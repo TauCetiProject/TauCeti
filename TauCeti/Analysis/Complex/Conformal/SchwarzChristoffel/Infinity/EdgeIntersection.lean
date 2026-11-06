@@ -36,6 +36,37 @@ namespace TauCeti
 
 variable {n : ℕ}
 
+/-- **Injectivity from three injective pieces.** Let `f` be injective on each of `Iic a`, `Icc a b`
+and `Ici b`, with `a ≤ b`. If `f` maps `Iic a` into `S` and `Ici b` into `T` with `S` and `T`
+disjoint, and a point of `Icc a b` mapped into `S` (respectively `T`) has the value `f a`
+(respectively `f b`), then `f` is injective. -/
+theorem injective_of_injOn_Iic_Icc_Ici {ι X : Type*} [LinearOrder ι] {f : ι → X} {a b : ι}
+    {S T : Set X} (hab : a ≤ b) (hl : InjOn f (Iic a)) (hm : InjOn f (Icc a b))
+    (hr : InjOn f (Ici b)) (hS : ∀ x ≤ a, f x ∈ S) (hT : ∀ x, b ≤ x → f x ∈ T)
+    (hST : Disjoint S T) (hSa : ∀ y ∈ Icc a b, f y ∈ S → f y = f a)
+    (hTb : ∀ y ∈ Icc a b, f y ∈ T → f y = f b) : Function.Injective f := by
+  suffices h : ∀ x y, x < y → f x ≠ f y from fun x y hxy ↦ by
+    rcases lt_trichotomy x y with hlt | rfl | hgt
+    · exact (h x y hlt hxy).elim
+    · rfl
+    · exact (h y x hgt hxy.symm).elim
+  intro x y hxy heq
+  by_cases hy₀ : y ≤ a
+  · exact hxy.ne (hl (hxy.le.trans hy₀) hy₀ heq)
+  by_cases hxn : b ≤ x
+  · exact hxy.ne (hr hxn (hxn.trans hxy.le) heq)
+  have hya := lt_of_not_ge hy₀
+  have hxb := lt_of_not_ge hxn
+  by_cases hx₀ : x ≤ a
+  · by_cases hyn : b ≤ y
+    · exact Set.disjoint_left.mp hST (hS x hx₀) (heq ▸ hT y hyn)
+    · have hy := hSa y ⟨hya.le, (lt_of_not_ge hyn).le⟩ (heq ▸ hS x hx₀)
+      exact hya.ne' (hm ⟨hya.le, (lt_of_not_ge hyn).le⟩ ⟨le_rfl, hab⟩ hy)
+  · by_cases hyn : b ≤ y
+    · have hx := hTb x ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ (heq ▸ hT y hyn)
+      exact hxb.ne (hm ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ ⟨hab, le_rfl⟩ hx)
+    · exact hxy.ne (hm ⟨(lt_of_not_ge hx₀).le, hxb.le⟩ ⟨hya.le, (lt_of_not_ge hyn).le⟩ heq)
+
 /-- If the bounded sides of an unbounded Schwarz--Christoffel boundary meet only at consecutive
 vertices, each outer ray meets the bounded sides only at its finite endpoint, and the two outer
 rays are disjoint, then the boundary map is injective. The exponents need only be integrable at
@@ -94,45 +125,16 @@ theorem schwarzChristoffelBoundary_injective_of_edge_intersections
         (ha i.castSucc_le_succ)
         (fun k _ => not_mem_Ioo_castSucc_succ a ha i k) (hfinite _) (hfinite _)]
     exact ⟨x, hi, rfl⟩
-  have hleftRay {x : ℝ} (hx : x ≤ a 0) : B x ∈ (fun t : ℝ => L - (t : ℂ) * u) '' Ici 0 := by
-    rw [← hleftImage]
-    exact ⟨x, hx, rfl⟩
-  have hrightRay {x : ℝ} (hx : a (Fin.last (n + 1)) ≤ x) :
-      B x ∈ (fun t : ℝ => R + (t : ℂ)) '' Ici 0 := by
-    rw [← hrightImage]
-    exact ⟨x, hx, rfl⟩
-  suffices h : ∀ x y, x < y → B x ≠ B y by
-    intro x y hxy
-    rcases lt_trichotomy x y with hlt | rfl | hgt
-    · exact False.elim (h x y hlt hxy)
-    · rfl
-    · exact False.elim (h y x hgt hxy.symm)
-  intro x y hxy heq
-  by_cases hy₀ : y ≤ a 0
-  · exact hxy.ne (hleftInj (hxy.le.trans hy₀) hy₀ heq)
-  by_cases hxn : a (Fin.last (n + 1)) ≤ x
-  · exact hxy.ne (hrightInj hxn (hxn.trans hxy.le) heq)
-  by_cases hx₀ : x ≤ a 0
-  · by_cases hyn : a (Fin.last (n + 1)) ≤ y
-    · exact Set.disjoint_left.mp houter (hleftRay hx₀) (heq ▸ hrightRay hyn)
-    · obtain ⟨i, hi⟩ := hmem y ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
-      have hyL := hleft i (B y) hi (by simpa only [L, u] using heq ▸ hleftRay hx₀)
-      have hya : y = a 0 := hbounded
-        ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩
-        ⟨le_rfl, ha (Fin.zero_le _)⟩
-        (hyL.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)).symm)
-      exact (lt_of_not_ge hy₀).ne' hya
-  · by_cases hyn : a (Fin.last (n + 1)) ≤ y
-    · obtain ⟨i, hi⟩ := hmem x ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
-      have hxR := hright i (B x) hi (by simpa only [R] using heq ▸ hrightRay hyn)
-      have hxa : x = a (Fin.last (n + 1)) := hbounded
-        ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
-        ⟨ha (Fin.zero_le _), le_rfl⟩
-        (hxR.trans (schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)).symm)
-      exact (lt_of_not_ge hxn).ne hxa
-    · exact hxy.ne (hbounded
-        ⟨(lt_of_not_ge hx₀).le, (lt_of_not_ge hxn).le⟩
-        ⟨(lt_of_not_ge hy₀).le, (lt_of_not_ge hyn).le⟩ heq)
+  refine injective_of_injOn_Iic_Icc_Ici (ha (Fin.zero_le _)) hleftInj hbounded hrightInj
+    (fun x hx ↦ ?_) (fun x hx ↦ ?_) houter (fun y hy hyL ↦ ?_) fun y hy hyR ↦ ?_
+  · exact hleftImage ▸ ⟨x, hx, rfl⟩
+  · exact hrightImage ▸ ⟨x, hx, rfl⟩
+  · obtain ⟨i, hi⟩ := hmem y hy
+    exact (hleft i (B y) hi (by simpa only [L, u] using hyL)).trans
+      (schwarzChristoffelBoundary_apply_prevertex a e z₀ 0 (hfinite 0)).symm
+  · obtain ⟨i, hi⟩ := hmem y hy
+    exact (hright i (B y) hi (by simpa only [R] using hyR)).trans
+      (schwarzChristoffelBoundary_apply_prevertex a e z₀ _ (hfinite _)).symm
 
 end TauCeti
 
