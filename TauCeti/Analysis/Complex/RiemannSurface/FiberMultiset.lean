@@ -248,7 +248,7 @@ from a compact Riemann surface which is constant near no point, a chart `e'` at 
 `e' y₀` the part of each fibre in the domain of `e x` is counted by the `m`-th roots of
 `z - e' y₀`, the fibre multiset of `e'.symm z` is the sum over `x` of those images, for `z` near
 `e' y₀`. -/
-private theorem eventually_fiberMultiset_eq_of_charts [CompactSpace X] [T2Space X] [T2Space Y]
+private theorem eventually_fiberMultiset_eq_of_charts [CompactSpace X] [T2Space Y]
     (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x))
     {e' : OpenPartialHomeomorph Y ℂ} {y₀ : Y} (hy₀ : y₀ ∈ e'.source) {O : X → Set X}
     (hOdisj : (f ⁻¹' {y₀}).PairwiseDisjoint O) (e : X → OpenPartialHomeomorph X ℂ)
