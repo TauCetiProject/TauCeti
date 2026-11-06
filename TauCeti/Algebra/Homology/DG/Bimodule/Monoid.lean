@@ -112,7 +112,7 @@ instance monObjGradedAlgebra : GradedAlgebra M.grading where
     exact Graded.map_mem (MonObj.mul (X := M)) ht
 
 /-- The unchanged differential makes the realized monoid a DG algebra. -/
-theorem monObjIsDGAlgebra : IsDGAlgebra M.grading M.differential where
+theorem monObj_isDGAlgebra : IsDGAlgebra M.grading M.differential where
   map_mem := M.isDGRightModule.isHomogeneous.map_mem
   sq_zero := M.isDGRightModule.sq_zero
   leibniz {p x} hx y := by
@@ -124,7 +124,7 @@ theorem monObjIsDGAlgebra : IsDGAlgebra M.grading M.differential where
     rfl
 
 /-- The unit morphism of a DG bimodule monoid is a DG algebra map from the base algebra. -/
-def monObjBaseHom : DGAlgHom hA (monObjIsDGAlgebra M) where
+def monObjBaseHom : DGAlgHom hA (monObj_isDGAlgebra M) where
   toAlgHom := AlgHom.ofLinearMap
     (((MonObj.one (X := M)).val.toLinearMap.restrictScalars R).comp
       (tensorUnitEquiv hA).toLinearMap)
@@ -151,18 +151,16 @@ def monObjBaseHom : DGAlgHom hA (monObjIsDGAlgebra M) where
       (by rw [tensorUnitEquiv_apply, tensorUnitEquiv_apply])
 
 /-- The base map is the categorical unit evaluated on the lifted base element. -/
-@[simp]
 theorem monObjBaseHom_apply (a : A) :
     monObjBaseHom M a = MonObj.one (X := M) (tensorUnitEquiv hA a) := (rfl)
 
 /-- Left multiplication by a base element is the original left action. -/
--- Apply before the base map's evaluation rule expands its argument.
-@[simp↓]
+@[simp]
 theorem monObjBaseHom_mul (a : A) (x : M) : monObjBaseHom M a * x = a • x := by
   rw [monObjBaseHom_apply, monObj_one_apply_mul]
 
 /-- Right multiplication by a base element is the original right action. -/
-@[simp↓]
+@[simp]
 theorem mul_monObjBaseHom (x : M) (a : A) : x * monObjBaseHom M a = op a • x := by
   rw [monObjBaseHom_apply, monObj_mul_one_apply]
 
@@ -170,7 +168,7 @@ variable {M} {N : DGBimoduleCat.{uR, uA, uA, uA} hA hA} [MonObj N]
 
 /-- A morphism of DG bimodule monoids realizes as a DG algebra morphism. -/
 def monObjMap (f : M ⟶ N) [IsMonHom f] :
-    DGAlgHom (monObjIsDGAlgebra M) (monObjIsDGAlgebra N) where
+    DGAlgHom (monObj_isDGAlgebra M) (monObj_isDGAlgebra N) where
   toAlgHom := AlgHom.ofLinearMap (f.val.toLinearMap.restrictScalars R)
     (by
       have h := congrArg (fun g ↦ g (tensorUnitEquiv hA 1)) (IsMonHom.one_hom f)
@@ -188,6 +186,7 @@ def monObjMap (f : M ⟶ N) [IsMonHom f] :
 theorem monObjMap_apply (f : M ⟶ N) [IsMonHom f] (x : M) : monObjMap f x = f x := (rfl)
 
 /-- Realized morphisms commute with the base algebra maps. -/
+-- Apply before `monObjMap_apply` replaces the realized map by its underlying morphism.
 @[simp↓]
 theorem monObjMap_base (f : M ⟶ N) [IsMonHom f] (a : A) :
     monObjMap f (monObjBaseHom M a) = monObjBaseHom N a := by
@@ -196,7 +195,7 @@ theorem monObjMap_base (f : M ⟶ N) [IsMonHom f] (a : A) :
 
 /-- Realization preserves identity morphisms. -/
 @[simp]
-theorem monObjMap_id : monObjMap (𝟙 M) = DGAlgHom.id (monObjIsDGAlgebra M) := by
+theorem monObjMap_id : monObjMap (𝟙 M) = DGAlgHom.id (monObj_isDGAlgebra M) := by
   ext x
   simp
 
