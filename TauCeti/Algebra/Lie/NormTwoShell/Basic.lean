@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.StdBasis
 public import TauCeti.LinearAlgebra.Matrix.NormTwoShell.Basic
 public import TauCeti.LinearAlgebra.Matrix.OrderedSignCover
 import Mathlib.Tactic.Module
+import TauCeti.Algebra.Ring.NegOnePow
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 /-!
@@ -489,41 +490,6 @@ private theorem root_lie_rootBracket {a b c : B.normTwoShell} (hbc : (b : I → 
     simp only [add_assoc]
   · rw [rootOf_of_notMem hm, ite_eq_right hm, ShellLieAlgebra.lie_zero, smul_zero]
 
-/-- The signs `(-1) ^ w * (-1) ^ x` and `(-1) ^ y * (-1) ^ z` agree when `w + x` and `y + z` have
-the same parity. -/
-private theorem negOnePow_mul_negOnePow_eq (w x y z : ℤ) (h : (w + x - (y + z)) % 2 = 0) :
-    w.negOnePow * x.negOnePow = y.negOnePow * z.negOnePow := by
-  rw [← Int.negOnePow_add, ← Int.negOnePow_add, Int.negOnePow_eq_iff, Int.even_iff]
-  exact h
-
-/-- The signs `(-1) ^ w * (-1) ^ x` and `-((-1) ^ y * (-1) ^ z)` agree when `w + x` and `y + z + 1`
-have the same parity. -/
-private theorem negOnePow_mul_negOnePow_eq_neg (w x y z : ℤ)
-    (h : (w + x - (y + z + 1)) % 2 = 0) :
-    w.negOnePow * x.negOnePow = -(y.negOnePow * z.negOnePow) := by
-  rw [← Int.negOnePow_add, ← Int.negOnePow_add, ← Int.negOnePow_succ, Int.negOnePow_eq_iff,
-    Int.even_iff]
-  exact h
-
-omit [LinearOrder I] in
-/-- Two distinct non-opposite vectors of the norm-two shell pair to a value in `{-1, 0, 1}`. -/
-private theorem neg_one_le_and_dotProduct_mulVec_le_one (hB : B.PosDef) (hdiag : ∀ i, Even (B i i))
-    {x y : B.normTwoShell} (hxy : x ≠ y) (hxy' : (x : I → ℤ) + y ≠ 0) :
-    -1 ≤ (x : I → ℤ) ⬝ᵥ B *ᵥ y ∧ (x : I → ℤ) ⬝ᵥ B *ᵥ y ≤ 1 :=
-  ⟨hB.neg_one_le_dotProduct_mulVec hdiag x.2 y.2 fun h ↦ hxy' (by rw [h, neg_add_cancel]),
-    hB.dotProduct_mulVec_le_one hdiag x.2 y.2 (Subtype.coe_injective.ne hxy)⟩
-
-omit [LinearOrder I] in
-/-- The norm of the sum of three vectors of the norm-two shell, in terms of their pairings. -/
-private theorem dotProduct_mulVec_add_add_of_mem_normTwoShell (hS : B.IsSymm)
-    {a b c : I → ℤ} (ha : a ∈ B.normTwoShell) (hb : b ∈ B.normTwoShell)
-    (hc : c ∈ B.normTwoShell) :
-    (a + b + c) ⬝ᵥ B *ᵥ (a + b + c) = 6 + 2 * (a ⬝ᵥ B *ᵥ b + b ⬝ᵥ B *ᵥ c + c ⬝ᵥ B *ᵥ a) := by
-  rw [hS.add_dotProduct_mulVec_add, hS.add_dotProduct_mulVec_add, add_dotProduct,
-    mem_normTwoShell.mp ha, mem_normTwoShell.mp hb, mem_normTwoShell.mp hc,
-    hS.dotProduct_mulVec_comm (x := a) (y := c)]
-  ring
-
 open scoped Classical in
 /-- The three double brackets of root vectors `a`, `b`, `c` summing to zero cancel: all three
 pairings are `-1`, and the terms are multiples of `H_a`, `H_b` and `H_c`. -/
@@ -553,13 +519,17 @@ private theorem jacobi_terms_of_add_add_eq_zero {a b c : B.normTwoShell}
           (rootOf B ((a : I → ℤ) + b + c) +
             if (a : I → ℤ) + b + c = 0 then cartan B c else 0))
       else 0) = 0 := by
+  set sab := B.orderedSignForm a b
+  set sba := B.orderedSignForm b a
+  set sbc := B.orderedSignForm b c
+  set scb := B.orderedSignForm c b
+  set sca := B.orderedSignForm c a
+  set sac := B.orderedSignForm a c
   rw [ite_eq_left hbc, ite_eq_left hca, ite_eq_left hab,
-    negOnePow_mul_negOnePow_eq (B.orderedSignForm c a)
-      (B.orderedSignForm b c + B.orderedSignForm b a) (B.orderedSignForm b c)
-      (B.orderedSignForm a b + B.orderedSignForm a c) (by omega),
-    negOnePow_mul_negOnePow_eq (B.orderedSignForm a b)
-      (B.orderedSignForm c a + B.orderedSignForm c b) (B.orderedSignForm b c)
-      (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
+    (TauCeti.negOnePow_mul_negOnePow_of_even (a := sca) (b := sbc + sba) (c := sbc + (sab + sac))
+      (Int.even_iff.2 (by omega))).trans (Int.negOnePow_add _ _),
+    (TauCeti.negOnePow_mul_negOnePow_of_even (a := sab) (b := sca + scb) (c := sbc + (sab + sac))
+      (Int.even_iff.2 (by omega))).trans (Int.negOnePow_add _ _)]
   simp only [hd, rootOf_zero, ↓reduceIte, zero_add]
   rw [← smul_add, ← smul_add, ← map_add (cartan B), ← map_add (cartan B), hd, map_zero, smul_zero]
 
@@ -574,9 +544,12 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
   have hb := b.2
   have hc := c.2
   -- The three pairings lie in `{-1, 0, 1}`, and decide which pairwise sums are roots.
-  have hp := neg_one_le_and_dotProduct_mulVec_le_one hB hdiag hab hab'
-  have hq := neg_one_le_and_dotProduct_mulVec_le_one hB hdiag hbc hbc'
-  have hr := neg_one_le_and_dotProduct_mulVec_le_one hB hdiag hca hca'
+  have hp1 := hB.neg_one_le_dotProduct_mulVec hdiag ha hb fun h ↦ hab' (by rw [h, neg_add_cancel])
+  have hp2 := hB.dotProduct_mulVec_le_one hdiag ha hb (Subtype.coe_injective.ne hab)
+  have hq1 := hB.neg_one_le_dotProduct_mulVec hdiag hb hc fun h ↦ hbc' (by rw [h, neg_add_cancel])
+  have hq2 := hB.dotProduct_mulVec_le_one hdiag hb hc (Subtype.coe_injective.ne hbc)
+  have hr1 := hB.neg_one_le_dotProduct_mulVec hdiag hc ha fun h ↦ hca' (by rw [h, neg_add_cancel])
+  have hr2 := hB.dotProduct_mulVec_le_one hdiag hc ha (Subtype.coe_injective.ne hca)
   have hmab := hS.add_mem_normTwoShell_iff ha hb
   have hmbc := hS.add_mem_normTwoShell_iff hb hc
   have hmca := hS.add_mem_normTwoShell_iff hc ha
@@ -586,7 +559,7 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
   have pca := even_orderedSignForm_add_orderedSignForm_swap_sub B hS hdiag c a
   rw [Int.even_iff] at pab pbc pca
   -- The norm of `a + b + c`.
-  have hnorm := dotProduct_mulVec_add_add_of_mem_normTwoShell hS ha hb hc
+  have hnorm := hS.dotProduct_mulVec_add_add_of_mem_normTwoShell ha hb hc
   -- Each double bracket lands on the same lattice vector `a + b + c`, in a rotated order.
   have hbca : (b : I → ℤ) + c + a = (a : I → ℤ) + b + c := by abel
   have hcab : (c : I → ℤ) + a + b = (a : I → ℤ) + b + c := by abel
@@ -600,6 +573,12 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
   simp only [ite_eq_right hd, add_zero]
   by_cases hdm : (a : I → ℤ) + b + c ∈ B.normTwoShell
   · -- Exactly two pairings are `-1`, and the two surviving terms cancel.
+    set sab := B.orderedSignForm a b
+    set sba := B.orderedSignForm b a
+    set sbc := B.orderedSignForm b c
+    set scb := B.orderedSignForm c b
+    set sca := B.orderedSignForm c a
+    set sac := B.orderedSignForm a c
     rw [mem_normTwoShell, hnorm] at hdm
     rcases (by omega : (a : I → ℤ) ⬝ᵥ B *ᵥ b = 0 ∧ (b : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∧
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧ (b : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∧
@@ -607,19 +586,19 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
         (b : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∧ (c : I → ℤ) ⬝ᵥ B *ᵥ a = 0) with
       ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_left (hmca.2 h3), ite_eq_right (by rw [hmab]; omega),
-        negOnePow_mul_negOnePow_eq_neg (B.orderedSignForm c a)
-          (B.orderedSignForm b c + B.orderedSignForm b a)
-          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
+        (TauCeti.negOnePow_mul_negOnePow_of_even (a := sca) (b := sbc + sba)
+          (c := sbc + (sab + sac) + 1)
+          (Int.even_iff.2 (by omega))).trans (by rw [Int.negOnePow_succ, Int.negOnePow_add])]
       simp
     · rw [ite_eq_right (by rw [hmbc]; omega), ite_eq_left (hmca.2 h3), ite_eq_left (hmab.2 h1),
-        negOnePow_mul_negOnePow_eq_neg (B.orderedSignForm a b)
-          (B.orderedSignForm c a + B.orderedSignForm c b)
-          (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a) (by omega)]
+        (TauCeti.negOnePow_mul_negOnePow_of_even (a := sab) (b := sca + scb)
+          (c := sca + (sbc + sba) + 1)
+          (Int.even_iff.2 (by omega))).trans (by rw [Int.negOnePow_succ, Int.negOnePow_add])]
       simp
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_right (by rw [hmca]; omega), ite_eq_left (hmab.2 h1),
-        negOnePow_mul_negOnePow_eq_neg (B.orderedSignForm a b)
-          (B.orderedSignForm c a + B.orderedSignForm c b)
-          (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]
+        (TauCeti.negOnePow_mul_negOnePow_of_even (a := sab) (b := sca + scb)
+          (c := sbc + (sab + sac) + 1)
+          (Int.even_iff.2 (by omega))).trans (by rw [Int.negOnePow_succ, Int.negOnePow_add])]
       simp
   · simp [rootOf_of_notMem hdm]
 
