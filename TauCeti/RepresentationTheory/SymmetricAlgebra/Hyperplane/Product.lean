@@ -118,7 +118,7 @@ theorem sum_card_dual_inertia_sub_one_eq_card_pseudoreflections
 /-- For a faithful finite-dimensional representation with group order invertible in `K`,
 the product over distinct reflecting hyperplanes of `ℓ_H^(e_H - 1)`, with `e_H` the order
 of the inertia group of `(ℓ_H)`, divides the Jacobian of any family of invariants. -/
-theorem prod_dual_inertia_sub_one_dvd_jacobian [FiniteDimensional K V]
+theorem prod_dual_ι_pow_sub_one_dvd_jacobian [FiniteDimensional K V]
     (hG : (Nat.card G : K) ≠ 0) (hρ : Function.Injective ρ)
     {n : Type*} [Fintype n] [DecidableEq n] (b : Module.Basis n K (Module.Dual K V))
     (ℓ : (H : ρ.reflectingHyperplanes) → Module.Dual K V)
