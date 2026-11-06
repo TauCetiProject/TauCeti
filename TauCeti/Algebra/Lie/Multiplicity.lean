@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Lie.Prod
 public import TauCeti.Algebra.Lie.Schur
 public import TauCeti.Algebra.Lie.Submodule.DirectSum
 
@@ -60,7 +61,8 @@ enveloping-algebra dictionary lives,
 
 * `LieModule.isotypicMultiplicity_eq_sum_of_isInternal`: **the multiplicity is additive over a
   finite decomposition of `M` into Lie submodules.** `LieModule.isotypicMultiplicity_directSum` is
-  the same for a finite external direct sum.
+  the same for a finite external direct sum, and `LieModule.isotypicMultiplicity_prod` for a binary
+  product.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton`: the zero module occurs with
   multiplicity zero.
 * `LieModule.isotypicMultiplicity_eq_zero_of_subsingleton_codomain`: everything occurs in the zero
@@ -216,6 +218,28 @@ theorem isotypicMultiplicity_directSum (P : ι → Type w₃) [∀ i, AddCommGro
   simp_rw [isotypicMultiplicity_def]
 
 end Additivity
+
+omit [LieModule K L S] in
+/-- **Multiplicity is additive over a binary product.** A morphism into `M × N` is the pair of its
+two components. Unlike `LieModule.isotypicMultiplicity_directSum`, the two factors may live in
+different universes. -/
+theorem isotypicMultiplicity_prod (N : Type w₃) [AddCommGroup N] [Module K N] [LieRingModule L N]
+    [LieModule K L N] (hM : FiniteDimensional K (S →ₗ⁅K,L⁆ M))
+    (hN : FiniteDimensional K (S →ₗ⁅K,L⁆ N)) :
+    isotypicMultiplicity K L (M × N) S =
+      isotypicMultiplicity K L M S + isotypicMultiplicity K L N S := by
+  let e : (S →ₗ⁅K,L⁆ M × N) ≃ₗ[K] (S →ₗ⁅K,L⁆ M) × (S →ₗ⁅K,L⁆ N) :=
+    { toFun f := ((TauCeti.LieModuleHom.fst K L M N).comp f,
+        (TauCeti.LieModuleHom.snd K L M N).comp f)
+      map_add' _ _ := Prod.ext (LieModuleHom.ext fun _ ↦ by simp) (LieModuleHom.ext fun _ ↦ by simp)
+      map_smul' _ _ :=
+        Prod.ext (LieModuleHom.ext fun _ ↦ by simp) (LieModuleHom.ext fun _ ↦ by simp)
+      invFun g := TauCeti.LieModuleHom.prod g.1 g.2
+      left_inv f := LieModuleHom.ext fun _ ↦ by simp
+      right_inv g :=
+        Prod.ext (LieModuleHom.ext fun _ ↦ by simp) (LieModuleHom.ext fun _ ↦ by simp) }
+  rw [isotypicMultiplicity_def, e.finrank_eq, Module.finrank_prod, isotypicMultiplicity_def,
+    isotypicMultiplicity_def]
 
 /-- **An irreducible module occurs in itself with multiplicity one.** -/
 @[simp]
