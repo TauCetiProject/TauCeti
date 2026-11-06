@@ -377,6 +377,15 @@ theorem hasWeakFDerivOn_iteratedGradient (k : ℕ) (u : Wkp mu Omega p (k + 2)) 
   exact WeakDerivStep.hasWeakFDerivOn_base_prev
     (sobolevStage (mu := mu) (Omega := Omega) (p := p) k).iteratedGradientL u
 
+/-- On an open subset of the line, the weak gradient of the first-order part of
+`u ∈ W^{2,p}(Ω)` has weak derivative the weak Hessian evaluated in the direction `1`. -/
+theorem hasWeakLineDerivOn_gradient_lowerOrder {mu : Measure ℝ} [mu.IsAddHaarMeasure]
+    {Omega : Opens ℝ} (u : Wkp mu Omega p 2) :
+    HasWeakLineDerivOn mu Omega (W1p.gradient (lowerOrder 1 u))
+      (fun x => iteratedGradient 1 u x 1) 1 := by
+  rw [← iteratedGradient_zero]
+  exact (hasWeakFDerivOn_iteratedGradient 0 u).hasWeakLineDerivOn 1
+
 /-- **A Sobolev function vanishing on an open subset has vanishing highest weak derivative
 there.** If `u ∈ W^{k+1,p}(Ω)` vanishes almost everywhere on an open `V ⊆ Ω`, then its highest
 weak derivative `iteratedGradient k u` vanishes almost everywhere on `V`. The first-order case is
