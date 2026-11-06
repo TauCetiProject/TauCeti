@@ -149,6 +149,8 @@ theorem affineIndependent_iff_det_ne_zero {x y z : k × k} :
 
 end Independent
 
+end TauCeti
+
 section Parallelogram
 
 variable {R V P : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
@@ -156,7 +158,7 @@ variable {R V P : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 /-- If the sides `b - a` and `d - a` are linearly independent, then so are the sides `d - b` and
 `c - b` of the triangle `bdc`, where `c = b + (d - a)` is the fourth vertex of the parallelogram
 `abcd`. -/
-theorem affineIndependent_vsub_vadd_of_linearIndependent_pair {a b d : P}
+theorem LinearIndependent.affineIndependent_vsub_vadd {a b d : P}
     (hli : LinearIndependent R ![b -ᵥ a, d -ᵥ a]) :
     AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b] := by
   rw [affineIndependent_iff_linearIndependent_vsub R _ 0,
@@ -173,5 +175,3 @@ theorem affineIndependent_vsub_vadd_of_linearIndependent_pair {a b d : P}
   · exact hcb
 
 end Parallelogram
-
-end TauCeti
