@@ -33,6 +33,9 @@ mixed derivative `∂_x^α ∂_ξ^β a(x, ξ)`, taking the frequency derivatives
 smooth `a`, local in the position, and for smooth `a` the order of the two kinds of derivatives
 does not matter (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`).
 
+A first-order coordinate derivative of a bilinear expression `B (f y) (g y)` obeys the Leibniz
+rule (`ContinuousLinearMap.coordinateDeriv_singleton_of_bilinear`).
+
 ## Main declarations
 
 * `TauCeti.CoordinateSpace n`: the Euclidean space `ℝⁿ = EuclideanSpace ℝ (Fin n)`.
@@ -370,5 +373,16 @@ theorem norm_mixedDeriv_smul_le {𝕜 : Type*} [NormedField 𝕜] [NormedSpace �
   exact mul_le_mul_of_nonneg_left haC (norm_nonneg c)
 
 end Linear
+
+/-- The Leibniz rule for a first-order coordinate derivative of a bilinear expression
+`B (f y) (g y)`. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_singleton_of_bilinear {A₁ A₂ : Type*}
+    [NormedAddCommGroup A₁] [NormedSpace ℝ A₁] [NormedAddCommGroup A₂] [NormedSpace ℝ A₂]
+    (B : A₁ →L[ℝ] A₂ →L[ℝ] A) {f : CoordinateSpace n → A₁} {g : CoordinateSpace n → A₂}
+    {x : CoordinateSpace n} (hf : DifferentiableAt ℝ f x) (hg : DifferentiableAt ℝ g x)
+    (j : Fin n) :
+    coordinateDeriv [j] (fun y => B (f y) (g y)) x =
+      B (coordinateDeriv [j] f x) (g x) + B (f x) (coordinateDeriv [j] g x) := by
+  simp [coordinateDeriv_cons, B.fderiv_of_bilinear hf hg, add_comm]
 
 end TauCeti
