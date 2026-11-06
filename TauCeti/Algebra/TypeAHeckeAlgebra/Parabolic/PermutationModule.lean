@@ -53,28 +53,6 @@ theorem mem_permutationModule_iff (x : TypeAHeckeAlgebra R q n) :
       ∃ y, y * parabolicEigenSum cs J (q : R) = x := by
   rw [permutationModule_def, Ideal.mem_span_singleton']
 
-/-- The standard coset vectors of any parabolic weighted sum are linearly independent,
-without requiring its weight to satisfy the Hecke quadratic. -/
-theorem linearIndependent_Tw_mul_parabolicEigenSum (a : R) :
-    LinearIndependent R (fun d : {d : W // cs.IsMinimalCosetRep J d} ↦
-      Tw q cs d * parabolicEigenSum cs J a) := by
-  classical
-  let c : parabolic (R := R) q J := ⟨_, parabolicEigenSum_mem_parabolic cs J a⟩
-  let f : R →ₗ[R] parabolic (R := R) q J := LinearMap.toSpanSingleton R _ c
-  have hf : Function.Injective f := by
-    intro r s h
-    exact smul_parabolicEigenSum_injective (q := q) (cs := cs) (J := J) a
-      (congrArg Subtype.val h)
-  let F := (parabolicCosetEquivRight q cs J).toLinearMap ∘ₗ Finsupp.mapRange.linearMap f
-  have hF : Function.Injective F :=
-    (parabolicCosetEquivRight q cs J).injective.comp
-      (Finsupp.mapRange_injective f (map_zero f) hf)
-  convert (Finsupp.linearIndependent_single_one (R := R)
-    (ι := {d : W // cs.IsMinimalCosetRep J d})).map' F
-      (LinearMap.ker_eq_bot.mpr hF) using 1
-  ext d
-  simp [F, f, c]
-
 /-- The minimal-coset vectors span the entire principal left ideal, not merely a
 submodule of it. -/
 theorem span_Tw_mul_parabolicEigenSum :
@@ -113,12 +91,9 @@ noncomputable def permutationModuleBasis :
       (mem_permutationModule_iff cs J _).mpr ⟨Tw q cs d, rfl⟩⟩)
     (LinearIndependent.of_comp ((permutationModule cs J).subtype.restrictScalars R)
       (linearIndependent_Tw_mul_parabolicEigenSum cs J (q : R))) <| by
-    refine (Submodule.map_injective_of_injective
-      (f := (permutationModule (q := q) cs J).subtype.restrictScalars R)
-      Subtype.val_injective ?_).ge
-    rw [Submodule.map_span, ← Set.range_comp, Submodule.map_top]
-    simpa [LinearMap.range_restrictScalars, Function.comp_def] using
-      span_Tw_mul_parabolicEigenSum (q := q) cs J
+    exact ((Submodule.span_range_subtype_eq_top_iff
+      ((permutationModule cs J).restrictScalars R) _).mpr
+        (span_Tw_mul_parabolicEigenSum (q := q) cs J)).ge
 
 /-- The standard permutation-module basis vector is the corresponding left translate
 of the row symmetrizer. -/
@@ -126,7 +101,7 @@ of the row symmetrizer. -/
 theorem coe_permutationModuleBasis (d : {d : W // cs.IsMinimalCosetRep J d}) :
     (permutationModuleBasis (q := q) cs J d : TypeAHeckeAlgebra R q n) =
       Tw q cs d * parabolicEigenSum cs J (q : R) := by
-  simp [permutationModuleBasis, Module.Basis.mk_apply]
+  exact congrArg Subtype.val (Module.Basis.mk_apply _ _ d)
 
 /-- An ascent that remains a minimal representative sends the coset basis vector
 to the basis vector of the new coset. -/

@@ -95,6 +95,28 @@ theorem smul_parabolicEigenSum_injective (a : R) :
   simpa only [map_smul, Finsupp.smul_apply, basisTw_repr_parabolicEigenSum,
     Subgroup.one_mem, ite_true, cs.length_one, pow_zero, smul_eq_mul, mul_one] using hc
 
+/-- The standard coset vectors of any parabolic weighted sum are linearly independent,
+without requiring its weight to satisfy the Hecke quadratic. -/
+theorem linearIndependent_Tw_mul_parabolicEigenSum (a : R) :
+    LinearIndependent R (fun d : {d : W // cs.IsMinimalCosetRep J d} ↦
+      Tw q cs d * parabolicEigenSum cs J a) := by
+  classical
+  let c : parabolic (R := R) q J := ⟨_, parabolicEigenSum_mem_parabolic cs J a⟩
+  let f : R →ₗ[R] parabolic (R := R) q J := LinearMap.toSpanSingleton R _ c
+  have hf : Function.Injective f := by
+    intro r s h
+    exact smul_parabolicEigenSum_injective (q := q) (cs := cs) (J := J) a
+      (congrArg Subtype.val h)
+  let F := (parabolicCosetEquivRight q cs J).toLinearMap ∘ₗ Finsupp.mapRange.linearMap f
+  have hF : Function.Injective F :=
+    (parabolicCosetEquivRight q cs J).injective.comp
+      (Finsupp.mapRange_injective f (map_zero f) hf)
+  convert (Finsupp.linearIndependent_single_one (R := R)
+    (ι := {d : W // cs.IsMinimalCosetRep J d})).map' F
+      (LinearMap.ker_eq_bot.mpr hF) using 1
+  ext d
+  simp [F, f, c]
+
 /-- A parabolic weighted sum is nonzero over every nontrivial coefficient ring. -/
 theorem parabolicEigenSum_ne_zero [Nontrivial R] (a : R) :
     parabolicEigenSum (q := q) cs J a ≠ 0 := by
