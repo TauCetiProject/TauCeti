@@ -68,9 +68,10 @@ theorem mpullback_eq_mextDeriv_quadratic (φ : MorseChart E f x)
     _ = mextDeriv (RoughForm.ofFunction 𝓘(ℝ, E) φ.quadratic) z := by
       rw [mextDeriv_ofFunction, mextDeriv_ofFunction, heq.mvfderiv_eq]
 
-/-- The coordinate one-form has coefficients `wᵢ zᵢ`, with the linear coordinate change of the
-Morse chart retained explicitly. In particular the quadratic potential's factor `1/2`
-disappears on differentiation. -/
+/-- With the Morse chart's linear coordinate change `L = φ.coord`, the coordinate one-form
+at `z` evaluates on `v` as `∑ i, φ.weight i * (L z i) * (L v i)`. The tangent vector is
+identified with `v` by `NormedSpace.fromTangentSpace z`. In particular the quadratic
+potential's factor `1/2` disappears on differentiation. -/
 theorem mpullback_apply_eq_sum (φ : MorseChart E f x)
     (hf : IsPrimitiveOn α f φ.toChart.source) {z : E} (hz : z ∈ φ.toChart.target) (v : E) :
     mpullback 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart.symm α z

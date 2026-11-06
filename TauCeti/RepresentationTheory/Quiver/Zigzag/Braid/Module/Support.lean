@@ -179,21 +179,17 @@ theorem zigzagBraidInverseTensorSupportSequence_X₃ (i : V) :
 /-- The positive support sequence is short exact in the functor category. -/
 theorem zigzagBraidTensorSupportSequence_shortExact (i : V) :
     (zigzagBraidTensorSupportSequence.{u, v, w} k G i).ShortExact :=
-  ShortComplex.shortExact_of_iso
-    ((tensor.{u, v, w} k G).mapTwoTermSupportReframedIso (positiveSupport k G i)
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G))
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso (zigzagGradedBraidBimodule k G i) (-1)))
-    ((tensor.{u, v, w} k G).mapTwoTermSupport_shortExact (positiveSupport k G i))
+  (tensor.{u, v, w} k G).mapTwoTermSupportReframed_shortExact (positiveSupport k G i)
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G))
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso (zigzagGradedBraidBimodule k G i) (-1))
 
 /-- The inverse support sequence is short exact in the functor category. -/
 theorem zigzagBraidInverseTensorSupportSequence_shortExact (i : V) :
     (zigzagBraidInverseTensorSupportSequence.{u, v, w} k G i).ShortExact :=
-  ShortComplex.shortExact_of_iso
-    ((tensor.{u, v, w} k G).mapTwoTermSupportReframedIso (inverseSupport k G i)
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso
-        ((GradedModuleCat.shiftFunctor (-2)).obj (zigzagGradedBraidBimodule k G i)) 1)
-      ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G)))
-    ((tensor.{u, v, w} k G).mapTwoTermSupport_shortExact (inverseSupport k G i))
+  (tensor.{u, v, w} k G).mapTwoTermSupportReframed_shortExact (inverseSupport k G i)
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowNatIso
+      ((GradedModuleCat.shiftFunctor (-2)).obj (zigzagGradedBraidBimodule k G i)) 1)
+    ((tensor.{u, v, w} k G).mapBifunctorSingleRowZeroNatIso (zigzagGradedBimodule k G))
 
 /-- The positive support sequence has its canonical splitting after evaluating at a
 module complex and a cochain degree. -/
