@@ -52,6 +52,10 @@ variable vanishes everywhere is constant along every horizontal line.
   of a function on a product are the restrictions of its derivative.
 * `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
   derivative along the first factor.
+* `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
+  on a product is the sum of the derivatives of its two slices.
+* `TauCeti.hasDerivAt_slice_right`: the partial derivative of a function in a scalar second
+  variable is its derivative applied to `(0, 1)`.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
@@ -114,6 +118,16 @@ restricted to the second factor. -/
 theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
     fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
   (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
+
+/-- The derivative of a function on a product is the sum of the derivatives of its two slices,
+applied to the two components of the direction. -/
+theorem fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right {f : E × F → G}
+    (hf : DifferentiableAt 𝕜 f (a, b)) (w : E × F) :
+    fderiv 𝕜 f (a, b) w =
+      fderiv 𝕜 (fun x ↦ f (x, b)) a w.1 + fderiv 𝕜 (fun y ↦ f (a, y)) b w.2 := by
+  rw [fderiv_slice_left hf, fderiv_slice_right hf]
+  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.inl_apply,
+    ContinuousLinearMap.inr_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
 
 /-- A function of the second variable alone has zero derivative along the first factor. No
 differentiability is needed: otherwise the derivative is zero. -/
@@ -222,6 +236,13 @@ theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt �
       (hasDerivAt_prodMk_left s b)
 
 end CoordinateLines
+
+/-- Where `u` is differentiable, its partial derivative in the second variable is its derivative
+applied to `(0, 1)`. -/
+theorem hasDerivAt_slice_right {u : E × 𝕜 → G} {a : E} {t : 𝕜}
+    (hu : DifferentiableAt 𝕜 u (a, t)) :
+    HasDerivAt (fun t ↦ u (a, t)) (fderiv 𝕜 u (a, t) (0, 1)) t :=
+  hu.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right a t)
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/

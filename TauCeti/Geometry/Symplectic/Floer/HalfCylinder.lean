@@ -129,7 +129,8 @@ theorem exists_periodic_hasDerivAt_tendstoUniformly_of_floer (hH : ContDiff ℝ 
         TendstoUniformly (fun n t ↦ u (φ n, t)) x atTop := by
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, -⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top hu hper hK huK
-      (ω.continuous_hamiltonianVectorField_uncurry hH) (fun v t ↦ by simp only [hHper t])
+      (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
+      (fun v t ↦ by simp only [hHper t])
       (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc
         hJM hfloer hE)
   exact ⟨x, hxper, hx, φ, hφa, hφ, hux⟩
@@ -222,7 +223,8 @@ theorem tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect
     Tendsto (fun i ↦ ω.hamiltonianAction H (fun t ↦ u (φ i, t))) l
       (𝓝 (ω.hamiltonianAction H x)) := by
   set X : ℝ → V → V := fun t ↦ ω.hamiltonianVectorField (H t)
-  have hX : Continuous (uncurry X) := ω.continuous_hamiltonianVectorField_uncurry hH
+  have hX : Continuous (uncurry X) :=
+    (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
   have hloop : ∀ i, Continuous fun t ↦ u (φ i, t) := fun i ↦
     continuous_slice_of_continuousOn hu.continuousOn (hφa i)
   have hdefc : ∀ i, Continuous fun t ↦ sliceDefect X u (φ i, t) := fun i ↦
@@ -285,7 +287,8 @@ theorem exists_periodic_hasDerivAt_tendsto_hamiltonianAction_of_floer
         (𝓝 (ω.hamiltonianAction H x)) := by
   obtain ⟨x, hxper, hx, φ, hφa, hφ, hux, hdef⟩ :=
     exists_periodic_hasDerivAt_tendstoUniformly_of_lintegral_ne_top (hu.of_le one_le_two) hper hK
-      huK (ω.continuous_hamiltonianVectorField_uncurry hH) (fun v t ↦ by simp only [hHper t])
+      huK (ω.contDiff_hamiltonianVectorField_uncurry (n := 0) (by simpa using hH)).continuous
+      (fun v t ↦ by simp only [hHper t])
       (lintegral_norm_sq_sliceDefect_ne_top (measurableSet_Ioi.prod measurableSet_Icc) hc hJc
         hJM hfloer hE)
   refine ⟨x, hxper, hx, ⟨φ, hφa, hφ, hux⟩, ?_⟩

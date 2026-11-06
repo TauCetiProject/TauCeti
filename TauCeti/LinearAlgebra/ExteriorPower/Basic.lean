@@ -99,8 +99,8 @@ theorem eq_zero_of_finrank_lt (d : ℕ) (h : Module.finrank R M < d) (x : ⋀[R]
   have : Subsingleton (⋀[R]^d M) := by
     rcases subsingleton_or_nontrivial R with _ | _
     · exact Module.subsingleton R _
-    · rw [← Module.finrank_eq_zero_iff_of_free R, finrank_eq, Nat.choose_eq_zero_iff]
-      exact h
+    · exact exteriorPower.subsingleton_of_span_eq_top_of_card_lt (Module.finBasis R M)
+        (Module.finBasis R M).span_eq d (by simpa using h)
   exact Subsingleton.elim x 0
 
 end Vanishing

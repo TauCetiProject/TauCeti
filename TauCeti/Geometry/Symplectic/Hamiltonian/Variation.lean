@@ -43,13 +43,12 @@ theorem contDiffAt_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
     ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.contDiffAt.comp (p, x)
       (hK'.fderiv contDiffAt_snd le_rfl)
 
-/-- A jointly `C¹` Hamiltonian family has jointly continuous Hamiltonian vector fields. -/
-theorem continuous_hamiltonianVectorField_uncurry (ω : SymplecticForm V) {K : P → V → ℝ}
-    (hK : ContDiff ℝ 1 (Function.uncurry K)) :
-    Continuous (Function.uncurry fun p ↦ ω.hamiltonianVectorField (K p)) :=
-  continuous_iff_continuousAt.2 fun w ↦
-    (ω.contDiffAt_hamiltonianVectorField_uncurry (n := 0) (by simpa using hK.contDiffAt)
-      ).continuousAt
+/-- A jointly `C^(n+1)` Hamiltonian family has jointly `C^n` Hamiltonian vector fields. This is
+the global form of `contDiffAt_hamiltonianVectorField_uncurry`. -/
+theorem contDiff_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
+    {K : P → V → ℝ} {n : WithTop ℕ∞} (hK : ContDiff ℝ (n + 1) (Function.uncurry K)) :
+    ContDiff ℝ n (fun w : P × V ↦ ω.hamiltonianVectorField (K w.1) w.2) :=
+  contDiff_iff_contDiffAt.2 fun _ ↦ ω.contDiffAt_hamiltonianVectorField_uncurry hK.contDiffAt
 
 /-- Along a continuous path `x`, the linearized Hamiltonian vector fields
 `S_t = dX_{H_t}(x(t))` of a jointly `C²` Hamiltonian depend continuously on `t`. -/
@@ -57,8 +56,7 @@ theorem continuous_fderiv_hamiltonianVectorField_comp (ω : SymplecticForm V) {H
     (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V} (hx : Continuous x) :
     Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) := by
   have hF : ContDiff ℝ 1 (Function.uncurry fun t y ↦ ω.hamiltonianVectorField (H t) y) :=
-    contDiff_iff_contDiffAt.2 fun p ↦
-      ω.contDiffAt_hamiltonianVectorField_uncurry (n := 1) hH.contDiffAt
+    ω.contDiff_hamiltonianVectorField_uncurry (n := 1) hH
   exact (hF.fderiv (contDiff_zero.2 hx) le_rfl).continuous
 
 /-- Differentiating a Hamiltonian vector field in a parameter direction gives the Hamiltonian
