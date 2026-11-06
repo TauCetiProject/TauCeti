@@ -7,7 +7,8 @@ module
 
 public import Mathlib.Probability.Moments.SubGaussian
 public import Mathlib.MeasureTheory.Constructions.Pi
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.MeasureTheory.Integral.Pi
+import TauCeti.Probability.Moments.Azuma
 import TauCeti.Algebra.Order.BigOperators.BoundedDifferences
 
 /-!
@@ -26,6 +27,11 @@ and the induction hypothesis controls the function obtained by averaging over it
 * `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences` gives the result for an arbitrary
   finite index type;
 * `TauCeti.Probability.hasSubgaussianMGF_of_bounded_differences_fin` specializes it to `Fin n`.
+
+The proof uses Hoeffding's lemma in oscillation form
+(`TauCeti.Probability.integral_exp_mul_sub_integral_le_of_abs_sub_le`) and the decomposition of a
+product measure along `Fin.cons` (`TauCeti.integral_pi_fin_succ_eq_integral_integral_finCons`,
+`TauCeti.measurable_comp_finCons`, `TauCeti.integrable_comp_finCons_of_abs_le`).
 
 ## References
 
@@ -73,54 +79,9 @@ private theorem integrable_exp_mul_sub_of_bounded_differences {ι : Type*} [Fini
     (ae_of_all _ fun x => abs_le.mp ((abs_sub (f x) I).trans ?_))
   linarith [abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x]
 
-/-- Composing a function on `Fin (n + 1) → β` with `Fin.cons` is measurable on the product of the
-first coordinate and the remaining ones. -/
-theorem measurable_comp_fin_cons {β γ : Type*} [MeasurableSpace β] [MeasurableSpace γ] {n : ℕ}
-    {F : (Fin (n + 1) → β) → γ} (hF : Measurable F) :
-    Measurable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2)) := by
-  refine hF.comp (measurable_pi_iff.mpr fun j => ?_)
-  refine Fin.cases ?_ (fun i => ?_) j
-  · simpa only [Fin.cons_zero] using measurable_fst
-  · simp only [Fin.cons_succ]
-    exact (measurable_pi_apply i).comp measurable_snd
-
-/-- Integration over the product of `n + 1` copies of a probability space splits into the
-integral over the first coordinate inside the integral over the remaining ones. -/
-theorem integral_pi_fin_succ_eq_integral_integral_cons {β : Type*} [MeasurableSpace β]
-    (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} (F : (Fin (n + 1) → β) → ℝ)
-    (hF : Integrable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2))
-      (ν.prod (Measure.pi fun _ : Fin n => ν))) :
-    ∫ x, F x ∂Measure.pi (fun _ : Fin (n + 1) => ν) =
-      ∫ w, ∫ a, F (Fin.cons a w) ∂ν ∂Measure.pi (fun _ : Fin n => ν) := by
-  set e := MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0 with he
-  have mp := measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) => ν) 0
-  have hcons : ∀ (a : β) (w : Fin n → β), e.symm (a, w) = Fin.cons a w := by
-    intro a w
-    ext j
-    refine Fin.cases ?_ ?_ j
-    · simp [he]
-    · intro i
-      simp [he]
-  have step1 : ∫ x, F x ∂Measure.pi (fun _ : Fin (n + 1) => ν) =
-      ∫ p, F (e.symm p) ∂(ν.prod (Measure.pi fun _ : Fin n => ν)) :=
-    (mp.symm.integral_comp' F).symm
-  rw [step1, integral_prod_symm _ (by simpa only [hcons] using hF)]
-  simp_rw [hcons]
-
-/-- A bounded measurable function on `Fin (n + 1) → β`, composed with `Fin.cons`, is integrable
-on the product of the first coordinate and the remaining ones. -/
-theorem integrable_comp_fin_cons_of_abs_le {β : Type*} [MeasurableSpace β]
-    (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} {F : (Fin (n + 1) → β) → ℝ} {K : ℝ}
-    (hF : Measurable F) (hFb : ∀ x, |F x| ≤ K) :
-    Integrable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2))
-      (ν.prod (Measure.pi fun _ : Fin n => ν)) := by
-  refine (integrable_const K).mono' (measurable_comp_fin_cons hF).aestronglyMeasurable
-    (ae_of_all _ fun p => ?_)
-  simpa using hFb (Fin.cons p.1 p.2)
-
 /-- Averaging out the first coordinate of a function with bounded differences gives a function
 of the remaining coordinates with the same bounded differences. -/
-theorem abs_integral_cons_sub_le {β : Type*} [MeasurableSpace β]
+theorem abs_integral_finCons_sub_le {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} {f : (Fin (n + 1) → β) → ℝ}
     {c : Fin (n + 1) → ℝ}
     (hint : ∀ w : Fin n → β, Integrable (fun a => f (Fin.cons a w)) ν)
@@ -145,41 +106,7 @@ theorem abs_integral_cons_sub_le {β : Type*} [MeasurableSpace β]
       (integrable_const (c i.succ)) hpt
     _ = c i.succ := by simp
 
-/-- **Hoeffding's lemma, oscillation form.** If a measurable real function on a probability space
-has oscillation at most `C`, then its centered exponential moment is at most
-`exp ((C / 2) ^ 2 * t ^ 2 / 2)`. -/
-theorem integral_exp_mul_sub_integral_le_of_abs_sub_le {β : Type*} [MeasurableSpace β]
-    (ν : Measure β) [IsProbabilityMeasure ν] {X : β → ℝ} (hX : Measurable X) {C : ℝ}
-    (hC : 0 ≤ C) (hosc : ∀ a a', |X a - X a'| ≤ C) (t : ℝ) :
-    ∫ a, Real.exp (t * (X a - ∫ a', X a' ∂ν)) ∂ν ≤ Real.exp ((C / 2) ^ 2 * t ^ 2 / 2) := by
-  have : Nonempty β := nonempty_of_isProbabilityMeasure ν
-  set A : ℝ := sInf (Set.range X)
-  have hbdd : BddBelow (Set.range X) := by
-    refine ⟨X (Classical.arbitrary β) - C, ?_⟩
-    rintro _ ⟨a, rfl⟩
-    have := hosc (Classical.arbitrary β) a
-    rw [abs_sub_le_iff] at this
-    linarith [this.1]
-  have hmem : ∀ a, X a ∈ Set.Icc A (A + C) := by
-    intro a
-    refine ⟨csInf_le hbdd ⟨a, rfl⟩, ?_⟩
-    have hle : A ≥ X a - C := by
-      apply le_csInf (Set.range_nonempty X)
-      rintro _ ⟨a', rfl⟩
-      have := hosc a a'
-      rw [abs_sub_le_iff] at this
-      linarith [this.1]
-    linarith
-  have hml := (ProbabilityTheory.hasSubgaussianMGF_of_mem_Icc (μ := ν)
-    hX.aemeasurable (ae_of_all _ hmem)).mgf_le t
-  have hexp : ((((‖(A + C) - A‖₊ / 2) ^ 2 : NNReal) : ℝ)) = (C / 2) ^ 2 := by
-    rw [add_sub_cancel_left, Real.nnnorm_of_nonneg hC]
-    push_cast
-    ring
-  rw [ProbabilityTheory.mgf, hexp] at hml
-  exact hml
-
-/-- A bound on `f` bounds the centered exponential `exp (t * (f x - I))`. -/
+/-- A bound on `f` bounds the shifted exponential `exp (t * (f x - I))` for any shift `I`. -/
 theorem abs_exp_mul_sub_le_exp {α : Type*} {f : α → ℝ} {M : ℝ} (hMf : ∀ x, |f x| ≤ M)
     (I t : ℝ) (x : α) : |Real.exp (t * (f x - I))| ≤ Real.exp (|t| * (M + |I|)) := by
   rw [Real.abs_exp]
@@ -192,11 +119,12 @@ theorem abs_exp_mul_sub_le_exp {α : Type*} {f : α → ℝ} {M : ℝ} (hMf : �
         (abs_nonneg t)
 
 /-- The peeled-coordinate step of McDiarmid's inequality: Hoeffding's lemma in the first
-coordinate, integrated over the remaining coordinates, bounds the centered exponential moment by
-a constant times the centered exponential moment of the average over the first coordinate. -/
-private theorem integral_integral_exp_cons_le {β : Type*} [MeasurableSpace β]
+coordinate, integrated over the remaining coordinates, bounds the shifted exponential moment
+`∫ exp (t * (f - I))` by a constant times the shifted exponential moment of the average over the
+first coordinate, for an arbitrary shift `I`. -/
+private theorem integral_integral_exp_finCons_le {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} {f : (Fin (n + 1) → β) → ℝ}
-    (hf : Measurable f) {c : Fin (n + 1) → ℝ} (hc0 : 0 ≤ c 0)
+    (hf : Measurable f) {c : Fin (n + 1) → ℝ}
     (hbd : ∀ (i : Fin (n + 1)) (x x' : Fin (n + 1) → β),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
     (hint : ∀ w : Fin n → β, Integrable (fun a => f (Fin.cons a w)) ν) (I t : ℝ) :
@@ -207,15 +135,15 @@ private theorem integral_integral_exp_cons_le {β : Type*} [MeasurableSpace β]
   set πn := Measure.pi (fun _ : Fin n => ν)
   set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
   have hg_meas : Measurable g :=
-    (measurable_comp_fin_cons hf).stronglyMeasurable.integral_prod_left.measurable
+    (measurable_comp_finCons hf).stronglyMeasurable.integral_prod_left.measurable
   have hsec_meas : ∀ w : Fin n → β, Measurable (fun a => f (Fin.cons a w)) := fun w =>
-    (measurable_comp_fin_cons hf).comp (measurable_id.prodMk measurable_const)
+    (measurable_comp_finCons hf).comp (measurable_id.prodMk measurable_const)
   have hg_bd : ∀ (i : Fin n) (w w' : Fin n → β), (∀ l, l ≠ i → w l = w' l) →
       |g w - g w'| ≤ c i.succ := fun i w w' hww' =>
-    abs_integral_cons_sub_le ν hint hbd i w w' hww'
+    abs_integral_finCons_sub_le ν hint hbd i w w' hww'
   have hHoeff : ∀ w, ∫ a, Real.exp (t * (f (Fin.cons a w) - g w)) ∂ν
       ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) := fun w =>
-    integral_exp_mul_sub_integral_le_of_abs_sub_le ν (hsec_meas w) hc0
+    integral_exp_mul_sub_integral_le_of_abs_sub_le ν (hsec_meas w)
       (fun a a' => hbd 0 _ _ (fun l hl => by
         rcases Fin.eq_zero_or_eq_succ l with rfl | ⟨m, rfl⟩
         · exact absurd rfl hl
@@ -236,7 +164,7 @@ private theorem integral_integral_exp_cons_le {β : Type*} [MeasurableSpace β]
     (integrable_exp_mul_sub_of_bounded_differences (fun i => c i.succ) hg_meas.aemeasurable
       hg_bd I t).const_mul _
   have hLmeas : Measurable (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) :=
-    ((((measurable_comp_fin_cons hf).sub_const I).const_mul t).exp
+    ((((measurable_comp_finCons hf).sub_const I).const_mul t).exp
       ).stronglyMeasurable.integral_prod_left.measurable
   have hL_int : Integrable
       (fun w => ∫ a, Real.exp (t * (f (Fin.cons a w) - I)) ∂ν) πn := by
@@ -250,7 +178,7 @@ private theorem integral_integral_exp_cons_le {β : Type*} [MeasurableSpace β]
 estimate for the averaged function on `Fin n` gives it for `f` on `Fin (n + 1)`. -/
 private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} (f : (Fin (n + 1) → β) → ℝ)
-    (hf : Measurable f) (c : Fin (n + 1) → ℝ) (hc : ∀ i, 0 ≤ c i)
+    (hf : Measurable f) (c : Fin (n + 1) → ℝ)
     (hbd : ∀ (i : Fin (n + 1)) (x x' : Fin (n + 1) → β),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
     (t : ℝ)
@@ -273,24 +201,24 @@ private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [Measurabl
     exact abs_le_sum_add_abs_of_bounded_differences c f hbd x₀ x
   have hint : ∀ w : Fin n → β, Integrable (fun a => f (Fin.cons a w)) ν := fun w =>
     (integrable_const M).mono'
-      ((measurable_comp_fin_cons hf).comp (measurable_id.prodMk measurable_const)
+      ((measurable_comp_finCons hf).comp (measurable_id.prodMk measurable_const)
         ).aestronglyMeasurable (ae_of_all _ fun a => by simpa using hMf (Fin.cons a w))
   set g : (Fin n → β) → ℝ := fun w => ∫ a, f (Fin.cons a w) ∂ν with hg_def
   have hgf : I = ∫ w, g w ∂πn := by
-    rw [hI_def, integral_pi_fin_succ_eq_integral_integral_cons ν f
-      (integrable_comp_fin_cons_of_abs_le ν hf hMf)]
-  rw [integral_pi_fin_succ_eq_integral_integral_cons ν (fun x => Real.exp (t * (f x - I)))
-    (integrable_comp_fin_cons_of_abs_le ν (((hf.sub_const I).const_mul t).exp)
+    rw [hI_def, integral_pi_fin_succ_eq_integral_integral_finCons ν f
+      (integrable_comp_finCons_of_abs_le ν hf hMf)]
+  rw [integral_pi_fin_succ_eq_integral_integral_finCons ν (fun x => Real.exp (t * (f x - I)))
+    (integrable_comp_finCons_of_abs_le ν (((hf.sub_const I).const_mul t).exp)
       (abs_exp_mul_sub_le_exp hMf I t))]
   calc
     _ ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) * ∫ w, Real.exp (t * (g w - I)) ∂πn :=
-      integral_integral_exp_cons_le ν hf (hc 0) hbd hint I t
+      integral_integral_exp_finCons_le ν hf hbd hint I t
     _ ≤ Real.exp ((c 0 / 2) ^ 2 * t ^ 2 / 2) *
         Real.exp ((∑ i : Fin n, (c i.succ / 2) ^ 2) * t ^ 2 / 2) := by
       apply mul_le_mul_of_nonneg_left _ (Real.exp_nonneg _)
       rw [hgf]
-      exact ih g (measurable_comp_fin_cons hf).stronglyMeasurable.integral_prod_left.measurable
-        (fun i w w' hww' => abs_integral_cons_sub_le ν hint hbd i w w' hww')
+      exact ih g (measurable_comp_finCons hf).stronglyMeasurable.integral_prod_left.measurable
+        (fun i w w' hww' => abs_integral_finCons_sub_le ν hint hbd i w w' hww')
     _ = Real.exp ((∑ i : Fin (n + 1), (c i / 2) ^ 2) * t ^ 2 / 2) := by
       rw [← Real.exp_add]
       congr 1
@@ -301,7 +229,7 @@ private theorem integral_exp_mul_centered_le_pi_fin_succ {β : Type*} [Measurabl
 `Fin n`. -/
 private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpace β]
     (ν : Measure β) [IsProbabilityMeasure ν] {n : ℕ} (f : (Fin n → β) → ℝ)
-    (hf : Measurable f) (c : Fin n → ℝ) (hc : ∀ i, 0 ≤ c i)
+    (hf : Measurable f) (c : Fin n → ℝ)
     (hbd : ∀ (i : Fin n) (x x' : Fin n → β),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
     (t : ℝ) :
@@ -327,14 +255,14 @@ private theorem integral_exp_mul_centered_le_pi_fin {β : Type*} [MeasurableSpac
       rw [hone]
       simp
   | succ n ih =>
-      exact integral_exp_mul_centered_le_pi_fin_succ ν f hf c hc hbd t fun g hg hgbd =>
-        ih g hg (fun i => c i.succ) (fun i => hc i.succ) hgbd
+      exact integral_exp_mul_centered_le_pi_fin_succ ν f hf c hbd t fun g hg hgbd =>
+        ih g hg (fun i => c i.succ) hgbd
 
 /-- The exponential-moment estimate transported from `Fin (Fintype.card ι)` to an arbitrary
 finite index type. -/
 private theorem integral_exp_mul_centered_le_pi {ι : Type*} [Fintype ι] {β : Type*}
     [MeasurableSpace β] (ν : Measure β) [IsProbabilityMeasure ν] (f : (ι → β) → ℝ)
-    (hf : Measurable f) (c : ι → ℝ) (hc : ∀ i, 0 ≤ c i)
+    (hf : Measurable f) (c : ι → ℝ)
     (hbd : ∀ (i : ι) (x x' : ι → β),
       (∀ l, l ≠ i → x l = x' l) → |f x - f x'| ≤ c i)
     (t : ℝ) :
@@ -359,7 +287,7 @@ private theorem integral_exp_mul_centered_le_pi {ι : Type*} [Fintype ι] {β : 
     refine hww' (e l) (fun hcontra => hl ?_)
     rw [← e.symm_apply_apply l, hcontra]
   have key := integral_exp_mul_centered_le_pi_fin ν (fun w => f (φ w))
-    (hf.comp φ.measurable) (fun i => c (e.symm i)) (fun i => hc (e.symm i)) hbdF t
+    (hf.comp φ.measurable) (fun i => c (e.symm i)) hbdF t
   have hI : (∫ x', f x' ∂Measure.pi (fun _ : ι => ν)) =
       ∫ w', f (φ w') ∂Measure.pi (fun _ : Fin (Fintype.card ι) => ν) :=
     (mp.integral_comp' f).symm
@@ -402,7 +330,7 @@ theorem hasSubgaussianMGF_of_bounded_differences
   have hint : ∀ t : ℝ, Integrable (fun x => Real.exp (t * (f x - I))) π := fun t =>
     integrable_exp_mul_sub_of_bounded_differences c hf.aemeasurable hbd I t
   refine ⟨hint, fun t => ?_⟩
-  have hkey := integral_exp_mul_centered_le_pi ν f hf c hc hbd t
+  have hkey := integral_exp_mul_centered_le_pi ν f hf c hbd t
   have hcoe : (((∑ i, (c i).toNNReal ^ 2 / 4 : ℝ≥0) : ℝ)) =
       ∑ i, (c i / 2) ^ 2 := by
     push_cast [Real.coe_toNNReal (c _) (hc _)]

@@ -36,6 +36,10 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 * `TauCeti.integral_pi_eq_integral_integral_update`: the two-coordinate Fubini
   identity.
 * `TauCeti.integral_pi_succ`: splitting off the zeroth coordinate of a finite product measure.
+* `TauCeti.integral_pi_fin_succ_eq_integral_integral_finCons`: the iterated form of
+  `TauCeti.integral_pi_succ` for a constant family, with `Fin.cons` in place of the equivalence.
+* `TauCeti.integrable_comp_finCons_of_abs_le`: a bounded measurable function composed with
+  `Fin.cons` is integrable on the head-tail product.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
@@ -210,5 +214,33 @@ theorem integral_pi_succ {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, Measurab
         f ((MeasurableEquiv.piFinSuccAbove α 0).symm p)
           ∂((μ 0).prod (Measure.pi fun i ↦ μ (Fin.succAbove (0 : Fin (n + 1)) i))) := by
   rw [← ((measurePreserving_piFinSuccAbove μ 0).symm).integral_comp']
+
+/-- Integration over the product of `n + 1` copies of a measure splits into the integral over the
+first coordinate inside the integral over the remaining ones. -/
+theorem integral_pi_fin_succ_eq_integral_integral_finCons {β : Type*} [MeasurableSpace β]
+    (ν : Measure β) [SigmaFinite ν] {n : ℕ} {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (F : (Fin (n + 1) → β) → E)
+    (hF : Integrable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2))
+      (ν.prod (Measure.pi fun _ : Fin n => ν))) :
+    ∫ x, F x ∂Measure.pi (fun _ : Fin (n + 1) => ν) =
+      ∫ w, ∫ a, F (Fin.cons a w) ∂ν ∂Measure.pi (fun _ : Fin n => ν) := by
+  have hF' : Integrable (fun p : β × (Fin n → β) =>
+      F ((MeasurableEquiv.piFinSuccAbove (fun _ : Fin (n + 1) => β) 0).symm p))
+      (ν.prod (Measure.pi fun _ : Fin n => ν)) := by
+    simpa only [fun p : β × (Fin n → β) =>
+      MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons p.1 p.2] using hF
+  rw [integral_pi_succ (fun _ : Fin (n + 1) => ν), integral_prod_symm _ hF']
+  simp only [MeasurableEquiv.piFinSuccAbove_zero_symm_apply_eq_cons]
+
+/-- A bounded measurable function on `Fin (n + 1) → β`, composed with `Fin.cons`, is integrable
+on the product of the first coordinate and the remaining ones. -/
+theorem integrable_comp_finCons_of_abs_le {β : Type*} [MeasurableSpace β]
+    (ν : Measure β) [IsFiniteMeasure ν] {n : ℕ} {F : (Fin (n + 1) → β) → ℝ} {K : ℝ}
+    (hF : Measurable F) (hFb : ∀ x, |F x| ≤ K) :
+    Integrable (fun p : β × (Fin n → β) => F (Fin.cons p.1 p.2))
+      (ν.prod (Measure.pi fun _ : Fin n => ν)) := by
+  refine (integrable_const K).mono' (measurable_comp_finCons hF).aestronglyMeasurable
+    (ae_of_all _ fun p => ?_)
+  simpa using hFb (Fin.cons p.1 p.2)
 
 end TauCeti
