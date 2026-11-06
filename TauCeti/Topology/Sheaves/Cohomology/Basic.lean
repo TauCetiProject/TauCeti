@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
 public import Mathlib.CategoryTheory.Abelian.GrothendieckCategory.HasExt
 public import TauCeti.CategoryTheory.Sites.SheafCohomology.FreeYoneda
 public import TauCeti.Topology.Sheaves.ClosedEmbedding
+public import TauCeti.Topology.Sheaves.Cohomology.Instances
 
 /-!
 # Cohomology of pushforward from a closed subspace
@@ -68,8 +69,6 @@ def cohomologyPushforwardNatIso (hf : IsClosedEmbedding f) (n : ℕ) (U : Opens 
           (evaluation (Opens Y)ᵒᵖ AddCommGrpCat.{u}).obj (op U) ≅
       _root_.CategoryTheory.Sheaf.cohomologyPresheafFunctor (Opens.grothendieckTopology X) n ⋙
         (evaluation (Opens X)ᵒᵖ AddCommGrpCat.{u}).obj (op ((Opens.map f).obj U)) := by
-  haveI : HasExt.{u} (X.Sheaf AddCommGrpCat.{u}) := inferInstance
-  haveI : HasExt.{u} (Y.Sheaf AddCommGrpCat.{u}) := inferInstance
   haveI := preservesFiniteColimits_pushforward_of_isClosedEmbedding f hf
   haveI : RepresentablyFlat (Opens.map f) := _root_.CategoryTheory.flat_of_preservesFiniteLimits _
   haveI : PreservesFiniteLimits (TopCat.Sheaf.pullback AddCommGrpCat.{u} f) :=

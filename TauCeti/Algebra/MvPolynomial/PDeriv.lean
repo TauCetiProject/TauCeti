@@ -38,6 +38,8 @@ approximately invertible Jacobian.
 * `MvPolynomial.iterate_pderiv_eq_zero_of_totalDegree_lt`: it vanishes when `totalDegree p < k`.
 * `MvPolynomial.coeff_iterate_pderiv_mem`: iterated partial derivatives keep the coefficients in
   an additive submonoid.
+* `MvPolynomial.iterate_pderiv_prod_aeval_X`: on a separated product `∏ⱼ Qⱼ(Xⱼ)` of one-variable
+  polynomials, the `k`-th iterated partial derivative along `Xᵢ` is `Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ≠ i} Qⱼ(Xⱼ)`.
 * `MvPolynomial.dvd_eval_sub_eval`: values at points congruent modulo `d` are congruent modulo `d`.
 * `MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv`: Taylor's estimate
   `d * e ∣ p(x') - p(x) - ∑ⱼ ∂ⱼp(t) (x'ⱼ - xⱼ)`.
@@ -128,6 +130,44 @@ theorem coeff_iterate_pderiv_mem {S : Type*} [SetLike S R] [AddSubmonoidClass S 
   | succ k ih =>
     rw [Function.iterate_succ_apply']
     exact coeff_pderiv_mem ih i m
+
+/-- Iterated partial differentiation along `Xᵢ` of a one-variable polynomial in `Xᵢ` is iterated
+differentiation of the polynomial. -/
+theorem iterate_pderiv_aeval_X_self (i : σ) (k : ℕ) (p : Polynomial R) :
+    (pderiv i)^[k] (Polynomial.aeval (X i : MvPolynomial σ R) p) =
+      Polynomial.aeval (X i) (Polynomial.derivative^[k] p) := by
+  induction k with
+  | zero => rfl
+  | succ k ih => simp [Function.iterate_succ_apply', ih]
+
+/-- **Partial derivatives of a separated product.** For one-variable polynomials `Qⱼ` and
+`i ∈ s`, the `k`-th iterated partial derivative along `Xᵢ` of `∏_{j ∈ s} Qⱼ(Xⱼ)` is
+`Qᵢ⁽ᵏ⁾(Xᵢ) ∏_{j ∈ s, j ≠ i} Qⱼ(Xⱼ)`: the other factors do not involve `Xᵢ`. -/
+theorem iterate_pderiv_prod_aeval_X [DecidableEq σ] {s : Finset σ} {i : σ} (hi : i ∈ s)
+    (Q : σ → Polynomial R) (k : ℕ) :
+    (pderiv i)^[k] (∏ j ∈ s, Polynomial.aeval (X j : MvPolynomial σ R) (Q j)) =
+      Polynomial.aeval (X i) (Polynomial.derivative^[k] (Q i)) *
+        ∏ j ∈ s.erase i, Polynomial.aeval (X j) (Q j) := by
+  set g := ∏ j ∈ s.erase i, Polynomial.aeval (X j : MvPolynomial σ R) (Q j)
+  have hg : pderiv i g = 0 := by
+    have key : ∀ t : Finset σ, i ∉ t →
+        pderiv i (∏ j ∈ t, Polynomial.aeval (X j : MvPolynomial σ R) (Q j)) = 0 := by
+      intro t
+      induction t using Finset.induction_on with
+      | empty => simp
+      | insert j t hj ih =>
+        intro hit
+        rw [Finset.mem_insert, not_or] at hit
+        rw [Finset.prod_insert hj, Derivation.leibniz, ih hit.2, Derivation.map_aeval,
+          pderiv_X_of_ne (Ne.symm hit.1)]
+        simp
+    exact key _ (Finset.notMem_erase i s)
+  rw [← Finset.mul_prod_erase s _ hi, ← iterate_pderiv_aeval_X_self]
+  induction k with
+  | zero => rfl
+  | succ k ih =>
+    rw [Function.iterate_succ_apply', ih, Derivation.leibniz, Function.iterate_succ_apply']
+    simp [hg, mul_comm]
 
 end CommSemiring
 

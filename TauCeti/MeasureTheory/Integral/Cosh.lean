@@ -16,13 +16,14 @@ import TauCeti.MeasureTheory.Integral.ExpDecay
 # Integrals involving the hyperbolic cosine
 
 An integrand dominated by `C * cosh (k * t)` has a primitive bounded by
-`C * cosh (k * t) / k` for `k > 0`, in either time direction. This estimate controls
+`C * cosh (k * t) / |k|` for `k ≠ 0`, in either time direction. This estimate controls
 Picard iteration in a weighted space of bounded continuous functions on the whole real line.
 
 In the other direction, `1 / cosh x ^ 2`, the derivative of `Real.tanh`, is integrable on the line
 with integral `2`: `TauCeti.integrable_one_div_cosh_sq` and `TauCeti.integral_one_div_cosh_sq`.
 So `(cosh x)⁻¹` is square integrable (`TauCeti.memLp_inv_cosh`), which makes it the decaying
-solution of `v' = -tanh(s) v`.
+solution of `v' = -tanh(s) v`. This scalar equation describes both the kernel of `d/ds + tanh` and
+the cokernel (the kernel of the formal adjoint) of `d/ds - tanh`.
 -/
 
 public section
@@ -34,30 +35,25 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- A hyperbolic-cosine bound on an integrand gives a hyperbolic-cosine bound on its interval
-integral from zero, for either sign of the endpoint. Only an almost-everywhere bound on the
-interval of integration is required. -/
-theorem norm_intervalIntegral_le_cosh {k C : ℝ} (hk : 0 < k) (hC : 0 ≤ C)
+integral from zero, for either sign of the endpoint and of the rate `k ≠ 0`. Only an
+almost-everywhere bound on the interval of integration is required. -/
+theorem norm_intervalIntegral_le_cosh {k C : ℝ} (hk : k ≠ 0) (hC : 0 ≤ C)
     {F : ℝ → E} (t : ℝ)
     (hF : ∀ᵐ s ∂volume.restrict (uIoc 0 t), ‖F s‖ ≤ C * Real.cosh (k * s)) :
-    ‖∫ s in (0 : ℝ)..t, F s‖ ≤ C * Real.cosh (k * t) / k := by
+    ‖∫ s in (0 : ℝ)..t, F s‖ ≤ C * Real.cosh (k * t) / |k| := by
   have hg : Continuous fun s : ℝ ↦ C * Real.cosh (k * s) := by fun_prop
-  have hderiv : ∀ s : ℝ, HasDerivAt (fun s : ℝ ↦ C * Real.sinh (k * s) / k)
+  have hderiv (s : ℝ) : HasDerivAt (fun s : ℝ ↦ C * Real.sinh (k * s) / k)
       (C * Real.cosh (k * s)) s := by
-    intro s
-    simpa [← mul_assoc, hk.ne'] using
+    simpa [← mul_assoc, hk] using
       (((hasDerivAt_id s).const_mul k).sinh.const_mul C).div_const k
-  have hcalc : ∫ s in (0 : ℝ)..t, C * Real.cosh (k * s) =
-      C * Real.sinh (k * t) / k := by
-    rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun s _ ↦ hderiv s)
-      (hg.intervalIntegrable _ _)]
-    simp
   calc ‖∫ s in (0 : ℝ)..t, F s‖
       ≤ |∫ s in (0 : ℝ)..t, C * Real.cosh (k * s)| :=
-        intervalIntegral.norm_integral_le_abs_of_norm_le hF
-          (hg.intervalIntegrable _ _)
-    _ = C * |Real.sinh (k * t)| / k := by
-        rw [hcalc, abs_div, abs_mul, abs_of_nonneg hC, abs_of_pos hk]
-    _ ≤ C * Real.cosh (k * t) / k := by
+        intervalIntegral.norm_integral_le_abs_of_norm_le hF (hg.intervalIntegrable _ _)
+    _ = C * |Real.sinh (k * t)| / |k| := by
+        rw [intervalIntegral.integral_eq_sub_of_hasDerivAt (fun s _ ↦ hderiv s)
+          (hg.intervalIntegrable _ _)]
+        simp [abs_div, abs_mul, abs_of_nonneg hC]
+    _ ≤ C * Real.cosh (k * t) / |k| := by
         gcongr
         rw [Real.abs_sinh, ← Real.cosh_abs (k * t)]
         exact (Real.sinh_lt_cosh _).le
