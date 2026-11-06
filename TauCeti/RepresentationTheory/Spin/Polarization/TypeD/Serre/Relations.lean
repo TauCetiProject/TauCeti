@@ -494,26 +494,20 @@ private theorem lie_typeDRootProduct_of_not_adjacent
       have hindices := not_typeDAdjacent_index_cases i j hij
       rw [ite_eq_left hi, ite_eq_left hj] at hindices
       simp only [hxx, hyy, hxy, zero_smul, add_zero, sub_zero]
-      split_ifs with hforward hbackward
-      · simp only [Fin.ext_iff] at *
-        omega
-      · simp only [Fin.ext_iff] at *
-        omega
-      · simp only [Fin.ext_iff] at *
-        omega
-      · simp only [zero_smul, sub_self]
+      split_ifs <;> first
+        | (simp only [zero_smul, sub_self]; done)
+        | (simp only [Fin.ext_iff] at *; omega)
     · rename_i hj
       rw [lie_ι_mul_ι_ι_mul_ι]
       have hindices := not_typeDAdjacent_index_cases i j hij
       rw [ite_eq_left hi, ite_eq_right hj] at hindices
       simp only [hxx, hxy, zero_smul, sub_zero, Fin.mk.injEq]
-      split_ifs with hnextLast hnextPenultimate
-      · omega
-      · omega
-      · simp only [one_smul, zero_smul, zero_add]
-        apply hx_mul_eq_zero
-        exact Fin.ext_iff.mpr (by simp only; omega)
-      · simp only [zero_smul, add_zero]
+      split_ifs <;> first
+        | omega
+        | (simp only [zero_smul, add_zero]; done)
+        | (simp only [one_smul, zero_smul, zero_add]
+           apply hx_mul_eq_zero
+           exact Fin.ext_iff.mpr (by simp only; omega))
   · rename_i hi
     split
     · rename_i hj
