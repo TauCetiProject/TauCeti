@@ -85,9 +85,13 @@ def ups (s : ℕ → Bool) (n : ℕ) : ℕ := #{i ∈ range n | s i}
 /-- There are no up steps in an empty prefix. -/
 @[simp] theorem ups_zero (s : ℕ → Bool) : ups s 0 = 0 := by simp [ups]
 
-private theorem depth_succ_of_le {w : ℕ → ℕ} {t : ℕ} (h : w t ≤ t) :
+/-- The depth of the vertex 	 + 1 is one more than the depth of its parent w t. -/
+theorem depth_succ_of_le {w : ℕ → ℕ} {t : ℕ} (h : w t ≤ t) :
     depth w (t + 1) = depth w (w t) + 1 := by
   rw [depth, min_eq_left h]
+
+/-- The root has depth zero. -/
+@[simp] theorem depth_zero (w : ℕ → ℕ) : depth w 0 = 0 := by simp [depth]
 
 @[simp] theorem depth_eq_zero_iff {w : ℕ → ℕ} {v : ℕ} : depth w v = 0 ↔ v = 0 := by
   cases v <;> simp [depth]
@@ -180,7 +184,7 @@ theorem depth_walkOf (hs : IsDyckPattern k s) :
     ∀ n ≤ 2 * k, (depth (walkOf s) (walkOf s n) : ℤ) = 2 * ups s n - n := by
   intro n
   induction n with
-  | zero => intro _; simp [walkOf_zero, depth, ups]
+  | zero => intro _; simp [walkOf_zero, ups]
   | succ n ih =>
     intro hn
     have ih := ih (by omega)
@@ -191,7 +195,7 @@ theorem depth_walkOf (hs : IsDyckPattern k s) :
       simp only [Bool.false_eq_true, ite_false, add_zero] at hup
       rw [hup] at hge ⊢
       have hd : 1 ≤ depth (walkOf s) (walkOf s n) := by omega
-      have hc : walkOf s n ≠ 0 := fun h => by simp [h, depth] at hd
+      have hc : walkOf s n ≠ 0 := fun h => by simp [h] at hd
       have h1 := depth_succ_of_le (w := walkOf s) (walkOf_le s (walkOf s n - 1))
       rw [Nat.sub_add_cancel (Nat.one_le_iff_ne_zero.mpr hc)] at h1
       rw [walkOf_down s hsn]
@@ -212,7 +216,7 @@ private theorem one_le_walkOf (hs : IsDyckPattern k s) {n : ℕ} (hn : n < 2 * k
   simp only [hsn, Bool.false_eq_true, ite_false, add_zero] at hup
   rw [hup] at hge
   have hd : 1 ≤ depth (walkOf s) (walkOf s n) := by omega
-  exact Nat.one_le_iff_ne_zero.mpr fun h => by simp [h, depth] at hd
+  exact Nat.one_le_iff_ne_zero.mpr fun h => by simp [h] at hd
 
 /-- The walk of a Dyck pattern returns to the root at time `2 * k`. -/
 theorem walkOf_two_mul (hs : IsDyckPattern k s) : walkOf s (2 * k) = 0 := by
@@ -497,7 +501,7 @@ theorem step_down {j : ℕ} (hj : j < 2 * k) (hn : ¬ w (j + 1) = j + 1) :
   set f : ℕ → ℤ := fun j => (depth w (w j) : ℤ) with hf
   have htel : ∑ j ∈ range (2 * k), (f (j + 1) - f j) = 0 := by
     rw [sum_range_sub]
-    simp [hf, hw.closed, hw.root, depth]
+    simp [hf, hw.closed, hw.root]
   have hU : ∑ j ∈ range (2 * k) with w (j + 1) = j + 1, (f (j + 1) - f j) = k := by
     have : ∀ j ∈ filter (fun j => w (j + 1) = j + 1) (range (2 * k)), f (j + 1) - f j = 1 := by
       intro j hj
@@ -565,7 +569,7 @@ private theorem depth_eq_ups : ∀ n ≤ 2 * k,
     (depth w (w n) : ℤ) = 2 * ups (upSteps k w) n - n := by
   intro n
   induction n with
-  | zero => intro _; simp [hw.root, depth, ups]
+  | zero => intro _; simp [hw.root, ups]
   | succ n ih =>
     intro hn
     have ih := ih (by omega)
@@ -693,10 +697,7 @@ private def dyckWordOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) : D
       (List.ofFn fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D).length = 2 * k :=
     by simp
   rw [List.take_of_length_le (by omega), hs.ups_eq] at h1
-  -- `semilength` is the count of `U` steps, and `dyckWordOf` stores this `ofFn` list.
-  change (List.ofFn fun i : Fin (2 * k) => if s i then DyckStep.U else DyckStep.D).count
-      DyckStep.U = k
-  exact h1
+  simpa only [DyckWord.semilength, dyckWordOf] using h1
 
 @[simp] private theorem dyckWordOf_stepsOf (p : DyckWord) :
     dyckWordOf (isDyckPattern_stepsOf p) = p := by
@@ -711,6 +712,7 @@ private theorem dyckWordOf_congr {k : ℕ} {s s' : ℕ → Bool} (e : s = s') (h
   subst e
   rfl
 
+/-- Extracting the up steps of the walk of a Dyck pattern recovers the original Boolean sequence. -/
 @[simp] theorem upSteps_walkOf {k : ℕ} {s : ℕ → Bool} (hs : IsDyckPattern k s) :
     upSteps k (walkOf s) = s := by
   funext j
