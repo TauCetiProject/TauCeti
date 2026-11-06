@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Complex.UnitDisc.Basic
+public import TauCeti.Analysis.Complex.Basic
 
 /-!
 # The pseudo-hyperbolic expression on the unit disc
@@ -70,11 +71,6 @@ lemma pseudoHyperbolicExpr_nonneg (z w : ℂ) : 0 ≤ pseudoHyperbolicExpr z w :
 @[simp]
 lemma pseudoHyperbolicExpr_self (z : ℂ) : pseudoHyperbolicExpr z z = 0 := by
   simp [pseudoHyperbolicExpr]
-
-private lemma norm_one_sub_conj_mul_comm (z w : ℂ) :
-    ‖1 - (starRingEnd ℂ) w * z‖ = ‖1 - (starRingEnd ℂ) z * w‖ := by
-  rw [← norm_conj]
-  simp [mul_comm]
 
 /-- The pseudo-hyperbolic expression is symmetric in its two arguments. -/
 lemma pseudoHyperbolicExpr_comm (z w : ℂ) :
