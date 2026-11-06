@@ -104,13 +104,6 @@ theorem exteriorPower_innerₗ (k : ℕ) :
 
 end TauCeti
 
-/-- The basis of `⋀ⁿ V` induced by an orthonormal basis `b` of `V` is orthonormal. -/
-theorem OrthonormalBasis.inner_toBasis_exteriorPower {I : Type*} [Fintype I] [LinearOrder I]
-    (b : OrthonormalBasis I ℝ V) (n : ℕ) (u v : powersetCard I n) :
-    ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
-  rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
-    OrthonormalBasis.inner_eq_ite]
-
 namespace Orientation
 
 variable {n : ℕ} [_i : Fact (finrank ℝ V = n)] (o : Orientation ℝ V (Fin n))
