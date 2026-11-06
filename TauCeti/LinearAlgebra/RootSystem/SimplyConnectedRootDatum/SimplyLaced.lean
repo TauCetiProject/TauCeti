@@ -27,6 +27,9 @@ The proof is uniform in the type: the identity holds at the simple roots by the 
 preserved by simple reflections because the Cartan matrix is symmetric, so Mathlib's
 `RootPairing.Base.induction_reflect` propagates it to every root.
 
+The symmetric pairing also controls root strings: a root sum `γ = α + β` has Cartan pairing
+`⟨α, β^∨⟩ = -1`, so `α + γ` is neither a root nor zero.
+
 ## Main results
 
 * `TauCeti.DynkinType.root_eq_coroot_vecMul_cartanMatrix`: the root with index `k` is
@@ -37,6 +40,12 @@ preserved by simple reflections because the Cartan matrix is symmetric, so Mathl
   coroot coordinates.
 * `TauCeti.DynkinType.coroot_reflectionPerm_simpleIndex`: simple reflections in coroot
   coordinates.
+* `TauCeti.DynkinType.pairing_simplyConnectedRootDatum_symm`: the Cartan pairing is symmetric.
+* `TauCeti.DynkinType.pairing_eq_neg_one_of_root_eq_add`: roots whose sum is a root have
+  Cartan pairing `-1`.
+* `TauCeti.DynkinType.root_add_notMem_of_root_eq_add` and
+  `TauCeti.DynkinType.root_add_ne_zero_of_root_eq_add`: a root sum `γ = α + β` cannot be
+  extended to a root or zero at `α + γ`.
 
 ## References
 

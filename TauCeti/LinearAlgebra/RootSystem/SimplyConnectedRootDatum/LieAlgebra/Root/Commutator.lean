@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.SimplyLaced
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Subsystem
 
 /-!
 # Commutators of the pinned all-root subgroups in simply-laced types
@@ -22,8 +22,9 @@ commute; this latter assertion holds in every type.
 The root-string conditions are consequences of the pinned datum, not additional Lie-bracket
 hypotheses on the representation. In a simply-laced type, a root sum has Cartan pairing `-1`,
 so neither `2α + β` nor `α + 2β` is a root or zero. The corresponding brackets vanish, and the
-integral exponential identity `baseChangeExp_mul_baseChangeExp_of_commutator_eq` gives the
-formula without inverting factorials in the value ring. No faithfulness or weight basis is
+Kostant relation `commutatorElement_kostantRootSubgroupParam_of_lie_eq`, based on the integral
+exponential identity `baseChangeExp_mul_baseChangeExp_of_commutator_eq`, gives the formula without
+inverting factorials in the value ring. No faithfulness or weight basis is
 required of the representation beyond the hypotheses of the existing root-subgroup construction.
 
 The commutator convention is `⁅x, y⁆ = x * y * x⁻¹ * y⁻¹`.
@@ -53,6 +54,7 @@ variable (hM : ∀ u ∈ kostantForm (t.lieBasis ht).rootGenerator (t.lieBasis h
 variable (hnil : ∀ i, IsNilpotent
   (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
 
+-- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
 attribute [local instance high] Algebra.toModule
 
 /-- Root subgroups commute when their roots sum to neither a root nor zero, in every type
@@ -64,10 +66,10 @@ theorem commute_chevalleyRootSubgroup_of_add_notMem {α β : Fin t.numRoots}
     (A : CommAlgCat ℤ) (u v : Multiplicative A) :
     Commute (chevalleyRootSubgroup ρ M hM hnil α A u)
       (chevalleyRootSubgroup ρ M hM hnil β A v) := by
-  apply Units.ext
-  simp only [Units.val_mul, chevalleyRootSubgroup_val]
-  exact commute_baseChangeExp M
-    (commute_of_lie_eq_zero ρ (lie_chevalleySystem_eq_zero h h₀)) _ _ _ _
+  rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
+    chevalleyRootSubgroup_eq_kostantRootSubgroupParam]
+  exact commute_kostantRootSubgroupParam _ _ ρ M _ _ _
+    (lie_chevalleySystem_eq_zero h h₀) A u v
 
 /-- **The simply-laced Chevalley commutator formula.** At every root sum `γ = α + β`,
 `⁅x_α(u), x_β(v)⁆ = x_γ(N_{α,β}uv)`. The structure constant and both vanishing higher brackets
@@ -86,33 +88,12 @@ theorem commutatorElement_chevalleyRootSubgroup_of_isSimplyLaced (hs : t.IsSimpl
   have hγ' := hγ.trans (add_comm _ _)
   have hβγ := lie_chevalleySystem_eq_zero
     (root_add_notMem_of_root_eq_add hs hγ') (root_add_ne_zero_of_root_eq_add hs hγ')
-  have hbr := lie_chevalleySystem_eq_structureConstant_zsmul hγ
-  let c := t.structureConstant ht α β
-  have hMc : ∀ n, ∀ z ∈ M, Associative.dividedPower n
-      (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • z ∈ M := by
-    intro n z hz
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n z hz) _
-  have hxy : chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
-        chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd ((c : A) * (u * v))) *
-        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
-    apply Units.ext
-    simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    rw [← baseChangeExp_zsmul c M
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ) hMc
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
-    exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M
-      (mul_eq_mul_add_zsmul_of_lie_eq ρ hbr)
-      ((commute_of_lie_eq_zero ρ hαγ).smul_right c)
-      ((commute_of_lie_eq_zero ρ hβγ).smul_right c)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β) _ _ hMc u v
-  have hyz := commute_chevalleyRootSubgroup_of_add_notMem ρ M hM hnil
-    (root_add_notMem_of_root_eq_add hs hγ') (root_add_ne_zero_of_root_eq_add hs hγ') A
-    (Multiplicative.ofAdd v) (Multiplicative.ofAdd ((c : A) * (u * v)))
-  rw [commutatorElement_def, hxy, mul_inv_cancel_right, hyz.eq, mul_inv_cancel_right]
+  rw [chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
+    chevalleyRootSubgroup_eq_kostantRootSubgroupParam,
+    chevalleyRootSubgroup_eq_kostantRootSubgroupParam]
+  exact commutatorElement_kostantRootSubgroupParam_of_lie_eq _ _ ρ M _ _ _ _
+    (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hαγ hβγ A
+    (Multiplicative.ofAdd u) (Multiplicative.ofAdd v)
 
 end
 
