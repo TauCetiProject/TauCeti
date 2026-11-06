@@ -20,7 +20,9 @@ permissions:
   contents: read
 jobs:
   tests:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     steps:
       - uses: actions/checkout@v4
       - name: Prepare pinned shared tools
