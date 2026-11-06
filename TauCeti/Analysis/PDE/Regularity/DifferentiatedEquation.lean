@@ -143,10 +143,10 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn
   refine Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => ?_
   have h := ((hcomm j).contDiffOn_smul (ha i j)).integral_lineDeriv_smul_eq_neg_integral_smul
     (∂_{b i} φ)
-  have hint₁ := integrable_smul_of_locallyIntegrableOn
-    ((hcomm j).locallyIntegrableOn_deriv.continuousOn_smul hΩ (ha i j).continuousOn) (∂_{b i} φ)
-  have hint₂ := integrable_smul_of_locallyIntegrableOn
-    ((hcomm j).locallyIntegrableOn.continuousOn_smul hΩ (hda i j)) (∂_{b i} φ)
+  have hint₁ := TestFunction.integrable_smul (∂_{b i} φ)
+    ((hcomm j).locallyIntegrableOn_deriv.continuousOn_smul hΩ (ha i j).continuousOn)
+  have hint₂ := TestFunction.integrable_smul (∂_{b i} φ)
+    ((hcomm j).locallyIntegrableOn.continuousOn_smul hΩ (hda i j))
   simp only [smul_add] at h
   rw [integral_add hint₁ hint₂] at h
   simp only [TestFunction.lineDerivOp_apply,
@@ -187,7 +187,7 @@ private theorem integrable_smul_sum_sum {B : EuclideanSpace ℝ ι → Matrix ι
         B x i j * ⟪W1p.gradient (D j) x, EuclideanSpace.basisFun ι ℝ i⟫_ℝ)) mu := by
   have hL := hasWeakLineDerivOn_smul_inner_gradient hB hD
   refine (integrable_finsetSum Finset.univ fun i _ => integrable_finsetSum Finset.univ fun j _ =>
-    integrable_smul_of_locallyIntegrableOn (hL i j).locallyIntegrableOn_deriv φ).congr
+    φ.integrable_smul (hL i j).locallyIntegrableOn_deriv).congr
       (Filter.Eventually.of_forall fun x => ?_)
   simp only [smul_eq_mul, innerSL_apply_apply, Finset.mul_sum]
   exact Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ => by ring
@@ -215,7 +215,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_neg_setIntegral_of_hasWeakLineDerivOn
       (B x i j • innerSL ℝ (W1p.gradient (D j) x) (EuclideanSpace.basisFun ι ℝ i) +
         fderiv ℝ (fun y => B y i j) x (EuclideanSpace.basisFun ι ℝ i) •
           innerSL ℝ (W1p.gradient u x) (EuclideanSpace.basisFun ι ℝ j))) mu :=
-    fun i j => integrable_smul_of_locallyIntegrableOn (hL i j).locallyIntegrableOn_deriv φ
+    fun i j => φ.integrable_smul (hL i j).locallyIntegrableOn_deriv
   rw [energyFormH1_ofTestFunctionₗ_eq_sum_sum (fun i j => (hB i j).continuousOn),
     Finset.sum_congr rfl fun i _ => Finset.sum_congr rfl fun j _ =>
       (hL i j).integral_lineDeriv_smul_eq_neg_integral_smul φ]
@@ -267,7 +267,7 @@ theorem energyFormH1_ofTestFunctionₗ_eq_setIntegral_of_hasWeakLineDerivOn
       ← setIntegral_smul_eq_integral_smul] at h
     simpa only [smul_eq_mul, mul_comm] using h
   have hgφ : IntegrableOn (fun x => g x * φ x) Omega mu :=
-    (integrable_smul_of_locallyIntegrableOn hf.locallyIntegrableOn_deriv φ).restrict.congr
+    (φ.integrable_smul hf.locallyIntegrableOn_deriv).restrict.congr
       (Filter.Eventually.of_forall fun x => mul_comm _ _)
   have hcomm := (integrable_smul_sum_sum hda hD φ).restrict (s := Omega)
   rw [energyFormH1_ofTestFunctionₗ_eq_neg_sub_of_hasWeakLineDerivOn ha hd,
