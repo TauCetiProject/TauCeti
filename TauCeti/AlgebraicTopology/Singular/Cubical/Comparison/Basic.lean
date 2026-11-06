@@ -432,18 +432,12 @@ theorem singularCubicalHomologyIso_inv_homologyπ_ofCube_point {X : TopCat.{u}} 
             ((normalizedCubicalChainComplexXEquiv X 0).symm
               (NormalizedCubicalChain.ofCube X k (SingularCube.point x))))) =
       singularHomology₀Section (ModuleCat.of k k) x 1 := by
-  let K := (normalizedCubicalChainComplex k).obj X
   let L := (TopCat.toSSet.obj X).chainComplex (ModuleCat.of k k)
-  have hφ : K.cycles₀Iso.inv ≫ K.homologyπ 0 ≫
-      HomologicalComplex.homologyMap ((cubicalToSingular k).app X) 0 =
-        ((cubicalToSingular k).app X).f 0 ≫ L.cycles₀Iso.inv ≫ L.homologyπ 0 := by
-    rw [HomologicalComplex.homologyπ_naturality, ← Category.assoc,
-      ChainComplex.cycles₀Iso_inv_naturality, Category.assoc]
-    -- The singular chains of `X` are the chains of its singular simplicial set `L`.
-    rfl
   rw [singularCubicalHomologyIso_inv, singularHomology₀Section_def,
     SSet.ιHomology₀_eq_cycles₀Iso_inv]
-  refine (ConcreteCategory.congr_hom hφ _).trans ?_
+  refine (ConcreteCategory.congr_hom
+    (ChainComplex.cycles₀Iso_inv_comp_homologyπ_comp_homologyMap
+      ((cubicalToSingular k).app X)) _).trans ?_
   refine (congrArg (L.cycles₀Iso.inv ≫ L.homologyπ 0).hom
     (cubicalToSingular_app_f_zero_ofCube (k := k) x)).trans ?_
   -- The chain of the vertex is the image of `1` under the inclusion of the vertex summand.
