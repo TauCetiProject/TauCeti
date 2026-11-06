@@ -16,7 +16,7 @@ public import TauCeti.Geometry.Symplectic.Lagrangian.Embedding.Basic
 A totally real embedding is a `C^n` embedding of half the ambient dimension whose tangent
 images are maximal totally real. The almost complex structure is supplied pointwise, without
 any regularity requirement, so the definition applies to finite-regularity as well as smooth
-structures. It does not introduce a second almost complex structure carrier.
+structures.
 
 The dimension condition is explicit even for empty source manifolds. The existing Lagrangian
 embedding predicate allows empty sources of any dimension, so its comparison theorem either
@@ -273,7 +273,8 @@ theorem SmoothTwoForm.IsNondegenerate.IsLagrangianEmbedding.isTotallyRealEmbeddi
     (h.isLagrangianMap.two_mul_finrank
       (h.isImmersion.mfderiv_injective (by simp) (Classical.arbitrary N))) htame
 
-/-- The pointwise theorem specializes to the native smooth tameness predicate. -/
+/-- On a nonempty source, a Lagrangian embedding is a smooth totally real embedding for every
+smooth almost complex structure tamed by the ambient form. -/
 theorem SmoothTwoForm.IsNondegenerate.IsLagrangianEmbedding.isTotallyRealEmbedding
     [Nonempty N] (h : hσ.IsLagrangianEmbedding I' f) {J : SmoothAlmostComplexStructure I M}
     (htame : σ.Tames J) :
