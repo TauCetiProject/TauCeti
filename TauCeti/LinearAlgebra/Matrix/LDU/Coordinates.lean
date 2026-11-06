@@ -53,6 +53,10 @@ inverting this product still inverts precisely all the leading block minors. -/
 noncomputable def leadingBlockMinorProduct (b : m → α) (M : Matrix m m R) : R :=
   ∏ i, (M.toSquareBlockProp fun j => b j ≤ b i).det
 
+/-- The defining product formula for the leading block minors. -/
+theorem leadingBlockMinorProduct_def (b : m → α) (M : Matrix m m R) :
+    leadingBlockMinorProduct b M = ∏ i, (M.toSquareBlockProp fun j => b j ≤ b i).det := (rfl)
+
 /-- The product of the leading block minors commutes with a change of coefficients. -/
 @[simp]
 theorem leadingBlockMinorProduct_map (b : m → α) (M : Matrix m m R) (f : R →+* S) :
