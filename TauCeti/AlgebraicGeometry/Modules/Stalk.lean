@@ -8,7 +8,6 @@ module
 public import Mathlib.AlgebraicGeometry.Modules.Sheaf
 public import Mathlib.Algebra.Category.ModuleCat.Stalk
 public import Mathlib.Topology.Sheaves.CommRingCat
-public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 
 /-!
 # Module structures on scheme-module stalks
@@ -19,8 +18,6 @@ The stalk of an `𝒪_X`-module carries the action of the original commutative l
 For a point `x` of an open `U`, the stalk `M_x` is also a `Γ(X, U)`-module through the germ map
 `Γ(X, U) ⟶ 𝒪_{X,x}` (`AlgebraicGeometry.Scheme.Modules.moduleSectionStalk`), and the germ map
 `Γ(M, U) → M_x` is `Γ(X, U)`-linear (`AlgebraicGeometry.Scheme.Modules.germₗ`).
-For a scheme over `Spec R`, the stalk also carries the canonical base-ring action,
-compatible with both the local-ring and section-ring actions.
 -/
 
 public section
@@ -81,38 +78,5 @@ lemma germₗ_apply (m : Γ(M, U)) : M.germₗ x m = M.presheaf.germ U x x.2 m :
   (rfl)
 
 end Section
-
-section Base
-
-variable (R : Type u) [CommRing R] [X.Over (Spec (.of R))]
-
-/-- A module stalk on a scheme over `Spec R` is an `R`-module through the local ring. -/
-instance (priority := 900) stalkBaseModule : Module R (M.presheaf.stalk x) :=
-  Module.compHom _ (X.baseRingToStalk R x)
-
-/-- The base-ring action on a module stalk factors through its local ring. -/
-instance isScalarTower_baseStalk :
-    IsScalarTower R (X.presheaf.stalk x) (M.presheaf.stalk x) :=
-  IsScalarTower.of_compHom _ _ _
-
-@[simp]
-lemma base_smul_stalk (r : R) (m : M.presheaf.stalk x) :
-    r • m = X.baseRingToStalk R x r • m :=
-  (rfl)
-
-/-- The base-ring and section-ring actions on a module stalk agree. -/
-lemma isScalarTower_base_section_moduleStalk {U : X.Opens} (x : U) :
-    letI : Algebra R Γ(X, U) :=
-      ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-    IsScalarTower R Γ(X, U) (M.presheaf.stalk x) := by
-  let : Algebra R Γ(X, U) :=
-    ((X.baseRingToStructurePresheaf R).app (op U)).hom.toAlgebra
-  have := X.isScalarTower_base_section_stalk R x
-  exact IsScalarTower.of_algebraMap_smul fun r m ↦ by
-    rw [base_smul_stalk]
-    exact congrArg (· • m)
-      (IsScalarTower.algebraMap_apply R Γ(X, U) (X.presheaf.stalk x) r).symm
-
-end Base
 
 end AlgebraicGeometry.Scheme.Modules

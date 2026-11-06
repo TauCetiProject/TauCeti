@@ -11,8 +11,9 @@ public import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Flat
 /-!
 # Flat Čech complexes from flat stalks
 
-For a quasi-coherent module flat over an affine base, the Čech complex of a finite
-family of opens with affine intersections consists of flat modules over the base.
+For a quasi-coherent module with stalks flat over an affine base on each open of a
+finite family with affine intersections, the Čech complex consists of flat modules
+over the base.
 The hypothesis is on stalks, not on sections: the affine local criterion for flatness
 supplies flatness of the sections appearing in the complex.
 
@@ -37,17 +38,19 @@ namespace AlgebraicGeometry.Scheme.Modules
 
 variable (R : Type u) [CommRing R] {X : Scheme.{u}} [X.Over (Spec (.of R))]
 
-/-- A quasi-coherent sheaf with stalks flat over the base gives a degreewise flat
-Čech complex for a finite family with affine nonempty finite intersections.
+/-- A quasi-coherent sheaf with stalks flat over the base on each open of a finite
+family with affine nonempty finite intersections gives a degreewise flat Čech complex.
 The family need not cover the scheme. -/
-theorem flat_cechComplex_X_of_flat_stalk {ι : Type u} [Finite ι]
+theorem flat_cechComplexFunctor_obj_X_of_flat_stalk {ι : Type u} [Finite ι]
     (U : ι → X.Opens) (M : X.Modules) [M.IsQuasicoherent]
     (hU : ∀ s : Finset ι, s.Nonempty → IsAffineOpen (s.inf U))
-    (hM : ∀ x : X, Module.Flat R (M.presheaf.stalk x)) (n : ℕ) :
+    (hM : ∀ (i : ι) (x : U i), Module.Flat R (M.presheaf.stalk x)) (n : ℕ) :
     Module.Flat R (((cechComplexFunctor U).obj
       ((sectionsBasePresheafFunctor R).obj M)).X n) := by
   apply TauCeti.CategoryTheory.flat_cechComplexFunctor_obj_X
   intro s hs
-  exact flat_sections_of_flat_stalk R M (hU s hs) fun x ↦ hM x
+  obtain ⟨i, hi⟩ := hs
+  exact flat_sections_of_flat_stalk R M (hU s ⟨i, hi⟩) fun x ↦
+    hM i ⟨x, (Finset.inf_le (f := U) hi) x.2⟩
 
 end AlgebraicGeometry.Scheme.Modules
