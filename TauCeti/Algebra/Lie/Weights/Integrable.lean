@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.Sl2.Spectrum
 public import TauCeti.Algebra.Lie.Sl2.WeightMultiplicity
 public import TauCeti.Algebra.Lie.Submodule.LocallyFinite
-public import TauCeti.LinearAlgebra.Eigenspace.Semisimple
 public import TauCeti.LinearAlgebra.Eigenspace.Separation
 public import Mathlib.Algebra.Lie.Weights.Killing
 
@@ -107,80 +106,6 @@ private theorem lie_mem_iSup_of_mem_rootSpace {N : Submodule K M} (P : ℤ → S
     exact le_iSup P j (by rw [hP]; exact ⟨hmapped, hNx w hw.2⟩)
   simpa using hle hu
 
-omit [CharZero K] [IsTriangularizable K H L] in
-/-- The Cartan element of an `sl₂` triple, acting on a Lie submodule `𝒲` over the subalgebra it
-generates, acts on the underlying vectors as the coroot acts on `M`. -/
-private theorem coe_toEnd_cartan_apply (t : IsSl2Triple h e f) (hh : h = (IsKilling.coroot α : L))
-    (𝒲 : LieSubmodule K (t.toLieSubalgebra K) M) (u : 𝒲) :
-    ((toEnd K (t.toLieSubalgebra K) 𝒲 ⟨h, t.h_mem_toLieSubalgebra⟩ u : 𝒲) : M) =
-      toEnd K H M (IsKilling.coroot α) (u : M) := by
-  simp only [toEnd_apply_apply, LieSubmodule.coe_bracket, LieSubalgebra.coe_bracket_of_module, hh]
-
-omit [CharZero K] [IsTriangularizable K H L] in
-/-- Powers of the shifted Cartan action on `𝒲` and on `M` agree on the underlying vectors. -/
-private theorem coe_toEnd_cartan_sub_smul_pow_apply (t : IsSl2Triple h e f)
-    (hh : h = (IsKilling.coroot α : L)) (𝒲 : LieSubmodule K (t.toLieSubalgebra K) M) (c : K)
-    (k : ℕ) (u : 𝒲) :
-    (((((toEnd K (t.toLieSubalgebra K) 𝒲 ⟨h, t.h_mem_toLieSubalgebra⟩) - c • 1) ^ k) u : 𝒲) :
-        M) = ((toEnd K H M (IsKilling.coroot α) - c • 1) ^ k) (u : M) := by
-  have hstep : ∀ u : 𝒲, ((((toEnd K (t.toLieSubalgebra K) 𝒲 ⟨h, t.h_mem_toLieSubalgebra⟩) -
-      c • 1) u : 𝒲) : M) = (toEnd K H M (IsKilling.coroot α) - c • 1) (u : M) := by
-    intro u
-    simp [hh]
-  induction k generalizing u with
-  | zero => simp
-  | succ k ih => rw [pow_succ, pow_succ, mul_apply_eq_comp, mul_apply_eq_comp, ih, hstep]
-
-omit [IsTriangularizable K H L] in
-/-- On a finite-dimensional Lie submodule `𝒲` over an `sl₂` triple, a generalized eigenvector of
-the coroot inside `𝒲` is an honest eigenvector: the Cartan element acts semisimply. -/
-private theorem apply_eq_smul_of_mem_maxGenEigenspace (t : IsSl2Triple h e f)
-    (hh : h = (IsKilling.coroot α : L)) (𝒲 : LieSubmodule K (t.toLieSubalgebra K) M)
-    [FiniteDimensional K 𝒲] (c : K) {u : M} (hu : u ∈ 𝒲)
-    (hgen : u ∈ (toEnd K H M (IsKilling.coroot α)).maxGenEigenspace c) :
-    toEnd K H M (IsKilling.coroot α) u = c • u := by
-  have hss : (toEnd K (t.toLieSubalgebra K) 𝒲 ⟨h, t.h_mem_toLieSubalgebra⟩).IsFinitelySemisimple :=
-    (isSemisimple_of_iSup_eigenspace_eq_top
-      (iSup_eigenspace_toEnd_eq_top (M := 𝒲) t.isSl2Triple_restrict)).isFinitelySemisimple
-  obtain ⟨k, hk⟩ := (Module.End.mem_maxGenEigenspace _ _ _).1 hgen
-  have hmem : (⟨u, hu⟩ : 𝒲) ∈
-      (toEnd K (t.toLieSubalgebra K) 𝒲 ⟨h, t.h_mem_toLieSubalgebra⟩).maxGenEigenspace c :=
-    (Module.End.mem_maxGenEigenspace _ _ _).2
-      ⟨k, Subtype.ext (by rw [coe_toEnd_cartan_sub_smul_pow_apply t hh 𝒲 c k]; simpa using hk)⟩
-  rw [hss.maxGenEigenspace_eq_eigenspace c, Module.End.mem_eigenspace_iff] at hmem
-  simpa [hh] using congrArg (fun w : 𝒲 ↦ (w : M)) hmem
-
-omit [IsTriangularizable K H L] in
-/-- In a finite-dimensional Lie submodule `𝒲` over an `sl₂` triple, if the coroot has an
-eigenvector of eigenvalue `n`, then `n` is an integer and the coroot has an eigenvector of
-eigenvalue `-n` too. -/
-private theorem exists_int_and_apply_eq_neg_smul (t : IsSl2Triple h e f)
-    (hh : h = (IsKilling.coroot α : L)) (𝒲 : LieSubmodule K (t.toLieSubalgebra K) M)
-    [FiniteDimensional K 𝒲] {n : K} {v : M} (hv : v ∈ 𝒲) (hv0 : v ≠ 0)
-    (hvA : toEnd K H M (IsKilling.coroot α) v = n • v) :
-    ∃ m : ℤ, n = (m : K) ∧ ∃ u ∈ 𝒲, u ≠ 0 ∧
-      toEnd K H M (IsKilling.coroot α) u = (-n) • u := by
-  set B : Module.End K 𝒲 := toEnd K (t.toLieSubalgebra K) 𝒲 ⟨h, t.h_mem_toLieSubalgebra⟩
-  have hvB : (⟨v, hv⟩ : 𝒲) ∈ B.eigenspace n :=
-    Module.End.mem_eigenspace_iff.2 (Subtype.ext (by
-      rw [coe_toEnd_cartan_apply t hh 𝒲]; simpa using hvA))
-  have hnB : B.eigenspace n ≠ ⊥ := fun hbot ↦ hv0 (by
-    simpa [Subtype.ext_iff] using (Submodule.eq_bot_iff _).1 hbot _ hvB)
-  obtain ⟨m, hm⟩ := exists_int_of_hasEigenvalue (M := 𝒲) t.isSl2Triple_restrict
-    (Module.End.hasEigenvalue_iff.2 hnB)
-  have hsym := finrank_eigenspace_toEnd_neg (L := ↥(t.toLieSubalgebra K)) (M := 𝒲)
-    t.isSl2Triple_restrict n
-  have hnegB : B.eigenspace (-n) ≠ ⊥ := by
-    intro hbot
-    rw [hbot, finrank_bot] at hsym
-    exact hnB (Submodule.finrank_eq_zero.1 hsym)
-  obtain ⟨u, humem, hu0⟩ := (Submodule.ne_bot_iff _).1 hnegB
-  refine ⟨m, hm, u, u.2, fun h0 ↦ hu0 (Subtype.ext h0), ?_⟩
-  have h2 : toEnd K H M (IsKilling.coroot α) (u : M) = ((-n • u : 𝒲) : M) :=
-    (coe_toEnd_cartan_apply t hh 𝒲 u).symm.trans
-      (congrArg Subtype.val (Module.End.mem_eigenspace_iff.1 humem))
-  simpa using h2
-
 /-- The pieces `M_{k α + χ} ⊓ N` of the `α`-string of `χ` lie in the eigenspaces `χ(α^∨) + 2 k`
 of the coroot, provided generalized eigenvectors of the coroot in a subspace `W` containing them
 are honest eigenvectors. -/
@@ -276,11 +201,13 @@ private theorem exists_int_apply_coroot_and_genWeightSpace_zsmul_add_ne_bot (hα
   have hhonest : ∀ (c : K) {u : M}, u ∈ W →
       u ∈ (toEnd K H M (IsKilling.coroot α)).maxGenEigenspace c →
         toEnd K H M (IsKilling.coroot α) u = c • u := fun c _ hu hgen ↦
-    apply_eq_smul_of_mem_maxGenEigenspace t hh 𝒲 c (hmem𝒲.2 hu) hgen
+    t.toEnd_apply_eq_smul_of_mem_maxGenEigenspace (x := IsKilling.coroot α) hh 𝒲 c (hmem𝒲.2 hu)
+      hgen
   have hPeig := string_inf_le_eigenspace (χ := χ) (N := N) hα
     (fun k ↦ le_iSup P k) hhonest
   -- the eigenvalue `χ(α^∨)` is attained on `𝒲`, hence so is its negative
-  obtain ⟨m, hm, u, humem, hu0, huA⟩ := exists_int_and_apply_eq_neg_smul t hh 𝒲
+  obtain ⟨m, hm, u, humem, hu0, huA⟩ :=
+    t.exists_int_and_toEnd_apply_eq_neg_smul (x := IsKilling.coroot α) hh 𝒲
     (hmem𝒲.2 (le_iSup P 0 hvP)) hv0 (by simpa using Module.End.mem_eigenspace_iff.1 (hPeig 0 hvP))
   exact ⟨m, hm, genWeightSpace_neg_zsmul_add_ne_bot P (fun _ ↦ rfl) hPeig hm (hmem𝒲.1 humem) hu0
     huA⟩
