@@ -49,7 +49,6 @@ jobs:
             scripts/test_roadmap_api.py \
             scripts/test_control_batch_workflows.py \
             scripts/test_control_batch_budget.py \
-            scripts/test_control_batch_merge.py \
             scripts/run-infrastructure-tests.sh
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy

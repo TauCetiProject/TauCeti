@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Measure.PiWithDensity
 public import TauCeti.Probability.Distributions.Gaussian.Basic
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The standard Gaussian measure on a finite product
@@ -101,9 +102,7 @@ theorem pi_volume_absolutelyContinuous_pi_gaussianReal :
     (Measure.pi fun _ : ι => (volume : Measure ℝ))
       ≪ Measure.pi fun _ : ι => (gaussianReal 0 1 : Measure ℝ) := by
   rw [pi_gaussianReal_eq_withDensity]
-  exact withDensity_absolutelyContinuous'
-    (measurable_prod_gaussianPDFReal ι).ennreal_ofReal.aemeasurable
-    (Filter.Eventually.of_forall fun x =>
-      (ENNReal.ofReal_pos.2 (prod_gaussianPDFReal_pos ι x)).ne')
+  exact absolutelyContinuous_withDensity_ofReal (measurable_prod_gaussianPDFReal ι).aemeasurable
+    (.of_forall (prod_gaussianPDFReal_pos ι))
 
 end TauCeti.Probability

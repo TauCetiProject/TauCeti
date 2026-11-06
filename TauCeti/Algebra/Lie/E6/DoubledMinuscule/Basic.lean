@@ -89,6 +89,20 @@ def loweringMatrix (i : Fin 6) : Matrix (Fin 27 ⊕ Fin 27) (Fin 27 ⊕ Fin 27) 
   Matrix.fromBlocks (TauCeti.E6Minuscule.loweringMatrix i) 0 0
     (-TauCeti.E6Minuscule.raisingMatrix i)
 
+/-- The raising operator has the minuscule raising block and the negative dual lowering
+block. -/
+theorem raisingMatrix_eq_fromBlocks (i : Fin 6) :
+    raisingMatrix i = Matrix.fromBlocks (TauCeti.E6Minuscule.raisingMatrix i) 0 0
+      (-TauCeti.E6Minuscule.loweringMatrix i) := by
+  rw [raisingMatrix]
+
+/-- The lowering operator has the minuscule lowering block and the negative dual raising
+block. -/
+theorem loweringMatrix_eq_fromBlocks (i : Fin 6) :
+    loweringMatrix i = Matrix.fromBlocks (TauCeti.E6Minuscule.loweringMatrix i) 0 0
+      (-TauCeti.E6Minuscule.raisingMatrix i) := by
+  rw [loweringMatrix]
+
 /-- The integral `54`-dimensional representation `V(ϖ₁) ⊕ V(ϖ₆)` of the type-`E₆` Serre
 presentation. -/
 noncomputable def serreRepresentation :
