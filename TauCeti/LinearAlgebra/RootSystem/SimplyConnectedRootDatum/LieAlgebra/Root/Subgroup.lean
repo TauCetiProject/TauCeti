@@ -10,7 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
+import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.Basic
 
 /-!
 # Root subgroups of the pinned Chevalley system at every root
@@ -160,6 +160,19 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
   rw [chevalleyRootSubgroup, MonoidHom.comp_apply, MulEquiv.coe_toMonoidHom,
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
+
+/-- Root subgroups of Lie-commuting Chevalley vectors commute over every value ring. -/
+theorem commute_chevalleyRootSubgroup {i j : Fin t.numRoots}
+    (hij : ⁅t.chevalleySystem ht i, t.chevalleySystem ht j⁆ = 0)
+    (A : CommAlgCat ℤ) (u v : Multiplicative A) :
+    Commute (chevalleyRootSubgroup ρ M hM hnil i A u)
+      (chevalleyRootSubgroup ρ M hM hnil j A v) := by
+  apply Units.ext
+  simpa only [Units.val_mul, chevalleyRootSubgroup_val] using
+    (commute_baseChangeExp_of_lie_eq_zero ρ M hij
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil i)
+      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil j)
+      (Multiplicative.toAdd u) (Multiplicative.toAdd v)).eq
 
 /-- **At a simple root the root subgroup is the simple root subgroup** `xᵢ` of the Kostant data. -/
 @[simp]

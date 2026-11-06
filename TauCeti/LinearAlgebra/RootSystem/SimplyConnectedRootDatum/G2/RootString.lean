@@ -133,16 +133,12 @@ theorem g2_chainBotCoeff_eq_one_of_short_add_short_eq_short (i j k : Fin 12)
       g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
     g2SimplyConnectedRootDatum.chainBotCoeff i j = 1 := by
   have hli := g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root' ⟨k, hadd⟩
-  have hsub : g2SimplyConnectedRootDatum.root j - g2SimplyConnectedRootDatum.root i ∈
-      Set.range g2SimplyConnectedRootDatum.root := by
+  obtain ⟨hsub, htwo⟩ :
+      g2SimplyConnectedRootDatum.root j - g2SimplyConnectedRootDatum.root i ∈
+        Set.range g2SimplyConnectedRootDatum.root ∧
+      g2SimplyConnectedRootDatum.root j - 2 • g2SimplyConnectedRootDatum.root i ∉
+        Set.range g2SimplyConnectedRootDatum.root := by
     clear hli
-    simp only [Set.mem_range, g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd ⊢
-    simp only [g2Length_apply] at hi hj hk
-    revert i j k
-    decide +kernel
-  have htwo : g2SimplyConnectedRootDatum.root j - 2 • g2SimplyConnectedRootDatum.root i ∉
-      Set.range g2SimplyConnectedRootDatum.root := by
-    clear hli hsub
     simp only [Set.mem_range, g2SimplyConnectedRootDatum_root, g2Root_apply] at hadd ⊢
     simp only [g2Length_apply] at hi hj hk
     revert i j k

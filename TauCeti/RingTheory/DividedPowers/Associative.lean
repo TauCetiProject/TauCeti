@@ -345,6 +345,15 @@ theorem dividedPower_zsmul (d : ℤ) (n : ℕ) (x : A) :
     ← Int.cast_smul_eq_zsmul ℚ (d ^ n) (dividedPower n x)]
   norm_cast
 
+/-- Integer rescaling preserves divided-power stability of an additive subgroup. -/
+theorem dividedPower_zsmul_smul_mem {V : Type*} [AddCommGroup V] [Module A V] {S : Type*}
+    [SetLike S V] [AddSubgroupClass S V] (c : ℤ) (x : A) (M : S) {n : ℕ}
+    (hM : ∀ v ∈ M, dividedPower n x • v ∈ M) :
+    ∀ v ∈ M, dividedPower n (c • x) • v ∈ M := by
+  intro v hv
+  rw [dividedPower_zsmul, smul_assoc]
+  exact zsmul_mem (hM v hv) _
+
 /-- Divided powers of a negated element acquire the expected sign. -/
 @[simp]
 theorem dividedPower_neg (n : ℕ) (x : A) :

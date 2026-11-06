@@ -5,11 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.RootString
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
-import TauCeti.RingTheory.Nilpotent.RootString.G2.ShortPair
+import TauCeti.Algebra.Lie.UniversalEnveloping.Commutator.G2.ShortPair
 
 /-!
 # The native G₂ short-pair Chevalley relation
@@ -25,12 +23,15 @@ relation the three parameters are `2cuv`, `3du²v` and `3auv²` after the initia
 in the element commutator they are `2cuv`, `3du²v` and `-3auv²`. Moving the initial `x_β(v)`
 past `x_γ(2cuv)` accounts for this last sign.
 
-The exponential argument uses `baseChangeExp_mul_baseChangeExp_of_g2_short_pair` and follows
-the scaled-operator transport in `kostantRootSubgroupPoints_mul_of_g2_short_pair`.
+The exponential argument shares `baseChangeExp_mul_baseChangeExp_of_g2_short_pair_lie`
+with `kostantRootSubgroupPoints_mul_of_g2_short_pair`; its scaled-operator transport was
+factored from that Kostant-lattice proof.
 
 ## Main results
 
 * `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_short_pair`: the product relation.
+* `TauCeti.DynkinType.chevalleyRootSubgroup_mul_of_g2_short_add_short_eq_long`: the single-term
+  relation for two short roots with long sum.
 * `TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_g2_short_pair`: the ordered
   element-commutator formula.
 
@@ -51,6 +52,47 @@ open scoped commutatorElement
 noncomputable section
 
 variable {ht : G2.Valid} {i j k l m : Fin G2.numRoots}
+
+private theorem g2_root_add_iff (i j k : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum ht).root k =
+        (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j ↔
+      g2Root k = g2Root i + g2Root j := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+    rank, numRoots]
+
+private theorem g2_sum_excluded_iff (i j : Fin G2.numRoots) (a b : ℤ) :
+    (a • (G2.simplyConnectedRootDatum ht).root i + b • (G2.simplyConnectedRootDatum ht).root j ∉
+        Set.range (G2.simplyConnectedRootDatum ht).root ∧
+      a • (G2.simplyConnectedRootDatum ht).root i +
+        b • (G2.simplyConnectedRootDatum ht).root j ≠ 0) ↔
+    (a • g2Root i + b • g2Root j ∉ Set.range g2Root ∧
+      a • g2Root i + b • g2Root j ≠ 0) := by
+  simp +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
+    rank, numRoots, Pi.zero_def]
+
+private theorem g2_short_pair_last_long {i j k m : Fin 12}
+    (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
+    (hij : g2Root k = g2Root i + g2Root j)
+    (hkj : g2Root m = g2Root k + g2Root j) : g2Length m = 3 := by
+  simp only [g2Root_apply] at hij hkj
+  simp only [g2Length_apply] at hi hj hk ⊢
+  revert i j k m
+  decide +kernel
+
+private theorem g2_chainBotCoeff_eq (i j : Fin G2.numRoots) :
+    (G2.simplyConnectedRootDatum ht).chainBotCoeff i j =
+      g2SimplyConnectedRootDatum.chainBotCoeff i j := by
+  simp +instances only [simplyConnectedRootDatum_G2, rank, numRoots]
+
+private theorem g2_short_add_short_long_excluded {j k m : Fin 12}
+    (hj : g2Length j = 1) (hk : g2Length k = 1) (hm : g2Length m = 3)
+    (hjk : g2Root m = g2Root j + g2Root k) :
+    (g2Root j + g2Root m ∉ Set.range g2Root ∧ g2Root j + g2Root m ≠ 0) ∧
+      (g2Root k + g2Root m ∉ Set.range g2Root ∧ g2Root k + g2Root m ≠ 0) := by
+  simp only [Set.mem_range, g2Root_apply] at hjk ⊢
+  simp only [g2Length_apply] at hj hk hm
+  revert j k m
+  decide +kernel
 
 private theorem g2_short_pair_excluded_sums {i j k : Fin 12}
     (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
@@ -81,16 +123,14 @@ private theorem g2_short_pair_coefficients
   let : P.IsReduced := isReduced_simplyConnectedRootDatum G2 ht
   have hij' : g2SimplyConnectedRootDatum.root k =
       g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j := by
-    ext s
-    simpa +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-      rank, numRoots, Pi.add_apply] using congrFun hij s
+    simpa only [g2SimplyConnectedRootDatum_root] using (g2_root_add_iff i j k).1 hij
   have hbot : P.chainBotCoeff i j = 1 := by
-    simpa +instances only [P, simplyConnectedRootDatum_G2, rank, numRoots] using
-      g2_chainBotCoeff_eq_one_of_short_add_short_eq_short i j k hi hj hk hij'
+    rw [g2_chainBotCoeff_eq]
+    exact g2_chainBotCoeff_eq_one_of_short_add_short_eq_short i j k hi hj hk hij'
   have hbot' : P.chainBotCoeff j i = 1 := by
-    simpa +instances only [P, simplyConnectedRootDatum_G2, rank, numRoots] using
-      g2_chainBotCoeff_eq_one_of_short_add_short_eq_short j i k hj hi hk
-        (hij'.trans (add_comm _ _))
+    rw [g2_chainBotCoeff_eq]
+    exact g2_chainBotCoeff_eq_one_of_short_add_short_eq_short j i k hj hi hk
+      (hij'.trans (add_comm _ _))
   have hli := P.linearIndependent_of_add_mem_range_root' ⟨k, hij⟩
   have hbotik : P.chainBotCoeff i k = 2 := by
     rw [P.chainBotCoeff_of_add hli (hij.trans (add_comm _ _)), hbot]
@@ -124,16 +164,14 @@ private theorem g2_short_pair_vanishing_brackets
       ⁅G2.chevalleySystem ht l, G2.chevalleySystem ht m⁆ = 0 := by
   let P := G2.simplyConnectedRootDatum ht
   have hij' : g2Root k = g2Root i + g2Root j := by
-    simpa +instances only [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-      rank, numRoots] using hij
+    exact (g2_root_add_iff i j k).1 hij
   have H (r s : Fin G2.numRoots) (a b : ℤ)
       (heq : P.root r + P.root s = a • P.root i + b • P.root j)
       (hab : (a, b) ∈ ({(3, 1), (2, 2), (1, 3), (3, 2), (2, 3), (3, 3)} : Set (ℤ × ℤ))) :
       ⁅G2.chevalleySystem ht r, G2.chevalleySystem ht s⁆ = 0 := by
     have hex : (a • P.root i + b • P.root j ∉ Set.range P.root) ∧
         a • P.root i + b • P.root j ≠ 0 := by
-      simpa +instances only [P, simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root,
-        rank, numRoots, Pi.zero_def] using g2_short_pair_excluded_sums hi hj hk hij' a b hab
+      exact (g2_sum_excluded_iff i j a b).2 (g2_short_pair_excluded_sums hi hj hk hij' a b hab)
     exact lie_chevalleySystem_eq_zero (heq ▸ hex.1) (heq ▸ hex.2)
   refine ⟨H i l 3 1 ?_ (by simp), H i m 2 2 ?_ (by simp),
     H j l 2 2 ?_ (by simp), H j m 1 3 ?_ (by simp),
@@ -201,51 +239,30 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_pair
   let c := G2.structureConstant ht i j / 2
   let d := c * (G2.structureConstant ht i k / 3)
   let a := c * (G2.structureConstant ht k j / 3)
-  let E r := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (G2.chevalleySystem ht r))
   obtain ⟨hbrij, hbrik, hbrkj⟩ := g2_short_pair_scaled_brackets hi hj hk hij hik hkj
-  have hz (r) (b : ℤ) : ∀ n, ∀ z ∈ M,
-      Associative.dividedPower n (b • E r) • z ∈ M := by
-    intro n z hz
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil r n z hz) _
   obtain ⟨hil, him, _, hjm, hkl, hkm, hlm⟩ :=
     g2_short_pair_vanishing_brackets hi hj hk hij hik hkj
-  have hxy : E i * E j = E j * E i + 2 • (c • E k) := by
-    simpa only [one_zsmul, one_mul] using
-      zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := 1) (q := 1) (r := c) (n := 2) (by simpa using hbrij)
-  have hxz : E i * (c • E k) = (c • E k) * E i + 3 • (d • E l) := by
-    simpa only [one_zsmul, one_mul] using
-      zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := 1) (q := c) (r := d) (n := 3) (by simpa using hbrik)
-  have hzy : (c • E k) * E j = E j * (c • E k) + 3 • (a • E m) := by
-    simpa only [one_zsmul, one_mul] using
-      zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := c) (q := 1) (r := a) (n := 3) (by simpa using hbrkj)
   refine Units.ext ?_
   simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-  rw [← baseChangeExp_zsmul c M _ (hz k c) (isNilpotent_apply_ι_chevalleySystem ρ hnil k),
-    ← baseChangeExp_zsmul d M _ (hz l d) (isNilpotent_apply_ι_chevalleySystem ρ hnil l),
-    ← baseChangeExp_zsmul a M _ (hz m a) (isNilpotent_apply_ι_chevalleySystem ρ hnil m)]
-  exact baseChangeExp_mul_baseChangeExp_of_g2_short_pair M hxy hxz hzy
-    ((commute_of_lie_eq_zero ρ hil).smul_right d)
-    ((commute_of_lie_eq_zero ρ him).smul_right a)
-    ((commute_of_lie_eq_zero ρ hjm).smul_right a)
-    (((commute_of_lie_eq_zero ρ hkl).smul_left c).smul_right d)
-    (((commute_of_lie_eq_zero ρ hkm).smul_left c).smul_right a)
-    (((commute_of_lie_eq_zero ρ hlm).smul_left d).smul_right a)
+  exact baseChangeExp_mul_baseChangeExp_of_g2_short_pair_lie (G2.chevalleySystem ht) ρ M
+    hbrij hbrik hbrkj hil him hjm hkl hkm hlm
     (isNilpotent_apply_ι_chevalleySystem ρ hnil i)
     (isNilpotent_apply_ι_chevalleySystem ρ hnil j)
-    ((isNilpotent_apply_ι_chevalleySystem ρ hnil k).smul c) _ _ (hz k c) (hz l d) (hz m a) u v
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil k)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil l)
+    (isNilpotent_apply_ι_chevalleySystem ρ hnil m)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil i)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil j)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil k)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil l)
+    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil m) u v
 
-private theorem g2_short_pair_middle_swap
-    (hi : g2Length i = 1) (hj : g2Length j = 1) (hk : g2Length k = 1)
-    (hij : (G2.simplyConnectedRootDatum ht).root k =
-      (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j)
-    (hik : (G2.simplyConnectedRootDatum ht).root l =
-      (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root k)
-    (hkj : (G2.simplyConnectedRootDatum ht).root m =
-      (G2.simplyConnectedRootDatum ht).root k + (G2.simplyConnectedRootDatum ht).root j)
+/-- Two short G₂ roots with long sum satisfy the single-term Chevalley product relation.
+The vanishing brackets are derived from the root datum; no auxiliary roots are required. -/
+theorem chevalleyRootSubgroup_mul_of_g2_short_add_short_eq_long
+    (hj : g2Length j = 1) (hk : g2Length k = 1) (hm : g2Length m = 3)
+    (hjk : (G2.simplyConnectedRootDatum ht).root m =
+      (G2.simplyConnectedRootDatum ht).root j + (G2.simplyConnectedRootDatum ht).root k)
     (A : CommAlgCat ℤ) (p q : A) :
     chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd p) *
         chevalleyRootSubgroup ρ M hM hnil k A (Multiplicative.ofAdd q) =
@@ -253,24 +270,13 @@ private theorem g2_short_pair_middle_swap
         chevalleyRootSubgroup ρ M hM hnil m A
           (Multiplicative.ofAdd ((G2.structureConstant ht j k : A) * (p * q))) *
         chevalleyRootSubgroup ρ M hM hnil j A (Multiplicative.ofAdd p) := by
-  let E r := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (G2.chevalleySystem ht r))
-  let n := G2.structureConstant ht j k
-  have hz : ∀ d, ∀ z ∈ M, Associative.dividedPower d (n • E m) • z ∈ M := by
-    intro d z hz
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil m d z hz) _
-  obtain ⟨_, _, _, hjm, _, hkm, _⟩ :=
-    g2_short_pair_vanishing_brackets hi hj hk hij hik hkj
-  have hxy := mul_eq_mul_add_zsmul_of_lie_eq ρ
-    (lie_chevalleySystem_eq_structureConstant_zsmul (hkj.trans (add_comm _ _)))
-  refine Units.ext ?_
-  simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-  rw [← baseChangeExp_zsmul n M _ hz (isNilpotent_apply_ι_chevalleySystem ρ hnil m)]
-  exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy
-    ((commute_of_lie_eq_zero ρ hjm).smul_right n)
-    ((commute_of_lie_eq_zero ρ hkm).smul_right n)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil j)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil k) _ _ hz p q
+  have hex := g2_short_add_short_long_excluded hj hk hm ((g2_root_add_iff j k m).1 hjk)
+  have hjm := (g2_sum_excluded_iff (ht := ht) j m 1 1).2 (by simpa using hex.1)
+  have hkm := (g2_sum_excluded_iff (ht := ht) k m 1 1).2 (by simpa using hex.2)
+  simp only [one_zsmul] at hjm hkm
+  exact chevalleyRootSubgroup_mul_of_add ρ M hM hnil hjk
+    (lie_chevalleySystem_eq_zero hjm.1 hjm.2)
+    (lie_chevalleySystem_eq_zero hkm.1 hkm.2) A p q
 
 /-- The Chevalley element-commutator formula for any two short G₂ roots with short sum.
 The factors occur at `i+j`, `2i+j`, `i+2j`, in increasing total degree. The last coefficient
@@ -300,16 +306,15 @@ theorem commutatorElement_chevalleyRootSubgroup_of_g2_short_pair
   obtain ⟨_, _, hjl, hjm, _, _, hlm⟩ :=
     g2_short_pair_vanishing_brackets hi hj hk hij hik hkj
   have H (r s) (hrs : ⁅G2.chevalleySystem ht r, G2.chevalleySystem ht s⁆ = 0) (p q : A) :
-      Commute (x r p) (x s q) := by
-    apply Units.ext
-    simpa only [x, Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd] using
-      (commute_baseChangeExp M (commute_of_lie_eq_zero ρ hrs)
-        (dividedPower_chevalleySystem_smul_mem ρ M hM hnil r)
-        (dividedPower_chevalleySystem_smul_mem ρ M hM hnil s) p q).eq
+      Commute (x r p) (x s q) :=
+    commute_chevalleyRootSubgroup ρ M hM hnil hrs A _ _
+  have hmLong := g2_short_pair_last_long hi hj hk
+    ((g2_root_add_iff i j k).1 hij) ((g2_root_add_iff k j m).1 hkj)
   let t := (G2.structureConstant ht j k : A) * (v * ((c : A) * (2 * u * v)))
   have hswap : x j v * x k ((c : A) * (2 * u * v)) =
       x k ((c : A) * (2 * u * v)) * x m t * x j v :=
-    g2_short_pair_middle_swap ρ M hM hnil hi hj hk hij hik hkj A v ((c : A) * (2 * u * v))
+    chevalleyRootSubgroup_mul_of_g2_short_add_short_eq_long ρ M hM hnil hj hk hmLong
+      (hkj.trans (add_comm _ _)) A v ((c : A) * (2 * u * v))
   have hprod := chevalleyRootSubgroup_mul_of_g2_short_pair ρ M hM hnil hi hj hk hij hik hkj A u v
   have hm : x m t * x m ((a : A) * (3 * u * v ^ 2)) =
       x m (-(a : A) * (3 * u * v ^ 2)) := by
