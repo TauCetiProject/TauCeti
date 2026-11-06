@@ -182,12 +182,14 @@ theorem differentiableOn_lineSchwarzReflection_of_symmetric {Ω : Set ℂ} {p a 
 the target line. The boundary hypothesis says precisely that the original function takes the
 source line into the target line. -/
 theorem lineSchwarzReflection_sourceReflection {Ω : Set ℂ} {p a q b : ℂ} {f : ℂ → ℂ}
-    (ha : a ≠ 0) (hb : b ≠ 0) (hline : ∀ z ∈ Ω, ((z - p) / a).im = 0 → ((f z - q) / b).im = 0)
+    (ha : a ≠ 0) (hline : ∀ z ∈ Ω, ((z - p) / a).im = 0 → ((f z - q) / b).im = 0)
     {z : ℂ} (hz : z ∈ Ω) :
     lineSchwarzReflection p a q b f
         (p + a * (starRingEnd ℂ) ((z - p) / a)) =
       q + b * (starRingEnd ℂ)
         ((lineSchwarzReflection p a q b f z - q) / b) := by
+  rcases eq_or_ne b 0 with rfl | hb
+  · simp only [lineSchwarzReflection_def, zero_mul, add_zero]
   let g := fun w : ℂ => (f (p + a * w) - q) / b
   have hgline : ((z - p) / a).im = 0 → (g ((z - p) / a)).im = 0 := by
     intro him
@@ -220,6 +222,6 @@ theorem exists_differentiableOn_eqOn_lineReflection_of_symmetric
   · intro z hz
     exact lineSchwarzReflection_of_coord_im_nonneg f ha hb hz.2
   · intro z hz
-    exact lineSchwarzReflection_sourceReflection ha hb hline hz
+    exact lineSchwarzReflection_sourceReflection ha hline hz
 
 end TauCeti
