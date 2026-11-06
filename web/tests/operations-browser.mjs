@@ -117,8 +117,21 @@ replaceDomain('queue',q=>{q.observed_at=new Date(fixture.clock-120000).toISOStri
 await page.clock.fastForward(20000);
 await page.waitForFunction(()=>document.querySelector('.ops-source')?.textContent.includes('queue · delayed'));
 assert.equal(await page.locator('.ops-table tbody tr').count(),100);
-// A pending job snapshot cannot hold a healthy queue update behind its request.
-replaceDomain('queue',q=>{q.observed_at=new Date(fixture.clock+35000).toISOString();});
+// A pending job snapshot cannot hold either the summary or open batch detail
+// behind its request. The new event is bound through fresh immutable detail/index refs.
+replaceDomain('queue',q=>{
+  q.observed_at=new Date(fixture.clock+35000).toISOString();
+  function store(value) {
+    const body=JSON.stringify(value), hash=createHash('sha256').update(body).digest('hex');
+    const ref={url:'/v1/operations/objects/'+JSON.parse(fixture.objects[manifestKey]).scope+'/'+hash+'.json'};
+    fixture.objects['public'+ref.url]=body;return ref;
+  }
+  const shard=JSON.parse(fixture.objects['public'+q.batch_shards[1].url]);
+  const batch=shard.batches.find(b=>b.id==='1');
+  const detail=JSON.parse(fixture.objects['public'+batch.detail.url]);
+  detail.event_pages.push(store({schema:'tauceti.operations.events/v1',records:[{at:new Date(fixture.clock+35000).toISOString(),kind:'publication_before_jobs_ready'}]}));
+  batch.detail=store(detail);q.batches.find(b=>b.id==='1').detail=batch.detail;q.batch_shards[1]=store(shard);
+});
 replaceDomain('jobs',j=>{j.received_at=new Date(fixture.clock+35000).toISOString();});
 const pendingJobs=JSON.parse(fixture.objects[manifestKey]).domains.jobs.url;
 let releaseJobs;
@@ -130,6 +143,7 @@ await page.route('https://ci-data.taucetiproject.org'+pendingJobs,async route=>{
 try {
   await page.clock.fastForward(15000);
   await page.waitForFunction(()=>document.querySelector('.ops-source')?.textContent.includes('queue · observed'),{},{timeout:3000});
+  await page.getByText(/publication_before_jobs_ready/).waitFor({timeout:3000});
 } finally { releaseJobs(); }
 replaceDomain('hosts',h=>{h.hosts[0].connected=false;h.hosts[0].observed_at=new Date(fixture.clock-120000).toISOString();});
 await page.getByRole('link',{name:'Runners',exact:true}).click();
