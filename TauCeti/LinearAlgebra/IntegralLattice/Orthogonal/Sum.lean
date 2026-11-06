@@ -92,13 +92,6 @@ theorem orthogonalSum_form (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).form = L.form.prod M.form :=
   (rfl)
 
-/-- The quadratic map of an orthogonal sum is the product of the component quadratic maps. -/
-theorem orthogonalSum_form_toQuadraticMap (L : IntegralLattice V) (M : IntegralLattice W) :
-    (L.orthogonalSum M).form.toQuadraticMap =
-      L.form.toQuadraticMap.prod M.form.toQuadraticMap := by
-  ext p
-  simp
-
 /-- The carrier of an orthogonal sum is canonically the product of the carrier types. -/
 def orthogonalSumCarrierEquiv (L : IntegralLattice V) (M : IntegralLattice W) :
     L.orthogonalSum M ≃ₗ[ℤ] L × M :=
@@ -344,7 +337,8 @@ instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralL
 @[simp]
 theorem radical_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).radical = L.radical.prod M.radical := by
-  rw [← (L.orthogonalSum M).radical_toQuadraticMap, orthogonalSum_form_toQuadraticMap,
+  rw [← (L.orthogonalSum M).radical_toQuadraticMap, orthogonalSum_form,
+    LinearMap.BilinForm.prod_toQuadraticMap,
     QuadraticMap.radical_prod, L.radical_toQuadraticMap, M.radical_toQuadraticMap]
 
 /-- The positive index of an orthogonal sum is the sum of the positive indices. -/
@@ -353,7 +347,8 @@ theorem sigPos_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).sigPos = L.sigPos + M.sigPos := by
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
-  rw [sigPos, orthogonalSum_form_toQuadraticMap,
+  rw [sigPos, orthogonalSum_form,
+    LinearMap.BilinForm.prod_toQuadraticMap,
     QuadraticForm.sigPos_prod]
 
 /-- The negative index of an orthogonal sum is the sum of the negative indices. -/
@@ -362,7 +357,8 @@ theorem sigNeg_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).sigNeg = L.sigNeg + M.sigNeg := by
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
-  rw [sigNeg, orthogonalSum_form_toQuadraticMap,
+  rw [sigNeg, orthogonalSum_form,
+    LinearMap.BilinForm.prod_toQuadraticMap,
     QuadraticForm.sigNeg_prod]
 
 /-- The null index of an orthogonal sum is the sum of the null indices. -/
