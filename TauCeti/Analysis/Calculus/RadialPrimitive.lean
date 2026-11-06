@@ -18,8 +18,8 @@ import TauCeti.Topology.Instances.Real.TSupport
 # Radial test functions as derivatives of weighted primitives
 
 Computations behind radial test functions on `ℝⁿ`: the radial Laplacian weight of
-`s ↦ ρ (s ^ 2)` is the derivative of `s ↦ s ^ n ρ' (s ^ 2)`, and every smooth test function `ψ`
-supported in `(0, R)` is of the form `s ↦ s ^ n ρ' (s ^ 2)` for a smooth `ρ`.
+`s ↦ ρ (s ^ 2)` is twice the derivative of `s ↦ s ^ n ρ' (s ^ 2)`, and every smooth test
+function `ψ` supported in `(0, R)` is of the form `s ↦ s ^ n ρ' (s ^ 2)` for a smooth `ρ`.
 
 ## Main results
 
