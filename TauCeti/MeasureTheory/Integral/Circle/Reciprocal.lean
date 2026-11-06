@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
+import TauCeti.Analysis.Contour.Winding.Number.Circle
 
 /-!
 # Circular averages of the reciprocal kernel
@@ -20,21 +21,6 @@ public section
 
 open Complex MeasureTheory Metric Set
 open scoped Real
-
-namespace circleIntegral
-
-/-- A reciprocal with pole outside the closed disc has zero contour integral. -/
-theorem integral_sub_inv_of_not_mem_closedBall {c w : ℂ} {r : ℝ} (hr : 0 ≤ r)
-    (hw : w ∉ closedBall c r) : (∮ z in C(c, r), (z - w)⁻¹) = 0 := by
-  have hne : ∀ z ∈ closedBall c r, z - w ≠ 0 := by
-    intro z hz h
-    exact hw (sub_eq_zero.mp h ▸ hz)
-  apply Complex.circleIntegral_eq_zero_of_differentiable_on_off_countable hr countable_empty
-  · exact (continuousOn_id.sub continuousOn_const).inv₀ hne
-  · intro z hz
-    exact (differentiableAt_id.sub_const w).inv (hne z (ball_subset_closedBall hz.1))
-
-end circleIntegral
 
 namespace Complex
 
@@ -94,8 +80,8 @@ theorem integral_circleMap_sub_inv {w : ℂ} {r : ℝ} (hr : 0 < r) (hne : ‖w�
             (circleIntegral.integral_sub_center_inv 0 hr.ne')
     rw [hangle] at hsplit
     by_cases hwr : r < ‖w‖
-    · rw [circleIntegral.integral_sub_inv_of_not_mem_closedBall hr.le
-        (by simpa using hwr), sub_zero] at hsplit
+    · rw [TauCeti.Contour.circleIntegral_sub_inv_eq_zero_of_lt_dist hr.le
+        (by simpa only [dist_zero_right] using hwr), sub_zero] at hsplit
       rw [ite_eq_left hwr]
       apply mul_left_cancel₀ I_ne_zero
       rw [hsplit]
