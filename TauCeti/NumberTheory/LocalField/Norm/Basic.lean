@@ -216,20 +216,12 @@ theorem norm_mem_integer {y : L} (hy : y ∈ 𝒪[L]) : Algebra.norm K y ∈ �
   simpa using (Algebra.norm 𝒪[K] (⟨y, hy⟩ : 𝒪[L])).2
 
 variable (K L) in
-/-- **The ideal norm of the maximal ideal of `𝒪[L]` is the residue-degree power of the
-maximal ideal of `𝒪[K]`**: `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f(L/K)`, in the form of Mathlib's
-`Ideal.relNorm`.
-
-This is the ideal-theoretic form of `TauCeti.toAdd_normalizedValuation_norm`, the valuation
-of a norm being `f(L/K)` times the valuation of its argument: a uniformizer of `𝒪[L]` is taken
-to an element of `𝒪[K]` of normalized valuation `f(L/K)`, which generates `𝓂[K] ^ f(L/K)` in
-the discrete valuation ring `𝒪[K]`. The principal-ideal step reads off
-`Ideal.relNorm_singleton`. -/
-theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
-    Ideal.relNorm 𝒪[K] 𝓂[L] = 𝓂[K] ^ inertiaDegree K L := by
+/-- The norm of a uniformizer of `𝒪[L]` is associated to the residue-degree power of a
+uniformizer of `𝒪[K]`: both have normalized valuation `f(L/K)`. -/
+private theorem associated_norm_irreducible_pow {π : 𝒪[K]} {ϖ : 𝒪[L]} (hπ : Irreducible π)
+    (hϖ : Irreducible ϖ) :
+    Associated (Algebra.norm 𝒪[K] ϖ) (π ^ inertiaDegree K L) := by
   let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
-  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   have hϖ' : (ϖ : L) ≠ 0 := fun h ↦ hϖ.ne_zero (Subtype.ext h)
   have hπ' : (π : K) ≠ 0 := fun h ↦ hπ.ne_zero (Subtype.ext h)
   -- the norm of the uniformizer of `L` has residue-degree valuation in `K`, and so does the
@@ -273,8 +265,24 @@ theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
     exact (toAdd_normalizedValuation_le_iff_valuation_le
       (Units.mk0 (π : K) hπ' ^ inertiaDegree K L)
       (Algebra.normUnits K (Units.mk0 (ϖ : L) hϖ'))).1 hle
-  have hass : Associated (Algebra.norm 𝒪[K] ϖ) (π ^ inertiaDegree K L) :=
-    associated_of_dvd_dvd h₁ h₂
+  exact associated_of_dvd_dvd h₁ h₂
+
+variable (K L) in
+/-- **The ideal norm of the maximal ideal of `𝒪[L]` is the residue-degree power of the
+maximal ideal of `𝒪[K]`**: `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f(L/K)`, in the form of Mathlib's
+`Ideal.relNorm`.
+
+This is the ideal-theoretic form of `TauCeti.toAdd_normalizedValuation_norm`, the valuation
+of a norm being `f(L/K)` times the valuation of its argument: a uniformizer of `𝒪[L]` is taken
+to an element of `𝒪[K]` of normalized valuation `f(L/K)`, which generates `𝓂[K] ^ f(L/K)` in
+the discrete valuation ring `𝒪[K]`. The principal-ideal step reads off
+`Ideal.relNorm_singleton`. -/
+theorem relNorm_maximalIdeal_eq_maximalIdeal_pow :
+    Ideal.relNorm 𝒪[K] 𝓂[L] = 𝓂[K] ^ inertiaDegree K L := by
+  let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
+  obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
+  obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
+  have hass := associated_norm_irreducible_pow K L hπ hϖ
   calc Ideal.relNorm 𝒪[K] 𝓂[L]
       = Ideal.relNorm 𝒪[K] (Ideal.span {↑ϖ} : Ideal 𝒪[L]) := by rw [hϖ.maximalIdeal_eq]
     _ = Ideal.span {Algebra.intNorm 𝒪[K] 𝒪[L] ϖ} := Ideal.relNorm_singleton 𝒪[K] ϖ
