@@ -46,8 +46,8 @@ variable
   [IsContMDiffRiemannianBundle J n F (fun y : N ↦ TangentSpace J y)]
   {f : M → N} {W : (x : M) → TangentSpace J (f x)} {x : M}
 
-/-- Applying the metric adjoint of a `C^(n+1)` differential to a `C^n` tangent field along
-the map gives a `C^n` vector field, for `C^n` Riemannian metrics. -/
+/-- If `f` is `C^(n+1)` at `x` and `W` is a `C^n` tangent field along `f` at `x`, then
+`y ↦ (mfderiv I J f y).adjoint (W y)` is `C^n` at `x`, for `C^n` Riemannian metrics. -/
 theorem ContMDiffAt.mfderiv_adjoint_apply (hf : ContMDiffAt I J (n + 1) f x)
     (hW : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n (fun y ↦ TotalSpace.mk' F (f y) (W y)) x) :
     ContMDiffAt I (I.prod 𝓘(ℝ, E)) n

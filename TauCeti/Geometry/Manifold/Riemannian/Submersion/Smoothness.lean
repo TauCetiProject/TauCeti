@@ -60,7 +60,7 @@ include h
 
 /-- The horizontal orthogonal projections of a smooth Riemannian submersion form a `C^n`
 endomorphism field when both metrics are `C^n`, for `n ≤ ∞`. -/
-theorem contMDiff_horizontalProjection (hn : n + 1 ≤ ∞) :
+theorem contMDiff_starProjection_orthogonal_ker (hn : n + 1 ≤ ∞) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
@@ -87,7 +87,7 @@ theorem contMDiff_horizontalProjection (hn : n + 1 ≤ ∞) :
 
 /-- The vertical orthogonal projections of a smooth Riemannian submersion form a `C^n`
 endomorphism field when both metrics are `C^n`, for `n ≤ ∞`. -/
-theorem contMDiff_verticalProjection (hn : n + 1 ≤ ∞) :
+theorem contMDiff_starProjection_ker (hn : n + 1 ≤ ∞) :
     ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
@@ -98,7 +98,7 @@ theorem contMDiff_verticalProjection (hn : n + 1 ≤ ∞) :
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         x (ContinuousLinearMap.id ℝ (TangentSpace I x))) :=
     (TauCeti.contMDiff_hom_bundle_iff _).mpr contMDiff_id
-  refine (hid.sub_section (h.contMDiff_horizontalProjection hn)).congr fun x ↦ ?_
+  refine (hid.sub_section (h.contMDiff_starProjection_orthogonal_ker hn)).congr fun x ↦ ?_
   simp only [Pi.sub_apply, Submodule.starProjection_orthogonal]
   congr 1
   abel
