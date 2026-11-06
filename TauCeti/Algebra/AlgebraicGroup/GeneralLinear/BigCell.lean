@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.Matrix.LDU
+public import TauCeti.LinearAlgebra.Matrix.MvPolynomial
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.Algebra.MvPolynomial.CommRing
 
@@ -22,9 +23,11 @@ linear group, including over arbitrary commutative rings.
 algebra with matrices having unit leading block minors. The universal matrix admits a block
 `LDU` factorization **in the coordinate algebra itself**. Consequently its factors have
 entries regular on this principal open, not merely pointwise factorizations over fields.
-`TauCeti.GeneralLinear.exists_blockBigCell_universal_factors` proves that evaluating these
-same three matrices recovers the unique factors of every point, over every coefficient
-algebra. No assertion about a Chevalley subgroup's intersection with this open is made here.
+`TauCeti.GeneralLinear.blockBigCellLower`, `TauCeti.GeneralLinear.blockBigCellDiag`, and
+`TauCeti.GeneralLinear.blockBigCellUpper` name these factors. Their `map_blockBigCellLower`,
+`map_blockBigCellDiag`, and `map_blockBigCellUpper` lemmas show that evaluation recovers the
+unique factors of every point, over every coefficient algebra. No assertion about a Chevalley
+subgroup's intersection with this open is made here.
 
 The factorization input is `Matrix.exists_blockLDU_iff` and its uniqueness theorem
 `Matrix.eq_of_blockLDU_eq`.
@@ -59,6 +62,13 @@ abbrev BlockBigCellCoordinateAlgebra :=
 noncomputable def blockBigCellMatrix : Matrix n n (BlockBigCellCoordinateAlgebra R b) :=
   (Matrix.mvPolynomialX n n R).map (algebraMap _ _)
 
+/-- The entries of the universal matrix are the localized coordinate variables. -/
+@[simp]
+theorem blockBigCellMatrix_apply (i j : n) :
+    blockBigCellMatrix R b i j =
+      algebraMap (MvPolynomial (n × n) R) _ (MvPolynomial.X (i, j)) :=
+  (rfl)
+
 variable {R} {b}
 
 /-- Each leading block minor of the universal matrix is invertible. -/
@@ -86,23 +96,18 @@ variable {S : Type*} [CommRing S] [Algebra R S]
 /-- Evaluating the denominator gives the product of the leading block minors. -/
 @[simp]
 theorem aeval_blockBigCellDenominator (M : Matrix n n S) :
-    MvPolynomial.aeval (fun ij : n × n => M ij.1 ij.2) (blockBigCellDenominator R b) =
+    MvPolynomial.aeval (Function.uncurry M) (blockBigCellDenominator R b) =
       ∏ i, (M.toSquareBlockProp fun j => b j ≤ b i).det := by
-  simp only [blockBigCellDenominator, map_prod, AlgHom.map_det,
-    AlgHom.mapMatrix_apply]
-  congr 1
-  funext i
-  rw [← Matrix.toSquareBlockProp_map]
-  congr 2
-  ext j k
-  simp [Matrix.mvPolynomialX]
+  simp only [blockBigCellDenominator, map_prod]
+  exact Finset.prod_congr rfl fun i _ =>
+    Matrix.aeval_det_submatrix_mvPolynomialX M Subtype.val Subtype.val
 
 /-- Evaluation at a matrix whose leading block minors are units. -/
 noncomputable def blockBigCellEval (M : Matrix n n S)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) :
     BlockBigCellCoordinateAlgebra R b →ₐ[R] S :=
   IsLocalization.Away.liftAlgHom (blockBigCellDenominator R b)
-    (f := MvPolynomial.aeval (fun ij : n × n => M ij.1 ij.2))
+    (f := MvPolynomial.aeval (Function.uncurry M))
     (by simpa only [aeval_blockBigCellDenominator] using IsUnit.prod_univ_iff.mpr hM)
 
 /-- Evaluation of a localized polynomial agrees with polynomial evaluation. -/
@@ -111,7 +116,7 @@ theorem blockBigCellEval_algebraMap (M : Matrix n n S)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
     (p : MvPolynomial (n × n) R) :
     blockBigCellEval (R := R) M hM (algebraMap _ _ p) =
-      MvPolynomial.aeval (fun ij : n × n => M ij.1 ij.2) p := by
+      MvPolynomial.aeval (Function.uncurry M) p := by
   simp [blockBigCellEval]
 
 /-- Evaluation recovers the matrix represented by the point. -/
@@ -120,7 +125,9 @@ theorem map_blockBigCellMatrix (M : Matrix n n S)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) :
     (blockBigCellMatrix R b).map (blockBigCellEval M hM) = M := by
   ext i j
-  simp [blockBigCellMatrix, Matrix.mvPolynomialX]
+  simp only [Matrix.map_apply, blockBigCellMatrix_apply, blockBigCellEval_algebraMap,
+    MvPolynomial.aeval_X]
+  exact Function.uncurry_apply_pair (f := M) i j
 
 /-- Algebra maps out of the block big cell are determined by the universal matrix entries. -/
 theorem blockBigCell_algHom_ext {f g : BlockBigCellCoordinateAlgebra R b →ₐ[R] S}
@@ -128,14 +135,14 @@ theorem blockBigCell_algHom_ext {f g : BlockBigCellCoordinateAlgebra R b →ₐ[
   apply IsLocalization.algHom_ext (Submonoid.powers (blockBigCellDenominator R b))
   apply MvPolynomial.algHom_ext
   intro ij
-  exact congrFun (congrFun h ij.1) ij.2
+  simp only [AlgHom.comp_apply, Algebra.algHom, IsScalarTower.toAlgHom_apply]
+  simpa only [Matrix.map_apply, blockBigCellMatrix_apply] using congrFun (congrFun h ij.1) ij.2
 
 /-- Every algebra-valued point of the block big cell has invertible leading block minors. -/
 theorem isUnit_minor_map_blockBigCellMatrix
     (f : BlockBigCellCoordinateAlgebra R b →ₐ[R] S) (i : n) :
-    IsUnit (((blockBigCellMatrix R b).map f).toSquareBlockProp fun j => b j ≤ b i).det := by
-  rw [Matrix.toSquareBlockProp_map, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
-  exact (isUnit_blockBigCellMatrix_minor (R := R) (b := b) i).map f
+    IsUnit (((blockBigCellMatrix R b).map f).toSquareBlockProp fun j => b j ≤ b i).det :=
+  (isUnit_blockBigCellMatrix_minor i).det_toSquareBlockProp_map f.toRingHom
 
 variable (R b S) in
 /-- The block big cell represents matrices with invertible leading block minors, over every
@@ -164,43 +171,116 @@ theorem blockBigCellPointsEquiv_symm_apply
   (rfl)
 
 /-- Evaluation is natural in the coefficient algebra. -/
-theorem blockBigCellEval_comp {T : Type*} [CommRing T] [Algebra R T]
+theorem comp_blockBigCellEval {T : Type*} [CommRing T] [Algebra R T]
     (f : S →ₐ[R] T) (M : Matrix n n S)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) :
     f.comp (blockBigCellEval M hM) = blockBigCellEval (M.map f)
-      (fun i => by
-        rw [Matrix.toSquareBlockProp_map, ← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
-        exact (hM i).map f) := by
+      (fun i => (hM i).det_toSquareBlockProp_map f.toRingHom) := by
   apply blockBigCell_algHom_ext
   rw [AlgHom.coe_comp, ← Matrix.map_map, map_blockBigCellMatrix, map_blockBigCellMatrix]
 
 variable (R b)
 
-/-- The block `LDU` factors are regular on the big cell: there are three matrices over its
-coordinate algebra whose evaluations are the unique factors of every algebra-valued point.
-The diagonal factor is invertible in the coordinate algebra, not merely at field-valued points. -/
-theorem exists_blockBigCell_universal_factors :
-    ∃ L D U : Matrix n n (BlockBigCellCoordinateAlgebra R b),
-      L.BlockUnitriangular (toDual ∘ b) ∧ D.BlockTriangular b ∧
-      D.BlockTriangular (toDual ∘ b) ∧ U.BlockUnitriangular b ∧ IsUnit D.det ∧
-      blockBigCellMatrix R b = L * D * U ∧
-      ∀ (S : Type*) [CommRing S] [Algebra R S] (M : Matrix n n S)
-        (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
-        (L' D' U' : Matrix n n S),
-        L'.BlockUnitriangular (toDual ∘ b) → D'.BlockTriangular b →
-        D'.BlockTriangular (toDual ∘ b) → U'.BlockUnitriangular b →
-        M = L' * D' * U' →
-        L.map (blockBigCellEval M hM) = L' ∧
-        D.map (blockBigCellEval M hM) = D' ∧ U.map (blockBigCellEval M hM) = U' := by
-  obtain ⟨L, D, U, hL, hD, hD₁, hU, hdet, h⟩ :=
-    (Matrix.exists_blockLDU_iff (blockBigCellMatrix R b)).mp
-      isUnit_blockBigCellMatrix_minor
-  refine ⟨L, D, U, hL, hD, hD₁, hU, hdet, h, ?_⟩
-  intro S _ _ M hM L' D' U' hL' hD' hD'₁ hU' h'
+-- Choose the factors together so all three accessors share the same factorization.
+private noncomputable def blockBigCellFactors :
+    {t : Matrix n n (BlockBigCellCoordinateAlgebra R b) ×
+        Matrix n n (BlockBigCellCoordinateAlgebra R b) ×
+        Matrix n n (BlockBigCellCoordinateAlgebra R b) //
+      t.1.BlockUnitriangular (toDual ∘ b) ∧ t.2.1.BlockTriangular b ∧
+      t.2.1.BlockTriangular (toDual ∘ b) ∧ t.2.2.BlockUnitriangular b ∧
+      IsUnit t.2.1.det ∧ blockBigCellMatrix R b = t.1 * t.2.1 * t.2.2} := by
+  let h := (Matrix.exists_blockLDU_iff (blockBigCellMatrix R b)).mp
+    isUnit_blockBigCellMatrix_minor
+  exact ⟨(h.choose, h.choose_spec.choose, h.choose_spec.choose_spec.choose),
+    h.choose_spec.choose_spec.choose_spec⟩
+
+/-- The regular block lower unitriangular factor of the universal matrix. -/
+noncomputable def blockBigCellLower : Matrix n n (BlockBigCellCoordinateAlgebra R b) :=
+  (blockBigCellFactors R b).val.1
+
+/-- The regular invertible block diagonal factor of the universal matrix. -/
+noncomputable def blockBigCellDiag : Matrix n n (BlockBigCellCoordinateAlgebra R b) :=
+  (blockBigCellFactors R b).val.2.1
+
+/-- The regular block upper unitriangular factor of the universal matrix. -/
+noncomputable def blockBigCellUpper : Matrix n n (BlockBigCellCoordinateAlgebra R b) :=
+  (blockBigCellFactors R b).val.2.2
+
+/-- The lower factor is block lower unitriangular. -/
+theorem blockUnitriangular_blockBigCellLower :
+    (blockBigCellLower R b).BlockUnitriangular (toDual ∘ b) :=
+  (blockBigCellFactors R b).property.1
+
+/-- The diagonal factor is block upper triangular. -/
+theorem blockTriangular_blockBigCellDiag : (blockBigCellDiag R b).BlockTriangular b :=
+  (blockBigCellFactors R b).property.2.1
+
+/-- The diagonal factor is also block lower triangular. -/
+theorem blockTriangular_blockBigCellDiag_toDual :
+    (blockBigCellDiag R b).BlockTriangular (toDual ∘ b) :=
+  (blockBigCellFactors R b).property.2.2.1
+
+/-- The upper factor is block upper unitriangular. -/
+theorem blockUnitriangular_blockBigCellUpper : (blockBigCellUpper R b).BlockUnitriangular b :=
+  (blockBigCellFactors R b).property.2.2.2.1
+
+/-- The diagonal factor is invertible in the coordinate algebra itself. -/
+theorem isUnit_det_blockBigCellDiag : IsUnit (blockBigCellDiag R b).det :=
+  (blockBigCellFactors R b).property.2.2.2.2.1
+
+/-- The universal matrix is the product of its three regular block factors. -/
+theorem blockBigCellMatrix_eq_lower_mul_diag_mul_upper :
+    blockBigCellMatrix R b = blockBigCellLower R b * blockBigCellDiag R b * blockBigCellUpper R b :=
+  (blockBigCellFactors R b).property.2.2.2.2.2
+
+variable {R b}
+
+private theorem map_blockBigCell_factors (M : Matrix n n S)
+    (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
+    {L D U : Matrix n n S} (hL : L.BlockUnitriangular (toDual ∘ b))
+    (hD : D.BlockTriangular b) (hD₁ : D.BlockTriangular (toDual ∘ b))
+    (hU : U.BlockUnitriangular b) (h : M = L * D * U) :
+    (blockBigCellLower R b).map (blockBigCellEval M hM) = L ∧
+    (blockBigCellDiag R b).map (blockBigCellEval M hM) = D ∧
+    (blockBigCellUpper R b).map (blockBigCellEval M hM) = U := by
   let f := blockBigCellEval (R := R) M hM
-  apply Matrix.eq_of_blockLDU_eq (hL.map f) (hD.map f) (hD₁.map f) (hU.map f)
-    hL' hD' hD'₁ hU'
-  · simpa only [← AlgHom.mapMatrix_apply, ← AlgHom.map_det] using hdet.map f
-  · rw [← Matrix.map_mul, ← Matrix.map_mul, ← h, map_blockBigCellMatrix, h']
+  apply Matrix.eq_of_blockLDU_eq ((blockUnitriangular_blockBigCellLower R b).map f)
+    ((blockTriangular_blockBigCellDiag R b).map f)
+    ((blockTriangular_blockBigCellDiag_toDual R b).map f)
+    ((blockUnitriangular_blockBigCellUpper R b).map f) hL hD hD₁ hU
+  · simpa only [← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
+      using (isUnit_det_blockBigCellDiag R b).map f
+  · rw [← Matrix.map_mul, ← Matrix.map_mul,
+      ← blockBigCellMatrix_eq_lower_mul_diag_mul_upper, map_blockBigCellMatrix, h]
+
+/-- Evaluating the regular lower factor gives the lower factor of any block `LDU`
+factorization of the represented point. -/
+theorem map_blockBigCellLower (M : Matrix n n S)
+    (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
+    {L D U : Matrix n n S} (hL : L.BlockUnitriangular (toDual ∘ b))
+    (hD : D.BlockTriangular b) (hD₁ : D.BlockTriangular (toDual ∘ b))
+    (hU : U.BlockUnitriangular b) (h : M = L * D * U) :
+    (blockBigCellLower R b).map (blockBigCellEval M hM) = L :=
+  (map_blockBigCell_factors M hM hL hD hD₁ hU h).1
+
+/-- Evaluating the regular diagonal factor gives the diagonal factor of any block `LDU`
+factorization of the represented point. -/
+theorem map_blockBigCellDiag (M : Matrix n n S)
+    (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
+    {L D U : Matrix n n S} (hL : L.BlockUnitriangular (toDual ∘ b))
+    (hD : D.BlockTriangular b) (hD₁ : D.BlockTriangular (toDual ∘ b))
+    (hU : U.BlockUnitriangular b) (h : M = L * D * U) :
+    (blockBigCellDiag R b).map (blockBigCellEval M hM) = D :=
+  (map_blockBigCell_factors M hM hL hD hD₁ hU h).2.1
+
+/-- Evaluating the regular upper factor gives the upper factor of any block `LDU`
+factorization of the represented point. -/
+theorem map_blockBigCellUpper (M : Matrix n n S)
+    (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det)
+    {L D U : Matrix n n S} (hL : L.BlockUnitriangular (toDual ∘ b))
+    (hD : D.BlockTriangular b) (hD₁ : D.BlockTriangular (toDual ∘ b))
+    (hU : U.BlockUnitriangular b) (h : M = L * D * U) :
+    (blockBigCellUpper R b).map (blockBigCellEval M hM) = U :=
+  (map_blockBigCell_factors M hM hL hD hD₁ hU h).2.2
 
 end TauCeti.GeneralLinear
