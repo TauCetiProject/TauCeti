@@ -37,8 +37,8 @@ open subspace is compared with one on the ambient space.
 * `CategoryTheory.Presieve.isSheafFor_of_bijective_app`: the sheaf condition for a presieve on `X`
   passes back along a natural transformation that is bijective at the objects over `X`.
 * `CategoryTheory.Presieve.isSheafFor_ofArrows_of_factorsThru`: the sheaf condition for a family of
-  arrows follows from that of a presieve it refines, once separated presieves on the sources of
-  the arrows refine that presieve.
+  arrows follows from that of a finer presieve `S` (one factoring through the arrows), once
+  separated presieves on the sources of the arrows refine `S` along them.
 -/
 
 public section
