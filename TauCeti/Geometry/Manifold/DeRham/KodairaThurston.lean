@@ -122,16 +122,6 @@ private theorem pathClassIntegral_descForm_deckLoop (ℓ : Cover →L[ℝ] ℝ)
     pathClassIntegral (descForm ℓ hℓ).1.1
         (.mk (deckLoop g)) = ℓ (g • 0) := by
   set θ := (descForm ℓ hℓ).1.1
-  -- The segment from `0` to `g • 0` in the cover, and its image, a path from `[0]` to `[g • 0]`.
-  let σ : Path (0 : Cover) (g • 0) :=
-    { toFun s := (s : ℝ) • (g • (0 : Cover))
-      continuous_toFun := by fun_prop
-      source' := by simp
-      target' := by simp }
-  have hmk : mk (g • 0) = mk 0 := mk_eq_mk_iff.2 ⟨g, rfl⟩
-  have hloop : deckLoop g = (σ.map continuous_mk).cast rfl hmk.symm := by
-    ext s
-    simp [σ]
   have hθ : IsSmoothForm 𝓘(ℝ, Cover) 1 θ :=
     (descForm ℓ hℓ).1.isSmoothForm.of_le (by simp)
   have hclosed : mextDeriv θ = 0 := (mem_closedForms _ _).1 (descForm ℓ hℓ).2
@@ -139,7 +129,7 @@ private theorem pathClassIntegral_descForm_deckLoop (ℓ : Cover →L[ℝ] ℝ)
       mextDeriv (RoughForm.ofFunction 𝓘(ℝ, Cover) ℓ) := by
     rw [← coe_coverForm, ← mpullback_mk_descForm ℓ hℓ, SmoothForm.coe_mpullback]
   have h := pathClassIntegral_mpullback (isLocalDiffeomorph_mk (n := 2)).contMDiff hθ hclosed
-    (.mk σ)
+    (.mk (deckPath g))
   rw [hpull, pathClassIntegral_mextDeriv_ofFunction ℓ.contMDiff, map_zero, sub_zero,
     ← Path.Homotopic.Quotient.mk_map] at h
   -- Recasting the endpoints of a path does not change the integral along it.
@@ -147,7 +137,7 @@ private theorem pathClassIntegral_descForm_deckLoop (ℓ : Cover →L[ℝ] ℝ)
       pathClassIntegral θ (.mk (τ.cast rfl hy)) = pathClassIntegral θ (.mk τ) := by
     rintro y y' τ rfl
     rw [Path.cast_rfl_rfl]
-  rw [hloop, hcast, ← h]
+  rw [deckLoop_eq_cast_map, hcast, ← h]
 
 /-! ### The coordinate one-forms of the Kodaira–Thurston manifold -/
 
@@ -272,12 +262,13 @@ private theorem periods_injective : Function.Injective periods := by
   -- Read the periods on `ℤ³` through `firstHomologyAddEquiv`.
   have key : (deRhamCohomology.homologyPeriod c).comp
       firstHomologyAddEquiv.symm.toAddMonoidHom = 0 := by
-    have e₁ : firstHomologyAddEquiv.symm (1, 0, 0) = deckClass gx := by
-      rw [firstHomologyAddEquiv_symm_apply]; rfl
-    have e₂ : firstHomologyAddEquiv.symm (0, 1, 0) = deckClass gy := by
-      rw [firstHomologyAddEquiv_symm_apply]; rfl
-    have e₃ : firstHomologyAddEquiv.symm (0, 0, 1) = deckClass gt := by
-      rw [firstHomologyAddEquiv_symm_apply]; rfl
+    have e (v : ℤ × ℤ × ℤ) (g : DeckGroup)
+        (hg : ((⟨v.1, v.2.1, 0⟩, .ofAdd v.2.2) : DeckGroup) = g) :
+        firstHomologyAddEquiv.symm v = deckClass g := by
+      rw [firstHomologyAddEquiv_symm_apply, hg]
+    have e₁ := e (1, 0, 0) gx (by ext <;> simp)
+    have e₂ := e (0, 1, 0) gy (by ext <;> simp)
+    have e₃ := e (0, 0, 1) gt (by ext <;> simp)
     ext ⟨m, n, k⟩
     have hv : ((m, n, k) : ℤ × ℤ × ℤ) = m • (1, 0, 0) + n • (0, 1, 0) + k • (0, 0, 1) := by
       ext <;> simp

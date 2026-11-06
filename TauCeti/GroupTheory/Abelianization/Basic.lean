@@ -65,8 +65,8 @@ the class of `(g, h)` corresponds to the pair of the classes of `g` and `h`. -/
 def prodMulEquiv (H : Type*) [Group H] :
     Abelianization (G × H) ≃* Abelianization G × Abelianization H :=
   (QuotientGroup.quotientMulEquivOfEq (by
-    rw [commutator_def, ← Subgroup.top_prod_top, Subgroup.commutator_prod_prod]
-    rfl)).trans (QuotientGroup.prodMulEquiv _ _)
+    rw [commutator_def, commutator_def, commutator_def, ← Subgroup.top_prod_top,
+      Subgroup.commutator_prod_prod])).trans (QuotientGroup.prodMulEquiv _ _)
 
 @[simp]
 theorem prodMulEquiv_of (H : Type*) [Group H] (gh : G × H) :

@@ -206,19 +206,28 @@ theorem not_simplyConnectedSpace : ¬ SimplyConnectedSpace KodairaThurston := by
 
 /-! ### The first homology group -/
 
-/-- The image of the straight segment `s ↦ s • (g • 0)` from `0` to `g • 0` in the cover. -/
-private def deckSegment (g : DeckGroup) : C(unitInterval, Cover) where
+/-- The straight segment `s ↦ s • (g • 0)` from `0` to `g • 0` in the cover. -/
+def deckPath (g : DeckGroup) : Path (0 : Cover) (g • 0) where
   toFun s := (s : ℝ) • (g • (0 : Cover))
   continuous_toFun := by fun_prop
-
-/-- The loop at `[0]` covered by the straight segment from `0` to `g • 0` in the cover. -/
-def deckLoop (g : DeckGroup) : Path (mk 0) (mk 0) where
-  toFun s := mk ((s : ℝ) • (g • (0 : Cover)))
-  continuous_toFun := continuous_mk.comp (deckSegment g).continuous
   source' := by simp
-  target' := by
-    simp only [Set.Icc.coe_one, one_smul]
-    exact mk_eq_mk_iff.2 ⟨g, rfl⟩
+  target' := by simp
+
+@[simp]
+theorem deckPath_apply (g : DeckGroup) (s : unitInterval) :
+    deckPath g s = (s : ℝ) • (g • (0 : Cover)) :=
+  (rfl)
+
+/-- The loop at `[0]` covered by the straight segment `TauCeti.KodairaThurston.deckPath g` from
+`0` to `g • 0` in the cover. -/
+def deckLoop (g : DeckGroup) : Path (mk 0) (mk 0) :=
+  ((deckPath g).map continuous_mk).cast rfl (mk_eq_mk_iff.2 ⟨g, rfl⟩).symm
+
+/-- The loop `deckLoop g` is the image of the segment `deckPath g`, with its endpoint `[g • 0]`
+recast as `[0]`. -/
+theorem deckLoop_eq_cast_map (g : DeckGroup) :
+    deckLoop g = ((deckPath g).map continuous_mk).cast rfl (mk_eq_mk_iff.2 ⟨g, rfl⟩).symm :=
+  (rfl)
 
 @[simp]
 theorem deckLoop_apply (g : DeckGroup) (s : unitInterval) :
@@ -230,8 +239,8 @@ to the image of `g` under the anti-automorphism `((x, y, z), n) ↦ ((x, y, x y 
 theorem fundamentalGroupMulEquiv_deckLoop (g : DeckGroup) :
     fundamentalGroupMulEquiv (x := mk 0) ⟨0, rfl⟩ (.of (.mk (deckLoop g))) =
       DeckGroup.opMulEquiv.symm (.op g) :=
-  fundamentalGroupMulEquiv_mk_eq (Γ := deckSegment g) rfl (by simp [deckSegment])
-    (by simp [deckSegment])
+  fundamentalGroupMulEquiv_mk_eq (Γ := (deckPath g).toContinuousMap) rfl (deckPath g).source
+    (deckPath g).target
 
 /-- **The first homology of the Kodaira–Thurston manifold** is `ℤ³`: the first singular homology
 group with integer coefficients is the abelianization `ℤ³` of its fundamental group, by the
@@ -262,8 +271,7 @@ theorem firstHomologyAddEquiv_symm_apply (v : ℤ × ℤ × ℤ) :
     firstHomologyAddEquiv.symm v =
       H₁AddEquivHomology _ (loopClass (X := TopCat.of KodairaThurston)
         (deckLoop (⟨v.1, v.2.1, 0⟩, .ofAdd v.2.2))) := by
-  rw [AddEquiv.symm_apply_eq, firstHomologyAddEquiv_loopClass_deckLoop]
-  rfl
+  simp [AddEquiv.symm_apply_eq]
 
 end KodairaThurston
 
