@@ -28,7 +28,8 @@ covers comparing a function with its derivative.
   power of the `Lᵖ` seminorm is the integral `∫⁻ f ^ p`; `TauCeti.eLpNorm_eq_lintegral_rpow` is
   the same identity solved for the seminorm.
 * `TauCeti.eLpNorm_add_measure_rpow_le`: the `p`-th power of the `Lᵖ` seminorm of an
-  `ℝ≥0∞`-valued function is subadditive under adding measures, with no measurability assumption.
+  `ℝ≥0∞`-valued function is subadditive under adding measures, with no measurability assumption
+  and at every `p : ℝ≥0∞`.
 * `TauCeti.eLpNorm_le_of_ae_tendsto_ennreal` and `TauCeti.eLpNorm_ennreal_le_of_ae_tendsto`:
   `ℝ≥0∞`-valued Fatou lemmas for the `Lᵖ` seminorm (for sequences at finite nonzero exponents, and
   along any countably generated filter at arbitrary `p : ℝ≥0∞`).
@@ -62,12 +63,17 @@ theorem eLpNorm_rpow_eq_lintegral {α : Type*} [MeasurableSpace α]
     ← lintegral_rpow_enorm_eq_rpow_eLpNorm' (ENNReal.toReal_pos hp0 hp)]
   simp
 
-/-- For a finite nonzero exponent, the `p`-th power of the `Lᵖ` seminorm of an `ℝ≥0∞`-valued
-function is subadditive under adding measures. No measurability is assumed: if the function is not
-almost everywhere measurable for one of the measures, its seminorm there is `∞`. -/
+/-- The `p`-th power of the `Lᵖ` seminorm of an `ℝ≥0∞`-valued function is subadditive under adding
+measures. For `p = 0` or `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No
+measurability is assumed: if the function is not almost everywhere measurable for one of the
+measures, its seminorm there is `∞`. -/
 theorem eLpNorm_add_measure_rpow_le {α : Type*} [MeasurableSpace α] {p : ℝ≥0∞}
-    (hp0 : p ≠ 0) (hp : p ≠ ∞) (f : α → ℝ≥0∞) (μ ν : Measure α) :
+    (f : α → ℝ≥0∞) (μ ν : Measure α) :
     eLpNorm f p (μ + ν) ^ p.toReal ≤ eLpNorm f p μ ^ p.toReal + eLpNorm f p ν ^ p.toReal := by
+  by_cases hp0 : p = 0
+  · simp [hp0]
+  by_cases hp : p = ∞
+  · simp [hp]
   have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
   by_cases hm : AEMeasurable f μ ∧ AEMeasurable f ν
   · rw [eLpNorm_rpow_eq_lintegral hp0 hp (hm.1.add_measure hm.2), lintegral_add_measure,
