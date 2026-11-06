@@ -93,6 +93,22 @@ theorem sin_pi_mul_ne_zero_of_mem_Ioo_of_ne_zero {x : ℝ}
 theorem sin_pi_div_pos {x : ℝ} (hx : 1 < x) : 0 < sin (π / x) :=
   sin_pos_of_pos_of_lt_pi (div_pos pi_pos (by linarith)) (div_lt_self pi_pos hx)
 
+/-- If the cosine of `2 * n * (π / m)` is one, with `m` a nonzero natural number, then `m` divides
+`n`: the rotation through the angle `2 π / m` has order exactly `m`. -/
+theorem dvd_of_cos_two_mul_pi_div_eq_one {m n : ℕ} (hm : m ≠ 0)
+    (h : cos (2 * (n : ℝ) * (π / m)) = 1) : m ∣ n := by
+  obtain ⟨j, hj⟩ := (cos_eq_one_iff _).1 h
+  have hm0 : (m : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hm
+  have hmul : (j : ℝ) * (2 * π) * (m : ℝ) = 2 * (n : ℝ) * π := by
+    rw [hj]
+    field_simp
+  have hcancel : (j : ℝ) * (m : ℝ) = (n : ℝ) :=
+    mul_right_cancel₀ (by positivity : (2 : ℝ) * π ≠ 0) (by linear_combination hmul)
+  have hint : (m : ℤ) ∣ (n : ℤ) := ⟨j, by
+    have : (n : ℤ) = j * (m : ℤ) := by exact_mod_cast hcancel.symm
+    linarith⟩
+  exact Int.ofNat_dvd.1 (by simpa using hint)
+
 /-- If `α, β > 0`, `γ ≥ 0` and `α + β + γ < π`, then `(cos α cos β + cos γ) / (sin α sin β) > 1`.
 Indeed `cos α cos β - sin α sin β = -cos (π - α - β)`, and `cos (π - α - β) < cos γ` because
 `0 ≤ γ < π - α - β ≤ π`. -/
