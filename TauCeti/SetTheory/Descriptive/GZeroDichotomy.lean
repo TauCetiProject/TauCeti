@@ -221,27 +221,17 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
   -- fresh edge.
   let w₀ (p : List.Vector Bool (n + 1) × List.Vector Bool (n + 1)) : List ℕ :=
     if p.1.head = p.2.head then T.word (p.1.tail, p.2.tail) else []
-  -- Once a combined family is chosen, extend its words by one letter and shrink its vertices.
-  suffices H : ∀ Ψ ⊆ image2 comb T.fam T.fam, AnalyticSet Ψ → ¬ G.IsSmallFamily Ψ →
-      (∀ p ∈ levelEdges S (n + 1), ∀ ψ ∈ Ψ, (ψ p.1, ψ p.2) ∈ g '' wordCylinder (w₀ p)) →
-      ∃ T' : Stage X G g S (n + 1),
-        (∀ ψ ∈ T'.fam, ∀ b u, ∃ φ ∈ T.fam, ψ (b ::ᵥ u) = φ u) ∧
-        ∀ p ∈ levelEdges S n, ∀ b, T.word p <+: T'.word (b ::ᵥ p.1, b ::ᵥ p.2) ∧
-          (T.word p).length < (T'.word (b ::ᵥ p.1, b ::ᵥ p.2)).length by
-    -- Combining along a level edge that extends one of level `n` keeps its witness.
-    have hold {φ₀ φ₁ : List.Vector Bool n → X} (h₀ : φ₀ ∈ T.fam) (h₁ : φ₁ ∈ T.fam)
-        {u v : List.Vector Bool (n + 1)} (hhead : u.head = v.head)
-        (htail : (u.tail, v.tail) ∈ levelEdges S n) :
-        (comb φ₀ φ₁ u, comb φ₀ φ₁ v) ∈ g '' wordCylinder (w₀ (u, v)) := by
-      simp only [w₀, ite_eq_left hhead]
-      exact comb_mem_image T h₀ h₁ hhead htail
+  -- First choose a combined family that is not small and inherits these words.
+  obtain ⟨Ψ, hΨsub, hΨa, hΨ, hΨw⟩ : ∃ Ψ ⊆ image2 comb T.fam T.fam, AnalyticSet Ψ ∧
+      ¬ G.IsSmallFamily Ψ ∧ ∀ p ∈ levelEdges S (n + 1), ∀ ψ ∈ Ψ,
+        (ψ p.1, ψ p.2) ∈ g '' wordCylinder (w₀ p) := by
     by_cases hfresh : ∃ s ∈ S, s.length = n
     · -- A fresh edge is born at `s.reverse`: combine members forming a pair of `G` there.
       obtain ⟨s₀, hs₀, hlen₀⟩ := hfresh
       let σ : List.Vector Bool n := ⟨s₀.reverse, by simp [hlen₀]⟩
-      refine H _ ?_ (SetRel.analyticSet_comb_cross hG T.analyticSet_fam σ continuous_comb)
-        (SetRel.not_isSmallFamily_comb_cross hG T.analyticSet_fam T.not_isSmallFamily_fam σ
-          fun _ _ ↦ range_comb_subset _ _) ?_
+      refine ⟨_, ?_, SetRel.analyticSet_comb_cross hG T.analyticSet_fam σ continuous_comb,
+        SetRel.not_isSmallFamily_comb_cross hG T.analyticSet_fam T.not_isSmallFamily_fam σ
+          fun _ _ ↦ range_comb_subset _ _, ?_⟩
       · rintro _ ⟨φ₀, h₀, φ₁, h₁, -, rfl⟩
         exact mem_image2_of_mem h₀ h₁
       · rintro ⟨u, v⟩ hp _ ⟨φ₀, h₀, φ₁, h₁, hσ, rfl⟩
@@ -249,21 +239,22 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
         · obtain rfl : s = s₀ := sparseWords_iff.1 hS s hs s₀ hs₀ (hlen.trans hlen₀.symm)
           obtain ⟨hu₁, hu₂⟩ := List.Vector.toList_eq_cons_iff.1 hu
           obtain ⟨hv₁, hv₂⟩ := List.Vector.toList_eq_cons_iff.1 hv
-          have hw : w₀ (u, v) = [] := ite_eq_right (by simp [hu₁, hv₁])
-          have hut : u.tail = σ := List.Vector.toList_injective hu₂
-          have hvt : v.tail = σ := List.Vector.toList_injective hv₂
-          rw [hw, wordCylinder_nil, image_univ, hgG]
+          obtain ⟨hut, hvt⟩ : u.tail = σ ∧ v.tail = σ :=
+            ⟨List.Vector.toList_injective hu₂, List.Vector.toList_injective hv₂⟩
+          rw [show w₀ (u, v) = [] from ite_eq_right (by simp [hu₁, hv₁]), wordCylinder_nil,
+            image_univ, hgG]
           simpa [comb, hu₁, hv₁, hut, hvt] using hσ
-        · exact hold h₀ h₁ hhead htail
+        · -- Combining along a level edge that extends one of level `n` keeps its witness.
+          simpa only [w₀, ite_eq_left hhead] using comb_mem_image T h₀ h₁ hhead htail
     · -- No fresh edge: combine arbitrary pairs of members.
-      refine H _ Subset.rfl (AnalyticSet.image2 continuous_comb T.analyticSet_fam T.analyticSet_fam)
-        (SetRel.not_isSmallFamily_image2 T.not_isSmallFamily_fam
-          fun φ ↦ (range_comb_subset φ φ).trans (union_self _).subset) ?_
+      refine ⟨_, Subset.rfl, AnalyticSet.image2 continuous_comb T.analyticSet_fam T.analyticSet_fam,
+        SetRel.not_isSmallFamily_image2 T.not_isSmallFamily_fam
+          fun φ ↦ (range_comb_subset φ φ).trans (union_self _).subset, ?_⟩
       rintro ⟨u, v⟩ hp _ ⟨φ₀, h₀, φ₁, h₁, rfl⟩
       rcases mem_levelEdges_succ hp with ⟨s, hs, hlen, -, -⟩ | ⟨hhead, htail⟩
       · exact absurd ⟨s, hs, hlen⟩ hfresh
-      · exact hold h₀ h₁ hhead htail
-  intro Ψ hΨsub hΨa hΨ hΨw
+      · simpa only [w₀, ite_eq_left hhead] using comb_mem_image T h₀ h₁ hhead htail
+  -- Then extend its words by one letter and shrink its vertices.
   obtain ⟨w, hpre, hlen, Ψ₁, hΨ₁, hΨ₁a, hΨ₁s, hΨ₁w⟩ :=
     SetRel.exists_subset_not_isSmallFamily_witness_extension (κ := levelEdges S (n + 1))
       (e := Subtype.val) (w := fun k ↦ w₀ k.1) hg hΨa hΨ (fun ψ hψ k ↦ hΨw k.1 k.2 ψ hψ) 1
@@ -274,16 +265,10 @@ private theorem exists_stage_succ (hS : SparseWords S) (hG : AnalyticSet G) (hg 
     hΨ₂d, fun p hp ψ hψ ↦ by simpa [hp] using hΨ₁w ψ (hΨ₂ hψ) ⟨p, hp⟩⟩, ?_, ?_⟩
   · rintro ψ hψ b u
     obtain ⟨φ₀, h₀, φ₁, h₁, rfl⟩ := hΨsub (hΨ₁ (hΨ₂ hψ))
-    cases b
-    exacts [⟨φ₀, h₀, comb_cons φ₀ φ₁ false u⟩, ⟨φ₁, h₁, comb_cons φ₀ φ₁ true u⟩]
+    exact ⟨_, by cases b <;> assumption, comb_cons φ₀ φ₁ b u⟩
   · intro p hp b
     have hp' := cons_mem_levelEdges hp b
-    have hw₀ : w₀ (b ::ᵥ p.1, b ::ᵥ p.2) = T.word p := by simp [w₀]
-    have hpre' := hpre ⟨_, hp'⟩
-    have hlen' := hlen ⟨_, hp'⟩
-    simp only [hw₀] at hpre' hlen'
-    simp only [dite_eq_left hp']
-    exact ⟨hpre', by omega⟩
+    simpa [hp', w₀] using And.intro (hpre ⟨_, hp'⟩) (hlen ⟨_, hp'⟩).ge
 
 omit [SecondCountableTopology X] [BorelSpace X] in
 /-- **Edges in the fusion limit.** Let a tower of stages have words cohering as in
