@@ -12,7 +12,9 @@ import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 /-!
 # The `L^∞` seminorm as the limit of the `Lᵖ` seminorms
 
-The essential supremum of `‖f‖ₑ` is recovered from the finite-exponent seminorms as `p → ∞`:
+The `L^∞` seminorm `eLpNorm f ∞ μ` is recovered from the finite-exponent seminorms as `p → ∞`.
+When `f` is almost everywhere strongly measurable, `eLpNorm f ∞ μ` is the essential supremum of
+`‖f‖ₑ` (`MeasureTheory.eLpNorm_exponent_top`), so this is the classical limit `‖f‖_p → ‖f‖_∞`:
 
 * against an arbitrary measure, `eLpNorm f ∞ μ` is at most the `liminf` of `eLpNorm f p μ`, by
   Chebyshev's inequality applied on a set of positive measure where `‖f‖ₑ` is close to its
@@ -21,21 +23,22 @@ The essential supremum of `‖f‖ₑ` is recovered from the finite-exponent sem
   the comparison `eLpNorm f p μ ≤ eLpNorm f ∞ μ * μ univ ^ (1 / p)`.
 
 No measurability hypothesis is needed: if `f` is not almost everywhere strongly measurable, then
-`eLpNorm f p μ = ∞` for every exponent `p` and both statements are immediate.
+`eLpNorm f p μ = ∞` for every exponent `p`, including `∞`, and both statements are immediate. In
+that case `eLpNorm f ∞ μ` need not agree with the essential supremum of `‖f‖ₑ`.
 
 The finite-measure hypothesis cannot be dropped from the convergence statement: for the constant
 function `1` on `ℝ` with Lebesgue measure, every finite-exponent seminorm is `∞` while the
-essential supremum is `1`.
+`L^∞` seminorm is `1`.
 
 The exponent runs over `ℝ≥0`, coerced to `ℝ≥0∞`, so that `Filter.atTop` is the limit `p → ∞`;
 the endpoint `∞` itself is `MeasureTheory.eLpNorm_exponent_top`.
 
 ## Main statements
 
-* `TauCeti.eLpNorm_exponent_top_le_liminf` — the essential supremum is at most the `liminf` of the
+* `TauCeti.eLpNorm_exponent_top_le_liminf` — `eLpNorm f ∞ μ` is at most the `liminf` of the
   finite-exponent seminorms, for every measure;
 * `TauCeti.tendsto_eLpNorm_atTop` — for a finite measure, the finite-exponent seminorms converge
-  to the essential supremum.
+  to `eLpNorm f ∞ μ`.
 
 ## References
 
@@ -54,9 +57,10 @@ namespace TauCeti
 variable {α ε : Type*} [MeasurableSpace α] [TopologicalSpace ε] [ContinuousENorm ε]
   {μ : Measure α} {f : α → ε}
 
-/-- **The essential supremum is below the limit inferior of the `Lᵖ` seminorms.** For every
-measure and every `f`, `eLpNorm f ∞ μ` is at most the `liminf` of `eLpNorm f p μ` as `p → ∞`. No
-finiteness of the measure is needed. -/
+/-- **The `L^∞` seminorm is below the limit inferior of the `Lᵖ` seminorms.** For every measure
+and every `f`, `eLpNorm f ∞ μ` is at most the `liminf` of `eLpNorm f p μ` as `p → ∞`. No
+finiteness of the measure is needed. For almost everywhere strongly measurable `f`, the left side
+is the essential supremum of `‖f‖ₑ`. -/
 theorem eLpNorm_exponent_top_le_liminf :
     eLpNorm f ∞ μ ≤ liminf (fun p : ℝ≥0 ↦ eLpNorm f p μ) atTop := by
   by_cases hf : AEStronglyMeasurable f μ
@@ -89,8 +93,9 @@ theorem eLpNorm_exponent_top_le_liminf :
     ← ENNReal.rpow_mul, one_div_mul_cancel hppos.ne', ENNReal.rpow_one]
   exact (mul_le_mul' le_rfl (min_le_left c 1)).trans hcheb
 
-/-- **The `Lᵖ` seminorms converge to the essential supremum.** Against a finite measure, for every
-`f`, `eLpNorm f p μ` tends to `eLpNorm f ∞ μ` as `p → ∞`. -/
+/-- **The `Lᵖ` seminorms converge to the `L^∞` seminorm.** Against a finite measure, for every
+`f`, `eLpNorm f p μ` tends to `eLpNorm f ∞ μ` as `p → ∞`. For almost everywhere strongly
+measurable `f`, the limit is the essential supremum of `‖f‖ₑ`. -/
 theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] :
     Tendsto (fun p : ℝ≥0 ↦ eLpNorm f p μ) atTop (𝓝 (eLpNorm f ∞ μ)) := by
   by_cases hf : AEStronglyMeasurable f μ
@@ -99,7 +104,7 @@ theorem tendsto_eLpNorm_atTop [IsFiniteMeasure μ] :
   rcases eq_zero_or_neZero μ with rfl | _
   · simp
   refine tendsto_of_le_liminf_of_limsup_le eLpNorm_exponent_top_le_liminf ?_
-  -- The comparison with the essential supremum weighted by the root of the total mass.
+  -- The comparison with the `L^∞` seminorm weighted by the root of the total mass.
   have hlim : Tendsto (fun p : ℝ≥0 ↦ eLpNorm f ∞ μ * μ Set.univ ^ (1 / (p : ℝ))) atTop
       (𝓝 (eLpNorm f ∞ μ)) := by
     simpa only [mul_one, Function.comp_def, id] using ENNReal.Tendsto.const_mul
