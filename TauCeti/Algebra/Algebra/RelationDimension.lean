@@ -60,13 +60,16 @@ theorem card_mul_finrank_quotient_add_le {k : Type*} [Field k] [Algebra k A]
     exact hxS a
   -- The maps induced on the quotients by the generators and by the relations.
   let d₁ : (ι → A ⧸ U) →ₗ[k] A ⧸ T := piQuotientLift (fun _ ↦ U) T
-    (fun i ↦ LinearMap.mulRight k (x i)) fun i u hu ↦ hUT u hu i
+    (fun i ↦ LinearMap.mulRight k (x i)) fun i u hu ↦ mem_comap.2 (hUT u hu i)
   let d₂ : (κ → A ⧸ W) →ₗ[k] ι → A ⧸ U := LinearMap.pi fun i ↦ piQuotientLift (fun _ ↦ W) U
-    (fun j ↦ LinearMap.mulRight k (y j i)) fun j w hw ↦ hWU w hw j i
-  have hd₁ (a : ι → A) : d₁ (U.mkQ ∘ a) = T.mkQ (∑ i, a i * x i) :=
-    (piQuotientLift_mk (fun _ ↦ U) T _ _ a).trans (congrArg T.mkQ (by simp))
-  have hd₂ (b : κ → A) : d₂ (W.mkQ ∘ b) = fun i ↦ U.mkQ (∑ j, b j * y j i) :=
-    funext fun i ↦ (piQuotientLift_mk (fun _ ↦ W) U _ _ b).trans (congrArg U.mkQ (by simp))
+    (fun j ↦ LinearMap.mulRight k (y j i)) fun j w hw ↦ mem_comap.2 (hWU w hw j i)
+  have hd₁ (a : ι → A) : d₁ (U.mkQ ∘ a) = T.mkQ (∑ i, a i * x i) := by
+    simp only [d₁, Function.comp_def, mkQ_apply, piQuotientLift_mk]
+    simp
+  have hd₂ (b : κ → A) : d₂ (W.mkQ ∘ b) = fun i ↦ U.mkQ (∑ j, b j * y j i) := by
+    ext i
+    simp only [d₂, LinearMap.pi_apply, Function.comp_def, mkQ_apply, piQuotientLift_mk]
+    simp
   -- The image of `d₁` lies in `S ⧸ T`, the kernel of `A ⧸ T → A ⧸ S`.
   have hrange : LinearMap.range d₁ ≤ LinearMap.ker (factor hTS) := by
     rintro _ ⟨a, rfl⟩
