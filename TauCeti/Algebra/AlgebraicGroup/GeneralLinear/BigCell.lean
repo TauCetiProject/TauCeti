@@ -79,7 +79,7 @@ theorem isUnit_blockBigCellMatrix_minor (i : n) :
     (Finset.dvd_prod_of_mem
       (fun k => ((Matrix.mvPolynomialX n n R).toSquareBlockProp fun j => b j ≤ b k).det)
       (Finset.mem_univ i))
-  rw [blockBigCellMatrix, Matrix.toSquareBlockProp_map, ← RingHom.mapMatrix_apply,
+  rw [blockBigCellMatrix, Matrix.map_toSquareBlockProp, ← RingHom.mapMatrix_apply,
     ← RingHom.map_det]
   exact h
 
@@ -142,7 +142,7 @@ theorem blockBigCell_algHom_ext {f g : BlockBigCellCoordinateAlgebra R b →ₐ[
 theorem isUnit_minor_map_blockBigCellMatrix
     (f : BlockBigCellCoordinateAlgebra R b →ₐ[R] S) (i : n) :
     IsUnit (((blockBigCellMatrix R b).map f).toSquareBlockProp fun j => b j ≤ b i).det :=
-  (isUnit_blockBigCellMatrix_minor i).det_toSquareBlockProp_map f.toRingHom
+  (isUnit_blockBigCellMatrix_minor i).det_map_toSquareBlockProp f.toRingHom
 
 variable (R b S) in
 /-- The block big cell represents matrices with invertible leading block minors, over every
@@ -175,7 +175,7 @@ theorem comp_blockBigCellEval {T : Type*} [CommRing T] [Algebra R T]
     (f : S →ₐ[R] T) (M : Matrix n n S)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) :
     f.comp (blockBigCellEval M hM) = blockBigCellEval (M.map f)
-      (fun i => (hM i).det_toSquareBlockProp_map f.toRingHom) := by
+      (fun i => (hM i).det_map_toSquareBlockProp f.toRingHom) := by
   apply blockBigCell_algHom_ext
   rw [AlgHom.coe_comp, ← Matrix.map_map, map_blockBigCellMatrix, map_blockBigCellMatrix]
 
@@ -229,7 +229,7 @@ theorem isUnit_det_blockBigCellDiag : IsUnit (blockBigCellDiag R b).det :=
   (blockBigCellFactors R b).property.2.2.2.2.1
 
 /-- The universal matrix is the product of its three regular block factors. -/
-theorem blockBigCellMatrix_eq_lower_mul_diag_mul_upper :
+theorem blockBigCellMatrix_eq_blockBigCellLower_mul_blockBigCellDiag_mul_blockBigCellUpper :
     blockBigCellMatrix R b = blockBigCellLower R b * blockBigCellDiag R b * blockBigCellUpper R b :=
   (blockBigCellFactors R b).property.2.2.2.2.2
 
@@ -251,7 +251,8 @@ private theorem map_blockBigCell_factors (M : Matrix n n S)
   · simpa only [← AlgHom.mapMatrix_apply, ← AlgHom.map_det]
       using (isUnit_det_blockBigCellDiag R b).map f
   · rw [← Matrix.map_mul, ← Matrix.map_mul,
-      ← blockBigCellMatrix_eq_lower_mul_diag_mul_upper, map_blockBigCellMatrix, h]
+      ← blockBigCellMatrix_eq_blockBigCellLower_mul_blockBigCellDiag_mul_blockBigCellUpper,
+      map_blockBigCellMatrix, h]
 
 /-- Evaluating the regular lower factor gives the lower factor of any block `LDU`
 factorization of the represented point. -/
