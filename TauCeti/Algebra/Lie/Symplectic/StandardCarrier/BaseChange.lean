@@ -290,9 +290,10 @@ theorem mem_baseChangeDefiningPointsSubgroup_iff_mem_points (B : CommAlgCat.{w} 
         (GeneralLinear.coordinateHopfAlgebra A ((n + 1) + (n + 1)))
         (baseChangeDefiningIdeal n A) B ↔
       GeneralLinear.pointsMulEquiv ((n + 1) + (n + 1)) g ∈ points n B := by
-  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_pointsMulEquiv
+  exact GeneralLinear.mem_quotientPointsSubgroup_iff_mem_of_surjective
     ((n + 1) + (n + 1)) (baseChangeDefiningIdeal n A) B (points n B)
-      (baseChangePointsMulEquiv n A B) (coe_baseChangePointsMulEquiv_apply n A B) g
+      (baseChangePointsMulEquiv n A B) (baseChangePointsMulEquiv n A B).surjective
+      (coe_baseChangePointsMulEquiv_apply n A B) g
 
 /-! ## The transported root subgroups -/
 
