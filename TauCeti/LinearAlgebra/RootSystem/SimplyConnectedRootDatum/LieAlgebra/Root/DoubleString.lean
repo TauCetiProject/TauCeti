@@ -16,8 +16,8 @@ import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
 For a pinned root string with positive root combinations `α + β` and `2α + β`, this proves the
 commutator formula on every Kostant-stable lattice over every commutative ring. The string
 hypotheses are read in the integral root datum, not assumed equations between Lie brackets:
-the `α`-string through `β` has bottom coefficient zero and top coefficient two, and the
-`β`-string through `α` has top coefficient one. These are the double-string configurations
+the `α`-string through `β` has bottom coefficient zero and top coefficient two. The
+`β`-string through `α` then has top coefficient one. These are the double-string configurations
 in types `B`, `C` and `F₄`, with no restriction to simple roots.
 The second coefficient is `N_{α,β} N_{α,α+β} / 2`, computed in the integers before passage to
 the value ring. In particular the formula also applies in characteristic two.
@@ -47,7 +47,7 @@ variable {t : DynkinType} {ht : t.Valid} {α β γ δ : Fin t.numRoots}
 
 /-- Along a root string starting at `β`, the bracket at its next step has even structure
 constant. Division by two here is in `ℤ`, not in a value ring. -/
-theorem two_mul_div_structureConstant_of_chainBotCoeff_eq_zero
+theorem two_mul_structureConstant_div_two_of_chainBotCoeff_eq_zero
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
@@ -55,10 +55,7 @@ theorem two_mul_div_structureConstant_of_chainBotCoeff_eq_zero
     (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0) :
     2 * (t.structureConstant ht α γ / 2) = t.structureConstant ht α γ := by
   let := t.isReduced_simplyConnectedRootDatum ht
-  have hli := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
-    (show (t.simplyConnectedRootDatum ht).root α +
-      (t.simplyConnectedRootDatum ht).root β ∈
-        Set.range (t.simplyConnectedRootDatum ht).root from ⟨γ, hγ⟩)
+  have hli := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
   have hnext := (t.simplyConnectedRootDatum ht).chainBotCoeff_of_add hli
     (hγ.trans (add_comm _ _))
   rcases structureConstant_eq_natCast_or_eq_neg_natCast (Set.mem_range.mpr ⟨δ, hδ⟩) with h | h
@@ -80,7 +77,7 @@ theorem lie_lie_chevalleySystem_of_chainBotCoeff_eq_zero
   rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
     lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul]
   congr 1
-  have := two_mul_div_structureConstant_of_chainBotCoeff_eq_zero hγ hδ hbot
+  have := two_mul_structureConstant_div_two_of_chainBotCoeff_eq_zero hγ hδ hbot
   linear_combination -t.structureConstant ht α β * this
 
 private theorem doubleString_brackets
@@ -88,8 +85,8 @@ private theorem doubleString_brackets
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
-    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2)
-    (hrev : (t.simplyConnectedRootDatum ht).chainTopCoeff β α = 1) :
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2) :
     ⁅t.chevalleySystem ht α, t.chevalleySystem ht δ⁆ = 0 ∧
       ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 ∧
       ⁅t.chevalleySystem ht β, t.chevalleySystem ht δ⁆ = 0 := by
@@ -99,6 +96,25 @@ private theorem doubleString_brackets
     P.linearIndependent_of_add_mem_range_root' ⟨γ, hγ⟩
   have hli' : LinearIndependent ℤ ![P.root β, P.root α] :=
     LinearIndependent.pair_symm_iff.mp hli
+  have hrev : P.chainTopCoeff β α = 1 := by
+    have hbot' : P.chainBotCoeff β α = 0 := by
+      apply P.chainBotCoeff_eq_zero_iff.mpr
+      right
+      rw [← P.neg_mem_range_root_iff, neg_sub]
+      exact (P.chainBotCoeff_eq_zero_iff.mp hbot).resolve_left (not_not.mpr hli)
+    have hne : P.root α ≠ P.root β := by
+      intro h
+      exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := 1) (by simpa using h)).1
+    have hneg : P.root α ≠ -P.root β := by
+      intro h
+      exact one_ne_zero (hli.eq_zero_of_pair' (s := 1) (t := -1) (by simpa using h)).1
+    have hpair := P.pairingIn_pairingIn_mem_set_of_isCrystal_of_isRed' α β hne hneg
+    have hp := P.chainBotCoeff_sub_chainTopCoeff hli
+    have hp' := P.chainTopCoeff_sub_chainBotCoeff hli'
+    simp only [Set.mem_insert_iff, Set.mem_singleton_iff, Prod.mk.injEq] at hpair
+    rw [hbot, htop] at hp
+    rw [hbot'] at hp'
+    omega
   have hn (a b : ℤ) (hb : b ≠ 0) : a • P.root α + b • P.root β ≠ 0 :=
     fun hz ↦ hb (LinearIndependent.pair_iff.mp hli a b hz).2
   have hthree : P.root β + 3 • P.root α ∉ Set.range P.root := by
@@ -144,27 +160,27 @@ variable (hnil : ∀ i, IsNilpotent
 
 attribute [local instance high] Algebra.toModule
 
-/-- The Chevalley element-commutator formula for a double string. Its root-string conditions
-specify the positive rank-two combinations `α + β` and `2α + β`; no Lie-bracket conditions or
-restrictions on the characteristic of the commutative value ring are required. -/
-theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
+/-- Reorder two root-subgroup elements along a double string. The two correction factors
+have roots `α + β` and `2α + β`, with coefficients computed integrally before scalar extension. -/
+theorem chevalleyRootSubgroup_mul_of_doubleString
     (hγ : (t.simplyConnectedRootDatum ht).root γ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (hδ : (t.simplyConnectedRootDatum ht).root δ =
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
     (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
     (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2)
-    (hrev : (t.simplyConnectedRootDatum ht).chainTopCoeff β α = 1)
     (A : CommAlgCat ℤ) (u v : A) :
-    ⁅chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u),
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
-      chevalleyRootSubgroup ρ M hM hnil γ A
-        (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
-      chevalleyRootSubgroup ρ M hM hnil δ A
-        (Multiplicative.ofAdd
-          (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) *
-            (u ^ 2 * v))) := by
-  obtain ⟨had, hbg, hbd⟩ := doubleString_brackets hγ hδ htop hrev
+    chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
+        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
+      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
+        (chevalleyRootSubgroup ρ M hM hnil γ A
+          (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+        chevalleyRootSubgroup ρ M hM hnil δ A
+          (Multiplicative.ofAdd
+            (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) *
+              (u ^ 2 * v)))) *
+        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
+  obtain ⟨had, hbg, _⟩ := doubleString_brackets hγ hδ hbot htop
   let x (k : Fin t.numRoots) := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
     (t.chevalleySystem ht k))
   let c := t.structureConstant ht α β
@@ -199,8 +215,32 @@ theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
     baseChangeExp_zsmul d M
       (dividedPower_chevalleySystem_smul_mem ρ M hM hnil δ) hMd
       (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)] at hmul
-  -- The β-factor commutes with both output factors, so the multiplication identity gives
-  -- the element commutator in increasing root height.
+  apply Units.ext
+  simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd, mul_assoc] using hmul
+
+/-- The Chevalley element-commutator formula for a double string. Its root-string conditions
+specify the positive rank-two combinations `α + β` and `2α + β`; no Lie-bracket conditions or
+restrictions on the characteristic of the commutative value ring are required. -/
+theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ)
+    (hbot : (t.simplyConnectedRootDatum ht).chainBotCoeff α β = 0)
+    (htop : (t.simplyConnectedRootDatum ht).chainTopCoeff α β = 2)
+    (A : CommAlgCat ℤ) (u v : A) :
+    ⁅chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u),
+      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
+      chevalleyRootSubgroup ρ M hM hnil γ A
+        (Multiplicative.ofAdd ((t.structureConstant ht α β : A) * (u * v))) *
+      chevalleyRootSubgroup ρ M hM hnil δ A
+        (Multiplicative.ofAdd
+          (((t.structureConstant ht α β * (t.structureConstant ht α γ / 2) : ℤ) : A) *
+            (u ^ 2 * v))) := by
+  obtain ⟨_, hbg, hbd⟩ := doubleString_brackets hγ hδ hbot htop
+  let c := t.structureConstant ht α β
+  let d := c * (t.structureConstant ht α γ / 2)
+  -- The β-factor commutes with both correction factors in the product relation.
   have hcomm : Commute
       (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
       (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd ((c : A) * (u * v))) *
@@ -211,18 +251,9 @@ theorem commutatorElement_chevalleyRootSubgroup_of_doubleString
     all_goals simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
     · exact (commute_baseChangeExp M (commute_of_lie_eq_zero ρ hbg) _ _ _ _).eq
     · exact (commute_baseChangeExp M (commute_of_lie_eq_zero ρ hbd) _ _ _ _).eq
-  have hrel :
-      chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
-        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
-        (chevalleyRootSubgroup ρ M hM hnil γ A
-          (Multiplicative.ofAdd ((c : A) * (u * v))) *
-        chevalleyRootSubgroup ρ M hM hnil δ A
-          (Multiplicative.ofAdd ((d : A) * (u ^ 2 * v)))) *
-        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
-    apply Units.ext
-    simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd, mul_assoc] using hmul
-  rw [commutatorElement_def, hrel, mul_inv_cancel_right, hcomm.eq, mul_inv_cancel_right]
+  rw [commutatorElement_def,
+    chevalleyRootSubgroup_mul_of_doubleString ρ M hM hnil hγ hδ hbot htop,
+    mul_inv_cancel_right, hcomm.eq, mul_inv_cancel_right]
 
 end
 
