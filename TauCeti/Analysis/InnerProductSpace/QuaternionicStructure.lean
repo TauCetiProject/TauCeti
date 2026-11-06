@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.LinearMap
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.Trace
+import Mathlib.Analysis.InnerProductSpace.Trace
 
 /-!
 # Antiunitary quaternionic structures
@@ -32,6 +34,9 @@ The standard quaternionic structure of `ℂ²` is
   orthogonal vector.
 * `LinearIsometry.rankOne_self_add_rankOne_map_self`: in dimension two,
   `x x* + (j x)(j x)* = ‖x‖² Id`.
+* `LinearIsometryEquiv.trace_eq_conj_trace`: operators `T` and `T'` related by a conjugate-linear
+  isometric equivalence `j`, `T' j = j T`, have conjugate traces. For instance, charge conjugation
+  of spinors conjugates traces of endomorphisms.
 
 ## References
 
@@ -106,3 +111,34 @@ theorem rankOne_self_add_rankOne_map_self (j : E →ₗᵢ⋆[𝕜] E) (hj : ∀
     simp [b, j.inner_map_self_eq_zero hj, j.inner_self_map_eq_zero hj, inner_self_eq_norm_sq_to_K]
 
 end LinearIsometry
+
+namespace LinearIsometryEquiv
+
+variable {𝕜 E E' : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+  [NormedAddCommGroup E'] [InnerProductSpace 𝕜 E'] [FiniteDimensional 𝕜 E]
+
+/-- Operators related by a conjugate-linear isometric equivalence `j`, `T' (j x) = j (T x)`, have
+conjugate traces: `tr T' = conj (tr T)`. -/
+theorem trace_eq_conj_trace (j : E ≃ₗᵢ⋆[𝕜] E') {T : E →ₗ[𝕜] E} {T' : E' →ₗ[𝕜] E'}
+    (h : ∀ x, T' (j x) = j (T x)) :
+    LinearMap.trace 𝕜 E' T' = conj (LinearMap.trace 𝕜 E T) := by
+  let b := stdOrthonormalBasis 𝕜 E
+  have hj (x y : E) : ⟪j x, j y⟫_𝕜 = conj ⟪x, y⟫_𝕜 := j.toLinearIsometry.inner_map_map_eq_conj x y
+  -- `j` carries the orthonormal basis `b` of `E` to an orthonormal basis of `E'`.
+  have hon : Orthonormal 𝕜 fun i ↦ j (b i) := by
+    rw [orthonormal_iff_ite]
+    intro i k
+    rw [hj, b.inner_eq_ite]
+    split_ifs <;> simp
+  have hsp : ⊤ ≤ Submodule.span 𝕜 (Set.range fun i ↦ j (b i)) := by
+    intro y _
+    rw [← j.apply_symm_apply y, ← b.sum_repr' (j.symm y), map_sum]
+    refine Submodule.sum_mem _ fun i _ ↦ ?_
+    rw [map_smulₛₗ]
+    exact Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+  rw [LinearMap.trace_eq_sum_inner T' (OrthonormalBasis.mk hon hsp),
+    LinearMap.trace_eq_sum_inner T b, map_sum]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rw [OrthonormalBasis.coe_mk, h, hj]
+
+end LinearIsometryEquiv
