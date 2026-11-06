@@ -70,15 +70,23 @@ linear approximation error by the difference of the Hessians.
 
 * `HolderOnWith.norm_image_sub_sub_le_of_hasFDerivWithinAt`: the first-order Taylor bound for a
   Hölder derivative.
+* `HolderOnWith.norm_sub_fderiv_le_of_mem_ball`: the Taylor remainder on a ball for the
+  derivative of a differentiable function.
 * `HolderOnWith.norm_apply_le_of_hasFDerivWithinAt`: the resulting bound on a directional
   derivative.
+* `HolderOnWith.norm_le_of_hasFDerivWithinAt_ball`: the local interpolation inequality on a
+  ball, also applicable to differences of two functions.
+* `HolderOnWith.norm_fderiv_sub_fderiv_le_of_norm_sub_le_ball`: comparison of two derivatives
+  from uniform function error and possibly different Hölder constants.
 * `HolderWith.norm_le_of_hasFDerivAt`, `HolderWith.norm_fderiv_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le`: the interpolation inequality on the whole
   space.
 * `ContDiff.norm_iteratedFDeriv_succ_le_of_norm_iteratedFDeriv_le`: the Landau-type inequality.
 * `HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le` and
   `HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`: the absorbed bounds on the two
-  derivatives above `D^k f`.
+  derivatives above `D^k f`, and
+  `HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`: both bounds with
+  one constant, for scales `ε ≤ 1`.
 * `HolderOnWith.norm_image_sub_sub_sub_le_of_hasFDerivWithinAt`: the second-order Taylor bound
   for a Hölder second derivative.
 * `HolderOnWith.norm_le_of_hasFDerivWithinAt_of_closedBall_subset` and
@@ -132,6 +140,24 @@ theorem norm_image_sub_sub_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
   rw [Real.rpow_add' (norm_nonneg w) (by positivity), Real.rpow_one, mul_comm (‖w‖)]
   simpa only [add_sub_cancel_left, mul_assoc] using hmvt
 
+/-- **Taylor remainder on a ball.** A differentiable function whose derivative is `(H, α)`-Hölder
+on a ball satisfies `‖g y - g x - Dg(x)(y - x)‖ ≤ H ‖y - x‖^α ‖y - x‖` at its centre `x`.
+Neither finite dimensionality, completeness nor a positive exponent is required. -/
+theorem norm_sub_fderiv_le_of_mem_ball {g : E → F} {H α : ℝ≥0} {x y : E} {r : ℝ}
+    (hH : HolderOnWith H α (fderiv ℝ g) (Metric.ball x r))
+    (hg : DifferentiableOn ℝ g (Metric.ball x r)) (hy : y ∈ Metric.ball x r) :
+    ‖g y - g x - fderiv ℝ g x (y - x)‖ ≤ H * ‖y - x‖ ^ (α : ℝ) * ‖y - x‖ := by
+  have hrpos := lt_of_le_of_lt dist_nonneg (Metric.mem_ball.mp hy)
+  have hseg : segment ℝ x (x + (y - x)) ⊆ Metric.ball x r := by
+    rw [add_sub_cancel]
+    exact (convex_ball x r).segment_subset (Metric.mem_ball_self hrpos) hy
+  have hTaylor := hH.norm_image_sub_sub_le_of_hasFDerivWithinAt
+    (fun z hz => ((hg z hz).differentiableAt (Metric.isOpen_ball.mem_nhds hz)).hasFDerivAt
+      |>.hasFDerivWithinAt) hseg
+  rw [add_sub_cancel, add_comm 1, Real.rpow_add' (norm_nonneg _) (by positivity),
+    Real.rpow_one] at hTaylor
+  simpa only [mul_assoc] using hTaylor
+
 /-- **Interpolation along a segment.** If `g` has derivative `g'` within `s` and `g'` is
 `α`-Hölder with constant `H` on `s`, then for a segment from `x` to `x + w` contained in `s`,
 the derivative in the direction `w` is bounded by the values of `g` at the endpoints and the
@@ -145,6 +171,51 @@ theorem norm_apply_le_of_hasFDerivWithinAt {s : Set E} {g : E → F} {g' : E →
     _ ≤ ‖g (x + w) - g x‖ + ‖g (x + w) - g x - g' x w‖ := norm_sub_le _ _
     _ ≤ ‖g (x + w)‖ + ‖g x‖ + H * ‖w‖ ^ (1 + (α : ℝ)) := by
       linarith [norm_sub_le (g (x + w)) (g x)]
+
+/-- **Local interpolation inequality.** On a ball of radius `ε`, a function bounded by `M`
+whose derivative is `(H, α)`-Hölder has derivative norm at the centre at most
+`4 M / ε + H ε^α`. Applying the estimate to a difference compares derivatives using only
+uniform function errors and Hölder derivative bounds. -/
+theorem norm_le_of_hasFDerivWithinAt_ball {g : E → F} {g' : E → E →L[ℝ] F}
+    {H α : ℝ≥0} {x : E} {ε M : ℝ} (hH : HolderOnWith H α g' (Metric.ball x ε))
+    (hg : ∀ y ∈ Metric.ball x ε, HasFDerivWithinAt g (g' y) (Metric.ball x ε) y)
+    (hM : ∀ y ∈ Metric.ball x ε, ‖g y‖ ≤ M) (hε : 0 < ε) :
+    ‖g' x‖ ≤ 4 * M / ε + H * ε ^ (α : ℝ) := by
+  have hx : x ∈ Metric.ball x ε := Metric.mem_ball_self hε
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM x hx)
+  refine ContinuousLinearMap.opNorm_le_of_shell (𝕜 := ℝ) (c := (2 : ℝ)) hε
+    (by positivity) (by norm_num) fun w hwlo hwhi => ?_
+  rw [Real.norm_two] at hwlo
+  have hxw : x + w ∈ Metric.ball x ε := by
+    simpa only [Metric.mem_ball, dist_eq_norm, add_sub_cancel_left] using hwhi
+  have hseg := (convex_ball x ε).segment_subset hx hxw
+  have hT := hH.norm_apply_le_of_hasFDerivWithinAt hg hseg
+  rw [Real.rpow_add' (norm_nonneg w) (by positivity), Real.rpow_one] at hT
+  have hpow : ‖w‖ ^ (α : ℝ) ≤ ε ^ (α : ℝ) :=
+    Real.rpow_le_rpow (norm_nonneg w) hwhi.le α.coe_nonneg
+  have hrem : H * (‖w‖ * ‖w‖ ^ (α : ℝ)) ≤ H * ε ^ (α : ℝ) * ‖w‖ := by
+    nlinarith [mul_le_mul_of_nonneg_left hpow
+      (mul_nonneg H.coe_nonneg (norm_nonneg w))]
+  have herr : 2 * M ≤ (4 * M / ε) * ‖w‖ := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hε]
+    nlinarith
+  nlinarith [hM (x + w) hxw, hM x hx]
+
+/-- **Derivative comparison on a ball.** If two differentiable functions differ by at most `M`
+on a ball of radius `ε`, and their derivatives have Hölder constants `H` and `K` with a common
+exponent `α`, their derivatives at the centre differ by at most `4 M / ε + (H + K) ε^α`.
+Neither completeness nor a positive exponent is required. -/
+theorem norm_fderiv_sub_fderiv_le_of_norm_sub_le_ball {g f : E → F} {H K α : ℝ≥0}
+    {x : E} {ε M : ℝ} (hH : HolderOnWith H α (fderiv ℝ g) (Metric.ball x ε))
+    (hK : HolderOnWith K α (fderiv ℝ f) (Metric.ball x ε))
+    (hg : DifferentiableOn ℝ g (Metric.ball x ε))
+    (hf : DifferentiableOn ℝ f (Metric.ball x ε))
+    (hM : ∀ y ∈ Metric.ball x ε, ‖g y - f y‖ ≤ M) (hε : 0 < ε) :
+    ‖fderiv ℝ g x - fderiv ℝ f x‖ ≤ 4 * M / ε + (H + K) * ε ^ (α : ℝ) :=
+  (hH.sub hK).norm_le_of_hasFDerivWithinAt_ball
+    (fun y hy => (((hg y hy).differentiableAt (Metric.isOpen_ball.mem_nhds hy)).hasFDerivAt.sub
+      ((hf y hy).differentiableAt (Metric.isOpen_ball.mem_nhds hy)).hasFDerivAt).hasFDerivWithinAt)
+    hM hε
 
 /-- **Interpolation inequality on an interval.** Let `f` have derivative `f'` within `[a, b]`,
 with `f'` `β`-Hölder with constant `H` on `[a, b]` and `‖f‖ ≤ M` there. Then for every step
@@ -504,6 +575,30 @@ theorem norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove {f : E → F} {k : �
       ≤ 2 * M / ε + (⨆ y, ‖iteratedFDeriv ℝ (k + 2) f y‖) * ε := h
     _ ≤ 2 * M / ε + (32 * M / ε ^ 2 + 2 * H * ε ^ (α : ℝ)) * ε := by gcongr
     _ = 34 * M / ε + 2 * H * ε ^ (1 + (α : ℝ)) := heq
+
+/-- **Absorbed interpolation inequalities with one constant.** If `f` is `C^(k+2)` with
+`‖D^k f‖ ≤ M`, `D^(k+2) f` is bounded and globally `α`-Hölder with constant `H`, then for every
+scale `0 < ε ≤ 1` both `‖D^(k+1) f x‖` and `‖D^(k+2) f x‖` are at most
+`(34 / ε + 32 / ε²) M + 2 H ε^α`. -/
+theorem norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le {f : E → F} {k : ℕ}
+    {H α : ℝ≥0} (hH : HolderWith H α (iteratedFDeriv ℝ (k + 2) f)) (hf : ContDiff ℝ (k + 2) f)
+    {M : ℝ} (hM : ∀ y, ‖iteratedFDeriv ℝ k f y‖ ≤ M)
+    (hbdd : BddAbove (range fun y => ‖iteratedFDeriv ℝ (k + 2) f y‖)) {ε : ℝ} (hε : 0 < ε)
+    (hε1 : ε ≤ 1) (x : E) :
+    ‖iteratedFDeriv ℝ (k + 1) f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) ∧
+      ‖iteratedFDeriv ℝ (k + 2) f x‖ ≤ (34 / ε + 32 / ε ^ 2) * M + 2 * H * ε ^ (α : ℝ) := by
+  have hM0 : 0 ≤ M := (norm_nonneg _).trans (hM 0)
+  have h34 : 0 ≤ 34 * M / ε := by positivity
+  have h32 : 0 ≤ 32 * M / ε ^ 2 := by positivity
+  have hc : (34 / ε + 32 / ε ^ 2) * M = 34 * M / ε + 32 * M / ε ^ 2 := by ring
+  have hεα : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
+    Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
+  have h1 := hH.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove hf hM hbdd hε x
+  have h2 := hH.norm_iteratedFDeriv_add_two_le_of_norm_le hf hM hbdd hε x
+  rw [hc]
+  constructor
+  · nlinarith [H.coe_nonneg]
+  · linarith
 
 end HolderWith
 

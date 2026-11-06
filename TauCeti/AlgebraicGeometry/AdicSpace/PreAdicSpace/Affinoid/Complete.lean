@@ -55,9 +55,8 @@ noncomputable def presentationLimitPreAdicSpaceCompleteIso
   let hj := isOpenEmbedding_spaComapLocHom P Aplus hP ({1} : Finset A) 1 B hden
   -- The rational subset R({1}/1) is the whole space, so this restriction retains all of Spa.
   have hr : Set.range (spaComapLocHom P Aplus ({1} : Finset A) 1 B hden) = Set.univ := by
-    rw [coe_spaComapLocHom, range_spaComapLoc P Aplus hP ({1} : Finset A) 1 B hden]
-    ext x
-    simp [mem_spaBasicOpen, rationalSubset_singleton_one]
+    rw [coe_spaComapLocHom, range_spaComapLoc P Aplus hP ({1} : Finset A) 1 B hden,
+      spaBasicOpen_singleton_one, Opens.coe_top]
   let M := presentationLimitPreAdicSpace P Aplus hAplus hP
   have hrange : Set.range (Opens.inclusion' (⊤ : Opens M)) =
       Set.range (spaComapLocHom P Aplus ({1} : Finset A) 1 B hden) := by

@@ -39,35 +39,26 @@ multiple of `p ^ k` so that `b ^ n - 1` has `p`-adic valuation exactly `k`. -/
 theorem exists_modEq_pow_sub_one_eq_mul {k n b₀ : ℕ} (hn : ¬ p ∣ n)
     (hb₀ : b₀ ^ n ≡ 1 [MOD p ^ k]) :
     ∃ b : ℕ, b ≡ b₀ [MOD p ^ k] ∧ ∃ c : ℤ, (b : ℤ) ^ n - 1 = (p : ℤ) ^ k * c ∧ ¬ (p : ℤ) ∣ c := by
-  have hp : p.Prime := Fact.out
-  have hpZ : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp hp
+  have hpZ : Prime (p : ℤ) := Nat.prime_iff_prime_int.mp Fact.out
   have hn0 : n ≠ 0 := by rintro rfl; exact hn (dvd_zero p)
   rcases k with - | k
   · -- For `k = 0` the congruence is empty, and `b = 0` gives `b ^ n - 1 = -1`.
-    refine ⟨0, Nat.modEq_one, -1, by simp [zero_pow hn0], fun h ↦ hpZ.not_dvd_one ?_⟩
-    exact (dvd_neg).mp h
+    exact ⟨0, Nat.modEq_one, -1, by simp [zero_pow hn0], fun h ↦ hpZ.not_dvd_one (dvd_neg.mp h)⟩
   obtain ⟨c₀, hc₀⟩ : (p : ℤ) ^ (k + 1) ∣ (b₀ : ℤ) ^ n - 1 := by
-    simpa using (Nat.modEq_iff_dvd.mp hb₀.symm)
-  by_cases hc₀p : (p : ℤ) ∣ c₀
-  · -- Replace `b₀` by `b₀ + p ^ (k + 1)`: the derivative term `n b₀ ^ (n - 1)` is prime to `p`.
-    have hb₀p : ¬ (p : ℤ) ∣ b₀ := by
-      intro h
-      have h1 : (p : ℤ) ∣ (b₀ : ℤ) ^ n - 1 :=
-        hc₀ ▸ dvd_mul_of_dvd_left (dvd_pow_self _ k.succ_ne_zero) _
-      exact hpZ.not_dvd_one ((dvd_sub_right (dvd_pow h hn0)).mp h1)
-    obtain ⟨m, hm⟩ := sq_dvd_add_pow_sub_sub ((p : ℤ) ^ (k + 1)) (b₀ : ℤ) n
-    refine ⟨b₀ + p ^ (k + 1), Nat.add_modEq_right,
-      c₀ + (b₀ : ℤ) ^ (n - 1) * n + (p : ℤ) ^ (k + 1) * m, ?_, ?_⟩
-    · push_cast
-      linear_combination hc₀ + hm
-    · intro hdvd
-      have hsplit : c₀ + (b₀ : ℤ) ^ (n - 1) * n + (p : ℤ) ^ (k + 1) * m =
-          (b₀ : ℤ) ^ (n - 1) * n + (c₀ + (p : ℤ) ^ (k + 1) * m) := by ring
-      rw [hsplit, dvd_add_left (dvd_add hc₀p
-        (dvd_mul_of_dvd_left (dvd_pow_self _ k.succ_ne_zero) _))] at hdvd
-      rcases hpZ.dvd_or_dvd hdvd with h | h
-      · exact hb₀p (hpZ.dvd_of_dvd_pow h)
-      · exact hn (Int.natCast_dvd_natCast.mp h)
+    simpa using Nat.modEq_iff_dvd.mp hb₀.symm
+  rcases em' ((p : ℤ) ∣ c₀) with hc₀p | hc₀p
   · exact ⟨b₀, Nat.ModEq.refl _, c₀, hc₀, hc₀p⟩
+  -- Replace `b₀` by `b₀ + p ^ (k + 1)`: the derivative term `n b₀ ^ (n - 1)` is prime to `p`.
+  have hpk : (p : ℤ) ∣ (p : ℤ) ^ (k + 1) := dvd_pow_self _ k.succ_ne_zero
+  have hb₀p : ¬ (p : ℤ) ∣ b₀ := fun h ↦ hpZ.not_dvd_one <|
+    (dvd_sub_right (dvd_pow h hn0)).mp (hc₀ ▸ dvd_mul_of_dvd_left hpk _)
+  obtain ⟨m, hm⟩ := sq_dvd_add_pow_sub_sub ((p : ℤ) ^ (k + 1)) (b₀ : ℤ) n
+  refine ⟨b₀ + p ^ (k + 1), Nat.add_modEq_right,
+    (b₀ : ℤ) ^ (n - 1) * n + (c₀ + (p : ℤ) ^ (k + 1) * m), ?_, fun h ↦ ?_⟩
+  · push_cast
+    linear_combination hc₀ + hm
+  rw [dvd_add_left (dvd_add hc₀p (dvd_mul_of_dvd_left hpk _))] at h
+  exact (hpZ.dvd_or_dvd h).elim (fun h ↦ hb₀p (hpZ.dvd_of_dvd_pow h))
+    fun h ↦ hn (Int.natCast_dvd_natCast.mp h)
 
 end TauCeti

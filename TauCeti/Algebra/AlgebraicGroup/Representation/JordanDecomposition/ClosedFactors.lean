@@ -65,16 +65,16 @@ noncomputable abbrev unipotentFactor : _root_.CommHopfAlgCat.{u} k :=
 /-- The closed semisimple factor is commutative. -/
 noncomputable instance instIsCocommSemisimpleFactor :
     Coalgebra.IsCocomm k (semisimpleFactor k H) :=
-  (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom
-    (semisimplePartBialgHom k H))).hom.toCoalgHom.isCocomm_of_surjective
-      (CommHopfAlgCat.mkImage_surjective _)
+  Coalgebra.IsCocomm.of_surjective
+    (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom (semisimplePartBialgHom k H))).hom
+    (CommHopfAlgCat.mkImage_surjective _)
 
 /-- The closed unipotent factor is commutative. -/
 noncomputable instance instIsCocommUnipotentFactor :
     Coalgebra.IsCocomm k (unipotentFactor k H) :=
-  (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom
-    (unipotentPartBialgHom k H))).hom.toCoalgHom.isCocomm_of_surjective
-      (CommHopfAlgCat.mkImage_surjective _)
+  Coalgebra.IsCocomm.of_surjective
+    (CommHopfAlgCat.mkImage (_root_.CommHopfAlgCat.ofHom (unipotentPartBialgHom k H))).hom
+    (CommHopfAlgCat.mkImage_surjective _)
 
 /-- The closed semisimple factor is smooth. -/
 noncomputable instance instSmoothSemisimpleFactor : Algebra.Smooth k (semisimpleFactor k H) :=

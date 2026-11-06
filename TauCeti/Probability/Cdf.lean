@@ -258,6 +258,12 @@ theorem exists_nat_le_measureReal_Iic {u : ℝ} (hu : u < 1) : ∃ k : ℕ, u �
   have h := hx.trans (monotone_cdf (μ.map (Nat.cast : ℕ → ℝ)) (Nat.le_ceil x))
   simpa only [cdf_map_natCast μ (Nat.cast_nonneg _), Nat.floor_natCast] using h
 
+/-- Every level below one is strictly below some cumulative mass of a natural-valued law. -/
+theorem exists_nat_lt_measureReal_Iic {u : ℝ} (hu : u < 1) :
+    ∃ n : ℕ, u < μ.real (Iic n) := by
+  obtain ⟨n, hn⟩ := μ.exists_nat_le_measureReal_Iic (u := (u + 1) / 2) (by linarith)
+  exact ⟨n, lt_of_lt_of_le (by linarith) hn⟩
+
 /-- The cumulative distribution function of a real probability measure `ν` is continuous at `x`
 if and only if `ν` assigns mass zero to `{x}`. -/
 theorem continuousAt_cdf_iff (ν : Measure ℝ) [IsProbabilityMeasure ν] (x : ℝ) :
