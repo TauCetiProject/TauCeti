@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Instances.Icc
 public import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 public import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
@@ -428,43 +429,6 @@ private theorem tangentCoordChange_tangent_eventuallyEq [IsManifold I 1 M] {x x�
   filter_upwards [hN] with a ha
   exact extChartAt_tangent_symm_trans_eq z q ha
 
-/-- The derivative within `s ×ˢ univ` of `a ↦ (F a.1, C a.1 a.2)`, evaluated at `(u, w)`, for
-`F : E → E` and `C : E → E →L[𝕜] E` differentiable within `s` at the base point. -/
-theorem fderivWithin_prodMk_fst_clm_apply_snd {s : Set E} {a₀ : E} {F : E → E}
-    {C : E → E →L[𝕜] E} (hF : DifferentiableWithinAt 𝕜 F s a₀)
-    (hC : DifferentiableWithinAt 𝕜 C s a₀) (hs : UniqueDiffWithinAt 𝕜 s a₀) {u : E} (w : E) :
-    (fderivWithin 𝕜 (fun a : E × E ↦ (F a.1, C a.1 a.2)) (s ×ˢ univ) (a₀, u)) (u, w) =
-      (fderivWithin 𝕜 F s a₀ u, fderivWithin 𝕜 C s a₀ u u + C a₀ w) := by
-  have hmaps : MapsTo (Prod.fst : E × E → E) (s ×ˢ univ) s := fun _ h ↦ h.1
-  have huniq : UniqueDiffWithinAt 𝕜 (s ×ˢ univ) (a₀, u) :=
-    hs.prod uniqueDiffWithinAt_univ
-  -- The calculus lemmas below are stated for explicit compositions with the two projections.
-  -- The `change` steps only eta-expand those compositions and their derivatives.
-  have hFp : DifferentiableWithinAt 𝕜 (fun a : E × E ↦ F a.1) (s ×ˢ univ) (a₀, u) := by
-    change DifferentiableWithinAt 𝕜 (F ∘ Prod.fst) (s ×ˢ univ) (a₀, u)
-    exact hF.comp (a₀, u) differentiableWithinAt_fst hmaps
-  have hCp : DifferentiableWithinAt 𝕜 (fun a : E × E ↦ C a.1) (s ×ˢ univ) (a₀, u) := by
-    change DifferentiableWithinAt 𝕜 (C ∘ Prod.fst) (s ×ˢ univ) (a₀, u)
-    exact hC.comp (a₀, u) differentiableWithinAt_fst hmaps
-  have hAp : DifferentiableWithinAt 𝕜 (fun a : E × E ↦ C a.1 a.2) (s ×ˢ univ) (a₀, u) :=
-    hCp.clm_apply differentiableWithinAt_snd
-  have hFp_eq := fderivWithin_comp (a₀, u) hF differentiableWithinAt_fst hmaps huniq
-  change fderivWithin 𝕜 (fun a : E × E ↦ F a.1) (s ×ˢ univ) (a₀, u) = _ at hFp_eq
-  have hCp_eq := fderivWithin_comp (a₀, u) hC differentiableWithinAt_fst hmaps huniq
-  change fderivWithin 𝕜 (fun a : E × E ↦ C a.1) (s ×ˢ univ) (a₀, u) = _ at hCp_eq
-  have hAp_eq := fderivWithin_clm_apply huniq hCp differentiableWithinAt_snd
-  change fderivWithin 𝕜 (fun a : E × E ↦ C a.1 a.2) (s ×ˢ univ) (a₀, u) = _ at hAp_eq
-  have hfst_app : (fderivWithin 𝕜 (Prod.fst : E × E → E) (s ×ˢ univ) (a₀, u)) (u, w) = u := by
-    rw [fderivWithin_fst huniq]
-    rfl
-  have hsnd_app : (fderivWithin 𝕜 (Prod.snd : E × E → E) (s ×ˢ univ) (a₀, u)) (u, w) = w := by
-    rw [fderivWithin_snd huniq]
-    rfl
-  rw [hFp.fderivWithin_prodMk hAp huniq, ContinuousLinearMap.prod_apply, hFp_eq,
-    hAp_eq, hCp_eq]
-  simp only [ContinuousLinearMap.comp_apply, add_apply, ContinuousLinearMap.flip_apply]
-  rw [hfst_app, hsnd_app, add_comm]
-
 private theorem fderivWithin_tangentCoordChange_tangent_model [IsManifold I 2 M] {x x₀ : M}
     (hx₀ : x ∈ (extChartAt I x₀).source) (u w : E) :
     (fderivWithin 𝕜 (fun a : E × E ↦
@@ -506,7 +470,7 @@ private theorem fderivWithin_tangentCoordChange_tangent_model [IsManifold I 2 M]
   have huniqBase : UniqueDiffWithinAt 𝕜 (range I) a₀ := I.uniqueDiffWithinAt_image
   change (fderivWithin 𝕜 (fun a : E × E ↦ (F a.1, C a.1 a.2))
     (range I ×ˢ univ) (a₀, u)) (u, w) = _
-  rw [fderivWithin_prodMk_fst_clm_apply_snd hF hC huniqBase]
+  rw [TauCeti.fderivWithin_prodMk_fst_clm_apply_snd hF hC huniqBase]
   simp only [C, a₀, extChartAt_to_inv]
   have hFderiv : fderivWithin 𝕜 F (range I) a₀ = tangentCoordChange I x x₀ x := by
     rw [tangentCoordChange_def]
