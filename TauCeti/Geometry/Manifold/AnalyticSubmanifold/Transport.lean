@@ -151,15 +151,15 @@ theorem isMAnalyticSubmanifold_image (Φ : OpenPartialHomeomorph M N)
   let C_J := (chartAt H' (Φ x)).extendTrans J e'.toHomeomorph
   let Ψ := C_I.symm.trans (Φ.trans C_J)
   have hΨ : AnalyticOnNhd 𝕜 Ψ Ψ.source :=
-    Φ.analyticOnNhd_extendTrans_symm_trans_map hΦ (chart_mem_maximalAtlas x)
-      (chart_mem_maximalAtlas (Φ x))
+    Φ.analyticOnNhd_extendTrans_symm_trans_map hΦ e.symm.contDiff e'.contDiff
+      (chart_mem_maximalAtlas x) (chart_mem_maximalAtlas (Φ x))
   have hΨ_symm : AnalyticOnNhd 𝕜 Ψ.symm Ψ.target := by
     have hΨs : Ψ.symm = C_J.symm.trans (Φ.symm.trans C_I) := by
       simp only [Ψ, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
         OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_assoc]
     rw [← Ψ.symm_source, hΨs]
-    exact Φ.symm.analyticOnNhd_extendTrans_symm_trans_map hΦs (chart_mem_maximalAtlas (Φ x))
-      (chart_mem_maximalAtlas x)
+    exact Φ.symm.analyticOnNhd_extendTrans_symm_trans_map hΦs e'.symm.contDiff e.contDiff
+      (chart_mem_maximalAtlas (Φ x)) (chart_mem_maximalAtlas x)
   have hxCI : x ∈ C_I.source := by simp [C_I]
   have hxΨ : C_I x ∈ Ψ.source :=
     ⟨C_I.map_source hxCI, by simpa [C_I.left_inv hxCI] using hxΦ,
