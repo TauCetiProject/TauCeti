@@ -5,11 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+public import Mathlib.Geometry.Manifold.IsManifold.Basic
 
 /-!
-# Disjoint coordinate balls about finitely many points
+# Coordinate balls
+
+In a manifold whose model with corners `I : ModelWithCorners ℝ E H` has no boundary, every
+neighbourhood of a point contains an open neighbourhood of that point homeomorphic to `E`: the
+inverse chart image of a small ball about the point
+(`TauCeti.exists_isOpen_mem_subset_homeomorph`).
 
 Let `X` be a Hausdorff space charted on a real normed space `E`. Finitely many points of `X` have
 pairwise disjoint coordinate balls about them: for a finite `S ⊆ X` and `r > 0`, there is an open
@@ -19,12 +24,46 @@ the disjoint open sets given by `Set.Finite.t2_separation`.
 
 ## Main results
 
+* `TauCeti.exists_isOpen_mem_subset_homeomorph`: open neighbourhoods homeomorphic to the model
+  vector space.
 * `Set.Finite.exists_isOpenEmbedding_prod_ball`: the open embedding of `S × ball 0 r`.
 -/
 
 public section
 
 open Metric Set Topology
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M]
+
+variable (I) in
+/-- **Euclidean neighbourhoods in a boundaryless manifold.** If the model with corners `I` has no
+boundary, every neighbourhood `W` of a point `x` contains an open neighbourhood of `x`
+homeomorphic to the model vector space `E`, namely the inverse chart image of a small ball about
+the image of `x`. -/
+theorem exists_isOpen_mem_subset_homeomorph (I : ModelWithCorners ℝ E H) [I.Boundaryless]
+    {x : M} {W : Set M} (hW : W ∈ 𝓝 x) :
+    ∃ U : Set M, IsOpen U ∧ x ∈ U ∧ U ⊆ W ∧ Nonempty (U ≃ₜ E) := by
+  -- The chart at `x`, read in `E`.
+  set c := (chartAt H x).trans I.toHomeomorph.toOpenPartialHomeomorph
+  have hx : x ∈ c.source := by simp [c, mem_chart_source]
+  obtain ⟨r, hr, hball⟩ := Metric.mem_nhds_iff.1 (Filter.inter_mem
+    (c.open_target.mem_nhds (c.map_source hx))
+    ((c.continuousAt_symm (c.map_source hx)).preimage_mem_nhds (by rwa [c.left_inv hx])))
+  have hsub : ball (c x) r ⊆ c.symm.source := fun y hy ↦ (hball hy).1
+  -- The ball is homeomorphic to `E`.
+  let e : ball (c x) r ≃ₜ E :=
+    ((Homeomorph.setCongr (OpenPartialHomeomorph.univBall_target (c x) hr).symm).trans
+      (OpenPartialHomeomorph.univBall (c x) r).toHomeomorphSourceTarget.symm).trans
+      ((Homeomorph.setCongr (OpenPartialHomeomorph.univBall_source (c x) r)).trans
+        (Homeomorph.Set.univ E))
+  exact ⟨c.symm '' ball (c x) r, c.symm.isOpen_image_of_subset_source isOpen_ball hsub,
+    ⟨c x, mem_ball_self hr, c.left_inv hx⟩, image_subset_iff.2 fun y hy ↦ (hball hy).2,
+    ⟨(c.symm.homeomorphOfImageSubsetSource hsub rfl).symm.trans e⟩⟩
+
+end TauCeti
 
 namespace Set.Finite
 
