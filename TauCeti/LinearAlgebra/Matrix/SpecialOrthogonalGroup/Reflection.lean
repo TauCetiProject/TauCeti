@@ -335,6 +335,196 @@ private theorem exists_laurentPath_of_pathData [Fintype n] {v w : n → K}
       reflectionMatrix (pathVector v w X Y) E).map (φ : K[T;T⁻¹] →+* K) = _
     rw [map_reflectionMatrix_mul, reflectionMatrix_comp_pathVector_right φ hX hY]
 
+/-- In the degenerate case the Laurent path is an affine line of vectors of constant norm joining a
+multiple of `v` to a multiple of `w`. -/
+private theorem exists_laurentPath_reflectionMatrix_mul_of_degenerate [Fintype n]
+    [NeZero (2 : K)] {v w : n → K} {c d : K} (hc : c * (v ⬝ᵥ v) = 2) (hd : d * (w ⬝ᵥ w) = 2)
+    (hdeg : (v ⬝ᵥ w) * (v ⬝ᵥ w) - (v ⬝ᵥ v) * (w ⬝ᵥ w) = 0) :
+    ∃ (M : Matrix.specialOrthogonalGroup n K[T;T⁻¹]) (a b : Kˣ),
+      ∀ φ : K[T;T⁻¹] →ₐ[K] K,
+        (φ (T 1) = (a : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) = 1) ∧
+        (φ (T 1) = (b : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) =
+          reflectionMatrix v c * reflectionMatrix w d) := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne _)
+  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
+  have hqv : v ⬝ᵥ v ≠ 0 := fun h => h2 (by rw [← hc, h, mul_zero])
+  have hqw : w ⬝ᵥ w ≠ 0 := fun h => h2 (by rw [← hd, h, mul_zero])
+  have hcv : c = 2 / (v ⬝ᵥ v) := (eq_div_iff hqv).mpr hc
+  have hdw : d = 2 / (w ⬝ᵥ w) := (eq_div_iff hqw).mpr hd
+  -- An affine line of vectors of constant norm joins a multiple of `v` to a multiple of `w`.
+  have hbb : (v ⬝ᵥ w) * (v ⬝ᵥ w) = (v ⬝ᵥ v) * (w ⬝ᵥ w) := sub_eq_zero.mp hdeg
+  have hC : (C (v ⬝ᵥ w) : K[T;T⁻¹]) * C (v ⬝ᵥ w) = C (v ⬝ᵥ v) * C (w ⬝ᵥ w) := by
+    rw [← map_mul, ← map_mul, hbb]
+  have hκ : (v ⬝ᵥ v) * (v ⬝ᵥ v) * (w ⬝ᵥ w) ≠ 0 := mul_ne_zero (mul_ne_zero hqv hqv) hqw
+  have hu : pathVector v w ((2 - T 1) * C (v ⬝ᵥ w)) ((T 1 - 1) * C (v ⬝ᵥ v)) ⬝ᵥ
+      pathVector v w ((2 - T 1) * C (v ⬝ᵥ w)) ((T 1 - 1) * C (v ⬝ᵥ v)) =
+        C ((v ⬝ᵥ v) * (v ⬝ᵥ v) * (w ⬝ᵥ w)) := by
+    rw [pathVector_dotProduct, map_mul, map_mul]
+    linear_combination ((2 * T 1 - T 1 * T 1) * C (v ⬝ᵥ v)) * hC
+  refine exists_laurentPath_of_pathData hc ((2 - T 1) * C (v ⬝ᵥ w))
+    ((T 1 - 1) * C (v ⬝ᵥ v)) (C (2 / ((v ⬝ᵥ v) * (v ⬝ᵥ v) * (w ⬝ᵥ w)))) 1
+    (unitOfInvertible (2 : K)) ?_ ?_ ?_
+  · rw [hu, ← map_mul, div_mul_cancel₀ _ hκ, map_ofNat]
+  · intro φ hφ
+    have hφ1 : φ (T 1) = 1 := by rw [hφ, Units.val_one]
+    have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = v ⬝ᵥ w := by
+      rw [map_mul, map_sub, map_ofNat, hφ1, C_eq_algebraMap, AlgHom.commutes,
+        Algebra.algebraMap_self_apply]
+      ring
+    have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = 0 := by
+      rw [map_mul, map_sub, map_one, hφ1, C_eq_algebraMap, AlgHom.commutes,
+        Algebra.algebraMap_self_apply]
+      ring
+    refine ⟨hY, ?_⟩
+    rw [hX, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hbb, hcv]
+    field_simp
+  · intro φ hφ
+    have hφ2 : φ (T 1) = 2 := by rw [hφ, val_unitOfInvertible]
+    have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = 0 := by
+      rw [map_mul, map_sub, map_ofNat, hφ2, sub_self, zero_mul]
+    have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = v ⬝ᵥ v := by
+      rw [map_mul, map_sub, map_one, hφ2, C_eq_algebraMap, AlgHom.commutes,
+        Algebra.algebraMap_self_apply]
+      ring
+    refine ⟨hX, ?_⟩
+    rw [hY, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hdw]
+    field_simp
+
+omit [DecidableEq n] in
+/-- The squared norm of the moving vector in the nondegenerate case, where `s * s` is the
+discriminant `(v ⬝ᵥ w) * (v ⬝ᵥ w) - (v ⬝ᵥ v) * (w ⬝ᵥ w)`. -/
+private theorem pathVector_dotProduct_nondegenerate [Fintype n] {v w : n → K} {s : K}
+    (hs : s * s = (v ⬝ᵥ w) * (v ⬝ᵥ w) - (v ⬝ᵥ v) * (w ⬝ᵥ w)) :
+    pathVector v w (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s))
+        (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) ⬝ᵥ
+      pathVector v w (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s))
+        (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) =
+      C (-(4 * (v ⬝ᵥ v) * (s * s))) * T 1 := by
+  have hC : (C s : K[T;T⁻¹]) * C s = C (v ⬝ᵥ w) * C (v ⬝ᵥ w) - C (v ⬝ᵥ v) * C (w ⬝ᵥ w) := by
+    rw [← map_mul, ← map_mul, ← map_mul, ← map_sub, hs]
+  rw [pathVector_dotProduct]
+  have hRHS : (C (-(4 * (v ⬝ᵥ v) * (s * s))) : K[T;T⁻¹]) =
+      -(4 * C (v ⬝ᵥ v) * (C s * C s)) := by
+    rw [map_neg, map_mul, map_mul, map_mul, map_ofNat]
+  rw [hRHS]
+  linear_combination (C (v ⬝ᵥ v) * (1 + T 1) * (1 + T 1)) * hC
+
+/-- The normalizing scalar `E = -(2 a s²)⁻¹ T⁻¹` of the nondegenerate path satisfies
+`E * (-(4 a s²) T) = 2`, where `-(4 a s²) T` is the squared norm of the moving vector. -/
+private theorem laurent_normalization_eq_two [NeZero (2 : K)] {a s : K} (ha : a ≠ 0)
+    (hs0 : s ≠ 0) :
+    C (-(2 * a * (s * s))⁻¹) * T (-1) * (C (-(4 * a * (s * s))) * T 1) = (2 : K[T;T⁻¹]) := by
+  have hT : (T (-1) : K[T;T⁻¹]) * T 1 = 1 := by
+    rw [← T_add]
+    norm_num
+  calc C (-(2 * a * (s * s))⁻¹) * T (-1) * (C (-(4 * a * (s * s))) * T 1)
+      = C (-(2 * a * (s * s))⁻¹) * C (-(4 * a * (s * s))) * ((T (-1) : K[T;T⁻¹]) * T 1) := by
+        ring
+    _ = C (-(2 * a * (s * s))⁻¹ * -(4 * a * (s * s))) := by rw [hT, mul_one, ← map_mul]
+    _ = 2 := by
+        -- Isolate the coefficient-field identity so `rw` can rewrite beneath `C`.
+        rw [show -(2 * a * (s * s))⁻¹ * -(4 * a * (s * s)) = 2 by
+          field_simp
+          ring]
+        exact map_ofNat C 2
+
+/-- At the parameter `-1` of the nondegenerate path, the moving vector is proportional to `v`. -/
+private theorem eval_nondegenerate_of_eq_neg_one [NeZero (2 : K)] {a b s : K} (ha : a ≠ 0)
+    (hs0 : s ≠ 0) (φ : K[T;T⁻¹] →ₐ[K] K) (hφ : φ (T 1) = -1) :
+    φ (C a + T 1 * C a) = 0 ∧
+      φ (-C b + C s + T 1 * (-C b - C s)) * φ (-C b + C s + T 1 * (-C b - C s)) *
+        φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) = 2 / a := by
+  have hφ2 : φ (T (-1)) = -1 := by
+    rw [laurentEval_unique _ φ (show φ (T 1) = ((-1 : Kˣ) : K) by rw [hφ, Units.val_neg,
+      Units.val_one]), laurentEval_T, zpow_neg, zpow_one, Units.val_inv_eq_inv_val, Units.val_neg,
+      Units.val_one]
+    norm_num
+  have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 2 * s := by
+    simp only [map_add, map_neg, map_mul, map_sub, C_eq_algebraMap, AlgHom.commutes,
+      Algebra.algebraMap_self_apply, hφ]
+    ring
+  have hY : φ (C a + T 1 * C a) = 0 := by
+    simp only [map_add, map_mul, C_eq_algebraMap, AlgHom.commutes,
+      Algebra.algebraMap_self_apply, hφ]
+    ring
+  have hEv : φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) = (2 * a * (s * s))⁻¹ := by
+    rw [map_mul, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hφ2]
+    ring
+  refine ⟨hY, ?_⟩
+  rw [hX, hEv]
+  field_simp
+
+/-- At the parameter `-(b - s) / (b + s)` of the nondegenerate path, the moving vector is
+proportional to `w`; here `a = v ⬝ᵥ v`, `b = v ⬝ᵥ w`, `q = w ⬝ᵥ w` and `(b + s) (b - s) = a q`. -/
+private theorem eval_nondegenerate_of_eq_div [NeZero (2 : K)] {a b s q : K} (ha : a ≠ 0)
+    (hq : q ≠ 0) (hs0 : s ≠ 0) (hbps : b + s ≠ 0) (hbms : b - s ≠ 0)
+    (hfac : (b + s) * (b - s) = a * q) (φ : K[T;T⁻¹] →ₐ[K] K) (u : Kˣ)
+    (hu : (u : K) = -((b - s) / (b + s))) (hφ : φ (T 1) = u) :
+    φ (-C b + C s + T 1 * (-C b - C s)) = 0 ∧
+      φ (C a + T 1 * C a) * φ (C a + T 1 * C a) * φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) =
+        2 / q := by
+  have hφ1 : φ (T 1) = -((b - s) / (b + s)) := by rw [hφ, hu]
+  have hφ2 : φ (T (-1)) = -((b + s) / (b - s)) := by
+    rw [laurentEval_unique _ φ hφ, laurentEval_T, zpow_neg, zpow_one,
+      Units.val_inv_eq_inv_val, hu, ← neg_inv, inv_div]
+  have hX : φ (-C b + C s + T 1 * (-C b - C s)) = 0 := by
+    simp only [map_add, map_neg, map_mul, map_sub, C_eq_algebraMap, AlgHom.commutes,
+      Algebra.algebraMap_self_apply, hφ1]
+    field_simp
+    ring
+  have hY : φ (C a + T 1 * C a) = a * (2 * s) / (b + s) := by
+    simp only [map_add, map_mul, C_eq_algebraMap, AlgHom.commutes,
+      Algebra.algebraMap_self_apply, hφ1]
+    field_simp
+    ring
+  have hEv : φ (C (-(2 * a * (s * s))⁻¹) * T (-1)) =
+      (b + s) / ((b - s) * (2 * a * (s * s))) := by
+    rw [map_mul, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hφ2]
+    field_simp
+  have hms : b - s = a * q / (b + s) := by
+    field_simp
+    linear_combination hfac
+  refine ⟨hX, ?_⟩
+  rw [hY, hEv, hms]
+  field_simp
+
+/-- In the nondegenerate case the plane has an isotropic basis, and `e + t • f` sweeps out its
+anisotropic lines as `t` runs through the units. -/
+private theorem exists_laurentPath_reflectionMatrix_mul_of_nondegenerate [Fintype n]
+    [NeZero (2 : K)] [IsAlgClosed K] {v w : n → K} {c d : K} (hc : c * (v ⬝ᵥ v) = 2)
+    (hd : d * (w ⬝ᵥ w) = 2) (hdeg : (v ⬝ᵥ w) * (v ⬝ᵥ w) - (v ⬝ᵥ v) * (w ⬝ᵥ w) ≠ 0) :
+    ∃ (M : Matrix.specialOrthogonalGroup n K[T;T⁻¹]) (a b : Kˣ),
+      ∀ φ : K[T;T⁻¹] →ₐ[K] K,
+        (φ (T 1) = (a : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) = 1) ∧
+        (φ (T 1) = (b : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) =
+          reflectionMatrix v c * reflectionMatrix w d) := by
+  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
+  have hqv : v ⬝ᵥ v ≠ 0 := fun h => h2 (by rw [← hc, h, mul_zero])
+  have hqw : w ⬝ᵥ w ≠ 0 := fun h => h2 (by rw [← hd, h, mul_zero])
+  have hcv : c = 2 / (v ⬝ᵥ v) := (eq_div_iff hqv).mpr hc
+  have hdw : d = 2 / (w ⬝ᵥ w) := (eq_div_iff hqw).mpr hd
+  obtain ⟨s, hs⟩ := IsAlgClosed.exists_pow_nat_eq
+    ((v ⬝ᵥ w) * (v ⬝ᵥ w) - (v ⬝ᵥ v) * (w ⬝ᵥ w)) (n := 2) (by norm_num)
+  rw [pow_two] at hs
+  have hs0 : s ≠ 0 := fun h => hdeg (by rw [← hs, h, mul_zero])
+  have hfac : ((v ⬝ᵥ w) + s) * ((v ⬝ᵥ w) - s) = (v ⬝ᵥ v) * (w ⬝ᵥ w) := by
+    linear_combination -hs
+  have hqvw : (v ⬝ᵥ v) * (w ⬝ᵥ w) ≠ 0 := mul_ne_zero hqv hqw
+  have hbps : (v ⬝ᵥ w) + s ≠ 0 := fun h => hqvw (by rw [← hfac, h, zero_mul])
+  have hbms : (v ⬝ᵥ w) - s ≠ 0 := fun h => hqvw (by rw [← hfac, h, mul_zero])
+  refine exists_laurentPath_of_pathData hc (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s))
+    (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) (C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * T (-1)) (-1)
+    (Units.mk0 (-(((v ⬝ᵥ w) - s) / ((v ⬝ᵥ w) + s))) (by
+      simp only [ne_eq, neg_eq_zero, div_eq_zero_iff, not_or]
+      exact ⟨hbms, hbps⟩)) ?_ (fun φ hφ => ?_) fun φ hφ => ?_
+  · rw [pathVector_dotProduct_nondegenerate hs, laurent_normalization_eq_two hqv hs0]
+  · obtain ⟨hY, hE⟩ := eval_nondegenerate_of_eq_neg_one (b := v ⬝ᵥ w) hqv hs0 φ
+      (by rw [hφ, Units.val_neg, Units.val_one])
+    exact ⟨hY, by rw [hcv, hE]⟩
+  · obtain ⟨hX, hE⟩ := eval_nondegenerate_of_eq_div hqv hqw hs0 hbps hbms hfac φ _
+      (Units.val_mk0 _) hφ
+    exact ⟨hX, by rw [hdw, hE]⟩
+
 /-- **Every product of two reflections is joined to the identity by a one-parameter family of
 special orthogonal matrices over the Laurent polynomials.**
 
@@ -352,142 +542,9 @@ theorem exists_laurentPath_reflectionMatrix_mul [Fintype n] [NeZero (2 : K)] [Is
         (φ (T 1) = (a : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) = 1) ∧
         (φ (T 1) = (b : K) → (M : Matrix n n K[T;T⁻¹]).map (φ : K[T;T⁻¹] →+* K) =
           reflectionMatrix v c * reflectionMatrix w d) := by
-  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne _)
-  have h2 : (2 : K) ≠ 0 := NeZero.ne (2 : K)
-  have hqv : v ⬝ᵥ v ≠ 0 := fun h => h2 (by rw [← hc, h, mul_zero])
-  have hqw : w ⬝ᵥ w ≠ 0 := fun h => h2 (by rw [← hd, h, mul_zero])
-  have hcv : c = 2 / (v ⬝ᵥ v) := (eq_div_iff hqv).mpr hc
-  have hdw : d = 2 / (w ⬝ᵥ w) := (eq_div_iff hqw).mpr hd
-  have hT : (T (-1) : K[T;T⁻¹]) * T 1 = 1 := by
-    rw [← T_add]
-    norm_num
   by_cases hdeg : (v ⬝ᵥ w) * (v ⬝ᵥ w) - (v ⬝ᵥ v) * (w ⬝ᵥ w) = 0
-  · -- The plane spanned by `v` and `w` is degenerate: an affine line of vectors of constant
-    -- norm joins a multiple of `v` to a multiple of `w`.
-    have hbb : (v ⬝ᵥ w) * (v ⬝ᵥ w) = (v ⬝ᵥ v) * (w ⬝ᵥ w) := sub_eq_zero.mp hdeg
-    have hC : (C (v ⬝ᵥ w) : K[T;T⁻¹]) * C (v ⬝ᵥ w) = C (v ⬝ᵥ v) * C (w ⬝ᵥ w) := by
-      rw [← map_mul, ← map_mul, hbb]
-    have hκ : (v ⬝ᵥ v) * (v ⬝ᵥ v) * (w ⬝ᵥ w) ≠ 0 := mul_ne_zero (mul_ne_zero hqv hqv) hqw
-    have hu : pathVector v w ((2 - T 1) * C (v ⬝ᵥ w)) ((T 1 - 1) * C (v ⬝ᵥ v)) ⬝ᵥ
-        pathVector v w ((2 - T 1) * C (v ⬝ᵥ w)) ((T 1 - 1) * C (v ⬝ᵥ v)) =
-          C ((v ⬝ᵥ v) * (v ⬝ᵥ v) * (w ⬝ᵥ w)) := by
-      rw [pathVector_dotProduct, map_mul, map_mul]
-      linear_combination ((2 * T 1 - T 1 * T 1) * C (v ⬝ᵥ v)) * hC
-    refine exists_laurentPath_of_pathData hc ((2 - T 1) * C (v ⬝ᵥ w))
-      ((T 1 - 1) * C (v ⬝ᵥ v)) (C (2 / ((v ⬝ᵥ v) * (v ⬝ᵥ v) * (w ⬝ᵥ w)))) 1
-      (unitOfInvertible (2 : K)) ?_ ?_ ?_
-    · rw [hu, ← map_mul, div_mul_cancel₀ _ hκ, map_ofNat]
-    · intro φ hφ
-      have hφ1 : φ (T 1) = 1 := by rw [hφ, Units.val_one]
-      have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = v ⬝ᵥ w := by
-        rw [map_mul, map_sub, map_ofNat, hφ1, C_eq_algebraMap, AlgHom.commutes,
-          Algebra.algebraMap_self_apply]
-        ring
-      have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = 0 := by
-        rw [map_mul, map_sub, map_one, hφ1, C_eq_algebraMap, AlgHom.commutes,
-          Algebra.algebraMap_self_apply]
-        ring
-      refine ⟨hY, ?_⟩
-      rw [hX, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hbb, hcv]
-      field_simp
-    · intro φ hφ
-      have hφ2 : φ (T 1) = 2 := by rw [hφ, val_unitOfInvertible]
-      have hX : φ ((2 - T 1) * C (v ⬝ᵥ w)) = 0 := by
-        rw [map_mul, map_sub, map_ofNat, hφ2, sub_self, zero_mul]
-      have hY : φ ((T 1 - 1) * C (v ⬝ᵥ v)) = v ⬝ᵥ v := by
-        rw [map_mul, map_sub, map_one, hφ2, C_eq_algebraMap, AlgHom.commutes,
-          Algebra.algebraMap_self_apply]
-        ring
-      refine ⟨hX, ?_⟩
-      rw [hY, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hdw]
-      field_simp
-  · -- The plane spanned by `v` and `w` is nondegenerate: it has an isotropic basis `e`, `f`,
-    -- and `e + t • f` sweeps out its anisotropic lines as `t` runs through the units.
-    obtain ⟨s, hs⟩ := IsAlgClosed.exists_pow_nat_eq
-      ((v ⬝ᵥ w) * (v ⬝ᵥ w) - (v ⬝ᵥ v) * (w ⬝ᵥ w)) (n := 2) (by norm_num)
-    rw [pow_two] at hs
-    have hs0 : s ≠ 0 := fun h => hdeg (by rw [← hs, h, mul_zero])
-    have hfac : ((v ⬝ᵥ w) + s) * ((v ⬝ᵥ w) - s) = (v ⬝ᵥ v) * (w ⬝ᵥ w) := by
-      linear_combination -hs
-    have hqvw : (v ⬝ᵥ v) * (w ⬝ᵥ w) ≠ 0 := mul_ne_zero hqv hqw
-    have hbps : (v ⬝ᵥ w) + s ≠ 0 := fun h => hqvw (by rw [← hfac, h, zero_mul])
-    have hbms : (v ⬝ᵥ w) - s ≠ 0 := fun h => hqvw (by rw [← hfac, h, mul_zero])
-    have hC : (C s : K[T;T⁻¹]) * C s = C (v ⬝ᵥ w) * C (v ⬝ᵥ w) - C (v ⬝ᵥ v) * C (w ⬝ᵥ w) := by
-      rw [← map_mul, ← map_mul, ← map_mul, ← map_sub, hs]
-    have hu : pathVector v w (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s))
-        (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) ⬝ᵥ
-          pathVector v w (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s))
-            (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) =
-          C (-(4 * (v ⬝ᵥ v) * (s * s))) * T 1 := by
-      rw [pathVector_dotProduct]
-      have hRHS : (C (-(4 * (v ⬝ᵥ v) * (s * s))) : K[T;T⁻¹]) =
-          -(4 * C (v ⬝ᵥ v) * (C s * C s)) := by
-        rw [map_neg, map_mul, map_mul, map_mul, map_ofNat]
-      rw [hRHS]
-      linear_combination (C (v ⬝ᵥ v) * (1 + T 1) * (1 + T 1)) * hC
-    refine exists_laurentPath_of_pathData hc (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s))
-      (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) (C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * T (-1)) (-1)
-      (Units.mk0 (-(((v ⬝ᵥ w) - s) / ((v ⬝ᵥ w) + s))) (by
-        simp only [ne_eq, neg_eq_zero, div_eq_zero_iff, not_or]
-        exact ⟨hbms, hbps⟩)) ?_ ?_ ?_
-    · rw [hu]
-      calc C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * T (-1) * (C (-(4 * (v ⬝ᵥ v) * (s * s))) * T 1)
-          = C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * C (-(4 * (v ⬝ᵥ v) * (s * s))) *
-              ((T (-1) : K[T;T⁻¹]) * T 1) := by ring
-        _ = C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹ * -(4 * (v ⬝ᵥ v) * (s * s))) := by
-              rw [hT, mul_one, ← map_mul]
-        _ = 2 := by
-              -- Isolate the coefficient-field identity so `rw` can rewrite beneath `C`.
-              rw [show -(2 * (v ⬝ᵥ v) * (s * s))⁻¹ * -(4 * (v ⬝ᵥ v) * (s * s)) = 2 by
-                field_simp
-                ring]
-              exact map_ofNat C 2
-    · intro φ hφ
-      have hφ1 : φ (T 1) = -1 := by rw [hφ, Units.val_neg, Units.val_one]
-      have hφ2 : φ (T (-1)) = -1 := by
-        rw [laurentEval_unique _ φ hφ, laurentEval_T, zpow_neg, zpow_one,
-          Units.val_inv_eq_inv_val, Units.val_neg, Units.val_one]
-        norm_num
-      have hX : φ (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s)) = 2 * s := by
-        simp only [map_add, map_neg, map_mul, map_sub, C_eq_algebraMap, AlgHom.commutes,
-          Algebra.algebraMap_self_apply, hφ1]
-        ring
-      have hY : φ (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) = 0 := by
-        simp only [map_add, map_mul, C_eq_algebraMap, AlgHom.commutes,
-          Algebra.algebraMap_self_apply, hφ1]
-        ring
-      have hEv : φ (C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * T (-1)) = (2 * (v ⬝ᵥ v) * (s * s))⁻¹ := by
-        rw [map_mul, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hφ2]
-        ring
-      refine ⟨hY, ?_⟩
-      rw [hX, hEv, hcv]
-      field_simp
-    · intro φ hφ
-      have hφ1 : φ (T 1) = -(((v ⬝ᵥ w) - s) / ((v ⬝ᵥ w) + s)) := by rw [hφ, Units.val_mk0]
-      have hφ2 : φ (T (-1)) = -(((v ⬝ᵥ w) + s) / ((v ⬝ᵥ w) - s)) := by
-        rw [laurentEval_unique _ φ hφ, laurentEval_T, zpow_neg, zpow_one,
-          Units.val_inv_eq_inv_val, Units.val_mk0, ← neg_inv, inv_div]
-      have hX : φ (-C (v ⬝ᵥ w) + C s + T 1 * (-C (v ⬝ᵥ w) - C s)) = 0 := by
-        simp only [map_add, map_neg, map_mul, map_sub, C_eq_algebraMap, AlgHom.commutes,
-          Algebra.algebraMap_self_apply, hφ1]
-        field_simp
-        ring
-      have hY : φ (C (v ⬝ᵥ v) + T 1 * C (v ⬝ᵥ v)) =
-          (v ⬝ᵥ v) * (2 * s) / ((v ⬝ᵥ w) + s) := by
-        simp only [map_add, map_mul, C_eq_algebraMap, AlgHom.commutes,
-          Algebra.algebraMap_self_apply, hφ1]
-        field_simp
-        ring
-      have hEv : φ (C (-(2 * (v ⬝ᵥ v) * (s * s))⁻¹) * T (-1)) =
-          ((v ⬝ᵥ w) + s) / (((v ⬝ᵥ w) - s) * (2 * (v ⬝ᵥ v) * (s * s))) := by
-        rw [map_mul, C_eq_algebraMap, AlgHom.commutes, Algebra.algebraMap_self_apply, hφ2]
-        field_simp
-      have hms : (v ⬝ᵥ w) - s = (v ⬝ᵥ v) * (w ⬝ᵥ w) / ((v ⬝ᵥ w) + s) := by
-        field_simp
-        linear_combination hfac
-      refine ⟨hX, ?_⟩
-      rw [hY, hEv, hms, hdw]
-      field_simp
+  · exact exists_laurentPath_reflectionMatrix_mul_of_degenerate hc hd hdeg
+  · exact exists_laurentPath_reflectionMatrix_mul_of_nondegenerate hc hd hdeg
 
 end Path
 
