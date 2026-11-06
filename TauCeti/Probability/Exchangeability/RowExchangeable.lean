@@ -451,7 +451,9 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
   set target : ι → Fin m → Set α := fun a j => ⋂ t ∈ {t | c t = (a, (j : ℕ))}, B t
   set F : Fin m → Finset ι :=
     fun j => (Finset.univ.filter fun t : Fin r => g t = j).image fun t => (c t).1
-  -- Injectivity: the cell `c t` is the only one constraining its row in its column.
+  -- Injectivity: the cell `c t` is the only one constraining its row in its column. The `rfl`
+  -- below holds by definitional unfolding: `c t = ((c t).1, ↑(g t))` is Prod eta together with
+  -- `↑(g t) = (c t).2`, which is how `g` is defined.
   have htarget : ∀ t, target (c t).1 (g t) = B t := fun t => Set.ext fun _ =>
     Set.mem_iInter₂.trans ⟨fun hx => hx t rfl, fun hx s hs => by rwa [@hc s t hs]⟩
   have hmeas : ∀ j : Fin m, MeasurableSet (Set.pi (↑(F j)) fun a => target a j) := fun j =>
@@ -462,6 +464,7 @@ theorem RowExchangeable.measure_setOf_forall_mem_eq_lintegral_prod [IsFiniteMeas
     ext ω
     simp only [Set.mem_ofPred_eq, Set.mem_pi, Finset.mem_coe, arrayCol_apply, target,
       Set.mem_iInter₂]
+    -- Again `rfl` is the definitional equation `c t = ((c t).1, ↑(g t))` (Prod eta, `g` unfolded).
     refine ⟨fun hω j a _ t ht => ht ▸ hω t, fun hω t => hω (g t) _ ?_ t rfl⟩
     exact Finset.mem_image_of_mem _ (Finset.mem_filter.2 ⟨Finset.mem_univ _, rfl⟩)
   rw [hset, ← blockLaw_apply_rectangle μ (arrayCol Y) (fun j : Fin m => (j : ℕ))
