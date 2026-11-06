@@ -157,8 +157,8 @@ variable {K : Type u} [Field K] {n : ℕ}
 
 /-- **Stable morphisms between the cyclic modules of `K[X]/(X ^ n)`.** With `x` the class of `X`
 and `M_i = A ⧸ (x ^ i)`, the space of stable morphisms `M_i ⟶ M_j` has dimension
-`min (min i j) (min (n - i) (n - j))` for `i, j ≤ n`, over any field `K`. -/
-theorem finrank_stableModuleHom_cyclicModule_root_pow {i j : ℕ} (hi : i ≤ n) (hj : j ≤ n) :
+`min (min i j) (min (n - i) (n - j))` for `j ≤ n`, over any field `K`. -/
+theorem finrank_stableModuleHom_cyclicModule_root_pow {i j : ℕ} (hj : j ≤ n) :
     finrank K ((stableModuleFunctor (AdjoinRoot (X ^ n : K[X]))).obj
         (cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ i)) ⟶
       (stableModuleFunctor _).obj (cyclicModule (AdjoinRoot.root (X ^ n : K[X]) ^ j))) =
@@ -167,7 +167,7 @@ theorem finrank_stableModuleHom_cyclicModule_root_pow {i j : ℕ} (hi : i ≤ n)
   have h := finrank_stableModuleHom_cyclicModule_add_finrank K
     (AdjoinRoot.root (X ^ n : K[X]) ^ i) (AdjoinRoot.root (X ^ n : K[X]) ^ j)
   rw [← (cyclicModuleHomEquiv K _).finrank_eq, finrank_cyclicModule_hom_root_pow hj,
-    finrank_map_ker_smul_op_root_pow hi hj] at h
+    finrank_map_ker_smul_op_root_pow hj] at h
   omega
 
 end TruncatedPolynomial
