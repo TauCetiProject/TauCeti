@@ -1,0 +1,310 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
+public import Mathlib.MeasureTheory.Integral.Pi
+
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+
+/-!
+# Normalizability of the Gaussian beta gas
+
+For every finite number of particles and every positive inverse temperature, the Gaussian beta-gas
+density has a finite, strictly positive integral. Dividing by that integral gives a probability
+measure on the particle configurations.
+-/
+
+public section
+noncomputable section
+
+open MeasureTheory Real
+
+namespace TauCeti.Probability
+
+/-- The unordered pairs of distinct indices in `Fin n`, represented in increasing order. -/
+private def gaussianBetaGasPairs (n : ℕ) : Finset (Fin n × Fin n) :=
+  Finset.univ.filter fun p => p.1 < p.2
+
+/-- The unnormalized density of the `n`-particle Gaussian beta gas with `V x = x^2 / 2`. -/
+def gaussianBetaGasWeight (n : ℕ) (β : ℝ) (x : Fin n → ℝ) : ℝ :=
+  exp (-(β * (n : ℝ) / 4) * ∑ i, x i ^ 2) *
+    ∏ p ∈ gaussianBetaGasPairs n, |x p.1 - x p.2| ^ β
+
+/-- The partition function of the finite Gaussian beta gas. -/
+def gaussianBetaGasPartitionFunction (n : ℕ) (β : ℝ) : ℝ :=
+  ∫ x : Fin n → ℝ, gaussianBetaGasWeight n β x
+    ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)
+
+private lemma integrable_one_add_abs_rpow_mul_exp_neg_sq {p a : ℝ}
+    (hp : 0 ≤ p) (ha : 0 < a) :
+    Integrable (fun x : ℝ => (1 + |x|) ^ p * exp (-a * x ^ 2)) volume := by
+  let k := ⌈p⌉₊
+  have hpk : p ≤ (k : ℝ) := Nat.le_ceil p
+  have hconst : Integrable (fun x : ℝ => exp (-a * x ^ 2)) volume :=
+    integrable_exp_neg_mul_sq ha
+  have hk_gt : -1 < ((2 * k : ℕ) : ℝ) := by
+    have hnonneg : 0 ≤ ((2 * k : ℕ) : ℝ) := Nat.cast_nonneg _
+    linarith
+  have hpow : Integrable (fun x : ℝ => x ^ (2 * k : ℕ) * exp (-a * x ^ 2)) volume := by
+    simpa only [Real.rpow_natCast] using
+      (integrable_rpow_mul_exp_neg_mul_sq ha
+        (s := ((2 * k : ℕ) : ℝ)) hk_gt)
+  have hmajor : Integrable (fun x : ℝ =>
+      2 ^ k * (exp (-a * x ^ 2) + x ^ (2 * k : ℕ) * exp (-a * x ^ 2))) volume :=
+    (hconst.add hpow).const_mul (2 ^ k)
+  have hbound : ∀ x : ℝ,
+      (1 + |x|) ^ p * exp (-a * x ^ 2) ≤
+        2 ^ k * (exp (-a * x ^ 2) + x ^ (2 * k : ℕ) * exp (-a * x ^ 2)) := by
+    intro x
+    have hx : 1 ≤ 1 + |x| := by nlinarith [abs_nonneg x]
+    have hsmall : (1 + |x|) ^ p ≤ (1 + |x|) ^ (k : ℝ) :=
+      Real.rpow_le_rpow_of_exponent_le hx hpk
+    have hlarge : (1 + |x|) ^ k ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) := by
+      have hu : 0 ≤ |x| := abs_nonneg x
+      have hsum : 1 + |x| ≤ 2 * max 1 |x| := by
+        by_cases h : 1 ≤ |x|
+        · rw [max_eq_right h]
+          nlinarith
+        · rw [max_eq_left (le_of_not_ge h)]
+          nlinarith
+      have hsumPow : (1 + |x|) ^ k ≤ (2 * max 1 |x|) ^ k :=
+        pow_le_pow_left₀ (by nlinarith [abs_nonneg x]) hsum k
+      have hmax : max 1 |x| ^ k ≤ 1 + x ^ (2 * k : ℕ) := by
+        have hxeven : 0 ≤ x ^ (2 * k : ℕ) := (even_two_mul k).pow_nonneg x
+        by_cases hx1 : |x| ≤ 1
+        · rw [max_eq_left hx1]
+          simpa only [one_pow] using (le_add_of_nonneg_right hxeven : 1 ≤ 1 + x ^ (2 * k : ℕ))
+        · rw [max_eq_right (le_of_not_ge hx1)]
+          have hxgt : 1 < |x| := lt_of_not_ge hx1
+          have hpowle : |x| ^ k ≤ |x| ^ (2 * k) := by
+            apply pow_le_pow_right₀ (by linarith : 1 ≤ |x|)
+            omega
+          have heven : |x| ^ (2 * k) = x ^ (2 * k : ℕ) := by
+            rw [← abs_pow]
+            exact abs_of_nonneg hxeven
+          exact hpowle.trans (heven ▸ le_add_of_nonneg_left (by norm_num))
+      calc
+        (1 + |x|) ^ k ≤ (2 * max 1 |x|) ^ k := hsumPow
+        _ = 2 ^ k * max 1 |x| ^ k := by rw [mul_pow]
+        _ ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) := by
+          gcongr
+    have hexp : 0 ≤ exp (-a * x ^ 2) := (exp_pos _).le
+    have hkcast : (1 + |x|) ^ (k : ℝ) = (1 + |x|) ^ k := by
+      rw [Real.rpow_natCast]
+    rw [hkcast] at hsmall
+    calc
+      _ ≤ (1 + |x|) ^ k * exp (-a * x ^ 2) := by gcongr
+      _ ≤ 2 ^ k * (1 + x ^ (2 * k : ℕ)) * exp (-a * x ^ 2) := by
+        gcongr
+      _ = 2 ^ k * (exp (-a * x ^ 2) +
+          x ^ (2 * k : ℕ) * exp (-a * x ^ 2)) := by ring
+  apply Integrable.mono' hmajor (by fun_prop)
+  · filter_upwards with x
+    simpa only [Real.norm_eq_abs, abs_of_nonneg (by positivity : 0 ≤
+      (1 + |x|) ^ p * exp (-a * x ^ 2))] using hbound x
+
+private lemma one_add_sum_le_prod {ι : Type*} (s : Finset ι) (f : ι → ℝ)
+    (hf : ∀ i ∈ s, 0 ≤ f i) :
+    1 + ∑ i ∈ s, f i ≤ ∏ i ∈ s, (1 + f i) := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    have hf' : ∀ j ∈ s, 0 ≤ f j := fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    have hs : 0 ≤ ∑ j ∈ s, f j := Finset.sum_nonneg hf'
+    have hi0 : 0 ≤ f i := hf i (Finset.mem_insert_self i s)
+    have ih' := ih hf'
+    rw [Finset.sum_insert hi, Finset.prod_insert hi]
+    have hgap : 0 ≤ (∏ j ∈ s, (1 + f j)) - (1 + ∑ j ∈ s, f j) :=
+      sub_nonneg.mpr ih'
+    nlinarith [mul_nonneg hi0 hs, mul_nonneg hi0 hgap]
+
+private lemma rpow_prod {ι : Type*} (s : Finset ι) (f : ι → ℝ) (p : ℝ)
+    (hf : ∀ i ∈ s, 0 ≤ f i) :
+    (∏ i ∈ s, f i) ^ p = ∏ i ∈ s, f i ^ p := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | @insert i s hi ih =>
+    have hf' : ∀ j ∈ s, 0 ≤ f j := fun j hj => hf j (Finset.mem_insert_of_mem hj)
+    rw [Finset.prod_insert hi, Finset.prod_insert hi,
+      Real.mul_rpow (hf i (Finset.mem_insert_self i s))
+        (Finset.prod_nonneg hf'), ih hf']
+
+private lemma continuous_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) :
+    Continuous (gaussianBetaGasWeight n β) := by
+  unfold gaussianBetaGasWeight
+  fun_prop
+
+private lemma gaussianBetaGasWeight_nonneg (n : ℕ) {β : ℝ}
+    (x : Fin n → ℝ) : 0 ≤ gaussianBetaGasWeight n β x := by
+  unfold gaussianBetaGasWeight
+  positivity
+
+/-- The Gaussian beta-gas weight is integrable for every positive inverse temperature. -/
+theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+    Integrable (gaussianBetaGasWeight n β)
+      (Measure.pi fun _ : Fin n => (volume : Measure ℝ)) := by
+  classical
+  by_cases hn : n = 0
+  · subst n
+    simp
+  · let pairs := gaussianBetaGasPairs n
+    let a : ℝ := β * (n : ℝ) / 4
+    let p : ℝ := 2 * (β * (pairs.card : ℝ))
+    have ha : 0 < a := by
+      dsimp [a]
+      positivity
+    have hp : 0 ≤ p := by
+      dsimp [p]
+      positivity
+    have hmajor : Integrable
+        (fun x : Fin n → ℝ =>
+          ∏ i, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)))
+        (Measure.pi fun _ : Fin n => (volume : Measure ℝ)) :=
+      Integrable.fintype_prod fun _ =>
+        integrable_one_add_abs_rpow_mul_exp_neg_sq hp ha
+    apply Integrable.mono' hmajor
+      ((continuous_gaussianBetaGasWeight n hβ.le).aestronglyMeasurable)
+    filter_upwards with x
+    let q : ℝ := ∏ i : Fin n, (1 + |x i|)
+    have hqsum : 1 + ∑ i : Fin n, |x i| ≤ q := by
+      simpa [q] using one_add_sum_le_prod (Finset.univ : Finset (Fin n))
+        (fun i => |x i|) (fun _ _ => abs_nonneg _)
+    have hqone : 1 ≤ q := by
+      have hsum : 0 ≤ ∑ i : Fin n, |x i| :=
+        Finset.sum_nonneg fun _ _ => abs_nonneg _
+      linarith
+    have hqnonneg : 0 ≤ q := by linarith [hqone]
+    have hqpow : q ^ 2 ≥ 1 + 2 * ∑ i : Fin n, |x i| := by
+      nlinarith [hqsum, hqone]
+    have hpair : ∀ z ∈ pairs, |x z.1 - x z.2| ≤ q ^ 2 := by
+      intro z hz
+      have hi : |x z.1| ≤ ∑ i : Fin n, |x i| :=
+        Finset.single_le_sum (f := fun i : Fin n => |x i|)
+          (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
+      have hj : |x z.2| ≤ ∑ i : Fin n, |x i| :=
+        Finset.single_le_sum (f := fun i : Fin n => |x i|)
+          (fun _ _ => abs_nonneg _) (Finset.mem_univ _)
+      have hdist := abs_sub_le (x z.1) 0 (x z.2)
+      simp only [sub_zero, zero_sub, abs_neg] at hdist
+      dsimp [pairs, gaussianBetaGasPairs] at hz
+      have hnonneg : 0 ≤ ∑ i : Fin n, |x i| :=
+        Finset.sum_nonneg fun _ _ => abs_nonneg _
+      nlinarith
+    have hvander : (∏ z ∈ pairs, |x z.1 - x z.2| ^ β) ≤
+        q ^ p := by
+      calc
+        _ ≤ ∏ z ∈ pairs, (q ^ 2) ^ β := by
+          apply Finset.prod_le_prod₀
+            (fun z hz => by positivity)
+            (fun z hz => Real.rpow_le_rpow (abs_nonneg _) (hpair z hz) hβ.le)
+        _ = ((q ^ 2) ^ β) ^ (pairs.card : ℕ) := by
+          simp [Finset.prod_const]
+        _ = ((q ^ 2) ^ β) ^ (pairs.card : ℝ) := by
+          rw [← Real.rpow_natCast]
+        _ = (q ^ 2) ^ (β * (pairs.card : ℝ)) := by
+          rw [← Real.rpow_mul (by positivity : 0 ≤ q ^ 2)]
+        _ = q ^ (2 * (β * (pairs.card : ℝ))) := by
+          have hq2 : q ^ (2 : ℕ) = q ^ ((2 : ℕ) : ℝ) := by
+            symm
+            exact Real.rpow_natCast q 2
+          rw [hq2, ← Real.rpow_mul hqnonneg (↑(2 : ℕ) : ℝ)
+            (β * (pairs.card : ℝ))]
+          congr 1
+        _ = q ^ p := by
+          rfl
+    have hexp : exp (-(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2) =
+        ∏ i : Fin n, exp (-a * x i ^ 2) := by
+      rw [show -(β * (n : ℝ) / 4) * ∑ i : Fin n, x i ^ 2 =
+        ∑ i : Fin n, (-a * x i ^ 2) by simp [a, Finset.mul_sum]]
+      exact Real.exp_sum _ _
+    have hqpowprod : q ^ p = ∏ i : Fin n, (1 + |x i|) ^ p := by
+      simpa [q] using rpow_prod (Finset.univ : Finset (Fin n))
+        (fun i => 1 + |x i|) p (fun _ _ => by positivity)
+    have hpoint : gaussianBetaGasWeight n β x ≤
+        ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
+      unfold gaussianBetaGasWeight
+      rw [hexp]
+      calc
+        _ ≤ (∏ i : Fin n, exp (-a * x i ^ 2)) * q ^ p := by
+          exact mul_le_mul_of_nonneg_left hvander (by positivity)
+        _ = ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
+          rw [hqpowprod, ← Finset.prod_mul_distrib]
+          apply Finset.prod_congr rfl
+          intro i hi
+          ring
+    simpa only [Real.norm_eq_abs, abs_of_nonneg (gaussianBetaGasWeight_nonneg n x),
+      Real.norm_eq_abs, abs_of_nonneg (by positivity :
+        0 ≤ ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)))] using hpoint
+
+/-- The Gaussian beta-gas partition function is strictly positive. -/
+theorem gaussianBetaGasPartitionFunction_pos (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+    0 < gaussianBetaGasPartitionFunction n β := by
+  by_cases hn : n = 0
+  · subst n
+    simp [gaussianBetaGasPartitionFunction, gaussianBetaGasWeight, gaussianBetaGasPairs]
+  · let x₀ : Fin n → ℝ := fun i => (i : ℝ)
+    have hx₀ : 0 < gaussianBetaGasWeight n β x₀ := by
+      unfold gaussianBetaGasWeight
+      apply mul_pos (exp_pos _)
+      apply Finset.prod_pos
+      intro z hz
+      have hz' : z.1 < z.2 := (Finset.mem_filter.mp hz).2
+      have hlt : (z.1 : ℝ) < (z.2 : ℝ) := by exact_mod_cast hz'
+      have hdiff : x₀ z.1 - x₀ z.2 ≠ 0 := by
+        dsimp [x₀]
+        exact (sub_ne_zero.mpr (ne_of_lt hlt))
+      exact Real.rpow_pos_of_pos (abs_pos.mpr hdiff) β
+    exact integral_pos_of_integrable_nonneg_ne_zero
+      (continuous_gaussianBetaGasWeight n hβ.le)
+      (integrable_gaussianBetaGasWeight n hβ)
+      (gaussianBetaGasWeight_nonneg n) hx₀.ne'
+
+/-- The normalized density of the finite Gaussian beta gas. -/
+def gaussianBetaGasDensity (n : ℕ) (β : ℝ) (x : Fin n → ℝ) : ℝ :=
+  gaussianBetaGasWeight n β x / gaussianBetaGasPartitionFunction n β
+
+/-- The probability measure of the finite Gaussian beta gas with quadratic potential. -/
+def gaussianBetaGasMeasure (n : ℕ) (β : ℝ) :
+    Measure (Fin n → ℝ) :=
+  (Measure.pi fun _ : Fin n => (volume : Measure ℝ)).withDensity fun x =>
+    ENNReal.ofReal (gaussianBetaGasDensity n β x)
+
+/-- The normalized Gaussian beta-gas measure has total mass one. -/
+theorem isProbabilityMeasure_gaussianBetaGasMeasure (n : ℕ) {β : ℝ} (hβ : 0 < β) :
+    IsProbabilityMeasure (gaussianBetaGasMeasure n β) := by
+  have hZ : 0 < gaussianBetaGasPartitionFunction n β :=
+    gaussianBetaGasPartitionFunction_pos n hβ
+  have hweight := integrable_gaussianBetaGasWeight n hβ
+  have hdensity : Integrable (gaussianBetaGasDensity n β)
+      (Measure.pi fun _ : Fin n => (volume : Measure ℝ)) := by
+    unfold gaussianBetaGasDensity
+    exact hweight.div_const _
+  have hdensity_nonneg : ∀ x, 0 ≤ gaussianBetaGasDensity n β x := by
+    intro x
+    exact div_nonneg (gaussianBetaGasWeight_nonneg n x) (le_of_lt hZ)
+  refine ⟨?_⟩
+  rw [gaussianBetaGasMeasure, withDensity_apply _ MeasurableSet.univ,
+    Measure.restrict_univ]
+  rw [← ofReal_integral_eq_lintegral_ofReal hdensity
+    (ae_of_all _ hdensity_nonneg)]
+  have hmass :
+      (∫ x, gaussianBetaGasDensity n β x
+        ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1 := by
+    change (∫ x, gaussianBetaGasWeight n β x /
+      gaussianBetaGasPartitionFunction n β
+        ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) = 1
+    rw [integral_div]
+    change (∫ x, gaussianBetaGasWeight n β x
+      ∂Measure.pi fun _ : Fin n => (volume : Measure ℝ)) /
+      gaussianBetaGasPartitionFunction n β = 1
+    exact div_self hZ.ne'
+  rw [hmass]
+  norm_num
+
+end TauCeti.Probability
