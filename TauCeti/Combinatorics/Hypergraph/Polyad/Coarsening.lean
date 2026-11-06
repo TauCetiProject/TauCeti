@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.Hypergraph.Polyad.Basic
 public import TauCeti.Order.Partition.Finpartition
+import Mathlib.Tactic.Linarith
 
 /-!
 # Coarse parents of polyads
@@ -20,7 +21,9 @@ a refined skeleton without charging the same coarse exceptional support more tha
 The construction also compares two colorings of the pairs on the same vertex cells. A triple
 keeps its polyad, up to the color map, whenever its three coordinate pairs keep their colors
 (`Polyad3.coarsen_ofTriple_of_color_coordPair`), and an injective color map then sends distinct
-polyads to distinct polyads (`Polyad3.coarsen_injective`).
+polyads to distinct polyads (`Polyad3.coarsen_injective`). Recoloring `|E|` ordered pairs
+therefore changes the polyad of at most `3 |E| |V|` triples
+(`Polyad3.card_filter_ofTriple_ne_coarsen_ofTriple_le`).
 -/
 
 public section
@@ -105,6 +108,34 @@ theorem coarsen_ofTriple_of_color_coordPair (hV : T.vertexPart ≤ S.vertexPart)
   · exact (S.pairColors.color_coordPair_eq_iff _).1 (by simpa using h₀₁)
   · exact (S.pairColors.color_coordPair_eq_iff _).1 (by simpa using h₀₂)
   · exact (S.pairColors.color_coordPair_eq_iff _).1 (by simpa using h₁₂)
+
+/-- **Moved triples.** Let the vertex cells of `T` refine those of `S`, and let the pair colors of
+`S` be those of `T` mapped by `g`, except on a set `E` of ordered pairs. At most `3 |E| |V|`
+injective triples then have a polyad over `S` other than the coarse parent of their polyad over
+`T`. -/
+theorem card_filter_ofTriple_ne_coarsen_ofTriple_le [DecidableEq κ]
+    (hV : T.vertexPart ≤ S.vertexPart) (g : κ' → κ) :
+    #{x | ofTriple S x ≠ (ofTriple T x).coarsen hV g} ≤
+      3 * #{p | S.pairColors.color p ≠ g (T.pairColors.color p)} * Fintype.card V := by
+  set E : Finset {p : V × V // p.1 ≠ p.2} := {p | S.pairColors.color p ≠ g (T.pairColors.color p)}
+  have hsub : ({x | ofTriple S x ≠ (ofTriple T x).coarsen hV g} :
+        Finset {x : Fin 3 → V // Function.Injective x}) ⊆
+      (({x | coordPair x 0 1 (by decide) ∈ E} : Finset _) ∪
+        ({x | coordPair x 0 2 (by decide) ∈ E} : Finset _)) ∪
+        ({x | coordPair x 1 2 (by decide) ∈ E} : Finset _) := by
+    intro x hx
+    rw [mem_filter] at hx
+    by_contra hE
+    simp only [mem_union, mem_filter, mem_univ, true_and, not_or, E, not_not] at hE
+    exact hx.2 (coarsen_ofTriple_of_color_coordPair hV g hE.1.1 hE.1.2 hE.2).symm
+  have h₀₁ := card_filter_coordPair_mem_le E (by decide : (0 : Fin 3) ≠ 1) (k := 2) (by decide)
+  have h₀₂ := card_filter_coordPair_mem_le E (by decide : (0 : Fin 3) ≠ 2) (k := 1) (by decide)
+  have h₁₂ := card_filter_coordPair_mem_le E (by decide : (1 : Fin 3) ≠ 2) (k := 0) (by decide)
+  have := (card_le_card hsub).trans (card_union_le _ _)
+  have := card_union_le
+    ({x | coordPair x 0 1 (by decide) ∈ E} : Finset {x : Fin 3 → V // Function.Injective x})
+    ({x | coordPair x 0 2 (by decide) ∈ E} : Finset {x : Fin 3 → V // Function.Injective x})
+  linarith
 
 variable (hV : T.vertexPart ≤ S.vertexPart) (f : κ' → κ)
   (hf : ∀ p, S.pairColors.color p = f (T.pairColors.color p))

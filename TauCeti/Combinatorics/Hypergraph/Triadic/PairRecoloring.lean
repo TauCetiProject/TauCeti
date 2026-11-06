@@ -31,9 +31,10 @@ over `S` plus `(1 + 2 / η)` times the number of moved triples
 When `T` has the vertex cells of `S` and its pair colors are obtained by an injective map `g`
 except on a set `E` of ordered pairs, taking `f P` to be the polyad with the same cells and the
 colors mapped by `g` moves at most `3 |E| |V|` triples
-(`Polyad3.card_filter_ofTriple_ne_coarsen_ofTriple_le`). The new pair palette may be larger,
-for example by a fresh color for the pairs inside the cells. For polyad decompositions of
-triadic complexes this yields `Colored3Graph.TopRegularOverMostPolyads.of_pairRecoloring`.
+(`Polyad3.card_filter_ofTriple_ne_coarsen_ofTriple_le` in `Polyad/Coarsening.lean`). The new
+pair palette may be larger, for example by a fresh color for the pairs inside the cells. For
+polyad decompositions of triadic complexes this yields
+`Colored3Graph.TopRegularOverMostPolyads.of_pairRecoloring`.
 
 ## Main results
 
@@ -41,8 +42,6 @@ triadic complexes this yields `Colored3Graph.TopRegularOverMostPolyads.of_pairRe
   support of the irregular polyads grows by at most a multiple of the moved triples.
 * `TauCeti.Colored3Graph.exceptionalPolyadMass_le_of_injective`: the same bound for the
   exceptional mass of polyad decompositions.
-* `TauCeti.Polyad3.card_filter_ofTriple_ne_coarsen_ofTriple_le`: recoloring `|E|` ordered pairs
-  moves at most `3 |E| |V|` triples.
 * `TauCeti.Colored3Graph.TopRegularOverMostPolyads.of_pairRecoloring`: top regularity over
   most polyads survives recoloring few pairs of the lower skeleton.
 
@@ -59,55 +58,6 @@ open Finset
 namespace TauCeti
 
 variable {κ κ₂ κ₂' V : Type*} [Fintype V] [DecidableEq V]
-
-namespace Polyad3
-
-variable {S : PairSkeleton3 κ₂ V} {T : PairSkeleton3 κ₂' V}
-
-/-- The injective triples whose coordinate pair on the roles `i` and `j` lies in `E` are at most
-`|E| |V|` many: such a triple is determined by that pair and its third coordinate `k`. -/
-private theorem card_filter_coordPair_mem_le (E : Finset {p : V × V // p.1 ≠ p.2})
-    {i j k : Fin 3} (hij : i ≠ j) (hl : ∀ l : Fin 3, l = i ∨ l = j ∨ l = k) :
-    #{x : {x : Fin 3 → V // Function.Injective x} | coordPair x i j hij ∈ E} ≤
-      #E * Fintype.card V := by
-  rw [← card_univ (α := V), ← card_product]
-  refine card_le_card_of_injOn (fun x ↦ (coordPair x i j hij, x.1 k))
-    (fun x hx ↦ mem_product.2 ⟨(mem_filter.1 hx).2, mem_univ _⟩) fun x _ y _ hxy ↦ ?_
-  simp only [Prod.mk.injEq, Subtype.ext_iff, coe_coordPair] at hxy
-  obtain ⟨⟨hi, hj⟩, hk⟩ := hxy
-  refine Subtype.ext (funext fun l ↦ ?_)
-  obtain rfl | rfl | rfl := hl l
-  exacts [hi, hj, hk]
-
-/-- **Moved triples.** Let the vertex cells of `S` refine those of `T`, and let the pair colors of
-`T` be those of `S` mapped by `g`, except on a set `E` of ordered pairs. At most `3 |E| |V|`
-injective triples then have a polyad over `T` other than the coarse parent of their polyad over
-`S`. -/
-theorem card_filter_ofTriple_ne_coarsen_ofTriple_le [DecidableEq κ₂']
-    (hV : S.vertexPart ≤ T.vertexPart) (g : κ₂ → κ₂') :
-    #{x | ofTriple T x ≠ (ofTriple S x).coarsen hV g} ≤
-      3 * #{p | T.pairColors.color p ≠ g (S.pairColors.color p)} * Fintype.card V := by
-  set E : Finset {p : V × V // p.1 ≠ p.2} := {p | T.pairColors.color p ≠ g (S.pairColors.color p)}
-  have hsub : ({x | ofTriple T x ≠ (ofTriple S x).coarsen hV g} :
-        Finset {x : Fin 3 → V // Function.Injective x}) ⊆
-      (({x | coordPair x 0 1 (by decide) ∈ E} : Finset _) ∪
-        ({x | coordPair x 0 2 (by decide) ∈ E} : Finset _)) ∪
-        ({x | coordPair x 1 2 (by decide) ∈ E} : Finset _) := by
-    intro x hx
-    rw [mem_filter] at hx
-    by_contra hE
-    simp only [mem_union, mem_filter, mem_univ, true_and, not_or, E, not_not] at hE
-    exact hx.2 (coarsen_ofTriple_of_color_coordPair hV g hE.1.1 hE.1.2 hE.2).symm
-  have h₀₁ := card_filter_coordPair_mem_le E (by decide : (0 : Fin 3) ≠ 1) (k := 2) (by decide)
-  have h₀₂ := card_filter_coordPair_mem_le E (by decide : (0 : Fin 3) ≠ 2) (k := 1) (by decide)
-  have h₁₂ := card_filter_coordPair_mem_le E (by decide : (1 : Fin 3) ≠ 2) (k := 0) (by decide)
-  have := (card_le_card hsub).trans (card_union_le _ _)
-  have := card_union_le
-    ({x | coordPair x 0 1 (by decide) ∈ E} : Finset {x : Fin 3 → V // Function.Injective x})
-    ({x | coordPair x 0 2 (by decide) ∈ E} : Finset {x : Fin 3 → V // Function.Injective x})
-  linarith
-
-end Polyad3
 
 namespace Colored3Graph
 
