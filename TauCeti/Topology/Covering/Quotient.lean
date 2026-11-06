@@ -135,7 +135,8 @@ private theorem image_smul_eq_image_smul_of_inter_nonempty
 
 /-- Openness inside the base set `q '' U` is detected on any single sheet `qH '' (g • U)`: a subset
 `W` of `q '' U` is open exactly when its preimage under `r`, cut down to that sheet, is open. -/
-private theorem isOpen_iff_isOpen_preimage_inter_image_smul (hq : IsQuotientCoveringMap q G)
+private theorem _root_.IsQuotientCoveringMap.isOpen_iff_isOpen_preimage_inter_image_smul
+    (hq : IsQuotientCoveringMap q G)
     (hqH : IsQuotientCoveringMap qH H) (hr : r ∘ qH = q) (hrc : Continuous r) {U : Set E}
     (hUo : IsOpen U) (g : G) {W : Set X} (hWV : W ⊆ q '' U) :
     IsOpen W ↔ IsOpen (r ⁻¹' W ∩ qH '' (g • U)) := by
@@ -190,7 +191,7 @@ private theorem isEvenlyCovered_of_smul_disjoint (hq : IsQuotientCoveringMap q G
         ?_ ?_ ?_ ?_ ?_) ⟨e, heU, rfl⟩)
   · -- Openness inside the base set is detected on any single sheet.
     rintro ⟨S, g, rfl⟩ W hWV
-    exact isOpen_iff_isOpen_preimage_inter_image_smul hq hqH hr hrc hUo g hWV
+    exact hq.isOpen_iff_isOpen_preimage_inter_image_smul hqH hr hrc hUo g hWV
   · -- The map is injective on each sheet.
     rintro ⟨S, g, rfl⟩ z hz z' hz' hzz'
     obtain ⟨w, hw, rfl⟩ := hz
