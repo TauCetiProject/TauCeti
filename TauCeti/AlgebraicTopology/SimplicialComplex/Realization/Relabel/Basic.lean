@@ -188,30 +188,21 @@ def realizationRelabelingHomeomorph {R : PreAbstractSimplicialComplex β}
       (Homeomorph.setCongr (s := {x : Realization L | x.1.support ∈ P.map f})
         (t := {x : Realization L | x.1.support ∈ R}) (by rw [hmap])))
 
-/-- A finite precomplex on `V` has the realization of its model on `Fin m` as a homeomorphic
-polyhedron. The witness is existential because the finite enumeration of `V` is noncanonical. -/
+/-- A precomplex on `Fin m` that some embedding `Fin m ↪ ι` carries onto `R` has the realization
+of its model on `Fin m` as a homeomorphic polyhedron. The witness is existential because the
+enumeration of the vertices is noncanonical; only one enumeration needs to carry `P` onto `R`. -/
 theorem nonempty_finsetRelabelingHomeomorph
-    {ι : Type*} {A : AbstractSimplicialComplex ι} {V : Finset ι} {m : ℕ}
+    {ι : Type*} {A : AbstractSimplicialComplex ι} {m : ℕ}
     {K : AbstractSimplicialComplex (Fin m)}
     {P : PreAbstractSimplicialComplex (Fin m)} {R : PreAbstractSimplicialComplex ι}
     [DecidableEq ι]
-    (hV : V.card = m)
-    (hmap : ∀ (f : Fin m ↪ ι), (Finset.univ : Finset (Fin m)).image f = V → P.map f = R)
+    (hmap : ∃ f : Fin m ↪ ι, P.map f = R)
     (hP : P = K.toPreAbstractSimplicialComplex)
     (hR : R ≤ A.toPreAbstractSimplicialComplex) :
     Nonempty ({x : Realization A // x.1.support ∈ R} ≃ₜ Realization K) := by
   classical
-  let e := (Finset.equivFinOfCardEq hV).symm
-  let f : Fin m ↪ ι := e.toEmbedding.trans (Function.Embedding.subtype (· ∈ V))
-  have himage : (Finset.univ : Finset (Fin m)).image f = V := by
-    ext v
-    simp only [Finset.mem_image, Finset.mem_univ, true_and]
-    constructor
-    · rintro ⟨i, rfl⟩
-      exact (e i).2
-    · intro hv
-      exact ⟨e.symm ⟨v, hv⟩, congrArg Subtype.val (e.apply_symm_apply _)⟩
-  exact ⟨(P.realizationRelabelingHomeomorph f (hmap f himage) hP hR).symm⟩
+  obtain ⟨f, hf⟩ := hmap
+  exact ⟨(P.realizationRelabelingHomeomorph f hf hP hR).symm⟩
 
 /-- Relabeling pushes forward the finitely supported barycentric coordinate vector. -/
 @[simp]

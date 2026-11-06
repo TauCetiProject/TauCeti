@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Finite
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Relabel.Basic
+import TauCeti.Data.Fintype.Fin
 public import TauCeti.AlgebraicTopology.SimplicialComplex.Realization.Star.Basic
 public import TauCeti.Analysis.Convex.CoordinateSimplex
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
@@ -405,8 +406,8 @@ theorem nonempty_homeomorph_simplex_closedBall {V : Finset ι}
   let P := simplex (Finset.univ : Finset (Fin (n + 1)))
   have hP : P = (⊤ : AbstractSimplicialComplex (Fin (n + 1))).toPreAbstractSimplicialComplex := by
     simp only [P, simplex_univ, AbstractSimplicialComplex.top_toPreAbstractSimplicialComplex]
-  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph hV (fun f himage => by
-      rw [map_simplex, himage]) hP hA
+  obtain ⟨f, himage⟩ := Fin.exists_embedding_image_univ_eq hV
+  obtain ⟨r⟩ := nonempty_finsetRelabelingHomeomorph ⟨f, by rw [map_simplex, himage]⟩ hP hA
   exact ⟨r.trans (AbstractSimplicialComplex.realizationTopHomeomorphClosedBall n)⟩
 
 end PreAbstractSimplicialComplex
