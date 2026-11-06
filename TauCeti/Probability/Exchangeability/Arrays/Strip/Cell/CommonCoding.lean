@@ -399,7 +399,11 @@ theorem SeparatelyExchangeable.exists_common_visibleArray_coding
     rfl
   rw [hcomm, ← Measure.map_map hcodeF hIr, ← Measure.map_prod_map _ _ measurable_id
     (Finset.measurable_restrict F), Measure.map_id, Measure.infinitePi_map_restrict, hF F]
-  rfl
+  -- Restricting the visible part of the array to `F` reads the cell `x p.1.1` at each `p : F`;
+  -- `hF` states this with the sets `H` and `V` unfolded.
+  refine congrArg (ρ.map ·) (funext fun x => ?_)
+  simp only [Function.comp_apply, Prod.map_apply, id_eq, Finset.restrict_def,
+    Set.domRestrict_apply, H, V]
 
 end TauCeti.Probability
 
