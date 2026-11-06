@@ -226,15 +226,16 @@ lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ :
 end StrongTrans
 
 /-- Naturality with respect to `2`-cells is automatic for a family of naturality
-isomorphisms between pseudofunctors out of a locally discrete bicategory. -/
+isomorphisms between pseudofunctors out of a locally discrete bicategory, such as
+`LocallyDiscrete B₀` for a category `B₀`. -/
 lemma naturality_naturality_of_locallyDiscrete
-    {B₀ : Type*} [Category B₀] (F G : LocallyDiscrete B₀ ⥤ᵖ C)
+    [IsLocallyDiscrete B] (F G : B ⥤ᵖ C)
     (app : ∀ a, F.obj a ⟶ G.obj a)
     (naturality : ∀ {a b} (f : a ⟶ b), F.map f ≫ app b ≅ app a ≫ G.map f)
-    {a b : LocallyDiscrete B₀} {f g : a ⟶ b} (η : f ⟶ g) :
+    {a b : B} {f g : a ⟶ b} (η : f ⟶ g) :
     F.map₂ η ▷ app b ≫ (naturality g).hom =
       (naturality f).hom ≫ app a ◁ G.map₂ η := by
-  obtain rfl := LocallyDiscrete.eq_of_hom η
+  obtain rfl := obj_ext_of_isDiscrete η
   rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
   simp
 
