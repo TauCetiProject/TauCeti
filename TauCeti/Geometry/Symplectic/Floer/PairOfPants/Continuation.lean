@@ -5,14 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
 public import TauCeti.Geometry.Symplectic.Floer.Continuation
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Analysis.Calculus.Deriv.Prod
 import Mathlib.Geometry.Manifold.Algebra.LieGroup
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import Mathlib.Geometry.Manifold.ContMDiff.Constructions
-import Mathlib.MeasureTheory.Integral.Prod
-import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Changing the end Hamiltonians of the pair of pants by continuation
@@ -56,7 +55,8 @@ its topological part plus that constant.
   `TauCeti.Floer.contDiffAt_pairOfPantsContinuationPerturbation_prod` is the `Cⁿ` statement for a
   vector space target.
 * `TauCeti.Floer.pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_forall_le`:
-  inside the necks it is the pair-of-pants perturbation of `G`;
+  where every `σ ≤ L_q`, on the pants side of the necks, it is the pair-of-pants perturbation
+  of `G`;
   `TauCeti.Floer.pairOfPantsContinuationPerturbation_of_nonpos`: for nonpositive neck positions it
   is the pair-of-pants perturbation of `H`;
   `TauCeti.Floer.pairOfPantsContinuationPerturbation_self`: for `G = H` it is the pair-of-pants
@@ -125,7 +125,8 @@ theorem pairOfPantsContinuationPerturbation_eq_zero_of_forall_le {w : ℂ}
   refine Finset.sum_eq_zero fun q _ => ?_
   rw [smoothTransition.zero_of_nonpos (by linarith [h q]), zero_mul, zero_smul]
 
-/-- **The perturbation is the pair-of-pants datum of `G` inside the necks.** At a point where the
+/-- **The perturbation is the pair-of-pants datum of `G` on the pants side of the necks.** At a
+point where the
 signed longitudinal coordinate of every end `q` is at most its neck position `L_q`, the
 perturbation is the pair-of-pants perturbation of the inner Hamiltonians `G`. -/
 theorem pairOfPantsContinuationPerturbation_eq_pairOfPantsPerturbation_of_forall_le {w : ℂ}
@@ -229,19 +230,12 @@ theorem contDiffAt_pairOfPantsContinuationPerturbation_prod {V : Type*} [NormedA
     (hH : ∀ q, Periodic (H q) 1) (hGs : ∀ q, ContDiff ℝ n (uncurry (G q)))
     (hHs : ∀ q, ContDiff ℝ n (uncurry (H q))) (L : Puncture → ℝ) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1)
     (x : V) :
-    ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsContinuationPerturbation G H L p.1 p.2) (w, x) := by
-  have hman (K : Puncture → ℝ → V → ℝ) (hK : ∀ q, ContDiff ℝ n (uncurry (K q))) :
-      ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (K q)) := fun q => by
-    have h := (hK q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h := contMDiffAt_pairOfPantsContinuationPerturbation (n := n) hG hH (hman G hGs)
-    (hman H hHs) L ⟨w, hw⟩ x
-  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℂ × V => pairOfPantsContinuationPerturbation G H L p.1 p.2) (w, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact h
-  exact h'.contDiffAt
+    ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsContinuationPerturbation G H L p.1 p.2) (w, x) :=
+  (contMDiffAt_prod_modelWithCornersSelf_iff.1
+    (contMDiffAt_pairOfPantsContinuationPerturbation hG hH
+      (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hGs q).contMDiff)
+      (fun q => contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff) L ⟨w, hw⟩
+      x)).contDiffAt
 
 section RealCoordinates
 
@@ -272,33 +266,6 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {G H : Puncture → ℝ → V → ℝ}
   {L : Puncture → ℝ}
-
-/-- The components of the perturbation in real coordinates are differentiable in the domain
-point, at points of `S`. -/
-private theorem differentiableAt_pairOfPantsContinuationPerturbation_domain
-    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
-    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun z' => pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z') x v)
-      z :=
-  ((contDiffAt_uncurry_pairOfPantsContinuationPerturbation hG hH hGs hHs L hz x v).differentiableAt
-    one_ne_zero).comp (f := fun z' : ℝ × ℝ ↦ (z', x)) z
-      (differentiableAt_id.prodMk (differentiableAt_const x))
-
-/-- The components of the perturbation are differentiable in the target point, at points
-of `S`. -/
-private theorem differentiableAt_pairOfPantsContinuationPerturbation_target
-    (hG : ∀ q, Periodic (G q) 1) (hH : ∀ q, Periodic (H q) 1)
-    (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal) (x : V) (v : ℂ) :
-    DifferentiableAt ℝ
-      (fun y => pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) y v)
-      x := by
-  have hK := (contDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L
-    (mem_thricePuncturedSphereReal_iff.1 hz) x).differentiableAt one_ne_zero
-  exact (hK.comp x ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
-    (differentiableAt_const v)
 
 variable [FiniteDimensional ℝ V]
 
@@ -335,11 +302,12 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : Symplec
         pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
       stdComplexLineReal =ᶠ[𝓝 z] fun _ _ ↦ 0 := by
     filter_upwards [hU.mem_nhds hz] with w hw
-    rw [perturbationPullback_endChart_eq, equivRealProdCLM_symm_stdComplexLineReal]
+    rw [perturbationPullback_endChart_eq_cylindricalEndLift,
+      equivRealProdCLM_symm_stdComplexLineReal]
     funext y
     beta_reduce
     rw [pairOfPantsContinuationPerturbation_cylindricalEndLift_of_pos (hG q) (hH q)
-      (z := ⟨w.1, w.2⟩) hw]
+      (z := Complex.equivRealProdCLM.symm w) (by simpa using hw)]
     simp
   have ht : perturbationPullback (endChart q)
       (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
@@ -348,11 +316,12 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : Symplec
       stdComplexLineImag =ᶠ[𝓝 z] fun w y ↦ smoothTransition (q.endSign * w.1 - 1) *
         continuationHomotopy (G q) (H q) (q.endSign * w.1 - L q, w.2) y := by
     filter_upwards [hU.mem_nhds hz] with w hw
-    rw [perturbationPullback_endChart_eq, equivRealProdCLM_symm_stdComplexLineImag]
+    rw [perturbationPullback_endChart_eq_cylindricalEndLift,
+      equivRealProdCLM_symm_stdComplexLineImag]
     funext y
     beta_reduce
     rw [pairOfPantsContinuationPerturbation_cylindricalEndLift_of_pos (hG q) (hH q)
-      (z := ⟨w.1, w.2⟩) hw]
+      (z := Complex.equivRealProdCLM.symm w) (by simpa using hw)]
     simp
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq hs ht, hamiltonianCurvature_zero_left,
     stdComplexLineReal_eq]
@@ -387,37 +356,6 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : Symplec
   · simp only [continuationHomotopy_def, Pi.add_apply]
     ring
 
-/-- **The curvature is supported on the ends.** At a point of `S` where the signed longitudinal
-coordinate of every end is less than `1`, the perturbation vanishes nearby, and so does its
-curvature. -/
-private theorem hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero
-    (ω : SymplecticForm V) {z : ℝ × ℝ} (hz : z ∈ thricePuncturedSphereReal)
-    (h : ∀ q : Puncture, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re < 1)
-    (x : V) :
-    ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦
-        pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z x = 0 := by
-  have hev : ∀ᶠ z' in 𝓝 z, ∀ q : Puncture,
-      q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re < 1 := by
-    refine Filter.eventually_all.2 fun q ↦ ?_
-    have hc : ContinuousAt
-        (fun z' ↦ q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z')).re) z :=
-      continuousAt_const.mul
-        (((q.contDiffAt_re_endCoord (ne_endCenter (mem_thricePuncturedSphereReal_iff.1 hz) q)
-          (n := 0)).continuousAt).comp
-          Complex.equivRealProdCLM.symm.continuous.continuousAt)
-    exact hc.eventually (gt_mem_nhds (h q))
-  have hK : ∀ᶠ z' in 𝓝 z, ∀ y,
-      pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z') y = 0 :=
-    hev.mono fun z' hz' y ↦
-      pairOfPantsContinuationPerturbation_eq_zero_of_forall_le (fun q ↦ (hz' q).le) y
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
-    (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y])
-    (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
-  simp
-
 /-- The curvature of the perturbation over the image of the strip of the end `q` is at most
 `B_q + D_q`, for a common bound `B_q` of `G_q` and `H_q` and a bound `D_q` of `H_q - G_q`,
 independently of the neck position `L_q`. -/
@@ -432,9 +370,6 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         (fun z x ↦
           pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (B q) + ENNReal.ofReal (D q) := by
-  -- Lebesgue measure on `ℝ × ℝ` is the product measure, an additive Haar measure.
-  have := Measure.prod.instIsAddHaarMeasure (volume : Measure ℝ) (volume : Measure ℝ)
-  have hmeas := measurableSet_endStrip q
   have hψ : ∀ s, 0 ≤ deriv smoothTransition s := fun _ ↦ smoothTransition.monotone.deriv_nonneg
   set f : ℝ → ENNReal := fun s ↦
     ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) +
@@ -446,59 +381,33 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
           (by fun_prop))).measurable
     exact ((hc 1).mul_const _).add ((hc (L q)).mul_const _)
-  rw [lintegral_image_eq_lintegral_abs_det_fderiv_mul volume hmeas
-    (fun z _ ↦ (hasFDerivAt_endChart q z).differentiableAt.hasFDerivAt.hasFDerivWithinAt)
-    (injOn_endChart q)]
-  calc _ ≤ ∫⁻ z in endStrip q, f z.1 := by
-        refine setLIntegral_mono' hmeas fun z hz ↦ ?_
-        have hz' := endSign_mul_pos_of_mem_endStrip hz
-        have hS := endChart_mem_thricePuncturedSphereReal hz'
-        -- The curvature is a two-form, and in the coordinates of the end it is
-        -- `±(β'(σ - 1) C_q + β(σ - 1) β'(σ - L_q) (H_q - G_q))`.
-        have key := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := z)
-          (Ks := fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x 1)
-          (Kt := fun z x ↦
-            pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x
-              Complex.I)
-          (x := u (endChart q z)) ((contDiff_endChart q 2).contDiffAt)
-          (differentiableAt_pairOfPantsContinuationPerturbation_domain hG hH hGs hHs hS _ 1)
-          (differentiableAt_pairOfPantsContinuationPerturbation_domain hG hH hGs hHs hS _
-            Complex.I)
-          (differentiableAt_pairOfPantsContinuationPerturbation_target hG hH hGs hHs hS _ 1)
-          (differentiableAt_pairOfPantsContinuationPerturbation_target hG hH hGs hHs hS _
-            Complex.I)
-        rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hH hGs hHs hz'] at key
-        rw [← Real.enorm_eq_ofReal_abs, ← enorm_mul, ← key, Real.enorm_eq_ofReal_abs, abs_mul,
-          abs_endSign, one_mul]
-        simp only [hf]
-        rw [← ENNReal.ofReal_mul (hψ _), ← ENNReal.ofReal_mul (hψ _),
-          ← ENNReal.ofReal_add (mul_nonneg (hψ _) ((abs_nonneg _).trans (hGB q 0 0)))
-            (mul_nonneg (hψ _) ((abs_nonneg _).trans (hD q 0 0)))]
-        refine ENNReal.ofReal_le_ofReal ((abs_add_le _ _).trans (add_le_add ?_ ?_))
-        · rw [abs_mul, abs_of_nonneg (hψ _)]
-          exact mul_le_mul_of_nonneg_left
-            (abs_continuationHomotopy_le (hGB q _ _) (hHB q _ _)) (hψ _)
-        · rw [abs_mul, abs_mul, abs_of_nonneg (smoothTransition.nonneg _), abs_of_nonneg (hψ _)]
-          calc _ ≤ 1 * deriv smoothTransition (q.endSign * z.1 - L q) * D q := by
-                exact mul_le_mul (mul_le_mul_of_nonneg_right (smoothTransition.le_one _) (hψ _))
-                  (hD q _ _) (abs_nonneg _) (mul_nonneg zero_le_one (hψ _))
-            _ = _ := by rw [one_mul]
-    _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s}, f s := by
-        have hvol : volume (Ico (-1 / 2 : ℝ) (1 / 2)) = 1 := by
-          rw [Real.volume_Ico]
-          norm_num
-        rw [Measure.volume_eq_prod, endStrip_def,
-          setLIntegral_prod (fun z : ℝ × ℝ ↦ f z.1) (hfm.comp measurable_fst).aemeasurable]
-        simp only [setLIntegral_const, hvol, mul_one]
-    _ ≤ ∫⁻ s, f s := setLIntegral_le_lintegral _ _
-    _ = ENNReal.ofReal (B q) + ENNReal.ofReal (D q) := by
-        have hc (c : ℝ) :
-            ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - c)) = 1 := by
-          rw [smoothTransition.lintegral_ofReal_deriv_mul_sub c q.endSign_ne_zero, abs_endSign,
-            inv_one, ENNReal.ofReal_one]
-        rw [hf, lintegral_add_left (by fun_prop), lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
-          lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, hc, hc, one_mul, one_mul]
+  refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le_lintegral
+    (fun w hw x ↦ (contDiffAt_pairOfPantsContinuationPerturbation_prod hG hH hGs hHs L hw
+      x).differentiableAt one_ne_zero) hfm (fun z hz x ↦ ?_) u).trans_eq ?_
+  · -- In the coordinates of the end the curvature is
+    -- `±(β'(σ - 1) C_q + β(σ - 1) β'(σ - L_q) (H_q - G_q))`.
+    rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hH hGs hHs
+      (endSign_mul_pos_of_mem_endStrip hz), Real.enorm_eq_ofReal_abs, abs_mul, abs_endSign,
+      one_mul]
+    simp only [hf]
+    rw [← ENNReal.ofReal_mul (hψ _), ← ENNReal.ofReal_mul (hψ _),
+      ← ENNReal.ofReal_add (mul_nonneg (hψ _) ((abs_nonneg _).trans (hGB q 0 0)))
+        (mul_nonneg (hψ _) ((abs_nonneg _).trans (hD q 0 0)))]
+    refine ENNReal.ofReal_le_ofReal ((abs_add_le _ _).trans (add_le_add ?_ ?_))
+    · rw [abs_mul, abs_of_nonneg (hψ _)]
+      exact mul_le_mul_of_nonneg_left
+        (abs_continuationHomotopy_le (hGB q _ _) (hHB q _ _)) (hψ _)
+    · rw [abs_mul, abs_mul, abs_of_nonneg (smoothTransition.nonneg _), abs_of_nonneg (hψ _)]
+      calc _ ≤ 1 * deriv smoothTransition (q.endSign * z.1 - L q) * D q := by
+            exact mul_le_mul (mul_le_mul_of_nonneg_right (smoothTransition.le_one _) (hψ _))
+              (hD q _ _) (abs_nonneg _) (mul_nonneg zero_le_one (hψ _))
+        _ = _ := by rw [one_mul]
+  · have hc (c : ℝ) :
+        ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - c)) = 1 := by
+      rw [smoothTransition.lintegral_ofReal_deriv_mul_sub c q.endSign_ne_zero, abs_endSign,
+        inv_one, ENNReal.ofReal_one]
+    rw [hf, lintegral_add_left (by fun_prop), lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
+      lintegral_mul_const' _ _ ENNReal.ofReal_ne_top, hc, hc, one_mul, one_mul]
 
 /-- **The integrated curvature of the pair-of-pants perturbation with continuation necks.** Let
 `K` be the perturbation with period-one `C¹` inner and outer Hamiltonians `G_q` and `H_q` on the
@@ -517,11 +426,9 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsContinuationPerturbation
         (fun z x ↦
           pairOfPantsContinuationPerturbation G H L (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ∑ q, (ENNReal.ofReal (B q) + ENNReal.ofReal (D q)) := by
-  -- Off the two punctures, the curvature is supported in the images of the strips of the ends.
-  refine (lintegral_le_sum_setLIntegral_image_endChart fun z hS hq ↦ ?_).trans
+  exact (ω.lintegral_enorm_hamiltonianCurvature_le_sum_endStrip
+    (fun w hw y ↦ pairOfPantsContinuationPerturbation_eq_zero_of_forall_le hw y) u).trans
     (Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_le ω hG hH hGs hHs hGB hHB hD u q)
-  simp [hamiltonianCurvature_pairOfPantsContinuationPerturbation_eq_zero ω hS
-    (fun q ↦ (hq q).trans_lt (by norm_num))]
 
 /-- The integral of the curvature of the pair-of-pants perturbation with continuation necks along
 any map, over any set, has absolute value at most `∑ q, (B_q + D_q)` when `|G_q|, |H_q| ≤ B_q`

@@ -31,6 +31,10 @@ An invertible square matrix induces not just a map but a continuous linear equiv
 inverse is the map of the inverse matrix. That is the form a substitution needs: it supplies the
 inverse substitution and, through `LinearMap.det_toLpLin`, the Jacobian.
 
+Conversely, every continuous linear automorphism of Euclidean space is the map of an invertible
+matrix. This correspondence is a group isomorphism, and the matrix depends continuously on the
+automorphism.
+
 A square matrix is unitary exactly when its continuous linear map preserves the inner product.
 The rows of a unitary matrix form an orthonormal basis, so the values of the quadratic form of a
 matrix `A` on an orthonormal basis are the diagonal entries of a unitary conjugate of `A`; for a
@@ -52,8 +56,16 @@ diagonal matrix `diag(w)` the quadratic form is `x ↦ ∑ᵢ |xᵢ|² wᵢ`.
   continuous linear map;
 * `Matrix.mem_unitaryGroup_iff_inner_toEuclideanCLM` — a matrix is unitary exactly when its
   Euclidean operator preserves the inner product;
+* `Matrix.toEuclideanCLM_apply_apply` — the coordinate formula for the continuous linear map of
+  a matrix, which depends continuously on the matrix (`Matrix.continuous_toEuclideanCLM`) and
+  conversely (`Matrix.continuous_toEuclideanCLM_symm`);
 * `Matrix.toEuclideanCLE` — the continuous linear equivalence of an invertible matrix, with its
-  `apply`, `symm_apply`, coercion and determinant lemmas.
+  `apply`, `symm_apply`, coercion and determinant lemmas;
+* `Matrix.GeneralLinearGroup.ofEuclideanCLE` — the group isomorphism taking a continuous linear
+  automorphism to its invertible matrix, inverse to `Matrix.toEuclideanCLE`; both directions are
+  continuous in families
+  (`Matrix.GeneralLinearGroup.continuous_ofEuclideanCLE`,
+  `Matrix.GeneralLinearGroup.continuous_toEuclideanCLE`).
 -/
 
 public section
@@ -146,6 +158,25 @@ theorem toEuclideanCLM_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι
     toEuclideanCLM (𝕜 := 𝕜) A x = toEuclideanLin A x := by
   rw [← coe_toEuclideanCLM_eq_toEuclideanLin, ContinuousLinearMap.coe_coe]
 
+/-- The coordinates of the image of a vector under the continuous linear map of a matrix. -/
+theorem toEuclideanCLM_apply_apply (A : Matrix ι ι 𝕜) (x : EuclideanSpace 𝕜 ι) (i : ι) :
+    toEuclideanCLM (𝕜 := 𝕜) A x i = ∑ j, A i j * x j := by
+  simp [mulVec, dotProduct]
+
+/-- The continuous linear map of a matrix depends continuously on the matrix. -/
+theorem continuous_toEuclideanCLM :
+    Continuous (toEuclideanCLM (n := ι) (𝕜 := 𝕜) :
+      Matrix ι ι 𝕜 → EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) :=
+  LinearMap.continuous_of_finiteDimensional
+    (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).toAlgEquiv.toLinearEquiv.toLinearMap
+
+/-- The matrix of a continuous linear map on Euclidean space depends continuously on the map. -/
+theorem continuous_toEuclideanCLM_symm :
+    Continuous ((toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm :
+      (EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) → Matrix ι ι 𝕜) :=
+  LinearMap.continuous_of_finiteDimensional
+    (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm.toAlgEquiv.toLinearEquiv.toLinearMap
+
 /-- A square matrix is unitary exactly when its Euclidean operator preserves the inner product. -/
 theorem mem_unitaryGroup_iff_inner_toEuclideanCLM {M : Matrix ι ι 𝕜} :
     M ∈ unitaryGroup ι 𝕜 ↔ ∀ x y : EuclideanSpace 𝕜 ι,
@@ -192,6 +223,14 @@ theorem toEuclideanCLE_symm_apply (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0)
   rw [← mul_apply_eq_comp, ← map_mul, mul_nonsing_inv _ (isUnit_iff_ne_zero.mpr hA), map_one,
     one_apply_eq_self]
 
+/-- The equivalence, as a continuous linear map, is the continuous linear map of the matrix. -/
+@[simp]
+theorem coe_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
+    (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) =
+      toEuclideanCLM (𝕜 := 𝕜) A :=
+  ContinuousLinearMap.ext fun x ↦ by
+    rw [ContinuousLinearEquiv.coe_coe, toEuclideanCLE_apply, toEuclideanCLM_apply]
+
 /-- The determinant of the equivalence is the determinant of the matrix. -/
 @[simp]
 theorem det_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
@@ -199,6 +238,67 @@ theorem det_toEuclideanCLE (A : Matrix ι ι 𝕜) (hA : A.det ≠ 0) :
   have hcoe : (A.toEuclideanCLE hA : EuclideanSpace 𝕜 ι →ₗ[𝕜] EuclideanSpace 𝕜 ι)
       = A.toEuclideanLin := LinearMap.ext fun x => A.toEuclideanCLE_apply hA x
   rw [hcoe, LinearMap.det_toLpLin]
+
+/-- **The invertible matrix of a continuous linear automorphism** of `EuclideanSpace 𝕜 ι`, as a
+group isomorphism. Its inverse is `Matrix.toEuclideanCLE`
+(`Matrix.GeneralLinearGroup.ofEuclideanCLE_symm_apply`). -/
+noncomputable def GeneralLinearGroup.ofEuclideanCLE :
+    (EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) ≃* GL ι 𝕜 :=
+  (ContinuousLinearEquiv.unitsEquiv 𝕜 (EuclideanSpace 𝕜 ι)).symm.trans
+    (Units.mapEquiv (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm.toMulEquiv)
+
+/-- The matrix of a continuous linear automorphism is the matrix of its continuous linear map. -/
+theorem GeneralLinearGroup.coe_ofEuclideanCLE (D : EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) :
+    (GeneralLinearGroup.ofEuclideanCLE D : Matrix ι ι 𝕜) =
+      (toEuclideanCLM (n := ι) (𝕜 := 𝕜)).symm (D : EuclideanSpace 𝕜 ι →L[𝕜] _) := by
+  rfl
+
+/-- The continuous linear map of the matrix of an automorphism is the automorphism. -/
+@[simp]
+theorem GeneralLinearGroup.toEuclideanCLM_ofEuclideanCLE
+    (D : EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) :
+    toEuclideanCLM (𝕜 := 𝕜) (GeneralLinearGroup.ofEuclideanCLE D : Matrix ι ι 𝕜) = D := by
+  rw [coe_ofEuclideanCLE, StarAlgEquiv.apply_symm_apply]
+
+/-- The continuous linear equivalence of the matrix of an automorphism is the automorphism. -/
+@[simp]
+theorem GeneralLinearGroup.toEuclideanCLE_ofEuclideanCLE
+    (D : EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι) :
+    (GeneralLinearGroup.ofEuclideanCLE D : Matrix ι ι 𝕜).toEuclideanCLE
+      (GeneralLinearGroup.ofEuclideanCLE D).det_ne_zero = D :=
+  ContinuousLinearEquiv.coe_injective <| by
+    rw [coe_toEuclideanCLE, toEuclideanCLM_ofEuclideanCLE]
+
+/-- The matrix of the continuous linear equivalence of an invertible matrix is the matrix. -/
+@[simp]
+theorem GeneralLinearGroup.ofEuclideanCLE_toEuclideanCLE (A : GL ι 𝕜) :
+    GeneralLinearGroup.ofEuclideanCLE ((A : Matrix ι ι 𝕜).toEuclideanCLE A.det_ne_zero) = A :=
+  Units.ext <| by rw [coe_ofEuclideanCLE, coe_toEuclideanCLE, StarAlgEquiv.symm_apply_apply]
+
+/-- The inverse of `Matrix.GeneralLinearGroup.ofEuclideanCLE` is the continuous linear equivalence
+of an invertible matrix. -/
+@[simp]
+theorem GeneralLinearGroup.ofEuclideanCLE_symm_apply (A : GL ι 𝕜) :
+    GeneralLinearGroup.ofEuclideanCLE.symm A =
+      (A : Matrix ι ι 𝕜).toEuclideanCLE A.det_ne_zero :=
+  (MulEquiv.symm_apply_eq _).2 (ofEuclideanCLE_toEuclideanCLE A).symm
+
+open scoped Matrix.Norms.L2Operator in
+/-- The matrix of a continuous family of automorphisms depends continuously on the parameter. -/
+theorem GeneralLinearGroup.continuous_ofEuclideanCLE {X : Type*} [TopologicalSpace X]
+    {D : X → EuclideanSpace 𝕜 ι ≃L[𝕜] EuclideanSpace 𝕜 ι}
+    (hD : Continuous fun x ↦ (D x : EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι)) :
+    Continuous fun x ↦ GeneralLinearGroup.ofEuclideanCLE (D x) :=
+  Units.isOpenEmbedding_val.continuous_iff.2 (continuous_toEuclideanCLM_symm.comp hD)
+
+/-- The continuous linear equivalence of a continuous family of invertible matrices depends
+continuously on the parameter. -/
+theorem GeneralLinearGroup.continuous_toEuclideanCLE {X : Type*} [TopologicalSpace X]
+    {A : X → GL ι 𝕜} (hA : Continuous A) :
+    Continuous fun x ↦ ((A x : Matrix ι ι 𝕜).toEuclideanCLE (A x).det_ne_zero :
+      EuclideanSpace 𝕜 ι →L[𝕜] EuclideanSpace 𝕜 ι) := by
+  simp only [coe_toEuclideanCLE]
+  exact continuous_toEuclideanCLM.comp (Units.continuous_val.comp hA)
 
 end Invertible
 
