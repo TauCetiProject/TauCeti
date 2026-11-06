@@ -86,19 +86,7 @@ theorem continuation_iff (ν : P → Q →₀ A)
       Finsupp.mapRange.linearMap d (ν x) =
         Finsupp.linearCombination A ν (mP.m x) +
           (ν x).sum (fun y a ↦ (indP x - indQ y - 1).negOnePow • (a • mQ.m y)) := by
-  classical
-  have hd : (∑ y ∈ (ν x).support, Finsupp.single y (d (ν x y))) =
-      Finsupp.mapRange.linearMap d (ν x) := by
-    conv_rhs => rw [← Finsupp.sum_single (ν x), Finsupp.sum]
-    rw [map_sum]
-    simp
-  have hD : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) mQ.m (ν x) =
-      Finsupp.mapRange.linearMap d (ν x) +
-        (ν x).sum (fun y a ↦ (indQ y - indP x).negOnePow • (a • mQ.m y)) := by
-    conv_lhs => rw [← Finsupp.sum_single (ν x), Finsupp.sum, map_sum]
-    simp_rw [rowFiniteTwistedDifferential_single mQ.m _ (hν x _)]
-    rw [Finset.sum_add_distrib, hd, Finsupp.sum]
-  rw [hD]
+  rw [rowFiniteTwistedDifferential_apply_of_mem mQ.m (hν x)]
   simp only [Int.negOnePow_sub_sub_one, Units.neg_smul, Finsupp.sum, Finset.sum_neg_distrib]
   constructor
   · intro heq

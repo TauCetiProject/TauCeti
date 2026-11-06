@@ -36,6 +36,8 @@ Dually, a single vector is a valid row for a new generator exactly when it is a 
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
+* `rowFiniteTwistedDifferential_mapDomain`: relabelling generators compatibly with the rows
+  commutes with the differentials.
 * `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
   row is the vanishing of its twisted differential.
 * `linearCombination_rowFiniteTwistedDifferential` and
@@ -58,7 +60,7 @@ open DirectSum
 
 namespace TauCeti
 
-universe uR uA uM uP uQ
+universe uR uA uM uP uP' uQ
 
 section Grading
 
@@ -258,6 +260,38 @@ theorem rowFiniteTwistedDifferential_single (m : P → P →₀ A) (x : P)
   classical
   simp [rowFiniteTwistedDifferential, rowFiniteSignedMap_single m x ha]
 
+/-- The differential evaluated on a single, not necessarily homogeneous, coefficient. -/
+theorem rowFiniteTwistedDifferential_single_koszulTwist (m : P → P →₀ A) (x : P) (c : A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (Finsupp.single x c) =
+      Finsupp.single x (d c) + (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 c • m x := by
+  rw [rowFiniteTwistedDifferential_apply, Finsupp.sum_single_index (by simp)]
+  simp
+
+/-- The differential of a vector whose coefficient at each `y` has degree `deg y` is the
+coefficient differential plus the finite sum of the signed coefficients acting on the rows. -/
+theorem rowFiniteTwistedDifferential_apply_of_mem (m : P → P →₀ A) {deg : P → ℤ}
+    {r : P →₀ A} (hr : ∀ y, r y ∈ 𝒜 (deg y)) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m r =
+      Finsupp.mapRange.linearMap d r + r.sum (fun y a ↦ (deg y).negOnePow • (a • m y)) := by
+  rw [rowFiniteTwistedDifferential_apply]
+  congr 1
+  exact Finsupp.sum_congr fun y _ ↦ by
+    rw [koszulTwist_one_eq_negOnePow_smul (R := R) (hr y), smul_assoc]
+
+/-- **Relabelling generators commutes with the twisted differentials.** If a map `e` of
+generators carries the row of each `x` to the row of `e x`, then relabelling vectors along `e`
+intertwines the two differentials. -/
+theorem rowFiniteTwistedDifferential_mapDomain {P' : Type uP'} (e : P → P') (m : P → P →₀ A)
+    {m' : P' → P' →₀ A} (hm : ∀ x, m' (e x) = Finsupp.mapDomain e (m x)) (f : P →₀ A) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m' (Finsupp.mapDomain e f) =
+      Finsupp.mapDomain e (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f₁ f₂ hf₁ hf₂ => simp only [Finsupp.mapDomain_add, map_add, hf₁, hf₂]
+  | single x c =>
+    simp only [Finsupp.mapDomain_single, rowFiniteTwistedDifferential_single_koszulTwist, hm,
+      Finsupp.mapDomain_add, Finsupp.mapDomain_smul]
+
 /-- The finite-support total grading is compatible with the pointwise left algebra action. -/
 instance instGradedSMulRowFiniteTotalGrading :
     SetLike.GradedSMul 𝒜 (rowFiniteTotalGrading 𝒜 ind) where
@@ -273,16 +307,10 @@ theorem mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero (m : P → P �
     {r : P →₀ A} (hr : ∀ y, r y ∈ 𝒜 (ind y - k + 1)) :
     Finsupp.mapRange.linearMap d r = r.sum (fun y a ↦ (k - ind y).negOnePow • (a • m y)) ↔
       rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m r = 0 := by
-  classical
-  have hd : (∑ y ∈ r.support, Finsupp.single y (d (r y))) = Finsupp.mapRange.linearMap d r := by
-    conv_rhs => rw [← Finsupp.sum_single r, Finsupp.sum]
-    rw [map_sum]
-    simp
   have hD : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m r =
       Finsupp.mapRange.linearMap d r - r.sum (fun y a ↦ (k - ind y).negOnePow • (a • m y)) := by
-    conv_lhs => rw [← Finsupp.sum_single r, Finsupp.sum, map_sum]
-    simp_rw [rowFiniteTwistedDifferential_single m _ (hr _)]
-    rw [Finset.sum_add_distrib, hd, Finsupp.sum, sub_eq_add_neg, ← Finset.sum_neg_distrib]
+    rw [rowFiniteTwistedDifferential_apply_of_mem m hr, sub_eq_add_neg, Finsupp.sum,
+      Finsupp.sum, ← Finset.sum_neg_distrib]
     congr 1
     refine Finset.sum_congr rfl fun y _ ↦ ?_
     rw [show ind y - k + 1 = -(k - ind y) + 1 by ring, Int.negOnePow_succ, Int.negOnePow_neg,
@@ -338,10 +366,8 @@ theorem forall_linearCombination_rowFiniteTwistedDifferential_iff (hM : IsDGLeft
         dM (Finsupp.linearCombination A g f)) ↔
       ∀ x, Finsupp.linearCombination A g (m x) = dM (g x) := by
   refine ⟨fun H x ↦ ?_, fun hg ↦ linearCombination_rowFiniteTwistedDifferential hM m hg⟩
-  have := H (Finsupp.single x 1)
-  rwa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜), h.map_one_eq_zero,
-    Finsupp.single_zero, zero_add, Int.negOnePow_zero, one_smul, one_smul,
-    Finsupp.linearCombination_single, one_smul] at this
+  simpa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜),
+    h.map_one_eq_zero] using H (Finsupp.single x 1)
 
 end Maps
 

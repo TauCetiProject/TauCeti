@@ -63,32 +63,11 @@ open Finsupp
 
 namespace TauCeti
 
-universe uR uA uM uP uP' uQ
+universe uR uA uM uP uQ
 
 variable {R : Type uR} {A : Type uA} {P : Type uP} {Q : Type uQ}
   [CommRing R] [Ring A] [Algebra R A]
   {𝒜 : ℤ → Submodule R A} [GradedAlgebra 𝒜] {d : A →ₗ[R] A} {ind : P → ℤ} {indQ : Q → ℤ}
-
-/-- The twisted differential of a single, not necessarily homogeneous, coefficient. -/
-private theorem rowFiniteTwistedDifferential_single_eq (m : P → P →₀ A) (x : P) (c : A) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m (single x c) =
-      single x (d c) + (InternalGrading.ofDecomposition 𝒜).koszulTwist 1 c • m x := by
-  rw [rowFiniteTwistedDifferential_apply, sum_single_index (by simp)]
-  simp
-
-/-- **Relabelling generators commutes with the twisted differentials.** If a map `e` of
-generators carries the row of each `x` to the row of `e x`, then relabelling vectors along `e`
-intertwines the two differentials. -/
-theorem rowFiniteTwistedDifferential_mapDomain {P' : Type uP'} (e : P → P') (m : P → P →₀ A)
-    {m' : P' → P' →₀ A} (hm : ∀ x, m' (e x) = mapDomain e (m x)) (f : P →₀ A) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m' (mapDomain e f) =
-      mapDomain e (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) := by
-  induction f using Finsupp.induction_linear with
-  | zero => simp
-  | add f₁ f₂ hf₁ hf₂ => simp only [mapDomain_add, map_add, hf₁, hf₂]
-  | single x c =>
-    simp only [mapDomain_single, rowFiniteTwistedDifferential_single_eq, hm, mapDomain_add,
-      mapDomain_smul]
 
 namespace RowFiniteTwistingCocycle
 
@@ -159,7 +138,7 @@ theorem attach_differential_mapDomain_inr (g : Q →₀ A) :
     simp only [mapDomain_add, map_add, hg₁, hg₂]
     abel
   | single q c =>
-    rw [mapDomain_single, rowFiniteTwistedDifferential_single_eq, attach_m_inr,
+    rw [mapDomain_single, rowFiniteTwistedDifferential_single_koszulTwist, attach_m_inr,
       rowFiniteSignedMap_apply, sum_single_index (by simp), mapDomain_smul]
     simp
 
