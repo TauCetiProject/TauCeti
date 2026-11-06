@@ -42,6 +42,8 @@ extension by zero is discontinuous at the other origin.
   supported de Rham complexes.
 * `TauCeti.compactlySupportedDeRhamCohomology.extendByZero`: the induced map on compactly supported
   de Rham cohomology, computed on classes by `extendByZero_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.exists_sum_extendByZero`: in degree at least the
+  model dimension, every class is a finite sum of extensions by zero from an open cover.
 * `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForms` and
   `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedForms`: let `η` be a
   smooth form on `W`, exact on an open subset `U ≤ W`, and let a smooth function on `W` vanish near
@@ -240,6 +242,17 @@ theorem coe_extendByZero {U W : Opens M} (h : U ≤ W) (k : ℕ)
 
 end compactlySupportedClosedForms
 
+/-- Viewing a compactly supported form as closed in top degree commutes with extension by zero. -/
+@[simp]
+theorem compactlySupportedForms.toClosedOfFinrankLe_extendByZero [FiniteDimensional ℝ E]
+    {U W : Opens M} (h : U ≤ W) {k : ℕ} (hk : Module.finrank ℝ E ≤ k)
+    (φ : compactlySupportedForms I U k) :
+    toClosedOfFinrankLe I hk (extendByZero h k φ) =
+      compactlySupportedClosedForms.extendByZero h k (toClosedOfFinrankLe I hk φ) := by
+  apply Subtype.ext ∘ Subtype.ext
+  simp only [coe_toClosedOfFinrankLe, coe_extendByZero,
+    compactlySupportedClosedForms.coe_extendByZero]
+
 namespace compactlySupportedDeRhamComplex
 
 /-- The cochain map between compactly supported de Rham complexes given by extension by zero along
@@ -333,6 +346,29 @@ theorem extendByZero_extendByZero {U V W : Opens M} (h₁ : U ≤ V) (h₂ : V �
   rw [extendByZero, extendByZero, extendByZero,
     ← compactlySupportedDeRhamComplex.extendByZero_comp_extendByZero h₁ h₂,
     HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+
+/-- Every compactly supported class in degree at least the model dimension is a finite sum of
+classes extended by zero from the members of an arbitrary open cover. -/
+theorem exists_sum_extendByZero [FiniteDimensional ℝ E] {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+    {W : Opens M} [SigmaCompactSpace W] {ι : Type*} (U : ι → Opens M)
+    (hU : ∀ i, U i ≤ W) (hcover : W ≤ iSup U) {n : ℕ} (hn : Module.finrank ℝ E ≤ n)
+    (c : compactlySupportedDeRhamCohomology I W n) :
+    ∃ s : Finset ι, ∃ d : ∀ i, compactlySupportedDeRhamCohomology I (U i) n,
+      c = ∑ i ∈ s, extendByZero (hU i) n (d i) := by
+  classical
+  obtain ⟨φ, rfl⟩ := mk_surjective I n c
+  let φc : compactlySupportedForms I W n :=
+    ⟨φ.1, (compactlySupportedClosedForms_le_compactlySupportedForms I n) φ.2⟩
+  obtain ⟨s, ψ, hψ⟩ := compactlySupportedForms.exists_sum_extendByZero U hU hcover n φc
+  refine ⟨s, fun i ↦ mk I n (compactlySupportedForms.toClosedOfFinrankLe I hn (ψ i)), ?_⟩
+  have hφ := congrArg (compactlySupportedForms.toClosedOfFinrankLe I hn) hψ
+  simp only [map_sum, compactlySupportedForms.toClosedOfFinrankLe_extendByZero] at hφ
+  have heq : compactlySupportedForms.toClosedOfFinrankLe I hn φc = φ :=
+    Subtype.ext (compactlySupportedForms.coe_toClosedOfFinrankLe I hn φc)
+  rw [heq] at hφ
+  rw [hφ, map_sum]
+  simp only [extendByZero_mk]
 
 end compactlySupportedDeRhamCohomology
 

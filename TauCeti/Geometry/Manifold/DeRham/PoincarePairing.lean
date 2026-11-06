@@ -149,13 +149,14 @@ theorem integral_map_diffeomorph
     (o : Manifold.Orientation I M (Fin n)) (o' : Manifold.Orientation J N (Fin n))
     (Φ : M ≃ₘ⟮I, J⟯ N) (hΦ : ∀ x, o.IsOrientationPreservingAt o' Φ x)
     (c : compactlySupportedDeRhamCohomology J N n) :
-    integral o (map Φ Φ.contMDiff Φ.toHomeomorph.isProperMap n c) = integral o' c := by
+    integral o (map Φ Φ.contMDiff
+      (by simpa only [Diffeomorph.coe_toHomeomorph] using Φ.toHomeomorph.isProperMap) n c) =
+      integral o' c := by
   obtain ⟨φ, rfl⟩ := mk_surjective J n c
-  -- The properness proof uses the homeomorphism coercion; `erw` identifies it with `Φ`.
-  erw [map_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_mpullback,
+  rw [map_mk, integral_mk, integral_mk, compactlySupportedClosedForms.coe_mpullback,
     SmoothForm.coe_mpullback]
-  exact (show Topology.IsOpenEmbedding (Φ : M → N) from
-    Φ.toHomeomorph.isOpenEmbedding).integralTopForm_mpullback_of_isOrientationPreservingAt
+  simpa only [Diffeomorph.coe_toHomeomorph] using
+    Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt
       hΦ (fun y _ ↦ ⟨Φ.symm y, Φ.apply_symm_apply y⟩)
 
 end compactlySupportedDeRhamCohomology

@@ -12,11 +12,11 @@ import Mathlib.Geometry.Manifold.LocalDiffeomorph
 /-!
 # Localization of compactly supported top-degree cohomology
 
-A compactly supported top-degree class is a finite sum of classes extended by zero from any
-open cover. Unlike lower-degree forms, the pieces of a partition of unity are still closed in
-top degree. On a domain diffeomorphic to the model space, integration identifies compactly
-supported top-degree cohomology with the scalars. Consequently a class coming from such a domain
-is zero if its integral is zero.
+Using the finite open-cover decomposition in
+`TauCeti.compactlySupportedDeRhamCohomology.exists_sum_extendByZero`, this file expresses top-degree
+classes as linear combinations of normalized coordinate-domain classes. On a domain diffeomorphic
+to the model space, integration identifies compactly supported top-degree cohomology with the
+scalars. Consequently a class coming from such a domain is zero if its integral is zero.
 
 These statements isolate the local ingredients in the computation of top compactly supported
 cohomology on connected oriented manifolds. They do not assert that integration is injective on
@@ -43,31 +43,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace compactlySupportedDeRhamCohomology
 
-/-- Every compactly supported top-degree class on an open subset is a finite sum of classes
-extended by zero from the members of an arbitrary open cover. -/
-theorem exists_sum_extendByZero {W : Opens M} [SigmaCompactSpace W] {ι : Type*}
-    (U : ι → Opens M)
-    (hU : ∀ i, U i ≤ W) (hcover : W ≤ iSup U) (hn : finrank ℝ E ≤ n)
-    (c : compactlySupportedDeRhamCohomology I W n) :
-    ∃ s : Finset ι, ∃ d : ∀ i, compactlySupportedDeRhamCohomology I (U i) n,
-      c = ∑ i ∈ s, extendByZero (hU i) n (d i) := by
-  classical
-  obtain ⟨φ, rfl⟩ := mk_surjective I n c
-  let φc : compactlySupportedForms I W n :=
-    ⟨φ.1, (compactlySupportedClosedForms_le_compactlySupportedForms I n) φ.2⟩
-  obtain ⟨s, ψ, hψ⟩ := compactlySupportedForms.exists_sum_extendByZero U hU hcover n φc
-  let θ (i : ι) : compactlySupportedClosedForms I (U i) n :=
-    ⟨(ψ i).1, (mem_compactlySupportedClosedForms I).mpr
-      ⟨(ψ i).2, mem_closedForms_of_finrank_le I hn (ψ i).1⟩⟩
-  refine ⟨s, fun i ↦ mk I n (θ i), ?_⟩
-  have hφ : φ = ∑ i ∈ s, compactlySupportedClosedForms.extendByZero (hU i) n (θ i) := by
-    apply Subtype.ext ∘ Subtype.ext
-    simpa only [φc, θ, Submodule.coe_sum, compactlySupportedForms.coe_extendByZero,
-      compactlySupportedClosedForms.coe_extendByZero] using
-      congrArg (fun q : compactlySupportedForms I W n ↦ q.1.1) hψ
-  rw [hφ, map_sum]
-  simp only [extendByZero_mk]
-
 variable [BoundarylessManifold I M]
 
 /-- On a manifold diffeomorphic to its finite-dimensional model space, integration on top
@@ -90,10 +65,12 @@ theorem bijective_integral_of_diffeomorph_normedSpace [SigmaCompactSpace M]
 vanishes. No connectedness of the ambient manifold or of the larger open subset is required. -/
 theorem eq_zero_of_integral_eq_zero_of_mem_range_extendByZero
     (o : Manifold.Orientation I M (Fin n)) {U W : Opens M}
-    [SigmaCompactSpace U] [SigmaCompactSpace W] (h : U ≤ W)
+    [SigmaCompactSpace W] (h : U ≤ W)
     (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U) {c : compactlySupportedDeRhamCohomology I W n}
     (hc : c ∈ LinearMap.range (extendByZero h n))
     (hzero : integral (o.restrict W) c = 0) : c = 0 := by
+  have : SigmaCompactSpace U :=
+    ⟨Φ.toHomeomorph.surjective.range_eq ▸ isSigmaCompact_range Φ.continuous⟩
   obtain ⟨d, rfl⟩ := hc
   rw [integral_extendByZero] at hzero
   have hd : d = 0 := (bijective_integral_of_diffeomorph_normedSpace (o.restrict U) Φ).injective
@@ -127,30 +104,29 @@ end compactlySupportedDeRhamCohomology
 compactly supported exact in any larger open subset if and only if its integral is zero. -/
 theorem mem_exactCompactlySupportedForms_iff_integralTopForm_eq_zero_of_tsupport_subset
     [BoundarylessManifold I M] (o : Manifold.Orientation I M (Fin n)) {U W : Opens M}
-    [SigmaCompactSpace U] [SigmaCompactSpace W] (h : U ≤ W)
+    [SigmaCompactSpace W] (h : U ≤ W)
     (Φ : E ≃ₘ⟮𝓘(ℝ, E), I⟯ U) {φ : SmoothForm I W ℝ n}
     (hφ : φ ∈ compactlySupportedForms I W n)
     (hs : _root_.tsupport (α := E [⋀^Fin n]→L[ℝ] ℝ) φ.1 ⊆ {x | (x : M) ∈ U}) :
     φ ∈ exactCompactlySupportedForms I W n ↔ integralTopForm (o.restrict W) φ.1 = 0 := by
   refine ⟨integralTopForm_eq_zero_of_mem_exactCompactlySupportedForms (o.restrict W), fun hz ↦ ?_⟩
-  let φd : compactlySupportedClosedForms I W n :=
-    ⟨φ, (mem_compactlySupportedClosedForms I).mpr
-      ⟨hφ, mem_closedForms_of_finrank_le I (by simpa using o.card_eq.ge) φ⟩⟩
+  have hn : finrank ℝ E ≤ n := by simpa using o.card_eq.ge
+  let φd := compactlySupportedForms.toClosedOfFinrankLe I hn ⟨φ, hφ⟩
   obtain ⟨ψ, hψ⟩ := (compactlySupportedForms.mem_range_extendByZero_iff h
     (φ := ⟨φ, hφ⟩)).mpr hs
-  let ψd : compactlySupportedClosedForms I U n :=
-    ⟨ψ.1, (mem_compactlySupportedClosedForms I).mpr
-      ⟨ψ.2, mem_closedForms_of_finrank_le I (by simpa using o.card_eq.ge) ψ.1⟩⟩
+  let ψd := compactlySupportedForms.toClosedOfFinrankLe I hn ψ
   have hext : compactlySupportedClosedForms.extendByZero h n ψd = φd := by
-    apply Subtype.ext ∘ Subtype.ext
-    simpa only [compactlySupportedClosedForms.coe_extendByZero,
-      compactlySupportedForms.coe_extendByZero] using
-      congrArg (fun q : compactlySupportedForms I W n ↦ q.1.1) hψ
+    simpa only [compactlySupportedForms.toClosedOfFinrankLe_extendByZero] using
+      congrArg (compactlySupportedForms.toClosedOfFinrankLe I hn) hψ
+  have hcoe : (φd : SmoothForm I W ℝ n) = φ :=
+    compactlySupportedForms.coe_toClosedOfFinrankLe I hn ⟨φ, hφ⟩
+  rw [← hcoe]
   apply (compactlySupportedDeRhamCohomology.mk_eq_zero_iff I n φd).mp
   apply compactlySupportedDeRhamCohomology.eq_zero_of_integral_eq_zero_of_mem_range_extendByZero
     o h Φ
   · exact ⟨compactlySupportedDeRhamCohomology.mk I n ψd, by
       rw [compactlySupportedDeRhamCohomology.extendByZero_mk, hext]⟩
-  · simpa only [compactlySupportedDeRhamCohomology.integral_mk] using hz
+  · simpa only [compactlySupportedDeRhamCohomology.integral_mk, φd,
+      compactlySupportedForms.coe_toClosedOfFinrankLe] using hz
 
 end TauCeti
