@@ -183,6 +183,16 @@ noncomputable def f4ShortRootIdealDividedSquareColumn
       f4ShortRootDividedAdjointSquare k (f4ShortRootLieIdealBasis a) := by
   rfl
 
+/-- The ideal divided-square column vanishes when the ambient divided square of the basis vector
+does. -/
+theorem f4ShortRootIdealDividedSquareColumn_eq_zero
+    (k : Fin 4 ⊕ Fin 4) (a : Fin 26)
+    (h : f4ModularDividedAdjointSquare k
+      (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra) = 0) :
+    f4ShortRootIdealDividedSquareColumn k a = 0 := by
+  simp only [f4ShortRootIdealDividedSquareColumn_apply]
+  exact Subtype.ext ((f4ModularDividedAdjointSquare_basis k a).symm.trans h)
+
 /-- The ideal's first-order canonical column is the corresponding sparse root-matrix column. -/
 theorem f4ShortRootIdealFirstColumn_eq
     (k : Fin 4 ⊕ Fin 4) (a : Fin 26) :

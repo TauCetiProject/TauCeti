@@ -112,16 +112,6 @@ theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_opposite_of_long
     _ = f4ShortRootLieIdealBasis b := hout
     _ = _ := hideal.symm
 
-/-- The ideal divided-square column vanishes when the ambient divided square of the basis vector
-does. -/
-private theorem f4ShortRootIdealDividedSquareColumn_eq_zero
-    (k : Fin 4 ⊕ Fin 4) (a : Fin 26)
-    (h : f4ModularDividedAdjointSquare k
-      (f4ShortRootLieIdealBasis a : f4ModularChevalleyLieAlgebra) = 0) :
-    f4ShortRootIdealDividedSquareColumn k a = 0 := by
-  simp only [f4ShortRootIdealDividedSquareColumn_apply]
-  exact Subtype.ext ((f4ModularDividedAdjointSquare_basis k a).symm.trans h)
-
 /-- For a long signed-simple source, away from the opposite long-root coordinate both
 divided-square columns vanish. -/
 private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long_of_ne_opposite
@@ -151,6 +141,7 @@ private theorem f4ShortRootQuotientToIdealEquiv_dividedSquare_rootColumn_of_long
     intro h
     apply hi
     apply Subtype.ext
+    -- Reduce the `Subtype.val` of the anonymous constructor so `h` can be rewritten into it.
     change (i : Fin 48) = f4SpecialIsogenyIndexEquiv
       (f4OppositeRootIndex (f4SignedSimpleRootIndex k))
     rw [← h]
