@@ -12,6 +12,7 @@ public import TauCeti.NumberTheory.NumberField.Ideal.RootsOfUnity
 public import TauCeti.NumberTheory.NumberField.Quadratic.Norm
 public import TauCeti.NumberTheory.NumberField.WorkedExamples.GaussianRationals.Invariants
 public import TauCeti.RingTheory.RootsOfUnity.Basic
+import Mathlib.NumberTheory.SumTwoSquares
 
 /-!
 # Basic facts about the Gaussian integers as a ring of integers
@@ -39,9 +40,11 @@ coordinates of `ℤ[i]` in the basis `1, i` are described for every quadratic cy
 * `IsPrimitiveRoot.isUnit_intCast_add_intCast_mul_toInteger_iff_of_four`: `a + b i` is a unit
   exactly when `a² + b² = 1`;
 * `TauCeti.isPrincipalIdealRing_ringOfIntegers_four`: `ℤ[i]` is a principal ideal domain;
-* `TauCeti.exists_ringHom_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
+* `TauCeti.exists_gal_apply_eq_pow_three_of_four`: complex conjugation of `ℤ[i]` cubes every
   fourth root of unity;
 * `TauCeti.intCast_norm_eq_mul_of_four`: the norm of `x` is `x σ(x)` for such a conjugation `σ`;
+* `TauCeti.exists_natCast_eq_mul_of_mod_four_ne_three`: a split or ramified rational prime is a
+  product of conjugate Gaussian integers of absolute norm equal to that prime;
 * `TauCeti.absNorm_span_natCast_four`: the absolute norm of `q ℤ[i]` is `q²`;
 * `NumberField.RingOfIntegers.natCast_absNorm_span_singleton_of_four`: the absolute norm of
   `x ℤ[i]` is the norm of `x`;
@@ -165,11 +168,12 @@ variable {K : Type*} [Field K] [NumberField K] [IsCyclotomicExtension {4} ℚ K]
 
 /-- Complex conjugation of `𝓞 K = ℤ[i]`, the automorphism corresponding to `-1 ∈ (ZMod 4)ˣ`, cubes
 every fourth root of unity. -/
-theorem exists_ringHom_apply_eq_pow_three_of_four :
-    ∃ σ : 𝓞 K →+* 𝓞 K, ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3 := by
-  refine ⟨MulSemiringAction.toRingHom Gal(K/ℚ) (𝓞 K) ((galEquivZMod 4 K).symm (-1)),
-    fun x hx ↦ ?_⟩
-  rw [MulSemiringAction.toRingHom_apply, galEquivZMod_smul_of_pow_eq 4 K _ hx,
+theorem exists_gal_apply_eq_pow_three_of_four :
+    ∃ σ : Gal(K/ℚ), galEquivZMod 4 K σ = -1 ∧
+      ∀ x : 𝓞 K, x ^ 4 = 1 →
+        MulSemiringAction.toRingEquiv Gal(K/ℚ) (𝓞 K) σ x = x ^ 3 := by
+  refine ⟨(galEquivZMod 4 K).symm (-1), MulEquiv.apply_symm_apply _ _, fun x hx ↦ ?_⟩
+  rw [MulSemiringAction.toRingEquiv_apply_apply, galEquivZMod_smul_of_pow_eq 4 K _ hx,
     MulEquiv.apply_symm_apply]
   -- The representative of `-1` in `ZMod 4` is `3`.
   rfl
@@ -186,6 +190,31 @@ theorem intCast_norm_eq_mul_of_four {σ : 𝓞 K →+* 𝓞 K} (hσ : ∀ x : �
   push_cast
   linear_combination (-((a : 𝓞 K) * b * hζ.toInteger) - (b : 𝓞 K) ^ 2 * (hζ.toInteger ^ 2 - 1)) *
     hsq
+
+/-- A split or ramified rational prime is a product of conjugate Gaussian integers of absolute
+norm `q`. Here `σ` is any ring homomorphism cubing the fourth roots of unity. -/
+theorem exists_natCast_eq_mul_of_mod_four_ne_three {σ : 𝓞 K →+* 𝓞 K}
+    (hσ : ∀ x : 𝓞 K, x ^ 4 = 1 → σ x = x ^ 3) {q : ℕ}
+    (hq : q.Prime) (hq3 : q % 4 ≠ 3) :
+    ∃ β : 𝓞 K, β ≠ 0 ∧ (q : 𝓞 K) = σ β * β ∧ Ideal.absNorm (Ideal.span {β}) = q := by
+  have := Fact.mk hq
+  obtain ⟨x, y, hxy⟩ := Nat.Prime.sq_add_sq hq3
+  have hζ := IsCyclotomicExtension.zeta_spec 4 ℚ K
+  let β : 𝓞 K := x + y * hζ.toInteger
+  have hn : Algebra.norm ℤ β = (q : ℤ) := by
+    have hn := hζ.norm_intCast_add_intCast_mul_toInteger_of_four (x : ℤ) (y : ℤ)
+    simp only [Int.cast_natCast] at hn
+    rw [hn]
+    exact_mod_cast hxy
+  have hqβ : (q : 𝓞 K) = σ β * β := by
+    have h := intCast_norm_eq_mul_of_four hσ β
+    rw [hn, Int.cast_natCast] at h
+    exact h.trans (mul_comm _ _)
+  refine ⟨β, ?_, hqβ, ?_⟩
+  · intro h
+    rw [h, mul_zero, Nat.cast_eq_zero] at hqβ
+    exact hq.ne_zero hqβ
+  · rw [Ideal.absNorm_span_singleton, hn, Int.natAbs_natCast]
 
 end TauCeti
 

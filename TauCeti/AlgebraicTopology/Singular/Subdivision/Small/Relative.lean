@@ -53,6 +53,10 @@ restricted to it. -/
 def smallSingularSubcomplex : (toSSetPair.obj P).right.Subcomplex :=
   P.fst.smallSingularSubcomplex U
 
+/-- The small subcomplex of a topological pair is the small subcomplex of its ambient space. -/
+lemma smallSingularSubcomplex_eq :
+    P.smallSingularSubcomplex U = P.fst.smallSingularSubcomplex U := (rfl)
+
 @[simp]
 lemma mem_smallSingularSubcomplex_iff {n : SimplexCategoryᵒᵖ}
     (σ : (toSSetPair.obj P).right.obj n) :

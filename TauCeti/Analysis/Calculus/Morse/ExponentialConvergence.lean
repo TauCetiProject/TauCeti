@@ -117,47 +117,62 @@ private theorem norm_sub_add_one_le
     rw [uIcc_of_le htt]
     exact fun s hs ↦ le_trans ht hs.1
   have hcontv : ContinuousOn (fun s ↦ ∇ f (γ s)) [[t, t + 1]] := hcont.mono hsub
-  have hcontn : ContinuousOn (fun s ↦ ‖∇ f (γ s)‖) [[t, t + 1]] := hcontv.norm
-  have hint1 : IntervalIntegrable (fun s ↦ ‖∇ f (γ s)‖) volume t (t + 1) :=
-    hcontn.intervalIntegrable
   have hint2 : IntervalIntegrable (fun s ↦ ‖∇ f (γ s)‖ ^ 2) volume t (t + 1) :=
-    (hcontn.pow 2).intervalIntegrable
-  have hintv : IntervalIntegrable (fun s ↦ -∇ f (γ s)) volume t (t + 1) :=
-    hcontv.neg.intervalIntegrable
-  have hint3 : IntervalIntegrable (fun s ↦ (α * ‖∇ f (γ s)‖ ^ 2 + 1 / α) / 2) volume t (t + 1) :=
-    ((hint2.const_mul α).add intervalIntegrable_const).div_const 2
+    (hcontv.norm.pow 2).intervalIntegrable
   have hFTC : ∫ s in t..(t + 1), -∇ f (γ s) = γ (t + 1) - γ t :=
-    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun s hs ↦ hderiv s (hsub hs)) hintv
-  have step1 : ‖γ (t + 1) - γ t‖ ≤ ∫ s in t..(t + 1), ‖∇ f (γ s)‖ := by
-    rw [← hFTC]
-    calc ‖∫ s in t..(t + 1), -∇ f (γ s)‖ ≤ ∫ s in t..(t + 1), ‖-∇ f (γ s)‖ :=
-          intervalIntegral.norm_integral_le_integral_norm htt
-      _ = ∫ s in t..(t + 1), ‖∇ f (γ s)‖ := by simp
-  have step2 : (∫ s in t..(t + 1), ‖∇ f (γ s)‖)
-      ≤ ∫ s in t..(t + 1), (α * ‖∇ f (γ s)‖ ^ 2 + 1 / α) / 2 := by
-    refine intervalIntegral.integral_mono_on htt hint1 hint3 fun s _ ↦ ?_
-    have hyoung := two_mul_le_add_mul_sq (a := ‖∇ f (γ s)‖) (b := 1) hα
-    norm_num [one_div] at hyoung ⊢
-    linarith
-  have step3 : (∫ s in t..(t + 1), (α * ‖∇ f (γ s)‖ ^ 2 + 1 / α) / 2)
-      = (α * (∫ s in t..(t + 1), ‖∇ f (γ s)‖ ^ 2) + 1 / α) / 2 := by
-    rw [intervalIntegral.integral_div, intervalIntegral.integral_add (hint2.const_mul α)
-      intervalIntegrable_const, intervalIntegral.integral_const_mul,
-      intervalIntegral.integral_const]
-    simp
-  have hcurve : IsIntegralCurveOn γ (fun _ x ↦ -∇ f x) (Ici T) :=
-    fun s hs ↦ (hderiv s hs).hasDerivWithinAt
-  have step4 : (∫ s in t..(t + 1), ‖∇ f (γ s)‖ ^ 2) = f (γ t) - f (γ (t + 1)) :=
-    integral_norm_gradient_sq_eq_sub hcurve hsub (fun s hs ↦ hdiff s (hsub hs))
+    intervalIntegral.integral_eq_sub_of_hasDerivAt (fun s hs ↦ hderiv s (hsub hs))
+      hcontv.neg.intervalIntegrable
+  have hE : (∫ s in t..(t + 1), ‖∇ f (γ s)‖ ^ 2) = f (γ t) - f (γ (t + 1)) :=
+    integral_norm_gradient_sq_eq_sub (fun s hs ↦ (hderiv s hs).hasDerivWithinAt) hsub
+      (fun s hs ↦ hdiff s (hsub hs))
   have hge1 : f p ≤ f (γ (t + 1)) := hge (t + 1) (le_trans ht htt)
-  have hfinal : α * (f (γ t) - f (γ (t + 1))) ≤ α * (f (γ t) - f p) :=
-    mul_le_mul_of_nonneg_left (by linarith) hα.le
-  calc ‖γ (t + 1) - γ t‖ ≤ ∫ s in t..(t + 1), ‖∇ f (γ s)‖ := step1
-    _ ≤ ∫ s in t..(t + 1), (α * ‖∇ f (γ s)‖ ^ 2 + 1 / α) / 2 := step2
-    _ = (α * (f (γ t) - f (γ (t + 1))) + 1 / α) / 2 := by rw [step3, step4]
-    _ ≤ (α * (f (γ t) - f p) + 1 / α) / 2 := by linarith
+  calc ‖γ (t + 1) - γ t‖ ≤ ∫ s in t..(t + 1), ‖∇ f (γ s)‖ := by
+        rw [← hFTC]
+        simpa using intervalIntegral.norm_integral_le_integral_norm (μ := volume)
+          (f := fun s ↦ -∇ f (γ s)) htt
+    _ ≤ ∫ s in t..(t + 1), (α * ‖∇ f (γ s)‖ ^ 2 + 1 / α) / 2 := by
+        refine intervalIntegral.integral_mono_on htt hcontv.norm.intervalIntegrable
+          (((hint2.const_mul α).add intervalIntegrable_const).div_const 2) fun s _ ↦ ?_
+        have hyoung := two_mul_le_add_mul_sq (a := ‖∇ f (γ s)‖) (b := 1) hα
+        norm_num [one_div] at hyoung ⊢
+        linarith
+    _ = (α * (f (γ t) - f (γ (t + 1))) + 1 / α) / 2 := by
+        rw [intervalIntegral.integral_div, intervalIntegral.integral_add (hint2.const_mul α)
+          intervalIntegrable_const, intervalIntegral.integral_const_mul, hE]
+        simp
+    _ ≤ (α * (f (γ t) - f p) + 1 / α) / 2 := by nlinarith
 
 /-! ### The main theorems -/
+
+/-- **The unit-time step is at most the square root of the energy.** If the energy decays like
+`q ^ 2 * exp (-(lam * (t - T)))` after time `T`, then the trajectory moves in unit time by at most
+`q * exp (-(lam / 2 * (t - T)))`; this is `norm_sub_add_one_le` with
+`α = exp (lam / 2 * (t - T)) / q`. -/
+private theorem norm_sub_add_one_le_mul_exp
+    (hderiv : ∀ s ∈ Ici T, HasDerivAt γ (-∇ f (γ s)) s)
+    (hdiff : ∀ s ∈ Ici T, DifferentiableAt ℝ f (γ s))
+    (hcont : ContinuousOn (fun s ↦ ∇ f (γ s)) (Ici T))
+    (hge : ∀ s ∈ Ici T, f p ≤ f (γ s)) {q : ℝ} (hq : 0 < q)
+    (hdecay : ∀ t ∈ Ici T, f (γ t) - f p ≤ q * q * Real.exp (-(lam * (t - T)))) :
+    ∀ t ∈ Ici T, ‖γ (t + 1) - γ t‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) := by
+  intro t ht
+  set e : ℝ := Real.exp (lam / 2 * (t - T)) with hedef
+  have hepos : (0 : ℝ) < e := Real.exp_pos _
+  have hee : (e * e)⁻¹ = Real.exp (-(lam * (t - T))) := by
+    rw [hedef, ← Real.exp_add, ← Real.exp_neg]
+    congr 1
+    ring
+  have hα : (0 : ℝ) < e / q := by positivity
+  refine (norm_sub_add_one_le hderiv hdiff hcont hge ht hα).trans ?_
+  have h1 : e / q * (f (γ t) - f p) ≤ q / e := by
+    have hd := hdecay t ht
+    rw [← hee] at hd
+    calc e / q * (f (γ t) - f p) ≤ e / q * (q * q * (e * e)⁻¹) :=
+          mul_le_mul_of_nonneg_left hd hα.le
+      _ = q / e := by field_simp
+  rw [Real.exp_neg, ← hedef, one_div_div]
+  rw [div_eq_mul_inv q e] at h1 ⊢
+  linarith
 
 /-- The data extracted from the hypotheses of the exponential-convergence theorems: a time `T`
 after which the trajectory is confined to a neighbourhood of `p` on which Łojasiewicz's inequality
@@ -236,102 +251,35 @@ theorem exists_norm_sub_le_mul_exp_atTop (hγ : IsIntegralCurveOn γ (fun _ x �
   have hqne : q ≠ 0 := hq0.ne'
   have hqq : q * q = G := Real.mul_self_sqrt hG.le
   -- the energy is dominated by `G * exp (-lam * (t - T))`
-  have hdecay : ∀ t ∈ Ici T, f (γ t) - f p ≤ G * Real.exp (-(lam * (t - T))) := by
+  have hdecay : ∀ t ∈ Ici T, f (γ t) - f p ≤ q * q * Real.exp (-(lam * (t - T))) := by
     intro t ht
     refine (le_mul_exp_of_hasDerivAt_le_neg_mul (lam := lam)
       (fun s hs ↦ hasDerivAt_energy (hderiv s hs) (hdiff s hs))
       (fun s hs ↦ by linarith [hloj s hs]) ht).trans ?_
+    rw [hqq]
     exact mul_le_mul_of_nonneg_right (by simp [hGdef]) (Real.exp_pos _).le
-  -- the trajectory moves by at most `sqrt (energy)` in unit time
-  have hstep : ∀ t ∈ Ici T, ‖γ (t + 1) - γ t‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) := by
-    intro t ht
-    set e : ℝ := Real.exp (lam / 2 * (t - T)) with hedef
-    have hepos : (0 : ℝ) < e := Real.exp_pos _
-    have hene : e ≠ 0 := hepos.ne'
-    have hee : (e * e)⁻¹ = Real.exp (-(lam * (t - T))) := by
-      rw [hedef, ← Real.exp_add, ← Real.exp_neg]
-      congr 1
-      ring
-    have hexpneg2 : Real.exp (-(lam / 2 * (t - T))) = e⁻¹ := by
-      rw [hedef, Real.exp_neg]
-    have hα : (0 : ℝ) < e / q := by positivity
-    refine (norm_sub_add_one_le hderiv hdiff hcont hge ht hα).trans ?_
-    have h1 : e / q * (f (γ t) - f p) ≤ q / e := by
-      have hd := hdecay t ht
-      rw [← hee] at hd
-      calc e / q * (f (γ t) - f p) ≤ e / q * (G * (e * e)⁻¹) :=
-            mul_le_mul_of_nonneg_left hd hα.le
-        _ = q / e := by rw [← hqq]; field_simp
-    have h2 : 1 / (e / q) = q / e := by field_simp
-    rw [hexpneg2, h2]
-    have h3 : q / e = q * e⁻¹ := by field_simp
-    rw [h3] at h1 ⊢
-    linarith
+  have hstep := norm_sub_add_one_le_mul_exp hderiv hdiff hcont hge hq0 hdecay
   -- summing the geometric series over the times `t, t + 1, t + 2, …`
   set r : ℝ := Real.exp (-(lam / 2)) with hrdef
-  have _ : 0 < r := Real.exp_pos _
   have hr1 : r < 1 := by
     rw [hrdef]
     exact Real.exp_lt_one_iff.2 (by linarith)
   have hone : (0 : ℝ) < 1 - r := by linarith
-  have htel : ∀ (n : ℕ) (t : ℝ), T ≤ t →
-      ‖γ (t + n) - γ t‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) * ((1 - r ^ n) / (1 - r)) := by
-    intro n
-    induction n with
-    | zero => intro t _; simp
-    | succ n ih =>
-      intro t ht
-      have hcast : ((n + 1 : ℕ) : ℝ) = (n : ℝ) + 1 := by push_cast; ring
-      have hmem : t + (n : ℝ) ∈ Ici T := by
-        have _ : (0 : ℝ) ≤ (n : ℝ) := Nat.cast_nonneg n
-        simp only [mem_Ici] at ht ⊢
-        linarith
-      have hexpn : Real.exp (-(lam / 2 * (t + (n : ℝ) - T)))
-          = Real.exp (-(lam / 2 * (t - T))) * r ^ n := by
-        rw [hrdef, ← Real.exp_nat_mul, ← Real.exp_add]
-        congr 1
-        ring
-      have hstep' : ‖γ (t + (n : ℝ) + 1) - γ (t + n)‖
-          ≤ q * Real.exp (-(lam / 2 * (t - T))) * r ^ n := by
-        refine (hstep _ hmem).trans_eq ?_
-        rw [hexpn, mul_assoc]
-      have hIH := ih t ht
-      have hsum : ‖γ (t + ((n : ℝ) + 1)) - γ t‖
-          ≤ ‖γ (t + (n : ℝ) + 1) - γ (t + n)‖ + ‖γ (t + n) - γ t‖ := by
-        have heq : t + ((n : ℝ) + 1) = t + (n : ℝ) + 1 := by ring
-        rw [heq, ← sub_add_sub_cancel (γ (t + (n : ℝ) + 1)) (γ (t + (n : ℝ))) (γ t)]
-        exact norm_add_le _ _
-      have hcalc : q * Real.exp (-(lam / 2 * (t - T))) * r ^ n
-          + q * Real.exp (-(lam / 2 * (t - T))) * ((1 - r ^ n) / (1 - r))
-          = q * Real.exp (-(lam / 2 * (t - T))) * ((1 - r ^ (n + 1)) / (1 - r)) := by
-        field_simp
-        ring
-      rw [hcast]
-      calc ‖γ (t + ((n : ℝ) + 1)) - γ t‖
-          ≤ ‖γ (t + (n : ℝ) + 1) - γ (t + n)‖ + ‖γ (t + n) - γ t‖ := hsum
-        _ ≤ q * Real.exp (-(lam / 2 * (t - T))) * r ^ n
-            + q * Real.exp (-(lam / 2 * (t - T))) * ((1 - r ^ n) / (1 - r)) :=
-            add_le_add hstep' hIH
-        _ = _ := hcalc
   have hlimit : ∀ t ∈ Ici T,
       ‖γ t - p‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) / (1 - r) := by
     intro t ht
-    have htend : Tendsto (fun n : ℕ ↦ γ (t + n)) atTop (𝓝 p) :=
-      hconv.comp (tendsto_atTop_add_const_left atTop t tendsto_natCast_atTop_atTop)
-    have hnorm : Tendsto (fun n : ℕ ↦ ‖γ (t + n) - γ t‖) atTop (𝓝 ‖p - γ t‖) :=
-      (htend.sub_const (γ t)).norm
-    have hbd : ‖p - γ t‖ ≤ q * Real.exp (-(lam / 2 * (t - T))) / (1 - r) := by
-      refine le_of_tendsto hnorm (Filter.Eventually.of_forall fun n ↦ ?_)
-      refine (htel n t ht).trans ?_
-      have hA : (0 : ℝ) ≤ q * Real.exp (-(lam / 2 * (t - T))) := by positivity
-      have hrn : (0 : ℝ) ≤ r ^ n := by positivity
-      have hle1 : (1 : ℝ) - r ^ n ≤ 1 := by linarith
-      calc q * Real.exp (-(lam / 2 * (t - T))) * ((1 - r ^ n) / (1 - r))
-          ≤ q * Real.exp (-(lam / 2 * (t - T))) * (1 / (1 - r)) := by
-            refine mul_le_mul_of_nonneg_left ?_ hA
-            gcongr
-        _ = q * Real.exp (-(lam / 2 * (t - T))) / (1 - r) := by ring
-    rwa [norm_sub_rev] at hbd
+    have h := dist_le_of_le_geometric_of_tendsto₀ (f := fun n : ℕ ↦ γ (t + n)) r
+      (q * Real.exp (-(lam / 2 * (t - T)))) hr1 (fun n ↦ ?_)
+      (hconv.comp (tendsto_atTop_add_const_left atTop t tendsto_natCast_atTop_atTop))
+    · simpa [dist_eq_norm] using h
+    · have hmem : t + (n : ℝ) ∈ Ici T := by
+        simp only [mem_Ici] at ht ⊢
+        linarith [(Nat.cast_nonneg n : (0 : ℝ) ≤ n)]
+      rw [dist_comm, dist_eq_norm, Nat.cast_succ, ← add_assoc]
+      refine (hstep _ hmem).trans_eq ?_
+      rw [hrdef, ← Real.exp_nat_mul, mul_assoc, ← Real.exp_add]
+      congr 2
+      ring
   refine ⟨lam / 2, by linarith, q * Real.exp (lam / 2 * T) / (1 - r), by positivity, ?_⟩
   filter_upwards [eventually_ge_atTop T] with t ht
   refine (hlimit t ht).trans_eq ?_

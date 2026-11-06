@@ -51,10 +51,14 @@ measure finite.
   constant Jacobian factor.
 * `MeasureTheory.Measure.rnDeriv_map_affine`: the Radon–Nikodym derivative of an affine image is
   obtained by the same substitution and Jacobian factor.
+* `MeasureTheory.Measure.support_withDensity_eq`: weighting a measure by an almost-everywhere
+  nonzero density preserves its topological support.
 * `MeasureTheory.Measure.support_withDensity_eq_closure_of_subset`: a density positive on an open
   set and zero off its closure has topological support equal to that closure.
 * `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
   support is exactly the open set.
+* `MeasureTheory.Measure.support_withDensity_ofReal`: a continuous nonnegative real density
+  has the same topological support as the measure it defines.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
@@ -120,6 +124,14 @@ namespace MeasureTheory.Measure
 
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
 
+/-- Weighting a measure by an almost-everywhere nonzero density preserves its topological support.
+-/
+theorem support_withDensity_eq {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    {μ : Measure X} {f : X → ℝ≥0∞} (hf : AEMeasurable f μ) (hf_ne_zero : ∀ᵐ x ∂μ, f x ≠ 0) :
+    (μ.withDensity f).support = μ.support :=
+  Set.Subset.antisymm (withDensity_absolutelyContinuous μ f).support_mono
+    (withDensity_absolutelyContinuous' hf hf_ne_zero).support_mono
+
 /-- If a measurable density is positive on an open set and zero off its closure, then its weighted
 measure has topological support equal to that closure, provided the reference measure is positive
 on nonempty open sets.
@@ -151,6 +163,17 @@ theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [Measura
     (μ.withDensity f).support = closure U := by
   exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
     (hsupp.le.trans subset_closure)
+
+/-- The support of a measure with continuous nonnegative real density is the topological support
+of that density, provided the reference measure is positive on nonempty open sets. -/
+theorem support_withDensity_ofReal {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ}
+    (hf : Continuous f) (hf0 : 0 ≤ f) :
+    (μ.withDensity (fun x ↦ ENNReal.ofReal (f x))).support = tsupport f := by
+  apply support_withDensity_eq_closure hf.measurable.ennreal_ofReal hf.isOpen_support
+  ext x
+  simp only [Function.mem_support, ne_eq, ENNReal.ofReal_eq_zero]
+  exact not_congr ⟨fun h ↦ le_antisymm h (hf0 x), fun h ↦ h.le⟩
 
 /-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
 which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to

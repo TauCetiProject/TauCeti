@@ -17,6 +17,7 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.LieStable
 public import TauCeti.Algebra.AlgebraicGroup.Representation.PointsAction.Basic
 public import TauCeti.Algebra.AlgebraicGroup.Representation.TensorProduct
 public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.FromMatrix
+public import TauCeti.Algebra.Lie.DirectSum
 import TauCeti.Algebra.Coalgebra.Subcomodule.PointSeparation
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
 import TauCeti.RingTheory.FiniteType.Tensor.PointSeparation
@@ -68,11 +69,15 @@ to rational representations of the group, and conversely.
   rational representations are the intertwiners of their differentials.
 * `TauCeti.IsRationalRep.map_lift_differential_apply`: they also intertwine the actions of the
   universal enveloping algebra `U(𝔤𝔩ₙ)`.
+* `TauCeti.IsRationalRep.lieModuleEquivOfEquiv`: an equivalence of rational representations is an
+  isomorphism of the differentiated `𝔤𝔩ₙ`-modules.
 * `TauCeti.IsRationalRep.differential_tprod`: the differential of a tensor product of rational
   representations is the tensor product of their differentials, `dρ X ⊗ 1 + 1 ⊗ dσ X`.
 * `TauCeti.IsRationalRep.tprodLieModuleEquiv`: isomorphisms of `𝔤𝔩ₙ`-modules out of two
   differentiated rational representations tensor to one out of their differentiated tensor
   product.
+* `TauCeti.IsRationalRep.differential_directSum` and
+  `TauCeti.IsRationalRep.directSumLieModuleEquiv`: the same for finite direct sums.
 
 ## References
 
@@ -84,6 +89,8 @@ to rational representations of the group, and conversely.
 public section
 
 open WithConv TensorProduct
+
+open scoped DirectSum
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
@@ -418,6 +425,28 @@ theorem map_lift_differential_apply (hρ : IsRationalRep ρ) (hσ : IsRationalRe
   | add a b ha hb => simp only [map_add, LinearMap.add_apply, ha, hb]
   | mul a b ha hb => simp only [map_mul, mul_apply_eq_comp, ha, hb]
 
+/-- **Equivalent rational representations have isomorphic differentials**: an equivalence of
+rational representations of `GL n ℂ` is an isomorphism between the `𝔤𝔩ₙ`-modules given by their
+differentials. -/
+noncomputable def lieModuleEquivOfEquiv (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (φ : ρ.Equiv σ) :
+    letI := LieRingModule.compLieHom W hρ.differential
+    letI := LieRingModule.compLieHom V hσ.differential
+    W ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ V :=
+  letI := LieRingModule.compLieHom W hρ.differential
+  letI := LieRingModule.compLieHom V hσ.differential
+  { φ.toLinearEquiv with
+    map_lie' := fun {X w} ↦
+      (hρ.isIntertwiningMap_iff_forall_map_differential hσ φ.toLinearEquiv.toLinearMap).mp
+        ⟨φ.toIntertwiningMap.isIntertwining⟩ X w }
+
+/-- `TauCeti.IsRationalRep.lieModuleEquivOfEquiv` is the given equivalence. -/
+@[simp]
+theorem lieModuleEquivOfEquiv_apply (hρ : IsRationalRep ρ) (hσ : IsRationalRep σ)
+    (φ : ρ.Equiv σ) (w : W) :
+    lieModuleEquivOfEquiv hρ hσ φ w = φ w :=
+  (rfl)
+
 end Intertwining
 
 section TensorProduct
@@ -507,6 +536,66 @@ theorem tprodLieModuleEquiv_tmul (hρ : IsRationalRep ρ) (hσ : IsRationalRep �
   (rfl)
 
 end TensorProduct
+
+section DirectSum
+
+variable {ι : Type*} [Finite ι] {V : ι → Type*} [∀ i, AddCommGroup (V i)] [∀ i, Module ℂ (V i)]
+  {σ : ∀ i, Representation ℂ (GL (Fin n) ℂ) (V i)}
+
+/-- **The differential of a finite direct sum of rational representations** is the direct sum of
+their differentials: differentiating carries direct sums of representations of `GL n ℂ` to direct
+sums of representations of `𝔤𝔩ₙ(ℂ)`. -/
+theorem differential_directSum (h : ∀ i, IsRationalRep (σ i)) (X : Matrix (Fin n) (Fin n) ℂ) :
+    (IsRationalRep.directSum h).differential X = DirectSum.lmap fun i ↦ (h i).differential X := by
+  classical
+  refine DirectSum.linearMap_ext ℂ fun i ↦ LinearMap.ext fun v ↦ ?_
+  -- Each inclusion of a summand intertwines the group actions, hence the differentials.
+  have hi : Representation.IsIntertwiningMap (σ i) (Representation.directSum σ)
+      (DirectSum.lof ℂ ι V i) :=
+    ⟨fun g w ↦ by rw [Representation.directSum_apply, DirectSum.lmap_lof]⟩
+  rw [LinearMap.comp_apply, LinearMap.comp_apply, DirectSum.lmap_lof,
+    ((h i).isIntertwiningMap_iff_forall_map_differential (IsRationalRep.directSum h) _).mp hi]
+
+variable {M : ι → Type*} [∀ i, AddCommGroup (M i)] [∀ i, Module ℂ (M i)]
+  [∀ i, LieRingModule (Matrix (Fin n) (Fin n) ℂ) (M i)]
+
+/-- **Differentiation preserves finite direct sums of `𝔤𝔩ₙ`-modules**: isomorphisms of
+`𝔤𝔩ₙ`-modules `e i : V i ≅ M i`, each source carrying the differential of a rational representation
+`σ i`, sum to an isomorphism `⨁ i, V i ≅ ⨁ i, M i` whose source carries the differential of the
+direct sum of the `σ i` and whose target carries the direct sum `𝔤𝔩ₙ`-module structure. -/
+noncomputable def directSumLieModuleEquiv (h : ∀ i, IsRationalRep (σ i))
+    (e : ∀ i, letI := LieRingModule.compLieHom (V i) (h i).differential
+      V i ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M i) :
+    letI := LieRingModule.compLieHom (⨁ i, V i) (IsRationalRep.directSum h).differential
+    (⨁ i, V i) ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ ⨁ i, M i :=
+  -- As in `TauCeti.IsRationalRep.tprodLieModuleEquiv`, the underlying linear equivalence is
+  -- extracted with the `𝔤𝔩ₙ`-module structures of the summands in scope only locally.
+  let f : (⨁ i, V i) ≃ₗ[ℂ] ⨁ i, M i :=
+    letI (i : ι) := LieRingModule.compLieHom (V i) (h i).differential
+    (DirectSum.lieModuleEquivCongrRight e).toLinearEquiv
+  -- On `⨁ i, V i` with the Lie direct sum structure of the summands, the bracket is
+  -- `⨁ i, dσᵢ X`, which `DirectSum.lieModuleEquivCongrRight` respects.
+  have hf (X : Matrix (Fin n) (Fin n) ℂ) (t : ⨁ i, V i) :
+      f (DirectSum.lmap (fun i ↦ (h i).differential X) t) = ⁅X, f t⁆ :=
+    letI (i : ι) := LieRingModule.compLieHom (V i) (h i).differential
+    (DirectSum.lieModuleEquivCongrRight e).map_lie X t
+  letI := LieRingModule.compLieHom (⨁ i, V i) (IsRationalRep.directSum h).differential
+  { f with
+    map_lie' := fun {X t} ↦ by
+      simp only [LieRingModule.compLieHom_apply, Module.End.lie_apply, AddHom.toFun_eq_coe,
+        LinearMap.coe_toAddHom, LinearEquiv.coe_coe]
+      rw [differential_directSum h, hf] }
+
+/-- `TauCeti.IsRationalRep.directSumLieModuleEquiv` acts componentwise. -/
+@[simp]
+theorem directSumLieModuleEquiv_apply (h : ∀ i, IsRationalRep (σ i))
+    (e : ∀ i, letI := LieRingModule.compLieHom (V i) (h i).differential
+      V i ≃ₗ⁅ℂ,Matrix (Fin n) (Fin n) ℂ⁆ M i) (t : ⨁ i, V i) (i : ι) :
+    directSumLieModuleEquiv h e t i = e i (t i) :=
+  letI (i : ι) := LieRingModule.compLieHom (V i) (h i).differential
+  DirectSum.lieModuleEquivCongrRight_apply e t i
+
+end DirectSum
 
 end IsRationalRep
 

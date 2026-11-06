@@ -102,7 +102,8 @@ theorem dividedPower_chevalleySystem_apply_mem (M : AddSubgroup V)
           (by simpa only [LieAlgebra.Basis.rootGenerator_inl, b, ρ, representation_ι,
             chevalleySystem_simpleIndex] using he)
           (by simpa only [LieAlgebra.Basis.rootGenerator_inr, b, ρ, representation_ι,
-            chevalleySystem_reflectionPerm_simpleIndex] using hf) st hai haj n (hz n)
+            chevalleySystem_reflectionPerm_simpleIndex] using hf) st hai.exists_pow_apply_eq_zero
+          haj.exists_pow_apply_eq_zero n (hz n)
   simpa only [ρ, representation_ι, Module.End.smul_def] using hall γ n v hv
 
 /-- The all-root Kostant form preserves every subgroup stable under the simple-generator

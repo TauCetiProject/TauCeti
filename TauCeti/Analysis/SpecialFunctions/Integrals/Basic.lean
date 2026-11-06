@@ -23,8 +23,6 @@ Interval integrals of elementary functions in closed form or as series, continui
   `∫ x in a..b, (b - x)^r = (b - a)^(r + 1) / (r + 1)` for `r > -1`.
 * `TauCeti.integral_sub_rpow_le_of_lt_neg_one`: `∫ x in a..b - c, (b - x)^r ≤ c^(r + 1) / -(r + 1)`
   for `r < -1`.
-* `TauCeti.norm_integral_le_of_ae_norm_le_rpow`: an integral over `[0, t]` with two power-weight
-  bounds near and away from `s = t`, split at `t - δ²`, is `O(δ^α)`.
 * `TauCeti.norm_integral_le_of_ae_norm_le_mul_sub_rpow`: an integral over `[0, t' - h]` of a
   function bounded by `A h (t' - s)^((α - 4)/2)` is at most `2 / (2 - α) A h^(α/2)` for `α < 2`.
 * `TauCeti.integral_one_div_sqrt_one_sub_sq`: `∫ x in a..b, 1 / √(1 - x²) = arcsin b - arcsin a`
@@ -33,6 +31,9 @@ Interval integrals of elementary functions in closed form or as series, continui
   `Jₙ = ∫ x in -1..1, xⁿ √(1 - x²)` satisfy `(n + 4) Jₙ₊₂ = (n + 1) Jₙ`.
 * `TauCeti.integral_exp_mul`: `∫ x in a..b, exp (c x) = (exp (c b) - exp (c a)) / c` for
   `c ≠ 0`, the real counterpart of Mathlib's `integral_exp_mul_complex`.
+* `TauCeti.integral_inv_mul_one_add_mul`:
+  `∫ σ in s..t, 1 / (σ (1 + C σ)) = log (t / (1 + C t)) - log (s / (1 + C s))` for `s, t > 0` and
+  `C ≥ 0`.
 * `TauCeti.integral_cexp_intCast_mul_mul_I`: `∫ θ in -π..π, exp (k θ i)` is `2π` for
   integer `k = 0` and `0` otherwise, the orthogonality of the Fourier characters on `[-π, π]`.
 * `TauCeti.integral_cos_pow_mul_cexp`: `∫ θ in -π..π, cosᵏ θ exp (n θ i)` in closed form, via the
@@ -79,87 +80,6 @@ theorem integral_sub_rpow_le_of_lt_neg_one {r a b c : ℝ} (hr : r < -1) (hc : 0
   rw [hval]
   gcongr
   exact sub_le_self _ (Real.rpow_nonneg (hc.le.trans hcb) _)
-
-open MeasureTheory Real Set in
-open scoped Interval in
-/-- Splitting a singular integral at distance `δ²` from its singular endpoint. If the integrand
-is `O(A (t - s)^((α - 2)/2))`, which is integrable, and also `O(B δ (t - s)^((α - 3)/2))`, which is
-integrable away from `s = t`, then using the first bound on `t - δ² < s < t` and the second on
-`0 < s < t - δ²` bounds the integral over `[0, t]` by `(2A/α + 2B/(1 - α)) δ^α`. This is the time
-integration behind parabolic Hölder estimates at two points at distance `δ`. -/
-theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {Φ : ℝ → F} {α δ t A B : ℝ} (hα₀ : 0 < α) (hα₁ : α < 1) (ht : 0 < t)
-    (hδ : 0 < δ) (hA : 0 ≤ A) (hB : 0 ≤ B) (hΦ : IntervalIntegrable Φ volume 0 t)
-    (hΦA : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ A * (t - s) ^ ((α - 2) / 2))
-    (hΦB : ∀ᵐ s, s ∈ Ioc 0 t → ‖Φ s‖ ≤ B * (t - s) ^ ((α - 3) / 2) * δ) :
-    ‖∫ s in 0..t, Φ s‖ ≤ (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
-  have hsq : (δ ^ 2) ^ (α / 2) = δ ^ α := by
-    rw [← rpow_natCast_mul hδ.le]
-    congr 1
-    push_cast
-    ring
-  -- Near `s = t`, the first bound integrates to `(2A/α) (t - a)^(α/2)`.
-  have hnear : ∀ a, 0 ≤ a → a ≤ t → ‖∫ s in a..t, Φ s‖ ≤ 2 / α * A * (t - a) ^ (α / 2) := by
-    intro a ha hat
-    refine (intervalIntegral.norm_integral_le_of_norm_le hat ?_
-      ((intervalIntegrable_sub_rpow (r := (α - 2) / 2) (by linarith) a t).const_mul A)).trans_eq ?_
-    · filter_upwards [hΦA] with s hs hsI using hs (Ioc_subset_Ioc ha le_rfl hsI)
-    · rw [intervalIntegral.integral_const_mul, integral_sub_rpow (by linarith),
-        show (α - 2) / 2 + 1 = α / 2 by ring]
-      field_simp
-  have hB' : 0 ≤ 2 / (1 - α) * B * δ ^ α := by
-    have : 0 < 1 - α := by linarith
-    positivity
-  rcases le_or_gt t (δ ^ 2) with htδ | htδ
-  · -- If `t ≤ δ²`, the first bound suffices on the whole interval.
-    calc ‖∫ s in 0..t, Φ s‖ ≤ 2 / α * A * (t - 0) ^ (α / 2) := hnear 0 le_rfl ht.le
-      _ ≤ 2 / α * A * (δ ^ 2) ^ (α / 2) := by
-          rw [sub_zero]
-          gcongr
-      _ ≤ (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
-          rw [hsq]
-          linarith
-  -- Otherwise split the interval at `s₀ = t - δ²`.
-  set s₀ := t - δ ^ 2 with hs₀_def
-  have hs₀ : 0 < s₀ := by linarith
-  have hs₀t : s₀ ≤ t := by linarith [pow_pos hδ 2]
-  have hmem : s₀ ∈ [[0, t]] := by
-    rw [uIcc_of_le ht.le]
-    exact ⟨hs₀.le, hs₀t⟩
-  rw [← intervalIntegral.integral_add_adjacent_intervals
-    (hΦ.mono_set (uIcc_subset_uIcc left_mem_uIcc hmem))
-    (hΦ.mono_set (uIcc_subset_uIcc hmem right_mem_uIcc))]
-  -- Away from `s = t`, the second bound integrates to at most `2B/(1 - α) δ^α`.
-  have hfar : ‖∫ s in 0..s₀, Φ s‖ ≤ 2 / (1 - α) * B * δ ^ α := by
-    have hcont : ContinuousOn (fun s => (t - s) ^ ((α - 3) / 2)) [[0, s₀]] := fun s hs => by
-      rw [uIcc_of_le hs₀.le] at hs
-      have hts : s < t := by linarith [hs.2, pow_pos hδ 2]
-      exact ((continuousAt_const.sub continuousAt_id).rpow_const
-        (Or.inl (sub_pos.2 hts).ne')).continuousWithinAt
-    refine (intervalIntegral.norm_integral_le_of_norm_le hs₀.le ?_
-      ((hcont.intervalIntegrable.const_mul B).mul_const δ)).trans ?_
-    · filter_upwards [hΦB] with s hs hsI using hs (Ioc_subset_Ioc le_rfl hs₀t hsI)
-    rw [intervalIntegral.integral_mul_const, intervalIntegral.integral_const_mul]
-    have hpow : (δ ^ 2) ^ ((α - 3) / 2 + 1) * δ = δ ^ α := by
-      rw [← rpow_natCast_mul hδ.le, ← rpow_add_one hδ.ne']
-      congr 1
-      push_cast
-      ring
-    have h1α : 1 - α ≠ 0 := by linarith
-    calc B * (∫ s in 0..s₀, (t - s) ^ ((α - 3) / 2)) * δ
-        ≤ B * ((δ ^ 2) ^ ((α - 3) / 2 + 1) / -((α - 3) / 2 + 1)) * δ := by
-          gcongr
-          exact integral_sub_rpow_le_of_lt_neg_one (by linarith) (by positivity) (by linarith)
-      _ = 2 / (1 - α) * B * δ ^ α := by
-          rw [← hpow, show -((α - 3) / 2 + 1) = (1 - α) / 2 by ring]
-          field_simp
-  calc ‖(∫ s in 0..s₀, Φ s) + ∫ s in s₀..t, Φ s‖
-      ≤ ‖∫ s in 0..s₀, Φ s‖ + ‖∫ s in s₀..t, Φ s‖ := norm_add_le _ _
-    _ ≤ 2 / (1 - α) * B * δ ^ α + 2 / α * A * (t - s₀) ^ (α / 2) :=
-        add_le_add hfar (hnear s₀ hs₀.le hs₀t)
-    _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by
-        rw [hs₀_def, sub_sub_cancel, hsq]
-        ring
 
 open MeasureTheory Real Set in
 open scoped Interval in
@@ -255,6 +175,23 @@ theorem integral_exp_mul {a b c : ℝ} (hc : c ≠ 0) :
     ∫ x in a..b, Real.exp (c * x) = (Real.exp (c * b) - Real.exp (c * a)) / c := by
   rw [intervalIntegral.integral_comp_mul_left (f := Real.exp) hc, integral_exp, smul_eq_mul,
     inv_mul_eq_div]
+
+/-- The integral of `σ ↦ 1 / (σ (1 + C σ))` between positive limits, for `C ≥ 0`: an
+antiderivative is `σ ↦ log (σ / (1 + C σ))`. -/
+theorem integral_inv_mul_one_add_mul {s t C : ℝ} (hs : 0 < s) (ht : 0 < t) (hC : 0 ≤ C) :
+    ∫ σ in s..t, (σ * (1 + C * σ))⁻¹ =
+      Real.log (t / (1 + C * t)) - Real.log (s / (1 + C * s)) := by
+  have hpos (σ : ℝ) (hσ : σ ∈ Set.uIcc s t) : 0 < σ := (lt_min hs ht).trans_le hσ.1
+  apply intervalIntegral.integral_eq_sub_of_hasDerivAt
+  · intro σ hσ
+    have h1 := hpos σ hσ
+    have h2 : 0 < 1 + C * σ := by positivity
+    have := ((hasDerivAt_id' σ).div (((hasDerivAt_id' σ).const_mul C).const_add 1) h2.ne').log
+      (div_ne_zero h1.ne' h2.ne')
+    exact this.congr_deriv (by simp only [Pi.div_apply]; field_simp; ring)
+  · refine ContinuousOn.intervalIntegrable (ContinuousOn.inv₀ (by fun_prop) fun σ hσ => ?_)
+    have := hpos σ hσ
+    positivity
 
 /-- The integral of the Fourier character `θ ↦ exp (k θ i)` over `[-π, π]`, for an integer `k`: it
 is `2π` when `k = 0`, and vanishes otherwise because `exp (k θ i)` has period `2π`. -/
