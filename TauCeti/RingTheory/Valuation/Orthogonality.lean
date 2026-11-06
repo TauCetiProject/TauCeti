@@ -38,9 +38,9 @@ theorem map_sum_eq_inf_of_ne {ι : Type*} (s : Finset ι) (f : ι → R)
   rcases eq_or_ne (v (f j)) ⊤ with htop | htop
   · rw [htop, ← top_le_iff, ← htop]
     exact v.map_le_sum hjmin
-  refine v.toValuation.map_sum_eq_of_lt hj fun i hi ↦ ?_
-  rw [Finset.mem_sdiff, Finset.mem_singleton] at hi
-  refine (lt_of_le_of_ne (hjmin i hi.1) fun heq ↦ ?_).dual
-  exact h i hi.1 j hj hi.2 (heq ▸ htop) htop heq.symm
+  rw [← Finset.add_sum_erase s f hj]
+  refine v.map_add_eq_of_lt_left (v.map_lt_sum htop fun i hi ↦ ?_)
+  obtain ⟨hij, his⟩ := Finset.mem_erase.mp hi
+  exact lt_of_le_of_ne (hjmin i his) fun heq ↦ h i his j hj hij (heq ▸ htop) htop heq.symm
 
 end AddValuation
