@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Analysis.Complex.ReImTopology
+public import TauCeti.Geometry.Manifold.Boundary.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 
 /-!
@@ -131,6 +132,7 @@ theorem closedUpperHalfPlaneCoordinates_apply_one (z : ℂ) :
     Equiv.piCongrLeft']
 
 /-- Convert real coordinates back to `s + it`. -/
+@[simp]
 theorem closedUpperHalfPlaneCoordinates_symm_apply (v : EuclideanSpace ℝ (Fin 2)) :
     closedUpperHalfPlaneCoordinates.symm v = v 1 + v 0 * I := by
   simp [closedUpperHalfPlaneCoordinates, LinearIsometryEquiv.piLpCongrLeft_apply,
@@ -208,17 +210,8 @@ theorem ClosedUpperHalfPlane.im_pos_iff_of_mem_contDiffGroupoid {n : ℕ∞ω}
     (he : e ∈ contDiffGroupoid n closedUpperHalfPlaneModel) (hn : n ≠ 0)
     {z : ClosedUpperHalfPlane} (hz : z ∈ e.source) :
     0 < (z : ℂ).im ↔ 0 < (e z : ℂ).im := by
-  let φ : PartialDiffeomorph closedUpperHalfPlaneModel closedUpperHalfPlaneModel
-      ClosedUpperHalfPlane ClosedUpperHalfPlane n :=
-    { toPartialEquiv := e.toPartialEquiv
-      open_source := e.open_source
-      open_target := e.open_target
-      contMDiffOn_toFun := contMDiffOn_of_mem_contDiffGroupoid he
-      contMDiffOn_invFun := contMDiffOn_of_mem_contDiffGroupoid
-        ((contDiffGroupoid n closedUpperHalfPlaneModel).symm he) }
-  have hd : IsLocalDiffeomorphAt closedUpperHalfPlaneModel closedUpperHalfPlaneModel n e z :=
-    φ.isLocalDiffeomorphAt closedUpperHalfPlaneModel closedUpperHalfPlaneModel n hz
-  simpa only [closedUpperHalfPlaneModel_isInteriorPoint_iff] using hd.isInteriorPoint_iff hn
+  simpa only [closedUpperHalfPlaneModel_isInteriorPoint_iff] using
+    ModelWithCorners.isInteriorPoint_iff_of_mem_contDiffGroupoid he hn hz
 
 /-- Smooth changes of closed-upper-half-plane charts send real boundary points to real boundary
 points, in both directions. -/
@@ -227,13 +220,7 @@ theorem ClosedUpperHalfPlane.im_eq_zero_iff_of_mem_contDiffGroupoid {n : ℕ∞�
     (he : e ∈ contDiffGroupoid n closedUpperHalfPlaneModel) (hn : n ≠ 0)
     {z : ClosedUpperHalfPlane} (hz : z ∈ e.source) :
     (z : ℂ).im = 0 ↔ (e z : ℂ).im = 0 := by
-  have h := im_pos_iff_of_mem_contDiffGroupoid he hn hz
-  have hz' := z.property
-  have hez := (e z).property
-  constructor <;> intro hzero
-  · have : ¬0 < (e z : ℂ).im := by simpa only [hzero, lt_self_iff_false, false_iff] using h
-    exact le_antisymm (le_of_not_gt this) hez
-  · have : ¬0 < (z : ℂ).im := by simpa only [hzero, lt_self_iff_false, iff_false] using h
-    exact le_antisymm (le_of_not_gt this) hz'
+  simpa only [closedUpperHalfPlaneModel_isBoundaryPoint_iff] using
+    ModelWithCorners.isBoundaryPoint_iff_of_mem_contDiffGroupoid he hn hz
 
 end TauCeti
