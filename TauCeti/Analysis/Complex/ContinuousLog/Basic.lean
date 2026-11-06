@@ -361,14 +361,7 @@ continuous logarithm on `K`.
 
 Contrapositively: if a closed set `K` carries no continuous logarithm of the Borsuk map of `a` and
 `b`, then `b ∉ connectedComponentIn Kᶜ a`; for `a`, `b` outside `K` that says the two points lie in
-different components of `Kᶜ`, and otherwise one of them lies in `K` itself.
-
-The proof moves the second point rather than constructing the logarithm. The set of points `w` of
-`Kᶜ` for which `z ↦ (z - a) / (z - w)` has a logarithm on `K` is open, because displacing `w` by
-less than half its distance to `K` multiplies the Borsuk map by a factor covered by
-`TauCeti.hasContinuousLogOn_sub_div_sub_of_norm_lt`; the same estimate run backwards makes the
-complementary set of `Kᶜ` open too. Since `a` itself is in the first set — its Borsuk map is the
-constant `1` — and the component of `a` is preconnected, the component lies in it. -/
+different components of `Kᶜ`, and otherwise one of them lies in `K` itself. -/
 theorem hasContinuousLogOn_sub_div_sub (hK : IsClosed K) (hb : b ∈ connectedComponentIn Kᶜ a) :
     HasContinuousLogOn (fun z => (z - a) / (z - b)) K := by
   have ha : a ∈ Kᶜ := connectedComponentIn_nonempty_iff.mp ⟨b, hb⟩
