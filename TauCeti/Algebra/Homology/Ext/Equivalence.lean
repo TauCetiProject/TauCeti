@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.MapAdjunction
-public import TauCeti.Algebra.Homology.Ext.Basic
+public import TauCeti.Algebra.Homology.Ext.Map.Adjunction
 
 /-!
 # `Ext` groups are invariant under an additive equivalence
@@ -50,22 +49,21 @@ isomorphism. -/
 noncomputable def _root_.CategoryTheory.Equivalence.extAddEquiv
     (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
     Ext.{w} X Y n ≃+ Ext.{w'} (e.functor.obj X) (e.functor.obj Y) n :=
-  (extAddEquivOfIso (Iso.refl X) (e.unitIso.app Y) n).trans e.toAdjunction.extEquiv.symm
+  AddEquiv.ofBijective (e.functor.mapExtAddHom X Y n)
+    (e.toAdjunction.mapExt_bijective_of_isIso_unit_app X Y n)
 
 @[simp]
 theorem _root_.CategoryTheory.Equivalence.extAddEquiv_apply
     (e : C ≌ D) [e.functor.Additive] {X Y : C} {n : ℕ}
     (α : Ext.{w} X Y n) :
-    e.extAddEquiv X Y n α = α.mapExactFunctor e.functor := by
-  simp [Equivalence.extAddEquiv, Adjunction.extEquiv_symm_apply, Ext.mapExactFunctor_comp,
-    Ext.mapExactFunctor_mk₀]
+    e.extAddEquiv X Y n α = α.mapExactFunctor e.functor := (rfl)
 
 /-- The forward functor of an additive equivalence is bijective on `Ext` groups, since
 `CategoryTheory.Equivalence.extAddEquiv` is `CategoryTheory.Abelian.Ext.mapExactFunctor`. -/
 theorem _root_.CategoryTheory.Equivalence.mapExtAddHom_bijective
     (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
     Function.Bijective (e.functor.mapExtAddHom.{w, w'} X Y n) :=
-  (funext e.extAddEquiv_apply).subst (motive := Function.Bijective) (e.extAddEquiv X Y n).bijective
+  e.toAdjunction.mapExt_bijective_of_isIso_unit_app X Y n
 
 /-- **The `R`-linear refinement of `CategoryTheory.Equivalence.extAddEquiv`.**  For an `R`-linear
 equivalence of `R`-linear abelian categories, `Extⁿ(X, Y)` and `Extⁿ(e X, e Y)` are isomorphic as

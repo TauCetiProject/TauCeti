@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-public import TauCeti.Algebra.Homology.Ext.MapInjective
-public import TauCeti.Algebra.Homology.Ext.MapAdjunction
+public import TauCeti.Algebra.Homology.Ext.Map.Injective
+public import TauCeti.Algebra.Homology.Ext.Map.Adjunction
 public import TauCeti.RingTheory.FormalGlueing.Torsion
 
 /-!
-# Detecting extensions of ideal-power torsion modules
+# Ext comparison under formal base change for ideal-power torsion modules
 
 Let `R → S` be flat and induce an isomorphism `R/I → S/IS`, with `I` finitely generated.
 Scalar extension is injective on `Ext¹_R(M, N)` when `M` is `I`-power torsion.
@@ -36,7 +36,8 @@ the section identity can be checked after base change.
 ## References
 
 * [Stacks Project, Lemma 15.91.8](https://stacks.math.columbia.edu/tag/05EG),
-  the injectivity part of the degree-one extension comparison.
+  the injectivity part for torsion sources and the torsion-coefficient case of the
+  extension comparison.
 -/
 
 public section
@@ -78,7 +79,7 @@ theorem mapExt_one_injective_of_primaryComponent_eq_top (f : R →+* S) (hf : f.
 /-- A flat ring map inducing `R/I ≅ S/IS` preserves all Ext groups with `I`-power
 torsion coefficients. The source module is arbitrary, and `I` need not be finitely generated. -/
 @[stacks 05EG "the torsion-coefficient case, in every degree"]
-theorem mapExtAddHom_bijective_of_primaryComponent_eq_top_right (f : R →+* S) (hf : f.Flat)
+theorem mapExt_bijective_of_primaryComponent_eq_top_right (f : R →+* S) (hf : f.Flat)
     (I : Ideal R)
     (hI : Function.Bijective (Ideal.quotientMap (I.map f) f Ideal.le_comap_map))
     (M N : ModuleCat.{u} R) (hN : I.primaryComponent N = ⊤) (n : ℕ) :
@@ -90,7 +91,7 @@ theorem mapExtAddHom_bijective_of_primaryComponent_eq_top_right (f : R →+* S) 
     rw [ConcreteCategory.isIso_iff_bijective]
     exact TauCeti.tensorProduct_mk_bijective_of_primaryComponent_eq_top (S := S) hI hN
   exact
-    (ModuleCat.extendRestrictScalarsAdj (algebraMap R S)).mapExtAddHom_bijective_of_isIso_unit_app
+    (ModuleCat.extendRestrictScalarsAdj (algebraMap R S)).mapExt_bijective_of_isIso_unit_app
       M N n
 
 end RingHom
