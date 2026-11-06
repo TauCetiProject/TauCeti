@@ -1,0 +1,200 @@
+/-
+Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Released under Apache 2.0 license as described in the file LICENSE.
+Authors: The Tau Ceti contributors
+-/
+module
+
+public import TauCeti.GroupTheory.GroupExtension.Quotient
+public import TauCeti.Algebra.GroupAction.TypeTags
+public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
+public import Mathlib.GroupTheory.GroupAction.ConjAct
+
+/-!
+# Complements and normalized crossed projections
+
+For an abelian normal subgroup `N` of `G`, a complement determines a crossed map
+`c : G → N` which restricts to the identity on `N`. Conversely, the locus where
+such a map equals `1` is a complement. This file proves both constructions and the
+existence criterion, without any finiteness assumption.
+
+The conjugation action is explicit rather than a global instance. The additive
+coefficient action uses `Additive.distribMulAction`, and kernels use the existing
+`groupCohomology.zeroLocus` rather than a second notion of cocycle kernel.
+The crossed projection is constructed from the complement's quotient splitting.
+
+## References
+
+* W. Gaschütz, Zur Erweiterungstheorie der endlichen Gruppen, J. reine angew. Math.
+  190 (1952), 93–107, for normalized crossed maps in complement theory.
+-/
+
+public section
+
+open scoped IsMulCommutative
+open groupCohomology
+
+namespace Subgroup
+
+variable {G : Type*} [Group G] (N : Subgroup G) [N.Normal]
+
+/-- Conjugation by the ambient group on a normal subgroup. -/
+@[instance_reducible]
+def conjugationAction : MulDistribMulAction G N :=
+  MulDistribMulAction.compHom N (MulAut.conjNormal (H := N))
+
+attribute [local instance] conjugationAction
+
+@[simp]
+theorem coe_conjugationAction_smul (g : G) (n : N) :
+    ((g • n : N) : G) = g * n * g⁻¹ := (rfl)
+
+variable {N}
+
+namespace IsComplement'
+
+variable {D : Subgroup G} (h : N.IsComplement' D)
+
+/-- Projection to the normal factor along a complement, written using the
+splitting of the quotient extension. It is generally not a homomorphism. -/
+noncomputable def crossedProjection (g : G) : N :=
+  ⟨g * (h.quotientSplitting ((g : G ⧸ N)))⁻¹, by
+    apply (QuotientGroup.eq_one_iff _).mp
+    have hs := h.quotientSplitting.rightInverse_rightHom (g : G ⧸ N)
+    simpa using congrArg (fun q : G ⧸ N => (g : G ⧸ N) * q⁻¹) hs⟩
+
+theorem coe_crossedProjection (g : G) :
+    (h.crossedProjection g : G) = g * (h.quotientSplitting (g : G ⧸ N))⁻¹ := (rfl)
+
+/-- The projection of a product of the two factors is its normal component. -/
+@[simp]
+theorem crossedProjection_mul (n : N) (d : D) :
+    h.crossedProjection ((n : G) * d) = n := by
+  apply Subtype.ext
+  rw [coe_crossedProjection]
+  have hn : (n : G ⧸ N) = 1 := (QuotientGroup.eq_one_iff _).mpr n.property
+  simp [hn]
+
+/-- The crossed projection restricts to the identity on the normal subgroup. -/
+@[simp]
+theorem crossedProjection_coe (n : N) : h.crossedProjection n = n := by
+  simpa using h.crossedProjection_mul n 1
+
+/-- The crossed projection vanishes on the complementary factor. -/
+@[simp]
+theorem crossedProjection_coe_right (d : D) : h.crossedProjection d = 1 := by
+  simpa using h.crossedProjection_mul 1 d
+
+/-- The projection satisfies the crossed identity for ambient conjugation. -/
+theorem isMulCocycle₁_crossedProjection [IsMulCommutative N] :
+    IsMulCocycle₁ h.crossedProjection := by
+  intro g k
+  apply Subtype.ext
+  simp only [coe_crossedProjection, coe_mul, coe_conjugationAction_smul,
+    QuotientGroup.mk_mul, map_mul]
+  group
+
+/-- Exactly the elements of the complement have trivial crossed projection. -/
+@[simp]
+theorem crossedProjection_eq_one_iff (g : G) : h.crossedProjection g = 1 ↔ g ∈ D := by
+  constructor
+  · intro hg
+    have he : g = h.quotientSplitting (g : G ⧸ N) := by
+      have he := congrArg Subtype.val hg
+      simpa [coe_crossedProjection, mul_inv_eq_one] using he
+    rw [he]
+    have hr : h.quotientSplitting (g : G ⧸ N) ∈ h.quotientSplitting.toMonoidHom.range :=
+      ⟨_, GroupExtension.Splitting.toMonoidHom_apply _ _⟩
+    simpa only [h.range_quotientSplitting] using hr
+  · intro hg
+    exact h.crossedProjection_coe_right ⟨g, hg⟩
+
+end IsComplement'
+
+variable [IsMulCommutative N]
+
+/-- Conjugation by an element of an abelian normal subgroup is trivial on that subgroup. -/
+@[simp]
+theorem conjugationAction_coe_smul (n m : N) : (n : G) • m = m := by
+  apply Subtype.ext
+  rw [coe_conjugationAction_smul, ← coe_mul, ← coe_inv, ← coe_mul]
+  simp
+
+/-- A normalized additive crossed map has complementary zero locus. This is the
+kernel construction for normalized multiplicative crossed maps read on `Additive N`. -/
+theorem isComplement'_zeroLocus {c : G → Additive N} (hc : IsCocycle₁ c)
+    (hn : ∀ n : N, c n = Additive.ofMul n) : N.IsComplement' (zeroLocus hc) := by
+  apply isComplement'_of_disjoint_and_mul_eq_univ
+  · rw [disjoint_iff_inf_le]
+    intro g hg
+    have hz : c g = 0 := (mem_zeroLocus hc).mp hg.2
+    rw [hn ⟨g, hg.1⟩] at hz
+    exact congrArg (fun x : Additive N => (x.toMul : G)) hz
+  · apply Set.eq_univ_iff_forall.mpr
+    intro g
+    let n : N := (c g).toMul
+    refine ⟨n, n.property, (n : G)⁻¹ * g, ?_, by simp⟩
+    apply (mem_zeroLocus hc).mpr
+    rw [hc]
+    have hi := hn n⁻¹
+    simp only [coe_inv] at hi
+    rw [hi]
+    have hs : ((n⁻¹ : N) : G) • c g = c g := by
+      apply Additive.toMul.injective
+      exact conjugationAction_coe_smul n⁻¹ (c g).toMul
+    simp only [coe_inv] at hs
+    rw [hs]
+    simp [n]
+
+/-- Recovering the projection from the zero locus returns the original normalized map. -/
+theorem crossedProjection_zeroLocus {c : G → Additive N} (hc : IsCocycle₁ c)
+    (hn : ∀ n : N, c n = Additive.ofMul n) (g : G) :
+    (isComplement'_zeroLocus hc hn).crossedProjection g = (c g).toMul := by
+  obtain ⟨⟨n, d⟩, rfl⟩ := (isComplement'_zeroLocus hc hn).surjective g
+  rw [IsComplement'.crossedProjection_mul]
+  rw [hc]
+  simp [(mem_zeroLocus hc).mp d.property, hn]
+
+variable (N) in
+/-- Complements correspond bijectively to normalized crossed maps, read additively. -/
+noncomputable def crossedProjectionEquiv :
+    {D : Subgroup G // N.IsComplement' D} ≃
+      {c : G → Additive N // IsCocycle₁ c ∧ ∀ n : N, c n = Additive.ofMul n} where
+  toFun D := ⟨fun g => Additive.ofMul (D.property.crossedProjection g),
+    (fun g k => congrArg Additive.ofMul (D.property.isMulCocycle₁_crossedProjection g k)),
+    fun n => congrArg Additive.ofMul (D.property.crossedProjection_coe n)⟩
+  invFun c := ⟨zeroLocus c.property.1, isComplement'_zeroLocus c.property.1 c.property.2⟩
+  left_inv D := by
+    apply Subtype.ext
+    ext g
+    simp [IsComplement'.crossedProjection_eq_one_iff]
+  right_inv c := by
+    apply Subtype.ext
+    funext g
+    exact congrArg Additive.ofMul (crossedProjection_zeroLocus c.property.1 c.property.2 g)
+
+@[simp]
+theorem crossedProjectionEquiv_apply
+    (D : {D : Subgroup G // N.IsComplement' D}) (g : G) :
+    (N.crossedProjectionEquiv D).val g = Additive.ofMul (D.property.crossedProjection g) := (rfl)
+
+@[simp]
+theorem crossedProjectionEquiv_symm_apply
+    (c : {c : G → Additive N // IsCocycle₁ c ∧ ∀ n : N, c n = Additive.ofMul n}) :
+    (N.crossedProjectionEquiv.symm c).val = zeroLocus c.property.1 := (rfl)
+
+/-- A normal abelian subgroup has a complement exactly when it admits a crossed
+map for conjugation which is the identity on that subgroup. -/
+theorem exists_complement_iff_crossedProjection :
+    (∃ D : Subgroup G, N.IsComplement' D) ↔
+      ∃ c : G → N, IsMulCocycle₁ c ∧ ∀ n : N, c n = n := by
+  constructor
+  · rintro ⟨D, hD⟩
+    exact ⟨hD.crossedProjection, hD.isMulCocycle₁_crossedProjection,
+      hD.crossedProjection_coe⟩
+  · rintro ⟨c, hc, hn⟩
+    have ha : IsCocycle₁ (fun g => Additive.ofMul (c g)) :=
+      fun g k => congrArg Additive.ofMul (hc g k)
+    exact ⟨zeroLocus ha, isComplement'_zeroLocus ha (fun n => congrArg Additive.ofMul (hn n))⟩
+
+end Subgroup
