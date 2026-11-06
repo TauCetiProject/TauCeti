@@ -216,8 +216,8 @@ theorem orderOf_natCast_prime_pow_eq_totient {p g : ℕ} (hp : p.Prime) (hp2 : p
 the order of `q` modulo `n` divides `k`. -/
 theorem dvd_pow_sub_one_iff_orderOf_natCast_dvd {n q : ℕ} (hq : 0 < q) (k : ℕ) :
     n ∣ q ^ k - 1 ↔ orderOf (q : ZMod n) ∣ k := by
-  rw [orderOf_dvd_iff_pow_eq_one, ← natCast_eq_zero_iff, Nat.cast_sub (Nat.one_le_pow _ _ hq),
-    sub_eq_zero, Nat.cast_pow, Nat.cast_one]
+  rw [orderOf_dvd_iff_pow_eq_one, ← natCast_eq_zero_iff]
+  simp [Nat.cast_sub (Nat.one_le_pow _ _ hq), sub_eq_zero]
 
 end ZMod
 
@@ -236,9 +236,10 @@ theorem dvd_pow_add_pow_iff_of_orderOf_eq_two_mul {p a b m : ℕ} (hp : p.Prime)
     rw [hb, inv_zero, mul_zero, orderOf_zero] at h
     omega
   -- Both sides say that `a ^ k = -b ^ k` modulo `p`.
-  rw [← TauCeti.pow_eq_neg_one_iff_of_orderOf_eq_two_mul h hm, mul_pow, inv_pow,
-    mul_inv_eq_iff_eq_mul₀ (pow_ne_zero k hb), neg_one_mul, eq_neg_iff_add_eq_zero,
-    ← ZMod.natCast_eq_zero_iff, Nat.cast_add, Nat.cast_pow, Nat.cast_pow]
+  rw [← TauCeti.pow_eq_neg_one_iff_of_orderOf_eq_two_mul h hm, ← ZMod.natCast_eq_zero_iff,
+    ← div_eq_mul_inv, div_pow, div_eq_iff (pow_ne_zero k hb)]
+  push_cast
+  constructor <;> intro h <;> linear_combination h
 
 /-- If `q` has order `2 * m` modulo a prime `p`, with `m ≠ 0`, then `p` divides `q ^ k + 1`
 exactly for the odd multiples `k` of `m`. -/
@@ -246,8 +247,6 @@ theorem dvd_pow_add_one_iff_of_orderOf_natCast_eq_two_mul {p q m : ℕ} (hp : p.
     (h : orderOf (q : ZMod p) = 2 * m) (hm : m ≠ 0) (k : ℕ) :
     p ∣ q ^ k + 1 ↔ m ∣ k ∧ ¬ 2 * m ∣ k := by
   have := Fact.mk hp
-  have h' : orderOf ((q : ZMod p) * ((1 : ℕ) : ZMod p)⁻¹) = 2 * m := by
-    rwa [Nat.cast_one, inv_one, mul_one]
-  simpa using hp.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul h' hm k
+  simpa using hp.dvd_pow_add_pow_iff_of_orderOf_eq_two_mul (b := 1) (by simpa using h) hm k
 
 end Nat.Prime
