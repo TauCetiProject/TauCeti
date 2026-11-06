@@ -9,14 +9,15 @@ public import Mathlib.Algebra.Module.ZMod
 public import Mathlib.GroupTheory.Exponent
 
 /-!
-# The exponent of a group whose additive copy is a `ℤ/nℤ`-module
+# The exponent of a commutative monoid whose additive copy is a `ℤ/nℤ`-module
 
 Scalars from `ZMod n` act on a `ZMod n`-module, so `n` kills it. Written multiplicatively, a
 commutative monoid whose additive copy carries a `ZMod n`-module structure therefore has exponent
 dividing `n`; for a prime `n` it is elementary abelian. This is the converse of
-`AddCommGroup.zmodModule`, which builds the module structure out of that divisibility, and it is
-what recovers the group-theoretic hypothesis from a module structure that some other construction
-supplied. The additive form is the same statement, through `AddMonoid.exponent_additive`.
+`AddCommMonoid.zmodModule` and `AddCommGroup.zmodModule`, which build the module structure out of
+that divisibility, and it is what recovers the group-theoretic hypothesis from a module structure
+that some other construction supplied. The additive form is the same statement, through
+`AddMonoid.exponent_additive`.
 
 ## Main results
 
@@ -32,7 +33,7 @@ namespace TauCeti
 `n` kills every `ZMod n`-module. -/
 theorem exponent_dvd_of_module_zmod {n : ℕ} {W : Type*} [CommMonoid W]
     [Module (ZMod n) (Additive W)] : Monoid.exponent W ∣ n :=
-  Monoid.exponent_dvd_of_forall_pow_eq_one fun w ↦
-    (by simp [← Nat.cast_smul_eq_nsmul (ZMod n)] : n • Additive.ofMul w = 0)
+  Monoid.exponent_dvd_of_forall_pow_eq_one fun w ↦ Additive.ofMul.injective <| by
+    rw [ofMul_pow, ofMul_one, ← Nat.cast_smul_eq_nsmul (ZMod n), ZMod.natCast_self, zero_smul]
 
 end TauCeti
