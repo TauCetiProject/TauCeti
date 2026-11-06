@@ -267,7 +267,7 @@ theorem generalizedExtremeValueMeasure_eq_withDensity (m s ξ : ℝ) :
       -- Transport the candidate density through the generalized Pareto change of variables.
       have hmap := TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul
         (s := univ) (φ := φ) (φ' := fun y ↦ s * Real.exp (ξ * y))
-        (f := generalizedExtremeValuePDF m s ξ) MeasurableSet.univ (by fun_prop)
+        (f := generalizedExtremeValuePDF m s ξ) MeasurableSet.univ
         (fun y _ ↦ (hasDerivAt_generalizedParetoMap s ξ y).const_add m |>.hasDerivWithinAt)
         ((strictMono_generalizedParetoMap hs ξ).const_add m).injective.injOn
       have hw : (fun y ↦ ENNReal.ofReal |s * Real.exp (ξ * y)| *
