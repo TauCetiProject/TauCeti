@@ -38,6 +38,10 @@ symmetric operator `A`: the increment of `F - ⟪·, y + A z⟫` is that of a qu
 (`LinearMap.IsSymmetric.increment_sub_quadratic_eq`), and a coercive quadratic of this form
 dominates its perturbation on a sphere (`LinearMap.lt_on_sphere_of_abs_increment_le`).
 
+A real coercive quadratic form also stays nonnegative under a small perturbation of the operator
+and a small scalar shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
+of perturbed barrier functions, for instance in the Monge–Ampère viscosity argument.
+
 ## Provenance
 
 Adapted from `ForTauCeti/Analysis/InnerProductSpace/CoerciveUnit.lean`
@@ -232,10 +236,9 @@ section Real
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
 
 /-- **The quadratic form stays nonnegative under small perturbations.** If `κ ‖v‖² ≤ ⟪A v, v⟫`
-and `‖D - A‖ < κ / 2`, then `0 ≤ ⟪(D + t • id) v, v⟫` for every `-(κ / 2) < t`. -/
-theorem inner_add_smul_id_nonneg_of_norm_sub_lt {A D : F →L[ℝ] F} {κ t : ℝ}
-    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (htκ : -(κ / 2) < t)
-    (hD : ‖D - A‖ < κ / 2) (v : F) :
+and `‖D - A‖ ≤ κ + t`, then `0 ≤ ⟪(D + t • id) v, v⟫`. -/
+theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (hD : ‖D - A‖ ≤ κ + t) (v : F) :
     0 ≤ inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v := by
   set B := D - A
   have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := by
@@ -247,7 +250,7 @@ theorem inner_add_smul_id_nonneg_of_norm_sub_lt {A D : F →L[ℝ] F} {κ t : �
       real_inner_self_eq_norm_sq]
     ring
   rw [h₂]
-  nlinarith [hA v, sq_nonneg ‖v‖]
+  nlinarith [hA v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
 
 end Real
 
