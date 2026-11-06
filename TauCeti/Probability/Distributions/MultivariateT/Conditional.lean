@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Gaussian.Conditional.Basic
 public import TauCeti.Probability.Distributions.MultivariateT.PDF
 import TauCeti.Probability.Distributions.Gamma.Measurability
+import TauCeti.Probability.Distributions.Gaussian.Conditional.Measurability
 import TauCeti.Probability.Distributions.MultivariateT.Measurability
 
 /-!
@@ -124,6 +125,27 @@ namespace TauCeti.Probability
 
 variable {ι κ : Type*} [Fintype ι] [Fintype κ] [DecidableEq ι] [DecidableEq κ]
 
+omit [Fintype κ] [DecidableEq κ] in
+/-- For a measurable mean function `μ`, the Gaussian law with mean `μ x₂` and scale `τ⁻¹ • C`,
+evaluated on the section at `x₂` of a measurable set `A`, is jointly measurable in the precision
+`τ` and the conditioning value `x₂`. -/
+theorem measurable_multivariateGaussian_prodMk_left_apply
+    {μ : EuclideanSpace ℝ κ → EuclideanSpace ℝ ι} (hμ : Measurable μ) (C : Matrix ι ι ℝ)
+    {A : Set (EuclideanSpace ℝ κ × EuclideanSpace ℝ ι)} (hA : MeasurableSet A) :
+    Measurable fun p : ℝ × EuclideanSpace ℝ κ =>
+      multivariateGaussian (μ p.2) (p.1⁻¹ • C) (Prod.mk p.2 ⁻¹' A) := by
+  -- Given the precision `τ`, the retained block given the observed block `x₂` is Gaussian with
+  -- mean `μ x₂` and covariance `τ⁻¹ • C`; this is a kernel from `(τ, x₂)`.
+  let η : Kernel (ℝ × EuclideanSpace ℝ κ) (EuclideanSpace ℝ ι) :=
+    ⟨fun p => multivariateGaussian (μ p.2) (p.1⁻¹ • C),
+      measurable_multivariateGaussian.comp ((hμ.comp measurable_snd).prodMk (by fun_prop))⟩
+  have : IsMarkovKernel η := ⟨fun p => inferInstanceAs (IsProbabilityMeasure
+    (multivariateGaussian (μ p.2) (p.1⁻¹ • C)))⟩
+  -- The section of `{q | (q.1.2, q.2) ∈ A}` at `p` is by definition the section of `A` at `p.2`.
+  exact Kernel.measurable_kernel_prodMk_left (κ := η)
+    (t := {q : (ℝ × EuclideanSpace ℝ κ) × EuclideanSpace ℝ ι | (q.1.2, q.2) ∈ A})
+    (hA.preimage (by fun_prop))
+
 /-- **The joint law of a multivariate t vector factors through the conditional t kernel.** If
 the observed scale block `S₂₂` is positive definite, the joint law of the observed and retained
 blocks is the multivariate t law of the observed block, with scale `S₂₂` and `ν` degrees of
@@ -153,24 +175,10 @@ theorem _root_.EuclideanSpace.map_snd_fst_multivariateTMeasure (m : EuclideanSpa
   -- each precision `τ`, swap the order of integration by Gamma–Gaussian conjugacy, and recognise
   -- the posterior Gamma mixture of Gaussian laws as the conditional multivariate t law.
   ext A hA
-  -- Given the precision `τ`, the retained block given the observed block `x₂` is Gaussian with
-  -- the same regression mean and covariance `τ⁻¹ • C`; this is jointly measurable in `(τ, x₂)`.
-  let η : Kernel (ℝ × EuclideanSpace ℝ κ) (EuclideanSpace ℝ ι) :=
-    ⟨fun p => multivariateGaussian (mean p.2) (p.1⁻¹ • C), by
-      have hμ : Measurable mean := by
-        simp only [mean]
-        rw [funext fun x₂ => m.gaussianCondMean_def S x₂]
-        fun_prop
-      exact measurable_multivariateGaussian.comp
-        ((hμ.comp measurable_snd).prodMk (by fun_prop))⟩
-  have : IsMarkovKernel η := ⟨fun p => inferInstanceAs (IsProbabilityMeasure
-    (multivariateGaussian (mean p.2) (p.1⁻¹ • C)))⟩
-  have hF : Measurable fun p : ℝ × EuclideanSpace ℝ κ =>
-      multivariateGaussian (mean p.2) (p.1⁻¹ • C) (Prod.mk p.2 ⁻¹' A) :=
-    -- The section of `{q | (q.1.2, q.2) ∈ A}` at `p` is by definition the section of `A` at `p.2`.
-    Kernel.measurable_kernel_prodMk_left (κ := η)
-      (t := {q : (ℝ × EuclideanSpace ℝ κ) × EuclideanSpace ℝ ι | (q.1.2, q.2) ∈ A})
-      (hA.preimage (by fun_prop))
+  have : Measurable mean :=
+    EuclideanSpace.measurable_gaussianCondMean.comp
+      ((measurable_const (a := (m, S))).prodMk measurable_id)
+  have hF := measurable_multivariateGaussian_prodMk_left_apply this C hA
   calc (multivariateTMeasure m S ν).map
         (fun x => ((EuclideanSpace.sumEquivProd x).2, (EuclideanSpace.sumEquivProd x).1)) A
       = ∫⁻ τ, ((multivariateGaussian m (τ⁻¹ • S)).map
