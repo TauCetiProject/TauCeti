@@ -125,7 +125,7 @@ point of the level lies in the preferred chart source of `M`. -/
 private theorem mem_chartAt_source_iff (z w : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
     w.1 ∈ (chartAt E z.1).source ↔
       (zeroHomeomorph I f c w : M) ∈ (chartAt H (zeroHomeomorph I f c z : M)).source := by
-  rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_source, mem_preimage,
+  rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_source_of_boundaryless, mem_preimage,
     coe_zeroHomeomorph, coe_zeroHomeomorph]
 
 private theorem chartAt_self (z : ↥{y : BoundarylessModel I M | sec I f c y = 0}) :
@@ -363,7 +363,8 @@ theorem mem_regularLevelChartAt_target_iff (x : {x : M // f x = c}) (k : Fin n �
     mem_sectionZeroChartAt_target_iff]
   dsimp only
   rw [hΦ, hsrc]
-  simp only [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target, extChartAt_target,
+  simp only [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target_of_boundaryless,
+    extChartAt_target,
     ModelWithCorners.Boundaryless.range_eq_univ, inter_univ, mem_preimage, ← coe_zeroHomeomorph,
     Bundle.Trivial.fiberBundle_trivializationAt', Bundle.Trivial.trivialization_baseSet,
     preimage_univ, interior_univ, mem_univ, and_true]
