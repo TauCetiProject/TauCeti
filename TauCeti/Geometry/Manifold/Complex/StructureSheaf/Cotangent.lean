@@ -62,7 +62,7 @@ theorem holomorphicStalkFDeriv_eq
 @[simp]
 theorem holomorphicStalkFDeriv_zero : e.holomorphicStalkFDeriv x hx 0 = 0 := by
   rw [holomorphicStalkFDeriv_eq e x hx (f := 0) (by simp)]
-  exact fderiv_const_apply 0
+  simp [Function.comp_def]
 
 variable (he : e ∈ maximalAtlas 𝓘(ℂ, E) ω X)
 
@@ -120,9 +120,10 @@ private def holomorphicMaximalIdealFDeriv :
       simpa only [maximalIdeal_stalk, RingHom.mem_ker] using s.property
     have h := e.holomorphicStalkFDeriv_mul x hx he a s
     rw [hs] at h
+    -- Evaluate pointwise: zero_smul does not simplify this continuous-dual action directly.
     ext v
     simpa only [_root_.add_apply, _root_.smul_apply, smul_eq_mul,
-      zero_mul, add_zero, Submodule.coe_smul, smul_eq_mul] using
+      zero_mul, add_zero, Submodule.coe_smul] using
       congrArg (fun L : StrongDual ℂ E ↦ L v) h
 
 @[simp]
@@ -206,19 +207,17 @@ theorem holomorphicCotangentEquiv_symm_apply (ℓ : StrongDual ℂ E) :
   apply (e.holomorphicCotangentEquiv x hx he).injective
   simp
 
-/-- The classes of centered coordinates form a basis of the cotangent space over the
-residue field, for every basis of the finite-dimensional chart model. -/
-theorem exists_basis_holomorphicCotangent {ι : Type*} (b : Module.Basis ι ℂ E) :
-    ∃ B : Module.Basis ι
-        (IsLocalRing.ResidueField ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
-        (IsLocalRing.CotangentSpace ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)),
-      ∀ i, B i = Ideal.toCotangent _
-        ⟨e.holomorphicLinearCoordinateGerm he x
-          (LinearMap.toContinuousLinearMap (b.coord i)) hx, by simp⟩ := by
+/-- The basis of the cotangent space over the residue field given by the classes of
+centered coordinates, for every basis of the finite-dimensional chart model. -/
+def holomorphicCotangentBasis {ι : Type*} (b : Module.Basis ι ℂ E) :
+    Module.Basis ι
+      (IsLocalRing.ResidueField ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
+      (IsLocalRing.CotangentSpace ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)) := by
   classical
   have := Module.Finite.finite_basis b
   let σ := residueFieldEquiv 𝓘(ℂ, E) X x
   let := Module.compHom (StrongDual ℂ E) (RingHomClass.toRingHom σ)
+  -- The compHom action unfolds to σ c • ℓ, so semilinearity gives linearity here.
   let d : IsLocalRing.CotangentSpace
       ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) ≃ₗ[_] StrongDual ℂ E :=
     { (e.holomorphicCotangentEquiv x hx he).toAddEquiv with
@@ -227,20 +226,35 @@ theorem exists_basis_holomorphicCotangent {ι : Type*} (b : Module.Basis ι ℂ 
     (fun c v ↦ by
       -- The new scalar action is restriction along the residue-field comparison.
       exact congrArg (fun a : ℂ ↦ a • v) (σ.apply_symm_apply c))
-  refine ⟨B.map d.symm, fun i ↦ ?_⟩
+  exact B.map d.symm
+
+/-- Differentiation sends the coordinate cotangent basis to the coordinate functionals. -/
+-- Simplify before expanding the basis vector into a coordinate germ class.
+@[simp↓]
+theorem holomorphicCotangentEquiv_holomorphicCotangentBasis
+    {ι : Type*} (b : Module.Basis ι ℂ E) (i : ι) :
+    e.holomorphicCotangentEquiv x hx he (e.holomorphicCotangentBasis x hx he b i) =
+      LinearMap.toContinuousLinearMap (b.coord i) := by
+  simp [holomorphicCotangentBasis, Module.Basis.mapCoeffs_apply, Module.Basis.coe_dualBasis]
+
+/-- The coordinate cotangent basis consists of the centered coordinate germ classes. -/
+@[simp]
+theorem holomorphicCotangentBasis_apply {ι : Type*} (b : Module.Basis ι ℂ E) (i : ι) :
+    e.holomorphicCotangentBasis x hx he b i = Ideal.toCotangent _
+      ⟨e.holomorphicLinearCoordinateGerm he x
+        (LinearMap.toContinuousLinearMap (b.coord i)) hx, by simp⟩ := by
   apply (e.holomorphicCotangentEquiv x hx he).injective
-  simp only [Module.Basis.map_apply, Module.Basis.mapCoeffs_apply, B, d]
-  simp [Module.Basis.coe_dualBasis]
+  simp
 
 include hx he in
 /-- The embedding dimension of a holomorphic stalk equals the complex dimension of its
 manifold model. This does not require Noetherianity of the stalk. -/
-theorem finrank_holomorphicCotangent :
+theorem finrank_cotangentSpace_holomorphicStalk :
     Module.finrank
         (IsLocalRing.ResidueField ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x))
         (IsLocalRing.CotangentSpace ((holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x)) =
       Module.finrank ℂ E := by
-  obtain ⟨B, -⟩ := e.exists_basis_holomorphicCotangent x hx he (Module.finBasis ℂ E)
-  simpa only [Fintype.card_fin] using Module.finrank_eq_card_basis B
+  simpa only [Fintype.card_fin] using Module.finrank_eq_card_basis
+    (e.holomorphicCotangentBasis x hx he (Module.finBasis ℂ E))
 
 end OpenPartialHomeomorph
