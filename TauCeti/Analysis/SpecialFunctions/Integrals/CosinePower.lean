@@ -78,18 +78,12 @@ theorem integrableOn_rpow_neg_mul_one_sub_cos {q t : ℝ} (hq : 0 < q) (hq2 : q 
       abs_of_nonneg (mul_nonneg (Real.rpow_nonneg hx0.le _) hcos0)]
     simpa [mul_comm] using mul_le_mul_of_nonneg_left hcos2 (Real.rpow_nonneg hx0.le (-(q + 1)))
 
-private lemma integrableOn_exp_neg_mul_Ioi {s : ℝ} (hs : 0 < s) :
-    IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
-  simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
-
-private lemma integral_Ioi_exp_neg_mul {s : ℝ} (hs : 0 < s) :
-    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) = s⁻¹ := by
-  simpa [mul_comm, hs.ne'] using integral_exp_mul_Ioi (a := -s) (neg_lt_zero.mpr hs) 0
-
 /-- The exponentially damped cosine is integrable on the positive half-line. -/
 theorem integrableOn_exp_neg_mul_mul_cos {s : ℝ} (hs : 0 < s) (t : ℝ) :
     IntegrableOn (fun x : ℝ ↦ exp (-(x * s)) * cos (t * x)) (Ioi 0) := by
-  refine (integrableOn_exp_neg_mul_Ioi hs).mono' (by fun_prop) ?_
+  have hexp : IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
+    simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
+  refine hexp.mono' (by fun_prop) ?_
   filter_upwards with x
   rw [Real.norm_eq_abs, abs_mul, abs_exp, mul_le_iff_le_one_right (exp_pos _)]
   exact abs_cos_le_one _
@@ -120,16 +114,20 @@ theorem integral_Ioi_exp_neg_mul_mul_cos {s : ℝ} (hs : 0 < s) (t : ℝ) :
 theorem integral_Ioi_exp_neg_mul_mul_one_sub_cos {s : ℝ} (hs : 0 < s) (t : ℝ) :
     ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * (1 - cos (t * x)) =
       s⁻¹ - s / (s ^ 2 + t ^ 2) := by
+  have hexp : IntegrableOn (fun x : ℝ ↦ exp (-(x * s))) (Ioi 0) := by
+    simpa [neg_mul, mul_comm] using integrableOn_exp_mul_Ioi (neg_lt_zero.mpr hs) 0
+  have hexp_value : ∫ x in Ioi (0 : ℝ), exp (-(x * s)) = s⁻¹ := by
+    simpa [mul_comm, hs.ne'] using integral_exp_mul_Ioi (a := -s) (neg_lt_zero.mpr hs) 0
   have hcos := integrableOn_exp_neg_mul_mul_cos hs t
   calc
     _ = (∫ x in Ioi (0 : ℝ), exp (-(x * s))) -
         ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * cos (t * x) := by
-      rw [← integral_sub (integrableOn_exp_neg_mul_Ioi hs) hcos]
+      rw [← integral_sub hexp hcos]
       congr 1
       funext x
       ring
     _ = s⁻¹ - s / (s ^ 2 + t ^ 2) := by
-      rw [integral_Ioi_exp_neg_mul hs, integral_Ioi_exp_neg_mul_mul_cos hs t]
+      rw [hexp_value, integral_Ioi_exp_neg_mul_mul_cos hs t]
 
 /-- For `0 < q < 2`, the singular power-weighted cosine integral has the closed form
 `π |t|^q / (2 Γ(q + 1) sin(π q / 2))`. -/
