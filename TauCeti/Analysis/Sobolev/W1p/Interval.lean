@@ -31,10 +31,10 @@ whose solutions are written down by integrating twice.
 
 ## The argument
 
-The zero-extension `ũ` of `u ∈ W^{1,p}_0(a, b)` is weakly differentiable on all of `ℝ`, with weak
+The zero-extension `u₀` of `u ∈ W^{1,p}_0(a, b)` is weakly differentiable on all of `ℝ`, with weak
 derivative the zero-extension of `u'` (`TauCeti.W1p0.hasWeakFDerivOn_indicator`), so by the
-fundamental theorem of calculus for weak derivatives `ũ t = c + ∫ s in a..t, ũ' s` almost
-everywhere on `ℝ`. To the left of `a` both `ũ` and the integral vanish, which forces `c = 0`.
+fundamental theorem of calculus for weak derivatives `u₀ t = c + ∫ s in a..t, u₀' s` almost
+everywhere on `ℝ`. To the left of `a` both `u₀` and the integral vanish, which forces `c = 0`.
 The integral of `u'` vanishes by `TauCeti.W1p0.setIntegral_inner_gradient_eq_zero`. Conversely
 the primitive is continuous on `[a, b]` and vanishes at `a` and `b`, so
 `TauCeti.W1p.mem_w1p0Submodule_of_continuousOn_closure` applies.
