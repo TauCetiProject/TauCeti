@@ -280,6 +280,41 @@ end Separated
 
 variable {n : ℕ}
 
+/-- If every root of `monicOfCoeff c` lies in one of the separated discs `ball w r` about the
+points `w` of `T`, with `g` holomorphic on the closed discs centred in `U` and these inside `U`
+while the other closed discs miss `U`, then the sum of `g` over the roots in `U` is the sum, over
+the points `w ∈ T ∩ U`, of the contour integrals of `g · P' / P` about `w`. -/
+private theorem sum_circleIntegral_eq_sum_map_filter_roots {T : Finset ℂ} {r : ℝ}
+    (hsep : ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w') {g : ℂ → ℂ} {U : Set ℂ}
+    [DecidablePred (· ∈ U)] (hr : 0 < r)
+    (hin : ∀ w ∈ T, w ∈ U → closedBall w r ⊆ interior U ∩ {z | AnalyticAt ℂ g z})
+    (hout : ∀ w ∈ T, w ∉ U → closedBall w r ⊆ (closure U)ᶜ)
+    (hgd : ∀ w ∈ T, w ∈ U → DifferentiableOn ℂ g (closedBall w r)) {c : Fin n → ℂ}
+    (hc : ∀ z ∈ (Polynomial.monicOfCoeff c).roots, ∃ w ∈ T, z ∈ ball w r) :
+    ∑ w ∈ T with w ∈ U, (2 * π * I)⁻¹ * ∮ t in C(w, r),
+      g t * ((Polynomial.monicOfCoeff c).derivative.eval t / (Polynomial.monicOfCoeff c).eval t) =
+      (((Polynomial.monicOfCoeff c).roots.filter (· ∈ U)).map g).sum := by
+  classical
+  rw [← sum_sum_map_filter_mem_ball hsep g
+    (m := (Polynomial.monicOfCoeff c).roots.filter (· ∈ U))
+    (fun z hz => hc z (Multiset.mem_of_mem_filter hz)), Finset.sum_filter]
+  refine Finset.sum_congr rfl fun w hw => ?_
+  split_ifs with hwU
+  · have hgw : DiffContOnCl ℂ g (ball w r) :=
+      ((hgd w hw hwU).mono (closure_ball w hr.ne').subset).diffContOnCl
+    have hfilter : ((Polynomial.monicOfCoeff c).roots.filter (· ∈ U)).filter (· ∈ ball w r) =
+        (Polynomial.monicOfCoeff c).roots.filter (· ∈ ball w r) := by
+      rw [Multiset.filter_filter]
+      exact Multiset.filter_congr fun z _ => and_iff_left_of_imp fun hz =>
+        interior_subset (hin w hw hwU (ball_subset_closedBall hz)).1
+    rw [Polynomial.circleIntegral_mul_derivative_div_eval _ hr hgw fun z hz => by
+        obtain ⟨w', hw', hzw'⟩ := hc z hz
+        exact notMem_sphere_of_mem_ball hsep hw hw' hzw',
+      inv_mul_cancel_left₀ two_pi_I_ne_zero, hfilter]
+  · rw [Multiset.filter_eq_nil.2 fun z hz hzw =>
+      hout w hw hwU (ball_subset_closedBall hzw) (subset_closure (Multiset.mem_filter.1 hz).2)]
+    simp
+
 /-- **Sums of a holomorphic function over the roots in a region depend analytically on the
 coefficients.** Let `U` be a set of complex numbers whose frontier contains no point of the
 unordered tuple with elementary symmetric coordinates `c₀`, and let `g` be holomorphic at every
@@ -331,27 +366,9 @@ theorem analyticAt_sum_map_filter_coeffEquiv_symm {g : ℂ → ℂ} {U : Set ℂ
       g t * ((Polynomial.monicOfCoeff c).derivative.eval t / (Polynomial.monicOfCoeff c).eval t) =
       ((((coeffEquiv ℂ n).symm c : Multiset ℂ).filter (· ∈ U)).map g).sum := by
     filter_upwards [hN] with c hc
-    have hc' : ∀ z ∈ (Polynomial.monicOfCoeff c).roots, z ∈ V := fun z hz =>
+    rw [coeffEquiv_symm_apply]
+    exact sum_circleIntegral_eq_sum_map_filter_roots hsep hr hin hout hgd fun z hz => hV z <|
       hc z (by rwa [← _root_.Sym.mem_coe, coeffEquiv_symm_apply])
-    rw [coeffEquiv_symm_apply, ← sum_sum_map_filter_mem_ball hsep g
-      (m := (Polynomial.monicOfCoeff c).roots.filter (· ∈ U))
-      (fun z hz => hV z (hc' z (Multiset.mem_of_mem_filter hz))), Finset.sum_filter]
-    refine Finset.sum_congr rfl fun w hw => ?_
-    split_ifs with hwU
-    · have hgw : DiffContOnCl ℂ g (ball w r) :=
-        ((hgd w hw hwU).mono (closure_ball w hr.ne').subset).diffContOnCl
-      have hfilter : ((Polynomial.monicOfCoeff c).roots.filter (· ∈ U)).filter (· ∈ ball w r) =
-          (Polynomial.monicOfCoeff c).roots.filter (· ∈ ball w r) := by
-        rw [Multiset.filter_filter]
-        exact Multiset.filter_congr fun z _ => and_iff_left_of_imp fun hz =>
-          interior_subset (hin w hw hwU (ball_subset_closedBall hz)).1
-      rw [Polynomial.circleIntegral_mul_derivative_div_eval _ hr hgw fun z hz => by
-          obtain ⟨w', hw', hzw'⟩ := hV z (hc' z hz)
-          exact notMem_sphere_of_mem_ball hsep hw hw' hzw',
-        inv_mul_cancel_left₀ two_pi_I_ne_zero, hfilter]
-    · rw [Multiset.filter_eq_nil.2 fun z hz hzw =>
-        hout w hw hwU (ball_subset_closedBall hzw) (subset_closure (Multiset.mem_filter.1 hz).2)]
-      simp
   -- Each contour integral is analytic in the coefficients.
   refine AnalyticAt.congr (Finset.analyticAt_fun_sum _ fun w hw => ?_) hsum
   obtain ⟨hw, hwU⟩ := Finset.mem_filter.1 hw
