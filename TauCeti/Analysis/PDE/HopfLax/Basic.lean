@@ -59,6 +59,9 @@ are not studied here.
 * `TauCeti.hopfLax_norm_rpow` and `TauCeti.hopfLax_norm_rpow_add_add_smul_le`: for the cost
   `L w = ‖w‖ ^ p`, the formula reads `u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))`, and the
   subsolution inequality holds in real seminormed spaces for `1 ≤ p`.
+* `TauCeti.le_hopfLax_norm_rpow_neg_div`: for this cost, a feasible pair `φ ⊕ ψ` gives
+  `ψ / κ ≤ u` for the Hopf–Lax value `u` of `-φ / κ`.
+* `TauCeti.hopfLax_norm_rpow_le_self`: for this cost, `u` at a time `t ≥ 0` lies below `φ`.
 * `TauCeti.abs_hopfLax_norm_rpow_le`: for this cost, `u` stays within the bounds of `φ`.
 * `TauCeti.lowerSemicontinuousOn_hopfLax_norm_rpow` and `TauCeti.continuousOn_hopfLax_norm_rpow`:
   in a proper space, for `1 ≤ p`, `u` is lower semicontinuous on `t > 0` when `φ` is lower
@@ -207,6 +210,20 @@ theorem hopfLax_norm_rpow (φ : E → ℝ) (ht : 0 < t) (x : E) :
     Real.rpow_sub_one ht.ne']
   field_simp
 
+/-- For the cost `L w = ‖w‖ ^ p`, if `φ x + ψ y ≤ ‖x - y‖ ^ p` for all `x y`, then at a time `t > 0`
+the Hopf–Lax value of `-φ / κ`, with `κ = t ^ (p - 1)`, lies above `ψ / κ`. -/
+theorem le_hopfLax_norm_rpow_neg_div {ψ : E → ℝ} (ht : 0 < t)
+    (hφψ : ∀ x y, φ x + ψ y ≤ ‖x - y‖ ^ p) (y : E) :
+    ψ y / t ^ (p - 1) ≤ hopfLax (‖·‖ ^ p) (fun x ↦ -φ x / t ^ (p - 1)) t y := by
+  rw [hopfLax_norm_rpow _ ht]
+  refine le_ciInf fun x ↦ ?_
+  calc ψ y / t ^ (p - 1) = (-φ x + (φ x + ψ y)) / t ^ (p - 1) := by ring
+    _ ≤ (-φ x + ‖y - x‖ ^ p) / t ^ (p - 1) := by
+        gcongr
+        rw [norm_sub_rev]
+        exact hφψ x y
+    _ = -φ x / t ^ (p - 1) + ‖y - x‖ ^ p / t ^ (p - 1) := by ring
+
 /-- **The Hopf–Lax subsolution inequality for the `p`-th power cost.** In a real seminormed space,
 for `1 ≤ p` and `φ` bounded below, `u (t + h, x + h w) ≤ u (t, x) + h ‖w‖ ^ p` for `t > 0` and
 `h ≥ 0`. -/
@@ -216,6 +233,13 @@ theorem hopfLax_norm_rpow_add_add_smul_le (hp : 1 ≤ p) (hφ : BddBelow (range 
   hopfLax_add_add_smul_le hφ ⟨0, forall_mem_range.2 fun _ ↦ by positivity⟩
     (convexOn_norm_rpow (E := E) hp) ht hh x w
 
+/-- For the cost `L w = ‖w‖ ^ p` with `p ≠ 0`, the Hopf–Lax value at a time `t ≥ 0` lies below the
+initial datum `φ`. -/
+theorem hopfLax_norm_rpow_le_self (hp : p ≠ 0) (hφ : BddBelow (range φ)) (ht : 0 ≤ t) (x : E) :
+    hopfLax (‖·‖ ^ p) φ t x ≤ φ x := by
+  simpa [Real.zero_rpow hp] using hopfLax_le_add_mul hφ
+    ⟨0, forall_mem_range.2 fun w ↦ Real.rpow_nonneg (norm_nonneg w) p⟩ ht x
+
 /-- For the cost `L w = ‖w‖ ^ p` with `p ≠ 0`, the Hopf–Lax value at a time `t ≥ 0` stays within
 any bound `C` of the initial datum: `|φ| ≤ C` gives `|u (t, x)| ≤ C`. -/
 theorem abs_hopfLax_norm_rpow_le (hp : p ≠ 0) {C : ℝ} (hφC : ∀ y, |φ y| ≤ C) (ht : 0 ≤ t)
@@ -223,10 +247,8 @@ theorem abs_hopfLax_norm_rpow_le (hp : p ≠ 0) {C : ℝ} (hφC : ∀ y, |φ y| 
   refine abs_le.2 ⟨?_, ?_⟩
   · simpa using add_mul_le_hopfLax (l := 0) (fun y ↦ (abs_le.1 (hφC y)).1)
       (fun w ↦ Real.rpow_nonneg (norm_nonneg w) p) ht x
-  · refine le_trans ?_ (abs_le.1 (hφC x)).2
-    simpa [Real.zero_rpow hp] using hopfLax_le_add_mul
-      ⟨-C, forall_mem_range.2 fun y ↦ (abs_le.1 (hφC y)).1⟩
-      ⟨0, forall_mem_range.2 fun w ↦ Real.rpow_nonneg (norm_nonneg w) p⟩ ht x
+  · exact (hopfLax_norm_rpow_le_self hp ⟨-C, forall_mem_range.2 fun y ↦ (abs_le.1 (hφC y)).1⟩
+      ht x).trans (abs_le.1 (hφC x)).2
 
 /-- **Lower semicontinuity of the Hopf–Lax value for the `p`-th power cost.** In a proper real
 seminormed space, for `1 ≤ p` and a lower semicontinuous initial datum `φ` bounded below, the
