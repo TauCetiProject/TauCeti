@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Hadamard
 public import Mathlib.Analysis.Complex.LocallyUniformLimit
+public import TauCeti.Analysis.Complex.VerticalStrip
 public import TauCeti.Analysis.Normed.Interpolation.CompatibleCouple
 public import TauCeti.Topology.ContinuousMap.ZeroAtInfty.Basic
 
@@ -42,9 +42,12 @@ admissible functions through their boundary traces:
   (`ComplexMethodSpace.norm_ofInter_le`), using the admissible functions `exp (δ (z - θ)²) x`
   with `δ → 0`;
 * `ComplexMethodSpace.map`: continuous linear maps `T₀ : X₀ → Y₀`, `T₁ : X₁ → Y₁` that agree on the
-  intersection, with norms at most `M₀, M₁ > 0`, induce a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at
-  most `M₀ ^ (1 - θ) * M₁ ^ θ` (`ComplexMethodSpace.norm_map_le`). Thus the complex method is an
-  exact interpolation functor of exponent `θ`.
+  intersection, with norms at most `M₀, M₁ ≥ 0`, induce a map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` of norm at
+  most `M₀ ^ (1 - θ) * M₁ ^ θ` (`ComplexMethodSpace.norm_map_le`), in particular of norm at most
+  `‖T₀‖ ^ (1 - θ) * ‖T₁‖ ^ θ` (`ComplexMethodSpace.opNorm_map_le_opNorm`). The construction
+  preserves identities and composition (`ComplexMethodSpace.map_id`, `ComplexMethodSpace.map_comp`)
+  and commutes with the inclusions of the intersections (`ComplexMethodSpace.map_ofInter`). Thus
+  the complex method is an exact interpolation functor of exponent `θ`.
 
 ## References
 
@@ -89,6 +92,12 @@ namespace IsStripFunction
 
 variable {C} {F G : ℂ → C.SumSpace} {g h : C₀(ℝ, X₀) × C₀(ℝ, X₁)}
 
+/-- An admissible function is bounded in norm on the closed strip. -/
+theorem exists_norm_le (hF : C.IsStripFunction F g) :
+    ∃ M, ∀ z ∈ verticalClosedStrip 0 1, ‖F z‖ ≤ M := by
+  obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hF.isBounded
+  exact ⟨M, fun z hz => hM _ (mem_image_of_mem F hz)⟩
+
 theorem zero : C.IsStripFunction 0 0 where
   diffContOnCl := diffContOnCl_const (c := 0)
   isBounded := (Bornology.isBounded_singleton (x := 0)).subset <| by
@@ -101,23 +110,22 @@ theorem add (hF : C.IsStripFunction F g) (hG : C.IsStripFunction G h) :
     C.IsStripFunction (F + G) (g + h) where
   diffContOnCl := hF.diffContOnCl.add hG.diffContOnCl
   isBounded := by
-    obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hF.isBounded
-    obtain ⟨N, hN⟩ := isBounded_iff_forall_norm_le.1 hG.isBounded
+    obtain ⟨M, hM⟩ := hF.exists_norm_le
+    obtain ⟨N, hN⟩ := hG.exists_norm_le
     refine isBounded_iff_forall_norm_le.2 ⟨M + N, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
-    exact (norm_add_le _ _).trans
-      (add_le_add (hM _ (mem_image_of_mem F hz)) (hN _ (mem_image_of_mem G hz)))
+    exact (norm_add_le _ _).trans (add_le_add (hM z hz) (hN z hz))
   apply_mul_I t := by simp [hF.apply_mul_I, hG.apply_mul_I]
   apply_one_add_mul_I t := by simp [hF.apply_one_add_mul_I, hG.apply_one_add_mul_I]
 
 theorem const_smul (hF : C.IsStripFunction F g) (c : ℂ) : C.IsStripFunction (c • F) (c • g) where
   diffContOnCl := hF.diffContOnCl.const_smul c
   isBounded := by
-    obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hF.isBounded
+    obtain ⟨M, hM⟩ := hF.exists_norm_le
     refine isBounded_iff_forall_norm_le.2 ⟨‖c‖ * M, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     rw [Pi.smul_apply, norm_smul]
-    exact mul_le_mul_of_nonneg_left (hM _ (mem_image_of_mem F hz)) (norm_nonneg c)
+    exact mul_le_mul_of_nonneg_left (hM z hz) (norm_nonneg c)
   apply_mul_I t := by simp [hF.apply_mul_I]
   apply_one_add_mul_I t := by simp [hF.apply_one_add_mul_I]
 
@@ -131,10 +139,10 @@ equal bounds on the two boundary lines. -/
 theorem norm_le (hF : C.IsStripFunction F g) {z : ℂ} (hz : z ∈ verticalClosedStrip 0 1) :
     ‖F z‖ ≤ ‖g‖ := by
   have hB : BddAbove ((norm ∘ F) '' verticalClosedStrip 0 1) := by
-    obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hF.isBounded
+    obtain ⟨M, hM⟩ := hF.exists_norm_le
     refine ⟨M, ?_⟩
     rintro _ ⟨w, hw, rfl⟩
-    exact hM _ (mem_image_of_mem F hw)
+    exact hM w hw
   have h := norm_le_interp_of_mem_verticalClosedStrip₀₁' F hz hF.diffContOnCl hB
     (a := ‖g‖) (b := ‖g‖) (fun w hw => ?_) (fun w hw => ?_)
   · rwa [← Real.rpow_add' (norm_nonneg g) (by simp), sub_add_cancel, Real.rpow_one] at h
@@ -175,13 +183,6 @@ the closed strip it agrees with every admissible function with these traces
 def stripFunction (g : C.stripTraces) : ℂ → C.SumSpace :=
   (verticalClosedStrip 0 1).indicator (mem_stripTraces_iff.1 g.2).choose
 
-private theorem mul_I_mem_verticalClosedStrip (t : ℝ) : (t * I : ℂ) ∈ verticalClosedStrip 0 1 := by
-  simp [verticalClosedStrip]
-
-private theorem one_add_mul_I_mem_verticalClosedStrip (t : ℝ) :
-    (1 + t * I : ℂ) ∈ verticalClosedStrip 0 1 := by
-  simp [verticalClosedStrip]
-
 theorem isStripFunction_stripFunction (g : C.stripTraces) :
     C.IsStripFunction (C.stripFunction g) g := by
   have hF := (mem_stripTraces_iff.1 g.2).choose_spec
@@ -189,15 +190,18 @@ theorem isStripFunction_stripFunction (g : C.stripTraces) :
       (verticalClosedStrip 0 1) := fun z hz => indicator_of_mem hz _
   exact
     { diffContOnCl :=
-        ⟨hF.diffContOnCl.differentiableOn.congr (hEq.mono (preimage_mono Ioo_subset_Icc_self)),
-          hF.diffContOnCl.continuousOn.congr (hEq.mono (closure_minimal
-            (preimage_mono Ioo_subset_Icc_self) (isClosed_Icc.preimage continuous_re)))⟩
+        ⟨hF.diffContOnCl.differentiableOn.congr
+            (hEq.mono (verticalStrip_subset_verticalClosedStrip 0 1)),
+          hF.diffContOnCl.continuousOn.congr (hEq.mono (closure_verticalStrip_subset 0 1))⟩
       isBounded := by
         rw [hEq.image_eq]
         exact hF.isBounded
-      apply_mul_I t := (hEq (mul_I_mem_verticalClosedStrip t)).trans (hF.apply_mul_I t)
+      apply_mul_I t :=
+        (hEq (mul_I_mem_verticalClosedStrip_iff.2 (left_mem_Icc.2 zero_le_one))).trans
+          (hF.apply_mul_I t)
       apply_one_add_mul_I t :=
-        (hEq (one_add_mul_I_mem_verticalClosedStrip t)).trans (hF.apply_one_add_mul_I t) }
+        (hEq (one_add_mul_I_mem_verticalClosedStrip_iff.2 (right_mem_Icc.2 zero_le_one))).trans
+          (hF.apply_one_add_mul_I t) }
 
 variable {C} in
 theorem stripFunction_eq {g : C.stripTraces} {F : ℂ → C.SumSpace} (hF : C.IsStripFunction F g)
@@ -288,19 +292,20 @@ theorem isClosed_stripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
         ((continuous_snd.tendsto g).comp hlim)
   -- the limit `F'` is admissible with traces `g`
   refine ⟨F', ⟨⟨?_, ?_⟩, ?_, fun t => ?_, fun t => ?_⟩⟩
-  · exact (hunif.mono (preimage_mono Ioo_subset_Icc_self)).tendstoLocallyUniformlyOn
+  · exact (hunif.mono (verticalStrip_subset_verticalClosedStrip 0 1)).tendstoLocallyUniformlyOn
       |>.differentiableOn (.of_forall fun n => (hF n).diffContOnCl.differentiableOn)
-        (isOpen_Ioo.preimage continuous_re)
-  · exact (hunif.mono (closure_minimal (preimage_mono Ioo_subset_Icc_self)
-      (isClosed_Icc.preimage continuous_re))).continuousOn
+        (isOpen_verticalStrip 0 1)
+  · exact (hunif.mono (closure_verticalStrip_subset 0 1)).continuousOn
       (.of_forall fun n => (hF n).diffContOnCl.continuousOn)
   · refine isBounded_iff_forall_norm_le.2 ⟨‖g‖, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     exact hbound hz
-  · refine tendsto_nhds_unique (hlimz (mul_I_mem_verticalClosedStrip t)) ?_
+  · refine tendsto_nhds_unique
+      (hlimz ((mul_I_mem_verticalClosedStrip_iff (t := t)).2 (left_mem_Icc.2 zero_le_one))) ?_
     simp_rw [(hF _).apply_mul_I]
     exact (C.fstToSum.continuous.tendsto _).comp (hfst t)
-  · refine tendsto_nhds_unique (hlimz (one_add_mul_I_mem_verticalClosedStrip t)) ?_
+  · refine tendsto_nhds_unique (hlimz
+      ((one_add_mul_I_mem_verticalClosedStrip_iff (t := t)).2 (right_mem_Icc.2 zero_le_one))) ?_
     simp_rw [(hF _).apply_one_add_mul_I]
     exact (C.sndToSum.continuous.tendsto _).comp (hsnd t)
 
@@ -383,13 +388,13 @@ admissible function. -/
 theorem exists_toSum_eq_iff (hθ : θ ∈ Icc 0 1) {u : C.SumSpace} :
     (∃ v : C.ComplexMethodSpace θ, toSum v = u) ↔
       ∃ F g, C.IsStripFunction F g ∧ F θ = u := by
-  have hθ' : (θ : ℂ) ∈ verticalClosedStrip 0 1 := by simpa [verticalClosedStrip] using hθ
   constructor
   · rintro ⟨v, rfl⟩
     obtain ⟨g, rfl⟩ := mk_surjective v
     exact ⟨_, g, C.isStripFunction_stripFunction g, rfl⟩
   · rintro ⟨F, g, hF, rfl⟩
-    exact ⟨mk θ ⟨g, F, hF⟩, by simpa using stripFunction_eq hF hθ'⟩
+    exact ⟨mk θ ⟨g, F, hF⟩, by
+      simpa using stripFunction_eq hF (ofReal_mem_verticalClosedStrip_iff.2 hθ)⟩
 
 end ComplexMethodSpace
 
@@ -484,7 +489,7 @@ private theorem stripEval_gaussianTrace {δ : ℝ} (hδ : 0 < δ) {θ : ℝ} (h�
     C.stripEval θ ⟨C.gaussianTrace hδ θ x, C.gaussianTrace_mem hδ θ x⟩ =
       C.fstToSum (C.interFst x) := by
   rw [stripEval_apply, stripFunction_eq (C.isStripFunction_gaussian hδ θ x)
-    (by simpa [verticalClosedStrip] using hθ)]
+    (ofReal_mem_verticalClosedStrip_iff.2 hθ)]
   simp [gaussian]
 
 namespace ComplexMethodSpace
@@ -559,7 +564,7 @@ private theorem norm_scaleFactor_le {z : ℂ} (hz : z ∈ verticalClosedStrip 0 
     ‖scaleFactor M₀ M₁ z‖ ≤ Real.exp (|Real.log M₀| + |Real.log M₁|) := by
   rw [norm_scaleFactor]
   refine Real.exp_le_exp.2 ?_
-  have hz' : z.re ∈ Icc (0 : ℝ) 1 := hz
+  have hz' := mem_verticalClosedStrip_iff.1 hz
   nlinarith [hz'.1, hz'.2, neg_abs_le (Real.log M₀), le_abs_self (Real.log M₀),
     neg_abs_le (Real.log M₁), le_abs_self (Real.log M₁), abs_nonneg (Real.log M₀),
     abs_nonneg (Real.log M₁)]
@@ -600,8 +605,10 @@ private theorem exists_isStripFunction_smul_comp (A : C.SumSpace →L[ℂ] D.Sum
     {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g) :
     ∃ g' : C₀(ℝ, Y₀) × C₀(ℝ, Y₁), D.IsStripFunction (fun z => c z • A (F z)) g' ∧
       (∀ t, g'.1 t = c (t * I) • A₀ (g.1 t)) ∧ ∀ t, g'.2 t = c (1 + t * I) • A₁ (g.2 t) := by
-  have hK₀ (t : ℝ) : ‖c (t * I)‖ ≤ K := hK _ (mul_I_mem_verticalClosedStrip t)
-  have hK₁ (t : ℝ) : ‖c (1 + t * I)‖ ≤ K := hK _ (one_add_mul_I_mem_verticalClosedStrip t)
+  have hK₀ (t : ℝ) : ‖c (t * I)‖ ≤ K :=
+    hK _ (mul_I_mem_verticalClosedStrip_iff.2 (left_mem_Icc.2 zero_le_one))
+  have hK₁ (t : ℝ) : ‖c (1 + t * I)‖ ≤ K :=
+    hK _ (one_add_mul_I_mem_verticalClosedStrip_iff.2 (right_mem_Icc.2 zero_le_one))
   have hcont₀ : Continuous fun t : ℝ => c (t * I) := hc.continuous.comp (by fun_prop)
   have hcont₁ : Continuous fun t : ℝ => c (1 + t * I) := hc.continuous.comp (by fun_prop)
   refine ⟨(⟨⟨fun t => c (t * I) • A₀ (g.1 t),
@@ -618,12 +625,12 @@ private theorem exists_isStripFunction_smul_comp (A : C.SumSpace →L[ℂ] D.Sum
       ((ZeroAtInftyContinuousMapClass.zero_at_infty g.1).norm.const_mul ‖A₀‖).const_mul K
   · simpa using
       ((ZeroAtInftyContinuousMapClass.zero_at_infty g.2).norm.const_mul ‖A₁‖).const_mul K
-  · obtain ⟨M, hM⟩ := isBounded_iff_forall_norm_le.1 hF.isBounded
+  · obtain ⟨M, hM⟩ := hF.exists_norm_le
     refine isBounded_iff_forall_norm_le.2 ⟨K * (‖A‖ * M), ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     have hKz := hK z hz
     exact (norm_smul _ _).trans_le (mul_le_mul hKz ((A.le_opNorm _).trans
-      (mul_le_mul_of_nonneg_left (hM _ (mem_image_of_mem F hz)) (norm_nonneg _)))
+      (mul_le_mul_of_nonneg_left (hM z hz) (norm_nonneg _)))
       (norm_nonneg _) ((norm_nonneg _).trans hKz))
   · simp [hF.apply_mul_I, hA₀]
   · simp [hF.apply_one_add_mul_I, hA₁]
@@ -678,6 +685,31 @@ theorem isStripFunction_stripTracesMap (g : C.stripTraces) :
       (stripTracesMap T₀ T₁ h g) :=
   isStripFunction_compLeft T₀ T₁ h g
 
+theorem stripTracesMap_id
+    (h : ∀ x : C.inter, C.fstToSum (ContinuousLinearMap.id ℂ X₀ (C.interFst x)) =
+      C.sndToSum (ContinuousLinearMap.id ℂ X₁ (C.interSnd x))) :
+    stripTracesMap (ContinuousLinearMap.id ℂ X₀) (ContinuousLinearMap.id ℂ X₁) h =
+      ContinuousLinearMap.id ℂ C.stripTraces :=
+  ContinuousLinearMap.ext fun _ => Subtype.ext <| Prod.ext
+    (ZeroAtInftyContinuousMap.ext fun _ => by simp) (ZeroAtInftyContinuousMap.ext fun _ => by simp)
+
+section Comp
+
+variable {Z₀ Z₁ U : Type*} [NormedAddCommGroup Z₀] [NormedSpace ℂ Z₀] [NormedAddCommGroup Z₁]
+  [NormedSpace ℂ Z₁] [AddCommGroup U] [Module ℂ U] [TopologicalSpace U] [ContinuousAdd U]
+  [T1Space U] {E : CompatibleCouple ℂ Z₀ Z₁ U} (S₀ : Y₀ →L[ℂ] Z₀) (S₁ : Y₁ →L[ℂ] Z₁)
+  (hS : ∀ x : D.inter, E.fstToSum (S₀ (D.interFst x)) = E.sndToSum (S₁ (D.interSnd x)))
+  (hST : ∀ x : C.inter,
+    E.fstToSum (S₀.comp T₀ (C.interFst x)) = E.sndToSum (S₁.comp T₁ (C.interSnd x)))
+
+theorem stripTracesMap_comp :
+    stripTracesMap (S₀.comp T₀) (S₁.comp T₁) hST =
+      (stripTracesMap S₀ S₁ hS).comp (stripTracesMap T₀ T₁ h) :=
+  ContinuousLinearMap.ext fun _ => Subtype.ext <| Prod.ext
+    (ZeroAtInftyContinuousMap.ext fun _ => by simp) (ZeroAtInftyContinuousMap.ext fun _ => by simp)
+
+end Comp
+
 /-- Evaluation commutes with the map of boundary traces. -/
 theorem stripEval_stripTracesMap (z : ℂ) (g : C.stripTraces) :
     D.stripEval z (stripTracesMap T₀ T₁ h g) =
@@ -713,6 +745,44 @@ theorem toSum_map (u : C.ComplexMethodSpace θ) :
   obtain ⟨g, rfl⟩ := mk_surjective u
   rw [map_mk, toSum_mk, toSum_mk, stripEval_stripTracesMap]
 
+/-- The identity maps of the endpoints induce the identity of `[X₀, X₁]_θ`. -/
+theorem map_id
+    (h : ∀ x : C.inter, C.fstToSum (ContinuousLinearMap.id ℂ X₀ (C.interFst x)) =
+      C.sndToSum (ContinuousLinearMap.id ℂ X₁ (C.interSnd x))) :
+    map θ (ContinuousLinearMap.id ℂ X₀) (ContinuousLinearMap.id ℂ X₁) h =
+      ContinuousLinearMap.id ℂ (C.ComplexMethodSpace θ) := by
+  refine ContinuousLinearMap.ext fun u => ?_
+  obtain ⟨g, rfl⟩ := mk_surjective u
+  rw [map_mk, stripTracesMap_id, ContinuousLinearMap.id_apply, ContinuousLinearMap.id_apply]
+
+section Comp
+
+variable {Z₀ Z₁ U : Type*} [NormedAddCommGroup Z₀] [NormedSpace ℂ Z₀] [NormedAddCommGroup Z₁]
+  [NormedSpace ℂ Z₁] [AddCommGroup U] [Module ℂ U] [TopologicalSpace U] [ContinuousAdd U]
+  [T1Space U] {E : CompatibleCouple ℂ Z₀ Z₁ U} (S₀ : Y₀ →L[ℂ] Z₀) (S₁ : Y₁ →L[ℂ] Z₁)
+  (hS : ∀ x : D.inter, E.fstToSum (S₀ (D.interFst x)) = E.sndToSum (S₁ (D.interSnd x)))
+  (hST : ∀ x : C.inter,
+    E.fstToSum (S₀.comp T₀ (C.interFst x)) = E.sndToSum (S₁.comp T₁ (C.interSnd x)))
+
+/-- The map induced by composites of maps of the endpoints is the composite of the induced maps. -/
+theorem map_comp :
+    map θ (S₀.comp T₀) (S₁.comp T₁) hST = (map θ S₀ S₁ hS).comp (map θ T₀ T₁ h) := by
+  refine ContinuousLinearMap.ext fun u => ?_
+  obtain ⟨g, rfl⟩ := mk_surjective u
+  rw [map_mk, stripTracesMap_comp T₀ T₁ h S₀ S₁ hS hST, ContinuousLinearMap.comp_apply,
+    ContinuousLinearMap.comp_apply, map_mk, map_mk]
+
+end Comp
+
+/-- For `0 ≤ θ ≤ 1`, the induced map commutes with the inclusions of the intersections: it sends
+the class of `x ∈ X₀ ∩ X₁` to the class of the element `y ∈ Y₀ ∩ Y₁` with first coordinate
+`T₀ x`. -/
+theorem map_ofInter (hθ : θ ∈ Icc 0 1) {x : C.inter} {y : D.inter}
+    (hy : D.interFst y = T₀ (C.interFst x)) : map θ T₀ T₁ h (ofInter θ x) = ofInter θ y := by
+  refine toSum_injective ?_
+  rw [toSum_map, toSum_ofInter hθ, toSum_ofInter hθ, hy]
+  exact C.sumLift_fstToSum _ _ h _
+
 /-- The image of an admissible function scaled by `scaleFactor M₀ M₁` has traces of norm at most
 those of the original one, so the class of `scaleFactor M₀ M₁ θ • map u` has norm at most that of
 any representative of `u`. -/
@@ -727,7 +797,7 @@ private theorem norm_scaleFactor_smul_map_mk_le (hθ : θ ∈ Icc 0 1) {M₀ M�
   have hv : mk θ ⟨g', _, hg'⟩ = scaleFactor M₀ M₁ θ • map θ T₀ T₁ h (mk θ g) :=
     toSum_injective <| by
       rw [map_smul, toSum_map, toSum_mk, toSum_mk, stripEval_apply, stripEval_apply,
-        stripFunction_eq hg' (by simpa [verticalClosedStrip] using hθ)]
+        stripFunction_eq hg' (ofReal_mem_verticalClosedStrip_iff.2 hθ)]
   have hg'g : ‖g'‖ ≤ ‖g‖ := norm_prod_le_iff.2
     ⟨(ZeroAtInftyContinuousMap.norm_le (norm_nonneg _)).2 fun t => ?_,
       (ZeroAtInftyContinuousMap.norm_le (norm_nonneg _)).2 fun t => ?_⟩
@@ -740,10 +810,8 @@ private theorem norm_scaleFactor_smul_map_mk_le (hθ : θ ∈ Icc 0 1) {M₀ M�
     exact (h₁ _).trans (mul_le_mul_of_nonneg_left
       ((ZeroAtInftyContinuousMap.norm_coe_le_norm _ _).trans (norm_snd_le _)) hM₁.le)
 
-/-- **Exact interpolation of exponent `θ`.** If `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` with
-`M₀, M₁ > 0`, the induced map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` satisfies
-`‖T u‖_θ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖_θ` for `0 ≤ θ ≤ 1`. -/
-theorem norm_map_le (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
+/-- `ComplexMethodSpace.norm_map_le` for strictly positive bounds. -/
+private theorem norm_map_le_of_pos (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
     (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.ComplexMethodSpace θ) :
     ‖map θ T₀ T₁ h u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
   set K := M₀ ^ (1 - θ) * M₁ ^ θ
@@ -758,11 +826,36 @@ theorem norm_map_le (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) 
         ((norm_scaleFactor_smul_map_mk_le T₀ T₁ h hθ hM₀ hM₁ h₀ h₁ g).trans hg.le) hKpos.le
     _ = K * ‖mk θ g‖ + ε := by rw [mul_add, mul_div_cancel₀ _ hKpos.ne']
 
+/-- **Exact interpolation of exponent `θ`.** If `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖` with
+`M₀, M₁ ≥ 0`, the induced map `[X₀, X₁]_θ → [Y₀, Y₁]_θ` satisfies
+`‖T u‖_θ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖_θ` for `0 ≤ θ ≤ 1`. -/
+theorem norm_map_le (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
+    (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (u : C.ComplexMethodSpace θ) :
+    ‖map θ T₀ T₁ h u‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ * ‖u‖ := by
+  -- apply the bound for the positive constants `M₀ + ε`, `M₁ + ε` and let `ε → 0`
+  have hle (ε : ℝ) (hε : 0 < ε) :
+      ‖map θ T₀ T₁ h u‖ ≤ (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * ‖u‖ :=
+    norm_map_le_of_pos T₀ T₁ h hθ (by positivity) (by positivity)
+      (fun x => (h₀ x).trans (by gcongr; linarith))
+      (fun x => (h₁ x).trans (by gcongr; linarith)) u
+  have hcont : Continuous fun ε : ℝ => (M₀ + ε) ^ (1 - θ) * (M₁ + ε) ^ θ * ‖u‖ :=
+    (((continuous_const.add continuous_id).rpow_const fun _ => Or.inr (sub_nonneg.2 hθ.2)).mul
+      ((continuous_const.add continuous_id).rpow_const fun _ => Or.inr hθ.1)).mul continuous_const
+  have hlim := (hcont.tendsto 0).mono_left (nhdsWithin_le_nhds (s := Ioi 0))
+  simp only [add_zero] at hlim
+  exact ge_of_tendsto hlim (eventually_nhdsWithin_of_forall hle)
+
 /-- The operator norm form of `ComplexMethodSpace.norm_map_le`. -/
-theorem opNorm_map_le (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 < M₀) (hM₁ : 0 < M₁)
+theorem opNorm_map_le (hθ : θ ∈ Icc 0 1) {M₀ M₁ : ℝ} (hM₀ : 0 ≤ M₀) (hM₁ : 0 ≤ M₁)
     (h₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (h₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) :
     ‖map θ T₀ T₁ h‖ ≤ M₀ ^ (1 - θ) * M₁ ^ θ :=
   ContinuousLinearMap.opNorm_le_bound _ (by positivity) (norm_map_le T₀ T₁ h hθ hM₀ hM₁ h₀ h₁)
+
+/-- **Exact interpolation of exponent `θ`**, in terms of operator norms:
+`‖T‖_θ ≤ ‖T₀‖ ^ (1 - θ) * ‖T₁‖ ^ θ` for `0 ≤ θ ≤ 1`. -/
+theorem opNorm_map_le_opNorm (hθ : θ ∈ Icc 0 1) :
+    ‖map θ T₀ T₁ h‖ ≤ ‖T₀‖ ^ (1 - θ) * ‖T₁‖ ^ θ :=
+  opNorm_map_le T₀ T₁ h hθ (norm_nonneg _) (norm_nonneg _) T₀.le_opNorm T₁.le_opNorm
 
 end ComplexMethodSpace
 
