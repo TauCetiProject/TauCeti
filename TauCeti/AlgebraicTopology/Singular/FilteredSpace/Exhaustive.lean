@@ -8,49 +8,46 @@ module
 public import TauCeti.AlgebraicTopology.Singular.FilteredSpace.Basic
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive
-public import TauCeti.Topology.CWComplex.Classical.Skeleton.Filtration
 
 /-!
 # Exhaustive filtrations of a space
 
-Let `X : ℤ → Set Y` be an increasing family of subsets of a space `Y` which *absorbs compact
-sets*: every compact subset of `Y` lies in some `X q`. Since a singular simplex has compact
-image, every singular chain of `Y` is then a chain of some `X q`
-(`TauCeti.exists_mem_range_singularChainFiltration_arrow`): the filtration of the singular chains
-of `Y` by those of the `X q` is exhaustive, even when no `X q` is all of `Y`. The proof uses that
-singular chains have compact supports (`TauCeti.isColimitMapCoconeToSSet`).
+Let `X : ℤ → Set Y` be an increasing family of subsets of a space `Y` that absorbs compact sets:
+every compact subset of `Y` lies in some `X q`. The family need not reach `Y` at any finite
+stage. The basic example is the filtration of a space mapping to an infinite-dimensional CW
+complex by the preimages of the skeleta
+(`TauCeti.AlgebraicTopology.Singular.FilteredSpace.Skeleton`).
 
-The convergence statements for exhaustive filtrations of
-`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive` therefore apply to the spectral
-sequence of the filtered space (`TauCeti.filteredSpaceSpectralSequence`), with coefficients in
-modules:
+A singular simplex has compact image, so it lies in some `X q`. Hence, with coefficients in a
+module `M`, every singular chain of `Y` lies in some stage of the filtration of the singular
+chains by those of the `X q` (`TauCeti.exists_mem_range_singularChainFiltration_arrow`). This is
+the exhaustiveness hypothesis of the convergence theorems for filtered complexes in
+`TauCeti.Algebra.Homology.SpectralSequence.Filtered.Exhaustive`, which therefore apply to
+`TauCeti.filteredSpaceSpectralSequence`:
 
 * the filtration of the abutment `Hₙ(Y)` is exhaustive
-  (`TauCeti.exists_mem_range_filteredSpace_abutmentFiltrationι`);
-* it reaches `Hₙ(Y)` at `b` when the relative homology groups `Hₙ(X (i + 1), X i)` vanish for
-  `i ≥ b` (`TauCeti.isIso_filteredSpace_abutmentFiltrationι`);
-* when moreover some stage `X a` is empty and the relative homology groups `Hₙ₊₁(X (i + 1), X i)`
-  vanish for large `i`, the object at `(p, q)` with `p + q = -n` on a large enough page is the
-  corresponding graded piece of the filtration of `Hₙ(Y)`
-  (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive`). This is strong convergence
-  without a finite upper bound on the filtration.
+  (`TauCeti.exists_mem_range_filteredSpaceAbutmentFiltrationι`);
+* if the relative homology `Hₙ(X (i + 1), X i)` vanishes for all `i ≥ b`, the `b`th piece of the
+  filtration of `Hₙ(Y)` is everything
+  (`TauCeti.isIso_filteredSpaceAbutmentFiltrationι_of_exhaustive`);
+* if `X a = ∅` and the relative homology `H_{1-(p+q)}(X (i + 1), X i)` vanishes for all large
+  `i`, the spectral sequence converges strongly: on a late enough page the object at `(p, q)` is
+  the graded piece `F_{q+1} H / F_q H` of `H_{-(p+q)}(Y)`
+  (`TauCeti.filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive`).
 
-The main example is the **skeletal filtration** `TauCeti.skeletalFiltration C p` of a space over a
-relative CW complex `C`: its stage `q` is the preimage `p⁻¹(Bᵠ)` of the `q`-skeleton under a
-map `p : Y → B`. For continuous `p` it absorbs compact sets
-(`TauCeti.exists_subset_skeletalFiltration_of_isCompact`) whatever the number of cells and the
-dimension of `C`, so singular chains are exhausted by it
-(`TauCeti.exists_mem_range_singularChainFiltration_skeletalFiltration_arrow`). For the total
-space of a fibration over a CW complex this is the filtration whose spectral sequence is the
-Serre spectral sequence; the identification of its second page is not treated here.
+The filtration of the abutment vanishes at a stage `X a = ∅`, by
+`CochainComplex.isZero_filtrationAbutmentFiltration` and
+`TauCeti.singularChainFiltration_eq_bot`, so in each degree it is finite, exhaustive and
+separated as soon as the graded pieces vanish from some stage on.
 
 ## References
 
-* C. A. Weibel, *An introduction to homological algebra*, Cambridge Studies in Advanced
-  Mathematics 38, Cambridge University Press, 1994, Theorem 5.5.1.
 * J. McCleary, *A User's Guide to Spectral Sequences*, 2nd ed., Cambridge University Press, 2001,
-  Chapter 5.
-* A. Hatcher, *Algebraic Topology*, Cambridge University Press, 2002, Appendix, Proposition A.1.
+  Theorem 2.6 and Section 5.1, the spectral sequence of the filtration of a total space by the
+  preimages of the skeleta of a CW base.
+* A. Hatcher, *Algebraic Topology*, Section 3.3, Proposition 3.33 and its proof (a singular
+  chain has compact image, so it lies in some member of a directed family of subspaces absorbing
+  compact sets).
 -/
 
 public section
@@ -63,23 +60,19 @@ universe w
 
 namespace TauCeti
 
-section FilteredSpace
-
 variable {k : Type w} [Ring k] (M : ModuleCat.{w} k) {Y : TopCat.{w}} {X : ℤ → Set Y}
 
-/-- The stages of an increasing family of subsets, as a diagram of spaces. -/
-private abbrev stageDiagram (hX : Monotone X) : ℤ ⥤ TopCat.{w} where
-  obj q := (TopPair.ofSubset (X q)).snd
-  map f := TopCat.ofHom (ContinuousMap.inclusion (hX f.le))
-
-/-- The inclusions of the stages of an increasing family of subsets into the space. -/
-private abbrev stageCocone (hX : Monotone X) : Cocone (stageDiagram hX) where
+/-- The subspaces `X q` of a monotone family, with their inclusions into `Y`, as a cocone over the
+diagram indexed by `ℤ`. -/
+private def filteredSpaceCocone (hX : Monotone X) :
+    Cocone ({ obj q := TopCat.of (X q)
+              map f := TopCat.ofHom (ContinuousMap.inclusion (hX f.le)) } : ℤ ⥤ TopCat.{w}) where
   pt := Y
-  ι := { app q := (TopPair.ofSubset (X q)).map }
+  ι := { app q := TopCat.ofHom ⟨Subtype.val, continuous_subtype_val⟩ }
 
-/-- **Singular chains are exhausted by an absorbing filtration.** If every compact subset of `Y`
-lies in some member of an increasing family `X` of subsets, then every singular chain of `Y` is a
-chain of some `X q`. -/
+/-- **Singular chains of an exhaustive filtration of a space.** If every compact subset of `Y` lies
+in some `X q`, every singular chain of `Y`, in each degree of the reindexed chain complex, lies in
+some stage of the filtration by the singular chains of the `X q`. -/
 theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
     (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) (m : ℤ)
     (x : (((TopCat.toSSet.obj Y).chainComplex M).extend ComplexShape.embeddingDownNat).X m) :
@@ -88,116 +81,83 @@ theorem exists_mem_range_singularChainFiltration_arrow (hX : Monotone X)
   · obtain ⟨n, hn⟩ := hm
     have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{w} k)) :=
       preservesSmallestFilteredColimits_of_preservesFilteredColimits _
-    have hc := isColimitOfPreserves (HomologicalComplex.eval _ _ n)
-      (isColimitOfPreserves ((SSet.chainComplexFunctor (ModuleCat.{w} k)).obj M)
-        (isColimitMapCoconeToSSet (stageCocone hX)
-          (fun q ↦ (TopPair.ofSubset (X q)).isEmbedding_map)
-          (fun K hKc ↦ (hK K hKc).imp fun q hq y hy ↦ ⟨⟨y, hq hy⟩, rfl⟩)))
+    -- In degree `n` the singular chains of `Y` are the filtered colimit of those of the `X q`,
+    -- because a singular simplex has compact image.
+    have hc := isColimitOfPreserves
+      ((SSet.chainComplexFunctor (ModuleCat.{w} k)).obj M ⋙ HomologicalComplex.eval _ _ n)
+      (isColimitMapCoconeToSSet (filteredSpaceCocone hX)
+        (fun q ↦ Topology.IsEmbedding.subtypeVal)
+        (fun K hK' ↦ (hK K hK').imp fun q hq y hy ↦ ⟨⟨y, hq hy⟩, rfl⟩))
     obtain ⟨q, y, hy⟩ := Concrete.isColimit_exists_rep _ hc
       ((((TopCat.toSSet.obj Y).chainComplex M).extendXIso _ hn).hom x)
-    -- The leg at `q` of the colimit cocone is, by definition of the image cocones, the map of
-    -- singular chains in degree `n` induced by the inclusion of `X q`.
-    change (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M).f n y = _
-      at hy
-    refine ⟨q, (singularChainFiltrationIso M X q).inv.f m
-      (((((TopCat.toSSet.obj (TopPair.ofSubset (X q)).snd).chainComplex M).extendXIso _ hn).inv
-        y)), ?_⟩
+    -- Transport the preimage `y` from degree `n` to degree `m = -n` of the extended complexes.
+    have hext {K L : ChainComplex (ModuleCat.{w} k) ℕ} (φ : K ⟶ L)
+        (x : (L.extend ComplexShape.embeddingDownNat).X m)
+        (h : (L.extendXIso _ hn).hom x ∈ LinearMap.range (φ.f n).hom) :
+        x ∈ LinearMap.range ((extendMap φ ComplexShape.embeddingDownNat).f m).hom := by
+      obtain ⟨y, hy⟩ := h
+      exact ⟨(K.extendXIso _ hn).inv y, by rw [extendMap_f _ _ hn]; simp [hy]⟩
+    obtain ⟨z, rfl⟩ := hext
+      (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) M) x ⟨y, hy⟩
+    refine ⟨q, (singularChainFiltrationIso M X q).inv.f m z, ?_⟩
     rw [← ModuleCat.comp_apply, ← HomologicalComplex.comp_f,
       ← singularChainFiltrationIso_hom_comp_singularChainFiltrationι, Iso.inv_hom_id_assoc,
-      singularChainFiltrationι_def, ← ModuleCat.comp_apply, extendMap_f _ _ hn]
-    -- After cancelling the two degree-`n` identifications of the chains of `X q`, this is `hy`.
-    -- The cancellation is stated through `congrArg`, since `Iso.inv_hom_id_assoc` does not match
-    -- the composite syntactically: the source of `y` is written through the diagram.
-    refine Eq.trans ?_ ((congrArg _ hy).trans (Iso.hom_inv_id_apply _ x))
-    exact congrArg (fun z ↦ ((SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map)
-      M).f n ≫ (((TopCat.toSSet.obj Y).chainComplex M).extendXIso _ hn).inv) z)
-      (Iso.inv_hom_id_apply _ y)
-  · refine ⟨0, ?_⟩
-    rw [(ModuleCat.isZero_iff_subsingleton.1
-      (isZero_extend_X _ _ m fun n hn ↦ hm ⟨n, hn⟩)).elim x 0]
-    exact Submodule.zero_mem _
+      singularChainFiltrationι_def]
+    -- The two sides differ only in the coercion of a linear map to a function.
+    rfl
+  · push Not at hm
+    refine ⟨0, ?_⟩
+    rw [(ModuleCat.isZero_iff_subsingleton.1 (isZero_extend_X _ _ m hm)).elim x 0]
+    exact zero_mem _
 
-/-- A graded piece of the filtration of singular chains has vanishing homology in degree `-n`
-when the corresponding relative singular homology group vanishes. -/
-private lemma isZero_homology_cokernel_of_isZero_singularHomology {a b : ℤ} (hab : X a ⊆ X b)
-    {n : ℕ} {m : ℤ} (hm : m = -n) (h : IsZero ((TopPair.ofInclusion hab).singularHomology M n)) :
-    IsZero ((cokernel (Subobject.ofLE _ _ (singularChainFiltration_mono M hab))).homology m) :=
-  h.of_iso (HomologicalComplex.homologyMapIso (singularChainFiltrationCokernelIso M hab) m ≪≫
-    extendHomologyIso _ ComplexShape.embeddingDownNat hm.symm)
+variable (hX : Monotone X)
 
-variable (hX : Monotone X) (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q)
-include hK
-
-/-- **The filtration of singular homology by an absorbing filtration is exhaustive.** If every
-compact subset of `Y` lies in some `X q`, then every class of the abutment `Hₙ(Y)`
-(`TauCeti.filteredSpaceAbutmentIso`) lies in some piece of its filtration, the image of
-`Hₙ(X q)`. -/
-theorem exists_mem_range_filteredSpace_abutmentFiltrationι {m : ℤ}
+/-- **The filtration of the abutment of an exhaustive filtration of a space is exhaustive**: every
+class of `Hₙ(Y)` lies in some piece of its filtration. -/
+theorem exists_mem_range_filteredSpaceAbutmentFiltrationι
+    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) {n : ℤ}
     (x : (CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_singularChainFiltration M hX))).abutment m) :
+      (monotone_singularChainFiltration M hX))).abutment n) :
     ∃ q, x ∈ LinearMap.range ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
-      (monotone_singularChainFiltration M hX))).abutmentFiltrationι q m).hom :=
+      (monotone_singularChainFiltration M hX))).abutmentFiltrationι q n).hom :=
   CochainComplex.exists_mem_range_filtrationAbutmentFiltrationι _ _
-    (exists_mem_range_singularChainFiltration_arrow M hX hK m) x
+    (exists_mem_range_singularChainFiltration_arrow M hX hK n) x
 
-/-- **The filtration of singular homology reaches `Hₙ(Y)`.** If every compact subset of `Y` lies
-in some `X q`, and the relative homology groups `Hₙ(X (i + 1), X i)` vanish for all `i ≥ b`, then
-the `b`th piece of the filtration of the abutment `Hₙ(Y)` is everything: every class of `Hₙ(Y)`
-comes from `Hₙ(X b)`. -/
-theorem isIso_filteredSpace_abutmentFiltrationι {b : ℤ} (n : ℕ)
-    (h : ∀ i, b ≤ i →
-      IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl : i ≤ i + 1))).singularHomology
+/-- **The filtration of the abutment reaches `Hₙ(Y)`.** For an exhaustive filtration of a space, if
+the relative homology `Hₙ(X (i + 1), X i)` vanishes for every `i ≥ b`, then the `b`th piece of the
+filtration of `Hₙ(Y)` is everything. -/
+theorem isIso_filteredSpaceAbutmentFiltrationι_of_exhaustive
+    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) {b : ℤ} (n : ℕ)
+    (hvanish : ∀ i, b ≤ i →
+      IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl) : X i ⊆ X (i + 1))).singularHomology
         M n)) :
     IsIso ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
       (monotone_singularChainFiltration M hX))).abutmentFiltrationι b (-n)) :=
   CochainComplex.isIso_filtrationAbutmentFiltrationι_of_exhaustive _ _
-    (exists_mem_range_singularChainFiltration_arrow M hX hK _)
-    fun i hi ↦ isZero_homology_cokernel_of_isZero_singularHomology M _ rfl (h i hi)
+    (exists_mem_range_singularChainFiltration_arrow M hX hK _) fun i hi ↦
+      isZero_homology_cokernel_singularChainFiltration M _ _ fun n' hn' ↦ by
+        obtain rfl : n' = n := by lia
+        exact hvanish i hi
 
-/-- **Strong convergence of the spectral sequence of an absorbing filtration of a space.** Let
-`pq = (p, q)` with `p + q = -n`. Suppose that every compact subset of `Y` lies in some `X i`, that
-`X a = ∅` for some `a ≥ q - r + 2`, and that the relative homology groups
-`Hₙ₊₁(X (i + 1), X i)` vanish for all `i ≥ q + r - 1`. Then the object at `(p, q)` on page `r ≥ 2`
-is the graded piece `F_{q+1} H / F_q H` of the filtration of the abutment `Hₙ(Y)`. No finite
-upper bound on the filtration is needed. -/
-def filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive {a : ℤ} (ha : X a = ∅) (r : ℤ)
-    (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a) (n : ℕ) (hn : pq.1 + pq.2 = -n)
-    (h : ∀ i, pq.2 + r - 1 ≤ i →
-      IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl : i ≤ i + 1))).singularHomology
-        M (n + 1))) :
+/-- **Strong convergence of the spectral sequence of an exhaustive filtration of a space.** Suppose
+that every compact subset of `Y` lies in some `X q` and that `X a = ∅`. Let `pq = (p, q)` and
+`r ≥ 2` with `q - r + 2 ≤ a`, and suppose that the relative homology `Hₙ(X (i + 1), X i)` vanishes
+for every `i ≥ q + r - 1`, where `p + q - 1 = -n`. Then the object at `(p, q)` on page `r` is the
+graded piece `F_{q+1} H / F_q H` of the filtration of the abutment in degree `p + q`, which is
+`H_{-(p+q)}(Y)` by `TauCeti.filteredSpaceAbutmentIso`. -/
+def filteredSpaceSpectralSequencePageXIsoGradedOfExhaustive
+    (hK : ∀ K : Set Y, IsCompact K → ∃ q, K ⊆ X q) {a : ℤ} (ha : X a = ∅)
+    (r : ℤ) (hr : 2 ≤ r) (pq : ℤ × ℤ) (hra : pq.2 - r + 2 ≤ a)
+    (hvanish : ∀ i, pq.2 + r - 1 ≤ i → ∀ n : ℕ, pq.1 + pq.2 - 1 = -n →
+      IsZero ((TopPair.ofInclusion (hX (Int.le_add_one le_rfl) : X i ⊆ X (i + 1))).singularHomology
+        M n)) :
     ((filteredSpaceSpectralSequence M hX).page r).X pq ≅
       cokernel ((CochainComplex.spectralObject (CochainComplex.filtrationFunctor _
         (monotone_singularChainFiltration M hX))).abutmentFiltrationMap pq.2 (pq.1 + pq.2)) :=
   CochainComplex.filtrationSpectralSequencePageXIsoGradedOfExhaustive _ _ r hr pq
     (exists_mem_range_singularChainFiltration_arrow M hX hK _)
     ((singularChainFiltration M X _).isZero_homology_of_eq_bot
-      (eq_bot_iff.2 ((monotone_singularChainFiltration M hX hra).trans
-        (singularChainFiltration_eq_bot M ha).le)) _)
-    fun i hi ↦ isZero_homology_cokernel_of_isZero_singularHomology M _ (by push_cast; lia)
-      (h i hi)
-
-end FilteredSpace
-
-section SkeletalChains
-
-open Topology
-
-variable {k : Type w} [Ring k] (M : ModuleCat.{w} k) {Y : TopCat.{w}} {B : Type*}
-  [TopologicalSpace B] [T2Space B] (C : Set B) {D : Set B} [RelCWComplex C D] {p : Y → B}
-
-/-- **Singular chains are exhausted by the skeletal filtration.** For a continuous map `p` from a
-space `Y` into a relative CW complex, every singular chain of `Y` is a chain of the preimage
-`p⁻¹(Bᵠ)` of some skeleton. The CW complex may have infinitely many cells and be
-infinite-dimensional. -/
-theorem exists_mem_range_singularChainFiltration_skeletalFiltration_arrow (hp : Continuous p)
-    (hpC : ∀ y, p y ∈ C) (m : ℤ)
-    (x : (((TopCat.toSSet.obj Y).chainComplex M).extend ComplexShape.embeddingDownNat).X m) :
-    ∃ q, x ∈ LinearMap.range
-      ((singularChainFiltration M (skeletalFiltration C p) q).arrow.f m).hom :=
-  exists_mem_range_singularChainFiltration_arrow M (monotone_skeletalFiltration C p)
-    (fun _ hK ↦ exists_subset_skeletalFiltration_of_isCompact C p hK hp.continuousOn
-      fun y _ ↦ hpC y) m x
-
-end SkeletalChains
+      (singularChainFiltration_eq_bot M (Set.subset_empty_iff.1 (ha ▸ hX hra))) _)
+    fun i hi ↦ isZero_homology_cokernel_singularChainFiltration M _ _ (hvanish i hi)
 
 end TauCeti
