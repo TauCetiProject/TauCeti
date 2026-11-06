@@ -326,6 +326,16 @@ theorem pointsMulEquiv_mapValue (phi : A →ₐ[R] B)
   rw [GeneralLinear.pointsMulEquiv_mapValue, pointsMulEquiv_toGL,
     Matrix.SpecialLinearGroup.toGL_map, AlgHom.toRingHom_eq_coe]
 
+/-- Specializing the universal `SLₙ` point at the coordinate homomorphism of a matrix
+recovers that matrix. The universal point corresponds to the identity coordinate map. -/
+theorem map_pointsMulEquiv_id (g : Matrix.SpecialLinearGroup (Fin n) A) :
+    Matrix.SpecialLinearGroup.map
+        (((pointsMulEquiv (R := R) (A := A) n).symm g).ofConv.toRingHom)
+        (pointsMulEquiv (R := R) (A := coordinateHopfAlgebra R n) n
+          (toConv (AlgHom.id R (coordinateHopfAlgebra R n)))) = g := by
+  rw [← pointsMulEquiv_mapValue, AlgHom.mapValue_apply, ofConv_toConv,
+    AlgHom.comp_id, toConv_ofConv, MulEquiv.apply_symm_apply]
+
 /-- Naturality of the inverse special-linear point equivalence in the value algebra. -/
 theorem mapValue_pointsMulEquiv_symm_apply (phi : A →ₐ[R] B)
     (s : Matrix.SpecialLinearGroup (Fin n) A) :

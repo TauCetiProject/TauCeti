@@ -6,11 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.Huber.Restricted.PowerSeries
-public import TauCeti.Topology.Algebra.Nonarchimedean.Absorption
 public import Mathlib.RingTheory.MvPowerSeries.Equiv
 public import Mathlib.Topology.Algebra.Nonarchimedean.Bases
-public import Mathlib.RingTheory.MvPowerSeries.Trunc
-public import Mathlib.Topology.Algebra.UniformMulAction
+import TauCeti.Topology.Algebra.Nonarchimedean.Absorption
 
 /-!
 # Weighted restricted power series `A⟨X⟩_T`
@@ -748,7 +746,6 @@ theorem algebraMap_prod_weightedRestrictedSubring_injective [NonarchimedeanRing 
   fun _ _ h ↦ algebraMap_weightedRestrictedSubring_injective T hT (by
     simpa using congrArg Prod.fst h)
 
-
 /-- **Wedhorn's neighbourhood subgroups** `U⟨X⟩`: the series all of whose coefficients — not
 merely almost all — satisfy the `U` bound. These are the fundamental system of neighbourhoods of
 zero for the topology on `A⟨X⟩_T`. -/
@@ -998,7 +995,6 @@ theorem continuous_weightedC [NonarchimedeanRing A] {T : Fin k → Set A} (hT : 
   intro U _
   filter_upwards [U.isOpen.mem_nhds U.zero_mem] with a ha
   exact (weightedC_mem_weightedNhd hT).mpr ha
-
 
 /-! ### Density of the polynomials -/
 
@@ -1346,7 +1342,6 @@ section Functoriality
 
 variable {B : Type*} [CommRing B]
 
-
 /-- **`weightMul` is functorial**: a ring map carrying each `T i` into `S i` and `U` into `V`
 carries `Tν · U` into `Sν · V`. -/
 theorem _root_.RingHom.weightMul_map_le (φ : A →+* B) {T : Fin k → Set A} {S : Fin k → Set B}
@@ -1487,7 +1482,6 @@ theorem weightedMap_weightedX [NonarchimedeanRing A] [NonarchimedeanRing B] {φ 
     {hS : IsWeightFamily S} (hTS : ∀ i, φ '' T i ⊆ S i) (i : Fin k) :
     weightedMap hφ hT hS hTS (weightedX T hT i) = weightedX S hS i :=
   Subtype.ext (by simp [MvPowerSeries.map_X])
-
 
 end Functoriality
 

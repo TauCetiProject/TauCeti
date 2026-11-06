@@ -16,28 +16,31 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.TateModule.Isogeny
 import TauCeti.GroupTheory.Index.PrimaryComponent
 
 /-!
-# The local cokernel of an isogeny at a place prime to its degree
+# The local cokernel of an isogeny at a finite place
 
 Let `A` be a Dedekind domain with fraction field `F`, let `u` be a height-one prime of `A` with
 finite residue field, and let `f : E₁ → E₂` be a morphism of elliptic curves over the completion
-`F_u` whose degree is prime to `u`. The local factor of `f` in Cassels' proof that the
-Birch–Swinnerton-Dyer quotient is an isogeny invariant is the ratio
+`F_u` whose degree `n` is nonzero in `A`, with `O_u` the ring of integers of `F_u`. The local
+factor of `f` in Cassels' proof that the Birch–Swinnerton-Dyer quotient is an isogeny invariant is
+the ratio
 
 `z(f) = #(E₂(F_u) ⧸ f E₁(F_u)) / #E₁(F_u)[f]`.
 
-This file shows that it is defined, and that the local factor of the dual isogeny `f̂` is its
-inverse:
+This file shows that it is defined, and that its product with the local factor of the dual
+isogeny `f̂` is the inverse of the normalised absolute value of `n` at `u`:
 
-`#(E₂(F_u) ⧸ f E₁(F_u)) · #(E₁(F_u) ⧸ f̂ E₂(F_u)) = #E₁(F_u)[f] · #E₂(F_u)[f̂]`.
+`#(E₂(F_u) ⧸ f E₁(F_u)) · #(E₁(F_u) ⧸ f̂ E₂(F_u)) = #E₁(F_u)[f] · #E₂(F_u)[f̂] · #(O_u ⧸ n O_u)`.
 
-Since `f̂ ∘ f` is multiplication by `deg f`, the ratios satisfy `z(f̂) · z(f) = z([deg f])`
-(`TauCeti.Isogeny.Hom.index_range_nsmul_mul_card_ker_mul_card_ker_dual`), and `z([deg f]) = 1` at a
-place prime to `deg f` (`WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy`). Finiteness of
-the cokernel comes from the same composite: the image of `f` contains `deg f · E₂(F_u)`, which has
-finite index.
+This holds also at the places dividing `n`. Since `f̂ ∘ f` is multiplication by `n`, the ratios
+satisfy `z(f̂) · z(f) = z([n])`
+(`TauCeti.Isogeny.Hom.index_range_nsmul_mul_card_ker_mul_card_ker_dual`), and
+`z([n]) = #(O_u ⧸ n O_u)` (`WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul`). At a
+place prime to `n` the last factor is `1`, so there the local factors of `f` and `f̂` are inverse.
+Finiteness of the cokernel comes from the same composite: the image of `f` contains
+`n E₂(F_u)`, which has finite index.
 
-The ratio itself is carried by finite torsion. Write `n = deg f` and `E(F_u)[n^∞]` for the
-`n`-primary component of `E(F_u)`, the points killed by a power of `n`, which is finite. Then
+At a place prime to `n`, the ratio itself is carried by finite torsion. Write `E(F_u)[n^∞]` for
+the `n`-primary component of `E(F_u)`, the points killed by a power of `n`, which is finite. Then
 
 `z(f) = #E₂(F_u)[n^∞] / #E₁(F_u)[n^∞]`.
 
@@ -46,26 +49,28 @@ of a minimal model), so every point of `E₂(F_u)` is divisible by `n`, hence li
 `f`, up to an element of `E₂(F_u)[n^∞]`; and the inverse image of `E₂(F_u)[n^∞]` under `f` is
 `E₁(F_u)[n^∞]`, since `f̂ ∘ f = [n]`.
 
-At good reduction the ratio is `1`. Reduction identifies `E(F_u)[n^∞]` with the `n`-primary
-component of the reduced curve over the residue field `k`, and isogenous curves with good
-reduction have reductions with the same number of points over `k`, because their Frobenius traces
-agree. Finite groups of the same order have `n`-primary components of the same order, so
-`#(E₂(F_u) ⧸ f E₁(F_u)) = #E₁(F_u)[f]`.
+At a place of good reduction prime to `n`, the ratio is `1`. Reduction identifies `E(F_u)[n^∞]`
+with the `n`-primary component of the reduced curve over the residue field `k`, and isogenous
+curves with good reduction have reductions with the same number of points over `k`, because their
+Frobenius traces agree. Finite groups of the same order have `n`-primary components of the same
+order, so `#(E₂(F_u) ⧸ f E₁(F_u)) = #E₁(F_u)[f]`.
 
 ## Main results
 
-* `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_degree_notMem`: the image of
+* `TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_degree_ne_zero`: the image of
   `E₁(F_u)` has finite index in `E₂(F_u)`.
-* `TauCeti.Isogeny.Hom.index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual`: the local
-  cokernel/kernel ratios of `f` and of `f̂` are inverse.
+* `TauCeti.Isogeny.Hom.index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_mul`: the
+  local cokernel/kernel ratios of `f` and of `f̂` multiply to `#(O_u ⧸ n O_u)`.
+* `TauCeti.Isogeny.Hom.index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual`: at a place
+  prime to `n`, they are inverse.
 * `TauCeti.Isogeny.Hom.index_range_mul_card_primaryComponent_of_degree_notMem` and
   `TauCeti.Isogeny.Hom.index_range_div_card_ker_of_degree_notMem`: the local cokernel/kernel ratio
   of `f` is the ratio of the orders of the `deg f`-primary components.
-* `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction, compute
-  this ratio using only the primary components of the finite reduced point groups.
+* `TauCeti.Isogeny.Hom.index_range_div_card_ker_eq_reduction`: at good reduction prime to `n`,
+  compute this ratio using only the primary components of the finite reduced point groups.
 * `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic` and
-  `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel`: at good reduction,
-  the ratio is `1`.
+  `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel`: at good reduction
+  prime to `n`, the ratio is `1`.
 
 ## References
 
@@ -86,15 +91,43 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {W₁ W₂ : WeierstrassCurve (u.adicCompletion F)} [W₁.IsElliptic] [W₂.IsElliptic]
   {f : Hom W₁.toAffine W₂.toAffine}
 
-/-- **The local cokernel of a morphism of degree prime to `u` is finite**: the image of
-`E₁(F_u)` has finite index in `E₂(F_u)`, since it contains `deg f · E₂(F_u)`. -/
-theorem finiteIndex_range_pointMapHom_of_degree_notMem (hf : (f.degree : A) ∉ u.asIdeal) :
+/-- **The local cokernel of a morphism is finite** at a place where its degree is nonzero in `A`:
+the image of `E₁(F_u)` has finite index in `E₂(F_u)`, since it contains `deg f · E₂(F_u)`. The
+place may divide the degree. -/
+theorem finiteIndex_range_pointMapHom_of_degree_ne_zero (hf : (f.degree : A) ≠ 0) :
     f.pointMapHom.range.FiniteIndex := by
-  have := WeierstrassCurve.finiteIndex_range_nsmul u W₂
-    (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm
+  have := WeierstrassCurve.finiteIndex_range_nsmul u W₂ hf
   refine AddSubgroup.finiteIndex_of_le (H := (nsmulAddMonoidHom f.degree).range) ?_
   rintro P ⟨Q, rfl⟩
   exact ⟨f.dual.pointMap Q, by simp [pointMap_dual_pointMap]⟩
+
+/-- **The local cokernel/kernel ratios of a morphism and of its dual multiply to
+`#(O_u ⧸ deg f · O_u)`** at a place where `n = deg f` is nonzero in `A`:
+
+`#(E₂(F_u) ⧸ f E₁(F_u)) · #(E₁(F_u) ⧸ f̂ E₂(F_u)) = #E₁(F_u)[f] · #E₂(F_u)[f̂] · #(O_u ⧸ n O_u)`,
+
+all five orders being finite. The last factor is the inverse of the normalised absolute value of
+`n` at `u`; it is `1` exactly when `u` is prime to `n`. -/
+theorem index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_mul
+    (hf : (f.degree : A) ≠ 0) :
+    f.pointMapHom.range.index * f.dual.pointMapHom.range.index =
+      Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker *
+        Nat.card (u.adicCompletionIntegers F ⧸
+          Ideal.span {(f.degree : u.adicCompletionIntegers F)}) := by
+  have hidx := WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul u W₁ hf
+  have hker : Nat.card (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).ker =
+      Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
+    Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
+      rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
+        natCast_zsmul])
+  -- `E₁(F_u)[n]` is finite, as `#(E₁(F_u) ⧸ n E₁(F_u)) = #E₁(F_u)[n] · #(O_u ⧸ n O_u)` is nonzero
+  have hT : Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) ≠ 0 :=
+    left_ne_zero_of_mul <| hidx ▸ (WeierstrassCurve.finiteIndex_range_nsmul u W₁ hf).index_ne_zero
+  -- `z(f̂) · z(f) = z([n])`, and `z([n]) = #(O_u ⧸ n O_u)`
+  have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
+  rw [hker, hidx] at h
+  refine Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hT) ?_
+  linear_combination h.symm
 
 /-- **The local cokernel/kernel ratios of a morphism and of its dual are inverse** at a place
 prime to the degree:
@@ -104,21 +137,10 @@ theorem index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual
     (hf : (f.degree : A) ∉ u.asIdeal) :
     f.pointMapHom.range.index * f.dual.pointMapHom.range.index =
       Nat.card f.pointMapHom.ker * Nat.card f.dual.pointMapHom.ker := by
-  have hidx := WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy u W₁ hf
-  have hker : Nat.card (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).ker =
-      Nat.card (Submodule.torsionBy ℤ W₁.toAffine.Point f.degree) :=
-    Nat.card_congr (Equiv.subtypeEquivRight fun P ↦ by
-      rw [AddMonoidHom.mem_ker, nsmulAddMonoidHom_apply, Submodule.mem_torsionBy_iff,
-        natCast_zsmul])
-  have hne : (nsmulAddMonoidHom (α := W₁.toAffine.Point) f.degree).range.index ≠ 0 :=
-    (WeierstrassCurve.finiteIndex_range_nsmul u W₁
-      (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm).index_ne_zero
-  -- `z(f̂) · z(f) = z([deg f])`, and the ratio for `[deg f]` is `1`
-  have h := f.index_range_nsmul_mul_card_ker_mul_card_ker_dual
-  rw [hker, ← hidx] at h
-  refine (Nat.eq_of_mul_eq_mul_left (Nat.pos_of_ne_zero hne) ?_).symm
-  rw [h]
-  ring
+  rw [index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_mul u
+      (ne_of_mem_of_not_mem u.asIdeal.zero_mem hf).symm,
+    ← map_natCast (algebraMap A (u.adicCompletionIntegers F)),
+    u.natCard_quotient_span_algebraMap_adicCompletionIntegers hf, mul_one]
 
 /-- **The local cokernel of a morphism of degree prime to `u`, through `deg f`-primary torsion**:
 with `n = deg f`,

@@ -49,7 +49,8 @@ are `TauCeti.IsAdaptedPseudoGradient.exists_isSmoothEmbedding_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.range_stableParam`: it is a smooth embedding with image
   `W^s(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableParam`: a Morse chart and a scale for which the
-  parametrization is a smooth embedding onto `W^s(x)`, whose derivative at `0` the chart inverts.
+  parametrization is a smooth embedding onto `W^s(x)`, whose derivative at `0` the chart inverts,
+  and which intertwines the scaling with the flow.
 
 ## References
 
@@ -389,14 +390,17 @@ end
 /-- **The parametrization of the stable manifold, with its chart.** For a critical point `x`, there
 are a Morse chart `φ` at `x` and a scale `δ` for which `stableParam φ δ` is a smooth embedding of
 the stable subspace of `φ` with image `W^s(x)`, sending `0` to `x`, whose derivative at `0`, read in
-the chart, is the inclusion of the stable subspace. -/
+the chart, is the inclusion of the stable subspace, and which carries the scaling `v ↦ e^{-s} v` to
+the time-`s` map of the flow. -/
 theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     ∃ (φ : MorseChart E f x) (δ : ℝ),
       IsSmoothEmbedding 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) ∧
       range (hX.stableParam φ δ) = hX.flow.stableSet x ∧ hX.stableParam φ δ 0 = x ∧
-      ∀ u : φ.stableSubspace, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x
-        (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u) = (u : E) := by
+      (∀ u : φ.stableSubspace, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x
+        (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u) = (u : E)) ∧
+      ∀ (v : φ.stableSubspace) (s : ℝ),
+        hX.stableParam φ δ (Real.exp (-s) • v) = hX.flow s (hX.stableParam φ δ v) := by
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   obtain ⟨ε, hε0, hε⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
@@ -418,7 +422,8 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
   have hεs := fun y hy hyε ↦ (hε y hy hyε).1
   exact ⟨φ, δ, hX.isSmoothEmbedding_stableParam φ hφ hrT hδr hδ hεδ hεs,
     hX.range_stableParam φ hφ hrT hδr hδ hε0 hεs, hX.stableParam_zero φ hφ hrT hδr hδ,
-    hX.mfderiv_toChart_mfderiv_stableParam_zero φ hφ hrT hδr hδ⟩
+    hX.mfderiv_toChart_mfderiv_stableParam_zero φ hφ hrT hδr hδ,
+    hX.stableParam_smul φ hφ hrT hδr hδ⟩
 
 end IsAdaptedPseudoGradient
 

@@ -132,19 +132,8 @@ theorem hamiltonianCurvature_zero_left (ω : SymplecticForm V) (Kt : ℝ × ℝ 
 theorem hamiltonianCurvature_cylindrical (ω : SymplecticForm V) (H : ℝ → V → ℝ) (z : ℝ × ℝ)
     (x : V) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
-  rw [hamiltonianCurvature_zero_left]
-  by_cases hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2
-  · have h : HasFDerivAt (fun w : ℝ × ℝ ↦ H w.2 x)
-        ((fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-      hH.hasFDerivAt.comp z hasFDerivAt_snd
-    simp [h.fderiv, stdComplexLineReal]
-  · have hH' : ¬DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z := by
-      intro h
-      have hz : DifferentiableAt ℝ (fun t : ℝ ↦ ((z.1, t) : ℝ × ℝ)) z.2 :=
-        (differentiableAt_const z.1).prodMk differentiableAt_id
-      have h' : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) (z.1, z.2) := h
-      exact hH (h'.comp z.2 hz)
-    simp [fderiv_zero_of_not_differentiableAt hH']
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
 
 /-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
 theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → ℝ} {H : ℝ → V → ℝ}
@@ -385,6 +374,17 @@ theorem floerEnergyDensity_nonneg (ω : SymplecticForm V) {J : AlmostComplexStru
     0 ≤ ω.floerEnergyDensity Ks Kt u z := by
   simpa only [floerEnergyDensity_def, ContinuousLinearMap.coe_coe] using
     h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+
+/-- The Floer energy density of a solution of the Floer equation
+`∂_s u + J (∂_t u - X_{K_t}(u)) = 0` at `z`, for the perturbation `K = K_t dt` with a
+domain-dependent Hamiltonian `K_t`, is nonnegative when `J` is tamed by `ω`. -/
+theorem floerEnergyDensity_zero_left_nonneg (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V} (hJ : ω.Tames J)
+    (hfloer : fderiv ℝ u z stdComplexLineReal +
+      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) = 0) :
+    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z :=
+  ω.floerEnergyDensity_nonneg hJ <|
+    (ω.isComplexLinearMap_perturbedFDeriv_iff J _ _ u z).2 (by simpa using hfloer)
 
 /-- For a solution of the Floer equation at `z`, the `t`-component of the perturbed derivative is
 `J` applied to its `s`-component `a = ∂_s u - X_{K_s}`, so the Floer energy density is
