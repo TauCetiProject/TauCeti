@@ -418,16 +418,17 @@ theorem isRightAlmostSplit_kroneckerARSequence_g :
       refine LinearMap.mem_ker.mpr ?_
       have h0 : ψ.app src x = 0 := hker0 x (LinearMap.mem_ker.mp hx)
       exact (congrArg (⇑(simpleRepSelfEquiv k src)) h0).trans (map_zero _)
-    -- A functional killing the kernel of the arrow factors through it: descend it to the
-    -- quotient by that kernel, read that quotient as the range of the arrow, and extend the
-    -- resulting functional on the range to the whole target vertex space.
+    -- A functional killing the kernel of the arrow lies in its dual annihilator, which is
+    -- the range of the arrow's dual map. Thus it equals θ composed with the arrow for some
+    -- functional θ on the target vertex space.
     obtain ⟨θ, hθ⟩ : ∃ θ : W.obj tgt →ₗ[k] k, ∀ x,
         θ ((W.map (arrowPath (default : A))).hom x)
           = ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom) x := by
       obtain ⟨θ, hθ⟩ : _ ∈ LinearMap.range (W.map (arrowPath (default : A))).hom.dualMap := by
         rw [LinearMap.range_dualMap_eq_dualAnnihilator_ker, Submodule.mem_dualAnnihilator]
         exact fun x hx ↦ hker hx
-      exact ⟨θ, LinearMap.congr_fun hθ⟩
+      exact ⟨θ, fun x ↦ by
+        simpa only [LinearMap.dualMap_apply] using LinearMap.congr_fun hθ x⟩
     refine ⟨kroneckerHom
       (ModuleCat.ofHom ((kroneckerProjSrcEquiv k A).symm.toLinearMap ∘ₗ
         ((simpleRepSelfEquiv k src).toLinearMap ∘ₗ (ψ.app src).hom)))
