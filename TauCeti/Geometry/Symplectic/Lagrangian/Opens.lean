@@ -7,16 +7,17 @@ module
 
 public import Mathlib.Topology.Sets.OpenCover
 public import TauCeti.Geometry.Manifold.MFDeriv.Opens
-public import TauCeti.Geometry.Symplectic.Lagrangian.Manifold
+public import TauCeti.Geometry.Symplectic.Lagrangian.SymplecticTangent
 public import TauCeti.Geometry.Symplectic.Manifold.Opens
 
 /-!
-# Isotropic, coisotropic and Lagrangian maps on open submanifolds
+# Isotropic, coisotropic, Lagrangian and symplectic tangent images on open submanifolds
 
 Restricting the source of a differentiable map to an open subset restricts its tangent-image
 condition to the points of that subset. These conditions can therefore be checked on any open
-cover of the source. If a map takes values in an open submanifold, its isotropic, coisotropic
-and Lagrangian conditions for the restricted form agree with those of its ambient inclusion.
+cover of the source. If a map takes values in an open submanifold, its isotropic, coisotropic,
+Lagrangian and symplectic tangent-image conditions for the restricted form agree with those of its
+ambient inclusion.
 Together these statements permit local calculations without changing the geometric condition.
 
 ## References
@@ -78,6 +79,17 @@ theorem isLagrangianMap_comp_subtype_val_iff (U : Opens N)
   simp only [Manifold.range_mfderiv_comp_subtype_val _ (hf _ (Subtype.property _)),
     Function.comp_apply, Subtype.forall]
 
+/-- The symplectic tangent-image condition on an open source restriction is precisely the
+condition on the original tangent images at the points of that open set. -/
+theorem hasSymplecticTangentImages_comp_subtype_val_iff (U : Opens N)
+    (hf : ∀ x ∈ U, MDifferentiableAt J I f x) :
+    hσ.HasSymplecticTangentImages J (f ∘ (Subtype.val : U → N)) ↔
+      ∀ x ∈ U, (hσ.symplecticFormAt (f x)).IsSymplectic
+        (LinearMap.range (mfderiv J I f x).toLinearMap) := by
+  rw [hasSymplecticTangentImages_iff_forall]
+  simp only [Manifold.range_mfderiv_comp_subtype_val _ (hf _ (Subtype.property _)),
+    Function.comp_apply, Subtype.forall]
+
 /-- Isotropy can be checked on any open cover of the source. -/
 theorem isIsotropicMap_iff_of_isOpenCover (hf : MDifferentiable J I f)
     {ι : Type*} {U : ι → Opens N} (hU : IsOpenCover U) :
@@ -111,6 +123,19 @@ theorem isLagrangianMap_iff_of_isOpenCover (hf : MDifferentiable J I f)
       ∀ i, hσ.IsLagrangianMap J (f ∘ (Subtype.val : U i → N)) := by
   rw [isLagrangianMap_iff_forall]
   simp only [hσ.isLagrangianMap_comp_subtype_val_iff _ (fun x _ ↦ hf x)]
+  constructor
+  · exact fun h i x _ ↦ h x
+  · intro h x
+    obtain ⟨i, hi⟩ := hU.exists_mem x
+    exact h i x hi
+
+/-- Symplectic tangent images can be checked on any open cover of the source. -/
+theorem hasSymplecticTangentImages_iff_of_isOpenCover (hf : MDifferentiable J I f)
+    {ι : Type*} {U : ι → Opens N} (hU : IsOpenCover U) :
+    hσ.HasSymplecticTangentImages J f ↔
+      ∀ i, hσ.HasSymplecticTangentImages J (f ∘ (Subtype.val : U i → N)) := by
+  rw [hasSymplecticTangentImages_iff_forall]
+  simp only [hσ.hasSymplecticTangentImages_comp_subtype_val_iff _ (fun x _ ↦ hf x)]
   constructor
   · exact fun h i x _ ↦ h x
   · intro h x
@@ -156,6 +181,18 @@ theorem isLagrangianMap_subtype_val_comp_iff (hf : MDifferentiable J I f) :
   rw [Manifold.range_mfderiv_subtype_val_comp x (hf x), Function.comp_apply,
     ← hσ.symplecticFormAt_mpullback_subtype_val_transport,
     SymplecticForm.isLagrangian_map_transport_iff]
+
+/-- A map into an open submanifold has symplectic tangent images for the restricted form exactly
+when its ambient inclusion has symplectic tangent images. -/
+@[simp]
+theorem hasSymplecticTangentImages_subtype_val_comp_iff (hf : MDifferentiable J I f) :
+    hσ.HasSymplecticTangentImages J ((Subtype.val : U → M) ∘ f) ↔
+      (hσ.mpullback_subtype_val U).HasSymplecticTangentImages J f := by
+  rw [hasSymplecticTangentImages_iff_forall, hasSymplecticTangentImages_iff_forall]
+  refine forall_congr' fun x ↦ ?_
+  rw [Manifold.range_mfderiv_subtype_val_comp x (hf x), Function.comp_apply,
+    ← hσ.symplecticFormAt_mpullback_subtype_val_transport,
+    SymplecticForm.isSymplectic_map_transport_iff]
 
 end Target
 
