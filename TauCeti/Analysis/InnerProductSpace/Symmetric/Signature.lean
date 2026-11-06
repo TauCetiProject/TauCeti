@@ -40,8 +40,9 @@ In the namespace `LinearMap.IsSymmetric`:
   negative point-spectral subspace of `T`.
 * `sigPos_eq_finrank_pointSpectralSubspace`: the positive index of `Q` is the dimension of the
   positive point-spectral subspace of `T`.
-* `isSymm_toBilinForm_innerSL_comp`, `sigNeg_toBilinForm_innerSL_comp`: the continuous bilinear
-  form `⟪T ·, ·⟫` is symmetric, and its negative index counts the negative eigenvalues of `T`.
+* `isSymm_toBilinForm_innerSL_comp`, `sigNeg_toBilinForm_innerSL_comp`,
+  `sigPos_toBilinForm_innerSL_comp`: the continuous bilinear form `⟪T ·, ·⟫` is symmetric, and its
+  negative and positive indices count the negative and positive eigenvalues of `T`.
 
 In the namespace `ContinuousLinearMap`:
 
@@ -136,6 +137,13 @@ theorem sigNeg_toBilinForm_innerSL_comp {T : E →L[ℝ] E} (hT : (T : E →ₗ[
     sigNeg ((innerSL ℝ).comp T).toBilinForm.toQuadraticMap =
       Module.finrank ℝ (Module.End.pointSpectralSubspace (T : E →ₗ[ℝ] E) (Iio 0)) :=
   hT.sigNeg_eq_finrank_pointSpectralSubspace fun x ↦ by simp
+
+/-- The positive index of the continuous bilinear form `⟪T ·, ·⟫` of a symmetric operator `T` is
+the dimension of the sum of the eigenspaces of `T` at positive eigenvalues. -/
+theorem sigPos_toBilinForm_innerSL_comp {T : E →L[ℝ] E} (hT : (T : E →ₗ[ℝ] E).IsSymmetric) :
+    sigPos ((innerSL ℝ).comp T).toBilinForm.toQuadraticMap =
+      Module.finrank ℝ (Module.End.pointSpectralSubspace (T : E →ₗ[ℝ] E) (Ioi 0)) :=
+  hT.sigPos_eq_finrank_pointSpectralSubspace fun x ↦ by simp
 
 end LinearMap.IsSymmetric
 

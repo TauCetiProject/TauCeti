@@ -545,6 +545,17 @@ private theorem squareIntegrableSolutions_modelCoefficient
 
 end TauCeti
 
+/-- A continuous linear map bounded below, `α ‖v‖ ≤ ‖B v‖` with `0 < α`, has trivial kernel. -/
+theorem ContinuousLinearMap.ker_eq_bot_of_mul_norm_le {R R₂ E F : Type*} [Semiring R]
+    [Semiring R₂] {σ : R →+* R₂} [NormedAddCommGroup E] [SeminormedAddCommGroup F] [Module R E]
+    [Module R₂ F] {B : E →SL[σ] F} {α : ℝ} (hα : 0 < α) (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) :
+    LinearMap.ker (B : E →ₛₗ[σ] F) = ⊥ :=
+  LinearMap.ker_eq_bot'.2 fun v hv ↦ by
+    have h := hB v
+    rw [ContinuousLinearMap.coe_coe] at hv
+    rw [hv, norm_zero] at h
+    exact norm_eq_zero.1 (le_antisymm (by nlinarith [norm_nonneg v]) (norm_nonneg v))
+
 namespace TauCeti.WeakDerivStep
 
 open Set
@@ -573,12 +584,6 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
     ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym)
   have hsymplus : (Aplus : E →ₗ[ℝ] E).IsSymmetric :=
     ContinuousLinearMap.isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)
-  have hker {B : E →L[ℝ] E} (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) : LinearMap.ker (B : E →ₗ[ℝ] E) = ⊥ :=
-    LinearMap.ker_eq_bot'.2 fun v hv ↦ by
-      have h := hB v
-      rw [ContinuousLinearMap.coe_coe] at hv
-      rw [hv, norm_zero] at h
-      exact norm_eq_zero.1 (le_antisymm (by nlinarith [norm_nonneg v]) (norm_nonneg v))
   -- Replace `A` by the model coefficient with the same limits, whose index is computable.
   set M := modelCoefficient Aminus Aplus
   set ML := (memLp_top_modelCoefficient (Aminus := Aminus) (Aplus := Aplus)
@@ -604,10 +609,12 @@ theorem index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank
   set U := Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)
   have hW : Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0) = Wᗮ := by
     rw [hsymplus.orthogonal_pointSpectralSubspace, compl_Ioi, ← Iio_insert,
-      Module.End.pointSpectralSubspace_insert_zero (hker hplus)]
+      Module.End.pointSpectralSubspace_insert_zero
+        (ContinuousLinearMap.ker_eq_bot_of_mul_norm_le hα hplus)]
   have hU : Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Ioi 0) = Uᗮ := by
     rw [hsymminus.orthogonal_pointSpectralSubspace, compl_Iio, ← Ioi_insert,
-      Module.End.pointSpectralSubspace_insert_zero (hker hminus)]
+      Module.End.pointSpectralSubspace_insert_zero
+        (ContinuousLinearMap.ker_eq_bot_of_mul_norm_le hα hminus)]
   rw [hW, hU, Submodule.inf_orthogonal]
   have h1 := Submodule.finrank_sup_add_finrank_inf_eq W U
   have h2 := (W ⊔ U).finrank_add_finrank_orthogonal
