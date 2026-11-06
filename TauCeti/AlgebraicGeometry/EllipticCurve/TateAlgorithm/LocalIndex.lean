@@ -383,13 +383,23 @@ theorem natCard_tateCubicRoots_eq [IsLocalRing R] (hϖ : maximalIdeal R = Ideal.
   -- the equivalence `R ⧸ (ϖ) ≃ R ⧸ 𝔪` sends the class of `t` to its residue (`residue_def`)
   simp [Ideal.quotEquivOfEq_mk, ← residue_def]
 
-/-- **The residue cubic has at most three roots** when `ϖ` is prime and `ϖ ∣ a₂`, `ϖ² ∣ a₄`,
-`ϖ³ ∣ a₆`, as on the normal form of Step 6. -/
-theorem natCard_tateCubicRoots_le (hϖ : Prime ϖ) (h₂ : ϖ ∣ W.a₂) (h₄ : ϖ ^ 2 ∣ W.a₄)
-    (h₆ : ϖ ^ 3 ∣ W.a₆) : Nat.card (W.tateCubicRoots ϖ) ≤ 3 := by
+/-- **The residue cubic has at most three roots** when `ϖ` is prime, `ϖ ∣ a₂` and `ϖ² ∣ a₄`, as
+on the normal form of Step 6. If `ϖ³ ∤ a₆` there are no roots at all. -/
+theorem natCard_tateCubicRoots_le (hϖ : Prime ϖ) (h₂ : ϖ ∣ W.a₂) (h₄ : ϖ ^ 2 ∣ W.a₄) :
+    Nat.card (W.tateCubicRoots ϖ) ≤ 3 := by
   classical
   obtain ⟨b₂, h₂⟩ := h₂
   obtain ⟨b₄, h₄⟩ := h₄
+  by_cases h₆ : ϖ ^ 3 ∣ W.a₆
+  swap
+  · -- Modulo `ϖ ^ 3` the three other terms vanish, so `ϖ ^ 4 ∣` the sum forces `ϖ ^ 3 ∣ a₆`.
+    have : W.tateCubicRoots ϖ = ∅ := by
+      refine Set.eq_empty_of_forall_notMem fun t ⟨t₀, _, h⟩ ↦ h₆ ?_
+      have h3 : ϖ ^ 3 ∣ (ϖ * t₀) ^ 3 + W.a₂ * (ϖ * t₀) ^ 2 + W.a₄ * (ϖ * t₀) := by
+        rw [h₂, h₄]
+        exact ⟨t₀ ^ 3 + b₂ * t₀ ^ 2 + b₄ * t₀, by ring⟩
+      exact (dvd_add_right h3).1 ((pow_dvd_pow ϖ (by norm_num : 3 ≤ 4)).trans h)
+    simp [this]
   obtain ⟨b₆, h₆⟩ := h₆
   have : (Ideal.span {ϖ}).IsPrime := (Ideal.span_singleton_prime hϖ.ne_zero).2 hϖ
   set P : (R ⧸ Ideal.span {ϖ})[X] := X ^ 3 + C (Ideal.Quotient.mk _ b₂) * X ^ 2 +
@@ -406,8 +416,8 @@ theorem natCard_tateCubicRoots_le (hϖ : Prime ϖ) (h₂ : ϖ ∣ W.a₂) (h₄ 
 /-- At `I₀*`, the residue cubic has at most three roots. -/
 theorem IsTateTerminal.natCard_tateCubicRoots_le (hϖ : Prime ϖ)
     (h : W.IsTateTerminal ϖ (.IStar 0)) : Nat.card (W.tateCubicRoots ϖ) ≤ 3 := by
-  obtain ⟨-, h₂, -, h₄, h₆, -⟩ := isTateTerminal_IStar_zero.1 h
-  exact WeierstrassCurve.natCard_tateCubicRoots_le hϖ h₂ h₄ h₆
+  obtain ⟨-, h₂, -, h₄, -, -⟩ := isTateTerminal_IStar_zero.1 h
+  exact WeierstrassCurve.natCard_tateCubicRoots_le hϖ h₂ h₄
 
 /-- **The local index is at most the number of components.** At each symbol `s` at which Tate's
 algorithm stops, the local index is at most the component count `m` of `s`. -/
