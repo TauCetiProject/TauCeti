@@ -22,10 +22,11 @@ The derivative of a transition kills the field (`TauCeti.mfderiv_flowTransition_
 since a transition is constant along flow lines, and lands in the kernel of the derivative of the
 function cutting out the target section (`TauCeti.mvfderiv_comp_mfderiv_flowTransition`). For a
 return branch, `DP_p` is therefore zero on the line spanned by `v p` and maps the tangent space
-`ker dg_p` of the section into itself; there it is the derivative of the return map of the section,
-the normal return derivative. As `T_p M = ker dg_p ⊕ ℝ v p`, the characteristic polynomial of
-`DP_p` is `X` times that of the normal return derivative, so the two have the same nonzero
-eigenvalues, and `1` is an eigenvalue of one exactly when it is an eigenvalue of the other.
+`ker dg_p` of the section into itself. Informally, its restriction to `ker dg_p` is the normal
+return derivative, the derivative of the return map of the section, and as
+`T_p M = ker dg_p ⊕ ℝ v p` the characteristic polynomial of `DP_p` should be `X` times that of the
+normal return derivative. This file neither defines the normal return derivative nor proves that
+identity: all its statements are about the full derivative `DP_p` on `T_p M`.
 
 Derivatives of transitions compose as the transitions do (`TauCeti.mfderiv_flowTransition_comp`).
 If the flow carries `p` to `q` at time `T`, the transition `h` from the section through `p` to a
@@ -38,7 +39,7 @@ time-`0` transitions onto the two sections, which `DP_p` and `DP_q` absorb. Henc
 characteristic polynomial (`TauCeti.charpoly_mfderiv_flowTransition_eq`), by
 `LinearMap.charpoly_comp_comm`. This is the linear content of the conjugacy
 `P_q = h ∘ P_p ∘ h⁻¹` of `TauCeti.eventually_flowTransition_eq_conj`: the spectrum of the return
-derivative, and in particular the test whether `1` is an eigenvalue
+derivative `DP_p`, and in particular whether `1` is an eigenvalue of `DP_p`
 (`TauCeti.hasEigenvalue_mfderiv_flowTransition_iff`), depend neither on the section nor on the
 base point on the orbit. Since the `k`-fold iterate of a return branch is the return branch at time
 `k * T₀`, the same holds for every iterate (`TauCeti.charpoly_mfderiv_iterate_flowTransition_eq`).
@@ -90,37 +91,11 @@ variable (hT : (T, p) ∈ flowDomain v) (hg : ContMDiffAt I 𝓘(ℝ) 1 g (flowO
   (hgv : mvfderiv I g (flowOf v T p) (v (flowOf v T p)) ≠ 0)
 include hT hg hgv
 
-/-- A transition is constant along the trajectory through `p`: for `s` near `0`, the point
-`flowOf v s p` is carried to `flowOf v T p`, its hitting time being `T - s`. -/
-theorem eventually_flowTransition_flowOf :
-    ∀ᶠ s in 𝓝 (0 : ℝ), flowTransition v g T p (flowOf v s p) = flowOf v T p := by
-  have hγ : Tendsto (fun s ↦ flowOf v s p) (𝓝 0) (𝓝 p) := by
-    simpa only [id_eq, flowOf_zero hv p] using
-      (contMDiffAt_flowOf_comp le_rfl hv (contMDiffAt_id (x := (0 : ℝ))) contMDiffAt_const
-        (mem_flowDomain_zero hv p)).continuousAt.tendsto
-  have hsub : Tendsto (fun s : ℝ ↦ T - s) (𝓝 0) (𝓝 T) := by
-    simpa only [sub_zero, id_eq] using
-      (tendsto_const_nhds (x := T)).sub (tendsto_id (x := 𝓝 (0 : ℝ)))
-  have hpair : Tendsto (fun s ↦ (T - s, flowOf v s p)) (𝓝 0) (𝓝 (T, p)) := hsub.prodMk_nhds hγ
-  have hzero : Tendsto (fun s : ℝ ↦ (s, p)) (𝓝 0) (𝓝 (0, p)) :=
-    (continuous_id.prodMk continuous_const).tendsto 0
-  filter_upwards [hpair.eventually ((isOpen_flowDomain hv).mem_nhds hT),
-    hzero.eventually ((isOpen_flowDomain hv).mem_nhds (mem_flowDomain_zero hv p)),
-    hpair.eventually (eventually_eq_flowHittingTime_iff hv hT hg hgv)] with s hsT hs hiff
-  have hflow : flowOf v (T - s) (flowOf v s p) = flowOf v T p := by
-    rw [(flowOf_add hv hs hsT).2, add_sub_cancel]
-  rw [flowTransition_apply, ← hiff.1 (by rw [hflow]), hflow]
-
 /-- **The derivative of a transition kills the field.** The transition to a section through
 `flowOf v T p` is constant along the trajectory through `p`, so its derivative at `p` vanishes on
 the field `v p`. -/
 theorem mfderiv_flowTransition_apply_eq_zero :
     mfderiv I I (flowTransition v g T p) p (v p) = 0 := by
-  have hγ : MDifferentiableAt 𝓘(ℝ) I (fun s ↦ flowOf v s p) 0 :=
-    (contMDiffAt_flowOf_comp le_rfl hv (contMDiffAt_id (x := (0 : ℝ))) contMDiffAt_const
-      (mem_flowDomain_zero hv p)).mdifferentiableAt one_ne_zero
-  have hh : MDifferentiableAt I I (flowTransition v g T p) p :=
-    (contMDiffAt_flowTransition le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
   have hconst : flowTransition v g T p ∘ (fun s ↦ flowOf v s p) =ᶠ[𝓝 0]
       fun _ ↦ flowOf v T p :=
     eventually_flowTransition_flowOf hv hT hg hgv
@@ -134,18 +109,18 @@ theorem mfderiv_flowTransition_apply_eq_zero :
     Manifold.curveVelocity_apply.symm.trans <|
       (curveVelocity_flowOf hv (mem_flowDomain_zero hv p)).trans (hvp _ (flowOf_zero hv p))
   have hzero : mfderiv 𝓘(ℝ) I (flowTransition v g T p ∘ fun s ↦ flowOf v s p) 0 (1 : ℝ) = 0 := by
-    rw [hconst.mfderiv_eq, mfderiv_const]
-    rfl
-  exact ((congrArg (mfderiv I I (flowTransition v g T p) p) hvel).symm.trans
-    (mfderiv_comp_apply_of_eq (0 : ℝ) hh hγ (flowOf_zero hv p) (1 : ℝ)).symm).trans hzero
+    rw [hconst.mfderiv_eq, mfderiv_const, ContinuousLinearMap.comp_zero]
+    exact zero_apply _
+  rw [← hvel]
+  exact (mfderiv_comp_apply_of_eq (0 : ℝ) (mdifferentiableAt_flowTransition hv hT hg hgv)
+    (mdifferentiableAt_flowOf hv (mem_flowDomain_zero hv p)) (flowOf_zero hv p) (1 : ℝ)).symm.trans
+    hzero
 
 /-- **The derivative of a transition lands in the tangent space of the section.** The transition
 carries a neighbourhood of `p` into the level of `g` through `flowOf v T p`, so the derivative of
 `g` vanishes on the range of the derivative of the transition. -/
 theorem mvfderiv_comp_mfderiv_flowTransition :
     mvfderiv I g (flowOf v T p) ∘L mfderiv I I (flowTransition v g T p) p = 0 := by
-  have hh : MDifferentiableAt I I (flowTransition v g T p) p :=
-    (contMDiffAt_flowTransition le_rfl hv hT hg hgv).mdifferentiableAt one_ne_zero
   have hconst : g ∘ flowTransition v g T p =ᶠ[𝓝 p] fun _ ↦ g (flowOf v T p) := by
     filter_upwards [eventually_flowHittingTime hv hT hg hgv] with z hz
     rw [comp_apply, flowTransition_apply]
@@ -153,8 +128,8 @@ theorem mvfderiv_comp_mfderiv_flowTransition :
   ext w
   have hzero : mvfderiv I (g ∘ flowTransition v g T p) p w = 0 := by
     simp [mvfderiv, hconst.mfderiv_eq]
-  exact (mvfderiv_comp_apply_of_eq p (hg.mdifferentiableAt one_ne_zero) hh
-    (flowTransition_self ..) w).symm.trans hzero
+  exact (mvfderiv_comp_apply_of_eq p (hg.mdifferentiableAt one_ne_zero)
+    (mdifferentiableAt_flowTransition hv hT hg hgv) (flowTransition_self ..) w).symm.trans hzero
 
 end Transition
 
@@ -168,12 +143,8 @@ theorem mfderiv_flowTransition_comp (hT : (T, p) ∈ flowDomain v) (hq : flowOf 
     (hg'v : mvfderiv I g' r (v r) ≠ 0) :
     mfderiv I I (flowTransition v g' T' q) q ∘L mfderiv I I (flowTransition v g T p) p =
       mfderiv I I (flowTransition v g' (T + T') p) p := by
-  have hh : MDifferentiableAt I I (flowTransition v g T p) p :=
-    (contMDiffAt_flowTransition le_rfl hv hT (by rwa [hq]) (by rwa [hq])).mdifferentiableAt
-      one_ne_zero
-  have hh' : MDifferentiableAt I I (flowTransition v g' T' q) q :=
-    (contMDiffAt_flowTransition le_rfl hv hT' (by rwa [hr]) (by rwa [hr])).mdifferentiableAt
-      one_ne_zero
+  have hh := mdifferentiableAt_flowTransition hv hT (by rwa [hq]) (by rwa [hq])
+  have hh' := mdifferentiableAt_flowTransition hv hT' (by rwa [hr]) (by rwa [hr])
   ext w
   have hcomp := flowTransition_comp_eventuallyEq hv hT hq hg hgv hT' hr hg' hg'v
   exact (mfderiv_comp_apply_of_eq p hh' hh (by rw [flowTransition_self, hq]) w).symm.trans
@@ -230,25 +201,32 @@ theorem charpoly_mfderiv_flowTransition_eq :
   have hAeq : mfderiv I I (flowTransition v g T₀ p) p =
       mfderiv I I (flowTransition v g (-T) q) q ∘L
         (mfderiv I I (flowTransition v g' T₀ q) q ∘L mfderiv I I (flowTransition v g' T p) p) := by
-    refine hA.symm.trans <| (congrArg (fun L ↦ L ∘L mfderiv I I (flowTransition v g T₀ p) p)
-      hh'h.symm).trans <| (ContinuousLinearMap.comp_assoc _ _ _).trans ?_
-    exact congrArg (fun L ↦ mfderiv I I (flowTransition v g (-T) q) q ∘L L)
-      (mfderiv_flowTransition_semiconj hv hT hq hP hp hg hgv hg' hg'v)
+    conv_lhs => rw [← hA, ← hh'h]
+    refine (ContinuousLinearMap.comp_assoc _ _ _).trans ?_
+    congr 1
+    exact mfderiv_flowTransition_semiconj hv hT hq hP hp hg hgv hg' hg'v
   have hBeq : mfderiv I I (flowTransition v g' T₀ q) q =
       (mfderiv I I (flowTransition v g' T₀ q) q ∘L mfderiv I I (flowTransition v g' T p) p) ∘L
         mfderiv I I (flowTransition v g (-T) q) q := by
-    refine hB.symm.trans <| (congrArg (fun L ↦ mfderiv I I (flowTransition v g' T₀ q) q ∘L L)
-      hhh'.symm).trans ?_
+    conv_lhs => rw [← hB, ← hhh']
     exact (ContinuousLinearMap.comp_assoc _ _ _).symm
-  exact (congrArg (fun L ↦ L.toLinearMap.charpoly) hAeq).trans <|
-    (LinearMap.charpoly_comp_comm _ _ rfl).trans
-      (congrArg (fun L ↦ L.toLinearMap.charpoly) hBeq).symm
+  -- Both tangent spaces are the model space `E`, so they have the same rank.
+  have hrank : Module.finrank ℝ (TangentSpace I p) = Module.finrank ℝ (TangentSpace I q) := rfl
+  rw [hAeq]
+  conv_rhs => rw [hBeq]
+  -- `(f ∘L g).toLinearMap` is `f.toLinearMap ∘ₗ g.toLinearMap` by definition
+  -- (`ContinuousLinearMap.toLinearMap_comp`). Rewriting with that lemma fails here, as the module
+  -- structures on `TangentSpace I q` and on `TangentSpace I (flowTransition v g' T p p)` agree
+  -- only after unfolding both to that of `E`.
+  exact LinearMap.charpoly_comp_comm _ _ hrank
 
 /-- **The eigenvalues of a return derivative are independent of the section and of the base
 point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time `T₀`, then
 `μ` is an eigenvalue of the derivative at `p` of the return branch of a section through `p` exactly
-when it is one at `q` for a section through `q`. For `μ = 1` this is the nondegeneracy test of
-the closed orbit. -/
+when it is one at `q` for a section through `q`. For `μ = 1`, whether `1` is an eigenvalue of the
+full derivative `DP_p` on `T_p M` is independent of these choices; relating this to the
+nondegeneracy test, which concerns the normal return derivative on the section, is not done
+here. -/
 theorem hasEigenvalue_mfderiv_flowTransition_iff (μ : ℝ) :
     Module.End.HasEigenvalue (mfderiv I I (flowTransition v g T₀ p) p).toLinearMap μ ↔
       Module.End.HasEigenvalue (mfderiv I I (flowTransition v g' T₀ q) q).toLinearMap μ := by
