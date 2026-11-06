@@ -130,6 +130,20 @@ private theorem compParabolicC2HolderAux_apply (u : ParabolicC2HolderSpace α E 
     compParabolicC2HolderAux B hα u v p = B (u p) (v p) := by
   simp [compParabolicC2HolderAux, valueField]
 
+/-- The arithmetic behind the constant `1200` in `norm_compParabolicC2HolderAux_le`: if the
+lower-order Hölder norms satisfy `u₀ + u₁ ≤ 24 U` and `u₂ + uₜ ≤ U`, and likewise for `v`, then the
+sum of all products of field norms in the Leibniz rule is at most `1200 U V`. -/
+private theorem sum_le_mul_aux {u₀ u₁ u₂ uₜ v₀ v₁ v₂ vₜ U V : ℝ} (hu₀ : 0 ≤ u₀) (hu₁ : 0 ≤ u₁)
+    (hv₀ : 0 ≤ v₀) (hv₁ : 0 ≤ v₁) (hv₂ : 0 ≤ v₂) (hvₜ : 0 ≤ vₜ)
+    (hu : u₀ + u₁ ≤ 24 * U) (hv : v₀ + v₁ ≤ 24 * V) (hu' : u₂ + uₜ ≤ U) (hv' : v₂ + vₜ ≤ V) :
+    u₀ * v₀ + (u₀ * v₁ + u₁ * v₀) + (u₀ * v₂ + 2 * (u₁ * v₁) + u₂ * v₀) +
+      (u₀ * vₜ + uₜ * v₀) ≤ 1200 * (U * V) := by
+  have hU : 0 ≤ U := by linarith
+  have hV : 0 ≤ V := by linarith
+  nlinarith [mul_le_mul hu hv (by positivity) (by positivity),
+    mul_le_mul (show u₀ ≤ 24 * U by linarith) hv' (by positivity) (by positivity),
+    mul_le_mul hu' (show v₀ ≤ 24 * V by linarith) (by positivity) (by positivity)]
+
 /-- The operator-norm bound for the pointwise product, before bundling. -/
 private theorem norm_compParabolicC2HolderAux_le (u : ParabolicC2HolderSpace α E F hab)
     (v : ParabolicC2HolderSpace α E G hab) :
@@ -177,23 +191,8 @@ private theorem norm_compParabolicC2HolderAux_le (u : ParabolicC2HolderSpace α 
   have hu' : u₂ + uₜ ≤ U := norm_spatialSecondFDerivL_add_norm_timeDerivL_le u
   have hv' : v₂ + vₜ ≤ V := norm_spatialSecondFDerivL_add_norm_timeDerivL_le v
   have hB := norm_nonneg B
-  have hu₀ := norm_nonneg (valueHolderL hα u)
-  have hu₁ := norm_nonneg (spatialFDerivHolderL hα u)
-  have hv₀ := norm_nonneg (valueHolderL hα v)
-  have hv₁ := norm_nonneg (spatialFDerivHolderL hα v)
-  have hu₂ := norm_nonneg (spatialSecondFDerivL u)
-  have huₜ := norm_nonneg (timeDerivL u)
-  have hv₂ := norm_nonneg (spatialSecondFDerivL v)
-  have hvₜ := norm_nonneg (timeDerivL v)
-  -- Every product of field norms is bounded by `2 (u₀ + u₁) (v₀ + v₁) + u₀ (v₂ + vₜ) +
-  -- (u₂ + uₜ) v₀ ≤ 1200 U V`.
-  have hsum : u₀ * v₀ + (u₀ * v₁ + u₁ * v₀) + (u₀ * v₂ + 2 * (u₁ * v₁) + u₂ * v₀) +
-      (u₀ * vₜ + uₜ * v₀) ≤ 1200 * (U * V) := by
-    have hU : 0 ≤ U := norm_nonneg u
-    have hV : 0 ≤ V := norm_nonneg v
-    nlinarith [mul_le_mul hu hv (by positivity) (by positivity),
-      mul_le_mul (show u₀ ≤ 24 * U by linarith) hv' (by positivity) (by positivity),
-      mul_le_mul hu' (show v₀ ≤ 24 * V by linarith) (by positivity) (by positivity)]
+  have hsum := sum_le_mul_aux (norm_nonneg _) (norm_nonneg _) (norm_nonneg _)
+    (norm_nonneg _) (norm_nonneg _) (norm_nonneg _) hu hv hu' hv'
   rw [ParabolicC2HolderSpace.norm_eq, compParabolicC2HolderAux, valueL_mk, spatialFDerivL_mk,
     spatialSecondFDerivL_mk, timeDerivL_mk]
   nlinarith [mul_le_mul_of_nonneg_left hsum hB]
