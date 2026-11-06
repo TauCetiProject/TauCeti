@@ -236,18 +236,19 @@ private theorem sum_splitDev_mul_le {x y : V} (x' y' : V) (hxU : x ∈ U) (hyU :
     rw [sum_splitDev_mul_eq_zero S c i U hxU hyU hd.1 hd.2.1 hd.2.2]
     positivity
 
-/-- The box sum of the deviations on two cells inside `U` averages, over the labellings of the
-pairs inside `U`, to at most the number of degenerate rectangles. -/
-private theorem sum_splitBox_le {A B : Finset V} (hA : A ⊆ U) (hB : B ⊆ U) :
-    ∑ g : U.sym2 → ι, splitBox S c i (extendLabel U g) A B ≤
-      Fintype.card (U.sym2 → ι) * (#A * #B ^ 2 + #A ^ 2 * #B + #B ^ 2) := by
+/-- The number of degenerate rectangles `(x, x', y, y')` in `A × A × B × B`, those with `x = x'`,
+`y = y'`, or `x = y'` and `y = x'`, is at most `#A #B² + #A² #B + #B²`. -/
+private theorem sum_degenerate_le (A B : Finset V) :
+    ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A,
+      ((if x = x' then (1 : ℝ) else 0) + (if y = y' then 1 else 0) +
+        (if x = y' then 1 else 0) * (if y = x' then 1 else 0)) ≤
+      #B * #B * #A + #B * (#A * #A) + #B * #B := by
   have hI (a : V) (s : Finset V) : ∑ b ∈ s, (if a = b then (1 : ℝ) else 0) ≤ 1 := by
     rw [sum_ite_eq]
     split_ifs <;> norm_num
   have hI' (a : V) (s : Finset V) : ∑ b ∈ s, (if b = a then (1 : ℝ) else 0) ≤ 1 := by
     rw [sum_ite_eq']
     split_ifs <;> norm_num
-  -- The three kinds of degenerate rectangles: `x = x'`, `y = y'`, and `x = y'` with `y = x'`.
   have h₁ : ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) ≤
       #B * #B * #A := by
     calc _ ≤ ∑ _y ∈ B, ∑ _y' ∈ B, ∑ _x ∈ A, (1 : ℝ) :=
@@ -272,6 +273,14 @@ private theorem sum_splitBox_le {A B : Finset V} (hA : A ⊆ U) (hB : B ⊆ U) :
           gcongr with y _ y' _
           exacts [hI' y' A, hI y A]
       _ = _ := by simp
+  simp only [sum_add_distrib]
+  exact add_le_add (add_le_add h₁ h₂) h₃
+
+/-- The box sum of the deviations on two cells inside `U` averages, over the labellings of the
+pairs inside `U`, to at most the number of degenerate rectangles. -/
+private theorem sum_splitBox_le {A B : Finset V} (hA : A ⊆ U) (hB : B ⊆ U) :
+    ∑ g : U.sym2 → ι, splitBox S c i (extendLabel U g) A B ≤
+      Fintype.card (U.sym2 → ι) * (#A * #B ^ 2 + #A ^ 2 * #B + #B ^ 2) := by
   calc _ = ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, ∑ g : U.sym2 → ι,
         splitDev S c i x y (extendLabel U g s(x, y)) *
           splitDev S c i x y' (extendLabel U g s(x, y')) *
@@ -289,14 +298,12 @@ private theorem sum_splitBox_le {A B : Finset V} (hA : A ⊆ U) (hB : B ⊆ U) :
           (if x = y' then 1 else 0) * (if y = x' then 1 else 0)) := by
         gcongr with y hy y' _ x hx x' _
         exact sum_splitDev_mul_le S c i U x' y' (hA hx) (hB hy)
-    _ ≤ (Fintype.card (U.sym2 → ι) : ℝ) * (#B * #B * #A + #B * (#A * #A) + #B * #B) := by
-        calc _ = (Fintype.card (U.sym2 → ι) : ℝ) *
-              (∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if x = x' then (1 : ℝ) else 0) +
-                ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A, (if y = y' then (1 : ℝ) else 0) +
-                ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A,
-                  (if x = y' then (1 : ℝ) else 0) * (if y = x' then 1 else 0)) := by
-              simp only [mul_add, mul_sum, sum_add_distrib]
-          _ ≤ _ := mul_le_mul_of_nonneg_left (add_le_add (add_le_add h₁ h₂) h₃) (by positivity)
+    _ = (Fintype.card (U.sym2 → ι) : ℝ) * ∑ y ∈ B, ∑ y' ∈ B, ∑ x ∈ A, ∑ x' ∈ A,
+        ((if x = x' then 1 else 0) + (if y = y' then 1 else 0) +
+          (if x = y' then 1 else 0) * (if y = x' then 1 else 0)) := by
+        simp only [mul_sum]
+    _ ≤ (Fintype.card (U.sym2 → ι) : ℝ) * (#B * #B * #A + #B * (#A * #A) + #B * #B) :=
+        mul_le_mul_of_nonneg_left (sum_degenerate_le A B) (by positivity)
     _ = _ := by ring
 
 end Averaging
