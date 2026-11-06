@@ -10,6 +10,7 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.ODE.Caratheodory
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Cosh
 
 /-!
@@ -306,14 +307,17 @@ which grows like `exp s` at `+∞`. In the convention `v' + A v = 0` of
 theorem squareIntegrableSolutions_neg_neckCoeff_smul_id (R : ℝ) :
     squareIntegrableSolutions (fun s ↦ -neckCoeff R s • ContinuousLinearMap.id ℝ F) = ⊥ :=
   squareIntegrableSolutions_neg_smul_id_eq_bot (continuous_neckCoeff R) (hasDerivAt_neckSolution R)
-    (neckSolution_zero R) (.inl rfl) (tendsto_neckSolution_atTop R)
+    (neckSolution_zero R) (MeasureTheory.not_memLp_of_tendsto_norm_atTop two_ne_zero
+      ENNReal.ofNat_ne_top (tendsto_norm_atTop_atTop.comp (tendsto_neckSolution_atTop R)))
 
 /-- **The adjoint equation `v' = -a_R v` has no nonzero square-integrable solution.** Every
 solution is `F_R(s)⁻¹ • v 0`, which grows like `exp (-s)` at `-∞`. -/
 theorem squareIntegrableSolutions_neckCoeff_smul_id (R : ℝ) :
     squareIntegrableSolutions (fun s ↦ neckCoeff R s • ContinuousLinearMap.id ℝ F) = ⊥ := by
   simpa using squareIntegrableSolutions_neg_smul_id_eq_bot (F := F) (continuous_neckCoeff R).neg
-    (hasDerivAt_inv_neckSolution R) (by simp) (.inr rfl) (tendsto_inv_neckSolution_atBot R)
+    (hasDerivAt_inv_neckSolution R) (by simp)
+    (MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero ENNReal.ofNat_ne_top
+      (tendsto_norm_atTop_atTop.comp (tendsto_inv_neckSolution_atBot R)))
 
 end Banach
 

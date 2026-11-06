@@ -11,7 +11,6 @@ import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.ODE.Caratheodory
 import TauCeti.Analysis.Sobolev.WeakDeriv.Interval
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
 /-!
 # The kernel of the trajectory operator consists of classical solutions
@@ -37,7 +36,7 @@ difference of dimensions of spaces of square-integrable solutions is
 * `TauCeti.squareIntegrableSolutions`: the initial values of the square-integrable solutions of
   `v' + A(s) v = 0`.
 * `TauCeti.squareIntegrableSolutions_neg_smul_id_eq_bot`: a scalar equation `v' = b v` has no
-  nonzero square-integrable solution when its scalar solution `g` tends to infinity at one end.
+  nonzero square-integrable solution when its scalar solution `g` is not square integrable.
 * `TauCeti.WeakDerivStep.exists_hasDerivAt_of_trajectoryOperator_eq_zero`: an element of the
   kernel of `D_A` has a classical solution of `v' = -A v` as representative.
 * `TauCeti.WeakDerivStep.exists_trajectoryOperator_ae_eq_of_hasDerivAt`: an `Lᵖ` classical
@@ -91,12 +90,11 @@ theorem mem_squareIntegrableSolutions {A : ℝ → F →L[ℝ] F} {x : F} :
       ∃ v : ℝ → F, v 0 = x ∧ (∀ s, HasDerivAt v (-A s (v s)) s) ∧ MemLp v 2 :=
   Iff.rfl
 
-/-- If the scalar equation `g' = b g` has a solution with `g 0 = 1` that tends to infinity at
-one end of the line, then `v' = b v` has no nonzero square-integrable solution in `F`: every
-solution is `g(s) • v 0`. -/
+/-- If the scalar equation `g' = b g` has a solution with `g 0 = 1` that is not square
+integrable, then `v' = b v` has no nonzero square-integrable solution in `F`: every solution is
+`g(s) • v 0`. -/
 theorem squareIntegrableSolutions_neg_smul_id_eq_bot {b g : ℝ → ℝ} (hb : Continuous b)
-    (hg : ∀ s, HasDerivAt g (b s * g s) s) (hg0 : g 0 = 1) {l : Filter ℝ}
-    (hl : l = atTop ∨ l = atBot) (hgl : Tendsto g l atTop) :
+    (hg : ∀ s, HasDerivAt g (b s * g s) s) (hg0 : g 0 = 1) (hg2 : ¬ MemLp g 2) :
     squareIntegrableSolutions (fun s ↦ -b s • ContinuousLinearMap.id ℝ F) = ⊥ := by
   rw [eq_bot_iff]
   intro x hx
@@ -108,13 +106,11 @@ theorem squareIntegrableSolutions_neg_smul_id_eq_bot {b g : ℝ → ℝ} (hb : C
       (t₀ := 0) (by simp [hg0])
   rw [Submodule.mem_bot]
   by_contra h0
-  have hvl : Tendsto (fun s ↦ ‖v s‖) l atTop := by
-    rw [heq]
-    simp_rw [norm_smul, Real.norm_eq_abs]
-    exact (tendsto_atTop_mono (fun s ↦ le_abs_self (g s)) hgl).atTop_mul_const (norm_pos_iff.2 h0)
-  rcases hl with rfl | rfl
-  · exact MeasureTheory.not_memLp_of_tendsto_norm_atTop two_ne_zero ENNReal.ofNat_ne_top hvl hv2
-  · exact MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero ENNReal.ofNat_ne_top hvl hv2
+  have hgc : Continuous g := continuous_iff_continuousAt.2 fun s ↦ (hg s).continuousAt
+  refine hg2 ((hv2.norm.const_mul ‖v 0‖⁻¹).of_le hgc.aestronglyMeasurable
+    (.of_forall fun s ↦ ?_))
+  rw [congrFun heq s, norm_smul, mul_comm, mul_inv_cancel_right₀ (norm_ne_zero_iff.2 h0),
+    norm_norm]
 
 end TauCeti
 
