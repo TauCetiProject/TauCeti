@@ -77,14 +77,12 @@ theorem contDiff (Q : QuadraticMap 𝕜 E F) {n : WithTop ℕ∞} : ContDiff �
 bilinear map `(v, w) ↦ polar Q v w`. -/
 theorem fderiv_fderiv_apply (Q : QuadraticMap 𝕜 E F) (x v w : E) :
     fderiv 𝕜 (fderiv 𝕜 Q) x v w = polar Q v w := by
-  let L : E →L[𝕜] E →L[𝕜] F := LinearMap.toContinuousLinearMap
-    ((LinearMap.toContinuousLinearMap : (E →ₗ[𝕜] F) ≃ₗ[𝕜] E →L[𝕜] F).toLinearMap ∘ₗ
-      polarBilin Q)
-  have hL : fderiv 𝕜 Q = L := funext fun y ↦ by
-    ext h
-    simp [L, fderiv_apply]
-  rw [hL, L.fderiv]
-  simp [L]
+  obtain ⟨B, rfl⟩ := LinearMap.BilinMap.toQuadraticMap_surjective Q
+  have hB : (B.toQuadraticMap : E → F) = fun z ↦ B.toContinuousBilinearMap z z := by
+    ext z
+    simp
+  rw [LinearMap.BilinMap.polar_toQuadraticMap, hB, ContinuousLinearMap.fderiv_fderiv_apply_self]
+  simp [add_comm]
 
 end QuadraticMap
 

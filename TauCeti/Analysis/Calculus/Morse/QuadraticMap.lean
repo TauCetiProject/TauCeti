@@ -36,6 +36,7 @@ namespace QuadraticMap
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 /-- The Hessian quadratic form of a quadratic form `Q` is `2 • Q`, at every point. -/
+@[simp]
 theorem hessianQuadraticForm_eq_two_smul (Q : QuadraticForm ℝ E) (x : E) :
     hessianQuadraticForm Q x = (2 : ℝ) • Q := by
   ext v
