@@ -13,14 +13,15 @@ import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 /-!
 # Inverting and differentiating continuous linear maps
 
-This file collects three kinds of facts about inverting continuous linear maps. The first is a
-perturbation criterion: a map differing from a continuous linear equivalence `L` by less than
-`‖L⁻¹‖⁻¹` in operator norm is again invertible, by a Neumann series. The second packages the
-derivative of a differentiable inverse family of continuous linear maps at an invertible base
-point, including its action on a varying vector; that is the analytic input for differentiating a
-vector-field pullback along a parametric family. The third is the smoothness of the ring inverse of
-a `C^n` family of units, together with the velocity `Z * C - C * Z` of a family that intertwines a
-curve through `1` with the constant `C`.
+This file collects facts about inverting and differentiating continuous linear maps, and about ring
+inverses in a general normed algebra. The first is a perturbation criterion: a map differing from a
+continuous linear equivalence `L` by less than `‖L⁻¹‖⁻¹` in operator norm is again invertible, by a
+Neumann series. The second packages the derivative of a differentiable inverse family of continuous
+linear maps at an invertible base point, including its action on a varying vector; that is the
+analytic input for differentiating a vector-field pullback along a parametric family. The third part
+works in an arbitrary normed algebra: it shows that the ring inverse of a `C^n` family of units is
+`C^n`, and computes the velocity `Z * C - C * Z` of a family that intertwines a curve through `1`
+with the constant `C`; the latter involves no inversion.
 
 ## Main results
 
@@ -38,7 +39,7 @@ curve through `1` with the constant `C`.
 * `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for an inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
-* `ContDiffAt.ringInverse` and `ContDiff.ringInverse`: the ring inverse of a `C^n` family of units
+* `ContDiffAt.inverse` and `ContDiff.inverse`: the ring inverse of a `C^n` family of units
   is `C^n`.
 * `DifferentiableAt.deriv_eq_mul_sub_mul_of_mul_eq_mul`: a family `K` with `K t * P t = P t * C`
   and `P` of velocity `Z` through `1` has velocity `Z * C - C * Z` at that point.
@@ -204,7 +205,7 @@ variable {R : Type*} [NormedRing R] [NormedAlgebra 𝕜 R] [HasSummableGeomSerie
   {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {n : WithTop ℕ∞}
 
 /-- The ring inverse of a `C^n` family is `C^n` at a point where the family takes a unit value. -/
-theorem ContDiffAt.ringInverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x)
+theorem ContDiffAt.inverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x)
     (hfx : IsUnit (f x)) : ContDiffAt 𝕜 n (fun y => Ring.inverse (f y)) x := by
   obtain ⟨u, hu⟩ := hfx
   have hi := contDiffAt_ringInverse (n := n) 𝕜 u
@@ -212,9 +213,9 @@ theorem ContDiffAt.ringInverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x
   exact hi.comp x hf
 
 /-- The ring inverse of a `C^n` family of units is `C^n`. -/
-theorem ContDiff.ringInverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x, IsUnit (f x)) :
+theorem ContDiff.inverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x, IsUnit (f x)) :
     ContDiff 𝕜 n (fun y => Ring.inverse (f y)) :=
-  contDiff_iff_contDiffAt.2 fun x => hf.contDiffAt.ringInverse (hfu x)
+  contDiff_iff_contDiffAt.2 fun x => hf.contDiffAt.inverse (hfu x)
 
 omit [HasSummableGeomSeries R] in
 /-- If `K t * P t = P t * C` for all `t`, `P t₀ = 1`, `P` has derivative `Z` at `t₀` and `K` is

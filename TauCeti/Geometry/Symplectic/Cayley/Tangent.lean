@@ -361,7 +361,7 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
   have hP0 : P 0 = 1 := by simp [P, hφ0]
   have hK0 : K 0 = Jc := by simp [K, hP0]
   have hPs : ContDiff ℝ ⊤ P := contDiff_const.add (hφs.smul contDiff_const)
-  have hKs : ContDiff ℝ ⊤ K := (hPs.mul contDiff_const).mul (hPs.ringInverse hPu)
+  have hKs : ContDiff ℝ ⊤ K := (hPs.mul contDiff_const).mul (hPs.inverse hPu)
   refine ⟨c, fun t v hv => ?_, AlmostComplexStructure.toLinearMap_injective ?_, hcK ▸ hKs, ?_⟩
   · have hcv : c t v = K t v := congrArg (fun A : V →L[ℝ] V => A v) (congrFun hcK t)
     rw [hcv]
