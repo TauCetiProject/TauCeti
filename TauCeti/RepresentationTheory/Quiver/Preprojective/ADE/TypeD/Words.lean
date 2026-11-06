@@ -125,7 +125,7 @@ theorem signlessPreprojectiveDBranchWord_add_eq_zero (hn : 3 ≤ n)
     signlessPreprojectiveDBranchWord k a b true (c + 1) +
       signlessPreprojectiveDBranchWord k a b false (c + 1) = 0 := by
   have hsum := forkTurn_add_pow_eq_zero k (G := DG) («c» := n - 3)
-    (by rw [DynkinType.rank_D]; omega) (diagramGraph_D_adj hn)
+    (by rw [DynkinType.rank_D]; omega) (fun i j => (diagramGraph_D_adj hn i j).1)
   simp only [forkTurn] at hsum
   simp only [signlessPreprojectiveDBranchWord_def, Nat.add_eq_zero_iff,
     Nat.one_ne_zero, and_false, ite_false, Bool.false_eq_true, ite_true,
