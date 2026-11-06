@@ -80,23 +80,6 @@ theorem mateEquiv_adjunction_id {G H : C ⥤ D} (α : TwoSquare G (𝟭 C) (𝟭
     Adjunction.id_unit, Adjunction.id_counit, Category.comp_id, Category.id_comp,
     Functor.comp_map, Functor.map_id, NatTrans.id_app]
 
-section TwoSquareWhisker
-
-variable {C₁ C₂ C₃ C₄ : Type*} [Category* C₁] [Category* C₂] [Category* C₃] [Category* C₄]
-  {T T' : C₁ ⥤ C₂} {L : C₁ ⥤ C₃} {R : C₂ ⥤ C₄} {B B' : C₃ ⥤ C₄}
-
-/-- A two-square is invertible as soon as its whiskering at the top by an isomorphism is. -/
-theorem TwoSquare.isIso_of_isIso_whiskerTop (w : TwoSquare T' L R B) (α : T ⟶ T') [IsIso α]
-    (h : IsIso (w.whiskerTop α)) : IsIso w :=
-  (isIso_comp_left_iff (Functor.whiskerRight α R) (g := w)).mp h
-
-/-- A two-square is invertible as soon as its whiskering at the bottom by an isomorphism is. -/
-theorem TwoSquare.isIso_of_isIso_whiskerBottom (w : TwoSquare T L R B) (α : B ⟶ B') [IsIso α]
-    (h : IsIso (w.whiskerBottom α)) : IsIso w :=
-  (isIso_comp_right_iff (Functor.whiskerLeft L α) (g := w)).mp h
-
-end TwoSquareWhisker
-
 section Conjugate
 
 namespace Adjunction

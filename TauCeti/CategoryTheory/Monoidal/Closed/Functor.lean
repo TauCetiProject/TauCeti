@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.Closed.Basic
 public import Mathlib.CategoryTheory.Monoidal.Braided.Reflection
 public import TauCeti.CategoryTheory.Adjunction.Mates
+public import TauCeti.CategoryTheory.Functor.TwoSquare
 public import TauCeti.CategoryTheory.Monoidal.Functor
 -- Non-public: the mate through the identity adjunctions and the invertibility of precomposing an
 -- internal Hom with an isomorphism are used only inside the proofs of the declarations below.
@@ -281,12 +282,12 @@ theorem ihomComparison_unit_isIso (F : C ⥤ D) [F.Monoidal]
   have hcD : IsIso cD := conjugateEquiv_iso adjD adjID qD.hom
   -- Conjugate the first identity mate back across the source unitor.
   have hm1 : IsIso m1 := by
-    refine TwoSquare.isIso_of_isIso_whiskerTop m1 cC ?_
+    refine (TwoSquare.isIso_whiskerTop_iff m1 cC).mp ?_
     rw [← hleft]
     simpa only [m0, m1, cC, S1, mateEquiv_adjunction_id] using hm0
   -- Conjugate the target identity mate back across the target unitor and unit map.
   have hm2 : IsIso m2 := by
-    refine TwoSquare.isIso_of_isIso_whiskerBottom m2 cD ?_
+    refine (TwoSquare.isIso_whiskerBottom_iff m2 cD).mp ?_
     rw [← hright]
     simpa only [m1, m2, cD, S0] using hm1
   -- `ihomComparison` is by definition this mate of the tensorator under the two
@@ -308,28 +309,13 @@ theorem ihomComparison_isIso_of_iso
   -- Naturality in the source transports invertibility from `A'` to `A` across `e`.
   have hnat := ihomComparison_whiskerLeft (F := F) (A := A') (A' := A) e.hom
   have hL : IsIso ((F.ihomComparison A').whiskerBottom
-      (MonoidalClosed.pre (F.map e.hom))) := by
-    rw [NatTrans.isIso_iff_isIso_app]
-    intro X
-    have hp : IsIso ((MonoidalClosed.pre (F.map e.hom)).app (F.obj X)) :=
-      (NatTrans.isIso_iff_isIso_app (MonoidalClosed.pre (F.map e.hom))).1 hpreF (F.obj X)
-    dsimp [TwoSquare.whiskerBottom]
-    exact (CategoryTheory.isIso_comp_left_iff _ _).mpr hp
+      (MonoidalClosed.pre (F.map e.hom))) :=
+    (TwoSquare.isIso_whiskerBottom_iff _ _).mpr hA'
   have hR : IsIso ((F.ihomComparison A).whiskerTop
       (MonoidalClosed.pre e.hom)) := by
     rw [← hnat]
     exact hL
-  rw [NatTrans.isIso_iff_isIso_app]
-  intro X
-  have hcomp :=
-    ((NatTrans.isIso_iff_isIso_app
-      ((F.ihomComparison A).whiskerTop
-        (MonoidalClosed.pre e.hom))).1 hR) X
-  simp only [TwoSquare.whiskerTop, Functor.whiskerRight] at hcomp
-  -- The remaining whiskered comparison is invertible because its precomposition is.
-  exact (CategoryTheory.isIso_comp_left_iff
-    (F.map ((MonoidalClosed.pre e.hom).app X))
-    ((F.ihomComparison A).app X)).mp hcomp
+  exact (TwoSquare.isIso_whiskerTop_iff _ _).mp hR
 
 end InternalHomComparison
 
