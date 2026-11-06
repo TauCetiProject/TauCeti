@@ -23,10 +23,10 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
   supremum of Schwartz seminorms of `f` times `(1 + ‖x‖) ^ (-k)`.
 * `SchwartzMap.integrable_norm_pow_mul_norm_sq`: `‖x‖ ^ k ‖f x‖²` is integrable.
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
-* `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
-  for every real `r`.
 * `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
   against any measure of temperate growth.
+* `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
+  for every real `r`.
 * `SchwartzMap.integral_norm_sq_eq_zero_iff`: a Schwartz function vanishes exactly when the
   integral of its squared norm does, for a measure charging every nonempty open set.
 -/
@@ -121,18 +121,6 @@ theorem integrable_inner {H : Type*} [NormedAddCommGroup H] [InnerProductSpace �
   ext x
   rw [pairing_apply_apply, innerSL_apply_apply]
 
-/-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
-integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
-theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup V]
-    [InnerProductSpace ℝ V] [MeasurableSpace V] [BorelSpace V] [SecondCountableTopology V]
-    {ν : Measure V} [ν.HasTemperateGrowth] (r : ℝ) (f : 𝓢(V, F)) :
-    Integrable (fun x ↦ (1 + ‖x‖ ^ 2) ^ r * ‖f x‖) ν := by
-  have hg := Function.hasTemperateGrowth_one_add_norm_sq_rpow V r
-  refine ((smulLeftCLM F (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ r) f).integrable (μ := ν)).norm.congr
-    (.of_forall fun x ↦ ?_)
-  dsimp only
-  rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
-
 omit [SecondCountableTopology E] in
 /-- For a Schwartz function `f` and real `c`, `m`, the function
 `⟨c x⟩ ^ m ‖f x‖ = (1 + ‖c x‖ ^ 2) ^ (m / 2) ‖f x‖` is integrable. -/
@@ -145,5 +133,12 @@ theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F
     (.of_forall fun x ↦ by
       rw [Real.norm_of_nonneg (by positivity)]
       exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
+
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and every real `r`, the function `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is
+integrable. With `r = s / 2` this is the Japanese bracket weight `⟨x⟩ ^ s ‖f x‖`. -/
+theorem integrable_one_add_norm_sq_rpow_mul_norm (r : ℝ) (f : 𝓢(E, F)) :
+    Integrable (fun x ↦ (1 + ‖x‖ ^ 2) ^ r * ‖f x‖) μ := by
+  simpa using f.integrable_one_add_norm_smul_sq_rpow_mul_norm (μ := μ) 1 (2 * r)
 
 end SchwartzMap

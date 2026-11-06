@@ -307,6 +307,16 @@ open ContinuousLinearMap
 
 variable {a : E × E → V →L[ℂ] W} {m : ℝ}
 
+private lemma aestronglyMeasurable_slice (ha : Continuous a) (x : E) :
+    AEStronglyMeasurable (fun ξ ↦ a (x, ξ)) :=
+  (ha.comp (continuous_const.prodMk continuous_id)).aestronglyMeasurable
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+private lemma continuous_fderiv_slice (ha : ContDiff ℝ 1 a) (x : E) :
+    Continuous fun ξ ↦ fderiv ℝ (fun y ↦ a (y, ξ)) x :=
+  (ContDiff.fderiv (f := fun (ξ : E) (y : E) ↦ a (y, ξ))
+    (ha.comp (contDiff_snd.prodMk contDiff_fst)) contDiff_const (n := 0) (by simp)).continuous
+
 /-- The derivative in the position `x` of the quantization integrand
 `x ↦ 𝐞 ⟪ζ, x⟫ • a (x, 2πζ) (f ζ)`. -/
 private def integrandFDeriv (a : E × E → V →L[ℂ] W) (f : 𝓢(E, V)) (x ζ : E) : E →L[ℝ] W :=
@@ -361,13 +371,13 @@ private lemma norm_integrandFDeriv_le {x : E} {C C' : ℝ}
   have h₁ : ‖a (x, (2 * π) • ζ) (((2 * π * Complex.I) * ⟪ζ, h⟫) • f ζ)‖ ≤
       C * (w ^ (m / 2) * ‖(2 * π) • ζ‖) * ‖f ζ‖ * ‖h‖ := by
     refine ((a _).le_opNorm _).trans ?_
-    rw [norm_smul, norm_mul, norm_mul, norm_mul, Complex.norm_ofNat, Complex.norm_real,
-      Real.norm_of_nonneg pi_pos.le, Complex.norm_I, mul_one, ← hζ]
-    have hi : ‖(⟪ζ, h⟫ : ℂ)‖ ≤ ‖ζ‖ * ‖h‖ := by
-      rw [Complex.norm_real, Real.norm_eq_abs]
-      exact abs_real_inner_le_norm ζ h
-    calc ‖a (x, (2 * π) • ζ)‖ * (2 * π * ‖(⟪ζ, h⟫ : ℂ)‖ * ‖f ζ‖)
-        ≤ C * w ^ (m / 2) * (2 * π * (‖ζ‖ * ‖h‖) * ‖f ζ‖) := by gcongr; exact hC _
+    rw [← hζ]
+    simp only [norm_smul, norm_mul, Complex.norm_ofNat, Complex.norm_real,
+      Real.norm_of_nonneg pi_pos.le, Complex.norm_I, mul_one]
+    calc ‖a (x, (2 * π) • ζ)‖ * (2 * π * ‖⟪ζ, h⟫‖ * ‖f ζ‖)
+        ≤ C * w ^ (m / 2) * (2 * π * (‖ζ‖ * ‖h‖) * ‖f ζ‖) := by
+          gcongr
+          exacts [hC _, norm_inner_le_norm ζ h]
       _ = C * (w ^ (m / 2) * (2 * π * ‖ζ‖)) * ‖f ζ‖ * ‖h‖ := by ring
   have h₂ : ‖fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x h (f ζ)‖ ≤
       C' * w ^ (m / 2) * ‖f ζ‖ * ‖h‖ := by
@@ -390,9 +400,7 @@ omit [MeasurableSpace E] [BorelSpace E] in
 private lemma continuous_integrandFDeriv (ha : ContDiff ℝ 1 a) (f : 𝓢(E, V)) (x : E) :
     Continuous (integrandFDeriv a f x) := by
   have hD : Continuous fun ζ : E ↦ fderiv ℝ (fun y ↦ a (y, (2 * π) • ζ)) x :=
-    (ContDiff.fderiv (f := fun (ζ : E) (y : E) ↦ a (y, (2 * π) • ζ))
-      (ha.comp (contDiff_snd.prodMk (contDiff_fst.const_smul _))) contDiff_const
-      (n := 0) (by simp)).continuous
+    (continuous_fderiv_slice ha x).comp (continuous_const_smul _)
   have he : Continuous fun ζ : E ↦ (𝐞 ⟪ζ, x⟫ : ℂ) :=
     continuous_subtype_val.comp
       (Real.continuous_fourierChar.comp (continuous_id.inner continuous_const))
@@ -413,8 +421,7 @@ private lemma hasFDerivAt_integral_integrand (ha : ContDiff ℝ 1 a)
       (∫ ζ, integrandFDeriv a f x₀ ζ) x₀ := by
   obtain ⟨C, hC⟩ := hC _ (isCompact_closedBall x₀ 1)
   obtain ⟨C', hC'⟩ := hC' _ (isCompact_closedBall x₀ 1)
-  have hmeas (x : E) : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)) :=
-    (ha.continuous.comp (continuous_const.prodMk continuous_id)).aestronglyMeasurable
+  have hmeas := aestronglyMeasurable_slice ha.continuous
   have hx₀ : x₀ ∈ Metric.closedBall x₀ 1 := Metric.mem_closedBall_self zero_le_one
   exact hasFDerivAt_integral_of_dominated_of_fderiv_le (Metric.ball_mem_nhds x₀ one_pos)
     (Filter.Eventually.of_forall fun x ↦ aestronglyMeasurable_integrand (hmeas x) f)
@@ -451,12 +458,9 @@ theorem fderiv_quantizeSchwartzValue_apply (ha : ContDiff ℝ 1 a)
         quantizeSchwartzValue (fun p ↦ fderiv ℝ (fun y ↦ a (y, p.2)) p.1 h) u x := by
   obtain ⟨C, hCx⟩ := hC _ isCompact_singleton
   obtain ⟨C', hC'x⟩ := hC' _ isCompact_singleton
-  have hmeas : AEStronglyMeasurable (fun ξ ↦ a (x, ξ)) :=
-    (ha.continuous.comp (continuous_const.prodMk continuous_id)).aestronglyMeasurable
+  have hmeas := aestronglyMeasurable_slice ha.continuous x
   have hmeas' : AEStronglyMeasurable (fun ξ ↦ fderiv ℝ (fun y ↦ a (y, ξ)) x h) :=
-    ((ContDiff.fderiv (f := fun (ξ : E) (y : E) ↦ a (y, ξ))
-      (ha.comp (contDiff_snd.prodMk contDiff_fst)) contDiff_const
-      (n := 0) (by simp)).continuous.clm_apply continuous_const).aestronglyMeasurable
+    ((continuous_fderiv_slice ha x).clm_apply continuous_const).aestronglyMeasurable
   have hCx' : ∀ ξ, ‖fderiv ℝ (fun y ↦ a (y, ξ)) x h‖ ≤ C' * ‖h‖ * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
     fun ξ ↦ ((fderiv ℝ (fun y ↦ a (y, ξ)) x).le_opNorm h).trans (by
       rw [mul_right_comm]
@@ -490,6 +494,11 @@ variable {n : ℕ} {m : ℝ}
 private lemma contDiff_one_coefficient (a : Symbol n V W m) : ContDiff ℝ 1 a.coefficient :=
   a.contDiff_coefficient.of_le (by simp)
 
+private lemma exists_bound_coefficient' (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
+  (a.exists_bound_coefficient K hK).imp fun _ h ↦ h.2
+
 /-- **Leibniz rule for symbols.** The coordinate derivative `∂_j` of the quantization of a symbol
 `a` is `Op(a) (∂_j u) + Op(∂_{x_j} a) u`. -/
 theorem coordinateDeriv_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
@@ -500,7 +509,7 @@ theorem coordinateDeriv_quantizeSchwartzValue (a : Symbol n V W m) (j : Fin n)
   funext x
   rw [coordinateDeriv_cons, coordinateDeriv_nil, fderiv_quantizeSchwartzValue_apply
     a.contDiff_one_coefficient
-    (fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ h ↦ h.2)
+    a.exists_bound_coefficient'
     a.exists_bound_fderiv_coefficient, Pi.add_apply]
   simp only [fderiv_coefficient_single]
 
@@ -511,11 +520,11 @@ theorem contDiff_quantizeSchwartzValue (a : Symbol n V W m) (u : 𝓢(Coordinate
   induction k generalizing a u with
   | zero =>
     exact contDiff_zero.2 (continuous_quantizeSchwartzValue a.contDiff_coefficient.continuous
-      (fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ h ↦ h.2) u)
+      a.exists_bound_coefficient' u)
   | succ k ih =>
     rw [Nat.cast_succ, contDiff_succ_iff_fderiv]
     refine ⟨differentiable_quantizeSchwartzValue a.contDiff_one_coefficient
-      (fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ h ↦ h.2)
+      a.exists_bound_coefficient'
       a.exists_bound_fderiv_coefficient u, by simp, contDiff_clm_apply_iff.2 fun h ↦ ?_⟩
     -- each partial derivative is again a sum of quantizations of symbols
     have hj (j : Fin n) : ContDiff ℝ k fun x ↦

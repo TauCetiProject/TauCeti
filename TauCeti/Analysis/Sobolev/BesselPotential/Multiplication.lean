@@ -166,7 +166,7 @@ theorem eLpNorm_rpow_smul_fourier_smulLeftCLM_le (s : ℝ) (φ : 𝓢(E, ℂ)) (
   have hg : Measurable g := ENNReal.measurable_ofReal.comp
     ((((measurable_const.add (measurable_norm.pow_const 2)).pow_const (s / 2))).mul
       (𝓕 f).continuous.norm.measurable)
-  have hint := ((𝓕 φ).integrable_one_add_norm_sq_rpow_mul_norm (ν := volume) (|s| / 2)).const_mul
+  have hint := ((𝓕 φ).integrable_one_add_norm_sq_rpow_mul_norm (μ := volume) (|s| / 2)).const_mul
     (2 ^ (|s| / 2))
   have hk_int : ∫⁻ ζ, k ζ = ENNReal.ofReal
       (2 ^ (|s| / 2) * ∫ ζ, (1 + ‖ζ‖ ^ 2) ^ (|s| / 2) * ‖𝓕 φ ζ‖) := by
