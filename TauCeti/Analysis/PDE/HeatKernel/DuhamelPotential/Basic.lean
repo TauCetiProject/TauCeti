@@ -650,7 +650,7 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
   · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
     have hb := norm_intervalIntegral_sub_le_of_le_sub (c := C₁ * H) (β := (α : ℝ) / 2)
       (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht' htt'.le hsmall
-      (hnear le_rfl ht.le le_rfl) (hnear le_rfl ht' htt'.le)
+      (by simpa using hnear le_rfl ht.le le_rfl) (by simpa using hnear le_rfl ht' htt'.le)
     have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
     linarith
   -- Otherwise split both integrals at `s₀ = 2 t' - t = t' - h`.
@@ -666,8 +666,11 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
         (by positivity) hh hbig hα₂' (hK hf hfM hH htt' |>.mono fun s hs hsI => hs hsI x)
   have hb := norm_intervalIntegral_sub_le_of_sub_lt (c := C₁ * H) (β := (α : ℝ) / 2)
     (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) hs₀ htt'.le (hint ht le_rfl)
-    (hint (by linarith) htt'.le) hfar (hnear hs₀ (by linarith) le_rfl)
-    (hnear hs₀ (by linarith) htt'.le)
+    (hint (by linarith) htt'.le) hfar
+    (by simpa only [show t - (2 * t' - t) = 2 * (t - t') by ring] using
+      hnear hs₀ (by linarith) le_rfl)
+    (by simpa only [show t' - (2 * t' - t) = t - t' by ring] using
+      hnear hs₀ (by linarith) htt'.le)
   linarith
 
 /-- **The temporal Hölder estimate for the Hessian of the Duhamel potential.** For `0 < α < 2`
