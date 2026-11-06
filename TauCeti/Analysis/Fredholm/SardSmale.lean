@@ -17,6 +17,7 @@ import TauCeti.Analysis.Fredholm.NormalForm
 import TauCeti.Analysis.Fredholm.Proper
 import TauCeti.Analysis.Normed.Operator.Surjective
 import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Invertible
+import TauCeti.Topology.Baire.Lindelof
 import TauCeti.Topology.Constructions.SumProd
 
 /-!
@@ -442,23 +443,6 @@ section Global
 
 variable [CompleteSpace E] [CompleteSpace F] {U : Set E} [LindelofSpace U] {f : E → F}
 
-omit [CompleteSpace E] [CompleteSpace F] in
-/-- The local-to-global step of the Sard--Smale theorem: if every point of a Lindelöf set `U` has
-a neighbourhood whose critical values are nowhere dense, then the critical values taken on `U`
-are meagre, since countably many of these neighbourhoods cover `U`. -/
-private theorem isMeagre_image_criticalPoints_of_forall_exists_mem_nhds
-    (hloc : ∀ x ∈ U, ∃ N ∈ 𝓝 x,
-      IsNowhereDense (f '' (N ∩ {x | ¬ Surjective (fderiv ℝ f x)}))) :
-    IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  choose! N hNnhds hNnd using hloc
-  obtain ⟨t, htc, htU, htcover⟩ := (IsLindelof.of_coe (s := U)).elim_nhds_subcover N hNnhds
-  have hsub : f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)}) ⊆
-      ⋃ x ∈ t, f '' (N x ∩ {x | ¬ Surjective (fderiv ℝ f x)}) := by
-    rintro _ ⟨z, ⟨hzU, hzc⟩, rfl⟩
-    obtain ⟨x, hx, hzN⟩ := Set.mem_iUnion₂.1 (htcover hzU)
-    exact Set.mem_iUnion₂.2 ⟨x, hx, ⟨z, ⟨hzN, hzc⟩, rfl⟩⟩
-  exact IsMeagre.mono hsub (isMeagre_biUnion htc fun x hx ↦ (hNnd x (htU x hx)).isMeagre)
-
 /-- **The Sard--Smale theorem.** The critical values of a sufficiently smooth Fredholm map on a
 Lindelöf subset of a Banach space form a meagre set. The subset need not be open; smoothness
 is assumed at each of its points in the ambient space. Every subset of a separable Banach space
@@ -478,10 +462,11 @@ theorem isMeagre_image_criticalPoints_of_isFredholm {n : ℕ∞ω}
     (hn : ∀ x ∈ U, ((finrank ℝ (fderiv ℝ f x).ker * finrank ℝ (fderiv ℝ f x).ker + 1 : ℕ) : ℕ∞ω)
       ≤ n) :
     IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  refine isMeagre_image_criticalPoints_of_forall_exists_mem_nhds fun x hx ↦ ?_
+  refine (IsLindelof.of_coe (s := U)).isMeagre_image_inter_of_forall_exists_mem_nhds
+    fun x hx ↦ ?_
   obtain ⟨N, hN, -, -, hNnd⟩ := exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints
     (hf x hx) (hFred x hx) (hn x hx) (U := univ) Filter.univ_mem
-  exact ⟨N, hN, hNnd⟩
+  exact ⟨N, hN, hNnd.isMeagre⟩
 
 /-- **Sard--Smale**, in the form transversality arguments consume: the regular values of a
 sufficiently smooth Fredholm map restricted to a Lindelöf subset are dense, being the complement
@@ -508,11 +493,12 @@ theorem isMeagre_image_criticalPoints_of_isFredholm_of_index_le_two {n : ℕ∞�
     (hindex : ∀ x ∈ U, (fderiv ℝ f x).index ≤ 2)
     (hn : ∀ x ∈ U, (((fderiv ℝ f x).index.toNat + 1 : ℕ) : ℕ∞ω) ≤ n) :
     IsMeagre (f '' (U ∩ {x | ¬ Surjective (fderiv ℝ f x)})) := by
-  refine isMeagre_image_criticalPoints_of_forall_exists_mem_nhds fun x hx ↦ ?_
+  refine (IsLindelof.of_coe (s := U)).isMeagre_image_inter_of_forall_exists_mem_nhds
+    fun x hx ↦ ?_
   obtain ⟨N, hN, -, -, hNnd⟩ :=
     exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two
       (hf x hx) (hFred x hx) (hindex x hx) (hn x hx) (U := univ) Filter.univ_mem
-  exact ⟨N, hN, hNnd⟩
+  exact ⟨N, hN, hNnd.isMeagre⟩
 
 /-- **Sard--Smale at the sharp regularity, in index at most two**, in the form transversality
 arguments consume: the regular values of such a map restricted to a Lindelöf subset are dense.

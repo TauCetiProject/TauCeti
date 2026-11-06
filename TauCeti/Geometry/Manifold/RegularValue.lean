@@ -41,6 +41,8 @@ to manifolds, including manifolds with boundary or corners.
 * `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
   manifold takes all its values strictly above one regular value and at most another.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
+* `TauCeti.isRegularPoint_iff_surjective_fderiv_extChartAt`: the same on a boundaryless source,
+  with the Fréchet derivative of the coordinate expression.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv`: for maps between normed spaces, regularity is
   surjectivity of the Fréchet derivative.
 * `TauCeti.isRegularPoint_iff_injective_mfderiv`: between models of the same finite dimension,
@@ -290,6 +292,17 @@ end Level
 section Boundaryless
 
 variable [I.Boundaryless]
+
+/-- On a boundaryless source, read in the extended charts at `x₀` and `y₀`, whose sources contain
+`x` and `f x`, a point `x` at which `f` is differentiable is regular exactly when the Fréchet
+derivative of the coordinate expression of `f` is surjective at the chart image of `x`. -/
+theorem isRegularPoint_iff_surjective_fderiv_extChartAt [IsManifold I 1 M] [IsManifold J 1 N]
+    {x₀ : M} {y₀ : N} (hf : MDifferentiableAt I J f x) (hx : x ∈ (chartAt H x₀).source)
+    (hfx : f x ∈ (chartAt H' y₀).source) :
+    IsRegularPoint I J f x ↔ Surjective (fderiv 𝕜
+      (extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) (extChartAt I x₀ x)) := by
+  simpa only [I.range_eq_univ, fderivWithin_univ] using
+    isRegularPoint_iff_surjective_fderivWithin hf hx hfx
 
 /-- At a regular point of a map into a normed space on a boundaryless manifold, the coordinate
 expression in the preferred extended chart has surjective derivative. -/
