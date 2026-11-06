@@ -58,8 +58,7 @@ private theorem IsClassicalSolution.hasDerivWithinAt_interpolate
   have htime : Tendsto (fun r : ℝ => t - r) (𝓝[>] s) (𝓝 (t - s)) :=
     ((continuous_sub_left t).tendsto s).mono_left nhdsWithin_le_nhds
   have hlim := S.tendsto_realOperator_apply htime
-    ((htime.eventually_const_lt (sub_pos.mpr hst)).mono fun _ h => h.le)
-    (sub_pos.mpr hst).le hquot
+    ((htime.eventually_const_lt (sub_pos.mpr hst)).mono fun _ h => h.le) hquot
   have hsum := hlim.add hback
   rw [add_neg_cancel] at hsum
   refine hsum.congr fun r => ?_
