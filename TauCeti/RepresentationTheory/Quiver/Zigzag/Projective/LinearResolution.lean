@@ -278,13 +278,14 @@ private theorem coe_zigzagArrowSumPiece_apply (u : V) (p : ℤ)
 
 variable [Module.Projective (nonisolatedZigzagQuotient k G) P]
 
-/-- The sum of the arrows into `u` is injective on a graded projective generated in degree `n`:
-multiplying by the reverse of the arrow from `w₀` isolates the `w₀` component. -/
+/-- The sum of the arrows into `u`, `⨁_{w ∼ u} e_w • P_n → e_u • P_{n+1}`, is injective on a graded
+projective generated in degree `n`. -/
 private theorem injective_zigzagArrowSumPiece (hns : ∀ i : V, ∃ j, G.Adj i j)
     (hP : P.grading.IsGeneratedInDegree (nonisolatedZigzagQuotient k G) n) (u : V) :
     Function.Injective (zigzagArrowSumPiece (P := P) u n) := by
   classical
   refine (injective_iff_map_eq_zero _).2 fun f hf => funext fun w₀ => Subtype.ext ?_
+  -- Multiplying by the reverse of the arrow from `w₀` isolates the `w₀` component.
   have hf' := congrArg (fun z : ↥(zigzagVertexIdempotent k G u • P.grading.piece (n + 1)) =>
     zigzagMk k G (ofArrow (arrow G (inDart u w₀).symm.adj)) • (z : P)) hf
   simp only [coe_zigzagArrowSumPiece_apply, ZeroMemClass.coe_zero, smul_zero,
