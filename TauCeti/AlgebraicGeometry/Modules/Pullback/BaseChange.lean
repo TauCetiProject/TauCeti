@@ -483,12 +483,10 @@ private lemma isBaseChange_pullbackSectionsBaseLinear_of_cover [Module.Flat R S]
   let : Algebra S Γ(Y, g ⁻¹ᵁ U) :=
     ((Y.baseRingToStructurePresheaf S).app (op (g ⁻¹ᵁ U))).hom.toAlgebra
   intro _ _ _ _ _ _
-  have hUV' : g ⁻¹ᵁ U ≤ ⨆ i, g ⁻¹ᵁ V i := by
-    rw [← Scheme.Hom.preimage_iSup]
-    exact g.preimage_mono hUV
+  have hUV' : g ⁻¹ᵁ U ≤ ⨆ i, g ⁻¹ᵁ V i :=
+    (g.preimage_mono hUV).trans_eq (Scheme.Hom.preimage_iSup _ _)
   have hab' (i j : ι) : ∃ p, a p = i ∧ b p = j ∧ g ⁻¹ᵁ V i ⊓ g ⁻¹ᵁ V j ≤ g ⁻¹ᵁ W' p :=
-    let ⟨p, hpa, hpb, hp⟩ := hab i j
-    ⟨p, hpa, hpb, g.preimage_mono hp⟩
+    (hab i j).imp fun _ ⟨hpa, hpb, hp⟩ ↦ ⟨hpa, hpb, g.preimage_mono hp⟩
   let N := (pullback g).obj M
   let := fun i ↦ sectionsBaseModule R M (V i)
   let := fun i ↦ sectionsBaseModule S N (g ⁻¹ᵁ V i)
@@ -522,14 +520,17 @@ private lemma isBaseChange_pullbackSectionsBaseLinear_of_cover [Module.Flat R S]
     (sectionsRestrictPiBaseLinear_injective R M V hVU hUV)
     (exact_sectionsRestrictPiBaseLinear S N _ _ a b _ _ _ hUV' hab')
     (sectionsRestrictPiBaseLinear_injective S N _ _ hUV')
-  all_goals
-    ext x i
+  · ext x i
     simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.coe_proj, Function.eval,
       LinearMap.restrictScalars_apply, sectionsRestrictPiBaseLinear_apply,
-      sectionsDiffPiBaseLinear_apply, pullbackSectionsBaseLinear_apply, map_sub]
-  · exact (g.pullbackSections_restrict M U (homOfLE (hVU i)) x).symm
-  · rw [← g.pullbackSections_restrict M (V (a i)) (homOfLE (ha i)),
-      ← g.pullbackSections_restrict M (V (b i)) (homOfLE (hb i))]
+      pullbackSectionsBaseLinear_apply]
+    exact (g.pullbackSections_restrict M U (homOfLE (hVU i)) x).symm
+  · ext x p
+    simp only [LinearMap.comp_apply, LinearMap.pi_apply, LinearMap.coe_proj, Function.eval,
+      LinearMap.restrictScalars_apply, sectionsDiffPiBaseLinear_apply,
+      pullbackSectionsBaseLinear_apply, map_sub]
+    rw [← g.pullbackSections_restrict M (V (a p)) (homOfLE (ha p)),
+      ← g.pullbackSections_restrict M (V (b p)) (homOfLE (hb p))]
     -- `(Opens.map g.base).map (homOfLE _)` is an inclusion of opens; such morphisms are unique.
     rfl
 
@@ -561,11 +562,11 @@ theorem isBaseChange_pullbackSections_of_isQuasiSeparated [Module.Flat R S] {U :
     fun p ↦ hU' _ _ (hVU p.1) p.1.1.1.isOpen p.1.1.2.isCompact (hVU p.2) p.2.1.1.isOpen
       p.2.1.2.isCompact
 
-/-- **Base change of global sections.** For a quasi-coherent sheaf `M` on a scheme `X` over `R`,
-pulling back global sections exhibits the global sections of `g^* M` as the base change
-`S ⊗[R] Γ(X, M)`, when `X` is affine, or when `X` is quasi-compact and quasi-separated and
-`R → S` is flat. -/
-theorem isBaseChange_pullbackSections_top
+/-- **Base change of global sections.** Let `Y = X ×_R S` with projection `g : Y ⟶ X`. For a
+quasi-coherent sheaf `M` on `X`, pulling back global sections exhibits the global sections of
+`g^* M` as the base change `S ⊗[R] Γ(X, M)`, when `X` is affine, or when `X` is quasi-compact and
+quasi-separated and `R → S` is flat. -/
+private theorem isBaseChange_pullbackSections_top
     (hX : IsAffine X ∨ (Module.Flat R S ∧ CompactSpace X ∧ QuasiSeparatedSpace X)) :
     letI : Algebra R Γ(X, ⊤) :=
       ((X.baseRingToStructurePresheaf R).app (op ⊤)).hom.toAlgebra
@@ -646,22 +647,19 @@ lemma pullbackSectionsLEBaseLinear_apply (g' : X' ⟶ X) (M : X.Modules) (w : Co
   intro _ _ _ _ _ _ s
   rfl
 
-/-- The structure map `Γ(B, V) ⟶ Γ(U, ⊤)` of the open subscheme `U` of `Z` over the affine open `V`
-of `B`, computed through `Spec Γ(B, V)`, is `k.appLE` followed by restriction. -/
-lemma ΓSpecIso_inv_comp_resLE_isoSpec_appLE {Z B : Scheme.{u}} (k : Z ⟶ B) {V : B.Opens}
-    (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens) :
-    (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (k.resLE V U e ≫ hV.isoSpec.hom).appLE ⊤ T le_top =
-      k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
-  calc (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (k.resLE V U e ≫ hV.isoSpec.hom).appLE ⊤ T le_top
-      _ = (Scheme.ΓSpecIso Γ(B, V)).inv ≫
-          (U.toSpecΓ ≫ Spec.map (k.appLE V U e)).appLE ⊤ T (by simp) := by
-        simp only [IsAffineOpen.isoSpec_hom, ← Scheme.Opens.toSpecΓ_SpecMap_appLE]
-      _ = (Scheme.ΓSpecIso Γ(B, V)).inv ≫ (Spec.map (k.appLE V U e)).appTop ≫
-          U.toSpecΓ.appLE ⊤ T (by simp) :=
-        congrArg _ (Scheme.Hom.comp_appLE _ _ _ _ _)
-      _ = k.appLE V U e ≫ U.ι.appLE U T (by simp) := by
-        rw [← Category.assoc, ← Scheme.ΓSpecIso_inv_naturality, Category.assoc,
-          Scheme.Opens.ΓSpecIso_inv_comp_toSpecΓ_appLE]
+/-- The structure map `Γ(B, V) ⟶ Γ(U, T)` of an open subscheme `U` of `Z` over the affine open `V`
+of `B`, for the algebra structure through `baseRingToStructurePresheaf`, is `k.appLE` followed by
+restriction to `T`. -/
+private lemma algebraMap_baseRingToStructurePresheaf_eq_appLE {Z B : Scheme.{u}} (k : Z ⟶ B)
+    {V : B.Opens} (hV : IsAffineOpen V) (U : Z.Opens) (e : U ≤ k ⁻¹ᵁ V) (T : U.toScheme.Opens)
+    (r : Γ(B, V)) :
+    letI : U.toScheme.Over (Spec (.of Γ(B, V))) := ⟨k.resLE V U e ≫ hV.isoSpec.hom⟩
+    letI : Algebra Γ(B, V) Γ(U.toScheme, T) :=
+      ((U.toScheme.baseRingToStructurePresheaf Γ(B, V)).app (op T)).hom.toAlgebra
+    algebraMap Γ(B, V) Γ(U.toScheme, T) r =
+      (U.ι.appLE U T (by simp)).hom ((k.appLE V U e).hom r) := by
+  rw [RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
+  exact congrArg (fun φ ↦ φ.hom r) (Scheme.Hom.ΓSpecIso_inv_comp_resLE_isoSpec_appLE k hV U e T)
 
 /-- Pulling sections back along the inclusion of the open subscheme `UX` identifies the sections
 of `M` over `UX` with the global sections of the pullback to `UX`, linearly over `Γ(S, W)`. -/
@@ -686,10 +684,9 @@ private lemma exists_linearEquiv_pullbackSectionsLE_ι (M : X.Modules) {W : S.Op
       map_add' := map_add _
       map_smul' r m := by
         rw [← IsScalarTower.algebraMap_smul Γ(X, UX) r m, map_smulₛₗ, RingHom.id_apply,
-          ← IsScalarTower.algebraMap_smul Γ(UX.toScheme, ⊤) r, RingHom.algebraMap_toAlgebra,
-          RingHom.algebraMap_toAlgebra, Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-        exact congrArg (· • UX.ι.pullbackSectionsLE M UX ⊤ _ m) (congrArg (fun φ ↦ φ.hom r)
-          (ΓSpecIso_inv_comp_resLE_isoSpec_appLE f hW UX eX ⊤)).symm }
+          ← IsScalarTower.algebraMap_smul Γ(UX.toScheme, ⊤) r,
+          algebraMap_baseRingToStructurePresheaf_eq_appLE f hW UX eX ⊤ r]
+        rfl }
     (Scheme.Modules.bijective_pullbackSectionsLE_ι M UX ⊤ rfl), fun _ ↦ rfl⟩
 
 /-- Pulling sections back along the inclusions of the open subschemes `UX` and `UY` identifies the
@@ -744,10 +741,8 @@ private lemma exists_linearEquiv_pullbackSectionsLE_pullback (g' : X' ⟶ X) (M 
         simp only [e₀, AddMonoidHom.coe_comp, Function.comp_apply, LinearMap.toAddMonoidHom_coe]
         rw [← IsScalarTower.algebraMap_smul Γ(X', UY) a x, map_smulₛₗ, Hom.app_smul, Hom.app_smul,
           Hom.app_smul, RingHom.id_apply, ← IsScalarTower.algebraMap_smul Γ(UY.toScheme, T) a,
-          RingHom.algebraMap_toAlgebra, RingHom.algebraMap_toAlgebra,
-          Scheme.baseRingToStructurePresheaf_app_eq_appLE]
-        exact congrArg (· • _) (congrArg (fun φ ↦ φ.hom a)
-          (ΓSpecIso_inv_comp_resLE_isoSpec_appLE f' hW' UY eY' T)).symm }
+          algebraMap_baseRingToStructurePresheaf_eq_appLE f' hW' UY eY' T a]
+        rfl }
     he₀, fun _ ↦ rfl⟩
 
 /-- Base change of sections over affine opens of the bases, either for an affine open `UX`, or for
@@ -810,7 +805,7 @@ private lemma isBaseChange_pullbackSectionsLEBaseLinear_aux (g' : X' ⟶ X) (M :
   let : Module R Γ((pullback g₀).obj M₀, T) := Module.compHom _ (algebraMap R A)
   have : IsScalarTower R A Γ((pullback g₀).obj M₀, T) := .of_algebraMap_smul fun _ _ ↦ rfl
   have key : IsBaseChange A (g₀.pullbackSectionsBaseLinear M₀ ⊤ H₀.toCommSq) := by
-    refine g₀.isBaseChange_pullbackSections_top M₀ H₀ (hUX.imp id fun ⟨hfl, hc, hq⟩ => ?_)
+    refine isBaseChange_pullbackSections_top g₀ M₀ H₀ (hUX.imp id fun ⟨hfl, hc, hq⟩ => ?_)
     have : Module.Flat R A := HasRingHomProperty.appLE @Flat g hfl ⟨W, hW⟩ ⟨W', hW'⟩ h
     exact ⟨this, isCompact_iff_compactSpace.mp hc,
       (isQuasiSeparated_iff_quasiSeparatedSpace _ UX.isOpen).mp hq⟩
