@@ -103,7 +103,13 @@ def overIsoOfEq (N₁ N₂ : M.Submodule) (V : C)
 
 /-- The inclusion of a submodule remains a monomorphism after restricting to an object. -/
 instance instMonoιOver (N : M.Submodule) (V : C) : Mono (N.ι.over V) :=
-  (forget _).mono_of_mono_map (PresheafOfModules.mono_of_injective fun _ ↦ Subtype.val_injective)
+  (forget _).mono_of_mono_map <| PresheafOfModules.mono_of_injective fun W s t h ↦ by
+    -- `N.ι.over V` is the pushforward of `N.ι` along `Over.forget V` (`overFunctor`), so its
+    -- sections over `W` are those of `N.ι` over `W.unop.left`.
+    have hW (x) : ((forget _).map (N.ι.over V)).app W x = N.toSubmodule.ι.app (op W.unop.left) x :=
+      PresheafOfModules.pushforward_map_app_apply (𝟙 _) N.toSubmodule.ι W x
+    rw [hW, hW] at h
+    exact PresheafOfModules.injective_of_mono N.toSubmodule.ι (op W.unop.left) h
 
 /-- The isomorphism `overIsoOfEq` is compatible with the inclusions into `M`. -/
 @[reassoc (attr := simp)]
