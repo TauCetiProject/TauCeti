@@ -54,6 +54,12 @@ theorem hamiltonianVectorField_def (ω : SymplecticForm V) (H : V → ℝ) (x : 
       ω.toBilinForm.toContinuousBilinearMap.inverse (fderiv ℝ H x) :=
   (rfl)
 
+/-- The Hamiltonian vector field at `x` depends only on the germ of the Hamiltonian at `x`. -/
+theorem hamiltonianVectorField_congr_of_eventuallyEq (ω : SymplecticForm V) {H H' : V → ℝ}
+    {x : V} (h : H =ᶠ[nhds x] H') :
+    ω.hamiltonianVectorField H x = ω.hamiltonianVectorField H' x := by
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, h.fderiv_eq]
+
 /-- Contraction of the Hamiltonian field is the derivative of the Hamiltonian. -/
 @[simp]
 theorem apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x v : V) :

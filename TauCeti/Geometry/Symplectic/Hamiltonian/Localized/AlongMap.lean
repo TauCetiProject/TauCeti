@@ -81,8 +81,7 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq (ω : SymplecticForm V) {
           (hχ1.filter_mono (nhds_le_nhdsSet (mem_image_of_mem _ hz)))
       have hK : (fun y ↦ χ (z, y) * ω (ξ z) y) =ᶠ[𝓝 (u z)] fun y ↦ ω (ξ z) y :=
         hev.mono fun y hy ↦ by simp [hy]
-      rw [hamiltonianVectorField_def, hK.fderiv_eq, ← hamiltonianVectorField_def,
-        hamiltonianVectorField_apply_left]
+      rw [ω.hamiltonianVectorField_congr_of_eventuallyEq hK, hamiltonianVectorField_apply_left]
     · have hξz : ξ z = 0 := image_eq_zero_of_notMem_tsupport hz
       have hK : (fun y ↦ χ (z, y) * ω (ξ z) y) = fun _ ↦ (0 : ℝ) := by
         ext y
@@ -90,6 +89,8 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq (ω : SymplecticForm V) {
       rw [hK, hamiltonianVectorField_const, hξz, Pi.zero_apply]
   have h0 (z : P) (y : V) (h : (z, y) ∉ L) : χ (z, y) * ω (ξ z) y = 0 := by
     rw [hχ0 _ h, zero_mul]
+  -- The coercion of `ω` to a function agrees definitionally with the continuous bilinear map `B`,
+  -- so smoothness of `p ↦ B (ξ p.1) p.2` is smoothness of `p ↦ ω (ξ p.1) p.2`.
   let B := ω.toBilinForm.toContinuousBilinearMap
   refine ⟨fun z y ↦ χ (z, y) * ω (ξ z) y, ?_, ?_, ?_, hX⟩
   · have hB : ContDiff ℝ (⊤ : ℕ∞) fun p : P × V ↦ B (ξ p.1) p.2 :=
