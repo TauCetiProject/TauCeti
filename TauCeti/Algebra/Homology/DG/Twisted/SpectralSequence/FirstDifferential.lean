@@ -56,7 +56,50 @@ open CategoryTheory Limits
 
 namespace TauCeti
 
-universe uR uA uM uP
+universe uR uA uM uP w
+
+/-- **The connecting map of the cokernel sequence of a composite, on classes.** Let `φ : X ⟶ Y` and
+`ψ : Y ⟶ Z` be maps of complexes of modules, `ψ` a monomorphism, `s` an element of `Z` in degree
+`n` and `t` an element of `Y` in degree `n + 1` with `ψ t = d s`, such that the image of `s` in
+`cokernel ψ` is a cycle `x`. Then the image of `t` in `cokernel φ` is a cycle, and it represents
+the image of the class of `x` under the connecting map of
+`cokernel φ ⟶ cokernel (φ ≫ ψ) ⟶ cokernel ψ`. -/
+theorem exists_δ_kernelCokernelSequence_L₃_eq {R : Type*} [Ring R]
+    {X Y Z : CochainComplex (ModuleCat.{w} R) ℤ} (φ : X ⟶ Y) (ψ : Y ⟶ Z) [Mono ψ] (n : ℤ)
+    (s : Z.X n) (t : Y.X (n + 1)) (hst : (ψ.f (n + 1)).hom t = (Z.d n (n + 1)).hom s)
+    (x : (cokernel ψ).X n) (hx : ((cokernel ψ).d n (n + 1)).hom x = 0)
+    (hsx : ((cokernel.π ψ).f n).hom s = x) :
+    ∃ hc : ((cokernel φ).d (n + 1) (n + 1 + 1)).hom (((cokernel.π φ).f (n + 1)).hom t) = 0,
+      ((kernelCokernelCompSequence_snakeInput_L₃_shortExact φ ψ).δ n (n + 1) rfl).hom
+          (((cokernel ψ).homologyπ n).hom ((cokernel ψ).moduleCatCyclesMk x (n + 1) (by simp) hx)) =
+        ((cokernel φ).homologyπ (n + 1)).hom ((cokernel φ).moduleCatCyclesMk
+          (((cokernel.π φ).f (n + 1)).hom t) (n + 1 + 1) (by simp) hc) := by
+  have hS := kernelCokernelCompSequence_snakeInput_L₃_shortExact φ ψ
+  have hLg : cokernel.π (φ ≫ ψ) ≫ (kernelCokernelCompSequence.snakeInput φ ψ).L₃.g =
+      cokernel.π ψ := by
+    simp [kernelCokernelCompSequence.snakeInput]
+  have hLf : cokernel.π φ ≫ (kernelCokernelCompSequence.snakeInput φ ψ).L₃.f =
+      ψ ≫ cokernel.π (φ ≫ ψ) := by
+    simp [kernelCokernelCompSequence.snakeInput]
+  have hx₂ : (((kernelCokernelCompSequence.snakeInput φ ψ).L₃.g.f n).hom
+      (((cokernel.π (φ ≫ ψ)).f n).hom s)) = x :=
+    (congrArg (fun ξ ↦ (ξ.f n).hom s) hLg).trans hsx
+  have hz₁ : (((kernelCokernelCompSequence.snakeInput φ ψ).L₃.f.f (n + 1)).hom
+      (((cokernel.π φ).f (n + 1)).hom t)) =
+      ((cokernel (φ ≫ ψ)).d n (n + 1)).hom (((cokernel.π (φ ≫ ψ)).f n).hom s) := by
+    refine (congrArg (fun ξ ↦ (ξ.f (n + 1)).hom t) hLf).trans ?_
+    -- `ψ ≫ cokernel.π` applied to `t`, written as a composite of elements.
+    change ((cokernel.π (φ ≫ ψ)).f (n + 1)).hom (((ψ).f (n + 1)).hom t) = _
+    rw [hst]
+    exact (HomologicalComplex.Hom.comm_apply _ _ _ _).symm
+  have hcyc : ((cokernel φ).d (n + 1) (n + 1 + 1)).hom (((cokernel.π φ).f (n + 1)).hom t) = 0 :=
+    hS.d_eq_zero_of_f_eq_d_apply n (n + 1) _ _ hz₁ _
+  exact ⟨hcyc, hS.moduleCat_δ_homologyπ n (n + 1) rfl
+    ((cokernel ψ).moduleCatCyclesMk x (n + 1) (by simp) hx)
+    (((cokernel.π (φ ≫ ψ)).f n).hom s)
+    (hx₂.trans (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _).symm)
+    ((cokernel φ).moduleCatCyclesMk (((cokernel.π φ).f (n + 1)).hom t) (n + 1 + 1) (by simp) hcyc)
+    ((congrArg _ (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _)).trans hz₁)⟩
 
 namespace TwistingCocycle
 
@@ -69,49 +112,43 @@ variable {R : Type uR} {A : Type uA} {M : Type uM}
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
   (m : TwistingCocycle 𝒜 d P ind) (hM : IsDGRightModule h ℳ dM)
 
-/-- **The first differential of the index spectral sequence.** On the first page (page `2` in
-Mathlib's numbering), the differential from `(a, b)` to `(a + 2, b - 1)` sends the class of a
-cycle `f` of the graded piece of the generators of index `b + 1` to the class of the restriction
-of the twisted differential of `f`, extended by zero, to the generators of index `b`. -/
-theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
-    (f : (indexGradedPieceComplex hM ind (b + 1)).X (a + b))
-    (hf : ((indexGradedPieceComplex hM ind (b + 1)).d (a + b) (a + b + 1)).hom f = 0) :
-    (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl (by omega)
-        (a + b + 1) (by simp only; omega)).hom
-      ((((m.indexSpectralSequence dM hM).page 2).d (a, b) (a + 2, b - 1)).hom
-        ((m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a, b) b (b + 1) rfl rfl (a + b) rfl).inv
-          (((indexGradedPieceComplex hM ind (b + 1)).homologyπ (a + b)).hom
-            ((indexGradedPieceComplex hM ind (b + 1)).moduleCatCyclesMk f (a + b + 1)
-              (by simp) hf)))) =
-      ((indexGradedPieceComplex hM ind b).homologyπ (a + b + 1)).hom
-        ((indexGradedPieceComplex hM ind b).moduleCatCyclesMk
-          (m.indexGradedPieceD1X hM b (b + 1) (a + b) f) (a + b + 1 + 1) (by simp)
-          (m.d_indexGradedPieceD1X hM b (b + 1) rfl (a + b) f hf)) := by
+/-- The differential of the first page, between the identifications of its source and target with
+the cohomology of the graded pieces, is the connecting map of the short exact sequence of graded
+pieces. -/
+private theorem page_two_d_comp_eq (a b : ℤ) :
+    (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a, b) b (b + 1) rfl rfl (a + b) rfl).inv ≫
+    ((m.indexSpectralSequence dM hM).page 2).d (a, b) (a + 2, b - 1) ≫
+      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl (by omega)
+        (a + b + 1) (by simp only; omega)).hom =
+    HomologicalComplex.homologyMap (m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv
+        (a + b) ≫
+      (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ (a + b) (a + b + 1)
+        rfl ≫
+      HomologicalComplex.homologyMap
+        (m.twistedIndexCokernelIsoOfEq dM hM (b - 1) b (by omega)).hom (a + b + 1) := by
   have key := CochainComplex.spectralSequence_first_page_d_eq
     (m.twistedIndexFiltrationFunctor dM hM) a b
-  have key' :
-      (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a, b) b (b + 1) rfl rfl (a + b) rfl).inv ≫
-      ((m.indexSpectralSequence dM hM).page 2).d (a, b) (a + 2, b - 1) ≫
-        (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl (by omega)
-          (a + b + 1) (by simp only; omega)).hom =
-      HomologicalComplex.homologyMap (m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv
-          (a + b) ≫
-        (TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact _ _).δ (a + b) (a + b + 1)
-          rfl ≫
-        HomologicalComplex.homologyMap
-          (m.twistedIndexCokernelIsoOfEq dM hM (b - 1) b (by omega)).hom (a + b + 1) := by
-    rw [key]
-    simp only [indexSpectralSequenceFirstPageXIsoOfEq_eq, Iso.trans_inv, Iso.trans_hom,
-      HomologicalComplex.homologyMapIso_inv, HomologicalComplex.homologyMapIso_hom,
-      Category.assoc, Iso.inv_hom_id_assoc]
-    congr 1
-    exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Iso.inv_hom_id_assoc _ _))
-  have hcls := congrArg (fun φ ↦ φ.hom (((indexGradedPieceComplex hM ind (b + 1)).homologyπ
-    (a + b)).hom ((indexGradedPieceComplex hM ind (b + 1)).moduleCatCyclesMk f (a + b + 1)
-      (by simp) hf))) key'
-  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hcls
-  refine hcls.trans ?_
-  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  rw [key]
+  simp only [indexSpectralSequenceFirstPageXIsoOfEq_eq, Iso.trans_inv, Iso.trans_hom,
+    HomologicalComplex.homologyMapIso_inv, HomologicalComplex.homologyMapIso_hom,
+    Category.assoc, Iso.inv_hom_id_assoc]
+  congr 1
+  exact (Category.assoc _ _ _).trans (congrArg (_ ≫ ·) (Iso.inv_hom_id_assoc _ _))
+
+/-- **A cycle of a graded piece lifts to the index filtration.** A cycle `f` of the graded piece
+of index `b + 1` is the projection of an element `s` of the `(b + 1)`-st stage of the filtration,
+whose differential is the image of an element `w` of the `b`-th stage projecting to the
+restriction of the twisted differential of `f` to the generators of index `b`. -/
+private theorem exists_lift_indexGradedPieceD1X (a b : ℤ)
+    (f : (indexGradedPieceComplex hM ind (b + 1)).X (a + b))
+    (hf : ((indexGradedPieceComplex hM ind (b + 1)).d (a + b) (a + b + 1)).hom f = 0) :
+    ∃ (s : (m.twistedIndexCochainComplex hM (b + 1)).X (a + b))
+      (w : (m.twistedIndexCochainComplex hM b).X (a + b + 1)),
+      ((m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl)).f (a + b + 1)).hom w =
+        ((m.twistedIndexCochainComplex hM (b + 1)).d (a + b) (a + b + 1)).hom s ∧
+      ((m.twistedIndexCochainComplexProj dM hM (b + 1)).f (a + b)).hom s = f ∧
+      ((m.twistedIndexCochainComplexProj dM hM b).f (a + b + 1)).hom w =
+        m.indexGradedPieceD1X hM b (b + 1) (a + b) f := by
   -- The lift `s'` of `f` to the `(b + 1)`-st stage of the filtration, and the element `w` of the
   -- `b`-th stage whose image is the differential of `s'`.
   set ef := indexExtend R M ind (b + 1) (indexGradedPieceComplexXEquiv hM ind (b + 1) (a + b) f)
@@ -157,110 +194,135 @@ theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
     (indexGradedPieceComplexXEquiv hM ind b (a + b + 1)).injective (Subtype.ext (by
       rw [m.twistedIndexCochainComplexProj_f_apply, hw,
         indexGradedPieceComplexXEquiv_indexGradedPieceD1X]))
-  -- The connecting map of the short exact sequence of graded pieces, computed on `s'`.
-  set Fn := m.twistedIndexFiltrationFunctor dM hM with hFn
-  have hS := TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
-    (Fn.map (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
-      (show b = b - 1 + 1 by lia))))
-    (Fn.map (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl)))
-  let s := ((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv.f (a + b)).hom s'
-  let t := ((m.twistedIndexFiltrationFunctorObjIso dM hM b).inv.f (a + b + 1)).hom w
-  have hz₃ : ((cokernel (Fn.map (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one
-      (show b = b from rfl) rfl)))).d (a + b) (a + b + 1))
-        (((m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv.f (a + b)).hom f) = 0 := by
+  exact ⟨s', w, hofLE, hprojs, hprojw⟩
+
+/-- The transition map of the index filtration sends the image of `w` to the differential of the
+image of `s`, when it sends `w` to the differential of `s`. -/
+private theorem twistedIndexFiltrationFunctor_map_objIso_inv_apply (a b : ℤ)
+    (s' : (m.twistedIndexCochainComplex hM (b + 1)).X (a + b))
+    (w : (m.twistedIndexCochainComplex hM b).X (a + b + 1))
+    (hofLE : ((m.twistedIndexCochainComplexMap hM (Int.le_add_one le_rfl)).f (a + b + 1)).hom w =
+      ((m.twistedIndexCochainComplex hM (b + 1)).d (a + b) (a + b + 1)).hom s') :
+    (((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl))).f
+        (a + b + 1)).hom
+        (((m.twistedIndexFiltrationFunctorObjIso dM hM b).inv.f (a + b + 1)).hom w) =
+      (((m.twistedIndexFiltrationFunctor dM hM).obj ((b + 1 : ℤ) : EInt)).d (a + b) (a + b + 1)).hom
+        (((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv.f (a + b)).hom s') := by
+  set Fn := m.twistedIndexFiltrationFunctor dM hM
+  set s := ((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv.f (a + b)).hom s'
+  set t := ((m.twistedIndexFiltrationFunctorObjIso dM hM b).inv.f (a + b + 1)).hom w
+  have hinj : Function.Injective
+      ((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).hom.f (a + b + 1)).hom :=
+    (ModuleCat.mono_iff_injective _).1 inferInstance
+  refine hinj ?_
+  have h₁ := congrArg (fun φ ↦ (φ.f (a + b + 1)).hom t)
+    (m.twistedIndexFiltrationFunctor_map_objIso_hom dM hM b)
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at h₁
+  rw [h₁, show ((m.twistedIndexFiltrationFunctorObjIso dM hM b).hom.f (a + b + 1)).hom t = w from
+    congrArg (fun φ ↦ (φ.f (a + b + 1)).hom w)
+      (m.twistedIndexFiltrationFunctorObjIso dM hM b).inv_hom_id, hofLE,
+    HomologicalComplex.Hom.comm_apply]
+  exact (congrArg (fun φ ↦ (φ.f (a + b + 1)).hom
+    (((m.twistedIndexCochainComplex hM (b + 1)).d (a + b) (a + b + 1)).hom s'))
+    (m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv_hom_id).symm
+
+/-- The image in the cokernel of the transition map of the image of `s'` is the image of `f`, when
+`s'` projects to `f` in the graded piece. -/
+private theorem cokernel_π_objIso_inv_apply (a b : ℤ)
+    (s' : (m.twistedIndexCochainComplex hM (b + 1)).X (a + b))
+    (f : (indexGradedPieceComplex hM ind (b + 1)).X (a + b))
+    (hprojs : ((m.twistedIndexCochainComplexProj dM hM (b + 1)).f (a + b)).hom s' = f) :
+    ((cokernel.π ((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl)))).f
+        (a + b)).hom
+        (((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv.f (a + b)).hom s') =
+      ((m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv.f (a + b)).hom f := by
+  set Fn := m.twistedIndexFiltrationFunctor dM hM
+  set s := ((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv.f (a + b)).hom s'
+  have h₁ := congrArg (fun φ ↦ (φ.f (a + b)).hom s)
+    (m.cokernel_π_comp_twistedIndexCokernelIsoOfEq_hom dM hM b (b + 1) rfl)
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at h₁
+  rw [show ((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).hom.f (a + b)).hom s = s' from
+    congrArg (fun φ ↦ (φ.f (a + b)).hom s')
+      (m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv_hom_id, hprojs] at h₁
+  have h₂ := congrArg (fun φ ↦ (φ.f (a + b)).hom (((cokernel.π (Fn.map (homOfLE
+    (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl)))).f
+        (a + b)).hom s))
+    (m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).hom_inv_id
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
+    HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply] at h₂
+  rw [h₁] at h₂
+  exact h₂.symm
+
+/-- The image in the cokernel of the inclusion `F_{b-1} ⟶ F_b` of the image of `w` is the
+restriction of the twisted differential of `f`, when `w` projects to it in the graded piece. -/
+private theorem cokernel_π_objIso_inv_apply_d1X (a b : ℤ)
+    (w : (m.twistedIndexCochainComplex hM b).X (a + b + 1))
+    (f : (indexGradedPieceComplex hM ind (b + 1)).X (a + b))
+    (hprojw : ((m.twistedIndexCochainComplexProj dM hM b).f (a + b + 1)).hom w =
+      m.indexGradedPieceD1X hM b (b + 1) (a + b) f) :
+    ((m.twistedIndexCokernelIsoOfEq dM hM (b - 1) b (by omega)).hom.f (a + b + 1)).hom
+      (((cokernel.π ((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
+      (show b = b - 1 + 1 by lia))))).f (a + b + 1)).hom
+        (((m.twistedIndexFiltrationFunctorObjIso dM hM b).inv.f (a + b + 1)).hom w)) =
+      m.indexGradedPieceD1X hM b (b + 1) (a + b) f := by
+  set Fn := m.twistedIndexFiltrationFunctor dM hM
+  set t := ((m.twistedIndexFiltrationFunctorObjIso dM hM b).inv.f (a + b + 1)).hom w
+  have h₁ := congrArg (fun φ ↦ (φ.f (a + b + 1)).hom t)
+    (m.cokernel_π_comp_twistedIndexCokernelIsoOfEq_hom dM hM (b - 1) b (by omega))
+  simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at h₁
+  rw [show ((m.twistedIndexFiltrationFunctorObjIso dM hM b).hom.f (a + b + 1)).hom t = w from
+    congrArg (fun φ ↦ (φ.f (a + b + 1)).hom w)
+      (m.twistedIndexFiltrationFunctorObjIso dM hM b).inv_hom_id] at h₁
+  exact h₁.trans hprojw
+
+/-- **The first differential of the index spectral sequence.** On the first page (page `2` in
+Mathlib's numbering), the differential from `(a, b)` to `(a + 2, b - 1)` sends the class of a
+cycle `f` of the graded piece of the generators of index `b + 1` to the class of the restriction
+of the twisted differential of `f`, extended by zero, to the generators of index `b`. -/
+theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
+    (f : (indexGradedPieceComplex hM ind (b + 1)).X (a + b))
+    (hf : ((indexGradedPieceComplex hM ind (b + 1)).d (a + b) (a + b + 1)).hom f = 0) :
+    (m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a + 2, b - 1) (b - 1) b rfl (by omega)
+        (a + b + 1) (by simp only; omega)).hom
+      ((((m.indexSpectralSequence dM hM).page 2).d (a, b) (a + 2, b - 1)).hom
+        ((m.indexSpectralSequenceFirstPageXIsoOfEq dM hM (a, b) b (b + 1) rfl rfl (a + b) rfl).inv
+          (((indexGradedPieceComplex hM ind (b + 1)).homologyπ (a + b)).hom
+            ((indexGradedPieceComplex hM ind (b + 1)).moduleCatCyclesMk f (a + b + 1)
+              (by simp) hf)))) =
+      ((indexGradedPieceComplex hM ind b).homologyπ (a + b + 1)).hom
+        ((indexGradedPieceComplex hM ind b).moduleCatCyclesMk
+          (m.indexGradedPieceD1X hM b (b + 1) (a + b) f) (a + b + 1 + 1) (by simp)
+          (m.d_indexGradedPieceD1X hM b (b + 1) rfl (a + b) f hf)) := by
+  have hcls := congrArg (fun φ ↦ φ.hom (((indexGradedPieceComplex hM ind (b + 1)).homologyπ
+    (a + b)).hom ((indexGradedPieceComplex hM ind (b + 1)).moduleCatCyclesMk f (a + b + 1)
+      (by simp) hf))) (m.page_two_d_comp_eq hM a b)
+  simp only [ModuleCat.hom_comp, LinearMap.comp_apply] at hcls
+  refine hcls.trans ?_
+  rw [HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk]
+  obtain ⟨s', w, hofLE, hprojs, hprojw⟩ := m.exists_lift_indexGradedPieceD1X hM a b f hf
+  have hz₃ : ((cokernel ((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl)))).d
+        (a + b) (a + b + 1))
+      (((m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv.f (a + b)).hom f) = 0 := by
     rw [HomologicalComplex.Hom.comm_apply]
     exact (congrArg _ hf).trans (map_zero _)
-  -- `s` projects to the image of `f` in the cokernel.
-  have hπs : ((cokernel.π (Fn.map (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one
-      (show b = b from rfl) rfl)))).f (a + b)).hom s =
-      ((m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv.f (a + b)).hom f := by
-    have h₁ := congrArg (fun φ ↦ (φ.f (a + b)).hom s)
-      (m.cokernel_π_comp_twistedIndexCokernelIsoOfEq_hom dM hM b (b + 1) rfl)
-    simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at h₁
-    rw [show ((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).hom.f (a + b)).hom s = s' from
-      congrArg (fun φ ↦ (φ.f (a + b)).hom s')
-        (m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv_hom_id, hprojs] at h₁
-    have h₂ := congrArg (fun φ ↦ (φ.f (a + b)).hom (((cokernel.π (Fn.map (homOfLE
-      (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl)))).f (a + b)).hom s))
-      (m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).hom_inv_id
-    simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply,
-      HomologicalComplex.id_f, ModuleCat.hom_id, LinearMap.id_apply] at h₂
-    rw [h₁] at h₂
-    exact h₂.symm
-  -- `t` projects to the restriction of the twisted differential of `f`.
-  have hπt : ((m.twistedIndexCokernelIsoOfEq dM hM (b - 1) b (by omega)).hom.f (a + b + 1)).hom
-      (((cokernel.π (Fn.map (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one
-        (show b - 1 = b - 1 from rfl) (show b = b - 1 + 1 by lia))))).f (a + b + 1)).hom t) =
-      m.indexGradedPieceD1X hM b (b + 1) (a + b) f := by
-    have h₁ := congrArg (fun φ ↦ (φ.f (a + b + 1)).hom t)
-      (m.cokernel_π_comp_twistedIndexCokernelIsoOfEq_hom dM hM (b - 1) b (by omega))
-    simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at h₁
-    rw [show ((m.twistedIndexFiltrationFunctorObjIso dM hM b).hom.f (a + b + 1)).hom t = w from
-      congrArg (fun φ ↦ (φ.f (a + b + 1)).hom w)
-        (m.twistedIndexFiltrationFunctorObjIso dM hM b).inv_hom_id] at h₁
-    exact h₁.trans hprojw
-  -- The transition map sends `t` to the differential of `s`.
-  have hFt : ((Fn.map (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one
-      (show b = b from rfl) rfl))).f (a + b + 1)).hom t = ((Fn.obj ((b + 1 : ℤ) : EInt)).d
-        (a + b) (a + b + 1)).hom s := by
-    have hinj : Function.Injective
-        ((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).hom.f (a + b + 1)).hom :=
-      (ModuleCat.mono_iff_injective _).1 inferInstance
-    refine hinj ?_
-    have h₁ := congrArg (fun φ ↦ (φ.f (a + b + 1)).hom t)
-      (m.twistedIndexFiltrationFunctor_map_objIso_hom dM hM b)
-    simp only [HomologicalComplex.comp_f, ModuleCat.hom_comp, LinearMap.comp_apply] at h₁
-    rw [h₁, show ((m.twistedIndexFiltrationFunctorObjIso dM hM b).hom.f (a + b + 1)).hom t = w from
-      congrArg (fun φ ↦ (φ.f (a + b + 1)).hom w)
-        (m.twistedIndexFiltrationFunctorObjIso dM hM b).inv_hom_id, hofLE,
-      HomologicalComplex.Hom.comm_apply]
-    exact (congrArg (fun φ ↦ (φ.f (a + b + 1)).hom
-      (((m.twistedIndexCochainComplex hM (b + 1)).d (a + b) (a + b + 1)).hom s'))
-      (m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv_hom_id).symm
-  set g₁ : ((b - 1 : ℤ) : EInt) ⟶ ((b : ℤ) : EInt) := homOfLE
-    (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
-      (show b = b - 1 + 1 by lia)) with hg₁
-  set g₂ : ((b : ℤ) : EInt) ⟶ ((b + 1 : ℤ) : EInt) := homOfLE
-    (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl) with hg₂
-  have hLg : cokernel.π (Fn.map g₁ ≫ Fn.map g₂) ≫
-      (kernelCokernelCompSequence.snakeInput (Fn.map g₁) (Fn.map g₂)).L₃.g =
-        cokernel.π (Fn.map g₂) := by
-    simp [kernelCokernelCompSequence.snakeInput]
-  have hLf : cokernel.π (Fn.map g₁) ≫
-      (kernelCokernelCompSequence.snakeInput (Fn.map g₁) (Fn.map g₂)).L₃.f =
-        Fn.map g₂ ≫ cokernel.π (Fn.map g₁ ≫ Fn.map g₂) := by
-    simp [kernelCokernelCompSequence.snakeInput]
-  have hx₂ : (((kernelCokernelCompSequence.snakeInput (Fn.map g₁) (Fn.map g₂)).L₃.g.f
-      (a + b)).hom (((cokernel.π (Fn.map g₁ ≫ Fn.map g₂)).f (a + b)).hom s)) =
-      ((m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv.f (a + b)).hom f :=
-    (congrArg (fun φ ↦ (φ.f (a + b)).hom s) hLg).trans hπs
-  have hz₁ : (((kernelCokernelCompSequence.snakeInput (Fn.map g₁) (Fn.map g₂)).L₃.f.f
-      (a + b + 1)).hom (((cokernel.π (Fn.map g₁)).f (a + b + 1)).hom t)) =
-      ((cokernel (Fn.map g₁ ≫ Fn.map g₂)).d (a + b) (a + b + 1)).hom
-        (((cokernel.π (Fn.map g₁ ≫ Fn.map g₂)).f (a + b)).hom s) := by
-    refine (congrArg (fun φ ↦ (φ.f (a + b + 1)).hom t) hLf).trans ?_
-    -- `Fn.map g₂ ≫ cokernel.π` applied to `t`, written as a composite of elements.
-    change ((cokernel.π (Fn.map g₁ ≫ Fn.map g₂)).f (a + b + 1)).hom
-      (((Fn.map g₂).f (a + b + 1)).hom t) = _
-    rw [hFt]
-    exact (HomologicalComplex.Hom.comm_apply _ _ _ _).symm
-  have hcyc₁ : ((cokernel (Fn.map g₁)).d (a + b + 1) (a + b + 1 + 1))
-      (((cokernel.π (Fn.map g₁)).f (a + b + 1)).hom t) = 0 :=
-    hS.d_eq_zero_of_f_eq_d_apply (a + b) (a + b + 1) _ _ hz₁ _
-  have hδ := hS.moduleCat_δ_homologyπ (a + b) (a + b + 1) rfl
-    ((cokernel (Fn.map g₂)).moduleCatCyclesMk
-      (((m.twistedIndexCokernelIsoOfEq dM hM b (b + 1) rfl).inv.f (a + b)).hom f) (a + b + 1)
-        (by simp) hz₃)
-    (((cokernel.π (Fn.map g₁ ≫ Fn.map g₂)).f (a + b)).hom s)
-    (hx₂.trans (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _).symm)
-    ((cokernel (Fn.map g₁)).moduleCatCyclesMk (((cokernel.π (Fn.map g₁)).f (a + b + 1)).hom t)
-      (a + b + 1 + 1) (by simp) hcyc₁)
-    ((congrArg _ (HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _)).trans hz₁)
+  obtain ⟨hc, hδ⟩ := exists_δ_kernelCokernelSequence_L₃_eq
+    ((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
+      (show b = b - 1 + 1 by lia))))
+    ((m.twistedIndexFiltrationFunctor dM hM).map
+        (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl))) (a + b)
+    (((m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv.f (a + b)).hom s')
+    (((m.twistedIndexFiltrationFunctorObjIso dM hM b).inv.f (a + b + 1)).hom w)
+    (m.twistedIndexFiltrationFunctor_map_objIso_inv_apply hM a b s' w hofLE) _ hz₃
+    (m.cokernel_π_objIso_inv_apply hM a b s' f hprojs)
   refine (congrArg (HomologicalComplex.homologyMap
     (m.twistedIndexCokernelIsoOfEq dM hM (b - 1) b (by omega)).hom (a + b + 1)).hom hδ).trans ?_
-  refine (HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk
-    (K := cokernel (Fn.map g₁)) _ _ _ _ hcyc₁).trans ?_
-  simp only [hπt]
+  refine (HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk _ _ _ _ hc).trans ?_
+  simp only [m.cokernel_π_objIso_inv_apply_d1X hM a b w f hprojw]
 
 section Components
 
@@ -299,7 +361,6 @@ theorem homologyMap_indexGradedPieceEval_page_two_d (a : ℤ)
   exact HomologicalComplex.homologyMap_homologyπ_moduleCatCyclesMk _ _ _ _ _
 
 end Components
-
 
 end TwistingCocycle
 
