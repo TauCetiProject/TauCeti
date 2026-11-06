@@ -369,7 +369,7 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
         ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) :=
         setLIntegral_endStrip_fst q ((ENNReal.continuous_ofReal.comp
           (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
-            (by fun_prop))).measurable.mul_const _)
+            (continuous_const.mul continuous_id |>.sub continuous_const))).measurable.mul_const _)
     _ ≤ ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) :=
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal (B q) := by
