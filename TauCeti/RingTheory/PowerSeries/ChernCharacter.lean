@@ -33,14 +33,14 @@ identities for the Chern character of vector bundles.
 * `TauCeti.chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial`,
   `TauCeti.C_factorial_mul_chernCharacterPolynomial`: `chₖ` is the rational Newton polynomial
   divided by `k!`, and `k! chₖ` is the integral Newton polynomial.
-* `TauCeti.aeval_multiset_esymm_chernCharacterPolynomial`: for a multiset `s` of `n` roots,
+* `Multiset.aeval_esymm_chernCharacterPolynomial`: for a multiset `s` of `n` roots,
   `chₖ(e₁(s), …, eₙ(s)) = (∑_{x ∈ s} xᵏ) / k!`.
-* `TauCeti.mk_aeval_multiset_esymm_chernCharacterPolynomial`: the generating function
+* `Multiset.mk_aeval_esymm_chernCharacterPolynomial`: the generating function
   `∑ₖ chₖ(e₁(s), …, eₙ(s)) tᵏ = ∑_{x ∈ s} exp(x t)`.
-* `TauCeti.aeval_multiset_esymm_add_chernCharacterPolynomial`: additivity on a union of roots.
-* `TauCeti.aeval_multiset_esymm_product_chernCharacterPolynomial`: multiplicativity on the
+* `Multiset.aeval_esymm_add_chernCharacterPolynomial`: additivity on a union of roots.
+* `Multiset.aeval_esymm_product_chernCharacterPolynomial`: multiplicativity on the
   pairwise sums of two families of roots.
-* `TauCeti.aeval_multiset_esymm_map_add_chernCharacterPolynomial`: twisting by the root of a line.
+* `Multiset.aeval_esymm_map_add_chernCharacterPolynomial`: twisting by the root of a line.
 * `TauCeti.aeval_neg_one_pow_mul_chernCharacterPolynomial`: replacing `cⱼ` by `(-1)ʲ cⱼ`
   multiplies `chₖ` by `(-1)ᵏ`.
 * `TauCeti.chernCharacterPolynomial_zero_right`, `TauCeti.chernCharacterPolynomial_one_right`,
@@ -121,23 +121,23 @@ variable {S : Type*} [CommSemiring S] [Algebra ℚ S]
 
 /-- **Root description of the Chern character polynomial**: for a multiset `s` of `n` roots in a
 commutative `ℚ`-algebra, `chₖ(e₁(s), …, eₙ(s)) = (∑_{x ∈ s} xᵏ) / k!`. -/
-theorem aeval_multiset_esymm_chernCharacterPolynomial (s : Multiset S) (hs : s.card = n) :
+theorem _root_.Multiset.aeval_esymm_chernCharacterPolynomial (s : Multiset S) (hs : s.card = n) :
     aeval (fun j : Fin n => s.esymm (j + 1)) (chernCharacterPolynomial n k) =
       algebraMap ℚ S (k ! : ℚ)⁻¹ * (s.map (· ^ k)).sum := by
   rw [chernCharacterPolynomial_eq_C_mul_newtonMvPolynomial, map_mul, aeval_C,
-    aeval_multiset_esymm_newtonMvPolynomial s hs]
+    Multiset.aeval_esymm_newtonMvPolynomial s hs]
 
 /-- **Additivity of the Chern character**: on the union of a family `s` of `n` roots and a family
 `t` of `m` roots, the Chern character polynomial is the sum of its values on `s` and on `t`. This
 is the root form of `ch(E ⊕ F) = ch(E) + ch(F)`. -/
-theorem aeval_multiset_esymm_add_chernCharacterPolynomial {m : ℕ} (s t : Multiset S)
+theorem _root_.Multiset.aeval_esymm_add_chernCharacterPolynomial {m : ℕ} (s t : Multiset S)
     (hs : s.card = n) (ht : t.card = m) :
     aeval (fun j : Fin (n + m) => (s + t).esymm (j + 1)) (chernCharacterPolynomial (n + m) k) =
       aeval (fun j : Fin n => s.esymm (j + 1)) (chernCharacterPolynomial n k) +
         aeval (fun j : Fin m => t.esymm (j + 1)) (chernCharacterPolynomial m k) := by
-  rw [aeval_multiset_esymm_chernCharacterPolynomial _ (by simp [hs, ht]),
-    aeval_multiset_esymm_chernCharacterPolynomial s hs,
-    aeval_multiset_esymm_chernCharacterPolynomial t ht, Multiset.map_add, Multiset.sum_add,
+  rw [Multiset.aeval_esymm_chernCharacterPolynomial _ (by simp [hs, ht]),
+    Multiset.aeval_esymm_chernCharacterPolynomial s hs,
+    Multiset.aeval_esymm_chernCharacterPolynomial t ht, Multiset.map_add, Multiset.sum_add,
     mul_add]
 
 /-- **Stability of the Chern character**: in positive degree, setting `cₙ₊₁ = 0` in the Chern
@@ -156,12 +156,12 @@ variable {S : Type*} [CommRing S] [Algebra ℚ S]
 
 /-- **The Chern character is the sum of the exponentials of the roots**: for a multiset `s` of
 `n` roots in a commutative `ℚ`-algebra, `∑ₖ chₖ(e₁(s), …, eₙ(s)) tᵏ = ∑_{x ∈ s} exp(x t)`. -/
-theorem mk_aeval_multiset_esymm_chernCharacterPolynomial (s : Multiset S) (hs : s.card = n) :
+theorem _root_.Multiset.mk_aeval_esymm_chernCharacterPolynomial (s : Multiset S) (hs : s.card = n) :
     PowerSeries.mk (fun k =>
         aeval (fun j : Fin n => s.esymm (j + 1)) (chernCharacterPolynomial n k)) =
       (s.map fun x => rescale x (exp S)).sum := by
   ext k
-  rw [PowerSeries.coeff_mk, aeval_multiset_esymm_chernCharacterPolynomial s hs, map_multiset_sum,
+  rw [PowerSeries.coeff_mk, Multiset.aeval_esymm_chernCharacterPolynomial s hs, map_multiset_sum,
     Multiset.map_map, ← Multiset.sum_map_mul_left]
   refine congrArg Multiset.sum (Multiset.map_congr rfl fun x _ => ?_)
   simp [PowerSeries.coeff_rescale, PowerSeries.coeff_exp, mul_comm]
@@ -170,14 +170,14 @@ theorem mk_aeval_multiset_esymm_chernCharacterPolynomial (s : Multiset S) (hs : 
 `m` roots, the Chern character polynomial on the `n * m` pairwise sums `x + y`, `x ∈ s`, `y ∈ t`,
 is the convolution of its values on `s` and on `t`. The Chern roots of a tensor product `E ⊗ F`
 are these pairwise sums, so this is the root form of `ch(E ⊗ F) = ch(E) ch(F)`. -/
-theorem aeval_multiset_esymm_product_chernCharacterPolynomial {m : ℕ} (s t : Multiset S)
+theorem _root_.Multiset.aeval_esymm_product_chernCharacterPolynomial {m : ℕ} (s t : Multiset S)
     (hs : s.card = n) (ht : t.card = m) :
     aeval (fun j : Fin (n * m) => ((s ×ˢ t).map fun p => p.1 + p.2).esymm (j + 1))
         (chernCharacterPolynomial (n * m) k) =
       ∑ p ∈ antidiagonal k,
         aeval (fun j : Fin n => s.esymm (j + 1)) (chernCharacterPolynomial n p.1) *
           aeval (fun j : Fin m => t.esymm (j + 1)) (chernCharacterPolynomial m p.2) := by
-  have h := congrArg (PowerSeries.coeff k) (mk_aeval_multiset_esymm_chernCharacterPolynomial
+  have h := congrArg (PowerSeries.coeff k) (Multiset.mk_aeval_esymm_chernCharacterPolynomial
     (n := n * m) ((s ×ˢ t).map fun p => p.1 + p.2) (by simp [hs, ht]))
   rw [PowerSeries.coeff_mk] at h
   rw [h]
@@ -185,30 +185,29 @@ theorem aeval_multiset_esymm_product_chernCharacterPolynomial {m : ℕ} (s t : M
   simp only [SProd.sprod, Multiset.product, Multiset.map_bind, Multiset.sum_bind,
     Multiset.map_map, Function.comp_def, ← PowerSeries.exp_mul_exp_eq_exp_add,
     Multiset.sum_map_mul_left, Multiset.sum_map_mul_right]
-  rw [← mk_aeval_multiset_esymm_chernCharacterPolynomial s hs,
-    ← mk_aeval_multiset_esymm_chernCharacterPolynomial t ht, PowerSeries.coeff_mul]
+  rw [← Multiset.mk_aeval_esymm_chernCharacterPolynomial s hs,
+    ← Multiset.mk_aeval_esymm_chernCharacterPolynomial t ht, PowerSeries.coeff_mul]
   simp only [PowerSeries.coeff_mk]
 
 /-- **The Chern character of a line twist**: for a family `s` of `n` roots and the root `y` of a
 line bundle, the Chern character polynomial on the shifted roots `x + y` is the convolution of
 its values on `s` with the coefficients `yʲ / j!` of `exp y`. This is the root form of
 `ch(E ⊗ L) = ch(E) exp(c₁(L))`. -/
-theorem aeval_multiset_esymm_map_add_chernCharacterPolynomial (s : Multiset S)
+theorem _root_.Multiset.aeval_esymm_map_add_chernCharacterPolynomial (s : Multiset S)
     (hs : s.card = n) (y : S) :
     aeval (fun j : Fin n => (s.map (· + y)).esymm (j + 1)) (chernCharacterPolynomial n k) =
       ∑ p ∈ antidiagonal k,
         aeval (fun j : Fin n => s.esymm (j + 1)) (chernCharacterPolynomial n p.1) *
           (algebraMap ℚ S (p.2 ! : ℚ)⁻¹ * y ^ p.2) := by
-  have h := congrArg (PowerSeries.coeff k)
-    (mk_aeval_multiset_esymm_chernCharacterPolynomial (s.map (· + y)) (by simpa using hs))
-  rw [PowerSeries.coeff_mk] at h
-  rw [h, Multiset.map_map, Function.comp_def]
-  simp_rw [← PowerSeries.exp_mul_exp_eq_exp_add]
-  rw [Multiset.sum_map_mul_right, ← mk_aeval_multiset_esymm_chernCharacterPolynomial s hs,
-    PowerSeries.coeff_mul]
+  -- This is multiplicativity with the single root `y` as the second family.
+  have h := s.aeval_esymm_product_chernCharacterPolynomial (k := k) (m := 1) {y} hs rfl
+  rw [mul_one] at h
+  have hs' : ((s ×ˢ {y}).map fun p => p.1 + p.2) = s.map (· + y) := by
+    simp [SProd.sprod, Multiset.product]
+  rw [← hs', h]
   refine Finset.sum_congr rfl fun p _ => ?_
-  rw [PowerSeries.coeff_mk, PowerSeries.coeff_rescale, PowerSeries.coeff_exp, one_div,
-    mul_comm (y ^ p.2)]
+  rw [Multiset.aeval_esymm_chernCharacterPolynomial (n := 1) {y} rfl]
+  simp
 
 /-- **The Chern character of the dual**: replacing each Chern class `cⱼ` by `(-1)ʲ cⱼ`, as
 passing to the dual bundle does, multiplies `chₖ` by `(-1)ᵏ`. -/

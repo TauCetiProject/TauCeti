@@ -9,6 +9,8 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
 public import TauCeti.RingTheory.MvPolynomial.Symmetric.Elementary
 import Mathlib.Data.Multiset.Fintype
 import Mathlib.RingTheory.Polynomial.Vieta
+import TauCeti.RingTheory.MvPolynomial.Symmetric.FundamentalTheorem
+import TauCeti.RingTheory.MvPolynomial.Symmetric.NewtonIdentities
 
 /-!
 # Newton polynomials
@@ -40,7 +42,7 @@ into `(-1)ʲ cⱼ`, and the Newton polynomial changes by the sign `(-1)ᵏ`.
   polynomial whose value at `e₁, …, eₙ` is the power sum `pₖ`.
 * `TauCeti.map_newtonMvPolynomial`: the Newton polynomial is compatible with every change of
   coefficients; in particular it is the image of the integral Newton polynomial.
-* `TauCeti.aeval_multiset_esymm_newtonMvPolynomial`: for a multiset `s` of `n` roots,
+* `Multiset.aeval_esymm_newtonMvPolynomial`: for a multiset `s` of `n` roots,
   `sₖ(e₁(s), …, eₙ(s)) = ∑_{x ∈ s} xᵏ`.
 * `TauCeti.aeval_neg_one_pow_mul_newtonMvPolynomial`: replacing each `eⱼ` by `(-1)ʲ eⱼ`
   multiplies `sₖ` by `(-1)ᵏ`.
@@ -113,7 +115,7 @@ variable {R n k} {S : Type*} [CommSemiring S] [Algebra R S]
 
 /-- **Root description of the Newton polynomial**: for a multiset `s` of `n` roots in a
 commutative `R`-algebra, `sₖ(e₁(s), …, eₙ(s)) = ∑_{x ∈ s} xᵏ`. -/
-theorem aeval_multiset_esymm_newtonMvPolynomial (s : Multiset S) (hs : s.card = n) :
+theorem _root_.Multiset.aeval_esymm_newtonMvPolynomial (s : Multiset S) (hs : s.card = n) :
     aeval (fun j : Fin n => s.esymm (j + 1)) (newtonMvPolynomial R n k) = (s.map (· ^ k)).sum := by
   classical
   let e : Fin n ≃ s.ToType := Fintype.equivOfCardEq (by simp [hs])
@@ -123,7 +125,7 @@ theorem aeval_multiset_esymm_newtonMvPolynomial (s : Multiset S) (hs : s.card = 
   have h : (fun j : Fin n => (univ.val.map fun i => (e i : S)).esymm (j + 1)) =
       fun j : Fin n => aeval (fun i => (e i : S)) (esymm (Fin n) R (j + 1)) := by
     simp [aeval_esymm_eq_multiset_esymm]
-  rw [← hx, h, ← comp_aeval_apply, aeval_esymm_newtonMvPolynomial, psum, map_sum,
+  rw [← hx, h, ← comp_aeval_apply, TauCeti.aeval_esymm_newtonMvPolynomial, psum, map_sum,
     Finset.sum_eq_multiset_sum, Multiset.map_map]
   simp only [Function.comp_def, map_pow, aeval_X]
 
@@ -131,23 +133,14 @@ end Roots
 
 variable {R n k}
 
-/-- To identify a polynomial in `n` variables, it suffices to compute its value at the
-elementary symmetric polynomials of the variables, viewed as a multiset of roots. -/
-private theorem eq_of_aeval_multiset_esymm_X {p q : MvPolynomial (Fin n) R}
-    (h : aeval (fun j : Fin n => (univ.val.map (X (R := R) (σ := Fin n))).esymm (j + 1)) p =
-      aeval (fun j : Fin n => (univ.val.map (X (R := R) (σ := Fin n))).esymm (j + 1)) q) :
-    p = q := by
-  refine esymmAlgHom_injective R (Fintype.card_fin n).ge (Subtype.ext ?_)
-  simpa [esymmAlgHom_apply, esymm_eq_multiset_esymm] using h
-
 /-- A polynomial whose value at the elementary symmetric functions of the variables is their
 power sum `pₖ` is the Newton polynomial. -/
 private theorem eq_newtonMvPolynomial_of_aeval {p : MvPolynomial (Fin n) R}
     (h : aeval (fun j : Fin n => (univ.val.map (X (R := R) (σ := Fin n))).esymm (j + 1)) p =
       ((univ.val.map (X (R := R) (σ := Fin n))).map (· ^ k)).sum) :
     p = newtonMvPolynomial R n k :=
-  eq_of_aeval_multiset_esymm_X <| by
-    rw [h, aeval_multiset_esymm_newtonMvPolynomial _ (by simp)]
+  aeval_multiset_esymm_X_injective R (Fintype.card_fin n).ge <| by
+    rw [h, Multiset.aeval_esymm_newtonMvPolynomial _ (by simp)]
 
 /-- **The Newton polynomial of the dual**: replacing each `eⱼ` by `(-1)ʲ eⱼ` multiplies the
 Newton polynomial `sₖ` by `(-1)ᵏ`. For the Chern classes of a complex vector bundle, this is the
@@ -161,12 +154,12 @@ theorem aeval_neg_one_pow_mul_newtonMvPolynomial {S : Type*} [CommRing S] [Algeb
   -- The identity holds universally, with the variables in place of `c`.
   have hX : aeval (fun j : Fin n => (-1) ^ (j.val + 1) * X j) (newtonMvPolynomial R n k) =
       (-1) ^ k * newtonMvPolynomial R n k := by
-    refine eq_of_aeval_multiset_esymm_X ?_
+    refine aeval_multiset_esymm_X_injective R (Fintype.card_fin n).ge ?_
     rw [comp_aeval_apply]
     simp only [map_mul, map_pow, map_neg, map_one, aeval_X]
     simp_rw [← Multiset.esymm_neg]
-    rw [aeval_multiset_esymm_newtonMvPolynomial _ (by simp),
-      aeval_multiset_esymm_newtonMvPolynomial _ hs, Multiset.map_map, ← Multiset.sum_map_mul_left]
+    rw [Multiset.aeval_esymm_newtonMvPolynomial _ (by simp),
+      Multiset.aeval_esymm_newtonMvPolynomial _ hs, Multiset.map_map, ← Multiset.sum_map_mul_left]
     exact congrArg Multiset.sum (Multiset.map_congr rfl fun x _ => neg_pow x k)
   simpa [comp_aeval_apply] using congrArg (aeval c) hX
 
@@ -191,25 +184,11 @@ theorem aeval_snoc_zero_newtonMvPolynomial {S : Type*} [CommSemiring S] [Algebra
       · rw [Fin.snoc_last, map_zero, Fin.val_last, Multiset.esymm_cons_zero,
           Multiset.esymm_of_card_lt (by simp)]
       · rw [Fin.snoc_castSucc, aeval_X, Fin.val_castSucc, Multiset.esymm_cons_zero]
-    rw [comp_aeval_apply, h, aeval_multiset_esymm_newtonMvPolynomial _ (by simp)]
+    rw [comp_aeval_apply, h, Multiset.aeval_esymm_newtonMvPolynomial _ (by simp)]
     simp [zero_pow hk]
   rw [← hX, comp_aeval_apply]
   refine congrArg (fun f => aeval f _) (funext fun j => ?_)
   refine Fin.lastCases ?_ (fun i => ?_) j <;> simp
-
-/-- The power sums of degree `1` to `3` of a multiset, in terms of its elementary symmetric
-functions. -/
-private theorem multiset_sum_map_pow_le_three {S : Type*} [CommRing S] (s : Multiset S) :
-    (s.map (· ^ 1)).sum = s.esymm 1 ∧
-    (s.map (· ^ 2)).sum = s.esymm 1 ^ 2 - 2 * s.esymm 2 ∧
-    (s.map (· ^ 3)).sum = s.esymm 1 ^ 3 - 3 * s.esymm 1 * s.esymm 2 + 3 * s.esymm 3 := by
-  induction s using Multiset.induction_on with
-  | empty => simp [Multiset.esymm, Multiset.powersetCard_zero_right]
-  | cons x s ih =>
-    obtain ⟨h1, h2, h3⟩ := ih
-    simp only [Multiset.map_cons, Multiset.sum_cons, Multiset.esymm_cons, Multiset.esymm_zero,
-      h1, h2, h3]
-    refine ⟨?_, ?_, ?_⟩ <;> ring
 
 variable (R n)
 
@@ -221,13 +200,13 @@ theorem newtonMvPolynomial_zero_right : newtonMvPolynomial R n 0 = n :=
 /-- **The linear Newton polynomial**: `s₁ = e₁`. -/
 theorem newtonMvPolynomial_one_right : newtonMvPolynomial R (n + 1) 1 = X 0 := by
   refine (eq_newtonMvPolynomial_of_aeval ?_).symm
-  rw [(multiset_sum_map_pow_le_three _).1, aeval_X, Fin.val_zero]
+  rw [Multiset.sum_map_pow_one_eq_esymm, aeval_X, Fin.val_zero]
 
 /-- **The quadratic Newton polynomial**: in at least two variables, `s₂ = e₁² - 2e₂`. -/
 theorem newtonMvPolynomial_two_right :
     newtonMvPolynomial R (n + 2) 2 = X 0 ^ 2 - 2 * X 1 := by
   refine (eq_newtonMvPolynomial_of_aeval ?_).symm
-  rw [(multiset_sum_map_pow_le_three _).2.1]
+  rw [Multiset.sum_map_pow_two_eq_esymm]
   simp only [map_sub, map_mul, map_pow, map_ofNat, aeval_X, Fin.val_zero, Fin.val_one]
 
 /-- **The cubic Newton polynomial**: in at least three variables,
@@ -236,7 +215,7 @@ theorem newtonMvPolynomial_three_right :
     newtonMvPolynomial R (n + 3) 3 = X 0 ^ 3 - 3 * X 0 * X 1 + 3 * X 2 := by
   refine (eq_newtonMvPolynomial_of_aeval ?_).symm
   have h2 : (2 : Fin (n + 3)).val = 2 := Nat.mod_eq_of_lt (by omega : 2 < n + 3)
-  rw [(multiset_sum_map_pow_le_three _).2.2]
+  rw [Multiset.sum_map_pow_three_eq_esymm]
   simp only [map_add, map_sub, map_mul, map_pow, map_ofNat, aeval_X, Fin.val_zero, Fin.val_one,
     h2]
 
