@@ -25,7 +25,8 @@ Definition 2.2), which is what the universal-cover construction consumes.
 Combined with the tube neighbourhoods of `TauCeti.Topology.Homotopy.TubeNeighborhood`, this shows
 that path-homotopy classes are open in the compact-open topology
 (`Path.isOpen_setOf_homotopic`), so that `Path.Homotopic.Quotient x y` is discrete
-(`Path.Homotopic.Quotient.discreteTopology`).
+(`Path.Homotopic.Quotient.discreteTopology`), and that null-homotopy of loops passes to limits in
+the compact-open topology, even when the base points move (`Path.Homotopic.refl_of_tendsto`).
 
 It is adapted from the Mathlib drafts
 [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
@@ -38,6 +39,7 @@ work in [#42](https://github.com/TauCetiProject/TauCeti/pull/42).
 noncomputable section
 
 open Filter Set Topology TauCeti
+open scoped unitInterval
 
 variable {X : Type*} [TopologicalSpace X]
 
@@ -255,5 +257,42 @@ public instance (priority := 100) Path.Homotopic.Quotient.discreteTopology
     DiscreteTopology (Path.Homotopic.Quotient x y) :=
   discreteTopology_of_semilocallySimplyConnectedOn fun p ↦
     .of_semilocallySimplyConnectedSpace (range p)
+
+/-! ### Limits of null-homotopic loops -/
+
+/-- **Null-homotopy of loops passes to limits.** In a semilocally simply connected, locally
+path-connected space, let `c i` be loops based at `x i`, eventually null-homotopic, which converge
+in the compact-open topology to a loop `ℓ` based at `x`. Then `ℓ` is null-homotopic. The base
+points `x i` need not be `x`. -/
+public theorem Path.Homotopic.refl_of_tendsto [SemilocallySimplyConnectedSpace X]
+    [LocallyPathConnectedSpace X] {ι : Type*} {L : Filter ι} [L.NeBot] {x : ι → X}
+    {c : ∀ i, Path (x i) (x i)} {y : X} {ℓ : Path y y}
+    (hc : Tendsto (fun i ↦ (c i).toContinuousMap) L (𝓝 ℓ.toContinuousMap))
+    (hnull : ∀ᶠ i in L, (c i).Homotopic (Path.refl (x i))) :
+    ℓ.Homotopic (Path.refl y) := by
+  obtain ⟨n, part, T, hℓ⟩ := ℓ.exists_isInTube_of_semilocallySimplyConnectedOn
+    (.of_semilocallySimplyConnectedSpace _)
+  -- A path-connected neighbourhood `N` of `x` inside both end vertex sets of the tube.
+  have hy : y ∈ T.V 0 ∩ T.V (Fin.last n) :=
+    ⟨by simpa using hℓ.mem_V 0, by simpa using hℓ.mem_V (Fin.last n)⟩
+  set N := pathComponentIn (T.V 0 ∩ T.V (Fin.last n)) y
+  have hN : N ∈ 𝓝 y := ((T.isOpen_V 0).inter (T.isOpen_V _)).pathComponentIn y |>.mem_nhds
+    (mem_pathComponentIn_self hy)
+  have h0 : Tendsto x L (𝓝 y) := by
+    have h := ((continuous_eval_const (0 : I)).tendsto ℓ.toContinuousMap).comp hc
+    simpa only [Function.comp_def, Path.coe_toContinuousMap, Path.source] using h
+  have htube : ∀ᶠ i in L, Path.IsInTube (c i) part T :=
+    hc.eventually ((T.isOpen_setOf_isInTube part).mem_nhds hℓ)
+  obtain ⟨i, hiN, hiT, hi⟩ := ((h0.eventually hN).and (htube.and hnull)).exists
+  -- Close up both ends by one path `α` from `y` to `x i` in `N`, and cancel it.
+  obtain ⟨α, hα⟩ := (isPathConnected_pathComponentIn hy).joinedIn y
+    (mem_pathComponentIn_self hy) _ hiN
+  have hαV : range α ⊆ T.V 0 ∩ T.V (Fin.last n) :=
+    range_subset_iff.mpr fun t ↦ pathComponentIn_subset (hα t)
+  have key := hℓ.trans_homotopic_trans hiT (hαV.trans inter_subset_left)
+    (hαV.trans inter_subset_right)
+  exact Path.Homotopic.trans_right_cancel (key.trans
+    ((((Path.Homotopic.refl α).hcomp hi).trans (Path.Homotopic.trans_refl α)).trans
+      (Path.Homotopic.refl_trans α).symm))
 
 end

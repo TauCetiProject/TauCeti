@@ -32,6 +32,8 @@ homotopy triviality of `Uᵢ` on each rectangle, and paste
 * `unitInterval.Partition.isOpen_setOf_mapsTo_Icc_and_mem`: the maps sending the segments and
   vertices of a partition into given open sets form an open set in the compact-open topology.
 * `Path.Tube.isOpen_setOf_isInTube`: hence tubes are open.
+* `Path.IsInTube.trans_homotopic_trans`: two paths in a common tube become homotopic after joining
+  their ends by paths in the end vertex sets.
 * `Path.IsInTube.exists_trans_homotopic`: two paths with the same source in a common tube become
   homotopic after appending to the first a path in the last vertex set.
 * `Path.IsInTube.homotopic`: two paths with the same endpoints in a common tube are homotopic.
@@ -149,11 +151,13 @@ private theorem Path.IsInTube.exists_rungs {x y x' y' : X} {γ : Path x y} {γ' 
   have h j := (T.isPathConnected_V j).joinedIn _ (hγ.mem_V j) _ (hγ'.mem_V j)
   exact ⟨fun j ↦ (h j).somePath, fun j ↦ range_subset_iff.mpr (h j).somePath_mem⟩
 
-/-- Two paths with the same source in a common tube are homotopic after appending to the first
-a path in the last vertex set of the tube. -/
-public theorem Path.IsInTube.exists_trans_homotopic {x y y' : X} {γ : Path x y} {γ' : Path x y'}
-    (hγ : Path.IsInTube γ part T) (hγ' : Path.IsInTube γ' part T) :
-    ∃ ρ : Path y y', range ρ ⊆ T.V (Fin.last n) ∧ (γ.trans ρ).Homotopic γ' := by
+/-- Two paths in a common tube become homotopic after joining their ends by paths in the end
+vertex sets: if `α₀` runs from the source of `γ` to that of `γ'` in the first vertex set, and `α₁`
+from the target of `γ` to that of `γ'` in the last one, then `γ · α₁` is homotopic to `α₀ · γ'`. -/
+public theorem Path.IsInTube.trans_homotopic_trans {x y x' y' : X} {γ : Path x y}
+    {γ' : Path x' y'} (hγ : Path.IsInTube γ part T) (hγ' : Path.IsInTube γ' part T)
+    {α₀ : Path x x'} {α₁ : Path y y'} (hα₀ : range α₀ ⊆ T.V 0)
+    (hα₁ : range α₁ ⊆ T.V (Fin.last n)) : (γ.trans α₁).Homotopic (α₀.trans γ') := by
   cases n with
   | zero => exact isEmptyElim part
   | succ n =>
@@ -168,12 +172,29 @@ public theorem Path.IsInTube.exists_trans_homotopic {x y y' : X} {γ : Path x y}
       (by
         rw [Path.trans_range]
         exact union_subset ((hα _).trans (T.V_castSucc_subset i)) (hγ'.range_subpath_subset i))
-  have h_α₀ : ((α 0).cast (by simp) (by simp)).Homotopic (Path.refl x) :=
-    (T.isPathHomotopyTrivial_U 0).nullhomotopic _
+  -- The given end paths are homotopic to the end rungs, inside the end segment sets.
+  have h₀ : α₀.Homotopic ((α 0).cast (by simp) (by simp)) :=
+    isPathHomotopyTrivial_def.mp (T.isPathHomotopyTrivial_U 0) _ _
+      (hα₀.trans (by simpa using T.V_castSucc_subset 0))
       (by simpa using (hα 0).trans (T.V_castSucc_subset 0))
-  exact ⟨(α (Fin.last _)).cast (by simp) (by simp), by simpa using hα _,
-    (Path.Homotopic.trans_of_subpath_trans γ γ' part α h_rect).trans
-      (Path.Homotopic.trans_left_of_nullhomotopic h_α₀)⟩
+  have h₁ : α₁.Homotopic ((α (Fin.last _)).cast (by simp) (by simp)) :=
+    isPathHomotopyTrivial_def.mp (T.isPathHomotopyTrivial_U (Fin.last n)) _ _
+      (hα₁.trans (by simpa using T.V_succ_subset (Fin.last n)))
+      (by simpa using (hα _).trans (T.V_succ_subset (Fin.last n)))
+  exact ((Path.Homotopic.refl γ).hcomp h₁).trans
+    ((Path.Homotopic.trans_of_subpath_trans γ γ' part α h_rect).trans
+      (h₀.symm.hcomp (Path.Homotopic.refl γ')))
+
+/-- Two paths with the same source in a common tube are homotopic after appending to the first
+a path in the last vertex set of the tube. -/
+public theorem Path.IsInTube.exists_trans_homotopic {x y y' : X} {γ : Path x y} {γ' : Path x y'}
+    (hγ : Path.IsInTube γ part T) (hγ' : Path.IsInTube γ' part T) :
+    ∃ ρ : Path y y', range ρ ⊆ T.V (Fin.last n) ∧ (γ.trans ρ).Homotopic γ' := by
+  obtain ⟨ρ, hρ⟩ := (T.isPathConnected_V _).joinedIn _ (by simpa using hγ.mem_V (Fin.last n)) _
+    (by simpa using hγ'.mem_V (Fin.last n))
+  have hx : x ∈ T.V 0 := by simpa using hγ.mem_V 0
+  refine ⟨ρ, range_subset_iff.mpr hρ, (hγ.trans_homotopic_trans hγ' (α₀ := Path.refl x)
+    (by simpa using hx) (range_subset_iff.mpr hρ)).trans (Path.Homotopic.refl_trans γ')⟩
 
 /-- Two paths with the same endpoints in a common tube are homotopic. -/
 public theorem Path.IsInTube.homotopic {x y : X} {γ γ' : Path x y}

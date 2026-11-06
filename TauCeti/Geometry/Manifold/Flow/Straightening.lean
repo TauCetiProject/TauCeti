@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ODE.Straightening
 public import TauCeti.Geometry.Manifold.ContMDiff.Atlas
 public import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import TauCeti.Geometry.Manifold.Flow.Basic
 import TauCeti.Geometry.Manifold.MFDeriv.ModelChart
 import TauCeti.Geometry.Manifold.VectorField.Regularity
 
@@ -31,10 +32,17 @@ of the chart's regularity. Without the boundaryless hypothesis the statement fai
 point a chart preserves the boundary, while a field tangent to the boundary at one boundary point
 and transverse to it at nearby ones cannot become constant.
 
+In particular the flow near a point `x` with `v x ≠ 0` moves the coordinates of such a chart at
+constant nonzero velocity, so no point near `x` returns to itself in a short positive time
+(`TauCeti.exists_pos_eventually_forall_flowOf_ne`): periodic trajectories through points near `x`
+have periods bounded away from `0`.
+
 ## Main results
 
 * `TauCeti.exists_chart_mfderiv_eq_const`: a nonvanishing `C^m` vector field is constant in a
   suitable chart of the `C^m` maximal atlas.
+* `TauCeti.exists_pos_eventually_forall_flowOf_ne`: points near a nonvanishing point of a `C¹`
+  vector field do not return to themselves quickly.
 
 ## References
 
@@ -114,5 +122,58 @@ theorem exists_chart_mfderiv_eq_const {m : ℕ∞} {n : ℕ∞ω} (hm : 1 ≤ m)
     rfl
   rw [hd]
   exact (congrArg (fderiv ℝ φ (e₀ y)) (hwe y hy₀).symm).trans (hφw _ hyφ)
+
+/-! ### No quick returns near a nonvanishing point -/
+
+/-- **Points near a nonvanishing point of a vector field do not return quickly.** Let `v` be a
+`C¹` vector field on a finite-dimensional boundaryless `C²` manifold with `v x ≠ 0`. Then there is
+a time `τ > 0` such that no point `y` near `x` is carried back to itself by the flow at any time
+`t ∈ (0, τ)`. In particular every nonconstant periodic trajectory through a point near `x` has
+period at least `τ`. -/
+theorem exists_pos_eventually_forall_flowOf_ne [T2Space M] [IsManifold I 2 M]
+    {v : (y : M) → TangentSpace I y}
+    (hv : ContMDiff I I.tangent 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) {x : M}
+    (hx : v x ≠ 0) :
+    ∃ τ > 0, ∀ᶠ y in 𝓝 x, ∀ t ∈ Ioo 0 τ, (t, y) ∈ flowDomain v → flowOf v t y ≠ y := by
+  have : IsManifold I 1 M := .of_le (n := 2) (by norm_num)
+  -- In a straightening chart `e`, the flow moves the coordinates `I ∘ e` at constant velocity `u`.
+  obtain ⟨e, u, he, hxe, hu, hd⟩ := exists_chart_mfderiv_eq_const (m := 1) (n := 2) le_rfl
+    (by norm_num) hv.contMDiffOn univ_mem hx
+  have hIe : ContMDiffOn I 𝓘(ℝ, E) 1 (I ∘ e) e.source :=
+    I.contMDiff.comp_contMDiffOn (contMDiffOn_of_mem_maximalAtlas he)
+  -- The flow stays in the chart for small times near `x`.
+  have hW : {q : ℝ × M | q ∈ flowDomain v ∧ flowOf v q.1 q.2 ∈ e.source} ∈ 𝓝 ((0 : ℝ), x) :=
+    ((contMDiffOn_flowOf le_rfl hv).continuousOn.isOpen_inter_preimage (isOpen_flowDomain hv)
+      e.open_source).mem_nhds ⟨mem_flowDomain_zero hv x, by rwa [mem_preimage, flowOf_zero hv]⟩
+  rw [nhds_prod_eq] at hW
+  obtain ⟨A, hA, V, hV, hAV⟩ := mem_prod_iff.1 hW
+  obtain ⟨τ, hτ, hτA⟩ := Metric.mem_nhds_iff.1 hA
+  refine ⟨τ, hτ, Filter.mem_of_superset hV fun y hy t ht htD hty ↦ ?_⟩
+  -- Along `[0, t]` the trajectory is defined and stays in the chart.
+  have hmem (s : ℝ) (hs : s ∈ Icc 0 t) :
+      (s, y) ∈ flowDomain v ∧ flowOf v s y ∈ e.source := by
+    have hsD : (s, y) ∈ flowDomain v := mem_flowDomain.2
+      (ordConnected_maximalIntegralCurveInterval.out (mem_flowDomain.1 (mem_flowDomain_zero hv y))
+        (mem_flowDomain.1 htD) hs)
+    refine hAV ⟨hτA ?_, hy⟩
+    rw [Metric.mem_ball, Real.dist_eq, sub_zero, abs_of_nonneg hs.1]
+    exact hs.2.trans_lt ht.2
+  have hderiv (s : ℝ) (hs : s ∈ Icc 0 t) :
+      HasDerivAt (fun r ↦ (I ∘ e) (flowOf v r y)) u s := by
+    obtain ⟨hsD, hse⟩ := hmem s hs
+    have h := hasDerivAt_comp_flowOf hv hsD
+      ((hIe.contMDiffAt (e.open_source.mem_nhds hse)).mdifferentiableAt one_ne_zero)
+    -- `mvfderiv` of a function into `E` is its `mfderiv`, read in `E`.
+    exact (hd _ hse) ▸ h
+  -- Hence the coordinates at time `t` are those at time `0` translated by `t • u`.
+  have heq := eq_of_has_deriv_right_eq (f := fun r ↦ (I ∘ e) (flowOf v r y))
+    (g := fun r ↦ (I ∘ e) y + r • u)
+    (fun s hs ↦ (hderiv s (Ico_subset_Icc_self hs)).hasDerivWithinAt)
+    (fun s _ ↦ ((hasDerivAt_id s).smul_const u).const_add _ |>.hasDerivWithinAt |>.congr_deriv
+      (by simp))
+    (fun s hs ↦ (hderiv s hs).continuousAt.continuousWithinAt) (by fun_prop)
+    (by simp only [Function.comp_apply, flowOf_zero hv, zero_smul, add_zero]) t ⟨ht.1.le, le_rfl⟩
+  simp only [Function.comp_apply, hty, left_eq_add, smul_eq_zero, hu, or_false] at heq
+  exact ht.1.ne' heq
 
 end TauCeti

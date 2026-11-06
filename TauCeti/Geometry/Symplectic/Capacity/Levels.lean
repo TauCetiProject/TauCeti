@@ -40,7 +40,9 @@ since subintervals of such an interval again satisfy these assumptions, closed c
 exist on a dense subset of the union of such intervals. Passing from a dense set of levels to
 almost every level, as in the Hofer–Zehnder–Struwe theorem, additionally needs the monotonicity of
 a capacity in the level, to bound the periods `τ` on shrinking intervals of levels, and a
-compactness argument for the resulting orbits; neither is treated here.
+compactness argument for the resulting orbits; these are carried out for the relative capacity in
+`TauCeti.Geometry.Symplectic.Capacity.Monotonicity` and
+`TauCeti.Geometry.Symplectic.Capacity.AlmostExistence`.
 
 ## Main results
 
