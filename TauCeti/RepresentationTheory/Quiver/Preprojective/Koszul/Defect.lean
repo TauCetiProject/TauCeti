@@ -228,7 +228,7 @@ private theorem exists_ne_zero_forall_ofArrow_reverse_mul_eq_zero
 /-- If `y₁` is killed on the right by every arrow, then right multiplication of its cut-down
 `y₁ e_u` by any element of the preprojective algebra stays on the line spanned by `y₁ e_u`: the
 scalar is the coefficient of `e_u`. -/
-private theorem mul_vertexIdempotent_mul_eq_smul {y₁ : Π}
+private theorem exists_mul_vertexIdempotent_mul_eq_smul {y₁ : Π}
     (hright : ∀ {i j : Symmetrify Q} (c : i ⟶ j), y₁ * π (ofArrow c) = 0)
     (u : Symmetrify Q) (r : Π) :
     ∃ t : k, y₁ * π (vertexIdempotent k u) * r = t • (y₁ * π (vertexIdempotent k u)) := by
@@ -258,15 +258,6 @@ private theorem mul_vertexIdempotent_mul_eq_smul {y₁ : Π}
       split_ifs
       · rw [hright, zero_mul, smul_zero, zero_smul]
       · rw [map_zero, mul_zero, zero_mul, smul_zero, zero_smul]
-
-/-- A nonzero element of the preprojective algebra does not vanish on the right at some vertex
-idempotent. -/
-private theorem exists_mul_vertexIdempotent_ne_zero {y : Π} (hy : y ≠ 0) :
-    ∃ u : Symmetrify Q, y * π (vertexIdempotent k u) ≠ 0 := by
-  by_contra! h
-  refine hy ?_
-  rw [← mul_one y, ← map_one π, one_def, map_sum, Finset.mul_sum]
-  exact Finset.sum_eq_zero fun u _ => h u
 
 /-- **The left Koszul kernel of a finite-dimensional preprojective algebra is a line.** At every
 vertex `v` there are a degree `n`, a vertex `u` and a nonzero `y ∈ e_v Π_n e_u`, killed by the
@@ -324,10 +315,10 @@ theorem exists_mem_preprojectiveCorner_forall_exists_eq_smul [FiniteDimensional 
       (preprojectiveMk_mem_preprojectiveGrade k Q (ofArrow_mem_grade_one c)), hc⟩
     omega
   -- Cut `y₁` down on the right to a vertex `u` where it does not vanish.
-  obtain ⟨u, hu⟩ := exists_mul_vertexIdempotent_ne_zero k hy₁0
+  obtain ⟨u, hu⟩ := exists_mul_preprojectiveMk_vertexIdempotent_ne_zero k hy₁0
+  have hline := exists_mul_vertexIdempotent_mul_eq_smul k hright u
   set y := y₁ * π (vertexIdempotent k u) with hy_def
   have hy : K y := hmul hy₁ _
-  have hline := mul_vertexIdempotent_mul_eq_smul k hright u
   obtain ⟨u, rfl⟩ : ∃ u' : Q, Symmetrify.of.obj u' = u := ⟨u, rfl⟩
   refine ⟨sSup L, u, y, mem_preprojectiveCorner_iff.2 ⟨?_, ?_⟩, hu, hy.2, fun z hz hzb => ?_⟩
   · simpa only [add_zero] using mul_mem_preprojectiveGrade k Q hy₁n (h0 _)
