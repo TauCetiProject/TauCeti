@@ -13,7 +13,9 @@ import Mathlib.Analysis.LocallyConvex.SeparatingDual
 import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Topology.OpenPartialHomeomorph.Basic
 import Mathlib.Topology.UnitInterval
+import TauCeti.Analysis.Convex.Topology
 import TauCeti.Topology.Homotopy.Extension.NDRPair
+import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
 # Segments in a chart have the homotopy extension property
@@ -152,29 +154,6 @@ private theorem exists_homotopyRel_segment (hℓ : y - x ≠ 0 → ℓ (y - x) =
     have hpw : p w = w := segmentProj_eq_self ℓ hℓ hw
     simp [hez, hpw, hwz]
 
-omit [NormedSpace ℝ E] in
-open scoped Classical in
-/-- A continuous function `g : E → I` equal to `1` off a compact subset `K` of the target of `e`,
-read through `e` on its source and extended by `1`, is continuous on `X`. -/
-private theorem continuous_ite_source_one [T2Space X] {g : E → I} (hg : Continuous g)
-    {K : Set E} (hK : IsCompact K) (hKt : K ⊆ e.target) (hgK : ∀ z ∉ K, g z = 1) :
-    Continuous fun z : X => if z ∈ e.source then g (e z) else 1 := by
-  classical
-  have hKclosed : IsClosed (e.symm '' K) :=
-    (hK.image_of_continuousOn (e.continuousOn_symm.mono hKt)).isClosed
-  refine continuous_iff_continuousAt.2 fun z => ?_
-  by_cases hzs : z ∈ e.source
-  · refine (hg.continuousAt.comp (e.continuousAt hzs)).congr ?_
-    filter_upwards [e.open_source.mem_nhds hzs] with w hw
-    simp [hw]
-  · have hz : z ∉ e.symm '' K := fun ⟨w, hw, hwz⟩ => hzs (hwz ▸ e.map_target (hKt hw))
-    refine (continuousAt_const (y := (1 : I))).congr ?_
-    filter_upwards [hKclosed.isOpen_compl.mem_nhds hz] with w hw
-    by_cases hws : w ∈ e.source
-    · simp only [hws, ↓reduceIte]
-      exact (hgK _ fun hK => hw ⟨e w, hK, e.left_inv hws⟩).symm
-    · simp [hws]
-
 /-- **The control function.** The distance `‖z - p z‖` from a point to its projection onto the
 segment, rescaled by `2 / δ`, cut off at `1` and read through `e`, extends by `1` to a continuous
 function on `X`. It vanishes exactly on the image of the segment and is less than `1` only on the
@@ -192,8 +171,8 @@ private theorem exists_control_segment [T2Space X] [ProperSpace E]
   -- Where `ρ < 2`, a point is closer than `δ` to the segment.
   have hρlt {z : E} (hz : ρ z < 2) : z ∈ thickening δ (segment ℝ x y) := by
     refine mem_thickening_iff.2 ⟨p z, segmentProj_mem ℓ x y z, ?_⟩
-    have h2 : 2 / δ * ‖z - p z‖ < 2 := hz
-    rw [div_mul_eq_mul_div, div_lt_iff₀ hδ] at h2
+    simp only [ρ] at hz
+    rw [div_mul_eq_mul_div, div_lt_iff₀ hδ] at hz
     rw [dist_eq_norm]
     linarith
   -- The points where `ρ ≤ 1` form a compact subset of the target.
@@ -201,13 +180,13 @@ private theorem exists_control_segment [T2Space X] [ProperSpace E]
   have hK : IsCompact K := by
     refine isCompact_of_isClosed_isBounded (isClosed_le hρ continuous_const) ?_
     refine isBounded_closedBall (x := x) (r := δ / 2 + ‖y - x‖) |>.subset fun z hz => ?_
-    have h2 : 2 / δ * ‖z - p z‖ ≤ 1 := hz
-    rw [div_mul_eq_mul_div, div_le_iff₀ hδ] at h2
+    simp only [K, mem_ofPred_eq, ρ] at hz
+    rw [div_mul_eq_mul_div, div_le_iff₀ hδ] at hz
     rw [mem_closedBall, dist_eq_norm]
     linarith [norm_sub_le_segmentProj ℓ x y z]
   have hKt : K ⊆ e.target := fun z hz => hδt (hρlt (lt_of_le_of_lt hz.out one_lt_two))
   have hproj : Continuous (projIcc (0 : ℝ) 1 zero_le_one) := continuous_projIcc
-  refine ⟨⟨_, e.continuous_ite_source_one (hproj.comp hρ) hK hKt fun z hz =>
+  refine ⟨⟨_, e.continuous_ite_source_of_eq_off_compact (hproj.comp hρ) hK hKt fun z hz =>
     projIcc_eq_one.2 (le_of_lt (not_le.1 hz))⟩, fun z => ?_, fun z hz => ?_⟩
   · rw [e.symm_image_eq_source_inter_preimage h]
     by_cases hzs : z ∈ e.source
@@ -239,10 +218,7 @@ theorem hasHomotopyExtensionProperty_symm_image_segment [T2Space X] [ProperSpace
     · exact ⟨0, fun h => absurd hxy h⟩
     · obtain ⟨ℓ, hℓ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hxy
       exact ⟨ℓ, fun _ => hℓ⟩
-  have hcompact : IsCompact (segment ℝ x y) := by
-    rw [segment_eq_image']
-    exact isCompact_Icc.image (by fun_prop)
-  obtain ⟨δ, hδ, hδt⟩ := hcompact.exists_thickening_subset_open e.open_target h
+  obtain ⟨δ, hδ, hδt⟩ := (isCompact_segment ℝ x y).exists_thickening_subset_open e.open_target h
   obtain ⟨r, ⟨D⟩⟩ := e.exists_homotopyRel_segment hℓ hδ h hδt
   obtain ⟨f, hf, hfU⟩ := e.exists_control_segment hℓ hδ h hδt
   exact (NDRPair.ofHomotopyRel _ D f hf hfU).hasHomotopyExtensionProperty
