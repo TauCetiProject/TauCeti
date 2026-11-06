@@ -109,12 +109,7 @@ private theorem composable_and_mem_resolvableInversions_trans_iff (hT : φ.targe
   have hX : (i, j) ∈ φ.inversions ↔ b < a := by simp [mem_inversions_iff_of_mem ha hb, hij]
   have hZ : (i, j) ∈ (φ.trans ψ).inversions ↔ d < c := by
     simp [mem_inversions_iff_of_mem (mem_trans.2 ⟨a, ha, hc⟩) (mem_trans.2 ⟨b, hb, hd⟩), hij]
-  have hY : (min a b, max a b) ∈ ψ.inversions ↔ (a < b ↔ d < c) := by
-    rcases lt_or_gt_of_ne hab with h | h
-    · simp [min_eq_left h.le, max_eq_right h.le, mem_inversions_iff_of_mem hc hd, h]
-    · simp only [min_eq_right h.le, max_eq_left h.le, mem_inversions_iff_of_mem hd hc, h,
-        true_and, h.not_gt, false_iff, not_lt]
-      exact ⟨le_of_lt, fun h' ↦ lt_of_le_of_ne h' hcd⟩
+  have hY := min_max_mem_inversions_iff hab hc hd
   have hφψ := inversionCount_trans_le φ ψ
   simp only [mem_resolvableInversions, composable_iff, target_resolve, source_resolve, hT,
     true_and]
@@ -324,7 +319,7 @@ private theorem chainPartner_spec {x : (_ : α × α) × (α × α)} (hx : x ∈
     rintro rfl
     exact notMem_inversions_resolve_self hp hq
   obtain ⟨s, u, w, hsu, hsw, huw, rfl, rfl⟩ :=
-    exists_min_max_of_not_disjoint (mem_inversions.1 hp).1 (mem_inversions.1 hq).1 hpq hd
+    exists_min_max_of_share_coord (mem_inversions.1 hp).1 (mem_inversions.1 hq).1 hpq hd
   obtain ⟨hxor, hqr, hrp⟩ := chains_three_cycle hsu hsw huw hx
   have ht : third (min s u, max s u) (min s w, max s w) = (min u w, max u w) :=
     third_min_max hsu hsw huw
@@ -340,7 +335,7 @@ private theorem chainPartner_spec {x : (_ : α × α) × (α × α)} (hx : x ∈
         third_min_max hsw.symm huw.symm hsu]
     rw [hpart]
     refine ⟨h₁, fun h ↦ hpq (Sigma.mk.inj_iff.1 h).1.symm, ?_, hqr h₁⟩
-    rw [chainPartner, ite_eq_right (not_disjoint_min_max s u w), ht', ite_eq_right h₂]
+    rw [chainPartner, ite_eq_right (min_max_share_coord s u w), ht', ite_eq_right h₂]
   · have h₂ : (⟨(min u w, max u w), (min s u, max s u)⟩ : (_ : α × α) × (α × α)) ∈ φ.chains := by
       simpa [xor_def, h₁] using hxor
     have hpart : φ.chainPartner ⟨(min s u, max s u), (min s w, max s w)⟩ =
@@ -350,7 +345,7 @@ private theorem chainPartner_spec {x : (_ : α × α) × (α × α)} (hx : x ∈
     have ht' : third (min u w, max u w) (min s u, max s u) = (min s w, max s w) := by
       rw [min_comm s u, max_comm s u, third_min_max huw hsu.symm hsw.symm, min_comm w s,
         max_comm w s]
-    have hnd := not_disjoint_min_max w s u
+    have hnd := min_max_share_coord w s u
     rw [min_comm w u, max_comm w u] at hnd
     rw [hpart]
     refine ⟨h₂, fun h ↦ hpq (eq_of_heq (Sigma.mk.inj_iff.1 h).2), ?_, hrp h₂⟩

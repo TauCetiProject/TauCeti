@@ -17,8 +17,8 @@ comparison of the relative orders of two triples of distinct points.
 
 ## Main results
 
-* `TauCeti.not_disjoint_min_max`: two sorted pairs with a common point share a coordinate.
-* `TauCeti.exists_min_max_of_not_disjoint`: two distinct increasing pairs sharing a coordinate are
+* `TauCeti.min_max_share_coord`: two sorted pairs with a common point share a coordinate.
+* `TauCeti.exists_min_max_of_share_coord`: two distinct increasing pairs sharing a coordinate are
   the sorted pairs `(min s u, max s u)` and `(min s w, max s w)` of three distinct points.
 * `TauCeti.xor_of_lt_iff`: given triples `s, u, w` and `S, U, W` of distinct points in two linear
   orders with `s < u ↔ U < S` and `s < w ↔ W < U`, exactly one of two further pairs of order
@@ -31,16 +31,16 @@ namespace TauCeti
 
 variable {α β : Type*} [LinearOrder α] [LinearOrder β]
 
-/-- Two sorted pairs with the common point `z` are not disjoint: some coordinate of
+/-- Two sorted pairs with the common point `z` share a coordinate: some coordinate of
 `(min y z, max y z)` is a coordinate of `(min x z, max x z)`. -/
-theorem not_disjoint_min_max (x y z : α) :
+theorem min_max_share_coord (x y z : α) :
     ¬(min y z ≠ min x z ∧ min y z ≠ max x z ∧ max y z ≠ min x z ∧ max y z ≠ max x z) := by
   rcases le_total x z with h₁ | h₁ <;> rcases le_total y z with h₂ | h₂ <;>
     simp [h₁, h₂]
 
 /-- Two distinct increasing pairs `p` and `q` sharing a coordinate share exactly one point: they are
 the sorted pairs `(min s u, max s u)` and `(min s w, max s w)` for distinct `s`, `u`, `w`. -/
-theorem exists_min_max_of_not_disjoint {p q : α × α} (hp : p.1 < p.2) (hq : q.1 < q.2)
+theorem exists_min_max_of_share_coord {p q : α × α} (hp : p.1 < p.2) (hq : q.1 < q.2)
     (hpq : p ≠ q) (h : ¬(q.1 ≠ p.1 ∧ q.1 ≠ p.2 ∧ q.2 ≠ p.1 ∧ q.2 ≠ p.2)) :
     ∃ s u w : α, s ≠ u ∧ s ≠ w ∧ u ≠ w ∧ p = (min s u, max s u) ∧ q = (min s w, max s w) := by
   obtain ⟨p₁, p₂⟩ := p
