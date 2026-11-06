@@ -25,10 +25,11 @@ derivative, `d (φ ∧ ψ) = dφ ∧ ψ + (-1) ^ k • φ ∧ dψ` for a `k`-for
 
 The construction uses `ContinuousAlternatingMap.pairedWedgeCLM` and Mathlib's calculus of
 application of continuous linear maps; `ContDiff.wedge` specializes the regularity statement to
-the real wedge of real-valued forms, and `HasCompactSupport.wedge_left` records that such a wedge
-is compactly supported when its right factor is. These results provide the coefficient calculus
-for wedge products of smooth bundle-valued forms. The wedge normalization follows John M. Lee,
-*Introduction to Smooth Manifolds*, second edition, Chapter 14.
+the real wedge of real-valued forms. A paired wedge with a compactly supported second factor is
+compactly supported (`HasCompactSupport.pairedWedge_left`, `HasCompactSupport.wedge_left`).
+These results provide the coefficient calculus for wedge products of smooth bundle-valued forms.
+The wedge normalization follows John M. Lee, *Introduction to Smooth Manifolds*, second edition,
+Chapter 14.
 -/
 
 public section
@@ -96,12 +97,21 @@ variable {X E F₁ F₂ F₃ : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     ContDiff ℝ n fun y ↦ wedge (φ y) (ψ y) := by
   simpa only [wedge_def] using contDiff_const.pairedWedge hφ hψ
 
-/-- A wedge of real-valued forms whose right factor is compactly supported is compactly
-supported; this is the wedge version of `HasCompactSupport.mul_left`. -/
-theorem _root_.HasCompactSupport.wedge_left {Y : Type*} [TopologicalSpace Y]
-    {φ : Y → E [⋀^Fin k]→L[ℝ] ℝ} {ψ : Y → E [⋀^Fin l]→L[ℝ] ℝ} (hψ : HasCompactSupport ψ) :
-    HasCompactSupport fun y ↦ wedge (φ y) (ψ y) :=
-  hψ.mono fun _ hy h ↦ hy (by simp [h, wedge_def, pairedWedge_zero_right])
+omit [NormedSpace ℝ X] in
+/-- The paired wedge of a family of forms with a compactly supported family is compactly
+supported, as for `HasCompactSupport.mul_left`. -/
+theorem _root_.HasCompactSupport.pairedWedge_left (hψ : HasCompactSupport ψ) :
+    HasCompactSupport fun y ↦ pairedWedge (μ y) (μ y).continuous₂ (φ y) (ψ y) :=
+  hψ.mono fun _ hx h ↦ hx (by simp [h])
+
+omit [NormedSpace ℝ X] in
+/-- The real wedge of a family of real-valued forms with a compactly supported family is
+compactly supported. -/
+theorem _root_.HasCompactSupport.wedge_left {φ : X → E [⋀^Fin k]→L[ℝ] ℝ}
+    {ψ : X → E [⋀^Fin l]→L[ℝ] ℝ} (hψ : HasCompactSupport ψ) :
+    HasCompactSupport fun y ↦ wedge (φ y) (ψ y) := by
+  simpa only [wedge_def] using
+    hψ.pairedWedge_left (μ := fun _ ↦ ContinuousLinearMap.mul ℝ ℝ) (φ := φ)
 
 /-- The paired wedge of differentiable families is differentiable within a set at a point. -/
 @[fun_prop] theorem _root_.DifferentiableWithinAt.pairedWedge

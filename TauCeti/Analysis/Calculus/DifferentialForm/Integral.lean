@@ -118,8 +118,8 @@ theorem _root_.Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv {
       b.addHaar := by
     refine Continuous.integrable_of_hasCompactSupport ?_ ?_
     · exact (((hφ.of_le zero_le_one).wedge (contDiff_extDeriv hψ le_rfl)).continuous).eval_const _
-    · exact hc.extDeriv.wedge_left.comp_left (g := fun ω : E [⋀^Fin (k + (l + 1))]→L[ℝ] ℝ ↦
-        ω (b ∘ Fin.cast (by omega))) rfl
+    · exact (hc.extDeriv.wedge_left (φ := φ)).comp_left
+        (g := fun ω ↦ ω (b ∘ Fin.cast (by omega))) rfl
   calc ∫ x, wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar
       = ∫ x, (extDeriv (fun x ↦ wedge (φ x) (ψ x)) x b -
           (-1 : ℝ) ^ k * wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega))) ∂b.addHaar :=
