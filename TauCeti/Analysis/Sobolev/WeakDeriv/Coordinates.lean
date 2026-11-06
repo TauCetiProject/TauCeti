@@ -12,9 +12,9 @@ public import Mathlib.Analysis.Normed.Module.FiniteDimension
 # Finite-coordinate characterization of weak derivatives
 
 Weak differentiation of a function with finite-dimensional real normed codomain is equivalent
-to weak differentiation of its scalar coordinates in any finite basis. Reconstruction uses the
-native continuous linear codomain maps and finite-sum rule, including for a zero-dimensional
-codomain. No integrability or weak-derivative condition is omitted in this characterization.
+to weak differentiation of its scalar coordinates in any finite basis. Each direction includes
+local integrability and the distributional identity for every scalar coordinate, for any measure
+and open set, including a zero-dimensional codomain.
 
 ## Main declarations
 
