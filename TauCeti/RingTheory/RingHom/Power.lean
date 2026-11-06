@@ -9,53 +9,57 @@ public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.Spectrum.Prime.RingHom
 
 /-!
-# Endomorphisms whose square is a power map
+# Ring homomorphisms followed by a power map
 
-If a ring endomorphism squares to a positive power map, it is integral and induces an
-involution on the prime spectrum. For an endomorphism of a finitely generated algebra,
-integrality implies finiteness. These criteria apply in particular to square roots of
-Frobenius, without requiring the ring to be reduced.
+Let `f : A →+* B` and `g : B → A` satisfy `f (g x) = x ^ n` for some positive `n`. Then `f` is
+integral, and if `g` is a ring homomorphism then `PrimeSpectrum.comap g` is a left inverse of
+`PrimeSpectrum.comap f`. For an algebra homomorphism into a finitely generated algebra,
+integrality implies finiteness.
+
+Taking `g = f` covers endomorphisms whose square is a positive power map, such as square roots
+of Frobenius: they are finite on finite-type algebras and induce involutions on the prime
+spectrum, without requiring the ring to be reduced.
 -/
 
 public section
 
 namespace RingHom
 
-variable {A : Type*}
+variable {A B : Type*}
 
-/-- An endomorphism whose square is a positive power map is integral. -/
-theorem isIntegral_of_comp_self_eq_pow [CommRing A] (f : A →+* A) {n : ℕ} (hn : 0 < n)
-    (hf : ∀ x, f (f x) = x ^ n) : f.IsIntegral := by
+/-- If every element of `B` has a positive power `x ^ n = f (g x)` in the range of `f`, then `f`
+is integral. -/
+theorem isIntegral_of_comp_eq_pow [CommRing A] [CommRing B] (f : A →+* B) {g : B → A} {n : ℕ}
+    (hn : 0 < n) (hfg : ∀ x, f (g x) = x ^ n) : f.IsIntegral := by
   let := f.toAlgebra
   intro x
   apply IsIntegral.of_pow hn
-  rw [← hf x]
+  rw [← hfg x]
   exact isIntegral_algebraMap
 
-/-- An endomorphism whose square is a positive power map induces an involution on prime ideals.
-This includes nonreduced rings: prime ideals detect membership of positive powers. -/
-theorem comap_involutive_of_comp_self_eq_pow [CommSemiring A] (f : A →+* A) {n : ℕ}
-    (hn : 0 < n)
-    (hf : ∀ x, f (f x) = x ^ n) : Function.Involutive (PrimeSpectrum.comap f) := by
+/-- If `f ∘ g` is a positive power map, then `PrimeSpectrum.comap g` is a left inverse of
+`PrimeSpectrum.comap f`. This includes nonreduced rings: prime ideals detect membership of
+positive powers. For `g = f` this says that `PrimeSpectrum.comap f` is an involution. -/
+theorem leftInverse_comap_of_comp_eq_pow [CommSemiring A] [CommSemiring B] (f : A →+* B)
+    {g : B →+* A} {n : ℕ} (hn : 0 < n) (hfg : ∀ x, f (g x) = x ^ n) :
+    Function.LeftInverse (PrimeSpectrum.comap g) (PrimeSpectrum.comap f) := by
   intro P
-  apply PrimeSpectrum.ext
   ext x
-  simp only [PrimeSpectrum.comap_asIdeal, Ideal.mem_comap, hf]
-  exact P.isPrime.pow_mem_iff_mem n hn
+  simp [hfg, P.isPrime.pow_mem_iff_mem n hn]
 
 end RingHom
 
 namespace AlgHom
 
-variable {R A : Type*} [CommRing R] [CommRing A] [Algebra R A]
+variable {R A B : Type*} [CommRing R] [CommRing A] [CommRing B] [Algebra R A] [Algebra R B]
 
-/-- A square root of a positive power map on a finite-type algebra is a finite morphism.
-No field or characteristic hypothesis is needed. -/
-theorem finite_of_comp_self_eq_pow [Algebra.FiniteType R A] (f : A →ₐ[R] A)
-    {n : ℕ} (hn : 0 < n) (hf : ∀ x, f (f x) = x ^ n) : f.Finite := by
-  apply (f.toRingHom.isIntegral_of_comp_self_eq_pow hn hf).to_finite
+/-- If `f ∘ g` is a positive power map and `B` is a finite-type `R`-algebra, then `f` is a
+finite morphism. No field or characteristic hypothesis is needed. -/
+theorem finite_of_comp_eq_pow [Algebra.FiniteType R B] (f : A →ₐ[R] B) {g : B → A}
+    {n : ℕ} (hn : 0 < n) (hfg : ∀ x, f (g x) = x ^ n) : f.Finite := by
+  apply (f.toRingHom.isIntegral_of_comp_eq_pow hn hfg).to_finite
   apply RingHom.FiniteType.of_comp_finiteType (f := algebraMap R A)
   simpa only [AlgHom.toRingHom_eq_coe, AlgHom.comp_algebraMap,
-    RingHom.finiteType_algebraMap] using (inferInstance : Algebra.FiniteType R A)
+    RingHom.finiteType_algebraMap] using (inferInstance : Algebra.FiniteType R B)
 
 end AlgHom
