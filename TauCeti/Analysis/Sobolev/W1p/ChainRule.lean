@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
+public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -97,43 +98,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 private theorem enorm_innerSL_sub (x y : E) :
     ‖innerSL ℝ x - innerSL ℝ y‖ₑ = ‖x - y‖ₑ := by
   rw [← map_sub, ← ofReal_norm, ← ofReal_norm, innerSL_apply_norm]
-
-/-- If bounded coefficients `c i` converge almost everywhere to `c₀` and `g i → g₀` in `L¹`,
-then `c i • g i → c₀ • g₀` in `L¹`, tested through `innerSL`. -/
-private theorem tendsto_lintegral_enorm_innerSL_smul_sub {α : Type*} [MeasurableSpace α]
-    {ν : Measure α} {M : ℝ≥0} {c : ℕ → α → ℝ} {c₀ : α → ℝ} {g : ℕ → α → E} {g₀ : α → E}
-    (hc : ∀ i, AEStronglyMeasurable (c i) ν) (hg : ∀ i, AEStronglyMeasurable (g i) ν)
-    (hg₀ : AEStronglyMeasurable g₀ ν) (hcM : ∀ i x, ‖c i x‖₊ ≤ M) (hc₀M : ∀ x, ‖c₀ x‖₊ ≤ M)
-    (hlim : ∀ᵐ x ∂ν, Tendsto (fun i => c i x) atTop (𝓝 (c₀ x)))
-    (hg₀int : ∫⁻ x, ‖g₀ x‖ₑ ∂ν ≠ ∞)
-    (hgg : Tendsto (fun i => ∫⁻ x, ‖g i x - g₀ x‖ₑ ∂ν) atTop (𝓝 0)) :
-    Tendsto (fun i => ∫⁻ x, ‖innerSL ℝ (c i x • g i x) - innerSL ℝ (c₀ x • g₀ x)‖ₑ ∂ν)
-      atTop (𝓝 0) := by
-  have hc₀ : AEStronglyMeasurable c₀ ν := aestronglyMeasurable_of_tendsto_ae atTop hc hlim
-  have hC : Tendsto (fun i => ∫⁻ x, ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ ∂ν) atTop (𝓝 0) := by
-    simpa using tendsto_lintegral_of_dominated_convergence' (fun x => (M + M) * ‖g₀ x‖ₑ)
-      (F := fun i x => ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ) (f := 0)
-      (fun i => ((hc i).sub hc₀).enorm.mul hg₀.enorm)
-      (fun i => .of_forall fun x => by
-        dsimp only
-        gcongr
-        exact enorm_sub_le.trans (add_le_add (enorm_le_coe.2 (hcM i x)) (enorm_le_coe.2 (hc₀M x))))
-      (by rw [lintegral_const_mul' _ _ (by simp)]; exact ENNReal.mul_ne_top (by simp) hg₀int)
-      (hlim.mono fun x hx => by
-        simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).enorm (Or.inr enorm_ne_top))
-  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
-    (by simpa using (ENNReal.Tendsto.const_mul (a := M) hgg (Or.inr ENNReal.coe_ne_top)).add hC)
-    (fun _ => zero_le) fun i => ?_
-  rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top,
-    ← lintegral_add_left' (f := fun x => M * ‖g i x - g₀ x‖ₑ) (((hg i).sub hg₀).enorm.const_mul _)]
-  refine lintegral_mono fun x => ?_
-  rw [enorm_innerSL_sub, show c i x • g i x - c₀ x • g₀ x =
-    c i x • (g i x - g₀ x) + (c i x - c₀ x) • g₀ x by rw [smul_sub, sub_smul]; abel]
-  refine (enorm_add_le _ _).trans (add_le_add ?_ (enorm_smul _ _).le)
-  rw [enorm_smul]
-  gcongr
-  exact enorm_le_coe.2 (hcM i x)
-
 
 /-! ### The classical chain rule for a test function -/
 
@@ -282,14 +246,16 @@ private theorem hasWeakFDerivOn_comp_aux (hp : p ≠ ∞) (hF : ContDiff ℝ 1 F
     exact hlip _ _
   -- the gradients converge in `L¹(V)`: the coefficient is bounded and continuous
   refine ((hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
+    (U := fun i x => innerSL ℝ
+      (deriv F (W1p.value (a (ns i)) x) • W1p.gradient (a (ns i)) x))
     (locallyIntegrableOn_comp_value hlip w) (locallyIntegrableOn_deriv_smul_gradient hF hM w)
     (fun i => hphi (ns i) ▸ hasWeakFDerivOn_comp_restrictL_ofTestFunctionₗ hF hVΩ _)
-    hconv1 (tendsto_lintegral_enorm_innerSL_smul_sub
+    hconv1 (by simpa only [enorm_innerSL_sub] using (tendsto_lintegral_enorm_smul_sub
       (fun i => hcont.comp_aestronglyMeasurable (Lp.aestronglyMeasurable _))
       (fun i => Lp.aestronglyMeasurable _) (Lp.aestronglyMeasurable _) (fun _ _ => hM _)
       (fun _ => hM _) (hns_ae.mono fun x hx => (hcont.tendsto _).comp hx)
       ((Lp.memLp (W1p.gradient w)).integrable Fact.out).2.ne
-      ((tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).comp hns.tendsto_atTop))).congr_ae
+      ((tendsto_lintegral_enorm_sub_of_tendsto_Lp hgrad).comp hns.tendsto_atTop)))).congr_ae
     ?_).congr_ae_deriv ?_
   · filter_upwards [W1p.value_restrictL_ae hVΩ u] with x hx; rw [hx]
   · filter_upwards [W1p.value_restrictL_ae hVΩ u, W1p.gradient_restrictL_ae hVΩ u] with x hx hg
@@ -719,7 +685,7 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
     exact ENNReal.ofReal_le_ofReal
       (by simpa [Real.norm_eq_abs] using abs_posPartApprox_sub_le (hdpos n) _)
   -- the gradients converge by dominated convergence
-  have hconv2 := tendsto_lintegral_enorm_innerSL_smul_sub (ν := mu.restrict V) (M := 1)
+  have hconv2 := tendsto_lintegral_enorm_smul_sub (ν := mu.restrict V) (M := 1)
     (c := fun n x => deriv (posPartApprox (d n)) (W1p.value u x - k))
     (g := fun _ => W1p.gradient u) (c₀ := fun x => if k < W1p.value u x then 1 else 0)
     (fun n => (contDiff_one_iff_deriv.mp (contDiff_posPartApprox (d n))).2.comp_aestronglyMeasurable
@@ -733,7 +699,8 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
   exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
     ((locallyIntegrableOn_comp_value (lipschitzWith_posPartAbove k) u).mono_set hVΩ)
     (fun v => (hgradLoc v).mono_set hVΩ)
-    (fun n => (hasWeakFDerivOn_posPartApprox_comp hp k (d n) u).mono hVΩ) hconv1 hconv2
+    (fun n => (hasWeakFDerivOn_posPartApprox_comp hp k (d n) u).mono hVΩ) hconv1
+    (by simpa only [enorm_innerSL_sub, posPartAboveGradient] using hconv2)
 
 /-- **For `1 ≤ p < ∞`, the positive part of a Sobolev function is weakly differentiable**, with
 weak gradient `1_{u > 0} ∇u`. -/

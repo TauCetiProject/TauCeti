@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.MeasureTheory.Function.StronglyMeasurable.AEStronglyMeasurable
 public import Mathlib.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 public import Mathlib.MeasureTheory.Integral.Lebesgue.Markov
 
 /-!
-# Uniformly small tails of a function of finite Lebesgue integral
+# Consequences of dominated convergence for Lebesgue integrals
 
 A function `f : α → ℝ≥0∞` of finite Lebesgue integral exceeds a large constant `M` only by an
 amount of small integral: `∫⁻ x, f x - M ∂μ → 0` as `M → ∞`. This is dominated convergence with
@@ -18,12 +20,18 @@ the bound `f`, since `f x - M` vanishes for `M ≥ f x` and `f` is almost everyw
 The file also records a squeeze principle: if `f n ≤ g n + h n` and the integrals of `g n` and
 `h n` tend to `0`, so does the integral of `f n`.
 
+Bounded real coefficients converging almost everywhere preserve `L¹` convergence of
+vector-valued sequences. This lets products pass to the limit when the coefficient convergence
+is pointwise and the vector-valued factor converges only in `L¹`.
+
 ## Main statements
 
 * `TauCeti.tendsto_lintegral_tsub_atTop`: the integral of the excess of `f` over the constant `M`
   tends to `0` as `M → ∞`.
 * `TauCeti.tendsto_lintegral_zero_of_le_add`: the integral of a function bounded by the sum of
   two functions with integrals tending to `0` tends to `0`.
+* `TauCeti.tendsto_lintegral_enorm_smul_sub`: bounded, almost everywhere convergent real
+  coefficients preserve `L¹` convergence in any real normed space.
 -/
 
 public section
@@ -66,5 +74,46 @@ theorem tendsto_lintegral_zero_of_le_add {ι : Type*} {l : Filter ι} {f g h : �
     (fun _ ↦ zero_le) fun i ↦ ?_
   rw [← lintegral_add_left' (hg i)]
   exact lintegral_mono (hfgh i)
+
+/-- If bounded coefficients `c i` converge almost everywhere to `c₀` and `g i → g₀` in `L¹`,
+then `c i • g i → c₀ • g₀` in `L¹`. The functions take values in any real normed space. -/
+theorem tendsto_lintegral_enorm_smul_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {ν : Measure α} {M : ℝ≥0} {c : ℕ → α → ℝ} {c₀ : α → ℝ} {g : ℕ → α → E} {g₀ : α → E}
+    (hc : ∀ i, AEStronglyMeasurable (c i) ν) (hg : ∀ i, AEStronglyMeasurable (g i) ν)
+    (hg₀ : AEStronglyMeasurable g₀ ν) (hcM : ∀ i x, ‖c i x‖₊ ≤ M) (hc₀M : ∀ x, ‖c₀ x‖₊ ≤ M)
+    (hlim : ∀ᵐ x ∂ν, Tendsto (fun i => c i x) atTop (𝓝 (c₀ x)))
+    (hg₀int : ∫⁻ x, ‖g₀ x‖ₑ ∂ν ≠ ∞)
+    (hgg : Tendsto (fun i => ∫⁻ x, ‖g i x - g₀ x‖ₑ ∂ν) atTop (𝓝 0)) :
+    Tendsto (fun i => ∫⁻ x, ‖c i x • g i x - c₀ x • g₀ x‖ₑ ∂ν)
+      atTop (𝓝 0) := by
+  have hc₀ : AEStronglyMeasurable c₀ ν := aestronglyMeasurable_of_tendsto_ae atTop hc hlim
+  have hC : Tendsto (fun i => ∫⁻ x, ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ ∂ν) atTop (𝓝 0) := by
+    simpa using tendsto_lintegral_of_dominated_convergence' (fun x => (M + M) * ‖g₀ x‖ₑ)
+      (F := fun i x => ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ) (f := 0)
+      (fun i => ((hc i).sub hc₀).enorm.mul hg₀.enorm)
+      (fun i => .of_forall fun x => by
+        dsimp only
+        gcongr
+        exact enorm_sub_le.trans (add_le_add (enorm_le_coe.2 (hcM i x)) (enorm_le_coe.2 (hc₀M x))))
+      (by rw [lintegral_const_mul' _ _ (by simp)]; exact ENNReal.mul_ne_top (by simp) hg₀int)
+      (hlim.mono fun x hx => by
+        simpa using ENNReal.Tendsto.mul_const (hx.sub_const (c₀ x)).enorm (Or.inr enorm_ne_top))
+  refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+    (by simpa using (ENNReal.Tendsto.const_mul (a := M) hgg (Or.inr ENNReal.coe_ne_top)).add hC)
+    (fun _ => zero_le) fun i => ?_
+  rw [← lintegral_const_mul' _ _ ENNReal.coe_ne_top,
+    ← lintegral_add_left' (f := fun x => M * ‖g i x - g₀ x‖ₑ) (((hg i).sub hg₀).enorm.const_mul _)]
+  refine lintegral_mono fun x => ?_
+  calc
+    ‖c i x • g i x - c₀ x • g₀ x‖ₑ
+      = ‖c i x • (g i x - g₀ x) + (c i x - c₀ x) • g₀ x‖ₑ := by
+          congr 1
+          rw [smul_sub, sub_smul]
+          abel
+    _ ≤ M * ‖g i x - g₀ x‖ₑ + ‖c i x - c₀ x‖ₑ * ‖g₀ x‖ₑ := ?_
+  refine (enorm_add_le _ _).trans (add_le_add ?_ (enorm_smul _ _).le)
+  rw [enorm_smul]
+  gcongr
+  exact enorm_le_coe.2 (hcM i x)
 
 end TauCeti
