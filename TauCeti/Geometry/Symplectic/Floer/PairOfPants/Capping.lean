@@ -234,18 +234,6 @@ private theorem exp_neg_two_mul_pi_div_two_lt_one : Real.exp (-(2 * π)) / 2 < 1
   rw [div_lt_one two_pos]
   exact (Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])).trans one_lt_two
 
-/-- Off the disc `‖w‖ < exp (-2π) / 2`, the longitudinal coordinate of the end at `0` is at most
-`1`. -/
-private theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :
-    (zero.endCoord w).re ≤ 1 := by
-  have hw₀ : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) hw
-  have hlog : -(2 * π) ≤ Real.log (‖w‖ / (1 / 2)) := by
-    rw [Real.le_log_iff_exp_le (by positivity), le_div_iff₀ (by norm_num)]
-    linarith
-  rw [re_endCoord, endCenter_zero, endScale_zero, sub_zero, norm_div, div_le_one (by positivity)]
-  norm_num at hlog ⊢
-  linarith
-
 /-- **The pole disc.** The positive plane perturbation vanishes off the disc `‖w‖ < exp (-2π) / 2`,
 where the longitudinal coordinate `s` of the end at `0` is at most `1`. In particular it vanishes
 on a neighbourhood of `∞`, the pole of the plane. -/
@@ -509,66 +497,6 @@ private theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
   exact (h.contDiff.comp ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
     contDiff_snd)).clm_apply contDiff_const
 
-/-- **Shrinking to where the datum lives.** Let `K` be a perturbation whose components
-`K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)` are `C¹` on an open set `P × V`, let `u` be `C¹` on `P`,
-and let `T ⊆ D ⊆ P` with `T` measurable and `D` compact. If `K` vanishes near every point of
-`D \ T`, then the Floer energy minus the symplectic area plus the integrated curvature is the same
-over `D` as over `T`. -/
-private theorem integral_floerEnergyDensity_sub_add_eq_of_eventually_eq_zero
-    (ω : SymplecticForm V) {K : ℂ → V → ℂ →L[ℝ] ℝ} {u : ℝ × ℝ → V} {P D T : Set (ℝ × ℝ)}
-    (hP : IsOpen P) (hu : ContDiffOn ℝ 1 u P)
-    (hK : ∀ v, ContDiffOn ℝ 1 (uncurry fun z x ↦ K (Complex.equivRealProdCLM.symm z) x v)
-      (P ×ˢ univ))
-    (hD : IsCompact D) (hDP : D ⊆ P) (hT : MeasurableSet T) (hTD : T ⊆ D)
-    (hDT : ∀ z ∈ D \ T, ∀ᶠ w in 𝓝 (Complex.equivRealProdCLM.symm z), K w = fun _ ↦ 0) :
-    (∫ z in D, ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) -
-      (∫ z in D, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
-      (∫ z in D, ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)) =
-    (∫ z in T, ω.floerEnergyDensity (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z) -
-      (∫ z in T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
-      ∫ z in T, ω.hamiltonianCurvature (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) := by
-  have hDTm : MeasurableSet (D \ T) := hD.isClosed.measurableSet.diff hT
-  -- The three integrands are continuous on `P`, hence integrable on the compact set `D`.
-  have hint (f : ℝ × ℝ → ℝ) (hf : ContinuousOn f P) : IntegrableOn f D :=
-    (hf.mono hDP).integrableOn_compact hD
-  have hdu := hu.continuousOn_fderiv_of_isOpen hP le_rfl
-  have hE := hint _ (ω.continuousOn_floerEnergyDensity hP hu (hK 1) (hK Complex.I))
-  have harea := hint (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal)
-    (fderiv ℝ u z stdComplexLineImag)) (ω.continuousOn_apply_comp
-      (hdu.clm_apply continuousOn_const) (hdu.clm_apply continuousOn_const))
-  have hcurv := hint _ (ω.continuousOn_hamiltonianCurvature_comp hP hu.continuousOn (hK 1)
-    (hK Complex.I))
-  have hsplit (f : ℝ × ℝ → ℝ) (hf : IntegrableOn f D) :
-      ∫ z in D, f z = (∫ z in T, f z) + ∫ z in D \ T, f z := by
-    rw [← integral_inter_add_sdiff hT hf, inter_eq_right.2 hTD]
-  -- Off `T` the datum vanishes near each point, so the energy is the area and the curvature
-  -- vanishes.
-  have hK' {z : ℝ × ℝ} (hz : z ∈ D \ T) :
-      ∀ᶠ z' in 𝓝 z, K (Complex.equivRealProdCLM.symm z') = fun _ ↦ 0 :=
-    Complex.equivRealProdCLM.symm.continuous.continuousAt.eventually (hDT z hz)
-  have hED : ∫ z in D \ T, ω.floerEnergyDensity
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      ∫ z in D \ T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    refine setIntegral_congr_fun hDTm fun z hz => ?_
-    have hKz := (hK' hz).self_of_nhds
-    simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
-      perturbedFDeriv_apply_stdComplexLineImag, hKz]
-  have hRD : ∫ z in D \ T, ω.hamiltonianCurvature
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z) = 0 := by
-    refine setIntegral_eq_zero_of_forall_eq_zero fun z hz => ?_
-    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
-      ((hK' hz).mono fun z' hz' ↦ funext fun y ↦ by simp [hz'])
-      ((hK' hz).mono fun z' hz' ↦ funext fun y ↦ by simp [hz']), hamiltonianCurvature_zero_left]
-    simp
-  rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hED, hRD]
-  ring
-
 /-- **The energy identity on discs of the negative plane.** Let `K` be the negative plane
 perturbation of a period-one `C¹` Hamiltonian `H`, with components `K_s(z) = K(z)(1)` and
 `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`, and let `u` be a `C¹` map. For
@@ -614,15 +542,22 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
     exact hz.2
   have hD : IsCompact D :=
     Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2 (isCompact_closedBall _ _)
-  have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventually_eq_zero
-    (K := negativePlanePerturbation H) (D := D) (T := T) isOpen_univ hu.contDiffOn
-    (fun v => by
-      rw [univ_prod_univ]
-      exact (contDiff_negativePlanePerturbation_apply hH hHs v).contDiffOn)
-    hD (subset_univ D) (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet hTD
-    fun z hz => eventually_negativePlanePerturbation_eq_zero
-      (mem_ball_zero_iff.1 (closedBall_sdiff_truncation_subset_ball (by linarith) hz))
+  -- Off the truncation, the components vanish near each point of the disc.
+  have hK₀ (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ D \ T) :
+      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) =ᶠ[𝓝 z] 0 :=
+    (Complex.equivRealProdCLM.symm.continuous.continuousAt.eventually
+      (eventually_negativePlanePerturbation_eq_zero (H := H)
+        (mem_ball_zero_iff.1 (closedBall_sdiff_truncation_subset_ball (by linarith) hz)))).mono
+      fun _ h ↦ funext fun _ ↦ by simp [h]
+  have hK (v : ℂ) : ContDiffOn ℝ 1
+      (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v)
+      (univ ×ˢ univ) := by
+    rw [univ_prod_univ]
+    exact (contDiff_negativePlanePerturbation_apply hH hHs v).contDiffOn
+  have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D) (T := T)
+    isOpen_univ hu.contDiffOn (hK 1) (hK Complex.I) hD (subset_univ D)
+    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+      (isCompact_truncation R)).isClosed.measurableSet hTD (hK₀ 1) (hK₀ Complex.I)
   beta_reduce at h
   linarith
 
@@ -777,16 +712,19 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
       (uncurry fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v)
       (P ×ˢ univ) := fun p hp =>
     (contDiffAt_positivePlanePerturbation_apply hH hHs hp.1 p.2 v).contDiffWithinAt
-  have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventually_eq_zero
-    (K := positivePlanePerturbation H) (D := D) (T := T)
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const) hu hK
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+  have hK₀ (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ D \ T) :
+      (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) =ᶠ[𝓝 z] 0 :=
+    (Complex.equivRealProdCLM.symm.continuous.continuousAt.eventually
+      (eventually_positivePlanePerturbation_eq_zero (H := H) (hDT hz))).mono
+      fun _ h ↦ funext fun _ ↦ by simp [h]
+  have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D) (T := T)
+    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const) hu (hK 1)
+    (hK Complex.I) (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       ((isCompact_closedBall _ _).diff Metric.isOpen_ball))
     (fun z hz h₀ => hz.2 (by rw [h₀]; exact Metric.mem_ball_self (by positivity)))
     (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
       (isCompact_truncation R)).isClosed.measurableSet
-    (preimage_mono (truncation_subset_closedBall_sdiff_ball R))
-    fun z hz => eventually_positivePlanePerturbation_eq_zero (hDT hz)
+    (preimage_mono (truncation_subset_closedBall_sdiff_ball R)) (hK₀ 1) (hK₀ Complex.I)
   beta_reduce at h
   linarith
 

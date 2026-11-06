@@ -197,6 +197,18 @@ theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
   rw [this, Real.log_inv, neg_neg]
   exact div_pos (Real.log_pos one_lt_two) (by positivity)
 
+/-- Off the disc `‖w‖ < exp (-2π) / 2`, the longitudinal coordinate of the end at `0` is at most
+`1`. -/
+theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :
+    (zero.endCoord w).re ≤ 1 := by
+  have hw₀ : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) hw
+  have hlog : -(2 * π) ≤ Real.log (‖w‖ / (1 / 2)) := by
+    rw [Real.le_log_iff_exp_le (by positivity), le_div_iff₀ (by norm_num)]
+    linarith
+  rw [re_endCoord, endCenter_zero, endScale_zero, sub_zero, norm_div, div_le_one (by positivity)]
+  norm_num at hlog ⊢
+  linarith
+
 /-- A point with nonzero longitudinal coordinate is not the center of the end. -/
 theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
     (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by
