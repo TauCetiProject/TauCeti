@@ -5,10 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.Ring.FilteredColimits
 public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.Limits.ConcreteCategory.Basic
 public import Mathlib.FieldTheory.IsPerfectClosure
+public import TauCeti.Algebra.Category.Ring.FilteredColimits
 public import TauCeti.Algebra.CharP.Frobenius.PowRingHom
 
 /-!
@@ -97,11 +97,6 @@ theorem frobeniusTowerMap_comp :
     frobeniusTowerMap (f ≫ g) hR hT = frobeniusTowerMap f hR hS ≫ frobeniusTowerMap g hS hT :=
   (rfl)
 
--- The forgetful functor preserves colimits indexed by `ℕ`, a filtered category of a smaller size.
-private theorem preservesColimit_forget : PreservesColimit (frobeniusTower R p h) (forget _) :=
-  have := preservesFilteredColimitsOfSize_shrink.{0, u, 0, u} (forget CommRingCat.{u})
-  inferInstance
-
 variable {c : Cocone (frobeniusTower R p h)} (hc : IsColimit c)
 
 /-- An element at stage `n` of the colimit of the Frobenius tower is the `p ^ k`-th power of the
@@ -116,13 +111,11 @@ include hc
 /-- **The colimit maps of the Frobenius tower are `p`-radical.** -/
 theorem isPRadical_ι_app_of_isColimit (n : ℕ) : IsPRadical (c.ι.app n).hom p where
   pow_mem' x := by
-    have := preservesColimit_forget (h := h)
     obtain ⟨m, y, rfl⟩ := Concrete.isColimit_exists_rep _ hc x
     -- `y` at stage `m` is `y ^ p ^ n` at stage `m + n`, whose `p ^ m`-th power is at stage `n`.
     refine ⟨m, y ^ p ^ n, (ι_app_pow (c := c) n m _).symm.trans ?_⟩
     rw [← ι_app_pow (c := c) m n y, map_pow, Nat.add_comm m n]
   ker_le' x hx := by
-    have := preservesColimit_forget (h := h)
     rw [RingHom.mem_ker] at hx
     obtain ⟨k, f, g, hk⟩ := (Concrete.isColimit_rep_eq_iff_exists _ hc (i := n) (j := n) x 0).1
       (hx.trans (map_zero _).symm)
@@ -131,7 +124,6 @@ theorem isPRadical_ι_app_of_isColimit (n : ℕ) : IsPRadical (c.ι.app n).hom p
 
 /-- **The colimit of the Frobenius tower is a perfect ring.** -/
 theorem perfectRing_of_isColimit : PerfectRing c.pt p := by
-  have := preservesColimit_forget (h := h)
   refine ⟨⟨fun x y hxy ↦ ?_, fun x ↦ ?_⟩⟩
   · obtain ⟨m, x, rfl⟩ := Concrete.isColimit_exists_rep _ hc x
     obtain ⟨n, y, rfl⟩ := Concrete.isColimit_exists_rep _ hc y

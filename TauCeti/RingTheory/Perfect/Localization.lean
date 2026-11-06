@@ -110,10 +110,10 @@ theorem isLocalization_map (hA : (p : A) = 0) (h : j.comp i = i'.comp (algebraMa
   have hek : e.comp k = i' := IsLocalization.ringHom_ext M <| by
     rw [RingHom.comp_assoc, hk, ← RingHom.comp_assoc, he, h]
   have he'j : e'.comp j = algebraMap B Bₘ := (IsPRadical.bijective_comp i p hA (M := Bₘ)).1 <| by
-    change (e'.comp j).comp i = (algebraMap B Bₘ).comp i
+    beta_reduce
     rw [RingHom.comp_assoc, h, ← RingHom.comp_assoc, he', hk]
   have h₁ : e.comp e' = RingHom.id B' := (IsPRadical.bijective_comp i' p hA' (M := B')).1 <| by
-    change (e.comp e').comp i' = (RingHom.id B').comp i'
+    beta_reduce
     rw [RingHom.comp_assoc, he', hek, RingHom.id_comp]
   have h₂ : e'.comp e = RingHom.id Bₘ := IsLocalization.ringHom_ext (M.map i) <| by
     rw [RingHom.comp_assoc, he, he'j, RingHom.id_comp]

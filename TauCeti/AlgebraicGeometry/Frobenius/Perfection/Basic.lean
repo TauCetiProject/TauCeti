@@ -98,6 +98,11 @@ instance perfectRing_perfectionDiagram_obj (U : X.Opensᵒᵖ) :
     PerfectRing ((perfectionDiagram X p hX).obj U) p :=
   CommRingCat.perfectRing_of_isColimit (colimit.isColimit _)
 
+/-- The prime `p` vanishes in the perfection of the sections of `X` over `U`. -/
+theorem natCast_perfectionDiagram_obj_eq_zero (U : X.Opensᵒᵖ) :
+    (p : (perfectionDiagram X p hX).obj U) = 0 := by
+  rw [← map_natCast ((perfectionDiagramMap X p hX).app U).hom, natCast_app_eq_zero hX, map_zero]
+
 /-- Perfection commutes with restriction to basic opens: over a basic open `D(r)` of an affine
 open `U`, the perfection of `Γ(X, D(r))` is the localization of the perfection of `Γ(X, U)` away
 from `r`. This is the condition under which the spectra of the perfections glue. -/
@@ -163,11 +168,6 @@ theorem isPullback_perfectionChart (U : X.affineOpens) :
 theorem natCast_perfection_eq_zero : (p : Γ(X.perfection p hX, ⊤)) = 0 :=
   natCast_eq_zero_of_hom (X.fromPerfection p hX) hX
 
-/-- The prime `p` vanishes in the perfection of the sections of `X` over `U`. -/
-private theorem natCast_perfectionDiagram_obj_eq_zero (U : X.Opensᵒᵖ) :
-    (p : (perfectionDiagram X p hX).obj U) = 0 := by
-  rw [← map_natCast ((perfectionDiagramMap X p hX).app U).hom, natCast_app_eq_zero hX, map_zero]
-
 /-- **The perfection of a scheme is perfect.** -/
 instance isPerfect_perfection : IsPerfect (X.perfection p hX) p :=
   have (U : X.AffineZariskiSite) : IsPerfect ((perfectionGlueData X p hX).cover.X U) p :=
@@ -230,8 +230,7 @@ private theorem injective_comp_fromPerfection :
 
 /-- **Morphisms from a perfect scheme lift uniquely to the perfection.** If `Y` is perfect, then
 composition with `X^perf ⟶ X` is a bijection from morphisms `Y ⟶ X^perf` to morphisms `Y ⟶ X`.
-Thus perfection is right adjoint to the inclusion of perfect schemes. Bhatt–Scholze 2017,
-Lemma 3.4 and Proposition 3.13. -/
+Thus perfection is right adjoint to the inclusion of perfect schemes. -/
 theorem bijective_comp_fromPerfection :
     Function.Bijective fun g : Y ⟶ X.perfection p hX ↦ g ≫ X.fromPerfection p hX := by
   refine ⟨injective_comp_fromPerfection Y, fun f ↦ ?_⟩
@@ -275,6 +274,14 @@ composition with `X^perf ⟶ X`. -/
 theorem hom_ext_perfection {g g' : Y ⟶ X.perfection p hX}
     (h : g ≫ X.fromPerfection p hX = g' ≫ X.fromPerfection p hX) : g = g' :=
   injective_comp_fromPerfection Y h
+
+/-- The lift to the perfection of `X` is natural in the perfect source: lifting `h ≫ f` for a
+morphism `h : Y' ⟶ Y` of perfect schemes is `h` followed by the lift of `f`. -/
+@[simp, reassoc]
+theorem homPerfectionEquiv_symm_comp_left {Y' : Scheme.{u}} [IsPerfect Y' p] (h : Y' ⟶ Y)
+    (f : Y ⟶ X) :
+    (homPerfectionEquiv (hX := hX) Y').symm (h ≫ f) = h ≫ (homPerfectionEquiv Y).symm f :=
+  hom_ext_perfection Y' (by simp)
 
 end IsPerfect
 
