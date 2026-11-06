@@ -368,6 +368,133 @@ private theorem tendsto_mul_m_im_atTop :
     have h := (m_at_imaginary_axis t ht).2
     nlinarith [sq_nonneg (m (t * Complex.I)).im]
 
+private theorem integrable_log_norm_imaginary (t : ℝ) (ht : 0 < t) :
+    Integrable (fun y : ℝ ↦ Real.log ‖(t : ℂ) * Complex.I - y‖)
+      (semicircleReal 0 1) := by
+  have hz : 0 < ((t : ℂ) * Complex.I).im := by simpa using ht
+  have h := (integrable_log_sub hz).re
+  refine h.congr ?_
+  filter_upwards with y
+  exact Complex.log_re _
+
+private theorem log_norm_imaginary_bounds (t : ℝ) (ht : 0 < t) :
+    Real.log t ≤ ∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1 ∧
+      (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1) ≤
+        Real.log (t + 2) := by
+  have hInt := integrable_log_norm_imaginary t ht
+  have hlow : ∀ᵐ (y : ℝ) ∂(semicircleReal (0 : ℝ) (1 : ℝ≥0)),
+      Real.log t ≤ Real.log ‖(t : ℂ) * Complex.I - y‖ := by
+    filter_upwards [ae_mem_Icc_semicircleReal_zero_one] with y hy
+    apply Real.log_le_log (by linarith)
+    have h := Complex.abs_im_le_norm ((t : ℂ) * Complex.I - (y : ℂ))
+    have him : (((t : ℂ) * Complex.I - y).im) = t := by simp
+    rw [him] at h
+    simpa [abs_of_pos ht] using h
+  have hhigh : ∀ᵐ (y : ℝ) ∂(semicircleReal (0 : ℝ) (1 : ℝ≥0)),
+      Real.log ‖(t : ℂ) * Complex.I - y‖ ≤ Real.log (t + 2) := by
+    filter_upwards [ae_mem_Icc_semicircleReal_zero_one] with y hy
+    have him : (((t : ℂ) * Complex.I - (y : ℂ)).im) = t := by simp
+    have hnorm := Complex.abs_im_le_norm ((t : ℂ) * Complex.I - (y : ℂ))
+    rw [him] at hnorm
+    have hnormpos : 0 < ‖(t : ℂ) * Complex.I - y‖ :=
+      lt_of_lt_of_le ht (by simpa [abs_of_pos ht] using hnorm)
+    apply Real.log_le_log hnormpos
+    · calc
+        ‖(t : ℂ) * Complex.I - (y : ℂ)‖ ≤
+          ‖(t : ℂ) * Complex.I‖ + ‖(y : ℂ)‖ :=
+          norm_sub_le _ _
+        _ = t + |y| := by simp [abs_of_pos ht]
+        _ ≤ t + 2 := by
+          have hyabs : |y| ≤ 2 := abs_le.mpr hy
+          linarith
+  constructor
+  · simpa [integral_const] using integral_mono_ae (integrable_const (Real.log t)) hInt hlow
+  · simpa [integral_const] using integral_mono_ae hInt (integrable_const (Real.log (t + 2))) hhigh
+
+private theorem tendsto_log_norm_imaginary_sub_log_atTop :
+    Tendsto
+      (fun t : ℝ ↦ (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1) -
+        Real.log t) atTop (𝓝 0) := by
+  have hlog : Tendsto (fun t : ℝ ↦ Real.log (t + 2) - Real.log t) atTop (𝓝 0) := by
+    simpa using Real.tendsto_log_comp_add_sub_log 2
+  refine Filter.Tendsto.squeeze' tendsto_const_nhds hlog ?_ ?_
+  · filter_upwards [eventually_gt_atTop 0] with t ht
+    have h := (log_norm_imaginary_bounds t ht).1
+    linarith
+  · filter_upwards [eventually_gt_atTop 0] with t ht
+    have h := (log_norm_imaginary_bounds t ht).2
+    linarith
+
+private theorem tendsto_primitive_re_sub_log_atTop :
+    Tendsto (fun t : ℝ ↦ (primitive ((t : ℂ) * Complex.I)).re - Real.log t)
+      atTop (𝓝 0) := by
+  have hcont : ContinuousAt (fun u : ℝ ↦ u / 2 - Real.log u - 1 / 2) 1 := by
+    fun_prop (disch := norm_num)
+  have h := hcont.tendsto.comp tendsto_mul_m_im_atTop
+  have heq : ∀ᶠ t : ℝ in atTop,
+      (primitive ((t : ℂ) * Complex.I)).re - Real.log t =
+        (t * (m (t * Complex.I)).im) / 2 -
+          Real.log (t * (m (t * Complex.I)).im) - 1 / 2 := by
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    have hzt : 0 < ((t : ℂ) * Complex.I).im := by simpa using ht
+    have hb := m_im_pos hzt
+    have hm := m_at_imaginary_axis t ht
+    have hmval : m ((t : ℂ) * Complex.I) =
+        (m ((t : ℂ) * Complex.I)).im * Complex.I := by
+      apply Complex.ext <;> simp [hm.1]
+    have hnorm : ‖m ((t : ℂ) * Complex.I)‖ =
+        (m ((t : ℂ) * Complex.I)).im := by
+      rw [hmval]
+      simp [abs_of_pos hb]
+    have hfirst :
+        (-( ((t : ℂ) * Complex.I) * m ((t : ℂ) * Complex.I)) / 2).re =
+          t * (m ((t : ℂ) * Complex.I)).im / 2 := by
+      rw [hmval]
+      simp
+    rw [primitive_re, hfirst, hnorm]
+    rw [Real.log_mul (ne_of_gt ht) (ne_of_gt hb)]
+    ring
+  have h' := Filter.Tendsto.congr' (EventuallyEq.symm heq) h
+  simpa using h'
+
+private theorem real_logPotential_eq_primitive_re {z : ℂ} (hz : 0 < z.im) :
+    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1) = (primitive z).re := by
+  let C := (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1) - (primitive z).re
+  have hG : Tendsto
+      (fun t : ℝ ↦
+        (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1) -
+          (primitive ((t : ℂ) * Complex.I)).re) atTop (𝓝 0) := by
+    have hH := tendsto_log_norm_imaginary_sub_log_atTop
+    have hF := tendsto_primitive_re_sub_log_atTop
+    have h := hH.sub hF
+    have hfun :
+        (fun t : ℝ ↦
+          (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1) -
+            (primitive ((t : ℂ) * Complex.I)).re) =
+          (fun (t : ℝ) ↦
+            ((∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1) -
+              Real.log t) -
+              ((primitive ((t : ℂ) * Complex.I)).re - Real.log t)) := by
+      funext t
+      ring
+    rw [hfun]
+    simpa using h
+  have hEq : (fun _ : ℝ ↦ C) =ᶠ[atTop] fun t ↦
+      (∫ y : ℝ, Real.log ‖(t : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1) -
+        (primitive ((t : ℂ) * Complex.I)).re := by
+    filter_upwards [eventually_gt_atTop 0] with t ht
+    have hzt : 0 < ((t : ℂ) * Complex.I).im := by simpa using ht
+    exact real_logPotential_sub_primitive_is_const hz hzt
+  have hconst : Tendsto (fun _ : ℝ ↦ C) atTop (𝓝 0) := hG.congr' hEq.symm
+  have hzero := tendsto_nhds_unique tendsto_const_nhds hconst
+  dsimp [C] at hzero
+  linarith
+
+private theorem log_norm_eq_primitive_re {z : ℂ} (hz : 0 < z.im) :
+    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1) =
+      (-(z * m z) / 2).re - Real.log ‖m z‖ - 1 / 2 := by
+  rw [real_logPotential_eq_primitive_re hz, primitive_re]
+
 end UpperHalfPlane
 
 end TauCeti.Probability
