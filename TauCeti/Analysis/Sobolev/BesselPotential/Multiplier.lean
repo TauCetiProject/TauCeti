@@ -75,4 +75,20 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
   · filter_upwards [hv, hw] with x hvx hwx
     rw [hvx, hwx]
 
+/-- The pointwise form of `exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives`: a
+smooth real coefficient whose derivatives through order `k` are bounded multiplies the real
+functions of `H^{k,p}` into themselves. -/
+theorem mul_mem_realSobolevFunctions_of_bounded_derivatives
+    {p : ENNReal} [Fact (1 ≤ p)] (hp : 1 < p) (hp_top : p ≠ ⊤) (k : ℕ)
+    {ψ : E → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ} (hM : 0 ≤ M)
+    (hbound : ∀ j ≤ k, ∀ x, ‖iteratedFDeriv ℝ j ψ x‖ ≤ M)
+    {g : E → ℝ} (hg : g ∈ realSobolevFunctions E k p) :
+    ψ * g ∈ realSobolevFunctions E k p := by
+  obtain ⟨u, hug, hu⟩ := mem_realSobolevFunctions.1 hg
+  obtain ⟨v, hv, hvu⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
+    hp hp_top k hψ hM hbound (mem_realSobolevSubmodule.2 hu)
+  refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hv) ?_
+  filter_upwards [hvu, hug] with x h₁ h₂
+  rw [h₁, h₂, Pi.mul_apply]
+
 end TemperedDistribution
