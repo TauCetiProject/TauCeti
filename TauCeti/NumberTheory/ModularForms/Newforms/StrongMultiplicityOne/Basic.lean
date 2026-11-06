@@ -35,10 +35,11 @@ every index coprime to `N`, and the difference is old by the Main Lemma
 (`TauCeti.mem_cuspFormsOld_of_forall_coprime_qExpansion_coeff_eq_zero`). Being a difference of
 newforms it is also new, and old and new are disjoint, so it is zero.
 
-Miyake states the theorem on the Fourier coefficients rather than the eigenvalues; for a
-normalised newform the coefficient at a good index *is* the eigenvalue there
-(`EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue` with `Newform.isNorm`), so that form is
-a corollary.
+Miyake states the theorem on the Fourier coefficients rather than the eigenvalues, at the good
+indices outside a finite set. Those coefficients also determine the nebentypus, so that form needs
+no hypothesis on it (`Newform.eq_of_forall_notMem_qExpansion_coeff_eq`, in
+`TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Nebentypus`, together with its
+cross-level analogue).
 
 Across unrelated levels, two newforms `f`, `g` of levels `N`, `M` whose nebentypes induce the
 same character modulo `lcm N M` and whose eigenvalues agree at all but finitely many primes
@@ -54,10 +55,6 @@ levels the fixed-level theorem then makes them the same function
   the eigenvalues at the primes outside a finite set.
 * `HeckeRing.GL2.Newform.eq_of_forall_prime_eigenvalue_eq`: a newform is determined by its
   eigenvalues at the primes not dividing the level.
-* `HeckeRing.GL2.Newform.eq_of_forall_notMem_eigenvalue_eq`: strong multiplicity one, on the
-  eigenvalues at the indices outside a finite set.
-* `HeckeRing.GL2.Newform.eq_of_forall_notMem_qExpansion_coeff_eq`: Miyake's own form, on the
-  `q`-expansion coefficients.
 * `HeckeRing.GL2.Newform.level_eq_of_dvd_of_forall_prime_eigenvalue_eq`: a good Hecke eigenform
   of a divisor level `M ∣ N` with `a₁ ≠ 0` sharing the nebentypus and the good eigensystem of a
   newform of level `N` has `M = N`.
@@ -122,8 +119,7 @@ private theorem exists_heckeRingHomCuspCharSpace_sub_eq_smul {χ : (ZMod N)ˣ �
 /-- **Strong multiplicity one at the primes** (Miyake, Theorem 4.6.12, fixed level and
 nebentypus): two newforms of level `N`, weight `k` and the same nebentypus whose eigenvalues
 agree at every prime `p ∤ N` outside a finite set `S` are equal. Nothing is assumed at the
-primes dividing `N`, nor at the primes of `S`; agreement at the indices outside a finite set is
-the special case `Newform.eq_of_forall_notMem_eigenvalue_eq`. -/
+primes dividing `N`, nor at the primes of `S`. -/
 theorem Newform.eq_of_forall_notMem_prime_eigenvalue_eq {f g : Newform N k} (hχ : f.χ = g.χ)
     {S : Finset ℕ}
     (h : ∀ (p : ℕ) (hp : p.Prime) (hpN : Nat.Coprime p N), p ∉ S →
@@ -165,31 +161,6 @@ theorem Newform.eq_of_forall_prime_eigenvalue_eq {f g : Newform N k} (hχ : f.χ
       f.eigenvalue ⟨p, hp.pos⟩ hpN = g.eigenvalue ⟨p, hp.pos⟩ hpN) :
     f = g :=
   Newform.eq_of_forall_notMem_prime_eigenvalue_eq hχ (S := ∅) fun p hp hpN _ ↦ h p hp hpN
-
-/-- **Strong multiplicity one** (Miyake, Theorem 4.6.12, fixed level and nebentypus): two
-newforms of level `N`, weight `k` and the same nebentypus whose eigenvalues agree at every index
-coprime to `N` outside a finite set are equal. -/
-theorem Newform.eq_of_forall_notMem_eigenvalue_eq {f g : Newform N k} (hχ : f.χ = g.χ)
-    {S : Finset ℕ}
-    (h : ∀ (n : ℕ+) (hn : Nat.Coprime n N), (n : ℕ) ∉ S → f.eigenvalue n hn = g.eigenvalue n hn) :
-    f = g :=
-  Newform.eq_of_forall_notMem_prime_eigenvalue_eq hχ fun p hp hpN hpS ↦ h ⟨p, hp.pos⟩ hpN hpS
-
-/-- **Strong multiplicity one, on Fourier coefficients** (Miyake's own form of Theorem 4.6.12):
-two newforms of level `N`, weight `k` and the same nebentypus whose `q`-expansion coefficients
-agree at every index coprime to `N` outside a finite set are equal. For a normalised newform the
-coefficient at a good index *is* the eigenvalue there
-(`HeckeRing.GL2.EigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue`), so this is the eigenvalue
-form. -/
-theorem Newform.eq_of_forall_notMem_qExpansion_coeff_eq {f g : Newform N k} (hχ : f.χ = g.χ)
-    {S : Finset ℕ}
-    (h : ∀ (n : ℕ+), Nat.Coprime (n : ℕ) N → (n : ℕ) ∉ S →
-      (qExpansion 1 f.toCuspForm).coeff (n : ℕ) = (qExpansion 1 g.toCuspForm).coeff (n : ℕ)) :
-    f = g :=
-  Newform.eq_of_forall_notMem_eigenvalue_eq hχ fun n hn hnS ↦ by
-    rw [← f.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f.isNorm n hn,
-      ← g.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue g.isNorm n hn]
-    exact h n hn hnS
 
 /-! ### Across divisor levels -/
 
