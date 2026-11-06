@@ -73,7 +73,7 @@ theorem mapProjective_id :
 
 /-- Successive changes of field agree with the composite embedding. -/
 @[simp]
-theorem mapProjective_comp (f : K →+* L) (g : L →+* M) (p : ℙ K (ι → K)) :
+theorem mapProjective_mapProjective (f : K →+* L) (g : L →+* M) (p : ℙ K (ι → K)) :
     g.mapProjective (f.mapProjective p) = (g.comp f).mapProjective p := by
   induction p using Projectivization.ind with
   | h v hv => simp [Function.comp_def]
