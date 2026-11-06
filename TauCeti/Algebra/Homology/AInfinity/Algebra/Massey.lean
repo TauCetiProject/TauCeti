@@ -473,16 +473,16 @@ theorem IsHomogeneous.value_mem_piece (hS : S.IsHomogeneous p q r) :
   𝒜.cohomologyClass_mem_cohomologyGrading_piece _ hS.cycle_mem_piece
 
 open _root_.DirectSum in
-/-- Projecting the bounding cochains `u`, `v` of a defining system to the degrees `p + q - 1`,
-`q + r - 1` projects the Massey cycle to degree `p + q + r - 1`, when `a`, `b`, `c` are
-homogeneous of degrees `p`, `q`, `r`. -/
-theorem cycle_projection (T : 𝒜.TripleMasseyDefiningSystem x y z) {p q r : ℤ}
+/-- The degree-`p + q + r - 1` component of the Massey cycle is the Massey cycle formula with the
+bounding cochains `u`, `v` replaced by their components of degrees `p + q - 1`, `q + r - 1`, when
+`a`, `b`, `c` are homogeneous of degrees `p`, `q`, `r`. -/
+private theorem coe_decompose_cycle (T : 𝒜.TripleMasseyDefiningSystem x y z) {p q r : ℤ}
     (ha : T.a ∈ 𝒜.grading.piece p) (hb : T.b ∈ 𝒜.grading.piece q)
     (hc : T.c ∈ 𝒜.grading.piece r) :
+    (decompose 𝒜.grading.piece T.cycle (p + q + r - 1) : A) =
     𝒜.m 2 ![(decompose 𝒜.grading.piece T.u (p + q - 1) : A), T.c] -
         𝒜.m 2 ![𝒜.grading.koszulTwist 1 T.a, (decompose 𝒜.grading.piece T.v (q + r - 1) : A)] +
-      𝒜.m 3 ![T.a, T.b, T.c] =
-    (decompose 𝒜.grading.piece T.cycle (p + q + r - 1) : A) := by
+      𝒜.m 3 ![T.a, T.b, T.c] := by
   have h₁ := DirectSum.map_decompose_shift 𝒜.grading.piece 𝒜.grading.piece
     (𝒜.mul.flip T.c) (· + r) (add_left_injective r)
     (fun _ _ h ↦ 𝒜.mul_mem_piece h hc) (p + q - 1) T.u
@@ -551,7 +551,10 @@ theorem exists_isHomogeneous_value_eq_iff {p q r : ℤ} (hx : x ∈ 𝒜.cohomol
   refine ⟨T', hT', ?_⟩
   -- The new Massey cycle is the degree-`(p + q + r - 1)` component of the old one.
   have hcycle : T'.cycle = decompose 𝒜.grading.piece T.cycle (p + q + r - 1) :=
-    TripleMasseyDefiningSystem.cycle_projection T (ha₂ ▸ hap) (hb₂ ▸ hbq) (hcT ▸ hcr)
+    by
+      rw [TripleMasseyDefiningSystem.cycle_def]
+      exact (TripleMasseyDefiningSystem.coe_decompose_cycle T (ha₂ ▸ hap) (hb₂ ▸ hbq)
+        (hcT ▸ hcr)).symm
   calc T'.value = decompose 𝒜.cohomologyGrading.piece T.value (p + q + r - 1) := by
         rw [TripleMasseyDefiningSystem.value_def, TripleMasseyDefiningSystem.value_def,
           decompose_cohomologyClass, cohomologyClass_eq_iff, hcycle, sub_self]
