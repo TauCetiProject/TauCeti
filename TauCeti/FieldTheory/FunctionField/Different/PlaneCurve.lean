@@ -117,6 +117,32 @@ end Integral
 
 section Rational
 
+/-- **The polynomial ring is the base of a rational function field**: if `t` is transcendental over
+`k` and `k(t)` is the whole field `K`, then `K` is the fraction field of `k[X]`, with `k[X]` acting
+through `X ↦ t`. -/
+theorem isFractionRing_polynomial_aeval {k K : Type*} [Field k] [Field K] [Algebra k K] {t : K}
+    (ht : Transcendental k t) (htop : k⟮t⟯ = ⊤) :
+    letI : Algebra k[X] K := (aeval t).toAlgebra
+    IsFractionRing k[X] K := by
+  let : Algebra k[X] K := (aeval t).toAlgebra
+  let e : RatFunc k ≃ₐ[k] K := (RatFunc.algEquivOfTranscendental t ht).trans
+    ((IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv)
+  refine IsLocalization.isLocalization_of_algEquiv _ { e with commutes' := fun p ↦ ?_ }
+  simp [e, RingHom.algebraMap_toAlgebra]
+
+/-- **Polynomials in a regular element are regular**: if `a` is regular at `P` and equals the image
+of `X` under a `k`-algebra structure of `k[X]` on `F`, then the image of every polynomial is
+regular at `P`. -/
+theorem algebraMap_polynomial_mem_integers {k F : Type*} [Field k] [Field F] [Algebra k F]
+    [Algebra k[X] F] [IsScalarTower k k[X] F] (P : Place k F) {a : F} (ha : a ∈ P.integers)
+    (haX : a = algebraMap k[X] F X) (r : k[X]) : algebraMap k[X] F r ∈ P.integers := by
+  induction r using Polynomial.induction_on' with
+  | add p q hp hq => rw [map_add]; exact add_mem hp hq
+  | monomial n c =>
+    rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, ← haX, ← Polynomial.algebraMap_eq,
+      ← IsScalarTower.algebraMap_apply]
+    exact mul_mem (P.algebraMap_mem_integers c) (pow_mem ha n)
+
 variable {k K F : Type*} [Field k] [Field K] [Field F] [Algebra k K] [Algebra k F] [Algebra K F]
   [IsScalarTower k K F] [FiniteDimensional K F] [Algebra.IsSeparable K F]
 
@@ -139,11 +165,7 @@ theorem differentExponent_eq_ord_aeval_pderiv_one {t : K} (ht : Transcendental k
   let _ : Algebra k[X] K := (aeval t).toAlgebra
   let _ : Algebra k[X] F := ((algebraMap K F).comp (algebraMap k[X] K)).toAlgebra
   have : IsScalarTower k[X] K F := .of_algebraMap_eq fun _ ↦ rfl
-  have : IsFractionRing k[X] K := by
-    let e : RatFunc k ≃ₐ[k] K := (RatFunc.algEquivOfTranscendental t ht).trans
-      ((IntermediateField.equivOfEq htop).trans IntermediateField.topEquiv)
-    refine IsLocalization.isLocalization_of_algEquiv _ { e with commutes' := fun p ↦ ?_ }
-    simp [e, RingHom.algebraMap_toAlgebra]
+  have : IsFractionRing k[X] K := isFractionRing_polynomial_aeval ht htop
   have : IsScalarTower k k[X] K := .of_algebraMap_eq fun c ↦ by
     simp [RingHom.algebraMap_toAlgebra]
   have : IsScalarTower k k[X] F := .of_algebraMap_eq fun c ↦ by
@@ -181,13 +203,8 @@ theorem differentExponent_eq_ord_aeval_pderiv_one {t : K} (ht : Transcendental k
       rw [← Algebra.adjoin_image, Set.image_singleton, Algebra.map_top, Subalgebra.range_val]
       rfl
   -- `P` is finite on `C`, since `t` is regular at `P` and `C` is integral over `k[t]`.
-  have hR : ∀ r : k[X], algebraMap k[X] F r ∈ P.integers := fun r ↦ by
-    induction r using Polynomial.induction_on' with
-    | add p q hp hq => rw [map_add]; exact add_mem hp hq
-    | monomial n c =>
-      rw [← C_mul_X_pow_eq_monomial, map_mul, map_pow, ← htX, ← Polynomial.algebraMap_eq,
-        ← IsScalarTower.algebraMap_apply]
-      exact mul_mem (P.algebraMap_mem_integers c) (pow_mem htP n)
+  have hR : ∀ r : k[X], algebraMap k[X] F r ∈ P.integers :=
+    algebraMap_polynomial_mem_integers P htP htX
   have hC : ∀ c : C, algebraMap C F c ∈ P.integers := fun c ↦
     P.mem_integers_of_isIntegral hR (Algebra.IsIntegral.isIntegral c).algebraMap
   rw [differentExponent_eq_ord_aeval_derivative_minpoly_of_isIntegralClosure k K
