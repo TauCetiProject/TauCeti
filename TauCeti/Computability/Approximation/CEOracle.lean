@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Computability.SingleOracle.Limit
 public import TauCeti.Computability.Enumeration.Code
+import TauCeti.Computability.Approximation.Limit
 import TauCeti.Computability.SingleOracle.Relative
 
 /-!
@@ -47,7 +48,7 @@ variable {A : ℕ → Finset ℕ} {c : Code} {g : ℕ → ℕ}
 with the limit oracle. This test is decidable relative to the limit oracle. -/
 private noncomputable def certifiedStage (A : ℕ → Finset ℕ) (c : Code) (x s : ℕ) : Bool :=
   let run := Code.evaln (Code.setAnswers (A s)) s c x
-  let u := (run.map Code.Halt.use).getD 0
+  let u := Code.stageUse (Code.setAnswers (A s)) s c x
   run.isSome && decide ((List.range u).map ((A s : Set ℕ).indicator (1 : ℕ → ℕ)) =
     (List.range u).map ((stageLimit A).indicator (1 : ℕ → ℕ)))
 
@@ -56,24 +57,25 @@ private theorem certifiedStage_iff {x s : ℕ} : certifiedStage A c x s = true �
       ∀ z < d.use, (A s : Set ℕ).indicator (1 : ℕ → ℕ) z =
         (stageLimit A).indicator (1 : ℕ → ℕ) z := by
   unfold certifiedStage
-  cases h : Code.evaln (Code.setAnswers (A s)) s c x <;>
-    simp [List.map_inj_left]
+  cases h : Code.evaln (Code.setAnswers (A s)) s c x with
+  | none => simp
+  | some d => simp [Code.stageUse_eq_of_evaln_eq_some h, List.map_inj_left]
 
 private theorem computableIn_certifiedStage
-    (hA : Computable fun s => Finset.equivBitIndices.symm (A s))
-    (hrun : Computable₂ fun s x => Code.evaln (Code.setAnswers (A s)) s c x) :
+    (hA : Computable fun s => Finset.equivBitIndices.symm (A s)) :
     ComputableIn₂ {(stageLimit A).oracle} (certifiedStage A c) := by
   classical
-  have hr := Computable.comp hrun (Computable.snd.pair Computable.fst)
+  have hr := Computable.comp (Code.computable₂_evaln_setAnswers hA c)
+    (Computable.snd.pair Computable.fst)
   have hu : Computable (fun p : ℕ × ℕ =>
-      ((Code.evaln (Code.setAnswers (A p.2)) p.2 c p.1).map Code.Halt.use).getD 0) :=
-    (Primrec.option_getD.comp
-      (Primrec.option_map Primrec.id (Code.Halt.primrec_use.comp Primrec.snd).to₂)
-      (Primrec.const 0)).to_comp.comp hr
-  have hbits : Computable₂ (fun s z => (A s : Set ℕ).indicator (1 : ℕ → ℕ) z) := by
-    have hm := (computablePred_mem_of_computable_equivBitIndices hA).decide
-    exact ((Primrec.cond Primrec.id (Primrec.const 1) (Primrec.const 0)).to_comp.comp hm).of_eq
-      fun p => by simp [Set.indicator_apply]
+      Code.stageUse (Code.setAnswers (A p.2)) p.2 c p.1) :=
+    ((Code.primrec_stageUse Code.primrec₂_setAnswers_equivBitIndices).to_comp.comp
+      ((hA.comp Computable.snd).pair
+        (Computable.snd.pair ((Computable.const c).pair Computable.fst)))).of_eq
+      fun p => by simp only [Finset.equivBitIndices.apply_symm_apply]
+  have hbits : Computable₂ (fun s z => (A s : Set ℕ).indicator (1 : ℕ → ℕ) z) :=
+    (Primrec.indicator_equivBitIndices.to_comp.comp (hA.comp Computable.fst)
+      Computable.snd).of_eq fun p => by simp only [Finset.equivBitIndices.apply_symm_apply]
   have hb : ComputableIn₂ {(stageLimit A).oracle}
       (fun s z => (A s : Set ℕ).indicator (1 : ℕ → ℕ) z) := hbits.computableIn
   have hleft := (ComputableIn₂.list_range_map hb).comp
@@ -131,15 +133,7 @@ theorem exists_computable_isModulus_of_stages (hA : Monotone A)
       ComputableIn {(stageLimit A).oracle} m ∧ IsModulus f g m := by
   classical
   obtain ⟨c, hc⟩ := Code.exists_code.1 (RecursiveIn.iff_nat.1 hg)
-  have hrun : Computable₂ fun s x => Code.evaln (Code.setAnswers (A s)) s c x := by
-    have hargs : Computable (fun p : ℕ × ℕ =>
-        (Finset.equivBitIndices.symm (A p.1), p.1, c, p.2)) := (hAc.comp Computable.fst).pair
-      (Computable.fst.pair ((Computable.const c).pair Computable.snd))
-    refine (Code.primrec_evaln_equivBitIndices.to_comp.comp hargs).of_eq fun p => ?_
-    simp only [Finset.equivBitIndices.apply_symm_apply]
-    congr 1
-    ext z
-    simp [Code.setAnswers_apply, Set.indicator_apply]
+  have hrun := Code.computable₂_evaln_setAnswers hAc c
   let f : ℕ → ℕ → ℕ := fun s x =>
     ((Code.evaln (Code.setAnswers (A s)) s c x).map Code.Halt.output).getD 0
   have hex := exists_certifiedStage hA hc
@@ -149,7 +143,7 @@ theorem exists_computable_isModulus_of_stages (hA : Monotone A)
       (Primrec.option_map Primrec.id (Code.Halt.primrec_output.comp Primrec.snd).to₂)
       (Primrec.const 0)).to_comp.comp hrun
   · -- The certificate is an oracle-decidable test; totality follows from visibility.
-    have htest := computableIn_certifiedStage hAc hrun
+    have htest := computableIn_certifiedStage hAc (c := c)
     have hzero : ComputableIn₂ {(stageLimit A).oracle} (fun x s =>
         bif certifiedStage A c x s then 0 else 1) :=
       (Primrec.cond Primrec.id (Primrec.const 0) (Primrec.const 1)).computableIn.comp htest
@@ -178,11 +172,10 @@ theorem computableIn_iff_exists_isModulus_of_rePred {Z : Set ℕ}
   constructor
   · intro hg
     obtain ⟨A, hA, -, hAc, hlim⟩ := rePred_iff_exists_stages.1 hZ
-    have hlim' : stageLimit A = Z := hlim
+    have hlim' : stageLimit A = Z := by simpa using hlim
     subst Z
     exact exists_computable_isModulus_of_stages hA hAc hg
   · rintro ⟨f, m, hf, hm, hmod⟩
-    exact RecursiveIn.of_eq (hf.computableIn.comp (hm.pair ComputableIn.id))
-      fun x => congrArg Part.some (hmod.apply_eq x)
+    exact hmod.computableIn hf.computableIn hm
 
 end TauCeti.Approximation

@@ -22,12 +22,16 @@ The algorithm computing `g x` relative to `Z'` searches for the least stage `s` 
 value at `x` no longer changes, and returns `f s x`. Whether a stage is such a stage is a
 question with a `Z`-c.e. negation, the existence of a later stage with a different value, so `Z'`
 answers it. No modulus of convergence is needed, and none need be computable in `Z`.
+If a modulus is computable in the original oracles, evaluating at that modulus already
+computes the limit in those oracles, without passing to the jump.
 
 The converse, that every function computable in `Z'` is such a limit, is proved in
 `TauCeti.Computability.Approximation.Jump`.
 
 ## Main results
 
+* `TauCeti.Approximation.IsModulus.computableIn`: a uniformly oracle-computable sequence with
+  an oracle-computable modulus has an oracle-computable limit.
 * `TauCeti.Approximation.Converges.computableIn_jump`: the limit of a sequence computable in `Z`
   is computable in `Z'`.
 * `TauCeti.Approximation.Converges.turingReducible_jump`: the characteristic-function form, a set
@@ -49,6 +53,15 @@ open Encodable
 namespace TauCeti
 
 namespace Approximation
+
+/-- **Oracle-computable modulus, oracle-computable limit.** A uniformly oracle-computable
+sequence with a modulus computable in the same oracles has a limit computable in those oracles. -/
+theorem IsModulus.computableIn {α β : Type*} [Primcodable α] [Primcodable β]
+    {O : Set (ℕ →. ℕ)} {f : ℕ → α → β} {g : α → β} {m : α → ℕ}
+    (hm : IsModulus f g m) (hf : ComputableIn₂ O f) (hmc : ComputableIn O m) :
+    ComputableIn O g :=
+  RecursiveIn.of_eq (hf.comp (hmc.pair ComputableIn.id))
+    fun x => congrArg Part.some (hm.apply_eq x)
 
 variable {Z : Set ℕ} {f : ℕ → ℕ → ℕ} {g : ℕ → ℕ}
 
