@@ -107,3 +107,56 @@ theorem holderOnWith_iteratedFDeriv_of_comp_right (e : G ≃L[𝕜] E) {f : E �
     _ = _ := by ring
 
 end ContinuousLinearEquiv
+
+namespace LinearIsometryEquiv
+
+/-- Linear isometries on either side preserve differences of iterated derivative fields,
+without any differentiability assumption on the function. -/
+theorem norm_iteratedFDeriv_sub_comp
+    {𝕜 E E' F F' : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedAddCommGroup F'] [NormedSpace 𝕜 F']
+    (e : E' ≃ₗᵢ[𝕜] E) (t : F ≃ₗᵢ[𝕜] F') (f : E → F) (j : ℕ) (x y : E') :
+    ‖iteratedFDeriv 𝕜 j (t ∘ f ∘ e) x - iteratedFDeriv 𝕜 j (t ∘ f ∘ e) y‖ =
+      ‖iteratedFDeriv 𝕜 j f (e x) - iteratedFDeriv 𝕜 j f (e y)‖ := by
+  have hr (z : E') : iteratedFDeriv 𝕜 j (f ∘ e) z =
+      (iteratedFDeriv 𝕜 j f (e z)).compContinuousLinearMap fun _ => (e : E' →L[𝕜] E) := by
+    simpa only [← iteratedFDerivWithin_univ, Set.preimage_univ, LinearIsometryEquiv.coe_coe] using
+      e.toContinuousLinearEquiv.iteratedFDerivWithin_comp_right f uniqueDiffOn_univ
+        (Set.mem_univ z) j
+  have htjet (z : E') : iteratedFDeriv 𝕜 j (t ∘ f ∘ e) z =
+      (t : F →L[𝕜] F').compContinuousMultilinearMap (iteratedFDeriv 𝕜 j (f ∘ e) z) := by
+    simpa only [LinearIsometryEquiv.coe_coe, Function.comp_assoc] using
+      t.toContinuousLinearEquiv.iteratedFDeriv_comp_left (f := f ∘ e) (x := z) (i := j)
+  rw [htjet, htjet]
+  have ht : (t : F →L[𝕜] F').compContinuousMultilinearMap
+      (iteratedFDeriv 𝕜 j (f ∘ e) x) -
+      (t : F →L[𝕜] F').compContinuousMultilinearMap (iteratedFDeriv 𝕜 j (f ∘ e) y) =
+      (t : F →L[𝕜] F').compContinuousMultilinearMap
+        (iteratedFDeriv 𝕜 j (f ∘ e) x - iteratedFDeriv 𝕜 j (f ∘ e) y) := by ext; simp
+  rw [ht, ← t.toContinuousLinearMap_toLinearIsometry,
+    t.toLinearIsometry.norm_compContinuousMultilinearMap, hr, hr]
+  have he : (iteratedFDeriv 𝕜 j f (e x)).compContinuousLinearMap (fun _ => (e : E' →L[𝕜] E)) -
+      (iteratedFDeriv 𝕜 j f (e y)).compContinuousLinearMap (fun _ => (e : E' →L[𝕜] E)) =
+      (iteratedFDeriv 𝕜 j f (e x) - iteratedFDeriv 𝕜 j f (e y)).compContinuousLinearMap
+        (fun _ => (e : E' →L[𝕜] E)) := by ext; simp
+  rw [he, ContinuousMultilinearMap.norm_compContinuous_linearIsometryEquiv]
+
+
+open scoped NNReal in
+/-- Composing with linear isometries preserves a local Hölder bound on an actual derivative
+field, including at points where the function need not be differentiable. -/
+theorem holderOnWith_iteratedFDeriv_comp {E E' T Tu : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
+    [NormedAddCommGroup T] [NormedSpace ℝ T] [NormedAddCommGroup Tu] [NormedSpace ℝ Tu]
+    (e : E' ≃ₗᵢ[ℝ] E) (t : T ≃ₗᵢ[ℝ] Tu) (v : E → T)
+    {C α : ℝ≥0} (j : ℕ) {S : Set E} (hv : HolderOnWith C α (iteratedFDeriv ℝ j v) S) :
+    HolderOnWith C α (iteratedFDeriv ℝ j (t ∘ v ∘ e)) (e ⁻¹' S) := by
+  rw [holderOnWith_iff_dist_le] at hv ⊢
+  intro x hx y hy
+  rw [dist_eq_norm, LinearIsometryEquiv.norm_iteratedFDeriv_sub_comp]
+  have hxy := hv (e x) hx (e y) hy
+  rw [e.dist_map] at hxy
+  simpa only [dist_eq_norm] using hxy
+
+end LinearIsometryEquiv

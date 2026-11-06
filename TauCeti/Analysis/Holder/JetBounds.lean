@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.MetricSpace.Holder
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.CompContinuousLinearEquiv
 public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.MeanValue
@@ -44,21 +45,6 @@ theorem holderOnWith_iteratedFDeriv_zero_iff {f : E → F} {s : Set E} {H α : �
     HolderOnWith H α (iteratedFDeriv ℝ 0 f) s ↔ HolderOnWith H α f s := by
   simp only [holderOnWith_iff_dist_le, iteratedFDeriv_zero_eq_comp,
     Function.comp_apply, LinearIsometryEquiv.dist_map]
-
-/-- Composing with linear isometries preserves a local Hölder bound on an actual derivative
-field, including at points where the function need not be differentiable. -/
-theorem _root_.LinearIsometryEquiv.holderOnWith_iteratedFDeriv_comp {E E' T Tu : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup E'] [NormedSpace ℝ E']
-    [NormedAddCommGroup T] [NormedSpace ℝ T] [NormedAddCommGroup Tu] [NormedSpace ℝ Tu]
-    (e : E' ≃ₗᵢ[ℝ] E) (t : T ≃ₗᵢ[ℝ] Tu) (v : E → T)
-    {C α : ℝ≥0} (j : ℕ) {S : Set E} (hv : HolderOnWith C α (iteratedFDeriv ℝ j v) S) :
-    HolderOnWith C α (iteratedFDeriv ℝ j (t ∘ v ∘ e)) (e ⁻¹' S) := by
-  rw [holderOnWith_iff_dist_le] at hv ⊢
-  intro x hx y hy
-  rw [dist_eq_norm, LinearIsometryEquiv.norm_iteratedFDeriv_sub_comp]
-  have hxy := hv (e x) hx (e y) hy
-  rw [e.dist_map] at hxy
-  simpa only [dist_eq_norm] using hxy
 
 /-- Every derivative field below the top order is Hölder, controlled by the uniform bound on
 that field and its next derivative. No Hölder assumption on lower derivatives is needed. -/
