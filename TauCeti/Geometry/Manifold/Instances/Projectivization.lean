@@ -29,6 +29,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 * `Projectivization.contDiffOn_affineChart_symm_trans`: the transition maps are `C^r` for
   every `r`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
+* `Projectivization.affineOpenPartialHomeomorph_mem_maximalAtlas`: each standard affine chart
+  belongs to the maximal atlas.
 * `Projectivization.contMDiffOn_affineChart` and `Projectivization.contMDiff_affineChart_symm`:
   the affine charts and their inverses are `C^r` maps.
 
@@ -90,6 +92,17 @@ theorem contMDiffOn_affineChart (i : Fin (n + 1)) (r : ℕ∞ω) :
     ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) r (affineChart i) (affineOpen (K := 𝕜) i) := by
   simpa using contMDiffOn_of_mem_maximalAtlas
     (IsManifold.subset_maximalAtlas (n := r) (affineOpenPartialHomeomorph_mem_atlas (𝕜 := 𝕜) i))
+
+/-- Each standard affine chart of projective space belongs to its `C^r` maximal atlas. -/
+theorem affineOpenPartialHomeomorph_mem_maximalAtlas (i : Fin (n + 1)) (r : ℕ∞ω) :
+    affineOpenPartialHomeomorph (K := 𝕜) i ∈
+      IsManifold.maximalAtlas 𝓘(𝕜, Fin n → 𝕜) r (ℙ 𝕜 (Fin (n + 1) → 𝕜)) :=
+  IsManifold.subset_maximalAtlas (affineOpenPartialHomeomorph_mem_atlas i)
+
+/-- For the self-model of `Fin n → 𝕜`, the extended standard affine chart is the affine chart. -/
+theorem affineOpenPartialHomeomorph_extend (i : Fin (n + 1)) :
+    (affineOpenPartialHomeomorph (K := 𝕜) i).extend 𝓘(𝕜, Fin n → 𝕜) = affineChart i := by
+  simp [OpenPartialHomeomorph.extend]
 
 /-- The inverse `z ↦ [Fin.insertNth i 1 z]` of each standard affine chart of projective space is
 a `C^r` map. -/

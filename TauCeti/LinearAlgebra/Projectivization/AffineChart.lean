@@ -35,6 +35,8 @@ of complex projective space are built.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
   its inverse in homogeneous coordinates.
+* `Projectivization.mk_single_injective` and `Projectivization.affineChart_mk_single`: the
+  coordinate points `[eᵢ]` are distinct, and `[eᵢ]` is the origin of the chart at `i`.
 * `Projectivization.affineChart_symm_trans_source` and
   `Projectivization.affineChart_symm_trans_apply`: the domain and formula of the transition maps.
 * `Projectivization.affineChart_apply_affineChart_symm`: a map of projective spaces given in
@@ -91,6 +93,15 @@ theorem affineOpen_eq_univ [Subsingleton ι] (i : ι) : affineOpen (K := K) i = 
   obtain ⟨j, hj⟩ := exists_mem_affineOpen x
   rwa [Subsingleton.elim j i] at hj
 
+/-- The coordinate points `[eᵢ]` of projective space are pairwise distinct. -/
+theorem mk_single_injective [DecidableEq ι] :
+    Function.Injective fun i : ι ↦
+      mk K (Pi.single i (1 : K)) (Pi.single_ne_zero_iff.2 one_ne_zero) := by
+  intro i j h
+  obtain ⟨t, ht⟩ := (mk_eq_mk_iff K _ _ _ _).1 h
+  by_contra hij
+  simpa [hij] using congrFun ht i
+
 end AffineOpen
 
 variable {K : Type*} [Field K] {n : ℕ}
@@ -141,6 +152,12 @@ theorem affineChart_symm_apply (i : Fin (n + 1)) (z : Fin n → K) :
     (affineChart i).symm z = mk K (Fin.insertNth (α := fun _ ↦ K) i 1 z)
       (Fin.insertNth_one_ne_zero i z) :=
   (rfl)
+
+/-- The coordinate point `[eᵢ]` is the origin of the standard affine chart at `i`. -/
+theorem affineChart_mk_single (i : Fin (n + 1)) :
+    affineChart i (mk K (Pi.single i 1) (Pi.single_ne_zero_iff.2 one_ne_zero)) = 0 := by
+  ext j
+  simp [Fin.succAbove_ne i j]
 
 /-- The domain of the transition map from the standard affine chart of `i` to that of `j`
 consists of the points whose homogeneous coordinates `Fin.insertNth i 1 z` have nonzero `j`-th
