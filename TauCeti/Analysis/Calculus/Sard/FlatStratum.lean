@@ -253,6 +253,51 @@ section SharpMeasure
 
 variable [FiniteDimensional ℝ E] [MeasurableSpace F] [BorelSpace F] {U : Set E}
 
+omit [FiniteDimensional ℝ E] in
+/-- The Hölder estimate on one piece of the partition behind
+`TauCeti.hausdorffMeasure_image_inter_ball_le`: if `T` lies in a ball of radius `δ / 2`, where `δ`
+is a modulus of uniform continuity of `D^{j+1} f` on the closed ball with tolerance `ε`, then the
+`d`-dimensional measure of the image of `s ∩ ball x₀ r ∩ T` is at most `ε ^ d` times the
+`finrank ℝ E`-dimensional measure of `ball x₀ r ∩ T`. -/
+private theorem hausdorffMeasure_image_inter_ball_inter_le [MeasurableSpace E] [BorelSpace E]
+    {j : ℕ} {x₀ c : E} {r d δ : ℝ} {ε : ℝ≥0} {T : Set E} (hU : IsOpen U)
+    (hf : ContDiffOn ℝ (j + 1 : ℕ) f U) (hKU : Metric.closedBall x₀ r ⊆ U)
+    (hzero : ∀ x ∈ s, ∀ i, 1 ≤ i → i ≤ j + 1 → iteratedFDeriv ℝ i f x = 0)
+    (hd : ((j + 1 : ℕ) : ℝ) * d = finrank ℝ E) (hd0 : 0 ≤ d)
+    (hδK : ∀ y ∈ Metric.closedBall x₀ r, ∀ x ∈ Metric.closedBall x₀ r, dist y x < δ →
+      dist (iteratedFDeriv ℝ (j + 1) f y) (iteratedFDeriv ℝ (j + 1) f x) < ε)
+    (hT : T ⊆ Metric.ball c (δ / 2)) :
+    μH[d] (f '' (s ∩ Metric.ball x₀ r ∩ T)) ≤
+      (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ r ∩ T) := by
+  rcases (s ∩ Metric.ball x₀ r ∩ T).eq_empty_or_nonempty with h | ⟨x₁, hx₁⟩
+  · simp [h]
+  have hhol : HolderOnWith ε ((j : ℝ≥0) + 1) f (s ∩ Metric.ball x₀ r ∩ T) := by
+    refine holderOnWith_of_iteratedFDeriv_eq_zero (V := Metric.ball x₀ r ∩ Metric.ball c (δ / 2))
+      (fun y hy ↦ hf.contDiffAt (hU.mem_nhds (hKU (Metric.ball_subset_closedBall hy.1))))
+      ((convex_ball _ _).inter (convex_ball _ _)) (fun y hy ↦ ?_)
+      (fun y hy ↦ ⟨hy.1.2, hT hy.2⟩)
+      fun x hx i hi1 hij ↦ hzero x hx.1.1 i hi1 (by omega)
+    have hdist : dist y x₁ < δ := by
+      have h1 := hy.2
+      have h2 := hT hx₁.2
+      rw [Metric.mem_ball] at h1 h2
+      calc dist y x₁ ≤ dist y c + dist x₁ c := dist_triangle_right _ _ _
+        _ < δ / 2 + δ / 2 := add_lt_add h1 h2
+        _ = δ := by ring
+    have := hδK y (Metric.ball_subset_closedBall hy.1) x₁
+      (Metric.ball_subset_closedBall hx₁.1.2) hdist
+    rw [hzero x₁ hx₁.1.1 (j + 1) (by omega) le_rfl, dist_zero_right] at this
+    exact this.le
+  have hexp : (((j : ℝ≥0) + 1 : ℝ≥0) : ℝ) * d = finrank ℝ E := by
+    rw [← hd]; push_cast; ring
+  calc μH[d] (f '' (s ∩ Metric.ball x₀ r ∩ T))
+      ≤ (ε : ℝ≥0∞) ^ d * μH[((j : ℝ≥0) + 1 : ℝ≥0) * d] (s ∩ Metric.ball x₀ r ∩ T) :=
+        hhol.hausdorffMeasure_image_le (by positivity) hd0
+    _ ≤ (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (Metric.ball x₀ r ∩ T) := by
+        rw [hexp]
+        gcongr
+        exact inter_subset_right
+
 /-- The covering estimate behind `TauCeti.hausdorffMeasure_image_eq_zero_of_iteratedFDeriv_eq_zero`.
 Let `f` be `C^{j+1}` on an open set containing the closed ball `K` of centre `x₀` and radius `r`,
 and let every derivative of order `1 ≤ i ≤ j + 1` vanish on `s`. For every `ε > 0`, the
@@ -287,43 +332,13 @@ private theorem hausdorffMeasure_image_inter_ball_le [MeasurableSpace E] [BorelS
     intro y
     obtain ⟨n, hn⟩ := Metric.denseRange_iff.1 hc y (δ / 2) (by linarith)
     exact mem_iUnion.2 ⟨n, hn⟩
-  -- On each piece, `f` is Hölder on `s` with constant `ε` and exponent `j + 1`.
-  have hpiece : ∀ n, μH[d] (f '' (s ∩ B ∩ T n)) ≤
-      (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := by
-    intro n
-    rcases (s ∩ B ∩ T n).eq_empty_or_nonempty with h | ⟨x₁, hx₁⟩
-    · simp [h]
-    have hhol : HolderOnWith ε ((j : ℝ≥0) + 1) f (s ∩ B ∩ T n) := by
-      refine holderOnWith_of_iteratedFDeriv_eq_zero (V := B ∩ Metric.ball (c n) (δ / 2))
-        (fun y hy ↦ hf.contDiffAt (hU.mem_nhds (hKU (hBK hy.1))))
-        ((convex_ball _ _).inter (convex_ball _ _)) (fun y hy ↦ ?_)
-        (fun y hy ↦ ⟨hy.1.2, hTsub n hy.2⟩)
-        fun x hx i hi1 hij ↦ hzero x hx.1.1 i hi1 (by omega)
-      have hdist : dist y x₁ < δ := by
-        have h1 := hy.2
-        have h2 := hTsub n hx₁.2
-        rw [Metric.mem_ball] at h1 h2
-        calc dist y x₁ ≤ dist y (c n) + dist x₁ (c n) := dist_triangle_right _ _ _
-          _ < δ / 2 + δ / 2 := add_lt_add h1 h2
-          _ = δ := by ring
-      have := hδK y (hBK hy.1) x₁ (hBK hx₁.1.2) hdist
-      rw [hzero x₁ hx₁.1.1 (j + 1) (by omega) le_rfl, dist_zero_right] at this
-      exact this.le
-    have hexp : (((j : ℝ≥0) + 1 : ℝ≥0) : ℝ) * d = finrank ℝ E := by
-      rw [← hd]; push_cast; ring
-    calc μH[d] (f '' (s ∩ B ∩ T n))
-        ≤ (ε : ℝ≥0∞) ^ d * μH[((j : ℝ≥0) + 1 : ℝ≥0) * d] (s ∩ B ∩ T n) :=
-          hhol.hausdorffMeasure_image_le (by positivity) hd0
-      _ ≤ (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := by
-          rw [hexp]
-          gcongr
-          exact inter_subset_right
   calc μH[d] (f '' (s ∩ B))
       ≤ μH[d] (⋃ n, f '' (s ∩ B ∩ T n)) := by
         refine measure_mono ?_
         rw [← image_iUnion, ← inter_iUnion, hTunion, inter_univ]
     _ ≤ ∑' n, μH[d] (f '' (s ∩ B ∩ T n)) := measure_iUnion_le _
-    _ ≤ ∑' n, (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := tsum_le_tsum hpiece
+    _ ≤ ∑' n, (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] (B ∩ T n) := tsum_le_tsum fun n ↦
+      hausdorffMeasure_image_inter_ball_inter_le hU hf hKU hzero hd hd0 hδK (hTsub n)
     _ = (ε : ℝ≥0∞) ^ d * μH[(finrank ℝ E : ℝ)] B := by
         rw [ENNReal.tsum_mul_left, ← measure_iUnion
           (fun m n hmn ↦ ((disjoint_disjointed _ hmn).mono inter_subset_right inter_subset_right))
