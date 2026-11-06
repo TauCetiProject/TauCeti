@@ -26,29 +26,38 @@ isogeny, the ratio of the orders of `Sel_φ(E₁)` and `Sel_φ̂(E₂)` is the g
 
 where `H¹_φ(K_v) ⊆ H¹(G_{K_v}, E₁[φ])` is the image of the local Kummer map.
 
-This file identifies the local conditions with these indices and computes them where the residue
-characteristic does not divide `deg φ`:
+This file identifies the local conditions with these indices, computes them where the residue
+characteristic does not divide `deg φ`, and computes their product with the indices of the dual
+isogeny `φ̂` at every finite place:
 
 * over every field, the image of the Kummer map has order `[E₂(K) : φ(E₁(K))]`
   (`TauCeti.Isogeny.natCard_range_kummerMap`), and so does the local condition at `L i` of the
   `φ`-Selmer structure of a family of extensions `L i`;
-* at a finite place `u` of a Dedekind domain with finite residue field, prime to `deg φ`, the
-  Kummer image is finite;
+* at a finite place `u` of a Dedekind domain with finite residue field, the Kummer image is
+  finite when `deg φ` is nonzero in the Dedekind domain, even if `u` divides it;
+* over the fraction field `K` of a Dedekind domain with finite residue fields, when `n = deg φ`
+  is nonzero in `K`, at every finite place `v`
+  `#H¹_φ(K_v) · #H¹_φ̂(K_v) = #E₁(K_v)[φ] · #E₂(K_v)[φ̂] · #(O_v ⧸ n O_v)`,
+  the last factor being the inverse of the normalised absolute value of `n` at `v`; this follows
+  from `φ̂ ∘ φ = [n]` and the index of `n E₁(K_v)`
+  (`WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul`);
 * over the fraction field `K` of a Dedekind domain with finite residue fields, when `deg φ` is
   nonzero in `K`, the local factor is `1` at all but finitely many finite places: there both
   curves have good reduction and the place is prime to `deg φ`, so that
   `TauCeti.Isogeny.Hom.index_range_eq_card_ker_of_isElliptic_integralModel` applies. This is the
   finite support of the product of the local factors at the finite places.
 
-The local factors at the places dividing `deg φ` and at the real places, which involve the
-formal group and the real period, are not computed here.
+The individual local factors at the places dividing `deg φ`, which involve the formal group, and
+the local factors at the archimedean places, which involve the real period, are not computed here.
 
 ## Main results
 
 * `TauCeti.Isogeny.natCard_localCondition_selmerStructure`: the local condition of the `φ`-Selmer
   structure at `L i` has order `[E₂(L i) : φ(E₁(L i))]`.
-* `TauCeti.Isogeny.finite_range_kummerMap_of_degree_notMem`: the local Kummer image at a finite
-  place prime to `deg φ` is finite.
+* `TauCeti.Isogeny.finite_range_kummerMap_of_degree_ne_zero`: the local Kummer image at a finite
+  place is finite.
+* `TauCeti.Isogeny.natCard_localCondition_selmerStructure_mul_natCard_localCondition_dual`: at
+  every finite place, the local factors of `φ` and `φ̂` multiply to `#(O_v ⧸ deg φ · O_v)`.
 * `TauCeti.Isogeny.eventually_natCard_localCondition_selmerStructure_eq`: for almost every finite
   place `v`, `#H¹_φ(K_v) = #E₁(K_v)[φ]`.
 
@@ -92,7 +101,7 @@ theorem natCard_localCondition_selmerStructure
 
 end Field
 
-/-! ### Places prime to the degree -/
+/-! ### Finite places -/
 
 section Local
 
@@ -102,15 +111,16 @@ variable {A : Type*} [CommRing A] [IsDedekindDomain A]
   {W₁ W₂ : WeierstrassCurve (u.adicCompletion F)} [W₁.IsElliptic] [W₂.IsElliptic]
   {ψ : Isogeny W₁.toAffine W₂.toAffine}
 
-/-- **The local Kummer image at a place prime to the degree is finite**: it is a copy of the
-cokernel `E₂(F_u) ⧸ ψ(E₁(F_u))`, whose finiteness is
-`TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_degree_notMem`. An isogeny of degree prime
-to `u` is automatically separable (`TauCeti.Isogeny.isSeparable_dual_and_self_iff`). -/
-theorem finite_range_kummerMap_of_degree_notMem
+/-- **The local Kummer image at a finite place is finite** when the degree is nonzero in `A`: it
+is a copy of the cokernel `E₂(F_u) ⧸ ψ(E₁(F_u))`, whose finiteness is
+`TauCeti.Isogeny.Hom.finiteIndex_range_pointMapHom_of_degree_ne_zero`. The place may divide the
+degree. An isogeny whose degree is nonzero in the field is automatically separable
+(`TauCeti.Isogeny.isSeparable_dual_and_self_iff`). -/
+theorem finite_range_kummerMap_of_degree_ne_zero
     [Algebra.IsSeparable ψ.fieldPullback.fieldRange W₁.toAffine.FunctionField]
-    (hψ : (ψ.degree : A) ∉ u.asIdeal) : Finite ψ.kummerMap.range :=
+    (hψ : (ψ.degree : A) ≠ 0) : Finite ψ.kummerMap.range :=
   finite_range_kummerMap_iff.2 <|
-    Hom.finiteIndex_range_pointMapHom_of_degree_notMem u (by rwa [Hom.degree_ofIsogeny])
+    Hom.finiteIndex_range_pointMapHom_of_degree_ne_zero u (by rwa [Hom.degree_ofIsogeny])
 
 end Local
 
@@ -146,6 +156,36 @@ theorem eventually_natCard_localCondition_selmerStructure_eq
     have hd : (φ.baseChange (v.adicCompletion K)).degree = φ.degree := degree_map φ _
     rw [Hom.degree_ofIsogeny, hd]
     exact hTdeg v hv
+
+/-- **The local conditions of `Sel_φ` and `Sel_φ̂` at a finite place**: if `n = deg φ` is nonzero
+in `K`, then at every finite place `v`, including those dividing `n`,
+
+`#H¹_φ(K_v) · #H¹_φ̂(K_v) = #E₁(K_v)[φ] · #E₂(K_v)[φ̂] · #(O_v ⧸ n O_v)`.
+
+So the product of the local factors `#H¹_φ(K_v) / #E₁(K_v)[φ]` of `φ` and of its dual is the
+inverse of the normalised absolute value of `n` at `v`. -/
+theorem natCard_localCondition_selmerStructure_mul_natCard_localCondition_dual
+    (τ : ∀ v : HeightOneSpectrum R,
+      SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (hφ : (φ.degree : K) ≠ 0) (v : HeightOneSpectrum R) :
+    Nat.card ((φ.selmerStructure τ).localCondition v) *
+        Nat.card ((φ.dual.selmerStructure τ).localCondition v) =
+      Nat.card (ofIsogeny (φ.baseChange (v.adicCompletion K))).pointMapHom.ker *
+        Nat.card (ofIsogeny (φ.dual.baseChange (v.adicCompletion K))).pointMapHom.ker *
+        Nat.card (v.adicCompletionIntegers K ⧸
+          Ideal.span {(φ.degree : v.adicCompletionIntegers K)}) := by
+  obtain ⟨_, _⟩ := φ.isSeparable_dual_and_self_iff.2 hφ
+  have hdual : ofIsogeny (φ.dual.baseChange (v.adicCompletion K)) =
+      (ofIsogeny (φ.baseChange (v.adicCompletion K))).dual := by
+    rw [Hom.dual_ofIsogeny]
+    exact congrArg ofIsogeny (dual_map φ _)
+  have hd : (ofIsogeny (φ.baseChange (v.adicCompletion K))).degree = φ.degree := by
+    rw [Hom.degree_ofIsogeny]
+    exact degree_map φ _
+  rw [natCard_localCondition_selmerStructure, natCard_localCondition_selmerStructure, hdual, ← hd]
+  refine Hom.index_range_mul_index_range_dual_eq_card_ker_mul_card_ker_dual_mul v ?_
+  rw [hd]
+  exact fun h ↦ hφ (by rw [← map_natCast (algebraMap R K), h, map_zero])
 
 end Global
 
