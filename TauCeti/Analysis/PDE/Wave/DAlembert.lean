@@ -10,6 +10,8 @@ public import Mathlib.Analysis.Calculus.Deriv.Shift
 public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.ParametricFDeriv
 
 /-!
 # The one-dimensional wave equation and d'Alembert's formula
@@ -286,20 +288,6 @@ end DAlembert
 
 section Representation
 
-/-- The partial derivative in time of a differentiable function on space-time is its derivative
-in the direction `(1, 0)`. -/
-private theorem hasDerivAt_uncurry_time {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {U : ℝ × ℝ → G} {t x : ℝ} (hU : DifferentiableAt ℝ U (t, x)) :
-    HasDerivAt (fun s ↦ U (s, x)) (fderiv ℝ U (t, x) (1, 0)) t :=
-  hU.hasFDerivAt.comp_hasDerivAt t ((hasDerivAt_id t).prodMk (hasDerivAt_const t x))
-
-/-- The partial derivative in space of a differentiable function on space-time is its derivative
-in the direction `(0, 1)`. -/
-private theorem hasDerivAt_uncurry_space {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
-    {U : ℝ × ℝ → G} {t x : ℝ} (hU : DifferentiableAt ℝ U (t, x)) :
-    HasDerivAt (fun y ↦ U (t, y)) (fderiv ℝ U (t, x) (0, 1)) x :=
-  hU.hasFDerivAt.comp_hasDerivAt x ((hasDerivAt_const x t).prodMk (hasDerivAt_id x))
-
 /-- The derivative of a `C²` function along a line, in the direction `v`, as a function of the
 position on the line. -/
 private theorem hasDerivAt_fderiv_apply_line {U : ℝ × ℝ → F} (hU : ContDiff ℝ 2 U)
@@ -327,18 +315,22 @@ private theorem fderiv_apply_one_one_eq (hu : ContDiff ℝ 2 (uncurry u))
     fderiv ℝ (uncurry u) (t, x) (1, 1) = fderiv ℝ (uncurry u) (0, x + t) (1, 1) := by
   set U := uncurry u
   have hU1 : Differentiable ℝ U := hu.differentiable (by norm_num)
+  have hD : Differentiable ℝ (fderiv ℝ U) :=
+    (hu.fderiv_right (m := 1) one_add_one_eq_two.le).differentiable one_ne_zero
   -- The wave equation reads `D²U p e₁ e₁ = D²U p e₂ e₂`.
   have hpure : ∀ p : ℝ × ℝ, fderiv ℝ (fderiv ℝ U) p (1, 0) (1, 0) =
       fderiv ℝ (fderiv ℝ U) p (0, 1) (0, 1) := by
     rintro ⟨t, x⟩
-    have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ U ((0, x) + s • ((1, 0) : ℝ × ℝ)) (1, 0) :=
-      funext fun s ↦ by simpa [U] using (hasDerivAt_uncurry_time (U := U) (hU1 (s, x))).deriv
-    have hx : deriv (u t) = fun y ↦ fderiv ℝ U ((t, 0) + y • ((0, 1) : ℝ × ℝ)) (0, 1) :=
-      funext fun y ↦ by simpa [U] using (hasDerivAt_uncurry_space (U := U) (hU1 (t, y))).deriv
+    have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ U (s, x) (1, 0) :=
+      funext fun s ↦ by simpa only [U, uncurry_apply_pair, timeFDeriv_apply] using
+        (hasDerivAt_parameterCurve (hU1 _)).deriv
+    have hx : deriv (u t) = fun y ↦ fderiv ℝ U (t, y) (0, 1) :=
+      funext fun y ↦ by
+        simpa only [U, uncurry_apply_pair, spatialFDeriv_apply] using
+          (hasFDerivAt_timeSlice (hU1 _)).hasDerivAt.deriv
     have h := hwave t x
-    rw [ht, hx, (hasDerivAt_fderiv_apply_line hu _ _ _ t).deriv,
-      (hasDerivAt_fderiv_apply_line hu _ _ _ x).deriv] at h
-    simpa using h
+    rwa [ht, hx, (hasDerivAt_fderiv_apply_fst (hD _) _).deriv,
+      (hasDerivAt_fderiv_apply_snd (hD _) _).deriv] at h
   have hsymm : ∀ p, IsSymmSndFDerivAt ℝ U p := fun p ↦
     hu.contDiffAt.isSymmSndFDerivAt (by simp)
   -- Along the characteristic `s ↦ (s, x + t - s)`, the derivative of `w` vanishes.
@@ -374,10 +366,12 @@ theorem eq_dAlembert_of_deriv_deriv_eq (hu : ContDiff ℝ 2 (uncurry u))
   set h : ℝ → F := fun z ↦ fderiv ℝ U (0, z) (1, 1)
   have hcont (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ U (0, z) v :=
     (hDcont.comp (continuous_const.prodMk continuous_id)).clm_apply continuous_const
-  have hg : ∀ z, g z = fderiv ℝ U (0, z) (1, 0) := fun z ↦
-    (hasDerivAt_uncurry_time (U := U) (hU1 (0, z))).deriv
-  have hf' : ∀ z, HasDerivAt (u 0) (fderiv ℝ U (0, z) (0, 1)) z := fun z ↦
-    hasDerivAt_uncurry_space (U := U) (hU1 (0, z))
+  have hg (z : ℝ) : g z = fderiv ℝ U (0, z) (1, 0) := by
+    simpa only [g, U, uncurry_apply_pair, timeFDeriv_apply] using
+      (hasDerivAt_parameterCurve (hU1 (0, z))).deriv
+  have hf' (z : ℝ) : HasDerivAt (u 0) (fderiv ℝ U (0, z) (0, 1)) z := by
+    simpa only [U, uncurry_apply_pair, spatialFDeriv_apply] using
+      (hasFDerivAt_timeSlice (hU1 (0, z))).hasDerivAt
   have hh : h = fun z ↦ g z + fderiv ℝ U (0, z) (0, 1) := by
     ext z
     rw [hg z, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
@@ -476,8 +470,9 @@ theorem lintegral_enorm_deriv_sq_add_enorm_deriv_sq_eq [CompleteSpace H] {u : �
     funext fun t ↦ funext (eq_dAlembert_of_deriv_deriv_eq hu hwave t)
   have hf : ContDiff ℝ 1 f := (hu.comp (contDiff_const.prodMk contDiff_id)).of_le (by norm_num)
   have hg : Continuous g := by
-    have : g = fun y ↦ fderiv ℝ (uncurry u) (0, y) (1, 0) := funext fun y ↦
-      (hasDerivAt_uncurry_time ((hu.differentiable (by norm_num)) (0, y))).deriv
+    have : g = fun y ↦ fderiv ℝ (uncurry u) (0, y) (1, 0) := funext fun y ↦ by
+      simpa only [g, uncurry_apply_pair, timeFDeriv_apply] using
+        (hasDerivAt_parameterCurve ((hu.differentiable (by norm_num)) (0, y))).deriv
     rw [this]
     exact ((hu.continuous_fderiv (by norm_num)).comp
       (continuous_const.prodMk continuous_id)).clm_apply continuous_const
