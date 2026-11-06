@@ -134,7 +134,6 @@ endpoints. -/
 theorem continuous_cdf_generalizedParetoMeasure (hs : 0 < s) (ξ : ℝ) :
     Continuous (cdf (generalizedParetoMeasure s ξ)) := by
   let _ := isProbabilityMeasure_generalizedParetoMeasure hs ξ
-  let _ := nullSingletonClass_generalizedParetoMeasure hs ξ
   exact Measure.continuous_cdf_of_noAtoms _
 
 end TauCeti.Probability
