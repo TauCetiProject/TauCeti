@@ -9,6 +9,7 @@ public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 public import TauCeti.GroupTheory.Coxeter.Bipartite
 
 import TauCeti.Combinatorics.SimpleGraph.Acyclic
+import TauCeti.GroupTheory.Coxeter.Basic
 
 /-!
 # Conjugacy of Coxeter elements on a forest
@@ -43,7 +44,6 @@ conjugate.
 
 ## Main results
 
-* `CoxeterSystem.isConj_wordProd_append`: rotating a word conjugates the element it spells.
 * `CoxeterSystem.isConj_wordProd_of_perm`: if the Coxeter graph induced on the letters of a word
   without repeated letters is a forest, every rearrangement of the word spells a conjugate element.
 * `CoxeterSystem.isConj_wordProd_bipartiteCoxeterElement`: on a forest, every Coxeter element is
@@ -61,13 +61,6 @@ public section
 namespace CoxeterSystem
 
 variable {B W : Type*} [Group W] {M : CoxeterMatrix B} (cs : CoxeterSystem M W)
-
-/-- **Rotating a word conjugates the element it spells**: `l₁ ++ l₂` and `l₂ ++ l₁` spell
-conjugate elements. -/
-theorem isConj_wordProd_append (l₁ l₂ : List B) :
-    IsConj (cs.wordProd (l₁ ++ l₂)) (cs.wordProd (l₂ ++ l₁)) := by
-  rw [wordProd_append, wordProd_append]
-  exact isConj_iff.mpr ⟨(cs.wordProd l₁)⁻¹, by simp⟩
 
 /-- The two moves on words: rotating the first letter to the end, and exchanging two adjacent
 letters that are not joined in the Coxeter graph. -/

@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.Coxeter.CoxeterElement
+public import TauCeti.GroupTheory.Coxeter.Graph
 public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Matrix
-public import TauCeti.LinearAlgebra.RootSystem.Coxeter.Presentation
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Diagram
 
 /-!
@@ -25,11 +24,7 @@ system `TauCeti.weylCoxeterSystem` of the Weyl group is available for every colo
 Dynkin diagram, and for an irreducible reduced root system the bipartite Coxeter elements of the
 two colourings are mutually inverse and conjugate
 (`CoxeterSystem.isConj_bipartiteCoxeterElement` with
-`RootPairing.preconnected_graph_coxeterMatrixOfBase`). Since the diagram is a forest, any two
-products of the simple reflections of a set of simple roots, each taken once, are conjugate in the
-Weyl group (`CoxeterSystem.isConj_wordProd_of_perm`); in particular all Coxeter elements of the
-Weyl group are conjugate, so their common order and their eigenvalues on the reflection
-representation depend only on the root system.
+`RootPairing.preconnected_graph_coxeterMatrixOfBase`).
 
 ## Main results
 
@@ -39,9 +34,6 @@ representation depend only on the root system.
   so has a two-colouring.
 * `RootPairing.preconnected_graph_coxeterMatrixOfBase`: for an irreducible reduced root pairing it
   is connected.
-* `RootPairing.isConj_wordProd_of_perm`: for a reduced root system, rearranging a product of
-  distinct simple reflections gives a conjugate element of the Weyl group; in particular all
-  Coxeter elements of the Weyl group are conjugate.
 
 ## References
 
@@ -85,15 +77,5 @@ theorem preconnected_graph_coxeterMatrixOfBase [P.IsReduced] [P.IsIrreducible] :
     (coxeterMatrixOfBase P b).graph.Preconnected := by
   rw [graph_coxeterMatrixOfBase]
   exact preconnected_diagramGraph_cartanMatrix b
-
-/-- **The Coxeter elements of a Weyl group are conjugate.** For a base of a finite reduced
-crystallographic root system, rearranging a word in the simple reflections with no repeated letter
-gives a conjugate element of the Weyl group. In particular any two products of all the simple
-reflections, each exactly once, are conjugate. -/
-theorem isConj_wordProd_of_perm [P.IsRootSystem] [P.IsReduced] {l l' : List b.support}
-    (hl : l.Nodup) (h : l.Perm l') : IsConj (wordProd P b l) (wordProd P b l') := by
-  rw [← weylCoxeterSystem_wordProd, ← weylCoxeterSystem_wordProd]
-  exact (weylCoxeterSystem P b).isConj_wordProd_of_perm hl
-    ((isAcyclic_graph_coxeterMatrixOfBase P b).induce _) h
 
 end RootPairing
