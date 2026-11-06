@@ -172,6 +172,17 @@ theorem mapLinearMap_apply {F : Type*} [SeminormedAddCommGroup F] [Module R F]
     (a : Gauss c E) (t : σ →₀ ℕ) : mapLinearMap φ hφ a t = φ (a t) := by
   simp [mapLinearMap, IsRestrictedFamily.coe_mapLinearMap]
 
+/-- Forgetting the Gauss topology commutes with a bounded coefficient map. -/
+theorem _root_.LinearMap.toAddSubgroup_mapGaussFamily
+    {F : Type*} [SeminormedAddCommGroup F] [Module R F]
+    [IsBoundedSMul R F] (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (a : Gauss c E) :
+    (mapLinearMap φ hφ a).toAddSubgroup =
+      IsRestrictedFamily.mapLinearMap φ hφ a.toAddSubgroup := by
+  apply IsRestrictedFamily.ext
+  intro t
+  simp [mapLinearMap_apply]
+
 end Module
 
 variable [hc : ∀ i, Fact (0 < c i)]
@@ -398,6 +409,20 @@ omit hc in
 @[simp]
 theorem toAddSubgroup_isRestrictedSubring_smul (f : IsRestricted.subring (R := R) c)
     (a : Gauss c E) : (f • a).toAddSubgroup = f • a.toAddSubgroup := (rfl)
+
+omit hc in
+/-- Bounded coefficient maps commute with convolution by scalar restricted series. -/
+@[simp]
+theorem _root_.LinearMap.mapGaussFamily_isRestrictedSubring_smul
+    {F : Type*} [SeminormedAddCommGroup F]
+    [IsUltrametricDist F] [Module R F] [IsBoundedSMul R F]
+    (φ : E →ₗ[R] F) {C : ℝ} (hφ : ∀ e, ‖φ e‖ ≤ C * ‖e‖)
+    (f : IsRestricted.subring (R := R) c) (a : Gauss c E) :
+    mapLinearMap φ hφ (f • a) = f • mapLinearMap φ hφ a := by
+  apply toAddSubgroupAddEquiv.injective
+  simpa only [toAddSubgroupAddEquiv_apply, LinearMap.toAddSubgroup_mapGaussFamily,
+    toAddSubgroup_isRestrictedSubring_smul] using
+      IsRestrictedFamily.mapLinearMap_isRestrictedSubring_smul φ hφ f a.toAddSubgroup
 
 /-- Convolution by a scalar restricted series satisfies the Gauss norm inequality. -/
 theorem norm_isRestrictedSubring_smul_le (f : IsRestricted.subring (R := R) c)
