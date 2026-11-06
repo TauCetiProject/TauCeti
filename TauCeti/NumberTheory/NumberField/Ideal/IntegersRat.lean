@@ -295,8 +295,8 @@ a Frobenius. -/
 theorem inertiaDeg_eq_orderOf [IsGalois ℚ K] (Q : Ideal (𝓞 K)) [Q.IsPrime]
     [Algebra.IsUnramifiedAt (𝓞 ℚ) Q] {σ : K ≃ₐ[ℚ] K} (hσ : IsArithFrobAt ℤ σ Q) :
     Q.inertiaDeg ℤ = orderOf σ := by
-  rw [← inertiaDeg_ringOfIntegers_rat_eq_int, orderOf_eq_inertiaDeg_of_isArithFrobAt Q hσ.ne_bot
-    ((isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
+  rw [← inertiaDeg_ringOfIntegers_rat_eq_int,
+    orderOf_eq_inertiaDeg_of_isArithFrobAt Q ((isArithFrobAt_ringOfIntegers_rat_iff σ Q).mpr hσ)]
 
 /-- At any prime of a number field, ramified or not, the residue degree over `ℤ` divides the order
 of a Frobenius. This is `Ideal.inertiaDeg_dvd_orderOf_of_isArithFrobAt` with base ring `ℤ`. -/
