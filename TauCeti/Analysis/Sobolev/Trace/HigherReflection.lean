@@ -92,7 +92,7 @@ theorem higherReflection_one (f : ℝ → F) (t : ℝ) :
 /-- The reflected normal slice is `Cⁿ` across zero when `n < k`. -/
 theorem _root_.ContDiff.higherReflection {k n : ℕ} (hn : n < k) {f : ℝ → F}
     (hf : ContDiff ℝ n f) : ContDiff ℝ n (higherReflection k f) := by
-  apply contDiff_if_nonneg hf hf.higherReflectionLower
+  apply hf.if_nonneg hf.higherReflectionLower
   intro i hi
   exact (iteratedDeriv_higherReflectionLower_zero (by omega)
     (hf.of_le (by exact_mod_cast hi))).symm

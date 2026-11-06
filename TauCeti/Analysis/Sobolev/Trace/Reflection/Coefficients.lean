@@ -17,12 +17,14 @@ import Mathlib.Tactic.NormNum
 To extend a function from the upper half-space, use the values at normal coordinates
 `-t / (j + 1)` below the boundary, weighted by `higherReflectionCoeff k j`, for `j : Fin k`.
 The coefficients satisfy `∑ j, c j * (-(j + 1)⁻¹)^i = 1` for `i < k`. Thus normal derivatives
-through order `k - 1` match across the boundary. The coefficients are the Lagrange interpolation
+of order `i < k` match across the boundary provided the input is `Cⁱ`. The coefficients are the
+Lagrange interpolation
 weights at `1` for the nodes `-(j + 1)⁻¹`; this also proves their uniqueness and polynomial
 reproduction. The first two cases are the even reflection and the coefficients `-3, 4`.
 
 `higherReflectionLower` is the linear combination used below the boundary, defined on the
-whole normal line. Its derivatives at zero agree with those of the input through order `k - 1`.
+whole normal line. Its derivative of order `i < k` at zero agrees with that of a `Cⁱ` input.
+For `k = 0` the lower branch is zero and no derivative matching is asserted.
 This file supplies the coefficients and matching identities, not the weak Sobolev gluing theorem.
 
 ## References

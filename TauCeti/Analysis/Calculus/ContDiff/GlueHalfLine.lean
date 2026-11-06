@@ -23,7 +23,7 @@ open scoped Topology
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- Equal values and derivatives at zero allow gluing the one-sided derivatives. -/
-theorem hasDerivAt_if_nonneg {f g f' g' : ℝ → F}
+theorem TauCeti.hasDerivAt_if_nonneg {f g f' g' : ℝ → F}
     (hf : ∀ t, HasDerivAt f (f' t) t) (hg : ∀ t, HasDerivAt g (g' t) t)
     (h₀ : f 0 = g 0) (h₁ : f' 0 = g' 0) (t : ℝ) :
     HasDerivAt (fun t ↦ if 0 ≤ t then f t else g t)
@@ -53,7 +53,7 @@ theorem hasDerivAt_if_nonneg {f g f' g' : ℝ → F}
       exact ite_eq_left hx.le)
 
 /-- Gluing `Cⁿ` functions with matching jets through order `n`. -/
-theorem contDiff_if_nonneg {n : ℕ} {f g : ℝ → F}
+theorem ContDiff.if_nonneg {n : ℕ} {f g : ℝ → F}
     (hf : ContDiff ℝ n f) (hg : ContDiff ℝ n g)
     (h : ∀ i ≤ n, iteratedDeriv i f 0 = iteratedDeriv i g 0) :
     ContDiff ℝ n (fun t ↦ if 0 ≤ t then f t else g t) := by
@@ -68,7 +68,7 @@ theorem contDiff_if_nonneg {n : ℕ} {f g : ℝ → F}
     subst t
     exact h 0 le_rfl
   | succ n ih =>
-    have hderiv := hasDerivAt_if_nonneg
+    have hderiv := TauCeti.hasDerivAt_if_nonneg
       (fun t ↦ (hf.differentiable (by simp) t).hasDerivAt)
       (fun t ↦ (hg.differentiable (by simp) t).hasDerivAt)
       (h 0 (by omega)) (by simpa only [iteratedDeriv_one] using h 1 (by omega))
