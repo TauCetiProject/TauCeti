@@ -510,6 +510,13 @@ theorem exists_smul_quadraticTwist_eq {θ : L} (hθ : θ ∉ Set.range (algebraM
   rw [h]
   exact E.exists_smul_quadraticTwistOf_trace_norm_eq hθ' hθ
 
+section TraceNormVariableChange
+
+/-! The explicit change of variables below and its API need only a nontrivial automorphism `σ`,
+not separability: `σ` alone makes the quadratic extension Galois. -/
+
+omit [Algebra.IsSeparable K L]
+
 /-- The change of variables over `L` that carries the twist by `θ` back to `E`. It rescales by
 `σ θ - θ`, a square root of the discriminant of `θ`'s minimal polynomial, and shears and
 translates by the amounts that clear the twisted model's `a₁` and `a₃` terms.
@@ -600,6 +607,8 @@ theorem map_quadraticTwistOfTraceNormVariableChange {θ : L} (hθ : θ ∉ Set.r
       map_neg, map_mul, map_pow, map_sub, map_zero, map_one, map_a₁, map_a₃, baseChange,
       σ.commutes, hσσ] <;>
     ring
+
+end TraceNormVariableChange
 
 variable (L) in
 /-- **The quadratic twist becomes isomorphic to `E` after base change to `L`.** Over a field,
