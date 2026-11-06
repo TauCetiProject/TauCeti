@@ -25,6 +25,11 @@ the integral root-datum input for proving that the span of the short root spaces
 the short coroot directions, is an ideal after base change to characteristic three.
 Constructing that Lie ideal and identifying the induced exceptional isogeny are later steps.
 
+The short–long root-string calculations also identify the lengths of `2α + β` and
+`3α + 2β`, and show that `β - α` is not a root when `α` is short, `β` is long and
+`α + β` is a root. These determine the integral divided-bracket coefficients in the
+four-factor root-subgroup product formula.
+
 ## Main results
 
 * `TauCeti.DynkinType.three_dvd_g2_pairing_of_long_short`: a long root pairs with a short coroot by
@@ -119,5 +124,40 @@ theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
   have hstring := P.chainBotCoeff_sub_chainTopCoeff hli
   rw [hpairIn] at hstring
   omega
+
+/-- If a short root plus a long root is a root, subtracting the short root from the long
+one is not a root. Thus the short-root string through the long root starts at that root. -/
+theorem g2_root_sub_not_mem_range_of_short_add_long_eq_root (i j k : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hk : g2SimplyConnectedRootDatum.root k =
+      g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i) :
+    g2SimplyConnectedRootDatum.root j - g2SimplyConnectedRootDatum.root i ∉
+      Set.range g2SimplyConnectedRootDatum.root := by
+  simp only [Set.mem_range, not_exists, g2SimplyConnectedRootDatum_root, g2Root_apply] at hk ⊢
+  rw [g2Length_apply] at hi hj
+  revert i j k
+  decide +kernel
+
+/-- A root equal to twice a short root plus a long root of `G₂` is short. -/
+theorem g2Length_eq_one_of_two_smul_short_add_long_eq_root (i j k : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hk : g2SimplyConnectedRootDatum.root k =
+      2 • g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j) :
+    g2Length k = 1 := by
+  simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hk
+  rw [g2Length_apply] at hi hj ⊢
+  revert i j k
+  decide +kernel
+
+/-- A root equal to three times a short root plus twice a long root of `G₂` is long. -/
+theorem g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root (i j k : Fin 12)
+    (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hk : g2SimplyConnectedRootDatum.root k =
+      3 • g2SimplyConnectedRootDatum.root i + 2 • g2SimplyConnectedRootDatum.root j) :
+    g2Length k = 3 := by
+  simp only [g2SimplyConnectedRootDatum_root, g2Root_apply] at hk
+  rw [g2Length_apply] at hi hj ⊢
+  revert i j k
+  decide +kernel
 
 end TauCeti.DynkinType
