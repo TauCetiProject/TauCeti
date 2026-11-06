@@ -68,7 +68,7 @@ residual quotient `V/H → V/G` has trivial inertia at every codimension-one poi
 * `Representation.isCyclic_inertia_span_singleton_ι` and
   `Representation.isCyclic_inertia_of_height_eq_one`: for a faithful representation of a finite
   group of order invertible in `K`, these inertia groups are cyclic.
-* `Representation.dual_symmetricAlgebra_mem_inertia_span_singleton_ι_iff`: for polynomial
+* `Representation.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule`: for polynomial
   functions on `V`, the inertia group of the ideal of `ker ℓ` is its pointwise stabilizer.
 * `Representation.exists_eq_span_singleton_ι_and_ker_eq_of_mem_inertia`: an element of the
   inertia group of a height-one prime of `Sym(V*)` acting nontrivially on `V` is a
@@ -212,15 +212,16 @@ section Dual
 variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
 variable (ρ : Representation K G V)
 
-variable {ρ} in
 /-- For polynomial functions on `V`, the inertia group of the ideal spanned by a linear form `ℓ`
 is the pointwise stabilizer of the hyperplane `ker ℓ`. -/
-theorem dual_symmetricAlgebra_mem_inertia_span_singleton_ι_iff {ℓ : Module.Dual K V} {g : G} :
+theorem mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule
+    {ℓ : Module.Dual K V} {g : G} :
     letI := ρ.dual.symmetricAlgebraMulSemiringAction
     g ∈ (Ideal.span {ι K (Module.Dual K V) ℓ}).inertia G ↔
-      LinearMap.ker ℓ ≤ LinearMap.ker (ρ g - 1) := by
+      LinearMap.ker ℓ ≤ (ρ g).fixedSubmodule := by
   rw [symmetricAlgebra_mem_inertia_span_singleton_ι_iff,
-    forall_sub_dual_apply_mem_span_singleton_iff]
+    forall_sub_dual_apply_mem_span_singleton_iff, LinearMap.fixedSubmodule_eq_ker,
+    ← Module.End.one_eq_id]
 
 /-- Let `P` be a height-one prime of the polynomial functions `Sym(V*)` on `V`, and let `g` lie in
 its inertia group and act nontrivially on `V`. Then `P` is spanned by a nonzero linear form `ℓ`,
@@ -233,7 +234,8 @@ theorem exists_eq_span_singleton_ι_and_ker_eq_of_mem_inertia
   obtain ⟨ℓ, hℓ, rfl⟩ := ρ.dual.exists_eq_span_singleton_ι_of_mem_inertia hP hg
     (dual_apply_eq_one_iff.not.2 hρg)
   refine ⟨ℓ, hℓ, rfl, ?_⟩
-  have hle := dual_symmetricAlgebra_mem_inertia_span_singleton_ι_iff.1 hg
+  have hle := (ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 hg
+  rw [LinearMap.fixedSubmodule_eq_ker, ← Module.End.one_eq_id] at hle
   refine ((LinearMap.isCoatom_ker_of_surjective (ℓ.surjective_or_eq_zero.resolve_right hℓ)).le_iff.1
     hle).resolve_left fun htop ↦ hρg ?_
   rw [← sub_eq_zero]
