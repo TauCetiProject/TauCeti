@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.Complex.Phase
 import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
@@ -111,16 +112,6 @@ theorem referenceConnection_eq_angular (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z
     referenceConnection f m z v = -(m : ℂ) * I * ((v / z).im : ℂ) := by
   simp [referenceConnection, cutoff_eq_one f hz, div_eq_mul_inv, mul_comm]
 
-/-- The winding phase `(z / ‖z‖) ^ m` is smooth away from the origin. -/
-private theorem contDiffAt_div_norm_pow (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
-    ContDiffAt ℝ ∞ (fun w : ℂ ↦ (w / (‖w‖ : ℂ)) ^ m) z := by
-  have hn : ContDiffAt ℝ ∞ (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
-    ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
-  have hp : ContDiffAt ℝ ∞ (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
-    simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
-      contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
-  exact hp.pow m
-
 /-- The angular one-form `-i m dθ`, `dθ_z(v) = Im(v / z)`, is smooth away from the origin. -/
 private theorem contDiffAt_angular (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
     ContDiffAt ℝ ∞ (fun w : ℂ ↦ (-(m : ℂ) * I) •
@@ -218,12 +209,11 @@ theorem exists_norm_iteratedFDeriv_referenceSection_le (f : ContDiffBump (0 : �
   refine exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq le_rfl (N := n)
     ((contDiff_referenceSection f m).of_le (by exact_mod_cast le_top))
     (h := fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m)
-    (fun z hz ↦ ((contDiffAt_div_norm_pow m hz).of_le (by exact_mod_cast le_top)).contDiffWithinAt)
+    (fun z hz ↦ (contDiffAt_div_norm_pow m hz).contDiffWithinAt)
     (fun t ht z _ ↦ ?_) (fun z hz ↦ referenceSection_eq_phase f m (rOut_le_sq_of_sqrt_le f hz))
     n le_rfl
-  rw [Real.rpow_zero, one_smul, norm_smul, Real.norm_of_nonneg ht.le, Complex.real_smul]
-  push_cast
-  rw [mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
+  have ht' : (t : ℂ) ≠ 0 := ofReal_ne_zero.2 ht.ne'
+  simp [abs_of_pos ht, Complex.real_smul, mul_div_mul_left _ _ ht']
 
 /-- The reference connection has bounded derivatives of every order: outside a disc it is the
 angular one-form `-i m dθ`, which is homogeneous of degree `-1`. -/
@@ -244,12 +234,14 @@ theorem exists_norm_iteratedFDeriv_referenceConnection_le (f : ContDiffBump (0 :
   · simp [referenceConnection, cutoff_eq_one f (rOut_le_sq_of_sqrt_le f hz)]
 
 /-- The reference section has temperate growth. -/
+@[fun_prop]
 theorem hasTemperateGrowth_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     (referenceSection f m).HasTemperateGrowth :=
   .of_norm_iteratedFDeriv_le (contDiff_referenceSection f m)
     (exists_norm_iteratedFDeriv_referenceSection_le f m)
 
 /-- The reference connection has temperate growth. -/
+@[fun_prop]
 theorem hasTemperateGrowth_referenceConnection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     (referenceConnection f m).HasTemperateGrowth :=
   .of_norm_iteratedFDeriv_le (contDiff_referenceConnection f m)

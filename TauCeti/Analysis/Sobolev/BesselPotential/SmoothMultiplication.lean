@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Distribution.Sobolev
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Distribution.TemperateGrowth
 import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
 import TauCeti.Analysis.Distribution.TemperedDistribution.SmulLeft
@@ -24,7 +24,8 @@ required: `g` may be a non-vanishing phase such as `(z / |z|) ^ m` outside a dis
 coefficient decaying only like `1 / |z|`. Such multipliers are the coefficients of the nonlinear
 field equations on affine Sobolev spaces centered at a reference field with a nontrivial tail.
 
-The proof is by induction on `k`. For `k = 0`, `H^{0,p} = Lᵖ` and `g` is bounded. For the
+The proof is by induction on `k`. For `k = 0`, `H^{0,p} = Lᵖ` and `g` is bounded
+(`TemperedDistribution.MemSobolev.smulLeftCLM_of_memLp_top`). For the
 inductive step, `u ∈ H^{k+1,p}` exactly when `u ∈ Lᵖ` and every `∂_v u ∈ H^{k,p}`
 (`TemperedDistribution.memSobolev_natCast_add_one_iff`), and the Leibniz rule
 `∂_v (g u) = (∂_v g) u + g ∂_v u` (`TemperedDistribution.lineDerivOp_smulLeftCLM`) expresses
@@ -60,20 +61,22 @@ variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteD
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [InnerProductSpace ℂ F]
   [CompleteSpace F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
-/-- Multiplication by a bounded function of temperate growth maps `Lᵖ = H^{0,p}` to itself. -/
-theorem MemSobolev.smulLeftCLM_of_norm_le {g : E → ℂ} (hg : g.HasTemperateGrowth) {C : ℝ}
-    (hC : ∀ x, ‖g x‖ ≤ C) {u : 𝓢'(E, F)} (hu : MemSobolev 0 p u) :
+/-- The order-`0` case of the standing hypothesis that the derivatives of order at most `k` of a
+continuous function are bounded puts the function in `L^∞`. -/
+private theorem memLp_top_of_norm_iteratedFDeriv_le {G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] {g : E → G} (hg : Continuous g) {k : ℕ}
+    (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) : MemLp g ∞ volume := by
+  obtain ⟨C, hC⟩ := hbd 0 (Nat.zero_le k)
+  exact memLp_top_of_bound hg.aestronglyMeasurable C (.of_forall fun x ↦ by simpa using hC x)
+
+/-- Multiplication by an essentially bounded function of temperate growth maps `Lᵖ = H^{0,p}` to
+itself. -/
+theorem MemSobolev.smulLeftCLM_of_memLp_top {g : E → ℂ} (hg : g.HasTemperateGrowth)
+    (hgm : MemLp g ∞ volume) {u : 𝓢'(E, F)} (hu : MemSobolev 0 p u) :
     MemSobolev 0 p (smulLeftCLM F g u) := by
   obtain ⟨f, rfl⟩ := memSobolev_zero_iff.1 hu
-  have hgm : MemLp g ∞ volume :=
-    memLp_top_of_bound hg.1.continuous.aestronglyMeasurable C (Filter.Eventually.of_forall hC)
-  have hm : MemLp (fun x ↦ g x • f x) p volume := hgm.smul (Lp.memLp f)
-  refine memSobolev_zero_iff.2 ⟨hm.toLp _, ?_⟩
-  ext φ
-  rw [Lp.smulLeftCLM_toTemperedDistribution_apply hg, Lp.toTemperedDistribution_apply]
-  refine integral_congr_ae ?_
-  filter_upwards [hm.coeFn_toLp] with x hx
-  rw [hx]
+  exact memSobolev_zero_iff.2
+    ⟨(hgm.toLp g • f : Lp F p volume), (Lp.toTemperedDistribution_smul_eq (r := p) hg hgm f).symm⟩
 
 /-- **Multiplication by a smooth function with bounded derivatives on `H^{k,p}`.** For a natural
 number `k` and `1 < p < ∞`, multiplication by a function `g` of temperate growth whose
@@ -82,29 +85,24 @@ theorem MemSobolev.smulLeftCLM_of_norm_iteratedFDeriv_le (hp : 1 < p) (hp_top : 
     {g : E → ℂ} (hg : g.HasTemperateGrowth)
     (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C) {u : 𝓢'(E, F)}
     (hu : MemSobolev k p u) : MemSobolev k p (smulLeftCLM F g u) := by
+  have hgm := memLp_top_of_norm_iteratedFDeriv_le hg.1.continuous hbd
   induction k generalizing g u with
-  | zero =>
-    obtain ⟨C, hC⟩ := hbd 0 le_rfl
-    simpa using MemSobolev.smulLeftCLM_of_norm_le hg (C := C) (fun x ↦ by simpa using hC x)
-      (by simpa using hu)
+  | zero => simpa using MemSobolev.smulLeftCLM_of_memLp_top hg hgm (by simpa using hu)
   | succ k ih =>
     have hk : MemSobolev k p u := hu.mono_of_one_lt hp hp_top (by simp)
     rw [Nat.cast_succ, memSobolev_natCast_add_one_iff hp hp_top] at hu ⊢
-    obtain ⟨C, hC⟩ := hbd 0 (Nat.zero_le _)
-    refine ⟨MemSobolev.smulLeftCLM_of_norm_le hg (C := C) (fun x ↦ by simpa using hC x) hu.1,
-      fun v ↦ ?_⟩
+    refine ⟨MemSobolev.smulLeftCLM_of_memLp_top hg hgm hu.1, fun v ↦ ?_⟩
     -- `∂_v (g u) = (∂_v g) u + g ∂_v u`, and `∂_v g` has bounded derivatives of order `≤ k`.
     rw [lineDerivOp_smulLeftCLM hg]
-    refine MemSobolev.add (ih (hg.fderiv_apply v) (fun n hn ↦ ?_) hk)
-      (ih hg (fun n hn ↦ hbd n (hn.trans k.le_succ)) (hu.2 v))
-    obtain ⟨C, hC⟩ := hbd (n + 1) (Nat.succ_le_succ hn)
-    refine ⟨‖v‖ * C, fun x ↦ ?_⟩
-    have h := (ContinuousLinearMap.apply ℝ ℂ v).norm_iteratedFDeriv_comp_left (n := n)
-      hg.fderiv.1.contDiffAt (by exact_mod_cast le_top) (x := x)
-    rw [norm_iteratedFDeriv_fderiv] at h
-    refine h.trans (mul_le_mul ?_ (hC x) (norm_nonneg _) (norm_nonneg v))
-    exact ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg v) fun L ↦ by
-      simpa [mul_comm] using L.le_opNorm v
+    have hbd' : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n (fun x ↦ fderiv ℝ g x v) x‖ ≤ C :=
+      (ContinuousLinearMap.apply ℝ ℂ v).exists_norm_iteratedFDeriv_comp_left_le
+        (hg.fderiv.1.of_le (mod_cast le_top)) fun n hn ↦ by
+          simpa only [norm_iteratedFDeriv_fderiv] using hbd (n + 1) (Nat.succ_le_succ hn)
+    have hbdk : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n g x‖ ≤ C :=
+      fun n hn ↦ hbd n (hn.trans k.le_succ)
+    exact MemSobolev.add (ih (hg.fderiv_apply v) hbd' hk
+      (memLp_top_of_norm_iteratedFDeriv_le (hg.fderiv_apply v).1.continuous hbd'))
+      (ih hg hbdk (hu.2 v) hgm)
 
 /-- **Multiplication by a real smooth function with bounded derivatives on real `H^{k,p}`
 functions.** For `1 < p < ∞`, the product of a real `Lᵖ` function whose complexification lies in
@@ -115,9 +113,7 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_norm_iteratedFDeriv_le (hp 
     (hbd : ∀ n ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv ℝ n c x‖ ≤ C)
     {u : Lp ℝ p (volume : Measure E)} (hu : u ∈ realSobolevSubmodule E k p) :
     ∃ v ∈ realSobolevSubmodule E k p, v =ᵐ[volume] fun x ↦ c x * u x := by
-  obtain ⟨C, hC⟩ := hbd 0 (Nat.zero_le _)
-  have hcm : MemLp c ∞ volume := memLp_top_of_bound hc.1.continuous.aestronglyMeasurable C
-    (Filter.Eventually.of_forall fun x ↦ by simpa using hC x)
+  have hcm := memLp_top_of_norm_iteratedFDeriv_le hc.1.continuous hbd
   have hm : MemLp (fun x ↦ c x * u x) p volume := hcm.mul (Lp.memLp u)
   have hc' : (fun x ↦ (c x : ℂ)).HasTemperateGrowth := Complex.hasTemperateGrowth_ofReal.comp hc
   -- The complexification of `c u` is the product of `c` with the complexification of `u`.
@@ -132,12 +128,7 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_norm_iteratedFDeriv_le (hp 
     simp only [h₁, h₂, h₃, Complex.ofRealCLM_apply, Complex.ofReal_mul, smul_eq_mul]
   refine ⟨hm.toLp _, ?_, hm.coeFn_toLp⟩
   rw [mem_realSobolevSubmodule, heq]
-  refine (mem_realSobolevSubmodule.1 hu).smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hc'
-    fun n hn ↦ ?_
-  obtain ⟨C, hC⟩ := hbd n hn
-  refine ⟨C, fun x ↦ ?_⟩
-  have h := Complex.ofRealLI.norm_iteratedFDeriv_comp_left hc.1.contDiffAt (x := x) (i := n)
-    (by exact_mod_cast le_top)
-  exact h.le.trans (hC x)
+  exact (mem_realSobolevSubmodule.1 hu).smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top hc'
+    (Complex.ofRealCLM.exists_norm_iteratedFDeriv_comp_left_le (hc.1.of_le (mod_cast le_top)) hbd)
 
 end TemperedDistribution

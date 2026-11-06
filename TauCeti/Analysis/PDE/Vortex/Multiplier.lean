@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Vortex.FieldSpace
-import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.CompLinear
 import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplication
 
 /-!
@@ -65,11 +65,8 @@ theorem clm_apply_mem_sobolevFields {k : ℕ}
       (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin 4)) (EuclideanSpace.single j 1))
   have hc (j : Fin 4) : (fun z ↦ L j (M z)).HasTemperateGrowth :=
     (L j).hasTemperateGrowth.comp hM
-  have hcbd (j : Fin 4) : ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ L j (M z)) z‖ ≤ C := by
-    intro n hn
-    obtain ⟨C, hC⟩ := hbd n hn
-    exact ⟨‖L j‖ * C, fun z ↦ ((L j).norm_iteratedFDeriv_comp_left hM.1.contDiffAt
-      (by exact_mod_cast le_top)).trans (mul_le_mul_of_nonneg_left (hC z) (norm_nonneg _))⟩
+  have hcbd (j : Fin 4) : ∀ n ≤ k, ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ L j (M z)) z‖ ≤ C :=
+    (L j).exists_norm_iteratedFDeriv_comp_left_le (hM.1.of_le (mod_cast le_top)) hbd
   -- Multiply each coordinate of `y` by its coefficient and sum.
   have hv (j : Fin 4) : ∃ u : Lp ℝ 2 (volume : Measure ℂ), u ∈ realSobolevSubmodule ℂ k 2 ∧
       u =ᵐ[volume] fun z ↦ L j (M z) * y z j := by

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
 import Mathlib.Analysis.Normed.Operator.Prod
 
 /-!
@@ -24,6 +25,10 @@ For a function of one variable, postcomposition with a continuous linear map com
 iterated derivative `iteratedDeriv`. This is the one-variable form of Mathlib's
 `ContinuousLinearMap.iteratedFDeriv_comp_left`, used for instance to test identities between
 iterated derivatives of vector-valued functions against continuous linear functionals.
+
+Postcomposition with a continuous linear map also preserves uniform bounds on the derivatives of
+order at most `k` (`ContinuousLinearMap.exists_norm_iteratedFDeriv_comp_left_le`), which is how
+bounded-derivative coefficients pass to their components.
 -/
 
 public section
@@ -50,6 +55,16 @@ of a function of one variable that is `C^i` at the point. -/
 theorem iteratedDeriv_comp_left (g : F →L[𝕜] G) {f : 𝕜 → F} {x : 𝕜} (hf : ContDiffAt 𝕜 n f x)
     {i : ℕ} (hi : i ≤ n) : iteratedDeriv i (g ∘ f) x = g (iteratedDeriv i f x) := by
   simp [iteratedDeriv_eq_iteratedFDeriv, g.iteratedFDeriv_comp_left hf hi]
+
+/-- Postcomposition with a continuous linear map `g` preserves uniform bounds on the derivatives
+of order at most `k` of a `C^k` function. -/
+theorem exists_norm_iteratedFDeriv_comp_left_le (g : F →L[𝕜] G) {f : E → F} {k : ℕ}
+    (hf : ContDiff 𝕜 k f) (hbd : ∀ i ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i f x‖ ≤ C) :
+    ∀ i ≤ k, ∃ C, ∀ x, ‖iteratedFDeriv 𝕜 i (fun x ↦ g (f x)) x‖ ≤ C := by
+  intro i hi
+  obtain ⟨C, hC⟩ := hbd i hi
+  exact ⟨‖g‖ * C, fun x ↦ (g.norm_iteratedFDeriv_comp_left hf.contDiffAt (mod_cast hi)).trans
+    (mul_le_mul_of_nonneg_left (hC x) (norm_nonneg g))⟩
 
 end ContinuousLinearMap
 
