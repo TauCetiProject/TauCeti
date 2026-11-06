@@ -9,6 +9,8 @@ public import TauCeti.Geometry.Toric.Delzant.Basic
 
 import Mathlib.LinearAlgebra.Dimension.OrzechProperty
 import Mathlib.LinearAlgebra.StdBasis
+import TauCeti.Algebra.Group.Pi.Lemmas
+import TauCeti.LinearAlgebra.Pi
 
 /-!
 # The standard simplex as a Delzant polytope
@@ -25,14 +27,15 @@ cut out the simplex
 
 `{x ∈ (ℝ^κ)* | 0 ≤ x (e k) for every k, and ∑ k, x (e k) ≤ a}`
 
-(`TauCeti.Toric.mem_facetPolyhedron_simplex_iff`). For `a > 0` and `κ` nonempty this is a
-Delzant polytope (`TauCeti.Toric.isDelzant_simplex`). Each of its `#κ + 1` facets is cut out by
-one of the normals. At a vertex all constraints but one are active: if two constraints `o₁ ≠ o₂`
-were inactive, a nonzero functional on `ℝ^κ` (a coordinate, or a difference of two coordinates)
-would vanish on all the active normals. Any `#κ` of the `#κ + 1` normals generate `ℤ^κ`, since
-the missing one is minus the sum of the others when it is `-1`, and is recovered as
-`e k = -(-1) - ∑_{m ≠ k} e m` otherwise. Having `#κ = rank ℤ^κ` elements, they then form a basis of
-`ℤ^κ`.
+(`TauCeti.Toric.mem_facetPolyhedron_simplex_iff`). It is bounded, since its points have norm at
+most `|a|` (`TauCeti.Toric.isBounded_facetPolyhedron_simplex`). For `a > 0` and `κ` nonempty
+this is a Delzant polytope (`TauCeti.Toric.isDelzant_simplex`). Each of its `#κ + 1` facets is cut
+out by one of the normals. At a vertex all constraints but one are active: if two constraints
+`o₁ ≠ o₂` were inactive, a nonzero functional on `ℝ^κ` (a coordinate, or a difference of two
+coordinates) would vanish on all the active normals. Any `#κ` of the `#κ + 1` normals generate
+`ℤ^κ`, since the missing one is minus the sum of the others when it is `-1`, and is recovered as
+`e k = -(-1) - ∑_{m ≠ k} e m` otherwise. Having `#κ = rank ℤ^κ` elements, they then form a basis
+of `ℤ^κ`.
 
 ## Main definitions
 
@@ -44,7 +47,8 @@ the missing one is minus the sum of the others when it is `-1`, and is recovered
 * `TauCeti.Toric.mem_facetPolyhedron_simplex_iff`: the polyhedron is the simplex of size `a`.
 * `TauCeti.Toric.none_mem_activeSet_simplex_iff`, `TauCeti.Toric.some_mem_activeSet_simplex_iff`:
   the facets of the simplex.
-* `TauCeti.Toric.isDelzant_simplex`: for `a > 0` it is a Delzant polytope.
+* `TauCeti.Toric.isBounded_facetPolyhedron_simplex`: the simplex is bounded.
+* `TauCeti.Toric.isDelzant_simplex`: for `a > 0` and `κ` nonempty it is a Delzant polytope.
 
 ## References
 
@@ -94,12 +98,6 @@ theorem simplexNormal_none : simplexNormal κ none = -1 :=
 @[simp]
 theorem simplexNormal_some (k : κ) : simplexNormal κ (some k) = Pi.single k 1 :=
   (rfl)
-
-@[simp]
-private theorem compLeft_single (k : κ) :
-    (Int.castAddHom ℝ).compLeft κ (Pi.single k 1) = Pi.single k 1 := by
-  ext m
-  simp [Pi.single_apply]
 
 /-- Any two of the normals can be omitted by a nonzero functional on `ℝ^κ` vanishing on all the
 others: a coordinate, or a difference of two coordinates. -/
@@ -151,13 +149,12 @@ private theorem span_simplexNormal_compl [Finite κ] (o : Option κ) :
 
 variable [Fintype κ]
 
-/-- A functional on `ℝ^κ` sends `1` to the sum of its values on the coordinate vectors. -/
+/-- A functional on `ℝ^κ` sends the image `1` of `1 ∈ ℤ^κ` to the sum of its values on the
+coordinate vectors. -/
 private theorem apply_compLeft_one (x : StrongDual ℝ (κ → ℝ)) :
     x ((Int.castAddHom ℝ).compLeft κ 1) = ∑ k, x (Pi.single k 1) := by
-  rw [← map_sum]
-  congr 1
-  ext m
-  simp
+  rw [show (Int.castAddHom ℝ).compLeft κ 1 = 1 by ext; simp]
+  simpa using (x : (κ → ℝ) →ₗ[ℝ] ℝ).pi_apply_eq_sum_single 1
 
 /-- **The standard simplex.** The polyhedron cut out by the normals `e k` and `-1` with support
 constants `0` and `-a` is the simplex `{x | 0 ≤ x (e k) for every k, and ∑ k, x (e k) ≤ a}`. -/
@@ -177,6 +174,25 @@ theorem some_mem_activeSet_simplex_iff {a : ℝ} {x : StrongDual ℝ (κ → ℝ
     some k ∈ activeSet (facetPairing ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ))
       (simplexSupport a) x ↔ x (Pi.single k 1) = 0 := by
   simp
+
+/-- **The simplex is bounded.** Its points have norm at most `|a|`. -/
+theorem isBounded_facetPolyhedron_simplex (a : ℝ) :
+    Bornology.IsBounded
+      (facetPolyhedron ((Int.castAddHom ℝ).compLeft κ) (simplexNormal κ) (simplexSupport a)) := by
+  refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨|a|, fun x hx ↦ ?_⟩
+  obtain ⟨hx₀, hxa⟩ := mem_facetPolyhedron_simplex_iff.1 hx
+  rw [Metric.mem_closedBall, dist_zero_right]
+  refine ContinuousLinearMap.opNorm_le_bound x (abs_nonneg a) fun v ↦ ?_
+  have hxv : x v = ∑ k, v k * x (Pi.single k 1) := by
+    simpa using (x : (κ → ℝ) →ₗ[ℝ] ℝ).pi_apply_eq_sum_single v
+  rw [hxv, mul_comm |a|]
+  calc ‖∑ k, v k * x (Pi.single k 1)‖ ≤ ∑ k, ‖v‖ * x (Pi.single k 1) := by
+        refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
+        rw [norm_mul, Real.norm_of_nonneg (hx₀ k)]
+        exact mul_le_mul_of_nonneg_right (norm_le_pi_norm v k) (hx₀ k)
+    _ ≤ ‖v‖ * |a| := by
+        rw [← Finset.mul_sum]
+        exact mul_le_mul_of_nonneg_left (hxa.trans (le_abs_self a)) (norm_nonneg v)
 
 /-- At a vertex of the simplex, all constraints but one are active. -/
 private theorem exists_activeSet_eq_compl_of_mem_extremePoints {a : ℝ} (ha : a ≠ 0)
@@ -221,24 +237,7 @@ theorem isDelzant_simplex [Nonempty κ] {a : ℝ} (ha : 0 < a) :
   have hpt (y : κ → ℝ) (m : κ) : pt y (Pi.single m 1) = y m := by
     simp [pt, Pi.single_apply]
   have hn : (0 : ℝ) < Fintype.card κ := Nat.cast_pos.2 Fintype.card_pos
-  refine ⟨?_, fun x hx ↦ ?_, fun o ↦ ?_⟩
-  · -- Every point of the simplex has norm at most `a`.
-    refine (Metric.isBounded_iff_subset_closedBall 0).2 ⟨a, fun x hx ↦ ?_⟩
-    obtain ⟨hx₀, hxa⟩ := mem_facetPolyhedron_simplex_iff.1 hx
-    rw [Metric.mem_closedBall, dist_zero_right]
-    refine ContinuousLinearMap.opNorm_le_bound x ha.le fun v ↦ ?_
-    -- A functional on `ℝ^κ` is determined by its values on the coordinate vectors.
-    have hxv : x v = ∑ k, v k * x (Pi.single k 1) := by
-      conv_lhs => rw [← Finset.univ_sum_single v]
-      simp_rw [map_sum, ← smul_eq_mul, ← map_smul, ← Pi.single_smul', smul_eq_mul, mul_one]
-    rw [hxv, mul_comm a]
-    calc ‖∑ k, v k * x (Pi.single k 1)‖ ≤ ∑ k, ‖v‖ * x (Pi.single k 1) := by
-          refine (norm_sum_le _ _).trans (Finset.sum_le_sum fun k _ ↦ ?_)
-          rw [norm_mul, Real.norm_of_nonneg (hx₀ k)]
-          exact mul_le_mul_of_nonneg_right (norm_le_pi_norm v k) (hx₀ k)
-      _ ≤ ‖v‖ * a := by
-          rw [← Finset.mul_sum]
-          exact mul_le_mul_of_nonneg_left hxa (norm_nonneg v)
+  refine ⟨isBounded_facetPolyhedron_simplex a, fun x hx ↦ ?_, fun o ↦ ?_⟩
   · obtain ⟨o, ho⟩ := exists_activeSet_eq_compl_of_mem_extremePoints ha.ne' hx
     exact isSmoothVertex_simplex_of_activeSet_eq_compl ho
   · cases o with
