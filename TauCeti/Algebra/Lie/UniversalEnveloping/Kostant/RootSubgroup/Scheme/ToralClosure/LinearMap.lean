@@ -99,14 +99,9 @@ theorem eqToHom_comp_kostantToralGroupSchemeι_linearMap (hf : Function.Injectiv
     eqToHom (kostantToralGroupScheme_linearMap e h ρ M hM hnil b wt hf) ≫
         kostantToralGroupSchemeι e h ρ M hM hnil b wt =
       kostantToralGroupSchemeι e h ρ M hM hnil b (fun j => f (wt j)) := by
-  have key : ∀ (J₁ J₂ : HopfIdeal ℤ (GeneralLinear.coordinateHopfAlgebra ℤ n)) (hJ : J₁ = J₂),
-      eqToHom (congrArg (CommHopfAlgCat.quotientSpec _) hJ) ≫
-          CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n) J₂ =
-        CommHopfAlgCat.quotientSpecι (GeneralLinear.coordinateHopfAlgebra ℤ n) J₁ := by
-    rintro J₁ _ rfl
-    simp
   rw [kostantToralGroupSchemeι_def, kostantToralGroupSchemeι_def, ← Category.assoc,
-    key _ _ (kostantToralDefiningIdeal_linearMap e h ρ M hM hnil b wt hf)]
+    CommHopfAlgCat.eqToHom_comp_quotientSpecι _
+      (kostantToralDefiningIdeal_linearMap e h ρ M hM hnil b wt hf)]
 
 /-- **The weight torus of the pushed-forward weights factors through the weight torus of the
 original weights**, by the split-torus morphism dual to `f`, after the identification of the two
