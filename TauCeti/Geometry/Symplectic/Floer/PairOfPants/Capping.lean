@@ -313,6 +313,32 @@ private theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
   exact (h.contDiff.comp ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
     contDiff_snd)).clm_apply contDiff_const
 
+/-- Where the negative plane perturbation vanishes, that is on a measurable set of points of norm
+below `2 exp (2π)`, the Floer energy density integrates to the symplectic area and the Hamiltonian
+curvature integrates to zero. -/
+private theorem integral_negativePlanePerturbation_of_forall_norm_lt (ω : SymplecticForm V)
+    {u : ℝ × ℝ → V} {S : Set (ℝ × ℝ)} (hS : MeasurableSet S)
+    (hSn : ∀ z ∈ S, ‖Complex.equivRealProdCLM.symm z‖ < 2 * Real.exp (2 * π)) :
+    (∫ z in S, ω.floerEnergyDensity
+      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
+      ∫ z in S, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) ∧
+    ∫ z in S, ω.hamiltonianCurvature
+      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+      z (u z) = 0 := by
+  refine ⟨?_, ?_⟩
+  · refine setIntegral_congr_fun hS fun z hz => ?_
+    have hK := (eventually_negativePlanePerturbation_eq_zero (H := H) (hSn z hz)).self_of_nhds
+    simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
+      perturbedFDeriv_apply_stdComplexLineImag, hK]
+  · refine setIntegral_eq_zero_of_forall_eq_zero fun z hz => ?_
+    have hK := eventually_negativePlanePerturbation_eq_zero (H := H) (hSn z hz)
+    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
+      (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz'])
+      (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz']), hamiltonianCurvature_zero_left]
+    simp
+
 /-- **The energy identity on discs of the negative plane.** Let `K` be the negative plane
 perturbation of a period-one `C¹` Hamiltonian `H`, with components `K_s(z) = K(z)(1)` and
 `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`, and let `u` be a `C¹` map. For
@@ -381,25 +407,8 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
       ∫ z in D, f z = (∫ z in T, f z) + ∫ z in D \ T, f z := by
     conv_lhs => rw [← union_sdiff_cancel hTD]
     exact setIntegral_union disjoint_sdiff_right hDTm (hf.mono_set hTD) (hf.mono_set sdiff_subset)
-  -- Off the truncation the energy is the area and the curvature vanishes.
-  have hED : ∫ z in D \ T, ω.floerEnergyDensity
-      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u z =
-      ∫ z in D \ T, ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    refine setIntegral_congr_fun hDTm fun z hz => ?_
-    have hK := (eventually_negativePlanePerturbation_eq_zero (H := H) (hDT hz)).self_of_nhds
-    simp [floerEnergyDensity_def, perturbedFDeriv_apply_stdComplexLineReal,
-      perturbedFDeriv_apply_stdComplexLineImag, hK]
-  have hRD : ∫ z in D \ T, ω.hamiltonianCurvature
-      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z) = 0 := by
-    refine setIntegral_eq_zero_of_forall_eq_zero fun z hz => ?_
-    have hK := eventually_negativePlanePerturbation_eq_zero (H := H) (hDT hz)
-    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
-      (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz'])
-      (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz']), hamiltonianCurvature_zero_left]
-    simp
+  obtain ⟨hED, hRD⟩ :=
+    integral_negativePlanePerturbation_of_forall_norm_lt ω hDTm fun z hz => hDT hz
   rw [hsplit _ hE, hsplit _ harea, hsplit _ hcurv, hED, hRD, hT]
   ring
 
