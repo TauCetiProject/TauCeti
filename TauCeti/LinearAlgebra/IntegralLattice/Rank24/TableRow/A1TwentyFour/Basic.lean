@@ -86,6 +86,12 @@ noncomputable def a1TwentyFourthLatticeConstructionAIsometry :
     IntegralLattice.Isometry a1TwentyFourth.lattice BinaryGolay.constructionALattice :=
   a1TwentyFourthLatticeIsometry.trans a1TwentyFourthConstructionAIsometry
 
+/-- The comparison with Construction A factors through the constant-family gluing. -/
+theorem a1TwentyFourthLatticeConstructionAIsometry_def :
+    a1TwentyFourthLatticeConstructionAIsometry =
+      a1TwentyFourthLatticeIsometry.trans a1TwentyFourthConstructionAIsometry :=
+  (rfl)
+
 /-- The isometry onto Golay Construction A doubles, in Golay coordinate `j`, the simple-root
 coordinate of the table component `p j`, where `p = TauCeti.a1TableToGolayPerm`. -/
 theorem a1TwentyFourthLatticeConstructionAIsometry_apply
