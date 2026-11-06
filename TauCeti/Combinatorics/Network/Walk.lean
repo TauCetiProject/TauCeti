@@ -384,6 +384,19 @@ theorem exists_eq_comp_cons_comp_of_mem_arrows {s t x y : V} {p : ArrowWalk Q s 
       obtain rfl := eq_of_heq he
       exact ⟨p, nil y, rfl⟩
 
+/-- No arrow traversed by a path leaves its last vertex. -/
+theorem IsPath.fst_ne_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath)
+    {a : Σ x y, Q x y} (ha : a ∈ p.arrows) : a.1 ≠ t := by
+  obtain ⟨x, y, e⟩ := a
+  obtain ⟨p₁, p₂, rfl⟩ := exists_eq_comp_cons_comp_of_mem_arrows ha
+  rintro rfl
+  -- The final segment would be a path starting and ending at `x`, visiting it twice.
+  have h := hp.of_comp_right
+  have hcomp : (((nil x).cons e).comp p₂).vertices = [x] ++ p₂.vertices :=
+    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ ((nil x).cons e) p₂
+  rw [isPath_def, hcomp] at h
+  exact (List.nodup_cons.1 h).1 (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₂)
+
 /-- **Path extraction.** Every walk contains a path with the same endpoints that traverses only
 arrows of the walk. -/
 theorem exists_isPath_arrows_subset {s t : V} (p : ArrowWalk Q s t) :
