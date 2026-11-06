@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Fredholm.Stabilization
 public import TauCeti.Geometry.Manifold.VectorBundle.Kernel
-import Mathlib.Geometry.Manifold.Algebra.Monoid
+import TauCeti.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Local bundles of stabilized Fredholm kernels
@@ -109,10 +109,8 @@ theorem IsFredholm.exists_stabilization_kernel_contMDiffVectorBundle
   let := FiniteDimensional.complete 𝕜 S
   let V : TopologicalSpace.Opens X := ⟨U, hU⟩
   have hA : ContMDiff I 𝓘(𝕜, (E × S) →L[𝕜] F) n
-      (fun x : V ↦ (T x).coprod S.subtypeL) := by
-    simp_rw [← comp_fst_add_comp_snd]
-    exact ((hT.comp contMDiff_subtype_val).clm_comp contMDiff_const).add
-      contMDiff_const
+      (fun x : V ↦ (T x).coprod S.subtypeL) :=
+    (hT.comp contMDiff_subtype_val).clm_coprod contMDiff_const
   exact ⟨S, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
     q, V, hx₀, fun x ↦ hinv x x.property, hA,
     TauCeti.kernelContMDiffVectorBundle hA.continuous _,
