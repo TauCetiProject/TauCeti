@@ -179,18 +179,22 @@ theorem mem_sobolevFields_of_hasCompactSupport {y : ℂ → EuclideanSpace ℝ (
   fun i ↦ mem_realSobolevFunctions_of_hasCompactSupport (contDiff_euclidean.1 hy i)
     (hc.comp_left (g := fun v : EuclideanSpace ℝ (Fin 4) ↦ v i) rfl) s 2
 
+/-- The order condition `s > 1` is `dim ℂ < 2 s`, the hypothesis of the Sobolev algebra and
+embedding theorems on the plane. -/
+theorem finrank_lt_two_mul {s : ℝ} (hs : 1 < s) : (finrank ℝ ℂ : ℝ) < 2 * s := by
+  rw [Complex.finrank_real_complex]
+  push_cast
+  linarith
+
 /-- **Decay of continuous Sobolev fields.** For `s > 1`, a continuous field in `sobolevFields s`
 tends to zero at infinity: by Sobolev embedding each coordinate agrees almost everywhere with a
 continuous function vanishing at infinity, hence everywhere. -/
 theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y) :
     Tendsto y (cocompact ℂ) (𝓝 0) := by
-  have hs' : (finrank ℝ ℂ : ℝ) < 2 * s := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith
   have h : Tendsto (fun z ↦ WithLp.ofLp (y z)) (cocompact ℂ) (𝓝 0) :=
-    tendsto_pi_nhds.2 fun i ↦ tendsto_cocompact_of_mem_realSobolevFunctions hs' (hy i)
+    tendsto_pi_nhds.2 fun i ↦ tendsto_cocompact_of_mem_realSobolevFunctions
+      (finrank_lt_two_mul hs) (hy i)
       ((PiLp.continuous_apply 2 _ i).comp hcont)
   simpa [Function.comp_def] using ((PiLp.continuous_toLp 2 _).tendsto 0).comp h
 

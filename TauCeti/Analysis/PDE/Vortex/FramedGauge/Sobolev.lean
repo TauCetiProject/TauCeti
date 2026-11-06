@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.PDE.Vortex.FieldSpace
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -20,10 +20,11 @@ For `s > 1` the Sobolev framed gauge group is
 
 the Banach gauge group paired with the affine Sobolev space `A_m^(s-1)` of framed plane vortex
 fields (`TauCeti.Vortex.framedFieldSpace`). As for those fields, `h` is taken in real
-coordinates: `h = (Re u - 1) + i Im u`, and both real functions `Re u - 1` and `Im u` lie in `H^s`
-(`TemperedDistribution.realSobolevFunctions`), which is the componentwise complexification of
-`H^s(ℂ; ℝ²)`. For `s > 1 = dim ℂ / 2` an `H^s` function has a continuous representative, and
-the elements of `G_s` are taken to be continuous circle-valued maps.
+coordinates: both real functions `Re u - 1` and `Im u` lie in `H^s`
+(`TemperedDistribution.realSobolevFunctions`), so the pair `(Re u - 1, Im u)` lies in
+`H^s(ℂ; ℝ²)`, identified with `H^s(ℂ; ℂ)` through `h = (Re u - 1) + i Im u`. For
+`s > 1 = dim ℂ / 2` an `H^s` function has a continuous representative, and the elements of `G_s`
+are taken to be continuous circle-valued maps.
 
 The group laws come from the algebra property of `H^s` above half the dimension
 (`TemperedDistribution.mul_mem_realSobolevFunctions`): writing `u = 1 + h` and `v = 1 + k`,
@@ -71,13 +72,6 @@ namespace TauCeti.Vortex
 
 open Complex ComplexConjugate Filter MeasureTheory Module TemperedDistribution
 open scoped Topology ContDiff SchwartzMap
-
-/-- The order condition `s > 1` is `dim ℂ < 2 s`, the hypothesis of the Sobolev algebra and
-embedding theorems on the plane. -/
-private theorem finrank_lt_two_mul {s : ℝ} (hs : 1 < s) : (finrank ℝ ℂ : ℝ) < 2 * s := by
-  rw [Complex.finrank_real_complex]
-  push_cast
-  linarith
 
 /-- The **Sobolev framed gauge group** `G_s = {u = 1 + h : h ∈ H^s(ℂ; ℂ), |u| = 1}`, for `s > 1`.
 Its elements are the continuous circle-valued maps `u` on the plane such that the real
@@ -136,10 +130,8 @@ theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {u : ℂ → Circle}
   · filter_upwards [Lp.coeFn_add (ofRealCLM.compLp a) (I • ofRealCLM.compLp b),
       Lp.coeFn_smul I (ofRealCLM.compLp b), ofRealCLM.coeFn_compLp (p := 2) (μ := volume) a,
       ofRealCLM.coeFn_compLp (p := 2) (μ := volume) b, hae, hbe] with z h h' ha' hb' ha'' hb''
-    rw [h, Pi.add_apply, h', Pi.smul_apply, ha', hb', ofRealCLM_apply, ofRealCLM_apply, ha'', hb'',
-      smul_eq_mul, ofReal_sub, ofReal_one]
-    conv_rhs => rw [← re_add_im (u z : ℂ)]
-    ring
+    rw [h, Pi.add_apply, h', Pi.smul_apply, ha', hb']
+    apply Complex.ext <;> simp [ha'', hb'']
   · have e := map_add (Lp.toTemperedDistributionCLM ℂ (volume : Measure ℂ) 2)
       (ofRealCLM.compLp a) (I • ofRealCLM.compLp b)
     rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
