@@ -26,13 +26,15 @@ morphisms; it only changes which equivalent rank-one condition is bundled with t
 * `FiniteLocallyFreeSheaf.FixedRank X r`: finite locally free sheaves of fixed rank `r`;
 * `FiniteLocallyFreeSheaf.FixedRank.pullback`: pullback of fixed-rank sheaves, with its identity
   and composition comparisons `FixedRank.pullbackId` and `FixedRank.pullbackComp`;
+* `FiniteLocallyFreeSheaf.FixedRank.twist`: the twist `E ⊗ L` of a fixed-rank sheaf by an
+  invertible sheaf;
 * `InvertibleSheaf.fixedRankOneEquiv`: the equivalence between invertible sheaves and finite
   locally free sheaves of fixed rank one.
 -/
 
 public section
 
-open CategoryTheory
+open CategoryTheory MonoidalCategory
 
 namespace TauCeti
 
@@ -183,6 +185,18 @@ theorem pullbackComp_inv_app_hom {Y Z : Scheme.{u}} (f : X ⟶ Y) (g : Y ⟶ Z)
         (FiniteLocallyFreeSheaf.pullbackComp f g).inv.app E.obj ≫
         eqToHom (by simp only [Functor.comp_obj, pullback_obj_obj]) :=
   ((Category.id_comp _).trans (congrArg _ (Category.comp_id _))).symm
+
+/-- The twist `E ⊗ L` of a finite locally free sheaf `E` of constant rank `r` by an invertible
+sheaf `L`. It has constant rank `r · 1 = r`. -/
+def twist (E : FixedRank X r) (L : InvertibleSheaf X) : FixedRank X r :=
+  ⟨E.obj ⊗ (InvertibleSheaf.toFiniteLocallyFree X).obj L, fun x ↦ by
+    rw [rank_tensor_apply, rank_apply, InvertibleSheaf.rank_toFiniteLocallyFree_apply, mul_one]⟩
+
+/-- The underlying sheaf of the twist `E ⊗ L` is the tensor product of the underlying sheaves. -/
+@[simp]
+theorem twist_obj_obj (E : FixedRank X r) (L : InvertibleSheaf X) :
+    (E.twist L).obj.obj = E.obj.obj ⊗ L.obj :=
+  (rfl)
 
 end FixedRank
 
