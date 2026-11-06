@@ -191,6 +191,24 @@ variable [CompleteSpace E]
       inv_smul_smul₀ (by simp [Real.pi_ne_zero])]
   · rw [circleIntegral.integral_sub_zpow_of_ne (by omega), zero_smul, smul_zero]
 
+/-- The circle integral of the divided difference `dslope f w` around a circle avoiding `w` is
+the difference of the Cauchy integral of `f` and the circle integral of `(z - w)⁻¹` times `f w`.
+Only continuity of `f` on the circle is needed. -/
+theorem circleIntegral_dslope_eq_of_continuousOn {f : ℂ → E} {c w : ℂ} {ρ : ℝ} (hρ : 0 ≤ ρ)
+    (hc : ContinuousOn f (sphere c ρ)) (hw : w ∉ sphere c ρ) :
+    (∮ z in C(c, ρ), dslope f w z) =
+      (∮ z in C(c, ρ), (z - w)⁻¹ • f z) - (∮ z in C(c, ρ), (z - w)⁻¹) • f w := by
+  have hne : ∀ z ∈ sphere c ρ, z ≠ w := fun _ hz => ne_of_mem_of_not_mem hz hw
+  have hw' : w ∉ sphere c |ρ| := by rwa [abs_of_nonneg hρ]
+  have hi₁ : CircleIntegrable (fun z => (z - w)⁻¹ • f z) c ρ := by
+    simpa only [zpow_neg_one] using (hc.circleIntegrable hρ).sub_zpow_smul (-1) hw'
+  have hi₂ : CircleIntegrable (fun z => (z - w)⁻¹ • f w) c ρ := by
+    simpa only [zpow_neg_one] using (circleIntegrable_const (f w) c ρ).sub_zpow_smul (-1) hw'
+  rw [← circleIntegral.integral_smul_const, ← circleIntegral.integral_sub hi₁ hi₂]
+  apply circleIntegral.integral_congr hρ
+  intro z hz
+  simp only [dslope_of_ne _ (hne z hz), slope, vsub_eq_sub, smul_sub]
+
 /-- The two-circle Cauchy formula on an annulus. The function is continuous on the closed
 annulus and complex differentiable outside a countable exceptional set in the open annulus.
 The evaluation point may belong to the exceptional set. -/
@@ -235,25 +253,8 @@ theorem
       fun h => (ne_of_lt h) (mem_sphere.mp hz)⟩
   have hwR : w ∉ sphere c R := fun h => (ne_of_lt hw.1) (mem_sphere.mp h)
   have hwr : w ∉ sphere c r := fun h => hw.2 (sphere_subset_closedBall h)
-  have hdslope (ρ : ℝ) (hρ : 0 ≤ ρ)
-      (hρA : sphere c ρ ⊆ closedBall c R \ ball c r) (hwρ : w ∉ sphere c ρ) :
-      (∮ z in C(c, ρ), dslope f w z) =
-        (∮ z in C(c, ρ), (z - w)⁻¹ • f z) -
-          (∮ z in C(c, ρ), (z - w)⁻¹) • f w := by
-    have hne : ∀ z ∈ sphere c ρ, z ≠ w :=
-      fun _ hz => ne_of_mem_of_not_mem hz hwρ
-    have hwρ' : w ∉ sphere c |ρ| := by rwa [abs_of_nonneg hρ]
-    have hi₁ : CircleIntegrable (fun z => (z - w)⁻¹ • f z) c ρ := by
-      simpa only [zpow_neg_one] using
-        ((hc.mono hρA).circleIntegrable hρ).sub_zpow_smul (-1) hwρ'
-    have hi₂ : CircleIntegrable (fun z => (z - w)⁻¹ • f w) c ρ := by
-      simpa only [zpow_neg_one] using
-        (circleIntegrable_const (f w) c ρ).sub_zpow_smul (-1) hwρ'
-    rw [← circleIntegral.integral_smul_const, ← circleIntegral.integral_sub hi₁ hi₂]
-    apply circleIntegral.integral_congr hρ
-    intro z hz
-    simp only [dslope_of_ne _ (hne z hz), slope, vsub_eq_sub, smul_sub]
-  rw [hdslope R hR.le hRA hwR, hdslope r hr.le hrA hwr,
+  rw [circleIntegral_dslope_eq_of_continuousOn hR.le (hc.mono hRA) hwR,
+    circleIntegral_dslope_eq_of_continuousOn hr.le (hc.mono hrA) hwr,
     circleIntegral.integral_sub_inv_of_mem_ball hw.1,
     Contour.circleIntegral_sub_inv_eq_zero_of_lt_dist hr.le hrw, zero_smul, sub_zero] at hid
   have hdiff : (∮ z in C(c, R), (z - w)⁻¹ • f z) -
