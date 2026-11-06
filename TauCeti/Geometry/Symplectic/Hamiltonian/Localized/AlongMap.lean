@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Basic
 public import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Localized Hamiltonian variations along a map
@@ -42,7 +43,6 @@ with variations of an almost complex structure, which act through the derivative
 public section
 
 open Set Topology Filter MeasureTheory
-open scoped Manifold
 
 namespace TauCeti.SymplecticForm
 
@@ -67,18 +67,15 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq (ω : SymplecticForm V) {
   have hGW : G ⊆ interior W := by
     rintro _ ⟨z, hz, rfl⟩
     exact mem_interior_iff_mem_nhds.mpr (hW z (hξΩ hz))
-  obtain ⟨L, hLc, hGL, hLW⟩ := exists_compact_between hGc isOpen_interior hGW
-  -- A bump function equal to `1` near the graph and supported in `L`.
-  obtain ⟨χ, hχ1, hχ0, -⟩ :=
-    exists_contMDiffMap_one_nhds_of_subset_interior 𝓘(ℝ, P × V) (n := (⊤ : ℕ∞)) hGc.isClosed hGL
-  have hχ : ContDiff ℝ (⊤ : ℕ∞) χ := contMDiff_iff_contDiff.mp χ.contMDiff
+  -- A bump function equal to `1` near the graph and supported in the interior of `W`.
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχW⟩ := hGc.exists_contDiff_cutoff isOpen_interior hGW
   -- The Hamiltonian is `ω(ξ z, ·)` near the graph and vanishes off the support of `ξ`.
   have hX (z : P) :
       ω.hamiltonianVectorField (fun y ↦ χ (z, y) * ω (ξ z) y) (u z) = ξ z := by
     by_cases hz : z ∈ tsupport ξ
     · have hev : ∀ᶠ y in 𝓝 (u z), χ (z, y) = 1 :=
         (continuous_const.prodMk continuous_id).continuousAt.preimage_mem_nhds
-          (hχ1.filter_mono (nhds_le_nhdsSet (mem_image_of_mem _ hz)))
+          (mem_interior_iff_mem_nhds.mp (hχ1 (mem_image_of_mem _ hz)))
       have hK : (fun y ↦ χ (z, y) * ω (ξ z) y) =ᶠ[𝓝 (u z)] fun y ↦ ω (ξ z) y :=
         hev.mono fun y hy ↦ by simp [hy]
       rw [ω.hamiltonianVectorField_congr_of_eventuallyEq hK, hamiltonianVectorField_apply_left]
@@ -87,8 +84,6 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq (ω : SymplecticForm V) {
         ext y
         simp [hξz]
       rw [hK, hamiltonianVectorField_const, hξz, Pi.zero_apply]
-  have h0 (z : P) (y : V) (h : (z, y) ∉ L) : χ (z, y) * ω (ξ z) y = 0 := by
-    rw [hχ0 _ h, zero_mul]
   -- The coercion of `ω` to a function agrees definitionally with the continuous bilinear map `B`,
   -- so smoothness of `p ↦ B (ξ p.1) p.2` is smoothness of `p ↦ ω (ξ p.1) p.2`.
   let B := ω.toBilinForm.toContinuousBilinearMap
@@ -96,11 +91,8 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq (ω : SymplecticForm V) {
   · have hB : ContDiff ℝ (⊤ : ℕ∞) fun p : P × V ↦ B (ξ p.1) p.2 :=
       (B.contDiff.comp (hξ.comp contDiff_fst)).clm_apply contDiff_snd
     exact hχ.mul hB
-  · exact HasCompactSupport.intro hLc fun ⟨z, y⟩ hp ↦ h0 z y hp
-  · refine (closure_minimal (fun ⟨z, y⟩ hp ↦ ?_) hLc.isClosed).trans
-      (hLW.trans interior_subset)
-    by_contra hpL
-    exact hp (h0 z y hpL)
+  · exact hχc.mul_right
+  · exact tsupport_mul_subset_left.trans (hχW.trans interior_subset)
 
 variable [MeasurableSpace P] [BorelSpace P] {μ : Measure P}
 
