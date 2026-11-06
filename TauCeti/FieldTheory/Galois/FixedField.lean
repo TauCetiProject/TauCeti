@@ -10,6 +10,7 @@ public import Mathlib.FieldTheory.KrullTopology
 public import Mathlib.FieldTheory.PurelyInseparable.Basic
 public import TauCeti.Algebra.Group.Subgroup.ZPowers
 import Mathlib.FieldTheory.Galois.Infinite
+import Mathlib.FieldTheory.Galois.IsGaloisGroup
 
 /-!
 # Fixed fields and fixing subgroups
@@ -328,10 +329,8 @@ Mathlib's `IntermediateField.finrank_fixedField_eq_card` is the same conclusion 
 `[FiniteDimensional K M]`, which a subgroup of the automorphism group of an infinite extension does
 not supply. -/
 theorem finrank_fixedField_eq_natCard (H : Subgroup (M ≃ₐ[K] M)) [Finite H] :
-    Module.finrank (fixedField H) M = Nat.card H := by
-  have := Fintype.ofFinite H
-  rw [Nat.card_eq_fintype_card]
-  exact FixedPoints.finrank_eq_card H M
+    Module.finrank (fixedField H) M = Nat.card H :=
+  (IsGaloisGroup.card_eq_finrank H (FixedPoints.subfield H M) M).symm
 
 /-- **An intermediate field of finite degree has a finite fixing subgroup**, being a copy of the
 automorphism group of a finite extension. -/
