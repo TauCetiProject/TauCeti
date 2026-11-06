@@ -146,12 +146,8 @@ theorem rectangleIntegral_eq (φ : RoughForm I M F 2) (u : ℝ × ℝ → M) (a 
 theorem IsSmoothForm.continuous_apply_mfderiv [IsManifold I 1 M] {φ : RoughForm I M F 2}
     (hφ : IsSmoothForm I 0 φ) {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
     Continuous fun z ↦ φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] := by
-  refine (hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun z ↦
-    (mpullback_apply u φ z _).trans ?_
-  congr 1
-  funext i
-  fin_cases i <;> rfl
+      mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] :=
+  (hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun z ↦ mpullback_apply_coord φ u z
 
 /-- For a continuous form `φ` and a `C¹` map `u`, the integral over `u` on a rectangle is, by
 Fubini, the integral of `φ_{u(z)}(∂_s u, ∂_t u)` over the rectangle. -/
@@ -299,14 +295,6 @@ theorem rectangleIntegral_comp_fst (φ : RoughForm I M F 2) (γ : ℝ → M) (a 
 section Continuous
 
 variable [IsManifold I 1 M]
-
-/-- For a continuous form `φ` and a `C¹` map `u` of the plane, `φ` evaluated on the partial
-derivatives of `u`, the integrand of `TauCeti.rectangleIntegral`, is continuous. -/
-theorem IsSmoothForm.continuous_apply_mfderiv {φ : RoughForm I M F 2} (hφ : IsSmoothForm I 0 φ)
-    {u : ℝ × ℝ → M} (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u) :
-    Continuous fun z ↦
-      φ (u z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I u z (0, 1)] :=
-  (hφ.continuous_mpullback_apply hu ![(1, 0), (0, 1)]).congr fun z ↦ mpullback_apply_coord φ u z
 
 /-- For a continuous form and a `C¹` map of the plane, the inner integral defining
 `TauCeti.rectangleIntegral` is a continuous function of the first coordinate. -/
