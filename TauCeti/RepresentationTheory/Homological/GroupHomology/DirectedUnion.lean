@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.RepresentationTheory.Homological.GroupHomology.Functoriality
 public import TauCeti.Algebra.Homology.ModuleCat.Basic
+public import TauCeti.RepresentationTheory.Homological.GroupHomology.Functoriality
 
 /-!
 # Group homology of a directed union of subgroups
@@ -15,26 +15,35 @@ Let `A` be a representation of a group `G`, and let `S i` be a directed family o
 whose union is `G`. Every class of `Hₙ(G, A)` is then the image of a class of `Hₙ(S i, A)` for some
 `i`, under the map induced by the inclusion of `S i`
 (`groupHomology.exists_map_subtype_eq`). In particular, if every `Hₙ(S i, A)` vanishes,
-so does `Hₙ(G, A)` (`TauCeti.groupHomology.isZero_groupHomology_of_directed`).
+so does `Hₙ(G, A)` (`TauCeti.groupHomology.isZero_groupHomology_of_directed`). Conversely, a class
+of `Hₙ(S i, A)` whose image in `Hₙ(G, A)` vanishes already vanishes in `Hₙ(S j, A)` for some
+`S j ⊇ S i` (`groupHomology.exists_map_inclusion_eq_zero`). Together these are the elementwise form
+of the statement that `Hₙ(G, A)` is the colimit of the `Hₙ(S i, A)`.
 
 This follows from the finiteness of chains. An inhomogeneous chain is a finite combination of
 tuples of elements of `G`, so it involves finitely many elements of `G`, which all lie in one
-`S i` (`TauCeti.groupHomology.exists_chainsMap_subtype_f_eq_of_directed`). The maps of
+`S i`, which may be taken to contain any given member
+(`TauCeti.groupHomology.exists_chainsMap_subtype_f_eq_of_directed`,
+`TauCeti.groupHomology.exists_le_chainsMap_subtype_f_eq_of_directed`). The maps of
 inhomogeneous chains induced by injective group homomorphisms are injective
 (`groupHomology.chainsMap_f_map_mono`), so a chain of `S i` whose image is a cycle is itself a
-cycle.
+cycle, and a chain of `S i` whose image is a boundary is the boundary of a chain of a larger
+member.
 
 Since the singular homology of a classifying space `BG` is the group homology of `G`, every
 homology class of an Eilenberg–MacLane space `K(G, 1)` comes from some `K(S i, 1)`, so `K(G, 1)` is
 acyclic whenever every `K(S i, 1)` is; for instance `K(ℤ[1/2], 1)`, with `ℤ[1/2] = ⋃ᵣ 2⁻ʳ ℤ`, is
-acyclic modulo two. Only this half of the comparison is proved here: a class of `S i` vanishing in
-`G` is not shown to vanish in a larger member, so `Hₙ(G, A)` is not identified with the colimit of
-the `Hₙ(S i, A)`.
+acyclic modulo two.
+
+The map from `Hₙ(S i, A)` to `Hₙ(S j, A)` for `S i ≤ S j` is induced along `Subgroup.inclusion`
+by `Rep.resInclusionHom`.
 
 ## Main results
 
 * `groupHomology.exists_map_subtype_eq`: a class of a directed union of subgroups comes
   from a member.
+* `groupHomology.exists_map_inclusion_eq_zero`: a class of a member that vanishes in a directed
+  union of subgroups vanishes in a larger member.
 * `TauCeti.groupHomology.isZero_groupHomology_of_directed`: group homology of a directed union of
   subgroups with vanishing homology vanishes.
 
@@ -45,9 +54,10 @@ the `Hₙ(S i, A)`.
 
 ## Implementation notes
 
-`exists_map_subtype_eq` takes a class of `groupHomology A n` as an explicit argument, so the
-dot-notation namespace lint keeps it in Mathlib's root `groupHomology` namespace rather than in a
-copy of that namespace nested inside `TauCeti`. The other results are in `TauCeti.groupHomology`.
+`exists_map_subtype_eq` and `exists_map_inclusion_eq_zero` take a class of group homology as an
+explicit argument, so the dot-notation namespace lint keeps them in Mathlib's root
+`groupHomology` namespace rather than in a copy of that namespace nested inside `TauCeti`. The
+other results are in `TauCeti.groupHomology`.
 -/
 
 public section
@@ -101,6 +111,22 @@ theorem exists_chainsMap_subtype_f_eq_of_directed {ι : Type*} [Nonempty ι] {S 
   exact Finset.mem_coe.2 <|
     Finset.mem_biUnion.2 ⟨g, hg, Finset.mem_image_of_mem g (Finset.mem_univ m)⟩
 
+/-- In a directed family of subgroups covering `G`, every inhomogeneous chain of `G` is the image
+of an inhomogeneous chain of a member containing any given member `S i₀`. -/
+theorem exists_le_chainsMap_subtype_f_eq_of_directed {ι : Type*} {S : ι → Subgroup G}
+    (hS : Directed (· ≤ ·) S) (hG : ⨆ i, S i = ⊤) (i₀ : ι) {n : ℕ}
+    (x : (inhomogeneousChains A).X n) :
+    ∃ i, ∃ _ : S i₀ ≤ S i, ∃ y, (chainsMap (S i).subtype (𝟙 (res (S i).subtype A))).f n y = x := by
+  -- apply `exists_chainsMap_subtype_f_eq_of_directed` to the members containing `S i₀`
+  have : Nonempty { i // S i₀ ≤ S i } := ⟨⟨i₀, le_rfl⟩⟩
+  obtain ⟨⟨i, hi⟩, y, hy⟩ := exists_chainsMap_subtype_f_eq_of_directed (A := A)
+    (S := fun i : { i // S i₀ ≤ S i } ↦ S i)
+    (fun i j ↦ (hS i j).elim fun l hl ↦ ⟨⟨l, i.2.trans hl.1⟩, hl⟩)
+    (eq_top_iff.2 <| hG ▸ iSup_le fun i ↦ by
+      obtain ⟨j, hij, hi₀j⟩ := hS i i₀
+      exact hij.trans (le_iSup (fun j : { i // S i₀ ≤ S i } ↦ S j) ⟨j, hi₀j⟩)) x
+  exact ⟨i, hi, y, hy⟩
+
 end TauCeti.groupHomology
 
 namespace groupHomology
@@ -118,6 +144,23 @@ theorem exists_map_subtype_eq {ι : Type*} [Nonempty ι] {S : ι → Subgroup G}
     (fun i ↦ (ModuleCat.mono_iff_injective _).1 <|
       chainsMap_f_map_mono _ (𝟙 (res (S i).subtype A)) (S i).subtype_injective _)
     (TauCeti.groupHomology.exists_chainsMap_subtype_f_eq_of_directed hS hG) x
+
+/-- **Vanishing classes of a directed union of subgroups.** If `S` is a directed family of
+subgroups whose union is `G`, and the image in `Hₙ(G, A)` of a class of `Hₙ(S i, A)` vanishes,
+then its image in `Hₙ(S j, A)` vanishes for some `j` with `S i ≤ S j`. -/
+theorem exists_map_inclusion_eq_zero {ι : Type*} {S : ι → Subgroup G}
+    (hS : Directed (· ≤ ·) S) (hG : ⨆ i, S i = ⊤) {i : ι} {n : ℕ}
+    (y : groupHomology (res (S i).subtype A) n)
+    (hy : map (S i).subtype (𝟙 (res (S i).subtype A)) n y = 0) :
+    ∃ j, ∃ hij : S i ≤ S j, map (Subgroup.inclusion hij) (Rep.resInclusionHom A hij) n y = 0 :=
+  HomologicalComplex.exists_homologyMap_eq_zero_of_injective n
+    (fun j ↦ chainsMap (S j).subtype (𝟙 (res (S j).subtype A)))
+    (fun j ↦ (ModuleCat.mono_iff_injective _).1 <|
+      chainsMap_f_map_mono _ (𝟙 (res (S j).subtype A)) (S j).subtype_injective _)
+    (ChainComplex.prev ℕ n) (P := fun j ↦ S i ≤ S j)
+    (fun _ hj ↦ chainsMap (Subgroup.inclusion hj) (Rep.resInclusionHom A hj))
+    (fun _ hj ↦ A.chainsMap_inclusion_comp_chainsMap_subtype hj)
+    (TauCeti.groupHomology.exists_le_chainsMap_subtype_f_eq_of_directed hS hG i) y hy
 
 end groupHomology
 
