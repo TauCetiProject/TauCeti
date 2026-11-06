@@ -62,21 +62,6 @@ theorem shortExact_map_supportedSubmoduleFunctor_of_isFlasque
   exact ShortComplex.ShortExact.mk' (U.reflects_exact_of_faithful _ h'.exact)
     (U.mono_of_mono_map h'.mono_f) (U.epi_of_epi_map h'.epi_g)
 
-/-- The functor `F ↦ Γ_S(W,F)` of sections on `W` supported in `S`. -/
-abbrev supportedSubmoduleSectionsFunctor (W : Opens X) :
-    Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⥤ ModuleCat.{u} R :=
-  supportedSubmoduleFunctor S ⋙ (sheafSections _ _).obj (op W)
-
-/-- The supported-section functor on an open is additive in the coefficient sheaf. -/
-instance additive_supportedSubmoduleSectionsFunctor (W : Opens X) :
-    (supportedSubmoduleSectionsFunctor (R := R) S W).Additive := by
-  have : ((sheafSections (Opens.grothendieckTopology X)
-      (ModuleCat.{u} R)).obj (op W)).Additive :=
-    Functor.additive_of_iso (sheafSectionsNatIsoEvaluation
-      (J := Opens.grothendieckTopology X) (A := ModuleCat.{u} R) (X := W)).symm
-  exact inferInstanceAs ((supportedSubmoduleFunctor S ⋙
-    (sheafSections _ (ModuleCat.{u} R)).obj (op W)).Additive)
-
 /-- Taking sections supported in `S` on any open preserves short exact sequences
 with flasque kernel. -/
 theorem shortExact_map_supportedSubmoduleSectionsFunctor_of_isFlasque (W : Opens X)

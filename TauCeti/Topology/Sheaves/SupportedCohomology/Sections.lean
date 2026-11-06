@@ -257,6 +257,21 @@ lemma coe_supportedSubmoduleFunctor_map_ι_hom_app_apply (Z S : Closeds X)
 instance additive_supportedSubmoduleFunctor : (supportedSubmoduleFunctor (R := R) S).Additive where
   map_add {F G f g} := (cancel_mono (G.supportedSubmoduleι S)).1 (by simp)
 
+/-- The functor `F ↦ Γ_S(W,F)` of sections on `W` supported in `S`. -/
+abbrev supportedSubmoduleSectionsFunctor (W : Opens X) :
+    Sheaf (Opens.grothendieckTopology X) (ModuleCat.{u} R) ⥤ ModuleCat.{u} R :=
+  supportedSubmoduleFunctor S ⋙ (sheafSections _ _).obj (op W)
+
+/-- The supported-section functor on an open is additive in the coefficient sheaf. -/
+instance additive_supportedSubmoduleSectionsFunctor (W : Opens X) :
+    (supportedSubmoduleSectionsFunctor (R := R) S W).Additive := by
+  have : ((sheafSections (Opens.grothendieckTopology X)
+      (ModuleCat.{u} R)).obj (op W)).Additive :=
+    Functor.additive_of_iso (sheafSectionsNatIsoEvaluation
+      (J := Opens.grothendieckTopology X) (A := ModuleCat.{u} R) (X := W)).symm
+  exact inferInstanceAs ((supportedSubmoduleFunctor S ⋙
+    (sheafSections _ (ModuleCat.{u} R)).obj (op W)).Additive)
+
 /-- The comparison with underlying abelian supported sections is natural in the sheaf. -/
 def supportedSubmoduleFunctorForgetIso :
     supportedSubmoduleFunctor S ⋙ sheafCompose _ (forget₂ (ModuleCat.{u} R) AddCommGrpCat.{u}) ≅
