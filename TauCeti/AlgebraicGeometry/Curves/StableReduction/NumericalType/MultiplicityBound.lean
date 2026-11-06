@@ -406,7 +406,8 @@ private lemma one_le_forkTest_le_two (c : ℕ → T.Component) (t : ℕ) (branch
 
 namespace IsSelfIntersectionMinusTwoFork
 
-/-- The fork test vector sums along a fork as `1` at the two leaves and `2` along the chain. -/
+/-- The row sum `∑ₖ aᵢₖ vₖ` of the fork test vector over a fork splits into the `branch` term and
+a sum along the chain with weight `1` at `c (t - 1)` and `2` elsewhere. -/
 private lemma sum_intersection_mul_forkTest_eq
     (hf : T.IsSelfIntersectionMinusTwoFork t c branch) (i : T.Component) :
     ∑ k ∈ insert branch ((range t).image c), T.intersection i k * forkTest c t branch k =
@@ -414,9 +415,7 @@ private lemma sum_intersection_mul_forkTest_eq
         T.intersection i (c s) * (if s = t - 1 then 1 else 2) := by
   have hc := hf.toIsSelfIntersectionMinusTwoChain
   have ht := hf.two_lt
-  have hbr : branch ∉ (range t).image c := by
-    simp only [Finset.mem_image, Finset.mem_range, not_exists, not_and]
-    exact fun s hs h ↦ hf.branch_ne s hs h.symm
+  have hbr := hf.branch_notMem_image
   -- the values of the test vector
   have hvc : ∀ s < t, forkTest c t branch (c s) = if s = t - 1 then 1 else 2 := by
     intro s hs
@@ -517,17 +516,12 @@ private lemma sum_intersection_mul_forkTest_nonpos
     (hbranch : T.intersection (c (t - 2)) branch = W) {i : T.Component}
     (hi : i ∈ insert branch ((range t).image c)) :
     ∑ k ∈ insert branch ((range t).image c), T.intersection i k * forkTest c t branch k ≤ 0 := by
-  have hc := hf.toIsSelfIntersectionMinusTwoChain
-  have ht := hf.two_lt
-  have hW : (0 : ℤ) < W := by exact_mod_cast W.pos
-  set S := insert branch ((range t).image c) with hS
-  have hmemS : ∀ {k}, k ∈ S ↔ k = branch ∨ ∃ s < t, c s = k := by
-    intro k
-    simp [hS]
   rw [hf.sum_intersection_mul_forkTest_eq]
-  rcases hmemS.mp hi with rfl | ⟨r, hr, rfl⟩
+  rcases mem_insert.mp hi with rfl | hi
   · exact hf.branch_row_forkTest_nonpos hwb hbranch
-  · exact hf.chain_row_forkTest_nonpos hcard hwc hedge hbranch hr
+  obtain ⟨r, hr, rfl⟩ := mem_image.mp hi
+  rw [mem_range] at hr
+  exact hf.chain_row_forkTest_nonpos hcard hwc hedge hbranch hr
 
 /-- The weighted-maximum-principle bound on a fork, for every component of the fork. -/
 private lemma forall_mem_multiplicity_mul_abs_intersection_self_le (hT : T.IsMinimal)
@@ -736,9 +730,7 @@ private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_fork (hT : 
     {i : T.Component} (hiS : i ∈ insert b ((range t).image c)) :
     (T.multiplicity i : ℤ) * |T.intersection i i| ≤ 768 * T.arithmeticGenus - 768 := by
   have hc := hf.toIsSelfIntersectionMinusTwoChain
-  have hbr : b ∉ (range t).image c := fun hb ↦ by
-    obtain ⟨q, hq, hbq⟩ := mem_image.mp hb
-    exact hf.branch_ne q (mem_range.mp hq) hbq.symm
+  have hbr := hf.branch_notMem_image
   have hcard' : t + 1 < Fintype.card T.Component := by
     rwa [card_insert_of_notMem hbr, hc.card_image_range] at hcard
   have hfclosed : ∀ z, (z = b ∨ ∃ r < t, z = c r) → ∀ k, k ≠ b → (∀ s < t, k ≠ c s) →
@@ -760,13 +752,13 @@ private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_fork (hT : 
 /-- An exceptional configuration (a chain of five to seven components with a leaf `b` meeting
 `c (t - 3)`) satisfies the bound `mᵢ|aᵢᵢ| ≤ 768g - 768` at each component, given the doubling bound
 `2 · (6g - 6)` at a component `x` of it. -/
-private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_exceptional
+private lemma multiplicity_mul_abs_intersection_self_le_of_exceptional
     (hg : 2 ≤ T.arithmeticGenus) {t : ℕ} {c : ℕ → T.Component} {b x : T.Component}
     (hc : T.IsSelfIntersectionMinusTwoChain t c) (ht5 : 5 ≤ t) (ht7 : t ≤ 7)
     (hb : T.intersection b b = -(2 * (T.weight b : ℤ))) (hbpos : 0 < T.intersection (c (t - 3)) b)
     (hxS : x ∈ insert b ((range t).image c))
     (hx : (T.multiplicity x : ℤ) * |T.intersection x x| ≤
-      2 ^ (0 + 1) * (6 * T.arithmeticGenus - 6))
+      2 ^ 1 * (6 * T.arithmeticGenus - 6))
     {i : T.Component} (hiS : i ∈ insert b ((range t).image c)) :
     (T.multiplicity i : ℤ) * |T.intersection i i| ≤ 768 * T.arithmeticGenus - 768 := by
   have hbpos' : 0 < T.intersection b (c (t - 3)) := T.intersection_comm b _ ▸ hbpos
@@ -814,7 +806,7 @@ private lemma IsMinimal.multiplicity_mul_abs_intersection_self_le_of_isMinusTwoI
   have hy := hT.multiplicity_mul_abs_intersection_self_le h
     (hclosed x hxS y hyS (T.adj_iff.mp hxy).2)
   have hx : (T.multiplicity x : ℤ) * |T.intersection x x| ≤
-      2 ^ (0 + 1) * (6 * T.arithmeticGenus - 6) :=
+      2 ^ 1 * (6 * T.arithmeticGenus - 6) :=
     le_two_pow_succ_mul (hself x hxS) (T.adj_iff.mp hxy).2 (by simpa using hy)
   rcases exists_chain_or_fork_or_exceptional hself hcard hconn with
     ⟨t, c, hc, rfl⟩ | ⟨t, c, b, hf, rfl⟩ | ⟨t, c, b, hc, ht5, ht7, -, -, hbpos, -, rfl⟩
