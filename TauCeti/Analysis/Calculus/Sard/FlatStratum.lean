@@ -50,7 +50,9 @@ the Morse--Sard theorem requires.
 ## Main results
 
 * `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: the Taylor-type estimate obtained from the
-  vanishing of the derivatives of order `1 ≤ i ≤ k` at a point.
+  vanishing of the derivatives of order `1 ≤ i ≤ k` at a point, and
+  `TauCeti.norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero` its version for the derivatives
+  of order at most `k`.
 * `TauCeti.holderOnWith_of_iteratedFDeriv_eq_zero`: a map is Hölder of exponent `k + 1` on any set
   of such points inside a convex set with bounded `(k+1)`-st derivative.
 * `TauCeti.dimH_image_le_of_iteratedFDeriv_eq_zero`: such a set has its Hausdorff dimension divided
@@ -88,11 +90,11 @@ variable {E F : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F]
   {f : E → F} {k : ℕ} {s : Set E}
 
-/-- The descending induction behind `TauCeti.norm_sub_le_pow_of_iteratedFDeriv_eq_zero`: if the
-derivatives of order `1 ≤ i ≤ k` vanish at `x`, then the derivative of order `k - j` grows at most
-like `‖y - x‖ ^ (j + 1)`. Each step is one application of the mean value inequality along the
-segment from `x` to `y`. -/
-private theorem norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero {M : ℝ} {x : E}
+/-- If `f` is `C^{k+1}` on a convex set `s` with `‖D^{k+1} f‖ ≤ M` there, and the derivatives of
+order `1 ≤ i ≤ k` vanish at `x ∈ s`, then for every `j ≤ k` the derivative of order `k - j` moves
+by at most `M * ‖y - x‖ ^ (j + 1)` between `x` and `y ∈ s`. Each step of the descending induction
+is one application of the mean value inequality along the segment from `x` to `y`. -/
+theorem norm_iteratedFDeriv_sub_le_of_iteratedFDeriv_eq_zero {M : ℝ} {x : E}
     (hf : ∀ y ∈ s, ContDiffAt ℝ (k + 1 : ℕ) f y) (hs : Convex ℝ s) (hx : x ∈ s)
     (hM : ∀ y ∈ s, ‖iteratedFDeriv ℝ (k + 1) f y‖ ≤ M)
     (hzero : ∀ i, 1 ≤ i → i ≤ k → iteratedFDeriv ℝ i f x = 0) :
