@@ -138,6 +138,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.comap_ker_comp_of_isClosedImmersion 
 
 /-- For ideal sheaves `I ≤ J`, the ideal sheaf of the inclusion `V(J) ⟶ V(I)` is the inverse image
 of `J` along `V(I) ⟶ X`. -/
+@[simp]
 theorem ker_inclusion {I J : X.IdealSheafData} (h : I ≤ J) :
     (inclusion h).ker = J.comap I.subschemeι := by
   rw [← Scheme.Hom.comap_ker_comp_of_isClosedImmersion (inclusion h) I.subschemeι,

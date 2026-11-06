@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicGeometry.Morphisms.Finite
 public import TauCeti.AlgebraicGeometry.AdicThickeningSystem.Spf
 
 /-!
@@ -162,6 +161,7 @@ theorem ι_toScheme (n : ℕ) :
 
 /-- The ideal sheaf of `V(I ^ (n + 1))` in `V(I ^ (n + 2))` is the inverse image of `I ^ (n + 1)`
 along `V(I ^ (n + 2)) ⟶ X`. -/
+@[simp]
 theorem ker_ι (n : ℕ) :
     ((X.formalCompletion I).ι n).ker = (I ^ (n + 1)).comap (toScheme X I (n + 1)) :=
   ker_inclusion _
