@@ -185,22 +185,6 @@ private theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero (ω : Sympl
     (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
   simp
 
-
-/-- The cutoff of an end has total increase one along the end. -/
-private theorem lintegral_deriv_smoothTransition_endSign (q : Puncture) :
-    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) = 1 := by
-  have h₁ : ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (s - 1)) = 1 := by
-    rw [lintegral_sub_right_eq_self (fun s ↦ ENNReal.ofReal (deriv smoothTransition s)) 1,
-      ← ofReal_integral_eq_lintegral_ofReal smoothTransition.integrable_deriv
-        (ae_of_all _ fun _ ↦ smoothTransition.monotone.deriv_nonneg),
-      smoothTransition.integral_deriv, ENNReal.ofReal_one]
-  cases q
-  · simpa using h₁
-  · simpa using h₁
-  · convert smoothTransition.lintegral_ofReal_mul_deriv (-1) one_pos using 4 with s
-    simp only [endSign_inf, one_mul]
-    ring_nf
-
 /-- The curvature of the perturbation over the image of the strip of the end `q` is at most a
 bound `B_q` for the Hamiltonian of that end. -/
 private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
@@ -251,7 +235,8 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal (B q) := by
         rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
-          lintegral_deriv_smoothTransition_endSign, one_mul]
+          smoothTransition.lintegral_ofReal_deriv_mul_sub 1 (abs_ne_zero.1 (by simp)), abs_endSign,
+          inv_one, ENNReal.ofReal_one, one_mul]
 
 /-- **The integrated curvature of the pair-of-pants perturbation.** Let `K` be the pair-of-pants
 perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, with

@@ -108,9 +108,7 @@ theorem comap_presentationLimitGlobalGerm (x : spa Aplus) :
         (eqToHom (CompleteSeparatedTopCommRingCat.of_obj A).symm) ≫ f) hcanon'
     simp only [← Category.assoc] at hcanon''
     erw [← hcanon'']
-    have hR : spaBasicOpen Aplus p.num p.den = ⊤ := by
-      ext y
-      simp [mem_spaBasicOpen, p]
+    have hR : spaBasicOpen Aplus p.num p.den = ⊤ := by simp [p]
     -- Generalize the membership proof before transporting its open to the whole space.
     revert hx
     erw [hR]

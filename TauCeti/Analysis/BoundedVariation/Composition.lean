@@ -103,10 +103,9 @@ theorem totalVariationOn_comp_lipschitz_le (hu : LocallyIntegrableOn u Ω μ)
 /-- Lipschitz composition preserves BV provided the composite is integrable. This hypothesis
 allows scalar maps with arbitrary value at zero on domains of infinite volume. -/
 theorem MemBV.comp_lipschitz_of_integrable (hu : MemBV μ Ω u) (hg : LipschitzWith C g)
-    (hint : IntegrableOn (g ∘ u) Ω μ) : MemBV μ Ω (g ∘ u) := by
-  rcases memBV_iff.mp hu with ⟨hu, hvar⟩
-  exact memBV_iff.mpr ⟨hint, (totalVariationOn_comp_lipschitz_le hu.locallyIntegrableOn hg).trans_lt
-    (ENNReal.mul_lt_top ENNReal.coe_lt_top hvar)⟩
+    (hint : IntegrableOn (g ∘ u) Ω μ) : MemBV μ Ω (g ∘ u) :=
+  memBV_iff.mpr ⟨hint, (totalVariationOn_comp_lipschitz_le hu.integrableOn.locallyIntegrableOn
+    hg).trans_lt (ENNReal.mul_lt_top ENNReal.coe_lt_top hu.totalVariationOn_lt_top)⟩
 
 /-- A Lipschitz scalar map vanishing at zero preserves BV, without a finite-volume assumption
 on the domain. -/
@@ -114,6 +113,6 @@ theorem MemBV.comp_lipschitz (hu : MemBV μ Ω u) (hg : LipschitzWith C g) (hg0 
     MemBV μ Ω (g ∘ u) := by
   exact hu.comp_lipschitz_of_integrable hg
     (memLp_one_iff_integrable.mp
-      (hg.comp_memLp hg0 (memLp_one_iff_integrable.mpr (memBV_iff.mp hu).1)))
+      (hg.comp_memLp hg0 (memLp_one_iff_integrable.mpr hu.integrableOn.integrable)))
 
 end TauCeti

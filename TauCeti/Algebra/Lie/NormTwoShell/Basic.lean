@@ -113,6 +113,11 @@ noncomputable def root (a : B.normTwoShell) : ShellLieAlgebra B :=
 theorem equivProd_cartan (h : I → ℤ) : equivProd B (cartan B h) = (h, 0) := by
   simp [cartan]
 
+/-- The Cartan embedding is injective. -/
+theorem cartan_injective : Function.Injective (cartan B) := by
+  intro v w h
+  simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
+
 @[simp]
 theorem equivProd_root (a : B.normTwoShell) :
     equivProd B (root B a) = (0, Finsupp.single a 1) := by

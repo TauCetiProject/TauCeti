@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.Huber.Basic
 public import TauCeti.Topology.Algebra.Group.DenseRange
 
 import Mathlib.RingTheory.Nakayama
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # Open ideals of a Huber ring
