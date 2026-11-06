@@ -155,6 +155,55 @@ fractional atoms are excluded, while infinite atoms require a separate finitenes
     · simpa [smul_apply, dirac_apply' _ hA, hx] using hc
     · exact Or.inl ⟨0, by simp [smul_apply, dirac_apply' _ hA, hx]⟩
 
+/-- A finite measure is integer-valued if its total mass and its masses on a generating
+π-system are natural numbers. -/
+theorem isIntegerValued_of_isPiSystem {S : Set (Set X)}
+    (hgen : ‹MeasurableSpace X› = .generateFrom S) (hpi : IsPiSystem S)
+    (hS : ∀ s ∈ S, ∃ n : ℕ, μ s = n) (huniv : ∃ n : ℕ, μ Set.univ = n) :
+    μ.IsIntegerValued := by
+  classical
+  have : IsFiniteMeasure μ := ⟨by obtain ⟨n, hn⟩ := huniv; simp [hn]⟩
+  suffices ∀ A : Set X, MeasurableSet A → ∃ n : ℕ, μ A = n by
+    intro A hA _
+    exact this A hA
+  intro A hA
+  induction A, hA using MeasurableSpace.induction_on_inter hgen hpi with
+  | empty => exact ⟨0, by simp⟩
+  | basic s hs => exact hS s hs
+  | compl s hs ih =>
+    obtain ⟨m, hm⟩ := huniv
+    obtain ⟨n, hn⟩ := ih
+    refine ⟨m - n, ?_⟩
+    rw [measure_compl hs (measure_ne_top _ _), hm, hn, ENNReal.natCast_sub]
+  | iUnion s hd hs ih =>
+    choose n hn using ih
+    have hfin : (∑' i, μ (s i)) ≠ ∞ := by
+      rw [← measure_iUnion hd hs]
+      exact measure_ne_top _ _
+    have hsupport : {i | μ (s i) ≠ 0}.Finite :=
+      (ENNReal.finite_const_le_of_tsum_ne_top hfin one_ne_zero).subset fun i hi => by
+        simp only [Set.mem_ofPred_eq] at hi ⊢
+        rw [hn i] at hi ⊢
+        exact_mod_cast Nat.one_le_iff_ne_zero.2 (by simpa using hi)
+    refine ⟨∑ i ∈ hsupport.toFinset, n i, ?_⟩
+    rw [measure_iUnion hd hs,
+      tsum_eq_sum (s := hsupport.toFinset) (fun i hi => by simpa using hi)]
+    simp [hn]
+
+/-- Integrality can be checked on the restrictions to any countable measurable cover.
+The cover need not be disjoint. -/
+theorem isIntegerValued_of_restrict {s : ℕ → Set X} (hs : ∀ n, MeasurableSet (s n))
+    (hcover : ⋃ n, s n = Set.univ) (hμ : ∀ n, (μ.restrict (s n)).IsIntegerValued) :
+    μ.IsIntegerValued := by
+  have hpieces (n : ℕ) : (μ.restrict (disjointed s n)).IsIntegerValued := by
+    simpa only [restrict_restrict_of_subset (disjointed_le s n)] using
+      (hμ n).restrict (A := disjointed s n)
+  have heq : μ = Measure.sum (fun n => μ.restrict (disjointed s n)) := by
+    rw [← restrict_iUnion (disjoint_disjointed s) (MeasurableSet.disjointed hs),
+      iUnion_disjointed, hcover, restrict_univ]
+  rw [heq]
+  exact IsIntegerValued.sum hpieces
+
 end MeasureTheory.Measure
 
 namespace Finset
