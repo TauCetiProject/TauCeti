@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Orientation
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Two.Even.PadicExponent.Basic
+public import TauCeti.Algebra.Group.CrossedHom.LabuteComm
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.Presentation
 import TauCeti.NumberTheory.Padics.PadicIntegers
@@ -57,11 +58,12 @@ vanishes, so the standard orientation has the prescription property.
 
 ## Main results
 
-* `TauCeti.IsCrossedHom.mul_mul_map_labuteComm`: the value of a crossed homomorphism on Labute's
-  commutator; `TauCeti.IsCrossedHom.map_demushkinWordNeTwo`,
+* `TauCeti.IsCrossedHom.map_demushkinWordNeTwo`,
   `TauCeti.IsCrossedHom.map_demushkinWordTwoOdd`, `TauCeti.IsCrossedHom.map_demushkinWordTwoEven`,
   `TauCeti.IsCrossedHom.map_demushkinWordTwoRankTwo`,
-  `TauCeti.IsCrossedHom.map_demushkinWordTwoOddTop`: its value on the five normal-form words;
+  `TauCeti.IsCrossedHom.map_demushkinWordTwoOddTop`: the value of a crossed homomorphism on the
+  five normal-form words (built on `TauCeti.IsCrossedHom.mul_mul_map_labuteComm`, its value on
+  Labute's commutator);
   `TauCeti.IsCrossedHom.map_demushkinWordTwoEvenPadic`: its value on the even dyadic word with a
   `2`-adic exponent; `TauCeti.IsCrossedHom.map_demushkinWordNeTwo_eq_zero`: at the tabulated
   character values the `q ≠ 2` word is killed, on any tuple.
@@ -113,102 +115,13 @@ namespace TauCeti
 
 open Finset
 
-/-! ### Crossed homomorphisms on Labute's commutator and on the normal-form words -/
+/-! ### Crossed homomorphisms on the normal-form words -/
 
 section Words
 
 variable {H : Type*} [Group H] {R : Type*} [CommRing R] {F' : Type*} [FunLike F' H Rˣ]
   [MonoidHomClass F' H Rˣ] {χ : F'} {F : H → R} (hF : IsCrossedHom χ F)
 include hF
-
-/-- The value of a crossed homomorphism on Labute's commutator `(x, y) = x⁻¹y⁻¹xy`, multiplied
-through by `χ x * χ y`: it is read off `F (x * y) = F (y * x * (x, y))`. -/
-theorem IsCrossedHom.mul_mul_map_labuteComm (x y : H) :
-    (χ x : R) * χ y * F (labuteComm x y) = (1 - χ y) * F x + (χ x - 1) * F y := by
-  have h : y * x * labuteComm x y = x * y := by
-    rw [labuteComm_def]
-    group
-  have h1 := hF.map_mul (y * x) (labuteComm x y)
-  rw [h, hF.map_mul x y, hF.map_mul y x, _root_.map_mul, Units.val_mul] at h1
-  linear_combination -h1
-
-/-- A crossed homomorphism vanishing at `x` and `y` vanishes at `(x, y)`. -/
-theorem IsCrossedHom.map_labuteComm_eq_zero_of_eq_zero {x y : H} (hx : F x = 0) (hy : F y = 0) :
-    F (labuteComm x y) = 0 := by
-  have h := hF.mul_mul_map_labuteComm x y
-  rw [hx, hy, mul_zero, mul_zero, add_zero, ← Units.val_mul] at h
-  exact (Units.mul_right_eq_zero _).1 h
-
-/-- A crossed homomorphism vanishes at `(x, y)` when the character is trivial at `x` and `y`. -/
-theorem IsCrossedHom.map_labuteComm_eq_zero_of_eq_one {x y : H} (hx : χ x = 1) (hy : χ y = 1) :
-    F (labuteComm x y) = 0 := by
-  have h := hF.mul_mul_map_labuteComm x y
-  rwa [hx, hy, Units.val_one, one_mul, one_mul, sub_self, zero_mul, zero_mul, add_zero] at h
-
-/-- If a crossed homomorphism takes the value `1` at `x`, the value `0` at `y` and vanishes at
-`(x, y)`, then the character is trivial at `y`. -/
-theorem IsCrossedHom.eq_one_of_map_labuteComm_eq_zero_left {x y : H} (hx : F x = 1) (hy : F y = 0)
-    (h : F (labuteComm x y) = 0) : χ y = 1 := by
-  have h' := hF.mul_mul_map_labuteComm x y
-  rw [h, hx, hy, mul_zero, mul_zero, mul_one, add_zero, eq_comm, sub_eq_zero, eq_comm] at h'
-  exact Units.val_eq_one.1 h'
-
-/-- If a crossed homomorphism takes the value `0` at `x`, the value `1` at `y` and vanishes at
-`(x, y)`, then the character is trivial at `x`. -/
-theorem IsCrossedHom.eq_one_of_map_labuteComm_eq_zero_right {x y : H} (hx : F x = 0) (hy : F y = 1)
-    (h : F (labuteComm x y) = 0) : χ x = 1 := by
-  have h' := hF.mul_mul_map_labuteComm x y
-  rw [h, hx, hy, mul_zero, mul_zero, mul_one, zero_add, eq_comm, sub_eq_zero] at h'
-  exact Units.val_eq_one.1 h'
-
-/-- The value of a crossed homomorphism on a product of Labute commutators indexed by
-`List.range m` is the sum of the values on the factors. -/
-theorem IsCrossedHom.map_list_range_prod_labuteComm (m : ℕ) (x y : ℕ → H) :
-    F ((List.range m).map fun i ↦ labuteComm (x i) (y i)).prod =
-      ∑ i ∈ range m, F (labuteComm (x i) (y i)) := by
-  rw [hF.map_list_prod_of_forall_eq_one, List.map_map, Finset.sum_eq_multiset_sum,
-    Finset.range_val, ← Multiset.coe_range, Multiset.map_coe, Multiset.sum_coe]
-  · rfl
-  · simp only [List.mem_map, List.mem_range, forall_exists_index, and_imp,
-      forall_apply_eq_imp_iff₂]
-    intro i _
-    rw [map_labuteComm, labuteComm_eq_one]
-
-/-- For `n` even and a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `2 ≤ j < n`, only
-the factor containing `x_j` contributes to the sum of its values on the commutators
-`(x₃, x₄), …, (x_{n-1}, x_n)` (the `0`-based pairs `(x (2i+2), x (2i+3))` for `i < n / 2 - 1`): the
-sum is the value on the factor `(x (2 ((j-2)/2) + 2), x (2 ((j-2)/2) + 3))`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite {n j : ℕ} (hn : Even n) (hj₂ : 2 ≤ j)
-    (hj : j < n) {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range (n / 2 - 1), F (labuteComm (x (2 * i + 2)) (x (2 * i + 3))) =
-      F (labuteComm (x (2 * ((j - 2) / 2) + 2)) (x (2 * ((j - 2) / 2) + 3))) := by
-  obtain ⟨k, rfl⟩ := hn
-  exact Finset.sum_eq_single _
-    (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-      (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
-    fun h0 ↦ absurd (mem_range.2 (by omega)) h0
-
-/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `1 ≤ j < n`, only the factor
-containing `x_j` contributes to the sum of its values on the commutators
-`(x₂, x₃), …` (the `0`-based pairs `(x (2i+1), x (2i+2))` for `i < n / 2`): the sum is the value on
-the factor `(x (2 ((j-1)/2) + 1), x (2 ((j-1)/2) + 2))`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite_one {n j : ℕ} (hj₁ : 1 ≤ j)
-    (hj : j < n) {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range (n / 2), F (labuteComm (x (2 * i + 1)) (x (2 * i + 2))) =
-      F (labuteComm (x (2 * ((j - 1) / 2) + 1)) (x (2 * ((j - 1) / 2) + 2))) :=
-  Finset.sum_eq_single _
-    (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-      (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
-    fun h0 ↦ absurd (mem_range.2 (by omega)) h0
-
-/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `j < 2`, the sum of its values
-on the commutators `(x₃, x₄), …, (x_{n-1}, x_n)` (the `0`-based pairs `(x (2i+2), x (2i+3))` for
-`i < n / 2 - 1`) is `0`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_zero_of_forall_eq_ite (n : ℕ) {j : ℕ} (hj : j < 2)
-    {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range (n / 2 - 1), F (labuteComm (x (2 * i + 2)) (x (2 * i + 3))) = 0 :=
-  Finset.sum_eq_zero fun i _ ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-    (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)])
 
 /-- The value of a crossed homomorphism on the `q ≠ 2` normal-form word
 `x₁^q (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)`. -/
@@ -383,49 +296,6 @@ theorem IsCrossedHom.map_labuteComm_eq_zero_of_map_demushkinWordTwoEvenPadic_eq_
 end DeltaValue
 
 end PadicWord
-
-/-! ### The partner step -/
-
-section Partner
-
-variable {p : ℕ} [Fact p.Prime] {n : ℕ} {rels : Set (freeProP p (Fin n))}
-  {χ : presentedProP p (Fin n) rels →ₜ* ℤ_[p]ˣ}
-
-/-- **The partner step.** If every crossed homomorphism with `F (x_i) = δ_{ij}` (for `t ≤ j < n`)
-killing the relators vanishes on the commutator factor `(x_a, x_{a+1})`, `a ≡ s mod 2`, containing
-`x_j`, then a character with the prescription property is trivial at every `x_i`, `s ≤ i`, whose
-partner in its factor lies in that range. -/
-theorem HasPrescriptionProperty.apply_presentedProPGen_eq_one_of_partner
-    (hχ : HasPrescriptionProperty χ) (hrels : rels ⊆ proPFrattini p (freeProP p (Fin n)))
-    {s t : ℕ} (hval : ∀ j, t ≤ j → j < n → ∀ F : freeProP p (Fin n) → ℤ_[p], Continuous F →
-      IsCrossedHom (χ.comp (presentedProP.mk p rels)) F →
-      (∀ i, F (freeProPGen p n i) = if i = j then 1 else 0) → (∀ r ∈ rels, F r = 0) →
-      F (labuteComm (freeProPGen p n (2 * ((j - s) / 2) + s))
-        (freeProPGen p n (2 * ((j - s) / 2) + s + 1))) = 0)
-    {i : ℕ} (hsi : s ≤ i) (heven : Even (i - s) → t ≤ i + 1 ∧ i + 1 < n)
-    (hodd : Odd (i - s) → t + 1 ≤ i ∧ i < n) :
-    χ (presentedProPGen p n rels i) = 1 := by
-  rw [← presentedProP.comp_mk_freeProPGen]
-  rcases Nat.even_or_odd (i - s) with he | ho
-  · obtain ⟨ht, hi⟩ := heven he
-    obtain ⟨m, hm⟩ := he
-    obtain ⟨F, hFc, hF, hFv, hFr⟩ :=
-      hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels hi
-    have hc := hval (i + 1) ht hi F hFc hF hFv hFr
-    rw [(by omega : 2 * ((i + 1 - s) / 2) + s = i)] at hc
-    exact hF.eq_one_of_map_labuteComm_eq_zero_right (by rw [hFv, ite_eq_right (by omega)])
-      (by rw [hFv, ite_eq_left rfl]) hc
-  · obtain ⟨ht, hi⟩ := hodd ho
-    obtain ⟨m, hm⟩ := ho
-    obtain ⟨F, hFc, hF, hFv, hFr⟩ :=
-      hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels
-        (by omega : i - 1 < n)
-    have hc := hval (i - 1) (by omega) (by omega) F hFc hF hFv hFr
-    rw [(by omega : 2 * ((i - 1 - s) / 2) + s = i - 1), (by omega : i - 1 + 1 = i)] at hc
-    exact hF.eq_one_of_map_labuteComm_eq_zero_left (by rw [hFv, ite_eq_left rfl])
-      (by rw [hFv, ite_eq_right (by omega)]) hc
-
-end Partner
 
 /-! ### The `q ≠ 2` normal form -/
 
