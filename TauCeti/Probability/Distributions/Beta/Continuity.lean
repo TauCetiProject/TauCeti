@@ -29,50 +29,53 @@ Johnson, Kotz, and Balakrishnan, *Continuous Univariate Distributions*, volume 2
 
 public section
 
-open Filter MeasureTheory ProbabilityTheory Set Topology
+open BoundedContinuousFunction Filter MeasureTheory ProbabilityTheory Set Topology
 
 namespace TauCeti.Probability
 
-/-- Beta laws depend jointly weakly continuously on their positive shape parameters. -/
-theorem continuous_betaMeasure :
-    Continuous (Y := ProbabilityMeasure ℝ) (fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
-      (⟨betaMeasure p.1 p.2,
-        isProbabilityMeasureBeta (mem_Ioi.mp p.1.2) (mem_Ioi.mp p.2.2)⟩ :
-          ProbabilityMeasure ℝ)) := by
-  -- The Gamma quotient is continuous and strictly positive on the parameter domain.
+/-- The reciprocal of the beta function is continuous in the two positive shape parameters. -/
+theorem continuous_one_div_beta :
+    Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (1 / beta p.1 p.2) := by
   have ha : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.1 : ℝ) :=
     continuous_subtype_val.comp continuous_fst
   have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
     continuous_subtype_val.comp continuous_snd
   have hG := Real.differentiableOn_Gamma_Ioi.continuousOn
-  have hB : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (1 / beta p.1 p.2) := by
-    simp only [beta]
-    exact continuous_const.div
-      (((hG.comp_continuous ha fun p ↦ p.1.2).mul
-        (hG.comp_continuous hb fun p ↦ p.2.2)).div
-        (hG.comp_continuous (ha.add hb) fun p ↦ add_pos p.1.2 p.2.2)
-        (fun p ↦ (Real.Gamma_pos_of_pos (add_pos p.1.2 p.2.2)).ne'))
-      (fun p ↦ (beta_pos p.1.2 p.2.2).ne')
-  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.2
-  intro f
-  -- Separate the normalizing constant from the kernel on the open unit interval.
-  have heq (p : Ioi (0 : ℝ) × Ioi (0 : ℝ)) :
-      ∫ x, f x ∂betaMeasure p.1 p.2 =
-        (1 / beta p.1 p.2) * ∫ x in Ioo (0 : ℝ) 1,
-          x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
-    rw [integral_betaMeasure_eq p.1.2 p.2.2]
-    calc
-      _ = ∫ x, (Ioo (0 : ℝ) 1).indicator (fun x ↦
-          (1 / beta p.1 p.2) *
-            (x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x)) x := by
-        congr 1
-        funext x
-        by_cases hx : 0 < x ∧ x < 1 <;>
-          simp [betaPDFReal, mem_Ioo, hx, smul_eq_mul, mul_assoc]
-      _ = _ := by rw [integral_indicator measurableSet_Ioo, integral_const_mul]
-  simp only [ProbabilityMeasure.coe_mk, heq]
-  refine hB.mul (continuous_iff_continuousAt.2 fun p ↦ ?_)
-  -- Halving the shapes gives a locally uniform integrable bound at both endpoints.
+  simp only [beta]
+  exact continuous_const.div
+    (((hG.comp_continuous ha fun p ↦ p.1.2).mul
+      (hG.comp_continuous hb fun p ↦ p.2.2)).div
+      (hG.comp_continuous (ha.add hb) fun p ↦ add_pos p.1.2 p.2.2)
+      (fun p ↦ (Real.Gamma_pos_of_pos (add_pos p.1.2 p.2.2)).ne'))
+    (fun p ↦ (beta_pos p.1.2 p.2.2).ne')
+
+/-- The integral of a function against a beta law is the reciprocal of the beta function times
+the integral of the unnormalized kernel over the open unit interval. -/
+theorem integral_betaMeasure_eq_one_div_beta_mul {a b : ℝ} (ha : 0 < a) (hb : 0 < b)
+    (f : ℝ → ℝ) :
+    ∫ x, f x ∂betaMeasure a b =
+      (1 / beta a b) * ∫ x in Ioo (0 : ℝ) 1, x ^ (a - 1) * (1 - x) ^ (b - 1) * f x := by
+  rw [integral_betaMeasure_eq ha hb]
+  calc
+    _ = ∫ x, (Ioo (0 : ℝ) 1).indicator (fun x ↦
+        (1 / beta a b) * (x ^ (a - 1) * (1 - x) ^ (b - 1) * f x)) x := by
+      congr 1
+      funext x
+      by_cases hx : 0 < x ∧ x < 1 <;>
+        simp [betaPDFReal, mem_Ioo, hx, smul_eq_mul, mul_assoc]
+    _ = _ := by rw [integral_indicator measurableSet_Ioo, integral_const_mul]
+
+/-- Halving the shapes gives a locally uniform integrable bound at both endpoints, so the
+unnormalized beta kernel integral against a bounded continuous function is continuous in the
+shape parameters. -/
+private theorem continuous_integral_rpow_mul_one_sub_rpow_mul (f : ℝ →ᵇ ℝ) :
+    Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
+      ∫ x in Ioo (0 : ℝ) 1, x ^ ((p.1 : ℝ) - 1) * (1 - x) ^ ((p.2 : ℝ) - 1) * f x := by
+  have ha : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.1 : ℝ) :=
+    continuous_subtype_val.comp continuous_fst
+  have hb : Continuous fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ (p.2 : ℝ) :=
+    continuous_subtype_val.comp continuous_snd
+  refine continuous_iff_continuousAt.2 fun p ↦ ?_
   let bound : ℝ → ℝ := fun x ↦
     ‖f‖ * (x ^ ((p.1 : ℝ) / 2 - 1) * (1 - x) ^ ((p.2 : ℝ) / 2 - 1))
   have hbound : Integrable bound (volume.restrict (Ioo (0 : ℝ) 1)) :=
@@ -108,5 +111,17 @@ theorem continuous_betaMeasure :
     exact ((((Real.continuous_const_rpow hx.1.ne').comp (ha.sub continuous_const)).mul
       ((Real.continuous_const_rpow (sub_pos.mpr hx.2).ne').comp
         (hb.sub continuous_const))).mul continuous_const).continuousAt
+
+/-- Beta laws depend jointly weakly continuously on their positive shape parameters. -/
+theorem continuous_betaMeasure :
+    Continuous (Y := ProbabilityMeasure ℝ) (fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦
+      (⟨betaMeasure p.1 p.2,
+        isProbabilityMeasureBeta (mem_Ioi.mp p.1.2) (mem_Ioi.mp p.2.2)⟩ :
+          ProbabilityMeasure ℝ)) := by
+  apply ProbabilityMeasure.continuous_iff_forall_continuous_integral.2
+  intro f
+  simp only [ProbabilityMeasure.coe_mk,
+    fun p : Ioi (0 : ℝ) × Ioi (0 : ℝ) ↦ integral_betaMeasure_eq_one_div_beta_mul p.1.2 p.2.2 f]
+  exact continuous_one_div_beta.mul (continuous_integral_rpow_mul_one_sub_rpow_mul f)
 
 end TauCeti.Probability
