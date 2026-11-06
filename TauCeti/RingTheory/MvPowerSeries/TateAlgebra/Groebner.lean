@@ -298,6 +298,31 @@ private theorem norm_coeff_monomial_mul_le (m : MonomialOrder σ)
       _ = _ := by ring
   · simpa using mul_nonneg hε0 (mul_nonneg hzK (norm_nonneg x))
 
+omit [NormMulClass R] in
+/-- A monomial `monomial K z` is a restricted series, of norm `‖z‖ * K.prod (c · ^ ·)`. -/
+private theorem exists_subring_eq_monomial (K : σ →₀ ℕ) (z : R) :
+    ∃ a : IsRestricted.subring (R := R) c, (a : MvPowerSeries σ R) = monomial K z ∧
+      ‖a‖ = ‖z‖ * K.prod (c · ^ ·) := by
+  refine ⟨⟨_, isRestricted_monomial c K z⟩, rfl, ?_⟩
+  rw [← norm_monomial K z (c := c)]
+
+omit [∀ i, Fact (0 < c i)] [NormMulClass R] in
+/-- The coefficients of `y - a * x` for a monomial `a = monomial K z`. -/
+private theorem coeff_sub_mul_of_eq_monomial {a : IsRestricted.subring (R := R) c} {K : σ →₀ ℕ}
+    {z : R} (ha : (a : MvPowerSeries σ R) = monomial K z)
+    (x y : IsRestricted.subring (R := R) c) (t : σ →₀ ℕ) :
+    coeff t ((y - a * x : IsRestricted.subring (R := R) c) : MvPowerSeries σ R) =
+      coeff t (y : MvPowerSeries σ R) -
+        if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0 := by
+  rw [AddSubgroupClass.coe_sub, Subring.coe_mul, ha, map_sub, coeff_monomial_mul]
+
+omit [NormMulClass R] in
+/-- If `y = p + w` with `‖w‖ ≤ ‖y‖` in an ultrametric ring, then `‖p‖ ≤ ‖y‖`. -/
+private theorem norm_le_of_eq_add_of_norm_le {p w y : R} (h : y = p + w) (hw : ‖w‖ ≤ ‖y‖) :
+    ‖p‖ ≤ ‖y‖ := by
+  rw [show p = y - w by rw [h, add_sub_cancel_right]]
+  exact (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl hw)
+
 /-- **One reduction step**, from the proof of Kedlaya's Lemma 3.8. If `y` has `θ < ‖y‖ ≤ M` for a
 threshold `θ ≥ ε M` and some `h ∈ H` satisfies `‖y - h‖ < ‖y‖`, subtracting a monomial multiple
 `a * x` of a suitable `x ∈ F` keeps the norm at most `M`, with `‖a‖ * ‖x‖ ≤ M`, and strictly lowers
@@ -316,9 +341,7 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
     (hy : ∃ h ∈ H, ‖y - h‖ < ‖y‖) (hyM : ‖y‖ ≤ M) (hyθ : θ < ‖y‖) :
     ∃ x ∈ F, ∃ a, ‖a‖ * ‖x‖ ≤ M ∧ ‖y - a * x‖ ≤ M ∧
       toColex (potential m deg hθ (y - a * x)) < toColex (potential m deg hθ y) := by
-  have hy0 : y ≠ 0 := by
-    rintro rfl
-    exact (hθ.trans (by simpa using hyθ)).false
+  have hy0 : y ≠ 0 := norm_pos_iff.1 (hθ.trans hyθ)
   obtain ⟨J, hJ⟩ := exists_isLeadingIndex m hy0
   obtain ⟨h, hhH, hyh⟩ := hy
   obtain ⟨hh0, hJh, hdegh⟩ := isLeadingIndex_of_norm_sub_lt m deg hdeg hJ hyh
@@ -327,33 +350,20 @@ private theorem exists_reduction_step (m : MonomialOrder σ) (deg : R → ℕ)
   have hI₁ := hI.1
   have hxpos : 0 < ‖x‖ := norm_pos_iff.mpr (hF0 x hxF)
   set cx := coeff I (x : MvPowerSeries σ R)
-  have hc0 : cx ≠ 0 := by
-    rintro h
-    rw [h, norm_zero, zero_mul] at hI₁
-    exact hxpos.ne hI₁
+  have hc0 : cx ≠ 0 := fun h => hxpos.ne (by rw [← hI₁, h, norm_zero, zero_mul])
   obtain ⟨z, w, hzw, hwle, hwdeg⟩ := hdiv cx (coeff J (y : MvPowerSeries σ R)) hc0
   set K := J - I
   have hKI : K + I = J := tsub_add_cancel_of_le hIJ
   have hKJ : K ≤ J := tsub_le_self
   have hJK : J - K = I := tsub_tsub_cancel_of_le hIJ
-  obtain ⟨a, ha⟩ : ∃ a : IsRestricted.subring (R := R) c, (a : MvPowerSeries σ R) = monomial K z :=
-    ⟨⟨_, isRestricted_monomial c K z⟩, rfl⟩
-  have hna : ‖a‖ = ‖z‖ * K.prod (c · ^ ·) := by
-    rw [← norm_monomial K z (c := c)]
-    exact congrArg norm (Subtype.ext ha)
-  -- The coefficients of the reduced series.
-  have hcoeff (t : σ →₀ ℕ) : coeff t ((y - a * x : IsRestricted.subring (R := R) c) :
-      MvPowerSeries σ R) = coeff t (y : MvPowerSeries σ R) -
-        if K ≤ t then z * coeff (t - K) (x : MvPowerSeries σ R) else 0 := by
-    rw [AddSubgroupClass.coe_sub, Subring.coe_mul, ha, map_sub, coeff_monomial_mul]
+  obtain ⟨a, ha, hna⟩ := exists_subring_eq_monomial (c := c) K z
+  have hcoeff := coeff_sub_mul_of_eq_monomial ha x y
   -- The size `‖z * cx‖ wJ = ‖a‖ ‖x‖` of the subtracted multiple.
   have hax : ‖a‖ * ‖x‖ = ‖z * cx‖ * J.prod (c · ^ ·) := by
     rw [hna, ← hI₁, norm_mul, ← hKI, prod_pow_add]
     ring
-  have hzc : ‖z * cx‖ ≤ ‖coeff J (y : MvPowerSeries σ R)‖ := by
-    have : z * cx = coeff J (y : MvPowerSeries σ R) - w := by rw [hzw, add_sub_cancel_right]
-    rw [this]
-    exact (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le le_rfl hwle)
+  have hzc : ‖z * cx‖ ≤ ‖coeff J (y : MvPowerSeries σ R)‖ :=
+    norm_le_of_eq_add_of_norm_le hzw hwle
   have haxM : ‖a‖ * ‖x‖ ≤ M := by
     rw [hax]
     exact (mul_le_mul_of_nonneg_right hzc (prod_pow_pos J).le).trans (hJ.1.le.trans hyM)
