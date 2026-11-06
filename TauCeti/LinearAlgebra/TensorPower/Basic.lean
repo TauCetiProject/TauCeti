@@ -12,25 +12,25 @@ public import Mathlib.LinearAlgebra.TensorProduct.Associator
 # Basic operations on tensor powers
 
 Mathlib's `TensorPower.mulEquiv` identifies `⨂[R]^k M ⊗[R] ⨂[R]^m M` with `⨂[R]^(k + m) M`.  This
-file records the inverse operation: `TauCeti.TensorPower.splitAt` cuts a tensor power of length `n`
-after its first `k` factors, landing in `⨂[R]^k M ⊗[R] ⨂[R]^(n - k) M`, together with its value on
-pure tensors, the fact that it is injective, and the unit and associativity laws of the inverse of
+file records the inverse operation: `TensorPower.splitAt` cuts a tensor power of length `n` after
+its first `k` factors, landing in `⨂[R]^k M ⊗[R] ⨂[R]^(n - k) M`, together with its value on pure
+tensors, the fact that it is injective, and the unit and associativity laws of the inverse of
 `TensorPower.mulEquiv`. It also identifies the first tensor power with the underlying module, and
 shows that `TensorPower.mulEquiv` is natural with respect to tensor-power maps.
 
 ## Main definitions
 
-* `TauCeti.TensorPower.splitAt`: split a tensor power at a specified position.
+* `TensorPower.splitAt`: split a tensor power at a specified position.
 * `TauCeti.TensorPower.oneEquiv`: identify the first tensor power with the underlying module.
 
 ## Main results
 
 * `TauCeti.TensorPower.mulEquiv_comp_map`: `TensorPower.mulEquiv` intertwines tensor-power maps
   with the tensor-power map of the appended family.
-* `TauCeti.TensorPower.lid_map_algebraMap₀_symm`, `TauCeti.TensorPower.rid_map_algebraMap₀_symm`:
-  an empty block on either side is absorbed by the scalar identification of `⨂[R]^0 M`.
-* `TauCeti.TensorPower.mulEquiv_symm_assoc`: cutting a tensor power into three blocks does not
-  depend on the order of the two cuts.
+* `TensorPower.lid_map_algebraMap₀_symm`, `TensorPower.rid_map_algebraMap₀_symm`: an empty
+  block on either side is absorbed by the scalar identification of `⨂[R]^0 M`.
+* `TensorPower.mulEquiv_symm_assoc`: cutting a tensor power into three blocks does not depend on
+  the order of the two cuts.
 
 -/
 
@@ -106,6 +106,10 @@ theorem mulEquiv_conj_map {d e : ℕ} (f : Fin d → M →ₗ[R] M) (g : Fin e �
     LinearEquiv.comp_symm, LinearMap.comp_id]
 
 end map
+
+end TauCeti.TensorPower
+
+namespace TensorPower
 
 /-- Split a tensor power after its first `k` factors. -/
 noncomputable def splitAt (n k : ℕ) (hk : k ≤ n) :
@@ -195,4 +199,4 @@ theorem mulEquiv_symm_assoc (p q r : ℕ) (x : TensorPower R (p + q + r) M) :
       simp only [TensorPower.gMul_def, LinearEquiv.symm_apply_apply,
         TensorProduct.map_tmul, LinearMap.id_apply, LinearEquiv.coe_coe]
 
-end TauCeti.TensorPower
+end TensorPower
