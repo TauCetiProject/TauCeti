@@ -639,12 +639,16 @@ order of the two generators. -/
 theorem fi24AutomorphismGroup_of_mul_of_pow (i j : Fin 12) :
     (PresentedGroup.of i * PresentedGroup.of j : Fi24AutomorphismGroup) ^
       fi24AutomorphismCoxeterMatrix i j = 1 :=
-  of_mul_of_pow_coxeterRelators_append _ _ i j
+  -- `Fi24AutomorphismGroup` unfolds to this presented group by `fi24AutomorphismRelators_def`.
+  of_mul_of_pow_coxeterRelators_append fi24AutomorphismCoxeterMatrix
+    fi24AutomorphismAdditionalRelators i j
 
 /-- Every source generator is an involution in the source presented group. -/
 theorem fi24AutomorphismGroup_of_mul_of_self (i : Fin 12) :
     (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 :=
-  of_mul_of_self_coxeterRelators_append _ _ i
+  -- `Fi24AutomorphismGroup` unfolds to this presented group by `fi24AutomorphismRelators_def`.
+  of_mul_of_self_coxeterRelators_append fi24AutomorphismCoxeterMatrix
+    fi24AutomorphismAdditionalRelators i
 
 /-- **All source generators agree in the abelianization of the source presented group.** Two
 generators joined by an edge of the diagram are involutions whose product has order dividing

@@ -323,6 +323,7 @@ theorem mulEquivPresentedGroupCoxeterAppend_apply_of {n : ℕ} (M : CoxeterMatri
 
 /-- **Every Coxeter relation of `M` holds in a presented group whose relators are the Coxeter
 relators of `M` followed by any further relators**, in either order of the two generators. -/
+@[simp]
 theorem of_mul_of_pow_coxeterRelators_append {n : ℕ} (M : CoxeterMatrix (Fin n))
     (extra : List (Relator (Fin n))) (i j : Fin n) :
     (PresentedGroup.of i * PresentedGroup.of j :
@@ -337,6 +338,7 @@ theorem of_mul_of_pow_coxeterRelators_append {n : ℕ} (M : CoxeterMatrix (Fin n
 
 /-- **Every generator is an involution in a presented group whose relators are the Coxeter
 relators of `M` followed by any further relators.** -/
+@[simp]
 theorem of_mul_of_self_coxeterRelators_append {n : ℕ} (M : CoxeterMatrix (Fin n))
     (extra : List (Relator (Fin n))) (i : Fin n) :
     (PresentedGroup.of i * PresentedGroup.of i :
