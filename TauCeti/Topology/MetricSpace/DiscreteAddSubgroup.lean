@@ -29,6 +29,9 @@ minimum.
 * `AddSubgroup.ncard_inter_le_ncard_closedBall_inter`: a set of diameter at most `r`
   carries at most as many points of a discrete additive subgroup as the closed ball of radius `r`
   centred at the origin.
+* `AddSubgroup.ncard_inter_le_card_mul_ncard_closedBall_inter`: a set covered by finitely many sets
+  of diameter at most `ρ` carries at most that many times the number of points of a discrete
+  additive subgroup in the closed ball of radius `ρ`.
 * `Submodule.exists_norm_le_of_ne_bot`: a nonzero discrete additive subgroup, viewed as a
   `ℤ`-submodule, has a shortest nonzero vector.
 -/
@@ -62,6 +65,25 @@ theorem ncard_inter_le_ncard_closedBall_inter (L : AddSubgroup E) [DiscreteTopol
   rintro x ⟨hxs, hxL⟩
   exact ⟨mem_closedBall_zero_iff.2 ((dist_eq_norm x z) ▸ hs x hxs z hzs),
     L.sub_mem hxL hzL⟩
+
+/-- A cover of `X` by finitely many sets of diameter at most `ρ` bounds the number of points of a
+discrete subgroup in `X` by the number of sets times the number of points of the subgroup in the
+closed ball of radius `ρ`. -/
+theorem ncard_inter_le_card_mul_ncard_closedBall_inter {ι : Type*} [Fintype ι] (L : AddSubgroup E)
+    [DiscreteTopology L] {X : Set E} (P : ι → Set E) {ρ : ℝ} (hcov : X ⊆ ⋃ p, P p)
+    (hdist : ∀ p, ∀ u ∈ P p, ∀ v ∈ P p, dist u v ≤ ρ) :
+    (X ∩ (L : Set E)).ncard ≤ Fintype.card ι * (closedBall (0 : E) ρ ∩ (L : Set E)).ncard := by
+  calc (X ∩ (L : Set E)).ncard
+      ≤ (⋃ p, P p ∩ (L : Set E)).ncard := by
+        refine Set.ncard_le_ncard ?_ (Set.finite_iUnion fun p ↦
+          L.finite_inter (Metric.isBounded_iff.2 ⟨ρ, fun _ hu _ hv ↦ hdist p _ hu _ hv⟩))
+        rw [← Set.iUnion_inter]
+        exact Set.inter_subset_inter_left _ hcov
+    _ ≤ ∑ p, (P p ∩ (L : Set E)).ncard := Set.ncard_iUnion_le_of_fintype _
+    _ ≤ ∑ _p : ι, (closedBall (0 : E) ρ ∩ (L : Set E)).ncard :=
+        Finset.sum_le_sum fun p _ ↦
+          AddSubgroup.ncard_inter_le_ncard_closedBall_inter L (hdist p)
+    _ = _ := by simp
 
 end AddSubgroup
 
