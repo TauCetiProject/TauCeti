@@ -205,6 +205,11 @@ private theorem coe_zeroCrossingTimeHomeomorphLevelSlice
     (zeroCrossingTimeHomeomorphLevelSlice hanti hex x : X) = x.1.1 :=
   rfl
 
+private theorem coe_zeroCrossingTimeHomeomorphLevelSlice_symm
+    (x : ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
+    (((zeroCrossingTimeHomeomorphLevelSlice hanti hex).symm x).1 : X) = x :=
+  rfl
+
 /-- **The connecting set is the product of time with a level slice.** The first coordinate is the
 negative crossing time, and the inverse flows a point of the slice for the given time. -/
 def connectingHomeomorphProdLevelSlice :
@@ -232,7 +237,7 @@ theorem connectingHomeomorphProdLevelSlice_snd_coe (x : ↥(unstableSet φ p ∩
 theorem connectingHomeomorphProdLevelSlice_symm_apply
     (tx : ℝ × ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
     ((connectingHomeomorphProdLevelSlice hf hanti hex).symm tx : X) = φ tx.1 tx.2.1 := by
-  simp [connectingHomeomorphProdLevelSlice, zeroCrossingTimeHomeomorphLevelSlice]
+  simp [connectingHomeomorphProdLevelSlice, coe_zeroCrossingTimeHomeomorphLevelSlice_symm]
 
 /-- In product coordinates time translation changes only the real coordinate. -/
 @[simp]
@@ -280,7 +285,7 @@ private theorem exists_homeomorph_levelSlice :
     (levelCrossingTime_eq_zero_iff (hanti _ x.2.1) (hex _ x.2.1)).2 x.2.2
   have hright : Function.RightInverse i s := fun x ↦ Subtype.ext <| by
     rw [hs, hzero, φ.map_zero_apply]
-    rfl
+    simp [i]
   have hrel (x y : ↥(unstableSet φ p ∩ stableSet φ q)) :
       connectingOrbitSetoid φ p q x y ↔ Setoid.ker s x y := by
     rw [Setoid.ker_def, connectingOrbitSetoid_apply, ← Subtype.coe_inj, hs, hs]
