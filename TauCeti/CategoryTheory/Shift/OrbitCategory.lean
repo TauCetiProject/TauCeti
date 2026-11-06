@@ -171,8 +171,8 @@ instance : Category.{v} (OrbitCategory D n) where
           exact ShiftedHom.comp_assoc _ _ _ _ _ (by ring)
 
 instance : Preadditive (OrbitCategory D n) where
-  add_comp _ _ _ f f' g := DFunLike.congr_fun (map_add _ f f') g
-  comp_add _ _ _ f g g' := map_add _ g g'
+  add_comp _ _ _ f f' g := by simp only [CategoryStruct.comp, map_add, AddMonoidHom.add_apply]
+  comp_add _ _ _ f g g' := by simp only [CategoryStruct.comp, map_add]
 
 /-- The inclusion of the homogeneous piece of degree `i`, the morphisms `X ⟶ Y⟦n * i⟧` of `D`,
 into the orbit hom group from `X` to `Y`. -/
