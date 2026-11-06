@@ -145,6 +145,8 @@ noncomputable def isoClassEquiv (n : ℕ) :
       exact PermutationTriple.IsoClass.mk_eq_mk_iff.mpr
         (equivalent_toPermutationTriple_of_iso f _ _)
   invFun := PermutationTriple.IsoClass.lift
+    -- `Fintype.card_ulift` applies because `BipartiteRibbonGraph.ulift` has edge type
+    -- `ULift Γ.E` with the `ULift.fintype` instance, by definition.
     (fun t ↦ ⟦⟨t.ribbonGraph.ulift, (Fintype.card_ulift _).trans t.card_E_ribbonGraph⟩⟧)
     fun _ _ h ↦ Quotient.sound <| isoSetoid_r.mpr <|
       (PermutationTriple.nonempty_iso_ribbonGraph_iff.mpr h).map fun f ↦
@@ -177,6 +179,8 @@ theorem isoClassEquiv_mk_equivFinOfCardEq
 @[simp]
 theorem isoClassEquiv_symm_mk (t : PermutationTriple n) :
     (isoClassEquiv.{u} n).symm (PermutationTriple.IsoClass.mk t) =
+      -- `Fintype.card_ulift` applies because `BipartiteRibbonGraph.ulift` has edge type
+      -- `ULift Γ.E` with the `ULift.fintype` instance, by definition.
       ⟦⟨t.ribbonGraph.ulift, (Fintype.card_ulift _).trans t.card_E_ribbonGraph⟩⟧ :=
   PermutationTriple.IsoClass.lift_mk _ _ t
 

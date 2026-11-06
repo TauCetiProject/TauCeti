@@ -104,6 +104,8 @@ theorem forget_connectedIsoClassEquiv (c : Quotient (connectedIsoSetoid.{u} n)) 
 theorem connectedIsoClassEquiv_symm_mk (t : ConnectedTriple n) :
     (connectedIsoClassEquiv.{u} n).symm (ConnectedIsoClass.mk t) =
       Quotient.mk (connectedIsoSetoid n)
+        -- `Fintype.card_ulift` applies because `BipartiteRibbonGraph.ulift` has edge type
+        -- `ULift Γ.E` with the `ULift.fintype` instance, by definition.
         ⟨⟨t.1.ribbonGraph.ulift, (Fintype.card_ulift _).trans t.1.card_E_ribbonGraph⟩,
           t.1.ribbonGraph.uliftIso.isConnected_iff.mpr
             (t.1.isConnected_ribbonGraph.mpr t.2)⟩ := by
