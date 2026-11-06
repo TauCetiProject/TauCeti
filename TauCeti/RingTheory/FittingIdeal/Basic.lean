@@ -131,14 +131,21 @@ theorem minorsIdeal_map_le (φ : F →ₗ[R] F') (N : Submodule R F) (p : ℕ) :
   obtain rfl : v = fun i ↦ φ (w i) := funext fun i ↦ (hwv i).symm
   exact det_mem_minorsIdeal (fun j ↦ f j ∘ₗ φ) hw
 
+/-- The minors ideals are invariant under a linear map with a left inverse, such as the inclusion
+of a direct summand. -/
+theorem minorsIdeal_map_of_leftInverse {φ : F →ₗ[R] F'} {ψ : F' →ₗ[R] F}
+    (h : Function.LeftInverse ψ φ) (N : Submodule R F) (p : ℕ) :
+    (N.map φ).minorsIdeal p = N.minorsIdeal p := by
+  refine le_antisymm (minorsIdeal_map_le _ _ _) ?_
+  calc N.minorsIdeal p = ((N.map φ).map ψ).minorsIdeal p := by
+        rw [← map_comp, (LinearMap.ext h : ψ ∘ₗ φ = LinearMap.id), map_id]
+    _ ≤ (N.map φ).minorsIdeal p := minorsIdeal_map_le _ _ _
+
 /-- The minors ideals are invariant under linear equivalences of the ambient module. -/
 @[simp]
 theorem minorsIdeal_map_equiv (e : F ≃ₗ[R] F') (N : Submodule R F) (p : ℕ) :
-    (N.map (e : F →ₗ[R] F')).minorsIdeal p = N.minorsIdeal p := by
-  refine le_antisymm (minorsIdeal_map_le _ _ _) ?_
-  calc N.minorsIdeal p = ((N.map (e : F →ₗ[R] F')).map (e.symm : F' →ₗ[R] F)).minorsIdeal p := by
-        rw [(map_symm_eq_iff e).2 rfl]
-    _ ≤ (N.map (e : F →ₗ[R] F')).minorsIdeal p := minorsIdeal_map_le _ _ _
+    (N.map (e : F →ₗ[R] F')).minorsIdeal p = N.minorsIdeal p :=
+  minorsIdeal_map_of_leftInverse (ψ := (e.symm : F' →ₗ[R] F)) e.symm_apply_apply N p
 
 /-- The minors ideals are invariant under linear equivalences of the ambient module. -/
 @[simp]

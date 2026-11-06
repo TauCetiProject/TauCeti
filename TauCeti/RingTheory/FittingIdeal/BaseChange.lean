@@ -42,7 +42,7 @@ They are also carried to each other by an isomorphism of `R`-algebras.
 ## Main results
 
 * `IsBaseChange.minorsIdeal_span_image`: the minors ideals of the `S`-span of the image of a
-  submodule `N` of a free module of finite rank under a base change are the extensions of the
+  submodule `N` of a finite projective module under a base change are the extensions of the
   minors ideals of `N`.
 * `Submodule.minorsIdeal_baseChange`: the same for `N.baseChange S`.
 * `TauCeti.fittingIdeal_baseChange`: `Fitt_k(S ⊗[R] M) = Fitt_k(M) S`.
@@ -78,10 +78,9 @@ namespace IsBaseChange
 variable {R S F W : Type*} [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup F] [Module R F]
   [AddCommGroup W] [Module R W] [Module S W] [IsScalarTower R S W] {j : F →ₗ[R] W}
 
-/-- Let `j : F → W` exhibit `W` as the base change of a free `R`-module `F` of finite rank to `S`.
-The minors ideals of the `S`-submodule of `W` spanned by the image of a submodule `N` of `F` are
-the extensions to `S` of the minors ideals of `N`. -/
-theorem minorsIdeal_span_image [Free R F] [Module.Finite R F] (hj : IsBaseChange S j)
+/-- The free case of `IsBaseChange.minorsIdeal_span_image`. -/
+private theorem minorsIdeal_span_image_of_free [Free R F] [Module.Finite R F]
+    (hj : IsBaseChange S j)
     (N : Submodule R F) (p : ℕ) :
     (Submodule.span S (j '' N)).minorsIdeal p = (N.minorsIdeal p).map (algebraMap R S) := by
   have hmap (f : Fin p → Dual R F) (v : Fin p → F) :
@@ -123,6 +122,30 @@ theorem minorsIdeal_span_image [Free R F] [Module.Finite R F] (hj : IsBaseChange
     rw [Ideal.mem_comap, ← hmap]
     exact Submodule.det_mem_minorsIdeal _ fun i ↦ Submodule.subset_span ⟨v i, hv i, rfl⟩
 
+/-- Let `j : F → W` exhibit `W` as the base change of a finite projective `R`-module `F` to `S`.
+The minors ideals of the `S`-submodule of `W` spanned by the image of a submodule `N` of `F` are
+the extensions to `S` of the minors ideals of `N`. -/
+theorem minorsIdeal_span_image [Projective R F] [Module.Finite R F] (hj : IsBaseChange S j)
+    (N : Submodule R F) (p : ℕ) :
+    (Submodule.span S (j '' N)).minorsIdeal p = (N.minorsIdeal p).map (algebraMap R S) := by
+  -- `F` is a direct summand `F → Rⁿ → F` of a free module of finite rank, and so is its base
+  -- change; the minors ideals do not see the passage to the larger free module
+  obtain ⟨n, φ, hφ⟩ := Module.Finite.exists_fin' R F
+  obtain ⟨ι, hι⟩ := projective_lifting_property φ LinearMap.id hφ
+  have hj' := TensorProduct.isBaseChange R (Fin n → R) S
+  let ι' : W →ₗ[S] S ⊗[R] (Fin n → R) := hj.lift (TensorProduct.mk R S (Fin n → R) 1 ∘ₗ ι)
+  let φ' : S ⊗[R] (Fin n → R) →ₗ[S] W := hj'.lift (j ∘ₗ φ)
+  have hφι : φ' ∘ₗ ι' = LinearMap.id := hj.algHom_ext _ _ fun x ↦ by
+    simp only [ι', φ', LinearMap.comp_apply, hj.lift_eq, hj'.lift_eq, LinearMap.id_apply]
+    exact congr(j $(LinearMap.congr_fun hι x))
+  have himage : (Submodule.span S (j '' N)).map ι' =
+      Submodule.span S (TensorProduct.mk R S (Fin n → R) 1 '' N.map ι) := by
+    rw [Submodule.map_span, ← Set.image_comp, Submodule.map_coe, ← Set.image_comp]
+    exact congrArg _ (Set.image_congr fun x _ ↦ hj.lift_eq _ x)
+  rw [← Submodule.minorsIdeal_map_of_leftInverse (ψ := φ') fun x ↦ congr($hφι x), himage,
+    minorsIdeal_span_image_of_free hj',
+    Submodule.minorsIdeal_map_of_leftInverse (ψ := φ) fun x ↦ congr($hι x)]
+
 end IsBaseChange
 
 namespace Submodule
@@ -130,13 +153,48 @@ namespace Submodule
 variable {R F : Type*} (S : Type*) [CommRing R] [CommRing S] [Algebra R S] [AddCommGroup F]
   [Module R F]
 
-/-- The minors ideals of the base change of a submodule of a free module of finite rank are the
+/-- The minors ideals of the base change of a submodule of a finite projective module are the
 extensions of its minors ideals. -/
 @[simp]
-theorem minorsIdeal_baseChange [Free R F] [Module.Finite R F] (N : Submodule R F) (p : ℕ) :
+theorem minorsIdeal_baseChange [Projective R F] [Module.Finite R F] (N : Submodule R F) (p : ℕ) :
     (N.baseChange S).minorsIdeal p = (N.minorsIdeal p).map (algebraMap R S) := by
   rw [baseChange_eq_span, map_coe]
   exact (TensorProduct.isBaseChange R F S).minorsIdeal_span_image N p
+
+section Field
+
+variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
+
+/-- Over a field, the ideal of `p × p` minors of a finite-dimensional subspace `U` vanishes exactly
+when `U` has dimension less than `p`. -/
+@[simp]
+theorem minorsIdeal_eq_bot_iff_finrank_lt (U : Submodule K V) [FiniteDimensional K U] {p : ℕ} :
+    U.minorsIdeal p = ⊥ ↔ finrank K U < p := by
+  refine ⟨fun h ↦ ?_, fun h ↦ le_bot_iff.1 <| minorsIdeal_le_iff.2 fun f v hv ↦ ?_⟩
+  · -- `p` vectors of a basis of `U` and extensions of their coordinate functionals give the
+    -- identity matrix as a minor
+    by_contra! hp
+    let b := Module.finBasis K U
+    choose g hg using fun j : Fin p ↦ LinearMap.exists_extend (b.coord (Fin.castLE hp j))
+    have hdet : (Matrix.of fun i j ↦ g j (b (Fin.castLE hp i) : V)) = 1 := by
+      ext i j
+      have := congr($(hg j) (b (Fin.castLE hp i)))
+      simp only [LinearMap.comp_apply, Submodule.subtype_apply] at this
+      simp [this, Matrix.one_apply, Finsupp.single_apply]
+    have := det_mem_minorsIdeal (N := U) g (v := fun i ↦ (b (Fin.castLE hp i) : V))
+      fun i ↦ (b _).2
+    rw [h, hdet, Matrix.det_one, Ideal.mem_bot] at this
+    exact one_ne_zero this
+  · -- more than `dim U` vectors of `U` are dependent, so the rows of the minor are dependent
+    have hdep : ¬LinearIndependent K (fun i ↦ (⟨v i, hv i⟩ : U)) := fun hli ↦
+      h.not_ge (by simpa using hli.fintype_card_le_finrank)
+    obtain ⟨c, hc, i, hi⟩ := Fintype.not_linearIndependent_iff.1 hdep
+    rw [Ideal.mem_bot, ← Matrix.exists_vecMul_eq_zero_iff]
+    refine ⟨c, fun h0 ↦ hi (congrFun h0 i), funext fun j ↦ ?_⟩
+    have := congr(f j ($hc : V))
+    simpa [Matrix.vecMul, dotProduct, map_sum, mul_comm] using this
+
+end Field
 
 end Submodule
 
