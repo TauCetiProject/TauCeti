@@ -76,7 +76,7 @@ theorem map_mul_comm (g h : G) : ℓ (g * h) = ℓ (h * g) :=
   simpa using hℓ g h⁻¹
 
 /-- The seminorm of a list product is invariant under any cyclic rotation. -/
-theorem map_prod_rotate (l : List G) (n : ℕ) : ℓ (l.rotate n).prod = ℓ l.prod := by
+@[simp] theorem map_prod_rotate (l : List G) (n : ℕ) : ℓ (l.rotate n).prod = ℓ l.prod := by
   exact List.IsRotated.apply_prod_eq hℓ.map_mul_comm (List.IsRotated.forall l n)
 
 end IsConjInvariant
