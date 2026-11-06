@@ -24,6 +24,12 @@ of polynomial truncations of an entire function converge coefficientwise to it.
 The cases `B = 0`, `B = X`, and `F = 1` are included. The zero constant term of `B` is essential:
 otherwise padding finite ranks introduces extra factors from zero eigenvalues.
 
+For a polynomial `B` the transform is the polynomial-input transform
+`Polynomial.colemanDSeries B F` (`PowerSeries.colemanDEntire_coe`), and for an entire `B` the
+polynomial-input transforms of the truncations of `B` converge coefficientwise to it
+(`PowerSeries.tendsto_coeff_colemanDSeries_trunc`). These two facts pass spectral mapping from
+polynomial to entire functions of an operator.
+
 The transform is multiplicative in the functional input, `D(B, F G) = D(B, F) D(B, G)`
 (`PowerSeries.colemanDEntire_mul`). At finite level, the product of the transforms of the
 truncations of `F` and `G` at order `N + 1` is the transform of the product of those truncations,
