@@ -192,12 +192,13 @@ end Intertwining
 section Continuity
 
 open scoped Matrix.Norms.Operator
-attribute [local instance] Matrix.linftyOpTopologicalSpace Matrix.linftyOpContinuousStar
 
 /-- The restriction of a rational representation to the unitary group has continuous matrix
 coefficients. -/
 theorem continuous_dual_apply_toUnits (h : IsRationalRep ρ) (f : Module.Dual ℂ W) (w : W) :
     Continuous fun u : Matrix.unitaryGroup (Fin n) ℂ => f (ρ (Unitary.toUnits u) w) := by
+  let _ := Matrix.linftyOpTopologicalSpace (Fin n) (Fin n) ℂ
+  let _ := Matrix.linftyOpContinuousStar (Fin n) ℂ
   exact (h.contMDiff_dual_apply f w).continuous.comp Unitary.continuous_toUnits
 
 end Continuity
