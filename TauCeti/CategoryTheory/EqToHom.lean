@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.CategoryTheory.Category.Preorder
 public import Mathlib.CategoryTheory.EqToHom
 public import Mathlib.CategoryTheory.Preadditive.Basic
 
@@ -34,6 +35,9 @@ and avoid exposing the definitional equality of the objects being transported.
 * `CategoryTheory.Functor.map_comp_eqToHom_of_isThin`: on a thin category, the images under a
   functor of two morphisms between equal endpoints agree up to the transports along those
   equalities.
+* `CategoryTheory.Functor.map_homOfLE_eq` and `CategoryTheory.Functor.unop_map_homOfLE_eq`: a
+  functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to the
+  identifications of the endpoints.
 -/
 
 public section
@@ -143,5 +147,26 @@ theorem map_comp_eqToHom_of_isThin {C D : Type*} [Category* C] [Category* D] [Qu
     F.map f ≫ eqToHom (congrArg F.obj hY) = eqToHom (congrArg F.obj hX) ≫ F.map g := by
   subst hX hY
   simp [Subsingleton.elim f g]
+
+/-- A functor out of a preorder sends inequalities with equal endpoints to the same morphism, up to
+the identifications of the endpoints. -/
+theorem map_homOfLE_eq {α D : Type*} [Preorder α] [Category* D] (G : α ⥤ D) {a a' b b' : α}
+    (ha : a = a') (hb : b = b') (h : a ≤ b) :
+    G.map (homOfLE h) =
+      eqToHom (congrArg G.obj ha) ≫ G.map (homOfLE (ha ▸ hb ▸ h)) ≫
+        eqToHom (congrArg G.obj hb).symm := by
+  subst ha hb
+  simp
+
+/-- The variant of `CategoryTheory.Functor.map_homOfLE_eq` for the opposites of the morphisms given
+by a functor `α ⥤ Dᵒᵖ`. -/
+theorem unop_map_homOfLE_eq {α D : Type*} [Preorder α] [Category* D] (G : α ⥤ Dᵒᵖ)
+    {a a' b b' : α} (ha : a = a') (hb : b = b') (h : a ≤ b) :
+    (G.map (homOfLE h)).unop =
+      eqToHom (congrArg (fun j ↦ Opposite.unop (G.obj j)) hb) ≫
+        (G.map (homOfLE (ha ▸ hb ▸ h))).unop ≫
+          eqToHom (congrArg (fun j ↦ Opposite.unop (G.obj j)) ha).symm := by
+  subst ha hb
+  simp
 
 end CategoryTheory.Functor

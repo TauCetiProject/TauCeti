@@ -39,7 +39,8 @@ the same coefficient is recorded in the `PowerSeries.coeff` spelling.
 Associativity is where the two spellings of a two-variable series genuinely diverge: the named
 form substitutes an already-substituted series through `pairSubstitution`, the `Fin 2` form
 through a `Matrix.cons` family over `Fin 3`. Transporting the identity therefore means
-reindexing the three-variable ambient ring as well, along `unitSumUnitSumUnitEquivFinThree`.
+reindexing the three-variable ambient ring as well, along
+`TauCeti.unitSumUnitSumUnitEquivFinThree`.
 
 ## Main results
 
@@ -76,7 +77,7 @@ public section
 
 namespace MvPowerSeries
 
-open Filter Finsupp
+open Filter Finsupp TauCeti
 
 variable {σ τ υ R : Type*}
 

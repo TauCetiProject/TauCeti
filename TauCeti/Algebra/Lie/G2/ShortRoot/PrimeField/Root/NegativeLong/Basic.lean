@@ -38,7 +38,7 @@ open CategoryTheory
 
 noncomputable section
 
-private def rankOneWord (i : Fin 2) : points (ZMod 3) :=
+private def negativeLongRankOneWord (i : Fin 2) : points (ZMod 3) :=
   rootSubgroupPoints (.inr i) (ZMod 3) (Multiplicative.ofAdd 1) *
     rootSubgroupPoints (.inl i) (ZMod 3) (Multiplicative.ofAdd (-1)) *
       rootSubgroupPoints (.inr i) (ZMod 3) (Multiplicative.ofAdd 1)
@@ -46,7 +46,7 @@ private def rankOneWord (i : Fin 2) : points (ZMod 3) :=
 /-- The explicit product of rank-one root words transporting the negative simple long root
 to `-(3α₁ + α₂)` at index zero and `-(3α₁ + 2α₂)` at index one. -/
 def negativeLongConjugator (i : Fin 2) : points (ZMod 3) :=
-  if i = 0 then rankOneWord 0 else rankOneWord 1 * rankOneWord 0
+  if i = 0 then negativeLongRankOneWord 0 else negativeLongRankOneWord 1 * negativeLongRankOneWord 0
 
 /-- The tangent vector at `-(3α₁ + α₂)` (index zero) or `-(3α₁ + 2α₂)` (index one),
 obtained by conjugating the negative simple long-root vector by explicit rank-one root words. -/
@@ -66,7 +66,7 @@ theorem negativeLongConjugator_def (i : Fin 2) :
         rootSubgroupPoints (.inl j) (ZMod 3) (Multiplicative.ofAdd (-1)) *
           rootSubgroupPoints (.inr j) (ZMod 3) (Multiplicative.ofAdd 1)
     negativeLongConjugator i = (if i = 0 then w 0 else w 1 * w 0) := by
-  simp only [negativeLongConjugator, rankOneWord]
+  simp only [negativeLongConjugator, negativeLongRankOneWord]
 
 /-- The two negative nonsimple long roots, in fundamental-weight coordinates. -/
 def negativeLongRootWeight (i : Fin 2) : Fin 2 → ℤ :=
@@ -89,13 +89,7 @@ theorem negativeLongRootWeight_eq_neg_simpleRoots (i : Fin 2) :
       -(3 • DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (0 : Fin 2)) +
         (if i = 0 then 1 else 2) •
           DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl (1 : Fin 2))) := by
-  have hroot (k : Fin 2) :
-      DynkinType.G2.rootGeneratorWeight DynkinType.valid_G2 (.inl k) =
-        fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) k j := by
-    funext j
-    simpa only [DynkinType.rank_G2, DynkinType.cartanMatrix_G2_eq] using
-      DynkinType.G2.rootGeneratorWeight_inl DynkinType.valid_G2 k j
-  rw [hroot, hroot]
+  rw [DynkinType.G2.rootGeneratorWeight_inl_eq, DynkinType.G2.rootGeneratorWeight_inl_eq]
   fin_cases i <;> decide
 
 private def negativeLongMatrix (i : Fin 2) : Matrix (Fin 7) (Fin 7) (ZMod 3) :=
@@ -112,7 +106,7 @@ theorem tangentMatrix_negativeLongRootVector (i : Fin 2) :
   rw [negativeLongRootVector, tangentMatrix_conjugateTangent, tangentMatrix_rootVector]
   unfold negativeLongConjugator
   split_ifs <;>
-    simp only [rankOneWord,
+    simp only [negativeLongRankOneWord,
       Subgroup.coe_mul, Units.val_mul, mul_inv_rev,
       ← map_inv (rootSubgroupPoints _ (ZMod 3)), ← ofAdd_neg,
       neg_neg, coe_rootSubgroupPoints, IntegralToralClosure.coe_rootSubgroupPoints,

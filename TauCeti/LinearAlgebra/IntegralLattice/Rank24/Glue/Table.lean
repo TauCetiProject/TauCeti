@@ -36,8 +36,9 @@ The uniform checks proved here, each a single statement over the row index, are:
 * `|H|² = |A_R|` for the expected order `|H|`
   (`TauCeti.RootfulNiemeierType.glueOrder_sq_eq_natCard_glueModule`).
 
-The cardinality, isotropy and minimum-norm checks of the generated subgroups themselves are not
-proved here.
+The isotropy, cardinality and minimum-norm checks of the generated subgroups themselves are proved
+in `TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Isotropic` and
+`TauCeti.LinearAlgebra.IntegralLattice.Rank24.Glue.Checks`.
 
 As in `TauCeti.LinearAlgebra.IntegralLattice.Rank24.RootSystems`, the data definitions are exposed
 so that finite checks over the table, in this file and later ones, are proof-producing

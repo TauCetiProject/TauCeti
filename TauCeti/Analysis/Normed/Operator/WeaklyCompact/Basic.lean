@@ -96,32 +96,23 @@ theorem isWeaklyCompact_iff_exists_isCompact {T : E →L[𝕜] F} :
 /-- The zero operator is weakly compact. -/
 @[simp]
 theorem isWeaklyCompact_zero : (0 : E →L[𝕜] F).IsWeaklyCompact :=
-  .of_isCompactOperator <| by
-    have h : toWeakSpace 𝕜 F ∘ ⇑(0 : E →L[𝕜] F) = 0 := by
-      ext x
-      simp
-    rw [h]
-    exact isCompactOperator_zero
+  -- `toWeakSpace` is the identity map of the underlying space, so `toWeakSpace ∘ 0` is `0` by
+  -- definitional unfolding; this is intended.
+  .of_isCompactOperator isCompactOperator_zero
 
 /-- The sum of two weakly compact operators is weakly compact. -/
 theorem IsWeaklyCompact.add {T S : E →L[𝕜] F} (hT : T.IsWeaklyCompact)
-    (hS : S.IsWeaklyCompact) : (T + S).IsWeaklyCompact := by
-  refine .of_isCompactOperator ?_
-  have h : toWeakSpace 𝕜 F ∘ ⇑(T + S) = toWeakSpace 𝕜 F ∘ T + toWeakSpace 𝕜 F ∘ S := by
-    ext x
-    simp
-  rw [h]
-  exact hT.isCompactOperator.add hS.isCompactOperator
+    (hS : S.IsWeaklyCompact) : (T + S).IsWeaklyCompact :=
+  -- `toWeakSpace` is the identity map of the underlying space, so `toWeakSpace ∘ (T + S)` is
+  -- `toWeakSpace ∘ T + toWeakSpace ∘ S` by definitional unfolding; this is intended.
+  .of_isCompactOperator (hT.isCompactOperator.add hS.isCompactOperator)
 
 /-- A scalar multiple of a weakly compact operator is weakly compact. -/
 theorem IsWeaklyCompact.smul {T : E →L[𝕜] F} (hT : T.IsWeaklyCompact) (c : 𝕜) :
-    (c • T).IsWeaklyCompact := by
-  refine .of_isCompactOperator ?_
-  have h : toWeakSpace 𝕜 F ∘ ⇑(c • T) = c • (toWeakSpace 𝕜 F ∘ T) := by
-    ext x
-    simp
-  rw [h]
-  exact hT.isCompactOperator.smul c
+    (c • T).IsWeaklyCompact :=
+  -- `toWeakSpace` is the identity map of the underlying space, so `toWeakSpace ∘ (c • T)` is
+  -- `c • (toWeakSpace ∘ T)` by definitional unfolding; this is intended.
+  .of_isCompactOperator (hT.isCompactOperator.smul c)
 
 /-- The negative of a weakly compact operator is weakly compact. -/
 theorem IsWeaklyCompact.neg {T : E →L[𝕜] F} (hT : T.IsWeaklyCompact) :
@@ -184,65 +175,72 @@ theorem isWeaklyCompact_id_and_not_isCompactOperator_id
 
 /-! ### Gantmacher's theorem -/
 
+/-- **Gantmacher's criterion**, forward direction: the bidual adjoint `T**` of a weakly compact
+operator takes values in the canonical image of the codomain in its bidual. -/
+theorem IsWeaklyCompact.range_precomp_precomp_subset {T : E →L[𝕜] F} (hT : T.IsWeaklyCompact) :
+    range (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)) ⊆
+      range (inclusionInDoubleDual 𝕜 F) := by
+  -- `A` is the bidual adjoint, viewed between the weak-star topologies of the biduals.
+  set A : WeakDual 𝕜 (StrongDual 𝕜 E) → WeakDual 𝕜 (StrongDual 𝕜 F) := fun Φ ↦
+    StrongDual.toWeakDual
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (WeakDual.toStrongDual Φ))
+  -- By Goldstine, `Φ` lies in the weak-star closure of the image of a ball of `E`, so `A Φ`
+  -- lies in the weak-star closure of the image of the weakly compact set `K`.
+  rintro _ ⟨Φ, rfl⟩
+  rw [← NormedSpace.toWeakDual_mem_range_inclusionInDoubleDualWeak_iff 𝕜 F]
+  set K := closure (toWeakSpace 𝕜 F '' (T '' closedBall 0 ‖Φ‖))
+  have hK : IsCompact K := hT.isCompact_closure_image isBounded_closedBall
+  have hΦ : StrongDual.toWeakDual Φ ∈
+      closure (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 ‖Φ‖)) := by
+    rw [closure_image_inclusionInDoubleDualWeak_closedBall, map_zero, mem_preimage,
+      StrongDual.toStrongDual_toWeakDual,
+      mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))]
+  have hsub : A '' (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 ‖Φ‖)) ⊆
+      inclusionInDoubleDualWeak 𝕜 F '' K := by
+    rintro _ ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩, rfl⟩
+    exact ⟨_, subset_closure ⟨T x, ⟨x, hx, rfl⟩, rfl⟩,
+      (toWeakDual_precomp_precomp_inclusionInDoubleDualWeak T x).symm⟩
+  obtain ⟨y, -, hy⟩ := closure_minimal hsub
+    (hK.image (inclusionInDoubleDualWeak 𝕜 F).continuous).isClosed
+    (image_closure_subset_closure_image (continuous_toWeakDual_precomp_precomp T) ⟨_, hΦ, rfl⟩)
+  exact ⟨y, by simpa [A] using hy⟩
+
+/-- **Gantmacher's criterion**, reverse direction: a bounded operator whose bidual adjoint `T**`
+takes values in the canonical image of the codomain in its bidual is weakly compact. -/
+theorem IsWeaklyCompact.of_range_precomp_precomp_subset {T : E →L[𝕜] F}
+    (h : range (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)) ⊆
+      range (inclusionInDoubleDual 𝕜 F)) :
+    T.IsWeaklyCompact := by
+  -- `A` is the bidual adjoint, viewed between the weak-star topologies of the biduals.
+  set A : WeakDual 𝕜 (StrongDual 𝕜 E) → WeakDual 𝕜 (StrongDual 𝕜 F) := fun Φ ↦
+    StrongDual.toWeakDual
+      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (WeakDual.toStrongDual Φ))
+  -- The image of the unit ball of `E` lands in `A` of the weak-star compact bidual ball,
+  -- which lies in the canonical image of `F`.
+  apply isCompact_closure_weakSpace_of_isBounded 𝕜 F
+  · rw [preimage_image_eq _ (toWeakSpace 𝕜 F).injective]
+    exact T.lipschitzWith.isBounded_image isBounded_closedBall
+  · have hsub : inclusionInDoubleDualWeak 𝕜 F '' (toWeakSpace 𝕜 F '' (T '' closedBall 0 1)) ⊆
+        A '' (WeakDual.toStrongDual ⁻¹' closedBall 0 1) := by
+      rintro _ ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩, rfl⟩
+      refine ⟨_, ?_, toWeakDual_precomp_precomp_inclusionInDoubleDualWeak T x⟩
+      rw [mem_preimage, inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
+        StrongDual.toStrongDual_toWeakDual,
+        mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))]
+      exact (double_dual_bound 𝕜 E x).trans (mem_closedBall_zero_iff.1 hx)
+    refine (closure_minimal hsub ((WeakDual.isCompact_closedBall 0 1).image
+      (continuous_toWeakDual_precomp_precomp T)).isClosed).trans ?_
+    rintro _ ⟨Φ, -, rfl⟩
+    exact (NormedSpace.toWeakDual_mem_range_inclusionInDoubleDualWeak_iff 𝕜 F _).2 (h ⟨_, rfl⟩)
+
 /-- **Gantmacher's criterion.** A bounded operator is weakly compact iff its bidual adjoint
 `T**` takes values in the canonical image of the codomain in its bidual. No completeness is
 assumed. -/
 theorem isWeaklyCompact_iff_range_subset {T : E →L[𝕜] F} :
     T.IsWeaklyCompact ↔
       range (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E)) ⊆
-        range (inclusionInDoubleDual 𝕜 F) := by
-  -- `A` is the bidual adjoint, viewed between the weak-star topologies of the biduals.
-  set A : WeakDual 𝕜 (StrongDual 𝕜 E) → WeakDual 𝕜 (StrongDual 𝕜 F) := fun Φ ↦
-    StrongDual.toWeakDual
-      (precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) (WeakDual.toStrongDual Φ))
-  have hA : Continuous A :=
-    WeakDual.continuous_of_continuous_eval fun f ↦ WeakDual.eval_continuous (f.comp T)
-  have hnat (x : E) : A (inclusionInDoubleDualWeak 𝕜 E (toWeakSpace 𝕜 E x)) =
-      inclusionInDoubleDualWeak 𝕜 F (toWeakSpace 𝕜 F (T x)) := by
-    simp [A, inclusionInDoubleDualWeak_apply]
-  have hmem (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
-      A (StrongDual.toWeakDual Φ) ∈ range (inclusionInDoubleDualWeak 𝕜 F) ↔
-        precomp 𝕜 (precomp 𝕜 T : StrongDual 𝕜 F →L[𝕜] StrongDual 𝕜 E) Φ ∈
-          range (inclusionInDoubleDual 𝕜 F) := by
-    simp only [A, mem_range, inclusionInDoubleDualWeak_apply, StrongDual.toStrongDual_toWeakDual,
-      EmbeddingLike.apply_eq_iff_eq, (toWeakSpace 𝕜 F).symm.surjective.exists]
-  constructor
-  · -- By Goldstine, `Φ` lies in the weak-star closure of the image of a ball of `E`, so `A Φ`
-    -- lies in the weak-star closure of the image of the weakly compact set `K`.
-    rintro hT _ ⟨Φ, rfl⟩
-    rw [← hmem]
-    set K := closure (toWeakSpace 𝕜 F '' (T '' closedBall 0 ‖Φ‖))
-    have hK : IsCompact K := hT.isCompact_closure_image isBounded_closedBall
-    have hΦ : StrongDual.toWeakDual Φ ∈
-        closure (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 ‖Φ‖)) := by
-      rw [closure_image_inclusionInDoubleDualWeak_closedBall, map_zero, mem_preimage,
-        StrongDual.toStrongDual_toWeakDual,
-        mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))]
-    have hsub : A '' (inclusionInDoubleDualWeak 𝕜 E '' (toWeakSpace 𝕜 E '' closedBall 0 ‖Φ‖)) ⊆
-        inclusionInDoubleDualWeak 𝕜 F '' K := by
-      rintro _ ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩, rfl⟩
-      exact ⟨_, subset_closure ⟨T x, ⟨x, hx, rfl⟩, rfl⟩, (hnat x).symm⟩
-    obtain ⟨y, -, hy⟩ := closure_minimal hsub
-      (hK.image (inclusionInDoubleDualWeak 𝕜 F).continuous).isClosed
-      (image_closure_subset_closure_image hA ⟨_, hΦ, rfl⟩)
-    exact ⟨y, hy⟩
-  · -- The image of the unit ball of `E` lands in `A` of the weak-star compact bidual ball,
-    -- which lies in the canonical image of `F`.
-    intro h
-    apply isCompact_closure_weakSpace_of_isBounded 𝕜 F
-    · rw [preimage_image_eq _ (toWeakSpace 𝕜 F).injective]
-      exact T.lipschitzWith.isBounded_image isBounded_closedBall
-    · have hsub : inclusionInDoubleDualWeak 𝕜 F '' (toWeakSpace 𝕜 F '' (T '' closedBall 0 1)) ⊆
-          A '' (WeakDual.toStrongDual ⁻¹' closedBall 0 1) := by
-        rintro _ ⟨_, ⟨_, ⟨x, hx, rfl⟩, rfl⟩, rfl⟩
-        refine ⟨_, ?_, hnat x⟩
-        rw [mem_preimage, inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
-          StrongDual.toStrongDual_toWeakDual,
-          mem_closedBall_zero_iff (E := StrongDual 𝕜 (StrongDual 𝕜 E))]
-        exact (double_dual_bound 𝕜 E x).trans (mem_closedBall_zero_iff.1 hx)
-      refine (closure_minimal hsub ((WeakDual.isCompact_closedBall 0 1).image hA).isClosed).trans ?_
-      rintro _ ⟨Φ, -, rfl⟩
-      simpa using (hmem (WeakDual.toStrongDual Φ)).2 (h ⟨_, rfl⟩)
+        range (inclusionInDoubleDual 𝕜 F) :=
+  ⟨IsWeaklyCompact.range_precomp_precomp_subset, IsWeaklyCompact.of_range_precomp_precomp_subset⟩
 
 end ContinuousLinearMap
 
@@ -261,7 +259,7 @@ theorem IsWeaklyCompact.precomp {T : E →L[𝕜] F} (hT : T.IsWeaklyCompact) :
   -- `T***ψ` is the canonical image of `T*(ψ ∘ J_F)`.
   refine ⟨ContinuousLinearMap.precomp 𝕜 T (ψ.comp (inclusionInDoubleDual 𝕜 F)),
     ContinuousLinearMap.ext fun Φ ↦ ?_⟩
-  obtain ⟨y, hy⟩ := isWeaklyCompact_iff_range_subset.1 hT ⟨Φ, rfl⟩
+  obtain ⟨y, hy⟩ := hT.range_precomp_precomp_subset ⟨Φ, rfl⟩
   have h := congrArg (fun Ψ ↦ Ψ (ψ.comp (inclusionInDoubleDual 𝕜 F))) hy
   have hy' : Φ.comp (ContinuousLinearMap.precomp 𝕜 T) = inclusionInDoubleDual 𝕜 F y := by
     simpa using hy.symm
@@ -287,8 +285,8 @@ theorem IsWeaklyCompact.of_precomp [CompleteSpace F] {T : E →L[𝕜] F}
   by_contra hΦ
   obtain ⟨ψ, hψS, hψ⟩ := Submodule.exists_dual_forall_mem_eq_zero_ne_zero (𝕜 := 𝕜) hS
     (x := ContinuousLinearMap.precomp 𝕜 (ContinuousLinearMap.precomp 𝕜 T) Φ)
-    fun h ↦ hΦ (LinearMap.mem_range.1 h)
-  obtain ⟨g, hg⟩ := isWeaklyCompact_iff_range_subset.1 hT ⟨ψ, rfl⟩
+    (by simpa [S] using hΦ)
+  obtain ⟨g, hg⟩ := hT.range_precomp_precomp_subset ⟨ψ, rfl⟩
   have hg0 : g = 0 := by
     ext x
     have h := congrArg (fun Ψ ↦ Ψ (inclusionInDoubleDual 𝕜 E x)) hg

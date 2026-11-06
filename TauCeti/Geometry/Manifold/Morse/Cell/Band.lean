@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.DirectedUnion
 public import TauCeti.AlgebraicTopology.Singular.Empty
+public import TauCeti.AlgebraicTopology.Singular.Sublevel
 public import TauCeti.AlgebraicTopology.Singular.Triple
 public import TauCeti.Geometry.Manifold.Morse.Cell.Homology
 public import TauCeti.Geometry.Manifold.Morse.Deformation.Homology
@@ -31,6 +32,10 @@ This file assembles these steps along finitely many critical levels, and then al
 * If `b` is a regular value with compact sublevel `M_b`, and every critical point in `M_b` has
   index at most `d`, then `Hₙ(M_b)` vanishes for `n > d`
   (`TauCeti.IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le`).
+* If `M` is compact and all critical points of `f` have index at most `d`, then `Hₙ(M)` vanishes
+  for `n > d`, with coefficients in any abelian category with coproducts
+  (`TauCeti.IsMorse.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le`). Here `M`
+  is itself a band over the empty sublevel, so no exactness of sequential colimits is needed.
 * If `f` is proper and bounded below and all its critical points have index at most `d`, then
   `Hₙ(M)` vanishes for `n > d`, with coefficients in an abelian category in which colimits of
   sequences are exact (`TauCeti.IsMorse.isZero_singularHomology_of_manifoldMorseIndex_le`). Every
@@ -119,6 +124,20 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le [HasCo
   -- Relative homology modulo the empty sublevel is the homology of `{f ≤ b}`.
   have hπ : IsIso ((sublevelPair f hab).singularHomologyπ R n) := inferInstance
   exact hzero.of_iso (@asIso _ _ _ _ _ hπ)
+
+/-- **Homology of a compact manifold vanishes above the largest index.** If every critical point
+of a Morse function on a compact boundaryless manifold `M` has index at most `d`, then the singular
+homology `Hₙ(M; R)` vanishes for every `n > d` and every coefficient object `R` of an abelian
+category with coproducts. -/
+theorem IsMorse.isZero_singularHomology_of_compactSpace_of_manifoldMorseIndex_le [CompactSpace M]
+    [HasCoproducts.{u} C] [Abelian C] (hf : IsMorse I f) {d : ℕ}
+    (hd : ∀ p ∈ criticalPoints I f, manifoldMorseIndex I f p ≤ d) (R : C) {n : ℕ} (hn : d < n) :
+    IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of M)) := by
+  obtain ⟨a, b, hab, hcompact, ha, hb, hf'⟩ :=
+    exists_isRegularValue_forall_mem_Ioc (I := I) hf.contMDiff.continuous
+  exact (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb
+    (fun p hp ↦ hd p hp.1) R hn).of_iso (singularHomologyIsoSublevelPair hab
+      (fun x ↦ (hf' x).1) (fun x ↦ (hf' x).2) R n)
 
 /-- **A manifold with a proper Morse function whose indices are at most `d` has no homology above
 degree `d`.** Let `f` be a proper Morse function, bounded below, all of whose critical points have

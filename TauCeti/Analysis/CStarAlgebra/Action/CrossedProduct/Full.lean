@@ -24,13 +24,13 @@ type synonym `FullConvolutionAlgebra α μ`. Since the full seminorm is a submul
 star-invariant seminorm satisfying the C⋆-identity, the completion
 `FullCrossedProduct α μ` is a nonunital C⋆-algebra. The canonical ⋆-homomorphism
 `FullCrossedProduct.of` from the twisted convolution algebra has dense range, and
-`‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a faithful representation in its own universe
-and `μ` is inner regular for compact sets on sets of finite measure
+`‖of f‖ = ‖f‖ᵤ`. It is injective whenever `A` has a faithful representation and `μ` is inner
+regular for compact sets on sets of finite measure
 (`μ.InnerRegularCompactLTTop`).
 
-Every integrated form `π ⋊ U` of a covariant representation on a Hilbert space in the universe
-`max u v` extends uniquely to a ⋆-homomorphism `CovariantRepresentation.integratedFull` on the
-full crossed product. The norm of `A ⋊_α G` is the supremum of the norms of these extensions,
+Every integrated form `π ⋊ U` of a covariant representation, on a Hilbert space in any universe,
+extends uniquely to a ⋆-homomorphism `CovariantRepresentation.integratedFull` on the full crossed
+product. The norm of `A ⋊_α G` is the supremum of the norms of these extensions,
 `FullCrossedProduct.norm_le_iff`. No unit, separability, σ-finiteness or nondegeneracy is
 assumed.
 
@@ -74,7 +74,7 @@ open MeasureTheory UniformSpace
 
 namespace TauCeti.CStarAction
 
-universe u v
+universe u v w
 
 variable {G : Type u} {A : Type v} [Group G] [TopologicalSpace G] [MeasurableSpace G]
   [NonUnitalCStarAlgebra A] {α : CStarAction G A} {μ : Measure G}
@@ -329,10 +329,10 @@ theorem induction_on {p : FullCrossedProduct α μ → Prop} (x : FullCrossedPro
     (hp : IsClosed {x | p x}) (ih : ∀ f, p (of α μ f)) : p x :=
   Completion.induction_on (p := p) x hp fun f => coe_toFull_eq_of (ofFull f) ▸ ih (ofFull f)
 
-/-- If `A` has a faithful representation on a Hilbert space `H : Type v` and `μ` is inner regular
-for compact sets on sets of finite measure, the canonical map from the twisted convolution algebra
-into the full crossed product is injective. -/
-theorem of_injective [μ.InnerRegularCompactLTTop] {H : Type v} [NormedAddCommGroup H]
+/-- If `A` has a faithful representation on a Hilbert space `H` and `μ` is inner regular for compact
+sets on sets of finite measure, the canonical map from the twisted convolution algebra into the full
+crossed product is injective. -/
+theorem of_injective [μ.InnerRegularCompactLTTop] {H : Type w} [NormedAddCommGroup H]
     [InnerProductSpace ℂ H] [CompleteSpace H] {ρ : A →⋆ₙₐ[ℂ] (H →L[ℂ] H)}
     (hρ : Function.Injective ρ) : Function.Injective (of α μ) :=
   (injective_iff_map_eq_zero (of α μ)).2 fun f hf =>
@@ -408,12 +408,12 @@ namespace CovariantRepresentation
 
 open FullCrossedProduct
 
-variable {H : Type (max u v)} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
+variable {H : Type w} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
   [CompleteSpace H] (P : CovariantRepresentation α H)
 
 variable (μ) in
-/-- The integrated form `π ⋊ U` of a covariant representation on a Hilbert space in the universe
-`max u v`, extended by continuity to a ⋆-homomorphism on the full crossed product. -/
+/-- The integrated form `π ⋊ U` of a covariant representation on a Hilbert space in any universe,
+extended by continuity to a ⋆-homomorphism on the full crossed product. -/
 def integratedFull : FullCrossedProduct α μ →⋆ₙₐ[ℂ] (H →L[ℂ] H) :=
   lift (P.integratedStarAlgHom μ)
     (ConvolutionAlgebra.norm_integratedStarAlgHom_le_fullSeminorm P)

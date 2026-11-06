@@ -44,7 +44,8 @@ theorem quantile_map_categoricalMeasure_eq_iff (p : StdSimplex NNReal I) (label 
   rw [Measure.quantile_map_finite_eq_iff _ label hu,
     ← map_measureReal_apply (measurable_of_finite label) measurableSet_Iio,
     p.map_categoricalMeasure_real_Iio,
-    ← Measure.cdf_map _ label (measurable_of_finite label), p.cdf_map_categoricalMeasure]
+    ← Measure.cdf_map _ label (measurable_of_finite label).aemeasurable,
+    p.cdf_map_categoricalMeasure]
 
 /-- As the level tends to zero from above, categorical quantiles tend to any least label whose
 category has positive weight. Zero-weight categories do not affect the endpoint. -/

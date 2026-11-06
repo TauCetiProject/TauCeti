@@ -67,6 +67,7 @@ means on `UCB G` with invariant means on `L∞(G, μ)`.
 * `MeasureTheory.Lp.convolutionUCB_apply_leftTranslation`: `h ⋆ (L_g φ) = (R_(g⁻¹) h) ⋆ φ`, where
   `R` is right translation on `L¹(G, μ)`, so `(R_(g⁻¹) h)(z) = c(g) * h (z * g⁻¹)` for the modular
   character `c`.
+* `MeasureTheory.Lp.convolutionUCB_rightTranslation_apply`: `(h ⋆ R_g φ) x = (h ⋆ φ) (x * g)`.
 * `MeasureTheory.Lp.convolutionUCB_convolutionL`: mixed associativity, `(h ⋆ k) ⋆ φ = h ⋆ (k ⋆ φ)`
   for `h, k ∈ L¹(G, μ)` and `φ ∈ L∞(G, μ)`, where `h ⋆ k` is the `L¹` convolution
   `MeasureTheory.Lp.convolutionL` and `k ⋆ φ ∈ UCB G` is viewed in `L∞(G, μ)`. Since
@@ -340,6 +341,17 @@ theorem convolutionUCB_apply_leftTranslation (g : G) (h : Lp ℝ 1 μ) (φ : Lp 
     (fun y => h (y * g⁻¹) * φ (y⁻¹ * x)) g
   simp only [mul_inv_rev, mul_assoc, mul_inv_cancel, mul_one, smul_eq_mul] at key
   simp [key, mul_assoc, integral_const_mul]
+
+/-- Right translating `φ ∈ L∞(G, μ)` by `g` translates `h ⋆ φ` on the right:
+`(h ⋆ R_g φ) x = (h ⋆ φ) (x * g)`. -/
+theorem convolutionUCB_rightTranslation_apply (g : G) (h : Lp ℝ 1 μ) (φ : Lp ℝ ∞ μ) (x : G) :
+    (convolutionUCB h (rightTranslation μ ∞ ℝ g φ) : G →ᵇ ℝ) x =
+      (convolutionUCB h φ : G →ᵇ ℝ) (x * g) := by
+  have hφ : rightTranslation μ ∞ ℝ g φ =ᵐ[μ] fun z ↦ φ (z * g) := by
+    filter_upwards [coeFn_rightTranslation (𝕜 := ℝ) (p := ∞) g φ] with z hz
+    simpa using hz
+  rw [convolutionUCB_apply_of_ae_eq (ae_eq_refl _) hφ x, convolutionUCB_apply]
+  simp_rw [mul_assoc]
 
 /-- **Mixed associativity of convolution**: `(h ⋆ k) ⋆ φ = h ⋆ (k ⋆ φ)` for kernels
 `h, k ∈ L¹(G, μ)` and `φ ∈ L∞(G, μ)`. Here `h ⋆ k` is the convolution in `L¹(G, μ)`, and on the
