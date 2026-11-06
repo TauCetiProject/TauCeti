@@ -13,6 +13,7 @@ import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import TauCeti.Analysis.Convolution.Young
 import TauCeti.Analysis.Distribution.SchwartzSpace.Convolution
 import TauCeti.Analysis.Fourier.Continuous
+import TauCeti.MeasureTheory.Function.LpSeminorm.Comp
 
 /-!
 # `Lᵖ` functions as tempered distributions
@@ -208,13 +209,16 @@ open scoped ENNReal SchwartzMap FourierTransform Convolution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
+/-- The kernel `𝓕⁻ σ` of the multiplier with a Schwartz symbol `σ` is integrable. -/
+private theorem integrable_fourierInv_coe (σ : 𝓢(E, ℂ)) : Integrable (𝓕⁻ (σ : E → ℂ)) := by
+  simpa [SchwartzMap.fourierInv_coe] using (𝓕⁻ σ : 𝓢(E, ℂ)).integrable (μ := volume)
+
 /-- An `eLpNorm` bound by `‖𝓕⁻ σ‖₁` in `ℝ≥0∞` gives the real bound by `∫ ‖𝓕⁻ σ‖`, as long as the
 other factor is finite. -/
 private theorem toReal_le_integral_norm_fourierInv_mul (σ : 𝓢(E, ℂ)) {a b : ℝ≥0∞} (hb : b ≠ ∞)
     (h : a ≤ eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * b) :
     a.toReal ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * b.toReal := by
-  have hK := (𝓕⁻ σ : 𝓢(E, ℂ)).integrable (μ := volume)
-  rw [SchwartzMap.fourierInv_coe] at hK
+  have hK := integrable_fourierInv_coe σ
   rw [integral_norm_eq_lintegral_enorm hK.1, ← eLpNorm_one_eq_lintegral_enorm hK.1,
     ← ENNReal.toReal_mul]
   exact ENNReal.toReal_mono (ENNReal.mul_ne_top (memLp_one_iff_integrable.2 hK).eLpNorm_ne_top hb) h
@@ -247,24 +251,15 @@ theorem fourierMultiplierCLM_toTemperedDistribution_apply_eq_integral_convolutio
     fourierMultiplierCLM F σ (f : 𝓢'(E, F)) u =
       ∫ y, u y • (𝓕⁻ (σ : E → ℂ) ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F)) y := by
   set K : E → ℂ := 𝓕⁻ (σ : E → ℂ)
-  have hK : ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) = K := SchwartzMap.fourierInv_coe σ
-  have hKi : Integrable K := hK ▸ (𝓕⁻ σ : 𝓢(E, ℂ)).integrable
-  have hf : AEStronglyMeasurable (f : E → F) volume := Lp.aestronglyMeasurable f
+  have hKi : Integrable K := integrable_fourierInv_coe σ
   -- The integrand `(x, y) ↦ (K (y - x) * u y) • f x` is integrable on the product: it is an
   -- integrable function of `(x, y)` times the bounded function `f x`.
   have hint : Integrable (Function.uncurry fun x y ↦ (K (y - x) * u y) • (f : E → F) x)
       (volume.prod volume) := by
     have h1 := (u.integrable (μ := volume)).convolution_integrand
       (ContinuousLinearMap.mul ℂ ℂ) hKi.comp_neg
-    have h2 : MemLp (fun q : E × E ↦ (f : E → F) q.1) ∞ (volume.prod volume) := by
-      have hfst : AEStronglyMeasurable (fun q : E × E ↦ (f : E → F) q.1)
-          (volume.prod volume) := hf.comp_quasiMeasurePreserving
-        (Measure.quasiMeasurePreserving_fst (μ := volume) (ν := (volume : Measure E)))
-      rw [MemLp, eLpNorm_exponent_top hfst]
-      refine (eLpNormEssSup_le_of_ae_enorm_bound <|
-        (Measure.quasiMeasurePreserving_fst (μ := volume) (ν := (volume : Measure E))).ae
-          (ae_le_eLpNormEssSup (μ := volume) (f := (f : E → F)))).trans_lt ?_
-      simpa [eLpNorm_exponent_top hf] using Lp.eLpNorm_lt_top f
+    have h2 : MemLp (fun q : E × E ↦ (f : E → F) q.1) ∞ (volume.prod volume) :=
+      (Lp.memLp f).comp_quasiMeasurePreserving_top Measure.quasiMeasurePreserving_fst
     refine (h1.smul_of_top_left h2).congr (Filter.Eventually.of_forall fun ⟨x, y⟩ ↦ ?_)
     simp [neg_sub, mul_comm]
   -- `𝓕 (σ • 𝓕⁻ u) x = ∫ 𝓕 σ (x - y) * u y` and `𝓕 σ (x - y) = K (y - x)`.
@@ -290,13 +285,11 @@ private theorem exists_fourierMultiplierCLM_eq_and_norm_le_top (σ : 𝓢(E, ℂ
     ∃ g : Lp F ∞ (volume : Measure E), fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g ∧
       ‖g‖ ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * ‖f‖ := by
   set K : E → ℂ := 𝓕⁻ (σ : E → ℂ)
-  have hK : ⇑(𝓕⁻ σ : 𝓢(E, ℂ)) = K := SchwartzMap.fourierInv_coe σ
-  have hKc : Continuous K := hK ▸ (𝓕⁻ σ : 𝓢(E, ℂ)).continuous
-  have hKi : Integrable K := hK ▸ (𝓕⁻ σ : 𝓢(E, ℂ)).integrable
+  have hKi : Integrable K := integrable_fourierInv_coe σ
   have hf : AEStronglyMeasurable (f : E → F) volume := Lp.aestronglyMeasurable f
   set h : E → F := K ⋆[ContinuousLinearMap.lsmul ℂ ℂ] (f : E → F)
   have hh_le : eLpNorm h ∞ volume ≤ eLpNorm K 1 volume * eLpNorm f ∞ volume := by
-    refine (eLpNorm_convolution_le _ hKc.aestronglyMeasurable hf le_top).trans ?_
+    refine (eLpNorm_convolution_le _ hKi.aestronglyMeasurable hf le_top).trans ?_
     grw [ContinuousLinearMap.opENorm_lsmul_le, one_mul]
   have hK1 : eLpNorm K 1 volume ≠ ∞ := (memLp_one_iff_integrable.2 hKi).eLpNorm_ne_top
   have hh : MemLp h ∞ volume :=
