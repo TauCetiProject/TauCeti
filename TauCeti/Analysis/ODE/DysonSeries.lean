@@ -47,6 +47,8 @@ one-parameter automorphism groups of C⋆-algebras.
 * `TauCeti.hasDerivAt_dysonSeries`: the series solves `Γ' t = Γ t * p t`.
 * `TauCeti.eq_mul_dysonSeries`: every solution of this equation is `f 0 * Γ t`.
 * `TauCeti.dysonSeries_mem_unitary`: for skew-adjoint `p` the series is unitary.
+* `TauCeti.continuous_parametric_dysonSeries`: the series of a jointly continuous family of paths
+  depends continuously on the parameter, jointly with the time.
 * `TauCeti.dysonSeriesLeft`: the Dyson series in the opposite algebra, solving
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`).
@@ -69,7 +71,7 @@ public section
 noncomputable section
 
 open Set intervalIntegral
-open scoped Nat Interval
+open scoped Nat Interval Topology
 
 namespace TauCeti
 
@@ -103,6 +105,18 @@ theorem continuous_dysonTerm (hp : Continuous p) (n : ℕ) : Continuous (dysonTe
   | succ n ih =>
     rw [funext (dysonTerm_succ p n)]
     exact continuous_primitive (fun _ _ => (ih.mul hp).intervalIntegrable _ _) 0
+
+/-- The iterated integrals of a jointly continuous family of paths are jointly continuous in the
+parameter and the time. -/
+theorem continuous_parametric_dysonTerm {X : Type*} [TopologicalSpace X] {p : X → ℝ → B}
+    (hp : Continuous (Function.uncurry p)) (n : ℕ) :
+    Continuous fun q : X × ℝ => dysonTerm (p q.1) n q.2 := by
+  induction n with
+  | zero => simpa using continuous_const
+  | succ n ih =>
+    simp_rw [dysonTerm_succ]
+    exact intervalIntegral.continuous_parametric_primitive_of_continuous
+      (f := fun x s => dysonTerm (p x) n s * p x s) (ih.mul hp)
 
 /-- The factorial bound on the iterated integrals: if `‖p s‖ ≤ C` for `|s| ≤ R`, then
 `‖dysonTerm p n t‖ ≤ ‖1‖ * (C * |t|) ^ n / n!` for `|t| ≤ R`. -/
@@ -232,6 +246,36 @@ theorem hasDerivAt_dysonSeries (hp : Continuous p) (t : ℝ) :
 theorem continuous_dysonSeries (hp : Continuous p) : Continuous (dysonSeries p) :=
   continuous_iff_continuousAt.2 fun t => (hasDerivAt_dysonSeries hp t).continuousAt
 
+/-- **Continuous dependence on parameters.** The Dyson series of a jointly continuous family of
+paths is jointly continuous in the parameter and the time. -/
+theorem continuous_parametric_dysonSeries {X : Type*} [TopologicalSpace X] {p : X → ℝ → B}
+    (hp : Continuous (Function.uncurry p)) :
+    Continuous fun q : X × ℝ => dysonSeries (p q.1) q.2 := by
+  -- Near `(x₀, t₀)` the paths are bounded uniformly in the parameter on a compact time
+  -- interval, so the factorial bound makes the series converge uniformly there.
+  refine continuous_iff_continuousAt.2 fun ⟨x₀, t₀⟩ => ?_
+  set R := |t₀| + 1
+  obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
+    ((hp.comp (Continuous.prodMk_right x₀)).continuousOn (s := Icc (-R) R))
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0 ⟨by simp only [R]; linarith [abs_nonneg t₀],
+    by simp only [R]; linarith [abs_nonneg t₀]⟩)
+  -- By the tube lemma, the bound `C + 1` holds for all parameters near `x₀`.
+  have hev : ∀ᶠ x in 𝓝 x₀, ∀ s ∈ Icc (-R) R, ‖p x s‖ ≤ C + 1 :=
+    isCompact_Icc.eventually_forall_of_forall_eventually fun s hs =>
+      ((hp.norm.tendsto (x₀, s)).eventually (eventually_lt_nhds (lt_add_one _))).mono
+        fun z hz => hz.le.trans (by simpa using hC s hs)
+  have hN : {x | ∀ s ∈ Icc (-R) R, ‖p x s‖ ≤ C + 1} ×ˢ {t : ℝ | |t| < R} ∈ 𝓝 (x₀, t₀) :=
+    prod_mem_nhds hev ((isOpen_lt continuous_abs continuous_const).mem_nhds (by simp [R]))
+  have hu := (Real.summable_pow_div_factorial ((C + 1) * R)).mul_left ‖(1 : B)‖
+  refine (continuousOn_tsum (fun n => (continuous_parametric_dysonTerm hp n).continuousOn) hu
+    (fun n q hq => ?_)).continuousAt hN
+  have hbound : ∀ s, |s| ≤ R → ‖p q.1 s‖ ≤ C + 1 := fun s hs => hq.1 s (abs_le.1 hs)
+  have hq₂ : |q.2| ≤ R := le_of_lt hq.2
+  calc ‖dysonTerm (p q.1) n q.2‖ ≤ ‖(1 : B)‖ * ((C + 1) * |q.2|) ^ n / n ! :=
+        norm_dysonTerm_le hbound n hq₂
+    _ ≤ ‖(1 : B)‖ * ((C + 1) * R) ^ n / n ! := by gcongr
+    _ = ‖(1 : B)‖ * (((C + 1) * R) ^ n / n !) := mul_div_assoc _ _ _
+
 /-- Every solution of `f' t = f t * p t` is `f 0 * dysonSeries p t`. -/
 theorem eq_mul_dysonSeries (hp : Continuous p) {f : ℝ → B}
     (hf : ∀ t, HasDerivAt f (f t * p t) t) (t : ℝ) : f t = f 0 * dysonSeries p t := by
@@ -288,6 +332,14 @@ theorem hasDerivAt_dysonSeriesLeft (hp : Continuous p) (t : ℝ) :
 /-- The left Dyson series of a continuous path is continuous. -/
 theorem continuous_dysonSeriesLeft (hp : Continuous p) : Continuous (dysonSeriesLeft p) :=
   continuous_iff_continuousAt.2 fun t => (hasDerivAt_dysonSeriesLeft hp t).continuousAt
+
+/-- The left Dyson series of a jointly continuous family of paths is jointly continuous in the
+parameter and the time. -/
+theorem continuous_parametric_dysonSeriesLeft {X : Type*} [TopologicalSpace X] {p : X → ℝ → B}
+    (hp : Continuous (Function.uncurry p)) :
+    Continuous fun q : X × ℝ => dysonSeriesLeft (p q.1) q.2 :=
+  MulOpposite.continuous_unop.comp <| continuous_parametric_dysonSeries
+    (p := fun x s => MulOpposite.op (p x s)) (MulOpposite.continuous_op.comp hp)
 
 /-- Every solution of `f' t = p t * f t` is `dysonSeriesLeft p t * f 0`. -/
 theorem eq_dysonSeriesLeft_mul (hp : Continuous p) {f : ℝ → B}
