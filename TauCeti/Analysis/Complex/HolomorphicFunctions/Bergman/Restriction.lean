@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bergman.Basic
 public import TauCeti.Analysis.Complex.HolomorphicFunctions.Bounded
+import Mathlib.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Function.Lp.CastMeasure
 
 /-!
 # Compact restriction from Bergman spaces
@@ -111,18 +113,12 @@ section Inclusion
 
 omit [CompleteSpace F]
 
-private theorem memLp_extend [IsFiniteMeasure (volume.restrict (V : Set ℂ))]
-    (f : boundedHolomorphicFunctions F V) :
-    MemLp (BoundedHolomorphicFunctions.extend f) 2 (volume.restrict (V : Set ℂ)) := by
-  have hf := (BoundedHolomorphicFunctions.differentiableOn_extend f).continuousOn
-  exact MemLp.of_bound (hf.aestronglyMeasurable V.isOpen.measurableSet) ‖f‖
-    (Filter.Eventually.of_forall (BoundedHolomorphicFunctions.norm_extend_apply_le f))
-
 /-- On a finite-measure open set, bounded holomorphic functions define native Bergman classes. -/
 def ofBounded [IsFiniteMeasure (volume.restrict (V : Set ℂ))] :
     boundedHolomorphicFunctions F V →L[ℂ] bergmanSpace F V := by
   let T : boundedHolomorphicFunctions F V →ₗ[ℂ] bergmanSpace F V :=
-    { toFun := fun f ↦ ⟨(memLp_extend f).toLp _, (mem_bergmanSpace_iff F V).2 ⟨
+    { toFun := fun f ↦ ⟨(BoundedHolomorphicFunctions.memLp_extend (μ := volume) 2 f).toLp _,
+        (mem_bergmanSpace_iff F V).2 ⟨
         BoundedHolomorphicFunctions.extend f,
         BoundedHolomorphicFunctions.differentiableOn_extend f, MemLp.coeFn_toLp _⟩⟩
       map_add' := by
@@ -147,9 +143,10 @@ def ofBounded [IsFiniteMeasure (volume.restrict (V : Set ℂ))] :
   refine T.mkContinuous ((measureUnivNNReal (volume.restrict (V : Set ℂ))) ^
     (2 : ℝ≥0∞).toReal⁻¹) fun f ↦ ?_
   -- Expose the native `L²` class constructed by the linear map before applying its norm bound.
-  change ‖(memLp_extend f).toLp _‖ ≤ _
+  change ‖(BoundedHolomorphicFunctions.memLp_extend (μ := volume) 2 f).toLp _‖ ≤ _
   exact Lp.norm_le_of_ae_bound (norm_nonneg f)
-    ((MemLp.coeFn_toLp (memLp_extend f)).mono fun x hx ↦ by
+    ((MemLp.coeFn_toLp
+      (BoundedHolomorphicFunctions.memLp_extend (μ := volume) 2 f)).mono fun x hx ↦ by
       rw [hx]
       exact BoundedHolomorphicFunctions.norm_extend_apply_le f x)
 
@@ -167,62 +164,56 @@ theorem coeFn_ofBounded [IsFiniteMeasure (volume.restrict (V : Set ℂ))]
     (ofBounded f : Lp F 2 (volume.restrict (V : Set ℂ))) =ᵐ[volume.restrict (V : Set ℂ)]
       BoundedHolomorphicFunctions.extend f := by
   simp only [ofBounded, LinearMap.mkContinuous_apply, LinearMap.coe_mk, AddHom.coe_mk]
-  exact MemLp.coeFn_toLp (memLp_extend f)
+  exact MemLp.coeFn_toLp (BoundedHolomorphicFunctions.memLp_extend (μ := volume) 2 f)
 
-
-private def restrictLp (hVU : V ≤ U) :
-    Lp F 2 (volume.restrict (U : Set ℂ)) →L[ℂ] Lp F 2 (volume.restrict (V : Set ℂ)) := by
-  have hle : volume.restrict (V : Set ℂ) ≤ (1 : ℝ≥0∞) • volume.restrict (U : Set ℂ) := by
-    simpa only [one_smul] using
-      (Measure.restrict_mono_set volume (SetLike.coe_subset_coe.mpr hVU))
-  let L := Lp.LpToLpOfMeasureLeSMul (E := F) (p := 2) (c := 1) (by simp) hle
-  refine { toFun := L, map_add' := L.map_add, map_smul' := ?_, cont := L.continuous }
-  intro c u
-  simp only [RingHom.id_apply]
-  apply Lp.ext
-  have hle' := Measure.restrict_mono_set volume (SetLike.coe_subset_coe.mpr hVU)
-  filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul (c := 1) (by simp) hle (c • u),
-    (Lp.coeFn_smul c u).filter_mono (ae_mono hle'), Lp.coeFn_smul c (L u),
-    Lp.coeFn_LpToLpOfMeasureLeSMul (c := 1) (by simp) hle u] with x h1 h2 h3 h4
-  simp only [Pi.smul_apply] at h2 h3
-  exact h1.trans (h2.trans ((congrArg (c • ·) h4).symm.trans h3.symm))
-
-private theorem coeFn_restrictLp (hVU : V ≤ U)
-    (u : Lp F 2 (volume.restrict (U : Set ℂ))) :
-    restrictLp hVU u =ᵐ[volume.restrict (V : Set ℂ)] u := by
-  exact Lp.coeFn_LpToLpOfMeasureLeSMul (c := 1) (by simp)
-    (by simpa only [one_smul] using
-      (Measure.restrict_mono_set volume (SetLike.coe_subset_coe.mpr hVU))) u
-
-private theorem norm_restrictLp_le (hVU : V ≤ U)
-    (u : Lp F 2 (volume.restrict (U : Set ℂ))) : ‖restrictLp hVU u‖ ≤ ‖u‖ := by
-  have hle : volume.restrict (V : Set ℂ) ≤ (1 : ℝ≥0∞) • volume.restrict (U : Set ℂ) := by
-    simpa only [one_smul] using
-      (Measure.restrict_mono_set volume (SetLike.coe_subset_coe.mpr hVU))
-  have h := Lp.norm_LpToLpOfMeasureLeSMul_le (E := F) (p := 2) (c := 1) (by simp) hle
-  -- The complex-linear wrapper has the native real restriction as its underlying function.
-  -- Expose that function to apply the native operator-norm estimate.
-  change ‖Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) hle u‖ ≤ ‖u‖
-  simpa using (Lp.LpToLpOfMeasureLeSMul (c := 1) (by simp) hle).le_of_opNorm_le h u
 
 /-- Restriction of native Bergman classes along any inclusion of open sets. It is the native
 `L²` restriction, and does not require compactness, finite measure or complete values. -/
-def restrict (hVU : V ≤ U) : bergmanSpace F U →L[ℂ] bergmanSpace F V :=
-  ContinuousLinearMap.codRestrict
-    ((restrictLp hVU).comp (bergmanSpace F U).subtypeL) (bergmanSpace F V) fun u =>
-      (mem_bergmanSpace_iff F V).mpr ⟨representative u,
-        (differentiableOn_representative u).mono (SetLike.coe_subset_coe.mpr hVU),
-        (coeFn_restrictLp hVU u.val).trans ((coeFn_ae_eq_representative u).filter_mono
-          (ae_mono (Measure.restrict_mono_set volume (SetLike.coe_subset_coe.mpr hVU))))⟩
+def restrict (hVU : V ≤ U) : bergmanSpace F U →L[ℂ] bergmanSpace F V := by
+  have hμ : (volume.restrict (U : Set ℂ)).restrict (V : Set ℂ) =
+      volume.restrict (V : Set ℂ) :=
+    Measure.restrict_restrict_of_subset (SetLike.coe_subset_coe.mpr hVU)
+  let L : Lp F 2 (volume.restrict (U : Set ℂ)) →L[ℂ]
+      Lp F 2 (volume.restrict (V : Set ℂ)) :=
+    (castLpₗᵢ (𝕜 := ℂ) hμ).toContinuousLinearEquiv.toContinuousLinearMap.comp
+      (MeasureTheory.LpToLpRestrictCLM ℂ F ℂ (volume.restrict (U : Set ℂ)) 2 (V : Set ℂ))
+  refine ContinuousLinearMap.codRestrict (L.comp (bergmanSpace F U).subtypeL)
+    (bergmanSpace F V) fun u ↦ (mem_bergmanSpace_iff F V).mpr
+      ⟨representative u,
+        (differentiableOn_representative u).mono (SetLike.coe_subset_coe.mpr hVU), ?_⟩
+  have hL : L u.val =ᵐ[volume.restrict (V : Set ℂ)] u.val := by
+    have h := MeasureTheory.LpToLpRestrictCLM_coeFn
+      (μ := volume.restrict (U : Set ℂ)) ℂ (V : Set ℂ) u.val
+    have h := h.filter_mono (ae_mono hμ.ge)
+    filter_upwards [h] with x hx
+    simpa only [L, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      LinearIsometryEquiv.coe_toContinuousLinearEquiv, coeFn_castLpₗᵢ] using hx
+  exact hL.trans ((coeFn_ae_eq_representative u).filter_mono
+    (ae_mono (Measure.restrict_mono_set volume (SetLike.coe_subset_coe.mpr hVU))))
 
 /-- Restriction preserves the original `L²` representative on the smaller open set. -/
 theorem coeFn_restrict (hVU : V ≤ U) (u : bergmanSpace F U) :
     (restrict hVU u : Lp F 2 (volume.restrict (V : Set ℂ))) =ᵐ[volume.restrict (V : Set ℂ)]
-      (u : Lp F 2 (volume.restrict (U : Set ℂ))) := coeFn_restrictLp hVU u.val
+      (u : Lp F 2 (volume.restrict (U : Set ℂ))) := by
+  have h := MeasureTheory.LpToLpRestrictCLM_coeFn (μ := volume.restrict (U : Set ℂ))
+    ℂ (V : Set ℂ) u.val
+  have h := h.filter_mono (ae_mono
+    (Measure.restrict_restrict_of_subset (SetLike.coe_subset_coe.mpr hVU)).ge)
+  filter_upwards [h] with x hx
+  simpa only [restrict, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, coeFn_castLpₗᵢ] using hx
 
 /-- Restriction does not increase the actual Bergman `L²` norm. -/
 theorem norm_restrict_apply_le (hVU : V ≤ U) (u : bergmanSpace F U) :
-    ‖restrict hVU u‖ ≤ ‖u‖ := norm_restrictLp_le hVU u.val
+    ‖restrict hVU u‖ ≤ ‖u‖ := by
+  rw [← Submodule.norm_coe (restrict hVU u), ← Submodule.norm_coe u]
+  simpa only [restrict, ContinuousLinearMap.coe_codRestrict_apply, ContinuousLinearMap.comp_apply,
+    Submodule.subtypeL_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, LinearIsometryEquiv.norm_map,
+    MeasureTheory.LpToLpRestrictCLM, LinearMap.mkContinuous_apply,
+    LinearMap.coe_mk, AddHom.coe_mk] using
+      (MeasureTheory.norm_Lp_toLp_restrict_le (μ := volume.restrict (U : Set ℂ)) (V : Set ℂ) u.val)
 
 /-- Bergman restriction is a contraction. -/
 theorem norm_restrict_le (hVU : V ≤ U) : ‖restrict (F := F) hVU‖ ≤ 1 :=

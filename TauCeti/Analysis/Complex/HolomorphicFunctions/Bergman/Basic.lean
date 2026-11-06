@@ -8,12 +8,9 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Function.LpSpace.Complete
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
-public import Mathlib.Analysis.Complex.LocallyUniformLimit
-import Mathlib.Analysis.InnerProductSpace.Harmonic.Constructions
+public import TauCeti.Analysis.Complex.HolomorphicFunctions.Lp.Convergence
 import Mathlib.MeasureTheory.Measure.OpenPos
 import Mathlib.MeasureTheory.Function.ConvergenceInMeasure
-import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
-import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 
 /-!
 # Bergman spaces on open subsets of the complex plane
@@ -63,111 +60,12 @@ namespace BergmanSpace
 
 variable {F U} [CompleteSpace F]
 
-private theorem norm_le_ball_integral {f : ℂ → F} (hf : DifferentiableOn ℂ f U)
-    {x : ℂ} {r : ℝ} (hr : 0 < r) (hball : closedBall x r ⊆ U) :
-    ‖f x‖ ≤ (volume.real (ball (0 : ℂ) r))⁻¹ * ∫ y in ball x r, ‖f y‖ := by
-  have hh : HarmonicOnNhd f (closedBall x r) := fun y hy ↦
-    (hf.analyticAt (U.isOpen.mem_nhds (hball hy))).harmonicAt
-  have hpos : 0 < volume.real (ball x r) :=
-    ENNReal.toReal_pos (measure_ball_pos volume x hr).ne' measure_ball_lt_top.ne
-  have heq := hh.setIntegral_ball_eq (μ := volume)
-  calc
-    ‖f x‖ = (volume.real (ball x r))⁻¹ * ‖∫ y in ball x r, f y‖ := by
-      rw [heq, norm_smul, Real.norm_eq_abs, abs_of_pos hpos, ← mul_assoc,
-        inv_mul_cancel₀ hpos.ne', one_mul]
-    _ ≤ (volume.real (ball x r))⁻¹ * ∫ y in ball x r, ‖f y‖ :=
-      mul_le_mul_of_nonneg_left (norm_integral_le_integral_norm _) (inv_nonneg.2 hpos.le)
-    _ = _ := by rw [Measure.addHaar_real_ball_center]
-
-private theorem norm_le_Lp_norm {u : Lp F 2 (volume.restrict (U : Set ℂ))}
-    {f : ℂ → F} (hf : DifferentiableOn ℂ f U)
-    (hu : u =ᵐ[volume.restrict (U : Set ℂ)] f) {x : ℂ} {r : ℝ}
-    (hr : 0 < r) (hball : closedBall x r ⊆ U) :
-    ‖f x‖ ≤ ((volume.real (ball (0 : ℂ) r))⁻¹ *
-      ((volume (ball (0 : ℂ) r)) ^ (1 / 2 : ℝ)).toReal) * ‖u‖ := by
-  have hle : volume.restrict (ball x r) ≤ volume.restrict (U : Set ℂ) :=
-    Measure.restrict_mono_set volume (ball_subset_closedBall.trans hball)
-  have hm := (Lp.aestronglyMeasurable u).mono_measure hle
-  have hae := hu.filter_mono (ae_mono hle)
-  have hfm := hm.congr hae
-  have htwo : eLpNorm f 2 (volume.restrict (ball x r)) ≤
-      eLpNorm u 2 (volume.restrict (U : Set ℂ)) := by
-    rw [← eLpNorm_congr_ae hae]
-    exact eLpNorm_mono_measure _ hle
-  have hbound := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := 2)
-    one_le_two hfm
-  have hpow : ((volume.restrict (ball x r)) univ) ^
-      (1 / (1 : ℝ≥0∞).toReal - 1 / (2 : ℝ≥0∞).toReal) =
-      volume (ball (0 : ℂ) r) ^ (1 / 2 : ℝ) := by
-    simp [Measure.addHaar_ball_center]
-    norm_num
-  rw [hpow] at hbound
-  have hfin : eLpNorm u 2 (volume.restrict (U : Set ℂ)) *
-      volume (ball (0 : ℂ) r) ^ (1 / 2 : ℝ) ≠ ∞ :=
-    ENNReal.mul_ne_top (Lp.eLpNorm_ne_top u)
-      (ENNReal.rpow_ne_top_of_nonneg (by norm_num) measure_ball_lt_top.ne)
-  have hone := ENNReal.toReal_mono hfin (hbound.trans
-    (mul_le_mul htwo le_rfl (by positivity) (by positivity)))
-  rw [ENNReal.toReal_mul, ← Lp.norm_def] at hone
-  have hint : ∫ y in ball x r, ‖f y‖ =
-      (eLpNorm f 1 (volume.restrict (ball x r))).toReal := by
-    rw [eLpNorm_one_eq_lintegral_enorm hfm]
-    exact integral_norm_eq_lintegral_enorm hfm
-  refine (norm_le_ball_integral hf hr hball).trans ?_
-  rw [hint, mul_assoc]
-  exact mul_le_mul_of_nonneg_left (by simpa [mul_comm] using hone) (by positivity)
-
-private theorem uniformCauchySeqOn_of_cauchySeq
-    {u : ℕ → Lp F 2 (volume.restrict (U : Set ℂ))} {f : ℕ → ℂ → F}
-    (hf : ∀ n, DifferentiableOn ℂ (f n) U)
-    (hu : ∀ n, u n =ᵐ[volume.restrict (U : Set ℂ)] f n) (hc : CauchySeq u)
-    {K : Set ℂ} (hK : IsCompact K) (hKU : K ⊆ U) :
-    UniformCauchySeqOn f atTop K := by
-  obtain ⟨r, hr, hrU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
-  let C := (volume.real (ball (0 : ℂ) r))⁻¹ *
-    ((volume (ball (0 : ℂ) r)) ^ (1 / 2 : ℝ)).toReal
-  have hC : 0 ≤ C := by positivity
-  refine Metric.uniformCauchySeqOn_iff.2 fun ε hε ↦ ?_
-  obtain ⟨N, hN⟩ := Metric.cauchySeq_iff.1 hc (ε / (C + 1))
-    (div_pos hε (by positivity))
-  refine ⟨N, fun m hm n hn x hx ↦ ?_⟩
-  have hae : u m - u n =ᵐ[volume.restrict (U : Set ℂ)] f m - f n :=
-    (Lp.coeFn_sub _ _).trans ((hu m).sub (hu n))
-  have hbound := norm_le_Lp_norm ((hf m).sub (hf n)) hae hr
-    ((closedBall_subset_cthickening hx r).trans hrU)
-  rw [Pi.sub_apply, ← dist_eq_norm] at hbound
-  calc
-    dist (f m x) (f n x) ≤ C * ‖u m - u n‖ := hbound
-    _ ≤ (C + 1) * dist (u m) (u n) := by
-      rw [dist_eq_norm]
-      exact mul_le_mul_of_nonneg_right (by linarith) (norm_nonneg _)
-    _ < (C + 1) * (ε / (C + 1)) :=
-      mul_lt_mul_of_pos_left (hN m hm n hn) (by positivity)
-    _ = ε := mul_div_cancel₀ ε (by positivity)
-
-/-- A sequence of holomorphic representatives that is Cauchy in native `L²` converges
-locally uniformly to a holomorphic function. No finite measure assumption on `U` is needed. -/
-theorem exists_tendstoLocallyUniformlyOn_of_cauchySeq
-    {u : ℕ → Lp F 2 (volume.restrict (U : Set ℂ))} {f : ℕ → ℂ → F}
-    (hf : ∀ n, DifferentiableOn ℂ (f n) U)
-    (hu : ∀ n, u n =ᵐ[volume.restrict (U : Set ℂ)] f n) (hc : CauchySeq u) :
-    ∃ g : ℂ → F, DifferentiableOn ℂ g U ∧ TendstoLocallyUniformlyOn f g atTop U := by
-  let g := fun x ↦ limUnder atTop (fun n ↦ f n x)
-  have hpoint : ∀ x ∈ U, Tendsto (fun n ↦ f n x) atTop (𝓝 (g x)) := by
-    intro x hx
-    exact ((uniformCauchySeqOn_of_cauchySeq hf hu hc isCompact_singleton
-      (singleton_subset_iff.2 hx)).cauchySeq (mem_singleton x)).tendsto_limUnder
-  have hlocal : TendstoLocallyUniformlyOn f g atTop U := by
-    refine (tendstoLocallyUniformlyOn_iff_forall_isCompact U.isOpen).2 fun K hKU hK ↦ ?_
-    exact (uniformCauchySeqOn_of_cauchySeq hf hu hc hK hKU).tendstoUniformlyOn_of_tendsto
-      fun x hx ↦ hpoint x (hKU hx)
-  exact ⟨g, hlocal.differentiableOn (Eventually.of_forall hf) U.isOpen, hlocal⟩
-
 /-- The holomorphic classes form a closed subspace of native `L²`. -/
 theorem isClosed : IsClosed (bergmanSpace F U : Set (Lp F 2 (volume.restrict (U : Set ℂ)))) := by
   refine IsSeqClosed.isClosed fun v u hv hlim ↦ ?_
   choose f hf hu using hv
-  obtain ⟨g, hg, hfg⟩ := exists_tendstoLocallyUniformlyOn_of_cauchySeq hf hu hlim.cauchySeq
+  obtain ⟨g, hg, hfg⟩ :=
+    HolomorphicFunctions.exists_tendstoLocallyUniformlyOn_of_cauchySeq hf hu hlim.cauchySeq
   refine ⟨g, hg, ?_⟩
   obtain ⟨ns, hns, hns_lim⟩ := (tendstoInMeasure_of_tendsto_Lp hlim).exists_seq_tendsto_ae
   have hae : ∀ᵐ x ∂volume.restrict (U : Set ℂ), ∀ n, (v n : ℂ → F) x = f n x :=
@@ -275,7 +173,8 @@ theorem exists_norm_representative_le {K : Set ℂ} (hK : IsCompact K) (hKU : K 
   obtain ⟨r, hr, hrU⟩ := hK.exists_cthickening_subset_open U.isOpen hKU
   refine ⟨(volume.real (ball (0 : ℂ) r))⁻¹ *
     ((volume (ball (0 : ℂ) r)) ^ (1 / 2 : ℝ)).toReal, by positivity, fun u x hx ↦ ?_⟩
-  exact norm_le_Lp_norm (differentiableOn_representative u) (coeFn_ae_eq_representative u)
+  exact HolomorphicFunctions.norm_le_Lp_norm (differentiableOn_representative u)
+    (coeFn_ae_eq_representative u)
     hr ((closedBall_subset_cthickening hx r).trans hrU)
 
 end BergmanSpace
