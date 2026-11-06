@@ -101,6 +101,29 @@ public section
 
 open Filter Function MeasureTheory Set Topology
 
+namespace TauCeti
+
+/-- The `∂_s` derivative of a product `β(s) h(t)` is `β'(s) h(t)`. This is the domain part of the
+curvature of a continuation perturbation `K = β(s) H_t dt`, for any target. -/
+theorem fderiv_mul_apply_stdComplexLineReal {β h : ℝ → ℝ} {z : ℝ × ℝ}
+    (hβ : DifferentiableAt ℝ β z.1) (hh : DifferentiableAt ℝ h z.2) :
+    fderiv ℝ (fun w : ℝ × ℝ ↦ β w.1 * h w.2) z stdComplexLineReal = deriv β z.1 * h z.2 := by
+  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
+      ((fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
+    hβ.hasFDerivAt.comp z hasFDerivAt_fst
+  have hh' : HasFDerivAt (fun w : ℝ × ℝ ↦ h w.2)
+      ((fderiv ℝ h z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
+    hh.hasFDerivAt.comp z hasFDerivAt_snd
+  have hmul : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 * h w.2)
+      (β z.1 • (fderiv ℝ h z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ) +
+        h z.2 • (fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
+    hβ'.mul hh'
+  rw [hmul.fderiv]
+  simp [stdComplexLineReal]
+  ring
+
+end TauCeti
+
 namespace TauCeti.SymplecticForm
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimensional ℝ V]
@@ -142,19 +165,7 @@ theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → 
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
       deriv β z.1 * H z.2 x := by
   rw [hamiltonianCurvature_zero_left]
-  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    hβ.hasFDerivAt.comp z hasFDerivAt_fst
-  have hH' : HasFDerivAt (fun w : ℝ × ℝ ↦ H w.2 x)
-      ((fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-    hH.hasFDerivAt.comp z hasFDerivAt_snd
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 * H w.2 x)
-      (β z.1 • (fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ) +
-        H z.2 x • (fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    HasFDerivAt.mul hβ' hH'
-  rw [h.fderiv]
-  simp [stdComplexLineReal]
-  ring
+  exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
 
 omit [FiniteDimensional ℝ V] in
 /-- The cylindrical perturbation `K = H_t dt` of a `Cⁿ` time-dependent Hamiltonian is `Cⁿ`. -/
