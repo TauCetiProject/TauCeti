@@ -201,9 +201,10 @@ theorem exists_recoloring_regular_offDiag [Fintype κ] (hε : 0 < ε)
 
 open Classical in
 /-- Replace a lower skeleton by an everywhere regular one on the same cells. The palette
-adds a fresh reversal-fixed color for diagonal blocks. Off-diagonal densities are preserved
-within `ε` (the fresh color has density zero there). The ordered-pair edit bound is the
-original irregular-pair mass plus the within-cell distinct-pair mass. -/
+adds a fresh reversal-fixed color for diagonal blocks. Original colors' off-diagonal densities
+change by at most `ε`; the fresh color has density at most `ε` there, compared to zero. The
+ordered-pair edit bound is the original irregular-pair mass plus the within-cell distinct-pair
+mass. -/
 theorem exists_recoloring_isPairColorRegular [Fintype κ] (hε : 0 < ε)
     (hsize : ∀ A ∈ P.parts, Fintype.card κ + 1 ≤ ε ^ 6 * #A) :
     ∃ T : PairColorSystem (Option κ) V, T.rev = Option.map S.rev ∧
