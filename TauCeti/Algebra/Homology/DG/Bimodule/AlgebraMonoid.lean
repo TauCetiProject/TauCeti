@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.CategoryTheory.Monoidal.Mon
+public import TauCeti.Algebra.Homology.DG.Bimodule.OfHom
 public import TauCeti.Algebra.Homology.DG.Module.Right.Restriction.Basic
 public import TauCeti.Algebra.Homology.DG.Bimodule.TensorProduct.Monoidal
 
@@ -74,9 +75,9 @@ scoped instance : IsScalarTower R A T :=
 /-- Left and right multiplication through the base map commute. -/
 scoped instance : SMulCommClass A Aᵐᵒᵖ T where
   smul_comm a b x := by
+    refine MulOpposite.rec' (fun b ↦ ?_) b
     apply RestrictScalars.ext
-    simp only [algebraBimodule_val_smul, RestrictScalars.val_smul_eq, AlgHom.op,
-      MulOpposite.smul_eq_mul_unop]
+    simp only [algebraBimodule_val_smul, RestrictScalars.val_op_smul, op_smul_eq_mul]
     exact (mul_assoc _ _ _).symm
 
 /-- The left action through a graded algebra map respects the restricted grading. -/
@@ -85,7 +86,13 @@ scoped instance : SetLike.GradedSMul 𝒜 Γ where
     rw [IsDGRightModule.mem_restrictScalarsGrading_iff] at hx ⊢
     rw [RestrictScalars.linearEquiv_apply] at hx ⊢
     rw [algebraBimodule_val_smul]
-    exact SetLike.GradedMul.mul_mem (Graded.map_mem f ha) hx
+    have h := f.bimoduleGradedSMulLeft.smul_mem ha
+      ((f.mem_bimoduleGrading_iff).2
+        (by simpa only [LinearEquiv.symm_apply_apply] using hx) :
+          Bimodule.of f.toGradedAlgHom.toAlgHom x.val ∈ f.bimoduleGrading j)
+    simpa only [mem_bimoduleGrading_iff, Algebra.TensorProduct.smul_moduleLeft,
+      Bimodule.symm_smul, LinearEquiv.symm_apply_apply, unop_one, mul_one,
+      GradedAlgHom.coe_toAlgHom, coe_toGradedAlgHom] using h
 
 /-- The two actions restricted through a DG algebra map satisfy both DG Leibniz rules. -/
 theorem isDGBimodule_algebraBimodule : IsDGBimodule hA hA Γ D where
@@ -97,8 +104,12 @@ theorem isDGBimodule_algebraBimodule : IsDGBimodule hA hA Γ D where
         simp only [IsDGRightModule.val_restrictScalarsDifferential,
           algebraBimodule_val_smul, RestrictScalars.val_add, Units.smul_def,
           RestrictScalars.val_zsmul]
-        rw [← f.map_d]
-        exact hB.leibniz (Graded.map_mem f ha) x.val }
+        simpa only [bimoduleOf_symm_bimoduleDifferential, map_add, Units.smul_def,
+          map_zsmul, Algebra.TensorProduct.smul_moduleLeft, Bimodule.symm_smul,
+          LinearEquiv.symm_apply_apply, unop_one, mul_one,
+          GradedAlgHom.coe_toAlgHom, coe_toGradedAlgHom] using
+          congrArg (Bimodule.of f.toGradedAlgHom.toAlgHom).symm
+            (f.isDGBimodule.leibniz ha (Bimodule.of f.toGradedAlgHom.toAlgHom x.val)) }
   leibniz_right := (hB.isDGRightModule.restrictScalars f).leibniz
 
 /-- A DG algebra under `A` as an `(A,A)`-DG bimodule, with both actions through its base map.
@@ -132,10 +143,11 @@ private def mulLinearMap :
   map_add' := map_add _
   map_smul' a z := lift_smul_right Aᵐᵒᵖ (mulBilinear f) (mulBilinear_balanced f)
     (fun a x y ↦ by
+      refine MulOpposite.rec' (fun a ↦ ?_) a
       apply (E).injective
       simp only [mulBilinear_apply,
-        RestrictScalars.linearEquiv_apply, RestrictScalars.val_smul_eq,
-        RestrictScalars.linearEquiv_symm_apply, AlgHom.op, MulOpposite.smul_eq_mul_unop]
+        RestrictScalars.linearEquiv_apply, RestrictScalars.val_op_smul,
+        RestrictScalars.linearEquiv_symm_apply, op_smul_eq_mul]
       exact (mul_assoc _ _ _).symm) a z
 
 private theorem mulLinearMap_tmul (x y : T) :
@@ -212,14 +224,11 @@ private def unitRightLinearMap : DGBimoduleCat.tensorUnit.{u} hA →ₗ[Aᵐᵒ�
     simp only [RestrictScalars.linearEquiv_symm_apply, RestrictScalars.val_add]
     rw [hab, map_add]
   map_smul' a x := by
-    have hax : (a • x).down = x.down * a.unop := by
-      simpa only [op_unop] using DGBimoduleCat.tensorUnit_op_smul_down hA a.unop x
+    refine MulOpposite.rec' (fun a ↦ ?_) a
     apply RestrictScalars.ext
-    simp only [RestrictScalars.linearEquiv_symm_apply, RingHom.id_apply,
-      RestrictScalars.val_smul_eq, AlgHom.op, MulOpposite.smul_eq_mul_unop]
-    rw [hax, map_mul]
-    -- The remaining opposite-hom evaluation reduces to applying f to a.unop.
-    rfl
+    simp only [RingHom.id_apply, RestrictScalars.val_op_smul,
+      RestrictScalars.linearEquiv_symm_apply,
+      DGBimoduleCat.tensorUnit_op_smul_down, map_mul, op_smul_eq_mul]
 
 /-- The base map is the unit of the target algebra regarded as a bimodule monoid. -/
 private def algebraBimoduleUnit : DGBimoduleCat.tensorUnit.{u} hA ⟶ f.algebraBimodule := by
