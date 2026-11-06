@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateCurve.XCoordinate
+import Mathlib.AlgebraicGeometry.EllipticCurve.DivisionPolynomial.Degree
 import Mathlib.Analysis.Normed.Unbundled.SpectralNorm
+import TauCeti.GroupTheory.QuotientGroup.Basic
 
 /-!
 # Injectivity of the Tate uniformisation
@@ -91,6 +93,13 @@ private theorem eq_zero_of_isRoot_twoTorsionPolynomial (q : Kˣ) (hq : ‖(q : K
   linear_combination ht - (2 * t ^ 3 + 2 * (tateCurveAt q hq).a₄ * t +
     2 * (tateCurveAt q hq).a₆) * h2
 
+/-- The first Tate coordinate of a nonidentity self-inverse class is a root of the `2`-torsion
+polynomial. -/
+private theorem isRoot_twoTorsionPolynomial_of_inv_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1)
+    {c : Kˣ ⧸ Subgroup.zpowers q} (hc : c ≠ 1) (hcc : c⁻¹ = c) :
+    (tateCurveAt q hq).twoTorsionPolynomial.toPoly.IsRoot (tateQuotientCoordinates q c).1 :=
+  isRoot_twoTorsionPolynomial_of_neg_eq q hq hc (by rw [← tateUniformization_inv, hcc])
+
 /-- **Parameters whose image has order two, in characteristic two.** If `2 = 0` in `K` and
 `q = r²`, a nonidentity parameter `x` whose image `P` satisfies `-P = P` is the class of `r`, and
 hence its own inverse. -/
@@ -99,29 +108,14 @@ private theorem inv_eq_self_of_two_eq_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h
     (h : -tateUniformization q hq x = tateUniformization q hq x) : x⁻¹ = x := by
   have hc : (r : Kˣ ⧸ Subgroup.zpowers q) ≠ 1 :=
     mt (QuotientGroup.eq_one_iff r).mp (notMem_zpowers_of_sq_eq hq hr)
-  have hcc : (r : Kˣ ⧸ Subgroup.zpowers q)⁻¹ = r := inv_eq_of_mul_eq_one_right <| by
-    rw [← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff, ← sq, hr]
-    exact Subgroup.mem_zpowers q
+  have hcc : (r : Kˣ ⧸ Subgroup.zpowers q)⁻¹ = r :=
+    QuotientGroup.mk_inv_eq_self_of_sq_mem (by rw [hr]; exact Subgroup.mem_zpowers q)
   -- both first coordinates are roots of the `2`-torsion polynomial, hence `0`
   have hxr := (eq_zero_of_isRoot_twoTorsionPolynomial q hq h2
     (isRoot_twoTorsionPolynomial_of_neg_eq q hq hx h)).trans
-    (eq_zero_of_isRoot_twoTorsionPolynomial q hq h2 (isRoot_twoTorsionPolynomial_of_neg_eq q hq hc
-      (by rw [← tateUniformization_inv, hcc]))).symm
+    (eq_zero_of_isRoot_twoTorsionPolynomial q hq h2
+      (isRoot_twoTorsionPolynomial_of_inv_eq q hq hc hcc)).symm
   rw [eq_of_tateQuotientCoordinates_fst_eq q hq hc hcc hx hxr, hcc]
-
-omit [CompleteSpace K] [IsUltrametricDist K] in
-/-- The class of `s` is its own inverse when `s²` lies in `q^ℤ`. -/
-private theorem mk_inv_eq_self_of_sq_mem {q : Kˣ} {s : Kˣ} (hs : s ^ 2 ∈ Subgroup.zpowers q) :
-    (s : Kˣ ⧸ Subgroup.zpowers q)⁻¹ = s := inv_eq_of_mul_eq_one_right <| by
-  rw [← QuotientGroup.mk_mul, QuotientGroup.eq_one_iff, ← sq]
-  exact hs
-
-/-- The first Tate coordinate of a nonidentity self-inverse class is a root of the `2`-torsion
-polynomial. -/
-private theorem isRoot_twoTorsionPolynomial_of_inv_eq (q : Kˣ) (hq : ‖(q : K)‖ < 1)
-    {c : Kˣ ⧸ Subgroup.zpowers q} (hc : c ≠ 1) (hcc : c⁻¹ = c) :
-    (tateCurveAt q hq).twoTorsionPolynomial.toPoly.IsRoot (tateQuotientCoordinates q c).1 :=
-  isRoot_twoTorsionPolynomial_of_neg_eq q hq hc (by rw [← tateUniformization_inv, hcc])
 
 /-- Distinct nonidentity classes, one of them self-inverse, have distinct first Tate
 coordinates. -/
@@ -129,14 +123,6 @@ private theorem tateQuotientCoordinates_fst_ne_of_inv_eq (q : Kˣ) (hq : ‖(q :
     {c d : Kˣ ⧸ Subgroup.zpowers q} (hc : c ≠ 1) (hd : d ≠ 1) (hdd : d⁻¹ = d) (hcd : c ≠ d) :
     (tateQuotientCoordinates q c).1 ≠ (tateQuotientCoordinates q d).1 :=
   fun h ↦ hcd (eq_of_tateQuotientCoordinates_fst_eq q hq hd hdd hc h)
-
-/-- Away from characteristic two, the `2`-torsion polynomial of the Tate curve is nonzero. -/
-private theorem twoTorsionPolynomial_toPoly_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1)
-    (h2 : (2 : K) ≠ 0) : (tateCurveAt q hq).twoTorsionPolynomial.toPoly ≠ 0 :=
-  Cubic.ne_zero_of_a_ne_zero <| by
-    simp only [twoTorsionPolynomial]
-    rw [show (4 : K) = 2 * 2 by norm_num]
-    exact mul_ne_zero h2 h2
 
 /-- **Parameters whose image has order two, away from characteristic two.** If `2 ≠ 0` in `K` and
 `q = r²`, a nonidentity parameter `x` whose image `P` satisfies `-P = P` is its own inverse: the
@@ -158,11 +144,14 @@ private theorem inv_eq_self_of_two_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h
   have hc {s : Kˣ} (hs : s ∉ Subgroup.zpowers q) : (s : Kˣ ⧸ Subgroup.zpowers q) ≠ 1 :=
     mt (QuotientGroup.eq_one_iff s).mp hs
   have hc₁ := hc hneg
-  have hcc₁ := mk_inv_eq_self_of_sq_mem (q := q) (s := -1) (by rw [neg_one_sq]; exact one_mem _)
+  have hcc₁ := QuotientGroup.mk_inv_eq_self_of_sq_mem (N := Subgroup.zpowers q) (s := -1)
+    (by rw [neg_one_sq]; exact one_mem _)
   have hc₂ := hc (notMem_zpowers_of_sq_eq hq hr)
-  have hcc₂ := mk_inv_eq_self_of_sq_mem (s := r) (by rw [hr]; exact Subgroup.mem_zpowers q)
+  have hcc₂ := QuotientGroup.mk_inv_eq_self_of_sq_mem (s := r)
+    (by rw [hr]; exact Subgroup.mem_zpowers q)
   have hc₃ := hc (notMem_zpowers_of_sq_eq hq hr')
-  have hcc₃ := mk_inv_eq_self_of_sq_mem (s := -r) (by rw [hr']; exact Subgroup.mem_zpowers q)
+  have hcc₃ := QuotientGroup.mk_inv_eq_self_of_sq_mem (s := -r)
+    (by rw [hr']; exact Subgroup.mem_zpowers q)
   have hne {a b : Kˣ} (hab : a⁻¹ * b ∉ Subgroup.zpowers q) :
       (a : Kˣ ⧸ Subgroup.zpowers q) ≠ b := fun h ↦ hab (QuotientGroup.eq.mp h)
   have hXx {c : Kˣ ⧸ Subgroup.zpowers q} (hc : c ≠ 1) (hcc : c⁻¹ = c) : X x ≠ X c :=
@@ -181,11 +170,15 @@ private theorem inv_eq_self_of_two_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) (h
       exact notMem_zpowers_of_sq_eq hq hr
     · rw [mul_neg, inv_mul_cancel]
       exact hneg
+  have hψ : ψ.toPoly ≠ 0 := by
+    rw [← (tateCurveAt q hq).Ψ₂Sq_eq]
+    exact (tateCurveAt q hq).Ψ₂Sq_ne_zero
+      (by simpa only [show (4 : K) = 2 * 2 by norm_num] using mul_ne_zero h2 h2)
   have hsub : S ⊆ ψ.roots.toFinset := by
     intro t ht
     simp only [S, Finset.mem_insert, Finset.mem_singleton] at ht
     rw [Multiset.mem_toFinset]
-    refine (mem_roots (twoTorsionPolynomial_toPoly_ne_zero q hq h2)).mpr ?_
+    refine (mem_roots hψ).mpr ?_
     rcases ht with rfl | rfl | rfl | rfl
     · exact isRoot_twoTorsionPolynomial_of_neg_eq q hq hx h
     · exact isRoot_twoTorsionPolynomial_of_inv_eq q hq hc₁ hcc₁
