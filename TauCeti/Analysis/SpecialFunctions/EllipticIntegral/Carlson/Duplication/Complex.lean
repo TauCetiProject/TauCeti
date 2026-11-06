@@ -70,12 +70,10 @@ private theorem analyticOnNhd_duplicationRHS_right {x y : ℂ}
   have hy' := carlson_duplication_node_mem_slitPlane y hxy.symm (Or.inr hz)
   have hz' := carlson_duplication_node_mem_slitPlane z (y := x) (z := y)
     (Or.inl hz) (Or.inl hz)
-  have hl₁ : sqrt y * sqrt x + sqrt x * sqrt z + sqrt z * sqrt y =
-      sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x := by ring
-  have hl₂ : sqrt z * sqrt x + sqrt x * sqrt y + sqrt y * sqrt z =
-      sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x := by ring
-  rw [hl₁] at hy'
-  rw [hl₂] at hz'
+  rw [carlsonDuplicationLambda_comm_left y x z] at hy'
+  rw [carlsonDuplicationLambda_comm_left z x y,
+    carlsonDuplicationLambda_comm_right x z y] at hz'
+  simp only [carlsonDuplicationLambda_def] at hx' hy' hz'
   exact ((analyticAt_const.add hl).div_const (c := 4)).carlsonRF
     ((analyticAt_const.add hl).div_const (c := 4))
     ((analyticAt_id.add hl).div_const (c := 4)) hx' hy' hz'
