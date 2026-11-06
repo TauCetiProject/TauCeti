@@ -10,7 +10,7 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
 public import TauCeti.Geometry.Manifold.DifferentialForm.MapCoeff
 public import TauCeti.Geometry.Symplectic.Complex.Complexification
-public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange
+public import TauCeti.Topology.Algebra.Module.Alternating.BaseChange.Basic
 public import Mathlib.Analysis.Normed.Module.Alternating.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 
