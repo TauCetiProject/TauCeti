@@ -31,7 +31,6 @@ variable {C : Type u} [Category.{v} C] {D : Type u'} [Category.{v'} D] [Preaddit
 
 /-- **A fully faithful `R`-linear functor is an isomorphism on morphism spaces.** The forward
 map is `F.map` and the inverse is `F.preimage`. -/
-@[expose]
 noncomputable def Functor.homLinearEquiv (X Y : C) : (X ⟶ Y) ≃ₗ[R] (F.obj X ⟶ F.obj Y) where
   toLinearMap := F.mapLinearMap R
   invFun := F.preimage
@@ -41,11 +40,11 @@ noncomputable def Functor.homLinearEquiv (X Y : C) : (X ⟶ Y) ≃ₗ[R] (F.obj 
 @[simp]
 theorem Functor.homLinearEquiv_apply {X Y : C} (f : X ⟶ Y) :
     F.homLinearEquiv R X Y f = F.map f :=
-  rfl
+  (rfl)
 
 @[simp]
 theorem Functor.homLinearEquiv_symm_apply {X Y : C} (f : F.obj X ⟶ F.obj Y) :
     (F.homLinearEquiv R X Y).symm f = F.preimage f :=
-  rfl
+  (rfl)
 
 end CategoryTheory
