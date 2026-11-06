@@ -11,6 +11,7 @@ import Mathlib.GroupTheory.Perm.Fin
 import Mathlib.Order.Fin.Tuple
 import TauCeti.LinearAlgebra.CliffordAlgebra.Contraction
 import TauCeti.LinearAlgebra.ExteriorPower.Basic
+import TauCeti.Order.Hom.PowersetCard
 
 /-!
 # Coordinate projections on an exterior algebra
@@ -132,141 +133,6 @@ indexed by `s.erase i`. When `i ∈ s`, this is the sign of moving `i` to the fr
 def basisEraseSign {I : Type w} [LinearOrder I] (i : I) (s : Finset I) : ℤˣ :=
   basisEraseSignOfErase i (s.erase i) (by simp)
 
-/-- Removing the position of `i` from the increasing enumeration of `s` gives the increasing
-enumeration of `s.erase i`. -/
-private theorem removeNth_orderEmbOfFin_symm_eq {I : Type w} [LinearOrder I]
-    (i : I) (s : Finset I) (hi : i ∈ s) (hsCard : s.card = (s.erase i).card + 1) :
-    ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).removeNth (fun j ↦ s.orderEmbOfFin hsCard j) =
-      (s.erase i).orderEmbOfFin rfl := by
-  let e : Fin ((s.erase i).card + 1) ↪o I := s.orderEmbOfFin hsCard
-  let k : Fin ((s.erase i).card + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
-  have hek : e k = i :=
-    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  apply Finset.orderEmbOfFin_unique
-  · intro j
-    exact Finset.mem_erase.mpr ⟨fun h ↦ k.succAbove_ne j (e.injective (h.trans hek.symm)),
-      Finset.orderEmbOfFin_mem s hsCard _⟩
-  · exact e.strictMono.comp (Fin.strictMono_succAbove k)
-
-/-- The increasing enumeration of a disjoint union of two ordered subsets, reindexed along a
-cardinality equivalence, is the increasing enumeration of any equal finset. -/
-private theorem orderEmbOfFin_disjUnion_eq_comp {I : Type w} [LinearOrder I] {a b n : ℕ}
-    {u : Set.powersetCard I a} {t : Set.powersetCard I b} (hdisj : Disjoint u.val t.val)
-    {s : Finset I} (hs : s.card = n) (hdval : (Set.powersetCard.disjUnion hdisj).val = s)
-    (c : Fin (a + b) ≃ Fin n) (hc : ∀ q, (c q : ℕ) = q) :
-    (fun q ↦ s.orderEmbOfFin hs (c q)) =
-      (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-        (Set.powersetCard.disjUnion hdisj).prop := by
-  apply Finset.orderEmbOfFin_unique
-  · intro q
-    rw [hdval]
-    exact Finset.orderEmbOfFin_mem s hs (c q)
-  · intro p q hpq
-    apply (s.orderEmbOfFin hs).strictMono
-    change (c p : ℕ) < c q
-    rw [hc, hc]
-    exact hpq
-
-/-- The shuffle of the singleton `{i}` and `s.erase i` places `i` first, followed by the
-increasing enumeration of `s.erase i`. -/
-private theorem orderEmbOfFin_permOfDisjoint_singleton_erase {I : Type w} [LinearOrder I]
-    (i : I) (s : Finset I) {n : ℕ} (hn : (s.erase i).card = n)
-    (hdisj : Disjoint (⟨{i}, Finset.card_singleton i⟩ : Set.powersetCard I 1).val
-      (⟨s.erase i, hn⟩ : Set.powersetCard I n).val) (j : Fin (n + 1)) :
-    (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin (Set.powersetCard.disjUnion hdisj).prop
-      (Set.powersetCard.permOfDisjoint hdisj ((finCongr (Nat.add_comm 1 n)).symm j)) =
-    (Fin.cons i ((s.erase i).orderEmbOfFin hn) : Fin (n + 1) → I) j := by
-  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
-  let t : Set.powersetCard I n := ⟨s.erase i, hn⟩
-  let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
-  let c : Fin (1 + n) ≃ Fin (n + 1) := finCongr (Nat.add_comm 1 n)
-  let x : (Set.powersetCard.disjUnion hdisj).val :=
-    Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-      (((Set.powersetCard.orderIsoOfFin u).sumCongr
-        (Set.powersetCard.orderIsoOfFin t)) (finSumFinEquiv.symm (c.symm j)))
-  have hx : (Set.powersetCard.disjUnion hdisj).val.orderEmbOfFin
-      (Set.powersetCard.disjUnion hdisj).prop (p (c.symm j)) = x := by
-    have hpApply : p (c.symm j) =
-        (Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).symm x := rfl
-    rw [hpApply]
-    exact congrArg Subtype.val
-      ((Set.powersetCard.orderIsoOfFin (Set.powersetCard.disjUnion hdisj)).apply_symm_apply x)
-  rw [hx]
-  cases j using Fin.cases with
-  | zero =>
-      have hzero : finSumFinEquiv.symm (c.symm 0) = Sum.inl (0 : Fin 1) := by
-        apply finSumFinEquiv.injective
-        apply Fin.ext
-        rfl
-      simp only [x, hzero, Fin.cons_zero]
-      -- Coercing the disjoint-union subtype reveals the singleton entry.
-      change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-        (Sum.inl ((Set.powersetCard.orderIsoOfFin u) 0))) = i
-      rw [Equiv.Finset.disjUnionEquiv_inl]
-      dsimp only [Set.powersetCard.orderIsoOfFin, u]
-      -- The unique increasing enumeration of a singleton is constant at its element.
-      change Finset.orderEmbOfFin {i} (Finset.card_singleton i) 0 = i
-      exact Finset.orderEmbOfFin_singleton i 0
-  | succ q =>
-      have hsucc : finSumFinEquiv.symm (c.symm q.succ) = Sum.inr q := by
-        apply finSumFinEquiv.injective
-        rw [finSumFinEquiv.apply_symm_apply]
-        apply Fin.ext
-        simp [c]
-        omega
-      simp only [x, hsucc, Fin.cons_succ]
-      -- Coercing the right summand reveals the increasing enumeration of `s.erase i`.
-      change ↑(Equiv.Finset.disjUnionEquiv u.val t.val hdisj
-        (Sum.inr ((Set.powersetCard.orderIsoOfFin t) q))) =
-          (s.erase i).orderEmbOfFin hn q
-      rw [Equiv.Finset.disjUnionEquiv_inr]
-      dsimp only [Set.powersetCard.orderIsoOfFin, t]
-      rfl
-
-/-- The shuffle of the singleton `{i}` and `s.erase i`, in the presentation `Fin (n + 1)`, is the
-inverse cycle moving the position of `i` in the increasing enumeration of `s` to the front. -/
-private theorem conj_permOfDisjoint_singleton_erase {I : Type w} [LinearOrder I]
-    (i : I) (s : Finset I) (hi : i ∈ s) {n : ℕ} (hn : (s.erase i).card = n)
-    (hsCard : s.card = n + 1)
-    (hdisj : Disjoint (⟨{i}, Finset.card_singleton i⟩ : Set.powersetCard I 1).val
-      (⟨s.erase i, hn⟩ : Set.powersetCard I n).val) :
-    (finCongr (Nat.add_comm 1 n)).symm.trans
-      ((Set.powersetCard.permOfDisjoint hdisj).trans (finCongr (Nat.add_comm 1 n))) =
-    ((s.orderIsoOfFin hsCard).symm ⟨i, hi⟩).cycleRange.symm := by
-  classical
-  let e : Fin (n + 1) ↪o I := s.orderEmbOfFin hsCard
-  let k : Fin (n + 1) := (s.orderIsoOfFin hsCard).symm ⟨i, hi⟩
-  have hek : e k = i :=
-    congrArg Subtype.val ((s.orderIsoOfFin hsCard).apply_symm_apply ⟨i, hi⟩)
-  have hremove : k.removeNth (fun j ↦ e j) = (s.erase i).orderEmbOfFin hn := by
-    subst hn
-    exact removeNth_orderEmbOfFin_symm_eq i s hi hsCard
-  let u : Set.powersetCard I 1 := ⟨{i}, Finset.card_singleton i⟩
-  let t : Set.powersetCard I n := ⟨s.erase i, hn⟩
-  have hdval : (Set.powersetCard.disjUnion hdisj).val = s := by
-    simp [hi]
-  let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
-  let c : Fin (1 + n) ≃ Fin (n + 1) := finCongr (Nat.add_comm 1 n)
-  have hec := orderEmbOfFin_disjUnion_eq_comp hdisj hsCard hdval c (fun q ↦ by simp [c])
-  apply Equiv.ext
-  intro j
-  apply e.injective
-  -- Unfold the conjugated shuffle so both sides are compared in the increasing enumeration.
-  change e (c (p (c.symm j))) = e (k.cycleRange.symm j)
-  have hrhs : e (k.cycleRange.symm j) =
-      (Fin.cons (e k) (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j := by
-    simpa only [Function.comp_apply] using
-      congrFun (Fin.cons_removeNth_eq_comp_cycleRange_symm e k) j |>.symm
-  rw [hrhs, hek]
-  -- The disjoint-union permutation enumerates the singleton first and the erased set second.
-  change e (c (p (c.symm j))) =
-    (Fin.cons i (k.removeNth (fun q ↦ e q)) : Fin (n + 1) → I) j
-  rw [hremove]
-  -- Expose the function represented by the increasing enumeration before applying `hec`.
-  change (fun q ↦ e (c q)) (p (c.symm j)) = _
-  rw [hec]
-  exact orderEmbOfFin_permOfDisjoint_singleton_erase i s hn hdisj j
-
 private theorem basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem
     {I : Type w} [LinearOrder I]
     (i : I) (s : Finset I) (hi : i ∈ s) :
@@ -287,7 +153,7 @@ private theorem basisEraseSign_eq_neg_one_pow_card_filter_lt_of_mem
   let p : Equiv.Perm (Fin (1 + n)) := Set.powersetCard.permOfDisjoint hdisj
   -- After reconciling the two cardinality presentations, this shuffle is the inverse cycle
   -- which moves position `k` to the front and shifts the preceding positions one step right.
-  have hp := conj_permOfDisjoint_singleton_erase i s hi rfl hsCard hdisj
+  have hp := Set.powersetCard.conj_permOfDisjoint_singleton_erase i s hi rfl hsCard hdisj
   have hsign : Equiv.Perm.sign ((finCongr (Nat.add_comm 1 n)).symm.trans
       (p.trans (finCongr (Nat.add_comm 1 n)))) = Equiv.Perm.sign p :=
     Equiv.Perm.sign_symm_trans_trans p (finCongr (Nat.add_comm 1 n))
