@@ -50,8 +50,6 @@ for set and probability integrals.
 
 * `integrable_exp_neg_of_ae_nonneg` shows that the negative exponential of an almost-everywhere
   nonnegative function is integrable on a finite measure space.
-* `integrable_exp_of_ae_le` shows that the exponential of an almost-everywhere measurable function
-  bounded above almost everywhere is integrable on a finite measure space.
 
 ## Set and probability integrals
 
@@ -176,14 +174,6 @@ theorem integrable_exp_neg_of_ae_nonneg {Ω : Type*} [MeasurableSpace Ω] {μ : 
   (integrable_const 1).mono' hf.neg.exp.aestronglyMeasurable <| by
     filter_upwards [hf0] with x hx
     simpa [Real.abs_exp] using hx
-
-/-- The exponential of an almost-everywhere measurable function that is bounded above almost
-everywhere is integrable on a finite measure space. -/
-theorem integrable_exp_of_ae_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
-    [IsFiniteMeasure μ] {f : Ω → ℝ} {K : ℝ} (hf : AEMeasurable f μ) (hfK : ∀ᵐ x ∂μ, f x ≤ K) :
-    Integrable (fun x ↦ Real.exp (f x)) μ :=
-  Integrable.of_bound hf.exp.aestronglyMeasurable (Real.exp K) <| hfK.mono fun x hx ↦ by
-    rwa [Real.norm_eq_abs, Real.abs_exp, Real.exp_le_exp]
 
 /-- An even function obtained by composing with absolute value is integrable on the whole real
 line whenever the original function is integrable on the positive half-line. -/

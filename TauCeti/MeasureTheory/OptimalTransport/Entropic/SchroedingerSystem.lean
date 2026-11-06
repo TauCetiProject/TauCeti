@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
+import Mathlib.Probability.Moments.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -102,9 +102,10 @@ private theorem measurable_logIntegralExp [SFinite ν] (hh : Measurable h) (hψ 
 measurable. -/
 private theorem integrable_exp_add_of_abs_le [IsFiniteMeasure ν] (hh : Measurable h)
     (hM : ∀ z, |h z| ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) :
-    Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν :=
-  TauCeti.MeasureTheory.integrable_exp_of_ae_le (K := M + C) (by fun_prop) (ae_of_all _ fun b ↦
-    (le_abs_self _).trans ((abs_add_le _ _).trans (add_le_add (hM _) (hC b))))
+    Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
+  simpa only [one_mul] using ProbabilityTheory.integrable_exp_mul_of_le (μ := ν) 1 (M + C)
+    zero_le_one (by fun_prop) (ae_of_all _ fun b ↦
+      (le_abs_self _).trans ((abs_add_le _ _).trans (add_le_add (hM _) (hC b))))
 
 /-- Integrating `exp (h (a, b) + ψ b + t)` against `ν` gives `exp (t + logIntegralExp h ν ψ a)`. -/
 private theorem lintegral_ofReal_exp_add [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
