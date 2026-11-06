@@ -140,12 +140,6 @@ theorem padicCompletionUnitsLift_apply (K : Type*) [CommMonoid K]
     (padicCompletionUnitsLift p L K f hf x).1 m = f m (x.1 m) :=
   by simp [padicCompletionUnitsLift]
 
-/-- Two elements of the additive completion are equal when all their coordinates agree. -/
-@[ext]
-theorem padicCompletionUnits_ext {x y : Additive ↑(padicCompletionUnits p L)}
-    (h : ∀ m, x.toMul.1 m = y.toMul.1 m) : x = y :=
-  Additive.toMul.injective (Subtype.ext (funext h))
-
 section PadicModule
 
 variable [Fact p.Prime]
@@ -290,12 +284,10 @@ private def padicCompletionUnitsMulEquiv (σ : L ≃ₐ[K] L) :
   { padicCompletionUnitsMap p L K σ with
     invFun := padicCompletionUnitsMap p L K σ.symm
     left_inv x := by
-      apply Subtype.ext
-      funext m
+      ext m
       simp [← padicCompletionPowerClassMap_symm]
     right_inv x := by
-      apply Subtype.ext
-      funext m
+      ext m
       simp [← padicCompletionPowerClassMap_symm] }
 
 @[simp]
