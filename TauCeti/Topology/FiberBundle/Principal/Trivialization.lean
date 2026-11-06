@@ -418,21 +418,15 @@ def pullback : GlobalTrivialization G ((⇑f) *ᵖ P) :=
 theorem equivAt_pullback (b : B') (p : ((⇑f) *ᵖ P) b) :
     (τ.pullback f).equivAt b p = τ.equivAt (f b) p := by
   let := τ.nonempty_fibres
-  calc
-    (τ.pullback f).equivAt b p = (τ.toTrivialization.pullback f ⟨b, p⟩).2 :=
-      (τ.pullback f).equivAt_apply b p
-    _ = (τ.toTrivialization (Pullback.lift f ⟨b, p⟩)).2 :=
-      congrArg Prod.snd (τ.toTrivialization.pullback_apply f ⟨b, p⟩)
-    _ = (τ.toTrivialization ⟨f b, p⟩).2 :=
-      congrArg (fun q ↦ (τ.toTrivialization q).2) (Pullback.lift_mk f b p)
-    _ = τ.equivAt (f b) p := (τ.equivAt_apply (f b) p).symm
+  -- Explicit fibre arguments let rewriting cross the Pullback type alias.
+  rw [(τ.pullback f).equivAt_apply b p, τ.equivAt_apply (f b) p]
+  simp only [pullback, Trivialization.pullback_apply, Pullback.lift_mk f b p]
 
 /-- The selected section pulls back by composition on the base. -/
 @[simp]
 theorem sectionValue_pullback (b : B') : (τ.pullback f).sectionValue b = τ.sectionValue (f b) := by
   apply ((τ.pullback f).equivAt b).injective
-  exact ((τ.pullback f).equivAt_sectionValue b).trans
-    ((τ.equivAt_pullback f b _).trans (τ.equivAt_sectionValue (f b))).symm
+  simp [τ.equivAt_pullback f b (τ.sectionValue (f b))]
 
 /-- Pullback preserves the reference transition map. -/
 @[simp]
@@ -450,13 +444,7 @@ variable [IsTopologicalGroup G]
 theorem pullback_gauge (a : C(B, G)) :
     (τ.gauge a).pullback f = (τ.pullback f).gauge (a.comp f) := by
   ext b p
-  calc
-    ((τ.gauge a).pullback f).equivAt b p = (τ.gauge a).equivAt (f b) p :=
-      (τ.gauge a).equivAt_pullback f b p
-    _ = a (f b) * τ.equivAt (f b) p := τ.equivAt_gauge a (f b) p
-    _ = ((τ.pullback f).gauge (a.comp f)).equivAt b p := by
-      rw [(τ.pullback f).equivAt_gauge, ContinuousMap.comp_apply]
-      exact congrArg (a (f b) * ·) (τ.equivAt_pullback f b p).symm
+  simp [τ.equivAt_gauge a (f b) p]
 
 end Pullback
 
@@ -469,8 +457,8 @@ def trivial (B G : Type*) [TopologicalSpace B] [Group G] [TopologicalSpace G] :
 
 /-- The canonical product trivialization has the identity group coordinate. -/
 @[simp]
-theorem equivAt_trivial (b : B) (g : G) : (trivial B G).equivAt b g = g :=
-  (rfl)
+theorem equivAt_trivial (b : B) (g : G) : (trivial B G).equivAt b g = g := by
+  simp [equivAt_apply, trivial, Trivial.trivialization_apply]
 
 /-- The canonical product trivialization selects the constant identity section. -/
 @[simp]
