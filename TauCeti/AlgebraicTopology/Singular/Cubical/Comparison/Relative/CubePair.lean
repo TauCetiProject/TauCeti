@@ -300,15 +300,15 @@ private lemma d_cubeBoundaryChain (m j : ℕ) :
   cases m with
   | zero =>
     rw [HomologicalComplex.shape _ _ _ (by simp)]
-    rfl
+    simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
   | succ m =>
     by_cases hj : j = m
     · subst hj
-      rw [normalizedCubicalChainComplexXEquiv_symm_apply, normalizedCubicalChainComplex_obj_d_apply,
-        boundary_cubeBoundaryChain]
-      rfl
+      apply (normalizedCubicalChainComplexXEquiv _ j).injective
+      rw [normalizedCubicalChainComplexXEquiv_d_apply, LinearEquiv.apply_symm_apply,
+        boundary_cubeBoundaryChain, map_zero]
     · rw [HomologicalComplex.shape _ _ _ (by simpa using hj)]
-      rfl
+      simp only [ModuleCat.hom_zero, LinearMap.zero_apply]
 
 /-- The **fundamental cycle of the boundary** `∂Iᵐ⁺¹`: the fundamental chain
 `TauCeti.cubeBoundaryChain`, as a cycle of the normalized cubical chains of `∂Iᵐ⁺¹`. -/

@@ -407,7 +407,9 @@ def cubicalCycleOfPoint {X : TopCat.{u}} (x : X) :
   HomologicalComplex.moduleCatCyclesMk _
     ((normalizedCubicalChainComplexXEquiv X 0).symm
       (NormalizedCubicalChain.ofCube X k (SingularCube.point x))) 0 ChainComplex.next_nat_zero
-    (by rw [HomologicalComplex.shape _ _ _ (by simp)]; rfl)
+    (by
+      rw [HomologicalComplex.shape _ _ _ (by simp)]
+      simp only [ModuleCat.hom_zero, LinearMap.zero_apply])
 
 variable (k) in
 @[simp]
