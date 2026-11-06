@@ -149,6 +149,17 @@ theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
       simp [hy]
     exact contDiffAt_const.congr_of_eventuallyEq h0
 
+/-- Where a function `ζ` equals one on a neighbourhood of `x`, every iterated derivative of `ζ * u`
+at `x` is that of `u`. -/
+theorem iteratedFDeriv_mul_eq_of_eventuallyEq_one {𝕜 F A : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F] [NormedRing A] [NormedAlgebra 𝕜 A] {k : ℕ}
+    {ζ u : F → A} {x : F} (hζ : ζ =ᶠ[𝓝 x] 1) :
+    iteratedFDeriv 𝕜 k (ζ * u) x = iteratedFDeriv 𝕜 k u x := by
+  have hev : ζ * u =ᶠ[𝓝 x] u := by
+    filter_upwards [hζ] with y hy
+    simp only [Pi.mul_apply, hy, Pi.one_apply, one_mul]
+  exact (hev.iteratedFDeriv 𝕜 k).eq_of_nhds
+
 /-- On a measurable set `K` where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm
 of `D u` on `K` is at most that of `D (χ u)` on the whole space. -/
 theorem eLpNorm_fderiv_restrict_le_of_subset_interior [NormedSpace ℝ E] [MeasurableSpace E]

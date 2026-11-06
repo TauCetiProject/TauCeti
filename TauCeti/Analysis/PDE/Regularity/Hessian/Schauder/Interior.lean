@@ -10,7 +10,6 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Multilinear
 import TauCeti.Analysis.Normed.Operator.Holder
-import TauCeti.MeasureTheory.Function.LpSeminorm.Support
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -329,48 +328,6 @@ private theorem interior_constant_le {κ lam Z B Q A K N X : ℝ} (hκ : 0 ≤ �
         have : 0 ≤ Q * A := mul_nonneg hQ hA
         nlinarith
 
-/-- A partial derivative of a function at a point is bounded by the norm of its derivative there. -/
-theorem abs_fderiv_apply_single_le {u : E → ℝ} {x : E} {N : ℝ} (i : Fin (n + 1))
-    (h : ‖fderiv ℝ u x‖ ≤ N) : |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
-  simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans h
-
-/-- A second partial derivative of a function at a point is bounded by the norm of its second
-iterated derivative there. -/
-theorem abs_fderiv_fderiv_apply_single_le {u : E → ℝ} {x : E} {N : ℝ} (i j : Fin (n + 1))
-    (h : ‖iteratedFDeriv ℝ 2 u x‖ ≤ N) :
-    |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
-  simpa [iteratedFDeriv_two_apply] using ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
-    (EuclideanSpace.basisFun _ ℝ) i j).trans h
-
-/-- Where a function `ζ` equals one on a neighbourhood, the second iterated derivative of `ζ * u`
-is that of `u`. -/
-theorem iteratedFDeriv_mul_eq_of_mem_interior_preimage_one {ζ u : E → ℝ} {x : E}
-    (hx : x ∈ interior (ζ ⁻¹' {1})) : iteratedFDeriv ℝ 2 (ζ * u) x = iteratedFDeriv ℝ 2 u x := by
-  have hev : ζ * u =ᶠ[𝓝 x] u := by
-    filter_upwards [mem_interior_iff_mem_nhds.1 hx] with y hy
-    simp only [Pi.mul_apply, show ζ y = 1 from hy, one_mul]
-  exact (hev.iteratedFDeriv ℝ 2).eq_of_nhds
-
-/-- The `L²` norm of the second derivative of a `C²` function supported in a closed ball is bounded
-by the volume of the ball and the bound on its second partial derivatives. -/
-theorem toReal_eLpNorm_iteratedFDeriv_two_le {w : E → ℝ} (hw : ContDiff ℝ 2 w) {x₀ : E} {R B : ℝ}
-    (hsupp : Function.support (iteratedFDeriv ℝ 2 w) ⊆ closedBall x₀ R) (hB₀ : 0 ≤ B)
-    (hB : ∀ x i j,
-      |fderiv ℝ (fderiv ℝ w) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ B) :
-    (eLpNorm (iteratedFDeriv ℝ 2 w) 2 volume).toReal ≤
-      (volume (closedBall (0 : E) R)).toReal ^ (2⁻¹ : ℝ) * (((n : ℝ) + 1) ^ 2 * B) := by
-  have hnorm (x : E) : ‖iteratedFDeriv ℝ 2 w x‖ ≤ ((n : ℝ) + 1) ^ 2 * B := by
-    refine ((iteratedFDeriv ℝ 2 w x).opNorm_le_card_sq_mul_of_norm_apply_le
-      (EuclideanSpace.basisFun _ ℝ) (B := B) fun i j => ?_).trans_eq (by simp)
-    simpa [iteratedFDeriv_two_apply] using hB x i j
-  refine (ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_nonneg (by positivity)
-    measure_closedBall_lt_top.ne) ENNReal.ofReal_ne_top) (eLpNorm_le_of_ae_bound_of_support_subset
-    (hw.continuous_iteratedFDeriv le_rfl).aestronglyMeasurable hsupp (ae_of_all _ hnorm))).trans
-    (le_of_eq ?_)
-  rw [ENNReal.toReal_mul, ← ENNReal.toReal_rpow, ENNReal.toReal_ofReal (by positivity),
-    Measure.addHaar_closedBall_center]
-  simp only [ENNReal.toReal_ofNat]
-
 /-- Translating a cutoff keeps the global Hölder constant and the uniform bound of the cutoff and
 of its first and second partial derivatives. -/
 private theorem holderWith_translate_cutoff {α Z : ℝ≥0} {ζ₀ : E → ℝ} (x₀ : E)
@@ -438,11 +395,14 @@ private theorem cutoff_mul_data {ζ u : E → ℝ} {x₀ : E} {R : ℝ} {α Z N 
   have hsR : ball x₀ R ⊆ closedBall x₀ R := ball_subset_closedBall
   obtain ⟨hHu, hHdu⟩ := holderOnWith_ball_of_norm_le hα1 hu hN1 hN2
   have hdu (i : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R) :
-      |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N :=
-    abs_fderiv_apply_single_le i (hN1 x hx)
+      |fderiv ℝ u x (EuclideanSpace.single i 1)| ≤ N := by
+    simpa using ((fderiv ℝ u x).unit_le_opNorm (EuclideanSpace.single i 1) (by simp)).trans
+      (hN1 x hx)
   have hd2u (i j : Fin (n + 1)) (x : E) (hx : x ∈ ball x₀ R) :
-      |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N :=
-    abs_fderiv_fderiv_apply_single_le i j (hN2 x hx)
+      |fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)| ≤ N := by
+    simpa [iteratedFDeriv_two_apply] using
+      ((iteratedFDeriv ℝ 2 u x).norm_apply_orthonormalBasis_le
+        (EuclideanSpace.basisFun _ ℝ) i j).trans (hN2 x hx)
   have hw : ContDiff ℝ 2 (ζ * u) := hu.contDiff_smul_of_tsupport_subset isOpen_ball hζ2 hζs
   have hWH := holderWith_fderiv_fderiv_cutoff_mul isOpen_ball hζ2 hζs hZ0 hZ1 hZ2 hu hN0 hdu hd2u
     hHu hHdu fun i j => by
@@ -563,7 +523,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_closedBall_of_sum_smul_fderiv_fde
   -- On a neighbourhood of `closedBall x₀ ρ` the cutoff is one, so `D²w = D²u` there.
   have hwu (x : E) (hx : x ∈ closedBall x₀ ρ) :
       iteratedFDeriv ℝ 2 w x = iteratedFDeriv ℝ 2 u x :=
-    iteratedFDeriv_mul_eq_of_mem_interior_preimage_one (hζ1 hx)
+    iteratedFDeriv_mul_eq_of_eventuallyEq_one
+      (mem_interior_iff_mem_nhds.1 (hζ1 hx))
   intro x hx y hy
   rw [← hwu x hx, ← hwu y hy]
   refine (key x y).trans ?_
