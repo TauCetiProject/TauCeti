@@ -138,6 +138,39 @@ theorem FiniteHolomorphicMap.card_fiberMultiset [CompactSpace X] [T2Space X] [T2
 
 /-! ### The fibre multiset in local normal form -/
 
+omit [ChartedSpace ℂ X] [IsManifold 𝓘(ℂ) 1 X] in
+/-- **Sums over a set of coordinate `m`-th roots.** Let `e` be a chart and `T` a set of points of
+the domain of `e` whose coordinates are exactly the `m`-th roots of a nonzero `s`, all of whose
+roots lie in the target of `e`. If every point of `T` has weight `1`, then the weighted sum of the
+singletons over `T` is the image under `e.symm` of the multiset of `m`-th roots of `s`. -/
+theorem finsum_mem_replicate_one_eq_map_nthRoots {m : ℕ} (hm : 0 < m) {s : ℂ} (hs : s ≠ 0)
+    (e : OpenPartialHomeomorph X ℂ) {T : Set X} {g : X → ℕ}
+    (hmem : ∀ x', x' ∈ T ↔ x' ∈ e.source ∧ e x' ^ m = s)
+    (hroot : ∀ w : ℂ, w ^ m = s → w ∈ e.target) (hg : ∀ x' ∈ T, g x' = 1) :
+    ∑ᶠ x' ∈ T, Multiset.replicate (g x') x' = (nthRoots m s).map e.symm := by
+  have hpiece (x' : X) (hx' : x' ∈ T) : x' = e.symm (e x') :=
+    (e.left_inv ((hmem x').1 hx').1).symm
+  have hfin : T.Finite := by
+    refine ((nthRootsFinset m s).finite_toSet.image e.symm).subset fun x' hx' ↦ ?_
+    exact ⟨e x', by simpa [mem_nthRootsFinset hm] using ((hmem x').1 hx').2,
+      (hpiece x' hx').symm⟩
+  rw [finsum_mem_congr rfl fun x' hx' ↦ by rw [hg x' hx', Multiset.replicate_one],
+    finsum_mem_eq_finite_toFinset_sum _ hfin, Finset.sum_eq_multiset_sum,
+    Multiset.sum_map_singleton]
+  have hnodup : (nthRoots m s).Nodup :=
+    (Complex.isPrimitiveRoot_exp m hm.ne').nthRoots_nodup hs
+  refine (Multiset.Nodup.ext hfin.toFinset.nodup (hnodup.map_on fun w hw w' hw' h ↦ ?_)).2
+    fun x' ↦ ?_
+  · rw [mem_nthRoots hm] at hw hw'
+    exact e.symm.injOn (hroot w hw) (hroot w' hw') h
+  · rw [Finset.mem_val, hfin.mem_toFinset, Multiset.mem_map]
+    refine ⟨fun hx' ↦ ⟨e x', (mem_nthRoots hm).2 ((hmem x').1 hx').2, (hpiece x' hx').symm⟩,
+      ?_⟩
+    rintro ⟨w, hw, rfl⟩
+    rw [mem_nthRoots hm] at hw
+    rw [hmem, e.right_inv (hroot w hw)]
+    exact ⟨e.map_target (hroot w hw), hw⟩
+
 /-- **The fibre multiset in a normal-form chart.** Let `f` be holomorphic and nonconstant near a
 point `x` of local multiplicity `m`, and let `e'` be a chart at `f x`. There is a chart `e` at `x`,
 inside any prescribed neighbourhood of `x`, such that for `z` near the coordinate of `f x` the
@@ -188,8 +221,6 @@ private theorem exists_chart_sum_replicate_inter_source_eq {x : X}
       rw [mem_preimage, mem_singleton_iff, ← e'.left_inv h.1]
       congr 1
       linear_combination h.2 + h1
-  have hpiece (x' : X) (hx' : x' ∈ f ⁻¹' {e'.symm z} ∩ e.source) :
-      x' = e.symm (e x') := (e.left_inv ((hmem x').1 hx').1).symm
   rcases eq_or_ne s 0 with hs | hs
   · -- Over `f x` itself the piece of the fibre is `{x}`, of multiplicity `m`, and the `m`-th
     -- roots of `0` all vanish.
@@ -209,26 +240,56 @@ private theorem exists_chart_sum_replicate_inter_source_eq {x : X}
       obtain ⟨h2, h⟩ := (hmem x').1 hx'
       refine (hsrc h2).2.resolve_left fun h' ↦ hs ?_
       rw [← h, h', hex, zero_pow hm.ne']
-    have hfin : (f ⁻¹' {e'.symm z} ∩ e.source).Finite := by
-      refine ((nthRootsFinset m s).finite_toSet.image e.symm).subset fun x' hx' ↦ ?_
-      exact ⟨e x', by simpa [mem_nthRootsFinset hm] using ((hmem x').1 hx').2,
-        (hpiece x' hx').symm⟩
-    rw [finsum_mem_congr rfl fun x' hx' ↦ by rw [hmult x' hx', Multiset.replicate_one],
-      finsum_mem_eq_finite_toFinset_sum _ hfin, Finset.sum_eq_multiset_sum,
-      Multiset.sum_map_singleton]
-    have hnodup : (nthRoots m s).Nodup :=
-      (Complex.isPrimitiveRoot_exp m hm.ne').nthRoots_nodup hs
-    refine (Multiset.Nodup.ext hfin.toFinset.nodup (hnodup.map_on fun w hw w' hw' h ↦ ?_)).2
-      fun x' ↦ ?_
-    · rw [mem_nthRoots hm] at hw hw'
-      exact e.symm.injOn (hroot w hw) (hroot w' hw') h
-    · rw [Finset.mem_val, hfin.mem_toFinset, Multiset.mem_map]
-      refine ⟨fun hx' ↦ ⟨e x', (mem_nthRoots hm).2 ((hmem x').1 hx').2, (hpiece x' hx').symm⟩,
-        ?_⟩
-      rintro ⟨w, hw, rfl⟩
-      rw [mem_nthRoots hm] at hw
-      rw [hmem, e.right_inv (hroot w hw)]
-      exact ⟨e.map_target (hroot w hw), hw⟩
+    exact finsum_mem_replicate_one_eq_map_nthRoots hm hs e hmem hroot hmult
+
+/-- **The fibre multiset near `y₀` from charts at the points of the fibre.** For a holomorphic map
+from a compact Riemann surface which is constant near no point, a chart `e'` at `y₀` and charts
+`e x` at the points `x` of the fibre of `y₀` with pairwise disjoint domains, such that near
+`e' y₀` the part of each fibre in the domain of `e x` is counted by the `m`-th roots of
+`z - e' y₀`, the fibre multiset of `e'.symm z` is the sum over `x` of those images, for `z` near
+`e' y₀`. -/
+private theorem eventually_fiberMultiset_eq_of_charts [CompactSpace X] [T2Space X] [T2Space Y]
+    (hf : MDifferentiable 𝓘(ℂ) 𝓘(ℂ) f) (hne : ∀ x, ¬ EventuallyConst f (𝓝 x))
+    {e' : OpenPartialHomeomorph Y ℂ} {y₀ : Y} (hy₀ : y₀ ∈ e'.source) {O : X → Set X}
+    (hOdisj : (f ⁻¹' {y₀}).PairwiseDisjoint O) (e : X → OpenPartialHomeomorph X ℂ)
+    (hxe : ∀ x ∈ f ⁻¹' {y₀}, x ∈ (e x).source) (hsub : ∀ x ∈ f ⁻¹' {y₀}, (e x).source ⊆ O x)
+    (hev : ∀ x ∈ f ⁻¹' {y₀}, ∀ᶠ z in 𝓝 (e' y₀),
+      ∑ᶠ x' ∈ f ⁻¹' {e'.symm z} ∩ (e x).source,
+          Multiset.replicate (localMultiplicity f x') x' =
+        (nthRoots (localMultiplicity f x) (z - e' y₀)).map (e x).symm) :
+    ∀ᶠ z in 𝓝 (e' y₀), fiberMultiset f (e'.symm z) =
+      ∑ᶠ x ∈ f ⁻¹' {y₀}, (nthRoots (localMultiplicity f x) (z - e' y₀)).map (e x).symm := by
+  classical
+  have hS : (f ⁻¹' {y₀}).Finite := finite_preimage_singleton hf hne y₀
+  -- Outside the chart domains the map misses `y₀`, hence a whole neighbourhood of `y₀`.
+  have hK : IsCompact (⋃ x ∈ f ⁻¹' {y₀}, (e x).source)ᶜ :=
+    (isOpen_biUnion fun x _ ↦ (e x).open_source).isClosed_compl.isCompact
+  have hyK : y₀ ∉ f '' (⋃ x ∈ f ⁻¹' {y₀}, (e x).source)ᶜ := by
+    rintro ⟨x, hxK, hfx⟩
+    exact hxK (mem_iUnion₂.2 ⟨x, hfx, hxe x hfx⟩)
+  have hV₀ : (f '' (⋃ x ∈ f ⁻¹' {y₀}, (e x).source)ᶜ)ᶜ ∈ 𝓝 y₀ :=
+    (hK.image hf.continuous).isClosed.isOpen_compl.mem_nhds hyK
+  have hsymm : Tendsto e'.symm (𝓝 (e' y₀)) (𝓝 y₀) := by
+    have h := (e'.continuousAt_symm (e'.map_source hy₀)).tendsto
+    rwa [e'.left_inv hy₀] at h
+  filter_upwards [hsymm.eventually hV₀, hS.eventually_all.2 hev] with z hz hzev
+  -- The fibre of `e'.symm z` is the disjoint union of its pieces inside the chart domains.
+  have hfib : f ⁻¹' {e'.symm z} = ⋃ x ∈ f ⁻¹' {y₀}, (f ⁻¹' {e'.symm z} ∩ (e x).source) := by
+    ext x'
+    refine ⟨fun hx' ↦ ?_, fun hx' ↦ ?_⟩
+    · have hx'U : x' ∈ ⋃ x ∈ f ⁻¹' {y₀}, (e x).source := by
+        by_contra h
+        exact hz ⟨x', h, hx'⟩
+      obtain ⟨x, hx, hx'U⟩ := mem_iUnion₂.1 hx'U
+      exact mem_iUnion₂.2 ⟨x, hx, hx', hx'U⟩
+    · obtain ⟨x, -, hx'⟩ := mem_iUnion₂.1 hx'
+      exact hx'.1
+  have hdisj : (f ⁻¹' {y₀}).PairwiseDisjoint fun x ↦ f ⁻¹' {e'.symm z} ∩ (e x).source :=
+    hOdisj.mono_on fun x hx ↦ inter_subset_right.trans (hsub x hx)
+  have hfin := finite_preimage_singleton hf hne (e'.symm z)
+  rw [fiberMultiset_def, hfib,
+    finsum_mem_biUnion hdisj hS fun x _ ↦ hfin.subset inter_subset_left]
+  exact finsum_mem_congr rfl hzev
 
 /-- **The fibre multisets near `y₀` in normal-form charts.** For a holomorphic map from a compact
 Riemann surface which is constant near no point, and a chart `e'` at `y₀`, there are charts
@@ -274,35 +335,8 @@ private theorem exists_charts_eventually_fiberMultiset_eq [CompactSpace X] [T2Sp
         (nthRoots (localMultiplicity f x) (z - e' y₀)).map (e x).symm :=
     he_eq x hx ▸ hev₀ x hx
   refine ⟨e, he, ?_⟩
-  -- Outside the chart domains the map misses `y₀`, hence a whole neighbourhood of `y₀`.
-  have hK : IsCompact (⋃ x ∈ f ⁻¹' {y₀}, (e x).source)ᶜ :=
-    (isOpen_biUnion fun x _ ↦ (e x).open_source).isClosed_compl.isCompact
-  have hyK : y₀ ∉ f '' (⋃ x ∈ f ⁻¹' {y₀}, (e x).source)ᶜ := by
-    rintro ⟨x, hxK, hfx⟩
-    exact hxK (mem_iUnion₂.2 ⟨x, hfx, (he x hfx).2.1⟩)
-  have hV₀ : (f '' (⋃ x ∈ f ⁻¹' {y₀}, (e x).source)ᶜ)ᶜ ∈ 𝓝 y₀ :=
-    (hK.image hf.continuous).isClosed.isOpen_compl.mem_nhds hyK
-  have hsymm : Tendsto e'.symm (𝓝 (e' y₀)) (𝓝 y₀) := by
-    have h := (e'.continuousAt_symm (e'.map_source hy₀)).tendsto
-    rwa [e'.left_inv hy₀] at h
-  filter_upwards [hsymm.eventually hV₀, hS.eventually_all.2 hev] with z hz hzev
-  -- The fibre of `e'.symm z` is the disjoint union of its pieces inside the chart domains.
-  have hfib : f ⁻¹' {e'.symm z} = ⋃ x ∈ f ⁻¹' {y₀}, (f ⁻¹' {e'.symm z} ∩ (e x).source) := by
-    ext x'
-    refine ⟨fun hx' ↦ ?_, fun hx' ↦ ?_⟩
-    · have hx'U : x' ∈ ⋃ x ∈ f ⁻¹' {y₀}, (e x).source := by
-        by_contra h
-        exact hz ⟨x', h, hx'⟩
-      obtain ⟨x, hx, hx'U⟩ := mem_iUnion₂.1 hx'U
-      exact mem_iUnion₂.2 ⟨x, hx, hx', hx'U⟩
-    · obtain ⟨x, -, hx'⟩ := mem_iUnion₂.1 hx'
-      exact hx'.1
-  have hdisj : (f ⁻¹' {y₀}).PairwiseDisjoint fun x ↦ f ⁻¹' {e'.symm z} ∩ (e x).source :=
-    hOdisj.mono_on fun x hx ↦ inter_subset_right.trans (hsub x hx)
-  have hfin := finite_preimage_singleton hf hne (e'.symm z)
-  rw [fiberMultiset_def, hfib,
-    finsum_mem_biUnion hdisj hS fun x _ ↦ hfin.subset inter_subset_left]
-  exact finsum_mem_congr rfl hzev
+  exact eventually_fiberMultiset_eq_of_charts hf hne hy₀ hOdisj e (fun x hx ↦ (he x hx).2.1) hsub
+    hev
 
 /-! ### Holomorphy of symmetric functions of fibre values -/
 
