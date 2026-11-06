@@ -246,7 +246,7 @@ theorem coe_inv_nilpotentExpUnit {x : A} (hx : IsNilpotent x) :
 /-- The one-parameter group of units `t ↦ exp (t • x)` attached to a nilpotent element `x`.
 
 The scalar ring can in particular be `ℤ`, giving the integral points of a root subgroup map. -/
-noncomputable def expSMulHom (R : Type*) [CommRing R] [Algebra R A]
+noncomputable def expSMulHom (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) : Multiplicative R →* Aˣ where
   toFun t := nilpotentExpUnit (hx.smul (Multiplicative.toAdd t))
   map_one' := by
@@ -262,28 +262,28 @@ noncomputable def expSMulHom (R : Type*) [CommRing R] [Algebra R A]
 /-- Applying the one-parameter group gives the unit exponential of the scalar multiple. -/
 -- See note [hom simp lemma priority].
 @[simp low]
-theorem expSMulHom_apply (R : Type*) [CommRing R] [Algebra R A]
+theorem expSMulHom_apply (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) (t : Multiplicative R) :
     expSMulHom R hx t = nilpotentExpUnit (hx.smul (Multiplicative.toAdd t)) :=
   (rfl)
 
 /-- The one-parameter group at parameter one is the original nilpotent exponential unit. -/
 @[simp]
-theorem expSMulHom_ofAdd_one (R : Type*) [CommRing R] [Algebra R A]
+theorem expSMulHom_ofAdd_one (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) :
     expSMulHom R hx (Multiplicative.ofAdd 1) = nilpotentExpUnit hx := by
   apply Units.ext
   simp [expSMulHom_apply]
 
 /-- The underlying value of the one-parameter group is the finite exponential. -/
-theorem coe_expSMulHom (R : Type*) [CommRing R] [Algebra R A]
+theorem coe_expSMulHom (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) (t : Multiplicative R) :
     (expSMulHom R hx t : A) = exp (Multiplicative.toAdd t • x) :=
   (rfl)
 
 /-- A ring homomorphism compatible with a change of scalars preserves the exponential curve. -/
-theorem map_expSMulHom (R : Type*) [CommRing R] [Algebra R A]
-    {S B : Type*} [CommRing S] [Ring B] [Algebra ℚ B] [Algebra S B]
+theorem map_expSMulHom (R : Type*) [CommSemiring R] [Algebra R A]
+    {S B : Type*} [CommSemiring S] [Ring B] [Algebra ℚ B] [Algebra S B]
     {x : A} (hx : IsNilpotent x) (f : A →+* B) (σ : R →+* S)
     (hf : ∀ r a, f (r • a) = σ r • f a) (t : Multiplicative R) :
     Units.map f.toMonoidHom (expSMulHom R hx t) =
@@ -293,7 +293,7 @@ theorem map_expSMulHom (R : Type*) [CommRing R] [Algebra R A]
   exact (map_exp (hx.smul _) f).trans (congrArg exp (hf _ _))
 
 /-- Natural-number parameters give powers of the value at one. -/
-theorem expSMulHom_ofAdd_natCast (R : Type*) [CommRing R] [Algebra R A]
+theorem expSMulHom_ofAdd_natCast (R : Type*) [CommSemiring R] [Algebra R A]
     {x : A} (hx : IsNilpotent x) (m : ℕ) :
     expSMulHom R hx (Multiplicative.ofAdd (m : R)) =
       nilpotentExpUnit hx ^ m := by
