@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.ODE.ExistUnique
 public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.Calculus.FDeriv.Prod
+public import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Analysis.Calculus.ParametricIntegral
 public import TauCeti.Analysis.ODE.SmoothParameter
 
@@ -848,47 +849,6 @@ private theorem hasFDerivAt_graph_of_solution_family {n : ℕ∞}
     (hasFDerivAt_id y₀).congr_of_eventuallyEq huinit'
   exact (husmooth.differentiableAt (by simp)).hasFDerivAt_fst_prodMk_of_slices hx hy
 
-/-- **A smooth map with invertible derivative is a local diffeomorphism.** If `Φ` is `C^(n+1)` on an
-open set `U` and has an invertible derivative at `p₀ ∈ U`, then `Φ` is, near `p₀`, the underlying
-function of an open partial homeomorphism `e` with source in `U`
-that is `C^(n+1)` on its source and whose inverse is `C^(n+1)` on its whole target. -/
-theorem exists_openPartialHomeomorph_of_hasFDerivAt {X : Type*} [NormedAddCommGroup X]
-    [NormedSpace ℝ X] [CompleteSpace X] {n : ℕ∞} {Φ : X → X} {U : Set X} {p₀ : X}
-    {A : X ≃L[ℝ] X} (hU : IsOpen U) (hΦOn : ContDiffOn ℝ (n + 1) Φ U) (hp₀U : p₀ ∈ U)
-    (hΦ : HasFDerivAt Φ (A : X →L[ℝ] X) p₀) :
-    ∃ e : OpenPartialHomeomorph X X, (e : X → X) = Φ ∧ p₀ ∈ e.source ∧ e.source ⊆ U ∧
-      ContDiffOn ℝ (n + 1) e e.source ∧ ContDiffOn ℝ (n + 1) e.symm e.target := by
-  have hΦsmooth : ContDiffAt ℝ (n + 1) Φ p₀ := hΦOn.contDiffAt (hU.mem_nhds hp₀U)
-  -- The derivative of `Φ` stays invertible on an open neighbourhood `V` of the base point.
-  let V : Set X := U ∩ fderiv ℝ Φ ⁻¹' range ((↑) : (X ≃L[ℝ] X) → _)
-  have hV : IsOpen V :=
-    (hΦOn.continuousOn_fderiv_of_isOpen hU (by simp)).isOpen_inter_preimage hU
-      ContinuousLinearEquiv.isOpen
-  have hp₀V : p₀ ∈ V := ⟨hp₀U, A, hΦ.fderiv.symm⟩
-  let e₀ : OpenPartialHomeomorph X X :=
-    hΦsmooth.toOpenPartialHomeomorph Φ hΦ (by simp)
-  have he₀fun : (e₀ : X → X) = Φ := hΦsmooth.toOpenPartialHomeomorph_coe hΦ (by simp)
-  let e : OpenPartialHomeomorph X X := e₀.restrOpen V hV
-  have hefun : (e : X → X) = Φ := (e₀.coe_restrOpen hV).trans he₀fun
-  have hesourceV : e.source ⊆ V := fun p hp ↦ by
-    rw [e₀.restrOpen_source] at hp
-    exact hp.2
-  have hesource : p₀ ∈ e.source := by
-    rw [e₀.restrOpen_source]
-    exact ⟨hΦsmooth.mem_toOpenPartialHomeomorph_source hΦ (by simp), hp₀V⟩
-  have heOn : ContDiffOn ℝ (n + 1) e e.source := by
-    rw [hefun]
-    exact hΦOn.mono fun p hp ↦ (hesourceV hp).1
-  refine ⟨e, hefun, hesource, fun p hp ↦ (hesourceV hp).1, heOn, fun z hz ↦ ?_⟩
-  -- At every point of the target the inverse function theorem applies.
-  have hq := e.map_target hz
-  obtain ⟨L, hL⟩ := (hesourceV hq).2
-  have hd : ContDiffAt ℝ (n + 1) e (e.symm z) := heOn.contDiffAt (e.open_source.mem_nhds hq)
-  refine (e.contDiffAt_symm hz (f₀' := L) ?_ hd).contDiffWithinAt
-  have hdiff := hd.differentiableAt (by simp)
-  rw [hefun] at hdiff ⊢
-  exact hL ▸ hdiff.hasFDerivAt
-
 /-- **Flat coordinates for an integrable graph field.** The smooth family of Frobenius solutions
 defines a local coordinate change `e (x, y) = (x, u (x, y))`, of class `C^(n+1)` with inverse of
 class `C^(n+1)` on its whole domain, fixing the base point. Its horizontal slices have derivative
@@ -922,8 +882,9 @@ theorem exists_frobenius_flat_coordinate [FiniteDimensional ℝ E] [FiniteDimens
   have hΦ : HasFDerivAt Φ (A : (E × F) →L[ℝ] (E × F)) (x₀, y₀) := by
     simpa only [Φ, A] using
       hasFDerivAt_graph_of_solution_family hu₀ husmooth huinit' husol'
-  obtain ⟨e, hefun, hesource, hesourceU, heOn, hesymm⟩ :=
-    exists_openPartialHomeomorph_of_hasFDerivAt hU hΦOn hp₀U hΦ
+  obtain ⟨e, hefun, hesource, hesourceU, hesymm⟩ :=
+    TauCeti.ContDiffOn.exists_openPartialHomeomorph hΦOn hU hp₀U (by simp) hΦ.fderiv.symm
+  have heOn : ContDiffOn ℝ (n + 1) e e.source := hefun ▸ hΦOn.mono hesourceU
   refine ⟨u, e, hu₀, huinit', hefun, hesource, heOn, hesymm, fun p hp ↦ ?_⟩
   rw [hefun]
   simpa only [id_eq] using (hasFDerivAt_id p.1).prodMk (husol p (hesourceU hp))
