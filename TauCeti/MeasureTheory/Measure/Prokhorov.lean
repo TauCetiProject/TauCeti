@@ -185,10 +185,11 @@ end ProbabilityMeasure
 
 end TauCeti
 
+open scoped BoundedContinuousFunction
+
 namespace MeasureTheory.ProbabilityMeasure
 
 open MeasureTheory Filter Set Topology
-open scoped BoundedContinuousFunction
 
 /-- A bounded-continuous integral at a weak cluster point belongs to every closed set that
 eventually contains the integrals along the sequence. -/
