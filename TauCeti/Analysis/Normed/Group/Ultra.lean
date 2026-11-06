@@ -69,6 +69,12 @@ theorem norm_div_le_max_norm_div (x y z : S) : ‖x / z‖ ≤ max ‖x / y‖ �
   rw [norm_div_rev z y, ← div_mul_div_cancel x y z]
   exact norm_mul_le_max _ _
 
+/-- In an ultrametric additive group, if `y = p + w` and `‖w‖ ≤ ‖y‖` then `‖p‖ ≤ ‖y‖`. -/
+theorem norm_le_of_eq_add_of_norm_le {E : Type*} [SeminormedAddGroup E] [IsUltrametricDist E]
+    {p w y : E} (h : y = p + w) (hw : ‖w‖ ≤ ‖y‖) : ‖p‖ ≤ ‖y‖ := by
+  rw [eq_sub_iff_add_eq.mpr h.symm]
+  exact (norm_sub_le_max _ _).trans (max_le le_rfl hw)
+
 section SphericalCompleteness
 
 open Metric
