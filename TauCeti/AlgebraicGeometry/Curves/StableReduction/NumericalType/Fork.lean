@@ -479,9 +479,7 @@ lemma insert_image_range_eq_univ (hf : T.IsSelfIntersectionMinusTwoFork t c bran
     insert branch ((range t).image c) = (univ : Finset T.Component) := by
   apply eq_univ_of_card
   rw [card_insert_of_notMem hf.branch_notMem_image,
-    card_image_of_injOn (by
-      intro i hi j hj hij
-      exact hf.injOn i (mem_range.mp hi) j (mem_range.mp hj) hij), card_range]
+    hf.toIsSelfIntersectionMinusTwoChain.card_image_range]
   exact hcard.symm
 
 /-- For a fork exhausting a numerical type, the fibre relation at any component splits into the
