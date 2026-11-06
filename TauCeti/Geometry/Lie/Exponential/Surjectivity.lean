@@ -6,25 +6,24 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.Exponential.Basic
--- Supplies carrier boundarylessness in the public exponential statement.
 public import TauCeti.Geometry.Lie.Interior
 import TauCeti.Geometry.Lie.Adjoint.InvariantForm
 import TauCeti.Geometry.Lie.Functor
-import TauCeti.Geometry.Manifold.ModelTransport.LieGroup
+import TauCeti.Geometry.Lie.Subgroup.Embedded
 import TauCeti.Geometry.Manifold.Riemannian.LieGroup.AdjointInvariant
 import TauCeti.Geometry.Manifold.Riemannian.LieGroup.Surjectivity
 
 /-!
 # Surjectivity of the exponential for compact connected Lie groups
 
-A compact finite-dimensional real Lie group has an adjoint-invariant positive form on its
-Lie algebra. Transporting that form to the tangent space at the identity gives a smooth
-left-invariant metric with
+A compact Lie group has an adjoint-invariant positive form on its Lie algebra. Transporting
+that form to the tangent space at the identity gives a smooth left-invariant metric with
 ad-invariant inner product. The geodesic criterion then makes the Lie exponential surjective
 when the group is connected. No metric is assumed in the statement.
 
-The model with corners is arbitrary; only the carrier must be a Lie group. No global
-surjectivity of the model is assumed.
+The conclusion applies to any real model with corners. The closed-subgroup theorem gives the
+whole subgroup a boundaryless vector-space model with its inherited topology; exponential
+naturality along its smooth inclusion transfers the metric conclusion to the original model.
 
 ## Main results
 
@@ -56,6 +55,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 attribute [local instance] LieGroup.minSmoothness_of_isRCLikeNormedField
 attribute [local instance] ContMDiffMul.boundarylessManifold
 
+/-- Compact-connected exponential surjectivity in a boundaryless model. -/
 private theorem lieExp_surjective_of_compact_connected_of_boundaryless [I.Boundaryless] :
     let _ : T2Space G := I.t2Space_of_lieGroup ∞
     Function.Surjective (lieExp (I := I) (G := G)) := by
@@ -73,27 +73,35 @@ private theorem lieExp_surjective_of_compact_connected_of_boundaryless [I.Bounda
       (m := ∞) (n := ∞) le_rfl b hb_symm hb_pos)
     (ContinuousLinearMap.lieInvariant_inner_leftInvariantMetric b hb_symm hb_pos hb_ad)
 
-/-- The Lie exponential of a compact connected finite-dimensional real Lie group is surjective,
-for an arbitrary model with corners. -/
+/-- The Lie exponential of a compact connected finite-dimensional real Lie group is surjective. -/
 theorem lieExp_surjective_of_compact_connected :
     let _ : T2Space G := I.t2Space_of_lieGroup ∞
     Function.Surjective (lieExp (I := I) (G := G)) := by
   let _ : T2Space G := I.t2Space_of_lieGroup ∞
-  let _ : CompactSpace (BoundarylessModel I G) := (BoundarylessModel.homeomorph I G).compactSpace
-  let _ : ConnectedSpace (BoundarylessModel I G) :=
-    (BoundarylessModel.homeomorph I G).connectedSpace_iff.mp inferInstance
-  let _ : T2Space (BoundarylessModel I G) := (𝓘(ℝ, E)).t2Space_of_lieGroup ∞
-  let φ := BoundarylessModel.contMDiffMonoidMorphismSymm I G ∞
   dsimp only
+  let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
+  let _ : FiniteDimensional ℝ (LeftInvariantDerivation I G) :=
+    finiteDimensional_leftInvariantDerivation
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
+  -- Cartan's theorem supplies a boundaryless model for the whole subgroup.
+  let K : Subgroup G := ⊤
+  let L := (lieSubalgebraOfSubgroup (I := I) K).toSubmodule
+  obtain ⟨d⟩ := nonempty_embeddedLieSubgroupData_lieSubalgebraOfSubgroup_of_isClosed
+    (I := I) (K := K) (by simp [K])
+  let _ : ChartedSpace L K := d.chartedSpace
+  let _ : LieGroup 𝓘(ℝ, L) ∞ K := d.lieGroup
+  let _ : CompactSpace K := isCompact_iff_compactSpace.mp
+    (by simpa only [K, Subgroup.coe_top] using (isCompact_univ : IsCompact (Set.univ : Set G)))
+  let _ : ConnectedSpace K := isConnected_iff_connectedSpace.mp
+    (by simpa only [K, Subgroup.coe_top] using (isConnected_univ : IsConnected (Set.univ : Set G)))
+  let f : ContMDiffMonoidMorphism 𝓘(ℝ, L) I ∞ K G := ⟨K.subtype, d.contMDiff_subtypeVal⟩
   intro g
-  obtain ⟨X, hX⟩ := (lieExp_surjective_of_compact_connected_of_boundaryless
-    (I := 𝓘(ℝ, E)) (G := BoundarylessModel I G)) (BoundarylessModel.homeomorph I G g)
-  refine ⟨lieMap φ X, ?_⟩
-  calc
-    lieExp (lieMap φ X) = φ (lieExp X) := (map_lieExp φ X).symm
-    _ = φ (BoundarylessModel.homeomorph I G g) := congrArg φ hX
-    _ = g := by
-      simp only [φ, BoundarylessModel.coe_contMDiffMonoidMorphismSymm,
-        BoundarylessModel.coe_continuousMulEquiv_symm, Homeomorph.symm_apply_apply]
+  obtain ⟨X, hX⟩ := (lieExp_surjective_of_compact_connected_of_boundaryless (I := 𝓘(ℝ, L)))
+    (⟨g, Subgroup.mem_top g⟩ : K)
+  -- The inclusion's Lie map sends the native logarithm to a logarithm in the original model.
+  refine ⟨lieMap f X, ?_⟩
+  rw [← map_lieExp f X, hX]
+  rfl
+
 
 end TauCeti.Lie

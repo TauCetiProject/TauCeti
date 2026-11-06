@@ -160,8 +160,7 @@ private theorem mem_modelChart_source_iff (y : BoundarylessModel I M) :
       (BoundarylessModel.homeomorph I M).symm y ∈ (chartAt H x).source ∧
         extChartAt I x ((BoundarylessModel.homeomorph I M).symm y) ∈ domain hf hx := by
   simp only [OpenPartialHomeomorph.trans_source, coordChart_source, BoundarylessModel.chartAt_eq,
-    BoundarylessModel.chart_source_of_boundaryless,
-    BoundarylessModel.chart_apply, Homeomorph.symm_apply_apply,
+    BoundarylessModel.chart_source, BoundarylessModel.chart_apply, Homeomorph.symm_apply_apply,
     extChartAt_coe, comp_apply, mem_inter_iff, mem_preimage]
 
 private theorem mem_modelChart_target_iff (v : E) :
@@ -171,9 +170,8 @@ private theorem mem_modelChart_target_iff (v : E) :
   simp only [OpenPartialHomeomorph.trans_target, OpenPartialHomeomorph.transHomeomorph_target,
     OpenPartialHomeomorph.restrOpen_toPartialEquiv, PartialEquiv.restr_target,
     ContinuousLinearEquiv.coe_symm_toHomeomorph, ContinuousLinearEquiv.symm_symm,
-    coe_coordChart_symm, BoundarylessModel.chartAt_eq,
-      BoundarylessModel.chart_target_of_boundaryless, Homeomorph.symm_apply_apply, comp_apply,
-    mem_inter_iff, mem_preimage]
+    coe_coordChart_symm, BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target,
+    Homeomorph.symm_apply_apply, comp_apply, mem_inter_iff, mem_preimage]
   -- The target of the restricted implicit-function chart is cut out by the domain, which lies over
   -- the preferred chart target.
   exact and_iff_left_of_imp fun h ↦ domain_subset hf hx h.2
@@ -233,8 +231,7 @@ private theorem contMDiffAt_modelChart_symm {n : ℕ∞ω} [IsManifold I n M] (h
   have hchart : ContMDiffAt 𝓘(ℝ, E) 𝓘(ℝ, E) n
       (chartAt E (BoundarylessModel.homeomorph I M x)).symm p := by
     refine contMDiffOn_chart_symm.contMDiffAt ((chartAt E _).open_target.mem_nhds ?_)
-    rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target_of_boundaryless,
-      Homeomorph.symm_apply_apply]
+    rw [BoundarylessModel.chartAt_eq, BoundarylessModel.chart_target, Homeomorph.symm_apply_apply]
     exact domain_subset hf hx hvD
   rw [OpenPartialHomeomorph.coe_trans_symm]
   exact hchart.comp v hcoord

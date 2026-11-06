@@ -79,11 +79,9 @@ theorem isImmersionAtOfComplement_target_iff {g : N → M} {x : N} :
     refine IsImmersionAtOfComplement.mk_of_charts h.equiv h.domChart (chart I h.codChart)
       h.mem_domChart_source ?_ h.domChart_mem_maximalAtlas
       ((chart_mem_maximalAtlas_iff I _ n).2 h.codChart_mem_maximalAtlas) ?_ ?_
-    · rw [chart_source_of_boundaryless, mem_preimage,
-        comp_apply, Homeomorph.symm_apply_apply]
+    · rw [chart_source, mem_preimage, comp_apply, Homeomorph.symm_apply_apply]
       exact h.mem_codChart_source
-    · rw [chart_source_of_boundaryless,
-        ← preimage_comp, ← comp_assoc, Homeomorph.symm_comp_self, id_comp]
+    · rw [chart_source, ← preimage_comp, ← comp_assoc, Homeomorph.symm_comp_self, id_comp]
       exact h.source_subset_preimage_source
     · intro y hy
       simpa only [comp_apply, OpenPartialHomeomorph.extend_coe, modelWithCornersSelf_coe, id_eq,
@@ -152,9 +150,9 @@ theorem isImmersionAtOfComplement_source_iff {g : M → N} {x : BoundarylessMode
     refine IsImmersionAtOfComplement.mk_of_charts h.equiv (chart I h.domChart) h.codChart
       ?_ h.mem_codChart_source ((chart_mem_maximalAtlas_iff I _ n).2 h.domChart_mem_maximalAtlas)
       h.codChart_mem_maximalAtlas ?_ ?_
-    · rw [chart_source_of_boundaryless]
+    · rw [chart_source]
       exact h.mem_domChart_source
-    · rw [chart_source_of_boundaryless, preimage_comp]
+    · rw [chart_source, preimage_comp]
       exact preimage_mono h.source_subset_preimage_source
     · intro v hv
       have hv' : v ∈ (h.domChart.extend I).target := by
