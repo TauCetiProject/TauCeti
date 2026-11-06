@@ -80,6 +80,99 @@ private theorem holderWith_frozen_hessian_error {α ε L J B : ℝ≥0}
   exact (HolderWith.sum fun i _ => HolderWith.sum fun j _ => hterm i j).mono
     (le_of_eq (by simp [Finset.card_univ]; ring))
 
+/-- The upper ellipticity bound of a matrix with a positive lower bound is positive. -/
+private theorem pos_of_toQuadraticForm'_bounds {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {lam Lam : ℝ} (hlam : 0 < lam) (hA : ∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ)
+    (hA' : ∀ ξ : E, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) : 0 < Lam := by
+  have := (hA (EuclideanSpace.single 0 1)).trans (hA' _)
+  have hlamLam : lam ≤ Lam := by simpa using this
+  exact hlam.trans_le hlamLam
+
+/-- Freezing the coefficients of `∑ aᵢⱼ ∂ᵢ∂ⱼ u` at a constant matrix `A` changes its Hölder
+constant by at most `(n+1)² (ε J + L b)`, where `b` bounds the Hessian pointwise. -/
+private theorem holderWith_sum_smul_fderiv_fderiv_frozen {α ε L J K : ℝ≥0} {b : ℝ} (hb : 0 ≤ b)
+    {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+    {a : E → Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {u : E → ℝ}
+    (ha : ∀ x i j, |a x i j - A i j| ≤ ε) (hL : ∀ i j, HolderWith L α (fun x => a x i j))
+    (hJ : HolderWith J α (iteratedFDeriv ℝ 2 u)) (hB : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ b)
+    (hf : HolderWith K α (fun x => ∑ i, ∑ j, a x i j • fderiv ℝ (fderiv ℝ u) x
+      (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))) :
+    HolderWith (K + ((n + 1 : ℝ≥0) ^ 2) * (ε * J + L * b).toNNReal) α
+      (fun x => ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ u) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) := by
+  have hB' : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ (b.toNNReal : ℝ) := fun x =>
+    (hB x).trans_eq (Real.coe_toNNReal _ hb).symm
+  have herror := holderWith_frozen_hessian_error ha hL hJ hB'
+  have hconst : ε * J + b.toNNReal * L = (ε * J + L * b).toNNReal := by
+    apply NNReal.coe_injective
+    rw [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_mul, Real.coe_toNNReal _ hb,
+      Real.coe_toNNReal _ (by positivity)]
+    ring
+  rw [hconst] at herror
+  convert hf.add herror using 1
+  funext x
+  simp only [Pi.add_apply, iteratedFDeriv_two_apply, smul_eq_mul, ← Finset.sum_add_distrib,
+    Matrix.cons_val_zero, Matrix.cons_val_one]
+  congr 1
+  ext i
+  congr 1
+  ext j
+  ring
+
+/-- Global form of the frozen-coefficient interior estimate: the Hölder constant of the Hessian
+is bounded by the Hölder constant of the frozen operator and the global `L²` norm of the
+Hessian, at any scale `r`. -/
+private theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_memLp
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ} {lam Lam : ℝ},
+      0 < lam → (∀ ξ : E, lam * ‖ξ‖ ^ 2 ≤ A.toQuadraticForm' ξ) →
+      (∀ ξ : E, A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2) →
+      ∀ {K : ℝ≥0} {r : ℝ} {u : E → ℝ}, 0 < r → ContDiff ℝ 2 u →
+      MemLp (iteratedFDeriv ℝ 2 u) 2 volume →
+      HolderWith K α (fun x => ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ u) x
+        (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)) →
+      HolderWith (C * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2) *
+        (K / lam + r ^ (-(((n : ℝ) + 1) / 2 + α)) *
+          (eLpNorm (iteratedFDeriv ℝ 2 u) 2 volume).toReal)).toNNReal α
+        (iteratedFDeriv ℝ 2 u) := by
+  obtain ⟨C, hC, hS⟩ :=
+    exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv hα hα1 (n := n)
+  refine ⟨C, hC, fun {A lam Lam} hlam hA hA' {K r u} hr hu hH2 hg => ?_⟩
+  have hLam := pos_of_toQuadraticForm'_bounds hlam hA hA'
+  have hM : 0 ≤ (eLpNorm (iteratedFDeriv ℝ 2 u) 2 volume).toReal := ENNReal.toReal_nonneg
+  apply holderOnWith_univ.mp
+  apply HolderOnWith.of_dist_le
+  intro x _ y _
+  have hxyBounded : Bornology.IsBounded ({x, y} : Set E) :=
+    ((finite_singleton y).insert x).isBounded
+  have hxy := hS hlam hA hA' isOpen_univ hu.contDiffOn hxyBounded
+    hr (subset_univ _) (hg.holderOnWith _)
+  have hb := hxy.dist_le (by simp : x ∈ ({x, y} : Set E)) (by simp : y ∈ ({x, y} : Set E))
+  rw [Real.coe_toNNReal _ (by positivity)] at hb
+  rw [Real.coe_toNNReal _ (by positivity)]
+  have hLp := ENNReal.toReal_mono hH2.eLpNorm_ne_top
+    (eLpNorm_mono_measure (iteratedFDeriv ℝ 2 u)
+      (Measure.restrict_le_self (s := thickening r {x, y})))
+  refine hb.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
+  gcongr
+
+/-- Absorbing the Hölder constant `J` on the right-hand side of the a priori estimate. -/
+private theorem le_two_mul_of_le_mul_add_mul {J κ K lam L V M R ε ρ N : ℝ} (hlam : 0 < lam)
+    (hJ : 0 ≤ J)
+    (hbound : J ≤ κ * ((K + N * (ε * J + L * (J * ρ + V * M))) / lam + R * M))
+    (hsmall : 2 * κ * N * (ε + L * ρ) ≤ lam) :
+    J ≤ 2 * κ * (K / lam + (N * L / lam * V + R) * M) := by
+  have hsmall' : κ * N * (ε + L * ρ) / lam ≤ 1 / 2 := by
+    apply (div_le_iff₀ hlam).2
+    linarith
+  have heq : κ * ((K + N * (ε * J + L * (J * ρ + V * M))) / lam + R * M) =
+      κ * (K / lam + (N * L / lam * V + R) * M) + (κ * N * (ε + L * ρ) / lam) * J := by
+    field_simp
+    ring
+  rw [heq] at hbound
+  have := mul_le_mul_of_nonneg_right hsmall' hJ
+  linarith
+
 /-- **Global a priori Schauder estimate for coefficients of small oscillation.**
 For `0 < α < 1` there is `C > 0`, depending only on dimension and `α`, with the following
 property. Put `κ = C (Λ / λ)^(1 + (n+1)/4 + α/2)`. Let `A` have ellipticity bounds `λ, Λ`, with
@@ -116,7 +209,7 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
             (eLpNorm (iteratedFDeriv ℝ 2 u) 2 volume).toReal)).toNNReal
         α (iteratedFDeriv ℝ 2 u) := by
   obtain ⟨C₀, hC₀, hS⟩ :=
-    exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv hα hα1 (n := n)
+    exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_memLp hα hα1 (n := n)
   refine ⟨C₀ + 1, by positivity, fun {A lam Lam} hlam hA hA' {a ε L K r} hr hsmall ha hL
     {u} hu hH hH2 hf => ?_⟩
   let H := iteratedFDeriv ℝ 2 u
@@ -124,101 +217,30 @@ theorem exists_holderWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_abs_su
   let M : ℝ := (eLpNorm H 2 volume).toReal
   let V : ℝ := (volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹))).toReal
   let κ : ℝ := (C₀ + 1) * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2)
-  have hLam : 0 < Lam := by
-    have := (hA (EuclideanSpace.single 0 1)).trans (hA' _)
-    have hlamLam : lam ≤ Lam := by simpa using this
-    exact hlam.trans_le hlamLam
+  have hLam := pos_of_toQuadraticForm'_bounds hlam hA hA'
   have hκ : 0 ≤ κ := by positivity
   have hM : 0 ≤ M := ENNReal.toReal_nonneg
   have hV : 0 ≤ V := ENNReal.toReal_nonneg
   have hJ : HolderWith J α H := hH.holderWith
-  have hvol : volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹)) ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos volume 0 hr).ne' measure_ball_lt_top.ne
   -- Interpolation at scale `r` makes the supremum term absorbable too.
   have hsup (x : E) : ‖H x‖ ≤ J * r ^ (α : ℝ) + V * M := by
-    have hx := hJ.enorm_le_add_eLpNorm (by norm_num) (by norm_num) hH2 hr x
-    have hfin : (J : ℝ≥0∞) * ENNReal.ofReal r ^ (α : ℝ) +
-        volume (ball (0 : E) r) ^ (-((2 : ℝ)⁻¹)) * eLpNorm H 2 volume ≠ ∞ := by
-      finiteness
-    have hx' := (ENNReal.toReal_le_toReal enorm_ne_top hfin).2 hx
-    rw [ENNReal.toReal_add (by finiteness) (ENNReal.mul_ne_top hvol hH2.eLpNorm_ne_top),
-      ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ← ENNReal.toReal_rpow,
-      ENNReal.toReal_ofReal hr.le] at hx'
-    simpa only [toReal_enorm] using hx'
-  let Q : ℝ≥0 := (ε * J + L * (J * r ^ (α : ℝ) + V * M)).toNNReal
-  have hQ : (Q : ℝ) = ε * J + L * (J * r ^ (α : ℝ) + V * M) := by
-    exact Real.coe_toNNReal _ (by positivity)
-  let e : E → ℝ := fun x => ∑ i, ∑ j, (A i j - a x i j) *
-    H x ![EuclideanSpace.single i 1, EuclideanSpace.single j 1]
-  have he : HolderWith (((n + 1 : ℝ≥0) ^ 2) * Q) α e := by
-    have hB : ∀ x, ‖H x‖ ≤ ((J * r ^ (α : ℝ) + V * M).toNNReal : ℝ) := fun x =>
-      (hsup x).trans_eq (Real.coe_toNNReal _ (by positivity)).symm
-    have herror := holderWith_frozen_hessian_error ha hL hJ hB
-    have hconst : ε * J + (J * r ^ (α : ℝ) + V * M).toNNReal * L = Q := by
-      apply NNReal.coe_injective
-      rw [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_mul,
-        Real.coe_toNNReal _ (by positivity), hQ]
-      ring
-    simpa only [hconst] using herror
-  let g : E → ℝ := fun x => ∑ i, ∑ j, A i j • fderiv ℝ (fderiv ℝ u) x
-    (EuclideanSpace.single i 1) (EuclideanSpace.single j 1)
-  have hg : HolderWith (K + ((n + 1 : ℝ≥0) ^ 2) * Q) α g := by
-    convert hf.add he using 1
-    funext x
-    simp only [Pi.add_apply, e, g, H, iteratedFDeriv_two_apply, smul_eq_mul,
-      ← Finset.sum_add_distrib, Matrix.cons_val_zero, Matrix.cons_val_one]
-    congr 1
-    ext i
-    congr 1
-    ext j
-    ring
-  -- Apply the interior frozen estimate to each two-point set, with one common global bound.
-  have hglobal : HolderWith (κ * ((K + ((n + 1 : ℝ≥0) ^ 2) * Q) / lam +
-      r ^ (-(((n : ℝ) + 1) / 2 + α)) * M)).toNNReal α H := by
-    apply holderOnWith_univ.mp
-    apply HolderOnWith.of_dist_le
-    intro x _ y _
-    have hxyBounded : Bornology.IsBounded ({x, y} : Set E) :=
-      ((finite_singleton y).insert x).isBounded
-    have hxy := hS hlam hA hA' isOpen_univ hu.contDiffOn hxyBounded
-      hr (subset_univ _) (hg.holderOnWith _)
-    have hb := hxy.dist_le (by simp : x ∈ ({x, y} : Set E)) (by simp : y ∈ ({x, y} : Set E))
-    rw [Real.coe_toNNReal _ (by positivity)] at hb ⊢
-    refine hb.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
-    have hLp : (eLpNorm H 2 (volume.restrict (thickening r ({x, y} : Set E)))).toReal ≤ M :=
-      ENNReal.toReal_mono hH2.eLpNorm_ne_top (eLpNorm_mono_measure H Measure.restrict_le_self)
-    calc C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2) *
-          ((K + ((n + 1 : ℝ≥0) ^ 2) * Q) / lam +
-            r ^ (-(((n : ℝ) + 1) / 2 + α)) *
-              (eLpNorm H 2 (volume.restrict (thickening r ({x, y} : Set E)))).toReal)
-        ≤ C₀ * (Lam / lam) ^ (1 + ((n : ℝ) + 1) / 4 + α / 2) *
-          ((K + ((n + 1 : ℝ≥0) ^ 2) * Q) / lam +
-            r ^ (-(((n : ℝ) + 1) / 2 + α)) * M) := by gcongr
-      _ ≤ _ := by dsimp [κ]; gcongr; linarith
-  have hbound : (J : ℝ) ≤ ((κ * ((K + ((n + 1 : ℝ≥0) ^ 2) * Q) / lam +
-      r ^ (-(((n : ℝ) + 1) / 2 + α)) * M)).toNNReal : ℝ) := by
-    exact_mod_cast hglobal.nnholderNorm_le
-  rw [Real.coe_toNNReal _ (by positivity)] at hbound
-  have hbound' : (J : ℝ) ≤ κ * ((K + ((n : ℝ) + 1) ^ 2 *
-      (ε * J + L * (J * r ^ (α : ℝ) + V * M))) / lam +
-        r ^ (-(((n : ℝ) + 1) / 2 + α)) * M) := by
-    simpa only [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_natCast,
-      NNReal.coe_one, hQ] using hbound
-  have hsmall' : κ * ((n : ℝ) + 1) ^ 2 * (ε + L * r ^ (α : ℝ)) / lam ≤ 1 / 2 := by
-    apply (div_le_iff₀ hlam).2
-    dsimp [κ] at *
+    simpa using hJ.norm_le_add_toReal_eLpNorm (by norm_num) (by norm_num) hH2 hr x
+  have hg := holderWith_sum_smul_fderiv_fderiv_frozen (by positivity) ha hL hJ hsup hf
+  have hglobal : HolderWith (κ * ((K + ((n + 1 : ℝ≥0) ^ 2) *
+      (ε * J + L * (J * r ^ (α : ℝ) + V * M)).toNNReal) / lam +
+        r ^ (-(((n : ℝ) + 1) / 2 + α)) * M)).toNNReal α H := by
+    refine (hS hlam hA hA' hr hu hH2 hg).mono (Real.toNNReal_le_toNNReal ?_)
+    dsimp [κ]
+    gcongr
     linarith
+  have hbound := NNReal.coe_le_coe.2 hglobal.nnholderNorm_le
   have hfinal : (J : ℝ) ≤ 2 * κ * (K / lam +
       (((n : ℝ) + 1) ^ 2 * L / lam * V + r ^ (-(((n : ℝ) + 1) / 2 + α))) * M) := by
-    have heq : κ * ((K + ((n : ℝ) + 1) ^ 2 *
-        (ε * J + L * (J * r ^ (α : ℝ) + V * M))) / lam +
-          r ^ (-(((n : ℝ) + 1) / 2 + α)) * M) =
-        κ * (K / lam + (((n : ℝ) + 1) ^ 2 * L / lam * V +
-          r ^ (-(((n : ℝ) + 1) / 2 + α))) * M) +
-          (κ * ((n : ℝ) + 1) ^ 2 * (ε + L * r ^ (α : ℝ)) / lam) * J := by ring
-    rw [heq] at hbound'
-    have := mul_le_mul_of_nonneg_right hsmall' J.coe_nonneg
-    linarith
+    refine le_two_mul_of_le_mul_add_mul hlam J.coe_nonneg ?_ hsmall
+    rw [Real.coe_toNNReal _ (by positivity)] at hbound
+    simpa only [NNReal.coe_add, NNReal.coe_mul, NNReal.coe_pow, NNReal.coe_natCast,
+      NNReal.coe_one, Real.coe_toNNReal _ (by positivity : 0 ≤ ε * J + L * (J * r ^ (α : ℝ) +
+        V * M))] using hbound
   exact hJ.mono (by
     rw [← NNReal.coe_le_coe, Real.coe_toNNReal _ (by positivity)]
     exact hfinal)

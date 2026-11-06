@@ -22,6 +22,7 @@ Hölder's inequality controls the average itself.
 ## Main declarations
 
 * `HolderWith.enorm_le_add_eLpNorm`: a global Hölder function in `Lᵖ` has a pointwise bound.
+* `HolderWith.norm_le_add_toReal_eLpNorm`: the same bound with real constants.
 * `HolderWith.toHolderSpace`: bundle a global Hölder `Lᵖ` function in `TauCeti.HolderSpace`.
 * `HolderWith.norm_toHolderSpace_le`: the resulting Hölder-space norm estimate.
 -/
@@ -82,6 +83,24 @@ theorem enorm_le_add_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p �
     _ ≤ C * ENNReal.ofReal r ^ (α : ℝ) + mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu :=
       add_le_add (by rw [edist_comm]; simpa only [edist_eq_enorm_sub] using hdev)
         (enorm_ballAverage_le hp hp' x)
+
+/-- Real-valued form of `HolderWith.enorm_le_add_eLpNorm`: the pointwise norm bound for a global
+Hölder function in `Lᵖ`, stated with real constants. -/
+theorem norm_le_add_toReal_eLpNorm (hg : HolderWith C α g) (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (hgLp : MemLp g p mu) {r : ℝ} (hr : 0 < r) (x : E) :
+    ‖g x‖ ≤ C * r ^ (α : ℝ) +
+      (mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹)).toReal * (eLpNorm g p mu).toReal := by
+  have hvol : mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) ≠ ∞ :=
+    ENNReal.rpow_ne_top_of_ne_zero (measure_ball_pos mu 0 hr).ne' measure_ball_lt_top.ne
+  have hx := hg.enorm_le_add_eLpNorm hp hp' hgLp hr x
+  have hfin : (C : ℝ≥0∞) * ENNReal.ofReal r ^ (α : ℝ) +
+      mu (ball (0 : E) r) ^ (-(p.toReal)⁻¹) * eLpNorm g p mu ≠ ∞ := by
+    finiteness
+  have hx' := (ENNReal.toReal_le_toReal enorm_ne_top hfin).2 hx
+  rw [ENNReal.toReal_add (by finiteness) (ENNReal.mul_ne_top hvol hgLp.eLpNorm_ne_top),
+    ENNReal.toReal_mul, ENNReal.toReal_mul, ENNReal.coe_toReal, ← ENNReal.toReal_rpow,
+    ENNReal.toReal_ofReal hr.le] at hx'
+  simpa only [toReal_enorm] using hx'
 
 /-- A global Hölder function in `Lᵖ`, bundled as an element of the Hölder Banach space. -/
 def toHolderSpace (hg : HolderWith C α g) (hα : 0 < α) (hp : 1 ≤ p) (hp' : p ≠ ∞)
