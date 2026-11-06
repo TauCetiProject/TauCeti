@@ -29,7 +29,7 @@ submodule.
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.sections D U`, the displayed `Γ(X, U)`-submodule of
   `Γ(𝒦_X, U)`, with `mem_sections_iff` its description over a nonempty open subset and
   `rationalFunctionsEquiv_symm_mem_sections` its membership criterion for a rational function;
-  `isEffective_iff_one_mem_sections` detects effectivity using the rational section `1`, while
+  `nonneg_iff_one_mem_sections` detects effectivity using the rational section `1`, while
   `sections_congr` and `sections_add_zsmul_ofPoint_eq` describe its dependence on the divisor's
   coefficients inside `U`;
 * `TauCeti.AlgebraicGeometry.SchemeWeilDivisor.submodule D`, the same data as a submodule of the
@@ -139,14 +139,14 @@ lemma mem_sections {D : SchemeWeilDivisor X} {U : X.Opens}
 
 /-- A Weil divisor is effective exactly when the rational section `1` belongs to its divisor
 sheaf over the whole scheme. -/
-theorem isEffective_iff_one_mem_sections (D : SchemeWeilDivisor X) :
-    WeilDivisor.IsEffective D ↔
+theorem nonneg_iff_one_mem_sections (D : SchemeWeilDivisor X) :
+    0 ≤ D ↔
       Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) ⊤
         (1 : Γ(X, (⊤ : X.Opens))) ∈ sections D ⊤ := by
   rw [mem_sections]
   simp only [Scheme.rationalFunctionsEquiv_toRationalFunctions_app, map_one, one_ne_zero,
     false_or, Scheme.ord_one]
-  rw [WeilDivisor.isEffective_iff]
+  rw [WeilDivisor.nonneg_iff]
   constructor
   · intro h x _
     have hx := h x
@@ -411,23 +411,23 @@ lemma sheafHomOfLE_app_bijective_of_coeff_eq {D E : SchemeWeilDivisor X} (h : D 
 
 /-- For an effective divisor `D`, every regular function on `U` is a section of `𝒪_X(D)`. -/
 lemma toRationalFunctions_app_mem_sections {D : SchemeWeilDivisor X}
-    (hD : WeilDivisor.IsEffective D) (U : X.Opens) (a : Γ(X, U)) :
+    (hD : 0 ≤ D) (U : X.Opens) (a : Γ(X, U)) :
     Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) U a ∈ sections D U := by
   refine mem_sections.mpr fun x hx ↦ ?_
   have : Nonempty U := ⟨⟨x, hx⟩⟩
   rw [Scheme.rationalFunctionsEquiv_toRationalFunctions_app]
-  exact Or.inr <| (neg_nonpos.mpr ((WeilDivisor.isEffective_iff D).mp hD x)).trans
+  exact Or.inr <| (neg_nonpos.mpr (WeilDivisor.coeff_nonneg hD x)).trans
     (Scheme.ord_germToFunctionField_nonneg a hx)
 
 /-- For an effective divisor `D`, the inclusion `𝒪_X ⟶ 𝒦_X` factors through `𝒪_X(D)`. -/
-def unitToSheaf {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D) :
+def unitToSheaf {D : SchemeWeilDivisor X} (hD : 0 ≤ D) :
     @Quiver.Hom X.Modules _ (SheafOfModules.unit X.ringCatSheaf) (sheaf D) :=
   TauCeti.SheafOfModules.liftToSubmodule (submodule D) (Scheme.toRationalFunctions X)
     fun U a ↦ toRationalFunctions_app_mem_sections hD U.unop a
 
 /-- The canonical map `𝒪_X ⟶ 𝒪_X(D)` is an isomorphism if every section of `𝒪_X(D)` is
 regular. -/
-theorem isIso_unitToSheaf {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D)
+theorem isIso_unitToSheaf {D : SchemeWeilDivisor X} (hD : 0 ≤ D)
     (hsurj : ∀ (U : X.Opens) (s : Γ(Scheme.rationalFunctions X, U)),
       s ∈ sections D U → ∃ t, Scheme.Modules.Hom.app (Scheme.toRationalFunctions X) U t = s) :
     IsIso (unitToSheaf hD) := by
@@ -436,7 +436,7 @@ theorem isIso_unitToSheaf {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffectiv
     Scheme.toRationalFunctions_app_injective hsurj
 
 @[simp, reassoc]
-lemma unitToSheaf_ι {D : SchemeWeilDivisor X} (hD : WeilDivisor.IsEffective D) :
+lemma unitToSheaf_ι {D : SchemeWeilDivisor X} (hD : 0 ≤ D) :
     unitToSheaf hD ≫ sheafι D = Scheme.toRationalFunctions X :=
   TauCeti.SheafOfModules.liftToSubmodule_ι _ _ _
 
