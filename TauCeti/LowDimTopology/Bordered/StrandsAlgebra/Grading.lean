@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Algebra.Operations
+public import Mathlib.Algebra.DirectSum.Module
+public import Mathlib.LinearAlgebra.Finsupp.Supported
 public import Mathlib.Algebra.Order.Field.Rat
 public import Mathlib.GroupTheory.Subgroup.Center
 public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Basic
@@ -46,10 +48,10 @@ functions of total sum zero. The boundary of the class of a diagram `φ : S → 
 `m(β, p) = -∑_{y < p} ∂β(y) - ∂β(p) / 2`, and for the class of a diagram this is the average of the
 number of strands passing just below and just above `p`
 (`TauCeti.StrandDiagram.pointMultiplicity_boundary`). The Maslov component is taken in `ℚ`.
-Lipshitz, Ozsváth and Thurston's `G'(n)` is the subgroup of `TauCeti.StrandGradingGroup (Fin n)` of
-the elements with half-integral Maslov component and boundary of total sum zero, and every grading
-of a diagram lies in it (`TauCeti.StrandDiagram.sum_boundary`,
-`TauCeti.StrandDiagram.exists_maslov_grading_eq`).
+Lipshitz, Ozsváth and Thurston's `G'(n)` is the subgroup `TauCeti.StrandGradingGroup.halfIntegral`
+of `TauCeti.StrandGradingGroup (Fin n)` of the elements with half-integral Maslov component and
+boundary of total sum zero, and every grading of a diagram lies in it
+(`TauCeti.StrandDiagram.grading_mem_halfIntegral`).
 
 ## Main definitions
 
@@ -57,20 +59,24 @@ of a diagram lies in it (`TauCeti.StrandDiagram.sum_boundary`,
 * `TauCeti.StrandGradingGroup.pointMultiplicity`: the multiplicity `m(β, p)` of a class at a point.
 * `TauCeti.StrandGradingGroup.linking`: the bilinear form `L(β₁, β₂) = m(β₂, ∂β₁)`.
 * `TauCeti.StrandGradingGroup.lambda`: the central element `λ = (1, 0)`.
+* `TauCeti.StrandGradingGroup.halfIntegral`: the subgroup `G'(n)`.
 * `TauCeti.StrandDiagram.boundary`: the boundary of the class of the strands of a diagram.
 * `TauCeti.StrandDiagram.grading`: the grading `gr(φ)` of a strand diagram.
-* `TauCeti.StrandsAlgebra.gradedPart`: the span of the diagrams of a given grading.
+* `TauCeti.StrandsAlgebra.gradedPart`: the elements supported on the diagrams of a given grading.
 
 ## Main results
 
 * `TauCeti.StrandDiagram.grading_trans`: the grading is multiplicative on composable diagrams.
 * `TauCeti.StrandDiagram.grading_idOn`: the identity diagrams have grading `1`.
+* `TauCeti.StrandDiagram.grading_mem_halfIntegral`: every grading of a diagram lies in `G'(n)`.
 * `TauCeti.StrandDiagram.grading_eq_lambda_zpow_mul`: diagrams with the same ends differ in
   grading by a power of `λ`.
 * `TauCeti.StrandsAlgebra.mul_mem_gradedPart`, `TauCeti.StrandsAlgebra.one_mem_gradedPart`,
   `TauCeti.StrandsAlgebra.iSup_gradedPart`: the graded parts multiply according to the group law,
   contain the unit in degree `1`, and span the algebra; a strand diagram lies in the part of its
   own grading only (`TauCeti.StrandsAlgebra.of_mem_gradedPart_iff`).
+* `TauCeti.StrandsAlgebra.iSupIndep_gradedPart`, `TauCeti.StrandsAlgebra.isInternal_gradedPart`:
+  the graded parts are independent, so over a ring the algebra is their internal direct sum.
 
 ## References
 
@@ -89,8 +95,9 @@ namespace TauCeti
 /-- The grading group of the strands algebra on a finite linear order `α`: pairs of a Maslov
 component `maslov` and the boundary `boundary = ∂β : α → ℤ` of a class
 `β ∈ H₁([1, n], {1, …, n})`, multiplied by `(j₁, β₁) (j₂, β₂) = (j₁ + j₂ + L(β₁, β₂), β₁ + β₂)`.
-For `α = Fin n`, Lipshitz, Ozsváth and Thurston's group `G'(n)` is its subgroup of elements with
-half-integral Maslov component and boundary of total sum zero. -/
+For `α = Fin n`, Lipshitz, Ozsváth and Thurston's group `G'(n)` is its subgroup
+`StrandGradingGroup.halfIntegral` of elements with half-integral Maslov component and boundary of
+total sum zero. -/
 @[ext]
 structure StrandGradingGroup (α : Type*) where
   /-- The Maslov component. -/
@@ -220,6 +227,45 @@ theorem mul_lambda_zpow (g : StrandGradingGroup α) (n : ℤ) :
 theorem lambda_mem_center : (lambda : StrandGradingGroup α) ∈ Subgroup.center _ :=
   Subgroup.mem_center_iff.2 fun g ↦ by ext <;> simp [add_comm]
 
+/-- The form `L` takes half-integral values. -/
+theorem exists_linking_eq (δ₁ δ₂ : α → ℤ) :
+    ∃ k : ℤ, linking δ₁ δ₂ = k / 2 := by
+  refine ⟨∑ p, δ₁ p * (-2 * ∑ y ∈ ({y | y < p} : Finset α), δ₂ y - δ₂ p), ?_⟩
+  simp only [linking_apply, pointMultiplicity_apply, div_eq_mul_inv]
+  push_cast
+  rw [Finset.sum_mul]
+  refine Finset.sum_congr rfl fun p _ ↦ ?_
+  ring
+
+/-- The grading group `G'(n)` of Lipshitz, Ozsváth and Thurston, for `α = Fin n`: the subgroup of
+the elements with half-integral Maslov component and boundary of total sum zero. -/
+def halfIntegral : Subgroup (StrandGradingGroup α) where
+  carrier := {g | (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0}
+  mul_mem' := by
+    rintro g h ⟨⟨k₁, hk₁⟩, hg⟩ ⟨⟨k₂, hk₂⟩, hh⟩
+    obtain ⟨k₃, hk₃⟩ := exists_linking_eq g.boundary h.boundary
+    refine ⟨⟨k₁ + k₂ + k₃, ?_⟩, ?_⟩
+    · rw [mul_maslov, hk₁, hk₂, hk₃]
+      push_cast
+      ring
+    · simp [Finset.sum_add_distrib, hg, hh]
+  one_mem' := ⟨⟨0, by simp⟩, by simp⟩
+  inv_mem' := by
+    rintro g ⟨⟨k₁, hk₁⟩, hg⟩
+    obtain ⟨k₂, hk₂⟩ := exists_linking_eq g.boundary g.boundary
+    refine ⟨⟨-k₁ + k₂, ?_⟩, ?_⟩
+    · rw [inv_maslov, hk₁, hk₂]
+      push_cast
+      ring
+    · simp [hg]
+
+theorem mem_halfIntegral {g : StrandGradingGroup α} :
+    g ∈ halfIntegral ↔ (∃ k : ℤ, g.maslov = k / 2) ∧ ∑ x, g.boundary x = 0 :=
+  Iff.rfl
+
+theorem lambda_mem_halfIntegral : (lambda : StrandGradingGroup α) ∈ halfIntegral :=
+  ⟨⟨2, by simp⟩, by simp⟩
+
 end StrandGradingGroup
 
 namespace StrandDiagram
@@ -250,40 +296,17 @@ theorem boundary_trans_of_target_eq {φ ψ : StrandDiagram α} (h : φ.target = 
     target_trans_of_target_eq h, h]
   ring
 
-/-- The end point of the strand starting at a point of the source. -/
-private theorem getD_mem {φ : StrandDiagram α} {i : α} (hi : i ∈ φ.source) :
-    (φ i).getD i ∈ φ i := by
-  obtain ⟨j, hj⟩ := mem_source.1 hi
-  rw [Option.mem_def] at hj ⊢
-  simp [hj]
-
-/-- The end points of a diagram are the images of its starting points. -/
-private theorem target_eq_image (φ : StrandDiagram α) :
-    φ.target = φ.source.image fun i ↦ (φ i).getD i := by
-  ext j
-  simp only [mem_target, Finset.mem_image]
-  refine ⟨fun ⟨i, hi⟩ ↦ ⟨i, mem_source.2 ⟨j, hi⟩, ?_⟩, fun ⟨i, hi, hj⟩ ↦ ⟨i, hj ▸ getD_mem hi⟩⟩
-  rw [Option.mem_def] at hi
-  simp [hi]
-
-private theorem injOn_getD (φ : StrandDiagram α) :
-    Set.InjOn (fun i ↦ (φ i).getD i) φ.source :=
-  fun i hi j hj h ↦ by
-    have h : (φ i).getD i = (φ j).getD j := h
-    exact φ.toPEquiv.inj (getD_mem hi) (h ▸ getD_mem hj)
-
 /-- A diagram has as many end points as starting points, so the boundary of its class has total
 sum zero. -/
 theorem sum_boundary (φ : StrandDiagram α) : ∑ x, φ.boundary x = 0 := by
   simp only [boundary_apply, Finset.sum_sub_distrib, Finset.sum_boole, Finset.filter_mem_eq_inter,
-    Finset.univ_inter, target_eq_image φ, card_image_of_injOn (injOn_getD φ), sub_self]
+    Finset.univ_inter, card_target, sub_self]
 
 /-- The boundary of the class of a diagram, summed over the points below `p`, counts the strands
 passing over `p`: those starting below `p` and ending at or above it. -/
 private theorem sum_boundary_lt (φ : StrandDiagram α) (p : α) :
     ∑ y ∈ ({y | y < p} : Finset α), φ.boundary y =
       -#{s ∈ φ.source | s < p ∧ p ≤ (φ s).getD s} := by
-  have hle : ∀ s ∈ φ.source, s ≤ (φ s).getD s := fun s hs ↦ φ.le_of_mem (getD_mem hs)
   have hT : #{t ∈ φ.target | t < p} = #{s ∈ φ.source | (φ s).getD s < p} := by
     rw [target_eq_image φ, Finset.filter_image, card_image_of_injOn]
     exact (injOn_getD φ).mono (Finset.filter_subset _ _)
@@ -303,7 +326,7 @@ private theorem sum_boundary_lt (φ : StrandDiagram α) (p : α) :
       · exact Or.inl ⟨hs, h⟩
       · exact Or.inr ⟨hs, hsp, not_lt.1 h⟩
     · rintro (⟨hs, h⟩ | ⟨hs, hsp, -⟩)
-      · exact ⟨hs, (hle s hs).trans_lt h⟩
+      · exact ⟨hs, (le_getD hs).trans_lt h⟩
       · exact ⟨hs, hsp⟩
   have hsum : ∑ y ∈ ({y | y < p} : Finset α), φ.boundary y =
       (#{t ∈ φ.target | t < p} : ℤ) - #{s ∈ φ.source | s < p} := by
@@ -332,7 +355,6 @@ with the one starting at `p`. -/
 private theorem card_filter_le_lt_add (φ : StrandDiagram α) (p : α) :
     #{s ∈ φ.source | s ≤ p ∧ p < (φ s).getD s} + (if p ∈ φ.target then 1 else 0) =
       #{s ∈ φ.source | s < p ∧ p ≤ (φ s).getD s} + (if p ∈ φ.source then 1 else 0) := by
-  have hle : ∀ s ∈ φ.source, s ≤ (φ s).getD s := fun s hs ↦ φ.le_of_mem (getD_mem hs)
   have hS : #{s ∈ φ.source | s = p} = if p ∈ φ.source then 1 else 0 := by
     rw [Finset.filter_eq']
     split_ifs <;> simp
@@ -354,14 +376,14 @@ private theorem card_filter_le_lt_add (φ : StrandDiagram α) (p : α) :
     · rcases hsp.lt_or_eq with hsp | rfl
       · exact Or.inl ⟨hs, hsp, hps.le⟩
       · exact Or.inr ⟨hs, rfl⟩
-    · rcases (hle s hs).lt_or_eq with h | h
+    · rcases (le_getD hs).lt_or_eq with h | h
       · exact Or.inl ⟨hs, h, le_rfl⟩
       · exact Or.inr ⟨hs, h⟩
   · rintro (⟨hs, hsp, hps⟩ | ⟨hs, rfl⟩)
     · rcases hps.lt_or_eq with hps | hps
       · exact Or.inl ⟨hs, hsp.le, hps⟩
       · exact Or.inr ⟨hs, hps.symm⟩
-    · rcases (hle s hs).lt_or_eq with h | h
+    · rcases (le_getD hs).lt_or_eq with h | h
       · exact Or.inl ⟨hs, le_rfl, h⟩
       · exact Or.inr ⟨hs, h.symm⟩
 
@@ -453,6 +475,11 @@ theorem grading_eq_lambda_zpow_mul {φ ψ : StrandDiagram α} (hs : ψ.source = 
     ring
   · simp [hb]
 
+/-- The grading of a diagram lies in the grading group `G'(n)` of Lipshitz, Ozsváth and
+Thurston. -/
+theorem grading_mem_halfIntegral (φ : StrandDiagram α) : φ.grading ∈ halfIntegral :=
+  ⟨φ.exists_maslov_grading_eq, φ.sum_boundary⟩
+
 end StrandDiagram
 
 namespace StrandsAlgebra
@@ -461,27 +488,40 @@ open StrandDiagram
 
 variable (R : Type*) {α : Type*} [CommSemiring R] [LinearOrder α] [Fintype α]
 
-/-- The part of the strands algebra of grading `g`: the span of the strand diagrams of grading
-`g`. -/
+/-- The part of the strands algebra of grading `g`: the elements supported on the strand diagrams
+of grading `g`, that is, the image of `Finsupp.supported` under the basis of strand diagrams. -/
 noncomputable def gradedPart (g : StrandGradingGroup α) : Submodule R (StrandsAlgebra R α) :=
-  Submodule.span R (of '' {φ | φ.grading = g})
+  (Finsupp.supported R R {φ : StrandDiagram α | φ.grading = g}).map
+    ((basis R α).repr.symm : (StrandDiagram α →₀ R) →ₗ[R] StrandsAlgebra R α)
 
 variable {R}
 
-theorem of_mem_gradedPart (φ : StrandDiagram α) :
-    (of φ : StrandsAlgebra R α) ∈ gradedPart R φ.grading :=
-  Submodule.subset_span ⟨φ, rfl, rfl⟩
+/-- An element has grading `g` exactly when every strand diagram in its support has grading `g`. -/
+theorem mem_gradedPart {g : StrandGradingGroup α} {x : StrandsAlgebra R α} :
+    x ∈ gradedPart R g ↔ ∀ φ ∈ ((basis R α).repr x).support, φ.grading = g := by
+  rw [gradedPart, Submodule.mem_map_equiv, LinearEquiv.symm_symm, Finsupp.mem_supported]
+  rfl
+
+/-- The part of grading `g` is the span of the strand diagrams of grading `g`. -/
+theorem gradedPart_eq_span (g : StrandGradingGroup α) :
+    gradedPart R g = Submodule.span R (of '' {φ | φ.grading = g}) := by
+  rw [gradedPart, Finsupp.supported_eq_span_single, Submodule.map_span, ← Set.image_comp]
+  congr 2
+  ext φ
+  simp [← basis_apply]
 
 /-- A strand diagram lies in the part of grading `g` exactly when its grading is `g`. -/
 theorem of_mem_gradedPart_iff [Nontrivial R] {φ : StrandDiagram α} {g : StrandGradingGroup α} :
     (of φ : StrandsAlgebra R α) ∈ gradedPart R g ↔ φ.grading = g := by
-  refine ⟨fun h ↦ ?_, fun h ↦ h ▸ of_mem_gradedPart φ⟩
-  have himage : (of '' {ψ | ψ.grading = g} : Set (StrandsAlgebra R α)) =
-      basis R α '' {ψ | ψ.grading = g} := by
-    simp only [basis_apply]
-  rw [gradedPart, himage, ← basis_apply, Module.Basis.mem_span_image, Module.Basis.repr_self,
-    Finsupp.support_single _ one_ne_zero] at h
-  simpa using h
+  rw [mem_gradedPart, ← basis_apply, Module.Basis.repr_self,
+    Finsupp.support_single _ one_ne_zero]
+  simp
+
+theorem of_mem_gradedPart (φ : StrandDiagram α) :
+    (of φ : StrandsAlgebra R α) ∈ gradedPart R φ.grading :=
+  mem_gradedPart.2 fun ψ hψ ↦ by
+    rw [← basis_apply, Module.Basis.repr_self] at hψ
+    rw [Finset.mem_singleton.1 (Finsupp.support_single_subset hψ)]
 
 theorem idem_mem_gradedPart (s : Finset α) :
     (idem s : StrandsAlgebra R α) ∈ gradedPart R 1 := by
@@ -497,6 +537,7 @@ theorem one_mem_gradedPart : (1 : StrandsAlgebra R α) ∈ gradedPart R 1 := by
 gradings `g` and `h` has grading `g * h`. -/
 theorem mul_mem_gradedPart {g h : StrandGradingGroup α} {x y : StrandsAlgebra R α}
     (hx : x ∈ gradedPart R g) (hy : y ∈ gradedPart R h) : x * y ∈ gradedPart R (g * h) := by
+  rw [gradedPart_eq_span] at hx hy
   induction hx using Submodule.span_induction with
   | mem x hx =>
     obtain ⟨φ, hφ, rfl⟩ := hx
@@ -516,9 +557,24 @@ theorem mul_mem_gradedPart {g h : StrandGradingGroup α} {x y : StrandsAlgebra R
   | smul r x _ hx => rw [smul_mul_assoc]; exact Submodule.smul_mem _ r hx
 
 /-- Every element of the strands algebra is a sum of homogeneous elements. -/
-theorem iSup_gradedPart : ⨆ g : StrandGradingGroup α, gradedPart R g = ⊤ :=
-  eq_top_iff.2 fun x _ ↦ induction_on x (zero_mem _) (fun _ _ ↦ add_mem) fun r φ ↦
-    Submodule.smul_mem _ r (Submodule.mem_iSup_of_mem φ.grading (of_mem_gradedPart φ))
+theorem iSup_gradedPart : ⨆ g : StrandGradingGroup α, gradedPart R g = ⊤ := by
+  have h : ⋃ g : StrandGradingGroup α, {φ : StrandDiagram α | φ.grading = g} = Set.univ :=
+    Set.iUnion_eq_univ_iff.2 fun φ ↦ ⟨φ.grading, rfl⟩
+  simp only [gradedPart, ← Submodule.map_iSup, ← Finsupp.supported_iUnion, h,
+    Finsupp.supported_univ, Submodule.map_top, LinearEquiv.range]
+
+/-- The parts of different gradings are independent. -/
+theorem iSupIndep_gradedPart : iSupIndep (gradedPart R : StrandGradingGroup α → _) := by
+  refine LinearMap.iSupIndep_map _ (basis R α).repr.symm.injective fun g ↦
+    (Finsupp.disjoint_supported_supported (s := {φ : StrandDiagram α | φ.grading = g})
+      (t := {φ | φ.grading ≠ g})
+      (Set.disjoint_left.2 fun _ hφ hφ' ↦ hφ' hφ)).mono_right ?_
+  exact iSup₂_le fun h hne ↦ Finsupp.supported_mono fun φ (hφ : φ.grading = h) ↦ hφ.trans_ne hne
+
+/-- Over a ring, the strands algebra is the internal direct sum of its graded parts. -/
+theorem isInternal_gradedPart {R : Type*} [CommRing R] [DecidableEq (StrandGradingGroup α)] :
+    DirectSum.IsInternal (gradedPart R : StrandGradingGroup α → Submodule R (StrandsAlgebra R α)) :=
+  DirectSum.isInternal_submodule_of_iSupIndep_of_iSup_eq_top iSupIndep_gradedPart iSup_gradedPart
 
 end StrandsAlgebra
 
