@@ -26,7 +26,8 @@ Covariance of the equation requires `C²` phases. Where the section does not van
 Where `∂bar_a α = 0`, the covariant derivative is complex linear,
 `d_a α (v) = v · d_a α (1)` (`covariantDerivative_eq_mul_of_equation_eq_zero`), and it controls
 the gradient of `|α|²` through `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
-(`fderiv_normSq_apply_one_sq_add_apply_I_sq`).
+(`fderiv_normSq_apply_one_sq_add_apply_I_sq`), so `|d_a α (1)| ≤ |∇ |α|²|` where `|α|² ≥ 1 / 2`
+(`norm_covariantDerivative_one_le_norm_fderiv_normSq`).
 
 `equation_add_smul` gives the exact quadratic expansion, and `hasDerivAt_equation`
 identifies `linearizedEquation` as its first variation. For the charge-one infinitesimal
@@ -93,8 +94,9 @@ theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace �
 regularity and derivative. -/
 private theorem sectionValue_eq_ofRealCLM (x : ℂ → EuclideanSpace ℝ (Fin 4)) :
     sectionValue x = fun w ↦ 2 * ((ofRealCLM ∘ fun w ↦ x w 2) w +
-      (ofRealCLM ∘ fun w ↦ x w 3) w * I) :=
-  (rfl)
+      (ofRealCLM ∘ fun w ↦ x w 3) w * I) := by
+  funext w
+  simp only [sectionValue_apply, Function.comp_apply, ofRealCLM_apply]
 
 /-- The squared modulus `|α|² = 4 (p² + q²)` is as regular as the real coordinates of the
 section. -/
@@ -102,6 +104,19 @@ theorem contDiff_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop �
     (hp : ContDiff ℝ n (fun w ↦ x w 2)) (hq : ContDiff ℝ n (fun w ↦ x w 3)) :
     ContDiff ℝ n (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :=
   contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+
+/-- The derivative of the squared modulus `|α|² = 4 (p² + q²)` in terms of those of the real
+coordinates of the section: `d |α|² (v) = 8 (p ∂_v p + q ∂_v q)`. -/
+theorem fderiv_normSq_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z v =
+      8 * (x z 2 * fderiv ℝ (fun w ↦ x w 2) z v + x z 3 * fderiv ℝ (fun w ↦ x w 3) z v) := by
+  have hd := ((hp.hasFDerivAt.pow 2).fun_add (hq.hasFDerivAt.pow 2)).const_mul (4 : ℝ)
+  rw [hd.fderiv]
+  simp only [smul_add, add_apply, smul_apply, smul_eq_mul, Nat.add_one_sub_one, pow_one,
+    nsmul_eq_mul, Nat.cast_ofNat]
+  ring
 
 /-- The section `α = 2 (p + i q)` is as regular as its real coordinates. -/
 theorem contDiff_sectionValue {x : ℂ → EuclideanSpace ℝ (Fin 4)} {n : WithTop ℕ∞}
@@ -249,6 +264,18 @@ theorem covariantDerivative_eq_mul_of_equation_eq_zero {x : ℂ → EuclideanSpa
       (v.re + v.im * I) * covariantDerivative x z 1 := by ring
     _ = v * covariantDerivative x z 1 := by rw [re_add_im]
 
+/-- The squared modulus of `d_a α (1) = 2 ((∂_s p - b₁ q) + i (∂_s q + b₁ p))`. -/
+theorem sq_norm_covariantDerivative_one {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) :
+    ‖covariantDerivative x z 1‖ ^ 2 =
+      4 * ((fderiv ℝ (fun w ↦ x w 2) z 1 - x z 0 * x z 3) ^ 2 +
+        (fderiv ℝ (fun w ↦ x w 3) z 1 + x z 0 * x z 2) ^ 2) := by
+  rw [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply,
+    Complex.sq_norm, Complex.normSq_apply]
+  simp only [one_re, one_im, mul_one, mul_zero, add_zero, mul_re, mul_im, add_re, add_im,
+    ofReal_re, ofReal_im, I_re, I_im, re_ofNat, im_ofNat]
+  ring
+
 /-- Where the holomorphicity rows `∂bar_a α = 0` hold, the gradient of `|α|²` and the covariant
 derivative of `α` satisfy `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`. -/
 theorem fderiv_normSq_apply_one_sq_add_apply_I_sq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
@@ -259,13 +286,7 @@ theorem fderiv_normSq_apply_one_sq_add_apply_I_sq {x : ℂ → EuclideanSpace �
       4 * (4 * (x z 2 ^ 2 + x z 3 ^ 2)) * ‖covariantDerivative x z 1‖ ^ 2 := by
   rw [equation_apply_one] at h₁
   rw [equation_apply_two] at h₂
-  have hd := ((hp.hasFDerivAt.pow 2).fun_add (hq.hasFDerivAt.pow 2)).const_mul (4 : ℝ)
-  rw [hd.fderiv, covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply,
-    Complex.sq_norm, Complex.normSq_apply]
-  simp only [Fin.isValue, Nat.add_one_sub_one, pow_one, nsmul_eq_mul, Nat.cast_ofNat, smul_add,
-    add_apply, smul_apply, smul_eq_mul, one_re, mul_one, one_im, mul_zero, add_zero, add_re, mul_re,
-    re_ofNat, ofReal_re, I_re, ofReal_im, I_im, sub_self, im_ofNat, add_im, mul_im, zero_add,
-    zero_mul, sub_zero, one_mul, zero_sub]
+  rw [fderiv_normSq_apply hp hq, fderiv_normSq_apply hp hq, sq_norm_covariantDerivative_one hp hq]
   -- With `A + i B = d_a α (1) / 2`, the rows give `p ∂_t p + q ∂_t q = q A - p B`, while
   -- `p ∂_s p + q ∂_s q = p A + q B`.
   linear_combination (64 * (x z 2 * fderiv ℝ (fun w ↦ x w 2) z I +
@@ -273,6 +294,29 @@ theorem fderiv_normSq_apply_one_sq_add_apply_I_sq {x : ℂ → EuclideanSpace �
     64 * (x z 3 * (fderiv ℝ (fun w ↦ x w 2) z 1 - x z 0 * x z 3) -
       x z 2 * (fderiv ℝ (fun w ↦ x w 3) z 1 + x z 0 * x z 2))) *
     (x z 2 * h₂ - x z 3 * h₁)
+
+/-- Where the holomorphicity rows `∂bar_a α = 0` hold and `|α|² ≥ 1 / 2`, the covariant derivative
+is bounded by the gradient of `|α|²`: `|d_a α (1)| ≤ |∇ |α|²|`. -/
+theorem norm_covariantDerivative_one_le_norm_fderiv_normSq {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    {z : ℂ} (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z)
+    (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z) (h₁ : equation x z 1 = 0)
+    (h₂ : equation x z 2 = 0) (hhalf : 1 / 2 ≤ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
+    ‖covariantDerivative x z 1‖ ≤ ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖ := by
+  set f := fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z
+  have hid := fderiv_normSq_apply_one_sq_add_apply_I_sq hp hq h₁ h₂
+  -- Both coordinate derivatives are bounded by the operator norm.
+  have hf₁ : f 1 ^ 2 ≤ ‖f‖ ^ 2 := by
+    have h := f.le_opNorm 1
+    rw [norm_one, mul_one, Real.norm_eq_abs] at h
+    exact sq_le_sq' (neg_le_of_abs_le h) (le_of_abs_le h)
+  have hfI : f I ^ 2 ≤ ‖f‖ ^ 2 := by
+    have h := f.le_opNorm I
+    rw [norm_I, mul_one, Real.norm_eq_abs] at h
+    exact sq_le_sq' (neg_le_of_abs_le h) (le_of_abs_le h)
+  -- So `2 |d_a α (1)|² ≤ 4 |α|² |d_a α (1)|² ≤ 2 |∇ |α|²|²`.
+  have hsq : ‖covariantDerivative x z 1‖ ^ 2 ≤ ‖f‖ ^ 2 := by
+    nlinarith [sq_nonneg ‖covariantDerivative x z 1‖]
+  exact (pow_le_pow_iff_left₀ (norm_nonneg _) (norm_nonneg _) two_ne_zero).mp hsq
 
 /-- The curvature component of the linearized equation. -/
 @[simp]

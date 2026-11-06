@@ -39,7 +39,8 @@ covariant derivative is complex linear, `d_a α (v) = v · d_a α (1)`
 (`TauCeti.Vortex.covariantDerivative_eq_mul_of_equation_eq_zero`), and
 `(∂_s |α|²)² + (∂_t |α|²)² = 4 |α|² |d_a α (1)|²`
 (`TauCeti.Vortex.fderiv_normSq_apply_one_sq_add_apply_I_sq`). Where `|α|² ≥ 1 / 2` this bounds
-`|d_a α|` by the gradient of `|α|²`.
+`|d_a α|` by the gradient of `|α|²`
+(`TauCeti.Vortex.norm_covariantDerivative_one_le_norm_fderiv_normSq`).
 
 These are gauge-invariant estimates for classical solutions. The decay of the connection
 coefficients themselves depends on a choice of gauge, such as the winding-`m` end trivialization,
@@ -305,25 +306,8 @@ theorem exists_norm_covariantDerivative_le_mul_exp
   -- Where `|α|² ≥ 1 / 2`, the covariant derivative is bounded by the gradient of `|α|²`.
   obtain ⟨K', hK'⟩ := exists_forall_le_mul_exp_of_eventually_le hcont (c := c) (K := K) (by
     filter_upwards [hlim.eventually (lt_mem_nhds (by norm_num : (1 / 2 : ℝ) < 1))] with z hz
-    have hid := fderiv_normSq_apply_one_sq_add_apply_I_sq (hp₁ z) (hq₁ z)
-      (by simp [hsol z]) (by simp [hsol z])
-    set N := ‖fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z‖
-    have h₁ : |fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z 1| ≤ N := by
-      have h := (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z).le_opNorm 1
-      rwa [norm_one, mul_one, Real.norm_eq_abs] at h
-    have hI : |fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z I| ≤ N := by
-      have h := (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z).le_opNorm I
-      rwa [norm_I, mul_one, Real.norm_eq_abs] at h
-    have hsq : ‖covariantDerivative x z 1‖ ^ 2 ≤ N ^ 2 := by
-      nlinarith [sq_abs (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z 1),
-        sq_abs (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z I),
-        abs_nonneg (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z 1),
-        abs_nonneg (fderiv ℝ (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) z I),
-        sq_nonneg ‖covariantDerivative x z 1‖]
-    have hN : 0 ≤ N := norm_nonneg _
-    have hle : ‖covariantDerivative x z 1‖ ≤ N := by
-      nlinarith [norm_nonneg (covariantDerivative x z 1)]
-    exact hle.trans (hK z))
+    exact (norm_covariantDerivative_one_le_norm_fderiv_normSq (hp₁ z) (hq₁ z) (by simp [hsol z])
+      (by simp [hsol z]) hz.le).trans (hK z))
   refine ⟨K', fun z v ↦ ?_⟩
   rw [covariantDerivative_eq_mul_of_equation_eq_zero (hp₁ z) (hq₁ z) (by simp [hsol z])
     (by simp [hsol z]) v, norm_mul, mul_comm K', mul_assoc]
