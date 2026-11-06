@@ -507,11 +507,8 @@ theorem tendsto_integral_normalCutoff_mul {a : ℝ} {F : WithLp 2 (ℝ × E) →
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- Pointwise domination of the cutoff-derivative error term, where `C` bounds the derivative of
-`smoothTransition` on `[-1, 1]` and `M` bounds the derivative of `χ`. The integrand vanishes off
-`tsupport χ`, off the half-space, and where the cutoff argument exceeds `1` (there
-`smoothTransition` is constant). On the remaining band the cutoff argument lies in `[-1, 1]`, so
-the derivative is at most `C`, and `(n + 1) (x.fst - a) ≤ 2` absorbs the factor `n + 1` against
-`|χ x| ≤ M (x.fst - a)`. -/
+`smoothTransition` on `[-1, 1]` and `M` bounds the derivative of `χ`. The bound is uniform in `n`
+and supported on `tsupport χ`. -/
 private theorem norm_mul_deriv_cutoff_le {a : ℝ} {w : WithLp 2 (ℝ × E) → ℝ}
     {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ)
     (hχa : ∀ y : E, χ (WithLp.toLp 2 (a, y)) = 0) (c : ℝ) {C M : ℝ} (hC0 : 0 ≤ C) (hM0 : 0 ≤ M)
@@ -521,6 +518,10 @@ private theorem norm_mul_deriv_cutoff_le {a : ℝ} {w : WithLp 2 (ℝ × E) → 
       2 * (C * M * |c|) * (tsupport χ).indicator (fun x => ‖w x‖) x := by
   have hb0 : 0 ≤ 2 * (C * M * |c|) * (tsupport χ).indicator (fun x => ‖w x‖) x :=
     mul_nonneg (by positivity) (indicator_nonneg (fun _ _ => norm_nonneg _) _)
+  -- The integrand vanishes off `tsupport χ`, off the half-space, and where the cutoff argument
+  -- exceeds `1` (there `smoothTransition` is constant). On the remaining band the cutoff argument
+  -- lies in `[-1, 1]`, so the derivative is at most `C`, and `(n + 1) (x.fst - a) ≤ 2` absorbs the
+  -- factor `n + 1` against `|χ x| ≤ M (x.fst - a)`.
   by_cases hxK : x ∈ tsupport χ
   swap
   · simpa [image_eq_zero_of_notMem_tsupport hxK] using hb0
@@ -676,9 +677,9 @@ private theorem fderiv_comp_normalReflection_apply (a : ℝ) {φ : WithLp 2 (ℝ
     LinearIsometryEquiv.coe_toContinuousLinearEquiv]
 
 omit [MeasurableSpace E] [BorelSpace E] in
-/-- On the boundary hyperplane the even combination `φ + ε (φ ∘ ρ)` vanishes in the normal direction
-`ε = -1`, because `ρ` fixes the hyperplane; in the tangential direction `ε = 1` the direction has
-no normal component. -/
+/-- On the boundary hyperplane the combination `φ + ε (φ ∘ ρ)` (odd under `ρ` when
+`ε = -1`) vanishes in the normal direction `ε = -1`, because `ρ` fixes the hyperplane; in the
+tangential direction `ε = 1` the direction has no normal component. -/
 private theorem fst_eq_zero_or_add_comp_normalReflection_eq_zero {a : ℝ} {d : WithLp 2 (ℝ × E)}
     {ε : ℝ} (hε : ε = 1 ∨ ε = -1) (hd : normalLinearReflection E d = ε • d)
     (φ : WithLp 2 (ℝ × E) → ℝ) :
@@ -698,7 +699,7 @@ private theorem fst_eq_zero_or_add_comp_normalReflection_eq_zero {a : ℝ} {d : 
 
 /-- The left side of `integral_lineDeriv_smul_add_comp_normalReflection`: changing variables by the
 reflection turns the pairing of `w + w ∘ ρ` with `∂_d φ` into the pairing of `w` with `∂_d` of the
-even combination `φ + ε (φ ∘ ρ)`. -/
+combination `φ + ε (φ ∘ ρ)` (odd under `ρ` when `ε = -1`). -/
 private theorem integral_lineDeriv_smul_add_comp_normalReflection_eq_fderiv {a : ℝ}
     {w : WithLp 2 (ℝ × E) → ℝ} (hwl : LocallyIntegrable w)
     {d : WithLp 2 (ℝ × E)} {ε : ℝ} (hε : ε = 1 ∨ ε = -1)
@@ -747,8 +748,9 @@ private theorem integral_lineDeriv_smul_add_comp_normalReflection_eq_fderiv {a :
         ring
 
 /-- The right side of `integral_lineDeriv_smul_add_comp_normalReflection`: changing variables by the
-reflection turns the pairing of `G` with the even combination `φ + ε (φ ∘ ρ)` into the pairing of
-`G + R (G ∘ ρ)` with `φ`, where `R` is the linear normal reflection. -/
+reflection turns the pairing of `G` with the combination `φ + ε (φ ∘ ρ)` (odd under `ρ` when
+`ε = -1`) into the pairing of `G + R (G ∘ ρ)` with `φ`, where `R` is the linear normal
+reflection. -/
 private theorem integral_add_comp_normalReflection_mul_inner {a : ℝ}
     {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)} (hGl : LocallyIntegrable G)
     {d : WithLp 2 (ℝ × E)} {ε : ℝ} (hd : normalLinearReflection E d = ε • d)
