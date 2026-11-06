@@ -47,7 +47,7 @@ theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
   have hentry (j : Fin 4) : ∃ v : Lp ℝ 2 (volume : Measure ℂ),
       v ∈ realSobolevSubmodule ℂ k 2 ∧
         (v : ℂ → ℝ) =ᵐ[volume] fun z ↦ A i j z * y z j := by
-    obtain ⟨u, hu, huS⟩ := mem_sobolevFields.mp hy j
+    obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.mp (mem_sobolevFields.mp hy j)
     obtain ⟨M, hM, hMbound⟩ := hbound i j
     obtain ⟨v, hvS, hv⟩ :=
       exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
@@ -57,7 +57,7 @@ theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
     filter_upwards [hv, hu] with z hvz huz
     rw [hvz, huz]
   choose v hvS hv using hentry
-  refine ⟨∑ j, v j, ?_, mem_realSobolevSubmodule.mp
+  refine mem_realSobolevFunctions.mpr ⟨∑ j, v j, ?_, mem_realSobolevSubmodule.mp
     (Submodule.sum_mem _ fun j _ ↦ hvS j)⟩
   filter_upwards [Lp.coeFn_finsetSum Finset.univ v, Filter.eventually_all.mpr hv] with z hz hvz
   simp only [hz, Finset.sum_apply]
