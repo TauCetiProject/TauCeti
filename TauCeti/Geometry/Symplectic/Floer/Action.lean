@@ -45,6 +45,16 @@ the whole cylinder `ℝ × [0, 1]` is the difference of the limiting actions at 
 cylinder with rectangles (`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto`). These are the
 end and neck terms of the energy identity `E = A₁ + A₂ - A₀ + ω(A) - ∫ R_K` for pairs of pants.
 
+For an `s`-dependent family of Hamiltonians `H_{(s, t)}`, the perturbation `K = H_{(s, t)} dt` of a
+continuation cylinder has curvature `∂_s H`, and the energy of `u` over `[a, b] × [0, 1]` is
+
+`E = A_{H(b, ·)}(u(b, ·)) - A_{H(a, ·)}(u(a, ·)) - ∫∫ (∂_s H)(s, t, u(s, t))`
+
+(`SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`). Over the
+whole cylinder, for a solution with tame `J` whose loop actions converge at the two ends, the
+energy is the difference of the limiting actions minus the integral of `∂_s H` along `u`
+(`SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral`).
+
 ## Main definitions
 
 * `TauCeti.SymplecticForm.hamiltonianAction`: the Hamiltonian action of a loop.
@@ -60,13 +70,19 @@ end and neck terms of the energy identity `E = A₁ + A₂ - A₀ + ω(A) - ∫ 
   solutions.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction`: the energy of a
   Floer solution on the whole cylinder is the difference of its limiting actions.
+* `SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`: the energy
+  identity of a continuation cylinder over a rectangle.
+* `SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`: the action estimate along
+  a continuation cylinder over a rectangle.
+* `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral`: the
+  energy identity of a continuation cylinder over the whole cylinder.
 
 ## References
 
 * D. McDuff and D. Salamon, *J-holomorphic curves and symplectic topology*, Section 8.1 and the
   chapter on Floer homology, on the action functional and the energy identity.
 * D. Salamon, *Lectures on Floer homology*, in *Symplectic geometry and topology*, IAS/Park City
-  Math. Ser. 7 (1999), Lecture 1.
+  Math. Ser. 7 (1999), Lectures 1 and 3.
 -/
 
 public section
@@ -217,5 +233,110 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
         fun z hz ↦ ω.floerEnergyDensity_cylindrical_nonneg hJ (hfloer z (hRsub n hz)))]
 
 end Energy
+
+section Homotopy
+
+variable [FiniteDimensional ℝ V] {H : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {U : Set (ℝ × ℝ)}
+  {a b : ℝ}
+
+/-- **The energy identity of a continuation cylinder.** Let `H_{(s, t)}` be a `C¹` family of
+Hamiltonians and let `u` be `C²` on an open neighbourhood `U` of `[a, b] × [0, 1]`, with
+`u(s, 1) = u(s, 0)` for `s ∈ [a, b]`. For the perturbation `K = H_{(s, t)} dt`, the Floer energy of
+`u` over the rectangle is the action of the loop at `s = b` for `H(b, ·)`, minus the action of the
+loop at `s = a` for `H(a, ·)`, minus the integral of `∂_s H` along `u`. -/
+theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral (ω : SymplecticForm V)
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0)) :
+    ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) H u z =
+      ω.hamiltonianAction (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) -
+        ω.hamiltonianAction (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) -
+        ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal := by
+  have hR : Icc a b ×ˢ Icc (0 : ℝ) 1 = Icc (a, 0) (b, 1) := Icc_prod_Icc _ _ _ _
+  have h := ω.integral_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := H) hU
+    (hu.of_le one_le_two) contDiffOn_const hH.contDiffOn (Prod.mk_le_mk.2 ⟨hab, zero_le_one⟩)
+    (hR ▸ hRU)
+  simp only [hamiltonianCurvature_zero_left, intervalIntegral.integral_zero, ← hR] at h
+  rw [h, ω.integral_symplecticForm_fderiv_eq_loopArea_sub hab
+      (fun z hz ↦ hu.contDiffAt (hU.mem_nhds (hRU hz))) hper,
+    hamiltonianAction_def, hamiltonianAction_def]
+  ring
+
+/-- **The action estimate along a continuation cylinder.** Under the hypotheses of
+`TauCeti.SymplecticForm.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral`, if `u`
+solves the Floer equation `∂_s u + J_z (∂_t u - X_{H_z}(u)) = 0` on the rectangle for almost
+complex structures `J_z` tamed by `ω`, then the action of the loop at `s = a` is at most the
+action of the loop at `s = b` minus the integral of `∂_s H` along `u`. -/
+theorem hamiltonianAction_le_hamiltonianAction_sub_integral (ω : SymplecticForm V)
+    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Tames (J z))
+    (hH : ContDiff ℝ 1 (uncurry H)) (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b)
+    (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U) (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
+    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
+      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z) (u z)) = 0) :
+    ω.hamiltonianAction (fun t ↦ H (a, t)) (fun t ↦ u (a, t)) ≤
+      ω.hamiltonianAction (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) -
+        ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal := by
+  have h := ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral hH hU hu hab hRU
+    hper
+  have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
+    fun z hz ↦ ω.floerEnergyDensity_zero_left_nonneg (hJ z hz) (hfloer z hz)
+  linarith
+
+/-- **The energy of a continuation cylinder.** Let `H_{(s, t)}` be a `C¹` family of Hamiltonians
+and let `u` be `C²` on an open neighbourhood `U` of `ℝ × [0, 1]`, with `u(s, 1) = u(s, 0)` for all
+`s`, solving the Floer equation `∂_s u + J_z (∂_t u - X_{H_z}(u)) = 0` there for almost complex
+structures `J_z` tamed by `ω`. Suppose that `∂_s H` is integrable along `u` and that the actions
+`A_{H(s, ·)}(u(s, ·))` tend to `A₁` as `s → -∞` and to `A₂` as `s → ∞`. Then the energy of `u` is
+`A₂ - A₁` minus the integral of `∂_s H` along `u`. -/
+theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral
+    (ω : SymplecticForm V) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, ω.Tames (J z)) (hH : ContDiff ℝ 1 (uncurry H))
+    (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U) (hRU : (univ : Set ℝ) ×ˢ Icc 0 1 ⊆ U)
+    (hper : ∀ s, u (s, 1) = u (s, 0))
+    (hfloer : ∀ z ∈ (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
+      J z (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (H z) (u z)) = 0)
+    (hint : IntegrableOn (fun z ↦ fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal)
+      ((univ : Set ℝ) ×ˢ Icc 0 1))
+    {A₁ A₂ : ℝ}
+    (hbot : Tendsto (fun s ↦ ω.hamiltonianAction (fun t ↦ H (s, t)) (fun t ↦ u (s, t))) atBot
+      (𝓝 A₁))
+    (htop : Tendsto (fun s ↦ ω.hamiltonianAction (fun t ↦ H (s, t)) (fun t ↦ u (s, t))) atTop
+      (𝓝 A₂)) :
+    ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
+        ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) H u z) =
+      ENNReal.ofReal (A₂ - A₁ -
+        ∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal) := by
+  set f : ℝ × ℝ → ℝ := fun z ↦ fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal
+  set A : ℝ → ℝ := fun s ↦ ω.hamiltonianAction (fun t ↦ H (s, t)) (fun t ↦ u (s, t))
+  have hRsub (n : ℕ) : Icc (-(n : ℝ)) n ×ˢ Icc (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
+    prod_mono (subset_univ _) le_rfl
+  have hcont := ω.continuousOn_floerEnergyDensity (Ks := fun _ _ ↦ 0) (Kt := H) hU
+    (hu.of_le one_le_two) contDiffOn_const hH.contDiffOn
+  -- On each rectangle `[-n, n] × [0, 1]` the energy identity holds, with nonnegative density.
+  have hE (n : ℕ) : ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ Icc 0 1,
+      ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) H u z) =
+      ENNReal.ofReal (A n - A (-n) - ∫ z in Icc (-(n : ℝ)) n ×ˢ Icc 0 1, f z) := by
+    rw [← ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral hH hU hu
+        (neg_le_self n.cast_nonneg) ((hRsub n).trans hRU) fun s _ ↦ hper s,
+      ofReal_integral_eq_lintegral_ofReal
+        ((hcont.mono ((hRsub n).trans hRU)).integrableOn_compact
+          (isCompact_Icc.prod isCompact_Icc))
+        (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
+          fun z hz ↦ ω.floerEnergyDensity_zero_left_nonneg (hJ z (hRsub n hz))
+            (hfloer z (hRsub n hz)))]
+  -- The integrals of `∂_s H` along `u` over the rectangles converge to the one over the strip.
+  have hf : Tendsto (fun n : ℕ ↦ ∫ z in Icc (-(n : ℝ)) n ×ˢ Icc 0 1, f z) atTop
+      (𝓝 (∫ z in (univ : Set ℝ) ×ˢ Icc 0 1, f z)) := by
+    have h := tendsto_setIntegral_of_monotone (μ := volume) (f := f)
+      (fun _ ↦ measurableSet_Icc.prod measurableSet_Icc) (monotone_Icc_neg_prod (Icc 0 1))
+      (by rwa [iUnion_Icc_neg_prod])
+    rwa [iUnion_Icc_neg_prod] at h
+  refine tendsto_nhds_unique (tendsto_setLIntegral_Icc_neg_prod volume (Icc (0 : ℝ) 1) _) ?_
+  simp only [hE]
+  exact (ENNReal.continuous_ofReal.tendsto _).comp
+    (((htop.comp tendsto_natCast_atTop_atTop).sub
+      (hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop))).sub hf)
+
+
+end Homotopy
 
 end TauCeti.SymplecticForm

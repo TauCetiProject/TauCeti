@@ -55,6 +55,7 @@ for the cylindrical end coordinates of a punctured Riemann surface.
 public noncomputable section
 
 open Set Real Manifold
+open scoped Topology
 
 namespace TauCeti.ThricePuncturedSphere.Puncture
 
@@ -190,6 +191,18 @@ theorem re_endCoord (q : Puncture) (w : ℂ) :
 theorem re_endCoord_endCenter (q : Puncture) : (q.endCoord q.endCenter).re = 0 := by
   simp [re_endCoord]
 
+/-- Approaching the center of an end, its longitudinal coordinate tends to `∞`. -/
+theorem tendsto_re_endCoord_nhdsNE (q : Puncture) :
+    Filter.Tendsto (fun w ↦ (q.endCoord w).re) (𝓝[≠] q.endCenter) Filter.atTop := by
+  have h : Filter.Tendsto (fun w ↦ ‖(w - q.endCenter) / q.endScale‖) (𝓝[≠] q.endCenter)
+      (𝓝[>] 0) := by
+    refine tendsto_nhdsWithin_iff.2 ⟨?_, eventually_nhdsWithin_of_forall fun w hw ↦
+      norm_pos_iff.2 (div_ne_zero (sub_ne_zero.2 hw) q.endScale_ne_zero)⟩
+    have hc : Continuous fun w : ℂ ↦ ‖(w - q.endCenter) / q.endScale‖ := by fun_prop
+    simpa using (hc.tendsto q.endCenter).mono_left nhdsWithin_le_nhds
+  simpa only [re_endCoord, Function.comp_def] using (Filter.tendsto_neg_atBot_atTop.comp
+    (Real.tendsto_log_nhdsGT_zero.comp h)).atTop_div_const (by positivity : 0 < 2 * π)
+
 /-- On the end at `∞` the point `1` has longitudinal coordinate `log 2 / (2π) > 0`. -/
 theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
   rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero]
@@ -233,8 +246,8 @@ theorem exists_endCoord_cylindricalEndLift (q : Puncture) (z : ℂ) :
   push_cast
   ring
 
-/-- The longitudinal coordinate of the end `q` at the image of `z` under its end lift is
-`Re z`. -/
+/-- The end coordinate recovers the longitudinal coordinate of a cylinder point from its image
+under the end lift. -/
 @[simp]
 theorem re_endCoord_cylindricalEndLift (q : Puncture) (z : ℂ) :
     (q.endCoord (q.cylindricalEndLift z)).re = z.re := by

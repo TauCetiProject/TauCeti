@@ -110,8 +110,10 @@ from a grid state `x` to a grid state `y`.
 
 It is recorded by the oriented rectangle from `x` to `y` with the same corners, whose terminal side
 is the grid line `finRotate n a`; the rows that side spans must contain the lower intersection row
-`s` and, above it, the upper intersection row `s'`. A hexagon-counting map only uses these shapes
-through `GridDiagram.ColumnCommutationData`, which places the column-`a` markings in the bigon. -/
+`s` and, above it, the upper intersection row `s'`. The shape records only the corners and the two
+turn rows. Its `coveredSquares` describe the squares of the hexagon when
+`GridDiagram.ColumnCommutationData` places the column-`a` markings in the bigon; the crossing change
+counts the same shapes for interleaving columns, with `crossingCoveredSquares` instead. -/
 structure GridHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState n)
     extends GridRectangleBetween x y where
   /-- The terminal side lies on the grid line between column `a` and the next column. -/
@@ -226,6 +228,14 @@ theorem mem_toGridRectangle_coveredSquares (P : GridHexagonBetween a s s' x y)
   rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
     GridRectangleBetween.top_def, P.right_eq]
 
+/-- The rectangle underlying a hexagon covers every square of column `a` in the rows of the bigon
+it cuts away. -/
+theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridHexagonBetween a s s' x y)
+    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
+    (a, r) ∈ P.toGridRectangle.coveredSquares :=
+  (P.mem_toGridRectangle_coveredSquares _).mpr
+    ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hr⟩
+
 /-- A hexagon carries no `X`-marking exactly when its underlying rectangle carries none outside
 column `a`. -/
 theorem disjoint_coveredSquares_XSet_iff (P : GridHexagonBetween a s s' x y) (G : GridDiagram n) :
@@ -285,9 +295,11 @@ from a grid state `x` to a grid state `y`.
 
 It is recorded by the oriented rectangle from `x` to `y` with the same corners, whose initial side
 is the grid line `finRotate n a`; the rows that side spans must contain the lower intersection row
-`s` and, above it, the upper intersection row `s'`. A hexagon-counting map only uses these shapes
-through `GridDiagram.ColumnCommutationData`, which places the column-`finRotate n a` markings in the
-bigon. -/
+`s` and, above it, the upper intersection row `s'`. The shape records only the corners and the two
+turn rows. Its `coveredSquares` describe the squares of the hexagon when
+`GridDiagram.ColumnCommutationData` places the column-`finRotate n a` markings in the bigon; the
+crossing change counts the same shapes for interleaving columns, with `crossingCoveredSquares`
+instead. -/
 structure GridInitialHexagonBetween {n : ℕ} (a s s' : Fin n) (x y : GridState n)
     extends GridRectangleBetween x y where
   /-- The initial side lies on the grid line between column `a` and the next column. -/
@@ -397,6 +409,14 @@ theorem mem_toGridRectangle_coveredSquares (P : GridInitialHexagonBetween a s s'
   rw [GridRectangleBetween.mem_toGridRectangle_coveredSquares, GridRectangleBetween.bottom_def,
     GridRectangleBetween.top_def, P.left_eq]
 
+/-- The rectangle underlying a hexagon turning on its initial side covers every square of the
+column after `a` in the rows of the bigon it cuts away. -/
+theorem mk_mem_toGridRectangle_coveredSquares_of_mem (P : GridInitialHexagonBetween a s s' x y)
+    {r : Fin n} (hr : r ∈ insert s' (Grid.cIco s s')) :
+    (finRotate n a, r) ∈ P.toGridRectangle.coveredSquares :=
+  (P.mem_toGridRectangle_coveredSquares _).mpr
+    ⟨Grid.left_mem_cIco P.right_ne.symm, P.insert_cIco_subset_cIco_bottom_top hr⟩
+
 /-- A hexagon turning on its initial side carries no `X`-marking exactly when its underlying
 rectangle carries none outside column `finRotate n a`. -/
 theorem disjoint_coveredSquares_XSet_iff (P : GridInitialHexagonBetween a s s' x y)
@@ -493,28 +513,6 @@ theorem mem_initialHexagons {C : ColumnCommutationData G} {x y : GridState n}
 
 /-! ### The markings of the cut-off column -/
 
-/-- The rectangle underlying a hexagon of a validated column commutation covers every square of
-column `C.column` in the bigon it cuts away, in particular both markings of that column. -/
-theorem column_mem_toGridRectangle_coveredSquares {C : ColumnCommutationData G}
-    {x y : GridState n} (P : GridHexagonBetween C.column C.oppositeTurnRow C.turnRow x y)
-    {r : Fin n} (hr : r ∈ insert C.turnRow (Grid.cIco C.oppositeTurnRow C.turnRow)) :
-    (C.column, r) ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, P.right_eq]
-  exact ⟨Grid.self_mem_cIco_finRotate P.left_ne, P.insert_cIco_subset_cIco_bottom_top hr⟩
-
-/-- The rectangle underlying a hexagon turning on its initial side covers every square of the
-column after `C.column` in the bigon it cuts away, in particular both markings of that column. -/
-theorem next_mem_toGridRectangle_coveredSquares {C : ColumnCommutationData G}
-    {x y : GridState n} (P : GridInitialHexagonBetween C.column C.turnRow C.oppositeTurnRow x y)
-    {r : Fin n} (hr : r ∈ insert C.oppositeTurnRow (Grid.cIco C.turnRow C.oppositeTurnRow)) :
-    (finRotate n C.column, r) ∈ P.toGridRectangle.coveredSquares := by
-  rw [GridRectangle.mem_coveredSquares, GridRectangle.mem_coveredColumns,
-    GridRectangle.mem_coveredRows, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, P.left_eq]
-  exact ⟨Grid.left_mem_cIco P.right_ne.symm, P.insert_cIco_subset_cIco_bottom_top hr⟩
-
 /-- The rectangle underlying a hexagon carries the `O`-markings of the hexagon together with the
 `O`-marking of `C.column`, which the hexagon cuts away. -/
 theorem OColumns_toGridRectangle_eq_insert_of_hexagon {C : ColumnCommutationData G}
@@ -523,7 +521,7 @@ theorem OColumns_toGridRectangle_eq_insert_of_hexagon {C : ColumnCommutationData
   ext c
   rw [mem_OColumns, Finset.mem_insert, mem_OColumnsOfSquares, P.mem_coveredSquares]
   rcases eq_or_ne c C.column with rfl | hc
-  · simpa using column_mem_toGridRectangle_coveredSquares G P C.O_column_below
+  · simpa using P.mk_mem_toGridRectangle_coveredSquares_of_mem C.O_column_below
   · simp only [hc, false_or, ne_eq, not_false_eq_true, true_and]
 
 /-- The rectangle underlying a hexagon turning on its initial side carries the `O`-markings of the
@@ -536,7 +534,7 @@ theorem OColumns_toGridRectangle_eq_insert_of_initialHexagon {C : ColumnCommutat
   ext c
   rw [mem_OColumns, Finset.mem_insert, mem_OColumnsOfSquares, P.mem_coveredSquares]
   rcases eq_or_ne c (finRotate n C.column) with rfl | hc
-  · simpa using next_mem_toGridRectangle_coveredSquares G P C.O_next_above
+  · simpa using P.mk_mem_toGridRectangle_coveredSquares_of_mem C.O_next_above
   · simp only [hc, false_or, ne_eq, not_false_eq_true, true_and]
 
 /-- The rectangle underlying a hexagon carrying no `X`-marking carries exactly one `X`-marking,
@@ -555,7 +553,7 @@ theorem XSet_inter_toGridRectangle_coveredSquares_of_disjoint_hexagon
     have hpa : p.1 ≠ C.column := fun h => hne (Prod.ext h (by rw [← h, hp]))
     exact hX ((G.mem_XSet p).mpr hp) ((P.mem_coveredSquares p).mpr ⟨hpa, hr⟩)
   · rintro rfl
-    exact ⟨rfl, column_mem_toGridRectangle_coveredSquares G P C.X_column_below⟩
+    exact ⟨rfl, P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_column_below⟩
 
 /-- The rectangle underlying a hexagon turning on its initial side and carrying no `X`-marking
 carries exactly one `X`-marking, that of the column after `C.column`. -/
@@ -574,7 +572,7 @@ theorem XSet_inter_toGridRectangle_coveredSquares_of_disjoint_initialHexagon
     have hpb : p.1 ≠ finRotate n C.column := fun h => hne (Prod.ext h (by rw [← h, hp]))
     exact hX ((G.mem_XSet p).mpr hp) ((P.mem_coveredSquares p).mpr ⟨hpb, hr⟩)
   · rintro rfl
-    exact ⟨rfl, next_mem_toGridRectangle_coveredSquares G P C.X_next_above⟩
+    exact ⟨rfl, P.mk_mem_toGridRectangle_coveredSquares_of_mem C.X_next_above⟩
 
 /-! ### The hexagon maps -/
 

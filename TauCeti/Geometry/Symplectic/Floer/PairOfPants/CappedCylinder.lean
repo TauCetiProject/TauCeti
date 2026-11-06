@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Chart
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
@@ -186,7 +186,7 @@ theorem perturbationPullback_endChart_zero_plumbedPerturbation (Hb : Puncture â†
         (fun z x â†¦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
           (Complex.equivRealProdCLM.symm z) x Complex.I) v =
       cappedCylinderComponent Hb L (Complex.equivRealProdCLM.symm v) := by
-  rw [perturbationPullback_endChart_eq]
+  rw [perturbationPullback_endChart_eq_cylindricalEndLift]
   funext z x
   rw [cappedCylinderComponent_def]
 
