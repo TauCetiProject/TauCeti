@@ -271,6 +271,80 @@ private theorem card_fixedField_frobenius_fiber_mul_orderOf (σ : L ≃ₐ[K] L)
     Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer P.asIdeal R0.1 hR0, hcent,
     Subgroup.card_top, AlgEquiv.card_algEquiv_fixedField_zpowers]
 
+/-- Below a prime `Q` of `L` over `p` at which `τ`, read over `K`, is an arithmetic Frobenius lies a
+prime of `E = L ^ ⟨σ⟩` of residue degree one over `K` at which `τ` is an arithmetic Frobenius. -/
+private theorem inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField (σ : L ≃ₐ[K] L)
+    (τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L) (p : HeightOneSpectrum (𝓞 K))
+    (hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
+      Algebra.IsUnramifiedAt (𝓞 K) R)
+    (Q : HeightOneSpectrum (𝓞 L)) (hQp : Q.under (𝓞 K) = p)
+    (hQ : IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q.asIdeal) :
+    (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).asIdeal.inertiaDeg (𝓞 K) = 1 ∧
+      IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ Q.asIdeal := by
+  have : Q.asIdeal.LiesOver p.asIdeal := ⟨(congrArg HeightOneSpectrum.asIdeal hQp).symm⟩
+  have : Algebra.IsUnramifiedAt (𝓞 K) Q.asIdeal := hur Q.asIdeal
+  have hdeg := (Ideal.inertiaDeg_under_fixedField_eq_one_iff Q.asIdeal _ hQ).2
+    (σ.restrictScalars_mem_zpowers τ)
+  rw [HeightOneSpectrum.under_asIdeal]
+  exact ⟨hdeg, (NumberField.isArithFrobAt_iff_restrictScalars_eq_pow_inertiaDeg hQ τ).mpr
+    (by rw [hdeg, pow_one])⟩
+
+/-- Below a prime `Q` of `L` over `p` at which `τ`, read over `K`, is an arithmetic Frobenius lies a
+prime of `E = L ^ ⟨σ⟩` in the Frobenius set of the class of `τ`. -/
+private theorem under_mem_frobeniusPrimeSet_fixedField (σ : L ≃ₐ[K] L)
+    (τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L) (p : HeightOneSpectrum (𝓞 K))
+    (hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
+      Algebra.IsUnramifiedAt (𝓞 K) R)
+    (Q : HeightOneSpectrum (𝓞 L)) (hQp : Q.under (𝓞 K) = p)
+    (hQ : IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q.asIdeal) :
+    Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) ∈
+      frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ) := by
+  have : Q.asIdeal.LiesOver (Q.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).asIdeal :=
+    ⟨HeightOneSpectrum.under_asIdeal _ Q⟩
+  exact mem_frobeniusPrimeSet_mk_of_isArithFrobAt
+    (fun R _ _ ↦ isUnramifiedAt_fixedField_of_under_eq σ p hur Q hQp R) Q.asIdeal
+    (inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField σ τ p hur Q hQp hQ).2
+
+/-- The primes of `L` above `p` at which `τ`, read over `K`, is an arithmetic Frobenius and which
+lie over a residue-degree-one prime `P` of `E = L ^ ⟨σ⟩` in the relative fibre of `τ` number
+`orderOf σ / orderOf τ`. -/
+private theorem card_fiber_under_fixedField_mul_orderOf (σ : L ≃ₐ[K] L)
+    (τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L) (p : HeightOneSpectrum (𝓞 K))
+    (hur : ∀ (R : Ideal (𝓞 L)) [R.IsPrime] [R.LiesOver p.asIdeal],
+      Algebra.IsUnramifiedAt (𝓞 K) R)
+    (P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers σ)))) (hPp : P.under (𝓞 K) = p)
+    (hPdeg : P.asIdeal.inertiaDeg (𝓞 K) = 1)
+    (hP : P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ)) :
+    Nat.card {Q : {Q : HeightOneSpectrum (𝓞 L) // Q.under (𝓞 K) = p ∧
+        IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q.asIdeal} //
+        Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P} *
+      orderOf (AlgEquiv.restrictScalars K τ) = orderOf σ := by
+  have hfE : {Q : {Q : HeightOneSpectrum (𝓞 L) // Q.under (𝓞 K) = p ∧
+        IsArithFrobAt (𝓞 K) (AlgEquiv.restrictScalars K τ) Q.asIdeal} //
+        Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P} ≃
+      {R : HeightOneSpectrum (𝓞 L) //
+        R.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P ∧
+          IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ R.asIdeal} :=
+    { toFun := fun Q ↦ ⟨Q.1.1, Q.2,
+        (inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField σ τ p hur Q.1.1 Q.1.2.1 Q.1.2.2).2⟩
+      invFun := fun R ↦
+        have hRK : R.1.under (𝓞 K) = p := by
+          rw [← HeightOneSpectrum.under_under
+            (𝓞 ↥(fixedField (Subgroup.zpowers σ))) R.1, R.2.1, hPp]
+        have hRdeg : (R.1.asIdeal.under
+            (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).inertiaDeg (𝓞 K) = 1 := by
+          rw [← HeightOneSpectrum.under_asIdeal, R.2.1]
+          exact hPdeg
+        ⟨⟨R.1, hRK, NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one R.2.2 hRdeg⟩,
+          R.2.1⟩
+      left_inv := fun _ ↦ rfl
+      right_inv := fun _ ↦ rfl }
+  have hord : orderOf τ = orderOf (AlgEquiv.restrictScalars K τ) :=
+    (orderOf_injective (AlgEquiv.restrictScalarsHom K)
+      (AlgEquiv.restrictScalarsHom_injective K) τ).symm
+  rw [Nat.card_congr hfE, ← hord]
+  exact card_fixedField_frobenius_fiber_mul_orderOf σ τ hP
+
 -- The orbit count follows Birkbeck--Brasca, `CebotarevDensity/FixedFieldDensity.lean`.
 /-- **The residue-degree-one fibre of one element of `⟨σ⟩`, counted.** Let `p` be a prime of `K`
 with Artin class `C`, and let `τ` be an automorphism of `L` over `E = L ^ ⟨σ⟩` that, read over
@@ -311,51 +385,19 @@ theorem fixedField_frobenius_fiber_inertiaDeg_eq_one_card_mul
   have hU : Nat.card U * orderOf w = Nat.card (Subgroup.centralizer {w}) := by
     rw [Nat.card_congr (p.frobeniusFiberEquiv w)]
     exact Ideal.frobenius_fiber_card_mul_orderOf_eq_card_centralizer p.asIdeal Q0.1 hQ0
-  -- Below a prime of `U` lies a residue-degree-one prime of `E` in the relative fibre of `τ`.
-  have hrel (Q : U) :
-      (Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).asIdeal.inertiaDeg (𝓞 K) = 1 ∧
-        IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ Q.1.asIdeal := by
-    have : Q.1.asIdeal.LiesOver p.asIdeal := ⟨(congrArg HeightOneSpectrum.asIdeal Q.2.1).symm⟩
-    have : Algebra.IsUnramifiedAt (𝓞 K) Q.1.asIdeal := hur Q.1.asIdeal
-    have hdeg := (Ideal.inertiaDeg_under_fixedField_eq_one_iff Q.1.asIdeal _ Q.2.2).2
-      (σ.restrictScalars_mem_zpowers τ)
-    rw [HeightOneSpectrum.under_asIdeal]
-    exact ⟨hdeg, (NumberField.isArithFrobAt_iff_restrictScalars_eq_pow_inertiaDeg Q.2.2 τ).mpr
-      (by rw [hdeg, pow_one])⟩
-  have hmemE (Q : U) : Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) ∈
-      frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ) := by
-    have : Q.1.asIdeal.LiesOver
-        (Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).asIdeal :=
-      ⟨HeightOneSpectrum.under_asIdeal _ Q.1⟩
-    exact mem_frobeniusPrimeSet_mk_of_isArithFrobAt
-      (fun R _ _ ↦ isUnramifiedAt_fixedField_of_under_eq σ p hur Q.1 Q.2.1 R) Q.1.asIdeal
-      (hrel Q).2
   -- The relative fibre `S`, and the contraction `g : U → S`.
   let S := {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers σ))) //
     P.under (𝓞 K) = p ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1 ∧
       P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ)}
   let g : U → S := fun Q ↦ ⟨Q.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))),
-    (HeightOneSpectrum.under_under _ Q.1).trans Q.2.1, (hrel Q).1, hmemE Q⟩
+    (HeightOneSpectrum.under_under _ Q.1).trans Q.2.1,
+    (inertiaDeg_under_eq_one_and_isArithFrobAt_fixedField σ τ p hur Q.1 Q.2.1 Q.2.2).1,
+    under_mem_frobeniusPrimeSet_fixedField σ τ p hur Q.1 Q.2.1 Q.2.2⟩
   -- Each fibre of `g` is a relative Frobenius fibre of `τ` in `L / E`.
   have hfib (P : S) : Nat.card {Q : U // g Q = P} * orderOf w = orderOf σ := by
-    have hfE : {Q : U // g Q = P} ≃ {R : HeightOneSpectrum (𝓞 L) //
-        R.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P.1 ∧
-          IsArithFrobAt (𝓞 ↥(fixedField (Subgroup.zpowers σ))) τ R.asIdeal} :=
-      { toFun := fun Q ↦ ⟨Q.1.1, congrArg Subtype.val Q.2, (hrel Q.1).2⟩
-        invFun := fun R ↦
-          have hRK : R.1.under (𝓞 K) = p := by
-            rw [← HeightOneSpectrum.under_under
-              (𝓞 ↥(fixedField (Subgroup.zpowers σ))) R.1, R.2.1, P.2.1]
-          have hRdeg : (R.1.asIdeal.under
-              (𝓞 ↥(fixedField (Subgroup.zpowers σ)))).inertiaDeg (𝓞 K) = 1 := by
-            rw [← HeightOneSpectrum.under_asIdeal, R.2.1]
-            exact P.2.2.1
-          ⟨⟨R.1, hRK, NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one R.2.2 hRdeg⟩,
-            Subtype.ext R.2.1⟩
-        left_inv := fun _ ↦ rfl
-        right_inv := fun _ ↦ rfl }
-    rw [Nat.card_congr hfE, ← hord]
-    exact card_fixedField_frobenius_fiber_mul_orderOf σ τ P.2.2.2
+    rw [← card_fiber_under_fixedField_mul_orderOf σ τ p hur P.1 P.2.1 P.2.2.1 P.2.2.2]
+    exact congrArg (· * orderOf w)
+      (Nat.card_congr (Equiv.subtypeEquivRight fun Q ↦ Subtype.ext_iff))
   -- Finiteness, from the nonvanishing counts.
   have : Finite U := Nat.finite_of_card_ne_zero fun h0 ↦ by
     rw [h0, zero_mul] at hU
@@ -418,6 +460,74 @@ theorem fixedField_frobenius_fiber_card
 
 /-! ### Powered fibres -/
 
+omit [IsGalois K L] in
+/-- The `m`-th roots `τ` of `σ` in `Gal(L/E)` that, read over `K`, lie in `C`, correspond to the
+`m`-th roots of `σ` in `C ∩ ⟨σ⟩`. -/
+private theorem card_fixedField_pow_roots (C : ConjClasses (L ≃ₐ[K] L)) (σ : L ≃ₐ[K] L) (m : ℕ) :
+    Nat.card {τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L //
+        τ ^ m = σ.toFixedFieldAlgEquiv ∧ AlgEquiv.restrictScalars K τ ∈ C.carrier} =
+      Nat.card {w : L ≃ₐ[K] L // w ∈ C.carrier ∧ w ∈ Subgroup.zpowers σ ∧ w ^ m = σ} := by
+  refine Nat.card_congr (Equiv.ofBijective (fun τ ↦ ⟨AlgEquiv.restrictScalars K τ.1, τ.2.2,
+    σ.restrictScalars_mem_zpowers τ.1, ?_⟩) ⟨?_, ?_⟩)
+  · rw [← AlgEquiv.restrictScalarsHom_apply, ← map_pow, τ.2.1,
+      AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
+  · intro τ₁ τ₂ h
+    exact Subtype.ext (AlgEquiv.restrictScalars_injective K (congrArg Subtype.val h))
+  · rintro ⟨w, hwC, ⟨k, rfl⟩, hwm⟩
+    have hk : AlgEquiv.restrictScalars K (σ.toFixedFieldAlgEquiv ^ k) = σ ^ k := by
+      rw [← AlgEquiv.restrictScalarsHom_apply, map_zpow, AlgEquiv.restrictScalarsHom_apply,
+        AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
+    refine ⟨⟨σ.toFixedFieldAlgEquiv ^ k, ?_, hk ▸ hwC⟩, Subtype.ext hk⟩
+    apply AlgEquiv.restrictScalars_injective K
+    rw [← AlgEquiv.restrictScalarsHom_apply, map_pow, AlgEquiv.restrictScalarsHom_apply, hk,
+      AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
+    exact hwm
+
+/-- The residue-degree-one primes of `L ^ ⟨σ⟩` over `p` whose relative Frobenius is an `m`-th root
+of `σ` are the disjoint union, over the `m`-th roots `τ` of `σ` that lie in `C` when read over `K`,
+of the residue-degree-one primes of the relative fibre of `τ`. -/
+private theorem card_sigma_fixedField_pow_eq (C : ConjClasses (L ≃ₐ[K] L)) (σ : L ≃ₐ[K] L)
+    (m : ℕ) (p : HeightOneSpectrum (𝓞 K)) (hp : p ∈ frobeniusPrimeSet K L C) :
+    Nat.card (Σ τ : {τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L //
+        τ ^ m = σ.toFixedFieldAlgEquiv ∧ AlgEquiv.restrictScalars K τ ∈ C.carrier},
+      {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers σ))) //
+        P.under (𝓞 K) = p ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1 ∧
+          P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ.1)}) =
+      Nat.card {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers σ))) //
+        P.under (𝓞 K) = p ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1 ∧
+          ∃ τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L, τ ^ m = σ.toFixedFieldAlgEquiv ∧
+            P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ)} := by
+  refine Nat.card_congr (Equiv.ofBijective
+    (fun x ↦ ⟨x.2.1, x.2.2.1, x.2.2.2.1, x.1.1, x.1.2.1, x.2.2.2.2⟩) ⟨?_, ?_⟩)
+  · rintro ⟨⟨τ₁, h₁⟩, P₁⟩ ⟨⟨τ₂, h₂⟩, P₂⟩ h
+    have hP : P₁.1 = P₂.1 := congrArg Subtype.val h
+    obtain rfl : τ₁ = τ₂ := by
+      by_contra hne
+      have hne' : ConjClasses.mk τ₁ ≠ ConjClasses.mk τ₂ := by
+        rw [Ne, ConjClasses.mk_eq_mk_iff_isConj]
+        rintro ⟨c, hc⟩
+        apply hne
+        rw [SemiconjBy, σ.fixedField_zpowers_mul_comm τ₂ (↑c)] at hc
+        exact mul_left_cancel hc
+      exact Set.disjoint_left.mp (disjoint_frobeniusPrimeSet hne') P₁.2.2.2 (hP ▸ P₂.2.2.2)
+    obtain rfl : P₁ = P₂ := Subtype.ext hP
+    rfl
+  · rintro ⟨P, hPp, hPdeg, τ, hτm, hPτ⟩
+    -- The absolute Frobenius below a residue-degree-one prime is `τ` read over `K`.
+    obtain ⟨R, hR⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk hPτ
+    have hRE : R.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P.asIdeal := R.2.2.over.symm
+    have hRK : R.1.under (𝓞 K) = p.asIdeal := by
+      rw [← Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers σ))) R.1, hRE,
+        ← HeightOneSpectrum.under_asIdeal, hPp]
+    have : R.1.LiesOver p.asIdeal := ⟨hRK.symm⟩
+    have habs := NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one hR
+      (hRE ▸ hPdeg)
+    have hmk : ConjClasses.mk (AlgEquiv.restrictScalars K τ) = C := by
+      obtain ⟨hur, hart⟩ := mem_frobeniusPrimeSet_iff.mp hp
+      rw [← hart]
+      exact (artinSymbol_eq_mk_of_isArithFrobAt p.asIdeal hur R.1 _ habs).symm
+    exact ⟨⟨⟨τ, hτm, ConjClasses.mem_carrier_iff_mk_eq.mpr hmk⟩, ⟨P, hPp, hPdeg, hPτ⟩⟩, rfl⟩
+
 /-- **The powered fibre count of the fixed-field contraction.** Let `p` be a prime of `K` with
 Artin class `C`, let `σ ∈ Gal(L/K)` and `E = L ^ ⟨σ⟩`, and let `m` be a natural number. The primes
 `P` of `E` above `p` of residue degree one over `K` whose relative Frobenius `Frob_{L/E}(P)`
@@ -461,62 +571,10 @@ theorem fixedField_frobenius_pow_fiber_card_mul
     rw [h0, zero_mul] at this
     exact Nat.card_pos.ne' this.symm
   -- The fibre over the tags is the disjoint union of the fibres of the tags.
-  have hsplit : (Σ τ : T, S τ) ≃
-      {P : HeightOneSpectrum (𝓞 ↥(fixedField (Subgroup.zpowers σ))) //
-        P.under (𝓞 K) = p ∧ P.asIdeal.inertiaDeg (𝓞 K) = 1 ∧
-          ∃ τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L, τ ^ m = σ.toFixedFieldAlgEquiv ∧
-            P ∈ frobeniusPrimeSet ↥(fixedField (Subgroup.zpowers σ)) L (ConjClasses.mk τ)} := by
-    refine Equiv.ofBijective (fun x ↦ ⟨x.2.1, x.2.2.1, x.2.2.2.1, x.1.1, x.1.2.1, x.2.2.2.2⟩)
-      ⟨?_, ?_⟩
-    · rintro ⟨⟨τ₁, h₁⟩, P₁⟩ ⟨⟨τ₂, h₂⟩, P₂⟩ h
-      have hP : P₁.1 = P₂.1 := congrArg Subtype.val h
-      obtain rfl : τ₁ = τ₂ := by
-        by_contra hne
-        have hne' : ConjClasses.mk τ₁ ≠ ConjClasses.mk τ₂ := by
-          rw [Ne, ConjClasses.mk_eq_mk_iff_isConj]
-          rintro ⟨c, hc⟩
-          apply hne
-          rw [SemiconjBy, σ.fixedField_zpowers_mul_comm τ₂ (↑c)] at hc
-          exact mul_left_cancel hc
-        exact Set.disjoint_left.mp (disjoint_frobeniusPrimeSet hne') P₁.2.2.2 (hP ▸ P₂.2.2.2)
-      obtain rfl : P₁ = P₂ := Subtype.ext hP
-      rfl
-    · rintro ⟨P, hPp, hPdeg, τ, hτm, hPτ⟩
-      -- The absolute Frobenius below a residue-degree-one prime is `τ` read over `K`.
-      obtain ⟨R, hR⟩ := exists_isArithFrobAt_of_mem_frobeniusPrimeSet_mk hPτ
-      have hRE : R.1.under (𝓞 ↥(fixedField (Subgroup.zpowers σ))) = P.asIdeal := R.2.2.over.symm
-      have hRK : R.1.under (𝓞 K) = p.asIdeal := by
-        rw [← Ideal.under_under (B := 𝓞 ↥(fixedField (Subgroup.zpowers σ))) R.1, hRE,
-          ← HeightOneSpectrum.under_asIdeal, hPp]
-      have : R.1.LiesOver p.asIdeal := ⟨hRK.symm⟩
-      have habs := NumberField.isArithFrobAt_restrictScalars_of_inertiaDeg_eq_one hR
-        (hRE ▸ hPdeg)
-      have hmk : ConjClasses.mk (AlgEquiv.restrictScalars K τ) = C := by
-        obtain ⟨hur, hart⟩ := mem_frobeniusPrimeSet_iff.mp hp
-        rw [← hart]
-        exact (artinSymbol_eq_mk_of_isArithFrobAt p.asIdeal hur R.1 _ habs).symm
-      exact ⟨⟨⟨τ, hτm, ConjClasses.mem_carrier_iff_mk_eq.mpr hmk⟩, ⟨P, hPp, hPdeg, hPτ⟩⟩, rfl⟩
-  -- The tags correspond to the `m`-th roots of `σ` in `C ∩ ⟨σ⟩`.
-  have htags : T ≃ {w : L ≃ₐ[K] L // w ∈ C.carrier ∧ w ∈ Subgroup.zpowers σ ∧ w ^ m = σ} := by
-    refine Equiv.ofBijective (fun τ ↦ ⟨AlgEquiv.restrictScalars K τ.1, τ.2.2,
-      σ.restrictScalars_mem_zpowers τ.1, ?_⟩) ⟨?_, ?_⟩
-    · rw [← AlgEquiv.restrictScalarsHom_apply, ← map_pow, τ.2.1,
-        AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
-    · intro τ₁ τ₂ h
-      exact Subtype.ext (AlgEquiv.restrictScalars_injective K (congrArg Subtype.val h))
-    · rintro ⟨w, hwC, ⟨k, rfl⟩, hwm⟩
-      have hk : AlgEquiv.restrictScalars K (σ.toFixedFieldAlgEquiv ^ k) = σ ^ k := by
-        rw [← AlgEquiv.restrictScalarsHom_apply, map_zpow, AlgEquiv.restrictScalarsHom_apply,
-          AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
-      refine ⟨⟨σ.toFixedFieldAlgEquiv ^ k, ?_, hk ▸ hwC⟩, Subtype.ext hk⟩
-      apply AlgEquiv.restrictScalars_injective K
-      rw [← AlgEquiv.restrictScalarsHom_apply, map_pow, AlgEquiv.restrictScalarsHom_apply, hk,
-        AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
-      exact hwm
   have : Fintype T := Fintype.ofFinite T
-  rw [← Nat.card_congr hsplit, Nat.card_sigma, Finset.sum_mul,
+  rw [← card_sigma_fixedField_pow_eq C σ m p hp, Nat.card_sigma, Finset.sum_mul,
     Finset.sum_congr rfl fun τ _ ↦ hS τ, Finset.sum_const, Finset.card_univ,
-    ← Nat.card_eq_fintype_card, Nat.card_congr htags, smul_eq_mul]
+    ← Nat.card_eq_fintype_card, card_fixedField_pow_roots C σ m, smul_eq_mul]
 
 /-- **The powered fibre count, as a quotient.** The number of primes of `L ^ ⟨σ⟩` above `p`, of
 residue degree one over `K`, whose relative Frobenius has `m`-th power `σ`, is
