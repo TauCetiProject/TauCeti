@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.D4.Tripled.GroupScheme
-public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne
+public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.RankOne
 
 /-!
@@ -82,7 +82,7 @@ theorem sl2BlockSL_diag2nUnit (i : Fin 4) (u : Rˣ) :
 
 variable (K : Type*) [Field K] (i : Fin 4)
 
-/- The containment and image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne`. -/
+/- The containment and image arguments adapt `TauCeti.Algebra.Lie.E7.Minuscule.RankOne.Basic`. -/
 private theorem sl2BlockSL_mem_points (g : SL(2, K)) : weightTable.sl2BlockSL i g ∈ points K := by
   apply (weightTable.sl2BlockSL i).sl2_range_le_of_transvection_mem _ _ ⟨g, rfl⟩
   · intro t
