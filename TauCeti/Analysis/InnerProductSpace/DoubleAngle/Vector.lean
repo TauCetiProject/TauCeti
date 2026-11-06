@@ -109,6 +109,17 @@ private theorem eigenvector_block_energy_identity (hT : T.IsSymmetric) (hH : H.I
   set s₂ : ℝ := ‖z‖ ^ 2
   linear_combination s₂ * e1 - c₂ * e2 + c₂ * hW
 
+/-- A lower quadratic-form bound `b * ‖y‖ ^ 2 ≤ re ⟪T y, y⟫` weighted by `‖z‖ ^ 2` and an upper
+bound `re ⟪T z, z⟫ ≤ a * ‖z‖ ^ 2` weighted by `‖y‖ ^ 2` bound the weighted gap
+`‖z‖ ^ 2 * re ⟪y, T y⟫ - ‖y‖ ^ 2 * re ⟪z, T z⟫` below by `‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)`. -/
+private theorem sq_mul_sq_mul_sub_le_re_inner_map {T : E →ₗ[𝕜] E} {a b : ℝ} {y z : E}
+    (hy : b * ‖y‖ ^ 2 ≤ RCLike.re ⟪T y, y⟫_𝕜) (hz : RCLike.re ⟪T z, z⟫_𝕜 ≤ a * ‖z‖ ^ 2) :
+    ‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)
+      ≤ ‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜 := by
+  rw [inner_re_symm] at hy hz
+  linarith [mul_le_mul_of_nonneg_left hy (sq_nonneg ‖z‖),
+    mul_le_mul_of_nonneg_left hz (sq_nonneg ‖y‖)]
+
 /-- **Davis's sin 2θ theorem, orthogonal-decomposition form.**  Let `T`, `H`
 be symmetric, `U` a `T`-invariant subspace with the quadratic form of `T` at
 least `b * ‖·‖ ^ 2` on `U` and at most `a * ‖·‖ ^ 2` on `Uᗮ`, and let
@@ -187,7 +198,7 @@ theorem sin_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
     linarith [(abs_le.mp hb1).2, (abs_le.mp hb2).1, key4]
   -- Insert the two form bounds and divide by `4c²s² > 0`.
   have h3 := mul_le_mul_of_nonneg_left
-    (LinearMap.sq_mul_sq_mul_sub_le_re_inner_map (hb y hyU) (ha z hzU)) hcs.le
+    (sq_mul_sq_mul_sub_le_re_inner_map (hb y hyU) (ha z hzU)) hcs.le
   refine le_of_mul_le_mul_left ?_ (mul_pos four_pos (mul_pos (pow_pos hc 2) (pow_pos hs 2)))
   linarith
 
@@ -288,7 +299,7 @@ theorem tan_two_theta_le_of_mem (hT : T.IsSymmetric) (hH : H.IsSymmetric)
     rw [hyH, hzH] at key
     linear_combination key
   -- The two quadratic-form bounds give the lower bound on the collapsed LHS.
-  have hlow := LinearMap.sq_mul_sq_mul_sub_le_re_inner_map (hb y hyU) (ha z hzU)
+  have hlow := sq_mul_sq_mul_sub_le_re_inner_map (hb y hyU) (ha z hzU)
   -- Chain: `‖y‖²‖z‖²(b-a) ≤ (Y-Z)·W ≤ |Y-Z|·‖y‖‖z‖·ε`.
   have hchain : ‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)
       ≤ |‖y‖ ^ 2 - ‖z‖ ^ 2| * (‖y‖ * ‖z‖ * ε) :=

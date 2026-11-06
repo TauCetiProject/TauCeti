@@ -10,14 +10,11 @@ public import Mathlib.Analysis.InnerProductSpace.Symmetric
 /-!
 # Two-vector quadratic-form identities in real or complex inner-product spaces
 
-Six elementary lemmas useful for block-operator perturbation estimates and planar motions:
+Five elementary lemmas useful for block-operator perturbation estimates and planar motions:
 
 * `LinearMap.IsSymmetric.re_inner_map_symm`: the real mixed coefficients agree for symmetric maps;
 * `LinearMap.re_inner_smul_add_smul_map`: expand the real quadratic form of a two-vector
   real-linear combination;
-* `LinearMap.sq_mul_sq_mul_sub_le_re_inner_map`: a lower quadratic-form bound at `y` and an upper
-  one at `z`, cross-weighted by `‖z‖ ^ 2` and `‖y‖ ^ 2`, bound the weighted gap
-  `‖z‖ ^ 2 * re ⟪y, T y⟫ - ‖y‖ ^ 2 * re ⟪z, T z⟫` from below;
 * `TauCeti.abs_re_inner_le_of_norm_le`: `‖w‖ ≤ ε * ‖v‖` bounds `|re ⟪u, w⟫|` by `‖u‖ * ‖v‖ * ε`,
   so an operator bound `‖H v‖ ≤ ε * ‖v‖` bounds the real part of every coefficient `⟪u, H v⟫`;
 * `TauCeti.norm_smul_add_smul_sq`: the Pythagorean norm formula for a two-vector
@@ -59,17 +56,6 @@ theorem re_inner_smul_add_smul_map (H : E →ₗ[𝕜] E) (y z : E) (γ σ : ℝ
   simp only [map_add, LinearMap.map_smul, inner_add_left, inner_add_right,
     inner_smul_left, inner_smul_right, RCLike.conj_ofReal, RCLike.re_ofReal_mul]
   ring
-
-/-- A lower quadratic-form bound `b * ‖y‖ ^ 2 ≤ re ⟪T y, y⟫` weighted by `‖z‖ ^ 2` and an upper
-bound `re ⟪T z, z⟫ ≤ a * ‖z‖ ^ 2` weighted by `‖y‖ ^ 2` bound the weighted gap
-`‖z‖ ^ 2 * re ⟪y, T y⟫ - ‖y‖ ^ 2 * re ⟪z, T z⟫` below by `‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)`. -/
-theorem sq_mul_sq_mul_sub_le_re_inner_map {T : E →ₗ[𝕜] E} {a b : ℝ} {y z : E}
-    (hy : b * ‖y‖ ^ 2 ≤ RCLike.re ⟪T y, y⟫_𝕜) (hz : RCLike.re ⟪T z, z⟫_𝕜 ≤ a * ‖z‖ ^ 2) :
-    ‖y‖ ^ 2 * ‖z‖ ^ 2 * (b - a)
-      ≤ ‖z‖ ^ 2 * RCLike.re ⟪y, T y⟫_𝕜 - ‖y‖ ^ 2 * RCLike.re ⟪z, T z⟫_𝕜 := by
-  rw [inner_re_symm] at hy hz
-  linarith [mul_le_mul_of_nonneg_left hy (sq_nonneg ‖z‖),
-    mul_le_mul_of_nonneg_left hz (sq_nonneg ‖y‖)]
 
 end LinearMap
 
