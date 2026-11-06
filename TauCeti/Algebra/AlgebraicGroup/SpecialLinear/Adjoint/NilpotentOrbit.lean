@@ -128,12 +128,13 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_le
         (H := coordinateHopfAlgebra k n)
         ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)) × k)
         (Module.isUnimodular_mk_one x))) + n ≤ n ^ 2 := by
-  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
-  have hle := (End.jordanPartition _ hx).conjugate.le_sum_sq_parts
-  have hcard := finrank_fin_fun k (n := n)
-  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
-  norm_cast at h ⊢
-  omega
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl]
+  norm_cast
+  by_cases hn : n = 0
+  · subst n
+    simp [Module.finrank_eq_zero_of_subsingleton]
+  · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_le
+      (by simpa using hn) (cotangentDualLieEquivSl n x) hx
 
 /-- The regular Jordan type `(n)` is characterized by adjoint orbit dimension `n² - n`. -/
 theorem topologicalKrullDim_range_projectiveOrbitMap_add_eq_iff
@@ -147,12 +148,15 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_eq_iff
       End.jordanPartition (toLinAlgEquiv'
         (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)) hx =
           Nat.Partition.indiscrete _ := by
-  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
-  have hcard := finrank_fin_fun k (n := n)
-  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
-  norm_cast at h ⊢
-  conv_rhs => rw [← Nat.Partition.sum_sq_conjugate_parts_eq_self_iff]
-  omega
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl]
+  norm_cast
+  by_cases hn : n = 0
+  · subst n
+    rw [← Nat.Partition.sum_sq_conjugate_parts_eq_self_iff,
+      ← Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
+    simp [Module.finrank_eq_zero_of_subsingleton]
+  · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_eq_iff
+      (by simpa using hn) (cotangentDualLieEquivSl n x) hx
 
 /-- Away from the regular Jordan type, a nilpotent adjoint orbit in `SLₙ` has dimension
 at most `n² - n - 2`. -/
@@ -167,12 +171,17 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_le
         (H := coordinateHopfAlgebra k n)
         ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)) × k)
         (Module.isUnimodular_mk_one x))) + n + 2 ≤ n ^ 2 := by
-  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
-  have hle := Nat.Partition.add_two_le_sum_sq_conjugate_parts _ hreg
-  have hcard := finrank_fin_fun k (n := n)
-  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
-  norm_cast at h ⊢
-  omega
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl]
+  norm_cast
+  by_cases hn : n = 0
+  · subst n
+    exfalso
+    apply hreg
+    rw [← Nat.Partition.sum_sq_conjugate_parts_eq_self_iff,
+      ← Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
+    simp [Module.finrank_eq_zero_of_subsingleton]
+  · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_add_two_le
+      (by simpa using hn) (cotangentDualLieEquivSl n x) hx hreg
 
 /-- The subregular Jordan type `(n - 1, 1)` is characterized by adjoint orbit dimension
 `n² - n - 2`. The equivalence has no solutions at sizes zero and one. -/
@@ -186,17 +195,21 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_eq_iff
         (Module.isUnimodular_mk_one x))) + n + 2 = n ^ 2 ↔
       (End.jordanPartition (toLinAlgEquiv'
         (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)) hx).parts = {n - 1, 1} := by
-  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
-  have hcard := finrank_fin_fun k (n := n)
-  have hsub := Nat.Partition.sum_sq_conjugate_parts_eq_add_two_iff (End.jordanPartition _ hx)
-  -- Rewrite only the size in the multiset, not the partition's dependent type.
-  have hparts : ({finrank k (Fin n → k) - 1, 1} : Multiset ℕ) = {n - 1, 1} := by
-    rw [hcard]
-  rw [hparts] at hsub
-  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
-  norm_cast at h ⊢
-  conv_rhs => rw [← hsub]
-  omega
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl]
+  norm_cast
+  by_cases hn : n = 0
+  · subst n
+    suffices (End.jordanPartition (toLinAlgEquiv'
+        (cotangentDualLieEquivSl 0 x : Matrix (Fin 0) (Fin 0) k)) hx).parts ≠ {0, 1} by
+      simpa [Module.finrank_eq_zero_of_subsingleton] using this
+    intro hparts
+    have hmem : 0 ∈ (End.jordanPartition (toLinAlgEquiv'
+        (cotangentDualLieEquivSl 0 x : Matrix (Fin 0) (Fin 0) k)) hx).parts := by
+      rw [hparts]
+      simp
+    exact (Nat.lt_irrefl 0) ((End.jordanPartition _ hx).parts_pos hmem)
+  · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_add_two_eq_iff
+      (by simpa using hn) (cotangentDualLieEquivSl n x) hx
 
 end Orbit
 
