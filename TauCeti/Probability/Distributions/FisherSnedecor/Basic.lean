@@ -433,7 +433,6 @@ theorem fisherSnedecorMeasure_eq_withDensity (m n : ℝ) :
     rw [fisherSnedecorMeasure_eq_map hm hn, betaMeasure_eq_withDensity_restrict_Ioo,
       withDensity_congr_ae hweight,
       MeasureTheory.map_withDensity_abs_deriv_mul measurableSet_Ioo
-        (measurable_fisherSnedecorMap m n)
         (fun u hu ↦ (hasDerivAt_fisherSnedecorMap m n hu.2.ne).hasDerivWithinAt)
         ((fisherSnedecorMap_strictMonoOn hm hn).injOn.mono fun _ hu ↦ hu.2),
       fisherSnedecorMap_image_Ioo hm hn, ← withDensity_indicator measurableSet_Ioi,
