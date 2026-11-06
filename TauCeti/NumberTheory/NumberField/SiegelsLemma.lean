@@ -144,6 +144,41 @@ end RingOfIntegers
 
 variable {α β : Type*} [Fintype α] [Fintype β]
 
+/-- A linear form with coefficients of absolute value at most `A`, evaluated at an integer point of
+the box `[0, B]^β`, has absolute value at most `#β * A * B`. -/
+theorem abs_sum_intCast_mul_le {c : β → ℝ} {x : β → ℤ} {A : ℝ} {B : ℕ} (hc : ∀ j, |c j| ≤ A)
+    (hx : ∀ j, 0 ≤ x j ∧ x j ≤ B) : |∑ j, (x j : ℝ) * c j| ≤ Fintype.card β * A * B := by
+  calc |∑ j, (x j : ℝ) * c j| ≤ ∑ j, |(x j : ℝ) * c j| := abs_sum_le_sum_abs _ _
+    _ ≤ ∑ _j : β, A * B := by
+      gcongr with j
+      rw [abs_mul, mul_comm A]
+      gcongr
+      · rw [abs_of_nonneg (by exact_mod_cast (hx j).1)]
+        exact_mod_cast (hx j).2
+      · exact hc j
+    _ = Fintype.card β * A * B := by simp [mul_assoc]
+
+/-- The pigeonhole count in Siegel's lemma: the box `[0, B]^β` has more integer points than the
+grid `range (⌊C B⌋ + 1) ^ γ` has cells, when `D = #γ < #β` and `C ^ (D / (#β - D)) < B + 1`. -/
+theorem card_piFinset_range_floor_lt_card_Icc [DecidableEq β] {γ : Type*} [Fintype γ]
+    [DecidableEq γ] {C : ℝ} {B D : ℕ} (hC : 1 ≤ C) (hγ : Fintype.card γ = D)
+    (hcard : D < Fintype.card β) (hB : C ^ ((D : ℝ) / (Fintype.card β - D)) < B + 1) :
+    #(Fintype.piFinset fun _ : γ ↦ range (⌊C * B⌋₊ + 1)) <
+      #(Icc (0 : β → ℤ) fun _ ↦ (B : ℤ)) := by
+  simpa [Fintype.card_piFinset, Pi.card_Icc, hγ] using Real.floor_mul_add_one_pow_lt hC hcard hB
+
+/-- Two nonnegative reals whose images under `x ↦ ⌊x * (3 / 2)⌋₊` agree after a common shift `m`
+differ by less than `2 / 3`: the cells of the pigeonhole grid have side `2 / 3`. -/
+theorem abs_sub_lt_two_thirds_of_natFloor_eq {u v m : ℝ} (hu : 0 ≤ u + m) (hv : 0 ≤ v + m)
+    (h : ⌊(u + m) * (3 / 2)⌋₊ = ⌊(v + m) * (3 / 2)⌋₊) : |u - v| < 2 / 3 := by
+  have hcell := Int.abs_sub_lt_one_of_floor_eq_floor
+    (a := (u + m) * (3 / 2)) (b := (v + m) * (3 / 2)) <| by
+    rw [← Int.natCast_floor_eq_floor (by positivity), ← Int.natCast_floor_eq_floor (by positivity),
+      h]
+  rw [← sub_mul, add_sub_add_right_eq_sub, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 3 / 2)]
+    at hcell
+  linarith
+
 /-- **Siegel's lemma over a number field, with rational integer unknowns** (Evertse,
 Theorem 3.20). Let `K` be a number field of degree `d` and `a` a matrix over `𝓞 K` with `M` rows
 and `N` columns, whose entries have house at most `A ≥ 1`. If `d * M < N`, there is a nonzero
@@ -175,17 +210,8 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
   have hT {x : β → ℤ} (hx : x ∈ T) (j : β) : 0 ≤ x j ∧ x j ≤ B := by
     rw [mem_Icc] at hx
     exact ⟨hx.1 j, hx.2 j⟩
-  have hL {x : β → ℤ} (hx : x ∈ T) (p : α × index K) : |L x p| ≤ n * A * B := by
-    calc |L x p| ≤ ∑ j, |(x j : ℝ) * c p j| := abs_sum_le_sum_abs _ _
-      _ ≤ ∑ _j : β, A * B := by
-        gcongr with j
-        have := hT hx j
-        rw [abs_mul, mul_comm A]
-        gcongr
-        · rw [abs_of_nonneg (by exact_mod_cast this.1)]
-          exact_mod_cast this.2
-        · exact hc p j
-      _ = n * A * B := by simp [n, mul_assoc]
+  have hL {x : β → ℤ} (hx : x ∈ T) (p : α × index K) : |L x p| ≤ n * A * B :=
+    abs_sum_intCast_mul_le (hc p) (hT hx)
   have hmaps (x : β → ℤ) (hx : x ∈ T) : f x ∈ S := by
     simp only [S, Fintype.mem_piFinset, mem_range, Nat.lt_succ_iff]
     intro p
@@ -194,34 +220,27 @@ theorem exists_ne_zero_int_vec_abs_le_of_house_le (a : Matrix α β (𝓞 K)) {A
   have hlt : #S < #T := by
     have : Fintype.card (index K) = finrank ℚ K := by
       rw [← mixedEmbedding.finrank K, finrank_eq_card_basis (stdBasis K)]
-    have hS : #S = (⌊3 * n * A * B⌋₊ + 1) ^ D := by
-      simp [S, Fintype.card_piFinset, Fintype.card_prod, this, hD_def, mul_comm]
-    have hT : #T = (B + 1) ^ n := by simp [T, Pi.card_Icc, n]
-    rw [hS, hT]
-    exact Real.floor_mul_add_one_pow_lt hnA hcard (Nat.lt_floor_add_one _)
+    have hγ : Fintype.card (α × index K) = D := by
+      simp [Fintype.card_prod, this, hD_def, mul_comm]
+    exact card_piFinset_range_floor_lt_card_Icc hnA hγ hcard (Nat.lt_floor_add_one _)
   obtain ⟨x, hx, y, hy, hne, hxy⟩ := exists_ne_map_eq_of_card_lt_of_maps_to hlt hmaps
   refine ⟨x - y, sub_ne_zero.mpr hne, ?_, fun j ↦ ?_⟩
   · -- Two points in the same cell differ by an integer vector on which every form is `< 2 / 3`.
     funext i
     refine RingOfIntegers.eq_zero_of_abs_stdBasis_repr_le fun r ↦ ?_
-    have hfloor := congr_arg (fun k : ℕ ↦ (k : ℤ)) (congr_fun hxy (i, r))
-    simp only [f] at hfloor
-    rw [Int.natCast_floor_eq_floor (by linarith [(abs_le.mp (hL hx (i, r))).1]),
-      Int.natCast_floor_eq_floor (by linarith [(abs_le.mp (hL hy (i, r))).1])] at hfloor
-    have hcell := Int.abs_sub_lt_one_of_floor_eq_floor hfloor
+    have hcell := abs_sub_lt_two_thirds_of_natFloor_eq
+      (by linarith [(abs_le.mp (hL hx (i, r))).1]) (by linarith [(abs_le.mp (hL hy (i, r))).1])
+      (congr_fun hxy (i, r))
     have hsub : ∑ j, ((x - y) j : ℝ) * (stdBasis K).repr (mixedEmbedding K (a i j : K)) r =
         L x (i, r) - L y (i, r) := by
       simp [L, c, sub_mul, sum_sub_distrib]
     rw [stdBasis_repr_mulVec_intCast, hsub]
-    rw [← sub_mul, add_sub_add_right_eq_sub, abs_mul, abs_of_pos (by norm_num : (0 : ℝ) < 3 / 2)]
-      at hcell
     linarith
   · obtain ⟨hx₁, hx₂⟩ := hT hx j
     obtain ⟨hy₁, hy₂⟩ := hT hy j
     calc |((x - y) j : ℝ)| ≤ B := by
-          have : |x j - y j| ≤ (B : ℤ) := abs_le.mpr ⟨by linarith, by linarith⟩
           rw [Pi.sub_apply]
-          exact_mod_cast this
+          exact_mod_cast (abs_le.mpr ⟨by linarith, by linarith⟩ : |x j - y j| ≤ (B : ℤ))
       _ ≤ _ := Nat.floor_le (by positivity)
 
 omit [NumberField K] [Fintype α] in
