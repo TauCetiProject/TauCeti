@@ -25,13 +25,6 @@ into its positive and negative subbundles. They concern the existing
 or projections. The invertibility hypothesis excludes eigenvalues crossing zero; dimension zero
 is allowed.
 
-For a self-adjoint operator on a finite-dimensional `RCLike` inner product space, the spectral
-projector `cfc (Ω.indicator 1) T` of any set `Ω ⊆ ℝ` is the same orthogonal projection onto
-`Module.End.pointSpectralSubspace T Ω`
-(`ContinuousLinearMap.cfc_indicator_eq_starProjection`), so the formulas above also describe the
-functional-calculus spectral projectors `cfc ((Iio 0).indicator 1) A` and
-`cfc ((Ioi 0).indicator 1) A`.
-
 ## References
 
 * R. Bhatia, *Matrix Analysis*, Springer, 1997, Chapter V (matrix functions).
@@ -46,29 +39,6 @@ open Set
 open scoped ContDiff
 
 namespace ContinuousLinearMap
-
-section RCLike
-
-variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] [CompleteSpace E] [Algebra ℝ (E →L[𝕜] E)]
-  [IsScalarTower ℝ 𝕜 (E →L[𝕜] E)] [ContinuousFunctionalCalculus ℝ (E →L[𝕜] E) IsSelfAdjoint]
-
-/-- **The spectral projector is an orthogonal projection.** For a self-adjoint operator `T` on a
-finite-dimensional space and a set `Ω ⊆ ℝ`, `cfc (Ω.indicator 1) T` is the orthogonal projection
-onto the sum of the eigenspaces of `T` at the eigenvalues in `Ω`. -/
-theorem cfc_indicator_eq_starProjection (Ω : Set ℝ) {T : E →L[𝕜] E} (hT : IsSelfAdjoint T) :
-    cfc (Ω.indicator 1) T =
-      (Module.End.pointSpectralSubspace (T : E →ₗ[𝕜] E) Ω).starProjection := by
-  have hs : (T : E →ₗ[𝕜] E).IsSymmetric := isSelfAdjoint_iff_isSymmetric.mp hT
-  have h := hs.toContinuousLinearMap_cfc (Ω.indicator 1)
-  have hT' : LinearMap.toContinuousLinearMap (T : E →ₗ[𝕜] E) = T := by
-    ext
-    simp
-  rw [← hs.coe_starProjection_pointSpectralSubspace, hT'] at h
-  ext v
-  simpa using congr($h v).symm
-
-end RCLike
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E]

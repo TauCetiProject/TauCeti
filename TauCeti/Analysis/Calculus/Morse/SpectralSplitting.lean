@@ -8,8 +8,8 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
+public import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
-public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 -- Private: used only to turn the finite-dimensional algebraic splitting into a continuous
 -- projection; the public API exposes the resulting continuous linear map.
 import Mathlib.Analysis.Normed.Module.Complemented
@@ -27,7 +27,9 @@ unstable linear subspace.
 This file constructs those two subspaces, shows that both are invariant under the
 negative-gradient linearization, and identifies the dimension of the unstable subspace with the
 Morse index; the stable dimension and the Morse index therefore add up to the dimension of the
-ambient space.
+ambient space. When the Hessian is injective, the projections of this splitting are the
+orthogonal spectral projections `cfc ((Ioi 0).indicator 1)` and `cfc ((Iio 0).indicator 1)` of
+the Hessian.
 
 These are the linear data used by the local stable- and unstable-manifold theorems. No local
 invariant manifold is asserted here: those theorems additionally have to control the nonlinear
@@ -60,6 +62,13 @@ remainder of the negative-gradient field, supplied by
 * `TauCeti.IsNondegenerateCriticalPoint.stableProjection` and
   `TauCeti.IsNondegenerateCriticalPoint.unstableProjection`: the same two projections specialized
   to a nondegenerate critical point, which supplies Hessian injectivity.
+* `ContDiffAt.stableProjection_eq_cfc_indicator_Ioi` and
+  `ContDiffAt.unstableProjection_eq_cfc_indicator_Iio`: when the Hessian is injective, the stable
+  and unstable projections are the orthogonal spectral projections
+  `cfc ((Ioi 0).indicator 1)` and `cfc ((Iio 0).indicator 1)` of the Hessian;
+  `TauCeti.IsNondegenerateCriticalPoint.stableProjection_eq_cfc_indicator_Ioi` and
+  `TauCeti.IsNondegenerateCriticalPoint.unstableProjection_eq_cfc_indicator_Iio` state the same
+  at a nondegenerate critical point.
 
 ## References
 
@@ -412,12 +421,10 @@ theorem stableProjection_eq_cfc_indicator_Ioi (hf : ContDiffAt ℝ 2 f x)
       hs.isSymmetric.orthogonal_pointSpectralSubspace]
     exact Module.End.pointSpectralSubspace_mono fun t ht ↦ not_lt.mpr (le_of_lt ht)
   ext v
-  obtain ⟨u, hu, s, hs, rfl⟩ := Submodule.mem_sup.mp
-    ((hf.isCompl_unstableLinearSubspace_stableLinearSubspace hker).sup_eq_top ▸
-      Submodule.mem_top (x := v))
-  rw [map_add, map_add, (hf.stableProjection_apply_eq_self_iff hker).2 hs,
-    (hf.stableProjection_apply_eq_zero_iff hker).2 hu, Submodule.starProjection_eq_self_iff.2 hs,
-    (Submodule.starProjection_apply_eq_zero_iff _).2 (hperp hu)]
+  refine (Submodule.eq_starProjection_of_mem_orthogonal (hf.stableProjection_apply_mem hker v)
+    (hperp ?_)).symm
+  rw [← hf.unstableProjection_apply hker]
+  exact hf.unstableProjection_apply_mem hker v
 
 /-- When the Hessian is injective, the unstable projection is the orthogonal spectral projection
 `cfc ((Iio 0).indicator 1)` of the Hessian onto its negative eigenvalues. -/

@@ -27,6 +27,8 @@ negative parts of the spectrum are complementary, `P₊ + P₋ = 1`.
   the spectrum of `a`;
 * `TauCeti.isStarProjection_cfc_indicator` — the spectral projector `cfc (Ω.indicator 1) a` is a
   star projection;
+* `IsUnit.continuousOn_indicator_spectrum` — at an invertible element, the indicator of a set
+  whose frontier is contained in `{0}` is continuous on the spectrum;
 * `TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio` — for invertible self-adjoint `a`, the
   positive and negative spectral projectors add up to `1`.
 -/
@@ -63,23 +65,22 @@ theorem isStarProjection_cfc_indicator (a : A) (Ω : Set ℝ) :
 open Set
 
 omit [StarRing A] [TopologicalSpace A] [ContinuousFunctionalCalculus ℝ A IsSelfAdjoint] in
-/-- At an invertible element, the indicator of a set whose frontier is `{0}`, such as a half-line
-ending at `0`, is continuous on the spectrum, since the spectrum avoids `0`. -/
-private theorem continuousOn_indicator_spectrum {Ω : Set ℝ} (hΩ : frontier Ω = {0}) {a : A}
-    (ha : IsUnit a) : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ a) := by
+/-- At an invertible element, the indicator of a set whose frontier is contained in `{0}`, such as
+a half-line ending at `0`, is continuous on the spectrum, since the spectrum avoids `0`. -/
+theorem _root_.IsUnit.continuousOn_indicator_spectrum {a : A} (ha : IsUnit a) {Ω : Set ℝ}
+    (hΩ : frontier Ω ⊆ {0}) : ContinuousOn (Ω.indicator (1 : ℝ → ℝ)) (spectrum ℝ a) := by
   classical
   rw [← piecewise_eq_indicator]
   refine ContinuousOn.piecewise (fun x hx ↦ ?_) continuousOn_const continuousOn_const
-  rw [hΩ, mem_inter_iff, mem_singleton_iff] at hx
-  exact absurd (hx.2 ▸ hx.1) (spectrum.zero_notMem ℝ ha)
+  exact absurd (mem_singleton_iff.mp (hΩ hx.2) ▸ hx.1) (spectrum.zero_notMem ℝ ha)
 
 /-- For an invertible self-adjoint `a`, the spectral projectors onto the positive and the negative
 parts of the spectrum add up to `1`. -/
 theorem cfc_indicator_Ioi_add_cfc_indicator_Iio {a : A} (ha : IsUnit a)
     (ha' : IsSelfAdjoint a := by cfc_tac) :
     cfc ((Ioi (0 : ℝ)).indicator 1) a + cfc ((Iio (0 : ℝ)).indicator 1) a = 1 := by
-  rw [← cfc_add (hf := continuousOn_indicator_spectrum frontier_Ioi ha)
-    (hg := continuousOn_indicator_spectrum frontier_Iio ha), ← cfc_const_one ℝ a]
+  rw [← cfc_add (hf := ha.continuousOn_indicator_spectrum frontier_Ioi.subset)
+    (hg := ha.continuousOn_indicator_spectrum frontier_Iio.subset), ← cfc_const_one ℝ a]
   refine cfc_congr fun x hx ↦ ?_
   rcases lt_or_gt_of_ne (ne_of_mem_of_not_mem hx (spectrum.zero_notMem ℝ ha)) with hx | hx
   · simp [indicator_of_notMem, indicator_of_mem, hx, hx.not_gt]
