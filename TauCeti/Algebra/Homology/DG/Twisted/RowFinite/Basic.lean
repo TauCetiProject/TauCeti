@@ -24,6 +24,11 @@ as in `twistedDifferential`; the finite `TwistingCocycle` has this extra conditi
 generators, the actual finite-support/function equivalence identifies this construction with
 the regular-bimodule twisted differential.
 
+An `A`-linear map out of the free module to a differential graded left module is determined by
+the images of the generators, and it commutes with the differentials exactly when it does so on
+each generator, that is, when it carries each row `m x` to the differential of the image of `x`.
+Dually, a single vector is a valid row for a new generator exactly when it is a cycle.
+
 ## Main definitions and results
 
 * `RowFiniteTwistingCocycle`: homogeneous finite rows with the Maurer–Cartan equation.
@@ -31,6 +36,11 @@ the regular-bimodule twisted differential.
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
+* `mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero`: the Maurer–Cartan equation of a
+  row is the vanishing of its twisted differential.
+* `linearCombination_rowFiniteTwistedDifferential` and
+  `forall_linearCombination_rowFiniteTwistedDifferential_iff`: maps out of the free module
+  commute with the differentials exactly when they do so on generators.
 * `TwistingCocycle.toRowFinite` and
   `linearEquivFunOnFinite_rowFiniteTwistedDifferential`: recovery of the finite prototype
   through `Finsupp.linearEquivFunOnFinite`.
@@ -48,7 +58,7 @@ open DirectSum
 
 namespace TauCeti
 
-universe uR uA uP uQ
+universe uR uA uM uP uQ
 
 section Grading
 
@@ -256,6 +266,85 @@ instance instGradedSMulRowFiniteTotalGrading :
     have := SetLike.GradedMul.mul_mem ha (hf x)
     simpa only [vadd_eq_add, add_assoc, Finsupp.smul_apply, smul_eq_mul] using this
 
+/-- The twisting equation of a single row says exactly that the row is a cycle of the twisted
+differential: a vector `r` of total degree `1 - k`, read as the prospective row of a generator of
+index `k`, satisfies `d r = ∑_y (-1)^(k - ind y) r_y · m_y` exactly when `D r = 0`. -/
+theorem mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero (m : P → P →₀ A) {k : ℤ}
+    {r : P →₀ A} (hr : ∀ y, r y ∈ 𝒜 (ind y - k + 1)) :
+    Finsupp.mapRange.linearMap d r = r.sum (fun y a ↦ (k - ind y).negOnePow • (a • m y)) ↔
+      rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m r = 0 := by
+  classical
+  have hd : (∑ y ∈ r.support, Finsupp.single y (d (r y))) = Finsupp.mapRange.linearMap d r := by
+    conv_rhs => rw [← Finsupp.sum_single r, Finsupp.sum]
+    rw [map_sum]
+    simp
+  have hD : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m r =
+      Finsupp.mapRange.linearMap d r - r.sum (fun y a ↦ (k - ind y).negOnePow • (a • m y)) := by
+    conv_lhs => rw [← Finsupp.sum_single r, Finsupp.sum, map_sum]
+    simp_rw [rowFiniteTwistedDifferential_single m _ (hr _)]
+    rw [Finset.sum_add_distrib, hd, Finsupp.sum, sub_eq_add_neg, ← Finset.sum_neg_distrib]
+    congr 1
+    refine Finset.sum_congr rfl fun y _ ↦ ?_
+    rw [show ind y - k + 1 = -(k - ind y) + 1 by ring, Int.negOnePow_succ, Int.negOnePow_neg,
+      Units.neg_smul]
+  rw [hD, sub_eq_zero]
+
+section Maps
+
+variable {M : Type uM} [AddCommGroup M] [Module R M] [Module A M] [IsScalarTower R A M]
+  {ℳ : ℤ → Submodule R M} [SetLike.GradedSMul 𝒜 ℳ]
+
+omit [GradedAlgebra 𝒜] [IsScalarTower R A M] in
+/-- An `A`-linear map out of the free module sends total degree `n` to degree `n` as soon as
+each generator `x` is sent to degree `-ind x`. -/
+theorem linearCombination_mem_of_mem_rowFiniteTotalGrading {g : P → M}
+    (hg : ∀ x, g x ∈ ℳ (-ind x)) {n : ℤ} {f : P →₀ A}
+    (hf : f ∈ rowFiniteTotalGrading 𝒜 ind n) : Finsupp.linearCombination A g f ∈ ℳ n := by
+  classical
+  rw [Finsupp.linearCombination_apply, Finsupp.sum]
+  refine Submodule.sum_mem _ fun x _ ↦ ?_
+  have := SetLike.GradedSMul.smul_mem (hf x) (hg x)
+  simpa only [vadd_eq_add, add_neg_cancel_right] using this
+
+variable [DirectSum.Decomposition ℳ] {dM : M →ₗ[R] M} {h : IsDGAlgebra 𝒜 d}
+
+/-- **Maps out of the free module are determined on generators.** If an `A`-linear map sends
+the differential of each generator, its row `m x`, to the differential of the image of the
+generator, then it commutes with the differentials on the whole free module, by the DG Leibniz
+rule. -/
+theorem linearCombination_rowFiniteTwistedDifferential (hM : IsDGLeftModule h ℳ dM)
+    (m : P → P →₀ A) {g : P → M} (hg : ∀ x, Finsupp.linearCombination A g (m x) = dM (g x))
+    (f : P →₀ A) :
+    Finsupp.linearCombination A g (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) =
+      dM (Finsupp.linearCombination A g f) := by
+  classical
+  induction f using Finsupp.induction_linear with
+  | zero => simp
+  | add f₁ f₂ hf₁ hf₂ => simp only [map_add, hf₁, hf₂]
+  | single x a =>
+    induction a using DirectSum.Decomposition.inductionOn 𝒜 with
+    | zero => simp
+    | @homogeneous q a =>
+      rw [rowFiniteTwistedDifferential_single m x a.2, map_add, Finsupp.linearCombination_single,
+        Finsupp.linearCombination_single, hM.leibniz a.2, ← hg x]
+      simp only [map_smul, LinearMap.map_smul_of_tower]
+    | add a b ha hb => simp only [Finsupp.single_add, map_add, ha, hb]
+
+/-- An `A`-linear map out of the free module commutes with the differentials exactly when it does
+so on the generators. -/
+theorem forall_linearCombination_rowFiniteTwistedDifferential_iff (hM : IsDGLeftModule h ℳ dM)
+    (m : P → P →₀ A) (g : P → M) :
+    (∀ f, Finsupp.linearCombination A g (rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m f) =
+        dM (Finsupp.linearCombination A g f)) ↔
+      ∀ x, Finsupp.linearCombination A g (m x) = dM (g x) := by
+  refine ⟨fun H x ↦ ?_, fun hg ↦ linearCombination_rowFiniteTwistedDifferential hM m hg⟩
+  have := H (Finsupp.single x 1)
+  rwa [rowFiniteTwistedDifferential_single m x (SetLike.one_mem_graded 𝒜), h.map_one_eq_zero,
+    Finsupp.single_zero, zero_add, Int.negOnePow_zero, one_smul, one_smul,
+    Finsupp.linearCombination_single, one_smul] at this
+
+end Maps
+
 section DifferentialLaws
 
 variable (m : P → P →₀ A) (h : IsDGAlgebra 𝒜 d)
@@ -306,24 +395,9 @@ theorem differential_single_one (x : P) :
 omit h in
 /-- The Maurer–Cartan equation says that every differential row is a cycle. -/
 theorem differential_row (x : P) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m (m.m x) = 0 := by
-  classical
-  have hd : (∑ y ∈ (m.m x).support, Finsupp.single y (d (m.m x y))) =
-      Finsupp.mapRange.linearMap d (m.m x) := by
-    conv_rhs => rw [← Finsupp.sum_single (m.m x), Finsupp.sum]
-    rw [map_sum]
-    simp
-  rw [← Finsupp.sum_single (m.m x), Finsupp.sum, map_sum]
-  simp_rw [rowFiniteTwistedDifferential_single m.m _ (m.mem_graded x _)]
-  rw [Finset.sum_add_distrib, hd, m.twisting x]
-  simp only [Finsupp.sum]
-  rw [← Finset.sum_add_distrib]
-  refine Finset.sum_eq_zero fun y _ ↦ ?_
-  have hsign : (ind y - ind x + 1).negOnePow = -(ind x - ind y).negOnePow := by
-    rw [Int.negOnePow_succ, ← Int.negOnePow_neg (ind x - ind y)]
-    congr 2
-    omega
-  rw [hsign, Units.neg_smul, add_neg_cancel]
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m (m.m x) = 0 :=
+  (mapRange_eq_sum_iff_rowFiniteTwistedDifferential_eq_zero m.m (m.mem_graded x)).mp
+    (m.twisting x)
 
 /-- The differential squares to zero, first on generators and then by the DG Leibniz rule. -/
 theorem differential_sq_zero (f : P →₀ A) :
