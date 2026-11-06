@@ -585,6 +585,40 @@ private lemma summable_norm_weightedTerm (z : ℍ) :
   rw [norm_mul, norm_mul, norm_pow, norm_pow, Complex.norm_natCast, mul_assoc]
   exact mul_le_mul hg le_rfl (by positivity) ((norm_nonneg _).trans hg)
 
+/-- **Folding the rows of a weighted Eisenstein series.** The double series over `ℤ × ℤ` is the
+sum of the row `c = 0` and the folded rows `c` and `-c` for `c ≥ 1`, each of which is given by
+`tsum_row_add_tsum_row_neg`. -/
+private lemma tsum_weightedEisensteinSummand_fold (hk : 2 ≤ k) (z : ℍ)
+    (hF : Summable fun p : ℤ × ℤ ↦
+      W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z)
+    (hT : Summable fun p : ℕ+ × ℕ+ ↦
+      𝓕 (fun d ↦ W ![((p.1 : ℕ) : ZMod N), d] +
+          (-1) ^ k * W ![-((p.1 : ℕ) : ZMod N), -d]) (-((p.2 : ℕ) : ZMod N)) *
+        ((p.2 : ℕ) : ℂ) ^ (k - 1) * cexp (2 * π * I * z / N) ^ ((p.1 : ℕ) * p.2)) :
+    ∑' p : ℤ × ℤ, W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z =
+      ∑' d : ℤ, W ![0, (d : ZMod N)] * eisSummand k ![0, d] z +
+        (-2 * π * I) ^ k / ((k - 1).factorial * N ^ k) * ∑' p : ℕ+ × ℕ+,
+          𝓕 (fun d ↦ W ![((p.1 : ℕ) : ZMod N), d] +
+              (-1) ^ k * W ![-((p.1 : ℕ) : ZMod N), -d]) (-((p.2 : ℕ) : ZMod N)) *
+            ((p.2 : ℕ) : ℂ) ^ (k - 1) * cexp (2 * π * I * z / N) ^ ((p.1 : ℕ) * p.2) := by
+  set F : ℤ × ℤ → ℂ := fun p ↦
+    W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z with hFdef
+  have hrows : Summable fun c : ℤ ↦ ∑' d, F (c, d) := hF.prod
+  have hpos : Summable fun c : ℕ+ ↦ ∑' d, F (((c : ℕ) : ℤ), d) :=
+    hrows.comp_injective (Nat.cast_injective.comp PNat.coe_injective)
+  have hneg : Summable fun c : ℕ+ ↦ ∑' d, F (-((c : ℕ) : ℤ), d) :=
+    hrows.comp_injective (neg_injective.comp (Nat.cast_injective.comp PNat.coe_injective))
+  rw [hF.tsum_prod, tsum_int_eq_zero_add_tsum_pnat hrows, add_assoc, ← hpos.tsum_add hneg,
+    hT.tsum_prod, ← tsum_mul_left]
+  congr 1
+  · exact tsum_congr fun d ↦ by simp [hFdef]
+  refine tsum_congr fun c ↦ ?_
+  simp only [hFdef, Int.cast_natCast, Int.cast_neg]
+  rw [tsum_row_add_tsum_row_neg W hk z c
+    (by simpa only [hFdef, Int.cast_natCast] using hF.prod_factor ((c : ℕ) : ℤ))
+    (by simpa only [hFdef, Int.cast_natCast, Int.cast_neg] using
+      hF.prod_factor (-((c : ℕ) : ℤ)))]
+
 /-- **The `q`-expansion of a weighted Eisenstein series at the period `N`.** Let `k ≥ 3` and let
 `f` be a modular form, on any group having `N` as a strict period, whose values are those of the
 weighted Eisenstein series `∑_{x ∈ ℤ²} W(x mod N) (x₀ z + x₁)^(-k)`. Its expansion in
@@ -625,11 +659,10 @@ theorem qExpansion_coeff_of_coe_eq_weightedEisensteinSeries {𝒢 : Subgroup (GL
     𝓕 (fun d ↦ W ![(c : ZMod N), d] + (-1) ^ k * W ![-(c : ZMod N), -d]) (-(m : ZMod N)) *
       (m : ℂ) ^ (k - 1) * q ^ (c * m) with hT
   have hTs : Summable fun p : ℕ+ × ℕ+ ↦ T p.1 p.2 := (summable_norm_weightedTerm W τ).of_norm
-  -- split the rows into `c = 0`, `c ≥ 1` and `c ≤ -1`, and fold `c` with `-c`
-  have hpos : Summable fun c : ℕ+ ↦ ∑' d, F (((c : ℕ) : ℤ), d) :=
-    hFs.prod.comp_injective (Nat.cast_injective.comp PNat.coe_injective)
-  have hneg : Summable fun c : ℕ+ ↦ ∑' d, F (-((c : ℕ) : ℤ), d) :=
-    hFs.prod.comp_injective (neg_injective.comp (Nat.cast_injective.comp PNat.coe_injective))
+  have hfτ : f τ = ∑' p, F p := by
+    rw [hf, weightedEisensteinSeries_def, ← (finTwoArrowEquiv ℤ).symm.tsum_eq]
+    simp [hF, hcomp]
+  have hfold := tsum_weightedEisensteinSummand_fold W (by omega) τ hFs hTs
   -- regroup by `n = c m`; each group carries `q ^ n`
   have hgroup (n : ℕ+) : ∑ x ∈ (n : ℕ).divisorsAntidiagonal, T x.1 x.2 = a n * q ^ (n : ℕ) := by
     rw [ha, Finset.sum_mul]
@@ -639,18 +672,15 @@ theorem qExpansion_coeff_of_coe_eq_weightedEisensteinSeries {𝒢 : Subgroup (GL
   convert! ((hasSum_pnat_iff (f := fun n : ℕ ↦ K * (a n * q ^ n))).mp H).add
     (hasSum_ite_eq 0 (∑' d : ℤ, W ![0, (d : ZMod N)] * (d : ℂ) ^ (-(k : ℤ)))) using 1
   · ext m
-    rcases eq_or_ne m 0 with rfl | hm <;> simp [b, a, mul_assoc, *]
-  · rw [hf, weightedEisensteinSeries_def, ← (finTwoArrowEquiv ℤ).symm.tsum_eq]
-    simp only [finTwoArrowEquiv_symm_apply, hcomp, ← hF]
-    rw [hFs.tsum_prod, tsum_int_eq_zero_add_tsum_pnat hFs.prod, add_assoc,
-      ← hpos.tsum_add hneg, hTs.tsum_prod, ← tsum_mul_left]
+    rcases eq_or_ne m 0 with rfl | hm
+    · simp [b, a, hq]
+    · simp [b, hm, hq, mul_assoc]
+  · rw [hfτ, hfold]
     simp only [a, Nat.divisorsAntidiagonal_zero, Finset.sum_empty, zero_mul, mul_zero, add_zero]
-    refine (add_comm _ _).trans (congrArg₂ (· + ·) (tsum_congr fun c ↦ ?_) ?_)
-    · simp only [hF, Int.cast_natCast, Int.cast_neg]
-      rw [tsum_row_add_tsum_row_neg W (k := k) (by omega) τ c
-        (by simpa only [hF, Int.cast_natCast] using hFs.prod_factor ((c : ℕ) : ℤ))
-        (by simpa only [hF, Int.cast_natCast, Int.cast_neg] using hFs.prod_factor (-((c : ℕ) : ℤ)))]
-    · exact tsum_congr fun d ↦ by simp [hF, eisSummand]
+    rw [add_comm]
+    congr 1
+    refine tsum_congr fun d ↦ ?_
+    simp [eisSummand]
 
 end Weighted
 
