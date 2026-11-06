@@ -19,6 +19,8 @@ of `D`:
 `F.map φ_X = φ_{F X} ≫ (δ_X)ᘁ ≫ δ_{Xᘁ}⁻¹`,
 an identity of morphisms `F.obj X ⟶ F.obj Xᘁᘁ` along the path
 `F.obj X ⟶ (F.obj X)ᘁᘁ ⟶ (F.obj Xᘁ)ᘁ ⟶ F.obj Xᘁᘁ`.
+Equivalently, `F` is pivotal exactly when `F.map φ_X ≫ κ_X = φ_{F X}` for every `X`, where
+`κ_X = F.mapDoubleRightDualIso X : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ` is the bidual comparison.
 
 The identity functor is pivotal, and a composite of pivotal functors is pivotal. A pivotal functor
 preserves the left and right traces, and hence the left and right dimensions, up to the unit
@@ -26,14 +28,16 @@ comparison `ε F : 𝟙_ D ⟶ F.obj (𝟙_ C)`: for instance
 `rightTrace (F.map f) = ε F ≫ F.map (rightTrace f) ≫ η F`. Between spherical categories it
 therefore preserves the trace and the quantum dimension.
 
-A braided functor carries the Drinfeld isomorphism of `X` to that of `F.obj X`, up to the
-comparisons `δ`. Consequently every braided functor between symmetric rigid categories is pivotal
-for their canonical pivotal structures.
+A braided functor carries the Drinfeld isomorphism `u_X` of `X` to that of `F.obj X`, up to the
+comparisons `δ`; equivalently, `F.map u_X ≫ κ_X = u_{F X}`. Consequently every braided functor
+between symmetric rigid categories is pivotal for their canonical pivotal structures.
 
 ## Main declarations
 
 * `CategoryTheory.Functor.IsPivotal`: a strong monoidal functor between pivotal categories that
   preserves the pivotal structure;
+* `CategoryTheory.Functor.isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom`:
+  the pivotal condition in terms of the bidual comparison;
 * `CategoryTheory.Functor.isPivotal_id` and `CategoryTheory.Functor.isPivotal_comp`: identities
   and composites of pivotal functors are pivotal;
 * `CategoryTheory.Functor.rightTrace_map` and `CategoryTheory.Functor.leftTrace_map`: a pivotal
@@ -41,7 +45,9 @@ for their canonical pivotal structures.
   `CategoryTheory.Functor.leftDim_map`, `CategoryTheory.Functor.trace_map` and
   `CategoryTheory.Functor.quantumDim_map`;
 * `CategoryTheory.Functor.map_drinfeldIso_hom_comp_mapRightDualIso_hom`: a braided functor
-  preserves Drinfeld isomorphisms;
+  preserves Drinfeld isomorphisms, restated along the bidual comparison by
+  `CategoryTheory.Functor.map_drinfeldIso_hom_comp_mapDoubleRightDualIso_hom` and
+  `CategoryTheory.Functor.map_drinfeldIso_inv`;
 * `CategoryTheory.Functor.isPivotal_of_braided`: a braided functor between symmetric rigid
   categories is pivotal.
 
@@ -90,6 +96,18 @@ variable {F} in
 theorem IsPivotal.mk' (h : ∀ X : C, F.map (pivotalIsoApp X).hom ≫ (F.mapRightDualIso Xᘁ).hom =
     (pivotalIsoApp (F.obj X)).hom ≫ ((F.mapRightDualIso X).hom)ᘁ) : F.IsPivotal where
   map_pivotalIsoApp_hom X := by rw [← Category.assoc, Iso.eq_comp_inv, h]
+
+variable {F} in
+/-- A monoidal functor is pivotal if and only if it carries `φ_X` to `φ_{F X}` along the bidual
+comparison `κ_X : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`, that is, `F.map φ_X ≫ κ_X = φ_{F X}` for every `X`. -/
+theorem isPivotal_iff_map_pivotalIsoApp_hom_comp_mapDoubleRightDualIso_hom :
+    F.IsPivotal ↔ ∀ X : C,
+      F.map (pivotalIsoApp X).hom ≫ (F.mapDoubleRightDualIso X).hom =
+        (pivotalIsoApp (F.obj X)).hom := by
+  refine ⟨fun _ X => ?_, fun h => ⟨fun X => ?_⟩⟩
+  · rw [IsPivotal.map_pivotalIsoApp_hom, Category.assoc, ← mapDoubleRightDualIso_inv,
+      Iso.inv_hom_id, Category.comp_id]
+  · rw [← mapDoubleRightDualIso_inv, ← h X, Category.assoc, Iso.hom_inv_id, Category.comp_id]
 
 /-- The identity functor is pivotal. -/
 instance isPivotal_id : (𝟭 C).IsPivotal where
@@ -174,6 +192,22 @@ theorem map_drinfeldIso_hom_comp_mapRightDualIso_hom (X : C) :
     rightAdjointMate_comp_evaluation, ← whisker_exchange_assoc, μ_natural_left_assoc,
     reassoc_of% h, LaxBraided.braided_assoc, drinfeldIso_hom_comp_evaluation,
     BraidedCategory.braiding_naturality_right_assoc]
+
+/-- A braided functor carries the Drinfeld isomorphism of `X` to that of `F.obj X` along the
+bidual comparison `κ_X : F.obj Xᘁᘁ ≅ (F.obj X)ᘁᘁ`: `F.map u_X ≫ κ_X = u_{F X}`. -/
+@[reassoc]
+theorem map_drinfeldIso_hom_comp_mapDoubleRightDualIso_hom (X : C) :
+    F.map (drinfeldIso X).hom ≫ (F.mapDoubleRightDualIso X).hom = (drinfeldIso (F.obj X)).hom := by
+  rw [mapDoubleRightDualIso_hom, map_drinfeldIso_hom_comp_mapRightDualIso_hom_assoc,
+    ← comp_rightAdjointMate, Iso.inv_hom_id, rightAdjointMate_id, Category.comp_id]
+
+/-- A braided functor carries the inverse Drinfeld isomorphism of `X` to that of `F.obj X`, after
+the bidual comparison: `F.map u_X⁻¹ = κ_X ≫ u_{F X}⁻¹`. -/
+theorem map_drinfeldIso_inv (X : C) :
+    F.map (drinfeldIso X).inv =
+      (F.mapDoubleRightDualIso X).hom ≫ (drinfeldIso (F.obj X)).inv := by
+  rw [Iso.eq_comp_inv, ← map_drinfeldIso_hom_comp_mapDoubleRightDualIso_hom, ← F.map_comp_assoc,
+    Iso.inv_hom_id, F.map_id, Category.id_comp]
 
 end Braided
 
