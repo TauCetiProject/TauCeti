@@ -101,6 +101,8 @@ theorem norm_le_of_isSymmetric_of_abs_re_inner_le_of_isCover_sphere
   have hη0 : 0 ≤ (η : ℝ) := η.coe_nonneg
   have hηreal : (η : ℝ) < 1 / 2 := by exact_mod_cast hη
   have hden : 0 < 1 - 2 * (η : ℝ) := by nlinarith
+  -- Transfer the net bound to every unit vector, with the quadratic-form error controlled by
+  -- the distance to its net point.
   have hunit : ∀ x : E, ‖x‖ = 1 →
       |RCLike.re (Inner.inner 𝕜 (T x) x)| ≤ M + 2 * (η : ℝ) * ‖T‖ := by
     intro x hx
@@ -126,6 +128,8 @@ theorem norm_le_of_isSymmetric_of_abs_re_inner_le_of_isCover_sphere
           |RCLike.re (Inner.inner 𝕜 (T z) z)| := abs_add_le _ _
       _ ≤ 2 * (η : ℝ) * ‖T‖ + M := add_le_add herror' (hM z hzN)
       _ = M + 2 * (η : ℝ) * ‖T‖ := by ring
+  -- The Rayleigh-quotient characterization turns the unit-vector estimate into an operator-norm
+  -- bound; rearrange to absorb the error term, using η < 1/2.
   have hnorm : ‖T‖ ≤ M + 2 * (η : ℝ) * ‖T‖ :=
     norm_le_of_forall_norm_eq_one_abs_re_inner_le T hT
       (add_nonneg hM0 (mul_nonneg (by positivity) (norm_nonneg T))) hunit
