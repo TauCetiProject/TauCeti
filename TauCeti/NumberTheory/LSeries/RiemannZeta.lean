@@ -82,21 +82,6 @@ theorem hasSum_nat_rpow_neg_riemannZeta_re {s : ℝ} (hs : 1 < s) :
 theorem measurable_riemannZeta : Measurable riemannZeta :=
   measurable_of_continuousOn_compl_singleton 1 differentiableOn_riemannZeta.continuousOn
 
-/-- The partial sums of the alternating coefficients `(-1) ^ (k + 1)` are `0` or `1`. -/
-private theorem sum_Icc_neg_one_pow (n : ℕ) :
-    ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1) = if Even n then 0 else 1 := by
-  induction n with
-  | zero => simp
-  | succ n ih =>
-    rw [sum_Icc_succ_top (by omega), ih]
-    rcases Nat.even_or_odd n with h | h
-    · simp [h, Nat.even_add_one, h.add_one.neg_one_pow, pow_succ]
-    · simp [h, Nat.not_even_iff_odd.mpr h, pow_succ, h.neg_one_pow]
-
-private theorem norm_sum_Icc_neg_one_pow_le (n : ℕ) :
-    ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1)‖ ≤ 1 := by
-  rw [sum_Icc_neg_one_pow]; split_ifs <;> simp
-
 /-- On `Re s > 1`, writing `(-1) ^ (n + 1) = 2 χ₀(n) - 1` with `χ₀` the principal character
 modulo `2` gives `η(s) = 2 (1 - 2⁻ˢ) ζ(s) - ζ(s) = (1 - 2 ^ (1 - s)) ζ(s)`. -/
 private theorem LSeries_neg_one_pow {s : ℂ} (hs : 1 < s.re) :
@@ -110,13 +95,15 @@ private theorem LSeries_neg_one_pow {s : ℂ} (hs : 1 < s.re) :
       simp [MulChar.map_nonunit χ this, h.add_one.neg_one_pow]
     · rw [Pi.sub_apply, Pi.smul_apply, ZMod.natCast_eq_one_iff_odd.mpr h]
       simp [pow_succ, h.neg_one_pow]; norm_num
-  rw [hχ, LSeries_sub (((χ.LSeriesSummable_of_one_lt_re hs)).smul 2)
-    (LSeriesSummable_one_iff.mpr hs), LSeries_smul, LSeries_one_eq_riemannZeta hs,
-    ← χ.LFunction_eq_LSeries hs, ← DirichletCharacter.LFunctionTrivChar,
-    DirichletCharacter.LFunctionTrivChar_eq_mul_riemannZeta (fun h ↦ by simp [h] at hs),
-    Nat.prime_two.primeFactors, prod_singleton, sub_eq_add_neg (1 : ℂ) s,
-    cpow_add _ _ two_ne_zero, cpow_one]
-  push_cast
+  have hL : LSeries ((2 : ℂ) • (fun n : ℕ ↦ χ n) - 1) s = 2 * χ.LFunction s - riemannZeta s := by
+    rw [LSeries_sub ((χ.LSeriesSummable_of_one_lt_re hs).smul 2) (LSeriesSummable_one_iff.mpr hs),
+      LSeries_smul, LSeries_one_eq_riemannZeta hs, χ.LFunction_eq_LSeries hs]
+  have hχζ : χ.LFunction s = (1 - 2 ^ (-s)) * riemannZeta s := by
+    simpa [χ, Nat.prime_two.primeFactors] using
+      DirichletCharacter.LFunctionTrivChar_eq_mul_riemannZeta (N := 2) (fun h ↦ by simp [h] at hs)
+  have h2 : (2 : ℂ) ^ (1 - s) = 2 * 2 ^ (-s) := by
+    rw [sub_eq_add_neg, cpow_add _ _ two_ne_zero, cpow_one]
+  rw [hχ, hL, hχζ, h2]
   ring
 
 /-- **Continuation of the alternating zeta series.** On `Re s > 0`, `s ≠ 1`, the function
@@ -129,10 +116,16 @@ theorem one_sub_two_cpow_mul_riemannZeta_eq_mul_integral {s : ℂ} (hs : 0 < s.r
         (t : ℂ) ^ (-(s + 1)) := by
   set G : ℂ → ℂ := fun z ↦ z * ∫ t in Set.Ioi (1 : ℝ),
     (∑ k ∈ Icc 1 ⌊t⌋₊, (-1 : ℂ) ^ (k + 1)) * (t : ℂ) ^ (-(z + 1))
+  have hA (n : ℕ) : ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1) = if Even n then 0 else 1 := by
+    rw [← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, add_tsub_cancel_right,
+      ← neg_one_geom_sum]
+    simp [pow_add]
+  have hA₁ (n : ℕ) : ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1)‖ ≤ 1 := by
+    rw [hA]; split_ifs <;> simp
   have hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1)) =O[atTop]
       fun n ↦ (n : ℝ) ^ (0 : ℝ) :=
     Asymptotics.isBigO_iff.mpr ⟨1, Eventually.of_forall fun n ↦ by
-      simpa using norm_sum_Icc_neg_one_pow_le n⟩
+      simpa using hA₁ n⟩
   have hopen : IsOpen {z : ℂ | 0 < z.re} := isOpen_lt continuous_const continuous_re
   have hG : AnalyticOnNhd ℂ (fun z ↦ (z - 1) * G z) {z : ℂ | 0 < z.re} :=
     ((differentiableOn_id.sub_const 1).mul
@@ -151,21 +144,28 @@ theorem one_sub_two_cpow_mul_riemannZeta_eq_mul_integral {s : ℂ} (hs : 0 < s.r
     field_simp
   have h := hG.eqOn_of_preconnected_of_eventuallyEq hZ (convex_halfSpace_re_gt 0).isPreconnected
     (by norm_num : (2 : ℂ) ∈ {z : ℂ | 0 < z.re}) heq hs
-  simp only at h
-  rw [riemannZeta_eq_inv_sub_mul hs₁, mul_left_comm, ← mul_assoc, mul_assoc, ← h,
-    ← mul_assoc, inv_mul_cancel₀ (sub_ne_zero.mpr hs₁), one_mul]
+  simp only [G] at h
+  rw [riemannZeta_eq_inv_sub_mul hs₁]
+  field_simp [sub_ne_zero.mpr hs₁]
+  linear_combination -h
 
 /-- The Riemann zeta function is a negative real number at every real point `0 < σ < 1`. -/
 theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemannZeta σ < 0 := by
   set F : ℝ → ℂ := fun t ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, (-1 : ℂ) ^ (k + 1)) * (t : ℂ) ^ (-((σ : ℂ) + 1))
   set g : ℝ → ℝ := fun t ↦ if Even ⌊t⌋₊ then 0 else t ^ (-(σ + 1))
+  have hA (n : ℕ) : ∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1) = if Even n then 0 else 1 := by
+    rw [← Ico_add_one_right_eq_Icc, sum_Ico_eq_sum_range, add_tsub_cancel_right,
+      ← neg_one_geom_sum]
+    simp [pow_add]
+  have hA₁ (n : ℕ) : ‖∑ k ∈ Icc 1 n, (-1 : ℂ) ^ (k + 1)‖ ≤ 1 := by
+    rw [hA]; split_ifs <;> simp
   have hFg : Set.EqOn F (fun t ↦ (g t : ℂ)) (Set.Ioi 1) := fun t ht ↦ by
-    simp only [F, g, sum_Icc_neg_one_pow]
+    simp only [F, g, hA]
     split_ifs
     · simp
     · rw [one_mul, ofReal_cpow (zero_le_one.trans ht.le), ofReal_neg, ofReal_add, ofReal_one]
   have hFint : MeasureTheory.IntegrableOn F (Set.Ioi 1) :=
-    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound _ norm_sum_Icc_neg_one_pow_le
+    TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound _ hA₁
       (by simpa using h₀)
   have hgint : MeasureTheory.IntegrableOn g (Set.Ioi 1) := by
     simpa using (hFint.congr_fun hFg measurableSet_Ioi).re
@@ -186,12 +186,18 @@ theorem riemannZeta_lt_zero {σ : ℝ} (h₀ : 0 < σ) (h₁ : σ < 1) : riemann
         simp only [Set.mem_Ioi] at ht; linarith)) Set.Ioc_subset_Ioi_self.eventuallyLE)
   have hrep := one_sub_two_cpow_mul_riemannZeta_eq_mul_integral (s := σ) (by simpa using h₀)
     (by exact_mod_cast h₁.ne)
+  have h2 : (2 : ℂ) ^ (1 - (σ : ℂ)) = ((2 : ℝ) ^ (1 - σ) : ℝ) := by
+    rw [ofReal_cpow zero_le_two]
+    push_cast
+    rfl
   rw [MeasureTheory.setIntegral_congr_fun measurableSet_Ioi hFg, integral_complex_ofReal,
-    ← ofReal_one, ← ofReal_sub, ← ofReal_ofNat, ← ofReal_cpow zero_le_two, ← ofReal_sub,
-    ← ofReal_mul] at hrep
+    h2] at hrep
   have hc : 1 - (2 : ℝ) ^ (1 - σ) < 0 := sub_neg.mpr (Real.one_lt_rpow one_lt_two (by linarith))
   have hz : riemannZeta σ = ((σ * ∫ t in Set.Ioi (1 : ℝ), g t) / (1 - 2 ^ (1 - σ)) : ℝ) := by
-    rw [ofReal_div, ← hrep, mul_div_cancel_left₀ _ (ofReal_ne_zero.mpr hc.ne)]
+    have hc' : (1 : ℂ) - ((2 : ℝ) ^ (1 - σ) : ℝ) ≠ 0 := by exact_mod_cast hc.ne
+    push_cast
+    rw [eq_div_iff hc', ← hrep]
+    ring
   rw [hz]
   exact_mod_cast div_neg_of_pos_of_neg (mul_pos h₀ hg) hc
 
