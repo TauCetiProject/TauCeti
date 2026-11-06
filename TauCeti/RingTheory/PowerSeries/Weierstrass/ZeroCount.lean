@@ -52,19 +52,28 @@ boundary zeros.
   multiplicity of a zero of `e * P` is its root multiplicity for `P`.
 * `TauCeti.PowerSeries.order_taylor_map_eq_rootMultiplicity`: the same in a complete normed field
   extension.
-* `TauCeti.PowerSeries.IsLowestDominant.card_filter_roots_map_norm_lt_le` and
-  `TauCeti.PowerSeries.IsLowestDominant.card_filter_roots_map_norm_lt_eq`: the roots in the open
-  disc of the preparation polynomial number at most, and when it splits exactly, the lowest
-  dominant degree of the series.
+* `TauCeti.PowerSeries.IsDistinguished.card_filter_roots_map_norm_le_le`,
+  `TauCeti.PowerSeries.IsDistinguished.card_filter_roots_map_norm_le_eq`,
+  `TauCeti.PowerSeries.IsLowestDominant.card_filter_roots_map_norm_lt_le`,
+  `TauCeti.PowerSeries.IsLowestDominant.card_filter_roots_map_norm_lt_eq` and
+  `TauCeti.PowerSeries.card_filter_roots_map_norm_eq_eq`: the roots of the preparation polynomial
+  in the closed disc and in the open disc number at most, and when it splits exactly, the
+  distinguished and the lowest dominant degree of the series; when it splits, the roots on the
+  sphere number the difference.
 * `PowerSeries.IsRestricted.existsUnique_multiset_order_taylor_eq`: the zeros of `f` in the closed
   disc of `L`, with multiplicity, form a unique finite multiset.
 * `TauCeti.PowerSeries.IsDistinguished.card_le_of_order_taylor_eq`,
   `TauCeti.PowerSeries.IsLowestDominant.card_filter_norm_lt_le_of_order_taylor_eq`: that multiset
   has at most `d` elements, of which at most `l` lie in the open disc.
+* `TauCeti.PowerSeries.IsDistinguished.card_eq_of_order_taylor_eq_of_splits`,
+  `TauCeti.PowerSeries.IsLowestDominant.card_filter_norm_lt_eq_of_order_taylor_eq_of_splits` and
+  `TauCeti.PowerSeries.card_filter_norm_eq_eq_of_order_taylor_eq_of_splits`: if a monic
+  preparation polynomial splits over `L`, exactly `d` zeros in the closed disc, `l` in the open
+  disc and `d - l` on the sphere.
 * `TauCeti.PowerSeries.IsDistinguished.card_eq_of_order_taylor_eq`,
   `TauCeti.PowerSeries.IsLowestDominant.card_filter_norm_lt_eq_of_order_taylor_eq` and
-  `TauCeti.PowerSeries.card_filter_norm_eq_eq_of_order_taylor_eq`: over an algebraically closed
-  `L`, exactly `d` zeros in the closed disc, `l` in the open disc and `d - l` on the sphere.
+  `TauCeti.PowerSeries.card_filter_norm_eq_eq_of_order_taylor_eq`: the same counts over an
+  algebraically closed `L`.
 
 ## References
 
@@ -155,6 +164,39 @@ theorem IsLowestDominant.card_filter_roots_map_norm_lt_eq (hl : IsLowestDominant
   have : IsUltrametricDist L := .of_normedAlgebra K
   exact (hl.map_polynomial hr he hf).card_filter_roots_norm_lt_eq hr hs
 
+/-- **Zeros in the closed disc.** Let `f = e * P` over an ultrametric normed field `K`, with `e` a
+unit of the ring of series restricted at `r > 0`, and let `d` be the distinguished degree of `f` at
+`r`. In any normed field extension `L`, the polynomial `P` has at most `d` roots `x` with
+`‖x‖ ≤ r`, counted with multiplicity. -/
+theorem IsDistinguished.card_filter_roots_map_norm_le_le (hd : IsDistinguished r d f)
+    (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f) :
+    ((P.map (algebraMap K L)).roots.filter (‖·‖ ≤ r)).card ≤ d := by
+  have : IsUltrametricDist L := .of_normedAlgebra K
+  exact (hd.map_polynomial hr he hf).card_filter_roots_norm_le_le hr
+
+/-- **Zeros in the closed disc, split case.** Let `f = e * P` over an ultrametric normed field `K`,
+with `e` a unit of the ring of series restricted at `r > 0`, and let `d` be the distinguished
+degree of `f` at `r`. In any normed field extension `L` over which `P` splits, `P` has exactly `d`
+roots `x` with `‖x‖ ≤ r`, counted with multiplicity. -/
+theorem IsDistinguished.card_filter_roots_map_norm_le_eq (hd : IsDistinguished r d f)
+    (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f)
+    (hs : (P.map (algebraMap K L)).Splits) :
+    ((P.map (algebraMap K L)).roots.filter (‖·‖ ≤ r)).card = d := by
+  have : IsUltrametricDist L := .of_normedAlgebra K
+  exact (hd.map_polynomial hr he hf).card_filter_roots_norm_le_eq hr hs
+
+/-- **Zeros on the sphere, split case.** Let `f = e * P` over an ultrametric normed field `K`, with
+`e` a unit of the ring of series restricted at `r > 0`, and let `d` and `l` be the distinguished
+and lowest dominant degrees of `f` at `r`. In any normed field extension `L` over which `P`
+splits, `P` has exactly `d - l` roots `x` with `‖x‖ = r`, counted with multiplicity. -/
+theorem card_filter_roots_map_norm_eq_eq (hd : IsDistinguished r d f)
+    (hl : IsLowestDominant r l f) (hr : 0 < r) (he : IsUnit e) (hf : (e : PowerSeries K) * P = f)
+    (hs : (P.map (algebraMap K L)).Splits) :
+    ((P.map (algebraMap K L)).roots.filter (‖·‖ = r)).card = d - l := by
+  have : IsUltrametricDist L := .of_normedAlgebra K
+  exact card_filter_roots_norm_eq_eq (hd.map_polynomial hr he hf) (hl.map_polynomial hr he hf) hr
+    hs
+
 variable [CompleteSpace L]
 
 /-- **Multiplicities of zeros in an extension.** Let `f = e * P` over an ultrametric normed field
@@ -186,16 +228,6 @@ private theorem roots_map_spec (hd : IsDistinguished r d f) (hr : 0 < r) (he : I
     (hP.map (algebraMap K L)) (Polynomial.mem_roots'.mp hz).2, fun x hx ↦ ?_⟩
   rw [order_taylor_map_eq_rootMultiplicity he hP.ne_zero hf hx, Polynomial.count_roots]
 
-omit [IsUltrametricDist K] [CompleteSpace L] in
-/-- A multiset supported in the closed disc is determined by its multiplicities there. -/
-private theorem multiset_eq_of_count_eq {Z₁ Z₂ : Multiset L} (hZ₁ : ∀ z ∈ Z₁, ‖z‖ ≤ r)
-    (hZ₂ : ∀ z ∈ Z₂, ‖z‖ ≤ r) (h : ∀ x : L, ‖x‖ ≤ r → Z₁.count x = Z₂.count x) : Z₁ = Z₂ := by
-  ext x
-  by_cases hx : ‖x‖ ≤ r
-  · exact h x hx
-  · rw [Multiset.count_eq_zero.mpr fun h ↦ hx (hZ₁ x h),
-      Multiset.count_eq_zero.mpr fun h ↦ hx (hZ₂ x h)]
-
 /-- The zero multiset of `f` on the closed disc is the root multiset of any monic preparation
 polynomial. -/
 private theorem eq_roots_map_of_order_taylor_eq (hd : IsDistinguished r d f) (hr : 0 < r)
@@ -204,9 +236,60 @@ private theorem eq_roots_map_of_order_taylor_eq (hd : IsDistinguished r d f) (hr
     (hZf : ∀ x : L, ‖x‖ ≤ r →
       (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
         Z.count x) :
-    Z = (P.map (algebraMap K L)).roots :=
-  multiset_eq_of_count_eq hZ (roots_map_spec hd hr he hP hf).1 fun x hx ↦
-    by exact_mod_cast (hZf x hx).symm.trans ((roots_map_spec hd hr he hP hf).2 x hx)
+    Z = (P.map (algebraMap K L)).roots := by
+  obtain ⟨hroots, hcount⟩ := roots_map_spec (L := L) hd hr he hP hf
+  ext x
+  by_cases hx : ‖x‖ ≤ r
+  · exact_mod_cast (hZf x hx).symm.trans (hcount x hx)
+  · rw [Multiset.count_eq_zero.mpr fun h ↦ hx (hZ x h),
+      Multiset.count_eq_zero.mpr fun h ↦ hx (hroots x h)]
+
+/-- **Exactly `d` zeros in the closed disc, split case.** Let `f = e * P` over an ultrametric
+normed field, with `e` a unit of the ring of series restricted at `r > 0` and `P` monic of the
+distinguished degree `d` of `f` at `r`. In any complete normed field extension over which `P`
+splits, the zeros of `f` in the closed disc of radius `r`, counted with multiplicity, number
+exactly `d`. -/
+theorem IsDistinguished.card_eq_of_order_taylor_eq_of_splits (hd : IsDistinguished r d f)
+    (hr : 0 < r) (he : IsUnit e) (hP : P.IsMonicOfDegree d) (hf : (e : PowerSeries K) * P = f)
+    (hs : (P.map (algebraMap K L)).Splits) {Z : Multiset L} (hZ : ∀ z ∈ Z, ‖z‖ ≤ r)
+    (hZf : ∀ x : L, ‖x‖ ≤ r →
+      (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
+        Z.count x) :
+    Z.card = d := by
+  rw [eq_roots_map_of_order_taylor_eq hd hr he hP hf hZ hZf,
+    Polynomial.splits_iff_card_roots.mp hs, (hP.map (algebraMap K L)).natDegree_eq]
+
+/-- **Exactly `l` zeros in the open disc, split case.** Let `f = e * P` over an ultrametric normed
+field, with `e` a unit of the ring of series restricted at `r > 0` and `P` monic of the
+distinguished degree `d` of `f` at `r`, and let `l` be the lowest dominant degree of `f` at `r`. In
+any complete normed field extension over which `P` splits, the zeros of `f` in the open disc of
+radius `r`, counted with multiplicity, number exactly `l`. -/
+theorem IsLowestDominant.card_filter_norm_lt_eq_of_order_taylor_eq_of_splits
+    (hl : IsLowestDominant r l f) (hd : IsDistinguished r d f) (hr : 0 < r) (he : IsUnit e)
+    (hP : P.IsMonicOfDegree d) (hf : (e : PowerSeries K) * P = f)
+    (hs : (P.map (algebraMap K L)).Splits) {Z : Multiset L} (hZ : ∀ z ∈ Z, ‖z‖ ≤ r)
+    (hZf : ∀ x : L, ‖x‖ ≤ r →
+      (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
+        Z.count x) :
+    (Z.filter (‖·‖ < r)).card = l := by
+  rw [eq_roots_map_of_order_taylor_eq hd hr he hP hf hZ hZf]
+  exact hl.card_filter_roots_map_norm_lt_eq hr he hf hs
+
+/-- **Exactly `d - l` zeros on the sphere, split case.** Let `f = e * P` over an ultrametric normed
+field, with `e` a unit of the ring of series restricted at `r > 0` and `P` monic of the
+distinguished degree `d` of `f` at `r`, and let `l` be the lowest dominant degree of `f` at `r`. In
+any complete normed field extension over which `P` splits, the zeros `x` of `f` with `‖x‖ = r`,
+counted with multiplicity, number exactly `d - l`. -/
+theorem card_filter_norm_eq_eq_of_order_taylor_eq_of_splits (hd : IsDistinguished r d f)
+    (hl : IsLowestDominant r l f) (hr : 0 < r) (he : IsUnit e) (hP : P.IsMonicOfDegree d)
+    (hf : (e : PowerSeries K) * P = f) (hs : (P.map (algebraMap K L)).Splits)
+    {Z : Multiset L} (hZ : ∀ z ∈ Z, ‖z‖ ≤ r)
+    (hZf : ∀ x : L, ‖x‖ ≤ r →
+      (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
+        Z.count x) :
+    (Z.filter (‖·‖ = r)).card = d - l := by
+  rw [eq_roots_map_of_order_taylor_eq hd hr he hP hf hZ hZf]
+  exact card_filter_roots_map_norm_eq_eq hd hl hr he hf hs
 
 variable [CompleteSpace K]
 
@@ -272,9 +355,7 @@ theorem IsDistinguished.card_eq_of_order_taylor_eq (hd : IsDistinguished r d f) 
     Z.card = d := by
   obtain ⟨e, P, he, hP, hf⟩ :=
     hd.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hd.coeff_ne_zero) hr hfr
-  rw [eq_roots_map_of_order_taylor_eq hd hr he hP hf hZ hZf,
-    Polynomial.splits_iff_card_roots.mp (IsAlgClosed.splits _),
-    (hP.map (algebraMap K L)).natDegree_eq]
+  exact hd.card_eq_of_order_taylor_eq_of_splits hr he hP hf (IsAlgClosed.splits _) hZ hZf
 
 /-- **Exactly `l` zeros in the open disc.** Let `f` be a power series over a complete ultrametric
 normed field, restricted at `r > 0` with lowest dominant degree `l` there. In any algebraically
@@ -289,8 +370,8 @@ theorem IsLowestDominant.card_filter_norm_lt_eq_of_order_taylor_eq (hl : IsLowes
   obtain ⟨d, hd⟩ := exists_isDistinguished hr hfr hl.ne_zero
   obtain ⟨e, P, he, hP, hf⟩ :=
     hd.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hd.coeff_ne_zero) hr hfr
-  rw [eq_roots_map_of_order_taylor_eq hd hr he hP hf hZ hZf]
-  exact hl.card_filter_roots_map_norm_lt_eq hr he hf (IsAlgClosed.splits _)
+  exact hl.card_filter_norm_lt_eq_of_order_taylor_eq_of_splits hd hr he hP hf
+    (IsAlgClosed.splits _) hZ hZf
 
 /-- **Exactly `d - l` zeros on the sphere.** Let `f` be a power series over a complete ultrametric
 normed field, restricted at `r > 0`, distinguished of degree `d` and with lowest dominant degree
@@ -303,11 +384,9 @@ theorem card_filter_norm_eq_eq_of_order_taylor_eq (hd : IsDistinguished r d f)
       (_root_.PowerSeries.taylor x (_root_.PowerSeries.map (algebraMap K L) f)).order =
         Z.count x) :
     (Z.filter (‖·‖ = r)).card = d - l := by
-  have : IsUltrametricDist L := .of_normedAlgebra K
   obtain ⟨e, P, he, hP, hf⟩ :=
     hd.exists_isUnit_isMonicOfDegree_mul_eq (isUnit_iff_ne_zero.mpr hd.coeff_ne_zero) hr hfr
-  rw [eq_roots_map_of_order_taylor_eq hd hr he hP hf hZ hZf]
-  exact card_filter_roots_norm_eq (hd.map_polynomial hr he hf) (hl.map_polynomial hr he hf) hr
-    (IsAlgClosed.splits _)
+  exact card_filter_norm_eq_eq_of_order_taylor_eq_of_splits hd hl hr he hP hf
+    (IsAlgClosed.splits _) hZ hZf
 
 end TauCeti.PowerSeries

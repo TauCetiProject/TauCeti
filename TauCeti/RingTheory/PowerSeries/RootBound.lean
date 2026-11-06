@@ -43,7 +43,7 @@ finite Newton face for a real additive valuation are
 * `TauCeti.PowerSeries.IsLowestDominant.card_filter_roots_norm_lt_le` and
   `TauCeti.PowerSeries.IsLowestDominant.card_filter_roots_norm_lt_eq`: the same for the lowest
   dominant degree and the open disc.
-* `TauCeti.PowerSeries.card_filter_roots_norm_eq`: for a split polynomial the difference of the
+* `TauCeti.PowerSeries.card_filter_roots_norm_eq_eq`: for a split polynomial the difference of the
   two degrees is the number of roots on the sphere.
 
 ## References
@@ -126,16 +126,14 @@ section Field
 
 variable {K : Type*} [NormedField K] {c : ℝ} {d l : ℕ} {P : Polynomial K}
 
-/-- A nonzero constant is distinguished of degree `0` at a positive radius. -/
-private theorem isDistinguished_C (hc : 0 < c) {a : K} (ha : a ≠ 0) :
-    IsDistinguished c 0 (PowerSeries.C a) := by
-  simpa using isDistinguished_monomial hc ha 0
-
-/-- A nonzero constant has lowest dominant degree `0` at a positive radius. -/
-private theorem isLowestDominant_C (hc : 0 < c) {a : K} (ha : a ≠ 0) :
-    IsLowestDominant c 0 (PowerSeries.C a) := by
-  have h := isDistinguished_C hc ha
-  exact ⟨h.gaussNorm_pos, h.norm_coeff_mul_pow_eq, fun m hm ↦ absurd hm m.not_lt_zero⟩
+/-- A polynomial that is nonzero as a power series is the product of the linear factors over its
+roots and a cofactor that is nonzero as a power series. -/
+private theorem exists_prod_roots_mul_eq (hP : (P : PowerSeries K) ≠ 0) :
+    ∃ q : Polynomial K, (q : PowerSeries K) ≠ 0 ∧
+      (P.roots.map fun a ↦ Polynomial.X - Polynomial.C a).prod * q = P := by
+  obtain ⟨q, hq, -, -⟩ := P.exists_prod_multiset_X_sub_C_mul
+  refine ⟨q, fun h ↦ hP ?_, hq⟩
+  rw [← hq, Polynomial.coe_eq_zero_iff.mp h, mul_zero, Polynomial.coe_zero]
 
 variable [IsUltrametricDist K]
 
@@ -145,7 +143,7 @@ theorem isDistinguished_multiset_prod_X_sub_C (hc : 0 < c) (s : Multiset K) :
     IsDistinguished c (s.filter (‖·‖ ≤ c)).card
       ((s.map fun a ↦ (Polynomial.X - Polynomial.C a : Polynomial K)).prod : PowerSeries K) := by
   induction s using Multiset.induction_on with
-  | empty => simpa [map_one] using isDistinguished_C hc (one_ne_zero (α := K))
+  | empty => simpa using isDistinguished_monomial hc (one_ne_zero (α := K)) 0
   | cons a s ih =>
     rw [Multiset.map_cons, Multiset.prod_cons, Polynomial.coe_mul, Polynomial.coe_sub,
       Polynomial.coe_X, Polynomial.coe_C, Multiset.filter_cons]
@@ -160,7 +158,7 @@ theorem isLowestDominant_multiset_prod_X_sub_C (hc : 0 < c) (s : Multiset K) :
     IsLowestDominant c (s.filter (‖·‖ < c)).card
       ((s.map fun a ↦ (Polynomial.X - Polynomial.C a : Polynomial K)).prod : PowerSeries K) := by
   induction s using Multiset.induction_on with
-  | empty => simpa [map_one] using isLowestDominant_C hc (one_ne_zero (α := K))
+  | empty => simpa using isLowestDominant_monomial hc (one_ne_zero (α := K)) 0
   | cons a s ih =>
     have hs := hasGaussNorm_of_isRestricted (isRestricted_polynomial (c := c)
       (s.map fun a ↦ (Polynomial.X - Polynomial.C a : Polynomial K)).prod)
@@ -180,11 +178,7 @@ degree `d` at the radius `c > 0` has at most `d` roots `x` with `‖x‖ ≤ c`,
 multiplicity. -/
 theorem IsDistinguished.card_filter_roots_norm_le_le (hP : IsDistinguished c d (P : PowerSeries K))
     (hc : 0 < c) : (P.roots.filter (‖·‖ ≤ c)).card ≤ d := by
-  obtain ⟨q, hq, -, -⟩ := P.exists_prod_multiset_X_sub_C_mul
-  have hq0 : (q : PowerSeries K) ≠ 0 := by
-    rintro h
-    rw [Polynomial.coe_eq_zero_iff.mp h, mul_zero] at hq
-    exact hP.ne_zero (by rw [← hq, Polynomial.coe_zero])
+  obtain ⟨q, hq0, hq⟩ := exists_prod_roots_mul_eq hP.ne_zero
   obtain ⟨e, he⟩ := exists_isDistinguished hc (isRestricted_polynomial q) hq0
   have h := (isDistinguished_multiset_prod_X_sub_C hc P.roots).mul he hc (norm_mul _ _)
   rw [← Polynomial.coe_mul, hq] at h
@@ -196,10 +190,11 @@ normed field distinguished of degree `d` at the radius `c > 0` has exactly `d` r
 theorem IsDistinguished.card_filter_roots_norm_le_eq (hP : IsDistinguished c d (P : PowerSeries K))
     (hc : 0 < c) (hs : P.Splits) : (P.roots.filter (‖·‖ ≤ c)).card = d := by
   have hlc : P.leadingCoeff ≠ 0 :=
-    Polynomial.leadingCoeff_ne_zero.mpr fun h ↦ hP.ne_zero (by rw [h, Polynomial.coe_zero])
-  have h := (isDistinguished_C hc hlc).mul (isDistinguished_multiset_prod_X_sub_C hc P.roots) hc
-    (norm_mul _ _)
-  rw [← Polynomial.coe_C, ← Polynomial.coe_mul, ← hs.eq_prod_roots, zero_add] at h
+    Polynomial.leadingCoeff_ne_zero.mpr (mt Polynomial.coe_eq_zero_iff.mpr hP.ne_zero)
+  have h := (isDistinguished_monomial hc hlc 0).mul
+    (isDistinguished_multiset_prod_X_sub_C hc P.roots) hc (norm_mul _ _)
+  rw [PowerSeries.monomial_zero_eq_C_apply, ← Polynomial.coe_C, ← Polynomial.coe_mul,
+    ← hs.eq_prod_roots, zero_add] at h
   exact hP.unique h |>.symm
 
 /-- **Roots in the open disc.** A polynomial over an ultrametric normed field with lowest dominant
@@ -208,11 +203,7 @@ multiplicity. -/
 theorem IsLowestDominant.card_filter_roots_norm_lt_le
     (hP : IsLowestDominant c l (P : PowerSeries K)) (hc : 0 < c) :
     (P.roots.filter (‖·‖ < c)).card ≤ l := by
-  obtain ⟨q, hq, -, -⟩ := P.exists_prod_multiset_X_sub_C_mul
-  have hq0 : (q : PowerSeries K) ≠ 0 := by
-    rintro h
-    rw [Polynomial.coe_eq_zero_iff.mp h, mul_zero] at hq
-    exact hP.ne_zero (by rw [← hq, Polynomial.coe_zero])
+  obtain ⟨q, hq0, hq⟩ := exists_prod_roots_mul_eq hP.ne_zero
   obtain ⟨e, he⟩ := exists_isLowestDominant hc (isRestricted_polynomial q) hq0
   have h := (isLowestDominant_multiset_prod_X_sub_C hc P.roots).mul he hc
     (hasGaussNorm_of_isRestricted (isRestricted_polynomial _))
@@ -227,17 +218,18 @@ theorem IsLowestDominant.card_filter_roots_norm_lt_eq
     (hP : IsLowestDominant c l (P : PowerSeries K)) (hc : 0 < c) (hs : P.Splits) :
     (P.roots.filter (‖·‖ < c)).card = l := by
   have hlc : P.leadingCoeff ≠ 0 :=
-    Polynomial.leadingCoeff_ne_zero.mpr fun h ↦ hP.ne_zero (by rw [h, Polynomial.coe_zero])
-  have h := (isLowestDominant_C hc hlc).mul (isLowestDominant_multiset_prod_X_sub_C hc P.roots) hc
-    (isLowestDominant_C hc hlc).hasGaussNorm
+    Polynomial.leadingCoeff_ne_zero.mpr (mt Polynomial.coe_eq_zero_iff.mpr hP.ne_zero)
+  have h0 := isLowestDominant_monomial hc hlc 0
+  have h := h0.mul (isLowestDominant_multiset_prod_X_sub_C hc P.roots) hc h0.hasGaussNorm
     (hasGaussNorm_of_isRestricted (isRestricted_polynomial _)) (norm_mul _ _)
-  rw [← Polynomial.coe_C, ← Polynomial.coe_mul, ← hs.eq_prod_roots, zero_add] at h
+  rw [PowerSeries.monomial_zero_eq_C_apply, ← Polynomial.coe_C, ← Polynomial.coe_mul,
+    ← hs.eq_prod_roots, zero_add] at h
   exact hP.unique h |>.symm
 
 /-- **Roots on the sphere of a split polynomial.** A split polynomial over an ultrametric normed
 field distinguished of degree `d` and with lowest dominant degree `l` at the radius `c > 0` has
 exactly `d - l` roots `x` with `‖x‖ = c`, counted with multiplicity. -/
-theorem card_filter_roots_norm_eq (hd : IsDistinguished c d (P : PowerSeries K))
+theorem card_filter_roots_norm_eq_eq (hd : IsDistinguished c d (P : PowerSeries K))
     (hl : IsLowestDominant c l (P : PowerSeries K)) (hc : 0 < c) (hs : P.Splits) :
     (P.roots.filter (‖·‖ = c)).card = d - l := by
   have h : P.roots.filter (‖·‖ < c) + P.roots.filter (‖·‖ = c) = P.roots.filter (‖·‖ ≤ c) := by

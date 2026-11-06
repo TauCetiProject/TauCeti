@@ -161,11 +161,9 @@ theorem IsLowestDominant.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R 
   let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
   have hg0 : g ≠ 0 := fun hg0 ↦ h.ne_zero (by rw [hg0, mul_zero])
   obtain ⟨t, ht⟩ := exists_isLowestDominant hc hg hg0
-  -- The unit is distinguished of degree `0`, so its lowest dominant degree is `0` as well.
   have hu0 := isDistinguished_zero_of_isUnit hc hu
-  have hul : IsLowestDominant c 0 (u : PowerSeries R) :=
-    ⟨hu0.gaussNorm_pos, hu0.norm_coeff_mul_pow_eq, fun m hm ↦ absurd hm m.not_lt_zero⟩
-  have hmul := hul.mul ht hc hu0.hasGaussNorm (hasGaussNorm_of_isRestricted hg) (norm_mul _ _)
+  have hmul := hu0.isLowestDominant_zero.mul ht hc hu0.hasGaussNorm
+    (hasGaussNorm_of_isRestricted hg) (norm_mul _ _)
   rw [zero_add] at hmul
   rwa [h.unique hmul]
 
