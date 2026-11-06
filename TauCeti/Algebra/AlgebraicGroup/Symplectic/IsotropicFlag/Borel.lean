@@ -203,7 +203,6 @@ private theorem exists_basis_castAdd_eq [IsAlgClosed k] [Algebra.FiniteType k Q]
     omega
   refine ⟨N, e, b.reindex finSumFinEquiv, he, fun j ↦ ?_, ?_⟩
   · rw [Basis.reindex_apply, finSumFinEquiv_symm_apply_castAdd, hbe]
-    rfl
   · ext i j
     rw [LinearMap.BilinForm.toMatrix_apply, Basis.reindex_apply, Basis.reindex_apply,
       ← LinearMap.BilinForm.toMatrix_apply, hbJ, JFin_eq_submatrix, Matrix.submatrix_apply]

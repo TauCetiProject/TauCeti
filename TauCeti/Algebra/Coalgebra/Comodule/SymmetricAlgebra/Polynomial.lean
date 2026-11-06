@@ -210,7 +210,7 @@ noncomputable def polynomialExpandSubcomodule (b : Basis ι R V) (p : ℕ)
     letI := polynomial H b
     Subcomodule R H (MvPolynomial ι R) :=
   letI := polynomial H b
-  { carrier := (MvPolynomial.expand p).range.toSubmodule
+  { toSubmodule := (MvPolynomial.expand p).range.toSubmodule
     coact_mem' := by
       rintro _ ⟨f, rfl⟩
       rw [polynomial_coact_apply]

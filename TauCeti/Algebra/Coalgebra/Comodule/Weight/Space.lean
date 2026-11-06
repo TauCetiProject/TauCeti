@@ -94,7 +94,7 @@ def weightSubcomodule (c : GroupLike R C) : TauCeti.Subcomodule R C M :=
 @[simp]
 theorem weightSubcomodule_toSubmodule (c : GroupLike R C) :
     (weightSubcomodule (M := M) c).toSubmodule = weightSpace (M := M) c :=
-  TauCeti.Subcomodule.ofSubmodule_carrier _ _
+  TauCeti.Subcomodule.ofSubmodule_toSubmodule _ _
 
 /-- Membership in the group-like weight subcomodule is the corresponding coaction equation. -/
 @[simp]

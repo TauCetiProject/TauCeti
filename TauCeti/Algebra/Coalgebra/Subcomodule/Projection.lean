@@ -46,12 +46,12 @@ noncomputable def projection (W Q : Subcomodule R C V)
       v ∈ W.toSubmodule ⊔ Q.toSubmodule)
     obtain ⟨x, hx⟩ := W.coact_mem hw
     obtain ⟨y, hy⟩ := Q.coact_mem hq
-    have hW : W.toSubmodule.projection Q.toSubmodule h ∘ₗ W.carrier.subtype =
-        LinearMap.id ∘ₗ W.carrier.subtype := by
+    have hW : W.toSubmodule.projection Q.toSubmodule h ∘ₗ W.toSubmodule.subtype =
+        LinearMap.id ∘ₗ W.toSubmodule.subtype := by
       ext w
       exact Submodule.projection_apply_of_mem_left h w.2
-    have hQ : W.toSubmodule.projection Q.toSubmodule h ∘ₗ Q.carrier.subtype =
-        0 ∘ₗ Q.carrier.subtype := by
+    have hQ : W.toSubmodule.projection Q.toSubmodule h ∘ₗ Q.toSubmodule.subtype =
+        0 ∘ₗ Q.toSubmodule.subtype := by
       ext q
       exact Submodule.projection_apply_of_mem_right h q.2
     simp only [LinearMap.comp_apply, map_add, ← hx, ← hy, TensorProduct.map_map, hW, hQ,

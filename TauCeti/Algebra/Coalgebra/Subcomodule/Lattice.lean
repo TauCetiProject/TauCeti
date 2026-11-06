@@ -56,7 +56,7 @@ namespace Subcomodule
 submodules. -/
 instance instMax : Max (Subcomodule R C M) where
   max N P :=
-    { carrier := N.toSubmodule ⊔ P.toSubmodule
+    { toSubmodule := N.toSubmodule ⊔ P.toSubmodule
       coact_mem' := by
         -- The stability field is pointwise. Express it as submodule containment to use the
         -- join's universal property; its membership API is not available during construction.
@@ -74,7 +74,7 @@ instance instMax : Max (Subcomodule R C M) where
 underlying submodules. -/
 instance instSupSet : SupSet (Subcomodule R C M) where
   sSup S :=
-    { carrier := ⨆ N : S, (N : Subcomodule R C M).toSubmodule
+    { toSubmodule := ⨆ N : S, (N : Subcomodule R C M).toSubmodule
       coact_mem' := by
         -- The stability field is pointwise. Express it as submodule containment to use the
         -- join's universal property; its membership API is not available during construction.

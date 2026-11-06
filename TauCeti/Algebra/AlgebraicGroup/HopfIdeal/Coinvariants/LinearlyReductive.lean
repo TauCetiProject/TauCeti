@@ -131,7 +131,7 @@ private theorem mem_span_coinvariants_of_isLinearlyReductive
   set P := Algebra.TensorProduct.map (AlgHom.id k H) (Ideal.Quotient.mkₐ k I.toIdeal)
   -- The Hopf ideal is a subcomodule of `H`.
   let W : Subcomodule k C H :=
-    { carrier := I.toIdeal.restrictScalars k
+    { toSubmodule := I.toIdeal.restrictScalars k
       coact_mem' := fun m hm ↦ by
         have h := map_comul_mem_leftTensorIdeal I hm
         rw [Ideal.mem_leftTensorIdeal_iff] at h

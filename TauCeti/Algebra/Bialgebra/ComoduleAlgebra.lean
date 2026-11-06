@@ -190,7 +190,7 @@ theorem coact_mem_map_includeLeft_span {S : Set A} (hS : S ⊆ coinvariants R H 
 so descends to the quotient by it. -/
 noncomputable def spanSubcomodule {S : Set A} (hS : S ⊆ coinvariants R H A) :
     Subcomodule R H A where
-  carrier := (Ideal.span S).restrictScalars R
+  toSubmodule := (Ideal.span S).restrictScalars R
   coact_mem' a ha := by
     rw [← LinearMap.rTensor_def, ← Ideal.map_includeLeft_eq]
     exact coact_mem_map_includeLeft_span hS ha

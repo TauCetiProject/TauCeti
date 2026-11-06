@@ -127,7 +127,7 @@ theorem exists_subcomodule_toSubmodule_eq_span_iff_coordinateSpanIsStable [Finit
       exact Submodule.subset_span ⟨j, hj, rfl⟩
     obtain ⟨t, ht⟩ := N.coact_mem hbj
     rw [coefficientMatrix_apply, matrixCoefficient_def, ← ht]
-    have hcoord : (b.coord i).comp N.carrier.subtype = 0 := by
+    have hcoord : (b.coord i).comp N.toSubmodule.subtype = 0 := by
       ext x
       rw [LinearMap.zero_apply]
       have hx : (x : M) ∈ Submodule.span R (b '' s) := hN ▸ x.2

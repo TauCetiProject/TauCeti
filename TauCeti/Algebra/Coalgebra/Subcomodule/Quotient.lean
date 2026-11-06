@@ -63,11 +63,11 @@ private theorem le_ker_tensorProduct_mkQ_comp_coact :
   let : AddCommGroup C := Module.addCommMonoidToAddCommGroup R (M := C)
   -- The goal is written with `TensorProduct.map`, while Mathlib's quotient-tensor exactness
   -- lemma is stated for `rTensor`; this is only the wrapper conversion between those forms.
-  change LinearMap.rTensor C N.carrier.mkQ
-    (LinearMap.rTensor C N.carrier.subtype t) = 0
+  change LinearMap.rTensor C N.toSubmodule.mkQ
+    (LinearMap.rTensor C N.toSubmodule.subtype t) = 0
   rw [← LinearMap.mem_ker, rTensor_mkQ]
   exact
-    (LinearMap.mem_range_self (LinearMap.rTensor C N.carrier.subtype) t)
+    (LinearMap.mem_range_self (LinearMap.rTensor C N.toSubmodule.subtype) t)
 
 /-- The coaction induced on the quotient by a subcomodule. -/
 def quotientCoact : M ⧸ N.toSubmodule →ₗ[R] (M ⧸ N.toSubmodule) ⊗[R] C :=

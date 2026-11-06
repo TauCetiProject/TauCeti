@@ -46,7 +46,7 @@ noncomputable def frobeniusBinaryForms (m : ℕ) :
   -- Use the installed special-linear comodule, with its public coaction formula, rather
   -- than identify its opaque instance with the independently constructed generic one.
   let S : Subcomodule k (coordinateHopfAlgebra k 2) (MvPolynomial (Fin 2) k) :=
-    { carrier := (MvPolynomial.expand p).range.toSubmodule
+    { toSubmodule := (MvPolynomial.expand p).range.toSubmodule
       coact_mem' := by
         rintro _ ⟨f, rfl⟩
         rw [polynomialComodule_coact, AlgHom.toLinearMap_apply]

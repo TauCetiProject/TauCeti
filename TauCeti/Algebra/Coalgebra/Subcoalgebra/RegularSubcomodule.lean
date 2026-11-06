@@ -53,7 +53,7 @@ open Comodule
 The underlying submodule is unchanged; the map `D ⊗ D → C ⊗ C` factors through
 `D ⊗ C → C ⊗ C` by including the second tensor factor. -/
 @[expose] def toRegularSubcomodule (D : Subcoalgebra R C) : Subcomodule R C C where
-  carrier := D.toSubmodule
+  toSubmodule := D.toSubmodule
   coact_mem' := by
     intro c hc
     exact TensorProduct.range_map_mono le_rfl (by simp) (D.comul_mem hc)

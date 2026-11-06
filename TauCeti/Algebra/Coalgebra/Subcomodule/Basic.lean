@@ -68,55 +68,44 @@ variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 
 /-- A subcomodule of a right `C`-comodule `M`.
 
-It is an `R`-submodule `carrier` such that the coaction of every element of `carrier` lies in
-the range of `carrier ⊗ C → M ⊗ C`. -/
+It is an `R`-submodule `toSubmodule` such that the coaction of every element of `toSubmodule`
+lies in the range of `toSubmodule ⊗ C → M ⊗ C`. -/
 structure Subcomodule where
   /-- The underlying submodule of a subcomodule. -/
-  carrier : Submodule R M
+  toSubmodule : Submodule R M
   /-- The coaction of an element of the submodule lies in its tensor product with `C`. -/
   coact_mem' :
-    ∀ ⦃m : M⦄, m ∈ carrier →
+    ∀ ⦃m : M⦄, m ∈ toSubmodule →
       Comodule.coact (R := R) (C := C) (M := M) m ∈
-        LinearMap.range (TensorProduct.map carrier.subtype (LinearMap.id : C →ₗ[R] C))
+        LinearMap.range (TensorProduct.map toSubmodule.subtype (LinearMap.id : C →ₗ[R] C))
 
 namespace Subcomodule
 
 variable {R C M}
 
 instance : SetLike (Subcomodule R C M) M where
-  coe N := N.carrier
+  coe N := N.toSubmodule
   coe_injective N P h := by
     cases N with
-    | mk carrier hN =>
+    | mk toSubmodule hN =>
     cases P with
-    | mk carrier' hP =>
+    | mk toSubmodule' hP =>
     congr
     exact SetLike.ext' h
 
 instance : AddSubmonoidClass (Subcomodule R C M) M where
-  add_mem {N} := N.carrier.add_mem
-  zero_mem N := N.carrier.zero_mem
+  add_mem {N} := N.toSubmodule.add_mem
+  zero_mem N := N.toSubmodule.zero_mem
 
 instance : SMulMemClass (Subcomodule R C M) R M where
-  smul_mem {N} r {_} hm := N.carrier.smul_mem r hm
+  smul_mem {N} r {_} hm := N.toSubmodule.smul_mem r hm
 
 instance : PartialOrder (Subcomodule R C M) :=
   .ofSetLike (Subcomodule R C M)
 
-/-- The underlying submodule of a subcomodule. -/
-@[expose] def toSubmodule (N : Subcomodule R C M) : Submodule R M :=
-  N.carrier
-
-@[simp]
-theorem mem_carrier {N : Subcomodule R C M} {m : M} : m ∈ N.carrier ↔ m ∈ N :=
-  Iff.rfl
-
 @[simp]
 theorem mem_toSubmodule {N : Subcomodule R C M} {m : M} : m ∈ N.toSubmodule ↔ m ∈ N :=
   Iff.rfl
-
-theorem toSubmodule_carrier (N : Subcomodule R C M) : N.toSubmodule = N.carrier :=
-  rfl
 
 /-- A subcomodule of a noetherian module is finitely generated as an `R`-module. -/
 theorem finite (N : Subcomodule R C M) [IsNoetherian R M] :
@@ -145,7 +134,7 @@ theorem ext {N P : Subcomodule R C M} (h : ∀ m : M, m ∈ N ↔ m ∈ P) : N =
 coalgebra. -/
 theorem coact_mem (N : Subcomodule R C M) {m : M} (hm : m ∈ N) :
     Comodule.coact (R := R) (C := C) (M := M) m ∈
-      LinearMap.range (TensorProduct.map N.carrier.subtype (LinearMap.id : C →ₗ[R] C)) :=
+      LinearMap.range (TensorProduct.map N.toSubmodule.subtype (LinearMap.id : C →ₗ[R] C)) :=
   N.coact_mem' hm
 
 /-- A subcomodule is stable under contracting the coaction against a linear functional on the
@@ -161,7 +150,7 @@ theorem rid_lTensor_coact_mem (N : Subcomodule R C M) (f : C →ₗ[R] R) {m : M
   rw [← hx]
   clear hx hm
   induction x with
-  | tmul y c => simpa using N.carrier.smul_mem (f c) y.2
+  | tmul y c => simpa using N.toSubmodule.smul_mem (f c) y.2
   | add a b ha hb => simpa only [map_add] using add_mem ha hb
 
 /-- Constructor from a submodule and the tensor-product stability condition. -/
@@ -170,12 +159,12 @@ theorem rid_lTensor_coact_mem (N : Subcomodule R C M) (f : C →ₗ[R] R) {m : M
         Comodule.coact (R := R) (C := C) (M := M) m ∈
           LinearMap.range (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[R] C))) :
     Subcomodule R C M where
-  carrier := N
+  toSubmodule := N
   coact_mem' := hN
 
 @[simp]
-theorem ofSubmodule_carrier (N : Submodule R M) (hN) :
-    (ofSubmodule (R := R) (C := C) (M := M) N hN).carrier = N :=
+theorem ofSubmodule_toSubmodule (N : Submodule R M) (hN) :
+    (ofSubmodule (R := R) (C := C) (M := M) N hN).toSubmodule = N :=
   rfl
 
 @[simp]
@@ -196,7 +185,7 @@ theorem coact_mem_tensor_top (m : M) :
 /-- The full module as a subcomodule. -/
 instance instTop : Top (Subcomodule R C M) where
   top :=
-    { carrier := ⊤
+    { toSubmodule := ⊤
       coact_mem' := fun m _ ↦ coact_mem_tensor_top m }
 
 @[simp]
@@ -214,7 +203,7 @@ instance : OrderTop (Subcomodule R C M) where
 /-- The zero submodule as a subcomodule. -/
 instance instBot : Bot (Subcomodule R C M) where
   bot :=
-    { carrier := ⊥
+    { toSubmodule := ⊥
       coact_mem' := by
         intro m hm
         rw [Submodule.mem_bot] at hm
@@ -285,15 +274,15 @@ variable {N : Type x} [AddCommMonoid N] [Module R N] [Comodule R C N]
 
 /-- The image of a subcomodule under a comodule morphism. -/
 @[expose] def map (A : Subcomodule R C M) (f : Comodule.Hom R C M N) : Subcomodule R C N where
-  carrier := A.carrier.map f.toLinearMap
+  toSubmodule := A.toSubmodule.map f.toLinearMap
   coact_mem' := by
     intro n hn
     rcases Submodule.mem_map.mp hn with ⟨m, hm, rfl⟩
     rcases A.coact_mem hm with ⟨t, ht⟩
-    refine ⟨TensorProduct.map (f.toLinearMap.submoduleMap A.carrier)
+    refine ⟨TensorProduct.map (f.toLinearMap.submoduleMap A.toSubmodule)
       (LinearMap.id : C →ₗ[R] C) t, ?_⟩
-    have hcomp : (A.carrier.map f.toLinearMap).subtype ∘ₗ
-        f.toLinearMap.submoduleMap A.carrier = f.toLinearMap ∘ₗ A.carrier.subtype := by
+    have hcomp : (A.toSubmodule.map f.toLinearMap).subtype ∘ₗ
+        f.toLinearMap.submoduleMap A.toSubmodule = f.toLinearMap ∘ₗ A.toSubmodule.subtype := by
       ext x
       simp only [LinearMap.comp_apply, Submodule.subtype_apply,
         LinearMap.submoduleMap_coe_apply]
@@ -416,7 +405,7 @@ negation, so its subtype is an additive group. -/
 instance {R : Type u} {C : Type v} {M : Type w} [CommRing R] [AddCommMonoid C] [Module R C]
     [Coalgebra R C] [AddCommGroup M] [Module R M] [Comodule R C M] :
     AddSubgroupClass (Subcomodule R C M) M where
-  neg_mem {N} := N.carrier.neg_mem
+  neg_mem {N} := N.toSubmodule.neg_mem
 
 end Subcomodule
 

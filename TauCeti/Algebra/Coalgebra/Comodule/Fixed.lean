@@ -58,7 +58,7 @@ variable [AddCommMonoid M] [Module R M] [Comodule R C M]
 
 For the comodule of a representation of an affine group this is the submodule of invariants. -/
 def fixedSubcomodule : Subcomodule R C M where
-  carrier :=
+  toSubmodule :=
     LinearMap.eqLocus (coact (R := R) (C := C) (M := M)) ((TensorProduct.mk R M C).flip 1)
   coact_mem' := by
     intro m hm

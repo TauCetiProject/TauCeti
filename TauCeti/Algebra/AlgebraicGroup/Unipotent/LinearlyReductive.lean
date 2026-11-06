@@ -140,11 +140,8 @@ theorem comul_eq_tmul_one_of_isLinearlyReductive_of_forall_exists_fixed
   obtain ⟨D, hDfin, hD⟩ := Subcoalgebra.exists_finiteDimensional_subcoalgebra_mem (k := k') h
   set N : Subcomodule k' H' H' := D.toRegularSubcomodule with hNdef
   let _ : AddCommGroup N := Module.addCommMonoidToAddCommGroup k'
-  have hNfin : FiniteDimensional k' N.toSubmodule := by
-    rw [hNdef, Subcoalgebra.toRegularSubcomodule_toSubmodule]
-    exact hDfin
-  -- `↥N` and `↥N.toSubmodule` subtype the same carrier, so finite-dimensionality transfers.
-  have _ : FiniteDimensional k' N := hNfin
+  -- `↥N` and `↥D.toSubmodule` subtype the same carrier, so finite-dimensionality transfers.
+  have _ : FiniteDimensional k' N := hDfin
   have hmem : h ∈ N := Subcoalgebra.mem_toRegularSubcomodule.mpr hD
   have hfixN := Comodule.coact_eq_tmul_one_of_isCompletelyReducible_of_forall_exists_fixed
     hlr.isCompletelyReducible (hfix N) ⟨h, hmem⟩

@@ -152,7 +152,7 @@ theorem exists_isGroupLikeElem_coact_eq_tmul_of_toSubmodule_eq_span
     rw [← Subcomodule.mem_toSubmodule, hN]
     exact Submodule.mem_span_singleton_self v
   have := N.coact_mem hmem
-  rwa [← N.toSubmodule_carrier, hN] at this
+  rwa [hN] at this
 
 /-- A subcomodule spanned by a single nonzero vector makes the ambient comodule have a nonzero
 weight vector. -/

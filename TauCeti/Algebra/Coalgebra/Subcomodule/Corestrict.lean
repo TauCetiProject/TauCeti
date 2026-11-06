@@ -68,13 +68,13 @@ def corestrict (f : C →ₗc[R] D) (W : Subcomodule R C M) :
     letI : Comodule R D M := Comodule.Corestrict f
     Subcomodule R D M :=
   letI : Comodule R D M := Comodule.Corestrict f
-  Subcomodule.ofSubmodule W.carrier fun m hm ↦ by
+  Subcomodule.ofSubmodule W.toSubmodule fun m hm ↦ by
     obtain ⟨t, ht⟩ := W.coact_mem hm
     refine ⟨TensorProduct.map LinearMap.id f.toLinearMap t, ?_⟩
     rw [Comodule.corestrict_coact_apply]
     calc
       _ = TensorProduct.map LinearMap.id f.toLinearMap
-          (TensorProduct.map W.carrier.subtype LinearMap.id t) := by
+          (TensorProduct.map W.toSubmodule.subtype LinearMap.id t) := by
             simp [TensorProduct.map_map]
       _ = _ := congrArg (TensorProduct.map LinearMap.id f.toLinearMap) ht
 
@@ -120,15 +120,15 @@ def corestrictSymm (e : C ≃ₗc[R] D)
     let _ : Comodule R C M := instOriginal
     exact corestrict_symm_instance_eq e
   letI : Comodule R C M := instOriginal
-  Subcomodule.ofSubmodule W.carrier fun m hm => by
+  Subcomodule.ofSubmodule W.toSubmodule fun m hm => by
     have hmem : instDouble.coact m ∈ LinearMap.range
-        (TensorProduct.map W.carrier.subtype (LinearMap.id : C →ₗ[R] C)) := by
+        (TensorProduct.map W.toSubmodule.subtype (LinearMap.id : C →ₗ[R] C)) := by
       let _ : Comodule R C M := instDouble
       have hmem' := W'.coact_mem hm
       -- The source of `hmem'` contains `W'.carrier`, while the target contains `W.carrier`.
       -- These subcomodules have different dependent comodule-instance indices, so expose the
       -- carrier equality explicitly before rewriting it with the corestriction API.
-      rw [show W'.carrier = W.carrier by
+      rw [show W'.toSubmodule = W.toSubmodule by
         exact corestrict_toSubmodule e.symm.toCoalgHom W] at hmem'
       exact hmem'
     rw [congrArg (fun rho : Comodule R C M => rho.coact) h] at hmem
@@ -441,7 +441,7 @@ def ofCorestrictOfSplit (f : C →ₗc[k] D) (r : D →ₗ[k] C)
     (W : letI : Comodule k D V := Comodule.Corestrict f
       Subcomodule k D V) : Subcomodule k C V :=
   letI : Comodule k D V := Comodule.Corestrict f
-  Subcomodule.ofSubmodule W.carrier (fun m hm ↦ by
+  Subcomodule.ofSubmodule W.toSubmodule (fun m hm ↦ by
     obtain ⟨t, ht⟩ := W.coact_mem hm
     refine ⟨TensorProduct.map LinearMap.id r t, ?_⟩
     have h := congrArg (TensorProduct.map (LinearMap.id : V →ₗ[k] V) r) ht
@@ -458,7 +458,7 @@ theorem ofCorestrictOfSplit_toSubmodule (f : C →ₗc[k] D) (r : D →ₗ[k] C)
     letI : Comodule k D V := Comodule.Corestrict f
     (ofCorestrictOfSplit f r hr W).toSubmodule = W.toSubmodule := by
   unfold ofCorestrictOfSplit
-  exact Subcomodule.ofSubmodule_carrier _ _
+  exact Subcomodule.ofSubmodule_toSubmodule _ _
 
 /-- Membership is unchanged by recovery from a split corestriction. -/
 @[simp]

@@ -81,14 +81,14 @@ private theorem coact_mem_range_comap_toLinearMap (f : Comodule.Hom R C M N) (B 
   rw [← ht]
   -- The quotient uses the derived additive-group instances, whereas `coact_mem` uses the
   -- original monoid instances; this converts their tensor-map wrappers to `rTensor`.
-  change LinearMap.rTensor C B.carrier.mkQ
-    (LinearMap.rTensor C B.carrier.subtype t) = 0
+  change LinearMap.rTensor C B.toSubmodule.mkQ
+    (LinearMap.rTensor C B.toSubmodule.subtype t) = 0
   rw [← LinearMap.mem_ker, rTensor_mkQ]
-  exact LinearMap.mem_range_self (LinearMap.rTensor C B.carrier.subtype) t
+  exact LinearMap.mem_range_self (LinearMap.rTensor C B.toSubmodule.subtype) t
 
 /-- The inverse image of a subcomodule under a comodule morphism. -/
 @[expose] def comap (B : Subcomodule R C N) (f : Comodule.Hom R C M N) : Subcomodule R C M where
-  carrier := B.toSubmodule.comap f.toLinearMap
+  toSubmodule := B.toSubmodule.comap f.toLinearMap
   coact_mem' := by
     intro m hm
     exact coact_mem_range_comap_toLinearMap f B hm

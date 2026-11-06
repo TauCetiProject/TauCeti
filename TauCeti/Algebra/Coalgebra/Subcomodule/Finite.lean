@@ -175,8 +175,7 @@ theorem exists_finite_subcomodule_mem [Module.Free R C] (m : M) :
         (TensorProduct.map N.subtype (LinearMap.id : C →ₗ[R] C))).smul_mem r hx
   refine ⟨ofSubmodule (R := R) (C := C) (M := M) N hstable, ?_, ?_⟩
   · have hSN : (ofSubmodule (R := R) (C := C) (M := M) N hstable).toSubmodule = N := by
-      rw [toSubmodule_carrier]
-      exact ofSubmodule_carrier N hstable
+      exact ofSubmodule_toSubmodule N hstable
     rw [hSN]
     exact Module.Finite.span_of_finite R a.finite_range
   · exact mem_ofSubmodule.mpr (mem_of_forall_coeff_mem b m ha_mem)

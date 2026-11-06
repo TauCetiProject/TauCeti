@@ -463,7 +463,7 @@ end Internal
 /-- The `g`-weight submodule as a subcomodule: the decomposition is one of comodules, not merely
 of modules. -/
 def weightSubcomodule (g : G) : Subcomodule R (MonoidAlgebra R G) V where
-  carrier := weightSpace R G V g
+  toSubmodule := weightSpace R G V g
   coact_mem' v hv := by
     refine ⟨(⟨v, hv⟩ : weightSpace R G V g) ⊗ₜ[R] MonoidAlgebra.single g (1 : R), ?_⟩
     rw [TensorProduct.map_tmul]

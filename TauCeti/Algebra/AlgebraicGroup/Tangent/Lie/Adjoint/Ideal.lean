@@ -81,7 +81,7 @@ of its adjoint representation, over an algebraically closed field. -/
 noncomputable def toAdjointSubcomodule
     (I : LieIdeal k (Module.Dual k (Bialgebra.CotangentSpace k H))) :
     Subcomodule k H (Module.Dual k (Bialgebra.CotangentSpace k H)) where
-  carrier := I.toSubmodule
+  toSubmodule := I.toSubmodule
   coact_mem' := by
     intro x hx
     apply Submodule.coact_mem_range_of_forall_differential_mem I.toSubmodule ?_ hx
