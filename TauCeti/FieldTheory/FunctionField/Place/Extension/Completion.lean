@@ -138,7 +138,7 @@ theorem ramificationGroup_eq_comap_completionDecompositionHom (i : ℕ) :
     ramificationGroup F P i =
       (IsLocalRing.ramificationGroup (P.completionPlace.integers.decompositionSubgroup k)
         P.completionPlace.integers i).comap (completionDecompositionHom F P) := by
-  rw [ramificationGroup_eq_isLocalRing_ramificationGroup]
+  rw [ramificationGroup_def]
   refine IsLocalRing.ramificationGroup_eq_comap_of_comap_maximalIdeal_pow _
     P.completionIntegersEmbedding.toRingHom
     (fun g x ↦ (completionDecompositionHom_smul_completionIntegersEmbedding g x).symm)
