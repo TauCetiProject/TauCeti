@@ -196,12 +196,12 @@ functors of filtrations `F` of `K` and `G` of `L`, and let `n` be a degree. Supp
 stages `F_i` and `G_i` at all indices `i ≤ a` have vanishing cohomology in degrees `n` and `n + 1`
 (for instance `F_a = G_a = ⊥`), that in degrees `n - 1` and `n` every element of `K` and of `L`
 lies in some stage of the filtration, and that the graded pieces of both filtrations at all
-indices `i ≥ b` have vanishing cohomology. If the morphism of spectral sequences induced by `α`
-is an isomorphism on every object of some page `r ≥ 2`, then `α.app ⊤` induces an isomorphism
-on `H^n`. -/
+indices `i ≥ b` have vanishing cohomology (no inequality between `a` and `b` is needed). If the
+morphism of spectral sequences induced by `α` is an isomorphism on every object of some page
+`r ≥ 2`, then `α.app ⊤` induces an isomorphism on `H^n`. -/
 theorem isIso_homologyMap_of_isIso_spectralSequence_page_of_exhaustive
     {L : CochainComplex (ModuleCat R) ℤ} (G : ℤ → Subobject L) (hG : Monotone G)
-    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) (n : ℤ) {a b : ℤ} (hab : a ≤ b)
+    (α : filtrationFunctor F hF ⟶ filtrationFunctor G hG) (n : ℤ) {a b : ℤ}
     (hFa : ∀ m, n ≤ m → m ≤ n + 1 → ∀ i, i ≤ a →
       IsZero ((F i : CochainComplex (ModuleCat R) ℤ).homology m))
     (hGa : ∀ m, n ≤ m → m ≤ n + 1 → ∀ i, i ≤ a →
@@ -221,9 +221,11 @@ theorem isIso_homologyMap_of_isIso_spectralSequence_page_of_exhaustive
       (spectralObjectMap α)).hom r hr).f pq)) :
     IsIso (HomologicalComplex.homologyMap (α.app ⊤) n) :=
   isIso_homologyMap_app_top_of_isIso_abutment α n <|
-    isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) hab n
-    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot F hF i m (hFa m hm₀ hm₁ i hi))
-    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot G hG i m (hGa m hm₀ hm₁ i hi))
+    isIso_hom_app_abutment_of_isIso_page (spectralObjectMap α) (min_le_right a b) n
+    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot F hF i m
+      (hFa m hm₀ hm₁ i (hi.trans (min_le_left a b))))
+    (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_bot G hG i m
+      (hGa m hm₀ hm₁ i (hi.trans (min_le_left a b))))
     (fun m i hm₀ hm₁ hi => isZero_spectralObject_H_top F hF i m
       (isZero_homology_cokernel_arrow_of_exhaustive F hF (hFex m hm₀ hm₁)
         fun j hj ↦ hFb m hm₀ hm₁ j (hi.trans hj)))
