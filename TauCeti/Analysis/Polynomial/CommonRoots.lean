@@ -50,6 +50,78 @@ namespace Polynomial
 variable {K : Type*} [NormedField K] [IsAlgClosed K] [ProperSpace K] {B : Type*}
   [TopologicalSpace B] {ι : Type*} [Fintype ι] {F : ι → B → K[X]} {x₀ : B} {d : ι → ℕ}
 
+omit [IsAlgClosed K] [ProperSpace K] in
+open scoped Classical in
+/-- Gluing step of the family matching lemma. Suppose the distinct roots of the family `P` are more
+than `2 * ρ` apart, each `P k` is matched with `Q k` by a bijection `e k` of the distinct roots
+that moves each root by less than `ρ` and preserves multiplicities, and every common root of two
+members of `P` is approached within `ρ` by a common root of the corresponding members of `Q`.
+Then the `e k` agree on common roots, and glue to one bijection of the unions of the distinct roots
+with the same properties for every member. -/
+private theorem exists_bijOn_biUnion_roots_toFinset_of_matchings {P Q : ι → K[X]} {ρ : ℝ}
+    (hP : ∀ k, P k ≠ 0) (hQ : ∀ k, Q k ≠ 0)
+    (hsep : ∀ z ∈ Finset.univ.biUnion (fun k => (P k).roots.toFinset),
+      ∀ w ∈ Finset.univ.biUnion (fun k => (P k).roots.toFinset), z ≠ w → 2 * ρ < dist z w)
+    {e : ι → K → K} (he : ∀ k, Set.BijOn (e k) (P k).roots.toFinset (Q k).roots.toFinset)
+    (hed : ∀ k, ∀ z ∈ (P k).roots,
+      ‖e k z - z‖ < ρ ∧ (Q k).rootMultiplicity (e k z) = (P k).rootMultiplicity z)
+    (hc : ∀ k l, k ≠ l → ∀ z, (P k).IsRoot z → (P l).IsRoot z →
+      ∃ w, (Q k).IsRoot w ∧ (Q l).IsRoot w ∧ ‖w - z‖ < ρ) :
+    ∃ E : K → K,
+      Set.BijOn E (Finset.univ.biUnion fun k => (P k).roots.toFinset)
+        (Finset.univ.biUnion fun k => (Q k).roots.toFinset) ∧
+      ∀ z ∈ Finset.univ.biUnion (fun k => (P k).roots.toFinset),
+        ‖E z - z‖ < ρ ∧ ∀ k, (Q k).rootMultiplicity (E z) = (P k).rootMultiplicity z := by
+  set T := Finset.univ.biUnion fun k => (P k).roots.toFinset
+  have hT (k : ι) : (P k).roots.toFinset ⊆ T :=
+    Finset.subset_biUnion_of_mem (fun k => (P k).roots.toFinset) (Finset.mem_univ k)
+  -- a root of `Q k` near a point of `T` is the partner of that point under `e k`
+  have huniq (k : ι) {z w : K} (hz : z ∈ T) (hw : w ∈ (Q k).roots) (hwz : ‖w - z‖ < ρ) :
+      z ∈ (P k).roots ∧ e k z = w := by
+    have h := mem_and_apply_eq_of_bijOn_of_dist_lt (Finset.coe_subset.2 (hT k)) (he k)
+      (fun z hz w hw => hsep z hz w hw) (fun z hz => by
+        simpa [dist_eq_norm] using (hed k z (Multiset.mem_toFinset.1 hz)).1) hz
+      (Finset.mem_coe.2 (Multiset.mem_toFinset.2 hw)) (by rwa [dist_eq_norm])
+    exact ⟨Multiset.mem_toFinset.1 h.1, h.2⟩
+  -- the matchings of two members agree at a common root
+  have hagree (k l : ι) {z : K} (hk : z ∈ (P k).roots) (hl : z ∈ (P l).roots) :
+      e k z = e l z := by
+    by_cases hkl : k = l
+    · rw [hkl]
+    have hz : z ∈ T := hT k (Multiset.mem_toFinset.2 hk)
+    obtain ⟨w, hwk, hwl, hwz⟩ := hc k l hkl z ((mem_roots (hP k)).1 hk) ((mem_roots (hP l)).1 hl)
+    rw [(huniq k hz ((mem_roots (hQ k)).2 hwk) hwz).2,
+      (huniq l hz ((mem_roots (hQ l)).2 hwl) hwz).2]
+  have hmemT {z : K} (hz : z ∈ T) : ∃ k, z ∈ (P k).roots := by
+    simpa [T] using hz
+  let E : K → K := fun z => if h : ∃ k, z ∈ (P k).roots then e h.choose z else z
+  have hE {k : ι} {z : K} (hz : z ∈ (P k).roots) : E z = e k z := by
+    have h : ∃ k, z ∈ (P k).roots := ⟨k, hz⟩
+    simp only [E, h, ↓reduceDIte]
+    exact hagree _ _ h.choose_spec hz
+  have hEclose {z : K} (hz : z ∈ T) : ‖E z - z‖ < ρ := by
+    obtain ⟨k, hk⟩ := hmemT hz
+    rw [hE hk]
+    exact (hed k z hk).1
+  refine ⟨E, ⟨fun z hz => ?_, fun z hz z' hz' hzz' => ?_, fun w hw => ?_⟩, fun z hz =>
+    ⟨hEclose hz, fun k => ?_⟩⟩
+  · obtain ⟨k, hk⟩ := hmemT hz
+    rw [hE hk]
+    exact Finset.mem_coe.2 (Finset.mem_biUnion.2 ⟨k, Finset.mem_univ _,
+      Finset.mem_coe.1 ((he k).mapsTo (Multiset.mem_toFinset.2 hk))⟩)
+  · exact eq_of_dist_lt_of_dist_lt (hsep z hz z' hz') (y := E z)
+      (by rw [dist_eq_norm]; exact hEclose hz) (by rw [dist_eq_norm, hzz']; exact hEclose hz')
+  · obtain ⟨k, -, hwk⟩ := Finset.mem_biUnion.1 (Finset.mem_coe.1 hw)
+    obtain ⟨z, hz, rfl⟩ := (he k).surjOn hwk
+    have hzk : z ∈ (P k).roots := Multiset.mem_toFinset.1 hz
+    exact ⟨z, Finset.mem_coe.2 (hT k hz), hE hzk⟩
+  · by_cases hk : z ∈ (P k).roots
+    · rw [hE hk]
+      exact (hed k z hk).2
+    · rw [rootMultiplicity_eq_zero fun h => hk ((mem_roots (hP k)).2 h)]
+      refine rootMultiplicity_eq_zero fun h => hk ?_
+      exact (huniq k hz ((mem_roots (hQ k)).2 h) (hEclose hz)).1
+
 open scoped Classical in
 /-- **Family matching lemma.** Let `F k x` be polynomials of degree `d k` near `x₀`, for `k` in a
 finite index type, whose coefficients of index at most `d k` are continuous at `x₀`. Suppose that
@@ -74,8 +146,6 @@ theorem eventually_exists_bijOn_biUnion_roots_toFinset
   -- show that a root of `F k x` in the disc around `z` must be `e k z`, deduce that the `e k`
   -- agree on common roots, and glue them into a single map `E`.
   set T := Finset.univ.biUnion fun k => (F k x₀).roots.toFinset
-  have hT (k : ι) : (F k x₀).roots.toFinset ⊆ T :=
-    Finset.subset_biUnion_of_mem (fun k => (F k x₀).roots.toFinset) (Finset.mem_univ k)
   -- shrink `ε` so that the discs around the distinct roots of the family are pairwise disjoint
   obtain ⟨r, hr, -, hsep⟩ := exists_pos_closedBall_subset_and_lt_dist
     (T := T) (U := fun _ => Set.univ) fun _ _ => univ_mem
@@ -100,53 +170,10 @@ theorem eventually_exists_bijOn_biUnion_roots_toFinset
   have hne (k : ι) (y : B) (hy : (F k y).degree = d k) : F k y ≠ 0 := by
     rintro h
     simp [h] at hy
-  -- a root of `F k x` near a point of `T` is the partner of that point under `e k`
-  have huniq (k : ι) {z w : K} (hz : z ∈ T) (hw : w ∈ (F k x).roots) (hwz : ‖w - z‖ < ρ) :
-      z ∈ (F k x₀).roots ∧ e k z = w := by
-    obtain ⟨z', hz', rfl⟩ := (he k).surjOn (Finset.mem_coe.2 (Multiset.mem_toFinset.2 hw))
-    have hz'k : z' ∈ (F k x₀).roots := Multiset.mem_toFinset.1 hz'
-    obtain rfl : z = z' := eq_of_dist_lt_of_dist_lt (hsep' z hz z' (hT k hz'))
-      (by rwa [dist_eq_norm]) (by rw [dist_eq_norm]; exact (hed k z' hz'k).1)
-    exact ⟨hz'k, rfl⟩
-  -- the matchings of two members agree at a common root
-  have hagree (k l : ι) {z : K} (hk : z ∈ (F k x₀).roots) (hl : z ∈ (F l x₀).roots) :
-      e k z = e l z := by
-    by_cases hkl : k = l
-    · rw [hkl]
-    have hz : z ∈ T := hT k (Multiset.mem_toFinset.2 hk)
-    obtain ⟨w, hwk, hwl, hwz⟩ := hc k l hkl z ((mem_roots (hne k x₀ (hdeg k).self_of_nhds)).1 hk)
-      ((mem_roots (hne l x₀ (hdeg l).self_of_nhds)).1 hl)
-    rw [(huniq k hz ((mem_roots (hne k x (hx k))).2 hwk) hwz).2,
-      (huniq l hz ((mem_roots (hne l x (hx l))).2 hwl) hwz).2]
-  have hmemT {z : K} (hz : z ∈ T) : ∃ k, z ∈ (F k x₀).roots := by
-    simpa [T] using hz
-  let E : K → K := fun z => if h : ∃ k, z ∈ (F k x₀).roots then e h.choose z else z
-  have hE {k : ι} {z : K} (hz : z ∈ (F k x₀).roots) : E z = e k z := by
-    have h : ∃ k, z ∈ (F k x₀).roots := ⟨k, hz⟩
-    simp only [E, h, ↓reduceDIte]
-    exact hagree _ _ h.choose_spec hz
-  have hEclose {z : K} (hz : z ∈ T) : ‖E z - z‖ < ρ := by
-    obtain ⟨k, hk⟩ := hmemT hz
-    rw [hE hk]
-    exact (hed k z hk).1
-  refine ⟨E, ⟨fun z hz => ?_, fun z hz z' hz' hzz' => ?_, fun w hw => ?_⟩, fun z hz =>
-    ⟨(hEclose hz).trans_le (min_le_left ε r), fun k => ?_⟩⟩
-  · obtain ⟨k, hk⟩ := hmemT hz
-    rw [hE hk]
-    exact Finset.mem_coe.2 (Finset.mem_biUnion.2 ⟨k, Finset.mem_univ _,
-      Finset.mem_coe.1 ((he k).mapsTo (Multiset.mem_toFinset.2 hk))⟩)
-  · exact eq_of_dist_lt_of_dist_lt (hsep' z hz z' hz') (y := E z)
-      (by rw [dist_eq_norm]; exact hEclose hz) (by rw [dist_eq_norm, hzz']; exact hEclose hz')
-  · obtain ⟨k, -, hwk⟩ := Finset.mem_biUnion.1 (Finset.mem_coe.1 hw)
-    obtain ⟨z, hz, rfl⟩ := (he k).surjOn hwk
-    have hzk : z ∈ (F k x₀).roots := Multiset.mem_toFinset.1 hz
-    exact ⟨z, Finset.mem_coe.2 (hT k hz), hE hzk⟩
-  · by_cases hk : z ∈ (F k x₀).roots
-    · rw [hE hk]
-      exact (hed k z hk).2
-    · rw [rootMultiplicity_eq_zero fun h => hk ((mem_roots (hne k x₀ (hdeg k).self_of_nhds)).2 h)]
-      refine rootMultiplicity_eq_zero fun h => hk ?_
-      exact (huniq k hz ((mem_roots (hne k x (hx k))).2 h) (hEclose hz)).1
+  obtain ⟨E, hE, hEρ⟩ := exists_bijOn_biUnion_roots_toFinset_of_matchings
+    (fun k => hne k x₀ (hdeg k).self_of_nhds) (fun k => hne k x (hx k)) hsep' he hed
+    hc
+  exact ⟨E, hE, fun z hz => ⟨(hEρ z hz).1.trans_le (min_le_left ε r), (hEρ z hz).2⟩⟩
 
 open scoped Classical in
 /-- **Local constancy of the number of distinct roots of a family.** Under the hypotheses of the
