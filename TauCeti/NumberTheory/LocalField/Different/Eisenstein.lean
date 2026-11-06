@@ -58,9 +58,8 @@ theorem natCast_differentExponent_eq_addVal_aeval_derivative_of_eisenstein_adjoi
     (hgen : K⟮(ξ : L)⟯ = ⊤) :
     (differentExponent K L : ℕ∞) = addVal 𝒪[L] (aeval ξ (derivative f)) := by
   have : Module.Finite K L := finite_of_valuativeExtension K L
-  have hlc : IsUnit f.leadingCoeff := notMem_maximalIdeal.mp hf.leading
-  have hassoc : Associated (minpoly 𝒪[K] ξ) f :=
-    associated_minpoly_of_eisenstein_isRoot hf hlc hroot
+  have hlc : IsUnit f.leadingCoeff := hf.isUnit_leadingCoeff
+  have hassoc : Associated (minpoly 𝒪[K] ξ) f := hf.associated_minpoly hlc hroot
   have hscale : f = Polynomial.C f.leadingCoeff * minpoly 𝒪[K] ξ :=
     Polynomial.eq_leadingCoeff_mul_of_monic_of_dvd_of_natDegree_le
       (minpoly.monic (IsIntegral.of_finite 𝒪[K] ξ)) hassoc.dvd
@@ -133,7 +132,7 @@ theorem
     exact congrArg (f.leadingCoeff * ·)
       (by exact_mod_cast congrArg (fun n : ℕ => (n : 𝒪[K])) hsub)
   have hlc : addVal 𝒪[K] f.leadingCoeff = 0 :=
-    (addVal_eq_zero_iff).mpr (notMem_maximalIdeal.mp hf.leading)
+    (addVal_eq_zero_iff).mpr hf.isUnit_leadingCoeff
   have h : (differentExponent K L : ℕ∞) ≤
       (ramificationIndex K L : ℕ) - 1 +
         ramificationIndex K L • addVal 𝒪[K] (ramificationIndex K L : 𝒪[K]) := by

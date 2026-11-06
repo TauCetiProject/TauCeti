@@ -92,8 +92,7 @@ theorem minpoly_eq_of_pow_eq_of_irreducible {L : Type*} [CommRing L] [IsDomain L
   refine eq_of_monic_of_associated
     (minpoly.monic (IsIntegral.of_pow (Nat.pos_of_ne_zero hn) (hα ▸ isIntegral_algebraMap)))
     hmonic ?_
-  refine associated_minpoly_of_eisenstein_isRoot
-    (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn))
+  refine (isEisensteinAt_X_pow_sub_C_of_irreducible hπ (Nat.pos_of_ne_zero hn)).associated_minpoly
     (hmonic.leadingCoeff ▸ isUnit_one) ?_
   simp [hα]
 
