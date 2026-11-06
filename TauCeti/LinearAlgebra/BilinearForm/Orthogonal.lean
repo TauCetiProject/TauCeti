@@ -648,6 +648,14 @@ end Submodule
 
 namespace LinearMap
 
+/-- Composing a reflexive bilinear map with an injective map of its values keeps it reflexive. -/
+theorem IsRefl.compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid Q] [Module R Q] [AddCommMonoid Q'] [Module R Q']
+    {B : M →ₗ[R] M →ₗ[R] Q} (hB : B.IsRefl) {e : Q →ₗ[R] Q'} (he : Function.Injective e) :
+    (B.compr₂ e).IsRefl := fun x y h ↦ by
+  rw [compr₂_apply, ← map_zero e, he.eq_iff] at h
+  rw [compr₂_apply, hB x y h, map_zero]
+
 /-- **Identifying a line with the scalars turns an injective line-valued form into a
 nondegenerate bilinear form.** If `L : V → Hom(V, Q)` is injective and `Q` is one-dimensional,
 then some linear equivalence `e : Q ≃ K` makes `e ∘ L` a nondegenerate bilinear form on `V`. -/
@@ -706,9 +714,7 @@ theorem IsRefl.orthogonalBilin_orthogonalBilin_of_injective {K V Q : Type*} [Fie
     (hQ : Module.finrank K Q = 1) (W : Submodule K V) :
     (W.orthogonalBilin L).orthogonalBilin L = W := by
   obtain ⟨e, hnd⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
-  have hrefl : (L.compr₂ e.toLinearMap).IsRefl := fun x y h ↦ by
-    simpa using hL x y (by simpa using h)
-  have h := BilinForm.orthogonal_orthogonal hnd hrefl W
+  have h := BilinForm.orthogonal_orthogonal hnd (hL.compr₂_of_injective e.injective) W
   rwa [BilinForm.orthogonal, BilinForm.orthogonal,
     Submodule.orthogonalBilin_compr₂_of_injective e.injective,
     Submodule.orthogonalBilin_compr₂_of_injective e.injective] at h

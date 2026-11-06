@@ -68,20 +68,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N] [ChartedSpace H' N]
   {D : Π x : M, Submodule ℝ (TangentSpace I x)} {f : N → M} {y : N}
 
-/-- The linear functional `v ↦ α_x (v)` of a one-form at `x`. -/
-private abbrev evalForm (α : RoughForm I M ℝ 1) (x : M) : TangentSpace I x →ₗ[ℝ] ℝ :=
-  ((ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ (0 : Fin 1)).symm (α x) :
-    TangentSpace I x →L[ℝ] ℝ)
-
-private theorem evalForm_apply (α : RoughForm I M ℝ 1) (x : M) (v : TangentSpace I x) :
-    evalForm α x v = α x ![v] := by
-  simp [evalForm, Matrix.vec_single_eq_const]
-
-private theorem ker_evalForm (α : RoughForm I M ℝ 1) (x : M) :
-    LinearMap.ker (evalForm α x) = α.ker x := by
-  ext v
-  rw [LinearMap.mem_ker, evalForm_apply, RoughForm.mem_ker]
-
 variable [CompleteSpace E] [IsManifold I 2 M]
 
 /-! ### The conformal symplectic normal space and its line-valued form -/
@@ -133,20 +119,6 @@ theorem IsContactDistribution.injective_conformalSymplecticNormalForm
 section Isotropic
 
 variable [IsManifold J 2 N]
-
-/-- The tangent image of a horizontal map, viewed in the contact hyperplane, is isotropic for the
-Levi form. -/
-private theorem IsHorizontalMap.le_orthogonalBilin [IsManifold I (n + 1) M]
-    (hD : IsContactDistribution I n D) (hn : 1 ≤ n) (hf : IsHorizontalMap J D f)
-    (hfy : ContMDiffAt J I 2 f y) :
-    (LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype ≤
-      ((LinearMap.range (mfderiv J I f y).toLinearMap).comap (D (f y)).subtype).orthogonalBilin
-        (distributionLeviForm D (f y)) := by
-  have hk : finrank ℝ E - 1 + 1 = finrank ℝ E := by
-    have := hD.finrank_add_one (f y)
-    omega
-  rintro ⟨_, hu⟩ ⟨v, rfl⟩ ⟨_, hu'⟩ ⟨w, rfl⟩
-  exact hf.distributionLeviForm_eq_zero hD.isContMDiffDistribution hk hn hfy w v
 
 /-- **Dimension of the conformal symplectic normal space.** Let `D` be a `C^n` contact structure,
 with `1 ≤ n`, on a manifold of dimension `2 m + 1`, and let `f` be horizontal for `D`, of class
@@ -211,13 +183,14 @@ def IsContactDistribution.normalSymplecticForm (hD : IsContactDistribution I n D
     (α : RoughForm I M ℝ 1) (hα : α.ker (f y) = D (f y)) :
     SymplecticForm (ConformalSymplecticNormal J D f y) where
   toBilinForm := (conformalSymplecticNormalForm J D f y).compr₂
-    ((D (f y)).liftQ (evalForm α (f y)) (by rw [ker_evalForm, hα]))
+    ((D (f y)).liftQ (α.eval (f y)) ((α.ker_eq_ker_eval (f y)).symm.trans hα).ge)
   isAlt x := by simp [isAlt_conformalSymplecticNormalForm.self_eq_zero x]
   nondegenerate :=
     have : FiniteDimensional ℝ (TangentSpace I (f y)) := inferInstanceAs (FiniteDimensional ℝ E)
     isAlt_distributionLeviForm.isRefl.nondegenerate_compr₂_symplecticNormalForm
       (hD.bijective_distributionLeviForm (f y)).injective (hD.finrank_quotient (f y))
-      (LinearMap.ker_eq_bot.1 (Submodule.ker_liftQ_eq_bot _ _ _ (by rw [ker_evalForm, hα])))
+      (LinearMap.ker_eq_bot.1
+        (Submodule.ker_liftQ_eq_bot _ _ _ ((α.ker_eq_ker_eval (f y)).symm.trans hα).le))
 
 /-- **The symplectic form of a defining form evaluates the Levi form.** If `w` represents
 `L_D (u, v)` in the line `T_(f y) M ⧸ D_(f y)`, then the symplectic form of `α` sends
@@ -230,7 +203,7 @@ theorem IsContactDistribution.normalSymplecticForm_mk (hD : IsContactDistributio
     hD.normalSymplecticForm J f y α hα (Submodule.Quotient.mk u) (Submodule.Quotient.mk v) =
       α (f y) ![w] := by
   simp only [normalSymplecticForm, LinearMap.compr₂_apply, conformalSymplecticNormalForm_mk]
-  rw [← hw, Submodule.mkQ_apply, Submodule.liftQ_apply, evalForm_apply]
+  rw [← hw, Submodule.mkQ_apply, Submodule.liftQ_apply, RoughForm.eval_apply]
 
 /-- **The symplectic form of a local defining form is `dα`.** Let `D` be a `C^n` contact
 structure, with `1 ≤ n`, and let the one-form `α` be differentiable at `f y` with kernel `D` on a

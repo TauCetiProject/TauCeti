@@ -88,6 +88,15 @@ theorem IsRefl.symplecticNormalForm_mk (hB : B.IsRefl) (u v : W.orthogonalBilin 
     hB.symplecticNormalForm W (Submodule.Quotient.mk u) (Submodule.Quotient.mk v) = B u v :=
   (rfl)
 
+/-- The form induced on the symplectic normal space by a reflexive form is reflexive. -/
+theorem IsRefl.isRefl_symplecticNormalForm (hB : B.IsRefl) :
+    (hB.symplecticNormalForm W).IsRefl := by
+  intro x y
+  induction x using Submodule.Quotient.induction_on with
+  | H u =>
+    induction y using Submodule.Quotient.induction_on with
+    | H v => exact hB u v
+
 /-- The form induced on the symplectic normal space by an alternating form is alternating. -/
 theorem IsAlt.isAlt_symplecticNormalForm (hB : B.IsAlt) :
     (hB.isRefl.symplecticNormalForm W).IsAlt := by
@@ -126,15 +135,8 @@ theorem IsRefl.nondegenerate_compr₂_symplecticNormalForm (hB : B.IsRefl)
     (hinj : Function.Injective B) (hQ : finrank K Q = 1) {e : Q →ₗ[K] K}
     (he : Function.Injective e) :
     BilinForm.Nondegenerate ((hB.symplecticNormalForm W).compr₂ e) := by
-  have hrefl : ((hB.symplecticNormalForm W).compr₂ e).IsRefl := fun x y h ↦ by
-    induction x using Submodule.Quotient.induction_on with
-    | H u =>
-      induction y using Submodule.Quotient.induction_on with
-      | H v =>
-        simp only [compr₂_apply, symplecticNormalForm_mk] at h ⊢
-        rw [← map_zero e, he.eq_iff] at h ⊢
-        exact hB _ _ h
-  refine (IsRefl.nondegenerate_iff_separatingLeft hrefl).2 fun x hx ↦
+  refine (IsRefl.nondegenerate_iff_separatingLeft
+    (hB.isRefl_symplecticNormalForm.compr₂_of_injective he)).2 fun x hx ↦
     hB.injective_symplecticNormalForm hinj hQ ?_
   rw [map_zero]
   ext y
