@@ -357,7 +357,7 @@ omit [IsMarkovKernel κ] in
 /-- The section at `v` of the singleton of a pair `(Fin.init w, a)`, measured by the kernel `κ`
 read off the last coordinate of `v`, is the indicator of `v = Fin.init w` times the transition
 weight from the last coordinate of `Fin.init w` to `a`. -/
-private theorem comap_apply_prod_mk_preimage_singleton {n : ℕ}
+private theorem comap_apply_prodMk_preimage_singleton {n : ℕ}
     (w : Fin (n + 2) → α) (v : Fin (n + 1) → α) :
     (κ.comap (fun y : Fin (n + 1) → α => y (Fin.last n)) (measurable_pi_apply (Fin.last n))) v
         (Prod.mk v ⁻¹' ({(Fin.init w, w (Fin.last (n + 1)))} :
@@ -415,7 +415,7 @@ theorem markovChainLaw_map_prefix_apply_singleton [SFinite ν]
       ← Measure.map_apply hprod (measurableSet_singleton _),
       markovChainLaw_map_prefix_succ_eq_compProd, Measure.compProd_apply
         (measurableSet_singleton _)]
-    have hint := comap_apply_prod_mk_preimage_singleton κ w
+    have hint := comap_apply_prodMk_preimage_singleton κ w
     rw [lintegral_congr hint, lintegral_indicator (measurableSet_singleton _),
       setLIntegral_const, ih (Fin.init w), Fin.prod_univ_castSucc]
     have hsucc : (Fin.last n).succ = Fin.last (n + 1) := Fin.succ_last n
