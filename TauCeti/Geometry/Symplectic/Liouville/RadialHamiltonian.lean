@@ -42,8 +42,9 @@ end:
 
 On the level `{r = c}` the field `X_r` is `-c` times the Reeb field of the contact form that `α`
 restricts to, and the Liouville flow identifies these levels with the boundary `∂W`, conjugating
-`X_r` with minus the Reeb field of `α|∂W`; this description is not formalized here, and the
-results below are stated for the intrinsic field `X_r`.
+`X_r` with minus the Reeb field of `α|∂W`. The results below are stated for the intrinsic field
+`X_r`; the identification with the Reeb field is in
+`TauCeti.Geometry.Symplectic.Liouville.Reeb`.
 
 The integral curves of the Hamiltonian vector field of a function `H` with `H = φ ∘ r` on a region
 `{r > R}`, `R ≥ 1`, stay on the levels of `r` they start on
