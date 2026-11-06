@@ -57,8 +57,12 @@ This is not a simp lemma: `PresheafOfModules.freeObj_map` already unfolds the re
 of a free presheaf, so the left-hand side is not in simp normal form. -/
 theorem freeObj_map_freeMk {R : Cᵒᵖ ⥤ RingCat.{w}} {F : Cᵒᵖ ⥤ Type w} {X Y : Cᵒᵖ} (f : X ⟶ Y)
     (x : F.obj X) :
-    (freeObj (R := R) F).map f (ModuleCat.freeMk x) = ModuleCat.freeMk (F.map f x) :=
-  ModuleCat.freeDesc_apply _ _
+    (freeObj (R := R) F).map f (ModuleCat.freeMk x) = ModuleCat.freeMk (F.map f x) := by
+  rw [freeObj_map]
+  -- `freeDesc` lands in the restriction of scalars of the free module, whose carrier is the free
+  -- module's only up to unfolding `restrictScalars`, so `ModuleCat.freeDesc_apply` is applied
+  -- with `exact` rather than by `rw`.
+  exact (ModuleCat.freeDesc_apply _ _).trans (TypeCat.ofHom_apply _ _)
 
 variable {R : Cᵒᵖ ⥤ RingCat.{v}}
 
@@ -69,8 +73,8 @@ element indexed by `g : X.unop ⟶ U` along `f : X ⟶ Y` to the basis element i
 This is not a simp lemma, for the same reason as `freeObj_map_freeMk`. -/
 theorem freeObj_yoneda_map_freeMk {U : C} {X Y : Cᵒᵖ} (f : X ⟶ Y) (g : X.unop ⟶ U) :
     (freeObj (R := R) (yoneda.obj U)).map f (ModuleCat.freeMk g) =
-      ModuleCat.freeMk (f.unop ≫ g) :=
-  freeObj_map_freeMk (F := yoneda.obj U) f g
+      ModuleCat.freeMk (f.unop ≫ g) := by
+  rw [freeObj_map_freeMk, yoneda_obj_map, TypeCat.ofHom_apply]
 
 variable {P Q : PresheafOfModules.{v} R}
 
