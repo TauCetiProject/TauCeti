@@ -25,7 +25,12 @@ There is no assertion here that the fixed group is finite or simple.
 
 The construction uses `kostantNumberedSymmetryPoints` and its naturality and order theorems,
 together with the toral normalization theorem and `kostantToralFrobenius`. It is the whole-point
-counterpart of `kostantElementarySteinberg`.
+counterpart of `kostantElementarySteinberg`. The existing `DynkinType.geckTwistedFrobenius`
+is the analogous construction on the adjoint Geck carrier. In contrast, this construction can
+be applied to the full-weight module `DynkinType.scModule` with lattice `DynkinType.scLattice`,
+which realizes the simply connected form rather than the adjoint form. Specialization still
+requires its numbered symmetry and weight-compatibility data; no such identification is
+asserted here.
 
 ## References
 
@@ -133,13 +138,26 @@ theorem kostantToralSteinberg_pow (m : ℕ) :
     (iterateFrobenius A p k) (kostantToralFrobenius e h ρ M hM hnil b wt p k A)
     (coe_kostantToralFrobenius e h ρ M hM hnil b wt p k A)
   have hcomm : Commute (show Monoid.End _ from γ.toMonoidHom)
-      (kostantToralFrobenius e h ρ M hM hnil b wt p k A) := hc.symm
-  rw [kostantToralSteinberg, kostantToralFrobenius_mul]
+      (kostantToralFrobenius e h ρ M hM hnil b wt p k A) := by
+    -- `Commute` uses composition-monoid multiplication. Expose its defining `comp`
+    -- equality to match the naturality theorem, rather than relying on implicit unfolding.
+    change γ.toMonoidHom.comp (kostantToralFrobenius e h ρ M hM hnil b wt p k A) =
+      (kostantToralFrobenius e h ρ M hM hnil b wt p k A).comp γ.toMonoidHom
+    exact hc.symm
+  -- Multiplication in the composition monoid is `MonoidHom.comp`; record the conversion
+  -- explicitly before applying the abstract commuting-product power law.
+  have hmul : (show Monoid.End _ from
+      kostantToralSteinberg e h ρ M hM hnil b wt σ θ hθM hθe hσ τ hwt p k A) =
+      (show Monoid.End _ from γ.toMonoidHom) *
+        (show Monoid.End _ from kostantToralFrobenius e h ρ M hM hnil b wt p k A) := rfl
+  rw [hmul, ← kostantToralFrobenius_mul]
   exact hcomm.mul_pow m
 
 /-- If the symmetry matrix has order dividing `m`, the `m`-th power of twisted Frobenius is
 plain Frobenius. No generation assertion about the point group is needed. -/
-theorem kostantToralSteinberg_pow_of_matrix_pow_eq_one {m : ℕ}
+-- Each `show` selects the composition-monoid structure on bundled homomorphisms.
+theorem
+    kostantToralSteinberg_pow_eq_kostantToralFrobenius_of_numberedSymmetryMatrix_pow_eq_one {m : ℕ}
     (hm : kostantNumberedSymmetryMatrix M b θ hθM A ^ m = 1) :
     (show Monoid.End _ from
       kostantToralSteinberg e h ρ M hM hnil b wt σ θ hθM hθe hσ τ hwt p k A) ^ m =
@@ -148,11 +166,16 @@ theorem kostantToralSteinberg_pow_of_matrix_pow_eq_one {m : ℕ}
   have hγ := kostantNumberedSymmetryPoints_pow_eq_one M b θ hθM A _
     (map_kostantToralPointsSubgroup_conj_numberedSymmetryMatrix
       e h ρ M hM hnil b wt σ θ hθM hθe hσ τ hwt A) hm
-  -- Use the evaluation action to transport the order relation to endomorphisms.
+  -- For the evaluation action of `MulAut`, forgetting the action is exactly forgetting
+  -- the inverse. Record this wrapper conversion before transporting the power relation.
+  have heval (δ : MulAut (kostantToralPointsSubgroup e h ρ M hM hnil b wt A)) :
+      MulDistribMulAction.toMonoidEnd
+        (MulAut (kostantToralPointsSubgroup e h ρ M hM hnil b wt A))
+        (kostantToralPointsSubgroup e h ρ M hM hnil b wt A) δ = δ.toMonoidHom := rfl
   have hp := congrArg (MulDistribMulAction.toMonoidEnd
     (MulAut (kostantToralPointsSubgroup e h ρ M hM hnil b wt A))
     (kostantToralPointsSubgroup e h ρ M hM hnil b wt A)) hγ
-  rw [map_pow, map_one] at hp
+  rw [map_pow, map_one, heval] at hp
   exact (congrArg (fun f : Monoid.End (kostantToralPointsSubgroup e h ρ M hM hnil b wt A) =>
     f * (show Monoid.End _ from kostantToralFrobenius e h ρ M hM hnil b wt p (k * m) A))
       hp).trans (one_mul _)
