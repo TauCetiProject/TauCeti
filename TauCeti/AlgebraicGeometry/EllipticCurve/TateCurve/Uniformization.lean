@@ -28,8 +28,8 @@ parameters through `tateParameterMap`.
 
 The map respects inversion and isometric coefficient embeddings. Its injectivity is proved in
 `TateCurve.Injectivity`, and its additivity, with the bundled homomorphism, in
-`TateCurve.Homomorphism`; surjectivity is not asserted. The norm need not be discrete, and the
-characteristic is unrestricted.
+`TateCurve.Homomorphism`; its surjectivity, with the bundled isomorphism, in
+`TateCurve.Surjectivity`. The norm need not be discrete, and the characteristic is unrestricted.
 
 ## References
 
