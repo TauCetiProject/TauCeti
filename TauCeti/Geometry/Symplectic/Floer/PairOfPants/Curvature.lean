@@ -250,40 +250,11 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sy
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
-  set N : Set (ℝ × ℝ) := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1}
-  have hN : volume N = 0 := by
-    rw [Measure.volume_eq_prod]
-    exact (Set.toFinite N).measure_zero _
   -- Off the two punctures, the curvature is supported in the images of the strips of the ends.
-  have hsupp : support (fun z ↦ ‖ω.hamiltonianCurvature
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-      z (u z)‖ₑ) ⊆ (⋃ q, endChart q '' endStrip q) ∪ N := by
-    intro z hz
-    by_cases h₀ : Complex.equivRealProdCLM.symm z = 0
-    · exact Or.inr (Or.inl ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
-        (congrArg _ h₀)))
-    by_cases h₁ : Complex.equivRealProdCLM.symm z = 1
-    · exact Or.inr (Or.inr ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
-        (congrArg _ h₁)))
-    have hS : z ∈ thricePuncturedSphereReal := mem_thricePuncturedSphereReal_iff.2 ⟨h₀, h₁⟩
-    by_cases hq : ∃ q : Puncture,
-        1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
-    · obtain ⟨q, hq⟩ := hq
-      exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart hS hq⟩)
-    · simp only [not_exists, not_lt] at hq
-      refine absurd ?_ hz
-      simp [hamiltonianCurvature_pairOfPantsPerturbation_eq_zero ω hS
-        (fun q ↦ (hq q).trans_lt (by norm_num))]
-  calc _ = ∫⁻ z in (⋃ q, endChart q '' endStrip q) ∪ N, ‖ω.hamiltonianCurvature
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          z (u z)‖ₑ := (setLIntegral_eq_of_support_subset hsupp).symm
-    _ ≤ _ := lintegral_union_le _ _ _
-    _ = _ := by rw [setLIntegral_measure_zero _ _ hN, add_zero]
-    _ ≤ _ := lintegral_iUnion_le _ _
-    _ = _ := tsum_fintype _
-    _ ≤ _ := Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_le ω hH hHs hB u q
+  refine (lintegral_le_sum_setLIntegral_image_endChart fun z hS hq ↦ ?_).trans
+    (Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_le ω hH hHs hB u q)
+  simp [hamiltonianCurvature_pairOfPantsPerturbation_eq_zero ω hS
+    (fun q ↦ (hq q).trans_lt (by norm_num))]
 
 /-- The integral of the curvature of the pair-of-pants perturbation along any map, over any set,
 has absolute value at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`. -/

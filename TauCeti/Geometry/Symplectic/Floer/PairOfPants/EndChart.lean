@@ -45,8 +45,12 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
-* `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
-  along the end chart is its component in the end coordinates.
+* `TauCeti.Floer.lintegral_le_sum_setLIntegral_image_endChart`: a function on `S` vanishing
+  wherever every signed longitudinal coordinate is at most `1/2` has integral at most the sum of
+  its integrals over the images of the three strips.
+* `TauCeti.Floer.perturbationPullback_endChart_eq`: the pullback of a datum on `ℂ` along the end
+  chart is its evaluation at the end lift; `TauCeti.Floer.perturbationPullback_endChart` is the
+  case of the pair-of-pants perturbation, whose pullback is its component in the end coordinates.
 
 ## References
 
@@ -173,13 +177,15 @@ theorem contDiff_endChart (q : Puncture) (n : WithTop ℕ∞) : ContDiff ℝ n (
       Complex.equivRealProdCLM.symm.contDiff)
 
 omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-/-- The pullback of the perturbation along the end chart of `q`, evaluated on a tangent vector
-`v`, is its component `TauCeti.Floer.pairOfPantsEndComponent` along `v` in the end coordinates. -/
-theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
+/-- The pullback along the end chart of `q` of the components `K_s(z) = K(z)(1)` and
+`K_t(z) = K(z)(i)` of a covector-valued datum `K` on `ℂ`, evaluated on a tangent vector `v`, is
+`K` at the end lift evaluated on the image `φ'(z) v` of `v`. -/
+theorem perturbationPullback_endChart_eq (K : ℂ → V → ℂ →L[ℝ] ℝ) (q : Puncture) (v : ℝ × ℝ) :
     perturbationPullback (endChart q)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm v) := by
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      fun z x ↦ K (q.cylindricalEndLift ⟨z.1, z.2⟩) x
+        (deriv q.cylindricalEndLift ⟨z.1, z.2⟩ * Complex.equivRealProdCLM.symm v) := by
   -- A real-linear functional `L` on `ℂ` satisfies `L w = Re w · L 1 + Im w · L i`.
   have hL (L : ℂ →L[ℝ] ℝ) (w : ℂ) :
       (Complex.equivRealProdCLM w).1 * L 1 + (Complex.equivRealProdCLM w).2 * L Complex.I =
@@ -189,10 +195,20 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
     simp
   funext z x
-  rw [perturbationPullback_apply, fderiv_endChart_apply, equivRealProdCLM_symm_endChart, hL,
-    pairOfPantsEndComponent_def]
+  rw [perturbationPullback_apply, fderiv_endChart_apply, equivRealProdCLM_symm_endChart, hL]
   -- `Complex.equivRealProdCLM.symm z` is the complex number `⟨z.1, z.2⟩` by definition.
   rfl
+
+omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
+/-- The pullback of the perturbation along the end chart of `q`, evaluated on a tangent vector
+`v`, is its component `TauCeti.Floer.pairOfPantsEndComponent` along `v` in the end coordinates. -/
+theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
+    perturbationPullback (endChart q)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm v) := by
+  funext z x
+  rw [perturbationPullback_endChart_eq, pairOfPantsEndComponent_def]
 
 /-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
 period. -/
@@ -246,6 +262,40 @@ theorem pairwise_disjoint_image_endChart :
     (Complex.equivRealProdCLM.injective h).symm
   · simpa using endSign_mul_pos_of_mem_endStrip hζ
   · simpa using endSign_mul_pos_of_mem_endStrip hζ'
+
+/-- A function on the plane vanishing at every point of `S` where the signed longitudinal
+coordinate of every end is at most `1/2` has integral at most the sum of its integrals over the
+images of the three strips: off the two punctures, a null set, it is supported in these images. -/
+theorem lintegral_le_sum_setLIntegral_image_endChart {f : ℝ × ℝ → ENNReal}
+    (hf : ∀ z ∈ thricePuncturedSphereReal,
+      (∀ q : Puncture, q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re ≤ 1 / 2) →
+        f z = 0) :
+    ∫⁻ z, f z ≤ ∑ q, ∫⁻ z in endChart q '' endStrip q, f z := by
+  set N : Set (ℝ × ℝ) := {Complex.equivRealProdCLM 0, Complex.equivRealProdCLM 1}
+  have hN : volume N = 0 := by
+    rw [Measure.volume_eq_prod]
+    exact (Set.toFinite N).measure_zero _
+  have hsupp : support f ⊆ (⋃ q, endChart q '' endStrip q) ∪ N := by
+    intro z hz
+    by_cases h₀ : Complex.equivRealProdCLM.symm z = 0
+    · exact Or.inr (Or.inl ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
+        (congrArg _ h₀)))
+    by_cases h₁ : Complex.equivRealProdCLM.symm z = 1
+    · exact Or.inr (Or.inr ((Complex.equivRealProdCLM.apply_symm_apply z).symm.trans
+        (congrArg _ h₁)))
+    have hS : z ∈ thricePuncturedSphereReal := mem_thricePuncturedSphereReal_iff.2 ⟨h₀, h₁⟩
+    by_cases hq : ∃ q : Puncture,
+        1 / 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re
+    · obtain ⟨q, hq⟩ := hq
+      exact Or.inl (mem_iUnion.2 ⟨q, mem_image_endChart hS hq⟩)
+    · simp only [not_exists, not_lt] at hq
+      exact absurd (hf z hS hq) hz
+  calc _ = ∫⁻ z in (⋃ q, endChart q '' endStrip q) ∪ N, f z :=
+        (setLIntegral_eq_of_support_subset hsupp).symm
+    _ ≤ _ := lintegral_union_le _ _ _
+    _ = _ := by rw [setLIntegral_measure_zero _ _ hN, add_zero]
+    _ ≤ _ := lintegral_iUnion_le _ _
+    _ = _ := tsum_fintype _
 
 end Floer
 
