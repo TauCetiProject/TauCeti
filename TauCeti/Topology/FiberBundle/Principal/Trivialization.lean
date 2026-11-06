@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.FiberBundle.Principal.Basic
+public import TauCeti.Topology.VectorBundle.Trivialization
 public import Mathlib.Topology.ContinuousMap.Algebra
 
 /-!
@@ -60,12 +61,18 @@ theorem mem_baseSet (b : B) : b ∈ τ.toTrivialization.baseSet := by
 
 /-- The equivariant homeomorphism from the total space to the product bundle. -/
 def homeomorph : TotalSpace G P ≃ₜ B × G :=
-  τ.toOpenPartialHomeomorph.toHomeomorphOfSourceEqUnivTargetEqUniv
-    (by rw [τ.source_eq, τ.baseSet_eq_univ, Set.preimage_univ])
-    (by rw [τ.target_eq, τ.baseSet_eq_univ, Set.univ_prod_univ])
+  (τ.toTrivialization.homeomorphTrivial τ.baseSet_eq_univ).trans
+    (Bundle.Trivial.homeomorphProd B G)
+
+private theorem homeomorph_symm_apply_eq (x : B × G) :
+    τ.homeomorph.symm x = τ.toOpenPartialHomeomorph.symm x := by
+  rw [homeomorph, Homeomorph.symm_trans_apply,
+    Trivialization.homeomorphTrivial_symm_apply,
+    Trivial.homeomorphProd_symm_apply_proj, Trivial.homeomorphProd_symm_apply_snd,
+    Prod.mk.eta, OpenPartialHomeomorph.coe_toPartialHomeomorph_symm]
 
 /-- Restriction of the native trivialization to a fibre. -/
-def toEquiv (b : B) : P b ≃ G where
+def equivAt (b : B) : P b ≃ G where
   toFun p := (τ.toTrivialization ⟨b, p⟩).2
   invFun g := cast (congrArg P (τ.toTrivialization.proj_symm_apply' (τ.mem_baseSet b)))
     (τ.toOpenPartialHomeomorph.symm (b, g)).2
@@ -84,33 +91,41 @@ def toEquiv (b : B) : P b ≃ G where
       (congrArg Prod.snd (τ.toTrivialization.apply_symm_apply' (τ.mem_baseSet b)))
 
 /-- The fibre coordinate is the second component of the native trivialization. -/
-theorem toEquiv_apply (b : B) (p : P b) :
-    τ.toEquiv b p = (τ.toTrivialization ⟨b, p⟩).2 :=
+theorem equivAt_apply (b : B) (p : P b) :
+    τ.equivAt b p = (τ.toTrivialization ⟨b, p⟩).2 :=
   (rfl)
 
 /-- The homeomorphism records the base point and the group coordinate. -/
 @[simp]
 theorem homeomorph_apply (p : TotalSpace G P) :
-    τ.homeomorph p = (p.proj, τ.toEquiv p.proj p.2) :=
-  (τ.toTrivialization.mk_proj_snd' (τ.mem_baseSet p.proj)).symm
+    τ.homeomorph p = (p.proj, τ.equivAt p.proj p.2) :=
+  congrArg (Bundle.Trivial.homeomorphProd B G)
+    (τ.toTrivialization.homeomorphTrivial_apply τ.baseSet_eq_univ p)
 
 /-- The inverse homeomorphism uses the inverse fibre coordinate. -/
 @[simp]
 theorem homeomorph_symm_apply (x : B × G) :
-    τ.homeomorph.symm x = ⟨x.1, (τ.toEquiv x.1).symm x.2⟩ := by
+    τ.homeomorph.symm x = ⟨x.1, (τ.equivAt x.1).symm x.2⟩ := by
+  rw [homeomorph_symm_apply_eq]
   exact (TotalSpace.mk_cast (τ.toTrivialization.proj_symm_apply' (τ.mem_baseSet x.1))
     (τ.toOpenPartialHomeomorph.symm (x.1, x.2)).2).symm
 
 /-- Global trivializations are determined by their group coordinates. -/
 @[ext]
-theorem ext (h : ∀ b p, τ.toEquiv b p = υ.toEquiv b p) : τ = υ := by
+theorem ext (h : ∀ b p, τ.equivAt b p = υ.equivAt b p) : τ = υ := by
   have hh : τ.homeomorph = υ.homeomorph := Homeomorph.ext fun p ↦ by
     simp only [homeomorph_apply, h]
   have he : τ.toTrivialization = υ.toTrivialization := by
     apply Trivialization.ext'
     · apply OpenPartialHomeomorph.ext
-      · exact DFunLike.congr_fun hh
-      · exact DFunLike.congr_fun (congrArg Homeomorph.symm hh)
+      · intro p
+        apply Prod.ext
+        · exact (τ.toTrivialization.coe_fst' (τ.mem_baseSet p.proj)).trans
+            (υ.toTrivialization.coe_fst' (υ.mem_baseSet p.proj)).symm
+        · exact h p.proj p.2
+      · intro x
+        simpa only [homeomorph_symm_apply_eq] using
+          DFunLike.congr_fun (congrArg Homeomorph.symm hh) x
       · rw [τ.source_eq, υ.source_eq, τ.baseSet_eq_univ, υ.baseSet_eq_univ]
     · rw [τ.baseSet_eq_univ, υ.baseSet_eq_univ]
   cases τ
@@ -120,17 +135,17 @@ theorem ext (h : ∀ b p, τ.toEquiv b p = υ.toEquiv b p) : τ = υ := by
 
 /-- Continuity of the global product coordinates. -/
 theorem continuous_toFun :
-    Continuous fun p : TotalSpace G P ↦ (p.proj, τ.toEquiv p.proj p.2) := by
+    Continuous fun p : TotalSpace G P ↦ (p.proj, τ.equivAt p.proj p.2) := by
   simpa only [← homeomorph_apply] using τ.homeomorph.continuous
 
 /-- Joint continuity of the inverse fibre coordinates. -/
 theorem continuous_invFun :
-    Continuous fun x : B × G ↦ (⟨x.1, (τ.toEquiv x.1).symm x.2⟩ : TotalSpace G P) := by
+    Continuous fun x : B × G ↦ (⟨x.1, (τ.equivAt x.1).symm x.2⟩ : TotalSpace G P) := by
   simpa only [← homeomorph_symm_apply] using τ.homeomorph.symm.continuous
 
 /-- Global coordinates intertwine the right action with right multiplication. -/
 theorem map_smul (b : B) (p : P b) (g : G) :
-    τ.toEquiv b (op g • p) = τ.toEquiv b p * g :=
+    τ.equivAt b (op g • p) = τ.equivAt b p * g :=
   τ.toTrivialization.snd_apply_smul (τ.mem_baseSet b) p g
 
 private def ofEquiv (e : ∀ b, P b ≃ G)
@@ -159,12 +174,12 @@ private def ofEquiv (e : ∀ b, P b ≃ G)
   isEquivariant := ⟨fun b _ p g ↦ he b p g⟩
 
 /-- The section whose group coordinate is the identity. -/
-def sectionValue (b : B) : P b := (τ.toEquiv b).symm 1
+def sectionValue (b : B) : P b := (τ.equivAt b).symm 1
 
 /-- The selected section has coordinate one. -/
 @[simp]
-theorem toEquiv_sectionValue (b : B) : τ.toEquiv b (τ.sectionValue b) = 1 :=
-  (τ.toEquiv b).apply_symm_apply 1
+theorem equivAt_sectionValue (b : B) : τ.equivAt b (τ.sectionValue b) = 1 :=
+  (τ.equivAt b).apply_symm_apply 1
 
 /-- The section selected by a global trivialization is continuous. -/
 theorem continuous_sectionValue :
@@ -173,9 +188,10 @@ theorem continuous_sectionValue :
 
 /-- The inverse coordinates are obtained by the right action on the selected section. -/
 theorem symm_apply_eq_smul (b : B) (g : G) :
-    (τ.toEquiv b).symm g = op g • τ.sectionValue b := by
-  have h : τ.homeomorph.symm (b, g) = op g • τ.homeomorph.symm (b, 1) :=
-    τ.toTrivialization.symm_apply_eq_smul (τ.mem_baseSet b) g
+    (τ.equivAt b).symm g = op g • τ.sectionValue b := by
+  have h : τ.homeomorph.symm (b, g) = op g • τ.homeomorph.symm (b, 1) := by
+    rw [homeomorph_symm_apply_eq, homeomorph_symm_apply_eq]
+    exact τ.toTrivialization.symm_apply_eq_smul (τ.mem_baseSet b) g
   rw [homeomorph_symm_apply, homeomorph_symm_apply] at h
   exact TotalSpace.mk_injective b h
 
@@ -193,9 +209,9 @@ def ofSection (σ : ∀ b, P b)
 
 /-- The coordinates supplied by a section are the division from that section. -/
 @[simp]
-theorem toEquiv_ofSection (σ : ∀ b, P b)
+theorem equivAt_ofSection (σ : ∀ b, P b)
     (hσ : Continuous fun b ↦ (⟨b, σ b⟩ : TotalSpace G P)) (b : B) (p : P b) :
-    (ofSection σ hσ).toEquiv b p = division G (σ b) p :=
+    (ofSection σ hσ).equivAt b p = division G (σ b) p :=
   congrArg Prod.snd (trivializationOfSection_apply σ isOpen_univ hσ.continuousOn ⟨b, p⟩)
 
 /-- The trivialization constructed from a section selects that same section. -/
@@ -203,23 +219,23 @@ theorem toEquiv_ofSection (σ : ∀ b, P b)
 theorem sectionValue_ofSection (σ : ∀ b, P b)
     (hσ : Continuous fun b ↦ (⟨b, σ b⟩ : TotalSpace G P)) (b : B) :
     (ofSection σ hσ).sectionValue b = σ b := by
-  apply (ofSection σ hσ).toEquiv b |>.injective
+  apply (ofSection σ hσ).equivAt b |>.injective
   simp
 
 omit [IsTopologicalGroup G] in
 /-- The coordinate of a point is its division from the section of the trivialization. -/
-theorem toEquiv_eq_division (b : B) (p : P b) :
-    τ.toEquiv b p = division G (τ.sectionValue b) p := by
+theorem equivAt_eq_division (b : B) (p : P b) :
+    τ.equivAt b p = division G (τ.sectionValue b) p := by
   symm
   apply division_eq_iff.2
-  exact (τ.symm_apply_eq_smul b (τ.toEquiv b p)).symm.trans
-    ((τ.toEquiv b).symm_apply_apply p)
+  exact (τ.symm_apply_eq_smul b (τ.equivAt b p)).symm.trans
+    ((τ.equivAt b).symm_apply_apply p)
 
 /-- A trivialization is reconstructed from its selected section. -/
 @[simp]
 theorem ofSection_sectionValue : ofSection τ.sectionValue τ.continuous_sectionValue = τ := by
   ext b p
-  simpa only [toEquiv_ofSection] using (τ.toEquiv_eq_division b p).symm
+  simpa only [equivAt_ofSection] using (τ.equivAt_eq_division b p).symm
 
 /-- Global equivariant trivializations correspond to continuous sections, with no chosen origin. -/
 def sectionEquiv : GlobalTrivialization G P ≃
@@ -249,7 +265,7 @@ variable [IsTopologicalGroup G]
 
 /-- Change the coordinates by left multiplication by a continuous gauge `a`. -/
 def gauge (a : C(B, G)) : GlobalTrivialization G P :=
-  ofEquiv (fun b ↦ (τ.toEquiv b).trans (Equiv.mulLeft (a b)))
+  ofEquiv (fun b ↦ (τ.equivAt b).trans (Equiv.mulLeft (a b)))
     (τ.continuous_toFun.fst.prodMk
       ((a.continuous.comp τ.continuous_toFun.fst).mul τ.continuous_toFun.snd))
     (τ.continuous_invFun.comp
@@ -258,21 +274,21 @@ def gauge (a : C(B, G)) : GlobalTrivialization G P :=
 
 /-- A gauge multiplies the group coordinate on the left. -/
 @[simp]
-theorem toEquiv_gauge (a : C(B, G)) (b : B) (p : P b) :
-    (τ.gauge a).toEquiv b p = a b * τ.toEquiv b p :=
+theorem equivAt_gauge (a : C(B, G)) (b : B) (p : P b) :
+    (τ.gauge a).equivAt b p = a b * τ.equivAt b p :=
   (rfl)
 
 /-- The inverse coordinate change multiplies by the inverse gauge on the left. -/
 @[simp]
-theorem toEquiv_gauge_symm (a : C(B, G)) (b : B) (g : G) :
-    ((τ.gauge a).toEquiv b).symm g = (τ.toEquiv b).symm ((a b)⁻¹ * g) :=
+theorem equivAt_gauge_symm_apply (a : C(B, G)) (b : B) (g : G) :
+    ((τ.gauge a).equivAt b).symm g = (τ.equivAt b).symm ((a b)⁻¹ * g) :=
   (rfl)
 
 /-- Changing coordinates by `a` moves the selected section by the inverse right action. -/
 @[simp]
 theorem sectionValue_gauge (a : C(B, G)) (b : B) :
     (τ.gauge a).sectionValue b = op ((a b)⁻¹) • τ.sectionValue b := by
-  rw [sectionValue, toEquiv_gauge_symm, mul_one, symm_apply_eq_smul]
+  rw [sectionValue, equivAt_gauge_symm_apply, mul_one, symm_apply_eq_smul]
 
 /-- The identity gauge leaves the trivialization unchanged. -/
 @[simp]
@@ -288,21 +304,26 @@ theorem gauge_gauge (a c : C(B, G)) : (τ.gauge a).gauge c = τ.gauge (c * a) :=
 
 /-- The transition gauge from `τ` to `υ`, evaluated on the section of `τ`. -/
 def transition : C(B, G) :=
-  ⟨fun b ↦ τ.toTrivialization.coordChange υ.toTrivialization b 1,
-    continuous_snd.comp (υ.homeomorph.continuous.comp
-      (τ.homeomorph.symm.continuous.comp (continuous_id.prodMk continuous_const)))⟩
+  ⟨fun b ↦ τ.toTrivialization.coordChange υ.toTrivialization b 1, by
+    simpa only [Function.comp_def, id_eq, homeomorph_symm_apply_eq, homeomorph_apply,
+      equivAt_apply, TotalSpace.eta, Trivialization.coordChange] using
+      continuous_snd.comp (υ.homeomorph.continuous.comp
+        (τ.homeomorph.symm.continuous.comp
+          (continuous_id.prodMk (continuous_const (y := (1 : G))))))⟩
 
 omit [IsTopologicalGroup G] in
 /-- Evaluate the target coordinate on the section of the reference. -/
 @[simp]
-theorem transition_apply (b : B) : τ.transition υ b = υ.toEquiv b (τ.sectionValue b) :=
-  congrArg (fun p ↦ (υ.toTrivialization p).2) (τ.homeomorph_symm_apply (b, 1))
+theorem transition_apply (b : B) : τ.transition υ b = υ.equivAt b (τ.sectionValue b) := by
+  have h := τ.homeomorph_symm_apply (b, 1)
+  rw [homeomorph_symm_apply_eq] at h
+  exact congrArg (fun p ↦ (υ.toTrivialization p).2) h
 
 /-- A trivialization is recovered from a reference by its transition gauge. -/
 @[simp]
 theorem gauge_transition : τ.gauge (τ.transition υ) = υ := by
   ext b p
-  rw [toEquiv_gauge, transition_apply, ← υ.map_smul,
+  rw [equivAt_gauge, transition_apply, ← υ.map_smul,
     ← τ.symm_apply_eq_smul, Equiv.symm_apply_apply]
 
 /-- The gauge changing a fixed reference to a trivialization is unique. -/
@@ -382,16 +403,16 @@ def pullback : GlobalTrivialization G ((⇑f) *ᵖ P) :=
 
 /-- Pullback reads the coordinate over the image base point. -/
 @[simp]
-theorem toEquiv_pullback (b : B') (p : ((⇑f) *ᵖ P) b) :
-    (τ.pullback f).toEquiv b p = τ.toEquiv (f b) p :=
+theorem equivAt_pullback (b : B') (p : ((⇑f) *ᵖ P) b) :
+    (τ.pullback f).equivAt b p = τ.equivAt (f b) p :=
   (rfl)
 
 /-- The selected section pulls back by composition on the base. -/
 @[simp]
 theorem sectionValue_pullback (b : B') : (τ.pullback f).sectionValue b = τ.sectionValue (f b) := by
-  apply ((τ.pullback f).toEquiv b).injective
-  exact ((τ.pullback f).toEquiv_sectionValue b).trans
-    ((τ.toEquiv_pullback f b _).trans (τ.toEquiv_sectionValue (f b))).symm
+  apply ((τ.pullback f).equivAt b).injective
+  exact ((τ.pullback f).equivAt_sectionValue b).trans
+    ((τ.equivAt_pullback f b _).trans (τ.equivAt_sectionValue (f b))).symm
 
 /-- Pullback preserves the reference transition map. -/
 @[simp]
@@ -421,7 +442,7 @@ def trivial (B G : Type*) [TopologicalSpace B] [Group G] [TopologicalSpace G] :
 
 /-- The canonical product trivialization has the identity group coordinate. -/
 @[simp]
-theorem toEquiv_trivial (b : B) (g : G) : (trivial B G).toEquiv b g = g :=
+theorem equivAt_trivial (b : B) (g : G) : (trivial B G).equivAt b g = g :=
   (rfl)
 
 /-- The canonical product trivialization selects the constant identity section. -/
