@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.WeakDeriv.Limit
 public import TauCeti.Analysis.Sobolev.WeakDeriv.Local
 public import TauCeti.MeasureTheory.Function.Lp.L1Convergence
 public import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
+public import TauCeti.Topology.EMetricSpace.Lipschitz
 
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
@@ -608,16 +609,10 @@ private theorem memLp_posPartAboveGradient (k : ℝ) (u : W1p mu Omega p) :
   MemLp.of_le (Lp.memLp (W1p.gradient u)) (aestronglyMeasurable_posPartAboveGradient k u)
     (Filter.Eventually.of_forall (norm_posPartAboveGradient_le k u))
 
-/-- The truncation `t ↦ (t - k)⁺` is `1`-Lipschitz. -/
-private theorem lipschitzWith_posPartAbove (k : ℝ) : LipschitzWith 1 (fun t : ℝ => max (t - k) 0) :=
-  LipschitzWith.of_dist_le_mul fun x y => by
-    simpa only [NNReal.coe_one, one_mul, dist_sub_right] using
-      MeasureTheory.Lp.lipschitzWith_pos_part.dist_le_mul (x - k) (y - k)
-
 /-- The pointwise truncation `(u - k)⁺` is in `Lᵖ` when `u` is and `k ≥ 0`. -/
 theorem W1p.memLp_posPartAbove {k : ℝ} (hk : 0 ≤ k) (u : W1p mu Omega p) :
     MemLp (fun x => max (W1p.value u x - k) 0) p (mu.restrict Omega) :=
-  (lipschitzWith_posPartAbove k).comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
+  (lipschitzWith_max_sub_const_zero k).comp_memLp (by simp [hk]) (Lp.memLp (W1p.value u))
 
 /-- Raising the level of an `Lᵖ` positive truncation preserves its `Lᵖ` membership. -/
 theorem W1p.memLp_posPartAbove_of_le (u : W1p mu Omega p) {k l : ℝ} (hkl : k ≤ l)
@@ -697,7 +692,7 @@ theorem W1p.hasWeakFDerivOn_posPartAbove (hp : p ≠ ∞) (k : ℝ) (u : W1p mu 
     (((Lp.memLp (W1p.gradient u)).mono_measure hres).integrable Fact.out).2.ne (by simp)
   simp only [← posPartAboveGradient_apply] at hconv2
   exact hasWeakFDerivOn_of_tendsto_lintegral_enorm_sub
-    ((locallyIntegrableOn_comp_value (lipschitzWith_posPartAbove k) u).mono_set hVΩ)
+    ((locallyIntegrableOn_comp_value (lipschitzWith_max_sub_const_zero k) u).mono_set hVΩ)
     (fun v => (hgradLoc v).mono_set hVΩ)
     (fun n => (hasWeakFDerivOn_posPartApprox_comp hp k (d n) u).mono hVΩ) hconv1
     (by simpa only [enorm_innerSL_sub, posPartAboveGradient] using hconv2)
