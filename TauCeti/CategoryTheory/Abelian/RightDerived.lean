@@ -5,13 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.Augment
 public import Mathlib.CategoryTheory.Abelian.RightDerived
 public import TauCeti.Algebra.Homology.HomotopyCategory.PreservesHomology
 public import TauCeti.CategoryTheory.Abelian.Injective.Resolution
 
 /-!
-# Additivity of right derived functors and commutation with exact functors
+# Additivity, commutation with exact functors, and dimension shifting for right derived functors
 
 Injective resolutions are additive after passing to the homotopy category: the sum of
 two lifts is a lift of the sum, and lifts of the same morphism are homotopic. Thus right
@@ -24,6 +23,8 @@ homology and `H` preserves homology and injective objects, then `RⁿF ⋙ G ≅
 
 The proof uses Mathlib's `InjectiveResolution.descHomotopy`, the uniqueness theorem for
 lifts between injective resolutions.
+
+## Dimension shifting
 
 For a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0` with `I` injective, an injective resolution of `Q`
 extends to one of `X` (`CategoryTheory.InjectiveResolution.ofShortExact`), which shifts the
@@ -117,57 +118,6 @@ resolutions shifts degrees by one, without the long exact sequence of right deri
 section DimensionShift
 
 open Limits
-
-namespace InjectiveResolution
-
-variable {S : ShortComplex C} (hS : S.ShortExact) [Injective S.X₂]
-  (R : InjectiveResolution S.X₃)
-
-omit [HasInjectiveResolutions C] in
-/-- For a short exact sequence `0 ⟶ X ⟶ I ⟶ Q ⟶ 0` with `I` injective, the injective resolution
-`X ⟶ I ⟶ R⁰ ⟶ R¹ ⟶ ⋯` of `X` obtained from an injective resolution `R` of `Q`. -/
-noncomputable def ofShortExact : InjectiveResolution S.X₁ where
-  cocomplex := R.cocomplex.augment (S.g ≫ R.ι₀) (by simp)
-  injective n := by cases n <;> dsimp <;> infer_instance
-  ι := (CochainComplex.fromSingle₀Equiv _ _).symm ⟨S.f, (S.zero_assoc _).trans zero_comp⟩
-  quasiIso := ⟨fun n => by
-    rcases n with _ | _ | n
-    · rw [CochainComplex.quasiIsoAt₀_iff, ShortComplex.quasiIso_iff_of_zeros]
-      · refine (ShortComplex.exact_and_mono_f_iff_of_iso ?_).2
-          ⟨(ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-            ({ τ₁ := 𝟙 _, τ₂ := 𝟙 _, τ₃ := R.ι₀ } :
-              S ⟶ ShortComplex.mk S.f (S.g ≫ R.ι₀) (by simp))).1 hS.exact, hS.mono_f⟩
-        exact ShortComplex.isoMk (Iso.refl _) (Iso.refl _) (Iso.refl _)
-          (by
-            dsimp
-            simp only [Category.id_comp]
-            -- `S.X₂` is the degree `0` object of the augmented complex only up to unfolding
-            -- `augment`, so `simp` can neither cancel `𝟙 S.X₂` nor rewrite the component
-            exact ((Category.comp_id _).trans (CochainComplex.fromSingle₀Equiv_symm_apply_f_zero
-              (C := R.cocomplex.augment (S.g ≫ R.ι₀) (by simp)) S.f _)).symm)
-          (by simp)
-      -- the differentials into and out of degree `0` vanish, between objects which are those of
-      -- the short complexes only up to unfolding `single₀` and `augment`
-      all_goals rfl
-    · rw [quasiIsoAt_iff_exactAt _ _ (CochainComplex.exactAt_succ_single_obj _ _),
-        HomologicalComplex.exactAt_iff' _ 0 1 2 (by simp) (by simp)]
-      have : Epi S.g := hS.epi_g
-      exact (ShortComplex.exact_iff_of_epi_of_isIso_of_mono
-        ({ τ₁ := S.g, τ₂ := 𝟙 _, τ₃ := 𝟙 _ } :
-          ShortComplex.mk (S.g ≫ R.ι₀) (R.cocomplex.d 0 1) (by simp) ⟶
-            ShortComplex.mk R.ι₀ (R.cocomplex.d 0 1) R.ι₀_comp_d)).2 R.exact_ι₀
-    · rw [quasiIsoAt_iff_exactAt _ _ (CochainComplex.exactAt_succ_single_obj _ _),
-        HomologicalComplex.exactAt_iff' _ (n + 1) (n + 2) (n + 3) (by simp) (by simp)]
-      exact R.exact_succ n⟩
-
-omit [HasInjectiveResolutions C] in
-/-- The complex of `R.ofShortExact hS` is that of `R`, augmented by `S.g ≫ R.ι₀ : I ⟶ R⁰`. -/
-@[simp]
-lemma ofShortExact_cocomplex :
-    (R.ofShortExact hS).cocomplex = R.cocomplex.augment (S.g ≫ R.ι₀) (by simp) :=
-  (rfl)
-
-end InjectiveResolution
 
 namespace Functor
 
