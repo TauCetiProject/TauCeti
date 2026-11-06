@@ -120,6 +120,49 @@ theorem card_add_card_le_card_add_card_biUnion_of_partialInjective
   simp only [inter_eq_right.mpr (subset_univ S), card_univ] at hι
   omega
 
+/-- Adjoining `hallDeficiency t` common dummy choices to every set of a family gives a family
+satisfying Hall's condition.  The definition of deficiency is exactly this condition. -/
+private theorem card_le_card_biUnion_disjSum_univ_hallDeficiency (t : ι → Finset α)
+    (S : Finset ι) :
+    #S ≤ #(S.biUnion fun i ↦ (t i).disjSum (univ : Finset (Fin (hallDeficiency t)))) := by
+  classical
+  have hbiUnion :
+      (S.biUnion fun i ↦ (t i).disjSum (univ : Finset (Fin (hallDeficiency t)))) =
+        (S.biUnion t).disjSum (if S.Nonempty then univ else ∅) := by
+    ext z
+    rcases z with a | b
+    · simp
+    · simp only [mem_biUnion, inr_mem_disjSum, mem_univ, and_true]
+      by_cases hS : S.Nonempty
+      · exact ⟨fun _ ↦ by simp [hS], fun _ ↦ hS⟩
+      · refine ⟨fun h ↦ (hS h).elim, fun h ↦ ?_⟩
+        simp [hS] at h
+  by_cases hS : S.Nonempty
+  · simp only [hbiUnion, card_disjSum, hS, ↓reduceIte, card_univ, Fintype.card_fin]
+    have hle := card_sub_card_biUnion_le_hallDeficiency t S
+    omega
+  · rw [not_nonempty_iff_eq_empty.mp hS]
+    exact Nat.zero_le _
+
+omit [DecidableEq α] in
+/-- An injective map into `α ⊕ Fin d` sends at most `d` indices to the `Fin d` summand. -/
+private theorem card_sdiff_filter_exists_inl_le {d : ℕ} (g : ι → α ⊕ Fin d)
+    [DecidableEq ι] [DecidablePred fun i ↦ ∃ a, g i = Sum.inl a] (hg : Injective g) :
+    #(univ \ univ.filter fun i ↦ ∃ a, g i = Sum.inl a) ≤ d := by
+  set D : Finset ι := univ.filter fun i ↦ ∃ a, g i = Sum.inl a
+  have hright (i : (univ \ D : Finset ι)) : ∃ b, g i = Sum.inr b := by
+    have hiD : (i : ι) ∉ D := (mem_sdiff.mp i.2).2
+    cases hgi : g i with
+    | inl a => exact False.elim (hiD (mem_filter.mpr ⟨mem_univ _, ⟨a, hgi⟩⟩))
+    | inr b => exact ⟨b, rfl⟩
+  let r : (univ \ D : Finset ι) → Fin d := fun i ↦ Classical.choose (hright i)
+  have hgr (i : (univ \ D : Finset ι)) : g i = Sum.inr (r i) := Classical.choose_spec (hright i)
+  have hr : Injective r := by
+    intro i j hij
+    apply Subtype.ext
+    exact hg (by simpa only [hgr i, hgr j, Sum.inr.injEq] using hij)
+  simpa only [Fintype.card_coe, Fintype.card_fin] using Fintype.card_le_of_injective r hr
+
 /-- A finite family has a partial injective choice and a set attaining equality in the
 deficiency bound.  The choice function is defined only on the selected set `D`. -/
 theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
@@ -129,29 +172,10 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
       #D = Fintype.card ι - hallDeficiency t := by
   classical
   let d := hallDeficiency t
-  -- Adjoin `d` common dummy choices.  The definition of deficiency is exactly the Hall
-  -- condition for this augmented family.
+  -- Adjoin `d` common dummy choices; Hall's condition holds for the augmented family.
   let augmented : ι → Finset (α ⊕ Fin d) := fun i ↦ (t i).disjSum univ
-  have hbiUnion (S : Finset ι) :
-      S.biUnion augmented =
-        (S.biUnion t).disjSum (if S.Nonempty then univ else ∅) := by
-    ext z
-    rcases z with a | b
-    · simp [augmented]
-    · simp only [mem_biUnion, augmented, inr_mem_disjSum, mem_univ, and_true]
-      by_cases hS : S.Nonempty
-      · exact ⟨fun _ ↦ by simp [hS], fun _ ↦ hS⟩
-      · refine ⟨fun h ↦ (hS h).elim, fun h ↦ ?_⟩
-        simp [hS] at h
-  have hHall : ∀ S : Finset ι, #S ≤ #(S.biUnion augmented) := by
-    intro S
-    by_cases hS : S.Nonempty
-    · simp only [hbiUnion, card_disjSum, hS, ↓reduceIte, card_univ, Fintype.card_fin]
-      have hle := card_sub_card_biUnion_le_hallDeficiency t S
-      have hle' : #S - #(S.biUnion t) ≤ d := hle
-      omega
-    · rw [not_nonempty_iff_eq_empty.mp hS]
-      exact Nat.zero_le _
+  have hHall : ∀ S : Finset ι, #S ≤ #(S.biUnion augmented) :=
+    card_le_card_biUnion_disjSum_univ_hallDeficiency t
   obtain ⟨g, hg, hgt⟩ :=
     (Finset.all_card_le_biUnion_card_iff_existsInjective' augmented).mp hHall
   -- Keep precisely the indices at which the full augmented choice uses an original value.
@@ -170,21 +194,7 @@ theorem exists_partialInjective_card_add_card_eq_card_add_card_biUnion
     rw [hgf i] at hi
     simpa [augmented] using hi
   -- The omitted indices inject into the `d` dummy choices.
-  have hcompl : #(univ \ D) ≤ d := by
-    have hright (i : (univ \ D : Finset ι)) : ∃ b, g i = Sum.inr b := by
-      have hiD : (i : ι) ∉ D := (mem_sdiff.mp i.2).2
-      cases hgi : g i with
-      | inl a => exact False.elim (hiD (mem_filter.mpr ⟨mem_univ _, ⟨a, hgi⟩⟩))
-      | inr b => exact ⟨b, rfl⟩
-    let r : (univ \ D : Finset ι) → Fin d := fun i ↦
-      Classical.choose (hright i)
-    have hgr (i : (univ \ D : Finset ι)) :
-        g i = Sum.inr (r i) := Classical.choose_spec (hright i)
-    have hr : Injective r := by
-      intro i j hij
-      apply Subtype.ext
-      exact hg (by simpa only [hgr i, hgr j, Sum.inr.injEq] using hij)
-    simpa only [Fintype.card_coe, Fintype.card_fin] using Fintype.card_le_of_injective r hr
+  have hcompl : #(univ \ D) ≤ d := card_sdiff_filter_exists_inl_le g hg
   have hsplit := card_sdiff_add_card_inter univ D
   have hDuniv : univ ∩ D = D := inter_eq_right.mpr (subset_univ D)
   rw [hDuniv, card_univ] at hsplit
