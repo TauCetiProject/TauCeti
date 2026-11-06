@@ -65,7 +65,9 @@ private theorem extend_testFunction_iteratedGradient (hsub : Omega ≤ Omega') (
     iteratedGradientTestFunctionLp_apply_ae (mu := mu) p k
       (TestFunction.monoCLM ℝ phi : 𝓓(Omega', ℝ))
 
-private theorem norm_testFunction_mono (hsub : Omega ≤ Omega') (k : ℕ)
+/-- Extension by zero from `Ω` to a larger open set `Ω'` preserves the `W^{k,p}` norm of a test
+function. -/
+theorem Wkp.norm_ofTestFunctionₗ_monoCLM (hsub : Omega ≤ Omega') (k : ℕ)
     (phi : 𝓓(Omega, ℝ)) :
     ‖Wkp.ofTestFunctionₗ (mu := mu) (Omega := Omega') (p := p) k
         (TestFunction.monoCLM ℝ phi)‖ =
@@ -107,6 +109,19 @@ private theorem norm_testFunction_mono (hsub : Omega ≤ Omega') (k : ℕ)
         (p := p) (k + 2) (TestFunction.monoCLM ℝ phi)),
         norm_nonneg (Wkp.ofTestFunctionₗ (mu := mu) (p := p) (k + 2) phi)]
 
+/-- The restriction to `Ω` of the `W^{k,p}(Ω')` element of a test function is represented on `Ω`
+by that test function. -/
+theorem Wkp.value_restrictL_ofTestFunctionₗ_ae (hsub : Omega ≤ Omega') (k : ℕ)
+    (phi : 𝓓(Omega', ℝ)) :
+    (Wkp.value k (Wkp.restrictL hsub k (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi)) : E → ℝ)
+      =ᵐ[mu.restrict Omega] phi := by
+  have hmono : ae (mu.restrict (Omega : Set E)) ≤ ae (mu.restrict (Omega' : Set E)) :=
+    ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hsub) le_rfl)
+  filter_upwards [Wkp.value_restrictL_ae hsub k
+      (Wkp.ofTestFunctionₗ (mu := mu) (p := p) k phi),
+    (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono hmono] with x h1 h2
+  rw [h1, Wkp.value_ofTestFunctionₗ, h2]
+
 /-- Extension by zero to a larger open set, as a linear isometry of zero-boundary
 Sobolev spaces. This preserves the full norm at every order, including at `p = ∞`. -/
 def Wkp0.extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ) :
@@ -116,7 +131,8 @@ def Wkp0.extendByZeroₗᵢ (hsub : Omega ≤ Omega') (k : ℕ) :
     (TestFunction.monoCLM ℝ).toLinearMap).extendOfIsometry
     (Wkp0.denseRange_ofTestFunctionₗ k) (fun phi => by
       simpa only [LinearMap.comp_apply, ContinuousLinearMap.coe_coe, ← Submodule.norm_coe,
-        Wkp0.coe_ofTestFunctionₗ] using norm_testFunction_mono (mu := mu) (p := p) hsub k phi)
+        Wkp0.coe_ofTestFunctionₗ] using
+          Wkp.norm_ofTestFunctionₗ_monoCLM (mu := mu) (p := p) hsub k phi)
 
 /-- A test function extends to the same test function on the larger domain. -/
 @[simp]

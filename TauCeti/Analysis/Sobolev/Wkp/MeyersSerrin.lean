@@ -79,28 +79,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-/-- Extension by zero from `U` to `Ω` preserves the `W^{k,p}` norm of a test function. -/
-private theorem norm_ofTestFunctionₗ_monoCLM {U : Opens E} (hUO : U ≤ Omega) (k : ℕ)
-    (phi : 𝓓(U, ℝ)) :
-    ‖ofTestFunctionₗ (mu := mu) (p := p) k (TestFunction.monoCLM ℝ phi : 𝓓(Omega, ℝ))‖ =
-      ‖ofTestFunctionₗ (mu := mu) (p := p) k phi‖ := by
-  have h := (Wkp0.extendByZeroₗᵢ (mu := mu) (p := p) hUO k).norm_map
-    (Wkp0.ofTestFunctionₗ k phi)
-  rwa [Wkp0.extendByZeroₗᵢ_ofTestFunctionₗ, ← Submodule.norm_coe, ← Submodule.norm_coe,
-    Wkp0.coe_ofTestFunctionₗ, Wkp0.coe_ofTestFunctionₗ] at h
-
-/-- The restriction to `U` of the `W^{k,p}(Ω)` element of a test function is represented on `U`
-by that test function. -/
-private theorem value_restrictL_ofTestFunctionₗ_ae {U : Opens E} (hUO : U ≤ Omega) (k : ℕ)
-    (phi : 𝓓(Omega, ℝ)) :
-    (value k (restrictL hUO k (ofTestFunctionₗ (mu := mu) (p := p) k phi)) : E → ℝ)
-      =ᵐ[mu.restrict U] phi := by
-  have hmono : ae (mu.restrict (U : Set E)) ≤ ae (mu.restrict (Omega : Set E)) :=
-    ae_mono (Measure.restrict_mono (SetLike.coe_subset_coe.mpr hUO) le_rfl)
-  filter_upwards [value_restrictL_ae hUO k (ofTestFunctionₗ (mu := mu) (p := p) k phi),
-    (testFunctionLp_apply_ae (mu := mu) p phi).filter_mono hmono] with x h1 h2
-  rw [h1, value_ofTestFunctionₗ, h2]
-
 /-- The Leibniz estimate makes the test functions `ζ ψ n`, extended by zero from `U` to `Ω`, a
 Cauchy sequence in `W^{k,p}(Ω)` whenever the restrictions of the `ψ n` to `U` are Cauchy in
 `W^{k,p}(U)`. -/
@@ -119,7 +97,7 @@ private theorem cauchySeq_ofTestFunctionₗ_monoCLM_mul {U : Opens E} (hUO : U �
       ofTestFunctionₗ k (TestFunction.monoCLM ℝ (PhiU m) : 𝓓(Omega, ℝ))‖ ≤
         2 ^ (k + 1) * M * ‖r n - r m‖ := by
     intro n m
-    rw [← map_sub, ← map_sub, norm_ofTestFunctionₗ_monoCLM hUO]
+    rw [← map_sub, ← map_sub, norm_ofTestFunctionₗ_monoCLM hUO k]
     refine norm_ofTestFunctionₗ_le_of_eqOn_mul k hzeta hM0 hM (r n - r m)
       (f := fun x => psi n x - psi m x)
       ((((psi n).contDiff.sub (psi m).contDiff).of_le (by simp)).contDiffOn) ?_ _
@@ -212,7 +190,7 @@ private theorem exists_tendsto_ofTestFunctionₗ_mul (hp : p ≠ ⊤) {zeta : E 
   have hPhi : ∀ n x, Phi n x = zeta x * psi n x := fun n x => by
     simp [Phi, PhiU, hUO]
   obtain ⟨v, hv⟩ := cauchySeq_tendsto_of_complete
-    (cauchySeq_ofTestFunctionₗ_monoCLM_mul hUO hzeta k hM0 hM psi PhiU (fun n x => rfl)
+    (cauchySeq_ofTestFunctionₗ_monoCLM_mul hUO hzeta k hM0 hM psi PhiU (fun n x => by simp [PhiU])
       hpsi.cauchySeq)
   exact ⟨v, Phi, fun n x hx => by rw [hPhi, hx, zero_mul],
     ae_eq_mul_of_tendsto_ofTestFunctionₗ hUO hKV k u v psi Phi hPhi hpsi hv, hv⟩
@@ -230,9 +208,8 @@ theorem exists_mem_wkp0Submodule_value_ae_eq_mul (hp : p ≠ ⊤) {zeta : E → 
   exact ⟨v, (wkp0Submodule mu Omega p k).isClosed.mem_of_tendsto hlim
     (Eventually.of_forall fun n => ofTestFunctionₗ_mem_wkp0Submodule k (Phi n)), hval⟩
 
-/-- The `Lᵖ` limit of the partial sums of the corrections `ζ j ψ j - ζ j u` is their pointwise
-limit `f - u`, where the partial sums of `ψ j` and `ζ j` are eventually `f` and `1` at each point
-of `Ω`. -/
+/-- The value of `∑' j, (Ψ j - b j)`, where `b j` has value `ζ j u`, is a.e. `f - u` on `Ω`,
+provided the partial sums of `Ψ j` and `ζ j` are eventually `f` and `1` at each point of `Ω`. -/
 private theorem ae_value_tsum_sub_eq {k : ℕ} (u : Wkp mu Omega p k) (zeta : ℕ → E → ℝ)
     (Psi : ℕ → 𝓓(Omega, ℝ)) (b : ℕ → Wkp mu Omega p k) (f : E → ℝ)
     (hb : ∀ j, (value k (b j) : E → ℝ) =ᵐ[mu.restrict Omega] fun x => zeta j x * value k u x)
