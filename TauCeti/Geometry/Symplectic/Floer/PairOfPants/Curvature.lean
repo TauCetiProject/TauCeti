@@ -440,9 +440,10 @@ private theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1
   exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
 
 /-- The cylinder-coordinate half of the energy identity over a rectangle of an end: over the strip
-`[a₁, b₁] × [-1/2, 1/2)` of the part `±s > 1/2` of the end coordinates, the pulled-back Floer
-energy is the symplectic area, plus the Hamiltonian boundary terms, minus the integrated
-curvature. -/
+`[a₁, b₁] × [-1/2, 1/2)`, contained in an open set `U` on which the end sign times the first
+coordinate is positive and whose image under the end chart lies in the real thrice-punctured
+sphere, the pulled-back Floer energy is the symplectic area, plus the Hamiltonian boundary terms,
+minus the integrated curvature. -/
 private theorem integral_floerEnergyDensity_endChart_rect (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
