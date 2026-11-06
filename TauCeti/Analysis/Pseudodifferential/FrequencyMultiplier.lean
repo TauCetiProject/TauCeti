@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Pseudodifferential.Quantization
-public import TauCeti.Analysis.Pseudodifferential.Symbol
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.SpecialFunctions.JapaneseBracket.Deriv
 
 /-!
