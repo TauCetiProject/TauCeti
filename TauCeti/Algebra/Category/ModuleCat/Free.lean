@@ -12,6 +12,10 @@ public import Mathlib.LinearAlgebra.Isomorphisms
 public import TauCeti.LinearAlgebra.FreeModule.Filtration
 public import TauCeti.LinearAlgebra.FreeModule.PID
 
+import Mathlib.Algebra.Category.ModuleCat.AB
+import Mathlib.CategoryTheory.Abelian.GrothendieckAxioms.Colim
+import Mathlib.CategoryTheory.Filtered.Final
+
 /-!
 # Freeness of sequential colimits of modules
 
@@ -59,8 +63,6 @@ injective. -/
 theorem injective_ι_app_of_isColimit (hc : IsColimit c)
     (hF : ∀ j, Function.Injective (F.map (homOfLE (Nat.le_succ j))).hom) (j : ℕ) :
     Function.Injective (c.ι.app j).hom := by
-  have : PreservesFilteredColimitsOfSize.{0, 0} (forget (ModuleCat.{u} R)) :=
-    preservesSmallestFilteredColimits_of_preservesFilteredColimits _
   -- Every transition map is a composite of the successive ones.
   have hmap {i k : ℕ} (hik : i ≤ k) : Function.Injective (F.map (homOfLE hik)).hom := by
     induction k, hik using Nat.le_induction with
@@ -68,10 +70,11 @@ theorem injective_ι_app_of_isColimit (hc : IsColimit c)
     | succ k hik ih =>
       rw [← homOfLE_comp hik (Nat.le_succ k), F.map_comp, ModuleCat.hom_comp, LinearMap.coe_comp]
       exact (hF k).comp ih
-  intro x y hxy
-  obtain ⟨k, f, g, hfg⟩ := Concrete.isColimit_exists_of_rep_eq F hc x y hxy
-  obtain rfl : g = f := Subsingleton.elim _ _
-  exact hmap (leOfHom g) hfg
+  have (i k : ℕ) (φ : i ⟶ k) : Mono (F.map φ) :=
+    (ModuleCat.mono_iff_injective _).2 (hmap (leOfHom φ))
+  -- Module categories satisfy AB5, so legs of filtered colimits of monomorphisms are mono.
+  have := AB5OfSize_shrink.{0, 0, u, u} (ModuleCat.{u} R)
+  exact (ModuleCat.mono_iff_injective _).1 (hc.mono_ι_app_of_isFiltered j)
 
 /-- **A sequential colimit of free modules with free cokernels is free.** Let `F₀ → F₁ → ⋯` be a
 sequence of modules with injective transition maps `φⱼ`, such that `F₀` and every cokernel
