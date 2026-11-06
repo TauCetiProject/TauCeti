@@ -278,7 +278,7 @@ embeddings whose images have the homotopy extension property, and let `f₀ : X�
 `f₁ : X₁ ≃ₕ Y₁` be homotopy equivalences with `j ∘ f₀ = f₁ ∘ i`. Given a left homotopy inverse `g₀`
 of `f₀` together with a homotopy `H₀ : g₀ ∘ f₀ ≃ id`, there is a left homotopy inverse `g₁` of
 `f₁` with `g₁ ∘ j = i ∘ g₀`, together with a homotopy `H₁ : g₁ ∘ f₁ ≃ id` with
-`H₁ (t, i x) = i (H₀ (t, x))`. -/
+`H₁ (t, i x) = i (H₀ (t, x))`; `g₁` is also a right homotopy inverse of `f₁`. -/
 theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbedding
     {X₀ X₁ Y₀ Y₁ : Type u} [TopologicalSpace X₀] [TopologicalSpace X₁] [TopologicalSpace Y₀]
     [TopologicalSpace Y₁] {i : C(X₀, X₁)} {j : C(Y₀, Y₁)} (hi : Topology.IsEmbedding i)
@@ -287,7 +287,8 @@ theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbe
     (hf : ∀ x, j (f₀ x) = f₁ (i x)) (g₀ : C(Y₀, X₀))
     (H₀ : (g₀.comp f₀.toFun).Homotopy (ContinuousMap.id X₀)) :
     ∃ (g₁ : C(Y₁, X₁)) (H₁ : (g₁.comp f₁.toFun).Homotopy (ContinuousMap.id X₁)),
-      (∀ y, g₁ (j y) = i (g₀ y)) ∧ ∀ (t : I) (x : X₀), H₁ (t, i x) = i (H₀ (t, x)) := by
+      (∀ y, g₁ (j y) = i (g₀ y)) ∧ (∀ (t : I) (x : X₀), H₁ (t, i x) = i (H₀ (t, x))) ∧
+        (f₁.toFun.comp g₁).Homotopic (ContinuousMap.id Y₁) := by
   -- Transport `f₀`, `g₀` and `H₀` to the images of `i` and `j`.
   let eX := hi.toHomeomorph
   let eY := hj.toHomeomorph
@@ -306,9 +307,9 @@ theorem HasHomotopyExtensionProperty.exists_inverse_extending_homotopy_of_isEmbe
       map_zero_left := fun a => by simp [g₀', h₀, hX]
       map_one_left := fun a => by simp }
   have hH₀' (p : I × Set.range i) : H₀' p = eX (H₀ (p.1, eX.symm p.2)) := rfl
-  obtain ⟨g₁, H₁, hg₁, hH₁, -⟩ :=
+  obtain ⟨g₁, H₁, hg₁, hH₁, hf₁g₁⟩ :=
     hiA.exists_inverse_extending_homotopy hjB f₁ h₀ hh₀ g₀' H₀'
-  refine ⟨g₁, H₁, fun y => ?_, fun t x => ?_⟩
+  refine ⟨g₁, H₁, fun y => ?_, fun t x => ?_, hf₁g₁⟩
   · rw [hg₁ ⟨j y, y, rfl⟩]
     simp [g₀', eX, eY]
   · rw [hH₁ t ⟨i x, x, rfl⟩, hH₀']

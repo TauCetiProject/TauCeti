@@ -29,7 +29,8 @@ through any of its slices `X × {t}`: the interval deforms linearly onto the poi
 the two ends of a cylinder are seen to induce isomorphisms on homology.
 
 It also records that a left homotopy inverse of a homotopy equivalence is automatically a right
-homotopy inverse.
+homotopy inverse, and that a map with both a left and a right homotopy inverse is a homotopy
+equivalence.
 
 ## Main declarations
 
@@ -43,6 +44,8 @@ homotopy inverse.
   `X ≃ₕ X × [a, b]`, with homotopy inverse the projection.
 * `ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun_homotopic_id`: a left
   homotopy inverse of a homotopy equivalence is a right homotopy inverse.
+* `ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id`: a right homotopy inverse of a
+  map which also has a left homotopy inverse is a two-sided homotopy inverse.
 -/
 
 public section
@@ -143,5 +146,18 @@ theorem _root_.ContinuousMap.HomotopyEquiv.toFun_comp_homotopic_id_of_comp_toFun
     (hg.comp (ContinuousMap.Homotopic.refl e.invFun))
   simp only [ContinuousMap.comp_id, ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₁ h₂
   exact (h₁.trans h₂).trans e.right_inv
+
+/-- **A map with a left and a right homotopy inverse is a homotopy equivalence.** If
+`g : Y → X` has a right homotopy inverse `f`, with `g ∘ f ≃ id`, and a left homotopy inverse `k`,
+with `k ∘ g ≃ id`, then also `f ∘ g ≃ id`, since `f ≃ k ∘ g ∘ f ≃ k`. -/
+theorem _root_.ContinuousMap.Homotopic.comp_homotopic_id_of_comp_homotopic_id {f k : C(X, Y)}
+    {g : C(Y, X)} (hgf : (g.comp f).Homotopic (ContinuousMap.id X))
+    (hkg : (k.comp g).Homotopic (ContinuousMap.id Y)) :
+    (f.comp g).Homotopic (ContinuousMap.id Y) := by
+  have h₁ := (ContinuousMap.Homotopic.refl k).comp hgf
+  have h₂ := hkg.comp (ContinuousMap.Homotopic.refl f)
+  rw [ContinuousMap.comp_id] at h₁
+  rw [ContinuousMap.id_comp, ContinuousMap.comp_assoc] at h₂
+  exact ((h₂.symm.trans h₁).comp (ContinuousMap.Homotopic.refl g)).trans hkg
 
 end TauCeti
