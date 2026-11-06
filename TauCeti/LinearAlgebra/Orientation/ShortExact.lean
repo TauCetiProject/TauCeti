@@ -86,48 +86,32 @@ private theorem exists_section (hg : Function.Surjective g) :
   g.exists_rightInverse_of_surjective (LinearMap.range_eq_top.2 hg)
 
 /-- The splittings along two sections `s` and `s'` differ by an automorphism of `U × W` of
-positive determinant: it is the square of the automorphism comparing either splitting with the
-splitting along the midpoint section. -/
-private theorem det_splitEquiv_trans_symm_pos (hf : Function.Injective f)
-    (hfg : Function.Exact f g) {s s' : W →ₗ[K] V} (hs : g ∘ₗ s = LinearMap.id)
-    (hs' : g ∘ₗ s' = LinearMap.id) :
+positive determinant: it is the block triangular map `(u, w) ↦ (u + φ w, w)`, where
+`f ∘ φ = s - s'`, so its determinant is `1` (`LinearEquiv.det_skewProd`). -/
+private theorem det_splitEquiv_trans_symm_pos [FiniteDimensional K U] [FiniteDimensional K W]
+    (hf : Function.Injective f) (hfg : Function.Exact f g) {s s' : W →ₗ[K] V}
+    (hs : g ∘ₗ s = LinearMap.id) (hs' : g ∘ₗ s' = LinearMap.id) :
     0 < LinearMap.det
       ((splitEquiv hf hfg s hs).trans (splitEquiv hf hfg s' hs').symm : (U × W) →ₗ[K] U × W) := by
-  have h2 : (2 : K) ≠ 0 := two_ne_zero
-  set m : W →ₗ[K] V := (2 : K)⁻¹ • (s + s')
-  have hm : g ∘ₗ m = LinearMap.id := by
-    rw [LinearMap.comp_smul, LinearMap.comp_add, hs, hs', ← two_smul K LinearMap.id, smul_smul,
-      inv_mul_cancel₀ h2, one_smul]
+  -- `s - s'` takes values in `ker g = range f`, so it lifts along `f` through a retraction `r`.
+  obtain ⟨r, hr⟩ := f.exists_leftInverse_of_injective (LinearMap.ker_eq_bot.2 hf)
   have hgs (w : W) : g (s w) = w := LinearMap.congr_fun hs w
   have hgs' (w : W) : g (s' w) = w := LinearMap.congr_fun hs' w
-  have hgm (w : W) : g (m w) = w := LinearMap.congr_fun hm w
-  have hgf (u : U) : g (f u) = 0 := congr_fun hfg.comp_eq_zero u
-  -- Both comparisons with the midpoint splitting are the same automorphism `ψ`.
-  have hψ : (splitEquiv hf hfg s hs).trans (splitEquiv hf hfg m hm).symm =
-      (splitEquiv hf hfg m hm).trans (splitEquiv hf hfg s' hs').symm := by
+  have hφ (w : W) : f (r (s w - s' w)) = s w - s' w := by
+    obtain ⟨u, hu⟩ := (hfg (s w - s' w)).1 (by rw [map_sub, hgs, hgs', sub_self])
+    rw [← hu, ← LinearMap.comp_apply r f, hr, LinearMap.id_apply]
+  set σ : (U × W) ≃ₗ[K] U × W := ((LinearEquiv.prodComm K W U).symm.trans
+    ((LinearEquiv.refl K W).skewProd (LinearEquiv.refl K U) (r ∘ₗ (s - s')))).trans
+      (LinearEquiv.prodComm K W U)
+  have hσ : (splitEquiv hf hfg s hs).trans (splitEquiv hf hfg s' hs').symm = σ := by
     ext1 x
-    simp only [LinearEquiv.trans_apply]
-    rw [LinearEquiv.symm_apply_eq]
-    set y := (splitEquiv hf hfg s' hs').symm (splitEquiv hf hfg m hm x)
-    have hy : splitEquiv hf hfg s' hs' y = splitEquiv hf hfg m hm x :=
-      LinearEquiv.apply_symm_apply _ _
-    rw [splitEquiv_apply, splitEquiv_apply] at hy
-    have hy₂ : y.2 = x.2 := by simpa [hgf, hgs', hgm] using congrArg g hy
-    rw [splitEquiv_apply, splitEquiv_apply, hy₂]
-    have hfy : f y.1 = f x.1 + m x.2 - s' x.2 := by rw [← hy, hy₂]; abel
-    rw [hfy]
-    have hmx : m x.2 + m x.2 = s x.2 + s' x.2 := by
-      simp only [m, LinearMap.smul_apply, LinearMap.add_apply, ← add_smul]
-      rw [← two_mul, mul_inv_cancel₀ h2, one_smul]
-    rw [← sub_eq_zero]
-    calc f x.1 + s x.2 - (f x.1 + m x.2 - s' x.2 + m x.2)
-        = s x.2 + s' x.2 - (m x.2 + m x.2) := by abel
-      _ = 0 := by rw [hmx, sub_self]
-  rw [show (splitEquiv hf hfg s hs).trans (splitEquiv hf hfg s' hs').symm =
-      ((splitEquiv hf hfg s hs).trans (splitEquiv hf hfg m hm).symm).trans
-        ((splitEquiv hf hfg m hm).trans (splitEquiv hf hfg s' hs').symm) by ext1 x; simp,
-    LinearEquiv.coe_trans, LinearMap.det_comp, ← hψ]
-  exact mul_self_pos.2 (LinearEquiv.isUnit_det' _).ne_zero
+    rw [LinearEquiv.trans_apply, LinearEquiv.symm_apply_eq]
+    simp only [σ, splitEquiv_apply, LinearEquiv.trans_apply, LinearEquiv.symm_prodComm,
+      LinearEquiv.prodComm_apply, LinearEquiv.skewProd_apply, LinearEquiv.refl_apply,
+      Prod.fst_swap, Prod.snd_swap, LinearMap.comp_apply, LinearMap.sub_apply, map_add, hφ]
+    abel
+  rw [hσ, ← LinearEquiv.coe_det, LinearEquiv.det_conj, LinearEquiv.det_skewProd]
+  simp
 
 private theorem map_splitEquiv_eq [FiniteDimensional K U] [FiniteDimensional K W]
     (hf : Function.Injective f) (hfg : Function.Exact f g) {s s' : W →ₗ[K] V}

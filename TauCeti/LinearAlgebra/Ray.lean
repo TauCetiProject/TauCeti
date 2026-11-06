@@ -44,6 +44,13 @@ theorem SameRay.trans_of_ne_zero (hxy : SameRay R x y) (hyz : SameRay R y z) (hy
     SameRay R x z :=
   hxy.trans hyz fun h ↦ absurd h hy
 
+/-- Scaling a ray by a unit commutes with transporting it along a linear equivalence. -/
+@[simp]
+theorem Module.Ray.map_units_smul {N : Type*} [AddCommMonoid N] [Module R N] (e : M ≃ₗ[R] N)
+    (u : Rˣ) (v : Module.Ray R M) : Module.Ray.map e (u • v) = u • Module.Ray.map e v := by
+  induction v using Module.Ray.ind with | h v hv =>
+    simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
+
 end Semiring
 
 section Neg
@@ -55,13 +62,6 @@ variable {R M : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
 theorem Module.Ray.units_smul_neg (u : Rˣ) (v : Module.Ray R M) : u • -v = -(u • v) := by
   induction v using Module.Ray.ind with | h v hv =>
     simp only [neg_rayOfNeZero, smul_rayOfNeZero, Units.smul_def, smul_neg]
-
-/-- Scaling a ray by a unit commutes with transporting it along a linear equivalence. -/
-@[simp]
-theorem Module.Ray.map_units_smul {N : Type*} [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N)
-    (u : Rˣ) (v : Module.Ray R M) : Module.Ray.map e (u • v) = u • Module.Ray.map e v := by
-  induction v using Module.Ray.ind with | h v hv =>
-    simp only [smul_rayOfNeZero, Module.Ray.map_apply, Units.smul_def, map_smul]
 
 end Neg
 

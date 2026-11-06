@@ -67,57 +67,17 @@ open Module
 variable {K X Y T : Type*} [Field K] [LinearOrder K] [IsStrictOrderedRing K]
   [AddCommGroup X] [Module K X] [AddCommGroup Y] [Module K Y] [AddCommGroup T] [Module K T]
 
-namespace LinearMap
-
-variable (α : X →ₗ[K] T) (β : Y →ₗ[K] T)
-
-omit [LinearOrder K] [IsStrictOrderedRing K] in
-/-- Precomposing `(η, ξ) ↦ β η - α ξ` with the exchange of factors gives the negative of
-`(ξ, η) ↦ α ξ - β η`. -/
-theorem coprod_neg_comp_prodComm :
-    β.coprod (-α) ∘ₗ (LinearEquiv.prodComm K X Y).toLinearMap = -α.coprod (-β) := by
-  rw [coprod_comp_prodComm]
-  ext <;> simp
-
-omit [LinearOrder K] [IsStrictOrderedRing K] in
-/-- The exchange of factors carries the fibre product of `α` and `β` onto that of `β` and `α`. -/
-theorem map_prodComm_ker_coprod_neg :
-    (ker (α.coprod (-β))).map (LinearEquiv.prodComm K X Y : X × Y →ₗ[K] Y × X) =
-      ker (β.coprod (-α)) := by
-  rw [Submodule.map_equiv_eq_comap_symm, ← ker_comp]
-  ext z
-  simp only [mem_ker, coe_comp, LinearEquiv.coe_coe, Function.comp_apply]
-  have h := LinearMap.congr_fun (coprod_neg_comp_prodComm β α) z
-  simp only [coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.neg_apply] at h
-  rw [show (LinearEquiv.prodComm K X Y).symm z = LinearEquiv.prodComm K Y X z from rfl, h,
-    neg_eq_zero]
-
-omit [LinearOrder K] [IsStrictOrderedRing K] in
-/-- Transversality of `α` and `β` is symmetric. -/
-theorem surjective_coprod_neg_comm (h : Function.Surjective (α.coprod (-β))) :
-    Function.Surjective (β.coprod (-α)) := by
-  intro z
-  obtain ⟨w, hw⟩ := h (-z)
-  refine ⟨LinearEquiv.prodComm K X Y w, ?_⟩
-  have hw' := LinearMap.congr_fun (coprod_neg_comp_prodComm α β) w
-  simp only [coe_comp, LinearEquiv.coe_coe, Function.comp_apply, LinearMap.neg_apply] at hw'
-  rw [hw', hw, neg_neg]
-
-end LinearMap
-
 namespace Orientation
 
 variable [FiniteDimensional K X] [FiniteDimensional K Y] [FiniteDimensional K T]
   {α : X →ₗ[K] T} {β : Y →ₗ[K] T} {x y t q : ℕ}
 
 omit [LinearOrder K] [IsStrictOrderedRing K] [FiniteDimensional K T] in
-/-- For transverse `α` and `β`, the fibre product has dimension `dim X + dim Y - dim T`. -/
+/-- `LinearMap.finrank_ker_coprod_neg_add` in terms of the dimensions `x`, `y`, `t` and `q`. -/
 private theorem finrank_ker_coprod_neg (h : Function.Surjective (α.coprod (-β)))
     (hx : finrank K X = x) (hy : finrank K Y = y) (ht : finrank K T = t) (hq : q + t = x + y) :
     finrank K (LinearMap.ker (α.coprod (-β))) = q := by
-  have hrank := (LinearMap.exact_subtype_ker_map (α.coprod (-β))).finrank_eq_add
-    (Submodule.injective_subtype _) h
-  rw [Module.finrank_prod, hx, hy, ht] at hrank
+  have := LinearMap.finrank_ker_coprod_neg_add h
   omega
 
 /-- The orientation of the fibre product `Q = {(ξ, η) | α ξ = β η}` of two transverse linear maps
@@ -198,7 +158,7 @@ theorem map_fiberProduct_comm :
   -- to `σ` on the fibre products and induces the negation of `T` on the quotients.
   have hnat := map_shortExact (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _)
     h hQ ht (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h' σ
-    (LinearEquiv.prodComm K X Y) (LinearEquiv.neg K) (by ext <;> rfl)
+    (LinearEquiv.prodComm K X Y) (LinearEquiv.neg K) (by ext <;> simp [σ])
     (by rw [LinearMap.coprod_neg_comp_prodComm]; ext <;> simp) oq ot
   have hfin : (finCongr (add_comm y x)).trans (finCongr hq.symm) =
       finCongr (hq.trans (add_comm x y)).symm := by
@@ -213,7 +173,7 @@ theorem map_fiberProduct_comm :
   have hdef := shortExact_fiberProduct h' oy ox ot hy hx ht (hq.trans (add_comm x y)) hQ'
   rw [reindex_units_smul] at hdef
   have hinv (v : Orientation K (Y × X) (Fin (q + t))) : (-1 : Kˣ) ^ t • (-1 : Kˣ) ^ t • v = v := by
-    rw [smul_smul, ← mul_pow, neg_one_mul, neg_neg, one_pow, one_smul]
+    simp [smul_smul, ← mul_pow]
   rw [← (shortExact_inj_left (Submodule.injective_subtype _) (LinearMap.exact_subtype_ker_map _) h'
     hQ' ht ot), shortExact_units_smul_left, hdef,
     ← hinv (shortExact _ _ h' (map (Fin q) σ oq) ot _ ht), ← hnat]
@@ -221,6 +181,6 @@ theorem map_fiberProduct_comm :
   -- The two exponents differ by the even number `2 * (x * t)`.
   congr 1
   rw [show x * y + t * (x + y) + t + x * t = t + (y * t + x * y) + 2 * (x * t) by ring,
-    pow_add _ _ (2 * (x * t)), pow_mul, neg_one_sq, one_pow, mul_one]
+    pow_add _ _ (2 * (x * t)), (even_two_mul _).neg_one_pow, mul_one]
 
 end Orientation

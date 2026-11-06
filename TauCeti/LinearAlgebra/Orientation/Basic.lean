@@ -70,17 +70,9 @@ theorem Orientation.reindex_trans {ι' ι'' : Type*} (e : ι ≃ ι') (e' : ι' 
   induction x using Module.Ray.ind with | h v hv =>
     simp only [reindex_apply, AlternatingMap.domDomCongr_trans]
 
-end CommSemiring
-
-section CommRing
-
-variable {R : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
-  {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*}
-
 /-- Transporting an orientation along a linear equivalence commutes with scaling by a unit. -/
 @[simp]
-theorem Orientation.map_units_smul {N : Type*} [AddCommGroup N] [Module R N] (e : M ≃ₗ[R] N)
-    (u : Rˣ) (x : Orientation R M ι) :
+theorem Orientation.map_units_smul (e : M ≃ₗ[R] N) (u : Rˣ) (x : Orientation R M ι) :
     Orientation.map ι e (u • x) = u • Orientation.map ι e x :=
   Module.Ray.map_units_smul _ u x
 
@@ -90,6 +82,13 @@ theorem Orientation.reindex_units_smul {ι' : Type*} (e : ι ≃ ι') (u : Rˣ)
     (x : Orientation R M ι) :
     Orientation.reindex R M e (u • x) = u • Orientation.reindex R M e x :=
   Module.Ray.map_units_smul _ u x
+
+end CommSemiring
+
+section CommRing
+
+variable {R : Type*} [CommRing R] [PartialOrder R] [IsStrictOrderedRing R]
+  {M : Type*} [AddCommGroup M] [Module R M] {ι : Type*}
 
 /-- Integral unit signs act on orientations by retaining or reversing the ray. -/
 theorem Orientation.intCast_units_smul_eq_ite (u : ℤˣ) (o : Orientation R M ι) :
@@ -165,10 +164,10 @@ theorem Orientation.map_linearEquiv_neg [FiniteDimensional R M] (x : Orientation
     ext; simp
   have hdet : LinearEquiv.det (LinearEquiv.neg R : M ≃ₗ[R] M) = (-1 : Rˣ) ^ finrank R M := by
     ext
-    rw [LinearEquiv.coe_det, hneg, LinearMap.det_smul, LinearMap.det_id, mul_one,
-      Units.val_pow_eq_pow_val, Units.val_neg, Units.val_one]
+    rw [LinearEquiv.coe_det, hneg, LinearMap.det_smul]
+    simp
   rw [hdet]
-  exact inv_eq_of_mul_eq_one_right (by rw [← mul_pow, neg_one_mul, neg_neg, one_pow])
+  exact inv_eq_of_mul_eq_one_right (by simp [← mul_pow])
 
 open Classical in
 /-- The sign distinguishing two orientations reconstructs the second from the first when
