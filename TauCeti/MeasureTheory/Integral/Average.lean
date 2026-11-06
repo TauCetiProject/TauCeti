@@ -68,6 +68,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   average over it is at most the integral of the extended norm over it.
 * `TauCeti.setLAverage_enorm_sub_setAverage_le`: the mean oscillation of `f` about its
   average is at most twice its mean oscillation about any constant.
+* `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
+  set of finite measure, `1 ≤ p < ∞`.
 * `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
   `TauCeti.setLAverage_enorm_add_sub_le`: the mean oscillation is infinite off integrability on a
   set of finite measure, ignores constants and is subadditive.
@@ -228,6 +230,43 @@ theorem setLAverage_enorm_sub_setAverage_le (hf : IntegrableOn f s μ) (c : F) :
         rw [setLAverage_eq μ (fun x => ‖f x - c‖ₑ + ⨍⁻ y in s, ‖f y - c‖ₑ ∂μ) s,
           lintegral_add_right _ measurable_const, setLIntegral_const,
           ENNReal.add_div, ENNReal.mul_div_cancel_right h0 htop, ← setLAverage_eq, two_mul]
+
+/-- The `Lᵖ` deviation of `f` from its average over a set `s` of finite measure is at most twice
+its `Lᵖ` deviation from any constant `c`: `‖f - f_s‖_{Lᵖ(s)} ≤ 2 ‖f - c‖_{Lᵖ(s)}` for
+`1 ≤ p < ∞`. -/
+theorem eLpNorm_sub_setAverage_le (hs : μ s ≠ ∞) {p : ℝ≥0∞} (hp : 1 ≤ p) (hp' : p ≠ ∞)
+    (c : F) :
+    eLpNorm (fun x ↦ f x - ⨍ y in s, f y ∂μ) p (μ.restrict s) ≤
+      2 * eLpNorm (fun x ↦ f x - c) p (μ.restrict s) := by
+  rcases eq_or_ne (μ s) 0 with h0 | h0
+  · simp [Measure.restrict_eq_zero.2 h0]
+  set N := eLpNorm (fun x ↦ f x - c) p (μ.restrict s)
+  rcases eq_or_ne N ∞ with hN | hN
+  · simp [hN]
+  -- A finite `Lᵖ` deviation from `c` makes `f` integrable on `s`, so `f_s - c` is the average of
+  -- `f - c`, which Hölder's inequality bounds by `N`.
+  have : IsFiniteMeasure (μ.restrict s) := isFiniteMeasure_restrict.2 hs
+  have hg : MemLp (fun x ↦ f x - c) p (μ.restrict s) :=
+    memLp_iff.2 (lt_top_iff_ne_top.2 hN)
+  have hfi : IntegrableOn f s μ :=
+    ((hg.integrable hp).add (integrable_const c)).congr (.of_forall fun x ↦ by simp)
+  have heq : (⨍ y in s, f y ∂μ) - c = ⨍ y in s, (f y - c) ∂μ := by
+    rw [setAverage_fun_sub hfi (integrableOn_const hs), setAverage_const h0 hs]
+  have hcancel : μ s ^ (-(p.toReal)⁻¹) * μ s ^ (1 / p.toReal) = 1 := by
+    rw [← ENNReal.rpow_add _ _ h0 hs, one_div, neg_add_cancel, ENNReal.rpow_zero]
+  calc eLpNorm (fun x ↦ f x - ⨍ y in s, f y ∂μ) p (μ.restrict s)
+      = eLpNorm ((fun x ↦ f x - c) - fun _ ↦ ⨍ y in s, (f y - c) ∂μ) p (μ.restrict s) := by
+        congr 1
+        ext x
+        simp [← heq]
+    _ ≤ N + eLpNorm (fun _ ↦ ⨍ y in s, (f y - c) ∂μ) p (μ.restrict s) := eLpNorm_sub_le hp
+    _ = N + ‖⨍ y in s, (f y - c) ∂μ‖ₑ * μ s ^ (1 / p.toReal) := by
+        rw [eLpNorm_const _ (zero_lt_one.trans_le hp).ne' (by simpa using h0),
+          Measure.restrict_apply_univ]
+    _ ≤ N + μ s ^ (-(p.toReal)⁻¹) * N * μ s ^ (1 / p.toReal) := by
+        gcongr
+        exact enorm_setAverage_le hp hp'
+    _ = 2 * N := by rw [mul_comm _ N, mul_assoc, hcancel, mul_one, two_mul]
 
 omit [NormedSpace ℝ F] [CompleteSpace F] in
 /-- On a set of finite measure, the average of `‖f - b‖ₑ` is infinite for an `f` that is a.e.
