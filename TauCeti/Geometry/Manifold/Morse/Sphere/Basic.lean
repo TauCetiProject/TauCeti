@@ -432,6 +432,7 @@ theorem infinite_setOf_sphereHeight_eq_zero (hE : 3 ≤ finrank ℝ E) (v : sphe
       mem_sphere_zero_iff_norm.2 ((Submodule.norm_coe _).trans
         (mem_sphere_zero_iff_norm.1 y.2))⟩ : sphere (0 : E) 1))
     (fun y z h ↦ Subtype.ext (Subtype.ext congr($h.1))) fun y ↦ ?_
+  rw [mem_ofPred_eq, sphereHeight_apply]
   exact Submodule.mem_orthogonal_singleton_iff_inner_left.1 (y : (ℝ ∙ (v : E))ᗮ).2
 
 end Sphere

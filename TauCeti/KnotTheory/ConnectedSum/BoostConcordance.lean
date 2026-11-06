@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.KnotTheory.ConnectedSum.Position
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Arc.Straightening
 
 /-!
 # Boosting concordances into connected-sum position
@@ -50,10 +51,16 @@ with any third knot in connected-sum position are then concordant
 (`TauCeti.SmoothCircleEmbedding.concordant_connectedSum_left_of_eventually_apply_eq` and its right
 version).
 
+A concordance which agrees with the standard strip only to first order along the arc `{-i} × ℝ`
+can first be made the standard strip near that arc
+(`TauCeti.SmoothEmbedding.Concordance.exists_eventuallyEq_prodMap_of_mfderiv_eq`), so it too gives
+a concordance in connected-sum position
+(`TauCeti.SmoothCircleEmbedding.exists_concordance_isConnectedSumPosition_of_mfderiv_eq`).
+
 Not formalized here: that every concordance between knots in connected-sum position can be
-replaced by one which is the standard strip near the arc `{-i} × ℝ`. In `Sⁿ × ℝ` with `n ≥ 3` this
-moves the image of that arc onto the straight line `{-v} × ℝ` and the tangent direction of the
-annulus along it onto that of the strip, by isotopy extension.
+replaced by one which agrees with the standard strip to first order along the arc `{-i} × ℝ`. In
+`Sⁿ × ℝ` with `n ≥ 3` this moves the image of that arc onto the straight line `{-v} × ℝ` and the
+tangent direction of the annulus along it onto that of the strip, by isotopy extension.
 
 Both concordances used here, `TauCeti.SmoothEmbedding.Concordance.boost` and
 `TauCeti.SmoothCircleEmbedding.boostConcordance`, are defined in
@@ -68,6 +75,9 @@ of a concordance into connected-sum position.
 * `TauCeti.SmoothCircleEmbedding.exists_concordance_isConnectedSumPosition`: two knots in
   connected-sum position joined by a concordance standard near that arc are joined by a
   concordance in connected-sum position.
+* `TauCeti.SmoothCircleEmbedding.exists_concordance_isConnectedSumPosition_of_mfderiv_eq`: the
+  same for a concordance which is standard only to first order along the arc, after straightening
+  it near the arc (`TauCeti.SmoothEmbedding.Concordance.exists_eventuallyEq_prodMap_of_mfderiv_eq`).
 * `TauCeti.SmoothCircleEmbedding.concordant_connectedSum_left_of_eventually_apply_eq`,
   `TauCeti.SmoothCircleEmbedding.concordant_connectedSum_right_of_eventually_apply_eq`: varying one
   summand of a connected sum through such a concordance gives concordant connected sums.
@@ -162,6 +172,22 @@ theorem exists_concordance_isConnectedSumPosition (hK : IsConnectedSumPosition �
   exact ⟨(boostConcordance ι a K).trans ((F.boost ι a).trans (boostConcordance ι a K').symm),
     (hK.boostConcordance ha).trans
       (hpos.trans (hK'.boostConcordance ha).symm)⟩
+
+/-- **Concordances in connected-sum position from concordances standard to first order along an
+arc.** Two knots in connected-sum position for `ι`, joined by a concordance which agrees with the
+standard strip `(z, t) ↦ (ι z, t)` to first order along the whole arc `{-i} × ℝ`, are joined by a
+concordance in connected-sum position. -/
+theorem exists_concordance_isConnectedSumPosition_of_mfderiv_eq (hK : IsConnectedSumPosition ι K)
+    (hK' : IsConnectedSumPosition ι K') {F : Concordance K K'} {z₀ : Circle}
+    (hz₀ : (z₀ : ℂ) = -Complex.I) (h₀ : ∀ t, F (z₀, t) = (greatCircle (n := n) ι z₀, t))
+    (h₁ : ∀ t, mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ)) F (z₀, t) =
+      mfderiv ((𝓡 1).prod 𝓘(ℝ)) ((𝓡 n).prod 𝓘(ℝ))
+        (Prod.map (greatCircle (n := n) ι) _root_.id) (z₀, t)) :
+    ∃ G : Concordance K K', G.IsConnectedSumPosition ι := by
+  have him : (z₀ : ℂ).im ≤ 0 := by simp [hz₀]
+  obtain ⟨G, hG, -⟩ := F.exists_eventuallyEq_prodMap_of_mfderiv_eq (greatCircle ι).contMDiff
+    (hK.eventuallyEq_greatCircle him) (hK'.eventuallyEq_greatCircle him) h₀ h₁ univ_mem
+  exact exists_concordance_isConnectedSumPosition hK hK' hz₀ hG
 
 /-- Varying the first summand of a connected sum through a concordance which is the standard strip
 near the arc `{-i} × ℝ` gives concordant connected sums. -/
