@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Combinatorics.DenseGraphLimits.Kernel.Integral
 import Mathlib.MeasureTheory.Measure.FiniteMeasure
+import TauCeti.MeasureTheory.Function.PosPart
 
 /-!
 # The cut norm of a symmetric kernel
@@ -571,17 +572,6 @@ theorem cutNorm_le_cutNormSigned (K : SymmKernel Ω μ) : cutNorm μ K ≤ cutNo
     (measurable_one.indicator hT) (indicator_one_mem_Icc_neg_one_one _)
       (indicator_one_mem_Icc_neg_one_one _)
 
-/-- A measurable `[-1,1]`-valued function is the difference of its positive and negative parts,
-two measurable `[0,1]`-valued functions. -/
-theorem exists_eq_sub_of_mem_Icc {u : Ω → ℝ} (hu : Measurable u)
-    (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) :
-    ∃ p n : Ω → ℝ, Measurable p ∧ Measurable n ∧ (∀ x, p x ∈ Icc (0 : ℝ) 1) ∧
-      (∀ x, n x ∈ Icc (0 : ℝ) 1) ∧ u = p - n :=
-  ⟨fun x => max (u x) 0, fun x => max (-u x) 0, hu.max measurable_const,
-    hu.neg.max measurable_const, fun x => ⟨le_max_right _ _, max_le (hu1 x).2 zero_le_one⟩,
-    fun x => ⟨le_max_right _ _, max_le (by linarith [(hu1 x).1]) zero_le_one⟩,
-    funext fun x => (max_zero_sub_max_neg_zero_eq_self (u x)).symm⟩
-
 /-- Splitting a `[-1,1]`-valued left test function into its positive and negative parts bounds a
 test integral against a `[0,1]`-valued right one by twice the cut norm. -/
 private theorem abs_testIntegral_le_two_mul_cutNorm (K : SymmKernel Ω μ) {u v : Ω → ℝ}
@@ -589,7 +579,7 @@ private theorem abs_testIntegral_le_two_mul_cutNorm (K : SymmKernel Ω μ) {u v 
     (hu1 : ∀ x, u x ∈ Icc (-1 : ℝ) 1) (hv1 : ∀ y, v y ∈ Icc (0 : ℝ) 1) :
     |K.testIntegral μ u v| ≤ 2 * cutNorm μ K := by
   have h01 : Icc (0 : ℝ) 1 ⊆ Icc (-1) 1 := Icc_subset_Icc (by norm_num) le_rfl
-  obtain ⟨p, n, hp, hn, hp1, hn1, rfl⟩ := exists_eq_sub_of_mem_Icc hu hu1
+  obtain ⟨p, n, hp, hn, hp1, hn1, rfl⟩ := hu.exists_eq_sub_of_mem_Icc hu1
   rw [K.testIntegral_sub_left μ
     (K.integrable_testIntegrand μ hp hv (fun x => h01 (hp1 x)) fun y => h01 (hv1 y))
     (K.integrable_testIntegrand μ hn hv (fun x => h01 (hn1 x)) fun y => h01 (hv1 y)), two_mul]
@@ -602,7 +592,7 @@ theorem cutNormSigned_le_four_mul_cutNorm (K : SymmKernel Ω μ) :
     cutNormSigned μ K ≤ 4 * cutNorm μ K := by
   refine cutNormSigned_le μ fun u v hu hv hu1 hv1 => ?_
   have h01 : Icc (0 : ℝ) 1 ⊆ Icc (-1) 1 := Icc_subset_Icc (by norm_num) le_rfl
-  obtain ⟨p, n, hp, hn, hp1, hn1, rfl⟩ := exists_eq_sub_of_mem_Icc hv hv1
+  obtain ⟨p, n, hp, hn, hp1, hn1, rfl⟩ := hv.exists_eq_sub_of_mem_Icc hv1
   rw [K.testIntegral_sub_right μ (K.integrable_testIntegrand μ hu hp hu1 fun y => h01 (hp1 y))
     (K.integrable_testIntegrand μ hu hn hu1 fun y => h01 (hn1 y))]
   linarith [abs_sub (K.testIntegral μ u p) (K.testIntegral μ u n),
