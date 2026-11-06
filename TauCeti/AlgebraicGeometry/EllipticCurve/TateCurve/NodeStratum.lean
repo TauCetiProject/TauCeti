@@ -298,7 +298,8 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   have : Nonempty S := ⟨⟨s, rfl⟩⟩
   have hne (v : S) : (v : K) ≠ 0 := norm_ne_zero_iff.mp (by rw [v.2]; exact hs0.ne')
   let U : S → Kˣ := fun v ↦ Units.mk0 v (hne v)
-  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := v.2
+  have hUv (v : S) : ((U v : Kˣ) : K) = v := Units.val_mk0 _
+  have hU (v : S) : ‖((U v : Kˣ) : K)‖ = ‖s‖ := by rw [hUv]; exact v.2
   have hU₁ (v : S) : ‖1 - ((U v : Kˣ) : K)‖ = 1 :=
     norm_one_sub_of_norm_lt_one ((hU v).trans_lt hs)
   have hqU (v : S) : ‖(q : K)‖ ≤ ‖((U v : Kˣ) : K)‖ ^ 2 := by rw [hU v]; exact hqs
@@ -337,11 +338,11 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   have hF : ContractingWith ‖s‖₊ (fun v : S ↦ (⟨tateNodeStep q (U v) s, hmem v⟩ : S)) := by
     refine ⟨by rwa [← NNReal.coe_lt_coe, coe_nnnorm, NNReal.coe_one],
       LipschitzWith.of_dist_le_mul fun v w ↦ ?_⟩
-    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm]
+    rw [Subtype.dist_eq, Subtype.dist_eq, dist_eq_norm, dist_eq_norm, coe_nnnorm, ← hUv v, ← hUv w]
     exact hlip v w
   exact ⟨U _, hU _, tateUniformizationX_add_tateUniformizationY_of_tateNodeStep_eq q (U _)
     (norm_ne_zero_iff.mp (by rw [hU₁]; exact one_ne_zero))
-    (congrArg Subtype.val (ContractingWith.fixedPoint_isFixedPt hF))⟩
+    ((congrArg Subtype.val (ContractingWith.fixedPoint_isFixedPt hF)).trans (hUv _).symm)⟩
 
 /-! ### Surjectivity onto the node stratum -/
 
