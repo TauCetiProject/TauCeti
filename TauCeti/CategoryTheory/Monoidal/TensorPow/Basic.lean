@@ -92,6 +92,18 @@ theorem tensorPowAddIso_succ_inv (X : C) (m n : ℕ) :
       X ◁ (tensorPowAddIso X m n).inv ≫ (α_ X (tensorPow X m) (tensorPow X n)).inv :=
   (rfl)
 
+/-- The block decomposition with a first block of length one removes its trailing tensor unit. -/
+theorem tensorPowAddIso_one_hom (X : C) (n : ℕ) :
+    (tensorPowAddIso X 1 n).hom = (ρ_ X).hom ▷ tensorPow X n := by
+  simp only [tensorPowAddIso_succ_hom, tensorPowAddIso_zero]
+  monoidal_coherence
+
+/-- The inverse block decomposition with a first block of length one inserts its tensor unit. -/
+theorem tensorPowAddIso_one_inv (X : C) (n : ℕ) :
+    (tensorPowAddIso X 1 n).inv = (ρ_ X).inv ▷ tensorPow X n := by
+  simp only [tensorPowAddIso_succ_inv, tensorPowAddIso_zero]
+  monoidal_coherence
+
 /-- The block decomposition with an empty second block is the right unitor. -/
 theorem tensorPowAddIso_zero_right_hom (X : C) (m : ℕ) :
     (tensorPowAddIso X m 0).hom =

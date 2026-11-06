@@ -129,11 +129,11 @@ theorem rightUnitor_hom_generator (F : TensorPowHom X M) :
 /-- Multiplicativity with a length-one block gives the recursion on components. -/
 theorem app_succ (F : TensorPowHom X M) (n : ℕ) :
     F.app (n + 1) = (F.generator ⊗ₘ F.app n) ≫ μ[M] := by
-  have h : (tensorPowAddIso X 1 n).hom = (ρ_ X).hom ▷ tensorPow X n := by
-    simp only [tensorPowAddIso_succ_hom, tensorPowAddIso_zero]
-    monoidal_coherence
   have he := congrArg (((ρ_ X).inv ▷ tensorPow X n) ≫ ·) (F.app_add 1 n)
-  simpa [h, generator, tensorHom_def, ← comp_whiskerRight, ← Category.assoc] using he
+  rw [tensorPowAddIso_one_hom, ← comp_whiskerRight_assoc, Iso.inv_hom_id,
+    id_whiskerRight, Category.id_comp] at he
+  rw [tensorHom_def, generator, comp_whiskerRight_assoc]
+  simpa only [tensorHom_def, Category.assoc] using he
 
 /-- Iterating the generator map recovers the original multiplicative family. -/
 @[simp]
