@@ -960,38 +960,23 @@ private theorem exists_reverseRowInsert_of_isTableauRows {k : ℕ} {rows : List 
         have hs' := hs
         rw [← hlast, sortedLE_append] at hs'
         exact fun z hz => hs'.2.2 z hz _ mem_cons_self
-      refine ⟨row.length - 1, by omega, ?_⟩
+      refine ⟨row.length - 1, by omega, by simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?],
+        by rw [reverseRowInsert_zero_cons, ← dropLastOfRow_zero_cons]; exact h.dropLastOfRow hk, ?_⟩
       by_cases hd : row.dropLast = []
       · -- a one-cell first row at a corner is the whole tableau
         obtain rfl := h.eq_nil_of_dropLast_eq_nil (by simpa using hk) hd
-        refine ⟨?_, ?_, ?_, ?_, ?_⟩
-        · simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?]
-        · simp [reverseRowInsert_zero_cons, hd]
+        refine ⟨?_, ?_, ?_⟩
         · simp only [reverseRowInsert_zero_cons, ite_eq_left hd, headD_nil]
           exact ⟨by simp, fun _ _ h₂ => absurd h₂ (by simp), fun _ h₂ _ => absurd h₂ (by simp)⟩
         · simpa [reverseRowInsert_zero_cons, hd] using congrArg (fun r => [r]) hlast
         · simp [reverseRowInsert_zero_cons, hd]
-      · have hk' : (rows.headD []).length ≤ row.dropLast.length := by
-          cases rows with
-          | nil => simp
-          | cons lower rows => simp at hk ⊢; omega
-        refine ⟨?_, ?_, ?_, ?_, ?_⟩
-        · simp [reverseRowInsert_zero_cons, getLast?_eq_getElem?]
-        · rw [reverseRowInsert_zero_cons, ite_eq_right hd]
-          refine isTableauRows_cons.mpr ⟨hd, sortedLE_iff_pairwise.mpr
-            ((sortedLE_iff_pairwise.mp hs).sublist (dropLast_sublist _)), ⟨hk', fun j hu hl => ?_⟩,
-            hrows⟩
-          rw [getElem_dropLast]
-          exact habove.getElem_lt j (by simp at hu; omega) hl
-        · rw [reverseRowInsert_zero_cons, ite_eq_right hd]
-          refine ⟨by simp, fun j h₁ h₂ => ?_, fun j h₂ hj => ?_⟩
-          · simp [getElem_dropLast]
-          · simp at h₂; omega
-        · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
-          rw [rowInsert_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle),
+      · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
+        refine ⟨⟨by simp, fun j h₁ h₂ => ?_, fun j h₂ hj => ?_⟩, ?_, ?_⟩
+        · simp [getElem_dropLast]
+        · simp at h₂; omega
+        · rw [rowInsert_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle),
             rowBump_of_forall_le _ _ hle, hlast]
-        · simp only [reverseRowInsert_zero_cons, ite_eq_right hd]
-          exact rowInsertIndex_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle)
+        · exact rowInsertIndex_cons_of_eq_none rows ((rowBump_snd_eq_none_iff _ _).mpr hle)
     | succ k =>
       obtain ⟨c, hc, hret, htab, hstep, hins, hidx⟩ := ih hrows (by simpa using hk)
       obtain ⟨d, hd, hx, hU, hstep'⟩ := reverseStep_reverseRowBump habove hstep
