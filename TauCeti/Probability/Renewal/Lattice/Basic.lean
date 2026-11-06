@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Basic
 public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.NumberTheory.FrobeniusNumber
+public import Mathlib.Probability.ConditionalProbability
 
 /-!
 # Lattice laws on the half-line and their maximal span
@@ -65,7 +66,7 @@ therefore no greatest one.
 public section
 
 open Set Filter
-open scoped NNReal ENNReal
+open scoped NNReal ENNReal ProbabilityTheory
 
 namespace MeasureTheory.Measure
 
@@ -92,6 +93,16 @@ theorem isLatticeSpan_iff :
 theorem isLattice_iff : μ.IsLattice ↔ ∃ a, μ.IsLatticeSpan a := Iff.rfl
 
 theorem IsLatticeSpan.isLattice (h : μ.IsLatticeSpan a) : μ.IsLattice := ⟨a, h⟩
+
+/-- An absolutely continuous measure retains every lattice span of the dominating measure. -/
+theorem IsLatticeSpan.of_absolutelyContinuous (h : μ.IsLatticeSpan a) {ν : Measure ℝ≥0}
+    (hν : ν ≪ μ) : ν.IsLatticeSpan a :=
+  ⟨h.pos, hν.ae_le h.ae_mem_range⟩
+
+/-- Conditioning on any event preserves a lattice span, including for null events. -/
+theorem IsLatticeSpan.cond (h : μ.IsLatticeSpan a) (s : Set ℝ≥0) :
+    μ[|s].IsLatticeSpan a :=
+  h.of_absolutelyContinuous ProbabilityTheory.cond_absolutelyContinuous
 
 /-- The span condition as a null set: `μ` gives no mass to the complement of `a ℕ`. -/
 theorem IsLatticeSpan.measure_compl_range (h : μ.IsLatticeSpan a) :
