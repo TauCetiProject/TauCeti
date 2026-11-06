@@ -16,6 +16,11 @@ This file proves that the regular parameters form a residual, and hence dense, s
 provided the universal linearization is surjective and the fixed-parameter linearization is
 Fredholm at every solution.
 
+The file also introduces regularity on a subset `U ⊆ E × Λ`, which asks for surjectivity only at
+the solutions lying in `U`. It reduces to regularity for `U = univ` and is monotone in `U`. The
+finite-dimensional measure-zero form of the theorem in
+`TauCeti.Analysis.Fredholm.LevelSet.FiniteDimensional` is stated for this variant.
+
 The proof globalizes the local statement in
 `TauCeti.Analysis.Fredholm.LevelSet.Parametric`. Around each solution, a level-set chart turns the
 projection to `Λ` into `TauCeti.levelSetParameterMap`; local Sard--Smale puts its non-regular
@@ -30,6 +35,9 @@ of Banach bundles require a separate bundle-level extension.
 
 * `TauCeti.IsRegularParameter`: every solution at a parameter has surjective fixed-parameter
   linearization.
+* `TauCeti.IsRegularParameterOn`: the variant restricted to the solutions in a set `U`; it is
+  `TauCeti.IsRegularParameter` for `U = univ` (`TauCeti.isRegularParameterOn_univ`) and is
+  monotone in `U` (`TauCeti.IsRegularParameterOn.mono`).
 * `TauCeti.isMeagre_setOf_not_isRegularParameter`: the non-regular parameters of a universal
   Fredholm equation form a meagre set.
 * `TauCeti.mem_residual_setOf_isRegularParameter`: the regular parameters form a residual set.
