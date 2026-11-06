@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Coalgebra.Comodule.Unitary.Basic
-public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Intertwiner
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
@@ -68,12 +67,33 @@ theorem adjoint_toLinearMap (f : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
     (hN : IsUnitary 𝕜 A N) :
     (f.adjoint hM hN).toLinearMap = f.toLinearMap.adjoint := (rfl)
 
-/-- The defining inner-product identity for the comodule adjoint. -/
-theorem inner_adjoint_left (f : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
+/-- The comodule adjoint acts as the ordinary Hilbert adjoint. -/
+@[simp]
+theorem coe_adjoint (f : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
+    (hN : IsUnitary 𝕜 A N) :
+    ⇑(f.adjoint hM hN) = LinearMap.adjoint f.toLinearMap := (rfl)
+
+/-- The defining inner-product identity for the comodule adjoint in the left slot. -/
+theorem adjoint_inner_left (f : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
     (hN : IsUnitary 𝕜 A N) (x : M) (y : N) :
     inner 𝕜 (f.adjoint hM hN y) x = inner 𝕜 y (f x) := by
-  simpa only [← coe_toLinearMap, adjoint_toLinearMap] using
+  simpa only [coe_adjoint, coe_toLinearMap] using
     LinearMap.adjoint_inner_left f.toLinearMap x y
+
+/-- The defining inner-product identity for the comodule adjoint in the right slot. -/
+theorem adjoint_inner_right (f : Hom 𝕜 A M N) (hM : IsUnitary 𝕜 A M)
+    (hN : IsUnitary 𝕜 A N) (x : M) (y : N) :
+    inner 𝕜 x (f.adjoint hM hN y) = inner 𝕜 (f x) y := by
+  simpa only [coe_adjoint, coe_toLinearMap] using
+    LinearMap.adjoint_inner_right f.toLinearMap x y
+
+/-- A comodule morphism is the adjoint of another exactly when it satisfies the
+adjoint inner-product identity. -/
+theorem eq_adjoint_iff (f : Hom 𝕜 A M N) (g : Hom 𝕜 A N M)
+    (hM : IsUnitary 𝕜 A M) (hN : IsUnitary 𝕜 A N) :
+    f = g.adjoint hN hM ↔ ∀ x y, inner 𝕜 (f x) y = inner 𝕜 x (g y) := by
+  rw [← toLinearMap_injective.eq_iff, adjoint_toLinearMap]
+  simpa only [coe_toLinearMap] using LinearMap.eq_adjoint_iff f.toLinearMap g.toLinearMap
 
 /-- Taking the comodule adjoint twice returns the original intertwiner. -/
 @[simp]
