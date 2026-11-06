@@ -138,6 +138,12 @@ theorem full_map_iff : (map φ f).Full ↔
     obtain ⟨m, hm, hmx⟩ := h a.back b.back g.hom g.map_val
     exact ⟨Functor.Elements.homMk m hmx, Functor.Elements.hom_ext hm⟩
 
+/-- An injective equivariant map for the same monoid induces a full functor, keeping every
+arrow label. -/
+theorem full_map_of_injective [MulAction M Y] (f : X →[M] Y)
+    (hf : Function.Injective f) : (map (MonoidHom.id M) f).Full :=
+  (full_map_iff _ _).2 fun x _ m h ↦ ⟨m, rfl, hf ((map_smul f m x).trans h)⟩
+
 section SingleObj
 
 variable {K : Type*} [Monoid K] (φ : K →* M) (x : X) (hx : ∀ k, φ k • x = x)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 public import Mathlib.Geometry.Manifold.Algebra.SMul
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
@@ -86,6 +87,43 @@ theorem preimage_sumOfConjugatesInnerSublevel {G E : Type*} [Group G] [Fintype G
   σ.toRepresentation.preimage_sumOfConjugatesInnerSublevel g c
 
 end ContRepresentation
+
+namespace OpenPartialHomeomorph
+
+/-- The inverse of a smooth equivariant chart, restricted to its invariant open target,
+is an equivariant open embedding and a local diffeomorphism. -/
+theorem exists_equivariant_symm_restrict
+    {𝕜 E H M G : Type*} [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+    [TopologicalSpace M] [ChartedSpace H M] [Monoid G] [MulAction G M]
+    (e : OpenPartialHomeomorph M E) (σ : ContRepresentation 𝕜 G E)
+    (hpres : ∀ g : G, ∀ v ∈ e.target, σ g v ∈ e.target) {n : ℕ∞ω}
+    (he : ContMDiffOn I 𝓘(𝕜, E) n e e.source)
+    (hei : ContMDiffOn 𝓘(𝕜, E) I n e.symm e.target)
+    (hequiv : ∀ g : G, ∀ z ∈ e.source,
+      g • z ∈ e.source ∧ e (g • z) = σ g (e z)) :
+    let B : TopologicalSpace.Opens E := ⟨e.target, e.open_target⟩
+    letI := σ.mulActionOpens B hpres
+    ∃ f : B →[G] M, (∀ v, f v = e.symm v) ∧ IsOpenEmbedding f ∧
+      IsLocalDiffeomorph 𝓘(𝕜, E) I n f := by
+  let B : TopologicalSpace.Opens E := ⟨e.target, e.open_target⟩
+  let : MulAction G B := σ.mulActionOpens B hpres
+  have hfequiv (g : G) (v : B) : e.symm (g • v : B) = g • e.symm v := by
+    apply e.injOn (e.map_target (g • v).2) (hequiv g _ (e.map_target v.2)).1
+    exact (e.right_inv (g • v).2).trans (by
+      rw [(hequiv g _ (e.map_target v.2)).2, e.right_inv v.2]
+      exact σ.val_mulActionOpens_smul B hpres g v)
+  let p : PartialDiffeomorph I 𝓘(𝕜, E) M E n :=
+    { toPartialEquiv := e.toPartialEquiv
+      open_source := e.open_source
+      open_target := e.open_target
+      contMDiffOn_toFun := he
+      contMDiffOn_invFun := hei }
+  refine ⟨⟨fun v ↦ e.symm v, hfequiv⟩, fun _ ↦ rfl, e.symm.isOpenEmbedding_restrict, ?_⟩
+  exact fun v ↦ (TauCeti.isLocalDiffeomorph_subtype_val v).comp
+    (hg := p.symm.isLocalDiffeomorphAt _ _ _ v.2)
+
+end OpenPartialHomeomorph
 
 namespace TauCeti
 

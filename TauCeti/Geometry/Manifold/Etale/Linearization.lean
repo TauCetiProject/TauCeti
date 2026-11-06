@@ -81,11 +81,13 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
   classical
   have := finite_hom_of_proper_source_target hp hs.isLocalHomeomorph x x
   have : Finite (Aut x) := .of_equiv _ (Aut.isoEquiv.trans (Groupoid.isoEquivHom x x)).symm
-  let ι := Fintype.ofFinite (Aut x)
-  let _ := ι
+  let ι : Fintype (Aut x) := Fintype.ofFinite (Aut x)
   obtain ⟨U, hxU, act, F₀, hsmul, hfix, hobj, hfull, hfaithful, hopen, harrow, hcentre⟩ :=
     exists_contMDiff_isotropy_action_of_proper_source_target hp hs ht hu hc x
-  let _ := act
+  -- Register the action and functor instances returned by the existential chart theorem.
+  let : MulAction (Aut x) U := act
+  have : F₀.Full := hfull
+  have : F₀.Faithful := hfaithful
   have hneigh : (Subtype.val : U → C) ⁻¹' s ∈ 𝓝 (⟨x, hxU⟩ : U) :=
     continuous_subtype_val.continuousAt.preimage_mem_nhds hsx
   obtain ⟨σ, e, c, hcpos, hxe, hezero, hes, het, -, he, hei, hequiv, -⟩ :=
@@ -97,45 +99,23 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
     rw [het] at hv ⊢
     rw [← Set.mem_preimage, σ.preimage_sumOfConjugatesInnerSublevel]
     exact hv
-  let actB := σ.mulActionOpens B hpres
-  let _ := actB
-  let f : B → U := fun v ↦ e.symm v
-  have hfinj : Function.Injective f := e.symm.isEmbedding_restrict.injective
-  have hfequiv (g : Aut x) (v : B) : f (g • v) = g • f v := by
-    apply e.injOn (e.map_target (g • v).2) (hequiv g _ (e.map_target v.2)).1
-    exact (e.right_inv (g • v).2).trans (by
-      rw [(hequiv g _ (e.map_target v.2)).2, e.right_inv v.2]
-      exact σ.val_mulActionOpens_smul B hpres g v)
-  let q : B →[Aut x] U := ⟨f, hfequiv⟩
-  let A := ActionCategory.map (MonoidHom.id (Aut x)) q
-  have : A.Full := (ActionCategory.full_map_iff _ _).2 fun v w g hg ↦
-    ⟨g, rfl, hfinj ((hfequiv g v).trans hg)⟩
+  let actB : MulAction (Aut x) B := σ.mulActionOpens B hpres
+  obtain ⟨f, hf, hfopen, hfdiff⟩ :=
+    e.exists_equivariant_symm_restrict σ hpres he hei hequiv
+  let A := ActionCategory.map (MonoidHom.id (Aut x)) f
+  have : A.Full := ActionCategory.full_map_of_injective f hfopen.injective
   have : A.Faithful := ActionCategory.faithful_map _ _ Function.injective_id
-  let _ := hfull
-  let _ := hfaithful
   let F := A ⋙ F₀
-  -- The inverse Bochner chart supplies the smooth object parametrization of the ball.
-  let p : PartialDiffeomorph I 𝓘(ℝ, E) U E n :=
-    { toPartialEquiv := e.toPartialEquiv
-      open_source := e.open_source
-      open_target := e.open_target
-      contMDiffOn_toFun := he
-      contMDiffOn_invFun := hei }
-  have hfdiff : IsLocalDiffeomorph 𝓘(ℝ, E) I n f := fun v ↦
-    (isLocalDiffeomorph_subtype_val v).comp
-      (hg := p.symm.isLocalDiffeomorphAt _ _ _ v.2)
-  have hfopen : IsOpenEmbedding f :=
-    .of_isEmbedding_isOpenMap e.symm.isEmbedding_restrict hfdiff.isOpenMap
   let z : B := ⟨0, hezero ▸ e.map_source hxe⟩
   have hfz : f z = ⟨x, hxU⟩ :=
-    (congrArg e.symm hezero).symm.trans (e.left_inv hxe)
+    (hf z).trans ((congrArg e.symm hezero).symm.trans (e.left_inv hxe))
   have hlabel (g : Aut x) (v : B) :
       (⟨_, _, F.map ((ActionCategory.totalEquiv (Aut x) B).symm (g, v)).hom⟩ :
         Quiver.Total C) =
       ⟨_, _, F₀.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, f v)).hom⟩ := by
     -- Label-source coordinates avoid dependent equality of the two target objects.
     exact congrArg F₀.toPrefunctor.mapTotal
-      (ActionCategory.mapTotal_totalEquiv_symm (MonoidHom.id (Aut x)) q g v)
+      (ActionCategory.mapTotal_totalEquiv_symm (MonoidHom.id (Aut x)) f g v)
   have hsmoothB := σ.contMDiffConstSMul_mulActionOpens B hpres n
   refine ⟨ι, σ, c, B, actB, (fun v ↦ (f v : C)), z, F, hcpos, het, rfl,
     congrArg Subtype.val hfz, σ.val_mulActionOpens_smul B hpres, hsmoothB,
@@ -143,10 +123,10 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
     (fun v ↦ (hfdiff v).comp (hg := isLocalDiffeomorph_subtype_val (f v))), ?_,
     (fun a ↦ (hobj (A.obj a)).trans
       (congrArg Subtype.val
-        (ActionCategory.back_map_obj (MonoidHom.id (Aut x)) q a))),
+        (ActionCategory.back_map_obj (MonoidHom.id (Aut x)) f a))),
     inferInstance, inferInstance, ?_, ?_, ?_⟩
   · rintro _ ⟨v, rfl⟩
-    exact hes (e.map_target v.2)
+    exact hes (hf v ▸ e.map_target v.2)
   · intro g
     simp only [hlabel]
     exact (hopen g).comp hfopen
