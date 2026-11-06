@@ -118,4 +118,28 @@ theorem le_re_of_mem_spectrum_of_coercive (N : E →L[ℂ] E) {c : ℝ}
   rw [spectrum.mem_iff] at hz
   exact hz (by simpa [Algebra.algebraMap_eq_smul_one] using hunit.neg)
 
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **The quadratic form stays nonnegative under small perturbations.** If `κ ‖v‖² ≤ ⟪A v, v⟫`
+and `‖D - A‖ < κ / 2`, then `0 ≤ ⟪(D + t • id) v, v⟫` for every `-(κ / 2) < t`. -/
+theorem inner_add_smul_id_nonneg_of_norm_sub_lt {A D : F →L[ℝ] F} {κ t : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (htκ : -(κ / 2) < t)
+    (hD : ‖D - A‖ < κ / 2) (v : F) :
+    0 ≤ inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v := by
+  set B := D - A
+  have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := by
+    nlinarith [abs_le.1 (abs_real_inner_le_norm (B v) v), B.le_opNorm v, norm_nonneg v]
+  have h₂ : inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v =
+      inner ℝ (A v) v + inner ℝ (B v) v + t * ‖v‖ ^ 2 := by
+    simp only [B, _root_.add_apply, _root_.sub_apply, _root_.smul_apply,
+      ContinuousLinearMap.id_apply, inner_add_left, inner_sub_left, real_inner_smul_left,
+      real_inner_self_eq_norm_sq]
+    ring
+  rw [h₂]
+  nlinarith [hA v, sq_nonneg ‖v‖]
+
+end Real
+
 end ContinuousLinearMap
