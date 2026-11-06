@@ -56,6 +56,9 @@ level are handled simultaneously.
   compatible maps on the lower sublevel and on the discs.
 * `TauCeti.morseCellAttachmentProdDesc`: the map `I × (M_{c-ε} ∪_α ⨆ᵢ D^{k i}) → Y` induced by
   compatible maps on `I × M_{c-ε}` and on the cylinders `I × D^{k i}`.
+* `TauCeti.morseCellAttachmentIsoOfAttachingMap`: for two chart families whose attaching maps
+  agree strictly up to automorphisms `h i` of the disc pairs, the homeomorphism between their
+  attachments which is the identity on the lower sublevel and `h i` on the disc of `i`.
 * `TauCeti.morseCellComparison`: the comparison map `M_{c-ε} ∪_α ⨆ᵢ D^{k i} → M_{c+ε}`.
 
 ## Main results
@@ -432,6 +435,84 @@ theorem isClosedEmbedding_morseCellComparison [T2Space M] [Finite ι] (hfc : Con
     _ (hA.preimage (morseCellAttachmentCell φ k hk hε.le hball hf i).hom.2)
 
 end Attachment
+
+section Strict
+
+variable {M : Type u} [TopologicalSpace M] {n : ℕ} {ι : Type u} {f : M → ℝ} {c ε : ℝ}
+  (φ₀ φ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin n))) (k : ι → ℕ)
+  (hk : ∀ i, k i ≤ n) (hε : 0 ≤ ε)
+  (hball₀ : ∀ i, closedBall 0 √ε ⊆ (φ₀ i).target) (hball₁ : ∀ i, closedBall 0 √ε ⊆ (φ₁ i).target)
+  (hf₀ : ∀ i, ∀ y ∈ (φ₀ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ₀ i y j ^ 2)
+  (hf₁ : ∀ i, ∀ y ∈ (φ₁ i).source, f y = c + ∑ j, (if j.val < k i then -1 else 1) * φ₁ i y j ^ 2)
+  (h : ∀ i, TopCat.disk.{u} (k i) ≅ TopCat.disk.{u} (k i))
+  (h' : ∀ i, TopCat.diskBoundary.{u} (k i) ≅ TopCat.diskBoundary.{u} (k i))
+  (hh : ∀ i, (h' i).hom ≫ TopCat.diskBoundaryInclusion (k i) =
+    TopCat.diskBoundaryInclusion (k i) ≫ (h i).hom)
+  (hα : ∀ i, (φ₁ i).morseAttachingMap (hk i) hε (hball₁ i) (hf₁ i) =
+    (h' i).hom ≫ (φ₀ i).morseAttachingMap (hk i) hε (hball₀ i) (hf₀ i))
+
+/-- **Strict reattachment.** Let `φ₀` and `φ₁` be two families of normal-form charts with the same
+indices, and let `h i` be automorphisms of the discs `D^{k i}` restricting to automorphisms `h' i`
+of their boundary spheres. If the attaching maps agree strictly up to these automorphisms,
+`α₁ i = α₀ i ∘ h' i`, then the map which is the identity on the lower sublevel `M_{c-ε}` and `h i`
+on the disc of `i` is a homeomorphism `M_{c-ε} ∪_{α₁} ⨆ᵢ D^{k i} ≅ M_{c-ε} ∪_{α₀} ⨆ᵢ D^{k i}`
+(`TauCeti.morseCellAttachmentIncl_comp_morseCellAttachmentIsoOfAttachingMap_hom`,
+`TauCeti.morseCellAttachmentCell_comp_morseCellAttachmentIsoOfAttachingMap_hom`). Typically
+`h i` is an orthogonal map of `ℝ^{k i}`. -/
+def morseCellAttachmentIsoOfAttachingMap :
+    morseCellAttachment φ₁ k hk hε hball₁ hf₁ ≅ morseCellAttachment φ₀ k hk hε hball₀ hf₀ where
+  hom := morseCellAttachmentDesc φ₁ k hk hε hball₁ hf₁
+    (morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀)
+    (fun i ↦ (h i).hom ≫ morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i) fun i ↦ by
+      rw [hα, Category.assoc, morseAttachingMap_comp_morseCellAttachmentIncl,
+        reassoc_of% (hh i)]
+  inv := morseCellAttachmentDesc φ₀ k hk hε hball₀ hf₀
+    (morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁)
+    (fun i ↦ (h i).inv ≫ morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i) fun i ↦ by
+      have hα' : (φ₀ i).morseAttachingMap (hk i) hε (hball₀ i) (hf₀ i) =
+          (h' i).inv ≫ (φ₁ i).morseAttachingMap (hk i) hε (hball₁ i) (hf₁ i) := by
+        rw [hα, Iso.inv_hom_id_assoc]
+      have hh' : (h' i).inv ≫ TopCat.diskBoundaryInclusion (k i) =
+          TopCat.diskBoundaryInclusion (k i) ≫ (h i).inv := by
+        rw [Iso.inv_comp_eq, reassoc_of% (hh i), Iso.hom_inv_id, Category.comp_id]
+      rw [hα', Category.assoc, morseAttachingMap_comp_morseCellAttachmentIncl,
+        reassoc_of% hh']
+  hom_inv_id := morseCellAttachment_hom_ext φ₁ k hk hball₁ hf₁ hε (by simp) fun i ↦ by simp
+  inv_hom_id := morseCellAttachment_hom_ext φ₀ k hk hball₀ hf₀ hε (by simp) fun i ↦ by simp
+
+/-- The strict reattachment homeomorphism is the identity on the lower sublevel. -/
+@[reassoc (attr := simp)]
+theorem morseCellAttachmentIncl_comp_morseCellAttachmentIsoOfAttachingMap_hom :
+    morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁ ≫
+        (morseCellAttachmentIsoOfAttachingMap φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h h' hh hα).hom =
+      morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ :=
+  by simp [morseCellAttachmentIsoOfAttachingMap]
+
+/-- The strict reattachment homeomorphism is `h i` on the disc of `i`. -/
+@[reassoc (attr := simp)]
+theorem morseCellAttachmentCell_comp_morseCellAttachmentIsoOfAttachingMap_hom (i : ι) :
+    morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i ≫
+        (morseCellAttachmentIsoOfAttachingMap φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h h' hh hα).hom =
+      (h i).hom ≫ morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i :=
+  by simp [morseCellAttachmentIsoOfAttachingMap]
+
+/-- The inverse of the strict reattachment homeomorphism is the identity on the lower sublevel. -/
+@[reassoc (attr := simp)]
+theorem morseCellAttachmentIncl_comp_morseCellAttachmentIsoOfAttachingMap_inv :
+    morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ ≫
+        (morseCellAttachmentIsoOfAttachingMap φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h h' hh hα).inv =
+      morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁ :=
+  by simp [morseCellAttachmentIsoOfAttachingMap]
+
+/-- The inverse of the strict reattachment homeomorphism is `(h i)⁻¹` on the disc of `i`. -/
+@[reassoc (attr := simp)]
+theorem morseCellAttachmentCell_comp_morseCellAttachmentIsoOfAttachingMap_inv (i : ι) :
+    morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i ≫
+        (morseCellAttachmentIsoOfAttachingMap φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h h' hh hα).inv =
+      (h i).inv ≫ morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i :=
+  by simp [morseCellAttachmentIsoOfAttachingMap]
+
+end Strict
 
 section Deformation
 
