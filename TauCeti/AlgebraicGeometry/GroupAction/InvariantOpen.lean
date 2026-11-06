@@ -15,7 +15,7 @@ Let a group `G` act on a scheme `X` by automorphisms, `σ : G →* Aut X`. An op
 invariant when `(σ g)⁻¹ U = U` for every `g`. Then `G` acts on the sections `Γ(X, U)` by ring
 automorphisms through pullback along inverses, `g • a = (σ g⁻¹)^* a`, extending
 `AlgebraicGeometry.Scheme.globalSectionsMulSemiringAction` from `U = ⊤` to every invariant open
-(`AlgebraicGeometry.Scheme.sectionsMulSemiringAction_top_smul`). Restriction between invariant
+(`AlgebraicGeometry.Scheme.sectionsMulSemiringAction_top`). Restriction between invariant
 opens is equivariant, and the basic open of an invariant section is invariant.
 
 For an invariant affine open `U`, the action on `Γ(X, U)` is the one whose affine invariant quotient
@@ -83,7 +83,7 @@ end Scheme.Opens.IsInvariant
 variable (σ) in
 /-- **A group acting on a scheme acts on the sections over an invariant open**, by pullback along
 inverses: `g • a = (σ g⁻¹)^* a`. For `U = ⊤` this is `Scheme.globalSectionsMulSemiringAction`
-(`Scheme.sectionsMulSemiringAction_top_smul`). It is not an instance, since `σ` and the invariance
+(`Scheme.sectionsMulSemiringAction_top`). It is not an instance, since `σ` and the invariance
 proof do not occur in the type `Γ(X, U)`. -/
 @[instance_reducible]
 noncomputable def Scheme.sectionsMulSemiringAction {U : X.Opens} (hU : U.IsInvariant σ) :
@@ -118,12 +118,23 @@ lemma Scheme.sectionsMulSemiringAction_smul_def {U : X.Opens} (hU : U.IsInvarian
 
 /-- On global sections, the action on the sections over the invariant open `⊤` is the action
 `Scheme.globalSectionsMulSemiringAction` on global functions. -/
-lemma Scheme.sectionsMulSemiringAction_top_smul (g : G) (a : Γ(X, ⊤)) :
-    (letI := Scheme.sectionsMulSemiringAction σ (Scheme.Opens.IsInvariant.top σ); g • a) =
-      (letI := Scheme.globalSectionsMulSemiringAction σ; g • a) := by
-  rw [Scheme.sectionsMulSemiringAction_smul_def, Scheme.globalSectionsMulSemiringAction_smul_def]
-  -- The preimage of `⊤` under any morphism is `⊤` itself, by definition.
-  exact congr(($(Scheme.Hom.appLE_eq_app (f := (σ g⁻¹).asIso.hom) (U := ⊤))).hom a)
+lemma Scheme.sectionsMulSemiringAction_top :
+    Scheme.sectionsMulSemiringAction σ (Scheme.Opens.IsInvariant.top σ) =
+      Scheme.globalSectionsMulSemiringAction σ := by
+  have h (g : G) (a : Γ(X, ⊤)) :
+      (letI := Scheme.sectionsMulSemiringAction σ (Scheme.Opens.IsInvariant.top σ); g • a) =
+        (letI := Scheme.globalSectionsMulSemiringAction σ; g • a) := by
+    rw [Scheme.sectionsMulSemiringAction_smul_def,
+      Scheme.globalSectionsMulSemiringAction_smul_def]
+    -- The preimage of `⊤` under any morphism is `⊤` itself, by definition.
+    exact congr(($(Scheme.Hom.appLE_eq_app (f := (σ g⁻¹).asIso.hom) (U := ⊤))).hom a)
+  -- A `MulSemiringAction` is determined by its scalar multiplication; its other fields are proofs.
+  generalize Scheme.sectionsMulSemiringAction σ _ = A at h
+  generalize Scheme.globalSectionsMulSemiringAction σ = B at h
+  obtain ⟨A⟩ := A
+  obtain ⟨B⟩ := B
+  congr
+  exact DistribMulAction.ext (funext₂ h)
 
 /-- The automorphism `σ g` acts on the sections over an invariant open as `g⁻¹`. -/
 lemma Scheme.appLE_apply_eq_inv_smul {U : X.Opens} (hU : U.IsInvariant σ) (g : G)
