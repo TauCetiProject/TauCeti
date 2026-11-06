@@ -264,13 +264,10 @@ section Simple
 variable (k : Type u) [Field k] (m : ℕ) [NeZero m]
 
 omit [NeZero m] in
-/-- For `m ≥ 2`, every nonzero vector of `k^m` is the image of every other one under a
-determinant-one matrix. -/
-private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤ m)
-    (hv : v ≠ 0) (hw : w ≠ 0) :
-    ∃ g : Matrix.SpecialLinearGroup (Fin m) k,
-      (g : Matrix (Fin m) (Fin m) k) *ᵥ w = v := by
-  -- First extend the equivalence between the two lines to an arbitrary ambient equivalence.
+/-- Any two nonzero vectors of `k^m` are exchanged by a linear automorphism. -/
+private theorem exists_linearEquiv_apply_eq {v w : Fin m → k} (hv : v ≠ 0) (hw : w ≠ 0) :
+    ∃ φ : (Fin m → k) ≃ₗ[k] (Fin m → k), φ w = v := by
+  -- Extend the equivalence between the two lines to an ambient equivalence.
   let e : (k ∙ w) ≃ₗ[k] (k ∙ v) :=
     (LinearEquiv.toSpanNonzeroSingleton k (Fin m → k) w hw).symm.trans
       (LinearEquiv.toSpanNonzeroSingleton k (Fin m → k) v hv)
@@ -284,8 +281,13 @@ private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤
       exact LinearEquiv.toSpanNonzeroSingleton_one k (Fin m → k) v hv
     rw [he] at hone
     exact hone.symm
-  -- A second direction modulo `k · v` gives a rank-one correction that fixes `v` and has
-  -- determinant inverse to that of `φ`.
+  exact ⟨φ, hφw⟩
+
+omit [NeZero m] in
+/-- For `m ≥ 2` and `v ≠ 0`, some linear functional vanishes at `v` and takes the value `1`
+at some vector. -/
+private theorem exists_dual_apply_eq_one {v : Fin m → k} (hm : 2 ≤ m) (hv : v ≠ 0) :
+    ∃ (f : Module.Dual k (Fin m → k)) (z : Fin m → k), f z = 1 ∧ f v = 0 := by
   have hspan : k ∙ v ≠ ⊤ := by
     intro htop
     have hfin := congrArg
@@ -306,6 +308,19 @@ private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤
     simp [f', hfz]
   have hf'v : f' v = 0 := by
     simp [f', hfv]
+  exact ⟨f', z, hf'z, hf'v⟩
+
+omit [NeZero m] in
+/-- For `m ≥ 2`, every nonzero vector of `k^m` is the image of every other one under a
+determinant-one matrix. -/
+private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤ m)
+    (hv : v ≠ 0) (hw : w ≠ 0) :
+    ∃ g : Matrix.SpecialLinearGroup (Fin m) k,
+      (g : Matrix (Fin m) (Fin m) k) *ᵥ w = v := by
+  obtain ⟨φ, hφw⟩ := exists_linearEquiv_apply_eq k m hv hw
+  -- A second direction modulo `k · v` gives a rank-one correction that fixes `v` and has
+  -- determinant inverse to that of `φ`.
+  obtain ⟨f', z, hf'z, hf'v⟩ := exists_dual_apply_eq_one k m hm hv
   let d := LinearEquiv.det φ
   let z' : Fin m → k := ((↑d⁻¹ : k) - 1) • z
   have hf'z' : f' z' = (↑d⁻¹ : k) - 1 := by
