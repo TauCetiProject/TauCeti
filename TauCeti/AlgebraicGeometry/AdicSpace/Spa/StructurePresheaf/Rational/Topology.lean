@@ -12,6 +12,7 @@ import TauCeti.AlgebraicGeometry.AdicSpace.Spa.RationalSubset.Refinement
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.KanExtension
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.OpenEmbedding
 import TauCeti.CategoryTheory.Sites.IsSheafFor
+import TauCeti.CategoryTheory.Sites.IsSheafForTrans
 import Mathlib.CategoryTheory.Sites.Coverage
 
 /-!
@@ -102,6 +103,149 @@ private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top_topCommRingC
     exact ⟨_, homOfLE (inf_le_inf_right _ le_top), homOfLE inf_le_left,
       Presieve.ofArrows.mk f, rfl⟩
 
+/-- The sheaf condition for rational covers of a rational open, when the cover is indexed by the
+empty type. -/
+private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_of_isEmpty
+    (hC : ContinuousLaurentGluing C) (hA : C A) (hP : P.ringOfDefinition ≤ Aplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) {ι : Type*} [IsEmpty ι] {U : ι → Opens ↥(spa Aplus)}
+    (hU : ∀ i, U i ∈ spaRationalOpens Aplus) (hcov : ⨆ i, U i = W)
+    (E : _root_.TopCommRingCat.{v}) :
+    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
+      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+        coyoneda.obj (op E)) := by
+  have hbot : W = ⊥ := by simpa using hcov.symm
+  subst hbot
+  let F := presentationLimitPresheaf P Aplus
+  let e : F.obj (op (⊥ : Opens ↥(spa Aplus))) ≃ₜ
+      presentationLimit (P := P) Aplus ⊥ :=
+    TopCat.homeoOfIso ((TopCommRingCat.isCompleteSeparated.ι ⋙
+      forget₂ _root_.TopCommRingCat TopCat).mapIso
+        (eqToIso (presentationLimitPresheaf_obj P Aplus (op ⊥))))
+  let _ : Subsingleton (presentationLimit (P := P) Aplus ⊥) :=
+    subsingleton_presentationLimit_bot P hAplus
+  let _ : Subsingleton (F.obj (op (⊥ : Opens ↥(spa Aplus)))) :=
+    ⟨fun x y ↦ e.injective (Subsingleton.elim _ _)⟩
+  let _ : Subsingleton
+      ((F ⋙ TopCommRingCat.isCompleteSeparated.ι).obj (op (⊥ : Opens ↥(spa Aplus)))) :=
+    ⟨fun x y ↦ e.injective (Subsingleton.elim _ _)⟩
+  rw [Presieve.isSheafFor_iff_generate]
+  exact TopCommRingCat.isSheafFor_of_isSheafFor_forget
+    (F ⋙ TopCommRingCat.isCompleteSeparated.ι) (Sieve.generate (Presieve.ofArrows U fun i ↦
+      homOfLE ((le_iSup U i).trans_eq hcov)))
+    ((Presieve.isSheafFor_iff_generate _).mp
+      (isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P hC.toLaurentGluing hA
+        hP hAplus hW hU hcov))
+    (Topology.IsInducing.of_subsingleton _) E
+
+/-- **Wedhorn's Remark 8.4 as isomorphisms of sections commuting with restriction.** For the
+rational opens `V ⊆ R(T/s)` of `Spa(A, A⁺)`, the presentation-limit sections over `V` are isomorphic
+to those of `Spa(A⟨T/s⟩, A_U⁺)` over `locOpensComap P Aplus T s _ hden V`, and these
+isomorphisms commute with the restriction maps. -/
+private theorem exists_iso_presentationLimitPresheaf_locOpensComap
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (T : Finset A) (s : A)
+    (hT : IsOpen (Ideal.span (T : Set A) : Set A))
+    (hden : HasDenominatorPower P (T : Set A) s (Localization.Away s)) :
+    letI := locUniformSpace P T s _ hden
+    haveI := isUniformAddGroup_locUniformSpace P T s _ hden
+    haveI := isTopologicalRing_locUniformSpace P T s _ hden
+    haveI := isHuberRing_completion_locTopology P T s _ hden
+    haveI := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
+    ∃ σ : (∀ V : Opens ↥(spa Aplus), V ∈ spaRationalOpens Aplus → V ≤ spaBasicOpen Aplus T s →
+        Iso ((presentationLimitPresheaf P Aplus).obj (op V))
+          ((presentationLimitPresheaf (completionLocalization P T s _ hden)
+            (completedPlusSubring P Aplus T s _ hden)).obj
+              (op (locOpensComap P Aplus T s _ hden V)))),
+      ∀ {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
+        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s) (h : V' ≤ V),
+        (presentationLimitPresheaf P Aplus).map (homOfLE h).op ≫ (σ V' hV' (h.trans hVT)).hom =
+          (σ V hV hVT).hom ≫ (presentationLimitPresheaf (completionLocalization P T s _ hden)
+            (completedPlusSubring P Aplus T s _ hden)).map
+              (homOfLE (locOpensComap_mono P Aplus T s _ hden h)).op := by
+  let _ := locUniformSpace P T s _ hden
+  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
+  have _ := isTopologicalRing_locUniformSpace P T s _ hden
+  have _ := isHuberRing_completion_locTopology P T s _ hden
+  have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
+  let Bplus := completedPlusSubring P Aplus T s _ hden
+  let Q := completionLocalization P T s _ hden
+  let F := presentationLimitPresheaf P Aplus
+  let FB := presentationLimitPresheaf Q Bplus
+  let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
+      (hVW : V ≤ spaBasicOpen Aplus T s) :
+      F.obj (op V) ≅ FB.obj (op (locOpensComap P Aplus T s _ hden V)) :=
+    eqToIso (presentationLimitPresheaf_obj P Aplus (op V)) ≪≫
+      presentationLimitLocIso P Aplus T s _ hden hAplus hT V hV hVW ≪≫
+      eqToIso (presentationLimitPresheaf_obj Q Bplus
+        (op (locOpensComap P Aplus T s _ hden V))).symm
+  refine ⟨σ, fun {V V'} hV hV' hVT h ↦ ?_⟩
+  dsimp only [σ]
+  rw [presentationLimitPresheaf_map, presentationLimitPresheaf_map]
+  simp only [Iso.trans_hom]
+  simp only [Category.assoc]
+  simp only [eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  slice_lhs 2 3 =>
+    rw [presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s _ hden hAplus hT
+      hV hV' hVT h]
+  simp only [Category.assoc]
+
+/-- The sheaf condition for rational covers of a rational open, when the cover is indexed by a
+nonempty type. -/
+private theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_of_nonempty
+    (hC : ContinuousLaurentGluing C) (hA : C A) (hP : P.ringOfDefinition ≤ Aplus)
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) {W : Opens ↥(spa Aplus)}
+    (hW : W ∈ spaRationalOpens Aplus) {ι : Type*} [Nonempty ι] {U : ι → Opens ↥(spa Aplus)}
+    (hU : ∀ i, U i ∈ spaRationalOpens Aplus) (hcov : ⨆ i, U i = W)
+    (E : _root_.TopCommRingCat.{v}) :
+    (Presieve.ofArrows U fun i ↦ homOfLE ((le_iSup U i).trans_eq hcov)).IsSheafFor
+      (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+        coyoneda.obj (op E)) := by
+  have _ : IsHuberRing A := ⟨⟨P⟩⟩
+  obtain ⟨T, s, hT, hWT⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hW)
+  obtain rfl : W = spaBasicOpen Aplus T s :=
+    Opens.ext (hWT.trans (Set.ext fun _ ↦ mem_spaBasicOpen.symm))
+  have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
+  let _ := locUniformSpace P T s _ hden
+  have _ := isUniformAddGroup_locUniformSpace P T s _ hden
+  have _ := isTopologicalRing_locUniformSpace P T s _ hden
+  have _ := isHuberRing_completion_locTopology P T s _ hden
+  have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
+  have hCB : C (UniformSpace.Completion (Localization.Away s)) :=
+    hC.completion_localization P T s hT hA
+  obtain ⟨σ, σ_nat⟩ := exists_iso_presentationLimitPresheaf_locOpensComap P hAplus T s hT hden
+  have hUW (i : ι) : U i ≤ spaBasicOpen Aplus T s := (le_iSup U i).trans_eq hcov
+  have hUB (i : ι) : locOpensComap P Aplus T s _ hden (U i) ∈ spaRationalOpens
+      (completedPlusSubring P Aplus T s _ hden) :=
+    locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)
+  have hcovB : ⨆ i, locOpensComap P Aplus T s _ hden (U i) =
+      locOpensComap P Aplus T s _ hden (spaBasicOpen Aplus T s) := by
+    rw [← hcov]
+    exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
+  have hB :=
+    isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top_topCommRingCat
+      (completionLocalization P T s _ hden) hC hCB
+      (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
+      (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus
+        T s _ hden)
+      (locOpensComap_spaBasicOpen_self P Aplus T s _ hden) hUB hcovB E
+  refine TauCeti.TopologicalSpace.Opens.isSheafFor_ofArrows_of_equiv
+    (F := presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+      coyoneda.obj (op E))
+    (G := presentationLimitPresheaf (completionLocalization P T s _ hden)
+      (completedPlusSubring P Aplus T s _ hden) ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
+      coyoneda.obj (op E))
+    (locOpensComap P Aplus T s _ hden) (fun _ _ h ↦ locOpensComap_mono P Aplus T s _ hden h)
+    (locOpensComap_inf P Aplus T s _ hden) (fun V hV V' hV' ↦ inf_mem_spaRationalOpens hV hV') hW
+    hU hUW (fun V hV hVW ↦ (((coyoneda.obj (op E)).mapIso
+      (TopCommRingCat.isCompleteSeparated.ι.mapIso (σ V hV hVW))).toEquiv)) ?_ hB
+  intro V V' hV hV' hVW h x
+  simp only [Iso.toEquiv_fun, Functor.mapIso_hom, Functor.comp_map]
+  dsimp [coyoneda]
+  have := congrArg (fun f ↦ f.hom) (σ_nat hV hV' hVW h)
+  simp only [ObjectProperty.FullSubcategory.comp_hom] at this
+  rw [Category.assoc, Category.assoc, this]
+
+
 /-- **Wedhorn's Lemma 8.34 in degree zero, with topology: rational covers of rational
 subsets.** Let `C` be a predicate on Tate rings satisfying `ContinuousLaurentGluing`, for example
 strong noetherianness, and `A` a Tate ring satisfying `C`. Let `P` be a pair of definition whose
@@ -122,201 +266,11 @@ theorem isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat
         coyoneda.obj (op E)) := by
   cases isEmpty_or_nonempty ι with
   | inl hempty =>
-    have hbot : W = ⊥ := by simpa using hcov.symm
-    subst hbot
-    let F := presentationLimitPresheaf P Aplus
-    let e : F.obj (op (⊥ : Opens ↥(spa Aplus))) ≃ₜ
-        presentationLimit (P := P) Aplus ⊥ :=
-      TopCat.homeoOfIso ((TopCommRingCat.isCompleteSeparated.ι ⋙
-        forget₂ _root_.TopCommRingCat TopCat).mapIso
-          (eqToIso (presentationLimitPresheaf_obj P Aplus (op ⊥))))
-    let _ : Subsingleton (presentationLimit (P := P) Aplus ⊥) :=
-      subsingleton_presentationLimit_bot P hAplus
-    let _ : Subsingleton (F.obj (op (⊥ : Opens ↥(spa Aplus)))) :=
-      ⟨fun x y ↦ e.injective (Subsingleton.elim _ _)⟩
-    let _ : Subsingleton
-        ((F ⋙ TopCommRingCat.isCompleteSeparated.ι).obj (op (⊥ : Opens ↥(spa Aplus)))) :=
-      ⟨fun x y ↦ e.injective (Subsingleton.elim _ _)⟩
-    rw [Presieve.isSheafFor_iff_generate]
-    exact TopCommRingCat.isSheafFor_of_isSheafFor_forget
-      (F ⋙ TopCommRingCat.isCompleteSeparated.ι) (Sieve.generate (Presieve.ofArrows U fun i ↦
-        homOfLE ((le_iSup U i).trans_eq hcov)))
-      ((Presieve.isSheafFor_iff_generate _).mp
-        (isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_of_laurentGluing P hC.toLaurentGluing hA
-          hP hAplus hW hU hcov))
-      (Topology.IsInducing.of_subsingleton _) E
+    exact isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_of_isEmpty P hC hA hP
+      hAplus hW hU hcov E
   | inr hnonempty =>
-    have _ : IsHuberRing A := ⟨⟨P⟩⟩
-    obtain ⟨T, s, hT, hWT⟩ := mem_spaRationalFamily_iff.mp (mem_spaRationalOpens.mp hW)
-    obtain rfl : W = spaBasicOpen Aplus T s :=
-      Opens.ext (hWT.trans (Set.ext fun _ ↦ mem_spaBasicOpen.symm))
-    have hden := hasDenominatorPower_of_isOpen_span P T s (Localization.Away s) hT
-    let _ := locUniformSpace P T s _ hden
-    have _ := isUniformAddGroup_locUniformSpace P T s _ hden
-    have _ := isTopologicalRing_locUniformSpace P T s _ hden
-    have _ := isHuberRing_completion_locTopology P T s _ hden
-    have _ := isTateRing_completion_locTopology_of_isTateRing P T s _ hden
-    have hCB : C (UniformSpace.Completion (Localization.Away s)) :=
-      hC.completion_localization P T s hT hA
-    let Bplus := completedPlusSubring P Aplus T s _ hden
-    let Q := completionLocalization P T s _ hden
-    let F := presentationLimitPresheaf P Aplus
-    let FB := presentationLimitPresheaf Q Bplus
-    let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
-        (hVW : V ≤ spaBasicOpen Aplus T s) :
-        F.obj (op V) ≅ FB.obj (op (locOpensComap P Aplus T s _ hden V)) :=
-      eqToIso (presentationLimitPresheaf_obj P Aplus (op V)) ≪≫
-        presentationLimitLocIso P Aplus T s _ hden hAplus hT V hV hVW ≪≫
-        eqToIso (presentationLimitPresheaf_obj Q Bplus
-          (op (locOpensComap P Aplus T s _ hden V))).symm
-    have σ_nat {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
-        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s)
-        (h : V' ≤ V) : F.map (homOfLE h).op ≫ (σ V' hV' (h.trans hVT)).hom =
-          (σ V hV hVT).hom ≫
-            FB.map (homOfLE (locOpensComap_mono P Aplus T s _ hden h)).op := by
-      dsimp only [σ]
-      rw [presentationLimitPresheaf_map, presentationLimitPresheaf_map]
-      simp only [Iso.trans_hom]
-      simp only [Category.assoc]
-      simp only [eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
-      slice_lhs 2 3 =>
-        rw [presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s _ hden hAplus hT
-          hV hV' hVT h]
-      simp only [Category.assoc]
-    have σ_nat_hom {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
-        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s)
-        (h : V' ≤ V) :
-        (F.map (homOfLE h).op).hom ≫ (σ V' hV' (h.trans hVT)).hom.hom =
-          (σ V hV hVT).hom.hom ≫
-            (FB.map (homOfLE (locOpensComap_mono P Aplus T s _ hden h)).op).hom := by
-      simpa only [ObjectProperty.FullSubcategory.comp_hom] using
-        congrArg (fun f ↦ f.hom) (σ_nat hV hV' hVT h)
-    have hUW (i : ι) : U i ≤ spaBasicOpen Aplus T s := (le_iSup U i).trans_eq hcov
-    have hUB (i : ι) : locOpensComap P Aplus T s _ hden (U i) ∈ spaRationalOpens Bplus :=
-      locOpensComap_mem_spaRationalOpens P Aplus T s _ hden (hU i)
-    have hcovB : ⨆ i, locOpensComap P Aplus T s _ hden (U i) =
-        locOpensComap P Aplus T s _ hden (spaBasicOpen Aplus T s) := by
-      rw [← hcov]
-      exact SetLike.ext fun v ↦ by simp [Opens.mem_iSup]
-    have hB :=
-      isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_top_topCommRingCat Q hC hCB
-        (completionLocalization_ringOfDefinition_le_completedPlusSubring P Aplus hP T s _ hden)
-        (isRingOfIntegralElements_completedPlusSubring P Aplus (fun j _ ↦ hP j.2) hAplus
-          T s _ hden)
-        (locOpensComap_spaBasicOpen_self P Aplus T s _ hden) hUB hcovB E
-    rw [Presieve.isSheafFor_arrows_iff] at hB ⊢
-    intro x hx
-    let τ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
-        (hVT : V ≤ spaBasicOpen Aplus T s) :=
-      TopCommRingCat.isCompleteSeparated.ι.map (σ V hV hVT).hom
-    let y : ∀ i, (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)).obj
-        (op (locOpensComap P Aplus T s _ hden (U i))) :=
-      fun i ↦ x i ≫ τ (U i) (hU i) (hUW i)
-    have hcover (i : ι) :
-        homOfLE ((le_iSup
-          (fun i ↦ locOpensComap P Aplus T s _ hden (U i)) i).trans_eq hcovB) =
-          homOfLE (locOpensComap_mono P Aplus T s _ hden (hUW i)) := by
-      -- The two maps express the same inclusion; morphisms between opens are unique.
-      exact Subsingleton.elim _ _
-    -- Transport the compatible family through the section isomorphisms.
-    have hy : Presieve.Arrows.Compatible
-        (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E))
-        (fun i ↦ homOfLE ((le_iSup
-          (fun i ↦ locOpensComap P Aplus T s _ hden (U i)) i).trans_eq hcovB)) y := by
-      apply (Presieve.Arrows.compatible_homOfLE_iff _ y).mpr
-      intro i j
-      have hxij := (Presieve.Arrows.compatible_homOfLE_iff hUW x).mp hx i j
-      have hUiUj := inf_mem_spaRationalOpens (hU i) (hU j)
-      have nat_i := σ_nat_hom (hU i) hUiUj (hUW i)
-        (inf_le_left : U i ⊓ U j ≤ U i)
-      have nat_j := σ_nat_hom (hU j) hUiUj (hUW j)
-        (inf_le_right : U i ⊓ U j ≤ U j)
-      have hyij :
-          (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)).map
-              (homOfLE (locOpensComap_mono P Aplus T s _ hden
-                (inf_le_left : U i ⊓ U j ≤ U i))).op (y i) =
-            (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)).map
-              (homOfLE (locOpensComap_mono P Aplus T s _ hden
-                (inf_le_right : U i ⊓ U j ≤ U j))).op (y j) := by
-        dsimp only [y, τ]
-        simp only [Functor.comp_map] at hxij ⊢
-        dsimp [coyoneda, yoneda] at hxij ⊢
-        slice_lhs 2 3 => rw [← nat_i]
-        slice_rhs 2 3 => rw [← nat_j]
-        -- Unfold the local presheaf abbreviation to read compatibility as an equality of
-        -- composites in `CommRingCat`.
-        change x i ≫ (F.map (homOfLE inf_le_left).op).hom =
-          x j ≫ (F.map (homOfLE inf_le_right).op).hom at hxij
-        slice_lhs 1 2 => rw [hxij]
-        simp only [Category.assoc]
-      let hloc := locOpensComap_inf P Aplus T s _ hden (U i) (U j)
-      let k := (FB.map (eqToHom hloc).op).hom
-      have hleft : eqToHom hloc ≫ homOfLE inf_le_left =
-          homOfLE (locOpensComap_mono P Aplus T s _ hden
-            (inf_le_left : U i ⊓ U j ≤ U i)) := by
-        -- Both sides are the inclusion of the transported intersection into `U i`.
-        exact Subsingleton.elim _ _
-      have hright : eqToHom hloc ≫ homOfLE inf_le_right =
-          homOfLE (locOpensComap_mono P Aplus T s _ hden
-            (inf_le_right : U i ⊓ U j ≤ U j)) := by
-        -- Both sides are the inclusion of the transported intersection into `U j`.
-        exact Subsingleton.elim _ _
-      dsimp [coyoneda, yoneda, y, τ] at hyij ⊢
-      apply (cancel_mono k).1
-      dsimp only [k]
-      slice_lhs 3 4 =>
-        rw [← ObjectProperty.FullSubcategory.comp_hom, ← FB.map_comp, ← op_comp, hleft]
-      slice_rhs 3 4 =>
-        rw [← ObjectProperty.FullSubcategory.comp_hom, ← FB.map_comp, ← op_comp, hright]
-      exact hyij
-    obtain ⟨c, hc, hcu⟩ := hB y hy
-    -- Transport the amalgamation of `y` back to the original rational open.
-    let a : E ⟶ (F ⋙ TopCommRingCat.isCompleteSeparated.ι).obj
-        (op (spaBasicOpen Aplus T s)) :=
-      c ≫ TopCommRingCat.isCompleteSeparated.ι.map
-        (σ (spaBasicOpen Aplus T s) hW le_rfl).inv
-    refine ⟨a, fun i ↦ ?_, fun a' ha' ↦ ?_⟩
-    · have nat_i := σ_nat_hom hW (hU i) le_rfl (hUW i)
-      have hc_i := hc i
-      dsimp [coyoneda, yoneda, y, τ] at hc_i
-      rw [hcover i] at hc_i
-      dsimp [coyoneda, yoneda, a]
-      apply (cancel_mono (σ (U i) (hU i) (hUW i)).hom.hom).1
-      slice_lhs 3 4 => rw [nat_i]
-      slice_lhs 2 3 =>
-        rw [← ObjectProperty.FullSubcategory.comp_hom, Iso.inv_hom_id]
-        simp
-      exact hc_i
-    · let c' : E ⟶ (FB ⋙ TopCommRingCat.isCompleteSeparated.ι).obj
-          (op (locOpensComap P Aplus T s _ hden (spaBasicOpen Aplus T s))) :=
-        a' ≫ TopCommRingCat.isCompleteSeparated.ι.map
-          (σ (spaBasicOpen Aplus T s) hW le_rfl).hom
-      -- Transport a competing amalgamation forward so uniqueness for `y` applies.
-      have hc' : ∀ i,
-          (FB ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙ coyoneda.obj (op E)).map
-              (homOfLE ((le_iSup
-                (fun i ↦ locOpensComap P Aplus T s _ hden (U i)) i).trans_eq hcovB)).op c' =
-            y i := by
-        intro i
-        have nat_i := σ_nat_hom hW (hU i) le_rfl (hUW i)
-        have ha_i := ha' i
-        dsimp [coyoneda, yoneda] at ha_i ⊢
-        rw [hcover i]
-        dsimp [c', y, τ]
-        slice_lhs 2 3 => rw [← nat_i]
-        slice_lhs 1 2 => rw [ha_i]
-      have hc'eq : c' = c := hcu c' hc'
-      apply (cancel_mono
-        (TopCommRingCat.isCompleteSeparated.ι.map
-          (σ (spaBasicOpen Aplus T s) hW le_rfl).hom)).1
-      -- After forgetting the full-subcategory wrappers, this is the transported map `c'`.
-      change c' = a ≫ (σ (spaBasicOpen Aplus T s) hW le_rfl).hom.hom
-      rw [hc'eq]
-      dsimp [a]
-      slice_rhs 2 3 =>
-        rw [← ObjectProperty.FullSubcategory.comp_hom, Iso.inv_hom_id]
-        simp
-      simp
+    exact isSheafFor_ofArrows_spaRationalOpens_of_iSup_eq_topCommRingCat_of_nonempty P hC hA hP
+      hAplus hW hU hcov E
 
 /-- **The structure presheaf is a sheaf under continuous Laurent gluing.** Let `C` be a predicate
 on Tate rings satisfying `ContinuousLaurentGluing`, and `A` a Tate ring satisfying `C`. If the ring
