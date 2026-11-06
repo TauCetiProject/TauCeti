@@ -889,9 +889,11 @@ theorem integral_one_sub_sq_rpow {a : ℝ} (ha : 0 < a) :
     (fun z : ℝ ↦ (1 - z ^ 2) ^ (a - 1)) two_ne_zero (-1)
   rw [intervalIntegral.integral_congr hpoint, intervalIntegral.integral_const_mul,
     integral_rpow_mul_one_sub_rpow ha ha] at hsub
-  norm_num at hsub
+  have hsub' :
+      (4 : ℝ) ^ (a - 1) * beta a a = 2⁻¹ * ∫ z in (-1 : ℝ)..1, (1 - z ^ 2) ^ (a - 1) := by
+    simpa [show (-1 : ℝ) + 2 = 1 by norm_num] using hsub
   rw [setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le (by norm_num),
-    beta_one_half_left_eq_two_rpow_mul_beta_self ha, ← hpow, mul_assoc, hsub]
-  ring
+    beta_one_half_left_eq_two_rpow_mul_beta_self ha, ← hpow]
+  linear_combination (-2 : ℝ) * hsub'
 
 end TauCeti

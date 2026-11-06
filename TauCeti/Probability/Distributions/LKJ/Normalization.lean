@@ -21,9 +21,9 @@ define the LKJ probability law.
 
 ## Main result
 
-* `TauCeti.Probability.integral_posDef_rpow_det_correlationLebesgue` evaluates the determinant-power
+* `TauCeti.Probability.integral_posDef_det_rpow_correlationLebesgue` evaluates the determinant-power
   integral over the positive-definite correlation matrices.
-* `TauCeti.Probability.integrableOn_posDef_rpow_det_correlationLebesgue` proves the corresponding
+* `TauCeti.Probability.integrableOn_posDef_det_rpow_correlationLebesgue` proves the corresponding
   integrability statement.
 
 ## References
@@ -96,7 +96,7 @@ private theorem prod_lkjBetaFactors (p : ℕ) (η : ℝ) :
 
 /-- On the open cube of partial correlations, the Jacobian of the partial-correlation chart times
 the determinant power `det ^ (η - 1)` factors as a product of powers of `1 - zᵢⱼ ^ 2`. -/
-private theorem abs_det_fderiv_smul_rpow_det_correlationCoordinatesOfPartialCorrelation
+private theorem abs_det_fderiv_smul_det_rpow_correlationCoordinatesOfPartialCorrelation
     {p : ℕ} {η : ℝ} {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
     |(fderiv ℝ (correlationCoordinatesOfPartialCorrelation (p := p)) z).det| •
         (correlationMatrix p (correlationCoordinatesOfPartialCorrelation z) :
@@ -125,7 +125,7 @@ private theorem abs_det_fderiv_smul_rpow_det_correlationCoordinatesOfPartialCorr
   rw [hindex]
   ring
 
-private theorem integral_rpow_det_posDefCorrelationRegion (p : ℕ) {η : ℝ} (hη : 0 < η) :
+private theorem integral_det_rpow_posDefCorrelationRegion (p : ℕ) {η : ℝ} (hη : 0 < η) :
     ∫ x in posDefCorrelationRegion p,
       (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) =
         lkjNormalizer p η := by
@@ -154,7 +154,7 @@ private theorem integral_rpow_det_posDefCorrelationRegion (p : ℕ) {η : ℝ} (
     (fun x ↦ (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1))
   rw [image_correlationCoordinatesOfPartialCorrelation,
     setIntegral_congr_fun hcube fun z hz ↦
-      abs_det_fderiv_smul_rpow_det_correlationCoordinatesOfPartialCorrelation hz] at hchange
+      abs_det_fderiv_smul_det_rpow_correlationCoordinatesOfPartialCorrelation hz] at hchange
   -- The integrand is now a product over the coordinates, so the integral is a product of
   -- one-dimensional beta integrals.
   have hfactor (ij : strictLowerTriangle p) :
@@ -170,7 +170,7 @@ private theorem integral_rpow_det_posDefCorrelationRegion (p : ℕ) {η : ℝ} (
 
 /-- The determinant power with parameter `η > 0` integrates over positive-definite correlation
 matrices to the LKJ normalizing constant. -/
-theorem integral_posDef_rpow_det_correlationLebesgue (p : ℕ) {η : ℝ} (hη : 0 < η) :
+theorem integral_posDef_det_rpow_correlationLebesgue (p : ℕ) {η : ℝ} (hη : 0 < η) :
     ∫ A in {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
         (A : Matrix (Fin p) (Fin p) ℝ).PosDef},
       (A : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1) ∂correlationLebesgue p =
@@ -193,17 +193,17 @@ theorem integral_posDef_rpow_det_correlationLebesgue (p : ℕ) {η : ℝ} (hη :
       · rw [indicator_of_mem hx, indicator_of_mem (mem_posDefCorrelationRegion.1 hx)]
       · rw [indicator_of_notMem hx, indicator_of_notMem]
         exact fun h ↦ hx (mem_posDefCorrelationRegion.2 h)
-    _ = lkjNormalizer p η := integral_rpow_det_posDefCorrelationRegion p hη
+    _ = lkjNormalizer p η := integral_det_rpow_posDefCorrelationRegion p hη
 
 /-- The determinant power with parameter `η > 0` is integrable on positive-definite correlation
 matrices with respect to correlation Lebesgue measure. -/
-theorem integrableOn_posDef_rpow_det_correlationLebesgue (p : ℕ) {η : ℝ} (hη : 0 < η) :
+theorem integrableOn_posDef_det_rpow_correlationLebesgue (p : ℕ) {η : ℝ} (hη : 0 < η) :
     IntegrableOn (fun A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) ↦
       (A : Matrix (Fin p) (Fin p) ℝ).det ^ (η - 1))
       {A | (A : Matrix (Fin p) (Fin p) ℝ).PosDef} (correlationLebesgue p) := by
   by_contra h
   have hzero := integral_undef h
-  rw [integral_posDef_rpow_det_correlationLebesgue p hη] at hzero
+  rw [integral_posDef_det_rpow_correlationLebesgue p hη] at hzero
   exact (lkjNormalizer_pos hη).ne' hzero
 
 end TauCeti.Probability
