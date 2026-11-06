@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 public import TauCeti.MeasureTheory.Function.Jacobian.Plane
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
+import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
 # Pulling back Hamiltonian perturbation data along changes of domain coordinates
@@ -42,11 +43,15 @@ domain.
 
 * `TauCeti.Floer.perturbationPullback`: the pullback `φ^*K` of a perturbation datum, evaluated on
   a tangent vector.
+* `TauCeti.Floer.complexAffineChart c a`: the complex affine map `w ↦ c + a w` in the real
+  coordinates `ℝ × ℝ ≃ ℂ`.
 
 ## Main results
 
 * `TauCeti.Floer.perturbationPullback_comp`: pullback is compatible with composition of
   coordinate changes.
+* `TauCeti.Floer.perturbationPullback_complexAffineChart`: the pullback of a datum on `ℂ` along
+  `w ↦ c + a w` evaluates it at `c + a w` on `a v`.
 * `TauCeti.Floer.fderiv_perturbationPullback_sub_fderiv_perturbationPullback`: the domain-derivative
   part `∂_s K_t - ∂_t K_s` of the curvature scales by `det dφ`, for any target.
 * `TauCeti.SymplecticForm.perturbedFDeriv_perturbationPullback`: the perturbed derivative of the
@@ -183,6 +188,52 @@ theorem fderiv_perturbationPullback_sub_fderiv_perturbationPullback {φ : ℝ ×
   simp only [ContinuousLinearMap.det, LinearMap.det_finTwoProd, ContinuousLinearMap.coe_coe,
     stdComplexLineReal_eq, stdComplexLineImag_eq]
   ring
+
+/-- The complex affine map `w ↦ c + a w` in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
+noncomputable def complexAffineChart (c a : ℂ) : ℝ × ℝ → ℝ × ℝ :=
+  Complex.equivRealProdCLM ∘ (fun w => c + a * w) ∘ Complex.equivRealProdCLM.symm
+
+theorem complexAffineChart_apply (c a : ℂ) (z : ℝ × ℝ) :
+    complexAffineChart c a z =
+      Complex.equivRealProdCLM (c + a * Complex.equivRealProdCLM.symm z) :=
+  (rfl)
+
+theorem contDiff_complexAffineChart (c a : ℂ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (complexAffineChart c a) :=
+  Complex.equivRealProdCLM.contDiff.comp
+    ((by fun_prop : ContDiff ℝ n fun w : ℂ => c + a * w).comp
+      Complex.equivRealProdCLM.symm.contDiff)
+
+theorem injective_complexAffineChart (c : ℂ) {a : ℂ} (ha : a ≠ 0) :
+    Injective (complexAffineChart c a) := by
+  have h : Injective fun w : ℂ => c + a * w := fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)
+  exact Complex.equivRealProdCLM.injective.comp (h.comp Complex.equivRealProdCLM.symm.injective)
+
+/-- The derivative of the complex affine chart `w ↦ c + a w` is multiplication by `a`. -/
+theorem fderiv_complexAffineChart_apply (c a : ℂ) (z v : ℝ × ℝ) :
+    fderiv ℝ (complexAffineChart c a) z v =
+      Complex.equivRealProdCLM (a * Complex.equivRealProdCLM.symm v) := by
+  have h : HasDerivAt (fun w : ℂ => c + a * w) a (Complex.equivRealProdCLM.symm z) := by
+    simpa using ((hasDerivAt_id (Complex.equivRealProdCLM.symm z)).const_mul a).const_add c
+  rw [complexAffineChart, (Complex.equivRealProdCLM.hasFDerivAt.comp z
+    ((h.hasFDerivAt.restrictScalars ℝ).comp z Complex.equivRealProdCLM.symm.hasFDerivAt)).fderiv]
+  simp [mul_comm]
+
+/-- The pullback along the complex affine chart `w ↦ c + a w` of a datum `P` on `ℂ`, written in
+the real coordinates through its values on `1` and `i`, evaluates `P` at the image `c + a w` on
+the image `a v` of the tangent vector. -/
+theorem perturbationPullback_complexAffineChart (c a : ℂ) (P : ℂ → X → ℂ →L[ℝ] ℝ)
+    (v w : ℝ × ℝ) (x : X) :
+    perturbationPullback (complexAffineChart c a)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
+      P (c + a * Complex.equivRealProdCLM.symm w) x (a * Complex.equivRealProdCLM.symm v) := by
+  have h := LinearMap.apply_eq_re_smul_one_add_im_smul_I
+    (P (c + a * Complex.equivRealProdCLM.symm w) x : ℂ →ₗ[ℝ] ℝ)
+    (a * Complex.equivRealProdCLM.symm v)
+  simp only [ContinuousLinearMap.coe_coe, smul_eq_mul] at h
+  rw [perturbationPullback_apply, fderiv_complexAffineChart_apply, complexAffineChart_apply,
+    ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply, h]
 
 end Floer
 

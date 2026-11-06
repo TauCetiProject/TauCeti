@@ -8,7 +8,9 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.Algebra.Monoid
+import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # Hamiltonian perturbation data on spheres with moving input ends
@@ -42,6 +44,8 @@ Suppose that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise disjoint and
 * for a symplectic vector space target, its integrated curvature along any map is at most
   `∑ i, sup |H i| + sup |Hout|`, whatever the configuration
   (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le`).
+  This bound only needs the smaller supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2` of the input end
+  data to be pairwise disjoint and to lie in the disc `‖w‖ ≤ 2 exp (2π)`.
 
 The pair-of-pants datum itself is the case of the inputs `0` and `1` with scales `1` and `-1`
 (`TauCeti.Floer.puncturedSpherePerturbation_eq_pairOfPantsPerturbation`).
@@ -63,36 +67,14 @@ namespace TauCeti.Floer
 
 variable {M : Type*}
 
+/-- The factor `exp (-2π)` relating the radius of the support of an input end datum to the radius
+of its end disc is less than `1`. -/
+private theorem exp_neg_two_pi_lt_one : Real.exp (-(2 * π)) < 1 :=
+  Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
+
 section InputEnd
 
 variable {H : ℝ → M → ℝ} {c a : ℂ}
-
-/-- The pair-of-pants datum of a single end is the summand of that end. -/
-theorem pairOfPantsPerturbation_single (q : Puncture) (G : ℝ → M → ℝ) (w : ℂ) (x : M) :
-    pairOfPantsPerturbation (Pi.single q G) w x =
-      (smoothTransition (q.endSign * (q.endCoord w).re - 1) * G (q.endCoord w).im x) •
-        q.endAngularForm w := by
-  rw [pairOfPantsPerturbation_def, Fintype.sum_eq_single q fun r hr => by
-    simp [Pi.single_eq_of_ne hr], Pi.single_eq_same]
-
-/-- The pair-of-pants datum whose only nonzero Hamiltonian is the one at the input `0` vanishes
-off the disc `‖w‖ < exp (-2π) / 2`, where the longitudinal coordinate of that end is at most
-`1`. -/
-theorem pairOfPantsPerturbation_single_zero_eq_zero_of_le_norm {w : ℂ}
-    (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) (x : M) :
-    pairOfPantsPerturbation (Pi.single zero H) w x = 0 := by
-  have hpos : 0 < ‖w / (1 / 2 : ℂ)‖ := by
-    rw [norm_div]
-    exact div_pos ((by positivity : (0 : ℝ) < Real.exp (-(2 * π)) / 2).trans_le hw) (by simp)
-  have hlog : -(2 * π) ≤ Real.log ‖w / (1 / 2 : ℂ)‖ := by
-    rw [Real.le_log_iff_exp_le hpos, norm_div]
-    rw [le_div_iff₀ (by simp)]
-    simpa [div_eq_mul_inv, mul_comm] using hw
-  have h : (zero.endCoord w).re ≤ 1 := by
-    rw [re_endCoord, endCenter_zero, endScale_zero, sub_zero, div_le_one (by positivity)]
-    linarith
-  rw [pairOfPantsPerturbation_single, endSign_zero, one_mul,
-    smoothTransition.zero_of_nonpos (by linarith), zero_mul, zero_smul]
 
 /-- The datum of an input end with center `c` and scale `a`: the pushforward
 `v ↦ K((w - c) / a)(v / a)` along the affine map `w ↦ c + a w` of the pair-of-pants datum `K`
@@ -181,12 +163,11 @@ theorem puncturedSpherePerturbation_eq_pairOfPantsPerturbation (H : Puncture →
       (smoothTransition (one.endSign * (one.endCoord w).re - 1) *
         H one (one.endCoord w).im x) • one.endAngularForm w := by
     ext v
-    rw [inputEndPerturbation_apply, pairOfPantsPerturbation_single, smul_apply, smul_apply, hc,
-      endSign_zero, endSign_one, endAngularForm_apply, endAngularForm_apply, endCenter_zero,
-      endCenter_one]
+    rw [inputEndPerturbation_apply, pairOfPantsPerturbation_single, hc]
+    simp only [smul_apply, endAngularForm_apply, endSign_zero, endSign_one, endCenter_zero,
+      endCenter_one, div_neg, div_one, sub_zero, mul_neg, neg_neg, inv_neg]
     congr 2
-    rw [show (w - 1) / -1 - 0 = -(w - 1) by ring]
-    simp only [mul_neg, neg_neg, inv_neg, inv_one, neg_mul, one_mul]
+    ring
   rw [puncturedSpherePerturbation_def, Fin.sum_univ_two, pairOfPantsPerturbation_def,
     Puncture.sum_univ]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one]
@@ -201,6 +182,18 @@ theorem puncturedSpherePerturbation_eq_negativePlanePerturbation {w : ℂ}
   rw [puncturedSpherePerturbation_def,
     Finset.sum_eq_zero fun i _ => inputEndPerturbation_eq_zero_of_le_norm_sub (hw i) x, zero_add]
 
+/-- **At a point off the supports of the other input ends the datum is that end's datum.** At a
+point `w` of the disc `‖w‖ ≤ 2 exp (2π)`, where the output datum vanishes, and outside the
+supports `‖w - c j‖ < ‖a j‖ exp (-2π) / 2` of the input end data of all `j ≠ i`, the datum is the
+input end datum of `i`. -/
+theorem puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne {i : ι} {w : ℂ}
+    (hne : ∀ j, j ≠ i → ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖w - c j‖)
+    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π)) (x : M) :
+    puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x := by
+  rw [puncturedSpherePerturbation_def, Finset.sum_eq_single i
+    (fun j _ hj => inputEndPerturbation_eq_zero_of_le_norm_sub (hne j hj) x) (by simp),
+    negativePlanePerturbation_eq_zero_of_norm_le hw, add_zero]
+
 /-- **Near an input end the datum is that end's datum.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are
 pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the disc of the input `i` the
 datum is the input end datum of `i`. -/
@@ -209,20 +202,15 @@ theorem puncturedSpherePerturbation_eq_inputEndPerturbation
     (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {i : ι} {w : ℂ}
     (hw : ‖w - c i‖ < ‖a i‖ / 2) (x : M) :
     puncturedSpherePerturbation c a H Hout w x = inputEndPerturbation (c i) (a i) (H i) w x := by
-  have he : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-  rw [puncturedSpherePerturbation_def, Finset.sum_eq_single i,
-    negativePlanePerturbation_eq_zero_of_norm_le, add_zero]
+  refine puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne (fun j hj => ?_) ?_ x
+  · have h₁ := hsep hj
+    have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
+      simpa using norm_sub_le (w - c i) (w - c j)
+    have h₃ := mul_le_mul_of_nonneg_left exp_neg_two_pi_lt_one.le (norm_nonneg (a j))
+    linarith
   · calc ‖w‖ ≤ ‖c i‖ + ‖w - c i‖ := by
           simpa using norm_add_le (c i) (w - c i)
       _ ≤ 2 * Real.exp (2 * π) := by linarith [hout i]
-  · intro j _ hj
-    refine inputEndPerturbation_eq_zero_of_le_norm_sub ?_ x
-    have h₁ := hsep hj
-    have h₂ : ‖c j - c i‖ ≤ ‖w - c i‖ + ‖w - c j‖ := by
-      simpa using norm_sub_le (w - c i) (w - c j)
-    have h₃ := mul_le_mul_of_nonneg_left he (norm_nonneg (a j))
-    linarith
-  · simp
 
 /-- **The datum on an input end.** If the discs `‖w - c j‖ < ‖a j‖ / 2` are pairwise disjoint and
 lie in the disc `‖w‖ ≤ 2 exp (2π)`, then on the part `s > 0` of the input end `i`, the pullback of
@@ -274,11 +262,10 @@ theorem puncturedSpherePerturbation_cylindricalEndLift_inf_of_le
     rw [h]
     gcongr
     nlinarith [Real.pi_pos]
-  have he : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
   rw [puncturedSpherePerturbation_eq_negativePlanePerturbation fun i => ?_,
     negativePlanePerturbation_cylindricalEndLift_of_neg hH (by linarith)]
   have h := norm_sub_norm_le (inf.cylindricalEndLift z) (c i)
-  nlinarith [hout i, norm_nonneg (a i)]
+  nlinarith [hout i, norm_nonneg (a i), exp_neg_two_pi_lt_one]
 
 /-- **The datum is `Hout(t) dt` far out on the output end.** Under the hypothesis of
 `puncturedSpherePerturbation_cylindricalEndLift_inf_of_le`, on the part `s ≤ -2` of the output end
@@ -298,15 +285,6 @@ section Smooth
 
 variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
-
-omit [TopologicalSpace M] in
-/-- Families indexed by the ends that are `H` at `0` and zero elsewhere inherit any property
-shared by `H` and `0`. -/
-private theorem forall_single_zero {H : ℝ → M → ℝ} {P : (ℝ → M → ℝ) → Prop} (h₀ : P 0)
-    (hH : P H) (q : Puncture) : P ((Pi.single zero H : Puncture → ℝ → M → ℝ) q) := by
-  rcases eq_or_ne q zero with rfl | hq
-  · simpa using hH
-  · simpa [Pi.single_eq_of_ne hq] using h₀
 
 /-- **The input end datum is smooth in its center and scale.** For a period-one Hamiltonian of
 class `C^n` on `ℝ × M`, the input end datum is `C^n` jointly in the center `c`, the scale `a`, the
@@ -337,8 +315,7 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
     have hw₁ : (w - c) / a ≠ 1 := by
       intro h
       rw [h, norm_one] at hle
-      have : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-      linarith
+      linarith [exp_neg_two_pi_lt_one]
     have hinv : ContDiffAt ℝ n (fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (c, a) :=
       (ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp (c, a)
         ((contDiffAt_inv ℝ ha).comp (c, a) contDiffAt_snd)
@@ -346,10 +323,16 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
         (fun p : (ℂ × ℂ) × (ℂ × M) => ContinuousLinearMap.mul ℝ ℂ p.1.2⁻¹) ((c, a), (w, x)) :=
       ContMDiffAt.comp (g := fun q : ℂ × ℂ => ContinuousLinearMap.mul ℝ ℂ q.2⁻¹) (f := Prod.fst)
         ((c, a), (w, x)) hinv.contMDiffAt contMDiffAt_fst
-    exact ((contMDiffAt_pairOfPantsPerturbation
-      (forall_single_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-      (forall_single_zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
-        contMDiff_const hHs) ⟨(w - c) / a, hw₀, hw₁⟩ x).comp ((c, a), (w, x))
+    -- The family that is `H` at `0` and zero elsewhere is periodic and `C^n` at every end.
+    have hP : ∀ r, Periodic ((Pi.single zero H : Puncture → ℝ → M → ℝ) r) 1 :=
+      (forall_update_iff (0 : Puncture → ℝ → M → ℝ) fun _ f => Periodic f 1).2
+        ⟨hH, fun _ _ _ => rfl⟩
+    have hS : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n
+        (uncurry ((Pi.single zero H : Puncture → ℝ → M → ℝ) r)) :=
+      (forall_update_iff (0 : Puncture → ℝ → M → ℝ) fun _ f =>
+        ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f)).2 ⟨hHs, fun _ _ => contMDiff_const⟩
+    exact ((contMDiffAt_pairOfPantsPerturbation hP hS ⟨(w - c) / a, hw₀, hw₁⟩ x).comp
+      ((c, a), (w, x))
       (hcoordM.prodMk (contMDiffAt_snd.comp _ contMDiffAt_snd))).clm_comp hmul
 
 variable {ι : Type*} [Fintype ι] {H : ι → ℝ → M → ℝ} {Hout : ℝ → M → ℝ}
@@ -387,52 +370,6 @@ open Floer MeasureTheory
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
-/-- The affine map `w ↦ c + a w` in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
-private noncomputable def affineChart (c a : ℂ) : ℝ × ℝ → ℝ × ℝ :=
-  Complex.equivRealProdCLM ∘ (fun w => c + a * w) ∘ Complex.equivRealProdCLM.symm
-
-private theorem affineChart_apply (c a : ℂ) (z : ℝ × ℝ) :
-    affineChart c a z = Complex.equivRealProdCLM (c + a * Complex.equivRealProdCLM.symm z) :=
-  (rfl)
-
-private theorem contDiff_affineChart (c a : ℂ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (affineChart c a) :=
-  Complex.equivRealProdCLM.contDiff.comp
-    ((by fun_prop : ContDiff ℝ n fun w : ℂ => c + a * w).comp
-      Complex.equivRealProdCLM.symm.contDiff)
-
-private theorem injective_affineChart (c : ℂ) {a : ℂ} (ha : a ≠ 0) :
-    Injective (affineChart c a) := by
-  have h : Injective fun w : ℂ => c + a * w := fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)
-  exact Complex.equivRealProdCLM.injective.comp (h.comp Complex.equivRealProdCLM.symm.injective)
-
-private theorem fderiv_affineChart_apply (c a : ℂ) (z v : ℝ × ℝ) :
-    fderiv ℝ (affineChart c a) z v =
-      Complex.equivRealProdCLM (a * Complex.equivRealProdCLM.symm v) := by
-  have h : HasDerivAt (fun w : ℂ => c + a * w) a (Complex.equivRealProdCLM.symm z) := by
-    simpa using ((hasDerivAt_id (Complex.equivRealProdCLM.symm z)).const_mul a).const_add c
-  rw [affineChart, (Complex.equivRealProdCLM.hasFDerivAt.comp z
-    ((h.hasFDerivAt.restrictScalars ℝ).comp z Complex.equivRealProdCLM.symm.hasFDerivAt)).fderiv]
-  simp [mul_comm]
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-/-- The pullback along the affine chart of a datum `P` on `ℂ`, written in the real coordinates
-through its values on `1` and `i`, evaluates `P` at the image under `w ↦ c + a w` on the image
-`a v` of the tangent vector. -/
-private theorem perturbationPullback_affineChart (c a : ℂ) (P : ℂ → V → ℂ →L[ℝ] ℝ)
-    (v w : ℝ × ℝ) (x : V) :
-    perturbationPullback (affineChart c a)
-        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
-      P (c + a * Complex.equivRealProdCLM.symm w) x (a * Complex.equivRealProdCLM.symm v) := by
-  -- A real-linear functional `κ` on `ℂ` satisfies `κ ξ = Re ξ · κ 1 + Im ξ · κ i`.
-  have hκ (κ : ℂ →L[ℝ] ℝ) (ξ : ℂ) : ξ.re * κ 1 + ξ.im * κ Complex.I = κ ξ := by
-    have hξ : ξ = ξ.re • (1 : ℂ) + ξ.im • Complex.I := by simp
-    conv_rhs => rw [hξ]
-    rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-  rw [perturbationPullback_apply, fderiv_affineChart_apply, affineChart_apply,
-    ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply, hκ]
-
 variable {H : ℝ → V → ℝ} {c a : ℂ}
 
 /-- At points other than its center, the input end datum of a `C¹` Hamiltonian is differentiable
@@ -440,10 +377,8 @@ jointly in the domain and target points. -/
 private theorem differentiableAt_inputEndPerturbation (hH : Periodic H 1)
     (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0) {w : ℂ} (hw : w ≠ c) (x : V) :
     DifferentiableAt ℝ (fun p : ℂ × V ↦ inputEndPerturbation c a H p.1 p.2) (w, x) := by
-  have hmfd : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry H) := by
-    have h := hHs.contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
+  have hmfd : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry H) :=
+    contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff
   have h := (contMDiffAt_inputEndPerturbation (n := 1) hH hmfd ha hw x).comp (w, x)
     (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
   have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
@@ -457,10 +392,11 @@ variable [FiniteDimensional ℝ V]
 /-- On the image under the affine chart of the plane without its origin, the integrated curvature
 of the input end datum is that of the pair-of-pants datum of `H` at the input `0`, along the
 reparametrized map. -/
-private theorem setLIntegral_image_affineChart_enorm_hamiltonianCurvature_inputEndPerturbation
+private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation
     (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0)
     (u : ℝ × ℝ → V) :
-    ∫⁻ z in affineChart c a '' {z | Complex.equivRealProdCLM.symm z ≠ 0}, ‖ω.hamiltonianCurvature
+    ∫⁻ z in complexAffineChart c a '' {z | Complex.equivRealProdCLM.symm z ≠ 0},
+      ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ =
@@ -468,27 +404,27 @@ private theorem setLIntegral_image_affineChart_enorm_hamiltonianCurvature_inputE
         (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z)
           x 1)
         (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z)
-          x Complex.I) w ((u ∘ affineChart c a) w)‖ₑ := by
+          x Complex.I) w ((u ∘ complexAffineChart c a) w)‖ₑ := by
   set S := {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0}
   have hSm : MeasurableSet S :=
     (measurableSet_singleton 0).compl.preimage Complex.equivRealProdCLM.symm.continuous.measurable
   -- The affine chart maps `S` off the center, where the datum is differentiable.
   have hdiff {w : ℝ × ℝ} (hw : w ∈ S) (y : V) :
       DifferentiableAt ℝ (fun p : ℂ × V ↦ inputEndPerturbation c a H p.1 p.2)
-        (Complex.equivRealProdCLM.symm (affineChart c a w), y) := by
+        (Complex.equivRealProdCLM.symm (complexAffineChart c a w), y) := by
     refine differentiableAt_inputEndPerturbation hH hHs ha ?_ y
-    rw [affineChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+    rw [complexAffineChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact fun h => hw (by simpa [ha] using h)
   have hdom {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
       (fun z ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) y v)
-      (affineChart c a w) :=
+      (complexAffineChart c a w) :=
     ((hdiff hw y).comp (f := fun z ↦ (Complex.equivRealProdCLM.symm z, y))
-      (affineChart c a w) (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
+      (complexAffineChart c a w) (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
         (differentiableAt_const y))).clm_apply (differentiableAt_const v)
   have htgt {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
       (fun y ↦ inputEndPerturbation c a H
-        (Complex.equivRealProdCLM.symm (affineChart c a w)) y v) y :=
-    ((hdiff hw y).comp (f := fun y ↦ (Complex.equivRealProdCLM.symm (affineChart c a w), y))
+        (Complex.equivRealProdCLM.symm (complexAffineChart c a w)) y v) y :=
+    ((hdiff hw y).comp (f := fun y ↦ (Complex.equivRealProdCLM.symm (complexAffineChart c a w), y))
       y ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
       (differentiableAt_const v)
   -- The pullback of the datum along the affine chart is the pair-of-pants datum.
@@ -496,15 +432,15 @@ private theorem setLIntegral_image_affineChart_enorm_hamiltonianCurvature_inputE
     apply Complex.ext <;> simp [stdComplexLineReal_eq]
   have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
     apply Complex.ext <;> simp [stdComplexLineImag_eq]
-  have hpull (v : ℝ × ℝ) : perturbationPullback (affineChart c a)
+  have hpull (v : ℝ × ℝ) : perturbationPullback (complexAffineChart c a)
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
       fun w x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm w) x
         (Complex.equivRealProdCLM.symm v) := by
     funext w x
-    rw [perturbationPullback_affineChart, inputEndPerturbation_add_mul ha]
-  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_affineChart c ha).injOn
-    (fun w _ ↦ (contDiff_affineChart c a).contDiffAt)
+    rw [perturbationPullback_complexAffineChart, inputEndPerturbation_add_mul ha]
+  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_complexAffineChart c ha).injOn
+    (fun w _ ↦ (contDiff_complexAffineChart c a).contDiffAt)
     (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I), hpull, hpull, h₁, hI]
   rfl
@@ -522,7 +458,7 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
   -- The plane is, up to the center `c`, the image under the affine chart of `ℂ ∖ {0}`.
-  have hcover : univ ⊆ affineChart c a '' {z | Complex.equivRealProdCLM.symm z ≠ 0} ∪
+  have hcover : univ ⊆ complexAffineChart c a '' {z | Complex.equivRealProdCLM.symm z ≠ 0} ∪
       {Complex.equivRealProdCLM c} := by
     intro z _
     by_cases h : Complex.equivRealProdCLM.symm z = c
@@ -530,18 +466,21 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
     · refine Or.inl ⟨Complex.equivRealProdCLM ((Complex.equivRealProdCLM.symm z - c) / a), ?_, ?_⟩
       · rw [Set.mem_ofPred_eq, ContinuousLinearEquiv.symm_apply_apply]
         exact div_ne_zero (sub_ne_zero.2 h) ha
-      · rw [affineChart_apply, ContinuousLinearEquiv.symm_apply_apply, mul_div_cancel₀ _ ha,
+      · rw [complexAffineChart_apply, ContinuousLinearEquiv.symm_apply_apply, mul_div_cancel₀ _ ha,
           add_sub_cancel, ContinuousLinearEquiv.apply_symm_apply]
   have hN : volume ({Complex.equivRealProdCLM c} : Set (ℝ × ℝ)) = 0 := by
     rw [Measure.volume_eq_prod]
     exact (Set.toFinite _).measure_zero _
-  have hP := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_single_zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single_zero (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (B := Pi.single zero B) (fun r t x => by
-      rcases eq_or_ne r zero with rfl | hr
-      · simpa using hB t x
-      · simp [Pi.single_eq_of_ne hr]) (u ∘ affineChart c a)
+  -- The family that is `H` at `0` and zero elsewhere is periodic and `C¹` at every end.
+  have hP₁ : ∀ r, Periodic ((Pi.single zero H : Puncture → ℝ → V → ℝ) r) 1 :=
+    (forall_update_iff (0 : Puncture → ℝ → V → ℝ) fun _ f => Periodic f 1).2
+      ⟨hH, fun _ _ _ => rfl⟩
+  have hP₂ : ∀ r, ContDiff ℝ 1 (uncurry ((Pi.single zero H : Puncture → ℝ → V → ℝ) r)) :=
+    (forall_update_iff (0 : Puncture → ℝ → V → ℝ) fun _ f => ContDiff ℝ 1 (uncurry f)).2
+      ⟨hHs, fun _ _ => contDiff_const⟩
+  have hP := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hP₁ hP₂
+    (B := Pi.single zero B) (fun r t x => by by_cases hr : r = zero <;> simp [hr, hB t x])
+    (u ∘ complexAffineChart c a)
   rw [Fintype.sum_eq_single zero fun r hr => by simp [Pi.single_eq_of_ne hr],
     Pi.single_eq_same] at hP
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
@@ -551,7 +490,7 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
     _ ≤ _ := lintegral_mono_set hcover
     _ ≤ _ := lintegral_union_le _ _ _
     _ = _ := by rw [setLIntegral_measure_zero _ _ hN, add_zero,
-        setLIntegral_image_affineChart_enorm_hamiltonianCurvature_inputEndPerturbation ω hH hHs
+        setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation ω hH hHs
           ha u]
     _ ≤ _ := setLIntegral_le_lintegral _ _
     _ ≤ _ := hP
@@ -582,59 +521,85 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_puncturedSpherePerturbat
 
 /-- **The integrated curvature on a sphere with moving input ends is bounded uniformly in the
 configuration.** Let the input ends have period-one `C¹` Hamiltonians `H i` with `|H i| ≤ B i`,
-nonzero scales `a i` and centers `c i`, such that the discs `‖w - c i‖ < ‖a i‖ / 2` are pairwise
-disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and let the output end have a period-one `C¹`
-Hamiltonian `Hout` with `|Hout| ≤ Bout`. Write the components of the datum `K` in the global
-coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u`
-into the target, the integral of `|R_K(z, u(z))|` over the plane is at most
-`∑ i, B i + Bout`. -/
+nonzero scales `a i` and centers `c i`, such that the supports `‖w - c i‖ < ‖a i‖ exp (-2π) / 2`
+of the input end data are pairwise disjoint and lie in the disc `‖w‖ ≤ 2 exp (2π)`, and let the
+output end have a period-one `C¹` Hamiltonian `Hout` with `|Hout| ≤ Bout`. Write the components of
+the datum `K` in the global coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and
+`K_t(z) = K(z)(i)`. Then for every map `u` into the target, the integral of `|R_K(z, u(z))|` over
+the plane is at most `∑ i, B i + Bout`. -/
 theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
     (ω : SymplecticForm V) (hH : ∀ i, Periodic (H i) 1) (hHs : ∀ i, ContDiff ℝ 1 (uncurry (H i)))
     (hHout : Periodic Hout 1) (hHouts : ContDiff ℝ 1 (uncurry Hout)) (ha : ∀ i, a i ≠ 0)
-    (hsep : Pairwise fun i j => ‖a i‖ / 2 + ‖a j‖ / 2 ≤ ‖c i - c j‖)
-    (hout : ∀ i, ‖c i‖ + ‖a i‖ / 2 ≤ 2 * Real.exp (2 * π)) {B : ι → ℝ} {Bout : ℝ}
-    (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout) (u : ℝ × ℝ → V) :
+    (hsep : Pairwise fun i j =>
+      ‖a i‖ * Real.exp (-(2 * π)) / 2 + ‖a j‖ * Real.exp (-(2 * π)) / 2 ≤ ‖c i - c j‖)
+    (hout : ∀ i, ‖c i‖ + ‖a i‖ * Real.exp (-(2 * π)) / 2 ≤ 2 * Real.exp (2 * π)) {B : ι → ℝ}
+    {Bout : ℝ} (hB : ∀ i t x, |H i t x| ≤ B i) (hBout : ∀ t x, |Hout t x| ≤ Bout)
+    (u : ℝ × ℝ → V) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
           Complex.I) z (u z)‖ₑ ≤ ∑ i, ENNReal.ofReal (B i) + ENNReal.ofReal Bout := by
-  -- The plane is covered by the discs `D i` of the input ends, on each of which the datum is the
-  -- datum of that end, and the open set `O` off their supports, on which it is the output datum.
+  classical
+  -- The plane is covered, up to the boundary circles `N` of the supports of the input end data,
+  -- by these supports `D i`, on each of which the datum is the datum of that end, and the open
+  -- set `O` off them, on which it is the output datum.
+  set r : ι → ℝ := fun i ↦ ‖a i‖ * Real.exp (-(2 * π)) / 2
   set f : ℝ × ℝ → ENNReal := fun z ↦ ‖ω.hamiltonianCurvature
     (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
     (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
       Complex.I) z (u z)‖ₑ
-  set D : ι → Set (ℝ × ℝ) :=
-    fun i ↦ {z | ‖Complex.equivRealProdCLM.symm z - c i‖ < ‖a i‖ / 2}
-  set O : Set (ℝ × ℝ) :=
-    {z | ∀ i, ‖a i‖ * Real.exp (-(2 * π)) / 2 < ‖Complex.equivRealProdCLM.symm z - c i‖}
+  set D : ι → Set (ℝ × ℝ) := fun i ↦ {z | ‖Complex.equivRealProdCLM.symm z - c i‖ < r i}
+  set O : Set (ℝ × ℝ) := {z | ∀ i, r i < ‖Complex.equivRealProdCLM.symm z - c i‖}
+  set N : Set (ℝ × ℝ) :=
+    ⋃ i, Complex.equivRealProdCLM.symm ⁻¹' Metric.sphere (c i) (r i)
   have hDo (i : ι) : IsOpen (D i) := isOpen_lt (by fun_prop) continuous_const
   have hOo : IsOpen O := by
     simp only [O, Set.ofPred_forall]
     exact isOpen_iInter_of_finite fun i ↦ isOpen_lt continuous_const (by fun_prop)
-  have hcover : univ ⊆ (⋃ i, D i) ∪ O := by
+  have hcover : univ ⊆ ((⋃ i, D i) ∪ O) ∪ N := by
     intro z _
     by_cases h : ∃ i, z ∈ D i
-    · exact Or.inl (mem_iUnion.2 h)
-    · refine Or.inr fun i ↦ ?_
-      have h' : ‖a i‖ / 2 ≤ ‖Complex.equivRealProdCLM.symm z - c i‖ :=
-        not_lt.1 (not_exists.1 h i)
-      have he : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
-      have hpos := norm_pos_iff.2 (ha i)
-      nlinarith
+    · exact Or.inl (Or.inl (mem_iUnion.2 h))
+    by_cases h' : ∃ i, ‖Complex.equivRealProdCLM.symm z - c i‖ = r i
+    · obtain ⟨i, hi⟩ := h'
+      exact Or.inr (mem_iUnion.2 ⟨i, by simpa [dist_eq_norm] using hi⟩)
+    · exact Or.inl (Or.inr fun i ↦ lt_of_le_of_ne (not_lt.1 (not_exists.1 h i))
+        fun hi ↦ h' ⟨i, hi.symm⟩)
+  have hN : volume N = 0 := by
+    refine measure_iUnion_null fun i ↦ ?_
+    have hpre := Complex.volume_preserving_equiv_real_prod.symm.measure_preimage
+      (s := Metric.sphere (c i) (r i)) Metric.isClosed_sphere.measurableSet.nullMeasurableSet
+    exact hpre.trans (Measure.addHaar_sphere volume (c i) (r i))
   have hD (i : ι) : ∫⁻ z in D i, f z ≤ ENNReal.ofReal (B i) := by
     rw [setLIntegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_eq ω (hDo i)
-      fun z hz x ↦ puncturedSpherePerturbation_eq_inputEndPerturbation hsep hout hz x]
-    exact (setLIntegral_le_lintegral _ _).trans
-      (lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le ω (hH i) (hHs i) (ha i)
-        (hB i) u)
+      fun z hz x ↦ puncturedSpherePerturbation_eq_inputEndPerturbation_of_forall_ne
+        (fun j hj ↦ ?_) ?_ x]
+    · exact (setLIntegral_le_lintegral _ _).trans
+        (lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le ω (hH i) (hHs i) (ha i)
+          (hB i) u)
+    · have h₁ := hsep hj
+      have h₂ : ‖c j - c i‖ ≤ ‖Complex.equivRealProdCLM.symm z - c i‖ +
+          ‖Complex.equivRealProdCLM.symm z - c j‖ := by
+        simpa using norm_sub_le (Complex.equivRealProdCLM.symm z - c i)
+          (Complex.equivRealProdCLM.symm z - c j)
+      have h₃ : ‖Complex.equivRealProdCLM.symm z - c i‖ < r i := hz
+      simp only [r] at h₃
+      linarith
+    · have h₃ : ‖Complex.equivRealProdCLM.symm z - c i‖ < r i := hz
+      simp only [r] at h₃
+      calc ‖Complex.equivRealProdCLM.symm z‖
+          ≤ ‖c i‖ + ‖Complex.equivRealProdCLM.symm z - c i‖ := by
+            simpa using norm_add_le (c i) (Complex.equivRealProdCLM.symm z - c i)
+        _ ≤ 2 * Real.exp (2 * π) := by linarith [hout i]
   have hO : ∫⁻ z in O, f z ≤ ENNReal.ofReal Bout := by
     rw [setLIntegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_eq ω hOo
       fun z hz x ↦ puncturedSpherePerturbation_eq_negativePlanePerturbation (fun i ↦ (hz i).le) x]
     exact (setLIntegral_le_lintegral _ _).trans
       (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hHout hHouts hBout u)
   calc ∫⁻ z, f z = ∫⁻ z in univ, f z := (setLIntegral_univ _).symm
-    _ ≤ ∫⁻ z in (⋃ i, D i) ∪ O, f z := lintegral_mono_set hcover
+    _ ≤ ∫⁻ z in ((⋃ i, D i) ∪ O) ∪ N, f z := lintegral_mono_set hcover
+    _ ≤ (∫⁻ z in (⋃ i, D i) ∪ O, f z) + ∫⁻ z in N, f z := lintegral_union_le _ _ _
+    _ = ∫⁻ z in (⋃ i, D i) ∪ O, f z := by rw [setLIntegral_measure_zero _ _ hN, add_zero]
     _ ≤ (∫⁻ z in ⋃ i, D i, f z) + ∫⁻ z in O, f z := lintegral_union_le _ _ _
     _ ≤ (∑' i, ∫⁻ z in D i, f z) + ∫⁻ z in O, f z := by
         gcongr
