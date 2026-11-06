@@ -221,6 +221,12 @@ noncomputable def quotientSheafGlobalSectionsIso (hJ : IsAdic J) :
     (quotientSheaf hJ).obj.obj (op ⊤) ≅ CommRingCat.of (A ⧸ J) :=
   (StructureSheaf.globalSectionsIso (A ⧸ J)).symm
 
+/-- The inverse of the identification of the global sections of `O_J` with `A ⧸ J` is the
+canonical map from `A ⧸ J` to the global sections of the structure sheaf of `Spec (A ⧸ J)`. -/
+theorem quotientSheafGlobalSectionsIso_inv (hJ : IsAdic J) :
+    (quotientSheafGlobalSectionsIso hJ).inv = CommRingCat.ofHom (algebraMap _ _) :=
+  (rfl)
+
 /-- On global sections, the reduction map `O_J → O_K` is the quotient map `A ⧸ J → A ⧸ K`. -/
 @[reassoc]
 theorem quotientSheafGlobalSectionsIso_inv_comp_quotientTransition (hJ : IsAdic J) (hK : IsAdic K)
