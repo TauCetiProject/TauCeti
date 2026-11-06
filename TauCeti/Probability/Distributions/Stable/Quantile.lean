@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Probability.Distributions.Stable.Cdf
 public import TauCeti.Probability.Distributions.Stable.Support
 public import TauCeti.Probability.Quantile
 
@@ -54,9 +55,8 @@ theorem quantile_stableMeasure_eq_iff_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ 
     (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     (stableMeasure α β s m).quantile u = x ↔ cdf (stableMeasure α β s m) x = u := by
   let := isProbabilityMeasure_stableMeasure hα hβ.le s m
-  let := nullSingletonClass_stableMeasure α β hs m
   simpa using Measure.quantile_eq_iff_of_ae_mem_of_strictMonoOn _ ordConnected_univ
-    (ae_of_all _ mem_univ) (Measure.continuous_cdf_of_noAtoms _)
+    (ae_of_all _ mem_univ) (continuous_cdf_stableMeasure hα hβ.le hs)
     ((strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m).strictMonoOn _) hu
 
 /-- For every valid skewness, a positive-scale stable quantile is strictly increasing on
@@ -64,8 +64,7 @@ interior levels, even when the distribution is supported on a half-line. -/
 theorem strictMonoOn_quantile_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
     (hs : 0 < s) (m : ℝ) : StrictMonoOn (stableMeasure α β s m).quantile (Ioo 0 1) := by
   let := isProbabilityMeasure_stableMeasure hα hβ s m
-  let := nullSingletonClass_stableMeasure α β hs m
-  exact Measure.strictMonoOn_quantile _ (Measure.continuous_cdf_of_noAtoms _)
+  exact Measure.strictMonoOn_quantile _ (continuous_cdf_stableMeasure hα hβ hs)
 
 /-- Two-sided positive-scale stable quantiles vary continuously with interior probability
 levels. -/
