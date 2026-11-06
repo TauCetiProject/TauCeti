@@ -77,6 +77,14 @@ theorem natTime_of_le (π : LSPath P b lam) {k : ℕ} (hk : k ≤ π.length + 1)
     π.natTime k = π.time ⟨k, Nat.lt_succ_of_le hk⟩ := by
   simp only [natTime, min_eq_left hk]
 
+theorem natDir_of_length_le (π : LSPath P b lam) {k : ℕ} (hk : π.length ≤ k) :
+    π.natDir k = (π.dir (Fin.last _)).1 := by
+  simp only [natDir, min_eq_right hk, Fin.last]
+
+theorem natTime_of_length_lt (π : LSPath P b lam) {k : ℕ} (hk : π.length < k) :
+    π.natTime k = 1 := by
+  simpa only [natTime, min_eq_right (Nat.succ_le_of_lt hk), Fin.last] using π.time_last
+
 theorem isMinimalCosetRep_natDir (π : LSPath P b lam) (k : ℕ) :
     (weylCoxeterSystem P b).IsMinimalCosetRep (P.wallIndices b lam) (π.natDir k) :=
   (π.dir _).2
@@ -89,7 +97,7 @@ theorem natTime_zero (π : LSPath P b lam) : π.natTime 0 = 0 :=
 theorem natTime_last (π : LSPath P b lam) : π.natTime (π.length + 1) = 1 := by
   simpa only [natTime, min_self, Fin.last] using π.time_last
 
-theorem natTime_strictMono (π : LSPath P b lam) (k : ℕ) (hk : k < π.length + 1) :
+theorem natTime_lt_natTime_succ (π : LSPath P b lam) (k : ℕ) (hk : k < π.length + 1) :
     π.natTime k < π.natTime (k + 1) := by
   apply π.strictMono_time
   simp only [Fin.mk_lt_mk, min_eq_left (by omega : k ≤ π.length + 1),

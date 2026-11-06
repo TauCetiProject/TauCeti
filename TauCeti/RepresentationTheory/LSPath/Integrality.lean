@@ -133,7 +133,7 @@ theorem exists_minHeight_eq_intCast (π : LSPath P b lam)
     (hF : ∀ m, F (f m) = (P.coroot' i m : 𝕜)) :
     ∃ z : ℤ, (π.toPLPath 𝕜 f).minHeight F = z := by
   obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam
-    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp⟩ i
+    π.natTime_zero π.natDir_chain π.natTime_lt_natTime_succ ⟨1, by simp⟩ i
   exact ⟨z, by rw [π.minHeight_eq_of_isLeast f i F hF hz, Rat.cast_intCast]⟩
 
 /-- The raising and lowering heights of an LS path are natural numbers. Their difference is
@@ -216,7 +216,7 @@ theorem exists_lower_toPLPath_eq (π : LSPath P b lam) (hlam : lam ∈ dominantC
   -- The rising piece: the last vertex `k₀` of minimal height and the first vertex `k₁` after it
   -- of height at least `H k₀ + 1`.
   obtain ⟨k₀, k₁, hk₀₁, hk₁, hleast, hrise, habove⟩ := exists_strictly_rising_of_isAChain hlam
-    π.natTime_zero π.natDir_chain π.natTime_strictMono ⟨1, by simp⟩ i
+    π.natTime_zero π.natDir_chain π.natTime_lt_natTime_succ ⟨1, by simp⟩ i
     (by simpa only [hH] using hgap)
   simp only [← hH] at hleast hrise habove
   have hleast' (j : ℕ) (hj : j ≤ s) : H k₀ ≤ H j := hleast.2 ⟨j, hj, rfl⟩

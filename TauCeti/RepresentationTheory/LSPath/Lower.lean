@@ -126,7 +126,7 @@ private theorem lower_chain (π : LSPath P b lam) (hlam : lam ∈ dominantChambe
       (π.natTime (k + 1) - π.natTime k) * P.coroot' i (π.natDir k • lam) := by
     rw [hH, hH, Finset.sum_range_succ]
   have hd (k : ℕ) (hk : k < π.length + 1) : 0 < π.natTime (k + 1) - π.natTime k :=
-    sub_pos.mpr (π.natTime_strictMono k hk)
+    sub_pos.mpr (π.natTime_lt_natTime_succ k hk)
   -- The reflected directions lie strictly on the positive side of the wall of `αᵢ`.
   have hcpos (k : ℕ) (h₀ : k₀ ≤ k) (h₁ : k < k₁) : 0 < P.coroot' i (π.natDir k • lam) := by
     have hr := (hrise k h₀ h₁).1
@@ -229,7 +229,7 @@ private theorem exists_toPLPath_eq_lower (π : LSPath P b lam) (hlam : lam ∈ d
   · rw [lowerTime_of_lt' (by omega), Nat.add_sub_cancel, π.natTime_last]
   · -- The times increase weakly: the new break `t₁` lies in the segment `k₁ - 1`.
     have hmono (k : ℕ) (hk : k < π.length + 1) : π.natTime k ≤ π.natTime (k + 1) :=
-      (π.natTime_strictMono k hk).le
+      (π.natTime_lt_natTime_succ k hk).le
     rcases lt_trichotomy (n + 1) k₁ with h₁ | h₁ | h₁
     · rw [lowerTime_of_lt (by omega), lowerTime_of_lt h₁]
       exact hmono n (by omega)
@@ -264,7 +264,7 @@ theorem exists_toPLPath_eq_of_lower_eq_some (π : LSPath P b lam)
   obtain ⟨k₀, k₁, θ, hk₀₁, hk₁, hθ₀, hθ₁, hleast, hrise, habove, hθmul, hlow⟩ :=
     exists_lower_toPLPath_eq π hlam f i F hF (f (P.root i)) H (fun _ ↦ rfl) h1
   obtain ⟨z, hz⟩ := exists_isLeast_sum_coroot'_eq_intCast_of_isAChain hlam π.natTime_zero
-    π.natDir_chain π.natTime_strictMono ⟨1, by rw [π.natTime_last, Int.cast_one]⟩ i
+    π.natDir_chain π.natTime_lt_natTime_succ ⟨1, by rw [π.natTime_last, Int.cast_one]⟩ i
   have hleast' (j : ℕ) (hj : j ≤ s) : H k₀ ≤ H j := hleast.2 ⟨j, hj, rfl⟩
   set j₁ := k₁ - 1
   have hk₁' : j₁ + 1 = k₁ := by omega
@@ -274,7 +274,7 @@ theorem exists_toPLPath_eq_of_lower_eq_some (π : LSPath P b lam)
     simp only [hH, Finset.sum_range_succ]
   set d := π.natTime k₁ - π.natTime j₁ with hd
   have hd₀ : 0 < d := by
-    have := π.natTime_strictMono j₁ (by omega)
+    have := π.natTime_lt_natTime_succ j₁ (by omega)
     rw [hk₁'] at this
     linarith
   set t₁ := π.natTime j₁ + θ * d with ht₁
