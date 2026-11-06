@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Instances.Matrix
+import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Orthogonal matrices as linear isometries
@@ -24,6 +25,8 @@ corresponding Euclidean space.
 * `TauCeti.orthogonalGroupToLinearIsometryEquiv_mul_apply` and
   `TauCeti.orthogonalGroupToLinearIsometryEquiv_inv_apply`: products and inverses act by
   composites and inverses.
+* `TauCeti.orthogonalGroupToLinearIsometryEquiv_surjective`: every linear isometry of Euclidean
+  space is the action of an orthogonal matrix.
 * `TauCeti.det_orthogonalGroupToLinearIsometryEquiv`: the linear isometry has the determinant of
   the matrix.
 * `TauCeti.continuous_orthogonalGroupToLinearIsometryEquiv`: the resulting linear maps depend
@@ -112,6 +115,27 @@ theorem orthogonalGroupToLinearIsometryEquiv_injective :
   exact LinearMap.ext fun x => by
     simpa only [orthogonalGroupToLinearIsometryEquiv_apply, Matrix.toLpLin_apply] using
       _root_.LinearIsometryEquiv.congr_fun h x
+
+/-- Every linear isometry equivalence of Euclidean space is the action of an orthogonal matrix,
+namely its matrix in the standard basis. -/
+theorem orthogonalGroupToLinearIsometryEquiv_surjective :
+    Function.Surjective
+      (orthogonalGroupToLinearIsometryEquiv :
+        Matrix.orthogonalGroup ι ℝ → EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι) := by
+  intro g
+  set B := Matrix.toEuclideanLin.symm g.toLinearIsometry.toLinearMap
+  have hB : Matrix.toEuclideanLin B = g.toLinearIsometry.toLinearMap :=
+    Matrix.toEuclideanLin.apply_symm_apply _
+  have hmem : B ∈ Matrix.orthogonalGroup ι ℝ := by
+    rw [Matrix.mem_orthogonalGroup_iff']
+    apply Matrix.toEuclideanLin.injective
+    rw [Matrix.toLpLin_mul_same, ← Matrix.conjTranspose_eq_transpose_of_trivial,
+      Matrix.toEuclideanLin_conjTranspose_eq_adjoint, hB, Matrix.toLpLin_one]
+    refine LinearMap.ext fun x ↦ ext_inner_left ℝ fun y ↦ ?_
+    simp
+  refine ⟨⟨B, hmem⟩, LinearIsometryEquiv.ext fun x ↦ ?_⟩
+  rw [orthogonalGroupToLinearIsometryEquiv_apply]
+  exact LinearMap.congr_fun hB x
 
 /-- The linear isometry equivalence of an orthogonal matrix has the determinant of the matrix. -/
 @[simp]
