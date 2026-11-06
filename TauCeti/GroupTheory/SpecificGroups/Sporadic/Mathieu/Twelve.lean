@@ -49,11 +49,11 @@ basic orbits of lengths `12`, `11`, `10`, `9` and `8`: for each `i < 5` an expli
 of the model fixes `0, …, i - 1` and sends `i` to each of `i, …, 11`. The two generators, and every
 product `s * r` of an element `s` of the `j`-th list with an element `r` of the `i`-th list for
 `i ≤ j`, sift through these lists from the `i`-th on, which by
-`Subgroup.natCard_eq_prod_length_of_sift` pins the order to the product of their lengths. The sifts
-are run by `decide` in the kernel. To keep them cheap, every listed element is a product of at most
-two of ten permutations given by tables of images: the ATLAS generators and eight further elements
-of the model, each checked to be a word in the ATLAS generators. The same argument shows that
-`0, 1, 2, 3, 4` is a base: only the identity of the model fixes these five points.
+`Subgroup.natCard_eq_prod_length_of_siftCheck` pins the order to the product of their lengths. The
+sifts are run by `decide` in the kernel. To keep them cheap, every listed element is a product of at
+most two of ten permutations given by tables of images: the ATLAS generators and eight further
+elements of the model, each checked to be a word in the ATLAS generators. The same argument shows
+that `0, 1, 2, 3, 4` is a base: only the identity of the model fixes these five points.
 
 ## Main declarations
 
@@ -427,63 +427,31 @@ private theorem mem_of_mem_transversal {i : ℕ} {r : Equiv.Perm (Fin 12)} (hr :
       hh1, hg2, hh2, hg3, hh3, hg4, hh4, one_mem]
   | _ + 5 => simp [transversal]
 
-private theorem transversal_mem_stabilizerChain :
-    ∀ i < 5, ∀ r ∈ transversal i, r ∈ M12.stabilizerChain (Fin.ofNat 12) i := by
-  have h : (List.range 5).all (fun i ↦ (transversal i).all fun r ↦
-      (List.range i).all fun j ↦ decide (r • Fin.ofNat 12 j = Fin.ofNat 12 j)) = true := by
-    decide +kernel
-  simp only [List.all_eq_true, List.mem_range, decide_eq_true_eq] at h
-  exact fun i hi r hr ↦ (Subgroup.mem_stabilizerChain_iff _ _).2
-    ⟨mem_of_mem_transversal hr, h i hi r hr⟩
+private theorem mem_transversal : ∀ i < 5, ∀ r ∈ transversal i, r ∈ M12 :=
+  fun _ _ _ ↦ mem_of_mem_transversal
 
-private theorem transversal_ne_nil : ∀ i < 5, transversal i ≠ [] := by
-  decide
+private theorem le_closure_tables : M12 ≤ Subgroup.closure {g | g ∈ [aTable, bTable]} := by
+  rw [M12_def, aTable_eq, bTable_eq]
+  exact Subgroup.closure_mono (by simp [Set.insert_subset_iff])
 
-private theorem nodup_map_transversal :
-    ∀ i < 5, ((transversal i).map (· • Fin.ofNat 12 i)).Nodup := by
-  have h : (List.range 5).all (fun i ↦
-      ((transversal i).map (· • Fin.ofNat 12 i)).Nodup) = true := by
-    decide +kernel
-  simpa only [List.all_eq_true, List.mem_range, decide_eq_true_eq] using h
+private theorem transversalCheck_eq_true :
+    TauCeti.transversalCheck (Fin.ofNat 12) transversal 5 = true := by
+  decide +kernel
 
-/-- The sifting conditions at level `i`: every product of an element of a list from level `i` on
-with an element of `transversal i` sifts through `transversal i, …, transversal 4`. -/
-private def siftCheck (i : ℕ) : Bool :=
-  ((List.range 5).filter (i ≤ ·)).all fun j ↦ (transversal j).all fun s ↦
-    (transversal i).all fun r ↦ TauCeti.sift (Fin.ofNat 12) transversal i (5 - i) 1 (s * r)
+private theorem sift_tables :
+    [aTable, bTable].all (TauCeti.sift (Fin.ofNat 12) transversal 0 5 1) = true := by
+  decide +kernel
 
-private theorem sift_transversal : ∀ i < 5, ∀ j < 5, i ≤ j → ∀ s ∈ transversal j,
-    ∀ r ∈ transversal i, TauCeti.sift (Fin.ofNat 12) transversal i (5 - i) 1 (s * r) = true := by
-  intro i hi j hj hij s hs r hr
-  have h : siftCheck i = true := by
-    interval_cases i
-    · decide +kernel
-    · decide +kernel
-    · decide +kernel
-    · decide +kernel
-    · decide +kernel
-  simp only [siftCheck, List.all_eq_true, List.mem_filter, List.mem_range,
-    decide_eq_true_eq] at h
-  exact h j ⟨hj, hij⟩ s hs r hr
-
-private theorem le_closure_transversal :
-    M12 ≤ Subgroup.closure {r | ∃ i < 5, r ∈ transversal i} := by
-  have hS : {r | ∃ j, 0 ≤ j ∧ j < 0 + 5 ∧ r ∈ transversal j} =
-      {r | ∃ i < 5, r ∈ transversal i} := by
-    simp
-  have hsa : TauCeti.sift (Fin.ofNat 12) transversal 0 5 1 aTable = true := by decide +kernel
-  have hsb : TauCeti.sift (Fin.ofNat 12) transversal 0 5 1 bTable = true := by decide +kernel
-  have ha := TauCeti.inv_mul_mem_closure_of_sift hsa
-  have hb := TauCeti.inv_mul_mem_closure_of_sift hsb
-  rw [inv_one, one_mul, hS] at ha hb
-  rw [M12_def, Subgroup.closure_le, Set.insert_subset_iff, Set.singleton_subset_iff]
-  exact ⟨aTable_eq ▸ ha, bTable_eq ▸ hb⟩
+private theorem siftCheck_eq_true :
+    ∀ i < 5, TauCeti.siftCheck (Fin.ofNat 12) transversal 5 i = true := by
+  intro i hi
+  interval_cases i <;> decide +kernel
 
 /-- **The points `0, 1, 2, 3, 4` form a base of `M12`**: no element of `M12` other than `1` fixes
 all of them. -/
 theorem stabilizerChain_five_eq_bot : M12.stabilizerChain (Fin.ofNat 12) 5 = ⊥ :=
-  Subgroup.stabilizerChain_eq_bot_of_sift transversal_mem_stabilizerChain transversal_ne_nil
-    nodup_map_transversal le_closure_transversal sift_transversal
+  Subgroup.stabilizerChain_eq_bot_of_siftCheck mem_transversal le_closure_tables
+    transversalCheck_eq_true sift_tables siftCheck_eq_true
 
 end M12
 
@@ -491,9 +459,8 @@ end M12
 elements: along the base `0, 1, 2, 3, 4` its basic orbits have lengths `12`, `11`, `10`, `9` and
 `8`. -/
 theorem card_M12 : Nat.card M12 = 95040 := by
-  rw [Subgroup.natCard_eq_prod_length_of_sift M12.transversal_mem_stabilizerChain
-    M12.transversal_ne_nil M12.nodup_map_transversal M12.le_closure_transversal
-    M12.sift_transversal]
+  rw [Subgroup.natCard_eq_prod_length_of_siftCheck M12.mem_transversal M12.le_closure_tables
+    M12.transversalCheck_eq_true M12.sift_tables M12.siftCheck_eq_true]
   decide
 
 end TauCeti.Sporadic
