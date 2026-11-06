@@ -63,9 +63,15 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
   `TauCeti.exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow` -- locally uniform upper and
   pointwise lower bounds comparing `‖((t : ℂ) + w) ^ s‖` with `(1 + t) ^ s.re` for `w` near
   `z ∈ slitPlane`, `t ≥ 0`, and arbitrary `s : ℂ`.
-* `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
-  continuous in the real variable `t > 0`.
-* `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
+* `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
+  `TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
+  `(0, ∞)` and `[0, ∞)`.
+* `Complex.cpow_half_re_nonneg`, `Complex.cpow_half_re_pos` -- the principal square root has
+  nonnegative real part, strictly positive on the slit plane.
+* `Complex.cpow_half_add_cpow_half_re_pos` -- a sum of principal square roots has positive real
+  part if at least one base lies in the slit plane.
+* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half` -- multiplying
+  `w ^ (-1/2)` by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 -/
@@ -409,6 +415,29 @@ theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} (hx : x ∈ slitPla
 end TauCeti
 
 namespace Complex
+
+/-- The principal square root has nonnegative real part, including on the branch cut. -/
+theorem cpow_half_re_nonneg (z : ℂ) : 0 ≤ (z ^ (1 / 2 : ℂ)).re := by
+  simpa only [one_div, cpow_inv_two_re] using
+    Real.sqrt_nonneg ((‖z‖ + z.re) / 2)
+
+/-- The principal square root of a point in the slit plane has positive real part. -/
+theorem cpow_half_re_pos {z : ℂ} (hz : z ∈ slitPlane) :
+    0 < (z ^ (1 / 2 : ℂ)).re := by
+  rw [one_div, cpow_inv_two_re, Real.sqrt_pos]
+  rcases mem_slitPlane_iff.mp hz with h | h
+  · linarith [norm_nonneg z]
+  · have := abs_re_lt_norm.mpr h
+    linarith [neg_abs_le z.re]
+
+/-- A sum of principal square roots has positive real part if at least one base lies in
+the slit plane. -/
+theorem cpow_half_add_cpow_half_re_pos {a b : ℂ} (h : a ∈ slitPlane ∨ b ∈ slitPlane) :
+    0 < (a ^ (1 / 2 : ℂ) + b ^ (1 / 2 : ℂ)).re := by
+  rw [add_re]
+  rcases h with ha | hb
+  · exact add_pos_of_pos_of_nonneg (cpow_half_re_pos ha) (cpow_half_re_nonneg b)
+  · exact add_pos_of_nonneg_of_pos (cpow_half_re_nonneg a) (cpow_half_re_pos hb)
 
 /-- The product of two principal powers `w ^ (-1/2)` is `w⁻¹`, including at `w = 0`. -/
 theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) : ℂ) = w⁻¹ := by
