@@ -8,12 +8,13 @@ module
 public import TauCeti.RingTheory.AdicCompletion.Algebra
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import TauCeti.RingTheory.AdicCompletion.Regular
+import Mathlib.Tactic.LinearCombination
 
 /-!
 # The principal localization–completion square
 
 For a regular element `r` of a commutative ring `R`, the square with corners
-`R`, `R[1/r]`, its `(r)`-adic completion `R̂`, and `R̂[1/r]` is a pullback.
+`R`, `R[1/r]`, the `(r)`-adic completion `R̂` of `R`, and `R̂[1/r]` is a pullback.
 The difference map `R[1/r] × R̂ → R̂[1/r]` is also surjective. Thus it gives the short exact
 sequence used before further completion in a second parameter.
 
@@ -47,18 +48,11 @@ theorem existsUnique_localization_lift (hr : IsRegular r)
   let C := AdicCompletion I R
   let D := Localization.Away (algebraMap R C r)
   let f := Localization.awayMap (algebraMap R C) r
-  have hrC : IsRegular (algebraMap R C r) :=
-    (Commute.isRegular_iff fun _ ↦ Commute.all _ _).mpr
-      ((isSMulRegular_algebraMap_iff C).mpr
-        (isSMulRegular_span_singleton hr.left.isSMulRegular))
-  have hinjC : Function.Injective (algebraMap C D) :=
-    (IsLocalization.injective_iff_isRegular (S := D)
-      (Submonoid.powers (algebraMap R C r))).mpr
-      (fun ⟨_, n, hn⟩ ↦ hn ▸ hrC.pow n)
-  have hinjR : Function.Injective (algebraMap R (Localization.Away r)) :=
-    (IsLocalization.injective_iff_isRegular (S := Localization.Away r)
-      (Submonoid.powers r)).mpr
-      (fun ⟨_, n, hn⟩ ↦ hn ▸ hr.pow n)
+  have hrC : IsRegular (algebraMap R C r) := hr.adicCompletion
+  have hinjC := IsLocalization.injective D
+    (Submonoid.powers_le.mpr (isRegular_iff_mem_nonZeroDivisors.mp hrC))
+  have hinjR := IsLocalization.injective (Localization.Away r)
+    (Submonoid.powers_le.mpr (isRegular_iff_mem_nonZeroDivisors.mp hr))
   obtain ⟨n, c, hc⟩ := IsLocalization.Away.surj r a
   have hcb : algebraMap R C c = algebraMap R C r ^ n * b := by
     apply hinjC
@@ -118,8 +112,9 @@ theorem exists_localization_sub_completion (r : R)
     IsLocalization.map_eq (Submonoid.powers r).le_comap_map y
   have hfa := congrArg f ha
   simp only [map_mul, map_pow, hf] at hfa
-  simp only [map_neg, sub_neg_eq_add, add_mul]
-  rw [hc, hfa, ← map_pow, mul_comm (algebraMap C D b), ← map_mul, ← hb, map_sub]
-  ring
+  have hbD := congrArg (algebraMap C D) hb
+  simp only [map_sub, map_mul, map_pow] at hbD
+  simp only [map_neg, sub_neg_eq_add]
+  linear_combination hfa - hbD - hc
 
 end AdicCompletion

@@ -12,20 +12,20 @@ public import Mathlib.Algebra.Regular.SMul
 # Regularity of the parameter on principal-adic completions
 
 If multiplication by `r` is injective on a module, it remains injective on its `(r)`-adic
-completion. This needs neither Noetherianity nor finite generation. Cancellation modulo
-`r^(n+1)` proves vanishing modulo `r^n`. In particular the parameter remains a non-zero-divisor
+completion. This needs neither Noetherianity nor finite generation.
+In particular the parameter remains a non-zero-divisor
 when forming a localization of its own adic completion.
 -/
 
 public section
 
-namespace AdicCompletion
+open AdicCompletion
 
 variable {R : Type*} [CommRing R] {M : Type*} [AddCommGroup M] [Module R M] {r : R}
 
 /-- A regular element on a module is regular on its own principal-adic completion, without
 Noetherian or finiteness hypotheses. -/
-theorem isSMulRegular_span_singleton (hr : IsSMulRegular M r) :
+theorem IsSMulRegular.adicCompletion (hr : IsSMulRegular M r) :
     IsSMulRegular (AdicCompletion (Ideal.span {r}) M) r := by
   apply (injective_iff_map_eq_zero (DistribSMul.toLinearMap R _ r)).mpr
   intro x hx
@@ -50,4 +50,9 @@ theorem isSMulRegular_span_singleton (hr : IsSMulRegular M r) :
     ← eval_apply, ← ha]
   exact han
 
-end AdicCompletion
+/-- A regular element remains regular in its own principal-adic completion as a ring. -/
+theorem IsRegular.adicCompletion (hr : IsRegular r) :
+    IsRegular (algebraMap R (AdicCompletion (Ideal.span {r}) R) r) :=
+  (Commute.isRegular_iff fun _ ↦ Commute.all _ _).mpr
+    ((isSMulRegular_algebraMap_iff (AdicCompletion (Ideal.span {r}) R)).mpr
+      hr.left.isSMulRegular.adicCompletion)
