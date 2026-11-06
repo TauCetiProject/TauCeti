@@ -11,29 +11,33 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgeb
 /-!
 # The simply connected Chevalley group scheme
 
-For a valid Dynkin type `t`, the full-weight module `V_sc(t) = ⨁ᵢ L(ϖᵢ)`, the direct sum of the
-fundamental modules of the pinned Lie algebra, carries the admissible lattice `⨁ᵢ U_ℤ · v⁺ᵢ` with
-a weight basis whose weights span the whole weight lattice `Fin t.rank → ℤ`. This file packages
-these as a Chevalley datum, `TauCeti.DynkinType.scChevalleyDatum`, and names its group scheme
-over `ℤ`, the **simply connected Chevalley group scheme** `G_sc(t)`, together with its points over
-a commutative ring and its split maximal torus.
+For a valid Dynkin type, the direct sum of its fundamental highest-weight modules over `ℚ`,
+with the direct sum of their admissible lattices, is a faithful representation with a numbered
+integral weight basis. This file assembles these existing constructions into
+`TauCeti.DynkinType.scChevalleyDatum`, and names its group scheme over `ℤ`, the **simply
+connected Chevalley group scheme** `G_sc(t)`, together with its points over a commutative ring
+and its split maximal torus.
 
-Since the weights span `Fin t.rank → ℤ`, the weight lattice `Λ` of the datum is everything, and
-the chosen basis of it is the standard one. The coordinate weights of the datum are therefore the
-weights themselves (`TauCeti.DynkinType.scChevalleyDatum_coordinateWeight`): for `G_sc(t)` the
-torus with character lattice `Λ` and the torus parametrized by the full weight lattice are the
-same, so the group scheme is the Kostant toral closure of the full-weight lattice with its weights
-read in fundamental-weight coordinates
+Its weight lattice is the entire lattice `Fin t.rank → ℤ`, not just the root lattice. The chosen
+basis consists of the fundamental weights, so the coordinate weights used by the datum's torus
+are exactly `TauCeti.DynkinType.scWeight`. Thus this datum supplies the full-weight input to
+Chevalley's construction without a change of torus coordinates: the group scheme is the Kostant
+toral closure of the full-weight lattice with its weights read in fundamental-weight coordinates
 (`TauCeti.DynkinType.chevalleyGroupScheme_eq_kostantToralGroupScheme`), and its points are the
 corresponding points of that closure
 (`TauCeti.DynkinType.chevalleyGroup_eq_kostantToralPointsSubgroup`). In particular every diagonal
 matrix of a torus parameter `s : Fin t.rank → Aˣ`, acting on each weight vector through its weight
 in fundamental-weight coordinates, is a point of `G_sc(t)`.
 
+The representation, lattice, and weight basis are those constructed in
+the full-weight lattice module imported above;
+the assembly follows the Geck-datum construction in
+`TauCeti.Algebra.AlgebraicGroup.Chevalley.Geck`. No identification of the resulting group scheme
+with an independently constructed reductive group is asserted here.
+
 ## Main definitions
 
-* `TauCeti.DynkinType.scChevalleyDatum`: the full-weight module, its lattice and weight basis, as a
-  Chevalley datum.
+* `TauCeti.DynkinType.scChevalleyDatum`: the full-weight module as a Chevalley datum.
 * `TauCeti.DynkinType.chevalleyGroupScheme`: the simply connected Chevalley group scheme
   `G_sc(t)` over `ℤ`.
 * `TauCeti.DynkinType.chevalleyGroup`: its points with values in a commutative ring, as a
@@ -43,9 +47,10 @@ in fundamental-weight coordinates, is a point of `G_sc(t)`.
 
 ## Main results
 
-* `TauCeti.DynkinType.scChevalleyDatum_weightLattice`: the weight lattice of the datum is the
-  whole weight lattice `Fin t.rank → ℤ`.
-* `TauCeti.DynkinType.scChevalleyDatum_coordinateWeight`: its coordinate weights are its weights.
+* `TauCeti.DynkinType.scChevalleyDatum_weightLattice`: its weights span the full weight lattice.
+* `TauCeti.DynkinType.coe_scChevalleyDatum_weightLatticeBasis`: the lattice basis consists of
+  the fundamental weights in their standard coordinates.
+* `TauCeti.DynkinType.scChevalleyDatum_coordinateWeight`: the coordinate weights are `scWeight`.
 * `TauCeti.DynkinType.chevalleyGroupScheme_eq_kostantToralGroupScheme`: `G_sc(t)` is the Kostant
   toral closure of the full-weight lattice.
 * `TauCeti.DynkinType.chevalleyTorus_comp_groupSchemeι` and
@@ -57,17 +62,17 @@ in fundamental-weight coordinates, is a point of `G_sc(t)`.
 ## References
 
 * R. Steinberg, *Lectures on Chevalley Groups*, AMS University Lecture Series 66 (2016),
-  Chapter 3, the remark after Lemma 27.
+  Chapter 2, Corollary 1 to Theorem 2, and Chapter 3, the remark after Lemma 27.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
 -/
 
 public section
 
-open AlgebraicGeometry CategoryTheory TauCeti.UniversalEnvelopingAlgebra
-
 namespace TauCeti.DynkinType
 
 noncomputable section
+
+open AlgebraicGeometry CategoryTheory _root_.TauCeti.UniversalEnvelopingAlgebra
 
 universe v
 
@@ -75,20 +80,17 @@ variable (t : DynkinType) (ht : t.Valid)
 
 /-! ## The full-weight Chevalley datum -/
 
-/-- **The full-weight module as a Chevalley datum.** The representation is that of the pinned Lie
-algebra on the direct sum `⨁ᵢ L(ϖᵢ)` of its fundamental modules, which is faithful; the lattice is
-the direct sum `⨁ᵢ U_ℤ · v⁺ᵢ` of the fundamental lattices with its numbered Kostant weight basis;
-and since the weights of that basis span `Fin t.rank → ℤ`, the chosen basis of the lattice they
-span is the standard basis. -/
--- Exposed so that statements about this datum read its carrier, lattice and weight basis as the
--- full-weight data: the lattice and basis are typed against the carrier.
+/-- The full-weight module, with its admissible lattice and weight basis, as a Chevalley datum.
+The basis of its weight lattice is the standard basis of fundamental weights. -/
+-- The carrier, dimension and lattice must compute so the dependent representation and basis
+-- equations below can be stated in terms of the existing full-weight module and lattice.
 @[expose] def scChevalleyDatum : ChevalleyDatum t ht where
   carrier := t.scModule ht
   representation := representation ℚ (t.lieAlgebra ht) (t.scModule ht)
   injective_representation_ι := by
     simpa only [representation_ι] using
-      (LieModule.IsFaithful.injective_toEnd :
-        Function.Injective (LieModule.toEnd ℚ (t.lieAlgebra ht) (t.scModule ht)))
+      (LieModule.IsFaithful.injective_toEnd (R := ℚ) (L := t.lieAlgebra ht)
+        (M := t.scModule ht))
   lattice := (t.scLattice ht).toAddSubgroup
   representation_mem_lattice := t.kostantForm_apply_mem_scLattice ht
   span_lattice_eq_top := Submodule.IsLattice.span_eq_top (R := ℤ) (A := ℚ)
@@ -96,67 +98,58 @@ span is the standard basis. -/
   basis := t.scWeightBasis ht
   weight := t.scWeight ht
   isCartanWeightVector_basis := t.isCartanWeightVector_scWeightBasis ht
-  weightLatticeBasis :=
-    (Pi.basisFun ℤ (Fin t.rank)).map
-      (LinearEquiv.ofTop _ (t.span_range_scWeight_eq_top ht)).symm
+  weightLatticeBasis := (Pi.basisFun ℤ (Fin t.rank)).map
+    (LinearEquiv.ofTop _ (t.span_range_scWeight_eq_top ht)).symm
 
-/-- The representation of the full-weight datum is that of the pinned Lie algebra on the
-full-weight module. -/
+/-- The dimension of the full-weight datum is the size of its existing weight basis. -/
+@[simp]
+theorem scChevalleyDatum_dim : (t.scChevalleyDatum ht).dim = t.scWeightBasisCard ht :=
+  (rfl)
+
+/-- The representation of the full-weight datum is the natural enveloping-algebra action. -/
 @[simp]
 theorem scChevalleyDatum_representation :
     (t.scChevalleyDatum ht).representation =
       representation ℚ (t.lieAlgebra ht) (t.scModule ht) :=
   (rfl)
 
-/-- The lattice of the full-weight datum is the full-weight lattice. -/
+/-- The lattice of the full-weight datum is the direct sum of the fundamental lattices. -/
 @[simp]
 theorem scChevalleyDatum_lattice :
     (t.scChevalleyDatum ht).lattice = (t.scLattice ht).toAddSubgroup :=
   (rfl)
 
-/-- The rank of the full-weight datum is the number of vectors of the weight basis of the
-full-weight lattice. -/
-@[simp]
-theorem scChevalleyDatum_dim : (t.scChevalleyDatum ht).dim = t.scWeightBasisCard ht :=
-  (rfl)
-
-/-- The weight basis of the full-weight datum is the numbered Kostant weight basis of the
-full-weight lattice. -/
+/-- The weight basis of the full-weight datum is the existing numbered Kostant weight basis. -/
 @[simp]
 theorem scChevalleyDatum_basis : (t.scChevalleyDatum ht).basis = t.scWeightBasis ht :=
   (rfl)
 
-/-- The weights of the full-weight datum are the weights of the full-weight lattice, in
-fundamental-weight coordinates. -/
+/-- The weights of the full-weight datum are the existing fundamental-weight coordinate vectors. -/
 @[simp]
 theorem scChevalleyDatum_weight : (t.scChevalleyDatum ht).weight = t.scWeight ht :=
   (rfl)
 
-/-- **The weight lattice of the full-weight datum is the whole weight lattice** `Fin t.rank → ℤ`:
-every fundamental weight is a weight of the full-weight lattice. -/
+/-- The weight lattice of the full-weight datum is the whole weight lattice. -/
 @[simp]
 theorem scChevalleyDatum_weightLattice : (t.scChevalleyDatum ht).weightLattice = ⊤ :=
   (t.scChevalleyDatum ht).weightLattice_def.trans (t.span_range_scWeight_eq_top ht)
 
-/-- **The chosen basis of the weight lattice of the full-weight datum is the standard basis** of
-`Fin t.rank → ℤ`, that is, the basis of fundamental weights. -/
+/-- The chosen weight-lattice basis consists of the fundamental weights, in their standard
+coordinates. -/
 @[simp]
 theorem coe_scChevalleyDatum_weightLatticeBasis (i : Fin t.rank) :
     ((t.scChevalleyDatum ht).weightLatticeBasis i : Fin t.rank → ℤ) = Pi.single i 1 := by
-  rw [scChevalleyDatum, Module.Basis.map_apply, LinearEquiv.coe_ofTop_symm_apply,
-    Pi.basisFun_apply]
+  rw [scChevalleyDatum, Module.Basis.map_apply]
+  simp [Pi.basisFun_apply]
 
-/-- **The coordinate weights of the full-weight datum are its weights.** The chosen basis of its
-weight lattice is the standard basis, so writing a weight in that basis does not change it. Hence
-the torus of the datum, whose character lattice is its weight lattice, is the torus parametrized
-by the full weight lattice. -/
+/-- The torus coordinates of the full-weight datum are the original fundamental-weight
+coordinates: no lattice-index correction is needed. -/
 @[simp]
 theorem scChevalleyDatum_coordinateWeight :
     (t.scChevalleyDatum ht).coordinateWeight = t.scWeight ht := by
-  funext j i
-  have h := (t.scChevalleyDatum ht).sum_coordinateWeight_smul j
-  simp only [coe_scChevalleyDatum_weightLatticeBasis, scChevalleyDatum_weight] at h
-  simp [← h, Finset.sum_apply, Pi.single_apply]
+  ext j i
+  have h := congrFun ((t.scChevalleyDatum ht).sum_coordinateWeight_smul j) i
+  simpa [Pi.single_apply] using h
 
 /-! ## The simply connected Chevalley group scheme -/
 
@@ -257,6 +250,7 @@ lattice span the weight lattice. -/
 instance isClosedImmersion_chevalleyTorus :
     IsClosedImmersion (t.chevalleyTorus ht).hom.hom.left :=
   (t.scChevalleyDatum ht).isClosedImmersion_torus
+
 
 end
 
