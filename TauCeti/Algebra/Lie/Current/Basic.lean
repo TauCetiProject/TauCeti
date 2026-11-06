@@ -536,6 +536,15 @@ theorem apply_trunc_ofLoop {V : Type*} [AddCommGroup V] [Module R V] {N : ℤ}
   rw [LieAlgebra.LoopAlgebra.toFinsupp_symm_single,
     hg n (not_lt.mp fun h ↦ Finsupp.mem_support_iff.mp hn (hvN n h))]
 
+variable {R L} in
+/-- The brackets of `X⁻¹ ⊗ x` with `X ⊗ y` and of `1 ⊗ x` with `1 ⊗ y` agree. -/
+lemma lie_single_neg_one_eq_lie_single_zero (x y : L) :
+    ⁅(HahnSeries.single (-1) 1 ⊗ₜ x : currentAlgebra R L),
+        (HahnSeries.single 1 1 ⊗ₜ y : currentAlgebra R L)⁆ =
+      ⁅(HahnSeries.single 0 1 ⊗ₜ x : currentAlgebra R L),
+        (HahnSeries.single 0 1 ⊗ₜ y : currentAlgebra R L)⁆ := by
+  simp [_root_.LieAlgebra.ExtendScalars.bracket_tmul, HahnSeries.single_mul_single]
+
 end Lie
 
 end CurrentAlgebra
