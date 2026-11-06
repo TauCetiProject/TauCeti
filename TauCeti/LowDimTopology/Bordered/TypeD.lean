@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.Idempotent
-public import Mathlib.Data.Matrix.Basic
 public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 import Mathlib.Tactic.Abel
@@ -216,14 +215,6 @@ variable (N) in
 theorem map_coeff_eq_coeff_mul_coeff [CharP R 2] :
     N.coeff.map d = N.coeff * N.coeff :=
   (add_eq_zero_iff_eq_of_charTwo R).mp N.map_coeff_add_coeff_mul_coeff
-
-variable (N) in
-/-- The structure equation of a type `D` structure says that its coefficient matrix is a
-Maurer–Cartan element of the matrix algebra with the entrywise differential. -/
-theorem mapMatrix_coeff_add_coeff_mul_coeff :
-    (d.mapMatrix : Matrix X X A →ₗ[R] Matrix X X A) N.coeff + N.coeff * N.coeff = 0 := by
-  rw [LinearMap.mapMatrix_apply]
-  exact N.map_coeff_add_coeff_mul_coeff
 
 /-- **The morphism differential squares to zero.** -/
 @[simp]

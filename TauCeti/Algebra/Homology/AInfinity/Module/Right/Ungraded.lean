@@ -11,6 +11,7 @@ public import TauCeti.Algebra.CharP.Two
 public import TauCeti.Algebra.Homology.DG.Ungraded
 import Mathlib.Algebra.BigOperators.Intervals
 import TauCeti.Algebra.BigOperators.Fin
+import TauCeti.Data.Fin.StrictMono
 import TauCeti.Data.Fin.Tuple.Basic
 
 /-!
@@ -74,6 +75,10 @@ product of bordered Heegaard Floer homology; see `TauCeti.LowDimTopology.Bordere
   differential squares to zero.
 * `TauCeti.UngradedAInfinityRightModule.matrixAct_apply`: the components of the matrix operations
   are sums over paths.
+* `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_act_eq_zero` and
+  `TauCeti.UngradedAInfinityRightModule.matrixAct_eq_zero_of_lt`: the matrix operations vanish
+  when those of `M` do, and along matrices whose nonzero entries strictly increase a bounded
+  height.
 
 ## References
 
@@ -278,6 +283,31 @@ theorem matrixAct_apply (n : ℕ) (F : Fin n → Matrix X X A) (φ : X → M) (z
     LinearMap.compMultilinearMap_apply, MultilinearMap.compLinearMap_apply, LinearMap.coe_comp,
     Function.comp_apply, LinearMap.lcomp_apply, LinearMap.llcomp_apply, LinearMap.coe_single,
     LinearMap.coe_proj, Function.eval, Matrix.entryLinearMap_apply, Pi.single_apply, eq_comm]
+
+/-- If the operation `m_{n+1}` of `M` vanishes, so does that of the matrix module. -/
+theorem matrixAct_eq_zero_of_act_eq_zero {n : ℕ} (h : Mm.act n = 0) : Mm.matrixAct X n = 0 := by
+  refine MultilinearMap.ext fun F => LinearMap.ext fun φ => funext fun z => ?_
+  simp [Mm.matrixAct_apply, h]
+
+/-- **Operations of the matrix module along height-increasing matrices vanish.** If a height
+`h` on `X` strictly increases along every nonzero entry of each of `F₁, …, Fₙ`, and `n` exceeds
+every height, then `m_{n+1}(·, F₁, …, Fₙ) = 0`: every path `x₀ → ⋯ → xₙ` meets a zero entry. -/
+theorem matrixAct_eq_zero_of_lt (h : X → ℕ) {n : ℕ} (hn : univ.sup h < n)
+    {F : Fin n → Matrix X X A} (hF : ∀ l x y, F l x y ≠ 0 → h x < h y) :
+    Mm.matrixAct X n F = 0 := by
+  refine LinearMap.ext fun φ => funext fun z => ?_
+  simp only [Mm.matrixAct_apply, LinearMap.zero_apply, Pi.zero_apply]
+  refine sum_eq_zero fun x _ => ?_
+  -- Some entry along the path `x` vanishes, since the height cannot increase `n` times.
+  obtain ⟨l, hl⟩ : ∃ l : Fin n, F l (x l.castSucc) (x l.succ) = 0 := by
+    by_contra hne
+    push Not at hne
+    have hx : StrictMono (h ∘ x) := Fin.strictMono_iff_lt_succ.mpr fun l => hF l _ _ (hne l)
+    have := hx.add_sub_le_nat (Fin.zero_le (Fin.last n))
+    simp only [Function.comp_apply, Fin.val_last, Fin.val_zero, Nat.sub_zero] at this
+    have := le_sup (f := h) (mem_univ (x (Fin.last n)))
+    omega
+  rw [(Mm.act n).map_coord_zero l hl, LinearMap.zero_apply, ite_self]
 
 /-- **Composing operations of the matrix module.** The `z`-component of
 `m_{j+1}(m_{i+1}(φ, F₁, …, Fᵢ), G₁, …, Gⱼ)` is the sum over the paths `w₀ → ⋯ → wᵢ₊ⱼ = z` of
