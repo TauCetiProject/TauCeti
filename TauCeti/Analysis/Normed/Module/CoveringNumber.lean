@@ -9,6 +9,7 @@ public import Mathlib.Basic.Real.ENatENNReal
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 public import Mathlib.Topology.MetricSpace.CoveringNumbers
 import Mathlib.Algebra.Order.Floor.Extended
+import TauCeti.MeasureTheory.Covering.Packing
 
 /-!
 # Volumetric bounds on covering and packing numbers
@@ -90,23 +91,19 @@ theorem card_le_of_isSeparated_of_subset_closedBall {s : Finset E} (hε : ε ≠
   set δ : ℝ := ε / 2 with hδ_def
   have hδ : 0 < δ := by positivity
   have hρ : 0 < r + δ := by positivity
-  -- The balls of radius `δ = ε / 2` around the points of `s` are pairwise disjoint ...
-  have hdisj : (s : Set E).PairwiseDisjoint fun y ↦ ball y δ := by
-    intro y hy z hz hyz
-    refine ball_disjoint_ball ?_
-    have hyz' : (ε : ℝ≥0∞) < edist y z := hs hy hz hyz
-    rw [edist_nndist, ENNReal.coe_lt_coe, ← NNReal.coe_lt_coe, coe_nndist] at hyz'
-    linarith
-  -- ... and lie in the ball of radius `r + δ` around `x`.
-  have hsub : (⋃ y ∈ s, ball y δ) ⊆ ball x (r + δ) := by
+  -- The balls of radius `δ = ε / 2` around the points of `s` are pairwise disjoint and lie in
+  -- the ball of radius `r + δ` around `x`.
+  have hsub : thickening δ (s : Set E) ⊆ ball x (r + δ) := by
+    rw [thickening_eq_biUnion_ball]
     refine iUnion₂_subset fun y hy ↦ ball_subset_ball' ?_
     linarith [mem_closedBall.1 (hsx hy)]
   have key : (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1) ≤
       ENNReal.ofReal ((r + δ) ^ finrank ℝ E) * μ (ball 0 1) :=
     calc (s.card : ℝ≥0∞) * ENNReal.ofReal (δ ^ finrank ℝ E) * μ (ball 0 1)
-        = μ (⋃ y ∈ s, ball y δ) := by
-          rw [measure_biUnion_finset hdisj fun _ _ ↦ measurableSet_ball]
-          simp [μ.addHaar_ball_of_pos _ hδ, mul_assoc]
+        ≤ μ (thickening δ (s : Set E)) := by
+          rw [mul_assoc]
+          simpa using hs.encard_mul_le_measure_thickening fun y _ ↦
+            (μ.addHaar_ball_of_pos y hδ).ge
       _ ≤ μ (ball x (r + δ)) := measure_mono hsub
       _ = ENNReal.ofReal ((r + δ) ^ finrank ℝ E) * μ (ball 0 1) := μ.addHaar_ball_of_pos _ hρ
   have hcard : (s.card : ℝ) * δ ^ finrank ℝ E ≤ (r + δ) ^ finrank ℝ E := by
