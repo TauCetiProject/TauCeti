@@ -108,8 +108,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   of `s` converge to those over `s`.
 * `TauCeti.integrable_and_average_rpow_le`: if `(f + δ) ^ s` is integrable then so is `f ^ s`, with
   a smaller average.
-* `TauCeti.tendsto_average_add_one_div_rpow`: dominated convergence for the averages of
-  `(f + 1 / (k + 1)) ^ p` for `f` in `Lᵖ` on a finite measure space.
+* `TauCeti.tendsto_average_add_rpow`: dominated convergence for the averages of
+  `(f + δ k) ^ p` for `f` in `Lᵖ` on a finite measure space and `δ k ∈ [0, 1]` tending to `0`.
 -/
 
 public section
@@ -720,34 +720,33 @@ theorem integrable_and_average_rpow_le {α : Type*} [MeasurableSpace α]
   rw [average_eq, average_eq]
   exact smul_le_smul_of_nonneg_left (integral_mono_ae hint hint' hle) (by positivity)
 
-/-- Dominated convergence for the averages of `(f + 1/(k + 1))^p`, for `f ≥ 0` in `Lᵖ` on a finite
-measure space and `0 < p`: `⨍ (f + 1/(k + 1))^p → ⨍ f^p`. -/
-theorem tendsto_average_add_one_div_rpow {α : Type*} [MeasurableSpace α]
-    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} {p : ℝ} (hp : 0 < p)
-    (hf : MemLp f (ENNReal.ofReal p) μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y) :
-    Filter.Tendsto (fun k : ℕ => ⨍ y, (f y + 1 / ((k : ℝ) + 1)) ^ p ∂μ)
+/-- Dominated convergence for the averages of `(f + δ k)^p`, for `f ≥ 0` in `Lᵖ` on a finite
+measure space, `0 < p` and `δ k ∈ [0, 1]` tending to `0`: `⨍ (f + δ k)^p → ⨍ f^p`. -/
+theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} [IsFiniteMeasure μ] {f : α → ℝ} {p : ℝ} {δ : ℕ → ℝ} (hp : 0 < p)
+    (hf : MemLp f (ENNReal.ofReal p) μ) (hf0 : ∀ᵐ y ∂μ, 0 ≤ f y)
+    (hδ0 : ∀ k, 0 ≤ δ k) (hδ1 : ∀ k, δ k ≤ 1) (hδ : Filter.Tendsto δ Filter.atTop (nhds 0)) :
+    Filter.Tendsto (fun k : ℕ => ⨍ y, (f y + δ k) ^ p ∂μ)
       Filter.atTop (nhds (⨍ y, f y ^ p ∂μ)) := by
-  -- For `0 < δ ≤ 1`, `(f + δ)^p ≤ (f + 1)^p`, which is integrable since `f ∈ Lᵖ`.
+  -- For `0 ≤ δ ≤ 1`, `(f + δ)^p ≤ (f + 1)^p`, which is integrable since `f ∈ Lᵖ`.
   have hbound : Integrable (fun y => (f y + 1) ^ p) μ := by
     have hmem : MemLp (fun y => f y + 1) (ENNReal.ofReal p) μ := hf.add (memLp_const 1)
     refine (hmem.integrable_norm_rpow (ENNReal.ofReal_pos.2 hp).ne'
       ENNReal.ofReal_ne_top).congr ?_
     filter_upwards [hf0] with y hy
     rw [ENNReal.toReal_ofReal hp.le, Real.norm_of_nonneg (by linarith)]
-  have hlim : Filter.Tendsto (fun k : ℕ => ∫ y, (f y + 1 / ((k : ℝ) + 1)) ^ p ∂μ)
+  have hlim : Filter.Tendsto (fun k : ℕ => ∫ y, (f y + δ k) ^ p ∂μ)
       Filter.atTop (nhds (∫ y, f y ^ p ∂μ)) := by
     refine tendsto_integral_of_dominated_convergence _ (fun k => ?_) hbound (fun k => ?_) ?_
     · exact ((hf.aestronglyMeasurable.aemeasurable.add_const _).pow_const p).aestronglyMeasurable
     · filter_upwards [hf0] with y hy
-      have hk : 1 / ((k : ℝ) + 1) ≤ 1 :=
-        (div_le_one (by positivity)).2 (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)])
+      have := hδ0 k
       rw [Real.norm_of_nonneg (Real.rpow_nonneg (by positivity) _)]
-      exact Real.rpow_le_rpow (by positivity) (by linarith) hp.le
+      exact Real.rpow_le_rpow (by positivity) (by linarith [hδ1 k]) hp.le
     · refine Filter.Eventually.of_forall fun y => ?_
-      have hδ0 := (tendsto_const_nhds (x := f y)).add
-        (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ))
-      rw [add_zero] at hδ0
-      exact (Real.continuousAt_rpow_const _ p (Or.inr hp.le)).tendsto.comp hδ0
+      have hδ' := (tendsto_const_nhds (x := f y)).add hδ
+      rw [add_zero] at hδ'
+      exact (Real.continuousAt_rpow_const _ p (Or.inr hp.le)).tendsto.comp hδ'
   simp only [average_eq, smul_eq_mul]
   exact hlim.const_mul _
 

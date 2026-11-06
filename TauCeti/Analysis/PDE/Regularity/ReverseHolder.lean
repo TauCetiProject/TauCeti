@@ -132,22 +132,18 @@ private theorem eLpNorm_rpow_le_eLpNorm_contDiffSMul {mu : Measure (EuclideanSpa
         rw [h1, h2, hψ1 (Metric.ball_subset_closedBall hx), Pi.one_apply, one_smul]
     _ ≤ _ := eLpNorm_mono_measure _ (Measure.restrict_mono hrB le_rfl)
 
-/-- The arithmetic of the gradient bound: from `g² ≤ 2 (1 + K²) (G² I)`, with `G` the gradient
-bound `c / (ρ' - r)` of the cutoff at the midpoint radius `ρ' = (r + ρ) / 2`, we get
+/-- The arithmetic of the gradient bound: from `g² ≤ 2 (1 + K²) (G² I)`, with `G = 2 c / (ρ - r)`
+the gradient bound of the cutoff at the midpoint radius, we get
 `g ≤ 2 √2 c (1 + K) / (ρ - r) · √I`. -/
-private theorem le_mul_sqrt_of_sq_le {g K c r ρ I : ℝ} (hg : 0 ≤ g) (hK : 0 ≤ K) (hc : 0 ≤ c)
-    (hrρ : r < ρ) (hI0 : 0 ≤ I)
-    (h : g ^ 2 ≤ 2 * (1 + K ^ 2) * ((c / ((r + ρ) / 2 - r)) ^ 2 * I)) :
+private theorem le_mul_sqrt_of_sq_le {g K c r ρ I G : ℝ} (hg : 0 ≤ g) (hK : 0 ≤ K)
+    (hc : 0 ≤ c) (hrρ : r < ρ) (hI0 : 0 ≤ I) (hG : G = 2 * c / (ρ - r))
+    (h : g ^ 2 ≤ 2 * (1 + K ^ 2) * (G ^ 2 * I)) :
     g ≤ 2 * √2 * c * (1 + K) / (ρ - r) * √I := by
-  have hG : c / ((r + ρ) / 2 - r) = 2 * c / (ρ - r) := by
-    have hmid : (r + ρ) / 2 - r = (ρ - r) / 2 := by ring
-    rw [hmid, div_div_eq_mul_div]
-    ring
   have hsq : g ^ 2 ≤ (2 * √2 * c * (1 + K) / (ρ - r) * √I) ^ 2 := by
     have h2 : (√2) ^ 2 = 2 := Real.sq_sqrt (by norm_num)
     have hI' : (√I) ^ 2 = I := Real.sq_sqrt hI0
-    calc g ^ 2 ≤ 2 * (1 + K ^ 2) * ((c / ((r + ρ) / 2 - r)) ^ 2 * I) := h
-      _ ≤ 2 * (1 + K) ^ 2 * ((c / ((r + ρ) / 2 - r)) ^ 2 * I) := by gcongr; nlinarith
+    calc g ^ 2 ≤ 2 * (1 + K ^ 2) * (G ^ 2 * I) := h
+      _ ≤ 2 * (1 + K) ^ 2 * (G ^ 2 * I) := by gcongr; nlinarith
       _ = (2 * √2 * c * (1 + K) / (ρ - r) * √I) ^ 2 := by
           simp only [hG, mul_pow, div_pow, h2, hI']
           ring
@@ -223,7 +219,11 @@ theorem exists_eLpNorm_rpow_le_mul_eLpNorm_rpow :
   have hI0 : 0 ≤ I := integral_nonneg fun x => sq_nonneg _
   -- The gradient of `z`.
   have hgradz : ‖W1p.gradient z‖ ≤ 2 * √2 * c * (1 + K) / (ρ - r) * √I :=
-    le_mul_sqrt_of_sq_le (norm_nonneg _) hK hc0 hrρ hI0 (by
+    le_mul_sqrt_of_sq_le (G := G) (norm_nonneg _) hK hc0 hrρ hI0
+      (by
+        have hmid : ρ' - r = (ρ - r) / 2 := by simp only [ρ']; ring
+        rw [show G = c / (ρ' - r) from rfl, hmid, div_div_eq_mul_div]
+        ring) (by
       have hleib := W1p.norm_gradient_contDiffSMul_sq_le hψ hM hψM' hgradM' w
       nlinarith)
   -- The `L²` norm of `w` on `B(x₀, ρ)` is `√I`.
@@ -763,8 +763,10 @@ theorem exists_setAverage_rpow_rpow_inv_le_mul_setAverage_rpow_rpow_inv [Nonempt
       hmono (inv_nonneg.2 hs.le)).trans hH⟩
   have hmemp : MemLp (W1p.value u) (ENNReal.ofReal p) (mu.restrict (Metric.ball x₀ R)) :=
     hmemR.mono_exponent ((ENNReal.ofReal_le_ofReal hp2).trans_eq (ENNReal.ofReal_ofNat 2))
-  have hlim := tendsto_average_add_one_div_rpow (μ := mu.restrict (Metric.ball x₀ R)) hp hmemp
-    hu0R
+  have hlim := tendsto_average_add_rpow (μ := mu.restrict (Metric.ball x₀ R)) hp hmemp
+    hu0R (fun k => by positivity)
+    (fun k => (div_le_one (by positivity)).2 (by linarith [(Nat.cast_nonneg k : (0 : ℝ) ≤ k)]))
+    tendsto_one_div_add_atTop_nhds_zero_nat
   exact ⟨(hδ 0).1, ge_of_tendsto'
     (((Real.continuousAt_rpow_const _ _ (Or.inr (inv_nonneg.2 hp.le))).tendsto.comp hlim).const_mul
       D) fun k => (hδ k).2⟩

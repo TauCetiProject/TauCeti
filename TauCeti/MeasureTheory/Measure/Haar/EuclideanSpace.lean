@@ -121,7 +121,7 @@ theorem measurePreserving_consEquivL (n : ℕ) : MeasurePreserving (consEquivL �
 /-- Hölder's inequality on a ball: for `p₀ ≤ p`, the `L^{p₀}` norm on `B(x₀, R)` is at most the
 `L^p` norm times `|B(x₀, R)|^{1/p₀ - 1/p} = (Rⁿ |B(0, 1)|)^{1/p₀ - 1/p}`. -/
 theorem eLpNorm_ball_le_mul_rpow {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
-    {f : EuclideanSpace ℝ ι → ℝ} {p₀ p R : ℝ}
+    {F : Type*} [NormedAddCommGroup F] {f : EuclideanSpace ℝ ι → F} {p₀ p R : ℝ}
     {x₀ : EuclideanSpace ℝ ι} (hR : 0 < R) (hp₀0 : 0 < p₀) (hp₀p : p₀ ≤ p)
     (hf : AEStronglyMeasurable f (mu.restrict (Metric.ball x₀ R))) :
     eLpNorm f (ENNReal.ofReal p₀) (mu.restrict (Metric.ball x₀ R)) ≤
