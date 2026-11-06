@@ -221,9 +221,9 @@ theorem cyclicTotalToHochschild_cyclicTotalDifferential {m : ℕ}
 
 end Differential
 
-section Contraction
+section KillingColumnOne
 
-variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
+variable {R A M : Type*} [CommSemiring R] [NonAssocSemiring A] [Module R A]
   [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- **Killing column one.** Let `y` be a total cochain of degree `m + 2` of a unital algebra which
@@ -247,6 +247,13 @@ theorem exists_cyclicTotalPeriodicity_eq_add_cyclicTotalDifferential {m : ℕ}
   obtain ⟨w, hw⟩ := (mem_range_cyclicTotalPeriodicity_iff
     (x := y + cyclicTotalDifferential R A M (m + 1) z)).2 ⟨by simp [hz₁], by simp [hz₂, hy₂]⟩
   exact ⟨w, z, hw⟩
+
+end KillingColumnOne
+
+section Contraction
+
+variable {R A M : Type*} [CommRing R] [Semiring A] [Module R A]
+  [IsScalarTower R A A] [SMulCommClass R A A] [AddCommGroup M] [Module R M]
 
 /-- **Killing the first two columns.** Let `x` be a total cocycle of degree `m + 2` of a unital
 algebra whose column-zero component is the Hochschild coboundary of a cochain `χ`. Then `x` is
