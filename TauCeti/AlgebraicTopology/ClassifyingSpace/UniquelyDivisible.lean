@@ -34,9 +34,9 @@ prime to `m`, hence a unit of `k`, so its homology vanishes
 (`TauCeti.isZero_groupHomology_localizationAway`); and a product of acyclic groups is acyclic over
 a semisimple ring, by the Künneth theorem (`TauCeti.subsingleton_groupHomology_prod`).
 
-For `m = 2` this is the vanishing `H̃_*(K(A, 1); 𝔽₂) = 0` for every uniquely two-divisible group
-`A`, the case `n = 1` of the mod-two acyclicity of the Eilenberg--MacLane spaces `K(A, n)` that
-drives the mod-two Hurewicz theorem.
+For `m = 2` this is the vanishing `H_i(K(A, 1); 𝔽₂) = 0` for all `i > 0` and every uniquely
+two-divisible group `A`, the case `n = 1` of the mod-two acyclicity of the Eilenberg--MacLane
+spaces `K(A, n)` that drives the mod-two Hurewicz theorem.
 
 ## Main results
 
@@ -314,7 +314,7 @@ theorem subsingleton_classifyingSpace_singularHomology_of_bijective_zsmul (hmk :
 
 /-- **Mod-two acyclicity of `K(A, 1)`.** For a uniquely two-divisible abelian group `A`, the
 Eilenberg--MacLane space `K(A, 1) = B(Multiplicative A)` has the mod-two homology of a point:
-`H̃_*(K(A, 1); 𝔽₂) = 0`. -/
+`H_i(K(A, 1); 𝔽₂) = 0` for all `i > 0`. -/
 theorem IsUniquelyTwoDivisible.subsingleton_classifyingSpace_singularHomology {A : Type}
     [AddCommGroup A] (hA : IsUniquelyTwoDivisible A) (n : ℕ) :
     Subsingleton (((singularChains (ZMod 2)).obj
