@@ -130,13 +130,9 @@ theorem pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr : 0 ≤ r) (c w : ℂ) :
 theorem pi_inv_mul_integral_sub_inv_mul_indicator_ball {r : ℝ} (hr : 0 ≤ r) (c w : ℂ) :
     (π : ℂ)⁻¹ * (∫ z : ℂ, (w-z)⁻¹ * (ball c r).indicator (fun _ => (1 : ℂ)) z) =
       if ‖w-c‖ ≤ r then conj (w-c) else (r : ℂ)^2/(w-c) := by
-  have heq : (fun z : ℂ => (w-z)⁻¹ * (ball c r).indicator (fun _ => (1 : ℂ)) z) =
-      (ball c r).indicator (fun z => (w-z)⁻¹) := by
-    funext z
-    by_cases hz : z ∈ ball c r
-    · rw [indicator_of_mem hz, indicator_of_mem hz, mul_one]
-    · rw [indicator_of_notMem hz, indicator_of_notMem hz, mul_zero]
-  rw [heq, integral_indicator measurableSet_ball]
+  simp_rw [← Set.indicator_mul_right (ball c r) (fun z : ℂ ↦ (w-z)⁻¹)
+    (fun _ ↦ (1 : ℂ)), mul_one]
+  rw [integral_indicator measurableSet_ball]
   exact pi_inv_mul_integral_sub_inv_ball hr c w
 
 /-- The defining unit disc normalization check for the actual Cauchy integral. -/
