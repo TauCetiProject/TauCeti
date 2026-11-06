@@ -439,15 +439,14 @@ private theorem contDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1
   rintro ⟨z, x⟩ ⟨hz, -⟩
   exact (contDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contDiffWithinAt
 
-/-- The cylinder-coordinate half of the energy identity over a rectangle of an end: on the closed
-rectangle in the end coordinates, the pulled-back Floer energy is the symplectic area, plus the
-Hamiltonian boundary terms, minus the integrated curvature. -/
+/-- The cylinder-coordinate half of the energy identity over a rectangle of an end: over the strip
+`[a₁, b₁] × [-1/2, 1/2)` of the part `±s > 1/2` of the end coordinates, the pulled-back Floer
+energy is the symplectic area, plus the Hamiltonian boundary terms, minus the integrated
+curvature. -/
 private theorem integral_floerEnergyDensity_endChart_rect (ω : SymplecticForm V)
     (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {u : ℝ × ℝ → V}
     (hu : ContDiffOn ℝ 1 u thricePuncturedSphereReal)
-    {q : Puncture} {a₁ b₁ : ℝ} (hab : a₁ ≤ b₁) (ha : 1 / 2 < q.endSign * a₁)
-    (hb : 1 / 2 < q.endSign * b₁) {U : Set (ℝ × ℝ)} (hUo : IsOpen U)
-    (hIccU : Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2) ⊆ U)
+    {q : Puncture} {a₁ b₁ : ℝ} (hab : a₁ ≤ b₁) {U : Set (ℝ × ℝ)} (hUo : IsOpen U)
     (hU₁ : ∀ {z : ℝ × ℝ}, z.1 ∈ Icc a₁ b₁ → z ∈ U)
     (hpos : ∀ {z : ℝ × ℝ}, z ∈ U → 0 < q.endSign * z.1)
     (hS : ∀ {z : ℝ × ℝ}, z ∈ U → endChart q z ∈ thricePuncturedSphereReal) :
@@ -472,6 +471,9 @@ private theorem integral_floerEnergyDensity_endChart_rect (ω : SymplecticForm V
   simp only [setIntegral_congr_set hae]
   -- In the cylinder coordinates the datum is `β(±s - 1) H_q(t) dt`: apply the energy identity on
   -- the rectangle.
+  have hIccU : Icc ((a₁, -1 / 2) : ℝ × ℝ) (b₁, 1 / 2) ⊆ U := fun z hz => hU₁ (by
+    rw [Icc_prod_eq] at hz
+    exact hz.1)
   have hu' : ContDiffOn ℝ 1 (u ∘ endChart q) U :=
     hu.comp (contDiff_endChart q 1).contDiffOn fun w hw => hS hw
   have hKs : ContDiffOn ℝ 1 (uncurry (pairOfPantsEndComponent H q 1)) (U ×ˢ univ) :=
@@ -494,14 +496,14 @@ private theorem integral_floerEnergyDensity_endChart_rect (ω : SymplecticForm V
       intervalIntegral.integral_zero]
     rw [uIcc_of_le hab] at hs
     exact pairOfPantsEndComponent_one_of_pos (hH q) (hpos (hU₁ (z := (s, c)) hs)) _
-  have ht {c : ℝ} (hc : 1 / 2 < q.endSign * c) :
+  have ht {c : ℝ} (hc : c ∈ Icc a₁ b₁) :
       ∫ t in (-1 / 2 : ℝ)..1 / 2,
           pairOfPantsEndComponent H q Complex.I (c, t) (u (endChart q (c, t))) =
         ∫ t in (-1 / 2 : ℝ)..1 / 2,
           smoothTransition (q.endSign * c - 1) * H q t (u (endChart q (c, t))) :=
     intervalIntegral.integral_congr fun t _ =>
-      pairOfPantsEndComponent_I_of_pos (hH q) (by linarith : 0 < q.endSign * c) _
-  rw [hs₀, hs₀, ht ha, ht hb]
+      pairOfPantsEndComponent_I_of_pos (hH q) (hpos (hU₁ (z := (c, t)) hc)) _
+  rw [hs₀, hs₀, ht (c := a₁) ⟨le_rfl, hab⟩, ht (c := b₁) ⟨hab, le_rfl⟩]
   ring
 
 /-- **The energy identity over a rectangle of an end.** Over the image in `S` of a rectangle
@@ -575,7 +577,7 @@ private theorem integral_floerEnergyDensity_image_endChart (ω : SymplecticForm 
       (fun w hw => differentiableAt_pairOfPantsPerturbation_target hH hHs (hS (hsU hw)) _ _),
     perturbationPullback_endChart, perturbationPullback_endChart,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag]
-  exact integral_floerEnergyDensity_endChart_rect ω hH hHs hu hab ha hb hUo hIccU hU₁ hpos hS
+  exact integral_floerEnergyDensity_endChart_rect ω hH hHs hu hab hUo hU₁ hpos hS
 
 /-- **The energy identity on an end piece.** Over the end piece `1 ≤ ±s ≤ R` of the end `q`, the
 Floer energy is the symplectic area, plus `±β(R - 1)` times the integral of `H_q(t)` over the
