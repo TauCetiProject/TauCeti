@@ -307,6 +307,14 @@ theorem contMDiff_inner_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
     (E := fun x : M ↦ TangentSpace I x) (b := id)
     (contMDiff_mgradient hf) (contMDiff_mgradient hg)
 
+/-- For a `C^n` Riemannian metric, the squared norm of the gradient of a `C^{n+1}`
+function is `C^n`. -/
+theorem contMDiff_norm_sq_mgradient {n : ℕ∞ω} [IsManifold I (n + 1) M]
+    [IsContMDiffRiemannianBundle I n E (fun x : M ↦ TangentSpace I x)]
+    (hf : ContMDiff I 𝓘(ℝ) (n + 1) f) :
+    ContMDiff I 𝓘(ℝ) n (fun x ↦ ‖mgradient I f x‖ ^ 2) := by
+  simpa only [real_inner_self_eq_norm_sq] using contMDiff_inner_mgradient hf hf
+
 /-- **The inner product of two gradients is continuous.** For a continuous Riemannian metric, the
 pointwise inner product `⟪grad f, grad g⟫` of two `C¹` functions is a continuous function. -/
 theorem continuous_inner_mgradient
