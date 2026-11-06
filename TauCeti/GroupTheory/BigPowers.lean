@@ -91,6 +91,19 @@ theorem isBP_iff : IsBP G ↔
 
 variable {G}
 
+/-- In a torsion-free group, for `H ≠ 1` and any `z`, `H ^ k * z ≠ 1` for all large `k`: the
+equation `H ^ k = z⁻¹` holds for at most one `k`. -/
+theorem exists_forall_pow_mul_ne_one [IsMulTorsionFree G] {H : G} (hH : H ≠ 1) (z : G) :
+    ∃ N : ℕ, ∀ k, N ≤ k → H ^ k * z ≠ 1 := by
+  by_cases hk : ∃ k : ℕ, H ^ k * z = 1
+  · obtain ⟨k₀, hk₀⟩ := hk
+    refine ⟨k₀ + 1, fun k hk h => ?_⟩
+    have := (IsMulTorsionFree.pow_right_inj hH).1
+      ((mul_eq_one_iff_eq_inv.1 h).trans (mul_eq_one_iff_eq_inv.1 hk₀).symm)
+    omega
+  · push Not at hk
+    exact ⟨0, fun k _ => hk k⟩
+
 namespace IsBP
 
 /-- The big powers property passes from `H` to `G` when every finite family of nonidentity
@@ -203,16 +216,9 @@ theorem exists_prod_map_pow_mul_ne_one (hBP : IsBP G) (hG : IsCSA G) {u : G} (hu
     exact hconj1 he
   rcases Hs with _ | ⟨H₁, _ | ⟨H₂, rest⟩⟩
   · exact absurd rfl hne
-  · -- A single conjugate: `H₁ ^ k = z⁻¹` holds for at most one `k`, by torsion-freeness.
-    by_cases hk : ∃ k : ℕ, H₁ ^ k * z = 1
-    · obtain ⟨k₀, hk₀⟩ := hk
-      refine ⟨k₀ + 1, fun k hk h => ?_⟩
-      simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at h
-      have := (IsMulTorsionFree.pow_right_inj (hne1 H₁ (by simp))).1
-        ((mul_eq_one_iff_eq_inv.1 h).trans (mul_eq_one_iff_eq_inv.1 hk₀).symm)
-      omega
-    · push Not at hk
-      exact ⟨0, fun k _ => by simpa using hk k⟩
+  · -- A single conjugate.
+    obtain ⟨N, hN⟩ := exists_forall_pow_mul_ne_one (hne1 H₁ (by simp)) z
+    exact ⟨N, fun k hk ↦ by simpa using hN k hk⟩
   · -- Several conjugates: if `P = H₁ ^ k ⋯ Hₘ ^ k` equals `z⁻¹`, then
     -- `P * Y ^ k * P⁻¹ * Z ^ k = 1` for `Y = W * u * W⁻¹` and `Z = z⁻¹ * Y⁻¹ * z`, which the big
     -- powers property excludes once `W` is chosen so that `Y` commutes with neither `Hₘ` nor
