@@ -21,10 +21,10 @@ def operations : Html := {{
   <section id="operations" class="ci-operations" data-operations="true" aria-label="Queue and runner operations">
     <p class="ops-status" data-ops-health="true" role="status">"Loading queue and runner observations…"</p>
     <nav class="ops-tabs" aria-label="Operations views">
-      <a href="#now" data-ops-tab="now">"Now"</a>
-      <a href="#queue" data-ops-tab="queue">"Queue"</a>
-      <a href="#runners" data-ops-tab="runners">"Runners"</a>
-      <a href="#history" data-ops-tab="history">"History"</a>
+      <a href="ci/#now" data-ops-tab="now">"Now"</a>
+      <a href="ci/#queue" data-ops-tab="queue">"Queue"</a>
+      <a href="ci/#runners" data-ops-tab="runners">"Runners"</a>
+      <a href="ci/#history" data-ops-tab="history">"History"</a>
     </nav>
     <div data-ops-view="true" aria-live="polite"></div>
     <noscript>"Enable JavaScript for the live queue, PR lookup and runner views. Historical charts follow below."</noscript>

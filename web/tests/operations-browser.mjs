@@ -12,6 +12,9 @@ for (const args of [['build','Site.CI','Site.Theme'], ['env','lean','--run','tes
   const result=spawnSync('lake',args,{cwd:web,stdio:'inherit'});
   if(result.status!==0) { fs.rmSync(output,{recursive:true,force:true}); process.exit(result.status||1); }
 }
+// The landing page must not duplicate CI: otherwise <base>-relative fragment
+// links can navigate off /ci/ while this fixture still appears to work.
+fs.writeFileSync(path.join(output,'index.html'),'<!doctype html><title>Landing fixture</title><p>No CI dashboard here.</p>');
 const server=createServer((request,response)=>{
   let relative=decodeURIComponent(new URL(request.url,'http://localhost').pathname);
   let local=path.join(output,relative);
@@ -46,6 +49,7 @@ await page.getByRole('button',{name:'Next',exact:true}).click();
 assert.ok((await page.locator('.ops-pager').innerText()).includes('101–200 of 1200'));
 await page.getByRole('link',{name:'Runners',exact:true}).click();
 await page.getByRole('heading',{name:'yael',exact:true}).waitFor();
+assert.equal(new URL(page.url()).pathname,'/ci/');
 assert.equal(await page.locator('.ops-job').count(),100);
 assert.ok((await page.locator('[data-ops-view]').innerText()).includes('Host yael · slot 1'));
 assert.ok((await page.locator('[data-ops-view]').innerText()).includes('CI ceiling 1 jobs · classes pr, staging'));

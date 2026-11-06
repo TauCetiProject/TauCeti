@@ -12,7 +12,8 @@
   function append(parent) { Array.prototype.slice.call(arguments, 1).forEach(function (node) { if (node) parent.append(node); }); return parent; }
   function link(text, url) {
     var node = el("a", text);
-    if (/^https:\/\/github\.com\/[-\w.]+\/[-\w.]+\/(pull\/\d+|commit\/[a-f0-9]{40}|actions\/runs\/\d+(\/attempts\/\d+|\/job\/\d+)?)$/.test(url || "") || /^#(now|queue|runners|history)(\?|$)/.test(url || "")) node.href = url;
+    if (/^https:\/\/github\.com\/[-\w.]+\/[-\w.]+\/(pull\/\d+|commit\/[a-f0-9]{40}|actions\/runs\/\d+(\/attempts\/\d+|\/job\/\d+)?)$/.test(url || "")) node.href = url;
+    else if (/^#(now|queue|runners|history)(\?|$)/.test(url || "")) node.href = location.pathname + location.search + url;
     return node;
   }
   function timestamp(value) { return Number.isFinite(typeof value === "number" ? value : Date.parse(value)) ? new Date(value).toISOString().slice(0, 19).replace("T", " ") + " UTC" : "unknown"; }
@@ -108,6 +109,11 @@
     var counts = queue.counts || {};
     container.append(badges([counts.waiting + " waiting/reserved inputs", (queue.batches || []).filter(function (b) { return b.state === "open"; }).length + " open successors", queue.workers.length + " repair worker observers"]));
     (queue.conditions || []).forEach(function (condition) { container.append(note(condition.kind.replaceAll("_", " ") + (condition.batch_id ? " · batch " + condition.batch_id : "") + (condition.since ? " · since " + timestamp(condition.since) : ""), "ops-warning")); });
+    var configuration = el("details"); configuration.append(el("summary", "Controller and effective queue settings"));
+    var service = queue.service || {};
+    configuration.append(note("Controller " + (service.controller || "unknown") + " · revision " + (service.revision || "unknown") + " · publication " + (service.publication_enabled === true ? "enabled" : service.publication_enabled === false ? "disabled" : "unknown") + " · status observed " + age(queue.status_observed_at)));
+    Object.entries(queue.settings || {}).forEach(function (entry) { configuration.append(note(entry[0].replaceAll("_", " ") + ": " + entry[1])); });
+    container.append(configuration);
     queue.workers.forEach(function (w) { container.append(note(w.id + " · " + (w.state || "unknown state") + " · heartbeat " + age(w.observed_at) + " · " + freshness(w.observed_at, 60))); });
   }
   function select(label, options, value, change) {
@@ -175,14 +181,27 @@
       if (!prResult.length) view.append(empty("No retained queue record for PR #" + searchValue + "."));
       prResult.forEach(function (pr) {
         append(view, heading("PR #" + pr.pr), link("GitHub pull request", "https://github.com/" + pr.repository + "/pull/" + pr.pr));
-        pr.inputs.forEach(function (i) { view.append(note(i.title + " · " + i.state + " · accepted " + i.accepted_head.slice(0, 12) + (i.landed_at ? " · landed " + timestamp(i.landed_at) : ""))); });
-        pr.members.forEach(function (m) { append(view, link("Batch " + m.batch_id + " · version " + m.batch_version + " · " + m.disposition, batchURL(m.batch_id)), note(m.explanation || "No programmatic explanation recorded.")); });
+        pr.inputs.forEach(function (i) {
+          append(view, note(i.title + " · " + i.state), link("Accepted revision " + i.accepted_head.slice(0, 12), "https://github.com/" + pr.repository + "/commit/" + i.accepted_head), note("Approved " + timestamp(i.approved_at) + " · " + age(i.approved_at)));
+          if (i.no_repair) view.append(note("Agents may not edit this contribution. Source fixes must come from the pull request."));
+          if (i.batch_id) view.append(link("Recorded batch " + i.batch_id, batchURL(i.batch_id)));
+          if (["waiting", "reserved"].includes(i.state)) view.append(note(i.state === "waiting" ? "Next event: queue admission into a batch." : "Next event: insertion into the reserved batch."));
+          if (i.landed_at) view.append(note("Landed " + timestamp(i.landed_at)));
+          if (i.landed_commit) view.append(link("Landed commit " + i.landed_commit.slice(0, 12), "https://github.com/" + pr.repository + "/commit/" + i.landed_commit));
+        });
+        pr.members.forEach(function (m) {
+          append(view, link("Batch " + m.batch_id + " · version " + m.batch_version + " · " + m.disposition, batchURL(m.batch_id)), note("Inserted " + timestamp(m.inserted_at) + (m.landed_at ? " · landed " + timestamp(m.landed_at) : m.removed ? " · removed membership" : m.withdrawn ? " · withdrawn membership" : "")));
+          if (m.commit_url) view.append(link("Constituent " + (m.commit || "unknown").slice(0,12), m.commit_url));
+          view.append(note(m.explanation || "No programmatic explanation recorded."));
+        });
       });
     }
     var choices = data.queue.batches.map(function (b) { return { value: b.id, label: "Batch " + b.id + " · " + b.state + " · v" + b.version + " · " + b.size + " members" }; });
     view.append(select("Batch", choices, selectedBatch || (choices[0] || {}).value, function (id) { location.hash = batchURL(id); }));
     if (!detail) { view.append(empty("Select a batch to load bounded detail pages.")); return; }
     append(view, heading("Batch " + detail.batch.id + " · " + detail.batch.state), link("Exact candidate " + detail.batch.tip.slice(0, 12), "https://github.com/" + detail.batch.repository + "/commit/" + detail.batch.tip));
+    view.append(note("Created " + timestamp(detail.batch.created_at) + " · sealed " + timestamp(detail.batch.sealed_at) + " · first dispatched " + timestamp(detail.batch.first_dispatch_at)));
+    view.append(note("Background preparation: " + (detail.batch.pre_rebase_state || "unknown") + ". Authoritative staging CI is dispatched only for the head."));
     if (!detail.member_details_complete) view.append(note("Member details are partial; the authoritative batch size is " + detail.batch.size + ".", "ops-warning"));
     view.append(select("Members", ["all", "agent_edited", "clean_replay", "reduced_empty", "already_landed_empty", "empty_unknown", "removed"], memberFilter, function (v) { memberFilter = v; page = 0; render(); }));
     var filtered = members.filter(function (m) { return memberFilter === "all" || (memberFilter === "removed" ? m.removed : m.disposition === memberFilter); });
