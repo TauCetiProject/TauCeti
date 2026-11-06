@@ -415,9 +415,7 @@ theorem coe_quadraticTwoForm_sqrt_smul_add_sub_smul
     (quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω =
       (r / 4 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1)) • ω +
         r • (quadraticTwoFormPolar o ρ hkl φ β : ⋀[ℝ]^2 V) := by
-  have hnorm : ‖((√r : ℝ) : ℂ)‖ ^ 2 = r := by
-    rw [Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg r), Real.sq_sqrt hr]
-  rw [quadraticTwoForm_smul, hnorm, Submodule.coe_smul,
+  rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul,
     coe_quadraticTwoForm_add_of_cliffordProjection o hQ hkl hω hω₂ hρ h₂ hφ hβ]
   module
 
@@ -429,13 +427,11 @@ theorem inner_quadraticTwoForm_sqrt_smul_add_sub_smul {φ β : positiveHalfSpino
     (hr : 0 ≤ r) :
     ⟪(quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • (φ + β)) : ⋀[ℝ]^2 V) - (r / 4) • ω, ω⟫ =
       r / 2 * (‖φ‖ ^ 2 - ‖β‖ ^ 2 - 1) := by
-  have hnorm : ‖((√r : ℝ) : ℂ)‖ ^ 2 = r := by
-    rw [Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg r), Real.sq_sqrt hr]
   have hPφ : cliffordProjection o ρ ω (φ + β) = φ := by rw [map_add, hφ, hβ, add_zero]
   have hPβ : cliffordProjection o ρ (-ω) (φ + β) = β := by
     rw [cliffordProjection_neg_apply, hPφ, add_sub_cancel_left]
-  rw [quadraticTwoForm_smul, hnorm, Submodule.coe_smul, inner_sub_left, real_inner_smul_left,
-    real_inner_smul_left, inner_quadraticTwoForm o hQ hkl hω, hPφ, hPβ,
+  rw [quadraticTwoForm_sqrt_smul o ρ hkl hr, Submodule.coe_smul, inner_sub_left,
+    real_inner_smul_left, real_inner_smul_left, inner_quadraticTwoForm o hQ hkl hω, hPφ, hPβ,
     real_inner_self_eq_norm_sq, hω₂]
   ring
 
