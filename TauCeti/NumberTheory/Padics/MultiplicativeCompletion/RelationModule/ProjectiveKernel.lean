@@ -63,6 +63,32 @@ open _root_.Rep
 
 variable (p : ℕ) [Fact p.Prime]
 
+/-- On an `ℓ`-subgroup with `ℓ ≠ p`, all positive-degree Tate cohomology of a `ℤ_p`-representation
+vanishes, because the order of the subgroup is a unit in `ℤ_p`. -/
+theorem subsingleton_tateCohomology_res_succ_of_isPGroup {ℓ : ℕ} [Fact ℓ.Prime] (hℓ : ℓ ≠ p)
+    {G : Type} [Group G] (S : Subgroup G) [Fintype S] (hS : IsPGroup ℓ S)
+    (B : Rep ℤ_[p] G) (n : ℕ) : Subsingleton (tateCohomology (res S.subtype B) (n + 1 : ℕ)) := by
+  obtain ⟨e, he⟩ := hS.exists_card_eq
+  have hunit : IsUnit (Nat.card S : ℤ_[p]) := by
+    rw [he, Nat.cast_pow]
+    exact (PadicInt.isUnit_natCast_of_coprime
+      ((Nat.coprime_primes Fact.out Fact.out).mpr (Ne.symm hℓ))).pow e
+  exact @Equiv.subsingleton _ _
+    ((TateCohomology.isoGroupCohomology (n + 1)).app _).toLinearEquiv.toEquiv
+    (groupCohomology.subsingleton_of_isUnit_natCard (res S.subtype B) hunit n)
+
+/-- The kernel of a `ℤ_p[G]`-linear map out of the relation module of a finite group is a free
+`ℤ_p`-module, as a submodule of `ℤ_p[G]^ι`. -/
+theorem free_ker_of_relationModule {G : Type} [Group G] [Finite G] {ι : Type} [Fintype ι]
+    {g : ι → G} {N : Type*} [AddCommGroup N] [Module (MonoidAlgebra ℤ_[p] G) N]
+    (β : MonoidAlgebra.relationModule ℤ_[p] G g →ₗ[MonoidAlgebra ℤ_[p] G] N) :
+    Module.Free ℤ_[p] (LinearMap.ker β) :=
+  Module.Free.of_injective_of_projective_of_isPrincipalIdealRing (R := ℤ_[p])
+    (M := ι → MonoidAlgebra ℤ_[p] G) (N := LinearMap.ker β)
+    (((MonoidAlgebra.relationModule ℤ_[p] G g).subtype ∘ₗ
+      (LinearMap.ker β).subtype).restrictScalars ℤ_[p])
+    (Subtype.val_injective.comp Subtype.val_injective)
+
 section LocalField
 
 variable {K L : Type} [Field K] [Field L] [Algebra K L] [FiniteDimensional K L] [IsGalois K L]
@@ -141,8 +167,6 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
   have : Module.Finite ℚ_[p] K := .left ℚ_[p] K L
   have : FiniteDimensional K L := .right ℚ_[p] K L
   have : Nontrivial ℚ_[p] := DivisionRing.toNontrivial
-  have : Algebra.IsAlgebraic ℚ_[p] K := Algebra.IsAlgebraic.of_finite ℚ_[p] K
-  have : Algebra.IsAlgebraic ℚ_[p] L := Algebra.IsAlgebraic.of_finite ℚ_[p] L
   -- The local-field structures of `K` and `L`; the statement does not see them.
   let _ := algebraicExtensionValuativeRel ℚ_[p] K
   let _ := algebraicExtensionNormedFieldTopology ℚ_[p] K
@@ -157,8 +181,7 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
   let A := Rep.of (padicCompletionUnitsRepresentation p L K)
   -- The module structure of `A(L)` is that of `A.ρ.asModule`, so the unit of the equivalence
   -- between representations and `ℤ_p[G]`-modules compares the two representations of `A(L)`.
-  let eA : ofModuleMonoidAlgebra.obj (ModuleCat.of Λ (Additive ↑(padicCompletionUnits p L))) ≅
-      A :=
+  let eA : ofModuleMonoidAlgebra.obj (ModuleCat.of Λ (Additive ↑(padicCompletionUnits p L))) ≅ A :=
     (Rep.unitIso A).symm
   -- The sequence `0 → ker β → R → A(L) → 0`, carried to representations and ending in `A`.
   let T₀ := β.shortComplexKer.map ofModuleMonoidAlgebra
@@ -166,31 +189,12 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
   let T : ShortComplex (Rep ℤ_[p] (L ≃ₐ[K] L)) :=
     ShortComplex.mk T₀.f (T₀.g ≫ eA.hom) (by rw [← Category.assoc, T₀.zero, zero_comp])
   have hT : T.ShortExact := ShortComplex.shortExact_of_iso
-    (ShortComplex.isoMk (S₁ := T₀) (S₂ := T) (Iso.refl _) (Iso.refl _) eA (by simp [T])
-      (by simp [T])) hT₀
-  -- `ker β` is a `ℤ_p`-lattice, as a submodule of `ℤ_p[G]^ι`.
-  have : Module.Free ℤ_[p] (LinearMap.ker β) :=
-    Module.Free.of_injective_of_projective_of_isPrincipalIdealRing (R := ℤ_[p])
-      (M := ι → Λ) (N := LinearMap.ker β)
-      (((MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g).subtype ∘ₗ
-        (LinearMap.ker β).subtype).restrictScalars ℤ_[p])
-      (Subtype.val_injective.comp Subtype.val_injective)
+    (ShortComplex.isoMk (S₁ := T₀) (S₂ := T) (.refl _) (.refl _) eA (by simp [T]) (by simp [T])) hT₀
+  have : Module.Free ℤ_[p] (LinearMap.ker β) := free_ker_of_relationModule p β
   let e₁ : T.X₁.ρ.asModule ≃ₗ[Λ] LinearMap.ker β :=
     (counitIso (ModuleCat.of Λ (LinearMap.ker β))).toLinearEquiv
   have : Module.Projective ℤ_[p] T.X₁.V :=
     .of_equiv (e₁.restrictScalars ℤ_[p] |>.symm.trans T.X₁.ρ.asModuleEquiv)
-  -- On an `ℓ`-subgroup with `ℓ ≠ p`, all positive-degree cohomology vanishes: `#S` is a unit.
-  have hsub (ℓ : ℕ) [Fact ℓ.Prime] (hℓ : ℓ ≠ p) (S : Subgroup (L ≃ₐ[K] L)) [Fintype S]
-      (hS : IsPGroup ℓ S) (B : Rep ℤ_[p] (L ≃ₐ[K] L)) (n : ℕ) :
-      Subsingleton (tateCohomology (res S.subtype B) (n + 1 : ℕ)) := by
-    obtain ⟨e, he⟩ := hS.exists_card_eq
-    have hunit : IsUnit (Nat.card S : ℤ_[p]) := by
-      rw [he, Nat.cast_pow]
-      exact (PadicInt.isUnit_natCast_of_coprime
-        ((Nat.coprime_primes Fact.out Fact.out).mpr (Ne.symm hℓ))).pow e
-    exact @Equiv.subsingleton _ _
-      ((TateCohomology.isoGroupCohomology (n + 1)).app _).toLinearEquiv.toEquiv
-      (groupCohomology.subsingleton_of_isUnit_natCard (res S.subtype B) hunit n)
   -- Tate's criterion in degrees `1, 2, 3`: `H-hat^1(S, A(L))` and `H-hat^3(S, R)` vanish, and the
   -- map is bijective on `H-hat^2(S, -)`, on `p`-subgroups by
   -- `bijective_tateCohomology_two_res_of_surjective`.
@@ -205,14 +209,17 @@ theorem projective_ker_of_relationModule_surjective_of_h2_surjective {L K : Type
         exact @Function.surjective_to_subsingleton _ _ _ (ModuleCat.subsingleton_of_isZero
           ((isZero_groupCohomology_one_res_padicCompletionUnits ℓ K L S).of_iso
             ((TateCohomology.isoGroupCohomology 1).app _))) _
-      · exact @Function.surjective_to_subsingleton _ _ _ (hsub ℓ hℓ S hS A 0) _
+      · exact @Function.surjective_to_subsingleton _ _ _
+          (subsingleton_tateCohomology_res_succ_of_isPGroup p hℓ S hS A 0) _
     · by_cases hℓ : ℓ = p
       · subst hℓ
         refine bijective_tateCohomology_two_res_of_surjective ℓ hg T.g ?_ S hS
         rw [Functor.map_comp, ConcreteCategory.coe_comp]
         exact (ConcreteCategory.bijective_of_isIso _).surjective.comp h2
-      · exact ⟨@Function.injective_of_subsingleton _ _ (hsub ℓ hℓ S hS _ 1) _,
-          @Function.surjective_to_subsingleton _ _ _ (hsub ℓ hℓ S hS _ 1) _⟩
+      · have h₂ := subsingleton_tateCohomology_res_succ_of_isPGroup p hℓ S hS T.X₂ 1
+        have h₃ := subsingleton_tateCohomology_res_succ_of_isPGroup p hℓ S hS T.X₃ 1
+        exact ⟨@Function.injective_of_subsingleton _ _ h₂ _,
+          @Function.surjective_to_subsingleton _ _ _ h₃ _⟩
   exact .of_equiv e₁
 
 /-- **A relation-module surjection onto `A(L)` which is onto on `H²` has kernel `ℤ_p[G]`.** Let
