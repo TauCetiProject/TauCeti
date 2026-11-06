@@ -138,7 +138,7 @@ private theorem ne_formalInverseEval_self {t : O_v} (ht : t ∈ m_v) (ht0 : t �
   exact (not_le_of_gt h2) hval
 
 /-- In characteristic two with `a₁ ≠ 0`, a small enough nonzero parameter avoids `t`, its formal
-inverse, and the formal-inverse fixed-point equation `s = -s`. -/
+inverse, and the formal-inverse fixed-point equation `s = W.formalInverseEval s`. -/
 private theorem exists_aux_param_of_a₁_ne_zero {t : O_v} (ht : t ∈ m_v) (ht0 : t ≠ 0)
     (htwo' : ((2 : O_v) : K_v) = 0) (ha₁ : (W.a₁ : K_v) ≠ 0) :
     ∃ s : O_v, s ∈ m_v ∧ s ≠ 0 ∧ s ≠ t ∧ s ≠ W.formalInverseEval t ∧
@@ -157,14 +157,8 @@ private theorem exists_aux_param_of_a₁_ne_zero {t : O_v} (ht : t ∈ m_v) (ht0
     exact (_root_.map_eq_zero (Valued.v :
       Valuation K_v (WithZero (Multiplicative ℤ)))).not.mpr
         (fun h ↦ hs0 (ZeroMemClass.coe_eq_zero.mp h))
-  have hsq : Valued.v (s : K_v) ^ 2 < Valued.v (W.a₁ : K_v) := by
-    calc
-      Valued.v (s : K_v) ^ 2 = Valued.v (s : K_v) * Valued.v (s : K_v) :=
-        pow_two _
-      _ < 1 * Valued.v (s : K_v) :=
-        mul_lt_mul_of_pos_right hsone (pos_iff_ne_zero.mpr hsval0)
-      _ = Valued.v (s : K_v) := one_mul _
-      _ < Valued.v (W.a₁ : K_v) := hsa₁
+  have hsq : Valued.v (s : K_v) ^ 2 < Valued.v (W.a₁ : K_v) :=
+    (pow_lt_self_of_lt_one₀ (pos_iff_ne_zero.mpr hsval0) hsone one_lt_two).trans hsa₁
   have hw_le : Valued.v (W.a₃ * W.formalWEval s : K_v) ≤
       Valued.v (s : K_v) ^ 3 := by
     rw [map_mul, valued_formalWEval v W hsm]
