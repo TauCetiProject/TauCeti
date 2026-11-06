@@ -399,9 +399,9 @@ private theorem exists_reflectionWord_of_apply_eq_self
     exact B.restrict_nondegenerate_orthogonal_spanSingleton hB hBsymm.isRefl haa
   have hane : (a : V) ≠ 0 := fun h ↦ a.2 (by rw [h, Q.map_zero])
   have hpos : 0 < n := hn ▸ Module.finrank_pos_iff_exists_ne_zero.mpr ⟨a, hane⟩
-  obtain ⟨gU, hgU⟩ := exists_orthogonalGroup_restrict_apply Q g ha
   obtain ⟨l, hllen, hlprod⟩ := ih (n - 1) (by omega)
-    (by rw [B.finrank_orthogonal hB, finrank_span_singleton hane, hn]) (Q.restrict U) hQU gU
+    (by rw [B.finrank_orthogonal hB, finrank_span_singleton hane, hn]) (Q.restrict U) hQU
+    (orthogonalGroup.restrictOrthogonal g ha)
   refine ⟨l.map (anisotropicVectorOfRestrict Q U), by simp only [List.length_map]; omega,
     Subtype.ext (LinearEquiv.toLinearMap_injective ?_)⟩
   refine LinearMap.ext_on_codisjoint (B.isCompl_span_singleton_orthogonal haa).codisjoint
@@ -411,7 +411,7 @@ private theorem exists_reflectionWord_of_apply_eq_self
     rw [reflectionWord_restrict_apply_of_isOrtho Q U l a fun u hu ↦
       (QuadraticMap.associated_isOrtho.mp (hu a (Submodule.mem_span_singleton_self _))).symm]
   · have happ := reflectionWord_restrict_apply Q U l ⟨y, hy⟩
-    rw [hlprod, hgU] at happ
+    rw [hlprod, coe_restrictOrthogonal_apply] at happ
     exact happ
 
 /-- The good case of the induction step: an orthogonal map that fixes an anisotropic vector, or
