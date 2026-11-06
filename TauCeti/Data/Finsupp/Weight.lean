@@ -9,6 +9,7 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Algebra.Order.Antidiag.Finsupp
 public import Mathlib.Data.Finsupp.Multiset
 public import Mathlib.Data.Finsupp.Option
+public import Mathlib.Basic.ENNReal.Inv
 public import TauCeti.Data.Finsupp.Order
 
 /-!
@@ -60,6 +61,9 @@ at `h` of the pushforward `Finsupp.mapDomain b`.
 * `Finsupp.natCast_weight_eq_of_support_subset`: on monomials supported in a finite set `s`, the
   weight `weight w` agrees with any additive functional on `s → ℤ` taking the value `w i` on the
   `i`-th coordinate vector.
+* `Finsupp.weight_le_ofReal_of_ratio`: for antitone positive integer ranks `r`, a row of degree at
+  most `r (n + 1)` not differentiating in the last variable has weight at most `σ` for the weights
+  `1 / rⱼ`, when `r (n + 1) ≤ σ r n`.
 * `Finsupp.finite_degree_eq`, `Finsupp.finite_degree_le`: in finitely many variables there are
   finitely many exponent vectors of each degree, and of degree at most `n`.
 * `Finsupp.fintypeDegreeEq`: for a fintype of variables with decidable equality, the exponent
@@ -271,5 +275,30 @@ instance fintypeDegreeEq {σ : Type*} [Fintype σ] [DecidableEq σ] (n : ℕ) :
     Fintype {s : σ →₀ ℕ // s.degree = n} :=
   Fintype.ofFinset (p := {s : σ →₀ ℕ | s.degree = n}) ((Finset.univ : Finset σ).finsuppAntidiag n)
     fun s ↦ by simp [Finset.mem_finsuppAntidiag, degree_eq_sum]
+
+open scoped ENNReal in
+/-- A row `ν` of degree at most `r (n + 1)` that does not differentiate in the last variable,
+where `r` is antitone with `r (n + 1) ≤ σ r n`, has weight at most `σ` for the weights
+`1 / rⱼ`. -/
+theorem weight_le_ofReal_of_ratio {n : ℕ} {r : Fin (n + 1 + 1) → ℕ} (hr : ∀ i, 0 < r i)
+    (hanti : Antitone r) {σ : ℝ}
+    (hratio : (r (Fin.last (n + 1)) : ℝ) ≤ σ * r (Fin.last n).castSucc)
+    {ν : Fin (n + 1 + 1) →₀ ℕ} (hν : ν.degree ≤ r (Fin.last (n + 1)))
+    (hνl : ν (Fin.last (n + 1)) = 0) :
+    ν.weight (fun j ↦ (r j : ℝ≥0∞)⁻¹) ≤ ENNReal.ofReal σ := by
+  set c := (Fin.last n).castSucc
+  have hc : (0 : ℝ) < r c := by exact_mod_cast hr c
+  refine (ν.weight_le_degree_nsmul_of_monotone
+    (fun a b h ↦ ENNReal.inv_le_inv.2 (by exact_mod_cast hanti h)) (i := c) fun j hj ↦
+      Fin.le_castSucc_iff.2 (Fin.lt_last_iff_ne_last.2 fun h ↦
+        Finsupp.mem_support_iff.1 hj (h ▸ hνl))).trans ?_
+  rw [nsmul_eq_mul]
+  calc (ν.degree : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ ≤
+        (r (Fin.last (n + 1)) : ℝ≥0∞) * (r c : ℝ≥0∞)⁻¹ := by
+        gcongr
+    _ = ENNReal.ofReal (r (Fin.last (n + 1)) / r c) := by
+        rw [ENNReal.ofReal_div_of_pos hc, ENNReal.ofReal_natCast, ENNReal.ofReal_natCast,
+          div_eq_mul_inv]
+    _ ≤ ENNReal.ofReal σ := ENNReal.ofReal_le_ofReal ((div_le_iff₀ hc).2 hratio)
 
 end Finsupp
