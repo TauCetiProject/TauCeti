@@ -392,17 +392,6 @@ open Filter Topology
 
 variable [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {poly : Polygon P n} {p₀ : P} {d : V}
 
-/-- A point of the interior of an edge lies on the edge. -/
-private theorem edgePath_mem_edgeSet (k : Fin n) {r : ℝ} (hr : r ∈ Ioo (0 : ℝ) 1) :
-    poly.edgePath ℝ k r ∈ poly.edgeSet ℝ k := by
-  rw [edgeSet_eq_image_edgePath]
-  exact mem_image_of_mem _ (Ioo_subset_Icc_self hr)
-
-/-- Moving along an edge by `c` translates a point of it by `c` times the edge direction. -/
-private theorem edgePath_add (k : Fin n) (r c : ℝ) : poly.edgePath ℝ k (r + c) =
-    c • (poly (finRotate n k) -ᵥ poly k) +ᵥ poly.edgePath ℝ k r := by
-  simp only [edgePath, lineMap_apply, vadd_vadd, ← add_smul, add_comm]
-
 /-- If a linear relation between the directions of two distinct edges and `d` has nonzero
 coefficients for both edges, then moving along both edges gives a second pair of points of the
 two edges with the same projection, contradicting
@@ -434,9 +423,11 @@ private theorem false_of_edgePath_move (hs : poly.IsSimple ℝ)
   let S : Set (P × P) := {q | q.1 ∈ poly.edgeSet ℝ i ∧ q.2 ∈ poly.edgeSet ℝ j ∧
     projAlong ℝ p₀ d q.1 = projAlong ℝ p₀ d q.2}
   have hq₀ : (poly.edgePath ℝ i s, poly.edgePath ℝ j t) ∈ S :=
-    ⟨edgePath_mem_edgeSet i hsI, edgePath_mem_edgeSet j htI, h⟩
+    ⟨edgePath_mem_edgeSet i (Ioo_subset_Icc_self hsI),
+      edgePath_mem_edgeSet j (Ioo_subset_Icc_self htI), h⟩
   have hq₁ : (poly.edgePath ℝ i (s + l * g 0), poly.edgePath ℝ j (t + -(l * g 1))) ∈ S :=
-    ⟨edgePath_mem_edgeSet i hl₁, edgePath_mem_edgeSet j hl₂, hproj⟩
+    ⟨edgePath_mem_edgeSet i (Ioo_subset_Icc_self hl₁),
+      edgePath_mem_edgeSet j (Ioo_subset_Icc_self hl₂), hproj⟩
   have hpair := hπ.subsingleton_setOf_mem_edgeSet hs hij hq₀ hq₁
   have hx := congrArg Prod.fst hpair
   dsimp only at hx
@@ -459,7 +450,8 @@ theorem IsRegularProjection.linearIndependent_of_projAlong_eq (hs : poly.IsSimpl
     LinearIndependent ℝ ![poly (finRotate n i) -ᵥ poly i, poly (finRotate n j) -ᵥ poly j, d] := by
   have hij : i ≠ j := by
     rintro rfl
-    exact hne (hπ.injOn_edgeSet i (edgePath_mem_edgeSet i hsI) (edgePath_mem_edgeSet i htI) h)
+    exact hne (hπ.injOn_edgeSet i (edgePath_mem_edgeSet i (Ioo_subset_Icc_self hsI))
+      (edgePath_mem_edgeSet i (Ioo_subset_Icc_self htI)) h)
   -- No edge is parallel to `d`, since the projection is injective on the vertices.
   have hnpar (k : Fin n) (a : ℝ) (ha : a • d = poly (finRotate n k) -ᵥ poly k) : False :=
     hs.hasNondegenerateEdges k (hπ.eq_vertex_of_apply_eq k
