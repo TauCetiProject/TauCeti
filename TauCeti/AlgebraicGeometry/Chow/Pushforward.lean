@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.AlgebraicCycle.OverField
 public import TauCeti.AlgebraicGeometry.Chow.ClosedImmersion
-public import TauCeti.AlgebraicGeometry.Scheme.LocalDimension
-import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
 # Pushforward of cycles over a field
@@ -18,8 +17,9 @@ sends the cycle `[V]` of an integral closed subscheme `V ⊆ X` to `[κ(V) : κ(
 `f(V)` has the dimension of `V`, and to `0` otherwise. Over a field the dimension condition is
 automatic: when `κ(V)` is finite over `κ(f(V))`, both have the same transcendence degree over `k`
 (`TauCeti.AlgebraicGeometry.height_apply_eq_height_of_residueDegree_ne_zero`), so the
-multiplicity is just the residue degree (`Chow.mapCoeff_height_eq_residueDegree`). This makes the
-pushforward of `k`-cycles functorial, and compatible with degrees of zero-cycles
+multiplicity is just the residue degree (`AlgebraicCycle.mapCoeff_height_eq_residueDegree`), and
+the pushforward sends `n`-cycles to `n`-cycles (`Chow.map_height_mem_cyclesOfDimension`). This
+makes the pushforward of `k`-cycles functorial, and compatible with degrees of zero-cycles
 ([Stacks, Sections 42.12 and 42.41](https://stacks.math.columbia.edu/tag/02R3); Fulton,
 *Intersection Theory*, §1.4).
 
@@ -28,7 +28,7 @@ pushforward of `k`-cycles functorial, and compatible with degrees of zero-cycles
 * `Chow.cyclesDegree k X`: the degree `Z_0(X) →+ ℤ`, `Σ n_x [x] ↦ Σ n_x [κ(x) : k]`, of
   zero-cycles on a quasi-compact `X` (Mathlib's `AlgebraicCycle.degree` of the structure
   morphism), with `Chow.cyclesDegree_cyclesMap`: `deg f_* α = deg α`, the case of zero-cycles of
-  `Chow.degree_map_height`.
+  `AlgebraicCycle.degree_map_height`.
 -/
 
 public section
@@ -44,49 +44,29 @@ variable (k : Type u) [Field k] {X Y Z : Scheme.{u}}
   [LocallyOfFiniteType (X ↘ Spec (.of k))] [LocallyOfFiniteType (Y ↘ Spec (.of k))]
   [LocallyOfFiniteType (Z ↘ Spec (.of k))]
 
-/-- Over a field, the multiplicity of Mathlib's pushforward of cycles with height weights is the
-residue degree: a point with finite residue extension has the dimension of its image. -/
-lemma mapCoeff_height_eq_residueDegree (f : X ⟶ Y) [f.IsOver (Spec (.of k))] (x : X) :
-    AlgebraicCycle.mapCoeff f height height x = f.residueDegree x := by
-  rw [AlgebraicCycle.mapCoeff]
-  split_ifs with h
-  · rfl
-  · by_contra hx
-    exact h (height_apply_eq_height_of_residueDegree_ne_zero k f (Ne.symm hx)).symm
-
-/-- Over a field, Mathlib's pushforward of cycles with height weights has, at a point `y`, the sum
-of the coefficients at the points `x` over `y`, weighted by the residue degrees `[κ(x) : κ(y)]`. -/
-lemma map_height_apply (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f]
-    (α : AlgebraicCycle X ℤ) (y : Y) :
-    AlgebraicCycle.map f height height α y = ∑ᶠ x ∈ f ⁻¹' {y}, α x * f.residueDegree x := by
-  simp only [AlgebraicCycle.map, Function.locallyFinsupp.map_apply,
-    mapCoeff_height_eq_residueDegree k]
-
-/-- Over a field, Mathlib's pushforward of cycles with height weights is functorial:
-`(g ∘ f)_* = g_* f_*`, by the tower law for residue degrees. -/
-lemma map_height_comp (f : X ⟶ Y) (g : Y ⟶ Z) [f.IsOver (Spec (.of k))]
-    [g.IsOver (Spec (.of k))] [QuasiCompact f] [QuasiCompact g] (α : AlgebraicCycle X ℤ) :
-    AlgebraicCycle.map (f ≫ g) height height α =
-      AlgebraicCycle.map g height height (AlgebraicCycle.map f height height α) :=
-  AlgebraicCycle.map_comp f height height g height α fun x ↦ by
-    simp only [mapCoeff_height_eq_residueDegree k, residueDegree_comp]
+/-- Over a field, Mathlib's pushforward of cycles with height weights sends `n`-cycles to
+`n`-cycles: a point with finite residue extension has the dimension of its image. -/
+lemma map_height_mem_cyclesOfDimension (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f]
+    {n : ℤ} {α : AlgebraicCycle X ℤ} (hα : α ∈ cyclesOfDimension X n) :
+    AlgebraicCycle.map f height height α ∈ cyclesOfDimension Y n := by
+  rw [mem_cyclesOfDimension_iff]
+  intro y hy
+  rw [Function.mem_support, AlgebraicCycle.map_height_apply k] at hy
+  obtain ⟨x, hxy, hx⟩ := exists_ne_zero_of_finsum_mem_ne_zero hy
+  rw [Set.mem_preimage, Set.mem_singleton_iff] at hxy
+  have hd : f.residueDegree x ≠ 0 := by exact_mod_cast right_ne_zero_of_mul hx
+  have hx' := mem_cyclesOfDimension_iff.mp hα (left_ne_zero_of_mul hx)
+  rw [← hxy]
+  simpa only [mem_pointsOfDimension,
+    height_apply_eq_height_of_residueDegree_ne_zero k f hd] using hx'
 
 /-- The pushforward of `n`-cycles along a quasi-compact morphism over a field: Mathlib's
 pushforward of cycles with height weights, `[V] ↦ [κ(V) : κ(f(V))] [f(V)]`. -/
 noncomputable def cyclesMap (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f] {n : ℤ} :
     cyclesOfDimension X n →+ cyclesOfDimension Y n :=
-  AddMonoidHom.mk' (fun α ↦ ⟨AlgebraicCycle.map f height height (α : AlgebraicCycle X ℤ), by
-      rw [mem_cyclesOfDimension_iff]
-      intro y hy
-      rw [Function.mem_support, map_height_apply k] at hy
-      obtain ⟨x, hxy, hx⟩ := exists_ne_zero_of_finsum_mem_ne_zero hy
-      rw [Set.mem_preimage, Set.mem_singleton_iff] at hxy
-      have hd : f.residueDegree x ≠ 0 := by exact_mod_cast right_ne_zero_of_mul hx
-      have hx' := mem_cyclesOfDimension_iff.mp α.2 (left_ne_zero_of_mul hx)
-      rw [← hxy]
-      simpa only [mem_pointsOfDimension,
-        height_apply_eq_height_of_residueDegree_ne_zero k f hd] using hx'⟩)
-    fun α β ↦ Subtype.ext (AlgebraicCycle.map_add _ _ _ _ _)
+  AddMonoidHom.mk' (fun α ↦ ⟨AlgebraicCycle.map f height height (α : AlgebraicCycle X ℤ),
+      map_height_mem_cyclesOfDimension k f α.2⟩)
+    fun _ _ ↦ Subtype.ext (AlgebraicCycle.map_add _ _ _ _ _)
 
 variable {k}
 
@@ -103,7 +83,7 @@ lemma cyclesMap_apply (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f] {
     (α : cyclesOfDimension X n) (y : Y) :
     (cyclesMap k f α : AlgebraicCycle Y ℤ) y =
       ∑ᶠ x ∈ f ⁻¹' {y}, (α : AlgebraicCycle X ℤ) x * f.residueDegree x :=
-  map_height_apply k f _ y
+  AlgebraicCycle.map_height_apply k f _ y
 
 variable (k)
 
@@ -119,7 +99,7 @@ lemma cyclesMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) [f.IsOver (Spec (.of k))]
     [g.IsOver (Spec (.of k))] [QuasiCompact f] [QuasiCompact g] {n : ℤ} :
     cyclesMap k (f ≫ g) (n := n) = (cyclesMap k g).comp (cyclesMap k f) := by
   ext α : 2
-  exact map_height_comp k f g _
+  exact AlgebraicCycle.map_height_comp k f g _
 
 /-- Along a closed immersion over `k`, the pushforward of cycles is the closed-immersion
 pushforward `Chow.cyclesPushforward`, which transports coefficients. -/
@@ -146,24 +126,7 @@ residue fields. -/
 lemma cyclesDegree_apply (α : cyclesOfDimension X 0) :
     cyclesDegree k X α =
       ∑ᶠ x, (X ↘ Spec (.of k)).residueDegree x • (α : AlgebraicCycle X ℤ) x :=
-  (rfl)
-
-/-- The degree of a cycle on a quasi-compact scheme over `k` is the coefficient of its
-pushforward to `Spec k`. -/
-lemma degree_eq_map_height_apply (α : AlgebraicCycle X ℤ) :
-    AlgebraicCycle.degree (X ↘ Spec (.of k)) α =
-      AlgebraicCycle.map (X ↘ Spec (.of k)) height height α default :=
-  AlgebraicCycle.degree_eq_map_of_unique _ _ _ _ fun _ _ hx ↦
-    (height_apply_eq_height_of_residueDegree_ne_zero k (X ↘ Spec (.of k)) hx).symm
-
-/-- Pushforward along a morphism over `k` of quasi-compact schemes preserves the degree of
-cycles. -/
-lemma degree_map_height [CompactSpace Y] (f : X ⟶ Y) [f.IsOver (Spec (.of k))] [QuasiCompact f]
-    (α : AlgebraicCycle X ℤ) :
-    AlgebraicCycle.degree (Y ↘ Spec (.of k)) (AlgebraicCycle.map f height height α) =
-      AlgebraicCycle.degree (X ↘ Spec (.of k)) α := by
-  rw [degree_eq_map_height_apply, degree_eq_map_height_apply, ← map_height_comp k]
-  simp only [comp_over]
+  AlgebraicCycle.degree_apply _ _
 
 /-- Pushforward along a morphism over `k` of quasi-compact schemes preserves the degree of
 zero-cycles. -/
@@ -171,7 +134,7 @@ zero-cycles. -/
 lemma cyclesDegree_cyclesMap [CompactSpace Y] (f : X ⟶ Y) [f.IsOver (Spec (.of k))]
     [QuasiCompact f] (α : cyclesOfDimension X 0) :
     cyclesDegree k Y (cyclesMap k f α) = cyclesDegree k X α :=
-  degree_map_height k f α
+  AlgebraicCycle.degree_map_height k f (α : AlgebraicCycle X ℤ)
 
 end Degree
 

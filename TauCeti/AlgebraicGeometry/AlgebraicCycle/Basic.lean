@@ -29,9 +29,8 @@ This file records basic support and coefficient lemmas for Mathlib's pushforward
   sums.
 * `AlgebraicCycle.map_height_apply_of_isClosedImmersion`: along a closed immersion, the pushforward
   with height weights transports coefficients, since closed immersions preserve heights and have
-  residue degree one. Consequently it is additive, injective, supported on the image of the support
-  and compatible with composition (`AlgebraicCycle.map_height_add_of_isClosedImmersion`,
-  `AlgebraicCycle.map_height_injective_of_isClosedImmersion`,
+  residue degree one. Consequently it is injective, supported on the image of the support and
+  compatible with composition (`AlgebraicCycle.map_height_injective_of_isClosedImmersion`,
   `AlgebraicCycle.support_map_height_of_isClosedImmersion`,
   `AlgebraicCycle.map_height_comp_of_isClosedImmersion`, the last for a closed immersion followed
   by any quasi-compact morphism).
@@ -63,15 +62,28 @@ lemma map_apply_eq_zero_of_notMem_range (c : AlgebraicCycle X R) {y : Y}
     (hy : y ∉ Set.range f) : map f wx wy c y = 0 :=
   Function.notMem_support.mp fun h ↦ hy (support_map_subset_range f wx wy c h)
 
+/-- Every point of the target of a quasi-compact morphism has an open neighbourhood, for instance
+an affine one, whose preimage is quasi-compact. -/
+private lemma exists_isOpen_mem_isCompact_preimage (y : Y) :
+    ∃ U : Set Y, IsOpen U ∧ y ∈ U ∧ IsCompact (f ⁻¹' U) := by
+  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
+    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
+  exact ⟨U, U.isOpen, hyU, QuasiCompact.isCompact_preimage (f := f) _ U.isOpen hU.isCompact⟩
+
 /-- A cycle has only finitely many points with nonzero coefficient in each fibre of a
 quasi-compact morphism: a fibre lies in the preimage of an affine open, which is quasi-compact. -/
 lemma finite_preimage_singleton_inter_support (c : AlgebraicCycle X R) (y : Y) :
     (f ⁻¹' {y} ∩ c.support).Finite := by
-  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
-    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
-  exact (c.locallyFiniteSupport.finite_inter_support_of_isCompact
-    (QuasiCompact.isCompact_preimage (f := f) _ U.isOpen hU.isCompact)).subset
+  obtain ⟨U, -, hyU, hK⟩ := exists_isOpen_mem_isCompact_preimage f y
+  exact (c.locallyFiniteSupport.finite_inter_support_of_isCompact hK).subset
     (Set.inter_subset_inter_left _ (Set.preimage_mono (Set.singleton_subset_iff.mpr hyU)))
+
+/-- A cycle with pointwise weighted coefficients has only finitely many points with nonzero
+coefficient in each fibre of a quasi-compact morphism. -/
+private lemma finite_preimage_singleton_inter_support_mul (c : AlgebraicCycle X R) (w : X → R)
+    (y : Y) : (f ⁻¹' {y} ∩ Function.support fun x ↦ c x * w x).Finite :=
+  (finite_preimage_singleton_inter_support f c y).subset
+    (Set.inter_subset_inter_right _ (Function.support_mul_subset_left _ _))
 
 /-- The pushforward along a quasi-compact morphism of a family of cycles with locally finite
 supports again has locally finite supports: the preimage of an affine open is quasi-compact, so it
@@ -80,10 +92,8 @@ lemma locallyFinite_support_map {ι : Type*} (c : ι → AlgebraicCycle X R)
     (hc : LocallyFinite fun i ↦ (c i).support) :
     LocallyFinite fun i ↦ (map f wx wy (c i)).support := by
   intro y
-  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
-    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
-  refine ⟨U, U.isOpen.mem_nhds hyU, (hc.finite_nonempty_inter_compact
-    (QuasiCompact.isCompact_preimage (f := f) _ U.isOpen hU.isCompact)).subset ?_⟩
+  obtain ⟨U, hU, hyU, hK⟩ := exists_isOpen_mem_isCompact_preimage f y
+  refine ⟨U, hU.mem_nhds hyU, (hc.finite_nonempty_inter_compact hK).subset ?_⟩
   rintro i ⟨z, hz, hzU⟩
   obtain ⟨x, rfl, hx⟩ := exists_ne_zero_of_finsum_mem_ne_zero hz
   exact ⟨x, left_ne_zero_of_mul hx, hzU⟩
@@ -94,11 +104,8 @@ lemma map_add (c d : AlgebraicCycle X R) :
   ext y
   simp only [map, Function.locallyFinsupp.map_apply, Function.locallyFinsuppWithin.coe_add,
     Pi.add_apply, add_mul]
-  exact finsum_mem_add_distrib'
-    ((finite_preimage_singleton_inter_support f c y).subset
-      (Set.inter_subset_inter_right _ (Function.support_mul_subset_left _ _)))
-    ((finite_preimage_singleton_inter_support f d y).subset
-      (Set.inter_subset_inter_right _ (Function.support_mul_subset_left _ _)))
+  exact finsum_mem_add_distrib' (finite_preimage_singleton_inter_support_mul f c _ y)
+    (finite_preimage_singleton_inter_support_mul f d _ y)
 
 /-- The pushforward along a quasi-compact morphism of a locally finite sum of cycles is the
 locally finite sum of the pushforwards. -/
@@ -113,9 +120,7 @@ lemma map_locallyFiniteSum {ι : Type*} (c : ι → AlgebraicCycle X R)
     Function.locallyFinsupp.locallyFiniteSum_apply]
   -- Only finitely many members `c i` meet the quasi-compact preimage `K` of an affine open
   -- neighbourhood of `y`, and each meets the fibre over `y` in finitely many points.
-  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
-    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
-  have hK : IsCompact (f ⁻¹' U) := QuasiCompact.isCompact_preimage (f := f) _ U.isOpen hU.isCompact
+  obtain ⟨U, -, hyU, hK⟩ := exists_isOpen_mem_isCompact_preimage f y
   have hI := hc.finite_nonempty_inter_compact hK
   have hS : (⋃ i ∈ {i | ((c i).support ∩ f ⁻¹' U).Nonempty},
       f ⁻¹' {y} ∩ (c i).support).Finite :=
@@ -157,13 +162,11 @@ lemma map_comp {Z : Scheme.{u}} (g : Y ⟶ Z) [QuasiCompact g] (wz : Z → N)
     simp
   have hfin : (f ⁻¹' (g ⁻¹' {z}) ∩
       Function.support fun x ↦ c x * (mapCoeff (f ≫ g) wx wz x : R)).Finite :=
-    (finite_preimage_singleton_inter_support (f ≫ g) c z).subset
-      (hpre ▸ Set.inter_subset_inter_right _ (Function.support_mul_subset_left _ _))
+    hpre ▸ finite_preimage_singleton_inter_support_mul (f ≫ g) c _ z
   rw [hpre, ← TauCeti.finsum_mem_fiberwise f (g ⁻¹' {z}) _ hfin]
   refine finsum_mem_congr rfl fun y _ ↦ ?_
-  rw [← AddMonoidHom.mulRight_apply, AddMonoidHom.map_finsum_mem' _
-    (finite_preimage_singleton_inter_support f c y |>.subset
-      (Set.inter_subset_inter_right _ (Function.support_mul_subset_left _ _)))]
+  rw [← AddMonoidHom.mulRight_apply,
+    AddMonoidHom.map_finsum_mem' _ (finite_preimage_singleton_inter_support_mul f c _ y)]
   simp only [AddMonoidHom.mulRight_apply]
   refine finsum_mem_congr rfl fun x hx ↦ ?_
   rw [Set.mem_preimage, Set.mem_singleton_iff] at hx
@@ -198,15 +201,6 @@ lemma support_map_height_of_isClosedImmersion (c : AlgebraicCycle W R) :
   · simp only [Function.mem_support, map_apply_eq_zero_of_notMem_range i _ _ c hx, ne_eq,
       not_true_eq_false, Set.mem_image, false_iff, not_exists, not_and]
     exact fun y _ hy ↦ hx ⟨y, hy⟩
-
-/-- Along a closed immersion, the pushforward with height weights is additive. -/
-lemma map_height_add_of_isClosedImmersion (c d : AlgebraicCycle W R) :
-    map i height height (c + d) = map i height height c + map i height height d := by
-  ext x
-  by_cases hx : x ∈ Set.range i
-  · obtain ⟨y, rfl⟩ := hx
-    simp [map_height_apply_of_isClosedImmersion]
-  · simp [map_apply_eq_zero_of_notMem_range i _ _ _ hx]
 
 /-- Along a closed immersion, the pushforward with height weights is injective. -/
 lemma map_height_injective_of_isClosedImmersion :
