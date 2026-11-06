@@ -113,9 +113,9 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
         (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) / ∏ i, a v i) := by
       rw [← map_prod, he]
       exact ha v
-    exact isSquare_div_last_of_isSquare_div_prod
-      (a := fun i => Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i))
-      (b := a v) hhead hp
+    exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
+      (a := fun i => Units.map (algebraMap K (v.1.adicCompletion K)).toMonoidHom (e i)) (b := a v)
+      (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
   · intro w i
     have hhead (j : Fin n) : IsSquare
         (Units.map (embedding_of_isReal w.1.2).toMonoidHom (e j.castSucc) / b w j.castSucc) := by
@@ -127,8 +127,8 @@ theorem exists_coefficients_prod_eq_isSquare_div_at_places
         (embedding_of_isReal w.1.2).toMonoidHom (e i)) / ∏ i, b w i) := by
       rw [← map_prod, he]
       exact hb w
-    exact isSquare_div_last_of_isSquare_div_prod
-      (a := fun i => Units.map (embedding_of_isReal w.1.2).toMonoidHom (e i))
-      (b := b w) hhead hp
+    exact isSquare_div_of_isSquare_prod_div_prod (Finset.mem_univ (Fin.last n))
+      (a := fun i => Units.map (embedding_of_isReal w.1.2).toMonoidHom (e i)) (b := b w)
+      (fun j _ hj ↦ by obtain ⟨j, rfl⟩ := Fin.exists_castSucc_eq.2 hj; exact hhead j) hp
 
 end TauCeti.GlobalNumberFields
