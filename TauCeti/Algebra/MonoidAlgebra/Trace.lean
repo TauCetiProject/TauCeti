@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.Trace
 public import TauCeti.Algebra.MonoidAlgebra.Basis
+public import TauCeti.RingTheory.Trace.Regular
 
 /-!
 # The trace of multiplication by an element of a finite monoid algebra
@@ -36,6 +37,10 @@ a field `k`, if `y * y = κ • y`, this trace is `κ` times the character of th
 * `MonoidAlgebra.trace_mulRight`: the trace of right multiplication by `x` on `k[G]` is
   `|G| * x_1`.
 * `MonoidAlgebra.trace_mulLeft`: the same for left multiplication.
+* `MonoidAlgebra.regularTraceForm_apply`: the regular trace form of `k[G]` is
+  `(x, y) ↦ |G| * (x * y)_1`.
+* `MonoidAlgebra.nondegenerate_regularTraceForm`: for a finite group whose order is nonzero in `k`,
+  the regular trace form of `k[G]` is nondegenerate.
 * `MonoidAlgebra.trace_mulLeft_single_mul_mulRight`: the trace of `x ↦ g * x * y` on a
   finite group algebra is `∑ σ, y_{σ⁻¹ g⁻¹ σ}`.
 -/
@@ -85,6 +90,27 @@ theorem trace_mulLeft {k G : Type*} [CommSemiring k] [Monoid G]
   have : Fintype G := Fintype.ofFinite G
   rw [LinearMap.trace_eq_matrix_trace k (MonoidAlgebra.basis G k), Algebra.toMatrix_lmul_eq,
     trace_leftMulMatrix, Nat.card_eq_fintype_card]
+
+/-- The regular trace form of a finite monoid algebra is `(x, y) ↦ |G| * (x * y)_1`. -/
+theorem regularTraceForm_apply {k G : Type*} [CommRing k] [Monoid G] [IsRightCancelMul G]
+    [Finite G] (x y : MonoidAlgebra k G) :
+    Algebra.regularTraceForm k (MonoidAlgebra k G) x y = (Nat.card G : k) * (x * y).coeff 1 := by
+  rw [Algebra.regularTraceForm_apply, ← trace_mulLeft]
+  exact congrArg _ (LinearMap.ext fun z => by simp [mul_assoc])
+
+/-- **The regular trace form of a group algebra is nondegenerate when `|G| ≠ 0`.** For a finite
+group `G` whose order is nonzero in the ring `k` without zero divisors, the regular trace form
+`(x, y) ↦ |G| * (x * y)_1` of `k[G]` is nondegenerate. -/
+theorem nondegenerate_regularTraceForm {k G : Type*} [CommRing k] [NoZeroDivisors k] [Group G]
+    [Finite G] [NeZero (Nat.card G : k)] :
+    (Algebra.regularTraceForm k (MonoidAlgebra k G)).Nondegenerate := by
+  refine ⟨fun x hx => ?_, fun y hy => ?_⟩ <;> ext g
+  · have := hx (single g⁻¹ 1)
+    rw [regularTraceForm_apply] at this
+    simpa [NeZero.ne] using this
+  · have := hy (single g⁻¹ 1)
+    rw [regularTraceForm_apply] at this
+    simpa [NeZero.ne] using this
 
 end MonoidAlgebra
 
