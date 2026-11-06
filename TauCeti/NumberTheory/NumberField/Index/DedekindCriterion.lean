@@ -378,18 +378,6 @@ theorem not_dvd_index_of_forall_eq_one_or_not_dvd_map (hφ : ∀ i, Irreducible 
     rw [h1]
     exact P.add_mem (P.mul_mem_left _ hp) (P.mul_mem_left _ h)
 
-/-- If some `β ∈ 𝓞 K` outside `ℤ[θ]` has `p β ∈ ℤ[θ]`, then `p` divides the index of `ℤ[θ]`. -/
-private theorem dvd_index_of_natCast_mul_mem_adjoin {β : 𝓞 K} (hβ : β ∉ θ.adjoin)
-    (hpβ : (p : 𝓞 K) * β ∈ θ.adjoin) : p ∣ θ.index := by
-  have hq0 : θ.adjoin.toSubmodule.mkQ β ≠ 0 := by
-    rw [Ne, mkQ_eq_zero_iff]
-    exact hβ
-  have hpq : p • θ.adjoin.toSubmodule.mkQ β = 0 := by
-    rw [nsmul_mkQ_eq_zero_iff]
-    exact hpβ
-  rw [index_def, ← addOrderOf_eq_prime hpq hq0]
-  exact addOrderOf_dvd_natCard _
-
 /-- **Dedekind's criterion, the necessary direction.** If `e i ≥ 2` and `φ i` divides the
 reduction of `H` for some `i`, then `p` divides the index `[𝓞 K : ℤ[θ]]`. -/
 theorem dvd_index_of_ne_one_of_dvd_map (i : ι) (hφi : Irreducible (φ i))
