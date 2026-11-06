@@ -43,7 +43,7 @@ functor on morphisms into a monoid object (`CategoryTheory.Functor.map_mul`).
 public section
 
 open CategoryTheory AlgebraicGeometry
-open scoped CategoryTheory.Obj
+open scoped CategoryTheory.Obj CategoryTheory.MonObj
 
 namespace TauCeti
 
@@ -245,9 +245,24 @@ restricted test scheme, with the same group law. -/
 def baseChangePointMulEquiv (A : AbelianVariety K) (L : Type u) [Field L] [Algebra K L]
     (T : Over (Spec (.of L))) :
     (T ⟶ (A.baseChange L).toOver) ≃*
-      ((Over.map (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj T ⟶ A.toOver) :=
-  GroupScheme.baseChangePointMulEquiv
-    (Spec.map (CommRingCat.ofHom (algebraMap K L))) (Grp.mk A.toOver) T
+      ((Over.map (Spec.map (CommRingCat.ofHom (algebraMap K L)))).obj T ⟶ A.toOver) := by
+  let : IsMonHom (eqToIso (baseChange_toOver A L)).hom :=
+    isMonHom_eqToHom_baseChange_toOver A L
+  exact (CategoryTheory.Hom.mulEquivCongrRight (eqToIso (baseChange_toOver A L)) T).trans
+    (GroupScheme.baseChangePointMulEquiv
+      (Spec.map (CommRingCat.ofHom (algebraMap K L))) (Grp.mk A.toOver) T)
+
+/-- The point comparison is the pullback-adjunction equivalence after transport to the
+underlying pullback over `Spec L`. -/
+lemma baseChangePointMulEquiv_apply (A : AbelianVariety K)
+    (L : Type u) [Field L] [Algebra K L] (T : Over (Spec (.of L)))
+    (p : T ⟶ (A.baseChange L).toOver) :
+    baseChangePointMulEquiv A L T p =
+      ((Over.mapPullbackAdj (Spec.map (CommRingCat.ofHom (algebraMap K L)))).homEquiv
+        T A.toOver).symm (p ≫ eqToHom (baseChange_toOver A L)) := by
+  change GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) T
+    (p ≫ eqToHom (baseChange_toOver A L)) = _
+  exact GroupScheme.baseChangePointMulEquiv_apply _ (Grp.mk A.toOver) T _
 
 /-- The point comparison is given by the first pullback projection. -/
 @[simp]
@@ -255,9 +270,11 @@ lemma baseChangePointMulEquiv_apply_left (A : AbelianVariety K)
     (L : Type u) [Field L] [Algebra K L] (T : Over (Spec (.of L)))
     (p : T ⟶ (A.baseChange L).toOver) :
     (baseChangePointMulEquiv A L T p).left =
-      p.left ≫ pullback.fst A.toOver.hom
-        (Spec.map (CommRingCat.ofHom (algebraMap K L))) :=
-  GroupScheme.baseChangePointMulEquiv_apply_left _ _ T p
+      (p ≫ eqToHom (baseChange_toOver A L)).left ≫ Limits.pullback.fst A.toOver.hom
+        (Spec.map (CommRingCat.ofHom (algebraMap K L))) := by
+  change (GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) T
+    (p ≫ eqToHom (baseChange_toOver A L))).left = _
+  exact GroupScheme.baseChangePointMulEquiv_apply_left _ (Grp.mk A.toOver) T _
 
 /-- The point comparison commutes with restriction along maps of test schemes. -/
 lemma baseChangePointMulEquiv_naturality_left (A : AbelianVariety K)
@@ -265,8 +282,13 @@ lemma baseChangePointMulEquiv_naturality_left (A : AbelianVariety K)
     (p : T ⟶ (A.baseChange L).toOver) :
     baseChangePointMulEquiv A L U (g ≫ p) =
       (Over.map (Spec.map (CommRingCat.ofHom (algebraMap K L)))).map g ≫
-        baseChangePointMulEquiv A L T p :=
-  GroupScheme.baseChangePointMulEquiv_naturality_left _ _ g p
+        baseChangePointMulEquiv A L T p := by
+  change GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) U
+      ((g ≫ p) ≫ eqToHom (baseChange_toOver A L)) =
+    _ ≫ GroupScheme.baseChangePointMulEquiv _ (Grp.mk A.toOver) T
+      (p ≫ eqToHom (baseChange_toOver A L))
+  rw [Category.assoc]
+  exact GroupScheme.baseChangePointMulEquiv_naturality_left _ (Grp.mk A.toOver) g _
 
 /-- The point comparison commutes with homomorphisms of abelian varieties. -/
 lemma baseChangePointMulEquiv_postcomp {A B : AbelianVariety K} (f : A ⟶ B)
@@ -274,10 +296,16 @@ lemma baseChangePointMulEquiv_postcomp {A B : AbelianVariety K} (f : A ⟶ B)
     (p : T ⟶ (A.baseChange L).toOver) :
     baseChangePointMulEquiv B L T (p ≫ Hom.toOverHom (Hom.baseChange f L)) =
       baseChangePointMulEquiv A L T p ≫ Hom.toOverHom f := by
-  simp only [baseChangePointMulEquiv, GroupScheme.baseChangePointMulEquiv_apply,
-    Hom.toOverHom_baseChange, baseChange_toOver, eqToHom_refl, Category.id_comp,
-    Category.comp_id]
-  exact (Over.mapPullbackAdj _).homEquiv_naturality_right_symm p (Hom.toOverHom f)
+  rw [baseChangePointMulEquiv_apply B L T, baseChangePointMulEquiv_apply A L T,
+    Hom.toOverHom_baseChange]
+  have cancelTransport : eqToHom (baseChange_toOver B L).symm ≫
+      eqToHom (baseChange_toOver B L) = 𝟙 _ :=
+    (eqToIso (baseChange_toOver B L)).inv_hom_id
+  simp only [Category.assoc]
+  rw [cancelTransport, Category.comp_id]
+  simpa only [Category.assoc] using
+    (Over.mapPullbackAdj _).homEquiv_naturality_right_symm
+      (p ≫ eqToHom (baseChange_toOver A L)) (Hom.toOverHom f)
 
 end
 
