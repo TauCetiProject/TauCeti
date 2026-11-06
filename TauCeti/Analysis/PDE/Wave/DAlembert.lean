@@ -12,6 +12,7 @@ public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Analysis.Calculus.ParametricFDeriv
+import TauCeti.Analysis.InnerProductSpace.Parallelogram
 
 /-!
 # The one-dimensional wave equation and d'Alembert's formula
@@ -41,7 +42,7 @@ times are allowed and the formula is used with an oriented interval integral.
   the value `u(t, x)` depends only on the data on `[x - |t|, x + |t|]` (finite speed of
   propagation, with speed one).
 * **Bounds.** `‖u(t, x)‖ ≤ M + |t| N` when `‖f‖ ≤ M` and `‖g‖ ≤ N`, and the energy
-  `∫ ‖∂ₜu(t, ·)‖² + ‖∂ₓu(t, ·)‖²` of a solution with values in a real inner product space is
+  `∫ ‖∂ₜu(t, ·)‖² + ‖∂ₓu(t, ·)‖²` of a solution with values in a real Hilbert space is
   independent of `t`, finite or not.
 * **No dispersion.** For initial data `(f, 0)` vanishing outside `(-R, R)`, from time `R` on the
   solution consists of two copies of `f / 2` travelling in opposite directions, so its supremum
@@ -175,18 +176,29 @@ theorem dAlembert_eq_add (hg : Continuous g) (t x : ℝ) :
     (hg.intervalIntegrable _ _)]
   module
 
+/-- The time and space derivatives of d'Alembert's formula, from its travelling-wave form. -/
+private theorem hasDerivAt_dAlembert [CompleteSpace F] (hf : Differentiable ℝ f)
+    (hg : Continuous g) (t x : ℝ) :
+    HasDerivAt (fun s ↦ dAlembert f g s x)
+      ((2 : ℝ)⁻¹ • (deriv f (x + t) + g (x + t)) - (2 : ℝ)⁻¹ • (deriv f (x - t) - g (x - t)))
+      t ∧
+    HasDerivAt (dAlembert f g t)
+      ((2 : ℝ)⁻¹ • (deriv f (x + t) + g (x + t)) + (2 : ℝ)⁻¹ • (deriv f (x - t) - g (x - t)))
+      x := by
+  simp only [funext₂ (dAlembert_eq_add (f := f) hg)]
+  exact hasDerivAt_comp_add_add_comp_sub
+    (fun z ↦ ((hf z).hasDerivAt.add (hg.integral_hasStrictDerivAt 0 z).hasDerivAt).const_smul _)
+    (fun z ↦ ((hf z).hasDerivAt.sub (hg.integral_hasStrictDerivAt 0 z).hasDerivAt).const_smul _)
+    t x
+
 /-- The time derivative of d'Alembert's formula:
 `∂ₜu(t, x) = (f'(x + t) + g(x + t)) / 2 - (f'(x - t) - g(x - t)) / 2`. -/
 theorem hasDerivAt_dAlembert_time [CompleteSpace F] (hf : Differentiable ℝ f) (hg : Continuous g)
     (t x : ℝ) :
     HasDerivAt (fun s ↦ dAlembert f g s x)
       ((2 : ℝ)⁻¹ • (deriv f (x + t) + g (x + t)) - (2 : ℝ)⁻¹ • (deriv f (x - t) - g (x - t)))
-      t := by
-  simp_rw [dAlembert_eq_add hg]
-  exact (hasDerivAt_comp_add_add_comp_sub
-    (fun z ↦ ((hf z).hasDerivAt.add (hg.integral_hasStrictDerivAt 0 z).hasDerivAt).const_smul _)
-    (fun z ↦ ((hf z).hasDerivAt.sub (hg.integral_hasStrictDerivAt 0 z).hasDerivAt).const_smul _)
-    t x).1
+      t :=
+  (hasDerivAt_dAlembert hf hg t x).1
 
 /-- The space derivative of d'Alembert's formula:
 `∂ₓu(t, x) = (f'(x + t) + g(x + t)) / 2 + (f'(x - t) - g(x - t)) / 2`. -/
@@ -194,15 +206,8 @@ theorem hasDerivAt_dAlembert_space [CompleteSpace F] (hf : Differentiable ℝ f)
     (t x : ℝ) :
     HasDerivAt (dAlembert f g t)
       ((2 : ℝ)⁻¹ • (deriv f (x + t) + g (x + t)) + (2 : ℝ)⁻¹ • (deriv f (x - t) - g (x - t)))
-      x := by
-  have h : dAlembert f g t = fun y ↦ (2 : ℝ)⁻¹ • (f (y + t) + ∫ y in 0..y + t, g y) +
-      (2 : ℝ)⁻¹ • (f (y - t) - ∫ y in 0..y - t, g y) :=
-    funext (dAlembert_eq_add hg t)
-  rw [h]
-  exact (hasDerivAt_comp_add_add_comp_sub
-    (fun z ↦ ((hf z).hasDerivAt.add (hg.integral_hasStrictDerivAt 0 z).hasDerivAt).const_smul _)
-    (fun z ↦ ((hf z).hasDerivAt.sub (hg.integral_hasStrictDerivAt 0 z).hasDerivAt).const_smul _)
-    t x).2
+      x :=
+  (hasDerivAt_dAlembert hf hg t x).2
 
 /-- At time zero, the time derivative of d'Alembert's formula is the initial velocity. -/
 theorem deriv_dAlembert_zero [CompleteSpace F] (hf : Differentiable ℝ f) (hg : Continuous g)
@@ -288,23 +293,25 @@ end DAlembert
 
 section Representation
 
-/-- The derivative of a `C²` function along a line, in the direction `v`, as a function of the
-position on the line. -/
-private theorem hasDerivAt_fderiv_apply_line {U : ℝ × ℝ → F} (hU : ContDiff ℝ 2 U)
-    (p q v : ℝ × ℝ) (s : ℝ) :
-    HasDerivAt (fun r ↦ fderiv ℝ U (p + r • q) v) (fderiv ℝ (fderiv ℝ U) (p + s • q) q v) s := by
-  have hD : DifferentiableAt ℝ (fderiv ℝ U) (p + s • q) :=
-    ((hU.fderiv_right (m := 1) one_add_one_eq_two.le).differentiable one_ne_zero) _
-  have hline : HasDerivAt (fun r : ℝ ↦ p + r • q) q s := by
-    simpa only [id_eq, one_smul] using ((hasDerivAt_id s).smul_const q).const_add p
-  have h1 : HasDerivAt (fun r ↦ fderiv ℝ U (p + r • q)) (fderiv ℝ (fderiv ℝ U) (p + s • q) q) s :=
-    hD.hasFDerivAt.comp_hasDerivAt s hline
-  have h2 : HasDerivAt (fun r ↦ fderiv ℝ U (p + r • q) v)
-      (fderiv ℝ (fderiv ℝ U) (p + s • q) q v + fderiv ℝ U (p + s • q) 0) s :=
-    h1.clm_apply (hasDerivAt_const s v)
-  rwa [map_zero, add_zero] at h2
-
 variable {u : ℝ → ℝ → F}
+
+/-- The time derivative of `u` is the derivative of `uncurry u` in the direction `(1, 0)`. -/
+private theorem hasDerivAt_time_fderiv (hu : Differentiable ℝ (uncurry u)) (t x : ℝ) :
+    HasDerivAt (fun s ↦ u s x) (fderiv ℝ (uncurry u) (t, x) (1, 0)) t := by
+  simpa only [uncurry_apply_pair, timeFDeriv_apply] using hasDerivAt_parameterCurve (hu (t, x))
+
+/-- The space derivative of `u` is the derivative of `uncurry u` in the direction `(0, 1)`. -/
+private theorem hasDerivAt_space_fderiv (hu : Differentiable ℝ (uncurry u)) (t x : ℝ) :
+    HasDerivAt (u t) (fderiv ℝ (uncurry u) (t, x) (0, 1)) x := by
+  simpa only [uncurry_apply_pair, spatialFDeriv_apply] using
+    (hasFDerivAt_timeSlice (hu (t, x))).hasDerivAt
+
+/-- For `u` of class `C²`, every directional derivative of `uncurry u` is continuous along the
+initial line `t = 0`. -/
+private theorem continuous_fderiv_apply_time_zero (hu : ContDiff ℝ 2 (uncurry u)) (v : ℝ × ℝ) :
+    Continuous fun z ↦ fderiv ℝ (uncurry u) (0, z) v :=
+  ((hu.continuous_fderiv (by norm_num)).comp (continuous_const.prodMk continuous_id)).clm_apply
+    continuous_const
 
 /-- **The characteristic factorization.** For a `C²` solution of the wave equation,
 `w = ∂ₜu + ∂ₓu`, the derivative of `u` in the direction `(1, 1)`, is constant along the lines
@@ -322,12 +329,9 @@ private theorem fderiv_apply_one_one_eq (hu : ContDiff ℝ 2 (uncurry u))
       fderiv ℝ (fderiv ℝ U) p (0, 1) (0, 1) := by
     rintro ⟨t, x⟩
     have ht : deriv (fun r ↦ u r x) = fun s ↦ fderiv ℝ U (s, x) (1, 0) :=
-      funext fun s ↦ by simpa only [U, uncurry_apply_pair, timeFDeriv_apply] using
-        (hasDerivAt_parameterCurve (hU1 _)).deriv
+      funext fun s ↦ (hasDerivAt_time_fderiv hU1 s x).deriv
     have hx : deriv (u t) = fun y ↦ fderiv ℝ U (t, y) (0, 1) :=
-      funext fun y ↦ by
-        simpa only [U, uncurry_apply_pair, spatialFDeriv_apply] using
-          (hasFDerivAt_timeSlice (hU1 _)).hasDerivAt.deriv
+      funext fun y ↦ (hasDerivAt_space_fderiv hU1 t y).deriv
     have h := hwave t x
     rwa [ht, hx, (hasDerivAt_fderiv_apply_fst (hD _) _).deriv,
       (hasDerivAt_fderiv_apply_snd (hD _) _).deriv] at h
@@ -344,9 +348,10 @@ private theorem fderiv_apply_one_one_eq (hu : ContDiff ℝ 2 (uncurry u))
     simp only [sub_apply]
     rw [hpure p, hsymm p (1, 0) (0, 1)]
     abel
-  have hconst := is_const_of_deriv_eq_zero
-    (fun s ↦ (hasDerivAt_fderiv_apply_line hu (0, x + t) (1, -1) (1, 1) s).differentiableAt)
-    (fun s ↦ (hasDerivAt_fderiv_apply_line hu _ _ _ s).deriv.trans (hzero s)) t 0
+  have hline (s : ℝ) := hasDerivAt_fderiv_apply_line (p := ((0, x + t) : ℝ × ℝ))
+    (q := ((1, -1) : ℝ × ℝ)) (hD _) ((1, 1) : ℝ × ℝ) (s := s)
+  have hconst := is_const_of_deriv_eq_zero (fun s ↦ (hline s).differentiableAt)
+    (fun s ↦ (hline s).deriv.trans (hzero s)) t 0
   simpa [Prod.ext_iff] using hconst
 
 variable [CompleteSpace F]
@@ -360,18 +365,14 @@ theorem eq_dAlembert_of_deriv_deriv_eq (hu : ContDiff ℝ 2 (uncurry u))
     (t x : ℝ) : u t x = dAlembert (u 0) (fun y ↦ deriv (fun s ↦ u s y) 0) t x := by
   set U := uncurry u
   have hU1 : Differentiable ℝ U := hu.differentiable (by norm_num)
-  have hDcont : Continuous (fderiv ℝ U) := hu.continuous_fderiv (by norm_num)
   set g : ℝ → F := fun y ↦ deriv (fun s ↦ u s y) 0
   -- `h z = w(0, z) = g z + (u 0)' z` is the value of `∂ₜu + ∂ₓu` on the initial line.
   set h : ℝ → F := fun z ↦ fderiv ℝ U (0, z) (1, 1)
   have hcont (v : ℝ × ℝ) : Continuous fun z ↦ fderiv ℝ U (0, z) v :=
-    (hDcont.comp (continuous_const.prodMk continuous_id)).clm_apply continuous_const
-  have hg (z : ℝ) : g z = fderiv ℝ U (0, z) (1, 0) := by
-    simpa only [g, U, uncurry_apply_pair, timeFDeriv_apply] using
-      (hasDerivAt_parameterCurve (hU1 (0, z))).deriv
-  have hf' (z : ℝ) : HasDerivAt (u 0) (fderiv ℝ U (0, z) (0, 1)) z := by
-    simpa only [U, uncurry_apply_pair, spatialFDeriv_apply] using
-      (hasFDerivAt_timeSlice (hU1 (0, z))).hasDerivAt
+    continuous_fderiv_apply_time_zero hu v
+  have hg (z : ℝ) : g z = fderiv ℝ U (0, z) (1, 0) := (hasDerivAt_time_fderiv hU1 0 z).deriv
+  have hf' (z : ℝ) : HasDerivAt (u 0) (fderiv ℝ U (0, z) (0, 1)) z :=
+    hasDerivAt_space_fderiv hU1 0 z
   have hh : h = fun z ↦ g z + fderiv ℝ U (0, z) (0, 1) := by
     ext z
     rw [hg z, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
@@ -429,24 +430,13 @@ section Energy
 
 variable {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℝ H]
 
-/-- The parallelogram law, in `ℝ≥0∞`. -/
-private theorem enorm_sub_sq_add_enorm_add_sq (a b : H) :
-    ‖a - b‖ₑ ^ 2 + ‖a + b‖ₑ ^ 2 = 2 * ‖a‖ₑ ^ 2 + 2 * ‖b‖ₑ ^ 2 := by
-  simp only [← ofReal_norm, ← ENNReal.ofReal_pow (norm_nonneg _)]
-  rw [← ENNReal.ofReal_add (by positivity) (by positivity), ← ENNReal.ofReal_ofNat 2,
-    ← ENNReal.ofReal_mul (by norm_num), ← ENNReal.ofReal_mul (by norm_num),
-    ← ENNReal.ofReal_add (by positivity) (by positivity)]
-  congr 1
-  have := parallelogram_law_with_norm ℝ a b
-  nlinarith [this]
-
 /-- The energy of the superposition `A(x + t) + B(x - t)` of two travelling waves with continuous
 profiles `A'`, `B'` of `∂ₓ`, written in terms of the two profiles: it does not depend on `t`. -/
 private theorem lintegral_enorm_sub_sq_add_enorm_add_sq {A' B' : ℝ → H} (hA : Continuous A')
     (hB : Continuous B') (t : ℝ) :
     ∫⁻ x, (‖A' (x + t) - B' (x - t)‖ₑ ^ 2 + ‖A' (x + t) + B' (x - t)‖ₑ ^ 2) =
       2 * (∫⁻ z, ‖A' z‖ₑ ^ 2) + 2 * ∫⁻ z, ‖B' z‖ₑ ^ 2 := by
-  simp_rw [enorm_sub_sq_add_enorm_add_sq]
+  simp_rw [add_comm (‖_ - _‖ₑ ^ 2), parallelogram_law_with_enorm ℝ, mul_add]
   have hA' : Measurable fun x ↦ ‖A' (x + t)‖ₑ ^ 2 :=
     (hA.comp (continuous_id.add continuous_const)).enorm.measurable.pow_const 2
   have hB' : Measurable fun x ↦ ‖B' (x - t)‖ₑ ^ 2 :=
@@ -456,7 +446,7 @@ private theorem lintegral_enorm_sub_sq_add_enorm_add_sq {A' B' : ℝ → H} (hA 
     lintegral_sub_right_eq_self (fun z ↦ ‖B' z‖ₑ ^ 2)]
 
 /-- **Conservation of energy.** For a `C²` solution `u` of the wave equation with values in a
-real inner product space, the energy `∫ ‖∂ₜu(t, x)‖² + ‖∂ₓu(t, x)‖² dx` is independent of `t`. The
+real Hilbert space, the energy `∫ ‖∂ₜu(t, x)‖² + ‖∂ₓu(t, x)‖² dx` is independent of `t`. The
 identity holds in `ℝ≥0∞`, so solutions of infinite energy are included. -/
 theorem lintegral_enorm_deriv_sq_add_enorm_deriv_sq_eq [CompleteSpace H] {u : ℝ → ℝ → H}
     (hu : ContDiff ℝ 2 (uncurry u))
@@ -470,12 +460,10 @@ theorem lintegral_enorm_deriv_sq_add_enorm_deriv_sq_eq [CompleteSpace H] {u : �
     funext fun t ↦ funext (eq_dAlembert_of_deriv_deriv_eq hu hwave t)
   have hf : ContDiff ℝ 1 f := (hu.comp (contDiff_const.prodMk contDiff_id)).of_le (by norm_num)
   have hg : Continuous g := by
-    have : g = fun y ↦ fderiv ℝ (uncurry u) (0, y) (1, 0) := funext fun y ↦ by
-      simpa only [g, uncurry_apply_pair, timeFDeriv_apply] using
-        (hasDerivAt_parameterCurve ((hu.differentiable (by norm_num)) (0, y))).deriv
+    have : g = fun y ↦ fderiv ℝ (uncurry u) (0, y) (1, 0) :=
+      funext fun y ↦ (hasDerivAt_time_fderiv (hu.differentiable (by norm_num)) 0 y).deriv
     rw [this]
-    exact ((hu.continuous_fderiv (by norm_num)).comp
-      (continuous_const.prodMk continuous_id)).clm_apply continuous_const
+    exact continuous_fderiv_apply_time_zero hu _
   have hf' : Continuous (deriv f) := hf.continuous_deriv_one
   have hfd : Differentiable ℝ f := hf.differentiable (by norm_num)
   have key : ∀ t, ∫⁻ x, (‖deriv (fun s ↦ u s x) t‖ₑ ^ 2 + ‖deriv (u t) x‖ₑ ^ 2) =
