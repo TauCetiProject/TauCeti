@@ -83,20 +83,6 @@ universe u
 variable {p : ℕ} [Fact p.Prime] {X : Type u} [Finite X] [LinearOrder X]
 
 omit [Finite X] [LinearOrder X] in
-/-- **Tail coefficients.** A vector `y` of the span of the iterated `p`-powers `π^j ξ_i` over a set
-`S` of generators is the combination `Σ_i c_i π^j ξ_i` of the `π^j ξ_i` with coefficients `c_i`
-that vanish outside `S`. -/
-private theorem exists_sum_smul_gradedPowIter_eq [Fintype X] {S : Set X} {j : ℕ}
-    {y : gradedPiece p (freeProP p X) j} (hy : y ∈ gradedPowIterSpan p X S j) :
-    ∃ c : X → ZMod p, (∀ i, c i ≠ 0 → i ∈ S) ∧
-      ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) = y := by
-  rw [gradedPowIterSpan_def] at hy
-  obtain ⟨f, hfS, hf⟩ := (Finsupp.mem_span_image_iff_linearCombination _).mp hy
-  refine ⟨f, fun i hi ↦ by_contra fun hiS ↦ hi ((Finsupp.mem_supported' _ _).mp hfS i hiS), ?_⟩
-  rw [← hf, Finsupp.linearCombination_apply_of_mem_supported (s := Finset.univ) (ZMod p)
-    (Finset.subset_univ _)]
-
-omit [Finite X] [LinearOrder X] in
 /-- **Tail corrections.** For coefficients `c_i` vanishing outside a duplicate-free list `l`, there
 are corrections `u_i` (one may take the powers `x_i^{p^n c_i}`) in the cyclic subgroups
 `Subgroup.closure {x_i}` and in `λ_n(F)`, such that the class in `gr_n(F)` of the product
@@ -194,7 +180,7 @@ private theorem exists_continuousMonoidHom_inv_mul_apply_mem_succ
   have hz := Submodule.mem_top (R := ZMod p) (x := gradedMk p (freeProP p X) (k + 1 + 1) ⟨_, hr⟩)
   rw [← hspan] at hz
   obtain ⟨_, ⟨v, rfl⟩, y', hy', hyy'⟩ := Submodule.mem_sup.mp hz
-  obtain ⟨c, hcS, hsum⟩ := exists_sum_smul_gradedPowIter_eq hy'
+  obtain ⟨c, hcS, hsum⟩ := exists_fun_of_mem_gradedPowIterSpan hy'
   -- The corrections carry the negated coefficients, so that their class is `-y'`.
   obtain ⟨u, hu, hucl, hU, hUc⟩ := exists_prod_gradedMk_eq_sum (-c) hnd
     (fun i hi ↦ hl i (hcS i (neg_ne_zero.mp hi))) (k + 1 + 1)
@@ -302,8 +288,9 @@ private theorem exists_surjective_apply_eq_tailWord
     QuotientGroup.map_surjective_of_surjective _ _ _ (QuotientGroup.mk_surjective.comp hsurj) hle,
     fun i ↦ ⟨t i, ⟨ht i, ht2 i⟩, rfl⟩, ?_⟩
   rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk]
-  simp only [← QuotientGroup.mk_list_prod, ← QuotientGroup.mk_mul]
-  exact QuotientGroup.eq.mpr (pLowerCentralSeries_antitone (by omega : k ≤ k + 2) hr)
+  have hmk := QuotientGroup.eq.mpr (pLowerCentralSeries_antitone (by omega : k ≤ k + 2) hr)
+  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_list_prod, List.map_map] at hmk
+  exact hmk
 
 /-- **The successive-approximation theorem with tails.** Let `r, w ∈ λ_1(F)` be relators of the
 free pro-`p` group `F` on a finite linearly ordered type with the same class `ρ ∈ gr_1(F)`, let
@@ -373,7 +360,7 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
   refine ⟨e, t, fun i ↦ (Subgroup.mem_inf.mp (htH i)).1, fun i ↦ (Subgroup.mem_inf.mp (htH i)).2,
     eq_of_forall_mk_eq_of_iInf_eq_bot (hP.iInf_pLowerCentralSeries_eq_bot hp) fun k ↦ ?_⟩
   rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_list_prod,
-    QuotientGroup.mk_list_prod, funext fun i ↦ hts k i]
+    QuotientGroup.mk_list_prod, List.map_map, List.map_map, Function.comp_def, funext (hts k)]
   exact (he k r).trans (s k).2.2.2
 
 end TauCeti.freeProP

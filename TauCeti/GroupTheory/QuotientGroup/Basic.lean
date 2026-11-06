@@ -240,9 +240,8 @@ theorem _root_.QuotientGroup.out_mul_out_mul_inv_mem (N : Subgroup G) [N.Normal]
 
 /-- The class modulo a normal subgroup of a list product is the product of the classes. -/
 @[simp]
-theorem _root_.QuotientGroup.mk_list_prod {ι : Type*} (K : Subgroup G) [K.Normal] (f : ι → G)
-    (l : List ι) :
-    (((l.map f).prod : G) : G ⧸ K) = (l.map fun i ↦ ((f i : G) : G ⧸ K)).prod := by
+theorem _root_.QuotientGroup.mk_list_prod (K : Subgroup G) [K.Normal] (l : List G) :
+    ((l.prod : G) : G ⧸ K) = (l.map ((↑) : G → G ⧸ K)).prod := by
   induction l with
   | nil => simp
   | cons a l ih => simp [ih]
@@ -263,7 +262,7 @@ theorem _root_.QuotientGroup.inv_mul_mul_list_prod_map_mul_mem {ι : Type*} (K :
     simpa [Function.comp_def] using
       List.prod_map_mul_of_mem_center l (fun i ↦ ((t i : G) : G ⧸ K)) _ fun i _ ↦ hu i
   have hUcen : ∀ l : List ι, (((l.map u).prod : G) : G ⧸ K) ∈ Submonoid.center _ := fun l ↦ by
-    rw [QuotientGroup.mk_list_prod]
+    rw [QuotientGroup.mk_list_prod, List.map_map]
     exact Submonoid.list_prod_mem _ fun x hx ↦ by
       obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
       exact hu i
