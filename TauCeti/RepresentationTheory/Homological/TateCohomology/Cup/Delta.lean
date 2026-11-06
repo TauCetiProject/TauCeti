@@ -233,28 +233,6 @@ private theorem δ_cup_naturality (M : Rep k G) {S S' : ShortComplex (Rep k G)}
   exact congrArg (fun φ ↦ φ (cup M S'.X₃ p q n h x y)) (_root_.TateCohomology.δ_naturality hMS'
     hMS ((tensorLeft M).mapShortComplex.map Φ) n).symm
 
-/-- If `ψ : T ⟶ D` induces an isomorphism on the Tate cohomology of the third terms of the tensor
-products `M ⊗ T` and `M ⊗ D`, and the connecting maps of these are isomorphisms, then `M ◁ ψ.τ₁`
-induces an injection on Tate cohomology of degree `n + 1`. -/
-private theorem injective_map_tensorLeft_τ₁ (M : Rep k G) {T D : ShortComplex (Rep k G)}
-    (hMT : (T.map (tensorLeft M)).ShortExact) (hMD : (D.map (tensorLeft M)).ShortExact)
-    (ψ : T ⟶ D) {n : ℤ} [IsIso (_root_.TateCohomology.δ hMT n)]
-    [IsIso (_root_.TateCohomology.δ hMD n)]
-    [IsIso ((tateCohomologyFunctor n).map ((tensorLeft M).mapShortComplex.map ψ).τ₃)] :
-    Function.Injective ((tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁)) := by
-  -- Naturality of the connecting maps along `M ◁ ψ` reads
-  -- `δ_{M ⊗ T} ≫ (M ◁ ψ.τ₁)_* = (M ◁ ψ.τ₃)_* ≫ δ_{M ⊗ D}`.
-  have e := _root_.TateCohomology.δ_naturality hMT hMD ((tensorLeft M).mapShortComplex.map ψ) n
-  have : IsIso (_root_.TateCohomology.δ hMT n ≫
-      (tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁)) := by
-    change IsIso (_root_.TateCohomology.δ hMT n ≫
-      (tateCohomologyFunctor (n + 1)).map ((tensorLeft M).mapShortComplex.map ψ).τ₁)
-    rw [e]
-    infer_instance
-  have := IsIso.of_isIso_comp_left (_root_.TateCohomology.δ hMT n)
-    ((tateCohomologyFunctor (n + 1)).map (M ◁ ψ.τ₁))
-  exact (ModuleCat.mono_iff_injective _).1 inferInstance
-
 /-- **The cup product rule for a flat first factor.** If the underlying module of `M` is flat
 over `k`, then for every short exact sequence `S`, `x` of degree `p` and `y` of any degree `q`,
 `x ∪ δ y = (-1)^p δ (x ∪ y)`, where the second `δ` is the connecting map of the tensor product of
@@ -306,7 +284,10 @@ theorem cup_δ_of_flat (M : Rep k G) [Module.Flat k M.V] {S : ShortComplex (Rep 
     have : IsIso ((tateCohomologyFunctor n).map ((tensorLeft M).mapShortComplex.map ψ).τ₃) := by
       rw [e₃]
       exact IsIso.id _
-    exact injective_map_tensorLeft_τ₁ M hMT hMD ψ
+    have := isIso_map_τ₁_of_isIso_δ hMT hMD ((tensorLeft M).mapShortComplex.map ψ) n
+    -- `tensorLeft M` acts on a morphism `f` by `M ◁ f`, by definition.
+    rw [Functor.mapShortComplex_map_τ₁, show (tensorLeft M).map ψ.τ₁ = M ◁ ψ.τ₁ from rfl] at this
+    exact (ModuleCat.mono_iff_injective _).1 inferInstance
   -- The rule for `T`, from the rule for `D` through `ψ`.
   have hT' : cup M T.X₁ p (q + 1) (n + 1) (by omega) x (_root_.TateCohomology.δ hT q y) =
       p.negOnePow • _root_.TateCohomology.δ hMT n (cup M T.X₃ p q n h x y) := by
