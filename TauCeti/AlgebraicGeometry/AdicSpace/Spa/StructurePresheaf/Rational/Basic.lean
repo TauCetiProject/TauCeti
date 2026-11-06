@@ -7,6 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.PresentationIndependence
 public import TauCeti.AlgebraicGeometry.AdicSpace.Spa.StructurePresheaf.Basic
+import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
 /-!
 # The presentation limit on a rational open is `A⟨T/s⟩`
@@ -54,6 +55,8 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   through each other along comparison morphisms.
 * `TauCeti.ValuationSpectrum.isIso_presentationLimitπ` : the projection at an index whose
   rational subset contains `V` is an isomorphism.
+* `TauCeti.ValuationSpectrum.bijective_presentationLimitRationalIso_apply` : sections over `R(p)`
+  are in bijection with `A⟨p⟩`, read through the isomorphism and the equality transport.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso_inv_comp_map_comp_hom` : between rational
   opens, the restriction maps of `presentationLimitPresheaf` are the comparison morphisms.
 
@@ -270,6 +273,20 @@ theorem presentationLimitRationalIso_inv_comp_π (hAplus : ∀ ⦃a⦄, a ∈ Ap
       homOfRationalSubsetSubset Aplus hAplus (j.rationalSubset_subset le_rfl) := by
   rw [Iso.inv_comp_eq, presentationLimitRationalIso_hom]
   exact presentationLimitπ_eq_π_comp hAplus _ j _
+
+variable (Aplus) in
+/-- Read through `presentationLimitRationalIso` and the transport along the equality of objects
+`completionLocObj_obj`, sections of the presentation limit over `R(p)` are in bijection with the
+elements of the completed rational localisation `A⟨p⟩`. -/
+theorem bijective_presentationLimitRationalIso_apply
+    (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
+    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
+    Function.Bijective fun z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den) ↦
+      (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
+        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z) :=
+  (ConcreteCategory.bijective_of_isIso
+    (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower))).comp
+    (ConcreteCategory.bijective_of_isIso (presentationLimitRationalIso Aplus hAplus p hp).hom)
 
 /-- A comparison morphism followed by the transport along an equality of presentations is again
 a comparison morphism. -/
