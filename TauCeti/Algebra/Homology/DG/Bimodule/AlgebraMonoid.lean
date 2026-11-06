@@ -60,21 +60,22 @@ scoped instance algebraBimoduleLeftModule : Module A T :=
     { toFun := RestrictScalars.val, invFun := RestrictScalars.mk,
       left_inv _ := rfl, right_inv _ := rfl, map_add' _ _ := rfl }
 
-private theorem val_smul_left (a : A) (x : T) : (a • x).val = f a * x.val := by
-  rfl
+/-- On underlying elements, the left action is multiplication through the base map. -/
+@[simp]
+theorem algebraBimodule_val_smul (a : A) (x : T) : (a • x).val = f a * x.val := (rfl)
 
 /-- The restricted left action extends the original ground-ring action. -/
 scoped instance : IsScalarTower R A T :=
   IsScalarTower.of_algebraMap_smul fun r x ↦ by
     apply RestrictScalars.ext
-    rw [val_smul_left, RestrictScalars.val_smul, AlgHomClass.commutes]
+    rw [algebraBimodule_val_smul, RestrictScalars.val_smul, AlgHomClass.commutes]
     exact (Algebra.smul_def r x.val).symm
 
 /-- Left and right multiplication through the base map commute. -/
 scoped instance : SMulCommClass A Aᵐᵒᵖ T where
   smul_comm a b x := by
     apply RestrictScalars.ext
-    simp only [val_smul_left, RestrictScalars.val_smul_eq, AlgHom.op,
+    simp only [algebraBimodule_val_smul, RestrictScalars.val_smul_eq, AlgHom.op,
       MulOpposite.smul_eq_mul_unop]
     exact (mul_assoc _ _ _).symm
 
@@ -83,7 +84,7 @@ scoped instance : SetLike.GradedSMul 𝒜 Γ where
   smul_mem {i j a x} ha hx := by
     rw [IsDGRightModule.mem_restrictScalarsGrading_iff] at hx ⊢
     rw [RestrictScalars.linearEquiv_apply] at hx ⊢
-    rw [val_smul_left]
+    rw [algebraBimodule_val_smul]
     exact SetLike.GradedMul.mul_mem (Graded.map_mem f ha) hx
 
 /-- The two actions restricted through a DG algebra map satisfy both DG Leibniz rules. -/
@@ -94,7 +95,8 @@ theorem isDGBimodule_algebraBimodule : IsDGBimodule hA hA Γ D where
       leibniz := fun ha x ↦ by
         apply RestrictScalars.ext
         simp only [IsDGRightModule.val_restrictScalarsDifferential,
-          val_smul_left, RestrictScalars.val_add, Units.smul_def, RestrictScalars.val_zsmul]
+          algebraBimodule_val_smul, RestrictScalars.val_add, Units.smul_def,
+          RestrictScalars.val_zsmul]
         rw [← f.map_d]
         exact hB.leibniz (Graded.map_mem f ha) x.val }
   leibniz_right := (hB.isDGRightModule.restrictScalars f).leibniz
@@ -103,35 +105,6 @@ theorem isDGBimodule_algebraBimodule : IsDGBimodule hA hA Γ D where
 The abbreviation retains the restriction-of-scalars carrier and its evaluation interface. -/
 abbrev algebraBimodule : DGBimoduleCat.{uR, u, u, u} hA hA := by
   exact DGBimoduleCat.of (isDGBimodule_algebraBimodule f)
-
-/-- The underlying ground-ring linear equivalence from the base bimodule to the target algebra. -/
-def algebraBimoduleEquiv : f.algebraBimodule ≃ₗ[R] B := E
-
-@[simp]
-theorem algebraBimoduleEquiv_apply (x : f.algebraBimodule) :
-    f.algebraBimoduleEquiv x = x.val := RestrictScalars.linearEquiv_apply f B x
-
-@[simp↓]
-theorem algebraBimoduleEquiv_smul (a : A) (x : f.algebraBimodule) :
-    f.algebraBimoduleEquiv (a • x) = f a * f.algebraBimoduleEquiv x := by
-  rw [algebraBimoduleEquiv_apply, algebraBimoduleEquiv_apply]
-  exact val_smul_left f a x
-
-@[simp↓]
-theorem algebraBimoduleEquiv_op_smul (a : A) (x : f.algebraBimodule) :
-    f.algebraBimoduleEquiv (op a • x) = f.algebraBimoduleEquiv x * f a := by
-  rw [algebraBimoduleEquiv_apply, algebraBimoduleEquiv_apply]
-  exact RestrictScalars.val_op_smul f B a x
-
-theorem mem_algebraBimodule_grading_iff {p : ℤ} {x : f.algebraBimodule} :
-    x ∈ f.algebraBimodule.grading p ↔ f.algebraBimoduleEquiv x ∈ ℬ p :=
-  IsDGRightModule.mem_restrictScalarsGrading_iff f
-
-@[simp↓]
-theorem algebraBimoduleEquiv_differential (x : f.algebraBimodule) :
-    f.algebraBimoduleEquiv (f.algebraBimodule.differential x) = dB (f.algebraBimoduleEquiv x) := by
-  rw [algebraBimoduleEquiv_apply, algebraBimoduleEquiv_apply]
-  exact IsDGRightModule.val_restrictScalarsDifferential f x
 
 open BalancedTensorProduct
 
@@ -149,7 +122,8 @@ private theorem mulBilinear_apply (x y : T) : mulBilinear f x y = (E).symm (x.va
 
 private theorem mulBilinear_balanced (a : A) (x y : T) :
     mulBilinear f (op a • x) y = mulBilinear f x (a • y) := by
-  rw [mulBilinear_apply, mulBilinear_apply, RestrictScalars.val_op_smul, val_smul_left]
+  rw [mulBilinear_apply, mulBilinear_apply, RestrictScalars.val_op_smul,
+    algebraBimodule_val_smul]
   exact congrArg (E).symm (mul_assoc _ _ _)
 
 private def mulLinearMap :
@@ -218,18 +192,15 @@ private def algebraBimoduleMul :
       (fun a x y ↦ by
         apply (E).injective
         simp only [mulBilinear_apply,
-          RestrictScalars.linearEquiv_apply, val_smul_left,
+          RestrictScalars.linearEquiv_apply, algebraBimodule_val_smul,
           RestrictScalars.linearEquiv_symm_apply]
         exact mul_assoc _ _ _) a z
 
 /-- The balanced multiplication is the original multiplication under the carrier equivalence. -/
 private theorem algebraBimoduleMul_tmul (x y : f.algebraBimodule) :
-    f.algebraBimoduleEquiv (f.algebraBimoduleMul (tmul R A x y)) =
-      f.algebraBimoduleEquiv x * f.algebraBimoduleEquiv y := by
-  have h : f.algebraBimoduleMul (tmul R A x y) = (E).symm (x.val * y.val) :=
-    mulLinearMap_tmul f x y
-  rw [h, algebraBimoduleEquiv, LinearEquiv.apply_symm_apply,
-    RestrictScalars.linearEquiv_apply, RestrictScalars.linearEquiv_apply]
+    (f.algebraBimoduleMul (tmul R A x y)).val = x.val * y.val := by
+  rw [algebraBimoduleMul, ← DGBimoduleHom.coe_val, DGRightModuleHom.coe_mk,
+    mulLinearMap_tmul, RestrictScalars.linearEquiv_symm_apply]
 
 private def unitRightLinearMap : DGBimoduleCat.tensorUnit.{u} hA →ₗ[Aᵐᵒᵖ] T where
   toFun a := (E).symm (f a.down)
@@ -247,6 +218,7 @@ private def unitRightLinearMap : DGBimoduleCat.tensorUnit.{u} hA →ₗ[Aᵐᵒ�
     simp only [RestrictScalars.linearEquiv_symm_apply, RingHom.id_apply,
       RestrictScalars.val_smul_eq, AlgHom.op, MulOpposite.smul_eq_mul_unop]
     rw [hax, map_mul]
+    -- The remaining opposite-hom evaluation reduces to applying f to a.unop.
     rfl
 
 /-- The base map is the unit of the target algebra regarded as a bimodule monoid. -/
@@ -254,9 +226,9 @@ private def algebraBimoduleUnit : DGBimoduleCat.tensorUnit.{u} hA ⟶ f.algebraB
   refine ⟨{ toLinearMap := unitRightLinearMap f, map_mem' := ?_, map_d' := ?_ }, ?_⟩
   · intro p a ha
     rw [DGBimoduleCat.mem_tensorUnit_grading_iff] at ha
-    exact (mem_algebraBimodule_grading_iff f).2 (by
+    exact (IsDGRightModule.mem_restrictScalarsGrading_iff f).2 (by
       simpa only [unitRightLinearMap, LinearMap.coe_mk, AddHom.coe_mk,
-        algebraBimoduleEquiv, LinearEquiv.apply_symm_apply] using Graded.map_mem f ha)
+        LinearEquiv.apply_symm_apply] using Graded.map_mem f ha)
   · intro a
     apply (E).injective
     simp only [RestrictScalars.linearEquiv_apply, IsDGRightModule.val_restrictScalarsDifferential,
@@ -268,12 +240,15 @@ private def algebraBimoduleUnit : DGBimoduleCat.tensorUnit.{u} hA ⟶ f.algebraB
     apply (E).injective
     simp only [unitRightLinearMap, DGRightModuleHom.coe_mk, LinearMap.coe_mk, AddHom.coe_mk,
       DGBimoduleCat.tensorUnit_smul_down, map_mul,
-      RestrictScalars.linearEquiv_apply, val_smul_left, RestrictScalars.linearEquiv_symm_apply]
+      RestrictScalars.linearEquiv_apply, algebraBimodule_val_smul,
+      RestrictScalars.linearEquiv_symm_apply]
 
 /-- The unit morphism evaluates to the specified base DG algebra map. -/
 private theorem algebraBimoduleUnit_apply (a : DGBimoduleCat.tensorUnit.{u} hA) :
-    f.algebraBimoduleEquiv (f.algebraBimoduleUnit a) = f a.down := by
-  exact (E).apply_symm_apply _
+    (f.algebraBimoduleUnit a).val = f a.down := by
+  rw [algebraBimoduleUnit, ← DGBimoduleHom.coe_val, DGRightModuleHom.coe_mk,
+    unitRightLinearMap, LinearMap.coe_mk, AddHom.coe_mk,
+    RestrictScalars.linearEquiv_symm_apply]
 
 open scoped MonObj
 
@@ -286,23 +261,24 @@ instance algebraBimoduleMonObj : MonObj f.algebraBimodule where
   one_mul := by
     apply DGBimoduleCat.tensorObj_hom_ext
     intro a x
-    apply f.algebraBimoduleEquiv.injective
+    apply RestrictScalars.ext
     rw [DGBimoduleCat.comp_apply, DGBimoduleCat.whiskerRight_tmul,
       algebraBimoduleMul_tmul, algebraBimoduleUnit_apply,
-      DGBimoduleCat.leftUnitor_hom_tmul, algebraBimoduleEquiv_smul]
+      DGBimoduleCat.leftUnitor_hom_tmul, algebraBimodule_val_smul]
   mul_one := by
     apply DGBimoduleCat.tensorObj_hom_ext
     intro x a
-    apply f.algebraBimoduleEquiv.injective
+    apply RestrictScalars.ext
     rw [DGBimoduleCat.comp_apply, DGBimoduleCat.whiskerLeft_tmul,
       algebraBimoduleMul_tmul, algebraBimoduleUnit_apply,
-      DGBimoduleCat.rightUnitor_hom_tmul, algebraBimoduleEquiv_op_smul]
+      DGBimoduleCat.rightUnitor_hom_tmul, RestrictScalars.val_op_smul,
+      MulOpposite.smul_eq_mul_unop, unop_op]
   mul_assoc := by
     apply DGBimoduleCat.tensorObj_hom_ext
     intro z w
     induction z using BalancedTensorProduct.induction_on with
     | ht x y =>
-        apply f.algebraBimoduleEquiv.injective
+        apply RestrictScalars.ext
         rw [DGBimoduleCat.comp_apply, DGBimoduleCat.comp_apply, DGBimoduleCat.comp_apply,
           DGBimoduleCat.whiskerRight_tmul, algebraBimoduleMul_tmul,
           algebraBimoduleMul_tmul, DGBimoduleCat.associator_hom_tmul,
@@ -311,16 +287,15 @@ instance algebraBimoduleMonObj : MonObj f.algebraBimodule where
     | ha z z' hz hz' => simp only [add_tmul, map_add, hz, hz']
 
 /-- The monoid unit is the given DG algebra map on underlying elements. -/
-@[simp↓]
+@[simp]
 theorem algebraBimodule_one_apply (a : DGBimoduleCat.tensorUnit.{u} hA) :
-    f.algebraBimoduleEquiv (η[f.algebraBimodule] a) = f a.down := by
+    (η[f.algebraBimodule] a).val = f a.down := by
   exact algebraBimoduleUnit_apply f a
 
 /-- The monoid product is the target algebra product on underlying elements. -/
-@[simp↓]
+@[simp]
 theorem algebraBimodule_mul_tmul (x y : f.algebraBimodule) :
-    f.algebraBimoduleEquiv (μ[f.algebraBimodule] (tmul R A x y)) =
-      f.algebraBimoduleEquiv x * f.algebraBimoduleEquiv y := by
+    (μ[f.algebraBimodule] (tmul R A x y)).val = x.val * y.val := by
   exact algebraBimoduleMul_tmul f x y
 
 end TauCeti.DGAlgHom
