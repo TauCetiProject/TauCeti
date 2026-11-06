@@ -247,11 +247,12 @@ theorem natCard_toEllipticCurveGeom_torsion [IsSepClosed K] {n : ℤ} (hn : (n :
 invertible, the group of points of the `N`-torsion `E[N]` of `toEllipticCurveGeom W` with values
 in `Spec K` is isomorphic to `(ℤ/Nℤ)²`. The isomorphism is noncanonical, so the result asserts its
 existence. -/
-theorem nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod [IsSepClosed K] (N : ℕ) [NeZero N]
+theorem nonempty_toEllipticCurveGeom_torsion_mulEquiv_prod [IsSepClosed K] (N : ℕ)
     (hN : (N : K) ≠ 0) :
     Nonempty ((𝟙_ (Over (Spec (.of K))) ⟶ ((toEllipticCurveGeom W).torsion N).X) ≃*
       Multiplicative (ZMod N × ZMod N)) := by
   classical
+  have : NeZero N := ⟨fun h ↦ hN (by simp [h])⟩
   obtain ⟨e⟩ := W.torsion_addEquiv_prod N hN
   exact ⟨(W.toEllipticCurveGeomTorsionPointsMulEquiv N).trans (AddEquiv.toMultiplicative e)⟩
 
