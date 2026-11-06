@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.SmallJumps
+public import TauCeti.Probability.Distributions.Stable.SmallJump.Basic
 public import TauCeti.Probability.Distributions.CompoundPoisson.Moments
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 import TauCeti.Probability.ConditionalProbability
