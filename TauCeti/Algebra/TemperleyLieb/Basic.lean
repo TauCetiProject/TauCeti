@@ -226,6 +226,22 @@ theorem adjoin_range_e : Algebra.adjoin R (Set.range (e δ (n := n))) = ⊤ := b
   rw [hrange, ← AlgHom.map_adjoin, FreeAlgebra.adjoin_range_ι, Algebra.map_top]
   exact (AlgHom.range_eq_top _).2 mkAlgHom_surjective
 
+/-- Induction on Temperley–Lieb elements using generators, scalars, addition and multiplication. -/
+@[elab_as_elim]
+theorem induction {P : TemperleyLieb R δ n → Prop}
+    (e : ∀ i, P (e δ i))
+    (algebraMap : ∀ r, P (algebraMap R (TemperleyLieb R δ n) r))
+    (add : ∀ x y, P x → P y → P (x + y))
+    (mul : ∀ x y, P x → P y → P (x * y)) (x : TemperleyLieb R δ n) : P x := by
+  have hx : x ∈ Algebra.adjoin R (Set.range (TemperleyLieb.e δ (n := n))) := by
+    rw [adjoin_range_e]
+    trivial
+  induction hx using Algebra.adjoin_induction with
+  | mem x hx => obtain ⟨i, rfl⟩ := hx; exact e i
+  | algebraMap r => exact algebraMap r
+  | add x y _ _ hx hy => exact add x y hx hy
+  | mul x y _ _ hx hy => exact mul x y hx hy
+
 /-- The algebra map from `TemperleyLieb R δ (n + 1)` to `TemperleyLieb R δ (n + 2)` that adds a
 last strand and leaves it straight: each generator is sent to the generator of the same index,
 and the new strand is never capped. This is the inclusion along which the Markov property of a

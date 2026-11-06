@@ -67,14 +67,11 @@ private theorem conjugateReverse_algebraMap (r : R) :
 
 private theorem conjugateReverse_involutive (x : TemperleyLieb R δ n) :
     unop (conjugateReverse (unop (conjugateReverse x))) = x := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := by rw [adjoin_range_e]; trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [conjugateReverse_e]
+  induction x using TemperleyLieb.induction with
+  | e i => simp [conjugateReverse_e]
   | algebraMap r => simp [conjugateReverse_algebraMap]
-  | add x y _ _ hx hy => simp [map_add, hx, hy]
-  | mul x y _ _ hx hy => simp [map_mul, hx, hy]
+  | add x y hx hy => simp [map_add, hx, hy]
+  | mul x y hx hy => simp [map_mul, hx, hy]
 
 /-- The analytic adjoint fixes generators and conjugates scalars at a self-adjoint loop
 parameter. In particular, real loop parameters give complex star algebras. -/
@@ -103,15 +100,12 @@ Involutivity need not be assumed for uniqueness. -/
 theorem eq_star (f : TemperleyLieb R δ n →ₗ⋆[R] TemperleyLieb R δ n)
     (hone : f 1 = 1) (hmul : ∀ x y, f (x * y) = f y * f x)
     (he : ∀ i, f (e δ i) = e δ i) (x : TemperleyLieb R δ n) : f x = star x := by
-  have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := by rw [adjoin_range_e]; trivial
-  induction hx using Algebra.adjoin_induction with
-  | mem x hx =>
-    obtain ⟨i, rfl⟩ := hx
-    simp [he]
+  induction x using TemperleyLieb.induction with
+  | e i => simp [he]
   | algebraMap r =>
     simp [Algebra.algebraMap_eq_smul_one, hone, starRingEnd_apply]
-  | add x y _ _ hx hy => simp [hx, hy]
-  | mul x y _ _ hx hy => simp [hmul, hx, hy]
+  | add x y hx hy => simp [hx, hy]
+  | mul x y hx hy => simp [hmul, hx, hy]
 
 section UniversalProperty
 
@@ -125,14 +119,11 @@ theorem map_star_iff {F : TemperleyLieb R δ n →ₐ[R] A} :
   · intro h i
     simpa only [IsSelfAdjoint, star_e] using (h (e δ i)).symm
   · intro h x
-    have hx : x ∈ Algebra.adjoin R (Set.range (e δ (n := n))) := by rw [adjoin_range_e]; trivial
-    induction hx using Algebra.adjoin_induction with
-    | mem x hx =>
-      obtain ⟨i, rfl⟩ := hx
-      simp only [star_e, (h i).star_eq]
+    induction x using TemperleyLieb.induction with
+    | e i => simp only [star_e, (h i).star_eq]
     | algebraMap r => simp [← algebraMap_star_comm]
-    | add x y _ _ hx hy => simp only [star_add, map_add, hx, hy]
-    | mul x y _ _ hx hy => simp only [star_mul, map_mul, hx, hy]
+    | add x y hx hy => simp only [star_add, map_add, hx, hy]
+    | mul x y hx hy => simp only [star_mul, map_mul, hx, hy]
 
 end UniversalProperty
 
