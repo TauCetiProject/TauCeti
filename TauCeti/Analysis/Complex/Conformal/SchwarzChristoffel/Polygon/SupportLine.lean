@@ -66,6 +66,39 @@ private lemma convex_setOf_im_mul_sub_nonneg (u w : ℂ) :
     sub_im, sub_nonneg] using
     convex_halfSpace_ge (Complex.imLm.comp (LinearMap.mulLeft ℝ u)).isLinear (u * w).im
 
+/-- **A horizontal step, rotated by `-θ`, has height `r * sin (-θ)`.**  If `x < y` in the order on
+`ℂ` (same imaginary part, smaller real part), then after multiplying by `exp (-θ * I)` the
+difference of heights is the length `r = (y - x).re ≥ 0` times `sin (-θ)`. -/
+private lemma im_exp_neg_mul_sub_sub_eq_of_lt (θ : ℝ) (w : ℂ) {x y : ℂ} (hxy : x < y) :
+    ∃ r, 0 ≤ r ∧ (Complex.exp (-θ * Complex.I) * (y - w)).im -
+      (Complex.exp (-θ * Complex.I) * (x - w)).im = r * Real.sin (-θ) := by
+  refine ⟨(y - x).re, sub_nonneg.mpr (Complex.lt_def.mp hxy).1.le, ?_⟩
+  have hu : (Complex.exp (-θ * Complex.I)).im = Real.sin (-θ) := by
+    have h := Complex.exp_ofReal_mul_I_im (-θ)
+    push_cast at h
+    exact h
+  rw [← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right, Complex.mul_im, Complex.sub_im,
+    (Complex.lt_def.mp hxy).2, sub_self, mul_zero, zero_add, hu, mul_comm]
+
+/-- **The edge angles, indexed by naturals, turn monotonically from above `-2π` down to `0`.**
+For any `φ : ℕ → ℝ` agreeing with `k ↦ schwarzChristoffelEdgeAngle a e (a k)` on `Fin (n + 1)`,
+the sequence is monotone on `0 ≤ l ≤ m ≤ n`, bounded below by `-2π`, and vanishes at `n`. -/
+private lemma schwarzChristoffelEdgeAngle_natIndexed_turning (a e : Fin (n + 1) → ℝ)
+    (ha : StrictMono a) (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2)
+    (φ : ℕ → ℝ) (hφ : ∀ k : Fin (n + 1), φ k = schwarzChristoffelEdgeAngle a e (a k)) :
+    (∀ l m : ℕ, l ≤ m → m ≤ n → φ l ≤ φ m) ∧ (∀ l : ℕ, l ≤ n → -2 * Real.pi < φ l) ∧
+      φ n = 0 := by
+  have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun k ↦ (he k).2
+  refine ⟨fun l m hlm hm ↦ ?_, fun l hl ↦ ?_, ?_⟩
+  · have := hangle.monotone
+      (Fin.mk_le_mk.mpr hlm : (⟨l, by omega⟩ : Fin (n + 1)) ≤ ⟨m, by omega⟩)
+    simpa only [← hφ] using this
+  · have := (schwarzChristoffelEdgeAngle_mem_Ioc a e (fun k ↦ (he k).2) hsum ⟨l, by omega⟩).1
+    simpa only [← hφ] using this
+  · have :=
+      schwarzChristoffelEdgeAngle_eq_zero_of_last_le a e ha.monotone (le_refl (a (Fin.last n)))
+    simpa only [← hφ, Fin.val_last] using this
+
 /-- **The finite vertices and the vertex at infinity lie on the interior side of each bounded
 side.**  Under the classical convex-polygon hypotheses, rotate the direction of the bounded side
 from vertex `i` to vertex `i + 1` to the positive real axis; then no vertex lies below the
@@ -93,18 +126,7 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
     simp only [V, k.isLt, ↓reduceDIte, Fin.eta]
   have hφ (k : Fin (n + 1)) : φ k = schwarzChristoffelEdgeAngle a e (a k) := by
     simp only [φ, k.isLt, ↓reduceDIte, Fin.eta]
-  have hangle := schwarzChristoffelEdgeAngle_comp_strictMono a e ha fun k ↦ (he k).2
-  have hmono (l m : ℕ) (hlm : l ≤ m) (hm : m ≤ n) : φ l ≤ φ m := by
-    have := hangle.monotone
-      (Fin.mk_le_mk.mpr hlm : (⟨l, by omega⟩ : Fin (n + 1)) ≤ ⟨m, by omega⟩)
-    simpa only [← hφ] using this
-  have hlow (l : ℕ) (hl : l ≤ n) : -2 * Real.pi < φ l := by
-    have := (schwarzChristoffelEdgeAngle_mem_Ioc a e (fun k ↦ (he k).2) hsum ⟨l, by omega⟩).1
-    simpa only [← hφ] using this
-  have hlast : φ n = 0 := by
-    have :=
-      schwarzChristoffelEdgeAngle_eq_zero_of_last_le a e ha.monotone (le_refl (a (Fin.last n)))
-    simpa only [← hφ, Fin.val_last] using this
+  obtain ⟨hmono, hlow, hlast⟩ := schwarzChristoffelEdgeAngle_natIndexed_turning a e ha he hsum φ hφ
   have hθ : φ i = θ := by simpa only [Fin.val_castSucc] using hφ i.castSucc
   -- Each bounded side contributes its length times the sine of its turn from side `i`.
   have hstep (l : ℕ) (hl : l < n) :
@@ -124,13 +146,8 @@ private lemma im_exp_neg_mul_sub_schwarzChristoffelVertex_nonneg (a e : Fin (n +
       (fun k ↦ (he k).1) hsum
   have hhoriz {x y : ℂ} (hxy : x < y) :
       ∃ r, 0 ≤ r ∧ (u * (y - w)).im - (u * (x - w)).im = r * Real.sin (-φ i) := by
-    refine ⟨(y - x).re, sub_nonneg.mpr (Complex.lt_def.mp hxy).1.le, ?_⟩
-    have hu : u.im = Real.sin (-θ) := by
-      have h := Complex.exp_ofReal_mul_I_im (-θ)
-      push_cast at h
-      exact h
-    rw [← Complex.sub_im, ← mul_sub, sub_sub_sub_cancel_right, Complex.mul_im, Complex.sub_im,
-      (Complex.lt_def.mp hxy).2, sub_self, mul_zero, zero_add, hu, hθ, mul_comm]
+    rw [hθ]
+    exact im_exp_neg_mul_sub_sub_eq_of_lt θ w hxy
   have hVn : V n = schwarzChristoffelVertex a e z₀ (Fin.last n) := by
     simpa only [Fin.val_last] using hV (Fin.last n)
   have hV0 : V 0 = schwarzChristoffelVertex a e z₀ 0 := hV 0
