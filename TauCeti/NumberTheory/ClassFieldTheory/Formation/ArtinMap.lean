@@ -370,14 +370,22 @@ theorem character_artinMap (a : F.level L.ground)
     congr 1
     rw [cupFundamentalClass_apply, cupClass_apply]
     dsimp only [pairing, sigma]
+    -- `Rep.trivial ℤ L.Gal ℤ` is the tensor unit `𝟙_ (Rep ℤ L.Gal)` by definition, so the
+    -- unitor identity and the exchange lemma below apply to it directly.
     have hstruct : ((λ_ (L.rep F)).hom ▷ Rep.trivial ℤ L.Gal ℤ) ≫ (ρ_ (L.rep F)).hom = _ :=
-      whiskerRight_leftUnitor_comp_rightUnitor_eq (L.rep F)
+      leftUnitor_whiskerRight_comp_rightUnitor_eq (L.rep F)
     simp only [Int.reduceAdd]
     rw [TateCohomology.cup_map_left, ← ModuleCat.comp_apply, ← Functor.map_comp, hstruct,
       Functor.map_comp, Functor.map_comp, Functor.map_comp, Functor.map_comp,
       ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.comp_apply]
-    exact TateCohomology.cup_cup_comm_degree_two (L.rep F) sigma
+    have key := TateCohomology.cup_right_comm (𝟙_ (Rep ℤ L.Gal)) (L.rep F) (𝟙_ (Rep ℤ L.Gal))
+      (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₁' := 0) (r := 2)
+      (by omega) (by omega) (by omega) (by omega) sigma
       ((L.tateHIsoH F 2).inv (cf.fundamentalClass L)) (L.characterConnectingClass chi)
+    rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul] at key
+    erw [key]
+    rw [← TateCohomology.cup_map_left]
+    rfl
   rw [hcup, cf.inv_cupFundamentalClass_zero]
   -- The layer's degree `-2` identification is the negative of the generic one, which turns the
   -- generic pairing `-χ(σ)` into `χ(σ)`.

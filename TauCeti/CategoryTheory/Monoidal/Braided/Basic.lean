@@ -19,7 +19,9 @@ which no rigidity is needed.
 
 This file also records naturality of the re-associated crossing
 `(α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom : X ⊗ (Y ⊗ Z) ⟶ Y ⊗ (X ⊗ Z)` of the first
-two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms.
+two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms,
+and the unitor identity `(λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom` expressed through the braiding
+`β_ X (𝟙_ C)` of `X` past the tensor unit.
 -/
 
 public section
@@ -109,7 +111,8 @@ theorem whiskerLeft_tensorHom_comp_associator_inv_braiding_associator_hom (X : C
 /-- **Unitors through the braiding with the unit.** The two ways of mapping
 `(𝟙_ C ⊗ X) ⊗ 𝟙_ C` to `X` agree: whiskering the left unitor and applying the right unitor, or
 reassociating, braiding `X` past the unit, reassociating back, and applying the unitors. -/
-theorem whiskerRight_leftUnitor_comp_rightUnitor_eq (X : C) :
+@[reassoc]
+theorem leftUnitor_whiskerRight_comp_rightUnitor_eq (X : C) :
     (λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom =
       (α_ (𝟙_ C) X (𝟙_ C)).hom ≫ 𝟙_ C ◁ (β_ X (𝟙_ C)).hom ≫
         (α_ (𝟙_ C) (𝟙_ C) X).inv ≫ (λ_ (𝟙_ C)).hom ▷ X ≫ (λ_ X).hom := by

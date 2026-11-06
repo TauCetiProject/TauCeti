@@ -33,8 +33,8 @@ sequences split `k`-linearly (`TauCeti.TateCohomology.δ_cup_of_leftInverse`). T
 * `TauCeti.TateCohomology.cupH0_eq_flip_cup0H`: graded commutativity in bidegree `(p, 0)`.
 * `TauCeti.TateCohomology.cup0H_eq_flip_cupH0`: graded commutativity in bidegree `(0, q)`.
 * `TauCeti.TateCohomology.cup_gradedComm`: graded commutativity in all integer bidegrees.
-* `TauCeti.TateCohomology.cup_cup_comm_degree_two`: two degree-two classes can be exchanged in
-  an iterated cup product, using associativity and graded commutativity.
+* `TauCeti.TateCohomology.cup_right_comm`: `(x ∪ y) ∪ z` and `(x ∪ z) ∪ y` agree up to the Koszul
+  sign `(-1) ^ (q * s)` and the structure isomorphisms of the coefficient modules.
 
 ## References
 
@@ -190,39 +190,23 @@ theorem cup_gradedComm (M N : Rep k G) {p q r : ℤ} (h : p + q = r) (x : tateCo
       exact cup_gradedComm_of_add_one M N (Int.negSucc_lt_zero _) h x
         (ih (dimensionShiftDown N) (by omega)) y
 
-/-- **Exchanging two degree-two classes in an iterated cup product.** For a class `σ` of degree
-`-2` and classes `u`, `w` of degree `2` (the second with trivial coefficients), the iterated cup
-product `(σ ∪ u) ∪ w` is `(σ ∪ w) ∪ u`, up to the associators, braiding and unitors identifying
-the coefficient modules. The Koszul sign `(-1) ^ (2 * 2)` is trivial. -/
-theorem cup_cup_comm_degree_two (X : Rep k G) (σ : tateCohomology (𝟙_ (Rep k G)) (-2))
-    (u : tateCohomology X 2) (w : tateCohomology (𝟙_ (Rep k G)) 2) :
-    (tateCohomologyFunctor 2).map (λ_ X).hom
-      ((tateCohomologyFunctor 2).map ((λ_ (𝟙_ (Rep k G))).hom ▷ X)
-        ((tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X).inv
-          ((tateCohomologyFunctor 2).map (𝟙_ (Rep k G) ◁ (β_ X (𝟙_ (Rep k G))).hom)
-            ((tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) X (𝟙_ (Rep k G))).hom
-              (cup (𝟙_ (Rep k G) ⊗ X) (𝟙_ (Rep k G)) 0 2 2 (by omega)
-                (cup (𝟙_ (Rep k G)) X (-2) 2 0 (by omega) σ u) w))))) =
-      (tateCohomologyFunctor 2).map (λ_ X).hom
-        (cup (𝟙_ (Rep k G)) X 0 2 2 (by omega)
-          ((tateCohomologyFunctor 0).map (λ_ (𝟙_ (Rep k G))).hom
-            (cup (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) (-2) 2 0 (by omega) σ w)) u) := by
-  -- Reassociate so that graded commutativity can exchange the degree-two factors.
-  have hAssoc₁ := cup_assoc (𝟙_ (Rep k G)) X (𝟙_ (Rep k G))
-    (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
-    (by omega) (by omega) (by omega) σ u w
-  rw [hAssoc₁, ← cup_map_right, cup_gradedComm]
-  rw [Int.negOnePow_even (2 * 2) ⟨2, rfl⟩, one_smul]
-  -- Reassociate back; the intervening associator and its inverse then cancel.
-  have hAssoc₂ := cup_assoc (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X
-    (p := -2) (q := 2) (s := 2) (r₁ := 0) (r₂ := 4) (r := 2)
-    (by omega) (by omega) (by omega) σ w u
-  have hcancel (z : tateCohomology ((𝟙_ (Rep k G) ⊗ 𝟙_ (Rep k G)) ⊗ X) 2) :
-      (tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X).inv
-        ((tateCohomologyFunctor 2).map (α_ (𝟙_ (Rep k G)) (𝟙_ (Rep k G)) X).hom z) = z := by
-    rw [← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
-      (tateCohomologyFunctor 2).map_id]
-    rfl
-  rw [← hAssoc₂, hcancel, ← cup_map_left]
+/-- **Right commutativity of the iterated cup product.** Cupping `x ∪ y` with `z` and cupping
+`x ∪ z` with `y` agree up to the Koszul sign `(-1) ^ (q * s)` and the associators and braiding
+identifying the coefficient modules `(M ⊗ N) ⊗ P` and `(M ⊗ P) ⊗ N`. -/
+theorem cup_right_comm (M N P : Rep k G) {p q s r₁ r₁' r : ℤ} (h₁ : p + q = r₁)
+    (h₂ : p + s = r₁') (h : r₁ + s = r) (h' : r₁' + q = r)
+    (x : tateCohomology M p) (y : tateCohomology N q) (z : tateCohomology P s) :
+    (tateCohomologyFunctor r).map (α_ M P N).inv
+      ((tateCohomologyFunctor r).map (M ◁ (β_ N P).hom)
+        ((tateCohomologyFunctor r).map (α_ M N P).hom
+          (cup (M ⊗ N) P r₁ s r h (cup M N p q r₁ h₁ x y) z))) =
+      (q * s).negOnePow • cup (M ⊗ P) N r₁' q r h' (cup M P p s r₁' h₂ x z) y := by
+  -- Reassociate so that graded commutativity can exchange the last two factors.
+  have hA := cup_assoc M P N h₂ (add_comm s q) h' x z y
+  rw [cup_assoc M N P h₁ rfl h x y z, ← cup_map_right, cup_gradedComm, Units.smul_def,
+    map_zsmul, map_zsmul, ← Units.smul_def]
+  rw [← hA, ← ModuleCat.comp_apply, ← Functor.map_comp, Iso.hom_inv_id,
+    (tateCohomologyFunctor r).map_id]
+  rfl
 
 end TauCeti.TateCohomology
