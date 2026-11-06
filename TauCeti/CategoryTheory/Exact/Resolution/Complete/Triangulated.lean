@@ -258,10 +258,9 @@ theorem stableToHomotopyCategory_commShiftIso_one_hom_app (X : C) :
   rw [stableToHomotopyCategoryCommShift, commShiftOfIntertwiningStableSuspensionShift_iso_one]
   simp [stableSuspensionCompStableToHomotopyCategoryIso]
 
-/-- Lifting a map of complete resolutions of the end terms of a conflation through the shift
-comparison recovers the map: the morphism `ψ` from the complete resolution of `X₃` to the shifted
-complete resolution of `X₁` is, in the homotopy category, the lift of its cycles map
-followed by the shift comparison. -/
+/-- For any morphism `ψ` from the complete resolution of `X₃` to the shifted complete resolution
+of `X₁`, the lift of its cycles map followed by the shift comparison equals `ψ` in the homotopy
+category. -/
 theorem quotient_map_liftMap_cyclesMap_comp_shiftHomotopyEquiv_hom (X₁ X₃ : C)
     (ψ : (hE.completeResolution X₃).complex ⟶ (hE.completeResolution X₁).shift.complex) :
     (HomotopyCategory.quotient C _).map
@@ -360,7 +359,7 @@ private theorem exists_comp_eq_presentation_of_horseshoe {S : ShortComplex C}
     simp [κ]
   refine ⟨a, ha, ?_⟩
   rw [← cancel_mono (r₁.ι (0 + 1)), Category.assoc, Category.assoc]
-  change S.g ≫ (hE.completeResolutionIso S.X₃).inv ≫ κ ≫ r₁.ι (0 + 1) = _
+  simp only [κ, ψ] at hκ
   rw [hκ, Preadditive.comp_neg, Preadditive.comp_neg, ← Category.assoc S.g, h.g_comp_connecting σ,
     neg_neg]
   simp [a, CompleteResolution.d_def]
