@@ -94,11 +94,10 @@ theorem ideal_le_ker_of_SpecMap_comp_fromSpec_eq (I : X.IdealSheafData) (U : X.a
     {L : Type u} [Field L] {φ : Γ(X, U) ⟶ CommRingCat.of L} {t : Spec (.of L) ⟶ I.subscheme}
     (h : Spec.map φ ≫ U.2.fromSpec = t ≫ I.subschemeι) : I.ideal U ≤ RingHom.ker φ.hom := by
   obtain ⟨pt⟩ : Nonempty (Spec (.of L)) := inferInstance
-  have hpt : Spec.map φ pt ∈ PrimeSpectrum.zeroLocus (I.ideal U : Set Γ(X, U)) := by
-    rw [← I.fromSpec_preimage_support U.2]
-    change (Spec.map φ ≫ U.2.fromSpec) pt ∈ (I.support : Set X)
+  have hpt : (Spec.map φ ≫ U.2.fromSpec) pt ∈ (I.support : Set X) := by
     rw [h, ← I.range_subschemeι]
     exact ⟨t pt, rfl⟩
+  rw [Scheme.Hom.comp_apply, ← Set.mem_preimage, I.fromSpec_preimage_support U.2] at hpt
   intro r hr
   have : φ.hom r ∈ pt.asIdeal := hpt hr
   rwa [@Ideal.eq_bot_of_prime _ _ pt.asIdeal pt.isPrime, Ideal.mem_bot] at this
