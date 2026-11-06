@@ -94,13 +94,21 @@ private theorem ker_fderiv_fderiv_comp_le_range_inl (hi : i.IsNondegenerateCriti
     exact ContinuousLinearMap.IsInvertible.comp
       ⟨NormedSpace.fromTangentSpace (e.extend I (i s)), rfl⟩ (isInvertible_mfderiv_extend he1 hx)
   let N := L.toLinearEquiv.trans T.symm.toLinearEquiv
+  -- In the chart, the critical Hessian is the Hessian of `f ∘ (e.extend I).symm` read through `T`.
+  have hchart (v w : E) : criticalHessian I f (i s) (T.symm v) (T.symm w) =
+      fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (L (a, 0)) v w := by
+    have h := criticalHessian_apply_eq_of_mem_maximalAtlas he hx hfx hcritx (T.symm v) (T.symm w)
+    simpa only [← hT, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
+      hxL] using h
+  -- Composing with the linear map `L` at a critical point composes the Hessian with `L`.
+  have hlin (z z' : E' × F) : fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0) z z' =
+      fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm)) (L (a, 0)) (L z) (L z') := by
+    have h := fderiv_fderiv_comp_apply_of_fderiv_eq_zero hQ2 L.contDiff.contDiffAt hQ0 z z'
+    simp only [L.fderiv, ContinuousLinearEquiv.coe_coe] at h
+    exact h
   have hHess (z z' : E' × F) : fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0) z z' =
       criticalHessian I f (i s) (N z) (N z') := by
-    simp only [N, LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv]
-    rw [criticalHessian_apply_eq_of_mem_maximalAtlas he hx hfx hcritx, ← hT,
-      ContinuousLinearEquiv.coe_coe, T.apply_symm_apply, T.apply_symm_apply, hxL, ← comp_assoc,
-      fderiv_fderiv_comp_apply_of_fderiv_eq_zero hQ2 L.contDiff.contDiffAt hQ0, L.fderiv,
-      ContinuousLinearEquiv.coe_coe]
+    simp only [N, LinearEquiv.trans_apply, ContinuousLinearEquiv.coe_toLinearEquiv, hlin, hchart]
   have hcomap : (fderiv ℝ (fderiv ℝ (f ∘ (e.extend I).symm ∘ L)) (a, 0)).ker =
       (criticalHessian I f (i s)).ker.comap N.toLinearMap := by
     ext z
