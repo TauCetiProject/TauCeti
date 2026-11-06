@@ -145,6 +145,39 @@ theorem exists_pivot_inv_mul_le_one [Finite ι] (v : AbsoluteValue K ℝ)
   rw [← hid, map_mul] at hb
   exact (mul_le_mul_iff_right₀ (v.pos hP0)).mp (by simpa [mul_comm] using hb)
 
+/-- A matrix supported on the pivot rows and the non-pivot columns, with entries in the unit ball
+whenever those of a given family `B` are, and agreeing with `B` there, has square zero. -/
+private theorem exists_shear (v : AbsoluteValue K ℝ) (e : Fin p ↪ ι) (B : Matrix (Fin p) ι K)
+    (hb : ∀ a j, v (B a j) ≤ 1) :
+    ∃ N : Matrix ι ι K, N * N = 0 ∧ (∀ i j, v (N i j) ≤ 1) ∧
+      (∀ i, ∀ j ∈ range e, N i j = 0) ∧ (∀ i ∉ range e, ∀ j, N i j = 0) ∧
+      ∀ a j, j ∉ range e → N (e a) j = B a j := by
+  classical
+  let N : Matrix ι ι K := Matrix.of
+    (Function.extend e (fun a j ↦ if j ∈ range e then 0 else B a j) 0)
+  have hrow (a : Fin p) (j : ι) : N (e a) j = if j ∈ range e then 0 else B a j := by
+    simp [N, e.injective.extend_apply]
+  have hout {i : ι} (hi : i ∉ range e) (j : ι) : N i j = 0 := by
+    simp [N, Function.extend_apply' _ _ _ hi]
+  have hcol (i : ι) {j : ι} (hj : j ∈ range e) : N i j = 0 := by
+    by_cases hi : i ∈ range e
+    · obtain ⟨a, rfl⟩ := hi
+      simp [hrow, hj]
+    · exact hout hi j
+  refine ⟨N, ?_, fun i j ↦ ?_, hcol, fun i hi j ↦ hout hi j, fun a j hj ↦ by simp [hrow, hj]⟩
+  · ext i j
+    refine Finset.sum_eq_zero fun k _ ↦ ?_
+    by_cases hk : k ∈ range e
+    · simp [hcol i hk]
+    · simp [hout hk j]
+  · by_cases hi : i ∈ range e
+    · obtain ⟨a, rfl⟩ := hi
+      rw [hrow]
+      split_ifs
+      · simp
+      · exact hb a j
+    · simp [hout hi j]
+
 /-- An independent family can be supported on pivot coordinates by a change
 of coordinates integral in both directions. Its pivot determinant attains the
 original exterior maximum norm. Together with `iSup_plucker_mul_eq`, this
@@ -166,31 +199,7 @@ theorem exists_integral_plucker_reduction (v : AbsoluteValue K ℝ) (hv : IsNona
       Matrix.one_mul]
   -- Extend the off-pivot columns of the normalized family by zero on the
   -- other rows. This shear has square zero.
-  let N : Matrix ι ι K := Matrix.of
-    (Function.extend e (fun a j ↦ if j ∈ range e then 0 else B a j) 0)
-  have hrow (a : Fin p) (j : ι) : N (e a) j = if j ∈ range e then 0 else B a j := by
-    simp [N, e.injective.extend_apply]
-  have hout {i : ι} (hi : i ∉ range e) (j : ι) : N i j = 0 := by
-    simp [N, Function.extend_apply' _ _ _ hi]
-  have hcol (i : ι) {j : ι} (hj : j ∈ range e) : N i j = 0 := by
-    by_cases hi : i ∈ range e
-    · obtain ⟨a, rfl⟩ := hi
-      simp [hrow, hj]
-    · exact hout hi j
-  have hNN : N * N = 0 := by
-    ext i j
-    refine Finset.sum_eq_zero fun k _ ↦ ?_
-    by_cases hk : k ∈ range e
-    · simp [hcol i hk]
-    · simp [hout hk j]
-  have hN (i j : ι) : v (N i j) ≤ 1 := by
-    by_cases hi : i ∈ range e
-    · obtain ⟨a, rfl⟩ := hi
-      rw [hrow]
-      split_ifs
-      · simp
-      · exact hb a j
-    · simp [hout hi j]
+  obtain ⟨N, hNN, hN, hcol, hout, hrow⟩ := v.exists_shear e B hb
   have hunit (i j : ι) : v ((1 : Matrix ι ι K) i j) ≤ 1 := by
     by_cases h : i = j <;> simp [Matrix.one_apply, h]
   have hbound (i j : ι) : v ((1 - N) i j) ≤ 1 ∧ v ((1 + N) i j) ≤ 1 := by
@@ -207,12 +216,12 @@ theorem exists_integral_plucker_reduction (v : AbsoluteValue K ℝ) (hv : IsNona
   · intro i j
     rw [Matrix.mul_sub, Matrix.mul_one, Matrix.sub_apply]
     by_cases hj : j ∈ range e
-    · simp [hj, Matrix.mul_apply, hcol _ hj]
+    · simp [hj, Matrix.mul_apply, hcol _ _ hj]
     · have hsum : (x * N) i j = (P * B) i j := by
         rw [Matrix.mul_apply, Matrix.mul_apply]
         exact (Fintype.sum_of_injective e e.injective _ _
-          (fun k hk ↦ by simp [hout hk j])
-          (fun a ↦ by simp [P, hrow, hj])).symm
+          (fun k hk ↦ by simp [hout k hk j])
+          (fun a ↦ by simp [P, hrow _ _ hj])).symm
       simp [hj, hsum, hPB]
 
 end Field
