@@ -101,7 +101,7 @@ determinants of polynomials in compact operators.
 ## References
 
 * R. Coleman, *p-adic Banach spaces and families of modular forms*, Invent. Math. **127** (1997),
-  417–479, Appendix A3.
+  417–479, Appendices A3–A4.
 -/
 
 public section
@@ -322,8 +322,8 @@ theorem colemanDBounded_one_sub_C_mul_reflect_self (hP : P.natDegree ≤ n) (hP0
 theorem eval_one_colemanDBounded_one_sub_C_mul_reflect (c : R) (F Q : R[X]) (n d : ℕ) :
     (colemanDBounded (1 - C c * Q.reflect d) F n d).eval 1 = resultant (C c * Q) F d n := by
   rw [eval_colemanDBounded, C_1, one_mul, sub_sub_cancel, resultant_C_mul_right,
-    resultant_reflect, resultant_comm F Q, resultant_C_mul_left, ← mul_assoc ((-1) ^ _),
-    ← mul_pow, neg_one_mul, neg_neg, one_pow, one_mul]
+    resultant_reflect, resultant_comm F Q, resultant_C_mul_left]
+  simp [mul_comm n d, ← mul_assoc, ← mul_pow]
 
 section RieszColeman
 
@@ -343,7 +343,8 @@ theorem natDegree_one_sub_C_mul_reverse_le (c : R) (Q : R[X]) :
 
 /-- Let `c` invert the leading coefficient of `Q`. Along `B = 1 - c Q*`, the value at `T = 1` of
 Coleman's transform of a polynomial `F` of degree at most `n` is a unit exactly when `Q` and `F`
-are coprime. -/
+are coprime. This is the polynomial step of Coleman's Appendix A4, in which a coprime factor `Q` of
+a Fredholm determinant becomes a zero at `T = 1` along `1 - lc(Q)⁻¹ Q*`. -/
 theorem isUnit_eval_one_colemanDBounded_one_sub_C_mul_reverse_iff
     (hc : c * Q.leadingCoeff = 1) (hF : F.natDegree ≤ n) :
     IsUnit ((colemanDBounded (1 - C c * Q.reverse) F n Q.natDegree).eval 1) ↔ IsCoprime Q F := by
