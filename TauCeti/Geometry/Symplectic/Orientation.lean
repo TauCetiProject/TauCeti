@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Orientation.Prod
 
 import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 import TauCeti.Geometry.Symplectic.Lagrangian.Basic
+import TauCeti.Geometry.Symplectic.StandardCompatible
 import TauCeti.LinearAlgebra.Basis.Triangular
 import TauCeti.LinearAlgebra.BilinearForm.SymplecticBasis
 
@@ -35,7 +36,9 @@ orientation of its source to that of its target
 it by the sign of `cⁿ` (`TauCeti.SymplecticForm.orientation_rescale`), so positive rescaling
 preserves it, while `-ω` has the opposite orientation exactly when `n` is odd. The symplectic
 orientation of a direct sum `ω₁ ⊕ ω₂` is the product of the symplectic orientations of the
-summands (`TauCeti.SymplecticForm.orientation_prod`).
+summands (`TauCeti.SymplecticForm.orientation_prod`). On the plane `ℝ × ℝ`, the symplectic
+orientation of the standard form `dx ∧ dy` is the standard orientation, in which `((1, 0), (0, 1))`
+is positive (`TauCeti.orientation_stdSymplecticForm_real`).
 
 The symplectic orientation is also determined by any almost complex structure `J` that `ω` tames,
 `ω(v, J v) > 0` for `v ≠ 0`: every `J`-adapted basis `(v₁, J v₁, …, vₙ, J vₙ)` is positive
@@ -308,5 +311,21 @@ theorem Tames.orientation_eq (hJ : ω.Tames J) {ω' : SymplecticForm V} (hJ' : �
   rw [← hJ.orientation_reindex hb hk h, hJ'.orientation_reindex hb hk h]
 
 end SymplecticForm
+
+/-- The symplectic orientation of the standard form `dx ∧ dy` on the plane `ℝ × ℝ` is the standard
+orientation, in which the basis `((1, 0), (0, 1))` is positive. -/
+theorem orientation_stdSymplecticForm_real (hk : finrank ℝ (ℝ × ℝ) = 2) :
+    (stdSymplecticForm (V := ℝ)).orientation hk = (Basis.finTwoProd ℝ).orientation := by
+  set e := finProdFinEquiv.trans (finCongr (by norm_num : 1 * 2 = 2))
+  have he₀ : e (0, 0) = 0 := by decide
+  have he₁ : e (0, 1) = 1 := by decide
+  -- The standard basis, listed as the single pair `(q₁, p₁) = ((1, 0), (0, 1))`, is Darboux.
+  have hb : (stdSymplecticForm (V := ℝ)).IsDarbouxBasis ((Basis.finTwoProd ℝ).reindex e.symm) := by
+    refine ⟨fun i j ↦ ?_, fun i j ↦ ?_, fun i j ↦ ?_⟩ <;> fin_cases i <;> fin_cases j <;>
+      simp [Basis.reindex_apply, he₀, he₁]
+  rw [← hb.orientation_reindex hk (by norm_num)]
+  exact congrArg Basis.orientation <| Basis.eq_of_apply_eq fun i ↦ by
+    simp only [Basis.reindex_apply, Equiv.symm_symm]
+    exact congrArg _ (e.apply_symm_apply i)
 
 end TauCeti
