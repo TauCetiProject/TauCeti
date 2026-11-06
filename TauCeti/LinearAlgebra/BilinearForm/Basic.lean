@@ -119,20 +119,22 @@ end LinearMap.BilinForm.IsSymm
 
 namespace LinearMap
 
-variable {R M N P : Type*} [CommSemiring R] [AddCommGroup M] [AddCommGroup N] [AddCommGroup P]
-  [IsAddTorsionFree P] [Module R M] [Module R N] [Module R P] (B : M →ₗ[R] N →ₗ[R] P)
+variable {R M N P : Type*} [CommSemiring R] [AddCommGroup M] [AddCommGroup P]
+  [IsAddTorsionFree P] [Module R M] [Module R P]
 
 /-- A bilinear map with additively torsion-free values sees its left argument only modulo
 elements of finite additive order. -/
-theorem apply_eq_apply_of_isOfFinAddOrder_sub_left {x x' : M} (h : IsOfFinAddOrder (x - x'))
-    (y : N) : B x y = B x' y := by
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_left [AddCommMonoid N] [Module R N]
+    (B : M →ₗ[R] N →ₗ[R] P) {x x' : M} (h : IsOfFinAddOrder (x - x')) (y : N) :
+    B x y = B x' y := by
   have := ((B.flip y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
   simpa [sub_eq_zero] using this
 
 /-- A bilinear map with additively torsion-free values sees its right argument only modulo
 elements of finite additive order. -/
-theorem apply_eq_apply_of_isOfFinAddOrder_sub_right {y y' : N} (h : IsOfFinAddOrder (y - y'))
-    (x : M) : B x y = B x y' := by
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommGroup N] [Module R N]
+    (B : M →ₗ[R] N →ₗ[R] P) {y y' : N} (h : IsOfFinAddOrder (y - y')) (x : M) :
+    B x y = B x y' := by
   have := ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
   simpa [sub_eq_zero] using this
 
@@ -206,7 +208,7 @@ theorem nondegenerate_smul_iff {R M : Type*} [CommSemiring R] [AddCommMonoid M]
 
 /-- Negating a bilinear form preserves nondegeneracy. -/
 @[simp]
-theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommGroup M]
+theorem nondegenerate_neg_iff {R M : Type*} [CommRing R] [AddCommMonoid M]
     [Module R M] {B : BilinForm R M} :
     (-B).Nondegenerate ↔ B.Nondegenerate := by
   rw [← neg_one_smul R B]
