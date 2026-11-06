@@ -115,23 +115,101 @@ private theorem energyFormH1_eq_setIntegral_inner_smul_single
   rw [(φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv, real_inner_comm,
     inner_gradient_left, mul_comm]
 
-/-- The core estimate, for a strong solution on all of `Ω`. -/
-private theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_aux
+/-- Applying a continuous linear map-valued average to a vector is the average of the
+applications. -/
+theorem _root_.ContinuousLinearMap.setAverage_apply {E F : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {X : Type*} [MeasurableSpace X]
+    {μ : Measure X} {s : Set X} {H : X → E →L[ℝ] F} (hH : IntegrableOn H s μ) (v : E) :
+    (⨍ y in s, H y ∂μ) v = ⨍ y in s, H y v ∂μ := by
+  rw [setAverage_eq, setAverage_eq, smul_apply, ContinuousLinearMap.integral_apply hH]
+
+/-- The gradient of `∂ⱼu`, with `∂ⱼu` the weak line derivative of `u`, is the corresponding
+column of the Hessian, almost everywhere. -/
+private theorem ae_gradient_eq_iteratedGradient_apply
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {D : Fin (n + 1) → W1p volume Omega 2}
+    (hDg : ∀ i j, (fun x => ⟪W1p.gradient (D j) x, EuclideanSpace.single i 1⟫_ℝ)
+      =ᵐ[volume.restrict Omega]
+        fun x => ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1),
+          EuclideanSpace.single j 1⟫_ℝ) (k : Fin (n + 1)) :
+    (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume.restrict Omega]
+        fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1) := by
+  filter_upwards [ae_all_iff.2 fun i => hDg i k,
+    ae_all_iff.2 fun i => Wkp.inner_iteratedGradient_one_apply_ae_eq u
+      (EuclideanSpace.single i 1) (EuclideanSpace.single k 1)] with x h1 h2
+  refine ext_inner_right_basis (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis fun i => ?_
+  simp only [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
+  rw [h1 i, h2 i]
+
+/-- The square mean oscillation of the gradient of `∂ₖu` over a ball in `Ω` is that of the
+`k`-th column of the Hessian. -/
+private theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_eq
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {D : Fin (n + 1) → W1p volume Omega 2} (k : Fin (n + 1))
+    (hcol : (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume.restrict Omega]
+        fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1))
+    {t : ℝ} (ht : ball x₀ t ⊆ Omega) :
+    ∫ x in ball x₀ t, ‖W1p.gradient (D k) x - ⨍ y in ball x₀ t, W1p.gradient (D k) y‖ ^ 2 =
+      ∫ x in ball x₀ t, ‖(Wkp.iteratedGradient 1 u x -
+        ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2 := by
+  have hH : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) 2
+      (volume.restrict Omega) := Lp.memLp _
+  have hct := ae_restrict_of_ae_restrict_of_subset ht hcol
+  rw [average_congr hct, integral_congr_ae (hct.mono fun x hx => by rw [hx])]
+  simp only [sub_apply, ContinuousLinearMap.setAverage_apply
+    (hH.integrableOn_of_subset one_le_two ht measure_ball_lt_top.ne)]
+
+/-- The square mean oscillation of the Hessian over a ball in `Ω` is controlled by the sum of
+those of its columns, with the factor `n + 1`. -/
+private theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_sum
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {t : ℝ} (ht : ball x₀ t ⊆ Omega) :
+    ∫ x in ball x₀ t,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
+      (n + 1) * ∑ k, ∫ x in ball x₀ t, ‖(Wkp.iteratedGradient 1 u x -
+        ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2 := by
+  have hH : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) 2
+      (volume.restrict Omega) := Lp.memLp _
+  have hHk : ∀ k : Fin (n + 1),
+      MemLp (fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1) :
+        EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
+        (volume.restrict Omega) := fun k => by
+    have := (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1)))
+      (EuclideanSpace.single k 1)).comp_memLp' hH
+    exact this
+  have hint : ∀ k : Fin (n + 1), Integrable (fun x => ‖(Wkp.iteratedGradient 1 u x -
+      ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2)
+        (volume.restrict (ball x₀ t)) := fun k =>
+    (hHk k).integrableOn_norm_sub_sq_of_subset ht measure_ball_lt_top.ne
+      ((⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1))
+  rw [← integral_finsetSum _ fun k _ => hint k, ← integral_const_mul]
+  refine setIntegral_mono_on ?_ ((integrable_finsetSum _ fun k _ => hint k).const_mul _)
+    measurableSet_ball fun x _ => ?_
+  · exact hH.integrableOn_norm_sub_sq_of_subset ht measure_ball_lt_top.ne _
+  · simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one, EuclideanSpace.basisFun_apply] using
+      ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis _
+        (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)
+
+/-- The comparison estimate for one column of the Hessian of a strong solution on all of `Ω`. -/
+private theorem setIntegral_ball_norm_column_sub_setAverage_sq_le_aux
     {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
     (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
     {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
     (heq : ∀ᵐ x ∂(volume.restrict Omega), ∑ i, ∑ j, A i j *
       ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
         f x)
-    (hρ : 0 < ρ) (hρr : ρ ≤ r) :
-    ∫ x in ball x₀ ρ,
-        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
-      (n + 1) ^ 2 *
-        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) *
-            (∫ x in ball x₀ r,
-              ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
-          (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
-            ∫ x in ball x₀ r, f x ^ 2) := by
+    (hρ : 0 < ρ) (hρr : ρ ≤ r) (k : Fin (n + 1)) :
+    ∫ x in ball x₀ ρ, ‖(Wkp.iteratedGradient 1 u x -
+        ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2 ≤
+      4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) *
+          (∫ x in ball x₀ r,
+            ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
+        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+          ∫ x in ball x₀ r, f x ^ 2 := by
   obtain ⟨K₁, hK₁⟩ : ∃ K₁ : ℝ, K₁ = 4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) *
       (ρ / r) ^ (n + 3) := ⟨_, rfl⟩
   obtain ⟨K₂, hK₂⟩ : ∃ K₂ : ℝ,
@@ -152,14 +230,6 @@ private theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_aux
       (Measure.restrict_mono hball le_rfl)
     filter_upwards [heq] with x hx
     rw [Function.comp_apply, Matrix.contraction_apply, hx]
-  have hHk : ∀ k, MemLp (fun x => Wkp.iteratedGradient 1 u x (e k)) 2 (volume.restrict Omega) :=
-    fun k => (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1))) (e k)).comp_memLp' hH
-  -- Columns commute with averages over balls in `Ω`.
-  have havg : ∀ k {t : ℝ}, ball x₀ t ⊆ Omega →
-      (⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (e k) =
-        ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y (e k) := fun k {t} ht => by
-    rw [setAverage_eq, setAverage_eq, smul_apply, ContinuousLinearMap.integral_apply
-      (hH.integrableOn_of_subset one_le_two ht measure_ball_lt_top.ne)]
   -- The first derivatives `∂ₖu ∈ H¹(Ω)` solve `-div(A ∇(∂ₖu)) = -div(f eₖ)`, and their
   -- gradients are the columns of the Hessian.
   choose D hD₀ hDg using fun j =>
@@ -167,72 +237,57 @@ private theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_aux
   have hD : ∀ j, HasWeakLineDerivOn volume Omega (W1p.value (Wkp.lowerOrder 1 u))
       (W1p.value (D j)) (e j) := fun j => by
     simpa only [Wkp.value_succ 1 u, Wkp.value_one] using hD₀ j
-  have hcol : ∀ k, (W1p.gradient (D k) : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1))) =ᵐ[volume.restrict Omega]
-        fun x => Wkp.iteratedGradient 1 u x (e k) := fun k => by
-    filter_upwards [ae_all_iff.2 fun i => hDg k (e i),
-      ae_all_iff.2 fun i => Wkp.inner_iteratedGradient_one_apply_ae_eq u (e i) (e k)]
-      with x h1 h2
-    refine ext_inner_right_basis (EuclideanSpace.basisFun (Fin (n + 1)) ℝ).toBasis fun i => ?_
-    simp only [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply]
-    rw [h1 i, h2 i]
-  -- The square mean oscillation of a column, in terms of the Hessian.
-  have hψk : ∀ k {t : ℝ}, ball x₀ t ⊆ Omega →
-      ∫ x in ball x₀ t, ‖W1p.gradient (D k) x - ⨍ y in ball x₀ t, W1p.gradient (D k) y‖ ^ 2 =
-        ∫ x in ball x₀ t, ‖(Wkp.iteratedGradient 1 u x -
-          ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (e k)‖ ^ 2 := fun k {t} ht => by
-    have hct := ae_restrict_of_ae_restrict_of_subset ht (hcol k)
-    rw [average_congr hct, integral_congr_ae (hct.mono fun x hx => by rw [hx])]
-    simp only [sub_apply, havg k ht]
-  -- The comparison estimate for each column.
-  have hk : ∀ k,
-      ∫ x in ball x₀ ρ, ‖(Wkp.iteratedGradient 1 u x -
-          ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y) (e k)‖ ^ 2 ≤
-        K₁ * (∫ x in ball x₀ r,
+  have hcol := ae_gradient_eq_iteratedGradient_apply u (fun i j => hDg j (e i))
+  have hGc : MemLp (fun x => f x • e k - 0) 2 (volume.restrict (ball x₀ r)) := by
+    simpa only [sub_zero, Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply] using
+      (ContinuousLinearMap.toSpanSingleton ℝ (e k)).comp_memLp' hf
+  have h := setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq
+    hA (energyFormH1_eq_setIntegral_inner_smul_single u heq hD (fun i j => hDg j (e i)) k) hball
+    hGc hρ hρr
+  rw [setIntegral_ball_norm_gradient_sub_setAverage_sq_eq u k (hcol k) hρΩ,
+    setIntegral_ball_norm_gradient_sub_setAverage_sq_eq u k (hcol k) hball, ← hK₁, ← hK₂] at h
+  have hfe : ∫ x in ball x₀ r, ‖f x • e k - 0‖ ^ 2 = ∫ x in ball x₀ r, f x ^ 2 := by
+    simp [he, norm_smul]
+  rw [hfe] at h
+  refine h.trans (add_le_add_left (mul_le_mul_of_nonneg_left ?_ hK₁0) _)
+  have hHk : MemLp (fun x => Wkp.iteratedGradient 1 u x (e k)) 2 (volume.restrict Omega) :=
+    (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1))) (e k)).comp_memLp' hH
+  refine setIntegral_mono_on ?_ ?_ measurableSet_ball fun x _ => ?_
+  · simpa only [sub_apply, ContinuousLinearMap.setAverage_apply
+      (hH.integrableOn_of_subset one_le_two hball measure_ball_lt_top.ne)] using
+      hHk.integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne _
+  · exact hH.integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne _
+  · refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
+    exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp)
+
+/-- The core estimate, for a strong solution on all of `Ω`. -/
+private theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_aux
+    {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {f : EuclideanSpace ℝ (Fin (n + 1)) → ℝ} (hball : ball x₀ r ⊆ Omega)
+    (heq : ∀ᵐ x ∂(volume.restrict Omega), ∑ i, ∑ j, A i j *
+      ⟪Wkp.iteratedGradient 1 u x (EuclideanSpace.single i 1), EuclideanSpace.single j 1⟫_ℝ =
+        f x)
+    (hρ : 0 < ρ) (hρr : ρ ≤ r) :
+    ∫ x in ball x₀ ρ,
+        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
+      (n + 1) ^ 2 *
+        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) *
+            (∫ x in ball x₀ r,
+              ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
+          (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+            ∫ x in ball x₀ r, f x ^ 2) := by
+  have hρΩ : ball x₀ ρ ⊆ Omega := (ball_subset_ball hρr).trans hball
+  refine (setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_sum u hρΩ).trans ?_
+  calc (n + 1) * ∑ k, ∫ x in ball x₀ ρ, ‖(Wkp.iteratedGradient 1 u x -
+          ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2
+      ≤ (n + 1) * ∑ _k : Fin (n + 1), (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 *
+          √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) * (∫ x in ball x₀ r,
           ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
-          K₂ * ∫ x in ball x₀ r, f x ^ 2 := fun k => by
-    have hGc : MemLp (fun x => f x • e k - 0) 2 (volume.restrict (ball x₀ r)) := by
-      simpa only [sub_zero, Function.comp_def, ContinuousLinearMap.toSpanSingleton_apply] using
-        (ContinuousLinearMap.toSpanSingleton ℝ (e k)).comp_memLp' hf
-    have h := setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq
-      hA (energyFormH1_eq_setIntegral_inner_smul_single u heq hD (fun i j => hDg j (e i)) k) hball
-      hGc hρ hρr
-    rw [hψk k hρΩ, hψk k hball, ← hK₁, ← hK₂] at h
-    have hfe : ∫ x in ball x₀ r, ‖f x • e k - 0‖ ^ 2 = ∫ x in ball x₀ r, f x ^ 2 := by
-      simp [he, norm_smul]
-    rw [hfe] at h
-    refine h.trans (add_le_add_left (mul_le_mul_of_nonneg_left ?_ hK₁0) _)
-    refine setIntegral_mono_on ?_ ?_ measurableSet_ball fun x _ => ?_
-    · simpa only [sub_apply, havg k hball] using
-        (hHk k).integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne _
-    · exact hH.integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne _
-    · refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2
-      exact (ContinuousLinearMap.le_opNorm _ _).trans (by simp [he])
-  -- Sum over the columns.
-  calc ∫ x in ball x₀ ρ,
-        ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y‖ ^ 2
-      ≤ ∫ x in ball x₀ ρ, (n + 1) * ∑ k, ‖(Wkp.iteratedGradient 1 u x -
-          ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y) (e k)‖ ^ 2 := by
-        refine setIntegral_mono_on ?_ ?_ measurableSet_ball fun x _ => ?_
-        · exact hH.integrableOn_norm_sub_sq_of_subset hρΩ measure_ball_lt_top.ne _
-        · refine (integrable_finsetSum _ fun k _ => ?_).const_mul _
-          exact (hHk k).integrableOn_norm_sub_sq_of_subset hρΩ measure_ball_lt_top.ne
-            ((⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y) (e k))
-        · simpa only [Fintype.card_fin, Nat.cast_add, Nat.cast_one,
-            EuclideanSpace.basisFun_apply] using
-            ContinuousLinearMap.opNorm_sq_le_card_mul_sum_norm_apply_sq_orthonormalBasis _
-              (EuclideanSpace.basisFun (Fin (n + 1)) ℝ)
-    _ = (n + 1) * ∑ k, ∫ x in ball x₀ ρ, ‖(Wkp.iteratedGradient 1 u x -
-          ⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y) (e k)‖ ^ 2 := by
-        rw [integral_const_mul, integral_finsetSum]
-        intro k _
-        exact (hHk k).integrableOn_norm_sub_sq_of_subset hρΩ measure_ball_lt_top.ne
-          ((⨍ y in ball x₀ ρ, Wkp.iteratedGradient 1 u y) (e k))
-    _ ≤ (n + 1) * ∑ _k : Fin (n + 1), (K₁ * (∫ x in ball x₀ r,
-          ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ r, Wkp.iteratedGradient 1 u y‖ ^ 2) +
-          K₂ * ∫ x in ball x₀ r, f x ^ 2) := by
+          (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+            ∫ x in ball x₀ r, f x ^ 2) := by
         gcongr with k
-        exact hk k
+        exact setIntegral_ball_norm_column_sub_setAverage_sq_le_aux hA u hball heq hρ hρr k
     _ = _ := by
         rw [Finset.sum_const, Finset.card_univ, Fintype.card_fin, nsmul_eq_mul]
         push_cast
