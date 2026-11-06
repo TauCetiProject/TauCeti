@@ -115,12 +115,14 @@ theorem eq_levelCrossingTime_iff (hanti : StrictAnti fun t ↦ f (φ t x))
   exact apply_flow_levelCrossingTime h
 
 /-- A point lies on the level exactly when its crossing time is zero. -/
+@[simp]
 theorem levelCrossingTime_eq_zero_iff (hanti : StrictAnti fun t ↦ f (φ t x))
     (h : ∃ t, f (φ t x) = c) :
     levelCrossingTime φ f c x = 0 ↔ f x = c := by
   rw [eq_comm, eq_levelCrossingTime_iff hanti h, φ.map_zero_apply]
 
 /-- Flowing a point for time `t` subtracts `t` from its crossing time. -/
+@[simp]
 theorem levelCrossingTime_flow (hanti : StrictAnti fun t ↦ f (φ t x))
     (h : ∃ t, f (φ t x) = c) (t : ℝ) :
     levelCrossingTime φ f c (φ t x) = levelCrossingTime φ f c x - t := by
@@ -166,6 +168,12 @@ private def connectingTimeCoord (φ : _root_.Flow ℝ X) (f : X → ℝ) (p q : 
     (x : ↥(unstableSet φ p ∩ stableSet φ q)) : ℝ :=
   -levelCrossingTime φ f c x
 
+/- Not a `rfl` lemma, so that `simp` does not unfold `connectingTimeCoord` inside the dependent
+arguments of `Flow.timeSliceHomeomorph`, which would block its projection lemmas. -/
+private theorem connectingTimeCoord_apply (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
+    connectingTimeCoord φ f p q c x = -levelCrossingTime φ f c x := by
+  rw [connectingTimeCoord]
+
 include hf hanti hex in
 private theorem continuous_connectingTimeCoord : Continuous (connectingTimeCoord φ f p q c) :=
   (continuousOn_iff_continuous_domRestrict.1 (continuousOn_levelCrossingTime hf hanti hex)).neg
@@ -210,24 +218,21 @@ def connectingHomeomorphProdLevelSlice :
 @[simp]
 theorem connectingHomeomorphProdLevelSlice_fst (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
     (connectingHomeomorphProdLevelSlice hf hanti hex x).1 = -levelCrossingTime φ f c x := by
-  rw [connectingHomeomorphProdLevelSlice, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
-    Prod.map_fst, Homeomorph.refl_apply, timeSliceHomeomorph_fst, connectingTimeCoord, id_eq]
+  simp [connectingHomeomorphProdLevelSlice, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
+    connectingTimeCoord_apply]
 
 @[simp]
 theorem connectingHomeomorphProdLevelSlice_snd_coe (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
     ((connectingHomeomorphProdLevelSlice hf hanti hex x).2 : X) =
       φ (levelCrossingTime φ f c x) x := by
-  rw [connectingHomeomorphProdLevelSlice, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
-    Prod.map_snd, coe_zeroCrossingTimeHomeomorphLevelSlice, timeSliceHomeomorph_snd_coe,
-    coe_restrict_apply, connectingTimeCoord, neg_neg]
+  simp [connectingHomeomorphProdLevelSlice, Homeomorph.trans_apply, Homeomorph.coe_prodCongr,
+    coe_zeroCrossingTimeHomeomorphLevelSlice, connectingTimeCoord_apply]
 
 @[simp]
 theorem connectingHomeomorphProdLevelSlice_symm_apply
     (tx : ℝ × ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
     ((connectingHomeomorphProdLevelSlice hf hanti hex).symm tx : X) = φ tx.1 tx.2.1 := by
-  rw [connectingHomeomorphProdLevelSlice, Homeomorph.symm_trans_apply, Homeomorph.prodCongr_symm,
-    Homeomorph.coe_prodCongr, timeSliceHomeomorph_symm_apply]
-  rfl
+  simp [connectingHomeomorphProdLevelSlice, zeroCrossingTimeHomeomorphLevelSlice]
 
 /-- In product coordinates time translation changes only the real coordinate. -/
 @[simp]
@@ -270,9 +275,11 @@ private theorem exists_homeomorph_levelSlice :
   have hs (x : ↥(unstableSet φ p ∩ stableSet φ q)) :
       (s x : X) = φ (levelCrossingTime φ f c x) x :=
     connectingHomeomorphProdLevelSlice_snd_coe hf hanti hex x
+  have hzero (x : ↥((unstableSet φ p ∩ stableSet φ q) ∩ {x | f x = c})) :
+      levelCrossingTime φ f c (i x) = 0 :=
+    (levelCrossingTime_eq_zero_iff (hanti _ x.2.1) (hex _ x.2.1)).2 x.2.2
   have hright : Function.RightInverse i s := fun x ↦ Subtype.ext <| by
-    rw [hs, show levelCrossingTime φ f c (i x) = 0 from
-      (levelCrossingTime_eq_zero_iff (hanti _ x.2.1) (hex _ x.2.1)).2 x.2.2, φ.map_zero_apply]
+    rw [hs, hzero, φ.map_zero_apply]
     rfl
   have hrel (x y : ↥(unstableSet φ p ∩ stableSet φ q)) :
       connectingOrbitSetoid φ p q x y ↔ Setoid.ker s x y := by

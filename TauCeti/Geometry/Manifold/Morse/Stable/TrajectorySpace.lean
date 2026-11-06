@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Dynamics.Flow.LevelCrossing
-public import TauCeti.Geometry.Manifold.Morse.Boundary.Basic
 public import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 public import TauCeti.Geometry.Manifold.PullbackGroupoid
 
@@ -28,10 +27,11 @@ Since `f` strictly decreases along every such trajectory, the general results of
   (`TauCeti.IsAdaptedPseudoGradient.exists_orbitQuotient_homeomorph_levelSlice`);
 * under the Morse–Smale condition it is a smooth manifold of dimension `ind a - ind b - 1`, with
   charts transported from a level slice
-  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isManifold_orbitQuotient`);
-* it has as many points as the middle-level slice counted by the mod-two Morse boundary, so the
-  boundary coefficient is the number of unparametrized trajectories modulo two
-  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundaryCoeff_eq_natCard`).
+  (`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.exists_isManifold_orbitQuotient`).
+
+`TauCeti.Geometry.Manifold.Morse.Boundary.Basic` uses the homeomorphism with the middle-level slice
+to identify the mod-two Morse boundary coefficient with the number of unparametrized trajectories
+modulo two.
 
 ## References
 
@@ -92,32 +92,6 @@ theorem exists_orbitQuotient_homeomorph_levelSlice (hf : MDifferentiable 𝓘(�
     fun _ hy ↦ (hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy hc.1
       hc.2).exists⟩
 
-/-- **Counting unparametrized trajectories.** For distinct points `p` and `q`, the unparametrized
-trajectories from `p` to `q` are as many as the points of the middle-level slice
-`TauCeti.IsAdaptedPseudoGradient.morseTrajectorySlice`. -/
-theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
-    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p q : M} (hpq : p ≠ q) :
-    Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) =
-      (hX.morseTrajectorySlice p q).ncard := by
-  have hslice : hX.morseTrajectorySlice p q =
-      hX.flow.unstableSet p ∩ hX.flow.stableSet q ∩ {x | f x = (f p + f q) / 2} := by
-    ext
-    simp [and_assoc]
-  rw [hslice]
-  by_cases hlt : f q < f p
-  · obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hf hpq
-      (c := (f p + f q) / 2) ⟨by linarith, by linarith⟩
-    exact (Nat.card_congr e.toEquiv).trans (Nat.card_coe_set_eq _)
-  · -- Without a drop in value there are no trajectories at all.
-    have hC : hX.flow.unstableSet p ∩ hX.flow.stableSet q = ∅ :=
-      eq_empty_of_forall_notMem fun y hy ↦
-        hlt ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).1.trans
-          (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).2)
-    have : IsEmpty ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet q) := by
-      rw [hC]
-      infer_instance
-    rw [Nat.card_of_isEmpty, hC, empty_inter, ncard_empty]
-
 namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
@@ -145,18 +119,6 @@ theorem exists_isManifold_orbitQuotient (ha : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f a
   obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hmd hab hc
   let := C
   exact ⟨L, hL, e.pullbackChartedSpace, Homeomorph.pullback_isManifold _ _ e⟩
-
-/-- **The Morse boundary counts unparametrized trajectories.** For critical points of consecutive
-index, the coefficient of `q` in the mod-two Morse boundary of `p` is the number of unparametrized
-trajectories from `p` to `q`, modulo two. -/
-theorem morseBoundaryCoeff_eq_natCard {p q : criticalPoints 𝓘(ℝ, E) f}
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
-    h.morseBoundaryCoeff hf p q =
-      (Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) : ZMod 2) := by
-  have hpq : (p : M) ≠ q := fun hpq ↦ by simp [hpq] at hind
-  rw [h.morseBoundaryCoeff_eq_ncard hf hind,
-    hX.natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
-      (hf.contMDiff.mdifferentiable (by simp)) hpq]
 
 end IsMorseSmale
 
