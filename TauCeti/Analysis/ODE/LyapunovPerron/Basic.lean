@@ -13,7 +13,6 @@ public import Mathlib.Topology.MetricSpace.Contracting
 -- Private: the exponential integrals, the splitting of exponentials, and the product rule are used
 -- only inside the proofs below.
 import Mathlib.Analysis.Calculus.Deriv.Mul
-import Mathlib.Analysis.ODE.ExistUnique
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import TauCeti.Analysis.Normed.Operator.Exponential
 import TauCeti.Topology.ContinuousMap.Bounded.Normed
@@ -124,21 +123,6 @@ def lyapunovPerronIntegral (A P : X →L[ℝ] X) (g : ℝ → X) (t : ℝ) : X :
 variable [CompleteSpace X]
 
 variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X} {t : ℝ}
-
-/-- A continuous function on `[0, ∞)` with right derivative `A (z t)` at every `t ≥ 0` is the linear
-flow `t ↦ exp (t • A) (z 0)` of its initial value, by uniqueness for the linear equation. -/
-theorem eq_exp_smul_apply_of_hasDerivWithinAt {z : ℝ → X}
-    (hz_cont : ContinuousOn z (Ici 0))
-    (hz : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt z (A (z t)) (Ici t) t)
-    (ht : 0 ≤ t) :
-    z t = exp (t • A) (z 0) :=
-  ODE_solution_unique_of_mem_Icc_right (v := fun _ x ↦ A x) (s := fun _ ↦ univ)
-    (K := ‖A‖₊) (fun _ _ ↦ A.lipschitzWith.lipschitzOnWith)
-    (hz_cont.mono Icc_subset_Ici_self) (fun t ht ↦ hz t ht.1) (fun _ _ ↦ mem_univ _)
-    (((differentiable_exp_smul_const ℝ A).continuous.clm_apply continuous_const).continuousOn)
-    (fun t _ ↦ ((hasDerivAt_exp_smul_const' A t).clm_apply
-      (hasDerivAt_const t (z 0))).hasDerivWithinAt.congr_deriv (by simp [mul_apply_eq_comp]))
-    (fun _ _ ↦ mem_univ _) (by simp) ⟨ht, le_rfl⟩
 
 section Estimates
 
