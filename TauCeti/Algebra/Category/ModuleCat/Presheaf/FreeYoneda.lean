@@ -9,13 +9,17 @@ public import Mathlib.Algebra.Category.ModuleCat.Presheaf.Generator
 public import Mathlib.Algebra.Category.ModuleCat.Presheaf.OfCommRing
 
 /-!
-# Free presheaves of modules on representable presheaves
+# Basis elements of free presheaves of modules, and the representable case
 
-Let `R` be a presheaf of rings on a category `C` and let `U` be an object of `C`. The free
-presheaf of modules `PresheafOfModules.freeObj (yoneda.obj U)` on the presheaf of sets represented
-by `U` has, over `V`, the free module on the morphisms `V ⟶ U`, and Mathlib's
-`PresheafOfModules.freeYonedaEquiv` identifies morphisms out of it with sections over `U`. This
-file records how its basis elements behave.
+Let `R` be a presheaf of rings on a category `C`. For a presheaf of sets `F` on `C`, the free
+presheaf of modules `PresheafOfModules.freeObj F` has, over `X`, the free module on `F.obj X`.
+This file first records how its restriction maps act on basis elements, for any `F`.
+
+It then specializes to the presheaf of sets `yoneda.obj U` represented by an object `U` of `C`.
+The free presheaf of modules on it has, over `V`, the free module on the morphisms `V ⟶ U`, and
+Mathlib's `PresheafOfModules.freeYonedaEquiv` identifies morphisms out of it with sections over
+`U`. The remaining results treat this representable case: restriction of its basis elements,
+and the values and composites of the morphisms attached to sections.
 
 ## Main declarations
 
