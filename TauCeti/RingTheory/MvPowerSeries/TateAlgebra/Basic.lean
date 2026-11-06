@@ -804,21 +804,33 @@ noncomputable instance instNormedAlgebraIsRestrictedSubring :
 end NormedField
 
 /-- A coefficientwise norm bound gives the same Gauss-norm bound for restricted series over
-possibly different coefficient rings, at the same positive polyradii. -/
+possibly different coefficient rings, at the same positive polyradii. The constant `K` may be
+any real number: if it is negative, all coefficients vanish. -/
 theorem norm_le_mul_of_norm_coeff_le {σ R S : Type*}
     [NormedRing R] [IsUltrametricDist R] [NormedRing S] [IsUltrametricDist S]
     {c : σ → ℝ} [∀ i, Fact (0 < c i)]
     {f : IsRestricted.subring (R := R) c} {g : IsRestricted.subring (R := S) c}
-    {K : ℝ} (hK : 0 ≤ K)
+    {K : ℝ}
     (h : ∀ t, ‖coeff t (f : MvPowerSeries σ R)‖ ≤ K * ‖coeff t (g : MvPowerSeries σ S)‖) :
     ‖f‖ ≤ K * ‖g‖ := by
-  refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
-  calc
-    ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
-        K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
-      mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
-    _ ≤ K * ‖g‖ := by
-      rw [mul_assoc]
-      exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
+  rcases le_or_gt 0 K with hK | hK
+  · refine (norm_le_iff (mul_nonneg hK (norm_nonneg g))).mpr fun t ↦ ?_
+    calc
+      ‖coeff t (f : MvPowerSeries σ R)‖ * t.prod (c · ^ ·) ≤
+          K * ‖coeff t (g : MvPowerSeries σ S)‖ * t.prod (c · ^ ·) :=
+        mul_le_mul_of_nonneg_right (h t) (prod_pow_pos t).le
+      _ ≤ K * ‖g‖ := by
+        rw [mul_assoc]
+        exact mul_le_mul_of_nonneg_left (norm_coeff_mul_prod_le g t) hK
+  · -- a negative constant forces every coefficient of `f` and `g` to vanish
+    have hg t : ‖coeff t (g : MvPowerSeries σ S)‖ = 0 := by
+      nlinarith [h t, norm_nonneg (coeff t (f : MvPowerSeries σ R)),
+        norm_nonneg (coeff t (g : MvPowerSeries σ S))]
+    have hf t : ‖coeff t (f : MvPowerSeries σ R)‖ = 0 :=
+      le_antisymm (by simpa [hg t] using h t) (norm_nonneg _)
+    have hf0 : ‖f‖ ≤ 0 := (norm_le_iff le_rfl).mpr fun t ↦ by simp [hf t]
+    have hg0 : ‖g‖ ≤ 0 := (norm_le_iff le_rfl).mpr fun t ↦ by simp [hg t]
+    rw [le_antisymm hg0 (norm_nonneg g), mul_zero]
+    exact hf0
 
 end TauCeti.MvPowerSeries
