@@ -31,6 +31,8 @@ Its matrix in `b` is then upper triangular, so its determinant in `b` is the pro
   product of its diagonal coefficients.
 * `Module.Basis.det_pos_of_sub_smul_mem_span`: over an ordered ring, a triangular family with
   positive diagonal coefficients has positive determinant.
+* `Module.Basis.det_pos_of_sub_smul_mem_span_image_fst_lt`: the same for a family indexed by a
+  product `ι × κ`, triangular with respect to the order on the first factor only.
 -/
 
 public section
@@ -86,5 +88,26 @@ theorem det_pos_of_sub_smul_mem_span [PartialOrder R] [IsStrictOrderedRing R] (b
   exact Finset.prod_pos fun i _ ↦ hc i
 
 end Det
+
+section Prod
+
+variable {ι κ R M : Type*} [CommRing R] [AddCommGroup M] [Module R M] [Fintype ι] [Fintype κ]
+  [LinearOrder ι] [LinearOrder κ] [PartialOrder R] [IsStrictOrderedRing R]
+
+/-- Over an ordered ring, a family `v` indexed by `ι × κ` that is triangular with respect to a
+basis `b` with positive diagonal coefficients `c p`, in the sense that each `v p - c p • b p` is a
+combination of the `b r` with `r.1 < p.1`, has positive determinant in `b`. This is
+`Module.Basis.det_pos_of_sub_smul_mem_span` for the lexicographic order on the index type. -/
+theorem det_pos_of_sub_smul_mem_span_image_fst_lt (b : Basis (ι × κ) R M) {v : ι × κ → M}
+    {c : ι × κ → R} (hc : ∀ p, 0 < c p)
+    (hv : ∀ p, v p - c p • b p ∈ span R (b '' {r | r.1 < p.1})) : 0 < b.det v := by
+  classical
+  rw [show b.det v = (b.reindex toLex).det (v ∘ ofLex) by rw [Basis.det_reindex]; rfl]
+  refine (b.reindex toLex).det_pos_of_sub_smul_mem_span (fun p ↦ hc (ofLex p)) fun p ↦ ?_
+  refine span_mono ?_ (by simpa using hv (ofLex p))
+  rintro _ ⟨q, hq, rfl⟩
+  exact ⟨toLex q, Prod.Lex.toLex_lt_toLex.2 (.inl hq), by simp⟩
+
+end Prod
 
 end Module.Basis
