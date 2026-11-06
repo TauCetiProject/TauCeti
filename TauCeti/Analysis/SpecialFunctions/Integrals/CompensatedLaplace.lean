@@ -9,11 +9,12 @@ public import TauCeti.Analysis.SpecialFunctions.Beta
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 
 /-!
-# Sine-compensated Laplace integrals
+# Mellin integrals of sine-compensated Laplace transforms
 
-The kernel `exp (-a * x) - 1 + a * sin x` vanishes quadratically at zero.
-Its power-weighted integral supplies the Laplace exponent of a totally skewed stable law.
-Gamma mixtures reduce the calculation to Mellin integrals of rational functions.
+Gamma mixtures reduce the power-weighted integral of the sine-compensated kernel
+`exp (-a * x) - 1 + a * sin x` to Mellin integrals of its rational Laplace transform.
+This file evaluates those Mellin integrals, which supply the Laplace exponent of a
+totally skewed stable law.
 -/
 
 public section
@@ -24,38 +25,6 @@ open MeasureTheory Real Set Filter
 open scoped Topology
 
 namespace TauCeti
-
-/-- The Laplace transform of the real sine-compensated exponential kernel, for
-`0 < s` and `0 < s + a`. -/
-theorem integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin {s a : ℝ}
-    (hs : 0 < s) (ha : 0 < s + a) :
-    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * (exp (-a * x) - 1 + a * sin x) =
-      (s + a)⁻¹ - s⁻¹ + a / (1 + s ^ 2) := by
-  have hC : (-s + Complex.I : ℂ).re < 0 := by simpa using hs
-  have hformC (x : ℝ) : (Complex.exp ((-s + Complex.I) * x)).im =
-      exp (-s * x) * sin x := by simp [Complex.exp_im]
-  have hi : IntegrableOn (fun x : ℝ ↦ exp (-s * x) * sin x) (Ioi 0) := by
-    simpa only [RCLike.im_to_complex, hformC] using
-      (integrableOn_exp_mul_complex_Ioi hC 0).im
-  have heq : ∫ x in Ioi (0 : ℝ), exp (-s * x) * sin x = (1 + s ^ 2)⁻¹ := by
-    have h := congrArg Complex.im (integral_exp_mul_complex_Ioi hC 0)
-    rw [← RCLike.im_to_complex, ← integral_im (integrableOn_exp_mul_complex_Ioi hC 0)] at h
-    simp only [RCLike.im_to_complex, hformC] at h
-    simpa [Complex.div_im, Complex.normSq_apply, pow_two, div_eq_mul_inv, add_comm] using h
-  have hexp := integrableOn_exp_mul_Ioi (a := -(s + a)) (by linarith) 0
-  have hbase := integrableOn_exp_mul_Ioi (a := -s) (by linarith) 0
-  have hform (x : ℝ) : exp (-(x * s)) * (exp (-a * x) - 1 + a * sin x) =
-      exp (-(s + a) * x) - exp (-s * x) + a * (exp (-s * x) * sin x) := by
-    have he : -(x * s) + -a * x = -(s + a) * x := by ring
-    rw [mul_add, mul_sub, ← exp_add, he]
-    simp only [neg_mul, mul_comm x s]
-    ring
-  rw [setIntegral_congr_fun measurableSet_Ioi (fun x _ ↦ hform x),
-    integral_add (hexp.sub' hbase) (hi.const_mul a), integral_sub hexp hbase,
-    integral_const_mul, integral_exp_mul_Ioi (by linarith : -(s + a) < 0) 0,
-    integral_exp_mul_Ioi (by linarith : -s < 0) 0, heq]
-  simp only [mul_zero, exp_zero, neg_div, div_neg, one_div, neg_neg]
-  ring
 
 /-- The Mellin integral of the rational sine-compensated Laplace transform, away from
 exponent one. The cancellations at zero and infinity permit every `0 < α < 2`. -/
