@@ -74,6 +74,68 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {Ω : Opens E} {ρ : Measure Ω} {k : Ω → ℝ≥0∞} {h : Ω → ℝ}
 
+omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- Shrinking open neighbourhoods of a compact set `K` inside a compact set `L` whose interior
+contains `K`, with intersection `K`. -/
+private theorem exists_antitone_open_iInter_eq {K L : Set Ω} (hK : IsCompact K)
+    (hKL : K ⊆ interior L) :
+    ∃ W : ℕ → Set Ω, (∀ n, IsOpen (W n)) ∧ (∀ n, W n ⊆ L) ∧ (∀ n, K ⊆ W n) ∧ Antitone W ∧
+      ⋂ n, W n = K := by
+  set W : ℕ → Set Ω := fun n => interior L ∩ thickening (1 / ((n : ℝ) + 1)) K
+  have hKW (n : ℕ) : K ⊆ W n := subset_inter hKL (self_subset_thickening (by positivity) K)
+  refine ⟨W, fun n => isOpen_interior.inter isOpen_thickening,
+    fun n => inter_subset_left.trans interior_subset, hKW, fun m n hmn =>
+    inter_subset_inter_right _ (thickening_mono (one_div_le_one_div_of_le (by positivity)
+      (by exact_mod_cast Nat.add_le_add_right hmn 1)) K), ?_⟩
+  refine Subset.antisymm (fun x hx => ?_) (subset_iInter hKW)
+  rw [← hK.isClosed.closure_eq, Metric.mem_closure_iff]
+  intro ε hε
+  obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
+  obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 (mem_iInter.1 hx n).2
+  exact ⟨y, hy, hxy.trans hn⟩
+
+omit [MeasurableSpace E] [BorelSpace E] in
+/-- A smooth cutoff with values in `[0, 1]`, equal to one on a compact set `K` and supported in an
+open set `W ⊇ K`. -/
+private theorem exists_testFunction_cutoff {K W : Set Ω} (hK : IsCompact K) (hW : IsOpen W)
+    (hKW : K ⊆ W) :
+    ∃ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) ∧ (∀ x, ψ x ≤ 1) ∧ (∀ x ∈ K, ψ x = 1) ∧
+      tsupport ψ ⊆ (↑) '' W := by
+  have := Ω.isOpen.locallyCompactSpace
+  obtain ⟨ψ, hψ, hrange, hone, hcpt, hsupp⟩ :=
+    (hK.image continuous_subtype_val).exists_contDiff_cutoff
+      (Ω.isOpen.isOpenMap_subtype_val _ hW) (image_mono hKW)
+  exact ⟨⟨ψ, hψ, hcpt, hsupp.trans (Subtype.coe_image_subset _ _)⟩,
+    fun x => (hrange ⟨x, rfl⟩).1, fun x => (hrange ⟨x, rfl⟩).2,
+    fun x hx => interior_subset (hone ⟨x, hx, rfl⟩), hsupp⟩
+
+/-- The pairings of `h` with cutoffs `ψ n` supported in shrinking neighbourhoods `W n ⊆ L` of a
+compact set `K`, equal to one on `K`, converge to the integral of `h` over `K`, by dominated
+convergence. -/
+private theorem tendsto_integral_testFunction_mul {K L : Set Ω} {W : ℕ → Set Ω}
+    {ψ : ℕ → 𝓓(Ω, ℝ)} (hh : LocallyIntegrable h ρ) (hK : IsCompact K) (hL : IsCompact L)
+    (hWL : ∀ n, W n ⊆ L) (hWanti : Antitone W) (hWK : ⋂ n, W n = K)
+    (hψ0 : ∀ n x, 0 ≤ ψ n x) (hψ1 : ∀ n x, ψ n x ≤ 1) (hψK : ∀ n, ∀ x ∈ K, ψ n x = 1)
+    (hψ_zero : ∀ n (x : Ω), x ∉ W n → ψ n x = 0) :
+    Tendsto (fun n => ∫ x, ψ n x * h x ∂ρ) atTop (𝓝 (∫ x in K, h x ∂ρ)) := by
+  rw [← integral_indicator hK.measurableSet]
+  refine tendsto_integral_of_dominated_convergence (L.indicator fun x => ‖h x‖)
+    (fun n => ((ψ n).continuous.comp continuous_subtype_val).aestronglyMeasurable.mul
+      hh.aestronglyMeasurable)
+    ((integrable_indicator_iff hL.measurableSet).2 (hh.integrableOn_isCompact hL).norm)
+    (fun n => ae_of_all _ fun x => ?_) (ae_of_all _ fun x => ?_)
+  · by_cases hx : x ∈ W n
+    · rw [indicator_of_mem (hWL n hx), norm_mul]
+      exact mul_le_of_le_one_left (norm_nonneg _)
+        (by simpa [abs_of_nonneg (hψ0 n x)] using hψ1 n x)
+    · simpa [hψ_zero n x hx] using indicator_nonneg (fun y _ => norm_nonneg (h y)) x
+  · by_cases hx : x ∈ K
+    · simp [hψK _ x hx, indicator_of_mem hx]
+    · obtain ⟨n, hn⟩ : ∃ n, x ∉ W n := by simpa [← hWK] using hx
+      rw [indicator_of_notMem hx]
+      exact tendsto_const_nhds.congr' <| eventually_atTop.2
+        ⟨n, fun m hm => by simp [hψ_zero m x fun h => hn (hWanti hm h)]⟩
+
 /-- The bound on pairings with nonnegative test functions bounds the integral of `h` over every
 compact set. -/
 private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
@@ -83,61 +145,20 @@ private theorem enorm_setIntegral_isCompact_le (hh : LocallyIntegrable h ρ)
     {K : Set Ω} (hK : IsCompact K) : ‖∫ x in K, h x ∂ρ‖ₑ ≤ ∫⁻ x in K, k x ∂ρ := by
   have := Ω.isOpen.locallyCompactSpace
   obtain ⟨L, hL, hKL⟩ := exists_compact_superset hK
-  -- Shrinking open neighbourhoods of `K` inside the compact set `L`.
-  set W : ℕ → Set Ω := fun n => interior L ∩ thickening (1 / ((n : ℝ) + 1)) K
-  have hWo (n : ℕ) : IsOpen (W n) := isOpen_interior.inter isOpen_thickening
-  have hKW (n : ℕ) : K ⊆ W n := subset_inter hKL (self_subset_thickening (by positivity) K)
-  have hWanti : Antitone W := fun m n hmn =>
-    inter_subset_inter_right _ (thickening_mono (one_div_le_one_div_of_le (by positivity)
-      (by exact_mod_cast Nat.add_le_add_right hmn 1)) K)
-  have hWK : ⋂ n, W n = K := by
-    refine Subset.antisymm (fun x hx => ?_) (subset_iInter hKW)
-    rw [← hK.isClosed.closure_eq, Metric.mem_closure_iff]
-    intro ε hε
-    obtain ⟨n, hn⟩ := exists_nat_one_div_lt hε
-    obtain ⟨y, hy, hxy⟩ := mem_thickening_iff.1 (mem_iInter.1 hx n).2
-    exact ⟨y, hy, hxy.trans hn⟩
-  -- Smooth cutoffs with values in `[0, 1]`, equal to one on `K` and supported in `W n`.
-  have hcut (n : ℕ) : ∃ ψ : 𝓓(Ω, ℝ), (∀ x, 0 ≤ ψ x) ∧ (∀ x, ψ x ≤ 1) ∧ (∀ x ∈ K, ψ x = 1) ∧
-      tsupport ψ ⊆ (↑) '' W n := by
-    obtain ⟨ψ, hψ, hrange, hone, hcpt, hsupp⟩ :=
-      (hK.image continuous_subtype_val).exists_contDiff_cutoff
-        (Ω.isOpen.isOpenMap_subtype_val _ (hWo n)) (image_mono (hKW n))
-    exact ⟨⟨ψ, hψ, hcpt, hsupp.trans (Subtype.coe_image_subset _ _)⟩,
-      fun x => (hrange ⟨x, rfl⟩).1, fun x => (hrange ⟨x, rfl⟩).2,
-      fun x hx => interior_subset (hone ⟨x, hx, rfl⟩), hsupp⟩
-  choose ψ hψ0 hψ1 hψK hψW using hcut
+  obtain ⟨W, hWo, hWL, hKW, hWanti, hWK⟩ := exists_antitone_open_iInter_eq hK hKL
+  choose ψ hψ0 hψ1 hψK hψW using fun n => exists_testFunction_cutoff hK (hWo n) (hKW n)
   have hψ_zero (n : ℕ) (x : Ω) (hx : x ∉ W n) : ψ n x = 0 :=
     image_eq_zero_of_notMem_tsupport fun hx' => hx <| by
       obtain ⟨y, hy, hyx⟩ := hψW n hx'
       rwa [← Subtype.val_injective hyx]
-  -- The pairings with `ψ n` converge to the integral over `K`, by dominated convergence.
-  have hlim : Tendsto (fun n => ∫ x, ψ n x * h x ∂ρ) atTop (𝓝 (∫ x in K, h x ∂ρ)) := by
-    rw [← integral_indicator hK.measurableSet]
-    refine tendsto_integral_of_dominated_convergence (L.indicator fun x => ‖h x‖)
-      (fun n => ((ψ n).continuous.comp continuous_subtype_val).aestronglyMeasurable.mul
-        hh.aestronglyMeasurable)
-      ((integrable_indicator_iff hL.measurableSet).2 (hh.integrableOn_isCompact hL).norm)
-      (fun n => ae_of_all _ fun x => ?_) (ae_of_all _ fun x => ?_)
-    · by_cases hx : x ∈ W n
-      · rw [indicator_of_mem (interior_subset hx.1), norm_mul]
-        exact mul_le_of_le_one_left (norm_nonneg _)
-          (by simpa [abs_of_nonneg (hψ0 n x)] using hψ1 n x)
-      · simpa [hψ_zero n x hx] using indicator_nonneg (fun y _ => norm_nonneg (h y)) x
-    · by_cases hx : x ∈ K
-      · simp [hψK _ x hx, indicator_of_mem hx]
-      · obtain ⟨n, hn⟩ : ∃ n, x ∉ W n := by simpa [← hWK] using hx
-        rw [indicator_of_notMem hx]
-        exact tendsto_const_nhds.congr' <| eventually_atTop.2
-          ⟨n, fun m hm => by simp [hψ_zero m x fun h => hn (hWanti hm h)]⟩
+  have hlim := tendsto_integral_testFunction_mul hh hK hL hWL hWanti hWK hψ0 hψ1 hψK hψ_zero
   -- The weights of the neighbourhoods converge to the weight of `K`, by continuity from above.
   have hlimk : Tendsto (fun n => ∫⁻ x in W n, k x ∂ρ) atTop (𝓝 (∫⁻ x in K, k x ∂ρ)) := by
     have h := tendsto_measure_iInter_atTop (μ := ρ.withDensity k)
       (fun n => (hWo n).measurableSet.nullMeasurableSet) hWanti
       ⟨0, by
         rw [withDensity_apply _ (hWo 0).measurableSet]
-        exact ne_top_of_le_ne_top (hk L hL)
-          (lintegral_mono_set (interior_subset.trans' inter_subset_left))⟩
+        exact ne_top_of_le_ne_top (hk L hL) (lintegral_mono_set (hWL 0))⟩
     rw [hWK, withDensity_apply _ hK.measurableSet] at h
     refine h.congr fun n => ?_
     simp [withDensity_apply _ (hWo n).measurableSet]
