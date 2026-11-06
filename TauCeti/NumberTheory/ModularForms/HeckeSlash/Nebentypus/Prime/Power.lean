@@ -71,7 +71,7 @@ indices `p^j m` with `m` prime to `p`, where the divisor sum is the `min` sum ab
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups
 

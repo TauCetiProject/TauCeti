@@ -23,6 +23,7 @@ import Mathlib.Topology.Algebra.Group.Basic
 
 This file records generic instances for actions on a topological space that typeclass search
 cannot otherwise reach, and continuity of maps equal to fixed-element scalar actions.
+A trivial action, fixing every point, is jointly continuous for any topologies.
 A continuous monoid action on a Hausdorff space has closed fixed sets, and a group action with
 continuous orbit maps on a `T₁` space has closed point stabilisers.
 A submonoid, and hence a subgroup, inherits `ContinuousConstSMul` from
@@ -37,6 +38,7 @@ open embedding.
 
 ## Main results
 
+* `TauCeti.continuousSMul_of_forall_smul_eq_self`: a trivial action is jointly continuous.
 * `Submonoid.continuousConstSMul` and `TauCeti.Subgroup.continuousConstSMul`: continuity
   in the point is inherited by a submonoid, hence by a subgroup.
 * `Continuous.properlyDiscontinuousSMul`: proper discontinuity pulls back along a continuous
@@ -74,6 +76,12 @@ theorem continuous_of_eq_smul {G M : Type*} [TopologicalSpace M] [SMul G M]
     [ContinuousConstSMul G M] (g : G) {f : M → M} (hf : ∀ m : M, f m = g • m) :
     Continuous f :=
   (continuous_const_smul g).congr fun m => (hf m).symm
+
+/-- A trivial action, with `g • m = m` for all `g` and `m`, is jointly continuous for any
+topologies on the scalars and on the space acted on. -/
+theorem continuousSMul_of_forall_smul_eq_self {G M : Type*} [TopologicalSpace G]
+    [TopologicalSpace M] [SMul G M] (h : ∀ (g : G) (m : M), g • m = m) : ContinuousSMul G M :=
+  ⟨continuous_snd.congr fun p ↦ (h p.1 p.2).symm⟩
 
 /-- The fixed set of an element acting continuously on a Hausdorff space is closed. -/
 theorem isClosed_fixedBy {M X : Type*} [Monoid M] [MulAction M X] [TopologicalSpace X]
