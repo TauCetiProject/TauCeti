@@ -395,7 +395,7 @@ open TauCeti
 
 section Free
 
-variable {k : Type w} [Ring k] (M : ModuleCat.{w} k) {X : TopCat.{w}}
+variable {k : Type v} [Ring k] (M : ModuleCat.{w} k) {X : TopCat.{w}}
 
 /-- A point of `X` splits the zeroth singular homology with coefficients in a module as the
 product of the reduced zeroth homology and the coefficient module. -/
