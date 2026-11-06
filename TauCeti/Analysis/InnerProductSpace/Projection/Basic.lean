@@ -283,6 +283,21 @@ theorem adjoint_orthogonalProjectionOnto_toLinearMap [FiniteDimensional 𝕜 E] 
     LinearMap.adjoint U.orthogonalProjectionOnto.toLinearMap = U.subtype := by
   rw [← U.adjoint_subtype, LinearMap.adjoint_adjoint]
 
+/-- The adjoint of the cross-projection `U → V` is the cross-projection `V → U`. -/
+theorem adjoint_orthogonalProjectionOnto_comp_subtype [FiniteDimensional 𝕜 E] :
+    LinearMap.adjoint (V.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype) =
+      U.orthogonalProjectionOnto.toLinearMap ∘ₗ V.subtype := by
+  simp only [LinearMap.adjoint_comp, adjoint_subtype, adjoint_orthogonalProjectionOnto_toLinearMap]
+
+/-- The adjoint of the compression `P_V S |_U` of a symmetric operator `S` is the compression
+`P_U S |_V`. -/
+theorem adjoint_orthogonalProjectionOnto_comp_comp_subtype [FiniteDimensional 𝕜 E]
+    {S : E →ₗ[𝕜] E} (hS : S.IsSymmetric) :
+    LinearMap.adjoint (V.orthogonalProjectionOnto.toLinearMap ∘ₗ (S ∘ₗ U.subtype)) =
+      (U.orthogonalProjectionOnto.toLinearMap ∘ₗ S) ∘ₗ V.subtype := by
+  simp only [LinearMap.adjoint_comp, adjoint_subtype, adjoint_orthogonalProjectionOnto_toLinearMap,
+    hS.adjoint_eq, LinearMap.comp_assoc]
+
 section Real
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
