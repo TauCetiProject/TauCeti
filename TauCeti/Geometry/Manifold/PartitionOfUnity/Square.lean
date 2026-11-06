@@ -115,6 +115,7 @@ theorem sqrtNormalized_nonneg (i : ι) (x : M) : 0 ≤ ρ.sqrtNormalized i x :=
   div_nonneg (ρ.nonneg i x) (Real.sqrt_nonneg _)
 
 /-- A normalized function vanishes exactly where the original function does. -/
+@[simp]
 theorem sqrtNormalized_eq_zero_iff {i : ι} {x : M} : ρ.sqrtNormalized i x = 0 ↔ ρ i x = 0 := by
   rw [sqrtNormalized_apply, div_eq_zero_iff,
     or_iff_left (Real.sqrt_pos.2 (ρ.normalizer_pos x)).ne']
@@ -179,7 +180,7 @@ theorem sqrtNormalized_eq_sqrt_sqNormalized (i : ι) (x : M) :
 @[simp]
 theorem support_sqNormalized (i : ι) : support (ρ.sqNormalized i) = support (ρ i) := by
   ext x
-  simp [ρ.sqrtNormalized_eq_zero_iff]
+  simp
 
 @[simp]
 theorem tsupport_sqNormalized (i : ι) : tsupport (ρ.sqNormalized i) = tsupport (ρ i) := by
