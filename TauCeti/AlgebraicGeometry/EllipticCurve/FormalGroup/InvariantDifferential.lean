@@ -48,6 +48,8 @@ strict isomorphism `FormalGroup.logIso` from `Ê` to the additive formal group l
 
 ## Main results
 
+* `WeierstrassCurve.derivative_formalW_mul_formalInvariantDifferentialDenom`: differentiating the
+  `w`-equation, `w'(z)` times the denominator is `3z² + a₁w + 2a₂zw + a₄w²`.
 * `WeierstrassCurve.inv_evalEval_polynomialY_smul_derivation_div`: for any derivation `D` on a
   field and any solution `(q, w)` of the `w`-equation, `(2y + a₁x + a₃)⁻¹ • D x` at the point
   `(x, y) = (q / w, -1 / w)` is `D q` scaled by the inverse of the denominator at `(q, w)`. This is
@@ -157,6 +159,24 @@ theorem coeff_two_formalInvariantDifferentialDenom :
     PowerSeries.coeff 2 W.formalInvariantDifferentialDenom = -W.a₂ := by
   rw [coeff_formalInvariantDifferentialDenom_of_lt W (by norm_num)]
   simp [PowerSeries.coeff_X_pow, PowerSeries.coeff_X]
+
+/-- **The derivative of the `w`-expansion.** Differentiating the `w`-equation
+`w = z³ + a₁zw + a₂z²w + a₃w² + a₄zw² + a₆w³` gives `w'(z)` times the denominator
+`1 - a₁z - a₂z² - 2a₃w - 2a₄zw - 3a₆w²`, which is minus the partial derivative of the equation in
+`w`. -/
+theorem derivative_formalW_mul_formalInvariantDifferentialDenom :
+    PowerSeries.derivative (formalW W) * W.formalInvariantDifferentialDenom =
+      3 * PowerSeries.X ^ 2 + PowerSeries.C W.a₁ * formalW W +
+        2 * PowerSeries.C W.a₂ * PowerSeries.X * formalW W +
+        PowerSeries.C W.a₄ * formalW W ^ 2 := by
+  have h := congrArg PowerSeries.derivative W.formalW_wEquation
+  rw [wEquationRHS_def] at h
+  simp only [PowerSeries.algebraMap_eq, map_add, Derivation.leibniz, Derivation.leibniz_pow,
+    PowerSeries.derivative_C, PowerSeries.derivative_X, smul_eq_mul, nsmul_eq_mul] at h
+  rw [formalInvariantDifferentialDenom_def]
+  simp only [PowerSeries.smul_eq_C_mul, map_mul, map_ofNat]
+  push_cast at h
+  linear_combination h
 
 /-! ### The invariant differential in the coordinates `(z, w)` -/
 
