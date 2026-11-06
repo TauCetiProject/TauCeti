@@ -68,11 +68,10 @@ omit [Algebra.FiniteType k C] [IsReduced C] [IsAlgClosed K] in
 /-- Pointwise stability makes every matrix coefficient through the quotient by `N` vanish at
 each geometric point, for elements of `N`. -/
 private theorem apply_matrixCoefficient_comp_mkQ_eq_zero (N : Submodule k M)
-    (hN : ∀ (g : C →ₐ[k] K) {m : M}, m ∈ N →
-      Comodule.endOfPoint M g (1 ⊗ₜ[k] m) ∈ N.baseChange K)
-    (g : C →ₐ[k] K) {m : M} (hm : m ∈ N) (φ : (M ⧸ N) →ₗ[k] k) :
+    (g : C →ₐ[k] K) {m : M}
+    (hg : Comodule.endOfPoint M g (1 ⊗ₜ[k] m) ∈ N.baseChange K) (φ : (M ⧸ N) →ₗ[k] k) :
     g (Comodule.matrixCoefficient (R := k) (C := C) (φ.comp N.mkQ) m) = 0 := by
-  obtain ⟨y, hy⟩ := hN g hm
+  obtain ⟨y, hy⟩ := hg
   have hyq : N.mkQ.baseChange K (Comodule.endOfPoint M g (1 ⊗ₜ[k] m)) = 0 := by
     rw [← hy, ← LinearMap.comp_apply, ← LinearMap.baseChange_comp]
     have hcomp : N.mkQ.comp N.subtype = 0 := by
@@ -83,16 +82,6 @@ private theorem apply_matrixCoefficient_comp_mkQ_eq_zero (N : Submodule k M)
       (R := k) (M := M ⧸ N) (A := K) (1 ⊗ₜ[k] φ) t) hyq
   rw [map_zero, Module.Dual.baseChangeEvaluation_one_tmul_baseChange] at heval
   simpa only [Comodule.baseChangeEvaluation_endOfPoint_tmul, one_mul] using heval
-
-omit [Coalgebra k C] [Algebra.FiniteType k C] [IsReduced C] in
-/-- Applying a functional `f` on `Q'` to a tensor in `Q' ⊗ C` agrees with applying any extension
-`φ` of `f` along `ι : Q' → Q` to its image in `Q ⊗ C`. -/
-private theorem lid_rTensor_eq_of_comp_subtype {Q Q' : Type*} [AddCommGroup Q] [Module k Q]
-    [AddCommGroup Q'] [Module k Q'] (f : Q' →ₗ[k] k) (φ : Q →ₗ[k] k) (ι : Q' →ₗ[k] Q)
-    (hφ : φ.comp ι = f) (z' : Q' ⊗[k] C) :
-    TensorProduct.lid k C (LinearMap.rTensor C f z') =
-      TensorProduct.lid k C (LinearMap.rTensor C φ (LinearMap.rTensor C ι z')) := by
-  rw [← LinearMap.rTensor_comp_apply, hφ]
 
 /-- If every geometric point preserves the scalar extension of a submodule, the coaction of
 each element of that submodule belongs to its tensor product with the coefficient coalgebra.
@@ -122,10 +111,9 @@ theorem coact_mem_range_of_forall_endOfPoint_tmul_mem_baseChange
       obtain ⟨φ, hφ⟩ := LinearMap.exists_extend (b.coord i)
       apply TauCeti.eq_of_forall_algHom_apply_eq (k := k) (K := K)
       intro g
-      rw [map_zero, ← apply_matrixCoefficient_comp_mkQ_eq_zero N hN g hm φ]
+      rw [map_zero, ← apply_matrixCoefficient_comp_mkQ_eq_zero N g (hN g hm) φ]
       congr 1
-      rw [Comodule.matrixCoefficient_def,
-        lid_rTensor_eq_of_comp_subtype (b.coord i) φ Q'.subtype hφ z', hz',
+      rw [Comodule.matrixCoefficient_def, ← hφ, LinearMap.rTensor_comp_apply, hz',
         ← LinearMap.rTensor_comp_apply, LinearMap.rTensor_def]
     rw [← hz', hz'zero, map_zero]
   have hzker : Comodule.coact (R := k) (C := C) (M := M) m ∈
