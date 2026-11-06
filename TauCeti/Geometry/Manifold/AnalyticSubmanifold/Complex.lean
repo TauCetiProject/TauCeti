@@ -105,6 +105,54 @@ end RestrictScalars
 
 section RealLocus
 
+/-- In a holomorphic chart `φ`, if a subset `s` agrees on `W` with the locus `star z = z` of the
+complex coordinates `e_ℂ`, then the real coordinates `e_ℝ` of `s` near `W` are the image of that
+locus under the real linear equivalence `(e_ℂ.restrictScalars ℝ).symm.trans e_ℝ`. -/
+private theorem image_inter_setOf_star_eq_image_inter
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [NormedSpace ℝ E] [IsScalarTower ℝ ℂ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] {n m : ℕ} {s : Set M}
+    (e_ℂ : E ≃L[ℂ] Fin n → ℂ) (e_ℝ : E ≃L[ℝ] Fin m → ℝ) (φ : OpenPartialHomeomorph M H)
+    {W : Set M}
+    (hWs : ∀ y ∈ W, y ∈ s ↔ star (e_ℂ (φ.extend I y)) = e_ℂ (φ.extend I y)) :
+    ((e_ℂ.restrictScalars' ℝ).symm.trans e_ℝ) ''
+        ((φ.extendTrans I e_ℂ.toHomeomorph).target ∩
+          (φ.extendTrans I e_ℂ.toHomeomorph).symm ⁻¹' W ∩ {z : Fin n → ℂ | star z = z}) =
+      ((φ.extendTrans (I.restrictScalars ℝ) e_ℝ.toHomeomorph).target ∩
+        (φ.extendTrans (I.restrictScalars ℝ) e_ℝ.toHomeomorph).symm ⁻¹' W) ∩
+        (e_ℝ ∘ φ.extend (I.restrictScalars ℝ)) '' (s ∩ φ.source) := by
+  set Φ_ℂ := φ.extendTrans I e_ℂ.toHomeomorph
+  set Φ_ℝ := φ.extendTrans (I.restrictScalars ℝ) e_ℝ.toHomeomorph
+  let e_ℂ' : E ≃L[ℝ] Fin n → ℂ := e_ℂ.restrictScalars' ℝ
+  let L : (Fin n → ℂ) ≃L[ℝ] Fin m → ℝ := e_ℂ'.symm.trans e_ℝ
+  ext u
+  constructor
+  · rintro ⟨z, ⟨⟨hzt, hzW⟩, hzstar⟩, rfl⟩
+    set y := Φ_ℂ.symm z
+    have hyΦ_ℂ : y ∈ Φ_ℂ.source := Φ_ℂ.map_target hzt
+    have hyφ : y ∈ φ.source := by simpa [Φ_ℂ] using hyΦ_ℂ
+    have hyW : y ∈ W := hzW
+    have hzy : Φ_ℂ y = z := Φ_ℂ.right_inv hzt
+    have hys : y ∈ s := (hWs y hyW).2 (by simpa [Φ_ℂ, ← hzy] using hzstar)
+    have hLy : L z = e_ℝ (φ.extend (I.restrictScalars ℝ) y) := by
+      rw [← hzy]
+      simp [L, e_ℂ', Φ_ℂ]
+    rw [hLy]
+    have hyΦ_ℝ : y ∈ Φ_ℝ.source := by simpa [Φ_ℝ] using hyφ
+    have h1 : Φ_ℝ y = e_ℝ (φ.extend (I.restrictScalars ℝ) y) := by simp [Φ_ℝ]
+    refine ⟨?_, y, ⟨hys, hyφ⟩, rfl⟩
+    rw [← h1]
+    exact ⟨Φ_ℝ.map_source hyΦ_ℝ, by simpa [Φ_ℝ.left_inv hyΦ_ℝ] using hyW⟩
+  · rintro ⟨huU, y, ⟨hys, hyφ⟩, rfl⟩
+    have hyΦ_ℝ : y ∈ Φ_ℝ.source := by simpa [Φ_ℝ] using hyφ
+    have h1 : Φ_ℝ y = e_ℝ (φ.extend (I.restrictScalars ℝ) y) := by simp [Φ_ℝ]
+    have hw : Φ_ℝ.symm (e_ℝ (φ.extend (I.restrictScalars ℝ) y)) ∈ W := huU.2
+    have hyW : y ∈ W := by rwa [← h1, Φ_ℝ.left_inv hyΦ_ℝ] at hw
+    have hyΦ_ℂ : y ∈ Φ_ℂ.source := by simpa [Φ_ℂ] using hyφ
+    refine ⟨Φ_ℂ y, ⟨⟨Φ_ℂ.map_source hyΦ_ℂ, by simpa [Φ_ℂ.left_inv hyΦ_ℂ] using hyW⟩, ?_⟩, ?_⟩
+    · simpa [Φ_ℂ] using (hWs y hyW).1 hys
+    · simp [Φ_ℂ]
+
 /-- On a boundaryless complex `C^r` manifold (`r ≠ 0`) modelled on `I : ModelWithCorners ℂ E H` with
 complex coordinates `e_ℂ : E ≃L[ℂ] Fin n → ℂ`, any nonempty subset `s ⊆ M` locally cut out in
 holomorphic charts by `star (e_ℂ (φ.extend I y)) = e_ℂ (φ.extend I y)` is an `n`-dimensional real
@@ -148,34 +196,8 @@ theorem isMAnalyticSubmanifold_restrictScalars_of_holomorphicChart_star_eq
   have himg := IsOpen.isAnalyticSubmanifold_image_inter_setOf_star_eq hV ⟨Φ_ℂ x, hxV⟩ L
   refine ⟨φ, hφ_real, hxφ, U, hU, hxU, ?_⟩
   have heq : L '' (V ∩ {z : Fin n → ℂ | star z = z}) =
-      U ∩ (e_ℝ ∘ φ.extend (I.restrictScalars ℝ)) '' (s ∩ φ.source) := by
-    ext u
-    constructor
-    · rintro ⟨z, ⟨⟨hzt, hzW⟩, hzstar⟩, rfl⟩
-      set y := Φ_ℂ.symm z
-      have hyΦ_ℂ : y ∈ Φ_ℂ.source := Φ_ℂ.map_target hzt
-      have hyφ : y ∈ φ.source := by simpa [Φ_ℂ] using hyΦ_ℂ
-      have hyW : y ∈ W := hzW
-      have hzy : Φ_ℂ y = z := Φ_ℂ.right_inv hzt
-      have hys : y ∈ s := (hWs y hyW).2 (by simpa [Φ_ℂ, ← hzy] using hzstar)
-      have hLy : L z = e_ℝ (φ.extend (I.restrictScalars ℝ) y) := by
-        rw [← hzy]
-        simp [L, e_ℂ', Φ_ℂ]
-      rw [hLy]
-      have hyΦ_ℝ : y ∈ Φ_ℝ.source := by simpa [Φ_ℝ] using hyφ
-      have h1 : Φ_ℝ y = e_ℝ (φ.extend (I.restrictScalars ℝ) y) := by simp [Φ_ℝ]
-      refine ⟨?_, y, ⟨hys, hyφ⟩, rfl⟩
-      rw [← h1]
-      exact ⟨Φ_ℝ.map_source hyΦ_ℝ, by simpa [Φ_ℝ.left_inv hyΦ_ℝ] using hyW⟩
-    · rintro ⟨huU, y, ⟨hys, hyφ⟩, rfl⟩
-      have hyΦ_ℝ : y ∈ Φ_ℝ.source := by simpa [Φ_ℝ] using hyφ
-      have h1 : Φ_ℝ y = e_ℝ (φ.extend (I.restrictScalars ℝ) y) := by simp [Φ_ℝ]
-      have hw : Φ_ℝ.symm (e_ℝ (φ.extend (I.restrictScalars ℝ) y)) ∈ W := huU.2
-      have hyW : y ∈ W := by rwa [← h1, Φ_ℝ.left_inv hyΦ_ℝ] at hw
-      have hyΦ_ℂ : y ∈ Φ_ℂ.source := by simpa [Φ_ℂ] using hyφ
-      refine ⟨Φ_ℂ y, ⟨⟨Φ_ℂ.map_source hyΦ_ℂ, by simpa [Φ_ℂ.left_inv hyΦ_ℂ] using hyW⟩, ?_⟩, ?_⟩
-      · simpa [Φ_ℂ] using (hWs y hyW).1 hys
-      · simp [L, e_ℂ', Φ_ℂ]
+      U ∩ (e_ℝ ∘ φ.extend (I.restrictScalars ℝ)) '' (s ∩ φ.source) :=
+    image_inter_setOf_star_eq_image_inter e_ℂ e_ℝ φ hWs
   rwa [heq] at himg
 
 /-- On a complex `C^r` manifold (`r ≠ 0`) modelled on `𝓘(ℂ, E)` with complex coordinates
