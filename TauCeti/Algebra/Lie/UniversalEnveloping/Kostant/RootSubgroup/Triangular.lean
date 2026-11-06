@@ -8,7 +8,6 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Coordinate
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 
 /-!
 # Triangularity of positive Kostant root subgroups
@@ -25,7 +24,7 @@ subgroup in the Chevalley--Demazure construction.
 
 ## Main declarations
 
-* `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_apply_eq_one_of_forall_weight_ne`:
+* `kostantRootSubgroupMatrix_apply_eq_one_apply_of_forall_weight_ne`:
   an entry is that of the identity if no positive root multiple connects its two weights.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_integralDividedPower_eq_zero_of_not_lt`: positive
   divided powers have no coordinate on or below their source basis vector.
@@ -63,6 +62,24 @@ variable (b : Module.Basis η ℤ M) (wt : η → κ → ℤ)
 
 /-! ## Integral divided-power coordinates -/
 
+omit [Fintype η] [LinearOrder η] in
+include e hM in
+/-- A divided power has zero coordinate at a basis vector whose weight is not the corresponding
+root shift of the source weight. No ordering or positivity hypothesis is needed. -/
+theorem repr_integralDividedPower_eq_zero_of_weight_ne
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
+    {r s : η} {n : ℕ} (hrs : wt r ≠ wt s + n • α) :
+    b.repr
+        (integralDividedPower
+          (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
+          (fun _ hv ↦ dividedPower_apply_mem_of_kostantForm_apply_mem
+            e h ρ hM i n hv) (b s)) r = 0 := by
+  apply repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
+  · rw [coe_integralDividedPower_apply]
+    exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
+  · exact hrs
+
 omit [Fintype η] in
 include e hM in
 /-- A positive divided power has no coordinate at a basis vector which does not precede its
@@ -81,10 +98,8 @@ theorem repr_integralDividedPower_eq_zero_of_not_lt
           (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
           (fun _ hv ↦ dividedPower_apply_mem_of_kostantForm_apply_mem
             e h ρ hM i n hv) (b s)) r = 0 := by
-  apply repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
-  · rw [coe_integralDividedPower_apply]
-    exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
-  · exact fun heq ↦ hrs (horder hn heq)
+  exact repr_integralDividedPower_eq_zero_of_weight_ne e h ρ M hM b wt hwt hα
+    (fun heq ↦ hrs (horder hn heq))
 
 include e hM in
 /-- Every positive divided power of a positive root operator is upper triangular in an
@@ -113,7 +128,7 @@ omit [LinearOrder η] in
 include e hM in
 /-- A root-subgroup matrix agrees with the identity at an entry where no positive multiple of its
 root connects the source and target weights. No ordering or positivity of the root is needed. -/
-theorem kostantRootSubgroupMatrix_apply_eq_one_of_forall_weight_ne [DecidableEq η]
+theorem kostantRootSubgroupMatrix_apply_eq_one_apply_of_forall_weight_ne [DecidableEq η]
     {A : Type*} [CommRing A]
     (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
     (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
@@ -127,10 +142,7 @@ theorem kostantRootSubgroupMatrix_apply_eq_one_of_forall_weight_ne [DecidableEq 
   have hX (n : ℕ) (hn : 0 < n) : X n r s = 0 := by
     dsimp only [X]
     rw [LinearMap.toMatrix_apply]
-    apply repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
-    · rw [coe_integralDividedPower_apply]
-      exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
-    · exact hrs n hn
+    exact repr_integralDividedPower_eq_zero_of_weight_ne e h ρ M hM b wt hwt hα (hrs n hn)
   have hX0 : X 0 = 1 := by simp [X, integralDividedPower_zero, LinearMap.toMatrix_one]
   have hsum := kostantRootSubgroupMatrix_eq_sum e h ρ M hM i hnil b
     (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) + 1) X (by omega)
@@ -151,51 +163,17 @@ theorem isUpperUnitriangular_kostantRootSubgroupMatrix {A : Type*} [CommRing A]
     (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     ((kostantRootSubgroupMatrix e h ρ M hM i hnil b f :
         Matrix.GeneralLinearGroup η A) : Matrix η η A).IsUpperUnitriangular := by
-  have hentry (r s : η) :
-      kostantRootSubgroupMatrix e h ρ M hM i hnil b f r s =
-        ∑ n ∈ Finset.range
-            (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))),
-          b.repr (integralDividedPower
-              (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
-              (fun _ hv ↦ dividedPower_apply_mem_of_kostantForm_apply_mem
-                e h ρ hM i n hv) (b s)) r •
-            Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ n := by
-    rw [kostantRootSubgroupMatrix_apply, Module.Basis.baseChange_apply,
-      kostantRootSubgroupPoints_tmul, map_sum, Finsupp.finsetSum_apply]
-    refine Finset.sum_congr rfl fun n _ ↦ ?_
-    rw [Module.Basis.baseChange_repr_tmul, mul_one]
+  have hentry {r s : η} (hrs : ¬ r < s) :=
+    kostantRootSubgroupMatrix_apply_eq_one_apply_of_forall_weight_ne
+      e h ρ M hM b wt i hnil hwt hα f (r := r) (s := s)
+      (fun n hn heq ↦ hrs (horder hn heq))
   rw [Matrix.isUpperUnitriangular_def]
   constructor
   · intro r s hsr
-    rw [hentry]
-    apply Finset.sum_eq_zero
-    intro n _
-    by_cases hn : n = 0
-    · subst n
-      have hrs : s ≠ r := ne_of_lt hsr
-      simp [integralDividedPower_zero, hrs]
-    · rw [repr_integralDividedPower_eq_zero_of_not_lt e h ρ M hM b wt hwt hα horder
-          (r := r) (s := s) (not_lt_of_ge hsr.le) (Nat.pos_of_ne_zero hn)]
-      simp
+    exact (hentry (r := r) (s := s) (not_lt_of_ge hsr.le)).trans
+      (Matrix.one_apply_ne (ne_of_gt hsr))
   · intro r
-    have hclass :
-        nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ≠ 0 := by
-      intro hzero
-      have hpow := pow_nilpotencyClass hnil
-      rw [hzero, pow_zero] at hpow
-      have hbzero : ((b r : M) : V) = 0 := by
-        have happ := LinearMap.congr_fun hpow ((b r : M) : V)
-        simpa using happ
-      exact b.ne_zero r (Subtype.ext hbzero)
-    rw [hentry]
-    rw [Finset.sum_eq_single 0]
-    · simp [integralDividedPower_zero]
-    · intro n _ hn
-      rw [repr_integralDividedPower_eq_zero_of_not_lt e h ρ M hM b wt hwt hα horder
-          (lt_irrefl r) (Nat.pos_of_ne_zero hn)]
-      simp
-    · intro hzero
-      exact False.elim (hclass (by simpa using hzero))
+    rw [hentry (lt_irrefl r), Matrix.one_apply_eq]
 
 include e hM in
 /-- The image of a positive Kostant root subgroup lies in the upper-unitriangular subgroup of

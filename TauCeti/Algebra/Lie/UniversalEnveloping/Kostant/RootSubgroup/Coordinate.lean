@@ -29,6 +29,10 @@ input for the natural transformation whose representing morphism is the root sub
   coordinates of the divided-power exponential on basis vectors.
 * `TauCeti.UniversalEnvelopingAlgebra.map_kostantRootSubgroupMatrix`: matrix coordinates commute
   with maps of value rings.
+* `TauCeti.UniversalEnvelopingAlgebra.repr_kostantRootSubgroupPoints_baseChange`: the coordinates
+  of a root-subgroup point on a base-changed basis vector.
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_eq_sum`: a nilpotent root
+  operator exponentiates to the finite sum of its integral divided-power matrices.
 
 ## References
 
@@ -90,6 +94,85 @@ action on a base-changed basis vector. -/
     (kostantRootSubgroupPoints e h ρ M hM i hnil f).val r s
 
 end Pointwise
+
+omit [Fintype η] [DecidableEq η] in
+/-- The coordinates of a root-subgroup point on a base-changed basis vector: the `r`-th
+coordinate of `xᵢ(t) (1 ⊗ b s)` is the divided-power polynomial in `t` whose coefficients are the
+`r`-th coordinates of the integral divided powers of `b s`. -/
+theorem repr_kostantRootSubgroupPoints_baseChange {A : Type*} [CommRing A]
+    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) (r s : η) :
+    (b.baseChange A).repr
+        ((kostantRootSubgroupPoints e h ρ M hM i hnil f).val (b.baseChange A s)) r =
+      ∑ k ∈ Finset.range
+          (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))),
+        b.repr (integralDividedPower
+            (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+            (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem
+              e h ρ hM i k hv) (b s)) r •
+          Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k := by
+  rw [Module.Basis.baseChange_apply, kostantRootSubgroupPoints_tmul, map_sum,
+    Finsupp.finsetSum_apply]
+  refine Finset.sum_congr rfl fun k _ => ?_
+  rw [Module.Basis.baseChange_repr_tmul, mul_one]
+
+/-- The zeroth divided power has the identity matrix in an integral lattice basis. -/
+theorem integralDividedPower_zero_basis_eq_sum (s : η) :
+    integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M 0
+        (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i 0 hv) (b s) =
+      ∑ r, (1 : Matrix η η ℤ) r s • b r := by
+  rw [integralDividedPower_zero]
+  -- The rewrite leaves the identity endomorphism acting on the lattice subtype; exposing its
+  -- underlying function is the definitional step needed before applying the basis expansion.
+  change b s = ∑ r, (1 : Matrix η η ℤ) r s • b r
+  convert (b.sum_repr (b s)).symm using 1
+  apply Finset.sum_congr rfl
+  intro r _
+  by_cases hrs : r = s
+  · subst r
+    simp
+  · simp [hrs]
+
+/-- **A nilpotent root-subgroup matrix is the finite divided-power sum.** If `X k` is the
+integral matrix of the `k`th divided power for every `k < d`, and the nilpotency class is at most
+`d`, then evaluation at `t` is `∑ k < d, t ^ k • X k`. -/
+theorem kostantRootSubgroupMatrix_eq_sum {A : Type*} [CommRing A]
+    (d : ℕ) (X : ℕ → Matrix η η ℤ)
+    (hclass : nilpotencyClass
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) ≤ d)
+    (haction : ∀ k < d, ∀ s, integralDividedPower
+      (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+      (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
+      (b s) = ∑ r, X k r s • b r)
+    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
+    (kostantRootSubgroupMatrix e h ρ M hM i hnil b f).val =
+      ∑ k ∈ Finset.range d,
+        Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k •
+          (X k).map (Int.cast : ℤ → A) := by
+  classical
+  ext r s
+  have hpad : ∑ k ∈ Finset.range
+        (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i)))),
+      b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+          (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
+          (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k =
+      ∑ k ∈ Finset.range d,
+        b.repr (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M k
+            (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i k hv)
+            (b s)) r • Multiplicative.toAdd (AdditiveGroup.gaPointsMulEquiv f) ^ k := by
+    refine Finset.sum_subset (Finset.range_subset_range.2 hclass) fun k _ hk => ?_
+    rw [Finset.mem_range, not_lt] at hk
+    rw [integralDividedPower_eq_zero_of_le _ _ _ _ (pow_nilpotencyClass hnil) hk]
+    simp
+  rw [kostantRootSubgroupMatrix_apply, repr_kostantRootSubgroupPoints_baseChange, hpad,
+    Matrix.sum_apply]
+  apply Finset.sum_congr rfl
+  intro k hk
+  rw [Matrix.smul_apply, Matrix.map_apply, haction k (Finset.mem_range.1 hk) s,
+    map_sum]
+  simp only [Finsupp.coe_finsetSum, Finset.sum_apply, map_zsmul, Module.Basis.repr_self,
+    Finsupp.smul_single, Finsupp.single_apply, smul_eq_mul, mul_one]
+  rw [Finset.sum_ite_eq' Finset.univ r fun x => X k x s]
+  simp [mul_comm]
 
 section Naturality
 

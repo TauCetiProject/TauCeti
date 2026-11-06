@@ -92,9 +92,10 @@ theorem orderedWeightBlock_lt_of_eq_add_nsmul (degree : (κ → ℤ) →+ D) (wt
     {α : κ → ℤ} (hα : 0 < degree α) {r s : η} {n : ℕ} (hn : 0 < n)
     (hrs : wt r = wt s + n • α) :
     orderedWeightBlock degree wt r < orderedWeightBlock degree wt s := by
-  apply orderedWeightBlock_lt_of_degree_lt degree wt
-  rw [hrs, map_add, map_nsmul]
-  exact lt_add_of_pos_right _ (nsmul_pos hα hn.ne')
+  classical
+  let _ := Fintype.ofFinite (Set.range wt)
+  exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul degree (fun μ : Set.range wt => μ.val)
+    hα hn (r := ⟨wt r, r, rfl⟩) (s := ⟨wt s, s, rfl⟩) hrs
 
 end Blocks
 
@@ -121,15 +122,11 @@ theorem blockUnitriangular_kostantRootSubgroupMatrix {A : Type*} [CommRing A]
     (hdegree : 0 < degree α) (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     ((kostantRootSubgroupMatrix e h ρ M hM i hnil b f : Matrix η η A)).BlockUnitriangular
       (orderedWeightBlock degree wt) := by
-  have hentry {r s : η}
-      (hrs : ¬ orderedWeightBlock degree wt r < orderedWeightBlock degree wt s) :=
-    kostantRootSubgroupMatrix_apply_eq_one_of_forall_weight_ne
-      e h ρ M hM b wt i hnil hwt hα f (r := r) (s := s) fun n hn heq =>
-        hrs (orderedWeightBlock_lt_of_eq_add_nsmul degree wt hdegree hn heq)
-  rw [Matrix.blockUnitriangular_iff]
-  refine ⟨fun r s hsr => ?_, fun r s hrs => hentry (by rw [hrs]; exact lt_irrefl _)⟩
-  rw [hentry (not_lt_of_gt hsr), Matrix.one_apply_ne]
-  exact fun hrs => (ne_of_lt hsr) (congrArg (orderedWeightBlock degree wt) hrs.symm)
+  apply Matrix.blockUnitriangular_of_apply_eq_one_apply_of_not_lt
+  intro r s hrs
+  exact kostantRootSubgroupMatrix_apply_eq_one_apply_of_forall_weight_ne
+    e h ρ M hM b wt i hnil hwt hα f fun n hn heq =>
+      hrs (orderedWeightBlock_lt_of_eq_add_nsmul degree wt hdegree hn heq)
 
 include hwt hα in
 /-- A negative-degree root subgroup is lower unitriangular for the same weight-space blocks used
@@ -138,18 +135,12 @@ theorem blockUnitriangular_toDual_kostantRootSubgroupMatrix {A : Type*} [CommRin
     (hdegree : degree α < 0) (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) :
     ((kostantRootSubgroupMatrix e h ρ M hM i hnil b f : Matrix η η A)).BlockUnitriangular
       (OrderDual.toDual ∘ orderedWeightBlock degree wt) := by
-  have hentry {r s : η}
-      (hrs : ¬ orderedWeightBlock degree wt s < orderedWeightBlock degree wt r) :=
-    kostantRootSubgroupMatrix_apply_eq_one_of_forall_weight_ne
-      e h ρ M hM b wt i hnil hwt hα f (r := r) (s := s) fun n hn heq =>
-        hrs (orderedWeightBlock_lt_of_eq_add_nsmul degree wt
-          (α := -α) (by simpa using neg_pos.mpr hdegree) hn (by simp [heq]))
-  rw [Matrix.blockUnitriangular_iff]
-  refine ⟨fun r s hsr => ?_, fun r s hrs => hentry ?_⟩
-  · rw [hentry (not_lt_of_gt hsr), Matrix.one_apply_ne]
-    exact fun hrs => (ne_of_lt hsr) (congrArg
-      (OrderDual.toDual ∘ orderedWeightBlock degree wt) hrs.symm)
-  · exact fun hlt => (ne_of_lt hlt) (OrderDual.toDual_inj.mp hrs).symm
+  apply Matrix.blockUnitriangular_of_apply_eq_one_apply_of_not_lt
+  intro r s hrs
+  exact kostantRootSubgroupMatrix_apply_eq_one_apply_of_forall_weight_ne
+    e h ρ M hM b wt i hnil hwt hα f fun n hn heq =>
+      hrs (orderedWeightBlock_lt_of_eq_add_nsmul degree wt
+        (α := -α) (by simpa using neg_pos.mpr hdegree) hn (by simp [heq]))
 
 end RootMatrices
 
