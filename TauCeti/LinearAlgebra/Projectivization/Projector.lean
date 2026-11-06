@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.LinearAlgebra.Matrix.DotProduct
@@ -48,13 +47,13 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
   trace zero vanishes).
 * `Projectivization.projector_injective` and `Projectivization.range_projector`: the projector
   map is a bijection from `ℙ K (ι → K)` onto the projector locus.
-* `Projectivization.projector_apply_self_pos_iff`,
-  `Projectivization.projector_apply_self_eq_zero_iff` and
-  `Projectivization.image_projector_affineOpen`: the projector map carries the standard affine
-  open `{x_i ≠ 0}` onto the matrices of the locus with nonzero, hence positive, `i`-th diagonal
-  entry.
-* `Projectivization.affineChart_eq_projector_div`: the standard affine charts in terms of the
-  entries of the projector.
+* `Projectivization.image_projector_affineOpen` and `Projectivization.affineChart_eq_projector_div`:
+  the projector map sends the standard affine open `{x_i ≠ 0}` onto the matrices of the locus with
+  nonzero `i`-th diagonal entry, and the standard affine chart at `i` reads the coordinates of a
+  line off its projector `A` as the ratios `A (i.succAbove k) i / A i i`.
+* `Projectivization.projector_apply_self_nonneg` and
+  `Projectivization.projector_apply_self_pos_iff`: the diagonal entries of a projector are
+  nonnegative, and the `i`-th one is positive exactly on the standard affine open `{x_i ≠ 0}`.
 
 ## References
 
@@ -62,6 +61,11 @@ S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Norm
 (3) 18 (1964), 449–474, §3, p. 464, for the use of this embedding to reduce triangulation of
 real projective spaces to the affine case. The formula here uses all homogeneous coordinates; the
 printed formula omits one of them.
+
+The affine-chart lemmas `Projectivization.projector_apply_self_eq_zero_iff`,
+`Projectivization.image_projector_affineOpen` and `Projectivization.affineChart_eq_projector_div`
+are adapted from the corresponding Hermitian projector lemmas in
+`TauCeti.LinearAlgebra.Projectivization.HermitianProjector`.
 -/
 
 public section
@@ -227,7 +231,15 @@ theorem range_projector :
   obtain ⟨x, hx, rfl⟩ := exists_rankOneProjector_eq_of_mem_projectorLocus hA
   exact ⟨mk K x hx, projector_mk x hx⟩
 
-/-- Over an ordered field the diagonal entries `x i ^ 2 / (xᵀ x)` of the projector of a line are
+/-- Over an ordered field the `i`-th diagonal entry of the projector of a line, `x_i² / ‖x‖²`,
+vanishes exactly when the line lies outside the standard affine open `{x_i ≠ 0}`. -/
+@[simp]
+theorem projector_apply_self_eq_zero_iff {p : ℙ K (ι → K)} {i : ι} :
+    projector p i i = 0 ↔ p ∉ affineOpen i := by
+  induction p using ind with
+  | h x hx => simp [rankOneProjector_apply, dotProduct_self_eq_zero.not.mpr hx]
+
+/-- Over an ordered field the diagonal entries `x_i² / ‖x‖²` of the projector of a line are
 nonnegative. -/
 theorem projector_apply_self_nonneg (p : ℙ K (ι → K)) (i : ι) : 0 ≤ projector p i i := by
   induction p using ind with
@@ -235,25 +247,15 @@ theorem projector_apply_self_nonneg (p : ℙ K (ι → K)) (i : ι) : 0 ≤ proj
     rw [projector_mk, rankOneProjector_apply]
     exact div_nonneg (mul_self_nonneg _) (dotProduct_self_nonneg x)
 
-/-- Over an ordered field the `i`-th diagonal entry `x i ^ 2 / (xᵀ x)` of the projector of a line
-is positive exactly when the line lies in the standard affine open `{x_i ≠ 0}`. -/
+/-- Over an ordered field the `i`-th diagonal entry `x_i² / ‖x‖²` of the projector of a line is
+positive exactly when the line lies in the standard affine open `{x_i ≠ 0}`. -/
 @[simp]
 theorem projector_apply_self_pos_iff {p : ℙ K (ι → K)} {i : ι} :
     0 < projector p i i ↔ p ∈ affineOpen i := by
-  induction p using ind with
-  | h x hx =>
-    simp [rankOneProjector_apply, div_pos_iff_of_pos_right (dotProduct_self_pos_iff.mpr hx),
-      mul_self_pos]
-
-/-- Over an ordered field the `i`-th diagonal entry `x i ^ 2 / (xᵀ x)` of the projector of a line
-vanishes exactly when the line lies outside the standard affine open `{x_i ≠ 0}`. -/
-@[simp]
-theorem projector_apply_self_eq_zero_iff {p : ℙ K (ι → K)} {i : ι} :
-    projector p i i = 0 ↔ p ∉ affineOpen i := by
-  rw [← projector_apply_self_pos_iff, not_lt, (projector_apply_self_nonneg p i).ge_iff_eq']
+  rw [(projector_apply_self_nonneg p i).lt_iff_ne', Ne, projector_apply_self_eq_zero_iff, not_not]
 
 /-- Over an ordered field the projector map sends the standard affine open `{x_i ≠ 0}` onto the
-matrices of the projector locus with nonzero, hence positive, `i`-th diagonal entry. -/
+matrices of the projector locus with nonzero `i`-th diagonal entry. -/
 theorem image_projector_affineOpen (i : ι) :
     projector '' affineOpen i = projectorLocus ι K ∩ {A | A i i ≠ 0} := by
   ext A
