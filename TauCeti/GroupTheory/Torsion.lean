@@ -333,13 +333,13 @@ theorem IsMulTorsion.exists_prime_orderOf_mem (hG : IsMulTorsion G) {H : Subgrou
 
 end PrimeOrder
 
-section TorsionFree
-
-variable {G : Type*} [Group G]
+section InfiniteOrder
 
 /-- An element of infinite order has `H ^ k ≠ a` for all large `k`: the equation `H ^ k = a` holds
 for at most one `k`. -/
-theorem exists_forall_pow_ne_of_not_isOfFinOrder {H : G} (hH : ¬IsOfFinOrder H) (a : G) :
+@[to_additive]
+theorem exists_forall_pow_ne_of_not_isOfFinOrder {G : Type*} [LeftCancelMonoid G] {H : G}
+    (hH : ¬IsOfFinOrder H) (a : G) :
     ∃ N : ℕ, ∀ k, N ≤ k → H ^ k ≠ a := by
   have hinj := injective_pow_iff_not_isOfFinOrder.2 hH
   by_cases hk : ∃ k : ℕ, H ^ k = a
@@ -350,4 +350,4 @@ theorem exists_forall_pow_ne_of_not_isOfFinOrder {H : G} (hH : ¬IsOfFinOrder H)
   · push Not at hk
     exact ⟨0, fun k _ => hk k⟩
 
-end TorsionFree
+end InfiniteOrder
