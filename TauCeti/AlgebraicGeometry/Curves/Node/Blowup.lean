@@ -6,12 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.AlgebraicGeometry.Morphisms.FlatRank
-public import TauCeti.AlgebraicGeometry.Blowup.AffineCharts
 public import TauCeti.AlgebraicGeometry.Blowup.BaseChange
 public import TauCeti.AlgebraicGeometry.Blowup.IdealSheaf
 public import TauCeti.AlgebraicGeometry.Curves.Node.FiniteEtale
 public import TauCeti.AlgebraicGeometry.Morphisms.FormallyUnramified
 public import TauCeti.RingTheory.Node.TangentCone
+
+import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.IdealSheaf.Affine
+import TauCeti.RingTheory.LocalRing.Localization
 
 /-!
 # The branches of a nodal curve over a field
@@ -77,68 +80,6 @@ open scoped TensorProduct
 universe u
 
 namespace TauCeti.AlgebraicGeometry
-
-section ClosedPoint
-
-variable {A L : Type u} [CommRing A] [IsLocalRing A] [Field L] [Algebra A L]
-  [IsLocalHom (algebraMap A L)]
-
-/-- If the closed fibre `κ ⊗[A] B` of `A → B` is a finite étale `κ`-algebra, then the base change of
-`Spec B ⟶ Spec A` along a field-valued point of the closed point of `Spec A` is finite étale, of
-the same rank. -/
-private theorem etale_isFinite_finrank_of_isPullback_SpecMap {B : Type u} [CommRing B]
-    [Algebra A B] [Algebra.Etale (ResidueField A) (ResidueField A ⊗[A] B)]
-    [Module.Finite (ResidueField A) (ResidueField A ⊗[A] B)] {P : Scheme.{u}}
-    {fst : P ⟶ Spec (.of B)} {snd : P ⟶ Spec (.of L)}
-    (h : IsPullback fst snd (Spec.map (CommRingCat.ofHom (algebraMap A B)))
-      (Spec.map (CommRingCat.ofHom (algebraMap A L)))) :
-    Etale snd ∧ IsFinite snd ∧ ∀ y, snd.finrank y =
-      Module.finrank (ResidueField A) (ResidueField A ⊗[A] B) := by
-  -- The base change `L ⊗[A] B` is the base change of the closed fibre along `κ → L`.
-  let := (ResidueField.lift (algebraMap A L)).toAlgebra
-  have : IsScalarTower A (ResidueField A) L := .of_algebraMap_eq fun a ↦ by
-    simp [RingHom.algebraMap_toAlgebra]
-  let e : L ⊗[ResidueField A] (ResidueField A ⊗[A] B) ≃ₐ[L] L ⊗[A] B :=
-    Algebra.TensorProduct.cancelBaseChange A (ResidueField A) L L B
-  have : Algebra.Etale L (L ⊗[A] B) := .of_equiv e
-  have : Module.Finite L (L ⊗[A] B) := .equiv e.toLinearEquiv
-  have hsnd := h.isoIsPullback_hom_snd _ _
-    (isPullback_SpecMap_of_isPushout _ _ _ _ (CommRingCat.isPushout_tensorProduct A L B)).flip
-  have : Etale (Spec.map (CommRingCat.ofHom (algebraMap L (L ⊗[A] B)))) :=
-    (HasRingHomProperty.Spec_iff (P := @Etale)).mpr (RingHom.etale_algebraMap.mpr inferInstance)
-  have : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap L (L ⊗[A] B)))) :=
-    (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr inferInstance)
-  refine ⟨hsnd ▸ inferInstance, hsnd ▸ inferInstance, fun y ↦ ?_⟩
-  rw [← hsnd, Scheme.Hom.finrank_comp_left_of_isIso]
-  refine (Scheme.Hom.finrank_SpecMap_algebraMap L (L ⊗[A] B) y).trans ?_
-  rw [Module.rankAtStalk_eq_finrank_of_free, ← e.toLinearEquiv.finrank_eq,
-    Module.finrank_baseChange]
-  exact Pi.natCast_apply _ _
-
-/-- Let `I = (a, b)` with `b² ∈ a I`, so that the chart `Spec A[I/a]` is the whole blowup of
-`Spec A` along `V(I)`. If the closed fibre `κ ⊗[A] A[I/a]` is a finite étale `κ`-algebra, then the
-base change of the blowup along a field-valued point of the closed point of `Spec A` is finite
-étale, of the same rank. -/
-private theorem etale_isFinite_finrank_of_isPullback_toSpecCoeff {I : Ideal A} {a b : A}
-    (hI : I = Ideal.span {a, b}) (hb : b ^ 2 ∈ Ideal.span {a} * I)
-    [Algebra.Etale (ResidueField A) (ResidueField A ⊗[A] I.affineBlowup a (Localization.Away a))]
-    [Module.Finite (ResidueField A) (ResidueField A ⊗[A] I.affineBlowup a (Localization.Away a))]
-    {P : Scheme.{u}} {fst : P ⟶ Proj (grade I)} {snd : P ⟶ Spec (.of L)}
-    (h : IsPullback fst snd (Proj.toSpecCoeff (grade I))
-      (Spec.map (CommRingCat.ofHom (algebraMap A L)))) :
-    Etale snd ∧ IsFinite snd ∧ ∀ y, snd.finrank y = Module.finrank (ResidueField A)
-      (ResidueField A ⊗[A] I.affineBlowup a (Localization.Away a)) := by
-  have ha : a ∈ I := hI ▸ Ideal.subset_span (Set.mem_insert _ _)
-  have := isIso_affineBlowupι_of_sq_mem (Localization.Away a) ha hI.symm hb
-  have hι : affineBlowupι (Localization.Away a) ha ≫ Proj.toSpecCoeff (grade I) =
-      Spec.map (CommRingCat.ofHom (algebraMap A (I.affineBlowup a (Localization.Away a)))) := by
-    rw [toSpecCoeff_reesAlgebra, affineBlowupι_toSpecZero]
-  refine etale_isFinite_finrank_of_isPullback_SpecMap (fst := fst ≫ inv (affineBlowupι _ ha)) ?_
-  refine h.of_iso (Iso.refl _) (asIso (affineBlowupι _ ha)).symm (Iso.refl _) (Iso.refl _)
-    (by simp) (by simp) ?_ (by simp)
-  simp [← hι]
-
-end ClosedPoint
 
 section Node
 
@@ -225,30 +166,14 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
   obtain ⟨W, hxW, _, hstd⟩ :=
     SyntomicOfRelativeDimension.exists_isStandardSyntomicOfRelativeDimension_appLE_top 1
       (X ↘ Spec (.of K)) ((t ≫ (X.singularLocus K).subschemeι) pt)
-  -- The point `t` is the spectrum of a homomorphism `ψ₀ : Γ(X, W) → L`.
-  have hu : Set.range (t ≫ (X.singularLocus K).subschemeι) ⊆ Set.range W.1.ι := by
-    rintro _ ⟨y, rfl⟩
-    simpa [Subsingleton.elim y pt] using hxW
-  obtain ⟨ψ₀, hψ₀⟩ := Spec.map_surjective
-    (IsOpenImmersion.lift W.1.ι (t ≫ (X.singularLocus K).subschemeι) hu ≫ W.2.isoSpec.hom)
-  replace hψ₀ : Spec.map ψ₀ ≫ W.2.fromSpec = t ≫ (X.singularLocus K).subschemeι := by
-    rw [hψ₀, ← W.2.isoSpec_inv_ι, Category.assoc, Iso.hom_inv_id_assoc, IsOpenImmersion.lift_fac]
-  -- Its kernel `q` contains the ideal of the singular subscheme.
+  -- The point `t` is the spectrum of a homomorphism `ψ₀ : Γ(X, W) → L`, whose kernel `q` contains
+  -- the ideal of the singular subscheme.
+  obtain ⟨ψ₀, hψ₀⟩ := W.2.exists_SpecMap_comp_fromSpec_eq (t ≫ (X.singularLocus K).subschemeι)
+    (by rintro _ ⟨y, rfl⟩; simpa [Subsingleton.elim y pt] using hxW)
   let q := RingHom.ker ψ₀.hom
   have : q.IsPrime := RingHom.ker_isPrime _
-  have hq : (X.singularLocus K).ideal W ≤ q := by
-    intro r hr
-    have hx : (t ≫ (X.singularLocus K).subschemeι) pt ∈
-        Set.range (X.singularLocus K).subschemeι := ⟨t pt, rfl⟩
-    rw [(X.singularLocus K).range_subschemeι] at hx
-    by_contra hne
-    refine (X.mem_zeroLocus_iff _ _).mp
-      (((X.singularLocus K).mem_support_iff_of_mem hxW).mp hx) r hr ?_
-    have hpt : pt ∈ (Spec.map ψ₀ ≫ W.2.fromSpec) ⁻¹ᵁ X.basicOpen r := by
-      rw [Scheme.Hom.comp_preimage, W.2.fromSpec_preimage_basicOpen, SpecMap_preimage_basicOpen]
-      refine (PrimeSpectrum.mem_basicOpen _ _).mpr ?_
-      rwa [@Ideal.eq_bot_of_prime _ _ pt.asIdeal pt.isPrime, Ideal.mem_bot]
-    rwa [hψ₀] at hpt
+  have hq : (X.singularLocus K).ideal W ≤ q :=
+    (X.singularLocus K).ideal_le_ker_of_SpecMap_comp_fromSpec_eq W hψ₀
   -- `ψ₀` factors through a local homomorphism from the localization `A` of `Γ(X, W)` at `q`.
   let A := Localization.AtPrime q
   let := ψ₀.hom.toAlgebra
@@ -257,15 +182,8 @@ private theorem etale_isFinite_finrank_of_isPullback_blowupToBase
   let := (IsLocalization.lift (M := q.primeCompl) (S := A) hunit).toAlgebra
   have : IsScalarTower Γ(X, W) A L :=
     .of_algebraMap_eq fun r ↦ (IsLocalization.lift_eq (M := q.primeCompl) (S := A) hunit r).symm
-  have : IsLocalHom (algebraMap A L) := by
-    refine ⟨fun z hz ↦ ?_⟩
-    obtain ⟨⟨r, y⟩, rfl⟩ := IsLocalization.mk'_surjective q.primeCompl z
-    rw [IsLocalization.AtPrime.isUnit_mk'_iff A q]
-    intro hr
-    have hspec := congrArg (algebraMap A L) (IsLocalization.mk'_spec A r y)
-    rw [map_mul, ← IsScalarTower.algebraMap_apply, ← IsScalarTower.algebraMap_apply,
-      RingHom.algebraMap_toAlgebra ψ₀.hom, RingHom.mem_ker.mp hr] at hspec
-    exact hz.ne_zero ((mul_eq_zero.mp hspec).resolve_right (hunit y).ne_zero)
+  have : IsLocalHom (algebraMap A L) := IsLocalization.AtPrime.isLocalHom_lift q hunit
+    fun r hr ↦ Ideal.mem_comap.mpr ((RingHom.mem_ker.mp hr).symm ▸ zero_mem _)
   -- Blowing up commutes with the flat base change to `Spec A`, so the base change of the blowup
   -- to `t` is that of the blowup of `Spec A` along the maximal ideal.
   have hbot : Spec.map (CommRingCat.ofHom (algebraMap A L)) ≫
