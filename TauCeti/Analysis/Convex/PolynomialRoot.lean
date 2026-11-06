@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.ClusterSet
 public import TauCeti.Topology.Algebra.Polynomial.Basic
-public import TauCeti.Topology.Algebra.Polynomial.RootExtension
+public import TauCeti.Topology.Algebra.Polynomial.Root.Extension
 public import Mathlib.Topology.Algebra.MvPolynomial
 
 /-!
