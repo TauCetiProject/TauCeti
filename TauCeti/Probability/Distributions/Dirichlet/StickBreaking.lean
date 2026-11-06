@@ -114,34 +114,6 @@ theorem dirichletStickSplit_insert {z : ℝ × EuclideanSpace ℝ ι}
 
 variable [Nonempty ι]
 
-/-- The Gamma–Beta ratio law, carried along an independent factor: for independent Gamma
-totals `t ~ Γ(q, 1)` and `s ~ Γ(p, 1)` and an independent `w ~ δ`, the pair `(s / (s + t), w)` has
-law `Beta(p, q) ⊗ δ`. -/
-private theorem map_prod_prod_gammaMeasure_div_add {α : Type*} [MeasurableSpace α]
-    (δ : Measure α) [SFinite δ] {p q : ℝ} (hp : 0 < p) (hq : 0 < q) :
-    ((δ.prod (gammaMeasure q 1)).prod (gammaMeasure p 1)).map
-      (fun z ↦ (z.2 / (z.2 + z.1.2), z.1.1)) = (betaMeasure p q).prod δ := by
-  let _ := isProbabilityMeasure_gammaMeasure hp one_pos
-  let _ := isProbabilityMeasure_gammaMeasure hq one_pos
-  let _ := isProbabilityMeasureBeta hp hq
-  have hbeta : ((gammaMeasure q 1).prod (gammaMeasure p 1)).map (fun z ↦ z.2 / (z.2 + z.1)) =
-      betaMeasure p q := by
-    rw [← Measure.prod_swap (μ := gammaMeasure p 1) (ν := gammaMeasure q 1),
-      Measure.map_map (by fun_prop) measurable_swap]
-    exact map_div_add_gammaMeasure hp hq one_pos
-  calc
-    _ = (δ.prod ((gammaMeasure q 1).prod (gammaMeasure p 1))).map
-        (fun z ↦ (z.2.2 / (z.2.2 + z.2.1), z.1)) := by
-      rw [← Measure.prodAssoc_prod, Measure.map_map (by fun_prop) (by fun_prop)]
-      rfl
-    _ = ((δ.prod ((gammaMeasure q 1).prod (gammaMeasure p 1))).map
-        (Prod.map id (fun z : ℝ × ℝ ↦ z.2 / (z.2 + z.1)))).map Prod.swap := by
-      rw [Measure.map_map measurable_swap (by fun_prop)]
-      rfl
-    _ = _ := by
-      rw [← Measure.map_prod_map _ _ measurable_id (by fun_prop), Measure.map_id, hbeta,
-        Measure.prod_swap]
-
 /-- A Dirichlet vector splits into an independent Beta fraction and Dirichlet remainder.
 The second Beta shape is the sum of the remaining concentration parameters. -/
 theorem map_dirichletStickSplit_dirichletMeasure {a : Option ι → ℝ}
@@ -163,7 +135,7 @@ theorem map_dirichletStickSplit_dirichletMeasure {a : Option ι → ℝ}
   have htail : μ.map (fun x ↦ (dirichletNormalize x, ∑ i, x i)) = δ.prod γ :=
     map_dirichletNormalize_sum_pi_gammaMeasure (fun i ↦ ha (some i)) one_pos
   -- Reassociate the three factors and apply the Gamma–Beta ratio law to the two totals.
-  have hratio := map_prod_prod_gammaMeasure_div_add δ (ha none) hA
+  have hratio := map_prod_prod_gammaMeasure_div_add δ (ha none) hA one_pos
   rw [dirichletMeasure_of_pos ha, Measure.map_map measurable_dirichletStickSplit
     measurable_dirichletNormalize, ← Measure.pi_map_piOptionEquivProd]
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
