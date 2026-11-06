@@ -53,13 +53,17 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.Nonempty.exists_subset_Ioi_insert_eq` writes a nonempty finset of a linear order as its
   minimum inserted into a finset above it, and `Finset.min'_insert_of_subset_Ioi` recovers that
   minimum.
+* `Finset.filter_min'_lt_eq_erase` identifies the elements above the minimum with the erasure of
+  the minimum.
 * `Finset.card_filter_eq_of_ite_eq` counts the elements of a finset satisfying a predicate against
   a pointwise decomposition of its indicator.
 * `Finset.exists_adjacent_eq_of_not_card_image_and_image_subset_Ioo` finds two consecutive points
   identified by a monotone map that is not injective on a finset `T` inside `Ioo a b`, or does not
   map it strictly between the images of `a` and `b`, and
   `Finset.card_image_comp_eq_and_image_comp_subset_Ioo_iff` splits that condition for a composite
-  of maps.
+  of maps. `StrictMono.image_subset_Ioo` maps a finset inside `Ioo a b` into the interval between
+  the images of `a` and `b` under a strictly monotone map, and
+  `StrictMono.exists_image_eq_of_subset_Ioo` lifts such an interval and finset along it.
 * `Finset.card_symmDiff_add_two_mul_card_inter` and `Finset.even_card_symmDiff_iff` compare the
   cardinality of a symmetric difference with the cardinalities of its two arguments: exactly, and
   modulo two.
@@ -71,6 +75,9 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.mem_map_swap_prodCongr_refl_iff_of_ne` and
   `Finset.mk_mem_map_swap_prodCongr_refl_iff` describe membership in a finset of pairs whose
   first coordinates are transposed.
+* `Finset.union_eq_union_and_disjoint_and_disjoint_of_repartition` shows that two pairs of
+  disjoint finsets partition the same elements, given two such partitions they agree with away
+  from a set of exceptional elements, and a comparison at the exceptional elements.
 * `Finset.sum_filter_le_sum_filter_le` reindexes a double sum over chains in a finite type with a
   `≤` relation.
 * `Finset.sum_eq_two` and `Finset.sum_eq_four` reduce a sum over a finite type, and a double sum
@@ -79,7 +86,9 @@ import TauCeti.Data.Set.PowersetCard
 * `Finset.filter_ne_product_of_disjoint` says that every pair in the product of disjoint finsets
   has distinct coordinates, `Finset.card_filter_ne_product` counts the pairs with distinct
   coordinates in any product by their first coordinate, `Finset.card_filter_ne_product_comm`
-  says that this count is symmetric in the two factors, and
+  says that this count is symmetric in the two factors,
+  `Finset.card_mul_card_le_two_mul_card_filter_ne_product` says that these pairs make up at least
+  half of the product when the second factor has two elements, and
   `Finset.card_filter_ne_product_mul_card_le` bounds the proportion of these pairs in a
   subproduct of the product of two equal or disjoint finsets.
 * `TauCeti.sum_piecewise_eq_sum_update_of_card_eq_succ` reindexes a sum of `Finset.piecewise` terms
@@ -218,6 +227,17 @@ theorem card_filter_ne_product_comm {α : Type*} [DecidableEq α] (s t : Finset 
   apply card_equiv (Equiv.prodComm α α)
   simp [and_comm, ne_comm]
 
+/-- If `t` has at least two elements, then pairs with distinct coordinates make up at least half
+of `s ×ˢ t`. -/
+theorem card_mul_card_le_two_mul_card_filter_ne_product {α : Type*} [DecidableEq α]
+    (s t : Finset α) (ht : 2 ≤ #t) : #s * #t ≤ 2 * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+  have hle : #s * (#t - 1) ≤ #{p ∈ s ×ˢ t | p.1 ≠ p.2} := by
+    rw [card_filter_ne_product, ← smul_eq_mul, ← sum_const]
+    exact sum_le_sum fun u _ ↦ pred_card_le_card_erase
+  calc #s * #t ≤ #s * (2 * (#t - 1)) := Nat.mul_le_mul_left _ (by omega)
+    _ = 2 * (#s * (#t - 1)) := Nat.mul_left_comm _ _ _
+    _ ≤ 2 * #{p ∈ s ×ˢ t | p.1 ≠ p.2} := Nat.mul_le_mul_left _ hle
+
 /-- If `s` and `t` are equal or disjoint, then for `s' ⊆ s` and `t' ⊆ t` the pairs with distinct
 coordinates in `s' ×ˢ t'` are at most a `#s' / #s`-fraction of those in `s ×ˢ t`. For
 overlapping `s ≠ t` this can fail: take `s = {a, b}`, `t = {b, c}`, `s' = {a}` and `t' = t`. -/
@@ -350,6 +370,29 @@ theorem map_swap_symmDiff_pair_eq_self_iff {α : Type*} [DecidableEq α] (a b : 
       · rw [Equiv.swap_apply_of_ne_of_ne hx hx']
         tauto
 
+/-- Let `A₀, B₀` and `S, F₀` be two partitions of the same elements into two disjoint finsets.
+Suppose that, away from the exceptional elements (those satisfying `q`), the finsets `A`, `B` and
+`F` agree with `A₀`, `B₀` and `F₀`, that `S` contains no exceptional element, and that at the
+exceptional elements `A` and `B` contain exactly the elements of `F`, without overlap. Then
+`A, B` and `S, F` partition the same elements. -/
+theorem union_eq_union_and_disjoint_and_disjoint_of_repartition {α : Type*} [DecidableEq α]
+    (q : α → Prop) {A B S F A₀ B₀ F₀ : Finset α}
+    (hrep : S ∪ F₀ = A₀ ∪ B₀) (hSF : Disjoint S F₀) (hAB : Disjoint A₀ B₀)
+    (hA : ∀ p, ¬q p → (p ∈ A ↔ p ∈ A₀)) (hB : ∀ p, ¬q p → (p ∈ B ↔ p ∈ B₀))
+    (hF : ∀ p, ¬q p → (p ∈ F ↔ p ∈ F₀)) (hS : ∀ p ∈ S, ¬q p)
+    (hq : ∀ p, q p → (p ∈ A ∨ p ∈ B ↔ p ∈ F) ∧ ¬(p ∈ A ∧ p ∈ B)) :
+    A ∪ B = S ∪ F ∧ Disjoint A B ∧ Disjoint S F := by
+  refine ⟨Finset.ext fun p => ?_, Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_,
+    Finset.disjoint_left.mpr fun {p} h₁ h₂ => ?_⟩
+  · rw [Finset.mem_union, Finset.mem_union]
+    by_cases hp : q p
+    · rw [(hq p hp).1, iff_false_intro fun h => hS p h hp, false_or]
+    · rw [hA p hp, hB p hp, hF p hp, ← Finset.mem_union, ← Finset.mem_union, hrep]
+  · by_cases hp : q p
+    · exact (hq p hp).2 ⟨h₁, h₂⟩
+    · exact Finset.disjoint_left.mp hAB ((hA p hp).mp h₁) ((hB p hp).mp h₂)
+  · exact Finset.disjoint_left.mp hSF h₁ ((hF p (hS p h₁)).mp h₂)
+
 /-- The two coordinates of every element of a finite set of natural-number pairs lie below a
 common bound. -/
 theorem exists_nat_prod_lt (I : Finset (ℕ × ℕ)) :
@@ -386,6 +429,29 @@ theorem exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : �
     have := hρ ⟨j, Finset.mem_union_right _ hj⟩
     simp only [g, hjI, ite_false] at this
     rw [this]; omega
+
+/-- For finite index sets `tA ⊆ S ×ˢ S` and `tB ⊆ S' ×ˢ S'` with `S`, `S'` disjoint, and every
+cutoff `n`, some permutation of `ℕ` fixes every index of `tA` and moves both coordinates of every
+index of `tB` to at least `n`. -/
+theorem exists_perm_prod_fix_and_le {S S' : Set ℕ} (hd : Disjoint S S')
+    {tA tB : Finset (ℕ × ℕ)} (htA : ↑tA ⊆ S ×ˢ S) (htB : ↑tB ⊆ S' ×ˢ S') (n : ℕ) :
+    ∃ ρ : Equiv.Perm ℕ, (∀ p ∈ tA, (ρ p.1, ρ p.2) = p) ∧ ∀ p ∈ tB, n ≤ ρ p.1 ∧ n ≤ ρ p.2 := by
+  classical
+  have hmem : ∀ {t : Finset (ℕ × ℕ)} {T : Set ℕ}, ↑t ⊆ T ×ˢ T →
+      ∀ i ∈ t.image Prod.fst ∪ t.image Prod.snd, i ∈ T := by
+    intro t T ht i hi
+    simp only [Finset.mem_union, Finset.mem_image] at hi
+    rcases hi with ⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩
+    · exact (ht (Finset.mem_coe.2 hp)).1
+    · exact (ht (Finset.mem_coe.2 hp)).2
+  obtain ⟨ρ, hρI, hρJ⟩ := (tA.image Prod.fst ∪ tA.image Prod.snd).exists_perm_eqOn_le_apply
+    (tB.image Prod.fst ∪ tB.image Prod.snd) (Finset.disjoint_left.2 fun i hi hj ↦
+      Set.disjoint_left.mp hd (hmem htA i hi) (hmem htB i hj)) n
+  refine ⟨ρ, fun p hp ↦ ?_, fun p hp ↦ ⟨?_, ?_⟩⟩
+  · rw [hρI _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp)),
+      hρI _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))]
+  · exact hρJ _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp))
+  · exact hρJ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))
 
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
@@ -595,6 +661,11 @@ theorem min'_insert_of_subset_Ioi {α : Type*} [LinearOrder α] [LocallyFiniteOr
     · exact le_rfl
     · exact (mem_Ioi.1 (hs hy)).le)
 
+/-- Removing the minimum of a nonempty finset leaves the elements strictly above it. -/
+theorem filter_min'_lt_eq_erase {α : Type*} [LinearOrder α] {s : Finset α} (hs : s.Nonempty) :
+    {x ∈ s | s.min' hs < x} = s.erase (s.min' hs) :=
+  (filter_congr fun y hy ↦ ⟨LT.lt.ne', (s.min'_le y hy).lt_of_ne'⟩).trans (filter_ne' s _)
+
 /-- A nonempty finset of a linear order is an element `a` inserted into a finset above `a`. -/
 theorem Nonempty.exists_subset_Ioi_insert_eq {α : Type*} [LinearOrder α]
     [LocallyFiniteOrderTop α] {s : Finset α} (hs : s.Nonempty) :
@@ -676,6 +747,33 @@ theorem card_image_comp_eq_and_image_comp_subset_Ioo_iff {α β γ : Type*} [Par
       exact lt_irrefl _ hf.2
   · rintro ⟨⟨hcg, -⟩, hcf, hsub⟩
     exact ⟨hcf.trans hcg, hsub⟩
+
+/-- A strictly monotone map sends elements strictly between `a` and `b` to elements strictly
+between their images. -/
+theorem _root_.StrictMono.image_subset_Ioo {α β : Type*} [Preorder α] [LocallyFiniteOrder α]
+    [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β} (he : StrictMono e)
+    {a b : α} {S : Finset α} (hS : S ⊆ Ioo a b) : S.image e ⊆ Ioo (e a) (e b) := fun _ hx ↦ by
+  obtain ⟨s, hs, rfl⟩ := mem_image.1 hx
+  have := mem_Ioo.1 (hS hs)
+  exact mem_Ioo.2 ⟨he this.1, he this.2⟩
+
+/-- Endpoints `a ≤ b` and a finset `S ⊆ Ioo a b`, all of whose elements are values of a strictly
+monotone map `e`, are the images under `e` of endpoints `a' ≤ b'` and of a finset
+`S' ⊆ Ioo a' b'`. -/
+theorem _root_.StrictMono.exists_image_eq_of_subset_Ioo {α β : Type*} [LinearOrder α]
+    [LocallyFiniteOrder α] [Preorder β] [LocallyFiniteOrder β] [DecidableEq β] {e : α → β}
+    (he : StrictMono e) {a b : β} {S : Finset β} (hab : a ≤ b) (hS : S ⊆ Ioo a b)
+    (ha : ∃ a', e a' = a) (hb : ∃ b', e b' = b) (hSe : ∀ s ∈ S, ∃ s', e s' = s) :
+    ∃ a' b' S', e a' = a ∧ e b' = b ∧ S'.image e = S ∧ a' ≤ b' ∧ S' ⊆ Ioo a' b' := by
+  classical
+  obtain ⟨a', rfl⟩ := ha
+  obtain ⟨b', rfl⟩ := hb
+  obtain ⟨S', rfl⟩ : ∃ S', S'.image e = S := ⟨S.preimage e he.injective.injOn, by
+    rw [image_preimage]
+    exact filter_true_of_mem hSe⟩
+  refine ⟨a', b', S', rfl, rfl, rfl, he.le_iff_le.1 hab, fun s hs ↦ ?_⟩
+  have := mem_Ioo.1 (hS (mem_image_of_mem _ hs))
+  exact mem_Ioo.2 ⟨he.lt_iff_lt.1 this.1, he.lt_iff_lt.1 this.2⟩
 
 /-- The sum over a finite type of a function that vanishes away from two distinct points is the sum
 of its values at those two points. -/

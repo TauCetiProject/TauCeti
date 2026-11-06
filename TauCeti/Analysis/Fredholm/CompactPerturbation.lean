@@ -9,34 +9,50 @@ public import TauCeti.Analysis.Fredholm.ClosedRange
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.Normed.Operator.Compact.RieszTheory
 
-/-!
-# Compact perturbations of Fredholm operators
+import Mathlib.Analysis.RCLike.Lemmas
+import TauCeti.Analysis.Normed.Operator.Basic
+import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
-A compact perturbation of a Fredholm operator between Banach spaces is Fredholm, with the same
-index. This is the last of the three classical stability statements for the Fredholm index, after
-finite-rank perturbations (`TauCeti.Analysis.Fredholm.FiniteRank`) and small perturbations
-(`TauCeti.Analysis.Fredholm.SmallPerturbation`).
+/-!
+# Compact perturbations of Fredholm operators and Atkinson's theorem
+
+A continuous linear map between Banach spaces is Fredholm exactly when it is invertible modulo
+compact operators (Atkinson's theorem). Consequently a compact perturbation of a Fredholm operator
+is Fredholm, with the same index. This is the last of the three classical stability statements
+for the Fredholm index, after finite-rank perturbations (`TauCeti.Analysis.Fredholm.FiniteRank`)
+and small perturbations (`TauCeti.Analysis.Fredholm.SmallPerturbation`). The parametrix form is
+the one used for elliptic operators, whose parametrices invert them modulo compact remainders.
 
 The starting point is the Riesz--Schauder theory of
 `TauCeti.Analysis.Normed.Operator.Compact.RieszTheory`: for a compact operator `K` the kernel of
 `1 - K` is finite dimensional and its cokernel is finite dimensional, so `1 - K` is Fredholm.
 
-For a general Fredholm `T` and compact `C`, take a continuous quasi-inverse `S` of `T`, so that
-`S ∘ T` and `T ∘ S` differ from the identity by operators of finite rank. Then
-`S ∘ (T + C) = (1 + S ∘ C) + (S ∘ T - 1)` is a finite-rank perturbation of a compact perturbation
-of the identity, hence Fredholm, and likewise for `(T + C) ∘ S`. The kernel of `T + C` sits inside
-the kernel of `S ∘ (T + C)` and the range of `T + C` contains the range of `(T + C) ∘ S`, so both
-defect spaces of `T + C` are finite dimensional.
+The two sides of a parametrix `S` of `T` are used separately. If `S ∘ T - 1` is compact, the
+identity `x = S (T x) - (S ∘ T - 1) x` is an estimate `‖x‖ ≤ ‖S‖ ‖T x‖ + ‖K x‖` with compact
+error, so `T` has finite-dimensional kernel and, on a Banach space, closed range by Peetre's
+lemma. If `T ∘ S - 1` is compact, the range of `T` contains the range of the Fredholm operator
+`T ∘ S`, so it has finite codimension. Conversely, a continuous quasi-inverse of a Fredholm
+operator inverts it modulo finite-rank, hence compact, operators. A parametrix of `T` is also a
+parametrix of `T + C` for `C` compact, which gives the perturbation statement.
 
 The index statement is then a connectedness argument rather than a new computation: the family
 `c ↦ T + c • C` is a continuous family of Fredholm operators over the preconnected parameter space
 `𝕜`, so the local constancy of the index proved in `TauCeti.Analysis.Fredholm.ContinuousFamily`
-forces the values at `c = 0` and `c = 1` to agree.
+forces the values at `c = 0` and `c = 1` to agree. Additivity of the index under composition
+then shows that a parametrix of `T` has index `-index T`.
 
 ## Main declarations
 
 * `TauCeti.isFredholm_one_sub` and `TauCeti.isFredholm_one_add`: `1 - K` and `1 + K` are Fredholm
   for `K` compact.
+* `ContinuousLinearMap.finiteDimensional_ker_of_isCompactOperator_comp_sub_one` and
+  `ContinuousLinearMap.isClosed_range_of_isCompactOperator_comp_sub_one`: an operator with a
+  left parametrix modulo compact operators has finite-dimensional kernel and closed range.
+* `ContinuousLinearMap.cofg_range_of_isCompactOperator_comp_sub_one`: an operator with a right
+  parametrix modulo compact operators has finite-codimensional range.
+* `ContinuousLinearMap.IsFredholm.of_isCompactOperator_comp_sub_one`,
+  `ContinuousLinearMap.IsFredholm.exists_isCompactOperator_comp_sub_one` and
+  `TauCeti.isFredholm_iff_exists_isCompactOperator_comp_sub_one`: Atkinson's theorem.
 * `ContinuousLinearMap.IsFredholm.add_of_isCompactOperator`: a compact perturbation of a Fredholm
   operator is Fredholm.
 * `ContinuousLinearMap.index_add_of_isCompactOperator`: a compact perturbation leaves the
@@ -44,10 +60,16 @@ forces the values at `c = 0` and `c = 1` to agree.
 * `ContinuousLinearMap.index_one_sub_eq_zero` and
   `ContinuousLinearMap.index_one_add_eq_zero`: `1 - K` and `1 + K` have index `0` for `K`
   compact.
+* `ContinuousLinearMap.index_eq_neg_of_isCompactOperator_comp_sub_one`: a parametrix modulo
+  compact operators has the opposite index.
 
-The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix
-A.1; the compact-perturbation statement is Atkinson's theorem together with the Riesz--Schauder
-theory, see Conway, *A Course in Functional Analysis*, Chapter XI.
+## References
+
+* F. V. Atkinson, *The normal solubility of linear equations in normed spaces*, Mat. Sbornik
+  N.S. 28 (70) (1951), 3--14.
+* J. B. Conway, *A Course in Functional Analysis*, Chapter XI.
+* D. McDuff, D. Salamon, *J-holomorphic Curves and Symplectic Topology*, Appendix A.1, whose
+  conventions for Fredholm operators are followed here.
 -/
 
 public section
@@ -77,57 +99,97 @@ theorem isFredholm_one_add {K : E →L[𝕜] E} (hK : IsCompactOperator K) :
   rw [hrw]
   exact isFredholm_one_sub hneg
 
-variable {T C : E →L[𝕜] F}
+variable {T C : E →L[𝕜] F} {S : F →L[𝕜] E}
 
-/-- A compact perturbation of a Fredholm operator between Banach spaces is Fredholm.
+omit [IsRCLikeNormedField 𝕜] [CompleteSpace E] [CompleteSpace F] in
+/-- An operator with a left parametrix modulo compact operators has finite-dimensional kernel:
+if `S ∘ T - 1` is compact then `ker T` is finite dimensional. No completeness of `E` or `F` is
+needed. -/
+theorem _root_.ContinuousLinearMap.finiteDimensional_ker_of_isCompactOperator_comp_sub_one
+    (T : E →L[𝕜] F) {S : F →L[𝕜] E} (hST : IsCompactOperator (S.comp T - 1 : E →L[𝕜] E)) :
+    FiniteDimensional 𝕜 T.ker :=
+  T.finiteDimensional_ker_of_compact_estimate hST
+    (T.norm_le_opNorm_mul_norm_add_norm_comp_sub_one S)
 
-The proof is Atkinson's argument: a quasi-inverse `S` of `T` turns `T + C` into a compact
-perturbation of the identity on both sides, up to finite rank, and the two defect spaces of
-`T + C` are then squeezed between those of `S ∘ (T + C)` and `(T + C) ∘ S`. -/
+omit [CompleteSpace F] in
+/-- An operator on a Banach space with a left parametrix modulo compact operators has closed
+range: if `S ∘ T - 1` is compact then `range T` is closed. -/
+theorem _root_.ContinuousLinearMap.isClosed_range_of_isCompactOperator_comp_sub_one
+    (T : E →L[𝕜] F) {S : F →L[𝕜] E} (hST : IsCompactOperator (S.comp T - 1 : E →L[𝕜] E)) :
+    IsClosed (T.range : Set F) :=
+  T.isClosed_range_of_compact_estimate hST (T.norm_le_opNorm_mul_norm_add_norm_comp_sub_one S)
+
+omit [CompleteSpace E] in
+/-- An operator with a right parametrix modulo compact operators has finite-codimensional range:
+if `T ∘ S - 1` is compact then `F ⧸ range T` is finite dimensional. Between Banach spaces the
+range is then closed by `ContinuousLinearMap.isClosed_range_of_finite_coker`. -/
+theorem _root_.ContinuousLinearMap.cofg_range_of_isCompactOperator_comp_sub_one
+    (T : E →L[𝕜] F) {S : F →L[𝕜] E} (hTS : IsCompactOperator (T.comp S - 1 : F →L[𝕜] F)) :
+    T.range.CoFG := by
+  have hrw : T.comp S = 1 + (T.comp S - 1) := by abel
+  have hfred := isFredholm_one_add hTS
+  rw [← hrw] at hfred
+  -- The range of `T` contains the range of the Fredholm operator `T ∘ S`.
+  have hrange : (T.comp S).range ≤ T.range := by
+    rintro y ⟨z, rfl⟩
+    exact ⟨S z, rfl⟩
+  exact hfred.finite_coker.of_le hrange
+
+/-- **Atkinson's theorem**, parametrix direction: an operator between Banach spaces with a
+two-sided parametrix modulo compact operators is Fredholm. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.of_isCompactOperator_comp_sub_one
+    (hST : IsCompactOperator (S.comp T - 1 : E →L[𝕜] E))
+    (hTS : IsCompactOperator (T.comp S - 1 : F →L[𝕜] F)) :
+    ContinuousLinearMap.IsFredholm T :=
+  ContinuousLinearMap.IsFredholm.of_finite_ker_coker T
+    (T.finiteDimensional_ker_of_isCompactOperator_comp_sub_one hST)
+    (T.cofg_range_of_isCompactOperator_comp_sub_one hTS)
+
+omit [CompleteSpace E] [CompleteSpace F] in
+/-- A Fredholm operator has a two-sided parametrix modulo compact operators: any continuous
+quasi-inverse, which inverts it modulo operators of finite rank, will do. -/
+theorem _root_.ContinuousLinearMap.IsFredholm.exists_isCompactOperator_comp_sub_one
+    (hT : ContinuousLinearMap.IsFredholm T) :
+    ∃ S : F →L[𝕜] E, IsCompactOperator (S.comp T - 1 : E →L[𝕜] E) ∧
+      IsCompactOperator (T.comp S - 1 : F →L[𝕜] F) := by
+  have : LocallyCompactSpace 𝕜 := by
+    let _i := IsRCLikeNormedField.rclike 𝕜
+    infer_instance
+  obtain ⟨S, hS⟩ := hT.exists_isQuasiInverse
+  refine ⟨S, ?_, ?_⟩ <;> apply LinearMap.HasFiniteRange.isCompactOperator
+  · simpa only [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearMap.toLinearMap_one, Module.End.one_eq_id] using
+      LinearMap.FiniteRangeSetoid.equiv_iff_hasFiniteRange.mp hS.1
+  · simpa only [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_comp,
+      ContinuousLinearMap.toLinearMap_one, Module.End.one_eq_id] using
+      LinearMap.FiniteRangeSetoid.equiv_iff_hasFiniteRange.mp hS.2
+
+/-- **Atkinson's theorem**: an operator between Banach spaces is Fredholm if and only if it is
+invertible modulo compact operators. -/
+theorem isFredholm_iff_exists_isCompactOperator_comp_sub_one :
+    ContinuousLinearMap.IsFredholm T ↔ ∃ S : F →L[𝕜] E,
+      IsCompactOperator (S.comp T - 1 : E →L[𝕜] E) ∧
+        IsCompactOperator (T.comp S - 1 : F →L[𝕜] F) :=
+  ⟨fun hT ↦ hT.exists_isCompactOperator_comp_sub_one,
+    fun ⟨_, hST, hTS⟩ ↦ .of_isCompactOperator_comp_sub_one hST hTS⟩
+
+/-- A compact perturbation of a Fredholm operator between Banach spaces is Fredholm: a
+parametrix of `T` modulo compact operators is also one of `T + C`. -/
 theorem _root_.ContinuousLinearMap.IsFredholm.add_of_isCompactOperator
     (hT : ContinuousLinearMap.IsFredholm T) (hC : IsCompactOperator C) :
     ContinuousLinearMap.IsFredholm (T + C) := by
-  obtain ⟨S, hS⟩ := hT.exists_isQuasiInverse
-  -- `S ∘ T` and `T ∘ S` differ from the identity by an operator of finite rank.
-  have hleft : LinearMap.HasFiniteRange ((S.comp T - 1 : E →L[𝕜] E) : E →ₗ[𝕜] E) := by
-    simpa only [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_comp,
-      ContinuousLinearMap.toLinearMap_one, Module.End.one_eq_id] using
-      LinearMap.FiniteRangeSetoid.equiv_iff_hasFiniteRange.mp hS.1
-  have hright : LinearMap.HasFiniteRange ((T.comp S - 1 : F →L[𝕜] F) : F →ₗ[𝕜] F) := by
-    simpa only [ContinuousLinearMap.toLinearMap_sub, ContinuousLinearMap.toLinearMap_comp,
-      ContinuousLinearMap.toLinearMap_one, Module.End.one_eq_id] using
-      LinearMap.FiniteRangeSetoid.equiv_iff_hasFiniteRange.mp hS.2
-  have hcomp₁ : ContinuousLinearMap.IsFredholm (S.comp (T + C)) := by
-    have hrw : S.comp (T + C) = (1 + S.comp C) + (S.comp T - 1) := by
+  obtain ⟨S, hST, hTS⟩ := hT.exists_isCompactOperator_comp_sub_one
+  refine .of_isCompactOperator_comp_sub_one (S := S) ?_ ?_
+  · have hrw : S.comp (T + C) - 1 = (S.comp T - 1) + S.comp C := by
       rw [ContinuousLinearMap.comp_add]
       abel
-    rw [hrw]
-    exact (isFredholm_one_add (hC.clm_comp S :)).add_hasFiniteRange hleft
-  have hcomp₂ : ContinuousLinearMap.IsFredholm ((T + C).comp S) := by
-    have hrw : (T + C).comp S = (1 + C.comp S) + (T.comp S - 1) := by
+    rw [hrw, FunLike.coe_add]
+    exact hST.add (hC.clm_comp S)
+  · have hrw : (T + C).comp S - 1 = (T.comp S - 1) + C.comp S := by
       rw [ContinuousLinearMap.add_comp]
       abel
-    rw [hrw]
-    exact (isFredholm_one_add (hC.comp_clm S :)).add_hasFiniteRange hright
-  refine ContinuousLinearMap.IsFredholm.of_finite_ker_coker _ ?_ ?_
-  · -- The kernel of `T + C` sits inside that of `S ∘ (T + C)`.
-    have hker : LinearMap.ker ((T + C : E →L[𝕜] F) : E →ₗ[𝕜] F)
-        ≤ LinearMap.ker ((S.comp (T + C) : E →L[𝕜] E) : E →ₗ[𝕜] E) := by
-      intro x hx
-      rw [LinearMap.mem_ker] at hx ⊢
-      simpa only [ContinuousLinearMap.coe_coe, ContinuousLinearMap.comp_apply, map_zero] using
-        congrArg S hx
-    have := ((isFredholm_iff_finite_ker_coker _).mp hcomp₁).1
-    exact Submodule.finiteDimensional_of_le hker
-  · -- The range of `T + C` contains that of `(T + C) ∘ S`.
-    have hrange : LinearMap.range (((T + C).comp S : F →L[𝕜] F) : F →ₗ[𝕜] F)
-        ≤ LinearMap.range ((T + C : E →L[𝕜] F) : E →ₗ[𝕜] F) := by
-      rintro y ⟨z, rfl⟩
-      exact ⟨S z, rfl⟩
-    have := ((isFredholm_iff_finite_ker_coker _).mp hcomp₂).2
-    exact FiniteDimensional.of_surjective (Submodule.factor hrange)
-      (Submodule.factor_surjective hrange)
-
+    rw [hrw, FunLike.coe_add]
+    exact hTS.add (hC.comp_clm S)
 
 /-- A compact perturbation leaves the Fredholm index unchanged.
 
@@ -166,6 +228,20 @@ theorem _root_.ContinuousLinearMap.index_one_add_eq_zero {K : E →L[𝕜] E} (h
     ContinuousLinearMap.index (1 + K : E →L[𝕜] E) = 0 := by
   have hrw : (1 + K : E →L[𝕜] E) = ContinuousLinearMap.id 𝕜 E + K := rfl
   rw [hrw, ContinuousLinearMap.index_add_of_isCompactOperator .id hK, ContinuousLinearMap.index_id]
+
+/-- A parametrix modulo compact operators of a Fredholm operator has the opposite index:
+if `S ∘ T - 1` and `T ∘ S - 1` are compact then `index S = -index T`. -/
+theorem _root_.ContinuousLinearMap.index_eq_neg_of_isCompactOperator_comp_sub_one
+    (hST : IsCompactOperator (S.comp T - 1 : E →L[𝕜] E))
+    (hTS : IsCompactOperator (T.comp S - 1 : F →L[𝕜] F)) :
+    ContinuousLinearMap.index S = -ContinuousLinearMap.index T := by
+  have hT : ContinuousLinearMap.IsFredholm T := .of_isCompactOperator_comp_sub_one hST hTS
+  have hS : ContinuousLinearMap.IsFredholm S := .of_isCompactOperator_comp_sub_one hTS hST
+  have hcomp := hS.index_comp hT
+  have hrw : S.comp T = 1 + (S.comp T - 1) := by abel
+  rw [← ContinuousLinearMap.index_def, hrw, ContinuousLinearMap.index_one_add_eq_zero hST] at hcomp
+  rw [ContinuousLinearMap.index_def, ContinuousLinearMap.index_def]
+  omega
 
 
 end TauCeti

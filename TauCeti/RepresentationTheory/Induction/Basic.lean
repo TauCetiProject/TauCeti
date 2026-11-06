@@ -18,6 +18,7 @@ on the groups or on the representations.
 
 ## Main statements
 
+* `Rep.indMap_hom_mk`: an induced intertwiner acts on the coefficient of each generator.
 * `Rep.indMap_add`: inducing an intertwiner along `φ` is additive, and `Rep.indFunctor_additive`:
   the same fact as a `CategoryTheory.Functor.Additive` instance for `Rep.indFunctor`.
 * `Rep.indMap_smul` and `Rep.indFunctor_linear`: induction is linear over the coefficient ring.
@@ -25,11 +26,27 @@ on the groups or on the representations.
 
 public section
 
-open CategoryTheory
+open CategoryTheory Representation
 
-universe u v w w'
+universe u v w w' t
 
 namespace Rep
+
+/-- An induced intertwiner applies the original intertwiner to each generator's coefficient. -/
+@[simp↓]
+theorem indMap_hom_mk {k : Type u} {G : Type v} {H : Type w}
+    [CommRing k] [Group G] [Group H] (φ : G →* H)
+    {A B : Rep.{w'} k G} (f : A ⟶ B) (h : H) (a : A) :
+    (indMap φ f).hom (IndV.mk φ A.ρ h a) = IndV.mk φ B.ρ h (f.hom a) := by
+  simp [indMap]
+
+/-- Induction–restriction reciprocity evaluates a morphism on the tensor generator at `1`. -/
+theorem indResHomEquiv_hom_apply {k : Type u} {G : Type v} {H : Type w}
+    [CommRing k] [Group G] [Group H] (φ : G →* H)
+    (A : Rep.{max t w u} k G) (B : Rep.{max t w u} k H)
+    (f : ind φ A ⟶ B) (a : A) :
+    (indResHomEquiv.{t, u, v, w} φ A B f).hom a = f.hom (IndV.mk φ A.ρ 1 a) :=
+  rfl
 
 /-- **Induction of intertwiners is additive**: for any homomorphism of groups `φ : G →* H`,
 `Rep.indMap φ (f + g) = Rep.indMap φ f + Rep.indMap φ g`. -/

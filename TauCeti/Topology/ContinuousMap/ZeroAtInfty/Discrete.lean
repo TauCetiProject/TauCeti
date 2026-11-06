@@ -33,7 +33,8 @@ This file develops the coordinate structure of `C₀(I, E)`:
   coordinate vectors with a fixed nonzero value are not norm null
   (`ZeroAtInftyContinuousMap.not_tendsto_single_cofinite`); a finite sum of coordinate vectors at
   distinct coordinates has the maximum of their norms
-  (`ZeroAtInftyContinuousMap.nnnorm_sum_single`);
+  (`ZeroAtInftyContinuousMap.nnnorm_sum_single`), so any family supported on a finite set has norm
+  equal to its maximum on that set (`ZeroAtInftyContinuousMap.norm_eq_sup_of_forall_eq_zero`);
 * `ZeroAtInftyContinuousMap.singleCLM R i`: the isometry `x ↦ single i x` as a continuous linear
   map;
 * `ZeroAtInftyContinuousMap.tendsto_toWeakDual_evalCLM_cofinite`: the coordinate functionals
@@ -355,6 +356,12 @@ theorem indicatorCLM_add_indicatorCLM_compl (S : Set I) :
   ext f i
   by_cases hi : i ∈ S <;> simp [hi]
 
+/-- A coordinate projection fixes any family vanishing outside its index set. -/
+theorem indicatorCLM_eq_self {S : Set I} {f : C₀(I, β)} (hf : ∀ i ∉ S, f i = 0) :
+    indicatorCLM R S f = f := by
+  ext i
+  by_cases hi : i ∈ S <;> simp [hi, hf i]
+
 /-- For a finite set `s`, the coordinate projection onto `s` is the partial sum of the coordinate
 expansion over `s`. -/
 theorem indicatorCLM_finset_apply [DecidableEq I] (s : Finset I) (f : C₀(I, β)) :
@@ -399,6 +406,22 @@ theorem nnnorm_sum_single [DecidableEq I] (s : Finset I) (b : I → β) :
     · simp
   · rw [← NNReal.coe_le_coe, coe_nnnorm, coe_nnnorm]
     simpa [sum_single_apply, hi] using norm_coe_le_norm (∑ i ∈ s, single i (b i)) i
+
+/-- A family vanishing outside a finite set `s` has `nnnorm` equal to the maximum over `s`. -/
+theorem nnnorm_eq_sup_of_forall_eq_zero {s : Finset I} {f : C₀(I, β)}
+    (hf : ∀ i ∉ s, f i = 0) :
+    ‖f‖₊ = s.sup fun i ↦ ‖f i‖₊ := by
+  classical
+  have h : indicatorCLM ℕ (s : Set I) f = f :=
+    indicatorCLM_eq_self fun i hi ↦ hf i (Finset.mem_coe.not.1 hi)
+  conv_lhs => rw [← h, indicatorCLM_finset_apply, nnnorm_sum_single]
+
+/-- A family vanishing outside a finite set `s` has norm equal to the maximum of its norms on `s`.
+-/
+theorem norm_eq_sup_of_forall_eq_zero {s : Finset I} {f : C₀(I, β)}
+    (hf : ∀ i ∉ s, f i = 0) :
+    ‖f‖ = ((s.sup fun i ↦ ‖f i‖₊ : NNReal) : ℝ) :=
+  congrArg NNReal.toReal (nnnorm_eq_sup_of_forall_eq_zero hf)
 
 /-- **The sup norm is attained**: on a nonempty discrete index, some coordinate of `f ∈ C₀(I, β)`
 has norm `‖f‖`. This covers every nonzero `f`, whose index type is necessarily nonempty. -/

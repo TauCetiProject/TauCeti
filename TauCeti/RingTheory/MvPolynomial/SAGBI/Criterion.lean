@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Group.Submonoid.Finsupp
-public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
+public import TauCeti.RingTheory.MvPolynomial.SAGBI.Subduction
 public import TauCeti.RingTheory.MvPolynomial.ToricIdeal.Basic
 public import TauCeti.RingTheory.MvPolynomial.WeightedHomogeneous
 
@@ -37,9 +36,10 @@ flat degeneration of `k[c]` to the semigroup algebra of its initial algebra.
   lies in the toric ideal.
 * `MonomialOrder.IsSAGBIBasis.exists_aeval_eq_aeval_sub`: if `c` is a SAGBI basis of `k[c]`, then
   every binomial `Y^u - Y^v` with `A u = A v` has a bounded zero subduction.
-* `MonomialOrder.exists_aeval_eq_of_mem_toricIdeal`: if the generating binomials have bounded zero
-  subductions, then so does every element of the toric ideal all of whose exponents have the same
-  image under `A`.
+* `MonomialOrder.exists_finsupp_forall_mem_support_sub_sum_lt`: if all exponents `w` of `P` have
+  `A w ≼ δ` and the coefficient of `X^δ` in `φ P` vanishes, then subtracting a combination of the
+  relations `Y^(u j) - Y^(v j) - Q j` of weight `δ` lowers the bound `δ`, for any polynomials `Q j`
+  all of whose exponents `w` satisfy `A w ≺ A (u j)`.
 * `MonomialOrder.isSAGBIBasis_range_iff_forall_exists_aeval_eq`: **the SAGBI criterion**.
 
 ## Implementation notes
@@ -102,28 +102,32 @@ section CommRing
 
 variable {R J : Type*} [CommRing R] [Nontrivial R] {c : ι → MvPolynomial σ R}
 
-/-- Let `c` be a family of polynomials and write `A w = ∑ i, w i • m.degree (c i)`. Suppose that
-binomials `Y^(u j) - Y^(v j)` generate the toric ideal of the leading exponents of `c` and that
-the image of each under `aeval c` is the image of a polynomial all of whose exponents `w` satisfy
-`A w ≺ A (u j)`. Then every element `p` of the toric ideal all of whose exponents `w` satisfy
-`A w = δ` has the same image as a polynomial all of whose exponents `w` satisfy `A w ≺ δ`. -/
-theorem exists_aeval_eq_of_mem_toricIdeal {u v : J → ι →₀ ℕ}
+/-- **The reduction step** for a monic family `c`. Write `A w = ∑ i, w i • m.degree (c i)`, let
+binomials `Y^(u j) - Y^(v j)` generate the toric ideal of the leading exponents of `c`, and let
+`Q j` be polynomials all of whose exponents `w` satisfy `A w ≺ A (u j)`. If every exponent `w` of
+`P` satisfies `A w ≼ δ` and the coefficient of `X^δ` in `aeval c P` vanishes, then `P` is the sum
+of a combination `∑ j, g j * (Y^(u j) - Y^(v j) - Q j)`, every exponent `x` of `g j` satisfying
+`A x + A (u j) = δ`, and of a polynomial all of whose exponents `w` satisfy `A w ≺ δ`. -/
+theorem exists_finsupp_forall_mem_support_sub_sum_lt (hc : ∀ i, m.Monic (c i))
+    {u v : J → ι →₀ ℕ}
     (hJ : TauCeti.toricIdeal R (fun i ↦ m.degree (c i)) =
       Ideal.span (Set.range fun j ↦ monomial (u j) (1 : R) - monomial (v j) 1))
-    (hQ : ∀ j, ∃ Q : MvPolynomial ι R,
-      aeval c Q = aeval c (monomial (u j) (1 : R) - monomial (v j) 1) ∧
-      ∀ w ∈ Q.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m]
-        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j))
-    {p : MvPolynomial ι R} (hp : p ∈ TauCeti.toricIdeal R (fun i ↦ m.degree (c i))) {δ : σ →₀ ℕ}
-    (hpδ : ∀ w ∈ p.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w = δ) :
-    ∃ p' : MvPolynomial ι R, aeval c p' = aeval c p ∧
-      ∀ w ∈ p'.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m] δ := by
+    {Q : J → MvPolynomial ι R}
+    (hQ : ∀ j, ∀ w ∈ (Q j).support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m]
+      Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j))
+    {P : MvPolynomial ι R} {δ : σ →₀ ℕ}
+    (hPδ : ∀ w ∈ P.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] δ)
+    (hδ : (aeval c P).coeff δ = 0) :
+    ∃ g : J →₀ MvPolynomial ι R,
+      (∀ j, ∀ x ∈ (g j).support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) x +
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) (u j) = δ) ∧
+      ∀ w ∈ (P - g.sum fun j q ↦ q * (monomial (u j) 1 - monomial (v j) 1 - Q j)).support,
+        Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m] δ := by
   classical
   set a := fun i ↦ m.degree (c i)
   set A := Finsupp.linearCombination ℕ a
   have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := by
     rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
-  choose Q hQc hQlt using hQ
   -- The generating binomial `Y^(u j) - Y^(v j)` is weighted homogeneous of weight `A (u j)`.
   have hβ (j : J) :
       (monomial (u j) (1 : R) - monomial (v j) 1).IsWeightedHomogeneous a (A (u j)) := by
@@ -133,32 +137,53 @@ theorem exists_aeval_eq_of_mem_toricIdeal {u v : J → ι →₀ ℕ}
     have huv : A (u j) = A (v j) := TauCeti.monomial_sub_monomial_mem_toricIdeal_iff.1 hmem
     exact (isWeightedHomogeneous_monomial _ _ _ (hA _)).sub
       (isWeightedHomogeneous_monomial _ _ _ ((hA _).trans huv.symm))
-  obtain ⟨g, hg⟩ := Finsupp.mem_ideal_span_range_iff_exists_finsupp.1 (hJ ▸ hp)
-  -- The weight-`δ` component of `p = ∑ j, g j * (Y^(u j) - Y^(v j))` is `p` itself; it is the sum
-  -- of the multiples `h j * (Y^(u j) - Y^(v j))` by the components `h j` of weight `δ - A (u j)`.
+  -- The part `P₀` of `P` of weight `δ` lies in the toric ideal: `P₀ = ∑ j, g₀ j * β j`.
+  obtain ⟨g₀, hg₀⟩ := Finsupp.mem_ideal_span_range_iff_exists_finsupp.1
+    (hJ ▸ weightedHomogeneousComponent_mem_toricIdeal hc hPδ hδ)
+  -- Taking weight-`δ` parts, `P₀ = ∑ j, h j * β j` for the components `h j` of weight
+  -- `δ - A (u j)` of the `g₀ j`.
   set h : J → MvPolynomial ι R := fun j ↦
-    if A (u j) ≤ δ then weightedHomogeneousComponent a (δ - A (u j)) (g j) else 0
-  have hph : p = ∑ j ∈ g.support, h j * (monomial (u j) 1 - monomial (v j) 1) := by
-    have hpw : p.IsWeightedHomogeneous a δ := fun w hw ↦ (hA w).trans (hpδ w (mem_support_iff.2 hw))
-    rw [← weightedHomogeneousComponent_eq_self hpw, ← hg, Finsupp.sum, map_sum]
+    if A (u j) ≤ δ then weightedHomogeneousComponent a (δ - A (u j)) (g₀ j) else 0
+  have hh (j : J) (hj : h j ≠ 0) : j ∈ g₀.support :=
+    Finsupp.mem_support_iff.2 fun h0 ↦ hj (by simp [h, h0])
+  have hhA (j : J) (x : ι →₀ ℕ) (hx : x ∈ (h j).support) : A x + A (u j) = δ := by
+    have hle : A (u j) ≤ δ := by
+      by_contra hle
+      simp [h, hle] at hx
+    simp only [h, hle, ite_true] at hx
+    rw [← hA, weightedHomogeneousComponent_isWeightedHomogeneous _ _ (mem_support_iff.1 hx),
+      tsub_add_cancel_of_le hle]
+  set g := Finsupp.onFinset g₀.support h hh
+  have hsum (F : J → MvPolynomial ι R) :
+      (g.sum fun j q ↦ q * F j) = ∑ j ∈ g₀.support, h j * F j := by
+    rw [Finsupp.sum_of_support_subset _ Finsupp.support_onFinset_subset _ fun _ _ ↦ zero_mul _]
+    simp only [Finsupp.onFinset_apply]
+  have hgP₀ : ∑ j ∈ g₀.support, h j * (monomial (u j) 1 - monomial (v j) 1) =
+      weightedHomogeneousComponent a δ P := by
+    conv_rhs => rw [← weightedHomogeneousComponent_eq_self
+      (weightedHomogeneousComponent_isWeightedHomogeneous δ P), ← hg₀, Finsupp.sum, map_sum]
     refine Finset.sum_congr rfl fun j _ ↦ ?_
     rw [(hβ j).weightedHomogeneousComponent_mul_right]
     split_ifs <;> simp [h, *]
-  refine ⟨∑ j ∈ g.support, h j * Q j, ?_, fun w hw ↦ ?_⟩
-  · simp_rw [hph, map_sum, map_mul, hQc]
-  -- An exponent of `h j * Q j` is a sum `x + y` with `A x = δ - A (u j)` and `A y ≺ A (u j)`.
+  refine ⟨g, fun j x hx ↦ hhA j x (by simpa only [g, Finsupp.onFinset_apply] using hx),
+    fun w hw ↦ ?_⟩
+  -- `P - ∑ j, h j * (β j - Q j) = (P - P₀) + ∑ j, h j * Q j`.
+  have heq : P - (g.sum fun j q ↦ q * (monomial (u j) 1 - monomial (v j) 1 - Q j)) =
+      P - weightedHomogeneousComponent a δ P + ∑ j ∈ g₀.support, h j * Q j := by
+    rw [hsum, ← hgP₀]
+    simp_rw [mul_sub, Finset.sum_sub_distrib]
+    ring
+  rw [heq] at hw
+  rcases Finset.mem_union.1 (support_add hw) with hw | hw
+  · rw [mem_support_iff, coeff_sub, coeff_weightedHomogeneousComponent, hA] at hw
+    have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
+    have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
+    exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
+  -- An exponent of `h j * Q j` is a sum `x + y` with `A x + A (u j) = δ` and `A y ≺ A (u j)`.
   obtain ⟨j, -, hj⟩ := Finset.mem_biUnion.1 (support_sum hw)
   obtain ⟨x, hx, y, hy, rfl⟩ := Finset.mem_add.1 (support_mul _ _ hj)
-  have hle : A (u j) ≤ δ := by
-    by_contra hle
-    simp [h, hle] at hx
-  have hAx : A x = δ - A (u j) := by
-    rw [← hA]
-    simp only [h, hle, ite_true] at hx
-    exact weightedHomogeneousComponent_isWeightedHomogeneous _ _ (mem_support_iff.1 hx)
-  rw [map_add, map_add, hAx]
-  conv_rhs => rw [← tsub_add_cancel_of_le hle, map_add]
-  exact add_lt_add_right (hQlt j y hy) _
+  rw [map_add, ← hhA j x hx, map_add, map_add]
+  exact add_lt_add_right (hQ j y hy) _
 
 end CommRing
 
@@ -177,40 +202,14 @@ theorem IsSAGBIBasis.exists_aeval_eq_aeval_sub (hc : ∀ i, m.Monic (c i))
     ∃ Q : MvPolynomial ι k, aeval c Q = aeval c (monomial u (1 : k) - monomial v 1) ∧
       ∀ w ∈ Q.support, Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≺[m]
         Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) u := by
-  set f := aeval c (monomial u (1 : k) - monomial v 1)
-  rcases eq_or_ne f 0 with hf | hf
-  · exact ⟨0, by rw [map_zero, hf], by simp⟩
-  have hf' : f = aeval c (monomial u (1 : k)) - aeval c (monomial v (1 : k)) :=
-    map_sub (aeval c) (monomial u (1 : k)) (monomial v 1)
-  have h1 (w : ι →₀ ℕ) : (aeval c (monomial w (1 : k))).coeff
-      (Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w) = 1 := by
-    rw [← degree_aeval_monomial_one hc]
-    exact (monic_aeval_monomial_one hc w).coeff_degree
-  -- The leading monomials `X^(A u)` of the images of `Y^u` and `Y^v` cancel.
-  have hlt : m.degree f ≺[m] Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) u := by
-    have hle : m.degree f ≼[m] Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) u := by
-      rw [hf']
-      refine m.degree_sub_le.trans ?_
-      rw [degree_aeval_monomial_one hc u, degree_aeval_monomial_one hc v, ← huv, sup_idem]
-    refine lt_of_le_of_ne hle fun heq ↦ m.coeff_degree_ne_zero_iff.2 hf ?_
-    rw [m.toSyn.injective heq, hf', coeff_sub, h1 u, huv, h1 v, sub_self]
-  -- Subduction expresses `f` through products `∏ i, c i ^ w i` of leading exponent at most that
-  -- of `f`, which are the images of the monomials `Y^w` with `A w ≼ m.degree f`.
-  have hsub : {g ∈ Submonoid.closure (Set.range c) | m.degree g ≼[m] m.degree f} ⊆
-      (aeval c).toLinearMap '' ((monomial · (1 : k)) ''
-        {w | Finsupp.linearCombination ℕ (fun i ↦ m.degree (c i)) w ≼[m] m.degree f}) := by
-    rintro g ⟨hg, hgf⟩
-    obtain ⟨w, rfl⟩ := Submonoid.exists_finsupp_of_mem_closure_range c g hg
-    have hw : aeval c (monomial w (1 : k)) = w.prod (c · ^ ·) := by
-      rw [aeval_monomial, map_one, one_mul]
-    refine ⟨monomial w 1, ⟨w, ?_, rfl⟩, hw⟩
-    rw [Set.mem_ofPred_eq, ← degree_aeval_monomial_one hc, hw]
-    exact hgf
-  have hmem := Submodule.span_mono hsub
-    (h.mem_span (Algebra.adjoin_range_eq_range_aeval k c ▸ ⟨_, rfl⟩ : f ∈ _))
-  rw [Submodule.span_image, ← restrictSupport_eq_span] at hmem
-  obtain ⟨Q, hQ, hQf⟩ := hmem
-  exact ⟨Q, hQf, fun w hw ↦ lt_of_le_of_lt ((mem_restrictSupport_iff k).1 hQ hw) hlt⟩
+  have hf : aeval c (monomial u (1 : k) - monomial v 1) ∈
+      Algebra.adjoin k (Set.range c) := by
+    rw [← aeval_range]
+    exact AlgHom.mem_range_self _ _
+  simpa only [Function.comp_def] using
+    h.exists_aeval_eq_support_lt (fun i ↦ (hc i).ne_zero) hf
+      (m.aeval_monomial_sub_monomial_eq_zero_or_degree_lt hc u v
+        (by simpa only [Function.comp_def] using huv))
 
 /-- The sufficiency step of the SAGBI criterion, by well-founded induction on an upper bound `δ`
 for the values of `A` on the exponents of a representation `f = aeval c P`. -/
@@ -230,32 +229,18 @@ private theorem degree_aeval_mem_closure (hc : ∀ i, m.Monic (c i)) {u v : J �
   set A := Finsupp.linearCombination ℕ a
   have hAmem (w : ι →₀ ℕ) : A w ∈ AddSubmonoid.closure (Set.range a) :=
     AddSubmonoid.mem_closure_range_iff.2 ⟨w, Finsupp.linearCombination_apply ℕ w⟩
+  choose Q hQc hQlt using hQ
   induction hd : m.toSyn δ using WellFoundedLT.induction generalizing δ P with
   | ind d ih =>
   subst hd
   by_cases htop : (aeval c P).coeff δ = 0
-  · -- The coefficients of `P` at the exponents of weight `δ` cancel, so its part `P₀` of weight
-    -- `δ` lies in the toric ideal and has a representation by exponents of weight below `δ`.
-    obtain ⟨P₀, hP₀def⟩ : ∃ P₀, P₀ = weightedHomogeneousComponent a δ P := ⟨_, rfl⟩
-    have hA (w : ι →₀ ℕ) : Finsupp.weight a w = A w := by
-      rw [Finsupp.weight_apply, Finsupp.linearCombination_apply]
-    have hP₀ : P₀ ∈ TauCeti.toricIdeal k a :=
-      hP₀def ▸ weightedHomogeneousComponent_mem_toricIdeal hc hPδ htop
-    obtain ⟨P₁, hP₁, hP₁δ⟩ := exists_aeval_eq_of_mem_toricIdeal hJ hQ hP₀ fun w hw ↦ by
-      rw [← hA]
-      rw [hP₀def] at hw
-      exact weightedHomogeneousComponent_isWeightedHomogeneous _ _ (mem_support_iff.1 hw)
-    -- Replace `P₀` by `P₁` in `P`.
-    have hP' : aeval c (P - P₀ + P₁) = aeval c P := by rw [map_add, map_sub, hP₁, sub_add_cancel]
-    have hlt : ∀ w ∈ (P - P₀ + P₁).support, A w ≺[m] δ := by
-      intro w hw
-      rcases Finset.mem_union.1 (support_add hw) with hw | hw
-      · rw [mem_support_iff, coeff_sub, hP₀def, coeff_weightedHomogeneousComponent, hA] at hw
-        have hwδ : A w ≠ δ := fun h ↦ hw (by simp [h])
-        have hwP : w ∈ P.support := mem_support_iff.2 fun h ↦ hw (by simp [h])
-        exact lt_of_le_of_ne (hPδ w hwP) fun h ↦ hwδ (m.toSyn.injective h)
-      · exact hP₁δ w hw
-    have hne : (P - P₀ + P₁).support.Nonempty :=
+  · -- The coefficients of `P` at the exponents of weight `δ` cancel, so subtracting a combination
+    -- of the relations `Y^(u j) - Y^(v j) - Q j`, which `aeval c` kills, lowers the bound `δ`.
+    obtain ⟨g, -, hlt⟩ := exists_finsupp_forall_mem_support_sub_sum_lt hc hJ hQlt hPδ htop
+    set P' := P - g.sum fun j q ↦ q * (monomial (u j) 1 - monomial (v j) 1 - Q j)
+    have hP' : aeval c P' = aeval c P := by
+      simp [P', Finsupp.sum, hQc]
+    have hne : P'.support.Nonempty :=
       support_nonempty.2 fun h ↦ hP (by rw [← hP', h, map_zero])
     obtain ⟨w₀, hw₀, hmax⟩ := Finset.exists_max_image _ (fun w ↦ m.toSyn (A w)) hne
     rw [← hP']

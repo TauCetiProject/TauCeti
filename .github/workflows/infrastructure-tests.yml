@@ -27,10 +27,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
+          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -49,7 +49,6 @@ jobs:
             scripts/test_roadmap_api.py \
             scripts/test_control_batch_workflows.py \
             scripts/test_control_batch_budget.py \
-            scripts/test_control_batch_merge.py \
             scripts/run-infrastructure-tests.sh
       - name: Checkout the pinned merge policy (read-only)
         uses: ./.github/actions/checkout-merge-policy
@@ -79,10 +78,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
+          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
           project-directory: .
       - name: Restore the project-owned Lake workflow test
         run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
@@ -124,10 +123,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@8bad7a00af97c00c90a9777c195618c857dbf91c
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: 8bad7a00af97c00c90a9777c195618c857dbf91c
+          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:

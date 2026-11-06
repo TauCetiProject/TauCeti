@@ -7,9 +7,10 @@ module
 
 public import Mathlib.CategoryTheory.Abelian.Injective.Resolution
 public import Mathlib.CategoryTheory.Preadditive.Injective.Preserves
+public import TauCeti.Algebra.Homology.Single.Kernel
 
 /-!
-# Exact functors preserving injective objects and injective resolutions
+# Injective resolutions: exact functors and comparison maps
 
 An additive functor `F : C ⥤ D` which preserves homology and injective objects sends an injective
 resolution `I` of `Z` to an injective resolution `F.mapInjectiveResolution I` of `F.obj Z`, whose
@@ -20,6 +21,14 @@ Consequently, choosing injective resolutions commutes with `F` up to homotopy: t
 `injectiveResolutions C ⋙ F.mapHomotopyCategory _` is naturally isomorphic to
 `F ⋙ injectiveResolutions D` (`CategoryTheory.Functor.injectiveResolutionsCompIso`). This is what
 makes right derived functors commute with such functors.
+
+A morphism `f : Z ⟶ Y` lifts to a morphism of complexes from any resolution `ι : Z[0] ⟶ K` of `Z`
+to an injective resolution `I` of `Y` (`CategoryTheory.InjectiveResolution.descOfQuasiIso`), and
+two such lifts agreeing on `Z` are homotopic
+(`CategoryTheory.InjectiveResolution.homotopyOfQuasiIso`). The terms of `K` need not be injective.
+The constructions follow Mathlib's `CategoryTheory.InjectiveResolution.desc` and
+`CategoryTheory.InjectiveResolution.descHomotopy`, whose source is required to be an injective
+resolution.
 -/
 
 public section
@@ -97,3 +106,101 @@ lemma injectiveResolutionsCompIso_hom_app (X : C) :
   (rfl)
 
 end CategoryTheory.Functor
+
+noncomputable section
+
+namespace CategoryTheory.InjectiveResolution
+
+open CochainComplex HomologicalComplex
+
+variable {C : Type u} [Category.{v} C] [Abelian C]
+
+section Desc
+
+variable {Y Z : C} {K : CochainComplex C ℕ} (f : Z ⟶ Y) (I : InjectiveResolution Y)
+  (ι : (single₀ C).obj Z ⟶ K) [QuasiIso ι]
+
+/-- The degree `0` component of `descOfQuasiIso`. -/
+private def descOfQuasiIsoFZero : K.X 0 ⟶ I.cocomplex.X 0 :=
+  Injective.factorThru (((single₀ C).map f).f 0 ≫ I.ι.f 0) (ι.f 0)
+
+private lemma ι_f_zero_descOfQuasiIsoFZero :
+    ι.f 0 ≫ descOfQuasiIsoFZero f I ι = ((single₀ C).map f).f 0 ≫ I.ι.f 0 :=
+  Injective.comp_factorThru _ _
+
+/-- The degree `1` component of `descOfQuasiIso`. -/
+private def descOfQuasiIsoFOne : K.X 1 ⟶ I.cocomplex.X 1 :=
+  (exact_f_zero_of_quasiIsoAt ι).descToInjective
+    (descOfQuasiIsoFZero f I ι ≫ I.cocomplex.d 0 1)
+    (by rw [reassoc_of% (ι_f_zero_descOfQuasiIsoFZero f I ι), I.ι_f_zero_comp_complex_d,
+      comp_zero])
+
+private lemma d_descOfQuasiIsoFOne :
+    K.d 0 1 ≫ descOfQuasiIsoFOne f I ι = descOfQuasiIsoFZero f I ι ≫ I.cocomplex.d 0 1 :=
+  (exact_f_zero_of_quasiIsoAt ι).comp_descToInjective _ _
+
+/-- **Lifting to an injective resolution.** A morphism `f : Z ⟶ Y` lifts to a morphism of
+complexes from any resolution `ι : Z[0] ⟶ K` of `Z` to an injective resolution `I` of `Y`
+(`CategoryTheory.InjectiveResolution.ι_comp_descOfQuasiIso`). The terms of `K` need not be
+injective. -/
+def descOfQuasiIso : K ⟶ I.cocomplex :=
+  mkHom _ _ (descOfQuasiIsoFZero f I ι) (descOfQuasiIsoFOne f I ι)
+    (d_descOfQuasiIsoFOne f I ι).symm fun n ⟨_, g', w⟩ ↦
+      ⟨(exact_succ_of_quasiIsoAt ι n).descToInjective (g' ≫ I.cocomplex.d (n + 1) (n + 2))
+          (by simp [← reassoc_of% w]),
+        ((exact_succ_of_quasiIsoAt ι n).comp_descToInjective _ _).symm⟩
+
+/-- The lift `descOfQuasiIso f I ι` is compatible with `f` and the two resolutions. -/
+@[reassoc (attr := simp)]
+lemma ι_comp_descOfQuasiIso : ι ≫ descOfQuasiIso f I ι = (single₀ C).map f ≫ I.ι := by
+  refine HomologicalComplex.hom_ext _ _ fun n ↦ ?_
+  rcases n with _ | n
+  · simpa [descOfQuasiIso] using ι_f_zero_descOfQuasiIsoFZero f I ι
+  · exact (isZero_single_obj_X _ _ _ _ (by simp)).eq_of_src _ _
+
+end Desc
+
+section Homotopy
+
+variable {Y : C} {K : CochainComplex C ℕ} {I : InjectiveResolution Y} {Z : C}
+  (ι : (single₀ C).obj Z ⟶ K) [QuasiIso ι]
+
+/-- The degree `0` component of `homotopyZeroOfQuasiIso`. -/
+private def homotopyZeroOfQuasiIsoZero (g : K ⟶ I.cocomplex) (hg : ι ≫ g = 0) :
+    K.X 1 ⟶ I.cocomplex.X 0 :=
+  (exact_f_zero_of_quasiIsoAt ι).descToInjective (g.f 0) congr($(hg).f 0)
+
+private lemma d_homotopyZeroOfQuasiIsoZero (g : K ⟶ I.cocomplex) (hg : ι ≫ g = 0) :
+    K.d 0 1 ≫ homotopyZeroOfQuasiIsoZero ι g hg = g.f 0 :=
+  (exact_f_zero_of_quasiIsoAt ι).comp_descToInjective _ _
+
+/-- A morphism from a resolution of `Z` to an injective resolution, which vanishes on `Z`, is
+homotopic to zero. -/
+private def homotopyZeroOfQuasiIso (g : K ⟶ I.cocomplex) (hg : ι ≫ g = 0) : Homotopy g 0 :=
+  Homotopy.mkCoinductive _ (homotopyZeroOfQuasiIsoZero ι g hg)
+    (d_homotopyZeroOfQuasiIsoZero ι g hg).symm
+    ((exact_succ_of_quasiIsoAt ι 0).descToInjective
+      (g.f 1 - homotopyZeroOfQuasiIsoZero ι g hg ≫ I.cocomplex.d 0 1)
+      (by simp [← reassoc_of% d_homotopyZeroOfQuasiIsoZero ι g hg, ← g.comm]))
+    (by
+      rw [(exact_succ_of_quasiIsoAt ι 0).comp_descToInjective]
+      abel)
+    fun n ⟨h, h', w⟩ ↦
+      ⟨(exact_succ_of_quasiIsoAt ι (n + 1)).descToInjective
+          (g.f (n + 2) - h' ≫ I.cocomplex.d (n + 1) (n + 2))
+          (by simp [← g.comm, w]),
+        by
+          rw [(exact_succ_of_quasiIsoAt ι (n + 1)).comp_descToInjective]
+          abel⟩
+
+/-- **Lifts to an injective resolution are unique up to homotopy.** Two morphisms from a
+resolution `ι : Z[0] ⟶ K` of `Z` to an injective resolution which agree on `Z` are homotopic. -/
+def homotopyOfQuasiIso (g h : K ⟶ I.cocomplex) (hgh : ι ≫ g = ι ≫ h) : Homotopy g h :=
+  Homotopy.equivSubZero.symm
+    (homotopyZeroOfQuasiIso ι (g - h) (by rw [Preadditive.comp_sub, hgh, sub_self]))
+
+end Homotopy
+
+end CategoryTheory.InjectiveResolution
+
+end

@@ -219,6 +219,45 @@ theorem incidenceBoundary_mapDomain_inclusion {O' : Set Γ.E} (h : O ⊆ O')
   simp only [incidenceBoundary, Finsupp.linearCombination_mapDomain]
   rfl
 
+section
+
+variable {F : Set Γ.E} {R : Type*} [Ring R]
+
+/-- A boundary-zero chain supported on a dart set with injective boundary vanishes.
+The chain may be written in any larger ambient dart set. -/
+theorem eq_zero_of_incidenceBoundary_eq_zero
+    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c : O →₀ R)
+    (hc : Γ.incidenceBoundary O R c = 0) (hs : ∀ e ∈ c.support, e.val ∈ F) :
+    c = 0 := by
+  classical
+  let i : F → O := Set.inclusion hsub
+  have hi : Function.Injective i := Set.inclusion_injective hsub
+  let b := Finsupp.comapDomain i c hi.injOn
+  have hb : Finsupp.mapDomain i b = c := by
+    apply Finsupp.mapDomain_comapDomain i hi c
+    intro e he
+    exact ⟨⟨e.val, hs e he⟩, Subtype.ext rfl⟩
+  have hboundary : Γ.incidenceBoundary F R b = 0 := by
+    rw [← Γ.incidenceBoundary_mapDomain_inclusion hsub R b, hb, hc]
+  have hbzero : b = 0 := hinj (hboundary.trans (map_zero _).symm)
+  rw [← hb, hbzero, Finsupp.mapDomain_zero]
+
+/-- If the boundary is injective on a dart subset, chains in any larger dart set are
+determined by their boundaries and their coordinates outside that subset. -/
+theorem eq_of_incidenceBoundary_eq_of_forall_notMem
+    (hsub : F ⊆ O) (hinj : Function.Injective (Γ.incidenceBoundary F R)) (c d : O →₀ R)
+    (hboundary : Γ.incidenceBoundary O R c = Γ.incidenceBoundary O R d)
+    (hchord : ∀ e : O, e.val ∉ F → c e = d e) : c = d := by
+  apply sub_eq_zero.mp
+  apply eq_zero_of_incidenceBoundary_eq_zero hsub hinj (c - d)
+  · simp [hboundary]
+  · intro e he
+    by_contra h
+    have hzero : (c - d) e = 0 := by simp [hchord e h]
+    exact (Finsupp.mem_support_iff.mp he) hzero
+
+end
+
 /-- Enlarging the chosen dart set carries boundary-zero chains to boundary-zero chains over
 any coefficient ring. -/
 theorem map_ker_incidenceBoundary_le_of_subset {O' : Set Γ.E} (h : O ⊆ O')

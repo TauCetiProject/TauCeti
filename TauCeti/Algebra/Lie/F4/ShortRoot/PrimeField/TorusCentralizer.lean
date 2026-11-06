@@ -5,27 +5,29 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PointsFunctor
+public import TauCeti.Algebra.Lie.F4.ShortRoot.PrimeField.PreservesBracket
 import TauCeti.LinearAlgebra.Matrix.Diagonal
 
 /-!
 # The centralizer of the short-root F₄ weight torus
 
-Over an infinite field of characteristic two, this file characterizes the centralizer of the
-weight torus in the short-root carrier's point group. A commuting matrix has no entry between
-distinct weight spaces, and conversely every carrier point with that weight-block form commutes
-with the torus.
+Over an infinite field of characteristic two, a point of the short-root carrier centralizes
+its weight torus exactly when its matrix is diagonal. Character separation first gives a
+block-diagonal matrix, with a two-dimensional zero-weight block. The two distinguished
+zero-weight vectors are brackets of opposite short simple-root vectors. Since the carrier
+preserves the bracket and each nonzero-weight line, it preserves these two lines separately.
+Thus the zero-weight block is diagonal too.
 
-Unlike the seven-dimensional short-root representation of `G₂`, the short-root representation
-of `F₄` has the zero weight with multiplicity two. Thus character separation gives a single
-two-dimensional zero-weight block rather than forcing the whole centralizer to be diagonal. A
-subsequent identification of the centralizer with the torus must use the carrier equations to
-control this block.
+The bracket argument works over every commutative `𝔽₂`-algebra, including nonreduced ones.
+Identifying diagonal carrier points with the weight torus, and hence proving that the torus
+is self-centralizing, remains a separate question. No identification with the pinned simply
+connected group scheme of type `F₄` is asserted.
 
-## Main declaration
+## Main declarations
 
-* `mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero`: a carrier point centralizes the
-  weight torus exactly when its entries between distinct weights vanish.
+* `mem_centralizer_range_weightTorusPoints_iff_isDiag`: over an infinite field, a carrier point
+  centralizes the weight torus exactly when its matrix is diagonal.
+* `centralizer_range_weightTorusPoints_eq_comap_diagonalTorus`: the subgroup form.
 
 ## References
 
@@ -52,7 +54,7 @@ short-root weights. -/
 theorem mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero_of_weightChar_injective
     (hchar : Function.Injective
       (weightChar A : (Fin 4 → ℤ) → ((Fin 4 → Aˣ) →* Aˣ))) (g : points A) :
-    g ∈ Subgroup.centralizer ((weightTorusPoints A).range : Set (points A)) ↔
+    g ∈ Subgroup.centralizer (Set.range (weightTorusPoints A)) ↔
       ∀ i j, f4ShortRootWeight i ≠ f4ShortRootWeight j →
         (((g : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A) i j) = 0 := by
   constructor
@@ -90,16 +92,38 @@ theorem mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero_of_weightChar_
       exact hmatrix.eq
     exact (Commute.of_map (points A).subtype_injective hgeneralLinear).eq
 
+/-- When distinct weights define distinct characters, the torus centralizer consists of
+exactly the diagonal carrier points. -/
+theorem mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_injective
+    (hchar : Function.Injective
+      (weightChar A : (Fin 4 → ℤ) → ((Fin 4 → Aˣ) →* Aˣ))) (g : points A) :
+    g ∈ Subgroup.centralizer (Set.range (weightTorusPoints A)) ↔
+      ((g : GL (Fin 26) A) : Matrix (Fin 26) (Fin 26) A).IsDiag := by
+  rw [mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero_of_weightChar_injective hchar]
+  constructor
+  · exact Matrix.isDiag_of_preserves_f4ShortRootBracket_of_weight_support _
+      (preservesBracket_of_mem_points g.2)
+  · intro h i j hij
+    exact h (fun heq ↦ hij (congrArg f4ShortRootWeight heq))
+
 variable {k : Type v} [Field k] [Algebra (ZMod 2) k] [Infinite k]
 
-/-- Over an infinite field of characteristic two, a point of the short-root carrier centralizes
-the weight torus exactly when its matrix is block diagonal for the short-root weights. In
-particular, the only block of size greater than one is the two-dimensional zero-weight block. -/
-theorem mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero (g : points k) :
-    g ∈ Subgroup.centralizer ((weightTorusPoints k).range : Set (points k)) ↔
-      ∀ i j, f4ShortRootWeight i ≠ f4ShortRootWeight j →
-        (((g : GL (Fin 26) k) : Matrix (Fin 26) (Fin 26) k) i j) = 0 :=
-  mem_centralizer_range_weightTorusPoints_iff_apply_eq_zero_of_weightChar_injective
+/-- Over an infinite field of characteristic two, a carrier point centralizes the weight
+torus exactly when its matrix is diagonal. -/
+@[simp]
+theorem mem_centralizer_range_weightTorusPoints_iff_isDiag (g : points k) :
+    g ∈ Subgroup.centralizer (Set.range (weightTorusPoints k)) ↔
+      ((g : GL (Fin 26) k) : Matrix (Fin 26) (Fin 26) k).IsDiag :=
+  mem_centralizer_range_weightTorusPoints_iff_isDiag_of_weightChar_injective
     weightChar_injective g
+
+/-- Over an infinite field of characteristic two, the weight-torus centralizer is the inverse
+image of the ambient diagonal torus in `GL₂₆`. This does not identify it with the weight torus. -/
+theorem centralizer_range_weightTorusPoints_eq_comap_diagonalTorus :
+    Subgroup.centralizer (Set.range (weightTorusPoints k)) =
+      (diagonalTorus k 26).comap (points k).subtype := by
+  ext g
+  simp only [mem_centralizer_range_weightTorusPoints_iff_isDiag, Subgroup.mem_comap,
+    Subgroup.subtype_apply, mem_diagonalTorus_iff]
 
 end TauCeti.F4ShortRoot.PrimeField

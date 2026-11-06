@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import Mathlib.MeasureTheory.Measure.Regular
 public import TauCeti.MeasureTheory.Measure.AbsolutelyContinuous
 
@@ -53,8 +54,12 @@ measures given only through a domination bound, such as the variation of a sum o
   with respect to a finite measure inherits each regularity property.
 * `MeasureTheory.Measure.OuterRegular.finsetSum`, `MeasureTheory.Measure.WeaklyRegular.finsetSum`:
   a finite sum of outer (weakly) regular measures is outer (weakly) regular.
+* `MeasureTheory.Measure.InnerRegularCompactLTTop.comap'`: compact inner regularity on sets of
+  finite measure pulls back along an open embedding between Borel spaces.
 * `MeasureTheory.NullMeasurableSet.exists_isSigmaCompact_subset_ae_eq`: a null measurable set
   contains a σ-compact subset of full measure.
+* `MeasureTheory.Measure.dirac.innerRegular`: a Dirac measure is inner regular; on an `R₁` space
+  with its Borel σ-algebra it is therefore regular.
 
 ## Provenance
 
@@ -155,6 +160,29 @@ instance WeaklyRegular.finsetSum {ι : Type*} {μ : ι → Measure α} [∀ i, W
   induction s using Finset.induction with
   | empty => rw [Finset.sum_empty]; infer_instance
   | insert a s ha ih => rw [Finset.sum_insert ha]; infer_instance
+
+/-- Compact inner regularity on measurable sets of finite measure pulls back along an open
+embedding between Borel spaces, complementing `Measure.InnerRegular.comap'` and
+`Measure.Regular.comap'`. -/
+protected theorem InnerRegularCompactLTTop.comap' {β : Type*} [BorelSpace α]
+    {mβ : MeasurableSpace β} [TopologicalSpace β] [BorelSpace β] (μ : Measure β)
+    [hμ : μ.InnerRegularCompactLTTop] {f : α → β} (hf : Topology.IsOpenEmbedding f) :
+    (μ.comap f).InnerRegularCompactLTTop where
+  innerRegular :=
+    hμ.innerRegular.comap hf.measurableEmbedding
+      (fun s ⟨hs, htop⟩ ↦ ⟨hf.measurableEmbedding.measurableSet_image' hs, by
+        rwa [← hf.measurableEmbedding.comap_apply]⟩)
+      (fun _ hKrange hK ↦ hf.isInducing.isCompact_preimage' hK hKrange)
+
+/-- A Dirac measure is inner regular: a measurable set containing the point contains the compact
+singleton, which carries the full mass. On an `R₁` space with its Borel σ-algebra, Mathlib's
+instances upgrade this to regularity of the finite measure `dirac x`. -/
+instance dirac.innerRegular (x : α) : (dirac x).InnerRegular where
+  innerRegular U hU r hr := by
+    by_cases hx : x ∈ U
+    · exact ⟨{x}, singleton_subset_iff.2 hx, isCompact_singleton,
+        by rwa [dirac_apply_of_mem (mem_singleton x), ← dirac_apply_of_mem hx]⟩
+    · simp [dirac_apply' x hU, hx] at hr
 
 end MeasureTheory.Measure
 

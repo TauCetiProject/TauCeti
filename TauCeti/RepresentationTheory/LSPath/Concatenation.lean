@@ -21,6 +21,14 @@ formulas `lower_mul` and `raise_mul`, only the comparison gap `φ(p) - ε(q)` mu
 separate integrality of the string lengths is unnecessary. A fractional gap strictly between
 zero and one can make lowering change both factors, so the two ambient cases are not exhaustive.
 
+Lowering also has a simple form on a path that rises monotonically from a minimum to one more than
+the minimum and stays there or higher afterwards: it reflects that rising piece and keeps the rest
+(`TauCeti.PLPath.lower_ofSegments_append_append`). When the height rises strictly from a minimum
+at the vertex `k₀` and first reaches the minimum plus one inside the segment `k₁ - 1`, never to
+return below it, the rising piece ends inside that segment, which is cut there
+(`TauCeti.PLPath.lower_ofSegments_eq_of_strictly_rising`). This is the shape of the height of a
+Lakshmibai–Seshadri path at a lowering step.
+
 ## References
 
 * P. Littelmann, *Paths and root operators in representation theory*, Ann. of Math. 142 (1995),
@@ -144,5 +152,126 @@ theorem raise_mul (h : ∃ n : ℤ,
       omega
     have : (n : 𝕜) ≤ -1 := by exact_mod_cast hnint
     exact raise_mul_of_add_one_le (by linarith)
+
+/-- **Lowering a path that rises from a minimum to the next level.** Suppose the path presented by
+`l₁ ++ l₂ ++ l₃` attains its minimal height at the end of `l₁`, rises monotonically along `l₂` by
+exactly one, and stays at least that high along `l₃`. Then lowering reflects `l₂` and keeps `l₁`
+and `l₃`. -/
+theorem lower_ofSegments_append_append {l₁ l₂ l₃ : List V}
+    (h₁ : f l₁.sum ≤ listMinHeight f l₁) (h₂ : ∀ v ∈ l₂, 0 ≤ f v) (h₂₁ : f l₂.sum = 1)
+    (h₃ : 0 ≤ listMinHeight f l₃) :
+    lower f x (ofSegments 𝕜 (l₁ ++ l₂ ++ l₃)) =
+      some (ofSegments 𝕜 (l₁ ++ l₂.map (preReflection x f) ++ l₃)) := by
+  have hmin₂₃ : listMinHeight f (l₂ ++ l₃) = 0 := by
+    rw [listMinHeight_append, listMinHeight_eq_zero_of_forall_nonneg h₂, h₂₁]
+    exact min_eq_left (by linarith)
+  have hmin : listMinHeight f (l₁ ++ (l₂ ++ l₃)) = f l₁.sum := by
+    rw [listMinHeight_append, hmin₂₃, add_zero, min_eq_right h₁]
+  have hguard : 1 ≤ f (l₁ ++ (l₂ ++ l₃)).sum - listMinHeight f (l₁ ++ (l₂ ++ l₃)) := by
+    have := listMinHeight_le_apply_sum (f := f) l₃
+    simp only [hmin, List.sum_append, map_add, h₂₁]
+    linarith
+  rw [List.append_assoc, lower_ofSegments, listLower_def, ite_eq_left hguard, hmin,
+    reflectRecords_append, reflectRecords_append, Option.map_some]
+  -- The three pieces under the caps that capped reflection induces on them.
+  have hr₁ : reflectRecords f x (min (f l₁.sum + 1) (f l₁.sum + listMinHeight f (l₂ ++ l₃))) l₁ =
+      l₁ :=
+    reflectRecords_of_le_listMinHeight (by rw [hmin₂₃, add_zero]; exact (min_le_right _ _).trans h₁)
+  have hr₂ : ofSegments 𝕜
+      (reflectRecords f x (min (f l₁.sum + 1 - f l₁.sum) (f l₂.sum + listMinHeight f l₃)) l₂) =
+      ofSegments 𝕜 (l₂.map (preReflection x f)) := by
+    have hcap : min (f l₁.sum + 1 - f l₁.sum) (f l₂.sum + listMinHeight f l₃) = f l₂.sum := by
+      rw [add_sub_cancel_left, h₂₁]
+      exact min_eq_left (by linarith)
+    rw [hcap, ofSegments_reflectRecords_of_forall_nonneg h₂]
+  have hr₃ : reflectRecords f x (f l₁.sum + 1 - f l₁.sum - f l₂.sum) l₃ = l₃ :=
+    reflectRecords_of_le_listMinHeight (by rw [h₂₁]; linarith)
+  rw [hr₁, hr₃]
+  simp only [ofSegments_append, hr₂, mul_assoc]
+
+/-- **Lowering a path whose height rises strictly from a minimum.** Let `h` be the minimal height of
+the path presented by `l`, attained at the vertex `k₀`. Suppose the height rises strictly from the
+vertex `k₀` to the vertex `k₁`, is at most `h + 1` at the vertex `k₁ - 1`, and is at least
+`h + 1` at every vertex from `k₁` on. If `θ` is the fraction of the segment `v = l[k₁ - 1]` at which
+the height reaches `h + 1`, then lowering reflects the piece of the path between the vertex `k₀`
+and that point, and keeps the rest. -/
+theorem lower_ofSegments_eq_of_strictly_rising {l : List V} {k₀ k₁ : ℕ} {θ : 𝕜}
+    (hk₀₁ : k₀ < k₁) (hk₁ : k₁ ≤ l.length) (h₀ : f (l.take k₀).sum = listMinHeight f l)
+    (hrise : ∀ j, k₀ ≤ j → j < k₁ → f (l.take j).sum < f (l.take (j + 1)).sum)
+    (hθ : f (l.take (k₁ - 1)).sum + θ * f l[k₁ - 1] = listMinHeight f l + 1)
+    (hcut : f (l.take (k₁ - 1)).sum ≤ listMinHeight f l + 1)
+    (habove : ∀ j, k₁ ≤ j → listMinHeight f l + 1 ≤ f (l.take j).sum) :
+    lower f x (ofSegments 𝕜 l) = some (ofSegments 𝕜 (l.take k₀ ++
+      ((l.take (k₁ - 1)).drop k₀ ++ [θ • l[k₁ - 1]]).map (preReflection x f) ++
+        (1 - θ) • l[k₁ - 1] :: l.drop k₁)) := by
+  set v := l[k₁ - 1]
+  set m := (l.take (k₁ - 1)).drop k₀
+  -- The vertex heights along the cut segment `v`.
+  have hstep : ∀ j (hj : j < l.length), f (l.take (j + 1)).sum = f (l.take j).sum + f l[j] := by
+    intro j hj
+    rw [List.sum_take_succ _ _ hj, map_add]
+  have hv : f (l.take (k₁ - 1)).sum + f v = f (l.take k₁).sum := by
+    rw [← hstep _ (by omega), Nat.sub_add_cancel (by omega : 1 ≤ k₁)]
+  have hvpos : 0 < f v := by
+    have := hrise (k₁ - 1) (by omega) (by omega)
+    rw [Nat.sub_add_cancel (by omega : 1 ≤ k₁)] at this
+    linarith
+  have hθv : θ * f v ≤ f v := by
+    have := habove k₁ le_rfl
+    linarith
+  have hθ₀ : 0 ≤ θ := by
+    by_contra! hneg
+    have : θ * f v < 0 := mul_neg_of_neg_of_pos hneg hvpos
+    linarith
+  -- Split `l` around the cut segment.
+  have htake : l.take (k₁ - 1) = l.take k₀ ++ m := by
+    rw [← List.take_append_drop k₀ (l.take (k₁ - 1)), List.take_take, min_eq_left (by omega)]
+  have hdrop : l.drop (k₁ - 1) = v :: l.drop k₁ := by
+    rw [List.drop_eq_getElem_cons (by omega), Nat.sub_add_cancel (by omega : 1 ≤ k₁)]
+  have hsplit : ofSegments 𝕜 l =
+      ofSegments 𝕜 (l.take k₀ ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: l.drop k₁)) := by
+    have hl : l = (l.take k₀ ++ m) ++ v :: l.drop k₁ := by
+      rw [← htake, ← hdrop, List.take_append_drop]
+    have hr : l.take k₀ ++ (m ++ [θ • v]) ++ ((1 - θ) • v :: l.drop k₁) =
+        (l.take k₀ ++ m) ++ (θ • v :: (1 - θ) • v :: l.drop k₁) := by
+      simp only [List.append_assoc, List.singleton_append]
+    conv_lhs => rw [hl]
+    rw [hr, ofSegments_append (l.take k₀ ++ m), ofSegments_append (l.take k₀ ++ m),
+      ofSegments_smul_cons_smul_cons hθ₀
+      (sub_nonneg.mpr ((mul_le_iff_le_one_left hvpos).mp hθv)), add_sub_cancel, one_smul]
+  rw [hsplit, lower_ofSegments_append_append]
+  · -- The minimum is attained at the end of `l.take k₀`.
+    have hsplit₀ := listMinHeight_append (f := f) (l.take k₀) (l.drop k₀)
+    rw [List.take_append_drop] at hsplit₀
+    rw [h₀, hsplit₀]
+    exact min_le_left _ _
+  · -- The heights rise along `m` and along the initial piece of `v`.
+    intro w hw
+    rcases List.mem_append.mp hw with hw | hw
+    · obtain ⟨n, hn, rfl⟩ := List.mem_iff_getElem.mp hw
+      have hlen : m.length = k₁ - 1 - k₀ := by
+        simp only [m, List.length_drop, List.length_take]
+        omega
+      simp only [m, List.getElem_drop, List.getElem_take]
+      have := hrise (k₀ + n) (by omega) (by omega)
+      rw [hstep _ (by omega)] at this
+      linarith
+    · rw [List.mem_singleton.mp hw, map_smul, smul_eq_mul]
+      exact mul_nonneg hθ₀ hvpos.le
+  · -- They rise by exactly one in total.
+    have hm : f m.sum = f (l.take (k₁ - 1)).sum - f (l.take k₀).sum := by
+      rw [htake, List.sum_append, map_add, add_sub_cancel_left]
+    rw [List.sum_append, map_add, hm, List.sum_singleton, map_smul, smul_eq_mul, h₀]
+    linarith
+  · -- Afterwards they stay at least `h + 1`.
+    obtain ⟨n, hn⟩ := exists_listMinHeight_eq (f := f) ((1 - θ) • v :: l.drop k₁)
+    rw [hn]
+    obtain _ | n := n
+    · simp
+    rw [List.take_succ_cons, List.sum_cons, map_add, map_smul, smul_eq_mul]
+    have hafter : f (l.take (k₁ + n)).sum = f (l.take k₁).sum + f ((l.drop k₁).take n).sum := by
+      rw [List.take_add, List.sum_append, map_add]
+    have := habove (k₁ + n) (by omega)
+    linarith
 
 end TauCeti.PLPath

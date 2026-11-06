@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Fredholm.ClosedRange
 public import TauCeti.Analysis.ODE.EnergyEstimate.Adjoint
 public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
+import TauCeti.Analysis.ODE.TrajectoryOperator.Degenerate
 public import TauCeti.Topology.Algebra.Module.ContinuousLinearMap.Index
 
 /-!
@@ -57,6 +58,9 @@ trajectory operator has closed range.
   is closed, its index is `dim ker D_A - dim ker D_{-A}`.
 * `TauCeti.WeakDerivStep.index_trajectoryOperator`: in particular, this holds under the
   asymptotic hypotheses above.
+* `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_iff`: combined with the degenerate-limit
+  results of `TauCeti.Analysis.ODE.TrajectoryOperator.Degenerate`, `D_A` is Fredholm exactly when
+  `A⁻` and `A⁺` are injective.
 
 ## References
 
@@ -91,9 +95,9 @@ private theorem inner_trajectoryOperator_smulRightW1pL
       ⟪e, (∫ s, lineDeriv ℝ (φ : ℝ → ℝ) s 1 • v s) + ∫ s, (φ : ℝ → ℝ) s • AL s (v s)⟫_ℝ := by
   have hi1 := integrable_lineDeriv_smul_of_locallyIntegrableOn
     (Lp.locallyIntegrableOn v (by norm_num)) φ 1
-  have hi2 := integrable_smul_of_locallyIntegrableOn (w := fun s ↦ AL s (v s))
+  have hi2 := φ.integrable_smul (f := fun s ↦ AL s (v s))
     ((Lp.locallyIntegrableOn _ (by norm_num)).congr
-      ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v)) φ
+      ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) AL v))
   have hψ : ContDiff ℝ 1 fun s ↦ (φ : ℝ → ℝ) s • e :=
     (φ.contDiff.of_le (by exact_mod_cast le_top)).smul contDiff_const
   have hDu := trajectoryOperator_apply_ae_eq_deriv_add AL _
@@ -351,5 +355,40 @@ theorem index_trajectoryOperator
         Module.finrank ℝ (trajectoryOperator (p := 2) (-AL)).ker :=
   index_trajectoryOperator_of_isClosed_range (ae_isSymmetric hsym hAL)
     (isClosed_range_trajectoryOperator hA hsym hα hminus hplus hbot htop hdbot hdtop AL hAL)
+
+/-- **The trajectory operator is Fredholm exactly when its limits are invertible.** Let `A` be a
+`C¹` family of symmetric operators on a finite-dimensional real inner product space with limits
+`A±` at `±∞` and derivative tending to zero at both ends. Then `u ↦ u' + A u` from
+`W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is Fredholm if and only if `A⁻` and `A⁺` are injective. The
+coefficient of the operator is any `L∞` class `AL` of `A`. -/
+theorem isFredholm_trajectoryOperator_iff (hA : ContDiff ℝ 1 A)
+    (hsym : ∀ s, (A s).toLinearMap.IsSymmetric) {Aminus Aplus : E →L[ℝ] E}
+    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
+    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
+    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    (trajectoryOperator (p := 2) AL).IsFredholm ↔
+      Function.Injective Aminus ∧ Function.Injective Aplus := by
+  refine ⟨fun hF ↦ ⟨(injective_iff_map_eq_zero Aminus).2 fun v hv ↦ ?_,
+    (injective_iff_map_eq_zero Aplus).2 fun v hv ↦ ?_⟩, fun ⟨hm, hp⟩ ↦ ?_⟩
+  · by_contra hv0
+    exact not_isFredholm_trajectoryOperator_of_tendsto_atBot hv0
+      (by simpa [hv, Function.comp_def] using
+        ((ContinuousLinearMap.apply ℝ E v).continuous.tendsto _).comp hbot) AL hAL hF
+  · by_contra hv0
+    exact not_isFredholm_trajectoryOperator_of_tendsto_atTop hv0
+      (by simpa [hv, Function.comp_def] using
+        ((ContinuousLinearMap.apply ℝ E v).continuous.tendsto _).comp htop) AL hAL hF
+  -- Injective operators on a finite-dimensional space are bounded below.
+  obtain ⟨Km, -, hKm⟩ := (Aminus : E →ₗ[ℝ] E).injective_iff_antilipschitz.1 hm
+  obtain ⟨Kp, -, hKp⟩ := (Aplus : E →ₗ[ℝ] E).injective_iff_antilipschitz.1 hp
+  have hbound {B : E →L[ℝ] E} {K : NNReal} (hK : AntilipschitzWith K (B : E →ₗ[ℝ] E))
+      (hle : (K : ℝ) ≤ max (Km : ℝ) Kp) (v : E) : (max (Km : ℝ) Kp + 1)⁻¹ * ‖v‖ ≤ ‖B v‖ := by
+    rw [inv_mul_le_iff₀ (by positivity)]
+    calc ‖v‖ ≤ K * ‖B v‖ := ZeroHomClass.bound_of_antilipschitz (B : E →ₗ[ℝ] E) hK v
+      _ ≤ (max (Km : ℝ) Kp + 1) * ‖B v‖ := by gcongr; linarith
+  exact isFredholm_trajectoryOperator hA hsym (by positivity)
+    (hbound hKm (le_max_left (Km : ℝ) Kp)) (hbound hKp (le_max_right (Km : ℝ) Kp)) hbot htop
+    hdbot hdtop AL hAL
 
 end TauCeti.WeakDerivStep

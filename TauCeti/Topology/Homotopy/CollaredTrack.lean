@@ -27,7 +27,8 @@ develops everything about a concordance that does not depend on the regularity a
 track — smooth, locally flat or merely topological. That is: the end conditions imply that the
 track is the appropriate product for all `t ≤ 0` and all `t ≥ 1` and that it moves no time level
 across `0` or `1`; the product `f × id` is a track from `f` to `f`; a track can be pushed forward
-along a map of the target or pulled back along a map of the source; time can be reflected
+along a map of the target or pulled back along a map of the source, and followed by an injective
+map of `N × ℝ` fixing everything outside a compact subset of the open slab; time can be reflected
 (`TauCeti.reverseTime`), giving a track from `g` to `f`; and two tracks can be stacked
 (`TauCeti.stack`), the first run at triple speed on `[0, 1/3]` and the second at triple speed on
 `[2/3, 1]`, giving a track from `f` to `h`. The stacked track is glued from two open slabs, and it
@@ -48,6 +49,9 @@ in the product region.
   the time coordinate with any level outside `(0, 1)`.
 * `TauCeti.isCollaredTrack_prodMap_id`, `TauCeti.IsCollaredTrack.reverseTime` and
   `TauCeti.IsCollaredTrack.stack`: the constant, reversed and stacked tracks are collared tracks.
+* `TauCeti.IsCollaredTrack.comp_of_isCompact`: a collared track followed by an injective map of
+  `N × ℝ` which fixes everything outside a compact subset of the open slab is a collared track
+  between the same maps.
 * `TauCeti.IsCollaredTrack.isEmbedding_stack`: the stack of two collared tracks which are
   topological embeddings is a topological embedding.
 * `TauCeti.IsCollaredTrack.isClosedEmbedding`: a continuous injective collared track with compact
@@ -170,6 +174,45 @@ theorem comp_prodMap_id (hF : IsCollaredTrack f g F) (e : M' → M) :
     obtain ⟨ε, hε, hF⟩ := hF.exists_pos_apply_eq_right
     exact ⟨ε, hε, fun x t ht => by simp [hF (e x) t ht]⟩
   snd_apply_mem_Ioo x t ht := by simpa using hF.snd_apply_mem_Ioo (e x) t ht
+
+/-- Following a collared track from `f` to `g` by an injective map `ψ` of `N × ℝ` which fixes every
+point outside a compact subset `C` of the open slab `N × (0, 1)` gives a collared track from `f` to
+`g`: compactness keeps `C` away from the two ends of the slab, where the track is untouched. -/
+theorem comp_of_isCompact [TopologicalSpace N] (hF : IsCollaredTrack f g F)
+    {ψ : N × ℝ → N × ℝ} (hψ : Function.Injective ψ) {C : Set (N × ℝ)} (hC : IsCompact C)
+    (hCslab : ∀ q ∈ C, q.2 ∈ Ioo 0 1) (hψC : ∀ q ∉ C, ψ q = q) :
+    IsCollaredTrack f g (ψ ∘ F) := by
+  -- The heights of points of `C` lie in `[δ, 1 - δ]` for some `δ > 0`.
+  obtain ⟨δ, hδ, hδC⟩ : ∃ δ > 0, ∀ q ∈ C, δ ≤ q.2 ∧ q.2 ≤ 1 - δ := by
+    rcases C.eq_empty_or_nonempty with rfl | hne
+    · exact ⟨1, one_pos, by simp⟩
+    obtain ⟨q₀, hq₀, hmin⟩ := hC.exists_isMinOn hne
+      (continuous_snd.min (continuous_const.sub continuous_snd)).continuousOn
+    have h₀ := hCslab q₀ hq₀
+    refine ⟨min q₀.2 (1 - q₀.2), lt_min h₀.1 (by linarith [h₀.2]), fun q hq => ?_⟩
+    have hq' : min q₀.2 (1 - q₀.2) ≤ min q.2 (1 - q.2) := isMinOn_iff.1 hmin q hq
+    exact ⟨hq'.trans (min_le_left _ _), by linarith [hq'.trans (min_le_right _ _)]⟩
+  have hfix : ∀ q : N × ℝ, q.2 < δ ∨ 1 - δ < q.2 → ψ q = q := fun q hq => hψC q fun hqC => by
+    rcases hq with hq | hq <;> linarith [hδC q hqC]
+  refine ⟨?_, ?_, fun x t ht => ?_⟩
+  · obtain ⟨ε, hε, hF'⟩ := hF.exists_pos_apply_eq_left
+    refine ⟨min ε (δ / 2), lt_min hε (half_pos hδ), fun x t ht => ?_⟩
+    rw [Function.comp_apply, hF' x t (ht.trans (min_le_left _ _))]
+    exact hfix _ (Or.inl (by linarith [min_le_right ε (δ / 2)]))
+  · obtain ⟨ε, hε, hF'⟩ := hF.exists_pos_apply_eq_right
+    refine ⟨min ε (δ / 2), lt_min hε (half_pos hδ), fun x t ht => ?_⟩
+    rw [Function.comp_apply, hF' x t ((sub_le_sub_left (min_le_left _ _) 1).trans ht)]
+    exact hfix _ (Or.inr (by linarith [min_le_right ε (δ / 2)]))
+  -- A point of `C` is moved into `C`: otherwise `ψ` would fix its image, contradicting injectivity.
+  rw [Function.comp_apply]
+  by_cases hq : F (x, t) ∈ C
+  · by_cases hψq : ψ (F (x, t)) ∈ C
+    · exact hCslab _ hψq
+    · have h : ψ (F (x, t)) = F (x, t) := hψ (hψC _ hψq)
+      rw [h] at hψq
+      exact absurd hq hψq
+  · rw [hψC _ hq]
+    exact hF.snd_apply_mem_Ioo x t ht
 
 end IsCollaredTrack
 

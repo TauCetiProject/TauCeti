@@ -7,11 +7,11 @@ module
 
 public import Mathlib.Algebra.Lie.Derivation.Basic
 public import Mathlib.Algebra.Module.Rat
+public import TauCeti.LinearAlgebra.End.Exp
 import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.Data.Nat.Choose.Cast
 import TauCeti.Algebra.Lie.Rat
 import TauCeti.Algebra.Module.LinearMap.Iterate
-import TauCeti.RingTheory.PowerSeries.Exp
 
 /-!
 # Taylor exponentials of locally nilpotent Lie derivations
@@ -35,8 +35,9 @@ advance.
 That `exp D` preserves the bracket is the general Leibniz rule
 `LieDerivation.iterate_apply_lie`: divided by factorials it says
 `Dⁿ ⁅x, y⁆ / n! = ∑_{i + j = n} ⁅Dⁱ x / i!, Dʲ y / j!⁆`, and summing over `n` gives
-`exp D ⁅x, y⁆ = ⁅exp D x, exp D y⁆`. That `exp (-D)` inverts `exp D` comes from the identity
-`∑_{i + j = n} (-1)ʲ / (i! j!) = 0` for `n > 0`, the coefficients of `e^X e^{-X} = 1`.
+`exp D ⁅x, y⁆ = ⁅exp D x, exp D y⁆`. As a linear automorphism, `exp D` is the exponential
+`Module.End.locallyNilpotentExp` of the underlying locally nilpotent endomorphism of `D`, so its
+inverse is the exponential of `-D` (`Module.End.locallyNilpotentExp_symm`).
 
 This is the Lie algebra counterpart of `Derivation.taylorExp` for derivations of commutative
 algebras.
@@ -53,6 +54,8 @@ algebras.
 * `LieDerivation.inv_factorial_smul_iterate_apply_lie`: the divided Leibniz rule.
 * `LieDerivation.taylorExp_apply_eq_sum`: any iterate killing `x` gives a finite expansion of
   `taylorExp D x`.
+* `LieDerivation.taylorExp_apply_eq_locallyNilpotentExp`: comparison with the exponential of
+  the underlying endomorphism.
 * `LieDerivation.taylorExp_symm`: the inverse of `taylorExp D` is `taylorExp (-D)`.
 * `LieDerivation.taylorExp_apply_of_apply_eq_zero`,
   `LieDerivation.taylorExp_apply_of_apply_apply_eq_zero` and
@@ -119,126 +122,83 @@ section TaylorExp
 
 variable (D : LieDerivation R L L) (hD : ∀ x, ∃ n, D^[n] x = 0)
 
-/-- The finite Taylor sum `∑ Dⁱ x / i!`, truncated at some iterate of `D` that kills `x` (a choice
-from `hD`). -/
-private noncomputable def taylorSum (x : L) : L :=
-  ∑ i ∈ range (hD x).choose, (i ! : ℚ)⁻¹ • D^[i] x
-
-/-- The Taylor sum may be truncated at any iterate killing the element. -/
-private theorem sum_range_eq_of_le {x : L} {n m : ℕ} (hn : D^[n] x = 0) (hnm : n ≤ m) :
-    ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] x = ∑ i ∈ range m, (i ! : ℚ)⁻¹ • D^[i] x :=
-  sum_subset (range_subset_range.2 hnm) fun i _ hi => by
-    rw [TauCeti.iterate_map_eq_zero_of_le D hn (by simpa using hi), smul_zero]
-
-private theorem taylorSum_eq {x : L} {n : ℕ} (hn : D^[n] x = 0) :
-    taylorSum D hD x = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] x := by
-  have hc := (hD x).choose_spec
-  rw [taylorSum, sum_range_eq_of_le D hc (le_max_left _ n),
-    sum_range_eq_of_le D hn (le_max_right _ n)]
-
-/-- `exp (-D)` inverts `exp D` on the left. -/
-private theorem taylorSum_neg_taylorSum (hD' : ∀ x, ∃ n, (-D)^[n] x = 0) (x : L) :
-    taylorSum (-D) hD' (taylorSum D hD x) = x := by
-  obtain ⟨n, hn⟩ := hD x
-  have hn' : D^[n + 1] x = 0 := TauCeti.iterate_map_eq_zero_of_le D hn n.le_succ
-  set N := n + 1
-  -- the iterates of `exp D x` beyond `N` vanish as well
-  have hy : (-D)^[N] (taylorSum D hD x) = 0 := by
-    rw [iterate_neg_apply_eq_zero_iff, taylorSum_eq D hD hn', TauCeti.iterate_map_sum]
-    refine sum_eq_zero fun i _ => ?_
-    rw [TauCeti.iterate_map_rat_smul, ← Function.iterate_add_apply, add_comm,
-      Function.iterate_add_apply, hn', iterate_map_zero, smul_zero]
-  let c : ℕ → ℕ → ℚ := fun i j => (i ! : ℚ)⁻¹ * ((-1) ^ j * (j ! : ℚ)⁻¹)
-  have hterm (i j : ℕ) : (j ! : ℚ)⁻¹ • (-D)^[j] ((i ! : ℚ)⁻¹ • D^[i] x) = c i j • D^[i + j] x := by
-    rw [TauCeti.iterate_map_rat_smul, iterate_neg_apply, ← Function.iterate_add_apply, add_comm j i,
-      ← Int.cast_smul_eq_zsmul ℚ, smul_smul, smul_smul]
-    congr 1
-    simp only [c, Int.cast_pow, Int.cast_neg, Int.cast_one]
-    ring
-  rw [taylorSum_eq (-D) hD' hy, taylorSum_eq D hD hn']
-  simp_rw [TauCeti.iterate_map_sum, smul_sum]
-  rw [sum_comm]
-  simp_rw [hterm]
-  have hsupp := TauCeti.sum_range_add_antidiagonal_of_support N N
-    (fun ij : ℕ × ℕ => c ij.1 ij.2 • D^[ij.1 + ij.2] x) fun i j hij => by
-      dsimp only
-      rw [TauCeti.iterate_map_eq_zero_of_le D hn' (by omega), smul_zero]
-  dsimp only at hsupp
-  rw [← hsupp]
-  have hk (k : ℕ) : ∑ ij ∈ antidiagonal k, c ij.1 ij.2 • D^[ij.1 + ij.2] x =
-      if k = 0 then x else 0 := by
-    rw [sum_congr rfl fun ij hij => by rw [(mem_antidiagonal.1 hij)], ← sum_smul,
-      TauCeti.sum_antidiagonal_inv_factorial_mul_neg_one_pow]
-    split_ifs with h <;> simp [h]
-  simp [hk, N]
-
 omit [Module ℚ L] in
 include hD in
 /-- The negative of a locally nilpotent derivation is locally nilpotent. -/
 theorem exists_iterate_neg_apply_eq_zero : ∀ x, ∃ n, (-D)^[n] x = 0 := fun x =>
   (hD x).imp fun _ hn => (iterate_neg_apply_eq_zero_iff D).2 hn
 
+omit [Module ℚ L] in
+include hD in
+/-- The local nilpotence of `D`, in the form of powers of its underlying endomorphism. -/
+private theorem exists_toLinearMap_pow_apply_eq_zero :
+    ∀ x, ∃ n, (D.toLinearMap ^ n) x = 0 := by
+  simpa only [pow_apply_eq_iterate, coeFn_coe] using hD
+
+/-- The exponential of the underlying endomorphism of `D`, expanded with the iterates of `D`. -/
+private theorem locallyNilpotentExp_toLinearMap_apply_eq_sum {x : L} {n : ℕ}
+    (hn : D^[n] x = 0) :
+    Module.End.locallyNilpotentExp D.toLinearMap (exists_toLinearMap_pow_apply_eq_zero D hD) x =
+      ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] x := by
+  rw [Module.End.locallyNilpotentExp_apply_eq_sum _ _
+    (by simpa only [pow_apply_eq_iterate, coeFn_coe] using hn)]
+  simp only [pow_apply_eq_iterate, coeFn_coe]
+
 /-- The **Taylor exponential** `x ↦ ∑ Dⁿ x / n!` of a locally nilpotent derivation `D` of a Lie
-algebra whose additive group is a `ℚ`-module. The sum is finite because some iterate of `D` kills
-`x`; the map preserves the bracket by the general Leibniz rule, and its inverse is the Taylor
-exponential of `-D`. -/
-noncomputable def taylorExp : L ≃ₗ⁅R⁆ L where
-  toFun := taylorSum D hD
-  map_add' x y := by
-    obtain ⟨n, hx⟩ := hD x
-    obtain ⟨m, hy⟩ := hD y
-    have hx' := TauCeti.iterate_map_eq_zero_of_le D hx (le_max_left n m)
-    have hy' := TauCeti.iterate_map_eq_zero_of_le D hy (le_max_right n m)
-    have hxy : D^[max n m] (x + y) = 0 := by rw [iterate_map_add, hx', hy', add_zero]
-    rw [taylorSum_eq D hD hxy, taylorSum_eq D hD hx', taylorSum_eq D hD hy', ← sum_add_distrib]
-    simp only [iterate_map_add, smul_add]
-  map_smul' r x := by
-    obtain ⟨n, hx⟩ := hD x
-    have hrx : D^[n] (r • x) = 0 := by rw [TauCeti.iterate_map_smul, hx, smul_zero]
-    rw [taylorSum_eq D hD hrx, taylorSum_eq D hD hx, smul_sum]
-    simp only [TauCeti.iterate_map_smul, RingHom.id_apply]
-    exact sum_congr rfl fun i _ => smul_comm _ _ _
-  map_lie' {x y} := by
-    obtain ⟨n, hx⟩ := hD x
-    obtain ⟨m, hy⟩ := hD y
-    have hx' := TauCeti.iterate_map_eq_zero_of_le D hx (le_max_left n m)
-    have hy' := TauCeti.iterate_map_eq_zero_of_le D hy (le_max_right n m)
-    set N := max n m
-    have hxy : D^[N + N] ⁅x, y⁆ = 0 := by
-      rw [iterate_apply_lie']
-      refine sum_eq_zero fun i hi => ?_
-      rcases le_or_gt N i with h | h
-      · rw [TauCeti.iterate_map_eq_zero_of_le D hx' h, zero_lie, smul_zero]
-      · rw [TauCeti.iterate_map_eq_zero_of_le D hy' (by omega), lie_zero, smul_zero]
-    simp only [taylorSum_eq D hD hxy, taylorSum_eq D hD hx', taylorSum_eq D hD hy', sum_lie,
-      lie_sum, inv_factorial_smul_iterate_apply_lie]
-    conv_rhs => rw [sum_comm]
-    refine TauCeti.sum_range_add_antidiagonal_of_support N N
-      (fun ij => ⁅(ij.1 ! : ℚ)⁻¹ • D^[ij.1] x, (ij.2 ! : ℚ)⁻¹ • D^[ij.2] y⁆) fun i j hij => ?_
-    dsimp only
-    rcases hij with h | h
-    · rw [TauCeti.iterate_map_eq_zero_of_le D hx' h, smul_zero, zero_lie]
-    · rw [TauCeti.iterate_map_eq_zero_of_le D hy' h, smul_zero, lie_zero]
-  invFun := taylorSum (-D) (exists_iterate_neg_apply_eq_zero D hD)
-  left_inv := taylorSum_neg_taylorSum D hD _
-  right_inv x := by
-    have h := taylorSum_neg_taylorSum (-D) (exists_iterate_neg_apply_eq_zero D hD)
-      (by simpa only [neg_neg] using hD) x
-    simp only [neg_neg] at h
-    exact h
+algebra whose additive group is a `ℚ`-module. It is the exponential
+`Module.End.locallyNilpotentExp` of the underlying endomorphism of `D`, which preserves the
+bracket by the general Leibniz rule; its inverse is the Taylor exponential of `-D`. -/
+noncomputable def taylorExp : L ≃ₗ⁅R⁆ L :=
+  { Module.End.locallyNilpotentExp D.toLinearMap (exists_toLinearMap_pow_apply_eq_zero D hD) with
+    map_lie' := fun {x y} => by
+      obtain ⟨n, hx⟩ := hD x
+      obtain ⟨m, hy⟩ := hD y
+      have hx' := TauCeti.iterate_map_eq_zero_of_le D hx (le_max_left n m)
+      have hy' := TauCeti.iterate_map_eq_zero_of_le D hy (le_max_right n m)
+      set N := max n m
+      have hxy : D^[N + N] ⁅x, y⁆ = 0 := by
+        rw [iterate_apply_lie']
+        refine sum_eq_zero fun i hi => ?_
+        rcases le_or_gt N i with h | h
+        · rw [TauCeti.iterate_map_eq_zero_of_le D hx' h, zero_lie, smul_zero]
+        · rw [TauCeti.iterate_map_eq_zero_of_le D hy' (by omega), lie_zero, smul_zero]
+      simp only [AddHom.toFun_eq_coe, LinearMap.coe_toAddHom, LinearEquiv.coe_coe,
+        locallyNilpotentExp_toLinearMap_apply_eq_sum D hD hxy,
+        locallyNilpotentExp_toLinearMap_apply_eq_sum D hD hx',
+        locallyNilpotentExp_toLinearMap_apply_eq_sum D hD hy', sum_lie, lie_sum,
+        inv_factorial_smul_iterate_apply_lie]
+      conv_rhs => rw [sum_comm]
+      refine TauCeti.sum_range_add_antidiagonal_of_support N N
+        (fun ij => ⁅(ij.1 ! : ℚ)⁻¹ • D^[ij.1] x, (ij.2 ! : ℚ)⁻¹ • D^[ij.2] y⁆) fun i j hij => ?_
+      dsimp only
+      rcases hij with h | h
+      · rw [TauCeti.iterate_map_eq_zero_of_le D hx' h, smul_zero, zero_lie]
+      · rw [TauCeti.iterate_map_eq_zero_of_le D hy' h, smul_zero, lie_zero] }
 
 /-- **Finite expansion of the Taylor exponential.** If `D^[n]` kills `x`, then the Taylor
 exponential of `x` is the sum of its first `n` Taylor terms. -/
 theorem taylorExp_apply_eq_sum {x : L} {n : ℕ} (hn : D^[n] x = 0) :
     taylorExp D hD x = ∑ i ∈ range n, (i ! : ℚ)⁻¹ • D^[i] x :=
-  taylorSum_eq D hD hn
+  locallyNilpotentExp_toLinearMap_apply_eq_sum D hD hn
+
+/-- The Taylor exponential is the exponential of the underlying locally nilpotent
+endomorphism. -/
+theorem taylorExp_apply_eq_locallyNilpotentExp (x : L) :
+    taylorExp D hD x = Module.End.locallyNilpotentExp D.toLinearMap
+      (by simpa only [pow_apply_eq_iterate, coeFn_coe] using hD) x := by
+  obtain ⟨n, hn⟩ := hD x
+  rw [taylorExp_apply_eq_sum D hD hn, locallyNilpotentExp_toLinearMap_apply_eq_sum D hD hn]
 
 /-- The inverse of the Taylor exponential of `D` is the Taylor exponential of `-D`. -/
 @[simp]
 theorem taylorExp_symm :
     (taylorExp D hD).symm = taylorExp (-D) (exists_iterate_neg_apply_eq_zero D hD) := by
   ext x
-  rfl
+  rw [LieEquiv.symm_apply_eq, taylorExp_apply_eq_locallyNilpotentExp,
+    taylorExp_apply_eq_locallyNilpotentExp]
+  simp only [coe_neg_linearMap]
+  rw [← Module.End.locallyNilpotentExp_symm _ (exists_toLinearMap_pow_apply_eq_zero D hD),
+    LinearEquiv.apply_symm_apply]
 
 /-- **Constants of the derivation are fixed by its Taylor exponential.** -/
 @[simp]

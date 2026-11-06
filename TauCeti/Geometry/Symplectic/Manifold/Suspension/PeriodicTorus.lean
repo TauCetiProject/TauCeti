@@ -157,6 +157,16 @@ theorem mfderiv_periodicTorus (p : UnitAddCircle × AddCircle (d : ℝ))
   simp only [mfderiv_id, hγ] at h
   convert! h using 1
 
+/-- The tangent map of the periodic torus is injective at every point. -/
+theorem injective_mfderiv_periodicTorus (p : UnitAddCircle × AddCircle (d : ℝ)) :
+    Injective (mfderiv (𝓘(ℝ).prod 𝓘(ℝ)) (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (periodicTorus φ hx) p) := by
+  intro v w hvw
+  have hvw' := Prod.mk.inj ((Manifold.tangentSpaceProdEquiv _).symm.injective
+    ((mfderiv_periodicTorus hx p v).symm.trans (hvw.trans (mfderiv_periodicTorus hx p w))))
+  refine Prod.ext hvw'.1 (injective_mfderiv_closedOrbit hx (by simp) p.2 ?_)
+  rw [mfderiv_closedOrbit]
+  exact hvw'.2
+
 variable {σ : SmoothTwoForm I M} {hσ : SmoothForm.mpullback φ φ.contMDiff σ = σ}
 
 /-- The fiber two-form vanishes on the periodic torus: both of its mapping-torus tangent

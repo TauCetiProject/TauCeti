@@ -26,6 +26,7 @@ The finite-group properties of the projection are developed in
 * `quotient`: the spectrum of the fixed subring.
 * `projection`: the invariant-spectrum projection.
 * `specComap`: the contravariant spectrum map of an action element.
+* `specAction`: for a group action, the induced action on `Spec A` by automorphisms.
 * `actionMap`: the action graphs mapped into the kernel pair of the quotient projection.
 * `desc`: descent of an invariant morphism to an affine target.
 
@@ -247,6 +248,22 @@ theorem specComap_base_apply (g : G) (x : PrimeSpectrum A) :
   simp only [Ideal.mem_comap, CommRingCat.hom_ofHom, MulSemiringAction.toRingHom_apply,
     MulSemiringAction.toRingAut, MonoidHom.coe_mk, OneHom.coe_mk,
     MulSemiringAction.toRingEquiv_apply_symm_apply, inv_inv]
+
+/-- A group acting on `A` acts on `Spec A` by automorphisms: `g` acts by the spectrum map of
+`g⁻¹`, so that it sends a prime ideal `𝔭` to `g • 𝔭` (`specAction_apply`). -/
+noncomputable def specAction : G →* Aut (Spec (CommRingCat.of A)) where
+  toFun g := .of (asIso (specComap A G g⁻¹))
+  map_one' := by ext1; ext1; simp
+  map_mul' g h := by ext1; ext1; simp
+
+@[simp]
+theorem specAction_asIso_hom (g : G) : (specAction A G g).asIso.hom = specComap A G g⁻¹ :=
+  (rfl)
+
+/-- The automorphism `specAction A G g` sends a prime ideal `𝔭` to `g • 𝔭`. -/
+theorem specAction_apply (g : G) (x : PrimeSpectrum A) :
+    (specAction A G g).asIso.hom x = g • x := by
+  rw [specAction_asIso_hom, specComap_base_apply, inv_inv]
 
 end Group
 

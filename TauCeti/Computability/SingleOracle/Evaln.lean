@@ -320,6 +320,11 @@ stage use does not record whether the run succeeded. -/
 def stageUse (σ : ℕ → Option ℕ) (k : ℕ) (c : Code) (n : ℕ) : ℕ :=
   ((evaln σ k c n).map Halt.use).getD 0
 
+/-- Equal stage runs have equal stage uses, including when both runs fail. -/
+theorem stageUse_congr {τ : ℕ → Option ℕ} {k' : ℕ} {c : Code}
+    (h : evaln σ k c n = evaln τ k' c n) : stageUse σ k c n = stageUse τ k' c n := by
+  simp only [stageUse, h]
+
 /-- The stage use of a successful run is its use. -/
 theorem stageUse_eq_of_evaln_eq_some {c : Code} (h : evaln σ k c n = some d) :
     stageUse σ k c n = d.use := by
@@ -532,20 +537,24 @@ theorem mem_eval_iff_exists_evaln {O : ℕ →. ℕ} (hσ : ∀ z y, σ z = some
   ⟨exists_evaln_eq_some_of_mem_eval fun z y => (hσ z y).2, fun ⟨_, _, h, hy⟩ =>
     hy ▸ evaln_sound h fun z _ y' hy' => (hσ z y').1 hy'⟩
 
+/-- A run with fuel `k` depends only on the first `k` answers of a total oracle. Truncating
+that oracle to a string of length `k` preserves failure as well as output and use. -/
+theorem evaln_range_map (O : ℕ → ℕ) (k : ℕ) (c : Code) (n : ℕ) :
+    evaln (fun z => ((List.range k).map O)[z]?) k c n =
+      evaln (fun z => some (O z)) k c n := by
+  apply Option.ext
+  intro d
+  constructor <;> intro hd <;>
+    refine evaln_eq_some_of_eqOn hd fun z hz => ?_
+  all_goals simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
+
 /-- **Evaluation through finite initial segments.** For a total oracle `O`, the values of a
 program relative to `O` are exactly the outputs of its successful runs, at some fuel `k`, against
 the finite oracle string `O 0, …, O (k - 1)`. -/
 theorem mem_eval_iff_exists_evaln_range_map {O : ℕ → ℕ} {c : Code} {n y : ℕ} :
     y ∈ eval (O : ℕ →. ℕ) c n ↔
       ∃ k d, evaln (fun z => ((List.range k).map O)[z]?) k c n = some d ∧ d.output = y := by
-  constructor
-  · intro h
-    obtain ⟨k, d, hd, rfl⟩ := exists_evaln_eq_some_of_mem_eval (σ := fun z => some (O z))
-      (fun z y hy => by rw [PFun.coe_val, Part.mem_some_iff] at hy; rw [hy]) h
-    -- the run at fuel `k` reads only addresses below `k`, where the string is correct
-    refine ⟨k, d, evaln_eq_some_of_eqOn hd fun z hz => ?_, rfl⟩
-    simp [(Set.mem_Iio.1 hz).trans_le (evaln_use_le hd)]
-  · rintro ⟨k, d, hd, rfl⟩
-    exact evaln_sound hd fun z _ y hy => by simp_all [List.getElem?_eq_some_iff]
+  simp_rw [evaln_range_map]
+  exact mem_eval_iff_exists_evaln (σ := fun z => some (O z)) (by simp [eq_comm])
 
 end TauCeti.Oracle.Single.Code

@@ -344,6 +344,14 @@ theorem map_isLink (f : Iso G H) {e : β} {x y : α} (he : G.IsLink e x y) :
       (f.vertexEquiv ⟨y, he.right_mem⟩) :=
   (f.map_isLink_iff ⟨e, he.edge_mem⟩ ⟨x, he.left_mem⟩ ⟨y, he.right_mem⟩).2 he
 
+/-- A graph isomorphism preserves and reflects incidence between actual edges and vertices. -/
+@[simp]
+theorem map_inc_iff (f : Iso G H) (e : G.edgeSet) (x : G.vertexSet) :
+    H.Inc (f.edgeEquiv e) (f.vertexEquiv x) ↔ G.Inc e x := by
+  refine ⟨fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x (f.vertexEquiv.symm ⟨y, hy.right_mem⟩)).1 ?_⟩,
+    fun ⟨y, hy⟩ ↦ ⟨_, (f.map_isLink_iff e x ⟨y, hy.right_mem⟩).2 hy⟩⟩
+  simpa using hy
+
 end Iso
 
 end Graph

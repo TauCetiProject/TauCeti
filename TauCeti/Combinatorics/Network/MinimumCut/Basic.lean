@@ -441,6 +441,10 @@ end Extremal
   classical
   simp [isAdmissible_iff]
 
+/-- A side admissible for a pair of singleton terminal sets separates distinct terminals. -/
+theorem IsAdmissible.ne {s t : V} {S : Finset V} (hS : IsAdmissible {s} {t} S) : s ≠ t :=
+  ne_of_mem_of_not_mem (isAdmissible_singleton.1 hS).1 (isAdmissible_singleton.1 hS).2
+
 /-- A minimum cut for a pair of singleton terminal sets has the usual source-membership,
 sink-exclusion, and optimality characterization. -/
 theorem isMinimum_singleton_iff [Preorder K] {f : Finset V → K} {s t : V}
@@ -480,9 +484,7 @@ theorem pairMinimumValue_le {s t : V} {S : Finset V} (hs : s ∈ S) (ht : t ∉ 
 /-- A minimum cut between two vertices attains their minimum cut value. -/
 theorem IsMinimum.pairMinimumValue_eq {f : Finset V → K} {s t : V} {S : Finset V}
     (hS : IsMinimum f {s} {t} S) : pairMinimumValue f s t = f S := by
-  obtain ⟨hs, ht⟩ := isAdmissible_singleton.mp hS.admissible
-  have hst : s ≠ t := fun h ↦ ht (h ▸ hs)
-  rw [pairMinimumValue_of_ne f hst]
+  rw [pairMinimumValue_of_ne f hS.admissible.ne]
   exact (((isMinimum_iff_value_eq f _).mp hS).2).symm
 
 /-- A cut separating two vertices is minimum exactly when it attains their minimum cut value. -/

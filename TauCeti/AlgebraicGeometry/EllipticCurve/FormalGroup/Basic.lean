@@ -7,7 +7,9 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Fin2
 public import Mathlib.RingTheory.FormalGroup.Basic
+public import TauCeti.RingTheory.FormalGroup.AddInv
 import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Assoc
+import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.Add.Inverse
 import TauCeti.RingTheory.MvPowerSeries.Rename
 
 /-!
@@ -31,6 +33,7 @@ power-series-valued points whose constant coefficient is nilpotent.
 
 * `WeierstrassCurve.isComm_formalGroup`: the elliptic formal group law is commutative.
 * `WeierstrassCurve.map_formalGroup`: the construction commutes with base change.
+* `WeierstrassCurve.formalGroup_addInvX`: the abstract inverse is the geometric inverse parameter.
 
 ## References
 
@@ -49,7 +52,7 @@ public section
 
 namespace WeierstrassCurve
 
-open MvPowerSeries
+open MvPowerSeries TauCeti
 
 variable {R : Type*} [CommRing R]
 
@@ -91,5 +94,24 @@ noncomputable instance isComm_formalGroup (W : WeierstrassCurve R) :
     funext s
     rcases s with u | u <;> cases u <;>
       simp [Function.comp_def]
+
+/-- The inverse series of the formal group is the parameter of geometric negation. -/
+theorem formalGroup_addInvX (W : WeierstrassCurve R) :
+    (formalGroup W).addInvX = W.formalInverse := by
+  apply Eq.symm
+  apply ((formalGroup W).eq_addInvX_iff_subst_right_eq_zero W.hasSubst_formalInverse).mpr
+  rw [formalGroup_toPowerSeries,
+    MvPowerSeries.subst_rename unitSumUnitEquivFinTwo _
+      (MvPowerSeries.hasSubst_of_constantCoeff_zero (by
+        intro i
+        fin_cases i
+        · exact PowerSeries.constantCoeff_X
+        · exact W.constantCoeff_formalInverse))]
+  convert W.subst_invPair_formalAdd using 1
+  congr 1
+  funext i
+  rcases i with i | i <;> cases i <;> simp
+  -- The one-variable `PowerSeries.X` is `MvPowerSeries.X ()`.
+  rfl
 
 end WeierstrassCurve

@@ -59,6 +59,8 @@ analysis on these pairings for three root vectors, in which no division by `2` o
 
 ## Main results
 
+* `Matrix.ShellLieAlgebra.cartan_add_sum_root_eq`: the decomposition of an element into its
+  Cartan part and root vectors.
 * `Matrix.ShellLieAlgebra.cartan_lie_root`, `Matrix.ShellLieAlgebra.root_lie_root`: the
   bracket on Cartan and root vectors.
 * `Matrix.ShellLieAlgebra.cartan_lie_rootBracket`: `⁅x_a, x_b⁆` has weight `a + b`.
@@ -111,6 +113,11 @@ noncomputable def root (a : B.normTwoShell) : ShellLieAlgebra B :=
 theorem equivProd_cartan (h : I → ℤ) : equivProd B (cartan B h) = (h, 0) := by
   simp [cartan]
 
+/-- The Cartan embedding is injective. -/
+theorem cartan_injective : Function.Injective (cartan B) := by
+  intro v w h
+  simpa only [equivProd_cartan] using congrArg (fun x ↦ (equivProd B x).1) h
+
 @[simp]
 theorem equivProd_root (a : B.normTwoShell) :
     equivProd B (root B a) = (0, Finsupp.single a 1) := by
@@ -140,6 +147,24 @@ theorem basis_inl [DecidableEq I] (i : I) : basis B (.inl i) = cartan B (Pi.sing
 @[simp]
 theorem basis_inr (a : B.normTwoShell) : basis B (.inr a) = root B a := by
   simp [basis, root, Basis.prod_apply]
+
+/-- The signed shell Lie algebra is free over `ℤ`, with basis `Matrix.ShellLieAlgebra.basis`. -/
+instance : Module.Free ℤ (ShellLieAlgebra B) :=
+  .of_basis (basis B)
+
+/-- The signed shell Lie algebra is finite over `ℤ` when its norm-two shell is finite, as it is for
+a positive definite `B` (`Matrix.PosDef.finite_normTwoShell`). -/
+instance [Finite B.normTwoShell] : Module.Finite ℤ (ShellLieAlgebra B) :=
+  .of_basis (basis B)
+
+/-- Every element `x` of `ShellLieAlgebra B` is the sum `H_h + ∑_(a ∈ Φ) c_a x_a` of the Cartan
+vector of its Cartan part `h` and the root vectors weighted by its root coefficients `c`. -/
+theorem cartan_add_sum_root_eq [Fintype B.normTwoShell] (x : ShellLieAlgebra B) :
+    cartan B (equivProd B x).1 + ∑ a, (equivProd B x).2 a • root B a = x := by
+  apply (equivProd B).injective
+  ext
+  · simp [map_sum, Prod.fst_sum]
+  · simp [map_sum, Prod.snd_sum]
 
 /-- A Cartan vector has its original lattice coordinates in the Cartan part of the shell basis. -/
 @[simp]

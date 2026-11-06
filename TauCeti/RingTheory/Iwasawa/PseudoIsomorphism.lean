@@ -7,10 +7,14 @@ module
 
 public import TauCeti.RingTheory.Iwasawa.PseudoNull
 public import Mathlib.RingTheory.Localization.Module
+public import TauCeti.Algebra.Module.Torsion.Basic
+
+public import Mathlib.RingTheory.QuotSMulTop
 
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
 import Mathlib.RingTheory.PowerSeries.Ideal
 import TauCeti.Algebra.Module.LocalizedModule.Submodule
+import TauCeti.Algebra.Module.Torsion.EulerQuotient
 import TauCeti.LinearAlgebra.Isomorphisms
 import TauCeti.NumberTheory.Padics.PowerSeriesIdeal
 import TauCeti.RingTheory.Finiteness.Finsupp
@@ -48,6 +52,8 @@ Chapter V, §3, Exercise 1).
   pseudo-isomorphisms are pseudo-isomorphisms.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.prodMap`: a product of pseudo-isomorphisms is a
   pseudo-isomorphism.
+* `TauCeti.Iwasawa.IsPseudoIsomorphism.restrict_torsion`: over a noetherian domain, a
+  pseudo-isomorphism restricts to a pseudo-isomorphism between the torsion submodules.
 * `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_iff`: over a noetherian ring, the source of a
   pseudo-isomorphism is finitely generated iff its target is.
 * `TauCeti.Iwasawa.isPseudoIsomorphism_lsmul`: multiplication by `a` on a finitely generated
@@ -64,6 +70,11 @@ Chapter V, §3, Exercise 1).
 * `TauCeti.Iwasawa.isPseudoIsomorphism_iff_finite`: over a noetherian local ring of dimension two
   with finite residue field, such as `O⟦T⟧`, a pseudo-isomorphism is a map with finite kernel and
   cokernel.
+* `TauCeti.Iwasawa.IsPseudoIsomorphism.natCard_quotSMulTop_div_natCard_torsionBy_eq`: over such a
+  ring, a pseudo-isomorphism `M → N` preserves the Euler quotient `#(M ⧸ rM) / #M[r]` of every
+  scalar `r`; `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_torsionBy_iff` and
+  `TauCeti.Iwasawa.IsPseudoIsomorphism.finite_quotSMulTop_iff` say that it preserves the finiteness
+  of `M[r]` and of `M ⧸ rM`.
 
 The examples at the end of the file are over `Λ = ℤ_p⟦T⟧`. The first checks the multiplication
 criterion: multiplication by `p` on `Λ ⧸ (T) ≅ ℤ_p` is a pseudo-isomorphism, although it is not
@@ -190,6 +201,38 @@ theorem IsPseudoIsomorphism.prodMap {M' N' : Type*} [AddCommGroup M'] [Module A 
       refine ⟨(Submodule.Quotient.mk n, Submodule.Quotient.mk n'), ?_⟩
       simp [← Submodule.Quotient.mk_add]
 
+/-- Over a noetherian domain, a pseudo-isomorphism restricts to a pseudo-isomorphism between the
+torsion submodules. -/
+theorem IsPseudoIsomorphism.restrict_torsion [IsDomain A] [IsNoetherianRing A] {f : M →ₗ[A] N}
+    (hf : IsPseudoIsomorphism f) :
+    IsPseudoIsomorphism
+      (f.restrict (q := Submodule.torsion A N) f.le_comap_torsion) where
+  isPseudoNull_ker := by
+    -- The kernel of the restriction is a submodule of the kernel of `f`.
+    refine hf.isPseudoNull_ker.of_injective (LinearMap.codRestrict _
+      ((Submodule.torsion A M).subtype ∘ₗ Submodule.subtype _) fun x ↦ ?_)
+      fun x y hxy ↦ Subtype.ext (Subtype.ext congr(($hxy : M)))
+    exact congr(($(LinearMap.map_coe_ker _ x) : N))
+  isPseudoNull_coker := by
+    -- The cokernel of the restriction embeds into the cokernel of `f`: if `t` is killed by `a`
+    -- and `t = f m`, then `a • m` lies in the kernel of `f`, which is torsion, so `m` is torsion.
+    refine hf.isPseudoNull_coker.of_injective
+      (Submodule.mapQ _ (LinearMap.range f) (Submodule.torsion A N).subtype ?_)
+      ((injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_)
+    · rintro _ ⟨m, rfl⟩
+      exact ⟨m, rfl⟩
+    obtain ⟨t, rfl⟩ := Submodule.mkQ_surjective _ x
+    rw [Submodule.mkQ_apply, Submodule.mapQ_apply, Submodule.Quotient.mk_eq_zero] at hx
+    rw [Submodule.mkQ_apply, Submodule.Quotient.mk_eq_zero]
+    obtain ⟨m, hm⟩ := hx
+    obtain ⟨a, ha⟩ := (Submodule.mem_torsion_iff _).mp t.2
+    obtain ⟨b, hb⟩ := hf.isPseudoNull_ker.isTorsion (x := ⟨a • m, by
+      rw [LinearMap.mem_ker, LinearMap.map_smul_of_tower, hm]
+      exact congr(($ha : N))⟩)
+    refine ⟨⟨m, (Submodule.mem_torsion_iff m).mpr ⟨b * a, ?_⟩⟩, Subtype.ext hm⟩
+    rw [mul_smul]
+    exact congr(($hb : M))
+
 /-- The multiplication criterion: over a noetherian ring, multiplication by `a` on a finitely
 generated module `M` is a pseudo-isomorphism if `a` lies in no prime of height at most one in the
 support of `M`. -/
@@ -311,6 +354,49 @@ theorem isPseudoIsomorphism_iff_finite [IsLocalRing A] [IsNoetherianRing A]
   · have : Module.Finite A (LinearMap.ker f) := .of_finite
     have : Module.Finite A (N ⧸ LinearMap.range f) := .of_finite
     exact ⟨(isPseudoNull_iff_finite hdim).mpr h₁, (isPseudoNull_iff_finite hdim).mpr h₂⟩
+
+section EulerQuotient
+
+variable [IsLocalRing A] [IsNoetherianRing A] [Finite (IsLocalRing.ResidueField A)]
+  (hdim : ringKrullDim A = 2) {f : M →ₗ[A] N} (r : A)
+
+include hdim
+
+/-- Over a noetherian local ring of dimension two with finite residue field, such as `O⟦T⟧`, a
+pseudo-isomorphism `M → N` preserves the finiteness of the `r`-torsion: `M[r]` is finite iff
+`N[r]` is. -/
+theorem IsPseudoIsomorphism.finite_torsionBy_iff (hf : IsPseudoIsomorphism f) :
+    Finite (Submodule.torsionBy A M r) ↔ Finite (Submodule.torsionBy A N r) :=
+  have := ((isPseudoIsomorphism_iff_finite hdim).1 hf).1
+  have := ((isPseudoIsomorphism_iff_finite hdim).1 hf).2
+  finite_torsionBy_iff_of_finite_ker_of_finite_coker r f
+
+/-- Over a noetherian local ring of dimension two with finite residue field, such as `O⟦T⟧`, a
+pseudo-isomorphism `M → N` preserves the finiteness of the cokernel of multiplication by `r`:
+`M ⧸ rM` is finite iff `N ⧸ rN` is. -/
+theorem IsPseudoIsomorphism.finite_quotSMulTop_iff (hf : IsPseudoIsomorphism f) :
+    Finite (QuotSMulTop r M) ↔ Finite (QuotSMulTop r N) :=
+  have := ((isPseudoIsomorphism_iff_finite hdim).1 hf).1
+  have := ((isPseudoIsomorphism_iff_finite hdim).1 hf).2
+  finite_quotSMulTop_iff_of_finite_ker_of_finite_coker r f
+
+/-- **The Euler quotient is invariant under pseudo-isomorphism.** Over a noetherian local ring of
+dimension two with finite residue field, such as `O⟦T⟧`, a pseudo-isomorphism `M → N` satisfies
+`#(M ⧸ rM) / #M[r] = #(N ⧸ rN) / #N[r]` for every scalar `r`. Both sides are `0` when the torsion
+groups are infinite. For `r = ω_n` this lets the Euler quotient `#(M ⧸ ω_n M) / #M[ω_n]` of a
+finitely generated module be computed on an elementary module, while the finiteness of the
+coinvariants `M ⧸ ω_n M` and of the invariants `M[ω_n]` transfers by
+`IsPseudoIsomorphism.finite_quotSMulTop_iff` and `IsPseudoIsomorphism.finite_torsionBy_iff`;
+the individual orders need not agree. -/
+theorem IsPseudoIsomorphism.natCard_quotSMulTop_div_natCard_torsionBy_eq
+    (hf : IsPseudoIsomorphism f) :
+    (Nat.card (QuotSMulTop r M) : ℚ) / Nat.card (Submodule.torsionBy A M r) =
+      Nat.card (QuotSMulTop r N) / Nat.card (Submodule.torsionBy A N r) :=
+  have := ((isPseudoIsomorphism_iff_finite hdim).1 hf).1
+  have := ((isPseudoIsomorphism_iff_finite hdim).1 hf).2
+  natCard_quotSMulTop_div_natCard_torsionBy_eq_of_finite_ker_of_finite_coker r f
+
+end EulerQuotient
 
 open PowerSeries in
 -- Over `Λ = ℤ_p⟦T⟧`, multiplication by `p` on `Λ ⧸ (T) ≅ ℤ_p` is a pseudo-isomorphism, although

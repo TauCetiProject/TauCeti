@@ -61,7 +61,8 @@ theorem isRegular_pair_of_finite_normal (hinj : Function.Injective (algebraMap A
     simpa using ⟨TauCeti.IsLocalRing.mem_maximalIdeal_of_span_pair_eq_maximalIdeal hxy,
       TauCeti.IsLocalRing.mem_maximalIdeal_of_span_pair_eq_maximalIdeal
         (Set.pair_comm x y ▸ hxy)⟩
-  have hx := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal hdim hxy
+  have hx := TauCeti.IsLocalRing.ne_zero_of_span_pair_eq_maximalIdeal
+    (not_isPrincipal_maximalIdeal_of_one_lt_ringKrullDim (R := A) (hdim ▸ by decide)) hxy
   have hxB : algebraMap A B x ≠ 0 := by simpa using hinj.ne hx
   have hmap : (span {x, y}).map (algebraMap A B) =
       span {algebraMap A B x, algebraMap A B y} := by

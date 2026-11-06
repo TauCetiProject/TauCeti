@@ -110,6 +110,38 @@ theorem mixedInner_comm (x y : mixedSpace K) : mixedInner K x y = mixedInner K y
   congr 1
   exact Finset.sum_congr rfl fun _ _ ↦ by ring
 
+/-- Multiplication by a point with real coordinates, `mixedSpaceOfRealSpace r`, is symmetric for
+the Euclidean pairing: its coordinates are fixed by complex conjugation. -/
+theorem mixedInner_mixedSpaceOfRealSpace_mul (r : realSpace K) (x y : mixedSpace K) :
+    mixedInner K (mixedSpaceOfRealSpace r * x) y =
+      mixedInner K x (mixedSpaceOfRealSpace r * y) := by
+  simp only [mixedInner, mixedSpaceOfRealSpace_apply, Prod.fst_mul, Prod.snd_mul, Pi.mul_apply,
+    map_mul, Complex.conj_ofReal]
+  congr 1
+  · exact Finset.sum_congr rfl fun _ _ ↦ by ring
+  · exact Finset.sum_congr rfl fun _ _ ↦ by ring_nf
+
+open NumberField.InfinitePlace in
+/-- The squared Euclidean length is the sum of the squared absolute values at the infinite
+places, each complex place counted once. -/
+theorem mixedInner_self_eq_sum (x : mixedSpace K) :
+    mixedInner K x x = ∑ w, normAtPlace w x ^ 2 := by
+  classical
+  rw [mixedInner_def,
+    ← Equiv.sum_comp (Equiv.subtypeEquivRight (fun _ ↦ not_isReal_iff_isComplex)),
+    ← Fintype.sum_subtype_add_sum_subtype (fun w : InfinitePlace K ↦ w.IsReal)]
+  congr 1
+  · apply Finset.sum_congr rfl
+    intro w _
+    rw [normAtPlace_apply_of_isReal w.prop, Real.norm_eq_abs, sq_abs]
+    ring
+  · apply Finset.sum_congr rfl
+    intro w _
+    rw [normAtPlace_apply_of_isComplex (not_isReal_iff_isComplex.mp w.prop)]
+    simp only [Complex.mul_conj, Complex.ofReal_re, Complex.sq_norm]
+    -- The subtype equivalence preserves the place; subtype eta identifies its complex coordinate.
+    rfl
+
 open scoped Classical in
 /-- **The Euclidean model carries `mixedInner`**: Mathlib's continuous linear equivalence
 `euclidean.toMixed` carries the inner product of `euclidean.mixedSpace K` to `mixedInner`. -/

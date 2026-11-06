@@ -5,20 +5,28 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Field.UnitBall
 public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 public import TauCeti.Topology.Algebra.Quaternion.Unitary
 
+import Mathlib.Analysis.Complex.Polynomial.Basic
 import TauCeti.AlgebraicTopology.FundamentalGroup.Product
 import TauCeti.AlgebraicTopology.FundamentalGroup.VanKampen.Basic
 import TauCeti.AlgebraicTopology.Sphere.Equator
 import TauCeti.AlgebraicTopology.Sphere.Puncture
+import TauCeti.LinearAlgebra.QuadraticForm.BaseChange
+import TauCeti.LinearAlgebra.QuadraticForm.SepClosed
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Complexification
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Connected
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Polar
 import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Real.Orbit.Bundle
+import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Two
 import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
-# Simple-connectedness of compact Spin groups
+# Simple-connectedness of compact and complex Spin groups
 
 The algebraic equivalence from compact `Spin(3)` to the unit Hamilton quaternions is continuous.
 Compactness of the source upgrades it to a continuous multiplicative equivalence. Unit quaternions
@@ -30,6 +38,13 @@ For higher dimensions, two trivializations of the sphere bundle
 product of `Spin(n)` with a punctured sphere, while their overlap retracts to the equator. The
 two-set van Kampen theorem therefore gives the inductive step and proves that compact `Spin(n)` is
 simply connected for every `n ≥ 3`.
+
+Over `ℂ`, a nondegenerate quadratic form on a space of dimension `n` is isometric to the
+complexification of the positive-definite form on `ℝⁿ`. The polar deformation `g ↦ g (g† g)^(-t/2)`
+retracts the Spin group of that complexification onto its unitary part, which extension of scalars
+identifies with compact `Spin(n)`. Hence complex Spin groups are simply connected for `n ≥ 3`.
+The bound is sharp: in dimension one the Spin group is `{±1}`, which is not path-connected, and in
+dimension two it is isomorphic to `ℂˣ`. In dimension zero it is trivial.
 
 ## Main results
 
@@ -43,6 +58,10 @@ simply connected for every `n ≥ 3`.
   induction step.
 * `CliffordAlgebra.simplyConnectedSpace_realCliffordSpinGroupZero` proves the result for every
   dimension at least three.
+* `CliffordAlgebra.simplyConnectedSpace_spinGroup_of_three_le_finrank`: the Spin group of a
+  nondegenerate complex quadratic form is simply connected in every dimension at least three.
+* `CliffordAlgebra.simplyConnectedSpace_spinGroup_iff`: a complex Spin group is simply connected
+  exactly when the dimension is zero or at least three.
 
 ## References
 
@@ -150,6 +169,22 @@ theorem realSpinThreeHomeomorphQuaternionSphere_symm_apply
     ContinuousMulEquiv.coe_toHomeomorph_symm]
   exact realSpinThreeContinuousMulEquivQuaternionUnitary_symm_apply
     (Quaternion.unitaryHomeomorphSphere.symm q)
+
+/-- The homeomorphism from compact `Spin(3)` to the unit quaternion sphere sends the identity to
+the quaternion `1`. -/
+@[simp]
+theorem realSpinThreeHomeomorphQuaternionSphere_one :
+    realSpinThreeHomeomorphQuaternionSphere 1 = 1 := by
+  apply Subtype.ext
+  rw [coe_realSpinThreeHomeomorphQuaternionSphere_apply, map_one]
+  rfl
+
+/-- The inverse homeomorphism from the unit quaternion sphere to compact `Spin(3)` sends the
+quaternion `1` to the identity. -/
+theorem realSpinThreeHomeomorphQuaternionSphere_symm_one :
+    realSpinThreeHomeomorphQuaternionSphere.symm 1 = 1 :=
+  realSpinThreeHomeomorphQuaternionSphere.symm_apply_eq.mpr
+    realSpinThreeHomeomorphQuaternionSphere_one.symm
 
 end TauCeti
 
@@ -303,5 +338,54 @@ theorem simplyConnectedSpace_realCliffordSpinGroupZero (n : ℕ) (hn : 3 ≤ n) 
   | succ n hn ih =>
       let _ : SimplyConnectedSpace (realCliffordSpinGroupZero n) := ih
       exact simplyConnectedSpace_realCliffordSpinGroupZero_succ n (by omega)
+
+/-! ### Complex Spin groups -/
+
+section Complex
+
+open Module
+
+/-- **The complexified compact Spin group is simply connected**: for `n ≥ 3`, the Spin group of
+the complexification of the positive-definite form on `ℝⁿ` is simply connected. It is homotopy
+equivalent to its unitary part (`CliffordAlgebra.spinPolarHomotopyEquiv`), which is compact
+`Spin(n)` (`CliffordAlgebra.spinGroupHomeomorphUnitary`). -/
+theorem simplyConnectedSpace_spinGroup_baseChange_realCliffordForm_zero (n : ℕ) (hn : 3 ≤ n) :
+    SimplyConnectedSpace (spinGroup ((realCliffordForm n 0).baseChange ℂ)) := by
+  have := simplyConnectedSpace_realCliffordSpinGroupZero n hn
+  have := (spinGroupHomeomorphUnitary
+    (nondegenerate_realCliffordForm n 0)).symm.toHomotopyEquiv.simplyConnectedSpace
+  exact (spinPolarHomotopyEquiv (isOrthoᵢ_associated_realCliffordForm n 0)
+    fun i ↦ by simp).symm.simplyConnectedSpace
+
+/-- **Complex Spin groups are simply connected** in every dimension at least three: the Spin group
+of a nondegenerate quadratic form on a complex vector space of dimension `n ≥ 3` is simply
+connected. Such a form is isometric to the complexification of the positive-definite form on
+`ℝⁿ`. -/
+theorem simplyConnectedSpace_spinGroup_of_three_le_finrank {V : Type*} [AddCommGroup V]
+    [Module ℂ V] [FiniteDimensional ℂ V] {Q : QuadraticForm ℂ V} (hQ : Q.Nondegenerate)
+    (hV : 3 ≤ finrank ℂ V) : SimplyConnectedSpace (spinGroup Q) := by
+  have := simplyConnectedSpace_spinGroup_baseChange_realCliffordForm_zero _ hV
+  obtain ⟨e⟩ := QuadraticForm.equivalent_of_finrank_eq_of_isSepClosed Q
+    ((realCliffordForm (finrank ℂ V) 0).baseChange ℂ) hQ
+    (QuadraticForm.Nondegenerate.baseChange (nondegenerate_realCliffordForm _ 0)) (by simp)
+  exact e.spinGroupContinuousMulEquiv.toHomeomorph.toHomotopyEquiv.simplyConnectedSpace
+
+/-- **Simple connectivity of complex Spin groups**: the Spin group of a nondegenerate quadratic
+form on a finite-dimensional complex space is simply connected exactly when the dimension is zero
+or at least three. In dimension one it is the two-point group `{±1}`, and in dimension two it is
+isomorphic to `ℂˣ` as a topological group. -/
+theorem simplyConnectedSpace_spinGroup_iff {V : Type*} [AddCommGroup V] [Module ℂ V]
+    [FiniteDimensional ℂ V] {Q : QuadraticForm ℂ V} (hQ : Q.Nondegenerate) :
+    SimplyConnectedSpace (spinGroup Q) ↔ finrank ℂ V = 0 ∨ 3 ≤ finrank ℂ V := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.elim (fun hV ↦ ?_)
+    (simplyConnectedSpace_spinGroup_of_three_le_finrank hQ)⟩
+  · have h1 := (pathConnectedSpace_spinGroup_iff hQ).mp inferInstance
+    have h2 : finrank ℂ V ≠ 2 := fun hV ↦
+      not_simplyConnectedSpace_spinGroup_of_finrank_eq_two Q hQ hV h
+    omega
+  · have : Subsingleton V := finrank_zero_iff (R := ℂ) |>.mp hV
+    infer_instance
+
+end Complex
 
 end CliffordAlgebra

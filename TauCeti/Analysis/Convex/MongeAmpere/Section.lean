@@ -60,6 +60,9 @@ point for the geometry of sections used in the regularity theory of the Monge–
   `TauCeti.exists_mul_measure_convexSection_sq_le_mul_ofReal_pow` — the corresponding lower and
   upper volume estimates `hⁿ ≤ C μ(S) MA_u(S)` and `λ μ(S)² ≤ C hⁿ` for sections.
 
+* `TauCeti.abs_sub_le_on_convexSection_of_smul_le_mongeAmpereMeasure_le_smul` — a quantitative
+  comparison on a section with a given zero-boundary reference.
+
 ## References
 
 * L. A. Caffarelli, *A localization property of viscosity solutions to the Monge–Ampère equation
@@ -104,6 +107,15 @@ theorem mongeAmpereMeasure_ite_mul_norm_sq_add {U : Set E} [DecidablePred (· �
     ContinuousLinearMap.coe_id, LinearMap.det_smul, LinearMap.det_id, mul_one]
   exact withDensity_const _
 
+/-- On a positive-dimensional space, a constant potential on an open convex set,
+extended by `⊤` outside it, has zero Monge–Ampère measure. -/
+theorem mongeAmpereMeasure_ite_const [Nontrivial E] {U : Set E}
+    [DecidablePred (· ∈ U)] (hU : IsOpen U) (hUc : Convex ℝ U) (c : ℝ) :
+    mongeAmpereMeasure μ (fun y => if y ∈ U then (c : EReal) else ⊤) = 0 := by
+  have hdim : finrank ℝ E ≠ 0 := (finrank_pos (R := ℝ) (M := E)).ne'
+  simpa only [zero_div, zero_mul, zero_add, zero_pow hdim, ENNReal.ofReal_zero, zero_smul]
+    using mongeAmpereMeasure_ite_mul_norm_sq_add μ hU hUc (a := 0) le_rfl c
+
 /-- **Subtracting a plane on a section.** Let `u` be convex on an open set `Ω`, and let
 `S = {y ∈ Ω | u y < u x + ℓ (y - x) + h}`. The Monge–Ampère measure of `u + L + c`, extended by
 `⊤` off `S`, is the restriction to `S` of the Monge–Ampère measure of `u` extended by `⊤` off
@@ -136,6 +148,53 @@ theorem smul_restrict_le_mongeAmpereMeasure_ite_convexSection_add_linearMap {Ω 
   exact Measure.restrict_mono_measure hMA _
 
 variable [Nontrivial E]
+
+/-- **Quantitative comparison on a section.** Subtract the defining plane and height of a
+bounded section whose closure is in the original open domain. If the Monge–Ampère measure
+restricted to that section lies between `(1 - ε)^n • ν` and `(1 + ε)^n • ν`, the resulting
+zero-boundary potential differs from a zero-boundary reference `v` with measure `ν` by at
+most `ε |v|` on the section. -/
+theorem abs_sub_le_on_convexSection_of_smul_le_mongeAmpereMeasure_le_smul {Ω : Set E}
+    [DecidablePred (· ∈ Ω)] {u v : E → ℝ} {x : E} {ℓ : E →ₗ[ℝ] ℝ} {h : ℝ}
+    [DecidablePred (· ∈ convexSection Ω u x ℓ h)] (hΩ : IsOpen Ω) (hu : ConvexOn ℝ Ω u)
+    (hSb : Bornology.IsBounded (convexSection Ω u x ℓ h))
+    (hSΩ : closure (convexSection Ω u x ℓ h) ⊆ Ω)
+    (hv : ConvexOn ℝ (convexSection Ω u x ℓ h) v)
+    (hvc : ContinuousOn v (closure (convexSection Ω u x ℓ h)))
+    (hv0 : ∀ y ∈ frontier (convexSection Ω u x ℓ h), v y = 0)
+    {ν : Measure E} (href : mongeAmpereMeasure μ
+      (fun y => if y ∈ convexSection Ω u x ℓ h then (v y : EReal) else ⊤) = ν)
+    {ε : ℝ} (hε : 0 ≤ ε) (hε1 : ε < 1)
+    (hlo : ENNReal.ofReal ((1 - ε) ^ finrank ℝ E) • ν ≤
+      (mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤)).restrict
+        (convexSection Ω u x ℓ h))
+    (hhi : (mongeAmpereMeasure μ (fun y => if y ∈ Ω then (u y : EReal) else ⊤)).restrict
+      (convexSection Ω u x ℓ h) ≤
+        ENNReal.ofReal ((1 + ε) ^ finrank ℝ E) • ν) :
+    ∀ y ∈ convexSection Ω u x ℓ h, |u y - (u x + ℓ (y - x) + h) - v y| ≤ ε * |v y| := by
+  let S := convexSection Ω u x ℓ h
+  let c := ℓ x - u x - h
+  have huc := hu.continuousOn hΩ
+  have hSo : IsOpen S := isOpen_convexSection hΩ huc ℓ.continuous_of_finiteDimensional
+  have hw0 : ∀ y ∈ frontier S, u y + (-ℓ) y + c = 0 := by
+    intro y hy
+    have heq := eq_of_mem_frontier_convexSection hΩ huc ℓ.continuous_of_finiteDimensional hSΩ hy
+    simp only [LinearMap.neg_apply, map_sub, c] at heq ⊢
+    linarith
+  have hMA := mongeAmpereMeasure_ite_convexSection_add_linearMap
+    μ (x := x) (ℓ := ℓ) (h := h) hΩ hu (-ℓ) c
+  have hcomparison := abs_sub_le_of_smul_le_mongeAmpereMeasure_le_smul μ hSo hSb
+    (convexOn_convexSection_add_linearMap hu (-ℓ) c) hv
+    (continuousOn_closure_convexSection_add_linearMap
+      huc (-ℓ).continuous_of_finiteDimensional hSΩ c)
+    hvc hw0 hv0 hε hε1
+    (by simpa only [S, hMA] using hlo) (by simpa only [S, hMA] using hhi) href
+  intro y hy
+  have heq : u y - (u x + ℓ (y - x) + h) = u y + (-ℓ) y + c := by
+    simp only [LinearMap.neg_apply, map_sub, c]
+    ring
+  rw [heq]
+  exact hcomparison y hy
 
 /-- **The depth of a convex function is controlled by its distance to the boundary, volume and
 Monge–Ampère mass.** There is a constant `C`, depending only on `E` and `μ`, with the following

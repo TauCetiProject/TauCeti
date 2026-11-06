@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.BrauerGroup.BaseChange
+public import TauCeti.Algebra.BrauerGroup.ULift
 public import TauCeti.Algebra.CrossedProduct.TwoTorsion
 
 /-!
@@ -13,12 +14,13 @@ public import TauCeti.Algebra.CrossedProduct.TwoTorsion
 
 Scalar extension preserves the subgroup of Brauer classes whose square is trivial. This file
 restricts the Brauer-group base-change homomorphism to that subgroup and records its
-functoriality.
+functoriality. It also restricts the identification `TauCeti.BrauerGroup.uliftEquiv` of the Brauer
+group of `K` with that of its universe lift `ULift K` to the `2`-torsion subgroups.
 -/
 
 public section
 
-universe u
+universe u w
 
 namespace TauCeti.BrauerGroup
 
@@ -55,5 +57,37 @@ theorem twoTorsionBaseChange_comp :
   simp only [MonoidHom.comp_apply, coe_twoTorsionBaseChange]
   exact congrArg (fun f : BrauerGroup K →* BrauerGroup M => f (x : BrauerGroup K))
     (baseChange_comp K L M)
+
+section ULift
+
+/-- **The `2`-torsion of the Brauer group of a universe lift.** The restriction of
+`TauCeti.BrauerGroup.uliftEquiv`, scalar extension from `K` to `ULift K`, to the `2`-torsion
+subgroups. -/
+noncomputable def twoTorsionUliftEquiv : twoTorsion K ≃* twoTorsion (ULift.{w} K) where
+  toFun x := ⟨uliftEquiv.{u, w} K x, mem_twoTorsion.2 (by
+    rw [← map_pow, mem_twoTorsion.mp x.property, map_one])⟩
+  invFun y := ⟨(uliftEquiv.{u, w} K).symm y, mem_twoTorsion.2 (by
+    rw [← map_pow, mem_twoTorsion.mp y.property, map_one])⟩
+  left_inv x := Subtype.ext ((uliftEquiv.{u, w} K).symm_apply_apply (x : BrauerGroup K))
+  right_inv y := Subtype.ext ((uliftEquiv.{u, w} K).apply_symm_apply (y : BrauerGroup (ULift K)))
+  map_mul' x y := Subtype.ext
+    (map_mul (uliftEquiv.{u, w} K) (x : BrauerGroup K) (y : BrauerGroup K))
+
+/-- Coercing the restricted identification to the Brauer group gives `uliftEquiv`. -/
+@[simp]
+theorem coe_twoTorsionUliftEquiv (x : twoTorsion K) :
+    ((twoTorsionUliftEquiv.{u, w} K x : twoTorsion (ULift.{w} K)) : BrauerGroup (ULift.{w} K)) =
+      uliftEquiv.{u, w} K x :=
+  (rfl)
+
+/-- Coercing the inverse of the restricted identification to the Brauer group gives the inverse of
+`uliftEquiv`. -/
+@[simp]
+theorem coe_twoTorsionUliftEquiv_symm (y : twoTorsion (ULift.{w} K)) :
+    (((twoTorsionUliftEquiv.{u, w} K).symm y : twoTorsion K) : BrauerGroup K) =
+      (uliftEquiv.{u, w} K).symm y :=
+  (rfl)
+
+end ULift
 
 end TauCeti.BrauerGroup
