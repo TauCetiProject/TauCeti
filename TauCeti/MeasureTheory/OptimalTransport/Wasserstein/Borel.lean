@@ -16,8 +16,9 @@ import TauCeti.MeasureTheory.OptimalTransport.Wasserstein.LowerSemicontinuous
 The finite-moment space `TauCeti.WassersteinSpace p X` and the anchored components
 `TauCeti.WassersteinComponent p μ₀` carry two structures of different origin: the measurable
 structure inherited from the Giry σ-algebra on `ProbabilityMeasure X`, and the topology of the
-Wasserstein metric. This file proves that, over a Polish ground space and for a finite exponent
-`1 ≤ p < ∞`, the first is the Borel σ-algebra of the second. Consequently the open sets of the
+Wasserstein metric. Over a Polish ground space, this file proves that the first is the Borel
+σ-algebra of the second for `P_p (X)` at finite exponents `1 ≤ p < ∞`, and for separable anchored
+components at every exponent `1 ≤ p ≤ ∞`. Consequently the open sets of the
 Wasserstein topology are measurable, and measures on the Wasserstein space — random laws, such as
 the population laws on `P_p (P_p (X))` of Wasserstein barycentre problems — may be manipulated with
 the topological and metric tools of a Borel space.

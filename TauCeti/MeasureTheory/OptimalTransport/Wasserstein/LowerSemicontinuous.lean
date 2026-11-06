@@ -116,11 +116,11 @@ end Extended
 
 section Metric
 
-variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X] [CompleteSpace X]
+variable {X : Type*} [PseudoMetricSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
 
-/-- **Weak limits do not increase the distance from a fixed law of `P_p (X)`**: on a Polish metric
-space, if the laws of a family `v` of `P_p (X)` converge weakly to the law of `ν` along a filter
+/-- **Weak limits do not increase the distance from a fixed law of `P_p (X)`**: on a pseudometric
+ground space with Polish topology, if the laws of a family `v` of `P_p (X)` converge weakly to the
+law of `ν` along a filter
 `l`, then `W_p (μ, ν) ≤ liminf W_p (μ, v i)` for every law `μ` of `P_p (X)`. -/
 theorem WassersteinSpace.edist_le_liminf {p : ℝ≥0∞} [Fact (1 ≤ p)] {ι : Type*} {l : Filter ι}
     {μ ν : WassersteinSpace p X} {v : ι → WassersteinSpace p X}

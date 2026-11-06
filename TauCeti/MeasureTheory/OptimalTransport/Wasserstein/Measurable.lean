@@ -17,17 +17,19 @@ We retain the Giry measurable structures on `WassersteinSpace` and `WassersteinC
 For an extended pseudometric ground space with Polish topology, Wasserstein distance is jointly
 measurable in the two laws for every exponent, including infinity. Consequently distances and
 metric balls in anchored components are measurable for the inherited structure even when their
-Wasserstein topology is nonseparable. The same holds for finite-moment spaces over ordinary
-Polish metric ground spaces.
+Wasserstein topology is nonseparable. The same holds for finite-moment spaces over
+pseudometric ground spaces with Polish topology.
 This permits integration of distances between random laws without a finite-moment assumption
 on their distribution.
 
 On ordinary Polish metric ground spaces, the inherited sigma algebra is contained in the metric
 Borel sigma algebra. We do not claim the reverse inclusion without separability: measurability of
 individual balls does not imply
-measurability of their arbitrary unions. In particular no `OpensMeasurableSpace` instance is
-installed at infinity. A random law measurable for the metric Borel structure is measurable for
-the inherited structure, but the converse is not asserted.
+measurability of their arbitrary unions. At infinity no `OpensMeasurableSpace` instance is
+installed without a separability hypothesis; for separable anchored components, see
+`TauCeti.WassersteinComponent.instBorelSpace`. A random law measurable for the metric Borel
+structure is measurable for the inherited structure, but without separability the converse is
+not asserted.
 
 The anchored-component results allow infinite ground distances and make no moment assumption on
 the anchor. The set of laws at finite Wasserstein distance from any fixed anchor is itself Giry
@@ -94,8 +96,8 @@ theorem measurableSpace_le_borel :
 
 end Comparison
 
-variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X] [CompleteSpace X] {p : ℝ≥0∞} [Fact (1 ≤ p)]
+variable {X : Type*} [PseudoMetricSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
+  {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- Extended distance on `P_p(X)` is jointly measurable for the inherited Giry structure,
 without assuming separability of its Wasserstein topology. -/
@@ -109,7 +111,8 @@ theorem measurable_edist :
 /-- Real distance on `P_p(X)` is jointly Giry measurable, including at infinity. -/
 theorem measurable_dist :
     Measurable fun q : WassersteinSpace p X × WassersteinSpace p X ↦ dist q.1 q.2 := by
-  simpa only [edist_dist, ENNReal.toReal_ofReal dist_nonneg] using measurable_edist.ennreal_toReal
+  simpa only [edist_def, dist_def] using
+    (measurable_edist (X := X) (p := p)).ennreal_toReal
 
 /-- A ball in `P_p(X)` is Giry measurable even at infinity. This does not assert measurability of
 arbitrary unions of balls. -/
