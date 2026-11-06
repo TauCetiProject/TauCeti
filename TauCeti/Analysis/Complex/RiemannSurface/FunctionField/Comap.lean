@@ -243,16 +243,6 @@ end ComapAlgHom
 
 section ComapAlgEquiv
 
-omit [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] in
-/-- A biholomorphism of connected Riemann surfaces is not constant: no point of a Riemann surface
-is isolated, so it has two distinct points, and a biholomorphism separates them. -/
-private theorem exists_apply_ne [ConnectedSpace X] (e : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) X Y (⊤ : ℕ∞)) :
-    ∃ x₁ x₂, e x₁ ≠ e x₂ := by
-  have := ChartedSpace.perfectSpace (H := ℂ) (X := X)
-  obtain ⟨x⟩ := ConnectedSpace.toNonempty (α := X)
-  obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
-  exact ⟨y, x, e.injective.ne hy⟩
-
 variable [ConnectedSpace X] [ConnectedSpace Y] [ConnectedSpace Z]
 
 /-- The pullback of meromorphic functions along a biholomorphism `e : X ≃ Y` of connected Riemann
@@ -260,8 +250,13 @@ surfaces, as an isomorphism of `ℂ`-algebras `M(Y) ≃ₐ[ℂ] M(X)`, `f ↦ f 
 pullback along the inverse biholomorphism (`comapAlgEquiv_symm`). -/
 def comapAlgEquiv (e : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) X Y (⊤ : ℕ∞)) :
     MeromorphicFunction Y ≃ₐ[ℂ] MeromorphicFunction X :=
-  AlgEquiv.ofAlgHom (comapₐ e (e.mdifferentiable (by simp)) (exists_apply_ne e))
-    (comapₐ e.symm (e.symm.mdifferentiable (by simp)) (exists_apply_ne e.symm))
+  -- a connected Riemann surface has two distinct points, which a biholomorphism separates
+  AlgEquiv.ofAlgHom (comapₐ e (e.mdifferentiable (by simp))
+      ((ChartedSpace.nontrivial (H := ℂ) (X := X)).exists_pair_ne.imp fun _ ⟨x₂, h⟩ ↦
+        ⟨x₂, e.injective.ne h⟩))
+    (comapₐ e.symm (e.symm.mdifferentiable (by simp))
+      ((ChartedSpace.nontrivial (H := ℂ) (X := Y)).exists_pair_ne.imp fun _ ⟨y₂, h⟩ ↦
+        ⟨y₂, e.symm.injective.ne h⟩))
     (AlgHom.ext fun _ ↦ ext fun _ ↦ by simp) (AlgHom.ext fun _ ↦ ext fun _ ↦ by simp)
 
 variable (e : Diffeomorph 𝓘(ℂ) 𝓘(ℂ) X Y (⊤ : ℕ∞))
@@ -284,7 +279,7 @@ composed with `e`. -/
 @[simp]
 theorem finitePart_comapAlgEquiv (f : MeromorphicFunction Y) :
     (comapAlgEquiv e f).finitePart = f.finitePart ∘ e :=
-  finitePart_comap e (e.mdifferentiable (by simp)) (exists_apply_ne e) f
+  funext fun _ ↦ by simp only [finitePart_def, comapAlgEquiv_apply, comp_apply]
 
 /-- The inverse of the pullback along `e` is the pullback along `e.symm`. -/
 @[simp]

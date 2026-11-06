@@ -232,13 +232,6 @@ section Action
 
 omit [NeZero M] [NeZero N]
 
-/-- The image in `PSL(2, ℝ)` of every element of `SL(2, ℤ)` normalizes the effective image of
-the normal subgroup `Γ(N)`. -/
-theorem conjAct_sl2zToPSL2R_smul_map_Gamma (γ : SL(2, ℤ)) :
-    ConjAct.toConjAct (sl2zToPSL2R γ) • (Gamma N).map sl2zToPSL2R = (Gamma N).map sl2zToPSL2R :=
-  have := Gamma_normal N
-  (Gamma N).conjAct_sl2zToPSL2R_smul_map γ
-
 variable (N) in
 /-- **The action of `SL(2, ℤ)` on the function field of `X(N)`.** The image in `PSL(2, ℝ)` of every
 `γ ∈ SL(2, ℤ)` normalizes the effective image of `Γ(N)`, so it induces a biholomorphism of `X(N)`
