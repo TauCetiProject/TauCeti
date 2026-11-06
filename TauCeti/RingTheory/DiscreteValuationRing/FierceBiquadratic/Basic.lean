@@ -42,8 +42,9 @@ So the inertia group has order `4` although `e = 1`: the residue field extension
 inseparable of degree `f_ins = 4`, and `|G_0| = e f_ins`. This is a **fierce** extension, one
 whose residue field extension is purely inseparable of degree equal to the degree `[B : A] = 4`,
 and the classical equality `|G_0| = e`, valid when the residue field extension is separable, fails
-for it. The same example tests the formulas for the different exponent, which are not computed
-here: Hilbert's formula `d = ∑ (|G_i| - 1)` also needs a separable residue field extension.
+for it. The different calculation in the companion module
+`TauCeti.RingTheory.DiscreteValuationRing.FierceBiquadratic.Different` also shows that Hilbert's
+formula `d = ∑ (|G_i| - 1)` needs a separable residue field extension.
 
 Each quadratic step is a ring `R[X] ⧸ (g)` with `g` monic with irreducible but inseparable
 reduction, and is a discrete valuation ring by
@@ -107,6 +108,11 @@ theorem monic_quadratic (t s : R) : (quadratic t s).Monic := by
 theorem natDegree_quadratic [Nontrivial R] (t s : R) : (quadratic t s).natDegree = 2 := by
   unfold quadratic
   compute_degree!
+
+/-- In characteristic two the derivative of `X² + tX - s` is the constant `t`. -/
+@[simp]
+theorem derivative_quadratic [CharP R 2] (t s : R) : derivative (quadratic t s) = C t := by
+  simp [quadratic, TauCeti.add_self_eq_zero_of_charTwo R]
 
 @[simp]
 theorem map_quadratic {S : Type*} [CommRing S] (f : R →+* S) (t s : R) :
