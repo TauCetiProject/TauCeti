@@ -35,6 +35,7 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   comparison maps.
 * `TauCeti.singularCubicalHomologyIso k X n`, `TauCeti.singularCubicalHomologyNatIso k n`: cubical
   singular homology is naturally isomorphic to singular homology.
+* `TauCeti.cubicalCycleOfPoint k x`: the point cube at `x`, as a cubical cycle of degree zero.
 
 ## Main results
 
@@ -399,16 +400,29 @@ theorem singularCubicalHomologyIso_inv (X : TopCat.{u}) (n : ℕ) :
   rw [← cubicalSingularHomotopyEquiv_inv]
   rfl
 
+variable (k) in
+/-- The point cube at `x`, as a cycle of degree zero of the normalized cubical chains of `X`. -/
+def cubicalCycleOfPoint {X : TopCat.{u}} (x : X) :
+    ((normalizedCubicalChainComplex k).obj X).cycles 0 :=
+  HomologicalComplex.moduleCatCyclesMk _
+    ((normalizedCubicalChainComplexXEquiv X 0).symm
+      (NormalizedCubicalChain.ofCube X k (SingularCube.point x))) 0 ChainComplex.next_nat_zero
+    (by rw [HomologicalComplex.shape _ _ _ (by simp)]; rfl)
+
+variable (k) in
+@[simp]
+theorem iCycles_cubicalCycleOfPoint {X : TopCat.{u}} (x : X) :
+    ((normalizedCubicalChainComplex k).obj X).iCycles 0 (cubicalCycleOfPoint k x) =
+      (normalizedCubicalChainComplexXEquiv X 0).symm
+        (NormalizedCubicalChain.ofCube X k (SingularCube.point x)) :=
+  HomologicalComplex.iCycles_moduleCatCyclesMk ..
+
 /-- The comparison of singular with normalized cubical homology sends the class of a point `x` in
 degree zero to the class of the point cube at `x`. -/
 theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u}} (x : X) :
     (singularCubicalHomologyIso k X 0).hom
         ((singularHomology₀Section (ModuleCat.of k k) x).hom 1) =
-      ((normalizedCubicalChainComplex k).obj X).homologyπ 0
-        (((normalizedCubicalChainComplex k).obj X).moduleCatCyclesMk
-          ((normalizedCubicalChainComplexXEquiv X 0).symm
-            (NormalizedCubicalChain.ofCube X k (SingularCube.point x))) 0 ChainComplex.next_nat_zero
-          (by rw [HomologicalComplex.shape _ _ _ (by simp)]; rfl)) := by
+      ((normalizedCubicalChainComplex k).obj X).homologyπ 0 (cubicalCycleOfPoint k x) := by
   -- The cycle given by the singular `0`-simplex at `x`, as a map from the coefficients.
   let z := ((singularChains k).obj X).liftCycles
     ((TopCat.toSSet.obj X).ιChainComplex (TopCat.toSSetObj₀Equiv.symm x)) 0 (by simp)
@@ -427,7 +441,7 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
     HomologicalComplex.homologyπ_naturality, ModuleCat.comp_apply]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [HomologicalComplex.iCycles_moduleCatCyclesMk, ← ModuleCat.comp_apply,
+  rw [iCycles_cubicalCycleOfPoint, ← ModuleCat.comp_apply,
     HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hi]
   rw [singularToCubical_app_f_zero_simplexChain, Equiv.apply_symm_apply,
     normalizedCubicalChainComplexXEquiv_symm_apply]

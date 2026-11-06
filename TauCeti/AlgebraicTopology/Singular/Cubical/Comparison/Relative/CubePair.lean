@@ -427,12 +427,9 @@ theorem singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero :
     singularCubicalHomologyIso_hom_singularHomology₀Section, ← map_sub]
   congr 1
   apply HomologicalComplex.moduleCat_iCycles_injective
-  rw [iCycles_cubeBoundaryCycle, map_sub, HomologicalComplex.iCycles_moduleCatCyclesMk,
-    HomologicalComplex.iCycles_moduleCatCyclesMk]
+  rw [iCycles_cubeBoundaryCycle, map_sub, iCycles_cubicalCycleOfPoint, iCycles_cubicalCycleOfPoint]
   simp only [cubeBoundaryChain, Fin.sum_univ_succ, Finset.univ_eq_empty, Finset.sum_empty,
     add_zero, Fin.val_zero, pow_zero, one_smul, cubeBoundaryFace_zero, map_sub]
-  -- The two sides differ only in the spelling `0 + 1`/`1` of the dimension of the cube.
-  rfl
 
 /-- **The fundamental cycle of `I¹` generates `H₁(I¹, ∂I¹; k)`**, over every ring `k`:
 `a ↦ a • [I¹]` is bijective, where `[I¹]` is the class of `TauCeti.cubeBoundaryPairCycle k 0`. -/
