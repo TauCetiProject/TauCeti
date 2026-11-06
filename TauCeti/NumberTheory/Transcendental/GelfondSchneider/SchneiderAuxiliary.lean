@@ -45,6 +45,8 @@ prescribed zeros, is not part of this file.
 
 * `TauCeti.exists_schneider_auxiliary_algebraic`: a nonzero integer coefficient matrix with the
   bound above for which every `y_{uv}`, `1 ≤ u, v ≤ L`, vanishes in `K`.
+* `TauCeti.exists_intCast_pow_mul_schneider_term`: a common denominator `m` and house bounds for
+  the terms `(u + v β) ^ k α ^ (u j) γ ^ (v j)` of the values `y_{uv}` (and of Gelfond's `y_k(t)`).
 * `RingHom.map_pow_mul_pow_eq_exp`: `σ (α ^ (u j) γ ^ (v j)) = exp (j λ (u + v σ β))`.
 * `RingHom.map_schneider_value`: `σ y_{uv} = F(u + v σ β)`.
 * `RingHom.exists_schneider_auxiliary`: the auxiliary function `F` vanishes at the grid points
@@ -197,81 +199,59 @@ theorem house_schneider_entry_le {x y z w : K} {L H : ℝ} (hx : house x ≤ H)
   obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hn
   rw [Nat.add_sub_cancel_left, mul_pow]
   ring
-/-- A nonzero integer `m` with `m α`, `m β` and `m γ` algebraic integers, together with a bound
-`H ≥ 1` for `|m|`, the houses of `m α` and `m γ`, and `|m| + house (m β)`. -/
-private theorem exists_schneider_multiplier (α β γ : K) :
-    ∃ (m : ℤ) (H : ℝ), m ≠ 0 ∧ 1 ≤ H ∧ IsIntegral ℤ ((m : K) * α) ∧ IsIntegral ℤ ((m : K) * β) ∧
-      IsIntegral ℤ ((m : K) * γ) ∧ |(m : ℝ)| ≤ H ∧ house ((m : K) * α) ≤ H ∧
-      |(m : ℝ)| + house ((m : K) * β) ≤ H ∧ house ((m : K) * γ) ≤ H := by
-  classical
-  obtain ⟨m, hm, hmS⟩ := exists_integral_multiples ℤ ℚ ({α, β, γ} : Finset K)
-  have hint (x) (hx : x ∈ ({α, β, γ} : Finset K)) : IsIntegral ℤ ((m : K) * x) := by
-    simpa only [zsmul_eq_mul] using hmS x hx
-  have hmH : |(m : ℝ)| ≤ |(m : ℝ)| + house ((m : K) * α) + house ((m : K) * β) +
-      house ((m : K) * γ) := by
-    linarith [house_nonneg ((m : K) * α), house_nonneg ((m : K) * β), house_nonneg ((m : K) * γ)]
-  refine ⟨m, _, hm, le_trans (by exact_mod_cast Int.one_le_abs hm) hmH, hint α (by simp),
-    hint β (by simp), hint γ (by simp), hmH, ?_, ?_, ?_⟩ <;>
-    linarith [abs_nonneg (m : ℝ), house_nonneg ((m : K) * α), house_nonneg ((m : K) * β),
-      house_nonneg ((m : K) * γ)]
 
-/-- The coefficient matrix of the linear system of Schneider's auxiliary function: for the grid
-point `(p.1 + 1, p.2 + 1)` and the unknown `a_q`, the entry is
-`m ^ N (u + v β) ^ i α ^ (u j) γ ^ (v j)` with `N = D₁ + 2 L D₂`, an algebraic integer of house at
-most `L ^ D₁ H ^ N`. -/
-private theorem exists_schneider_grid_matrix {α β γ : K} {m : ℤ} {H : ℝ}
-    (hmα : IsIntegral ℤ ((m : K) * α)) (hmβ : IsIntegral ℤ ((m : K) * β))
-    (hmγ : IsIntegral ℤ ((m : K) * γ)) (hmH : |(m : ℝ)| ≤ H) (hαH : house ((m : K) * α) ≤ H)
-    (hβH : |(m : ℝ)| + house ((m : K) * β) ≤ H) (hγH : house ((m : K) * γ) ≤ H) (hH : 1 ≤ H)
-    {L : ℕ} (hL : 1 ≤ L) (D₁ D₂ : ℕ) :
-    ∃ a : Matrix (Fin L × Fin L) (Fin D₁ × Fin D₂) (𝓞 K),
-      (∀ p q, (a p q : K) = (m : K) ^ (D₁ + 2 * L * D₂) *
-        ((((p.1 : ℕ) + 1 : ℕ) + (((p.2 : ℕ) + 1 : ℕ) : K) * β) ^ (q.1 : ℕ) *
-          (α ^ (((p.1 : ℕ) + 1) * q.2) * γ ^ (((p.2 : ℕ) + 1) * q.2)))) ∧
-      ∀ p q, house (a p q : K) ≤ (L : ℝ) ^ D₁ * H ^ (D₁ + 2 * L * D₂) := by
-  set N := D₁ + 2 * L * D₂
-  let k : Fin L × Fin L → Fin D₁ × Fin D₂ → ℕ := fun p q ↦
-    q.1 + (p.1 + 1) * q.2 + (p.2 + 1) * q.2
-  have hk (p : Fin L × Fin L) (q : Fin D₁ × Fin D₂) : k p q ≤ N :=
-    schneider_exponent_le q.1 q.2 p.1.is_lt p.2.is_lt
-  -- Name the exponent `r = N - k p q` of the power of `m`, so that `N = k p q + r` can be
-  -- substituted and `ring` can combine the powers of `m`.
-  have hNk (p q) : ∃ r, N - k p q = r ∧ N = k p q + r := ⟨N - k p q, rfl, by have := hk p q; omega⟩
-  let w : Fin L × Fin L → K := fun p ↦ (((p.1 : ℕ) + 1 : ℕ) : K) + (((p.2 : ℕ) + 1 : ℕ) : K) * β
-  let e : Fin L × Fin L → Fin D₁ × Fin D₂ → K := fun p q ↦
-    (m : K) ^ (N - k p q) * ((m : K) * w p) ^ (q.1 : ℕ) *
-      (((m : K) * α) ^ (((p.1 : ℕ) + 1) * q.2) * ((m : K) * γ) ^ (((p.2 : ℕ) + 1) * q.2))
-  -- `m w_p = (p.1 + 1) m + (p.2 + 1) (m β)`.
-  have hmw_eq (p : Fin L × Fin L) : (m : K) * w p =
-      ((((p.1 : ℕ) + 1 : ℕ) * m : ℤ) : K) + (((p.2 : ℕ) + 1 : ℕ) : K) * ((m : K) * β) := by
-    simp only [w]
-    push_cast
-    ring
-  have hep (p q) : e p q = (m : K) ^ N * (w p ^ (q.1 : ℕ) *
-      (α ^ (((p.1 : ℕ) + 1) * q.2) * γ ^ (((p.2 : ℕ) + 1) * q.2))) := by
-    obtain ⟨r, hNr, hr⟩ := hNk p q
-    simp only [e]
-    rw [hNr, hr]
-    simp only [k, mul_pow]
-    ring
-  have he (p q) : IsIntegral ℤ (e p q) := by
-    rw [hep]
-    exact isIntegral_intCast_pow_mul_schneider_term hmα hmβ hmγ (hk p q)
-  have hwH (p : Fin L × Fin L) : house ((m : K) * w p) ≤ L * H := by
-    have hu : ((p.1 : ℕ) + 1 : ℝ) ≤ L := by exact_mod_cast p.1.is_lt
-    have hv : ((p.2 : ℕ) + 1 : ℝ) ≤ L := by exact_mod_cast p.2.is_lt
-    rw [hmw_eq]
+/-- A common denominator for the terms of Schneider's and Gelfond's values: there are a nonzero
+integer `c₀` and `H ≥ 1` with `|c₀| ≤ H` such that for `u, v ≤ B` (`B ≥ 1`) and
+`k + u j + v j ≤ N` the multiple `c₀ ^ N ((u + v β) ^ k α ^ (u j) γ ^ (v j))` is an algebraic
+integer of house at most `B ^ k H ^ N`. -/
+theorem exists_intCast_pow_mul_schneider_term (α β γ : K) :
+    ∃ c₀ : ℤ, c₀ ≠ 0 ∧ ∃ H : ℝ, 1 ≤ H ∧ |(c₀ : ℝ)| ≤ H ∧
+      ∀ k u v j N B : ℕ, 1 ≤ B → u ≤ B → v ≤ B → k + u * j + v * j ≤ N →
+        IsIntegral ℤ ((c₀ : K) ^ N * (((u : K) + v * β) ^ k * (α ^ (u * j) * γ ^ (v * j)))) ∧
+        house ((c₀ : K) ^ N * (((u : K) + v * β) ^ k * (α ^ (u * j) * γ ^ (v * j)))) ≤
+          (B : ℝ) ^ k * H ^ N := by
+  classical
+  -- A nonzero integer `c₀` such that `c₀ α`, `c₀ β` and `c₀ γ` are algebraic integers.
+  obtain ⟨c₀, hc₀, hc₀S⟩ := exists_integral_multiples ℤ ℚ ({α, β, γ} : Finset K)
+  have hint (x) (hx : x ∈ ({α, β, γ} : Finset K)) : IsIntegral ℤ ((c₀ : K) * x) := by
+    simpa only [zsmul_eq_mul] using hc₀S x hx
+  obtain ⟨H, hHdef⟩ : ∃ H : ℝ,
+      H = |(c₀ : ℝ)| + house ((c₀ : K) * α) + house ((c₀ : K) * β) + house ((c₀ : K) * γ) :=
+    ⟨_, rfl⟩
+  have h₀ := abs_nonneg (c₀ : ℝ)
+  have h₁ := house_nonneg ((c₀ : K) * α)
+  have h₂ := house_nonneg ((c₀ : K) * β)
+  have h₃ := house_nonneg ((c₀ : K) * γ)
+  have hc₀H : |(c₀ : ℝ)| ≤ H := by linarith
+  have hH : 1 ≤ H := le_trans (by exact_mod_cast Int.one_le_abs hc₀) hc₀H
+  refine ⟨c₀, hc₀, H, hH, hc₀H, fun k u v j N B hB hu hv hN ↦ ⟨?_, ?_⟩⟩
+  · exact isIntegral_intCast_pow_mul_schneider_term (hint α (by simp)) (hint β (by simp))
+      (hint γ (by simp)) hN
+  -- `c₀ (u + v β) = u c₀ + v (c₀ β)` has house at most `B H`.
+  have hwH : house ((c₀ : K) * ((u : K) + v * β)) ≤ B * H := by
+    have hu' : (u : ℝ) ≤ B := by exact_mod_cast hu
+    have hv' : (v : ℝ) ≤ B := by exact_mod_cast hv
+    have hcw : (c₀ : K) * ((u : K) + v * β) = ((u * c₀ : ℤ) : K) + (v : K) * ((c₀ : K) * β) := by
+      push_cast
+      ring
+    rw [hcw]
     refine (house_add_le _ _).trans ?_
     rw [house_intCast, house_nat_mul]
     push_cast
-    rw [abs_mul, abs_of_nonneg (by positivity : (0 : ℝ) ≤ (p.1 : ℕ) + 1)]
-    have := house_nonneg ((m : K) * β)
-    have := abs_nonneg (m : ℝ)
+    rw [abs_mul, Nat.abs_cast]
+    have hβH : |(c₀ : ℝ)| + house ((c₀ : K) * β) ≤ H := by linarith
     nlinarith
-  have hmH' : house (m : K) ≤ H := ((house_intCast m).trans Int.cast_abs).trans_le hmH
-  exact ⟨fun p q ↦ ⟨e p q, he p q⟩, hep, fun p q ↦
-    house_schneider_entry_le hmH' (hwH p) hαH hγH (by exact_mod_cast hL) (by linarith)
-      q.1.is_lt.le (hk p q)⟩
+  have hc₀H' : house (c₀ : K) ≤ H := by rwa [house_intCast, Int.cast_abs]
+  have hαH : house ((c₀ : K) * α) ≤ H := by linarith
+  have hγH : house ((c₀ : K) * γ) ≤ H := by linarith
+  have h := house_schneider_entry_le (s := u * j) (t := v * j) (n := N) hc₀H' hwH hαH hγH
+    (by exact_mod_cast hB) (by linarith) (le_refl k) hN
+  refine le_of_eq_of_le ?_ h
+  obtain ⟨r, rfl⟩ := Nat.exists_eq_add_of_le hN
+  rw [Nat.add_sub_cancel_left]
+  congr 1
+  simp only [mul_pow]
+  ring
 
 /-- **Schneider's auxiliary function, algebraic form** (Evertse, Lemma 4.22). Let `K` be a number
 field of degree `d` and `α, β, γ ∈ K`. There is `c > 0` such that for all integers `L ≥ 3` and
@@ -285,14 +265,24 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
         ∀ u v : ℕ, 1 ≤ u → u ≤ L → 1 ≤ v → v ≤ L →
           ∑ i, ∑ j, (a i j : K) * ((u : K) + v * β) ^ (i : ℕ) *
             (α ^ (u * j) * γ ^ (v * j)) = 0 := by
-  obtain ⟨m, H, hm, hH, hmα, hmβ, hmγ, hmH, hαH, hβH, hγH⟩ := exists_schneider_multiplier α β γ
+  obtain ⟨m, hm, H, hH, -, hterm⟩ := exists_intCast_pow_mul_schneider_term α β γ
   refine ⟨4 + 2 * Real.log H, by linarith [Real.log_nonneg hH], fun L D₁ D₂ hL hD ↦ ?_⟩
   have hd : 0 < finrank ℚ K := finrank_pos
   have hD₁D₂ : 0 < D₁ * D₂ := lt_of_lt_of_le (by positivity) hD
   have hD₁ : 1 ≤ D₁ := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hD₁D₂
   have hD₂ : 1 ≤ D₂ := Nat.pos_of_ne_zero fun h ↦ by simp [h] at hD₁D₂
-  obtain ⟨a', ha'e, heA⟩ := exists_schneider_grid_matrix hmα hmβ hmγ hmH hαH hβH hγH hH
-    (by omega : 1 ≤ L) D₁ D₂
+  have hL₁ : 1 ≤ L := by omega
+  -- The coefficient matrix: the term `(u, v) = (p.1 + 1, p.2 + 1)`, `(i, j) = q`, times `m ^ N`.
+  have hent (p : Fin L × Fin L) (q : Fin D₁ × Fin D₂) := hterm q.1 ((p.1 : ℕ) + 1) ((p.2 : ℕ) + 1)
+    q.2 (D₁ + 2 * L * D₂) L hL₁ p.1.is_lt p.2.is_lt
+    (schneider_exponent_le q.1 q.2 p.1.is_lt p.2.is_lt)
+  let a' : Matrix (Fin L × Fin L) (Fin D₁ × Fin D₂) (𝓞 K) := fun p q ↦ ⟨_, (hent p q).1⟩
+  have ha'e (p q) : (a' p q : K) = (m : K) ^ (D₁ + 2 * L * D₂) *
+      ((((p.1 : ℕ) + 1 : ℕ) + (((p.2 : ℕ) + 1 : ℕ) : K) * β) ^ (q.1 : ℕ) *
+        (α ^ (((p.1 : ℕ) + 1) * q.2) * γ ^ (((p.2 : ℕ) + 1) * q.2))) := rfl
+  have heA (p q) : house (a' p q : K) ≤ (L : ℝ) ^ D₁ * H ^ (D₁ + 2 * L * D₂) :=
+    (hent p q).2.trans (mul_le_mul_of_nonneg_right (pow_le_pow_right₀
+      (by exact_mod_cast hL₁) q.1.is_lt.le) (by positivity))
   have hA : 1 ≤ (L : ℝ) ^ D₁ * H ^ (D₁ + 2 * L * D₂) := one_le_mul_of_one_le_of_one_le
     (one_le_pow₀ (by exact_mod_cast (by omega : 1 ≤ L))) (one_le_pow₀ hH)
   have hcard : finrank ℚ K * Fintype.card (Fin L × Fin L) < Fintype.card (Fin D₁ × Fin D₂) := by
@@ -376,11 +366,10 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
   push_cast
   ring
 
-/-- The exponent comparison in `schneider_value_bound_le_exp`: the exponents of the three factors
-add up to at most `(3 + |c₁| + 2 log (2 c + 2) + (2 c + 2) log H) E`, where
-`E = D₁ log L + D₂ L`. -/
-private theorem schneider_exponent_add_le {c₁ H : ℝ} {c L D₁ D₂ : ℕ} (hH : 1 ≤ H) (hL : 2 ≤ L)
-    (hlog2B : Real.log (2 * ((c : ℝ) * L + 1)) ≤ Real.log (2 * c + 2) + Real.log L) :
+/-- The exponent comparison in `schneider_value_bound_le_exp`: the exponents of the four factors
+`D₁ D₂`, `exp (c₁ E)`, `(2 (c L + 1)) ^ D₁` and `H ^ (D₁ + 2 (c L + 1) D₂)` add up to at most
+`(3 + |c₁| + 2 log (2 c + 2) + (2 c + 2) log H) E`, where `E = D₁ log L + D₂ L`. -/
+private theorem schneider_exponent_add_le {c₁ H : ℝ} {c L D₁ D₂ : ℕ} (hH : 1 ≤ H) (hL : 2 ≤ L) :
     (D₁ : ℝ) + D₂ + c₁ * (D₁ * Real.log L + D₂ * L) +
         D₁ * Real.log (2 * ((c : ℝ) * L + 1)) +
         (D₁ + 2 * ((c : ℝ) * L + 1) * D₂) * Real.log H ≤
@@ -388,6 +377,9 @@ private theorem schneider_exponent_add_le {c₁ H : ℝ} {c L D₁ D₂ : ℕ} (
         (D₁ * Real.log L + D₂ * L) := by
   set E : ℝ := D₁ * Real.log L + D₂ * L
   have hL' : (2 : ℝ) ≤ L := by exact_mod_cast hL
+  have hlog2B : Real.log (2 * ((c : ℝ) * L + 1)) ≤ Real.log (2 * c + 2) + Real.log L := by
+    rw [← Real.log_mul (by positivity) (by positivity)]
+    exact Real.log_le_log (by positivity) (by nlinarith)
   have hlogL : 1 / 2 ≤ Real.log L := by
     linarith [Real.log_two_gt_d9, Real.log_le_log (by norm_num) hL']
   have hD₁ : (0 : ℝ) ≤ D₁ := D₁.cast_nonneg
@@ -424,13 +416,8 @@ private theorem schneider_value_bound_le_exp {c₁ H : ℝ} {c L D₁ D₂ : ℕ
       Real.exp ((3 + |c₁| + 2 * Real.log (2 * c + 2) + (2 * c + 2) * Real.log H) *
         (D₁ * Real.log L + D₂ * L)) := by
   set E : ℝ := D₁ * Real.log L + D₂ * L
-  have hL' : (2 : ℝ) ≤ L := by exact_mod_cast hL
   have hD₂ : (0 : ℝ) ≤ D₂ := D₂.cast_nonneg
   -- Each factor of the explicit bound is the exponential of a multiple of at most `E`.
-  have h2B : 0 < 2 * ((c : ℝ) * L + 1) := by positivity
-  have hlog2B : Real.log (2 * ((c : ℝ) * L + 1)) ≤ Real.log (2 * c + 2) + Real.log L := by
-    rw [← Real.log_mul (by positivity) (by positivity)]
-    exact Real.log_le_log h2B (by nlinarith)
   have hfac₁ : (D₁ : ℝ) * D₂ ≤ Real.exp (D₁ + D₂) := by
     rw [Real.exp_add]
     exact mul_le_mul (by linarith [Real.add_one_le_exp (D₁ : ℝ)])
@@ -453,7 +440,7 @@ private theorem schneider_value_bound_le_exp {c₁ H : ℝ} {c L D₁ D₂ : ℕ
         simp only [Real.exp_add]
     _ ≤ Real.exp ((3 + |c₁| + 2 * Real.log (2 * c + 2) + (2 * c + 2) * Real.log H) * E) := by
         rw [Real.exp_le_exp]
-        exact schneider_exponent_add_le hH hL hlog2B
+        exact schneider_exponent_add_le hH hL
 
 /-- **Schneider's values on an extended grid.** Let `α, β, γ ∈ K`, `c₁ ∈ ℝ` and `c ∈ ℕ`. There
 is `C ≥ 0` such that for all integers `L ≥ 2`, `D₁` and `D₂`, all integers `a_{ij}`, `i < D₁`,
