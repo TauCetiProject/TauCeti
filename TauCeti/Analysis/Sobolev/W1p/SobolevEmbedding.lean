@@ -250,45 +250,6 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   {μ : Measure E} [μ.IsAddHaarMeasure] {Ω : Opens E}
   {q s : ℝ≥0} [Fact (1 ≤ (q : ℝ≥0∞))]
 
-omit [Nontrivial E] in
-/-- A single cutoff realizes restriction on `V` through a bounded zero-boundary domain. -/
-private theorem W1p.exists_zeroBoundaryLocalization {V : Set E}
-    (hVc : IsCompact (closure V)) (hVΩ : closure V ⊆ Ω) :
-    ∃ U : Opens E, μ U ≠ ∞ ∧ V ⊆ U ∧
-      ∃ T : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] W1p0 μ U (q : ℝ≥0∞),
-        ∀ u, W1p.value (T u).1 =ᵐ[μ.restrict V] W1p.value u := by
-  obtain ⟨ψ, M, hψ, -, hψ1, hψc, hψΩ, hM, hψM, hgM⟩ :=
-    hVc.exists_contDiff_cutoff_with_bounds Ω.isOpen hVΩ
-  obtain ⟨R, hR⟩ := (hVc.union hψc).isBounded.subset_ball (0 : E)
-  let U : Opens E := Ω ⊓ ⟨ball 0 R, isOpen_ball⟩
-  have hKU : tsupport ψ ⊆ U := fun x hx ↦ ⟨hψΩ hx, hR (Or.inr hx)⟩
-  have hVU : V ⊆ U := fun x hx ↦ ⟨hVΩ (subset_closure hx), hR (Or.inl (subset_closure hx))⟩
-  let T : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] W1p μ U (q : ℝ≥0∞) :=
-    (W1p.restrictL inf_le_left).comp
-      (W1p.contDiffSMulL ψ hψ hM (fun x _ ↦ hψM x) (fun x _ ↦ hgM x))
-  have hTval (u : W1p μ Ω (q : ℝ≥0∞)) :
-      W1p.value (T u) =ᵐ[μ.restrict U] fun x ↦ ψ x * W1p.value u x := by
-    filter_upwards [W1p.value_restrictL_ae (U := U) inf_le_left
-      (W1p.contDiffSMul ψ hψ hM (fun x _ ↦ hψM x) (fun x _ ↦ hgM x) u),
-      ae_restrict_of_ae_restrict_of_subset (show (U : Set E) ⊆ Ω from fun _ hx ↦ hx.1)
-        (W1p.value_contDiffSMul_ae hψ hM (fun x _ ↦ hψM x) (fun x _ ↦ hgM x) u)]
-      with x h1 h2
-    simpa only [T, ContinuousLinearMap.comp_apply, W1p.contDiffSMulL_apply, smul_eq_mul]
-      using h1.trans h2
-  have hTzero (u : W1p μ Ω (q : ℝ≥0∞)) : T u ∈ w1p0Submodule μ U (q : ℝ≥0∞) := by
-    apply W1p.mem_w1p0Submodule_of_isCompact ENNReal.coe_ne_top hψc hKU
-    filter_upwards [hTval u] with x hx hxs
-    simp [hx, image_eq_zero_of_notMem_tsupport hxs]
-  have hTrep (u : W1p μ Ω (q : ℝ≥0∞)) :
-      W1p.value (T u) =ᵐ[μ.restrict V] W1p.value u := by
-    filter_upwards [ae_restrict_of_ae_restrict_of_subset hVU (hTval u),
-      ae_restrict_of_ae_restrict_of_subset subset_closure
-        (ae_restrict_mem hVc.measurableSet)] with x hx hxV
-    rw [hx, show ψ x = 1 from interior_subset (hψ1 hxV), one_mul]
-  refine ⟨U, measure_ne_top_of_subset (fun _ hx ↦ hx.2) measure_ball_lt_top.ne, hVU,
-    T.codRestrict (w1p0Submodule μ U (q : ℝ≥0∞)).toSubmodule (fun u ↦ hTzero u), ?_⟩
-  exact hTrep
-
 /-- Interior Sobolev embedding with any finite subcritical gain, including when the source
 exponent equals or exceeds the dimension. -/
 theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
@@ -297,7 +258,8 @@ theorem W1p.exists_eLpNorm_value_le_of_subcritical_gain
     ∃ C : ℝ≥0, ∀ u : W1p μ Ω (q : ℝ≥0∞),
       eLpNorm (W1p.value u) s (μ.restrict V) ≤ C * ‖u‖ₑ := by
   obtain ⟨U, hUf, hVU, T, hTrep⟩ :=
-    W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (q := q) hVc hVΩ
+    W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (p := (q : ℝ≥0∞))
+      ENNReal.coe_ne_top hVc hVΩ
   let δ : ℝ := (q : ℝ)⁻¹ - (s : ℝ)⁻¹
   let A : ℝ≥0∞ := ENNReal.ofReal ((finrank ℝ E : ℝ)⁻¹ *
     μ.real (ball 0 1) ^ (-(finrank ℝ E : ℝ)⁻¹) *
@@ -370,7 +332,8 @@ theorem W1p.exists_lpInftyEmbeddingL_of_isCompact_closure
     ∃ S : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] Lp ℝ ∞ (μ.restrict V),
       ∀ u, S u =ᵐ[μ.restrict V] W1p.value u := by
   obtain ⟨U, -, hVU, T, hT⟩ :=
-    W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (q := q) hVc hVΩ
+    W1p.exists_zeroBoundaryLocalization (μ := μ) (Ω := Ω) (p := (q : ℝ≥0∞))
+      ENNReal.coe_ne_top hVc hVΩ
   let Z : W1p μ Ω (q : ℝ≥0∞) →L[ℝ] W1p μ ⊤ (q : ℝ≥0∞) :=
     (w1p0Submodule μ ⊤ (q : ℝ≥0∞)).toSubmodule.subtypeL.comp
       ((W1p0.extendByZeroL le_top).comp T)
