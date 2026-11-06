@@ -44,6 +44,7 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
 * `OrthonormalBasis.ιMulti_two_eq_sum`, `OrthonormalBasis.inner_ιMulti_two_eq_sum`,
   `OrthonormalBasis.norm_sq_eq_sum_sq_inner_ιMulti_two`: the coordinates of two-vectors in the
   basis `bᵢ ∧ bⱼ` induced by an orthonormal basis `b` of a four-dimensional space.
+* `OrthonormalBasis.inner_toBasis_exteriorPower`: the induced basis of `⋀ⁿ E` is orthonormal.
 * `exteriorPower.norm_ιMulti_sq`: `‖v₁ ∧ ⋯ ∧ vₙ‖ ^ 2` is the Gram determinant of `v`.
 * `exteriorPower.norm_ιMulti_le_prod_norm`: Hadamard's inequality `‖v₁ ∧ ⋯ ∧ vₙ‖ ≤ ∏ ‖vᵢ‖`.
 * `TauCeti.inner_twoVectorContraction_apply`: the contraction `u ⌟ F` of a two-vector
@@ -258,6 +259,13 @@ theorem norm_sq_eq_sum_sq_inner_ιMulti_two (b : OrthonormalBasis (Fin 4) ℝ E)
   ring
 
 end FinFour
+
+/-- The basis of `⋀ⁿ E` induced by an orthonormal basis `b` of `E` is orthonormal. -/
+theorem inner_toBasis_exteriorPower [LinearOrder ι] (b : OrthonormalBasis ι ℝ E) (n : ℕ)
+    (u v : Set.powersetCard ι n) :
+    ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
+  rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
+    OrthonormalBasis.inner_eq_ite]
 
 end OrthonormalBasis
 
