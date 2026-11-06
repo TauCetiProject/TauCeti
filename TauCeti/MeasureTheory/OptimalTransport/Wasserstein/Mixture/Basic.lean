@@ -112,7 +112,7 @@ theorem wassersteinEDist_add_rpow_le (μ μ' ν ν' : Measure X) :
     (ne_top_of_lt (lt_of_le_of_lt le_add_self hb)) hδ)
   calc _ ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (π + π') ^ p.toReal :=
         ENNReal.rpow_le_rpow (wassersteinEDist_le (hπ.add hπ') p) hr.le
-    _ ≤ _ := eLpNorm_add_measure_rpow_le hp0 hp _ π π'
+    _ ≤ _ := eLpNorm_add_measure_rpow_le _ π π'
     _ ≤ _ := add_le_add h₁.le h₂.le
     _ = _ := by rw [add_add_add_comm, ENNReal.add_halves]
 
