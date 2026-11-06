@@ -247,7 +247,7 @@ lemma bigSectionsRestrict_homMk_ι (T : Over S) (V : T.left.Opens)
       bigSectionsRestrictLE F V.ι rfl V ⊤ (by simp)
         (((pullback T.hom).obj F).presheaf.map (homOfLE le_top).op y) := by
   rw [bigSectionsRestrict_eq_bigSectionsRestrictLE, bigSectionsRestrictLE_map]
-  rfl
+  exact bigSectionsRestrictLE_congr F (Over.homMk_left _ _) _ _ _ _ _
 
 /-- For opens `W ≤ V` of `T`, restriction from the `S`-scheme `V` to the `S`-scheme `W` is, under
 the identifications of `bijective_bigSectionsRestrictLE_ι`, restriction of sections from `V` to
@@ -286,6 +286,14 @@ lemma bigPresheaf_obj (T : Over S) :
 @[simp]
 lemma bigPresheaf_map_apply {T T' : Over S} (f : T ⟶ T') (s : Γ((pullback T'.hom).obj F, ⊤)) :
     F.bigPresheaf.map f.op s = bigSectionsRestrict F f s :=
+  (rfl)
+
+/-- The restriction maps of the underlying presheaf of sets of `bigPresheaf F` are
+`bigSectionsRestrict`. -/
+lemma bigPresheaf_presheaf_comp_forget_map_apply {T T' : Over S} (f : T ⟶ T')
+    (s : (F.bigPresheaf.presheaf ⋙ CategoryTheory.forget AddCommGrpCat).obj (op T')) :
+    (F.bigPresheaf.presheaf ⋙ CategoryTheory.forget AddCommGrpCat).map f.op s =
+      bigSectionsRestrict F f s :=
   (rfl)
 
 /-- The underlying presheaf of sets of `bigPresheaf F` is Mathlib's presheaf of morphisms from

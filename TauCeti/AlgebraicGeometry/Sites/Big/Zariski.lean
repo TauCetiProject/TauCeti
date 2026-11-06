@@ -67,20 +67,21 @@ theorem isSheafFor_bigPresheaf_ofArrows_ι (T : Over S) {ι : Type*} {U : ι →
     refine (he (U i ⊓ U j)).1 ((bigSectionsRestrict_homMk_homOfLE F T inf_le_left (s i)).symm.trans
       (((congrArg _ (hs i)).trans ?_).trans (bigSectionsRestrict_homMk_homOfLE F T inf_le_right
         (s j))))
-    refine (hx i j (Over.mk ((U i ⊓ U j).ι ≫ T.hom))
+    have hij := hx i j (Over.mk ((U i ⊓ U j).ι ≫ T.hom))
       (Over.homMk (T.left.homOfLE (inf_le_left : U i ⊓ U j ≤ U i)) (by simp))
       (Over.homMk (T.left.homOfLE (inf_le_right : U i ⊓ U j ≤ U j)) (by simp))
-      (by ext; simp)).trans ?_
-    exact congrArg (bigSectionsRestrict F _) (hs j).symm
+      (by ext; simp)
+    rw [bigPresheaf_presheaf_comp_forget_map_apply,
+      bigPresheaf_presheaf_comp_forget_map_apply] at hij
+    exact hij.trans (congrArg (bigSectionsRestrict F _) (hs j).symm)
   obtain ⟨t, ht, ht'⟩ := TopCat.Sheaf.existsUnique_gluing' ⟨G.presheaf, G.isSheaf⟩ U ⊤
     (fun i ↦ homOfLE le_top) hU.iSup_eq_top.ge s hcompat
   refine ⟨t, fun i ↦ ?_, fun t' h' ↦ ht' t' fun i ↦ (he (U i)).1 ?_⟩
-  · -- The restriction maps of the underlying presheaf of sets are `bigSectionsRestrict`.
-    change bigSectionsRestrict F (Over.homMk (U i).ι : Over.mk ((U i).ι ≫ T.hom) ⟶ T) t = x i
-    exact (bigSectionsRestrict_homMk_ι F T (U i) t).trans ((congrArg _ (ht i)).trans (hs i))
-  · -- As above, `h' i` is a statement about `bigSectionsRestrict`.
-    rw [hs]
-    exact (bigSectionsRestrict_homMk_ι F T (U i) t').symm.trans (h' i)
+  · exact (bigPresheaf_presheaf_comp_forget_map_apply F _ t).trans
+      ((bigSectionsRestrict_homMk_ι F T (U i) t).trans ((congrArg _ (ht i)).trans (hs i)))
+  · rw [hs]
+    exact (bigSectionsRestrict_homMk_ι F T (U i) t').symm.trans
+      ((bigPresheaf_presheaf_comp_forget_map_apply F _ t').symm.trans (h' i))
 
 /-- **The big presheaf of a module is a Zariski sheaf.** For every `𝒪_S`-module `F`, the presheaf
 of abelian groups `(T, h) ↦ Γ(T, h^* F)` underlying `bigPresheaf F` is a sheaf for the Zariski
@@ -101,28 +102,14 @@ theorem isSheaf_bigPresheaf_zariskiTopology :
     refine .mk (top_le_iff.mp fun x _ ↦ ?_)
     obtain ⟨i, y, rfl⟩ := hsurj x
     exact TopologicalSpace.Opens.mem_iSup.mpr ⟨i, y, rfl⟩
-  -- The covering family and the inclusions of the opens `U i` generate the same sieve.
-  rw [Presieve.isSheafFor_iff_generate]
-  convert (Presieve.isSheafFor_iff_generate _).mp (isSheafFor_bigPresheaf_ofArrows_ι F T hU)
-    using 2
-  refine le_antisymm (Sieve.generate_le_iff _ _ |>.mpr ?_) (Sieve.generate_le_iff _ _ |>.mpr ?_)
-  · rintro _ _ ⟨i⟩
-    have hle : Set.range (g i).left ⊆ Set.range (U i).ι := by simp [U]
-    refine ⟨Over.mk ((U i).ι ≫ T.hom),
-      Over.homMk (IsOpenImmersion.lift (U i).ι (g i).left hle) ?_,
-      (Over.homMk (U i).ι : Over.mk ((U i).ι ≫ T.hom) ⟶ T), ⟨i⟩, ?_⟩
-    · -- The structure morphism of `Over.mk ((U i).ι ≫ T.hom)` is `(U i).ι ≫ T.hom`.
-      change _ ≫ (U i).ι ≫ T.hom = _
-      rw [← Category.assoc, IsOpenImmersion.lift_fac, Over.w (g i)]
-    · ext
-      exact IsOpenImmersion.lift_fac _ _ _
-  · rintro _ _ ⟨i⟩
-    have hle : Set.range (U i).ι ⊆ Set.range (g i).left := by simp [U]
-    refine ⟨Z i, Over.homMk (IsOpenImmersion.lift (g i).left (U i).ι hle) ?_, g i, ⟨i⟩, ?_⟩
-    · -- As above, unfold the structure morphism of `Over.mk ((U i).ι ≫ T.hom)`.
-      change _ = (U i).ι ≫ T.hom
-      rw [← Over.w (g i), ← Category.assoc, IsOpenImmersion.lift_fac]
-    · ext
-      exact IsOpenImmersion.lift_fac _ _ _
+  -- Each `g i` is an isomorphism onto the `S`-scheme `U i` followed by the inclusion of
+  -- `U i`.
+  let e (i : ι) : Z i ≅ Over.mk ((U i).ι ≫ T.hom) :=
+    Over.isoMk (g i).left.isoOpensRange (by simp [U])
+  have hg : g = fun i ↦ (e i).hom ≫ Over.homMk (U i).ι := by
+    ext i : 2
+    simp [e, U]
+  rw [hg]
+  exact (Presieve.isSheafFor_ofArrows_comp_iff _ e).mpr (isSheafFor_bigPresheaf_ofArrows_ι F T hU)
 
 end AlgebraicGeometry.Scheme.Modules
