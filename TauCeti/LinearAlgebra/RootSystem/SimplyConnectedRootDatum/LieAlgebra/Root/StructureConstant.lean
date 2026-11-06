@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
-import TauCeti.LinearAlgebra.RootSystem.RootString
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
 /-!
 # The structure constants of the pinned Chevalley system
@@ -211,17 +211,10 @@ theorem structureConstant_eq_two_or_neg_two_of_pairingIn_eq_zero {α β : Fin t.
       (t.simplyConnectedRootDatum ht).root β ∈ Set.range (t.simplyConnectedRootDatum ht).root)
     (horth : (t.simplyConnectedRootDatum ht).pairingIn ℤ β α = 0) :
     t.structureConstant ht α β = 2 ∨ t.structureConstant ht α β = -2 := by
-  obtain ⟨γ, hγ⟩ := hsum
-  have hsum : (t.rationalRootSystem ht).root α + (t.rationalRootSystem ht).root β ∈
-      Set.range (t.rationalRootSystem ht).root := by
-    refine ⟨γ, ?_⟩
-    simpa [add_comm] using (t.root_rationalRootSystem_eq_add_zsmul_iff ht α β γ 1).2
-      (by simpa [add_comm] using hγ)
+  have := t.isReduced_simplyConnectedRootDatum ht
   have hbot := (RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
-    (t.rationalRootSystem ht) hsum (by simpa using horth)).1
-  have h := structureConstant_eq_natCast_or_eq_neg_natCast ⟨γ, hγ⟩
-  simp only [chainBotCoeff_rationalRootSystem] at hbot
-  simpa [hbot] using h
+    (t.simplyConnectedRootDatum ht) hsum horth).1
+  simpa [hbot] using structureConstant_eq_natCast_or_eq_neg_natCast hsum
 
 /-- **Brackets at non-roots vanish.** If `α + β` is neither a root of the pinned datum nor zero,
 then `⁅e_α, e_β⁆ = 0`. -/

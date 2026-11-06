@@ -21,6 +21,8 @@ integrality of Chevalley structure constants.
   quadratic along integral root relations `γ = β + n • α`.
 * `RootPairing.chainBotCoeff_comm_of_root_add_mem`: `chainBotCoeff` is symmetric when the sum of
   two roots is a root.
+* `RootPairing.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero`:
+  orthogonal roots whose sum is a root have one string step in each direction.
 * `RootPairing.InvariantForm.apply_root_self_eq_of_root_add_of_pairing_eq_zero`: orthogonal roots
   whose sum is a root have equal squared length under any invariant form.
 * `RootPairing.InvariantForm.chainTopCoeff_mul_apply_root_self_eq`: along a root string,
@@ -30,6 +32,7 @@ integrality of Chevalley structure constants.
 
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §25.2.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.1.
+* N. Bourbaki, *Lie Groups and Lie Algebras*, Chapters 4–6, Chapter VI, §1.
 -/
 
 public section
@@ -327,6 +330,19 @@ section
 variable {I R M N : Type*} [Finite I] [CommRing R] [CharZero R] [IsDomain R]
   [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing I R M N} [P.IsCrystallographic] [P.IsReduced]
+
+/-- The string through orthogonal roots with a root as their sum has precisely one step
+in each direction. -/
+theorem chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
+    (P : RootPairing I R M N) [P.IsCrystallographic] [P.IsReduced] {α β : I}
+    (h : P.root α + P.root β ∈ Set.range P.root) (horth : P.pairingIn ℤ β α = 0) :
+    P.chainBotCoeff α β = 1 ∧ P.chainTopCoeff α β = 1 := by
+  have hli := P.linearIndependent_of_add_mem_range_root' h
+  have hdiff := P.chainBotCoeff_sub_chainTopCoeff hli
+  have hbound := P.chainBotCoeff_add_chainTopCoeff_le_three (i := α) (j := β)
+  have hpos := P.one_le_chainTopCoeff_of_root_add_mem h
+  rw [horth] at hdiff
+  omega
 
 /-- The lower endpoint of the root string through two roots is symmetric when their sum is a
 root. -/

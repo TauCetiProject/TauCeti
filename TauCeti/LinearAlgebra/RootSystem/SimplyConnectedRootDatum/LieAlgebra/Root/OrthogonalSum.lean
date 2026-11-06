@@ -7,9 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.LinearAlgebra.RootSystem.RootString
-import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
+import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
 /-!
 # Chevalley commutators for orthogonal roots with a root sum
@@ -43,18 +41,15 @@ private theorem orthogonal_sum_brackets
       (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
     (horth : (t.simplyConnectedRootDatum ht).pairingIn ℤ β α = 0) :
     ⁅t.chevalleySystem ht α, t.chevalleySystem ht γ⁆ = 0 := by
-  let P := t.rationalRootSystem ht
-  have hsum : P.root α + P.root β ∈ Set.range P.root := by
-    refine ⟨γ, ?_⟩
-    simpa [P, add_comm] using (t.root_rationalRootSystem_eq_add_zsmul_iff ht α β γ 1).2
-      (by simpa [add_comm] using hγ)
+  have := t.isReduced_simplyConnectedRootDatum ht
+  let P := t.simplyConnectedRootDatum ht
+  have hsum : P.root α + P.root β ∈ Set.range P.root := ⟨γ, hγ⟩
   have hli := P.linearIndependent_of_add_mem_range_root' hsum
   have htop := (P.chainBotCoeff_eq_one_and_chainTopCoeff_eq_one_of_pairingIn_eq_zero
-    hsum (by simpa [P] using horth)).2
+    hsum horth).2
   apply lie_chevalleySystem_eq_zero
   · rintro ⟨δ, hδ⟩
-    have hδ' : P.root δ = P.root β + (2 : ℚ) • P.root α := by
-      apply (t.root_rationalRootSystem_eq_add_zsmul_iff ht α β δ 2).2
+    have hδ' : P.root δ = P.root β + (2 : ℕ) • P.root α := by
       rw [hδ, hγ]
       module
     have : 2 ≤ P.chainTopCoeff α β :=
@@ -93,40 +88,8 @@ theorem commutatorElement_chevalleyRootSubgroup_of_pairingIn_eq_zero
   have hβα : (t.simplyConnectedRootDatum ht).pairingIn ℤ α β = 0 :=
     (t.simplyConnectedRootDatum ht).pairingIn_eq_zero_iff.mp horth
   have hβγ := orthogonal_sum_brackets (hγ.trans (add_comm _ _)) hβα
-  let c := t.structureConstant ht α β
-  have hxy := mul_eq_mul_add_zsmul_of_lie_eq ρ
-    (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
-  have hxz := commute_of_lie_eq_zero ρ hαγ
-  have hyz := commute_of_lie_eq_zero ρ hβγ
-  have hdp := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (n : ℕ) (z : V) (hz : z ∈ M) :
-      Associative.dividedPower n
-        (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (t.chevalleySystem ht γ))) • z ∈ M := by
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hdp γ n z hz) _
-  have hprod :
-      chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
-        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
-      chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
-        chevalleyRootSubgroup ρ M hM hnil γ A
-          (Multiplicative.ofAdd ((c : A) * (u * v))) *
-        chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
-    apply Units.ext
-    simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    rw [← baseChangeExp_zsmul c M (hdp γ) hscaled
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
-    exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy
-      (hxz.smul_right c) (hyz.smul_right c)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β) (hdp α) (hdp β) hscaled u v
-  have hcomm (w : A) : Commute
-      (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
-      (chevalleyRootSubgroup ρ M hM hnil γ A (Multiplicative.ofAdd w)) := by
-    apply Units.ext
-    simpa only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd] using
-      (commute_baseChangeExp M hyz (hdp β) (hdp γ) v w).eq
-  rw [commutatorElement_def, hprod, mul_inv_cancel_right, (hcomm _).eq]
-  simp [c]
+  exact commutatorElement_chevalleyRootSubgroup_of_lie_eq ρ M hM hnil
+    (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hαγ hβγ A u v
 
 /-- In characteristic two, orthogonal root subgroups with a root sum commute. -/
 theorem commute_chevalleyRootSubgroup_of_pairingIn_eq_zero_of_char_two
