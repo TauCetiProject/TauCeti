@@ -352,6 +352,32 @@ lemma cochainComplexCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ N) :
   rw [cochainsCoefficientMap_comp]
   exact (AlgebraicTopology.alternatingCofaceMapComplex _).map_comp _ _
 
+variable (R X)
+
+/-- Direct singular cochains, functorially in their local coefficient system. The abbreviation
+keeps the objects and maps identified with the existing cochain complexes and coefficient maps. -/
+abbrev cochainComplexFunctor :
+    LocalCoefficientSystem.{u, v, w} R X ⥤ CochainComplex (ModuleCat.{max v w} R) ℕ where
+  obj := cochainComplex
+  map := cochainComplexCoefficientMap
+  map_id := cochainComplexCoefficientMap_id
+  map_comp := cochainComplexCoefficientMap_comp
+
+/-- The direct cochain functor is additive in the local coefficient system. -/
+instance : (cochainComplexFunctor.{u, v, w} R X).Additive where
+  map_add {L K} η θ := by
+    apply HomologicalComplex.hom_ext
+    intro n
+    apply ModuleCat.hom_ext
+    apply LinearMap.ext
+    intro c
+    apply cochainComplex_ext
+    intro σ
+    simp only [cochainComplexFunctor, HomologicalComplex.add_f_apply, ModuleCat.hom_add,
+      LinearMap.add_apply, map_add, cochainComplexCoefficientMap_eval.{u, v, w}, NatTrans.app_add]
+
+variable {R X}
+
 variable (L)
 
 /-- Singular cohomology with values in `L`. -/
@@ -381,6 +407,21 @@ lemma cohomologyCoefficientMap_comp (η : L ⟶ K) (θ : K ⟶ N) (n : ℕ) :
       cohomologyCoefficientMap η n ≫ cohomologyCoefficientMap θ n := by
   simp [cohomologyCoefficientMap, cochainComplexCoefficientMap_comp,
     HomologicalComplex.homologyMap_comp]
+
+/-- A monomorphism of local systems induces an injection on degree-zero cohomology. -/
+lemma mono_cohomologyCoefficientMap_zero (η : L ⟶ K) [Mono η] :
+    Mono (cohomologyCoefficientMap η 0) := by
+  rw [cohomologyCoefficientMap_eq]
+  have : Mono ((cochainComplexCoefficientMap η).f 0) := by
+    apply (ModuleCat.mono_iff_injective _).2
+    intro c d hcd
+    apply cochainComplex_ext
+    intro σ
+    apply (ModuleCat.mono_iff_injective (η.app (initialVertex σ))).1 inferInstance
+    simpa only [cochainComplexCoefficientMap_eval.{u, v, w}] using
+      congrArg (cochainComplexEval K 0 σ) hcd
+  exact HomologicalComplex.mono_homologyMap_of_mono_of_not_rel
+    (cochainComplexCoefficientMap η) 0 (by simp)
 
 /-- For a constant system the differential is the ordinary alternating sum of face values. -/
 lemma cochainComplex_d_eval_constant (M : ModuleCat.{w} R) (n : ℕ)
