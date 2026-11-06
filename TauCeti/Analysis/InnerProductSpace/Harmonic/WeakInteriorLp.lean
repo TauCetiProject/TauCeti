@@ -46,7 +46,7 @@ theorem WeaklyHarmonicOn.exists_harmonicOnNhd_ae_eq_norm_and_norm_fderiv_le_inte
         ∀ x ∈ closedBall c r,
           ‖v x‖ ≤ C * ∫ z in ball c R, ‖u z‖ ∂μ ∧
             ‖fderiv ℝ v x‖ ≤ C * ∫ z in ball c R, ‖u z‖ ∂μ := by
-  obtain ⟨C, hC⟩ := HarmonicOnNhd.exists_norm_and_norm_fderiv_le_integral_norm
+  obtain ⟨C, hC⟩ := exists_norm_and_norm_fderiv_le_integral_norm_of_harmonicOnNhd
     (F := ℝ) (μ := μ) c hrR
   refine ⟨C, fun {u} hu hi ↦ ?_⟩
   obtain ⟨v, hv, huv⟩ := hu.exists_harmonicOnNhd_ae_eq
@@ -76,7 +76,7 @@ theorem WeaklyHarmonicOn.exists_W1p_value_ae_eq_norm_le_integral_norm
   have hV : 0 ≤ V := by positivity
   refine ⟨(2 * V * C).toNNReal, fun {u} hu hi ↦ ?_⟩
   have : IsFiniteMeasure (μ.restrict (⟨ball c r, isOpen_ball⟩ : Opens E)) := by
-    change IsFiniteMeasure (μ.restrict (ball c r))
+    rw [Opens.coe_mk]
     exact isFiniteMeasure_restrict.mpr measure_ball_lt_top.ne
   obtain ⟨v, hv, huv, hN⟩ := hC hu hi
   have hsub : closedBall c r ⊆ Ω := (closedBall_subset_ball hrR).trans hRΩ
