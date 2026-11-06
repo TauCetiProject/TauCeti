@@ -15,11 +15,11 @@ import Mathlib.Topology.UniformSpace.UniformEmbedding
 # Hölder functions: a `dist` criterion, extension from a dense set, sums, and the seminorm
 
 A Hölder bound stated with `dist` is equivalent to `HolderOnWith`, which Mathlib phrases with
-`edist`. A function with bounded oscillation is Hölder with every smaller exponent, with a
-constant depending on a free scale. A function with bounded oscillation which satisfies a Hölder
-bound between nearby points is Hölder, which turns Hölder bounds on the pieces of a cover into one
-on the whole set; in particular, so is a function which is Lipschitz between nearby points. Local
-Hölder bounds around the points of a compact set are uniform on a thickening of the set.
+`edist`. A function with bounded oscillation which satisfies a Hölder bound between nearby points
+is Hölder, which turns Hölder bounds on the pieces of a cover into one on the whole set, and is
+Hölder with every smaller exponent, with a constant depending on the scale; in particular, so is a
+function which is Lipschitz between nearby points. Local Hölder bounds around the points of a
+compact set are uniform on a thickening of the set.
 
 A function which is Hölder continuous, with positive exponent, on a dense subset `s` of a
 pseudo-emetric space and takes values in a complete emetric space extends to a function which is
@@ -43,8 +43,9 @@ points, the form in which Hölder seminorms are written in analysis texts.
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
   is Mathlib's `HolderOnWith.dist_le`.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
-* `HolderOnWith.of_le_of_dist_le`: a `β`-Hölder function with values within distance `D` of each
-  other is `γ`-Hölder for `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)` for every scale `δ > 0`.
+* `HolderOnWith.of_le_of_dist_le`: a function satisfying a `β`-Hölder bound between points at
+  distance less than `δ > 0`, with values within distance `D` of each other, is `γ`-Hölder for
+  `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)`.
 * `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
   between points at distance less than `δ`, with values within distance `D` of each other, is
   Hölder with constant `K + D δ^(-r)`.
@@ -54,9 +55,6 @@ points, the form in which Hölder seminorms are written in analysis texts.
   function on the whole space.
 * `HolderWith.sum`: a finite sum of Hölder functions is Hölder.
 * `HolderOnWith.add`, `HolderOnWith.sub`: sums and differences of Hölder functions on a set.
-* `HolderOnWith.of_lipschitz_of_dist_lt_of_dist_le`: a function which is `K`-Lipschitz between
-  points at distance less than `δ`, with values within distance `D` of each other, is `α`-Hölder
-  for `α ≤ 1`, with constant `K δ^(1 - α) + D δ^(-α)`.
 * `IsCompact.exists_holderOnWith_thickening_and_norm_le`: a function which is Hölder on a ball
   around each point of a compact set `K` is Hölder with one constant, and bounded, on a thickening
   of `K`.
@@ -142,20 +140,22 @@ theorem HolderOnWith.of_dist_lt_of_dist_le {X Y : Type*} [PseudoMetricSpace X]
       _ ≤ D * (δ : ℝ) ^ (-(r : ℝ)) * dist x y ^ (r : ℝ) := by gcongr
       _ ≤ _ := le_add_of_nonneg_left hK
 
-/-- A function that is `β`-Hölder with constant `K` on `s`, and whose values on `s` lie within
-distance `D` of each other, is `γ`-Hölder on `s` for every `γ ≤ β`. For each scale `δ > 0` the
-constant is `K δ^(β - γ) + D δ^(-γ)`: the `β`-Hölder bound is used at distances at most `δ` and
-the bound `D` at larger distances. A small scale makes the coefficient of `K` small at the price
-of a large coefficient of `D`. Compare Mathlib's `HolderOnWith.of_le`, which bounds the domain
-instead of the values. -/
+/-- A function that satisfies the `β`-Hölder bound with constant `K` between points of `s` at
+distance less than `δ > 0`, and whose values on `s` lie within distance `D` of each other, is
+`γ`-Hölder on `s` for every `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)`: the `β`-Hölder bound
+is used at distances less than `δ` and the bound `D` at larger distances. A small scale makes the
+coefficient of `K` small at the price of a large coefficient of `D`. For `β = 1` the hypothesis is
+a Lipschitz bound between nearby points, as given by a derivative bound on balls of radius `δ`.
+Compare Mathlib's `HolderOnWith.of_le`, which bounds the domain instead of the values. -/
 theorem HolderOnWith.of_le_of_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetricSpace Y]
-    {K D δ β γ : ℝ≥0} {f : X → Y} {s : Set X} (hf : HolderOnWith K β f s)
+    {K D δ β γ : ℝ≥0} {f : X → Y} {s : Set X}
+    (hf : ∀ x ∈ s, ∀ y ∈ s, dist x y < δ → dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ))
     (hD : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ D) (hγβ : γ ≤ β) (hδ : 0 < δ) :
     HolderOnWith (K * δ ^ ((β : ℝ) - γ) + D * δ ^ (-(γ : ℝ))) γ f s := by
   have hγβ' : (γ : ℝ) ≤ β := hγβ
   refine HolderOnWith.of_dist_lt_of_dist_le hδ (fun x hx y hy h => ?_) hD
   push_cast
-  calc dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ) := hf.dist_le hx hy
+  calc dist (f x) (f y) ≤ K * dist x y ^ (β : ℝ) := hf x hx y hy h
     _ = K * dist x y ^ ((β : ℝ) - γ) * dist x y ^ (γ : ℝ) := by
       rw [mul_assoc, ← Real.rpow_add_of_nonneg dist_nonneg (sub_nonneg.2 hγβ') γ.coe_nonneg,
         sub_add_cancel]
@@ -205,26 +205,6 @@ theorem HolderOnWith.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommG
   HolderOnWith.of_dist_le fun x hx y hy => by
     push_cast
     linarith [dist_sub_sub_le (f x) (g x) (f y) (g y), hf.dist_le hx hy, hg.dist_le hx hy]
-
-/-- A function which is `K`-Lipschitz between points of `s` at distance less than `δ > 0`, and whose
-values on `s` lie within distance `D` of each other, is `α`-Hölder on `s` for every `α ≤ 1`, with
-constant `K δ^(1 - α) + D δ^(-α)`. For instance, a function with derivative bounded by `K` on an
-open set containing every ball of radius `δ` centred in `s` is Lipschitz on these balls. -/
-theorem HolderOnWith.of_lipschitz_of_dist_lt_of_dist_le {X Y : Type*} [PseudoMetricSpace X]
-    [PseudoMetricSpace Y] {K D δ α : ℝ≥0} {f : X → Y} {s : Set X} (hδ : 0 < δ) (hα : α ≤ 1)
-    (hf : ∀ x ∈ s, ∀ y ∈ s, dist x y < δ → dist (f x) (f y) ≤ K * dist x y)
-    (hD : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ D) :
-    HolderOnWith (K * δ ^ (1 - (α : ℝ)) + D * δ ^ (-(α : ℝ))) α f s := by
-  have hα' : (α : ℝ) ≤ 1 := hα
-  refine HolderOnWith.of_dist_lt_of_dist_le hδ (fun x hx y hy h => ?_) hD
-  push_cast
-  calc dist (f x) (f y) ≤ K * dist x y := hf x hx y hy h
-    _ = K * (dist x y ^ (1 - (α : ℝ)) * dist x y ^ (α : ℝ)) := by
-      rw [← Real.rpow_add_of_nonneg dist_nonneg (sub_nonneg.2 hα') α.coe_nonneg, sub_add_cancel,
-        Real.rpow_one]
-    _ ≤ K * ((δ : ℝ) ^ (1 - (α : ℝ)) * dist x y ^ (α : ℝ)) := by
-      gcongr
-    _ = K * (δ : ℝ) ^ (1 - (α : ℝ)) * dist x y ^ (α : ℝ) := by ring
 
 /-- **Local Hölder bounds near a compact set are uniform on a thickening.** If `f` is `α`-Hölder on
 a ball around each point of a compact set `K`, with radii and constants depending on the point, then

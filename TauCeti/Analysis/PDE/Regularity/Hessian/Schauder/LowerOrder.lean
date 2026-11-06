@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.HolderCoefficient
 public import TauCeti.Analysis.PDE.Regularity.Hessian.Schauder.WholeSpace
 import TauCeti.Analysis.Holder.Interpolation
+import TauCeti.Analysis.Holder.MeanValue
 import TauCeti.Analysis.Normed.Operator.Holder
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Topology.MetricSpace.Holder
@@ -42,9 +43,10 @@ No sign condition on `c` is needed for the estimates.
 The lower-order part `b · ∇u + c u` is moved to the right side: `u` solves
 `∑ᵢⱼ aᵢⱼ ∂ᵢ∂ⱼu = L u - b · ∇u - c u`, and the Hölder constant of `b · ∇u + c u` is bounded by
 products of the sup norms and the Hölder constants of the factors
-(`ContinuousLinearMap.holderOnWith_comp₂`). The functions `u` and `Du` are Lipschitz between nearby
-points, with constants given by the bounds on `Du` and `D²u`, and bounded, so they are `α`-Hölder
-(`HolderOnWith.of_lipschitz_of_dist_lt_of_dist_le`).
+(`ContinuousLinearMap.holderOnWith_comp₂`). The functions `u` and `Du` are bounded, with
+derivatives bounded by the bounds on `Du` and `D²u`, so they are `α`-Hölder
+(`TauCeti.holderOnWith_thickening_of_norm_fderiv_le`,
+`TauCeti.holderWith_of_norm_le_of_norm_fderiv_le`).
 
 In the interior estimate the principal-part estimate
 (`TauCeti.PDE.exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_of_holderOnWith`)
@@ -57,8 +59,8 @@ bounded by multiples of `N`.
 On the whole space only `‖u‖_∞` is allowed on the right, so the bounds of `Du` and `D²u` entering
 through the lower-order terms are removed by the interpolation inequalities
 `‖Du‖_∞, ‖D²u‖_∞ ≤ C_ε ‖u‖_∞ + 2 ε^α [D²u]_α`
-(`HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le`,
-`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`), and the resulting multiple of
+(`HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`), and the resulting
+multiple of
 `[D²u]_α` is absorbed into the global principal-part estimate
 (`TauCeti.PDE.exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fderiv`) for
 small `ε`.
@@ -102,45 +104,6 @@ private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b
   · exact mul_le_of_le_one_left zero_le (by
       rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
   · exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
-
-/-- A function bounded by `N`, with derivative bounded by `N`, on an open set containing the
-`2δ`-thickening of `K` is `α`-Hölder on the `δ`-thickening of `K`: nearby points of the
-`δ`-thickening lie in a ball of radius `δ` contained in the `2δ`-thickening. -/
-private theorem holderOnWith_thickening_of_norm_fderiv_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {Ω K : Set E} {g : E → F} {δ N α : ℝ≥0} (hδ : 0 < δ) (hα : α ≤ 1)
-    (hΩ : IsOpen Ω) (hKΩ : thickening (2 * δ) K ⊆ Ω) (hg : DifferentiableOn ℝ g Ω)
-    (hg0 : ∀ x ∈ Ω, ‖g x‖ ≤ N) (hg1 : ∀ x ∈ Ω, ‖fderiv ℝ g x‖ ≤ N) :
-    HolderOnWith (N * δ ^ (1 - (α : ℝ)) + 2 * N * δ ^ (-(α : ℝ))) α g (thickening δ K) := by
-  refine HolderOnWith.of_lipschitz_of_dist_lt_of_dist_le hδ hα (fun x hx y _ hxy => ?_)
-    fun x hx y hy => ?_
-  · -- The ball `B(x, δ)` is convex and lies in `Ω`, where `‖Dg‖ ≤ N`.
-    have hball : ball x δ ⊆ Ω := fun z hz => hKΩ <| by
-      rw [two_mul]
-      exact thickening_thickening_subset _ _ K (ball_subset_thickening hx _ hz)
-    have hy : y ∈ ball x δ := by rw [mem_ball, dist_comm]; exact hxy
-    rw [dist_comm (g x), dist_comm x y, dist_eq_norm, dist_eq_norm]
-    exact (convex_ball x δ).norm_image_sub_le_of_norm_fderiv_le
-      (fun z hz => hg.differentiableAt (hΩ.mem_nhds (hball hz))) (fun z hz => hg1 z (hball hz))
-      (mem_ball_self (by exact_mod_cast hδ)) hy
-  · have hU : thickening (δ : ℝ) K ⊆ Ω :=
-      (thickening_mono (by linarith [δ.coe_nonneg]) K).trans hKΩ
-    push_cast
-    linarith [dist_le_norm_add_norm (g x) (g y), hg0 x (hU hx), hg0 y (hU hy)]
-
-/-- A function on the whole space bounded by `N₀`, with derivative bounded by `N₁`, is `α`-Hölder
-with constant `N₁ + 2 N₀`: it is `N₁`-Lipschitz, which is used at distances less than `1`. -/
-private theorem holderOnWith_univ_of_norm_fderiv_le {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {g : E → F} {N₀ N₁ α : ℝ≥0} (hα : α ≤ 1) (hg : Differentiable ℝ g)
-    (hg0 : ∀ x, ‖g x‖ ≤ N₀) (hg1 : ∀ x, ‖fderiv ℝ g x‖ ≤ N₁) :
-    HolderOnWith (N₁ + 2 * N₀) α g univ := by
-  have h := HolderOnWith.of_lipschitz_of_dist_lt_of_dist_le (s := univ) (f := g) (δ := 1)
-    (K := N₁) (D := 2 * N₀) one_pos hα (fun x _ y _ _ => ?_) fun x _ y _ => ?_
-  · simpa only [NNReal.one_rpow, mul_one] using h
-  · rw [dist_comm (g x), dist_comm x y, dist_eq_norm, dist_eq_norm]
-    exact convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun z _ => hg z) (fun z _ => hg1 z)
-      (mem_univ x) (mem_univ y)
-  · push_cast
-    linarith [dist_le_norm_add_norm (g x) (g y), hg0 x, hg0 y]
 
 /-- **The interior Schauder estimate with lower-order terms.** Let `0 < α < 1`, let
 `Ω ⊆ ℝ^{n+1}` be open and `K ⊆ Ω` compact. Let `a` be a matrix-valued coefficient, `b` a
@@ -190,12 +153,12 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_add_fde
   refine ⟨C₀ * (1 + P), fun {u N M} hu hN₀ hN₁ hN₂ hV hM => ?_⟩
   -- `u` and `Du` are `α`-Hölder on `U` with constant `N Q`.
   have hHu : HolderOnWith (N * Q) α u U := by
-    refine (holderOnWith_thickening_of_norm_fderiv_le hδ hα1.le hΩ h2U
+    refine (holderOnWith_thickening_of_norm_fderiv_le (N₀ := N) (N₁ := N) hδ hα1.le hΩ h2U
       (hu.differentiableOn (by norm_num)) (fun x hx => ?_) hN₁).mono_const (le_of_eq (by ring))
     rw [Real.norm_eq_abs]
     exact hN₀ x hx
   have hHDu : HolderOnWith (N * Q) α (fderiv ℝ u) U := by
-    refine (holderOnWith_thickening_of_norm_fderiv_le hδ hα1.le hΩ h2U
+    refine (holderOnWith_thickening_of_norm_fderiv_le (N₀ := N) (N₁ := N) hδ hα1.le hΩ h2U
       ((hu.fderiv_of_isOpen hΩ (m := 1) (by norm_num)).differentiableOn (by norm_num)) hN₁
       fun x hx => ?_).mono_const (le_of_eq (by ring))
     rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
@@ -272,30 +235,24 @@ theorem
   have hHe : 0 ≤ (H : ℝ) * e := by positivity
   set P : ℝ := c' * N + 2 * H * e
   have hP : 0 ≤ P := by positivity
-  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ P := by
-    refine (hH.norm_iteratedFDeriv_add_two_le_of_norm_le (k := 0) hu hN0 hbdd hε x).trans ?_
-    have : 0 ≤ 34 * (N : ℝ) / ε := by positivity
-    simp only [P, c']
-    linarith [show 34 / ε * (N : ℝ) = 34 * N / ε by ring,
-      show 32 / ε ^ 2 * (N : ℝ) = 32 * N / ε ^ 2 by ring]
   have h1 (x : E) : ‖fderiv ℝ u x‖ ≤ P := by
-    have h := hH.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove (k := 0) hu hN0 hbdd hε x
-    rw [zero_add, norm_iteratedFDeriv_one] at h
-    have hε' : ε ^ (1 + (α : ℝ)) ≤ e := Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
-    have : 0 ≤ 32 * (N : ℝ) / ε ^ 2 := by positivity
-    simp only [P, c']
-    nlinarith [H.coe_nonneg, show 34 / ε * (N : ℝ) = 34 * N / ε by ring,
-      show 32 / ε ^ 2 * (N : ℝ) = 32 * N / ε ^ 2 by ring]
+    have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0
+      hbdd hε hε1 x).1
+    rwa [zero_add, norm_iteratedFDeriv_one] at h
+  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ P :=
+    (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0 hbdd hε
+      hε1 x).2
   set P' : ℝ≥0 := P.toNNReal
   have hPP' : (P' : ℝ) = P := Real.coe_toNNReal _ hP
   -- `u` and `Du` are bounded by `N` and `P'`, with derivatives bounded by `P'`, hence `α`-Hölder.
   have hHu : HolderOnWith (P' + 2 * N) α u univ :=
-    holderOnWith_univ_of_norm_fderiv_le hα1.le (hu.differentiable (by norm_num))
-      (fun x => by rw [Real.norm_eq_abs]; exact hN x) fun x => (h1 x).trans hPP'.ge
+    (holderWith_of_norm_le_of_norm_fderiv_le hα1.le (hu.differentiable (by norm_num))
+      (fun x => by rw [Real.norm_eq_abs]; exact hN x) fun x => (h1 x).trans hPP'.ge).holderOnWith
+      univ
   have hHDu : HolderOnWith (P' + 2 * P') α (fderiv ℝ u) univ := by
-    refine holderOnWith_univ_of_norm_fderiv_le hα1.le
+    refine (holderWith_of_norm_le_of_norm_fderiv_le hα1.le
       ((hu.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num))
-      (fun x => (h1 x).trans hPP'.ge) fun x => ?_
+      (fun x => (h1 x).trans hPP'.ge) fun x => ?_).holderOnWith univ
     rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
     exact (h2 x).trans hPP'.ge
   -- The principal part `L u - (b · ∇u + c u)` is globally `α`-Hölder with constant `K₀`.
