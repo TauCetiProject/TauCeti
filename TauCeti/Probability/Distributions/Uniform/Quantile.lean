@@ -129,7 +129,7 @@ theorem tendsto_quantile_map_uniformOn_univ_nhdsGT_zero [Finite α] [Nonempty α
   let _ := Fintype.ofFinite α
   apply Measure.tendsto_quantile_map_finite_nhdsGT_zero
     (uniformOn (Set.univ : Set α)) label i
-  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+  · rw [measureReal_def, uniformOn_univ, Measure.count_singleton, one_div]
     simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
     exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
   · exact fun j _ ↦ hmin j
@@ -143,7 +143,7 @@ theorem tendsto_quantile_map_uniformOn_univ_nhdsLT_one [Finite α] [Nonempty α]
   let _ := Fintype.ofFinite α
   apply Measure.tendsto_quantile_map_finite_nhdsLT_one
     (uniformOn (Set.univ : Set α)) label i
-  · rw [measureReal_def, uniformOn_univ_apply_singleton]
+  · rw [measureReal_def, uniformOn_univ, Measure.count_singleton, one_div]
     simp only [ENNReal.toReal_inv, ENNReal.toReal_natCast]
     exact inv_pos.mpr (Nat.cast_pos.mpr Fintype.card_pos)
   · exact fun j _ ↦ hmax j
