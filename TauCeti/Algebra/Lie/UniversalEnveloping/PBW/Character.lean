@@ -564,6 +564,14 @@ private theorem exists_adapted_basis {B : LieSubalgebra K L} {ι : Type w₁} [L
       change (bA (toLex (Sum.inl i)) : L) = v i
       simp [bA, f, bV, Basis.span_apply hv i]⟩
 
+/-- The `OrderEmbedding.subtype` form of `Finsupp.mapDomain_subtypeDomain_subtype`: an exponent
+vector supported on `s` is the push-forward of its restriction along the inclusion `s ↪o ι`. -/
+private theorem mapDomain_subtypeDomain_orderEmbedding_subtype {ι : Type*} [LinearOrder ι]
+    {s : Set ι} {α : ι →₀ ℕ} (hα : ↑α.support ⊆ s) :
+    (α.subtypeDomain (· ∈ s)).mapDomain (OrderEmbedding.subtype (· ∈ s)) = α := by
+  rw [OrderEmbedding.coe_subtype]
+  exact Finsupp.mapDomain_subtypeDomain_subtype hα
+
 /-- The complement monomial of the extension by zero of an exponent vector supported on `s` is
 the ordered monomial in `v`, when the basis `bA` of the complement restricts to `v` along the order
 embedding `inl` of `s`. -/
@@ -575,9 +583,7 @@ private theorem complementMonomial_mapDomain_subtypeDomain
       pbwMonomial K L v (α.toMultiset.sort (· ≤ ·)) := by
   have h := pbwMonomial_sort_toMultiset_mapDomain K L (OrderEmbedding.subtype (· ∈ s)) v
     (α.subtypeDomain (· ∈ s))
-  rw [show (α.subtypeDomain (· ∈ s)).mapDomain (OrderEmbedding.subtype (· ∈ s)) = α by
-    rw [OrderEmbedding.coe_subtype]
-    exact Finsupp.mapDomain_subtypeDomain_subtype hα] at h
+  rw [mapDomain_subtypeDomain_orderEmbedding_subtype hα] at h
   rw [complementMonomial, pbwMonomial_sort_toMultiset_mapDomain K L inl, h]
   congr 1
   exact funext hbA
@@ -603,19 +609,17 @@ theorem _root_.LieAlgebra.LieCharacter.linearIndepOn_mkQ_pbwMonomial {B : LieSub
   classical
   -- Exponent vectors supported on `s` are carried to exponent vectors of the extended basis.
   let extend : (ι →₀ ℕ) → (σ →₀ ℕ) := fun α ↦ (α.subtypeDomain (· ∈ s)).mapDomain inl
-  have hsub {α : ι →₀ ℕ} (hα : ↑α.support ⊆ s) :
-      (α.subtypeDomain (· ∈ s)).mapDomain (OrderEmbedding.subtype (· ∈ s)) = α := by
-    rw [OrderEmbedding.coe_subtype]
-    exact Finsupp.mapDomain_subtypeDomain_subtype hα
   have hmon {α : ι →₀ ℕ} (hα : ↑α.support ⊆ s) :
       complementMonomial bA (extend α) = pbwMonomial K L v (α.toMultiset.sort (· ≤ ·)) :=
     complementMonomial_mapDomain_subtypeDomain bA inl hbA hα
   have hdeg {α : ι →₀ ℕ} (hα : ↑α.support ⊆ s) : (extend α).degree = α.degree := by
     rw [Finsupp.degree_mapDomain, ← Finsupp.degree_mapDomain (OrderEmbedding.subtype (· ∈ s)),
-      hsub hα]
+      mapDomain_subtypeDomain_orderEmbedding_subtype hα]
   have hinj {α γ : ι →₀ ℕ} (hα : ↑α.support ⊆ s) (hγ : ↑γ.support ⊆ s)
       (h : extend α = extend γ) : α = γ := by
-    rw [← hsub hα, ← hsub hγ, Finsupp.mapDomain_injective inl.injective h]
+    rw [← mapDomain_subtypeDomain_orderEmbedding_subtype hα,
+      ← mapDomain_subtypeDomain_orderEmbedding_subtype hγ,
+      Finsupp.mapDomain_injective inl.injective h]
   -- The character form of the extended exponent vector of `γ` reads off the coefficient of `γ`.
   rw [linearIndepOn_iff]
   intro l hl hl0
