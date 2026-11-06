@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.Basic
 public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import TauCeti.Analysis.Calculus.CoordinateDeriv
 
 /-!
@@ -31,7 +32,9 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
-  (`TauCeti.Symbol.const`).
+  (`TauCeti.Symbol.const`);
+* `TauCeti.Symbol.ofBoundedFrequencySupport`: a smooth coefficient vanishing at all large
+  frequencies is a symbol of every order.
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -72,6 +75,28 @@ private theorem rpow_weight_le_rpow_weight (ξ : CoordinateSpace n) {t t' : ℝ}
 private theorem rpow_weight_pos (ξ : CoordinateSpace n) (t : ℝ) :
     0 < (1 + ‖ξ‖ ^ 2) ^ (t / 2) :=
   Real.rpow_pos_of_pos (by positivity) _
+
+/-- On a compact set of positions and a bounded set of frequencies, a continuous function of the
+position and the frequency is bounded by a multiple of every weight `⟨ξ⟩^s = (1 + ‖ξ‖²)^(s/2)`. -/
+theorem exists_norm_le_mul_rpow_weight_of_continuous {A : Type*} [NormedAddCommGroup A]
+    {g : CoordinateSpace n × CoordinateSpace n → A} (hg : Continuous g)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (R s : ℝ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖ξ‖ ≤ R → ‖g (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by
+  -- The quotient of `‖g‖` by the positive continuous weight is bounded on the compact set.
+  have hq : Continuous fun p : CoordinateSpace n × CoordinateSpace n =>
+      ‖g p‖ / (1 + ‖p.2‖ ^ 2) ^ (s / 2) :=
+    hg.norm.div (((continuous_const.add (continuous_snd.norm.pow 2)).rpow_const fun p =>
+      Or.inl (add_pos_of_pos_of_nonneg one_pos (sq_nonneg ‖p.2‖)).ne')) fun p =>
+        (rpow_weight_pos p.2 s).ne'
+  obtain ⟨C, hC⟩ :=
+    (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) R)).exists_bound_of_continuousOn
+      hq.continuousOn
+  refine ⟨max C 0, le_max_right _ _, fun x hx ξ hξ => ?_⟩
+  have hw := rpow_weight_pos ξ s
+  have hb := hC (x, ξ) (Set.mk_mem_prod hx (by simpa using hξ))
+  dsimp only at hb
+  rw [Real.norm_of_nonneg (div_nonneg (norm_nonneg _) hw.le), div_le_iff₀ hw] at hb
+  exact hb.trans (mul_le_mul_of_nonneg_right (le_max_left _ _) hw.le)
 
 variable (n) in
 /-- The class `S^m_{1,0}` of symbols of order `m` on `ℝⁿ × ℝⁿ` with values in `V →L[ℂ] W`: smooth
@@ -461,6 +486,35 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp [coordinateDeriv_const T hα]
 
 end Spatial
+
+section BoundedFrequencySupport
+
+/-- A smooth coefficient that vanishes at all frequencies `‖ξ‖ ≥ R` is a symbol of every order
+`m`: its mixed derivatives vanish for `‖ξ‖ > R` and are bounded on the remaining compact sets. -/
+def ofBoundedFrequencySupport (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W)
+    (hf : ContDiff ℝ ∞ f) (R : ℝ) (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) : Symbol n V W m where
+  coefficient := f
+  contDiff_coefficient := hf
+  exists_bound := fun K hK α β => by
+    obtain ⟨C, hC, hCK⟩ := exists_norm_le_mul_rpow_weight_of_continuous
+      (hf.mixedDeriv α β).continuous hK R (m - β.length)
+    refine ⟨C, hC, fun x hx ξ => ?_⟩
+    rcases le_or_gt ‖ξ‖ R with hξ | hξ
+    · exact hCK x hx ξ hξ
+    · -- Near frequencies of norm `> R` the coefficient vanishes identically.
+      have h0 : f =ᶠ[nhds (x, ξ)] 0 := by
+        filter_upwards [(isOpen_lt continuous_const continuous_snd.norm).mem_nhds
+          (show R < ‖(x, ξ).2‖ from hξ)] with p hp using hR p.1 p.2 hp.le
+      rw [Filter.EventuallyEq.mixedDeriv_eq h0, mixedDeriv_zero, norm_zero]
+      exact mul_nonneg hC (rpow_weight_pos ξ _).le
+
+@[simp]
+theorem coefficient_ofBoundedFrequencySupport
+    (f : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W) (hf : ContDiff ℝ ∞ f) (R : ℝ)
+    (hR : ∀ x ξ, R ≤ ‖ξ‖ → f (x, ξ) = 0) :
+    (ofBoundedFrequencySupport f hf R hR : Symbol n V W m).coefficient = f := (rfl)
+
+end BoundedFrequencySupport
 
 end Symbol
 
