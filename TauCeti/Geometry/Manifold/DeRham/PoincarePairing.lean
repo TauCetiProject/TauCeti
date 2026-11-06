@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.DifferentialForm.Integration.TopForm
 public import TauCeti.Geometry.Manifold.DeRham.ExtendByZero
 public import TauCeti.Geometry.Manifold.Orientation.OpenSubset
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.OpenSubset
-import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.BoundarylessStokes
 import TauCeti.Geometry.Manifold.DifferentialForm.Integration.Regularity
 import Mathlib.LinearAlgebra.Isomorphisms

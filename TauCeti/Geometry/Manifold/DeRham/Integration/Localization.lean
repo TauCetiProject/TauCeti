@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.Euclidean
 import TauCeti.Geometry.Manifold.Orientation.Pullback
-import Mathlib.Geometry.Manifold.LocalDiffeomorph
 
 /-!
 # Localization of compactly supported top-degree cohomology
