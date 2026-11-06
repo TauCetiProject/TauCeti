@@ -204,7 +204,7 @@ private theorem restrictNormalHom_mem_zpowers_of_mk_eq_artinMap {x : ℚ_[p]ˣ}
 /-- Two units of `ℤ/mℤ` that agree modulo `N`, where `N = p ^ f - 1` and `f = φ(pⁿ)`, with `r` a
 power of `a`, agree modulo `pⁿ`: modulo `N` the class of `p` has order exactly `f`, and `a ^ f = 1`
 modulo `pⁿ`. -/
-private theorem unitsMap_eq_of_zpow_of_unitsMap_eq {m n : ℕ} [NeZero m]
+private theorem unitsMap_eq_of_zpow_of_unitsMap_eq {m n : ℕ}
     (hf : (p ^ n).totient ≠ 0) (hpN : p.Coprime (p ^ (p ^ n).totient - 1))
     (hdN : p ^ (p ^ n).totient - 1 ∣ m) (hdP : p ^ n ∣ m) {r a : (ZMod m)ˣ} {k : ℤ}
     (hra : r = a ^ k) (hqN : (a : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1)))
