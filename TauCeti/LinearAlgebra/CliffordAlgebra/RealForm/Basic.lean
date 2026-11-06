@@ -210,6 +210,13 @@ theorem isOrtho_realCliffordForm_single {p q : ℕ} {i j : Fin (p + q)} (hij : i
       simp [hki]
     · simp [hki, hkj]
 
+/-- The coordinate basis is orthogonal for the polar form of the signature form. -/
+theorem isOrthoᵢ_associated_realCliffordForm (p q : ℕ) :
+    (QuadraticMap.associated (realCliffordForm p q)).IsOrthoᵢ (Pi.basisFun ℝ (Fin (p + q))) :=
+  fun _ _ hij ↦ by
+    simpa only [Function.onFun, Pi.basisFun_apply] using
+      QuadraticMap.associated_isOrtho.mpr (isOrtho_realCliffordForm_single hij 1 1)
+
 /-- Every coordinate unit vector has value one for the compact real Clifford form. -/
 @[simp]
 theorem realCliffordForm_zero_single_one (n : ℕ) (i : Fin n) :
