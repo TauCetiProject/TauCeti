@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Subsystem.Basic
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.ClosedRootSubgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.GeckLattice.Torus.Basic
+import TauCeti.CategoryTheory.Subobject.FactorThru
 
 /-!
 # The positive subgroup scheme of the pinned Geck carrier
@@ -354,68 +355,6 @@ theorem geckWeightTorusClosedSubgroup_le_geckTorusPositiveClosedSubgroup
   exact Subobject.mk_le_mk_of_comm (t.geckWeightTorusToTorusPositive ht)
     (t.geckWeightTorusToTorusPositive_comp_geckTorusPositiveInclusion ht)
 
-/-- Transport of the order relation along an isomorphism of ambient group schemes: if the
-parametrization `i` of a subobject of `G` equals `eB.hom ≫ c ≫ eG.inv`, then the subobject of `G`
-represented by `i` lies in `P` exactly when the subobject of `K` represented by `c` lies in the
-transport `P.arrow ≫ eG.hom` of `P`. -/
-private lemma subobject_mk_le_iff_mk_le_mk_comp {X : Scheme} {G K B A : Grp (Over X)}
-    (eG : G ≅ K) (eB : B ≅ A) {i : B ⟶ G} {c : A ⟶ K} [Mono i] [Mono c]
-    (hinc : i = eB.hom ≫ c ≫ eG.inv) (P : Subobject G) :
-    Subobject.mk i ≤ P ↔ Subobject.mk c ≤ Subobject.mk (P.arrow ≫ eG.hom) := by
-  constructor
-  · intro hle
-    let a := Subobject.ofMkLE i P hle
-    have ha : a ≫ P.arrow = i := Subobject.ofMkLE_arrow _
-    apply Subobject.mk_le_mk_of_comm (eB.inv ≫ a)
-    slice_lhs 2 3 => rw [ha]
-    rw [hinc]
-    simp
-  · intro hle
-    let a := Subobject.ofMkLEMk c (P.arrow ≫ eG.hom) hle
-    have ha : a ≫ P.arrow ≫ eG.hom = c := Subobject.ofMkLEMk_comp _
-    apply Subobject.mk_le_of_comm (eB.hom ≫ a)
-    apply (cancel_mono eG.hom).mp
-    rw [Category.assoc, Category.assoc, ha, hinc]
-    simp
-
-/-- Transport of unique factorisation through a closed subgroup along an isomorphism of ambient
-group schemes: a morphism `g` into `K` factors uniquely through the closed subgroup represented by
-`P.arrow ≫ eG.hom` exactly when `g ≫ eG.inv` factors uniquely through `P`. -/
-private lemma existsUnique_factor_mk_comp_iff {X : Scheme} {G K : Grp (Over X)} (eG : G ≅ K)
-    (P : ClosedSubgroupScheme G) [IsClosedImmersion (P.1.arrow ≫ eG.hom).hom.hom.left]
-    (Y : Grp (Over X)) (g : Y ⟶ K) :
-    (∃! f : Y ⟶ ((ClosedSubgroupScheme.mk (P.1.arrow ≫ eG.hom)).1 : Grp (Over X)),
-      f ≫ (ClosedSubgroupScheme.mk (P.1.arrow ≫ eG.hom)).1.arrow = g) ↔
-      ∃! f : Y ⟶ (P.1 : Grp (Over X)), f ≫ P.1.arrow = g ≫ eG.inv := by
-  let j := P.1.arrow ≫ eG.hom
-  let Q := ClosedSubgroupScheme.mk j
-  let qIso := ClosedSubgroupScheme.mkIso j
-  have hqIsoInv : qIso.inv ≫ Q.1.arrow = j := ClosedSubgroupScheme.mkIso_inv_comp_arrow j
-  have hqIso : qIso.hom ≫ j = Q.1.arrow := by
-    apply (cancel_epi qIso.inv).mp
-    simpa only [Iso.inv_hom_id_assoc] using hqIsoInv.symm
-  constructor
-  · rintro ⟨f, hf, -⟩
-    have hmap : (f ≫ qIso.hom) ≫ P.1.arrow = g ≫ eG.inv := by
-      apply (cancel_mono eG.hom).mp
-      -- The change only reassociates composition and unfolds `j`.
-      change f ≫ qIso.hom ≫ j = (g ≫ eG.inv) ≫ eG.hom
-      rw [Category.assoc, hqIso, hf]
-      simp
-    refine ⟨f ≫ qIso.hom, hmap, ?_⟩
-    intro f' hf'
-    apply (cancel_mono P.1.arrow).mp
-    rw [hf', hmap]
-  · rintro ⟨f, hf, -⟩
-    have hmap : (f ≫ qIso.inv) ≫ Q.1.arrow = g := by
-      rw [Category.assoc, hqIsoInv]
-      dsimp only [j]
-      rw [← Category.assoc, hf]
-      simp
-    refine ⟨f ≫ qIso.inv, hmap, ?_⟩
-    intro f' hf'
-    apply (cancel_mono Q.1.arrow).mp
-    rw [hf', hmap]
 /-- **Universal property of the positive Geck carrier.** It is the smallest closed subgroup
 scheme of the full Geck carrier through which every positive simple-root subgroup and the weight
 torus factor. -/
@@ -430,47 +369,36 @@ theorem geckTorusPositiveClosedSubgroup_le_iff
           f ≫ P.1.arrow = t.geckWeightTorus ht := by
   let eB := eqToIso (t.geckTorusPositiveGroupScheme_def ht)
   let eG := eqToIso (t.geckGroupScheme_def ht)
-  let c := UniversalEnvelopingAlgebra.kostantTorusSubsystemToToral
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
-    (t.geckCoordinateLattice ht).toAddSubgroup
-    (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
-    (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
-    (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl)
-  have hinc : t.geckTorusPositiveInclusion ht = eB.hom ≫ c ≫ eG.inv := by
-    rfl
-  have hj : IsClosedImmersion (P.1.arrow ≫ eG.hom).hom.hom.left := by
-    rw [← closedSubgroupMorphismProperty_iff]
-    rw [(closedSubgroupMorphismProperty _).cancel_right_of_respectsIso]
-    exact P.2
-  let Q := ClosedSubgroupScheme.mk (P.1.arrow ≫ eG.hom)
-  have horder : t.geckTorusPositiveClosedSubgroup ht ≤ P ↔
+  have hmap : ClosedSubgroupScheme.mapIso eG (t.geckTorusPositiveClosedSubgroup ht) =
       UniversalEnvelopingAlgebra.kostantTorusSubsystemClosedSubgroup
         (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
         (t.geckCoordinateLattice ht).toAddSubgroup
         (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
         (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)
-        (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl) ≤ Q := by
-    rw [← Subtype.coe_le_coe, ← Subtype.coe_le_coe, coe_geckTorusPositiveClosedSubgroup,
-      UniversalEnvelopingAlgebra.coe_kostantTorusSubsystemClosedSubgroup,
-      ClosedSubgroupScheme.coe_mk]
-    exact subobject_mk_le_iff_mk_le_mk_comp eG eB hinc P.1
-  have hfactor := existsUnique_factor_mk_comp_iff eG P
-  rw [horder, UniversalEnvelopingAlgebra.kostantTorusSubsystemClosedSubgroup_le_iff]
-  constructor
-  · rintro ⟨hroot, htorus⟩
-    constructor
-    · intro i
-      simpa only [geckRootSubgroup_def, eG, eqToIso.inv] using
-        (hfactor _ _).mp (hroot (.inl i) (Set.mem_range_self i))
-    · simpa only [geckWeightTorus_def, eG, eqToIso.inv] using (hfactor _ _).mp htorus
-  · rintro ⟨hroot, htorus⟩
-    constructor
-    · intro i hi
-      obtain ⟨j, rfl⟩ := hi
-      exact (hfactor _ _).mpr (by
-        simpa only [geckRootSubgroup_def, eG, eqToIso.inv] using hroot j)
-    · exact (hfactor _ _).mpr (by
-        simpa only [geckWeightTorus_def, eG, eqToIso.inv] using htorus)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht) (Set.range Sum.inl) := by
+    rw [geckTorusPositiveClosedSubgroup, ClosedSubgroupScheme.mapIso_mk]
+    apply Subtype.ext
+    rw [ClosedSubgroupScheme.coe_mk,
+      UniversalEnvelopingAlgebra.coe_kostantTorusSubsystemClosedSubgroup]
+    exact Subobject.mk_eq_mk_of_comm _ _ eB (by simp [eB, eG, geckTorusPositiveInclusion])
+  have hfactor {Y : Grp (Over (Spec (CommRingCat.of ℤ)))}
+      (g : Y ⟶ UniversalEnvelopingAlgebra.kostantToralGroupScheme
+        (t.lieBasis ht).rootGenerator (t.lieBasis ht).h (t.geckRepresentation ht)
+        (t.geckCoordinateLattice ht).toAddSubgroup
+        (t.geckRepresentation_kostantForm_mem_geckCoordinateLattice ht)
+        (t.isNilpotent_geckRepresentation_rootGenerator ht)
+        (t.geckCoordinateBasisFin ht) (t.geckWeightFin ht)) :
+      (∃! f : Y ⟶ (((ClosedSubgroupScheme.mapIso eG P).1 :
+          Grp (Over (Spec (CommRingCat.of ℤ))))),
+        f ≫ (ClosedSubgroupScheme.mapIso eG P).1.arrow = g) ↔
+      ∃! f : Y ⟶ (P.1 : Grp (Over (Spec (CommRingCat.of ℤ)))), f ≫ P.1.arrow = g ≫ eG.inv := by
+    rw [← Subobject.factors_iff_existsUnique, ← Subobject.factors_iff_existsUnique,
+      ClosedSubgroupScheme.coe_mapIso, ← Subobject.mapIsoToOrderIso_apply,
+      Subobject.factors_mapIsoToOrderIso_iff]
+  rw [← (ClosedSubgroupScheme.mapIso eG).le_iff_le, hmap,
+    UniversalEnvelopingAlgebra.kostantTorusSubsystemClosedSubgroup_le_iff]
+  simp only [hfactor, eG, eqToIso.inv, ← geckRootSubgroup_def, ← geckWeightTorus_def,
+    Set.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
 
 /-! ## Rigidity -/
 
