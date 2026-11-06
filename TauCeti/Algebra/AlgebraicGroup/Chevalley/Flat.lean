@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Flat
-public import TauCeti.AlgebraicGeometry.Fibers.SchematicDensity
 
 /-!
 # Flatness and generic fibres of Chevalley data
@@ -24,8 +23,7 @@ Flatness and generic-fibre density do not assert smoothness, or that the integra
 subgroup commutes with specialization to a field of positive characteristic.
 
 The torsion-freeness input is
-`TauCeti.UniversalEnvelopingAlgebra.isTorsionFree_kostantToralCoordinateHopfAlgebra`;
-no second construction of the integral group is used.
+`TauCeti.UniversalEnvelopingAlgebra.isTorsionFree_kostantToralCoordinateHopfAlgebra`.
 
 ## References
 
@@ -42,20 +40,7 @@ namespace TauCeti.DynkinType.ChevalleyDatum
 
 noncomputable section
 
--- Use the scalar module of the coordinate algebra in the flatness criterion.
-attribute [local instance high] Algebra.toModule
-
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
-
-/-- The structural morphism of the integral group scheme of a Chevalley datum is flat. -/
-instance flat_groupScheme : Flat D.groupScheme.X.hom := by
-  rw [D.groupScheme_eq_hopfSpec]
-  exact (moduleFlat_iff_flat_hopfSpec ℤ D.coordinateHopfAlgebra).mp inferInstance
-
-/-- The rational generic fibre is schematically dense in the integral group scheme. -/
-instance isSchemeTheoreticallyDominant_genericFiberι :
-    IsSchemeTheoreticallyDominant (genericFiberι ℤ ℚ D.groupScheme.X.hom) :=
-  TauCeti.isSchemeTheoreticallyDominant_genericFiberι ℤ ℚ (Int.cast_injective) _
 
 /-- The integral defining ideal sheaf in `GLₙ` is recovered from the rational generic fibre.
 Equivalently, the integral group is the schematic closure of its generic fibre in `GLₙ`. -/

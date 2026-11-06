@@ -194,14 +194,6 @@ theorem isNilpotent_representation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank)
 
 /-! ## The group scheme -/
 
-/-- The coordinate Hopf algebra of a Chevalley datum, with the torus expressed in the
-chosen basis of its actual weight lattice. -/
-noncomputable abbrev coordinateHopfAlgebra : CommHopfAlgCat ℤ :=
-  CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ D.dim)
-    (UniversalEnvelopingAlgebra.kostantToralDefiningIdeal (t.lieBasis ht).rootGenerator
-      (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight)
-
 /-- **The group scheme of a Chevalley datum**: the smallest closed subgroup scheme of `GLₙ` over
 `ℤ`, for `n` the rank of the lattice, containing the divided-power exponential root subgroups of
 the numbered Chevalley generators and the split torus acting on the weight basis through the
@@ -213,12 +205,6 @@ noncomputable abbrev groupScheme : Grp (Over (Spec (CommRingCat.of ℤ))) :=
   UniversalEnvelopingAlgebra.kostantToralGroupScheme (t.lieBasis ht).rootGenerator
     (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight
-
-/-- The existing group scheme of the datum is represented by its coordinate Hopf algebra,
-with exactly the original representation, lattice, basis and coordinate weights. -/
-theorem groupScheme_eq_hopfSpec :
-    D.groupScheme = (hopfSpec (CommRingCat.of ℤ)).obj (Opposite.op D.coordinateHopfAlgebra) :=
-  (rfl)
 
 /-- The closed immersion of the group scheme of a Chevalley datum into `GLₙ`. -/
 noncomputable def groupSchemeι : D.groupScheme ⟶ GeneralLinear.groupScheme ℤ D.dim :=
