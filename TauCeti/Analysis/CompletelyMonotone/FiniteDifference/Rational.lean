@@ -92,6 +92,91 @@ private theorem exists_seq_rat_tendsto_nhdsGT (u : ℝ) :
   exact tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hup
     (fun n => (hr₁ n).le) fun n => (hr₂ n).le
 
+/-- A function that is right-continuous at `t + h` and does not increase along rational
+increments from `t` does not increase along the real increment `h ≥ 0`. -/
+theorem le_of_forall_rat_add_le {G : ℝ → ℝ} {t h : ℝ} (hh : 0 ≤ h)
+    (hG : Tendsto G (𝓝[>] (t + h)) (𝓝 (G (t + h))))
+    (hanti : ∀ q : ℚ, 0 ≤ q → G (t + q) ≤ G t) : G (t + h) ≤ G t := by
+  obtain ⟨r, hr, hrt⟩ := exists_seq_rat_tendsto_nhdsGT h
+  have hid : Tendsto (fun n => (r n : ℝ)) atTop (𝓝 h) := hrt.mono_right nhdsWithin_le_nhds
+  have hshift : Tendsto (fun n => t + (r n : ℝ)) atTop (𝓝[>] (t + h)) := by
+    refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
+      (tendsto_const_nhds.add hid) (Eventually.of_forall fun n => ?_)
+    exact mem_Ioi.2 (by linarith [hr n])
+  refine le_of_tendsto (hG.comp hshift) (Eventually.of_forall fun n => ?_)
+  exact hanti (r n) (by exact_mod_cast (hh.trans (hr n).le))
+
+private theorem nonneg_of_mem_map_ratCast {l : List ℚ} (hl : ∀ h ∈ l, 0 ≤ h) :
+    ∀ h ∈ l.map (Rat.cast : ℚ → ℝ), (0 : ℝ) ≤ h := by
+  intro h hh
+  obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hh
+  exact_mod_cast hl q hq
+
+/-- The base point is freed first: the sign condition along a fixed list of rational steps passes
+from rational to real base points by right-continuity. -/
+private theorem sign_fwdDiffList_map_ratCast
+    (hcont : ∀ u : ℝ, 0 ≤ u → Tendsto f (𝓝[>] u) (𝓝 (f u)))
+    (hrat : ∀ l : List ℚ, (∀ h ∈ l, 0 ≤ h) → ∀ s : ℚ, 0 ≤ s →
+      0 ≤ (-1) ^ l.length * fwdDiffList (l.map (Rat.cast)) f (s : ℝ))
+    {l : List ℚ} (hl : ∀ h ∈ l, 0 ≤ h) {t : ℝ} (ht : 0 ≤ t) :
+    0 ≤ (-1) ^ l.length * fwdDiffList (l.map (Rat.cast)) f t := by
+  obtain ⟨r, hr, hrt⟩ := exists_seq_rat_tendsto_nhdsGT t
+  refine ge_of_tendsto (((tendsto_const_nhds (x := ((-1 : ℝ) ^ l.length))).mul
+    (tendsto_fwdDiffList_nhdsGT hcont (nonneg_of_mem_map_ratCast hl) ht)).comp hrt)
+    (Eventually.of_forall fun n => ?_)
+  simpa using hrat l hl (r n) (by exact_mod_cast (ht.trans (hr n).le))
+
+/-- The inductive step of the freeing of the real steps: given the sign condition for the lists
+`l.map Rat.cast ++ m` with `l` rational, it holds for `l.map Rat.cast ++ h :: m`. -/
+private theorem sign_fwdDiffList_cons_step
+    (hcont : ∀ u : ℝ, 0 ≤ u → Tendsto f (𝓝[>] u) (𝓝 (f u)))
+    {h : ℝ} (hh : 0 ≤ h) {m : List ℝ} (hmrest : ∀ k ∈ m, 0 ≤ k)
+    (ih : ∀ l : List ℚ, (∀ h ∈ l, 0 ≤ h) → ∀ t : ℝ, 0 ≤ t →
+      0 ≤ (-1) ^ (l.length + m.length) * fwdDiffList (l.map (Rat.cast) ++ m) f t)
+    {l : List ℚ} (hl : ∀ h ∈ l, 0 ≤ h) {t : ℝ} (ht : 0 ≤ t) :
+    0 ≤ (-1) ^ (l.length + (h :: m).length) * fwdDiffList (l.map (Rat.cast) ++ h :: m) f t := by
+  set Φ : ℝ → ℝ := fwdDiffList (l.map (Rat.cast) ++ m) f with hΦ
+  have hLnonneg : ∀ k ∈ l.map (Rat.cast : ℚ → ℝ) ++ m, (0 : ℝ) ≤ k := by
+    intro k hk
+    rcases List.mem_append.1 hk with hk | hk
+    · exact nonneg_of_mem_map_ratCast hl k hk
+    · exact hmrest k hk
+  have hpow : ∀ k : ℕ, ((-1 : ℝ)) ^ (k + 1) = -((-1 : ℝ) ^ k) := by
+    intro k; rw [pow_succ]; ring
+  -- The two length normalizations needed to match the exponent produced by the inductive
+  -- hypothesis against the one in the goal.
+  have hlenl : l.length + 1 + m.length = l.length + m.length + 1 := by omega
+  have hlenm : l.length + (m.length + 1) = l.length + m.length + 1 := by omega
+  -- Rational increments do not increase the signed difference, by the inductive hypothesis
+  -- applied to the list with one further rational step.
+  have hanti : ∀ q : ℚ, 0 ≤ q →
+      (-1 : ℝ) ^ (l.length + m.length) * Φ (t + (q : ℝ))
+        ≤ (-1 : ℝ) ^ (l.length + m.length) * Φ t := by
+    intro q hq
+    have hcons : ∀ k ∈ q :: l, (0 : ℚ) ≤ k := by
+      intro k hk
+      rcases List.mem_cons.1 hk with rfl | hk
+      · exact hq
+      · exact hl k hk
+    have hstep := ih (q :: l) hcons t ht
+    rw [List.map_cons, List.cons_append, List.length_cons] at hstep
+    simp only [fwdDiffList_cons, fwdDiff] at hstep
+    rw [← hΦ, hlenl, hpow] at hstep
+    nlinarith [hstep]
+  -- Right-continuity turns rational increments into arbitrary ones.
+  have hreal := le_of_forall_rat_add_le hh
+    (G := fun v => (-1 : ℝ) ^ (l.length + m.length) * Φ v)
+    (tendsto_const_nhds.mul
+      (hΦ ▸ tendsto_fwdDiffList_nhdsGT hcont hLnonneg (by linarith : (0 : ℝ) ≤ t + h)))
+    hanti
+  -- Peel the new step off the front and read the sign condition off `hreal`.
+  have hpermeq : fwdDiffList (l.map (Rat.cast) ++ h :: m) f = fwdDiffList (h :: (l.map
+      (Rat.cast) ++ m)) f := fwdDiffList_eq_of_perm List.perm_middle f
+  rw [List.length_cons, hpermeq]
+  simp only [fwdDiffList_cons, fwdDiff]
+  rw [← hΦ, hlenm, hpow]
+  nlinarith [hreal]
+
 /-- **Rational data suffice for complete monotonicity in the finite-difference sense.** A function
 that is continuous from the right at every point of `[0, ∞)` and whose mixed forward differences
 along lists of nonnegative *rational* steps alternate at every nonnegative *rational* base point is
@@ -106,82 +191,17 @@ theorem isDifferenceCompletelyMonotone_of_forall_rat
     (hrat : ∀ l : List ℚ, (∀ h ∈ l, 0 ≤ h) → ∀ s : ℚ, 0 ≤ s →
       0 ≤ (-1) ^ l.length * fwdDiffList (l.map (Rat.cast)) f (s : ℝ)) :
     IsDifferenceCompletelyMonotone f := by
-  have hmap : ∀ l : List ℚ, (∀ h ∈ l, 0 ≤ h) → ∀ h ∈ l.map (Rat.cast : ℚ → ℝ), (0 : ℝ) ≤ h := by
-    intro l hl h hh
-    obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hh
-    exact_mod_cast hl q hq
-  -- The base point is freed first: a mixed difference along a fixed list is right-continuous.
-  have step₁ : ∀ l : List ℚ, (∀ h ∈ l, 0 ≤ h) → ∀ t : ℝ, 0 ≤ t →
-      0 ≤ (-1) ^ l.length * fwdDiffList (l.map (Rat.cast)) f t := by
-    intro l hl t ht
-    obtain ⟨r, hr, hrt⟩ := exists_seq_rat_tendsto_nhdsGT t
-    refine ge_of_tendsto (((tendsto_const_nhds (x := ((-1 : ℝ) ^ l.length))).mul
-      (tendsto_fwdDiffList_nhdsGT hcont (hmap l hl) ht)).comp hrt)
-      (Eventually.of_forall fun n => ?_)
-    simpa using hrat l hl (r n) (by exact_mod_cast (ht.trans (hr n).le))
   -- The steps are freed one at a time.
-  have step₂ : ∀ m : List ℝ, (∀ h ∈ m, 0 ≤ h) → ∀ l : List ℚ, (∀ h ∈ l, 0 ≤ h) → ∀ t : ℝ, 0 ≤ t →
+  have step : ∀ m : List ℝ, (∀ h ∈ m, 0 ≤ h) → ∀ l : List ℚ, (∀ h ∈ l, 0 ≤ h) → ∀ t : ℝ, 0 ≤ t →
       0 ≤ (-1) ^ (l.length + m.length) * fwdDiffList (l.map (Rat.cast) ++ m) f t := by
     intro m
     induction m with
-    | nil => intro _ l hl t ht; simpa using step₁ l hl t ht
+    | nil => intro _ l hl t ht; simpa using sign_fwdDiffList_map_ratCast hcont hrat hl ht
     | cons h m ih =>
         intro hm l hl t ht
-        have hh : 0 ≤ h := hm h (by simp)
         have hmrest : ∀ k ∈ m, 0 ≤ k := fun k hk => hm k (List.mem_cons_of_mem h hk)
-        set Φ : ℝ → ℝ := fwdDiffList (l.map (Rat.cast) ++ m) f with hΦ
-        have hLnonneg : ∀ k ∈ l.map (Rat.cast : ℚ → ℝ) ++ m, (0 : ℝ) ≤ k := by
-          intro k hk
-          rcases List.mem_append.1 hk with hk | hk
-          · exact hmap l hl k hk
-          · exact hmrest k hk
-        have hpow : ∀ k : ℕ, ((-1 : ℝ)) ^ (k + 1) = -((-1 : ℝ) ^ k) := by
-          intro k; rw [pow_succ]; ring
-        -- The two length normalizations needed to match the exponent produced by the inductive
-        -- hypothesis against the one in the goal.
-        have hlenl : l.length + 1 + m.length = l.length + m.length + 1 := by omega
-        have hlenm : l.length + (m.length + 1) = l.length + m.length + 1 := by omega
-        -- Rational increments do not increase the signed difference, by the inductive hypothesis
-        -- applied to the list with one further rational step.
-        have hanti : ∀ u : ℝ, 0 ≤ u → ∀ q : ℚ, 0 ≤ q →
-            (-1 : ℝ) ^ (l.length + m.length) * Φ (u + (q : ℝ))
-              ≤ (-1 : ℝ) ^ (l.length + m.length) * Φ u := by
-          intro u hu q hq
-          have hcons : ∀ k ∈ q :: l, (0 : ℚ) ≤ k := by
-            intro k hk
-            rcases List.mem_cons.1 hk with rfl | hk
-            · exact hq
-            · exact hl k hk
-          have hstep := ih hmrest (q :: l) hcons u hu
-          rw [List.map_cons, List.cons_append, List.length_cons] at hstep
-          simp only [fwdDiffList_cons, fwdDiff] at hstep
-          rw [← hΦ, hlenl, hpow] at hstep
-          nlinarith [hstep]
-        -- Right-continuity turns rational increments into arbitrary ones.
-        have hreal : (-1 : ℝ) ^ (l.length + m.length) * Φ (t + h)
-            ≤ (-1 : ℝ) ^ (l.length + m.length) * Φ t := by
-          obtain ⟨r, hr, hrt⟩ := exists_seq_rat_tendsto_nhdsGT h
-          have hid : Tendsto (fun n => (r n : ℝ)) atTop (𝓝 h) := hrt.mono_right nhdsWithin_le_nhds
-          have hshift : Tendsto (fun n => t + (r n : ℝ)) atTop (𝓝[>] (t + h)) := by
-            refine tendsto_nhdsWithin_of_tendsto_nhds_of_eventually_within _
-              (tendsto_const_nhds.add hid) (Eventually.of_forall fun n => ?_)
-            exact mem_Ioi.2 (by linarith [hr n])
-          have hΦcont : Tendsto (fun v => (-1 : ℝ) ^ (l.length + m.length) * Φ v)
-              (𝓝[>] (t + h)) (𝓝 ((-1 : ℝ) ^ (l.length + m.length) * Φ (t + h))) :=
-            tendsto_const_nhds.mul
-              (hΦ ▸ tendsto_fwdDiffList_nhdsGT hcont hLnonneg (by linarith : (0 : ℝ) ≤ t + h))
-          refine le_of_tendsto (hΦcont.comp hshift) (Eventually.of_forall fun n => ?_)
-          exact hanti t ht (r n) (by exact_mod_cast (hh.trans (hr n).le))
-        -- Peel the new step off the front and read the sign condition off `hreal`.
-        have hpermeq : fwdDiffList (l.map (Rat.cast) ++ h :: m) f = fwdDiffList (h :: (l.map
-            (Rat.cast) ++ m)) f := fwdDiffList_eq_of_perm List.perm_middle f
-        rw [List.length_cons, hpermeq]
-        simp only [fwdDiffList_cons, fwdDiff]
-        rw [← hΦ, hlenm, hpow]
-        nlinarith [hreal]
+        exact sign_fwdDiffList_cons_step hcont (hm h (by simp)) hmrest (ih hmrest) hl ht
   refine isDifferenceCompletelyMonotone_iff.2 fun m hm t ht => ?_
-  simpa using step₂ m hm [] (by simp) t ht
+  simpa using step m hm [] (by simp) t ht
 
 end TauCeti
-
-end
