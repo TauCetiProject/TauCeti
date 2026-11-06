@@ -29,6 +29,8 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
 * `Ideal.smul_top_eq_top_of_pi`: an ideal that expands the whole of a product of modules expands
   the whole of every factor.
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
+* `Ideal.image_fintypeLinearCombination_pi`: linear combinations with coefficients in an ideal
+  give precisely the ideal multiple of the span.
 * `Ideal.smul_top_eq_top_of_isIdempotentElem`: an idempotent ideal `I` satisfies `I • I = I`.
 * `Ideal.span_range_fin_two_eq_top_iff`: a pair generates the unit ideal exactly when its entries
   are coprime.
@@ -172,6 +174,24 @@ theorem smul_top_eq_top_of_pi (I : Ideal R) (h : I • (⊤ : Submodule R (∀ i
     LinearMap.range_eq_top.mpr (Function.surjective_eval i)] at this
 
 end Pi
+
+/-- The linear-combination map carries the cube of a two-sided ideal onto the ideal multiple
+of the submodule spanned by the family. -/
+theorem image_fintypeLinearCombination_pi {R M ι : Type*} [Semiring R] [AddCommMonoid M]
+    [Module R M] [Fintype ι] (J : Ideal R) [J.IsTwoSided] (v : ι → M) :
+    Fintype.linearCombination R v '' Set.univ.pi (fun _ ↦ (J : Set R)) =
+      ((J • Submodule.span R (Set.range v) : Submodule R M) : Set M) := by
+  ext x
+  constructor
+  · rintro ⟨c, hc, rfl⟩
+    rw [Fintype.linearCombination_apply]
+    exact Submodule.sum_mem _ fun i _ ↦
+      Submodule.smul_mem_smul (hc i trivial) (Submodule.subset_span ⟨i, rfl⟩)
+  · intro hx
+    obtain ⟨c, hc, rfl⟩ := (Submodule.mem_ideal_smul_span_iff_exists_sum J v x).mp hx
+    refine ⟨c, fun i _ ↦ hc i, ?_⟩
+    rw [Fintype.linearCombination_apply,
+      Finsupp.sum_fintype c (fun i a ↦ a • v i) fun _ ↦ zero_smul _ _]
 
 end Ideal
 

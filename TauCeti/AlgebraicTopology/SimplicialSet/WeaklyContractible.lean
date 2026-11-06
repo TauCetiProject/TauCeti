@@ -21,9 +21,9 @@ public import TauCeti.CategoryTheory.Monoidal.Closed.Cartesian
 
 A simplicial set `K` is *weakly contractible* (`SSet.IsWeaklyContractible`) when, for every Kan
 complex `Z`, the inclusion `SSet.constMaps K Z : Z ⟶ Fun(K, Z)` of the constant maps into the
-internal hom is a simplicial homotopy equivalence. This is the mapping-space formulation used to
-define final maps of quasicategories: a map `K ⟶ L` is final when its fibre products with the
-coslices of `L` are weakly contractible.
+internal hom is a simplicial homotopy equivalence. It appears in Joyal's Theorem A (HTT Theorem
+4.1.3.1, Kerodon Theorem 7.2.3.1): a map `K ⟶ L` to a quasicategory is right cofinal exactly when
+its fibre products with the coslices of `L` are weakly contractible.
 
 A simplicial set with a homotopy from a constant map to its identity, such as a standard simplex
 (`SSet.stdSimplex.contraction`), is weakly contractible: evaluation at the vertex is a homotopy
@@ -56,6 +56,8 @@ of the Kan–Quillen model structure and is not proved here.
 * `SSet.IsWeaklyContractible.exists_homotopy_const`: maps to Kan complexes are homotopic to
   constant maps.
 * `SSet.IsWeaklyContractible.isConnected`: weakly contractible simplicial sets are connected.
+* `SSet.isWeaklyContractible_const_iff`: the discrete simplicial set on `ι` is weakly
+  contractible exactly when `ι` has a unique element.
 * `SSet.not_isWeaklyContractible_boundary_two`: the connected simplicial set `∂Δ[2]` is not
   weakly contractible.
 
@@ -247,6 +249,18 @@ instance isConnected : K.IsConnected where
     simpa [mapπ₀_mk, toπ₀_app_zero] using this.symm
 
 end IsWeaklyContractible
+
+/-- The discrete simplicial set on a type `ι` is weakly contractible exactly when `ι` has a unique
+element: its connected components are the elements of `ι`. -/
+theorem isWeaklyContractible_const_iff (ι : Type u) :
+    IsWeaklyContractible ((Functor.const SimplexCategoryᵒᵖ).obj ι) ↔ Nonempty (Unique ι) := by
+  rw [unique_iff_subsingleton_and_nonempty]
+  refine ⟨fun _ ↦ ⟨(constπ₀Equiv ι).symm.injective.subsingleton,
+    IsWeaklyContractible.nonempty (K := (Functor.const SimplexCategoryᵒᵖ).obj ι)⟩,
+    fun ⟨_, ⟨i⟩⟩ ↦ IsWeaklyContractible.of_homotopy (x := i) (.ofEq ?_)⟩
+  -- Every simplicial set map to a discrete simplicial set on a subsingleton is the identity.
+  ext n s
+  exact Subsingleton.elim (α := ι) _ _
 
 section Boundary
 
