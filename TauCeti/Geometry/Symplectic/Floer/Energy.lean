@@ -80,6 +80,10 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   `SymplecticForm.hamiltonianCurvature_continuation`: the curvature of perturbations without `ds`
   component, and `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, its local form
   along a line near which the perturbation is cylindrical.
+* `SymplecticForm.perturbedFDeriv_add_const`, `SymplecticForm.floerEnergyDensity_add_const`,
+  `SymplecticForm.hamiltonianCurvature_add_const`: adding a target-independent one-form
+  `k = k_s ds + k_t dt` to `K` changes neither the perturbed derivative nor the energy density,
+  and adds `∂_s k_t - ∂_t k_s` to the curvature (`SymplecticForm.hamiltonianCurvature_const`).
 * `SymplecticForm.hamiltonianCurvature_congr_of_eventuallyEq`,
   `SymplecticForm.hamiltonianCurvature_comp_add_right`: the curvature is local in the domain and
   commutes with domain translations, and likewise for the perturbed derivative
@@ -469,6 +473,81 @@ theorem floerEnergyDensity_add_hamiltonianCurvature_eq (ω : SymplecticForm V)
     ω.neg_eq (fderiv ℝ u z stdComplexLineImag) (fderiv ℝ u z stdComplexLineReal)
 
 end Density
+
+section TargetIndependent
+
+/-! ### Target-independent perturbations
+
+Adding to `K` a one-form `k = k_s ds + k_t dt` whose components are functions of the domain point
+alone changes no Hamiltonian vector field. The perturbed derivative, and with it the Floer equation
+and the energy density, are unchanged, while the curvature changes by the exterior derivative
+`∂_s k_t - ∂_t k_s` of `k`. Normalizing the Hamiltonians on the ends by functions of time is the
+main example. -/
+
+/-- The curvature of a target-independent perturbation `k = k_s ds + k_t dt` is the exterior
+derivative `∂_s k_t - ∂_t k_s`; the Poisson bracket term vanishes. -/
+@[simp]
+theorem hamiltonianCurvature_const (ω : SymplecticForm V) (ks kt : ℝ × ℝ → ℝ) (z : ℝ × ℝ)
+    (x : V) :
+    ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x =
+      fderiv ℝ kt z stdComplexLineReal - fderiv ℝ ks z stdComplexLineImag := by
+  simp [hamiltonianCurvature_def]
+
+/-- A target-independent perturbation has no Hamiltonian vector fields, so its perturbed
+derivative is the derivative of the map. -/
+@[simp]
+theorem perturbedFDeriv_const (ω : SymplecticForm V) (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → V) :
+    ω.perturbedFDeriv (fun w _ ↦ ks w) (fun w _ ↦ kt w) u = fderiv ℝ u := by
+  funext z
+  simp [perturbedFDeriv]
+
+/-- Adding a target-independent one-form to the perturbation adds its exterior derivative to the
+curvature: `R_{K + k} = R_K + ∂_s k_t - ∂_t k_s`, at a point where the components are
+differentiable in the domain. -/
+theorem hamiltonianCurvature_add_const (ω : SymplecticForm V) {Ks Kt : ℝ × ℝ → V → ℝ}
+    {ks kt : ℝ × ℝ → ℝ} {z : ℝ × ℝ} {x : V} (hKs : DifferentiableAt ℝ (fun w ↦ Ks w x) z)
+    (hKt : DifferentiableAt ℝ (fun w ↦ Kt w x) z) (hks : DifferentiableAt ℝ ks z)
+    (hkt : DifferentiableAt ℝ kt z) :
+    ω.hamiltonianCurvature (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) z x =
+      ω.hamiltonianCurvature Ks Kt z x +
+        ω.hamiltonianCurvature (fun w _ ↦ ks w) (fun w _ ↦ kt w) z x := by
+  rw [hamiltonianCurvature_const, hamiltonianCurvature_def, hamiltonianCurvature_def,
+    fderiv_fun_add hKt hkt, fderiv_fun_add hKs hks]
+  simp only [add_apply, poissonBracket_add_const_left,
+    poissonBracket_add_const_right]
+  ring
+
+/-- Adding a target-independent one-form to the perturbation does not change the Hamiltonian
+one-form `X_K`. -/
+@[simp]
+theorem hamiltonianOneForm_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) :
+    ω.hamiltonianOneForm (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) =
+      ω.hamiltonianOneForm Ks Kt := by
+  funext z x
+  simp only [hamiltonianOneForm, hamiltonianVectorField_add_const]
+
+/-- Adding a target-independent one-form to the perturbation does not change the perturbed
+derivative, so a map solves the Floer equation for `K + k` exactly when it solves it for `K`. -/
+@[simp]
+theorem perturbedFDeriv_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → V) :
+    ω.perturbedFDeriv (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.perturbedFDeriv Ks Kt u := by
+  funext z
+  simp only [perturbedFDeriv, hamiltonianVectorField_add_const]
+
+/-- Adding a target-independent one-form to the perturbation does not change the Floer energy
+density. -/
+@[simp]
+theorem floerEnergyDensity_add_const (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (ks kt : ℝ × ℝ → ℝ) (u : ℝ × ℝ → V) :
+    ω.floerEnergyDensity (fun w y ↦ Ks w y + ks w) (fun w y ↦ Kt w y + kt w) u =
+      ω.floerEnergyDensity Ks Kt u := by
+  funext z
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_add_const]
+
+end TargetIndependent
 
 section Integral
 

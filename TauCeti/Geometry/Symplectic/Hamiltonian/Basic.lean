@@ -160,6 +160,14 @@ theorem hamiltonianVectorField_const (ω : SymplecticForm V) (c : ℝ) :
   rw [Pi.zero_apply, eq_comm, eq_hamiltonianVectorField_iff]
   simp
 
+/-- Adding a constant to a Hamiltonian does not change its Hamiltonian vector field. No
+differentiability is needed: `H` and `H + c` are differentiable at the same points. -/
+@[simp]
+theorem hamiltonianVectorField_add_const (ω : SymplecticForm V) (H : V → ℝ) (c : ℝ) :
+    ω.hamiltonianVectorField (fun x ↦ H x + c) = ω.hamiltonianVectorField H := by
+  funext x
+  rw [hamiltonianVectorField_def, hamiltonianVectorField_def, fderiv_add_const]
+
 /-- The Hamiltonian vector field is linear in Hamiltonians differentiable at the point:
 `X_{aF + bG} = a X_F + b X_G`. -/
 theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {F G : V → ℝ}
@@ -295,6 +303,18 @@ theorem poissonBracket_const_left (ω : SymplecticForm V) (c : ℝ) (G : V → �
 @[simp]
 theorem poissonBracket_const_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (x : V) :
     ω.poissonBracket F (fun _ ↦ c) x = 0 := by
+  simp [poissonBracket_def]
+
+/-- Adding a constant to the first Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_left (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
+    (x : V) : ω.poissonBracket (fun y ↦ F y + c) G x = ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- Adding a constant to the second Hamiltonian does not change the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_add_const_right (ω : SymplecticForm V) (F G : V → ℝ) (c : ℝ) (x : V) :
+    ω.poissonBracket F (fun y ↦ G y + c) x = ω.poissonBracket F G x := by
   simp [poissonBracket_def]
 
 /-- The Poisson bracket is homogeneous in its first argument: `{c F, G} = c {F, G}`. -/
