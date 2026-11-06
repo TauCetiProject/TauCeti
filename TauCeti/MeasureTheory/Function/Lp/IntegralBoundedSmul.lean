@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.MeasureTheory.Function.Lp.Norm
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Integral.Bochner.Set
 
@@ -33,14 +34,6 @@ open scoped ENNReal Topology
 
 variable {α F : Type*} [MeasurableSpace α] {μ : Measure α} [NormedAddCommGroup F]
   [NormedSpace ℝ F]
-
-/-- For `1 ≤ p`, the Hölder exponent `1 - 1 / p` is nonnegative (with `p = ∞` giving `1`). -/
-private theorem zero_le_one_sub_one_div_toReal {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / p.toReal := by
-  rcases eq_or_ne p ∞ with rfl | hp_top
-  · simp
-  · have h1p : (1 : ℝ) ≤ p.toReal := by
-      simpa using ENNReal.toReal_mono hp_top hp
-    exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
 
 /-- If `k` is a.e. bounded by `B` on a set `W` of finite measure, and `h ∈ Lᵖ`, `1 ≤ p`,
 vanishes a.e. off `W`, then `k • h` is integrable and, by Hölder's inequality on `W`,
