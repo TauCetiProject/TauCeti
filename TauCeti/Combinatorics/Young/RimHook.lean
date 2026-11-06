@@ -541,7 +541,7 @@ end IsRimHook
 whose beta-number is below the new value `v`: the rows `a < i ≤ j` are shifted down by one, the row
 `a` receives the new bead, and the rows `i < a` and `j < i` are unchanged.  This sequence is
 antitone, and it exceeds the old row lengths exactly on `[a, j]`. -/
-private theorem exists_antitone_rowLen_moveBead {v : ℕ} (hjr : j < r) (haj : a ≤ j)
+private theorem exists_antitone_rowLen_moveBead {v : ℕ} (haj : a ≤ j)
     (hav : ν.rowLen a + (r - 1 - a) < v) (hbefore : ∀ i < a, v < ν.rowLen i + (r - 1 - i)) :
     ∃ g : ℕ → ℕ, Antitone g ∧ g a = v - (r - 1 - a) ∧
       (∀ i, a < i → i ≤ j → g i = ν.rowLen (i - 1) + 1) ∧ (∀ i, j < i → g i = ν.rowLen i) ∧
@@ -616,7 +616,7 @@ theorem exists_isRimHook_rimHookRows_eq_Icc {s : ℕ} (hν : ν.colLen 0 ≤ r) 
     lt_of_le_of_ne (Nat.not_lt.mp (Nat.find_min hex hi)) fun hi' => hfree i (by omega) hi'.symm
   simp only [betaNumber_def] at hav hbefore
   obtain ⟨g, hgmono, hg_a, hg_mid, hg_gt, hrows⟩ :=
-    exists_antitone_rowLen_moveBead (ν := ν) hjr haj hav hbefore
+    exists_antitone_rowLen_moveBead (ν := ν) haj hav hbefore
   set μ := ofRowLensFin (fun i : Fin r => g i) fun _ _ h => hgmono h
   have hμ : ∀ i, μ.rowLen i = g i := fun i => by
     by_cases hi : i < r
