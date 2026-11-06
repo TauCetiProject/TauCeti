@@ -385,7 +385,7 @@ theorem IsPermutationEquivalent.weightDistribution_eq (h : IsPermutationEquivale
   rw [Submodule.map_coe]
   exact (weightDistribution_image (C : Set (ι → R))
     (LinearEquiv.funCongrLeft R R e.symm).toEquiv
-    (fun x ↦ Equiv.hammingNorm_funLeft e.symm x) w).symm
+    (fun x ↦ Equiv.hammingNorm_funLeft (R := R) e.symm x) w).symm
 
 /-- Permutation-equivalent codes have the same weight enumerator. -/
 theorem IsPermutationEquivalent.weightEnumerator_eq (h : IsPermutationEquivalent C D) :
