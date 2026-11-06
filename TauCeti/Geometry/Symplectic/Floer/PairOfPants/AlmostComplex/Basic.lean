@@ -149,10 +149,9 @@ theorem cayley_pairOfPantsAlmostComplex_cylindricalEndLift_of_pos (h₀ : ω.Com
       smoothTransition (q.endSign * z.re - 1) • J₀.cayley (J q z.im x) := by
   rw [cayley_pairOfPantsAlmostComplex, Finset.sum_eq_single q]
   · obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
-    have hre : (q.endCoord (q.cylindricalEndLift z)).re = z.re := by simp [hk]
     have him : (q.endCoord (q.cylindricalEndLift z)).im = z.im + k := by simp [hk]
     have hp : J q (z.im + k) = J q z.im := by simpa using hJp.int_mul k z.im
-    rw [hre, him, hp]
+    rw [re_endCoord_cylindricalEndLift, him, hp]
   · intro r _ hr
     simp [smoothTransition_endCoord_cylindricalEndLift_eq_zero hr hz]
   · simp

@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # The pair of pants capped at `1` as a Floer cylinder
@@ -107,26 +108,42 @@ private theorem plumbedPerturbation_single_inf_one_of_re_endCoord_nonpos (hL : 2
     plumbedPerturbation (Pi.single inf (Hb one)) Hb one L w x = pairOfPantsPerturbation Hb w x :=
   plumbedPerturbation_of_re_endCoord_le (by simp) (by simp) (by linarith) x
 
+/-- On the part `±s ≥ 1` of an end other than `1`, the longitudinal coordinate of the end at `1` is
+not positive. -/
+private theorem re_endCoord_one_cylindricalEndLift_nonpos {q : Puncture} (hq : q ≠ one) {w : ℂ}
+    (hw : 1 ≤ q.endSign * w.re) : (one.endCoord (q.cylindricalEndLift w)).re ≤ 0 := by
+  simpa using endSign_mul_re_endCoord_nonpos hq (w := q.cylindricalEndLift w)
+    (by rw [re_endCoord_cylindricalEndLift]; linarith)
+
+/-- The end lift of the end at `0` maps the cylinder into `ℂ ∖ {0}`: every image point is the
+capped puncture `1` or a point of the pair of pants. -/
+private theorem cylindricalEndLift_zero_eq_endCenter_one_or (w : ℂ) :
+    zero.cylindricalEndLift w = one.endCenter ∨
+      zero.cylindricalEndLift w ≠ 0 ∧ zero.cylindricalEndLift w ≠ 1 := by
+  have h₀ := zero.cylindricalEndLift_sub_endCenter_ne_zero w
+  rw [endCenter_zero, sub_zero] at h₀
+  rcases eq_or_ne (zero.cylindricalEndLift w) 1 with h | h
+  · exact Or.inl (by simpa using h)
+  · exact Or.inr ⟨h₀, h⟩
+
 /-- **The input end.** For `s ≥ 2`, the capped datum on the cylinder is `Hb 0 (t) dt`. -/
 theorem cappedCylinderComponent_of_two_le (hHb : Periodic (Hb zero) 1) (hL : 2 ≤ L)
     {z : ℝ × ℝ} (hz : 2 ≤ z.1) (v : ℂ) (x : M) :
     cappedCylinderComponent Hb L v z x = v.im * Hb zero z.2 x := by
   set w := Complex.equivRealProdCLM.symm z
   have hw : w.re = z.1 := by simp [w, Complex.equivRealProdCLM_symm_apply]
-  have hone : (one.endCoord (zero.cylindricalEndLift w)).re ≤ 0 := by
-    have h := endSign_mul_re_endCoord_nonpos (q := zero) (r := one) (by simp)
-      (w := zero.cylindricalEndLift w) (by rw [re_endCoord_cylindricalEndLift, hw]; simp; linarith)
-    simpa using h
+  have hone : (one.endCoord (zero.cylindricalEndLift w)).re ≤ 0 :=
+    re_endCoord_one_cylindricalEndLift_nonpos (by simp)
+      (by rw [endSign_zero, one_mul, hw]; linarith)
   rw [cappedCylinderComponent_def, plumbedPerturbation_single_inf_one_of_re_endCoord_nonpos hL hone,
     pairOfPantsPerturbation_cylindricalEndLift hHb (by simpa [hw] using hz)]
   simp [w, Complex.equivRealProdCLM_symm_apply]
 
-/-- **The output end.** For `s ≤ -3`, the capped datum on the cylinder is `Hb ∞ (t) dt`. In the
-end coordinate of `∞`, the point `z` of the cylinder is `z + log 4 / (2π)`, and
-`log 4 / (2π) < 1`. -/
+/-- **The output end.** For `s ≤ -3`, the capped datum on the cylinder is `Hb ∞ (t) dt`. -/
 theorem cappedCylinderComponent_of_le_neg_three (hHb : Periodic (Hb inf) 1) (hL : 2 ≤ L)
     {z : ℝ × ℝ} (hz : z.1 ≤ -3) (v : ℂ) (x : M) :
     cappedCylinderComponent Hb L v z x = v.im * Hb inf z.2 x := by
+  -- In the end coordinate of `∞`, the point `z` of the cylinder is `z + c`, and `c < 1`.
   set c : ℝ := Real.log 4 / (2 * π)
   set w := Complex.equivRealProdCLM.symm z + (c : ℂ)
   have hc : c < 1 := by
@@ -139,13 +156,11 @@ theorem cappedCylinderComponent_of_le_neg_three (hHb : Periodic (Hb inf) 1) (hL 
   have hderiv : deriv zero.cylindricalEndLift (Complex.equivRealProdCLM.symm z) =
       deriv inf.cylindricalEndLift w := by
     rw [hlift, deriv_comp_add_const]
-  have hone : (one.endCoord (inf.cylindricalEndLift w)).re ≤ 0 := by
-    have h := endSign_mul_re_endCoord_nonpos (q := inf) (r := one) (by simp)
-      (w := inf.cylindricalEndLift w) (by rw [re_endCoord_cylindricalEndLift, hw]; simp; linarith)
-    simpa using h
+  have hone : (one.endCoord (inf.cylindricalEndLift w)).re ≤ 0 :=
+    re_endCoord_one_cylindricalEndLift_nonpos (by simp) (by rw [endSign_inf, hw]; linarith)
   rw [cappedCylinderComponent_def, hderiv, congrFun hlift,
     plumbedPerturbation_single_inf_one_of_re_endCoord_nonpos hL hone,
-    pairOfPantsPerturbation_cylindricalEndLift hHb (by simp [hw]; linarith)]
+    pairOfPantsPerturbation_cylindricalEndLift hHb (by rw [endSign_inf, hw]; linarith)]
   simp [w, Complex.equivRealProdCLM_symm_apply]
 
 /-- **Periodicity.** The capped datum on the cylinder has period one in the angular coordinate
@@ -182,8 +197,7 @@ variable {E G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSp
 
 /-- **The capped datum on the cylinder is smooth.** For period-one Hamiltonians `Hb` of class
 `C^n` on `ℝ × M` and neck length `L > 4`, every component of the capped datum on the cylinder is
-`C^n` jointly in the cylinder point and the target point. The end lift `φ_0` maps the cylinder
-into `ℂ ∖ {0}`, where the capped datum is smooth. -/
+`C^n` jointly in the cylinder point and the target point. -/
 theorem contMDiff_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Periodic (Hb r) 1)
     (hHbs : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (Hb r))) (hL : 4 < L) (v : ℂ) :
     ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry (cappedCylinderComponent Hb L v)) := by
@@ -196,17 +210,9 @@ theorem contMDiff_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Periodic (H
       (fun z : ℝ × ℝ ↦ deriv zero.cylindricalEndLift (Complex.equivRealProdCLM.symm z) * v) := by
     simp only [deriv_cylindricalEndLift]
     exact ((contDiff_const.mul (hlift.sub contDiff_const)).neg).mul contDiff_const
-  -- The end lift maps `z` to a point of `ℂ ∖ {0}`: the capped puncture `1`, or a point of the pair
-  -- of pants.
-  have hw : zero.cylindricalEndLift (Complex.equivRealProdCLM.symm z) = one.endCenter ∨
-      zero.cylindricalEndLift (Complex.equivRealProdCLM.symm z) ≠ 0 ∧
-        zero.cylindricalEndLift (Complex.equivRealProdCLM.symm z) ≠ 1 := by
-    have h₀ := zero.cylindricalEndLift_sub_endCenter_ne_zero (Complex.equivRealProdCLM.symm z)
-    rw [endCenter_zero, sub_zero] at h₀
-    rcases eq_or_ne (zero.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) 1 with h | h
-    · exact Or.inl (by simpa using h)
-    · exact Or.inr ⟨h₀, h⟩
-  have hK := contMDiffAt_plumbedPerturbation_single_inf (q := one) (by simp) hHb hHbs hL hw x
+  -- The end lift maps the cylinder into `ℂ ∖ {0}`, where the capped datum is smooth.
+  have hK := contMDiffAt_plumbedPerturbation_single_inf (q := one) (by simp) hHb hHbs hL
+    (cylindricalEndLift_zero_eq_endCenter_one_or (Complex.equivRealProdCLM.symm z)) x
   have hg : ContMDiffAt (𝓘(ℝ, ℝ × ℝ).prod I) (𝓘(ℝ, ℂ).prod I) n
       (fun p : (ℝ × ℝ) × M ↦ (zero.cylindricalEndLift (Complex.equivRealProdCLM.symm p.1), p.2))
       (z, x) :=
@@ -224,40 +230,9 @@ Hamiltonians `Hb` of class `C^n` on `ℝ × V` and neck length `L > 4`, every co
 datum on the cylinder is `C^n` jointly in the cylinder point and the target point. -/
 theorem contDiff_uncurry_cappedCylinderComponent {n : ℕ∞} (hHb : ∀ r, Periodic (Hb r) 1)
     (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r))) (hL : 4 < L) (v : ℂ) :
-    ContDiff ℝ n (uncurry (cappedCylinderComponent Hb L v)) := by
-  have hHbs' (r : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (Hb r)) := by
-    have h := (hHbs r).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h : ContMDiff 𝓘(ℝ, (ℝ × ℝ) × V) 𝓘(ℝ, ℝ) n (uncurry (cappedCylinderComponent Hb L v)) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact contMDiff_cappedCylinderComponent hHb hHbs' hL v
-  exact h.contDiff
-
-/-- In real coordinates, the components of the capped datum are `C^n` at every point whose domain
-point is not `0`. -/
-private theorem contDiffAt_uncurry_plumbedPerturbation_single_inf_one {n : ℕ∞}
-    (hHb : ∀ r, Periodic (Hb r) 1) (hHbs : ∀ r, ContDiff ℝ n (uncurry (Hb r))) (hL : 4 < L)
-    {y : ℝ × ℝ} (hy : Complex.equivRealProdCLM.symm y ≠ 0) (x : V) (v : ℂ) :
-    ContDiffAt ℝ n (uncurry fun y x ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
-      (Complex.equivRealProdCLM.symm y) x v) (y, x) := by
-  have hHbs' (r : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n (uncurry (Hb r)) := by
-    have h := (hHbs r).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have hw : Complex.equivRealProdCLM.symm y = one.endCenter ∨
-      Complex.equivRealProdCLM.symm y ≠ 0 ∧ Complex.equivRealProdCLM.symm y ≠ 1 := by
-    rcases eq_or_ne (Complex.equivRealProdCLM.symm y) 1 with h | h
-    · exact Or.inl (by simpa using h)
-    · exact Or.inr ⟨hy, h⟩
-  have hK : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
-      (fun p : ℂ × V ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L p.1 p.2)
-      (Complex.equivRealProdCLM.symm y, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact contMDiffAt_plumbedPerturbation_single_inf (q := one) (by simp) hHb hHbs' hL hw x
-  exact (hK.contDiffAt.comp (f := fun p : (ℝ × ℝ) × V ↦ (Complex.equivRealProdCLM.symm p.1, p.2))
-    (y, x) ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
-      contDiff_snd).contDiffAt).clm_apply contDiffAt_const
+    ContDiff ℝ n (uncurry (cappedCylinderComponent Hb L v)) :=
+  (contMDiff_prod_modelWithCornersSelf_iff.1 (contMDiff_cappedCylinderComponent hHb
+    (fun r ↦ contMDiff_prod_modelWithCornersSelf_iff.2 (hHbs r).contMDiff) hL v)).contDiff
 
 end VectorSpace
 
@@ -288,11 +263,10 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedCylinderComponent_le (ω : Sy
     simp only [u', comp_apply]
     rw [hinj.leftInvOn_invFunOn hw]
   -- The end chart lands in `ℂ ∖ {0}`, where the capped datum is `C¹`.
-  have hne (w : ℝ × ℝ) : Complex.equivRealProdCLM.symm (endChart zero w) ≠ 0 := by
-    have h₀ := zero.cylindricalEndLift_sub_endCenter_ne_zero (Complex.equivRealProdCLM.symm w)
-    rwa [endCenter_zero, sub_zero, ← equivRealProdCLM_symm_endChart] at h₀
-  have hdiff (v : ℂ) (w : ℝ × ℝ) := (contDiffAt_uncurry_plumbedPerturbation_single_inf_one hHb hHbs
-    hL (hne w) (u' (endChart zero w)) v).differentiableAt one_ne_zero
+  have hdiff (v : ℂ) (w : ℝ × ℝ) := (contDiffAt_uncurry_plumbedPerturbation_single_inf
+    (q := one) (y := endChart zero w) (by simp) hHb hHbs hL
+    (by rw [equivRealProdCLM_symm_endChart]; exact cylindricalEndLift_zero_eq_endCenter_one_or _)
+    (u' (endChart zero w)) v).differentiableAt one_ne_zero
   -- Differentiability in the domain point and in the target point separately.
   have hdom (v : ℂ) (w : ℝ × ℝ) : DifferentiableAt ℝ
       (fun z ↦ plumbedPerturbation (Pi.single inf (Hb one)) Hb one L
