@@ -62,28 +62,6 @@ namespace TauCeti.Huber
 
 variable {C : Type*} [CommRing C]
 
-/-- A sum of elements of `ϖᵐ A₀` lies in `ϖᵐ A₀`, for `ϖ` a unit: the set is closed, being the
-image of the open, hence closed, subring `A₀` under multiplication by a unit. -/
-private theorem mem_pow_smul_of_hasSum [TopologicalSpace C] [IsTopologicalRing C]
-    (P : PairOfDefinition C) {ϖ : C} (hϖ : IsUnit ϖ) {ι : Type*} {f : ι → C} {s : C}
-    (hs : HasSum f s) {m : ℕ} (hf : ∀ i, f i ∈ ϖ ^ m • (P.ringOfDefinition : Set C)) :
-    s ∈ ϖ ^ m • (P.ringOfDefinition : Set C) := by
-  obtain ⟨u, hu⟩ := hϖ.pow m
-  have hclosed : IsClosed (P.ringOfDefinition : Set C) :=
-    P.ringOfDefinition.toAddSubgroup.isClosed_of_isOpen P.isOpen_ringOfDefinition
-  simp only [Set.mem_smul_set, SetLike.mem_coe] at hf ⊢
-  refine ⟨↑u⁻¹ * s, (hs.mul_left _).mem (s := P.ringOfDefinition) hclosed fun i ↦ ?_, ?_⟩
-  · obtain ⟨r, hr, hfi⟩ := hf i
-    rwa [← hfi, ← hu, smul_eq_mul, Units.inv_mul_cancel_left]
-  · rw [← hu, smul_eq_mul, Units.mul_inv_cancel_left]
-
-/-- Membership of an element of `A₀` in `ϖᵐ A₀` is divisibility by `ϖᵐ` in `A₀`. -/
-private theorem dvd_of_coe_mem_pow_smul [TopologicalSpace C] (P : PairOfDefinition C)
-    {ϖ y : P.ringOfDefinition} {m : ℕ}
-    (h : (y : C) ∈ (ϖ : C) ^ m • (P.ringOfDefinition : Set C)) : ϖ ^ m ∣ y := by
-  obtain ⟨r, hr, h⟩ := h
-  exact ⟨⟨r, hr⟩, Subtype.ext (by simpa using h.symm)⟩
-
 variable [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C] [CompleteSpace C]
   (P : PairOfDefinition C) {N : ℕ}
 
@@ -95,7 +73,7 @@ theorem weightedEval_mem_ringOfDefinition {F : MvPowerSeries (Fin N) C}
     (hF₀ : ∀ ν, MvPowerSeries.coeff ν F ∈ P.ringOfDefinition) (x : Fin N → P.ringOfDefinition) :
     weightedEval (RingHom.id C) (fun i ↦ (x i : C)) F ∈ P.ringOfDefinition := by
   have := P.toNonarchimedeanRing
-  simpa using mem_pow_smul_of_hasSum P isUnit_one (m := 0)
+  simpa using P.mem_smul_of_hasSum isUnit_one
     (hasSum_weightedEval_of_forall_isPowerBounded continuous_id.continuousAt
       (fun i ↦ P.isBounded_ringOfDefinition.isPowerBounded_of_mem (x i).2) hF)
     fun ν ↦ by
@@ -140,7 +118,7 @@ theorem weightedEval_sub_weightedEval_sub_sum_mem_pow_smul {ϖ : P.ringOfDefinit
       ring
   have hD := ((hsum x' hF).sub (hsum x hF)).sub
     (hasSum_sum (s := Finset.univ) fun j _ ↦ (hgrad j).mul_right ((x' j : C) - x j))
-  refine mem_pow_smul_of_hasSum P hϖ hD fun μ ↦ ?_
+  refine P.mem_smul_of_hasSum (hϖ.pow _) hD fun μ ↦ ?_
   -- Each term is the `μ`-th coefficient of `F` times Taylor's error for the monomial `Xᵘ`.
   obtain ⟨q, hq⟩ := MvPolynomial.mul_dvd_eval_sub_eval_sub_sum_pderiv
     (MvPolynomial.monomial μ (1 : P.ringOfDefinition)) hx (pow_dvd_pow ϖ hab) hxx'
@@ -184,7 +162,7 @@ private theorem pow_dvd_evalOD_sub
     (hn : k + 1 ≤ n) (hxx' : ∀ i, ϖ ^ n ∣ x' i - x i) (i : Fin N) :
     ϖ ^ (n + k + 1) ∣ evalOD P hF hF₀ x' i - evalOD P hF hF₀ x i -
       (jacobianOD P hF hF₀ t *ᵥ (x' - x)) i := by
-  refine dvd_of_coe_mem_pow_smul P ?_
+  refine P.coe_mem_smul_iff_dvd.mp ?_
   rw [show n + k + 1 = k + 1 + n by omega]
   convert weightedEval_sub_weightedEval_sub_sum_mem_pow_smul P hϖ (hF i) (hF₀ i) hn hx hxx'
     using 1
@@ -229,7 +207,7 @@ theorem pow_dvd_sub_of_weightedEval_eq_zero (hϖ : IsUnit (ϖ : C))
     (fun _ _ h ↦ Subtype.ext (hϖ.mul_left_cancel (congrArg Subtype.val h)))
     (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
     (fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ x x' hx n hn hxx')
-    (fun i ↦ dvd_of_coe_mem_pow_smul P (ht i)) hu (funext fun i ↦ Subtype.ext (hFu i : _)) i
+    (fun i ↦ P.coe_mem_smul_iff_dvd.mp (ht i)) hu (funext fun i ↦ Subtype.ext (hFu i : _)) i
 
 /-- **Newton's method for restricted series with integral coefficients.** Let `C` be Hausdorff,
 let `ϖ ∈ A₀` be a pseudouniformiser, and let `M` be an integral matrix with `M J(t) = ϖᵏ`, where
@@ -253,7 +231,7 @@ theorem existsUnique_weightedEval_eq_zero [T0Space C] (hϖ : IsPseudoUniformizer
   simpa only [hzero] using IsAdicComplete.existsUnique_eq_zero_of_mul_eq_pow_smul
     (fun _ _ h ↦ Subtype.ext (hϖ.isUnit.mul_left_cancel (congrArg Subtype.val h)))
     (evalOD P hF hF₀) (mul_jacobianOD_eq P hF hF₀ hM) t
-    (fun i ↦ dvd_of_coe_mem_pow_smul P (ht i))
+    (fun i ↦ P.coe_mem_smul_iff_dvd.mp (ht i))
     fun x x' hx _ n hn hxx' ↦ pow_dvd_evalOD_sub P hF hF₀ hϖ.isUnit x x' hx n hn hxx'
 
 end Newton

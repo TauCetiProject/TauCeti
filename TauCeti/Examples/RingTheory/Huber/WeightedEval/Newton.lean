@@ -11,8 +11,8 @@ import TauCeti.RingTheory.Huber.WeightedEval.Newton
 # Checks for Newton's method on restricted power series
 
 For the linear system `Fᵢ = Xᵢ - aᵢ` with `a ∈ A₀^N`, the Jacobian matrix is the identity, so
-Newton's method applies with `k = 0` and `M = 1` at every `t ≡ a mod ϖ`, and the unique zero it
-produces is `a`. This checks that the hypotheses of
+Newton's method applies with `k = 0` and `M = 1` at every `t ≡ a mod ϖ` and produces a unique
+zero in the class of `t`. This checks that the hypotheses of
 `TauCeti.Huber.existsUnique_weightedEval_eq_zero` are satisfiable for a nontrivial family.
 -/
 
@@ -23,7 +23,7 @@ namespace TauCeti.Examples
 variable {C : Type*} [CommRing C] [UniformSpace C] [IsUniformAddGroup C] [IsTopologicalRing C]
   [CompleteSpace C] [T0Space C] (P : PairOfDefinition C) {N : ℕ}
 
--- The linear system `Xᵢ - aᵢ` has the unique zero `a` in the class of any `t ≡ a mod ϖ`.
+-- The linear system `Xᵢ - aᵢ` has a unique zero in the class of any `t ≡ a mod ϖ`.
 example {ϖ : P.ringOfDefinition} (hϖ : IsPseudoUniformizer (ϖ : C))
     (a t : Fin N → P.ringOfDefinition) (ht : ∀ i, ϖ ∣ t i - a i) :
     ∃! u : Fin N → P.ringOfDefinition, (∀ i, ϖ ∣ u i - t i) ∧
