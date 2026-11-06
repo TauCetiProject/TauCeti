@@ -69,6 +69,8 @@ Morse-theoretic definitions that use them.
 * `TauCeti.fderiv_fderiv_comp_apply_of_fderiv_eq_zero`: for `C²` maps, where the differential of
   the outer function vanishes, the second derivative of a composition is the pullback of the
   second derivative along the differential of the inner function.
+* `TauCeti.fderiv_fderiv_slice_right_apply`: the second derivative of the restriction of a map on
+  a product to a fibre is its second derivative on fibre directions.
 * `TauCeti.fderiv_fderiv_comp_fst_add_comp_snd`: the second derivative of a separated sum on a
   product is block diagonal.
 * `TauCeti.fderiv_fderiv_sum_comp_eval_apply`: the second derivative of a separated sum of
@@ -177,6 +179,17 @@ theorem fderiv_fderiv_comp_apply_of_fderiv_eq_zero {f : E → G} {φ : F → E} 
     fderiv 𝕜 (fderiv 𝕜 (f ∘ φ)) b v w =
       fderiv 𝕜 (fderiv 𝕜 f) (φ b) (fderiv 𝕜 φ b v) (fderiv 𝕜 φ b w) := by
   simp [fderiv_fderiv_comp_apply hf hφ, hc]
+
+/-- The second derivative of the restriction `y ↦ f (a, y)` of a `C²` map on a product to a fibre
+is the second derivative of `f` evaluated on fibre directions. -/
+theorem fderiv_fderiv_slice_right_apply {f : E × F → G} {a : E} {b : F}
+    (hf : ContDiffAt 𝕜 2 f (a, b)) (v w : F) :
+    fderiv 𝕜 (fderiv 𝕜 (fun y ↦ f (a, y))) b v w =
+      fderiv 𝕜 (fderiv 𝕜 f) (a, b) (0, v) (0, w) := by
+  have hD : fderiv 𝕜 (fun y : F ↦ (a, y)) = fun _ ↦ ContinuousLinearMap.inr 𝕜 E F :=
+    funext fun y ↦ (hasFDerivAt_prodMk_right a y).fderiv
+  simpa [Function.comp_def, hD] using fderiv_fderiv_comp_apply (φ := fun y : F ↦ (a, y)) hf
+    (contDiffAt_const.prodMk contDiffAt_id) v w
 
 /-- The second derivative of a separated sum `φ ∘ Prod.fst + ψ ∘ Prod.snd` at `(a, b)` is block
 diagonal: it sends `(v, w)` to the coproduct of `D²φ a v` and `D²ψ b w`, i.e. to the functional
