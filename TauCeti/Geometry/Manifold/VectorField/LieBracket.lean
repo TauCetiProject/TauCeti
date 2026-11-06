@@ -101,6 +101,35 @@ theorem mlieBracket_eq_lieBracket {V W : ∀ y : F, TangentSpace 𝓘(𝕜, F) y
   rw [← VectorField.mlieBracketWithin_univ, VectorField.mlieBracketWithin_eq_lieBracketWithin]
   exact VectorField.lieBracketWithin_univ
 
+/-- The manifold Lie bracket of a constant vector field `a` with a vector field `W` on a normed
+space is the derivative of `W` in the direction `a`. -/
+@[simp]
+theorem mlieBracket_const_left_model_space (a : F) (W : ∀ y : F, TangentSpace 𝓘(𝕜, F) y)
+    (x : F) :
+    VectorField.mlieBracket 𝓘(𝕜, F) (fun _ : F ↦ a) W x = fderiv 𝕜 W x a := by
+  let A : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ a
+  -- The explicit dependent section exposes the model-space representative.
+  change VectorField.mlieBracket 𝓘(𝕜, F) A W x = _
+  rw [mlieBracket_eq_lieBracket]
+  -- The tangent space of the model manifold is definitionally its model vector space.
+  change fderiv 𝕜 W x a - fderiv 𝕜 (fun _ : F ↦ a) x (W x) = _
+  simp only [fderiv_const_apply, sub_eq_self]
+  rfl
+
+/-- The manifold Lie bracket of a vector field `V` with a constant vector field `b` on a normed
+space is minus the derivative of `V` in the direction `b`. -/
+@[simp]
+theorem mlieBracket_const_right_model_space (V : ∀ y : F, TangentSpace 𝓘(𝕜, F) y) (b x : F) :
+    VectorField.mlieBracket 𝓘(𝕜, F) V (fun _ : F ↦ b) x = -fderiv 𝕜 V x b := by
+  let B : ∀ y : F, TangentSpace 𝓘(𝕜, F) y := fun _ ↦ b
+  -- The explicit dependent section exposes the model-space representative.
+  change VectorField.mlieBracket 𝓘(𝕜, F) V B x = _
+  rw [mlieBracket_eq_lieBracket]
+  -- The tangent space of the model manifold is definitionally its model vector space.
+  change fderiv 𝕜 (fun _ : F ↦ b) x (V x) - fderiv 𝕜 V x b = _
+  rw [fderiv_const_apply]
+  exact zero_sub _
+
 /-- The manifold Lie bracket of the linear vector fields `y ↦ A y` and `y ↦ B y` on a normed
 vector space is the linear vector field `x ↦ B (A x) - A (B x)`. -/
 theorem mlieBracket_continuousLinearMap_model_space (A B : F →L[𝕜] F) (x : F) :

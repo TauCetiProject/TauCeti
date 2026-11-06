@@ -11,10 +11,6 @@ public import Mathlib.Topology.Instances.AddCircle.Defs
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Geometry.Manifold.IntegralCurve.Transform
-import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.Geometry.Manifold.IntegralCurve.PeriodicLimit
-import TauCeti.Geometry.Symplectic.Hamiltonian.Characteristic
-import TauCeti.Geometry.Symplectic.Hamiltonian.Complete
 import TauCeti.Geometry.Symplectic.Manifold.Rescale
 import TauCeti.Topology.Homotopy.AddCircle
 
@@ -52,18 +48,6 @@ levels of `F`. Rescaling the form by `a ≠ 0` changes neither notion
 `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleAlmostExistence_smul_iff`), and both are
 monotone in `W`.
 
-Closed characteristics of bounded period pass to the limit at a regular level. Let `σ` be
-nondegenerate and `F` smooth, on a finite-dimensional boundaryless manifold `M`. If the levels
-`F⁻¹(c)` carrying a closed characteristic contractible in `M` of period at most `τ` accumulate at a
-regular value `s`, and `F⁻¹([a, b])` is compact for some `a < s < b`, then `F⁻¹(s)` carries such
-a closed characteristic
-(`IsNondegenerate.hasContractibleClosedCharacteristicOfPeriodLE_of_frequently`).
-A subsequence of the orbits on the nearby levels has initial points and periods converging, by
-compactness of `F⁻¹([a, b]) × [0, τ]`. The limit point `x` lies on `F⁻¹(s)`, where `X_F` does not
-vanish since `s` is a regular value, so the limit period is positive and the orbit of `X_F`
-through `x` is a nonconstant periodic orbit, whose loop is contractible in `M` as a limit of
-contractible loops (`TauCeti.exists_nullhomotopic_of_tendsto`).
-
 ## Main definitions
 
 * `TauCeti.SmoothTwoForm.HasContractibleClosedCharacteristic`: a level carries a closed
@@ -88,9 +72,6 @@ contractible loops (`TauCeti.exists_nullhomotopic_of_tendsto`).
 * `TauCeti.SmoothTwoForm.HasContractibleAlmostExistence.exists_hasContractibleClosedCharacteristic`:
   when the nearby values are regular, almost existence gives closed characteristics on levels
   arbitrarily close to the given one.
-* `IsNondegenerate.hasContractibleClosedCharacteristicOfPeriodLE_of_frequently`: closed
-  characteristics of bounded period on levels accumulating at a regular value give one on that
-  level.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.hasContractibleClosedCharacteristic_image_iff`: closed
   characteristics are invariant under symplectic diffeomorphisms, and by its variant
   `IsNondegenerate.hasContractibleClosedCharacteristic_image_iff_of_mpullback_eq_smul` under
@@ -300,89 +281,6 @@ theorem IsNondegenerate.hasContractibleAlmostExistence_smul_iff [FiniteDimension
     (hσ : σ.IsNondegenerate) {a : ℝ} (ha : a ≠ 0) :
     (a • σ).HasContractibleAlmostExistence W F c ↔ σ.HasContractibleAlmostExistence W F c := by
   simp only [hasContractibleAlmostExistence_iff, hσ.hasContractibleClosedCharacteristic_smul_iff ha]
-
-/-! ### Closed characteristics pass to the limit -/
-
-section Limit
-
-variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M]
-
-open Filter Topology
-
-namespace IsNondegenerate
-
-/-- A limit of closed characteristics of period at most `τ`, contractible in `M`, through a regular
-point `x` of the level `F⁻¹(s)` whose orbit is defined for all time, is a closed characteristic of
-`F⁻¹(s)` of period at most `τ`, contractible in `M`. -/
-private theorem hasContractibleClosedCharacteristicOfPeriodLE_of_tendsto
-    (hσ : σ.IsNondegenerate) (hF : ContMDiff I 𝓘(ℝ) ∞ F) {γ : ℕ → ℝ → M} {T : ℕ → ℝ} {x : M}
-    {T₀ s τ : ℝ} (hγ : ∀ n, IsMIntegralCurve (γ n) (σ.hamiltonianVectorField F))
-    (hper : ∀ n, Periodic (γ n) (T n)) (hT : ∀ n, 0 < T n)
-    (hnull : ∀ n, ∃ g : C(AddCircle (T n), M), g.Nullhomotopic ∧ ∀ t : ℝ, g t = γ n t)
-    (hx : Tendsto (fun n ↦ γ n 0) atTop (𝓝 x)) (hTl : Tendsto T atTop (𝓝 T₀))
-    (hT₀ : T₀ ∈ Icc 0 τ) (hFx : F x = s) (hreg : IsRegularPoint I 𝓘(ℝ) F x)
-    (hglob : maximalIntegralCurveInterval (σ.hamiltonianVectorField F) x = univ) :
-    σ.HasContractibleClosedCharacteristicOfPeriodLE univ F s τ := by
-  have hv := hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (hF.of_le (by simp))
-  have hX := hσ.hamiltonianVectorField_ne_zero hreg
-  -- The limit period is positive, since otherwise `x` would be a zero of `X_F`.
-  have hpos : 0 < T₀ := hT₀.1.lt_of_ne fun h0 ↦ hX <|
-    eq_zero_of_tendsto_of_tendsto_zero hv hγ hper hT hx (h0 ▸ hTl) (by simp [hglob])
-  have hint : IsMIntegralCurve (maximalIntegralCurve (σ.hamiltonianVectorField F) x)
-      (σ.hamiltonianVectorField F) := isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv hglob
-  have h0 : maximalIntegralCurve (σ.hamiltonianVectorField F) x 0 = x :=
-    maximalIntegralCurve_zero (hglob ▸ mem_univ _)
-  obtain ⟨g', hg', hg'γ⟩ := exists_nullhomotopic_of_tendsto hv hγ hper hT hnull hx hTl hpos hglob
-  rw [hasContractibleClosedCharacteristicOfPeriodLE_iff]
-  refine ⟨T₀, _, hpos, hT₀.2, hint, periodic_maximalIntegralCurve_of_tendsto hv hγ hper hx hTl
-      hglob, ?_, fun t ↦ ?_, (⟨fun y ↦ ⟨y, mem_univ y⟩, by fun_prop⟩ : C(M, univ)).comp g',
-    hg'.comp_right _, fun t ↦ by simp [hg'γ]⟩
-  · -- A constant orbit would pass through a zero of `X_F`.
-    by_contra! hcon
-    have : Nonempty M := ⟨x⟩
-    have hz := ((hint.isMIntegralCurveOn univ).isMIntegralCurveAt (t₀ := 0) univ_mem)
-      |>.eq_zero_of_eventuallyConst
-        (eventuallyConst_iff_exists_eventuallyEq.2 ⟨_, Eventually.of_forall hcon⟩)
-    exact hX (h0 ▸ hz)
-  · rw [hσ.apply_maximalIntegralCurve_hamiltonianVectorField (hF.of_le (by simp))
-      (hglob ▸ mem_univ t), hFx]
-
-/-- **Closed characteristics pass to the limit at a regular level.** Let `F` be smooth with
-`F⁻¹([a, b])` compact and let `s ∈ (a, b)` be a regular value of `F`. If levels of `F` carrying a
-closed characteristic contractible in `M` of period at most `τ` accumulate at `s`, then the level
-`F⁻¹(s)` carries such a closed characteristic. -/
-theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.IsNondegenerate)
-    (hF : ContMDiff I 𝓘(ℝ) ∞ F) {a b s τ : ℝ} (hs : s ∈ Ioo a b)
-    (hcpt : IsCompact (F ⁻¹' Icc a b)) (hreg : IsRegularValue I 𝓘(ℝ) F s)
-    (h : ∃ᶠ c in 𝓝 s, σ.HasContractibleClosedCharacteristicOfPeriodLE univ F c τ) :
-    σ.HasContractibleClosedCharacteristicOfPeriodLE univ F s τ := by
-  have : FirstCountableTopology H := I.isClosedEmbedding.isEmbedding.firstCountableTopology
-  have : FirstCountableTopology M := ChartedSpace.firstCountableTopology (H := H)
-  obtain ⟨c, hc, hcc⟩ := exists_seq_forall_of_frequently h
-  simp only [hasContractibleClosedCharacteristicOfPeriodLE_iff] at hcc
-  choose T γ hT hTτ hγ hper _ hlev g hg hgγ using hcc
-  -- Extract a subsequence whose initial points and periods converge, to `x` and `T₀`.
-  have hfreq : ∃ᶠ n in atTop, (γ n 0, T n) ∈ (F ⁻¹' Icc a b) ×ˢ Icc 0 τ :=
-    ((hc.eventually (Ioo_mem_nhds hs.1 hs.2)).mono fun n hn ↦
-      ⟨by simp [hlev n 0, hn.1.le, hn.2.le], (hT n).le, hTτ n⟩).frequently
-  obtain ⟨⟨x, T₀⟩, ⟨-, hT₀⟩, φ, hφ, hlim⟩ := (hcpt.prod isCompact_Icc).tendsto_subseq' hfreq
-  have hx : Tendsto (fun k ↦ γ (φ k) 0) atTop (𝓝 x) := (continuous_fst.tendsto _).comp hlim
-  have hFx : F x = s := tendsto_nhds_unique ((hF.continuous.tendsto x).comp hx)
-    ((hc.comp hφ.tendsto_atTop).congr fun k ↦ (hlev _ 0).symm)
-  -- The orbit through `x` stays in the compact level `F⁻¹(s)`, so it is defined for all time.
-  have hglob := hσ.maximalIntegralCurveInterval_hamiltonianVectorField_eq_univ_of_isCompact
-    (hF.of_le (by simp)) (x := x) (hcpt.of_isClosed_subset
-      (isClosed_eq hF.continuous continuous_const) fun y (hy : F y = F x) ↦ by
-        simp [hy.trans hFx, hs.1.le, hs.2.le])
-  exact hσ.hasContractibleClosedCharacteristicOfPeriodLE_of_tendsto hF (fun k ↦ hγ (φ k))
-    (fun k ↦ hper (φ k)) (fun k ↦ hT (φ k))
-    (fun k ↦ ⟨(ContinuousMap.mk Subtype.val continuous_subtype_val).comp (g (φ k)),
-      (hg (φ k)).comp_right _, hgγ (φ k)⟩) hx ((continuous_snd.tendsto _).comp hlim) hT₀ hFx
-    (hreg.isRegularPoint hFx) hglob
-
-end IsNondegenerate
-
-end Limit
 
 /-! ### Invariance under symplectomorphisms -/
 

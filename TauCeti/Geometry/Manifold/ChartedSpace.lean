@@ -34,8 +34,6 @@ charted space in its preferred charts and to check that it is well behaved.
 * `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
   isolated points.
 * `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
-* `ChartedSpace.firstCountableTopology`: a charted space over a first-countable space is first
-  countable.
 -/
 
 public section
@@ -108,13 +106,3 @@ theorem ChartedSpace.nontrivial {H X : Type*} [TopologicalSpace H] [PerfectSpace
   obtain ⟨x⟩ := ‹Nonempty X›
   obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
   exact ⟨⟨y, x, hy⟩⟩
-
-/-- A charted space over a first-countable space is first countable: near `x` its neighbourhood
-filter is the pullback along the chart at `x` of the neighbourhood filter of `chartAt H x x`,
-restricted to the chart's source. -/
-theorem ChartedSpace.firstCountableTopology {H X : Type*} [TopologicalSpace H]
-    [FirstCountableTopology H] [TopologicalSpace X] [ChartedSpace H X] :
-    FirstCountableTopology X :=
-  ⟨fun x ↦ by
-    rw [(chartAt H x).nhds_eq_comap_inf_principal (mem_chart_source H x)]
-    infer_instance⟩

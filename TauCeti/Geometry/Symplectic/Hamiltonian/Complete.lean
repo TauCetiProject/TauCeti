@@ -32,10 +32,6 @@ In the namespace `TauCeti.SmoothTwoForm`:
 
 * `IsFirstIntegral.apply_maximalIntegralCurve`: conservation of a first integral along a maximal
   integral curve of a Hamiltonian vector field.
-* `IsNondegenerate.apply_maximalIntegralCurve_hamiltonianVectorField`: conservation of energy
-  along a maximal integral curve of a Hamiltonian vector field.
-* `IsNondegenerate.maximalIntegralCurveInterval_hamiltonianVectorField_eq_univ_of_isCompact`: the
-  orbit of a Hamiltonian vector field through a point of a compact level is defined for all time.
 * `IsNondegenerate.isCompleteVectorField_hamiltonianVectorField_of_isProperMap`: a Hamiltonian
   vector field with a proper family of first integrals is complete.
 * `IsNondegenerate.isCompleteVectorField_hamiltonianVectorField_of_isProperMap_self`: the
@@ -91,25 +87,6 @@ namespace IsNondegenerate
 variable (hσ : σ.IsNondegenerate)
 include hσ
 
-/-- **Conservation of energy along maximal integral curves.** A `C²` Hamiltonian `f` takes the
-same value at every point of the maximal integral curve of its Hamiltonian vector field through `x`
-as at `x`. -/
-theorem apply_maximalIntegralCurve_hamiltonianVectorField (hf : ContMDiff I 𝓘(ℝ) 2 f)
-    (ht : t ∈ maximalIntegralCurveInterval (σ.hamiltonianVectorField f) x) :
-    f (maximalIntegralCurve (σ.hamiltonianVectorField f) x t) = f x :=
-  (isFirstIntegral_self f).apply_maximalIntegralCurve hσ hf (hf.mdifferentiable (by simp)) ht
-
-/-- **A Hamiltonian orbit on a compact level is defined for all time.** If the level
-`f⁻¹(f x)` of a `C²` Hamiltonian `f` is compact, then the maximal integral curve of the
-Hamiltonian vector field of `f` through `x` is defined on all of `ℝ`. -/
-theorem maximalIntegralCurveInterval_hamiltonianVectorField_eq_univ_of_isCompact
-    (hf : ContMDiff I 𝓘(ℝ) 2 f) (hK : IsCompact {y | f y = f x}) :
-    maximalIntegralCurveInterval (σ.hamiltonianVectorField f) x = univ := by
-  have hv := hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by rwa [one_add_one_eq_two])
-  exact maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) hK fun _ ht ↦
-      hσ.apply_maximalIntegralCurve_hamiltonianVectorField hf ht
-
 /-- **A Hamiltonian vector field with a proper family of first integrals is complete.** If the
 functions `G_i = G (·) i` are differentiable first integrals of a `C²` Hamiltonian `f` and
 `G : M → (ι → ℝ)` is a proper map, then every maximal integral curve of the Hamiltonian vector
@@ -130,7 +107,8 @@ theorem isCompleteVectorField_hamiltonianVectorField_of_isProperMap_self
     IsCompleteVectorField (σ.hamiltonianVectorField f) :=
   isCompleteVectorField_of_isProperMap
     (hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (by rwa [one_add_one_eq_two])) hfp
-    fun _ _ ht ↦ hσ.apply_maximalIntegralCurve_hamiltonianVectorField hf ht
+    fun _ _ ht ↦ (isFirstIntegral_self f).apply_maximalIntegralCurve hσ hf
+      (hf.mdifferentiable (by simp)) ht
 
 end IsNondegenerate
 
