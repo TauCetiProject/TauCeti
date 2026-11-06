@@ -81,12 +81,14 @@ theorem hasDerivWithinAt_volume_real_add_smul_closedBall_rpow (K : ConvexBody E)
 
 /-- **The isoperimetric inequality for convex bodies, in real-valued form.** In dimension
 `n ≥ 1`, a convex body `K` of positive volume `V` satisfies `n ω_n^(1/n) V^(1 - 1/n) ≤ P(K)`,
-where `ω_n = volume (ball 0 1)`. -/
+where `ω_n = volume (ball 0 1)`. The case `n = 0` is trivial, as the left side vanishes. -/
 theorem mul_volume_real_rpow_mul_le_perimeter_toReal (K : ConvexBody E)
-    (hn : finrank ℝ E ≠ 0) (hK : volume (K : Set E) ≠ 0) :
+    (hK : volume (K : Set E) ≠ 0) :
     finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real (K : Set E) ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤
       (perimeter volume ⊤ (K : Set E)).toReal := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · simp [hn]
   have : Nontrivial E := Module.nontrivial_of_finrank_pos (Nat.pos_of_ne_zero hn)
   let B : ConvexBody E := ⟨closedBall 0 1, convex_closedBall 0 1, isCompact_closedBall 0 1,
     nonempty_closedBall.2 zero_le_one⟩
@@ -110,7 +112,7 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow (K : ConvexB
   rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal K.isCompact.measure_lt_top.ne hn,
     ← ENNReal.ofReal_toReal hP, ← ENNReal.ofReal_pow ENNReal.toReal_nonneg]
   exact ENNReal.ofReal_le_ofReal
-    (pow_le_pow_left₀ (by positivity) (K.mul_volume_real_rpow_mul_le_perimeter_toReal hn hK) _)
+    (pow_le_pow_left₀ (by positivity) (K.mul_volume_real_rpow_mul_le_perimeter_toReal hK) _)
 
 /-- **Equality in the isoperimetric inequality for convex bodies.** In dimension `n ≥ 1`, a
 convex body `K` of positive volume satisfies `P(K)^n = n^n ω_n |K|^(n-1)`, where
