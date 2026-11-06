@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Alexandrov
 import TauCeti.Analysis.Convex.Extrema
+import TauCeti.Analysis.InnerProductSpace.Coercive
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Calculus.Gradient
 import Mathlib.MeasureTheory.Measure.Decomposition.RadonNikodym
@@ -155,65 +156,6 @@ private theorem mem_subgradientImage_closedBall_of_forall_lt
       have := hglob x' hx'
       rwa [LinearMap.flip_apply] at this
 
-omit [FiniteDimensional ℝ E] in
-/-- The increment of `g = F - ⟪·, p⟫` for `p = y + A z` from `x` to `x'` is
-`⟪A (x' - x - z), x' - x - z⟫ / 2 - ⟪A z, z⟫ / 2`, up to the error of the second-order expansion
-of `F` at `x` with gradient `y` and Hessian `A`. -/
-private theorem abs_increment_le_of_abs_expansion_le {A : E →L[ℝ] E} (hA : A.IsPositive)
-    {x x' y z : E} {a b δ : ℝ}
-    (hb : |a - b - ⟪y, x' - x⟫_ℝ - ⟪A (x' - x), x' - x⟫_ℝ / 2| ≤ δ * ‖x' - x‖ ^ 2) :
-    |(a - ⟪x', y + A z⟫_ℝ) - (b - ⟪x, y + A z⟫_ℝ) -
-      (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 - ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2 := by
-  have hsym : ⟪A z, x' - x⟫_ℝ = ⟪A (x' - x), z⟫_ℝ := by
-    rw [hA.inner_left_eq_inner_right, real_inner_comm]
-  have hexp : ⟪A (x' - x - z), x' - x - z⟫_ℝ =
-      ⟪A (x' - x), x' - x⟫_ℝ - 2 * ⟪A (x' - x), z⟫_ℝ + ⟪A z, z⟫_ℝ := by
-    generalize x' - x = h at hsym ⊢
-    rw [map_sub, inner_sub_left, inner_sub_right, inner_sub_right, hsym]
-    ring
-  have hpx : ⟪x', y + A z⟫_ℝ - ⟪x, y + A z⟫_ℝ = ⟪y, x' - x⟫_ℝ + ⟪A (x' - x), z⟫_ℝ := by
-    rw [← inner_sub_left, inner_add_right, ← hsym, real_inner_comm y, real_inner_comm (A z)]
-  convert hb using 2
-  linarith
-
-omit [FiniteDimensional ℝ E] in
-/-- If `g` has, on `closedBall x r`, the increment from `x` of a quadratic centred at `x + z`, up
-to `δ ‖x' - x‖ ^ 2` with `δ` small relative to the coercivity constant `c` of `A` and `‖z‖ ≤ s * r`
-for `s < 1`, then `g` on the sphere exceeds `g (x + z)`. -/
-private theorem lt_of_forall_abs_increment_le {A : E →L[ℝ] E} {g : E → ℝ} {x z : E}
-    {r s c δ : ℝ} (hc : 0 < c) (hcA : ∀ w, c * ‖w‖ ^ 2 ≤ ⟪A w, w⟫_ℝ) (hs : s < 1) (hr : 0 < r)
-    (hδ : δ = c * (1 - s) ^ 2 / 8) (hz : ‖z‖ ≤ s * r)
-    (hincr : ∀ x' ∈ closedBall x r, |g x' - g x - (⟪A (x' - x - z), x' - x - z⟫_ℝ / 2 -
-      ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2) :
-    ∀ x' ∈ closedBall x r \ ball x r, g (x + z) < g x' := by
-  have hη : 0 < 1 - s := sub_pos.2 hs
-  have hδ0 : 0 < δ := by rw [hδ]; positivity
-  have hsr : s * r ≤ r := by nlinarith [norm_nonneg z]
-  rintro x' ⟨hx', hx'b⟩
-  have hnorm : ‖x' - x‖ = r := by
-    rw [← dist_eq_norm]
-    exact le_antisymm (mem_closedBall.1 hx') (not_lt.1 hx'b)
-  have hzr : x + z ∈ closedBall x r := by
-    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left]
-    exact hz.trans hsr
-  have h₁ := hincr _ hzr
-  have h₂ := hincr x' hx'
-  rw [add_sub_cancel_left, sub_self, map_zero, inner_zero_left, zero_div, zero_sub] at h₁
-  have hηr : (1 - s) * r ≤ ‖x' - x - z‖ := by
-    have := norm_sub_norm_le (x' - x) z
-    rw [hnorm] at this
-    linarith
-  have hq := hcA (x' - x - z)
-  have hq' : c * ((1 - s) * r) ^ 2 ≤ c * ‖x' - x - z‖ ^ 2 :=
-    mul_le_mul_of_nonneg_left (pow_le_pow_left₀ (mul_pos hη hr).le hηr 2) hc.le
-  have hzr' : ‖z‖ ^ 2 ≤ r ^ 2 := pow_le_pow_left₀ (norm_nonneg _) (hz.trans hsr) 2
-  have hδz : δ * ‖z‖ ^ 2 ≤ δ * r ^ 2 := mul_le_mul_of_nonneg_left hzr' hδ0.le
-  have hδr : δ * r ^ 2 = c * ((1 - s) * r) ^ 2 / 8 := by rw [hδ]; ring
-  have hpos : 0 < c * ((1 - s) * r) ^ 2 := by positivity
-  rw [abs_le] at h₁ h₂
-  rw [hnorm] at h₂
-  linarith [h₁.2, h₂.1]
-
 /-- Let `f` be convex, finite near `x`, with a second-order expansion
 `F x' = F x + ⟪y, x' - x⟫ + ⟪A (x' - x), x' - x⟫ / 2 + o(‖x' - x‖ ^ 2)` for a positive `A` with
 nonzero determinant. Then for every `s < 1` and every small `r > 0`, the set
@@ -252,7 +194,7 @@ private theorem eventually_image_subset_subgradientImage_closedBall
       ⟪A z, z⟫_ℝ / 2)| ≤ δ * ‖x' - x‖ ^ 2 := fun x' hx' => by
     have hb := (hball ((mem_closedBall.1 hx').trans_lt hr.2)).1
     rw [norm_pow, norm_norm, Real.norm_eq_abs] at hb
-    exact abs_increment_le_of_abs_expansion_le hA hb
+    exact abs_increment_le_of_abs_expansion_le hA.isSymmetric hb
   have hlt := lt_of_forall_abs_increment_le hc hcA hs hr.1 rfl hz hincr
   exact mem_subgradientImage_closedBall_of_forall_lt hf hbot hKD
     (mem_closedBall.2 (by rw [dist_eq_norm, add_sub_cancel_left]; exact hz.trans hsr)) hlt
