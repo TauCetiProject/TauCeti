@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.Basic
 public import Mathlib.Analysis.Calculus.ContDiff.Basic
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 import Mathlib.Analysis.Normed.Module.RCLike.Real
 
 /-!
@@ -27,7 +28,11 @@ the symbol calculus needs:
   derivative of positive order also vanishes for `‖ξ‖ ≥ 2`, so it is supported in the closed
   annulus `1 ≤ ‖ξ‖ ≤ 2`;
 * on a proper space every iterated derivative of a cutoff is bounded, and the difference of two
-  cutoffs, as well as `1 - χ`, has compact support.
+  cutoffs, as well as `1 - χ`, has compact support;
+* the rescaled cutoffs `ξ ↦ χ(ξ / t)`, `t ≥ 1`, which cut off below the frequency radius `t`,
+  satisfy the order-zero symbol estimates `‖D^i χ(· / t) ξ‖ ≤ B_i ⟨ξ⟩^(-i)` with constants
+  independent of `t` (`FrequencyCutoff.exists_norm_iteratedFDeriv_comp_smul_le`). This is what
+  makes cutoffs at growing radii usable in Borel summation of symbols.
 
 ## References
 
@@ -166,6 +171,62 @@ theorem exists_bound_iteratedFDeriv [ProperSpace E] (k : ℕ) :
   refine (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
     (HasCompactSupport.intro (isCompact_closedBall 0 2) fun ξ hξ ↦ ?_)
   exact χ.iteratedFDeriv_eq_zero_of_two_le_norm hk (by simpa using hξ : 2 < ‖ξ‖).le
+
+/-- If `0 ≤ r ≤ 2t` with `t ≥ 1`, then `t⁻ⁱ ≤ 3ⁱ (1 + r²)^(-i/2)`. -/
+private theorem inv_pow_le_three_pow_mul_rpow {t r : ℝ} (ht : 1 ≤ t) (hr₀ : 0 ≤ r)
+    (hr : r ≤ 2 * t) (i : ℕ) : t⁻¹ ^ i ≤ 3 ^ i * (1 + r ^ 2) ^ (-(i : ℝ) / 2) := by
+  have ht0 : 0 < t := one_pos.trans_le ht
+  have h9 : 1 + r ^ 2 ≤ (3 * t) ^ 2 := by nlinarith
+  have key : ((3 * t) ^ 2 : ℝ) ^ (-(i : ℝ) / 2) = ((3 * t) ^ i)⁻¹ := by
+    rw [← Real.rpow_natCast (3 * t) 2, ← Real.rpow_mul (by positivity),
+      show ((2 : ℕ) : ℝ) * (-(i : ℝ) / 2) = -(i : ℝ) by push_cast; ring,
+      Real.rpow_neg (by positivity), Real.rpow_natCast]
+  calc t⁻¹ ^ i = 3 ^ i * ((3 * t) ^ i)⁻¹ := by
+        rw [mul_pow, mul_inv, ← mul_assoc, mul_inv_cancel₀ (by positivity), one_mul, inv_pow]
+    _ ≤ 3 ^ i * (1 + r ^ 2) ^ (-(i : ℝ) / 2) := by
+        rw [← key]
+        exact mul_le_mul_of_nonneg_left
+          (Real.rpow_le_rpow_of_nonpos (by positivity) h9
+            (by linarith [(Nat.cast_nonneg i : (0 : ℝ) ≤ i)])) (by positivity)
+
+/-- The rescaled cutoffs `ξ ↦ χ(ξ / t)`, `t ≥ 1`, satisfy the order-zero symbol estimates
+`‖D^i χ(· / t) ξ‖ ≤ B ⟨ξ⟩^(-i)`, where `⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`, with a constant `B` that does
+not depend on `t`. -/
+theorem exists_norm_iteratedFDeriv_comp_smul_le [ProperSpace E] (i : ℕ) :
+    ∃ B, 0 ≤ B ∧ ∀ t : ℝ, 1 ≤ t → ∀ ξ : E,
+      ‖iteratedFDeriv ℝ i (fun η ↦ χ (t⁻¹ • η)) ξ‖ ≤ B * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) := by
+  obtain ⟨B₀, hB₀⟩ := χ.exists_bound_iteratedFDeriv i
+  refine ⟨max B₀ 0 * 3 ^ i, by positivity, fun t ht ξ ↦ ?_⟩
+  have ht0 : 0 < t := one_pos.trans_le ht
+  -- `ξ ↦ χ(ξ / t)` is `χ` composed with the linear map `g = t⁻¹ • id`, of norm at most `t⁻¹`.
+  set g : E →L[ℝ] E := t⁻¹ • ContinuousLinearMap.id ℝ E with hg_def
+  have hg : ‖g‖ ≤ t⁻¹ := by
+    refine (norm_smul_le t⁻¹ (ContinuousLinearMap.id ℝ E)).trans ?_
+    rw [Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
+    exact mul_le_of_le_one_right (inv_nonneg.2 ht0.le) ContinuousLinearMap.norm_id_le
+  have hcomp : (fun η ↦ χ (t⁻¹ • η)) = χ ∘ g := by
+    funext η
+    simp [hg_def]
+  have hgξ : g ξ = t⁻¹ • ξ := by simp [hg_def]
+  rw [hcomp, g.iteratedFDeriv_comp_right (χ.contDiff (n := ⊤)) ξ (mod_cast le_top)]
+  refine ((iteratedFDeriv ℝ i χ (g ξ)).norm_compContinuousLinearMap_le _).trans ?_
+  rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+  have hB : ‖iteratedFDeriv ℝ i χ (g ξ)‖ ≤ max B₀ 0 := (hB₀ _).trans (le_max_left _ _)
+  rcases eq_or_ne i 0 with rfl | hi
+  · simpa using hB
+  by_cases hξ : 2 * t ≤ ‖ξ‖
+  · -- Beyond the radius `2t` the derivatives of positive order vanish.
+    have h2 : 2 ≤ ‖g ξ‖ := by
+      rw [hgξ, norm_smul, Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
+      exact (le_inv_mul_iff₀ ht0).2 (by linarith)
+    rw [χ.iteratedFDeriv_eq_zero_of_two_le_norm hi h2, norm_zero, zero_mul]
+    positivity
+  · calc ‖iteratedFDeriv ℝ i χ (g ξ)‖ * ‖g‖ ^ i ≤ max B₀ 0 * t⁻¹ ^ i := by gcongr
+      _ ≤ max B₀ 0 * (3 ^ i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2)) :=
+        mul_le_mul_of_nonneg_left
+          (inv_pow_le_three_pow_mul_rpow ht (norm_nonneg ξ) (not_le.1 hξ).le i)
+          (le_max_right _ _)
+      _ = max B₀ 0 * 3 ^ i * (1 + ‖ξ‖ ^ 2) ^ (-(i : ℝ) / 2) := by ring
 
 /-- If `f` is a smooth bump function centred at `0` with `1 ≤ f.rIn` and `f.rOut ≤ 2`, then
 `1 - f` is a frequency cutoff. -/

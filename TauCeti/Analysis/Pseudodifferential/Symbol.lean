@@ -42,6 +42,9 @@ uniform exactly when all derivatives of `f` are bounded (`TauCeti.Symbol.isUnifo
 so the local estimates alone do not give uniform ones: a coordinate function `x_j` is a symbol of
 order `0` that is not uniform (`TauCeti.Symbol.not_isUniform_ofSpatial_smul`).
 
+The estimates also bound the full Fréchet derivatives in the frequency
+(`TauCeti.Symbol.exists_norm_iteratedFDeriv_coordinateDeriv_le`).
+
 The mixed derivative `TauCeti.mixedDeriv α β a x ξ`, defined with the coordinate derivatives,
 takes the frequency derivatives first. For smooth `a` the two kinds of derivatives commute
 (`TauCeti.mixedDeriv_eq_coordinateDeriv_snd`), which is what makes spatial derivatives of symbols
@@ -461,6 +464,29 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp [coordinateDeriv_const T hα]
 
 end Spatial
+
+section FDeriv
+
+/-- The symbol estimates control the full Fréchet derivatives in the frequency: on a compact set
+`K` of positions, every position derivative satisfies
+`‖D_ξ^k ∂_x^α a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - k)`. -/
+theorem exists_norm_iteratedFDeriv_coordinateDeriv_le (a : Symbol n V W m)
+    {K : Set (CoordinateSpace n)} (hK : IsCompact K) (α : List (Fin n)) (k : ℕ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
+      ‖iteratedFDeriv ℝ k (fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x) ξ‖ ≤
+        C * (1 + ‖ξ‖ ^ 2) ^ ((m - k) / 2) := by
+  choose D hD0 hD using fun γ : List (Fin n) => a.exists_bound K hK α γ
+  refine ⟨∑ r : Fin k → Fin n, D (List.ofFn r), Finset.sum_nonneg fun r _ => hD0 _,
+    fun x hx ξ => ?_⟩
+  have hA : ContDiff ℝ ∞ fun η => coordinateDeriv α (fun y => a.coefficient (y, η)) x :=
+    (a.contDiff_coefficient.coordinateDeriv_fst α).comp (contDiff_prodMk_right x)
+  refine (norm_iteratedFDeriv_le_sum_coordinateDeriv (contDiff_infty.1 hA _) ξ).trans ?_
+  rw [Finset.sum_mul]
+  refine Finset.sum_le_sum fun r _ => ?_
+  have h := hD (List.ofFn r) x hx ξ
+  rwa [mixedDeriv_eq_coordinateDeriv_snd a.contDiff_coefficient, List.length_ofFn] at h
+
+end FDeriv
 
 end Symbol
 
