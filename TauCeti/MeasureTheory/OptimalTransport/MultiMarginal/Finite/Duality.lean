@@ -83,6 +83,7 @@ theorem finiteMultiDualValue_mono {φ ψ : ∀ i, X i → ℝ} (h : ∀ i x, φ 
   exact mul_le_mul_of_nonneg_left (h i x) ENNReal.toReal_nonneg
 
 /-- The finite multi-marginal dual value is continuous in the potentials. -/
+@[fun_prop]
 theorem continuous_finiteMultiDualValue (μ : ∀ i, PMF (X i)) :
     Continuous fun φ : ∀ i, X i → ℝ ↦ finiteMultiDualValue μ φ := by
   simp only [finiteMultiDualValue_def]
@@ -394,20 +395,26 @@ private theorem le_of_card_add_two_mul_le {M B : ℝ} (hM0 : 0 ≤ M)
     Nat.one_le_cast.2 (Fintype.card_pos_iff.2 ‹Nonempty ι›)
   nlinarith
 
+omit [∀ i, Fintype (X i)] [Nonempty ι] in
+/-- If every term of a finite sum over `ι` is at most `M ≥ 0`, the sum is at most the `i`-th term
+plus `card ι * M`. -/
+private theorem sum_le_apply_add_card_mul {f : ι → ℝ} {M : ℝ} (hM0 : 0 ≤ M)
+    (hf : ∀ j, f j ≤ M) (i : ι) :
+    ∑ j, f j ≤ f i + (Fintype.card ι : ℝ) * M := by
+  have hrest : ∑ j ∈ Finset.univ.erase i, f j ≤ (Fintype.card ι : ℝ) * M :=
+    (Finset.sum_le_card_nsmul _ _ M fun j _ ↦ hf j).trans
+      (by rw [nsmul_eq_mul]; gcongr; exact_mod_cast Finset.card_erase_le.trans_eq Finset.card_univ)
+  linarith [Finset.add_sum_erase Finset.univ f (Finset.mem_univ i)]
+
 omit [Nonempty ι] in
 /-- Each marginal contributes at most `M` to the dual value, so, when the dual value is at least
 `-M`, it contributes at least `-(card ι * M + M)`. -/
 private theorem neg_le_sum_toReal_mul {M : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i, X i → ℝ}
     (hψ_le : ∀ i x, ψ i x ≤ M) (hval : -M ≤ finiteMultiDualValue μ ψ) (i : ι) :
     -((Fintype.card ι : ℝ) * M + M) ≤ ∑ x, ((μ i) x).toReal * ψ i x := by
-  have hrest : ∑ j ∈ Finset.univ.erase i, ∑ x, ((μ j) x).toReal * ψ j x ≤
-      (Fintype.card ι : ℝ) * M :=
-    (Finset.sum_le_card_nsmul _ _ M fun j _ ↦
-      PMF.sum_toReal_mul_le (μ j) Finset.univ hM0 (hψ_le j)).trans
-      (by rw [nsmul_eq_mul]; gcongr; exact_mod_cast Finset.card_erase_le.trans_eq Finset.card_univ)
-  have hsplit := Finset.add_sum_erase Finset.univ
-    (fun j ↦ ∑ x, ((μ j) x).toReal * ψ j x) (Finset.mem_univ i)
-  beta_reduce at hsplit
+  have hle := sum_le_apply_add_card_mul (f := fun j ↦ ∑ x, ((μ j) x).toReal * ψ j x) hM0
+    (fun j ↦ PMF.sum_toReal_mul_le (μ j) Finset.univ hM0 (hψ_le j)) i
+  beta_reduce at hle
   rw [finiteMultiDualValue_def] at hval
   linarith
 
@@ -421,9 +428,7 @@ private theorem neg_le_of_toReal_ne_zero {M B : ℝ} (hM0 : 0 ≤ M) {ψ : ∀ i
     -B ≤ ψ i x := by
   have hw : 0 < ((μ i) x).toReal := lt_of_le_of_ne ENNReal.toReal_nonneg (Ne.symm hx)
   have hothers := PMF.sum_toReal_mul_le (μ i) (Finset.univ.erase x) hM0 (hψ_le i)
-  have hsplit := Finset.add_sum_erase Finset.univ
-    (fun y ↦ ((μ i) y).toReal * ψ i y) (Finset.mem_univ x)
-  beta_reduce at hsplit
+  rw [← Finset.add_sum_erase _ _ (Finset.mem_univ x)] at hE
   have hprod : -((Fintype.card ι + 2 : ℝ) * M) ≤ ((μ i) x).toReal * ψ i x := by linarith
   have := (div_le_iff₀ hw).1 hquot
   nlinarith
@@ -440,14 +445,9 @@ private theorem finiteMultiDualFeasible_of_replace {c : (∀ i, X i) → ℝ} {M
   intro z
   by_cases hz : ∃ i, ((μ i) (z i)).toReal = 0
   · obtain ⟨i, hi⟩ := hz
-    have hrest : ∑ j ∈ Finset.univ.erase i, χ j (z j) ≤ (Fintype.card ι : ℝ) * M :=
-      (Finset.sum_le_card_nsmul _ _ M fun j _ ↦ hχ_le j (z j)).trans
-        (by
-          rw [nsmul_eq_mul]; gcongr
-          exact_mod_cast Finset.card_erase_le.trans_eq Finset.card_univ)
-    have hsplit := Finset.add_sum_erase Finset.univ (fun j ↦ χ j (z j)) (Finset.mem_univ i)
-    beta_reduce at hsplit
-    rw [hzero i (z i) hi] at hsplit
+    have hle := sum_le_apply_add_card_mul hM0 (fun j ↦ hχ_le j (z j)) i
+    beta_reduce at hle
+    rw [hzero i (z i) hi] at hle
     have hc : -M ≤ c z := neg_le_of_abs_le (hM z)
     linarith
   · have hχψ : ∀ i, χ i (z i) = ψ i (z i) := fun i ↦ hpos i (z i) fun hi ↦ hz ⟨i, hi⟩
@@ -583,7 +583,7 @@ theorem exists_forall_finiteMultiDualValue_le (c : (∀ i, X i) → ℝ)
   obtain ⟨base, hbasefeas, hbasevalue, hbasebox⟩ :=
     exists_dualFeasible_value_eq_neg (μ := μ) hM hM0 hMB
   set K : Set (∀ i, X i → ℝ) := {φ | FiniteMultiDualFeasible c φ ∧
-    -M ≤ finiteMultiDualValue μ φ ∧ ∀ i x, |φ i x| ≤ B} with hK
+    -M ≤ finiteMultiDualValue μ φ ∧ ∀ i x, |φ i x| ≤ B}
   have hKcompact : IsCompact K := isCompact_dualFeasible_box c μ M B
   obtain ⟨φmax, hφmax, hmax⟩ := hKcompact.exists_isMaxOn
     ⟨base, hbasefeas, hbasevalue.ge, hbasebox⟩
