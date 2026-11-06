@@ -62,6 +62,7 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
+* `lieMap_eq_zero_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
 
 The supporting norm-preservation and four-frame construction lemmas live in
@@ -285,6 +286,33 @@ theorem lieMap_lieMap_of_hodgeStar_eq_self
   have h := lieMap_lieMap_add_hodgeStar h₀ h₂ hkl he η
   rw [hη, map_add, map_add] at h
   linear_combination (norm := module) (2⁻¹ : ℝ) • h
+
+include he h₀ h₂ in
+/-- **Anti-self-dual two-forms are `J`-invariant** for the complex orientation: if `⋆η = -η`
+then `D_J η = 0`. In a positively oriented unitary frame the anti-self-dual forms are spanned by
+`e₀ ∧ e₁ - e₂ ∧ e₃`, `e₀ ∧ e₂ + e₁ ∧ e₃` and `e₀ ∧ e₃ - e₁ ∧ e₂`, the real primitive forms of
+type `(1, 1)`. -/
+theorem lieMap_eq_zero_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η) :
+    exteriorPower.lieMap 2 J.toLinearMap η = 0 := by
+  have hJ := inner_apply_apply_of_orthonormalBasis h₀ h₂
+  set D := exteriorPower.lieMap 2 J.toLinearMap
+  -- `D_J` kills `x - ⋆x` for every `x`; move `D_J` to the right, where it acts on `u ∧ w`.
+  have key : D ∘ₗ (LinearMap.id - (o.hodgeStar hkl).toLinearMap) = 0 := by
+    refine linearMap_ext_inner_ιMulti_two fun a b u w ↦ ?_
+    simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply,
+      LinearEquiv.coe_coe, LinearMap.zero_apply, inner_zero_left,
+      inner_lieMap_left (inner_apply_left hJ), D, exteriorPower.lieMap_two_apply_ιMulti,
+      inner_add_right, inner_sub_left, o.inner_hodgeStar_ιMulti_two hkl, inner_ιMulti_two,
+      o.volumeForm_robust e he, Basis.det_apply, Matrix.det_fin_four]
+    simp only [e.inner_eq_sum_repr, conj_trivial, Fin.sum_univ_four, Basis.toMatrix_apply,
+      OrthonormalBasis.coe_toBasis_repr_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
+      Matrix.cons_val_two, Matrix.cons_val_three, Matrix.head_cons, Matrix.tail_cons,
+      repr_apply h₀ h₂]
+    ring
+  have h := LinearMap.congr_fun key η
+  simp only [LinearMap.comp_apply, LinearMap.sub_apply, LinearMap.id_apply, LinearEquiv.coe_coe,
+    LinearMap.zero_apply, hη, sub_neg_eq_add, ← two_smul ℝ η, map_smul] at h
+  exact (smul_eq_zero.1 h).resolve_left two_ne_zero
 
 include he h₀ h₂ in
 /-- **The self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`**:
