@@ -39,8 +39,8 @@ instance `E = [s₀, ∞) × [0, 1]` and `s_k → ∞`. Suppose that the transla
 * `x(t) = v(0, t)` is an orbit of the Hamiltonian vector field, `x'(t) = X_{H_t}(x(t))` on
   `[0, 1]` (`SymplecticForm.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`);
 * if `u(s, 0) = u(s, 1)` on `E`, then `x(0) = x(1)`, so that `x` is a one-periodic orbit for a
-  one-periodic Hamiltonian
-  (`SymplecticForm.apply_zero_eq_apply_one_of_tendstoLocallyUniformlyOn_comp_add`);
+  one-periodic Hamiltonian; this boundary condition passes to the limit of the translates by the
+  general `TauCeti.apply_eq_apply_of_tendstoLocallyUniformlyOn_comp_add`;
 * the limit is a stationary Floer cylinder: its perturbed derivative `dv - X_K(v)` vanishes on the
   open strip (`SymplecticForm.perturbedFDeriv_eq_zero_of_tendstoLocallyUniformlyOn_comp_add`).
 
@@ -453,26 +453,6 @@ theorem hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add (hH : ContDiff �
     hJM hfloer hfin hs hW hv le_rfl hτ.1 hτ.2
   rw [← sub_eq_zero, ← h]
   abel
-
-omit [NormedSpace ℝ V] [FiniteDimensional ℝ V] in
-/-- **The limit of translated Floer cylinders closes up.** If moreover `u(s, 0) = u(s, 1)` on `E`,
-then the limit of the translates satisfies `v(s, 0) = v(s, 1)`. Together with
-`TauCeti.SymplecticForm.hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add`, for a
-one-periodic Hamiltonian the limit is the stationary cylinder over a one-periodic orbit. -/
-theorem apply_zero_eq_apply_one_of_tendstoLocallyUniformlyOn_comp_add
-    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E)
-    (hper : ∀ r, (r, (0 : ℝ)) ∈ E → u (r, 0) = u (r, 1))
-    (hv : TendstoLocallyUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop
-      ((univ : Set ℝ) ×ˢ Icc 0 1)) (r : ℝ) :
-    v (r, 0) = v (r, 1) := by
-  have h₀ := hv.tendsto_at (show (r, (0 : ℝ)) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 from
-    ⟨mem_univ r, left_mem_Icc.2 zero_le_one⟩)
-  have h₁ := hv.tendsto_at (show (r, (1 : ℝ)) ∈ (univ : Set ℝ) ×ˢ Icc 0 1 from
-    ⟨mem_univ r, right_mem_Icc.2 zero_le_one⟩)
-  refine tendsto_nhds_unique (h₀.congr' ?_) h₁
-  filter_upwards [hW r r] with k hk
-  have hmem : (r + s k, (0 : ℝ)) ∈ E := hk ⟨⟨le_rfl, le_rfl⟩, left_mem_Icc.2 zero_le_one⟩
-  simpa using hper _ hmem
 
 /-- **The limit of translated Floer cylinders is a stationary solution.** Under the hypotheses
 of `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and for a jointly `C¹`
