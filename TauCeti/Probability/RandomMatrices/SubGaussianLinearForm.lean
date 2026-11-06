@@ -55,20 +55,7 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
     exact hsum
   have hset : {ω | t ≤ |S ω|} =
       {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
-    ext ω
-    constructor
-    · intro h
-      have h' : t ≤ |S ω| := h
-      rcases le_total 0 (S ω) with h0 | h0
-      · left
-        rwa [abs_of_nonneg h0] at h'
-      · right
-        rwa [abs_of_nonpos h0] at h'
-    · rintro (h | h)
-      · have h' : t ≤ S ω := h
-        exact h'.trans (le_abs_self _)
-      · have h' : t ≤ -S ω := h
-        exact h'.trans (neg_le_abs _)
+    by ext ω; exact le_abs
   have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
       {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
   calc
