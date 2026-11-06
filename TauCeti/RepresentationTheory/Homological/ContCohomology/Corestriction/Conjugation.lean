@@ -87,38 +87,6 @@ namespace ContinuousCohomology
 
 open TauCeti.ContCohomology
 
-section InnerPair
-
-variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] (N : Type u) [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
-  [DistribMulAction G N] [ContinuousSMul G N] (g : G) (n : ℕ)
-
-/-- **The inner compatible pair on a discrete `G`-module**: the pair `(x ↦ g⁻¹ x g, m ↦ g • m)`
-consisting of conjugation on `G` and the action of `g` on `N` induces the identity on `Hⁿ(G, N)`.
-This packages `TauCeti.ContinuousCohomology.map_eq_id_of_inner` for this pair, for use when the
-pair must be inserted into a composite of compatible-pair maps. -/
-theorem exists_map_eq_id_conj_smul :
-    ∃ (c : G →ₜ* G) (B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G N) ⟶
-        ofDiscreteModule ℤ G N),
-      (∀ x : G, c x = g⁻¹ * x * g) ∧ (∀ m : N, B.hom m = g • m) ∧
-        _root_.ContinuousCohomology.map c B n = 𝟙 _ := by
-  let c : G →ₜ* G := ContinuousMonoidHom.toContinuousMonoidHom (ContinuousAut.conj g⁻¹)
-  have hc (x : G) : c x = g⁻¹ * x * g := by simp [c]
-  let B : TopRep.res (c : G →* G) (ofDiscreteModule ℤ G N) ⟶ ofDiscreteModule ℤ G N :=
-    ofDiscreteModulePair (c : G →* G) (DistribSMul.toAddMonoidHom N g).toIntLinearMap
-      fun x m => by
-        have hx : (c : G →* G) x = g⁻¹ * x * g := hc x
-        simp only [AddMonoidHom.coe_toIntLinearMap, DistribSMul.toAddMonoidHom_apply, hx,
-          smul_smul]
-        congr 1
-        group
-  have hBm (m : N) : B.hom m = g • m := ofDiscreteModulePair_hom_apply _ _ _ m
-  exact ⟨c, B, hc, hBm, map_eq_id_of_inner g c hc B hBm
-    (ofDiscreteModule_isSmoothDiscrete ℤ G N) n⟩
-
-end InnerPair
-
-
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
   [CompactSpace G] [TotallyDisconnectedSpace G]
   (U V : Subgroup G) (M : Type u) [AddCommGroup M] [TopologicalSpace M] [DiscreteTopology M]
