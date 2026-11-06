@@ -406,10 +406,8 @@ seminorm of `D²f`. -/
 theorem holderWith_fderiv_fderiv (f : CkHolderSpace 2 α E F) :
     HolderWith (nnHolderNorm α (_root_.iteratedFDeriv ℝ 2 f)) α (fderiv ℝ (fderiv ℝ f)) := by
   have he : (fun x ↦ continuousMultilinearCurryFin2 ℝ E F (_root_.iteratedFDeriv ℝ 2 f x)) =
-      fderiv ℝ (fderiv ℝ f) := by
-    funext x
-    ext v w
-    simp [_root_.iteratedFDeriv_two_apply]
+      fderiv ℝ (fderiv ℝ f) :=
+    funext fun x ↦ continuousMultilinearCurryFin2_iteratedFDeriv_two _ x
   simpa [Function.comp_def, he] using
     (continuousMultilinearCurryFin2 ℝ E F).isometry.lipschitzWith.holderWith.comp
       f.memHolder_iteratedFDeriv.holderWith
