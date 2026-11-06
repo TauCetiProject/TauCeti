@@ -41,12 +41,12 @@ open Set
 
 /-- A family `v`, viewed in the additive submonoid `AddSubmonoid.closure (range v)` it generates,
 generates that submonoid. This is the family form of `AddSubmonoid.closure_closure_coe_preimage`. -/
-theorem closure_range_mk_eq_top {ι M : Type*} [AddMonoid M] (v : ι → M) :
+theorem closure_range_mk_eq_top {ι M : Type*} [AddZeroClass M] (v : ι → M) :
     AddSubmonoid.closure (range fun i ↦ (⟨v i, AddSubmonoid.subset_closure (mem_range_self i)⟩ :
       AddSubmonoid.closure (range v))) = ⊤ := by
   rw [← AddSubmonoid.closure_closure_coe_preimage (s := range v)]
   congr 1
-  ext ⟨m, hm⟩
+  ext
   simp [Subtype.ext_iff]
 
 /-- For finitely many generators `a i` of positive degree in `ℕ`, only finitely many elements of
@@ -55,17 +55,14 @@ weight `n`. -/
 theorem finite_closure_range_deg_eq {ι M : Type*} [AddCommMonoid M] [Finite ι] (a : ι → M)
     (deg : M →+ ℕ) (hdeg : ∀ i, deg (a i) ≠ 0) (n : ℕ) :
     Finite {s : AddSubmonoid.closure (range a) // deg s = n} := by
-  have hmem (u : ι →₀ ℕ) : Finsupp.linearCombination ℕ a u ∈ AddSubmonoid.closure (range a) :=
-    AddSubmonoid.mem_closure_range_iff.2 ⟨u, Finsupp.linearCombination_apply ℕ u⟩
-  have hfin : {s : AddSubmonoid.closure (range a) | deg s = n}.Finite := by
-    refine ((Finsupp.finite_of_nat_weight_eq (deg ∘ a) hdeg n).image
-      fun u ↦ (⟨_, hmem u⟩ : AddSubmonoid.closure (range a))).subset ?_
-    rintro ⟨s, hs⟩ (rfl : deg s = n)
-    obtain ⟨u, rfl⟩ := AddSubmonoid.mem_closure_range_iff.1 hs
-    refine ⟨u, ?_, ?_⟩
-    · exact Finsupp.weight_comp_eq_apply_linearCombination deg a u
-    · simp [Finsupp.linearCombination_apply]
-  exact hfin.to_subtype
+  let f (u : ι →₀ ℕ) : AddSubmonoid.closure (range a) :=
+    ⟨_, AddSubmonoid.mem_closure_range_iff.2 ⟨u, Finsupp.linearCombination_apply ℕ u⟩⟩
+  refine Set.Finite.to_subtype (s := {s : AddSubmonoid.closure (range a) | deg s = n}) <|
+    ((Finsupp.finite_of_nat_weight_eq (deg ∘ a) hdeg n).image f).subset ?_
+  rintro ⟨s, hs⟩ (rfl : deg s = n)
+  obtain ⟨u, rfl⟩ := AddSubmonoid.mem_closure_range_iff.1 hs
+  exact ⟨u, Finsupp.weight_comp_eq_apply_linearCombination deg a u,
+    Subtype.ext (Finsupp.linearCombination_apply ℕ u)⟩
 
 variable {κ M : Type*} [Fintype κ] [SubtractionCommMonoid M] (v : κ → M)
 
@@ -73,19 +70,16 @@ variable {κ M : Type*} [Fintype κ] [SubtractionCommMonoid M] (v : κ → M)
 closure of the family. -/
 theorem sum_smul_mem_closure (c : κ → ℤ) (hc : ∀ i, 0 ≤ c i) :
     (∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) := by
-  refine AddSubmonoid.sum_mem _ fun i _ => ?_
-  lift c i to ℕ using hc i with m
-  rw [natCast_zsmul]
-  exact AddSubmonoid.nsmul_mem _ (AddSubmonoid.subset_closure (mem_range_self i)) m
+  refine sum_mem fun i _ ↦ ?_
+  rw [← Int.toNat_of_nonneg (hc i), natCast_zsmul]
+  exact nsmul_mem (AddSubmonoid.subset_closure (mem_range_self i)) _
 
 /-- A combination of a finite family whose integer coefficients all have the same sign lies in the
 additive closure of the family, or its negative does. -/
 theorem sum_smul_mem_or_neg_mem_closure (c : κ → ℤ) (hc : (∀ i, 0 ≤ c i) ∨ (∀ i, c i ≤ 0)) :
     (∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) ∨
       -(∑ i, c i • v i) ∈ AddSubmonoid.closure (range v) := by
-  refine hc.imp (sum_smul_mem_closure v c) fun h => ?_
-  rw [← Finset.sum_neg_distrib]
-  simp only [← neg_zsmul]
-  exact sum_smul_mem_closure v (-c) fun i => Int.neg_nonneg_of_nonpos (h i)
+  refine hc.imp (sum_smul_mem_closure v c) fun h ↦ ?_
+  simpa using sum_smul_mem_closure v (-c) fun i ↦ neg_nonneg.2 (h i)
 
 end TauCeti
