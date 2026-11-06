@@ -19,8 +19,7 @@ On a compact Riemannian manifold of dimension `n > 2`, the Yamabe quotient satis
 for every `C¹` function `u`. Here `Scal_g⁻ = max (-Scal_g) 0` is the negative part of the
 scalar curvature. Hölder's inequality with conjugate exponents `n / 2` and `n / (n - 2)`
 controls the negative potential energy by the critical norm of `u`; the Dirichlet term is
-nonnegative. In particular, the quotients of nonzero smooth functions are bounded below,
-and nonnegative scalar curvature gives nonnegative quotients.
+nonnegative. In particular, the quotients of nonzero smooth functions are bounded below.
 
 These are bounds for the differentiable-function quotient, not a construction of its weak
 domain or a claim that its infimum is attained. Neither orientation nor absence of boundary
@@ -130,18 +129,6 @@ theorem neg_integral_scalarCurvature_negPart_rpow_le_yamabeQuotient
       simpa only [Pi.neg_apply, neg_mul] using
         (mul_le_mul_of_nonneg_right hScal (sq_nonneg (u x))).trans
           (le_add_of_nonneg_left hgrad)
-
-omit [CompactSpace M] in
-/-- Nonnegative scalar curvature makes the total Yamabe quotient nonnegative in dimension
-`n > 2`, even without regularity or integrability assumptions on the function. -/
-theorem yamabeQuotient_nonneg [SigmaCompactSpace M] (hn : 2 < finrank ℝ E) (u : M → ℝ)
-    (hS : ∀ x, 0 ≤ (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x) :
-    0 ≤ yamabeQuotient I u := by
-  rw [yamabeQuotient_def]
-  exact div_nonneg (integral_nonneg fun x ↦ add_nonneg
-    (mul_nonneg (conformalCoefficient_pos hn).le (sq_nonneg _))
-    (mul_nonneg (hS x) (sq_nonneg _)))
-    (Real.rpow_nonneg (integral_nonneg fun x ↦ Real.rpow_nonneg (abs_nonneg _) _) _)
 
 /-- On a compact Riemannian manifold of dimension greater than two, the Yamabe quotients of
 nonzero `C¹` functions form a set bounded below. In particular this bounds the smooth test
