@@ -429,6 +429,42 @@ local instance f4ShortRootCotangentAdjointComodule :
   Derivation.adjointComodule
     (R := 𝔽₂) (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
 
+/-- A vector of the ideal flag term has nonzero coordinates only at indices below the ideal rank. -/
+private theorem lt_of_mem_support_repr_of_mem_ideal
+    {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual}
+    (hx : x ∈ f4ShortRootCotangentFlagIdeal (A := A))
+    {i : Fin ((f4ShortRootRepresentedIdealRank + 26) +
+      f4ShortRootRepresentedComplementRank)}
+    (hi : i ∈ ((f4ShortRootCotangentFlagBasis.baseChange A).repr x).support) :
+    i.val < f4ShortRootRepresentedIdealRank := by
+  unfold f4ShortRootCotangentFlagIdeal at hx
+  have hsupp :=
+    (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
+      (Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
+        Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
+      (by simpa only [← Set.range_comp, Function.comp_def] using hx)
+  rcases hsupp hi with ⟨i', hi'⟩
+  rw [← hi']
+  exact i'.isLt
+
+/-- A vector of the range flag term has nonzero coordinates only at indices below the range rank. -/
+private theorem lt_of_mem_support_repr_of_mem_range
+    {x : TensorProduct 𝔽₂ A f4ShortRootCotangentDual}
+    (hx : x ∈ f4ShortRootCotangentFlagRange (A := A))
+    {i : Fin ((f4ShortRootRepresentedIdealRank + 26) +
+      f4ShortRootRepresentedComplementRank)}
+    (hi : i ∈ ((f4ShortRootCotangentFlagBasis.baseChange A).repr x).support) :
+    i.val < f4ShortRootRepresentedIdealRank + 26 := by
+  unfold f4ShortRootCotangentFlagRange at hx
+  have hsupp :=
+    (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
+      (Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
+        Fin.castAdd f4ShortRootRepresentedComplementRank i)
+      (by simpa only [← Set.range_comp, Function.comp_def] using hx)
+  rcases hsupp hi with ⟨i', hi'⟩
+  rw [← hi']
+  exact i'.isLt
+
 /-- A point acts block triangularly on the adapted flag if it preserves its two nontrivial steps. -/
 theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     (g : HopfAlgebra.points
@@ -457,19 +493,9 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
         f4ShortRootCotangentFlagIdeal (A := A) := by
       rw [hj]
       exact f4ShortRootCotangentFlagBasis_mem_ideal j'
-    have hmap := hIdeal hjmem
-    unfold f4ShortRootCotangentFlagIdeal at hmap
-    have hsupp :=
-      (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
-        (Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
-          Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
-        (by simpa only [← Set.range_comp, Function.comp_def] using hmap)
     apply Finsupp.notMem_support_iff.mp
     intro hcoord
-    rcases hsupp hcoord with ⟨i', hi'⟩
-    have hiIdeal : i.val < f4ShortRootRepresentedIdealRank := by
-      rw [← hi']
-      exact i'.isLt
+    have hiIdeal := lt_of_mem_support_repr_of_mem_ideal (hIdeal hjmem) hcoord
     rw [f4ShortRootCotangentFlagWeight_of_ideal j hjIdeal,
       f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal] at hweight
     omega
@@ -480,19 +506,9 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
           f4ShortRootCotangentFlagRange (A := A) := by
         rw [hj]
         exact f4ShortRootCotangentFlagBasis_mem_range j'
-      have hmap := hRange hjmem
-      unfold f4ShortRootCotangentFlagRange at hmap
-      have hsupp :=
-        (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
-          (Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
-            Fin.castAdd f4ShortRootRepresentedComplementRank i)
-          (by simpa only [← Set.range_comp, Function.comp_def] using hmap)
       apply Finsupp.notMem_support_iff.mp
       intro hcoord
-      rcases hsupp hcoord with ⟨i', hi'⟩
-      have hiRange : i.val < f4ShortRootRepresentedIdealRank + 26 := by
-        rw [← hi']
-        exact i'.isLt
+      have hiRange := lt_of_mem_support_repr_of_mem_range (hRange hjmem) hcoord
       have hjWeight : f4ShortRootCotangentFlagWeight j = 1 :=
         f4ShortRootCotangentFlagWeight_of_quotient j hjIdeal hjRange
       have hiWeight : 1 ≤ f4ShortRootCotangentFlagWeight i := by
