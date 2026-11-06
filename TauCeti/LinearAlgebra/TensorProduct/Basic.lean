@@ -26,8 +26,8 @@ pure tensors over a finite spanning family of the right factor.
 
 * `LinearMap.assoc_rTensor_lTensor_comp`: reassociation commutes with tensoring a composite map.
 * `LinearMap.lTensor_rTensor_comm`: tensoring maps on the two factors commutes elementwise.
-* `LinearMap.rTensor_add_lTensor_comp_rTensor_sq`: the square of the twisted co-Leibniz operator
-  on `N ⊗ N`, for an involution anticommuting with `b`.
+* `LinearMap.rTensor_add_lTensor_comp_rTensor_comp_self`: the twisted co-Leibniz operator on
+  `N ⊗ N` composed with itself, for an involution anticommuting with `b`.
 * `LinearMap.injective_rTensor_congr`: injectivity of `f ⊗ 𝟙 M` is invariant under isomorphisms
   of `M`.
 * `LinearMap.tensorComponent`: contraction against the right factor of a tensor product.
@@ -93,14 +93,14 @@ theorem injective_rTensor_congr (f : N →ₗ[R] P) (e : M ≃ₗ[R] Q) :
     funext fun x ↦ lTensor_rTensor_comm f e.toLinearMap x
   rw [← EquivLike.comp_injective _ (e.lTensor P), h, EquivLike.injective_comp]
 
-/-- Squaring the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ b) ∘ (τ ⊗ 𝟙)` on `N ⊗ N`: if `τ` is an
-involution anticommuting with `b`, the cross terms cancel and the square is
+/-- Composing the twisted co-Leibniz operator `b ⊗ 𝟙 + (𝟙 ⊗ b) ∘ (τ ⊗ 𝟙)` on `N ⊗ N` with itself:
+if `τ` is an involution anticommuting with `b`, the cross terms cancel and the composite is
 `(b ∘ b) ⊗ 𝟙 + 𝟙 ⊗ (b ∘ b)`. -/
-theorem rTensor_add_lTensor_comp_rTensor_sq (b τ : N →ₗ[R] N) (hτ : τ ∘ₗ τ = LinearMap.id)
-    (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) (w : N ⊗[R] N) :
-    (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N)
-        ((b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) w) =
-      (b ∘ₗ b).rTensor N w + (b ∘ₗ b).lTensor N w := by
+theorem rTensor_add_lTensor_comp_rTensor_comp_self (b τ : N →ₗ[R] N) (hτ : τ ∘ₗ τ = LinearMap.id)
+    (hodd : b ∘ₗ τ + τ ∘ₗ b = 0) :
+    (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) ∘ₗ (b.rTensor N + b.lTensor N ∘ₗ τ.rTensor N) =
+      (b ∘ₗ b).rTensor N + (b ∘ₗ b).lTensor N := by
+  refine LinearMap.ext fun w ↦ ?_
   have hcross : TensorProduct.map (b ∘ₗ τ) b w + TensorProduct.map (τ ∘ₗ b) b w = 0 := by
     rw [← LinearMap.add_apply, ← TensorProduct.map_add_left, hodd, TensorProduct.map_zero_left,
       LinearMap.zero_apply]
