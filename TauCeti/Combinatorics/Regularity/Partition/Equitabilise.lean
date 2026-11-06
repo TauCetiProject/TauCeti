@@ -32,6 +32,8 @@ This controls how much a quantity defined part by part, such as an energy, can c
   `a * k ≤ #s`.
 * `Finpartition.card_filter_not_part_equitabilise_subset_part_le`: at most `#P.parts * m` points
   of `s` have a part in `P.equitabilise h` not contained in their part in `P`.
+* `Finpartition.exists_card_parts_equitabilise_eq`: `P.equitabilise` can produce any number
+  `n ≤ #s` of parts.
 * `Finpartition.exists_equipartition_card_eq_card_filter_not_part_subset_le`: every partition is
   close, in this sense, to an equipartition with any number `n ≤ #s` of parts.
 -/
@@ -108,6 +110,19 @@ theorem card_filter_not_part_equitabilise_subset_part_le {a b m : ℕ}
     _ = #P.parts * m := sum_const_nat fun _ _ ↦ rfl
 
 variable (P) in
+/-- For `0 < n ≤ #s`, some instance of `P.equitabilise` has exactly `n` parts, of sizes `#s / n`
+and `#s / n + 1`. -/
+theorem exists_card_parts_equitabilise_eq {n : ℕ} (hn : n ≠ 0) (hns : n ≤ #s) :
+    ∃ (a b : ℕ) (h : a * (#s / n) + b * (#s / n + 1) = #s), #(P.equitabilise h).parts = n := by
+  have hsum : (n - #s % n) * (#s / n) + #s % n * (#s / n + 1) = #s := by
+    rw [Nat.sub_mul, mul_add, ← add_assoc,
+      tsub_add_cancel_of_le (Nat.mul_le_mul_right _ (Nat.mod_lt _ hn.bot_lt).le), mul_one,
+      add_comm, Nat.mod_add_div]
+  refine ⟨_, _, hsum, ?_⟩
+  rw [card_parts_equitabilise _ _ (Nat.div_pos hns hn.bot_lt).ne',
+    tsub_add_cancel_of_le (Nat.mod_lt _ hn.bot_lt).le]
+
+variable (P) in
 /-- Every partition `P` of `s` is close to an equipartition of `s` into any number `n` of parts
 with `0 < n ≤ #s`: at most `#P.parts * (#s / n)` points of `s` lie in a part of the equipartition
 not contained in their part of `P`. -/
@@ -115,13 +130,8 @@ theorem exists_equipartition_card_eq_card_filter_not_part_subset_le {n : ℕ} (h
     (hns : n ≤ #s) :
     ∃ Q : Finpartition s, Q.IsEquipartition ∧ #Q.parts = n ∧
       #{x ∈ s | ¬Q.part x ⊆ P.part x} ≤ #P.parts * (#s / n) := by
-  have hsum : (n - #s % n) * (#s / n) + #s % n * (#s / n + 1) = #s := by
-    rw [Nat.sub_mul, mul_add, ← add_assoc,
-      tsub_add_cancel_of_le (Nat.mul_le_mul_right _ (Nat.mod_lt _ hn.bot_lt).le), mul_one,
-      add_comm, Nat.mod_add_div]
-  refine ⟨P.equitabilise hsum, equitabilise_isEquipartition, ?_,
-    card_filter_not_part_equitabilise_subset_part_le P hsum⟩
-  rw [card_parts_equitabilise _ _ (Nat.div_pos hns hn.bot_lt).ne',
-    tsub_add_cancel_of_le (Nat.mod_lt _ hn.bot_lt).le]
+  obtain ⟨a, b, h, hcard⟩ := P.exists_card_parts_equitabilise_eq hn hns
+  exact ⟨P.equitabilise h, equitabilise_isEquipartition, hcard,
+    card_filter_not_part_equitabilise_subset_part_le P h⟩
 
 end Finpartition

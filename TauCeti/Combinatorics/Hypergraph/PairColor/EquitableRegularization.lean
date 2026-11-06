@@ -247,9 +247,12 @@ theorem exists_equipartition_sum_irregularPairs_le [Finite κ] (hε : 0 < ε) {l
       ∑ AB ∈ S.irregularPairs ε P, (#AB.1 * #AB.2 : ℝ) ≤ ε * (Fintype.card V : ℝ) ^ 2 := by
   have := Fintype.ofFinite κ
   by_cases hV : equitablePairColorRegularityBound ε l ≤ Fintype.card V
-  · obtain ⟨P, hP, hlP, hPcard, hP'⟩ :=
-      S.exists_equipartition_sum_irregularPairs_le_or_le_energy hε l _ hV
-    refine ⟨P, hP, (le_max_left _ _).trans hlP, hPcard, hP'.resolve_right fun h ↦ ?_⟩
+  · rw [equitablePairColorRegularityBound_def] at hV
+    obtain ⟨P, hP, hlP, hPcard, hP'⟩ :=
+      S.exists_equipartition_sum_irregularPairs_le_or_le_energy hε l (⌊2 / ε ^ 5⌋₊ + 1) hV
+    refine ⟨P, hP, (le_max_left _ _).trans hlP,
+      hPcard.trans_eq (equitablePairColorRegularityBound_def ε l).symm,
+      hP'.resolve_right fun h ↦ ?_⟩
     -- After `⌊2 / ε⁵⌋ + 1` rounds the energy would exceed one.
     have hN : 2 / ε ^ 5 < (⌊2 / ε ^ 5⌋₊ + 1 : ℕ) := by
       push_cast
