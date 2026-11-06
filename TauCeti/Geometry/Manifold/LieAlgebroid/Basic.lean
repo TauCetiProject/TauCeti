@@ -122,6 +122,38 @@ def anchorDeriv (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) : C^∞�
 theorem anchorDeriv_apply (a : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) (x : M) :
     A.anchorDeriv a f x = mvfderiv I f x (A.anchor x (a x)) := (rfl)
 
+/-- The derivative along the anchor of the zero section vanishes. -/
+@[simp]
+theorem anchorDeriv_zero_left (f : C^∞⟮I, M; ℝ⟯) : A.anchorDeriv 0 f = 0 := by
+  ext x
+  simp only [anchorDeriv_apply, ContMDiffSection.coe_zero, Pi.zero_apply, map_zero,
+    ContMDiffMap.coe_zero]
+
+/-- The derivative of a constant function along the anchor vanishes. -/
+@[simp]
+theorem anchorDeriv_const_right (a : Cₛ^∞⟮I; F, V⟯) (c : ℝ) :
+    A.anchorDeriv a (ContMDiffMap.const c) = 0 := by
+  ext x
+  simp only [anchorDeriv_apply, ContMDiffMap.coe_zero, Pi.zero_apply]
+  rw [show ⇑(ContMDiffMap.const c : C^∞⟮I, M; ℝ⟯) = fun _ ↦ c from rfl, mvfderiv_const,
+    _root_.zero_apply]
+
+/-- The derivative of the zero function along the anchor vanishes. -/
+@[simp]
+theorem anchorDeriv_zero_right (a : Cₛ^∞⟮I; F, V⟯) : A.anchorDeriv a 0 = 0 :=
+  A.anchorDeriv_const_right a 0
+
+/-- The derivative of the constant function one along the anchor vanishes. -/
+@[simp]
+theorem anchorDeriv_one_right (a : Cₛ^∞⟮I; F, V⟯) : A.anchorDeriv a 1 = 0 :=
+  A.anchorDeriv_const_right a 1
+
+/-- The derivative of a scalar constant function along the anchor vanishes. -/
+@[simp]
+theorem anchorDeriv_algebraMap_right (a : Cₛ^∞⟮I; F, V⟯) (c : ℝ) :
+    A.anchorDeriv a (algebraMap ℝ C^∞⟮I, M; ℝ⟯ c) = 0 :=
+  A.anchorDeriv_const_right a c
+
 /-- The derivative along the anchor is additive in the section. -/
 @[simp]
 theorem anchorDeriv_add_left (a b : Cₛ^∞⟮I; F, V⟯) (f : C^∞⟮I, M; ℝ⟯) :

@@ -15,7 +15,8 @@ The tangent bundle of a finite-dimensional real manifold, with the identity anch
 bracket of vector fields `VectorField.mlieBracket`, is a Lie algebroid,
 `TauCeti.LieAlgebroid.tangent`. Its Leibniz rule is the product rule
 `VectorField.mlieBracket_smul_right` of the bracket of vector fields, and its Jacobi identity is
-`VectorField.leibniz_identity_mlieBracket`. Every Lie algebroid maps to it by its anchor
+`VectorField.leibniz_identity_mlieBracket`. Over a Hausdorff base, every Lie algebroid whose
+underlying bundle is a smooth vector bundle maps to it by its anchor
 (`TauCeti.LieAlgebroid.anchor_bracket`).
 -/
 
