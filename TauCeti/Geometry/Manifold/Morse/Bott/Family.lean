@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 public import TauCeti.Geometry.Manifold.Morse.Bott.Basic
 import TauCeti.Geometry.Manifold.SmoothEmbedding.LeftInverse
 import TauCeti.Topology.Connected.Basic
@@ -21,6 +22,8 @@ each modelled on its own space. The family **exhibits `f` as a Morse–Bott func
 * each `i a` is a nondegenerate critical submanifold of `f`
   (`TauCeti.SmoothEmbedding.IsNondegenerateCriticalSubmanifold`): along its image the kernel of
   the critical Hessian is exactly the tangent space of the image;
+* each piece `S a` is a nonempty manifold without boundary, as in Bott's definition; a critical
+  half-line, say, is not a Morse–Bott critical submanifold;
 * the images `range (i a)` are exactly the connected components of the critical set, each
   occurring for exactly one index;
 * the family of images is locally finite.
@@ -45,8 +48,8 @@ Morse–Bott family of zero-dimensional pieces is Morse
 (`TauCeti.IsMorseBottFamily.isMorse_of_subsingleton`), and conversely the critical points of a
 Morse function, each included as a point, form a Morse–Bott family
 (`TauCeti.IsMorse.exists_isMorseBottFamily`). At the other extreme, a constant function on a
-nonempty connected manifold is Morse–Bott with the whole manifold as its only critical
-submanifold (`TauCeti.isMorseBottFamily_const`).
+nonempty connected manifold without boundary is Morse–Bott with the whole manifold as its only
+critical submanifold (`TauCeti.isMorseBottFamily_const`).
 
 ## References
 
@@ -70,14 +73,17 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {n : ℕ∞ω} {i : ∀ a, SmoothEmbedding (J a) I n (S a) M} {f : M → ℝ} {x : M}
 
 /-- A family of smooth embeddings `i a : S a → M`, each modelled on its own space, **exhibits `f`
-as a Morse–Bott function** when each `i a` is a nondegenerate critical submanifold of `f`, the
-images of the `i a` are exactly the connected components of the critical set of `f`, each occurring
-for exactly one index, and the family of images is locally finite. -/
+as a Morse–Bott function** when each `i a` is a nondegenerate critical submanifold of `f` whose
+source is a nonempty manifold without boundary, the images of the `i a` are exactly the connected
+components of the critical set of `f`, each occurring for exactly one index, and the family of
+images is locally finite. -/
 structure IsMorseBottFamily (i : ∀ a, SmoothEmbedding (J a) I n (S a) M) (f : M → ℝ) : Prop where
   /-- Each piece is a nondegenerate critical submanifold. -/
   isNondegenerateCriticalSubmanifold (a : ι) : (i a).IsNondegenerateCriticalSubmanifold f
   /-- Each piece is nonempty. -/
   nonempty (a : ι) : Nonempty (S a)
+  /-- Each piece is a manifold without boundary. -/
+  boundarylessManifold (a : ι) : BoundarylessManifold (J a) (S a)
   /-- The image of each piece is the connected component of the critical set through any of its
   points. -/
   range_eq_connectedComponentIn (a : ι) (s : S a) :
@@ -152,6 +158,7 @@ theorem isClosed_range [I.Boundaryless] [IsManifold I 1 M] (hf : ContMDiff I �
 theorem neg : IsMorseBottFamily i (-f) where
   isNondegenerateCriticalSubmanifold a := (h.isNondegenerateCriticalSubmanifold a).neg
   nonempty := h.nonempty
+  boundarylessManifold := h.boundarylessManifold
   range_eq_connectedComponentIn a s := by
     rw [criticalPoints_neg]
     exact h.range_eq_connectedComponentIn a s
@@ -211,7 +218,8 @@ theorem IsMorse.exists_isMorseBottFamily [I.Boundaryless] [FiniteDimensional ℝ
     exact range_const
   have hi (a : criticalPoints I f) (z : Z) : i a z = a :=
     SmoothEmbedding.ofIsSmoothEmbedding_apply _ _ _
-  refine ⟨i, hi, ⟨fun a ↦ ?_, fun _ ↦ ⟨0⟩, fun a z ↦ ?_, fun a b hab ↦ ?_, ?_, ?_⟩⟩
+  refine ⟨i, hi, ⟨fun a ↦ ?_, fun _ ↦ ⟨0⟩, fun _ ↦ inferInstance, fun a z ↦ ?_, fun a b hab ↦ ?_,
+    ?_, ?_⟩⟩
   · exact SmoothEmbedding.isNondegenerateCriticalSubmanifold_iff_of_subsingleton.2 fun z ↦
       hi a z ▸ hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints a.2
   · rw [hrange, hi]
@@ -229,10 +237,11 @@ theorem IsMorse.exists_isMorseBottFamily [I.Boundaryless] [FiniteDimensional ℝ
     subst hya hzb
     exact Subtype.ext ((hxt _ hyt a.2).trans (hxt _ hzt b.2).symm)
 
-/-- **A constant function is Morse–Bott.** On a nonempty connected manifold, the identity
-embedding exhibits a constant function as a Morse–Bott function, with the whole manifold as its
-only critical submanifold. -/
-theorem isMorseBottFamily_const [IsManifold I n M] [ConnectedSpace M] (c : ℝ) :
+/-- **A constant function is Morse–Bott.** On a nonempty connected manifold without boundary, the
+identity embedding exhibits a constant function as a Morse–Bott function, with the whole manifold
+as its only critical submanifold. -/
+theorem isMorseBottFamily_const [IsManifold I n M] [BoundarylessManifold I M] [ConnectedSpace M]
+    (c : ℝ) :
     IsMorseBottFamily (fun _ : Unit ↦ SmoothEmbedding.id (I := I) (n := n) (M := M))
       (fun _ ↦ c) := by
   have hcrit : criticalPoints I (fun _ : M ↦ c) = univ :=
@@ -240,7 +249,8 @@ theorem isMorseBottFamily_const [IsManifold I n M] [ConnectedSpace M] (c : ℝ) 
   have hrange : range (SmoothEmbedding.id (I := I) (n := n) (M := M)) = univ := by
     rw [SmoothEmbedding.coe_id, range_id]
   refine ⟨fun _ ↦ SmoothEmbedding.isNondegenerateCriticalSubmanifold_id_const c,
-    fun _ ↦ inferInstance, fun _ x ↦ ?_, fun _ _ _ ↦ rfl, ?_, (locallyFinite_of_finite _)⟩
+    fun _ ↦ inferInstance, fun _ ↦ inferInstance, fun _ x ↦ ?_, fun _ _ _ ↦ rfl, ?_,
+    (locallyFinite_of_finite _)⟩
   · rw [hrange, hcrit, connectedComponentIn_univ,
       PreconnectedSpace.connectedComponent_eq_univ]
   · rw [hcrit]
