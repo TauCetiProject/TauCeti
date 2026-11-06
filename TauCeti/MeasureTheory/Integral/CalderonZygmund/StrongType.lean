@@ -8,6 +8,7 @@ module
 public import TauCeti.MeasureTheory.Function.Lp.Adjoint
 public import TauCeti.MeasureTheory.Integral.CalderonZygmund.WeakType
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.General
+import TauCeti.MeasureTheory.Function.Lp.Norm
 
 /-!
 # Singular integral operators of strong type `(p, p)` for `1 < p < ∞`
@@ -268,11 +269,7 @@ theorem exists_eLpNorm_le_of_setLIntegral_compl_closedBall_le (c : ℝ) {M B B' 
   · refine ⟨M, hM, fun T hTM _ _ f => ?_⟩
     rw [← Lp.enorm_def, ← Lp.enorm_def]
     exact (T.le_opENorm f).trans (by gcongr)
-  · have : 0 ≤ 1 - 1 / p.toReal := by
-      have : 1 ≤ p.toReal := by
-        simpa using (ENNReal.toReal_le_toReal (by norm_num) hp_top).2 hp.le
-      rw [sub_nonneg]
-      exact div_le_one_of_le₀ this (by positivity)
+  · have : 0 ≤ 1 - 1 / p.toReal := TauCeti.zero_le_one_sub_one_div_toReal hp.le
     refine ⟨(ENNReal.ofReal p.toReal *
           (2 * (2 ^ Fintype.card ι * (4 * M ^ 2) + ENNReal.ofReal c ^ Fintype.card ι + 4 * B')) +
         ENNReal.ofReal (p.toReal / (p.toReal - 2)) * (4 * M ^ 2)) ^ (1 - 1 / p.toReal),

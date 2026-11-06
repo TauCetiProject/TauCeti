@@ -24,6 +24,8 @@ bounds.
 
 * `TauCeti.Lp.norm_le_add_of_ae_norm_le`: an `Lᵖ` norm bound from pointwise domination by a
   two-term linear combination.
+* `TauCeti.zero_le_one_sub_one_div_toReal`: for `1 ≤ p`, the Hölder exponent `1 - 1 / p.toReal` is
+  nonnegative.
 * `MeasureTheory.L1.norm_eq_integral_of_nonneg`: the norm of a nonnegative real `L¹` function is
   its integral.
 * `MeasureTheory.Lp.integral_norm_sq_eq_norm_sq`: the integral of the squared pointwise
@@ -55,6 +57,14 @@ namespace TauCeti
 
 open MeasureTheory
 open scoped ENNReal
+
+/-- For `1 ≤ p`, the Hölder exponent `1 - 1 / p` is nonnegative (with `p = ∞` giving `1`). -/
+theorem zero_le_one_sub_one_div_toReal {p : ℝ≥0∞} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / p.toReal := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · simp
+  · have h1p : (1 : ℝ) ≤ p.toReal := by
+      simpa using ENNReal.toReal_mono hp_top hp
+    exact sub_nonneg.2 (div_le_one_of_le₀ h1p (by positivity))
 
 /-- The norm of an `Lᵖ` function dominated pointwise by a two-term combination of two other
 `Lᵖ` functions obeys the same bound in norm. -/
@@ -153,12 +163,7 @@ theorem Lp.integral_norm_le_mul_norm {alpha F : Type*} [MeasurableSpace alpha]
     {m : Measure alpha} [IsFiniteMeasure m] [NormedAddCommGroup F] {p : ℝ≥0∞} [Fact (1 ≤ p)]
     (f : Lp F p m) :
     ∫ x, ‖f x‖ ∂m ≤ (m Set.univ ^ (1 - 1 / p.toReal)).toReal * ‖f‖ := by
-  have hexp : 0 ≤ 1 - 1 / p.toReal := by
-    rcases eq_or_ne p ∞ with rfl | hp
-    · simp
-    · have h1p : 1 ≤ p.toReal := by
-        simpa using ENNReal.toReal_mono hp (Fact.out : 1 ≤ p)
-      exact sub_nonneg.2 (div_le_one_of_le₀ h1p (zero_le_one.trans h1p))
+  have hexp := TauCeti.zero_le_one_sub_one_div_toReal (Fact.out : 1 ≤ p)
   have h := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (p := 1) (q := p) (μ := m) Fact.out
     (Lp.aestronglyMeasurable f)
   rw [ENNReal.toReal_one, div_one] at h
