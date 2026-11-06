@@ -241,7 +241,14 @@ theorem exists_nat_sum_nsmul_eq_zero_and_forall_coeff_add_dual_pos [Fintype ι]
   let m : N →+ ℤ := (∑ k, w k • b.coord k).toAddMonoidHom
   have hm : ∀ n, (m n : ℚ) = E * Y (e n) := fun n ↦ by
     conv_rhs => rw [pi_eq_sum_univ' (e n)]
-    simp [m, e, Finset.mul_sum, hw, mul_comm, mul_left_comm]
+    simp only [m, LinearMap.toAddMonoidHom_coe, LinearMap.sum_apply, LinearMap.smul_apply,
+      Int.cast_sum, Int.cast_mul, map_sum, map_smul, smul_eq_mul, Finset.mul_sum]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [hw k]
+    simp only [e, AddMonoidHom.comp_apply, AddMonoidHom.compLeft_apply,
+      Function.comp_apply, LinearMap.toAddMonoidHom_coe, LinearEquiv.coe_coe,
+      Module.Basis.equivFun_apply, Int.coe_castAddHom, Module.Basis.coord_apply]
+    ring
   refine ⟨x, m, ?_, fun j ↦ ?_, fun j ↦ ?_⟩
   · apply b.repr.injective
     ext k
