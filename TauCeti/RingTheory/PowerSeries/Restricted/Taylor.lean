@@ -82,11 +82,13 @@ theorem norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm (hc : 0 < c) (hf : f.HasGaus
     (gaussNorm_nonneg _ _ f fun _ ↦ norm_nonneg _) n fun m ↦ le_gaussNorm _ _ f hf (m + n)
 
 /-- **Translation does not increase the Gauss norm.** Over an ultrametric normed ring, for a
-series with a Gauss norm at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`,
-`‖taylor a f‖_c ≤ ‖f‖_c`. -/
-theorem gaussNorm_taylor_le (hc : 0 < c) (hf : f.HasGaussNorm norm c) (ha : ‖a‖ ≤ c) :
-    (taylor a f).gaussNorm norm c ≤ f.gaussNorm norm c :=
-  (gaussNorm_eq _ _ _).trans_le <| ciSup_le fun n ↦ by
+series with a Gauss norm at a radius `c` and a point `a` with `‖a‖ ≤ c`,
+`‖taylor a f‖_c ≤ ‖f‖_c`. For `c = 0` the point is `a = 0` and translation is the identity. -/
+theorem gaussNorm_taylor_le (hf : f.HasGaussNorm norm c) (ha : ‖a‖ ≤ c) :
+    (taylor a f).gaussNorm norm c ≤ f.gaussNorm norm c := by
+  rcases ((norm_nonneg a).trans ha).eq_or_lt with rfl | hc
+  · rw [norm_le_zero_iff.mp ha, taylor_zero]
+  exact (gaussNorm_eq _ _ _).trans_le <| ciSup_le fun n ↦ by
     simpa only [coeff_taylor] using norm_evalAt_hasseDeriv_mul_pow_le_gaussNorm hc hf ha n
 
 /-- **Translates of restricted series are restricted.** Over an ultrametric normed ring, if `f` is
@@ -188,12 +190,12 @@ theorem IsRestricted.taylor_neg_taylor (hf : f.IsRestricted c) (ha : ‖a‖ ≤
   rw [hf.taylor_taylor ha (by rwa [norm_neg]), neg_add_cancel, taylor_zero]
 
 /-- **Translation is an isometry.** Over a complete ultrametric normed ring, for a series `f`
-restricted at a radius `c > 0` and a point `a` with `‖a‖ ≤ c`, `‖taylor a f‖_c = ‖f‖_c`. -/
-theorem IsRestricted.gaussNorm_taylor (hf : f.IsRestricted c) (hc : 0 < c)
+restricted at a radius `c` and a point `a` with `‖a‖ ≤ c`, `‖taylor a f‖_c = ‖f‖_c`. -/
+theorem IsRestricted.gaussNorm_taylor (hf : f.IsRestricted c)
     (ha : ‖a‖ ≤ c) : (PowerSeries.taylor a f).gaussNorm norm c = f.gaussNorm norm c := by
-  refine (gaussNorm_taylor_le hc (hasGaussNorm_of_isRestricted hf) ha).antisymm ?_
+  refine (gaussNorm_taylor_le (hasGaussNorm_of_isRestricted hf) ha).antisymm ?_
   conv_lhs => rw [← hf.taylor_neg_taylor ha]
-  exact gaussNorm_taylor_le hc (hasGaussNorm_of_isRestricted (hf.taylor ha)) (by rwa [norm_neg])
+  exact gaussNorm_taylor_le (hasGaussNorm_of_isRestricted (hf.taylor ha)) (by rwa [norm_neg])
 
 /-- **The Taylor remainder estimate.** Over a complete ultrametric normed ring, let `f` be
 restricted at a radius `c > 0` and let `‖a‖ ≤ c`, `‖y‖ ≤ c`. If `ε` bounds the first `T` terms

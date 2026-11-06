@@ -133,7 +133,7 @@ theorem norm_restrict_taylorHom_le (ha : ‖a‖ < R₀) (r s : Set.Ioo (0 : ℝ
   simp only [coe_restrict, coe_taylorHom] at hf htf
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_taylorHom]
   exact (gaussNorm_le_gaussNorm_of_le (fun _ ↦ norm_nonneg _) r.2.1.le hrs htf).trans
-    (gaussNorm_taylor_le s.2.1 hf has)
+    (gaussNorm_taylor_le hf has)
 
 /-- Translation is continuous for all smaller-radius Gauss norms. -/
 theorem continuous_taylorHom (ha : ‖a‖ < R₀) : Continuous (taylorHom ha) := by
@@ -191,7 +191,7 @@ theorem norm_restrict_taylorHom (ha : ‖a‖ < R₀) (r : Set.Ioo (0 : ℝ) R�
     ‖restrict r (taylorHom ha f)‖ = ‖restrict r f‖ := by
   rw [norm_eq_gaussNorm, norm_eq_gaussNorm, coe_restrict, coe_restrict, coe_taylorHom]
   exact (OnOpenDisc.mem_subring.mp f.2 |>.isRestricted
-    (by simpa only [abs_of_pos r.2.1] using r.2.2)).gaussNorm_taylor r.2.1 har
+    (by simpa only [abs_of_pos r.2.1] using r.2.2)).gaussNorm_taylor har
 
 /-- Evaluating a translate at an algebra point `b` evaluates the original series at
 `b + algebraMap R A a`. -/
