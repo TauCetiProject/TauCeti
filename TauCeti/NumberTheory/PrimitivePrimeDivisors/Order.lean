@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.FieldTheory.Finite.Basic
-public import TauCeti.Data.Nat.GCD
+public import TauCeti.Data.Nat.Prime.Basic
 
 /-!
 # Primitive prime divisors and multiplicative orders
