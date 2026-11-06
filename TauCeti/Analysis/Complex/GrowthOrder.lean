@@ -32,6 +32,10 @@ growth input of Hadamard's factorization and of the convexity bounds for L-funct
   `TauCeti.orderLE_cexp_pow_iff` shows that `exp (s ^ n)` has no smaller order when `n ≠ 0`.
   In particular `exp` has order exactly `1` (`TauCeti.orderLE_cexp_iff`).
 * `TauCeti.orderLE_iff_isConst`: an entire function of negative order is constant (Liouville).
+* `TauCeti.IsFiniteOrder`: existence of an order bound, with closure under finite sums,
+  products and affine pullback. Invertible affine substitutions and nonzero polynomial
+  factors preserve finite order in both directions; the latter permits changing a
+  polynomial used to clear poles without changing the finite-order condition.
 -/
 
 public section
@@ -233,5 +237,155 @@ theorem orderLE_cexp_pow_iff {n : ℕ} (hn : n ≠ 0) :
 @[simp]
 theorem orderLE_cexp_iff : OrderLE cexp A ↔ 1 ≤ A := by
   simpa using orderLE_cexp_pow_iff (A := A) one_ne_zero
+
+/-! ### Finite order -/
+
+/-- A function has finite order if it has order at most some real exponent.
+Entirety is not part of this predicate. -/
+def IsFiniteOrder (f : ℂ → ℂ) : Prop := ∃ A, OrderLE f A
+
+/-- The defining characterization of finite order. -/
+theorem isFiniteOrder_def : IsFiniteOrder f ↔ ∃ A, OrderLE f A := Iff.rfl
+
+/-- Any upper bound on the order witnesses finite order. -/
+theorem OrderLE.isFiniteOrder (hf : OrderLE f A) : IsFiniteOrder f := ⟨A, hf⟩
+
+/-- Domination at infinity preserves finite order. -/
+theorem _root_.Asymptotics.IsBigO.isFiniteOrder (hfg : f =O[cobounded ℂ] g)
+    (hg : IsFiniteOrder g) : IsFiniteOrder f := by
+  obtain ⟨A, hA⟩ := hg
+  exact (hfg.orderLE hA).isFiniteOrder
+
+/-- Constants have finite order. -/
+@[simp]
+theorem isFiniteOrder_const (c : ℂ) : IsFiniteOrder (fun _ ↦ c) :=
+  (orderLE_const c 0).isFiniteOrder
+
+namespace IsFiniteOrder
+
+/-- Two functions of finite order admit a common nonnegative upper bound on their orders. -/
+theorem exists_common_orderLE (hf : IsFiniteOrder f) (hg : IsFiniteOrder g) :
+    ∃ A ≥ 0, OrderLE f A ∧ OrderLE g A := by
+  obtain ⟨A, hA⟩ := hf
+  obtain ⟨B, hB⟩ := hg
+  exact ⟨max 0 (max A B), le_max_left _ _,
+    hA.mono ((le_max_left A B).trans (le_max_right _ _)),
+    hB.mono ((le_max_right A B).trans (le_max_right _ _))⟩
+
+/-- The sum of two functions of finite order has finite order. -/
+theorem add (hf : IsFiniteOrder f) (hg : IsFiniteOrder g) :
+    IsFiniteOrder (fun s ↦ f s + g s) := by
+  obtain ⟨A, _, hA, hB⟩ := hf.exists_common_orderLE hg
+  exact (hA.add hB).isFiniteOrder
+
+/-- Negation preserves finite order. -/
+theorem neg (hf : IsFiniteOrder f) : IsFiniteOrder (fun s ↦ -f s) := by
+  obtain ⟨A, hA⟩ := hf
+  exact hA.neg.isFiniteOrder
+
+/-- The difference of two functions of finite order has finite order. -/
+theorem sub (hf : IsFiniteOrder f) (hg : IsFiniteOrder g) :
+    IsFiniteOrder (fun s ↦ f s - g s) := by
+  simpa only [sub_eq_add_neg] using hf.add hg.neg
+
+/-- The product of two functions of finite order has finite order. -/
+theorem mul (hf : IsFiniteOrder f) (hg : IsFiniteOrder g) :
+    IsFiniteOrder (fun s ↦ f s * g s) := by
+  obtain ⟨A, _, hA, hB⟩ := hf.exists_common_orderLE hg
+  exact (hA.mul hB).isFiniteOrder
+
+/-- Multiplication by a constant preserves finite order. -/
+theorem const_mul (hf : IsFiniteOrder f) (c : ℂ) :
+    IsFiniteOrder (fun s ↦ c * f s) :=
+  (isFiniteOrder_const c).mul hf
+
+/-- Natural powers preserve finite order. -/
+theorem pow (hf : IsFiniteOrder f) (n : ℕ) : IsFiniteOrder (fun s ↦ f s ^ n) := by
+  obtain ⟨A, hA⟩ := hf
+  exact (hA.pow n).isFiniteOrder
+
+/-- A finite sum of functions of finite order has finite order. -/
+theorem sum {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
+    (h : ∀ i ∈ t, IsFiniteOrder (F i)) : IsFiniteOrder (fun s ↦ ∑ i ∈ t, F i s) := by
+  classical
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert i t hi ih =>
+    simp only [Finset.sum_insert hi]
+    exact (h i (Finset.mem_insert_self i t)).add
+      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+/-- A finite product of functions of finite order has finite order. -/
+theorem prod {ι : Type*} {t : Finset ι} {F : ι → ℂ → ℂ}
+    (h : ∀ i ∈ t, IsFiniteOrder (F i)) : IsFiniteOrder (fun s ↦ ∏ i ∈ t, F i s) := by
+  classical
+  induction t using Finset.induction_on with
+  | empty => simp
+  | insert i t hi ih =>
+    simp only [Finset.prod_insert hi]
+    exact (h i (Finset.mem_insert_self i t)).mul
+      (ih fun j hj ↦ h j (Finset.mem_insert_of_mem hj))
+
+/-- An affine pullback of a function of finite order has finite order, even for a constant map. -/
+theorem comp_mul_add (hf : IsFiniteOrder f) (a b : ℂ) :
+    IsFiniteOrder (fun s ↦ f (a * s + b)) := by
+  obtain ⟨A, hA⟩ := hf
+  exact (hA.comp_mul_add a b).isFiniteOrder
+
+end IsFiniteOrder
+
+/-- An invertible affine substitution preserves finite order in both directions. -/
+@[simp]
+theorem isFiniteOrder_comp_mul_add_iff {a : ℂ} (ha : a ≠ 0) (b : ℂ) :
+    IsFiniteOrder (fun s ↦ f (a * s + b)) ↔ IsFiniteOrder f := by
+  refine ⟨fun h ↦ ?_, fun h ↦ h.comp_mul_add a b⟩
+  have h' := h.comp_mul_add a⁻¹ (-(a⁻¹ * b))
+  simpa [mul_add, ← mul_assoc, ha] using h'
+
+/-- Polynomials have finite order. -/
+theorem _root_.Polynomial.isFiniteOrder_eval (p : Polynomial ℂ) : IsFiniteOrder p.eval :=
+  p.orderLE_eval.isFiniteOrder
+
+/-- A nonzero polynomial factor can be cancelled when testing finite order.
+No continuity or analyticity assumption on the other factor is needed. -/
+@[simp]
+theorem _root_.Polynomial.isFiniteOrder_eval_mul_iff (p : Polynomial ℂ) (hp : p ≠ 0) :
+    IsFiniteOrder (fun s ↦ p.eval s * f s) ↔ IsFiniteOrder f := by
+  refine ⟨fun h ↦ ?_, fun h ↦ p.isFiniteOrder_eval.mul h⟩
+  have hP : (fun _ : ℂ ↦ (1 : ℂ)) =O[cobounded ℂ] p.eval := by
+    simpa using Polynomial.isBigO_cobounded_of_degree_le
+      (P := (1 : Polynomial ℂ)) (Q := p)
+      (Polynomial.degree_one_le.trans (Polynomial.zero_le_degree_iff.mpr hp))
+  simpa only [one_mul] using (hP.mul (isBigO_refl f _)).isFiniteOrder h
+
+/-- The exponential of a monomial has finite order, regardless of its degree. -/
+theorem isFiniteOrder_cexp_mul_pow (a : ℂ) (n : ℕ) :
+    IsFiniteOrder (fun s ↦ cexp (a * s ^ n)) :=
+  (orderLE_cexp_mul_pow a n).isFiniteOrder
+
+/-- The iterated exponential does not have finite order: on the positive real axis,
+its logarithmic norm outgrows every power. -/
+@[simp]
+theorem not_isFiniteOrder_cexp_cexp : ¬ IsFiniteOrder (fun s ↦ cexp (cexp s)) := by
+  rintro ⟨A, hA⟩
+  let B := max A 0 + 1
+  have hAB : A < B := by dsimp [B]; linarith [le_max_left A 0]
+  have hO := ((hA B hAB).comp_tendsto
+    (RCLike.tendsto_ofReal_atTop_cobounded ℂ)).norm_left
+  have hreal : (fun x : ℝ ↦ Real.exp (Real.exp x)) =O[atTop]
+      (fun x : ℝ ↦ Real.exp (|x| ^ B)) := by
+    simpa [Function.comp_def, ← Complex.ofReal_exp] using hO
+  rw [Real.isBigO_exp_comp_exp_comp] at hreal
+  have hsmall := (isLittleO_rpow_exp_atTop B).bound (by norm_num : (0 : ℝ) < 1 / 2)
+  have ht : Tendsto (fun x : ℝ ↦ Real.exp x - |x| ^ B) atTop atTop := by
+    apply tendsto_atTop_mono' atTop _ (Real.tendsto_exp_atTop.const_mul_atTop
+      (by norm_num : (0 : ℝ) < 1 / 2))
+    filter_upwards [hsmall, eventually_ge_atTop 0] with x hx hx0
+    simp only [Real.norm_eq_abs, Real.abs_exp] at hx
+    rw [abs_of_nonneg hx0]
+    have hp := Real.rpow_nonneg hx0 B
+    rw [abs_of_nonneg hp] at hx
+    linarith
+  exact not_isBoundedUnder_of_tendsto_atTop ht hreal
 
 end TauCeti
