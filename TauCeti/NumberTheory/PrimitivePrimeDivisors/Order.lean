@@ -78,6 +78,21 @@ theorem orderOf_ratio_pos {p : ℕ} (hp : p.Prime)
   Nat.pos_of_dvd_of_pos (hp.orderOf_ratio_dvd_sub_one hab)
     (Nat.sub_pos_of_lt hp.one_lt)
 
+/-- If a prime not dividing `b` is primitive at positive exponent `n`, then the ratio of
+bases has order `n` modulo that prime. The inequality prevents truncated subtraction. -/
+theorem orderOf_ratio_eq_of_primitive {p : ℕ} (hp : p.Prime)
+    {a b n : ℕ} (hba : b ≤ a) (hb : ¬ p ∣ b) (hn : 0 < n)
+    (hdiv : p ∣ a ^ n - b ^ n)
+    (hprev : ∀ k, 0 < k → k < n → ¬ p ∣ a ^ k - b ^ k) :
+    orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) = n := by
+  refine (orderOf_eq_iff hn).2 ⟨?_, ?_⟩
+  · exact orderOf_dvd_iff_pow_eq_one.mp
+      ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb n).mp hdiv)
+  · intro k hkn hk hpow
+    exact hprev k hk hkn
+      ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb k).mpr
+        (orderOf_dvd_of_pow_eq_one hpow))
+
 /-- For coprime bases, a prime is primitive at exponent `n` exactly when the ratio of
 the bases has order `n` modulo that prime. Primitivity is stated directly, not as a predicate. -/
 theorem primitive_divisor_iff_orderOf_eq {p : ℕ} (hp : p.Prime)
@@ -88,13 +103,7 @@ theorem primitive_divisor_iff_orderOf_eq {p : ℕ} (hp : p.Prime)
   · rintro ⟨hdiv, hprev⟩
     have hprod := hab.not_dvd_mul_of_dvd_pow_sub_pow hp hba hn hdiv
     have hb : ¬ p ∣ b := fun h => hprod (dvd_mul_of_dvd_right h a)
-    refine ⟨hprod, (orderOf_eq_iff hn).2 ⟨?_, ?_⟩⟩
-    · exact orderOf_dvd_iff_pow_eq_one.mp
-        ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb n).mp hdiv)
-    · intro k hkn hk hpow
-      exact hprev k hk hkn
-        ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb k).mpr
-          (orderOf_dvd_of_pow_eq_one hpow))
+    exact ⟨hprod, hp.orderOf_ratio_eq_of_primitive hba hb hn hdiv hprev⟩
   · rintro ⟨hprod, horder⟩
     have hb : ¬ p ∣ b := fun h => hprod (dvd_mul_of_dvd_right h a)
     refine ⟨(hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb n).mpr
@@ -115,25 +124,13 @@ theorem dvd_sub_one_of_primitive {p : ℕ} (hp : p.Prime)
   have hba : b ≤ a := by
     by_contra h
     exact h1 (by simp [Nat.sub_eq_zero_of_le (by omega : a ≤ b)])
-  have hle := Nat.pow_le_pow_left hba n
   have hprod : ¬ p ∣ a * b := by
     intro hmul
-    rcases hp.dvd_mul.mp hmul with ha | hb
-    · have hb := hp.dvd_of_dvd_pow
-        ((Nat.dvd_sub_iff_right hle (ha.pow hn.ne')).mp hdiv)
-      exact h1 (Nat.dvd_sub ha hb)
-    · have ha := hp.dvd_of_dvd_pow
-        ((Nat.dvd_sub_iff_left hle (hb.pow hn.ne')).mp hdiv)
-      exact h1 (Nat.dvd_sub ha hb)
+    have h := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba hn hdiv hmul
+    exact h1 (Nat.dvd_sub (h.trans (Nat.gcd_dvd_left a b))
+      (h.trans (Nat.gcd_dvd_right a b)))
   have hb : ¬ p ∣ b := fun h => hprod (dvd_mul_of_dvd_right h a)
-  have horder : orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) = n := by
-    refine (orderOf_eq_iff hn).2 ⟨?_, ?_⟩
-    · exact orderOf_dvd_iff_pow_eq_one.mp
-        ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb n).mp hdiv)
-    · intro k hkn hk hpow
-      exact hprev k hk hkn
-        ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb k).mpr
-          (orderOf_dvd_of_pow_eq_one hpow))
+  have horder := hp.orderOf_ratio_eq_of_primitive hba hb hn hdiv hprev
   simpa only [horder] using hp.orderOf_ratio_dvd_sub_one hprod
 
 /-- A primitive prime divisor is strictly larger than its exponent. -/

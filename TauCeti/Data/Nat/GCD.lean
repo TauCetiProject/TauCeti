@@ -44,21 +44,26 @@ theorem coprime_pow_sub_one (q N : ℕ) (hq : 1 < q) (hN : N ≠ 0) :
   apply Nat.Coprime.of_dvd_left (dvd_pow_self q hN)
   exact (Nat.coprime_self_sub_right hpow).2 (Nat.coprime_one_right _)
 
+/-- A prime dividing both a positive-index difference of powers and the product of the
+bases divides their gcd. The inequality prevents truncation of natural subtraction. -/
+theorem Prime.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul {p : ℕ} (hp : p.Prime)
+    {a b n : ℕ} (hba : b ≤ a) (hn : 0 < n) (hdiv : p ∣ a ^ n - b ^ n)
+    (hmul : p ∣ a * b) : p ∣ a.gcd b := by
+  have hle := Nat.pow_le_pow_left hba n
+  rcases hp.dvd_mul.mp hmul with ha | hb
+  · exact Nat.dvd_gcd ha (hp.dvd_of_dvd_pow
+      ((Nat.dvd_sub_iff_right hle (ha.pow hn.ne')).mp hdiv))
+  · exact Nat.dvd_gcd (hp.dvd_of_dvd_pow
+      ((Nat.dvd_sub_iff_left hle (hb.pow hn.ne')).mp hdiv)) hb
+
 /-- A prime divisor of a positive-index difference of powers of coprime bases divides
 neither base. The inequality prevents truncation of natural subtraction. -/
 theorem Coprime.not_dvd_mul_of_dvd_pow_sub_pow {a b n p : ℕ} (hab : a.Coprime b)
     (hp : p.Prime) (hba : b ≤ a) (hn : 0 < n) (hdiv : p ∣ a ^ n - b ^ n) :
     ¬ p ∣ a * b := by
-  have hle := Nat.pow_le_pow_left hba n
-  have hcop := hab.pow n n
   intro hmul
-  have hboth : p ∣ a ^ n ∧ p ∣ b ^ n := by
-    rcases hp.dvd_mul.mp hmul with ha | hb
-    · have ha' := ha.pow hn.ne'
-      exact ⟨ha', (Nat.dvd_sub_iff_right hle ha').mp hdiv⟩
-    · have hb' := hb.pow hn.ne'
-      exact ⟨(Nat.dvd_sub_iff_left hle hb').mp hdiv, hb'⟩
-  have := (Nat.dvd_gcd hboth.1 hboth.2).trans (by rw [hcop.gcd_eq_one])
-  exact hp.not_dvd_one this
+  have h := hp.dvd_gcd_of_dvd_pow_sub_pow_of_dvd_mul hba hn hdiv hmul
+  rw [hab.gcd_eq_one] at h
+  exact hp.not_dvd_one h
 
 end Nat
