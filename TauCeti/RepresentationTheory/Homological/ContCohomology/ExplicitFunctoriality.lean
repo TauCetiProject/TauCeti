@@ -444,7 +444,7 @@ def explicitMap1Equiv
     (φ : H ≃ₜ* G) (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) : H1 G M ≃+ H1 H N := by
   have hequiv' : ∀ (g : G) (n : N), e.symm (φ.symm g • n) = g • e.symm n :=
-    AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv
+    AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply hequiv
   exact
     { toFun := explicitMap1 G M H N φ e.toAddMonoidHom he hequiv
       invFun := explicitMap1 H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
@@ -485,7 +485,8 @@ theorem explicitMap1Equiv_symm_apply
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) (x : H1 H N) :
     (explicitMap1Equiv G M H N φ e he he' hequiv).symm x =
       explicitMap1 H N G M φ.symm e.symm.toAddMonoidHom he'
-        (AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv) x :=
+        (AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply
+          hequiv) x :=
   (rfl)
 
 /-- Pullback on the explicit second continuous cohomology group along a compatible pair. -/
@@ -551,7 +552,7 @@ def explicitMap2Equiv [ContinuousMul G] [ContinuousMul H]
     (φ : H ≃ₜ* G) (e : M ≃+ N) (he : Continuous e) (he' : Continuous e.symm)
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) : H2 G M ≃+ H2 H N := by
   have hequiv' : ∀ (g : G) (n : N), e.symm (φ.symm g • n) = g • e.symm n :=
-    AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv
+    AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply hequiv
   exact
     { toFun := explicitMap2 G M H N φ e.toAddMonoidHom he hequiv
       invFun := explicitMap2 H N G M φ.symm e.symm.toAddMonoidHom he' hequiv'
@@ -592,7 +593,8 @@ theorem explicitMap2Equiv_symm_apply [ContinuousMul G] [ContinuousMul H]
     (hequiv : ∀ (h : H) (m : M), e (φ h • m) = h • e m) (x : H2 H N) :
     (explicitMap2Equiv G M H N φ e he he' hequiv).symm x =
       explicitMap2 H N G M φ.symm e.symm.toAddMonoidHom he'
-        (AddEquiv.symm_map_smul_of_map_mulEquiv_smul e φ.toMulEquiv hequiv) x :=
+        (AddEquiv.symm_map_smul_of_map_smul_of_rightInverse e φ φ.symm φ.apply_symm_apply
+          hequiv) x :=
   (rfl)
 
 end Cohomology
@@ -998,10 +1000,10 @@ theorem explicitCoeff1_bijective [DiscreteTopology M] {N : Type uN} [AddCommGrou
     [TopologicalSpace N] [DiscreteTopology N] [DistribMulAction G N]
     [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff1 G M f continuous_of_discreteTopology) := by
-  have h := (explicitCoeff1Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have h := (explicitCoeff1Equiv G M (AddEquiv.ofBijective f hf)
     continuous_of_discreteTopology continuous_of_discreteTopology
     (AddEquiv.ofBijective_smul hf)).bijective
-  have e : ⇑(explicitCoeff1Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have e : ⇑(explicitCoeff1Equiv G M (AddEquiv.ofBijective f hf)
       continuous_of_discreteTopology continuous_of_discreteTopology
       (AddEquiv.ofBijective_smul hf)) =
       ⇑(explicitCoeff1 G M f continuous_of_discreteTopology) := funext fun x => by
@@ -1016,10 +1018,10 @@ theorem explicitCoeff2_bijective [ContinuousMul G] [DiscreteTopology M] {N : Typ
     [AddCommGroup N] [TopologicalSpace N] [DiscreteTopology N]
     [DistribMulAction G N] [ContinuousSMul G N] {f : M →+[G] N} (hf : Function.Bijective f) :
     Function.Bijective (explicitCoeff2 G M f continuous_of_discreteTopology) := by
-  have h := (explicitCoeff2Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have h := (explicitCoeff2Equiv G M (AddEquiv.ofBijective f hf)
     continuous_of_discreteTopology continuous_of_discreteTopology
     (AddEquiv.ofBijective_smul hf)).bijective
-  have e : ⇑(explicitCoeff2Equiv G M (AddEquiv.ofBijective (f : M →+ N) hf)
+  have e : ⇑(explicitCoeff2Equiv G M (AddEquiv.ofBijective f hf)
       continuous_of_discreteTopology continuous_of_discreteTopology
       (AddEquiv.ofBijective_smul hf)) =
       ⇑(explicitCoeff2 G M f continuous_of_discreteTopology) := funext fun x => by
