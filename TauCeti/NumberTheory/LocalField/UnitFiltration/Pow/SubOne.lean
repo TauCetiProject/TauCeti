@@ -178,6 +178,46 @@ private theorem bddAbove_range_log_normalizedValuationWithZero_zpow_sub_one {α 
   rintro _ ⟨b, rfl⟩
   exact ⟨_, Subgroup.zpow_mem_zpowers _ b, by simp⟩
 
+/-- A nonnegativity fact used to absorb constants in the one-factor estimate. -/
+private theorem log_max_one_abs_nonneg (b : ℤ) : 0 ≤ Real.log (max 1 |(b : ℝ)|) :=
+  Real.log_nonneg (le_max_left _ _)
+
+/-- **The one-factor estimate for a non-torsion unit.** If a power `a ^ M ≠ 1` of a unit `a` lies in
+`U(K, e + 1)`, where `e = v_K(p)`, then `v_K(a ^ b - 1)` is bounded as in the one-factor estimate,
+with the explicit constant `v_K(a ^ M - 1) + e / log p`. -/
+private theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le_of_pow_mem [CharZero K]
+    {a : Kˣ} {α : K} (ha : (a : K) = α) (hpK : (ringChar 𝓀[K] : K) ≠ 0) {M : ℕ}
+    (hM : a ^ M ∈ unitFiltration K (natCastValuation K (ringChar 𝓀[K]) hpK + 1))
+    (hM1 : a ^ M ≠ 1) :
+    ∃ C : ℝ, ∀ b : ℤ, α ^ b ≠ 1 →
+      ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
+        C * (1 + Real.log (max 1 |(b : ℝ)|)) := by
+  set e := natCastValuation K (ringChar 𝓀[K]) hpK
+  have hd : ((e + 1 : ℕ) : ℤ) ≤ WithZero.log (normalizedValuationWithZero K (α ^ M - 1)) := by
+    rw [← ha, ← Units.val_pow_eq_pow_val]
+    exact (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one
+      (Nat.succ_ne_zero e) hM1).mp hM
+  set d := WithZero.log (normalizedValuationWithZero K (α ^ M - 1))
+  refine ⟨d + e / Real.log (ringChar 𝓀[K]), fun b hb ↦ ?_⟩
+  have hb0 : b ≠ 0 := by
+    rintro rfl
+    exact hb (zpow_zero α)
+  have hbK : (b.natAbs : K) ≠ 0 := Nat.cast_ne_zero.mpr (Int.natAbs_ne_zero.mpr hb0)
+  have h := log_normalizedValuationWithZero_zpow_sub_one_le (Nat.succ_ne_zero e) hM hM1 hbK
+    fun ℓ hℓ hℓK _ ↦ natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one hpK hℓ hℓK
+  have hv := natCastValuation_le_div_log_mul_log hbK hpK
+  have hb1 : (1 : ℝ) ≤ |(b : ℝ)| := by
+    rw [← Int.cast_abs]
+    exact_mod_cast Int.one_le_abs hb0
+  rw [Nat.cast_natAbs, Int.cast_abs, ← max_eq_right hb1] at hv
+  have hd0 : (0 : ℝ) ≤ d := by exact_mod_cast (Int.natCast_nonneg _).trans hd
+  have he0 : (0 : ℝ) ≤ e / Real.log (ringChar 𝓀[K]) := by positivity
+  have h' : ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
+      d + natCastValuation K b.natAbs hbK := by
+    rw [ha] at h
+    exact_mod_cast h
+  nlinarith [log_max_one_abs_nonneg b]
+
 /-- **The one-factor estimate.** Let `K` be a nonarchimedean local field of characteristic zero,
 that is, a finite extension of `ℚ_[p]`. For every fixed `α ∈ K` there is a constant `C`,
 depending on `α` and `K`, such that
@@ -187,8 +227,6 @@ theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le [CharZero K] (α 
     ∃ C : ℝ, ∀ b : ℤ, α ^ b ≠ 1 →
       ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
         C * (1 + Real.log (max 1 |(b : ℝ)|)) := by
-  have hL : ∀ b : ℤ, 0 ≤ Real.log (max 1 |(b : ℝ)|) := fun b ↦
-    Real.log_nonneg (le_max_left _ _)
   -- The case `α = 0`: `α ^ b - 1 = -1` for `b ≠ 0`.
   rcases eq_or_ne α 0 with rfl | hα
   · refine ⟨0, fun b hb ↦ ?_⟩
@@ -222,31 +260,8 @@ theorem exists_log_normalizedValuationWithZero_zpow_sub_one_le [CharZero K] (α 
     calc ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ)
         ≤ ((max C₀ 0 : ℤ) : ℝ) := by exact_mod_cast (hC₀ ⟨b, rfl⟩).trans (le_max_left _ _)
       _ ≤ ((max C₀ 0 : ℤ) : ℝ) * (1 + Real.log (max 1 |(b : ℝ)|)) :=
-        le_mul_of_one_le_right (by exact_mod_cast le_max_right _ _) (by linarith [hL b])
-  -- A non-torsion unit: the explicit form, with `v_K(|b|) ≤ (e / log p) log |b|`.
-  have hd : ((e + 1 : ℕ) : ℤ) ≤ WithZero.log (normalizedValuationWithZero K (α ^ M - 1)) := by
-    rw [← ha, ← Units.val_pow_eq_pow_val]
-    exact (mem_unitFiltration_iff_le_log_normalizedValuationWithZero_sub_one
-      (Nat.succ_ne_zero e) hM1).mp hM
-  set d := WithZero.log (normalizedValuationWithZero K (α ^ M - 1))
-  refine ⟨d + e / Real.log (ringChar 𝓀[K]), fun b hb ↦ ?_⟩
-  have hb0 : b ≠ 0 := by
-    rintro rfl
-    exact hb (zpow_zero α)
-  have hbK : (b.natAbs : K) ≠ 0 := Nat.cast_ne_zero.mpr (Int.natAbs_ne_zero.mpr hb0)
-  have h := log_normalizedValuationWithZero_zpow_sub_one_le (Nat.succ_ne_zero e) hM hM1 hbK
-    fun ℓ hℓ hℓK _ ↦ natCastValuation_lt_sub_one_mul_natCastValuation_ringChar_add_one hpK hℓ hℓK
-  have hv := natCastValuation_le_div_log_mul_log hbK hpK
-  have hb1 : (1 : ℝ) ≤ |(b : ℝ)| := by
-    rw [← Int.cast_abs]
-    exact_mod_cast Int.one_le_abs hb0
-  rw [Nat.cast_natAbs, Int.cast_abs, ← max_eq_right hb1] at hv
-  have hd0 : (0 : ℝ) ≤ d := by exact_mod_cast (Int.natCast_nonneg _).trans hd
-  have he0 : (0 : ℝ) ≤ e / Real.log (ringChar 𝓀[K]) := by positivity
-  have h' : ((WithZero.log (normalizedValuationWithZero K (α ^ b - 1)) : ℤ) : ℝ) ≤
-      d + natCastValuation K b.natAbs hbK := by
-    rw [ha] at h
-    exact_mod_cast h
-  nlinarith [hL b]
+        le_mul_of_one_le_right (by exact_mod_cast le_max_right _ _)
+          (by linarith [log_max_one_abs_nonneg b])
+  exact exists_log_normalizedValuationWithZero_zpow_sub_one_le_of_pow_mem ha hpK hM hM1
 
 end TauCeti
