@@ -10,6 +10,7 @@ public import Mathlib.GroupTheory.Coxeter.Basic
 public import Mathlib.LinearAlgebra.BilinearForm.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.RepresentationTheory.Basic
+import TauCeti.Analysis.SpecialFunctions.Trigonometric.Angle
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
@@ -403,8 +404,7 @@ private theorem pow_geometricReflection_mul_eq_one_iff (n : ℕ) :
       have : (n : ℝ) = 0 := by linarith
       have : n = 0 := by exact_mod_cast this
       simp [hzero, this]
-    · have hm0 : (M i i' : ℝ) ≠ 0 := Nat.cast_ne_zero.2 (by omega)
-      have hs : sin (π / M i i') ≠ 0 :=
+    · have hs : sin (π / M i i') ≠ 0 :=
         (TauCeti.sin_pi_div_pos (by exact_mod_cast hge : (1 : ℝ) < M i i')).ne'
       have key := M.pow_geometricReflection_mul_apply_single i i' hs n
       rw [hR, one_apply_eq_self] at key
