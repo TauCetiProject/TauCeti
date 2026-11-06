@@ -417,6 +417,7 @@ theorem repartitionTrace_smul (hF : IsFunctionField k F) (f : F)
 
 open scoped Classical in
 /-- The trace of the fibre-constant repartition `z` over `P` is `Tr z` at `P`. -/
+@[simp]
 theorem repartitionTrace_single (hF : IsFunctionField k F) (P : Place k F) (z : F') :
     repartitionTrace k F F' hF ⟨_, single_mem_relativeRepartitionSpace P z⟩ =
       singleRepartition P (Algebra.trace F F' z) :=
