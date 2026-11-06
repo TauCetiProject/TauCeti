@@ -42,6 +42,7 @@ python3 scripts/test_dependency_prefill.py
 python3 scripts/test_toolchain_install_retry.py
 python3 scripts/test_duplicate_audit_workflow.py
 python3 scripts/test_ci_host_resources.py
+python3 scripts/test_ci_live_progress.py
 python3 scripts/test_web_pins.py
 python3 scripts/test_attest_pr_config.py
 python3 scripts/test_prepare_pr_integration.py
