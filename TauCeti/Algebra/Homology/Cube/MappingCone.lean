@@ -455,12 +455,14 @@ variable {n : ℕ} (F : Finset (Fin (n + 1)) ⥤ C) (c : Fin (n + 1))
 restriction to the vertices not containing `c`, as a cube indexed by `Fin n` through
 `c.succAbove`. -/
 abbrev cubeFaceZeroAt : Finset (Fin n) ⥤ C :=
+  -- `Monotone.functor` reads the function off the type of its proof, so `show` states it.
   (show Monotone (Finset.map c.succAboveEmb) from fun _ _ ↦ map_subset_map.2).functor ⋙ F
 
 /-- The `1`-face of a cube indexed by `Fin (n + 1)` in the direction of the index `c`: the
 restriction to the vertices containing `c`, as a cube indexed by `Fin n` through
 `c.succAbove`. -/
 abbrev cubeFaceOneAt : Finset (Fin n) ⥤ C :=
+  -- `Monotone.functor` reads the function off the type of its proof, so `show` states it.
   (show Monotone fun S : Finset (Fin n) ↦ insert c (S.map c.succAboveEmb) from
     fun _ _ h ↦ insert_subset_insert c (map_subset_map.2 h)).functor ⋙ F
 
@@ -486,6 +488,7 @@ private def frontEquiv : Fin (n + 1) ≃ WithBot (Fin n) :=
 
 /-- The cube `F` with the index `c` moved to the front. -/
 private abbrev cubeFront : Finset (WithBot (Fin n)) ⥤ C :=
+  -- `Monotone.functor` reads the function off the type of its proof, so `show` states it.
   (show Monotone (Finset.map (frontEquiv c).symm.toEmbedding) from
     fun _ _ ↦ map_subset_map.2).functor ⋙ F
 
@@ -610,8 +613,8 @@ private lemma cubeComplexι_cubeComplexReindexIso_frontEquiv_inv_f {r : ℤ}
     (F.cubeFront c).cubeComplexι ⟨U, hU⟩ ≫
         (F.cubeComplexReindexIso (frontEquiv c) _ (F.isCubeReindexCompatible_cubeFront c)).inv.f r =
       (-1 : ℤ) ^ #(S.inversions (frontEquiv c)) •
-        eqToHom (congrArg F.obj (show U.map (frontEquiv c).symm.toEmbedding = S by
-          rw [← h, ← map_map_frontEquiv_symm])) ≫
+        eqToHom (congrArg F.obj (a₁ := U.map (frontEquiv c).symm.toEmbedding) (a₂ := S)
+          (by rw [← h, ← map_map_frontEquiv_symm])) ≫
           F.cubeComplexι ⟨S, by rw [← hU, ← h, card_map]⟩ := by
   subst h
   exact F.ι_cubeComplexReindexIso_inv_f (frontEquiv c) _ (F.isCubeReindexCompatible_cubeFront c)
