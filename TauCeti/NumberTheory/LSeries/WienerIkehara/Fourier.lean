@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+public import Mathlib.MeasureTheory.Group.Circle
 public import TauCeti.NumberTheory.LSeries.Continuity
 
 /-!
@@ -50,12 +51,6 @@ open Complex Filter FourierTransform MeasureTheory Real Set
 open scoped ComplexConjugate Real Topology
 
 variable {a : ℕ → ℂ} {psi : ℝ → ℂ} {x sigma t : ℝ}
-
-private instance : MeasurableSpace Circle :=
-  inferInstanceAs <| MeasurableSpace <| Subtype (· ∈ Metric.sphere (0 : ℂ) 1)
-
-private instance : BorelSpace Circle :=
-  inferInstanceAs <| BorelSpace <| Subtype (· ∈ Metric.sphere (0 : ℂ) 1)
 
 private lemma fourierIntegrand_aemeasurable (hpsi : AEStronglyMeasurable psi)
     (x : ℝ) (n : ℕ) :
