@@ -266,10 +266,11 @@ private theorem laurentSeries_eq_evalInvSub_add {φ : meromorphicGerms 𝕜 a} {
   rw [← laurentSeries_mk_of_analyticAt hg, ← map_add,
     ← sub_eq_iff_eq_add'.1 (Subtype.ext (by rw [hφg, coe_mk]))]
 
-/-- **Negative Laurent coefficients.** The coefficient of `X ^ (-(k + 1))` in the Laurent
-expansion of a meromorphic germ is the coefficient of `X ^ (k + 1)` in its principal part. -/
-theorem coeff_laurentSeries_neg (φ : meromorphicGerms 𝕜 a) (k : ℕ) :
-    (laurentSeries a φ).coeff (-((k + 1 : ℕ) : ℤ)) = (principalPart φ).coeff (k + 1) := by
+/-- **Negative Laurent coefficients.** For `k ≠ 0`, the coefficient of `X ^ (-k)` in the Laurent
+expansion of a meromorphic germ is the coefficient of `X ^ k` in its principal part. -/
+@[simp]
+theorem coeff_laurentSeries_neg (φ : meromorphicGerms 𝕜 a) {k : ℕ} (hk : k ≠ 0) :
+    (laurentSeries a φ).coeff (-(k : ℤ)) = (principalPart φ).coeff k := by
   obtain ⟨g, hg, hφg⟩ := exists_analyticAt_coe_sub_evalInvSub_principalPart φ
   rw [laurentSeries_eq_evalInvSub_add hg hφg, HahnSeries.coeff_add,
     coeff_laurentSeries_evalInvSub, ofPowerSeries_apply, embDomain_of_notMem_range, add_zero]
