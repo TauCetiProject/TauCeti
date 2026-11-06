@@ -146,18 +146,6 @@ theorem schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul
   apply tendsto_nhds_unique (hBtop.sub tendsto_const_nhds)
   exact hright.congr' ((eventually_ge_atTop p).mono fun _ hx ↦ (hformula hx).symm)
 
-/-- **A map running along a ray is a segment.** If `B x = c + d x * u` on `s`, where `d` maps `s`
-onto `Ico 0 D` with `0 < D` and `V = c + D * u`, then `B` maps `s` onto the segment from `c` to `V`
-with its endpoint `V` removed. -/
-theorem image_eq_segment_sdiff_of_forall_eq_add_mul {s : Set ℝ} {B : ℝ → ℂ} {d : ℝ → ℝ}
-    {D : ℝ} {c u V : ℂ} (hD : 0 < D) (hu : u ≠ 0) (hdimage : d '' s = Ico 0 D)
-    (hB : ∀ x ∈ s, B x = c + (d x : ℂ) * u) (hV : V - c = (D : ℂ) * u) :
-    B '' s = segment ℝ c V \ {V} := by
-  have hscalar : (fun t : ℝ => c + (t : ℂ) * u) '' Ico 0 D = segment ℝ c V \ {V} := by
-    simpa only [Complex.real_smul] using image_add_smul_Ico hD hu hV
-  rw [← hscalar, ← hdimage, image_image]
-  exact image_congr hB
-
 /-- The image of the right-hand unbounded boundary edge is the segment from its finite endpoint to
 the vertex at infinity, with the latter not attained at a finite boundary parameter. -/
 theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHalfPlane) {p : ℝ}
@@ -211,8 +199,10 @@ theorem schwarzChristoffelBoundary_image_Ici (a e : ι → ℝ) (z₀ : UpperHal
   have hVdir : V - B p = ((D : ℝ) : ℂ) * u := by
     simpa [B, V, D, u] using
       schwarzChristoffelVertexAtInfinity_sub_boundary_eq_norm_mul a e z₀ hp ha hS
-  exact image_eq_segment_sdiff_of_forall_eq_add_mul hDpos (Complex.exp_ne_zero _)
-    (hd0 ▸ himage) (fun x hx => by linear_combination hformula hx) hVdir
+  exact image_eq_segment_sdiff_of_forall_eq_add_smul hDpos (Complex.exp_ne_zero _)
+    (hd0 ▸ himage) (fun x hx => by simpa only [Complex.real_smul] using
+      (by linear_combination hformula hx : B x = B p + (d x : ℂ) * u))
+    (by simpa only [Complex.real_smul] using hVdir)
 
 /-- The right-hand unbounded edge based at a prevertex starts at its corresponding
 Schwarz--Christoffel vertex. -/
@@ -420,9 +410,11 @@ theorem schwarzChristoffelBoundary_image_Iic (a e : ι → ℝ) (z₀ : UpperHal
       simpa [B, V, D, u] using
         schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul a e z₀ hp ha hS
     linear_combination -hleft
-  exact image_eq_segment_sdiff_of_forall_eq_add_mul hDpos
+  exact image_eq_segment_sdiff_of_forall_eq_add_smul hDpos
     (neg_ne_zero.mpr (Complex.exp_ne_zero _)) (hd0 ▸ himage)
-    (fun x hx => by linear_combination -hformula hx) hVdir
+    (fun x hx => by simpa only [Complex.real_smul] using
+      (by linear_combination -hformula hx : B x = B p + (d x : ℂ) * -u))
+    (by simpa only [Complex.real_smul] using hVdir)
 
 /-- The left-hand unbounded edge based at a prevertex starts at its corresponding
 Schwarz--Christoffel vertex. -/
