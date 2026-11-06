@@ -58,7 +58,7 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi
       intro y hy
       exact hx.trans (hy.trans_le (le_abs_self y))
     rw [cond_real_of_subset measurableSet_Ioi hsub, mul_div_assoc]
-    rfl
+    simp only [measureReal_def, ν, a]
   have hsum := tendsto_rpow_mul_real_compoundPoissonMeasure_Ioi (ν A).toNNReal hα.1 hjump
   rw [ENNReal.coe_toNNReal_eq_toReal, mul_div_cancel₀ _ ha] at hsum
   apply (hsum.rpow_mul_comp_add c).congr

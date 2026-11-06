@@ -80,13 +80,12 @@ theorem map_neg_stableCompensatedPoissonMeasure (α β ε : ℝ) :
   have hcond : (cond ν A).map (fun x ↦ -x) = cond (stableLevyMeasure α (-β)) A := by
     have hrestrict := (Measure.restrict_map (μ := ν) measurable_neg hA).symm
     rw [hpre, map_neg_stableLevyMeasure] at hrestrict
-    rw [ProbabilityTheory.cond, Measure.map_smul _ measurable_neg.aemeasurable, hrestrict, hmass]
-    rfl
+    rw [ProbabilityTheory.cond, ProbabilityTheory.cond,
+      Measure.map_smul _ measurable_neg.aemeasurable, hrestrict, hmass]
   have hsin : (∫ y in A, sin y ∂stableLevyMeasure α (-β)) = -∫ y in A, sin y ∂ν := by
     rw [← map_neg_stableLevyMeasure,
       setIntegral_map hA (by fun_prop) measurable_neg.aemeasurable, hpre]
-    simp only [sin_neg, integral_neg]
-    rfl
+    simp only [sin_neg, integral_neg, ν]
   have hcp : (compoundPoissonMeasure (ν A).toNNReal (cond ν A)).map (fun x : ℝ ↦ -x) =
       compoundPoissonMeasure (ν A).toNNReal ((cond ν A).map (fun x : ℝ ↦ -x)) :=
     map_compoundPoissonMeasure (ν A).toNNReal (cond ν A) (-AddMonoidHom.id ℝ) measurable_neg
