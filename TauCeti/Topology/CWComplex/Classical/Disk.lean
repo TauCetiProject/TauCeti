@@ -160,8 +160,9 @@ images of the boundary spheres, with one `n i`-cell for each summand `i`
 (`TauCeti.diskSigmaRelCWCellEquiv`), whose characteristic map is that of
 `TauCeti.diskBoundaryRelCW (n i)` followed by the summand inclusion
 (`TauCeti.map_diskSigmaRelCW`). This is not an instance, since the base of a relative CW
-structure is an output parameter. -/
-@[instance_reducible]
+structure is an output parameter. Its body is exposed, so the cells of `diskSigmaRelCW n` are
+those of `Topology.RelCWComplex.sigmaUniv` in public statements. -/
+@[instance_reducible, expose]
 def diskSigmaRelCW :
     RelCWComplex (univ : Set (Σ i, TopCat.disk.{u} (n i)))
       (univ.sigma fun i ↦ range (TopCat.diskBoundaryInclusion.{u} (n i))) :=
@@ -177,6 +178,18 @@ def diskSigmaRelCWCellEquiv (m : ℕ) :
   (RelCWComplex.sigmaUnivCellEquiv _ m).trans
     ((Equiv.sigmaCongrRight fun i ↦ diskBoundaryRelCWCellEquiv (n i) m).trans
       (Equiv.sigmaPLiftEquivSubtype _))
+
+/-- `TauCeti.diskSigmaRelCWCellEquiv` keeps the summand index of a cell. -/
+@[simp]
+theorem coe_diskSigmaRelCWCellEquiv_sigmaUnivCellEquiv_symm (m : ℕ) (i : ι)
+    (j : @cell _ _ (univ : Set (TopCat.disk.{u} (n i))) _ (diskBoundaryRelCW (n i)) m) :
+    (diskSigmaRelCWCellEquiv n m
+      ((@RelCWComplex.sigmaUnivCellEquiv _ _ _ _ (fun i ↦ diskBoundaryRelCW.{u} (n i))
+        m).symm ⟨i, j⟩) : ι) = i := by
+  rw [diskSigmaRelCWCellEquiv, Equiv.trans_apply, Equiv.apply_symm_apply, Equiv.trans_apply,
+    Equiv.sigmaCongrRight_apply]
+  -- `Equiv.sigmaPLiftEquivSubtype` keeps the first component, by definition.
+  rfl
 
 /-- A disjoint union of finitely many disks is a finite relative CW complex relative to the
 boundary spheres. -/
@@ -203,8 +216,8 @@ theorem map_diskSigmaRelCW (i : ι) (x : closedBall (0 : Fin (n i) → ℝ) 1) :
   -- The cell of the summand `i` is the summand's unique cell, with its summand index.
   have h : (diskSigmaRelCWCellEquiv n (n i)).symm ⟨i, rfl⟩ =
       (RelCWComplex.sigmaUnivCellEquiv _ (n i)).symm ⟨i, default⟩ :=
-    (diskSigmaRelCWCellEquiv n (n i)).symm_apply_eq.2 <| Subtype.ext <| by
-      simp [diskSigmaRelCWCellEquiv, Equiv.sigmaPLiftEquivSubtype, Equiv.psigmaEquivSubtype]
+    (diskSigmaRelCWCellEquiv n (n i)).symm_apply_eq.2 <| Subtype.ext
+      (coe_diskSigmaRelCWCellEquiv_sigmaUnivCellEquiv_symm n (n i) i default).symm
   rw [h]
   exact (congrFun (RelCWComplex.coe_map_sigmaUniv (X := fun i ↦ TopCat.disk.{u} (n i)) _ (n i) i
     default) x).trans (congrArg (Sigma.mk i) (map_diskBoundaryRelCW (n i) default x))
