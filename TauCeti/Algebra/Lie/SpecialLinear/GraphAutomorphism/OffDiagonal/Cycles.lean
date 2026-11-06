@@ -164,7 +164,7 @@ private def offDiagonalCycleIndex (p : {p : Fin (r + 1) × Fin (r + 1) // p.1 �
   if h : p.val.1.val + p.val.2.val ≤ r then ⟨⟨p, h⟩, 0⟩
   else
     ⟨⟨finDistinctPairsRevSwap (r + 1) p,
-      (finDistinctPairsRevSwap_val_fst_add_val_snd_lt p (not_le.mp h)).le⟩, Fin.last _⟩
+      ((finDistinctPairsRevSwap_val_fst_add_val_snd_lt_iff p).mpr (not_le.mp h)).le⟩, Fin.last _⟩
 
 private theorem offDiagonalCyclePoint_offDiagonalCycleIndex :
     Function.LeftInverse (fun x : Σ c, Fin (typeAOffDiagonalCyclePredLength r c + 1) ↦
@@ -175,7 +175,7 @@ private theorem offDiagonalCyclePoint_offDiagonalCycleIndex :
     exact offDiagonalCyclePoint_zero r ⟨p, hp⟩
   · have hlt : (finDistinctPairsRevSwap (r + 1) p).val.1.val +
         (finDistinctPairsRevSwap (r + 1) p).val.2.val < r :=
-      finDistinctPairsRevSwap_val_fst_add_val_snd_lt p (not_le.mp hp)
+      (finDistinctPairsRevSwap_val_fst_add_val_snd_lt_iff p).mpr (not_le.mp hp)
     rw [offDiagonalCycleIndex, dite_eq_right hp]
     exact (offDiagonalCyclePoint_last r ⟨finDistinctPairsRevSwap (r + 1) p, hlt.le⟩ hlt).trans
       (finDistinctPairsRevSwap_finDistinctPairsRevSwap p)
@@ -233,10 +233,10 @@ theorem typeAOffDiagonalCycleEquiv_symm_apply_of_gt
     (p : {p : Fin (r + 1) × Fin (r + 1) // p.1 ≠ p.2}) (h : r < p.val.1.val + p.val.2.val) :
     (typeAOffDiagonalCycleEquiv r).symm p =
       ⟨⟨finDistinctPairsRevSwap (r + 1) p,
-        (finDistinctPairsRevSwap_val_fst_add_val_snd_lt p h).le⟩, Fin.last _⟩ := by
+        ((finDistinctPairsRevSwap_val_fst_add_val_snd_lt_iff p).mpr h).le⟩, Fin.last _⟩ := by
   have hlt : (finDistinctPairsRevSwap (r + 1) p).val.1.val +
       (finDistinctPairsRevSwap (r + 1) p).val.2.val < r :=
-    finDistinctPairsRevSwap_val_fst_add_val_snd_lt p h
+    (finDistinctPairsRevSwap_val_fst_add_val_snd_lt_iff p).mpr h
   exact (Equiv.symm_apply_eq _).mpr
     ((typeAOffDiagonalCycleEquiv_last r ⟨finDistinctPairsRevSwap (r + 1) p, hlt.le⟩).trans
       (finDistinctPairsRevSwap_finDistinctPairsRevSwap p)).symm
