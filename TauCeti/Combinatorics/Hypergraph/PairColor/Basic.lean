@@ -22,6 +22,7 @@ only diagonal pairs have color `none`. `PairColorSystem.ofRaw` makes any directe
 coherent by recording its colors in both orientations, using the product palette.
 `PairColorSystem.relabel` renames the palette along an equivalence.
 `PairColorSystem.split` refines a coloring by a symmetric labelling of the unordered pairs.
+`PairColorSystem.comap` restricts a coloring along a vertex embedding, preserving the palette.
 `coordPair` extracts the ordered distinct pair of two coordinates of an injective tuple.
 -/
 
@@ -166,6 +167,40 @@ theorem colorOfPair_split_eq_some_iff (S : PairColorSystem κ V) (f : Sym2 V →
     (S.split f).colorOfPair u v = some (c, i) ↔ S.colorOfPair u v = some c ∧ f s(u, v) = i := by
   rw [colorOfPair_split]
   cases S.colorOfPair u v <;> simp
+
+/-- Restrict a coherent pair coloring along a vertex embedding. The palette and its
+reversal are unchanged. -/
+def comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) : PairColorSystem κ V where
+  color p := S.color ⟨(f p.1.1, f p.1.2), f.injective.ne p.2⟩
+  rev := S.rev
+  rev_involutive := S.rev_involutive
+  color_rev p := S.color_rev ⟨(f p.1.1, f p.1.2), f.injective.ne p.2⟩
+
+@[simp]
+theorem comap_color {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W)
+    (p : {p : V × V // p.1 ≠ p.2}) :
+    (S.comap f).color p = S.color ⟨(f p.1.1, f p.1.2), f.injective.ne p.2⟩ := (rfl)
+
+@[simp]
+theorem comap_rev {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) (c : κ) :
+    (S.comap f).rev c = S.rev c := (rfl)
+
+@[simp]
+theorem colorOfPair_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W) (u v : V) :
+    (S.comap f).colorOfPair u v = S.colorOfPair (f u) (f v) := by
+  by_cases h : u = v
+  · subst h
+    simp
+  · simp [h, f.injective.ne h]
+
+@[simp]
+theorem comap_refl (S : PairColorSystem κ V) : S.comap (.refl V) = S := by
+  ext <;> rfl
+
+@[simp]
+theorem comap_comap {W U : Type*} (S : PairColorSystem κ U) (g : W ↪ U) (f : V ↪ W) :
+    (S.comap g).comap f = S.comap (f.trans g) := by
+  ext <;> rfl
 
 end PairColorSystem
 

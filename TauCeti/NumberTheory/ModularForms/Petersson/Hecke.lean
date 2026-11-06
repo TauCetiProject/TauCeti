@@ -44,7 +44,7 @@ Petersson trace adjunction and specializes the result to a character space.
 
 public section
 
-open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 open HeckeRing.GLn
 
 open scoped MatrixGroups ModularForm

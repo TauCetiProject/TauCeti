@@ -240,19 +240,11 @@ theorem oneLoopRepHom_oneLoopRepScalar {c d : k}
 theorem isFinDim_oneLoopRep (c : k) : IsFinDim k Quiver.OneLoop (oneLoopRep.{u, w} k c) :=
   isFinDim_iff.mpr fun _ ↦ inferInstanceAs (FiniteDimensional k k)
 
-/-- `TauCeti.oneLoopRep k c` is nonzero: the vector space at its vertex is the base field, which is
-not the zero module. -/
-theorem not_isZero_oneLoopRep (c : k) : ¬ IsZero (oneLoopRep.{u, w} k c) := by
-  intro h
-  have : Subsingleton k :=
-    ModuleCat.subsingleton_of_isZero (h.obj (Quiver.OneLoop.vertex : Paths Quiver.OneLoop))
-  exact one_ne_zero (α := k) (Subsingleton.elim _ _)
-
 /-- **`TauCeti.oneLoopRep k c` is indecomposable.** Its only vertex carries a line, so its scalar
 records an endomorphism faithfully in the field `k`, a local ring, sending `0` to `0`, the
 identity to `1` and squares to squares. -/
 theorem indecomposable_oneLoopRep (c : k) : Indecomposable (oneLoopRep.{u, w} k c) :=
-  indecomposable_of_injective_of_isLocalRing (not_isZero_oneLoopRep c) oneLoopRepScalar
+  indecomposable_of_injective_of_isLocalRing oneLoopRepScalar
     (fun _ _ h ↦ oneLoopRep_hom_ext h) (oneLoopRepScalar_zero c c) (oneLoopRepScalar_id c)
     fun f ↦ oneLoopRepScalar_comp f f
 
@@ -324,15 +316,6 @@ theorem dimVector_oneLoopNilpotentRep (n : ℕ) (v : Quiver.OneLoop) :
   -- `AdjoinRoot f` *is* `k[X] ⧸ (f)`, so Mathlib's dimension formula for such a quotient applies.
   exact finrank_quotient_span_eq_natDegree.trans (natDegree_X_pow (n + 1))
 
-/-- `TauCeti.oneLoopNilpotentRep k n` is nonzero: its vertex space is the nontrivial ring
-`k[X]/(Xⁿ⁺¹)`. -/
-theorem not_isZero_oneLoopNilpotentRep (n : ℕ) :
-    ¬ IsZero (oneLoopNilpotentRep.{u, w} k n) := by
-  intro h
-  have : Subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1))) :=
-    ModuleCat.subsingleton_of_isZero (h.obj (Quiver.OneLoop.vertex : Paths Quiver.OneLoop))
-  exact false_of_nontrivial_of_subsingleton (AdjoinRoot ((X : k[X]) ^ (n + 1)))
-
 /-- The single component of an endomorphism of a nilpotent Jordan block, as a linear map on
 `k[X]/(Xⁿ⁺¹)`. The quiver has one vertex, so a natural transformation is this one linear map. -/
 private noncomputable def oneLoopNilpotentRepApp {n : ℕ}
@@ -391,7 +374,7 @@ theorem indecomposable_oneLoopNilpotentRep (n : ℕ) :
       oneLoopNilpotentRepApp e = LinearMap.mulRight k (oneLoopNilpotentRepApp e 1) := fun e ↦
     AdjoinRoot.eq_mulRight_of_root_mul (monic_X_pow (R := k) (n + 1))
       (oneLoopNilpotentRepApp_root_mul e)
-  refine indecomposable_of_injective_of_isLocalRing (not_isZero_oneLoopNilpotentRep n)
+  refine indecomposable_of_injective_of_isLocalRing
     (fun e ↦ oneLoopNilpotentRepApp e 1) (fun e e' h ↦ ?_) ?_ ?_ fun e ↦ ?_
   · refine oneLoopNilpotentRep_hom_ext ?_
     rw [hmul e, hmul e']

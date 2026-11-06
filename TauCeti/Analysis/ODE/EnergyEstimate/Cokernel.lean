@@ -83,9 +83,9 @@ private theorem inner_trajectoryOperator_smulRightW1pL
       ⟪e, (∫ s, lineDeriv ℝ (φ : ℝ → ℝ) s 1 • v s) + ∫ s, (φ : ℝ → ℝ) s • BL s (v s)⟫_ℝ := by
   have hi1 := integrable_lineDeriv_smul_of_locallyIntegrableOn
     (Lp.locallyIntegrableOn v (by norm_num)) φ 1
-  have hi2 := integrable_smul_of_locallyIntegrableOn (w := fun s ↦ BL s (v s))
+  have hi2 := φ.integrable_smul (f := fun s ↦ BL s (v s))
     ((Lp.locallyIntegrableOn _ (by norm_num)).congr
-      ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) BL v)) φ
+      ((ContinuousLinearMap.id ℝ (E →L[ℝ] E)).coeFn_holder (r := 2) BL v))
   have hψ : ContDiff ℝ 1 fun s ↦ (φ : ℝ → ℝ) s • e :=
     (φ.contDiff.of_le (by exact_mod_cast le_top)).smul contDiff_const
   have hDu := trajectoryOperator_apply_ae_eq_deriv_add AL _

@@ -49,7 +49,10 @@ are `TauCeti.IsAdaptedPseudoGradient.exists_isSmoothEmbedding_stableSet` and
   `TauCeti.IsAdaptedPseudoGradient.range_stableParam`: it is a smooth embedding with image
   `W^s(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableParam`: a Morse chart and a scale for which the
-  parametrization is a smooth embedding onto `W^s(x)`, whose derivative at `0` the chart inverts.
+  parametrization is a smooth embedding onto `W^s(x)`, whose derivative at `0` the chart inverts,
+  and which intertwines the scaling with the flow.
+* `TauCeti.IsAdaptedPseudoGradient.exists_mem_stableSet_ne`: below the top index, the stable
+  manifold of a critical point is not reduced to that point.
 
 ## References
 
@@ -99,8 +102,8 @@ open. -/
 theorem isOpen_smallCube (ε δ : ℝ) :
     IsOpen (φ.toChart.source ∩ φ.toChart ⁻¹' {w : E | ‖φ.coord w‖ < ε ∧ ‖w‖ < δ}) :=
   φ.toChart.continuousOn.isOpen_inter_preimage φ.toChart.open_source
-    ((isOpen_lt (continuous_norm.comp (φ.coordL.continuous.congr φ.coordL_apply))
-      continuous_const).inter (isOpen_lt continuous_norm continuous_const))
+    ((isOpen_lt (continuous_norm.comp φ.continuous_coord) continuous_const).inter
+      (isOpen_lt continuous_norm continuous_const))
 
 end MorseChart
 
@@ -389,14 +392,17 @@ end
 /-- **The parametrization of the stable manifold, with its chart.** For a critical point `x`, there
 are a Morse chart `φ` at `x` and a scale `δ` for which `stableParam φ δ` is a smooth embedding of
 the stable subspace of `φ` with image `W^s(x)`, sending `0` to `x`, whose derivative at `0`, read in
-the chart, is the inclusion of the stable subspace. -/
+the chart, is the inclusion of the stable subspace, and which carries the scaling `v ↦ e^{-s} v` to
+the time-`s` map of the flow. -/
 theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     ∃ (φ : MorseChart E f x) (δ : ℝ),
       IsSmoothEmbedding 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) ∞ (hX.stableParam φ δ) ∧
       range (hX.stableParam φ δ) = hX.flow.stableSet x ∧ hX.stableParam φ δ 0 = x ∧
-      ∀ u : φ.stableSubspace, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x
-        (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u) = (u : E) := by
+      (∀ u : φ.stableSubspace, mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) φ.toChart x
+        (mfderiv 𝓘(ℝ, φ.stableSubspace) 𝓘(ℝ, E) (hX.stableParam φ δ) 0 u) = (u : E)) ∧
+      ∀ (v : φ.stableSubspace) (s : ℝ),
+        hX.stableParam φ δ (Real.exp (-s) • v) = hX.flow s (hX.stableParam φ δ v) := by
   obtain ⟨φ, hφ⟩ := hX.exists_morseChart x hx
   obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
   obtain ⟨ε, hε0, hε⟩ := hX.exists_forall_mem_stableSet_iff φ hφ hf
@@ -418,7 +424,21 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
   have hεs := fun y hy hyε ↦ (hε y hy hyε).1
   exact ⟨φ, δ, hX.isSmoothEmbedding_stableParam φ hφ hrT hδr hδ hεδ hεs,
     hX.range_stableParam φ hφ hrT hδr hδ hε0 hεs, hX.stableParam_zero φ hφ hrT hδr hδ,
-    hX.mfderiv_toChart_mfderiv_stableParam_zero φ hφ hrT hδr hδ⟩
+    hX.mfderiv_toChart_mfderiv_stableParam_zero φ hφ hrT hδr hδ,
+    hX.stableParam_smul φ hφ hrT hδr hδ⟩
+
+/-- **Below the top index, the stable manifold is not a point.** If the Morse index of a critical
+point `q` is less than the dimension, some point other than `q` flows into `q`. -/
+theorem exists_mem_stableSet_ne (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {q : M}
+    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f q < Module.finrank ℝ E) :
+    ∃ y ∈ hX.flow.stableSet q, y ≠ q := by
+  obtain ⟨φ, δ, hemb, hrange, h0, -, -⟩ := hX.exists_stableParam hf hq
+  have hL := φ.finrank_stableSubspace_add_manifoldMorseIndex
+  obtain ⟨u, hu⟩ : ∃ u : φ.stableSubspace, u ≠ 0 :=
+    (Module.finrank_pos_iff_exists_ne_zero (R := ℝ) (M := φ.stableSubspace)).1 (by omega)
+  exact ⟨hX.stableParam φ δ u, hrange ▸ mem_range_self u,
+    fun h ↦ hu (hemb.isEmbedding.injective (h.trans h0.symm))⟩
 
 end IsAdaptedPseudoGradient
 
