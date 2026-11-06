@@ -9,6 +9,7 @@ public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
 public import Mathlib.Analysis.Real.Sqrt
 public import TauCeti.MeasureTheory.Group.Measure
 public import TauCeti.Probability.Quantile
+import Mathlib.Topology.Algebra.Group.Order
 
 /-!
 # Quantiles of pushforwards along monotone maps
@@ -43,7 +44,10 @@ mass of `μ`. Every quantile at a level strictly between `0` and `1` lies in suc
   `MeasureTheory.Measure.quantile_map_of_monotone` and
   `MeasureTheory.Measure.upperQuantile_map_of_monotone`;
 * `MeasureTheory.Measure.quantile_neg`, `MeasureTheory.Measure.upperQuantile_neg` — the quantiles
-  of the reflected law;
+  of the reflected law, with `MeasureTheory.Measure.quantile_neg_of_continuousWithinAt` when the
+  original quantile is right continuous, and its endpoint limits
+  `MeasureTheory.Measure.tendsto_quantile_neg_nhdsGT_zero` and
+  `MeasureTheory.Measure.tendsto_quantile_neg_nhdsLT_one`;
 * `MeasureTheory.Measure.quantile_map_of_antitoneOn`,
   `MeasureTheory.Measure.upperQuantile_map_of_antitoneOn` — the quantiles of a pushforward along a
   nonincreasing continuous map, with the global forms
@@ -179,6 +183,45 @@ strictly between `0` and `1` is minus the quantile of the law of `X` at the comp
     measureReal_compl measurableSet_Iic, probReal_univ, le_neg,
     quantile_le_iff μ (by linarith) (by linarith), cdf_eq_real]
   constructor <;> intro h <;> linarith
+
+/-- Where the quantile of `μ` is right continuous at the complementary level, the quantile of the
+reflected law is minus that quantile. This is the case for every law whose quantile function is
+continuous on the open unit interval. -/
+theorem quantile_neg_of_continuousWithinAt [IsProbabilityMeasure μ] (h0 : 0 < t) (h1 : t < 1)
+    (h : ContinuousWithinAt μ.quantile (Ioi (1 - t)) (1 - t)) :
+    μ.neg.quantile t = -μ.quantile (1 - t) := by
+  rw [quantile_neg h0 h1,
+    upperQuantile_eq_quantile_of_continuousWithinAt μ (by linarith) (by linarith) h]
+
+/-- **Lower endpoint of the reflected law.** If the quantiles of `μ` tend to `a` as the level
+increases to one, then the quantiles of the reflected law tend to `-a` as the level decreases to
+zero. The limit `a` may be infinite. -/
+theorem tendsto_quantile_neg_nhdsGT_zero [IsProbabilityMeasure μ] {a : EReal}
+    (h : Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[<] 1) (𝓝 a)) :
+    Tendsto (fun u ↦ (μ.neg.quantile u : EReal)) (𝓝[>] 0) (𝓝 (-a)) := by
+  have hup := tendsto_upperQuantile_nhdsLT_one μ
+  rw [← tendsto_nhds_unique h (tendsto_quantile_nhdsLT_one μ)] at hup
+  have hlevel : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[>] 0) (𝓝[<] 1) := by
+    have hmap := (Filter.map_subLeft_nhdsGT (c := (1 : ℝ)) (a := 0)).le
+    rwa [sub_zero] at hmap
+  refine ((continuous_neg.tendsto a).comp (hup.comp hlevel)).congr' ?_
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with u hu
+  simp [quantile_neg hu.1 hu.2]
+
+/-- **Upper endpoint of the reflected law.** If the quantiles of `μ` tend to `a` as the level
+decreases to zero, then the quantiles of the reflected law tend to `-a` as the level increases to
+one. The limit `a` may be infinite. -/
+theorem tendsto_quantile_neg_nhdsLT_one [IsProbabilityMeasure μ] {a : EReal}
+    (h : Tendsto (fun u ↦ (μ.quantile u : EReal)) (𝓝[>] 0) (𝓝 a)) :
+    Tendsto (fun u ↦ (μ.neg.quantile u : EReal)) (𝓝[<] 1) (𝓝 (-a)) := by
+  have hup := tendsto_upperQuantile_nhdsGT_zero μ
+  rw [← tendsto_nhds_unique h (tendsto_quantile_nhdsGT_zero μ)] at hup
+  have hlevel : Tendsto (fun u : ℝ ↦ 1 - u) (𝓝[<] 1) (𝓝[>] 0) := by
+    have hmap := (Filter.map_subLeft_nhdsLT (c := (1 : ℝ)) (a := 1)).le
+    rwa [sub_self] at hmap
+  refine ((continuous_neg.tendsto a).comp (hup.comp hlevel)).congr' ?_
+  filter_upwards [Ioo_mem_nhdsLT zero_lt_one] with u hu
+  simp [quantile_neg hu.1 hu.2]
 
 /-- Pushing forward along a nonincreasing map `g` is pushing the reflected law forward along the
 map `x ↦ g (-x)`, which is nondecreasing and continuous on the reflected interval, and that
