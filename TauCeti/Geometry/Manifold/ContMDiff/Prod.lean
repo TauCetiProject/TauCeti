@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiff.Defs
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
+import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 
 /-!
 # Smooth maps from products
@@ -25,6 +27,8 @@ compact slice `{x} × K` is `C^n` on a product of open neighbourhoods of `x` and
 * `contMDiff_prod_modelWithCornersSelf_iff`: a map from a product of model vector spaces is `C^n`
   for the product of the self-models if and only if it is `C^n` for the self-model of the product.
 * `contMDiffOn_prod_modelWithCornersSelf_iff`: the same bridge for `C^n` maps on a set.
+* `ContMDiffAt.differentiableAt_curry_left`: a `C^n` map, `n ≠ 0`, from the product of a model
+  vector space and a manifold is differentiable in its first variable.
 * `TauCeti.exists_isOpen_prod_contMDiffOn`: the tube lemma for maps from a product which are
   `C^n` along a compact slice.
 
@@ -56,6 +60,15 @@ theorem contMDiffOn_prod_modelWithCornersSelf_iff :
     ContMDiffOn (𝓘(𝕜, E₁).prod 𝓘(𝕜, E₂)) I' n f s ↔
       ContMDiffOn 𝓘(𝕜, E₁ × E₂) I' n f s := by
   rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+
+/-- A map from the product of a model vector space and a manifold to a normed space which is
+`C^n` at a point, with `n ≠ 0`, is differentiable in its first variable there. -/
+theorem ContMDiffAt.differentiableAt_curry_left {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace 𝕜 F] {g : E₁ × M → F} {p : E₁ × M}
+    (hg : ContMDiffAt (𝓘(𝕜, E₁).prod I') 𝓘(𝕜, F) n g p) (hn : n ≠ 0) :
+    DifferentiableAt 𝕜 (fun x ↦ g (x, p.2)) p.1 :=
+  (contMDiffAt_iff_contDiffAt.1
+    (hg.comp p.1 (contMDiffAt_id.prodMk contMDiffAt_const))).differentiableAt hn
 
 namespace TauCeti
 

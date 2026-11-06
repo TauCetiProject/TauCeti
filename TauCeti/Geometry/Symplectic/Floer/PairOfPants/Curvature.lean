@@ -37,10 +37,11 @@ components of `K` are its values on the tangent vectors `1` and `i`.
 
 The same decomposition of `S` into its core, where `K` vanishes, and the three ends integrates
 the energy identity over the truncation `S_R` of `S`
-(`TauCeti.ThricePuncturedSphere.truncation`), where every `±s ≤ R`. On each end the rectangle
-identity on rectangles applies in cylinder coordinates; the
-boundary terms along the angular sides cancel by periodicity, and those on the circles `±s = 1`
-vanish with the cutoff. For a map `u` which is `C¹` on `S` and `R ≥ 1` this gives
+(`TauCeti.ThricePuncturedSphere.truncation`), where every `±s ≤ R`. On each end the energy
+identity on rectangles (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`) applies
+in cylinder coordinates; the boundary terms along the angular sides cancel by periodicity, and
+those on the circles `±s = 1` vanish with the cutoff. For a map `u` which is `C¹` on `S` and
+`R ≥ 1` this gives
 
 `∫_{S_R} E = ∫_{S_R} u^*ω + β(R - 1) ∑ q, ±∫₀¹ H_q(t, u(φ_q(±R + i t))) dt - ∫_{S_R} R_K(u)`,
 
@@ -129,6 +130,18 @@ private theorem contMDiff_uncurry (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) 
   contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff
 
 variable [FiniteDimensional ℝ V]
+
+/-- The intrinsic energy density of the pair-of-pants perturbation for the constant form is the
+vector-space energy density. -/
+private theorem floerEnergyDensity_constSmooth_pairOfPantsPerturbation (ω : SymplecticForm V)
+    (u : ℝ × ℝ → V) :
+    ω.constSmooth.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u =
+      ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u :=
+  funext (floerEnergyDensity_constSmooth ω _ _ u)
 
 /-- **The integrated curvature of the pair-of-pants perturbation.** Let `K` be the pair-of-pants
 perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, with
@@ -235,18 +248,14 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  have hE : ω.constSmooth.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u =
-      ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u :=
-    funext (floerEnergyDensity_constSmooth ω _ _ u)
   have h :=
     SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation
       hH (contMDiff_uncurry hHs) (isNondegenerate_constSmooth ω) (contMDiffOn_iff_contDiffOn.2 hu)
-      hR (by rw [hE]; exact (integrableOn_truncation_pairOfPantsPerturbation ω hH hHs hu R).1)
-  simp only [hE, eval₂_constSmooth_mfderiv_stdComplexLine, hamiltonianCurvature_constSmooth] at h
+      hR (by
+        rw [floerEnergyDensity_constSmooth_pairOfPantsPerturbation]
+        exact (integrableOn_truncation_pairOfPantsPerturbation ω hH hHs hu R).1)
+  simp only [floerEnergyDensity_constSmooth_pairOfPantsPerturbation,
+    eval₂_constSmooth_mfderiv_stdComplexLine, hamiltonianCurvature_constSmooth] at h
   exact h
 
 /-- **The energy bound on the truncated pair of pants.** If the end Hamiltonians are bounded,
@@ -333,17 +342,12 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation (ω : SymplecticForm
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           z (u z) := by
-  have hE' : ω.constSmooth.floerEnergyDensity
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-      (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u =
-      ω.floerEnergyDensity
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u :=
-    funext (floerEnergyDensity_constSmooth ω _ _ u)
   have h := (isNondegenerate_constSmooth ω).integral_floerEnergyDensity_pairOfPantsPerturbation
-    hH (contMDiff_uncurry hHs) hB (contMDiffOn_iff_contDiffOn.2 hu) hx (by rw [hE']; exact hE)
+    hH (contMDiff_uncurry hHs) hB (contMDiffOn_iff_contDiffOn.2 hu) hx
+    (by rw [floerEnergyDensity_constSmooth_pairOfPantsPerturbation]; exact hE)
     (by simp only [eval₂_constSmooth_mfderiv_stdComplexLine]; exact hA)
-  simp only [hE', eval₂_constSmooth_mfderiv_stdComplexLine, hamiltonianCurvature_constSmooth] at h
+  simp only [floerEnergyDensity_constSmooth_pairOfPantsPerturbation,
+    eval₂_constSmooth_mfderiv_stdComplexLine, hamiltonianCurvature_constSmooth] at h
   exact h
 
 /-- **The energy bound on the pair of pants.** Under the hypotheses of
