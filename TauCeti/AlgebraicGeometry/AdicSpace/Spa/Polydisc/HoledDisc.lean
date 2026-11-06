@@ -750,16 +750,16 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
     (hρ _ (Finset.mem_image_of_mem _ hq₁)))
   -- the class of each centre is a proper subfamily
   set G : K × K → Finset (K × K) := fun q ↦ F.filter fun q'' ↦ ‖q''.1 - q.1‖ < ‖τ‖
-  have hGF {q : K × K} (_ : q ∈ F) : G q ⊂ F := by
+  have hGF (q : K × K) : G q ⊂ F := by
     refine Finset.filter_ssubset.mpr ?_
     by_contra! h
     have h' := IsUltrametricDist.norm_sub_le_max_norm_sub q'.1 q.1 q₁.1
     rw [hτq'] at h'
     exact (h'.trans_lt (max_lt (h q' hq') (h q₁ hq₁))).false
-  have hGrat {q : K × K} (hq : q ∈ F) :
+  have hGrat (q : K × K) :
       IsRat ({v : closedPolydisc 1 K | v.1.toValuativeRel.vle (C τ) (T - C q.1)} ∪
         ⋃ q'' ∈ G q, closedSubdisc q''.1 q''.2) :=
-    ih (G q) (hGF hq) q.1 τ hτ₀ fun q'' hq'' ↦ by
+    ih (G q) (hGF q) q.1 τ hτ₀ fun q'' hq'' ↦ by
       obtain ⟨hq''F, hq''τ⟩ := Finset.mem_filter.mp hq''
       exact ⟨(hF q'' hq''F).1, hq''τ, hA q'' hq''F⟩
   -- the radius `ε = ρ τⁿ⁻¹` of the product of the linear factors
@@ -773,7 +773,7 @@ private theorem isRat_setOf_vle_union_biUnion_closedSubdisc (F : Finset (K × K)
   rw [setOf_vle_union_biUnion_closedSubdisc_eq ⟨q₁, hq₁⟩ (fun q hq ↦ (hF q hq).2.1) hτs
     (fun q hq ↦ hρ _ (Finset.mem_image_of_mem _ hq)) hρτ fun q hq q' hq' ↦ hdist hq hq']
   exact (isRat_setOf_vle_or_vle _ (mul_ne_zero hρ₀ (pow_ne_zero _ hτ₀)) hεs).inter
-    (isRat_biInter F fun q hq ↦ hGrat hq)
+    (isRat_biInter F fun q _ ↦ hGrat q)
 
 /-- Two complements of open discs cover the disc when the smaller open disc `D⁻(b₀, |d₀|)` lies
 outside the larger one `D⁻(b, |d|)`. -/
