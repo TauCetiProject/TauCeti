@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Stable.Decomposition
 public import TauCeti.Probability.Distributions.Stable.IntegrableExpMul
 import TauCeti.Probability.Distributions.Stable.Operations
+import TauCeti.Probability.Distributions.Stable.Transforms
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
 import TauCeti.Probability.Distributions.Pareto.Basic
@@ -82,7 +83,8 @@ private lemma not_integrable_exp_mul_stableMeasure_one_zero
   have hlarge : Integrable (fun x ↦ exp (t * x))
       (stableCompensatedPoissonMeasure α β 1) :=
     mgf_pos_iff.mp (pos_of_mul_pos_right hpos mgf_nonneg)
-  have hdomain : t ∈ integrableExpSet id (stableCompensatedPoissonMeasure α β 1) := hlarge
+  have hdomain : t ∈ integrableExpSet id (stableCompensatedPoissonMeasure α β 1) := by
+    simpa only [integrableExpSet, mem_ofPred_eq, id_eq] using hlarge
   rw [stableCompensatedPoissonMeasure_def] at hdomain
   -- The compensation is a translation, so affine transport removes it from the domain.
   have htranslate : (fun x : ℝ ↦ x - ∫ y in {y : ℝ | 1 < |y|}, sin y
@@ -97,7 +99,9 @@ private lemma not_integrable_exp_mul_stableMeasure_one_zero
       ⟨(stableLevyMeasure_abs_gt_pos hα hβ (by norm_num)).ne',
         stableLevyMeasure_abs_gt_ne_top (by norm_num)⟩
   have hjump := (integrable_exp_mul_compoundPoissonMeasure_iff hrate
-    (f := AddMonoidHom.id ℝ) measurable_id t).mp hdomain
+    (f := AddMonoidHom.id ℝ) measurable_id t).mp
+      (by simpa only [integrableExpSet, mem_ofPred_eq, id_eq, AddMonoidHom.id_apply]
+        using hdomain)
   exact not_integrable_exp_mul_cond_stableLevyMeasure hα hβ hβneg ht hjump
 
 private lemma integrable_exp_mul_stableMeasure_one_zero_iff
@@ -137,18 +141,17 @@ theorem integrable_exp_mul_stableMeasure_iff (hα : α ∈ Ioc 0 2) (hβ : |β| 
     Integrable (fun x ↦ exp (t * x)) (stableMeasure α β s m) ↔
       s = 0 ∨ α = 2 ∨ t = 0 ∨ |β| = 1 ∧ β * t ≤ 0 := by
   rcases eq_zero_or_pos s with rfl | hs
-  · simp only [stableMeasure_zero_scale hα hβ, true_or, iff_true]
-    exact integrable_dirac' (by fun_prop) (by simp)
+  · have hmem : t ∈ integrableExpSet id (stableMeasure α β 0 m) := by
+      rw [integrableExpSet_id_stableMeasure_zero_scale hα hβ]
+      exact mem_univ t
+    simpa only [integrableExpSet, mem_ofPred_eq, id_eq, true_or, iff_true] using hmem
   rcases hα.2.eq_or_lt with rfl | hα2
-  · simp [stableMeasure_two hβ, integrable_exp_mul_gaussianReal]
-  have hmap : (stableMeasure α β 1 0).map (fun x ↦ m + s * x) =
-      stableMeasure α β s m := by
-    simpa [Real.sign_of_pos (NNReal.coe_pos.mpr hs)] using
-      stableMeasure_map_affine (α := α) (β := β) (s := 1) (m := 0) (a := m) (b := s)
-        (Or.inl (NNReal.coe_ne_zero.mpr hs.ne'))
-  have hmem : t ∈ integrableExpSet id (stableMeasure α β s m) ↔
-      s * t ∈ integrableExpSet id (stableMeasure α β 1 0) := by
-    rw [← hmap, integrableExpSet_id_map_affine, mem_preimage]
+  · have hmem : t ∈ integrableExpSet id (stableMeasure 2 β s m) := by
+      rw [integrableExpSet_id_stableMeasure_two hβ]
+      exact mem_univ t
+    simpa only [integrableExpSet, mem_ofPred_eq, id_eq, true_or, or_true, iff_true] using hmem
+  have hmem := mem_integrableExpSet_id_stableMeasure_iff_one_zero (α := α) (β := β)
+    (m := m) (t := t) hs
   simp only [integrableExpSet, mem_ofPred_eq, id_eq] at hmem
   rw [hmem, integrable_exp_mul_stableMeasure_one_zero_iff ⟨hα.1, hα2⟩ hβ]
   have hsign : β * ((s : ℝ) * t) ≤ 0 ↔ β * t ≤ 0 := by
