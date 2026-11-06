@@ -138,7 +138,7 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
       · exact hM
     -- a `G`-stable subgroup `N` of order `p` with trivial action
     obtain ⟨N, hNcard, hNfix⟩ := exists_addSubgroup_natCard_eq_invariant_of_isProP hG
-      (isPPrimaryTorsion_iff.1 (isPPrimaryTorsion_of_natCard_eq_pow hk))
+      (isAddPGroup_iff_pow_nsmul_eq_zero.1 (IsAddPGroup.of_card hk))
     have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x hx ↦ (hNfix g x hx).symm ▸ hx
     let := N.restrictDistribMulAction hN
     let := N.quotientDistribMulAction hN
@@ -289,7 +289,7 @@ private theorem subsingleton_continuousCohomology_three (A : Type u) [AddCommGro
     (hA : Nat.card A = p) :
     Subsingleton (continuousCohomology 3 (ofDiscreteModule ℤ G A)) :=
   cohomologicalDimensionLE_iff.mp hcd A
-    (isPPrimaryTorsion_of_natCard_eq_pow (hA.trans (pow_one p).symm)) 3 (by norm_num)
+    (IsAddPGroup.of_card (hA.trans (pow_one p).symm)) 3 (by norm_num)
 
 include hG hfg htriv
 
