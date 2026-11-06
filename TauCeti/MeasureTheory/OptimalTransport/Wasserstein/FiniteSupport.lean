@@ -320,14 +320,14 @@ theorem exists_eLpNorm_edist_le (hp : 1 ≤ p) (hp_top : p ≠ ∞) [IsProbabili
   -- the quantizer: the nearest listed point of index below the cutoff, and `u 0` beyond it
   set T : X → X := (fun i ↦ u (if i < n then i else 0)) ∘ idx with hT_def
   have hT_meas : Measurable T := Measurable.of_discrete.comp hidx_meas
-  refine ⟨(Finset.range (n + 1)).image u, T, hT_meas, fun x ↦ Finset.mem_image_of_mem u
-    (Finset.mem_range.2 (show ite _ _ _ < n + 1 by split_ifs <;> omega)), ?_⟩
+  refine ⟨(Finset.range (n + 1)).image u, T, hT_meas, fun x ↦ Finset.mem_image.2
+    ⟨if idx x < n then idx x else 0, Finset.mem_range.2 (by split_ifs <;> omega), rfl⟩, ?_⟩
   -- the displacement is at most `δ` off the tail set, and at most the tail distance on it
   have hbound : ∀ x, edist x (T x) ≤ ENNReal.ofReal δ + (A n).indicator f x := fun x ↦ by
     by_cases h : idx x < n
     · simpa [hT_def, h, edist_dist] using
         le_add_right (ENNReal.ofReal_le_ofReal (Nat.find_spec (hidx x)).le)
-    · rw [Set.indicator_of_mem (not_lt.1 h : n ≤ idx x)]
+    · rw [Set.indicator_of_mem (by simpa [hA_def] using not_lt.1 h)]
       simpa [hT_def, h, hf_def] using le_add_left (edist_comm x (u 0)).le
   have hind : eLpNorm ((A n).indicator f) p μ ≤ ENNReal.ofReal δ := by
     refine (ENNReal.rpow_le_rpow_iff ht).1 (le_trans (le_of_eq ?_) hn)
