@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Normed.Module.Complexification
 public import TauCeti.LinearAlgebra.Complex.Conjugation
+import TauCeti.LinearAlgebra.Complex.RealForm
 
 /-!
 # The complexification topology on `ℂ ⊗[ℝ] W`
@@ -322,3 +323,48 @@ end ContinuousLinearEquiv
 end BaseChangeComplex
 
 end
+
+section LiftBaseChangeComplex
+
+open scoped TensorProduct
+open TauCeti
+
+namespace ContinuousLinearMap
+
+variable {W V : Type*} [AddCommGroup W] [Module ℝ W] [TopologicalSpace W]
+  [TopologicalSpace (ℂ ⊗[ℝ] W)] [IsComplexificationTopology W]
+  [AddCommGroup V] [Module ℝ V] [Module ℂ V] [IsScalarTower ℝ ℂ V]
+  [TopologicalSpace V] [IsTopologicalAddGroup V] [ContinuousConstSMul ℂ V]
+
+/-- A continuous real-linear map into a complex module extends canonically to a continuous
+complex-linear map on its complexification. No finite-dimensionality is needed. -/
+noncomputable def liftBaseChangeComplex (f : W →L[ℝ] V) : ℂ ⊗[ℝ] W →L[ℂ] V where
+  toLinearMap := f.toLinearMap.liftBaseChange ℂ
+  cont := ((f.continuous.comp (realPartCLM W).continuous).add
+    ((f.continuous.comp (imaginaryPartCLM W).continuous).const_smul Complex.I)).congr
+      fun u ↦ by
+        simpa only [Pi.add_apply, Pi.smul_apply, Function.comp_apply, realPartCLM_apply,
+          imaginaryPartCLM_apply, ContinuousLinearMap.coe_coe, LinearMap.toFun_eq_coe] using
+          (f.toLinearMap.liftBaseChange_complex_apply u).symm
+
+/-- The extension is exactly the native canonical base-change lift. -/
+@[simp]
+theorem toLinearMap_liftBaseChangeComplex (f : W →L[ℝ] V) :
+    f.liftBaseChangeComplex.toLinearMap = f.toLinearMap.liftBaseChange ℂ := by
+  simp only [liftBaseChangeComplex]
+
+/-- The characteristic tensor formula for continuous scalar extension. -/
+@[simp]
+theorem liftBaseChangeComplex_tmul (f : W →L[ℝ] V) (c : ℂ) (w : W) :
+    f.liftBaseChangeComplex (c ⊗ₜ[ℝ] w) = c • f w := by
+  simp only [liftBaseChangeComplex, coe_mk', LinearMap.liftBaseChange_tmul,
+    ContinuousLinearMap.coe_coe]
+
+/-- The real/imaginary formula for the actual continuous complex-linear extension. -/
+theorem liftBaseChangeComplex_apply (f : W →L[ℝ] V) (u : ℂ ⊗[ℝ] W) :
+    f.liftBaseChangeComplex u = f (realPart W u) + Complex.I • f (imaginaryPart W u) := by
+  exact f.toLinearMap.liftBaseChange_complex_apply u
+
+end ContinuousLinearMap
+
+end LiftBaseChangeComplex

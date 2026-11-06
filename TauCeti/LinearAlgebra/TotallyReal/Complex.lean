@@ -11,6 +11,8 @@ public import Mathlib.LinearAlgebra.Complex.Module
 public import Mathlib.LinearAlgebra.Determinant
 public import TauCeti.LinearAlgebra.Prod
 public import TauCeti.LinearAlgebra.TotallyReal.Basic
+public import TauCeti.LinearAlgebra.Complex.RealForm
+import TauCeti.RingTheory.TensorProduct.IsBaseChange
 
 /-!
 # Totally real subspaces of complex modules
@@ -92,6 +94,119 @@ theorem IsTotallyReal.linearIndependent_complex
     rw [ha0, zero_eq_neg, smul_eq_zero] at hab
     exact hab.resolve_left Complex.I_ne_zero
   exact Complex.ext (hv s _ ha0 i hi) (hv s _ hb0 i hi)
+
+/-- An injective real-linear map onto a maximal totally real subspace exhibits the ambient
+complex module as its complexification. Both real scalar structures are the given compatible
+ones; finite-dimensionality and a choice of basis are unnecessary. -/
+theorem _root_.LinearMap.isBaseChange_complex_of_isMaximalTotallyReal
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range) :
+    IsBaseChange ℂ f := by
+  rw [IsBaseChange.iff_liftBaseChange_bijective]
+  constructor
+  · rw [f.liftBaseChange_complex_injective_iff]
+    intro x y hxy
+    have hxJ : f x ∈ f.range.map ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) := by
+      refine ⟨f (-y), ⟨-y, rfl⟩, ?_⟩
+      simp only [map_neg, LinearMap.restrictScalars_apply, LinearMap.lsmul_apply]
+      exact (eq_neg_of_add_eq_zero_left hxy).symm
+    have hx : f x = 0 := Submodule.disjoint_def.mp hmax.disjoint (f x) ⟨x, rfl⟩ hxJ
+    have hy : f y = 0 := (smul_eq_zero.mp (by simpa only [hx, zero_add] using hxy)).resolve_left
+      Complex.I_ne_zero
+    exact ⟨hf (by simpa using hx), hf (by simpa using hy)⟩
+  · intro v
+    have hv : v ∈ f.range ⊔ f.range.map ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) := by
+      rw [hmax.sup_eq_top]
+      exact Submodule.mem_top
+    obtain ⟨a, ⟨x, rfl⟩, b, ⟨u, ⟨y, rfl⟩, rfl⟩, hxy⟩ := Submodule.mem_sup.mp hv
+    exact LinearMap.mem_range.mp (f.mem_range_liftBaseChange_complex_iff.mpr ⟨x, y, hxy⟩)
+
+/-- The canonical conjugation whose real form is the image of the given maximal totally real
+inclusion. It transports the existing tensor conjugation through the canonical base-change map. -/
+noncomputable def _root_.LinearMap.conjugationOfMaximalTotallyReal
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range) :
+    E →ₛₗ[starRingEnd ℂ] E :=
+  (f.isBaseChange_complex_of_isMaximalTotallyReal hf hmax).equiv.conjugationOfComplexification
+
+/-- The defining transport formula through the canonical complexification map. -/
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_apply
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
+    (v : E) :
+    f.conjugationOfMaximalTotallyReal hf hmax v =
+      (f.isBaseChange_complex_of_isMaximalTotallyReal hf hmax).equiv
+        (tmulConj W ((f.isBaseChange_complex_of_isMaximalTotallyReal hf hmax).equiv.symm v)) := by
+  rw [LinearMap.conjugationOfMaximalTotallyReal, LinearEquiv.conjugationOfComplexification_apply]
+
+/-- Conjugation of a maximal real form is involutive. -/
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_involutive
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range) :
+    Function.Involutive (f.conjugationOfMaximalTotallyReal hf hmax) := by
+  unfold LinearMap.conjugationOfMaximalTotallyReal
+  exact LinearEquiv.conjugationOfComplexification_involutive _
+
+/-- The fixed vectors are exactly the image of the given real inclusion. -/
+@[simp]
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_eq_self_iff
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
+    (v : E) : f.conjugationOfMaximalTotallyReal hf hmax v = v ↔ v ∈ f.range := by
+  rw [LinearMap.conjugationOfMaximalTotallyReal,
+    LinearEquiv.conjugationOfComplexification_eq_self_iff]
+  simp only [IsBaseChange.equiv_tmul, one_smul, LinearMap.mem_range]
+
+/-- Any conjugate-linear map fixing the given real inclusion is this conjugation. In particular
+the construction is independent of frames or auxiliary complexification presentations. -/
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_unique
+    {W : Type*} [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] E)
+    (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
+    (K : E →ₛₗ[starRingEnd ℂ] E) (hfix : ∀ w, K (f w) = f w) :
+    K = f.conjugationOfMaximalTotallyReal hf hmax := by
+  unfold LinearMap.conjugationOfMaximalTotallyReal
+  apply LinearEquiv.conjugationOfComplexification_unique
+  intro w
+  simpa only [IsBaseChange.equiv_tmul, one_smul] using hfix w
+
+/-- The conjugation depends only on the real range, even when two inclusions have different
+source carriers. This is the independence of the presentation of the maximal real form. -/
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_congr_range
+    {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W'] [Module ℝ W']
+    (f : W →ₗ[ℝ] E) (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
+    (g : W' →ₗ[ℝ] E) (hg : Function.Injective g)
+    (hmax' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) g.range)
+    (hrange : f.range = g.range) :
+    f.conjugationOfMaximalTotallyReal hf hmax = g.conjugationOfMaximalTotallyReal hg hmax' := by
+  apply g.conjugationOfMaximalTotallyReal_unique hg hmax'
+  intro w
+  apply (f.conjugationOfMaximalTotallyReal_eq_self_iff hf hmax (g w)).mpr
+  rw [hrange]
+  exact ⟨w, rfl⟩
+
+/-- A complex-linear map carrying one maximal real form to another intertwines their canonical
+conjugations. Neither map is required to be invertible. -/
+theorem _root_.LinearMap.conjugationOfMaximalTotallyReal_natural
+    {W W' E' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W'] [Module ℝ W']
+    [AddCommGroup E'] [Module ℝ E'] [Module ℂ E'] [IsScalarTower ℝ ℂ E']
+    (f : W →ₗ[ℝ] E) (hf : Function.Injective f)
+    (hmax : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E Complex.I).restrictScalars ℝ) f.range)
+    (g : W' →ₗ[ℝ] E') (hg : Function.Injective g)
+    (hmax' : IsMaximalTotallyReal ((LinearMap.lsmul ℂ E' Complex.I).restrictScalars ℝ) g.range)
+    (A : E →ₗ[ℂ] E') (b : W →ₗ[ℝ] W') (hreal : ∀ w, A (f w) = g (b w)) (v : E) :
+    g.conjugationOfMaximalTotallyReal hg hmax' (A v) =
+      A (f.conjugationOfMaximalTotallyReal hf hmax v) := by
+  unfold LinearMap.conjugationOfMaximalTotallyReal
+  apply LinearEquiv.conjugationOfComplexification_natural _ _ A b
+  intro w
+  simpa only [IsBaseChange.equiv_tmul, one_smul] using hreal w
 
 namespace IsMaximalTotallyReal
 

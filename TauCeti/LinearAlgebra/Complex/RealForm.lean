@@ -70,6 +70,14 @@ namespace LinearMap
 variable {V W : Type*} [AddCommGroup V] [Module ℂ V] [Module ℝ V] [IsScalarTower ℝ ℂ V]
   [AddCommGroup W] [Module ℝ W] (f : W →ₗ[ℝ] V)
 
+/-- The canonical extension to the complexification is the real-image plus `i` times the
+imaginary-image. This formula respects an independently given compatible real scalar action. -/
+theorem liftBaseChange_complex_apply (u : ℂ ⊗[ℝ] W) :
+    f.liftBaseChange ℂ u =
+      f (TauCeti.realPart W u) + Complex.I • f (TauCeti.imaginaryPart W u) := by
+  conv_lhs => rw [← TauCeti.one_tmul_realPart_add_I_tmul_imaginaryPart W u]
+  simp only [map_add, LinearMap.liftBaseChange_tmul, one_smul]
+
 /-- The image of the complexified map `ℂ ⊗[ℝ] W → V`, `c ⊗ₜ w ↦ c • f w`, consists of the
 vectors `f x + I • f y`. -/
 theorem mem_range_liftBaseChange_complex_iff {v : V} :
