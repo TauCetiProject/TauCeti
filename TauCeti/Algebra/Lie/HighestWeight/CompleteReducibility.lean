@@ -283,13 +283,14 @@ section Quotient
 
 attribute [local instance 100] LieRing.ofAssociativeRing
 
-omit [IsKilling K L] in
+omit [IsKilling K L] [FiniteDimensional K L] in
 /-- **Weyl's theorem for an action through a quotient.** If an ideal `I` of `L` acts trivially on
-a finite-dimensional module `M` and the quotient `L ⧸ I` has nondegenerate Killing form, then every
-Lie submodule of `M` has a complement. This applies when `L` itself is not semisimple, for
-instance to a module of `L` on which its solvable radical acts trivially. -/
+a finite-dimensional module `M` and the quotient `L ⧸ I` is finite-dimensional with nondegenerate
+Killing form, then every Lie submodule of `M` has a complement. This applies when `L` itself is not
+semisimple, for instance to a module of `L` on which its solvable radical acts trivially. -/
 theorem _root_.LieSubmodule.exists_isCompl_of_le_ker [FiniteDimensional K M]
     (N : LieSubmodule K L M) {I : LieIdeal K L} [IsKilling K (L ⧸ I)]
+    [FiniteDimensional K (L ⧸ I)]
     (hI : I ≤ LieModule.ker K L M) : ∃ N' : LieSubmodule K L M, IsCompl N N' := by
   -- `L ⧸ I` acts on `M` through the induced representation, with the same submodules as `L`.
   let ρ : L ⧸ I →ₗ⁅K⁆ Module.End K M := I.liftQ (toEnd K L M) hI
