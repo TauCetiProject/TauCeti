@@ -252,10 +252,8 @@ theorem mapRange_mem_potentialFiltration {C : ℝ} {a : NovikovModule R F}
 
 /-- Coefficient change is continuous for the potential-cutoff topologies. -/
 theorem continuous_mapRange : Continuous (mapRange (F := F) ρ) :=
-  continuous_of_continuousAt_zero (mapRange (F := F) ρ).toAddMonoidHom <| by
-    rw [ContinuousAt, map_zero]
-    exact (hasBasis_nhds_zero.tendsto_iff hasBasis_nhds_zero).2 fun C _ =>
-      ⟨C, trivial, fun _ ha => mapRange_mem_potentialFiltration ρ ha⟩
+  continuous_of_forall_mem_potentialFiltration (mapRange ρ) fun C =>
+    ⟨C, fun _ ha => mapRange_mem_potentialFiltration ρ ha⟩
 
 end Ring
 
@@ -287,8 +285,7 @@ theorem mapRange_smul (β : NovikovSeries R H N) (a : NovikovModule R F) :
   let := module (R := R') hF
   let r := fun i => Classical.arbitrary (P i)
   refine (coordinates hF r).injective (funext fun i => ?_)
-  rw [coordinates_smul, Pi.smul_apply, coordinates_mapRange, coordinates_smul, Pi.smul_apply,
-    smul_eq_mul, smul_eq_mul, map_mul, coordinates_mapRange]
+  simp only [coordinates_smul, Pi.smul_apply, smul_eq_mul, map_mul, coordinates_mapRange]
 
 /-- Coefficient change on a finite union of torsors, as a semilinear map over the coefficient
 change `NovikovSeries.mapRingHom ρ` of Novikov rings, for the Novikov module structures of
