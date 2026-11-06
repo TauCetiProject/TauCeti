@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Integral.Prod
 public import Mathlib.MeasureTheory.Measure.WithDensityFinite
 public import TauCeti.MeasureTheory.Function.Lp.TendstoExponentTop
+import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 
 /-!
 # Iterated `Lᵖ` seminorms on a product measure
@@ -204,18 +205,8 @@ theorem MeasureTheory.MemLp.ae_memLp_prod_right [SFinite ν] {f : α × β → �
     rw [← TauCeti.eLpNorm_prod_eq_eLpNorm_eLpNorm hf.aestronglyMeasurable]
     exact hf
   set g : α → ℝ≥0∞ := fun x ↦ eLpNorm (fun y ↦ f (x, y)) p ν with hg
-  have hgm : AEMeasurable g μ := hf.aestronglyMeasurable.eLpNorm_prod_right.aemeasurable
   suffices ∀ᵐ x ∂μ, g x < ∞ from this.mono fun x hx ↦ hx
   rcases eq_or_ne p 0 with rfl | hp0
   · filter_upwards [hf.aestronglyMeasurable.prodMk_left] with x hx
     simp [hg, eLpNorm_exponent_zero hx]
-  rcases eq_or_ne p ∞ with rfl | hp
-  · filter_upwards [enorm_ae_le_eLpNormEssSup g μ] with x hx
-    exact (enorm_eq_self (g x) ▸ hx).trans_lt (eLpNormEssSup_le_eLpNorm_top.trans_lt h)
-  · rw [eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top hp0 hp
-      hf.aestronglyMeasurable.eLpNorm_prod_right] at h
-    have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-    filter_upwards [ae_lt_top' (hgm.pow_const p.toReal) (by simpa using h.ne)] with x hx
-    by_contra hxt
-    rw [not_lt, top_le_iff] at hxt
-    simp [hxt, ENNReal.top_rpow_of_pos hr] at hx
+  · exact TauCeti.ae_lt_top_of_eLpNorm_ne_top hp0 h.ne
