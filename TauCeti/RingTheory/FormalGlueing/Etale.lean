@@ -77,7 +77,7 @@ theorem formallyEtale_iff_baseChange_and_localized
 to the `I`-adic completion of a Noetherian ring and the principal opens complementary to `I`.
 In general, any flat `R → S` inducing `R/I ≃ S/IS` suffices: neither ring needs to be
 Noetherian, and completeness and faithful flatness are not required. -/
-theorem finite_etale_iff_baseChange_and_localized
+theorem finite_and_etale_iff_baseChange_and_localized
     (hG : Bijective (Ideal.quotientMap ((Ideal.span (G : Set R)).map (algebraMap R S))
       (algebraMap R S) Ideal.le_comap_map)) :
     (Module.Finite R A ∧ Algebra.Etale R A) ↔
