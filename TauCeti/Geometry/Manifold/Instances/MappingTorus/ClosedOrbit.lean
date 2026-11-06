@@ -422,6 +422,11 @@ theorem injective_orbitTorus_iff : Injective (orbitTorus φ h) ↔ minimalPeriod
   rw [← injective_closedOrbit_iff h, orbitTorus, Prod.map_injective]
   exact and_iff_right injective_id
 
+/-- The orbit torus is continuous. -/
+@[continuity, fun_prop]
+theorem continuous_orbitTorus : Continuous (orbitTorus φ h) :=
+  continuous_id.prodMap (continuous_closedOrbit h)
+
 variable [T2Space M] [LocallyCompactSpace M] [IsManifold I n M] [Fact (0 < (d : ℝ))]
 
 /-- The orbit torus is `C^n`. -/
