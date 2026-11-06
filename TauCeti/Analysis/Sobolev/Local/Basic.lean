@@ -48,6 +48,10 @@ On a set reaching the real axis, those compact subsets include the boundary. -/
 def MemLpLoc (p : ENNReal) (U : Set ℂ) (f : ℂ → F) : Prop :=
   ∀ K : Set ℂ, K ⊆ U → IsCompact K → MemLp f p (volume.restrict K)
 
+/-- Local `Lᵖ` membership is characterized by `Lᵖ` membership on every compact subset. -/
+theorem memLpLoc_iff : MemLpLoc p U f ↔
+    ∀ K : Set ℂ, K ⊆ U → IsCompact K → MemLp f p (volume.restrict K) := Iff.rfl
+
 /-- Local integrability restricts to any smaller set. -/
 theorem MemLpLoc.mono_set (hf : MemLpLoc p U f) (hVU : V ⊆ U) : MemLpLoc p V f :=
   fun K hK hc => hf K (hK.trans hVU) hc
