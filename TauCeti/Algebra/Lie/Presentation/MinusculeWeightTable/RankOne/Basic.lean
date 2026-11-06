@@ -149,6 +149,16 @@ theorem sl2BlockGL_injective (i : B) (hi : ∃ a, T.weight a i = -1) :
     Function.Injective (T.sl2BlockGL i : GL (Fin 2) R → GL ι R) :=
   Units.map_injective (T.sl2BlockMatrix_injective i hi)
 
+omit [Fintype ι] in
+/-- Applying a ring homomorphism entrywise commutes with the block action. -/
+@[simp]
+theorem map_sl2BlockMatrix {S : Type*} [CommRing S] (f : R →+* S) (i : B)
+    (g : Matrix (Fin 2) (Fin 2) R) :
+    (T.sl2BlockMatrix i g).map f = T.sl2BlockMatrix i (g.map f) := by
+  ext a b
+  simp only [sl2BlockMatrix_apply, Matrix.map_apply, Matrix.one_apply]
+  split_ifs <;> simp only [map_add, map_mul, map_zero, map_one]
+
 /-- Restriction of the block representation to the special linear group. -/
 def sl2BlockSL (i : B) : Matrix.SpecialLinearGroup (Fin 2) R →* GL ι R :=
   (T.sl2BlockGL i).comp Matrix.SpecialLinearGroup.toGL
@@ -159,6 +169,18 @@ theorem coe_sl2BlockSL (i : B) (g : Matrix.SpecialLinearGroup (Fin 2) R) :
     (T.sl2BlockSL i g : Matrix ι ι R) = T.sl2BlockMatrix i (g : Matrix (Fin 2) (Fin 2) R) := by
   simp only [sl2BlockSL, MonoidHom.comp_apply, coe_sl2BlockGL,
     Matrix.SpecialLinearGroup.coe_GL_coe_matrix]
+
+/-- The special-linear block representation is natural in the coefficient ring. -/
+@[simp]
+theorem map_sl2BlockSL {S : Type*} [CommRing S] (f : R →+* S) (i : B)
+    (g : Matrix.SpecialLinearGroup (Fin 2) R) :
+    Matrix.GeneralLinearGroup.map f (T.sl2BlockSL i g) =
+      T.sl2BlockSL i (Matrix.SpecialLinearGroup.map f g) := by
+  apply Units.ext
+  ext a b
+  simpa only [Matrix.GeneralLinearGroup.map_apply, coe_sl2BlockSL,
+    Matrix.SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, Matrix.map_apply] using
+    congrFun (congrFun (T.map_sl2BlockMatrix f i (g : Matrix (Fin 2) (Fin 2) R)) a) b
 
 /-- A weight of coordinate `-1` at the node makes the special-linear block representation
 faithful. -/
