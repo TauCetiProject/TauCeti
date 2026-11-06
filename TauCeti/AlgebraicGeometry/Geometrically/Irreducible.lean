@@ -115,9 +115,9 @@ lemma GeometricallyIrreducible.of_dense_open {field : Type u} [Field field]
   have compositeSquare : IsPullback (pullback.fst immersion first)
       (pullback.snd immersion first ≫ second) (immersion ≫ structureMap) point :=
     (IsPullback.of_hasPullback immersion first).paste_vert square
-  letI : IrreducibleSpace (pullback immersion first : Scheme.{u}) :=
+  let : IrreducibleSpace (pullback immersion first : Scheme.{u}) :=
     GeometricallyIrreducible.geometrically_irreducibleSpace _ _ _ compositeSquare
-  letI : UniversallyOpen first := MorphismProperty.of_isPullback square.flip inferInstance
+  let : UniversallyOpen first := MorphismProperty.of_isPullback square.flip inferInstance
   have denseImage : Dense (Set.range (pullback.snd immersion first)) := by
     rw [IsOpenImmersion.range_pullbackSnd]
     exact (show Dense (Set.range immersion) from denseRange).preimage first.isOpenMap
