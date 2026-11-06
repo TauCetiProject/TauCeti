@@ -40,6 +40,7 @@ points, the form in which Hölder seminorms are written in analysis texts.
 
 * `HolderOnWith.of_dist_le`: a Hölder bound stated with `dist` gives `HolderOnWith`; the converse
   is Mathlib's `HolderOnWith.dist_le`.
+* `HolderOnWith.sub`: differences preserve the exponent and add the Hölder constants.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
 * `HolderOnWith.of_le_of_dist_le`: a `β`-Hölder function with values within distance `D` of each
   other is `γ`-Hölder for `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)` for every scale `δ > 0`.
@@ -101,6 +102,20 @@ theorem HolderOnWith.of_dist_le {X Y : Type*} [PseudoMetricSpace X] [PseudoMetri
   rw [edist_dist, edist_dist, ENNReal.ofReal_rpow_of_nonneg dist_nonneg r.coe_nonneg,
     ← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul C.coe_nonneg]
   exact ENNReal.ofReal_le_ofReal (h x hx y hy)
+
+/-- The difference of two Hölder functions on a set has the same exponent and the sum
+of their Hölder constants. -/
+theorem HolderOnWith.sub {X Y : Type*} [PseudoMetricSpace X] [SeminormedAddCommGroup Y]
+    {C D r : ℝ≥0} {f g : X → Y} {s : Set X}
+    (hf : HolderOnWith C r f s) (hg : HolderOnWith D r g s) :
+    HolderOnWith (C + D) r (f - g) s := by
+  refine HolderOnWith.of_dist_le fun x hx y hy => ?_
+  calc
+    dist (f x - g x) (f y - g y) ≤ dist (f x) (f y) + dist (g x) (g y) :=
+      dist_sub_sub_le _ _ _ _
+    _ ≤ (C : ℝ) * dist x y ^ (r : ℝ) + (D : ℝ) * dist x y ^ (r : ℝ) :=
+      add_le_add (hf.dist_le hx hy) (hg.dist_le hx hy)
+    _ = _ := by rw [NNReal.coe_add, add_mul]
 
 /-- `HolderOnWith` is equivalent to the Hölder bound stated with `dist`. Compare
 `lipschitzOnWith_iff_dist_le_mul`. -/

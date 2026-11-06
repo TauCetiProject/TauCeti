@@ -182,11 +182,7 @@ theorem exists_pos_forall_morseIndex_eq [FiniteDimensional ℝ E]
     ⟨hg.isSymmSndFDerivAt (by simp)⟩
   have hmorse (g : E → ℝ) (y : E) :
       morseIndex g y = sigNeg (fderiv ℝ (fderiv ℝ g) y).toBilinForm.toQuadraticMap := by
-    rw [morseIndex_def]
-    congr 1
-    ext v
-    rw [LinearMap.BilinMap.toQuadraticMap_apply, hessianQuadraticForm_apply,
-      ContinuousLinearMap.toBilinForm_apply]
+    rw [morseIndex_def, hessianQuadraticForm_def]
   -- The negative index is locally constant on the space of symmetric forms.
   let a : {B : E →L[ℝ] E →L[ℝ] ℝ // B.toBilinForm.IsSymm} :=
     ⟨fderiv ℝ (fderiv ℝ f) x, hsymm h.contDiffAt⟩
