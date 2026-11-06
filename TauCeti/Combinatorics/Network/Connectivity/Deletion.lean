@@ -129,7 +129,7 @@ theorem arcConnectivity_le_withoutHom_add_card (F : Finset (Σ v w, Q v w)) :
   refine ENat.forall_natCast_le_iff_le.1 fun k hk ↦ ?_
   have hk := (isArcStrong_iff_le_arcConnectivity k).2 hk
   by_cases hkF : k ≤ #F
-  · exact (Nat.cast_le.2 hkF).trans (le_add_of_nonneg_left bot_le)
+  · exact (Nat.cast_le.2 hkF).trans (le_add_of_nonneg_left zero_le)
   · have h := (isArcStrong_iff_le_arcConnectivity (k - #F)).1 (hk.withoutHom F)
     have heq : k - #F + #F = k := Nat.sub_add_cancel (by omega)
     calc
