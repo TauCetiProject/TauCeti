@@ -14,13 +14,16 @@ For an element `p` of an additive group that is not of finite additive order, th
 `zmultiples p` of its `ℤ`-multiples is infinite cyclic: `n ↦ n • p` is an isomorphism
 `ℤ ≃+ zmultiples p`. This applies Mathlib's `intEquivOfZMultiplesEqTop` to the subgroup
 `zmultiples p` itself. A homomorphism into a torsion-free additive group is injective on
-`zmultiples p` whenever it is nonzero at `p`.
+`zmultiples p` whenever it is nonzero at `p`. If `n ↦ n • g` identifies `ℤ` with a group `H`,
+then any element that an additive endomorphism of `H` sends to `g` is `g` up to a unit of `ℤ`.
 
 ## Main declarations
 
 * `TauCeti.intEquivZMultiples`: the isomorphism `ℤ ≃+ zmultiples p` for a non-torsion `p`.
 * `AddMonoidHom.comp_zmultiples_subtype_injective`: injectivity on a cyclic subgroup when
   its generator has nonzero image in a torsion-free group.
+* `AddMonoidHom.exists_eq_units_smul_of_map_eq`: in an infinite cyclic group with generator `g`,
+  an element sent to `g` by an additive endomorphism is a unit multiple of `g`.
 -/
 
 public section
@@ -80,5 +83,17 @@ theorem comp_zmultiples_subtype_injective {A B : Type*} [AddGroup A] [AddGroup B
   have hmn : m = n := IsAddTorsionFree.zsmul_left_injective ha (by
     simpa only [comp_apply, AddSubgroup.subtype_apply, ← hm, ← hn, map_zsmul] using hxy)
   exact Subtype.ext (hm.symm.trans (hmn ▸ hn))
+
+/-- If `k ↦ k • g` identifies `ℤ` with `H` and an additive endomorphism of `H` sends `x` to `g`,
+then `g` is a unit multiple of `x`. -/
+theorem exists_eq_units_smul_of_map_eq {H : Type*} [AddCommGroup H] (f : H →+ H) {g x : H}
+    (hg : Function.Bijective fun k : ℤ ↦ k • g) (hx : f x = g) :
+    ∃ ε : ℤˣ, g = (ε : ℤ) • x := by
+  -- Write `x = m • g` and `f g = j • g`. Then `g = f x = (m * j) • g`, so `m * j = 1`.
+  obtain ⟨m, rfl⟩ := hg.2 x
+  obtain ⟨j, hj⟩ := hg.2 (f g)
+  have hmj : m * j = 1 := hg.1 <| by
+    simp only [mul_smul, hj, ← map_zsmul, hx, one_smul]
+  exact ⟨Units.mkOfMulEqOne j m (by rw [mul_comm, hmj]), by simp [smul_smul, mul_comm j m, hmj]⟩
 
 end AddMonoidHom
