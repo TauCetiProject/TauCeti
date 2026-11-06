@@ -8,6 +8,7 @@ module
 public import Mathlib.CategoryTheory.Monoidal.NaturalTransformation
 public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.PointFaithful
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.ScalarExtension.Monoidal
+public import TauCeti.CategoryTheory.Monoidal.Conjugation
 
 /-!
 # Tensor automorphisms from algebraic-group points
@@ -182,73 +183,24 @@ theorem scalarExtensionComponent_natural
   simpa only [bmap, SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom] using
     congrArg SemimoduleCat.Hom.hom hcat'
 
-/-- A linear map on `A ⊗[R] (M ⊗[R] N)` that commutes, through the inverse of the distributivity
-isomorphism `A ⊗[R] (M ⊗[R] N) ≃ (A ⊗[R] M) ⊗[A] (A ⊗[R] N)`, with the tensor product of two
-linear maps acts on the image of a pure tensor by the tensor product of their values. -/
-theorem distribBaseChange_symm_tmul_of_square
-    {M N : Type u} [AddCommMonoid M] [Module R M] [AddCommMonoid N] [Module R N]
-    {cM : A ⊗[R] M →ₗ[A] A ⊗[R] M} {cN : A ⊗[R] N →ₗ[A] A ⊗[R] N}
-    {cMN : A ⊗[R] (M ⊗[R] N) →ₗ[A] A ⊗[R] (M ⊗[R] N)}
-    (h : (SemimoduleCat.ofHom
-            (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap :
-            (SemimoduleCat.of A (A ⊗[R] M) ⊗ SemimoduleCat.of A (A ⊗[R] N)) ⟶
-              SemimoduleCat.of A (A ⊗[R] (M ⊗[R] N))) ≫ SemimoduleCat.ofHom cMN =
-      (SemimoduleCat.ofHom cM ⊗ₘ SemimoduleCat.ofHom cN) ≫
-        (SemimoduleCat.ofHom
-          (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap :
-          (SemimoduleCat.of A (A ⊗[R] M) ⊗ SemimoduleCat.of A (A ⊗[R] N)) ⟶
-            SemimoduleCat.of A (A ⊗[R] (M ⊗[R] N))))
-    (x : A ⊗[R] M) (y : A ⊗[R] N) :
-    cMN ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm (x ⊗ₜ[A] y)) =
-      (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
-        (cM x ⊗ₜ[A] cN y) := by
+/-- A linear map `c` on the target of `e : X ⊗[A] Y →ₗ[A] Z` that intertwines `e` with the tensor
+product of two linear maps `a` and `b`, as a square of module maps, evaluates on the image of a
+pure tensor by `c (e (x ⊗ₜ y)) = e (a x ⊗ₜ b y)`. -/
+private theorem apply_tmul_of_comp_eq {X Y Z : Type u} [AddCommMonoid X] [Module A X]
+    [AddCommMonoid Y] [Module A Y] [AddCommMonoid Z] [Module A Z] (e : X ⊗[A] Y →ₗ[A] Z)
+    {a : X →ₗ[A] X} {b : Y →ₗ[A] Y} {c : Z →ₗ[A] Z}
+    (h : (SemimoduleCat.ofHom e : (SemimoduleCat.of A X ⊗ SemimoduleCat.of A Y) ⟶
+            SemimoduleCat.of A Z) ≫ SemimoduleCat.ofHom c =
+      (SemimoduleCat.ofHom a ⊗ₘ SemimoduleCat.ofHom b) ≫
+        (SemimoduleCat.ofHom e : (SemimoduleCat.of A X ⊗ SemimoduleCat.of A Y) ⟶
+            SemimoduleCat.of A Z))
+    (x : X) (y : Y) : c (e (x ⊗ₜ[A] y)) = e (a x ⊗ₜ[A] b y) := by
   have hlin := congrArg SemimoduleCat.Hom.hom h
+  -- The hypothesis `h` mentions the object `of A X ⊗ of A Y`, whose carrier is `X ⊗[A] Y` only up
+  -- to unfolding the monoidal structure of `SemimoduleCat`, so `rw` cannot see the redexes of
+  -- `hom_comp` and `hom_tensorHom`; `erw` matches them up to that definitional equality.
   erw [SemimoduleCat.hom_comp, SemimoduleCat.hom_comp, SemimoduleCat.hom_tensorHom] at hlin
-  simp only [SemimoduleCat.hom_ofHom] at hlin
-  -- Finally evaluate the linear-map equality on a pure tensor.
-  have happ := LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
-  -- No carrier-level rewrite theorem unfolds these two categorical applications, so display
-  -- their underlying linear maps before evaluating `TensorProduct.map`.
-  change cMN
-      ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap (x ⊗ₜ[A] y)) =
-    (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap
-      (TensorProduct.map cM cN (x ⊗ₜ[A] y)) at happ
-  rw [TensorProduct.map_tmul] at happ
-  change cMN
-      ((TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
-        (x ⊗ₜ[A] y)) =
-    (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm
-      (cM x ⊗ₜ[A]
-        cN y) at happ
-  exact happ
-
-/-- Transporting a tensor-compatible endomorphism along isomorphisms of the objects: if
-`aM ⊗ₘ aN` and `aMN` are intertwined by the composite `(iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv`, then
-the conjugates `iM.inv ≫ aM ≫ iM.hom` and `iN.inv ≫ aN ≫ iN.hom` are intertwined with
-`iMN.inv ≫ aMN ≫ iMN.hom` by `d`. -/
-theorem transport_tensor_square {C : Type*} [Category C] [MonoidalCategory C]
-    {M N M' N' P P' : C} (iM : M ≅ M') (iN : N ≅ N') (iMN : P ≅ P') (d : M' ⊗ N' ⟶ P')
-    (aM : M ⟶ M) (aN : N ⟶ N) (aMN : P ⟶ P)
-    (hmon : (((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) ≫ aMN) =
-      (aM ⊗ₘ aN) ≫ ((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv)) :
-    d ≫ (iMN.inv ≫ aMN ≫ iMN.hom) =
-      ((iM.inv ≫ aM ≫ iM.hom) ⊗ₘ (iN.inv ≫ aN ≫ iN.hom)) ≫ d := by
-  have he :
-      (iM.hom ⊗ₘ iN.hom) ≫
-          ((iM.inv ≫ aM ≫ iM.hom) ⊗ₘ (iN.inv ≫ aN ≫ iN.hom)) =
-        ((aM ≫ iM.hom) ⊗ₘ (aN ≫ iN.hom)) := by
-    rw [MonoidalCategory.tensorHom_comp_tensorHom]
-    simp only [Iso.hom_inv_id_assoc]
-  have he' :
-      (aM ⊗ₘ aN) ≫ (iM.hom ⊗ₘ iN.hom) =
-        ((aM ≫ iM.hom) ⊗ₘ (aN ≫ iN.hom)) :=
-    MonoidalCategory.tensorHom_comp_tensorHom _ _ _ _
-  rw [← cancel_epi (iM.hom ⊗ₘ iN.hom)]
-  rw [← cancel_mono iMN.inv]
-  simp only [Category.assoc, Iso.hom_inv_id, Category.comp_id]
-  conv_rhs => rw [← Category.assoc]
-  rw [he, ← he']
-  simpa only [Category.assoc] using hmon
+  exact LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
 
 /-- Tensor compatibility of the explicitly transported components of a tensor automorphism. -/
 @[simp]
@@ -292,10 +244,13 @@ theorem scalarExtensionComponent_tensor
     SemimoduleCat.ofHom
       (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap
   have hmon :
-      (((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) ≫ aMN) =
+      (iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv ≫ aMN =
+        (aM ⊗ₘ aN) ≫ (iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv := by
+    have hmon' : ((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) ≫ aMN =
         (aM ⊗ₘ aN) ≫ ((iM.hom ⊗ₘ iN.hom) ≫ d ≫ iMN.inv) := by
-    simpa only [iM, iN, iMN, d, eqToIso.hom, eqToIso.inv] using htensor
-  have hcat := transport_tensor_square iM iN iMN d aM aN aMN hmon
+      simpa only [iM, iN, iMN, d, eqToIso.hom, eqToIso.inv] using htensor
+    simpa only [Category.assoc] using hmon'
+  have hcat := comp_conj_eq_tensorHom_conj_comp iM iN iMN d aM aN aMN hmon
   -- Use the same bridge to replace all three transported maps before passing to linear maps.
   have hcat' :
       d ≫ SemimoduleCat.ofHom
@@ -307,7 +262,8 @@ theorem scalarExtensionComponent_tensor
       ofHom_scalarExtensionComponent R H A η N hN]
     convert hcat using 1 <;>
       simp only [iM, iN, iMN, aM, aN, aMN, eqToIso.inv, eqToIso.hom] <;> rfl
-  exact distribBaseChange_symm_tmul_of_square R A hcat' x y
+  exact apply_tmul_of_comp_eq A
+    (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap hcat' x y
 
 -- Conjugating by an object transport turns the identity into the identity. Stated for a
 -- variable object so that the transport can be substituted away.
