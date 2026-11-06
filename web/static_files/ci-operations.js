@@ -195,7 +195,7 @@
       if (admission.reservation_error) card.append(note("Staging reservation configuration needs attention.", "ops-warning"));
       card.append(note("Worker rounds in 24h · finished " + (activity.finished_rounds ?? "unknown") + " · failed " + (activity.failed_rounds ?? "unknown") + " · outcomes unconfirmed " + (activity.unknown_rounds ?? "unknown") + " · activity prepared " + age(activity.observed_at)));
       (h.slots || []).forEach(function (s) { card.append(note("Slot " + s.slot + " · " + s.phase + " · " + (s.busy ? "busy" : "not marked busy") + " · runner " + (s.runner_id || "unknown") + " · VM " + (s.instance_id || "unknown") + " · configured guest " + (s.vcpus ?? "unknown") + " CPUs / " + (s.memory_gib ?? "unknown") + " GiB")); });
-      (h.workers || []).forEach(function (w) { card.append(note("Worker " + w.id + " · " + w.state + " · heartbeat " + age(w.observed_at))); });
+      (h.workers || []).forEach(function (w) { card.append(note("Worker " + w.id + " · " + w.state + " · " + (w.alive ? "reported alive" : "not marked alive") + " · heartbeat " + age(w.observed_at) + " · " + freshness(w.observed_at, 60))); });
       if (!(h.slots || []).length) card.append(note("No slots in this observation. This does not establish available capacity.")); view.append(card);
     });
     jobsView(view);
