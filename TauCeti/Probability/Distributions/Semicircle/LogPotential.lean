@@ -303,6 +303,71 @@ private theorem logPotential_sub_primitive_is_const {z w : ℂ}
   have h := hopen.is_const_of_deriv_eq_zero hconv hdiff hderiv hz hw
   exact h
 
+private theorem primitive_re (z : ℂ) :
+    (primitive z).re = (-(z * m z) / 2).re - Real.log ‖m z‖ - 1 / 2 := by
+  simp [primitive, Complex.log_re, norm_neg]
+
+private theorem real_logPotential_sub_primitive_is_const {z w : ℂ}
+    (hz : 0 < z.im) (hw : 0 < w.im) :
+    (∫ y : ℝ, Real.log ‖z - y‖ ∂semicircleReal 0 1) - (primitive z).re =
+      (∫ y : ℝ, Real.log ‖w - y‖ ∂semicircleReal 0 1) - (primitive w).re := by
+  have h := congrArg Complex.re (logPotential_sub_primitive_is_const hz hw)
+  simpa only [Complex.sub_re, integral_log_norm_sub hz, integral_log_norm_sub hw] using h
+
+private theorem m_at_imaginary_axis (t : ℝ) (ht : 0 < t) :
+    (m ((t : ℂ) * Complex.I)).re = 0 ∧
+      (m ((t : ℂ) * Complex.I)).im ^ 2 + t * (m ((t : ℂ) * Complex.I)).im = 1 := by
+  let z : ℂ := (t : ℂ) * Complex.I
+  have hz : 0 < z.im := by simp [z, ht]
+  have hzre : z.re = 0 := by simp [z]
+  have hzim : z.im = t := by simp [z]
+  have hquad := m_quad hz
+  have him : (2 * (m z).im + t) * (m z).re = 0 := by
+    have h := congrArg Complex.im hquad
+    simp only [Complex.add_im, Complex.mul_im, Complex.one_im, Complex.zero_im,
+      hzre, hzim] at h
+    nlinarith
+  have hfactor : 0 < 2 * (m z).im + t := by
+    have hb := m_im_pos hz
+    linarith
+  have hre : (m z).re = 0 := (mul_eq_zero.mp him).resolve_left (ne_of_gt hfactor)
+  have hm : m z = (m z).im * Complex.I := by
+    apply Complex.ext <;> simp [hre]
+  have hr := congrArg Complex.re hquad
+  rw [hm] at hr
+  simp only [Complex.add_re, Complex.mul_re, Complex.mul_im, Complex.one_re,
+    Complex.zero_re, Complex.ofReal_re, Complex.ofReal_im, Complex.I_re,
+    Complex.I_im, zero_mul, mul_zero, sub_zero, add_zero, hzre, hzim] at hr
+  constructor
+  · exact hre
+  · change (m z).im ^ 2 + t * (m z).im = 1
+    nlinarith
+
+private theorem tendsto_mul_m_im_atTop :
+    Tendsto (fun t : ℝ ↦ t * (m (t * Complex.I)).im) atTop (𝓝 1) := by
+  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun a ha ↦ ?_⟩
+  · have hδ : 0 < 1 - a := sub_pos.mpr ha
+    filter_upwards [eventually_gt_atTop (max 1 (1 / (1 - a)))] with t ht
+    have ht1 : 1 < t := lt_of_le_of_lt (le_max_left _ _) ht
+    have ht0 : 0 < t := by linarith
+    have htd : 1 / (1 - a) < t := lt_of_le_of_lt (le_max_right _ _) ht
+    have hδt : 1 < (1 - a) * t := by
+      simpa [mul_comm] using (div_lt_iff₀ hδ).mp htd
+    have hδt2 : 1 < (1 - a) * t ^ 2 := by nlinarith
+    have ht2 : 1 / t ^ 2 < 1 - a := (div_lt_iff₀ (sq_pos_of_pos ht0)).mpr hδt2
+    have h := (m_at_imaginary_axis t ht0).2
+    have hb : 0 < (m (t * Complex.I)).im := m_im_pos (by simpa using ht0)
+    have hb_le : (m (t * Complex.I)).im ≤ 1 / t := by
+      apply (le_div_iff₀ ht0).2
+      nlinarith [sq_nonneg (m (t * Complex.I)).im]
+    have hb_sq : (m (t * Complex.I)).im ^ 2 ≤ 1 / t ^ 2 := by
+      have hsq := (sq_le_sq₀ (le_of_lt hb) (by positivity : 0 ≤ 1 / t)).2 hb_le
+      simpa [one_div_pow] using hsq
+    nlinarith
+  · filter_upwards [eventually_gt_atTop 0] with t ht
+    have h := (m_at_imaginary_axis t ht).2
+    nlinarith [sq_nonneg (m (t * Complex.I)).im]
+
 end UpperHalfPlane
 
 end TauCeti.Probability
