@@ -8,37 +8,34 @@ module
 public import TauCeti.Geometry.Manifold.Algebra.ComplexSmoothFunctions
 public import TauCeti.Geometry.Manifold.VectorBundle.Complexification
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
+public import TauCeti.LinearAlgebra.Complex.Module
 
 /-!
-# Sections of complex vector bundles as modules over complex-valued smooth functions
+# Sections of complex bundles as modules over complex-valued functions
 
-Let `W` be a complex vector bundle over a real manifold `M`. Its `C^n` sections form a module
-over the ring `C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯` of complex-valued real `C^n` functions, acting by
-pointwise multiplication `(f • s) x = f x • s x`. Smoothness of `f • s` comes from
-`ContMDiff.smul_totalSpace`: in a complex-linear trivialization, multiplication by a complex
-scalar is a smooth map of the real model fibre.
+Let `V` be a complex vector bundle over a real manifold `M`, and let
+`A_ℂ = C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯` be the complex-valued `C^n` functions on `M`, where differentiability
+is taken over `ℝ`, so they are not required to be holomorphic. Pointwise multiplication makes
+the `C^n` sections of `V` an `A_ℂ`-module (`ContMDiffSection.instModuleContMDiffMapOfNormedAlgebra`,
+for the extension `ℝ ⊆ ℂ`). This is the module on which complex differential operators between
+complex bundles over a real base act, in the same way as `ContMDiffSection.instModuleContMDiffMap`
+makes sections of a real bundle a module over the real functions. This file relates the
+`A_ℂ`-action to the complex structure of the fibres and to complexification.
 
-This module structure extends both scalar actions already present on sections. Constant
-functions act by the complex scalar action (`ContMDiffSection.complexSmoothConstants_smul`), and
-real-valued functions act by the real smooth-function action of `Section/Module.lean`
-(`ContMDiffSection.ofReal_smul`). Writing `f = u + i v` with real `u` and `v`, the action is
-`f • s = u • s + v • (i • s)`, where `s ↦ i • s` is the fibrewise complex structure
-(`ContMDiffSection.complexFunction_smul_eq_re_smul_add_im_smul`). The action commutes with
-pullback and with restriction to open subsets.
-
-For the complexification `ℂ ⊗[ℝ] E` of a real bundle `E`, the real and imaginary parts of
-`f • σ` are computed from those of `σ` by complex multiplication, and the canonical
-isomorphism `ℂ ⊗[ℝ] Cₛ^n⟮I; F, E⟯ ≃ Cₛ^n⟮I; Complexification F, ℂ ⊗[ℝ] E⟯` intertwines the real
-function actions on both sides. Applied to the tangent bundle, this makes complex vector fields,
-the sections of `ℂ ⊗[ℝ] TM`, a module over `C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯` whose real and imaginary parts
-are pairs of real vector fields.
-
-No dimension, compactness or boundary hypotheses are needed.
+Complex scalars act through constant functions and real functions through their complex
+inclusion. Writing `J s = I • s` for fibrewise multiplication by `i`, a function
+`u + i v` acts by `(u + i v) • s = u • s + v • J s`
+(`ContMDiffSection.smul_eq_re_smul_add_im_smul_I_smul`). On the complexification `ℂ ⊗[ℝ] E` of a
+real bundle `E`, the real and imaginary parts of `(u + i v) • σ` are `u Re σ - v Im σ` and
+`u Im σ + v Re σ`. On a real section `s`, this reads
+`(u + i v) • (1 ⊗ s) = 1 ⊗ (u • s) + i ⊗ (v • s)`
+(`ContMDiffSection.smul_function_of_normedAlgebra_oneTmulLinearMap`). The identification of
+`ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` intertwines the real function actions.
 
 ## References
 
 * I. Kolář, P. W. Michor, J. Slovák, *Natural Operations in Differential Geometry*, Springer
-  (1993), §§1.2 and 10.
+  (1993), §10.
 * D. Huybrechts, *Complex Geometry: An Introduction*, Springer (2005), §1.2.
 -/
 
@@ -51,177 +48,126 @@ open scoped Manifold ContDiff TensorProduct
 
 namespace ContMDiffSection
 
+/-! ### Complex-valued functions on real manifolds -/
+
+section Complex
+
+open TauCeti
+
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
-  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M] {n : ℕ∞ω}
-  {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [NormedSpace ℂ G] [IsScalarTower ℝ ℂ G]
-  {W : M → Type*} [∀ x, AddCommGroup (W x)] [∀ x, Module ℂ (W x)]
-  [∀ x, TopologicalSpace (W x)] [TopologicalSpace (TotalSpace G W)] [FiberBundle G W]
-  [VectorBundle ℂ G W]
+  {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace ℂ F] [IsScalarTower ℝ ℂ F]
+  {n : ℕ∞ω} {V : M → Type*} [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [∀ x, AddCommGroup (V x)] [∀ x, Module ℂ (V x)] [VectorBundle ℂ F V]
 
-section Module
-
--- Smoothness of the product is `ContMDiff.smul_totalSpace` for complex scalars.
-/-- Complex-valued `C^n` functions on a real manifold act on `C^n` sections of a complex vector
-bundle by pointwise multiplication. -/
-instance instSMulComplexContMDiffMap : SMul C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; G, W⟯ :=
-  ⟨fun f s ↦ ⟨fun x ↦ f x • s x, f.contMDiff.smul_totalSpace s.contMDiff⟩⟩
-
-/-- Evaluation of complex smooth-function multiplication is fibrewise complex multiplication. -/
-@[simp]
-theorem complexFunction_smul_apply (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; G, W⟯) (x : M) :
-    (f • s) x = f x • s x := (rfl)
-
-variable [∀ x, Module ℝ (W x)] [VectorBundle ℝ G W]
-
-/-- Sections of a complex vector bundle form a module over the complex-valued functions of the
-same regularity. -/
-instance instModuleComplexContMDiffMap : Module C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; G, W⟯ where
-  smul_add f s t := by ext x; simp [smul_add]
-  add_smul f g s := by ext x; simp [add_smul]
-  mul_smul f g s := by ext x; simp [mul_smul]
-  one_smul s := by ext x; simp
-  zero_smul s := by ext x; simp
-  smul_zero f := by ext x; simp
-
-/-- Complex scalars and complex smooth functions form a tower on sections. -/
+/-- Complex scalars, acting on complex-valued functions through constant functions, and these
+functions form a tower on sections. -/
 instance instIsScalarTowerComplexContMDiffMap :
-    IsScalarTower ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; G, W⟯ where
-  smul_assoc z f s := by ext x; simp [mul_smul]
+    IsScalarTower ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; F, V⟯ where
+  smul_assoc c f s := by ext x; simp [mul_smul]
 
-/-- Complex scalar multiplication commutes with complex smooth-function multiplication. -/
-instance instSMulCommClassComplexContMDiffMap :
-    SMulCommClass ℂ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; G, W⟯ where
-  smul_comm z f s := by ext x; simp [smul_comm z (f x)]
-
-variable [∀ x, IsScalarTower ℝ ℂ (W x)]
-
-/-- Real scalars and complex smooth functions form a tower on sections. -/
-instance instIsScalarTowerRealComplexContMDiffMap :
-    IsScalarTower ℝ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; G, W⟯ where
-  smul_assoc r f s := by
-    ext x
-    simp only [complexFunction_smul_apply, ContMDiffMap.coe_smul, Pi.smul_apply, coe_smul]
-    exact smul_assoc r (f x) (s x)
-
-/-- Real scalar multiplication commutes with complex smooth-function multiplication. -/
-instance instSMulCommClassRealComplexContMDiffMap :
-    SMulCommClass ℝ C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ Cₛ^n⟮I; G, W⟯ where
-  smul_comm r f s := by ext x; simp [smul_comm r (f x)]
-
-end Module
-
-section Pullback
-
-variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
-  [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'}
-  [TopologicalSpace N] [ChartedSpace H' N]
-
-/-- Pullback intertwines complex smooth-function multiplication with composition of
-functions. -/
+/-- A constant complex function acts on sections by complex scalar multiplication. -/
 @[simp]
-theorem pullback_smul_complexFunction (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; G, W⟯)
-    (g : C^n⟮I', N; I, M⟯) :
-    (f • s).pullback g = f.comp g • s.pullback g := by
-  ext x
-  simp only [ContinuousMap.coe_ofClass, pullback_apply, complexFunction_smul_apply,
-    ContMDiffMap.comp_apply]
-  -- The sides differ only in how the pullback fibre `W (g x)` is written.
-  exact rfl
+theorem complexSmoothConstants_smul (z : ℂ) (s : Cₛ^n⟮I; F, V⟯) :
+    (complexSmoothConstants z : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) • s = z • s :=
+  ext fun x ↦ by simp
 
-/-- Restriction intertwines complex smooth-function multiplication with restriction of
-functions. -/
+variable [∀ x, Module ℝ (V x)] [VectorBundle ℝ F V] [∀ x, IsScalarTower ℝ ℂ (V x)]
+
+/-- A real function, viewed as a complex function, acts on sections by the real function
+action. -/
 @[simp]
-theorem restrict_smul_complexFunction (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; G, W⟯)
-    (U : Opens M) :
-    (f • s).restrict U =
-      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U := by
-  ext x
-  exact (restrict_apply (f • s) U x).trans (congrArg (f x • ·) (restrict_apply s U x).symm)
+theorem ofReal_smul (f : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; F, V⟯) :
+    ContMDiffMap.ofReal f • s = f • s :=
+  ext fun x ↦ by simpa using algebraMap_smul ℂ (f x) (s x)
 
-end Pullback
-
-variable [∀ x, Module ℝ (W x)] [VectorBundle ℝ G W]
-
-section Constants
-
-/-- A constant complex function acts on sections by the complex scalar action. -/
-@[simp]
-theorem complexSmoothConstants_smul (z : ℂ) (s : Cₛ^n⟮I; G, W⟯) :
-    TauCeti.complexSmoothConstants (I := I) (M := M) (n := n) z • s = z • s := by
-  ext x; simp
-
-variable [∀ x, IsScalarTower ℝ ℂ (W x)]
-
-/-- A real-valued function acts on sections of a complex bundle through its inclusion into the
-complex-valued functions. -/
-@[simp]
-theorem ofReal_smul (f : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; G, W⟯) :
-    ContMDiffMap.ofReal f • s = f • s := by
-  ext x
-  simp only [complexFunction_smul_apply, ContMDiffMap.ofReal_apply, smul_apply]
-  exact (RCLike.real_smul_eq_coe_smul (K := ℂ) (f x) (s x)).symm
-
-/-- Splitting a complex function `f = u + i v` into real and imaginary parts splits its action:
-`f • s = u • s + v • (i • s)`, where `i • s` is the fibrewise complex structure applied to `s`. -/
-theorem complexFunction_smul_eq_re_smul_add_im_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (s : Cₛ^n⟮I; G, W⟯) :
+/-- A complex function `u + i v` acts on a section by `u • s + v • (i • s)`, where `u` and `v`
+act through the real function action. -/
+theorem smul_eq_re_smul_add_im_smul_I_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; F, V⟯) :
     f • s = f.re • s + f.im • (Complex.I • s) := by
-  conv_lhs => rw [← f.ofReal_re_add_I_smul_im]
-  rw [add_smul, smul_assoc, smul_comm Complex.I, ofReal_smul, ofReal_smul]
+  ext x
+  simp [ContMDiffMap.re_apply, ContMDiffMap.im_apply]
 
-end Constants
+end Complex
+
+/-! ### Sections of a complexified real bundle -/
 
 section Complexification
 
 open TauCeti
 
-variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module ℝ (V x)]
-  [TopologicalSpace (TotalSpace F V)] [∀ x, TopologicalSpace (V x)] [FiberBundle F V]
-  [VectorBundle ℝ F V] [∀ x, TopologicalSpace (ℂ ⊗[ℝ] V x)]
-  [∀ x, IsComplexificationTopology (V x)]
+variable {EB : Type*} [NormedAddCommGroup EB] [NormedSpace ℝ EB] {HB : Type*} [TopologicalSpace HB]
+  {IB : ModelWithCorners ℝ EB HB} {B : Type*} [TopologicalSpace B] [ChartedSpace HB B]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {n : ℕ∞ω}
+  {E : B → Type*} [∀ x, AddCommGroup (E x)] [∀ x, Module ℝ (E x)]
+  [TopologicalSpace (TotalSpace F E)] [∀ x, TopologicalSpace (E x)] [FiberBundle F E]
+  [VectorBundle ℝ F E] [∀ x, TopologicalSpace (ℂ ⊗[ℝ] E x)] [∀ x, IsComplexificationTopology (E x)]
 
-/-- The real part of `f • σ` for a complexified section `σ` is
-`re f • re σ - im f • im σ`. -/
+/-- The real part of `(u + i v) • σ` is `u • Re σ - v • Im σ`. -/
 @[simp]
-theorem realPartLinearMap_complexFunction_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
-    realPartLinearMap I F n V (f • σ) =
-      f.re • realPartLinearMap I F n V σ - f.im • imaginaryPartLinearMap I F n V σ := by
-  ext x; simp
+theorem realPartLinearMap_smul_function_of_normedAlgebra (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    realPartLinearMap IB F n E (f • σ) =
+      f.re • realPartLinearMap IB F n E σ - f.im • imaginaryPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp [ContMDiffMap.re_apply, ContMDiffMap.im_apply]
 
-/-- The imaginary part of `f • σ` for a complexified section `σ` is
-`re f • im σ + im f • re σ`. -/
+/-- The imaginary part of `(u + i v) • σ` is `u • Im σ + v • Re σ`. -/
 @[simp]
-theorem imaginaryPartLinearMap_complexFunction_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (σ : Cₛ^n⟮I; Complexification F, fun x ↦ ℂ ⊗[ℝ] V x⟯) :
-    imaginaryPartLinearMap I F n V (f • σ) =
-      f.re • imaginaryPartLinearMap I F n V σ + f.im • realPartLinearMap I F n V σ := by
-  ext x; simp
+theorem imaginaryPartLinearMap_smul_function_of_normedAlgebra (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    imaginaryPartLinearMap IB F n E (f • σ) =
+      f.re • imaginaryPartLinearMap IB F n E σ + f.im • realPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp [ContMDiffMap.re_apply, ContMDiffMap.im_apply]
 
-/-- Multiplying the complexification `1 ⊗ s` of a real section by `f = u + i v` gives
+/-- Taking real parts commutes with the real function action. -/
+@[simp]
+theorem realPartLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯)
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    realPartLinearMap IB F n E (f • σ) = f • realPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp
+
+/-- Taking imaginary parts commutes with the real function action. -/
+@[simp]
+theorem imaginaryPartLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯)
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    imaginaryPartLinearMap IB F n E (f • σ) = f • imaginaryPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp
+
+/-- The real inclusion `s ↦ 1 ⊗ s` commutes with the real function action. -/
+@[simp]
+theorem oneTmulLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
+    oneTmulLinearMap IB F n E (f • s) = f • oneTmulLinearMap IB F n E s :=
+  ext fun x ↦ by simp [TensorProduct.tmul_smul]
+
+/-- The imaginary inclusion `s ↦ i ⊗ s` commutes with the real function action. -/
+@[simp]
+theorem ITmulLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
+    ITmulLinearMap IB F n E (f • s) = f • ITmulLinearMap IB F n E s :=
+  ext fun x ↦ by simp [TensorProduct.tmul_smul]
+
+/-- Multiplying the complexification `1 ⊗ s` of a real section by `u + i v` gives
 `1 ⊗ (u • s) + i ⊗ (v • s)`. -/
-theorem complexFunction_smul_oneTmulLinearMap (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
-    (s : Cₛ^n⟮I; F, V⟯) :
-    f • oneTmulLinearMap I F n V s =
-      oneTmulLinearMap I F n V (f.re • s) + ITmulLinearMap I F n V (f.im • s) := by
+theorem smul_function_of_normedAlgebra_oneTmulLinearMap (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
+    (s : Cₛ^n⟮IB; F, E⟯) :
+    f • oneTmulLinearMap IB F n E s =
+      oneTmulLinearMap IB F n E (f.re • s) + ITmulLinearMap IB F n E (f.im • s) := by
   ext x
-  simp only [complexFunction_smul_apply, oneTmulLinearMap_apply, coe_add, Pi.add_apply,
+  simp only [smul_apply_of_normedAlgebra, oneTmulLinearMap_apply, coe_add, Pi.add_apply,
     smul_apply, ContMDiffMap.re_apply, ContMDiffMap.im_apply, ITmulLinearMap_apply,
     TensorProduct.tmul_smul, TensorProduct.smul_tmul']
   rw [← TensorProduct.add_tmul]
   congr 1
   apply Complex.ext <;> simp
 
-/-- The canonical isomorphism `ℂ ⊗[ℝ] Cₛ^n⟮I; F, V⟯ ≃ Cₛ^n⟮I; Complexification F, ℂ ⊗[ℝ] V⟯`
-intertwines the real function action on the right tensor factor with the action of real
-functions viewed as complex-valued functions. -/
-@[simp]
-theorem complexificationEquiv_tmul_smul (z : ℂ) (f : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; F, V⟯) :
-    complexificationEquiv I F n V (z ⊗ₜ[ℝ] (f • s)) =
-      ContMDiffMap.ofReal f • complexificationEquiv I F n V (z ⊗ₜ[ℝ] s) := by
-  ext x
-  simp [TensorProduct.smul_tmul', TensorProduct.tmul_smul]
+/-- The identification of `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` carries the real
+function action on the second tensor factor to the real function action on sections of
+`ℂ ⊗[ℝ] E`. -/
+theorem complexificationEquiv_tmul_smul_function (z : ℂ) (f : C^n⟮IB, B; ℝ⟯)
+    (s : Cₛ^n⟮IB; F, E⟯) :
+    complexificationEquiv IB F n E (z ⊗ₜ[ℝ] (f • s)) =
+      f • complexificationEquiv IB F n E (z ⊗ₜ[ℝ] s) := by
+  rw [complexificationEquiv_tmul_eq_smul, complexificationEquiv_tmul_eq_smul,
+    oneTmulLinearMap_smul_function, ← ofReal_smul, ← ofReal_smul, smul_comm]
 
 end Complexification
 

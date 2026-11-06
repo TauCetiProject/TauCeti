@@ -171,44 +171,33 @@ private theorem SameAtomicType.realize_rel_iff (h : SameAtomicType (L := L) a b)
 
 end Atomic
 
-/-- **Pairs in a tuple back-and-forth system satisfy the same infinitary formulas**, at every
-carrier. -/
-theorem IsTupleBFSystem.realize_iff {S : Set (Σ n, (Fin n → M) × (Fin n → N))}
-    (hS : IsTupleBFSystem (L := L) S) {κ : Type uκ} :
-    ∀ {n} (φ : L.BoundedFormulaInf κ Empty n) {a : Fin n → M} {b : Fin n → N},
-      ⟨n, a, b⟩ ∈ S → ∀ (v : Empty → M) (w : Empty → N), φ.Realize v a ↔ φ.Realize w b := by
-  -- Induct on formulas: atomic formulas use atomic-type agreement, and quantifiers use the forth
-  -- and back clauses.
-  intro n φ
-  induction φ with
-  | falsum => intro _ _ _ _ _; simp only [BoundedFormulaInf.realize_falsum]
-  | equal t₁ t₂ =>
-    intro a b hab v w
-    exact (hS.sameAtomicType hab).realize_equal_iff t₁ t₂ v w
-  | rel R ts =>
-    intro a b hab v w
-    exact (hS.sameAtomicType hab).realize_rel_iff R ts v w
-  | imp φ ψ ihφ ihψ =>
-    intro a b hab v w
-    simp only [BoundedFormulaInf.realize_imp, ihφ hab v w, ihψ hab v w]
-  | all φ ih =>
-    intro a b hab v w
-    simp only [BoundedFormulaInf.realize_all]
-    constructor
-    · intro h y
-      obtain ⟨x, hx⟩ := hS.back hab y
-      exact (ih hx v w).1 (h x)
-    · intro h x
-      obtain ⟨y, hy⟩ := hS.forth hab x
-      exact (ih hy v w).2 (h y)
-  | iSup φs ih =>
-    intro a b hab v w
-    simp only [BoundedFormulaInf.realize_iSup]
-    exact exists_congr fun i => ih i hab v w
-  | iInf φs ih =>
-    intro a b hab v w
-    simp only [BoundedFormulaInf.realize_iInf]
-    exact forall_congr' fun i => ih i hab v w
+/-- The quantifier step of `BFEquiv.realize_iff_of_qrank_le`: if back-and-forth equivalence at
+every level reaching the rank of `φ` preserves `φ`, then back-and-forth equivalence at a level `α`
+reaching the rank of `φ.all` preserves `φ.all`, through the forth and back clauses at a level
+below `α`. -/
+private theorem BFEquiv.realize_all_iff {κ : Type uκ} {n : ℕ}
+    {φ : L.BoundedFormulaInf κ Empty (n + 1)}
+    (ih : ∀ {α : Ordinal.{o}} {a : Fin (n + 1) → M} {b : Fin (n + 1) → N},
+      BFEquiv (L := L) α (n + 1) a b → Ordinal.lift.{o} φ.qrank ≤ Ordinal.lift.{uκ} α →
+      ∀ (v : Empty → M) (w : Empty → N), φ.Realize v a ↔ φ.Realize w b)
+    {α : Ordinal.{o}} {a : Fin n → M} {b : Fin n → N} (hab : BFEquiv (L := L) α n a b)
+    (hrank : Ordinal.lift.{o} φ.all.qrank ≤ Ordinal.lift.{uκ} α) (v : Empty → M)
+    (w : Empty → N) : φ.all.Realize v a ↔ φ.all.Realize w b := by
+  rw [BoundedFormulaInf.qrank_all] at hrank
+  replace hrank := (Ordinal.lift_lt.mpr (Order.lt_succ φ.qrank)).trans_le hrank
+  -- The rank of the body is the lift of some level `β` with `β + 1 ≤ α`.
+  obtain ⟨β, hβ⟩ := Ordinal.mem_range_lift_of_le hrank.le
+  rw [← hβ, Ordinal.lift_lt] at hrank
+  obtain ⟨-, hforth, hback⟩ :=
+    (BFEquiv.add_one β a b).mp (hab.mono (Order.add_one_le_of_lt hrank))
+  simp only [BoundedFormulaInf.realize_all]
+  constructor
+  · intro h y
+    obtain ⟨x, hx⟩ := hback y
+    exact (ih hx hβ.symm.le v w).1 (h x)
+  · intro h x
+    obtain ⟨y, hy⟩ := hforth x
+    exact (ih hy hβ.symm.le v w).2 (h y)
 
 /-- **Back-and-forth equivalence at level `α` gives agreement up to quantifier rank `α`.** Tuples
 that are back-and-forth equivalent at level `α` satisfy the same infinitary formulas of quantifier
@@ -235,23 +224,7 @@ theorem BFEquiv.realize_iff_of_qrank_le {κ : Type uκ} :
     simp only [BoundedFormulaInf.realize_imp,
       ihφ hab ((Ordinal.lift_le.mpr (le_max_left _ _)).trans hrank) v w,
       ihψ hab ((Ordinal.lift_le.mpr (le_max_right _ _)).trans hrank) v w]
-  | all φ ih =>
-    intro α a b hab hrank v w
-    rw [BoundedFormulaInf.qrank_all] at hrank
-    replace hrank := (Ordinal.lift_lt.mpr (Order.lt_succ φ.qrank)).trans_le hrank
-    -- The rank of the body is the lift of some level `β` with `β + 1 ≤ α`.
-    obtain ⟨β, hβ⟩ := Ordinal.mem_range_lift_of_le hrank.le
-    rw [← hβ, Ordinal.lift_lt] at hrank
-    obtain ⟨-, hforth, hback⟩ :=
-      (BFEquiv.add_one β a b).mp (hab.mono (Order.add_one_le_of_lt hrank))
-    simp only [BoundedFormulaInf.realize_all]
-    constructor
-    · intro h y
-      obtain ⟨x, hx⟩ := hback y
-      exact (ih hx hβ.symm.le v w).1 (h x)
-    · intro h x
-      obtain ⟨y, hy⟩ := hforth x
-      exact (ih hy hβ.symm.le v w).2 (h y)
+  | all φ ih => exact fun hab hrank => hab.realize_all_iff ih hrank
   | iSup φs ih =>
     intro α a b hab hrank v w
     simp only [BoundedFormulaInf.realize_iSup]
@@ -281,6 +254,16 @@ theorem BFEquiv.elementarilyEquivalent
     Subsingleton.elim default (Fin.elim0 : Fin 0 → M),
     Subsingleton.elim default (Fin.elim0 : Fin 0 → N)] using
     h.realize_iff_of_qrank_le (BoundedFormula.toInf φ) hrank Empty.elim Empty.elim
+
+/-- **Pairs in a tuple back-and-forth system satisfy the same infinitary formulas**, at every
+carrier. -/
+theorem IsTupleBFSystem.realize_iff {S : Set (Σ n, (Fin n → M) × (Fin n → N))}
+    (hS : IsTupleBFSystem (L := L) S) {κ : Type uκ} :
+    ∀ {n} (φ : L.BoundedFormulaInf κ Empty n) {a : Fin n → M} {b : Fin n → N},
+      ⟨n, a, b⟩ ∈ S → ∀ (v : Empty → M) (w : Empty → N), φ.Realize v a ↔ φ.Realize w b :=
+  -- The pairs of a tuple system are back-and-forth equivalent at every level, in particular at
+  -- the quantifier rank of the formula.
+  fun φ _ _ hab => (hS.bfEquiv φ.qrank hab).realize_iff_of_qrank_le φ le_rfl
 
 /-- **Karp's theorem, forward direction.** Potentially isomorphic structures in a relational
 language satisfy the same infinitary sentences, at every carrier. -/
