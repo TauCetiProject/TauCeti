@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.LieAlgebroid.Basic
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
+import TauCeti.Geometry.Manifold.VectorField.LieBracket
 
 /-!
 # The tangent Lie algebroid
@@ -45,10 +46,7 @@ def tangent : LieAlgebroid I E (TangentSpace I : M → Type _) where
   bracket := LinearMap.mk₂ ℝ
     (fun X Y ↦
       { toFun := mlieBracket I X Y
-        contMDiff_toFun :=
-          have : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
-          have : IsManifold I ((⊤ : ℕ∞) + 1) M := IsManifold.of_le (n := ∞) (by simp)
-          ContDiff.mlieBracket_vectorField (m := ⊤) (n := ⊤) X.contMDiff Y.contMDiff (by simp) })
+        contMDiff_toFun := contMDiff_mlieBracket X.contMDiff Y.contMDiff })
     (fun X X' Y ↦ ContMDiffSection.ext fun x ↦
       mlieBracket_add_left (X.contMDiff.mdifferentiableAt (by simp))
         (X'.contMDiff.mdifferentiableAt (by simp)))
