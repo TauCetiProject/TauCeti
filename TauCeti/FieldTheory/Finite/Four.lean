@@ -41,6 +41,7 @@ theorem two_eq_zero_of_natCard_eq_four (hF : Nat.card F = 4) : (2 : F) = 0 := by
 
 /-- In a field of order four, the roots of `X² + X + 1` are exactly the elements other than zero
 and one. -/
+@[simp]
 theorem sq_add_self_add_one_eq_zero_iff_of_natCard_eq_four (hF : Nat.card F = 4) {ω : F} :
     ω ^ 2 + ω + 1 = 0 ↔ ω ≠ 0 ∧ ω ≠ 1 := by
   refine ⟨fun hω ↦ ⟨?_, ?_⟩, fun ⟨h0, h1⟩ ↦ ?_⟩
