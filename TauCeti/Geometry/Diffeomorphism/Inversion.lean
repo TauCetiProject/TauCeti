@@ -89,6 +89,90 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   [CompactSpace M] [T2Space N] [LocallyCompactSpace E]
   [IsManifold I n M] [IsManifold J n N]
 
+/-- Along the inverse image of a moving point of the target chart, the source chart is eventually
+defined and sends the inverse image to a point of the source chart target, tending to the
+chart image of the limit inverse image. -/
+private theorem tendsto_extChartAt_diffeomorph_symm_eval
+    {f₀ : M ≃ₘ^n⟮I, J⟯ N} {x : M} {y : N} {w₀ : F}
+    (hw₀ : w₀ ∈ (extChartAt J y).target)
+    (hf₀ : f₀.symm ((extChartAt J y).symm w₀) ∈ (extChartAt I x).source) :
+    (∀ᶠ p in 𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀,
+      p.1.symm ((extChartAt J y).symm p.2) ∈ (extChartAt I x).source) ∧
+    Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
+      extChartAt I x (p.1.symm ((extChartAt J y).symm p.2)))
+      (𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀)
+      (𝓝[(extChartAt I x).target]
+        (extChartAt I x (f₀.symm ((extChartAt J y).symm w₀)))) := by
+  set l := 𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀
+  have hpt : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
+      (p.1, (extChartAt J y).symm p.2)) l (𝓝 (f₀, (extChartAt J y).symm w₀)) := by
+    rw [nhds_prod_eq]
+    exact (tendsto_fst : Tendsto Prod.fst l (𝓝 f₀)).prodMk
+      ((continuousOn_extChartAt_symm y w₀ hw₀).tendsto.comp tendsto_snd)
+  have hv := (continuous_diffeomorph_symm_eval.tendsto (f₀, (extChartAt J y).symm w₀)).comp hpt
+  have hsrc := hv.eventually ((isOpen_extChartAt_source x).mem_nhds hf₀)
+  exact ⟨hsrc, tendsto_nhdsWithin_iff.mpr ⟨(continuousOn_extChartAt x _ hf₀).tendsto.comp
+    (tendsto_nhdsWithin_iff.mpr ⟨hv, hsrc⟩), hsrc.mono fun _ hp ↦ (extChartAt I x).map_source hp⟩⟩
+
+omit [CompactSpace M] [T2Space N] [LocallyCompactSpace E] in
+/-- The first inverse coordinate differential is a right inverse of the first Taylor coefficient
+of the forward coordinate map. -/
+private theorem curry_ftaylorSeriesWithin_comp_fderivWithin_symm
+    (f : M ≃ₘ^n⟮I, J⟯ N) {x : M} {y : N} {w : F}
+    (hn : n ≠ 0) (hw : w ∈ (extChartAt J y).target)
+    (hf : f.symm ((extChartAt J y).symm w) ∈ (extChartAt I x).source) :
+    (continuousMultilinearCurryFin1 𝕜 E F
+      (ftaylorSeriesWithin 𝕜 (extChartAt J y ∘ f ∘ (extChartAt I x).symm)
+        (extChartAt I x).target (extChartAt I x (f.symm ((extChartAt J y).symm w))) 1)).comp
+      (fderivWithin 𝕜 (extChartAt I x ∘ f.symm ∘ (extChartAt J y).symm)
+        (extChartAt J y).target w) = .id 𝕜 F := by
+  set φ := extChartAt I x with hφdef
+  set ψ := extChartAt J y with hψdef
+  have hc : continuousMultilinearCurryFin1 𝕜 E F
+      (ftaylorSeriesWithin 𝕜 (ψ ∘ f ∘ φ.symm) φ.target (φ (f.symm (ψ.symm w))) 1) =
+      fderivWithin 𝕜 (ψ ∘ f ∘ φ.symm) φ.target (φ (f.symm (ψ.symm w))) := by
+    ext u
+    exact iteratedFDerivWithin_one_apply
+      ((uniqueDiffOn_extChartAt_target x) _ (φ.map_source hf)) _
+  rw [hc]
+  have hss : f.symm.symm = f := Diffeomorph.ext fun _ ↦ rfl
+  simpa only [hss, ← hφdef, ← hψdef, ψ.right_inv hw] using
+    fderivWithin_diffeomorph_chart_symm_comp f.symm hn (ψ.map_target hw) hf
+
+omit [T2Space N] [LocallyCompactSpace E] in
+/-- The composite of the inverse and forward coordinate Taylor series is the identity jet at the
+moving source point, so it is continuous along any net of inverse images in the source chart. -/
+private theorem tendsto_taylorComp_symm_extChartAt
+    {f₀ : M ≃ₘ^n⟮I, J⟯ N} {x : M} {y : N} {w₀ : F}
+    (hw₀ : w₀ ∈ (extChartAt J y).target)
+    (hf₀ : f₀.symm ((extChartAt J y).symm w₀) ∈ (extChartAt I x).source)
+    {m : ℕ} (hm : m ≤ n)
+    (hsrc : ∀ᶠ p in 𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀,
+      p.1.symm ((extChartAt J y).symm p.2) ∈ (extChartAt I x).source)
+    (hφ : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
+      extChartAt I x (p.1.symm ((extChartAt J y).symm p.2)))
+      (𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀)
+      (𝓝[(extChartAt I x).target]
+        (extChartAt I x (f₀.symm ((extChartAt J y).symm w₀))))) :
+    Tendsto (fun a : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
+      (ftaylorSeriesWithin 𝕜 (extChartAt I x ∘ a.1.symm ∘ (extChartAt J y).symm)
+        (extChartAt J y).target a.2).taylorComp
+      (ftaylorSeriesWithin 𝕜 (extChartAt J y ∘ a.1 ∘ (extChartAt I x).symm)
+        (extChartAt I x).target
+        (extChartAt I x (a.1.symm ((extChartAt J y).symm a.2)))) m)
+      (𝓝 f₀ ×ˢ 𝓝[(extChartAt J y).target] w₀)
+      (𝓝 ((ftaylorSeriesWithin 𝕜 (extChartAt I x ∘ f₀.symm ∘ (extChartAt J y).symm)
+        (extChartAt J y).target w₀).taylorComp
+      (ftaylorSeriesWithin 𝕜 (extChartAt J y ∘ f₀ ∘ (extChartAt I x).symm)
+        (extChartAt I x).target
+        (extChartAt I x (f₀.symm ((extChartAt J y).symm w₀)))) m)) := by
+  rw [Diffeomorph.taylorComp_symm_extChartAt f₀ hw₀ hf₀ hm]
+  have hid := (contDiff_id.contDiffOn : ContDiffOn 𝕜 n (id : E → E) (extChartAt I x).target)
+    |>.continuousOn_iteratedFDerivWithin hm (uniqueDiffOn_extChartAt_target x)
+  apply (hid _ ((extChartAt I x).map_source hf₀)).tendsto.comp hφ |>.congr'
+  filter_upwards [hsrc, tendsto_snd.eventually self_mem_nhdsWithin] with a ha hw
+  exact (Diffeomorph.taylorComp_symm_extChartAt a.1 hw ha hm).symm
+
 /-- Every inverse coordinate derivative varies continuously with the diffeomorphism and the
 point of the target chart, including boundary and corner points. -/
 theorem tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
@@ -110,18 +194,7 @@ theorem tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
     let z₀ := f₀.symm (ψ.symm w₀)
     let l := 𝓝 f₀ ×ˢ 𝓝[ψ.target] w₀
     let v := fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦ p.1.symm (ψ.symm p.2)
-    have hpt : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦ (p.1, ψ.symm p.2)) l
-        (𝓝 (f₀, ψ.symm w₀)) := by
-      rw [nhds_prod_eq]
-      exact (tendsto_fst : Tendsto Prod.fst l (𝓝 f₀)).prodMk
-        ((continuousOn_extChartAt_symm y w₀ hw₀).tendsto.comp tendsto_snd)
-    have hv : Tendsto v l (𝓝 z₀) :=
-      (continuous_diffeomorph_symm_eval.tendsto (f₀, ψ.symm w₀)).comp hpt
-    have hsrc : ∀ᶠ p in l, v p ∈ φ.source :=
-      hv.eventually ((isOpen_extChartAt_source x).mem_nhds hf₀)
-    have hφ : Tendsto (fun p ↦ φ (v p)) l (𝓝[φ.target] (φ z₀)) :=
-      tendsto_nhdsWithin_iff.mpr ⟨(continuousOn_extChartAt x z₀ hf₀).tendsto.comp
-        (tendsto_nhdsWithin_iff.mpr ⟨hv, hsrc⟩), hsrc.mono fun _ hp ↦ φ.map_source hp⟩
+    obtain ⟨hsrc, hφ⟩ := tendsto_extChartAt_diffeomorph_symm_eval hw₀ hf₀
     rcases m with _ | m
     · have h := ((continuousMultilinearCurryFin0 𝕜 F E).symm.continuous.tendsto _).comp
         (tendsto_nhdsWithin_iff.mp hφ).1
@@ -131,9 +204,9 @@ theorem tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
     have hn' : n ≠ 0 := by rintro rfl; simp at hn
     have hz₀ : f₀ z₀ ∈ ψ.source := by
       simpa only [z₀, Diffeomorph.apply_symm_apply] using ψ.map_target hw₀
-    have hz₀' : z₀ ∈ φ.source := hf₀
     have hvis : f₀.toContMDiffMap (φ.symm (φ z₀)) ∈ ψ.source := by
-      simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk, φ.left_inv hz₀'] using hz₀
+      simpa only [Diffeomorph.toContMDiffMap, ContMDiffMap.coeFn_mk,
+        φ.left_inv (show z₀ ∈ φ.source from hf₀)] using hz₀
     -- All forward jets can be evaluated continuously at this moving inverse image.
     have hforward : Tendsto (fun p : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
         (p.1.toContMDiffMap, φ (v p))) l
@@ -149,33 +222,6 @@ theorem tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
     let A := fun a : (M ≃ₘ^n⟮I, J⟯ N) × F ↦
       fderivWithin 𝕜 (φ ∘ a.1.symm ∘ ψ.symm) ψ.target a.2
     let A₀ := fderivWithin 𝕜 (φ ∘ f₀.symm ∘ ψ.symm) ψ.target w₀
-    -- The composite jet is the identity jet at the moving source point.
-    have hcomp : Tendsto (fun a ↦ (q a).taylorComp (p a) (m + 1)) l
-        (𝓝 (q₀.taylorComp p₀ (m + 1))) := by
-      rw [Diffeomorph.taylorComp_symm_extChartAt f₀ hw₀ hf₀ hm]
-      have hid := (contDiff_id.contDiffOn : ContDiffOn 𝕜 n (id : E → E) φ.target)
-        |>.continuousOn_iteratedFDerivWithin hm (uniqueDiffOn_extChartAt_target x)
-      apply (hid _ (φ.map_source hf₀)).tendsto.comp hφ |>.congr'
-      filter_upwards [hsrc, tendsto_snd.eventually self_mem_nhdsWithin] with a ha hw
-      exact (Diffeomorph.taylorComp_symm_extChartAt a.1 hw ha hm).symm
-    -- The first inverse differential is a right inverse of the forward linear coefficient.
-    have hright (f : M ≃ₘ^n⟮I, J⟯ N) {w : F} (hw : w ∈ ψ.target)
-        (hf : f.symm (ψ.symm w) ∈ φ.source) :
-        (continuousMultilinearCurryFin1 𝕜 E F
-          (ftaylorSeriesWithin 𝕜 (ψ ∘ f ∘ φ.symm) φ.target
-            (φ (f.symm (ψ.symm w))) 1)).comp
-          (fderivWithin 𝕜 (φ ∘ f.symm ∘ ψ.symm) ψ.target w) = .id 𝕜 F := by
-      have hc : continuousMultilinearCurryFin1 𝕜 E F
-          (ftaylorSeriesWithin 𝕜 (ψ ∘ f ∘ φ.symm) φ.target
-            (φ (f.symm (ψ.symm w))) 1) =
-          fderivWithin 𝕜 (ψ ∘ f ∘ φ.symm) φ.target (φ (f.symm (ψ.symm w))) := by
-        ext u
-        exact iteratedFDerivWithin_one_apply
-          ((uniqueDiffOn_extChartAt_target x) _ (φ.map_source hf)) _
-      rw [hc]
-      have hss : f.symm.symm = f := Diffeomorph.ext fun _ ↦ rfl
-      simpa only [hss, ← hφdef, ← hψdef, ψ.right_inv hw] using
-        fderivWithin_diffeomorph_chart_symm_comp f.symm hn' (ψ.map_target hw) hf
     -- Recover the next inverse coefficient from the lower ones and the identity composite.
     apply Filter.Tendsto.of_taylorComp (q := q) (p := p) (q₀ := q₀) (p₀ := p₀)
       (A := A) (A₀ := A₀) (Nat.zero_lt_succ m)
@@ -188,11 +234,11 @@ theorem tendsto_iteratedFDerivWithin_diffeomorph_symm_extChartAt
         ftaylorSeriesWithin, p, p₀, φ, ψ] using
         (ContMDiffMap.tendsto_iteratedFDerivWithin_extChartAt (φ.map_source hf₀) hvis
           (hk'.trans hm)).comp hforward
-    · exact hcomp
+    · exact tendsto_taylorComp_symm_extChartAt hw₀ hf₀ hm hsrc hφ
     · exact tendsto_fderivWithin_diffeomorph_symm_extChartAt hn hw₀ hf₀
     · filter_upwards [hsrc, tendsto_snd.eventually self_mem_nhdsWithin] with a ha hw
-      exact hright a.1 hw ha
-    · exact hright f₀ hw₀ hf₀
+      exact curry_ftaylorSeriesWithin_comp_fderivWithin_symm a.1 hn' hw ha
+    · exact curry_ftaylorSeriesWithin_comp_fderivWithin_symm f₀ hn' hw₀ hf₀
 
 end TauCeti
 
