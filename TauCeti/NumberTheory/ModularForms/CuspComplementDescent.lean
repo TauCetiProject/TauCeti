@@ -62,7 +62,7 @@ argument can be used with dot notation, as in `f.coe_gammaSlashₗ γ`.
 
 public noncomputable section
 
-open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup
+open Matrix Matrix.SpecialLinearGroup ModularForm CongruenceSubgroup TauCeti
 open scoped MatrixGroups Pointwise
 
 namespace ModularForm
