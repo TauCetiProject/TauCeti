@@ -116,6 +116,31 @@ private theorem rpow_div_sub_le_self {B n N : ℝ} (hB : 1 ≤ B) (hn : 0 ≤ n)
   (Real.rpow_le_rpow_of_exponent_le hB (div_le_one_of_le₀ (by linarith) (by linarith))).trans_eq
     (Real.rpow_one B)
 
+/-- The coefficient bound of Siegel's lemma for Schneider's system: if `2 d L ^ 2 ≤ D₁ D₂`, then
+the bound `(3 N A) ^ (d M / (N - d M))` with `N = D₁ D₂` unknowns, `M = L ^ 2` equations and entries
+of house at most `A = L ^ D₁ H ^ (D₁ + 2 L D₂)` is at most `exp ((4 + 2 log H) (D₁ log L + D₂ L))`,
+since Siegel's exponent is at most `1`. -/
+private theorem schneider_siegel_coeff_le {d L D₁ D₂ : ℕ} {H : ℝ} (hL : 3 ≤ L) (hD₁ : 1 ≤ D₁)
+    (hD₂ : 1 ≤ D₂) (hH : 1 ≤ H) (hD : 2 * d * L ^ 2 ≤ D₁ * D₂) :
+    (3 * (Fintype.card (Fin D₁ × Fin D₂) : ℝ) * ((L : ℝ) ^ D₁ * H ^ (D₁ + 2 * L * D₂))) ^
+        ((d * Fintype.card (Fin L × Fin L) : ℝ) /
+          (Fintype.card (Fin D₁ × Fin D₂) - d * Fintype.card (Fin L × Fin L))) ≤
+      Real.exp ((4 + 2 * Real.log H) * (D₁ * Real.log L + D₂ * L)) := by
+  simp only [Fintype.card_prod, Fintype.card_fin]
+  have hD₁D₂ : 0 < D₁ * D₂ := Nat.mul_pos hD₁ hD₂
+  have hbase : 1 ≤ 3 * ((D₁ * D₂ : ℕ) : ℝ) * ((L : ℝ) ^ D₁ * H ^ (D₁ + 2 * L * D₂)) := by
+    have : (1 : ℝ) ≤ ((D₁ * D₂ : ℕ) : ℝ) := by exact_mod_cast hD₁D₂
+    have hL₁ : (1 : ℝ) ≤ L := by exact_mod_cast (by omega : 1 ≤ L)
+    have : 1 ≤ (L : ℝ) ^ D₁ * H ^ (D₁ + 2 * L * D₂) :=
+      one_le_mul_of_one_le_of_one_le (one_le_pow₀ hL₁) (one_le_pow₀ hH)
+    nlinarith
+  have h2 : (2 * (d * (L * L) : ℕ) : ℝ) ≤ (D₁ * D₂ : ℕ) := by
+    exact_mod_cast (by nlinarith : 2 * (d * (L * L)) ≤ D₁ * D₂)
+  push_cast at hbase h2 ⊢
+  have hbound := schneider_siegel_bound_le hL hD₁ hD₂ hH
+  push_cast at hbound
+  exact (rpow_div_sub_le_self hbase (by positivity) h2).trans hbound
+
 /-- For `i < D₁`, `j < D₂` and `u, v ≤ B`, the total degree `i + u j + v j` of a term of
 Schneider's value `y_{uv}` in `u + v β`, `α` and `γ` is at most `D₁ + 2 B D₂`. -/
 private theorem schneider_exponent_le {D₁ D₂ B : ℕ} (i : Fin D₁) (j : Fin D₂) {u v : ℕ}
@@ -291,18 +316,7 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
   obtain ⟨x, hx0, hax, hxle⟩ := exists_ne_zero_int_vec_abs_le_of_house_le a' hA hcard heA
   refine ⟨fun i j ↦ x (i, j), fun h ↦ hx0 (funext fun q ↦ congr_fun₂ h q.1 q.2), fun i j ↦ ?_,
     fun u v hu₁ hu hv₁ hv ↦ ?_⟩
-  · -- Siegel's exponent is at most `1`, since `2 d L² ≤ D₁ D₂`.
-    refine (hxle (i, j)).trans ?_
-    simp only [Fintype.card_prod, Fintype.card_fin]
-    have hbase : 1 ≤ 3 * ((D₁ * D₂ : ℕ) : ℝ) * ((L : ℝ) ^ D₁ * H ^ (D₁ + 2 * L * D₂)) := by
-      have : (1 : ℝ) ≤ ((D₁ * D₂ : ℕ) : ℝ) := by exact_mod_cast hD₁D₂
-      nlinarith
-    have h2 : (2 * (finrank ℚ K * (L * L) : ℕ) : ℝ) ≤ (D₁ * D₂ : ℕ) := by
-      exact_mod_cast (by nlinarith : 2 * (finrank ℚ K * (L * L)) ≤ D₁ * D₂)
-    push_cast at hbase h2 ⊢
-    have hbound := schneider_siegel_bound_le hL hD₁ hD₂ hH
-    push_cast at hbound
-    exact (rpow_div_sub_le_self hbase (by positivity) h2).trans hbound
+  · exact (hxle (i, j)).trans (schneider_siegel_coeff_le hL hD₁ hD₂ hH hD)
   · -- The equation of the grid point `(u, v)`, divided by `m ^ N`.
     obtain ⟨u, rfl⟩ := Nat.exists_eq_add_of_le' hu₁
     obtain ⟨v, rfl⟩ := Nat.exists_eq_add_of_le' hv₁
