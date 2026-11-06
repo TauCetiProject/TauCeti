@@ -9,6 +9,7 @@ public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.Gen
 public import TauCeti.AlgebraicGeometry.Curves.StableReduction.NumericalType.DoubleFork
 import TauCeti.Algebra.Group.AffineSequence
 import Mathlib.Tactic.LinearCombination
+import Mathlib.Tactic.Linarith
 
 /-!
 # Affine D numerical types
@@ -190,28 +191,40 @@ theorem isGenusOneAffineDShape (hr : T.IsSelfIntersectionMinusTwoFork t c right)
   have hfib := hr.sum_add_add_eq_zero hleft_ne hleftRight hcard
   obtain ⟨hdiff, hprog⟩ := multiplicity_eq_add_of_add_eq_two_mul ht fun i hi hit ↦ by
     simpa using hr.interior_relation_of_weight_eq (by omega) (by omega) (by omega)
-      (hw (i - 1) (by omega)) (hw i (by omega)) (hw (i + 1) (by omega)) (b := 0) (by
+      (hw (i - 1) (by omega)) (hw i (by omega)) (hw (i + 1) (by omega))
+      (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := 0) (by
         simpa [hl0 i (by omega) (by omega), hr0 i (by omega) (by omega)] using hfib (c i))
   have h₁ := hr.interior_relation_of_weight_eq (by omega) (i := 1) (by omega) (by omega)
     (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega))
+    (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := T.multiplicity left)
     (by simpa [hledge, hr0 1 (by omega) (by omega)] using hfib (c 1))
   have h₂ := hr.interior_relation_of_weight_eq (by omega) (i := t - 2) (by omega) (by omega)
     (hw _ (by omega)) (hw _ (by omega)) (hw _ (by omega))
+    (y := fun j ↦ (T.multiplicity (c j) : ℤ)) (b := T.multiplicity right)
     (by simpa [hredge, hl0 (t - 2) (by omega) (by omega)] using hfib (c (t - 2)))
-  norm_num [show t - 2 - 1 = t - 3 by omega, show t - 2 + 1 = t - 1 by omega] at h₁ h₂
+  simp only [Nat.sub_self, Nat.reduceAdd, show t - 2 - 1 = t - 3 by omega,
+    show t - 2 + 1 = t - 1 by omega] at h₁ h₂
   -- The leaves do not meet, so the multiplicities are those of affine `D`.
   have hx₀ : T.intersection left right = 0 := mul_right_cancel₀
     (b := (T.multiplicity left : ℤ) + T.multiplicity right) (by norm_cast; simp)
     (by linear_combination hL + hR + w * (2 * h₁ + 2 * h₂ - 2 * hdiff + hm₁ + hm₂))
   have hmL : (T.multiplicity (c 1) : ℤ) = 2 * T.multiplicity left :=
     mul_left_cancel₀ (by simp : (w : ℤ) ≠ 0) (by linear_combination hL - T.multiplicity right * hx₀)
-  simp only [show (T.multiplicity (c 2) : ℤ) - T.multiplicity (c 1) = 0 by omega, smul_zero,
-    add_zero] at hprog
+  have hd : (T.multiplicity (c 2) : ℤ) - T.multiplicity (c 1) = 0 := by
+    linarith only [h₁, hm₁, hmL]
+  simp only [hd, smul_zero, add_zero] at hprog
   have hp₂ := hprog (t - 2) (by omega) (by omega)
-  refine ⟨w, T.multiplicity (c 0), by simp, by simp, hw, hwl, hwr, fun i hi ↦ ?_, by omega,
-    by omega, hedge, hledge, hredge, hx₀⟩
+  have hm₀ : (T.multiplicity (c (t - 1)) : ℤ) = T.multiplicity (c 0) := by
+    linarith only [hm₂, hp₂, hm₁]
+  have hmL₀ : (T.multiplicity left : ℤ) = T.multiplicity (c 0) := by linarith only [hm₁, hmL]
+  have hmR₀ : (T.multiplicity right : ℤ) = T.multiplicity (c 0) := by
+    linarith only [h₂, hm₂, hdiff, hd, hm₀]
+  refine ⟨w, T.multiplicity (c 0), by simp, by simp, hw, hwl, hwr, fun i hi ↦ ?_,
+    by exact_mod_cast hmL₀, by exact_mod_cast hmR₀, hedge, hledge, hredge, hx₀⟩
   split_ifs with hend
-  · rcases (by omega : i = 0 ∨ i = t - 1) with rfl | rfl <;> omega
+  · rcases (by omega : i = 0 ∨ i = t - 1) with rfl | rfl
+    · rfl
+    · exact_mod_cast hm₀
   · linear_combination hprog i (by omega) (by omega) + hm₁
 
 end IsSelfIntersectionMinusTwoFork
