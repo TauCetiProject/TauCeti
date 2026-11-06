@@ -6,7 +6,7 @@ Authors: Claude, Codex
 module
 
 public import TauCeti.MeasureTheory.Measure.SymmetricMatrix.Congruence
-public import TauCeti.Analysis.Matrix.PartialCorrelation
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 public import TauCeti.LinearAlgebra.Matrix.Cholesky.Basic
 public import Mathlib.Topology.Algebra.ContinuousAffineMap
 import TauCeti.MeasureTheory.Measure.Lebesgue.Basic
