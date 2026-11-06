@@ -78,6 +78,19 @@ def pointTwistCoefficient (D : WeilDivisor X) (U : Opens X) (x : U) :
       simpa only [Finsupp.add_apply, hp, neg_add, sub_eq_add_neg] using
         toChartGerm_mem_orderGE f x)
 
+/-- The point-twist coefficient is the meromorphic coefficient of its order-bounded
+coordinate germ. -/
+@[simp]
+theorem pointTwistCoefficient_apply (D : WeilDivisor X) (U : Opens X) (x : U)
+    (f : divisorSections (D + WeilDivisor.ofPoint x.1) U) :
+    pointTwistCoefficient D U x f =
+      meromorphicGerms.coeff (chartAt ℂ x.1 x.1) (-D x.1 - 1)
+        ⟨toChartGerm (D + WeilDivisor.ofPoint x.1) U x f, by
+          have hp : (WeilDivisor.ofPoint x.1) x.1 = 1 := WeilDivisor.coeff_ofPoint_self _
+          simpa only [Finsupp.add_apply, hp, neg_add, sub_eq_add_neg] using
+            toChartGerm_mem_orderGE f x⟩ := by
+  rfl
+
 /-- The new coefficient is zero precisely when the coordinate germ satisfies the old order
 bound. This statement includes divisors with negative coefficients. -/
 theorem pointTwistCoefficient_eq_zero_iff (f : divisorSections (D + WeilDivisor.ofPoint x) U)
@@ -86,10 +99,8 @@ theorem pointTwistCoefficient_eq_zero_iff (f : divisorSections (D + WeilDivisor.
       toChartGerm (D + WeilDivisor.ofPoint x) U ⟨x, hx⟩ f ∈
         meromorphicGerms.orderGE (chartAt ℂ x x) (-D x) := by
   classical
-  -- Applying the composite linear map exposes the coefficient of the coordinate germ.
-  change meromorphicGerms.coeff _ (-D x - 1) _ = 0 ↔ _
-  rw [meromorphicGerms.coeff_eq_zero_iff]
-  simp only [LinearMap.codRestrict_apply, sub_add_cancel]
+  rw [pointTwistCoefficient_apply, meromorphicGerms.coeff_eq_zero_iff]
+  simp only [sub_add_cancel]
 
 /-- The point-twist coefficient depends only on the germ, so it commutes with restriction. -/
 theorem pointTwistCoefficient_restrict {V : Opens X} (h : V ≤ U) (hx : x ∈ V)
