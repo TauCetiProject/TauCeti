@@ -8,6 +8,7 @@ module
 public import TauCeti.RingTheory.MvPowerSeries.TateAlgebra.Module.Norm
 public import TauCeti.Analysis.Normed.Module.Quotient
 public import TauCeti.Analysis.Normed.Group.Submodule
+public import TauCeti.Analysis.Normed.Group.Quotient
 import TauCeti.Analysis.Normed.Group.OpenMapping
 
 /-!
@@ -212,5 +213,22 @@ theorem isQuotientMap_gaussFamilyMkQ :
 
 end GaussFamilies
 end Quotient
+
+section Convolution
+
+variable {σ R E : Type*} [NormedRing R] [IsUltrametricDist R]
+  [SeminormedAddCommGroup E] [IsUltrametricDist E] [Module R E] [IsBoundedSMul R E]
+  {c : σ → ℝ} (N : Submodule R E)
+
+/-- Coefficient quotient maps commute with convolution by restricted scalar series. -/
+@[simp]
+theorem gaussFamilyMkQ_isRestrictedSubring_smul
+    (f : _root_.MvPowerSeries.IsRestricted.subring (R := R) c)
+    (a : Gauss c E) : gaussFamilyMkQ N (f • a) = f • gaussFamilyMkQ N a := by
+  simpa only [gaussFamilyMkQ] using
+    LinearMap.mapGaussFamily_isRestrictedSubring_smul N.mkQ
+      (C := 1) (fun e ↦ by simpa using Submodule.Quotient.norm_mk_le N e) f a
+
+end Convolution
 
 end Submodule

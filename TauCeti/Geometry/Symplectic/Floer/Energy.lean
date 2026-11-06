@@ -48,8 +48,8 @@ where `d(K(u)) = ∂_s (K_t(u)) - ∂_t (K_s(u))` is the exterior derivative of 
 one-form `K(u) = K_s(u) ds + K_t(u) dt`. Integrated over a rectangle using Stokes' formula,
 the energy is the symplectic area plus the boundary integral of `K(u)` minus the integral of the
 curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical perturbation
-`K = H_t dt`, the curvature vanishes; for the perturbation `K = H_s(t) dt` of a homotopy of
-Hamiltonians, it is `∂_s H_s(t)`, and in particular for a continuation perturbation
+`K = H_t dt`, the curvature vanishes; for the perturbation `K = H_{(s, t)} dt` of a homotopy of
+Hamiltonians, it is `∂_s H_{(s, t)}`, and in particular for a continuation perturbation
 `K = β(s) H_t dt` it is `β'(s) H_t`.
 
 ## Main definitions
@@ -134,26 +134,14 @@ theorem hamiltonianCurvature_zero_left (ω : SymplecticForm V) (Kt : ℝ × ℝ 
 theorem hamiltonianCurvature_cylindrical (ω : SymplecticForm V) (H : ℝ → V → ℝ) (z : ℝ × ℝ)
     (x : V) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
-  rw [hamiltonianCurvature_zero_left]
-  by_cases hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2
-  · have h : HasFDerivAt (fun w : ℝ × ℝ ↦ H w.2 x)
-        ((fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-      hH.hasFDerivAt.comp z hasFDerivAt_snd
-    simp [h.fderiv, stdComplexLineReal]
-  · have hH' : ¬DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z := by
-      intro h
-      have hz : DifferentiableAt ℝ (fun t : ℝ ↦ ((z.1, t) : ℝ × ℝ)) z.2 :=
-        (differentiableAt_const z.1).prodMk differentiableAt_id
-      have h' : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.2 x) (z.1, z.2) := h
-      exact hH (h'.comp z.2 hz)
-    simp [fderiv_zero_of_not_differentiableAt hH']
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
 
-/-- **The curvature of a homotopy of Hamiltonians.** A perturbation `K = H_s(t) dt` without `ds`
-component, given by a family `H_s` of time-dependent Hamiltonians, has curvature `∂_s H_s(t)`. -/
-theorem hamiltonianCurvature_homotopy (ω : SymplecticForm V) {H : ℝ → ℝ → V → ℝ} {z : ℝ × ℝ}
-    {x : V} (hH : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.1 w.2 x) z) :
-    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.1 w.2) z x =
-      deriv (fun s ↦ H s z.2 x) z.1 := by
+/-- **The curvature of a homotopy of Hamiltonians.** A perturbation `K = H_{(s, t)} dt` without
+`ds` component, given by a family `H_{(s, t)}` of Hamiltonians, has curvature `∂_s H_{(s, t)}`. -/
+theorem hamiltonianCurvature_homotopy (ω : SymplecticForm V) {H : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ}
+    {x : V} (hH : DifferentiableAt ℝ (fun w ↦ H w x) z) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) H z x = deriv (fun s ↦ H (s, z.2) x) z.1 := by
   rw [hamiltonianCurvature_zero_left]
   have h : HasDerivAt (fun s : ℝ ↦ ((s, z.2) : ℝ × ℝ)) stdComplexLineReal z.1 :=
     (hasDerivAt_id z.1).prodMk (hasDerivAt_const z.1 z.2)
@@ -164,10 +152,10 @@ theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → 
     {z : ℝ × ℝ} {x : V} (hβ : DifferentiableAt ℝ β z.1)
     (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
-      deriv β z.1 * H z.2 x :=
-  (ω.hamiltonianCurvature_homotopy (H := fun s t y ↦ β s * H t y)
-    ((hβ.comp z differentiableAt_fst).mul (hH.comp z differentiableAt_snd))).trans
-    (deriv_mul_const hβ _)
+      deriv β z.1 * H z.2 x := by
+  rw [ω.hamiltonianCurvature_homotopy
+    ((hβ.comp z differentiableAt_fst).mul (hH.comp z differentiableAt_snd))]
+  exact deriv_mul_const hβ (H z.2 x)
 
 omit [FiniteDimensional ℝ V] in
 /-- The cylindrical perturbation `K = H_t dt` of a `Cⁿ` time-dependent Hamiltonian is `Cⁿ`. -/
@@ -387,6 +375,17 @@ theorem floerEnergyDensity_nonneg (ω : SymplecticForm V) {J : AlmostComplexStru
     0 ≤ ω.floerEnergyDensity Ks Kt u z := by
   simpa only [floerEnergyDensity_def, ContinuousLinearMap.coe_coe] using
     h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+
+/-- The Floer energy density of a solution of the Floer equation
+`∂_s u + J (∂_t u - X_{K_t}(u)) = 0` at `z`, for the perturbation `K = K_t dt` with a
+domain-dependent Hamiltonian `K_t`, is nonnegative when `J` is tamed by `ω`. -/
+theorem floerEnergyDensity_zero_left_nonneg (ω : SymplecticForm V)
+    {J : AlmostComplexStructure V} (hJ : ω.Tames J)
+    (hfloer : fderiv ℝ u z stdComplexLineReal +
+      J (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)) = 0) :
+    0 ≤ ω.floerEnergyDensity (fun _ _ ↦ 0) Kt u z :=
+  ω.floerEnergyDensity_nonneg hJ <|
+    (ω.isComplexLinearMap_perturbedFDeriv_iff J _ _ u z).2 (by simpa using hfloer)
 
 /-- For a solution of the Floer equation at `z`, the `t`-component of the perturbed derivative is
 `J` applied to its `s`-component `a = ∂_s u - X_{K_s}`, so the Floer energy density is
