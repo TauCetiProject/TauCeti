@@ -43,7 +43,7 @@ zeros a factor `(|t₀ - t| / (T - t)) ^ r ≤ √r ^ (-r)`. Altogether
 
 * `TauCeti.exists_norm_iteratedDeriv_gelfond_auxiliary_le`: the bound above for `R⁽ʳ⁾(t₀)`, with
   complex coefficients `η_{ab}`.
-* `RingHom.exists_norm_gelfond_value_le`: the algebraic form. For an embedding `σ : K →+* ℂ`
+* `RingHom.exists_norm_gelfond_value_le`: the algebraic form. For a ring homomorphism `σ` to `ℂ`
   with `σ α = exp λ`, `σ γ = exp (σ β λ)` and `λ ≠ 0`, if the values
   `y_k(t) = ∑_{a, b} η_{ab} (a + b β) ^ k α ^ (a t) γ ^ (b t)` vanish for `k < r` and `1 ≤ t ≤ m`,
   then `|σ y_r(t₀)| ≤ c₃ ^ r r ^ (((3 - m) r + 1) / 2)`.
@@ -129,11 +129,8 @@ private theorem norm_gelfond_auxiliary_le_sqrt (l β : ℂ) (c : ℝ) {m n q r :
   have hA : c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) ≤ max 1 |c| ^ r * S ^ (r + 1) := by
     have hnr' : (n : ℝ) ≤ r := by exact_mod_cast hnr
     have hSr : S ^ (r + 1) = (r : ℝ) ^ (((r : ℝ) + 1) / 2) := by
-      rw [show S = (r : ℝ) ^ (1 / 2 : ℝ) from Real.sqrt_eq_rpow _, ← Real.rpow_natCast,
-        ← Real.rpow_mul hr₀]
-      congr 1
-      push_cast
-      ring
+      rw [Real.rpow_div_two_eq_sqrt _ hr₀]
+      norm_cast
     rw [hSr]
     refine mul_le_mul ?_ ((Real.rpow_le_rpow (by positivity) hnr' (by positivity)).trans
       (Real.rpow_le_rpow_of_exponent_le hr' (by linarith))) (by positivity) (by positivity)
@@ -263,10 +260,7 @@ private theorem le_pow_mul_rpow_of_mul_sqrt_pow_le {D c' E : ℝ} {m r : ℕ} (h
           ring
   -- `S ^ (3 r + 1) / S ^ (m r) = r ^ (((3 - m) r + 1) / 2)`.
   have hpow (N : ℕ) : S ^ N = (r : ℝ) ^ ((N : ℝ) / 2) := by
-    rw [show S = (r : ℝ) ^ (1 / 2 : ℝ) from Real.sqrt_eq_rpow _, ← Real.rpow_natCast,
-      ← Real.rpow_mul hr₀.le]
-    congr 1
-    ring
+    rw [Real.rpow_div_two_eq_sqrt _ hr₀.le, Real.rpow_natCast]
   have hrpow : (r : ℝ) ^ (((3 - m : ℝ) * r + 1) / 2) = S ^ (3 * r + 1) / S ^ (m * r) := by
     rw [hpow, hpow, ← Real.rpow_sub hr₀]
     congr 1
@@ -305,22 +299,22 @@ end TauCeti
 
 namespace RingHom
 
-/-- **The analytic upper bound for Gelfond's values** (Karatarakis–Wiedijk, §3). Let `K` be a
-field with an embedding `σ : K →+* ℂ`, let `λ ≠ 0`, and let `α, β, γ ∈ K` with `σ α = exp λ` and
-`σ γ = exp (σ β λ)`. For `m ∈ ℕ` and `c ∈ ℝ` there is `c₃ ≥ 1` with the following property. Let
-`n ≥ 1`, `q ^ 2 ≤ 2 m n`, `r ≥ n` and `1 ≤ t₀ ≤ m`, and let `η_{ab} ∈ K`, `a, b < q`, satisfy
-`‖σ η_{ab}‖ ≤ c ^ n n ^ ((n + 1) / 2)`. If
+/-- **The analytic upper bound for Gelfond's values** (Karatarakis–Wiedijk, §3). Let `R` be a
+ring with a ring homomorphism `σ : R →+* ℂ`, let `λ ≠ 0`, and let `α, β, γ ∈ R` with
+`σ α = exp λ` and `σ γ = exp (σ β λ)`. For `m ∈ ℕ` and `c ∈ ℝ` there is `c₃ ≥ 1` with the
+following property. Let `n ≥ 1`, `q ^ 2 ≤ 2 m n`, `r ≥ n` and `1 ≤ t₀ ≤ m`, and let
+`η_{ab} ∈ R`, `a, b < q`, satisfy `‖σ η_{ab}‖ ≤ c ^ n n ^ ((n + 1) / 2)`. If
 `y_k(t) = ∑_{a, b} η_{ab} ((a + 1) + (b + 1) β) ^ k α ^ ((a + 1) t) γ ^ ((b + 1) t)` vanishes for
 all `k < r` and `1 ≤ t ≤ m`, then `‖σ y_r(t₀)‖ ≤ c₃ ^ r r ^ (((3 - m) r + 1) / 2)`. -/
-theorem exists_norm_gelfond_value_le {K : Type*} [Field K] (σ : K →+* ℂ) {l : ℂ} (hl : l ≠ 0)
-    {α β γ : K} (hα : σ α = Complex.exp l) (hγ : σ γ = Complex.exp (σ β * l)) (m : ℕ) (c : ℝ) :
-    ∃ c₃ : ℝ, 1 ≤ c₃ ∧ ∀ (n q r t₀ : ℕ) (η : Fin q → Fin q → K), 1 ≤ n → q ^ 2 ≤ 2 * m * n →
+theorem exists_norm_gelfond_value_le {R : Type*} [Ring R] (σ : R →+* ℂ) {l : ℂ} (hl : l ≠ 0)
+    {α β γ : R} (hα : σ α = Complex.exp l) (hγ : σ γ = Complex.exp (σ β * l)) (m : ℕ) (c : ℝ) :
+    ∃ c₃ : ℝ, 1 ≤ c₃ ∧ ∀ (n q r t₀ : ℕ) (η : Fin q → Fin q → R), 1 ≤ n → q ^ 2 ≤ 2 * m * n →
       n ≤ r → t₀ ∈ Icc 1 m →
       (∀ a b, ‖σ (η a b)‖ ≤ c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2)) →
       (∀ k < r, ∀ t ∈ Icc 1 m, ∑ a, ∑ b, η a b *
-        (((a + 1 : ℕ) : K) + (b + 1 : ℕ) * β) ^ k *
+        (((a + 1 : ℕ) : R) + (b + 1 : ℕ) * β) ^ k *
           (α ^ ((a + 1 : ℕ) * t) * γ ^ ((b + 1 : ℕ) * t)) = 0) →
-      ‖σ (∑ a, ∑ b, η a b * (((a + 1 : ℕ) : K) + (b + 1 : ℕ) * β) ^ r *
+      ‖σ (∑ a, ∑ b, η a b * (((a + 1 : ℕ) : R) + (b + 1 : ℕ) * β) ^ r *
         (α ^ ((a + 1 : ℕ) * t₀) * γ ^ ((b + 1 : ℕ) * t₀)))‖ ≤
         c₃ ^ r * (r : ℝ) ^ (((3 - m : ℝ) * r + 1) / 2) := by
   obtain ⟨c₃, hc₃, h⟩ := TauCeti.exists_norm_iteratedDeriv_gelfond_auxiliary_le l (σ β) m c

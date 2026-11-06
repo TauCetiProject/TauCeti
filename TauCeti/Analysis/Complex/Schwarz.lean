@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Complex.AbsMax
 public import TauCeti.Analysis.Analytic.ExtractZeros
+public import TauCeti.Analysis.Calculus.IteratedDeriv.Leibniz
 
 /-!
 # Schwarz's lemma with prescribed zeros
@@ -50,6 +51,14 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {f : ℂ → E} {c : ℂ} {T M : ℝ}
   {s : Finset ℂ} {k : ℂ → ℕ}
 
+/-- The norm of `f = (∏ x ∈ s, (· - x) ^ k x) • g` is the product of the distances to the zeros
+times the norm of the quotient. -/
+private theorem norm_eq_prod_mul_of_eq_prod_pow_smul {g : ℂ → E}
+    (hfg : ∀ z, f z = (∏ x ∈ s, (z - x) ^ k x) • g z) (w : ℂ) :
+    ‖f w‖ = (∏ x ∈ s, ‖w - x‖ ^ k x) * ‖g w‖ := by
+  rw [hfg, norm_smul, norm_prod]
+  simp [norm_pow]
+
 /-- The maximum modulus step of Schwarz's lemma: if `f = (∏ x ∈ s, (· - x) ^ k x) • g` with `g`
 analytic on a neighbourhood of `closedBall c T`, `f` is bounded by `M` on `sphere c T` and every
 `x ∈ s` satisfies `‖x - c‖ < T`, then `‖g z‖ ≤ M / ∏ x ∈ s, (T - ‖x - c‖) ^ k x` on the disc. -/
@@ -69,9 +78,7 @@ private theorem norm_le_div_prod_of_eq_prod_pow_smul (hT : 0 < T) {g : ℂ → E
     rw [le_div_iff₀ hQ, mul_comm]
     calc Q * ‖g w‖ ≤ (∏ x ∈ s, ‖w - x‖ ^ k x) * ‖g w‖ :=
           mul_le_mul_of_nonneg_right hPQ (norm_nonneg _)
-      _ = ‖f w‖ := by
-          rw [hfg, norm_smul, norm_prod]
-          simp [norm_pow]
+      _ = ‖f w‖ := (norm_eq_prod_mul_of_eq_prod_pow_smul hfg w).symm
       _ ≤ M := hM w (by rw [mem_sphere, dist_eq_norm, hw])
   exact Complex.norm_le_of_forall_mem_frontier_norm_le isBounded_ball
     (hg.differentiableOn.diffContOnCl_ball subset_rfl) hgM (by rwa [closure_ball c hT.ne'])
@@ -96,9 +103,7 @@ theorem norm_le_mul_prod_div_pow (hf : AnalyticOnNhd ℂ f (closedBall c T))
   obtain ⟨g, hg, hfg⟩ := hf.exists_eq_prod_pow_smul s k hk
   set Q : ℝ := ∏ x ∈ s, (T - ‖x - c‖) ^ k x
   have hgz : ‖g z‖ ≤ M / Q := norm_le_div_prod_of_eq_prod_pow_smul hT hg hfg hsT hM hz
-  calc ‖f z‖ = (∏ x ∈ s, ‖z - x‖ ^ k x) * ‖g z‖ := by
-        rw [hfg, norm_smul, norm_prod]
-        simp [norm_pow]
+  calc ‖f z‖ = (∏ x ∈ s, ‖z - x‖ ^ k x) * ‖g z‖ := norm_eq_prod_mul_of_eq_prod_pow_smul hfg z
     _ ≤ (∏ x ∈ s, ‖z - x‖ ^ k x) * (M / Q) :=
         mul_le_mul_of_nonneg_left hgz (Finset.prod_nonneg fun _ _ ↦ by positivity)
     _ = M * ∏ x ∈ s, (‖z - x‖ / (T - ‖x - c‖)) ^ k x := by
