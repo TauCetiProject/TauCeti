@@ -116,6 +116,7 @@ theorem coe_unitConormalInclusion (z : unitConormal J I k i) :
 
 /-- The image of the unit conormal bundle in `S*M` is the set of unit covectors which are
 conormal to `i`, that is, `N*Q ∩ S*M`. -/
+@[simp]
 theorem range_unitConormalInclusion :
     range (unitConormalInclusion J I k i) =
       {z : cosphereBundle I M | (z : CotangentBundle I M) ∈ conormal J I i} := by
@@ -126,8 +127,7 @@ theorem range_unitConormalInclusion :
     exact mem_range_self _
   · rw [mem_ofPred_eq, ← range_conormalInclusion (Fin k → ℝ)] at hz
     obtain ⟨w, hw⟩ := hz
-    exact ⟨⟨w, show conormalInclusion (Fin k → ℝ) J I i w ∈ cosphereBundle I M from
-      hw ▸ z.2⟩, Subtype.ext hw⟩
+    exact ⟨⟨w, mem_unitConormal.2 (hw ▸ z.2)⟩, Subtype.ext hw⟩
 
 /-- For an injective map `i`, the inclusion of the unit conormal bundle into `S*M` is injective. -/
 theorem unitConormalInclusion_injective (hi : Injective i) :
@@ -137,62 +137,6 @@ theorem unitConormalInclusion_injective (hi : Injective i) :
 end Definitions
 
 variable [FiniteDimensional ℝ E] [IsManifold I ∞ M] [IsManifold J ∞ Q]
-
-/-- **The conormal inclusion preserves Euler fields.** The canonical inclusion of the conormal
-bundle of `i` into `T*M` is linear on fibres, so it carries the Euler vector field of the conormal
-bundle to the Euler vector field `p ∂_p` of `T*M`. -/
-theorem mfderiv_conormalInclusion_vectorBundleEulerField (hi : ContMDiff J I ∞ i)
-    (hinj : ∀ q, Injective (mfderiv J I i q)) (hk : finrank ℝ F + k = finrank ℝ E)
-    (z : TotalSpace (Fin k → ℝ) fun q ↦ conormalSpace J I i q) :
-    letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
-    letI := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
-    mfderiv (J.prod 𝓘(ℝ, Fin k → ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
-        (conormalInclusion (Fin k → ℝ) J I i) z (vectorBundleEulerField J z) =
-      vectorBundleEulerField I (conormalInclusion (Fin k → ℝ) J I i z) := by
-  let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
-  let := conormalVectorBundle (n := ∞) hi (by simp) hinj hk
-  -- Unfold the inclusion `(q, p) ↦ (i q, p)`, so that the fibre lines become comparable.
-  have hι : conormalInclusion (Fin k → ℝ) J I i = fun w ↦
-      (⟨i w.proj, (w.2 : TangentSpace I (i w.proj) →L[ℝ] ℝ)⟩ : CotangentBundle I M) :=
-    funext (conormalInclusion_apply (Fin k → ℝ) J I i)
-  have hsmooth := contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk
-  rw [hι] at hsmooth ⊢
-  have hγ1 : (⟨z.proj, (1 : ℝ) • z.2⟩ : TotalSpace (Fin k → ℝ) fun q ↦ conormalSpace J I i q) =
-      z := by
-    rw [one_smul]
-  have hcomp := mfderiv_comp_of_eq ((hsmooth z).mdifferentiableAt (by simp))
-    (hasMFDerivAt_vectorBundleEulerField (I := J) z).mdifferentiableAt hγ1
-  -- The composite is the fibre line through the image of `z`: the coercion of a scalar multiple
-  -- in the conormal subspace is the scalar multiple of the coercion.
-  have hline : HasMFDerivAt 𝓘(ℝ) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
-      ((fun w : TotalSpace (Fin k → ℝ) (fun q ↦ conormalSpace J I i q) ↦
-        (⟨i w.proj, (w.2 : TangentSpace I (i w.proj) →L[ℝ] ℝ)⟩ : CotangentBundle I M)) ∘
-        fun t : ℝ ↦
-          (⟨z.proj, t • z.2⟩ : TotalSpace (Fin k → ℝ) fun q ↦ conormalSpace J I i q)) 1
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (vectorBundleEulerField I
-        (⟨i z.proj, (z.2 : TangentSpace I (i z.proj) →L[ℝ] ℝ)⟩ : CotangentBundle I M))) :=
-    hasMFDerivAt_vectorBundleEulerField (I := I)
-      (⟨i z.proj, (z.2 : TangentSpace I (i z.proj) →L[ℝ] ℝ)⟩ : CotangentBundle I M)
-  -- Evaluate both derivatives of the line on `1 : ℝ`; `smulRight 1 v` sends `1` to `1 • v`. The
-  -- lemma `smulRight_apply` does not apply by rewriting, since the vectors live in tangent spaces
-  -- at points which agree only up to unfolding.
-  have h₁ := DFunLike.congr_fun (hline.mfderiv.symm.trans hcomp) (1 : ℝ)
-  have h₂ : mfderiv 𝓘(ℝ) (J.prod 𝓘(ℝ, Fin k → ℝ))
-      (fun t : ℝ ↦ (⟨z.proj, t • z.2⟩ : TotalSpace (Fin k → ℝ) fun q ↦ conormalSpace J I i q)) 1
-        (1 : ℝ) = vectorBundleEulerField J z :=
-    (DFunLike.congr_fun (hasMFDerivAt_vectorBundleEulerField (I := J) z).mfderiv (1 : ℝ)).trans
-      (one_smul ℝ _)
-  -- Move the base point `1 • z` of the composite back to `z`, reading both derivatives as maps
-  -- between the model spaces.
-  have h₃ := DFunLike.congr_fun (congrArg
-    (fun x : TotalSpace (Fin k → ℝ) (fun q ↦ conormalSpace J I i q) ↦
-      @id (F × (Fin k → ℝ) →L[ℝ] E × (E →L[ℝ] ℝ))
-        (mfderiv (J.prod 𝓘(ℝ, Fin k → ℝ)) (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
-          (fun w : TotalSpace (Fin k → ℝ) (fun q ↦ conormalSpace J I i q) ↦
-            (⟨i w.proj, (w.2 : TangentSpace I (i w.proj) →L[ℝ] ℝ)⟩ : CotangentBundle I M)) x))
-    hγ1)
-    (vectorBundleEulerField J z)
-  exact h₃.symm.trans ((congrArg _ h₂).symm.trans (h₁.symm.trans (one_smul ℝ _)))
 
 section Level
 
@@ -223,7 +167,7 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
   rw [isRegularValue_iff]
   intro z hz
   rw [isRegularPoint_iff]
-  have hz' : z ∈ unitConormal J I k i := hz
+  have hz' : z ∈ unitConormal J I k i := mem_unitConormal.2 (mem_cosphereBundle.2 hz)
   have hne := snd_ne_zero_of_mem_cosphereBundle hz'
   have hd : mfderiv (J.prod 𝓘(ℝ, Fin k → ℝ)) 𝓘(ℝ)
       (fun z ↦ ‖(conormalInclusion (Fin k → ℝ) J I i z).2‖) z (vectorBundleEulerField J z) =
@@ -236,7 +180,7 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
       (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk z).mdifferentiableAt (by simp)
     have h := mfderiv_comp_apply (g := fun w : CotangentBundle I M ↦ ‖w.2‖) z hnorm hι
       (vectorBundleEulerField J z)
-    rw [mfderiv_conormalInclusion_vectorBundleEulerField hi hinj hk,
+    rw [mfderiv_conormalInclusion_vectorBundleEulerField hi (by simp) hinj hk (by simp),
       mfderiv_norm_snd_vectorBundleEulerField hne] at h
     exact h
   -- The differential is onto `ℝ`, whose tangent spaces are `ℝ` itself.
@@ -415,8 +359,7 @@ theorem isLegendrianEmbedding_unitConormalInclusion_neg_liouvilleForm [Nontrivia
   -- The form `-λ|S*M` is `-1` times `λ|S*M`, with the same kernel.
   refine ⟨(SmoothForm.isLegendrianImmersion_iff_of_eq_smul (g := fun _ ↦ -1)
     (fun _ ↦ neg_ne_zero.2 one_ne_zero) fun x ↦ ?_).2 h.1, h.2⟩
-  rw [map_neg, neg_one_smul]
-  rfl
+  rw [map_neg, neg_one_smul, SmoothForm.neg_toRoughForm, Pi.neg_apply]
 
 end Legendrian
 
