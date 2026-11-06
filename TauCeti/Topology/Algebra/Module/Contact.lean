@@ -6,9 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.BilinearForm.Contact
-public import Mathlib.Topology.Instances.Matrix
+public import Mathlib.Topology.Algebra.Ring.Basic
 public import Mathlib.Topology.Compactness.Compact
-import Mathlib.LinearAlgebra.Matrix.Nondegenerate
+import TauCeti.Topology.Algebra.Module.BilinearForm
 
 /-!
 # Openness of the contact condition
@@ -47,23 +47,15 @@ theorem isOpen_setOf_isContact
     (ha : ∀ v, Continuous fun x ↦ a x v)
     (hB : ∀ v w, Continuous fun x ↦ B x v w) :
     IsOpen {x | (a x).IsContact (B x)} := by
-  let b := Module.finBasis 𝕜 (𝕜 × V)
-  have hc : Continuous fun x ↦ ((a x).symplectizationForm (B x)).toMatrix b |>.det := by
-    refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
-    simp only [LinearMap.BilinForm.toMatrix_apply, Module.Dual.symplectizationForm_apply]
-    exact ((continuous_const.mul (ha (b j).2)).sub
-      (continuous_const.mul (ha (b i).2))).add (hB (b i).2 (b j).2)
-  have heq : {x | (a x).IsContact (B x)} =
-      (fun x ↦ ((a x).symplectizationForm (B x)).toMatrix b |>.det) ⁻¹' {0}ᶜ := by
-    ext x
-    exact (Module.Dual.isContact_iff_nondegenerate_symplectizationForm).trans
-      (LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b)
-  rw [heq]
-  exact isOpen_compl_singleton.preimage hc
+  simpa only [Module.Dual.isContact_iff_nondegenerate_symplectizationForm] using
+    (isOpen_setOf_nondegenerate (B := fun x ↦ (a x).symplectizationForm (B x)) fun v w ↦ by
+      simp only [Module.Dual.symplectizationForm_apply]
+      exact ((continuous_const.mul (ha w.2)).sub
+        (continuous_const.mul (ha v.2))).add (hB v.2 w.2))
 
 /-- If two continuous covector/bilinear-form pairs agree and are contact on `S`, their
-entire affine homotopy is contact near `S`, uniformly for parameters in a compact set.
-No compactness or closedness of `S` is needed. -/
+affine interpolation is contact on an open neighborhood of `S` for all parameters in the
+compact set `K`. No compactness or closedness of `S` is needed. -/
 theorem exists_isOpen_isContact_affine
     {a₀ a₁ : X → Module.Dual 𝕜 V} {B₀ B₁ : X → LinearMap.BilinForm 𝕜 V}
     (ha₀ : ∀ v, Continuous fun x ↦ a₀ x v)
