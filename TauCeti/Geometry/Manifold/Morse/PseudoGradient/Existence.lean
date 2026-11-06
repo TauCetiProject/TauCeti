@@ -144,6 +144,19 @@ theorem exists_pos_forall_norm_lt_mem_target :
     (φ.toChart.open_target.preimage φ.coordL.symm.continuous) 0 h0
   exact ⟨r, hr, fun z hz ↦ by simpa using hball (mem_ball_zero_iff.2 hz)⟩
 
+/-- The coordinate change of a Morse chart is continuous. -/
+theorem continuous_coord : Continuous φ.coord :=
+  φ.coordL.continuous.congr φ.coordL_apply
+
+open Filter in
+/-- The point with coordinates `w` tends to the critical point as `w` tends to `0`. -/
+theorem tendsto_toChart_symm_coord_symm_nhds_zero :
+    Tendsto (fun w ↦ φ.toChart.symm (φ.coord.symm w)) (𝓝 0) (𝓝 x) := by
+  obtain ⟨r, hr, hrT⟩ := φ.exists_pos_forall_norm_lt_mem_target
+  have h := (φ.toChart.continuousAt_symm (hrT 0 (by simpa using hr))).comp
+    (φ.coordL.symm.continuous.continuousAt.congr (.of_forall φ.coordL_symm_apply))
+  rwa [ContinuousAt, comp_apply, φ.toChart_symm_coord_symm_zero] at h
+
 /-- The derivative of the quadratic normal form. -/
 theorem hasFDerivAt_quadratic (z : E) :
     HasFDerivAt φ.quadratic
