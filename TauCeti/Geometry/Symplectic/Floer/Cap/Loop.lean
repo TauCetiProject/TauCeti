@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Torsor.Quotient
 public import TauCeti.CategoryTheory.Groupoid.Torsor
 public import TauCeti.Geometry.Symplectic.Floer.SphericalPeriodGroup
+public import TauCeti.GroupTheory.QuotientGroup.KerEquiv
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!
@@ -61,7 +62,8 @@ cap classes of actual loops.
 * `TauCeti.Floer.SphericalCapClass ω c γ`: the cap classes of `γ` with respect to `ω` and `c`.
 * `TauCeti.Floer.SphericalCapClass.instAddTorsor`: on a path-connected space, the cap classes of a
   null-homotopic loop form a torsor under the spherical period group.
-* `TauCeti.Floer.SphericalCapClass.glue`: gluing a homotopy of loops to cap classes.
+* `TauCeti.Floer.SphericalCapClass.glue`: gluing a homotopy of loops to cap classes, a bijection
+  `TauCeti.Floer.SphericalCapClass.glueEquiv`.
 * `TauCeti.Floer.SphericalCapClass.lift`: the descent of a function on raw caps obeying a recapping
   law.
 
@@ -75,6 +77,8 @@ cap classes of actual loops.
 * `TauCeti.Floer.SphericalCapClass.ofHomotopyGroup_vadd_mk`,
   `TauCeti.Floer.SphericalCapClass.mk_vsub_mk`: the torsor structure on cap classes is computed on
   raw caps.
+* `TauCeti.Floer.SphericalCapClass.glue_id`, `TauCeti.Floer.SphericalCapClass.glue_comp`: gluing is
+  functorial in the homotopy of loops.
 * `TauCeti.Floer.SphericalCapClass.glue_vadd`, `TauCeti.Floer.SphericalCapClass.glue_vsub_glue`,
   `TauCeti.Floer.SphericalCapClass.lift_vadd`: gluing and descended functions obey the recapping
   laws.
@@ -263,6 +267,30 @@ theorem glue_mk (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂�
     glue p (mk ω c D) = mk ω c (p ≫ D) :=
   (rfl)
 
+/-- Gluing the constant homotopy of loops does nothing. -/
+@[simp]
+theorem glue_id (q : SphericalCapClass ω c γ) : glue (𝟙 _) q = q := by
+  induction q using induction_on with
+  | h D => rw [glue_mk, Category.id_comp]
+
+/-- Gluing a composite homotopy of loops is gluing one after the other. -/
+@[simp]
+theorem glue_comp {γ₃ : Ω X x} (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂⟩)
+    (p' : (⟨γ₂⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₃⟩) (q : SphericalCapClass ω c γ₃) :
+    glue (p ≫ p') q = glue p (glue p' q) := by
+  induction q using induction_on with
+  | h D => rw [glue_mk, glue_mk, glue_mk, Category.assoc]
+
+/-- Gluing a homotopy of loops `p` from `γ₁` to `γ₂` is a bijection from the cap classes of `γ₂`
+to those of `γ₁`, with inverse gluing the reversed homotopy. -/
+@[expose, simps]
+def glueEquiv (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂⟩) :
+    SphericalCapClass ω c γ₂ ≃ SphericalCapClass ω c γ₁ where
+  toFun := glue p
+  invFun := glue (inv p)
+  left_inv q := by rw [← glue_comp, IsIso.inv_hom_id, glue_id]
+  right_inv q := by rw [← glue_comp, IsIso.hom_inv_id, glue_id]
+
 /-- Gluing a homotopy preserves the class by which two cap classes differ. -/
 @[simp]
 theorem glue_vsub_glue (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂⟩)
@@ -276,21 +304,23 @@ variable [PathConnectedSpace X]
 
 /-- Recapping a cap class by a class of the period group: `[a] +ᵥ mk D = mk (a +ᵥ D)` for any
 sphere `a`, where `[a]` is its class. It is the action of the quotient of `π₂(X, x)` on the orbit
-space, transported along `SphericalPeriodGroup.homotopyGroupQuotientEquiv`. -/
+space, transported along the first isomorphism theorem for the surjection
+`SphericalPeriodGroup.ofHomotopyGroup`. -/
 instance instAddAction : AddAction (SphericalPeriodGroup ω c) (SphericalCapClass ω c γ) :=
   AddAction.compHom (AddAction.orbitRel.Quotient
       (SphericalPeriodGroup.ofHomotopyGroup ω c x).ker (RawCap γ))
-    (SphericalPeriodGroup.homotopyGroupQuotientEquiv ω c x).symm.toAddMonoidHom
+    (QuotientAddGroup.quotientKerEquivOfSurjective _
+      (SphericalPeriodGroup.ofHomotopyGroup_surjective x)).symm.toAddMonoidHom
 
 /-- Recapping by the class of a sphere `a` is gluing `a` to a representative. -/
 @[simp]
 theorem ofHomotopyGroup_vadd_mk (a : Additive (π_ 2 X x)) (D : RawCap γ) :
     SphericalPeriodGroup.ofHomotopyGroup ω c x a +ᵥ mk ω c D = mk ω c (a +ᵥ D) := by
-  have h : (SphericalPeriodGroup.homotopyGroupQuotientEquiv ω c x).symm
-      (SphericalPeriodGroup.ofHomotopyGroup ω c x a) = a := by
-    rw [AddEquiv.symm_apply_eq, SphericalPeriodGroup.homotopyGroupQuotientEquiv_mk]
-  -- the action is that of the quotient group on the orbit space, after transport along `h`
-  exact (congrArg (· +ᵥ (Quotient.mk'' D : AddAction.orbitRel.Quotient _ (RawCap γ))) h).trans
+  -- the action is that of the quotient group on the orbit space, after transport along the
+  -- inverse of the first isomorphism theorem
+  exact (congrArg (· +ᵥ (Quotient.mk'' D : AddAction.orbitRel.Quotient _ (RawCap γ)))
+    (TauCeti.QuotientAddGroup.quotientKerEquivOfSurjective_symm_apply _
+      (SphericalPeriodGroup.ofHomotopyGroup_surjective x) a)).trans
     (AddAction.orbitRel.Quotient.mk_vadd_mk _ a D)
 
 /-- **The cap classes of a contractible loop form a torsor under the spherical period group**, on
@@ -318,6 +348,7 @@ theorem glue_vadd (p : (⟨γ₁⟩ : FundamentalGroupoid (Ω X x)) ⟶ ⟨γ₂
       RawCap.comp_vadd]
 
 /-- The descended function obeys the recapping law on cap classes. -/
+@[simp]
 theorem lift_vadd (φ : SphericalPeriodGroup ω c →+ A) (f : RawCap γ → A)
     (hf : ∀ a D, f (a +ᵥ D) = φ (SphericalPeriodGroup.ofHomotopyGroup ω c x a) + f D)
     (g : SphericalPeriodGroup ω c) (q : SphericalCapClass ω c γ) :
