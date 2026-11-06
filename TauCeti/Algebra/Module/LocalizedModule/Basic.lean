@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Module.LocalizedModule.IsLocalization
-public import Mathlib.Algebra.Module.LinearMap.End
+public import Mathlib.Algebra.Module.LocalizedModule.Basic
 
 /-!
 # The identity as a localization map
