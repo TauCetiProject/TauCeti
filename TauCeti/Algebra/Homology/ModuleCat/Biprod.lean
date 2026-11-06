@@ -29,9 +29,8 @@ identification, bases of `K.X i` and `L.X i` give the basis `HomologicalComplex.
 of based complexes is based.
 
 On elements, the biproduct inclusions, projections, `biprod.lift` and `biprod.desc` act
-componentwise (`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`
-and the composites such as `HomologicalComplex.biprod_inl_desc_f_apply`), which is how elements
-of the middle term of a Mayer–Vietoris sequence are handled.
+componentwise (`HomologicalComplex.biprod_desc_f_apply`, `HomologicalComplex.biprod_lift_f_apply`),
+which is how elements of the middle term of a Mayer–Vietoris sequence are handled.
 
 ## References
 
@@ -148,27 +147,13 @@ section Elements
 variable {K₁ K₂ : HomologicalComplex (ModuleCat.{v} R) c} (φ₁ : K₁ ⟶ K) (φ₂ : K₂ ⟶ K)
   (ψ₁ : K ⟶ K₁) (ψ₂ : K ⟶ K₂) (i : ι)
 
-/-- `biprod.inl ≫ biprod.desc φ₁ φ₂ = φ₁`, on elements of the terms of complexes of modules. -/
-@[simp]
-theorem biprod_inl_desc_f_apply (x : K₁.X i) :
-    ((biprod.desc φ₁ φ₂).f i).hom (((biprod.inl : K₁ ⟶ K₁ ⊞ K₂).f i).hom x) = (φ₁.f i).hom x := by
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, biprod.inl_desc]
-
-/-- `biprod.inr ≫ biprod.desc φ₁ φ₂ = φ₂`, on elements of the terms of complexes of modules. -/
-@[simp]
-theorem biprod_inr_desc_f_apply (x : K₂.X i) :
-    ((biprod.desc φ₁ φ₂).f i).hom (((biprod.inr : K₂ ⟶ K₁ ⊞ K₂).f i).hom x) = (φ₂.f i).hom x := by
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, biprod.inr_desc]
-
 /-- `biprod.desc φ₁ φ₂` sends an element `x` of a term of `K₁ ⊞ K₂` to the sum of the images of
 its two components. -/
 theorem biprod_desc_f_apply (x : (K₁ ⊞ K₂).X i) :
     ((biprod.desc φ₁ φ₂).f i).hom x =
       (φ₁.f i).hom (((biprod.fst : K₁ ⊞ K₂ ⟶ K₁).f i).hom x) +
         (φ₂.f i).hom (((biprod.snd : K₁ ⊞ K₂ ⟶ K₂).f i).hom x) := by
-  rw [biprod.desc_eq, HomologicalComplex.add_f_apply, ModuleCat.hom_add, LinearMap.add_apply,
-    HomologicalComplex.comp_f, HomologicalComplex.comp_f, ModuleCat.hom_comp, ModuleCat.hom_comp,
-    LinearMap.comp_apply, LinearMap.comp_apply]
+  simp [biprod.desc_eq]
 
 /-- `biprod.lift ψ₁ ψ₂` sends an element `x` of a term of `K` to the sum of the inclusions of its
 two images. -/
@@ -176,21 +161,7 @@ theorem biprod_lift_f_apply (x : K.X i) :
     ((biprod.lift ψ₁ ψ₂).f i).hom x =
       ((biprod.inl : K₁ ⟶ K₁ ⊞ K₂).f i).hom ((ψ₁.f i).hom x) +
         ((biprod.inr : K₂ ⟶ K₁ ⊞ K₂).f i).hom ((ψ₂.f i).hom x) := by
-  rw [biprod.lift_eq, HomologicalComplex.add_f_apply, ModuleCat.hom_add, LinearMap.add_apply,
-    HomologicalComplex.comp_f, HomologicalComplex.comp_f, ModuleCat.hom_comp, ModuleCat.hom_comp,
-    LinearMap.comp_apply, LinearMap.comp_apply]
-
-/-- `biprod.lift ψ₁ ψ₂ ≫ biprod.fst = ψ₁`, on elements of the terms of complexes of modules. -/
-@[simp]
-theorem biprod_lift_fst_f_apply (x : K.X i) :
-    ((biprod.fst : K₁ ⊞ K₂ ⟶ K₁).f i).hom (((biprod.lift ψ₁ ψ₂).f i).hom x) = (ψ₁.f i).hom x := by
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, biprod.lift_fst]
-
-/-- `biprod.lift ψ₁ ψ₂ ≫ biprod.snd = ψ₂`, on elements of the terms of complexes of modules. -/
-@[simp]
-theorem biprod_lift_snd_f_apply (x : K.X i) :
-    ((biprod.snd : K₁ ⊞ K₂ ⟶ K₂).f i).hom (((biprod.lift ψ₁ ψ₂).f i).hom x) = (ψ₂.f i).hom x := by
-  rw [← LinearMap.comp_apply, ← ModuleCat.hom_comp, ← HomologicalComplex.comp_f, biprod.lift_snd]
+  simp [biprod.lift_eq]
 
 end Elements
 

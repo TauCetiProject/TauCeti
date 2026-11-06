@@ -38,6 +38,8 @@ relative chains (`TauCeti/AlgebraicTopology/Singular/AlexanderWhitney/RelativeCu
 
 ## Main definitions and results
 
+* `TopPair.d_comp_cupCochain_rightAlexanderWhitneyDiagonal`: the Leibniz rule against a
+  relative cocycle.
 * `TopPair.singularChainComplexMap_f_cupCochain_rightAlexanderWhitneyDiagonal`: the cup product of
   absolute and relative cochains is natural in maps of pairs.
 * `TopPair.singularCup`, with `TopPair.singularCup_homologyπ` computing it on classes of cocycles,
@@ -110,6 +112,18 @@ lemma singularChainComplexMap_f_cupCochain_rightAlexanderWhitneyDiagonal {P P' :
         ((singularChainComplexMap f S).f q ≫ ψ) :=
   (TauCeti.ChainComplex.cupCochain_naturality _ μ _ _ _ _
     (rightAlexanderWhitneyDiagonal_naturality f u) p q n h φ ψ).symm
+
+/-- **The Leibniz rule against a relative cocycle**: if `ψ` is a cocycle, the coboundary of
+`φ ⌣ ψ` is `δφ ⌣ ψ`. -/
+lemma d_comp_cupCochain_rightAlexanderWhitneyDiagonal (P : TopPair.{w}) (u : T ⟶ R ⊗ S)
+    (μ : M ⊗ N ⟶ L) {p q n : ℕ} (h : p + q = n) (h' : p + 1 + q = n + 1)
+    (φ : ((TopCat.toSSet.obj P.fst).chainComplex R).X p ⟶ M)
+    (ψ : (P.singularChainComplex S).X q ⟶ N) (hψ : (P.singularChainComplex S).d (q + 1) q ≫ ψ = 0) :
+    (P.singularChainComplex T).d (n + 1) n ≫
+        TauCeti.ChainComplex.cupCochain k (P.rightAlexanderWhitneyDiagonal u) μ p q n h φ ψ =
+      TauCeti.ChainComplex.cupCochain k (P.rightAlexanderWhitneyDiagonal u) μ (p + 1) q (n + 1) h'
+        (((TopCat.toSSet.obj P.fst).chainComplex R).d (p + 1) p ≫ φ) ψ := by
+  rw [TauCeti.ChainComplex.d_comp_cupCochain, hψ, map_zero, smul_zero, add_zero]
 
 variable {R₁ R₂ T₁₂ T₂₃ M₁ M₂ M₃ M₁₂ M₂₃ : C}
 
