@@ -88,7 +88,7 @@ theorem Measurable.eLpNorm_prod_right [SFinite ν] {g : α × β → ℝ≥0∞}
     tendsto_atTop_mono (fun _ ↦ le_self_add) tendsto_natCast_atTop_atTop
   have htend (x : α) : Tendsto (fun n : ℕ ↦ eLpNorm (fun y ↦ g (x, y)) ((n + 1 : ℝ≥0) : ℝ≥0∞)
       ν.toFinite) atTop (𝓝 (eLpNorm (fun y ↦ g (x, y)) ∞ ν.toFinite)) :=
-    (TauCeti.tendsto_eLpNorm_atTop (hsec x).aestronglyMeasurable).comp hseq
+    TauCeti.tendsto_eLpNorm_atTop.comp hseq
   have hm (n : ℕ) : Measurable fun x ↦
       eLpNorm (fun y ↦ g (x, y)) ((n + 1 : ℝ≥0) : ℝ≥0∞) ν.toFinite :=
     hfin _ _ (ENNReal.coe_ne_zero.2 n.cast_add_one_ne_zero) ENNReal.coe_ne_top
