@@ -49,7 +49,8 @@ known; it is a finite computation, run by `decide`.
   contain the whole orbit of the base point.
 * `TauCeti.CosetTable.index_le` and `TauCeti.CosetTable.finiteIndex`: a certified table on `k`
   points for a subgroup `H` shows `H.index ≤ k`, and in particular that `H` has finite index.
-* `TauCeti.CosetTable.index_eq_of_check`: distinct named cosets give the exact subgroup index.
+* `TauCeti.CosetTable.index_eq_iff_injective`: a certified table on `k` points gives the exact
+  subgroup index `k` exactly when its named cosets are distinct.
 
 ## References
 
@@ -83,8 +84,8 @@ variable {m k : ℕ} (T : CosetTable m k)
 The bodies below are exposed because a certificate is checked by `decide`, which has to evaluate
 them. -/
 
-/-- The point reached from `i` along the word `u`, whose letters act from the right, as the
-product of the word acts on a point. -/
+/-- The point reached from `i` along the word `u`, applying its letters from right to left, as
+the product of the word acts on a point. -/
 @[expose]
 def trace (u : List (Fin m)) (i : Fin k) : Fin k :=
   u.foldr T.act i
@@ -252,10 +253,8 @@ theorem surjective_point {H : Subgroup G} {rels stab : List (List (Fin m))}
     (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) :
     Function.Surjective (T.point g ((1 : G) : G ⧸ H)) := by
   refine QuotientGroup.mk_surjective.forall.2 fun x ↦ ?_
-  have hstab' : ∀ r ∈ stab, (r.map g).prod • ((1 : G) : G ⧸ H) = ((1 : G) : G ⧸ H) := by
-    intro r hr
-    rw [MulAction.Quotient.smul_mk, smul_eq_mul, mul_one, QuotientGroup.eq, mul_one]
-    exact H.inv_mem (hstab r hr)
+  have hstab' : ∀ r ∈ stab, (r.map g).prod • ((1 : G) : G ⧸ H) = ((1 : G) : G ⧸ H) :=
+    fun r hr ↦ by simpa [MulAction.Quotient.smul_mk, QuotientGroup.eq] using hstab r hr
   simpa [MulAction.Quotient.smul_mk] using smul_mem_range_point hg hT hrels hstab' x
 
 /-- **Coset enumeration bounds the index.** If the generators `g` generate `G`, the relators
@@ -269,14 +268,17 @@ theorem index_le {H : Subgroup G} {rels stab : List (List (Fin m))}
   exact (Nat.card_le_card_of_surjective _ (surjective_point hg hT hrels hstab)).trans_eq
     (Nat.card_fin k)
 
-/-- A certified table with distinct named cosets gives the exact subgroup index. -/
-theorem index_eq_of_check {H : Subgroup G} {rels stab : List (List (Fin m))}
+/-- A certified coset table on `k` points for a subgroup `H` shows that `H` has index exactly `k`
+if and only if the cosets it names are distinct. -/
+theorem index_eq_iff_injective {H : Subgroup G} {rels stab : List (List (Fin m))}
     {cert : List (Fin k × List (Fin m))} (hg : Subgroup.closure (Set.range g) = ⊤)
     (hT : T.check rels stab cert = true) (hrels : ∀ r ∈ rels, (r.map g).prod = 1)
-    (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H)
-    (hinj : Function.Injective (T.point g ((1 : G) : G ⧸ H))) : H.index = k := by
-  rw [Subgroup.index_eq_card, ← Nat.card_fin k]
-  exact (Nat.card_eq_of_bijective _ ⟨hinj, T.surjective_point hg hT hrels hstab⟩).symm
+    (hstab : ∀ r ∈ stab, (r.map g).prod ∈ H) :
+    H.index = k ↔ Function.Injective (T.point g ((1 : G) : G ⧸ H)) := by
+  have hsurj := surjective_point hg hT hrels hstab
+  rw [Subgroup.index_eq_card]
+  refine ⟨fun h ↦ (hsurj.bijective_of_nat_card_le (by rw [Nat.card_fin, h])).1, fun hinj ↦ ?_⟩
+  rw [← Nat.card_eq_of_bijective _ ⟨hinj, hsurj⟩, Nat.card_fin]
 
 /-- A subgroup admitting a certified coset table has finite index. -/
 theorem finiteIndex {H : Subgroup G} {rels stab : List (List (Fin m))}
