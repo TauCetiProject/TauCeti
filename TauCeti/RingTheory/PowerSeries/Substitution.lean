@@ -150,6 +150,12 @@ theorem subst_one {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
     (1 : R⟦X⟧).subst a = 1 := by
   rw [← coe_substAlgHom ha, map_one]
 
+/-- Substituting `X ^ b` into `X ^ a` multiplies the exponents. -/
+theorem subst_X_pow_X_pow {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
+    (a : ℕ) {b : ℕ} (hb : b ≠ 0) :
+    (X ^ a : R⟦X⟧).subst (X ^ b : S⟦X⟧) = X ^ (a * b) := by
+  simp [subst_pow (.X_pow hb), subst_X (.X_pow hb), ← pow_mul, Nat.mul_comm]
+
 /-- Substituting `a` into `X + e Xᵏ` gives `a + e aᵏ`. -/
 theorem subst_X_add_C_mul_X_pow {R τ : Type*} [CommRing R] {a : MvPowerSeries τ R}
     (ha : HasSubst a) (e : R) (k : ℕ) :
