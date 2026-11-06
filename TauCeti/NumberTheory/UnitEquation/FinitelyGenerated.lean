@@ -8,6 +8,7 @@ module
 public import Mathlib.NumberTheory.NumberField.House
 public import TauCeti.NumberTheory.NumberField.Global.Places.Height
 import TauCeti.Analysis.AbsoluteValue.FiniteOrder
+import TauCeti.Analysis.SpecialFunctions.Log.AddMulLog
 
 /-!
 # An explicit exponent bound for unit equations in finitely generated groups
@@ -59,6 +60,38 @@ namespace TauCeti.NumberField.SUnit
 
 variable {K : Type*} [Field K] [NumberField K]
 
+/-- If `q + δ x = 1` and `|q - 1|_v ≥ e > 0`, where `|δ|_v ≤ M`, then `log e ≤ log M + log |x|_v`,
+because `|q - 1|_v = |δ|_v |x|_v ≤ M |x|_v`. -/
+theorem log_le_add_log_adicAbv_of_add_mul_eq_one {x δ q : K} (hx0 : x ≠ 0) (hδ : δ ≠ 0)
+    (v : HeightOneSpectrum (𝓞 K)) {M e : ℝ} (hδv : HeightOneSpectrum.adicAbv K v δ ≤ M)
+    (he : 0 < e) (hq1 : q - 1 = -(δ * x)) (hqe : e ≤ HeightOneSpectrum.adicAbv K v (q - 1)) :
+    Real.log e ≤ Real.log M + Real.log (HeightOneSpectrum.adicAbv K v x) := by
+  have hxv : 0 < HeightOneSpectrum.adicAbv K v x := (AbsoluteValue.pos_iff _).mpr hx0
+  have hδv0 : 0 < HeightOneSpectrum.adicAbv K v δ := (AbsoluteValue.pos_iff _).mpr hδ
+  have hM : 0 < M := hδv0.trans_le hδv
+  have key : e ≤ M * HeightOneSpectrum.adicAbv K v x := by
+    refine hqe.trans ?_
+    rw [hq1, AbsoluteValue.map_neg, AbsoluteValue.map_mul]
+    exact mul_le_mul_of_nonneg_right hδv hxv.le
+  rw [← Real.log_mul hM.ne' hxv.ne']
+  exact Real.log_le_log he key
+
+/-- If `q + δ x = 1` and `‖σ q - 1‖ ≥ e > 0` for an embedding `σ` of the infinite place `w`, where
+`‖σ δ‖ ≤ M`, then `log e ≤ log M + log (w x)`, because `‖σ q - 1‖ = ‖σ δ‖ w(x) ≤ M w(x)`. -/
+theorem log_le_add_log_infinitePlace_of_add_mul_eq_one {x δ q : K} (hx0 : x ≠ 0) (hδ : δ ≠ 0)
+    (w : InfinitePlace K) {M e : ℝ} (hδM : house δ ≤ M) (he : 0 < e) (hq1 : q - 1 = -(δ * x))
+    (hqe : e ≤ ‖w.embedding q - 1‖) : Real.log e ≤ Real.log M + Real.log (w x) := by
+  have hxw : 0 < w x := (InfinitePlace.pos_iff).mpr hx0
+  have hδσ : 0 < ‖w.embedding δ‖ := norm_pos_iff.mpr ((map_ne_zero _).mpr hδ)
+  have hM : 0 < M := hδσ.trans_le ((norm_embedding_le_house δ w.embedding).trans hδM)
+  have key : e ≤ M * w x := by
+    refine hqe.trans ?_
+    rw [← map_one w.embedding, ← map_sub, hq1, map_neg, norm_neg, map_mul, norm_mul,
+      InfinitePlace.norm_embedding_eq w x]
+    exact mul_le_mul_of_nonneg_right ((norm_embedding_le_house δ w.embedding).trans hδM) hxw.le
+  rw [← Real.log_mul hM.ne' hxw.ne']
+  exact Real.log_le_log he key
+
 /-- Let `q + δ x = 1`, where `x ≠ 0` has absolute value `1` at every finite place outside `S`
 and `δ ≠ 0` has house and absolute values at the places of `S` at most `M`. If
 `|σ q - 1|` and `|q - 1|_v` are at least `(exp 1 * N) ^ (-C)` for every complex embedding `σ`
@@ -103,30 +136,16 @@ private theorem logHeight₁_le_of_add_mul_eq_one {S : Finset (HeightOneSpectrum
   · -- At a place `v ∈ S`: `|q - 1|_v = |δ|_v |x|_v ≤ M |x|_v`.
     have hvS : v ∈ S := by simpa using hvT
     rw [GlobalNumberFields.normalizedAbsValue_inl] at hv
-    have hxv : 0 < HeightOneSpectrum.adicAbv K v x := (AbsoluteValue.pos_iff _).mpr hx0
-    have hδv : 0 < HeightOneSpectrum.adicAbv K v δ := (AbsoluteValue.pos_iff _).mpr hδ
-    have hM : 0 < M := hδv.trans_le (hδS v hvS)
-    have key : (Real.exp 1 * N) ^ (-C) ≤ M * HeightOneSpectrum.adicAbv K v x := by
-      refine (hfin v hvS hq).trans ?_
-      rw [hq1, AbsoluteValue.map_neg, AbsoluteValue.map_mul]
-      exact mul_le_mul_of_nonneg_right (hδS v hvS) hxv.le
-    have hlog := Real.log_le_log (by positivity) key
-    rw [hlogE, Real.log_mul hM.ne' hxv.ne'] at hlog
+    have hlog := log_le_add_log_adicAbv_of_add_mul_eq_one hx0 hδ v (hδS v hvS) (by positivity)
+      hq1 (hfin v hvS hq)
+    rw [hlogE] at hlog
     have : 0 ≤ logHeight₁ x / s := by positivity
     linarith
   · -- At an infinite place `w`: `|σ q - 1| = |σ δ| w(x) ≤ M w(x)` for `σ` an embedding of `w`.
     rw [GlobalNumberFields.normalizedAbsValue_inr, Real.log_pow] at hv
-    set σ := w.embedding
-    have hxw : 0 < w x := (InfinitePlace.pos_iff).mpr hx0
-    have hδσ : 0 < ‖σ δ‖ := norm_pos_iff.mpr ((map_ne_zero σ).mpr hδ)
-    have hM : 0 < M := hδσ.trans_le ((norm_embedding_le_house δ σ).trans hδM)
-    have key : (Real.exp 1 * N) ^ (-C) ≤ M * w x := by
-      refine (hinf σ hq).trans ?_
-      rw [← map_one σ, ← map_sub, hq1, map_neg, norm_neg, map_mul, norm_mul,
-        InfinitePlace.norm_embedding_eq w x]
-      exact mul_le_mul_of_nonneg_right ((norm_embedding_le_house δ σ).trans hδM) hxw.le
-    have hlog := Real.log_le_log (by positivity) key
-    rw [hlogE, Real.log_mul hM.ne' hxw.ne'] at hlog
+    have hlog := log_le_add_log_infinitePlace_of_add_mul_eq_one hx0 hδ w hδM (by positivity)
+      hq1 (hinf w.embedding hq)
+    rw [hlogE] at hlog
     -- The multiplicity of `w` is `1` or `2`, so `2 log w(x) ≤ -logHeight₁ x / s`.
     have hm1 : (1 : ℝ) ≤ w.mult := one_le_mult
     have hm2 : (w.mult : ℝ) ≤ 2 := by
@@ -134,6 +153,47 @@ private theorem logHeight₁_le_of_add_mul_eq_one {S : Finset (HeightOneSpectrum
       split_ifs <;> norm_num
     have : 0 ≤ logHeight₁ x / s := by positivity
     nlinarith
+
+/-- A root of unity times a product of integer powers of nonzero elements `γ i` that have absolute
+value `1` at every finite place outside `S` is nonzero and has absolute value `1` at every finite
+place outside `S`. -/
+theorem mul_prod_zpow_ne_zero_and_adicAbv_eq_one {ι : Type*} [Fintype ι]
+    {S : Finset (HeightOneSpectrum (𝓞 K))} {γ : ι → K} (hγ0 : ∀ j, γ j ≠ 0)
+    (hγS : ∀ j, ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (γ j) = 1) {ζ : K}
+    (hζ : IsOfFinOrder ζ) (z : ι → ℤ) :
+    ζ * ∏ i, γ i ^ z i ≠ 0 ∧ ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (ζ * ∏ i, γ i ^ z i) = 1 := by
+  refine ⟨mul_ne_zero hζ.isUnit.ne_zero
+    (prod_ne_zero_iff.mpr fun i _ ↦ zpow_ne_zero _ (hγ0 i)), fun v hv ↦ ?_⟩
+  simp [map_zpow₀, hγS _ v hv, AbsoluteValue.map_eq_one_of_isOfFinOrder _ hζ]
+
+/-- The lower bounds of `max_abs_le_of_mul_add_mul_eq_one`, with `max 1 (maxⱼ |z j|)` enlarged to
+`max 1 Bn` whenever the exponents are at most `Bn`. -/
+private theorem lowerBounds_of_sup_le {ι : Type*} [Fintype ι]
+    {S : Finset (HeightOneSpectrum (𝓞 K))} {γ : ι → K} {a b : K} {C : ℝ} (hC : 0 ≤ C)
+    (hinf : ∀ σ : K →+* ℂ, ∀ c ∈ ({a, b} : Set K), ∀ ζ : K, IsOfFinOrder ζ → ∀ z : ι → ℤ,
+      c * ζ * ∏ j, γ j ^ z j ≠ 1 →
+        (Real.exp 1 * max 1 ((Finset.univ.sup fun j ↦ (z j).natAbs : ℕ) : ℝ)) ^ (-C) ≤
+          ‖σ (c * ζ * ∏ j, γ j ^ z j) - 1‖)
+    (hfin : ∀ v ∈ S, ∀ c ∈ ({a, b} : Set K), ∀ ζ : K, IsOfFinOrder ζ → ∀ z : ι → ℤ,
+      c * ζ * ∏ j, γ j ^ z j ≠ 1 →
+        (Real.exp 1 * max 1 ((Finset.univ.sup fun j ↦ (z j).natAbs : ℕ) : ℝ)) ^ (-C) ≤
+          HeightOneSpectrum.adicAbv K v (c * ζ * ∏ j, γ j ^ z j - 1))
+    {Bn : ℕ} {c : K} (hc : c ∈ ({a, b} : Set K)) {ζ : K} (hζ : IsOfFinOrder ζ) {z : ι → ℤ}
+    (hz : (Finset.univ.sup fun j ↦ (z j).natAbs) ≤ Bn) :
+    (∀ σ : K →+* ℂ, c * (ζ * ∏ i, γ i ^ z i) ≠ 1 →
+      (Real.exp 1 * max 1 (Bn : ℝ)) ^ (-C) ≤ ‖σ (c * (ζ * ∏ i, γ i ^ z i)) - 1‖) ∧
+    ∀ v ∈ S, c * (ζ * ∏ i, γ i ^ z i) ≠ 1 →
+      (Real.exp 1 * max 1 (Bn : ℝ)) ^ (-C) ≤
+        HeightOneSpectrum.adicAbv K v (c * (ζ * ∏ i, γ i ^ z i) - 1) := by
+  have hle : (Real.exp 1 * max 1 (Bn : ℝ)) ^ (-C) ≤
+      (Real.exp 1 * max 1 ((Finset.univ.sup fun j ↦ (z j).natAbs : ℕ) : ℝ)) ^ (-C) := by
+    refine Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (neg_nonpos.mpr hC)
+    gcongr
+  refine ⟨fun σ h ↦ ?_, fun v hv h ↦ ?_⟩
+  · rw [← mul_assoc] at h ⊢
+    exact hle.trans (hinf σ c hc ζ hζ z h)
+  · rw [← mul_assoc] at h ⊢
+    exact hle.trans (hfin v hv c hc ζ hζ z h)
 
 /-- **Exponent bound for unit equations in finitely generated groups** (Győry). Let `γ j` be
 nonzero elements of a number field `K` with absolute value `1` at every finite place outside a
@@ -185,28 +245,6 @@ theorem max_abs_le_of_mul_add_mul_eq_one {ι : Type*} [Fintype ι]
     have := zero_le_logHeight₁ (1 * ∏ i, γ i ^ (Pi.single j 1 : ι → ℤ) i)
     nlinarith
   have hB₀ : 0 ≤ B₀ := by positivity
-  have hprod (ζ : K) (hζ : IsOfFinOrder ζ) (z : ι → ℤ) :
-      ζ * ∏ i, γ i ^ z i ≠ 0 ∧ ∀ v ∉ S, HeightOneSpectrum.adicAbv K v (ζ * ∏ i, γ i ^ z i) = 1 := by
-    refine ⟨mul_ne_zero hζ.isUnit.ne_zero
-      (prod_ne_zero_iff.mpr fun i _ ↦ zpow_ne_zero _ (hγ0 i)), fun v hv ↦ ?_⟩
-    simp [map_zpow₀, hγS _ v hv, AbsoluteValue.map_eq_one_of_isOfFinOrder _ hζ]
-  -- The lower bounds, with `max 1 (maxⱼ |z j|)` enlarged to `N`.
-  have hLB {c : K} (hc : c ∈ ({a, b} : Set K)) {ζ : K} (hζ : IsOfFinOrder ζ) {z : ι → ℤ}
-      (hz : (Finset.univ.sup fun j ↦ (z j).natAbs) ≤ Bn) :
-      (∀ σ : K →+* ℂ, c * (ζ * ∏ i, γ i ^ z i) ≠ 1 →
-        (Real.exp 1 * N) ^ (-C) ≤ ‖σ (c * (ζ * ∏ i, γ i ^ z i)) - 1‖) ∧
-      ∀ v ∈ S, c * (ζ * ∏ i, γ i ^ z i) ≠ 1 →
-        (Real.exp 1 * N) ^ (-C) ≤ HeightOneSpectrum.adicAbv K v (c * (ζ * ∏ i, γ i ^ z i) - 1) := by
-    have hle : (Real.exp 1 * N) ^ (-C) ≤
-        (Real.exp 1 * max 1 ((Finset.univ.sup fun j ↦ (z j).natAbs : ℕ) : ℝ)) ^ (-C) := by
-      refine Real.rpow_le_rpow_of_nonpos (by positivity) ?_ (neg_nonpos.mpr hC)
-      gcongr
-      exact max_le_max le_rfl (by exact_mod_cast hz)
-    refine ⟨fun σ h ↦ ?_, fun v hv h ↦ ?_⟩
-    · rw [← mul_assoc] at h ⊢
-      exact hle.trans (hinf σ c hc ζ hζ z h)
-    · rw [← mul_assoc] at h ⊢
-      exact hle.trans (hfin v hv c hc ζ hζ z h)
   -- Hence every exponent is at most `A + B₀ log N`.
   have hexp (j : ι) : max |(zx j : ℝ)| |(zy j : ℝ)| ≤ A + B₀ * Real.log N := by
     have hAB : κ * (2 * s * (Real.log M + C * (1 + Real.log N))) = A + B₀ * Real.log N := by
@@ -219,12 +257,14 @@ theorem max_abs_le_of_mul_add_mul_eq_one {ι : Type*} [Fintype ι]
       Finset.sup_mono_fun fun j _ ↦ le_max_right _ _
     refine max_le ((hκ ζx hζx zx j).trans (mul_le_mul_of_nonneg_left ?_ hκ0))
       ((hκ ζy hζy zy j).trans (mul_le_mul_of_nonneg_left ?_ hκ0))
-    · exact logHeight₁_le_of_add_mul_eq_one (hprod ζx hζx zx).1 (hprod ζx hζx zx).2 ha haM
-        (fun v hv ↦ (hSM v hv).1) (by linear_combination hxy) hN
-        (hLB (c := b) (by simp) hζy hzy).1 (hLB (c := b) (by simp) hζy hzy).2
-    · exact logHeight₁_le_of_add_mul_eq_one (hprod ζy hζy zy).1 (hprod ζy hζy zy).2 hb hbM
-        (fun v hv ↦ (hSM v hv).2) (by linear_combination hxy) hN
-        (hLB (c := a) (by simp) hζx hzx).1 (hLB (c := a) (by simp) hζx hzx).2
+    · have hLB := lowerBounds_of_sup_le hC hinf hfin (c := b) (by simp) hζy hzy
+      have hp := mul_prod_zpow_ne_zero_and_adicAbv_eq_one hγ0 hγS hζx zx
+      exact logHeight₁_le_of_add_mul_eq_one hp.1 hp.2 ha haM
+        (fun v hv ↦ (hSM v hv).1) (by linear_combination hxy) hN hLB.1 hLB.2
+    · have hLB := lowerBounds_of_sup_le hC hinf hfin (c := a) (by simp) hζx hzx
+      have hp := mul_prod_zpow_ne_zero_and_adicAbv_eq_one hγ0 hγS hζy zy
+      exact logHeight₁_le_of_add_mul_eq_one hp.1 hp.2 hb hbM
+        (fun v hv ↦ (hSM v hv).2) (by linear_combination hxy) hN hLB.1 hLB.2
   -- The largest exponent `Bn` satisfies `Bn ≤ A + B₀ log (max 1 Bn)`.
   have hcast (j : ι) :
       ((max (zx j).natAbs (zy j).natAbs : ℕ) : ℝ) = max |(zx j : ℝ)| |(zy j : ℝ)| := by
@@ -242,15 +282,6 @@ theorem max_abs_le_of_mul_add_mul_eq_one {ι : Type*} [Fintype ι]
   simp only [N, max_eq_right h1.le] at hBn
   -- Solve `Bn ≤ A + B₀ log Bn`: as `log (Bn / (2 B₀)) ≤ Bn / (2 B₀) - 1`,
   -- `B₀ log Bn ≤ Bn / 2 + B₀ (log (2 B₀) - 1)`.
-  rcases hB₀.eq_or_lt with h0 | h0
-  · rw [← h0] at hBn ⊢
-    simp only [zero_mul, add_zero, mul_zero] at hBn ⊢
-    linarith
-  have hBn0 : (0 : ℝ) < Bn := zero_lt_one.trans h1
-  have hlog := Real.log_le_sub_one_of_pos (div_pos hBn0 (by positivity : (0 : ℝ) < 2 * B₀))
-  rw [Real.log_div hBn0.ne' (by positivity)] at hlog
-  have hmul : B₀ * ((Bn : ℝ) / (2 * B₀)) = Bn / 2 := by
-    field_simp
-  nlinarith [mul_le_mul_of_nonneg_left hlog h0.le]
+  exact Real.le_two_mul_add_of_le_add_mul_log hB₀ (zero_lt_one.trans h1) hBn
 
 end TauCeti.NumberField.SUnit
