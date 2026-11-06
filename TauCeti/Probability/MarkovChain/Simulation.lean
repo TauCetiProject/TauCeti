@@ -25,7 +25,7 @@ individual transition weights. The uniform representation is an existence result
 no prescribed enumeration or inverse-cdf endpoint convention.
 
 The proof uses the existing prefix-recursion uniqueness theorem for `markovChainLaw` and
-`Kernel.map_prod_eq_compProd_of_map` for a single randomized transition.
+`IndepFun.map_prodMk_eq_compProd_of_map` for a single randomized transition.
 
 ## References
 
@@ -133,22 +133,16 @@ theorem hasLaw_randomizedChain {g : ξ → α} {f : α → ξ → α}
     let η := κ.comap (fun w : Fin (n + 1) → α => w (Fin.last n))
       (measurable_pi_apply (Fin.last n))
     let F (w : Fin (n + 1) → α) (u : ξ) := f (w (Fin.last n)) u
-    have hF : Measurable (uncurry F) := by fun_prop
-    have hstep := η.map_prod_eq_compProd_of_map (μ := P.map W) ρ F hF
-      (fun w => hf_map (w (Fin.last n)))
-    have hpair := (indepFun_randomizedChain_prefix hg hf hU hindep n).map_prod_eq_prod_map_map
-      hW.aemeasurable (hU (n + 1)).aemeasurable
-    rw [(hlaw (n + 1)).map_eq] at hpair
     calc
       _ = P.map (fun ω => (W ω, F (W ω) (U (n + 1) ω))) := by
         rw [Measure.map_map (by fun_prop) hX]
         apply congrArg (fun h => P.map h)
         funext ω
         simp only [comp_apply, X, W, F, Fin.val_last, randomizedChain_succ]
-      _ = ((P.map W).prod ρ).map (fun p => (p.1, F p.1 p.2)) := by
-        rw [← hpair, Measure.map_map (by fun_prop) (hW.prodMk (hU (n + 1)))]
-        rfl
-      _ = (P.map W) ⊗ₘ η := hstep
+      _ = (P.map W) ⊗ₘ η :=
+        (indepFun_randomizedChain_prefix hg hf hU hindep n).map_prodMk_eq_compProd_of_map
+          hW (hU (n + 1)) (hlaw (n + 1)) η F (by fun_prop)
+          (fun w => hf_map (w (Fin.last n)))
       _ = _ := by
         rw [Measure.map_map (by fun_prop) hX]
         rfl
