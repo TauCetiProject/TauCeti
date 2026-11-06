@@ -20,6 +20,15 @@ These identities are useful for holonomy with noncommutative coefficients.
 The metric is Mathlib's `GroupNorm.toNormedGroup`; no metric instance is installed globally.
 Conversely, `GroupNorm.ofLeftInvariantMetric` uses `NormedGroup.ofMulDist'` and `normGroupNorm`
 to recover a group norm from a left-invariant metric.
+
+Conjugation invariance is preserved by pullback along a homomorphism, by nonnegative scalar
+multiples, and by sums and pointwise maxima (`GroupSeminorm.IsConjInvariant.comp`, `.smul`,
+`.add` and `.sup`). For group norms, `GroupNorm.comp` pulls a norm back along an injective
+homomorphism (along the inclusion of a subgroup `K`, `ℓ.comp K.subtype_injective` is the
+restricted norm), and `GroupNorm.smulOfPos` multiplies a norm by a positive real; their underlying
+seminorms are `ℓ.toGroupSeminorm.comp f` and a scalar multiple of `ℓ.toGroupSeminorm`
+(`GroupNorm.toGroupSeminorm_comp`, `GroupNorm.toGroupSeminorm_smulOfPos`), so the lemmas above
+apply to them.
 -/
 
 public section
@@ -73,6 +82,29 @@ theorem map_mul_comm (g h : G) : ℓ (g * h) = ℓ (h * g) :=
 /-- The seminorm of a list product is invariant under any cyclic rotation. -/
 theorem map_prod_rotate (l : List G) (n : ℕ) : ℓ (l.rotate n).prod = ℓ l.prod := by
   exact List.IsRotated.apply_prod_eq hℓ.map_mul_comm (List.IsRotated.forall l n)
+
+end IsConjInvariant
+
+namespace IsConjInvariant
+
+variable {H : Type*} [Group H] {ℓ ℓ' : GroupSeminorm G}
+
+/-- The pullback of a conjugation-invariant seminorm along a homomorphism is conjugation
+invariant. -/
+theorem comp (hℓ : ℓ.IsConjInvariant) (f : H →* G) : (ℓ.comp f).IsConjInvariant := fun g h ↦ by
+  simp [hℓ.map_conj]
+
+/-- A nonnegative multiple of a conjugation-invariant seminorm is conjugation invariant. -/
+theorem smul (hℓ : ℓ.IsConjInvariant) (r : NNReal) : (r • ℓ).IsConjInvariant := fun g h ↦ by
+  simp [hℓ.map_conj]
+
+/-- The sum of two conjugation-invariant seminorms is conjugation invariant. -/
+theorem add (hℓ : ℓ.IsConjInvariant) (hℓ' : ℓ'.IsConjInvariant) : (ℓ + ℓ').IsConjInvariant :=
+  fun g h ↦ by simp [hℓ.map_conj, hℓ'.map_conj]
+
+/-- The pointwise maximum of two conjugation-invariant seminorms is conjugation invariant. -/
+theorem sup (hℓ : ℓ.IsConjInvariant) (hℓ' : ℓ'.IsConjInvariant) : (ℓ ⊔ ℓ').IsConjInvariant :=
+  fun g h ↦ by simp [hℓ.map_conj, hℓ'.map_conj]
 
 end IsConjInvariant
 
@@ -145,5 +177,48 @@ end Metric
     ofLeftInvariantMetric (fun g h k => by simp [dist_eq_norm_inv_mul, mul_assoc]) = ℓ := by
   ext g
   simp [dist_eq_norm_inv_mul, norm]
+
+/-! ### Restricted and rescaled norms -/
+
+section Constructions
+
+variable {H : Type*} [Group H]
+
+/-- The pullback of a group norm along an injective homomorphism. Along the inclusion of a
+subgroup `K`, `ℓ.comp K.subtype_injective` is the restriction of the norm to `K`. -/
+def comp (ℓ : GroupNorm G) {f : H →* G} (hf : Function.Injective f) : GroupNorm H where
+  toGroupSeminorm := ℓ.toGroupSeminorm.comp f
+  eq_one_of_map_eq_zero' _ h := hf <| by
+    rw [map_one]
+    exact eq_one_of_map_eq_zero ℓ h
+
+@[simp]
+theorem comp_apply (ℓ : GroupNorm G) {f : H →* G} (hf : Function.Injective f) (x : H) :
+    ℓ.comp hf x = ℓ (f x) :=
+  (rfl)
+
+/-- The seminorm underlying the pullback of a group norm is the pullback of its seminorm. -/
+theorem toGroupSeminorm_comp (ℓ : GroupNorm G) {f : H →* G} (hf : Function.Injective f) :
+    (ℓ.comp hf).toGroupSeminorm = ℓ.toGroupSeminorm.comp f :=
+  (rfl)
+
+/-- A group norm multiplied by a positive real number. -/
+def smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) : GroupNorm G where
+  toGroupSeminorm := (show NNReal from ⟨r, hr.le⟩) • ℓ.toGroupSeminorm
+  eq_one_of_map_eq_zero' _ h :=
+    eq_one_of_map_eq_zero ℓ <| (mul_eq_zero.mp h).resolve_left hr.ne'
+
+@[simp]
+theorem smulOfPos_apply (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (g : G) :
+    ℓ.smulOfPos hr g = r * ℓ g :=
+  (rfl)
+
+/-- The seminorm underlying a positive multiple of a group norm is the corresponding multiple of
+its seminorm. -/
+theorem toGroupSeminorm_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) :
+    (ℓ.smulOfPos hr).toGroupSeminorm = (show NNReal from ⟨r, hr.le⟩) • ℓ.toGroupSeminorm :=
+  (rfl)
+
+end Constructions
 
 end GroupNorm
