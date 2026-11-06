@@ -122,7 +122,7 @@ private theorem sigmoid_jacobian_mul_pdf (m : ℝ) (v : ℝ≥0) (y : ℝ) :
 theorem logitNormalMeasure_eq_withDensity (m : ℝ) (hv : v ≠ 0) :
     logitNormalMeasure m v = volume.withDensity (logitNormalPDF m v) := by
   have hmap := MeasureTheory.map_withDensity_abs_deriv_mul (f := logitNormalPDF m v)
-    MeasurableSet.univ (by fun_prop)
+    MeasurableSet.univ
     (fun y _ ↦ (Real.hasDerivAt_sigmoid y).hasDerivWithinAt) Real.sigmoid_injective.injOn
   simp only [Measure.restrict_univ, sigmoid_jacobian_mul_pdf, image_univ,
     Real.range_sigmoid] at hmap
