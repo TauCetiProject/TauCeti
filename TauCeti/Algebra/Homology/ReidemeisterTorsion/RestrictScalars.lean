@@ -31,8 +31,9 @@ matrices, then
 
 `τ(D, e) = N_{L/F} (τ(C, c))`,
 
-with no sign. This holds for every complex: `D` is acyclic exactly when `C` is, and both sides
-vanish otherwise. To compare the brackets, the boundaries of `D` are given the bases
+with no sign. This holds for every complex: `D` is acyclic exactly when `C` is
+(`HomologicalComplex.acyclic_iff_of_toMatrix_eq_leftMulMatrix`), and both sides vanish otherwise.
+To compare the brackets, the boundaries of `D` are given the bases
 `β a • bⱼ k` built from bases `bⱼ` of the boundaries of `C`, and the lifts `β a • sⱼ k` built
 from lifts `sⱼ`; the bracket of `D` in each degree is then the determinant of a family of the
 form `β a • v k` in the basis `β a • c i k`, which is the norm of the determinant of `v` in the
@@ -108,45 +109,6 @@ private theorem d_towerEquiv (j : ℤ) (x : C.X (j + 1)) :
     (by rw [hd, toMatrix_towerBasis, RingHom.coe_id, Matrix.map_id]) x
   simpa [semilinearMap_towerBasis] using h
 
-include hd in
-private theorem range_d_eq_map (j : ℤ) :
-    LinearMap.range (D.d (j + 1) j).hom =
-      ((LinearMap.range (C.d (j + 1) j).hom).restrictScalars F).map
-        (towerEquiv β c e j).toLinearMap := by
-  have hcomp : (towerEquiv β c e j).toLinearMap ∘ₗ (C.d (j + 1) j).hom.restrictScalars F =
-      (D.d (j + 1) j).hom ∘ₗ (towerEquiv β c e (j + 1)).toLinearMap :=
-    LinearMap.ext fun x ↦ (d_towerEquiv hd j x).symm
-  rw [← LinearMap.range_restrictScalars, ← LinearMap.range_comp, hcomp,
-    LinearMap.range_comp_of_range_eq_top _ (LinearEquiv.range _)]
-
-include hd in
-/-- The boundaries of `D` have `m` times the dimension of the boundaries of `C`. -/
-private theorem finrank_range_d (j : ℤ) :
-    finrank F (LinearMap.range (D.d (j + 1) j).hom) =
-      finrank L (LinearMap.range (C.d (j + 1) j).hom) * m := by
-  have : Module.Finite F L := .of_basis β
-  have hm : finrank F L = m := by rw [finrank_eq_card_basis β, Fintype.card_fin]
-  rw [range_d_eq_map hd, LinearEquiv.finrank_map_eq, mul_comm, ← hm]
-  exact (Module.finrank_mul_finrank F L (LinearMap.range (C.d (j + 1) j).hom)).symm
-
-include hd in
-/-- `D` is acyclic exactly when `C` is. -/
-private theorem acyclic_iff_restrict (hm : m ≠ 0) : D.Acyclic ↔ C.Acyclic := by
-  have hrk (i j : ℤ) : finrank F (LinearMap.range (D.d i j).hom) =
-      finrank L (LinearMap.range (C.d i j).hom) * m := by
-    by_cases hij : (ComplexShape.down ℤ).Rel i j
-    · obtain rfl : j + 1 = i := hij
-      exact finrank_range_d hd j
-    · rw [D.shape i j hij, C.shape i j hij, ModuleCat.hom_zero, ModuleCat.hom_zero,
-        LinearMap.range_zero, LinearMap.range_zero, finrank_bot, finrank_bot, zero_mul]
-  refine forall_congr' fun j ↦ ?_
-  have : Module.Finite F (D.X j) := .of_basis (e j)
-  have : Module.Finite L (C.X j) := .of_basis (c j)
-  rw [exactAt_iff_finrank_add_finrank D rfl rfl, exactAt_iff_finrank_add_finrank C rfl rfl, hrk,
-    hrk, finrank_eq_card_basis (c j), finrank_eq_card_basis (e j), Fintype.card_fin,
-    Fintype.card_fin, ← add_mul]
-  exact Nat.mul_left_inj hm
-
 variable (β c e) in
 /-- The vectors `β a • u k` of `C.X i`, transported to `D.X i` and indexed by `Fin (p * m)`. -/
 private def towerVec (i : ℤ) {p : ℕ} (u : Fin p → C.X i) (x : Fin (p * m)) : D.X i :=
@@ -193,7 +155,7 @@ private def towerBoundaryBasis (j : ℤ) :
   basisOfLinearIndependentOfCardEqFinrank' (fun x ↦ ⟨_, towerVec_mem_range hd j x⟩)
     (LinearIndependent.of_comp (LinearMap.range (D.d (j + 1) j).hom).subtype
       (linearIndependent_towerVec j))
-    (by rw [Fintype.card_fin, finrank_range_d hd])
+    (by rw [Fintype.card_fin, finrank_range_d_eq_mul_of_toMatrix_eq_leftMulMatrix β (hd j)])
 
 private theorem coe_towerBoundaryBasis (j : ℤ) (x) :
     (towerBoundaryBasis hd j x : D.X j) =
@@ -272,7 +234,9 @@ theorem norm_reidemeisterTorsion :
   swap
   · rw [reidemeisterTorsion_of_not_finite _ _ hn,
       reidemeisterTorsion_of_not_finite _ _ (hnD ▸ hn), Algebra.norm_zero]
-  have hDC := acyclic_iff_restrict hd hm
+  have hDC : D.Acyclic ↔ C.Acyclic := acyclic_iff_of_toMatrix_eq_leftMulMatrix β fun i j hij ↦ by
+    obtain rfl : j + 1 = i := hij
+    exact hd j
   by_cases h : C.Acyclic
   swap
   · rw [reidemeisterTorsion_of_not_acyclic C c h,
