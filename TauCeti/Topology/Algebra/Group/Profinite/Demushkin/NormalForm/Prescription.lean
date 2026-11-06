@@ -206,11 +206,6 @@ theorem IsCrossedHom.map_demushkinWordNeTwo (q n : ℕ) (x : ℕ → H) :
   rw [demushkinWordNeTwo_def, hF.map_mul, hF.map_pow, _root_.map_pow, Units.val_pow_eq_pow_val,
     hF.map_list_range_prod_labuteComm]
 
-/-- The value of a crossed homomorphism on a product of three elements. -/
-theorem IsCrossedHom.map_mul_mul (a b c : H) :
-    F (a * b * c) = (χ a : R) * χ b * F c + ((χ a : R) * F b + F a) := by
-  rw [hF.map_mul, hF.map_mul, _root_.map_mul, Units.val_mul]
-
 /-- A crossed homomorphism vanishing at every entry vanishes on the `q ≠ 2` normal-form word
 `x₁^q (x₁, x₂)(x₃, x₄) ⋯`. -/
 theorem IsCrossedHom.map_demushkinWordNeTwo_eq_zero_of_forall_eq_zero (q n : ℕ)
@@ -218,9 +213,9 @@ theorem IsCrossedHom.map_demushkinWordNeTwo_eq_zero_of_forall_eq_zero (q n : ℕ
   rw [hF.map_demushkinWordNeTwo, Finset.sum_eq_zero fun i _ ↦
     hF.map_labuteComm_eq_zero_of_eq_zero (h _) (h _), mul_zero, h 0, mul_zero, add_zero]
 
-/-- A crossed homomorphism vanishing at every entry of the `q ≠ 2` normal-form word except
-`x_{2 i₀}` and `x_{2 i₀ + 1}` sees only that commutator factor and the `q`-th power of `x₁`
-(the first entry). -/
+/-- A crossed homomorphism vanishing at every entry `x j` of the `q ≠ 2` normal-form word except
+`x (2 i₀)` and `x (2 i₀ + 1)` (`0`-based) sees only the commutator factor
+`(x (2 i₀), x (2 i₀ + 1))` and the `q`-th power of `x 0`. -/
 theorem IsCrossedHom.map_demushkinWordNeTwo_of_forall_eq_zero_of_ne (q : ℕ)
     {n i₀ : ℕ} (hi₀ : i₀ < n / 2) {x : ℕ → H}
     (h : ∀ j, j ≠ 2 * i₀ → j ≠ 2 * i₀ + 1 → F (x j) = 0) :

@@ -45,6 +45,7 @@ generating tuple are what Labute's prescription property of a continuous charact
   trivial, `F` is additive.
 * `TauCeti.IsCrossedHom.map_commutatorElement`: for a character into a commutative ring,
   `F ⁅x, y⁆ = (χ x - 1) * F y - (χ y - 1) * F x`.
+* `TauCeti.IsCrossedHom.map_mul_mul`: the value on a product of three elements.
 
 ## References
 
@@ -204,6 +205,11 @@ theorem IsCrossedHom.map_commutatorElement (hF : IsCrossedHom χ F) (x y : H) :
   rw [h, hF.map_mul x y, hF.map_mul y x, _root_.map_commutatorElement,
     commutatorElement_eq_one_iff_mul_comm.2 (mul_comm (χ x) (χ y)), Units.val_one, one_mul] at h1
   linear_combination -h1
+
+/-- The value of a crossed homomorphism on a product of three elements. -/
+theorem IsCrossedHom.map_mul_mul (hF : IsCrossedHom χ F) (a b c : H) :
+    F (a * b * c) = (χ a : R) * χ b * F c + ((χ a : R) * F b + F a) := by
+  rw [hF.map_mul, hF.map_mul, _root_.map_mul, Units.val_mul]
 
 end CommRing
 

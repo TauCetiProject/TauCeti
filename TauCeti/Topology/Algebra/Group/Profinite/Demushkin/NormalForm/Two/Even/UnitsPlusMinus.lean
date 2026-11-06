@@ -12,6 +12,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Free.ElementaryAutomorphi
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.CrossedHom
 public import TauCeti.Topology.Algebra.Group.LowerCentralSeries.Graded.PadicModule
 public import TauCeti.NumberTheory.Padics.TwistedUnits
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacter
 
 /-!
 # Labute's normal form for the dyadic Demushkin groups of even rank with image `{±1} × U^(f)`
@@ -150,10 +151,11 @@ private theorem apply_freeProPGen_zero_eq_one (hn3 : 3 < n) : χ (freeProPGen 2 
     hD.map_demushkinWordNeTwo_eq_zero_of_forall_eq_zero _ _ fun j ↦ hv _ (by omega)] at h
   simp only [mul_zero, zero_add, add_zero] at h
   exact hD.eq_one_of_map_labuteComm_eq_zero_right (hv 0 (by omega))
-    (crossedHom_single_freeProPGen_self χ _ rfl) ((Units.mul_right_eq_zero _).1 h)
+    (crossedHom_single_freeProPGen_self χ _) ((Units.mul_right_eq_zero _).1 h)
 
-/-- A Kronecker crossed homomorphism `D_k`, `k ∈ {2 i₀ + 2, 2 i₀ + 3}` and `k ≠ 2`, kills the
-`i₀`-th commutator factor `(x_{2 i₀ + 3}, x_{2 i₀ + 4})` of the relator. -/
+/-- A Kronecker crossed homomorphism `D_k`, `k ∈ {2 i₀ + 2, 2 i₀ + 3}` and `k ≠ 2` (the `0`-based
+index of the generator `x_{k+1}`), kills the `i₀`-th commutator factor
+`(x_{2 i₀ + 3}, x_{2 i₀ + 4})` of the relator. -/
 private theorem crossedHom_single_labuteComm_eq_zero {i₀ : ℕ} (hi₀ : i₀ < (n - 2) / 2) (k : Fin n)
     (hk : (k : ℕ) = 2 * i₀ + 2 ∨ (k : ℕ) = 2 * i₀ + 3) (hk₂ : (k : ℕ) ≠ 2) :
     crossedHom χ (Pi.single k 1)
@@ -170,31 +172,32 @@ private theorem crossedHom_single_labuteComm_eq_zero {i₀ : ℕ} (hi₀ : i₀ 
     hv 2 fun h ↦ hk₂ h.symm] at h
   simpa [mul_eq_zero, Units.ne_zero] using h
 
-/-- Under the hypotheses of the character-values theorem, the character is trivial at `x_{2 i₀ + 2}`
-for every `i₀`: the Kronecker crossed homomorphism at its partner `x_{2 i₀ + 3}` reads it off. -/
+/-- Under the hypotheses of the character-values theorem, the character is trivial at `x_{2 i₀ + 3}`
+for every `i₀` (the generator `freeProPGen 2 n (2 i₀ + 2)`): the Kronecker crossed homomorphism at
+its partner `x_{2 i₀ + 4}` reads it off. -/
 private theorem apply_freeProPGen_eq_one_right {i₀ : ℕ} (hi₀ : i₀ < (n - 2) / 2) :
     χ (freeProPGen 2 n (2 * i₀ + 2)) = 1 :=
   (isCrossedHom_crossedHom χ
     (Pi.single (⟨2 * i₀ + 3, by omega⟩ : Fin n) 1)).eq_one_of_map_labuteComm_eq_zero_right
-    (crossedHom_single_freeProPGen_of_ne χ _ (by change 2 * i₀ + 2 ≠ 2 * i₀ + 3; omega))
-    (crossedHom_single_freeProPGen_self χ _ rfl)
+    (crossedHom_single_freeProPGen_of_ne χ _ (by simp only; omega))
+    (crossedHom_single_freeProPGen_self χ _)
     (crossedHom_single_labuteComm_eq_zero hkill hi₀ _ (Or.inr rfl)
-      (by change 2 * i₀ + 3 ≠ 2; omega))
+      (by simp only; omega))
 
 /-- Under the hypotheses of the character-values theorem, the character is trivial at
-`x_{2 i₀ + 3}` for every `i₀ ≥ 1`: the Kronecker crossed homomorphism at its partner `x_{2 i₀ + 2}`
-reads it off. -/
+`x_{2 i₀ + 4}` for every `i₀ ≥ 1` (the generator `freeProPGen 2 n (2 i₀ + 3)`): the Kronecker
+crossed homomorphism at its partner `x_{2 i₀ + 3}` reads it off. -/
 private theorem apply_freeProPGen_eq_one_left {i₀ : ℕ} (hi₀ : i₀ < (n - 2) / 2) (hi₁ : 1 ≤ i₀) :
     χ (freeProPGen 2 n (2 * i₀ + 3)) = 1 :=
   (isCrossedHom_crossedHom χ
     (Pi.single (⟨2 * i₀ + 2, by omega⟩ : Fin n) 1)).eq_one_of_map_labuteComm_eq_zero_left
-    (crossedHom_single_freeProPGen_self χ _ rfl)
-    (crossedHom_single_freeProPGen_of_ne χ _ (by change 2 * i₀ + 3 ≠ 2 * i₀ + 2; omega))
+    (crossedHom_single_freeProPGen_self χ _)
+    (crossedHom_single_freeProPGen_of_ne χ _ (by simp only; omega))
     (crossedHom_single_labuteComm_eq_zero hkill hi₀ _ (Or.inl rfl)
-      (by change 2 * i₀ + 2 ≠ 2; omega))
+      (by simp only; omega))
 
-/-- Under the hypotheses of the character-values theorem, the character is trivial at `x_j` for
-every `4 ≤ j < n`, when `n` is even. -/
+/-- Under the hypotheses of the character-values theorem, the character is trivial at
+`freeProPGen 2 n j` (the generator `x_{j+1}`) for every `4 ≤ j < n`, when `n` is even. -/
 private theorem apply_freeProPGen_eq_one_of_four_le (hn : Even n) {j : ℕ} (hj₄ : 4 ≤ j)
     (hjn : j < n) : χ (freeProPGen 2 n j) = 1 := by
   obtain ⟨m, hm⟩ := hn
@@ -213,13 +216,9 @@ private theorem apply_freeProPGen_one_mul_one_add (hn3 : 3 < n) (h0 : χ (freePr
   have hv : ∀ j : ℕ, j ≠ 0 → crossedHom χ (Pi.single (⟨0, by omega⟩ : Fin n) 1)
       (freeProPGen 2 n j) = 0 := fun j hj ↦ crossedHom_single_freeProPGen_of_ne χ _ hj
   have h₁ : crossedHom χ (Pi.single (⟨0, by omega⟩ : Fin n) 1) (freeProPGen 2 n 0) = 1 :=
-    crossedHom_single_freeProPGen_self χ _ rfl
-  have hχP : χ ((isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α)) = 1 := by
-    have e : χ ((isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α)) =
-        isProP_units_padicInt_two.padicPow (χ (freeProPGen 2 n 0)) (2 + α) :=
-      (isProP_freeProP 2 (Fin n)).map_padicPow isProP_units_padicInt_two
-        (χ : freeProP 2 (Fin n) →* ℤ_[2]ˣ) χ.continuous (freeProPGen 2 n 0) (2 + α)
-    rw [e, h0, IsProP.one_padicPow]
+    crossedHom_single_freeProPGen_self χ _
+  have hχP : χ ((isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α)) = 1 :=
+    (isProP_freeProP 2 (Fin n)).map_padicPow_eq_one_of_eq_one χ h0 (2 + α)
   have hDP : crossedHom χ (Pi.single (⟨0, by omega⟩ : Fin n) 1)
       ((isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α)) = 2 + α := by
     rw [hD.map_padicPow_of_eq_one hDc (isProP_freeProP 2 (Fin n)) h0, h₁, mul_one]
@@ -239,7 +238,7 @@ private theorem apply_freeProPGen_three_mul_one_sub (hn3 : 3 < n)
   have hv : ∀ j : ℕ, j ≠ 2 → crossedHom χ (Pi.single (⟨2, by omega⟩ : Fin n) 1)
       (freeProPGen 2 n j) = 0 := fun j hj ↦ crossedHom_single_freeProPGen_of_ne χ _ hj
   have h₁ : crossedHom χ (Pi.single (⟨2, by omega⟩ : Fin n) 1) (freeProPGen 2 n 2) = 1 :=
-    crossedHom_single_freeProPGen_self χ _ rfl
+    crossedHom_single_freeProPGen_self χ _
   have hc := hD.mul_mul_map_labuteComm (freeProPGen 2 n 2) (freeProPGen 2 n 3)
   rw [h2, Units.val_one, one_mul, sub_self, zero_mul, add_zero, h₁, mul_one] at hc
   have h := hkill _ (continuous_crossedHom χ _) hD
@@ -310,7 +309,7 @@ theorem range_eq_topologicalClosure_zpowers_sup_zpowers
 /-- **The symplectic transvection pair `x₂ ↦ x₂ x₄^d`, `x₃ ↦ x₃ x₁^{-d}`** turns a character `χ`
 which is trivial away from `x₂` and `x₄` into one taking the value `-1` at `x₂`, when
 `χ(x₄)^d = (-χ(x₂))⁻¹`; the value at `x₄` and the triviality at the other generators persist. -/
-theorem comp_symplecticTransvection_apply_freeProPGen (hn3 : 3 < n)
+private theorem apply_freeProPGen_of_forall_apply_eq_symplecticTransvection (hn3 : 3 < n)
     {χ χ₂ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ} {d : ℤ_[2]}
     (hχ₂ : ∀ y, χ₂ y = χ (symplecticTransvection hn3 d y))
     (hd : isProP_units_padicInt_two.padicPow (χ (freeProPGen 2 n 3)) d =
@@ -327,18 +326,15 @@ theorem comp_symplecticTransvection_apply_freeProPGen (hn3 : 3 < n)
       neg_one_mul, neg_neg]
   · rw [hχ₂, symplecticTransvection_freeProPGen_of_ne hn3 d 3 (by omega) (by omega)]
   · by_cases hj₂ : j = 2
-    · have e : χ ((isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (-d)) =
-          isProP_units_padicInt_two.padicPow (χ (freeProPGen 2 n 0)) (-d) :=
-        (isProP_freeProP 2 (Fin n)).map_padicPow isProP_units_padicInt_two
-          (χ : freeProP 2 (Fin n) →* ℤ_[2]ˣ) χ.continuous (freeProPGen 2 n 0) (-d)
-      rw [hj₂, hχ₂, symplecticTransvection_freeProPGen_two, map_mul, e, hv 0 (by omega) (by omega),
-        hv 2 (by omega) (by omega), IsProP.one_padicPow, mul_one]
+    · rw [hj₂, hχ₂, symplecticTransvection_freeProPGen_two, map_mul,
+        (isProP_freeProP 2 (Fin n)).map_padicPow_eq_one_of_eq_one χ (hv 0 (by omega) (by omega))
+          (-d), hv 2 (by omega) (by omega), mul_one]
     · rw [hχ₂, symplecticTransvection_freeProPGen_of_ne hn3 d j hj₁ hj₂]
       exact hv j hj₁ hj₃
 
 /-- The kernel of the exponent sum at `x₄` is the kernel of `χ²`, for a character `χ` with
 `χ(x₂) = -1`, trivial at the other generators but `x₄`, and with `χ(x₄)` of exact level `g`. -/
-theorem exponentSumKer_eq_ker_pow_two (hn3 : 3 < n) {g : ℕ} (hg : 2 ≤ g)
+private theorem exponentSumKer_eq_ker_pow_two (hn3 : 3 < n) {g : ℕ} (hg : 2 ≤ g)
     (χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ) (h₁ : χ (freeProPGen 2 n 1) = -1)
     (hv : ∀ j : ℕ, j ≠ 1 → j ≠ 3 → χ (freeProPGen 2 n j) = 1)
     (hmem : ∀ k, χ (freeProPGen 2 n 3) ∈ unitsPrincipal 2 k ↔ k ≤ g) :
@@ -360,9 +356,10 @@ theorem exponentSumKer_eq_ker_pow_two (hn3 : 3 < n) {g : ℕ} (hg : 2 ≤ g)
 
 /-! ### The graded classes of the normal-form words -/
 
-/-- **The relator of the `q = 2^g` normal form has the class of the `q = 2` word in `gr_1(F)`**:
-`x₁^{2+α} (x₁, x₂) x₃^{2^g} (x₃, x₄) ⋯` and `x₁² (x₁, x₂) x₃² (x₃, x₄) ⋯` have the same class
-modulo `λ₂(F)`, when `4 ∣ α` and `g ≥ 2`. -/
+/-- **The relator of the `q = 2^g` normal form has the class of the `q = 2` word in `gr_1(F)`**
+(`demushkinWordNeTwo 2 n`, which has no `x₃²` factor):
+`x₁^{2+α} (x₁, x₂) x₃^{2^g} (x₃, x₄) ⋯` and `x₁² (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` have the same
+class modulo `λ₂(F)`, when `4 ∣ α` and `g ≥ 2`. -/
 theorem gradedMk_padicPow_mul_labuteComm_mul_eq_gradedMk_demushkinWordNeTwo (hn3 : 3 < n)
     {α : ℤ_[2]} (hα : 4 ∣ α) {g : ℕ} (hg : 2 ≤ g) {r : freeProP 2 (Fin n)}
     (hr : r = (isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α) *
@@ -393,10 +390,10 @@ theorem gradedMk_padicPow_mul_labuteComm_mul_eq_gradedMk_demushkinWordNeTwo (hn3
   simp only [QuotientGroup.mk_mul, hPα, hT2, mul_one, one_mul]
 
 /-- **The exact even-rank normal form has the class of the transvected relator**: if a relator `r`
-has the class of the word `x₁² (x₁, x₂) x₃² (x₃, x₄) ⋯` in `gr_1(F)`, then the exact word
+has the class of the word `x₁² (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` in `gr_1(F)`, then the exact word
 `x₁² (x₁, x₂) x₃^{2^g} (x₃, x₄) ⋯` of `demushkinWordTwoEven` has the class of `τ⁻¹ r` for the
 symplectic transvection pair `τ`. -/
-theorem gradedMk_demushkinWordTwoEven_eq_gradedMk_symm (hn3 : 3 < n) (d : ℤ_[2]) {g : ℕ}
+private theorem gradedMk_demushkinWordTwoEven_eq_gradedMk_symm (hn3 : 3 < n) (d : ℤ_[2]) {g : ℕ}
     (hg : 2 ≤ g) {r : freeProP 2 (Fin n)} (hr₁ : r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
     (hr₂₁ : (symplecticTransvection hn3 d).symm r ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
     (h₀ : demushkinWordNeTwo 2 n (freeProPGen 2 n) ∈ pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1)
@@ -429,48 +426,20 @@ theorem gradedMk_demushkinWordTwoEven_eq_gradedMk_symm (hn3 : 3 < n) (d : ℤ_[2
   exact (gradedMk_demushkinWordTwoEven_eq_gradedMk_demushkinWordNeTwo (dvd_zero 2) hg
     (by omega) _).trans (hinj h).symm
 
-/-! ### The canonical character, read on the free group -/
-
-/-- **The canonical character of a one-relator Demushkin group, read on the free group**: for a
-relator `r ∈ Φ(F)` presenting a Demushkin group `G`, the character `χ` of `F` obtained by
-composing the canonical character of `G` with `F → G` has the same image, is trivial on `r`, and
-every continuous crossed homomorphism for `χ` kills `r`. -/
-theorem exists_continuousMonoidHom_range_eq_demushkinCharacter {r : freeProP 2 (Fin n)}
-    (hG : IsDemushkin 2 (presentedProP 2 (Fin n) {r}))
-    (hΦ : r ∈ proPFrattini 2 (freeProP 2 (Fin n))) :
-    ∃ χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ,
-      χ.toMonoidHom.range = (demushkinCharacter hG).toMonoidHom.range ∧
-      (∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ D → D r = 0) ∧
-      χ r = 1 := by
-  have hχ : ∀ g, ((demushkinCharacter hG).comp (presentedProP.mk 2 {r})) g =
-      demushkinCharacter hG (presentedProP.mk 2 {r} g) := fun g ↦ rfl
-  refine ⟨(demushkinCharacter hG).comp (presentedProP.mk 2 {r}), ?_, fun D hDc hD ↦ ?_, ?_⟩
-  · refine le_antisymm ?_ ?_
-    · rintro _ ⟨g, rfl⟩
-      exact ⟨presentedProP.mk 2 {r} g, (hχ g).symm⟩
-    · rintro _ ⟨y, rfl⟩
-      obtain ⟨g, rfl⟩ := presentedProP.mk_surjective 2 {r} y
-      exact ⟨g, hχ g⟩
-  · exact (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
-      (Set.singleton_subset_iff.2 hΦ) _).1 (hasPrescriptionProperty_demushkinCharacter hG) D hDc
-      hD _ rfl
-  · rw [hχ, presentedProP.mk_relator _ (Set.mem_singleton _), map_one]
-
 /-! ### The steps of Labute's Theorem 6 -/
 
 /-- **The values of the character at the marked generators**: let `χ` be a character of the free
 pro-`2` group on `n` generators with image `V^(f) = {±1} × U^(f)`, `f ≥ 2`, trivial away from the
 generators `x₂`, `x₄`, with `χ(x₂) (1 + α) = -1` and `χ(x₄) (1 - q) = 1`, `4 ∣ α` and
-`q ∈ {0} ∪ {2^g : g ≥ 2}`. Then `q = 2^f`, `χ(x₄)` lies in `U^(k)` exactly for `k ≤ f`, and
-`χ(x₄)^d = (-χ(x₂))⁻¹` for some `d ∈ ℤ₂`. -/
-theorem exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} (hf : 2 ≤ f)
+`q ∈ {0} ∪ {2^g : g ≥ 2}`. Then `q = 2^f` and `χ(x₄)^d = (-χ(x₂))⁻¹` for some `d ∈ ℤ₂`. -/
+private theorem eq_two_pow_and_exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} (hf : 2 ≤ f)
     {χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ} {α : ℤ_[2]} {q : ℕ} (hα : 4 ∣ α)
     (hq : q = 0 ∨ ∃ g, 2 ≤ g ∧ q = 2 ^ g)
     (hv : ∀ j : ℕ, j ≠ 1 → j ≠ 3 → χ (freeProPGen 2 n j) = 1)
     (h₁ : (χ (freeProPGen 2 n 1) : ℤ_[2]) * (1 + α) = -1)
     (h₃ : (χ (freeProPGen 2 n 3) : ℤ_[2]) * (1 - q) = 1)
     (hrange : χ.toMonoidHom.range = unitsPlusMinus f) :
-    q = 2 ^ f ∧ (∀ k, χ (freeProPGen 2 n 3) ∈ unitsPrincipal 2 k ↔ k ≤ f) ∧
+    q = 2 ^ f ∧
       ∃ d : ℤ_[2], isProP_units_padicInt_two.padicPow (χ (freeProPGen 2 n 3)) d =
         (-χ (freeProPGen 2 n 1))⁻¹ := by
   have hV := (range_eq_topologicalClosure_zpowers_sup_zpowers χ hv).symm.trans hrange
@@ -498,7 +467,7 @@ theorem exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} (hf : 2 ≤ f)
   have hmem₃ : ∀ k, χ (freeProPGen 2 n 3) ∈ unitsPrincipal 2 k ↔ k ≤ g := fun k ↦
     mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one h₃g
   obtain rfl := eq_of_topologicalClosure_zpowers_sup_zpowers_eq_unitsPlusMinus hf hg hV hnegf hmem₃
-  refine ⟨rfl, hmem₃, ?_⟩
+  refine ⟨rfl, ?_⟩
   -- `χ(x₄)` topologically generates `U^(f)`, so `(-χ(x₂))⁻¹ ∈ U^(f)` is a `2`-adic power of it.
   have hgen : (zpowers (χ (freeProPGen 2 n 3))).topologicalClosure = unitsPrincipal 2 g :=
     topologicalClosure_zpowers_eq_unitsPrincipal_of_val_mul_one_sub_pow_eq_one (by omega)
@@ -507,18 +476,17 @@ theorem exists_padicPow_eq_neg_inv_of_range_eq {f : ℕ} (hf : 2 ≤ f)
     ← zpowers_eq_closure, hgen]
   exact inv_mem hnegf
 
-/-- **The transvected relator is reached from the exact even-rank normal form**: let `χ` be a
-character of the free pro-`2` group with the marked values of the dyadic case (`χ(x₄)` of exact
-level `f`, `χ(x₄)^d = (-χ(x₂))⁻¹`, trivial elsewhere), such that every continuous crossed
-homomorphism for `χ` kills the relator `x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` of `Φ(F)`, which
-`χ` trivialises. Then a continuous automorphism of `F` carries this relator to
-`x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯`. -/
-theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_forall_isCrossedHom_eq_zero
+/-- **The exact even-rank relator is carried to the normal form
+`x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯`**: let `χ` be a character of the free pro-`2` group with the
+marked values of the dyadic case (`χ(x₄)` of exact level `f`, `χ(x₄)^d = (-χ(x₂))⁻¹`, trivial
+elsewhere), such that every continuous crossed homomorphism for `χ` kills the relator
+`x₁^{2+α} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯` of `Φ(F)`, which `χ` trivialises. Then a continuous
+automorphism of `F` carries this relator to `x₁² (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯`. -/
+private theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_isCrossedHom_eq_zero
     (hn : Even n) (hn3 : 3 < n) {f : ℕ} (hf : 2 ≤ f) {α : ℤ_[2]} (hα : 4 ∣ α)
     {χ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ} {d : ℤ_[2]}
     (hv : ∀ j : ℕ, j ≠ 1 → j ≠ 3 → χ (freeProPGen 2 n j) = 1)
     (h₃ : (χ (freeProPGen 2 n 3) : ℤ_[2]) * (1 - ((2 ^ f : ℕ) : ℤ_[2])) = 1)
-    (hmem₃ : ∀ k, χ (freeProPGen 2 n 3) ∈ unitsPrincipal 2 k ↔ k ≤ f)
     (hd : isProP_units_padicInt_two.padicPow (χ (freeProPGen 2 n 3)) d =
       (-χ (freeProPGen 2 n 1))⁻¹)
     {r : freeProP 2 (Fin n)}
@@ -530,12 +498,16 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_forall_isCros
     (hχr : χ r = 1) :
     ∃ e : freeProP 2 (Fin n) ≃ₜ* freeProP 2 (Fin n),
       e r = demushkinWordTwoEven 0 f n (freeProPGen 2 n) := by
+  have hmem₃ : ∀ k, χ (freeProPGen 2 n 3) ∈ unitsPrincipal 2 k ↔ k ≤ f := fun k ↦
+    mem_unitsPrincipal_iff_of_val_mul_one_sub_pow_eq_one (by push_cast at h₃ ⊢; exact h₃)
   -- Step 4: the symplectic transvection pair `x₂ ↦ x₂ x₄^d`, `x₃ ↦ x₃ x₁^{-d}` makes `χ(x₂) = -1`.
   obtain ⟨χ₂, hχ₂⟩ : ∃ χ₂ : freeProP 2 (Fin n) →ₜ* ℤ_[2]ˣ,
       ∀ y, χ₂ y = χ (symplecticTransvection hn3 d y) :=
     ⟨χ.comp (symplecticTransvection hn3 d : freeProP 2 (Fin n) →ₜ* freeProP 2 (Fin n)),
-      fun y ↦ rfl⟩
-  obtain ⟨hχ₂₁, hχ₂₃, hχ₂ne⟩ := comp_symplecticTransvection_apply_freeProPGen hn3 hχ₂ hd hv
+      fun y ↦ by
+        rw [ContinuousMonoidHom.coe_comp, Function.comp_apply, ContinuousMonoidHom.coe_coe]⟩
+  obtain ⟨hχ₂₁, hχ₂₃, hχ₂ne⟩ :=
+    apply_freeProPGen_of_forall_apply_eq_symplecticTransvection hn3 hχ₂ hd hv
   -- The relator `r₂` in the new basis: every crossed homomorphism for `χ₂` kills it.
   have hr₂₁ : (symplecticTransvection hn3 d).symm r ∈
       pLowerCentralSeries 2 (freeProP 2 (Fin n)) 1 :=
@@ -608,17 +580,24 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_range_eq
   -- character, which is read on `F` as a character `χ₁` killed by the crossed homomorphisms.
   have hG₁ : IsDemushkin 2 (presentedProP 2 (Fin n) {rex}) :=
     IsDemushkin.of_equiv 2 hG (presentedProP.congrSingleton e₀ he₀)
-  obtain ⟨χ₁, hrange, hkill₁, hχ₁rex⟩ := exists_continuousMonoidHom_range_eq_demushkinCharacter hG₁
-    ((pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two).le hrex₁)
-  rw [range_demushkinCharacter_of_equiv hG hG₁ (presentedProP.congrSingleton e₀ he₀), hA] at hrange
+  have hrex₁Φ : rex ∈ proPFrattini 2 (freeProP 2 (Fin n)) :=
+    (pLowerCentralSeries_one_eq_proPFrattini Nat.prime_two).le hrex₁
+  set χ₁ := demushkinRelatorCharacter hG₁
+  have hrange : χ₁.toMonoidHom.range = unitsPlusMinus f := by
+    rw [range_demushkinRelatorCharacter, range_demushkinCharacter_of_equiv hG hG₁
+      (presentedProP.congrSingleton e₀ he₀), hA]
+  have hkill₁ : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ₁ D → D rex = 0 :=
+    fun D hDc hD ↦ demushkinRelatorCharacter_isCrossedHom_eq_zero hG₁ hrex₁Φ hDc hD
+  have hχ₁rex : χ₁ rex = 1 := demushkinRelatorCharacter_mem_ker hG₁
   -- Step 3: the values of `χ₁` on the generators and the level of its marked values.
   obtain ⟨hv, h₁, h₃⟩ :=
     apply_eq_of_forall_isCrossedHom_eq_zero_padicPow_mul_labuteComm_mul hn hn3 χ₁ α q hkill₁
-  obtain ⟨rfl, hmem₃, d, hd⟩ := exists_padicPow_eq_neg_inv_of_range_eq hf hα hq' hv h₁ h₃ hrange
+  obtain ⟨rfl, d, hd⟩ :=
+    eq_two_pow_and_exists_padicPow_eq_neg_inv_of_range_eq hf hα hq' hv h₁ h₃ hrange
   -- Steps 4 and 5: the transvection pair and the successive approximation.
   obtain ⟨e₃, he₃⟩ :=
-    exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_forall_isCrossedHom_eq_zero hn hn3
-      hf hα hv h₃ hmem₃ hd hrex hrex₁ hkill₁ hχ₁rex
+    exists_continuousMulEquiv_apply_eq_demushkinWordTwoEven_of_isCrossedHom_eq_zero hn hn3
+      hf hα hv h₃ hd hrex hrex₁ hkill₁ hχ₁rex
   exact ⟨e₀.trans e₃, by rw [ContinuousMulEquiv.trans_apply, he₀]; exact he₃⟩
 
 /-- **Labute's normal form for a one-relator dyadic Demushkin group of even rank with image

@@ -10,6 +10,7 @@ public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Character.Basic
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Equiv
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.Character
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.Prescription.CharacterImage
+import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.Labute.RelatorCharacter
 
 /-!
 # Labute's normal form for the dyadic Demushkin groups of even rank with twisted image
@@ -158,9 +159,9 @@ theorem exists_continuousMulEquiv_apply_eq_demushkinWordNeTwo_of_range_eq
   have hχ₁A : ∀ g, χ₁ g ∈ (zpowers w).topologicalClosure := fun g ↦ hA₁ ▸ ⟨_, rfl⟩
   have hkill : ∀ D : freeProP 2 (Fin n) → ℤ_[2], Continuous D → IsCrossedHom χ₁ D →
       D (e₁ r) = 0 := fun D hDc hD ↦
-    (presentedProP.hasPrescriptionProperty_iff_forall_isCrossedHom_eq_zero
-      (Set.singleton_subset_iff.2 hr₁Φ) _).1 (hasPrescriptionProperty_demushkinCharacter hG₁) D hDc
-      hD _ rfl
+    demushkinRelatorCharacter_isCrossedHom_eq_zero hG₁ hr₁Φ hDc
+      (by rwa [show ⇑(demushkinRelatorCharacter hG₁) = ⇑χ₁ from
+        funext fun g ↦ demushkinRelatorCharacter_apply hG₁ g])
   -- Step 2: the values of `χ₁` on the generators modulo `4`.
   have hU2 : ∀ j, j ≠ ⟨1, hn1⟩ → χ₁ (of j) ∈ unitsPrincipal 2 2 := fun j hj ↦
     apply_mem_unitsPrincipal_two_of_crossedHom_single_eq_zero hn hn1 hq ⟨e₁ r, hr₁₁⟩ hclass
