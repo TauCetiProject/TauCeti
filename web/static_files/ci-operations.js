@@ -3,7 +3,8 @@
   "use strict";
   var root = document.querySelector("[data-operations]");
   if (!root) return;
-  var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, polling = false, delay = 15000;
+  var pollInterval = 10000;
+  var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, polling = false, delay = pollInterval;
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
   var selectedHistoryHost, hostHistories = new Map(), historyGeneration = 0, historyMetric = "busy_slots";
   var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", repoFilter = "all", workflowFilter = "all", platformFilter = "all", hostFilter = "all", ageFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
@@ -483,7 +484,7 @@
         etag = changes.filter(Boolean).length === Object.values(next.domains).filter(function (d) { return d.url; }).length ? response.headers.get("etag") : null;
         if (route().tab === "history" && data.host_history && data.host_history.hosts.length) await loadHostHistory(selectedHistoryHost || data.host_history.hosts[0].machine_id);
       }
-      disconnected = false; delay = 15000; render();
+      disconnected = false; delay = pollInterval; render();
       if (data.queue && route().tab === "queue" && !detail) await navigate();
     } catch (_) { disconnected = true; delay = Math.min(60000, delay * 2); render(); }
     polling = false;
