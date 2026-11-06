@@ -111,7 +111,7 @@ theorem of_pow_eq_of_gcd_ord_eq_one {y : F} {n : ℕ} {u : RatFunc k}
     (hu : u ≠ 0) (hdvd : ∀ P ∉ Place.zeroOneInfty k, (n : ℤ) ∣ P.ord u)
     (P : Place k (RatFunc k)) (hP : Int.gcd n (P.ord u) = 1) : IsAlgebraicBelyiPair k F :=
   of_pow_eq (isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (IsFunctionField.ratFunc k)
-    isIntegrallyClosedIn_ratFunc hgen hy (Nat.cast_ne_zero.mpr hn) hu P hP) hgen hy hn hu hdvd
+    isIntegrallyClosedIn_ratFunc hgen hy (Nat.cast_ne_zero.mpr hn) P hP) hgen hy hn hu hdvd
 
 /-- **The superelliptic Belyi pairs** `y ^ n = c t ^ a (t - 1) ^ b`: if `F = k(t)(y)` with
 `y ^ n = c t ^ a (t - 1) ^ b` for a nonzero `c ∈ k`, and `n` is coprime to one of `a`, `b` and

@@ -229,7 +229,7 @@ theorem genus_formula_of_pow_eq_of_isPrimitiveRoot [Algebra.IsSeparable k k']
   have hn : (n : k) ≠ 0 := by rwa [← (algebraMap k F).injective.ne_iff, map_natCast, map_zero]
   have hfin := finrank_eq_of_pow_eq_of_adjoin_eq_top hζ hnd hy hgen
   have : FiniteDimensional F F' := Module.finite_of_finrank_pos (hfin.symm ▸ NeZero.pos n)
-  have : Algebra.IsSeparable F F' := isSeparable_of_pow_eq_of_adjoin_eq_top hnF hu hy hgen
+  have : Algebra.IsSeparable F F' := isSeparable_of_pow_eq_of_adjoin_eq_top hnF hy hgen
   exact genus_formula_of_pow_eq hF hgen hy hn hu S hS hF' hex hex' hfin
 
 end Kummer
@@ -244,9 +244,9 @@ variable {y : F'} {n : ℕ} {u : F}
 
 omit [Algebra k F'] [IsScalarTower k F F'] in
 /-- A radical extension `F(y) / F`, `y ^ n = u`, with a place at which `n` is coprime to the order
-of `u`, has degree `n` and is finite and separable when `n` is invertible in `k` and `u ≠ 0`. -/
+of `u`, has degree `n` and is finite and separable when `n` is invertible in `k`. -/
 private theorem finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one (hgen : F⟮y⟯ = ⊤)
-    (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (hu : u ≠ 0) (P : Place k F)
+    (hy : y ^ n = algebraMap F F' u) (hn : (n : k) ≠ 0) (P : Place k F)
     (hP : Int.gcd n (P.ord u) = 1) :
     Module.finrank F F' = n ∧ FiniteDimensional F F' ∧ Algebra.IsSeparable F F' := by
   have hn0 : n ≠ 0 := by
@@ -258,18 +258,18 @@ private theorem finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one (hgen : F
   have hnF : (n : F) ≠ 0 := by
     rwa [← map_natCast (algebraMap k F), ne_eq, map_eq_zero]
   exact ⟨hfin, Module.finite_of_finrank_pos (hfin ▸ Nat.pos_of_ne_zero hn0),
-    isSeparable_of_pow_eq_of_adjoin_eq_top hnF hu hy hgen⟩
+    isSeparable_of_pow_eq_of_adjoin_eq_top hnF hy hgen⟩
 
 /-- **A Kummer extension with a place of coprime order acquires no new constants** (Stichtenoth,
-Corollary 3.7.4): if `F' = F(y)` with `y ^ n = u` for a nonzero `u ∈ F`, `n` is invertible in
+Corollary 3.7.4): if `F' = F(y)` with `y ^ n = u` for some `u ∈ F`, `n` is invertible in
 the exact constant field `k` of `F`, and `gcd(n, ord_P u) = 1` at some place `P` of `F`, then `k`
 is also the exact constant field of `F'`. -/
 theorem isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (hgen : F⟮y⟯ = ⊤) (hy : y ^ n = algebraMap F F' u)
-    (hn : (n : k) ≠ 0) (hu : u ≠ 0) (P : Place k F) (hP : Int.gcd n (P.ord u) = 1) :
+    (hn : (n : k) ≠ 0) (P : Place k F) (hP : Int.gcd n (P.ord u) = 1) :
     IsIntegrallyClosedIn k F' := by
   obtain ⟨hfin, _, _⟩ :=
-    finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one hgen hy hn hu P hP
+    finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one hgen hy hn P hP
   obtain ⟨P', hP'⟩ :=
     Place.restrict_surjective_of_finiteDimensional (k' := k) (F' := F') hF hF.finite_extension P
   refine isIntegrallyClosedIn_of_isTotallyRamified (F := F) hex (P' := P') ?_
@@ -293,8 +293,8 @@ theorem two_mul_genus_sub_two_eq_of_pow_eq_of_gcd_ord_eq_one (hF : IsFunctionFie
     2 * (genus k F' : ℤ) - 2 =
       n * (2 * genus k F - 2) + ∑ Q ∈ S, ((n : ℤ) - Int.gcd n (Q.ord u)) * Q.degree := by
   obtain ⟨hfin, _, _⟩ :=
-    finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one hgen hy hn hu P hP
-  have hex' := isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one hF hex hgen hy hn hu P hP
+    finrank_eq_and_isSeparable_of_pow_eq_of_gcd_ord_eq_one hgen hy hn P hP
+  have hex' := isIntegrallyClosedIn_of_pow_eq_of_gcd_ord_eq_one hF hex hgen hy hn P hP
   simpa only [Module.finrank_self, Nat.cast_one, one_mul] using
     genus_formula_of_pow_eq (k' := k) hF hgen hy hn hu S hS hF.finite_extension hex hex' hfin
 
