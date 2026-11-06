@@ -72,17 +72,16 @@ theorem sl2BlockSL_lower_transvection (i : Fin 4) (t : R) :
     coe_rootSubgroupPoints_inr, loweringMatrix_def, toAdd_ofAdd]
 
 /-- The diagonal block action is the numbered simple-coroot point over any commutative ring. -/
+@[simp high] -- Prefer the carrier equation to the generic weight-table diagonal equation.
 theorem sl2BlockSL_diag2nUnit (i : Fin 4) (u : Rˣ) :
     weightTable.sl2BlockSL i (Matrix.SpecialLinearGroup.diag2nUnit
       (by decide : (0 : Fin 2) ≠ 1) u) =
         (weightTorusPoints R (Pi.mulSingle i u) : GL (Fin 24) R) := by
-  apply Units.ext
-  rw [weightTable.coe_sl2BlockSL, Matrix.SpecialLinearGroup.diag2nUnit_coe,
-    weightTable.sl2BlockMatrix_diagonal_unit, coe_weightTorusPoints,
-    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply, diagGL_coe]
+  rw [weightTable.sl2BlockSL_diag2nUnit, coe_weightTorusPoints,
+    UniversalEnvelopingAlgebra.kostantTorusMatrix_apply]
   congr 1
   funext a
-  simp [torusCharacter_mulSingle, weightTable_weight]
+  rw [torusCharacter_mulSingle, weightTable_weight]
 
 section FieldContainment
 
