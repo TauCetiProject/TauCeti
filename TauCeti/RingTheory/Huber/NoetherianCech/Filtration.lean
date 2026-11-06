@@ -37,20 +37,18 @@ variable {B : Type*} [CommRing B] [TopologicalSpace B] [IsTopologicalRing B]
 
 private theorem map_erase_faceIdeal_pow_le [DecidableEq ι]
     (p : ℕ) (S : Finset ι) (a : S) (i : ℕ) :
-    let R := Localization.Away (∏ j ∈ S.erase a.1, f j)
-    let T := Localization.Away (∏ j ∈ S, f j)
-    let φ : R →+* T := IsLocalization.Away.lift _
-      (IsLocalization.Away.isUnit_of_dvd _ ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩)
     letI := faceTopology f P hf p (S.erase a.1)
     letI := faceTopology f P hf (p + 1) S
-    ∀ hφ : ∀ r ∈ (facePair f P hf p (S.erase a.1)).ringOfDefinition,
-      φ r ∈ (facePair f P hf (p + 1) S).ringOfDefinition,
-      ((facePair f P hf p (S.erase a.1)).idealOfDefinition ^ i).map
-        (φ.restrict _ _ hφ) ≤ (facePair f P hf (p + 1) S).idealOfDefinition ^ i := by
-  intro R T φ hφ
+    ((facePair f P hf p (S.erase a.1)).idealOfDefinition ^ i).map
+      ((eraseRingHom f S a).restrict _ _
+        fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr) ≤
+      (facePair f P hf (p + 1) S).idealOfDefinition ^ i := by
+  let R := Localization.Away (∏ j ∈ S.erase a.1, f j)
+  let T := Localization.Away (∏ j ∈ S, f j)
   let _ := faceTopology f P hf p (S.erase a.1)
   let _ := faceTopology f P hf (p + 1) S
-  let ψ := φ.restrict _ _ hφ
+  let ψ := (eraseRingHom f S a).restrict _ _
+    (fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr)
   have hI : (facePair f P hf p (S.erase a.1)).idealOfDefinition.map ψ ≤
       (facePair f P hf (p + 1) S).idealOfDefinition := by
     refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_
@@ -65,7 +63,8 @@ private theorem map_erase_faceIdeal_pow_le [DecidableEq ι]
     obtain ⟨s, hs, heq⟩ := (P.mem_locIdealImage_iff _ _ T 1).mp h
     have he : s = ⟨ψ r, by
         simpa only [facePair_ringOfDefinition] using (ψ r).property⟩ :=
-      Subtype.val_injective heq
+      Subtype.val_injective (by
+        simpa only [ψ, RingHom.coe_restrict_apply, eraseRingHom_eq_awayLift] using heq)
     simpa only [pow_one, he] using hs
   rw [Ideal.map_pow]
   exact pow_le_pow_left' hI i
@@ -80,33 +79,28 @@ theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
   let R := Localization.Away (∏ j ∈ S.erase a.1, f j)
   let T := Localization.Away (∏ j ∈ S, f j)
   let Q := LocalizedModule (.powers (∏ j ∈ S, f j)) M
-  let φ : R →+* T := IsLocalization.Away.lift _
-    (IsLocalization.Away.isUnit_of_dvd _ ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩)
+  let φ : R →+* T := eraseRingHom f S a
   let _ := faceTopology f P hf p (S.erase a.1)
   let _ := faceTopology f P hf (p + 1) S
   let D := (facePair f P hf p (S.erase a.1)).ringOfDefinition
   let E := (facePair f P hf (p + 1) S).ringOfDefinition
-  have hφ : ∀ r ∈ D, φ r ∈ E := by
-    intro r hr
-    simp only [D, E, facePair_ringOfDefinition] at hr ⊢
-    exact P.awayLift_mem_locSubring _ _ R _ _ T (f a.1)
-      (Finset.prod_erase_mul S f a.2).symm (fun _ ht ↦ mul_mem_numerators f ht a.1) hr
+  have hφ : ∀ r ∈ D, φ r ∈ E :=
+    fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr
   let ψ : D →+* E := φ.restrict D E hφ
   have hψ (r : D) : (ψ r : T) = φ r := rfl
-  have hI r hr := map_erase_faceIdeal_pow_le f P hf p S a i hφ
+  -- Restriction preserves the ideal power acting on the lattice.
+  have hI r hr := map_erase_faceIdeal_pow_le f P hf p S a i
     (Ideal.mem_map_of_mem ψ (x := r) hr)
   let _ : Module R Q := Module.compHom Q φ
-  have : IsScalarTower B R Q := IsScalarTower.of_algebraMap_smul fun b x ↦ by
-    -- The restricted action is defined by the canonical localization homomorphism.
-    change φ (algebraMap B R b) • x = b • x
-    simp only [φ, IsLocalization.Away.lift_eq]
-    exact IsScalarTower.algebraMap_smul T b x
+  have : IsScalarTower B R Q := isScalarTower_compHom_eraseRingHom f M S a
   let u := (cechLocalizationRestriction M f (S.erase_subset a.1)).extendScalarsOfIsLocalization
     (.powers (∏ j ∈ S.erase a.1, f j)) R
   have hu (r : D) (y : LocalizedModule (.powers (∏ j ∈ S.erase a.1, f j)) M) :
       u (r • y) = (ψ r : T) • u y := by
     rw [Subring.smul_def, hψ]
     exact u.map_smul (r : R) y
+  -- It also preserves the lattice: generators map to the same localized generators,
+  -- and scalar multiplication is transported along the map of rings of definition.
   have hspan : ∀ y ∈ Submodule.span D (mkLinearMap _ M '' N),
       u y ∈ Submodule.span E (mkLinearMap _ M '' N) := by
     intro y hy
@@ -119,6 +113,7 @@ theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
     | smul r y _ hy =>
       rw [hu]
       exact Submodule.smul_mem _ (ψ r) hy
+  -- Combine lattice preservation with ideal-power preservation on each simple product.
   rw [mem_faceFiltration] at hx ⊢
   refine Submodule.smul_induction_on hx (fun r hr y hy ↦ ?_) (fun y z hy hz ↦ ?_)
   · rw [← LinearMap.extendScalarsOfIsLocalization_apply'

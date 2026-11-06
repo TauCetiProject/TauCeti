@@ -73,6 +73,32 @@ namespace TauCeti.Huber.NoetherianCech
 
 variable {B : Type*} [CommRing B] {ι : Type*} (f : ι → B)
 
+/-- The localization homomorphism from a face with one vertex deleted to the full face. -/
+noncomputable def eraseRingHom [DecidableEq ι] (S : Finset ι) (a : S) :
+    Localization.Away (∏ i ∈ S.erase a.1, f i) →+* Localization.Away (∏ i ∈ S, f i) :=
+  IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
+    ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩)
+
+/-- The deleted-face homomorphism is the canonical lift between the two localizations. -/
+theorem eraseRingHom_eq_awayLift [DecidableEq ι] (S : Finset ι) (a : S) :
+    eraseRingHom f S a = IsLocalization.Away.lift _ (IsLocalization.Away.isUnit_of_dvd _
+      ⟨f a.1, (Finset.prod_erase_mul S f a.2).symm⟩) :=
+  (rfl)
+
+/-- Restricting the localized module action along `eraseRingHom` respects the original
+coefficient-ring action. -/
+theorem isScalarTower_compHom_eraseRingHom [DecidableEq ι]
+    (M : Type*) [AddCommGroup M] [Module B M] (S : Finset ι) (a : S) :
+    letI := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M) (eraseRingHom f S a)
+    IsScalarTower B (Localization.Away (∏ i ∈ S.erase a.1, f i))
+      (LocalizedModule (.powers (∏ i ∈ S, f i)) M) := by
+  let _ := Module.compHom (LocalizedModule (.powers (∏ i ∈ S, f i)) M) (eraseRingHom f S a)
+  refine IsScalarTower.of_algebraMap_smul fun b x ↦ ?_
+  -- The restricted action is defined by the canonical localization homomorphism.
+  change eraseRingHom f S a (algebraMap B _ b) • x = b • x
+  simp only [eraseRingHom, IsLocalization.Away.lift_eq]
+  exact IsScalarTower.algebraMap_smul (Localization.Away (∏ i ∈ S, f i)) b x
+
 /-! ### The numerators of the faces -/
 
 /-- The numerators `F_p = {∏_k f (j k) | j : Fin (p + 1) → ι}` of the rational subset
@@ -159,6 +185,20 @@ theorem mem_facePair_idealOfDefinition (hf : Ideal.span (Set.range f) = ⊤) (p 
         P.locSubring (numerators f p) (∏ i ∈ S, f i) (Localization.Away (∏ i ∈ S, f i))) ∈
         P.locIdeal (numerators f p) _ _ :=
   P.mem_localization_idealOfDefinition _ _ _ _
+
+/-- The deleted-face localization homomorphism preserves the rings of definition. -/
+theorem eraseRingHom_mem_ringOfDefinition (hf : Ideal.span (Set.range f) = ⊤)
+    [DecidableEq ι] (p : ℕ) (S : Finset ι) (a : S) :
+    letI := faceTopology f P hf p (S.erase a.1)
+    letI := faceTopology f P hf (p + 1) S
+    ∀ {r}, r ∈ (facePair f P hf p (S.erase a.1)).ringOfDefinition →
+      eraseRingHom f S a r ∈ (facePair f P hf (p + 1) S).ringOfDefinition := by
+  let _ := faceTopology f P hf p (S.erase a.1)
+  let _ := faceTopology f P hf (p + 1) S
+  intro r hr
+  simp only [facePair_ringOfDefinition] at hr ⊢
+  exact P.awayLift_mem_locSubring _ _ _ _ _ _ (f a.1)
+    (Finset.prod_erase_mul S f a.2).symm (fun _ ht ↦ mul_mem_numerators f ht a.1) hr
 
 /-! ### The topology of the terms -/
 
