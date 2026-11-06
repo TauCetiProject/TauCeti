@@ -349,6 +349,35 @@ theorem realPeriod_baseChange_variableChange {R : Type*} [CommRing R] [Algebra R
 
 /-! ### Substitutions -/
 
+/-- The pointwise identity behind the substitution formula: if `r` has derivative `c s(x)` at `x`
+with `s(x) ≠ 0`, `Ψ₂Sq(x) > 0` and `Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)`, then
+`|c| / √Ψ₂Sq(x) = |r'(x)| / √Ψ₂Sq'(r(x))`. -/
+private theorem ofReal_abs_mul_inv_sqrt_eq_normDet_fderiv_mul {W' : WeierstrassCurve ℝ}
+    {r : ℝ → ℝ} {c sx x : ℝ} (hd : HasDerivAt r (c * sx) x) (hx : 0 < W.Ψ₂Sq.eval x)
+    (hsx : sx ≠ 0) (hΨ : W'.Ψ₂Sq.eval (r x) = sx ^ 2 * W.Ψ₂Sq.eval x) :
+    ENNReal.ofReal |c| * ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ =
+      ENNReal.ofReal (fderiv ℝ r x).normDet *
+        ENNReal.ofReal (√(W'.Ψ₂Sq.eval (r x)))⁻¹ := by
+  have hnormDet : (fderiv ℝ r x).normDet = |c * sx| := by
+    rw [hd.hasFDerivAt.fderiv, LinearMap.normDet_eq_norm_apply_one]
+    simp
+  have hsx' : 0 < |sx| := abs_pos.mpr hsx
+  have hΨx : 0 < √(W.Ψ₂Sq.eval x) := Real.sqrt_pos.mpr hx
+  rw [hnormDet, hΨ, ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (abs_nonneg _),
+    Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, abs_mul]
+  congr 1
+  field_simp
+
+/-- A function of the form `n(y) / √Ψ₂Sq(y)` (with `1 / 0 = 0`, as an extended nonnegative real)
+is supported on the set where `Ψ₂Sq(y) > 0`. -/
+private theorem support_mul_ofReal_inv_sqrt_subset (W' : WeierstrassCurve ℝ) (n : ℝ → ℕ∞) :
+    (Function.support fun y ↦ (n y : ℝ≥0∞) * ENNReal.ofReal (√(W'.Ψ₂Sq.eval y))⁻¹) ⊆
+      {y | 0 < W'.Ψ₂Sq.eval y} := by
+  intro y hy
+  by_contra h
+  simp only [mem_ofPred_eq, not_lt] at h
+  simp [Real.sqrt_eq_zero'.mpr h] at hy
+
 /-- **The real period integral under a substitution `x' = r(x)`, counting fibres.** Suppose that on
 the set where `Ψ₂Sq(x) > 0`, away from a countable set `Z`, the function `r` has derivative
 `r'(x) = c s(x)` with `c ≠ 0` and `s(x) ≠ 0`, and `Ψ₂Sq'(r(x)) = s(x)² Ψ₂Sq(x)`, where `Ψ₂Sq'` is
@@ -377,20 +406,12 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : Weierstr
   have hr₀ : Measurable r₀ := hrc.measurable_piecewise continuousOn_const hSm
   have hr₀S (x : ℝ) (hx : x ∈ S) : r₀ x = r x := piecewise_eq_of_mem _ _ _ hx
   have hg : Measurable g := (W'.Ψ₂Sq.continuous.measurable.sqrt.inv).ennreal_ofReal
-  have hnormDet (x : ℝ) (hx : x ∈ S) : (fderiv ℝ r x).normDet = |c * s x| := by
-    rw [(hd x hx).hasFDerivAt.fderiv, LinearMap.normDet_eq_norm_apply_one]
-    simp
   -- on `S`, `|c| / √Ψ₂Sq(x) = |r'(x)| / √Ψ₂Sq'(r(x))`
   have hpt (x : ℝ) (hx : x ∈ S) : ENNReal.ofReal |c| * ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ =
       ENNReal.ofReal (fderiv ℝ r x).normDet * g (r₀ x) := by
-    have hsx : 0 < |s x| := abs_pos.mpr (hs x hx.1 hx.2)
-    have hΨx : 0 < √(W.Ψ₂Sq.eval x) := Real.sqrt_pos.mpr hx.1
-    rw [hnormDet x hx, hr₀S x hx, g_def]
-    dsimp only
-    rw [hΨ x hx.1 hx.2, ← ENNReal.ofReal_mul (abs_nonneg _), ← ENNReal.ofReal_mul (abs_nonneg _),
-      Real.sqrt_mul (sq_nonneg _), Real.sqrt_sq_eq_abs, abs_mul]
-    congr 1
-    field_simp
+    rw [hr₀S x hx, g_def]
+    exact ofReal_abs_mul_inv_sqrt_eq_normDet_fderiv_mul W (hd x hx) hx.1 (hs x hx.1 hx.2)
+      (hΨ x hx.1 hx.2)
   -- the area formula on `S`, where the derivative of `r` is injective
   have harea := TauCeti.lintegral_normDet_fderiv_mul_eq_lintegral_tsum_of_injective_fderiv
     hSm (fun x hx ↦ (hd x hx).differentiableAt) (fun x hx ↦ ?_) (g := fun x ↦ g (r₀ x))
@@ -407,12 +428,6 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : Weierstr
     ext x
     simp only [S, mem_inter_iff, mem_sdiff, mem_preimage, mem_singleton_iff]
     exact ⟨fun h ↦ ⟨h.1.1, h.2⟩, fun h ↦ ⟨⟨h.1, fun hxZ ↦ hy ⟨x, hxZ, h.2⟩⟩, h.2⟩⟩
-  have hsupp : (Function.support fun y ↦ ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y) ⊆
-      {y | 0 < W'.Ψ₂Sq.eval y} := by
-    intro y hy
-    by_contra h
-    simp only [mem_ofPred_eq, not_lt] at h
-    simp [g, Real.sqrt_eq_zero'.mpr h] at hy
   calc ENNReal.ofReal |c| * W.realPeriodLIntegral
       = ∫⁻ x in S, ENNReal.ofReal |c| * ENNReal.ofReal (√(W.Ψ₂Sq.eval x))⁻¹ := by
         rw [realPeriodLIntegral_def, ← lintegral_const_mul' _ _ ENNReal.ofReal_ne_top,
@@ -426,7 +441,8 @@ theorem ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard {W' : Weierstr
         exact tsum_congr fun x ↦ by rw [hr₀S x x.2.1, x.2.2]
     _ = ∫⁻ y, ((U ∩ r ⁻¹' {y}).encard : ℝ≥0∞) * g y :=
         lintegral_congr_ae (hfib.mono fun y hy ↦ by dsimp only; rw [hy])
-    _ = _ := (setLIntegral_eq_of_support_subset hsupp).symm
+    _ = _ := (setLIntegral_eq_of_support_subset
+        (support_mul_ofReal_inv_sqrt_subset W' fun y ↦ (U ∩ r ⁻¹' {y}).encard)).symm
 
 /-- **The real period integral under a substitution with constant fibre count.** Under the
 hypotheses of `WeierstrassCurve.ofReal_abs_mul_realPeriodLIntegral_eq_setLIntegral_encard`, if
