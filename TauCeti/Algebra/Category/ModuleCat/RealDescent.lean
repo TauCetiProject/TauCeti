@@ -64,10 +64,12 @@ structure Hom (V W : ConjugateModuleCat.{u}) where
   /-- Compatibility with conjugation. -/
   commutes : ∀ x, hom (V.conj x) = W.conj (hom x)
 
+attribute [simp] Hom.commutes
+
 instance : Category ConjugateModuleCat.{u} where
   Hom := Hom
   id V := ⟨LinearMap.id, fun _ => rfl⟩
-  comp f g := ⟨g.hom.comp f.hom, fun x => by simp [f.commutes, g.commutes]⟩
+  comp f g := ⟨g.hom.comp f.hom, fun x => by simp⟩
 
 @[ext]
 theorem hom_ext {V W : ConjugateModuleCat} {f g : V ⟶ W}
@@ -81,15 +83,33 @@ theorem hom_id (V : ConjugateModuleCat) : (𝟙 V : V ⟶ V).hom = LinearMap.id 
 theorem hom_comp {V W Z : ConjugateModuleCat} (f : V ⟶ W) (g : W ⟶ Z) :
     (f ≫ g).hom = g.hom.comp f.hom := (rfl)
 
+/-- A complex-linear equivalence preserving conjugation gives an isomorphism. -/
+noncomputable def isoMk {V W : ConjugateModuleCat.{u}} (e : V ≃ₗ[ℂ] W)
+    (he : ∀ x, e (V.conj x) = W.conj (e x)) : V ≅ W where
+  hom := ⟨e.toLinearMap, he⟩
+  inv := ⟨e.symm.toLinearMap, fun x => e.injective (by
+    simp only [LinearEquiv.coe_coe]
+    rw [he, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply])⟩
+  hom_inv_id := by ext x; exact e.symm_apply_apply x
+  inv_hom_id := by ext x; exact e.apply_symm_apply x
+
+@[simp]
+theorem isoMk_hom_hom {V W : ConjugateModuleCat.{u}} (e : V ≃ₗ[ℂ] W)
+    (he : ∀ x, e (V.conj x) = W.conj (e x)) :
+    (isoMk e he).hom.hom = e.toLinearMap := (rfl)
+
+@[simp]
+theorem isoMk_inv_hom {V W : ConjugateModuleCat.{u}} (e : V ≃ₗ[ℂ] W)
+    (he : ∀ x, e (V.conj x) = W.conj (e x)) :
+    (isoMk e he).inv.hom = e.symm.toLinearMap := (rfl)
+
 /-- The fixed-point functor, acting on morphisms by restriction.
 The abbreviation keeps its subtype carrier available to dependent constructions. -/
 noncomputable abbrev fixedPoints : ConjugateModuleCat.{u} ⥤ ModuleCat.{u} ℝ where
   obj V := ModuleCat.of ℝ (realPoints V.conj)
-  map f := ModuleCat.ofHom
-    { toFun := fun x => ⟨f.hom x, mem_realPoints.mpr (by
-        rw [← f.commutes, mem_realPoints.mp x.property])⟩
-      map_add' x y := by ext; exact map_add f.hom x.val y.val
-      map_smul' r x := by ext; exact (f.hom.restrictScalars ℝ).map_smul r x.val }
+  map f := ModuleCat.ofHom ((f.hom.restrictScalars ℝ).restrict
+    (p := realPoints _) (q := realPoints _) fun x hx => mem_realPoints.mpr (by
+      rw [LinearMap.coe_restrictScalars, ← f.commutes, mem_realPoints.mp hx]))
 
 /-- Complexification with tensor conjugation, lifting scalar extension on real modules.
 The abbreviation keeps its tensor carrier available to dependent constructions. -/
@@ -119,7 +139,7 @@ noncomputable def descentUnit : 𝟭 (ModuleCat.{u} ℝ) ≅ complexification �
       right_inv x := by
         apply Subtype.ext
         obtain ⟨w, hw⟩ := (tmulConj_eq_self_iff W x.val).mp (mem_realPoints.mp x.property)
-        simp [hw] }) (by intros; ext w; rfl)
+        simp [hw] }) (by intros; ext w; apply Subtype.ext; simp [LinearMap.baseChange_tmul])
 
 @[simp]
 theorem descentUnit_hom_apply (W : ModuleCat.{u} ℝ) (w : W) :
@@ -133,25 +153,14 @@ theorem descentUnit_inv_apply (W : ModuleCat.{u} ℝ)
 /-- The counit of real descent is scalar multiplication, with inverse given by the
 fixed-point real/imaginary decomposition. -/
 noncomputable def descentCounit : fixedPoints ⋙ complexification ≅ 𝟭 ConjugateModuleCat.{u} :=
-  NatIso.ofComponents (fun V => by
-    let e := realPointsEquiv V.involutive
-    have he (x : ℂ ⊗[ℝ] realPoints V.conj) : e (tmulConj (realPoints V.conj) x) = V.conj (e x) := by
-      induction x using TensorProduct.inductionOn with
-      | tmul z w => simp [e, mem_realPoints.mp w.property]
-      | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
-    exact
-      { hom := ⟨e.toLinearMap, he⟩
-        inv := ⟨e.symm.toLinearMap, fun x => e.injective (by
-          simpa only [Functor.id_obj, Functor.comp_obj, complexification_conj,
-            LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply] using (he (e.symm x)).symm)⟩
-        hom_inv_id := by ext x; exact e.symm_apply_apply x
-        inv_hom_id := by ext x; exact e.apply_symm_apply x }) (by
+  NatIso.ofComponents (fun V => isoMk (realPointsEquiv V.involutive)
+    (realPointsEquiv_tmulConj V.involutive)) (by
       intro V W f
       apply Hom.ext
       apply TensorProduct.AlgebraTensorModule.ext
       intro z w
       simp only [hom_comp, LinearMap.comp_apply, Functor.comp_map, Functor.id_map,
-        LinearEquiv.coe_coe]
+        isoMk_hom_hom, LinearEquiv.coe_coe]
       rw [LinearMap.baseChange_tmul, realPointsEquiv_tmul, realPointsEquiv_tmul]
       exact (map_smul f.hom z w.val).symm)
 

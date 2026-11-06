@@ -513,6 +513,22 @@ theorem tmulConj_eq_one_tmul_sub_I_tmul (u : ℂ ⊗[ℝ] W) :
 
 end Complexification
 
+/-- Real descent intertwines tensor conjugation with the original conjugation. -/
+@[simp]
+theorem realPointsEquiv_tmulConj (hK : Function.Involutive K)
+    (x : ℂ ⊗[ℝ] realPoints K) :
+    realPointsEquiv hK (tmulConj (realPoints K) x) = K (realPointsEquiv hK x) := by
+  induction x using TensorProduct.inductionOn with
+  | tmul z w => simp [mem_realPoints.mp w.property]
+  | add x y hx hy => simpa only [map_add] using congrArg₂ (· + ·) hx hy
+
+/-- Inverse real descent intertwines the original conjugation with tensor conjugation. -/
+theorem realPointsEquiv_symm_conj (hK : Function.Involutive K) (v : V) :
+    (realPointsEquiv hK).symm (K v) =
+      tmulConj (realPoints K) ((realPointsEquiv hK).symm v) := by
+  apply (realPointsEquiv hK).injective
+  rw [realPointsEquiv_tmulConj, LinearEquiv.apply_symm_apply, LinearEquiv.apply_symm_apply]
+
 /-- **The conjugation of a complexification commutes with every base-changed map**, because
 `LinearMap.baseChange` leaves the conjugated factor alone. -/
 theorem tmulConj_baseChange {W W' : Type*} [AddCommGroup W] [Module ℝ W] [AddCommGroup W']
