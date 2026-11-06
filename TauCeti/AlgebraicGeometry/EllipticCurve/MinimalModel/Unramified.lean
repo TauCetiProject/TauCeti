@@ -5,15 +5,16 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Bound
 public import TauCeti.AlgebraicGeometry.EllipticCurve.IntegralModel.ValuativeExtension
+public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Valuation
+public import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 public import TauCeti.NumberTheory.LocalField.Unramified.Basic
 -- Proof-only: an equation on which Tate's algorithm stops is minimal.
 import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Invariance
+-- Proof-only: base change commutes with changes of variables.
+import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 -- Proof-only: the additive valuation of `𝒪[K]` scales by the ramification index in `𝒪[L]`.
 import TauCeti.NumberTheory.LocalField.RamificationIndex
--- Proof-only: `𝒪[L]` is Henselian.
-import TauCeti.NumberTheory.LocalField.Henselian
 
 /-!
 # Minimal equations over an unramified extension
@@ -22,14 +23,8 @@ Let `L/K` be an unramified extension of nonarchimedean local fields, and let `W`
 curve over `K` given by a minimal equation. This file proves that the base change of `W` to `L`
 is again minimal, and that its reduction type, its reduction and the valuation of its minimal
 discriminant do not change (Silverman, *The Arithmetic of Elliptic Curves*, VII.5.4(a)).
-
-Minimality is the substantial step. Tate's algorithm, run on the integral model of `W` with a
-uniformiser `ϖ` of `K`, stops after a change of variables over `𝒪[K]` at some symbol `s`. Its
-stopping tests are divisibilities by powers of `ϖ`, which the inclusion `𝒪[K] → 𝒪[L]` reflects
-(`TauCeti.algebraMap_integerRing_dvd_iff`), and `ϖ` is still a uniformiser of `L` since `L/K` is
-unramified. So the algorithm stops at `s` on the image of that equation over `𝒪[L]`
-(`WeierstrassCurve.isTateTerminal_map_iff`), and an equation on which it stops is minimal
-(`WeierstrassCurve.IsTateTerminal.isMinimal_baseChange`). Once both equations are minimal:
+The base change is minimal because Tate's algorithm stops at the same symbol over `𝒪[L]` as over
+`𝒪[K]`. Once both equations are minimal:
 
 * the reduction over `L` is the base change of the reduction over `K`, by
   `WeierstrassCurve.reduction_baseChange`, which applies through the instance
@@ -44,13 +39,10 @@ unramified. So the algorithm stops at `s` on the image of that equation over `�
 Over a ramified extension the base change of a minimal equation need not be minimal, and additive
 reduction can become good or multiplicative.
 
-The valuation of the minimal discriminant bounds the index of the subgroup `E₀` of points with
-nonsingular reduction: it is `v(Δ_min)` at split multiplicative reduction and at most `4`
-otherwise (Kodaira, Néron; `WeierstrassCurve.Affine.index_nonsingularReduction_le_four`). Read
-over `L`, this gives a bound on `[E(L) : E₀(L)]` that is independent of the unramified extension
-`L`, so torsion of `E(L)` of prime order beyond that bound has nonsingular reduction, whatever the
-degree of `L`. Over unramified extensions of growing degree this is what puts prescribed torsion
-points into `E₀(L)`.
+Since the valuation of the minimal discriminant bounds the index of the subgroup `E₀` of points
+with nonsingular reduction, this gives a bound on `[E(L) : E₀(L)]` independent of the unramified
+extension `L`; that bound is proved in
+`TauCeti.AlgebraicGeometry.EllipticCurve.Affine.Point.Index.Unramified`.
 
 ## Main results
 
@@ -60,14 +52,10 @@ points into `E₀(L)`.
   not change.
 * `WeierstrassCurve.localMinimalDiscriminantValuation_baseChange_of_isUnramified`: the valuation
   of the minimal discriminant does not change.
-* `WeierstrassCurve.Affine.index_nonsingularReduction_baseChange_le_of_isUnramified`: the index
-  `[E(L) : E₀(L)]` is at most `max 4 v(Δ_min)`, with `v(Δ_min)` computed over `K`.
-* `WeierstrassCurve.Affine.Point.mem_nonsingularReduction_baseChange_of_isUnramified`: points of
-  `W(L)` of prime order `ℓ > max 4 v(Δ_min)` have nonsingular reduction.
 
 ## References
 
-* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.5.4 and VII.6.1.
+* [J. Silverman, *The Arithmetic of Elliptic Curves*][silverman2009], VII.5.4.
 * J. Tate, *Algorithm for determining the type of a singular fibre in an elliptic pencil*, in
   *Modular Functions of One Variable IV*, LNM 476 (1975), 33–52.
 -/
@@ -82,14 +70,6 @@ variable {K L : Type*} [Field K] [ValuativeRel K] [TopologicalSpace K]
   [IsNonarchimedeanLocalField K] [Field L] [ValuativeRel L] [TopologicalSpace L]
   [IsNonarchimedeanLocalField L] [Algebra K L] [ValuativeExtension K L]
 
-omit [TopologicalSpace K] [IsNonarchimedeanLocalField K] [TopologicalSpace L]
-  [IsNonarchimedeanLocalField L] in
-/-- The square from `𝒪[K]` to `L` through `𝒪[L]` and through `K` commutes. -/
-private theorem algebraMap_comp_algebraMap_integerRing :
-    (algebraMap 𝒪[L] L).comp (algebraMap 𝒪[K] 𝒪[L]) =
-      (algebraMap K L).comp (algebraMap 𝒪[K] K) := by
-  rw [← IsScalarTower.algebraMap_eq, ← IsScalarTower.algebraMap_eq]
-
 variable [IsUnramified K L] (W : WeierstrassCurve K) [W.IsElliptic]
 
 /-- **A minimal equation stays minimal over an unramified extension** (Silverman AEC VII.5.4(a)).
@@ -103,7 +83,10 @@ instance isMinimal_baseChange_of_isUnramified [IsMinimal 𝒪[K] W] : IsMinimal 
     infer_instance
   have hΔ : Wo.Δ ≠ 0 := fun h ↦ W.isUnit_Δ.ne_zero <| by
     rw [← integralModel_Δ_eq 𝒪[K] W, h, map_zero]
-  -- Tate's algorithm stops on `C • Wo` at some symbol `s`, for a change of variables `C`
+  -- Tate's algorithm stops on `C • Wo` at some symbol `s`, for a change of variables `C`. Its
+  -- stopping tests are divisibilities by powers of `ϖ`, which `𝒪[K] → 𝒪[L]` reflects, and `ϖ` is
+  -- still a uniformiser of `L` since `L/K` is unramified. So the algorithm stops at `s` on the
+  -- image of `C • Wo` over `𝒪[L]`, and an equation on which it stops is minimal.
   obtain ⟨C, s, hs⟩ := exists_isTateTerminal (K := K) hϖ Wo hΔ
   set f := algebraMap 𝒪[K] 𝒪[L]
   -- `𝒪[K] → 𝒪[L]` reflects divisibility
@@ -166,58 +149,5 @@ theorem localMinimalDiscriminantValuation_baseChange_of_isUnramified :
     IsUnramified.ramificationIndex_eq_one, one_smul,
     ← W.localMinimalDiscriminantValuation_eq_addVal_of_isMinimal_smul 𝒪[K] C hC] at h
   exact_mod_cast h
-
-/-- Over an unramified extension, `E₀(L)` has positive index at most `max 4 v(Δ_min)`. -/
-private theorem index_nonsingularReduction_baseChange_pos_and_le [DecidableEq L] :
-    0 < ((W⁄L).toAffine.nonsingularReduction (valuation L)).index ∧
-      ((W⁄L).toAffine.nonsingularReduction (valuation L)).index ≤
-        max 4 (W.localMinimalDiscriminantValuation 𝒪[K]) := by
-  -- the results over a Henselian discrete valuation ring are stated for the valuation subring
-  have : IsMinimal (valuation L).valuationSubring (W⁄L) :=
-    inferInstanceAs (IsMinimal 𝒪[L] (W⁄L))
-  have : IsDiscreteValuationRing (valuation L).valuationSubring :=
-    inferInstanceAs (IsDiscreteValuationRing 𝒪[L])
-  have : HenselianLocalRing (valuation L).valuationSubring :=
-    inferInstanceAs (HenselianLocalRing 𝒪[L])
-  have : PerfectField (ResidueField (valuation L).valuationSubring) :=
-    inferInstanceAs (PerfectField 𝓀[L])
-  refine ⟨Nat.pos_of_ne_zero (AddSubgroup.FiniteIndex.index_ne_zero), ?_⟩
-  by_cases h : (W⁄L).HasSplitMultiplicativeReduction (valuation L).valuationSubring
-  · rw [Affine.index_nonsingularReduction_eq_localMinimalDiscriminantValuation (valuation L) (W⁄L)]
-    exact (localMinimalDiscriminantValuation_baseChange_of_isUnramified W).le.trans
-      (le_max_right _ _)
-  · exact (Affine.index_nonsingularReduction_le_four (valuation L) (W⁄L) h).trans
-      (le_max_left _ _)
-
-/-- **The index of `E₀` is bounded uniformly over unramified extensions** (Kodaira, Néron;
-Silverman AEC VII.6.1). Let `W` be an elliptic curve over `K` given by a minimal equation, and let
-`L/K` be unramified. Then the subgroup `E₀(L)` of points of `W(L)` with nonsingular reduction has
-index at most `max 4 v(Δ_min)`, where `v(Δ_min)` is the valuation of the minimal discriminant of
-`W` over `K`: the index is `v(Δ_min)` where the reduction over `L` is split multiplicative and at
-most `4` otherwise. -/
-theorem Affine.index_nonsingularReduction_baseChange_le_of_isUnramified [DecidableEq L] :
-    ((W⁄L).toAffine.nonsingularReduction (valuation L)).index ≤
-      max 4 (W.localMinimalDiscriminantValuation 𝒪[K]) :=
-  (index_nonsingularReduction_baseChange_pos_and_le W).2
-
-/-- **Torsion of large prime order has nonsingular reduction over unramified extensions.** Let `W`
-be an elliptic curve over `K` given by a minimal equation, let `L/K` be unramified, and let `ℓ` be
-a prime larger than `4` and than the valuation of the minimal discriminant of `W` over `K`. Then
-every point of `W(L)` killed by `ℓ` lies in the subgroup `E₀(L)` of points with nonsingular
-reduction, since `ℓ` is prime to the index of `E₀(L)`. -/
-theorem Affine.Point.mem_nonsingularReduction_baseChange_of_isUnramified [DecidableEq L] {ℓ : ℕ}
-    (hℓ : ℓ.Prime) (hlt : max 4 (W.localMinimalDiscriminantValuation 𝒪[K]) < ℓ)
-    {P : (W⁄L).toAffine.Point} (hP : ℓ • P = 0) :
-    P ∈ (W⁄L).toAffine.nonsingularReduction (valuation L) := by
-  set H := (W⁄L).toAffine.nonsingularReduction (valuation L)
-  obtain ⟨hc₀, hc⟩ := index_nonsingularReduction_baseChange_pos_and_le (L := L) W
-  -- `ℓ` and the index `c` are coprime, and both `ℓ • P = 0` and `c • P` lie in `H`
-  have hcop := Nat.coprime_of_lt_prime hc₀.ne' (hc.trans_lt hlt) hℓ
-  have hcP : H.index • P ∈ H := AddSubgroup.nsmul_index_mem H P
-  have key : P = Nat.gcdA ℓ H.index • ℓ • P + Nat.gcdB ℓ H.index • H.index • P := by
-    rw [← natCast_zsmul, ← natCast_zsmul, smul_smul, smul_smul, ← add_smul, mul_comm _ (ℓ : ℤ),
-      mul_comm _ (H.index : ℤ), ← Nat.gcd_eq_gcd_ab, hcop, Nat.cast_one, one_smul]
-  rw [key, hP, smul_zero, zero_add]
-  exact H.zsmul_mem hcP _
 
 end WeierstrassCurve
