@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Determinant.Exact
 public import TauCeti.LinearAlgebra.Exact
+public import TauCeti.RingTheory.Finiteness.Finsupp
 
 /-!
 # The determinant line of a composition
@@ -64,11 +65,10 @@ finite-dimensional kernels and cokernels, the canonical isomorphism
 exact sequence `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0`; its value
 on exterior products is `LinearMap.detLineCompEquiv_tmul`. -/
 def detLineCompEquiv : (g ∘ₗ f).detLine ≃ₗ[K] f.detLine ⊗[K] g.detLine :=
-  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) :=
-    TauCeti.finiteDimensional_of_exact (f.exact_cokerToCokerComp_factor g)
+  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
   TauCeti.detLineSixTermEquiv (Submodule.inclusion_injective (ker_le_ker_comp f g))
     (f.exact_inclusion_kerCompToKer g) (f.exact_kerCompToKer_kerToCoker g)
-    (f.exact_kerToCoker_cokerToCokerComp g) (f.exact_cokerToCokerComp_factor g)
+    (f.exact_kerToCoker_cokerToCokerComp g) (exact_mapQ_range_factor f g)
     (Submodule.factor_surjective _)
 
 /-- **The value of `LinearMap.detLineCompEquiv` on exterior products.** Choose `u`, a family of
@@ -98,8 +98,7 @@ theorem detLineCompEquiv_tmul (u : Fin (finrank K (ker f)) → ker f)
     {χ : Dual K (TauCeti.detLine K (P ⧸ range g))}
     (hχ : χ (exteriorPower.ιMulti K _ (Submodule.factor (range_comp_le_range f g) ∘ y)) = 1) :
     f.detLineCompEquiv g (β ⊗ₜ φ) = φ ε • ((exteriorPower.ιMulti K _ u ⊗ₜ ψ) ⊗ₜ (γ ⊗ₜ χ)) :=
-  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) :=
-    TauCeti.finiteDimensional_of_exact (f.exact_cokerToCokerComp_factor g)
+  have : FiniteDimensional K (P ⧸ range (g ∘ₗ f)) := Module.Finite.quotient_range_comp f g
   TauCeti.detLineSixTermEquiv_tmul _ _ _ _ _ _ u v w x y hβ hγ hδ hε φ hψ hχ
 
 end LinearMap

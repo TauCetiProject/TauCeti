@@ -311,8 +311,10 @@ theorem _root_.LinearMap.kerToCoker_apply (y : ker g) :
 
 /-- The map `N ⧸ range f → P ⧸ range (g ∘ f)` induced by `g`. It is the fourth map of the exact
 sequence `0 → ker f → ker (g ∘ f) → ker g → coker f → coker (g ∘ f) → coker g → 0` of a
-composition, whose last map is `Submodule.factor (range_comp_le_range f g)`. -/
-def _root_.LinearMap.cokerToCokerComp : N ⧸ range f →ₗ[R] P ⧸ range (g ∘ₗ f) :=
+composition, whose last map is `Submodule.factor (range_comp_le_range f g)`. Exactness at
+`P ⧸ range (g ∘ f)` is `LinearMap.exact_mapQ_range_factor`, which applies to this map by
+unfolding; it is exposed for that reason. -/
+@[expose] def _root_.LinearMap.cokerToCokerComp : N ⧸ range f →ₗ[R] P ⧸ range (g ∘ₗ f) :=
   (range f).mapQ _ g (by rw [← Submodule.map_le_iff_le_comap, ← range_comp])
 
 @[simp]
@@ -342,12 +344,6 @@ theorem _root_.LinearMap.exact_kerToCoker_cokerToCokerComp :
     Function.Exact (f.kerToCoker g) (f.cokerToCokerComp g) := by
   rw [exact_iff]
   simp [kerToCoker, cokerToCokerComp, range_comp, Submodule.ker_mapQ, Submodule.comap_map_eq]
-
-/-- The kernel–cokernel sequence of a composition is exact at `P ⧸ range (g ∘ f)`. -/
-theorem _root_.LinearMap.exact_cokerToCokerComp_factor :
-    Function.Exact (f.cokerToCokerComp g) (Submodule.factor (range_comp_le_range f g)) := by
-  rw [exact_iff]
-  simp [cokerToCokerComp, Submodule.factor, Submodule.ker_mapQ, Submodule.range_mapQ]
 
 end KerCokerComp
 
