@@ -138,30 +138,39 @@ private theorem apply_comp_perm_eq
   simp only [submatrix_apply, Equiv.symm_apply_apply, id_eq] at h'
   simpa only [hpi] using h'
 
+/-- Any two ordered pairs of distinct indices are related by a permutation. -/
+private theorem exists_perm_apply_eq_of_ne {a b : Fin n} (hab : a ≠ b) (c d : Fin n)
+    (hcd : c ≠ d) : ∃ σ : Equiv.Perm (Fin n), σ a = c ∧ σ b = d :=
+  (exists_pair_perm_fixed (s := ∅) hab hcd (by simp) (by simp) (by simp) (by simp)).imp
+    fun _ h ↦ h.2
+
+/-- A matrix commuting with the Kronecker squares of the permutation matrices takes the same value
+at two pairs of index patterns related by a common renaming of the indices. -/
+private theorem apply_eq_apply_of_perm_apply
+    (hM : ∀ g : Matrix.orthogonalGroup (Fin n) K,
+      M * (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) =
+        (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) * M)
+    (σ : Equiv.Perm (Fin n)) {v u w z : Fin 2 → Fin n} (hv : ∀ i, σ (w i) = v i)
+    (hu : ∀ i, σ (z i) = u i) : M v u = M w z := by
+  rw [← apply_comp_perm_eq hM σ w z, funext hv, funext hu]
+
 /-- The diagonal projection of `(Kⁿ)^{⊗2}` onto the span of the basis tensors `eₐ ⊗ eₐ`. -/
 private abbrev diagProj (K : Type*) [Field K] (n : ℕ) : Matrix (Fin 2 → Fin n) (Fin 2 → Fin n) K :=
   diagonal fun v ↦ if v 0 = v 1 then 1 else 0
 
-/-- **Sign and permutation constraints.** With at least two coordinates, a matrix commuting with
-the Kronecker squares of all orthogonal matrices is a combination of the matrices of the three
-Brauer diagrams on two strands and of the diagonal projection onto the span of the `eₐ ⊗ eₐ`. -/
-private theorem exists_eq_add_smul_diagProj (h2 : (2 : K) ≠ 0) (hn : 2 ≤ n)
+/-- **Sign and permutation constraints.** With two distinct coordinates `a₀ ≠ a₁`, a matrix
+commuting with the Kronecker squares of all orthogonal matrices is a combination of the matrices of
+the three Brauer diagrams on two strands and of the diagonal projection onto the span of the
+`eₐ ⊗ eₐ`. -/
+private theorem exists_eq_add_smul_diagProj (h2 : (2 : K) ≠ 0) {a₀ a₁ : Fin n} (ha : a₀ ≠ a₁)
     (hM : ∀ g : Matrix.orthogonalGroup (Fin n) K,
       M * (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) =
         (g : Matrix (Fin n) (Fin n) K).kroneckerPower (Fin 2) * M) :
     ∃ q r p y : K, M = q • (permToBrauer 1).orthogonalActionMatrix K (Fin n) +
       r • (permToBrauer (Equiv.swap (0 : Fin 2) 1)).orthogonalActionMatrix K (Fin n) +
       p • (capCup (0 : Fin 2) 1).orthogonalActionMatrix K (Fin n) + y • diagProj K n := by
-  set a₀ : Fin n := ⟨0, by omega⟩
-  set a₁ : Fin n := ⟨1, by omega⟩
-  have ha : a₀ ≠ a₁ := by simp [a₀, a₁, Fin.ext_iff]
-  -- Every pair of distinct indices is the image of `(a₀, a₁)` under a permutation.
-  have htrans (c d : Fin n) (hcd : c ≠ d) : ∃ σ : Equiv.Perm (Fin n), σ a₀ = c ∧ σ a₁ = d :=
-    (exists_pair_perm_fixed (s := ∅) ha hcd (by simp) (by simp) (by simp) (by simp)).imp
-      fun _ h ↦ h.2
-  have hmove (σ : Equiv.Perm (Fin n)) {v u w z : Fin 2 → Fin n} (hv : ∀ i, σ (w i) = v i)
-      (hu : ∀ i, σ (z i) = u i) : M v u = M w z := by
-    rw [← apply_comp_perm_eq hM σ w z, funext hv, funext hu]
+  have htrans := exists_perm_apply_eq_of_ne ha
+  have hmove := @apply_eq_apply_of_perm_apply _ _ _ _ hM
   -- The value of `M` on each pattern of indices is its value at a pattern built from `a₀, a₁`.
   set x := M ![a₀, a₀] ![a₀, a₀]
   set p := M ![a₀, a₀] ![a₁, a₁]
@@ -277,7 +286,8 @@ private theorem exists_eq_smul_add_smul_add_smul (h2 : (2 : K) ≠ 0) {c s : K}
     ext v u
     obtain rfl := Subsingleton.elim v u
     simp [trace, Fintype.sum_subsingleton _ v]
-  obtain ⟨q, r, p, y, hy⟩ := exists_eq_add_smul_diagProj h2 hn hM
+  obtain ⟨q, r, p, y, hy⟩ := exists_eq_add_smul_diagProj h2
+    (a₀ := ⟨0, by omega⟩) (a₁ := ⟨1, by omega⟩) (by simp [Fin.ext_iff]) hM
   refine ⟨q, r, p, ?_⟩
   -- The three diagram matrices commute with every `g ⊗ g`, so the coefficient of `Δ` vanishes.
   have hN (g : Matrix.orthogonalGroup (Fin n) K) := fun D ↦
