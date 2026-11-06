@@ -85,6 +85,18 @@ theorem tendsto_sectionValue_zero {l : Filter ℂ} {x : ℂ → EuclideanSpace �
   simp only [PiLp.zero_apply, ofReal_zero, zero_mul, add_zero, mul_zero] at this
   exact this.congr fun z ↦ (sectionValue_apply x z).symm
 
+/-- If the section times a phase of unit modulus tends to one along a filter, then the squared
+modulus `|α|² = 4 (p² + q²)` tends to one. -/
+theorem tendsto_normSq_of_tendsto_sectionValue_mul {l : Filter ℂ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)} {phase : ℂ → ℂ} (hphase : ∀ᶠ z in l, ‖phase z‖ = 1)
+    (hx : Filter.Tendsto (fun z ↦ sectionValue x z * phase z) l (nhds 1)) :
+    Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) l (nhds 1) := by
+  have h := hx.norm.pow 2
+  rw [norm_one, one_pow] at h
+  refine h.congr' ?_
+  filter_upwards [hphase] with z hz
+  rw [norm_mul, hz, mul_one, sq_norm_sectionValue]
+
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
 def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : ℂ :=

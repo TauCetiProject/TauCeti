@@ -7,9 +7,12 @@ module
 
 public import Mathlib.Analysis.Distribution.TestFunction
 public import TauCeti.Analysis.PDE.Vortex.Decay
+public import TauCeti.Analysis.PDE.Vortex.Divisor
+public import TauCeti.Analysis.PDE.Vortex.FieldSpace
 public import TauCeti.Analysis.PDE.Vortex.Zeros
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import Mathlib.Topology.Algebra.Module.Cardinality
+import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.Analysis.Calculus.ContDiff.Removable
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Cutoff
@@ -50,8 +53,19 @@ Testing this identity against dilated cutoffs `χ_R`, the left side tends to zer
 
 The multiplicities enter through any function `n` with the local factorization property. The
 similarity principle supplies one, and it is unique (`TauCeti.eq_of_eventually_sub_pow_smul_eq`).
-Smoothness `C²` of the connection is assumed so that the factor `v` is `C²`. Relating the total
-multiplicity to the winding degree of an end framing is not addressed here.
+Smoothness `C²` of the connection is assumed so that the factor `v` is `C²`.
+
+In terms of the zero divisor `D` of the section (`TauCeti.Vortex.IsZeroDivisor`), the total
+multiplicity is the degree of `D`, so `(2π)⁻¹ ∫ iF_a = deg D`
+(`TauCeti.Vortex.IsZeroDivisor.integral_curvature_eq_neg_mul_card`). For a vortex with the
+degree-`m` end framing `α(z) (z / |z|)⁻ᵐ → 1`, the argument principle gives `deg D = m`, hence the
+flux identity
+
+`(2π)⁻¹ ∫ iF_a = m`
+
+(`TauCeti.Vortex.integral_curvature_eq_neg_mul_of_tendsto`). Every `C²` vortex in the affine
+field space `A_m^s`, `s > 1`, has this end framing
+(`TauCeti.Vortex.integral_curvature_eq_neg_mul_of_mem_framedFieldSpace`).
 
 ## References
 
@@ -330,5 +344,63 @@ theorem integral_curvature_eq_neg_mul_finsum
   rw [h, integral_neg, integral_div,
     integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim hn]
   ring
+
+/-! ### The flux of a framed vortex -/
+
+/-- **The flux identity in terms of the zero divisor.** For a `C²` vortex on the whole plane with
+`|α| → 1` at infinity and zero divisor `D`, `∫ (1 - |α|²) = 16π deg D`. -/
+theorem IsZeroDivisor.integral_one_sub_normSq_eq_mul_card {D : Multiset ℂ}
+    (hD : IsZeroDivisor x D)
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∫ z, (1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2)) = 16 * π * Multiset.card D := by
+  rw [integral_one_sub_normSq_eq_mul_finsum hb₁ hb₂ hp hq hsol hlim (isZeroDivisor_iff.1 hD),
+    Multiset.finsum_count_eq_card]
+
+/-- **The flux is the degree of the zero divisor.** For a `C²` vortex on the whole plane with
+`|α| → 1` at infinity and zero divisor `D`, the curvature coefficient `∂₁ b₂ - ∂₂ b₁` integrates
+to `-2π deg D`; equivalently `(2π)⁻¹ ∫ iF_a = deg D`. -/
+theorem IsZeroDivisor.integral_curvature_eq_neg_mul_card {D : Multiset ℂ}
+    (hD : IsZeroDivisor x D)
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1)) :
+    ∫ z, curvature x z = -(2 * π * Multiset.card D) := by
+  rw [integral_curvature_eq_neg_mul_finsum hb₁ hb₂ hp hq hsol hlim (isZeroDivisor_iff.1 hD),
+    Multiset.finsum_count_eq_card]
+
+/-- **The flux identity for a framed degree-`m` vortex.** If a `C²` vortex on the whole plane has
+the end framing `α(z) (z / |z|)⁻ᵐ → 1`, then its curvature coefficient `∂₁ b₂ - ∂₂ b₁` integrates
+to `-2πm`; equivalently, since `iF_a = -(∂₁ b₂ - ∂₂ b₁) ds ∧ dt`, the flux `(2π)⁻¹ ∫ iF_a` is
+`m`. -/
+theorem integral_curvature_eq_neg_mul_of_tendsto {m : ℕ}
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0)
+    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
+    ∫ z, curvature x z = -(2 * π * m) := by
+  obtain ⟨D, hD⟩ := exists_sym_isZeroDivisor (k := 2) (by norm_num) hb₁ hb₂
+    (hp.differentiable (by norm_num)) (hq.differentiable (by norm_num))
+    (fun w ↦ ⟨by simp [hsol w], by simp [hsol w]⟩) hframe
+  rw [hD.integral_curvature_eq_neg_mul_card hb₁ hb₂ hp hq hsol
+    (tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow hframe), Sym.card_coe]
+
+/-- **The flux identity in the affine field space.** For `s > 1`, every `C²` vortex in `A_m^s`
+has flux `(2π)⁻¹ ∫ iF_a = m`: its curvature coefficient `∂₁ b₂ - ∂₂ b₁` integrates to `-2πm`. -/
+theorem integral_curvature_eq_neg_mul_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)}
+    {m : ℕ} {s : ℝ} (hs : 1 < s) (hx : x ∈ framedFieldSpace f m s)
+    (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
+    (hp : ContDiff ℝ 2 (fun w ↦ x w 2)) (hq : ContDiff ℝ 2 (fun w ↦ x w 3))
+    (hsol : ∀ z, equation x z = 0) :
+    ∫ z, curvature x z = -(2 * π * m) := by
+  have hcont : Continuous x := by
+    refine contDiff_zero.1 (contDiff_euclidean.2 fun i ↦ contDiff_zero.2 ?_)
+    fin_cases i
+    exacts [hb₁.continuous, hb₂.continuous, hp.continuous, hq.continuous]
+  exact integral_curvature_eq_neg_mul_of_tendsto hb₁ hb₂ hp hq hsol
+    (tendsto_sectionValue_mul_inv_pow hs hx hcont)
 
 end TauCeti.Vortex
