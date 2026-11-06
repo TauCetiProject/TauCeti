@@ -10,7 +10,6 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Sobolev
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 public import TauCeti.Analysis.SpecialFunctions.Hyperbolic
 import TauCeti.Analysis.ODE.Caratheodory
-import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Integral.Cosh
 
 /-!
@@ -300,31 +299,6 @@ theorem tendsto_inv_neckSolution_atBot (R : ℝ) :
 section Banach
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- If the scalar equation `g' = b g` has a solution with `g 0 = 1` that tends to infinity at
-one end of the line, then `v' = b v` has no nonzero square-integrable solution in `F`: every
-solution is `g(s) • v 0`. -/
-private theorem squareIntegrableSolutions_neg_smul_id_eq_bot {b g : ℝ → ℝ} (hb : Continuous b)
-    (hg : ∀ s, HasDerivAt g (b s * g s) s) (hg0 : g 0 = 1) {l : Filter ℝ}
-    (hl : l = atTop ∨ l = atBot) (hgl : Tendsto g l atTop) :
-    squareIntegrableSolutions (fun s ↦ -b s • ContinuousLinearMap.id ℝ F) = ⊥ := by
-  rw [eq_bot_iff]
-  intro x hx
-  obtain ⟨v, rfl, hv, hv2⟩ := mem_squareIntegrableSolutions.1 hx
-  have hB : Continuous fun s ↦ b s • ContinuousLinearMap.id ℝ F := hb.smul continuous_const
-  have heq : v = fun s ↦ g s • v 0 :=
-    hB.eq_of_hasDerivAt_clm_apply (fun s ↦ by simpa using hv s)
-      (fun s ↦ by simpa [smul_smul, mul_comm] using (hg s).smul_const (v 0))
-      (t₀ := 0) (by simp [hg0])
-  rw [Submodule.mem_bot]
-  by_contra h0
-  have hvl : Tendsto (fun s ↦ ‖v s‖) l atTop := by
-    rw [heq]
-    simp_rw [norm_smul, Real.norm_eq_abs]
-    exact (tendsto_atTop_mono (fun s ↦ le_abs_self (g s)) hgl).atTop_mul_const (norm_pos_iff.2 h0)
-  rcases hl with rfl | rfl
-  · exact MeasureTheory.not_memLp_of_tendsto_norm_atTop two_ne_zero ENNReal.ofNat_ne_top hvl hv2
-  · exact MeasureTheory.not_memLp_of_tendsto_norm_atBot two_ne_zero ENNReal.ofNat_ne_top hvl hv2
 
 /-- **`v' = a_R v` has no nonzero square-integrable solution.** Every solution is `F_R(s) • v 0`,
 which grows like `exp s` at `+∞`. In the convention `v' + A v = 0` of
