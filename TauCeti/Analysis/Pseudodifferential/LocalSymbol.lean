@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.Sets.Opens
 public import TauCeti.Analysis.Pseudodifferential.Symbol
-import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Symbols on an open set of positions
@@ -31,8 +31,9 @@ The local classes are compared with the class `TauCeti.Symbol n V W m` of symbol
 * `TauCeti.LocalSymbol.restrict`: a symbol on `U × ℝⁿ` restricts to every smaller open set, and
   restrictions compose (`TauCeti.LocalSymbol.restrict_restrict`,
   `TauCeti.Symbol.restrict_restrict`);
-* `TauCeti.Symbol.restrictTopEquiv`: for `U = ℝⁿ` restriction is a linear equivalence, so the local
-  class over all of `ℝⁿ` is exactly `TauCeti.Symbol`.
+* `TauCeti.Symbol.restrictTopEquiv`: for `U = ℝⁿ` restriction is a linear equivalence
+  (`TauCeti.Symbol.restrict_top`), so the local class over all of `ℝⁿ` is exactly
+  `TauCeti.Symbol`.
 
 A smooth coefficient on `U × ℝⁿ` need not extend smoothly to `ℝⁿ × ℝⁿ` (for instance `1 / x₁` on
 the half-space `x₁ > 0`), so for `U ≠ ℝⁿ` a local symbol is in general not the restriction of a
@@ -55,42 +56,6 @@ open Set
 namespace TauCeti
 
 variable {n : ℕ}
-
-section Localization
-
-variable {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A] {U : Set (CoordinateSpace n)}
-  {f : CoordinateSpace n × CoordinateSpace n → A}
-
-/-- Multiplying a function smooth on `U × ℝⁿ` by a smooth function of the position whose support
-lies in `U` gives a function smooth on all of `ℝⁿ × ℝⁿ`. -/
-private theorem contDiff_smul_of_tsupport_subset (hU : IsOpen U)
-    (hf : ContDiffOn ℝ ∞ f (U ×ˢ univ)) {φ : CoordinateSpace n → ℝ} (hφ : ContDiff ℝ ∞ φ)
-    (hφU : tsupport φ ⊆ U) : ContDiff ℝ ∞ fun p => φ p.1 • f p := by
-  refine contDiff_iff_contDiffAt.2 fun p => ?_
-  by_cases hp : p.1 ∈ tsupport φ
-  · exact (hφ.comp contDiff_fst).contDiffAt.smul
-      (hf.contDiffAt ((hU.prod isOpen_univ).mem_nhds ⟨hφU hp, mem_univ _⟩))
-  · have hzero : ∀ᶠ q : CoordinateSpace n × CoordinateSpace n in 𝓝 p, q.1 ∉ tsupport φ :=
-      continuousAt_fst.preimage_mem_nhds ((isClosed_tsupport φ).isOpen_compl.mem_nhds hp)
-    refine (contDiffAt_const (c := (0 : A))).congr_of_eventuallyEq ?_
-    filter_upwards [hzero] with q hq
-    rw [image_eq_zero_of_notMem_tsupport hq, zero_smul]
-
-/-- A function smooth on `U × ℝⁿ` agrees, at all positions near a point `x ∈ U`, with a function
-smooth on all of `ℝⁿ × ℝⁿ`. -/
-private theorem exists_contDiff_eventually_eq (hU : IsOpen U) (hf : ContDiffOn ℝ ∞ f (U ×ˢ univ))
-    {x : CoordinateSpace n} (hx : x ∈ U) :
-    ∃ g : CoordinateSpace n × CoordinateSpace n → A, ContDiff ℝ ∞ g ∧
-      ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = f (y, η) := by
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.1 hU x hx
-  let ψ : ContDiffBump x := ⟨ε / 4, ε / 2, by positivity, by linarith⟩
-  refine ⟨fun p => ψ p.1 • f p, contDiff_smul_of_tsupport_subset hU hf ψ.contDiff ?_, ?_⟩
-  · rw [ψ.tsupport_eq]
-    exact (Metric.closedBall_subset_ball (show ε / 2 < ε by linarith)).trans hball
-  · filter_upwards [ψ.eventuallyEq_one] with y hy η
-    rw [hy, Pi.one_apply, one_smul]
-
-end Localization
 
 /-- The class `S^m_{1,0}` of symbols of order `m` on `U × ℝⁿ`, for an open set `U ⊆ ℝⁿ` of
 positions, with values in `V →L[ℂ] W`: maps `a`, smooth on `U × ℝⁿ`, such that on every compact
@@ -133,7 +98,9 @@ private theorem exists_contDiff_eventually_eq_coefficient (a : LocalSymbol U V W
     {x : CoordinateSpace n} (hx : x ∈ U) :
     ∃ g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W, ContDiff ℝ ∞ g ∧
       ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = a.coefficient (y, η) :=
-  exists_contDiff_eventually_eq U.isOpen a.contDiffOn_coefficient hx
+  let ⟨g, hg, hga⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
+    isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
+  ⟨g, hg, hga x rfl⟩
 
 section Module
 
@@ -249,12 +216,7 @@ def restrict (h : U' ≤ U) : LocalSymbol U V W m →ₗ[ℂ] LocalSymbol U' V W
       exists_bound := fun K hKU' hK α β => by
         obtain ⟨C, hC, ha⟩ := a.exists_bound K (hKU'.trans h) hK α β
         refine ⟨C, hC, fun x hx ξ => ?_⟩
-        have heq : ∀ᶠ y in 𝓝 x, ∀ η,
-            ((U' : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient (y, η) =
-              a.coefficient (y, η) := by
-          filter_upwards [U'.isOpen.mem_nhds (hKU' hx)] with y hy η
-          exact indicator_of_mem (mk_mem_prod hy (mem_univ η)) _
-        rw [mixedDeriv_congr_of_eventually heq]
+        rw [mixedDeriv_indicator_prod_univ_of_mem U'.isOpen (hKU' hx)]
         exact ha x hx ξ }
   map_add' a b := by
     ext1
@@ -293,31 +255,40 @@ namespace Symbol
 variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
   [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
-/-- The restriction of a symbol on `ℝⁿ × ℝⁿ` to the open set `U` of positions, extended by zero
-at positions outside `U`. It satisfies the same estimates on the compact subsets of `U`. -/
-def restrict (U : TopologicalSpace.Opens (CoordinateSpace n)) :
-    Symbol n V W m →ₗ[ℂ] LocalSymbol U V W m where
+/-- Over all of `ℝⁿ`, the local symbols are exactly the symbols on `ℝⁿ × ℝⁿ`: a symbol on
+`ℝⁿ × ℝⁿ` is a local symbol on `⊤` with the same coefficient, and this is a linear equivalence. -/
+def restrictTopEquiv :
+    Symbol n V W m ≃ₗ[ℂ] LocalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m where
   toFun a :=
-    { coefficient := ((U : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient
-      contDiffOn_coefficient := a.contDiff_coefficient.contDiffOn.congr
-        fun _ hp => indicator_of_mem hp _
-      coefficient_of_notMem := fun x hx ξ => indicator_of_notMem (by simp [hx]) _
-      exists_bound := fun K hKU hK α β => by
-        obtain ⟨C, hC, ha⟩ := a.exists_bound K hK α β
-        refine ⟨C, hC, fun x hx ξ => ?_⟩
-        have heq : ∀ᶠ y in 𝓝 x, ∀ η,
-            ((U : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient (y, η) =
-              a.coefficient (y, η) := by
-          filter_upwards [U.isOpen.mem_nhds (hKU hx)] with y hy η
-          exact indicator_of_mem (mk_mem_prod hy (mem_univ η)) _
-        rw [mixedDeriv_congr_of_eventually heq]
-        exact ha x hx ξ }
-  map_add' a b := by
-    ext1
-    exact indicator_add' _ _ _
-  map_smul' c a := by
-    ext1
-    exact indicator_const_smul _ c _
+    { coefficient := a.coefficient
+      contDiffOn_coefficient := a.contDiff_coefficient.contDiffOn
+      coefficient_of_notMem := fun x hx => absurd (TopologicalSpace.Opens.mem_top x) hx
+      exists_bound := fun K _ hK α β => a.exists_bound K hK α β }
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun a :=
+    { coefficient := a.coefficient
+      contDiff_coefficient := contDiffOn_univ.1 <| by
+        simpa using a.contDiffOn_coefficient
+      exists_bound := fun K hK α β => a.exists_bound K (by simp) hK α β }
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coefficient_restrictTopEquiv_apply (a : Symbol n V W m) :
+    (restrictTopEquiv a).coefficient = a.coefficient := (rfl)
+
+@[simp]
+theorem coefficient_restrictTopEquiv_symm_apply
+    (a : LocalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
+    (restrictTopEquiv.symm a : Symbol n V W m).coefficient = a.coefficient := (rfl)
+
+/-- The restriction of a symbol on `ℝⁿ × ℝⁿ` to the open set `U` of positions, extended by zero
+at positions outside `U`: the restriction from `⊤` to `U` of the corresponding local symbol. It
+satisfies the same estimates on the compact subsets of `U`. -/
+def restrict (U : TopologicalSpace.Opens (CoordinateSpace n)) :
+    Symbol n V W m →ₗ[ℂ] LocalSymbol U V W m :=
+  LocalSymbol.restrict le_top ∘ₗ restrictTopEquiv.toLinearMap
 
 theorem coefficient_restrict (a : Symbol n V W m) :
     (a.restrict U).coefficient = ((U : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient :=
@@ -326,38 +297,17 @@ theorem coefficient_restrict (a : Symbol n V W m) :
 @[simp]
 theorem coefficient_restrict_of_mem (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∈ U)
     (ξ : CoordinateSpace n) : (a.restrict U).coefficient (x, ξ) = a.coefficient (x, ξ) :=
-  indicator_of_mem (mk_mem_prod hx (mem_univ ξ)) _
+  LocalSymbol.coefficient_restrict_of_mem le_top (restrictTopEquiv a) hx ξ
 
 @[simp]
 theorem restrict_restrict (h : U' ≤ U) (a : Symbol n V W m) :
     LocalSymbol.restrict h (a.restrict U) = a.restrict U' :=
-  LocalSymbol.ext_of_mem fun x hx ξ => by
-    rw [LocalSymbol.coefficient_restrict_of_mem _ _ hx, coefficient_restrict_of_mem _ (h hx),
-      coefficient_restrict_of_mem _ hx]
+  LocalSymbol.restrict_restrict le_top h (restrictTopEquiv a)
 
-/-- Over all of `ℝⁿ`, the local symbols are exactly the symbols on `ℝⁿ × ℝⁿ`: restriction to `⊤`
-is a linear equivalence. -/
-def restrictTopEquiv :
-    Symbol n V W m ≃ₗ[ℂ] LocalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m :=
-  { restrict ⊤ with
-    invFun a :=
-      { coefficient := a.coefficient
-        contDiff_coefficient := contDiffOn_univ.1 <| by
-          simpa using a.contDiffOn_coefficient
-        exists_bound := fun K hK α β => a.exists_bound K (by simp) hK α β }
-    left_inv b := by
-      ext1
-      funext ⟨x, ξ⟩
-      exact coefficient_restrict_of_mem b (TopologicalSpace.Opens.mem_top x) ξ
-    right_inv a := LocalSymbol.ext_of_mem fun _ hx ξ => coefficient_restrict_of_mem _ hx ξ }
-
+/-- Restricting a symbol to all of `ℝⁿ` gives the corresponding local symbol on `⊤`. -/
 @[simp]
-theorem restrictTopEquiv_apply (a : Symbol n V W m) : restrictTopEquiv a = a.restrict ⊤ := (rfl)
-
-@[simp]
-theorem coefficient_restrictTopEquiv_symm_apply
-    (a : LocalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
-    (restrictTopEquiv.symm a : Symbol n V W m).coefficient = a.coefficient := (rfl)
+theorem restrict_top (a : Symbol n V W m) : a.restrict ⊤ = restrictTopEquiv a :=
+  LocalSymbol.restrict_self (restrictTopEquiv a)
 
 end Symbol
 

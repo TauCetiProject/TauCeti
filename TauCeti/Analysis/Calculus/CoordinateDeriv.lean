@@ -358,6 +358,15 @@ theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     mixedDeriv α β a x ξ = 0 :=
   (mixedDeriv_congr_of_eventually (b := 0) h α β ξ).trans (mixedDeriv_zero α β x ξ)
 
+/-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
+at positions of `U`. -/
+theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+    {x : CoordinateSpace n} (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β ((U ×ˢ Set.univ).indicator a) x ξ = mixedDeriv α β a x ξ := by
+  refine mixedDeriv_congr_of_eventually ?_ α β ξ
+  filter_upwards [hU.mem_nhds hx] with y hy η
+  exact Set.indicator_of_mem (Set.mk_mem_prod hy (Set.mem_univ η)) _
+
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 
 /-- Bounds `C * w` and `D * w` on mixed derivatives of smooth `a` and `b` add to a bound on the
