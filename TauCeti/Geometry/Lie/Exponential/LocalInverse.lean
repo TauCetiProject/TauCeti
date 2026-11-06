@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 public import TauCeti.Geometry.Lie.Exponential.Derivative.Basic
 import Mathlib.Analysis.Calculus.FDeriv.OfCompLeft
+import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 /-!
@@ -459,22 +460,6 @@ theorem exists_injOn_mulInvariantExp_modelSpace [FiniteDimensional ℝ E] [LieGr
   apply φ.injOn hx hy
   rw [mulInvariantExpOpenPartialHomeomorph_apply, mulInvariantExpOpenPartialHomeomorph_apply]
   exact congrArg (extChartAt I (1 : G)) hxy
-
-/-- A `C^n` open partial homeomorphism of a complete normed space (`1 ≤ n`) whose derivative is
-invertible at every point of its source has a `C^n` inverse on its target. -/
-theorem OpenPartialHomeomorph.contDiffOn_symm_of_isUnit_fderiv [CompleteSpace E] {n : ℕ∞ω}
-    (ψ : OpenPartialHomeomorph E E) (hψ : ContDiffOn ℝ n ψ ψ.source)
-    (hunit : ∀ x ∈ ψ.source, IsUnit (fderiv ℝ ψ x)) (hn : n ≠ 0) :
-    ContDiffOn ℝ n ψ.symm ψ.target := by
-  intro y hy
-  have hx := ψ.map_target hy
-  have hat : ContDiffAt ℝ n ψ (ψ.symm y) :=
-    (hψ _ hx).contDiffAt (ψ.open_source.mem_nhds hx)
-  obtain ⟨A, hA⟩ := hunit _ hx
-  refine (ψ.contDiffAt_symm hy (f₀' := ContinuousLinearEquiv.ofUnit A) ?_ hat).contDiffWithinAt
-  rw [show ((ContinuousLinearEquiv.ofUnit A : E ≃L[ℝ] E) : E →L[ℝ] E) =
-      fderiv ℝ ψ (ψ.symm y) from hA]
-  exact (hat.differentiableAt hn).hasFDerivAt
 
 /-- A smooth partial diffeomorphism for the fully charted exponential, whose source stays inside
 the identity chart. -/
