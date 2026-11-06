@@ -11,9 +11,7 @@ public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.FiniteCompo
 public import TauCeti.NumberTheory.NumberField.Global.HeckeCharacter.Shift
 import TauCeti.NumberTheory.ArithmeticDirichletSeries.Estimates
 import TauCeti.NumberTheory.LocalField.Uniformizer
-import TauCeti.NumberTheory.NumberField.FinitePlace.Basic
 import TauCeti.NumberTheory.NumberField.Global.Ideles.Norm.Basic
-import TauCeti.NumberTheory.NumberField.Global.Ideles.Ray.ClassQuotient
 import TauCeti.RingTheory.DedekindDomain.AdicValuation.ValuativeRel
 
 /-!
@@ -190,13 +188,15 @@ theorem toHeckeCharacter_primeIdele (χ : Grossencharacter K 𝔪) (v : HeightOn
     ((χ.toHeckeCharacter.finiteComponent v u : ℂˣ) : ℂ) =
       χ.unitaryWeight.1 v.asIdeal * (v.asIdeal.absNorm : ℂ) ^ (χ.idealShift : ℂ) := by
   -- Split `χ = χ_u ‖·‖ ^ shift`; a uniformizer idele has norm `N(v)⁻¹`.
-  conv_lhs => rw [← χ.toHeckeCharacter.unitaryPart_mul_normPow_shift]
-  rw [χ.unitaryWeight_apply v hv u hu, HeckeCharacter.finiteComponent_apply,
-    HeckeCharacter.finiteComponent_apply, ContinuousMonoidHom.mul_apply, Units.val_mul,
-    HeckeCharacter.normPow_apply, IdeleClassGroup.ofAdicCompletion_apply, ideleClassNorm_mk,
-    coe_ideleNorm_ofAdicCompletion_of_valued_eq_exp_neg_one v hu, idealShift_def]
-  push_cast
-  rw [Complex.cpow_neg, Complex.inv_cpow _ _ (by simpa using Real.pi_ne_zero.symm)]
+  rw [← χ.toHeckeCharacter.unitaryPart_mul_normPow_shift, HeckeCharacter.finiteComponent_mul,
+    ContinuousMonoidHom.mul_apply, Units.val_mul, ← χ.unitaryWeight_apply v hv u hu]
+  -- `N(v)` is a natural number, so its argument is `0 ≠ π` and `(N(v)⁻¹) ^ s = N(v) ^ (-s)`.
+  have harg : (v.asIdeal.absNorm : ℂ).arg ≠ Real.pi := by
+    rw [Complex.natCast_arg]
+    exact Real.pi_ne_zero.symm
+  simp [IdeleClassGroup.ofAdicCompletion_apply,
+    coe_ideleNorm_ofAdicCompletion_of_valued_eq_exp_neg_one v hu, idealShift_def,
+    Complex.inv_cpow _ _ harg, Complex.cpow_neg]
 
 /-! ### The presentation of a ray class character -/
 
@@ -227,22 +227,13 @@ def ofRayClassCharacter (η : RayClassCharacter 𝔪) : Grossencharacter K 𝔪 
         fun h ↦ hI (Modulus.isCoprimeTo_iff.mpr (Ideal.isPrimeTo_iff.mp h))]
   unitaryWeight_apply v hv u hu := by
     have hv' : v ∉ 𝔪.support := (𝔪.mem_support_iff v).not.mpr hv
-    have hprime : Ideal.IsPrimeTo v.asIdeal 𝔪.support := Ideal.isPrimeTo_asIdeal_iff.mpr hv'
-    have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
-    -- The ray-class weight at `v` is `η` on the ray class of `v`; the character of `η` is its own
-    -- unitary part, and its local component at `u` is `η` on the ray class of the idele `u`,
-    -- which is the ray class of `v` because `u` is a uniformizer.
-    rw [RayClassCharacter.val_toUnitaryIdealWeight,
-      RayClassCharacter.toMultiplicativeIdealWeight_apply_of_isPrimeTo η hprime,
-      RayClassCharacter.onIdeals_apply, idealClass_apply,
-      (HeckeCharacter.unitaryPart_eq_self_iff _).mpr
+    -- The character of `η` is its own unitary part, and its component at the uniformizer `u` is
+    -- the value of `η` on the prime `v`, which is the ray-class weight at `v`.
+    rw [(HeckeCharacter.unitaryPart_eq_self_iff _).mpr
         (HeckeCharacter.shift_ofRayClassCharacter η),
-      HeckeCharacter.finiteComponent_apply, HeckeCharacter.ofRayClassCharacter_apply,
-      rayClassQuotient_ofAdicCompletion_of_isUniformizer hv'
-        (v.isUniformizer_iff_valued_eq_exp_neg_one.mpr hu)
-        (NumberFieldArithmetic.integralIdealsAwayHom K 𝔪.support ⟨v.asIdeal,
-          NumberFieldArithmetic.mem_integralIdealsAway_iff_isPrimeTo.mpr hprime⟩)
-        (NumberFieldArithmetic.coe_integralIdealsAwayHom _ _)]
+      HeckeCharacter.finiteComponent_ofRayClassCharacter_of_isUniformizer η hv'
+        (v.isUniformizer_iff_valued_eq_exp_neg_one.mpr hu)]
+    simp [Ideal.isPrimeTo_asIdeal_iff.mpr hv']
 
 /-- The Hecke character presented by `ofRayClassCharacter η` is that of `η`. -/
 @[simp]
