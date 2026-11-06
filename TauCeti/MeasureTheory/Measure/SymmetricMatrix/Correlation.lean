@@ -75,6 +75,9 @@ of a positive-definite correlation matrix and reads off its partial correlations
 * `TauCeti.bijOn_correlationCoordinatesOfPartialCorrelation`,
   `TauCeti.image_correlationCoordinatesOfPartialCorrelation` — the forward map is a bijection from
   the open cube onto the positive-definite region.
+* `TauCeti.setIntegral_comp_correlationCoordinatesOfPartialCorrelation`,
+  `TauCeti.integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff` — integration over
+  the positive-definite region in partial-correlation coordinates.
 * `TauCeti.partialCorrelationOfCorrelationCoordinates`,
   `TauCeti.invOn_partialCorrelationOfCorrelationCoordinates` — its inverse, which reads the partial
   correlations off the Cholesky factor and maps the region into the open cube.
@@ -303,6 +306,15 @@ def posDefCorrelationRegion : Set (strictLowerTriangle p → ℝ) :=
 theorem mem_posDefCorrelationRegion {x : strictLowerTriangle p → ℝ} :
     x ∈ posDefCorrelationRegion p ↔ (correlationMatrix p x : Matrix (Fin p) (Fin p) ℝ).PosDef :=
   Iff.rfl
+
+variable (p) in
+/-- The positive-definite correlation region is the preimage of the positive-definite symmetric
+matrices under `TauCeti.correlationMatrix p`. -/
+theorem preimage_correlationMatrix_setOf_posDef :
+    correlationMatrix p ⁻¹' {A : selfAdjoint.submodule ℝ (Matrix (Fin p) (Fin p) ℝ) |
+        (A : Matrix (Fin p) (Fin p) ℝ).PosDef} =
+      posDefCorrelationRegion p :=
+  (rfl)
 
 variable (p) in
 theorem isOpen_posDefCorrelationRegion : IsOpen (posDefCorrelationRegion p) :=
@@ -968,6 +980,55 @@ set. -/
 theorem volume_frontier_posDefCorrelationRegion :
     volume (frontier (posDefCorrelationRegion p)) = 0 :=
   (convex_posDefCorrelationRegion p).addHaar_frontier _
+
+/-! ### Integration in partial-correlation coordinates -/
+
+private theorem hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation
+    {z : strictLowerTriangle p → ℝ} (hz : ∀ ij, |z ij| < 1) :
+    HasFDerivWithinAt (correlationCoordinatesOfPartialCorrelation (p := p))
+      (fderiv ℝ correlationCoordinatesOfPartialCorrelation z)
+      {z : strictLowerTriangle p → ℝ | ∀ ij, |z ij| < 1} z :=
+  ((contDiffOn_correlationCoordinatesOfPartialCorrelation.differentiableOn
+    (by simp)).differentiableAt
+      (isOpen_setOf_forall_abs_lt_one.mem_nhds hz)).hasFDerivAt.hasFDerivWithinAt
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- **Change of variables to partial correlations, integrability.** A function is integrable on
+the positive-definite correlation region exactly when its composite with the partial-correlation
+forward map, weighted by the Jacobian `∏ √(1 - z ij ^ 2) ^ (p - j - 2)` (zero-based column `j`),
+is integrable on the open cube. -/
+theorem integrableOn_comp_correlationCoordinatesOfPartialCorrelation_iff
+    (g : (strictLowerTriangle p → ℝ) → E) :
+    IntegrableOn (fun z ↦ (∏ ij : strictLowerTriangle p,
+        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+          g (correlationCoordinatesOfPartialCorrelation z)) {z | ∀ ij, |z ij| < 1} ↔
+      IntegrableOn g (posDefCorrelationRegion p) := by
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    integrableOn_image_iff_integrableOn_abs_det_fderiv_smul volume
+      isOpen_setOf_forall_abs_lt_one.measurableSet
+      (fun _ hz ↦ hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation hz)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine integrableOn_congr_fun (fun z hz ↦ ?_) isOpen_setOf_forall_abs_lt_one.measurableSet
+  rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation hz]
+
+/-- **Change of variables to partial correlations.** The integral of a function over the
+positive-definite correlation region is the integral over the open cube of its composite with the
+partial-correlation forward map, weighted by the Jacobian `∏ √(1 - z ij ^ 2) ^ (p - j - 2)`
+(zero-based column `j`). -/
+theorem setIntegral_comp_correlationCoordinatesOfPartialCorrelation
+    (g : (strictLowerTriangle p → ℝ) → E) :
+    ∫ z in {z | ∀ ij, |z ij| < 1}, (∏ ij : strictLowerTriangle p,
+        Real.sqrt (1 - z ij ^ 2) ^ (p - ij.1.2.1 - 2)) •
+          g (correlationCoordinatesOfPartialCorrelation z) =
+      ∫ x in posDefCorrelationRegion p, g x := by
+  rw [← image_correlationCoordinatesOfPartialCorrelation,
+    integral_image_eq_integral_abs_det_fderiv_smul volume
+      isOpen_setOf_forall_abs_lt_one.measurableSet
+      (fun _ hz ↦ hasFDerivWithinAt_correlationCoordinatesOfPartialCorrelation hz)
+      injOn_correlationCoordinatesOfPartialCorrelation]
+  refine setIntegral_congr_fun isOpen_setOf_forall_abs_lt_one.measurableSet fun z hz ↦ ?_
+  rw [abs_det_fderiv_correlationCoordinatesOfPartialCorrelation hz]
 
 /-! ### Invariance under permutations and sign changes
 
