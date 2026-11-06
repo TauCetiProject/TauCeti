@@ -484,7 +484,7 @@ theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} (hR : 0 ≤ R) :
   · linarith
 
 /-- The truncation `S_R` lies in the closed annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)`. -/
-theorem truncation_subset_closedBall_diff_ball (R : ℝ) :
+theorem truncation_subset_closedBall_sdiff_ball (R : ℝ) :
     truncation R ⊆ Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
       Metric.ball 0 (Real.exp (-(2 * π * R)) / 2) :=
   fun w hw => by
@@ -493,7 +493,7 @@ theorem truncation_subset_closedBall_diff_ball (R : ℝ) :
 
 /-- The points of the closed annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` outside the truncation
 `S_R` lie in the open disc of radius `exp (-2πR) / 2` about `1`. -/
-theorem closedBall_diff_ball_sdiff_truncation_subset_ball (R : ℝ) :
+theorem closedBall_sdiff_ball_sdiff_truncation_subset_ball (R : ℝ) :
     (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
         Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) \ truncation R ⊆
       Metric.ball 1 (Real.exp (-(2 * π * R)) / 2) := by
