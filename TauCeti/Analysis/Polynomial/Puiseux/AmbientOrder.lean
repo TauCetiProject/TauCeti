@@ -65,6 +65,76 @@ namespace TauCeti
 
 variable {n : ℕ} {ι : Type*} [Fintype ι]
 
+/-- Complexifying the real plane slice of `f` in direction `v` through a real point commutes with
+taking the plane order at a real point. -/
+private theorem orderAt_planeSlice_complexify {f : MvPolynomial (Fin (n + 1)) ℝ} {v : Fin n → ℝ}
+    {z : Fin n → ℂ} {y : Fin n → ℝ} (hz : z = fun i ↦ (y i : ℂ)) (t : ℝ) :
+    (MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
+      (fun j ↦ MvPolynomial.C (z j) + MvPolynomial.C (v j : ℂ) * MvPolynomial.X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) ℂ) (MvPolynomial.map Complex.ofRealHom f)).orderAt
+        ![0, (t : ℂ)] =
+      (MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
+        (fun j ↦ MvPolynomial.C (y j) + MvPolynomial.C (v j) * MvPolynomial.X 0) :
+          Fin (n + 1) → MvPolynomial (Fin 2) ℝ) f).orderAt ![0, t] := by
+  have hPx : MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
+      (fun j ↦ MvPolynomial.C (z j) + MvPolynomial.C (v j : ℂ) * MvPolynomial.X 0) :
+        Fin (n + 1) → MvPolynomial (Fin 2) ℂ) (MvPolynomial.map Complex.ofRealHom f) =
+      MvPolynomial.map Complex.ofRealHom
+        (MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
+          (fun j ↦ MvPolynomial.C (y j) + MvPolynomial.C (v j) * MvPolynomial.X 0) :
+            Fin (n + 1) → MvPolynomial (Fin 2) ℝ) f) := by
+    rw [MvPolynomial.map_aeval_finCons_C_add_C_mul_X]
+    simp only [hz, Complex.ofRealHom_eq_coe]
+  have hpt : ![0, (t : ℂ)] = fun i ↦ Complex.ofRealHom (![0, t] i) := by
+    ext i
+    fin_cases i <;> simp
+  rw [hPx, hpt, MvPolynomial.orderAt_map Complex.ofRealHom.injective]
+
+/-- Near `a`, a real root `θ` of the fibers of `p` is the value of a complex branch `r i` on the
+base, and only branches through the central value `θ a` are met. -/
+private theorem eventually_branch_of_root
+    {p : Polynomial (MvPolynomial (Fin n) ℝ)}
+    {φ : (ι → ℝ) → Fin n → ℝ} {θ : (ι → ℝ) → ℝ} {a : ι → ℝ}
+    {Φ : (ι → ℂ) → Fin n → ℂ} {v : Fin n → ℝ} {r : Fin p.natDegree → (ι → ℂ) × ℂ → ℂ}
+    (hθ : ContinuousAt θ a)
+    (hroot : ∀ᶠ x in 𝓝 a, (p.map (MvPolynomial.eval (φ x))).IsRoot (θ x))
+    (hreal : ∀ᶠ x in 𝓝 a, Φ (fun j ↦ (x j : ℂ)) = fun i ↦ (φ x i : ℂ))
+    (hr : ∀ i, AnalyticAt ℂ (r i) ((fun j ↦ (a j : ℂ)), 0))
+    (hsplit : ∀ᶠ z in 𝓝 ((fun j ↦ (a j : ℂ)), (0 : ℂ)),
+      p.map (MvPolynomial.eval₂Hom Complex.ofRealHom
+        (Φ z.1 + z.2 ^ p.natDegree.factorial • (fun i ↦ (v i : ℂ)))) =
+          ∏ i, (X - C (r i z))) :
+    (∀ᶠ x in 𝓝 a, ∃ i, r i ((fun j ↦ (x j : ℂ)), 0) = (θ x : ℂ)) ∧
+      ∀ᶠ x in 𝓝 a, ∀ i, r i ((fun j ↦ (x j : ℂ)), 0) = (θ x : ℂ) →
+        r i ((fun j ↦ (a j : ℂ)), 0) = (θ a : ℂ) := by
+  have hψ : Tendsto (fun (x : ι → ℝ) j ↦ (x j : ℂ)) (𝓝 a) (𝓝 fun j ↦ (a j : ℂ)) :=
+    (continuous_pi fun j ↦ Complex.continuous_ofReal.comp (continuous_apply j)).tendsto a
+  have hψ0 : Tendsto (fun x ↦ ((fun j ↦ (x j : ℂ)), (0 : ℂ))) (𝓝 a)
+      (𝓝 ((fun j ↦ (a j : ℂ)), 0)) := hψ.prodMk_nhds tendsto_const_nhds
+  refine ⟨?_, ?_⟩
+  · filter_upwards [hreal, hroot, hψ0.eventually hsplit] with x hx hθx hsx
+    have heval := congrArg (eval (θ x : ℂ)) hsx
+    simp only [zero_pow (Nat.factorial_ne_zero _), zero_smul, add_zero, eval_prod, eval_sub,
+      eval_X, eval_C] at heval
+    rw [hx, eval_map] at heval
+    obtain ⟨i, -, hi⟩ : ∃ i ∈ Finset.univ, (θ x : ℂ) - r i ((fun j ↦ (x j : ℂ)), 0) = 0 := by
+      have hcomp : (MvPolynomial.eval₂Hom Complex.ofRealHom fun i ↦ (φ x i : ℂ)) =
+          Complex.ofRealHom.comp (MvPolynomial.eval (φ x)) := by
+        ext <;> simp
+      have hzero := congrArg Complex.ofRealHom hθx.eq_zero
+      rw [eval_map, Polynomial.hom_eval₂, ← hcomp, map_zero] at hzero
+      rw [← Finset.prod_eq_zero_iff, ← heval, ← hzero, Complex.ofRealHom_eq_coe]
+    exact ⟨i, (sub_eq_zero.1 hi).symm⟩
+  · refine eventually_all.2 fun i ↦ ?_
+    by_cases hi : r i ((fun j ↦ (a j : ℂ)), 0) = (θ a : ℂ)
+    · exact .of_forall fun _ _ ↦ hi
+    have hcont : Tendsto (fun x ↦ r i ((fun j ↦ (x j : ℂ)), 0) - (θ x : ℂ)) (𝓝 a)
+        (𝓝 (r i ((fun j ↦ (a j : ℂ)), 0) - (θ a : ℂ))) :=
+      ((hr i).continuousAt.tendsto.comp hψ0).sub
+        (Complex.continuous_ofReal.continuousAt.tendsto.comp hθ)
+    filter_upwards [hcont.eventually_ne (sub_ne_zero.2 hi)] with x hx hix
+    exact absurd (sub_eq_zero.2 hix) hx
+
 /-- Constant ambient order on root sections for a monic polynomial whose formal discriminant has
 constant finite ambient order along a real analytic parametrization. -/
 private theorem _root_.Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_discr_eq
@@ -111,42 +181,9 @@ private theorem _root_.Polynomial.Monic.eventually_orderAt_root_eq_of_orderAt_di
         (fun j ↦ MvPolynomial.C (φ x j) + MvPolynomial.C (v j) * MvPolynomial.X 0) :
           Fin (n + 1) → MvPolynomial (Fin 2) ℝ) f).orderAt ![0, t] := by
     filter_upwards [hreal] with x hx t
-    have hPx : P (ψ x) = MvPolynomial.map Complex.ofRealHom
-        (MvPolynomial.aeval (Fin.cons (MvPolynomial.X 1)
-          (fun j ↦ MvPolynomial.C (φ x j) + MvPolynomial.C (v j) * MvPolynomial.X 0) :
-            Fin (n + 1) → MvPolynomial (Fin 2) ℝ) f) := by
-      rw [MvPolynomial.map_aeval_finCons_C_add_C_mul_X]
-      simp only [P, ψ, hx, Complex.ofRealHom_eq_coe]
-    have hpt : ![0, (t : ℂ)] = fun i ↦ Complex.ofRealHom (![0, t] i) := by
-      ext i
-      fin_cases i <;> simp
-    rw [hPx, hpt, MvPolynomial.orderAt_map Complex.ofRealHom.injective]
-  -- Each value of the real root is the value of some complex branch on the base.
-  have hbranch : ∀ᶠ x in 𝓝 a, ∃ i, r i (ψ x, 0) = (θ x : ℂ) := by
-    filter_upwards [hreal, hroot, hψ0.eventually hsplit] with x hx hθx hsx
-    have heval := congrArg (eval (θ x : ℂ)) hsx.1
-    simp only [zero_pow (Nat.factorial_ne_zero _), zero_smul, add_zero, eval_prod, eval_sub,
-      eval_X, eval_C] at heval
-    rw [hx, eval_map] at heval
-    obtain ⟨i, -, hi⟩ : ∃ i ∈ Finset.univ, (θ x : ℂ) - r i (ψ x, 0) = 0 := by
-      have hcomp : (MvPolynomial.eval₂Hom Complex.ofRealHom fun i ↦ (φ x i : ℂ)) =
-          Complex.ofRealHom.comp (MvPolynomial.eval (φ x)) := by
-        ext <;> simp
-      have hzero := congrArg Complex.ofRealHom hθx.eq_zero
-      rw [eval_map, Polynomial.hom_eval₂, ← hcomp, map_zero] at hzero
-      rw [← Finset.prod_eq_zero_iff, ← heval, ← hzero, Complex.ofRealHom_eq_coe]
-    exact ⟨i, (sub_eq_zero.1 hi).symm⟩
-  -- Near `a`, the real root only meets branches through its central value.
-  have hnear : ∀ᶠ x in 𝓝 a, ∀ i, r i (ψ x, 0) = (θ x : ℂ) → r i (ac, 0) = (θ a : ℂ) := by
-    refine eventually_all.2 fun i ↦ ?_
-    by_cases hi : r i (ac, 0) = (θ a : ℂ)
-    · exact .of_forall fun _ _ ↦ hi
-    have hcont : Tendsto (fun x ↦ r i (ψ x, 0) - (θ x : ℂ)) (𝓝 a)
-        (𝓝 (r i (ac, 0) - (θ a : ℂ))) :=
-      ((hr i).continuousAt.tendsto.comp hψ0).sub
-        (Complex.continuous_ofReal.continuousAt.tendsto.comp hθ)
-    filter_upwards [hcont.eventually_ne (sub_ne_zero.2 hi)] with x hx hix
-    exact absurd (sub_eq_zero.2 hix) hx
+    exact orderAt_planeSlice_complexify hx t
+  obtain ⟨hbranch, hnear⟩ := eventually_branch_of_root hθ hroot hreal hr
+    (hsplit.mono fun z hz ↦ hz.1)
   obtain ⟨i₀, hi₀⟩ := hbranch.self_of_nhds
   filter_upwards [hPreal, hψ.eventually horder, hbranch, hnear] with x hx hox hbx hnx
   obtain ⟨i, hi⟩ := hbx
