@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Ideal.Norm.AbsNorm
 public import TauCeti.AlgebraicGeometry.EllipticCurve.MinimalModel.Reduced
 public import TauCeti.AlgebraicGeometry.EllipticCurve.TateAlgorithm.Reduction.Conductor
 public import TauCeti.NumberTheory.AbcConjecture
+import TauCeti.Algebra.Order.Ring.MaxPow
 import TauCeti.AlgebraicGeometry.EllipticCurve.Weierstrass
 import TauCeti.Data.Nat.Prime.Basic
 import TauCeti.RingTheory.Radical.NatInt
@@ -389,20 +390,6 @@ private theorem radical_mul_le_radical_six_mul {a b c c₄ c₆ Δ : ℤ} {g : �
   refine radical_dvd_radical ?_ (pow_ne_zero 6 h₀)
   simpa [Int.natAbs_mul, Int.natAbs_pow] using Int.natAbs_dvd_natAbs.2 this
 
-/-- The sixth-power bookkeeping of the case `c₄ c₆ ≠ 0`: `g R ≤ 432 x y N` bounds
-`(g R)⁶` by `432⁶ M⁵ N⁶`, where `M = max (x³, y²)`. -/
-private theorem pow_six_le_of_le_mul {x y N g R : ℕ} (h : g * R ≤ 432 * (x * y * N)) :
-    (g * R) ^ 6 ≤ 432 ^ 6 * (max (x ^ 3) (y ^ 2)) ^ 5 * N ^ 6 := by
-  have h₂ : (x * y) ^ 6 ≤ (max (x ^ 3) (y ^ 2)) ^ 5 :=
-    calc (x * y) ^ 6 = (x ^ 3) ^ 2 * (y ^ 2) ^ 3 := by ring
-      _ ≤ (max (x ^ 3) (y ^ 2)) ^ 2 * (max (x ^ 3) (y ^ 2)) ^ 3 :=
-        Nat.mul_le_mul (Nat.pow_le_pow_left (le_max_left _ _) 2)
-          (Nat.pow_le_pow_left (le_max_right _ _) 3)
-      _ = (max (x ^ 3) (y ^ 2)) ^ 5 := by ring
-  calc (g * R) ^ 6 ≤ (432 * (x * y * N)) ^ 6 := Nat.pow_le_pow_left h 6
-    _ = 432 ^ 6 * (x * y) ^ 6 * N ^ 6 := by ring
-    _ ≤ 432 ^ 6 * (max (x ^ 3) (y ^ 2)) ^ 5 * N ^ 6 := by gcongr
-
 /-- **The case `c₄ c₆ ≠ 0`**: abc, with constant `C₀` at the exponent `1 + ε₀`, applied to the
 coprime triple of `c₆² + 1728 Δ = c₄³`, together with the bookkeeping of
 `gcd_mul_radical_dvd`, bounds `max (|c₄|³, c₆²)` by a constant times `N ^ (6 + ε)`. -/
@@ -444,7 +431,7 @@ private theorem le_of_abc_of_ne_zero {ε ε₀ C₀ : ℝ} (hε₀ : 0 < ε₀) 
   -- the product `g · rad (6 c₄ c₆ Δ)` is at most `432 |c₄ c₆| N`, whose sixth power is at most
   -- `432⁶ M⁵ N⁶`
   have hy : (g * R) ^ 6 ≤ 432 ^ 6 * M ^ 5 * N ^ 6 :=
-    pow_six_le_of_le_mul (Nat.le_of_dvd (by positivity) (hg ▸ hdvd))
+    pow_six_le_of_le_mul (K := 432) (Nat.le_of_dvd (by positivity) (hg ▸ hdvd))
   refine le_mul_rpow_of_le_mul_rpow hε₀ hεε₀ (y := ((g * R : ℕ) : ℝ)) ?_ ?_ ?_ ?_
     (by exact_mod_cast hy)
   · exact_mod_cast (Nat.one_le_pow _ _ (by omega)).trans (le_max_left _ _)
