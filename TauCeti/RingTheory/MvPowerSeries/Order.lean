@@ -499,7 +499,7 @@ theorem le_order_subst_update_add_sub [DecidableEq σ] (f : MvPowerSeries σ R)
     {e : MvPowerSeries τ S} {n : ℕ} (hn : n ≠ 0) (he : n ≤ e.order) :
     ((n + 1 : ℕ) : ℕ∞) ≤ (f.subst (Function.update a s (a s + e)) - f.subst a -
       algebraMap R S (coeff (Finsupp.single s 1) f) • e).order := by
-  set b := Function.update a s (a s + e) with hb_def
+  set b := Function.update a s (a s + e)
   have he₀ : constantCoeff e = 0 := one_le_order_iff_constCoeff_eq_zero.mp <|
     (Nat.one_le_cast.mpr (Nat.one_le_iff_ne_zero.mpr hn)).trans he
   have hb₀ (t : σ) : constantCoeff (b t) = 0 := by
