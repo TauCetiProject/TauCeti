@@ -382,14 +382,21 @@ theorem restrictNormal_mem_lowerRamificationGroup_one
   -- `v(β) = v(ϖ) ^ (p ^ k)` in `M`, since the value group is torsion-free.
   have hab : valuation M b = valuation M (algebraMap L M ϖ) ^ p ^ k := by
     refine (pow_left_inj hm0).mp ?_
-    rw [← map_pow, show b ^ m = algebraMap K M π₀ from Subtype.ext hβ,
-      IsScalarTower.algebraMap_apply K L M, ← ValuativeExtension.mapValueGroupWithZero_valuation,
-      valuation_algebraMap_irreducible hπ₀ hϖ, hkm, map_pow,
-      ValuativeExtension.mapValueGroupWithZero_valuation, ← pow_mul]
-  have hσb : AlgEquiv.restrictNormal σ M • b = b :=
-    Subtype.ext ((AlgEquiv.restrictNormal_apply M σ b).trans hσβ)
-  have hσa : AlgEquiv.restrictNormal σ M • algebraMap L M ϖ = algebraMap L M (τ • (ϖ : L)) :=
-    Subtype.ext ((AlgEquiv.restrictNormal_apply M σ _).trans
+    -- `Subtype.ext` applies since both sides coerce to `algebraMap K (AlgebraicClosure K) π₀`
+    have hbm : b ^ m = algebraMap K M π₀ := Subtype.ext hβ
+    -- the valuation of `M` on the image of `z : L` is the image of the valuation of `z`
+    have hf (z : L) : valuation M (algebraMap L M z) =
+        ValuativeExtension.mapValueGroupWithZero L M (valuation L z) :=
+      (ValuativeExtension.mapValueGroupWithZero_valuation z).symm
+    have hπL : valuation L (algebraMap K L π₀) = valuation L ϖ ^ (p ^ k * m) := by
+      rw [valuation_algebraMap_irreducible hπ₀ hϖ, hkm]
+    rw [← map_pow, hbm, IsScalarTower.algebraMap_apply K L M, hf, hπL, map_pow, ← hf, ← pow_mul]
+  have hσb : AlgEquiv.restrictNormal σ M • b = b := by
+    rw [AlgEquiv.smul_def]
+    exact Subtype.ext ((AlgEquiv.restrictNormal_apply M σ b).trans hσβ)
+  have hσa : AlgEquiv.restrictNormal σ M • algebraMap L M ϖ = algebraMap L M (τ • (ϖ : L)) := by
+    rw [AlgEquiv.smul_def, AlgEquiv.smul_def]
+    exact Subtype.ext ((AlgEquiv.restrictNormal_apply M σ _).trans
       (AlgEquiv.restrictNormal_apply L σ ϖ).symm)
   have hlt := valuation_smul_div_pow_sub_one_lt_one hτM ((_root_.map_ne_zero _).2 hϖ0) hab hσb
   rw [hσa, ← map_div₀, ← map_pow, ← map_one (algebraMap L M), ← map_sub,
@@ -453,8 +460,9 @@ theorem mem_wildInertiaSubgroup_iff_forall_restrictNormal_mem_finiteGaloisLowerR
         AlgEquiv.commutes, div_self ((_root_.map_ne_zero _).2 a.ne_zero), Units.val_one]
     have hz : z = 1 := Subgroup.disjoint_def.1
       (disjoint_rootsOfUnity_unitFiltration_one_of_isUnit hmL) hzm hz1
-    exact (AlgEquiv.restrictNormal_apply L σ y).symm.trans
-      (congrArg Subtype.val ((div_eq_one_iff_eq hy0).1 (congrArg Units.val hz)))
+    have hτy : τ • y = y := (div_eq_one_iff_eq hy0).1 (congrArg Units.val hz)
+    rw [AlgEquiv.smul_def] at hτy
+    exact (AlgEquiv.restrictNormal_apply L σ y).symm.trans (congrArg Subtype.val hτy)
 
 variable {K} in
 /-- **Wild inertia is the inverse limit of the finite-level `G_1`.** An automorphism `σ` of
