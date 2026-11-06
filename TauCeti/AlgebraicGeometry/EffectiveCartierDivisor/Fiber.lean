@@ -211,14 +211,9 @@ theorem exists_eq_span_singleton_of_isEffectiveCartier_comap_fiberι [IsLocallyN
       PrimeSpectrum.comap_asIdeal] at this
   -- The field-valued point `Spec κ(p) ⟶ Spec A ⟶ S` lies over `f x`.
   have hp : (Spec.map (CommRingCat.ofHom (algebraMap Γ(S, W) p.asIdeal.ResidueField)) ≫
-      hW.fromSpec) (IsLocalRing.closedPoint p.asIdeal.ResidueField) = f x := by
-    refine ((Scheme.Hom.comp_apply _ _ _).trans (congrArg hW.fromSpec (PrimeSpectrum.ext ?_))).trans
-      (hW.fromSpec_primeIdealOf ⟨f x, hxW⟩)
-    -- The closed point of `Spec κ(p)` is the zero ideal, whose inverse image in `A` is `p`.
-    refine (congrArg PrimeSpectrum.asIdeal (Spec.map_apply _ _)).trans ?_
-    rw [PrimeSpectrum.comap_asIdeal, CommRingCat.hom_ofHom]
-    exact (congrArg (Ideal.comap _) IsLocalRing.maximalIdeal_eq_bot).trans
-      ((RingHom.ker_eq_comap_bot _).symm.trans (Ideal.ker_algebraMap_residueField _))
+      hW.fromSpec) (IsLocalRing.closedPoint p.asIdeal.ResidueField) = f x :=
+    (Scheme.Hom.comp_apply _ _ _).trans <| (congrArg hW.fromSpec
+      (Spec.map_algebraMap_residueField_closedPoint p)).trans (hW.fromSpec_primeIdealOf _)
   -- The fibre of `I` over `Spec κ(p) ⟶ S` is effective Cartier, so `I(U)` generates a principal
   -- ideal, with a nonzerodivisor generator, in the local ring of the fibre ring at `Q`, hence
   -- also in `B_q`.
