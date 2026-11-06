@@ -45,14 +45,6 @@ open scoped ComplexConjugate
 
 namespace TauCeti
 
-private lemma add_I_ne_zero_of_mem_upperHalfPlane {z : ℂ}
-    (hz : z ∈ UpperHalfPlane.upperHalfPlaneSet) :
-    z + I ≠ 0 := by
-  let τ : UpperHalfPlane := ⟨z, hz⟩
-  let i : UpperHalfPlane := ⟨I, by simp⟩
-  simpa only [τ, i, UpperHalfPlane.coe_mk, map_neg, conj_I, sub_neg_eq_add] using
-    UpperHalfPlane.coe_sub_conj_ne_zero i τ
-
 /-- **Cayley-coordinate Herglotz representation of a Pick function.** A function holomorphic on
 the upper half-plane with nonnegative imaginary part is, after the Cayley coordinate
 `z ↦ (z - i) / (z + i)`, `i` times the Herglotz transform of a finite positive measure on the
@@ -81,7 +73,7 @@ theorem exists_isFiniteMeasure_eq_I_mul_herglotzTransform_cayley_add {F : ℂ �
   have hcz := bijOn_sub_I_div_add_I_upperHalfPlaneSet.mapsTo hz
   have h := hrep ((z - I) / (z + I)) hcz
   dsimp only [G] at h
-  rw [I_mul_one_add_sub_I_div_add_I_div_one_sub (add_I_ne_zero_of_mem_upperHalfPlane hz)] at h
+  rw [I_mul_one_add_sub_I_div_add_I_div_one_sub (add_I_ne_zero_of_im_nonneg hz.le)] at h
   have hc : (G 0).im = -(F I).re := by
     simp [G]
   rw [hc] at h
@@ -117,7 +109,7 @@ theorem differentiableOn_and_im_nonneg_iff_exists_eq_I_mul_herglotzTransform_cay
       intro z hz
       exact (((differentiableAt_id.sub (differentiableAt_const I)).div
         (differentiableAt_id.add (differentiableAt_const I))
-        (add_I_ne_zero_of_mem_upperHalfPlane hz)).differentiableWithinAt)
+        (add_I_ne_zero_of_im_nonneg hz.le)).differentiableWithinAt)
     have htransform : DifferentiableOn ℂ (fun z => μ.herglotzTransform (c z))
         UpperHalfPlane.upperHalfPlaneSet :=
       (Measure.differentiableOn_herglotzTransform μ).comp hc
