@@ -333,14 +333,6 @@ private theorem IsTateTerminal.starStage {n : ℕ} (h : W.IsTateTerminal ϖ (.IS
   · exact ⟨starStage_two_mul.2 hk, starTest_two_mul.not.2 ht⟩
   · exact ⟨starStage_two_mul_add_one.2 hk, starTest_two_mul_add_one.not.2 ht⟩
 
-/-- A power `ϖ ^ (n + 1)` dividing `x` forces `ϖ ∣ x`. -/
-private theorem dvd_of_pow_succ_dvd (n : ℕ) {x : R} (h : ϖ ^ (n + 1) ∣ x) : ϖ ∣ x :=
-  (dvd_pow_self ϖ n.succ_ne_zero).trans h
-
-/-- A lower power of `ϖ` divides whatever a higher power divides. -/
-private theorem pow_dvd_of_le {m n : ℕ} (hmn : m ≤ n) {x : R} (h : ϖ ^ n ∣ x) : ϖ ^ m ∣ x :=
-  (pow_dvd_pow ϖ hmn).trans h
-
 end CommRing
 
 section DiscreteValuationRing
@@ -493,25 +485,26 @@ private theorem tateContext_IStar_add_one {n : ℕ} (hϖ : Irreducible ϖ)
       ¬ tateTest ϖ W (chainIndex (.IStar (n + 1))) := by
   rcases isTateTerminal_IStar_add_one.1 h with ⟨k, -, hk, -⟩ | ⟨k, -, hk, -⟩
   · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateOddStage_iff.1 hk
-    exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' (pow_dvd_of_le (by omega) h₃)
-      (pow_dvd_of_le (by omega) h₄)
-      (pow_dvd_of_le (by omega) h₆)
+    exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' ((pow_dvd_pow ϖ (by omega)).trans h₃)
+      ((pow_dvd_pow ϖ (by omega)).trans h₄)
+      ((pow_dvd_pow ϖ (by omega)).trans h₆)
   · obtain ⟨h₁, h₂, h₂', h₃, h₄, h₆⟩ := isTateEvenStage_iff.1 hk
-    exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' (pow_dvd_of_le (by omega) h₃)
-      (pow_dvd_of_le (by omega) h₄)
-      (pow_dvd_of_le (by omega) h₆)
+    exact tateContext_six_of_doubleRoot hϖ h₁ h₂ h₂' ((pow_dvd_pow ϖ (by omega)).trans h₃)
+      ((pow_dvd_pow ϖ (by omega)).trans h₄)
+      ((pow_dvd_pow ϖ (by omega)).trans h₆)
 
 /-- The context and failed test at which Tate's algorithm stops with `IV*`. -/
 private theorem tateContext_IVStar (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ .IVStar) :
     TateContext ϖ (chainIndex .IVStar) W ∧ ¬ tateTest ϖ W (chainIndex .IVStar) := by
   obtain ⟨h₁, h₂, h₃, h₄, h₆, hb₆⟩ := isTateTerminal_IVStar.1 h
-  have ht := tateTest_of_stepSix h₁ (dvd_of_pow_succ_dvd 1 h₂) h₃ (pow_dvd_of_le (by omega) h₄)
-    (pow_dvd_of_le (by omega) h₆)
+  have ht := tateTest_of_stepSix h₁ ((dvd_pow_self ϖ (by omega)).trans h₂) h₃
+    ((pow_dvd_pow ϖ (by omega)).trans h₄) ((pow_dvd_pow ϖ (by omega)).trans h₆)
   have ht' := tateTest_five_six_of_stepEight hϖ h₂ h₄ h₆
   refine ⟨⟨fun k hk ↦ ?_,
-    fun _ ↦ ⟨dvd_of_pow_succ_dvd 1 h₃, dvd_of_pow_succ_dvd 2 h₄, dvd_of_pow_succ_dvd 3 h₆⟩,
-    fun _ ↦ ⟨h₁, dvd_of_pow_succ_dvd 1 h₂, h₃, pow_dvd_of_le (by omega) h₄,
-      pow_dvd_of_le (by omega) h₆⟩,
+    fun _ ↦ ⟨(dvd_pow_self ϖ (by omega)).trans h₃, (dvd_pow_self ϖ (by omega)).trans h₄,
+      (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+    fun _ ↦ ⟨h₁, (dvd_pow_self ϖ (by omega)).trans h₂, h₃, ((pow_dvd_pow ϖ (by omega)).trans h₄),
+      ((pow_dvd_pow ϖ (by omega)).trans h₆)⟩,
     fun _ ↦ ⟨h₂, h₄, h₆⟩,
     by simp [chainIndex]⟩, hb₆⟩
   simp only [chainIndex] at hk
@@ -524,15 +517,16 @@ private theorem tateContext_IVStar (hϖ : Irreducible ϖ) (h : W.IsTateTerminal 
 private theorem tateContext_IIIStar (hϖ : Irreducible ϖ) (h : W.IsTateTerminal ϖ .IIIStar) :
     TateContext ϖ (chainIndex .IIIStar) W ∧ ¬ tateTest ϖ W (chainIndex .IIIStar) := by
   obtain ⟨h₁, h₂, h₃, h₄, h₆, h₄'⟩ := isTateTerminal_IIIStar.1 h
-  have ht := tateTest_of_stepSix h₁ (dvd_of_pow_succ_dvd 1 h₂) (pow_dvd_of_le (by omega) h₃)
-    (pow_dvd_of_le (by omega) h₄)
-    (pow_dvd_of_le (by omega) h₆)
-  have ht' := tateTest_five_six_of_stepEight hϖ h₂ h₄ (pow_dvd_of_le (by omega) h₆)
+  have ht := tateTest_of_stepSix h₁ ((dvd_pow_self ϖ (by omega)).trans h₂)
+    ((pow_dvd_pow ϖ (by omega)).trans h₃) ((pow_dvd_pow ϖ (by omega)).trans h₄)
+    ((pow_dvd_pow ϖ (by omega)).trans h₆)
+  have ht' := tateTest_five_six_of_stepEight hϖ h₂ h₄ ((pow_dvd_pow ϖ (by omega)).trans h₆)
   refine ⟨⟨fun k hk ↦ ?_,
-    fun _ ↦ ⟨dvd_of_pow_succ_dvd 2 h₃, dvd_of_pow_succ_dvd 2 h₄, dvd_of_pow_succ_dvd 4 h₆⟩,
-    fun _ ↦ ⟨h₁, dvd_of_pow_succ_dvd 1 h₂, pow_dvd_of_le (by omega) h₃,
-      pow_dvd_of_le (by omega) h₄, pow_dvd_of_le (by omega) h₆⟩,
-    fun _ ↦ ⟨h₂, h₄, pow_dvd_of_le (by omega) h₆⟩, fun _ ↦ ⟨h₃, h₆⟩⟩, h₄'⟩
+    fun _ ↦ ⟨(dvd_pow_self ϖ (by omega)).trans h₃, (dvd_pow_self ϖ (by omega)).trans h₄,
+      (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+    fun _ ↦ ⟨h₁, (dvd_pow_self ϖ (by omega)).trans h₂, ((pow_dvd_pow ϖ (by omega)).trans h₃),
+      ((pow_dvd_pow ϖ (by omega)).trans h₄), ((pow_dvd_pow ϖ (by omega)).trans h₆)⟩,
+    fun _ ↦ ⟨h₂, h₄, ((pow_dvd_pow ϖ (by omega)).trans h₆)⟩, fun _ ↦ ⟨h₃, h₆⟩⟩, h₄'⟩
   simp only [chainIndex] at hk
   rcases lt_or_ge k 5 with hk5 | hk5
   · exact ht k hk5
@@ -545,7 +539,7 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
     (h : W.IsTateTerminal ϖ s) :
     TateContext ϖ (chainIndex s) W ∧ ¬ tateTest ϖ W (chainIndex s) := by
   have hΔ (hs : ∀ n, s ≠ .I n) : ϖ ∣ W.Δ :=
-    dvd_of_pow_succ_dvd _ (h.pow_componentCount_add_one_dvd_Δ hϖ.prime hs)
+    (dvd_pow_self ϖ (by omega)).trans (h.pow_componentCount_add_one_dvd_Δ hϖ.prime hs)
   match s, h with
   | .I 0, h =>
     exact ⟨⟨by simp [chainIndex], by simp [chainIndex], by simp [chainIndex], by simp [chainIndex],
@@ -555,7 +549,7 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
     refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, h₆⟩, by simp [chainIndex], by simp [chainIndex],
       by simp [chainIndex]⟩, hb₂⟩
     obtain rfl : k = 0 := by simpa [chainIndex] using hk
-    exact dvd_of_pow_succ_dvd n hΔ'
+    exact (dvd_pow_self ϖ (by omega)).trans hΔ'
   | .II, h =>
     obtain ⟨hb₂, h₃, h₄, h₆, h₆'⟩ := isTateTerminal_II.1 h
     refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, h₆⟩, by simp [chainIndex], by simp [chainIndex],
@@ -565,22 +559,23 @@ private theorem IsTateTerminal.tateContext (hϖ : Irreducible ϖ) {s : Reduction
     exacts [hΔ (by simp), hb₂]
   | .III, h =>
     obtain ⟨hb₂, h₃, h₄, h₆, hb₈⟩ := isTateTerminal_III.1 h
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, dvd_of_pow_succ_dvd 1 h₆⟩, by simp [chainIndex],
-      by simp [chainIndex], by simp [chainIndex]⟩, hb₈⟩
+    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+      by simp [chainIndex], by simp [chainIndex], by simp [chainIndex]⟩, hb₈⟩
     simp only [chainIndex] at hk
     interval_cases k
     exacts [hΔ (by simp), hb₂, h₆]
   | .IV, h =>
     obtain ⟨hb₂, h₃, h₄, h₆, hb₈, hb₆⟩ := isTateTerminal_IV.1 h
-    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, dvd_of_pow_succ_dvd 1 h₆⟩, by simp [chainIndex],
-      by simp [chainIndex], by simp [chainIndex]⟩, hb₆⟩
+    refine ⟨⟨fun k hk ↦ ?_, fun _ ↦ ⟨h₃, h₄, (dvd_pow_self ϖ (by omega)).trans h₆⟩,
+      by simp [chainIndex], by simp [chainIndex], by simp [chainIndex]⟩, hb₆⟩
     simp only [chainIndex] at hk
     interval_cases k
     exacts [hΔ (by simp), hb₂, h₆, hb₈]
   | .IStar 0, h =>
     obtain ⟨h₁, h₂, h₃, h₄, h₆, hd⟩ := isTateTerminal_IStar_zero.1 h
     exact ⟨⟨tateTest_of_stepSix h₁ h₂ h₃ h₄ h₆,
-      fun _ ↦ ⟨dvd_of_pow_succ_dvd 1 h₃, dvd_of_pow_succ_dvd 1 h₄, dvd_of_pow_succ_dvd 2 h₆⟩,
+      fun _ ↦ ⟨(dvd_pow_self ϖ (by omega)).trans h₃, (dvd_pow_self ϖ (by omega)).trans h₄,
+      (dvd_pow_self ϖ (by omega)).trans h₆⟩,
       fun _ ↦ ⟨h₁, h₂, h₃, h₄, h₆⟩, by simp [chainIndex], by simp [chainIndex]⟩, hd⟩
   | .IStar (n + 1), h => exact tateContext_IStar_add_one hϖ h
   | .IVStar, h => exact tateContext_IVStar hϖ h
