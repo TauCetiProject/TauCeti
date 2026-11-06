@@ -48,6 +48,8 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
   of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
+* `Subgroup.mul_mul_injective_of_disjoint`: the coordinates `u n b` are unique when `U`
+  meets `n B n⁻¹` trivially.
 * `Subgroup.map_conj_map_conj`: successive conjugations of a subgroup compose to one
   conjugation.
 * `Subgroup.map_map_conj`: the image of a conjugate subgroup is the conjugate of the image.
@@ -351,6 +353,23 @@ theorem _root_.Subgroup.normalCore_comap_of_forall_exists_mul_eq (f : G →* H) 
     group
   rw [hconj]
   exact mul_mem (mul_mem (inv_mem hb) (hx y⁻¹)) (inv_mem (inv_mem hb))
+
+/-- The coordinates `u n b` are unique if `U` meets `n B n⁻¹` trivially. -/
+theorem _root_.Subgroup.mul_mul_injective_of_disjoint (U B : Subgroup G) {n : G}
+    (h : Disjoint U (B.map (MulAut.conj n).toMonoidHom)) :
+    Function.Injective (fun p : U × B => (p.1 : G) * n * p.2) := by
+  intro p q hpq
+  have heq : (p.1 : G) * (n * p.2 * n⁻¹) = (q.1 : G) * (n * q.2 * n⁻¹) := by
+    simpa only [mul_assoc] using congrArg (fun x : G => x * n⁻¹) hpq
+  have hconj (b : B) : n * b * n⁻¹ ∈ B.map (MulAut.conj n).toMonoidHom := by
+    simpa only [MulEquiv.coe_toMonoidHom, MulAut.conj_apply] using
+      _root_.Subgroup.mem_map_of_mem (MulAut.conj n).toMonoidHom b.property
+  have hpair := _root_.Subgroup.mul_injective_of_disjoint h
+    (a₁ := (p.1, ⟨n * p.2 * n⁻¹, hconj p.2⟩))
+    (a₂ := (q.1, ⟨n * q.2 * n⁻¹, hconj q.2⟩)) heq
+  refine Prod.ext (congrArg (fun r : U × B.map (MulAut.conj n).toMonoidHom => r.1) hpair) ?_
+  apply Subtype.ext
+  exact mul_left_cancel (mul_right_cancel (congrArg (fun x => (x.2 : G)) hpair))
 
 /-- The image of a conjugate subgroup `gRg⁻¹` under a homomorphism `f` is the conjugate of `f(R)`
 by `f g`.
