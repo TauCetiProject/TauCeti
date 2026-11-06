@@ -139,8 +139,7 @@ theorem toPointHom_some_eq_some_of_isEquiv_comap_pointPlace_of_forall_inertiaDeg
   -- hence the norm of `𝔓` is the ideal of `Q`
   have hnorm : Ideal.relNorm W₂.CoordinateRing 𝔓.asIdeal =
       (CoordinateRing.pointPlace h'.1).asIdeal :=
-    Ideal.relNorm_eq_of_forall_inertiaDeg_eq_one (CoordinateRing.pointPlace h'.1).ne_bot hf
-      𝔓.asIdeal
+    Ideal.relNorm_eq_of_forall_inertiaDeg_eq_one hf 𝔓.asIdeal
   -- read the class-group computation off these ideals
   rw [toPointHom_eq_iff, Point.toClass_some_eq_ofMul_mk0 h, Point.toClass_some_eq_ofMul_mk0 h',
     pushClass_apply, toMul_ofMul, pushClassMonoidHom_mk0]
