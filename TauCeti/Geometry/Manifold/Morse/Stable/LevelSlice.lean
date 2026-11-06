@@ -39,6 +39,9 @@ vector space.
   trajectory from `a` to `b` have values strictly between `f b` and `f a`.
 * `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet`: a
   trajectory from `a` to `b` crosses each value strictly between `f b` and `f a` exactly once.
+* `TauCeti.IsAdaptedPseudoGradient.existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet`
+  (the case `c = (f a + f b) / 2`): a trajectory from `a` to `b` crosses the middle level exactly
+  once.
 * `TauCeti.IsAdaptedPseudoGradient.eq_of_flow_eq_of_value_eq`: a point of such a trajectory is
   determined by its orbit and its level.
 * `TauCeti.IsAdaptedPseudoGradient.exists_subseq_tendsto_flow_of_tendsto`: if points of such a
@@ -154,6 +157,17 @@ theorem existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet
     ((htop.eventually (eventually_lt_nhds hbc)).exists.imp fun _ h ↦ h.le)
     ((hbot.eventually (eventually_gt_nhds hca)).exists.imp fun _ h ↦ h.le)
   exact ⟨t, ht, fun s hs ↦ hanti.injective (hs.trans ht.symm)⟩
+
+/-- **A trajectory crosses the middle level exactly once.** Along a trajectory from a critical
+point `a` to a different critical point `b`, the function `f` takes the value `(f a + f b) / 2`
+at exactly one time. -/
+theorem existsUnique_flow_eq_midpoint_of_mem_unstableSet_inter_stableSet
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
+    (hab : a ≠ b) (hy : y ∈ hX.flow.unstableSet a ∩ hX.flow.stableSet b) :
+    ∃! t : ℝ, f (hX.flow t y) = (f a + f b) / 2 := by
+  have hval := hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hab hy
+  exact hX.existsUnique_flow_eq_of_mem_unstableSet_inter_stableSet hf hab hy
+    (by linarith [hval.1, hval.2]) (by linarith [hval.1, hval.2])
 
 /-- **A point of a trajectory is determined by its orbit and its level.** Two points that lie on a
 common orbit and a common level coincide, if one of them is on a trajectory between distinct

@@ -126,10 +126,10 @@ jobs:
       # that the rest of this change exists to keep fresh. Restoring the last published set
       # first makes "keep the previous one" true for the generated data too.
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@a8b16c3dd0c0730a1963052cb520808e161222ef
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@18285517f50cf43fdf748e3fd0e858a812a68c65
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: a8b16c3dd0c0730a1963052cb520808e161222ef
+          tools-ref: 18285517f50cf43fdf748e3fd0e858a812a68c65
           project-directory: .
       - name: Restore the last published data assets
         uses: actions/cache/restore@v4
@@ -168,6 +168,28 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: git clone --quiet https://github.com/TauCetiProject/TauCetiRoadmap.git /tmp/roadmap
 
+      # Compare every historical library point with the same pinned Mathlib tree.
+      # No Mathlib build or oleans are needed: only Lean source line counts.
+      - name: Read the pinned Mathlib revision
+        id: statistics-mathlib
+        working-directory: ${{ github.workspace }}
+        run: |
+          ref=$(jq -er '.packages[] | select(.name == "mathlib") | .rev' lake-manifest.json)
+          [[ "$ref" =~ ^[0-9a-f]{40}$ ]]
+          echo "ref=$ref" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout Mathlib source for the statistics baseline
+        uses: actions/checkout@v4
+        with:
+          repository: leanprover-community/mathlib4
+          ref: ${{ steps.statistics-mathlib.outputs.ref }}
+          path: .statistics-mathlib
+          persist-credentials: false
+          sparse-checkout: |
+            /Mathlib/
+            /Mathlib.lean
+          sparse-checkout-cone-mode: false
+
       # Overwrites the checked-in SVGs in the runner only (never committed back). The
       # versions tracked in web/static_files/ are just fallback snapshots so a local
       # `cd web && lake exe web` renders something; refresh them by running these same
@@ -176,7 +198,7 @@ jobs:
         working-directory: ${{ github.workspace }}
         run: |
           python3 scripts/loc_graph.py \
-            --repo . --ref HEAD \
+            --repo . --ref HEAD --mathlib-repo .statistics-mathlib \
             --title "Tau Ceti — lines of Lean" --accent "#ff9d4d" \
             --out web/static_files/loc-tauceti.svg \
             --dump-data "$RUNNER_TEMP/library-loc.json" \
