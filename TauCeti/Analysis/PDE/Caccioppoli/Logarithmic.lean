@@ -287,7 +287,8 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_div_sq_le
 
 omit [DecidableEq ι] in
 /-- If `u ≥ m > 0` almost everywhere on the ball `B(x₀, R) ⊆ Ω`, then `log u` is an element `w` of
-`H¹(B(x₀, R))` with value `log u` and `‖∇w‖² = ‖∇u‖² / u²` almost everywhere on the ball. -/
+`H¹(B(x₀, R))` with value `log u` and `‖∇w‖² = ‖∇u‖² / u²` almost everywhere on the ball: the
+restriction of `W1p.exists_value_gradient_ae_eq_log` to the ball. -/
 private theorem exists_w1p_value_log_gradient_sq {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι}
     {R m : ℝ} (hball : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (hm : 0 < m)
     (hum : ∀ᵐ x ∂mu.restrict (ball x₀ R), m ≤ W1p.value u x) :
@@ -297,23 +298,16 @@ private theorem exists_w1p_value_log_gradient_sq {u : W1p mu Omega 2} {x₀ : Eu
         ‖W1p.gradient w x‖ ^ 2 = ‖W1p.gradient u x‖ ^ 2 / W1p.value u x ^ 2 := by
   set U : Opens (EuclideanSpace ℝ ι) := ⟨ball x₀ R, isOpen_ball⟩
   have hU : U ≤ Omega := hball
-  set F := positiveCutoff m Real.log
-  have hgC : ∀ t : ℝ, 0 < t → ContDiffAt ℝ 1 Real.log t :=
-    fun t ht => Real.contDiffAt_log.2 ht.ne'
-  have hFC : ContDiff ℝ 1 F := contDiff_positiveCutoff hm hgC
-  obtain ⟨MF, hMF⟩ := exists_nnnorm_deriv_positiveCutoff_le hm hgC (K := m⁻¹) fun t ht => by
-    rw [Real.deriv_log, abs_inv, abs_of_pos (hm.trans_le ht)]
-    gcongr
-  have hF0 : F 0 = 0 := positiveCutoff_of_le hm _ (by linarith)
-  refine ⟨W1p.contDiffComp (by norm_num) hFC hMF hF0 (W1p.restrictL hU u), ?_, ?_⟩
-  · filter_upwards [W1p.value_contDiffComp_ae (by norm_num) hFC hMF hF0 (W1p.restrictL hU u),
-      W1p.value_restrictL_ae hU u, hum] with x hx hux hmx
+  obtain ⟨w, hwv, hwg⟩ := W1p.exists_value_gradient_ae_eq_log (p := 2) (by norm_num) hm
+    (u := W1p.restrictL hU u) (by
+      filter_upwards [W1p.value_restrictL_ae hU u, hum] with x hx h
+      rwa [hx])
+  refine ⟨w, ?_, ?_⟩
+  · filter_upwards [hwv, W1p.value_restrictL_ae hU u] with x hx hux
     rw [hx, hux]
-    exact positiveCutoff_of_ge hm _ (by linarith)
-  · filter_upwards [W1p.gradient_contDiffComp_ae (by norm_num) hFC hMF hF0 (W1p.restrictL hU u),
-      W1p.value_restrictL_ae hU u, W1p.gradient_restrictL_ae hU u, hum] with x hx hux hgx hmx
-    rw [hx, hux, hgx, deriv_positiveCutoff hm _ (by linarith), Real.deriv_log, norm_smul,
-      Real.norm_eq_abs, abs_inv, abs_of_pos (hm.trans_le hmx)]
+  · filter_upwards [hwg, W1p.value_restrictL_ae hU u, W1p.gradient_restrictL_ae hU u, hum] with
+      x hx hux hgx hmx
+    rw [hx, hux, hgx, norm_smul, Real.norm_eq_abs, abs_inv, abs_of_pos (hm.trans_le hmx)]
     ring
 
 /-- **The logarithmic Caccioppoli inequality on concentric balls.** There is a constant `c > 0`,
