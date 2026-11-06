@@ -201,8 +201,9 @@ theorem relatorEval_injective (r : R)
   have hq := MonoidHom.mem_ker.1 (hle ▸ Subgroup.mem_top q)
   simpa using hq
 
-/-- Read on `G` through `e`, the transgression of the restriction to `R` of a Heisenberg cochain
-of two cocycles of `F` pulled back from `G` is the explicit cup product of the original classes. -/
+/-- Read on `G` through `e`, the transgression of the negative restriction `-h|_R` to `R` of a
+Heisenberg cochain `h` of two cocycles of `F` pulled back from `G` is the explicit cup product of
+the original classes. -/
 private theorem explicitCup11_eq_h2QuotientEquiv_transgression {a b : Z1 (freeProP p X) (ZMod p)}
     {h : freeProP p X → ZMod p}
     (hh : IsHeisenbergCochain (AddMonoidHom.mul : ZMod p →+ ZMod p →+ ZMod p) a b h)
