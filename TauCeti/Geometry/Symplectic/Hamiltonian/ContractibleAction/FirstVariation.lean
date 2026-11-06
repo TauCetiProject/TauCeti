@@ -23,10 +23,10 @@ time-dependent Hamiltonian, jointly `C¹` on `ℝ × M`. A **variation** of loop
 `d/ds A_H(γ_s) = ∫₀¹ ω(∂_t u, ∂_s u) - d(H t)(∂_s u) dt`
 
 (`TauCeti.IsWeaklyExact.hasDerivAt_contractibleLoopAction`). This is the **first variation
-formula** of the action functional. If `X t` is a Hamiltonian vector field of `H t`, that is
-`ι_{X t} ω = d(H t)`, it takes the form
+formula** of the action functional. For a weakly exact smooth two-form `σ` and a Hamiltonian
+vector field `X t` of `H t`, that is `ι_{X t} σ = d(H t)`, it takes the form
 
-`d/ds A_H(γ_s) = ∫₀¹ ω(γ_s' - X_t(γ_s), ∂_s u) dt`
+`d/ds A_H(γ_s) = ∫₀¹ σ(γ_s' - X_t(γ_s), ∂_s u) dt`
 
 (`TauCeti.SmoothTwoForm.hasDerivAt_contractibleLoopAction_of_isHamiltonianVectorField`). In
 particular the `1`-periodic orbits of `X`, the loops with `γ' = X_t(γ)`, are critical points of the
@@ -212,17 +212,12 @@ theorem hasDerivAt_contractibleLoopAction_of_mem_periodicSolutions (hw : IsWeakl
   refine (hasDerivAt_contractibleLoopAction_of_isHamiltonianVectorField hw hH hX hu hper
     hv).congr_deriv ?_
   -- Along the orbit, `∂_t u = X_t(u)`, so the integrand vanishes.
-  have hder (t : ℝ) : mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (0, 1) = X t (u (s₀, t)) := by
-    have hl : HasMFDerivAt 𝓘(ℝ, ℝ) 𝓘(ℝ, ℝ × ℝ) (fun t' ↦ (s₀, t')) t
-        ((0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ)) :=
-      ((hasFDerivAt_const s₀ t).prodMk (hasFDerivAt_id t)).hasMFDerivAt
-    have h : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun t' ↦ u (s₀, t')) t
-        ((mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t)).comp
-          ((0 : ℝ →L[ℝ] ℝ).prod (ContinuousLinearMap.id ℝ ℝ))) :=
-      ((hu (s₀, t)).mdifferentiableAt two_ne_zero).hasMFDerivAt.comp t hl
-    have := (HasMFDerivAt.mfderiv h).symm.trans
-      (HasMFDerivAt.mfderiv ((mem_periodicSolutions.mp hγ).1 t))
-    exact (congrArg (fun L : ℝ →L[ℝ] TangentSpace I (u (s₀, t)) ↦ L 1) this).trans (by simp)
+  have hder (t : ℝ) : mfderiv 𝓘(ℝ, ℝ × ℝ) I u (s₀, t) (0, 1) = X t (u (s₀, t)) :=
+    (Manifold.curveVelocity_eq_mfderiv_snd (f := fun s t ↦ u (s, t))
+      ((hu (s₀, t)).mdifferentiableAt two_ne_zero)).symm.trans <| by
+      rw [← Manifold.curveVelocityWithin_univ]
+      exact Manifold.curveVelocityWithin_eq_of_hasMFDerivWithinAt
+        ((mem_periodicSolutions.mp hγ).1 t).hasMFDerivWithinAt uniqueDiffWithinAt_univ
   refine (intervalIntegral.integral_congr fun t _ ↦ ?_).trans intervalIntegral.integral_zero
   rw [hder t, sub_self, ← SmoothForm.bilinFormAt_apply, map_zero, LinearMap.zero_apply]
 
