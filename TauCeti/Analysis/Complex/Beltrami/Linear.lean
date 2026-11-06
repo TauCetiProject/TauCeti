@@ -9,12 +9,10 @@ public import TauCeti.Geometry.Symplectic.Cayley.Smooth
 public import TauCeti.Geometry.Symplectic.Complex.Line
 public import TauCeti.Analysis.Complex.Wirtinger.Basic
 public import TauCeti.LinearAlgebra.Complex.LinearPart
-public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
-import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
+public import Mathlib.Analysis.Complex.UnitDisc.Basic
 import Mathlib.LinearAlgebra.Complex.Determinant
-import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
 /-!
 # Scalar Beltrami coordinates and the affine normalizer
@@ -36,12 +34,13 @@ equation. It does not construct isothermal charts or assume a solution of that e
 
 public noncomputable section
 
-open Complex Manifold Module
+open Complex Manifold
 open scoped ComplexConjugate ContDiff
 
 namespace TauCeti.Beltrami
 
-/-- The real-linear affine Beltrami map, with value zero and complex derivative one at zero. -/
+/-- The real-linear affine Beltrami map has value zero at zero and holomorphic Wirtinger
+derivative one. -/
 def linearMap (μ : ℂ) : ℂ →L[ℝ] ℂ :=
   ContinuousLinearMap.id ℝ ℂ + μ • Complex.conjCLE.toContinuousLinearMap
 
@@ -74,37 +73,38 @@ private theorem sub_conj_linearMap (μ z : ℂ) :
   simp only [Complex.ofReal_sub, Complex.ofReal_one]
   ring
 
-private theorem left_inverse (μ : ℂ) (hμ : ‖μ‖ < 1) :
+private theorem left_inverse (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) :
     Function.LeftInverse (fun z => (1 - Complex.normSq μ)⁻¹ • (z - μ * conj z))
       (linearMap μ) := by
-  have hpos : 0 < 1 - Complex.normSq μ := by
-    simpa only [Complex.normSq_eq_norm_sq] using one_sub_sq_norm_pos_of_norm_lt_one hμ
   intro z
   dsimp only
-  rw [sub_conj_linearMap, smul_smul, inv_mul_cancel₀ hpos.ne', one_smul]
+  rw [sub_conj_linearMap, smul_smul, inv_mul_cancel₀ (sub_ne_zero.mpr hμ.symm), one_smul]
 
-private theorem right_inverse (μ : ℂ) (hμ : ‖μ‖ < 1) :
+private theorem right_inverse (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) :
     Function.RightInverse (fun z => (1 - Complex.normSq μ)⁻¹ • (z - μ * conj z))
       (linearMap μ) := by
-  have hpos : 0 < 1 - Complex.normSq μ := by
-    simpa only [Complex.normSq_eq_norm_sq] using one_sub_sq_norm_pos_of_norm_lt_one hμ
   intro z
   dsimp only
   rw [map_smul, linearMap_sub_conj, smul_smul,
-    inv_mul_cancel₀ hpos.ne', one_smul]
+    inv_mul_cancel₀ (sub_ne_zero.mpr hμ.symm), one_smul]
 
-/-- The actual continuous real-linear equivalence of the affine Beltrami map for `‖μ‖ < 1`. -/
-def linearEquiv (μ : ℂ) (hμ : ‖μ‖ < 1) : ℂ ≃L[ℝ] ℂ :=
+/-- The actual continuous real-linear equivalence of the affine Beltrami map for `normSq μ ≠ 1`. -/
+def linearEquiv (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) : ℂ ≃L[ℝ] ℂ :=
   (LinearEquiv.ofBijective (linearMap μ).toLinearMap
     ⟨(left_inverse μ hμ).injective, (right_inverse μ hμ).surjective⟩).toContinuousLinearEquiv
 
 @[simp]
-theorem linearEquiv_apply (μ : ℂ) (hμ : ‖μ‖ < 1) (z : ℂ) :
+theorem linearEquiv_apply (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) (z : ℂ) :
     linearEquiv μ hμ z = z + μ * conj z := (rfl)
 
-/-- The explicit inverse has denominator equal to the positive real Jacobian factor. -/
+/-- The continuous linear map underlying the equivalence is the affine Beltrami map. -/
 @[simp]
-theorem linearEquiv_symm_apply (μ : ℂ) (hμ : ‖μ‖ < 1) (z : ℂ) :
+theorem linearEquiv_toContinuousLinearMap (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) :
+    (linearEquiv μ hμ).toContinuousLinearMap = linearMap μ := (rfl)
+
+/-- The explicit inverse has denominator equal to the nonzero real Jacobian factor. -/
+@[simp]
+theorem linearEquiv_symm_apply (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) (z : ℂ) :
     (linearEquiv μ hμ).symm z = (1 - Complex.normSq μ)⁻¹ • (z - μ * conj z) := by
   apply (linearEquiv μ hμ).injective
   rw [ContinuousLinearEquiv.apply_symm_apply]
@@ -170,49 +170,6 @@ theorem antilinear_apply {C : Module.End ℝ ℂ}
     Complex.real_smul]
   ring
 
-private def planeBasis (J : AlmostComplexStructure ℂ) : Basis (Fin 2) ℝ ℂ :=
-  basisOfLinearIndependentOfCardEqFinrank' ![1, J 1]
-    (J.linearIndependent_pair one_ne_zero) (by simp)
-
-private theorem planeBasis_apply (J : AlmostComplexStructure ℂ) :
-    ⇑(planeBasis J) = ![1, J 1] :=
-  coe_basisOfLinearIndependentOfCardEqFinrank' _ _ _
-
-/-- A plane complex structure cannot send one to a real vector: its square is minus the identity.
-Thus there are exactly two choices of orientation for the scalar coefficient chart. -/
-theorem im_apply_one_ne_zero (J : AlmostComplexStructure ℂ) : (J 1).im ≠ 0 := by
-  intro h
-  have he := congrArg Complex.im ((planeBasis J).sum_repr Complex.I)
-  simp [Fin.sum_univ_two, planeBasis_apply, h, Complex.real_smul] at he
-
-/-- The orientation component of a complex structure on the real plane is detected at one.
-The standard area form tames exactly the component for which `Im (J 1)` is positive. -/
-theorem tames_iff_im_pos (J : AlmostComplexStructure ℂ) :
-    stdComplexSymplecticForm.Tames J ↔ 0 < (J 1).im := by
-  constructor
-  · intro h
-    simpa using h 1 one_ne_zero
-  · intro h z hz
-    let x := (planeBasis J).repr z 0
-    let y := (planeBasis J).repr z 1
-    have he : z = x • (1 : ℂ) + y • J 1 := by
-      simpa [x, y, Fin.sum_univ_two, planeBasis_apply] using
-        ((planeBasis J).sum_repr z).symm
-    have hxy : x ≠ 0 ∨ y ≠ 0 := by
-      by_contra! hxy
-      exact hz (by simpa [hxy.1, hxy.2] using he)
-    have hsq : 0 < x ^ 2 + y ^ 2 := by
-      rcases hxy with hx | hy
-      · exact add_pos_of_pos_of_nonneg (sq_pos_of_ne_zero hx) (sq_nonneg y)
-      · exact add_pos_of_nonneg_of_pos (sq_nonneg x) (sq_pos_of_ne_zero hy)
-    rw [he, map_add, map_smul, map_smul, J.apply_apply]
-    have ha : stdComplexSymplecticForm (x • (1 : ℂ) + y • J 1)
-        (x • J 1 + y • -(1 : ℂ)) = (x ^ 2 + y ^ 2) * (J 1).im := by
-      simp [stdComplexSymplecticForm_apply, Complex.real_smul]
-      ring
-    rw [ha]
-    exact mul_pos hsq h
-
 /-- The antilinear real endomorphism with scalar coefficient `μ`. -/
 def antilinearMap (μ : ℂ) : ℂ →L[ℝ] ℂ :=
   μ • Complex.conjCLE.toContinuousLinearMap
@@ -229,12 +186,6 @@ theorem isComplexAntilinear_antilinearMap (μ : ℂ) :
   simp [AlmostComplexStructure.ofComplexModule_apply]
   ring
 
-private theorem area_std (z : ℂ) :
-    stdComplexSymplecticForm z (AlmostComplexStructure.ofComplexModule ℂ z) =
-      Complex.normSq z := by
-  simp [stdComplexSymplecticForm_apply, AlmostComplexStructure.ofComplexModule_apply,
-    Complex.normSq_apply]
-
 /-- The Cayley contraction condition on the complex line is precisely the scalar unit disc. -/
 theorem antilinearMap_mem_cayleyBall_iff (μ : ℂ) :
     (antilinearMap μ).toLinearMap ∈
@@ -244,16 +195,18 @@ theorem antilinearMap_mem_cayleyBall_iff (μ : ℂ) :
   constructor
   · intro h
     have h1 := h.2 1 one_ne_zero
-    simp only [area_std, ContinuousLinearMap.coe_coe, antilinearMap_apply, map_one, mul_one] at h1
+    simp only [stdComplexSymplecticForm_apply_ofComplexModule,
+      ContinuousLinearMap.coe_coe, antilinearMap_apply, map_one, mul_one] at h1
     rw [Complex.normSq_eq_norm_sq] at h1
     nlinarith [norm_nonneg μ]
   · intro h
     refine ⟨isComplexAntilinear_antilinearMap μ, fun z hz => ?_⟩
-    simp only [area_std, ContinuousLinearMap.coe_coe, antilinearMap_apply,
+    simp only [stdComplexSymplecticForm_apply_ofComplexModule,
+      ContinuousLinearMap.coe_coe, antilinearMap_apply,
       Complex.normSq_mul, Complex.normSq_conj]
     have hm : Complex.normSq μ < 1 := by
-      simpa only [Complex.normSq_eq_norm_sq] using
-        sub_pos.mp (one_sub_sq_norm_pos_of_norm_lt_one h)
+      simpa only [Complex.UnitDisc.coe_mk] using
+        Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk μ h)
     simpa using mul_lt_mul_of_pos_right hm (Complex.normSq_pos.mpr hz)
 
 /-- Evaluation at one identifies the native plane Cayley ball with the complex unit disc. -/
@@ -285,7 +238,7 @@ theorem cayleyBallEquiv_symm_apply (μ : {μ : ℂ // ‖μ‖ < 1}) :
     (cayleyBallEquiv.symm μ).val = (antilinearMap μ.val).toLinearMap := (rfl)
 
 /-- The native tame Cayley chart, expressed by a single scalar Beltrami coefficient. Its domain
-is the positive orientation component, characterized by `tames_iff_im_pos`. -/
+is the positive orientation component; see `stdComplexSymplecticForm_tames_iff_im_pos`. -/
 def coefficientEquiv :
     {J : AlmostComplexStructure ℂ // stdComplexSymplecticForm.Tames J} ≃
       {μ : ℂ // ‖μ‖ < 1} :=
@@ -296,8 +249,8 @@ theorem coefficientEquiv_apply (J : AlmostComplexStructure ℂ)
     (hJ : stdComplexSymplecticForm.Tames J) :
     (coefficientEquiv ⟨J, hJ⟩).val =
       (AlmostComplexStructure.ofComplexModule ℂ).cayley J 1 := by
-  change (stdComplexSymplecticForm_compatible.cayleyEquiv ⟨J, hJ⟩).val 1 = _
-  rw [SymplecticForm.Compatible.cayleyEquiv_apply_coe]
+  simp only [coefficientEquiv, Equiv.trans_apply, cayleyBallEquiv_apply,
+    SymplecticForm.Compatible.cayleyEquiv_apply_coe]
 
 /-- The affine map for the scalar Cayley coefficient actually intertwines the given structure
 with multiplication by `I`. -/
@@ -312,7 +265,8 @@ theorem linearMap_intertwines (J : AlmostComplexStructure ℂ)
     (SymplecticForm.mem_cayleyBall.mp hC).1
   have hrel := LinearMap.congr_fun
     (stdComplexSymplecticForm_tames.cayley_mul_one_sub_mul hJ) z
-  change C (z - J₀ (J z)) = -(z + J₀ (J z)) at hrel
+  simp only [mul_apply_eq_comp, LinearMap.sub_apply, LinearMap.add_apply,
+    LinearMap.neg_apply, one_apply_eq_self] at hrel
   rw [map_sub, ha.apply] at hrel
   have hh : J₀ (J z) + J₀ (C (J z)) = -(z + C z) := by
     linear_combination hrel
@@ -330,19 +284,29 @@ Applied to the value of a field at a chosen point, this is the normalization `μ
 theorem transport_linearEquiv_eq_std (J : AlmostComplexStructure ℂ)
     (hJ : stdComplexSymplecticForm.Tames J) :
     J.transport (linearEquiv (coefficientEquiv ⟨J, hJ⟩).val
-      (coefficientEquiv ⟨J, hJ⟩).property).toLinearEquiv =
+      (by
+        simpa only [Complex.UnitDisc.coe_mk] using
+          (Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk _
+            (coefficientEquiv ⟨J, hJ⟩).property)).ne)).toLinearEquiv =
       AlmostComplexStructure.ofComplexModule ℂ := by
-  let e := linearEquiv (coefficientEquiv ⟨J, hJ⟩).val (coefficientEquiv ⟨J, hJ⟩).property
+  let e := linearEquiv (coefficientEquiv ⟨J, hJ⟩).val
+    (by
+      simpa only [Complex.UnitDisc.coe_mk] using
+        (Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk _
+          (coefficientEquiv ⟨J, hJ⟩).property)).ne)
   apply AlmostComplexStructure.ext
   intro z
   rw [AlmostComplexStructure.transport_apply, AlmostComplexStructure.ofComplexModule_apply]
   have h := linearMap_intertwines J hJ (e.symm z)
-  change e (J (e.symm z)) = Complex.I * e (e.symm z) at h
-  simpa only [ContinuousLinearEquiv.apply_symm_apply, smul_eq_mul,
-    ContinuousLinearEquiv.coe_toLinearEquiv, ContinuousLinearEquiv.coe_symm_toLinearEquiv] using h
+  have he : e.toContinuousLinearMap = linearMap (coefficientEquiv ⟨J, hJ⟩).val :=
+    linearEquiv_toContinuousLinearMap _ _
+  rw [← he] at h
+  simpa only [ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.apply_symm_apply,
+    smul_eq_mul, ContinuousLinearEquiv.coe_toLinearEquiv,
+    ContinuousLinearEquiv.coe_symm_toLinearEquiv] using h
 
-/-- Every coefficient in the open unit disc gives an actual smooth local diffeomorphism. -/
-theorem isLocalDiffeomorph_linearMap (μ : ℂ) (hμ : ‖μ‖ < 1) :
+/-- Every coefficient with nonzero real Jacobian gives an actual smooth local diffeomorphism. -/
+theorem isLocalDiffeomorph_linearMap (μ : ℂ) (hμ : Complex.normSq μ ≠ 1) :
     IsLocalDiffeomorph 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ) ∞ (linearMap μ) :=
   (linearEquiv μ hμ).toDiffeomorph.isLocalDiffeomorph
 
@@ -350,9 +314,15 @@ theorem isLocalDiffeomorph_linearMap (μ : ℂ) (hμ : ‖μ‖ < 1) :
 real-linear affine normalizer. -/
 theorem coefficientEquiv_symm_apply (μ : {μ : ℂ // ‖μ‖ < 1}) (z : ℂ) :
     (coefficientEquiv.symm μ).val z =
-      (linearEquiv μ.val μ.property).symm
-        (Complex.I * linearEquiv μ.val μ.property z) := by
-  apply (linearEquiv μ.val μ.property).injective
+      (linearEquiv μ.val (by
+        simpa only [Complex.UnitDisc.coe_mk] using
+          (Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk μ.val μ.property)).ne)).symm
+        (Complex.I * linearEquiv μ.val (by
+          simpa only [Complex.UnitDisc.coe_mk] using
+            (Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk μ.val μ.property)).ne) z) := by
+  apply (linearEquiv μ.val (by
+        simpa only [Complex.UnitDisc.coe_mk] using
+          (Complex.UnitDisc.normSq_lt_one (Complex.UnitDisc.mk μ.val μ.property)).ne)).injective
   rw [ContinuousLinearEquiv.apply_symm_apply]
   have h := linearMap_intertwines (coefficientEquiv.symm μ).val
     (coefficientEquiv.symm μ).property z
@@ -365,28 +335,6 @@ theorem coefficientEquiv_std :
       stdComplexSymplecticForm_tames⟩).val = 0 := by
   rw [coefficientEquiv_apply, AlmostComplexStructure.cayley_self]
   rfl
-
-/-- The opposite standard structure lies outside the positive component. -/
-theorem not_tames_neg_std :
-    ¬ stdComplexSymplecticForm.Tames (-(AlmostComplexStructure.ofComplexModule ℂ)) := by
-  rw [tames_iff_im_pos]
-  simp [AlmostComplexStructure.ofComplexModule_apply]
-
-/-- Conjugating the real chart puts exactly the negative component in the positive chart.
-Thus the scalar unit-disc chart is used only after choosing the complex orientation. -/
-theorem tames_transport_conj_iff (J : AlmostComplexStructure ℂ) :
-    stdComplexSymplecticForm.Tames (J.transport Complex.conjCLE.toLinearEquiv) ↔
-      (J 1).im < 0 := by
-  rw [tames_iff_im_pos]
-  simp
-
-/-- Every plane complex structure belongs to the positive scalar chart after either keeping
-or conjugating the real coordinates. -/
-theorem tames_or_tames_transport_conj (J : AlmostComplexStructure ℂ) :
-    stdComplexSymplecticForm.Tames J ∨
-      stdComplexSymplecticForm.Tames (J.transport Complex.conjCLE.toLinearEquiv) := by
-  rw [tames_iff_im_pos, tames_transport_conj_iff]
-  exact (lt_or_gt_of_ne (im_apply_one_ne_zero J)).symm
 
 /-- At coefficient one the affine map fails to be a local diffeomorphism at every point,
 not just to be globally injective. -/
