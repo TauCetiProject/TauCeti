@@ -65,6 +65,23 @@ namespace TauCeti
 
 variable {U : Set ℂ} {a : ℂ}
 
+/-- The connected component, in the complement of a set `F` containing the frontier of
+`U` and the sphere `sphere a r`, of a point of `U ∩ ball a r` outside `F` stays inside
+`U ∩ ball a r`: a preconnected set meeting a set and its complement meets its frontier. -/
+private theorem connectedComponentIn_compl_subset_inter_ball {x₀ : ℂ} {r : ℝ}
+    (hr : 0 < r) {F : Set ℂ} (hF : frontier U ∪ sphere a r ⊆ F)
+    (hx₀U : x₀ ∈ U) (hx₀r : x₀ ∈ ball a r) (hx₀F : x₀ ∈ Fᶜ) :
+    connectedComponentIn Fᶜ x₀ ⊆ U ∩ ball a r := by
+  have hCpre : IsPreconnected (connectedComponentIn Fᶜ x₀) := isPreconnected_connectedComponentIn
+  have hx₀C := mem_connectedComponentIn hx₀F
+  have key (s : Set ℂ) (hs : x₀ ∈ s) (hfr : frontier s ⊆ F) : connectedComponentIn Fᶜ x₀ ⊆ s := by
+    by_contra h
+    obtain ⟨p, hpC, hpf⟩ := hCpre.inter_frontier_nonempty ⟨x₀, hx₀C, hs⟩
+      (Set.not_subset.mp h)
+    exact connectedComponentIn_subset _ _ hpC (hfr hpf)
+  exact subset_inter (key U hx₀U fun z hz => hF (Or.inl hz))
+    (key _ hx₀r fun z hz => hF (Or.inr (by rwa [frontier_ball _ hr.ne'] at hz)))
+
 /-- **Janiszewski step.**  Given an open arc `W` of the boundary through `a`,
 inside `ball a r`, with closed preconnected complement, the trace `U ∩ ball a δ`
 lies in one preconnected subset of `U ∩ ball a r` for some `δ > 0`. -/
@@ -77,64 +94,26 @@ private theorem IsJordanDomain.exists_isPreconnected_inter_ball_subset_of_arc
   -- a radius whose ball misses the complementary arc
   obtain ⟨ρ, hρ₀, hρr, hρdisj⟩ :
       ∃ ρ > 0, ρ ≤ r ∧ Disjoint (ball a ρ) (J \ W) := by
-    rcases (J \ W).eq_empty_or_nonempty with hne | hne
-    · exact ⟨r, hr, le_rfl, by rw [hne]; exact disjoint_empty _⟩
-    · have haJW : a ∉ J \ W := fun h => h.2 haW
-      have hpos : 0 < infDist a (J \ W) := by
-        rcases (infDist_nonneg (x := a) (s := J \ W)).lt_or_eq with h | h
-        · exact h
-        · exact absurd ((hclosed.mem_iff_infDist_zero hne).mpr h.symm) haJW
-      refine ⟨min r (infDist a (J \ W)), lt_min hr hpos, min_le_left _ _, ?_⟩
-      rw [Set.disjoint_left]
-      intro z hz hzJ
-      have h1 : infDist a (J \ W) ≤ dist a z := infDist_le_dist_of_mem hzJ
-      have h2 : dist a z < min r (infDist a (J \ W)) := by rw [dist_comm]; exact mem_ball.mp hz
-      exact absurd (h2.trans_le (min_le_right _ _)) (not_lt.mpr h1)
+    obtain ⟨ε, hε, hεsub⟩ := Metric.isOpen_iff.mp hclosed.isOpen_compl a fun h => h.2 haW
+    exact ⟨min r ε, lt_min hr hε, min_le_left _ _,
+      Set.disjoint_left.2 fun z hz hzE => hεsub (ball_subset_ball (min_le_right _ _) hz) hzE⟩
   refine ⟨ρ, hρ₀, ?_⟩
   rcases (U ∩ ball a ρ).eq_empty_or_nonempty with hne | ⟨x₀, hx₀U, hx₀a⟩
   · exact ⟨∅, empty_subset _, isPreconnected_empty, hne.subset⟩
   set S : Set ℂ := J
   set T : Set ℂ := sphere a r ∪ (J \ W)
-  set C : Set ℂ := connectedComponentIn (S ∪ T)ᶜ x₀
   have hUJ : U ∩ J = ∅ := hU.isOpen.inter_frontier_eq
-  have hx₀J : x₀ ∉ J := fun h => (Set.eq_empty_iff_forall_notMem.mp hUJ) x₀ ⟨hx₀U, h⟩
   have hx₀r : x₀ ∈ ball a r := ball_subset_ball hρr hx₀a
-  have hx₀T : x₀ ∉ T := by
-    rintro (h | h)
+  have hx₀T : x₀ ∈ (S ∪ T)ᶜ := by
+    have hx₀J : x₀ ∉ J := fun h => (Set.eq_empty_iff_forall_notMem.mp hUJ) x₀ ⟨hx₀U, h⟩
+    rintro (h | h | h)
+    · exact hx₀J h
     · exact (ne_of_lt (mem_ball.mp hx₀r)) (mem_sphere.mp h)
     · exact hx₀J h.1
-  have hx₀C : x₀ ∈ C := mem_connectedComponentIn (by
-    rintro (h | h)
-    · exact hx₀J h
-    · exact hx₀T h)
-  have hCpre : IsPreconnected C := isPreconnected_connectedComponentIn
-  have hCST : C ⊆ (S ∪ T)ᶜ := connectedComponentIn_subset _ _
-  -- `C` avoids the frontier, so it lies in `U`
-  have hCU : C ⊆ U := by
-    refine IsPreconnected.subset_left_of_subset_union hU.isOpen
-      (isClosed_closure : IsClosed (closure U)).isOpen_compl
-      ?_ ?_ ⟨x₀, hx₀C, hx₀U⟩ hCpre
-    · exact disjoint_compl_right.mono_left subset_closure
-    · intro z hz
-      by_cases hzc : z ∈ closure U
-      · left
-        by_contra hzU
-        exact hCST hz (Or.inl ⟨hzc, fun hi => hzU (interior_subset hi)⟩)
-      · exact Or.inr hzc
-  -- `C` avoids the sphere, so it lies in the ball
-  have hCball : C ⊆ ball a r := by
-    refine IsPreconnected.subset_left_of_subset_union isOpen_ball
-      (isClosed_closedBall : IsClosed (closedBall a r)).isOpen_compl
-      ?_ ?_ ⟨x₀, hx₀C, hx₀r⟩ hCpre
-    · exact disjoint_compl_right.mono_left ball_subset_closedBall
-    · intro z hz
-      by_cases hzc : z ∈ closedBall a r
-      · left
-        rcases (mem_closedBall.mp hzc).lt_or_eq with h | h
-        · exact mem_ball.mpr h
-        · exact absurd (Or.inr (Or.inl (mem_sphere.mpr h))) (hCST hz)
-      · exact Or.inr hzc
-  refine ⟨C, fun z hz => ⟨hCU hz, hCball hz⟩, hCpre, ?_⟩
+  refine ⟨connectedComponentIn (S ∪ T)ᶜ x₀,
+    connectedComponentIn_compl_subset_inter_ball hr
+      (fun z hz => hz.elim Or.inl fun h => Or.inr (Or.inl h)) hx₀U hx₀r hx₀T,
+    isPreconnected_connectedComponentIn, ?_⟩
   -- Janiszewski puts every point of `U ∩ ball a ρ` in the component of `x₀`
   rintro y ⟨hyU, hya⟩
   have hSb : IsBounded S := hU.isBounded.closure.subset frontier_subset_closure
