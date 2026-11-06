@@ -75,6 +75,52 @@ variable {K : Type*} [Field K] [NumberField K] {θ : 𝓞 K} {d : ℤ}
 
 variable {Q : ℕ → (Ideal (𝓞 K))⁰}
 
+/-- A totally positive unit of a quadratic field has norm one: the conjugate product is not `-1`. -/
+theorem mul_ringOfIntegersQuadraticConj_eq_one_of_isTotallyPositive
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    {ε : (𝓞 K)ˣ} (hpos : IsTotallyPositive ((ε : 𝓞 K) : K)) :
+    (ε : 𝓞 K) * ringOfIntegersQuadraticConj hmin hgen (ε : 𝓞 K) = 1 := by
+  rcases mul_ringOfIntegersQuadraticConj_unit_eq_one_or_neg_one hmin hgen ε with h | h
+  · exact h
+  · have hεK : (((ε : 𝓞 K) : K)) ≠ 0 :=
+      RingOfIntegers.coe_ne_zero_iff.mpr ε.ne_zero
+    have hnorm_pos := norm_pos_of_isTotallyPositive hεK hpos
+    have hnorm_neg : Algebra.norm ℚ (((ε : 𝓞 K) : K)) = -1 := by
+      apply (algebraMap ℚ K).injective
+      rw [algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen, h]
+      simp
+    rw [hnorm_neg] at hnorm_pos
+    norm_num at hnorm_pos
+
+/-- If an ambiguous principal ideal `(γ)` with `σγ = εγ` for a totally positive unit `ε` is a
+product of the primes `Q p`, `p ∈ S`, then the product of their narrow classes is trivial: `γ / σγ`
+is totally positive, so `γ` or `-γ` is. -/
+theorem prod_narrowMk0_eq_one_of_prod_eq_span
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    {ε : (𝓞 K)ˣ} (hpos : IsTotallyPositive ((ε : 𝓞 K) : K)) {γ : 𝓞 K} (hγ0 : γ ≠ 0)
+    (hσγ : ringOfIntegersQuadraticConj hmin hgen γ = (ε : 𝓞 K) * γ) {S : Finset ℕ}
+    (hprodeq : (∏ p ∈ S, (Q p : Ideal (𝓞 K))) = Ideal.span {γ}) :
+    ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
+  have hσγK : quadraticConj hmin hgen (γ : K) = ((ε : 𝓞 K) : K) * (γ : K) := by
+    rw [← coe_ringOfIntegersQuadraticConj hmin hgen γ, hσγ]
+    push_cast
+    ring
+  have hγK : (γ : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hγ0
+  have hposratio : IsTotallyPositive ((γ : K) / quadraticConj hmin hgen (γ : K)) := by
+    rw [hσγK, div_mul_eq_div_div_swap, div_self hγK]
+    simpa using hpos.inv
+  have hcoe : ((∏ p ∈ S, Q p : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = Ideal.span {γ} := by
+    rw [Submonoid.coe_finsetProd]
+    exact hprodeq
+  rw [← map_prod]
+  rcases isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
+    hmin hgen hposratio with h | h
+  · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hγ0 h hcoe
+  · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -γ) (neg_ne_zero.mpr hγ0)
+      (by push_cast; exact h) ?_
+    rw [Ideal.span_singleton_neg]
+    exact hcoe
+
 /-- **A totally positive unit that is not a conjugation ratio produces a relation.** Let `ε` be a
 totally positive unit of norm one such that `σv = εv` for no unit `v`. Hilbert 90 produces `z ≠ 0`
 with `σz = εz`, so the ideal `(z)` is ambiguous; the structure theorem writes it as a positive
@@ -94,18 +140,7 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
       ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
   classical
   set σ := ringOfIntegersQuadraticConj hmin hgen
-  have hnorm : (ε : 𝓞 K) * σ (ε : 𝓞 K) = 1 := by
-    rcases mul_ringOfIntegersQuadraticConj_unit_eq_one_or_neg_one hmin hgen ε with h | h
-    · exact h
-    · have hεK : (((ε : 𝓞 K) : K)) ≠ 0 :=
-        RingOfIntegers.coe_ne_zero_iff.mpr ε.ne_zero
-      have hnorm_pos := norm_pos_of_isTotallyPositive hεK hpos
-      have hnorm_neg : Algebra.norm ℚ (((ε : 𝓞 K) : K)) = -1 := by
-        apply (algebraMap ℚ K).injective
-        rw [algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen, h]
-        simp
-      rw [hnorm_neg] at hnorm_pos
-      norm_num at hnorm_pos
+  have hnorm := mul_ringOfIntegersQuadraticConj_eq_one_of_isTotallyPositive hmin hgen hpos
   obtain ⟨z, hz0, hz⟩ :=
     exists_ne_zero_mul_eq_mul_ringOfIntegersQuadraticConj hmin hgen (x := (ε : 𝓞 K)) (y := 1)
       ε.ne_zero (by simpa using hnorm)
@@ -145,27 +180,7 @@ theorem exists_nonempty_prod_narrowMk0_eq_one_of_unit
     refine mul_right_cancel₀ hm0' ?_
     rw [mul_assoc]
     exact h
-  -- `γ / σγ = ε⁻¹` is totally positive, so `γ` or `-γ` is.
-  have hσγK : quadraticConj hmin hgen (γ : K) = ((ε : 𝓞 K) : K) * (γ : K) := by
-    rw [← coe_ringOfIntegersQuadraticConj hmin hgen γ, hσγ]
-    push_cast
-    ring
-  have hγK : (γ : K) ≠ 0 := RingOfIntegers.coe_ne_zero_iff.mpr hγ0
-  have hposratio : IsTotallyPositive ((γ : K) / quadraticConj hmin hgen (γ : K)) := by
-    rw [hσγK, div_mul_eq_div_div_swap, div_self hγK]
-    simpa using hpos.inv
-  have hcoe : ((∏ p ∈ S, Q p : (Ideal (𝓞 K))⁰) : Ideal (𝓞 K)) = Ideal.span {γ} := by
-    rw [Submonoid.coe_finsetProd]
-    exact hprodeq
-  have hone : ∏ p ∈ S, NarrowClassGroup.mk0 (Q p) = 1 := by
-    rw [← map_prod]
-    rcases isTotallyPositive_or_isTotallyPositive_neg_of_isTotallyPositive_div_quadraticConj
-      hmin hgen hposratio with h | h
-    · exact NarrowClassGroup.mk0_eq_one_of_isTotallyPositive hγ0 h hcoe
-    · refine NarrowClassGroup.mk0_eq_one_of_isTotallyPositive (a := -γ) (neg_ne_zero.mpr hγ0)
-        (by push_cast; exact h) ?_
-      rw [Ideal.span_singleton_neg]
-      exact hcoe
+  have hone := prod_narrowMk0_eq_one_of_prod_eq_span hmin hgen hpos hγ0 hσγ hprodeq
   refine ⟨S, ?_, hS, hone⟩
   rcases S.eq_empty_or_nonempty with rfl | hSne
   · rw [Finset.prod_empty, Ideal.one_eq_top, eq_comm, Ideal.span_singleton_eq_top] at hprodeq
