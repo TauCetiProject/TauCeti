@@ -953,7 +953,7 @@ theorem quadraticTwistPointEquiv_map_eq_quadraticCharacter_smul_map (σ : M ≃�
       (f := ({ σ.toAlgHom.toRingHom with commutes' := hσ } : M →ₐ[L] M)) (P := P)
     rw [(AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M σ).2 hσ, map_one]
     exact_mod_cast key
-  · rw [Algebra.IsQuadraticExtension.quadraticCharacter_eq_neg_one_of_ne_one _ _
+  · rw [(Algebra.IsQuadraticExtension.quadraticCharacter_eq_neg_one_iff _ _).mpr
       fun h ↦ hσ ((AlgEquiv.restrictNormal_eq_one_iff_algebraMap K L M σ).1 h)]
     simpa using quadraticTwistPointEquiv_map_eq_neg_map_of_not_fixed
       (E := E) (L := L) (M := M) (σ := σ) hσ P

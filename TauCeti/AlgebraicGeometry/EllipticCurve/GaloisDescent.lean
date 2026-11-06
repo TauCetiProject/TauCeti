@@ -15,8 +15,8 @@ import TauCeti.AlgebraicGeometry.EllipticCurve.VariableChange.Basic
 
 Let `L/K` be a separable quadratic extension. Data attached to a Weierstrass curve over `L` and
 fixed by the nontrivial `σ ∈ Gal(L/K)` descends to `K`, because an element of `L` fixed by `σ` is
-already in `K` (`Algebra.IsQuadraticExtension.mem_range_algebraMap_of_apply_eq`). Two descent
-results are proved here:
+already in `K` (`Algebra.IsQuadraticExtension.mem_range_algebraMap_iff_apply_eq_self`). Two
+descent results are proved here:
 
 * `WeierstrassCurve.VariableChange.exists_baseChange_eq_of_map_eq`: an admissible change of
   variables over `L` fixed by `σ` is the base change of one over `K`;
@@ -137,8 +137,8 @@ theorem exists_baseChange_eq_of_map_eq [DecidableEq K] [DecidableEq L]
   · exact ⟨0, Affine.Point.map_zero _⟩
   · rw [Affine.Point.map_some] at hR
     injection hR with hx hy
-    obtain ⟨x₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hx
-    obtain ⟨y₀, rfl⟩ := mem_range_algebraMap_of_apply_eq K L hσ hy
+    obtain ⟨x₀, rfl⟩ := (mem_range_algebraMap_iff_apply_eq_self K L hσ).mpr hx
+    obtain ⟨y₀, rfl⟩ := (mem_range_algebraMap_iff_apply_eq_self K L hσ).mpr hy
     -- `Algebra.ofId K L` and `algebraMap K L` are the same map; make the bridge explicit.
     simp only [← Algebra.ofId_apply] at h ⊢
     exact ⟨.some x₀ y₀ ((Affine.baseChange_nonsingular W

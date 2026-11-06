@@ -8,13 +8,14 @@ module
 public import Mathlib.FieldTheory.Galois.Basic
 
 /-!
-# The Galois theory of separable quadratic extensions
+# The Galois theory of quadratic extensions
 
-Material complementing `Mathlib/FieldTheory/Galois/Basic.lean` for a separable quadratic
-extension `L/K`: it has exactly two automorphisms, so the identity and any one nontrivial
-automorphism exhaust `Gal(L/K)`, and an element fixed by a nontrivial automorphism lies in the
-base field. `Algebra.IsQuadraticExtension.quadraticCharacter` records the resulting
-`Gal(L/K) →* ℤˣ` — the identity to `1`, the nontrivial automorphism to `-1`. It is there so that
+Material complementing `Mathlib/FieldTheory/Galois/Basic.lean` for a quadratic extension `L/K`:
+it has at most two automorphisms, so the identity and any one nontrivial automorphism exhaust
+`Gal(L/K)` and every automorphism is an involution. When `L/K` is also separable it has exactly
+two, and an element fixed by the nontrivial one lies in the base field; only these results assume
+separability. `Algebra.IsQuadraticExtension.quadraticCharacter` records the resulting
+`Gal(L/K) →* ℤˣ` — the identity to `1`, a nontrivial automorphism to `-1`. It is there so that
 a quantity alternating with the Galois action can be described uniformly in `σ` rather than by
 cases; `WeierstrassCurve.quadraticTwistPointEquiv_map_eq_quadraticCharacter_smul_map` is the
 intended consumer. Mathlib's `quadraticChar` is a different object — the Legendre symbol of a
@@ -39,51 +40,55 @@ than in the copyright header. Only the results consumed downstream are adapted h
 
 public section
 
-variable (K L : Type*) [Field K] [Field L] [Algebra K L]
-variable [Algebra.IsQuadraticExtension K L] [Algebra.IsSeparable K L]
+variable (K L : Type*) [Field K] [Field L] [Algebra K L] [Algebra.IsQuadraticExtension K L]
 
 namespace Algebra.IsQuadraticExtension
 
+/-- A quadratic extension has at most two automorphisms. -/
+theorem card_algEquiv_le_two : Nat.card (L ≃ₐ[K] L) ≤ 2 := by
+  simpa [Nat.card_eq_fintype_card, finrank_eq_two] using AlgEquiv.card_le (F := K) (K := L)
+
 /-- A separable quadratic extension has exactly two automorphisms. -/
-theorem card_algEquiv_eq_two : Nat.card (L ≃ₐ[K] L) = 2 := by
-  rw [IsGalois.card_aut_eq_finrank]
-  exact finrank_eq_two K L
+theorem card_algEquiv_eq_two [Algebra.IsSeparable K L] : Nat.card (L ≃ₐ[K] L) = 2 :=
+  (IsGalois.card_aut_eq_finrank K L).trans (finrank_eq_two K L)
 
-/-- The only automorphisms of a separable quadratic extension are the identity and any given
-nontrivial automorphism. -/
+/-- The only automorphisms of a quadratic extension are the identity and any given nontrivial
+automorphism. -/
 theorem algEquiv_eq_one_or_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) (φ : L ≃ₐ[K] L) : φ = 1 ∨ φ = σ := by
-  rcases eq_or_ne φ 1 with h1 | h1
-  · exact .inl h1
-  · exact .inr (((Nat.card_eq_two_iff' 1).mp (card_algEquiv_eq_two K L)).unique h1 hσ)
+  have : Nontrivial (L ≃ₐ[K] L) := ⟨σ, 1, hσ⟩
+  have h2 := (card_algEquiv_le_two K L).antisymm Finite.one_lt_card
+  exact or_iff_not_imp_left.mpr fun h1 ↦ ((Nat.card_eq_two_iff' 1).mp h2).unique h1 hσ
 
-/-- **Every automorphism of a separable quadratic extension is an involution.** `Gal(L/K)` has
-order two, so this needs no nontriviality hypothesis: it holds for the identity as well. -/
+/-- **Every automorphism of a quadratic extension is an involution.** `Gal(L/K)` has order at
+most two, so this needs no nontriviality hypothesis: it holds for the identity as well. -/
 @[simp]
 theorem algEquiv_mul_self (σ : L ≃ₐ[K] L) : σ * σ = 1 := by
-  rw [← sq, ← card_algEquiv_eq_two K L]
-  exact pow_card_eq_one'
+  rcases eq_or_ne σ 1 with rfl | hσ
+  · exact one_mul 1
+  · exact (algEquiv_eq_one_or_eq K L hσ (σ * σ)).resolve_right (by simpa using hσ)
 
-/-- An element fixed by a nontrivial automorphism — hence, `Gal(L/K)` having order two, by all of
-`Gal(L/K)` — lies in the base field. -/
-theorem mem_range_algebraMap_of_apply_eq {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {x : L} (hx : σ x = x) :
-    x ∈ Set.range (algebraMap K L) := by
-  rw [IsGalois.mem_range_algebraMap_iff_fixed]
-  intro φ
+/-- **The base field of a separable quadratic extension is the fixed field of any nontrivial
+automorphism.** An element fixed by a nontrivial automorphism — hence, `Gal(L/K)` having order
+two, by all of `Gal(L/K)` — lies in the base field, and conversely. -/
+theorem mem_range_algebraMap_iff_apply_eq_self [Algebra.IsSeparable K L] {σ : L ≃ₐ[K] L}
+    (hσ : σ ≠ 1) {x : L} : x ∈ Set.range (algebraMap K L) ↔ σ x = x := by
+  refine ⟨fun ⟨y, hy⟩ ↦ hy ▸ σ.commutes y, fun hx ↦ ?_⟩
+  refine (IsGalois.mem_range_algebraMap_iff_fixed x).mpr fun φ ↦ ?_
   rcases algEquiv_eq_one_or_eq K L hσ φ with rfl | rfl <;> simp_all
 
-/-- **A nontrivial automorphism moves every element outside the base field.** The difference
-`σ x - x` is the square root of the discriminant of `x`'s minimal polynomial, so this is exactly
-the nondegeneracy that makes such an `x` a generator. -/
-theorem apply_sub_self_ne_zero {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {x : L}
+/-- **A nontrivial automorphism of a separable quadratic extension moves every element outside
+the base field.** The difference `σ x - x` is the square root of the discriminant of `x`'s
+minimal polynomial, so this is exactly the nondegeneracy that makes such an `x` a generator. -/
+theorem apply_sub_self_ne_zero [Algebra.IsSeparable K L] {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) {x : L}
     (hx : x ∉ Set.range (algebraMap K L)) : σ x - x ≠ 0 :=
-  sub_ne_zero.mpr fun heq ↦ hx (mem_range_algebraMap_of_apply_eq K L hσ heq)
+  sub_ne_zero.mpr fun heq ↦ hx ((mem_range_algebraMap_iff_apply_eq_self K L hσ).mpr heq)
 
 /-- A separable quadratic extension has a nontrivial automorphism. -/
-theorem exists_algEquiv_ne_one : ∃ σ : L ≃ₐ[K] L, σ ≠ 1 :=
+theorem exists_algEquiv_ne_one [Algebra.IsSeparable K L] : ∃ σ : L ≃ₐ[K] L, σ ≠ 1 :=
   ((Nat.card_eq_two_iff' 1).mp (card_algEquiv_eq_two K L)).exists
 
-/-- The automorphism group of a separable quadratic extension consists of the identity and one
-nontrivial element. -/
+/-- The automorphism group of a quadratic extension with a nontrivial automorphism `σ` consists
+of the identity and `σ`. -/
 theorem univ_eq_pair [DecidableEq (L ≃ₐ[K] L)] {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) :
     (Finset.univ : Finset (L ≃ₐ[K] L)) = {1, σ} :=
   (Finset.eq_univ_of_forall fun φ ↦ by simpa using algEquiv_eq_one_or_eq K L hσ φ).symm
@@ -91,21 +96,18 @@ theorem univ_eq_pair [DecidableEq (L ≃ₐ[K] L)] {σ : L ≃ₐ[K] L} (hσ : �
 /-! ### The quadratic character -/
 
 open scoped Classical in
-/-- **The quadratic character of a separable quadratic extension**: the identity goes to `1` and
-the nontrivial automorphism to `-1`. `Gal(L/K)` has order two, so this is a group isomorphism onto
-`ℤˣ`, but the point of packaging it as a `MonoidHom` is that a statement which alternates in `σ` —
-a Galois action twisted by the extension, as for the points of a quadratic twist — can then be
-written uniformly in `σ` instead of split into a fixed and a moved branch by every consumer. -/
+/-- **The quadratic character of a quadratic extension**: the identity goes to `1` and a
+nontrivial automorphism, if there is one, to `-1`. `Gal(L/K)` has order at most two, so this is
+injective, but the point of packaging it as a `MonoidHom` is that a statement which alternates in
+`σ` — a Galois action twisted by the extension, as for the points of a quadratic twist — can then
+be written uniformly in `σ` instead of split into a fixed and a moved branch by every consumer. -/
 noncomputable def quadraticCharacter : (L ≃ₐ[K] L) →* ℤˣ where
   toFun σ := if σ = 1 then 1 else -1
   map_one' := by simp
   map_mul' σ τ := by
     rcases eq_or_ne σ 1 with rfl | hσ
     · simp
-    · rcases eq_or_ne τ 1 with rfl | hτ
-      · simp
-      · obtain rfl := (algEquiv_eq_one_or_eq K L hσ τ).resolve_left hτ
-        simp [algEquiv_mul_self, hσ]
+    · rcases algEquiv_eq_one_or_eq K L hσ τ with rfl | rfl <;> simp [hσ]
 
 /-- The quadratic character detects the identity: it takes the value `1` exactly there. -/
 @[simp]
@@ -114,15 +116,13 @@ theorem quadraticCharacter_eq_one_iff {σ : L ≃ₐ[K] L} :
   classical
   simp [quadraticCharacter]
 
-/-- Off the identity the quadratic character takes the value `-1`, there being nowhere else to
-go in `ℤˣ`. -/
-theorem quadraticCharacter_eq_neg_one_of_ne_one {σ : L ≃ₐ[K] L} (hσ : σ ≠ 1) :
-    quadraticCharacter K L σ = -1 := by
+/-- The quadratic character takes the value `-1` exactly off the identity, there being nowhere
+else to go in `ℤˣ`. -/
+theorem quadraticCharacter_eq_neg_one_iff {σ : L ≃ₐ[K] L} :
+    quadraticCharacter K L σ = -1 ↔ σ ≠ 1 := by
   classical
-  simp [quadraticCharacter, hσ]
+  simp [quadraticCharacter]
 
 end Algebra.IsQuadraticExtension
-
-
 
 end

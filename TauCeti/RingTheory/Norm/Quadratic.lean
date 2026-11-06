@@ -443,7 +443,7 @@ theorem discrim_eq_zero_iff_mem_range_algebraMap {θ : L} :
     simp only [map_sub, map_pow, map_mul, map_zero, map_ofNat,
       algebraMap_trace_eq_add K L hσ, algebraMap_norm_eq_mul K L hσ] at h2
     linear_combination h2
-  exact mem_range_algebraMap_of_apply_eq K L hσ
+  exact (mem_range_algebraMap_iff_apply_eq_self K L hσ).mpr
     (sub_eq_zero.mp ((pow_eq_zero_iff two_ne_zero).mp h1)).symm
 
 /-- A generator of a separable quadratic extension — an element outside `K` — has nonzero
