@@ -432,6 +432,16 @@ theorem chevalleySystem_mem_rootSpace (γ : Fin t.numRoots) :
   ((isSl2System_extendRootFamily_iff _).1
     (t.isChevalleySystem_chevalleySystem ht).toIsSl2System).1 γ
 
+/-- A Cartan basis generator acts on each named Chevalley root vector by its integral root
+coordinate, cast to the rational ground field. -/
+theorem lie_h_chevalleySystem (γ : Fin t.numRoots) (i : Fin t.rank) :
+    ⁅(t.lieBasis ht).h i, t.chevalleySystem ht γ⁆ =
+      (((t.simplyConnectedRootDatum ht).root γ i : ℤ) : ℚ) • t.chevalleySystem ht γ := by
+  rw [← t.coe_cartanBasis ht i, ← LieSubalgebra.coe_bracket_of_module,
+    ← t.rootEquiv_apply_cartanBasis ht γ i]
+  exact _root_.LieAlgebra.IsKilling.lie_eq_smul_of_mem_rootSpace
+    (t.chevalleySystem_mem_rootSpace ht γ) (t.cartanBasis ht i)
+
 /-- The named root vectors of `γ` and `-γ` bracket to the coroot of `γ`. -/
 theorem lie_chevalleySystem_reflectionPerm_self (γ : Fin t.numRoots) :
     ⁅t.chevalleySystem ht γ,

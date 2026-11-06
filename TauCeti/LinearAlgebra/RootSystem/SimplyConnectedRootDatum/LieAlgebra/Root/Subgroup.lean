@@ -161,6 +161,18 @@ theorem chevalleyRootSubgroup_val (γ : Fin t.numRoots) (A : CommAlgCat ℤ) (u 
     ← LinearMap.GeneralLinearGroup.generalLinearEquiv_to_linearMap, MulEquiv.apply_symm_apply,
     baseChangeExpHom_apply, baseChangeExpLinearEquiv_toLinearMap]
 
+/-- The all-root Kostant parameter is the Chevalley root subgroup on any lattice stable under
+both Kostant forms. -/
+theorem kostantRootSubgroupParam_chevalleySystem
+    (hAll : ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
+      ∀ v ∈ M, ρ u v ∈ M)
+    (γ : Fin t.numRoots) (A : CommAlgCat ℤ) :
+    kostantRootSubgroupParam (t.chevalleySystem ht) (t.lieBasis ht).h ρ M hAll γ
+        (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) A =
+      chevalleyRootSubgroup ρ M hM hnil γ A := by
+  refine MonoidHom.ext fun u => Units.ext <| LinearMap.ext fun z => ?_
+  rw [kostantRootSubgroupParam_val_apply, chevalleyRootSubgroup_val]
+
 /-- **At a simple root the root subgroup is the simple root subgroup** `xᵢ` of the Kostant data. -/
 @[simp]
 theorem chevalleyRootSubgroup_simpleIndex (i : Fin t.rank) (A : CommAlgCat ℤ) :
