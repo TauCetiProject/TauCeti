@@ -27,7 +27,9 @@ scheme-theoretically dominant exactly when it is injective on global sections
 a ring homomorphism is scheme-theoretically dominant exactly when the homomorphism is injective
 (`AlgebraicGeometry.isSchemeTheoreticallyDominant_SpecMap_iff`). A morphism is scheme-theoretically
 dominant if its base change to each member of an open cover of the target is
-(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_openCover`).
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_openCover`). The scheme-theoretic image of a
+scheme-theoretically dominant morphism is its whole target
+(`AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι`).
 -/
 
 public section
@@ -53,6 +55,12 @@ theorem _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.of_comp
 theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_comp_of_isSchemeTheoreticallyDominant
     (f : W ⟶ X) [IsSchemeTheoreticallyDominant f] (g : X ⟶ Y) : (f ≫ g).ker = g.ker := by
   rw [Scheme.Hom.ker_comp, f.ker_eq_bot, Scheme.IdealSheafData.map_bot]
+
+/-- The scheme-theoretic image of a scheme-theoretically dominant morphism is the whole target. -/
+instance _root_.AlgebraicGeometry.IsSchemeTheoreticallyDominant.isIso_imageι (f : X ⟶ Y)
+    [IsSchemeTheoreticallyDominant f] : IsIso f.imageι :=
+  IsClosedImmersion.isIso_iff_ker_eq_bot.mpr
+    ((Scheme.IdealSheafData.ker_subschemeι _).trans f.ker_eq_bot)
 
 /-- Two morphisms into a separated scheme over a base agree if they agree after precomposition
 with a scheme-theoretically dominant morphism. The source need not be reduced. -/
