@@ -53,7 +53,7 @@ theorem movedNorm_conj (σ τ : Perm α) :
 
 /-- The moved-point norm is a conjugation-invariant group norm. -/
 theorem isConjInvariant_movedNorm : (movedNorm α).toGroupSeminorm.IsConjInvariant :=
-  fun τ σ ↦ movedNorm_conj σ τ
+  (GroupSeminorm.isConjInvariant_iff _).mpr fun τ σ ↦ movedNorm_conj σ τ
 
 /-- The Hamming distance of two permutations is the moved-point norm of their quotient. -/
 theorem hammingDist_eq_movedNorm (σ τ : Perm α) :
@@ -81,6 +81,6 @@ theorem two_le_movedNorm_of_sign_eq_neg_one {σ : Perm α} (hσ : sign σ = -1) 
     2 ≤ movedNorm α σ := by
   apply two_le_movedNorm_of_ne_one
   rintro rfl
-  simp at hσ
+  exact (by decide : (1 : ℤˣ) ≠ -1) (by simpa using hσ)
 
 end Equiv.Perm

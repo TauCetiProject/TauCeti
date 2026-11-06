@@ -24,7 +24,7 @@ to recover a group norm from a left-invariant metric.
 Conjugation invariance is preserved by pullbacks, nonnegative scalar multiples, sums and pointwise
 maxima of seminorms. For norms, `GroupNorm.comp` pulls a norm back along an injective
 homomorphism (for instance, restricts it to a subgroup) and `GroupNorm.smulOfPos` multiplies it by
-a positive real number; their underlying seminorms are the corresponding seminorm constructions.
+a positive real number; both preserve conjugation invariance.
 -/
 
 public section
@@ -182,8 +182,7 @@ section Constructions
 variable {H : Type*} [Group H]
 
 /-- The pullback of a group norm along an injective homomorphism. Along the inclusion of a
-subgroup `K`, `ℓ.comp K.subtype_injective` is the restriction of the norm to `K`. Its underlying
-seminorm is `ℓ.toGroupSeminorm.comp f`, so `GroupSeminorm.IsConjInvariant.comp` applies. -/
+subgroup `K`, `ℓ.comp K.subtype_injective` is the restriction of the norm to `K`. -/
 def comp (ℓ : GroupNorm G) {f : H →* G} (hf : Function.Injective f) : GroupNorm H where
   toGroupSeminorm := ℓ.toGroupSeminorm.comp f
   eq_one_of_map_eq_zero' _ h := hf <| by
@@ -195,10 +194,22 @@ theorem comp_apply (ℓ : GroupNorm G) {f : H →* G} (hf : Function.Injective f
     ℓ.comp hf x = ℓ (f x) :=
   (rfl)
 
-/-- A group norm multiplied by a positive real number. Its underlying seminorm is a scalar
-multiple of `ℓ.toGroupSeminorm`, so `GroupSeminorm.IsConjInvariant.smul` applies. -/
+/-- The seminorm underlying the pullback of a norm is the pullback of its seminorm. -/
+@[simp]
+theorem toGroupSeminorm_comp (ℓ : GroupNorm G) {f : H →* G} (hf : Function.Injective f) :
+    (ℓ.comp hf).toGroupSeminorm = ℓ.toGroupSeminorm.comp f :=
+  (rfl)
+
+/-- The pullback of a conjugation-invariant norm along an injective homomorphism is conjugation
+invariant. -/
+theorem isConjInvariant_comp {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
+    {f : H →* G} (hf : Function.Injective f) : (ℓ.comp hf).toGroupSeminorm.IsConjInvariant := by
+  rw [toGroupSeminorm_comp]
+  exact hℓ.comp f
+
+/-- A group norm multiplied by a positive real number. -/
 def smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) : GroupNorm G where
-  toGroupSeminorm := (⟨r, hr.le⟩ : NNReal) • ℓ.toGroupSeminorm
+  toGroupSeminorm := (show NNReal from ⟨r, hr.le⟩) • ℓ.toGroupSeminorm
   eq_one_of_map_eq_zero' _ h :=
     eq_one_of_map_eq_zero ℓ <| (mul_eq_zero.mp h).resolve_left hr.ne'
 
@@ -206,6 +217,18 @@ def smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) : GroupNorm G where
 theorem smulOfPos_apply (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) (g : G) :
     ℓ.smulOfPos hr g = r * ℓ g :=
   (rfl)
+
+/-- The seminorm underlying a positive multiple of a norm is the multiple of its seminorm. -/
+@[simp]
+theorem toGroupSeminorm_smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) :
+    (ℓ.smulOfPos hr).toGroupSeminorm = (show NNReal from ⟨r, hr.le⟩) • ℓ.toGroupSeminorm :=
+  (rfl)
+
+/-- A positive multiple of a conjugation-invariant norm is conjugation invariant. -/
+theorem isConjInvariant_smulOfPos {ℓ : GroupNorm G} (hℓ : ℓ.toGroupSeminorm.IsConjInvariant)
+    {r : ℝ} (hr : 0 < r) : (ℓ.smulOfPos hr).toGroupSeminorm.IsConjInvariant := by
+  rw [toGroupSeminorm_smulOfPos]
+  exact hℓ.smul _
 
 end Constructions
 
