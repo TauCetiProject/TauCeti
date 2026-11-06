@@ -395,17 +395,6 @@ theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     exact congrFun (coordinateDeriv_zero β) ξ
   rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
 
-/-- If `a` vanishes for all frequencies at all positions near `x`, then so do all its mixed
-derivatives at `x`. -/
-theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
-    (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = 0) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = 0 := by
-  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x] 0 := by
-    filter_upwards [h] with y hy
-    have hy' : (fun η => a (y, η)) = 0 := funext hy
-    rw [hy', coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
-  rw [mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
-
 /-- Mixed derivatives at `(x, ξ)` only depend on the germ of the function there. -/
 theorem _root_.Filter.EventuallyEq.mixedDeriv_eq {x ξ : CoordinateSpace n}
     (h : a =ᶠ[nhds (x, ξ)] b) (α β : List (Fin n)) :
@@ -419,6 +408,15 @@ theorem _root_.Filter.EventuallyEq.mixedDeriv_eq {x ξ : CoordinateSpace n}
       filter_upwards [hpb] with η hη using hab hy hη
     exact (hy'.coordinateDeriv β).eq_of_nhds
   exact (h'.coordinateDeriv α).eq_of_nhds
+
+/-- If `a` vanishes for all frequencies at all positions near `x`, then so do all its mixed
+derivatives at `x`. -/
+theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
+    (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = 0) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = 0 := by
+  have h' : a =ᶠ[nhds (x, ξ)] 0 := by
+    filter_upwards [continuous_fst.continuousAt.eventually h] with p hp using hp p.2
+  rw [h'.mixedDeriv_eq, mixedDeriv_zero]
 
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 

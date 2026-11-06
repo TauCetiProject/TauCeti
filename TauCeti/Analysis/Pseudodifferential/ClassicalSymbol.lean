@@ -8,6 +8,8 @@ module
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
 public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+import TauCeti.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
 # Classical symbols
@@ -59,40 +61,6 @@ open scoped ContDiff Topology
 namespace TauCeti
 
 variable {n : ℕ}
-
-/-! ### Comparing `‖ξ‖ ^ s` with the weight `⟨ξ⟩ ^ s` at large frequencies -/
-
-/-- For `0 < u ≤ v ≤ 2 u`, the powers `u ^ t` and `v ^ t` agree up to the factor `2 ^ |t|`. -/
-private theorem rpow_le_two_rpow_abs_mul {u v : ℝ} (hu : 0 < u) (huv : u ≤ v) (hvu : v ≤ 2 * u)
-    (t : ℝ) : u ^ t ≤ 2 ^ |t| * v ^ t ∧ v ^ t ≤ 2 ^ |t| * u ^ t := by
-  have hv : 0 < v := hu.trans_le huv
-  have h2 : (2 * u) ^ t = 2 ^ t * u ^ t := Real.mul_rpow zero_le_two hu.le
-  rcases le_total 0 t with ht | ht
-  · rw [abs_of_nonneg ht]
-    exact ⟨(Real.rpow_le_rpow hu.le huv ht).trans
-      (le_mul_of_one_le_left (by positivity) (Real.one_le_rpow one_le_two ht)),
-      (Real.rpow_le_rpow hv.le hvu ht).trans h2.le⟩
-  · rw [abs_of_nonpos ht]
-    refine ⟨?_, (Real.rpow_le_rpow_of_nonpos hu huv ht).trans
-      (le_mul_of_one_le_left (by positivity) (Real.one_le_rpow one_le_two (neg_nonneg.2 ht)))⟩
-    have hu' : u ^ t = 2 ^ (-t) * (2 * u) ^ t := by
-      rw [h2, ← mul_assoc, ← Real.rpow_add two_pos, neg_add_cancel, Real.rpow_zero, one_mul]
-    rw [hu']
-    exact mul_le_mul_of_nonneg_left (Real.rpow_le_rpow_of_nonpos hv hvu ht) (by positivity)
-
-/-- At frequencies `‖ξ‖ ≥ 1`, the power `‖ξ‖ ^ s` and the weight `(1 + ‖ξ‖²)^(s/2)` agree up to
-the factor `2 ^ |s / 2|`. -/
-private theorem rpow_norm_le_and_rpow_weight_le {ξ : CoordinateSpace n} (hξ : 1 ≤ ‖ξ‖) (s : ℝ) :
-    ‖ξ‖ ^ s ≤ 2 ^ |s / 2| * (1 + ‖ξ‖ ^ 2) ^ (s / 2) ∧
-      (1 + ‖ξ‖ ^ 2) ^ (s / 2) ≤ 2 ^ |s / 2| * ‖ξ‖ ^ s := by
-  have hs : ‖ξ‖ ^ s = (‖ξ‖ ^ 2) ^ (s / 2) := by
-    rw [← Real.rpow_natCast, ← Real.rpow_mul (norm_nonneg ξ)]
-    congr 1
-    push_cast
-    ring
-  rw [hs]
-  exact rpow_le_two_rpow_abs_mul (pow_pos (one_pos.trans_le hξ) 2) (by linarith)
-    (by nlinarith) (s / 2)
 
 namespace HomogeneousSymbol
 
@@ -173,15 +141,17 @@ private theorem exists_bound_mixedDeriv_smul_coefficient
         C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
   set s := m - (β.length : ℝ)
   -- At bounded frequencies the smooth term is bounded by continuity.
-  obtain ⟨C₁, hC₁, h₁⟩ := exists_norm_le_mul_rpow_weight_of_continuous
-    ((a.contDiff_smul_coefficient χ).mixedDeriv α β).continuous hK 2 s
+  obtain ⟨C₁, hC₁, h₁⟩ := (contDiff_zero.2 ((a.contDiff_smul_coefficient χ).mixedDeriv α β
+    ).continuous).exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le hK 2 s
   -- At large frequencies the term is `a`, whose mixed derivatives are homogeneous of degree `s`.
   obtain ⟨C₂, hC₂, h₂⟩ :=
     ((a.iteratedFrequencyDeriv β).iteratedSpatialDeriv α).exists_norm_coefficient_le hK
-  refine ⟨C₁ + 2 ^ |s / 2| * C₂, by positivity, fun x hx ξ => ?_⟩
+  refine ⟨C₁ + 2 ^ (|s| / 2) * C₂, by positivity, fun x hx ξ => ?_⟩
   have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (s / 2) := by positivity
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
-  · exact (h₁ x hx ξ hξ).trans
+  · have h := h₁ x hx ξ hξ
+    rw [norm_iteratedFDeriv_zero] at h
+    exact h.trans
       (mul_le_mul_of_nonneg_right (le_add_of_nonneg_right (by positivity)) hw)
   · have heq : (fun p : CoordinateSpace n × CoordinateSpace n => χ p.2 • a.coefficient p)
         =ᶠ[𝓝 (x, ξ)] a.coefficient := by
@@ -192,8 +162,8 @@ private theorem exists_bound_mixedDeriv_smul_coefficient
       ← coefficient_iteratedSpatialDeriv_iteratedFrequencyDeriv a α β x
         (norm_pos_iff.1 (by linarith))]
     calc _ ≤ C₂ * ‖ξ‖ ^ s := h₂ x hx ξ
-      _ ≤ C₂ * (2 ^ |s / 2| * (1 + ‖ξ‖ ^ 2) ^ (s / 2)) :=
-        mul_le_mul_of_nonneg_left (rpow_norm_le_and_rpow_weight_le (by linarith) s).1 hC₂
+      _ ≤ C₂ * (2 ^ (|s| / 2) * (1 + ‖ξ‖ ^ 2) ^ (s / 2)) :=
+        mul_le_mul_of_nonneg_left (norm_rpow_le_one_add_norm_sq_rpow (by linarith) s) hC₂
       _ ≤ _ := by nlinarith [mul_nonneg hC₁ hw]
 
 /-- The cut-off term `χ(ξ) a(x, ξ)` of a homogeneous symbol `a` of degree `m`, for a frequency
@@ -218,12 +188,12 @@ theorem eq_zero_of_coefficient_eq {μ s : ℝ} (hs : s < μ)
     {R : ℝ} (h : ∀ x ξ, R ≤ ‖ξ‖ → d.coefficient (x, ξ) = r.coefficient (x, ξ)) : d = 0 := by
   refine d.eq_zero_of_forall_exists_norm_le fun x => ?_
   obtain ⟨C, hC, hb⟩ := r.exists_bound {x} isCompact_singleton [] []
-  refine ⟨C * 2 ^ |s / 2|, max R 1, s, hs, fun ξ hξ => ?_⟩
+  refine ⟨C * 2 ^ (|s| / 2), max R 1, s, hs, fun ξ hξ => ?_⟩
   have hb' := hb x rfl ξ
   simp only [mixedDeriv_nil_nil, List.length_nil, Nat.cast_zero, sub_zero] at hb'
   rw [h x ξ ((le_max_left _ _).trans hξ), mul_assoc]
   exact hb'.trans (mul_le_mul_of_nonneg_left
-    (rpow_norm_le_and_rpow_weight_le ((le_max_right _ _).trans hξ) s).2 hC)
+    (one_add_norm_sq_rpow_le_norm_rpow ((le_max_right _ _).trans hξ) s) hC)
 
 end HomogeneousSymbol
 
