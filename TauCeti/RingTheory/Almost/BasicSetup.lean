@@ -67,6 +67,8 @@ pseudouniformiser.
   isomorphism.
 * `TauCeti.Almost.BasicSetup.IsAlmostIso.lTensor_bijective`: `m~ ⊗[V] −` turns an almost
   isomorphism into a bijection.
+* `TauCeti.Almost.BasicSetup.IsAlmostIso.exists_comp_eq_smul_id`: an almost isomorphism `f` has,
+  for every `δ ∈ m`, a linear map `g` back with `f ∘ g = δ • id` and `g ∘ f = δ • id`.
 * `TauCeti.Almost.BasicSetup.flat_tilde_map`: `mW ⊗[W] mW ≅ W ⊗[V] m~` is flat, so basic setups
   base change (the isomorphism is `Ideal.baseChangeTensorSelfEquiv`, valid for every idempotent
   ideal); `TauCeti.Almost.BasicSetup.baseChange_away_eq_classical`: inverting an element of
@@ -449,6 +451,38 @@ theorem IsAlmostIso.lTensor_bijective {f : M →ₗ[V] N} (hf : S.IsAlmostIso f)
     rw [Subsingleton.elim z 0, map_zero]
   · exact (lTensor_exact S.tilde f.exact_map_mkQ_range (Submodule.mkQ_surjective _) y).mp
       (Subsingleton.elim _ _)
+
+variable {S} in
+/-- An almost isomorphism is invertible up to every element of `m`: for `δ ∈ m` there is a
+linear map `g` in the opposite direction with `f ∘ g = δ • id` and `g ∘ f = δ • id`. For a
+product `δ = b * c`, `g` sends `y` to `c • x` for any `x` with `f x = b • y`. -/
+theorem IsAlmostIso.exists_comp_eq_smul_id {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) {δ : V}
+    (hδ : δ ∈ S.ideal) :
+    ∃ g : N →ₗ[V] M, f ∘ₗ g = δ • LinearMap.id ∧ g ∘ₗ f = δ • LinearMap.id := by
+  obtain ⟨hker, hcoker⟩ := isAlmostIso_iff.mp hf
+  rw [← S.isIdempotentElem.eq] at hδ
+  refine Submodule.mul_induction_on hδ (fun b hb c hc ↦ ?_) fun x y hx hy ↦ ?_
+  · have hb' (y : N) : (b • LinearMap.id : N →ₗ[V] N) y ∈ LinearMap.range f :=
+      (Module.isTorsionBySet_quotient_iff _ _).mp hcoker y b hb
+    have hc' : LinearMap.ker f ≤ LinearMap.ker (c • LinearMap.id : M →ₗ[V] M) := fun x hx ↦
+      congrArg Subtype.val (hker.smul_eq_zero hc ⟨x, hx⟩)
+    let g := (LinearMap.ker f).liftQ _ hc' ∘ₗ f.quotKerEquivRange.symm.toLinearMap ∘ₗ
+      LinearMap.codRestrict _ _ hb'
+    -- `g` sends `y` to `c • x` whenever `f x = b • y`.
+    have hg {x : M} {y : N} (h : f x = b • y) : g y = c • x := by
+      have : f.quotKerEquivRange.symm (LinearMap.codRestrict _ _ hb' y) =
+          (LinearMap.ker f).mkQ x :=
+        (LinearEquiv.symm_apply_eq _).mpr (Subtype.ext (by simp [h]))
+      simp [g, this]
+    refine ⟨g, LinearMap.ext fun y ↦ ?_, LinearMap.ext fun x ↦ ?_⟩
+    · obtain ⟨x, hx⟩ := hb' y
+      rw [LinearMap.smul_apply, LinearMap.id_apply] at hx
+      simp [hg hx, hx, smul_smul, mul_comm]
+    · simp [hg (map_smul f b x), smul_smul, mul_comm]
+  · obtain ⟨g₁, hg₁, hg₁'⟩ := hx
+    obtain ⟨g₂, hg₂, hg₂'⟩ := hy
+    exact ⟨g₁ + g₂, by rw [LinearMap.comp_add, hg₁, hg₂, add_smul],
+      by rw [LinearMap.add_comp, hg₁', hg₂', add_smul]⟩
 
 end IsAlmostIso
 
