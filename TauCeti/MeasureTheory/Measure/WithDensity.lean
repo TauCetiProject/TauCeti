@@ -59,6 +59,8 @@ measure finite.
   support is exactly the open set.
 * `MeasureTheory.Measure.support_withDensity_ofReal`: a continuous nonnegative real density
   has the same topological support as the measure it defines.
+* `MeasureTheory.absolutelyContinuous_withDensity_ofReal`: a measure is absolutely continuous with
+  respect to itself weighted by an almost-everywhere positive real density.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
@@ -297,6 +299,14 @@ theorem rnDeriv_map_affine (μ : Measure E) [μ.IsAddHaarMeasure] (A : E ≃L[�
 end MeasureTheory.Measure
 
 namespace MeasureTheory
+
+/-- A measure is absolutely continuous with respect to itself weighted by an almost-everywhere
+positive real density: the weight `ENNReal.ofReal ∘ w` vanishes only on a null set, so weighting
+destroys no null sets. -/
+theorem absolutelyContinuous_withDensity_ofReal {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    {w : α → ℝ} (hwm : AEMeasurable w μ) (hwpos : ∀ᵐ x ∂μ, 0 < w x) :
+    μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
+  withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
 
 /-- Continuous nonnegative real densities that present the same measure are equal pointwise. -/
 theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
