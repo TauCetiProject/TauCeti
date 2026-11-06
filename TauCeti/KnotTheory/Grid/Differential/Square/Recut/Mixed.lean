@@ -43,19 +43,11 @@ namespace GridRectangleDecomposition
 
 variable {n : ℕ} {x z : GridState n}
 
-/-- Diagonal reflection preserves and reflects inequality of intermediate states. -/
-private theorem transpose_middle_ne_iff (E D : GridRectangleDecomposition x z) :
-    E.transpose.middle ≠ D.transpose.middle ↔ E.middle ≠ D.middle := by
-  simp only [transpose_middle, ne_eq]
-  exact not_congr (Function.Involutive.injective GridState.transpose_transpose).eq_iff
-
-/-- The intermediate state of a reflected decomposition is a column swap of the reflected source
-exactly when the intermediate state of the original is the corresponding row swap of the source. -/
-private theorem transpose_middle_eq_swapColumns_iff (E : GridRectangleDecomposition x z)
-    (a b : Fin n) :
-    E.transpose.middle = x.transpose.swapColumns a b ↔ E.middle = x.swapRows a b := by
-  rw [transpose_middle, ← GridState.swapRows_transpose]
-  exact (Function.Involutive.injective GridState.transpose_transpose).eq_iff
+/-- The reflection of a state is a column swap of the reflected source exactly when the state is
+the corresponding row swap of the source. -/
+private theorem transpose_eq_swapColumns_iff (m : GridState n) (a b : Fin n) :
+    m.transpose = x.transpose.swapColumns a b ↔ m = x.swapRows a b := by
+  rw [← GridState.swapRows_transpose, GridState.transpose_inj]
 
 /-! ### Initial side of the first rectangle equals terminal side of the second -/
 
@@ -93,8 +85,8 @@ theorem exists_isRepartition_of_isEmpty_of_left_eq_right
     (D.transpose.exists_isRepartition_of_isEmpty_of_right_eq_right htransRight htransLeft
       (D.isEmpty_transpose_first.mpr hfirst) (D.isEmpty_transpose_second.mpr hsecond))
   rw [transposeEquiv_apply]
-  simp only [IsRepartition.transpose_iff, transpose_middle_ne_iff,
-    transpose_middle_eq_swapColumns_iff, isEmpty_transpose_first, isEmpty_transpose_second,
+  simp only [IsRepartition.transpose_iff, transpose_middle, GridState.transpose_inj, ne_eq,
+    transpose_eq_swapColumns_iff, isEmpty_transpose_first, isEmpty_transpose_second,
     transpose_first_left, transpose_first_right, transpose_second_left, transpose_second_right]
 
 /-! ### Terminal side of the first rectangle equals initial side of the second -/
@@ -137,8 +129,8 @@ theorem exists_isRepartition_of_isEmpty_of_right_eq_left
     (D.transpose.exists_isRepartition_of_isEmpty_of_left_eq_left htransLeft htransRight
       (D.isEmpty_transpose_first.mpr hfirst) (D.isEmpty_transpose_second.mpr hsecond))
   rw [transposeEquiv_apply]
-  simp only [IsRepartition.transpose_iff, transpose_middle_ne_iff,
-    transpose_middle_eq_swapColumns_iff, isEmpty_transpose_first, isEmpty_transpose_second,
+  simp only [IsRepartition.transpose_iff, transpose_middle, GridState.transpose_inj, ne_eq,
+    transpose_eq_swapColumns_iff, isEmpty_transpose_first, isEmpty_transpose_second,
     transpose_first_left, transpose_first_right, transpose_second_left, transpose_second_right]
 
 end GridRectangleDecomposition
