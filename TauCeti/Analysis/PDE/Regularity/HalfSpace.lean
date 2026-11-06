@@ -162,12 +162,12 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
         -∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x ∂mu := fun i j =>
     (hG i j).integral_lineDeriv_smul_eq_neg_integral_smul φ
   have hIG : ∀ i j, Integrable (fun x => (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x) mu :=
-    fun i j => integrable_smul_of_locallyIntegrableOn (hG i j).locallyIntegrableOn_deriv φ
+    fun i j => φ.integrable_smul (hG i j).locallyIntegrableOn_deriv
   have hR : -∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • -(f x + ∑ i, ∑ j, G i j x) ∂mu =
       (∫ x in Omega, f x * φ x ∂mu) +
         ∑ i, ∑ j, ∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x ∂mu := by
     simp only [smul_neg, integral_neg, neg_neg, smul_add, Finset.smul_sum]
-    rw [integral_add (integrable_smul_of_locallyIntegrableOn hfloc φ)
+    rw [integral_add (φ.integrable_smul hfloc)
       (integrable_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j),
       integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j]
     congr 1

@@ -203,8 +203,7 @@ theorem WeaklyHarmonicOn.sub_comp_normalReflection
   have hint (v : WithLp 2 (ℝ × E) → ℝ) (hv : LocallyIntegrableOn v U volume) (θ : 𝓓(U, ℝ)) :
       Integrable fun x => Δ (θ : WithLp 2 (ℝ × E) → ℝ) x • v x := by
     simpa only [TestFunction.laplacianCLM_apply] using
-      integrable_smul_of_locallyIntegrableOn hv
-        (LineDeriv.laplacianCLM ℝ (WithLp 2 (ℝ × E)) 𝓓(U, ℝ) θ)
+      TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ (WithLp 2 (ℝ × E)) 𝓓(U, ℝ) θ) hv
   have hcv : ∫ x, Δ (φ : WithLp 2 (ℝ × E) → ℝ) x • w (ρ x) =
       ∫ x, Δ (φρ : WithLp 2 (ℝ × E) → ℝ) x • w x := by
     rw [← integral_comp_normalReflection a fun x => Δ (φρ : WithLp 2 (ℝ × E) → ℝ) x • w x]

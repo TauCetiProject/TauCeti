@@ -198,9 +198,9 @@ private theorem exists_integral_comp_add_sub_mul_eq (hu : LocallyIntegrableOn u 
   refine ⟨Φ, hΦ1, hΦ0, ?_⟩
   -- By translation invariance of `μ`, `∫ g u (· + h) = ∫ g (· - h) u`.
   have hg₀ : Integrable (fun x => g x * u x) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn (hu.mono_set hV0) g
+    simpa using g.integrable_smul (hu.mono_set hV0)
   have hgh : Integrable (fun y => g (y - h) * u y) μ := by
-    simpa using integrable_smul_of_locallyIntegrableOn hu (translateTestFunction hV1 g)
+    simpa using TestFunction.integrable_smul (translateTestFunction hV1 g) hu
   have hgh' : Integrable (fun x => g x * u (x + h)) μ := by
     simpa using hgh.comp_add_right h
   have htrans : ∫ x, g x * u (x + h) ∂μ = ∫ y, g (y - h) * u y ∂μ := by
