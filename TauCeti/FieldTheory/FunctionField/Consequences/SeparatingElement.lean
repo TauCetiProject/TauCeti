@@ -165,9 +165,9 @@ theorem exists_algebraMap_notMem_fieldRange_frobenius_of_constantCompositum_eq_t
   have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
   have hp : 0 < (p : ℤ) := by exact_mod_cast expChar_pos F' p
   -- The conorm `Con D` has the degree of `D`.
-  have hdegCon : degree (conorm k' F' D) = degree D := by
-    rw [degree_conorm k' F' hF hdisj D, (geometricDegree_eq_one_iff F k' F').2 h, Nat.cast_one,
-      one_mul]
+  have hdegCon : degree (conorm k' F' D) = degree D :=
+    degree_conorm_of_finrank_eq_finrank k' F' hF h
+      (by rwa [h, IntermediateField.finrank_top'] at hdisj) D
   -- The divisor `E = ⌊Con D / p⌋` of `F' / k'`.
   let E : Divisor k' F' := Finsupp.mapRange (· / (p : ℤ)) (Int.zero_ediv _) (conorm k' F' D)
   have hE (P : Place k' F') : E.coeff P = (conorm k' F' D).coeff P / p :=

@@ -532,39 +532,20 @@ extension `F' = F · k'` with exact constants on both sides, `[F' : F] = [k' : k
 canonical class of `F' / k'`. -/
 theorem conormClassGroup_canonicalClass_of_genus_eq :
     Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h) (canonicalClass hF hex) =
-      canonicalClass (hF.of_constantCompositum_eq_top h) hex' := by
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
-  have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
-  rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',
-    Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg,
-    Divisor.degree_conorm k' F' hF (by rw [h, IntermediateField.finrank_top', hn]) W,
-    (geometricDegree_eq_one_iff F k' F').2 h, Nat.cast_one, one_mul, hg]
-  exact hW'
+      canonicalClass (hF.of_constantCompositum_eq_top h) hex' :=
+  conormClassGroup_canonicalClass_of_forall_dim_conorm_eq hF _
+    (Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn)
+    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg) hex hex' hg
 
 /-- **The conorm is injective on divisor classes when the genus does not drop** (Stichtenoth,
 Theorem 3.6.3(f), without separability of `k' / k`): under a finite constant field extension
 `F' = F · k'` with exact constants on both sides, `[F' : F] = [k' : k]` and
 `g(F' / k') = g(F / k)`, a divisor of `F / k` whose conorm is principal is itself principal. -/
 theorem conormClassGroup_injective_of_genus_eq :
-    Function.Injective (Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)) := by
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hdeg (D : Divisor k F) : Divisor.degree (Divisor.conorm k' F' D) = Divisor.degree D := by
-    rw [Divisor.degree_conorm k' F' hF (by rw [h, IntermediateField.finrank_top', hn]) D,
-      (geometricDegree_eq_one_iff F k' F').2 h, Nat.cast_one, one_mul]
-  rw [injective_iff_map_eq_zero]
-  intro c hc
-  obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
-  rw [Divisor.conormClassGroup_divisorClass, Divisor.divisorClass_eq_zero_iff hF'] at hc
-  obtain ⟨z, hz⟩ := hc
-  have hD : Divisor.degree D = 0 := by
-    rw [← hdeg, ← hz, Divisor.degree_principal]
-  have hdim : 1 ≤ Divisor.dim D := by
-    rw [← Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg]
-    exact (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF' (by
-      rw [hdeg, hD])).2 ⟨z, hz⟩
-  exact (Divisor.divisorClass_eq_zero_iff hF).2
-    ((Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF hD).1 hdim)
+    Function.Injective (Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)) :=
+  conormClassGroup_injective_of_forall_dim_conorm_eq hF _
+    (Divisor.degree_conorm_of_finrank_eq_finrank k' F' hF h hn)
+    (Divisor.dim_conorm_of_genus_eq h hn hF hex hex' hg)
 
 end NoDrop
 

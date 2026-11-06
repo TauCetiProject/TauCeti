@@ -44,6 +44,11 @@ can be strict (`TauCeti.GenusDrop.genus_lt_genus`).
 * `TauCeti.Divisor.degree_conorm_of_constantCompositum_eq_top`: `deg (Con D) = deg D`.
 * `TauCeti.genus_eq_genus_of_constantCompositum_eq_top`: `g(F' / k') = g(F / k)` for a separable
   algebraic `k' / k`, finite or not.
+* `TauCeti.conormClassGroup_canonicalClass_of_forall_dim_conorm_eq` and
+  `TauCeti.conormClassGroup_injective_of_forall_dim_conorm_eq`: a conorm preserving degrees and
+  Riemann–Roch dimensions, along an extension that preserves the genus, carries the canonical
+  class to the canonical class; one preserving degrees and dimensions is injective on divisor
+  classes.
 * `TauCeti.conormClassGroup_canonicalClass_of_constantCompositum_eq_top`: the conorm of the
   canonical class is the canonical class.
 * `TauCeti.conormClassGroup_injective_of_constantCompositum_eq_top`: the conorm is injective on
@@ -303,10 +308,55 @@ theorem genus_eq_genus_of_constantCompositum_eq_top (hF : IsFunctionField k F)
 
 end Algebraic
 
+/-! ### Divisor classes under conorms preserving degrees and dimensions -/
+
+variable [Algebra.IsIntegral F F']
+variable [∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+
+section DegreeDim
+
+variable (hF : IsFunctionField k F) (hF' : IsFunctionField k' F')
+  (hdeg : ∀ D : Divisor k F, Divisor.degree (Divisor.conorm k' F' D) = Divisor.degree D)
+  (hdim : ∀ D : Divisor k F, (Divisor.conorm k' F' D).dim = D.dim)
+
+include hdeg hdim
+
+/-- **The conorm of the canonical class is the canonical class** when the conorm preserves the
+degrees and Riemann–Roch dimensions of all divisors and the genus does not change: the canonical
+class is the class of degree `2g - 2` and dimension `g`. -/
+theorem conormClassGroup_canonicalClass_of_forall_dim_conorm_eq (hex : IsIntegrallyClosedIn k F)
+    (hex' : IsIntegrallyClosedIn k' F') (hg : genus k' F' = genus k F) :
+    Divisor.conormClassGroup k' F' hF hF' (canonicalClass hF hex) = canonicalClass hF' hex' := by
+  obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
+  have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
+  rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',
+    hdim, hdeg, hg]
+  exact hW'
+
+/-- **The conorm is injective on divisor classes** when it preserves the degrees and Riemann–Roch
+dimensions of all divisors: a divisor of degree zero whose conorm is principal has a nonzero
+Riemann–Roch space, so it is itself principal. -/
+theorem conormClassGroup_injective_of_forall_dim_conorm_eq :
+    Function.Injective (Divisor.conormClassGroup k' F' hF hF') := by
+  rw [injective_iff_map_eq_zero]
+  intro c hc
+  obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
+  rw [Divisor.conormClassGroup_divisorClass, Divisor.divisorClass_eq_zero_iff hF'] at hc
+  obtain ⟨z, hz⟩ := hc
+  have hD : Divisor.degree D = 0 := by
+    rw [← hdeg, ← hz, Divisor.degree_principal]
+  have hD₁ : 1 ≤ Divisor.dim D := by
+    rw [← hdim]
+    exact (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF' (by
+      rw [hdeg, hD])).2 ⟨z, hz⟩
+  exact (Divisor.divisorClass_eq_zero_iff hF).2
+    ((Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF hD).1 hD₁)
+
+end DegreeDim
+
 /-! ### Divisor classes under separable algebraic constant field extensions -/
 
-variable [Algebra.IsIntegral F F'] [Algebra.IsSeparable k k']
-variable [∀ P : Place k F, Finite {P' : Place k' F' // P'.restrict k F = P}]
+variable [Algebra.IsSeparable k k']
 
 /-- **The conorm of the canonical class is the canonical class** (Stichtenoth,
 Theorem 3.6.3(e)): for a separable algebraic constant field extension `F · k' / k'` of `F / k` with
@@ -317,15 +367,10 @@ theorem conormClassGroup_canonicalClass_of_constantCompositum_eq_top (hF : IsFun
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
     Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h) (canonicalClass hF hex) =
       canonicalClass (hF.of_constantCompositum_eq_top h)
-        (hex.of_constantCompositum_eq_top h) := by
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  have hex' := hex.of_constantCompositum_eq_top h
-  obtain ⟨W, hW⟩ := (Place.orderSystem hF).divisorClass_surjective (canonicalClass hF hex)
-  have hW' := (divisorClass_eq_canonicalClass_iff hF hex W).1 hW
-  rw [← hW, Divisor.conormClassGroup_divisorClass, divisorClass_eq_canonicalClass_iff hF' hex',
-    Divisor.dim_conorm hex h hF, Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h,
-    genus_eq_genus_of_constantCompositum_eq_top hF hex h]
-  exact hW'
+        (hex.of_constantCompositum_eq_top h) :=
+  conormClassGroup_canonicalClass_of_forall_dim_conorm_eq hF _
+    (Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h) (Divisor.dim_conorm hex h hF)
+    hex _ (genus_eq_genus_of_constantCompositum_eq_top hF hex h)
 
 /-- **The conorm is injective on divisor classes** (Stichtenoth, Theorem 3.6.3(f)):
 along a separable algebraic constant field extension of a function field with exact constants,
@@ -333,21 +378,8 @@ two divisors with the same conorm class lie in the same class; equivalently, a d
 conorm is principal is itself principal. -/
 theorem conormClassGroup_injective_of_constantCompositum_eq_top (hF : IsFunctionField k F)
     (hex : IsIntegrallyClosedIn k F) (h : constantCompositum F k' F' = ⊤) :
-    Function.Injective (Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)) := by
-  have hF' : IsFunctionField k' F' := hF.of_constantCompositum_eq_top h
-  rw [injective_iff_map_eq_zero]
-  intro c hc
-  obtain ⟨D, rfl⟩ := (Place.orderSystem hF).divisorClass_surjective c
-  rw [Divisor.conormClassGroup_divisorClass, Divisor.divisorClass_eq_zero_iff hF'] at hc
-  obtain ⟨z, hz⟩ := hc
-  have hdeg : Divisor.degree D = 0 := by
-    rw [← Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h, ← hz,
-      Divisor.degree_principal]
-  have hdim : 1 ≤ Divisor.dim D := by
-    rw [← Divisor.dim_conorm hex h hF]
-    exact (Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF' (by
-      rw [Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h, hdeg])).2 ⟨z, hz⟩
-  exact (Divisor.divisorClass_eq_zero_iff hF).2
-    ((Divisor.one_le_dim_iff_exists_principal_eq_of_degree_eq_zero hF hdeg).1 hdim)
+    Function.Injective (Divisor.conormClassGroup k' F' hF (hF.of_constantCompositum_eq_top h)) :=
+  conormClassGroup_injective_of_forall_dim_conorm_eq hF _
+    (Divisor.degree_conorm_of_constantCompositum_eq_top hF hex h) (Divisor.dim_conorm hex h hF)
 
 end TauCeti
