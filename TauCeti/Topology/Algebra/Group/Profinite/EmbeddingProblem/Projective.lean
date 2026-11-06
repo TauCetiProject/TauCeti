@@ -64,6 +64,19 @@ def IsProjective (p : ℕ) (G : Type u) [Group G] [TopologicalSpace G] : Prop :=
     IsProP p A → ∀ (α : A →ₜ* B), Function.Surjective α →
       ∀ f : G →ₜ* B, ∃ φ : G →ₜ* A, α.comp φ = f
 
+/-- A continuous homomorphism that kills the kernel of a homomorphism which is a quotient map
+factors through it by a continuous homomorphism. -/
+theorem exists_continuousMonoidHom_comp_eq_of_isQuotientMap {X Y Z : Type*} [Group X] [Group Y]
+    [Group Z] [TopologicalSpace X] [TopologicalSpace Y] [TopologicalSpace Z] {s : X →* Y}
+    {π : X →* Z} (hs : Topology.IsQuotientMap s) (hπ : Continuous π) (hle : s.ker ≤ π.ker) :
+    ∃ β : Y →* Z, Continuous β ∧ ∀ x, β (s x) = π x := by
+  refine ⟨s.liftOfSurjective hs.surjective ⟨π, hle⟩, hs.continuous_iff.mpr ?_, fun x ↦ ?_⟩
+  · convert hπ using 1
+    exact funext fun x ↦ by
+      simp only [Function.comp_apply, MonoidHom.liftOfSurjective,
+        MonoidHom.liftOfRightInverse_comp_apply]
+  · simp only [MonoidHom.liftOfSurjective, MonoidHom.liftOfRightInverse_comp_apply]
+
 variable {G : Type u} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
 variable {A : Type v} [Group A] [TopologicalSpace A] [IsTopologicalGroup A]
   [CompactSpace A]
@@ -103,17 +116,11 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
     exact (QuotientGroup.eq_one_iff (τ h)).mpr (Subgroup.mem_map.mpr ⟨h, hh, rfl⟩)
   -- Stage 3: `π` kills `ker s`, so it descends along the quotient map `s` to a continuous
   -- `β : G → t.range ⧸ K`.
-  let β := s.liftOfSurjective hs ⟨π, hle⟩
-  have hβ (h : H) : β (s h) = π h := by
-    simp only [β, MonoidHom.liftOfSurjective, MonoidHom.liftOfRightInverse_comp_apply]
   have hπcont : Continuous π :=
     QuotientGroup.continuous_mk.comp
       ((QuotientGroup.continuous_mk.comp
         (continuous_fst.comp continuous_subtype_val)).subtype_mk _)
-  have hβcont : Continuous β := hsquot.continuous_iff.mpr <| by
-    have heq : (β : G → _) ∘ s = π := funext hβ
-    rw [heq]
-    exact hπcont
+  obtain ⟨β, hβcont, hβ⟩ := exists_continuousMonoidHom_comp_eq_of_isQuotientMap hsquot hπcont hle
   -- Stage 4: `K` is a `p`-group inside the `p`-group `A ⧸ U`, so `HasPGroupSolutions` lifts `β`
   -- through `t.range ↠ t.range ⧸ K` to `γ : G → t.range`; `δ` is `γ` followed by the inclusion.
   obtain ⟨γ, hγ, hγβ⟩ := hG.exists_comp_eq (QuotientGroup.mk' K)
@@ -123,8 +130,7 @@ private theorem exists_quotient_map_in_relation {p : ℕ} (hG : HasPGroupSolutio
   let δ : G →ₜ* A ⧸ U.toSubgroup :=
     ⟨t.range.subtype.comp γ,
       continuous_subtype_val.comp (γ.continuous_iff_isOpen_ker.mpr hγ)⟩
-  refine ⟨δ, ?_⟩
-  intro g
+  refine ⟨δ, fun g ↦ ?_⟩
   -- Stage 5: over `g`, pick `h ∈ H` with `s h = g`; then `τ h` and `γ g` agree modulo
   -- `K = τ (ker s)`, so correcting `h` by an element of `ker s` gives a point of `H` over `g`
   -- whose first coordinate reduces to `δ g`.
