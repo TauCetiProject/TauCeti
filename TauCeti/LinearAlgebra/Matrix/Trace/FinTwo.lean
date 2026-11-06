@@ -53,6 +53,9 @@ trace is `2 cos θ`, is in `TauCeti.Analysis.SpecialFunctions.Trigonometric.Matr
 * `Matrix.exists_pow_eq_smul_sub_smul_one_fin_two`, `Matrix.discr_smul_sub_smul_one_fin_two`,
   `Matrix.exists_discr_pow_eq_sq_mul_fin_two`: the powers of a `2 × 2` matrix are combinations of
   the matrix and `1`, and their discriminants are square multiples of its discriminant.
+* `Matrix.det_one_sub_eq_two_sub_trace_of_det_eq_one`,
+  `Matrix.det_one_add_eq_two_add_trace_of_det_eq_one`: `det (1 ∓ A) = 2 ∓ trace A` for a
+  determinant-one matrix `A`.
 * `Matrix.abs_trace_pow_le_two`: the powers of a determinant-one matrix of trace at most `2` in
   absolute value again have this property.
 * `Matrix.det_one_sub_pow_neg_of_two_lt_trace`, `Matrix.det_one_sub_pow_neg_of_trace_lt_neg_two`,
@@ -132,6 +135,18 @@ theorem exists_discr_pow_eq_sq_mul_fin_two (A : Matrix (Fin 2) (Fin 2) R) (n : �
     ∃ a : R, (A ^ n).discr = a ^ 2 * A.discr := by
   obtain ⟨a, b, h⟩ := exists_pow_eq_smul_sub_smul_one_fin_two A n
   exact ⟨a, by rw [h, discr_smul_sub_smul_one_fin_two]⟩
+
+/-- For a `2 × 2` matrix `A` of determinant one, `det (1 - A) = 2 - trace A`. -/
+theorem det_one_sub_eq_two_sub_trace_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) : (1 - A).det = 2 - A.trace := by
+  rw [det_one_sub_fin_two, hdet]
+  ring
+
+/-- For a `2 × 2` matrix `A` of determinant one, `det (1 + A) = 2 + trace A`. -/
+theorem det_one_add_eq_two_add_trace_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
+    (hdet : A.det = 1) : (1 + A).det = 2 + A.trace := by
+  rw [det_one_add_fin_two, hdet]
+  ring
 
 end CommRing
 
@@ -234,10 +249,7 @@ theorem sign_det_one_sub_pow_succ_of_det_eq_one {A : Matrix (Fin 2) (Fin 2) R}
     (hdet : A.det = 1) (hA : ∀ n ≠ 0, (1 - A ^ n).det ≠ 0) (k : ℕ) :
     (SignType.sign (1 - A ^ (k + 1)).det : ℤ) =
       SignType.sign (1 - A).det * (if (1 + A).det < 0 then -1 else 1) ^ k := by
-  have h₂ : (1 + A).det = 2 + A.trace := by
-    rw [det_one_add_fin_two, hdet]
-    ring
-  rw [h₂]
+  rw [det_one_add_eq_two_add_trace_of_det_eq_one hdet]
   rcases lt_or_ge 2 A.trace with htr | htr
   · rw [ite_eq_right (by linarith), one_pow, mul_one,
       sign_neg (det_one_sub_pow_neg_of_two_lt_trace hdet htr k.succ_ne_zero),

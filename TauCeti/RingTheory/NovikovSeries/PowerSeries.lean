@@ -139,13 +139,6 @@ theorem period_multiplesHom (γ : H) (n : ℕ) :
     N (multiplesHom H γ n) = N γ * Nat.castAddMonoidHom ℝ n := by
   simp [mul_comm]
 
-/-- The multiples of an exponent of positive period are pairwise distinct. -/
-theorem multiplesHom_injective (hγ : 0 < N γ) : Function.Injective (multiplesHom H γ) :=
-  fun m n hmn => by
-    have h := congrArg N hmn
-    rw [period_multiplesHom, period_multiplesHom] at h
-    simpa using mul_left_cancel₀ hγ.ne' h
-
 variable [Semiring R]
 
 variable (γ) in
@@ -163,8 +156,8 @@ coefficients. -/
 theorem ofPowerSeries_apply (f : R⟦X⟧) :
     ofPowerSeries γ hγ f = map (RingHom.id R : R →+ R) (multiplesHom H γ)
       ⟨N γ, hγ, period_multiplesHom γ⟩ (toPowerSeries.symm f) := by
-  rw [ofPowerSeries, RingHom.comp_apply, mapRingHom_apply]
-  rfl
+  rw [ofPowerSeries, RingHom.comp_apply, mapRingHom_apply, RingEquiv.toRingHom_eq_coe,
+    RingEquiv.coe_toRingHom]
 
 /-- The monomial `r Xⁿ` goes to the monomial `r e^(n • γ)`. -/
 @[simp]
@@ -186,8 +179,10 @@ theorem ofPowerSeries_X : ofPowerSeries γ hγ (X : R⟦X⟧) = single γ (1 : R
 @[simp]
 theorem coeff_ofPowerSeries_nsmul (f : R⟦X⟧) (n : ℕ) :
     (ofPowerSeries γ hγ f).coeff (n • γ) = PowerSeries.coeff n f := by
-  rw [ofPowerSeries_apply, ← multiplesHom_apply, coeff_map_of_injective _ _ _
-    (multiplesHom_injective hγ)]
+  -- The multiples of `γ` are pairwise distinct, because their periods `n • N γ` are.
+  have hinj : Function.Injective (multiplesHom H γ) :=
+    .of_comp (f := N) <| by simpa [Function.comp_def] using (nsmul_left_strictMono hγ).injective
+  rw [ofPowerSeries_apply, ← multiplesHom_apply, coeff_map_of_injective _ _ _ hinj]
   simp
 
 /-- The image has zero coefficient off the multiples of `γ`. -/

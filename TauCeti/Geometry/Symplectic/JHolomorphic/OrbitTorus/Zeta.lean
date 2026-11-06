@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.JHolomorphic.TorusWeight
 public import TauCeti.RingTheory.NovikovSeries.OrbitZeta.Basic
 public import TauCeti.RingTheory.NovikovSeries.PowerSeries
-import TauCeti.LinearAlgebra.Matrix.Charpoly.FinTwo
 import TauCeti.LinearAlgebra.Matrix.Trace.FinTwo
 
 /-!
@@ -105,12 +104,8 @@ theorem ofPowerSeries_torusWeightSeries_true_zero :
   have h := congrArg (ofPowerSeries g hg) torusWeightSeries_true_zero_mul
   rw [_root_.map_mul, _root_.map_one, map_sub, _root_.map_one, ofPowerSeries_X,
     ← coe_unitsOneSubSingle hg (1 : ℤ)] at h
-  calc ofPowerSeries g hg (torusWeightSeries true 0)
-      = ofPowerSeries g hg (torusWeightSeries true 0) *
-          ((unitsOneSubSingle hg (1 : ℤ) : nonnegSubring ℤ N) : NovikovSeries ℤ H N) *
-          ((↑(unitsOneSubSingle hg (1 : ℤ))⁻¹ : nonnegSubring ℤ N) : NovikovSeries ℤ H N) := by
-        rw [mul_assoc, ← Subring.coe_mul, Units.mul_inv, Subring.coe_one, mul_one]
-    _ = _ := by rw [h, one_mul]
+  exact Units.eq_inv_of_mul_eq_one_right
+    (u := Units.map (nonnegSubring ℤ N).subtype.toMonoidHom (unitsOneSubSingle hg (1 : ℤ))) h
 
 variable {R : Type*} [CommRing R] [LinearOrder R] [IsStrictOrderedRing R]
   {P : Matrix (Fin 2) (Fin 2) R}
@@ -127,13 +122,8 @@ theorem ofPowerSeries_torusWeightSeries_eq_zpow_unitsOneSubSingle (hdet : P.det 
       ((↑(unitsOneSubSingle hg (if (1 + P).det < 0 then -1 else 1 : ℤ) ^
           (-(SignType.sign (1 - P).det * if (1 + P).det < 0 then -1 else 1 : ℤ))) :
         nonnegSubring ℤ N) : NovikovSeries ℤ H N) := by
-  have h₁ : (1 - P).det = 2 - P.trace := by
-    rw [det_one_sub_fin_two, hdet]
-    ring
-  have h₂ : (1 + P).det = 2 + P.trace := by
-    rw [det_one_add_fin_two, hdet]
-    ring
-  rw [h₁, h₂]
+  rw [det_one_sub_eq_two_sub_trace_of_det_eq_one hdet] at hP ⊢
+  rw [det_one_add_eq_two_add_trace_of_det_eq_one hdet]
   rcases lt_or_ge 2 P.trace with htr | htr
   · rw [decide_eq_false (by linarith), ite_eq_right (by linarith), ite_eq_right (by linarith),
       sign_neg (by linarith), ofPowerSeries_torusWeightSeries_false_zero hg]
@@ -142,8 +132,7 @@ theorem ofPowerSeries_torusWeightSeries_eq_zpow_unitsOneSubSingle (hdet : P.det 
   · rw [decide_eq_true (by linarith), ite_eq_left (by linarith), ite_eq_left (by linarith),
       sign_pos (by linarith), ofPowerSeries_torusWeightSeries_true_one hg]
     norm_num
-  have hne : 2 - P.trace ≠ 0 := by rwa [← h₁]
-  have hpos : 0 < 2 - P.trace := lt_of_le_of_ne (by linarith) hne.symm
+  have hpos : 0 < 2 - P.trace := lt_of_le_of_ne (by linarith) hP.symm
   rw [decide_eq_true hpos, ite_eq_right (by linarith), ite_eq_right (by linarith), sign_pos hpos,
     ofPowerSeries_torusWeightSeries_true_zero hg]
   norm_num
