@@ -38,10 +38,12 @@ namespace TauCeti
 variable {m : ℤ} {T : Type*} [AddCommGroup T] [Module (Localization.Away m) T]
 
 /-- The integer `m` is inverted in `ℤ[1/m]`, written with the integer cast. -/
+@[simp]
 theorem intCast_mul_invSelf : (m : Localization.Away m) * invSelf m = 1 := by
   simpa using mul_invSelf (S := Localization.Away m) m
 
 /-- In a `ℤ[1/m]`-module, `m⁻¹` undoes multiplication by `m`. -/
+@[simp]
 theorem invSelf_smul_zsmul (x : T) : (invSelf m : Localization.Away m) • m • x = x := by
   rw [← Int.cast_smul_eq_zsmul (Localization.Away m), smul_smul, mul_comm, intCast_mul_invSelf,
     one_smul]
