@@ -131,6 +131,52 @@ private theorem measureReal_arrival_le_le_pow_succ (hT : ∀ n, Measurable (T n)
     _ ≤ 1 ^ ⌈t⌉₊ * ρ ^ (j + 1) := by gcongr
     _ = ρ ^ (j + 1) := by simp
 
+/-- The Laplace transform of the increment law at rate `1` is strictly less than `1` when the
+increments are not almost surely zero. -/
+private theorem mgf_neg_one_lt_one [IsProbabilityMeasure P] (hT : ∀ n, Measurable (T n))
+    (hzero : P {ω | T 0 ω = 0} < 1) : mgf (fun ω ↦ (T 0 ω : ℝ)) P (-1) < 1 := by
+  have hpos : P {ω | 0 < (T 0 ω : ℝ)} ≠ 0 := by
+    have : {ω | 0 < (T 0 ω : ℝ)} = {ω | T 0 ω = 0}ᶜ := by
+      ext ω
+      simp [pos_iff_ne_zero]
+    rw [this, Ne, prob_compl_eq_zero_iff (measurableSet_eq_fun (hT 0) measurable_const)]
+    exact hzero.ne
+  exact mgf_lt_one_of_nonneg_of_neg (hT 0).coe_nnreal_real.aemeasurable
+    (ae_of_all _ fun ω ↦ (T 0 ω).2) hpos (by norm_num)
+
+/-- The `p`-th power of the index of a tail term times the probability that the arrival has come by
+time `t` is at most `M ^ p * ((j + 1) ^ p * ρ ^ (j + 1))`, where `M = L * ⌈t⌉₊ + 1` and `ρ` is the
+Laplace transform of the increment law at rate `1`. -/
+private theorem mul_measure_arrival_le_le_ofReal (hT : ∀ n, Measurable (T n))
+    (hindep : iIndepFun T P) (hid : ∀ n, IdentDistrib (T n) (T 0) P P) {L : ℕ}
+    (hL : exp 1 * mgf (fun ω ↦ (T 0 ω : ℝ)) P (-1) ^ L ≤ 1) (t : ℝ≥0) (p j : ℕ) :
+    ((L * ⌈t⌉₊ + 1 + j : ℕ) : ℝ≥0∞) ^ p * P {ω | arrival T (L * ⌈t⌉₊ + 1 + j) ω ≤ t} ≤
+      ENNReal.ofReal (((L * ⌈t⌉₊ + 1 : ℕ) : ℝ) ^ p *
+        (((j + 1 : ℕ) : ℝ) ^ p * mgf (fun ω ↦ (T 0 ω : ℝ)) P (-1) ^ (j + 1))) := by
+  have := hindep.isProbabilityMeasure
+  rw [← ofReal_measureReal (measure_ne_top _ _), ← ENNReal.ofReal_natCast,
+    ← ENNReal.ofReal_pow (Nat.cast_nonneg _),
+    ← ENNReal.ofReal_mul (pow_nonneg (Nat.cast_nonneg _) p)]
+  refine ENNReal.ofReal_le_ofReal ?_
+  have hchernoff := measureReal_arrival_le_le_pow_succ hT hindep hid hL t j
+  have hMj : ((L * ⌈t⌉₊ + 1 + j : ℕ) : ℝ) ^ p ≤
+      ((L * ⌈t⌉₊ + 1 : ℕ) : ℝ) ^ p * ((j + 1 : ℕ) : ℝ) ^ p := by
+    rw [← mul_pow]
+    gcongr
+    have hM1 : (1 : ℝ) ≤ (L * ⌈t⌉₊ + 1 : ℕ) := by exact_mod_cast Nat.le_add_left 1 (L * ⌈t⌉₊)
+    push_cast at hM1 ⊢
+    nlinarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
+  rw [← mul_assoc]
+  exact mul_le_mul hMj hchernoff measureReal_nonneg (by positivity)
+
+/-- The number of arrivals `L * ⌈t⌉₊ + 1` is at most `(L + 1) * (t + 1)`. -/
+private theorem natCast_mul_ceil_add_one_le (L : ℕ) (t : ℝ≥0) :
+    ((L * ⌈t⌉₊ + 1 : ℕ) : ℝ) ≤ (L + 1) * ((t : ℝ) + 1) := by
+  have hk : (⌈t⌉₊ : ℝ) < t + 1 := Nat.ceil_lt_add_one t.2
+  have ht : (0 : ℝ) ≤ t := t.2
+  push_cast
+  nlinarith [(Nat.cast_nonneg L : (0 : ℝ) ≤ L)]
+
 /-- **Polynomial growth of the moments of the renewal counts.** For independent, identically
 distributed increments that are not almost surely zero, the `p`-th moment of the count grows at most
 like the `p`-th power of time: there is a constant `C` with `∫⁻ (N t) ^ p ≤ C * (t + 1) ^ p` for
@@ -142,14 +188,7 @@ theorem exists_lintegral_renewalCount_pow_le (hT : ∀ n, Measurable (T n)) (hin
   -- The Laplace transform `ρ` of the increment law at rate `1` is strictly less than `1`.
   set ρ := mgf (fun ω ↦ (T 0 ω : ℝ)) P (-1)
   have hρ0 : 0 ≤ ρ := mgf_nonneg
-  have hpos : P {ω | 0 < (T 0 ω : ℝ)} ≠ 0 := by
-    have : {ω | 0 < (T 0 ω : ℝ)} = {ω | T 0 ω = 0}ᶜ := by
-      ext ω
-      simp [pos_iff_ne_zero]
-    rw [this, Ne, prob_compl_eq_zero_iff (measurableSet_eq_fun (hT 0) measurable_const)]
-    exact hzero.ne
-  have hρ : ρ < 1 := mgf_lt_one_of_nonneg_of_neg (hT 0).coe_nnreal_real.aemeasurable
-    (ae_of_all _ fun ω ↦ (T 0 ω).2) hpos (by norm_num)
+  have hρ : ρ < 1 := mgf_neg_one_lt_one hT hzero
   -- Choose `L` with `exp 1 * ρ ^ L ≤ 1`. After `M = L * ⌈t⌉₊ + 1` arrivals, the Chernoff factor
   -- `exp t` is absorbed and the tail decays like `ρ ^ (j + 1)`.
   obtain ⟨L, hL⟩ := exists_pow_lt_of_lt_one (exp_pos (-1)) hρ
@@ -168,25 +207,9 @@ theorem exists_lintegral_renewalCount_pow_le (hT : ∀ n, Measurable (T n)) (hin
   set M := L * k + 1
   -- Each tail term is at most `M ^ p * ((j + 1) ^ p * ρ ^ (j + 1))`.
   have hterm (j : ℕ) : ((M + j : ℕ) : ℝ≥0∞) ^ p * P {ω | arrival T (M + j) ω ≤ t} ≤
-      ENNReal.ofReal ((M : ℝ) ^ p * (((j + 1 : ℕ) : ℝ) ^ p * ρ ^ (j + 1))) := by
-    rw [← ofReal_measureReal (measure_ne_top _ _), ← ENNReal.ofReal_natCast,
-      ← ENNReal.ofReal_pow (Nat.cast_nonneg _),
-      ← ENNReal.ofReal_mul (pow_nonneg (Nat.cast_nonneg _) p)]
-    refine ENNReal.ofReal_le_ofReal ?_
-    have hchernoff := measureReal_arrival_le_le_pow_succ hT hindep hid hL' t j
-    have hMj : ((M + j : ℕ) : ℝ) ^ p ≤ (M : ℝ) ^ p * ((j + 1 : ℕ) : ℝ) ^ p := by
-      rw [← mul_pow]
-      gcongr
-      have hM1 : (1 : ℝ) ≤ M := by exact_mod_cast Nat.le_add_left 1 (L * k)
-      push_cast
-      nlinarith [(Nat.cast_nonneg j : (0 : ℝ) ≤ j)]
-    rw [← mul_assoc]
-    exact mul_le_mul hMj hchernoff measureReal_nonneg (by positivity)
-  have hM : (M : ℝ) ≤ (L + 1) * ((t : ℝ) + 1) := by
-    have hk : (k : ℝ) < t + 1 := Nat.ceil_lt_add_one t.2
-    have ht : (0 : ℝ) ≤ t := t.2
-    push_cast [M]
-    nlinarith [(Nat.cast_nonneg L : (0 : ℝ) ≤ L)]
+      ENNReal.ofReal ((M : ℝ) ^ p * (((j + 1 : ℕ) : ℝ) ^ p * ρ ^ (j + 1))) :=
+    mul_measure_arrival_le_le_ofReal hT hindep hid hL' t p j
+  have hM : (M : ℝ) ≤ (L + 1) * ((t : ℝ) + 1) := natCast_mul_ceil_add_one_le L t
   calc ∫⁻ ω, renewalCount T t ω ^ p ∂P
       ≤ (M : ℝ≥0∞) ^ p +
           ∑' j : ℕ, ((M + j : ℕ) : ℝ≥0∞) ^ p * P {ω | arrival T (M + j) ω ≤ t} :=
