@@ -484,14 +484,19 @@ private theorem mem_range_upper_of_mem_range_stackMap {p : sphere (0 : E) 1 × �
   · exact hu
 
 /-- The image of the composite is the union of the lower half with its heights capped at `1 / 2`
-and the upper half with its heights raised to at least `1 / 2`; here the capping maps `P` and `Q`
-are given by their fixed points and their values past the height `1 / 2`. -/
-private theorem range_stackMap_eq_union (P Q : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ)
-    (hPfix : ∀ p : sphere (0 : E) 1 × ℝ, p.2 ≤ 1 / 2 → P p = p)
-    (hQfix : ∀ p : sphere (0 : E) 1 × ℝ, 1 / 2 ≤ p.2 → Q p = p)
-    (hPK : ∀ p : sphere (0 : E) 1 × ℝ, 1 / 2 ≤ p.2 → P p = (p.1, 1 / 2))
-    (hQK : ∀ p : sphere (0 : E) 1 × ℝ, p.2 ≤ 1 / 2 → Q p = (p.1, 1 / 2)) :
-    range (stackMap S₁ S₂) = range (P ∘ lower S₁) ∪ range (Q ∘ upper S₂) := by
+and the upper half with its heights raised to at least `1 / 2`. -/
+private theorem range_stackMap_eq_union :
+    range (stackMap S₁ S₂) =
+      range ((fun p : sphere (0 : E) 1 × ℝ ↦ (p.1, min p.2 (1 / 2))) ∘ lower S₁) ∪
+        range ((fun p : sphere (0 : E) 1 × ℝ ↦ (p.1, max p.2 (1 / 2))) ∘ upper S₂) := by
+  have hPfix (p : sphere (0 : E) 1 × ℝ) (hp : p.2 ≤ 1 / 2) : (p.1, min p.2 (1 / 2)) = p :=
+    Prod.ext rfl (min_eq_left hp)
+  have hQfix (p : sphere (0 : E) 1 × ℝ) (hp : 1 / 2 ≤ p.2) : (p.1, max p.2 (1 / 2)) = p :=
+    Prod.ext rfl (max_eq_left hp)
+  have hPK (p : sphere (0 : E) 1 × ℝ) (hp : 1 / 2 ≤ p.2) :
+      (p.1, min p.2 (1 / 2)) = (p.1, 1 / 2) := by rw [min_eq_right hp]
+  have hQK (p : sphere (0 : E) 1 × ℝ) (hp : p.2 ≤ 1 / 2) :
+      (p.1, max p.2 (1 / 2)) = (p.1, 1 / 2) := by rw [max_eq_right hp]
   have h₁ := sub_lt_half S₁
   have h₂ := half_lt_add S₂
   ext p
@@ -536,21 +541,16 @@ private theorem isPreconnected_range_stackMap : IsPreconnected (range (stackMap 
     isPreconnected_range (hQ.comp (isSmoothEmbedding_upper S₂).isEmbedding.continuous)
   have h₁ := sub_lt_half S₁
   have h₂ := half_lt_add S₂
-  have hPfix (p : sphere (0 : E) 1 × ℝ) (hp : p.2 ≤ 1 / 2) : P p = p :=
-    Prod.ext rfl (min_eq_left hp)
-  have hQfix (p : sphere (0 : E) 1 × ℝ) (hp : 1 / 2 ≤ p.2) : Q p = p :=
-    Prod.ext rfl (max_eq_left hp)
   -- On the circle `K₁` at height `1 / 2` both halves are the cylinder over `K₁`.
   have hp₀A : (K₁ 1, (1 / 2 : ℝ)) ∈ range (P ∘ lower S₁) := by
     obtain ⟨x, hx⟩ := (mem_range_lower_iff_of_le S₁ (p := (K₁ 1, 1 / 2)) h₁.le).2
       (mem_range_self (f := ⇑K₁) 1)
-    exact ⟨x, by rw [comp_apply, hx, hPfix _ le_rfl]⟩
+    exact ⟨x, by rw [comp_apply, hx]; exact Prod.ext rfl (min_eq_left le_rfl)⟩
   have hp₀B : (K₁ 1, (1 / 2 : ℝ)) ∈ range (Q ∘ upper S₂) := by
     obtain ⟨y, hy⟩ := (mem_range_upper_iff_of_le S₂ (p := (K₁ 1, 1 / 2)) h₂.le).2
       (mem_range_self (f := ⇑K₁) 1)
-    exact ⟨y, by rw [comp_apply, hy, hQfix _ le_rfl]⟩
-  rw [range_stackMap_eq_union S₁ S₂ P Q hPfix hQfix (fun p hp ↦ Prod.ext rfl (min_eq_right hp))
-    (fun p hp ↦ Prod.ext rfl (max_eq_right hp))]
+    exact ⟨y, by rw [comp_apply, hy]; exact Prod.ext rfl (max_eq_left le_rfl)⟩
+  rw [range_stackMap_eq_union S₁ S₂]
   exact hA.union _ hp₀A hp₀B hB
 
 private instance : ConnectedSpace (Stack S₁ S₂) := by
