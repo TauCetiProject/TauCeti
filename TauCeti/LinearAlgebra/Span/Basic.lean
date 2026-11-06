@@ -24,7 +24,7 @@ exactly when it sends that vector to a multiple of itself. Finally, a submodule 
 subring that is a direct sum `⊕ i, J i • y i` with nonzero ideal coefficients spans the same
 subspace over the larger field as the family `y`. A unitriangular change of a family indexed by a
 well-founded order, where each `z j` is `x j` plus a combination of the earlier `x l`, preserves
-the spans of initial segments. The pivot rows of a triangular family are distinct.
+the spans of initial segments.
 -/
 
 public section
@@ -157,20 +157,3 @@ theorem span_image_Iio_eq_span_image_Iio {x z : ι → M}
 end Unitriangular
 
 end Submodule
-
-section Triangular
-
-variable {M ι : Type*}
-
-/-- The pivot rows of a triangular family are distinct: if `f (π i) (z j) = 0` for `i < j` while
-`f (π j) (z j) ≠ 0`, then `π` is injective. -/
-theorem injective_of_triangular {κ N : Type*} [LinearOrder ι] [Zero N] {f : κ → M → N}
-    {z : ι → M} {π : ι → κ} (h₀ : ∀ i j, i < j → f (π i) (z j) = 0)
-    (hp : ∀ j, f (π j) (z j) ≠ 0) : Function.Injective π := by
-  intro i j hij
-  by_contra hne
-  rcases lt_or_gt_of_ne hne with h | h
-  · exact hp j (hij ▸ h₀ i j h)
-  · exact hp i (hij.symm ▸ h₀ j i h)
-
-end Triangular

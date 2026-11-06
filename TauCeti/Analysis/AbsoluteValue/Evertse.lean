@@ -13,6 +13,7 @@ public import Mathlib.LinearAlgebra.LinearIndependent.Basic
 import Mathlib.Data.Fintype.Lattice
 import TauCeti.Algebra.Order.AbsoluteValue.Basic
 import TauCeti.LinearAlgebra.Span.Basic
+import TauCeti.Logic.Function.Triangular
 import Mathlib.Tactic.Abel
 import Mathlib.Tactic.GCongr
 import Mathlib.Tactic.Linarith
@@ -293,7 +294,19 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
           ν v (π v i) * min (μ v i) (μ v j) := by
   classical
   have hxI (j : Fin m) : x j ∉ span K (x '' Set.Iio j) := hx.notMem_span_image (lt_irrefl j)
-  obtain ⟨c, hc, hc₂, hcv, hc₁⟩ := exists_forall_apply_add_le_mul_max (R := K) (S := ℝ)
+  -- The growth factor of one addition: `1` at nonarchimedean places, `2` elsewhere.
+  obtain ⟨c, hc, hc₂, hcv, hc₁⟩ : ∃ c : AbsoluteValue K ℝ → ℝ, (∀ v, 1 ≤ c v) ∧ (∀ v, c v ≤ 2) ∧
+      (∀ (v : AbsoluteValue K ℝ) a b, v (a + b) ≤ c v * max (v a) (v b)) ∧
+      ∀ v : AbsoluteValue K ℝ, IsNonarchimedean v → c v = 1 :=
+    ⟨fun v ↦ if IsNonarchimedean v then 1 else 2,
+      fun v ↦ by dsimp only; split_ifs; exacts [le_rfl, one_le_two],
+      fun v ↦ by dsimp only; split_ifs; exacts [one_le_two, le_rfl],
+      fun v a b ↦ by
+        dsimp only
+        split_ifs with h
+        · simpa using h a b
+        · exact v.apply_add_le_two_mul_max a b,
+      fun v h ↦ by simp [h]⟩
   -- Step 1: an exactly triangular family at each place of `T`.
   have hloc (v : AbsoluteValue K ℝ) : ∃ (z : Fin m → V) (π : Fin m → Fin m),
       (∀ j, z j - x j ∈ span K (x '' Set.Iio j)) ∧ (v ∈ T →
@@ -306,7 +319,7 @@ theorem exists_evertse_of_approx {m : ℕ} {T : Set (AbsoluteValue K ℝ)} {R : 
     · exact ⟨x, id, fun j ↦ by simp, fun h ↦ absurd h hv⟩
   choose z π hzx hz using hloc
   have hπ (v : AbsoluteValue K ℝ) (hv : v ∈ T) : Function.Injective (π v) :=
-    injective_of_triangular (f := fun r z ↦ L v r z) (hz v hv).1 (hz v hv).2.1
+    Function.Injective.of_triangular (f := fun r z ↦ L v r z) (hz v hv).1 (hz v hv).2.1
   set σ : AbsoluteValue K ℝ → Equiv.Perm (Fin m) := fun v ↦
     if hv : v ∈ T then Equiv.ofBijective (π v) (Finite.injective_iff_bijective.mp (hπ v hv))
     else 1 with hσ_def
