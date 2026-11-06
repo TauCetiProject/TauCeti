@@ -8,8 +8,8 @@ module
 public import TauCeti.FieldTheory.FunctionField.Differential.Kaehler
 public import TauCeti.FieldTheory.FunctionField.Place.Expansion.Laurent.Derivative
 public import TauCeti.RingTheory.Derivation.Wronskian.Rescale
-import Mathlib.LinearAlgebra.Vandermonde
 import TauCeti.FieldTheory.FunctionField.Place.Degree
+import TauCeti.LinearAlgebra.Vandermonde
 
 /-!
 # Wronskians in function fields
@@ -123,6 +123,28 @@ theorem wronskian_derivativeOfSeparating_mem_filtration [Algebra.IsSeparable k P
     (fun j _ ↦ P.iterate_derivativeOfSeparating_mem_filtration ht htr (hf j) (σ j))
   rwa [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun i ↦ ((i : ℕ) : ℤ))] at h
 
+include ht in
+/-- Normalizing the entry of the Wronskian matrix of a nonzero function `f` by `t ^ i / f` gives
+the integer `(descPochhammer ℤ i).eval (ord f)`, up to the maximal ideal of `P`. -/
+private lemma normalized_entry_sub_mem_filtration_one [Algebra.IsSeparable k P.ResidueField]
+    {f : F} (hf : f ≠ 0) (i : ℕ) :
+    t ^ i * (f⁻¹ * (⇑(derivativeOfSeparating htr))^[i] f) -
+      (((descPochhammer ℤ i).eval (P.ord f) : ℤ) : F) ∈ P.filtration 1 := by
+  have ht0 : t ≠ 0 := by
+    rintro rfl
+    simp at ht
+  have hE := P.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration ht htr
+    (P.mem_filtration_ord f) i
+  have hw : t ^ i * f⁻¹ ∈ P.filtration (i - P.ord f) := by
+    convert P.mul_mem_filtration (P.mem_filtration_ord (t ^ i))
+      (P.mem_filtration_ord f⁻¹) using 2
+    simp [ht, sub_eq_add_neg]
+  convert P.mul_mem_filtration hw hE using 1
+  · congr 1
+    omega
+  · simp only [zsmul_eq_mul, inv_pow]
+    field_simp
+
 include hP ht in
 /-- Scaling row `i` of the Wronskian matrix by `t ^ i` and column `j` by `(f j)⁻¹` gives a matrix
 integral at `P` whose reduction is a Vandermonde matrix in the orders of the `f j`; when these are
@@ -142,18 +164,7 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
   let c : Matrix (Fin n) (Fin n) ℤ := of fun i j ↦ (descPochhammer ℤ i).eval (P.ord (f j))
   -- Each normalized entry is congruent to the integer `(ord f_j)(ord f_j - 1)⋯` modulo `𝔪_P`.
   have hentry (i j : Fin n) : N i j - (c i j : F) ∈ P.filtration 1 := by
-    have hE := P.iterate_derivativeOfSeparating_sub_zsmul_mem_filtration ht htr
-      (P.mem_filtration_ord (f j)) i
-    have hw : t ^ (i : ℕ) * (f j)⁻¹ ∈ P.filtration (i - P.ord (f j)) := by
-      convert P.mul_mem_filtration (P.mem_filtration_ord (t ^ (i : ℕ)))
-        (P.mem_filtration_ord (f j)⁻¹) using 2
-      simp [ht, sub_eq_add_neg]
-    convert P.mul_mem_filtration hw hE using 1
-    · congr 1
-      omega
-    · have := hf j
-      simp only [← hNdef, c, of_apply, zsmul_eq_mul, inv_pow]
-      field_simp
+    simpa [← hNdef, c] using P.normalized_entry_sub_mem_filtration_one ht htr (hf j) i
   have hint (i j : Fin n) : N i j ∈ P.integers := by
     rw [← mem_filtration_zero_iff, ← sub_add_cancel (N i j) (c i j : F)]
     refine add_mem (P.filtration_antitone (by omega) (hentry i j)) ?_
@@ -175,16 +186,12 @@ private lemma det_normalized {n : ℕ} {f : Fin n → F} (hf : ∀ j, f j ≠ 0)
     exact (residue_eq_iff_sub_mem_filtration_one P).mpr (by simpa [N'] using hentry i j)
   have hc : ((c.det : ℤ) : k) ≠ 0 := by
     -- The reduction of `c` is the transpose of a Vandermonde matrix in the orders.
-    have hv : ((c.det : ℤ) : k) = (vandermonde fun j ↦ (P.ord (f j) : k)).det := by
-      have h := RingHom.map_det (Int.castRingHom k) cᵀ
-      rw [eq_intCast, det_transpose] at h
-      rw [h, det_eval_matrixOfPolynomials_eq_det_vandermonde _ (fun i ↦ descPochhammer k i)
-        (fun i ↦ descPochhammer_natDegree k i) (fun i ↦ monic_descPochhammer k i)]
-      congr 1
-      ext i j
-      simp [c, descPochhammer_eval_cast]
-    rw [hv]
-    exact det_vandermonde_ne_zero_iff.mpr hinj
+    have h := RingHom.map_det (Int.castRingHom k) c
+    rw [eq_intCast] at h
+    rw [h]
+    convert det_descPochhammer_eval_ne_zero hinj using 2
+    ext i j
+    simp [c, descPochhammer_eval_cast]
   have hcmem : ((c.det : ℤ) : F) ∉ P.filtration 1 := by
     rw [← map_intCast (algebraMap k F),
       P.mem_filtration_iff_le_ord ((map_ne_zero _).mpr hc), ord_algebraMap]
