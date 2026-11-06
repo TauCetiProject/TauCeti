@@ -8,7 +8,6 @@ module
 public import Mathlib.Geometry.Manifold.Instances.Real
 public import Mathlib.Geometry.Manifold.Diffeomorph
 public import Mathlib.Analysis.Complex.ReImTopology
-import Mathlib.Analysis.Complex.Basic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 
 /-!
@@ -64,14 +63,17 @@ def closedUpperHalfPlaneModel : ModelWithCorners ℝ ℂ ClosedUpperHalfPlane :=
       left_inv' := by
         intro z _
         apply Subtype.ext
-        simp only [max_eq_left (show 0 ≤ (z : ℂ).im from z.property)]
+        simp only [max_eq_left z.property]
         exact Complex.re_add_im _
       right_inv' := by
         intro z hz
-        simp only [max_eq_left (show 0 ≤ z.im from hz)]
+        simp only [Set.mem_ofPred_eq] at hz
+        simp only [max_eq_left hz]
         exact Complex.re_add_im _ }
     rfl ((convex_Ici (0 : ℝ)).linear_preimage Complex.imCLM.toLinearMap)
     continuous_subtype_val (by
+      -- The model constructor asks for continuity of a map into the subtype; this unfolds
+      -- its bundled partial-equivalence inverse so `fun_prop` can see the clamped coordinate.
       change Continuous (fun z : ℂ ↦ (⟨(z.re : ℂ) + ((max z.im 0 : ℝ) : ℂ) * I,
         by simp⟩ : ClosedUpperHalfPlane))
       fun_prop)
@@ -111,54 +113,34 @@ theorem closedUpperHalfPlaneModel_isBoundaryPoint_iff (z : ClosedUpperHalfPlane)
 
 /-- Real coordinates with the normal coordinate first: `s + it ↦ (t,s)`. -/
 def closedUpperHalfPlaneCoordinates : ℂ ≃L[ℝ] EuclideanSpace ℝ (Fin 2) :=
-  LinearEquiv.toContinuousLinearEquiv
-    { toFun := fun z ↦ WithLp.toLp 2 ![z.im, z.re]
-      invFun := fun v ↦ v 1 + v 0 * I
-      left_inv := by intro z; exact Complex.re_add_im z
-      right_inv := by
-        intro v
-        ext j
-        fin_cases j <;> simp
-      map_add' := by
-        intro z w
-        ext j
-        fin_cases j <;> simp
-      map_smul' := by
-        intro c z
-        ext j
-        fin_cases j <;> simp }
+  (Complex.orthonormalBasisOneI.repr.trans
+    (LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ (Equiv.swap 0 1))).toContinuousLinearEquiv
 
 /-- The native half-space's first coordinate is the imaginary part. -/
 @[simp]
 theorem closedUpperHalfPlaneCoordinates_apply_zero (z : ℂ) :
     closedUpperHalfPlaneCoordinates z 0 = z.im := by
-  rw [closedUpperHalfPlaneCoordinates]
-  rfl
+  simp [closedUpperHalfPlaneCoordinates, LinearIsometryEquiv.piLpCongrLeft_apply,
+    Equiv.piCongrLeft']
 
 /-- The second native coordinate is the real part. -/
 @[simp]
 theorem closedUpperHalfPlaneCoordinates_apply_one (z : ℂ) :
     closedUpperHalfPlaneCoordinates z 1 = z.re := by
-  rw [closedUpperHalfPlaneCoordinates]
-  rfl
+  simp [closedUpperHalfPlaneCoordinates, LinearIsometryEquiv.piLpCongrLeft_apply,
+    Equiv.piCongrLeft']
 
 /-- Convert real coordinates back to `s + it`. -/
 theorem closedUpperHalfPlaneCoordinates_symm_apply (v : EuclideanSpace ℝ (Fin 2)) :
     closedUpperHalfPlaneCoordinates.symm v = v 1 + v 0 * I := by
-  rw [closedUpperHalfPlaneCoordinates]
-  rfl
+  simp [closedUpperHalfPlaneCoordinates, LinearIsometryEquiv.piLpCongrLeft_apply,
+    Equiv.piCongrLeft']
 
 /-- The closed upper half-plane is homeomorphic to Mathlib's native real two-dimensional
 half-space, with the normal coordinate first. -/
 def ClosedUpperHalfPlane.euclideanHalfSpaceHomeomorph :
-    ClosedUpperHalfPlane ≃ₜ EuclideanHalfSpace 2 where
-  toFun z := ⟨closedUpperHalfPlaneCoordinates z, by simp [z.property]⟩
-  invFun v := ⟨closedUpperHalfPlaneCoordinates.symm v.1, by
-    simpa [closedUpperHalfPlaneCoordinates_symm_apply] using v.property⟩
-  left_inv z := Subtype.ext (closedUpperHalfPlaneCoordinates.symm_apply_apply (z : ℂ))
-  right_inv v := Subtype.ext (closedUpperHalfPlaneCoordinates.apply_symm_apply v.1)
-  continuous_toFun := by fun_prop
-  continuous_invFun := by fun_prop
+    ClosedUpperHalfPlane ≃ₜ EuclideanHalfSpace 2 :=
+  closedUpperHalfPlaneCoordinates.toHomeomorph.subtype (fun z ↦ by simp)
 
 @[simp]
 theorem ClosedUpperHalfPlane.coe_euclideanHalfSpaceHomeomorph (z : ClosedUpperHalfPlane) :
@@ -184,6 +166,9 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
     apply closedUpperHalfPlaneCoordinates.contDiff.contDiffOn.congr
     intro z hz
     simp only [mfld_simps, Function.comp_apply]
+    -- The inherited half-space chart and subtype coercion reduce to their ambient model
+    -- coordinates; `simp` has already exposed the chart composition, but cannot rewrite
+    -- this dependent subtype expression to the public coefficient getter directly.
     change (euclideanHalfSpaceHomeomorph (closedUpperHalfPlaneModel.symm z)).1 =
       closedUpperHalfPlaneCoordinates z
     rw [coe_euclideanHalfSpaceHomeomorph]
@@ -195,6 +180,8 @@ def ClosedUpperHalfPlane.euclideanHalfSpaceDiffeomorph (n : ℕ∞ω) :
     apply closedUpperHalfPlaneCoordinates.symm.contDiff.contDiffOn.congr
     intro v hv
     simp only [mfld_simps, Function.comp_apply]
+    -- Likewise, reduce the self chart and inverse model coercions to the ambient complex
+    -- coordinate of the subtype; the remaining equality uses only the public inverse getter.
     change (euclideanHalfSpaceHomeomorph.symm ((𝓡∂ 2).symm v) : ℂ) =
       closedUpperHalfPlaneCoordinates.symm v
     rw [coe_euclideanHalfSpaceHomeomorph_symm]
