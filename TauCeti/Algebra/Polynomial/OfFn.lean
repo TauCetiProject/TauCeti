@@ -10,6 +10,7 @@ public import Mathlib.Algebra.Polynomial.OfFn
 -- Proof-only: supply `Polynomial.X_sub_C_pow_dvd_iff` and `Polynomial.X_pow_dvd_iff`.
 import Mathlib.Algebra.Polynomial.AlgebraMap
 import Mathlib.Algebra.Polynomial.Div
+import TauCeti.Algebra.BigOperators.Finset.Pairs
 
 /-!
 # Recovering a polynomial of bounded degree from its coefficient vector
@@ -35,6 +36,23 @@ omit [DecidableEq R] in
 @[simp]
 theorem _root_.Polynomial.toFn_apply (n : ℕ) (p : R[X]) (i : Fin n) :
     toFn n p i = p.coeff i := (rfl)
+
+/-- Evaluating the polynomial with coefficient vector `c` under a ring map `f` is the sum of
+`f (c j) * t ^ j`. -/
+theorem _root_.Polynomial.eval₂_ofFn {S : Type*} [Semiring S] (f : R →+* S) (t : S) {n : ℕ}
+    (c : Fin n → R) : (ofFn n c).eval₂ f t = ∑ j, f (c j) * t ^ (j : ℕ) := by
+  simp only [ofFn_eq_sum_monomial, eval₂_finsetSum, eval₂_monomial]
+
+/-- The coefficient of the product of two polynomials given by coefficient vectors is the
+convolution over bounded pairs of indices of total degree equal to the requested degree. -/
+theorem _root_.Polynomial.coeff_ofFn_mul_ofFn {n : ℕ} (a b : Fin n → R) (j : Fin n) :
+    (ofFn n a * ofFn n b).coeff j =
+      ∑ l : Fin n × Fin n with (l.1 : ℕ) + (l.2 : ℕ) = (j : ℕ), a l.1 * b l.2 := by
+  rw [coeff_mul]
+  symm
+  apply sum_fin_product_eq_sum_antidiagonal j.isLt
+  intro l _
+  simp only [ofFn_coeff_eq_val_of_lt _ l.1.isLt, ofFn_coeff_eq_val_of_lt _ l.2.isLt]
 
 -- Mathlib's `ofFn` takes `[DecidableEq R]`, so this instance occurs in the statement.
 /-- The coordinate vector with value one at `l` reconstructs the monomial `X ^ l.val`. -/
