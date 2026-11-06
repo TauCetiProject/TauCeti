@@ -152,64 +152,33 @@ private theorem degree_poles_eq_finrank_adjoin (hF : IsFunctionField k F) {x : F
     simpa only [c, Units.val_mk0] using b.linearIndependent
   let B : Divisor k F := Divisor.poles hF (Units.mk0 x hx0)
   let C : Divisor k F := ∑ i, Divisor.poles hF (c i)
-  have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦
+  have hpos (i) : 0 ≤ Divisor.poles hF (c i) :=
     WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c i))
-  have hCi (i) : Divisor.poles hF (c i) ≤ C :=
-    Finset.single_le_sum
-      (fun j _ ↦ WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF (c j)))
-      (Finset.mem_univ i)
-  have hlower (n : ℕ) :
-      Module.finrank k⟮x⟯ F * (n + 1) ≤
-        Divisor.dim (n • B + C) := by
+  have hC : 0 ≤ C := Finset.sum_nonneg fun i _ ↦ hpos i
+  have hB : 0 ≤ B := WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF _)
+  -- `n = deg C + q` makes the Riemann bound `n deg B + deg C + q` equal to `n (deg B + 1)`.
+  let n := (Divisor.degree C).toNat + Module.finrank k (algebraicClosure k F)
+  have hn : (n : ℤ) = Divisor.degree C + Module.finrank k (algebraicClosure k F) := by
+    simp [n, Int.toNat_of_nonneg (Divisor.degree_nonneg hC)]
+  have hlow : Module.finrank k⟮x⟯ F * (n + 1) ≤ Divisor.dim (n • B + C) := by
     simpa only [B, Fintype.card_fin] using
-      Divisor.card_mul_succ_le_dim_nsmul_poles_add hF (Units.mk0 x hx0) hx c hcLI hCi n
-  have hB : 0 ≤ B :=
-    WeilDivisor.isEffective_iff_zero_le.mp (Divisor.isEffective_poles hF _)
-  have hBdeg : 0 ≤ Divisor.degree B := Divisor.degree_nonneg hB
-  let d := (Divisor.degree B).toNat
-  have hd : (d : ℤ) = Divisor.degree B := by
-    exact Int.toNat_of_nonneg hBdeg
-  have hCdeg : 0 ≤ Divisor.degree C := Divisor.degree_nonneg hC
-  let e := (Divisor.degree C).toNat
-  have he : (e : ℤ) = Divisor.degree C := Int.toNat_of_nonneg hCdeg
-  let q := Module.finrank k (algebraicClosure k F)
-  let n := e + q
-  let E : Divisor k F := n • B + C
-  have hE : 0 ≤ E := add_nonneg (nsmul_nonneg hB _) hC
-  have hlow : Module.finrank k⟮x⟯ F * (n + 1) ≤ Divisor.dim E := by
-    simpa only [E] using hlower n
-  have hupp := Divisor.dim_le_degree_posPart_add_finrank hF E
-  rw [WeilDivisor.posPart_eq_self_iff_isEffective.mpr
-    (WeilDivisor.isEffective_iff_zero_le.mpr hE), Divisor.degree_add, map_nsmul] at hupp
-  have hineq : ((Module.finrank k⟮x⟯ F * (n + 1) : ℕ) : ℤ) ≤
-      (n : ℤ) * d + e + q := by
-    calc
-      ((Module.finrank k⟮x⟯ F * (n + 1) : ℕ) : ℤ) ≤ Divisor.dim E := by
-        exact_mod_cast hlow
-      _ ≤ (n : ℤ) * Divisor.degree B + Divisor.degree C + q := by
-        simpa only [E, q, nsmul_eq_mul] using hupp
-      _ = (n : ℤ) * d + e + q := by rw [← hd, ← he]
-  have hle : Module.finrank k⟮x⟯ F ≤ d := by
-    by_contra hnot
-    have hgt : d < Module.finrank k⟮x⟯ F := Nat.lt_of_not_ge hnot
-    have hgtZ : (d : ℤ) + 1 ≤ Module.finrank k⟮x⟯ F := by exact_mod_cast hgt
-    dsimp only [n] at hineq
-    push_cast at hineq
-    have hfactor : 0 ≤ (e : ℤ) + q + 1 := by positivity
-    have hmul := mul_le_mul_of_nonneg_right hgtZ hfactor
-    nlinarith
+      Divisor.card_mul_succ_le_dim_nsmul_poles_add hF (Units.mk0 x hx0) hx c hcLI
+        (fun i ↦ Finset.single_le_sum (fun j _ ↦ hpos j) (Finset.mem_univ i)) n
+  have hupp := Divisor.dim_le_degree_posPart_add_finrank hF (n • B + C)
+  rw [WeilDivisor.posPart_eq_self_iff_isEffective.mpr (WeilDivisor.isEffective_iff_zero_le.mpr
+    (add_nonneg (nsmul_nonneg hB _) hC)), Divisor.degree_add, map_nsmul, nsmul_eq_mul] at hupp
   have hdegree_ge : (Module.finrank k⟮x⟯ F : ℤ) ≤ Divisor.degree B := by
-    rw [← hd]
-    exact_mod_cast hle
+    by_contra! hnot
+    have hmul := mul_le_mul_of_nonneg_right (Int.add_one_le_of_lt hnot) (by positivity :
+      (0 : ℤ) ≤ n + 1)
+    nlinarith [Divisor.degree_nonneg hB]
   let _ : FiniteDimensional k⟮x⁻¹⟯ F := by
     rw [IntermediateField.adjoin_simple_inv]
     exact hF.finiteDimensional_adjoin hx
   have hdegree_le := degree_zeros_le_finrank_adjoin hF (inv_ne_zero hx0)
-  have hunit : Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ := by
-    ext
-    simp only [Units.val_mk0, Units.val_inv_eq_inv_val]
-  rw [hunit, ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0),
-    IntermediateField.adjoin_simple_inv] at hdegree_le
+  rw [show Units.mk0 x⁻¹ (inv_ne_zero hx0) = (Units.mk0 x hx0)⁻¹ from Units.ext rfl,
+    ← Divisor.poles_eq_zeros_inv hF (Units.mk0 x hx0), IntermediateField.adjoin_simple_inv]
+    at hdegree_le
   exact le_antisymm (by simpa only [B] using hdegree_le) hdegree_ge
 
 namespace Divisor
