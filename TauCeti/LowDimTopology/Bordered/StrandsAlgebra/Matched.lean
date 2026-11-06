@@ -17,7 +17,7 @@ public import TauCeti.LowDimTopology.Bordered.StrandsAlgebra.Horizontal
 
 A pointed matched circle `Z` has `4k` marked points, cut open at the basepoint to the linear order
 `{1, …, 4k}`, and a matching `M` pairing them up. Lipshitz, Ozsváth and Thurston define its algebra
-`A(Z)` inside the strands algebra `A(4k)`: a basis element is obtained from a strand diagram `ρ`
+`A(Z)` inside the strands algebra `A(4k)`: a generator is obtained from a strand diagram `ρ`
 without horizontal strands (a set of Reeb chords) and a set `h` of matched pairs by summing over
 all ways of adding one horizontal strand at a point of each pair in `h`. Both `M` restricted to the
 starting points of the resulting diagrams and `M` restricted to their end points are required to be
@@ -25,22 +25,23 @@ injective: no two strands may start, or end, at the two points of one pair.
 
 This file constructs that subspace for an arbitrary linear order `α` and an arbitrary map
 `M : α → β` (the pairs of a pointed matched circle are the fibres of `M`) and proves that it is
-closed under multiplication. In fact the product of two basis elements is again a basis element or
+closed under multiplication. In fact the product of two generators is again a generator or
 zero (`TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`). The idempotents
 `I(s)`, sums of the identity diagrams over the ways of choosing one point of each pair in `s`, are
 orthogonal idempotents of `A(Z)`, and their sum over all sets of pairs is a unit for `A(Z)`.
 
-The proof of closure takes two basis elements `a(ρ, h)` and `a(σ, k)`. A horizontal strand of the
+The proof of closure takes two generators `a(ρ, h)` and `a(σ, k)`. A horizontal strand of the
 first factor over a pair in `M(σ⁻)` must sit where a strand of `σ` starts, and a horizontal strand
 of the second factor over a pair in `M(ρ⁺)` must sit where a strand of `ρ` ends; over a pair in
 `h ∩ k` both factors have a horizontal strand at the same freely chosen point. Common horizontal
 strands do not affect composability (`TauCeti.StrandDiagram.composable_addHorizontal_iff`), so the
-nonzero products are indexed by the choices over `h ∩ k` and sum to a single basis element.
+nonzero products are indexed by the choices over `h ∩ k` and sum to a single generator.
 
 ## Main definitions
 
 * `TauCeti.StrandsAlgebra.IsMatchedGenerator M ρ h`: `ρ` has no horizontal strands, `M` is
   injective on its starting points and on its end points, and `h` avoids their images.
+* `TauCeti.StrandsAlgebra.matchedChoices M h`: the choices of one point of each pair in `h`.
 * `TauCeti.StrandsAlgebra.horizontalCompletion M ρ h`: the element `a(ρ, h)`, the sum of `ρ` with a
   horizontal strand added at one point of each pair in `h`, over all such choices.
 * `TauCeti.StrandsAlgebra.matchedAlgebra R M`: the span of the `a(ρ, h)`, a non-unital subalgebra
@@ -50,8 +51,8 @@ nonzero products are indexed by the choices over `h ∩ k` and sum to a single b
 
 ## Main results
 
-* `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two basis
-  elements.
+* `TauCeti.StrandsAlgebra.horizontalCompletion_mul_horizontalCompletion`: the product of two
+  generators.
 * `TauCeti.StrandsAlgebra.matchedIdem_mul_matchedIdem`: the `I(s)` are orthogonal idempotents.
 * `TauCeti.StrandsAlgebra.matchedOne_mul`, `TauCeti.StrandsAlgebra.mul_matchedOne`: `∑ₛ I(s)` is
   a two-sided unit for `A(Z)`.
@@ -76,7 +77,7 @@ namespace StrandsAlgebra
 variable {R : Type*} [CommSemiring R] {α β : Type*} [LinearOrder α] [Fintype α] [DecidableEq β]
   (M : α → β)
 
-/-- The pair `(ρ, h)` indexes a basis element of the algebra of the matching `M`: `ρ` has no
+/-- The pair `(ρ, h)` indexes a generator of the algebra of the matching `M`: `ρ` has no
 horizontal strands, `M` is injective on its starting points and on its end points, and the set `h`
 of pairs along which horizontal strands are added avoids the pairs of those points. -/
 structure IsMatchedGenerator (ρ : StrandDiagram α) (h : Finset β) : Prop where
@@ -86,23 +87,39 @@ structure IsMatchedGenerator (ρ : StrandDiagram α) (h : Finset β) : Prop wher
   disjoint_source : Disjoint (ρ.source.image M) h
   disjoint_target : Disjoint (ρ.target.image M) h
 
-/-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
-`ρ` by adding a horizontal strand at one point of each pair in `h`, over all such choices `U`. -/
-def horizontalCompletion (ρ : StrandDiagram α) (h : Finset β) : StrandsAlgebra R α :=
-  ∑ U with U.image M = h ∧ #U = #h, of (ρ.addHorizontal U)
+/-- The choices of one point of each pair in `h`: the finite sets `U` with `M(U) = h` and `#U = #h`,
+so that `M` is injective on `U` (`mem_matchedChoices`). -/
+def matchedChoices (h : Finset β) : Finset (Finset α) :=
+  {U | U.image M = h ∧ #U = #h}
 
 variable {M}
+
+omit [LinearOrder α] in
+theorem mem_matchedChoices {h : Finset β} {U : Finset α} :
+    U ∈ matchedChoices M h ↔ U.image M = h ∧ Set.InjOn M U := by
+  simp only [matchedChoices, mem_filter, mem_univ, true_and]
+  refine and_congr_right fun hU ↦ ?_
+  rw [← card_image_iff, hU, eq_comm]
+
+variable (M) in
+/-- The element `a(ρ, h)` of the algebra of the matching `M`: the sum of the diagrams obtained from
+`ρ` by adding a horizontal strand at one point of each pair in `h`, over all such choices `U`. When
+`IsMatchedGenerator M ρ h` holds, each summand is `ρ` together with these horizontal strands; for
+other inputs, the strands of `ρ` starting or ending at a chosen point are dropped. -/
+def horizontalCompletion (ρ : StrandDiagram α) (h : Finset β) : StrandsAlgebra R α :=
+  ∑ U ∈ matchedChoices M h, of (ρ.addHorizontal U)
 
 /-- With no pairs to add horizontal strands along, `a(ρ, ∅)` is the diagram `ρ` itself. -/
 @[simp]
 theorem horizontalCompletion_empty (ρ : StrandDiagram α) :
     (horizontalCompletion M ρ ∅ : StrandsAlgebra R α) = of ρ := by
-  simp [horizontalCompletion, image_eq_empty, filter_eq']
+  simp [horizontalCompletion, matchedChoices, image_eq_empty, filter_eq']
 
 /-- `a(ρ, h)` is zero unless `h` consists of pairs of `M`. -/
 private theorem horizontalCompletion_eq_zero_of_not_subset (ρ : StrandDiagram α) {h : Finset β}
     (hh : ¬h ⊆ univ.image M) : (horizontalCompletion M ρ h : StrandsAlgebra R α) = 0 :=
-  sum_eq_zero fun U hU ↦ absurd ((mem_filter.1 hU).2.1 ▸ image_subset_image (subset_univ U)) hh
+  sum_eq_zero fun U hU ↦
+    absurd ((mem_matchedChoices.1 hU).1 ▸ image_subset_image (subset_univ U)) hh
 
 namespace IsMatchedGenerator
 
@@ -165,6 +182,30 @@ private theorem eq_union_inter_of_composable (hρ : IsMatchedGenerator M ρ h)
       refine ⟨x, ⟨hxU, ?_⟩, rfl⟩
       exact ((hmem x).1 (Or.inr hxU)).resolve_left fun hxS ↦ hSk x hxS hmk
 
+/-- The horizontal strands of `a(ρ, h)` forced at the points of `A` over `h` avoid the starting and
+end points of `ρ`, so they add to its starting points. -/
+private theorem source_addHorizontal_filter (hρ : IsMatchedGenerator M ρ h) (A : Finset α) :
+    (ρ.addHorizontal {i ∈ A | M i ∈ h}).source = ρ.source ∪ {i ∈ A | M i ∈ h} :=
+  StrandDiagram.source_addHorizontal
+    (hρ.disjoint_source_of_image_subset (image_filter_mem_subset _ _ _))
+    (hρ.disjoint_target_of_image_subset (image_filter_mem_subset _ _ _))
+
+/-- The horizontal strands of `a(ρ, h)` forced at the points of `A` over `h` avoid the starting and
+end points of `ρ`, so they add to its end points. -/
+private theorem target_addHorizontal_filter (hρ : IsMatchedGenerator M ρ h) (A : Finset α) :
+    (ρ.addHorizontal {i ∈ A | M i ∈ h}).target = ρ.target ∪ {i ∈ A | M i ∈ h} :=
+  StrandDiagram.target_addHorizontal
+    (hρ.disjoint_source_of_image_subset (image_filter_mem_subset _ _ _))
+    (hρ.disjoint_target_of_image_subset (image_filter_mem_subset _ _ _))
+
+omit [LinearOrder α] [Fintype α] in
+/-- If the pairs of the points of `A` avoid `k`, the points of `A` over `h` avoid every set `W`
+over `k`. -/
+private theorem disjoint_filter_of_image_subset {A W : Finset α} {h k : Finset β}
+    (hA : Disjoint (A.image M) k) (hW : W.image M ⊆ k) : Disjoint {i ∈ A | M i ∈ h} W :=
+  (disjoint_of_subset_right hW
+    (disjoint_of_subset_left (image_subset_image (filter_subset _ _)) hA)).of_image_finset
+
 /-- Adding common horizontal strands over `h ∩ k` to the forced parts of two summands does not
 change their composability, and commutes with their product. -/
 private theorem composable_and_trans_of_image_subset_inter (hρ : IsMatchedGenerator M ρ h)
@@ -181,35 +222,25 @@ private theorem composable_and_trans_of_image_subset_inter (hρ : IsMatchedGener
   set Vf := {i ∈ ρ.target | M i ∈ k}
   have hWh : W.image M ⊆ h := hW.trans inter_subset_left
   have hWk : W.image M ⊆ k := hW.trans inter_subset_right
-  have hUf : Uf.image M ⊆ h := image_filter_mem_subset _ _ _
-  have hVf : Vf.image M ⊆ k := image_filter_mem_subset _ _ _
   -- The forced horizontal strands lie over pairs used by the other factor.
-  have hUfS : Uf.image M ⊆ σ.source.image M := image_subset_image (filter_subset _ _)
-  have hVfT : Vf.image M ⊆ ρ.target.image M := image_subset_image (filter_subset _ _)
-  have hUfW : Disjoint Uf W :=
-    (disjoint_of_subset_right hWk (disjoint_of_subset_left hUfS hσ.disjoint_source)).of_image_finset
-  have hVfW : Disjoint Vf W :=
-    (disjoint_of_subset_right hWh (disjoint_of_subset_left hVfT hρ.disjoint_target)).of_image_finset
-  have hρs := hρ.disjoint_source_of_image_subset hUf
-  have hρt := hρ.disjoint_target_of_image_subset hUf
-  have hσs := hσ.disjoint_source_of_image_subset hVf
-  have hσt := hσ.disjoint_target_of_image_subset hVf
+  have hUfW : Disjoint Uf W := disjoint_filter_of_image_subset hσ.disjoint_source hWk
+  have hVfW : Disjoint Vf W := disjoint_filter_of_image_subset hρ.disjoint_target hWh
   have h₁s : Disjoint (ρ.addHorizontal Uf).source W := by
-    rw [StrandDiagram.source_addHorizontal hρs hρt]
+    rw [source_addHorizontal_filter hρ]
     exact disjoint_union_left.2 ⟨hρ.disjoint_source_of_image_subset hWh, hUfW⟩
   have h₁t : Disjoint (ρ.addHorizontal Uf).target W := by
-    rw [StrandDiagram.target_addHorizontal hρs hρt]
+    rw [target_addHorizontal_filter hρ]
     exact disjoint_union_left.2 ⟨hρ.disjoint_target_of_image_subset hWh, hUfW⟩
   have h₂s : Disjoint (σ.addHorizontal Vf).source W := by
-    rw [StrandDiagram.source_addHorizontal hσs hσt]
+    rw [source_addHorizontal_filter hσ]
     exact disjoint_union_left.2 ⟨hσ.disjoint_source_of_image_subset hWk, hVfW⟩
   have h₂t : Disjoint (σ.addHorizontal Vf).target W := by
-    rw [StrandDiagram.target_addHorizontal hσs hσt]
+    rw [target_addHorizontal_filter hσ]
     exact disjoint_union_left.2 ⟨hσ.disjoint_target_of_image_subset hWk, hVfW⟩
   rw [← StrandDiagram.addHorizontal_addHorizontal, ← StrandDiagram.addHorizontal_addHorizontal]
   refine ⟨StrandDiagram.composable_addHorizontal_iff h₁s h₁t h₂s h₂t, ?_⟩
-  exact StrandDiagram.addHorizontal_trans_addHorizontal fun i j hij ↦
-    disjoint_left.1 h₁t (StrandDiagram.mem_target.2 ⟨i, hij⟩)
+  exact StrandDiagram.addHorizontal_trans_addHorizontal fun _ _ ↦
+    StrandDiagram.notMem_of_mem_of_disjoint_target h₁t
 
 omit [Fintype α] in
 /-- Under the pair condition `M(B) ∪ h = M(A) ∪ k`, the points of `A` over `h` together with a
@@ -238,11 +269,51 @@ private theorem image_union_eq_and_injOn {A B : Finset α} {h k : Finset β} (hA
     simpa only [coe_image] using disjoint_coe.2 (disjoint_of_subset_left
       (image_subset_image (filter_subset _ _)) (disjoint_of_subset_right hWk hAk))
 
-/-- **The product of two basis elements of the algebra of a matching.** Let `U₀` be the starting
+/-- Under the pair condition `M(ρ⁺) ∪ h = M(σ⁻) ∪ k`, the pairs of choices over `h` and over `k`
+whose summands have a nonzero product are the images of the choices `W` over `h ∩ k` under
+`W ↦ (U₀ ∪ W, V₀ ∪ W)`, so the expanded product `a(ρ, h) a(σ, k)` is a sum over `h ∩ k`. -/
+private theorem sum_mul_eq_sum_matchedChoices_inter (hρ : IsMatchedGenerator M ρ h)
+    (hσ : IsMatchedGenerator M σ k) (hC : ρ.target.image M ∪ h = σ.source.image M ∪ k) :
+    ∑ p ∈ matchedChoices M h ×ˢ matchedChoices M k,
+        (of (ρ.addHorizontal p.1) * of (σ.addHorizontal p.2) : StrandsAlgebra R α) =
+      ∑ W ∈ matchedChoices M (h ∩ k), of (ρ.addHorizontal ({i ∈ σ.source | M i ∈ h} ∪ W)) *
+        of (σ.addHorizontal ({i ∈ ρ.target | M i ∈ k} ∪ W)) := by
+  set Uf := {i ∈ σ.source | M i ∈ h}
+  set Vf := {i ∈ ρ.target | M i ∈ k}
+  set g : Finset α → Finset α × Finset α := fun W ↦ (Uf ∪ W, Vf ∪ W)
+  have hUfk : Disjoint (Uf.image M) k :=
+    disjoint_of_subset_left (image_subset_image (filter_subset _ _)) hσ.disjoint_source
+  -- A choice `W` over `h ∩ k` is recovered from `Uf ∪ W`, as the points over `k`.
+  have hrec {W : Finset α} (hW : W ∈ matchedChoices M (h ∩ k)) :
+      {x ∈ Uf ∪ W | M x ∈ k} = W := by
+    rw [filter_union, filter_false_of_mem fun x hx ↦
+        disjoint_left.1 hUfk (mem_image_of_mem M hx),
+      filter_true_of_mem fun x hx ↦
+        (mem_matchedChoices.1 hW).1.le.trans inter_subset_right (mem_image_of_mem M hx),
+      empty_union]
+  have hg : Set.InjOn g (matchedChoices M (h ∩ k)) := fun W hW W' hW' hWW' ↦ by
+    have hfst : Uf ∪ W = Uf ∪ W' := congrArg Prod.fst hWW'
+    rw [← hrec hW, ← hrec hW', hfst]
+  refine ((sum_subset ?_ ?_).symm.trans (sum_image hg)).trans (sum_congr rfl fun _ _ ↦ rfl)
+  · intro p hp
+    obtain ⟨W, hW, rfl⟩ := mem_image.1 hp
+    obtain ⟨hWim, hWi⟩ := mem_matchedChoices.1 hW
+    exact mem_product.2 ⟨mem_matchedChoices.2 (image_union_eq_and_injOn hσ.injOn_source
+      hσ.disjoint_source hC hWim hWi), mem_matchedChoices.2 (image_union_eq_and_injOn
+      hρ.injOn_target hρ.disjoint_target hC.symm (inter_comm h k ▸ hWim) hWi)⟩
+  · intro p hp hpg
+    obtain ⟨hU, hV⟩ := mem_product.1 hp
+    refine of_mul_of_of_not_composable fun hUV ↦ hpg (mem_image.2 ⟨p.1 ∩ p.2, ?_⟩)
+    obtain ⟨-, h₁, h₂, h₃⟩ := eq_union_inter_of_composable hρ hσ (mem_matchedChoices.1 hU).1
+      (mem_matchedChoices.1 hV).1 hUV
+    exact ⟨mem_matchedChoices.2 ⟨h₃, (mem_matchedChoices.1 hU).2.mono
+      (coe_subset.2 inter_subset_left)⟩, Prod.ext h₁.symm h₂.symm⟩
+
+/-- **The product of two generators of the algebra of a matching.** Let `U₀` be the starting
 points of `σ` over the pairs of `h` and `V₀` the end points of `ρ` over the pairs of `k`. The
 product `a(ρ, h) a(σ, k)` is zero unless the pairs at the right of the first factor are those at
 the left of the second, `M(ρ⁺) ∪ h = M(σ⁻) ∪ k`, and `ρ` with horizontal strands at `U₀` is
-composable with `σ` with horizontal strands at `V₀`; then it is the basis element of their
+composable with `σ` with horizontal strands at `V₀`; then it is the generator of their
 composite and of the common pairs `h ∩ k`. -/
 theorem horizontalCompletion_mul_horizontalCompletion (hρ : IsMatchedGenerator M ρ h)
     (hσ : IsMatchedGenerator M σ k) :
@@ -253,76 +324,30 @@ theorem horizontalCompletion_mul_horizontalCompletion (hρ : IsMatchedGenerator 
         horizontalCompletion M ((ρ.addHorizontal {i ∈ σ.source | M i ∈ h}).trans
           (σ.addHorizontal {i ∈ ρ.target | M i ∈ k})) (h ∩ k)
       else 0 := by
-  -- Expand the product as a sum over pairs `(U, V)` of choices over `h` and over `k`. The pairs
-  -- with a nonzero product are the images of the choices `W` over `h ∩ k` under
-  -- `W ↦ (U₀ ∪ W, V₀ ∪ W)`, and only exist under the stated condition.
-  set Uf := {i ∈ σ.source | M i ∈ h}
-  set Vf := {i ∈ ρ.target | M i ∈ k}
-  set Sec : Finset β → Finset (Finset α) := fun h ↦ {U | U.image M = h ∧ #U = #h}
-  have hSec {U : Finset α} {h : Finset β} : U ∈ Sec h ↔ U.image M = h ∧ Set.InjOn M U := by
-    simp only [Sec, mem_filter, mem_univ, true_and]
-    refine and_congr_right fun hU ↦ ?_
-    rw [← card_image_iff, hU, eq_comm]
-  set f : Finset α × Finset α → StrandsAlgebra R α :=
-    fun p ↦ of (ρ.addHorizontal p.1) * of (σ.addHorizontal p.2)
+  -- Expand the product as a sum over pairs `(U, V)` of choices over `h` and over `k`.
   have hLHS : (horizontalCompletion M ρ h * horizontalCompletion M σ k : StrandsAlgebra R α) =
-      ∑ p ∈ Sec h ×ˢ Sec k, f p := by
+      ∑ p ∈ matchedChoices M h ×ˢ matchedChoices M k,
+        of (ρ.addHorizontal p.1) * of (σ.addHorizontal p.2) := by
     rw [horizontalCompletion, horizontalCompletion, sum_mul_sum, sum_product]
-  -- A nonzero summand has the shape described by `eq_union_inter_of_composable`.
-  have hshape {p : Finset α × Finset α} (hp : p ∈ Sec h ×ˢ Sec k) (hfp : f p ≠ 0) :
-      (ρ.addHorizontal p.1).Composable (σ.addHorizontal p.2) ∧
-        ρ.target.image M ∪ h = σ.source.image M ∪ k ∧ p.1 = Uf ∪ p.1 ∩ p.2 ∧
-          p.2 = Vf ∪ p.1 ∩ p.2 ∧ (p.1 ∩ p.2).image M = h ∩ k := by
-    obtain ⟨hU, hV⟩ := mem_product.1 hp
-    have hUV : (ρ.addHorizontal p.1).Composable (σ.addHorizontal p.2) := by
-      by_contra hn
-      exact hfp (StrandsAlgebra.of_mul_of_of_not_composable hn)
-    exact ⟨hUV, eq_union_inter_of_composable hρ hσ (hSec.1 hU).1 (hSec.1 hV).1 hUV⟩
   rw [hLHS]
   split_ifs with hC
-  · obtain ⟨hC, hτ⟩ := hC
-    set g : Finset α → Finset α × Finset α := fun W ↦ (Uf ∪ W, Vf ∪ W)
-    have hgW {W : Finset α} (hW : W ∈ Sec (h ∩ k)) :=
-      composable_and_trans_of_image_subset_inter hρ hσ (hSec.1 hW).1.le
-    have hUfk : Disjoint (Uf.image M) k :=
-      disjoint_of_subset_left (image_subset_image (filter_subset _ _)) hσ.disjoint_source
-    -- A choice `W` over `h ∩ k` is recovered from `Uf ∪ W`, as the points over `k`.
-    have hrec {W : Finset α} (hW : W ∈ Sec (h ∩ k)) : {x ∈ Uf ∪ W | M x ∈ k} = W := by
-      rw [filter_union, filter_false_of_mem fun x hx ↦
-          disjoint_left.1 hUfk (mem_image_of_mem M hx),
-        filter_true_of_mem fun x hx ↦
-          (hSec.1 hW).1.le.trans inter_subset_right (mem_image_of_mem M hx), empty_union]
-    have hg : Set.InjOn g (Sec (h ∩ k)) := fun W hW W' hW' hWW' ↦ by
-      have hfst : Uf ∪ W = Uf ∪ W' := congrArg Prod.fst hWW'
-      rw [← hrec hW, ← hrec hW', hfst]
-    rw [horizontalCompletion]
-    refine ((sum_subset ?_ ?_).symm.trans (sum_image hg)).trans (sum_congr rfl ?_)
-    · intro p hp
-      obtain ⟨W, hW, rfl⟩ := mem_image.1 hp
-      obtain ⟨hWim, hWi⟩ := hSec.1 hW
-      refine mem_product.2 ⟨hSec.2 (image_union_eq_and_injOn hσ.injOn_source hσ.disjoint_source
-        hC hWim hWi), hSec.2 (image_union_eq_and_injOn hρ.injOn_target hρ.disjoint_target
-        hC.symm (inter_comm h k ▸ hWim) hWi)⟩
-    · intro p hp hpg
-      by_contra hfp
-      obtain ⟨-, -, h₁, h₂, h₃⟩ := hshape hp hfp
-      refine hpg (mem_image.2 ⟨p.1 ∩ p.2, hSec.2 ⟨h₃, ?_⟩, ?_⟩)
-      · exact (hSec.1 (mem_product.1 hp).1).2.mono (coe_subset.2 inter_subset_left)
-      · exact Prod.ext h₁.symm h₂.symm
-    · intro W hW
-      obtain ⟨hcomp, htrans⟩ := hgW hW
-      simp only [f, g]
-      rw [StrandsAlgebra.of_mul_of_of_composable (hcomp.2 hτ), htrans]
-  · refine sum_eq_zero fun p hp ↦ ?_
-    by_contra hfp
-    obtain ⟨hUV, hC', h₁, h₂, h₃⟩ := hshape hp hfp
-    refine hC ⟨hC', ?_⟩
+  · rw [sum_mul_eq_sum_matchedChoices_inter hρ hσ hC.1, horizontalCompletion]
+    refine sum_congr rfl fun W hW ↦ ?_
+    obtain ⟨hcomp, htrans⟩ :=
+      composable_and_trans_of_image_subset_inter hρ hσ (mem_matchedChoices.1 hW).1.le
+    rw [of_mul_of_of_composable (hcomp.2 hC.2), htrans]
+  · -- A nonzero summand has the shape described by `eq_union_inter_of_composable`.
+    refine sum_eq_zero fun p hp ↦ of_mul_of_of_not_composable fun hUV ↦ hC ?_
+    obtain ⟨hU, hV⟩ := mem_product.1 hp
+    obtain ⟨hC', h₁, h₂, h₃⟩ := eq_union_inter_of_composable hρ hσ (mem_matchedChoices.1 hU).1
+      (mem_matchedChoices.1 hV).1 hUV
+    refine ⟨hC', ?_⟩
     have := (composable_and_trans_of_image_subset_inter hρ hσ h₃.le).1
     rw [← h₁, ← h₂] at this
     exact this.1 hUV
 
 /-- The composite in `horizontalCompletion_mul_horizontalCompletion`, together with the common
-pairs `h ∩ k`, again indexes a basis element. -/
+pairs `h ∩ k`, again indexes a generator. -/
 theorem IsMatchedGenerator.trans (hρ : IsMatchedGenerator M ρ h) (hσ : IsMatchedGenerator M σ k)
     (hτ : (ρ.addHorizontal {i ∈ σ.source | M i ∈ h}).Composable
       (σ.addHorizontal {i ∈ ρ.target | M i ∈ k})) :
@@ -335,17 +360,11 @@ theorem IsMatchedGenerator.trans (hρ : IsMatchedGenerator M ρ h) (hσ : IsMatc
   have hUfS : Uf.image M ⊆ σ.source.image M := image_subset_image (filter_subset _ _)
   have hVfT : Vf.image M ⊆ ρ.target.image M := image_subset_image (filter_subset _ _)
   have hsource : ((ρ.addHorizontal Uf).trans (σ.addHorizontal Vf)).source = ρ.source ∪ Uf := by
-    rw [StrandDiagram.source_trans_of_target_eq hτ.target_eq,
-      StrandDiagram.source_addHorizontal (hρ.disjoint_source_of_image_subset hUf)
-        (hρ.disjoint_target_of_image_subset hUf)]
+    rw [StrandDiagram.source_trans_of_target_eq hτ.target_eq, source_addHorizontal_filter hρ]
   have htarget : ((ρ.addHorizontal Uf).trans (σ.addHorizontal Vf)).target = σ.target ∪ Vf := by
-    rw [StrandDiagram.target_trans_of_target_eq hτ.target_eq,
-      StrandDiagram.target_addHorizontal (hσ.disjoint_source_of_image_subset hVf)
-        (hσ.disjoint_target_of_image_subset hVf)]
+    rw [StrandDiagram.target_trans_of_target_eq hτ.target_eq, target_addHorizontal_filter hσ]
   -- Pairs over `h` avoid the end points of `ρ`, so no point carries forced strands of both kinds.
-  have hUfVf : Disjoint Uf Vf :=
-    (disjoint_of_subset_right hUf
-      (disjoint_of_subset_left hVfT hρ.disjoint_target)).of_image_finset.symm
+  have hUfVf : Disjoint Uf Vf := (disjoint_filter_of_image_subset hρ.disjoint_target hUf).symm
   refine ⟨fun i hi ↦ ?_, ?_, ?_, ?_, ?_⟩
   · obtain ⟨j, hij, hji⟩ := StrandDiagram.mem_trans.1 hi
     obtain rfl : j = i := le_antisymm ((σ.addHorizontal Vf).le_of_mem hji)
@@ -377,8 +396,8 @@ open scoped Pointwise in
 variable (R M) in
 /-- The algebra of the matching `M`, spanned by the elements `a(ρ, h)`. For the matching of a
 pointed matched circle `Z` this is the algebra `A(Z)` of Lipshitz, Ozsváth and Thurston, without
-its differential. It is closed under multiplication because the product of two of its basis
-elements is again one or zero (`horizontalCompletion_mul_horizontalCompletion`). It is a
+its differential. It is closed under multiplication because the product of two of its
+generators is again one or zero (`horizontalCompletion_mul_horizontalCompletion`). It is a
 non-unital subalgebra of the strands algebra; its own unit is `matchedOne M`. -/
 def matchedAlgebra : NonUnitalSubalgebra R (StrandsAlgebra R α) :=
   (Submodule.span R {x | ∃ ρ h, IsMatchedGenerator M ρ h ∧ horizontalCompletion M ρ h = x}
@@ -404,7 +423,7 @@ theorem horizontalCompletion_mem_matchedAlgebra {ρ : StrandDiagram α} {h : Fin
   Submodule.subset_span ⟨ρ, h, hρ, rfl⟩
 
 /-- To prove a linear property of the elements of the algebra of a matching, it suffices to prove
-it for the basis elements `a(ρ, h)`. -/
+it for the generators `a(ρ, h)`. -/
 @[elab_as_elim]
 theorem matchedAlgebra_induction {p : (x : StrandsAlgebra R α) → x ∈ matchedAlgebra R M → Prop}
     (generator : ∀ ρ h (hρ : IsMatchedGenerator M ρ h),
@@ -424,7 +443,7 @@ theorem matchedAlgebra_induction {p : (x : StrandsAlgebra R α) → x ∈ matche
 
 variable (M)
 
-/-- The empty diagram, with no horizontal strands added, indexes a basis element for every set of
+/-- The empty diagram, with no horizontal strands added, indexes a generator for every set of
 pairs. -/
 theorem isMatchedGenerator_idOn_empty (s : Finset β) :
     IsMatchedGenerator M (StrandDiagram.idOn ∅) s where
@@ -444,7 +463,7 @@ theorem matchedIdem_def (s : Finset β) :
   (rfl)
 
 theorem matchedIdem_eq_sum (s : Finset β) :
-    (matchedIdem M s : StrandsAlgebra R α) = ∑ U with U.image M = s ∧ #U = #s, idem U := by
+    (matchedIdem M s : StrandsAlgebra R α) = ∑ U ∈ matchedChoices M s, idem U := by
   simp [matchedIdem, horizontalCompletion, StrandDiagram.idOn_addHorizontal, idem_def]
 
 theorem matchedIdem_mem_matchedAlgebra (s : Finset β) :

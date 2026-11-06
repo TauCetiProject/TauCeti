@@ -142,9 +142,15 @@ def single (i j : α) (h : i ≤ j) : StrandDiagram α where
     obtain ⟨rfl, rfl⟩ := (PEquiv.mem_single_iff _ _ _ _).1 hk
     exact h
 
+@[simp]
+theorem single_apply (i j : α) (h : i ≤ j) (k : α) :
+    single i j h k = if k = i then some j else none :=
+  (rfl)
+
 theorem mem_single {i j : α} {h : i ≤ j} {k l : α} : l ∈ single i j h k ↔ k = i ∧ l = j :=
   PEquiv.mem_single_iff _ _ _ _
 
+@[simp]
 theorem single_trans_single {i j k : α} (hij : i ≤ j) (hjk : j ≤ k) :
     (single i j hij).trans (single j k hjk) = single i k (hij.trans hjk) :=
   toPEquiv_injective (PEquiv.single_trans_single _ _ _)
@@ -172,6 +178,16 @@ theorem mem_target {φ : StrandDiagram α} {j : α} : j ∈ φ.target ↔ ∃ i,
 theorem apply_eq_none_of_notMem_source {φ : StrandDiagram α} {i : α} (h : i ∉ φ.source) :
     φ i = none :=
   Option.eq_none_iff_forall_ne_some.2 fun j hj ↦ h (mem_source.2 ⟨j, hj⟩)
+
+/-- The starting point of a strand of `φ` lies outside any set disjoint from the source. -/
+theorem notMem_of_mem_of_disjoint_source {φ : StrandDiagram α} {U : Finset α}
+    (hs : Disjoint φ.source U) {i j : α} (hij : j ∈ φ i) : i ∉ U :=
+  disjoint_left.1 hs (mem_source.2 ⟨j, hij⟩)
+
+/-- The end point of a strand of `φ` lies outside any set disjoint from the target. -/
+theorem notMem_of_mem_of_disjoint_target {φ : StrandDiagram α} {U : Finset α}
+    (ht : Disjoint φ.target U) {i j : α} (hij : j ∈ φ i) : j ∉ U :=
+  disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩)
 
 @[simp]
 theorem source_idOn (s : Finset α) : (idOn s).source = s := by

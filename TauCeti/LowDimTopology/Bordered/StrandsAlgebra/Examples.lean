@@ -22,12 +22,12 @@ over `𝔽₂`, with points `1, …, n` written `0, …, n - 1`.
 
 Two products in the algebra `A(T²)` of the genus-one pointed matched circle, whose points
 `1, 2, 3, 4` are matched as `{1, 3}` and `{2, 4}`, encoded by the parity of `0, 1, 2, 3`. Its Reeb
-chords `ρ₁ = (1 ↦ 2)`, `ρ₂ = (2 ↦ 3)` and `ρ₁₂ = (1 ↦ 3)` give the basis elements `a(ρ)` without
+chords `ρ₁ = (1 ↦ 2)`, `ρ₂ = (2 ↦ 3)` and `ρ₁₂ = (1 ↦ 3)` give the generators `a(ρ)` without
 horizontal strands.
 
 * `ρ₁ ρ₂ = ρ₁₂`.
 * `ρ₂ ρ₁ = 0`, although the end point `3` of `ρ₂` and the starting point `1` of `ρ₁` are matched:
-  the product of basis elements needs the actual points to agree, not just their pairs.
+  the product of generators needs the actual points to agree, not just their pairs.
 -/
 
 open TauCeti StrandsAlgebra StrandDiagram
@@ -81,13 +81,13 @@ example :
         horizontalCompletion M (single 0 1 (by decide)) ∅ :
           StrandsAlgebra (ZMod 2) (Fin 4)) = 0 := by
   intro M
-  -- A Reeb chord, with no horizontal strands added, indexes a basis element.
+  -- A Reeb chord, with no horizontal strands added, indexes a generator.
   have hgen (i j : Fin 4) (h : i < j) : IsMatchedGenerator M (single i j h.le) ∅ :=
     ⟨fun k hk ↦ h.ne ((mem_single.1 hk).1.symm.trans (mem_single.1 hk).2), by simp, by simp,
       Finset.disjoint_empty_right _, Finset.disjoint_empty_right _⟩
   refine ⟨?_, ?_⟩
   · rw [horizontalCompletion_mul_horizontalCompletion (hgen 0 1 (by decide)) (hgen 1 2 (by decide))]
-    simp [composable_single_single, single_trans_single]
+    simp [composable_single_single]
   · rw [horizontalCompletion_mul_horizontalCompletion (hgen 1 2 (by decide)) (hgen 0 1 (by decide))]
     refine ite_eq_right_iff.2 fun hc ↦ absurd hc.2.target_eq ?_
     simp

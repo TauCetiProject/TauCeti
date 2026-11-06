@@ -101,6 +101,7 @@ theorem addHorizontal_empty (φ : StrandDiagram α) : φ.addHorizontal ∅ = φ 
   simp [← Option.mem_def, mem_addHorizontal]
 
 /-- Adding horizontal strands in two steps adds them along the union. -/
+@[simp]
 theorem addHorizontal_addHorizontal (φ : StrandDiagram α) (U V : Finset α) :
     (φ.addHorizontal U).addHorizontal V = φ.addHorizontal (U ∪ V) := by
   ext i j
@@ -108,6 +109,7 @@ theorem addHorizontal_addHorizontal (φ : StrandDiagram α) (U V : Finset α) :
   grind
 
 /-- Adding horizontal strands to an identity diagram gives an identity diagram. -/
+@[simp]
 theorem idOn_addHorizontal (s U : Finset α) : (idOn s).addHorizontal U = idOn (s ∪ U) := by
   ext i j
   simp only [← Option.mem_def, mem_addHorizontal, mem_idOn, mem_union]
@@ -145,8 +147,8 @@ theorem source_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjo
     · exact Or.inr hi
     · exact Or.inl ⟨j, hij⟩
   · rintro (⟨j, hij⟩ | hi)
-    · exact ⟨j, Or.inr ⟨disjoint_left.1 hs (mem_source.2 ⟨j, hij⟩),
-        disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩), hij⟩⟩
+    · exact ⟨j, Or.inr ⟨notMem_of_mem_of_disjoint_source hs hij,
+        notMem_of_mem_of_disjoint_target ht hij, hij⟩⟩
     · exact ⟨i, Or.inl ⟨hi, rfl⟩⟩
 
 /-- When `U` avoids the source and target of `φ`, the target of `φ.addHorizontal U` is that of `φ`
@@ -160,8 +162,8 @@ theorem target_addHorizontal {φ : StrandDiagram α} {U : Finset α} (hs : Disjo
     · exact Or.inr hi
     · exact Or.inl ⟨i, hij⟩
   · rintro (⟨i, hij⟩ | hj)
-    · exact ⟨i, Or.inr ⟨disjoint_left.1 hs (mem_source.2 ⟨j, hij⟩),
-        disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩), hij⟩⟩
+    · exact ⟨i, Or.inr ⟨notMem_of_mem_of_disjoint_source hs hij,
+        notMem_of_mem_of_disjoint_target ht hij, hij⟩⟩
     · exact ⟨j, Or.inl ⟨hj, rfl⟩⟩
 
 /-- On a point outside `U`, `φ.addHorizontal U` agrees with `φ` when `U` avoids the target. -/
@@ -170,7 +172,7 @@ theorem addHorizontal_apply_of_notMem {φ : StrandDiagram α} {U : Finset α}
   ext j
   simp only [← Option.mem_def, mem_addHorizontal, hi, false_and, not_false_eq_true, true_and,
     false_or, and_iff_right_iff_imp]
-  exact fun hij ↦ disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩)
+  exact notMem_of_mem_of_disjoint_target ht
 
 /-- The crossings of the strands of `φ` with horizontal strands at the points of `W`: pairs
 `(i, w)` with `w ∈ W` and a strand `i ↦ j` of `φ` with `i < w < j`. -/
@@ -195,7 +197,7 @@ private theorem inversionCount_addHorizontal {φ : StrandDiagram α} {W : Finset
     (hs : Disjoint φ.source W) (ht : Disjoint φ.target W) :
     (φ.addHorizontal W).inversionCount = φ.inversionCount + #(horizontalCrossings φ W) := by
   have hnotW {i j : α} (hij : j ∈ φ i) : i ∉ W ∧ j ∉ W :=
-    ⟨disjoint_left.1 hs (mem_source.2 ⟨j, hij⟩), disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩)⟩
+    ⟨notMem_of_mem_of_disjoint_source hs hij, notMem_of_mem_of_disjoint_target ht hij⟩
   have heq : (φ.addHorizontal W).inversions = φ.inversions ∪ horizontalCrossings φ W := by
     ext ⟨i, k⟩
     simp only [mem_union, mem_inversions, mem_horizontalCrossings, mem_addHorizontal]
@@ -242,7 +244,7 @@ private theorem card_horizontalCrossings_trans {φ ψ : StrandDiagram α} {W : F
       obtain ⟨⟨hw, -, k, ⟨j, hij, hjk⟩, hwk⟩, hjw⟩ := hp
       rw [Option.mem_def] at hij
       have hjw' : j < w := lt_of_le_of_ne (hjw j hij) fun h ↦
-        disjoint_left.1 ht (mem_target.2 ⟨i, hij⟩) (h ▸ hw)
+        notMem_of_mem_of_disjoint_target ht hij (h ▸ hw)
       simp only [hij, Option.getD_some]
       exact mem_horizontalCrossings.2 ⟨hw, hjw', k, hjk, hwk⟩
     · rintro ⟨i, w⟩ hp ⟨i', w'⟩ hp' he
@@ -282,10 +284,8 @@ theorem composable_addHorizontal_iff {φ ψ : StrandDiagram α} {W : Finset α}
       exact (mem_union.1 this).resolve_right (disjoint_left.1 hψs hi)
   rw [composable_iff, composable_iff, htarget]
   refine and_congr_right fun hφψ ↦ ?_
-  have hW : ∀ i j, j ∈ φ i → j ∉ W := fun i j hij ↦
-    disjoint_left.1 hφt (mem_target.2 ⟨i, hij⟩)
-  rw [addHorizontal_trans_addHorizontal hW, inversionCount_addHorizontal hφs hφt,
-    inversionCount_addHorizontal hψs hψt,
+  rw [addHorizontal_trans_addHorizontal fun _ _ ↦ notMem_of_mem_of_disjoint_target hφt,
+    inversionCount_addHorizontal hφs hφt, inversionCount_addHorizontal hψs hψt,
     inversionCount_addHorizontal (by rwa [source_trans_of_target_eq hφψ])
       (by rwa [target_trans_of_target_eq hφψ]), card_horizontalCrossings_trans hφψ hφt]
   omega
