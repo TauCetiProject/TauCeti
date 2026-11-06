@@ -63,6 +63,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.isClosed_criticalPoints` and
   `TauCeti.IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints`: the critical
   set of a `C¹` function is closed, and nondegenerate critical points are isolated in it.
+* `TauCeti.exists_mem_Ioc_criticalPoints_inter_preimage_Icc_eq_empty`: above a regular value
+  with a compact band, a thinner band contains no critical point.
 * `TauCeti.IsMorse.eventually_eq_of_mem_criticalPoints`: the critical points of a Morse function
   are isolated.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
@@ -329,6 +331,25 @@ theorem isClosed_criticalPoints (hf : ContMDiff I 𝓘(ℝ) 1 f) : IsClosed (cri
         isOpen_compl_singleton)
   · exact ⟨mem_extChartAt_source x, mem_extChartAt_target x,
       fun h0 ↦ hx ((hcrit x (mem_extChartAt_source x)).2 h0)⟩
+
+/-- **A regular value is followed by a band without critical points.** If `a` is a regular value
+of a `C¹` function `f` and the band `f⁻¹[a, b]`, where `a < b`, is compact, then for some
+`b' ∈ (a, b]` the band `f⁻¹[a, b']` contains no critical point of `f`. -/
+theorem exists_mem_Ioc_criticalPoints_inter_preimage_Icc_eq_empty (hf : ContMDiff I 𝓘(ℝ) 1 f)
+    {a b : ℝ} (hab : a < b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) :
+    ∃ b' ∈ Ioc a b, criticalPoints I f ∩ f ⁻¹' Icc a b' = ∅ := by
+  have hK := hcompact.inter_left (isClosed_criticalPoints hf)
+  rcases (criticalPoints I f ∩ f ⁻¹' Icc a b).eq_empty_or_nonempty with hK₀ | hKne
+  · exact ⟨b, ⟨hab, le_rfl⟩, hK₀⟩
+  -- Stop halfway to the lowest critical value in the band, which lies strictly above `a`.
+  obtain ⟨p, hp, hpmin⟩ := hK.exists_isMinOn hKne hf.continuous.continuousOn
+  have hap : a < f p := hp.2.1.lt_of_ne fun h ↦
+    isRegularValue_iff_notMem_image_criticalPoints.1 ha ⟨p, hp.1, h.symm⟩
+  refine ⟨min ((a + f p) / 2) b, ⟨lt_min (by linarith) hab, min_le_right _ _⟩,
+    eq_empty_of_forall_notMem fun x ⟨hx, hxa, hxb⟩ ↦ ?_⟩
+  have hpx : f p ≤ f x := hpmin ⟨hx, hxa, hxb.trans (min_le_right _ _)⟩
+  linarith [min_le_left ((a + f p) / 2) b]
 
 /-- **A Morse function has finitely many critical points in each compact set.** -/
 theorem IsMorse.finite_criticalPoints_inter (hf : IsMorse I f) {K : Set M} (hK : IsCompact K) :
