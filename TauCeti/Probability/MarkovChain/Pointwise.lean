@@ -11,7 +11,7 @@ public import TauCeti.Probability.MarkovChain.Product.Limits
 public import TauCeti.Probability.MarkovChain.Occupation.Bounds
 public import TauCeti.Probability.MarkovChain.Occupation
 public import TauCeti.Probability.Process.Occupation
-public import TauCeti.MeasureTheory.Measure.TotalVariation
+public import TauCeti.MeasureTheory.Measure.TotalVariation.Basic
 public import TauCeti.Analysis.SpecificLimits.MovingAverage
 
 /-!
