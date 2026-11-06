@@ -19,19 +19,19 @@ in the ambient coordinate space.
 A nonnegative vector paired with strictly positive weights has dot product zero precisely when
 the vector is zero.
 
-A ring homomorphism carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a matrix to the form of the image
-matrix at the image vectors.
+A ring homomorphism carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a (possibly rectangular) matrix
+to the form of the image matrix at the image vectors.
 
 ## Main results
 
 * `Function.Injective.dotProduct_extend_zero`: the dot product with a vector extended by zero
   along an injective map is the dot product of the pulled-back vectors.
-* `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if its pairing with
-  strictly positive weights vanishes.
 * `RingHom.map_dotProduct_mulVec`: a ring homomorphism commutes with the bilinear form
   `v ⬝ᵥ A *ᵥ w`.
-* `Matrix.intCast_dotProduct_mulVec`: the form of the cast of an integer matrix, at the cast of an
-  integer vector, is the cast of the integer value of the form.
+* `Matrix.intCast_dotProduct_mulVec`: the form of the cast of an integer matrix, at the casts of
+  integer vectors, is the cast of the integer value of the form.
+* `TauCeti.dotProduct_eq_zero_iff_of_pos`: a nonnegative vector is zero if and only if its pairing
+  with strictly positive weights vanishes.
 -/
 
 public section
@@ -47,40 +47,37 @@ coordinates in the range of that map. -/
 theorem dotProduct_extend_zero {f : n → m} (hf : f.Injective) (x : m → α) (y : n → α) :
     x ⬝ᵥ f.extend y 0 = (x ∘ f) ⬝ᵥ y := by
   classical
-  simp only [dotProduct, Function.comp_apply]
-  rw [← Finset.sum_subset (Finset.subset_univ (Finset.univ.map ⟨f, hf⟩)), Finset.sum_map]
-  · exact Finset.sum_congr rfl fun k _ ↦ by simp [hf.extend_apply]
-  · intro i _ hi
-    have hi : ¬∃ k, f k = i := by simpa using hi
-    rw [Function.extend_apply' _ _ _ hi, Pi.zero_apply, mul_zero]
+  rw [dotProduct, dotProduct, ← Finset.sum_extend_zero_of_injective _ hf fun _ ↦ Finset.mem_univ _]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  rcases em (∃ k, f k = i) with ⟨k, rfl⟩ | hi
+  · simp [hf.extend_apply]
+  · simp [extend_apply' _ _ _ hi]
 
 end Function.Injective
 
 namespace RingHom
 
-variable {n R S : Type*} [Fintype n] [NonAssocSemiring R] [NonAssocSemiring S]
+variable {m n R S : Type*} [Fintype m] [Fintype n] [NonAssocSemiring R] [NonAssocSemiring S]
 
 /-- A ring homomorphism `f` carries the bilinear form `v ⬝ᵥ A *ᵥ w` of a matrix `A` to the form of
 `A.map f` at `f ∘ v` and `f ∘ w`. -/
-theorem map_dotProduct_mulVec (f : R →+* S) (A : Matrix n n R) (v w : n → R) :
+theorem map_dotProduct_mulVec (f : R →+* S) (A : Matrix m n R) (v : m → R) (w : n → R) :
     f (v ⬝ᵥ A *ᵥ w) = (f ∘ v) ⬝ᵥ A.map f *ᵥ (f ∘ w) := by
-  rw [f.map_dotProduct]
-  congr 1
-  ext i
-  exact f.map_mulVec A w i
+  simp only [f.map_dotProduct, Function.comp_def, f.map_mulVec]
 
 end RingHom
 
 namespace Matrix
 
-variable {n : Type*} [Fintype n]
+variable {m n : Type*} [Fintype m] [Fintype n]
 
-/-- The form of the reduction of an integer matrix, at the reduction of an integer vector, is the
-reduction of the integer value of the form: `RingHom.map_dotProduct_mulVec` for the cast. -/
-theorem intCast_dotProduct_mulVec (R : Type*) [CommRing R] (A : Matrix n n ℤ) (v : n → ℤ) :
-    (fun i ↦ (v i : R)) ⬝ᵥ A.map (Int.cast : ℤ → R) *ᵥ (fun i ↦ (v i : R)) =
-      ((v ⬝ᵥ A *ᵥ v : ℤ) : R) :=
-  ((Int.castRingHom R).map_dotProduct_mulVec A v v).symm
+/-- The form of the cast of an integer matrix, at the casts of integer vectors, is the cast of the
+integer value of the form. -/
+theorem intCast_dotProduct_mulVec {R : Type*} [NonAssocRing R] (A : Matrix m n ℤ) (v : m → ℤ)
+    (w : n → ℤ) :
+    (fun i ↦ (v i : R)) ⬝ᵥ A.map (Int.cast : ℤ → R) *ᵥ (fun i ↦ (w i : R)) =
+      ((v ⬝ᵥ A *ᵥ w : ℤ) : R) :=
+  ((Int.castRingHom R).map_dotProduct_mulVec A v w).symm
 
 end Matrix
 
@@ -93,9 +90,7 @@ theorem dotProduct_eq_zero_iff_of_pos {ι R : Type*} [Fintype ι] [NonUnitalNonA
     [PartialOrder R] [IsOrderedAddMonoid R] [PosMulMono R] [NoZeroDivisors R]
     {c x : ι → R} (hc : ∀ i, 0 < c i) (hx : 0 ≤ x) :
     c ⬝ᵥ x = 0 ↔ x = 0 := by
-  refine ⟨fun h => funext fun i => ?_, fun h => by simp [h]⟩
-  have hterm := (Finset.sum_eq_zero_iff_of_nonneg fun j _ => mul_nonneg (hc j).le (hx j)).1 h i
-    (Finset.mem_univ i)
-  exact (mul_eq_zero.1 hterm).resolve_left (hc i).ne'
+  simp [dotProduct, Finset.sum_eq_zero_iff_of_nonneg fun j _ ↦ mul_nonneg (hc j).le (hx j),
+    (hc _).ne', funext_iff]
 
 end TauCeti
