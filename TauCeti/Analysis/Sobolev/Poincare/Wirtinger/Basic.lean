@@ -44,6 +44,11 @@ under rescaling `Ω`.
 
 * `TauCeti.lintegral_enorm_sub_setAverage_rpow_le_of_convex`: the inequality in `∫⁻` form.
 * `TauCeti.eLpNorm_sub_setAverage_le_of_convex`: the inequality between `Lᵖ` seminorms.
+* `TauCeti.setIntegral_norm_sub_setAverage_sq_le_of_convex`: the case `p = 2` for Bochner
+  integrals of squared norms, for maps that are `C¹` on the whole space.
+* `TauCeti.setIntegral_norm_sq_le_of_convex`: the consequence
+  `∫_Ω ‖u‖² ≤ (2 + 4 μ(Ω)/μ(S)) C² ∫_Ω ‖Du‖² + (4 μ(Ω)/μ(S)) ∫_S ‖u‖²`, which bounds `u` on `Ω`
+  by its derivative and its size on the subset `S`.
 * `TauCeti.setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_of_convex`: the `L¹`
   deviation on a subset `A ⊆ Ω` is at most `μ(B(0, 1)) ^ (1 - 1/n) * (diam Ω) ^ n / μ(S)` times
   `μ(A) ^ (1/n) ‖Du‖_{L¹(Ω)}`.
@@ -239,5 +244,100 @@ theorem eLpNorm_sub_setAverage_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ
     ((hu.continuousOn.aestronglyMeasurable hΩ.measurableSet).sub aestronglyMeasurable_const)
     (lintegral_enorm_sub_setAverage_rpow_le_of_convex hΩ hΩc hb hu hS hS₀
       (by simpa using ENNReal.toReal_mono hp' hp))
+
+/-- **The Poincaré–Wirtinger inequality on a convex domain**, for `p = 2` and Bochner integrals.
+If `u` is `C¹`, `Ω` is a bounded convex open set and `S ⊆ Ω` has positive measure, the integral
+over `Ω` of the squared deviation of `u` from its mean over `S` is at most `C ^ 2` times the
+integral of `‖Du‖ ^ 2` over `Ω`, where `C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)`. -/
+theorem setIntegral_norm_sub_setAverage_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hS : S ⊆ Ω) (hS₀ : μ S ≠ 0) :
+    ∫ x in Ω, ‖u x - ⨍ y in S, u y ∂μ‖ ^ 2 ∂μ ≤
+      (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2 *
+        ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ := by
+  have h := lintegral_enorm_sub_setAverage_rpow_le_of_convex (μ := μ) hΩ hΩc hb hu.contDiffOn
+    hS hS₀ one_le_two
+  have hpowF (v : F) : ENNReal.ofReal (‖v‖ ^ 2) = ‖v‖ₑ ^ 2 := by
+    rw [← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
+  have hpowL (L : E →L[ℝ] F) : ENNReal.ofReal (‖L‖ ^ 2) = ‖L‖ₑ ^ 2 := by
+    rw [← ofReal_norm, ENNReal.ofReal_pow (norm_nonneg _)]
+  -- Continuous functions are integrable on the compact closure of `Ω`.
+  have hi₁ : IntegrableOn (fun x ↦ ‖u x - ⨍ y in S, u y ∂μ‖ ^ 2) Ω μ :=
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact
+      hb.isCompact_closure).mono_set subset_closure
+  have hi₂ : IntegrableOn (fun x ↦ ‖fderiv ℝ u x‖ ^ 2) Ω μ :=
+    ((((hu.continuous_fderiv one_ne_zero).norm.pow 2).continuousOn).integrableOn_compact
+      hb.isCompact_closure).mono_set subset_closure
+  rw [← ENNReal.ofReal_le_ofReal_iff (by positivity), ENNReal.ofReal_mul (by positivity),
+    ofReal_integral_eq_lintegral_ofReal hi₁ (ae_of_all _ fun _ ↦ by positivity),
+    ofReal_integral_eq_lintegral_ofReal hi₂ (ae_of_all _ fun _ ↦ by positivity)]
+  simp only [hpowF, hpowL]
+  simpa only [Real.rpow_two, ENNReal.rpow_two] using h
+
+
+/-- **The Poincaré inequality on a convex domain, relative to a subset.** If `u` is `C¹`, `Ω` is a
+bounded convex open set and `S ⊆ Ω` is measurable with positive measure, then `∫_Ω ‖u‖²` is at
+most `(2 + 4 μ(Ω) / μ(S)) C ^ 2 ∫_Ω ‖Du‖² + (4 μ(Ω) / μ(S)) ∫_S ‖u‖²`, where
+`C = μ(B(0, 1)) * (diam Ω) ^ (n + 1) / μ(S)` is the Poincaré–Wirtinger constant. -/
+theorem setIntegral_norm_sq_le_of_convex (hΩ : IsOpen Ω) (hΩc : Convex ℝ Ω)
+    (hb : Bornology.IsBounded Ω) (hu : ContDiff ℝ 1 u) (hSm : MeasurableSet S) (hS : S ⊆ Ω)
+    (hS₀ : μ S ≠ 0) :
+    ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
+      (2 + 4 * μ.real Ω / μ.real S) *
+          (μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S) ^ 2 *
+          ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ +
+        4 * μ.real Ω / μ.real S * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+  set m := ⨍ y in S, u y ∂μ
+  set C := μ.real (ball 0 1) * diam Ω ^ (finrank ℝ E + 1) / μ.real S
+  have hΩfin : μ Ω ≠ ∞ := hb.measure_lt_top.ne
+  have hs : 0 < μ.real S :=
+    ENNReal.toReal_pos hS₀ ((measure_mono hS).trans_lt hb.measure_lt_top).ne
+  have hV : 0 ≤ μ.real Ω := measureReal_nonneg
+  have hcpt := hb.isCompact_closure
+  have hdev : IntegrableOn (fun x ↦ ‖u x - m‖ ^ 2) Ω μ :=
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hcpt).mono_set subset_closure
+  have hsq : IntegrableOn (fun x ↦ ‖u x‖ ^ 2) Ω μ :=
+    ((Continuous.continuousOn (by fun_prop)).integrableOn_compact hcpt).mono_set subset_closure
+  have hX := setIntegral_norm_sub_setAverage_sq_le_of_convex (μ := μ) hΩ hΩc hb hu hS hS₀
+  -- The mean over `S` is controlled by the deviation and by `∫_S ‖u‖²`.
+  have hm : μ.real S * ‖m‖ ^ 2 ≤
+      2 * ∫ x in Ω, ‖u x - m‖ ^ 2 ∂μ + 2 * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+    have hpt (x : E) : ‖m‖ ^ 2 ≤ 2 * ‖u x - m‖ ^ 2 + 2 * ‖u x‖ ^ 2 := by
+      have h := norm_sub_le (u x) (u x - m)
+      rw [sub_sub_cancel] at h
+      nlinarith [sq_nonneg (‖u x‖ - ‖u x - m‖), norm_nonneg m]
+    calc μ.real S * ‖m‖ ^ 2 = ∫ _ in S, ‖m‖ ^ 2 ∂μ := by rw [setIntegral_const, smul_eq_mul]
+      _ ≤ ∫ x in S, (2 * ‖u x - m‖ ^ 2 + 2 * ‖u x‖ ^ 2) ∂μ :=
+        setIntegral_mono_on (integrableOn_const ((measure_mono hS).trans_lt
+          hb.measure_lt_top).ne) (((hdev.mono_set hS).const_mul 2).fun_add
+          ((hsq.mono_set hS).const_mul 2)) hSm fun x _ ↦ hpt x
+      _ = 2 * ∫ x in S, ‖u x - m‖ ^ 2 ∂μ + 2 * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+        rw [integral_add ((hdev.mono_set hS).const_mul 2) ((hsq.mono_set hS).const_mul 2),
+          integral_const_mul, integral_const_mul]
+      _ ≤ _ := by
+        gcongr 2 * ?_ + _
+        exact setIntegral_mono_set hdev (ae_of_all _ fun _ ↦ by positivity) hS.eventuallyLE
+  -- On `Ω`, `‖u‖²` is controlled by the deviation and the mean.
+  have hU : ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤
+      2 * ∫ x in Ω, ‖u x - m‖ ^ 2 ∂μ + 2 * μ.real Ω * ‖m‖ ^ 2 := by
+    have hpt (x : E) : ‖u x‖ ^ 2 ≤ 2 * ‖u x - m‖ ^ 2 + 2 * ‖m‖ ^ 2 := by
+      have h := norm_add_le (u x - m) m
+      rw [sub_add_cancel] at h
+      nlinarith [sq_nonneg (‖u x - m‖ - ‖m‖), norm_nonneg (u x)]
+    calc ∫ x in Ω, ‖u x‖ ^ 2 ∂μ ≤ ∫ x in Ω, (2 * ‖u x - m‖ ^ 2 + 2 * ‖m‖ ^ 2) ∂μ :=
+          setIntegral_mono_on hsq ((hdev.const_mul 2).fun_add
+            (integrableOn_const hΩfin).integrable) hΩ.measurableSet fun x _ ↦ hpt x
+      _ = _ := by
+        rw [integral_add (hdev.const_mul 2) (integrableOn_const hΩfin).integrable,
+          integral_const_mul, setIntegral_const, smul_eq_mul]
+        ring
+  refine le_of_mul_le_mul_left ?_ hs
+  have e : μ.real S * ((2 + 4 * μ.real Ω / μ.real S) * C ^ 2 * ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ +
+      4 * μ.real Ω / μ.real S * ∫ x in S, ‖u x‖ ^ 2 ∂μ) =
+      (2 * μ.real S + 4 * μ.real Ω) * (C ^ 2 * ∫ x in Ω, ‖fderiv ℝ u x‖ ^ 2 ∂μ) +
+        4 * μ.real Ω * ∫ x in S, ‖u x‖ ^ 2 ∂μ := by
+    field_simp
+  rw [e]
+  nlinarith [mul_le_mul_of_nonneg_left hU hs.le, mul_le_mul_of_nonneg_left hm hV,
+    mul_le_mul_of_nonneg_left hX (by positivity : 0 ≤ 2 * μ.real S + 4 * μ.real Ω)]
 
 end TauCeti
