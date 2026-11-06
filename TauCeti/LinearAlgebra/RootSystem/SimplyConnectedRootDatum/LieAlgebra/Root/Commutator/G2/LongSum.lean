@@ -6,9 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant.G2
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.Basic
-import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Commutator.ClassTwo
 
 /-!
 # Chevalley commutators with a long sum in type `G₂`
@@ -20,9 +18,9 @@ The representation needs only nilpotence of the simple generators and a Kostant-
 subgroup; no weight basis or faithfulness is required.
 
 For two short summands the coefficient is `±3`, so the subgroups commute in characteristic
-three. The proof uses the integral exponential identity
-`TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq`, with divided-power stability from
-the native all-root subgroup construction.
+three. The proof specializes the type-independent native class-two commutator formula
+`TauCeti.DynkinType.commutatorElement_chevalleyRootSubgroup_of_lie_eq_zero` using the long-sum
+root geometry.
 
 ## References
 
@@ -63,61 +61,16 @@ theorem commutatorElement_chevalleyRootSubgroup_G2_of_long_sum {α β γ : Fin G
         chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v)⁆ =
       chevalleyRootSubgroup ρ M hM hnil γ A
         (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v))) := by
-  let := G2.isReduced_simplyConnectedRootDatum ht
-  -- The long-sum geometry makes the third root vector central for both summands.
-  have hcentral (i j : Fin G2.numRoots)
-      (hij : (G2.simplyConnectedRootDatum ht).root γ =
-        (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j) :
-      ⁅G2.chevalleySystem ht i, G2.chevalleySystem ht γ⁆ = 0 := by
-    apply lie_chevalleySystem_eq_zero
-    · simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
-        g2_root_add_not_mem_range_of_add_eq_long i j γ hγ
-          (by simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using hij)
-    · intro hz
-      have hli := (G2.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
-        ⟨γ, hij⟩
-      have hcoeff := (LinearIndependent.pair_iff.mp hli) (2 : ℤ) 1
-        (by simpa only [hij, two_smul, one_smul, add_assoc] using hz)
-      norm_num at hcoeff
-  have hαγ := hcentral α β hadd
-  have hβγ := hcentral β α (hadd.trans (add_comm _ _))
-  have hαβ := lie_chevalleySystem_eq_structureConstant_zsmul hadd
-  -- Absorb the integral structure constant into the exponential parameter.
-  have hscaled : ∀ n, ∀ w ∈ M, Associative.dividedPower n
-      (G2.structureConstant ht α β •
-        ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (G2.chevalleySystem ht γ))) • w ∈ M := by
-    intro n w hw
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n w hw) _
-  -- The existing integral exponential identity supplies the product relation.
-  -- Using preserved divided powers directly avoids requiring a finite-dimensional Lie module.
-  have hprod :
-      chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) *
-          chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) =
-        chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v) *
-          chevalleyRootSubgroup ρ M hM hnil γ A
-            (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v))) *
-          chevalleyRootSubgroup ρ M hM hnil α A (Multiplicative.ofAdd u) := by
-    apply Units.ext
-    simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    rw [← baseChangeExp_zsmul (G2.structureConstant ht α β) M
-      (dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ) hscaled
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)]
-    exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M
-      (mul_eq_mul_add_zsmul_of_lie_eq ρ hαβ)
-      ((commute_of_lie_eq_zero ρ hαγ).smul_right _)
-      ((commute_of_lie_eq_zero ρ hβγ).smul_right _)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil β) _ _ hscaled u v
-  -- The central third factor turns that product relation into the canonical commutator.
-  have hcomm : Commute
-      (chevalleyRootSubgroup ρ M hM hnil β A (Multiplicative.ofAdd v))
-      (chevalleyRootSubgroup ρ M hM hnil γ A
-        (Multiplicative.ofAdd ((G2.structureConstant ht α β : A) * (u * v)))) := by
-    apply Units.ext
-    simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-    exact commute_baseChangeExp M (commute_of_lie_eq_zero ρ hβγ) _ _ _ _
-  rw [commutatorElement_def, hprod, mul_inv_cancel_right, hcomm.eq, mul_inv_cancel_right]
+  apply commutatorElement_chevalleyRootSubgroup_of_lie_eq_zero ρ M hM hnil hadd
+  · apply lie_chevalleySystem_eq_zero_of_add_eq hadd
+    simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
+      g2_root_add_not_mem_range_of_add_eq_long α β γ hγ
+        (by simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using hadd)
+  · apply lie_chevalleySystem_eq_zero_of_add_eq (hadd.trans (add_comm _ _))
+    simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
+      g2_root_add_not_mem_range_of_add_eq_long β α γ hγ
+        (by simpa +instances only [numRoots_G2, rank_G2, simplyConnectedRootDatum_G2] using
+          hadd.trans (add_comm _ _))
 
 /-- Short `G₂` root subgroups whose sum is long commute in characteristic three. -/
 theorem commute_chevalleyRootSubgroup_G2_of_short_add_short_eq_long {α β γ : Fin G2.numRoots}
