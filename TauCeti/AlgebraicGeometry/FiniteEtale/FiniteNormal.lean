@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.FiniteEtale.PuncturedSpectrum
+public import TauCeti.AlgebraicGeometry.FiniteEtale.Extension
 import TauCeti.AlgebraicGeometry.Morphisms.StalkMap
 import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
+import TauCeti.RingTheory.CohenMacaulay.Normal
 
 /-!
 # Finite normal algebras and covers of the punctured spectrum
@@ -31,6 +32,17 @@ needed and is missing from the Stacks statement: for `A` normal of dimension at 
 algebra `A × A/𝔪` is finite, normal and étale away from `𝔪`, but its restriction to `U` is that of
 `A`, so the functor would not be faithful on it.
 
+If purity holds for `A` (`TauCeti.IsLocalRing.PurityHolds A`), every finite étale cover of `U`
+extends to a finite étale scheme over `Spec A`, so its ring of sections is finite étale over `A`
+when `A` has depth at least two (Stacks, Lemma 58.20.2 (0BLK)). When a finite algebra `B`, étale
+at every prime not lying over `𝔪`, is recovered from its sections over the preimage of `U`, this
+shows that `B` itself is étale over `A`. For a finite torsion-free algebra `B` whose localizations
+at maximal ideals are normal domains, over a Noetherian normal local domain `A` of dimension at
+least two, both the depth bound and the recovery of `B` from its sections hold. So purity for the
+punctured spectrum of `A` implies purity for finite normal `A`-algebras: this is how part (2) of
+Stacks, Lemma 58.21.3 (0BMA), purity for regular local rings in its algebraic form, follows from
+part (1), purity of the punctured spectrum.
+
 ## Main definitions
 
 * `TauCeti.IsLocalRing.finiteNormalPuncturedEtale`: the finite normal torsion-free `A`-algebras
@@ -47,10 +59,16 @@ algebra `A × A/𝔪` is finite, normal and étale away from `𝔪`, but its res
   maximal ideal.
 * `TauCeti.IsLocalRing.restrictPuncturedSpec.fullyFaithful`: restriction to the punctured spectrum
   is fully faithful on finite normal punctured-étale algebras.
+* `TauCeti.Algebra.etale_of_finiteNormal_of_purityHolds`: over a Noetherian normal local domain of
+  dimension at least two for which purity holds, a finite torsion-free algebra with normal
+  localizations at maximal ideals, étale at every prime not lying over the closed point, is
+  étale.
 
 ## References
 
+* [The Stacks Project, Lemma 58.20.2](https://stacks.math.columbia.edu/tag/0BLK).
 * [The Stacks Project, Lemma 58.20.3](https://stacks.math.columbia.edu/tag/0BM9).
+* [The Stacks Project, Lemma 58.21.3](https://stacks.math.columbia.edu/tag/0BMA).
 -/
 
 public section
@@ -210,3 +228,33 @@ def restrictPuncturedSpec.fullyFaithful [IsDomain A] [IsIntegrallyClosed A]
     (Equiv.ofBijective _ (restrictPuncturedSpec_map_bijective hdim B C)).symm_apply_apply
 
 end TauCeti.IsLocalRing
+
+namespace TauCeti.Algebra
+
+variable {A B : Type u} [CommRing A] [CommRing B] [Algebra A B] [IsLocalRing A]
+  [IsNoetherianRing A] [Module.Finite A B]
+
+/-- **Purity for finite normal algebras from purity of the punctured spectrum.** Let `A` be a
+Noetherian normal local domain of dimension at least two for which purity holds: every finite
+étale cover of its punctured spectrum extends to a finite étale scheme over `Spec A`. Then a finite
+torsion-free `A`-algebra whose localizations at maximal ideals are normal domains, and which is
+étale over `A` at every prime not lying over the maximal ideal, is étale over `A`. -/
+@[stacks 0BMA "(1) implies (2), with B torsion free over A"]
+theorem etale_of_finiteNormal_of_purityHolds [IsDomain A] [IsIntegrallyClosed A]
+    [Module.IsTorsionFree A B] (hpurity : IsLocalRing.PurityHolds A)
+    (hdim : 2 ≤ ringKrullDim A)
+    (hnormal : ∀ (𝔮 : Ideal B) [𝔮.IsMaximal],
+      IsDomain (Localization.AtPrime 𝔮) ∧ IsIntegrallyClosed (Localization.AtPrime 𝔮))
+    (hetale : ∀ (q : Ideal B) [q.IsPrime], q.under A ≠ maximalIdeal A →
+      Algebra.IsEtaleAt A q) :
+    Algebra.Etale A B := by
+  let W := Spec.map (CommRingCat.ofHom (algebraMap A B)) ⁻¹ᵁ IsLocalRing.puncturedSpectrum A
+  refine etale_of_purityHolds_of_bijective hpurity (two_le_depth_of_isIntegrallyClosed hdim)
+    ?_ hetale
+  rw [Scheme.Opens.ι_appTop]
+  refine AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_isIntegrallyClosed hdim hnormal
+    (W.ι ''ᵁ ⊤) fun p hp ↦ ?_
+  rw [Scheme.Opens.ι_image_top]
+  exact (IsLocalRing.mem_preimage_puncturedSpectrum_iff A p).mpr hp
+
+end TauCeti.Algebra

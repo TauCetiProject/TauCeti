@@ -46,6 +46,8 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top`: for affine opens `V ≤ U`,
   the restrictions of the functions on `U` whose basic open lies in `V` generate the unit ideal of
   `Γ(X, V)`.
+* `AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq`: a quasi-compact open inside an
+  affine open `U` is a finite union of basic opens of `U` contained in it.
 * `AlgebraicGeometry.Scheme.inf_mem_range_basicOpen` and
   `AlgebraicGeometry.IsAffineOpen.exists_mem_range_basicOpen_le_sup`: the basic opens of `U` are
   closed under intersections, and for `U` affine, a basic open covered by a basic open `A` and
@@ -230,6 +232,20 @@ theorem _root_.AlgebraicGeometry.IsAffineOpen.span_restrict_basicOpen_le_eq_top 
   refine Opens.mem_iSup.mpr ⟨⟨_, f, hfV, rfl⟩, ?_⟩
   rw [Scheme.basicOpen_res]
   exact ⟨hx, hxf⟩
+
+/-- A quasi-compact open `W` contained in an affine open `U` is the union of finitely many basic
+opens of `U` contained in `W`. -/
+theorem _root_.AlgebraicGeometry.IsAffineOpen.exists_finset_sup_basicOpen_eq (hU : IsAffineOpen U)
+    {W : X.Opens} (hW : IsCompact (W : Set X)) (hWU : W ≤ U) :
+    ∃ s : Finset {f : Γ(X, U) // X.basicOpen f ≤ W}, s.sup (fun i ↦ X.basicOpen i.1) = W := by
+  obtain ⟨s, hs⟩ := hW.elim_finite_subcover
+    (fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ (X.basicOpen i.1 : Set X))
+    (fun i ↦ (X.basicOpen i.1).isOpen) fun x hx ↦ by
+      obtain ⟨f, hf, hxf⟩ := hU.exists_basicOpen_le ⟨x, hx⟩ (hWU hx)
+      exact Set.mem_iUnion.mpr ⟨⟨f, hf⟩, hxf⟩
+  refine ⟨s, le_antisymm (Finset.sup_le fun i _ ↦ i.2) fun x hx ↦ ?_⟩
+  obtain ⟨i, hi, hxi⟩ := Set.mem_iUnion₂.mp (hs hx)
+  exact (Finset.le_sup (f := fun i : {f : Γ(X, U) // X.basicOpen f ≤ W} ↦ X.basicOpen i.1) hi) hxi
 
 /-- The basic opens `X.basicOpen f` of sections `f` over an open `U` are closed under binary
 intersections. -/

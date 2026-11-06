@@ -1344,7 +1344,7 @@ jobs:
           # status from its result here rather than from a separate workflow. BUMP_BAD is set
           # only when a manifest/toolchain change failed that validator; anything else (no pin
           # change, or a validated forward bump) is a pass. Posting it from this job also means
-          # both required statuses land together, before the auto-merge workflow_run fires.
+          # both required statuses land together for the queue service's admission policy.
           if [ "${{ env.BUMP_BAD }}" = "1" ]; then
             bg_state=failure; bg_desc="Lake pin change is not a validated forward bump — needs human review"
           elif [ "${{ env.BUMP }}" = "1" ] && [ "${{ env.BUMP_VALIDATED }}" != "1" ]; then

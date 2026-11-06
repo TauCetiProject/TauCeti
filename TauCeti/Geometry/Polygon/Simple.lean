@@ -53,6 +53,8 @@ no vertices is vacuously simple and has empty boundary, so the results about the
 ## Main results
 
 * `Polygon.isSimple_rotate_iff`: relabelling the vertices cyclically keeps a polygon simple.
+* `Polygon.isSimple_reverse_iff`: reversing the order of the vertices keeps a polygon simple.
+* `Polygon.boundaryParam_reverse`: the reversal traverses the boundary backwards.
 * `Polygon.IsSimple.apply_notMem_edgeSet`: a vertex of a simple polygon lies on no edge other
   than the two edges through it.
 * `Polygon.isSimple_map_iff`: an injective affine map preserves and reflects simplicity.
@@ -148,6 +150,30 @@ theorem IsSimple.apply_notMem_edgeSet {poly : Polygon P n} (hs : poly.IsSimple R
     ⟨h', -⟩
   · exact hs.hasNondegenerateEdges k he
   · exact hkj' h'
+
+omit [ZeroLEOneClass R] in
+variable [IsOrderedRing R] in
+/-- Reversing a simple polygon keeps it simple. -/
+theorem IsSimple.reverse {poly : Polygon P n} (h : poly.IsSimple R) : poly.reverse.IsSimple R := by
+  refine ⟨fun j => ?_, fun j₁ j₂ x hne hx₁ hx₂ => ?_⟩
+  · have := h.hasNondegenerateEdges (-finRotate n j)
+    rw [Fin.finRotate_neg_finRotate] at this
+    rw [reverse_apply, reverse_apply]
+    exact this.symm
+  · rw [edgeSet_reverse] at hx₁ hx₂
+    rcases h.eq_vertex_of_mem_edgeSet (fun e => hne ((finRotate n).injective (neg_injective e)))
+      hx₁ hx₂ with ⟨e, rfl⟩ | ⟨e, rfl⟩
+    · rw [Fin.finRotate_neg_finRotate, neg_inj] at e
+      exact .inr ⟨e.symm, by rw [reverse_apply, ← e]⟩
+    · rw [Fin.finRotate_neg_finRotate, neg_inj] at e
+      exact .inl ⟨e.symm, by rw [reverse_apply, ← e]⟩
+
+omit [ZeroLEOneClass R] in
+variable [IsOrderedRing R] in
+/-- A polygon is simple exactly when its reversal is. -/
+@[simp]
+theorem isSimple_reverse_iff (poly : Polygon P n) : poly.reverse.IsSimple R ↔ poly.IsSimple R :=
+  ⟨fun h => by simpa using h.reverse, IsSimple.reverse⟩
 
 end IsSimple
 
@@ -379,6 +405,9 @@ private theorem vertexIndex_natCast [NeZero n] (i : Fin n) : vertexIndex n (i : 
   -- lemma evaluating it, so this step unfolds it.
   exact (Int.cast_natCast (R := ZMod (m + 1)) i).trans (@ZMod.natCast_zmod_val (m + 1) _ i)
 
+private theorem vertexIndex_neg [NeZero n] (k : ℤ) : vertexIndex n (-k) = -vertexIndex n k := by
+  rw [vertexIndex, vertexIndex, Int.cast_neg, map_neg]
+
 private theorem vertexIndex_eq_vertexIndex_iff [NeZero n] {k l : ℤ} :
     vertexIndex n k = vertexIndex n l ↔ (n : ℤ) ∣ l - k := by
   rw [vertexIndex, vertexIndex, (ZMod.finEquiv n).symm.injective.eq_iff,
@@ -459,6 +488,36 @@ theorem boundaryParam_rotate (t : ℝ) :
     poly.rotate.boundaryParam t = poly.boundaryParam (t + 1) := by
   rw [boundaryParam_eq_edgePath_edgeIndexAt, boundaryParam_eq_edgePath_edgeIndexAt, edgePath_rotate,
     edgeIndexAt_add_one, Int.fract_add_one]
+
+/-- Away from the vertices, the boundary parametrization runs backwards at time `-t` along the edge
+`-(i + 1)`, where `i` is the edge it runs along at time `t`. -/
+theorem edgeIndexAt_neg {t : ℝ} (ht : Int.fract t ≠ 0) :
+    edgeIndexAt n (-t) = -finRotate n (edgeIndexAt n t) := by
+  have hfract := (Int.fract_nonneg t).lt_of_ne' ht
+  rw [Int.fract] at hfract
+  have hfloor : ⌊-t⌋ = -⌊t⌋ - 1 := by
+    rw [Int.floor_eq_iff]
+    push_cast
+    constructor <;> linarith [Int.lt_floor_add_one t]
+  rw [edgeIndexAt, edgeIndexAt, hfloor, ← vertexIndex_add_one, ← vertexIndex_neg, neg_add']
+
+/-- The reversal `poly.reverse` traverses the boundary of `poly` backwards from vertex `0`: its
+boundary parametrization at time `t` is that of `poly` at time `-t`. -/
+@[simp]
+theorem boundaryParam_reverse (t : ℝ) :
+    poly.reverse.boundaryParam t = poly.boundaryParam (-t) := by
+  -- At time `-t` the parametrization of `poly` runs backwards along edge `-(⌊t⌋ + 1)`.
+  have ht : -t ∈ Icc ((-⌊t⌋ - 1 : ℤ) : ℝ) ((-⌊t⌋ - 1 : ℤ) + 1) := by
+    push_cast
+    constructor <;> linarith [Int.floor_le t, Int.lt_floor_add_one t]
+  have hj : vertexIndex n (-⌊t⌋ - 1) = -finRotate n (vertexIndex n ⌊t⌋) := by
+    rw [← vertexIndex_add_one, ← vertexIndex_neg, neg_add']
+  have hs : -t - ((-⌊t⌋ - 1 : ℤ) : ℝ) = 1 - Int.fract t := by
+    rw [Int.fract]
+    push_cast
+    ring
+  rw [poly.boundaryParam_eq_edgePath _ ht, ← vertexIndex, hj, hs, boundaryParam]
+  simp only [edgePath, reverse_apply, Fin.finRotate_neg_finRotate, AffineMap.lineMap_apply_one_sub]
 
 /-- The boundary parametrization runs over the whole boundary of the polygon. -/
 @[simp]
