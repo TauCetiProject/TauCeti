@@ -16,6 +16,7 @@ import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
 import TauCeti.Analysis.Calculus.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Wedge
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # The cutoff current and the curvature current against test forms
@@ -70,32 +71,111 @@ namespace TauCeti.SeibergWitten
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {n : ℕ}
-  {α : E → ℂ} {a : E → E [⋀^Fin 1]→L[ℝ] ℝ} {χ : ℝ → ℝ} {ζ : E → E [⋀^Fin n]→L[ℝ] ℝ}
+  {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {χ : ℝ → ℝ} {ζ : E → E [⋀^Fin n]→L[ℝ] ℝ}
 
 /-- **The cutoff current against a test form.** For a compactly supported C1 test form `ζ` of
-degree `n` on a space of dimension `2 + n`, the pairing of `Θ - i F_a = Θ + da` with `ζ` is the
+degree `n` on a space of dimension `2 + n`, the pairing of `Θ - i F_a = Θ + db` with `ζ` is the
 pairing of the cutoff phase form `χ(|α|²) τ` with `dζ`. Top-degree coefficients are taken on a
 basis `e` and integrated against its Haar measure. -/
 theorem integral_cutoffCurrent_add_extDeriv_wedge_eq (e : Module.Basis (Fin (2 + n)) ℝ E)
-    (hα : ContDiff ℝ 2 α) (ha : ContDiff ℝ 1 a) (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0)
+    (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0)
     (hζ : ContDiff ℝ 1 ζ) (hc : HasCompactSupport ζ) :
-    ∫ x, wedge (cutoffCurrent χ a α x + extDeriv a x) (ζ x) e ∂e.addHaar =
-      ∫ x, wedge (cutoffPhaseForm χ a α x) (extDeriv ζ x) (e ∘ Fin.cast (by omega)) ∂e.addHaar := by
-  let b := e.reindex (finCongr (by omega : 2 + n = 1 + n + 1))
-  have hb : b.addHaar = e.addHaar := Module.Basis.addHaar_reindex _ _
-  have h := b.integral_extDeriv_wedge_eq_integral_wedge_extDeriv
-    (contDiff_cutoffPhaseForm hα ha hχ hχ₀) hζ hc
-  have e₁ : ⇑b ∘ Fin.cast (show 1 + 1 + n = 1 + n + 1 by omega) = ⇑e := by
-    funext i
-    simp [b]
-  have e₂ : ⇑b ∘ Fin.cast (show 1 + (n + 1) = 1 + n + 1 by omega) =
-      ⇑e ∘ Fin.cast (show 1 + (n + 1) = 2 + n by omega) := by
-    funext i
-    simp [b]
-  rw [e₁, e₂, hb, pow_one, neg_neg, one_mul] at h
+    ∫ x, wedge (cutoffCurrent χ b α x + extDeriv b x) (ζ x) e ∂e.addHaar =
+      ∫ x, wedge (cutoffPhaseForm χ b α x) (extDeriv ζ x) (e ∘ Fin.cast (by omega)) ∂e.addHaar := by
+  let e' := e.reindex (finCongr (by omega : 2 + n = 1 + n + 1))
+  have h := e'.integral_extDeriv_wedge_eq_integral_wedge_extDeriv
+    (contDiff_cutoffPhaseForm hα hb hχ hχ₀) hζ hc
+  have h₁ : ⇑e' ∘ Fin.cast (show 1 + 1 + n = 1 + n + 1 by omega) = ⇑e :=
+    e.reindex_finCongr_comp_cast _ _
+  rw [h₁, e.reindex_finCongr_comp_cast, Module.Basis.addHaar_reindex, pow_one, neg_neg,
+    one_mul] at h
   simpa only [cutoffCurrent_apply, sub_add_cancel] using h
 
 variable (J : AlmostComplexStructure E)
+
+/-- The pairing of a twisted differential `d^c_J g` with a compactly supported C1 form `η` of
+complementary degree is bounded by `C A ∫_K |g|`, where `K` is a compact set containing the
+support of `η` and `A` bounds the derivative of `η`. The constant `C` depends only on `J` and the
+basis `e`. -/
+private theorem exists_abs_integral_twistedDifferential_wedge_le {m : ℕ}
+    (e : Module.Basis (Fin (1 + m)) ℝ E) :
+    ∃ C, 0 ≤ C ∧ ∀ ⦃g : E → ℝ⦄ ⦃η : E → E [⋀^Fin m]→L[ℝ] ℝ⦄ ⦃K : Set E⦄ ⦃A : ℝ⦄,
+      ContDiff ℝ 1 g → ContDiff ℝ 1 η → IsCompact K → tsupport η ⊆ K →
+      (∀ x, ‖fderiv ℝ η x‖ ≤ A) →
+      |∫ x, wedge (J.twistedDifferential g x) (η x) e ∂e.addHaar| ≤
+        C * (A * ∫ x in K, |g x| ∂e.addHaar) := by
+  let J' := LinearMap.toContinuousLinearMap J.toLinearMap
+  let L := compContinuousLinearMapCLM (F := ℝ) (ι := Fin m) (-J')
+  let e' := ⇑e ∘ Fin.cast (show m + 1 = 1 + m by omega)
+  refine ⟨|LinearMap.det J.toLinearMap| / 2 * ((m + 1) * ‖L‖ * ∏ i, ‖e' i‖), by positivity, ?_⟩
+  intro g η K A hg hη hK hηK hA
+  have hcη : HasCompactSupport η := hK.of_isClosed_subset (isClosed_tsupport η) hηK
+  -- Integrate by parts onto the derivative of `η`, which vanishes outside `K`.
+  rw [J.integral_twistedDifferential_wedge_eq e hg hη hcη]
+  set η' := fun y ↦ (η y).compContinuousLinearMap (-J')
+  have hDη' (x : E) : fderiv ℝ η' x = L.comp (fderiv ℝ η x) :=
+    (L.hasFDerivAt.comp x (hη.differentiable one_ne_zero x).hasFDerivAt).fderiv
+  have hnorm (x : E) : ‖extDeriv η' x‖ ≤ (m + 1) * ‖L‖ * A := by
+    calc ‖extDeriv η' x‖ ≤ (m + 1) * ‖fderiv ℝ η' x‖ := norm_alternatizeUncurryFin_le _
+      _ ≤ (m + 1) * (‖L‖ * A) := by
+          rw [hDη']
+          gcongr
+          exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr; exact hA x)
+      _ = _ := by ring
+  have hvan (x : E) (hx : x ∉ K) : g x * extDeriv η' x e' = 0 := by
+    have hDη0 : fderiv ℝ η x = 0 :=
+      image_eq_zero_of_notMem_tsupport fun h ↦ hx (hηK (tsupport_fderiv_subset ℝ h))
+    simp [extDeriv, hDη', hDη0, ← alternatizeUncurryFinCLM_apply]
+  have hint : IntegrableOn (fun x ↦ (m + 1) * ‖L‖ * A * (∏ i, ‖e' i‖) * |g x|) K e.addHaar :=
+    (continuous_const.mul hg.continuous.abs).continuousOn.integrableOn_compact hK
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, abs_mul, abs_div, abs_two]
+  calc |LinearMap.det J.toLinearMap| / 2 * |∫ x in K, g x * extDeriv η' x e' ∂e.addHaar|
+      ≤ |LinearMap.det J.toLinearMap| / 2 *
+          ∫ x in K, (m + 1) * ‖L‖ * A * (∏ i, ‖e' i‖) * |g x| ∂e.addHaar := by
+        gcongr
+        rw [← Real.norm_eq_abs]
+        refine norm_integral_le_of_norm_le hint (ae_restrict_of_forall_mem hK.measurableSet ?_)
+        intro x _
+        rw [Real.norm_eq_abs, abs_mul, mul_comm]
+        gcongr
+        rw [← Real.norm_eq_abs]
+        exact ((extDeriv η' x).le_opNorm e').trans (by gcongr; exact hnorm x)
+    _ = _ := by
+        rw [integral_const_mul]
+        ring
+
+/-- The pairing of the correction one-form `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J` with a form `η`
+of complementary degree is bounded by `2 (1 + m) A / √c ∫_K |∂bar_a α|` times the product of the
+norms of the basis vectors, where `η` vanishes outside `K`, `|η| ≤ A`, and the cutoff `χ` vanishes
+below `c` with `|χ| ≤ 1`. -/
+private theorem abs_integral_cutoffDBarForm_wedge_le {m : ℕ} (e : Module.Basis (Fin (1 + m)) ℝ E)
+    {η : E → E [⋀^Fin m]→L[ℝ] ℝ} {K : Set E} {c A : ℝ} (hc : 0 < c) (hχc : ∀ t < c, χ t = 0)
+    (hχ₁ : ∀ t, |χ t| ≤ 1) (hα : ContDiff ℝ 1 α) (hb : Continuous b) (hK : IsCompact K)
+    (hηK : ∀ x ∉ K, η x = 0) (hA : ∀ x, ‖η x‖ ≤ A) :
+    |∫ x, wedge (cutoffDBarForm J χ b α x) (η x) e ∂e.addHaar| ≤
+      2 * (1 + m) * (∏ i, ‖e i‖) * (A / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e.addHaar) := by
+  have hvan (x : E) (hx : x ∉ K) : wedge (cutoffDBarForm J χ b α x) (η x) e = 0 := by
+    simp [hηK x hx, wedge_def, pairedWedge_zero_right]
+  have hint : IntegrableOn
+      (fun x ↦ 2 * (1 + m) * (∏ i, ‖e i‖) * (A / √c * ‖covariantDBar J b α x‖)) K e.addHaar :=
+    (continuous_const.mul (continuous_const.mul (continuous_covariantDBar J hα hb).norm))
+      |>.continuousOn.integrableOn_compact hK
+  rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, ← integral_const_mul,
+    ← integral_const_mul, ← Real.norm_eq_abs]
+  refine norm_integral_le_of_norm_le hint (ae_restrict_of_forall_mem hK.measurableSet fun x _ ↦ ?_)
+  have hE := norm_cutoffDBarForm_le J hc (fun t _ ht ↦ hχc t ht) hχ₁ b α x
+  calc ‖wedge (cutoffDBarForm J χ b α x) (η x) e‖
+      ≤ ‖wedge (cutoffDBarForm J χ b α x) (η x)‖ * ∏ i, ‖e i‖ :=
+        (wedge (cutoffDBarForm J χ b α x) (η x)).le_opNorm _
+    _ ≤ ((1 + m).choose 1 * ‖cutoffDBarForm J χ b α x‖ * ‖η x‖) * ∏ i, ‖e i‖ := by
+        gcongr
+        exact norm_wedge_le _ _
+    _ ≤ ((1 + m) * (2 / √c * ‖covariantDBar J b α x‖) * A) * ∏ i, ‖e i‖ := by
+        rw [Nat.choose_one_right]
+        push_cast
+        gcongr
+        exact hA x
+    _ = 2 * (1 + m) * (∏ i, ‖e i‖) * (A / √c * ‖covariantDBar J b α x‖) := by ring
 
 /-- **Comparison of the cutoff current with the curvature current.** There is a constant `C`,
 depending only on `J` and the basis `e`, with the following property. Let `χ` vanish below
@@ -104,36 +184,31 @@ depending only on `J` and the basis `e`, with the following property. Let `χ` v
 
 `|∫ (Θ - i F_a) ∧ ζ| ≤ C (A₂ / c ∫_K |1 - |α|²| + A₁ / √c ∫_K |∂bar_a α|)`,
 
-where `Θ - i F_a = Θ + da`. Top-degree coefficients are taken on `e` and integrated against its
+where `Θ - i F_a = Θ + db`. Top-degree coefficients are taken on `e` and integrated against its
 Haar measure. -/
 theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
     (e : Module.Basis (Fin (2 + n)) ℝ E) :
-    ∃ C, 0 ≤ C ∧ ∀ ⦃χ : ℝ → ℝ⦄ ⦃a : E → E [⋀^Fin 1]→L[ℝ] ℝ⦄ ⦃α : E → ℂ⦄
+    ∃ C, 0 ≤ C ∧ ∀ ⦃χ : ℝ → ℝ⦄ ⦃b : E → E [⋀^Fin 1]→L[ℝ] ℝ⦄ ⦃α : E → ℂ⦄
       ⦃ζ : E → E [⋀^Fin n]→L[ℝ] ℝ⦄ ⦃K : Set E⦄ ⦃c A₁ A₂ : ℝ⦄, 0 < c →
       (∀ t < c, χ t = 0) → (∀ t, |χ t| ≤ 1) → ContDiff ℝ 1 χ → ContDiff ℝ 2 α →
-      ContDiff ℝ 1 a → ContDiff ℝ 2 ζ → IsCompact K → tsupport ζ ⊆ K →
+      ContDiff ℝ 1 b → ContDiff ℝ 2 ζ → IsCompact K → tsupport ζ ⊆ K →
       (∀ x, ‖extDeriv ζ x‖ ≤ A₁) → (∀ x, ‖fderiv ℝ (extDeriv ζ) x‖ ≤ A₂) →
-      |∫ x, wedge (cutoffCurrent χ a α x + extDeriv a x) (ζ x) e ∂e.addHaar| ≤
+      |∫ x, wedge (cutoffCurrent χ b α x + extDeriv b x) (ζ x) e ∂e.addHaar| ≤
         C * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e.addHaar +
-          A₁ / √c * ∫ x in K, ‖covariantDBar J a α x‖ ∂e.addHaar) := by
+          A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e.addHaar) := by
   let e₁ := e.reindex (finCongr (by omega : 2 + n = 1 + (n + 1)))
-  let J' := LinearMap.toContinuousLinearMap J.toLinearMap
-  let L := compContinuousLinearMapCLM (F := ℝ) (ι := Fin (n + 1)) (-J')
-  let e₂ := ⇑e₁ ∘ Fin.cast (show n + 1 + 1 = 1 + (n + 1) by omega)
-  let K₁ := |LinearMap.det J.toLinearMap| / 2 * ((n + 2) * ‖L‖ * ∏ i, ‖e₂ i‖)
-  let K₂ := (n + 2) * (∏ i, ‖e₁ i‖) * 2
-  refine ⟨max K₁ K₂, by positivity, ?_⟩
-  intro χ a α ζ K c A₁ A₂ hc hχc hχ₁ hχ hα ha hζ hK hζK hA₁ hA₂
+  obtain ⟨C₁, hC₁, hTw⟩ := exists_abs_integral_twistedDifferential_wedge_le J e₁
+  let C₂ : ℝ := 2 * (1 + (n + 1 : ℕ)) * ∏ i, ‖e₁ i‖
+  refine ⟨max C₁ C₂, le_max_of_le_left hC₁, ?_⟩
+  intro χ b α ζ K c A₁ A₂ hc hχc hχ₁ hχ hα hb hζ hK hζK hA₁ hA₂
   have hχ₀ : χ =ᶠ[𝓝 0] 0 := (eventually_lt_nhds hc).mono hχc
   have hcζ : HasCompactSupport ζ := hK.of_isClosed_subset (isClosed_tsupport ζ) hζK
   set η := extDeriv ζ
   have hη : ContDiff ℝ 1 η := contDiff_extDeriv hζ (by norm_num)
   have hcη : HasCompactSupport η := hcζ.extDeriv
-  -- Outside `K` the form `dζ` and its derivative vanish.
+  -- Outside `K` the form `dζ` vanishes.
   have hηK : tsupport η ⊆ K := tsupport_extDeriv_subset.trans hζK
   have hη0 (x) (hx : x ∉ K) : η x = 0 := image_eq_zero_of_notMem_tsupport fun h ↦ hx (hηK h)
-  have hDη0 (x) (hx : x ∉ K) : fderiv ℝ η x = 0 :=
-    image_eq_zero_of_notMem_tsupport fun h ↦ hx (hηK (tsupport_fderiv_subset ℝ h))
   have hA₁0 : 0 ≤ A₁ := (norm_nonneg _).trans (hA₁ 0)
   have hA₂0 : 0 ≤ A₂ := (ContinuousLinearMap.opNorm_nonneg _).trans (hA₂ 0)
   -- The modulus potential `H(|α|²)` and the decomposition `χ(|α|²) τ = d^c_J H(|α|²) + E`.
@@ -146,121 +221,64 @@ theorem exists_abs_integral_cutoffCurrent_add_extDeriv_wedge_le
     refine (contDiff_one_iff_deriv.2 ⟨fun t ↦ (hH t).differentiableAt, ?_⟩).comp hs
     rw [show deriv H = fun t ↦ χ t / t from funext fun t ↦ (hH t).deriv]
     exact hχ.continuous.div_id_of_eventuallyEq_zero hχ₀
-  have hdec (x : E) : cutoffPhaseForm χ a α x =
-      J.twistedDifferential (fun y ↦ H (normSq (α y))) x + cutoffDBarForm J χ a α x :=
+  have hdec (x : E) : cutoffPhaseForm χ b α x =
+      J.twistedDifferential (fun y ↦ H (normSq (α y))) x + cutoffDBarForm J χ b α x :=
     cutoffPhaseForm_eq_twistedDifferential_add J (hH _) (hχc 0 hc)
       (hα.differentiable two_ne_zero x)
   -- Reduce to the pairing of the cutoff phase form with `dζ`, evaluated on `e₁`.
-  have he₁ : ⇑e ∘ Fin.cast (show 1 + (n + 1) = 2 + n by omega) = ⇑e₁ := by
-    funext i
-    simp [e₁]
+  have he₁ : ⇑e ∘ Fin.cast (show 1 + (n + 1) = 2 + n by omega) = ⇑e₁ :=
+    (e.reindex_finCongr_comp_cast _ rfl).symm
   have hμ : e₁.addHaar = e.addHaar := Module.Basis.addHaar_reindex _ _
-  rw [integral_cutoffCurrent_add_extDeriv_wedge_eq e hα ha hχ hχ₀ (hζ.of_le one_le_two) hcζ, he₁,
+  rw [integral_cutoffCurrent_add_extDeriv_wedge_eq e hα hb hχ hχ₀ (hζ.of_le one_le_two) hcζ, he₁,
     ← hμ]
   set g := fun y ↦ H (normSq (α y))
-  set A := fun x ↦ wedge (J.twistedDifferential g x) (η x) e₁ with hA_def
-  set B := fun x ↦ wedge (cutoffDBarForm J χ a α x) (η x) e₁
-  have hA : Integrable A e₁.addHaar :=
+  set P := fun x ↦ wedge (J.twistedDifferential g x) (η x) e₁
+  set Q := fun x ↦ wedge (cutoffDBarForm J χ b α x) (η x) e₁
+  have hcw (φ : E → E [⋀^Fin 1]→L[ℝ] ℝ) : HasCompactSupport fun x ↦ wedge (φ x) (η x) e₁ :=
+    hcη.wedge_left.comp_left (g := fun ω : E [⋀^Fin (1 + (n + 1))]→L[ℝ] ℝ ↦ ω e₁) rfl
+  have hP : Integrable P e₁.addHaar :=
     (((J.contDiff_twistedDifferential (n := 0) (by simpa using hg)).wedge
       (hη.of_le zero_le_one)).continuous.eval_const _).integrable_of_hasCompactSupport
-      (hcη.mono fun x hx h ↦ hx (by simp [h, wedge_def, pairedWedge_zero_right]))
-  have hT : Integrable (fun x ↦ wedge (cutoffPhaseForm χ a α x) (η x) e₁) e₁.addHaar :=
+      (hcw _)
+  have hT : Integrable (fun x ↦ wedge (cutoffPhaseForm χ b α x) (η x) e₁) e₁.addHaar :=
     (((contDiff_cutoffPhaseForm (n := 0) (by simpa using hα.of_le one_le_two)
-      (ha.of_le zero_le_one) (hχ.of_le zero_le_one) hχ₀).wedge
+      (hb.of_le zero_le_one) (hχ.of_le zero_le_one) hχ₀).wedge
       (hη.of_le zero_le_one)).continuous.eval_const _).integrable_of_hasCompactSupport
-      (hcη.mono fun x hx h ↦ hx (by simp [h, wedge_def, pairedWedge_zero_right]))
-  have hsplit (x : E) : wedge (cutoffPhaseForm χ a α x) (η x) e₁ = A x + B x := by
-    simp only [A, B, hdec, wedge_add_left, ContinuousAlternatingMap.add_apply]
-  have hB : Integrable B e₁.addHaar :=
-    (hT.sub hA).congr (Eventually.of_forall fun x ↦ by
+      (hcw _)
+  have hsplit (x : E) : wedge (cutoffPhaseForm χ b α x) (η x) e₁ = P x + Q x := by
+    simp only [P, Q, hdec, wedge_add_left, ContinuousAlternatingMap.add_apply]
+  have hQ : Integrable Q e₁.addHaar :=
+    (hT.sub hP).congr (Eventually.of_forall fun x ↦ by
       rw [Pi.sub_apply, hsplit, add_sub_cancel_left])
-  rw [integral_congr_ae (Eventually.of_forall hsplit), integral_add hA hB]
-  -- The `d^c_J H(|α|²)` term: integrate by parts onto the derivative of `dζ`.
-  have hIA : |∫ x, A x ∂e₁.addHaar| ≤
-      K₁ * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) := by
-    rw [hA_def, J.integral_twistedDifferential_wedge_eq e₁ hg hη hcη]
-    set η' := fun y ↦ (η y).compContinuousLinearMap (-J')
-    have hDη' (x : E) : fderiv ℝ η' x = L.comp (fderiv ℝ η x) :=
-      (L.hasFDerivAt.comp x (hη.differentiable one_ne_zero x).hasFDerivAt).fderiv
-    have hnorm (x : E) : ‖extDeriv η' x‖ ≤ (n + 2) * ‖L‖ * A₂ := by
-      have h₁ : ‖extDeriv η' x‖ ≤ ((n + 1 : ℕ) + 1 : ℝ) * ‖fderiv ℝ η' x‖ := by
-        rw [extDeriv]
-        exact norm_alternatizeUncurryFin_le _
-      have h₂ : ‖fderiv ℝ η' x‖ ≤ ‖L‖ * A₂ := by
-        rw [hDη']
-        exact (ContinuousLinearMap.opNorm_comp_le _ _).trans (by gcongr; exact hA₂ x)
-      calc ‖extDeriv η' x‖ ≤ (n + 2) * (‖L‖ * A₂) := by
-            refine h₁.trans ?_
-            push_cast
-            rw [show (n : ℝ) + 1 + 1 = n + 2 by ring]
-            gcongr
-        _ = _ := by ring
-    have hvan (x : E) (hx : x ∉ K) : g x * extDeriv η' x e₂ = 0 := by
-      simp [extDeriv, hDη', hDη0 x hx, ← alternatizeUncurryFinCLM_apply]
-    have hint : IntegrableOn (fun x ↦ (n + 2) * ‖L‖ * A₂ * (∏ i, ‖e₂ i‖) / c *
-        |normSq (α x) - 1|) K e₁.addHaar :=
-      (continuous_const.mul ((hs.continuous.sub continuous_const).abs)).continuousOn
-        |>.integrableOn_compact hK
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, abs_mul, abs_div, abs_two]
-    calc |LinearMap.det J.toLinearMap| / 2 * |∫ x in K, g x * extDeriv η' x e₂ ∂e₁.addHaar|
-        ≤ |LinearMap.det J.toLinearMap| / 2 * ∫ x in K, (n + 2) * ‖L‖ * A₂ * (∏ i, ‖e₂ i‖) / c *
-            |normSq (α x) - 1| ∂e₁.addHaar := by
-          gcongr
-          rw [← Real.norm_eq_abs]
-          refine norm_integral_le_of_norm_le hint (ae_restrict_of_forall_mem hK.measurableSet ?_)
-          intro x _
-          rw [Real.norm_eq_abs, abs_mul]
-          have hH' : |g x| ≤ |normSq (α x) - 1| / c :=
-            abs_modulusPotential_le hc (fun t _ ht ↦ hχc t ht) hχ₁ (normSq_nonneg _)
-          have hD : |extDeriv η' x e₂| ≤ (n + 2) * ‖L‖ * A₂ * ∏ i, ‖e₂ i‖ := by
-            rw [← Real.norm_eq_abs]
-            exact ((extDeriv η' x).le_opNorm e₂).trans (by gcongr; exact hnorm x)
-          calc |g x| * |extDeriv η' x e₂|
-              ≤ |normSq (α x) - 1| / c * ((n + 2) * ‖L‖ * A₂ * ∏ i, ‖e₂ i‖) := by
-                gcongr
-            _ = _ := by ring
-      _ = K₁ * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) := by
-          rw [integral_const_mul]
-          ring
-  -- The correction term `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`, bounded pointwise.
-  have hIB : |∫ x, B x ∂e₁.addHaar| ≤
-      K₂ * (A₁ / √c * ∫ x in K, ‖covariantDBar J a α x‖ ∂e₁.addHaar) := by
-    have hvan (x : E) (hx : x ∉ K) : B x = 0 := by
-      simp [B, hη0 x hx, wedge_def, pairedWedge_zero_right]
-    have hint : IntegrableOn (fun x ↦ K₂ * (A₁ / √c) * ‖covariantDBar J a α x‖) K e₁.addHaar :=
-      (continuous_const.mul (continuous_covariantDBar J (hα.of_le one_le_two)
-        ha.continuous).norm).continuousOn.integrableOn_compact hK
-    have hrhs : K₂ * (A₁ / √c * ∫ x in K, ‖covariantDBar J a α x‖ ∂e₁.addHaar) =
-        ∫ x in K, K₂ * (A₁ / √c) * ‖covariantDBar J a α x‖ ∂e₁.addHaar := by
-      rw [integral_const_mul]
-      ring
-    rw [← setIntegral_eq_integral_of_forall_compl_eq_zero hvan, hrhs, ← Real.norm_eq_abs]
-    refine norm_integral_le_of_norm_le hint (ae_restrict_of_forall_mem hK.measurableSet ?_)
-    intro x _
-    have hE := norm_cutoffDBarForm_le J hc (fun t _ ht ↦ hχc t ht) hχ₁ a α x
-    calc ‖B x‖ ≤ ‖wedge (cutoffDBarForm J χ a α x) (η x)‖ * ∏ i, ‖e₁ i‖ :=
-          (wedge (cutoffDBarForm J χ a α x) (η x)).le_opNorm _
-      _ ≤ ((1 + (n + 1)).choose 1 * ‖cutoffDBarForm J χ a α x‖ * ‖η x‖) * ∏ i, ‖e₁ i‖ := by
-          gcongr
-          exact norm_wedge_le _ _
-      _ ≤ ((n + 2) * (2 / √c * ‖covariantDBar J a α x‖) * A₁) * ∏ i, ‖e₁ i‖ := by
-          rw [Nat.choose_one_right]
-          push_cast
-          rw [show (1 : ℝ) + (n + 1) = n + 2 by ring]
-          gcongr
-          exact hA₁ x
-      _ = K₂ * (A₁ / √c) * ‖covariantDBar J a α x‖ := by
-          simp only [K₂]
-          ring
+  rw [integral_congr_ae (Eventually.of_forall hsplit), integral_add hP hQ]
+  -- The `d^c_J H(|α|²)` term, using `|H(s)| ≤ |s - 1| / c`.
+  have hgK : ∫ x in K, |g x| ∂e₁.addHaar ≤ (∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) / c := by
+    rw [← integral_div]
+    refine setIntegral_mono_on (hg.continuous.abs.continuousOn.integrableOn_compact hK)
+      (((hs.continuous.sub continuous_const).abs.div_const c).continuousOn.integrableOn_compact
+        hK) hK.measurableSet fun x _ ↦ ?_
+    exact abs_modulusPotential_le hc (fun t _ ht ↦ hχc t ht) hχ₁ (normSq_nonneg _)
+  have hIP : |∫ x, P x ∂e₁.addHaar| ≤
+      C₁ * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) :=
+    calc |∫ x, P x ∂e₁.addHaar| ≤ C₁ * (A₂ * ∫ x in K, |g x| ∂e₁.addHaar) :=
+          hTw hg hη hK hηK hA₂
+      _ ≤ C₁ * (A₂ * ((∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) / c)) := by gcongr
+      _ = _ := by ring
+  -- The correction term `E = 2 χ(|α|²) Re (α⁻¹ ∂bar_a α) ∘ J`.
+  have hIQ : |∫ x, Q x ∂e₁.addHaar| ≤
+      C₂ * (A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e₁.addHaar) := by
+    simpa only [C₂, Nat.cast_add, Nat.cast_one] using
+      abs_integral_cutoffDBarForm_wedge_le J e₁ hc hχc hχ₁ (hα.of_le one_le_two) hb.continuous hK
+        hη0 hA₁
   have hX : 0 ≤ A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar :=
     mul_nonneg (div_nonneg hA₂0 hc.le) (setIntegral_nonneg hK.measurableSet fun _ _ ↦ abs_nonneg _)
-  have hY : 0 ≤ A₁ / √c * ∫ x in K, ‖covariantDBar J a α x‖ ∂e₁.addHaar :=
+  have hY : 0 ≤ A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e₁.addHaar :=
     mul_nonneg (div_nonneg hA₁0 (Real.sqrt_nonneg _))
       (setIntegral_nonneg hK.measurableSet fun _ _ ↦ norm_nonneg _)
-  calc |∫ x, A x ∂e₁.addHaar + ∫ x, B x ∂e₁.addHaar|
-      ≤ |∫ x, A x ∂e₁.addHaar| + |∫ x, B x ∂e₁.addHaar| := abs_add_le _ _
-    _ ≤ K₁ * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) +
-        K₂ * (A₁ / √c * ∫ x in K, ‖covariantDBar J a α x‖ ∂e₁.addHaar) := add_le_add hIA hIB
+  calc |∫ x, P x ∂e₁.addHaar + ∫ x, Q x ∂e₁.addHaar|
+      ≤ |∫ x, P x ∂e₁.addHaar| + |∫ x, Q x ∂e₁.addHaar| := abs_add_le _ _
+    _ ≤ C₁ * (A₂ / c * ∫ x in K, |normSq (α x) - 1| ∂e₁.addHaar) +
+        C₂ * (A₁ / √c * ∫ x in K, ‖covariantDBar J b α x‖ ∂e₁.addHaar) := add_le_add hIP hIQ
     _ ≤ _ := by
         rw [mul_add]
         gcongr

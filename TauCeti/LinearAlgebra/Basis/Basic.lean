@@ -31,6 +31,8 @@ basis vector is the negative of a basis vector.
   linear equivalence are the coordinates of the vector transported back.
 * `Module.Basis.linearIndependent_coe_basis`: the vectors of a basis of a submodule `U`, viewed in
   the ambient module, are linearly independent.
+* `Module.Basis.reindex_finCongr_comp_cast`: a `Fin`-indexed basis reindexed along `finCongr`
+  and precomposed with a `Fin.cast` is the original basis precomposed with a `Fin.cast`.
 * `Module.Basis.linearIndependent_of_repr_eq_single`: a family indexed by a finite set `S` of
   indices, whose `s`-th member has the coordinates of `b s` at the indices in `S`, is linearly
   independent.
@@ -87,6 +89,15 @@ theorem coord_map_apply {R M M' ι : Type*} [Semiring R] [AddCommMonoid M] [Modu
     [AddCommMonoid M'] [Module R M'] (b : Module.Basis ι R M) (f : M ≃ₗ[R] M') (i : ι) (x : M') :
     (b.map f).coord i x = b.coord i (f.symm x) := by
   simp only [coord_apply, map_repr, LinearEquiv.trans_apply]
+
+/-- Reindexing a `Fin`-indexed basis along `finCongr h` and then precomposing with a `Fin.cast`
+is the original basis precomposed with the composite cast. Not a simp lemma: simp already proves
+it through `Module.Basis.reindex_apply`. -/
+theorem reindex_finCongr_comp_cast {R M : Type*} [Semiring R] [AddCommMonoid M] [Module R M]
+    {m m' p : ℕ} (b : Module.Basis (Fin m) R M) (h : m = m') (h' : p = m') :
+    ⇑(b.reindex (finCongr h)) ∘ Fin.cast h' = ⇑b ∘ Fin.cast (h'.trans h.symm) := by
+  funext i
+  simp
 
 /-- A family of vectors indexed by a finite set `S` of indices, whose `s`-th member has the
 coordinates of `b s` at the indices in `S`, is linearly independent. -/
