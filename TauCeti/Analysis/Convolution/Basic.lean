@@ -19,7 +19,9 @@ An essentially bounded function convolves with an integrable function at every p
 measurable additive group with a measure invariant under left translations and negation
 (`MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable` and
 `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`). No topology on the group or
-sigma-finiteness of the measure is required.
+sigma-finiteness of the measure is required. For two integrable scalar kernels and an
+essentially bounded function, convolution is associative at every point; this associativity
+statement additionally assumes s-finiteness.
 
 A continuous linear map `L : F →L[𝕜] F'` between real or complex Banach spaces commutes with
 convolution against a scalar kernel `ρ : G → 𝕜`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)` at every point where
@@ -48,6 +50,8 @@ zero, so `(f ⋆ g) x₀` is bounded by `‖L‖ (∫ ‖f‖)` times the oscill
 * `MeasureTheory.convolutionExists_of_ae_norm_le_of_integrable`,
   `MeasureTheory.convolutionExists_of_integrable_of_ae_norm_le`: existence of `f ⋆ g` when one
   factor is integrable and the other essentially bounded.
+* `MeasureTheory.convolution_lsmul_assoc_of_integrable_of_ae_norm_le`: pointwise associativity
+  for two integrable kernels and an essentially bounded function.
 * `ContinuousLinearMap.convolution_lsmul_comp_comm`: `ρ ⋆ (L ∘ f) = L (ρ ⋆ f)`.
 * `MeasureTheory.le_convolution_lsmul_of_forall_le` and
   `MeasureTheory.convolution_lsmul_le_of_forall_le`: one-sided bounds on a ball pass to the
@@ -97,6 +101,41 @@ theorem convolutionExists_of_integrable_of_ae_norm_le (hf : Integrable f μ)
     have hsub := (Measure.measurePreserving_sub_left μ x).quasiMeasurePreserving
     simpa only [ConvolutionExistsAt, Function.comp_def] using
       L.integrable_of_bilin_of_bdd_right M hf (hg.comp_quasiMeasurePreserving hsub) (hsub.ae hgM)
+
+section Assoc
+
+variable {𝕜 G F : Type*} [RCLike 𝕜] [AddCommGroup G] [MeasurableSpace G] [MeasurableAdd₂ G]
+  [MeasurableNeg G] {μ : Measure G} [SFinite μ] [μ.IsAddLeftInvariant] [μ.IsNegInvariant]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [NormedSpace 𝕜 F] [CompleteSpace F]
+  {f g : G → 𝕜} {h : G → F} {M : ℝ}
+
+/-- Convolution of two integrable scalar kernels with an essentially bounded function is
+associative at every point, not just almost everywhere. -/
+theorem convolution_lsmul_assoc_of_integrable_of_ae_norm_le
+    (hf : Integrable f μ) (hg : Integrable g μ) (hh : AEStronglyMeasurable h μ)
+    (hM : ∀ᵐ x ∂μ, ‖h x‖ ≤ M) :
+    (f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] g) ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h =
+      f ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] (g ⋆[ContinuousLinearMap.lsmul 𝕜 𝕜, μ] h) := by
+  have hbdd : ∀ x, ‖((fun y ↦ ‖g y‖) ⋆[ContinuousLinearMap.mul ℝ ℝ, μ]
+      (fun y ↦ ‖h y‖)) x‖ ≤ (∫ y, ‖g y‖ ∂μ) * M := by
+    intro x
+    rw [convolution_def, ← integral_mul_const]
+    refine norm_integral_le_of_norm_le (hg.norm.mul_const M) ?_
+    filter_upwards [(μ.measurePreserving_sub_left x).quasiMeasurePreserving.ae hM] with y hy
+    simpa only [ContinuousLinearMap.mul_apply', norm_mul, norm_norm] using
+      mul_le_mul_of_nonneg_left hy (norm_nonneg (g y))
+  ext x
+  exact convolution_assoc (ContinuousLinearMap.lsmul 𝕜 𝕜)
+    (ContinuousLinearMap.lsmul 𝕜 𝕜) (ContinuousLinearMap.lsmul 𝕜 𝕜)
+    (ContinuousLinearMap.lsmul 𝕜 𝕜) (fun a b c ↦ mul_smul a b c)
+    hf.aestronglyMeasurable hg.aestronglyMeasurable hh
+    (hf.ae_convolution_exists _ hg)
+    (ae_of_all _ (convolutionExists_of_integrable_of_ae_norm_le _ hg.norm hh.norm
+      (hM.mono fun _ hx ↦ by simpa only [norm_norm] using hx)))
+    (convolutionExists_of_integrable_of_ae_norm_le _ hf.norm
+      (hg.aestronglyMeasurable.norm.convolution _ hh.norm) (ae_of_all _ hbdd) x)
+
+end Assoc
 
 end MeasureTheory
 
