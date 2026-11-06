@@ -324,6 +324,43 @@ theorem bivectorExterior_mul_chirality_of_hodgeStar_eq_self (hkl : 2 + 2 = finra
 
 /-! ### The anticommutator of two two-forms -/
 
+omit hQ in
+/-- The basis `e_s` of `⋀² V` induced by the frame is orthonormal. -/
+private theorem inner_frame_exteriorPower (u v : powersetCard (Fin 4) 2) :
+    ⟪(frame o).toBasis.exteriorPower 2 u, (frame o).toBasis.exteriorPower 2 v⟫ =
+      if u = v then 1 else 0 := by
+  rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
+    OrthonormalBasis.inner_eq_ite]
+
+/-- A two-element index set `t` is `{k, l}`, and then `e_t = c(e_k) c(e_l)`. -/
+private theorem exists_basis_frame_eq_ι_mul (t : powersetCard (Fin 4) 2) :
+    ∃ k l, (∀ i, i ∈ t.val ↔ i = k ∨ i = l) ∧
+      basis Q (frame o).toBasis t = ι Q (frame o k) * ι Q (frame o l) := by
+  obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
+    (by rw [Finset.length_sort, powersetCard.mem_iff.1 t.2] :
+      ((t : Finset (Fin 4)).sort (· ≤ ·)).length = 2)
+  refine ⟨k, l, fun i ↦ ?_, ?_⟩
+  · rw [← Finset.mem_sort (· ≤ ·), hsort]
+    simp
+  · rw [basis_eq_prod_map_sort ((frame o).isOrthoᵢ_associated hQ), hsort]
+    simp
+
+/-- `e_s` anticommutes with the generators `c(e_i)` it contains. -/
+private theorem basis_frame_mul_ι_of_mem (s : powersetCard (Fin 4) 2) {i : Fin 4}
+    (hi : i ∈ s.val) : basis Q (frame o).toBasis s * ι Q (frame o i) =
+      -(ι Q (frame o i) * basis Q (frame o).toBasis s) := by
+  rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_mem ((frame o).isOrthoᵢ_associated hQ) hi,
+    powersetCard.mem_iff.1 s.2]
+  simp
+
+/-- `e_s` commutes with the generators `c(e_i)` it does not contain. -/
+private theorem basis_frame_mul_ι_of_notMem (s : powersetCard (Fin 4) 2) {i : Fin 4}
+    (hi : i ∉ s.val) : basis Q (frame o).toBasis s * ι Q (frame o i) =
+      ι Q (frame o i) * basis Q (frame o).toBasis s := by
+  rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_notMem ((frame o).isOrthoᵢ_associated hQ) hi,
+    powersetCard.mem_iff.1 s.2]
+  simp
+
 /-- The anticommutator formula on the orthonormal basis `e_s` of `⋀² V` induced by the frame. -/
 private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V)
     (s t : powersetCard (Fin 4) 2) :
@@ -337,34 +374,12 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
           (frame o).toBasis.exteriorPower 2 t⟫) • chirality Q o := by
   have hcard : 2 + 2 = Fintype.card (Fin 4) := rfl
   -- The basis `e_s` is orthonormal, and `⋆ e_s = ε e_{sᶜ}`.
-  have hinner : ∀ u v : powersetCard (Fin 4) 2,
-      ⟪(frame o).toBasis.exteriorPower 2 u, (frame o).toBasis.exteriorPower 2 v⟫ =
-        if u = v then 1 else 0 := fun u v ↦ by
-    rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
-      OrthonormalBasis.inner_eq_ite]
   rw [o.hodgeStar_basis (frame o) (frame_orientation o) hkl s, Units.smul_def,
-    ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, hinner, hinner,
-    bivectorExterior_exteriorPower_basis, bivectorExterior_exteriorPower_basis]
+    ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, inner_frame_exteriorPower,
+    inner_frame_exteriorPower, bivectorExterior_exteriorPower_basis,
+    bivectorExterior_exteriorPower_basis]
   -- Write `e_t = c(e_k) c(e_l)`, where `t = {k, l}`.
-  obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
-    (by rw [Finset.length_sort, powersetCard.mem_iff.1 t.2] :
-      ((t : Finset (Fin 4)).sort (· ≤ ·)).length = 2)
-  have hmem : ∀ i, i ∈ t.val ↔ i = k ∨ i = l := fun i ↦ by
-    rw [← Finset.mem_sort (· ≤ ·), hsort]
-    simp
-  have ht : basis Q (frame o).toBasis t = ι Q (frame o k) * ι Q (frame o l) := by
-    rw [basis_eq_prod_map_sort ((frame o).isOrthoᵢ_associated hQ), hsort]
-    simp
-  -- `e_s` anticommutes with the generators it contains and commutes with the others.
-  have hb := (frame o).isOrthoᵢ_associated hQ
-  have hmem_s : ∀ {i}, i ∈ s.val → basis Q (frame o).toBasis s * ι Q (frame o i) =
-      -(ι Q (frame o i) * basis Q (frame o).toBasis s) := fun hi ↦ by
-    rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_mem hb hi, powersetCard.mem_iff.1 s.2]
-    simp
-  have hnotMem_s : ∀ {i}, i ∉ s.val → basis Q (frame o).toBasis s * ι Q (frame o i) =
-      ι Q (frame o i) * basis Q (frame o).toBasis s := fun hi ↦ by
-    rw [← OrthonormalBasis.coe_toBasis, basis_mul_ι_of_notMem hb hi, powersetCard.mem_iff.1 s.2]
-    simp
+  obtain ⟨k, l, hmem, ht⟩ := exists_basis_frame_eq_ι_mul o hQ t
   set A := basis Q (frame o).toBasis s
   by_cases hts : t.val ⊆ s.val
   · -- `t ⊆ s`, so `t = s` and `e_s² = -1`.
@@ -388,8 +403,8 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
     have hct : t = powersetCard.compl hcard s :=
       (powersetCard.disjoint_iff_eq_compl hcard).1 hdisj.symm
     have h : basis Q (frame o).toBasis t * A = A * basis Q (frame o).toBasis t := by
-      rw [ht, mul_assoc, ← hnotMem_s hl, ← mul_assoc,
-        ← hnotMem_s hk, mul_assoc]
+      rw [ht, mul_assoc, ← basis_frame_mul_ι_of_notMem o hQ s hl, ← mul_assoc,
+        ← basis_frame_mul_ι_of_notMem o hQ s hk, mul_assoc]
     rw [ite_eq_right hst, ite_eq_left hct.symm, h, hct, basis_mul_basis_compl o hQ hcard s,
       Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ]
     simp only [mul_zero, map_zero, zero_sub, mul_one, smul_neg]
@@ -402,8 +417,9 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
   have hct : powersetCard.compl hcard s ≠ t := fun h ↦
     powersetCard.mem_compl.1 (h ▸ hit : i ∈ powersetCard.compl hcard s) his
   have hi : SemiconjBy A (ι Q (frame o i)) (-ι Q (frame o i)) := by
-    rw [SemiconjBy, hmem_s his, neg_mul]
-  have hj : SemiconjBy A (ι Q (frame o j)) (ι Q (frame o j)) := hnotMem_s hjs
+    rw [SemiconjBy, basis_frame_mul_ι_of_mem o hQ s his, neg_mul]
+  have hj : SemiconjBy A (ι Q (frame o j)) (ι Q (frame o j)) :=
+    basis_frame_mul_ι_of_notMem o hQ s hjs
   have h : A * basis Q (frame o).toBasis t = -(basis Q (frame o).toBasis t * A) := by
     rw [ht]
     rcases (hmem i).1 hit with rfl | rfl <;> rcases (hmem j).1 hjt with rfl | rfl
