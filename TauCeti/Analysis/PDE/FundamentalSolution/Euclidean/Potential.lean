@@ -247,29 +247,6 @@ private theorem fderiv_fderiv_newtonianKernel_sub_apply {x y : EuclideanSpace �
     fderiv_clm_apply_const_apply hdG, iteratedFDeriv_two_apply]
   exact ContDiffAt.isSymmSndFDerivAt hG2 (by simp) w v
 
-/-- The second derivative of the Newtonian potential `Gₙ ⋆ f` in the directions `v`, `w` is the
-convolution of `Gₙ` with the second derivative of `f`, evaluated at `x`: the two derivatives fall
-on `f`. -/
-private theorem iteratedFDeriv_two_newtonianKernel_convolution_apply
-    (hf : ContDiff ℝ 2 f) (hc : HasCompactSupport f) {x : EuclideanSpace ℝ (Fin n)}
-    {v w : EuclideanSpace ℝ (Fin n)} :
-    iteratedFDeriv ℝ 2 (newtonianKernel n ⋆ f) x ![v, w] =
-      ∫ y, newtonianKernel n (x - y) • fderiv ℝ (fun y => fderiv ℝ f y w) y v := by
-  have hfw : ContDiff ℝ 1 fun y => fderiv ℝ f y w :=
-    (hf.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
-  have hcw : HasCompactSupport fun y => fderiv ℝ f y w := hc.fderiv_apply (𝕜 := ℝ) w
-  have hG := locallyIntegrable_newtonianKernel n
-  have hu : ContDiff ℝ 2 (newtonianKernel n ⋆ f) := contDiff_newtonianKernel_convolution hf hc
-  have h₁ : (fun y => fderiv ℝ (newtonianKernel n ⋆ f) y w) =
-      newtonianKernel n ⋆ fun y => fderiv ℝ f y w := funext fun y =>
-    hc.fderiv_convolution_right_apply (lsmul ℝ ℝ) hG (hf.of_le (by norm_num)) y w
-  have hdu : DifferentiableAt ℝ (fderiv ℝ (newtonianKernel n ⋆ f)) x :=
-    (hu.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num) x
-  rw [iteratedFDeriv_two_apply]
-  simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [← fderiv_clm_apply_const_apply hdu w v, h₁,
-    hcw.fderiv_convolution_right_apply (lsmul ℝ ℝ) hG hfw x v, convolution_lsmul_swap]
-
 /-- **Second derivatives of the Newtonian potential off the support.** If `f` is `C²` with
 compact support on `ℝⁿ` and `x ∉ tsupport f`, then
 
@@ -286,19 +263,20 @@ theorem iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport
   set fw : EuclideanSpace ℝ (Fin n) → F := fun y => fderiv ℝ f y w
   have hfw : ContDiff ℝ 1 fw := (hf.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
   have hcw : HasCompactSupport fw := hc.fderiv_apply (𝕜 := ℝ) w
-  rw [iteratedFDeriv_two_newtonianKernel_convolution_apply hf hc]
+  rw [hc.iteratedFDeriv_two_convolution_right_apply (lsmul ℝ ℝ)
+    (locallyIntegrable_newtonianKernel n) hf, convolution_lsmul_swap]
   -- The kernel `k y = Gₙ(y - x)` is `C²` away from `x`, in particular near `tsupport f`.
   set k : EuclideanSpace ℝ (Fin n) → ℝ := fun y => G (y - x)
   have hk : ∀ y, y ≠ x → ContDiffAt ℝ 2 k y := fun y hy =>
     (contDiffAt_newtonianKernel n (sub_ne_zero.2 hy)).comp y (contDiffAt_id.sub contDiffAt_const)
-  have hne : ∀ y ∈ tsupport f, y ≠ x := fun y hy hyx => hx (hyx ▸ hy)
+  have hxs : tsupport f ⊆ {x}ᶜ := fun y hy hyx => hx ((Set.mem_singleton_iff.1 hyx) ▸ hy)
+  have hne : ∀ y ∈ tsupport f, y ≠ x := fun y hy => Set.mem_compl_singleton_iff.1 (hxs hy)
   have hkv : ∀ y, y ≠ x → ContDiffAt ℝ 1 (fun y => fderiv ℝ k y v) y := fun y hy =>
     ((hk y hy).fderiv_right (m := 1) (by norm_num)).clm_apply contDiffAt_const
   have hsub : tsupport fw ⊆ tsupport f := tsupport_fderiv_apply_subset ℝ w
   -- Integrability: every integrand is a function continuous off `x` times a continuous function
   -- with compact support in `tsupport f`, which does not contain `x`.
   have hU : IsOpen ({x}ᶜ : Set (EuclideanSpace ℝ (Fin n))) := isOpen_compl_singleton
-  have hxs : tsupport f ⊆ {x}ᶜ := hne
   have hkc : ContinuousOn k {x}ᶜ := fun y hy => (hk y hy).continuousAt.continuousWithinAt
   have hkvc : ContinuousOn (fun y => fderiv ℝ k y v) {x}ᶜ := fun y hy =>
     (hkv y hy).continuousAt.continuousWithinAt
