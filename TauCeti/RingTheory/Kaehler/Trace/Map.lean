@@ -5,7 +5,7 @@ Authors: Axel Delaval, Jie Xu, Shitan Xu
 -/
 module
 
-public import TauCeti.RingTheory.Kaehler.Trace
+public import TauCeti.RingTheory.Kaehler.Trace.Basic
 
 /-!
 # Functoriality of the trace of differentials

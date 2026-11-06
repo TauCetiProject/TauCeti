@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Etale.Kaehler
 public import Mathlib.RingTheory.Idempotents
 public import Mathlib.RingTheory.Localization.Away.Lemmas
-public import TauCeti.RingTheory.Kaehler.Trace
+public import TauCeti.RingTheory.Kaehler.Trace.Basic
 
 /-!
 # The trace of differentials and idempotents
