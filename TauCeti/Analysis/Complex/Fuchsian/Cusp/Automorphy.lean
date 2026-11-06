@@ -51,7 +51,15 @@ where `r ∈ {0, 1}` is fixed by `ε ^ k = (-1) ^ r`. Precisely:
   `(-1) ^ r` under `q₂ ↦ -q₂` (`TauCeti.Subgroup.CuspDatum.automorphyUntwist_neg`); so the order
   of the coefficient at the cusp is read off from that expansion as
   `ord₀ (automorphyUntwist D s k f) = r + ord₀ (automorphyDescent D s k r f) * 2`
-  (`TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyUntwist`).
+  (`TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyUntwist`);
+* in even weight `k = 2 * j` the frame is compared with the frame `(dq) ^ j` of the `j`-th power
+  of the sheaf of differentials, whose weight-`k` function is
+  `differentialFrame D j τ = (dq / dτ) ^ j`: since `dq / dτ = (2 * π * I / w) * q / denom s τ ^ 2`,
+  it is `automorphyFrame D s k 0 τ * ((2 * π * I / w) ^ j * q ^ j)`
+  (`TauCeti.Subgroup.CuspDatum.differentialFrame_eq_automorphyFrame_mul`), so the transition
+  function between the two frames is `q ↦ (2 * π * I / w) ^ j * q ^ j`
+  (`TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_differentialFrame`), of order `j = k / 2`
+  at the cusp (`TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyDescent_differentialFrame`).
 
 At a regular cusp, or in even weight, `ε ^ k = 1`, so `r = 0`: the frame is `denom s τ ^ (-k)` and
 the coefficient is the usual expansion of `f ∣[k] s⁻¹` in `q`. At an irregular cusp in odd weight
@@ -61,7 +69,9 @@ at an irregular cusp is half the order in `q₂` whatever the weight, the order 
 cusp is `1 / 2` plus the order of its coefficient. This half-integral correction is the
 irregular-cusp contribution to the divisor of the automorphy sheaf in the odd-weight dimension
 formulas of Diamond–Shurman §3.6. The analytic input is the twisted descent through `u ↦ u ^ 2`,
-`TauCeti.pow_smul_descendPowTwist_pow`.
+`TauCeti.pow_smul_descendPowTwist_pow`. In even weight the order `k / 2` of the transition
+function to `(dq) ^ (k / 2)` is the cusp correction `(k / 2) * ε∞` of the even-weight dimension
+formulas of Diamond–Shurman §3.5.
 
 ## Main declarations
 
@@ -76,6 +86,11 @@ formulas of Diamond–Shurman §3.6. The analytic input is the twisted descent t
   `TauCeti.Subgroup.CuspDatum.differentiableOn_automorphyDescent` and
   `TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent`: the local trivialization.
 * `TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyUntwist`: the order relation.
+* `TauCeti.Subgroup.CuspDatum.differentialFrame`,
+  `TauCeti.Subgroup.CuspDatum.eqOn_automorphyDescent_differentialFrame` and
+  `TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyDescent_differentialFrame`: the
+  weight-`2 * j` function of `(dq) ^ j` and its coefficient `(2 * π * I / w) ^ j * q ^ j` with
+  respect to the automorphy frame.
 
 ## References
 
@@ -440,5 +455,100 @@ theorem analyticOrderAt_automorphyUntwist (hA : 0 ≤ A) (hr : r < 2) :
     fun _ hu ↦ apply_rootsOfUnity_two_smul_of_apply_neg <| by
       rw [smul_eq_mul]
       exact automorphyUntwist_neg hs hg hk hf hfd hbdd hA hu
+
+/-! ### The powers of the differential of the cusp coordinate -/
+
+variable (D) in
+/-- **The `j`-th power of the differential of the cusp coordinate**, as a function of weight
+`2 * j` on the upper half-plane: `τ ↦ (dq / dτ) ^ j` for the cusp coordinate
+`q(τ) = exp (2 * π * I * σ τ / w)`, read on `ℂ` through `UpperHalfPlane.ofComplex`. It is the
+weight-`2 * j` function attached to the frame `(dq) ^ j` of the `j`-th power of the sheaf of
+differentials in the chart at the cusp. It is the automorphy frame times
+`(2 * π * I / w) ^ j * q ^ j`
+(`TauCeti.Subgroup.CuspDatum.differentialFrame_eq_automorphyFrame_mul`), so its coefficient with
+respect to the automorphy frame, the transition function between the two frames, vanishes to
+order `j` at the cusp
+(`TauCeti.Subgroup.CuspDatum.analyticOrderAt_automorphyDescent_differentialFrame`). -/
+def differentialFrame (j : ℕ) (τ : ℍ) : ℂ :=
+  deriv (fun t : ℂ ↦ coordinate D (ofComplex t)) τ ^ j
+
+variable (D) in
+theorem differentialFrame_def (j : ℕ) (τ : ℍ) :
+    differentialFrame D j τ = deriv (fun t : ℂ ↦ coordinate D (ofComplex t)) τ ^ j :=
+  (rfl)
+
+include hs in
+/-- **The powers of the differential of the cusp coordinate in the automorphy frame.** For a lift
+`s` of the scaling, `(dq / dτ) ^ j` is the automorphy frame of weight `2 * j` and exponent `0`
+times `(2 * π * I / w) ^ j * q ^ j`. -/
+theorem differentialFrame_eq_automorphyFrame_mul (j : ℕ) (τ : ℍ) :
+    differentialFrame D j τ = automorphyFrame D s (2 * j) 0 τ *
+      ((2 * Real.pi * Complex.I / D.width) ^ j * coordinate D τ ^ j) := by
+  rw [differentialFrame_def, (hasDerivAt_coordinate D τ).deriv, ← hs,
+    Matrix.SpecialLinearGroup.smulDeriv_coe, automorphyFrame_def, pow_zero, mul_one, zpow_neg,
+    show (2 * (j : ℤ)) = ((2 * j : ℕ) : ℤ) by push_cast; ring, zpow_natCast, pow_mul]
+  ring
+
+include hs in
+/-- **The transition function from the automorphy frame to the powers of the differential at a
+cusp.** For a lift `s` of the scaling, the coefficient of
+`differentialFrame D j`, the weight-`2 * j` function of the frame `(dq) ^ j`, with respect to the
+automorphy frame `automorphyFrame D s (2 * j) 0` is `q ↦ (2 * π * I / w) ^ j * q ^ j` on the open
+unit disc. -/
+theorem eqOn_automorphyDescent_differentialFrame (j : ℕ) :
+    EqOn (automorphyDescent D s (2 * j) 0 (differentialFrame D j))
+      (fun q ↦ (2 * Real.pi * Complex.I / D.width) ^ j * q ^ j) (ball 0 1) := by
+  set c : ℂ := 2 * Real.pi * Complex.I / D.width
+  obtain ⟨g, hg⟩ := QuotientGroup.mk_surjective (D.generator : PSL(2, ℝ))
+  -- in even weight the sign of `s * g * s⁻¹` disappears
+  have hk : ((s * g * s⁻¹) 1 1 : ℝ) ^ (2 * (j : ℤ)) = (-1) ^ 0 := by
+    rw [zpow_mul, zpow_two,
+      (TauCeti.UpperHalfPlane.entries_of_coe_eq_upperRightHom (coe_conj_eq_upperRightHom hs hg)).2,
+      one_zpow, pow_zero]
+  have hF (τ : ℍ) := differentialFrame_eq_automorphyFrame_mul (D := D) hs j τ
+  have hf : ∀ τ ∈ horodisc D 0, differentialFrame D j (g • τ) =
+      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * differentialFrame D j τ := by
+    intro τ _
+    have hq : coordinate D (g • τ) = coordinate D τ := by
+      rw [← sqrtCoordinate_sq, ← sqrtCoordinate_sq, ← pslMk_smul, hg,
+        sqrtCoordinate_generator_smul, neg_sq]
+    rw [hF, hF, automorphyFrame_smul hs hg hk, hq, mul_assoc]
+  have hfd : MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (differentialFrame D j) (horodisc D 0) := by
+    rw [show differentialFrame D j = fun τ ↦ automorphyFrame D s (2 * j) 0 τ *
+        (c ^ j * coordinate D τ ^ j) from funext hF]
+    exact ((mdifferentiable_automorphyFrame D s _ _).mul
+      (mdifferentiable_const.mul ((mdifferentiable_coordinate D).pow j))).mdifferentiableOn
+  -- in the scaling coordinate, `(dq / dτ) ^ j` is `c ^ j * q ^ j`, which is bounded
+  have hbdd : IsBoundedAtImInfty
+      (differentialFrame D j ∣[(2 * j : ℤ)] Matrix.SpecialLinearGroup.mapGL ℝ s⁻¹) := by
+    refine isBoundedAtImInfty_iff.mpr ⟨‖c‖ ^ j, 0, fun τ _ ↦ ?_⟩
+    have hτ : τ = s • (s⁻¹ • τ) := (smul_inv_smul s τ).symm
+    rw [hτ, Matrix.SpecialLinearGroup.slash_mapGL_inv_apply_smul, hF, automorphyFrame_def,
+      pow_zero, mul_one, ← mul_assoc, ← zpow_add₀ (denom_ne_zero _ _), add_neg_cancel, zpow_zero,
+      one_mul, norm_mul, norm_pow, norm_pow]
+    exact mul_le_of_le_one_right (by positivity)
+      (pow_le_one₀ (norm_nonneg _) (norm_coordinate_lt_one D _).le)
+  have h := eqOn_automorphyDescent hs hg hk hf hfd hbdd le_rfl two_pos
+    (G := fun q ↦ c ^ j * q ^ j) (by fun_prop) fun τ _ ↦ hF τ
+  rw [mul_zero, zero_div, Real.exp_zero] at h
+  exact h.symm
+
+include hs in
+/-- **The order of the transition function at a cusp.** The coefficient of the weight-`2 * j`
+function of `(dq) ^ j` with respect to the automorphy frame vanishes to order exactly `j` at the
+cusp. This is the correction `k / 2`, for `k = 2 * j`, of the divisor of the weight-`k` automorphy
+sheaf at a cusp relative to the `j`-th power of the sheaf of differentials. -/
+theorem analyticOrderAt_automorphyDescent_differentialFrame (j : ℕ) :
+    analyticOrderAt (automorphyDescent D s (2 * j) 0 (differentialFrame D j)) 0 = j := by
+  have hc : (2 * Real.pi * Complex.I / D.width : ℂ) ^ j ≠ 0 :=
+    pow_ne_zero _ (div_ne_zero (by simp [Real.pi_ne_zero])
+      (Complex.ofReal_ne_zero.mpr D.width_pos.ne'))
+  have heq : automorphyDescent D s (2 * j) 0 (differentialFrame D j) =ᶠ[𝓝 0]
+      (fun _ ↦ (2 * Real.pi * Complex.I / D.width : ℂ) ^ j) * (· - (0 : ℂ)) ^ j := by
+    filter_upwards [ball_mem_nhds (0 : ℂ) one_pos] with q hq
+    rw [eqOn_automorphyDescent_differentialFrame hs j hq]
+    simp
+  rw [analyticOrderAt_congr heq, analyticOrderAt_mul analyticAt_const (by fun_prop),
+    analyticAt_const.analyticOrderAt_eq_zero.mpr hc, analyticOrderAt_centeredMonomial, zero_add]
 
 end TauCeti.Subgroup.CuspDatum
