@@ -7,7 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Adjunction.Evaluation
 public import TauCeti.AlgebraicTopology.Spectra.SymmetricSpectrum
-public import TauCeti.CategoryTheory.Monoidal.Mod.Free
+public import TauCeti.CategoryTheory.Monoidal.Mod.Free.Basic
 
 /-!
 # Free symmetric spectra
