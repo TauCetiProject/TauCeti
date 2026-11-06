@@ -83,7 +83,8 @@ theorem isMeagre_image_of_not_isRegularPoint [LindelofSpace s]
     (hf : ∀ x ∈ s, ContMDiffAt I J ∞ f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
     IsMeagre (f '' s) :=
   isMeagre_image_of_forall_isMeagre_image_extChartAt (fun x hx ↦ (hf x hx).continuousAt)
-    (isMeagre_image_extChartAt_inter_charts hf hs)
+    fun x _ ↦ ⟨univ, univ_mem, by
+      simpa only [inter_univ] using isMeagre_image_extChartAt_inter_charts hf hs x (f x)⟩
 
 /-- The critical values of a smooth map from a Lindelöf finite-dimensional manifold without
 boundary form a meagre set. -/
