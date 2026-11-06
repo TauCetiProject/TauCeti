@@ -239,21 +239,21 @@ theorem hessianQuadraticForm_model_zero (a : ℝ) (ν : Fin n → ℝ) (v : Fin 
 equals `a`. -/
 theorem isNondegenerateCriticalPoint_model_zero_iff {a : ℝ} {ν : Fin n → ℝ} :
     IsNondegenerateCriticalPoint (model 𝕜 a ν) 0 ↔ ∀ j, ν j ≠ a := by
-  rw [isNondegenerateCriticalPoint_iff_separatingLeft]
-  simp only [ContinuousLinearMap.toBilinForm_apply, fderiv_fderiv_model_zero, smul_apply,
-    nsmul_eq_mul]
+  rw [isNondegenerateCriticalPoint_iff_separatingLeft, fderiv_fderiv_model_zero]
   refine ⟨fun ⟨_, _, h⟩ j hj ↦ ?_, fun hν ↦ ⟨(contDiff_model a ν).contDiffAt, fderiv_model_zero a ν,
     fun v hv ↦ funext fun j ↦ ?_⟩⟩
   · -- A coordinate direction whose weight equals `a` lies in the radical of the Hessian.
     have h0 := congr_fun (h (Pi.single j 1) fun v ↦ ?_) j
     · simp at h0
-    rw [mul_eq_zero, weightedInner_apply]
+    simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply, weightedInner_apply,
+      smul_eq_zero]
     refine .inr (Finset.sum_eq_zero fun i _ ↦ ?_)
     obtain rfl | hij := eq_or_ne i j
     · simp [hj]
     · simp [Pi.single_eq_of_ne hij]
   · have hj := hv (Pi.single j (v j))
-    simp only [weightedInner_single, real_inner_self_eq_norm_sq] at hj
+    simp only [ContinuousLinearMap.toBilinForm_apply, smul_apply, weightedInner_single,
+      real_inner_self_eq_norm_sq, nsmul_eq_mul] at hj
     simpa [sub_ne_zero.mpr (hν j)] using hj
 
 /-- The Morse index of the chart model at the origin is the real dimension of `𝕜` times the
