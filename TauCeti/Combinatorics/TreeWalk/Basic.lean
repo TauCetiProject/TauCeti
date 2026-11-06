@@ -85,7 +85,7 @@ def ups (s : ℕ → Bool) (n : ℕ) : ℕ := #{i ∈ range n | s i}
 /-- There are no up steps in an empty prefix. -/
 @[simp] theorem ups_zero (s : ℕ → Bool) : ups s 0 = 0 := by simp [ups]
 
-/-- The depth of the vertex 	 + 1 is one more than the depth of its parent w t. -/
+/-- The depth of the vertex `t + 1` is one more than the depth of its parent `w t`. -/
 theorem depth_succ_of_le {w : ℕ → ℕ} {t : ℕ} (h : w t ≤ t) :
     depth w (t + 1) = depth w (w t) + 1 := by
   rw [depth, min_eq_left h]
