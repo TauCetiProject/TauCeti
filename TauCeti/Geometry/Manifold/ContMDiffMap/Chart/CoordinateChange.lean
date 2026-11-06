@@ -86,15 +86,6 @@ theorem chartIteratedFDeriv_eq_iteratedFDerivWithin_coordChange
   exact ⟨z.2, hz⟩
 
 omit [IsManifold I n M] in
-/-- A map of a chart of the maximal atlas is smooth on the target of its extended chart, read
-through the inverse chart. -/
-private theorem contDiffOn_comp_extend_symm (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯)
-    {e : OpenPartialHomeomorph M H} (he : e ∈ maximalAtlas I n M) :
-    ContDiffOn 𝕜 n (f ∘ (e.extend I).symm) (e.extend I).target := by
-  rw [e.extend_target']
-  exact (f.contMDiff.comp_contMDiffOn (contMDiffOn_extend_symm he)).contDiffOn
-
-omit [IsManifold I n M] in
 /-- On a compact subset of the overlap of two charts of the maximal atlas, the coordinate
 derivatives through order `k` of a map in the first chart are bounded by a constant multiple of
 any common bound on its coordinate derivatives through order `k` in the second chart, taken at

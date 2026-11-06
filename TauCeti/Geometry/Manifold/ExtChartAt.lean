@@ -28,7 +28,9 @@ The extended chart of a product manifold has the product of the targets of the f
 its target (`TauCeti.extChartAt_prod_target`).
 
 Coordinate changes transport images of subsets of chart overlaps and are injective there,
-without differentiability assumptions; for a boundaryless model, their domains are open. On an
+without differentiability assumptions; for a boundaryless model, their domains are open. A compact
+coordinate set of a chart is covered by finitely many compact pieces, each in the overlap with
+one of a given family of charts at points of the manifold. On an
 open subset, extended chart targets lie in the ambient chart targets, and inverse charts agree
 through inclusion on the smaller target. Near a chart point the inverse charts of nested open
 subsets likewise differ only by the inclusion. Over `ℝ`, every chart point has
@@ -156,6 +158,35 @@ theorem _root_.ModelWithCorners.extend_symm_comp_extendCoordChange_eventuallyEq 
     (e'.extend I).symm ∘ I.extendCoordChange e e' =ᶠ[𝓝 (I (e x))] (e.extend I).symm := by
   filter_upwards [I.extendCoordChange_source_mem_nhds hx hx'] with y hy
   exact (e'.extend I).left_inv hy.2
+
+open Set in
+omit [ChartedSpace H M] in
+/-- A compact coordinate set of a chart `e` is covered by finitely many compact pieces, each in
+the overlap of `e` with the chart `σ x` at some point `x`. -/
+theorem exists_finite_cover_extendCoordChange_source
+    (σ : M → OpenPartialHomeomorph M H) (hσ : ∀ x, x ∈ (σ x).source)
+    (e : OpenPartialHomeomorph M H) {K : Set E} (hK : IsCompact K)
+    (hKt : K ⊆ (e.extend I).target) :
+    ∃ (N : ℕ) (p : Fin N → M) (P : Fin N → Set E), (∀ j, IsCompact (P j)) ∧ (∀ j, P j ⊆ K) ∧
+      (∀ j, P j ⊆ (I.extendCoordChange e (σ (p j))).source) ∧ K ⊆ ⋃ j, P j := by
+  classical
+  -- Each point of `K` has an open neighbourhood whose trace on `K` lies in a chart overlap.
+  have hnhds (z : K) : (I.extendCoordChange e (σ ((e.extend I).symm z))).source ∈ 𝓝[K] (z : E) := by
+    refine nhdsWithin_mono _ (hKt.trans (e.extend_target_subset_range (I := I)))
+      (I.extendCoordChange_source_mem_nhdsWithin ?_)
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source, (σ _).extend_source]
+    exact ⟨hKt z.2, hσ _⟩
+  choose u hu hzu huK using fun z : K ↦ mem_nhdsWithin.mp (hnhds z)
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover u hu fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hzu _⟩
+  obtain ⟨Q, hQc, hQu, hKQ⟩ := hK.finite_compact_cover t u (fun z _ ↦ hu z)
+    (by simpa only [iUnion_subtype] using ht)
+  have hQK (z : K) (hz : z ∈ t) : Q z ⊆ K := hKQ ▸ subset_biUnion_of_mem (u := Q) hz
+  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).1,
+    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).2,
+    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).2 hw⟩, fun z hz ↦ ?_⟩
+  rw [hKQ] at hz
+  obtain ⟨y, hy, hzy⟩ := mem_iUnion₂.mp hz
+  exact mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa using hzy⟩
 
 /-- The extended chart of an open subset at a point sends that point to the same coordinates as
 the extended chart of a larger open subset at its image under the inclusion. -/

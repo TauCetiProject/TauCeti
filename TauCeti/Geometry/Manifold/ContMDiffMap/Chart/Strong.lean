@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 public import Mathlib.Topology.Compactness.LocallyFinite
 public import Mathlib.Topology.MetricSpace.Thickening
 import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
+import TauCeti.Geometry.Manifold.ExtChartAt
 import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
@@ -417,34 +418,6 @@ theorem mem_ball {c : AtlasCkControl I M n} {f g : C^n⟮I, M; 𝓘(𝕜, F), F�
 
 end AtlasCkControl
 
-omit [ChartedSpace H M] in
-/-- A compact coordinate set of a chart `e` is covered by finitely many compact pieces, each in
-the overlap of `e` with the chart `σ x` at some point `x`. -/
-private theorem exists_finite_cover_extendCoordChange_source
-    (σ : M → OpenPartialHomeomorph M H) (hσ : ∀ x, x ∈ (σ x).source)
-    (e : OpenPartialHomeomorph M H) {K : Set E} (hK : IsCompact K)
-    (hKt : K ⊆ (e.extend I).target) :
-    ∃ (N : ℕ) (p : Fin N → M) (P : Fin N → Set E), (∀ j, IsCompact (P j)) ∧ (∀ j, P j ⊆ K) ∧
-      (∀ j, P j ⊆ (I.extendCoordChange e (σ (p j))).source) ∧ K ⊆ ⋃ j, P j := by
-  classical
-  -- Each point of `K` has an open neighbourhood whose trace on `K` lies in a chart overlap.
-  have hnhds (z : K) : (I.extendCoordChange e (σ ((e.extend I).symm z))).source ∈ 𝓝[K] (z : E) := by
-    refine nhdsWithin_mono _ (hKt.trans (e.extend_target_subset_range (I := I)))
-      (I.extendCoordChange_source_mem_nhdsWithin ?_)
-    rw [PartialEquiv.trans_source, PartialEquiv.symm_source, (σ _).extend_source]
-    exact ⟨hKt z.2, hσ _⟩
-  choose u hu hzu huK using fun z : K ↦ mem_nhdsWithin.mp (hnhds z)
-  obtain ⟨t, ht⟩ := hK.elim_finite_subcover u hu fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hzu _⟩
-  obtain ⟨Q, hQc, hQu, hKQ⟩ := hK.finite_compact_cover t u (fun z _ ↦ hu z)
-    (by simpa only [iUnion_subtype] using ht)
-  have hQK (z : K) (hz : z ∈ t) : Q z ⊆ K := hKQ ▸ subset_biUnion_of_mem (u := Q) hz
-  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).1,
-    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).2,
-    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).2 hw⟩, fun z hz ↦ ?_⟩
-  rw [hKQ] at hz
-  obtain ⟨y, hy, hzy⟩ := mem_iUnion₂.mp hz
-  exact mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa using hzy⟩
-
 /-- Refinement of an atlas control into charts chosen by `σ`. Each compact set of the control is
 cut into finitely many compact pieces lying in chart overlaps, the pieces are moved into the
 charts `σ x` and each tolerance is divided by twice the coordinate-change constant of its piece. -/
@@ -460,7 +433,7 @@ private theorem AtlasCkControl.exists_refinement (c : AtlasCkControl I M n)
           ‖iteratedFDerivWithin 𝕜 m (⇑(g - f) ∘ ((σ (p j)).extend I).symm)
             ((σ (p j)).extend I).target z‖ < δ j) → g ∈ c.ball f := by
   choose N p P hPc hPK hPs hcov using fun i ↦
-    exists_finite_cover_extendCoordChange_source σ hσx (c.chart i)
+    TauCeti.exists_finite_cover_extendCoordChange_source σ hσx (c.chart i)
       ((c.compact i).isCompact.image continuous_subtype_val) (Subtype.coe_image_subset _ _)
   choose C hCpos hC using fun i j ↦ exists_norm_iteratedFDerivWithin_comp_extend_symm_le
     (F := F) (c.chart_mem i) (hσ (p i j)) (hPc i j) (hPs i j) c.order c.order_le
@@ -535,6 +508,10 @@ open IsManifold
   tolerance_pos := c.tolerance_pos
   locallyFinite := c.locallyFinite
 
+theorem StrongCkControl.toAtlasCkControl_ι (c : StrongCkControl I M n) :
+    c.toAtlasCkControl.ι = c.ι :=
+  rfl
+
 @[simp]
 theorem StrongCkControl.toAtlasCkControl_chart (c : StrongCkControl I M n) (i : c.ι) :
     c.toAtlasCkControl.chart i = chartAt H (c.center i) :=
@@ -543,6 +520,18 @@ theorem StrongCkControl.toAtlasCkControl_chart (c : StrongCkControl I M n) (i : 
 @[simp]
 theorem StrongCkControl.toAtlasCkControl_order (c : StrongCkControl I M n) :
     c.toAtlasCkControl.order = c.order :=
+  rfl
+
+-- The preferred extended chart is, by definition, the extension of the preferred chart, so the
+-- two compact sets live in the same type.
+@[simp]
+theorem StrongCkControl.toAtlasCkControl_compact (c : StrongCkControl I M n) (i : c.ι) :
+    c.toAtlasCkControl.compact i = c.compact i :=
+  rfl
+
+@[simp]
+theorem StrongCkControl.toAtlasCkControl_tolerance (c : StrongCkControl I M n) (i : c.ι) :
+    c.toAtlasCkControl.tolerance i = c.tolerance i :=
   rfl
 
 /-- Reading a strong `C^k` control in its preferred charts does not change its neighbourhoods. -/
