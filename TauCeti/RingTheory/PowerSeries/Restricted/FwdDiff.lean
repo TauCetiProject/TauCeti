@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.ForwardDiff
 public import TauCeti.RingTheory.PowerSeries.EvalAt
-import TauCeti.Algebra.Group.ForwardDiff
 import TauCeti.Analysis.Normed.Ring.Ultra
 import TauCeti.RingTheory.PowerSeries.GaussNorm
 
