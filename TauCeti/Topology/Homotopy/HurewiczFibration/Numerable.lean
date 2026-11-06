@@ -672,35 +672,32 @@ private theorem PartialLift.exists_of_pairwise_disjoint_isOpen {X : Type*} [Topo
     ∃ LO : PartialLift p (f.restrict (⋃ i, S i)) (restrictHomotopy H (⋃ i, S i))
         (τ.restrict (⋃ i, S i)),
       ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i), LO.map (t, x) = (LF i).map (t, ⟨x.1, hx⟩) := by
-  let onO_fun (z : I × ⋃ i, S i) : E :=
-    (LF (mem_iUnion.1 z.2.2).choose).map (z.1, ⟨z.2.1, (mem_iUnion.1 z.2.2).choose_spec⟩)
+  let T (i : κ) : Set (I × ⋃ i, S i) := {z | z.2.1 ∈ S i}
+  let φ (i : κ) : C(T i, E) :=
+    (LF i).map.comp ⟨fun z ↦ (z.1.1, ⟨z.1.2.1, z.2⟩), by fun_prop⟩
+  let onO : C(I × ⋃ i, S i, E) :=
+    ContinuousMap.liftCover T φ
+      (fun i j z hzi hzj ↦ by
+        cases hdisj i j z.2.1 hzi hzj
+        rfl)
+      fun z ↦ by
+        obtain ⟨i, hi⟩ := mem_iUnion.1 z.2.2
+        exact ⟨i, ((hS i).preimage continuous_subtype_val).preimage continuous_snd |>.mem_nhds hi⟩
   have honO_stratum : ∀ i t (x : ⋃ i, S i) (hx : x.1 ∈ S i),
-      onO_fun (t, x) = (LF i).map (t, ⟨x.1, hx⟩) := by
-    intro i t x hx
-    cases hdisj _ _ x.1 (mem_iUnion.1 x.2).choose_spec hx
-    rfl
-  have honO_cont : Continuous onO_fun := by
-    refine continuous_iff_continuousAt.2 fun ⟨t₀, x₀⟩ ↦ ?_
-    obtain ⟨i, hx₀i⟩ := mem_iUnion.1 x₀.2
-    have hUi_open : IsOpen {x : ⋃ i, S i | x.1 ∈ S i} := (hS i).preimage continuous_subtype_val
-    have hOn : ContinuousOn onO_fun (univ ×ˢ {x : ⋃ i, S i | x.1 ∈ S i}) :=
-      continuousOn_iff_continuous_domRestrict.2 <|
-        (by fun_prop : Continuous fun z : univ ×ˢ {x : ⋃ i, S i | x.1 ∈ S i} ↦
-          (LF i).map (z.1.1, ⟨z.1.2.1, z.2.2⟩)).congr
-          fun z ↦ (honO_stratum i z.1.1 z.1.2 z.2.2).symm
-    exact hOn.continuousAt ((isOpen_univ.prod hUi_open).mem_nhds ⟨mem_univ t₀, hx₀i⟩)
-  refine ⟨{ map := ⟨onO_fun, honO_cont⟩
+      onO (t, x) = (LF i).map (t, ⟨x.1, hx⟩) :=
+    fun i t x hx ↦ ContinuousMap.liftCover_coe (φ := φ) (i := i) ⟨(t, x), hx⟩
+  refine ⟨{ map := onO
             proj_eq := fun t x ↦ ?_
             zero_eq := fun x ↦ ?_
             const_of_ge := fun t x ht ↦ ?_ }, honO_stratum⟩
   · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
-    rw [ContinuousMap.coe_mk, honO_stratum i t x hxi]
+    rw [honO_stratum i t x hxi]
     exact (LF i).proj_eq t ⟨x.1, hxi⟩
   · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
-    rw [ContinuousMap.coe_mk, honO_stratum i 0 x hxi]
+    rw [honO_stratum i 0 x hxi]
     exact (LF i).zero_eq ⟨x.1, hxi⟩
   · obtain ⟨i, hxi⟩ := mem_iUnion.1 x.2
-    rw [ContinuousMap.coe_mk, ContinuousMap.restrict_apply, honO_stratum i t x hxi,
+    rw [ContinuousMap.restrict_apply, honO_stratum i t x hxi,
       honO_stratum i (τ x.1) x hxi]
     exact (LF i).const_of_ge t ⟨x.1, hxi⟩ ht
 
