@@ -31,8 +31,7 @@ the almost isomorphisms, which fixes the category of firm modules as the localiz
 
 The basic input is that `m~` is an idempotent `V`-module
 (`TauCeti.Almost.BasicSetup.tildeTensorIdealEquiv`), so `m~` is itself firm. The flatness of `m~`
-is used for the closure of firm modules under kernels and extensions. A morphism is an almost
-isomorphism if and only if `m~ ⊗[V] −` sends it to an isomorphism.
+is used for the closure of firm modules under kernels and extensions.
 
 ## Main definitions
 
@@ -57,8 +56,6 @@ isomorphism if and only if `m~ ⊗[V] −` sends it to an isomorphism.
   and extensions.
 * `TauCeti.Almost.BasicSetup.IsAlmostIso.bijective_of_isFirm`: an almost isomorphism between firm
   modules is bijective.
-* `TauCeti.Almost.BasicSetup.isAlmostIso_iff_lTensor_bijective`: almost isomorphisms are exactly
-  the maps that become bijective after tensoring with `m~`.
 * `TauCeti.Almost.BasicSetup.isAlmostIso_tildeAct`: the action map is an almost isomorphism.
 * `TauCeti.Almost.BasicSetup.linearMap_eq_zero_of_ideal_smul`: a linear map from a module with
   surjective action map vanishes if every scalar in the setup ideal kills it.
@@ -587,20 +584,11 @@ noncomputable instance hasLocalization :
       (S.almostZero : ObjectProperty (ModuleCat.{u} V)).isoModSerre where
   L := S.firm
 
-/-- A linear map is an almost isomorphism exactly when tensoring it with `m~` is bijective. -/
-theorem isAlmostIso_iff_lTensor_bijective {M N : ModuleCat.{u} V} (f : M ⟶ N) :
-    S.IsAlmostIso f.hom ↔ Function.Bijective (f.hom.lTensor S.tilde) := by
-  rw [S.isAlmostIso_iff_isoModSerre,
-    ← ObjectProperty.SerreClassLocalization.isIso_map_iff S.firm S.almostZero]
-  exact (isIso_iff_of_reflects_iso _ S.isFirm.ι).symm.trans
-    (ConcreteCategory.isIso_iff_bijective _)
-
 /-- The action map `m~ ⊗ M → M` is an almost isomorphism. -/
 theorem isAlmostIso_tildeAct (M : ModuleCat.{u} V) :
     S.IsAlmostIso (M := S.tilde ⊗[V] M) (S.tildeAct M) := by
-  apply (S.isAlmostIso_iff_lTensor_bijective
-    (ModuleCat.ofHom (S.tildeAct M) : ModuleCat.of V (S.tilde ⊗[V] M) ⟶ M)).mpr
-  rw [ModuleCat.hom_ofHom, S.lTensor_tildeAct]
+  apply S.isAlmostIso_iff_lTensor_bijective.mpr
+  rw [S.lTensor_tildeAct]
   exact S.isFirm_tilde_tensor M
 
 end Category
