@@ -83,14 +83,6 @@ private theorem f4ShortRootIdealFirstColumn_eq_zero_of_no_short_sum
         α β δ hα hβ hδlong hδroot
       _ = ((0 : f4ShortRootLieIdeal) : f4ModularChevalleyLieAlgebra) := rfl
 
-/-- The canonical lift of a root coordinate of the quotient is the root vector of its preimage
-under the special root permutation. -/
-private theorem f4ShortRootQuotientLift_symm_inl (i : F4ShortRootIndex) :
-    f4ShortRootQuotientLift (f4ShortRootWeightIndexEquiv.symm (Sum.inl i)) =
-      f4ModularRootVector (f4SpecialIsogenyIndexEquiv i) := by
-  rw [f4ShortRootQuotientLift_eq_basis, f4LongRootBasisCoordinate_symm_inl,
-    f4ModularChevalleyBasis_inl_eq_rootVector, f4PinnedRootIndex_f4KillingRootLabel]
-
 /-- A surviving long-source first-order quotient edge is the matching first-order edge for the
 reversed short source on the short-root ideal. -/
 theorem f4ShortRootQuotientToIdealEquiv_firstColumn_eq_firstColumn_of_specialMap_add
