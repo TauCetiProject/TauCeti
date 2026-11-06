@@ -25,6 +25,9 @@ when the product `m * n` of the dimensions is even, and reverses it when `m * n`
 `TauCeti.Manifold.Orientation.isOrientationReversingAt_swap_prod`). The two products are indexed by
 `Fin (m + n)` and `Fin (n + m)`, identified by `TauCeti.Manifold.Orientation.reindex`.
 
+A product `Prod.map f g` of maps preserving orientations at `p.1` and at `p.2` preserves the
+product orientations at `p` (`TauCeti.Manifold.Orientation.IsOrientationPreservingAt.prodMap`).
+
 ## References
 
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Chapter 15 (product orientations).
@@ -198,6 +201,33 @@ theorem prod_neg_right (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fi
 theorem prod_neg_neg (o : Orientation I M (Fin m)) (o' : Orientation I' M' (Fin n)) :
     (-o).prod (-o') = o.prod o' := by
   rw [prod_neg_left, prod_neg_right, neg_neg]
+
+section ProdMap
+
+variable {F G N F' G' N' : Type*}
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F] [TopologicalSpace G]
+  {J : ModelWithCorners ℝ F G} [TopologicalSpace N] [ChartedSpace G N] [IsManifold J 1 N]
+  [NormedAddCommGroup F'] [NormedSpace ℝ F'] [FiniteDimensional ℝ F'] [TopologicalSpace G']
+  {J' : ModelWithCorners ℝ F' G'} [TopologicalSpace N'] [ChartedSpace G' N'] [IsManifold J' 1 N']
+
+/-- A product of maps preserving orientations at `p.1` and at `p.2` preserves the product
+orientations at `p`. -/
+theorem IsOrientationPreservingAt.prodMap {o : Orientation I M (Fin m)}
+    {o' : Orientation I' M' (Fin n)} {q : Orientation J N (Fin m)} {q' : Orientation J' N' (Fin n)}
+    {f : M → N} {g : M' → N'} {p : M × M'} (hf : IsOrientationPreservingAt o q f p.1)
+    (hg : IsOrientationPreservingAt o' q' g p.2) :
+    IsOrientationPreservingAt (o.prod o') (q.prod q') (Prod.map f g) p := by
+  obtain ⟨e, he, h⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp hf
+  obtain ⟨e', he', h'⟩ := (isOrientationPreservingAt_iff _ _ _ _).mp hg
+  refine (isOrientationPreservingAt_iff _ _ _ _).mpr ⟨e.prodCongr e', ?_, ?_⟩
+  · rw [mfderiv_prodMap (mdifferentiableAt_of_isInvertible_mfderiv ⟨e, he⟩)
+      (mdifferentiableAt_of_isInvertible_mfderiv ⟨e', he'⟩), ← he, ← he']
+    -- Both sides are `(v, w) ↦ (e v, e' w)` on the product of the tangent spaces.
+    rfl
+  · rw [orientationAt_prod, orientationAt_prod, Prod.map_fst, Prod.map_snd, ← h, ← h']
+    exact _root_.Orientation.map_prod _ _ _ _ e.toLinearEquiv e'.toLinearEquiv
+
+end ProdMap
 
 /-- The derivative of `Prod.swap : M × M' → M' × M` at `x`, as a continuous linear equivalence
 of tangent spaces. -/
