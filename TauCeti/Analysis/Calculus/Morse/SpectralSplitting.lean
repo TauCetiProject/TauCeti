@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
+public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 -- Private: used only to turn the finite-dimensional algebraic splitting into a continuous
 -- projection; the public API exposes the resulting continuous linear map.
 import Mathlib.Analysis.Normed.Module.Complemented
@@ -394,6 +395,42 @@ theorem commute_neg_hessianOperator_unstableProjection (hf : ContDiffAt ℝ 2 f 
   rw [unstableProjection]
   exact (Commute.one_right _).sub_right (hf.commute_neg_hessianOperator_stableProjection hker)
 
+/-- When the Hessian is injective, the stable projection is the orthogonal spectral projection
+`cfc ((Ioi 0).indicator 1)` of the Hessian onto its positive eigenvalues. In particular it is an
+orthogonal projection, and on the invertible Hessians it depends smoothly on the Hessian
+(`ContinuousLinearMap.contDiffOn_cfc_indicator_Ioi`). -/
+theorem stableProjection_eq_cfc_indicator_Ioi (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    hf.stableProjection hker = cfc ((Ioi (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  have hs := hf.isSelfAdjoint_hessianOperator
+  rw [ContinuousLinearMap.cfc_indicator_eq_starProjection _ hs,
+    ← hf.stableLinearSubspace_eq_pointSpectralSubspace]
+  have hperp : hf.unstableLinearSubspace ≤ hf.stableLinearSubspaceᗮ := by
+    rw [hf.unstableLinearSubspace_eq_pointSpectralSubspace,
+      hf.stableLinearSubspace_eq_pointSpectralSubspace,
+      hs.isSymmetric.orthogonal_pointSpectralSubspace]
+    exact Module.End.pointSpectralSubspace_mono fun t ht ↦ not_lt.mpr (le_of_lt ht)
+  ext v
+  obtain ⟨u, hu, s, hs, rfl⟩ := Submodule.mem_sup.mp
+    ((hf.isCompl_unstableLinearSubspace_stableLinearSubspace hker).sup_eq_top ▸
+      Submodule.mem_top (x := v))
+  rw [map_add, map_add, (hf.stableProjection_apply_eq_self_iff hker).2 hs,
+    (hf.stableProjection_apply_eq_zero_iff hker).2 hu, Submodule.starProjection_eq_self_iff.2 hs,
+    (Submodule.starProjection_apply_eq_zero_iff _).2 (hperp hu)]
+
+/-- When the Hessian is injective, the unstable projection is the orthogonal spectral projection
+`cfc ((Iio 0).indicator 1)` of the Hessian onto its negative eigenvalues. -/
+theorem unstableProjection_eq_cfc_indicator_Iio (hf : ContDiffAt ℝ 2 f x)
+    (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
+    hf.unstableProjection hker = cfc ((Iio (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  have hu : IsUnit (hessianOperator f x) :=
+    ContinuousLinearMap.isUnit_iff_isUnit_toLinearMap.mpr
+      ((LinearMap.isUnit_iff_ker_eq_bot _).mpr hker)
+  rw [unstableProjection, hf.stableProjection_eq_cfc_indicator_Ioi hker,
+    ← ContinuousLinearMap.one_def,
+    ← TauCeti.cfc_indicator_Ioi_add_cfc_indicator_Iio hu hf.isSelfAdjoint_hessianOperator,
+    add_sub_cancel_left]
+
 end ContDiffAt
 
 namespace TauCeti
@@ -548,6 +585,20 @@ theorem commute_neg_hessianOperator_unstableProjection (h : IsNondegenerateCriti
     Commute (-hessianOperator f x) h.unstableProjection := by
   rw [h.unstableProjection_eq_contDiffAt]
   exact h.contDiffAt.commute_neg_hessianOperator_unstableProjection _
+
+/-- The stable projection at a nondegenerate critical point is the orthogonal spectral projection
+`cfc ((Ioi 0).indicator 1)` of the Hessian onto its positive eigenvalues. -/
+theorem stableProjection_eq_cfc_indicator_Ioi (h : IsNondegenerateCriticalPoint f x) :
+    h.stableProjection = cfc ((Ioi (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  rw [h.stableProjection_eq_contDiffAt]
+  exact h.contDiffAt.stableProjection_eq_cfc_indicator_Ioi _
+
+/-- The unstable projection at a nondegenerate critical point is the orthogonal spectral
+projection `cfc ((Iio 0).indicator 1)` of the Hessian onto its negative eigenvalues. -/
+theorem unstableProjection_eq_cfc_indicator_Iio (h : IsNondegenerateCriticalPoint f x) :
+    h.unstableProjection = cfc ((Iio (0 : ℝ)).indicator 1) (hessianOperator f x) := by
+  rw [h.unstableProjection_eq_contDiffAt]
+  exact h.contDiffAt.unstableProjection_eq_cfc_indicator_Iio _
 
 end IsNondegenerateCriticalPoint
 
