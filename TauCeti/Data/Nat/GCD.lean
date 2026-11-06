@@ -15,8 +15,8 @@ For `q > 1` and `N > 0`, the natural numbers `q` and `q ^ N - 1` are coprime, be
 divisor of `q` and `q ^ N - 1` also divides `q ^ N - (q ^ N - 1) = 1`.
 
 The least common multiple of two nonzero naturals is nonzero, also as a `NeZero` instance.
-For coprime bases, a prime dividing a positive-index difference of powers divides neither
-base; this ensures that their ratio modulo the prime is a unit.
+For coprime natural bases `b ≤ a`, a prime dividing `a ^ n - b ^ n` with `n > 0` divides
+neither base; this ensures that their ratio modulo the prime is a unit.
 
 ## Main results
 
@@ -24,8 +24,8 @@ base; this ensures that their ratio modulo the prime is a unit.
   computation `TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one` in
   `TauCeti/Data/ZMod/Units.lean` and the cyclotomic normalization of the local Artin map in
   `TauCeti/NumberTheory/ClassFieldTheory/Local/ExplicitCyclotomicSymbol/ArtinMap.lean`.
-* `Nat.Coprime.not_dvd_mul_of_dvd_pow_sub_pow`: prime divisors of a positive-index difference
-  of powers of coprime bases do not divide the product of the bases.
+* `Nat.Coprime.not_dvd_mul_of_dvd_pow_sub_pow`: for coprime natural bases `b ≤ a`, prime
+  divisors of `a ^ n - b ^ n` with `n > 0` do not divide the product of the bases.
 -/
 
 public section

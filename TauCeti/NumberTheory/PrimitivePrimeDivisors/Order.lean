@@ -34,7 +34,8 @@ public section
 
 namespace Nat.Prime
 
-/-- The integer difference-of-powers criterion, with no ordering assumption on the bases.
+/-- For a prime `p` not dividing `b`, `p` divides `a ^ k - b ^ k` iff the order of
+`a * b⁻¹` in `ZMod p` divides `k`. No ordering of the integer bases is needed.
 The inverse in the conclusion is `ZMod.inv`, so the statement needs no primality instance. -/
 theorem int_dvd_pow_sub_pow_iff_orderOf_dvd {p : ℕ} (hp : p.Prime)
     {a b : ℤ} (hb : ¬ (p : ℤ) ∣ b) (k : ℕ) :
@@ -43,9 +44,9 @@ theorem int_dvd_pow_sub_pow_iff_orderOf_dvd {p : ℕ} (hp : p.Prime)
   let : Fact p.Prime := ⟨hp⟩
   have hb0 : (b : ZMod p) ≠ 0 :=
     fun h => hb ((ZMod.intCast_zmod_eq_zero_iff_dvd b p).mp h)
-  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, Int.cast_sub, Int.cast_pow, Int.cast_pow,
-    sub_eq_zero, orderOf_dvd_iff_pow_eq_one]
-  rw [← div_eq_mul_inv, div_pow, div_eq_one_iff_eq (pow_ne_zero k hb0)]
+  rw [← ZMod.intCast_zmod_eq_zero_iff_dvd, orderOf_dvd_iff_pow_eq_one]
+  push_cast
+  simp [← div_eq_mul_inv, div_pow, div_eq_one_iff_eq (pow_ne_zero k hb0), sub_eq_zero]
 
 /-- A prime divides a natural difference of powers exactly at multiples of the order of
 the ratio modulo that prime. Only the denominator is required to be prime to `p`. -/
@@ -105,20 +106,44 @@ theorem primitive_divisor_iff_orderOf_eq {p : ℕ} (hp : p.Prime)
 
 /-- The exponent of a primitive prime divisor divides one less than that prime. -/
 theorem dvd_sub_one_of_primitive {p : ℕ} (hp : p.Prime)
-    {a b n : ℕ} (hab : a.Coprime b) (hba : b ≤ a) (hn : 0 < n)
-    (hdiv : p ∣ a ^ n - b ^ n)
+    {a b n : ℕ} (hn : 0 < n) (hdiv : p ∣ a ^ n - b ^ n)
     (hprev : ∀ k, 0 < k → k < n → ¬ p ∣ a ^ k - b ^ k) : n ∣ p - 1 := by
-  obtain ⟨hprod, horder⟩ :=
-    (hp.primitive_divisor_iff_orderOf_eq hab hba hn).mp ⟨hdiv, hprev⟩
+  by_cases hn1 : n = 1
+  · simp [hn1]
+  have h1 : ¬ p ∣ a - b := by
+    simpa using hprev 1 (by omega) (by omega)
+  have hba : b ≤ a := by
+    by_contra h
+    exact h1 (by simp [Nat.sub_eq_zero_of_le (by omega : a ≤ b)])
+  have hle := Nat.pow_le_pow_left hba n
+  have hprod : ¬ p ∣ a * b := by
+    intro hmul
+    rcases hp.dvd_mul.mp hmul with ha | hb
+    · have hb := hp.dvd_of_dvd_pow
+        ((Nat.dvd_sub_iff_right hle (ha.pow hn.ne')).mp hdiv)
+      exact h1 (Nat.dvd_sub ha hb)
+    · have ha := hp.dvd_of_dvd_pow
+        ((Nat.dvd_sub_iff_left hle (hb.pow hn.ne')).mp hdiv)
+      exact h1 (Nat.dvd_sub ha hb)
+  have hb : ¬ p ∣ b := fun h => hprod (dvd_mul_of_dvd_right h a)
+  have horder : orderOf ((a : ZMod p) * (b : ZMod p)⁻¹) = n := by
+    refine (orderOf_eq_iff hn).2 ⟨?_, ?_⟩
+    · exact orderOf_dvd_iff_pow_eq_one.mp
+        ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb n).mp hdiv)
+    · intro k hkn hk hpow
+      exact hprev k hk hkn
+        ((hp.dvd_pow_sub_pow_iff_orderOf_dvd hba hb k).mpr
+          (orderOf_dvd_of_pow_eq_one hpow))
   simpa only [horder] using hp.orderOf_ratio_dvd_sub_one hprod
 
 /-- A primitive prime divisor is strictly larger than its exponent. -/
 theorem exponent_lt_of_primitive {p : ℕ} (hp : p.Prime)
-    {a b n : ℕ} (hab : a.Coprime b) (hba : b ≤ a) (hn : 0 < n)
-    (hdiv : p ∣ a ^ n - b ^ n)
+    {a b n : ℕ} (hdiv : p ∣ a ^ n - b ^ n)
     (hprev : ∀ k, 0 < k → k < n → ¬ p ∣ a ^ k - b ^ k) : n < p := by
+  rcases Nat.eq_zero_or_pos n with rfl | hn
+  · exact hp.pos
   have := Nat.le_of_dvd (Nat.sub_pos_of_lt hp.one_lt)
-    (hp.dvd_sub_one_of_primitive hab hba hn hdiv hprev)
+    (hp.dvd_sub_one_of_primitive hn hdiv hprev)
   omega
 
 end Nat.Prime
