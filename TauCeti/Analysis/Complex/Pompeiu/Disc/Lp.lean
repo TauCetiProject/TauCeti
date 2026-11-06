@@ -130,12 +130,13 @@ theorem memLp_top_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball {r : ℝ} (hr 
 
 /-- A radius-zero disc gives the zero Cauchy integral, hence belongs to every `Lp`, including
 exponents zero and infinity. -/
-theorem memLp_pi_inv_mul_integral_sub_inv_ball_radius_zero (c : ℂ) (p : ℝ≥0∞) :
+theorem _root_.Complex.memLp_pi_inv_mul_integral_sub_inv_ball_radius_zero (c : ℂ) (p : ℝ≥0∞) :
     MemLp (fun w => (π : ℂ)⁻¹ * ∫ z in ball c 0, (w-z)⁻¹) p volume := by
   simp
 
 /-- The holomorphic derivative of the radius-zero potential is zero at every exponent. -/
-theorem memLp_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_radius_zero (c : ℂ) (p : ℝ≥0∞) :
+theorem _root_.Complex.memLp_wirtingerDeriv_pi_inv_mul_integral_sub_inv_ball_radius_zero
+    (c : ℂ) (p : ℝ≥0∞) :
     MemLp (fun w => wirtingerDeriv
       (fun v => (π : ℂ)⁻¹ * ∫ z in ball c 0, (v-z)⁻¹) w 1) p volume := by
   simp only [ball_zero, setIntegral_empty, mul_zero]

@@ -140,7 +140,7 @@ theorem pi_inv_mul_integral_sub_inv_mul_indicator_ball {r : ℝ} (hr : 0 ≤ r) 
   exact pi_inv_mul_integral_sub_inv_ball hr c w
 
 /-- The defining unit disc normalization check for the actual Cauchy integral. -/
-theorem pi_inv_mul_integral_sub_inv_unit_ball (w : ℂ) :
+theorem _root_.Complex.pi_inv_mul_integral_sub_inv_unit_ball (w : ℂ) :
     (π : ℂ)⁻¹ * (∫ z in ball (0 : ℂ) 1, (w - z)⁻¹) =
       if ‖w‖ ≤ 1 then conj w else w⁻¹ := by
   simpa using pi_inv_mul_integral_sub_inv_ball_zero zero_le_one w
