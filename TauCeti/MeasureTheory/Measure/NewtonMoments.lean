@@ -152,6 +152,183 @@ private lemma exists_tendsto_moments {ι : Type*} {U : Ultrafilter ι} {R : ℝ}
   choose M₀ hM₀ using hlim
   exact ⟨M₀, tendsto_pi_nhds.2 hM₀⟩
 
+/-- The root counting measure of the Newton polynomial of the moments of `μ - ν` has total mass
+`m`, and moments of order at most `m` equal those of `μ - ν`. -/
+private lemma integral_pow_sum_roots_newtonPolynomial {μ ν : Measure ℂ} [IsFiniteMeasure μ]
+    [IsFiniteMeasure ν] {m : ℕ} (hmass : μ.real univ - ν.real univ = m) {k : ℕ} (hk : k ≤ m) :
+    ∫ w, w ^ k ∂((newtonPolynomial (fun k => ∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν) m).roots.map
+      Measure.dirac).sum = ∫ w, w ^ k ∂μ - ∫ w, w ^ k ∂ν := by
+  rw [Multiset.integral_sum_map_dirac]
+  rcases Nat.eq_zero_or_pos k with rfl | hk₀
+  · simp only [pow_zero, integral_const, Complex.real_smul, mul_one, Multiset.map_const',
+      Multiset.sum_replicate, nsmul_eq_mul, card_roots_newtonPolynomial]
+    exact_mod_cast hmass.symm
+  · exact sum_map_pow_roots_newtonPolynomial _ hk₀ hk
+
+/-- Steps 1-3 of the compactness core: along an ultrafilter, the moments converge, and the measures
+`μ i` and the root counting measures of the Newton polynomials converge narrowly to limits carried
+by a common disc. -/
+private lemma exists_tendsto_finiteMeasure_roots {ι : Type*} {U : Ultrafilter ι} {m : ℕ} {R : ℝ}
+    (hR : 0 ≤ R) {μ ν : ι → Measure ℂ} [∀ i, IsFiniteMeasure (μ i)] [∀ i, IsFiniteMeasure (ν i)]
+    (hμR : ∀ i, μ i (closedBall 0 R)ᶜ = 0) (hνR : ∀ i, ν i (closedBall 0 R)ᶜ = 0)
+    (hmass : ∀ i, (μ i).real univ - (ν i).real univ = m)
+    (hν : Tendsto (fun i => (ν i).real univ) U (𝓝 0))
+    {τ : ι → Measure ℂ} [∀ i, IsFiniteMeasure (τ i)]
+    (hτ : ∀ i, τ i = ((newtonPolynomial (fun k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) m).roots.map
+      Measure.dirac).sum) :
+    ∃ (M₀ : ℕ → ℂ) (B : ℝ) (ρ ρ' : FiniteMeasure ℂ),
+      Tendsto (fun i k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) U (𝓝 M₀) ∧
+      (∀ i, μ i (closedBall 0 B)ᶜ = 0) ∧
+      (∀ᶠ i in U, τ i (closedBall 0 B)ᶜ = 0) ∧
+      (ρ : Measure ℂ) (closedBall 0 B)ᶜ = 0 ∧ (ρ' : Measure ℂ) (closedBall 0 B)ᶜ = 0 ∧
+      Tendsto (β := FiniteMeasure ℂ) (fun i => ⟨μ i, inferInstance⟩) U (𝓝 ρ) ∧
+      Tendsto (β := FiniteMeasure ℂ) (fun i => ⟨τ i, inferInstance⟩) U (𝓝 ρ') := by
+  have hν1 : ∀ᶠ i in U, (ν i).real univ ≤ 1 := hν.eventually (eventually_le_nhds one_pos)
+  have hμmass : ∀ i, (μ i).real univ = m + (ν i).real univ := fun i => by linarith [hmass i]
+  obtain ⟨M₀, hM⟩ := exists_tendsto_moments hR hμR hνR (C := m + 1) <|
+    hν1.mono fun i hi => ⟨by rw [hμmass]; linarith, by linarith⟩
+  obtain ⟨B₀, _, hroots⟩ := exists_eventually_forall_mem_roots_norm_le hM m
+  set B := max B₀ R
+  have hBK : IsCompact (closedBall (0 : ℂ) B) := isCompact_closedBall 0 B
+  have hμB (i : ι) : μ i (closedBall 0 B)ᶜ = 0 :=
+    measure_mono_null (compl_subset_compl.2 (closedBall_subset_closedBall (le_max_right _ _)))
+      (hμR i)
+  have hτB : ∀ᶠ i in U, τ i (closedBall 0 B)ᶜ = 0 := hroots.mono fun i hi => by
+    rw [hτ]
+    exact Multiset.sum_map_dirac_apply_eq_zero measurableSet_closedBall.compl fun z hz hzB =>
+      hzB (mem_closedBall_zero_iff.2 ((hi z hz).trans (le_max_left _ _)))
+  obtain ⟨ρ, hρB, hρ⟩ := exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero
+    (μs := fun i => (⟨μ i, inferInstance⟩ : FiniteMeasure ℂ)) hBK (C := m + 1) <|
+    hν1.mono fun i hi => ⟨hμB i, by
+      simp only [FiniteMeasure.toMeasure_mk, hμmass]; linarith⟩
+  obtain ⟨ρ', hρ'B, hρ'⟩ := exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero
+    (μs := fun i => (⟨τ i, inferInstance⟩ : FiniteMeasure ℂ)) hBK (C := m) <|
+    hτB.mono fun i hi => ⟨hi, by simp [hτ]⟩
+  exact ⟨M₀, B, ρ, ρ', hM, hμB, hτB, hρB, hρ'B, hρ, hρ'⟩
+
+/-- The root counting measure of a nonzero polynomial gives zero mean squared value to it. -/
+private lemma integral_norm_eval_sq_sum_roots {P : ℂ[X]} (hP : P ≠ 0) :
+    ∫ w, ‖P.eval w‖ ^ 2 ∂(P.roots.map Measure.dirac).sum = 0 := by
+  rw [Multiset.integral_sum_map_dirac]
+  refine Multiset.sum_eq_zero fun x hx => ?_
+  obtain ⟨r, hr, rfl⟩ := Multiset.mem_map.1 hx
+  simp [((mem_roots hP).1 hr).eq_zero]
+
+/-- Two finite measures carried by a disc, with the same moments of order at most `m` and with
+vanishing mean squared value of the Newton polynomial of these moments, are equal. -/
+private lemma measure_eq_of_integral_pow_eq_of_integral_norm_eval_newtonPolynomial_sq_eq_zero
+    {M₀ : ℕ → ℂ} {m : ℕ} {B : ℝ} {ρ ρ' : Measure ℂ} [IsFiniteMeasure ρ] [IsFiniteMeasure ρ']
+    (hρB : ρ (closedBall 0 B)ᶜ = 0) (hρ'B : ρ' (closedBall 0 B)ᶜ = 0)
+    (hρmom : ∀ k ≤ m, ∫ w, w ^ k ∂ρ = M₀ k) (hρ'mom : ∀ k ≤ m, ∫ w, w ^ k ∂ρ' = M₀ k)
+    (hρvar : ∫ w, ‖(newtonPolynomial M₀ m).eval w‖ ^ 2 ∂ρ = 0)
+    (hρ'var : ∫ w, ‖(newtonPolynomial M₀ m).eval w‖ ^ 2 ∂ρ' = 0) : ρ = ρ' := by
+  set P₀ := newtonPolynomial M₀ m
+  have hP₀ : P₀ ≠ 0 := (monic_newtonPolynomial M₀ m).ne_zero
+  have hcard : P₀.roots.toFinset.card ≤ m :=
+    (Multiset.toFinset_card_le _).trans (card_roots_newtonPolynomial M₀ m).le
+  have hP₀cont : Continuous fun w => ‖P₀.eval w‖ ^ 2 := (continuous_norm.comp P₀.continuous).pow 2
+  have hroots₀ {ρ₀ : Measure ℂ} [IsFiniteMeasure ρ₀] (hρ₀B : ρ₀ (closedBall 0 B)ᶜ = 0)
+      (hρ₀var : ∫ w, ‖P₀.eval w‖ ^ 2 ∂ρ₀ = 0) : ρ₀ (↑P₀.roots.toFinset)ᶜ = 0 := by
+    refine MeasureTheory.measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero hP₀ ?_ hρ₀var
+    rw [← Measure.restrict_eq_self_of_ae_mem (s := closedBall 0 B) (mem_ae_iff.2 hρ₀B)]
+    exact hP₀cont.continuousOn.integrableOn_compact (isCompact_closedBall 0 B)
+  exact Measure.ext_of_forall_lt_card_integral_pow_eq_of_support
+    P₀.roots.toFinset (hroots₀ hρB hρvar) (hroots₀ hρ'B hρ'var) fun k hk => by
+      rw [hρmom k (by omega), hρ'mom k (by omega)]
+
+/-- Integrals of functions converging uniformly on the disc `closedBall 0 R` against measures
+carried by that disc with total mass tending to zero tend to zero. -/
+private lemma tendsto_integral_of_tendstoUniformlyOn_of_tendsto_measureReal_univ {𝕜 ι : Type*}
+    [RCLike 𝕜] {U : Ultrafilter ι} {R : ℝ} {ν : ι → Measure ℂ} [∀ i, IsFiniteMeasure (ν i)]
+    (hνR : ∀ i, ν i (closedBall 0 R)ᶜ = 0) (hν : Tendsto (fun i => (ν i).real univ) U (𝓝 0))
+    {f : ι → ℂ → 𝕜} {g : ℂ → 𝕜} (hg : Continuous g)
+    (hfg : TendstoUniformlyOn f g U (closedBall 0 R)) :
+    Tendsto (fun i => ∫ w, f i w ∂ν i) U (𝓝 0) := by
+    obtain ⟨Cg, hCg⟩ := (isCompact_closedBall (0 : ℂ) R).exists_bound_of_continuousOn
+      hg.continuousOn
+    refine tendsto_integral_of_tendsto_measureReal_univ hνR hν (C := Cg + 1) ?_
+    filter_upwards [Metric.tendstoUniformlyOn_iff.1 hfg 1 one_pos] with i hi w hw
+    have h1 := hi w hw
+    rw [dist_comm, dist_eq_norm] at h1
+    linarith [norm_le_norm_add_norm_sub' (f i w) (g w), hCg w hw]
+
+/-- Steps 4-7 of the compactness core: if the measures `μ i` and the root counting measures converge
+narrowly to carried limits `ρ` and `ρ'` and the Newton variances tend to zero, then `ρ = ρ'` and
+the three integral terms converge accordingly. -/
+private theorem tendsto_integral_sub_sum_roots_of_tendsto_finiteMeasure {𝕜 : Type*} [RCLike 𝕜]
+    {ι : Type*} {U : Ultrafilter ι} {m : ℕ} {R : ℝ} {μ ν : ι → Measure ℂ}
+    [∀ i, IsFiniteMeasure (μ i)] [∀ i, IsFiniteMeasure (ν i)]
+    (hνR : ∀ i, ν i (closedBall 0 R)ᶜ = 0)
+    (hmass : ∀ i, (μ i).real univ - (ν i).real univ = m)
+    (hν : Tendsto (fun i => (ν i).real univ) U (𝓝 0))
+    (hvar : Tendsto (fun i => ∫ w, ‖(newtonPolynomial
+      (fun k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) m).eval w‖ ^ 2 ∂μ i) U (𝓝 0))
+    {f : ι → ℂ → 𝕜} {g : ℂ → 𝕜} (hf : ∀ i, Continuous (f i)) (hg : Continuous g)
+    (hfg : ∀ B, TendstoUniformlyOn f g U (closedBall 0 B))
+    {τ : ι → Measure ℂ} [∀ i, IsFiniteMeasure (τ i)]
+    (hτ : ∀ i, τ i = ((newtonPolynomial (fun k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) m).roots.map
+      Measure.dirac).sum)
+    {M₀ : ℕ → ℂ} {B : ℝ} {ρ ρ' : FiniteMeasure ℂ}
+    (hM : Tendsto (fun i k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) U (𝓝 M₀))
+    (hμB : ∀ i, μ i (closedBall 0 B)ᶜ = 0)
+    (hτB : ∀ᶠ i in U, τ i (closedBall 0 B)ᶜ = 0)
+    (hρB : (ρ : Measure ℂ) (closedBall 0 B)ᶜ = 0) (hρ'B : (ρ' : Measure ℂ) (closedBall 0 B)ᶜ = 0)
+    (hρ : Tendsto (β := FiniteMeasure ℂ) (fun i => ⟨μ i, inferInstance⟩) U (𝓝 ρ))
+    (hρ' : Tendsto (β := FiniteMeasure ℂ) (fun i => ⟨τ i, inferInstance⟩) U (𝓝 ρ')) :
+    Tendsto (fun i => ∫ w, f i w ∂μ i - ∫ w, f i w ∂ν i - ((newtonPolynomial
+      (fun k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) m).roots.map (f i)).sum) U (𝓝 0) := by
+  set M : ι → ℕ → ℂ := fun i k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i
+  set P : ι → ℂ[X] := fun i => newtonPolynomial (M i) m
+  have hP2 := tendstoUniformlyOn_norm_eval_newtonPolynomial_sq hM m
+  have hconst {h : ℂ → ℂ} : TendstoUniformlyOn (fun _ : ι => h) h U (closedBall 0 B) :=
+    fun _ hu => Eventually.of_forall fun _ _ _ => refl_mem_uniformity hu
+  -- The limits `ρ` and `ρ'` have the same moments of order at most `m`, namely `M₀`.
+  have hρmom (k : ℕ) : ∫ w, w ^ k ∂(ρ : Measure ℂ) = M₀ k := by
+    have hνk : Tendsto (fun i => ∫ w, w ^ k ∂ν i) U (𝓝 0) :=
+      tendsto_integral_of_tendsto_measureReal_univ hνR hν
+        (.of_forall fun _ _ hw => norm_pow_le_of_mem_closedBall hw k)
+    refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ
+      (.of_forall hμB) hρB (fun _ => (continuous_pow k).continuousOn)
+      (continuous_pow k).continuousOn hconst) ?_
+    simpa [M] using ((tendsto_pi_nhds.1 hM k).add hνk)
+  have hρ'mom (k : ℕ) (hk : k ≤ m) : ∫ w, w ^ k ∂(ρ' : Measure ℂ) = M₀ k :=
+    tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ'
+      hτB hρ'B (fun _ => (continuous_pow k).continuousOn) (continuous_pow k).continuousOn hconst)
+      ((tendsto_pi_nhds.1 hM k).congr fun i => by
+        simp only [FiniteMeasure.toMeasure_mk]
+        rw [hτ]
+        exact (integral_pow_sum_roots_newtonPolynomial (hmass i) hk).symm)
+  -- Both limits have vanishing Newton variance for the limiting polynomial.
+  have hPcont (i : ι) : Continuous fun w => ‖(P i).eval w‖ ^ 2 :=
+    (continuous_norm.comp (P i).continuous).pow 2
+  have hP₀cont : Continuous fun w => ‖(newtonPolynomial M₀ m).eval w‖ ^ 2 :=
+    (continuous_norm.comp (newtonPolynomial M₀ m).continuous).pow 2
+  have hρvar : ∫ w, ‖(newtonPolynomial M₀ m).eval w‖ ^ 2 ∂(ρ : Measure ℂ) = 0 :=
+    tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ
+      (.of_forall hμB) hρB (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B)) hvar
+  have hρ'var : ∫ w, ‖(newtonPolynomial M₀ m).eval w‖ ^ 2 ∂(ρ' : Measure ℂ) = 0 :=
+    tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ'
+      hτB hρ'B (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B))
+      (tendsto_const_nhds.congr fun i =>
+        by
+        simp only [FiniteMeasure.toMeasure_mk]
+        rw [hτ]
+        exact (integral_norm_eval_sq_sum_roots (monic_newtonPolynomial (M i) m).ne_zero).symm)
+  have hρρ' : (ρ : Measure ℂ) = ρ' :=
+    measure_eq_of_integral_pow_eq_of_integral_norm_eval_newtonPolynomial_sq_eq_zero hρB hρ'B
+      (fun k _ => hρmom k) hρ'mom hρvar hρ'var
+  -- Compare the three terms with their limits; the integrals against `ν i` vanish in the limit.
+  have hT₁ : Tendsto (fun i => ∫ w, f i w ∂μ i) U (𝓝 (∫ w, g w ∂(ρ : Measure ℂ))) :=
+    FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ (.of_forall hμB) hρB
+      (fun i => (hf i).continuousOn) hg.continuousOn (hfg B)
+  have hT₂ := tendsto_integral_of_tendstoUniformlyOn_of_tendsto_measureReal_univ hνR hν hg (hfg R)
+  have hT₃ : Tendsto (fun i => ((P i).roots.map (f i)).sum) U
+      (𝓝 (∫ w, g w ∂(ρ' : Measure ℂ))) :=
+    (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ' hτB hρ'B
+      (fun i => (hf i).continuousOn) hg.continuousOn (hfg B)).congr fun i => by
+      simp [P, M, hτ, Multiset.integral_sum_map_dirac]
+  simpa [hρρ'] using (hT₁.sub hT₂).sub hT₃
+
 /-- The compactness core of the moment lemma, along an ultrafilter: if the negative masses and the
 Newton variances tend to zero, then the signed measures and the root counting measures have the
 same limit against test functions converging uniformly on discs. -/
@@ -167,109 +344,10 @@ private theorem tendsto_integral_sub_sum_roots {𝕜 : Type*} [RCLike 𝕜] {ι 
     (hfg : ∀ B, TendstoUniformlyOn f g U (closedBall 0 B)) :
     Tendsto (fun i => ∫ w, f i w ∂μ i - ∫ w, f i w ∂ν i - ((newtonPolynomial
       (fun k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i) m).roots.map (f i)).sum) U (𝓝 0) := by
-  set M : ι → ℕ → ℂ := fun i k => ∫ w, w ^ k ∂μ i - ∫ w, w ^ k ∂ν i
-  set P : ι → ℂ[X] := fun i => newtonPolynomial (M i) m
-  have hν1 : ∀ᶠ i in U, (ν i).real univ ≤ 1 := hν.eventually (eventually_le_nhds one_pos)
-  have hμmass : ∀ i, (μ i).real univ = m + (ν i).real univ := fun i => by linarith [hmass i]
-  -- Step 1: the moments converge along `U`, to `M₀` say.
-  obtain ⟨M₀, hM⟩ := exists_tendsto_moments hR hμR hνR (C := m + 1) <|
-    hν1.mono fun i hi => ⟨by rw [hμmass]; linarith, by linarith⟩
-  set P₀ := newtonPolynomial M₀ m
-  -- Step 2: the Newton variance integrands converge uniformly on discs, and the roots stay in a
-  -- disc of radius `B`, which we take to contain the supports of the `μ i`.
-  have hP2 := tendstoUniformlyOn_norm_eval_newtonPolynomial_sq hM m
-  have hP₀cont : Continuous fun w => ‖P₀.eval w‖ ^ 2 := (continuous_norm.comp P₀.continuous).pow 2
-  have hPcont (i : ι) : Continuous fun w => ‖(P i).eval w‖ ^ 2 :=
-    (continuous_norm.comp (P i).continuous).pow 2
-  obtain ⟨B₀, hB₀, hroots⟩ := exists_eventually_forall_mem_roots_norm_le hM m
-  set B := max B₀ R
-  have hBK : IsCompact (closedBall (0 : ℂ) B) := isCompact_closedBall 0 B
-  -- Step 3: by Prokhorov's theorem, the measures `μ i` and the root counting measures `τ i`
-  -- converge narrowly, to limits `ρ` and `ρ'` carried by the disc of radius `B`.
-  let μf : ι → FiniteMeasure ℂ := fun i => ⟨μ i, inferInstance⟩
-  let τ : ι → Measure ℂ := fun i => ((P i).roots.map Measure.dirac).sum
-  let τf : ι → FiniteMeasure ℂ := fun i => ⟨τ i, inferInstance⟩
-  have hμB (i : ι) : μ i (closedBall 0 B)ᶜ = 0 :=
-    measure_mono_null (compl_subset_compl.2 (closedBall_subset_closedBall (le_max_right _ _)))
-      (hμR i)
-  have hτB : ∀ᶠ i in U, τ i (closedBall 0 B)ᶜ = 0 := hroots.mono fun i hi =>
-    Multiset.sum_map_dirac_apply_eq_zero measurableSet_closedBall.compl fun z hz hzB =>
-      hzB (mem_closedBall_zero_iff.2 ((hi z hz).trans (le_max_left _ _)))
-  obtain ⟨ρ, hρB, hρ⟩ := exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero
-    (μs := μf) hBK (C := m + 1) <| hν1.mono fun i hi => ⟨hμB i, by
-      simp only [μf, FiniteMeasure.toMeasure_mk, hμmass]; linarith⟩
-  obtain ⟨ρ', hρ'B, hρ'⟩ := exists_tendsto_finiteMeasure_of_eventually_measure_compl_eq_zero
-    (μs := τf) hBK (C := m) <| hτB.mono fun i hi => ⟨hi, by simp [τf, τ, P]⟩
-  -- Integrals against `μ i` and `τ i` of functions converging uniformly on the disc converge, by
-  -- `FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall`.
-  have hconst {h : ℂ → ℂ} : TendstoUniformlyOn (fun _ : ι => h) h U (closedBall 0 B) :=
-    fun _ hu => Eventually.of_forall fun _ _ _ => refl_mem_uniformity hu
-  -- Step 4: `ρ` and `ρ'` have the same moments of order at most `m`, namely `M₀`.
-  have hρmom (k : ℕ) : ∫ w, w ^ k ∂(ρ : Measure ℂ) = M₀ k := by
-    have hνk : Tendsto (fun i => ∫ w, w ^ k ∂ν i) U (𝓝 0) :=
-      tendsto_integral_of_tendsto_measureReal_univ hνR hν
-        (.of_forall fun _ _ hw => norm_pow_le_of_mem_closedBall hw k)
-    refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ
-      (.of_forall hμB) hρB (fun _ => (continuous_pow k).continuousOn)
-      (continuous_pow k).continuousOn hconst) ?_
-    simpa [M, μf] using ((tendsto_pi_nhds.1 hM k).add hνk)
-  have hρ'mom (k : ℕ) (hk : k ≤ m) : ∫ w, w ^ k ∂(ρ' : Measure ℂ) = M₀ k := by
-    refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ'
-      hτB hρ'B (fun _ => (continuous_pow k).continuousOn) (continuous_pow k).continuousOn hconst)
-      ((tendsto_pi_nhds.1 hM k).congr fun i => ?_)
-    simp only [τf, τ, FiniteMeasure.toMeasure_mk, Multiset.integral_sum_map_dirac]
-    rcases Nat.eq_zero_or_pos k with rfl | hk₀
-    · have := hmass i
-      simp only [M, P, pow_zero, integral_const, Complex.real_smul, mul_one, Multiset.map_const',
-        Multiset.sum_replicate, nsmul_eq_mul, card_roots_newtonPolynomial]
-      exact_mod_cast this
-    · exact (sum_map_pow_roots_newtonPolynomial (M i) hk₀ hk).symm
-  -- Step 5: both limits have vanishing Newton variance for the limiting polynomial `P₀`, since the
-  -- variances of the `μ i` tend to zero and those of the `τ i` vanish.
-  have hρvar : ∫ w, ‖P₀.eval w‖ ^ 2 ∂(ρ : Measure ℂ) = 0 :=
-    tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ
-      (.of_forall hμB) hρB (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B)) hvar
-  have hρ'var : ∫ w, ‖P₀.eval w‖ ^ 2 ∂(ρ' : Measure ℂ) = 0 := by
-    refine tendsto_nhds_unique (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ'
-      hτB hρ'B (fun i => (hPcont i).continuousOn) hP₀cont.continuousOn (hP2 B))
-      (tendsto_const_nhds.congr fun i => ?_)
-    simp only [τf, τ, FiniteMeasure.toMeasure_mk, Multiset.integral_sum_map_dirac]
-    refine (Multiset.sum_eq_zero fun x hx => ?_).symm
-    obtain ⟨r, hr, rfl⟩ := Multiset.mem_map.1 hx
-    have hr₀ : (P i).eval r = 0 :=
-      ((mem_roots (monic_newtonPolynomial (M i) m).ne_zero).1 hr).eq_zero
-    simp [hr₀]
-  -- Step 6: so both are carried by the at most `m` roots of `P₀`, and they agree.
-  have hP₀ : P₀ ≠ 0 := (monic_newtonPolynomial M₀ m).ne_zero
-  have hcard : P₀.roots.toFinset.card ≤ m :=
-    (Multiset.toFinset_card_le _).trans (card_roots_newtonPolynomial M₀ m).le
-  have hroots₀ {ρ₀ : Measure ℂ} [IsFiniteMeasure ρ₀] (hρ₀B : ρ₀ (closedBall 0 B)ᶜ = 0)
-      (hρ₀var : ∫ w, ‖P₀.eval w‖ ^ 2 ∂ρ₀ = 0) : ρ₀ (↑P₀.roots.toFinset)ᶜ = 0 := by
-    refine MeasureTheory.measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero hP₀ ?_ hρ₀var
-    rw [← Measure.restrict_eq_self_of_ae_mem (s := closedBall 0 B) (mem_ae_iff.2 hρ₀B)]
-    exact hP₀cont.continuousOn.integrableOn_compact hBK
-  have hρρ' : (ρ : Measure ℂ) = ρ' := Measure.ext_of_forall_lt_card_integral_pow_eq_of_support
-    P₀.roots.toFinset (hroots₀ hρB hρvar) (hroots₀ hρ'B hρ'var) fun k hk => by
-      rw [hρmom k, hρ'mom k (by omega)]
-  -- Step 7: compare the three terms with their limits; the integrals against `ν i` vanish in the
-  -- limit, as the `f i` are eventually bounded on the disc of radius `R`.
-  have hT₁ : Tendsto (fun i => ∫ w, f i w ∂μ i) U (𝓝 (∫ w, g w ∂(ρ : Measure ℂ))) :=
-    FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ (.of_forall hμB) hρB
-      (fun i => (hf i).continuousOn) hg.continuousOn (hfg B)
-  have hT₂ : Tendsto (fun i => ∫ w, f i w ∂ν i) U (𝓝 0) := by
-    obtain ⟨Cg, hCg⟩ := (isCompact_closedBall (0 : ℂ) R).exists_bound_of_continuousOn
-      hg.continuousOn
-    refine tendsto_integral_of_tendsto_measureReal_univ hνR hν (C := Cg + 1) ?_
-    filter_upwards [Metric.tendstoUniformlyOn_iff.1 (hfg R) 1 one_pos] with i hi w hw
-    have h1 := hi w hw
-    rw [dist_comm, dist_eq_norm] at h1
-    linarith [norm_le_norm_add_norm_sub' (f i w) (g w), hCg w hw]
-  have hT₃ : Tendsto (fun i => ((P i).roots.map (f i)).sum) U
-      (𝓝 (∫ w, g w ∂(ρ' : Measure ℂ))) :=
-    (FiniteMeasure.tendsto_integral_of_tendstoUniformlyOn_closedBall hρ' hτB hρ'B
-      (fun i => (hf i).continuousOn) hg.continuousOn (hfg B)).congr fun i => by
-      simp [τf, τ, Multiset.integral_sum_map_dirac]
-  simpa [hρρ'] using (hT₁.sub hT₂).sub hT₃
+  obtain ⟨M₀, B, ρ, ρ', hM, hμB, hτB, hρB, hρ'B, hρ, hρ'⟩ :=
+    exists_tendsto_finiteMeasure_roots hR hμR hνR hmass hν fun _ => rfl
+  exact tendsto_integral_sub_sum_roots_of_tendsto_finiteMeasure hνR hmass hν hvar hf hg hfg
+    (fun _ => rfl) hM hμB hτB hρB hρ'B hρ hρ'
 
 /-- The sequential form of the compactness core used by both public statements: for data whose
 negative masses and Newton variances are at most `1 / (n + 1)`, some index satisfies any required
