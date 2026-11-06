@@ -11,6 +11,7 @@ public import Mathlib.Data.Fintype.WithTopBot
 public import Mathlib.Order.Hom.WithTopBot
 public import TauCeti.Algebra.Homology.Cube.Reindex
 public import TauCeti.Algebra.Homology.HomotopyCategory.MappingCone
+public import TauCeti.CategoryTheory.EqToHom
 public import TauCeti.Data.Finset.WithBot
 
 /-!
@@ -479,14 +480,6 @@ lemma cubeFaceMapAt_app (S : Finset (Fin n)) :
     (F.cubeFaceMapAt c).app S = F.map (homOfLE (subset_insert c (S.map c.succAboveEmb))) :=
   (rfl)
 
-/-- Two maps of a cube between vertices, followed or preceded by identifications of equal
-vertices, agree: the morphisms of the preorder category of subsets are proofs of inclusion. -/
-private lemma map_comp_eqToHom {κ : Type*} {G : Finset κ ⥤ C} {S T S' T' : Finset κ}
-    (f : S ⟶ T) (g : S' ⟶ T') (hS : S = S') (hT : T = T') :
-    G.map f ≫ eqToHom (congrArg G.obj hT) = eqToHom (congrArg G.obj hS) ≫ G.map g := by
-  subst hS hT
-  simp [Subsingleton.elim f g]
-
 /-- `Fin (n + 1)` reordered so that `c` comes first, as `WithBot (Fin n)`. -/
 private def frontEquiv : Fin (n + 1) ≃ WithBot (Fin n) :=
   finSuccEquiv' c
@@ -524,7 +517,7 @@ private lemma isCubeReindexCompatible_cubeFront :
     IsCubeReindexCompatible F (F.cubeFront c) (frontEquiv c)
       fun S ↦ eqToIso (congrArg F.obj (map_map_frontEquiv_symm c S)) :=
   isCubeReindexCompatible_iff.2 fun S a _ ↦
-    map_comp_eqToHom (G := F) _ _ (map_map_frontEquiv_symm c S)
+    F.map_comp_eqToHom_of_isThin _ _ (map_map_frontEquiv_symm c S)
       (map_map_frontEquiv_symm c (insert a S))
 
 /-- The `0`-face of `F` moved to the front is the `0`-face of `F` at `c`. -/
@@ -532,14 +525,14 @@ private def cubeFrontFaceZeroIso : (F.cubeFront c).cubeFaceZero ≅ F.cubeFaceZe
   NatIso.ofComponents
     (fun S ↦ eqToIso (congrArg F.obj (map_coeWithBot_map_frontEquiv_symm c S)))
     fun {S T} _ ↦ by
-      simpa using map_comp_eqToHom (G := F) _ _ (map_coeWithBot_map_frontEquiv_symm c S)
+      simpa using F.map_comp_eqToHom_of_isThin _ _ (map_coeWithBot_map_frontEquiv_symm c S)
         (map_coeWithBot_map_frontEquiv_symm c T)
 
 /-- The `1`-face of `F` moved to the front is the `1`-face of `F` at `c`. -/
 private def cubeFrontFaceOneIso : (F.cubeFront c).cubeFaceOne ≅ F.cubeFaceOneAt c :=
   NatIso.ofComponents (fun S ↦ eqToIso (congrArg F.obj (insertBot_map_frontEquiv_symm c S)))
     fun {S T} _ ↦ by
-      simpa using map_comp_eqToHom (G := F) _ _ (insertBot_map_frontEquiv_symm c S)
+      simpa using F.map_comp_eqToHom_of_isThin _ _ (insertBot_map_frontEquiv_symm c S)
         (insertBot_map_frontEquiv_symm c T)
 
 private lemma cubeFrontFaceZeroIso_inv_comp_cubeFaceMap :
@@ -548,7 +541,7 @@ private lemma cubeFrontFaceZeroIso_inv_comp_cubeFaceMap :
   ext S
   simp only [NatTrans.comp_app, cubeFaceMapAt_app, cubeFrontFaceZeroIso, cubeFrontFaceOneIso,
     NatIso.ofComponents_inv_app, eqToIso.inv, cubeFaceMap_app, comp_map]
-  exact map_comp_eqToHom (G := F) _ _ (map_coeWithBot_map_frontEquiv_symm c S).symm
+  exact F.map_comp_eqToHom_of_isThin _ _ (map_coeWithBot_map_frontEquiv_symm c S).symm
     (insertBot_map_frontEquiv_symm c S).symm
 
 variable [Preadditive C] [HasFiniteBiproducts C]

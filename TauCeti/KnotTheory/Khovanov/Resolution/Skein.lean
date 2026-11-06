@@ -50,6 +50,8 @@ All in the namespace `TauCeti.PDCode`:
 
 ## Main results
 
+* `resolveCrossingSaddle_app`: the component of the saddle map at a vertex is the edge map of the
+  cube of `D` in the direction of `c`, through the identifications of the two faces.
 * `resolveCrossingSaddle_app_comp_resolutionCubeι`: the saddle map acts on circle tensors as the
   merge or split of `D` at `c`.
 * `inl_v_khovanovBracketMappingConeIso_hom_f`, `inr_f_khovanovBracketMappingConeIso_hom_f`: the
@@ -121,7 +123,8 @@ def resolveCrossingSaddle :
 /-- The component of the saddle map at the vertex `S`, read through the identifications of the
 two cubes with the faces of the cube of `D`, is the edge map of the cube of `D` from the vertex
 over `S` on the `A`-face to the vertex over `S` on the `B`-face. -/
-private theorem resolveCrossingSaddle_app (S : Finset (Fin n)) :
+@[reassoc]
+theorem resolveCrossingSaddle_app (S : Finset (Fin n)) :
     (D.resolveCrossingSaddle c hD R j).app S =
       (D.resolveCrossingCubeIso c true hD (hD.resolveCrossing _ c true) R (j := j) (j' := j)
           (by simp)).hom.app S ≫
