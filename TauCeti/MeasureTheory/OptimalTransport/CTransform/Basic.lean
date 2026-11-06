@@ -333,6 +333,15 @@ theorem uniformContinuous_iInf_sub [PseudoMetricSpace Y] [Nonempty X]
   rw [Real.dist_eq, abs_lt]
   constructor <;> linarith
 
+/-- The infimal `c`-transform of a real potential is uniformly continuous when the cost is. -/
+theorem uniformContinuous_iInf_sub_of_uniformContinuous [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] [Nonempty X] {c : X × Y → ℝ} {φ : X → ℝ} (hc : UniformContinuous c)
+    (hbdd : ∀ y, BddBelow (Set.range fun x ↦ c (x, y) - φ x)) :
+    UniformContinuous fun y ↦ ⨅ x, (c (x, y) - φ x) :=
+  uniformContinuous_iInf_sub (fun ε hε ↦ by
+    obtain ⟨δ, hδ, h⟩ := Metric.uniformContinuous_iff.1 hc ε hε
+    exact ⟨δ, hδ, fun x y y' hy ↦ h (by simpa [Prod.dist_eq] using hy)⟩) hbdd
+
 /-- **Regularity of conjugate potentials.** Let `c` be a bounded uniformly continuous cost on a
 product of nonempty pseudometric spaces, and let `φ`, `ψ` be real potentials each of which is the
 real infimal transform of the other: `φ x = ⨅ y, (c (x, y) - ψ y)` and
@@ -371,18 +380,12 @@ theorem exists_boundedContinuousFunction_of_eq_iInf_sub [PseudoMetricSpace X]
   have hψge (y : Y) : m - max (M - ψ y₀) 0 ≤ ψ y := by
     rw [hψ y]
     exact le_ciInf fun x ↦ by linarith [hcm (x, y), hφle x]
-  -- The sections of a uniformly continuous cost share a uniform modulus of continuity.
-  have hmod := Metric.uniformContinuous_iff.1 hc
   have hψu : UniformContinuous ψ := by
-    have h := uniformContinuous_iInf_sub (c := c) (φ := φ) (fun ε hε ↦ by
-      obtain ⟨δ, hδ, h⟩ := hmod ε hε
-      exact ⟨δ, hδ, fun x y y' hy ↦ h (by simpa [Prod.dist_eq] using hy)⟩) hbψ
+    have h := uniformContinuous_iInf_sub_of_uniformContinuous (φ := φ) hc hbψ
     rwa [← funext hψ] at h
   have hφu : UniformContinuous φ := by
-    have h := uniformContinuous_iInf_sub (c := fun z : Y × X ↦ c (z.2, z.1)) (φ := ψ)
-      (fun ε hε ↦ by
-        obtain ⟨δ, hδ, h⟩ := hmod ε hε
-        exact ⟨δ, hδ, fun y x x' hx ↦ h (by simpa [Prod.dist_eq] using hx)⟩) hbφ
+    have h := uniformContinuous_iInf_sub_of_uniformContinuous (c := fun z : Y × X ↦ c (z.2, z.1))
+      (φ := ψ) (hc.comp uniformContinuous_swap) hbφ
     rwa [← funext hφ] at h
   set C := |m| + max (M - φ x₀) 0 + max (M - ψ y₀) 0
   exact ⟨.ofNormedAddCommGroup φ hφu.continuous C fun x ↦ abs_le.2
