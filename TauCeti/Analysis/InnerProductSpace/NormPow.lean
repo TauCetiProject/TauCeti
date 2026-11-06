@@ -8,13 +8,14 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.Calculus.Gradient
 
 /-!
-# Real powers of the norm away from the origin
+# Real powers of the norm
 
 Mathlib computes the derivative of `x ↦ ‖x‖ ^ p` on the whole inner-product space when
 `1 < p`.  Negative powers, which occur in the Newtonian kernel, are smooth only away from the
@@ -34,6 +35,9 @@ the size and smoothness estimates of a singular integral kernel.
 The first derivative proof adapts Mathlib's `hasFDerivAt_norm_rpow`, retaining its norm-square
 chain-rule argument while replacing the global exponent hypothesis with the local condition
 `x ≠ 0`.
+
+For positive exponents, `contDiff_norm_rpow_of_lt` additionally gives global `Cᵏ` regularity
+whenever `k < p` in finite dimension, including the behavior at the origin.
 
 ## Main declarations
 
@@ -69,6 +73,20 @@ open Filter InnerProductSpace Laplacian Topology
 open scoped RealInnerProductSpace ContDiff Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+
+/-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
+in a finite-dimensional real inner-product space. -/
+theorem contDiff_norm_rpow_of_lt [FiniteDimensional ℝ E] {k : ℕ} {p : ℝ}
+    (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
+  apply contDiff_of_homogeneous (p := p)
+  · intro x hx
+    exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
+      (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
+  · simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']
+  · intro t ht x
+    simp only [norm_smul, Real.norm_of_nonneg ht.le,
+      Real.mul_rpow ht.le (norm_nonneg x), smul_eq_mul]
+  · exact hp
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` is
 `p ‖x‖ ^ (p - 2) ⟨x, ·⟩`.  Unlike Mathlib's `hasFDerivAt_norm_rpow`, this local form
