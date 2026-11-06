@@ -90,6 +90,52 @@ theorem Convex.addHaar_pos_iff_affineSpan_eq_top (hs : Convex ℝ s) :
     0 < μ s ↔ affineSpan ℝ s = ⊤ := by
   rw [hs.addHaar_pos_iff_interior_nonempty, hs.interior_nonempty_iff_affineSpan_eq_top]
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- A convex set containing the ball `ball x r` and a point `y` contains the ball of radius
+`(1 - t) * r` about `x + t • (y - x)` for every `0 ≤ t < 1`. -/
+theorem Convex.ball_add_smul_sub_subset (hs : Convex ℝ s) {x y : E} {r t : ℝ}
+    (hball : ball x r ⊆ s) (hy : y ∈ s) (ht₀ : 0 ≤ t) (ht : t < 1) :
+    ball (x + t • (y - x)) ((1 - t) * r) ⊆ s := fun z hz => by
+  -- `z = (1 - t) • b + t • y` with `b = x + (1 - t)⁻¹ • (z - (x + t • (y - x)))` in `ball x r`.
+  have hb : x + (1 - t)⁻¹ • (z - (x + t • (y - x))) ∈ ball x r := by
+    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, norm_inv, Real.norm_eq_abs,
+      abs_of_pos (by linarith), ← dist_eq_norm, inv_mul_lt_iff₀ (by linarith)]
+    rwa [mem_ball] at hz
+  convert hs (hball hb) hy (by linarith : (0 : ℝ) ≤ 1 - t) ht₀ (by ring) using 1
+  rw [smul_add, smul_smul, mul_inv_cancel₀ (by linarith : (1 - t) ≠ 0), one_smul]
+  module
+
+namespace TauCeti
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- On the ray from `x` through `y`, the points at distances `j * r` from `x` (`j : ℕ`) are
+at mutual distance at least `r`, so the balls of radius `r / 2` about them are pairwise
+disjoint. -/
+theorem pairwiseDisjoint_ball_add_nat_smul_sub {x y : E} {r : ℝ} (hr : 0 < r) (hyx : y ≠ x)
+    (S : Set ℕ) :
+    S.PairwiseDisjoint fun j : ℕ => ball (x + ((j : ℝ) * r / dist y x) • (y - x)) (r / 2) := by
+  have hL : 0 < dist y x := dist_pos.2 hyx
+  have hyx' : ‖y - x‖ = dist y x := (dist_eq_norm y x).symm
+  generalize dist y x = L at hL hyx' ⊢
+  have hdist : ∀ i j : ℕ, dist (x + ((i : ℝ) * r / L) • (y - x))
+      (x + ((j : ℝ) * r / L) • (y - x)) = |(i : ℝ) - j| * r := fun i j => by
+    simp only [dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, hyx',
+      Real.norm_eq_abs, ← sub_div, ← sub_mul, abs_div, abs_mul, abs_of_pos hr]
+    rw [abs_of_pos hL]
+    field_simp
+  intro i _ j _ hij
+  refine ball_disjoint_ball ?_
+  rw [hdist, add_halves]
+  have : (1 : ℝ) ≤ |(i : ℝ) - j| := by
+    rcases lt_or_gt_of_ne hij with h | h
+    · have : (i : ℝ) + 1 ≤ j := by exact_mod_cast h
+      exact le_abs.2 (Or.inr (by linarith))
+    · have : (j : ℝ) + 1 ≤ i := by exact_mod_cast h
+      exact le_abs.2 (Or.inl (by linarith))
+  nlinarith
+
+end TauCeti
+
 /-- **A convex set containing a ball and a point is large.** In a finite-dimensional real normed
 space `E` of dimension `n`, if a convex set `s` contains the ball of radius `r > 0` about `x` and
 the point `y`, then `dist y x * r ^ (n - 1) * μ (ball 0 1) ≤ 2 ^ (n + 1) * μ s` for every
@@ -110,13 +156,7 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
   -- `m + 1 > L / (2 * r)` balls about them are pairwise disjoint.
   set m := ⌊L / (2 * r)⌋₊
   set c : ℕ → E := fun j => x + ((j : ℝ) * r / L) • (y - x)
-  have hyx : ‖y - x‖ = L := (dist_eq_norm y x).symm
-  have hdist : ∀ i j : ℕ, dist (c i) (c j) = |(i : ℝ) - j| * r := fun i j => by
-    simp only [c, dist_eq_norm, add_sub_add_left_eq_sub, ← sub_smul, norm_smul, hyx,
-      Real.norm_eq_abs, ← sub_div, ← sub_mul, abs_div, abs_mul, abs_of_pos hr]
-    rw [abs_of_pos hL]
-    field_simp
-  have hsub : ∀ j ∈ Finset.range (m + 1), ball (c j) (r / 2) ⊆ s := fun j hj z hz => by
+  have hsub : ∀ j ∈ Finset.range (m + 1), ball (c j) (r / 2) ⊆ s := fun j hj => by
     set t := (j : ℝ) * r / L
     have ht₀ : 0 ≤ t := by positivity
     have ht : t ≤ 1 / 2 := by
@@ -126,26 +166,10 @@ theorem Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le [Nontrivial E] (hs : Conv
       rw [div_le_iff₀ hL]
       rw [le_div_iff₀ (by positivity)] at hj
       linarith
-    -- `z = (1 - t) • b + t • y` with `b = x + (1 - t)⁻¹ • (z - c j)` in `ball x r`.
-    have hb : x + (1 - t)⁻¹ • (z - c j) ∈ ball x r := by
-      rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, norm_inv, Real.norm_eq_abs,
-        abs_of_pos (by linarith), ← dist_eq_norm, inv_mul_lt_iff₀ (by linarith)]
-      rw [mem_ball] at hz
-      nlinarith
-    convert hs (hball hb) hy (by linarith : (0 : ℝ) ≤ 1 - t) ht₀ (by ring) using 1
-    have hc : c j = x + t • (y - x) := rfl
-    rw [smul_add, smul_smul, mul_inv_cancel₀ (by linarith : (1 - t) ≠ 0), one_smul, hc]
-    module
+    exact (ball_subset_ball (by nlinarith)).trans
+      (hs.ball_add_smul_sub_subset hball hy ht₀ (by linarith))
   have hdisj : (Finset.range (m + 1) : Set ℕ).PairwiseDisjoint fun j => ball (c j) (r / 2) :=
-    fun i _ j _ hij => ball_disjoint_ball <| by
-      rw [hdist, add_halves]
-      have : (1 : ℝ) ≤ |(i : ℝ) - j| := by
-        rcases lt_or_gt_of_ne hij with h | h
-        · have : (i : ℝ) + 1 ≤ j := by exact_mod_cast h
-          exact le_abs.2 (Or.inr (by linarith))
-        · have : (j : ℝ) + 1 ≤ i := by exact_mod_cast h
-          exact le_abs.2 (Or.inl (by linarith))
-      nlinarith
+    TauCeti.pairwiseDisjoint_ball_add_nat_smul_sub hr (dist_pos.1 hL) _
   have hn : 1 ≤ n := finrank_pos
   have hm : L / (2 * r) < m + 1 := Nat.lt_floor_add_one _
   calc ENNReal.ofReal (L * r ^ (n - 1)) * μ (ball 0 1)
