@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Flow.Transition
-public import Mathlib.LinearAlgebra.Eigenspace.Basic
+public import TauCeti.LinearAlgebra.Eigenspace.Range
 
 /-!
 # Derivatives of return germs
@@ -209,26 +209,6 @@ theorem mfderiv_flowTransition_injOn :
 
 end Inverse
 
-omit hv in
-/-- For `μ ≠ 0`, the generalized eigenvectors for `μ` of an endomorphism `f` lie in every submodule
-containing the range of `f`: if `(f - μ)^(l + 1) w` lies in it, so do `(f - μ)^l w` and `f w`,
-hence `μ • w`. -/
-private theorem genEigenspace_le_of_range_le {V : Type*} [AddCommGroup V] [Module ℝ V]
-    {f : Module.End ℝ V} {K : Submodule ℝ V} (hf : LinearMap.range f ≤ K) {μ : ℝ} (hμ : μ ≠ 0)
-    (k : ℕ∞) : f.genEigenspace μ k ≤ K := fun w hw ↦ by
-  obtain ⟨l, -, hl⟩ := Module.End.mem_genEigenspace.1 hw
-  suffices h : ∀ (l : ℕ) (w : V), ((f - μ • 1) ^ l) w ∈ K → w ∈ K from
-    h l w ((LinearMap.mem_ker.1 hl).symm ▸ K.zero_mem)
-  intro l
-  induction l with
-  | zero => simp
-  | succ l ih =>
-    intro w hw
-    rw [pow_succ, mul_apply_eq_comp] at hw
-    have h := K.sub_mem (hf (LinearMap.mem_range_self f w)) (ih _ hw)
-    rw [LinearMap.sub_apply, sub_sub_cancel, LinearMap.smul_apply, one_apply_eq_self] at h
-    exact (K.smul_mem_iff hμ).1 h
-
 /-- The generalized eigenvectors of the linearized return map for a nonzero eigenvalue lie in the
 tangent space `ker dg_p` of the section. -/
 theorem genEigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v)
@@ -236,7 +216,7 @@ theorem genEigenspace_returnDerivative_le_ker (hP : (T₀, p) ∈ flowDomain v)
     {μ : ℝ} (hμ : μ ≠ 0) (k : ℕ∞) :
     (returnDerivative v g T₀ p).genEigenspace μ k ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ) :=
-  genEigenspace_le_of_range_le (fun _ ⟨w, hw⟩ ↦ hw ▸
+  Module.End.genEigenspace_le_of_range_le (fun _ ⟨w, hw⟩ ↦ hw ▸
     mvfderiv_mfderiv_flowTransition_eq_zero hv hP hp hg hgv w) hμ k
 
 /-- The eigenvectors of the linearized return map for a nonzero eigenvalue lie in the tangent space
@@ -334,6 +314,9 @@ theorem exists_linearEquiv_genEigenspace_returnDerivative {μ : ℝ} (hμ : μ �
           hT hq hP hp hg hgv hg' hg'v) μ k hw
   let f' : (returnDerivative v g' T₀ q).genEigenspace μ k →ₗ[ℝ]
       (returnDerivative v g T₀ p).genEigenspace μ k :=
+    -- As in `returnDerivative_comp_mfderiv_flowTransition`, the derivative lands in the tangent
+    -- space at `flowTransition v g (-T) q q`, which is `p` only propositionally; it is read as a
+    -- map into the tangent space at `p`, which is the same `E`.
     (show TangentSpace I q →L[ℝ] TangentSpace I p from
       mfderiv I I (flowTransition v g (-T) q) q).toLinearMap.restrict fun _ hw ↦
         Module.End.mapsTo_genEigenspace_of_comp _ (returnDerivative_comp_mfderiv_flowTransition hv
