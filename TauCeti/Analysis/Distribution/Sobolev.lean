@@ -44,6 +44,11 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   lies in `H^{s,p}`, as a real submodule of `Lᵖ`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_of_hasCompactSupport`: smooth
   compactly supported real functions have representatives in every `realSobolevSubmodule`.
+* `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_add`,
+  `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_neg`: real functions with
+  representatives in `realSobolevSubmodule` are closed under sums and negatives.
+* `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_congr`: such representatives
+  transport along a pointwise equality of functions.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -176,6 +181,34 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_of_hasCompactSupport {f : E → �
     (hc.comp_left Complex.ofReal_zero) ?_
   filter_upwards [Complex.ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with x h₁ h₂
   simp [h₁, h₂]
+
+/-- Representatives of a sum of real functions, in the vector space `realSobolevSubmodule`. -/
+theorem exists_mem_realSobolevSubmodule_ae_eq_add {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f₁ f₂ : E → ℝ} (h₁ : ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] f₁)
+    (h₂ : ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] f₂) :
+    ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] fun x ↦ f₁ x + f₂ x := by
+  obtain ⟨g₁, hg₁, he₁⟩ := h₁
+  obtain ⟨g₂, hg₂, he₂⟩ := h₂
+  refine ⟨g₁ + g₂, add_mem hg₁ hg₂, ?_⟩
+  filter_upwards [Lp.coeFn_add g₁ g₂, he₁, he₂] with x h h₁ h₂
+  rw [h, Pi.add_apply, h₁, h₂]
+
+/-- Representatives of a negative of a real function, in `realSobolevSubmodule`. -/
+theorem exists_mem_realSobolevSubmodule_ae_eq_neg {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f : E → ℝ} (h : ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] f) :
+    ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] fun x ↦ -f x := by
+  obtain ⟨g, hg, he⟩ := h
+  refine ⟨-g, neg_mem hg, ?_⟩
+  filter_upwards [Lp.coeFn_neg g, he] with x h₁ h₂
+  rw [h₁, Pi.neg_apply, h₂]
+
+/-- Representatives in `realSobolevSubmodule` transported along a pointwise equality of real
+functions. -/
+theorem exists_mem_realSobolevSubmodule_ae_eq_congr {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
+    {f₁ f₂ : E → ℝ} (h : ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] f₁)
+    (hf : ∀ x, f₁ x = f₂ x) : ∃ g ∈ realSobolevSubmodule E s p, g =ᵐ[volume] f₂ := by
+  obtain ⟨g, hg, he⟩ := h
+  exact ⟨g, hg, he.trans (.of_forall hf)⟩
 
 end normed
 

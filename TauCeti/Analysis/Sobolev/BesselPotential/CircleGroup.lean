@@ -63,46 +63,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
 
 namespace TauCeti
 
-/-- Representatives of a sum of real functions, in the vector space `realSobolevSubmodule`. -/
-private theorem exists_mem_realSobolevSubmodule_ae_eq_add {s : ℝ} {f₁ f₂ : E → ℝ}
-    (h₁ : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₁)
-    (h₂ : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₂) :
-    ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] fun x ↦ f₁ x + f₂ x := by
-  obtain ⟨g₁, hg₁, he₁⟩ := h₁
-  obtain ⟨g₂, hg₂, he₂⟩ := h₂
-  refine ⟨g₁ + g₂, add_mem hg₁ hg₂, ?_⟩
-  filter_upwards [Lp.coeFn_add g₁ g₂, he₁, he₂] with x h h₁ h₂
-  rw [h, Pi.add_apply, h₁, h₂]
-
-/-- Representatives of a negative of a real function, in `realSobolevSubmodule`. -/
-private theorem exists_mem_realSobolevSubmodule_ae_eq_neg {s : ℝ} {f : E → ℝ}
-    (h : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f) :
-    ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] fun x ↦ -f x := by
-  obtain ⟨g, hg, he⟩ := h
-  refine ⟨-g, neg_mem hg, ?_⟩
-  filter_upwards [Lp.coeFn_neg g, he] with x h₁ h₂
-  rw [h₁, Pi.neg_apply, h₂]
-
-/-- Representatives of a product of real functions, for `s > dim E / 2`. -/
-private theorem exists_mem_realSobolevSubmodule_ae_eq_mul' {s : ℝ}
-    (hs : finrank ℝ E < 2 * s) {f₁ f₂ : E → ℝ}
-    (h₁ : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₁)
-    (h₂ : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₂) :
-    ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] fun x ↦ f₁ x * f₂ x := by
-  obtain ⟨g₁, hg₁, he₁⟩ := h₁
-  obtain ⟨g₂, hg₂, he₂⟩ := h₂
-  obtain ⟨g, hg, he⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul hs hg₁ hg₂
-  refine ⟨g, hg, ?_⟩
-  filter_upwards [he, he₁, he₂] with x h h₁ h₂
-  rw [h, h₁, h₂]
-
-/-- Representatives transported along a pointwise equality of real functions. -/
-private theorem exists_mem_realSobolevSubmodule_ae_eq_congr {s : ℝ} {f₁ f₂ : E → ℝ}
-    (h : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₁) (hf : ∀ x, f₁ x = f₂ x) :
-    ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₂ := by
-  obtain ⟨g, hg, he⟩ := h
-  exact ⟨g, hg, he.trans (.of_forall hf)⟩
-
 variable (E) in
 /-- **The group of circle-valued `H^s` maps**, `s > dim E / 2`. It consists of the continuous
 maps `u : E → Circle` such that `h = u - 1` lies in `H^s(E; ℂ)`, in real coordinates: `Re u - 1`
@@ -122,14 +82,14 @@ def sobolevCircleGroup (s : ℝ) (hs : finrank ℝ E < 2 * s) : Subgroup (E → 
     refine ⟨hu.mul hv, exists_mem_realSobolevSubmodule_ae_eq_congr
       (exists_mem_realSobolevSubmodule_ae_eq_add (exists_mem_realSobolevSubmodule_ae_eq_add
         (exists_mem_realSobolevSubmodule_ae_eq_add
-          (exists_mem_realSobolevSubmodule_ae_eq_mul' hs ha hb) ha) hb)
+          (exists_mem_realSobolevSubmodule_ae_eq_mul_of_exists hs ha hb) ha) hb)
         (exists_mem_realSobolevSubmodule_ae_eq_neg
-          (exists_mem_realSobolevSubmodule_ae_eq_mul' hs hc hd))) fun x ↦ ?_,
+          (exists_mem_realSobolevSubmodule_ae_eq_mul_of_exists hs hc hd))) fun x ↦ ?_,
       exists_mem_realSobolevSubmodule_ae_eq_congr
       (exists_mem_realSobolevSubmodule_ae_eq_add (exists_mem_realSobolevSubmodule_ae_eq_add
         (exists_mem_realSobolevSubmodule_ae_eq_add
-          (exists_mem_realSobolevSubmodule_ae_eq_mul' hs ha hd) hd)
-          (exists_mem_realSobolevSubmodule_ae_eq_mul' hs hc hb)) hc) fun x ↦ ?_⟩ <;>
+          (exists_mem_realSobolevSubmodule_ae_eq_mul_of_exists hs ha hd) hd)
+          (exists_mem_realSobolevSubmodule_ae_eq_mul_of_exists hs hc hb)) hc) fun x ↦ ?_⟩ <;>
     · simp only [Pi.mul_apply, Circle.coe_mul, mul_re, mul_im]
       ring
   inv_mem' := by

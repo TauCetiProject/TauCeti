@@ -55,6 +55,8 @@ convolution estimate is `TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution`, in
   `H^s`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
+* `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul_of_exists`: the same for
+  functions known only through representatives in `realSobolevSubmodule`.
 
 ## References
 
@@ -156,5 +158,20 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul {s : ℝ} (hs : finrank ℝ E 
     rw [h₁, h₃, h₄, Complex.ofRealCLM_apply, h₂]
   rw [mem_realSobolevSubmodule, heq]
   exact hu.mul hs hv
+
+/-- **Products of real functions with `H^s` representatives, `s > n / 2`.** If two real functions
+agree almost everywhere with elements of `realSobolevSubmodule E s 2`, `s > dim E / 2`, then so
+does their pointwise product. -/
+theorem exists_mem_realSobolevSubmodule_ae_eq_mul_of_exists {s : ℝ}
+    (hs : finrank ℝ E < 2 * s) {f₁ f₂ : E → ℝ}
+    (h₁ : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₁)
+    (h₂ : ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] f₂) :
+    ∃ g ∈ realSobolevSubmodule E s 2, g =ᵐ[volume] fun x ↦ f₁ x * f₂ x := by
+  obtain ⟨g₁, hg₁, he₁⟩ := h₁
+  obtain ⟨g₂, hg₂, he₂⟩ := h₂
+  obtain ⟨g, hg, he⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul hs hg₁ hg₂
+  refine ⟨g, hg, ?_⟩
+  filter_upwards [he, he₁, he₂] with x h h₁ h₂
+  rw [h, h₁, h₂]
 
 end TemperedDistribution
