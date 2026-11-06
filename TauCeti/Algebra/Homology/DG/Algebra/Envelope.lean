@@ -144,27 +144,24 @@ theorem envelopeDifferential_mul_of_sign (hd : IsNonUnitalDGAlgebra 𝒜 d) (n m
 
 omit [SetLike.GradedMul 𝒜] in
 /-- The enveloping differential raises total tensor degree by one whenever the original
-endomorphism does, independently of the degree of its free generator. -/
-theorem isHomogeneous_envelopeDifferential (hdeg : LinearMap.IsHomogeneous d 𝒜 𝒜 1) (n : ℤ) :
+endomorphism does, independently of the degree of its free generator. The bundled grading
+may carry any decomposition of the original homogeneous pieces. -/
+theorem isHomogeneous_envelopeDifferential (G : InternalGrading R A) (hG : G.piece = 𝒜)
+    (hdeg : LinearMap.IsHomogeneous d G.piece G.piece 1) (n : ℤ) :
     LinearMap.IsHomogeneous (envelopeDifferential 𝒜 d n)
-      ((InternalGrading.ofDecomposition 𝒜).tensorProduct
-        (InternalGrading.ofDecomposition 𝒜).opposite).piece
-      ((InternalGrading.ofDecomposition 𝒜).tensorProduct
-        (InternalGrading.ofDecomposition 𝒜).opposite).piece 1 := by
-  let G := InternalGrading.ofDecomposition 𝒜
-  have hdeg' : LinearMap.IsHomogeneous d G.piece G.piece 1 := by
-    simpa only [G, InternalGrading.ofDecomposition_piece] using hdeg
+      (G.tensorProduct G.opposite).piece (G.tensorProduct G.opposite).piece 1 := by
   rw [LinearMap.isHomogeneous_def]
   intro q z hz
   refine G.tensorProduct_piece_le G.opposite
     (C := ((G.tensorProduct G.opposite).piece (q + 1)).comap
       (envelopeDifferential 𝒜 d n)) (fun p x hx y hy ↦ ?_) hz
-  rw [Submodule.mem_comap, ← op_unop y, envelopeDifferential_tmul]
+  rw [Submodule.mem_comap, ← op_unop y,
+    envelopeDifferential_tmul_of_mem n (by simpa only [hG] using hx)]
   have hy' := (G.mem_opposite_piece_iff _ _).mp hy
-  have hl := G.tmul_mem_tensorProduct G.opposite (hdeg'.map_mem hx)
+  have hl := G.tmul_mem_tensorProduct G.opposite (hdeg.map_mem hx)
     ((G.op_mem_opposite_piece_iff _ _).mpr hy')
-  have hr := G.tmul_mem_tensorProduct G.opposite (G.koszulTwist_mem_piece hx 1)
-    ((G.op_mem_opposite_piece_iff _ _).mpr (hdeg'.map_mem hy'))
+  have hr := G.tmul_mem_tensorProduct G.opposite hx
+    ((G.op_mem_opposite_piece_iff _ _).mpr (hdeg.map_mem hy'))
   exact add_mem (by convert hl using 1; congr 1; omega)
     (Submodule.smul_mem _ _ (by convert hr using 1; congr 1; omega))
 

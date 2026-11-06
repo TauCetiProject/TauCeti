@@ -54,12 +54,9 @@ theorem isHomogeneous_vertexTensorBimoduleDifferential :
   rw [LinearMap.isHomogeneous_def]
   intro n x hx
   rw [mem_vertexTensorGrading_piece_iff, coe_vertexTensorBimoduleDifferential hd hdε]
-  have hΓ : InternalGrading.ofDecomposition (gradeBy k wt) =
-      InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt) :=
-    InternalGrading.ext fun _ ↦ by rw [InternalGrading.ofDecomposition_piece]
   have h := isHomogeneous_envelopeDifferential
+    (InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt)) rfl
     (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦ hd.map_mem hx) 0
-  rw [hΓ] at h
   exact h.map_mem ((mem_vertexTensorGrading_piece_iff k Q wt).mp hx)
 
 /-- The vertex term with its total-weight grading and enveloping differential. -/
@@ -96,7 +93,7 @@ local notation "K" => gradedCochainComplex (gradeBy k wt) d
   (fun _ x ↦ hd.sq_zero x)
 
 /-- The boundary of the standard resolution as a map of cochain complexes. -/
-noncomputable def arrowTensorComplexBoundary :
+noncomputable def arrowTensorDifferentialComplexHom :
     arrowTensorComplex k Q wt d hd hdε ⟶ vertexTensorComplex k Q wt d hd hdε :=
   gradedCochainComplexHom ((arrowTensorDifferential k Q).restrictScalars k)
     (LinearMap.isHomogeneous_def.mpr fun _ _ hx ↦
@@ -125,13 +122,13 @@ noncomputable def vertexTensorComplexAugmentation :
 
 /-- The boundary acts by the existing arrow-tensor boundary on every homogeneous piece. -/
 @[simp]
-theorem arrowTensorComplexBoundary_f_apply (n : ℤ)
+theorem arrowTensorDifferentialComplexHom_f_apply (n : ℤ)
     (x : (arrowTensorComplex k Q wt d hd hdε).X n) :
     (gradedCochainComplexXEquiv n
-      (((arrowTensorComplexBoundary k Q wt d hd hdε).f n).hom x) :
+      (((arrowTensorDifferentialComplexHom k Q wt d hd hdε).f n).hom x) :
         vertexTensorBimodule k Q) =
       arrowTensorDifferential k Q (gradedCochainComplexXEquiv n x) := by
-  simp only [arrowTensorComplexBoundary,
+  simp only [arrowTensorDifferentialComplexHom,
     gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply, LinearMap.restrictScalars_apply]
 
 omit [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)] in
@@ -148,61 +145,62 @@ theorem vertexTensorComplexAugmentation_f_apply (n : ℤ)
     LinearMap.restrictScalars_apply, LinearEquiv.coe_coe]
 
 /-- The standard path-algebra bimodule sequence, viewed as scalar cochain complexes. -/
-noncomputable def semifreeResolutionSequence :
+noncomputable def standardResolutionSequence :
     ShortComplex (CochainComplex (ModuleCat k) ℤ) where
   X₁ := arrowTensorComplex k Q wt d hd hdε
   X₂ := vertexTensorComplex k Q wt d hd hdε
   X₃ := K
-  f := arrowTensorComplexBoundary k Q wt d hd hdε
+  f := arrowTensorDifferentialComplexHom k Q wt d hd hdε
   g := vertexTensorComplexAugmentation k Q wt d hd hdε
   zero := by
     apply gradedCochainComplex_hom_ext
     intro n x
-    rw [HomologicalComplex.comp_f, HomologicalComplex.zero_f]
-    dsimp only [arrowTensorComplex, vertexTensorComplex] at *
-    simp only [arrowTensorComplexBoundary, vertexTensorComplexAugmentation]
-    simp only [ModuleCat.hom_comp, LinearMap.comp_apply,
-      gradedCochainComplexXEquiv_gradedCochainComplexHom_f_apply,
-      LinearMap.restrictScalars_apply, vertexTensorMul_arrowTensorDifferential,
-      map_zero]
-    simp
+    simp only [HomologicalComplex.comp_f, HomologicalComplex.zero_f,
+      ModuleCat.hom_comp, LinearMap.comp_apply,
+      vertexTensorComplexAugmentation_f_apply, arrowTensorDifferentialComplexHom_f_apply,
+      vertexTensorMul_arrowTensorDifferential, ModuleCat.hom_zero, LinearMap.zero_apply,
+      map_zero, ZeroMemClass.coe_zero]
 
 @[simp]
-theorem semifreeResolutionSequence_X₁ :
-    (semifreeResolutionSequence k Q wt d hd hdε).X₁ = arrowTensorComplex k Q wt d hd hdε := (rfl)
+theorem standardResolutionSequence_X₁ :
+    (standardResolutionSequence k Q wt d hd hdε).X₁ = arrowTensorComplex k Q wt d hd hdε := (rfl)
 
 @[simp]
-theorem semifreeResolutionSequence_X₂ :
-    (semifreeResolutionSequence k Q wt d hd hdε).X₂ = vertexTensorComplex k Q wt d hd hdε := (rfl)
+theorem standardResolutionSequence_X₂ :
+    (standardResolutionSequence k Q wt d hd hdε).X₂ = vertexTensorComplex k Q wt d hd hdε := (rfl)
 
 @[simp]
-theorem semifreeResolutionSequence_X₃ :
-    (semifreeResolutionSequence k Q wt d hd hdε).X₃ = K := (rfl)
+theorem standardResolutionSequence_X₃ :
+    (standardResolutionSequence k Q wt d hd hdε).X₃ = K := (rfl)
 
-/-- The first map of the sequence is the boundary, under its component identifications. -/
-theorem semifreeResolutionSequence_f :
-    (semifreeResolutionSequence k Q wt d hd hdε).f =
-      eqToHom (semifreeResolutionSequence_X₁ k Q wt d hd hdε) ≫
-        arrowTensorComplexBoundary k Q wt d hd hdε ≫
-          eqToHom (semifreeResolutionSequence_X₂ k Q wt d hd hdε).symm := (rfl)
+/-- The first map of the sequence is the boundary, under its component identifications.
+The transports are needed because the sequence's object fields are not exposed. -/
+@[simp]
+theorem standardResolutionSequence_f :
+    (standardResolutionSequence k Q wt d hd hdε).f =
+      eqToHom (standardResolutionSequence_X₁ k Q wt d hd hdε) ≫
+        arrowTensorDifferentialComplexHom k Q wt d hd hdε ≫
+          eqToHom (standardResolutionSequence_X₂ k Q wt d hd hdε).symm := (rfl)
 
-/-- The second map of the sequence is multiplication, under its component identifications. -/
-theorem semifreeResolutionSequence_g :
-    (semifreeResolutionSequence k Q wt d hd hdε).g =
-      eqToHom (semifreeResolutionSequence_X₂ k Q wt d hd hdε) ≫
+/-- The second map of the sequence is multiplication, under its component identifications.
+The transports are needed because the sequence's object fields are not exposed. -/
+@[simp]
+theorem standardResolutionSequence_g :
+    (standardResolutionSequence k Q wt d hd hdε).g =
+      eqToHom (standardResolutionSequence_X₂ k Q wt d hd hdε) ≫
         vertexTensorComplexAugmentation k Q wt d hd hdε ≫
-          eqToHom (semifreeResolutionSequence_X₃ k Q wt d hd hdε).symm := (rfl)
+          eqToHom (standardResolutionSequence_X₃ k Q wt d hd hdε).symm := (rfl)
 
 /-- The standard resolution sequence is short exact as a sequence of cochain complexes.
 In particular, its exactness holds in every cohomological degree, with the twisted arrow
 differential rather than an unrelated grading on the ungraded sequence. -/
-theorem semifreeResolutionSequence_shortExact :
-    (semifreeResolutionSequence k Q wt d hd hdε).ShortExact := by
+theorem standardResolutionSequence_shortExact :
+    (standardResolutionSequence k Q wt d hd hdε).ShortExact := by
   refine HomologicalComplex.shortExact_of_degreewise_shortExact
     (C := ModuleCat.{max u v w} k) (c := ComplexShape.up ℤ)
-    (semifreeResolutionSequence k Q wt d hd hdε) ?_
+    (standardResolutionSequence k Q wt d hd hdε) ?_
   intro n
-  dsimp only [semifreeResolutionSequence, ShortComplex.map, HomologicalComplex.eval_obj,
+  dsimp only [standardResolutionSequence, ShortComplex.map, HomologicalComplex.eval_obj,
     HomologicalComplex.eval_map]
   apply ModuleCat.shortComplex_shortExact
   · -- Exactness lifts from the ungraded sequence: the boundary detects the degree of its preimage.
@@ -222,16 +220,16 @@ theorem semifreeResolutionSequence_shortExact :
       refine ⟨(gradedCochainComplexXEquiv n).symm ⟨x, hxdeg⟩, ?_⟩
       apply (gradedCochainComplexXEquiv n).injective
       apply Subtype.ext
-      simpa only [arrowTensorComplexBoundary_f_apply, LinearEquiv.apply_symm_apply] using hx
+      simpa only [arrowTensorDifferentialComplexHom_f_apply, LinearEquiv.apply_symm_apply] using hx
     · rintro ⟨x, rfl⟩
-      have hzero := ((semifreeResolutionSequence k Q wt d hd hdε).map
+      have hzero := ((standardResolutionSequence k Q wt d hd hdε).map
         (HomologicalComplex.eval (ModuleCat k) (ComplexShape.up ℤ) n)).zero
       exact congr($(hzero) x)
   · intro x y h
     apply (gradedCochainComplexXEquiv n).injective
     apply Subtype.ext
     apply arrowTensorDifferential_injective
-    simpa only [arrowTensorComplexBoundary_f_apply] using congrArg
+    simpa only [arrowTensorDifferentialComplexHom_f_apply] using congrArg
       (fun z ↦ (gradedCochainComplexXEquiv n z : vertexTensorBimodule k Q)) h
   · -- Multiplication is onto in each degree by taking the degree component of an ungraded lift.
     intro x
