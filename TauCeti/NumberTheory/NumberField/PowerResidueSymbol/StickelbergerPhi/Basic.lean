@@ -412,7 +412,7 @@ private theorem quotientMk_gaussSum_ne_zero (P P' : Ideal (𝓞 K)) [P.IsMaximal
     [Fintype (𝓞 K ⧸ P)]
     (hP : (absNorm P).Coprime m) (hPP' : (absNorm P).Coprime (absNorm P')) (hm : 2 ≤ m)
     {R : Type*} [CommRing R] [IsDomain R] {f : 𝓞 K →+* R} (hf : Function.Injective f)
-    {ψ : AddChar (𝓞 K ⧸ P) R} (hψ : ψ.IsPrimitive) (I : Ideal R) [I.IsPrime]
+    {ψ : AddChar (𝓞 K ⧸ P) R} (hψ : ψ.IsPrimitive) (I : Ideal R)
     (hI : I.comap f = P') :
     Quotient.mk I (gaussSum ((powerResidueSymbol P m)⁻¹.ringHomComp f) ψ) ≠ 0 := by
   let _ := Ideal.Quotient.field P
