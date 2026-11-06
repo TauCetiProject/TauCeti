@@ -7,10 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.Orientation.Homological
 public import TauCeti.AlgebraicTopology.Singular.LocalHomology.TopHomology
-import Mathlib.Algebra.Category.ModuleCat.Descent
-import Mathlib.AlgebraicTopology.SimplicialSet.Homology.MapHomologicalComplex
-import Mathlib.RingTheory.Flat.Localization
-import Mathlib.RingTheory.Localization.Rat
+public import TauCeti.AlgebraicTopology.SimplicialSet.Homology.Coefficients
 
 /-!
 # Integral and rational fundamental classes of an oriented manifold
@@ -402,41 +399,6 @@ theorem exists_eq_zsmul_fundamentalClass
   obtain ⟨d, rfl⟩ := (o.fundamentalClassEquiv hn).surjective γ
   exact ⟨d, fundamentalClassEquiv_apply o hn d⟩
 
-/-- Flatness is used only for this fixed rational coefficient extension. -/
-private instance rationalExtendScalars_preservesFiniteLimits :
-    Limits.PreservesFiniteLimits
-      (ModuleCat.extendScalars (Int.castRingHom ℚ) : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ) := by
-  have hflat : (Int.castRingHom ℚ).Flat := by
-    -- RingHom.Flat uses the algebra induced by Int.castRingHom, whereas localization
-    -- flatness uses the canonical integer action. These actions are definitionally equal;
-    -- change aligns the instance arguments, which rewriting the proposition alone cannot do.
-    change Module.Flat ℤ ℚ
-    exact IsLocalization.flat ℚ (nonZeroDivisors ℤ)
-  exact ModuleCat.preservesFiniteLimits_extendScalars_of_flat hflat
-
-/-- The orientation-independent native comparison between rational extension of integral
-homology and rational homology. This is private to the normalized fundamental-class construction. -/
-private def rationalHomologyExtendScalarsIso :
-    (ModuleCat.extendScalars (Int.castRingHom ℚ)).obj
-      ((TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℤ (ULift.{0} ℤ)) n) ≅
-        (TopCat.toSSet.obj (TopCat.of M)).homology (ModuleCat.of ℚ ℚ) n := by
-  let F : ModuleCat.{0} ℤ ⥤ ModuleCat.{0} ℚ := ModuleCat.extendScalars (Int.castRingHom ℚ)
-  have : F.Additive := Functor.additive_of_preserves_binary_products F
-  let R := ModuleCat.of ℤ (ULift.{0} ℤ)
-  let X := TopCat.toSSet.obj (TopCat.of M)
-  let C := X.chainComplex R
-  let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
-    (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
-  let eR : F.obj R ≅ ModuleCat.of ℚ ℚ :=
-    F.mapIso ULift.moduleEquiv.toModuleIso ≪≫ eUnit
-  let eH : F.obj (C.homology n) ≅ X.homology (F.obj R) n :=
-    ((C.sc n).mapHomologyIso F).symm ≪≫
-      HomologicalComplex.homologyMapIso ((SSet.chainComplexFunctorObjCompMapIso F R).app X) n
-  let eC : X.homology (F.obj R) n ≅ X.homology (ModuleCat.of ℚ ℚ) n :=
-    HomologicalComplex.homologyMapIso
-      (((SSet.chainComplexFunctor.{0} (ModuleCat.{0} ℚ)).flip.obj X).mapIso eR) n
-  exact eH ≪≫ eC
-
 /-- **The rational fundamental class generates top homology freely.** For a compact connected
 oriented manifold, rational extension of its integral fundamental-class equivalence gives
 `ℚ ≃ₗ[ℚ] Hₙ(M; ℚ)`. No finite CW model is required. -/
@@ -447,7 +409,7 @@ def rationalFundamentalClassEquiv : ℚ ≃ₗ[ℚ]
   let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
     (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
   exact (eUnit.symm ≪≫ F.mapIso (o.fundamentalClassEquiv hn).toModuleIso ≪≫
-    rationalHomologyExtendScalarsIso (M := M) (n := n)).toLinearEquiv
+    (TopCat.toSSet.obj (TopCat.of M)).rationalHomologyExtendScalarsIso n).toLinearEquiv
 
 /-- Reversing orientation negates every value of the normalized rational equivalence. -/
 theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
@@ -456,7 +418,7 @@ theorem rationalFundamentalClassEquiv_neg_apply (c : ℚ) :
   have : F.Additive := Functor.additive_of_preserves_binary_products F
   let eUnit : F.obj (ModuleCat.of ℤ ℤ) ≅ ModuleCat.of ℚ ℚ :=
     (TensorProduct.AlgebraTensorModule.rid ℤ ℚ ℚ).toModuleIso
-  let eH := rationalHomologyExtendScalarsIso (M := M) (n := n)
+  let eH := (TopCat.toSSet.obj (TopCat.of M)).rationalHomologyExtendScalarsIso n
   -- Keep the induced integer action visible in these typed comparison maps. The original
   -- composition uses a definitionally equal canonical action in its tensor unit isomorphism.
   change eH.hom ((F.map ((-o).fundamentalClassEquiv hn).toModuleIso.hom)

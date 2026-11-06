@@ -66,19 +66,11 @@ theorem eulerChar_eq_two_sub_finrank_singularHomology_one :
     rw [(o.rationalFundamentalClassEquiv hn).symm.finrank_eq]
     exact finrank_self ℚ
   rw [eulerChar_eq_finsum_finrank_singularHomology M ℚ,
-    finsum_eq_sum_of_support_subset (s := Finset.range 3) _ ?_]
-  · simp [Finset.sum_range_succ, h₀, h₂]
-    ring
-  · intro i hi
-    by_contra hi₃
-    have hdim : 2 < i := by
-      have : 3 ≤ i := by
-        simpa only [Finset.mem_coe, Finset.mem_range, not_lt] using hi₃
-      omega
-    have hz := isZero_singularHomology_of_compactSpace (M := M) (E := E)
-      (ModuleCat.of ℚ ℚ) hn hdim
-    have := ModuleCat.subsingleton_of_isZero hz
-    simp [finrank_zero_of_subsingleton] at hi
+    ModuleCat.finsum_neg_one_pow_finrank_eq_sum_range (N := 3)
+      (fun i hi ↦ isZero_singularHomology_of_compactSpace (M := M) (E := E)
+        (ModuleCat.of ℚ ℚ) hn (by omega))]
+  simp [Finset.sum_range_succ, h₀, h₂]
+  ring
 
 /-- A closed connected homologically oriented surface of finite CW type has Euler characteristic
 at most two. -/
