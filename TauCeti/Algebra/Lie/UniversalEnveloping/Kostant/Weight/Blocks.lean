@@ -77,13 +77,24 @@ theorem orderedWeightBlock_surjective (degree : (κ → ℤ) →+ D) (wt : η �
   obtain ⟨x, hx⟩ := μ.property
   exact ⟨x, (congrArg (weightBlockEquiv degree wt) (Subtype.ext hx)).trans hμ⟩
 
+/-- The cardinality cast in the block numbering preserves the underlying natural number. -/
+private theorem orderedWeightBlock_val (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
+    (x : η) :
+    (orderedWeightBlock degree wt x).val =
+      letI := Fintype.ofFinite (Set.range wt)
+      (orderedWeightIndexEquiv degree (fun μ : Set.range wt => μ.val) ⟨wt x, x, rfl⟩).val := by
+  classical
+  simp only [orderedWeightBlock, weightBlockEquiv, Equiv.trans_apply, finCongr_apply_coe]
+
 /-- A strictly larger degree places a weight space strictly earlier in the block ranking. -/
 theorem orderedWeightBlock_lt_of_degree_lt (degree : (κ → ℤ) →+ D) (wt : η → κ → ℤ)
     {r s : η} (hrs : degree (wt s) < degree (wt r)) :
     orderedWeightBlock degree wt r < orderedWeightBlock degree wt s := by
   classical
   let _ := Fintype.ofFinite (Set.range wt)
-  exact orderedWeightIndexEquiv_lt_of_degree_lt degree (fun μ : Set.range wt => μ.val) hrs
+  rw [Fin.lt_def, orderedWeightBlock_val, orderedWeightBlock_val]
+  exact Fin.lt_def.mp (orderedWeightIndexEquiv_lt_of_degree_lt degree
+    (fun μ : Set.range wt => μ.val) (r := ⟨wt r, r, rfl⟩) (s := ⟨wt s, s, rfl⟩) hrs)
 
 variable [IsOrderedAddMonoid D]
 
@@ -92,10 +103,9 @@ theorem orderedWeightBlock_lt_of_eq_add_nsmul (degree : (κ → ℤ) →+ D) (wt
     {α : κ → ℤ} (hα : 0 < degree α) {r s : η} {n : ℕ} (hn : 0 < n)
     (hrs : wt r = wt s + n • α) :
     orderedWeightBlock degree wt r < orderedWeightBlock degree wt s := by
-  classical
-  let _ := Fintype.ofFinite (Set.range wt)
-  exact orderedWeightIndexEquiv_lt_of_eq_add_nsmul degree (fun μ : Set.range wt => μ.val)
-    hα hn (r := ⟨wt r, r, rfl⟩) (s := ⟨wt s, s, rfl⟩) hrs
+  apply orderedWeightBlock_lt_of_degree_lt degree wt
+  rw [hrs, map_add, map_nsmul]
+  exact lt_add_of_pos_right _ (nsmul_pos hα hn.ne')
 
 end Blocks
 
@@ -139,8 +149,11 @@ theorem blockUnitriangular_toDual_kostantRootSubgroupMatrix {A : Type*} [CommRin
   intro r s hrs
   exact kostantRootSubgroupMatrix_apply_eq_one_apply_of_forall_weight_ne
     e h ρ M hM b wt i hnil hwt hα f fun n hn heq =>
-      hrs (orderedWeightBlock_lt_of_eq_add_nsmul degree wt
-        (α := -α) (by simpa using neg_pos.mpr hdegree) hn (by simp [heq]))
+      hrs (by
+        simp only [Function.comp_apply, OrderDual.toDual_lt_toDual]
+        exact orderedWeightBlock_lt_of_eq_add_nsmul degree wt
+          (α := -α) (by simpa using neg_pos.mpr hdegree) (r := s) (s := r) hn
+          (by simp [heq]))
 
 end RootMatrices
 
