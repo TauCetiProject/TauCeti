@@ -8,7 +8,10 @@ module
 public import Mathlib.Algebra.Order.AddGroupWithTop
 public import Mathlib.Basic.Real.Basic
 public import Mathlib.Data.Set.Card
+public import Mathlib.GroupTheory.GroupAction.Defs
+public import TauCeti.Algebra.Order.AddGroupWithTop
 public import TauCeti.GroupTheory.BruhatTits.RootDatum
+public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Valuations of a root datum
@@ -39,8 +42,10 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 * `TauCeti.BruhatTits.Valuation`: a valuation of a root datum.
 * `TauCeti.BruhatTits.Valuation.filtration`: the filtration subgroups `U (a, k)`.
 * `TauCeti.BruhatTits.Valuation.valueSet`: the set `Γ a = φ a (U a ∖ {1}) ⊆ ℝ`.
-* `TauCeti.BruhatTits.Valuation.shift`: the valuation `φ + v` for `v` in the coroot space.
-* `TauCeti.BruhatTits.Valuation.Equipollent`: valuations differing by a shift.
+* `TauCeti.BruhatTits.Valuation.shift`: the valuation `φ + v` for `v` in the coroot space; it
+  defines an additive action of the coroot space on the valuations.
+* `TauCeti.BruhatTits.Valuation.Equipollent`: valuations differing by a shift, the orbit relation
+  of this action.
 * `TauCeti.BruhatTits.Valuation.IsCompatible`: compatibility with a map `T → N`.
 
 ## Main results
@@ -48,7 +53,7 @@ valuation `ω` of the field, and it says that `z` acts on the apartment by the t
 * `TauCeti.BruhatTits.Valuation.filtration_antitone`: `U (a, l) ≤ U (a, k)` for `k ≤ l`.
 * `TauCeti.BruhatTits.Valuation.commutator_filtration_le`: the axiom (V3) for subgroups.
 * `TauCeti.BruhatTits.Valuation.bruhat_value_right`: the value form of (V5) for the right factor.
-* `TauCeti.BruhatTits.Valuation.valueSet_reflectionPerm_self`: `Γ (-a) = -Γ a`.
+* `TauCeti.BruhatTits.Valuation.valueSet_neg`: `Γ (-a) = -Γ a`.
 * `TauCeti.BruhatTits.Valuation.equivalence_equipollent`: equipollence is an equivalence relation.
 * `TauCeti.BruhatTits.Valuation.isCompatible_iff_filtration`: `φ` is compatible with `ν` if and
   only if each `z ∈ T` conjugates `U (a, k)` onto `U (a, k - a (ν z))`.
@@ -159,11 +164,12 @@ def filtration (i : ι) (k : ℝ) : Subgroup G where
     rintro g ⟨hg, hk⟩
     exact ⟨inv_mem hg, hk.trans (φ.apply_le_apply_inv i ⟨g, hg⟩)⟩
 
+@[simp]
 theorem mem_filtration_iff {k : ℝ} {g : G} :
     g ∈ φ.filtration i k ↔ ∃ h : g ∈ D.U i, (k : WithTop ℝ) ≤ φ i ⟨g, h⟩ :=
   Iff.rfl
 
-@[simp]
+/-- Not `@[simp]`: `simp` proves it from `mem_filtration_iff` and `Subtype.coe_eta`. -/
 theorem coe_mem_filtration_iff {k : ℝ} (u : D.U i) :
     (u : G) ∈ φ.filtration i k ↔ (k : WithTop ℝ) ≤ φ i u :=
   ⟨fun ⟨_, h⟩ ↦ h, fun h ↦ ⟨u.2, h⟩⟩
@@ -252,14 +258,14 @@ theorem bruhat_value_right (u : D.U i) (u' u'' : D.U (P.reflectionPerm i i))
     simpa [mul_assoc] using D.inv_mem_reflectionCoset h
   simpa using φ.bruhat_value_left i u⁻¹ u''⁻¹ u'⁻¹ h'
 
-/-- In (V5) the middle factor `u` is nontrivial, so all three values are real. -/
+/-- In (V5) the middle factor `u` is nontrivial, so `φ a u` is real. -/
 theorem bruhat_value_ne_top (u : D.U i) (u' u'' : D.U (P.reflectionPerm i i))
     (h : (u' : G) * u * u'' ∈ D.reflectionCoset i) : φ i u ≠ ⊤ := by
   rw [φ.apply_ne_top_iff, Ne, ← Subtype.coe_inj]
   exact D.ne_one_of_mul_mul_mem_reflectionCoset u'.2 u''.2 h
 
 /-- A value `k` of `φ a` gives the value `-k` of `φ (-a)`, by (DR4) and (V5). -/
-theorem neg_mem_valueSet_reflectionPerm_self {k : ℝ} (hk : k ∈ φ.valueSet i) :
+theorem neg_mem_valueSet_neg {k : ℝ} (hk : k ∈ φ.valueSet i) :
     -k ∈ φ.valueSet (P.reflectionPerm i i) := by
   obtain ⟨u, hu⟩ := hk
   have hu1 : (u : G) ≠ 1 := by
@@ -269,8 +275,7 @@ theorem neg_mem_valueSet_reflectionPerm_self {k : ℝ} (hk : k ∈ φ.valueSet i
   -- Write `u = x n y` with `x, y ∈ U (-a)` and `n ∈ M (-a) = M a`.
   have hmem : (u : G) ∈ (D.U (P.reflectionPerm (P.reflectionPerm i i)
       (P.reflectionPerm i i)) : Set G) \ {1} :=
-    ⟨by rw [show P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i from
-      P.indexNeg.neg_neg i]; exact u.2, hu1⟩
+    ⟨by rw [P.reflectionPerm_reflectionPerm_self]; exact u.2, hu1⟩
   obtain ⟨_, ⟨x, hx, n, hn, rfl⟩, y, hy, hxy⟩ := D.bruhat _ hmem
   rw [D.reflectionCoset_reflectionPerm_self] at hn
   have hn' : ((⟨x, hx⟩⁻¹ : D.U _) : G) * u * (⟨y, hy⟩⁻¹ : D.U _) ∈ D.reflectionCoset i := by
@@ -282,13 +287,11 @@ theorem neg_mem_valueSet_reflectionPerm_self {k : ℝ} (hk : k ∈ φ.valueSet i
   rw [hu, WithTop.LinearOrderedAddCommGroup.coe_neg]
 
 /-- The value set of `-a` is the negative of that of `a`: `Γ (-a) = -Γ a`. -/
-theorem valueSet_reflectionPerm_self (i : ι) :
+theorem valueSet_neg (i : ι) :
     φ.valueSet (P.reflectionPerm i i) = -φ.valueSet i := by
   refine Set.Subset.antisymm (fun k hk ↦ Set.mem_neg.mpr ?_) fun k hk ↦ by
-    simpa using φ.neg_mem_valueSet_reflectionPerm_self (Set.mem_neg.mp hk)
-  have := φ.neg_mem_valueSet_reflectionPerm_self hk
-  rwa [show P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i from
-    P.indexNeg.neg_neg i] at this
+    simpa using φ.neg_mem_valueSet_neg (Set.mem_neg.mp hk)
+  simpa using φ.neg_mem_valueSet_neg hk
 
 end Ordered
 
@@ -325,16 +328,6 @@ namespace Valuation
 variable [Module ℝ M] [Module ℝ N] {P : RootPairing ι ℝ M N} {D : RootDatum P G}
   (φ : Valuation D) {i : ι}
 
-private theorem coe_le_add_coe_iff {x : WithTop ℝ} {k c : ℝ} :
-    (k : WithTop ℝ) ≤ x + c ↔ ((k - c : ℝ) : WithTop ℝ) ≤ x := by
-  rw [← add_le_add_iff_left_of_ne_top (a := (c : WithTop ℝ)) WithTop.coe_ne_top
-    (b := ((k - c : ℝ) : WithTop ℝ)), ← WithTop.coe_add, sub_add_cancel]
-
-private theorem coe_sub_le_sub_coe_iff {x : WithTop ℝ} {k c : ℝ} :
-    ((k - c : ℝ) : WithTop ℝ) ≤ x - c ↔ (k : WithTop ℝ) ≤ x := by
-  rw [WithTop.LinearOrderedAddCommGroup.coe_sub,
-    LinearOrderedAddCommGroupWithTop.sub_le_sub_iff_left_of_ne_top WithTop.coe_ne_top]
-
 /-- The shift `(φ + v) a = φ a + a v` of a valuation by a vector `v` of the coroot space. -/
 def shift (v : N) : Valuation D where
   toFun i u := φ i u + (P.root' i v : WithTop ℝ)
@@ -354,19 +347,18 @@ def shift (v : N) : Valuation D where
   exists_apply_eq_apply_conj_add i m hm := by
     obtain ⟨c, hc⟩ := φ.exists_apply_eq_apply_conj_add i m hm
     refine ⟨c - 2 * P.root' i v, fun u hu ↦ ?_⟩
-    have hneg : P.root' (P.reflectionPerm i i) v = -P.root' i v := by simp [RootPairing.root']
-    rw [hc u hu, hneg]
+    rw [hc u hu, P.root'_reflectionPerm_self, LinearMap.neg_apply]
     obtain ⟨k, hk⟩ := φ.exists_apply_eq_coe (u := ⟨m * u * m⁻¹, _⟩) (fun h ↦ hu (by
       simpa using congrArg Subtype.val h))
     rw [hk]
     norm_cast
     ring
   commutator_mem i j hij k l u w hu hw := by
-    rw [coe_le_add_coe_iff] at hu hw
+    rw [WithTop.coe_le_add_coe_iff] at hu hw
     refine Subgroup.closure_mono ?_ (φ.commutator_mem i j hij _ _ u w hu hw)
     rintro g ⟨n, p, q, hp, hq, hn, hg, hv⟩
     refine ⟨n, p, q, hp, hq, hn, hg, ?_⟩
-    rw [coe_le_add_coe_iff]
+    rw [WithTop.coe_le_add_coe_iff]
     have hnv : P.root' n v = p * P.root' i v + q * P.root' j v := by
       simp [RootPairing.root', hn, nsmul_eq_mul]
     convert hv using 3
@@ -377,8 +369,7 @@ def shift (v : N) : Valuation D where
     rw [φ.apply_eq_two_smul i j h u, hv, two_nsmul, two_nsmul, two_mul, WithTop.coe_add]
     abel
   bruhat_value_left i u u' u'' h := by
-    have hneg : P.root' (P.reflectionPerm i i) v = -P.root' i v := by simp [RootPairing.root']
-    rw [φ.bruhat_value_left i u u' u'' h, hneg]
+    rw [φ.bruhat_value_left i u u' u'' h, P.root'_reflectionPerm_self, LinearMap.neg_apply]
     generalize φ.toFun i u = x
     cases x with
     | top => simp
@@ -403,7 +394,7 @@ theorem shift_shift (v w : N) : (φ.shift v).shift w = φ.shift (v + w) := by
 theorem filtration_shift (v : N) (k : ℝ) :
     (φ.shift v).filtration i k = φ.filtration i (k - P.root' i v) := by
   ext g
-  simp only [mem_filtration_iff, shift_apply, coe_le_add_coe_iff]
+  simp only [mem_filtration_iff, shift_apply, WithTop.coe_le_add_coe_iff]
 
 /-- Shifting by `v` translates the value set of `a` by `a v`. -/
 @[simp]
@@ -419,13 +410,26 @@ theorem valueSet_shift (v : N) :
   · rintro ⟨l, ⟨u, hu⟩, rfl⟩
     exact ⟨u, by rw [hu]; norm_cast⟩
 
-/-- Two valuations are equipollent if they differ by a shift: `ψ = φ + v` for some `v`. -/
+/-- The coroot space acts on the valuations by shifts: `v +ᵥ φ = φ + v`. -/
+instance : AddAction N (Valuation D) where
+  vadd v φ := φ.shift v
+  zero_vadd := shift_zero
+  add_vadd v w φ := by
+    change φ.shift (v + w) = (φ.shift w).shift v
+    rw [shift_shift, add_comm]
+
+@[simp]
+theorem vadd_eq_shift (v : N) : v +ᵥ φ = φ.shift v :=
+  rfl
+
+/-- Two valuations are equipollent if they differ by a shift: `ψ = φ + v` for some `v`. They
+are the orbits of the action of the coroot space by shifts, which form the reduced apartment. -/
 def Equipollent (φ ψ : Valuation D) : Prop :=
-  ∃ v : N, ψ = φ.shift v
+  AddAction.orbitRel N (Valuation D) ψ φ
 
 theorem equipollent_iff {ψ : Valuation D} :
     φ.Equipollent ψ ↔ ∃ v : N, ∀ i u, ψ i u = φ i u + (P.root' i v : WithTop ℝ) :=
-  exists_congr fun v ↦ ⟨fun h _ _ ↦ by simp [h], fun h ↦ ext h⟩
+  exists_congr fun v ↦ ⟨fun h _ _ ↦ by simp [← h], fun h ↦ (ext h).symm⟩
 
 /-- Every valuation is equipollent to its shifts. -/
 theorem equipollent_shift (v : N) : φ.Equipollent (φ.shift v) :=
@@ -433,21 +437,18 @@ theorem equipollent_shift (v : N) : φ.Equipollent (φ.shift v) :=
 
 @[refl]
 theorem Equipollent.refl : φ.Equipollent φ :=
-  ⟨0, φ.shift_zero.symm⟩
+  (AddAction.orbitRel N (Valuation D)).refl φ
 
 variable {φ}
 
 @[symm]
-theorem Equipollent.symm {ψ : Valuation D} (h : φ.Equipollent ψ) : ψ.Equipollent φ := by
-  obtain ⟨v, rfl⟩ := h
-  exact ⟨-v, by simp⟩
+theorem Equipollent.symm {ψ : Valuation D} (h : φ.Equipollent ψ) : ψ.Equipollent φ :=
+  (AddAction.orbitRel N (Valuation D)).symm h
 
 @[trans]
 theorem Equipollent.trans {ψ χ : Valuation D} (h₁ : φ.Equipollent ψ) (h₂ : ψ.Equipollent χ) :
-    φ.Equipollent χ := by
-  obtain ⟨v, rfl⟩ := h₁
-  obtain ⟨w, rfl⟩ := h₂
-  exact ⟨v + w, by simp⟩
+    φ.Equipollent χ :=
+  (AddAction.orbitRel N (Valuation D)).trans h₂ h₁
 
 variable (D) in
 /-- Equipollence is an equivalence relation on the valuations of a root datum. -/
@@ -490,7 +491,7 @@ theorem isCompatible_iff_filtration {ν : D.T → N} :
       have e₂ : g ∈ φ.filtration i (k - P.root' i (ν z)) ↔
           ((k - P.root' i (ν z) : ℝ) : WithTop ℝ) ≤ φ i ⟨g, hg⟩ :=
         φ.coe_mem_filtration_iff ⟨g, hg⟩
-      rw [e₁, e₂, hc, coe_sub_le_sub_coe_iff]
+      rw [e₁, e₂, hc, WithTop.coe_sub_le_sub_coe_iff]
     · refine iff_of_false (fun hk ↦ hg ?_) fun hk ↦ hg (φ.filtration_le_U i _ hk)
       simpa [mul_assoc] using D.mul_mul_inv_mem_U z.2 (φ.filtration_le_U i k hk)
   · intro h i z u
@@ -504,7 +505,7 @@ theorem isCompatible_iff_filtration {ν : D.T → N} :
     have e : (z * u * (z : G)⁻¹ : G) ∈ φ.filtration i k ↔
         (k : WithTop ℝ) ≤ φ i ⟨z * u * (z : G)⁻¹, D.mul_mul_inv_mem_U z.2 u.2⟩ :=
       φ.coe_mem_filtration_iff ⟨_, D.mul_mul_inv_mem_U z.2 u.2⟩
-    rw [← e, key, coe_mem_filtration_iff, ← coe_sub_le_sub_coe_iff (c := P.root' i (ν z)),
+    rw [← e, key, coe_mem_filtration_iff, ← WithTop.coe_sub_le_sub_coe_iff (c := P.root' i (ν z)),
       add_sub_cancel_right]
 
 /-- Compatibility is invariant under shifts. -/

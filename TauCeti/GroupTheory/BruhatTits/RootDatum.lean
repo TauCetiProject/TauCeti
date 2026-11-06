@@ -58,6 +58,14 @@ public section
 
 open scoped Pointwise
 
+/-- Negating a root index twice gives it back: the root of index `P.reflectionPerm j j` for
+`j = P.reflectionPerm i i` is `-(-P.root i) = P.root i`. -/
+@[simp]
+theorem RootPairing.reflectionPerm_reflectionPerm_self {ι R M N : Type*} [CommRing R]
+    [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] (P : RootPairing ι R M N)
+    (i : ι) : P.reflectionPerm (P.reflectionPerm i i) (P.reflectionPerm i i) = i :=
+  P.indexNeg.neg_neg i
+
 namespace TauCeti.BruhatTits
 
 variable {ι R M N : Type*} [Field R] [LinearOrder R]
@@ -203,6 +211,13 @@ theorem mul_mul_inv_mem_U_of_mem_reflectionCoset {i : ι} {m u : G}
   rw [← D.conj_smul_U_neg hm, ← ConjAct.toConjAct_smul]
   exact Subgroup.smul_mem_pointwise_smul _ _ _ hu
 
+/-- Each element of `M a` conjugates `U a` into `U (-a)`. -/
+theorem mul_mul_inv_mem_U_neg_of_mem_reflectionCoset {i : ι} {m u : G}
+    (hm : m ∈ D.reflectionCoset i) (hu : u ∈ D.U i) :
+    m * u * m⁻¹ ∈ D.U (P.reflectionPerm i i) := by
+  rw [← D.reflection_conjugates i m hm i, ← ConjAct.toConjAct_smul]
+  exact Subgroup.smul_mem_pointwise_smul _ _ _ hu
+
 /-- Membership in a reflection coset, tested against one of its elements. -/
 theorem mem_reflectionCoset_iff_mul_inv_mem_T {i : ι} {m g : G}
     (hm : m ∈ D.reflectionCoset i) : g ∈ D.reflectionCoset i ↔ g * m⁻¹ ∈ D.T :=
@@ -275,7 +290,7 @@ theorem eq_one_of_mem_normalizer {i : ι} {g : G} (hg : g ∈ D.U i)
     (hn : g ∈ Subgroup.normalizer (D.U (P.reflectionPerm i i) : Set G)) : g = 1 := by
   by_contra hne
   set j := P.reflectionPerm i i
-  have hji : P.reflectionPerm j j = i := P.indexNeg.neg_neg i
+  have hji : P.reflectionPerm j j = i := P.reflectionPerm_reflectionPerm_self i
   have hg' : g ∈ (D.U (P.reflectionPerm j j) : Set G) \ {1} := ⟨by rwa [hji], hne⟩
   obtain ⟨_, ⟨p, hp, n, hn', rfl⟩, q, hq, hpq⟩ := D.bruhat j hg'
   have hnorm : n ∈ Subgroup.normalizer (D.U j : Set G) := by
@@ -296,7 +311,7 @@ private theorem mem_reflectionCoset_of_mem_mul {i : ι} {g : G}
     g ∈ D.reflectionCoset i := by
   obtain ⟨_, ⟨x, hx, m, hm, rfl⟩, y, hy, rfl⟩ := hg
   set j := P.reflectionPerm i i
-  have hji : P.reflectionPerm j j = i := P.indexNeg.neg_neg i
+  have hji : P.reflectionPerm j j = i := P.reflectionPerm_reflectionPerm_self i
   have hm₁ := D.conj_smul_U_neg hm
   have hm₂ : ConjAct.toConjAct m • D.U i = D.U j := D.reflection_conjugates i m hm i
   -- `h = x * m * y * m⁻¹` normalizes `U a` and `U (-a)`, and lies in `U a * U (-a)`.
@@ -309,9 +324,7 @@ private theorem mem_reflectionCoset_of_mem_mul {i : ι} {g : G}
   have hh₂ : h ∈ Subgroup.normalizer (D.U j : Set G) := by
     rw [← Subgroup.conjAct_pointwise_smul_iff, ConjAct.toConjAct_mul, mul_smul,
       ConjAct.toConjAct_inv, hm₂', h₁]
-  have hz : m * y * m⁻¹ ∈ D.U j := by
-    rw [← hm₂, ← ConjAct.toConjAct_smul]
-    exact Subgroup.smul_mem_pointwise_smul _ _ _ hy
+  have hz : m * y * m⁻¹ ∈ D.U j := D.mul_mul_inv_mem_U_neg_of_mem_reflectionCoset hm hy
   have hz₁ : m * y * m⁻¹ = 1 := by
     refine D.eq_one_of_mem_normalizer hz ?_
     rw [hji]
@@ -331,7 +344,7 @@ private theorem mem_reflectionCoset_of_mem_mul {i : ι} {g : G}
 theorem reflectionCoset_reflectionPerm_self (i : ι) :
     D.reflectionCoset (P.reflectionPerm i i) = D.reflectionCoset i := by
   set j := P.reflectionPerm i i
-  have hji : P.reflectionPerm j j = i := P.indexNeg.neg_neg i
+  have hji : P.reflectionPerm j j = i := P.reflectionPerm_reflectionPerm_self i
   -- Write a nontrivial `u ∈ U (-a)` as `x m y` with `x, y ∈ U a` and `m ∈ M a`.
   obtain ⟨u, hu, hne, x, hx, m, hm, y, hy, rfl⟩ := D.exists_mem_bruhat i
   have hmi : ConjAct.toConjAct m • D.U i = D.U j := D.reflection_conjugates i m hm i
@@ -347,12 +360,12 @@ theorem reflectionCoset_reflectionPerm_self (i : ι) :
     rw [Subgroup.conjAct_pointwise_smul_eq_self (Subgroup.le_normalizer hu')] at h'
     exact D.U_ne_of_root_eq_neg (by simp [j]) h'.symm
   -- Then `x⁻¹ = (m y m⁻¹) m u⁻¹ ∈ U a ∖ {1}` factors through `M (-a)` by (DR4).
-  have hz : m * y * m⁻¹ ∈ D.U j := by
-    rw [← hmi, ← ConjAct.toConjAct_smul]
-    exact Subgroup.smul_mem_pointwise_smul _ _ _ hy
+  have hz : m * y * m⁻¹ ∈ D.U j := D.mul_mul_inv_mem_U_neg_of_mem_reflectionCoset hm hy
   have hxinv : x⁻¹ ∈ (D.U (P.reflectionPerm j j) : Set G) \ {1} :=
     ⟨by rw [hji]; exact inv_mem hx, inv_ne_one.mpr hx₁⟩
   obtain ⟨_, ⟨p, hp, n, hn, rfl⟩, q, hq, hpq⟩ := D.bruhat j hxinv
+  -- Membership in a pointwise product states `p * n * q` through unreduced lambdas, which
+  -- `rw [hpq]` below cannot match, so restate it in beta-reduced form.
   replace hpq : p * n * q = x⁻¹ := hpq
   -- So `m ∈ U (-a) M (-a) U (-a)` exchanges `U a` and `U (-a)`, hence `m ∈ M (-a)`.
   have hmj : m ∈ D.reflectionCoset j := by
