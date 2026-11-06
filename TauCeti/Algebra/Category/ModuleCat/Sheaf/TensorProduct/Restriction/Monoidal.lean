@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.ModuleCat.Sheaf.TensorProduct.Restriction.Basic
 public import Mathlib.CategoryTheory.Localization.Monoidal.Functor
+public import TauCeti.CategoryTheory.Monoidal.Braided.Basic
 
 /-!
 # Restriction as a symmetric monoidal functor
@@ -187,16 +188,6 @@ instance _root_.SheafOfModules.overFunctorMonoidal :
     (_root_.SheafOfModules.overFunctor (ringCatSheaf R) X) restrictionSheafification
     (overSheafificationBraided R X).toMonoidal _ (overSheafificationLifting R X)
 
-/-- Sheafification of presheaves of modules is compatible with the braiding: the tensorator
-inverse `δ` intertwines the braiding of sheafifications with the sheafification of the braiding. -/
-private theorem overSheafification_δ_comp_braiding (M N : SheafOfModules.{u} (ringCatSheaf R)) :
-    Functor.OplaxMonoidal.δ sourceSheafification M.val N.val ≫
-        (β_ ((sourceSheafification).obj M.val) ((sourceSheafification).obj N.val)).hom =
-      (sourceSheafification).map (β_ M.val N.val).hom ≫
-        Functor.OplaxMonoidal.δ sourceSheafification N.val M.val := by
-  rw [← cancel_mono (Functor.LaxMonoidal.μ sourceSheafification N.val M.val)]
-  simp
-
 /-- The braiding compatibility of restriction to a slice, in terms of the tensor comparison
 `curriedTensorPreIsoPost` characterizing the generated tensorator of `overFunctor`. -/
 private theorem overCurriedTensorPreIsoPost_braiding (M N : SheafOfModules.{u} (ringCatSheaf R)) :
@@ -223,7 +214,8 @@ private theorem overCurriedTensorPreIsoPost_braiding (M N : SheafOfModules.{u} (
     (sheafificationIso (ringCatSheaf R) M).symm]
   simp only [Category.assoc, ← Functor.map_comp]
   -- Move the source braiding across the inverse tensorator of sheafification.
-  rw [BraidedCategory.braiding_naturality, reassoc_of% (overSheafification_δ_comp_braiding R M N),
+  rw [BraidedCategory.braiding_naturality,
+    reassoc_of% (Functor.δ_braiding sourceSheafification M.val N.val),
     Functor.map_comp]
   -- Naturality moves the mapped source braiding through the localization comparison.
   rw [← reassoc_of% (CategoryTheory.Localization.Lifting.iso

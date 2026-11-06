@@ -119,4 +119,14 @@ theorem leftUnitor_whiskerRight_comp_rightUnitor_eq (X : C) :
   rw [braiding_tensorUnit_right]
   monoidal
 
+/-- The inverse tensorator `δ` of a braided functor intertwines the braiding of the images with the
+image of the braiding. This is the `δ` counterpart of `Functor.map_braiding`. -/
+@[reassoc]
+theorem _root_.CategoryTheory.Functor.δ_braiding {D : Type*} [Category* D] [MonoidalCategory D]
+    [BraidedCategory D] (F : C ⥤ D) [F.Braided] (X Y : C) :
+    Functor.OplaxMonoidal.δ F X Y ≫ (β_ (F.obj X) (F.obj Y)).hom =
+      F.map (β_ X Y).hom ≫ Functor.OplaxMonoidal.δ F Y X := by
+  rw [← cancel_mono (Functor.LaxMonoidal.μ F Y X)]
+  simp
+
 end TauCeti
