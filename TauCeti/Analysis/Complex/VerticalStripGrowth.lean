@@ -16,9 +16,8 @@ The height threshold depends on the strip: in particular, poles at nonzero heigh
 need not obstruct this property. No regularity of `f` is required.
 
 The property is stable under addition and multiplication. Bounds extend to degenerate
-strips, and real exponential functions provide examples bounded on every vertical strip
-without being bounded on the whole plane. These facts allow growth estimates for completed
-L-functions to be assembled from their factors.
+strips, and real exponential functions provide nonconstant examples of vertical-strip growth.
+These facts allow growth estimates for completed L-functions to be assembled from their factors.
 -/
 
 public section
@@ -33,6 +32,7 @@ def HasVerticalStripGrowth (f : ℂ → ℂ) : Prop :=
     ∀ s : ℂ, s.re ∈ Set.Icc a b → T₀ ≤ |s.im| →
       ‖f s‖ ≤ C * (1 + |s.im|) ^ A
 
+/-- Unfolds `HasVerticalStripGrowth` into its quantifier form. -/
 theorem hasVerticalStripGrowth_iff {f : ℂ → ℂ} :
     HasVerticalStripGrowth f ↔
       ∀ a b : ℝ, a < b → ∃ C : ℝ, 0 < C ∧ ∃ A : ℝ, 0 ≤ A ∧ ∃ T₀ : ℝ, 0 ≤ T₀ ∧
@@ -43,8 +43,8 @@ namespace HasVerticalStripGrowth
 
 variable {f g : ℂ → ℂ}
 
-/-- A bound on any smaller strip, including a single vertical line, can be obtained
-with the constants and threshold of an enclosing nondegenerate strip. -/
+/-- Growth bounds hold on every closed strip `a ≤ re s ≤ b` with `a ≤ b`,
+including a single vertical line. -/
 theorem exists_bound (hf : HasVerticalStripGrowth f) {a b : ℝ} (hab : a ≤ b) :
     ∃ C : ℝ, 0 < C ∧ ∃ A : ℝ, 0 ≤ A ∧ ∃ T₀ : ℝ, 0 ≤ T₀ ∧
       ∀ s : ℂ, s.re ∈ Set.Icc a b → T₀ ≤ |s.im| →
@@ -60,8 +60,7 @@ theorem mono (hg : HasVerticalStripGrowth g) (hfg : ∀ s, ‖f s‖ ≤ ‖g s�
   obtain ⟨C, hC, A, hA, T₀, hT₀, hbound⟩ := hg a b hab
   exact ⟨C, hC, A, hA, T₀, hT₀, fun s hs ht ↦ (hfg s).trans (hbound s hs ht)⟩
 
-/-- Adding two functions adds their bounding constants and takes the larger exponent
-and height threshold. -/
+/-- Vertical-strip growth is stable under addition. -/
 theorem add (hf : HasVerticalStripGrowth f) (hg : HasVerticalStripGrowth g) :
     HasVerticalStripGrowth (fun s ↦ f s + g s) := by
   intro a b hab
@@ -73,16 +72,18 @@ theorem add (hf : HasVerticalStripGrowth f) (hg : HasVerticalStripGrowth g) :
   calc
     ‖f s + g s‖ ≤ ‖f s‖ + ‖g s‖ := norm_add_le _ _
     _ ≤ C * (1 + |s.im|) ^ A + D * (1 + |s.im|) ^ B :=
-      add_le_add (hfbound s hs ((le_max_left _ _).trans ht))
-        (hgbound s hs ((le_max_right _ _).trans ht))
+      by
+        gcongr
+        · exact hfbound s hs ((le_max_left _ _).trans ht)
+        · exact hgbound s hs ((le_max_right _ _).trans ht)
     _ ≤ C * (1 + |s.im|) ^ max A B + D * (1 + |s.im|) ^ max A B :=
-      add_le_add (mul_le_mul_of_nonneg_left
-        (Real.rpow_le_rpow_of_exponent_le hbase (le_max_left _ _)) hC.le)
-        (mul_le_mul_of_nonneg_left
-          (Real.rpow_le_rpow_of_exponent_le hbase (le_max_right _ _)) hD.le)
+      by
+        gcongr
+        · exact le_max_left _ _
+        · exact le_max_right _ _
     _ = (C + D) * (1 + |s.im|) ^ max A B := (add_mul _ _ _).symm
 
-/-- Products have the sum of the exponents, with the larger height threshold. -/
+/-- Vertical-strip growth is stable under multiplication. -/
 theorem mul (hf : HasVerticalStripGrowth f) (hg : HasVerticalStripGrowth g) :
     HasVerticalStripGrowth (fun s ↦ f s * g s) := by
   intro a b hab
@@ -93,13 +94,15 @@ theorem mul (hf : HasVerticalStripGrowth f) (hg : HasVerticalStripGrowth g) :
   calc
     ‖f s * g s‖ = ‖f s‖ * ‖g s‖ := norm_mul _ _
     _ ≤ (C * (1 + |s.im|) ^ A) * (D * (1 + |s.im|) ^ B) :=
-      mul_le_mul (hfbound s hs ((le_max_left _ _).trans ht))
-        (hgbound s hs ((le_max_right _ _).trans ht)) (norm_nonneg _) (by positivity)
+      by
+        gcongr
+        · exact hfbound s hs ((le_max_left _ _).trans ht)
+        · exact hgbound s hs ((le_max_right _ _).trans ht)
     _ = (C * D) * (1 + |s.im|) ^ (A + B) := by
       rw [Real.rpow_add (by positivity)]
       ring
 
-/-- Negation preserves the same bounds. -/
+/-- Vertical-strip growth is stable under negation. -/
 theorem neg (hf : HasVerticalStripGrowth f) :
     HasVerticalStripGrowth (fun s ↦ -f s) :=
   hf.mono fun s ↦ (norm_neg (f s)).le
@@ -111,7 +114,7 @@ theorem sub (hf : HasVerticalStripGrowth f) (hg : HasVerticalStripGrowth g) :
 
 end HasVerticalStripGrowth
 
-/-- Constants are bounded on every strip, with zero exponent and threshold. -/
+/-- Constant functions have vertical-strip growth. -/
 @[simp]
 theorem hasVerticalStripGrowth_const {c : ℂ} : HasVerticalStripGrowth (fun _ ↦ c) := by
   intro a b hab
@@ -122,12 +125,12 @@ namespace HasVerticalStripGrowth
 variable {f : ℂ → ℂ}
 
 /-- Multiplication by a constant preserves vertical-strip growth. -/
-theorem const_mul (hf : HasVerticalStripGrowth f) {c : ℂ} :
+theorem const_mul (hf : HasVerticalStripGrowth f) (c : ℂ) :
     HasVerticalStripGrowth (fun s ↦ c * f s) :=
   hasVerticalStripGrowth_const.mul hf
 
 /-- Natural powers preserve vertical-strip growth. -/
-theorem pow (hf : HasVerticalStripGrowth f) {n : ℕ} :
+theorem pow (hf : HasVerticalStripGrowth f) (n : ℕ) :
     HasVerticalStripGrowth (fun s ↦ f s ^ n) := by
   induction n with
   | zero => simpa only [pow_zero] using (hasVerticalStripGrowth_const (c := 1))
@@ -140,9 +143,8 @@ theorem hasVerticalStripGrowth_congr {f g : ℂ → ℂ} (h : ∀ s, f s = g s) 
     HasVerticalStripGrowth f ↔ HasVerticalStripGrowth g := by
   rw [funext h]
 
-/-- A real exponential is bounded on each vertical strip, even though a nonconstant
-one is unbounded on the plane. -/
-theorem hasVerticalStripGrowth_exp_real_mul {r : ℝ} :
+/-- Real exponentials `exp (r * s)` have vertical-strip growth. -/
+theorem hasVerticalStripGrowth_cexp_ofReal_mul {r : ℝ} :
     HasVerticalStripGrowth (fun s : ℂ ↦ Complex.exp (r * s)) := by
   intro a b hab
   refine ⟨Real.exp (|r| * max |a| |b|), Real.exp_pos _, 0, le_rfl,
@@ -151,9 +153,6 @@ theorem hasVerticalStripGrowth_exp_real_mul {r : ℝ} :
   simp only [Complex.norm_exp, Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im,
     zero_mul, sub_zero, Real.rpow_zero, mul_one]
   apply Real.exp_le_exp.mpr
-  calc
-    r * s.re ≤ |r * s.re| := le_abs_self _
-    _ = |r| * |s.re| := abs_mul _ _
-    _ ≤ |r| * max |a| |b| := mul_le_mul_of_nonneg_left hre (abs_nonneg _)
+  exact (le_abs_self _).trans (by rw [abs_mul]; gcongr)
 
 end TauCeti
