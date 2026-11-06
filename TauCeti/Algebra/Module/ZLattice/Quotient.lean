@@ -334,6 +334,17 @@ theorem _root_.Module.Basis.quotientSmulEquivPiZMod_mk {ι : Type*} [Finite ι] 
   rw [Module.Basis.quotientSmulEquivPiZMod, LinearEquiv.trans_apply, quotEquivOfEq_mk,
     LinearEquiv.restrictScalars_apply, Basis.equivFun_apply, ModN.basis_repr_mk]
 
+/-- The class in `L / cL` with coordinates `x` modulo `c` in `b` is the class of
+`∑ i, (x i).val • b i`, the combination of `b` with the least natural representatives of the
+coordinates. -/
+@[simp]
+theorem _root_.Module.Basis.quotientSmulEquivPiZMod_symm_apply {ι : Type*} [Fintype ι]
+    (b : Basis ι ℤ L) (c : ℕ) [NeZero c] (x : ι → ZMod c) :
+    (b.quotientSmulEquivPiZMod c).symm x = Submodule.Quotient.mk (∑ i, ((x i).val : ℤ) • b i) := by
+  refine (b.quotientSmulEquivPiZMod c).symm_apply_eq.mpr (funext fun i ↦ ?_)
+  rw [Module.Basis.quotientSmulEquivPiZMod_mk, b.repr_sum_self, Int.cast_natCast,
+    ZMod.natCast_zmod_val]
+
 variable (L) [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
 
 /-- The quotient `L / cL` of a full lattice of rank `n` has `c ^ n` elements. For `c = 0` this
