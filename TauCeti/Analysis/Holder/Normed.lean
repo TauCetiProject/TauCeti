@@ -322,8 +322,7 @@ private theorem norm_sub_limit_toBoundedContinuousFunction_le
     _ ≤ ‖u n - u N‖ := norm_toBoundedContinuousFunction_le _
     _ ≤ C := hbound n hn
 
-/-- The limit in `X →ᵇ Y` of a Cauchy sequence of Hölder functions is Hölder: its difference from
-one term of the sequence is `1`-Hölder by `holderWith_sub_of_tendsto_of_norm_sub_le`. -/
+/-- The limit in `X →ᵇ Y` of a Cauchy sequence of Hölder functions is Hölder. -/
 private theorem memHolder_of_tendsto_of_cauchySeq {u : ℕ → HolderSpace α X Y} {F : X →ᵇ Y}
     (hu : CauchySeq u) (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F)) :
     MemHolder α (F : X → Y) := by
@@ -338,8 +337,8 @@ private theorem memHolder_of_tendsto_of_cauchySeq {u : ℕ → HolderSpace α X 
     exact sub_add_cancel (F x) (u N x)
   rwa [heq] at h
 
-/-- A term of a Cauchy sequence in the Hölder space is within twice the Cauchy bound of the limit:
-the supremum and the Hölder term of the difference are each at most `C`. -/
+/-- If `‖u n - u N‖ ≤ C` for all `n ≥ N` and `u` converges to `F` in `X →ᵇ Y`, then `u N` is within
+`2 * C` of the Hölder limit of `u`. -/
 private theorem norm_sub_ofBoundedContinuousFunction_le {u : ℕ → HolderSpace α X Y} {F : X →ᵇ Y}
     (hF : Tendsto (fun n ↦ (u n).toBoundedContinuousFunction) atTop (𝓝 F))
     (hholderF : MemHolder α (F : X → Y)) (N : ℕ) (C : ℝ≥0) (hbound : ∀ n ≥ N, ‖u n - u N‖ ≤ C) :
