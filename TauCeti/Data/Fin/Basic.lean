@@ -412,6 +412,15 @@ theorem finRotate_succ_succAbove_of_ne {n : ℕ} {i k : Fin n} (hk : k ≠ i) :
 theorem finRotate_castSucc {n : ℕ} (i : Fin n) : finRotate (n + 1) i.castSucc = i.succ :=
   finRotate_of_lt i.isLt
 
+/-- The inverse cyclic rotation sends `k.succ` to `k.castSucc`. -/
+@[simp] theorem finRotate_symm_succ {m : ℕ} (k : Fin m) :
+    (finRotate (m + 1)).symm k.succ = k.castSucc :=
+  (finRotate _).symm_apply_eq.mpr (finRotate_castSucc k).symm
+
+/-- The inverse cyclic rotation sends `0` to `Fin.last m`. -/
+@[simp] theorem finRotate_symm_zero {m : ℕ} : (finRotate (m + 1)).symm 0 = last m :=
+  (finRotate _).symm_apply_eq.mpr finRotate_last.symm
+
 /-- Rotating a tuple of even length alternating between two entries swaps the two entries. -/
 theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y : α) :
     (fun k : Fin n ↦ if Even (k : ℕ) then x else y) ∘ (finRotate n).symm =
@@ -422,12 +431,11 @@ theorem ite_even_comp_finRotate_symm {α : Type*} {n : ℕ} (hn : Even n) (x y :
   | succ n =>
     cases k using Fin.cases with
     | zero =>
-      have h : (finRotate (n + 1)).symm 0 = last n := (Equiv.symm_apply_eq _).2 finRotate_last.symm
-      simp [h, Nat.even_add_one.1 hn]
+      rw [Function.comp_apply, finRotate_symm_zero]
+      simp [Nat.even_add_one.1 hn]
     | succ k =>
-      have h : (finRotate (n + 1)).symm k.succ = k.castSucc :=
-        (Equiv.symm_apply_eq _).2 (finRotate_castSucc k).symm
-      by_cases hk : Even (k : ℕ) <;> simp [h, hk, Nat.even_add_one]
+      rw [Function.comp_apply, finRotate_symm_succ]
+      by_cases hk : Even (k : ℕ) <;> simp [hk, Nat.even_add_one]
 
 /-- A position `p` of `Fin (n + 1)` cyclically adjacent to `p.succAbove i` is `i.castSucc` or
 `i.succ`, or wraps around: `p` is last and `p.succAbove i` is `0`, or `p` is `0` and
