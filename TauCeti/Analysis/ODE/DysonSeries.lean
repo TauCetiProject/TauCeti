@@ -51,7 +51,10 @@ one-parameter automorphism groups of C⋆-algebras.
   `Γ' t = p t * Γ t` (`TauCeti.hasDerivAt_dysonSeriesLeft`), and factoring as
   `Γ (t + d) = Γ t * Γ d` for a path of period `d` (`TauCeti.dysonSeriesLeft_add_of_periodic`).
   Its values are invertible, with inverse the Dyson series of `-p`
-  (`TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`, `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`).
+  (`TauCeti.dysonSeriesLeft_mul_dysonSeries_neg`, `TauCeti.dysonSeries_neg_mul_dysonSeriesLeft`),
+  also stated on vectors for paths of bounded operators
+  (`TauCeti.dysonSeriesLeft_apply_dysonSeries_neg_apply`,
+  `TauCeti.dysonSeries_neg_apply_dysonSeriesLeft_apply`).
 * `TauCeti.eq_dysonSeriesLeft_apply`: for a path of bounded operators, every solution of the
   time-dependent linear equation `w' t = M t (w t)` is `w t = dysonSeriesLeft M t (w 0)`.
 * `TauCeti.eq_dysonSeriesLeft_apply_add_integral`: the variation of constants formula for the
@@ -370,6 +373,18 @@ theorem hasDerivAt_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Conti
     HasDerivAt (fun t => dysonSeriesLeft M t x) (M t (dysonSeriesLeft M t x)) t := by
   simpa using (hasDerivAt_dysonSeriesLeft hM t).clm_apply (hasDerivAt_const t x)
 
+/-- The left Dyson series of `M` undoes the Dyson series of `-M` on vectors:
+`Γ t (Φ t x) = x`. -/
+theorem dysonSeriesLeft_apply_dysonSeries_neg_apply {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    (t : ℝ) (x : X) : dysonSeriesLeft M t (dysonSeries (-M) t x) = x := by
+  rw [← mul_apply_eq_comp, dysonSeriesLeft_mul_dysonSeries_neg hM t, one_apply_eq_self]
+
+/-- The Dyson series of `-M` undoes the left Dyson series of `M` on vectors:
+`Φ t (Γ t x) = x`. -/
+theorem dysonSeries_neg_apply_dysonSeriesLeft_apply {M : ℝ → X →L[ℝ] X} (hM : Continuous M)
+    (t : ℝ) (x : X) : dysonSeries (-M) t (dysonSeriesLeft M t x) = x := by
+  rw [← mul_apply_eq_comp, dysonSeries_neg_mul_dysonSeriesLeft hM t, one_apply_eq_self]
+
 /-- **Variation of constants.** For a continuous forcing `g`, the function
 `t ↦ Γ t (x + ∫₀ᵗ Φ s (g s))`, with `Γ = dysonSeriesLeft M` and `Φ = dysonSeries (-M)`,
 solves the inhomogeneous equation `w' t = M t (w t) + g t`. -/
@@ -381,8 +396,7 @@ theorem hasDerivAt_dysonSeriesLeft_apply_add_integral {M : ℝ → X →L[ℝ] X
   have hI := (((continuous_dysonSeries hM.neg).clm_apply hg).integral_hasStrictDerivAt 0 t
     |>.hasDerivAt).const_add x
   refine ((hasDerivAt_dysonSeriesLeft hM t).clm_apply hI).congr_deriv ?_
-  rw [← mul_apply_eq_comp, dysonSeriesLeft_mul_dysonSeries_neg hM t, one_apply_eq_self,
-    mul_apply_eq_comp]
+  rw [dysonSeriesLeft_apply_dysonSeries_neg_apply hM, mul_apply_eq_comp]
 
 /-- **Variation of constants.** Every solution of `w' t = M t (w t) + g t`, for a continuous
 path `M` of bounded operators and a continuous forcing `g`, is

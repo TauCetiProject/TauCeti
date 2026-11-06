@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.Isomorphisms
-public import Mathlib.Topology.ContinuousMap.Algebra
+public import TauCeti.Analysis.Calculus.TwistedPeriodic
 public import TauCeti.Analysis.ODE.DysonSeries
 import TauCeti.Analysis.Calculus.PeriodicDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
@@ -28,21 +28,22 @@ This file compares the first-order operator
 `L x = x' - M x`
 
 from the `C¹` to the continuous `c`-twisted periodic functions
-(`TauCeti.periodicLinearODEOperator`) with the finite-dimensional map `c • 1 - P` on `V`:
+(`TauCeti.periodicLinearODEOperator`) with the bounded operator `c • 1 - P` on `V`:
 
 * **Kernel.** Evaluation at `0` is a linear equivalence from `ker L` onto `ker (c • 1 - P)`,
   with inverse `v ↦ (t ↦ Γ t v)` (`TauCeti.periodicLinearODEOperatorKerEquiv`).
 * **Range.** Let `E g = Γ d (∫₀ᵈ Γ s⁻¹ (g s))` be the *endpoint map*, the value at time `d` of the
-  solution of `w' = M w + g` with `w 0 = 0` (`TauCeti.endpointMap`). Every solution of
-  `w' = M w + g` satisfies `w d = P (w 0) + E g`
-  (`TauCeti.apply_eq_dysonSeriesLeft_apply_add_endpointMap`). Consequently `g` lies in the range
-  of `L` exactly when `E g` lies in the range of `c • 1 - P`
+  solution of `w' = M w + g` with `w 0 = 0` (`TauCeti.periodicLinearODEEndpointMap`). Every
+  solution of `w' = M w + g` satisfies `w d = P (w 0) + E g`
+  (`TauCeti.apply_eq_dysonSeriesLeft_apply_add_periodicLinearODEEndpointMap`). Consequently `g`
+  lies in the range of `L` exactly when `E g` lies in the range of `c • 1 - P`
   (`TauCeti.range_periodicLinearODEOperator`).
 * **Cokernel.** For `d > 0` and `c ≠ 0` the endpoint map is onto from the twisted periodic
-  functions (`TauCeti.surjective_endpointMap_domRestrict`), so it induces a linear equivalence
-  between the cokernel of `L` and the cokernel `V ⧸ range (c • 1 - P)`
+  functions (`TauCeti.surjective_periodicLinearODEEndpointMap_domRestrict`), so it induces a
+  linear equivalence between the cokernel of `L` and the cokernel `V ⧸ range (c • 1 - P)`
   (`TauCeti.periodicLinearODEOperatorCokerEquiv`). In finite dimension the kernel and cokernel of
-  `L` therefore have the same dimension (`TauCeti.finrank_ker_periodicLinearODEOperator`).
+  `L` therefore have the same dimension
+  (`TauCeti.finrank_ker_periodicLinearODEOperator_eq_finrank_quotient_range`).
 
 Together these form the endpoint exact sequence
 `0 → ker L → V → V → coker L → 0`, whose middle map is `c • 1 - P`. For `c = 1` and a
@@ -51,8 +52,9 @@ monodromy `P = φ^*` acting on the cohomology of the fibre of a mapping torus, t
 kernel and cokernel of that finite complex. For `c = ±1` it describes the operator along a closed
 orbit twisted by a real sign character, whose kernel and cokernel are those of `±1 - P`.
 
-The twisted periodic forcings used for the cokernel are produced by extending a continuous
-function on `[0, d]` with `f d = c • f 0` (`TauCeti.exists_continuous_add_eq_smul_eqOn`).
+The twisted periodic function spaces and the extension of a continuous function on `[0, d]` with
+`f d = c • f 0`, used to produce forcings for the cokernel, are in
+`TauCeti.Analysis.Calculus.TwistedPeriodic`.
 
 ## References
 
@@ -70,81 +72,6 @@ open Set intervalIntegral
 namespace TauCeti
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
-
-/-! ### Twisted periodic extension -/
-
-/-- A function continuous on `[0, d]` with `f d = c • f 0`, where `d > 0` and `c ≠ 0`, agrees on
-`[0, d]` with a continuous function `g` on `ℝ` satisfying `g (t + d) = c • g t`. -/
-theorem exists_continuous_add_eq_smul_eqOn {d c : ℝ} (hd : 0 < d) (hc : c ≠ 0) {f : ℝ → V}
-    (hf : ContinuousOn f (Icc 0 d)) (hfd : f d = c • f 0) :
-    ∃ g : ℝ → V, Continuous g ∧ (∀ t, g (t + d) = c • g t) ∧ EqOn g f (Icc 0 d) := by
-  set g : ℝ → V := fun t => c ^ ⌊t / d⌋ • f (t - ⌊t / d⌋ * d) with hg
-  -- On `[k d, k d + d]` the extension is `c ^ k • f (t - k d)`.
-  have hpiece (k : ℤ) : EqOn g (fun t => c ^ k • f (t - k * d)) (Icc (k * d) (k * d + d)) := by
-    intro t ht
-    rcases eq_or_lt_of_le ht.2 with h | h
-    · subst h
-      have hk : ⌊(k * d + d) / d⌋ = k + 1 := by
-        rw [show (k * d + d) / d = ((k + 1 : ℤ) : ℝ) by push_cast; field_simp]
-        exact Int.floor_intCast _
-      have e₁ : k * d + d - ((k + 1 : ℤ) : ℝ) * d = 0 := by push_cast; ring
-      have e₂ : k * d + d - k * d = d := by ring
-      simp only [hg, hk, zpow_add_one₀ hc, e₁, e₂, hfd, mul_smul]
-    · have hk : ⌊t / d⌋ = k :=
-        Int.floor_eq_iff.2 ⟨(le_div_iff₀ hd).2 ht.1, (div_lt_iff₀ hd).2 (by linarith)⟩
-      simp [hg, hk]
-  have hcont (k : ℤ) : ContinuousOn g (Icc (k * d) (k * d + d)) :=
-    have hmaps : MapsTo (fun t => t - k * d) (Icc (k * d) (k * d + d)) (Icc 0 d) := fun t ht =>
-      ⟨sub_nonneg.2 ht.1, sub_le_iff_le_add'.2 ht.2⟩
-    ((hf.comp (continuous_sub_right _).continuousOn hmaps).const_smul _).congr (hpiece k)
-  refine ⟨g, continuous_iff_continuousAt.2 fun t => ?_, fun t => ?_, fun t ht => ?_⟩
-  · set k := ⌊t / d⌋
-    have h₁ : k * d ≤ t := (le_div_iff₀ hd).1 (Int.floor_le _)
-    have h₂ : t < k * d + d := by
-      have := (div_lt_iff₀ hd).1 (Int.lt_floor_add_one (t / d)); linarith
-    have hlow := hcont (k - 1)
-    push_cast at hlow
-    have hU : ContinuousOn g (Icc (k * d - d) (k * d + d)) := by
-      rw [← Icc_union_Icc_eq_Icc (b := k * d) (by linarith) (by linarith)]
-      refine ContinuousOn.union_of_isClosed ?_ (hcont k) isClosed_Icc isClosed_Icc
-      convert hlow using 2 <;> ring
-    exact hU.continuousAt (Icc_mem_nhds (by linarith) h₂)
-  · have hk : ⌊(t + d) / d⌋ = ⌊t / d⌋ + 1 := by
-      rw [add_div, div_self hd.ne', Int.floor_add_one]
-    simp only [hg, hk, zpow_add_one₀ hc]
-    push_cast
-    rw [mul_comm, mul_smul]
-    congr 3
-    ring
-  · simpa using hpiece 0 (by simpa using ht)
-
-/-! ### Twisted periodic function spaces -/
-
-variable (V) in
-/-- The continuous functions `g : ℝ → V` with `g (t + d) = c • g t`. -/
-def twistedPeriodicContinuous (d c : ℝ) : Submodule ℝ C(ℝ, V) where
-  carrier := {g | ∀ t, g (t + d) = c • g t}
-  add_mem' {f g} hf hg t := by simp [hf t, hg t, smul_add]
-  zero_mem' t := by simp
-  smul_mem' a g hg t := by simp [hg t, smul_comm a c]
-
-@[simp]
-theorem mem_twistedPeriodicContinuous {d c : ℝ} {g : C(ℝ, V)} :
-    g ∈ twistedPeriodicContinuous V d c ↔ ∀ t, g (t + d) = c • g t :=
-  Iff.rfl
-
-variable (V) in
-/-- The continuously differentiable functions `x : ℝ → V` with `x (t + d) = c • x t`. -/
-def twistedPeriodicContDiff (d c : ℝ) : Submodule ℝ (ℝ → V) where
-  carrier := {x | ContDiff ℝ 1 x ∧ ∀ t, x (t + d) = c • x t}
-  add_mem' {x y} hx hy := ⟨hx.1.add hy.1, fun t => by simp [hx.2 t, hy.2 t, smul_add]⟩
-  zero_mem' := ⟨contDiff_const, fun t => by simp⟩
-  smul_mem' a x hx := ⟨hx.1.const_smul a, fun t => by simp [hx.2 t, smul_comm a c]⟩
-
-@[simp]
-theorem mem_twistedPeriodicContDiff {d c : ℝ} {x : ℝ → V} :
-    x ∈ twistedPeriodicContDiff V d c ↔ ContDiff ℝ 1 x ∧ ∀ t, x (t + d) = c • x t :=
-  Iff.rfl
 
 /-! ### The periodic linear operator -/
 
@@ -191,16 +118,20 @@ theorem mem_ker_periodicLinearODEOperator (hM : Continuous M) (hper : Function.P
 
 /-! ### The kernel -/
 
+/-- A vector lies in the kernel of `c • 1 - P` exactly when `P` multiplies it by `c`. -/
+private theorem smul_one_sub_apply_eq_zero_iff {P : V →L[ℝ] V} {v : V} :
+    (c • (1 : V →L[ℝ] V) - P) v = 0 ↔ P v = c • v := by
+  rw [sub_apply, sub_eq_zero, eq_comm]
+  simp
+
 variable [CompleteSpace V]
 
-/-- A solution of `w' = M w` for a path of period `d` is `c`-twisted periodic exactly when its
-initial value lies in the kernel of `c • 1 - P`, where `P` is the monodromy over one period. -/
+/-- The initial value of a solution of `w' = M w` lies in the kernel of `c • 1 - P`, where
+`P = dysonSeriesLeft M d`, exactly when the solution satisfies `w d = c • w 0`. -/
 theorem sub_dysonSeriesLeft_apply_eq_zero_iff (hM : Continuous M) {w : ℝ → V}
     (hw : ∀ t, HasDerivAt w (M t (w t)) t) :
-    w d = c • w 0 ↔ (c • (1 : V →L[ℝ] V) - dysonSeriesLeft M d) (w 0) = 0 := by
-  have h : (c • (1 : V →L[ℝ] V) - dysonSeriesLeft M d) (w 0) =
-      c • w 0 - dysonSeriesLeft M d (w 0) := by simp
-  rw [h, sub_eq_zero, eq_dysonSeriesLeft_apply hM hw d, eq_comm]
+    (c • (1 : V →L[ℝ] V) - dysonSeriesLeft M d) (w 0) = 0 ↔ w d = c • w 0 := by
+  rw [smul_one_sub_apply_eq_zero_iff, eq_dysonSeriesLeft_apply hM hw d]
 
 /-- The solution `t ↦ Γ t v` through a vector `v` of the kernel of `c • 1 - P` is a `C¹`
 `c`-twisted periodic function. -/
@@ -211,13 +142,9 @@ theorem dysonSeriesLeft_apply_mem_twistedPeriodicContDiff (hM : Continuous M)
   refine ⟨?_, fun t => ?_⟩
   · simpa using (contDiff_dysonSeriesLeft (n := 0) (contDiff_zero.2 hM)).clm_apply
       (contDiff_const (c := v))
-  have hPv : dysonSeriesLeft M d v = c • v := by
-    have h : (c • (1 : V →L[ℝ] V) - dysonSeriesLeft M d) v = c • v - dysonSeriesLeft M d v := by
-      simp
-    rw [h, sub_eq_zero] at hv
-    exact hv.symm
-  simp only
-  rw [dysonSeriesLeft_add_of_periodic hM hper, mul_apply_eq_comp, hPv, map_smul]
+  beta_reduce
+  rw [dysonSeriesLeft_add_of_periodic hM hper, mul_apply_eq_comp,
+    smul_one_sub_apply_eq_zero_iff.1 hv, map_smul]
 
 variable (c) in
 /-- **The kernel of the periodic operator.** Evaluation at `0` identifies the kernel of
@@ -228,7 +155,7 @@ def periodicLinearODEOperatorKerEquiv (hM : Continuous M) (hper : Function.Perio
       LinearMap.ker (c • 1 - (dysonSeriesLeft M d).toLinearMap) where
   toFun x := ⟨x.1.1 0, by
     have hw := (mem_ker_periodicLinearODEOperator hM hper).1 x.2
-    exact LinearMap.mem_ker.2 ((sub_dysonSeriesLeft_apply_eq_zero_iff hM hw).1
+    exact LinearMap.mem_ker.2 ((sub_dysonSeriesLeft_apply_eq_zero_iff hM hw).2
       (by simpa using x.1.2.2 0))⟩
   invFun v := ⟨⟨fun t => dysonSeriesLeft M t v,
       dysonSeriesLeft_apply_mem_twistedPeriodicContDiff hM hper (LinearMap.mem_ker.1 v.2)⟩,
@@ -260,8 +187,9 @@ theorem periodicLinearODEOperatorKerEquiv_symm_apply (hM : Continuous M)
 variable (d) in
 /-- The endpoint map `E g = Γ d (∫₀ᵈ Φ s (g s))`, with `Γ = dysonSeriesLeft M` and
 `Φ = dysonSeries (-M)` its inverse. It is the value at time `d` of the solution of
-`w' = M w + g` with `w 0 = 0` (`TauCeti.apply_eq_dysonSeriesLeft_apply_add_endpointMap`). -/
-def endpointMap (hM : Continuous M) : C(ℝ, V) →ₗ[ℝ] V where
+`w' = M w + g` with `w 0 = 0`
+(`TauCeti.apply_eq_dysonSeriesLeft_apply_add_periodicLinearODEEndpointMap`). -/
+def periodicLinearODEEndpointMap (hM : Continuous M) : C(ℝ, V) →ₗ[ℝ] V where
   toFun g := dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (g s))
   map_add' f g := by
     have hi (g : C(ℝ, V)) :
@@ -272,16 +200,18 @@ def endpointMap (hM : Continuous M) : C(ℝ, V) →ₗ[ℝ] V where
   map_smul' a g := by
     simp [integral_smul]
 
-theorem endpointMap_apply (hM : Continuous M) (g : C(ℝ, V)) :
-    endpointMap d hM g = dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (g s)) :=
+theorem periodicLinearODEEndpointMap_apply (hM : Continuous M) (g : C(ℝ, V)) :
+    periodicLinearODEEndpointMap d hM g =
+      dysonSeriesLeft M d (∫ s in 0..d, dysonSeries (-M) s (g s)) :=
   (rfl)
 
 /-- **The endpoint relation.** Every solution of `w' = M w + g` satisfies
 `w d = P (w 0) + E g`, where `P = dysonSeriesLeft M d` and `E` is the endpoint map. -/
-theorem apply_eq_dysonSeriesLeft_apply_add_endpointMap (hM : Continuous M) {g : C(ℝ, V)}
-    {w : ℝ → V} (hw : ∀ t, HasDerivAt w (M t (w t) + g t) t) :
-    w d = dysonSeriesLeft M d (w 0) + endpointMap d hM g := by
-  rw [eq_dysonSeriesLeft_apply_add_integral hM g.continuous hw d, map_add, endpointMap_apply]
+theorem apply_eq_dysonSeriesLeft_apply_add_periodicLinearODEEndpointMap (hM : Continuous M)
+    {g : C(ℝ, V)} {w : ℝ → V} (hw : ∀ t, HasDerivAt w (M t (w t) + g t) t) :
+    w d = dysonSeriesLeft M d (w 0) + periodicLinearODEEndpointMap d hM g := by
+  rw [eq_dysonSeriesLeft_apply_add_integral hM g.continuous hw d, map_add,
+    periodicLinearODEEndpointMap_apply]
 
 /-- **The range of the periodic operator.** A continuous `c`-twisted periodic forcing `g` is
 `x' - M x` for some `C¹` `c`-twisted periodic `x` exactly when its endpoint `E g` lies in the
@@ -289,13 +219,13 @@ range of `c • 1 - P`. -/
 theorem range_periodicLinearODEOperator (hM : Continuous M) (hper : Function.Periodic M d) :
     LinearMap.range (periodicLinearODEOperator c hM hper) =
       (LinearMap.range (c • 1 - (dysonSeriesLeft M d).toLinearMap)).comap
-        ((endpointMap d hM).domRestrict (twistedPeriodicContinuous V d c)) := by
+        ((periodicLinearODEEndpointMap d hM).domRestrict (twistedPeriodicContinuous V d c)) := by
   ext g
   simp only [LinearMap.mem_range, Submodule.mem_comap, LinearMap.domRestrict_apply]
   constructor
   · rintro ⟨x, rfl⟩
     refine ⟨x.1 0, ?_⟩
-    have h := apply_eq_dysonSeriesLeft_apply_add_endpointMap (d := d) hM
+    have h := apply_eq_dysonSeriesLeft_apply_add_periodicLinearODEEndpointMap (d := d) hM
       (hasDerivAt_periodicLinearODEOperator hM hper x)
     have hx := x.2.2 0
     rw [zero_add] at hx
@@ -308,7 +238,7 @@ theorem range_periodicLinearODEOperator (hM : Continuous M) (hper : Function.Per
       hasDerivAt_dysonSeriesLeft_apply_add_integral hM g.1.continuous x₀ t
     have hw0 : w 0 = x₀ := by simp [w]
     have hwd : w d = c • x₀ := by
-      rw [apply_eq_dysonSeriesLeft_apply_add_endpointMap hM hw, hw0, ← hx₀]
+      rw [apply_eq_dysonSeriesLeft_apply_add_periodicLinearODEEndpointMap hM hw, hw0, ← hx₀]
       simp
     -- `t ↦ w (t + d) - c • w t` solves the homogeneous equation and vanishes at `0`.
     have htw (t : ℝ) : w (t + d) = c • w t := by
@@ -330,8 +260,10 @@ theorem range_periodicLinearODEOperator (hM : Continuous M) (hper : Function.Per
 
 /-- For `d > 0` and `c ≠ 0`, the endpoint map is onto from the continuous `c`-twisted periodic
 functions. -/
-theorem surjective_endpointMap_domRestrict (hM : Continuous M) (hd : 0 < d) (hc : c ≠ 0) :
-    Function.Surjective ((endpointMap d hM).domRestrict (twistedPeriodicContinuous V d c)) := by
+theorem surjective_periodicLinearODEEndpointMap_domRestrict (hM : Continuous M) (hd : 0 < d)
+    (hc : c ≠ 0) :
+    Function.Surjective
+      ((periodicLinearODEEndpointMap d hM).domRestrict (twistedPeriodicContinuous V d c)) := by
   intro v
   -- The forcing `s (d - s) Γ s u` on `[0, d]` has endpoint `(d ^ 3 / 6) Γ d u`.
   set u : V := (6 / d ^ 3) • dysonSeries (-M) d v
@@ -346,8 +278,7 @@ theorem surjective_endpointMap_domRestrict (hM : Continuous M) (hd : 0 < d) (hc 
     refine integral_congr fun s hs => ?_
     rw [uIcc_of_le hd.le] at hs
     rw [hgf hs]
-    simp only [f, map_smul, ← mul_apply_eq_comp, dysonSeries_neg_mul_dysonSeriesLeft hM s,
-      one_apply_eq_self]
+    simp only [f, map_smul, dysonSeries_neg_apply_dysonSeriesLeft_apply hM]
   have hpoly : ∫ s in 0..d, s * (d - s) = d ^ 3 / 6 := by
     simp only [mul_sub, ← pow_two]
     rw [integral_sub (f := fun s => s * d) (g := fun s => s ^ 2)
@@ -355,10 +286,10 @@ theorem surjective_endpointMap_domRestrict (hM : Continuous M) (hd : 0 < d) (hc 
       ((continuous_pow 2).intervalIntegrable _ _), intervalIntegral.integral_mul_const,
       integral_id, integral_pow]
     ring
-  rw [LinearMap.domRestrict_apply, endpointMap_apply]
+  rw [LinearMap.domRestrict_apply, periodicLinearODEEndpointMap_apply]
   simp only [ContinuousMap.coe_mk]
   rw [hint, intervalIntegral.integral_smul_const, hpoly, smul_smul, map_smul,
-    ← mul_apply_eq_comp, dysonSeriesLeft_mul_dysonSeries_neg hM d, one_apply_eq_self]
+    dysonSeriesLeft_apply_dysonSeries_neg_apply hM]
   field_simp
   simp
 
@@ -372,24 +303,25 @@ def periodicLinearODEOperatorCokerEquiv (hM : Continuous M) (hper : Function.Per
       ≃ₗ[ℝ] V ⧸ LinearMap.range (c • 1 - (dysonSeriesLeft M d).toLinearMap) :=
   (Submodule.quotEquivOfEq _ (LinearMap.ker
     ((LinearMap.range (c • 1 - (dysonSeriesLeft M d).toLinearMap)).mkQ ∘ₗ
-      (endpointMap d hM).domRestrict (twistedPeriodicContinuous V d c))) (by
+      (periodicLinearODEEndpointMap d hM).domRestrict (twistedPeriodicContinuous V d c))) (by
     rw [range_periodicLinearODEOperator, LinearMap.ker_comp, Submodule.ker_mkQ])).trans
     (LinearMap.quotKerEquivOfSurjective _
-      ((Submodule.mkQ_surjective _).comp (surjective_endpointMap_domRestrict hM hd hc)))
+      ((Submodule.mkQ_surjective _).comp
+        (surjective_periodicLinearODEEndpointMap_domRestrict hM hd hc)))
 
 @[simp]
 theorem periodicLinearODEOperatorCokerEquiv_mk (hM : Continuous M)
     (hper : Function.Periodic M d) (hd : 0 < d) (hc : c ≠ 0)
     (g : twistedPeriodicContinuous V d c) :
     periodicLinearODEOperatorCokerEquiv c hM hper hd hc (Submodule.Quotient.mk g) =
-      Submodule.Quotient.mk (endpointMap d hM g) :=
+      Submodule.Quotient.mk (periodicLinearODEEndpointMap d hM g) :=
   (rfl)
 
 /-- **Index zero.** In finite dimension, for `d > 0` and `c ≠ 0`, the kernel and the cokernel of
 the periodic operator `L = d/dt - M` on `c`-twisted periodic functions have the same dimension,
 that of the kernel of `c • 1 - P`. -/
-theorem finrank_ker_periodicLinearODEOperator [FiniteDimensional ℝ V] (hM : Continuous M)
-    (hper : Function.Periodic M d) (hd : 0 < d) (hc : c ≠ 0) :
+theorem finrank_ker_periodicLinearODEOperator_eq_finrank_quotient_range [FiniteDimensional ℝ V]
+    (hM : Continuous M) (hper : Function.Periodic M d) (hd : 0 < d) (hc : c ≠ 0) :
     Module.finrank ℝ (LinearMap.ker (periodicLinearODEOperator c hM hper)) =
       Module.finrank ℝ
         (twistedPeriodicContinuous V d c ⧸
