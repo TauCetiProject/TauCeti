@@ -48,6 +48,8 @@ of the pairing: if every `Q (b i)` is nonnegative then `τ (reverse x * x) ≥ 0
   scalar part.
 * `CliffordAlgebra.basis_eq_prod_map_sort`: for an orthogonal basis, the basis vector indexed by
   `s` is the product of the generators of `s` in increasing order.
+* `CliffordAlgebra.exists_basis_eq_ι_mul`: for an orthogonal basis, the basis vector indexed by a
+  two-element set `{k, l}` is `ι Q (b k) * ι Q (b l)`.
 * `CliffordAlgebra.involute_basis` and `CliffordAlgebra.basis_repr_involute`: for an orthogonal
   basis, the grade involution acts on `e_s` and on the coordinate at `s` by `(-1) ^ |s|`.
 * `CliffordAlgebra.basis_mul_basis_of_disjoint`: for an orthogonal basis, basis vectors with
@@ -131,6 +133,20 @@ theorem basis_eq_prod_map_sort (hb : (QuadraticMap.associated Q).IsOrthoᵢ b) (
   rw [basis_apply, LinearEquiv.symm_apply_eq,
     equivExterior_prod_map_ι_of_pairwise_isOrtho Q (pairwise_isOrtho_map_sort hb s),
     Module.Basis.exteriorAlgebra_eq_prod_map_sort]
+
+/-- For an orthogonal basis `b`, a two-element index set `s` is `{k, l}`, and the Clifford basis
+vector indexed by `s` is `ι Q (b k) * ι Q (b l)`. -/
+theorem exists_basis_eq_ι_mul (hb : (QuadraticMap.associated Q).IsOrthoᵢ b)
+    (s : Set.powersetCard I 2) :
+    ∃ k l, (∀ i, i ∈ s.val ↔ i = k ∨ i = l) ∧ basis Q b s = ι Q (b k) * ι Q (b l) := by
+  obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
+    (by rw [Finset.length_sort, Set.powersetCard.mem_iff.1 s.2] :
+      ((s : Finset I).sort (· ≤ ·)).length = 2)
+  refine ⟨k, l, fun i ↦ ?_, ?_⟩
+  · rw [← Finset.mem_sort (· ≤ ·), hsort]
+    simp
+  · rw [basis_eq_prod_map_sort hb, hsort]
+    simp
 
 /-- For an orthogonal basis, the grade involution multiplies the Clifford basis vector indexed by
 `s` by the sign `(-1) ^ |s|` of its degree. -/

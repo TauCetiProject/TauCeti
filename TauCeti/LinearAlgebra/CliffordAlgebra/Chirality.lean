@@ -324,27 +324,6 @@ theorem bivectorExterior_mul_chirality_of_hodgeStar_eq_self (hkl : 2 + 2 = finra
 
 /-! ### The anticommutator of two two-forms -/
 
-omit hQ in
-/-- The basis `e_s` of `⋀² V` induced by the frame is orthonormal. -/
-private theorem inner_frame_exteriorPower (u v : powersetCard (Fin 4) 2) :
-    ⟪(frame o).toBasis.exteriorPower 2 u, (frame o).toBasis.exteriorPower 2 v⟫ =
-      if u = v then 1 else 0 := by
-  rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
-    OrthonormalBasis.inner_eq_ite]
-
-/-- A two-element index set `t` is `{k, l}`, and then `e_t = c(e_k) c(e_l)`. -/
-private theorem exists_basis_frame_eq_ι_mul (t : powersetCard (Fin 4) 2) :
-    ∃ k l, (∀ i, i ∈ t.val ↔ i = k ∨ i = l) ∧
-      basis Q (frame o).toBasis t = ι Q (frame o k) * ι Q (frame o l) := by
-  obtain ⟨k, l, hsort⟩ := List.length_eq_two.1
-    (by rw [Finset.length_sort, powersetCard.mem_iff.1 t.2] :
-      ((t : Finset (Fin 4)).sort (· ≤ ·)).length = 2)
-  refine ⟨k, l, fun i ↦ ?_, ?_⟩
-  · rw [← Finset.mem_sort (· ≤ ·), hsort]
-    simp
-  · rw [basis_eq_prod_map_sort ((frame o).isOrthoᵢ_associated hQ), hsort]
-    simp
-
 /-- `e_s` anticommutes with the generators `c(e_i)` it contains. -/
 private theorem basis_frame_mul_ι_of_mem (s : powersetCard (Fin 4) 2) {i : Fin 4}
     (hi : i ∈ s.val) : basis Q (frame o).toBasis s * ι Q (frame o i) =
@@ -375,11 +354,12 @@ private theorem bivectorExterior_basis_mul_add_swap (hkl : 2 + 2 = finrank ℝ V
   have hcard : 2 + 2 = Fintype.card (Fin 4) := rfl
   -- The basis `e_s` is orthonormal, and `⋆ e_s = ε e_{sᶜ}`.
   rw [o.hodgeStar_basis (frame o) (frame_orientation o) hkl s, Units.smul_def,
-    ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, inner_frame_exteriorPower,
-    inner_frame_exteriorPower, bivectorExterior_exteriorPower_basis,
+    ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left, (frame o).inner_toBasis_exteriorPower,
+    (frame o).inner_toBasis_exteriorPower, bivectorExterior_exteriorPower_basis,
     bivectorExterior_exteriorPower_basis]
   -- Write `e_t = c(e_k) c(e_l)`, where `t = {k, l}`.
-  obtain ⟨k, l, hmem, ht⟩ := exists_basis_frame_eq_ι_mul o hQ t
+  obtain ⟨k, l, hmem, ht⟩ := exists_basis_eq_ι_mul ((frame o).isOrthoᵢ_associated hQ) t
+  rw [OrthonormalBasis.coe_toBasis] at ht
   set A := basis Q (frame o).toBasis s
   by_cases hts : t.val ⊆ s.val
   · -- `t ⊆ s`, so `t = s` and `e_s² = -1`.
