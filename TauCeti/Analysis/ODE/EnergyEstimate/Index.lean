@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import TauCeti.Analysis.Fredholm.ContinuousFamily
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Symmetric.Basic
+public import TauCeti.Analysis.Normed.Operator.Basic
 public import TauCeti.Analysis.ODE.EnergyEstimate.Fredholm
 public import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 import Mathlib.Analysis.SpecialFunctions.Exponential
@@ -544,17 +545,6 @@ private theorem squareIntegrableSolutions_modelCoefficient
       (hsplit hv).1.2 (hv0 ▸ hxplus)⟩⟩
 
 end TauCeti
-
-/-- A continuous linear map bounded below, `α ‖v‖ ≤ ‖B v‖` with `0 < α`, has trivial kernel. -/
-theorem ContinuousLinearMap.ker_eq_bot_of_mul_norm_le {R R₂ E F : Type*} [Semiring R]
-    [Semiring R₂] {σ : R →+* R₂} [NormedAddCommGroup E] [SeminormedAddCommGroup F] [Module R E]
-    [Module R₂ F] {B : E →SL[σ] F} {α : ℝ} (hα : 0 < α) (hB : ∀ v, α * ‖v‖ ≤ ‖B v‖) :
-    LinearMap.ker (B : E →ₛₗ[σ] F) = ⊥ :=
-  LinearMap.ker_eq_bot'.2 fun v hv ↦ by
-    have h := hB v
-    rw [ContinuousLinearMap.coe_coe] at hv
-    rw [hv, norm_zero] at h
-    exact norm_eq_zero.1 (le_antisymm (by nlinarith [norm_nonneg v]) (norm_nonneg v))
 
 namespace TauCeti.WeakDerivStep
 

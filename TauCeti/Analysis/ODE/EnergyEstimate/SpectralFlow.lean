@@ -39,7 +39,7 @@ drops between two invertible times by the sum of the signatures of the crossing 
 index of `⟪B ·, ·⟫` is the number of negative eigenvalues of `B`
 (`LinearMap.IsSymmetric.sigNeg_toBilinForm_innerSL_comp`), and it is locally constant at
 an invertible symmetric operator, so it agrees with that of `A±` at all large enough `±t`, where
-`A t` is invertible.
+`A t` is invertible (`TauCeti.exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto`).
 
 ## Main results
 
@@ -66,57 +66,7 @@ open scoped ENNReal Topology InnerProductSpace
 namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-
-/-! ### Invertibility and the negative index near the ends -/
-
-variable {A : ℝ → E →L[ℝ] E}
-
-/-- Along a family of symmetric operators tending to an invertible limit `L`, the operators are
-eventually injective, and the negative index of their bilinear forms is eventually the number of
-negative eigenvalues of `L`. -/
-private theorem eventually_ker_eq_bot_and_sigNeg_eq {l : Filter ℝ} [l.NeBot]
-    (hsym : ∀ s, (A s : E →ₗ[ℝ] E).IsSymmetric) {L : E →L[ℝ] E}
-    (hLker : LinearMap.ker (L : E →ₗ[ℝ] E) = ⊥) (hlim : Tendsto A l (𝓝 L)) :
-    ∀ᶠ s in l, LinearMap.ker (A s : E →ₗ[ℝ] E) = ⊥ ∧
-      sigNeg ((innerSL ℝ).comp (A s)).toBilinForm.toQuadraticMap =
-        Module.finrank ℝ (Module.End.pointSpectralSubspace (L : E →ₗ[ℝ] E) (Iio 0)) := by
-  have hLsym : (L : E →ₗ[ℝ] E).IsSymmetric :=
-    isClosed_setOf_isSymmetric.mem_of_tendsto hlim (.of_forall hsym)
-  have hLnd := nondegenerate_toBilinForm_innerSL_comp_iff.2 hLker
-  -- The negative index is locally constant on the space of symmetric operators at `L`.
-  let S := {B : E →L[ℝ] E // (B : E →ₗ[ℝ] E).IsSymmetric}
-  have hV : Continuous fun B : S ↦ (innerSL ℝ).comp (B : E →L[ℝ] E) :=
-    continuous_const.clm_comp continuous_subtype_val
-  have hconst := eventually_sigNeg_toBilinForm_eq_of_continuousAt (x := (⟨L, hLsym⟩ : S))
-    (.of_forall fun B ↦ B.2.isSymm_toBilinForm_innerSL_comp) hV.continuousAt hLnd
-  have hlimS : Tendsto (fun s ↦ (⟨A s, hsym s⟩ : S)) l (𝓝 ⟨L, hLsym⟩) :=
-    tendsto_subtype_rng.2 hlim
-  filter_upwards [hlimS hconst, hlimS (hV.continuousAt.eventually_toBilinForm_nondegenerate hLnd)]
-    with s hs hnd
-  exact ⟨nondegenerate_toBilinForm_innerSL_comp_iff.1 hnd,
-    hs.trans hLsym.sigNeg_toBilinForm_innerSL_comp⟩
-
-/-- A family of symmetric operators with invertible limits is invertible outside a compact interval
-`[a, b]`, and the negative indices of its bilinear forms at `a` and `b` are the numbers of negative
-eigenvalues of the limits. -/
-private theorem exists_le_forall_ker_eq_bot (hsym : ∀ s, (A s : E →ₗ[ℝ] E).IsSymmetric)
-    {Aminus Aplus : E →L[ℝ] E} (hminus : LinearMap.ker (Aminus : E →ₗ[ℝ] E) = ⊥)
-    (hplus : LinearMap.ker (Aplus : E →ₗ[ℝ] E) = ⊥)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus)) :
-    ∃ a b, a ≤ b ∧ (∀ s ∉ Ioo a b, LinearMap.ker (A s : E →ₗ[ℝ] E) = ⊥) ∧
-      sigNeg ((innerSL ℝ).comp (A a)).toBilinForm.toQuadraticMap =
-        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aminus : E →ₗ[ℝ] E) (Iio 0)) ∧
-      sigNeg ((innerSL ℝ).comp (A b)).toBilinForm.toQuadraticMap =
-        Module.finrank ℝ (Module.End.pointSpectralSubspace (Aplus : E →ₗ[ℝ] E) (Iio 0)) := by
-  obtain ⟨a, ha⟩ := eventually_atBot.1 (eventually_ker_eq_bot_and_sigNeg_eq hsym hminus hbot)
-  obtain ⟨b, hb⟩ := eventually_atTop.1 (eventually_ker_eq_bot_and_sigNeg_eq hsym hplus htop)
-  refine ⟨min a b, max a b, min_le_max, fun s hs ↦ ?_, (ha _ (min_le_left a b)).2,
-    (hb _ (le_max_right a b)).2⟩
-  rcases not_and_or.1 hs with hs | hs
-  · exact (ha s ((not_lt.1 hs).trans (min_le_left a b))).1
-  · exact (hb s ((le_max_right a b).trans (not_lt.1 hs))).1
-
-/-! ### Crossings and the index -/
+  {A : ℝ → E →L[ℝ] E}
 
 omit [FiniteDimensional ℝ E] in
 /-- The path of bilinear forms `⟪A t ·, ·⟫` of a differentiable family `A` has derivative
@@ -153,7 +103,8 @@ theorem finite_setOf_ker_ne_bot_of_tendsto (hA : Differentiable ℝ A)
     (hreg : ∀ t, LinearMap.ker (A t : E →ₗ[ℝ] E) ≠ ⊥ →
       (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t))).Nondegenerate) :
     {t | LinearMap.ker (A t : E →ₗ[ℝ] E) ≠ ⊥}.Finite := by
-  obtain ⟨a, b, -, hout, -, -⟩ := exists_le_forall_ker_eq_bot hsym hminus hplus hbot htop
+  obtain ⟨a, b, -, hout, -, -⟩ :=
+    exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym hminus hplus hbot htop
   have hfin := finite_setOf_not_nondegenerate_toBilinForm
     (continuous_innerSL_comp hA).continuousOn (a := a) (b := b)
     (fun t _ ↦ (hsym t).isSymm_toBilinForm_innerSL_comp)
@@ -188,7 +139,7 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
       ∑ᶠ t, ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t))) : ℤ) -
         sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t)))) := by
   have hAd : Differentiable ℝ A := hA.differentiable one_ne_zero
-  obtain ⟨a, b, hab, hout, ha, hb⟩ := exists_le_forall_ker_eq_bot hsym
+  obtain ⟨a, b, hab, hout, ha, hb⟩ := exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym
     (ker_eq_bot_of_mul_norm_le hα hminus) (ker_eq_bot_of_mul_norm_le hα hplus) hbot htop
   have hnd {s : ℝ} (hs : s ∉ Ioo a b) : ((innerSL ℝ).comp (A s)).toBilinForm.Nondegenerate :=
     nondegenerate_toBilinForm_innerSL_comp_iff.2 (hout s hs)
