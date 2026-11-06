@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
-public import Mathlib.RingTheory.KrullDimension.LocalRing
+public import TauCeti.RingTheory.KrullDimension.LocalRing
 public import TauCeti.RingTheory.KrullDimension.Regular
 public import TauCeti.RingTheory.Length
 
@@ -316,22 +316,6 @@ theorem exists_nat_length_quotient_span_pair {f g : R}
   exact ⟨(Module.length R (R ⧸ Ideal.span {f, g})).toNat, (ENat.natCast_toNat hc).symm⟩
 
 end NoetherianLocalRing
-
-section OneDimensional
-
-variable {A : Type u} [CommRing A] [IsLocalRing A] [IsDomain A]
-
-/-- A nonzero element `x` of the maximal ideal of a one-dimensional local domain generates an ideal
-whose radical is the maximal ideal. -/
-theorem radical_span_singleton_eq_maximalIdeal_of_ringKrullDim_eq_one
-    (hdim : ringKrullDim A = 1) {x : A} (hxm : x ∈ maximalIdeal A) (hx : x ≠ 0) :
-    (Ideal.span {x}).radical = maximalIdeal A := by
-  refine le_antisymm ?_ (((ringKrullDim_eq_one_iff_of_isLocalRing_isDomain).mp hdim).2 _ hx)
-  rw [Ideal.radical_eq_sInf]
-  refine sInf_le ⟨?_, inferInstance⟩
-  rwa [Ideal.span_le, Set.singleton_subset_iff]
-
-end OneDimensional
 
 section PrimeCurve
 
