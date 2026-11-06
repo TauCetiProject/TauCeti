@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Normed.Field.UnitBall
-public import TauCeti.AlgebraicTopology.Sphere.SimplyConnected
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Three
 public import TauCeti.Topology.Algebra.CliffordAlgebra.Spin.Compact
 public import TauCeti.Topology.Algebra.Quaternion.Unitary
@@ -28,10 +27,9 @@ import TauCeti.Topology.Homotopy.HomotopyEquiv
 /-!
 # Simple-connectedness of compact and complex Spin groups
 
-The algebraic equivalence from compact `Spin(3)` to the unit Hamilton quaternions is continuous.
-Compactness of the source upgrades it to a continuous multiplicative equivalence. Unit quaternions
-form the unit sphere in the four-dimensional real space `ℍ`, so the existing simple-connectedness
-theorem for spheres proves that compact `Spin(3)` is simply connected.
+Compact `Spin(3)` is isomorphic as a topological group to the unit Hamilton quaternions and is
+simply connected. It is also homeomorphic to the unit sphere in the four-dimensional real space
+`ℍ`.
 
 For higher dimensions, two trivializations of the sphere bundle
 `Spin(n) → Spin(n + 1) → Sⁿ`, centred at antipodal points, cover the total group. Each chart is a
@@ -196,12 +194,8 @@ open Metric Set Topology
 /-- The compact three-dimensional real Spin group is simply connected. -/
 theorem simplyConnectedSpace_realCliffordSpinGroupZero_three :
     SimplyConnectedSpace (realCliffordSpinGroupZero 3) := by
-  let _ : SimplyConnectedSpace (sphere (0 : ℍ[ℝ]) 1) := by
-    apply simplyConnectedSpace_sphere
-    · rw [Quaternion.rank_eq_four]
-      norm_num
-    · positivity
-  exact realSpinThreeHomeomorphQuaternionSphere.toHomotopyEquiv.simplyConnectedSpace
+  let e := realSpinThreeContinuousMulEquivQuaternionUnitary.toHomeomorph
+  exact e.toHomotopyEquiv.simplyConnectedSpace
 
 private theorem contractibleSpace_realCliffordUnitLevel_compl_singleton {n : ℕ}
     (x : realCliffordUnitLevel n) :
