@@ -131,8 +131,8 @@ theorem _root_.ContDiffOn.integral_laplacian_smul_eq_integral_smul_laplacian
     simpa only [TestFunction.lineDeriv_lineDeriv_eq_fderiv_fderiv] using this
   have hint₂ : ∀ i,
       Integrable (fun x ↦ (φ : E → ℝ) x • fderiv ℝ (fun y ↦ fderiv ℝ u y (b i)) x (b i)) μ :=
-    fun i ↦ integrable_smul_of_locallyIntegrableOn
-      ((hu.continuousOn_fderiv_fderiv_apply hΩ (b i)).locallyIntegrableOn hΩ.measurableSet) φ
+    fun i ↦ φ.integrable_smul
+      ((hu.continuousOn_fderiv_fderiv_apply hΩ (b i)).locallyIntegrableOn hΩ.measurableSet)
   calc ∫ x, Δ (φ : E → ℝ) x • u x ∂μ
       = ∑ i, ∫ x, fderiv ℝ (fun y ↦ fderiv ℝ (φ : E → ℝ) y (b i)) x (b i) • u x ∂μ := by
         simp_rw [hΔφ, Finset.sum_smul]
@@ -229,8 +229,8 @@ theorem HasWeakFDerivOn.integral_laplacian_smul_eq_neg_integral_inner [OpensMeas
   have hint₂ : ∀ i,
       Integrable (fun x ↦ fderiv ℝ (φ : E → ℝ) x (b i) • ⟪g x, b i⟫_ℝ) μ := by
     intro i
-    have := integrable_smul_of_locallyIntegrableOn
-      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv (TestFunction.lineDerivCLM ℝ (b i) φ)
+    have := TestFunction.integrable_smul (TestFunction.lineDerivCLM ℝ (b i) φ : 𝓓(Ω, ℝ))
+      (h.hasWeakLineDerivOn (b i)).locallyIntegrableOn_deriv
     rw [TestFunction.coe_lineDerivCLM] at this
     simpa only [hline, innerSL_apply_apply] using this
   calc ∫ x, Δ (φ : E → ℝ) x • u x ∂μ
