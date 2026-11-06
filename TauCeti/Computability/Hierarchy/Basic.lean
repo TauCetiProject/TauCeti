@@ -66,6 +66,10 @@ theorem IsSigma.of_eq (h : IsSigma Z n p) (hpq : ∀ x, p x ↔ q x) : IsSigma Z
 theorem IsPi.of_eq (h : IsPi Z n p) (hpq : ∀ x, p x ↔ q x) : IsPi Z n q :=
   IsSigma.of_eq h fun x => (hpq x).not
 
+/-- Δ⁰ₙ membership depends only on the extension of the predicate. -/
+theorem IsDelta.of_eq (h : IsDelta Z n p) (hpq : ∀ x, p x ↔ q x) : IsDelta Z n q :=
+  ⟨h.1.of_eq hpq, h.2.of_eq hpq⟩
+
 /-- Complementation exchanges Π⁰ₙ and Σ⁰ₙ. -/
 @[simp]
 theorem isPi_not_iff : IsPi Z n (fun x => ¬p x) ↔ IsSigma Z n p := by
@@ -74,6 +78,11 @@ theorem isPi_not_iff : IsPi Z n (fun x => ¬p x) ↔ IsSigma Z n p := by
 /-- Complementation exchanges Σ⁰ₙ and Π⁰ₙ. -/
 @[simp]
 theorem isSigma_not_iff : IsSigma Z n (fun x => ¬p x) ↔ IsPi Z n p := Iff.rfl
+
+/-- Complementation preserves Δ⁰ₙ. -/
+@[simp]
+theorem isDelta_not_iff : IsDelta Z n (fun x => ¬p x) ↔ IsDelta Z n p := by
+  simp [IsDelta, and_comm]
 
 /-- A Σ⁰ₙ₊₁ predicate is an existential number projection of a Π⁰ₙ predicate. -/
 theorem isSigma_succ_iff : IsSigma Z (n + 1) p ↔

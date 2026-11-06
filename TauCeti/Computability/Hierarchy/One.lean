@@ -6,17 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Computability.Hierarchy.Basic
-public import TauCeti.Computability.Enumeration.Domain
 public import TauCeti.Computability.Jump.Basic
 import TauCeti.Computability.SingleOracle.Relative
-import TauCeti.Computability.SingleOracle.Universal
 
 /-!
 # The first existential level of the arithmetical hierarchy
 
-A predicate on the naturals is Σ⁰₁ relative to `Z` exactly when it is the domain of a partial
-function recursive in `Z`. The forward implication searches the total Boolean matrix; the
-reverse implication uses finite successful computations of an oracle program. Totality of the
+A predicate on any primitive-codable type is Σ⁰₁ relative to `Z` exactly when it is the domain
+of a partial function recursive in `Z`. The forward implication searches the total Boolean matrix;
+the reverse implication uses finite successful computations of an oracle program. Totality of the
 oracle is essential to computing bounded simulation.
 
 This gives the ordinary characterization by `REPred` at the empty oracle, the index presentation
@@ -34,26 +32,35 @@ open Encodable TauCeti.Oracle.Single
 
 namespace TauCeti.ArithmeticalHierarchy
 
-variable {Z : Set ℕ} {p : ℕ → Prop}
+variable {Z : Set ℕ} {α : Type*} [Primcodable α] {p : α → Prop}
 
 /-- An existential number quantifier over a total `Z`-computable matrix defines the domain
 of a partial function recursive in `Z`, by least-witness search. -/
 theorem IsSigma.exists_recursiveIn_domain (h : IsSigma Z 1 p) :
-    ∃ f : ℕ →. ℕ, Nat.RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom := by
+    ∃ f : α →. ℕ, RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom := by
   obtain ⟨b, hb, heq⟩ := isSigma_one_iff.1 h
   have hnot := Primrec.not.computableIn.comp hb
   unfold ComputableIn RecursiveIn at hnot
-  -- Mathlib's numerical search succeeds at zero; encode the negated Boolean matrix.
-  have hmatrix : Nat.RecursiveIn {Z.oracle} fun n =>
-      Part.some (encode (!b (n.unpair.1, n.unpair.2))) := by
-    exact hnot.of_eq fun n => by simp
-  refine ⟨_, hmatrix.rfind, fun x => (heq x).trans ?_⟩
-  simp only [Nat.unpair_pair]
-  refine ⟨fun ⟨y, hy⟩ => Nat.rfind_dom.2 ⟨y, ?_, fun _ => by simp⟩, ?_⟩
-  · simp [hy]
-  · intro hdom
-    obtain ⟨y, hy, -⟩ := Nat.rfind_dom.1 hdom
-    exact ⟨y, by cases h : b (x, y) <;> simp_all⟩
+  refine ⟨fun x => Nat.rfind fun y => Part.some (b (x, y)), ?_, fun x => ?_⟩
+  · -- Compare encodings, keeping invalid input codes undefined. Numerical search succeeds
+    -- at zero, so negate the Boolean matrix to exchange its codes.
+    unfold RecursiveIn
+    exact hnot.rfind.of_eq fun n => by
+      cases e : decode (α := α) n with
+      | none =>
+        simpa [e, decode_prod_val] using Nat.rfind_zero_none (fun _ => Part.none) rfl
+      | some x =>
+        simp only [decode_prod_val, Nat.unpair_pair, decode_nat, Option.map_some, e,
+          Option.bind_some, Part.map_some, Part.map_eq_map, Part.coe_some, Part.bind_some]
+        congr 1
+        funext y
+        cases b (x, y) <;> rfl
+  · refine (heq x).trans ⟨?_, ?_⟩
+    · rintro ⟨y, hy⟩
+      exact Nat.rfind_dom.2 ⟨y, by simp [hy], fun _ => trivial⟩
+    · intro hdom
+      obtain ⟨y, hy, -⟩ := Nat.rfind_dom.1 hdom
+      exact ⟨y, (Part.mem_some_iff.1 hy).symm⟩
 
 /-- The domain of an oracle program is Σ⁰₁: a number belongs exactly when a finite successful
 run is found at some fuel bound. -/
@@ -78,21 +85,25 @@ theorem isSigma_one_dom_eval (c : Code) :
 /-- **The first relativized Post equivalence.** Σ⁰₁ predicates relative to `Z` are exactly the
 domains of partial functions recursive in `Z`. -/
 theorem isSigma_one_iff_exists_recursiveIn_domain : IsSigma Z 1 p ↔
-    ∃ f : ℕ →. ℕ, Nat.RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom := by
+    ∃ f : α →. ℕ, RecursiveIn {Z.oracle} f ∧ ∀ x, p x ↔ (f x).Dom := by
   refine ⟨IsSigma.exists_recursiveIn_domain, fun ⟨f, hf, heq⟩ => ?_⟩
+  unfold RecursiveIn at hf
   obtain ⟨c, hc⟩ := Code.exists_code.1 hf
-  exact (isSigma_one_dom_eval c).of_eq fun x => by rw [hc]; exact (heq x).symm
+  exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq fun x => by
+    simpa [hc, encodek] using (heq x).symm
 
-/-- Σ⁰₁ predicates relative to `Z` are exactly the domains in the adopted oracle numbering. -/
+/-- Σ⁰₁ predicates relative to `Z` are exactly oracle-program domains on encoded inputs. -/
 theorem isSigma_one_iff_exists_code : IsSigma Z 1 p ↔
-    ∃ c : Code, ∀ x, p x ↔ (Code.eval Z.oracle c x).Dom := by
-  rw [isSigma_one_iff_exists_recursiveIn_domain]
+    ∃ c : Code, ∀ x, p x ↔ (Code.eval Z.oracle c (encode x)).Dom := by
   constructor
-  · rintro ⟨f, hf, heq⟩
+  · intro h
+    obtain ⟨f, hf, heq⟩ := h.exists_recursiveIn_domain
+    unfold RecursiveIn at hf
     obtain ⟨c, hc⟩ := Code.exists_code.1 hf
-    exact ⟨c, fun x => by rw [hc]; exact heq x⟩
+    exact ⟨c, fun x => by simpa [hc, encodek] using heq x⟩
   · rintro ⟨c, heq⟩
-    exact ⟨_, Code.recursiveIn_eval Z.oracle c, heq⟩
+    exact ((isSigma_one_dom_eval c).preimage Primrec.encode.computableIn).of_eq
+      fun x => (heq x).symm
 
 /-- At the empty oracle, the quantifier definition of Σ⁰₁ agrees with Mathlib's c.e.
 predicate `REPred`. -/
@@ -100,29 +111,28 @@ theorem isSigma_one_empty_iff_rePred : IsSigma ∅ 1 p ↔ REPred p := by
   rw [isSigma_one_iff_exists_recursiveIn_domain]
   constructor
   · rintro ⟨f, hf, heq⟩
-    have hf' : Partrec f := (RecursiveIn.iff_nat.2 hf).partrec_of_oracle fun g hg => by
+    have hf' : Partrec f := hf.partrec_of_oracle fun g hg => by
       rw [Set.mem_singleton_iff.1 hg, Set.oracle_empty]
       exact Partrec.const' _
     exact hf'.dom_re.of_eq fun x => (heq x).symm
   · intro hp
-    obtain ⟨c, hc⟩ := Enumeration.rePred_iff_exists_code.1 hp
-    exact ⟨c.eval, (Partrec.nat_iff.1 (Nat.Partrec.Code.eval_part.comp
-      (Computable.const c) Computable.id)).recursiveIn, hc⟩
+    refine ⟨fun x => (Part.assert (p x) fun _ => Part.some ()).map fun _ => 0,
+      (hp.map (Computable.const 0).to₂).recursiveIn, fun x => ?_⟩
+    simp [Part.assert]
 
 /-- The diagonal halting set relative to `Z` is Σ⁰₁ relative to `Z`. -/
-theorem isSigma_one_jump : IsSigma Z 1 (· ∈ Z.jump) := by
-  have h := (isSigma_one_dom_eval (Z := Z) Code.universal).preimage
-    (Primrec₂.natPair.comp Primrec.id Primrec.id).computableIn
-  have hO : Z.oracle = ((Z.indicator 1 : ℕ → ℕ) : ℕ →. ℕ) :=
-    funext fun x => Set.oracle_apply Z x
-  exact h.of_eq fun x => by simp [hO, Code.eval_universal, Set.mem_jump]
+theorem isSigma_one_jump : IsSigma Z 1 (· ∈ Z.jump) :=
+  isSigma_one_iff_exists_recursiveIn_domain.2
+    ⟨_, RecursiveIn.iff_nat.2 Z.recursiveIn_eval_diag, fun _ => Set.mem_jump⟩
 
 /-- Every relative Σ⁰₁ set reduces one-one to the relative jump. -/
 theorem IsSigma.oneOneReducible_jump (h : IsSigma Z 1 p) :
     OneOneReducible p (· ∈ Z.jump) := by
   obtain ⟨f, hf, heq⟩ := h.exists_recursiveIn_domain
-  have hred : OneOneReducible p (fun x => (f x).Dom) :=
-    ⟨id, Computable.id, Function.injective_id, heq⟩
+  unfold RecursiveIn at hf
+  have hred : OneOneReducible p
+      (fun n => (Part.bind (decode (α := α) n) fun x => (f x).map encode).Dom) :=
+    ⟨encode, Computable.encode, encode_injective, fun x => by simpa using heq x⟩
   exact hred.trans (Z.oneOneReducible_jump_of_recursiveIn hf)
 
 end TauCeti.ArithmeticalHierarchy
