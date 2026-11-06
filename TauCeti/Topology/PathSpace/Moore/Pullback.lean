@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.PathSpace.Moore.Between.Equiv
+public import TauCeti.Topology.PathSpace.Moore.From
 public import TauCeti.Topology.Homotopy.FiberHomotopyEquiv
 public import Mathlib.Analysis.Convex.PathConnected
 public import TauCeti.Topology.PathSpace.Moore.Comparison.Basic
@@ -47,7 +48,7 @@ namespace TauCeti
 /-- The pullback of the endpoint map on Moore paths starting at `b` along `f`. -/
 abbrev MoorePathPullback {D X : Type*} [TopologicalSpace D] [TopologicalSpace X]
     (f : C(D, X)) (b : X) :=
-  {z : D × MoorePath X // z.2.source = b ∧ z.2.target = f z.1}
+  {z : D × MoorePathFrom X b // z.2.toMoorePath.target = f z.1}
 
 namespace MoorePathPullback
 
@@ -58,25 +59,29 @@ variable {D X : Type*} [TopologicalSpace D] [TopologicalSpace X]
 def point (x : MoorePathPullback f b) : D := x.1.1
 
 /-- The path from `b` to the image of the parameter. -/
-def path (x : MoorePathPullback f b) : MoorePath X := x.1.2
+def path (x : MoorePathPullback f b) : MoorePath X := x.1.2.toMoorePath
+
+/-- Projection to the based path space underlying the pullback. -/
+def toMoorePathFrom : C(MoorePathPullback f b, MoorePathFrom X b) :=
+  ⟨fun x ↦ x.1.2, continuous_snd.comp continuous_subtype_val⟩
 
 @[simp]
-theorem point_mk (d : D) (γ : MoorePath X) (h : γ.source = b ∧ γ.target = f d) :
+theorem point_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
     point (f := f) (b := b) ⟨(d, γ), h⟩ = d := (rfl)
 
 @[simp]
-theorem path_mk (d : D) (γ : MoorePath X) (h : γ.source = b ∧ γ.target = f d) :
-    path (f := f) (b := b) ⟨(d, γ), h⟩ = γ := (rfl)
+theorem path_mk (d : D) (γ : MoorePathFrom X b) (h : γ.toMoorePath.target = f d) :
+    path (f := f) (b := b) ⟨(d, γ), h⟩ = γ.toMoorePath := (rfl)
 
 @[simp]
-theorem source_path (x : MoorePathPullback f b) : x.path.source = b := x.2.1
+theorem source_path (x : MoorePathPullback f b) : x.path.source = b := MoorePathFrom.source x.1.2
 
 @[simp]
-theorem target_path (x : MoorePathPullback f b) : x.path.target = f x.point := x.2.2
+theorem target_path (x : MoorePathPullback f b) : x.path.target = f x.point := x.2
 
 @[ext]
 theorem ext {x y : MoorePathPullback f b} (h : x.point = y.point) (h' : x.path = y.path) :
-    x = y := Subtype.ext (Prod.ext h h')
+    x = y := Subtype.ext (Prod.ext h (MoorePathFrom.ext h'))
 
 @[fun_prop]
 theorem continuous_point : Continuous (point : MoorePathPullback f b → D) :=
@@ -84,7 +89,7 @@ theorem continuous_point : Continuous (point : MoorePathPullback f b → D) :=
 
 @[fun_prop]
 theorem continuous_path : Continuous (path : MoorePathPullback f b → MoorePath X) :=
-  continuous_snd.comp continuous_subtype_val
+  MoorePathFrom.continuous_toMoorePath.comp toMoorePathFrom.continuous
 
 /-- Projection of the pulled-back path space to its parameter. -/
 def proj (f : C(D, X)) (b : X) : C(MoorePathPullback f b, D) :=
@@ -93,10 +98,33 @@ def proj (f : C(D, X)) (b : X) : C(MoorePathPullback f b, D) :=
 @[simp]
 theorem proj_apply (x : MoorePathPullback f b) : proj f b x = x.point := (rfl)
 
-/-- Concatenate a loop in front of a pulled-back path. -/
+/-- Concatenate a loop in front using the action on the based path space. -/
 def leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
     MoorePathPullback f b :=
-  ⟨(x.point, ω.toMoorePath.trans x.path (by simp)), by simp⟩
+  ⟨(x.1.1, ω • x.1.2), by simpa using x.property⟩
+
+@[simp]
+theorem leftAct_one (x : MoorePathPullback f b) : leftAct 1 x = x :=
+  Subtype.ext (Prod.ext rfl (one_smul _ _))
+
+@[simp]
+theorem leftAct_mul (ω η : MooreLoopSpace X b) (x : MoorePathPullback f b) :
+    leftAct (ω * η) x = leftAct ω (leftAct η x) :=
+  Subtype.ext (Prod.ext rfl (mul_smul ω η _))
+
+/-- Loops act through the existing action on the based path space. -/
+instance : MulAction (MooreLoopSpace X b) (MoorePathPullback f b) where
+  smul := leftAct
+  one_smul := leftAct_one
+  mul_smul := leftAct_mul
+
+@[simp]
+theorem smul_eq_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
+    ω • x = leftAct ω x := rfl
+
+@[simp]
+theorem toMoorePathFrom_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
+    toMoorePathFrom (leftAct ω x) = ω • toMoorePathFrom x := (rfl)
 
 @[simp]
 theorem point_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
@@ -104,36 +132,13 @@ theorem point_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
 
 @[simp]
 theorem path_leftAct (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
-    (leftAct ω x).path = ω.toMoorePath.trans x.path (by simp) := (rfl)
-
-@[simp]
-theorem leftAct_one (x : MoorePathPullback f b) : leftAct 1 x = x :=
-  ext (by simp) (by simp)
-
-@[simp]
-theorem leftAct_mul (ω η : MooreLoopSpace X b) (x : MoorePathPullback f b) :
-    leftAct (ω * η) x = leftAct ω (leftAct η x) :=
-  ext (by simp) (by simp [MoorePath.trans_assoc])
-
-/-- Loops act by concatenation in front of the pulled-back path. -/
-instance : MulAction (MooreLoopSpace X b) (MoorePathPullback f b) where
-  smul := leftAct
-  one_smul := leftAct_one
-  mul_smul := leftAct_mul
-
-@[simp]
-theorem point_smul (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
-    (ω • x).point = x.point := (rfl)
-
-@[simp]
-theorem path_smul (ω : MooreLoopSpace X b) (x : MoorePathPullback f b) :
-    (ω • x).path = ω.toMoorePath.trans x.path (by simp) := (rfl)
+    (leftAct ω x).path = ω.toMoorePath.trans x.path (by simp) :=
+  MoorePathFrom.toMoorePath_leftAct ω x.1.2
 
 instance : ContinuousSMul (MooreLoopSpace X b) (MoorePathPullback f b) where
   continuous_smul :=
     ((continuous_point.comp continuous_snd).prodMk
-      ((MooreLoopSpace.continuous_toMoorePath.comp continuous_fst).moorePath_trans
-        (continuous_path.comp continuous_snd) _)).subtype_mk _
+      (continuous_fst.smul (toMoorePathFrom.continuous.comp continuous_snd))).subtype_mk _
 
 variable (τ : C(D, MoorePath X)) (h₀ : ∀ d, (τ d).source = b)
   (h₁ : ∀ d, (τ d).target = f d)
@@ -141,11 +146,13 @@ variable (τ : C(D, MoorePath X)) (h₀ : ∀ d, (τ d).source = b)
 /-- Append the chosen path to a loop, giving a path over the parameter. -/
 def trivializationMap (τ : C(D, MoorePath X)) (h₀ : ∀ d, (τ d).source = b)
     (h₁ : ∀ d, (τ d).target = f d) : C(D × MooreLoopSpace X b, MoorePathPullback f b) where
-  toFun z := ⟨(z.1, z.2.toMoorePath.trans (τ z.1) (by simp [h₀])), by simp [h₁]⟩
+  toFun z := ⟨(z.1, ⟨z.2.toMoorePath.trans (τ z.1) (by simp [h₀]), by simp⟩),
+    by simp [h₁]⟩
   continuous_toFun :=
     (continuous_fst.prodMk
-      ((MooreLoopSpace.continuous_toMoorePath.comp continuous_snd).moorePath_trans
-        (τ.continuous.comp continuous_fst) (fun z ↦ by simp [h₀]))).subtype_mk
+      (((MooreLoopSpace.continuous_toMoorePath.comp continuous_snd).moorePath_trans
+        (τ.continuous.comp continuous_fst) (fun z ↦ by simp [h₀])).subtype_mk
+          (fun z ↦ by simp))).subtype_mk
           (fun z ↦ by simp [h₁])
 
 @[simp]
@@ -155,7 +162,7 @@ theorem point_trivializationMap (z : D × MooreLoopSpace X b) :
 @[simp]
 theorem path_trivializationMap (z : D × MooreLoopSpace X b) :
     (trivializationMap τ h₀ h₁ z).path = z.2.toMoorePath.trans (τ z.1) (by simp [h₀]) :=
-  (rfl)
+  MoorePathFrom.toMoorePath_mk _ _
 
 /-- Append the reversed chosen path to recover a loop, retaining the parameter. -/
 def trivializationInverse (τ : C(D, MoorePath X)) (h₀ : ∀ d, (τ d).source = b)
@@ -180,7 +187,8 @@ theorem toMoorePath_trivializationInverse_snd (x : MoorePathPullback f b) :
 theorem trivializationMap_mul (d : D) (ω η : MooreLoopSpace X b) :
     trivializationMap τ h₀ h₁ (d, ω * η) = ω • trivializationMap τ h₀ h₁ (d, η) := by
   refine ext (by simp) ?_
-  simp only [path_trivializationMap, path_smul, MooreLoopSpace.toMoorePath_mul]
+  simp only [path_trivializationMap, smul_eq_leftAct, path_leftAct,
+    MooreLoopSpace.toMoorePath_mul]
   exact MoorePath.trans_assoc ..
 
 /-- The inverse map is strictly left-loop-equivariant. -/
@@ -189,8 +197,8 @@ theorem trivializationInverse_smul (ω : MooreLoopSpace X b) (x : MoorePathPullb
       (x.point, ω * (trivializationInverse τ h₀ h₁ x).2) := by
   apply Prod.ext (by simp)
   apply MooreLoopSpace.ext
-  simp only [toMoorePath_trivializationInverse_snd, point_smul, path_smul,
-    MooreLoopSpace.toMoorePath_mul]
+  simp only [toMoorePath_trivializationInverse_snd, smul_eq_leftAct, point_leftAct,
+    path_leftAct, MooreLoopSpace.toMoorePath_mul]
   exact MoorePath.trans_assoc ..
 
 /-- The inverse homotopy on the trivial product grows the retracing suffix `τ d ⋆ (τ d)⁻¹`. -/
@@ -206,12 +214,9 @@ def trivializationLeftHomotopy :
       (MooreLoopSpace.isEmbedding_toMoorePath.continuous_iff.2 ?_))
     simp only [Function.comp_def, MoorePathBetween.toMoorePath_retrace,
       MoorePathBetween.toMoorePath_mk]
-    have h : Continuous (fun z : I × (D × MooreLoopSpace X b) ↦
-        (τ z.2.1).truncate (toNNReal z.1 * (τ z.2.1).length)) :=
-      (τ.continuous.comp continuous_snd.fst).moorePath_truncate
+    exact (τ.continuous.comp continuous_snd.fst).moorePath_retrace
       ((toNNReal_continuous.comp continuous_fst).mul
         (MoorePath.continuous_length.comp (τ.continuous.comp continuous_snd.fst)))
-    exact h.moorePath_trans h.moorePath_symm (fun _ ↦ by simp)
   map_zero_left z := by
     apply Prod.ext (by simp)
     apply MooreLoopSpace.ext
@@ -219,11 +224,7 @@ def trivializationLeftHomotopy :
   map_one_left z := by
     apply Prod.ext (by simp)
     apply MooreLoopSpace.ext
-    simp only [ContinuousMap.comp_apply, toMoorePath_trivializationInverse_snd,
-      path_trivializationMap, point_trivializationMap, MooreLoopSpace.toMoorePath_mul,
-      toNNReal_one, one_mul, MoorePathBetween.toMoorePath_retrace,
-      MoorePathBetween.toMoorePath_mk, MoorePath.truncate_length]
-    exact (MoorePath.trans_assoc ..).symm
+    simp [MoorePath.trans_assoc]
   prop' _ := ContinuousMap.ext fun _ ↦ rfl
 
 @[simp]
@@ -237,32 +238,25 @@ def trivializationRightHomotopy :
     HomotopyWith (.id (MoorePathPullback f b))
       ((trivializationMap τ h₀ h₁).comp (trivializationInverse τ h₀ h₁))
       (fun g ↦ (proj f b).comp g = proj f b) where
-  toFun z := ⟨(z.2.point, z.2.path.trans
+  toFun z := ⟨(z.2.point, ⟨z.2.path.trans
     ((MoorePathBetween.symm ⟨τ z.2.point, h₀ _, h₁ _⟩).retrace
-      (toNNReal z.1 * (τ z.2.point).length)).toMoorePath (by simp [h₁])), by simp [h₁]⟩
+      (toNNReal z.1 * (τ z.2.point).length)).toMoorePath (by simp [h₁]), by simp⟩),
+    by simp [h₁]⟩
   continuous_toFun := by
     apply Continuous.subtype_mk
     refine (continuous_point.comp continuous_snd).prodMk
-      ((continuous_path.comp continuous_snd).moorePath_trans ?_ (fun z ↦ by simp [h₁]))
+      (((continuous_path.comp continuous_snd).moorePath_trans ?_
+        (fun z ↦ by simp [h₁])).subtype_mk _)
     simp only [MoorePathBetween.toMoorePath_retrace, MoorePathBetween.toMoorePath_symm,
       MoorePathBetween.toMoorePath_mk]
-    have h : Continuous (fun z : I × MoorePathPullback f b ↦
-        (τ z.2.point).symm.truncate (toNNReal z.1 * (τ z.2.point).length)) :=
-      (τ.continuous.comp (continuous_point.comp continuous_snd)).moorePath_symm
-      |>.moorePath_truncate ((toNNReal_continuous.comp continuous_fst).mul
+    exact (τ.continuous.comp (continuous_point.comp continuous_snd)).moorePath_symm
+      |>.moorePath_retrace ((toNNReal_continuous.comp continuous_fst).mul
         (MoorePath.continuous_length.comp
           (τ.continuous.comp (continuous_point.comp continuous_snd))))
-    exact h.moorePath_trans h.moorePath_symm (fun _ ↦ by simp)
   map_zero_left x := ext rfl (by simp)
   map_one_left x := by
-    have hfull : (τ x.point).symm.truncate (τ x.point).length = (τ x.point).symm := by
-      simpa only [MoorePath.length_symm] using (τ x.point).symm.truncate_length
     apply ext (by simp)
-    simp only [path_mk, ContinuousMap.comp_apply, path_trivializationMap,
-      toMoorePath_trivializationInverse_snd, trivializationInverse_fst, toNNReal_one,
-      one_mul, MoorePathBetween.toMoorePath_retrace, MoorePathBetween.toMoorePath_symm,
-      MoorePathBetween.toMoorePath_mk, hfull, MoorePath.symm_symm]
-    exact (MoorePath.trans_assoc ..).symm
+    simp [MoorePath.trans_assoc, MoorePath.truncate_of_length_le]
   prop' _ := ContinuousMap.ext fun _ ↦ rfl
 
 @[simp]
@@ -273,7 +267,8 @@ theorem point_trivializationRightHomotopy (s : I) (x : MoorePathPullback f b) :
 theorem path_trivializationRightHomotopy (s : I) (x : MoorePathPullback f b) :
     (trivializationRightHomotopy τ h₀ h₁ (s, x)).path =
       x.path.trans ((MoorePathBetween.symm ⟨τ x.point, h₀ _, h₁ _⟩).retrace
-        (toNNReal s * (τ x.point).length)).toMoorePath (by simp [h₁]) := (rfl)
+        (toNNReal s * (τ x.point).length)).toMoorePath (by simp [h₁]) :=
+  MoorePathFrom.toMoorePath_mk _ _
 
 /-- The left inverse homotopy is equivariant at every time. -/
 theorem trivializationLeftHomotopy_mul (s : I) (d : D) (ω η : MooreLoopSpace X b) :
@@ -288,11 +283,14 @@ theorem trivializationRightHomotopy_smul (s : I) (ω : MooreLoopSpace X b)
     trivializationRightHomotopy τ h₀ h₁ (s, ω • x) =
       ω • trivializationRightHomotopy τ h₀ h₁ (s, x) := by
   refine ext (by simp) ?_
-  simp only [path_trivializationRightHomotopy, point_smul, path_smul]
+  simp only [path_trivializationRightHomotopy, smul_eq_leftAct, point_leftAct, path_leftAct]
   exact MoorePath.trans_assoc ..
 
 /-- A continuous choice of paths gives a fibre homotopy trivialization of the pulled-back
-based path fibration. The maps and specified inverse homotopies are left-loop-equivariant. -/
+based path fibration, assembled from `trivializationMap`, `trivializationInverse`,
+`trivializationLeftHomotopy` and `trivializationRightHomotopy`. Their equivariance is proved in
+`trivializationMap_mul`, `trivializationInverse_smul`, `trivializationLeftHomotopy_mul` and
+`trivializationRightHomotopy_smul`; the returned structure records only existence of homotopies. -/
 def fiberHomotopyEquiv :
     FiberHomotopyEquiv (ContinuousMap.fst : C(D × MooreLoopSpace X b, D)) (proj f b) where
   toFun := trivializationMap τ h₀ h₁
@@ -351,8 +349,11 @@ theorem radialPaths_apply_length_add (v : S) (t : I) :
         hS.segment_subset v.2 (lineMap_mem_segment ℝ c v.1 t.2)⟩ := by
   simp [radialPaths, MoorePath.trans_apply_length_add, MoorePath.ofUnitPath_apply]
 
-/-- Equivariant fibre homotopy trivialization over a star-convex parameter set, using radial
-paths. In particular this constructs the comparison over every characteristic disk. -/
+/-- The fibre homotopy trivialization `fiberHomotopyEquiv` applied to `radialPaths`.
+In particular this constructs the comparison over every characteristic disk. Equivariance of
+the underlying maps and homotopies is given by `trivializationMap_mul`,
+`trivializationInverse_smul`, `trivializationLeftHomotopy_mul` and
+`trivializationRightHomotopy_smul`, rather than stored in the returned structure. -/
 def radialFiberHomotopyEquiv :
     FiberHomotopyEquiv (ContinuousMap.fst : C(S × MooreLoopSpace X b, S)) (proj χ b) :=
   fiberHomotopyEquiv (radialPaths hS hc χ γ) (source_radialPaths hS hc χ γ)
