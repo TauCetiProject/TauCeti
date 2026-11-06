@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.PiL2
 public import Mathlib.Topology.Instances.Matrix
-import Mathlib.Analysis.InnerProductSpace.Adjoint
 
 /-!
 # Orthogonal matrices as linear isometries
@@ -123,16 +122,12 @@ theorem orthogonalGroupToLinearIsometryEquiv_surjective :
       (orthogonalGroupToLinearIsometryEquiv :
         Matrix.orthogonalGroup ι ℝ → EuclideanSpace ℝ ι ≃ₗᵢ[ℝ] EuclideanSpace ℝ ι) := by
   intro g
-  set B := Matrix.toEuclideanLin.symm g.toLinearIsometry.toLinearMap
+  set B := Matrix.toEuclideanLin.symm g.toLinearIsometry.toLinearMap with hBdef
   have hB : Matrix.toEuclideanLin B = g.toLinearIsometry.toLinearMap :=
     Matrix.toEuclideanLin.apply_symm_apply _
   have hmem : B ∈ Matrix.orthogonalGroup ι ℝ := by
-    rw [Matrix.mem_orthogonalGroup_iff']
-    apply Matrix.toEuclideanLin.injective
-    rw [Matrix.toLpLin_mul_same, ← Matrix.conjTranspose_eq_transpose_of_trivial,
-      Matrix.toEuclideanLin_conjTranspose_eq_adjoint, hB, Matrix.toLpLin_one]
-    refine LinearMap.ext fun x ↦ ext_inner_left ℝ fun y ↦ ?_
-    simp
+    rw [hBdef, Matrix.toEuclideanLin_eq_toLin_orthonormal]
+    exact g.toMatrix_mem_unitaryGroup (EuclideanSpace.basisFun ι ℝ) (EuclideanSpace.basisFun ι ℝ)
   refine ⟨⟨B, hmem⟩, LinearIsometryEquiv.ext fun x ↦ ?_⟩
   rw [orthogonalGroupToLinearIsometryEquiv_apply]
   exact LinearMap.congr_fun hB x

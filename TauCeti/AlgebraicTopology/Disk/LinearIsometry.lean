@@ -164,6 +164,17 @@ private def pathHomotopy {S : Set (EuclideanSpace ℝ (Fin n))}
   map_zero_left x := ULift.ext (Subtype.ext (hf x).symm)
   map_one_left x := ULift.ext (Subtype.ext (by simp [h1]))
 
+/-- The homotopy `pathHomotopy` acts at time `t` by `γ t`. -/
+private theorem pathHomotopy_apply_down {S : Set (EuclideanSpace ℝ (Fin n))}
+    (hS : ∀ h : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n), MapsTo h S S)
+    {γ : I → (EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n))}
+    (hγ : Continuous (fun t ↦ ((γ t).toContinuousLinearEquiv :
+      EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n))))
+    (h1 : γ 1 = LinearIsometryEquiv.refl ℝ _) {f : C(ULift.{u} S, ULift.{u} S)}
+    (hf : ∀ x, ((f x).down : EuclideanSpace ℝ (Fin n)) = γ 0 x.down) (p : I × ULift.{u} S) :
+    ((pathHomotopy hS hγ h1 hf p).down : EuclideanSpace ℝ (Fin n)) = γ p.1 p.2.down :=
+  rfl
+
 variable {g : EuclideanSpace ℝ (Fin n) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin n)}
 
 /-- An orientation-preserving linear isometry of `ℝⁿ` is joined to the identity by a path of
@@ -185,9 +196,10 @@ theorem exists_homotopy_diskMap_id_of_det_eq_one (hg : LinearMap.det g.toLinearM
         range (TopCat.diskBoundaryInclusion n) := by
   obtain ⟨γ, hγ, h0, h1⟩ := exists_path_refl hg
   refine ⟨pathHomotopy (S := closedBall 0 1) (fun h x hx ↦ by simpa using hx) hγ h1
-    (f := (LinearIsometryEquiv.diskMap.{u} g).hom) (fun w ↦ by rw [h0]; rfl), fun t s ↦ ?_⟩
+    (f := (LinearIsometryEquiv.diskMap.{u} g).hom)
+    (fun w ↦ (LinearIsometryEquiv.coe_diskMap_apply_down g w).trans (by rw [h0])), fun t s ↦ ?_⟩
   rw [mem_range_diskBoundaryInclusion_iff]
-  change ‖γ t (TopCat.diskBoundaryInclusion n s).down‖ = 1
+  refine (congrArg norm (pathHomotopy_apply_down _ _ _ _ (t, _))).trans ?_
   rw [LinearIsometryEquiv.norm_map, coe_diskBoundaryInclusion_apply_down]
   exact mem_sphere_zero_iff_norm.1 s.down.2
 
@@ -197,7 +209,8 @@ theorem homotopic_diskBoundaryMap_id_of_det_eq_one (hg : LinearMap.det g.toLinea
     (LinearIsometryEquiv.diskBoundaryMap.{u} g).hom.Homotopic (ContinuousMap.id _) := by
   obtain ⟨γ, hγ, h0, h1⟩ := exists_path_refl hg
   exact ⟨pathHomotopy (S := sphere 0 1) (fun h x hx ↦ by simpa using hx) hγ h1
-    (f := (LinearIsometryEquiv.diskBoundaryMap.{u} g).hom) (fun s ↦ by rw [h0]; rfl)⟩
+    (f := (LinearIsometryEquiv.diskBoundaryMap.{u} g).hom)
+    (fun s ↦ (LinearIsometryEquiv.coe_diskBoundaryMap_apply_down g s).trans (by rw [h0]))⟩
 
 /-- **Precomposing with an orientation-preserving orthogonal map does not change a map of pairs
 up to homotopy.** If `det g = 1` and `χ : D^n → X` sends the boundary sphere into `S`, then the

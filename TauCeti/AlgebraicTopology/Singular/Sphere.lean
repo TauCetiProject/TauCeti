@@ -842,10 +842,7 @@ theorem reducedSingularHomologyFunctor_map_diskBoundaryMap {n : ℕ}
       diskBoundaryHomeomorph (n + 1) (g.diskBoundaryMap x) =
         f.unitSphereMap (diskBoundaryHomeomorph (n + 1) x) := by
     refine Subtype.ext ?_
-    rw [LinearIsometry.coe_unitSphereMap_apply, coe_diskBoundaryHomeomorph_apply,
-      coe_diskBoundaryHomeomorph_apply, LinearIsometryEquiv.coe_diskBoundaryMap_apply_down, hfL,
-      LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.trans_apply,
-      LinearIsometryEquiv.trans_apply, hL, LinearIsometryEquiv.symm_apply_apply]
+    simp [hfL, coe_diskBoundaryHomeomorph_apply, ← hL]
   let e := TopCat.isoOfHomeo (X := TopCat.diskBoundary.{w} (n + 1))
     (Y := TopCat.of (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) 1))
     (diskBoundaryHomeomorph (n + 1))
