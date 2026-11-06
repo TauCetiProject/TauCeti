@@ -154,13 +154,15 @@ private theorem contDiffAt_globalSolution_of_contDiffAt_sub {n : ℕ} (v : E →
   congr 2
   ring
 
-/-- The finite-order case of `contDiff_globalSolution`: for a fixed initial condition, the smooth
-times form a nonempty clopen subset of `ℝ`, and the flow law propagates smoothness locally,
-including at limit points. -/
+/-- The finite-order case of `contDiff_globalSolution`: for a globally Lipschitz `C^(n+1)` vector
+field `v` and natural `n`, the global solution is jointly `C^(n+1)` in the initial condition and
+time. -/
 private theorem contDiff_globalSolution_of_nat {n : ℕ} (v : E → E) {K : ℝ≥0}
     (hv : LipschitzWith K v) (hvs : ContDiff ℝ (n + 1) v) :
     ContDiff ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) := by
   let G : E × ℝ → E := fun p ↦ globalSolution v hv p.1 p.2
+  -- For a fixed initial condition, the times at which `G` is `C^(n+1)` form a nonempty clopen
+  -- subset of `ℝ`; the flow law propagates smoothness locally, including at limit points.
   have hlocal (a : E) : ContDiffAt ℝ (n + 1) G (a, 0) := by
     exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv
       (by exact_mod_cast hvs.contDiffOn) (univ_mem : Set.univ ∈ nhds a)
