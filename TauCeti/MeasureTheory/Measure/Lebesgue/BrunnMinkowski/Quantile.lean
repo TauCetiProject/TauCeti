@@ -230,8 +230,7 @@ theorem _root_.Convex.continuousOn_volume_real_hyperplaneSection_quantile (hs : 
     ContinuousOn (fun τ ↦ volume.real {y : (ℝ ∙ e)ᗮ |
       (y : E) + ((volume[|s]).map fun x ↦ ⟪e, x⟫).quantile τ • e ∈ s}) (Ioo 0 1) := by
   have hsi : volume s ≠ ∞ := hsb.measure_lt_top.ne
-  refine (hs.continuousOn_volume_real_hyperplaneSection he
-    fun t ↦ (hsb.volume_hyperplaneSection_lt_top e t).ne).comp
+  refine (hs.continuousOn_volume_real_hyperplaneSection he).comp
     (continuousOn_quantile _ (continuous_cdf_map_inner_cond he hs0 hsi)
       (hs.strictMonoOn_cdf_map_inner_cond he hs0 hsi)) fun τ hτ ↦ ?_
   exact interior_maximal (image_mono interior_subset) (isOpen_image_inner_interior he s)

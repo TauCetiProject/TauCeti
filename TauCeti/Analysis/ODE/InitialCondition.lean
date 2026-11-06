@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Calculus.BumpFunction.FiniteDimension
 public import TauCeti.Analysis.ODE.GlobalSolution
 public import TauCeti.Analysis.ODE.SmoothParameter
 
@@ -35,19 +34,15 @@ therefore smooth directions.
 
 ## Main results
 
-* `ODE.contDiffAt_globalSolution`: the global solution of a globally Lipschitz `C^(n+1)` field is
-  `C^(n+1)` in time and initial condition near time `0`, for `n` finite or infinite.
+* `ODE.contDiffAt_globalSolution`: the global solution of a globally Lipschitz field that is
+  locally `C^(n+1)` is jointly `C^(n+1)` near time `0`, for `n` finite or infinite.
 * `ODE.contDiff_globalSolution`: the global solution is `C^(n+1)` jointly in its initial condition
   and time, for `n` finite or infinite.
 * `ODE.contDiff_globalSolution_apply`: every time-`t` map is `C^(n+1)`.
-* `ODE.exists_contDiffAt_localFlow`: a vector field which is `C^(n+1)` on a neighbourhood of a
-  point has a local flow through the nearby points which is `C^(n+1)` in time and initial
-  condition near that point at time `0`, and which obeys the flow law
-  `Φ x (t + u) = Φ (Φ x t) u`.
 
-The local flow produced here is the model-space input to the smooth flow of a vector field on a
-manifold, and in particular to the flow of the geodesic spray, whose base curves are the
-geodesics of a Riemannian metric.
+The local smoothness theorem needs smoothness of the field only near the initial point.
+It therefore also applies to globally Lipschitz extensions that are not smooth away from that
+point. This is the input to local flows of locally smooth fields on Banach spaces.
 
 ## References
 
@@ -94,20 +89,28 @@ section
 variable [CompleteSpace E]
 
 /-- **The global solution of a globally Lipschitz field depends smoothly on time and on its
-initial condition**, near time `0`, at the order of the field. -/
+initial condition** near time `0`, provided the field is smooth near the initial point.
+No smoothness of the field away from that neighbourhood is required. -/
 theorem contDiffAt_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : LipschitzWith K v)
-    (hvs : ContDiff ℝ (n + 1) v) (a : E) :
+    {a : E} {s : Set E} (hvs : ContDiffOn ℝ (n + 1) v s) (hs : s ∈ nhds a) :
     ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ globalSolution v hv p.1 p.2) (a, 0) := by
-  -- The field of the rescaled equation, with the initial condition and the speed as parameters.
-  have hf : ContDiff ℝ (n + 1) fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2) :=
-    ContDiff.smul (contDiff_fst.snd) (hvs.comp (contDiff_fst.fst.add contDiff_snd))
+  -- Keep every Picard path in the local smoothness domain of the field.
+  let S : Set ((E × ℝ) × E) := (fun q ↦ q.1.1 + q.2) ⁻¹' interior s
+  have hS : IsOpen S := isOpen_interior.preimage (by fun_prop)
+  have hbase : ((a, (0 : ℝ)), (0 : E)) ∈ S := by
+    simpa [S] using mem_interior_iff_mem_nhds.mpr hs
+  have hf : ContDiffOn ℝ (n + 1)
+      (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) S :=
+    contDiff_fst.snd.contDiffOn.smul
+      (hvs.comp (contDiff_fst.fst.add contDiff_snd).contDiffOn
+        (fun _ hq ↦ interior_subset hq))
   have hzero : ∀ᶠ y in nhds (0 : E),
       (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (((a, (0 : ℝ))), y) = 0 :=
     .of_forall fun y ↦ zero_smul ℝ _
   obtain ⟨γ, U, hU, hp₀U, hγU, -, hprop⟩ :=
     exists_contDiffOn_picard_solution
       (fun q : (E × ℝ) × E ↦ q.1.2 • v (q.1.1 + q.2)) (a, (0 : ℝ)) (0 : E)
-      isOpen_univ (mem_univ _) hf.contDiffOn hzero
+      hS hbase hf hzero
   have hγ : ContDiffAt ℝ (n + 1) γ (a, 0) := hγU.contDiffAt (hU.mem_nhds hp₀U)
   have hsmooth : ContDiffAt ℝ (n + 1)
       (fun p : E × ℝ ↦ p.1 + γ p ⟨1, by norm_num⟩) (a, 0) := by
@@ -156,7 +159,8 @@ theorem contDiff_globalSolution {n : ℕ∞} (v : E → E) {K : ℝ≥0} (hv : L
   -- the flow law propagates smoothness locally, including at limit points.
   let G : E × ℝ → E := fun p ↦ globalSolution v hv p.1 p.2
   have hlocal (a : E) : ContDiffAt ℝ (n + 1) G (a, 0) := by
-    exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv (by exact_mod_cast hvs) a
+    exact_mod_cast contDiffAt_globalSolution (n := (n : ℕ∞)) v hv
+      (by exact_mod_cast hvs.contDiffOn) (univ_mem : Set.univ ∈ nhds a)
   have hfinite : (n + 1 : ℕ∞) ≠ ∞ := by simp
   have propagate (a : E) {s t : ℝ} (hs : ContDiffAt ℝ (n + 1) G (a, s))
       (hout : ContDiffAt ℝ (n + 1) G (globalSolution v hv a s, t - s)) :
@@ -220,34 +224,6 @@ theorem contDiff_globalSolution_apply {n : ℕ∞} (v : E → E) {K : ℝ≥0} (
   (contDiff_globalSolution v hv hvs).comp (contDiff_id.prodMk contDiff_const)
 
 end
-
-/-- **The local flow of a smooth vector field.** A field which is `C^(n+1)` on a neighbourhood of
-`a` admits a flow `Φ`: a family of curves, one through each point, which start at that point,
-obey the flow law `Φ x (t + u) = Φ (Φ x t) u`, depend on the initial condition and the time in a
-`C^(n+1)` way near `(a, 0)`, and solve the equation for every initial condition and time in some
-neighbourhood of `(a, 0)`. No global hypothesis on the field is needed: a bump function cuts the
-field down to a globally Lipschitz one agreeing with it near `a`, and the two fields still agree
-along the curves at the times where the equation is claimed. The flow law holds for all times
-because `Φ` is the global flow of that cut-off field; only the equation for `v` is local. -/
-theorem exists_contDiffAt_localFlow [FiniteDimensional ℝ E] {n : ℕ∞} (v : E → E) {a : E}
-    {s : Set E} (hv : ContDiffOn ℝ (n + 1) v s) (hs : s ∈ nhds a) :
-    ∃ Φ : E → ℝ → E, ContDiffAt ℝ (n + 1) (fun p : E × ℝ ↦ Φ p.1 p.2) (a, 0) ∧
-      (∀ x, Φ x 0 = x) ∧ (∀ x t u, Φ x (t + u) = Φ (Φ x t) u) ∧
-      ∀ᶠ p in nhds ((a, 0) : E × ℝ), HasDerivAt (Φ p.1) (v (Φ p.1 p.2)) p.2 := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
-  obtain ⟨g, K, hg, hgK, hgv⟩ :=
-    hv.exists_lipschitzWith_contDiff_eventuallyEq_of_finiteDimensional hs
-  refine ⟨globalSolution g hgK, contDiffAt_globalSolution g hgK hg a,
-    fun x ↦ globalSolution_zero g hgK x, fun x t u ↦ globalSolution_add g hgK x t u, ?_⟩
-  have htends : Tendsto (fun p : E × ℝ ↦ globalSolution g hgK p.1 p.2) (nhds ((a, 0) : E × ℝ))
-      (nhds a) := by
-    have hcont : Continuous fun p : E × ℝ ↦ globalSolution g hgK p.1 p.2 :=
-      (continuous_globalSolution g hgK).comp (continuous_snd.prodMk continuous_fst)
-    have h := hcont.tendsto ((a, 0) : E × ℝ)
-    simp only [globalSolution_zero] at h
-    exact h
-  filter_upwards [htends.eventually hgv] with p hp
-  exact hp ▸ hasDerivAt_globalSolution g hgK p.1 p.2
 
 end ODE
 

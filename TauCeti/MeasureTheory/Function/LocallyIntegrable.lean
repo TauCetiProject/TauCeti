@@ -379,6 +379,15 @@ theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {
   (hg.indicator (measurableSet_toMeasurable μ s)).congr
     (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)
 
+/-- The product of a locally integrable function with an almost everywhere strongly measurable,
+almost everywhere bounded one is locally integrable, the analogue of Mathlib's
+`MeasureTheory.Integrable.mul_bdd`. -/
+theorem mul_bdd {u v : X → 𝕜} {C : ℝ} (hu : LocallyIntegrable u μ)
+    (hv : AEStronglyMeasurable v μ) (hvC : ∀ᵐ x ∂μ, ‖v x‖ ≤ C) :
+    LocallyIntegrable (fun x => u x * v x) μ := fun x => by
+  obtain ⟨s, hs, hus⟩ := hu x
+  exact ⟨s, hs, hus.mul_bdd hv.restrict (ae_restrict_of_ae hvC)⟩
+
 end MeasureTheory.LocallyIntegrable
 
 namespace MeasureTheory.Lp
