@@ -89,6 +89,8 @@ measure cannot be integrable there.
 
 * `not_integrableOn_Ioi_of_eventually_le_norm` is the half-line form, and
   `not_integrable_of_eventually_le_atTop` is its real-valued Lebesgue-integrability consequence.
+* `not_memLp_of_tendsto_norm_atTop` and `not_memLp_of_tendsto_norm_atBot`: a function whose norm
+  tends to infinity at one end of the line lies in no `Lᵖ` with `0 < p < ∞`.
 
 ## Reflection across the origin
 
@@ -214,6 +216,25 @@ theorem not_integrable_of_eventually_le_atTop {f : ℝ → ℝ} {ε : ℝ} (hε 
   not_integrableOn_Ioi_of_eventually_le_norm hε 0
     (hf.mono fun x hx => by rw [Real.norm_eq_abs]; exact hx.trans (le_abs_self _))
     hint.integrableOn
+
+/-- A function on the real line whose norm tends to infinity at `+∞` lies in no `Lᵖ` with
+`0 < p < ∞`: the integrand `‖f‖ ^ p` is eventually at least `1`. -/
+theorem not_memLp_of_tendsto_norm_atTop {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : Tendsto (fun x => ‖f x‖) atTop atTop) :
+    ¬ MemLp f p volume := fun hmem =>
+  not_integrableOn_Ioi_of_eventually_le_norm one_pos 0
+    ((hf.eventually_ge_atTop 1).mono fun x hx => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      exact Real.one_le_rpow hx ENNReal.toReal_nonneg)
+    (hmem.integrable_norm_rpow hp0 hp).integrableOn
+
+/-- A function on the real line whose norm tends to infinity at `-∞` lies in no `Lᵖ` with
+`0 < p < ∞`. -/
+theorem not_memLp_of_tendsto_norm_atBot {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : Tendsto (fun x => ‖f x‖) atBot atTop) :
+    ¬ MemLp f p volume := fun hmem =>
+  not_memLp_of_tendsto_norm_atTop hp0 hp (hf.comp tendsto_neg_atTop_atBot)
+    (hmem.comp_measurePreserving (Measure.measurePreserving_neg volume))
 
 /-- Integrating `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set: if `‖g‖²` and `‖h‖²` are integrable on
 `s`, then `∫_s ‖g + h‖² ≤ 2 ∫_s ‖g‖² + 2 ∫_s ‖h‖²`. -/
