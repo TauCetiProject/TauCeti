@@ -71,7 +71,7 @@ theorem exists_finiteDimensional_quotient_norm_comp_subtype_le (hT : IsCompactOp
       _ ≤ ‖y - T (x : E)‖ := mul_le_of_le_one_left (norm_nonneg _) (hφ j)
       _ = ‖T (x : E) - y‖ := norm_sub_rev _ _
   have hdist : ‖T (x : E) - y‖ < ε / 2 := by simpa [dist_eq_norm] using hxy
-  change ‖T (x : E)‖ ≤ ε
+  rw [ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply]
   calc
     ‖T (x : E)‖ ≤ ‖T (x : E) - y‖ + ‖y‖ := by
       simpa only [sub_add_cancel] using norm_add_le (T (x : E) - y) y
