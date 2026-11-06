@@ -130,11 +130,11 @@ theorem holderWith_iteratedFDeriv_of_tsupport_subset_right
   have hLu : (fun x => Lu (fu x) (gu x)) = c.symm ∘ (fun x => L (f x) (g x)) ∘ e := by
     ext x
     simp [Lu, Lu₀, fu, gu]
-  have hnorm : ‖Lu‖₊ ≤ ‖L‖₊ := by
-    change ‖Lu‖ ≤ ‖L‖
+  have hnormReal : ‖Lu‖ ≤ ‖L‖ := by
     refine opNorm_le_bound _ (norm_nonneg L) fun v => ?_
     refine opNorm_le_bound _ (by positivity) fun w => ?_
     simpa [Lu, Lu₀] using L.le_opNorm₂ (a v) (b w)
+  have hnorm : ‖Lu‖₊ ≤ ‖L‖₊ := by exact_mod_cast hnormReal
   have hfu : ContDiffOn ℝ k fu (e ⁻¹' s) :=
     a.symm.contDiff.comp_contDiffOn (hf.comp_continuousLinearMap (e : Eu →L[ℝ] E))
   have hgu : ContDiff ℝ k gu := b.symm.contDiff.comp (hg.comp e.contDiff)

@@ -37,8 +37,8 @@ theorem norm_iteratedFDeriv_cutoff_smul_le {k j : ℕ} {s : Set E} {f : E → F}
     (hχb : ∀ i ≤ k, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ N) (x : E) :
     ‖iteratedFDeriv ℝ j (fun y => χ y • f y) x‖ ≤ (2 : ℝ)^j * N * M := by
   by_cases hx : x ∈ s
-  · have h := norm_iteratedFDerivWithin_smul_le hχ.contDiffOn hf hs.uniqueDiffOn hx
-      (show (j : WithTop ℕ∞) ≤ k by exact_mod_cast hj)
+  · have hjorder : (j : WithTop ℕ∞) ≤ k := by exact_mod_cast hj
+    have h := norm_iteratedFDerivWithin_smul_le hχ.contDiffOn hf hs.uniqueDiffOn hx hjorder
     simp_rw [iteratedFDerivWithin_of_isOpen _ hs hx] at h
     refine h.trans ?_
     calc
@@ -56,7 +56,8 @@ theorem norm_iteratedFDeriv_cutoff_smul_le {k j : ℕ} {s : Set E} {f : E → F}
       filter_upwards [notMem_tsupport_iff_eventuallyEq.1 fun h => hx (hχs h)] with y hy
       simp [hy]
     rw [(h0.iteratedFDeriv (𝕜 := ℝ) j).self_of_nhds]
-    simpa using (show (0 : ℝ) ≤ 2^j * N * M by positivity)
+    have hnonneg : (0 : ℝ) ≤ 2^j * N * M := by positivity
+    simpa using hnonneg
 
 /-- The top derivative of a cutoff product is globally Hölder. The constant involves only the
 source jet bound, its top Hölder constant, and the cutoff jets through order `k + 1`. -/
@@ -72,11 +73,18 @@ theorem holderWith_iteratedFDeriv_cutoff_smul {k : ℕ} {s : Set E} {f : E → F
     intro j hj
     rcases hj.eq_or_lt with rfl | hj
     · exact hfH.mono_const (le_self_add)
-    · exact (hf.holderOnWith_iteratedFDeriv_of_lt hs hc hj hα hfb).mono_const (le_add_self)
+    · have hlow := hf.holderOnWith_iteratedFDeriv_of_lt hs hc hj hα
+        (hfb j hj.le) (hfb (j + 1) (by omega))
+      have hconstant : M + 2 * M = 3 * M := by ring
+      rw [hconstant] at hlow
+      exact hlow.mono_const le_add_self
   have hcut : ∀ j ≤ k, HolderWith (3 * N) α (iteratedFDeriv ℝ j χ) := by
     intro j hj
-    exact holderOnWith_univ.mp (hχ.contDiffOn.holderOnWith_iteratedFDeriv_of_lt (k := k + 1)
-      isOpen_univ (convex_univ) (by omega) hα (fun i hi x _ => hχb i hi x))
+    have hlow := hχ.contDiffOn.holderOnWith_iteratedFDeriv_of_lt (k := k + 1)
+      isOpen_univ convex_univ (by omega : j < k + 1) hα
+      (fun x _ => hχb j (by omega) x) (fun x _ => hχb (j + 1) (by omega) x)
+    convert holderOnWith_univ.mp hlow using 1
+    ring
   let L := (ContinuousLinearMap.lsmul ℝ ℝ : ℝ →L[ℝ] F →L[ℝ] F).flip
   have hL : ‖L‖₊ ≤ 1 := by
     dsimp [L]

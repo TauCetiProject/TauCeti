@@ -11,7 +11,6 @@ public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
 public import Mathlib.Analysis.Calculus.ContDiff.Defs
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Normed.Operator.Holder
 
 /-!
 # Hölder bounds for local derivative fields
@@ -27,18 +26,6 @@ open Set
 open scoped NNReal
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedAddCommGroup F]
-
-/-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
-assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
-theorem LipschitzOnWith.holderOnWith_of_norm_le {X : Type*} [PseudoMetricSpace X]
-    {s : Set X} {f : X → F}
-    {L M α : ℝ≥0} (h : LipschitzOnWith L f s) (hb : ∀ x ∈ s, ‖f x‖ ≤ M) (hα : α ≤ 1) :
-    HolderOnWith (L + 2 * M) α f s := by
-  have hdiam : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ ((2 * M : ℝ≥0) : ℝ) := by
-    intro x hx y hy
-    rw [dist_eq_norm]
-    exact (_root_.norm_sub_le _ _).trans (by push_cast; linarith [hb x hx, hb y hy])
-  simpa using h.holderOnWith.of_le_of_dist_le (D := 2 * M) hdiam hα (by norm_num : (0 : ℝ≥0) < 1)
 
 variable [NormedSpace ℝ E] [NormedSpace ℝ F]
 
@@ -76,18 +63,18 @@ theorem _root_.LinearIsometryEquiv.holderOnWith_iteratedFDeriv_comp {E E' T Tu :
 /-- Every derivative field below the top order is Hölder, controlled by the uniform bound on
 that field and its next derivative. No Hölder assumption on lower derivatives is needed. -/
 theorem _root_.ContDiffOn.holderOnWith_iteratedFDeriv_of_lt {k j : ℕ} {s : Set E}
-    {f : E → F} {M α : ℝ≥0} (hf : ContDiffOn ℝ k f s) (hs : IsOpen s)
+    {f : E → F} {M L α : ℝ≥0} (hf : ContDiffOn ℝ k f s) (hs : IsOpen s)
     (hconv : Convex ℝ s) (hj : j < k) (hα : α ≤ 1)
-    (hb : ∀ i ≤ k, ∀ x ∈ s, ‖iteratedFDeriv ℝ i f x‖ ≤ M) :
-    HolderOnWith (3 * M) α (iteratedFDeriv ℝ j f) s := by
+    (hb : ∀ x ∈ s, ‖iteratedFDeriv ℝ j f x‖ ≤ M)
+    (hnext : ∀ x ∈ s, ‖iteratedFDeriv ℝ (j + 1) f x‖ ≤ L) :
+    HolderOnWith (L + 2 * M) α (iteratedFDeriv ℝ j f) s := by
   have hdiff : ∀ x ∈ s, DifferentiableAt ℝ (iteratedFDeriv ℝ j f) x := fun x hx =>
     (hf.contDiffAt (hs.mem_nhds hx)).differentiableAt_iteratedFDeriv (by exact_mod_cast hj)
-  have hder : ∀ x ∈ s, ‖fderiv ℝ (iteratedFDeriv ℝ j f) x‖₊ ≤ M := by
+  have hder : ∀ x ∈ s, ‖fderiv ℝ (iteratedFDeriv ℝ j f) x‖₊ ≤ L := by
     intro x hx
     exact_mod_cast (norm_fderiv_iteratedFDeriv (𝕜 := ℝ) (f := f) (n := j) (x := x)) ▸
-      hb (j + 1) (by omega) x hx
+      hnext x hx
   have hlip := Convex.lipschitzOnWith_of_nnnorm_fderiv_le hdiff hder hconv
-  convert hlip.holderOnWith_of_norm_le (hb j hj.le) hα using 1
-  ring
+  exact hlip.holderOnWith_of_norm_le hb hα
 
 end TauCeti

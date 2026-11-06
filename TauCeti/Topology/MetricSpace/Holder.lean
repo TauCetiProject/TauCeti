@@ -43,6 +43,8 @@ points, the form in which Hölder seminorms are written in analysis texts.
 * `holderOnWith_iff_dist_le`: `HolderOnWith` is equivalent to the Hölder bound stated with `dist`.
 * `HolderOnWith.of_le_of_dist_le`: a `β`-Hölder function with values within distance `D` of each
   other is `γ`-Hölder for `γ ≤ β`, with constant `K δ^(β - γ) + D δ^(-γ)` for every scale `δ > 0`.
+* `LipschitzOnWith.holderOnWith_of_norm_le`: a bounded `L`-Lipschitz function with norm bound
+  `M` is Hölder of any exponent at most one with constant `L + 2 M`.
 * `HolderOnWith.of_dist_lt_of_dist_le`: a function satisfying a Hölder bound with constant `K`
   between points at distance less than `δ`, with values within distance `D` of each other, is
   Hölder with constant `K + D δ^(-r)`.
@@ -162,6 +164,19 @@ theorem HolderOnWith.dist_le_mul_rpow_of_mem_ball {X Y : Type*} [PseudoMetricSpa
   calc dist (f x) (f x₀) ≤ C * dist x x₀ ^ (r : ℝ) :=
         hf.dist_le hx (Metric.mem_ball_self (dist_nonneg.trans_lt hx'))
     _ ≤ C * ρ ^ (r : ℝ) := by gcongr
+
+/-- A bounded Lipschitz map is Hölder for every exponent at most one, without a bounded-domain
+assumption. The scale-one estimate uses the Lipschitz constant plus twice the value bound. -/
+theorem LipschitzOnWith.holderOnWith_of_norm_le {X F : Type*}
+    [PseudoMetricSpace X] [NormedAddCommGroup F]
+    {s : Set X} {f : X → F}
+    {L M α : ℝ≥0} (h : LipschitzOnWith L f s) (hb : ∀ x ∈ s, ‖f x‖ ≤ M) (hα : α ≤ 1) :
+    HolderOnWith (L + 2 * M) α f s := by
+  have hdiam : ∀ x ∈ s, ∀ y ∈ s, dist (f x) (f y) ≤ ((2 * M : ℝ≥0) : ℝ) := by
+    intro x hx y hy
+    rw [dist_eq_norm]
+    exact (_root_.norm_sub_le _ _).trans (by push_cast; linarith [hb x hx, hb y hy])
+  simpa using h.holderOnWith.of_le_of_dist_le (D := 2 * M) hdiam hα (by norm_num : (0 : ℝ≥0) < 1)
 
 /-- A finite sum of Hölder functions with a common exponent is Hölder, with the sum of the
 constants. -/
