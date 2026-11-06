@@ -14,8 +14,10 @@ import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Symplectic.Floer.Translation
 import TauCeti.MeasureTheory.Integral.Lebesgue.ApproximateBound
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 import TauCeti.Topology.UniformSpace.UniformConvergence.Comp
+import TauCeti.Topology.UniformSpace.UniformConvergence.Translate
 
 /-!
 # Limits of translated Floer cylinders
@@ -180,25 +182,6 @@ section Limit
 variable {E : Set (ℝ × ℝ)} {J : ℝ × ℝ → AlmostComplexStructure V} {c M : ℝ} {s : ℕ → ℝ}
   {v : ℝ × ℝ → V}
 
-/-- The windows `[a + s_k, b + s_k] × [0, 1]` eventually lie in `E` and outside every band
-`|s| < R`, when `s_k` tends to infinity and every translated window eventually lies in `E`. -/
-private theorem eventually_window_subset (hs : Tendsto s atTop (cocompact ℝ))
-    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E) (a b R : ℝ) :
-    ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E ∩ {z | R ≤ |z.1|} := by
-  filter_upwards [hW a b,
-    hs.eventually (isCompact_closedBall (0 : ℝ) (R + |a| + |b|)).compl_mem_cocompact]
-    with k hk hsk z hz
-  refine ⟨hk hz, ?_⟩
-  have hsk' : R + |a| + |b| < |s k| := by
-    simpa [Metric.mem_closedBall, Real.dist_eq] using hsk
-  have h₁ : |z.1 - s k| ≤ |a| + |b| := by
-    obtain ⟨⟨h₁, h₂⟩, -⟩ := hz
-    refine abs_le.2 ⟨?_, ?_⟩ <;>
-      linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
-  have h₂ : |s k| ≤ |z.1| + |z.1 - s k| := by
-    simpa using abs_sub z.1 (z.1 - s k)
-  exact (by linarith : R ≤ |z.1|)
-
 /-- The `L²` norm of the perturbed derivative over the translated windows tends to zero, by the
 coercivity of the energy density and the finiteness of the energy. -/
 private theorem tendsto_lintegral_norm_sq_perturbedFDeriv
@@ -216,7 +199,8 @@ private theorem tendsto_lintegral_norm_sq_perturbedFDeriv
           ‖ω.perturbedFDeriv (fun _ _ ↦ 0) (fun w ↦ H w.2) u z stdComplexLineImag‖ ^ 2))
       atTop (𝓝 0) := by
   have hE := tendsto_setLIntegral_of_eventually_subset hfin
-    (A := fun k ↦ Icc (a + s k) (b + s k) ×ˢ Icc 0 1) (eventually_window_subset hs hW a b)
+    (A := fun k ↦ Icc (a + s k) (b + s k) ×ˢ Icc 0 1)
+    (eventually_Icc_add_prod_subset_inter hs (hW a b))
   have hlim := ENNReal.Tendsto.const_mul hE (Or.inr (ENNReal.ofReal_ne_top (r := (1 + M ^ 2) / c)))
   rw [mul_zero] at hlim
   refine tendsto_of_tendsto_of_tendsto_of_le_of_le' tendsto_const_nhds hlim
@@ -276,33 +260,6 @@ private theorem tendsto_lintegral_enorm_perturbedFDeriv (hEU : E ⊆ U)
     Measure.restrict_apply_univ, hvol] at hL
   convert hL using 3 <;> norm_num
 
-omit [FiniteDimensional ℝ V] in
-/-- A point of the rectangle `[α, β] × [0, 1]`, translated by `(r, 0)`, lies in the translated
-window `[α + r, β + r] × [0, 1]`. -/
-private theorem add_mem_window {α β r : ℝ} {z : ℝ × ℝ} (hz : z ∈ Icc α β ×ˢ Icc (0 : ℝ) 1) :
-    z + (r, 0) ∈ Icc (α + r) (β + r) ×ˢ Icc (0 : ℝ) 1 := by
-  obtain ⟨⟨h₁, h₂⟩, h₃⟩ := hz
-  exact ⟨⟨by simp [h₁], by simp [h₂]⟩, by simpa using h₃⟩
-
-omit [FiniteDimensional ℝ V] in
-/-- On a compact window `[α, β] × [0, 1]` the translates converge uniformly, they are eventually
-continuous, and the limit is continuous. -/
-private theorem tendstoUniformlyOn_window (hu : ContDiffOn ℝ 1 u U) (hEU : E ⊆ U)
-    (hW : ∀ a b : ℝ, ∀ᶠ k in atTop, Icc (a + s k) (b + s k) ×ˢ Icc 0 1 ⊆ E)
-    (hv : TendstoLocallyUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop
-      ((univ : Set ℝ) ×ˢ Icc 0 1)) (α β : ℝ) :
-    TendstoUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop (Icc α β ×ˢ Icc 0 1) ∧
-      (∀ᶠ k in atTop, ContinuousOn (fun z ↦ u (z + (s k, 0))) (Icc α β ×ˢ Icc 0 1)) ∧
-      ContinuousOn v (Icc α β ×ˢ Icc 0 1) := by
-  have hUC : TendstoUniformlyOn (fun k z ↦ u (z + (s k, 0))) v atTop (Icc α β ×ˢ Icc 0 1) :=
-    (tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
-      (isCompact_Icc.prod isCompact_Icc)).1 (hv.mono (prod_mono (subset_univ _) le_rfl))
-  have hcont : ∀ᶠ k in atTop, ContinuousOn (fun z ↦ u (z + (s k, 0))) (Icc α β ×ˢ Icc 0 1) := by
-    filter_upwards [hW α β] with k hk
-    exact hu.continuousOn.comp (continuousOn_id.add continuousOn_const)
-      fun z hz ↦ hEU (hk (add_mem_window hz))
-  exact ⟨hUC, hcont, hUC.continuousOn hcont.frequently⟩
-
 /-- **The limit of translated Floer cylinders is stationary.** Let `u` be `C¹` on an open set `U`
 and solve the Floer equation for the cylindrical perturbation `K = H_t dt` on `E ⊆ U`, for almost
 complex structures with `c ‖w‖² ≤ ω(w, J z w)` and `‖J z w‖ ≤ M ‖w‖` on `E`, where `c > 0`, and
@@ -324,7 +281,8 @@ theorem eq_of_tendstoLocallyUniformlyOn_comp_add
     ∀ r, ∀ t ∈ Icc (0 : ℝ) 1, v (r, t) = v (0, t) := by
   -- It suffices to compare the two vertical sides of a rectangle `[α, β] × [0, 1]`.
   have key {α β : ℝ} (hαβ : α ≤ β) : ∀ t ∈ Icc (0 : ℝ) 1, v (β, t) = v (α, t) := by
-    obtain ⟨hUC, -, hvK⟩ := tendstoUniformlyOn_window hu hEU hW hv α β
+    obtain ⟨hUC, -, hvK⟩ := tendstoUniformlyOn_Icc_prod_comp_add_and_continuousOn isCompact_Icc
+      (hu.continuousOn.mono hEU) (hW α β) hv
     have hsides {γ : ℝ} (hγ : γ ∈ Icc α β) : ContinuousOn (fun t ↦ v (γ, t)) (Icc 0 1) :=
       hvK.comp (continuousOn_const.prodMk continuousOn_id) fun t ht ↦ ⟨hγ, ht⟩
     have hβ : β ∈ Icc α β := ⟨hαβ, le_rfl⟩
@@ -363,28 +321,6 @@ theorem eq_of_tendstoLocallyUniformlyOn_comp_add
   · exact (key hr t ht).symm
   · exact key hr t ht
 
-omit [FiniteDimensional ℝ V] in
-/-- The defect `a₂ - a₁ - ∫ g` from an integral equation over an interval of length at most one
-moves by at most `3 δ` when the endpoint values and the integrand move by at most `δ`. -/
-private theorem norm_sub_sub_integral_le {a₁ a₂ b₁ b₂ : V} {g g' : ℝ → V} {t₁ t₂ δ : ℝ}
-    (ht : t₁ ≤ t₂) (ht₁₂ : t₂ - t₁ ≤ 1) (hg : IntervalIntegrable g volume t₁ t₂)
-    (hg' : IntervalIntegrable g' volume t₁ t₂) (h₁ : ‖a₁ - b₁‖ ≤ δ) (h₂ : ‖a₂ - b₂‖ ≤ δ)
-    (hgg : ∀ t ∈ uIoc t₁ t₂, ‖g t - g' t‖ ≤ δ) :
-    ‖a₂ - a₁ - ∫ t in t₁..t₂, g t‖ ≤ ‖b₂ - b₁ - ∫ t in t₁..t₂, g' t‖ + 3 * δ := by
-  have hδ : 0 ≤ δ := (norm_nonneg _).trans h₁
-  have hI : ‖∫ t in t₁..t₂, (g t - g' t)‖ ≤ δ :=
-    (intervalIntegral.norm_integral_le_of_norm_le_const hgg).trans
-      (mul_le_of_le_one_right hδ (by rwa [abs_of_nonneg (sub_nonneg.2 ht)]))
-  have hsplit : a₂ - a₁ - ∫ t in t₁..t₂, g t = (b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂) -
-      (a₁ - b₁) - ∫ t in t₁..t₂, (g t - g' t) := by
-    rw [intervalIntegral.integral_sub hg hg']
-    abel
-  rw [hsplit]
-  linarith [norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂) - (a₁ - b₁))
-      (∫ t in t₁..t₂, (g t - g' t)),
-    norm_sub_le ((b₂ - b₁ - ∫ t in t₁..t₂, g' t) + (a₂ - b₂)) (a₁ - b₁),
-    norm_add_le (b₂ - b₁ - ∫ t in t₁..t₂, g' t) (a₂ - b₂)]
-
 /-- Under the hypotheses of `TauCeti.SymplecticForm.eq_of_tendstoLocallyUniformlyOn_comp_add`, and
 for a jointly `C¹` Hamiltonian `H`, the path `x(t) = v(0, t)` satisfies the integral equation
 `x(t₂) - x(t₁) = ∫_{t₁}^{t₂} X_{H_t}(x(t)) dt` of the Hamiltonian flow for `0 ≤ t₁ ≤ t₂ ≤ 1`. -/
@@ -404,7 +340,8 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
   have hstat := eq_of_tendstoLocallyUniformlyOn_comp_add hU hu hEU hc hJc hJM hfloer hfin hs hW hv
   set Φ : ℝ × V → V := fun p ↦ ω.hamiltonianVectorField (H p.1) p.2
   have hΦ : Continuous Φ := ω.continuous_uncurry_hamiltonianVectorField hH
-  obtain ⟨hUC, hFc, hvK⟩ := tendstoUniformlyOn_window hu hEU hW hv 0 1
+  obtain ⟨hUC, hFc, hvK⟩ := tendstoUniformlyOn_Icc_prod_comp_add_and_continuousOn isCompact_Icc
+    (hu.continuousOn.mono hEU) (hW 0 1) hv
   -- The vector field along the translates converges uniformly on `[0, 1] × [0, 1]`, since `Φ` is
   -- continuous on the compact set of values of the limit.
   have hΦUC : TendstoUniformlyOn (fun k z ↦ Φ (z.2, u (z + (s k, 0)))) (fun z ↦ Φ (z.2, v z))
@@ -462,12 +399,17 @@ private theorem sub_sub_integral_eq_zero_of_tendstoLocallyUniformlyOn_comp_add
         have h := hk (r, t) (hmem htm)
         rw [dist_eq_norm, hF, hstat r t (hsub htm)] at h
         exact h.le
-      have hA := norm_sub_sub_integral_le ht (by linarith) hcv.intervalIntegrable
-        hcu.intervalIntegrable (hend left_mem_uIcc) (hend right_mem_uIcc) fun t htm ↦ by
+      have hA := intervalIntegral.norm_sub_sub_integral_le (a₁ := v (0, t₁)) (a₂ := v (0, t₂))
+        (b₁ := u (r + s k, t₁)) (b₂ := u (r + s k, t₂)) hcv.intervalIntegrable
+        hcu.intervalIntegrable fun t htm ↦ by
           have h := hkΦ (r, t) (hmem (uIoc_subset_uIcc htm))
           rw [dist_eq_norm, hF] at h
           exact h.le
-      rw [← hxv, show 3 * δ = ε by rw [hδε]; ring] at hA
+      rw [← hxv] at hA
+      have hlen : δ * |t₂ - t₁| ≤ δ :=
+        mul_le_of_le_one_right hδ.le (by rw [abs_of_nonneg (sub_nonneg.2 ht)]; linarith)
+      replace hA := hA.trans (by linarith [hend left_mem_uIcc, hend right_mem_uIcc] :
+        _ ≤ ‖u (r + s k, t₂) - u (r + s k, t₁) - ∫ t in t₁..t₂, Φ (t, u (r + s k, t))‖ + ε)
       rw [← ofReal_norm, ← ofReal_norm, ← ENNReal.ofReal_coe_nnreal,
         ← ENNReal.ofReal_add (norm_nonneg _) ε.coe_nonneg]
       exact ENNReal.ofReal_le_ofReal hA
@@ -492,7 +434,8 @@ theorem hasDerivWithinAt_of_tendstoLocallyUniformlyOn_comp_add (hH : ContDiff �
       ((univ : Set ℝ) ×ˢ Icc 0 1)) :
     ∀ t ∈ Icc (0 : ℝ) 1, HasDerivWithinAt (fun t ↦ v (0, t))
       (ω.hamiltonianVectorField (H t) (v (0, t))) (Icc 0 1) t := by
-  obtain ⟨-, -, hvK⟩ := tendstoUniformlyOn_window hu hEU hW hv 0 1
+  obtain ⟨-, -, hvK⟩ := tendstoUniformlyOn_Icc_prod_comp_add_and_continuousOn isCompact_Icc
+    (hu.continuousOn.mono hEU) (hW 0 1) hv
   have hx : ContinuousOn (fun t ↦ v (0, t)) (Icc 0 1) :=
     hvK.comp (continuousOn_const.prodMk continuousOn_id) fun t ht ↦
       ⟨left_mem_Icc.2 zero_le_one, ht⟩

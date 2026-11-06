@@ -37,7 +37,8 @@ Finally, a function with finite integral over a set `E` has small integral over 
 far out along the strip: its integrals over sets that eventually lie in `E` and outside every band
 `|z.1| < R` tend to zero (`TauCeti.tendsto_setLIntegral_of_eventually_subset`). Applied to
 windows `[a + s_k, b + s_k] × T` with `|s_k| → ∞`, this says that a half-cylinder of finite energy
-carries less and less energy over its translated windows.
+carries less and less energy over its translated windows, since such windows eventually lie
+outside every band (`TauCeti.eventually_Icc_add_prod_subset_inter`).
 -/
 
 public section
@@ -136,6 +137,27 @@ theorem setLIntegral_univ_prod_eq_zero_of_periodic {β : Type*} [MeasurableSpace
   rw [hunion]
   refine (lintegral_iUnion_le _ _).trans (le_of_eq ?_)
   simp [setLIntegral_Ioc_prod_eq_zero_of_periodic hT hμ hf hfin]
+
+/-- If `|s_i| → ∞` and the translated window `[a + s_i, b + s_i] × T` eventually lies in `E`, then
+it eventually lies in `E` and outside the band `|z.1| < R`, for every `R`. These windows are thus
+sets to which `TauCeti.tendsto_setLIntegral_of_eventually_subset` applies. -/
+theorem eventually_Icc_add_prod_subset_inter {ι β : Type*} {l : Filter ι} {s : ι → ℝ}
+    {T : Set β} {E : Set (ℝ × β)} {a b : ℝ} (hs : Tendsto s l (cocompact ℝ))
+    (hW : ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E) (R : ℝ) :
+    ∀ᶠ i in l, Icc (a + s i) (b + s i) ×ˢ T ⊆ E ∩ {z | R ≤ |z.1|} := by
+  filter_upwards [hW,
+    hs.eventually (isCompact_closedBall (0 : ℝ) (R + |a| + |b|)).compl_mem_cocompact]
+    with i hi hsi z hz
+  refine ⟨hi hz, ?_⟩
+  have hsi' : R + |a| + |b| < |s i| := by
+    simpa [Metric.mem_closedBall, Real.dist_eq] using hsi
+  have h₁ : |z.1 - s i| ≤ |a| + |b| := by
+    obtain ⟨⟨h₁, h₂⟩, -⟩ := hz
+    refine abs_le.2 ⟨?_, ?_⟩ <;>
+      linarith [neg_abs_le a, le_abs_self b, abs_nonneg a, abs_nonneg b]
+  have h₂ : |s i| ≤ |z.1| + |z.1 - s i| := by
+    simpa using abs_sub z.1 (z.1 - s i)
+  exact (by linarith : R ≤ |z.1|)
 
 /-- **Integrals over sets escaping along the strip.** If `f` has finite integral over `E`, then its
 integrals over sets `A i` that eventually lie in `E` and outside every band `|z.1| < R` tend to
