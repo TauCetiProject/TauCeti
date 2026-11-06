@@ -12,8 +12,9 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 # Tangent images of graphs and product maps
 
 Under the canonical identification of product tangent spaces, the tangent image of
-`x ↦ (x, f x)` is the linear graph of `df`, and the tangent image of a product map `f × g` at
-`(x, y)` is the product of the tangent images of `f` at `x` and of `g` at `y`. These are the
+`x ↦ (f x, g x)` is the range of `df × dg`, that of `x ↦ (x, f x)` is the linear graph of `df`,
+and the tangent image of a product map `f × g` at `(x, y)` is the product of the tangent images
+of `f` at `x` and of `g` at `y`. These are the
 bridges between linear criteria for graphs and products of subspaces and geometric conditions on
 embedded graphs and products of submanifolds, including Lagrangian ones. The calculations use
 Mathlib's product derivatives, `LinearMap.graph_eq_range_prod` and `LinearMap.range_prodMap`.
@@ -51,6 +52,26 @@ theorem mfderiv_graph_snd_apply {f : M → N} {x : M} (hf : MDifferentiableAt I 
   have hg : MDifferentiableAt I (I.prod J) (fun y ↦ (y, f y)) x := mdifferentiableAt_id.prodMk hf
   exact (hg.mfderiv_snd_apply v).symm
 
+/-- The tangent image of a map `y ↦ (f y, g y)` into a product, read in the product tangent
+spaces, is the range of the product of the differentials of its two coordinates. -/
+theorem map_range_mfderiv_prodMk {E' H'' N' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+    [TopologicalSpace H''] {J' : ModelWithCorners 𝕜 E' H''} [TopologicalSpace N']
+    [ChartedSpace H'' N'] {f : M → N} {g : M → N'} {x : M} (hf : MDifferentiableAt I J f x)
+    (hg : MDifferentiableAt I J' g x) :
+    (LinearMap.range (mfderiv I (J.prod J') (fun y ↦ (f y, g y)) x).toLinearMap).map
+        (Manifold.tangentSpaceProdEquiv (I := J) (J := J') (f x, g x)).toLinearEquiv.toLinearMap =
+      LinearMap.range ((mfderiv I J f x).toLinearMap.prod (mfderiv I J' g x).toLinearMap) := by
+  have hd : (Manifold.tangentSpaceProdEquiv (I := J) (J := J') (f x, g x)).toLinearEquiv.toLinearMap
+      ∘ₗ (mfderiv I (J.prod J') (fun y ↦ (f y, g y)) x).toLinearMap =
+      (mfderiv I J f x).toLinearMap.prod (mfderiv I J' g x).toLinearMap := by
+    -- Native product derivatives use definitionally equal product tangent synonyms.
+    erw [mfderiv_prodMk hf hg]
+    apply LinearMap.ext
+    intro v
+    exact Manifold.tangentSpaceProdEquiv_apply (I := J) (J := J') (f x, g x)
+      (((mfderiv I J f x).prod (mfderiv I J' g x)) v)
+  rw [← LinearMap.range_comp, hd]
+
 /-- The tangent image of a graph, read in the product tangent spaces, is the graph of the
 original map's differential. -/
 @[simp]
@@ -58,16 +79,10 @@ theorem map_range_mfderiv_graph {f : M → N} {x : M} (hf : MDifferentiableAt I 
     (LinearMap.range (mfderiv I (I.prod J) (fun y ↦ (y, f y)) x).toLinearMap).map
         (Manifold.tangentSpaceProdEquiv (I := I) (J := J) (x, f x)).toLinearEquiv.toLinearMap =
       (mfderiv I J f x).toLinearMap.graph := by
-  have hd : (Manifold.tangentSpaceProdEquiv (I := I) (J := J) (x, f x)).toLinearEquiv.toLinearMap ∘ₗ
-      (mfderiv I (I.prod J) (fun y ↦ (y, f y)) x).toLinearMap =
-      LinearMap.id.prod (mfderiv I J f x).toLinearMap := by
-    -- Native product derivatives use definitionally equal product tangent synonyms.
-    erw [mfderiv_prodMk mdifferentiableAt_id hf, mfderiv_id]
-    apply LinearMap.ext
-    intro v
-    exact Manifold.tangentSpaceProdEquiv_apply (I := I) (J := J) (x, f x)
-      (((ContinuousLinearMap.id 𝕜 (TangentSpace I x)).prod (mfderiv I J f x)) v)
-  rw [← LinearMap.range_comp, hd, ← LinearMap.graph_eq_range_prod]
+  rw [map_range_mfderiv_prodMk (f := fun y ↦ y) mdifferentiableAt_id hf,
+    LinearMap.graph_eq_range_prod]
+  congr
+  exact congrArg ContinuousLinearMap.toLinearMap mfderiv_id
 
 /-- The tangent image of a product of differentiable maps, read in the product tangent spaces, is
 the product of the tangent images of the factors. -/
