@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
-import Mathlib.Probability.Moments.Basic
 import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
+import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -103,8 +103,8 @@ measurable. -/
 private theorem integrable_exp_add_of_abs_le [IsFiniteMeasure ν] (hh : Measurable h)
     (hM : ∀ z, |h z| ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) :
     Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν :=
-  integrable_exp_of_abs_le (K := M + C) (by fun_prop) (ae_of_all _ fun b ↦
-    (abs_add_le _ _).trans (add_le_add (hM _) (hC b)))
+  TauCeti.MeasureTheory.integrable_exp_of_ae_le (K := M + C) (by fun_prop) (ae_of_all _ fun b ↦
+    (le_abs_self _).trans ((abs_add_le _ _).trans (add_le_add (hM _) (hC b))))
 
 /-- Integrating `exp (h (a, b) + ψ b + t)` against `ν` gives `exp (t + logIntegralExp h ν ψ a)`. -/
 private theorem lintegral_ofReal_exp_add [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
@@ -480,7 +480,7 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
     rw [hf_def]
     simp only [Function.comp_apply, Prod.swap_prod_mk]
     ring_nf
-  have hcoupling := isCoupling_withDensity_of_lintegral_eq hμν hf (ae_of_all _ hrow)
+  have hcoupling := isCoupling_withDensity_of_lintegral_eq hμν hf.aemeasurable (ae_of_all _ hrow)
     (ae_of_all _ hcol)
   refine ⟨φ, ψ, max (M + C + |Real.log (ν.real univ)|) C, hφ, hψ,
     fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _), ?_⟩

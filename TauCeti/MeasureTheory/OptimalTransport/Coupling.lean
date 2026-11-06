@@ -492,10 +492,9 @@ theorem isCoupling_of_measure_prod_univ_of_measure_univ_prod
 
 /-- A density `f` against `μ.prod ν` whose rows integrate to `1` against `ν` for `μ`-almost every
 `x`, and whose columns integrate to a constant against `μ` for `ν`-almost every `y`, defines a
-coupling of `μ` and `ν`, when `μ` and `ν` are finite measures of equal mass: comparing total masses
-forces the constant to be `1`. -/
+coupling of `μ` and `ν`, when `μ` and `ν` are finite measures of equal mass. -/
 theorem isCoupling_withDensity_of_lintegral_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (hμν : μ univ = ν univ) {f : X × Y → ℝ≥0∞} (hf : Measurable f)
+    (hμν : μ univ = ν univ) {f : X × Y → ℝ≥0∞} (hf : AEMeasurable f (μ.prod ν))
     (hrow : ∀ᵐ x ∂μ, ∫⁻ y, f (x, y) ∂ν = 1) {κ : ℝ≥0∞}
     (hcol : ∀ᵐ y ∂ν, ∫⁻ x, f (x, y) ∂μ = κ) :
     IsCoupling ((μ.prod ν).withDensity f) μ ν := by
@@ -506,12 +505,12 @@ theorem isCoupling_withDensity_of_lintegral_eq [IsFiniteMeasure μ] [IsFiniteMea
   have hfst : ((μ.prod ν).withDensity f).fst = μ := by
     ext s hs
     rw [Measure.fst_apply hs, ← prod_univ, withDensity_apply _ (hs.prod MeasurableSet.univ),
-      setLIntegral_prod _ hf.aemeasurable]
+      setLIntegral_prod _ hf.restrict]
     simp_rw [Measure.restrict_univ]
     rw [setLIntegral_congr_fun_ae hs (hrow.mono fun x hx _ ↦ hx), setLIntegral_const, one_mul]
   have hsnd (t : Set Y) (ht : MeasurableSet t) : ((μ.prod ν).withDensity f).snd t = κ * ν t := by
     rw [Measure.snd_apply ht, ← univ_prod, withDensity_apply _ (MeasurableSet.univ.prod ht),
-      setLIntegral_prod_symm _ hf.aemeasurable]
+      setLIntegral_prod_symm _ hf.restrict]
     simp_rw [Measure.restrict_univ]
     rw [setLIntegral_congr_fun_ae ht (hcol.mono fun y hy _ ↦ hy), setLIntegral_const]
   -- Comparing total masses forces `κ = 1`.
