@@ -70,10 +70,12 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {W : Type*} [NormedAddCommGroup W] [NormedSpace ℂ W]
 
 /-- The oscillatory integral `∫∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ` of an amplitude `b(y, ξ)`, as the
-iterated integral with the position integral inside. For amplitudes whose position derivatives
-have polynomial growth in the frequency, the position integral is integrable in the frequency
-(`integrable_integral_exp_smul`) and this is the limit of the regularized double integrals
-(`tendsto_integral_cutoff_smul_oscillatoryIntegral`). -/
+iterated Bochner integral with the position integral inside. It is the oscillatory integral only
+for amplitudes whose position slices `y ↦ b(y, ξ)` are integrable; otherwise the inner Bochner
+integral is `0`. If the slices are `C^N` with integrable derivatives up to order `N`, and both
+`∫ ‖b(y, ξ)‖ dy` and `∫ ‖D_y^N b(y, ξ)‖ dy` are at most `C ⟨ξ⟩ ^ m` with `N > m + dim E`, the
+position integral is integrable in the frequency (`integrable_integral_exp_smul`) and this is the
+limit of the regularized double integrals (`tendsto_integral_cutoff_smul_oscillatoryIntegral`). -/
 def oscillatoryIntegral (b : E × E → W) : W :=
   ∫ ξ, ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ)
 
@@ -92,13 +94,6 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private lemma norm_exp_neg_inner_mul_I (y ξ : E) : ‖Complex.exp (-(⟪y, ξ⟫ * Complex.I))‖ = 1 := by
   rw [Complex.norm_exp]
   simp
-
-/-- Multiplying an integrable function by the phase `exp(-i ⟪y, ξ⟫)` keeps it integrable. -/
-private lemma integrable_exp_neg_inner_smul {f : E → W} (hf : Integrable f) (ξ : E) :
-    Integrable fun y ↦ Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • f y :=
-  hf.norm.mono' ((by fun_prop : Continuous fun y : E ↦
-    Complex.exp (-(⟪y, ξ⟫ * Complex.I))).aestronglyMeasurable.smul hf.aestronglyMeasurable)
-    (ae_of_all _ fun y ↦ by rw [norm_smul, norm_exp_neg_inner_mul_I, one_mul])
 
 /-- The oscillatory integral is additive on amplitudes whose position slices are integrable and
 whose position integrals are integrable in the frequency. -/
@@ -323,10 +318,14 @@ theorem tendsto_integral_cutoff_smul_quantizeSchwartzValue [CompleteSpace V]
     fun ξ k hk ↦ (u.integral_norm_iteratedFDeriv_clm_comp_le (L ξ) k).trans <| by
       rw [mul_right_comm]
       exact mul_le_mul (hL ξ) hk (integral_nonneg fun _ ↦ norm_nonneg _) (by positivity)
-  have hmeas' : AEStronglyMeasurable fun p : E × E ↦ L p.2 (u p.1) :=
-    (by fun_prop : Continuous fun p : E × E ↦ Complex.exp (⟪x, p.2⟫ * Complex.I)
-      ).aestronglyMeasurable.smul (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable
-        (hmeas.comp_snd.prodMk (u.continuous.comp continuous_fst).aestronglyMeasurable))
+  have hmeas' : AEStronglyMeasurable fun p : E × E ↦ L p.2 (u p.1) := by
+    have h : AEStronglyMeasurable fun p : E × E ↦
+        Complex.exp (⟪x, p.2⟫ * Complex.I) • a (x, p.2) (u p.1) :=
+      (by fun_prop : Continuous fun p : E × E ↦ Complex.exp (⟪x, p.2⟫ * Complex.I)
+        ).aestronglyMeasurable.smul (isBoundedBilinearMap_apply.continuous.comp_aestronglyMeasurable
+          (hmeas.comp_snd.prodMk (u.continuous.comp continuous_fst).aestronglyMeasurable))
+    refine h.congr (ae_of_all _ fun p ↦ ?_)
+    simp only [L, ContinuousLinearMap.coe_restrictScalars', smul_apply]
   have key := tendsto_integral_cutoff_smul_oscillatoryIntegral (b := fun p ↦ L p.2 (u p.1))
     (N := N) hmeas'
     (fun ξ ↦ ((L ξ).contDiff.comp (u.smooth ⊤)).of_le (mod_cast le_top))
