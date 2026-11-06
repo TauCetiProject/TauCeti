@@ -40,11 +40,12 @@ algebraic description of jets and differential operators.
 * `TauCeti.smoothCotangentMap`: the pullback `I_x / I_x² → I_y / I_y²` along a smooth map `φ`
   with `φ y = x`, functorial in `φ`. Under `smoothCotangentEquiv` it is the transpose of `dφ_y`
   (`TauCeti.smoothCotangentEquiv_smoothCotangentMap`), so it is bijective when `dφ_y` is
-  invertible (`TauCeti.bijective_smoothCotangentMap`).
+  invertible (`TauCeti.smoothCotangentMap_bijective`).
 * `TauCeti.smoothCotangentRestrictEquiv`: restriction to an open neighbourhood of `x` is an
   isomorphism of algebraic cotangent spaces.
-* `TauCeti.exists_basis_smoothCotangent`: the classes of localized chart coordinates form a basis
-  of `I_x / I_x²`, dual to the chosen basis of the model space.
+* `TauCeti.smoothCotangentBasis`: the basis of `I_x / I_x²` dual to a chosen basis of the model
+  space, formed by the classes of the localized chart coordinates
+  (`TauCeti.smoothCotangentBasis_eq_toCotangent`).
 * `TauCeti.smoothVanishingIdeal_sq_eq_self`: on a zero-dimensional manifold `I_x² = I_x`.
 
 ## Implementation notes
@@ -330,40 +331,64 @@ theorem smoothCotangentEquiv_toCotangent_of_eventuallyEq {x : M} (hx : I.IsInter
   -- Both sides evaluate `ℓ` at `v`, read once as a tangent vector and once in the model space.
   rfl
 
-/-- **The coordinate-differential basis.** At an interior point `x`, for every basis `b` of the
-model space there are smooth functions `c i` vanishing at `x`, equal near `x` to the localized
-chart coordinates `b.coord i ∘ extChartAt I x - b.coord i (extChartAt I x x)`, whose cotangent
-classes form a basis of `I_x / I_x²`; it corresponds under `smoothCotangentEquiv` to the dual
-basis of `b`. -/
-theorem exists_basis_smoothCotangent {x : M} (hx : I.IsInteriorPoint x) {ι : Type*} [Finite ι]
-    (b : Module.Basis ι ℝ E) :
-    ∃ (c : ι → smoothVanishingIdeal I x)
-      (B : Module.Basis ι ℝ (smoothVanishingIdeal I x).Cotangent),
-      (∀ i, (c i : M → ℝ) =ᶠ[𝓝 x]
-        fun y ↦ b.coord i (extChartAt I x y) - b.coord i (extChartAt I x x)) ∧
-      (∀ i, B i = (smoothVanishingIdeal I x).toCotangent (c i)) ∧
-      ∀ i, smoothCotangentEquiv hx (B i) = LinearMap.toContinuousLinearMap (b.coord i) := by
+/-- **The coordinate-differential basis.** At an interior point `x`, the basis of `I_x / I_x²`
+corresponding under `smoothCotangentEquiv` to the dual basis of a basis `b` of the model space.
+Its `i`-th vector is the class of any function vanishing at `x` that agrees near `x` with the
+localized chart coordinate `b.coord i ∘ extChartAt I x - b.coord i (extChartAt I x x)`
+(`smoothCotangentBasis_eq_toCotangent`); such functions exist
+(`exists_toCotangent_eq_smoothCotangentBasis`). -/
+def smoothCotangentBasis {x : M} (hx : I.IsInteriorPoint x) {ι : Type*}
+    (b : Module.Basis ι ℝ E) : Module.Basis ι ℝ (smoothVanishingIdeal I x).Cotangent := by
   classical
-  have := Fintype.ofFinite ι
+  have : Finite ι := Module.Finite.finite_basis b
+  -- Read `b` as a basis of `T_x M = E`, and transport its dual basis, as continuous functionals,
+  -- to `I_x / I_x²`.
+  let b' : Module.Basis ι ℝ (TangentSpace I x) := b
+  exact (b'.dualBasis.map LinearMap.toContinuousLinearMap).map (smoothCotangentEquiv hx).symm
+
+/-- The coordinate-differential basis corresponds under `smoothCotangentEquiv` to the dual basis
+of `b`. -/
+@[simp]
+theorem smoothCotangentEquiv_smoothCotangentBasis {x : M} (hx : I.IsInteriorPoint x) {ι : Type*}
+    (b : Module.Basis ι ℝ E) (i : ι) :
+    smoothCotangentEquiv hx (smoothCotangentBasis hx b i) =
+      LinearMap.toContinuousLinearMap (b.coord i) := by
+  classical
+  have : Finite ι := Module.Finite.finite_basis b
+  simp only [smoothCotangentBasis, Module.Basis.map_apply, LinearEquiv.apply_symm_apply]
+  -- The dual basis of `b` is `b.coord`, read on `T_x M` and on the model space `E`.
+  exact congrArg _ (congrFun b.coe_dualBasis i)
+
+/-- The `i`-th coordinate-differential basis vector is the class of any function vanishing at `x`
+that agrees near `x` with the localized chart coordinate
+`b.coord i ∘ extChartAt I x - b.coord i (extChartAt I x x)`. -/
+theorem smoothCotangentBasis_eq_toCotangent {x : M} (hx : I.IsInteriorPoint x) {ι : Type*}
+    (b : Module.Basis ι ℝ E) (i : ι) (f : smoothVanishingIdeal I x)
+    (hf : (f : M → ℝ) =ᶠ[𝓝 x]
+      fun y ↦ b.coord i (extChartAt I x y) - b.coord i (extChartAt I x x)) :
+    smoothCotangentBasis hx b i = (smoothVanishingIdeal I x).toCotangent f := by
+  apply (smoothCotangentEquiv hx).injective
+  rw [smoothCotangentEquiv_smoothCotangentBasis]
+  exact (smoothCotangentEquiv_toCotangent_of_eventuallyEq hx f _ (by simpa using hf)).symm
+
+/-- Each coordinate-differential basis vector is the class of a smooth function vanishing at `x`
+that agrees near `x` with the localized chart coordinate
+`b.coord i ∘ extChartAt I x - b.coord i (extChartAt I x x)`. -/
+theorem exists_toCotangent_eq_smoothCotangentBasis {x : M} (hx : I.IsInteriorPoint x)
+    {ι : Type*} (b : Module.Basis ι ℝ E) (i : ι) :
+    ∃ c : smoothVanishingIdeal I x, (c : M → ℝ) =ᶠ[𝓝 x]
+        (fun y ↦ b.coord i (extChartAt I x y) - b.coord i (extChartAt I x x)) ∧
+      (smoothVanishingIdeal I x).toCotangent c = smoothCotangentBasis hx b i := by
   obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  let c (i : ι) : smoothVanishingIdeal I x :=
+  let c : smoothVanishingIdeal I x :=
     ⟨⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
       ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub contMDiff_const⟩,
       mem_smoothVanishingIdeal_iff.mpr (sub_self _)⟩
-  have hc (i : ι) : (c i : M → ℝ) =ᶠ[𝓝 x]
+  have hc : (c : M → ℝ) =ᶠ[𝓝 x]
       fun y ↦ b.coord i (extChartAt I x y) - b.coord i (extChartAt I x x) := by
     filter_upwards [hF] with y hy
     simp [c, hy, hF.eq_of_nhds]
-  -- Transport the dual basis of `b`, read as continuous functionals, to `I_x / I_x²`.
-  let B := (b.dualBasis.map LinearMap.toContinuousLinearMap).map (smoothCotangentEquiv hx).symm
-  have hB (i : ι) :
-      smoothCotangentEquiv hx (B i) = LinearMap.toContinuousLinearMap (b.coord i) := by
-    refine (LinearEquiv.eq_symm_apply _).mp ?_
-    refine (Module.Basis.map_apply _ _ i).trans (congrArg _ ?_)
-    exact (Module.Basis.map_apply _ _ i).trans (congrArg _ (congrFun b.coe_dualBasis i))
-  refine ⟨c, B, hc, fun i ↦ (smoothCotangentEquiv hx).injective ?_, hB⟩
-  exact (hB i).trans (smoothCotangentEquiv_toCotangent_of_eventuallyEq hx (c i) _
-    (by simpa using hc i)).symm
+  exact ⟨c, hc, (smoothCotangentBasis_eq_toCotangent hx b i c hc).symm⟩
 
 /-- **Zero-dimensional manifolds.** When the model space is zero, the algebraic cotangent space
 at an interior point vanishes. -/
@@ -406,26 +431,22 @@ theorem smoothCotangentEquiv_smoothCotangentMap (φ : C^∞⟮J, N; I, M⟯) {x 
 /-- If the differential of a smooth map `φ` at an interior point `y` is invertible, for instance
 for a local diffeomorphism, the pullback of cotangent classes `I_x / I_x² → I_y / I_y²` along `φ`,
 where `x = φ y` is interior, is bijective. -/
-theorem bijective_smoothCotangentMap (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N} (h : φ y = x)
+theorem smoothCotangentMap_bijective (φ : C^∞⟮J, N; I, M⟯) {x : M} {y : N} (h : φ y = x)
     (hx : I.IsInteriorPoint x) (hy : J.IsInteriorPoint y) (hφ : (mfderiv J I φ y).IsInvertible) :
     Function.Bijective (smoothCotangentMap φ h) := by
+  subst h
   obtain ⟨e, he⟩ := hφ
   -- Under the cotangent identifications the pullback is precomposition with `e`, a bijection.
-  have hmap : ⇑(smoothCotangentMap φ h) = (smoothCotangentEquiv hy).symm ∘
-      (fun L ↦ L.comp (e : TangentSpace J y →L[ℝ] TangentSpace I (φ y))) ∘
-        smoothCotangentEquiv hx := by
+  have hmap : ⇑(smoothCotangentMap φ rfl) = (smoothCotangentEquiv hy).symm ∘
+      e.symm.arrowCongr (ContinuousLinearEquiv.refl ℝ ℝ) ∘ smoothCotangentEquiv hx := by
     funext u
     rw [Function.comp_apply, Function.comp_apply, LinearEquiv.eq_symm_apply,
-      smoothCotangentEquiv_smoothCotangentMap φ h hx hy, he]
-  have hcomp : Function.Bijective
-      (fun L : TangentSpace I (φ y) →L[ℝ] ℝ ↦
-        L.comp (e : TangentSpace J y →L[ℝ] TangentSpace I (φ y))) :=
-    ⟨fun L L' hL ↦ ContinuousLinearMap.ext fun v ↦ by
-        simpa using congr($hL (e.symm v)),
-      fun L ↦ ⟨L.comp (e.symm : TangentSpace I (φ y) →L[ℝ] TangentSpace J y), by ext; simp⟩⟩
+      smoothCotangentEquiv_smoothCotangentMap φ rfl hx hy, ← he]
+    ext v
+    simp
   rw [hmap]
   exact (smoothCotangentEquiv hy).symm.bijective.comp
-    (hcomp.comp (smoothCotangentEquiv hx).bijective)
+    ((e.symm.arrowCongr _).bijective.comp (smoothCotangentEquiv hx).bijective)
 
 end Pullback
 
@@ -437,7 +458,7 @@ def smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (
   LinearEquiv.ofBijective
     (smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
       (by simp))
-    (bijective_smoothCotangentMap _ _ hx (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
+    (smoothCotangentMap_bijective _ _ hx (I.isInteriorPoint_iff_isInteriorPoint_val.mpr hx)
       ⟨Manifold.tangentSpaceOpenEquiv x, (Manifold.mfderiv_subtype_val x).symm⟩)
 
 /-- Restriction to an open set sends the class of `f` to the class of its restriction. -/
@@ -449,6 +470,16 @@ theorem smoothCotangentRestrictEquiv_toCotangent (U : Opens M) {x : U}
         ⟨(f : C^∞⟮I, M; ℝ⟯).comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯),
           comp_mem_smoothVanishingIdeal _ (by simp) f.2⟩ :=
   smoothCotangentMap_toCotangent _ (by simp) f
+
+/-- Restriction to an open set is the pullback of cotangent classes along the inclusion of `U`. -/
+theorem coe_smoothCotangentRestrictEquiv (U : Opens M) {x : U} (hx : I.IsInteriorPoint (x : M)) :
+    ⇑(smoothCotangentRestrictEquiv U hx) =
+      smoothCotangentMap (⟨Subtype.val, contMDiff_subtype_val⟩ : C^∞⟮I, U; I, M⟯) (y := x)
+        (by simp) := by
+  funext u
+  obtain ⟨f, rfl⟩ := Ideal.toCotangent_surjective _ u
+  rw [smoothCotangentRestrictEquiv_toCotangent]
+  exact (smoothCotangentMap_toCotangent _ _ f).symm
 
 /-- Restriction to an open set is compatible with the identifications of the algebraic cotangent
 spaces with the cotangent space, the tangent spaces of `U` and `M` at `x` being identified by
