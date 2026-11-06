@@ -67,6 +67,7 @@ curve need not carry a `HasMFDerivWithinAt` witness for it.
   chain rule under reparametrization, with `MDifferentiableAt.curveVelocity_comp_mfderiv` for a
   curve through a normed space and `TauCeti.Manifold.curveVelocity_comp` for scalar
   reparametrizations.
+* `Function.Periodic.curveVelocity_add`: the velocity of a periodic curve is periodic.
 * `TauCeti.Manifold.curveVelocity_eq_mfderiv_snd` and
   `TauCeti.Manifold.curveVelocity_eq_mfderiv_fst`: the two partial velocities of a two-parameter
   family `f : 𝕜 → 𝕜 → M` are the differential of the uncurried family in the coordinate
@@ -327,6 +328,15 @@ theorem curveVelocity_comp {φ : 𝕜 → 𝕜} {c : 𝕜} (hφ : HasDerivAt φ 
     curveVelocityWithin_comp (s := Set.univ) (u := Set.univ) hφ.hasDerivWithinAt
       (Set.mapsTo_univ φ Set.univ) hγ.mdifferentiableWithinAt
       (uniqueDiffOn_univ t (Set.mem_univ t))
+
+/-- The velocity of a `c`-periodic curve is `c`-periodic: at a point where the curve is
+differentiable, its velocity at `t + c` is its velocity at `t`. -/
+theorem _root_.Function.Periodic.curveVelocity_add {c : 𝕜} (h : Function.Periodic γ c)
+    (hγ : MDifferentiableAt 𝓘(𝕜, 𝕜) I γ (t + c)) :
+    curveVelocity I γ (t + c) = curveVelocity I γ t := by
+  have h' := curveVelocity_comp (c := 1) ((hasDerivAt_id' t).add_const c) hγ
+  rw [one_smul, show (γ ∘ fun t ↦ t + c) = γ from funext h] at h'
+  exact h'.symm
 
 /-- On a parameter set which is a neighbourhood of `t`, the restricted velocity is the
 unrestricted one. -/
