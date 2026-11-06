@@ -200,6 +200,24 @@ private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan
       mul_assoc, heX, hYX, mul_smul_comm]
     exact zsmul_mem (zsmul_mem (hspan _ _ hlow) _) ε
 
+/-- **Every path of positive length in the signless algebra of `Eₙ` is a sum of commutators**,
+once every nonempty word in the backtracks at the branch node is, on any graph equal to the
+diagram of `Eₙ`. -/
+private theorem signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq
+    (hspan : ∀ t, ∀ w ∈ eSpan k n ^ (t + 1), w ∈ commutatorSubmodule k Π) {G' : SimpleGraph (Fin n)}
+    (hG : G' = G) (x : Quiver.TotalPath (DoubledQuiver G')) (hx : 0 < x.2.2.length) :
+    signlessPreprojectiveMk k _ (ofPath x) ∈
+      commutatorSubmodule k (signlessPreprojectiveAlgebra k (DoubledQuiver G')) := by
+  subst hG
+  obtain ⟨a', b', p⟩ := x
+  obtain ⟨a, rfl⟩ := exists_eq_vertex _ a'
+  obtain ⟨b, rfl⟩ := exists_eq_vertex _ b'
+  by_cases hab : a = b
+  · subst hab
+    exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan k hn hspan p hx
+  · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
+      fun h => hab (vertex_injective _ h)
+
 end EGraph
 
 variable (k : Type*) [CommRing k]
@@ -239,20 +257,9 @@ theorem signlessPreprojectiveMk_E6_ofPath_mem_commutatorSubmodule (h2 : IsUnit (
     (h3 : IsUnit (3 : k)) (x : Quiver.TotalPath Q) (hx : 0 < x.2.2.length) :
     σ (ofPath x) ∈ commutatorSubmodule k Π := by
   -- The `E₆` Cartan matrix is `CartanMatrix.E 6`, for which the normal forms are proved.
-  have key : ∀ C : Matrix (Fin 6) (Fin 6) ℤ, C = CartanMatrix.E 6 →
-      ∀ x : Quiver.TotalPath (DoubledQuiver (diagramGraph C)), 0 < x.2.2.length →
-        signlessPreprojectiveMk k _ (ofPath x) ∈ commutatorSubmodule k
-          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph C))) := by
-    rintro C rfl ⟨a', b', p⟩ hx
-    obtain ⟨a, rfl⟩ := exists_eq_vertex _ a'
-    obtain ⟨b, rfl⟩ := exists_eq_vertex _ b'
-    by_cases hab : a = b
-    · subst hab
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan k (n := 6)
-        (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_six_pow k h2 h3) p hx
-    · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
-        fun h => hab (vertex_injective _ h)
-  exact key _ DynkinType.cartanMatrix_E6 x hx
+  exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq k (n := 6)
+    (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_six_pow k h2 h3)
+    (by rw [DynkinType.cartanMatrix_E6]; rfl) x hx
 
 /-- **The cyclic quotient of the signless algebra of `E₆` vanishes in positive degrees** when `2`
 and `3` are units: every homogeneous piece of positive path degree lies in the commutator
@@ -344,20 +351,9 @@ theorem signlessPreprojectiveMk_E7_ofPath_mem_commutatorSubmodule (h2 : IsUnit (
     (h3 : IsUnit (3 : k)) (x : Quiver.TotalPath Q) (hx : 0 < x.2.2.length) :
     σ (ofPath x) ∈ commutatorSubmodule k Π := by
   -- The `E₇` Cartan matrix is `CartanMatrix.E 7`, for which the normal forms are proved.
-  have key : ∀ C : Matrix (Fin 7) (Fin 7) ℤ, C = CartanMatrix.E 7 →
-      ∀ x : Quiver.TotalPath (DoubledQuiver (diagramGraph C)), 0 < x.2.2.length →
-        signlessPreprojectiveMk k _ (ofPath x) ∈ commutatorSubmodule k
-          (signlessPreprojectiveAlgebra k (DoubledQuiver (diagramGraph C))) := by
-    rintro C rfl ⟨a', b', p⟩ hx
-    obtain ⟨a, rfl⟩ := exists_eq_vertex _ a'
-    obtain ⟨b, rfl⟩ := exists_eq_vertex _ b'
-    by_cases hab : a = b
-    · subst hab
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan k (n := 7)
-        (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_seven_pow k h2 h3) p hx
-    · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
-        fun h => hab (vertex_injective _ h)
-  exact key _ DynkinType.cartanMatrix_E7 x hx
+  exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq k (n := 7)
+    (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_seven_pow k h2 h3)
+    (by rw [DynkinType.cartanMatrix_E7]; rfl) x hx
 
 /-- **The cyclic quotient of the signless algebra of `E₇` vanishes in positive degrees** when `2`
 and `3` are units: every homogeneous piece of positive path degree lies in the commutator
@@ -451,20 +447,9 @@ theorem signlessPreprojectiveMk_E8_ofPath_mem_commutatorSubmodule (h2 : IsUnit (
     (hx : 0 < x.2.2.length) :
     σ (ofPath x) ∈ commutatorSubmodule k Π := by
   -- The `E₈` graph is the diagram of `CartanMatrix.E 8`, for which the normal forms are proved.
-  have key : ∀ G : SimpleGraph (Fin 8), G = diagramGraph (CartanMatrix.E 8) →
-      ∀ x : Quiver.TotalPath (DoubledQuiver G), 0 < x.2.2.length →
-        signlessPreprojectiveMk k _ (ofPath x) ∈ commutatorSubmodule k
-          (signlessPreprojectiveAlgebra k (DoubledQuiver G)) := by
-    rintro G rfl ⟨a', b', p⟩ hx
-    obtain ⟨a, rfl⟩ := exists_eq_vertex _ a'
-    obtain ⟨b, rfl⟩ := exists_eq_vertex _ b'
-    by_cases hab : a = b
-    · subst hab
-      exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan k (n := 8)
-        (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_eight_pow k h2 h3 h5) p hx
-    · exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_ne k p
-        fun h => hab (vertex_injective _ h)
-  exact key _ (by rw [zigzagE8Graph_eq_diagramGraph, DynkinType.cartanMatrix_E8]; rfl) x hx
+  exact signlessPreprojectiveMk_ofPath_mem_commutatorSubmodule_of_eSpan_of_eq k (n := 8)
+    (by norm_num) (mem_commutatorSubmodule_of_mem_eSpan_eight_pow k h2 h3 h5)
+    (by rw [zigzagE8Graph_eq_diagramGraph, DynkinType.cartanMatrix_E8]; rfl) x hx
 
 /-- **The cyclic quotient of the signless algebra of `E₈` vanishes in positive degrees** when `2`,
 `3` and `5` are units: every homogeneous piece of positive path degree lies in the commutator
