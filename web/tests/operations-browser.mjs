@@ -124,6 +124,18 @@ assert.ok((await page.locator('[data-ops-view]').innerText()).includes('600 runn
 assert.ok((await page.locator('.ops-host').innerText()).includes('delayed'));
 await page.getByRole('link',{name:'Queue',exact:true}).click();
 await page.getByRole('heading',{name:'Batch 1 · head',exact:true}).waitFor();
+await page.getByRole('searchbox').fill('20000');
+await page.getByRole('button',{name:'Find PR',exact:true}).click();
+await page.getByRole('heading',{name:'PR #20000',exact:true}).waitFor();
+replaceDomain('queue',q=>{
+  const ref=q.pr_shards[20000%64], shard=JSON.parse(fixture.objects['public'+ref.url]);
+  shard.prs['TauCetiProject/TauCeti#20000'].inputs[0].state='reserved';
+  const body=JSON.stringify(shard), hash=createHash('sha256').update(body).digest('hex');
+  ref.url=ref.url.slice(0,ref.url.lastIndexOf('/')+1)+hash+'.json';
+  fixture.objects['public'+ref.url]=body;
+});
+await page.clock.fastForward(20000);
+await page.getByText('Next event: insertion into the reserved batch.',{exact:true}).waitFor();
 // A publisher disconnect retains facts and visibly ages, without false zeros.
 await page.route('https://ci-data.taucetiproject.org/v1/operations/manifest.json',route=>route.fulfill({status:503,body:'{}',headers:{'access-control-allow-origin':'*'}}));
 await page.clock.fastForward(30000);

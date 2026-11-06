@@ -7,7 +7,7 @@
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
   var selectedHistoryHost, hostHistoryRecords = [], historyMetric = "busy_slots";
   var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", repoFilter = "all", workflowFilter = "all", platformFilter = "all", hostFilter = "all", ageFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
-  var waitingPage = 0, waitingOpen = false;
+  var waitingPage = 0, waitingOpen = false, lookupGeneration = 0, prObservedAt;
   var view = root.querySelector("[data-ops-view]"), health = root.querySelector("[data-ops-health]");
   function el(tag, text, cls) { var node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (cls) node.className = cls; return node; }
   function append(parent) { Array.prototype.slice.call(arguments, 1).forEach(function (node) { if (node) parent.append(node); }); return parent; }
@@ -135,12 +135,16 @@
   }
   async function lookup(pr) {
     var queue = data.queue; if (!queue || !/^\d+$/.test(pr)) return;
-    searchValue = pr; prResult = null; errorText = "";
+    var token = ++lookupGeneration;
+    if (searchValue !== pr) prResult = null;
+    searchValue = pr; errorText = "";
     try {
       var shard = await get(queue.pr_shards[Number(BigInt(pr) % 64n)]);
+      if (token !== lookupGeneration || queue !== data.queue || route().params.get("pr") !== pr) return;
       prResult = (queue.scope.repositories || []).flatMap(function (repo) { return shard.prs[repo + "#" + pr] ? [shard.prs[repo + "#" + pr]] : []; });
+      prObservedAt = queue.observed_at;
       render();
-    } catch (_) { errorText = "PR lookup unavailable; preserving the current queue view."; render(); }
+    } catch (_) { if (token === lookupGeneration && queue === data.queue && route().params.get("pr") === pr) { errorText = "PR lookup unavailable; last successful records are retained."; render(); } }
   }
   async function loadBatch(id) {
     var token = ++generation, same = selectedBatch === id; selectedBatch = id;
@@ -187,6 +191,7 @@
       if (!prResult.length) view.append(empty("No retained queue record for PR #" + searchValue + "."));
       prResult.forEach(function (pr) {
         append(view, heading("PR #" + pr.pr), link("GitHub pull request", "https://github.com/" + pr.repository + "/pull/" + pr.pr));
+        view.append(note("PR record observed " + age(prObservedAt) + " · " + freshness(prObservedAt,60)));
         pr.inputs.forEach(function (i) {
           append(view, note(i.title + " · " + i.state), link("Accepted revision " + i.accepted_head.slice(0, 12), "https://github.com/" + pr.repository + "/commit/" + i.accepted_head), note("Approved " + timestamp(i.approved_at) + " · " + age(i.approved_at)));
           if (i.no_repair) view.append(note("Agents may not edit this contribution. Source fixes must come from the pull request."));
@@ -434,6 +439,7 @@
             if (entry[0] === "jobs") { value.loaded_jobs = await records(value.job_pages); value.loaded_workflows = await records(value.workflow_pages); jobs = value.loaded_jobs; workflows = value.loaded_workflows; }
             if (entry[0] === "queue" && data.queue) { value.loaded_waiting = data.queue.loaded_waiting; value.waiting_observed_at = data.queue.waiting_observed_at; }
             data[entry[0]] = value; manifest.domains[entry[0]] = entry[1]; render();
+            if (entry[0] === "queue" && route().tab === "queue" && route().params.get("pr")) await lookup(route().params.get("pr"));
             if (entry[0] === "queue" && value.waiting_pages) {
               try { value.loaded_waiting = await records(value.waiting_pages); value.waiting_observed_at = value.observed_at; value.waiting_error = false; }
               catch (_) { value.waiting_error = true; }
