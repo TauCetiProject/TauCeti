@@ -211,13 +211,8 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   let A := g '' (N ∩ {k | ¬ Surjective
     ((fderiv ℝ f ((Φ.symm k : ↥{p | f p = 0}) : X × Λ)).comp
       (ContinuousLinearMap.inl ℝ X Λ))})
-  have hΦsource : (⟨(φ x, l), hfzero⟩ : ↥{p | f p = 0}) ∈ Φ.source :=
-    mem_levelSetChart_source hstrict _ _ hfzero
-  have hΦzero : Φ ⟨(φ x, l), hfzero⟩ = 0 := levelSetChart_apply_self hstrict _ _ hfzero
-  have hQ : Φ.source ∩ Φ ⁻¹' N ∈ 𝓝 (⟨(φ x, l), hfzero⟩ : ↥{p | f p = 0}) :=
-    inter_mem (Φ.open_source.mem_nhds hΦsource)
-      (Φ.continuousAt hΦsource (hΦzero ▸ hN))
-  obtain ⟨V, hV, hVsub⟩ := (mem_nhds_subtype _ _ _).mp hQ
+  obtain ⟨V, hV, hVsub⟩ := exists_mem_nhds_forall_mem_source_and_levelSetChart_mem hstrict
+    hsurj (hFred'.closedComplemented_ker_coprod hsurj) hfzero hN
   have hne : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ ∞ :=
     (fun m : ℕ ↦ (by simp : (m : ℕ∞ω) ≠ ∞)) _
   have hne0 : ((finrank ℝ D₁.ker * finrank ℝ D₁.ker + 1 : ℕ) : ℕ∞ω) ≠ 0 :=
@@ -247,7 +242,7 @@ private theorem exists_section_badParameter_neighborhood {n : ℕ∞ω} {x : M} 
   have hleft : φ.symm (φ x') = x' := φ.left_inv hx'φ
   let v : ↥{p | f p = 0} := ⟨(φ x', k), hfzero_of hx'φ hwe hw⟩
   have hvV : v ∈ Subtype.val ⁻¹' V := by simpa [v, ψ] using hwV
-  have hvQ : v ∈ Φ.source ∩ Φ ⁻¹' N := hVsub hvV
+  have hvQ : v ∈ Φ.source ∩ Φ ⁻¹' N := hVsub v hvV
   have hvback : Φ.symm (Φ v) = v := Φ.left_inv hvQ.1
   -- Away from the centre the coordinate derivative is the intrinsic one followed by the
   -- derivative of the inverse chart; so a regular coordinate zero is a regular section zero.
