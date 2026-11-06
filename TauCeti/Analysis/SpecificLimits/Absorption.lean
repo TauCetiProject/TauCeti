@@ -53,6 +53,54 @@ namespace TauCeti
 
 open Filter Set Topology
 
+/-- The radii iteration behind `TauCeti.exists_le_mul_mul_rpow_add_of_le_mul_add`. Applying the
+step estimate `f s ≤ θ f t + A (t - s)^{-β} + B` along the radii `sᵢ = r₁ - τⁱ (r₁ - r₀)`
+bounds `f r₀` by `θᵏ M` plus a partial geometric sum, for every `k`, where `M` bounds `f` above on
+`[r₀, r₁]`. -/
+private theorem le_pow_mul_max_add_sum_of_le_mul_add {f : ℝ → ℝ} {r₀ r₁ A B θ τ β M : ℝ}
+    (hθ0 : 0 ≤ θ) (hτ0 : 0 < τ) (hτ1 : τ < 1) (hr : r₀ < r₁)
+    (hM : M ∈ upperBounds (f '' Icc r₀ r₁))
+    (hf : ∀ s t, r₀ ≤ s → s < t → t ≤ r₁ → f s ≤ θ * f t + A * (t - s) ^ (-β) + B) (k : ℕ) :
+    f r₀ ≤ θ ^ k * max M 0 + ∑ i ∈ Finset.range k,
+      (A * ((1 - τ) * (r₁ - r₀)) ^ (-β) * (θ * τ ^ (-β)) ^ i + B * θ ^ i) := by
+  set d := r₁ - r₀
+  have hd : 0 < d := sub_pos.2 hr
+  -- The radii `sᵢ = r₁ - τⁱ d` increase from `s₀ = r₀` towards `r₁`.
+  set s : ℕ → ℝ := fun i => r₁ - τ ^ i * d
+  have hs_mem : ∀ i, s i ∈ Icc r₀ r₁ := fun i => by
+    have h1 : τ ^ i ≤ 1 := pow_le_one₀ hτ0.le hτ1.le
+    have h0 : 0 ≤ τ ^ i * d := by positivity
+    constructor <;> nlinarith
+  have hgap : ∀ i, s (i + 1) - s i = τ ^ i * ((1 - τ) * d) := fun i => by
+    simp only [s, pow_succ]
+    ring
+  set K := ((1 - τ) * d) ^ (-β)
+  have hgapβ : ∀ i, (s (i + 1) - s i) ^ (-β) = (τ ^ (-β)) ^ i * K := fun i => by
+    rw [hgap, Real.mul_rpow (pow_nonneg hτ0.le i) (by nlinarith),
+      Real.rpow_pow_comm hτ0.le]
+  -- Iterating `k` times leaves `θᵏ f(sₖ)` and a partial geometric sum.
+  have key : ∀ k : ℕ, f r₀ ≤ θ ^ k * f (s k) +
+      ∑ i ∈ Finset.range k, (A * K * (θ * τ ^ (-β)) ^ i + B * θ ^ i) := by
+    intro k
+    induction k with
+    | zero => simp [s, d]
+    | succ k ih =>
+      have hlt : s k < s (k + 1) := by
+        have := mul_pos (pow_pos hτ0 k) (mul_pos (sub_pos.2 hτ1) hd)
+        linarith [hgap k]
+      have hstep := hf (s k) (s (k + 1)) (hs_mem k).1 hlt (hs_mem (k + 1)).2
+      rw [hgapβ] at hstep
+      have hθk : 0 ≤ θ ^ k := pow_nonneg hθ0 k
+      have := mul_le_mul_of_nonneg_left hstep hθk
+      rw [Finset.sum_range_succ, mul_pow]
+      calc f r₀ ≤ θ ^ k * f (s k) +
+            ∑ i ∈ Finset.range k, (A * K * (θ * τ ^ (-β)) ^ i + B * θ ^ i) := ih
+        _ ≤ θ ^ k * (θ * f (s (k + 1)) + A * ((τ ^ (-β)) ^ k * K) + B) +
+            ∑ i ∈ Finset.range k, (A * K * (θ * τ ^ (-β)) ^ i + B * θ ^ i) := by gcongr
+        _ = _ := by rw [pow_succ]; ring
+  exact (key k).trans (add_le_add_left (mul_le_mul_of_nonneg_left
+    ((hM (mem_image_of_mem f (hs_mem k))).trans (le_max_left _ _)) (pow_nonneg hθ0 k)) _)
+
 /-- **The absorption lemma.** Fix `0 ≤ θ < 1` and an exponent `β`. There is `C > 0`, depending
 only on `θ` and `β`, such that the following holds. Let `f` be bounded above on `[r₀, r₁]`,
 with `r₀ < r₁`, and suppose that
@@ -78,38 +126,7 @@ theorem exists_le_mul_mul_rpow_add_of_le_mul_add {θ : ℝ} (hθ0 : 0 ≤ θ) (h
   obtain ⟨M, hM⟩ := hbdd
   set d := r₁ - r₀
   have hd : 0 < d := sub_pos.2 hr
-  -- The radii `sᵢ = r₁ - τⁱ d` increase from `s₀ = r₀` towards `r₁`.
-  set s : ℕ → ℝ := fun i => r₁ - τ ^ i * d
-  have hs_mem : ∀ i, s i ∈ Icc r₀ r₁ := fun i => by
-    have h1 : τ ^ i ≤ 1 := pow_le_one₀ hτ0.le hτ1.le
-    have h0 : 0 ≤ τ ^ i * d := by positivity
-    constructor <;> nlinarith
-  have hgap : ∀ i, s (i + 1) - s i = τ ^ i * ((1 - τ) * d) := fun i => by
-    simp only [s, pow_succ]
-    ring
   set K := ((1 - τ) * d) ^ (-β)
-  have hgapβ : ∀ i, (s (i + 1) - s i) ^ (-β) = (τ ^ (-β)) ^ i * K := fun i => by
-    rw [hgap, Real.mul_rpow (pow_nonneg hτ0.le i) (by nlinarith),
-      Real.rpow_pow_comm hτ0.le]
-  -- Iterating `k` times leaves `θᵏ f(sₖ)` and a partial geometric sum.
-  have key : ∀ k : ℕ, f r₀ ≤ θ ^ k * f (s k) +
-      ∑ i ∈ Finset.range k, (A * K * q ^ i + B * θ ^ i) := by
-    intro k
-    induction k with
-    | zero => simp [s, d]
-    | succ k ih =>
-      have hlt : s k < s (k + 1) := by
-        have := mul_pos (pow_pos hτ0 k) (mul_pos (sub_pos.2 hτ1) hd)
-        linarith [hgap k]
-      have hstep := hf (s k) (s (k + 1)) (hs_mem k).1 hlt (hs_mem (k + 1)).2
-      rw [hgapβ] at hstep
-      have hθk : 0 ≤ θ ^ k := pow_nonneg hθ0 k
-      have := mul_le_mul_of_nonneg_left hstep hθk
-      rw [Finset.sum_range_succ, mul_pow]
-      calc f r₀ ≤ θ ^ k * f (s k) + ∑ i ∈ Finset.range k, (A * K * q ^ i + B * θ ^ i) := ih
-        _ ≤ θ ^ k * (θ * f (s (k + 1)) + A * ((τ ^ (-β)) ^ k * K) + B) +
-            ∑ i ∈ Finset.range k, (A * K * q ^ i + B * θ ^ i) := by gcongr
-        _ = _ := by rw [pow_succ]; ring
   -- The partial sums are bounded by the full geometric series.
   have hsum : ∀ k : ℕ, ∑ i ∈ Finset.range k, (A * K * q ^ i + B * θ ^ i) ≤
       A * K / (1 - q) + B / (1 - θ) := fun k => by
@@ -120,9 +137,8 @@ theorem exists_le_mul_mul_rpow_add_of_le_mul_add {θ : ℝ} (hθ0 : 0 ≤ θ) (h
     rw [pow_zero, one_div, ← Finset.range_eq_Ico] at hgq hgθ
     gcongr
   have hbound : ∀ k : ℕ, f r₀ ≤ θ ^ k * max M 0 + (A * K / (1 - q) + B / (1 - θ)) := fun k =>
-    (key k).trans (add_le_add (mul_le_mul_of_nonneg_left
-      ((hM (mem_image_of_mem f (hs_mem k))).trans (le_max_left _ _)) (pow_nonneg hθ0 k))
-      (hsum k))
+    (le_pow_mul_max_add_sum_of_le_mul_add hθ0 hτ0 hτ1 hr hM hf k).trans
+      (add_le_add_right (hsum k) _)
   have hlim : Tendsto (fun k : ℕ => θ ^ k * max M 0 + (A * K / (1 - q) + B / (1 - θ))) atTop
       (𝓝 (A * K / (1 - q) + B / (1 - θ))) := by
     simpa using ((tendsto_pow_atTop_nhds_zero_of_lt_one hθ0 hθ1).mul_const (max M 0)).add_const
@@ -171,6 +187,39 @@ private theorem le_two_mul_add_mul_sq_mul_of_le_of_le {Φ₁ Φ₂ P z K cA cB N
     (by positivity : (0 : ℝ) ≤ (8 * cA + 16 * cA * N * (4 * cB + 1)) * z)
   nlinarith
 
+/-- The pointwise bound on the weighted quantity `(R - σ)² k(σ)` in the proof of
+`TauCeti.sq_mul_le_of_forall_le`: the step estimate for `k` from `σ` to the midpoint
+`(σ + R) / 2`, together with the bound `(R - σ') h(σ') ≤ Φ₁` at the midpoint, gives
+`(R - σ)² k(σ) ≤ R² a₀ + 4 K c_A (Φ₁ + z)`. -/
+private theorem sq_mul_le_add_of_step_midpoint {R z a₀ K cA Φ₁ : ℝ} {k h : ℝ → ℝ}
+    (ha₀ : 0 ≤ a₀) (hK1 : 1 ≤ K) (hcA : 0 ≤ cA)
+    (hA : ∀ {s t : ℝ}, 0 < s → s < t → t ≤ R →
+      k s ≤ a₀ + K * (cA / (t - s) * h t + cA / (t - s) ^ 2 * z))
+    (hΦ₁ : ∀ σ ∈ Set.Ioo 0 R, (R - σ) * h σ ≤ Φ₁) {σ : ℝ} (hσ : σ ∈ Set.Ioo 0 R) :
+    (R - σ) ^ 2 * k σ ≤ R ^ 2 * a₀ + 4 * K * cA * (Φ₁ + z) := by
+  have hσ' : (σ + R) / 2 ∈ Set.Ioo 0 R := ⟨by linarith [hσ.1, hσ.2], by linarith [hσ.2]⟩
+  have hσσ' : σ < (σ + R) / 2 := by linarith [hσ.2]
+  set d := (R - σ) / 2 with hd
+  have hd0 : 0 < d := by linarith [hσ.2]
+  have hstep := hA hσ.1 hσσ' hσ'.2.le
+  have h1 := hΦ₁ _ hσ'
+  rw [show (σ + R) / 2 - σ = d by rw [hd]; ring] at hstep
+  rw [show R - (σ + R) / 2 = d by rw [hd]; ring] at h1
+  have hRσ : R - σ = 2 * d := by rw [hd]; ring
+  calc (R - σ) ^ 2 * k σ
+      ≤ (R - σ) ^ 2 * (a₀ + K * (cA / d * h ((σ + R) / 2) + cA / d ^ 2 * z)) :=
+        mul_le_mul_of_nonneg_left hstep (sq_nonneg _)
+    _ = (R - σ) ^ 2 * a₀ + 4 * K * cA * (d * h ((σ + R) / 2)) +
+          4 * K * cA * z := by
+        rw [hRσ]
+        field_simp
+        ring
+    _ ≤ R ^ 2 * a₀ + 4 * K * cA * Φ₁ + 4 * K * cA * z := by
+        gcongr
+        · linarith [hσ.2]
+        · linarith [hσ.1]
+    _ = _ := by ring
+
 /-- **Absorption over concentric balls.** Let `0 < r < R`, and let `k`, `h`, `y` be nonnegative
 functions of the radius, thought of as the norms of `D²u`, `∇u` and `u` on `B_σ`, with `k` and
 `h` bounded on `(0, R)` by their values at `R` and `y ≤ z` there. Suppose that for `0 < s < t ≤ R`
@@ -213,27 +262,7 @@ theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} 
   have hΦ₂ : Φ₂ ≤ R ^ 2 * a₀ + 4 * K * cA * (Φ₁ + z) := by
     refine csSup_le ⟨_, Set.mem_image_of_mem _ hI⟩ ?_
     rintro _ ⟨σ, hσ, rfl⟩
-    obtain ⟨hσ', hσσ'⟩ := hmid σ hσ
-    set d := (R - σ) / 2 with hd
-    have hd0 : 0 < d := by linarith [hσ.2]
-    have hstep := hA hσ.1 hσσ' hσ'.2.le
-    have h1 := hle₁ _ hσ'
-    rw [show (σ + R) / 2 - σ = d by rw [hd]; ring] at hstep
-    rw [show R - (σ + R) / 2 = d by rw [hd]; ring] at h1
-    have hRσ : R - σ = 2 * d := by rw [hd]; ring
-    calc (R - σ) ^ 2 * k σ
-        ≤ (R - σ) ^ 2 * (a₀ + K * (cA / d * h ((σ + R) / 2) + cA / d ^ 2 * z)) :=
-          mul_le_mul_of_nonneg_left hstep (sq_nonneg _)
-      _ = (R - σ) ^ 2 * a₀ + 4 * K * cA * (d * h ((σ + R) / 2)) +
-            4 * K * cA * z := by
-          rw [hRσ]
-          field_simp
-          ring
-      _ ≤ R ^ 2 * a₀ + 4 * K * cA * Φ₁ + 4 * K * cA * z := by
-          gcongr
-          · linarith [hσ.2]
-          · linarith [hσ.1]
-      _ = _ := by ring
+    exact sq_mul_le_add_of_step_midpoint ha₀ hK1 hcA hA (fun σ hσ => hle₁ σ hσ) hσ
   -- Step (B) with `η = θ (R - σ) / 2` bounds `Φ₁` by a small multiple of `Φ₂` and of itself.
   set θ := 1 / (16 * K * cA + 4 * cB + 1) with hθ
   have hθ0 : 0 < θ := by positivity
