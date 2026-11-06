@@ -18,19 +18,19 @@ import Mathlib.Analysis.Calculus.FDeriv.Equiv
 # Dilation scaling of the Sobolev seminorms
 
 Fix a finite-dimensional real normed space `E` of dimension `n` carrying an additive Haar
-measure `μ`, and dilate the variable of a function by `r > 0`, i.e. replace `u` by
+measure `μ`, and dilate the variable of a function by `r ≠ 0`, i.e. replace `u` by
 `x ↦ u (r⁻¹ • x)`. This file records how that operation rescales the `Lᵖ` seminorm of the
 derivative, the second of the two quantities a first-order Sobolev estimate compares; the first,
 the `Lᵖ` seminorm of the function itself, is `MeasureTheory.Measure.eLpNorm_comp_inv_smul`.
 
 For every exponent `p` the two scaling laws are
 
-`‖u (r⁻¹ • ·)‖_p = r ^ (n / p) * ‖u‖_p` and `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`,
+`‖u (r⁻¹ • ·)‖_p = |r| ^ (n / p) * ‖u‖_p` and `‖D(u (r⁻¹ • ·))‖_p = |r| ^ (n / p - 1) * ‖Du‖_p`,
 
-the extra `r⁻¹` in the second coming from the chain rule, in the shape of Mathlib's
+the extra `|r|⁻¹` in the second coming from the chain rule, in the shape of Mathlib's
 `fderiv_comp_smul`. Here `n / p` stands for `n / p.toReal`, which is `0` at `p = 0` and `p = ∞`
 by Lean's conventions `ENNReal.toReal ∞ = 0` and `x / 0 = 0`; at those two exponents the factors
-are therefore `1` and `r⁻¹`. The mismatch of the two exponents is the scaling obstruction behind
+are therefore `1` and `|r|⁻¹`. The mismatch of the two exponents is the scaling obstruction behind
 `TauCeti.not_exists_eLpNorm_le_const_mul_eLpNorm_fderiv`: a
 Poincaré-type inequality cannot hold with one constant for all compactly supported functions on
 the whole space.
@@ -38,7 +38,7 @@ the whole space.
 ## Main declarations
 
 * `MeasureTheory.Measure.eLpNorm_fderiv_comp_inv_smul`:
-  `‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`.
+  `‖D(u (r⁻¹ • ·))‖_p = |r| ^ (n / p - 1) * ‖Du‖_p`.
 -/
 
 public section
@@ -53,21 +53,19 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
 /-- **Dilation scaling of the `Lᵖ` seminorm of the derivative:**
-`‖D(u (r⁻¹ • ·))‖_p = r ^ (n / p - 1) * ‖Du‖_p`. The exponent drops by one relative to
-`MeasureTheory.Measure.eLpNorm_comp_inv_smul` because the chain rule contributes a factor `r⁻¹`.
+`‖D(u (r⁻¹ • ·))‖_p = |r| ^ (n / p - 1) * ‖Du‖_p` for `r ≠ 0`. The exponent drops by one relative
+to `MeasureTheory.Measure.eLpNorm_comp_inv_smul` because the chain rule contributes a factor `r⁻¹`.
 The exponent `n / p` is `n / p.toReal`, which is `0` at `p = 0` and `p = ∞`, where the factor is
-thus `r⁻¹`. -/
-theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : 0 < r) (p : ℝ≥0∞) :
+thus `|r|⁻¹`. -/
+theorem eLpNorm_fderiv_comp_inv_smul (u : E → F) {r : ℝ} (hr : r ≠ 0) (p : ℝ≥0∞) :
     eLpNorm (fderiv ℝ fun y => u (r⁻¹ • y)) p μ =
-      ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal - 1)) * eLpNorm (fderiv ℝ u) p μ := by
+      ENNReal.ofReal (|r| ^ ((finrank ℝ E : ℝ) / p.toReal - 1)) * eLpNorm (fderiv ℝ u) p μ := by
   have hfderiv : (fderiv ℝ fun y => u (r⁻¹ • y)) = r⁻¹ • fun x => fderiv ℝ u (r⁻¹ • x) :=
     funext fun x => fderiv_comp_smul (f := u) (x := x) r⁻¹
   rw [hfderiv, eLpNorm_const_smul r⁻¹ (fun x => fderiv ℝ u (r⁻¹ • x)) p μ,
     eLpNorm_comp_inv_smul μ (fderiv ℝ u) hr p, ← mul_assoc]
   congr 1
-  rw [Real.enorm_eq_ofReal_abs, abs_of_pos (by positivity : (0 : ℝ) < r⁻¹),
-    ← ENNReal.ofReal_mul (by positivity), Real.rpow_sub hr, Real.rpow_one]
-  congr 1
-  field_simp
+  rw [Real.enorm_eq_ofReal_abs, abs_inv, ← ENNReal.ofReal_mul (by positivity),
+    Real.rpow_sub (abs_pos.2 hr), Real.rpow_one, ← div_eq_inv_mul]
 
 end MeasureTheory.Measure
