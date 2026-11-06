@@ -313,7 +313,7 @@ private theorem isHoledDiscUnion_cell_inter [IsAlgClosed K] {Z : Finset K} {f g 
     · refine key Set.univ (by rwa [Set.inter_univ]) fun x _ ↦ ?_
       simp [hc]
     obtain ⟨ρ, hρ⟩ := IsAlgClosed.exists_pow_nat_eq (e / c) (Nat.sub_pos_of_lt hmn)
-    refine key _ (hcell.inter_closedSubdisc γ ρ) fun x hx ↦ ?_
+    refine key _ (hcell.inter_closedSubdisc γ ρ) fun x _ ↦ ?_
     have hρ0 : ρ ≠ 0 := by
       rintro rfl
       rw [zero_pow (by omega), eq_comm, div_eq_zero_iff] at hρ

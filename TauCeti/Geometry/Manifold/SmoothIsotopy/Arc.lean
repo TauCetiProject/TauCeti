@@ -192,7 +192,7 @@ private theorem exists_smoothIsotopy_line_of_map_sub_eq_zero {n : ℕ∞ω} (hn�
   /- The constants: `‖g s - p‖ ≤ C` for `|s| ≤ R`, and `R < L` with `C ≤ L * ‖e‖`. -/
   obtain ⟨C, hC⟩ := isCompact_Icc.exists_bound_of_continuousOn
     ((hgc.continuous.sub continuous_const).continuousOn (s := Icc (-R) R))
-  set L := max (max R 1) (C / ‖e‖) + 1 with hL
+  set L := max (max R 1) (C / ‖e‖) + 1
   have hL0 : 0 < L := by
     have := le_max_right R 1
     have := le_max_left (max R 1) (C / ‖e‖)

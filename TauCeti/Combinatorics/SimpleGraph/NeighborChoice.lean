@@ -60,7 +60,7 @@ theorem exists_forall_adj_and_apply_apply_ne_of_forall_reachable (G : SimpleGrap
       exact ⟨_, h, lt_of_le_of_lt (Nat.find_min' (hP _) ⟨s, hs, q, rfl⟩) (by omega)⟩
   let f : V → V := fun u => if hu : u ∈ S then g u else (hstep u hu).choose
   have hfS : ∀ s ∈ S, f s = g s := fun s hs => by simp only [f, hs, ↓reduceDIte]
-  have hfn : ∀ u (hu : u ∉ S), G.Adj u (f u) ∧ d (f u) < d u := fun u hu => by
+  have hfn : ∀ u (_ : u ∉ S), G.Adj u (f u) ∧ d (f u) < d u := fun u hu => by
     simp only [f, hu, ↓reduceDIte]
     exact (hstep u hu).choose_spec
   refine ⟨f, hfS, fun u => ?_⟩

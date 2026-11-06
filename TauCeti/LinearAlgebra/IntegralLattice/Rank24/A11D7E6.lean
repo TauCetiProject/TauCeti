@@ -282,7 +282,7 @@ theorem four_le_sum_glueMinimum_of_mem_a11d7e6GlueSubgroup {w : FiniteQuadraticM
       (a11d7e6 i).glueAlphabet (isSimplyLaced_a11d7e6 i)}
     (hw : w ∈ a11d7e6GlueSubgroup) (hw0 : w ≠ 0) :
     4 ≤ ∑ i, (a11d7e6 i).glueMinimum (isSimplyLaced_a11d7e6 i) (w i) := by
-  obtain ⟨k, hk, rfl⟩ := mem_a11d7e6GlueSubgroup_iff.mp hw
+  obtain ⟨k, _, rfl⟩ := mem_a11d7e6GlueSubgroup_iff.mp hw
   have hk0 : k % 12 ≠ 0 := fun h ↦
     hw0 ((nsmul_a11d7e6GlueWord_eq_zero_iff k).mpr (Nat.dvd_of_mod_eq_zero h))
   rw [sum_glueMinimum_nsmul_a11d7e6GlueWord]

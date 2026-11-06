@@ -81,7 +81,7 @@ theorem eventually_pow_dvd_orderOf_natCast {ℓ : ℕ} (hℓ : ℓ.Prime) {a : �
   set B := ℓ ^ (j - 1) * (ℓ - 1) with hB_def
   have hB : 0 < B := Nat.mul_pos (pow_pos hℓ.pos _) (Nat.sub_pos_of_lt hℓ.one_lt)
   have haB : 0 < a ^ B - 1 := Nat.sub_pos_of_lt (Nat.one_lt_pow hB.ne' ha)
-  set r := a ^ B with hr_def
+  set r := a ^ B
   have hr : 0 < r := pow_pos (by omega) B
   refine ⟨r, ?_⟩
   have : NeZero (ℓ ^ r) := ⟨pow_ne_zero r hℓ.ne_zero⟩

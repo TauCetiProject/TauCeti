@@ -248,7 +248,6 @@ private theorem FineMesh.isSimple_inscribed {h₀ : ℝ} (hF : FineMesh γ T δ 
   have hh : 0 < h := div_pos hT (by exact_mod_cast hn1)
   have hnh : (n : ℝ) * h = T := by rw [hh_def]; field_simp
   have hhδ : h ≤ δ := hn.trans hF.le_delta
-  have hδ : 0 ≤ δ := hh.le.trans hhδ
   have hhη : 2 * K * h < η := lt_of_le_of_lt (by gcongr) hF.lt_sep
   have hval (k : Fin n) : (k : ℝ) * h ∈ Icc 0 T :=
     ⟨by positivity, by rw [← hnh]; gcongr; exact_mod_cast k.is_lt.le⟩
@@ -336,7 +335,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
   -- The constants come from compactness of `Q = [0, 1] × [0, 2T]`: a bound `B` on the derivative
   -- of `Γ`, uniform windows of width `δ₀` along which the loops increase, and the least distance
   -- `η₀` between points of one loop whose parameters are between `δ` and `T - δ` apart.
-  set Q : Set (ℝ × ℝ) := Icc 0 1 ×ˢ Icc 0 (2 * T) with hQ
+  set Q : Set (ℝ × ℝ) := Icc 0 1 ×ˢ Icc 0 (2 * T)
   have hQc : IsCompact Q := isCompact_Icc.prod isCompact_Icc
   have hQv : Convex ℝ Q := (convex_Icc _ _).prod (convex_Icc _ _)
   have hQ0 : ((0 : ℝ), (0 : ℝ)) ∈ Q := ⟨⟨le_rfl, zero_le_one⟩, ⟨le_rfl, by positivity⟩⟩
@@ -345,7 +344,6 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
   -- A bound `B` for the derivative on `Q`, so a Lipschitz bound for `Γ` there.
   obtain ⟨B, hB⟩ := hQc.exists_bound_of_continuousOn hfc.continuousOn
   have hB0 : 0 ≤ B := (norm_nonneg _).trans (hB _ hQ0)
-  have hB1 : 0 < B + 1 := by linarith
   have hlipΓ {t₁ s₁ t₂ s₂ : ℝ} (h₁ : (t₁, s₁) ∈ Q) (h₂ : (t₂, s₂) ∈ Q) :
       ‖Γ t₁ s₁ - Γ t₂ s₂‖ ≤ B * max |t₁ - t₂| |s₁ - s₂| := by
     have := hQv.norm_image_sub_le_of_norm_fderiv_le (fun x _ ↦ hdiff x) hB h₂ h₁
@@ -356,7 +354,7 @@ private theorem exists_fineFamily {Γ : ℝ → ℝ → E} (hT : 0 < T) (hΓ : C
   have hδ : 0 < δ := by positivity
   obtain ⟨η₀, hη₀, hsep⟩ := TauCeti.exists_pos_le_dist_apply_add_uncurry hΓ.continuous
     isCompact_Icc hinj (isCompact_Icc (a := 0) (b := 2 * T)) hδ
-  set lam := min 1 lam₀ with hlam_def
+  set lam := min 1 lam₀
   have hlam : 0 < lam := lt_min one_pos hlam₀
   have hlam1 : lam ≤ 1 := min_le_left _ _
   have hlam₀' : lam ≤ lam₀ := min_le_right _ _
@@ -431,7 +429,6 @@ private theorem exists_fineMesh (hT : 0 < T) (hγ : ContDiff ℝ 1 γ) (hper : P
   refine ⟨δ, η, h, K, hh, hF.fineMesh_const (t := 0) (c := 0) (fun s ↦ by rw [add_zero])
     ⟨le_rfl, zero_le_one⟩ ⟨le_rfl, hT.le⟩ (min_le_left _ _) ?_⟩
   have h₁ : h * (2 * K + 1) ≤ η := (le_div_iff₀ (by positivity)).1 (min_le_right _ _)
-  have h₂ : h * (2 * K + 1) = 2 * K * h + h := by ring
   linarith
 
 /-- **Inscribed polygons of a `C¹` loop are eventually simple.** Let `γ : ℝ → E` be a `C¹` curve
@@ -711,7 +708,7 @@ private theorem FineMesh.exists_combinatoriallyEquivalent_union (hF : FineMesh �
   classical
   induction A using Finset.induction_on with
   | empty => exact ⟨N, t, ht, hp, by simp, .refl _⟩
-  | insert a A haA ih =>
+  | insert a A _ ih =>
     obtain ⟨N', t', ht', hp', hr, he⟩ := ih fun b hb ↦ hA b (Finset.mem_insert_of_mem hb)
     have haT := hA a (Finset.mem_insert_self a A)
     rw [Finset.coe_insert, union_insert, ← hr]
@@ -842,8 +839,6 @@ private theorem cosTime_mem_Icc {t t' : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) (ht' :
     (h s : ℝ) : cosTime t t' h s ∈ Icc (0 : ℝ) 1 := by
   have h₁ := Real.neg_one_le_cos (2 * Real.pi * s / h)
   have h₂ := Real.cos_le_one (2 * Real.pi * s / h)
-  have hw₀ : 0 ≤ (1 - Real.cos (2 * Real.pi * s / h)) / 2 := by linarith
-  have hw₁ : (1 - Real.cos (2 * Real.pi * s / h)) / 2 ≤ 1 := by linarith
   rw [cosTime]
   constructor <;> nlinarith [ht.1, ht.2, ht'.1, ht'.2]
 
@@ -993,7 +988,7 @@ theorem exists_combinatoriallyEquivalent_inscribed_of_isotopy {Γ : ℝ → ℝ 
           ⟨m, inscribed (Γ 1) T m, hm⟩ := by
   obtain ⟨δ, η, lam, ρ, K, hδ, hη, hlam, hρ, hF⟩ := exists_fineFamily hT hΓ hper hinj hderiv
   -- A mesh `h₀` below which every loop of the family is fine.
-  set h₀ := min δ (η / (2 * K + 1)) with hh₀_def
+  set h₀ := min δ (η / (2 * K + 1))
   have hh₀ : 0 < h₀ := lt_min hδ (by positivity)
   have hfine {h : ℝ} (hh : h ≤ h₀) : h ≤ δ ∧ 2 * K * h < η := by
     refine ⟨hh.trans (min_le_left _ _), ?_⟩

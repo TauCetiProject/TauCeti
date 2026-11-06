@@ -480,10 +480,7 @@ theorem setLIntegral_Ioo_eq_setLIntegral_Ioi {e₁ e₂ e₃ : ℝ} (h₁₂ : e
     have hx₁ : x - e₁ ≠ 0 := by rw [mem_Ioi] at hx; linarith
     have hd := (((hasDerivAt_id x).sub_const e₁).inv hx₁).const_mul k |>.const_add e₁
     exact (hd.congr_deriv (by simp only [id_eq]; field_simp)).hasDerivWithinAt
-  have hinj : InjOn f (Ioi e₃) := fun a ha b hb hab ↦ by
-    rw [mem_Ioi] at ha hb
-    have ha₁ : a - e₁ ≠ 0 := by linarith
-    have hb₁ : b - e₁ ≠ 0 := by linarith
+  have hinj : InjOn f (Ioi e₃) := fun a _ b _ hab ↦ by
     simp only [f, add_right_inj, mul_right_inj' hk.ne', inv_inj, sub_left_inj] at hab
     exact hab
   have himage : f '' Ioi e₃ = Ioo e₁ e₂ := by

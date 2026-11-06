@@ -45,7 +45,6 @@ theorem sin_nonpos_of_pi_le_of_le_two_pi {x : ℝ} (hpx : π ≤ x) (hxp : x ≤
 
 /-- The quantity `1 - a sin² θ` is positive when `a < 1`. -/
 theorem one_sub_mul_sin_sq_pos {a : ℝ} (ha : a < 1) (θ : ℝ) : 0 < 1 - a * sin θ ^ 2 := by
-  have h₀ := sq_nonneg (sin θ)
   have h₁ := sin_sq_le_one θ
   rcases le_or_gt a 0 with h | h <;> nlinarith
 

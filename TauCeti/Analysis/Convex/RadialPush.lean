@@ -98,7 +98,7 @@ theorem exists_homotopyRel_frontier (hs : Convex ℝ s) (hsc : IsClosed s)
       map_zero_left := hzero
       map_one_left := fun _ ↦ rfl
       prop' := fun t y hy ↦ hfix t y hy },
-    fun t y hy ↦ ?_, fun y hy hyp ↦ ?_⟩
+    fun t y hy ↦ ?_, fun y _ hyp ↦ ?_⟩
   · -- The gauge of the moved point is a convex combination of `gauge K (y - p) ≤ 1` and
     -- `gauge K (y - p) / max (gauge K (y - p)) c ≤ 1`.
     -- The homotopy is `fun q ↦ p + a q.1 q.2 • (q.2 - p)` by construction.

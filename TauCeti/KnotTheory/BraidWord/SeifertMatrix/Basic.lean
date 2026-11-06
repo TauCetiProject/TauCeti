@@ -604,7 +604,7 @@ private theorem seifertEntry_eq_columnPotential_sub {c b : ℕ × ℕ} (hc : w.I
     seifertEntry w c b = columnPotential w b c.2 - columnPotential w b c.1 := by
   have h₁ : c.1 = b.1 → c = b := hc.eq_of_fst_eq hb
   have h₂ : c.2 = b.2 → c = b := hc.eq_of_snd_eq hb
-  obtain ⟨hc12, hc2, -, -⟩ := hc
+  obtain ⟨hc12, _, -, -⟩ := hc
   obtain ⟨hb12, hb2, -, -⟩ := hb
   have hs₁ := signAt_eq_one_or_eq_neg_one w (hb12.trans hb2)
   have hs₂ := signAt_eq_one_or_eq_neg_one w hb2
@@ -1033,7 +1033,6 @@ theorem exists_seifertMatrix_append_singleton :
         (v ++ [x]).seifertMatrix = (P * seifertMatrix (n := n) (x :: v) * Pᵀ).submatrix ι ι := by
   -- the last letter of `x :: v` on the level of `x`
   obtain ⟨m, hm, hm'⟩ := exists_levelAt_cons_last x v
-  have hmlen := lt_length_of_levelAt_cons hm
   have hlen : ∀ c : seifertLoops (n := n) (x :: v), c.1.1 < c.1.2 ∧ c.1.2 < v.length + 1 :=
     fun c ↦ by
       have hc := (mem_seifertLoops _).1 c.2

@@ -215,7 +215,7 @@ is the image of `m[|A]` under the homothety of ratio `1 - t` towards `o`. -/
 theorem measureContraction_of_nonpos_of_finrank_le [Nontrivial E] (hK : K ≤ 0)
     (hN : (finrank ℝ E : ℝ) ≤ N) : M.MeasureContraction K N := by
   have hN₀ : 0 < N := (Nat.cast_pos.2 finrank_pos).trans_le hN
-  intro o _ A hA hpos hfin
+  intro o _ A _ hpos hfin
   have hseg : Measurable fun y : E ↦ segmentPath (y, o) :=
     (segmentPath.continuous.comp (continuous_id.prodMk continuous_const)).measurable
   have hprob : IsProbabilityMeasure M.reference[|A] :=

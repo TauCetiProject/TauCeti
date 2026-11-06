@@ -119,7 +119,6 @@ private theorem mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add {A : M
   -- In terms of `g = U^{p/2-1} G`, the gradient of `u^{p/2}` up to the factor `p/2`, this is the
   -- absorption estimate `mul_sq_mul_norm_sq_le_matrixBilinearForm_add` with the weight
   -- `W = -U^{p/2} / (1 - p)`.
-  have h1p : 0 < 1 - p := by linarith
   set s := U ^ (p / 2 - 1)
   set g : EuclideanSpace ℝ ι := s • G
   set W := -(U ^ (p / 2) / (1 - p))
@@ -215,7 +214,7 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
     exact mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add hlam (h.lower_bound hx)
       (h.upper_bound hx) hp (hε.trans_le hux) (ψ x) (W1p.gradient u x) (∇ ψ x)
   -- Integrability of the three terms.
-  obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
+  obtain ⟨M, _, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
   have hF : Integrable (fun x => ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
       (mu.restrict Omega) := by
     refine ((W1p.integrable_norm_gradient_sq u).const_mul (M ^ 2 * ε ^ (p - 2))).mono' ?_ ?_
@@ -296,7 +295,6 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_norm_gradient_sq_le_of_ae_eq_rpow
       (|p| * Lam / ((1 - p) * lam)) ^ 2 *
         ∫ x in Omega, ‖∇ ψ x‖ ^ 2 * W1p.value w x ^ 2 ∂mu := by
   have hlam := h.pos
-  have h1p : 0 < 1 - p := by linarith
   have hc := h.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le ha hu hε hεu hp hψ hcpt hts
   -- Both sides in terms of `u`: `‖∇w‖² = (p/2)² u^{p-2} ‖∇u‖²` and `w² = u^p`.
   have hl : ∫ x in Omega, ψ x ^ 2 * ‖W1p.gradient w x‖ ^ 2 ∂mu = (p / 2) ^ 2 *

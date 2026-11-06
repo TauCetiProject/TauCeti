@@ -127,7 +127,7 @@ theorem memLp_inv_one_add_norm_eval_sq (hm : 0 < P.natDegree) :
     (continuous_const.add (P.continuous.norm.pow 2)).inv₀ fun z ↦
       (by positivity : (0 : ℝ) < 1 + ‖P.eval z‖ ^ 2).ne'
   rw [memLp_two_iff_integrable_sq hcont.aestronglyMeasurable]
-  obtain ⟨c, hc, hb⟩ := exists_eventually_norm_bounds hm
+  obtain ⟨c, -, hb⟩ := exists_eventually_norm_bounds hm
   refine (hcont.pow 2).locallyIntegrable.integrable_of_isBigO_one_add_norm_rpow_neg (r := 4)
     (by simp [Complex.finrank_real_complex]; norm_num) (IsBigO.of_bound (16 * c ^ 4) ?_)
   filter_upwards [hb] with z ⟨h₁, hr, ha, _⟩

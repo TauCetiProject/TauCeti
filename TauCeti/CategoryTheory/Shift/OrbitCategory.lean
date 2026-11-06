@@ -172,7 +172,7 @@ instance : Category.{v} (OrbitCategory D n) where
 
 instance : Preadditive (OrbitCategory D n) where
   add_comp _ _ _ f f' g := DFunLike.congr_fun (map_add _ f f') g
-  comp_add _ _ _ f g g' := map_add _ g g'
+  comp_add _ _ _ _ g g' := map_add _ g g'
 
 /-- The inclusion of the homogeneous piece of degree `i`, the morphisms `X ⟶ Y⟦n * i⟧` of `D`,
 into the orbit hom group from `X` to `Y`. -/

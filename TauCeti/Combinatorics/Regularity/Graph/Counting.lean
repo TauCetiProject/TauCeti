@@ -111,10 +111,8 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
   have hq₁ : q ≤ 1 := G.patternDensity_le_one _ _ _
   have hpq₀ : 0 ≤ p * q := mul_nonneg hp₀ hq₀
   have hpq₁ : p * q ≤ 1 := (mul_le_of_le_one_left hq₀ hp₁).trans hq₁
-  have ha₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₀₁
   have hb₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₀₂
   have hc₀ := patternWeight_nonneg (G := G) (𝕜 := 𝕜) e₁₂
-  have ha₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₁
   have hb₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₀₂
   have hc₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₁₂
   -- Replace the three indicators by their densities one at a time: each difference is a test of
@@ -129,7 +127,7 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
       rw [sum_comm]
       exact sum_congr rfl fun _ _ ↦ sum_comm
     have e₃ : (#s₀ * #s₁ * #s₂ : 𝕜) * (p * q * r) =
-        ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
+        ∑ _ ∈ s₀, ∑ _ ∈ s₁, ∑ _ ∈ s₂, p * q * r := by
       simp only [sum_const, nsmul_eq_mul]
       ring
     rw [e₁, sum_comm (s := s₁), e₃]

@@ -563,7 +563,7 @@ private theorem jacobi_root_root_root_of_ne (hB : B.PosDef) (hdiag : ∀ i, Even
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧ (b : I → ℤ) ⬝ᵥ B *ᵥ c = 0 ∧
         (c : I → ℤ) ⬝ᵥ B *ᵥ a = -1 ∨ (a : I → ℤ) ⬝ᵥ B *ᵥ b = -1 ∧
         (b : I → ℤ) ⬝ᵥ B *ᵥ c = -1 ∧ (c : I → ℤ) ⬝ᵥ B *ᵥ a = 0) with
-      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩
+      ⟨h1, h2, h3⟩ | ⟨h1, h2, h3⟩ | ⟨h1, h2, _⟩
     · rw [ite_eq_left (hmbc.2 h2), ite_eq_left (hmca.2 h3), ite_eq_right (by rw [hmab]; omega),
         sign_neg (B.orderedSignForm c a) (B.orderedSignForm b c + B.orderedSignForm b a)
           (B.orderedSignForm b c) (B.orderedSignForm a b + B.orderedSignForm a c) (by omega)]

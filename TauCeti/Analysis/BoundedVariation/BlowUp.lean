@@ -155,7 +155,6 @@ theorem eventually_neg_le_integral_divergenceCLM_mul_indicator_preimage
   have hR' : 0 < R' := lt_max_of_lt_right one_pos
   set ω := μ.real (ball 0 1)
   set A := 4 * M' * n * ω * R' ^ m with hAdef
-  have hA : 0 ≤ A := by positivity
   set η := ε / (A + 1)
   have hη : 0 < η := div_pos hε (by positivity)
   have hRr : Tendsto (fun r => R' * r) (𝓝[>] 0) (𝓝[>] 0) :=

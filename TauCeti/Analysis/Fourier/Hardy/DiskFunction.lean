@@ -184,7 +184,6 @@ theorem norm_diskFunction_le (hw : ‖w‖ < 1) :
     congr 1
     funext n
     simp [k, hardyBasis_repr, mul_comm]
-  have hpos : 0 < 1 - ‖w‖ ^ 2 := sub_pos.mpr hw2
   have hknorm : ‖k‖ = (√(1 - ‖w‖ ^ 2))⁻¹ := by
     rw [← Real.sqrt_inv, ← hk, Real.sqrt_sq (norm_nonneg k)]
   calc ‖x.diskFunction w‖ = ‖⟪k, hardyBasis.repr x⟫_ℂ‖ := by rw [hinner]

@@ -285,7 +285,7 @@ private theorem integralTopForm_eq_sum_parameter_integrals {ι : Type*} [Fintype
     simp_rw [hj]
     rw [Finset.sum_comm]
     apply Finset.sum_congr rfl
-    intro i hi
+    intro i _
     rw [← integral_iUnion_fintype (fun j ↦ hS j i) (hSpair i) (fun j ↦ (hpiece j i).1), hSD i,
       hvolume]
 

@@ -50,7 +50,7 @@ theorem legendreEc_two_mul_sqrt_div_one_add {k : ℝ} (hk₀ : 0 ≤ k) (hk₁ :
   have hp : 0 < 1 + k := by linarith
   have hk : k ^ 2 < 1 := by nlinarith
   have hs : 0 < √k := sqrt_pos.2 hk₀
-  have ht : 0 < 2 * √k / (1 + k) := by positivity
+  have ht : 0 < 2 * √k / (1 + k) := div_pos (mul_pos two_pos hs) hp
   have hsq := one_sub_sq_two_mul_sqrt_div_one_add hk₀.le
   have hlt := sq_two_mul_sqrt_div_one_add_lt_one hk₀.le hk₁.ne
   have hd : HasDerivAt (fun x : ℝ ↦ 2 * √x / (1 + x))

@@ -129,7 +129,7 @@ theorem abs_sub_le_exp_mul_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_ad
     refine ContinuousOn.congr ?_ fun p _ ↦ hv p.1 p.2
     exact (hcont.mono (prod_mono (Icc_subset_Icc_right ht₀.2) subset_rfl)).sub
       (hh.continuous.comp continuous_snd).continuousOn
-  have hD₂0 : 0 ≤ D₂ := (ContinuousLinearMap.opNorm_nonneg _).trans (hD₂ 0)
+  have : 0 ≤ D₂ := (ContinuousLinearMap.opNorm_nonneg _).trans (hD₂ 0)
   have hD₁0 : 0 ≤ D₁ := (norm_nonneg _).trans (hD₁ 0)
   -- The equation for `v`, with the forcing enlarged by the size of `P h`.
   have hPv : ∀ ⦃t⦄, t ∈ Ioo 0 t₀ → ∀ y, |deriv (fun s ↦ v s y) t -
@@ -312,7 +312,7 @@ theorem tendstoUniformly_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_m
     (hω : ∀ k x y, |u k 0 x - u k 0 y| ≤ ω (dist x y)) (hω0 : Tendsto ω (𝓝[>] 0) (𝓝 0)) :
     TendstoUniformly (fun t (q : κ × EuclideanSpace ℝ ι) ↦ u q.1 t q.2)
       (fun q ↦ u q.1 0 q.2) (𝓝[>] 0) := by
-  obtain ⟨C, hC, hest⟩ :=
+  obtain ⟨C, _, hest⟩ :=
     exists_abs_sub_le_mul_add_mul_of_abs_deriv_sub_sum_mul_fderiv_fderiv_add_fderiv_add_mul_le
       (ι := ι) T Lam β γ
   -- The bound `C (ω(√t) + t (M + F))` tends to zero as `t → 0⁺`.

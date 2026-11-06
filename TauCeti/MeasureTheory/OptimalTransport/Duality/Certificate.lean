@@ -409,7 +409,6 @@ theorem IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet [IsFiniteMeasure �
   set T : ℕ → ℝ → ℝ := fun n t ↦ max (-(n : ℝ)) (min t n) with hT
   have hT_le (n : ℕ) (a b : ℝ) :
       ENNReal.ofReal (T n a + T n b) ≤ ENNReal.ofReal (a + b) := by
-    have hn : (0 : ℝ) ≤ n := n.cast_nonneg
     rw [ENNReal.ofReal_le_ofReal_iff']
     rcases le_total 0 (a + b) with h | h
     · left
@@ -419,7 +418,6 @@ theorem IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet [IsFiniteMeasure �
       simp only [hT, max_def, min_def]
       split_ifs <;> linarith
   have hT_nonneg (n : ℕ) {a b : ℝ} (h : 0 ≤ a + b) : 0 ≤ T n a + T n b := by
-    have hn : (0 : ℝ) ≤ n := n.cast_nonneg
     simp only [hT, max_def, min_def]
     split_ifs <;> linarith
   have hT_eq (a : ℝ) : ∀ᶠ n in Filter.atTop, T n a = a := by

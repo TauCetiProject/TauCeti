@@ -190,7 +190,7 @@ theorem pullbackCLM_prodMk_left_apply (hW : ∀ p ∈ W, p.2 ∈ Icc (0 : ℝ) 1
   · rw [pullbackCLM_apply_of_mem _ hx, (hasFDerivAt_prodMk_left x t).fderiv]
   · have hxt : (x, t) ∉ tsupport ω := fun h ↦ hx (hW _ (ω.tsupport_subset h) ht)
     rw [pullbackCLM_apply_of_notMem _ hx, image_eq_zero_of_notMem_tsupport hxt]
-    ext v
+    ext _
     simp
 
 /-- **The homotopy formula on test forms**: `h ∘ d = ι₁^* - ι₀^* - d ∘ h` on test

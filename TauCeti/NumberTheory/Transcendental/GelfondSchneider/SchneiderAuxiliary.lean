@@ -342,7 +342,6 @@ theorem house_schneider_value_le {α β γ : K} {H A : ℝ} (hH : 1 ≤ H) (hα 
       D₁ * D₂ * A * (2 * B) ^ D₁ * H ^ (D₁ + 2 * B * D₂) := by
   have hu' : (u : ℝ) ≤ B := by exact_mod_cast hu
   have hv' : (v : ℝ) ≤ B := by exact_mod_cast hv
-  have hB' : (1 : ℝ) ≤ B := by exact_mod_cast hB
   have hw : house ((u : K) + v * β) ≤ (2 * B : ℕ) * H := by
     refine (house_add_le _ _).trans ?_
     rw [← mul_one (u : K), house_nat_mul, house_nat_mul, ← Int.cast_one, house_intCast]
@@ -429,7 +428,6 @@ private theorem schneider_value_bound_le_exp {c₁ H : ℝ} {c L D₁ D₂ : ℕ
             (2 * c + 2) * Real.log H * E := by
           have : (D₁ + 2 * ((c : ℝ) * L + 1) * D₂) ≤ (2 * c + 2) * E := by
             simp only [E]
-            have hc : (0 : ℝ) ≤ c := c.cast_nonneg
             nlinarith
           nlinarith
         nlinarith

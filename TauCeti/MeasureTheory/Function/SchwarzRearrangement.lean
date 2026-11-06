@@ -479,8 +479,7 @@ theorem lintegral_sub_rpow_schwarzRearrangement_le {f g : E → ℝ≥0∞} (hf 
   set G := hg.mk g
   have hF : Measurable F := hf.measurable_mk
   have hG : Measurable G := hg.measurable_mk
-  have hF' := measurable_schwarzRearrangement μ F
-  have hG' := measurable_schwarzRearrangement μ G
+  have _ := measurable_schwarzRearrangement μ G
   -- Write the power as a mixture of the hinges `f - g - r`, each of which contracts.
   simp_rw [rpow_eq_lintegral_mul_sub hp]
   rw [lintegral_lintegral_swap (by fun_prop)]

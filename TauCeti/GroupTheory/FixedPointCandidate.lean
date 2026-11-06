@@ -64,7 +64,7 @@ abbrev FixedPointCandidate (F : G →* G) : Type _ :=
 derived subgroup of a finite group is finite, and so is a quotient of it by the centre. This is the
 finiteness step of the recipe, and it is what transfers a finiteness proof for the fixed points of a
 Steinberg endomorphism to the candidate group attached to them. -/
-instance finiteFixedPointCandidate {F : G →* G} [h : Finite ↥(fixedSubgroup F)] :
+instance finiteFixedPointCandidate {F : G →* G} [_h : Finite ↥(fixedSubgroup F)] :
     Finite (FixedPointCandidate F) :=
   inferInstance
 

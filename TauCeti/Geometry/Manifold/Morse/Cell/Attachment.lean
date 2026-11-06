@@ -220,7 +220,6 @@ private theorem milnorFunction_symm_scale_le (hμa : Antitone μ)
   simp only [e, ContinuousLinearEquiv.apply_symm_apply, norm_smul, mul_pow, Real.norm_eq_abs,
     sq_abs]
   have hs2 : s ^ 2 ≤ 1 := pow_le_one₀ hs.1 hs.2
-  have hb : 0 ≤ ‖(e (ψ i x)).2‖ ^ 2 := sq_nonneg _
   have hμle := hμa (show ‖(e (ψ i x)).1‖ ^ 2 + 2 * (s ^ 2 * ‖(e (ψ i x)).2‖ ^ 2) ≤
     ‖(e (ψ i x)).1‖ ^ 2 + 2 * ‖(e (ψ i x)).2‖ ^ 2 by nlinarith)
   nlinarith

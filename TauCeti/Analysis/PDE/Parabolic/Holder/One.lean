@@ -445,7 +445,7 @@ private theorem eHolderNorm_le (hα : α ≤ 1) (f : ParabolicC1HolderSpace α E
         (f : slab (E := E) a b → F)]
       refine spaceEHolderNorm_one_le_of_hasFDerivAt
         (w' := ParabolicC2HolderSpace.timeExtension hab (spatialFDerivL f))
-        (fun t ht y ↦ ?_) fun y t ht ↦ ?_
+        (fun t ht y ↦ ?_) fun y t _ ↦ ?_
       · simpa [ParabolicC2HolderSpace.timeExtension_def, projIcc_of_mem hab ht] using
           f.hasSpatialFDerivAt ⟨t, ht⟩ y
       · simpa only [ParabolicC2HolderSpace.timeExtension_def,

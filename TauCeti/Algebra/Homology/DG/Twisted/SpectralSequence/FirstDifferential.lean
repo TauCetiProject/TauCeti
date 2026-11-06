@@ -158,7 +158,7 @@ theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
       rw [m.twistedIndexCochainComplexProj_f_apply, hw,
         indexGradedPieceComplexXEquiv_indexGradedPieceD1X]))
   -- The connecting map of the short exact sequence of graded pieces, computed on `s'`.
-  set Fn := m.twistedIndexFiltrationFunctor dM hM with hFn
+  set Fn := m.twistedIndexFiltrationFunctor dM hM
   have hS := TauCeti.kernelCokernelCompSequence_snakeInput_L₃_shortExact
     (Fn.map (homOfLE (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
       (show b = b - 1 + 1 by lia))))
@@ -219,9 +219,9 @@ theorem indexSpectralSequence_page_two_d_apply (a b : ℤ)
       (m.twistedIndexFiltrationFunctorObjIso dM hM (b + 1)).inv_hom_id).symm
   set g₁ : ((b - 1 : ℤ) : EInt) ⟶ ((b : ℤ) : EInt) := homOfLE
     (CochainComplex.coe_le_coe_of_eq_add_one (show b - 1 = b - 1 from rfl)
-      (show b = b - 1 + 1 by lia)) with hg₁
+      (show b = b - 1 + 1 by lia))
   set g₂ : ((b : ℤ) : EInt) ⟶ ((b + 1 : ℤ) : EInt) := homOfLE
-    (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl) with hg₂
+    (CochainComplex.coe_le_coe_of_eq_add_one (show b = b from rfl) rfl)
   have hLg : cokernel.π (Fn.map g₁ ≫ Fn.map g₂) ≫
       (kernelCokernelCompSequence.snakeInput (Fn.map g₁) (Fn.map g₂)).L₃.g =
         cokernel.π (Fn.map g₂) := by

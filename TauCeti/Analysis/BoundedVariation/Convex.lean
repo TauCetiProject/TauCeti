@@ -122,7 +122,6 @@ private theorem exists_normal_extension (f : StrongDual ℝ E) (hf : f ≠ 0) (c
       f (φ (y - (f y - c) • w))
     have hloc : (ψ : E → E) =ᶠ[𝓝 x] fun y => h y • w := by
       filter_upwards [(isOpen_lt continuous_const f.continuous).mem_nhds hx] with y hy
-      have hy : c < f y := hy
       simp [hψ, h, Real.smoothTransition.one_of_one_le (show 1 ≤ f y - c + 1 by linarith)]
     have hhd : DifferentiableAt ℝ h x := by
       have := hφc.differentiable (by simp)

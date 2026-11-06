@@ -155,10 +155,10 @@ theorem mpullback_globalFlow_comp_eq_symplectization (hZα : (mextDeriv α.1).in
       funext fun p ↦ by simp
     have key := SmoothForm.mpullback_symplectizationLift_symplectization hι contMDiff_const
       (fun _ ↦ one_pos) (α := SmoothForm.mpullback ι hι α) (α' := α) fun x ↦ by rw [one_smul]
-    have hcongr : ∀ {f g : ℝ × S → ℝ × M} (hfg : f = g) (hf : ContMDiff (𝓘(ℝ).prod J)
+    have hcongr : ∀ {f g : ℝ × S → ℝ × M} (_ : f = g) (hf : ContMDiff (𝓘(ℝ).prod J)
         (𝓘(ℝ).prod I) ∞ f) (hg : ContMDiff (𝓘(ℝ).prod J) (𝓘(ℝ).prod I) ∞ g),
         SmoothForm.mpullback (F := ℝ) (k := 1) f hf = SmoothForm.mpullback g hg := by
-      rintro f g rfl hf hg
+      rintro f g rfl hf _
       rfl
     rwa [hcongr hfun] at key
   have hcomp := SmoothForm.mpullback_comp (F := ℝ) (k := 1) _ _ hlift

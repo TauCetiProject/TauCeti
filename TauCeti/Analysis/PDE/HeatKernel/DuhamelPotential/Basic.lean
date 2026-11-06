@@ -547,7 +547,6 @@ theorem exists_holderWith_iteratedFDeriv_two_heatDuhamelPotential {α : ℝ≥0}
     exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_le (E := E) (F := F) (α := α)
   have hα₀' : (0 : ℝ) < α := hα₀
   have hα₁' : (α : ℝ) < 1 := hα₁
-  have h1α : (0 : ℝ) < 1 - α := by linarith
   refine ⟨(2 / α * (2 * C₂) + 2 / (1 - α) * C₃).toNNReal, fun {f M t H} hf hfM hH ht => ?_⟩
   rw [← holderOnWith_univ]
   refine HolderOnWith.of_dist_le fun x _ y _ => ?_
@@ -621,19 +620,19 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
     exists_norm_integral_iteratedFDeriv_two_heatKernel_convolution_le (E := E) (F := F) hα₀
   obtain ⟨K, hK₀, hK⟩ :=
     exists_ae_norm_iteratedFDeriv_two_heatKernel_convolution_sub_time_le (E := E) (F := F) (α := α)
-  have hα₀' : (0 : ℝ) < α := hα₀
+  have : (0 : ℝ) < α := hα₀
   have hα₂' : (α : ℝ) < 2 := hα₂
-  have h2α : (0 : ℝ) < 2 - α := by linarith
+  have : (0 : ℝ) < 2 - α := by linarith
   refine ⟨3 * C₁ + 2 / (2 - α) * K, by positivity,
     fun {f M t t' H} hf hfM hH ht' htt' x => ?_⟩
   rcases htt'.eq_or_lt with rfl | htt'
   · rw [sub_self, norm_zero]
     positivity
   have ht : 0 < t := ht'.trans_lt htt'
-  set h := t - t' with hh_def
+  set h := t - t'
   have hh : 0 < h := sub_pos.2 htt'
   set Φ : ℝ → ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin 2 => E) F :=
-    fun τ s => iteratedFDeriv ℝ 2 (heatKernel (τ - s) ⋆ f s) x with hΦ_def
+    fun τ s => iteratedFDeriv ℝ 2 (heatKernel (τ - s) ⋆ f s) x
   have hfM' {τ : ℝ} (hτ : τ ≤ t) : ∀ᵐ s ∂volume.restrict (Ioo 0 τ), ∀ᵐ y, ‖f s y‖ ≤ M :=
     ae_restrict_of_ae_restrict_of_subset (Ioo_subset_Ioo_right hτ) hfM
   have hH' {τ : ℝ} (hτ : τ ≤ t) : ∀ᵐ s ∂volume.restrict (Ioo 0 τ), HolderWith H α (f s) :=
@@ -670,7 +669,7 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
           have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
           linarith
   -- Otherwise split both integrals at `s₀ = t' - h`.
-  set s₀ := t' - h with hs₀_def
+  set s₀ := t' - h
   have hs₀ : 0 < s₀ := by linarith
   have hint {τ : ℝ} (hτ : 0 < τ) (hτt : τ ≤ t) : IntervalIntegrable (Φ τ) volume 0 τ :=
     intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith hf (hfM' hτt)

@@ -190,7 +190,7 @@ theorem exists_diffeomorph_fix_zeroSection_eventually_compContinuousLinearMap_fd
   have hdω₁' : ∀ x ∈ W ∩ A ⁻¹' W, extDeriv ω₁' x = 0 := fun x hx ↦ by
     rw [hω₁'_eq, extDeriv_pullback ((hω₁.differentiableOn hr0).differentiableAt (hW.mem_nhds hx.2))
       (A.contDiff (n := ⊤)).contDiffAt le_top, hdω₁ _ hx.2]
-    ext v
+    ext _
     simp
   have htan' : ∀ q : E, (q, (0 : N)) ∈ W ∩ A ⁻¹' W →
       (ω₁' (q, 0)).compContinuousLinearMap (.inl ℝ E N) =

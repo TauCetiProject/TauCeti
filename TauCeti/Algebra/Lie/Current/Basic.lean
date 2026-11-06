@@ -186,7 +186,7 @@ theorem mem_orderSubmodule_iff [Module.Free R L] (N : ℤ) (u : currentAlgebra R
   let e := TensorProduct.equivFinsuppOfBasisRight (M := R⸨X⸩) b
   rw [← e.symm_apply_apply u, TensorProduct.equivFinsuppOfBasisRight_symm_apply]
   apply Submodule.sum_mem
-  intro i hi
+  intro i _
   apply tmul_mem_orderSubmodule
   rw [HahnSeries.le_orderTop_iff_forall]
   intro n hn

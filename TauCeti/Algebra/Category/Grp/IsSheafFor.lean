@@ -46,7 +46,7 @@ theorem isSheafFor_comp_forget_addCommGrpCat_iff (R : Presieve X) (P : Cᵒᵖ �
   refine ⟨fun h E x hx ↦ ?_, fun h ↦ (Presieve.isSheafFor_iff_of_iso
     (Functor.isoWhiskerLeft P AddCommGrpCat.coyonedaObjIsoForget)).1 (h _)⟩
   -- restriction to the members of `R` is jointly injective on underlying sets
-  have hsep {s t : P.obj (op X)} (hst : ∀ ⦃Y : C⦄ ⦃g : Y ⟶ X⦄ (hg : R g),
+  have hsep {s t : P.obj (op X)} (hst : ∀ ⦃Y : C⦄ ⦃g : Y ⟶ X⦄ (_ : R g),
       P.map g.op s = P.map g.op t) : s = t :=
     h.isSeparatedFor.ext hst
   -- glue the values of the family at each `e : E`

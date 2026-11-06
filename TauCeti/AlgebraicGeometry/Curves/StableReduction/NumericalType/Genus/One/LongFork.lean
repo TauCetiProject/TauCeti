@@ -199,8 +199,6 @@ theorem isGenusOneLongForkShape (hf : T.IsSelfIntersectionMinusTwoFork t c branc
     have htstep : t - 2 = (t - 3) + 1 := by omega
     rw [htstep, add_nsmul, one_nsmul] at hmPen
     have hm0pos : (0 : ℤ) < T.multiplicity (c 0) := by simp
-    have hm0zero : (2 * (T.multiplicity (c 0) : ℤ) - T.multiplicity (c 0)) = 0 := by
-      omega
     exfalso
     omega
   · -- A double-weight endpoint gives case (29).
@@ -302,7 +300,7 @@ theorem IsMinimal.isGenusOneLongForkShape (hT : T.IsMinimal) (hg : T.arithmeticG
     (∀ i < t, T.genus (c i) = 0) ∧ T.genus branch = 0 ∧
       T.IsGenusOneLongForkShape t c branch := by
   have htwo := (T.isMinimal_and_arithmeticGenus_eq_one_iff (by rw [hcard]; omega)).mp ⟨hT, hg⟩
-  exact ⟨fun i hi ↦ (T.isMinusTwoIndex_iff.mp (htwo (c i))).1,
+  exact ⟨fun i _ ↦ (T.isMinusTwoIndex_iff.mp (htwo (c i))).1,
     (T.isMinusTwoIndex_iff.mp (htwo branch)).1, hf.isGenusOneLongForkShape hcard ht⟩
 
 /-- For a genus-one long fork on a minus-two fork exhausting all components, some component's

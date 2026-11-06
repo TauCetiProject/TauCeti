@@ -270,7 +270,7 @@ private theorem lintegral_le_and_setLIntegral_le {Q : Set E} (hQ : MeasurableSet
           rw [← setLIntegral_const]
           exact mul_le_mul' (ENNReal.coe_le_coe.2 h₁) (setLIntegral_mono' hQ fun x hx ↦ (hj x hx).1)
       _ = _ := by rw [lintegral_const_mul' _ _ ENNReal.coe_ne_top, ← mul_assoc, ENNReal.coe_mul]
-  · calc ∫⁻ x in Q, j x ≤ ∫⁻ x in Q, (σ : ℝ≥0∞) * ENNReal.ofReal L.adjoint.normDet :=
+  · calc ∫⁻ x in Q, j x ≤ ∫⁻ _ in Q, (σ : ℝ≥0∞) * ENNReal.ofReal L.adjoint.normDet :=
           setLIntegral_mono' hQ fun x hx ↦ (hj x hx).2
       _ = σ * (ENNReal.ofReal L.adjoint.normDet * volume Q) := by
           rw [setLIntegral_const, mul_assoc]

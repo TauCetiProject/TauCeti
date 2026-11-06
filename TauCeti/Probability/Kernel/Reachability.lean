@@ -133,7 +133,7 @@ theorem isIrreducible_count_iff_forall_reaches [MeasurableSingletonClass S] :
     exact h.irreducible (measurableSet_singleton y) hpos x
   · intro h
     refine ⟨?_⟩
-    intro s hs hA x
+    intro s _ hA x
     obtain ⟨y, hy⟩ := Measure.count_ne_zero_iff.mp (Ne.symm (ne_of_lt hA))
     obtain ⟨n, hn⟩ := h x y
     use n

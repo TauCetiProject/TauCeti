@@ -241,7 +241,6 @@ theorem exists_intCast_pow_mul_gelfond_term (α β γ : K) :
     rw [house_intCast, house_nat_mul]
     push_cast
     rw [abs_mul, Nat.abs_cast]
-    have hβH : |(c₀ : ℝ)| + house ((c₀ : K) * β) ≤ H := by linarith
     nlinarith
   have hc₀H' : house (c₀ : K) ≤ H := by rwa [house_intCast, Int.cast_abs]
   have hαH : house ((c₀ : K) * α) ≤ H := by linarith

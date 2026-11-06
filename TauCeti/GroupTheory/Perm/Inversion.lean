@@ -162,7 +162,7 @@ theorem sign_shuffle {m : ℕ} (h : k + m = n) (e : Fin k ⊕ Fin m ≃ Fin n)
   -- For each `a`, the number of such `b` is the position of `e (inl a)` minus `a`.
   have hcount (a : Fin k) : #{b | e (.inr b) < e (.inl a)} + a = (e (.inl a) : ℕ) := by
     rw [← Fin.card_Iio, ← Fin.card_Iio (e _), ← filter_gt_eq_Iio, ← filter_gt_eq_Iio]
-    simp only [card_filter, ← e.sum_comp (fun x ↦ ite _ _ _), Fintype.sum_sum_type, hl']
+    simp only [card_filter, ← e.sum_comp (fun _ ↦ ite _ _ _), Fintype.sum_sum_type, hl']
     ring
   -- Mathlib's product formula for the sign, with the interval `Iio` written as a filter, so that
   -- the double product can be reindexed along `E`.
@@ -175,7 +175,7 @@ theorem sign_shuffle {m : ℕ} (h : k + m = n) (e : Fin k ⊕ Fin m ≃ Fin n)
     split_ifs <;> grind [EmbeddingLike.apply_eq_iff_eq]
   set E := finSumFinEquiv.trans (finCongr h)
   rw [hsign, ← E.prod_comp]
-  simp_rw [← E.prod_comp (fun x ↦ ite _ _ _)]
+  simp_rw [← E.prod_comp (fun _ ↦ ite _ _ _)]
   have hprod :
       (∏ x : Fin k ⊕ Fin m, ∏ i : Fin k ⊕ Fin m,
           if E i < E x ∧ (E.symm.trans e) (E x) < (E.symm.trans e) (E i) then (-1 : ℤˣ) else 1) =

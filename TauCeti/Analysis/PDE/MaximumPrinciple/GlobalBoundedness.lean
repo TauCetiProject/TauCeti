@@ -159,8 +159,6 @@ private theorem toReal_eLpNorm_posPartAbove_le
   set m := ν.real A ^ (1 - (r : ℝ)⁻¹ - (s : ℝ)⁻¹)
   have hlam := h.pos
   have hW : 0 ≤ W := ENNReal.toReal_nonneg
-  have hm : 0 ≤ m := by positivity
-  have hF : 0 ≤ F := ENNReal.toReal_nonneg
   have hkey : lam * W ^ 2 ≤ S ^ 2 * F * m * W := by
     calc lam * W ^ 2 ≤ lam * ((S : ℝ) * ‖W1p.gradient w‖) ^ 2 := by gcongr
       _ = S ^ 2 * (lam * ‖W1p.gradient w‖ ^ 2) := by ring
@@ -221,7 +219,6 @@ private theorem measureReal_lt_le_div_sub_rpow_mul_rpow
     refine measure_mono_ae ?_
     filter_upwards [W1p.value_posPartAbove_ae (by norm_num) (hk.trans hkl) u] with x hx hxt
     rw [hx, Real.enorm_of_nonneg (le_max_right _ _)]
-    have hxt' : t < W1p.value u x := hxt
     exact ENNReal.ofReal_le_ofReal (le_max_of_le_left (by linarith))
   have hfin : eLpNorm (W1p.value w) s ν ^ ((s : ℝ≥0∞).toReal) ≠ ∞ := by
     refine ENNReal.rpow_ne_top_of_nonneg (by positivity) ?_

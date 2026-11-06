@@ -143,7 +143,7 @@ theorem integrable_exp_mul_id_chiMeasure (k s t : ℝ) :
     filter_upwards [ae_pos_gammaMeasure (k / 2) (1 / 2)] with x hx
     rw [Real.norm_eq_abs, abs_of_pos (exp_pos _), ← exp_add]
     apply exp_le_exp.2
-    have hsq := sq_nonneg (t * s - √x / 2)
+    have _ := sq_nonneg (t * s - √x / 2)
     have hsqrt := sq_sqrt hx.le
     nlinarith
 

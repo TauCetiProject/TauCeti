@@ -37,7 +37,7 @@ namespace Function
 negative integers. -/
 theorem extend_natCast_of_neg {α : Sort*} (a : ℕ → α) (e : ℤ → α) {n : ℤ} (hn : n < 0) :
     extend ((↑) : ℕ → ℤ) a e n = e n :=
-  extend_apply' _ _ _ fun ⟨m, hm⟩ => by omega
+  extend_apply' _ _ _ fun ⟨_, _⟩ => by omega
 
 /-- Extending a function on `t` along `Subtype.val`, or first restricting it to a subset `s ⊆ t`,
 gives the same value at a point `a` that lies in `s` whenever it lies in `t`: both are `g a` if

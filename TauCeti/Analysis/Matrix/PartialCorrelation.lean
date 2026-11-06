@@ -248,7 +248,7 @@ theorem det_partialCorrelationGram {z : strictLowerTriangle p → ℝ}
 /-- The triangular construction is injective on the open partial-correlation cube. -/
 theorem injOn_partialCorrelationCholesky :
     Set.InjOn (partialCorrelationCholesky (p := p)) {z | ∀ ij, |z ij| < 1} := by
-  intro z hz w hw heq
+  intro z _ w hw heq
   have hrows : ∀ n, ∀ j : Fin p, j.val = n → ∀ i,
       partialCorrelationRow z i j = partialCorrelationRow w i j := by
     intro n

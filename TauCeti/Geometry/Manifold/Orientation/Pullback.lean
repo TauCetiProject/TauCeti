@@ -144,7 +144,7 @@ theorem eventually_mapOrientation_map_symm_eq {f : M → M'} {a : M}
   have hbase : ∀ᶠ x in 𝓝 a, x ∈ e.baseSet := e.open_baseSet.mem_nhds ha
   have hfbase : ∀ᶠ x in 𝓝 a, f x ∈ e'.baseSet :=
     hf.continuousAt.preimage_mem_nhds (e'.open_baseSet.mem_nhds hfa)
-  filter_upwards [hω, hpos, hbase, hfbase, hD] with x hωx hKx hx₀ hfx hDx hx
+  filter_upwards [hω, hpos, hbase, hfbase, hD] with x hωx hKx _ hfx hDx hx
   rw [hread x hx hfx, hread a ha hfa, hωx hfx]
   set ω' := e'.mapOrientation ι hfa (ω a)
   set η := _root_.Orientation.map ι (T a ha hfa).symm.toLinearEquiv ω'

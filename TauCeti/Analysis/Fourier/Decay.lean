@@ -96,7 +96,6 @@ theorem exists_abs_pow_mul_norm_fourierCoeff_le {f : AddCircle T → ℂ} {k : �
       simp [abs_of_pos hT.out]
     rw [hnorm, div_pow, mul_pow] at hbound
     have hT0 : 0 < T ^ k := pow_pos hT.out k
-    have hπ : 0 < (2 * π) ^ k := pow_pos (by positivity) k
     rw [div_pow]
     calc |(n : ℝ)| ^ k * _ = T ^ k / (2 * π) ^ k *
         ((2 * π) ^ k * |(n : ℝ)| ^ k / T ^ k * ‖fourierCoeffOn _ (fun x : ℝ ↦ f x) n‖) := by

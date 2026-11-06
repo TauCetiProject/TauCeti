@@ -503,7 +503,6 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
   have hgψ := ContDiff.continuous_gradient hψ
-  have hgφ := ContDiff.continuous_gradient φ.contDiff
   have hBn : Continuous fun x => ‖matrixBilinearForm (a x)‖ :=
     Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   obtain ⟨C, hC⟩ := exists_norm_divMatrixGradient_le hM hK hψ hψc

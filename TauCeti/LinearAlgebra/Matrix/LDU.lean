@@ -373,7 +373,7 @@ theorem exists_blockLDU_iff (M : Matrix m m R) :
         fun j => ⟨fun _ => hk j (Finset.mem_univ j), fun _ => trivial⟩]
       exact hM k
     rwa [det_mul, det_mul, hL.det_eq_one, hU.det_eq_one, one_mul, mul_one] at hfull
-  · rintro ⟨L, D, U, hL, hD, hD', hU, hDdet, rfl⟩ i
+  · rintro ⟨L, D, U, hL, hD, _, hU, hDdet, rfl⟩ i
     have hp : ∀ ⦃j k⦄, b k ≤ b j → b j ≤ b i → b k ≤ b i := fun _ _ h₁ h₂ => h₁.trans h₂
     rw [det_toSquareBlockProp_blockLDU hL hU hp]
     -- `D` is block triangular for the split into the leading segment and its complement.

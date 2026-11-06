@@ -376,7 +376,7 @@ theorem sphericalPendulumEffectivePotential_lt_of_eq_zero {j z₀ z : ℝ} (hz�
     (hcrit : j ^ 2 * z₀ + (1 - z₀ ^ 2) ^ 2 = 0) (hz : z ∈ Ioo (-1) 1) (hne : z ≠ z₀) :
     sphericalPendulumEffectivePotential j z₀ < sphericalPendulumEffectivePotential j z := by
   have h1z : 0 < 1 - z ^ 2 := sub_pos.2 (((sq_lt_one_iff_abs_lt_one _).trans abs_lt).2 hz)
-  obtain ⟨hz₀₁, hz₀₂⟩ := hz₀
+  obtain ⟨_, hz₀₂⟩ := hz₀
   rw [← sub_pos, sphericalPendulumEffectivePotential_sub_eq hz₀₂.ne h1z.ne' hcrit]
   have hnum : 0 < 1 + z₀ ^ 2 + 2 * z₀ * z := by
     -- `1 + z₀² + 2 z₀ z = (1 + z₀ z)² + z₀² (1 - z²)`.

@@ -491,7 +491,6 @@ theorem exists_contDiff_antitone_cutoff_abs_deriv_le {a b v τ : ℝ} (hab : a <
     (hvτ : v < τ * (b - a)) :
     ∃ μ : ℝ → ℝ, ContDiff ℝ ∞ μ ∧ Antitone μ ∧ (∀ r, 0 ≤ μ r) ∧ (∀ r, b ≤ r → μ r = 0) ∧
       (∀ r ≤ a, μ r = v) ∧ (∀ r, |deriv μ r| ≤ τ) ∧ ∀ r ∉ Ioo a b, deriv μ r = 0 := by
-  have hba : 0 < b - a := sub_pos.2 hab
   have hτ : 0 < τ := by
     by_contra h
     nlinarith

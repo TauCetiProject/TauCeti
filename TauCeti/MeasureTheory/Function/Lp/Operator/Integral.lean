@@ -196,7 +196,6 @@ integrals of `‖K‖`. In particular, a common bound `A` on both gives norm at 
 theorem norm_integralOperatorLp_le_max : ‖integralOperatorLp K p hK hA hB‖ ≤ max A B := by
   refine norm_integralOperatorLp_le.trans ?_
   have h₀ := one_sub_toReal_inv_nonneg (Fact.out : 1 ≤ p)
-  have h₁ : 0 ≤ p.toReal⁻¹ := by positivity
   rw [NNReal.coe_le_coe]
   calc A ^ (1 - p.toReal⁻¹) * B ^ p.toReal⁻¹
       ≤ max A B ^ (1 - p.toReal⁻¹) * max A B ^ p.toReal⁻¹ := by

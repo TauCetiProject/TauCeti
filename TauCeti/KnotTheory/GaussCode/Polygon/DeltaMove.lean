@@ -436,7 +436,7 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
       exact (hne (hπ.injOn_edgeSet k hk (hpj (hIcc hsu)) hπeq)).elim
     exact (hne (hvert (hbdj (hpj (hIcc hsu))) (hprism k hki hkj w₀ hk (hπeq ▸ hT')) hπeq).symm).elim
   -- Points of the new edges project into the sides `AC` and `CB`.
-  set N := affineSegment ℝ (poly i) c ∪ affineSegment ℝ c (poly (finRotate n i)) with hNdef
+  set N := affineSegment ℝ (poly i) c ∪ affineSegment ℝ c (poly (finRotate n i))
   have hND : N ⊆ D := union_subset hΔ.affineSegment_left_subset_closedInterior
     hΔ.affineSegment_right_subset_closedInterior
   have hNq : N ⊆ q.boundary ℝ := by rw [boundary_insertVertex]; exact subset_union_right
@@ -684,7 +684,7 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
       have hi : ((i : ℕ) : ℝ) + 1 ≤ n := by exact_mod_cast i.isLt
       push_cast
       have hi0 : (0 : ℝ) ≤ (i : ℕ) := Nat.cast_nonneg _
-      exact ⟨by linarith [hτy.1], by linarith [hτy.2]⟩
+      exact ⟨by linarith [hi0, hτy.1], by linarith [hτy.2]⟩
     · obtain ⟨h₁, h₂, -⟩ := hθgood ht htx
       rw [hφo htx]
       exact (hψt _ h₁ h₂).1
@@ -732,7 +732,7 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     rcases hz with rfl | rfl
     · rw [hgx]
     · rw [hgx', hπy]
-  have hgoff {z : P} (hz : z ∈ poly.doublePoints ℝ π) (h : π z ≠ π xx) : g z = z :=
+  have hgoff {z : P} (_ : z ∈ poly.doublePoints ℝ π) (h : π z ≠ π xx) : g z = z :=
     hgo (fun h' ↦ h (h' ▸ rfl)) fun h' ↦ h (h' ▸ hπx''.symm)
   have hfib : ∀ z ∈ poly.doublePoints ℝ π, ∀ w₀ ∈ poly.doublePoints ℝ π,
       π z = π w₀ → π (g z) = π (g w₀) := by
@@ -817,8 +817,6 @@ theorem gaussCode_insertVertex_of_crossing (hs : poly.IsSimple ℝ)
     -- Away from the moved crossing, both visits keep their edges.
     have ht'x : t' ≠ τx := fun h ↦ htx' (hbpinj ht hτx'CT (by
       rw [hbpτx', ← hpx, ← hbpτx, ← h, htt', hπ.involutive_doublePointPartner]))
-    have ht'x' : t' ≠ τx' := fun h ↦ htx (hbpinj ht hτxCT (by
-      rw [hbpτx, ← hpx', ← hbpτx', ← h, htt', hπ.involutive_doublePointPartner]))
     obtain ⟨a₁, a₂, -, a₄⟩ := hθgood ht htx
     obtain ⟨b₁, b₂, -, b₄⟩ := hθgood ht' ht'x
     rw [hφo htx, hφo ht'x, (hψt _ a₁ a₂).2.2, (hψt _ b₁ b₂).2.2, a₄, b₄]

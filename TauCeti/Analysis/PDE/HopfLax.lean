@@ -290,7 +290,6 @@ theorem lowerSemicontinuousOn_hopfLax_norm_rpow [ProperSpace E] (hp : 1 ≤ p)
   have hmax : max q.1 τ ^ (p - 1) ≤ D := by
     rw [max_eq_left hτ'.le]
     exact Real.rpow_le_rpow (hτ.trans hτ').le hS.le (by linarith)
-  have hmax0 : 0 < max q.1 τ ^ (p - 1) := Real.rpow_pos_of_pos (lt_max_of_lt_right hτ) _
   calc c' ≤ m + (R - 1) / D := by
         rw [hR, add_div, mul_div_assoc, div_self hD.ne', mul_one]
         linarith [le_abs_self (c' - m), one_div_pos.2 hD]

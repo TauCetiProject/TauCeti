@@ -518,7 +518,6 @@ theorem setIntegral_norm_sub_setAverage_sq_le_add_of_subset {t : Set X} {f H : X
     hH.integrableOn_norm_sub_sq_of_subset subset_rfl ht
   have hfH : IntegrableOn (fun x => ‖f x - H x‖ ^ 2) t μ :=
     (hf.sub hH).integrable_norm_pow two_ne_zero
-  have hE0 : 0 ≤ ∫ x in t, ‖f x - H x‖ ^ 2 ∂μ := integral_nonneg fun _ => by positivity
   -- On `s`, compare `f` with the average of `H`, then split off `f - H`.
   have step1 := setIntegral_norm_sub_setAverage_sq_le_setIntegral_norm_sub_sq hs
     (hf.integrableOn_of_subset one_le_two hst hs)

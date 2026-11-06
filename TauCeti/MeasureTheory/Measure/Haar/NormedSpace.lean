@@ -224,7 +224,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt
     rw [huniv, measure_univ_of_isAddLeftInvariant]
   -- For finite `m`, pick the radius `r` of the centered ball of measure `m`.
   have hω0 : mu (ball (0 : E) 1) ≠ 0 := (measure_ball_pos mu 0 one_pos).ne'
-  obtain ⟨r, hr0, hr⟩ : ∃ r : ℝ, 0 ≤ r ∧ mu (ball (0 : E) r) = m := by
+  obtain ⟨r, _, hr⟩ : ∃ r : ℝ, 0 ≤ r ∧ mu (ball (0 : E) r) = m := by
     refine ⟨(m / mu (ball (0 : E) 1)).toReal ^ (finrank ℝ E : ℝ)⁻¹, by positivity, ?_⟩
     rw [mu.addHaar_ball 0 (by positivity),
       Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg finrank_pos.ne',

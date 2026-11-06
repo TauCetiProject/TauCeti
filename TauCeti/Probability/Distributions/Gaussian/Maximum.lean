@@ -111,7 +111,6 @@ theorem sqrt_log_card_div_le_integral_sup'_abs (hindep : iIndepFun g P)
     have hq : cdf ν s ≤ 1 - p := by
       rw [cdf_eq_real, ← compl_Ioi, measureReal_compl measurableSet_Ioi, probReal_univ]
       linarith
-    have hp0 : 0 ≤ p := gaussianPDFReal_nonneg 0 1 _
     have h7 : rexp (-(1 / 7)) ≤ 7 / 8 := by
       rw [Real.exp_neg, inv_le_comm₀ (Real.exp_pos _) (by norm_num)]
       linarith [Real.add_one_le_exp (1 / 7 : ℝ)]

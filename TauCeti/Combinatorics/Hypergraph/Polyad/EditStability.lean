@@ -49,7 +49,7 @@ theorem IsTopRegularOverPolyad.of_card_editedOn_le
     H'.IsTopRegularOverPolyad P ε r := by
   rw [isTopRegularOverPolyad_iff]
   intro c Q hQ
-  obtain hP | hP := P.support.eq_empty_or_nonempty
+  obtain hP | _ := P.support.eq_empty_or_nonempty
   · have hU : Subpolyad3.unionSupport Q = ∅ :=
       subset_empty.1 (hP ▸ Subpolyad3.unionSupport_subset Q)
     simp [hU, H'.relativeDensity_of_support_eq_empty c hP, hε.le]

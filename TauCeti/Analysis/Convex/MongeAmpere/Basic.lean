@@ -632,7 +632,6 @@ theorem ofReal_neg_pow_mul_addHaar_ball_le_mul_mongeAmpereMeasure (hΩo : IsOpen
             mul_le_mul_of_nonneg_left (by linarith) (by positivity)
         _ = h := by field_simp
     rw [real_inner_smul_right, real_inner_comm, hw, map_sub]
-    have hdef : h = -u x₀ := rfl
     linarith
   have hqn : dist ((h / (d * ‖w‖)) • w) 0 = h / d := by
     rw [dist_zero_right, norm_smul, Real.norm_of_nonneg (by positivity)]

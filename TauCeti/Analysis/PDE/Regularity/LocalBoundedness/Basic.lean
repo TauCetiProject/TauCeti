@@ -530,7 +530,6 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
       (E * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) * (4 * 4 ^ α) ^ j * Y j ^ (1 + α) := fun j => by
     refine (setIntegral_ball_max_sub_sq_succ_le hq hS hwLp hA hB hcacc hc hR hball hK hα
       j).trans ?_
-    have hYj : 0 ≤ Y j := integral_nonneg (hnn _)
     gcongr
   have hlim := tendsto_atTop_zero_of_le_mul_pow_mul_rpow (Y := Y)
     (fun j => integral_nonneg (hnn _)) hC hb hα0 (hY0'.trans_le hY0) hrec
@@ -595,7 +594,6 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
       rw [hα, sub_pos, div_lt_one (by linarith)]
       exact h2q
   -- Enlarge the cutoff constant to `c + 1 ≥ 1`.
-  have hc'0 : 1 ≤ c + 1 := by linarith
   have hc' : ∀ (x₀ : EuclideanSpace ℝ ι) {r R : ℝ}, 0 < r → r < R →
       ∃ ψ : EuclideanSpace ℝ ι → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧
         EqOn ψ 1 (Metric.closedBall x₀ r) ∧ tsupport ψ ⊆ Metric.closedBall x₀ R ∧
@@ -615,10 +613,6 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   set E : ℝ := 2 * (64 * (c + 1) ^ 2) * M * (S : ℝ) ^ 2
   have hE : 2 * (64 * (c + 1) ^ 2 * (1 + A) + B * R ^ 2) * (S : ℝ) ^ 2 ≤ E := by
     have hc64 : 0 ≤ 64 * (c + 1) ^ 2 - 1 := by nlinarith
-    have heq : E - 2 * (64 * (c + 1) ^ 2 * (1 + A) + B * R ^ 2) * (S : ℝ) ^ 2 =
-        2 * (S : ℝ) ^ 2 * ((64 * (c + 1) ^ 2 - 1) * (B * R ^ 2)) := by
-      simp only [E, M]
-      ring
     have : 0 ≤ 2 * (S : ℝ) ^ 2 * ((64 * (c + 1) ^ 2 - 1) * (B * R ^ 2)) := by positivity
     linarith
   set E₁ : ℝ := E * 4 ^ α

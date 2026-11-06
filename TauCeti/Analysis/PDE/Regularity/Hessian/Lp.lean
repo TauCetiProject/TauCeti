@@ -258,11 +258,11 @@ private theorem eLpNorm_lineDerivOp_lineDerivOp_le_of_succ (v w : EuclideanSpace
     have h0 := congrFun ((ψ.continuous.ae_eq_iff_eq volume continuous_zero).1 h) 0
     simp [ψ, φ.one_of_mem_closedBall (Metric.mem_closedBall_self zero_le_one)] at h0
   have hψtop : eLpNorm (⇑ψ) p volume ≠ ∞ := (ψ.eLpNorm_lt_top p).ne
-  set A := eLpNorm (⇑ψ) p volume with hA
-  set B := eLpNorm (⇑(∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ) : 𝓢(ℝ, ℝ))) p volume with hB
-  set a := eLpNorm (⇑(∂_{v} (∂_{w} u) : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume with ha
-  set b := eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume with hb
-  set c := eLpNorm (⇑u) p volume with hc
+  set A := eLpNorm (⇑ψ) p volume
+  set B := eLpNorm (⇑(∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ) : 𝓢(ℝ, ℝ))) p volume
+  set a := eLpNorm (⇑(∂_{v} (∂_{w} u) : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume
+  set b := eLpNorm (⇑(Δ u : 𝓢(EuclideanSpace ℝ (Fin n), F))) p volume
+  set c := eLpNorm (⇑u) p volume
   have hBc : B * c ≠ ∞ :=
     ENNReal.mul_ne_top ((∂_{(1 : ℝ)} (∂_{(1 : ℝ)} ψ)).eLpNorm_lt_top p).ne (u.eLpNorm_lt_top p).ne
   have hR (R : ℝ) (hR : 0 < R) : A * a ≤ C * (A * b) + C * (‖R⁻¹ * R⁻¹‖ₑ * (B * c)) := by

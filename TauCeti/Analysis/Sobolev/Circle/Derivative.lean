@@ -168,7 +168,7 @@ an element of `H^(s + 1)` whose derivative is `b`. -/
 theorem exists_inclusion_eq_and_derivative_eq (a b : CircleSobolev s E)
     (hb : ∀ n, b.coeff n = (2 * π * I * n / T : ℂ) • a.coeff n) :
     ∃ c : CircleSobolev (s + 1) E, inclusion (by linarith) c = a ∧ derivative T le_rfl c = b := by
-  have hT₀ : 0 < 2 * π / T := div_pos (by positivity) hT.out
+  have _ : 0 < 2 * π / T := div_pos (by positivity) hT.out
   -- `(1 + |n|) ^ (s + 1) ‖a_n‖ = (1 + |n|) ^ s ‖a_n‖ + (1 + |n|) ^ s |n| ‖a_n‖`, and the last
   -- term is `T / 2π` times `(1 + |n|) ^ s ‖b_n‖`.
   have hle (n : ℤ) : weight (s + 1) n * ‖a.coeff n‖ ≤

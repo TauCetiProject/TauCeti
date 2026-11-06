@@ -128,7 +128,7 @@ instance sigma : IsManifold I n (Σ i, M i) where
     · apply ContDiffGroupoid.mem_of_source_eq_empty
       ext x
       constructor
-      · rintro ⟨hx, y, hy, hxy⟩
+      · rintro ⟨_, y, _, hxy⟩
         exact hij (by simpa using (congrArg Sigma.fst hxy).symm)
       · exact fun hx ↦ hx.elim
 

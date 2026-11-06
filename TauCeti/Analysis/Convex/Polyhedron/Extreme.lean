@@ -128,7 +128,7 @@ theorem mem_extremePoints_polyhedron_iff [Finite ι] :
     refine ⟨hx, fun w hw ↦ ?_⟩
     -- The inactive constraints have slack at `x`, so `x ± t w` stays in the polyhedron for
     -- `t = (1 + S)⁻¹`, where `S` bounds every ratio `|f j w| / (f j x - c j)`.
-    set S := ∑ j, |f j w| / (f j x - c j) with hS
+    set S := ∑ j, |f j w| / (f j x - c j)
     have hterm (j : ι) : 0 ≤ |f j w| / (f j x - c j) :=
       div_nonneg (abs_nonneg _) (sub_nonneg.2 (hx j))
     have hS₀ : 0 ≤ S := Finset.sum_nonneg fun j _ ↦ hterm j

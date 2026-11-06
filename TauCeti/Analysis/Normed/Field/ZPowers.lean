@@ -69,7 +69,7 @@ theorem eq_of_norm_mem_Ioc_of_quotient_zpowers_eq (q : Kˣ) (hq : ‖(q : K)‖ 
   obtain ⟨n, hn⟩ := Subgroup.mem_zpowers_iff.mp (QuotientGroup.eq_iff_div_mem.mp huv)
   have hnu : q ^ n * v = u := by
     rw [hn, div_mul_cancel]
-  obtain ⟨m, hm, hm_unique⟩ := existsUnique_norm_zpow_mul_mem_Ioc q v hq
+  obtain ⟨m, _, hm_unique⟩ := existsUnique_norm_zpow_mul_mem_Ioc q v hq
   have hn0 : n = 0 := (hm_unique n (by simpa [hnu] using hu)).trans
     (hm_unique 0 (by simpa using hv)).symm
   simpa [hn0] using hnu.symm

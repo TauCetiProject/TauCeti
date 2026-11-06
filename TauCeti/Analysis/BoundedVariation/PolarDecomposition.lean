@@ -425,7 +425,6 @@ theorem integral_trace_fderiv_mul_eq_neg_integral_inner_polarDensity
   have huK : IntegrableOn u K μ := hu.integrableOn_compact_subset hδΩ hK
   set C := ‖traceCLM ℝ E‖ * ∫ x in K, ‖u x‖ ∂μ +
     (variationMeasure μ Ω u).real (((↑) : Ω → E) ⁻¹' K)
-  have hC : 0 ≤ C := by positivity
   -- Compare both sides with those of a test field `ψ` that is `C¹`-close to `φ`.
   refine dist_le_zero.1 (le_of_forall_pos_le_add fun ε hε => ?_)
   set η := ε / (C + 1)

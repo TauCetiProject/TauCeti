@@ -515,7 +515,7 @@ private theorem exists_sameSide_of_initial_first
     ∃ D' ∈ G.sameSidePentagonPairs C x z, D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, -, -, h2l, -, -, -, h2b, h2t⟩ | ⟨hrow, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩
+    ⟨_, -, -, h2l, -, -, -, h2b, h2t⟩ | ⟨hrow, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩
   · refine (hfalse _ hrecut (G.hasHexagonPiece_second_initial C _ (h2l.trans hl) ?_ ?_)).elim
     · rw [h2b, h2t]
       exact hlow
@@ -557,7 +557,7 @@ private theorem exists_sameSide_of_terminal_second
   have hrecut := D.isRecut_recut hone h1 h2
   rw [D.second_bottom_eq_first_bottom_of_right_eq_left hcommon] at hlow
   rcases (D.isRecutOfRightEqLeft_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩ | ⟨hrow, -, h1r, -, -, h1b, h1t, -, -⟩
+    ⟨hrow, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩ | ⟨_, -, h1r, -, -, h1b, h1t, -, -⟩
   · by_cases hA : C.oppositeTurnRow ∈ Grid.cIco D.first.top D.second.top
     · refine (hfalse _ hrecut (G.hasHexagonPiece_first_terminal C _ (h1r.trans hr) ?_ ?_)).elim
       · rw [h1b, h1t]
@@ -598,7 +598,7 @@ private theorem exists_sameSide_of_terminal_first
     ∃ D' ∈ G.sameSidePentagonPairs C x z, D'.toRectangleDecomposition.IsRecut D := by
   have hrecut := D.isRecut_recut hone h1 h2
   rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, -, -, -, h2r, -, -, h2b, h2t⟩ | ⟨hrow, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩
+    ⟨_, -, -, -, h2r, -, -, h2b, h2t⟩ | ⟨hrow, -, h1r, -, h2r, h1b, h1t, h2b, h2t⟩
   · refine (hfalse _ hrecut (G.hasHexagonPiece_second_terminal C _ (h2r.trans hr) ?_ ?_)).elim
     · rw [h2b, h2t]
       exact hlow
@@ -640,7 +640,7 @@ private theorem exists_sameSide_of_initial_second
   have hrecut := D.isRecut_recut hone h1 h2
   rw [D.second_top_eq_first_top_of_left_eq_right hcommon] at hlow hup
   rcases (D.isRecutOfLeftEqRight_recut hcommon hone h1 h2).recut_geometry hone with
-    ⟨hrow, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩ | ⟨hrow, h1l, -, -, -, h1b, h1t, -, -⟩
+    ⟨hrow, h1l, -, h2l, -, h1b, h1t, h2b, h2t⟩ | ⟨_, h1l, -, -, -, h1b, h1t, -, -⟩
   · by_cases hA : C.oppositeTurnRow ∈ Grid.cIco D.second.bottom D.first.bottom
     · obtain ⟨hA1, hA2⟩ := Grid.mem_cIco_and_mem_cIoo_of_mem_cIoo_of_mem_cIco hlow hup hA
       refine (hfalse _ hrecut (G.hasHexagonPiece_first_initial C _ (h1l.trans hl) ?_ ?_)).elim

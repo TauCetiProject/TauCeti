@@ -360,10 +360,6 @@ private theorem tanThetaResidualWitness_scalar
       dsimp [y]
       rw [LinearMap.leftSingularVector_def]
       exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
-    have hXadj : X.toLinearMap.adjoint y = ((σ : ℝ) : 𝕜) • v := by
-      simpa [S, σ, v, y] using
-        Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-            U X.toLinearMap (i := i)
     have hMupper : RCLike.re ⟪M v, v⟫_𝕜 ≤ α := by
       have hTopRed : (⊤ ∈ Module.End.invtSubmodule M) := fun z _ => Submodule.mem_top
       have hbound : RCLike.re ⟪M v, v⟫_𝕜 ≤ α * ‖v‖ ^ 2 :=

@@ -226,7 +226,7 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
   · intro h S _ ε hε
     -- Embed `S` with distortion bounds `1 ± δ`, where `(1 + δ) / (1 - δ) < 1 + ε`, and
     -- compare `S` with the range of the embedding.
-    set δ := ε / (ε + 3) with hδ_def
+    set δ := ε / (ε + 3)
     have hδ : 0 < δ := by positivity
     have hδε : δ * (ε + 3) = ε := div_mul_cancel₀ _ (by positivity)
     have hδ1 : 0 < 1 - δ := by nlinarith
@@ -255,12 +255,10 @@ theorem finitelyRepresentable_iff_banachMazurDist_lt :
   · intro h S _ ε hε
     obtain ⟨G, hne, hd⟩ := h S ‹_› ε hε
     obtain ⟨e, he⟩ := banachMazurDist_lt_iff.1 hd
-    rcases subsingleton_or_nontrivial S with hS | hS
+    rcases subsingleton_or_nontrivial S with hS | _
     · exact ⟨0, fun x ↦ by simp [Subsingleton.elim x 0]⟩
     -- Rescale `e` by `c = ‖e⁻¹‖`, so that it no longer shrinks any vector.
     set c := ‖(e.symm : G →L[𝕜] S)‖
-    have h₁ : 1 ≤ ‖(e : S →L[𝕜] G)‖ * c :=
-      (one_le_banachMazurDist hne).trans (banachMazurDist_le e)
     have hc : 0 ≤ c := norm_nonneg _
     refine ⟨(c : 𝕜) • G.subtypeL.comp (e : S →L[𝕜] G), fun x ↦ ?_⟩
     have hTx : ‖((c : 𝕜) • G.subtypeL.comp (e : S →L[𝕜] G)) x‖ = c * ‖e x‖ := by

@@ -122,7 +122,7 @@ theorem isJacobiFieldOn_zero (hγ : IsGeodesicCurveOn I γ s) :
     IsJacobiFieldOn I γ (fun r ↦ (0 : TangentSpace I (γ r))) s := by
   refine ⟨hγ, ?_, ?_⟩
   · exact (Bundle.contMDiff_zeroSection ℝ (TangentSpace I)).comp_contMDiffOn hγ.contMDiffOn
-  · intro r hr
+  · intro r _
     have hzero : alongCurveWithin (leviCivitaConnection I M) γ
         (fun r ↦ (0 : TangentSpace I (γ r))) s = fun r ↦ 0 := by
       funext r

@@ -104,7 +104,7 @@ theorem smul_apply {β : Type w} {R : Type t} [Semiring R] [Preadditive C] [Line
 
 /-- A morphism of graded objects which is a monomorphism in every degree is a monomorphism. -/
 theorem mono_of_mono_apply {β : Type w} {X Y : GradedObject β C} (f : X ⟶ Y)
-    (hf : ∀ i, Mono (f i)) : Mono f :=
+    (_ : ∀ i, Mono (f i)) : Mono f :=
   ⟨fun _ _ h => funext fun i => (cancel_mono (f i)).1 (congr_fun h i)⟩
 
 end CategoryTheory.GradedObject

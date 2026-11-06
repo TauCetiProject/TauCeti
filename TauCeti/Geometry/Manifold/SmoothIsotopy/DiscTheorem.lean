@@ -81,7 +81,7 @@ theorem exists_smoothIsotopy_of_det_chartAt_mul_pos
       (fderiv ℝ (chartAt E (f 0) ∘ g) 0).det) :
     ∃ G : SmoothIsotopy f.toContMDiffMap g.toContMDiffMap,
       ∀ t : unitInterval, G (t, 0) = f 0 := by
-  set p := f 0 with hp
+  set p := f 0
   set φ := chartAt E p
   have hφ : φ ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M := IsManifold.chart_mem_maximalAtlas p
   set c := φ p

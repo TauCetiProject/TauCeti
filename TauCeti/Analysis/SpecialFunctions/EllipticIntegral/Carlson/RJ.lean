@@ -118,7 +118,7 @@ theorem integrableOn_carlsonRJ_integrand {x y z p : ℂ} (hx : x ∈ slitPlane �
     (by norm_num)
   obtain ⟨Cy, hCy⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hy (r := -(1 / 2)) (by norm_num)
   obtain ⟨Cz, hCz⟩ := TauCeti.exists_norm_ofReal_add_cpow_le hz (r := -(1 / 2)) (by norm_num)
-  obtain ⟨Cp, hCp0, hCp⟩ := TauCeti.exists_norm_inv_ofReal_add_le hp
+  obtain ⟨Cp, _, hCp⟩ := TauCeti.exists_norm_inv_ofReal_add_le hp
   push_cast at hCx hCy hCz
   have hcpow {w : ℂ} (hw : w ∈ slitPlane ∪ {0}) :
       ContinuousOn (fun t : ℝ => ((t : ℂ) + w) ^ (-(1 / 2) : ℂ)) (Ioi 0) := fun _ ht =>
@@ -376,7 +376,7 @@ theorem two_mul_sub_mul_carlsonRD_self_right {x y : ℂ} (hx : x ∈ slitPlane �
   have hint : IntegrableOn G' (Ioi 0) := (integrableOn_carlsonRC_integrand hx hy).sub
     ((integrableOn_carlsonRJ_integrand hx hy hy hy).const_mul (2 * (y - x)))
   have hG_lim : Tendsto G atTop (𝓝 0) := by
-    obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_inv_ofReal_add_le hy
+    obtain ⟨Cy, _, hCy⟩ := TauCeti.exists_norm_inv_ofReal_add_le hy
     have h0 : Tendsto
         (fun t : ℝ => 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * (1 + t) ^ (-(1 / 2) : ℝ))
         atTop (𝓝 0) := by

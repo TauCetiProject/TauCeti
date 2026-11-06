@@ -174,7 +174,6 @@ theorem tendsto_backgroundAmplitude_add_natDegree_mul_log {P : Polynomial ℂ} (
   simp only [Real.log_one, zero_div] at hlog
   refine hlog.congr' ?_
   filter_upwards [hz] with z hz
-  have hz' : 0 < ‖z‖ := norm_pos_iff.mpr hz
   have hsplit : (‖z‖ ^ (2 * m))⁻¹ + ‖P.eval z / z ^ m‖ ^ 2 =
       (1 + ‖P.eval z‖ ^ 2) / ‖z‖ ^ (2 * m) := by
     rw [norm_div, norm_pow, div_pow, ← pow_mul, mul_comm m 2]

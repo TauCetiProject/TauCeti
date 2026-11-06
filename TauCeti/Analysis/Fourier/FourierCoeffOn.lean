@@ -205,7 +205,6 @@ theorem fourierCoeffOn_iteratedDeriv {f : ℝ → ℂ} {k : ℕ} (hf : ContDiff 
       ((hf.continuous_iteratedDeriv (j + 1) (by exact_mod_cast hj)).intervalIntegrable _ _)
     rw [hper.iteratedDeriv j a, sub_self, mul_zero, zero_sub, ih (by omega)] at h
     have hT0 : (T : ℂ) ≠ 0 := ofReal_ne_zero.2 hT.out.ne'
-    have hc : (2 * π * I * n : ℂ) ≠ 0 := by simp [hn, Real.pi_ne_zero, I_ne_zero]
     rw [pow_succ, mul_comm _ (2 * π * I * n / T), mul_assoc, h]
     push_cast
     field_simp

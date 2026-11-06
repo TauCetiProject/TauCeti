@@ -227,7 +227,7 @@ theorem exists_isSubdivision_forall_nonneg_or_forall_nonpos [Finite ι] (hK : K.
       (hτ ▸ ⟨x, hxσ, hxτ⟩), hτ]
   -- A point of a cell lies in the intrinsic interior of a cell contained in it: the cell of its
   -- carrier simplex and of its own sign vector.
-  have hcell : ∀ ⦃x : E⦄ ⦃σ : Finset E⦄ (hσ : σ ∈ K.faces) ⦃τ : ι → SignType⦄,
+  have hcell : ∀ ⦃x : E⦄ ⦃σ : Finset E⦄ (_ : σ ∈ K.faces) ⦃τ : ι → SignType⦄,
       x ∈ convexHull ℝ (σ : Set E) → x ∈ signCell g τ →
       ∃ q : J, x ∈ intrinsicInterior ℝ (P q) ∧
         P q ⊆ convexHull ℝ (σ : Set E) ∩ signCell g τ := by

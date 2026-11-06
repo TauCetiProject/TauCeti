@@ -204,7 +204,7 @@ theorem normalFlatMass_comp_extDerivCLM_le
     (V : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] ℝ) →L[ℝ] ℝ) :
     (V ∘L extDerivCLM).normalFlatMass ≤ V.normalFlatMass := by
   conv_rhs => rw [normalFlatMass_def]
-  refine le_iInf fun S => le_iInf fun hS => le_iInf fun hR => ?_
+  refine le_iInf fun S => le_iInf fun _ => le_iInf fun hR => ?_
   have heq : V ∘L extDerivCLM = 0 + (V - S ∘L extDerivCLM) ∘L extDerivCLM := by
     simp [sub_comp, comp_assoc, extDerivCLM_comp_extDerivCLM]
   simpa using (normalFlatMass_le_of_eq_add_comp_extDerivCLM _ isNormal_zero hR heq).trans

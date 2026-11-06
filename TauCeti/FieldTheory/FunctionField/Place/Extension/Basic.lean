@@ -1052,7 +1052,7 @@ private theorem linearIndependent_of_ord_neg_of_restrict_eq_finite {ι : Type*} 
     (fun i ↦ P₁.ord (c i)) ⟨i₁, by simpa using hi₁⟩
   simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hmS hmin
   -- The index at whose place the sum is tested: a minimizer other than `i₀` if there is one.
-  obtain ⟨j, hcj, hjmin, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
+  obtain ⟨j, hcj, _, hlt⟩ : ∃ j, c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m) ∧
       ∀ i, i ≠ j → c i ≠ 0 →
         (P j).ord (c j • z j) < (P j).ord (c i • z i) := by
     by_cases hA : ∃ j, j ≠ i₀ ∧ c j ≠ 0 ∧ P₁.ord (c j) = P₁.ord (c m)

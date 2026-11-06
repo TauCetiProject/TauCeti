@@ -50,7 +50,7 @@ theorem fourier_gaussian_of_im_pos {τ : ℂ} (hτ : 0 < τ.im) (y : V) :
   have hπ : (π : ℂ) ≠ 0 := ofReal_ne_zero.mpr pi_ne_zero
   set b : ℂ := -(π * I * τ)
   have hb : 0 < b.re := by simpa [b] using mul_pos pi_pos hτ
-  have hb0 : b ≠ 0 := fun h ↦ by simp [h] at hb
+  have _ : b ≠ 0 := fun h ↦ by simp [h] at hb
   -- `τ / i = -i τ` has positive real part, so it is off the branch cut of `cpow`.
   have harg : (τ / I).arg ≠ π := by
     rw [Ne, arg_eq_pi_iff, not_and_or, not_lt]
