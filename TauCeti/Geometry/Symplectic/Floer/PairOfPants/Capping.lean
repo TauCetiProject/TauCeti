@@ -88,9 +88,10 @@ negative planes and the output by a positive plane.
 * `TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_positivePlanePerturbation_le`: its
   integrated curvature along any map is at most a bound for `|H|`.
 * `SymplecticForm.integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball`: the
-  energy identity over the annulus whose inner boundary is the circle `s = R` of the end.
+  energy identity over the annuli `exp (-2πR) / 2 ≤ ‖w‖ ≤ ρ`, whose inner boundary is the circle
+  `s = R` of the end.
 * `abs_integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball_sub_le`: the
-  resulting energy bound, uniform in `R`.
+  resulting energy bound, uniform in `R` and `ρ`.
 * `TauCeti.Floer.plumbedPerturbation_single_zero_eq_zero`: the output-capped datum vanishes off the
   disc `‖w‖ < exp (-2π) / 2`.
 * `TauCeti.Floer.contMDiffAt_plumbedPerturbation_single_zero`: for `L > 4` the output-capped datum
@@ -652,34 +653,68 @@ private theorem contDiffAt_positivePlanePerturbation_apply (hH : Periodic H 1)
       (forall_single zero (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
       (mem_thricePuncturedSphereReal_iff.2 ⟨hz, h₁⟩) x v
 
+/-- A point of the truncation `S_R` outside the annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ ρ` lies outside
+the circle `‖w‖ = ρ`, hence in the region `‖w‖ > exp (-2π) / 2` when `ρ ≥ exp (-2π) / 2`. -/
+private theorem lt_norm_of_mem_truncation_of_notMem_annulus {R ρ : ℝ}
+    (hρ : Real.exp (-(2 * π)) / 2 ≤ ρ) {w : ℂ} (hT : w ∈ truncation R)
+    (hD : w ∉ Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) :
+    Real.exp (-(2 * π)) / 2 < ‖w‖ := by
+  rw [truncation_eq] at hT
+  have hlt : ρ < ‖w‖ := by
+    by_contra! h
+    exact hD ⟨by simpa using h, by simpa using hT.1.1⟩
+  linarith
+
+/-- For `R ≥ 0`, a point of the annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ ρ` outside the truncation `S_R`
+lies near `1` or outside the circle `‖w‖ = 2 exp (2πR)`, hence in the region
+`‖w‖ > exp (-2π) / 2`. -/
+private theorem lt_norm_of_mem_annulus_of_notMem_truncation {R ρ : ℝ} (hR : 0 ≤ R) {w : ℂ}
+    (hD : w ∈ Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))
+    (hT : w ∉ truncation R) : Real.exp (-(2 * π)) / 2 < ‖w‖ := by
+  have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
+  have he' : Real.exp (-(2 * π)) < 1 := Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos])
+  have h1 : 1 ≤ Real.exp (2 * π * R) := Real.one_le_exp (by nlinarith [Real.pi_pos])
+  have hD' : Real.exp (-(2 * π * R)) / 2 ≤ ‖w‖ := by simpa using hD.2
+  rw [truncation_eq] at hT
+  have hnorm : 1 - ‖w‖ ≤ ‖w - 1‖ := by simpa [norm_sub_rev] using norm_sub_norm_le (1 : ℂ) w
+  by_cases h₁ : Real.exp (-(2 * π * R)) / 2 ≤ ‖w - 1‖
+  · -- Away from `1`, the point lies outside the outer circle of the truncation.
+    have h₂ : 2 * Real.exp (2 * π * R) < ‖w‖ := by
+      by_contra! h
+      exact hT ⟨⟨hD', h₁⟩, by simpa using h⟩
+    linarith
+  · linarith
+
 /-- **The energy identity on annuli of the positive plane.** Let `K` be the positive plane
 perturbation of a period-one `C¹` Hamiltonian `H`, with components `K_s(z) = K(z)(1)` and
 `K_t(z) = K(z)(i)` in the global coordinate `z = s + i t` of `ℂ`, and let `u` be a map which is
-`C¹` on `ℂ ∖ {0}`. For `R ≥ 1`, over the annulus `A_R` given by
-`exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)`, whose inner boundary is the circle `s = R` of the input end
-at `0`, the Floer energy of `u` is its symplectic area, plus `β(R - 1)` times the integral of
-`H(t)` along the inner boundary circle, minus the integrated curvature:
+`C¹` on `ℂ ∖ {0}`. For `R ≥ 1` and `ρ ≥ exp (-2π) / 2`, over the closed annulus `A` given by
+`exp (-2πR) / 2 ≤ ‖w‖ ≤ ρ`, whose inner boundary is the circle `s = R` of the input end at `0`,
+the Floer energy of `u` is its symplectic area, plus `β(R - 1)` times the integral of `H(t)` along
+the inner boundary circle, minus the integrated curvature:
 
-`∫_{A_R} E = ∫_{A_R} u^*ω + β(R - 1) ∫₀¹ H(t, u(φ(R + i t))) dt - ∫_{A_R} R_K(u)`.
+`∫_A E = ∫_A u^*ω + β(R - 1) ∫₀¹ H(t, u(φ(R + i t))) dt - ∫_A R_K(u)`.
 
 Here `φ` is the end lift `z ↦ exp (-2πz) / 2` and `β = smoothTransition`, so `β(R - 1) = 1` for
-`R ≥ 2`. The datum vanishes near the outer boundary circle, which contributes no boundary term. -/
+`R ≥ 2`. The datum vanishes where `‖w‖ ≥ exp (-2π) / 2`, so the outer radius `ρ` only enlarges
+the region where the energy is the area, and the outer circle contributes no boundary term. -/
 theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball
     (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u {z | Complex.equivRealProdCLM.symm z ≠ 0}) {R : ℝ} (hR : 1 ≤ R) :
-    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
-        Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
+    (hu : ContDiffOn ℝ 1 u {z | Complex.equivRealProdCLM.symm z ≠ 0}) {R ρ : ℝ} (hR : 1 ≤ R)
+    (hρ : Real.exp (-(2 * π)) / 2 ≤ ρ) :
+    ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
         ω.floerEnergyDensity
           (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z =
-      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
-          Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+          (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
           ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) +
         smoothTransition (R - 1) * (∫ t in (0 : ℝ)..1,
           H t (u (Complex.equivRealProdCLM (zero.cylindricalEndLift (R + t * Complex.I))))) -
-        ∫ z in Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
-          Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
+        ∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+          (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
           ω.hamiltonianCurvature
             (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
             (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -693,63 +728,67 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
   rw [pairOfPantsPerturbation_single_zero, Fintype.sum_eq_single zero fun r hr => by
     simp [Pi.single_eq_of_ne hr]] at hT
   simp only [Pi.single_eq_same, endSign_zero, one_mul] at hT
-  set D := Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall (0 : ℂ)
-    (2 * Real.exp (2 * π * R)) \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))
+  set D := Complex.equivRealProdCLM.symm ⁻¹'
+    (Metric.closedBall (0 : ℂ) ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
-  -- The annulus is the truncation of the pair of pants together with a small disc about `1`,
-  -- which lies outside the support disc of the perturbation.
-  have hDT {z : ℝ × ℝ} (hz : z ∈ D \ T) :
-      Real.exp (-(2 * π)) / 2 < ‖Complex.equivRealProdCLM.symm z‖ := by
-    have h₁ := closedBall_sdiff_ball_sdiff_truncation_subset_ball R hz
-    rw [Metric.mem_ball, dist_eq_norm] at h₁
-    have hnorm := norm_sub_norm_le (1 : ℂ) (Complex.equivRealProdCLM.symm z)
-    rw [norm_one, norm_sub_rev] at hnorm
-    have he : Real.exp (-(2 * π * R)) ≤ 1 := Real.exp_le_one_iff.2 (by nlinarith [Real.pi_pos])
-    have he' : Real.exp (-(2 * π)) ≤ 1 := Real.exp_le_one_iff.2 (by linarith [Real.pi_pos])
-    linarith
-  -- The perturbation is `C¹` on `ℂ ∖ {0}`, which contains the compact annulus.
+  have hP : IsOpen P := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
+  have hTc : IsCompact T := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    (isCompact_truncation R)
+  have hDc : IsCompact D := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
+  have hTD : MeasurableSet (T ∩ D) := hTc.isClosed.measurableSet.inter hDc.isClosed.measurableSet
+  -- The perturbation is `C¹` on `ℂ ∖ {0}`, which contains the truncation and the annulus.
   have hK (v : ℂ) : ContDiffOn ℝ 1
       (uncurry fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v)
       (P ×ˢ univ) := fun p hp =>
     (contDiffAt_positivePlanePerturbation_apply hH hHs hp.1 p.2 v).contDiffWithinAt
-  have hK₀ (v : ℂ) (z : ℝ × ℝ) (hz : z ∈ D \ T) :
+  -- The perturbation vanishes near every point outside the support disc.
+  have hK₀ (v : ℂ) {z : ℝ × ℝ}
+      (hz : Real.exp (-(2 * π)) / 2 < ‖Complex.equivRealProdCLM.symm z‖) :
       (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) =ᶠ[𝓝 z] 0 :=
     (Complex.equivRealProdCLM.symm.continuous.continuousAt.eventually
-      (eventually_positivePlanePerturbation_eq_zero (H := H) (hDT hz))).mono
+      (eventually_positivePlanePerturbation_eq_zero (H := H) hz)).mono
       fun _ h ↦ funext fun _ ↦ by simp [h]
-  have h := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D) (T := T)
-    (isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const) hu (hK 1)
-    (hK Complex.I) (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      ((isCompact_closedBall _ _).diff Metric.isOpen_ball))
-    (fun z hz h₀ => hz.2 (by rw [h₀]; exact Metric.mem_ball_self (by positivity)))
-    (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-      (isCompact_truncation R)).isClosed.measurableSet
-    (preimage_mono (truncation_subset_closedBall_sdiff_ball R)) (hK₀ 1) (hK₀ Complex.I)
-  beta_reduce at h
+  -- The truncation and the annulus differ only outside the support disc.
+  have hT₀ {z : ℝ × ℝ} (hz : z ∈ T \ (T ∩ D)) :
+      Real.exp (-(2 * π)) / 2 < ‖Complex.equivRealProdCLM.symm z‖ :=
+    lt_norm_of_mem_truncation_of_notMem_annulus hρ hz.1 fun h => hz.2 ⟨hz.1, h⟩
+  have hD₀ {z : ℝ × ℝ} (hz : z ∈ D \ (T ∩ D)) :
+      Real.exp (-(2 * π)) / 2 < ‖Complex.equivRealProdCLM.symm z‖ :=
+    lt_norm_of_mem_annulus_of_notMem_truncation (by linarith) hz.1 fun h => hz.2 ⟨h, hz.1⟩
+  have h₁ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := T) (T := T ∩ D)
+    hP hu (hK 1) (hK Complex.I) hTc (fun _ hz => (mem_truncation.1 hz).1) hTD inter_subset_left
+    (fun _ hz => hK₀ 1 (hT₀ hz)) (fun _ hz => hK₀ Complex.I (hT₀ hz))
+  have h₂ := ω.integral_floerEnergyDensity_sub_add_eq_of_eventuallyEq_zero (D := D) (T := T ∩ D)
+    hP hu (hK 1) (hK Complex.I) hDc
+    (fun z hz h₀ => hz.2 (by rw [h₀]; exact Metric.mem_ball_self (by positivity))) hTD
+    inter_subset_right (fun _ hz => hK₀ 1 (hD₀ hz)) (fun _ hz => hK₀ Complex.I (hD₀ hz))
+  beta_reduce at h₁ h₂
   linarith
 
 /-- **The energy bound on annuli of the positive plane.** If `|H| ≤ B`, then for every `R ≥ 1`
-the Floer energy over the annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` differs from the
-symplectic area plus the Hamiltonian boundary term by at most `B`, uniformly in `R`. -/
+and `ρ ≥ exp (-2π) / 2` the Floer energy over the annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ ρ` differs from
+the symplectic area plus the Hamiltonian boundary term by at most `B`, uniformly in `R` and `ρ`. -/
 theorem abs_integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball_sub_le
     (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {B : ℝ}
     (hB : ∀ t x, |H t x| ≤ B) {u : ℝ × ℝ → V}
-    (hu : ContDiffOn ℝ 1 u {z | Complex.equivRealProdCLM.symm z ≠ 0}) {R : ℝ} (hR : 1 ≤ R) :
-    |(∫ z in Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
-        Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
+    (hu : ContDiffOn ℝ 1 u {z | Complex.equivRealProdCLM.symm z ≠ 0}) {R ρ : ℝ} (hR : 1 ≤ R)
+    (hρ : Real.exp (-(2 * π)) / 2 ≤ ρ) :
+    |(∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+        (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
         ω.floerEnergyDensity
           (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           u z) -
-      (∫ z in Complex.equivRealProdCLM.symm ⁻¹' (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
-          Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
+      (∫ z in Complex.equivRealProdCLM.symm ⁻¹'
+          (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)),
           ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) -
         smoothTransition (R - 1) * (∫ t in (0 : ℝ)..1,
           H t (u (Complex.equivRealProdCLM (zero.cylindricalEndLift (R + t * Complex.I)))))| ≤
       B := by
   have hsub (a b c : ℝ) : a + b - c - a - b = -c := by ring
-  rw [integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball ω hH hHs hu hR,
-    hsub, abs_neg]
+  rw [integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_ball ω hH hHs hu hR
+    hρ, hsub, abs_neg]
   have hB₀ : 0 ≤ B := (abs_nonneg _).trans (hB 0 0)
   rw [← ENNReal.ofReal_le_ofReal_iff hB₀, ← Real.enorm_eq_ofReal_abs]
   exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
