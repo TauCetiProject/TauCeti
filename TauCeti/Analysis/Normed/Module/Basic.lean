@@ -34,6 +34,18 @@ instance RingHomIsometric.intCastRingHom {R : Type*} [SeminormedRing R]
 
 namespace TauCeti
 
+/-- Every point of the segment from `b` to `b + d` has norm at least `‖b‖ / 2` when
+`2 ‖d‖ ≤ ‖b‖`. -/
+theorem half_norm_le_norm_add_smul {E : Type*} [SeminormedAddCommGroup E] [NormedSpace ℝ E]
+    {b d : E} (hd : 2 * ‖d‖ ≤ ‖b‖) {t : ℝ}
+    (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖b‖ / 2 ≤ ‖b + t • d‖ := by
+  have htd : ‖t • d‖ ≤ ‖d‖ := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
+    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+  have := norm_sub_norm_le b (-(t • d))
+  rw [sub_neg_eq_add, norm_neg] at this
+  linarith
+
 /-- If scalar coefficients `a i` satisfy `‖a i‖ * r i ≤ b` against positive weights `r i`, then
 `‖∑ i ∈ s, a i • u i‖ ≤ (∑ i ∈ s, ‖u i‖ / r i) * b`. -/
 theorem norm_sum_smul_le_sum_div_mul {ι A E : Type*} [SeminormedAddGroup A]

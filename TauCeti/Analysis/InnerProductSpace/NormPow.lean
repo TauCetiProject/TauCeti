@@ -10,6 +10,7 @@ public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
 import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import TauCeti.Analysis.Normed.Module.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
@@ -323,17 +324,6 @@ private theorem exists_hasDerivAt_norm_rpow_hessian_line (p : ℝ) (b d v w : E)
     _ = _ := by
       rw [h6, h4]
       ring
-
-/-- Every point of the segment from `b` to `b + d` has norm at least `‖b‖ / 2` when
-`2 ‖d‖ ≤ ‖b‖`. -/
-theorem half_norm_le_norm_add_smul {b d : E} (hd : 2 * ‖d‖ ≤ ‖b‖) {t : ℝ}
-    (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖b‖ / 2 ≤ ‖b + t • d‖ := by
-  have htd : ‖t • d‖ ≤ ‖d‖ := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
-    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
-  have := norm_sub_norm_le b (-(t • d))
-  rw [sub_neg_eq_add, norm_neg] at this
-  linarith
 
 /-- For `p ≤ 3`, `‖z‖ ^ (p - 3)` is at most `2 ^ (3 - p) ‖b‖ ^ (p - 3)` along the segment from `b`
 to `b + d` when `2 ‖d‖ ≤ ‖b‖`. -/
