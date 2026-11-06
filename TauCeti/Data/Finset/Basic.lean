@@ -430,6 +430,29 @@ theorem exists_perm_eqOn_le_apply (I J : Finset ℕ) (hIJ : Disjoint I J) (n : �
     simp only [g, hjI, ite_false] at this
     rw [this]; omega
 
+/-- For finite index sets `tA ⊆ S ×ˢ S` and `tB ⊆ S' ×ˢ S'` with `S`, `S'` disjoint, and every
+cutoff `n`, some permutation of `ℕ` fixes every index of `tA` and moves both coordinates of every
+index of `tB` to at least `n`. -/
+theorem exists_perm_prod_fix_and_le {S S' : Set ℕ} (hd : Disjoint S S')
+    {tA tB : Finset (ℕ × ℕ)} (htA : ↑tA ⊆ S ×ˢ S) (htB : ↑tB ⊆ S' ×ˢ S') (n : ℕ) :
+    ∃ ρ : Equiv.Perm ℕ, (∀ p ∈ tA, (ρ p.1, ρ p.2) = p) ∧ ∀ p ∈ tB, n ≤ ρ p.1 ∧ n ≤ ρ p.2 := by
+  classical
+  have hmem : ∀ {t : Finset (ℕ × ℕ)} {T : Set ℕ}, ↑t ⊆ T ×ˢ T →
+      ∀ i ∈ t.image Prod.fst ∪ t.image Prod.snd, i ∈ T := by
+    intro t T ht i hi
+    simp only [Finset.mem_union, Finset.mem_image] at hi
+    rcases hi with ⟨p, hp, rfl⟩ | ⟨p, hp, rfl⟩
+    · exact (ht (Finset.mem_coe.2 hp)).1
+    · exact (ht (Finset.mem_coe.2 hp)).2
+  obtain ⟨ρ, hρI, hρJ⟩ := (tA.image Prod.fst ∪ tA.image Prod.snd).exists_perm_eqOn_le_apply
+    (tB.image Prod.fst ∪ tB.image Prod.snd) (Finset.disjoint_left.2 fun i hi hj ↦
+      Set.disjoint_left.mp hd (hmem htA i hi) (hmem htB i hj)) n
+  refine ⟨ρ, fun p hp ↦ ?_, fun p hp ↦ ⟨?_, ?_⟩⟩
+  · rw [hρI _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp)),
+      hρI _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))]
+  · exact hρJ _ (Finset.mem_union_left _ (Finset.mem_image_of_mem _ hp))
+  · exact hρJ _ (Finset.mem_union_right _ (Finset.mem_image_of_mem _ hp))
+
 open Classical in
 /-- A double sum over a chain `a ≤ b ≤ c`, summed first over `b` and then over `c`, can instead
 be summed first over `c` and then over the interval of possible `b`. -/
