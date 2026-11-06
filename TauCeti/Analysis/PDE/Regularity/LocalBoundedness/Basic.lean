@@ -151,24 +151,16 @@ private theorem value_restrictL_ae_ball_half_and_setIntegral_comp_eq
   exact ⟨ae_restrict_of_ae_restrict_of_subset hhalf hw,
     integral_congr_ae (hw.mono fun _ hx => congrArg f hx)⟩
 
-/-- **Chebyshev's inequality for truncations.** For `k < l`, the level set `{l < g}` in a set `s`
-of finite measure has measure at most `∫_s ((g - k)⁺)² / (l - k)²`. -/
-private theorem measureReal_inter_lt_le_setIntegral_max_sub_sq_div {X : Type*} [MeasurableSpace X]
-    {ν : Measure X} {g : X → ℝ} {s : Set X} (hs : MeasurableSet s) (hsfin : ν s ≠ (∞ : ℝ≥0∞))
-    {k l : ℝ} (hkl : k < l) (hint : IntegrableOn (fun x => max (g x - k) 0 ^ 2) s ν) :
-    ν.real (s ∩ {x | l < g x}) ≤ (∫ x in s, max (g x - k) 0 ^ 2 ∂ν) / (l - k) ^ 2 := by
-  have hlk : 0 < (l - k) ^ 2 := by nlinarith
-  rw [le_div_iff₀ hlk, mul_comm]
-  refine le_trans ?_ (mul_meas_ge_le_integral_of_nonneg
-    (Eventually.of_forall fun x => by positivity) hint ((l - k) ^ 2))
-  rw [measureReal_restrict_apply' hs]
-  refine mul_le_mul_of_nonneg_left (measureReal_mono (fun x hx => ?_)
-    (ne_top_of_le_ne_top hsfin (measure_mono inter_subset_right))) hlk.le
-  obtain ⟨hxs, hx⟩ := hx
-  refine ⟨?_, hxs⟩
-  simp only [mem_ofPred_eq] at hx ⊢
-  rw [max_eq_left (by linarith)]
-  exact pow_le_pow_left₀ (by linarith) (by linarith) 2
+/-- The truncation `(u - l)⁺`, as an element of `W^{1,2}(Ω)`, has pointwise square at most
+`((u - k)⁺)²` almost everywhere on `Ω` when `k ≤ l`. -/
+private theorem value_posPartAboveOfMemLp_sq_le_ae {u : W1p mu Omega 2} {k l : ℝ} (hkl : k ≤ l)
+    (hwl : MemLp (fun x => max (W1p.value u x - l) 0) 2 (mu.restrict Omega)) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      W1p.value (W1p.posPartAboveOfMemLp (by norm_num) l u hwl) x ^ 2 ≤
+        max (W1p.value u x - k) 0 ^ 2 := by
+  filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) l u hwl] with x hx
+  rw [hx]
+  exact pow_le_pow_left₀ (le_max_right _ _) (max_le_max (sub_le_sub_left hkl _) le_rfl) 2
 
 /-- The cutoff step of De Giorgi's energy recursion. If `w = (u - l)⁺` satisfies the Caccioppoli
 inequality with `I = ∫_{Ω ∩ supp ψ} ((u - k)⁺)²`, then `z = ψ w ∈ W^{1,2}_0(Ω)` has
@@ -216,11 +208,7 @@ private theorem exists_mem_w1p0Submodule_norm_gradient_sq_le_of_caccioppoli
   -- `∇ψ` vanishes off the support of `ψ`, where `(u - l)⁺ ≤ (u - k)⁺`.
   have hJ : J ≤ G ^ 2 * I := by
     have hbound := W1p.setIntegral_norm_gradient_sq_mul_value_sq_le w hψ hG hT
-      (by simp [T]) hwLp.integrable_sq (by
-        filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) l u hwl] with x hx
-        rw [hx]
-        exact pow_le_pow_left₀ (le_max_right _ _)
-          (max_le_max (sub_le_sub_left hkl.le _) le_rfl) 2)
+      (by simp [T]) hwLp.integrable_sq (value_posPartAboveOfMemLp_sq_le_ae hkl.le hwl)
     simpa only [J, I] using hbound
   refine ⟨z, W1p.contDiffSMul_mem_w1p0Submodule_of_hasCompactSupport (by norm_num) hψ hM hψM'
     hgradM' hcpt hts w, ?_, hzw.mono fun x hx => by rw [hx]; ring, ?_⟩
@@ -292,7 +280,7 @@ theorem setIntegral_sq_mul_max_sub_sq_le_of_caccioppoli {q : ℝ≥0∞} (hq : 2
   -- Chebyshev: on `{u > l}`, the lower truncation `(u - k)⁺` is at least `l - k`.
   have hcheb : mu.real ((Omega : Set (EuclideanSpace ℝ ι)) ∩ A') ≤ I / (l - k) ^ 2 := by
     rw [← inter_assoc]
-    exact measureReal_inter_lt_le_setIntegral_max_sub_sq_div (hmeasO.inter hT)
+    exact MeasureTheory.measureReal_inter_lt_le_setIntegral_max_sub_sq_div (hmeasO.inter hT)
       (ne_top_of_le_ne_top hTfin (measure_mono inter_subset_right)) hkl
       (IntegrableOn.mono_set hwLp.integrable_sq inter_subset_left)
   rw [integral_congr_ae (hz2.mono fun x hx => hx.symm)]
@@ -367,7 +355,8 @@ theorem CaccioppoliAbove.mono {u : W1p mu Omega 2} {k k' A A' B B' : ℝ}
 
 /-- The radii `r₀ = R/2 + R/2^{j+1}`, `r₁ = R/2 + R/2^{j+2}` and `ρ = (r₀ + r₁)/2` of one step of
 De Giorgi's iteration on balls are ordered `0 < r₁ < ρ < r₀ ≤ R`, with gap `ρ - r₁ = R/2^{j+3}`. -/
-private theorem ball_radii {R r₀ r₁ ρ : ℝ} (hR : 0 < R) {j : ℕ} (h₀ : r₀ = R / 2 + R / 2 ^ (j + 1))
+private theorem sub_eq_div_two_pow_and_pos_and_lt_and_lt_and_le {R r₀ r₁ ρ : ℝ} (hR : 0 < R) {j : ℕ}
+    (h₀ : r₀ = R / 2 + R / 2 ^ (j + 1))
     (h₁ : r₁ = R / 2 + R / 2 ^ (j + 2)) (hρ : ρ = (r₀ + r₁) / 2) :
     ρ - r₁ = R / 2 ^ (j + 3) ∧ 0 < r₁ ∧ r₁ < ρ ∧ ρ < r₀ ∧ r₀ ≤ R := by
   have hρr₁ : ρ - r₁ = R / 2 ^ (j + 3) := by
@@ -388,7 +377,8 @@ private theorem ball_radii {R r₀ r₁ ρ : ℝ} (hR : 0 < R) {j : ℕ} (h₀ :
 
 /-- The levels `k = k₀ + (K - K/2^j)` and `l = k₀ + (K - K/2^{j+1})` of one step of De Giorgi's
 iteration satisfy `k₀ ≤ k < l`, with gap `l - k = K/2^{j+1}`. -/
-private theorem level_gap {k₀ K k l : ℝ} (hK : 0 < K) {j : ℕ} (hk : k = k₀ + (K - K / 2 ^ j))
+private theorem sub_eq_div_two_pow_and_le_and_lt {k₀ K k l : ℝ} (hK : 0 < K) {j : ℕ}
+    (hk : k = k₀ + (K - K / 2 ^ j))
     (hl : l = k₀ + (K - K / 2 ^ (j + 1))) : l - k = K / 2 ^ (j + 1) ∧ k₀ ≤ k ∧ k < l := by
   have hlk : l - k = K / 2 ^ (j + 1) := by
     simp only [hl, hk, pow_succ]
@@ -401,7 +391,8 @@ private theorem level_gap {k₀ K k l : ℝ} (hK : 0 < K) {j : ℕ} (hk : k = k�
 
 /-- The cutoff and zeroth-order coefficients of one step of De Giorgi's iteration are at most a
 multiple of `4ʲ R⁻²`, since the cutoff has gradient at most `c / (R / 2^{j+3})`. -/
-private theorem cutoff_coeff_le {A B c R : ℝ} (hB : 0 ≤ B) (hR : 0 < R) (j : ℕ) :
+private theorem one_add_mul_div_div_two_pow_sq_add_le {A B c R : ℝ} (hB : 0 ≤ B) (hR : 0 < R)
+    (j : ℕ) :
     (1 + A) * (c / (R / 2 ^ (j + 3))) ^ 2 + B ≤
       (64 * c ^ 2 * (1 + A) + B * R ^ 2) * 4 ^ j * (R ^ 2)⁻¹ := by
   have h64 : ((2 : ℝ) ^ (j + 3)) ^ 2 = 64 * 4 ^ j := by
@@ -419,8 +410,10 @@ private theorem cutoff_coeff_le {A B c R : ℝ} (hB : 0 ≤ B) (hR : 0 < R) (j :
   linarith
 
 /-- The algebra closing one step of De Giorgi's iteration: with `Y` in place of the integral over
-the larger ball, `(Y / (K / 2^{j+1})²)^α = Y^α 4^α (4^α)^j (K²)^{-α}`. -/
-private theorem recursion_constant_eq {M S R Y K α : ℝ} {j : ℕ} (hY : 0 ≤ Y) (hK : 0 < K)
+the larger ball,
+`2 (M 4ʲ R⁻²) S² Y (Y / (K / 2^{j+1})²)^α = (2 M S² 4^α R⁻² (K²)^{-α}) (4 · 4^α)ʲ Y^{1+α}`. -/
+private theorem mul_mul_div_div_two_pow_sq_rpow_eq {M S R Y K α : ℝ} {j : ℕ} (hY : 0 ≤ Y)
+    (hK : 0 < K)
     (hα : 0 ≤ α) :
     2 * (M * 4 ^ j * (R ^ 2)⁻¹) * S ^ 2 * Y * (Y / (K / 2 ^ (j + 1)) ^ 2) ^ α =
       (2 * M * S ^ 2 * 4 ^ α * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) * (4 * 4 ^ α) ^ j * Y ^ (1 + α) := by
@@ -455,10 +448,7 @@ private theorem setIntegral_sq_mul_posPart_sq_le {u : W1p mu Omega 2} {k l : ℝ
   W1p.setIntegral_sq_mul_value_sq_le _ hψc.aestronglyMeasurable (fun x => by
     obtain ⟨h0, h1⟩ := hψ01 (mem_range_self x)
     exact pow_le_one₀ h0 h1) (isClosed_tsupport ψ).measurableSet subset_rfl
-    hwk.integrable_sq (by
-      filter_upwards [W1p.value_posPartAboveOfMemLp_ae (by norm_num) l u hwl] with x hx
-      rw [hx]
-      exact pow_le_pow_left₀ (le_max_right _ _) (max_le_max (sub_le_sub_left hkl _) le_rfl) 2)
+    hwk.integrable_sq (value_posPartAboveOfMemLp_sq_le_ae hkl hwl)
 
 /-- One step of De Giorgi's iteration on balls. Suppose that the truncations `(u - l)⁺` at every
 level `l ≥ k₀` satisfy the Caccioppoli inequality with constants `A, B ≥ 0` against every cutoff.
@@ -493,8 +483,9 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
   set ρ := (r₀ + r₁) / 2
   set k := k₀ + (K - K / 2 ^ j)
   set l := k₀ + (K - K / 2 ^ (j + 1))
-  obtain ⟨hρr₁, hr₁, hr₁ρ, hρr₀, hr₀R⟩ := ball_radii hR (j := j) rfl rfl rfl
-  obtain ⟨hlk, hk0, hkl⟩ := level_gap hK (j := j) rfl rfl
+  obtain ⟨hρr₁, hr₁, hr₁ρ, hρr₀, hr₀R⟩ :=
+    sub_eq_div_two_pow_and_pos_and_lt_and_lt_and_le hR (j := j) rfl rfl rfl
+  obtain ⟨hlk, hk0, hkl⟩ := sub_eq_div_two_pow_and_le_and_lt hK (j := j) rfl rfl
   obtain ⟨ψ, hψ, hψ01, hψ1, hψts, hψG⟩ := hc x₀ hr₁ hr₁ρ
   have hts : tsupport ψ ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     hψts.trans ((Metric.closedBall_subset_ball hρr₀).trans
@@ -532,10 +523,10 @@ private theorem setIntegral_ball_max_sub_sq_succ_le {q : ℝ≥0∞} (hq : 2 ≤
       (Eventually.of_forall fun x => hnn k x)
       ((inter_subset_right.trans (hψts.trans (Metric.closedBall_subset_ball hρr₀))).eventuallyLE)
   -- The cutoff and zeroth-order terms are both at most a multiple of `4ʲ R⁻²`.
-  have hG := cutoff_coeff_le (A := A) (c := c) hB hR j
+  have hG := one_add_mul_div_div_two_pow_sq_add_le (A := A) (c := c) hB hR j
   refine hlhs.trans (hstep.trans ?_)
   rw [hρr₁, hlk]
-  refine le_trans ?_ (recursion_constant_eq hY hK hα0).le
+  refine le_trans ?_ (mul_mul_div_div_two_pow_sq_rpow_eq hY hK hα0).le
   rw [← hα]
   gcongr
 
@@ -611,32 +602,13 @@ private theorem ae_value_le_of_setIntegral_le {q : ℝ≥0∞} (hq : 2 ≤ q) {S
           (Eventually.of_forall (hnn _)) hsub.eventuallyLE
   have hZ0 : ∫ x in Metric.ball x₀ (R / 2), max (W1p.value u x - (k₀ + K)) 0 ^ 2 ∂mu = 0 :=
     le_antisymm (ge_of_tendsto' hlim hZ) (integral_nonneg (hnn _))
-  rw [setIntegral_eq_zero_iff_of_nonneg_ae (Eventually.of_forall (hnn _))
-    ((hint _ (by linarith)).mono_set hhalf)] at hZ0
-  filter_upwards [hZ0] with x hx
-  have hmax : max (W1p.value u x - (k₀ + K)) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
-  linarith [le_max_left (W1p.value u x - (k₀ + K)) 0]
-
-/-- If the truncation `(u - k)⁺` has zero energy on `B(x₀, R) ⊆ Ω`, then `u ≤ k` almost everywhere
-on the half ball `B(x₀, R/2)`. -/
-private theorem ae_value_le_of_setIntegral_max_sub_sq_eq_zero {u : W1p mu Omega 2} {k : ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {R : ℝ}
-    (hwLp : MemLp (fun x => max (W1p.value u x - k) 0) 2 (mu.restrict Omega)) (hR : 0 < R)
-    (hball : Metric.ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι)))
-    (hzero : ∫ x in Metric.ball x₀ R, max (W1p.value u x - k) 0 ^ 2 ∂mu = 0) :
-    ∀ᵐ x ∂mu.restrict (Metric.ball x₀ (R / 2)), W1p.value u x ≤ k := by
-  have hint : IntegrableOn (fun x => max (W1p.value u x - k) 0 ^ 2) (Metric.ball x₀ R) mu :=
-    IntegrableOn.mono_set hwLp.integrable_sq hball
-  have hae := (setIntegral_eq_zero_iff_of_nonneg_ae
-    (Eventually.of_forall fun x => by positivity) hint).1 hzero
-  refine ae_restrict_of_ae_restrict_of_subset (Metric.ball_subset_ball (half_le_self hR.le)) ?_
-  filter_upwards [hae] with x hx
-  have hmax : max (W1p.value u x - k) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
-  linarith [le_max_left (W1p.value u x - k) 0]
+  exact MeasureTheory.ae_le_of_setIntegral_max_sub_sq_eq_zero
+    ((hint _ (by linarith)).mono_set hhalf) hZ0
 
 /-- Enlarging the recursion constant `2 (64 C² (1 + A) + B R²) S²` to `2 (64 C²) (1 + A + B R²) S²`
 is harmless when `C ≥ 1`. -/
-private theorem le_recursion_constant {C A B R S : ℝ} (hC : 1 ≤ C) (hB : 0 ≤ B) :
+private theorem mul_add_mul_sq_le_mul_add_mul_sq_of_one_le {C A B R S : ℝ} (hC : 1 ≤ C) (hB : 0 ≤ B)
+    :
     2 * (64 * C ^ 2 * (1 + A) + B * R ^ 2) * S ^ 2 ≤
       2 * (64 * C ^ 2) * (1 + A + B * R ^ 2) * S ^ 2 := by
   have hc64 : 0 ≤ 64 * C ^ 2 - 1 := by nlinarith
@@ -644,7 +616,8 @@ private theorem le_recursion_constant {C A B R S : ℝ} (hC : 1 ≤ C) (hB : 0 �
 
 /-- The level gap `K = √(F^{1/α} b^{1/α²}) M^{1/(2α)} S^{1/α} R^{-1/α} √Y₀` makes `Y₀` exactly the
 threshold `(E₁ R⁻² (K²)^{-α})^{-1/α} b^{-1/α²}` of fast geometric convergence, `E₁ = F M S²`. -/
-private theorem threshold_eq {α F b M S R Y₀ K E₁ : ℝ} (hα0 : 0 < α) (hF : 0 < F) (hb0 : 0 < b)
+private theorem eq_mul_inv_mul_sq_rpow_neg_rpow_mul_rpow {α F b M S R Y₀ K E₁ : ℝ} (hα0 : 0 < α)
+    (hF : 0 < F) (hb0 : 0 < b)
     (hM : 0 < M) (hS0 : 0 < S) (hR : 0 < R) (hY₀ : 0 ≤ Y₀) (hE₁ : E₁ = F * M * S ^ 2)
     (hK : K = √(F ^ α⁻¹ * b ^ (α ^ 2)⁻¹) * M ^ (2 * α)⁻¹ * S ^ α⁻¹ * R ^ (-α⁻¹) * √Y₀)
     (hK0 : 0 < K) :
@@ -729,7 +702,7 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   -- The enlarged recursion constant `E`, and `E 4^α = F M S²`.
   set E : ℝ := 2 * (64 * (c + 1) ^ 2) * M * (S : ℝ) ^ 2
   have hE : 2 * (64 * (c + 1) ^ 2 * (1 + A) + B * R ^ 2) * (S : ℝ) ^ 2 ≤ E :=
-    le_recursion_constant hc'0 hB
+    mul_add_mul_sq_le_mul_add_mul_sq_of_one_le hc'0 hB
   set E₁ : ℝ := E * 4 ^ α
   have hE₁ : E₁ = F * M * (S : ℝ) ^ 2 := by
     simp only [E₁, E, F]
@@ -739,8 +712,10 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
   have hY₀ : 0 ≤ Y₀ := integral_nonneg fun x => by positivity
   rcases hY₀.eq_or_lt with hzero | hpos
   · -- Zero energy: `(u - k)⁺` vanishes almost everywhere on the ball.
-    refine (ae_value_le_of_setIntegral_max_sub_sq_eq_zero hwLp hR hball hzero.symm).mono
-      fun x hx => ?_
+    refine (ae_restrict_of_ae_restrict_of_subset
+      (Metric.ball_subset_ball (half_le_self hR.le))
+      (MeasureTheory.ae_le_of_setIntegral_max_sub_sq_eq_zero
+        (IntegrableOn.mono_set hwLp.integrable_sq hball) hzero.symm)).mono fun x hx => ?_
     rw [← hzero, Real.sqrt_zero, mul_zero, add_zero]
     exact hx
   · set K := √(F ^ α⁻¹ * b ^ (α ^ 2)⁻¹) * M ^ (2 * α)⁻¹ * (S : ℝ) ^ α⁻¹ * R ^ (-α⁻¹) * √Y₀
@@ -750,11 +725,12 @@ private theorem exists_ae_value_le_add_mul_rpow_mul_rpow_mul_rpow_mul_sqrt_setIn
     -- `K` was chosen to make `Y₀` exactly the threshold. The `change` only folds the recursion
     -- constant back into the abbreviations `E₁` and `b`, which `set` does not do for new goals.
     change Y₀ = (E₁ * (R ^ 2)⁻¹ * (K ^ 2) ^ (-α)) ^ (-α⁻¹) * b ^ (-(α ^ 2)⁻¹)
-    exact threshold_eq hα0 hF (by positivity) hM hS0' hR hY₀ hE₁ rfl hK
+    exact eq_mul_inv_mul_sq_rpow_neg_rpow_mul_rpow hα0 hF (by positivity) hM hS0' hR hY₀ hE₁ rfl hK
 
-/-- `D₀ M ^ (1/(4δ)) S ^ (1/(2δ)) R ^ (-1/(2δ)) = D Mⁿ R ^ (-n/2)` for `δ = 1/(4n)` and
-`S = K R ^ (1 - n δ)`, since `1/(4δ) = n` and `(1 - n δ - 1) / (2δ) = -n/2`. -/
-private theorem rpow_exponent_arithmetic {n : ℕ} (hn : (0 : ℝ) < n) {δ : ℝ}
+/-- For `δ = 1/(4n)` and `S = K R ^ (1 - n δ)`,
+`D₀ M ^ (1/(4δ)) S ^ (1/(2δ)) R ^ (-1/(2δ)) = D₀ K ^ (1/(2δ)) Mⁿ R ^ (-n/2)`. -/
+private theorem mul_rpow_mul_rpow_mul_rpow_neg_eq_mul_rpow_mul_pow_mul_rpow {n : ℕ}
+    (hn : (0 : ℝ) < n) {δ : ℝ}
     (hδ : δ = (4 * (n : ℝ))⁻¹) {K R S : ℝ} {D₀ M : ℝ} (hK : 0 < K) (hR : 0 < R)
     (hS : S = K * R ^ (1 - n * δ)) :
     D₀ * M ^ (2 * (2 * δ))⁻¹ * S ^ (2 * δ)⁻¹ * R ^ (-(2 * δ)⁻¹) =
@@ -833,7 +809,7 @@ private theorem exists_ae_value_le_add_mul_pow_mul_rpow_mul_sqrt_setIntegral_of_
   have hbound := hmain (k := k) (NNReal.coe_pos.1 (by rw [hS]; positivity)) hA hB hsob hcacc
     ((Lp.memLp _).sub (memLp_const k)).pos_part hR hΩ.symm.subset
   rw [hα] at hbound
-  rwa [rpow_exponent_arithmetic hn0 rfl hK hR hS] at hbound
+  rwa [mul_rpow_mul_rpow_mul_rpow_neg_eq_mul_rpow_mul_pow_mul_rpow hn0 rfl hK hR hS] at hbound
 
 /-- **Local boundedness from the Caccioppoli inequality (De Giorgi).** In every dimension
 `n ≥ 1` there is `D > 0`, depending on the dimension and the normalization of the additive Haar
@@ -1160,30 +1136,6 @@ private theorem toReal_eLpNormEssSup_le_and_ae_le {w : EuclideanSpace ℝ ι →
   calc w x = ‖w x‖ₑ.toReal := by rw [toReal_enorm, Real.norm_of_nonneg (hw0 x)]
     _ ≤ _ := ENNReal.toReal_mono (ne_top_of_le_ne_top ENNReal.ofReal_ne_top h1) hx
 
-/-- **Interpolation of `L²` between `L^∞` and `Lᵖ`.** If `0 ≤ w ≤ F` almost everywhere on
-`B(x₀, ρ)` and `p ≤ 2`, then `∫_{B(x₀, ρ)} w² ≤ F^{2-p} ∫_{B(x₀, R)} wᵖ` for `ρ ≤ R`. -/
-private theorem setIntegral_ball_sq_le_rpow_mul_setIntegral_rpow {w : EuclideanSpace ℝ ι → ℝ}
-    {x₀ : EuclideanSpace ℝ ι} {R ρ F p : ℝ} (hF : 0 ≤ F) (hρR : ρ ≤ R) (hp2 : p ≤ 2)
-    (hw0 : ∀ x, 0 ≤ w x) (hintp : IntegrableOn (fun x => w x ^ p) (Metric.ball x₀ R) mu)
-    (hwF : ∀ᵐ x ∂mu.restrict (Metric.ball x₀ ρ), w x ≤ F) :
-    ∫ x in Metric.ball x₀ ρ, w x ^ 2 ∂mu ≤ F ^ (2 - p) * ∫ x in Metric.ball x₀ R, w x ^ p ∂mu := by
-  calc ∫ x in Metric.ball x₀ ρ, w x ^ 2 ∂mu
-      ≤ ∫ x in Metric.ball x₀ ρ, F ^ (2 - p) * w x ^ p ∂mu := by
-        refine integral_mono_of_nonneg (Eventually.of_forall fun x => sq_nonneg (w x))
-          ((hintp.mono_set (Metric.ball_subset_ball hρR)).const_mul _) ?_
-        filter_upwards [hwF] with x hx
-        have h2p : w x ^ 2 = w x ^ (2 - p) * w x ^ p := by
-          rw [← Real.rpow_add' (hw0 x) (by simp), sub_add_cancel, Real.rpow_two]
-        rw [h2p]
-        exact mul_le_mul_of_nonneg_right
-          (Real.rpow_le_rpow (hw0 x) hx (by linarith : (0 : ℝ) ≤ 2 - p))
-          (Real.rpow_nonneg (hw0 x) p)
-    _ = F ^ (2 - p) * ∫ x in Metric.ball x₀ ρ, w x ^ p ∂mu := integral_const_mul _ _
-    _ ≤ F ^ (2 - p) * ∫ x in Metric.ball x₀ R, w x ^ p ∂mu := by
-        exact mul_le_mul_of_nonneg_left (setIntegral_mono_set hintp
-          (Eventually.of_forall fun x => Real.rpow_nonneg (hw0 x) p)
-          (Metric.ball_subset_ball hρR).eventuallyLE) (Real.rpow_nonneg hF _)
-
 /-- **The absorption step.** In the setting of `ae_le_mul_sub_rpow_mul_sqrt_setIntegral`, let
 `F r` be the essential supremum of `w ≥ 0` on `B(x₀, r)` and `J = ∫_{B(x₀, R)} wᵖ` with
 `0 < p ≤ 2`. Interpolating `‖w‖²_{L²} ≤ F^{2-p} J` and splitting the product with the weighted
@@ -1212,7 +1164,8 @@ private theorem toReal_eLpNormEssSup_le_half_add {w : EuclideanSpace ℝ ι → 
     (toReal_eLpNormEssSup_le_and_ae_le hD hw0 hint H hρR le_rfl).2
   -- Interpolation: `∫_{B(x₀, ρ)} w² ≤ F^{2-p} J`.
   have hI : ∫ x in Metric.ball x₀ ρ, w x ^ 2 ∂mu ≤ F ^ (2 - p) * J :=
-    setIntegral_ball_sq_le_rpow_mul_setIntegral_rpow hF hρR.le hp2 hw0 hintp hwF
+    MeasureTheory.setIntegral_sq_le_rpow_mul_setIntegral_rpow hF (Metric.ball_subset_ball hρR.le)
+      hp2 hw0 hintp hwF
   have hsqrt : √(F ^ (2 - p) * J) = F ^ (1 - p / 2) * √J := by
     rw [Real.sqrt_mul (Real.rpow_nonneg hF _), Real.sqrt_eq_rpow (F ^ (2 - p)),
       ← Real.rpow_mul hF]

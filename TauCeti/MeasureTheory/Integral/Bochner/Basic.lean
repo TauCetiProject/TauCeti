@@ -61,6 +61,12 @@ for set and probability integrals.
   pair of sets `s ⊆ S` to any `f` close to `K` in square mean on `S`.
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
   integral, in squared form.
+* `measureReal_inter_lt_le_setIntegral_max_sub_sq_div` is Chebyshev's inequality for truncations:
+  the level set `{l < g}` in `s` has measure at most `∫_s ((g - k)⁺)² / (l - k)²`.
+* `ae_le_of_setIntegral_max_sub_sq_eq_zero` gives `g ≤ k` almost everywhere on `s` when the
+  squared truncation `((g - k)⁺)²` has zero integral over `s`.
+* `setIntegral_sq_le_rpow_mul_setIntegral_rpow` interpolates `L²` between `L^∞` and `Lᵖ`:
+  `∫_s w² ≤ F^{2-p} ∫_t wᵖ` for `0 ≤ w ≤ F` almost everywhere on `s ⊆ t`.
 * `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
   integral over a larger set, for a weight in `[0, 1]` almost everywhere on the larger set and
   equal to one on the smaller set.
@@ -530,6 +536,60 @@ theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Typ
   refine measure_mono_null (fun w hw ↦ ?_) (ae_iff.1 hae)
   have hw' : p.eval w ≠ 0 := fun h0 ↦ hw (by simp [mem_roots hp, h0])
   simpa using hw'
+
+/-- **Chebyshev's inequality for truncations.** For `k < l`, the level set `{l < g}` in a set `s`
+of finite measure has measure at most `∫_s ((g - k)⁺)² / (l - k)²`. -/
+theorem measureReal_inter_lt_le_setIntegral_max_sub_sq_div {X : Type*} [MeasurableSpace X]
+    {ν : Measure X} {g : X → ℝ} {s : Set X} (hs : MeasurableSet s) (hsfin : ν s ≠ (∞ : ℝ≥0∞))
+    {k l : ℝ} (hkl : k < l) (hint : IntegrableOn (fun x => max (g x - k) 0 ^ 2) s ν) :
+    ν.real (s ∩ {x | l < g x}) ≤ (∫ x in s, max (g x - k) 0 ^ 2 ∂ν) / (l - k) ^ 2 := by
+  have hlk : 0 < (l - k) ^ 2 := by nlinarith
+  rw [le_div_iff₀ hlk, mul_comm]
+  refine le_trans ?_ (mul_meas_ge_le_integral_of_nonneg
+    (Eventually.of_forall fun x => by positivity) hint ((l - k) ^ 2))
+  rw [measureReal_restrict_apply' hs]
+  refine mul_le_mul_of_nonneg_left (measureReal_mono (fun x hx => ?_)
+    (ne_top_of_le_ne_top hsfin (measure_mono Set.inter_subset_right))) hlk.le
+  obtain ⟨hxs, hx⟩ := hx
+  refine ⟨?_, hxs⟩
+  simp only [Set.mem_ofPred_eq] at hx ⊢
+  rw [max_eq_left (by linarith)]
+  exact pow_le_pow_left₀ (by linarith) (by linarith) 2
+
+/-- If the squared truncation `((g - k)⁺)²` is integrable on `s` with integral zero, then `g ≤ k`
+almost everywhere on `s`. -/
+theorem ae_le_of_setIntegral_max_sub_sq_eq_zero {X : Type*} [MeasurableSpace X] {ν : Measure X}
+    {g : X → ℝ} {s : Set X} {k : ℝ} (hint : IntegrableOn (fun x => max (g x - k) 0 ^ 2) s ν)
+    (hzero : ∫ x in s, max (g x - k) 0 ^ 2 ∂ν = 0) : ∀ᵐ x ∂ν.restrict s, g x ≤ k := by
+  have hae := (setIntegral_eq_zero_iff_of_nonneg_ae
+    (Eventually.of_forall fun x => by positivity) hint).1 hzero
+  filter_upwards [hae] with x hx
+  have hmax : max (g x - k) 0 = 0 := pow_eq_zero_iff two_ne_zero |>.1 hx
+  linarith [le_max_left (g x - k) 0]
+
+/-- **Interpolation of `L²` between `L^∞` and `Lᵖ`.** If `w ≥ 0` everywhere, `w ≤ F` almost
+everywhere on `s`, `s ⊆ t` and `p ≤ 2`, then `∫_s w² ≤ F^{2-p} ∫_t wᵖ`. -/
+theorem setIntegral_sq_le_rpow_mul_setIntegral_rpow {X : Type*} [MeasurableSpace X]
+    {ν : Measure X} {w : X → ℝ} {s t : Set X} {F p : ℝ} (hF : 0 ≤ F) (hst : s ⊆ t)
+    (hp2 : p ≤ 2) (hw0 : ∀ x, 0 ≤ w x) (hintp : IntegrableOn (fun x => w x ^ p) t ν)
+    (hwF : ∀ᵐ x ∂ν.restrict s, w x ≤ F) :
+    ∫ x in s, w x ^ 2 ∂ν ≤ F ^ (2 - p) * ∫ x in t, w x ^ p ∂ν := by
+  calc ∫ x in s, w x ^ 2 ∂ν
+      ≤ ∫ x in s, F ^ (2 - p) * w x ^ p ∂ν := by
+        refine integral_mono_of_nonneg (Eventually.of_forall fun x => sq_nonneg (w x))
+          ((hintp.mono_set hst).const_mul _) ?_
+        filter_upwards [hwF] with x hx
+        have h2p : w x ^ 2 = w x ^ (2 - p) * w x ^ p := by
+          rw [← Real.rpow_add' (hw0 x) (by simp), sub_add_cancel, Real.rpow_two]
+        rw [h2p]
+        exact mul_le_mul_of_nonneg_right
+          (Real.rpow_le_rpow (hw0 x) hx (by linarith : (0 : ℝ) ≤ 2 - p))
+          (Real.rpow_nonneg (hw0 x) p)
+    _ = F ^ (2 - p) * ∫ x in s, w x ^ p ∂ν := integral_const_mul _ _
+    _ ≤ F ^ (2 - p) * ∫ x in t, w x ^ p ∂ν := by
+        exact mul_le_mul_of_nonneg_left (setIntegral_mono_set hintp
+          (Eventually.of_forall fun x => Real.rpow_nonneg (hw0 x) p) hst.eventuallyLE)
+          (Real.rpow_nonneg hF _)
 
 end MeasureTheory
 
