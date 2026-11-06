@@ -58,7 +58,8 @@ that enlarging the stabilization changes the identification of determinant lines
   sequence `0 → U → V → W → 0`, with its value `TauCeti.coe_detLineShortExactEquiv_tmul`.
 * `TauCeti.detLineFourTermEquiv`: the isomorphism `det B ⊗ (det C)^* ≃ det A ⊗ (det D)^*` of a
   four-term exact sequence `0 → A → B → C → D → 0`.
-* `TauCeti.detLineFourTermEquiv_tmul`: its value on exterior products.
+* `TauCeti.detLineFourTermEquiv_tmul`: its value on exterior products, which determine it by
+  `TauCeti.rid_lTensor_eval_injective`.
 * `TauCeti.detLineShortExactCancelEquiv`: the isomorphism `det V ⊗ (det V')^* ≃ det U ⊗ (det U')^*`
   of two short exact sequences with the same quotient, with its value
   `TauCeti.detLineShortExactCancelEquiv_tmul`.
@@ -223,6 +224,20 @@ theorem detLineFourTermEquiv_tmul (u : Fin (finrank K A) → A)
     TensorProduct.rid_tmul, Dual.eval_apply, Module.Invertible.leftCancelDualEquiv_tmul_apply,
     LinearEquiv.apply_symm_apply, LinearEquiv.dualMap_apply, hγ']
 
+/-- Pairing the dual factor with a nonzero element `ω` of a line `L` is injective on `M ⊗ L^*`.
+With `TauCeti.detLineFourTermEquiv_tmul`, taking `L = det D` and `ω` the exterior product of the
+images of a basis of `D`, this determines `TauCeti.detLineFourTermEquiv` by its values on
+exterior products. -/
+theorem rid_lTensor_eval_injective {M L : Type*} [AddCommGroup M] [Module K M] [AddCommGroup L]
+    [Module K L] (hL : finrank K L = 1) {ω : L} (hω : ω ≠ 0) :
+    Function.Injective fun y : M ⊗[K] Dual K L ↦
+      TensorProduct.rid K M ((Dual.eval K L ω).lTensor M y) := by
+  refine (TensorProduct.rid K M).injective.comp
+    (Module.Flat.lTensor_preserves_injective_linearMap _ fun ψ₁ ψ₂ hψ ↦ LinearMap.ext fun y ↦ ?_)
+  obtain ⟨a, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' _ hω).1 hL y
+  simp only [Dual.eval_apply] at hψ
+  rw [map_smul, map_smul, hψ]
+
 section ChangeOfMiddle
 
 /-! ### Enlarging the middle of a four-term exact sequence -/
@@ -235,13 +250,6 @@ variable {B' C' W : Type*} [AddCommGroup B'] [Module K B'] [AddCommGroup C'] [Mo
   (hj : Function.Injective j) (hjπ : Function.Exact j (π ∘ₗ g'))
   (hπg : Function.Surjective (π ∘ₗ g')) (hι : Function.Injective ι)
   (hιπ : Function.Exact ι π) (hπ : Function.Surjective π)
-
-/-- Exterior products are unchanged by reindexing along `Fin.cast`. -/
-private theorem ιMulti_comp_cast {M : Type*} [AddCommGroup M] [Module K M] {a b : ℕ}
-    (e : a = b) (x : Fin b → M) :
-    ExteriorAlgebra.ιMulti K a (x ∘ Fin.cast e) = ExteriorAlgebra.ιMulti K b x := by
-  subst e
-  rfl
 
 include hf hfg hgh hh hf' hfg' hgh' hh' hj hjπ hπg hι hιπ hπ in
 /-- `TauCeti.detLineFourTermEquiv_detLineShortExactCancelEquiv` on exterior products. Let `z` be
@@ -264,20 +272,12 @@ private theorem detLineFourTermEquiv_detLineShortExactCancelEquiv_ιMulti
           exteriorPower.ιMulti K _ ((π ∘ₗ g') ∘ w)) ⊗ₜ φ) := by
   have : FiniteDimensional K D := Module.Finite.of_surjective h hh
   have : FiniteDimensional K B' := finiteDimensional_of_exact hjπ
-  -- Vectors `z` of `C` lifting a basis of `D`. Pairing with the exterior product of that basis
-  -- detects elements of `det A ⊗ (det D)^*`.
+  -- Vectors `z` of `C` lifting a basis of `D`, whose images span the line `det D`.
   choose z hz using fun i ↦ hh (Module.finBasis K D i)
   have hω : exteriorPower.ιMulti K _ (h ∘ z) ≠ 0 := by
     rw [show h ∘ z = ⇑(Module.finBasis K D) from funext hz]
     exact (exteriorPower.ιMulti_ne_zero_iff _).2 (Module.finBasis K D).linearIndependent
-  have hχ : Function.Injective fun y : detLine K A ⊗[K] Dual K (detLine K D) ↦
-      TensorProduct.rid K _ ((Dual.eval K _ (exteriorPower.ιMulti K _ (h ∘ z))).lTensor _ y) := by
-    refine (TensorProduct.rid K _).injective.comp
-      (Module.Flat.lTensor_preserves_injective_linearMap _ fun ψ₁ ψ₂ hψ ↦ LinearMap.ext fun y ↦ ?_)
-    obtain ⟨a, rfl⟩ := (finrank_eq_one_iff_of_ne_zero' _ hω).1 (finrank_detLine K _) y
-    simp only [Dual.eval_apply] at hψ
-    rw [map_smul, map_smul, hψ]
-  refine hχ ?_
+  refine rid_lTensor_eval_injective (finrank_detLine K D) hω ?_
   dsimp only
   -- The exterior products entering the two four-term isomorphisms.
   have hβ : (detLineShortExactEquiv hf hfg.rangeRestrict g.surjective_rangeRestrict
@@ -293,25 +293,16 @@ private theorem detLineFourTermEquiv_detLineShortExactCancelEquiv_ιMulti
     have e₂ := hfg'.rangeRestrict.finrank_eq_add hf' g'.surjective_rangeRestrict
     have e₃ := hjπ.finrank_eq_add hj hπg
     omega
-  have hgjv : ⇑g' ∘ (⇑j ∘ v) = ⇑ι ∘ (⇑g ∘ v) := by
-    rw [← Function.comp_assoc, ← LinearMap.coe_comp, hgj, LinearMap.coe_comp, Function.comp_assoc]
+  have hjfu : ⇑j ∘ (⇑f ∘ u) = ⇑f' ∘ u := funext fun i ↦ LinearMap.congr_fun hjf (u i)
+  have hgjv : ⇑g' ∘ (⇑j ∘ v) = ⇑ι ∘ (⇑g ∘ v) := funext fun i ↦ LinearMap.congr_fun hgj (v i)
+  have hz' : ⇑h' ∘ (⇑ι ∘ z) = ⇑h ∘ z := funext fun i ↦ LinearMap.congr_fun hhι (z i)
   have hβ' : (detLineShortExactEquiv hj hjπ hπg
       (detLineShortExactEquiv hf hfg.rangeRestrict g.surjective_rangeRestrict
         (exteriorPower.ιMulti K _ u ⊗ₜ exteriorPower.ιMulti K _ (g.rangeRestrict ∘ v)) ⊗ₜ
         exteriorPower.ιMulti K _ ((π ∘ₗ g') ∘ w)) : ExteriorAlgebra K B') =
       ExteriorAlgebra.ιMulti K _ (Fin.append (f' ∘ u) (Fin.append (j ∘ v) w ∘ Fin.cast hr)) := by
-    rw [coe_detLineShortExactEquiv_tmul_eq_map_mul, hβ, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
-      map_mul, ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.map_apply_ιMulti,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti (f' ∘ u), ιMulti_comp_cast,
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, mul_assoc, ← Function.comp_assoc, ← LinearMap.coe_comp,
-      hjf]
-  -- Moving the `dim W` directions `g' ∘ w` past the `dim D` directions `ι ∘ z`.
-  have hswap : ExteriorAlgebra.ιMulti K _ (g' ∘ w) * ExteriorAlgebra.ιMulti K _ (ι ∘ z) =
-      (-1 : K) ^ (finrank K D * finrank K W) •
-        (ExteriorAlgebra.ιMulti K _ (ι ∘ z) * ExteriorAlgebra.ιMulti K _ (g' ∘ w)) := by
-    rw [ExteriorAlgebra.ιMulti_mul_ιMulti_anticomm, Units.smul_def, ← Int.cast_smul_eq_zsmul K]
-    push_cast
-    rfl
+    simp only [coe_detLineShortExactEquiv_tmul_eq_map_mul, hβ, ← ExteriorAlgebra.ιMulti_mul_ιMulti,
+      map_mul, ExteriorAlgebra.map_apply_ιMulti, ExteriorAlgebra.ιMulti_comp_cast, hjfu, mul_assoc]
   have hγ' : ((((-1 : K) ^ (finrank K D * finrank K W)) •
       detLineShortExactEquiv hι hιπ hπ
         (detLineShortExactEquiv (LinearMap.range g).injective_subtype hgh.range_subtype hh
@@ -319,15 +310,12 @@ private theorem detLineFourTermEquiv_detLineShortExactCancelEquiv_ιMulti
           exteriorPower.ιMulti K _ (π ∘ (g' ∘ w))) : detLine K C') : ExteriorAlgebra K C') =
       ExteriorAlgebra.ιMulti K _ (Fin.append (g' ∘ (Fin.append (j ∘ v) w ∘ Fin.cast hr))
         (ι ∘ z)) := by
-    rw [Submodule.coe_smul, coe_detLineShortExactEquiv_tmul_eq_map_mul, hγ,
+    rw [← Function.comp_assoc (⇑g')]
+    simp only [Submodule.coe_smul, coe_detLineShortExactEquiv_tmul_eq_map_mul, hγ,
       ← ExteriorAlgebra.ιMulti_mul_ιMulti, map_mul, ExteriorAlgebra.map_apply_ιMulti,
-      ExteriorAlgebra.map_apply_ιMulti, ← ExteriorAlgebra.ιMulti_mul_ιMulti (g' ∘ _),
-      ← Function.comp_assoc (⇑g'), ιMulti_comp_cast,
-      ← ExteriorAlgebra.map_apply_ιMulti g' (Fin.append (j ∘ v) w),
-      ← ExteriorAlgebra.ιMulti_mul_ιMulti, map_mul, ExteriorAlgebra.map_apply_ιMulti,
-      ExteriorAlgebra.map_apply_ιMulti, hgjv, mul_assoc, mul_assoc, hswap, mul_smul_comm]
-  have hz' : ⇑h' ∘ (⇑ι ∘ z) = ⇑h ∘ z := by
-    rw [← Function.comp_assoc, ← LinearMap.coe_comp, hhι]
+      ExteriorAlgebra.ιMulti_comp_cast, ExteriorAlgebra.ιMulti_comp_append, hgjv, mul_assoc]
+    -- Move the `dim W` directions `g' ∘ w` past the `dim D` directions `ι ∘ z`.
+    rw [ExteriorAlgebra.ιMulti_mul_ιMulti_eq_neg_one_pow_smul (⇑g' ∘ w) (⇑ι ∘ z), mul_smul_comm]
   have hA := detLineFourTermEquiv_tmul hf' hfg' hgh' hh' u
     (Fin.append (j ∘ v) w ∘ Fin.cast hr) (ι ∘ z) hβ' hγ' φ
   rw [hz'] at hA
