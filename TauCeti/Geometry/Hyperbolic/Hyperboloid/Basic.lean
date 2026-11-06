@@ -10,7 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 public import TauCeti.AlgebraicTopology.Singular.Straightening
 
 /-!
-# Straight simplices in the hyperboloid model of hyperbolic space
+# The hyperboloid model and straight simplices
 
 Equip `ℝ × E`, for a real normed space `E`, with the Minkowski square norm
 `TauCeti.minkowskiNormSq (t, x) = t² - ‖x‖²`. The upper sheet of the unit hyperboloid,
@@ -21,6 +21,11 @@ When `E` is an inner product space of dimension `n`, the hyperboloid with the me
 the Minkowski form is hyperbolic `n`-space, its geodesics are its intersections with planes
 through the origin, and its isometries are the linear maps of `ℝ × E` preserving the Minkowski
 form and the future cone.
+
+Spatial projection is a global homeomorphism from this hyperboloid to `E`, with inverse
+`x ↦ (√(1 + ‖x‖²), x)` (`Hyperboloid.parametrization`). These coordinates use the existing
+subspace topology and allow the Lorentz-orthogonal tangent hyperplanes to be identified with
+the model space when constructing the hyperboloid metric.
 
 This presents the hyperboloid as a retract of a convex set
 (`TauCeti.hyperboloidConvexRetract`), so `TauCeti.ConvexRetract.straighten` straightens its
@@ -103,6 +108,49 @@ lemma hyperboloid_subset_futureCone : hyperboloid E ⊆ futureCone E := by
   rintro v ⟨hv, hq⟩
   rw [minkowskiNormSq_def] at hq
   exact (pow_lt_pow_iff_left₀ (norm_nonneg _) hv.le two_ne_zero).1 (by linarith)
+
+namespace Hyperboloid
+
+/-- The time coordinate of a point of the upper hyperboloid is positive. -/
+theorem time_pos (p : hyperboloid E) : 0 < (p : ℝ × E).1 :=
+  (mem_hyperboloid.mp p.property).1
+
+/-- The hyperboloid equation expressed as a square of the time coordinate. -/
+theorem time_sq (p : hyperboloid E) : (p : ℝ × E).1 ^ 2 = 1 + ‖(p : ℝ × E).2‖ ^ 2 := by
+  have h := (mem_hyperboloid.mp p.property).2
+  rw [minkowskiNormSq_def] at h
+  linarith
+
+private theorem graph_mem (x : E) : (Real.sqrt (1 + ‖x‖ ^ 2), x) ∈ hyperboloid E := by
+  rw [mem_hyperboloid, minkowskiNormSq_def]
+  exact ⟨Real.sqrt_pos.mpr (by positivity), by rw [Real.sq_sqrt (by positivity)]; ring⟩
+
+/-- The global graph parametrization `x ↦ (√(1 + ‖x‖²), x)` of the upper hyperboloid,
+with inverse spatial projection. -/
+def parametrization : E ≃ₜ hyperboloid E where
+  toFun x := ⟨(Real.sqrt (1 + ‖x‖ ^ 2), x), graph_mem x⟩
+  invFun p := (p : ℝ × E).2
+  left_inv _ := rfl
+  right_inv p := by
+    apply Subtype.ext
+    apply Prod.ext
+    · dsimp only
+      rw [← time_sq p, Real.sqrt_sq (time_pos p).le]
+    · rfl
+  continuous_toFun :=
+    ((Real.continuous_sqrt.comp (continuous_const.add (continuous_norm.pow 2))).prodMk
+      continuous_id).subtype_mk _
+  continuous_invFun := continuous_snd.comp continuous_subtype_val
+
+/-- The ambient formula for the global parametrization. -/
+@[simp] theorem coe_parametrization (x : E) :
+    (parametrization x : ℝ × E) = (Real.sqrt (1 + ‖x‖ ^ 2), x) := (rfl)
+
+/-- The inverse global parametrization is spatial projection. -/
+@[simp] theorem parametrization_symm_apply (p : hyperboloid E) :
+    parametrization.symm p = (p : ℝ × E).2 := (rfl)
+
+end Hyperboloid
 
 variable [NormedSpace ℝ E]
 
