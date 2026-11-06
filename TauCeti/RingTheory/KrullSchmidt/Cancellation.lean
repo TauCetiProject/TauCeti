@@ -57,17 +57,14 @@ variable {M : Type v} [AddCommMonoid M] [Module A M]
 variable {N : Type w} [AddCommMonoid N] [Module A N]
 variable {P : Type x} [AddCommGroup P] [Module A P]
 
-/-- **Cancellation of a summand with local endomorphism ring.** If `End_A(P)` is local, a linear
-equivalence `M × P ≃ N × P` induces a linear equivalence `M ≃ N`.
-
-Only `P` needs additive inverses; `M` and `N` may be semimodules over a semiring. No finiteness
-assumption is needed. The local endomorphism hypothesis already implies that `P`
-is indecomposable; this is the one-summand cancellation step iterated in Krull--Schmidt--Azumaya
-cancellation. -/
-theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
-    [IsLocalRing (Module.End A P)]
-    (h : Nonempty ((M × P) ≃ₗ[A] (N × P))) : Nonempty (M ≃ₗ[A] N) := by
-  let e := h.some
+/-- **Block Gaussian elimination for a summand with local endomorphism ring.** If `End_A(P)` is
+local and `e : M × P ≃ N × P`, then some linear equivalence `M × P ≃ N × P` has an invertible
+lower-right block `P → P`. -/
+theorem exists_linearEquiv_isUnit_snd_comp_inr_of_isLocalRing_end [IsLocalRing (Module.End A P)]
+    (e : (M × P) ≃ₗ[A] (N × P)) :
+    ∃ e₁ : (M × P) ≃ₗ[A] (N × P), IsUnit
+      ((LinearMap.snd A N P).comp
+        ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))) := by
   let b : P →ₗ[A] N := (LinearMap.fst A N P).comp
     ((e : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))
   let d : Module.End A P := (LinearMap.snd A N P).comp
@@ -108,15 +105,19 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
     simpa [add_assoc] using hcb
   -- In the second case, adding `c'` of the upper row to the lower row makes the lower-right block
   -- `d + c' b` invertible.
-  obtain ⟨e₁, he₁⟩ : ∃ e₁ : (M × P) ≃ₗ[A] (N × P), IsUnit
-      ((LinearMap.snd A N P).comp
-        ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P))) := by
-    rcases hright with hd | hd
-    · exact ⟨e, hd⟩
-    · refine ⟨e.trans ((LinearEquiv.refl A N).skewProd (LinearEquiv.refl A P) c'), ?_⟩
-      convert hd using 1
-      ext p
-      simp [b, d, LinearMap.add_apply]
+  rcases hright with hd | hd
+  · exact ⟨e, hd⟩
+  · refine ⟨e.trans ((LinearEquiv.refl A N).skewProd (LinearEquiv.refl A P) c'), ?_⟩
+    convert hd using 1
+    ext p
+    simp [b, d, LinearMap.add_apply]
+
+/-- **Cancellation from an invertible lower-right block.** A linear equivalence `M × P ≃ N × P`
+whose lower-right block `P → P` is invertible induces a linear equivalence `M ≃ N`. -/
+theorem nonempty_linearEquiv_of_isUnit_snd_comp_inr (e₁ : (M × P) ≃ₗ[A] (N × P))
+    (he₁ : IsUnit ((LinearMap.snd A N P).comp
+      ((e₁ : (M × P) →ₗ[A] (N × P)).comp (LinearMap.inr A M P)))) :
+    Nonempty (M ≃ₗ[A] N) := by
   -- Clear the lower-left block. The resulting triangular equivalence restricts to an
   -- equivalence on pairs with second coordinate zero, so no subtraction in `M` or `N` is needed.
   let c₁ : M →ₗ[A] P := (LinearMap.snd A N P).comp
@@ -155,6 +156,19 @@ theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
     subst p
     exact ⟨m, congrArg Prod.fst hmp⟩
   exact ⟨LinearEquiv.ofBijective s ⟨hs_injective, hs_surjective⟩⟩
+
+/-- **Cancellation of a summand with local endomorphism ring.** If `End_A(P)` is local, a linear
+equivalence `M × P ≃ N × P` induces a linear equivalence `M ≃ N`.
+
+Only `P` needs additive inverses; `M` and `N` may be semimodules over a semiring. No finiteness
+assumption is needed. The local endomorphism hypothesis already implies that `P`
+is indecomposable; this is the one-summand cancellation step iterated in Krull--Schmidt--Azumaya
+cancellation. -/
+theorem nonempty_linearEquiv_of_prod_linearEquiv_of_isLocalRing_end
+    [IsLocalRing (Module.End A P)]
+    (h : Nonempty ((M × P) ≃ₗ[A] (N × P))) : Nonempty (M ≃ₗ[A] N) :=
+  have ⟨e₁, he₁⟩ := exists_linearEquiv_isUnit_snd_comp_inr_of_isLocalRing_end h.some
+  nonempty_linearEquiv_of_isUnit_snd_comp_inr e₁ he₁
 
 end Semiring
 
