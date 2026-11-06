@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.VectorBundle.Section.Gluing
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Evaluation
 public import Mathlib.Topology.ContinuousMap.LocallyConvex
 public import Mathlib.Topology.UniformSpace.CompactConvergence
 
@@ -22,7 +23,9 @@ For a cover, the coefficient map `TauCeti.Manifold.sectionFrameCoordinates` is a
 embedding into the product of weak Whitney coefficient spaces. Its image consists exactly
 of tuples satisfying the actual bundle transition law, as proved in `Section.Gluing`.
 Thus this topology retains the gluing equations when taking coefficient limits.
-Point evaluation is continuous, and the section space is Hausdorff.
+Point evaluation is continuous, and the section space is Hausdorff. When the source model is
+locally compact, evaluation is jointly continuous in the section and base point. Consequently,
+requiring a section to take values in an open subset of the total space on a compact set is open.
 
 The topology is supplied explicitly, rather than installed globally, since the frame domains
 are parameters. The results here concern a specified family of frame domains; no comparison
@@ -227,6 +230,50 @@ theorem continuous_eval_const (hcover : ∀ x, ∃ i, x ∈ U i) (x : M) :
   let _ := frameTopology (I := I) (n := n) e U hU
   obtain ⟨i, hi⟩ := hcover x
   exact continuous_eval_const_of_mem e U hU i hi
+
+section Evaluation
+
+variable [LocallyCompactSpace E]
+
+/-- Evaluation of a section is continuous jointly in the section and the base point, for a
+covering frame system and the compact derivative topology. -/
+theorem continuous_totalSpace_eval (hcover : ∀ x, ∃ i, x ∈ U i) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    Continuous (fun p : Cₛ^n⟮I; F, V⟯ × M ↦ TotalSpace.mk' F p.2 (p.1 p.2)) := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  have hlocal (i : ι) : Continuous (fun p : Cₛ^n⟮I; F, V⟯ × U i ↦
+      TotalSpace.mk' F (p.2 : M) (p.1 p.2)) := by
+    have hc : Continuous (fun p : Cₛ^n⟮I; F, V⟯ × U i ↦
+        ((e i).frameCoordinates (hU i) p.1) p.2) :=
+      ContMDiffMap.continuous_eval_manifoldWeakWhitney.comp
+        (((continuous_frameCoordinates e U hU i).comp continuous_fst).prodMk continuous_snd)
+    have ht := (e i).continuousOn_symm.comp_continuous
+      ((continuous_subtype_val.comp continuous_snd).prodMk hc)
+      (fun p ↦ ⟨hU i p.2.property, Set.mem_univ _⟩)
+    exact ht.congr fun p ↦ by
+      simp only [Function.comp_apply, Trivialization.frameCoordinates_apply,
+        Trivialization.symm_apply_apply_mk _ (hU i p.2.property)]
+  refine continuous_iff_continuousAt.mpr fun ⟨s, x⟩ ↦ ?_
+  obtain ⟨i, hi⟩ := hcover x
+  apply ((IsOpenEmbedding.id.prodMap (U i).isOpen.isOpenEmbedding_subtypeVal).continuousAt_iff
+    (g := fun p : Cₛ^n⟮I; F, V⟯ × M ↦ TotalSpace.mk' F p.2 (p.1 p.2))
+    (x := (s, ⟨x, hi⟩))).mp
+  exact (hlocal i).continuousAt
+
+/-- On a compact set of base points, requiring a section to take values in an open subset of
+the total space is open in the compact derivative topology. -/
+theorem isOpen_setOf_forall_mem (hcover : ∀ x, ∃ i, x ∈ U i)
+    {K : Set M} (hK : IsCompact K) {W : Set (TotalSpace F V)} (hW : IsOpen W) :
+    let _ := frameTopology (I := I) (n := n) e U hU
+    IsOpen {s : Cₛ^n⟮I; F, V⟯ | ∀ x ∈ K, TotalSpace.mk' F x (s x) ∈ W} := by
+  let _ := frameTopology (I := I) (n := n) e U hU
+  let f : Cₛ^n⟮I; F, V⟯ → C(M, TotalSpace F V) :=
+    fun s ↦ ⟨fun x ↦ TotalSpace.mk' F x (s x), s.contMDiff.continuous⟩
+  have hf : Continuous f := ContinuousMap.continuous_of_continuous_uncurry _
+    (continuous_totalSpace_eval e U hU hcover)
+  exact (ContinuousMap.isOpen_setOfPred_mapsTo hK hW).preimage hf
+
+end Evaluation
 
 end Coefficients
 
