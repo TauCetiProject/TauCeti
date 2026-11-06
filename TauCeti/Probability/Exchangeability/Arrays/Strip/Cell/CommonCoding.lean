@@ -197,27 +197,6 @@ theorem SeparatelyExchangeable.condIndepFun_cell_crossingStrips
   exact condIndep_of_condIndep_of_le_of_le (measurable_pi_apply (i, j)).comap_le
     (Set.measurable_restrict _).comap_le (Set.measurable_restrict _).comap_le hstep hRC hCH
 
-/-- Conditionally on its context, a visible cell forgets the rest of the crossing strips: the joint
-law of the context, the strips `H` and the cell disintegrates through the kernel of the cell given
-its context. -/
-private theorem map_cellContext_strips_cell_eq_compProd
-    (hρ : SeparatelyExchangeable ρ fun p x => x p) {e f : ℕ → ℕ}
-    (he : (Set.range e).Infinite) (hf : (Set.range f).Infinite)
-    {i j : ℕ} (hi : i ∉ Set.range e) (hj : j ∉ Set.range f) {H : Set (ℕ × ℕ)}
-    (hH : H = (Set.univ ×ˢ Set.range f) ∪ (Set.range e ×ˢ Set.univ)) :
-    ρ.map (fun x => ((cellContext e f i j x, H.domRestrict x), x (i, j))) =
-      (ρ.map fun x => (cellContext e f i j x, H.domRestrict x)) ⊗ₘ
-        (condDistrib (fun x : ℕ × ℕ → α => x (i, j)) (cellContext e f i j) ρ).prodMkRight
-          (H → α) := by
-  have hZ : Measurable (H.domRestrict (π := fun _ : ℕ × ℕ => α)) := Set.measurable_restrict H
-  subst hH
-  refine (condDistrib_ae_eq_iff_measure_eq_compProd
-    (((measurable_cellContext e f i j).prodMk hZ).aemeasurable)
-    (measurable_pi_apply (i, j)).aemeasurable _).1 ?_
-  exact (condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight (measurable_pi_apply (i, j)) hZ
-    (measurable_cellContext e f i j)).1
-    (hρ.condIndepFun_cell_crossingStrips he hf hi hj).symm
-
 /-- The crossing-strip coding of a single visible cell: feeding the cell's context and one fresh
 uniform variable to a realization of the common conditional cell kernel reproduces the joint law
 of the crossing strips and that cell. -/
@@ -240,7 +219,9 @@ private theorem map_prod_cellCoding_eq
   have hψ : Measurable fun y : H → α => (cellContextOfStrips (α := α) e f i j y, y) :=
     hΦ.prodMk measurable_id
   set κ := condDistrib (fun x : ℕ × ℕ → α => x (i, j)) (cellContext e f i j) ρ
-  have hjoint := map_cellContext_strips_cell_eq_compProd hρ he hf hi hj (H := H) rfl
+  -- Conditionally on its context, the cell forgets the rest of the crossing strips.
+  have hjoint := CondIndepFun.map_prod_eq_compProd_prodMkRight (measurable_pi_apply (i, j)) hZ
+    (measurable_cellContext e f i j) (hρ.condIndepFun_cell_crossingStrips he hf hi hj).symm
   -- One uniform variable realizes that kernel, uniformly in the context.
   have hcode : ((ρ.map fun x => (cellContext e f i j x, H.domRestrict x)).prod
       (volume : Measure I)).map (fun q => (q.1, g q.1.1 q.2)) =

@@ -672,3 +672,24 @@ theorem condIndepFun_domRestrict_of_finite_reindexing {R D U : Set ι} (hRD : R 
   exact condIndepFun_domRestrict_of_reindexing hRD r hr hfix hinto
 
 end TauCeti.Probability
+
+namespace ProbabilityTheory
+
+open MeasureTheory
+
+variable {Ω β β' γ : Type*} {mΩ : MeasurableSpace Ω} [StandardBorelSpace Ω]
+  {μ : Measure Ω} [IsFiniteMeasure μ] [MeasurableSpace β] [MeasurableSpace β'] [MeasurableSpace γ]
+  [StandardBorelSpace β] [Nonempty β] [StandardBorelSpace β'] [Nonempty β']
+  {X : Ω → β} {Z : Ω → β'} {W : Ω → γ}
+
+/-- If `X` and `Z` are conditionally independent given `W`, then the joint law of `((W, Z), X)`
+disintegrates as the law of `(W, Z)` followed by the kernel of `X` given `W`, with the extra
+coordinate `Z` ignored. -/
+theorem CondIndepFun.map_prod_eq_compProd_prodMkRight (hX : Measurable X) (hZ : Measurable Z)
+    (hW : Measurable W) (h : Z ⟂ᵢ[W, hW; μ] X) :
+    μ.map (fun ω => ((W ω, Z ω), X ω)) =
+      μ.map (fun ω => (W ω, Z ω)) ⊗ₘ (condDistrib X W μ).prodMkRight β' :=
+  (condDistrib_ae_eq_iff_measure_eq_compProd (hW.prodMk hZ).aemeasurable hX.aemeasurable _).1
+    ((condIndepFun_iff_condDistrib_prod_ae_eq_prodMkRight hX hZ hW).1 h)
+
+end ProbabilityTheory
