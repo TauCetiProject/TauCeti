@@ -668,7 +668,28 @@ theorem IsSymm.exists_orthogonal_basis_apply_zero_one_eq (hB : B.IsSymm) {x y : 
 
 end LinearMap.BilinForm
 
+namespace Submodule
+
+/-- Composing a bilinear map with an injective map of its values does not change orthogonals. -/
+theorem orthogonalBilin_compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid Q] [Module R Q] [AddCommMonoid Q'] [Module R Q']
+    {B : M →ₗ[R] M →ₗ[R] Q} {e : Q →ₗ[R] Q'} (he : Function.Injective e) (W : Submodule R M) :
+    W.orthogonalBilin (B.compr₂ e) = W.orthogonalBilin B := by
+  ext v
+  simp only [mem_orthogonalBilin, LinearMap.compr₂_apply]
+  exact forall₂_congr fun w _ ↦ by rw [← map_zero e, he.eq_iff]
+
+end Submodule
+
 namespace LinearMap
+
+/-- Composing a reflexive bilinear map with an injective map of its values keeps it reflexive. -/
+theorem IsRefl.compr₂_of_injective {R M Q Q' : Type*} [CommSemiring R]
+    [AddCommMonoid M] [Module R M] [AddCommMonoid Q] [Module R Q] [AddCommMonoid Q'] [Module R Q']
+    {B : M →ₗ[R] M →ₗ[R] Q} (hB : B.IsRefl) {e : Q →ₗ[R] Q'} (he : Function.Injective e) :
+    (B.compr₂ e).IsRefl := fun x y h ↦ by
+  rw [compr₂_apply, ← map_zero e, he.eq_iff] at h
+  rw [compr₂_apply, hB x y h, map_zero]
 
 /-- **Identifying a line with the scalars turns an injective line-valued form into a
 nondegenerate bilinear form.** If `L : V → Hom(V, Q)` is injective and `Q` is one-dimensional,
@@ -718,6 +739,20 @@ theorem mem_of_apply_eq_zero_of_two_mul_finrank_eq {K V Q : Type*} [Field K] [Ad
   rw [heq, BilinForm.mem_orthogonal_iff]
   intro b hb
   simp [B, ha b hb]
+
+/-- **Double orthogonality for a line-valued form.** If `L : V → Hom(V, Q)` is injective and
+reflexive, and `Q` is one-dimensional, then the orthogonal of the orthogonal of any subspace `W` is
+`W`. Identifying `Q` with the scalars turns `L` into a nondegenerate reflexive bilinear form. -/
+theorem IsRefl.orthogonalBilin_orthogonalBilin_of_injective {K V Q : Type*} [Field K]
+    [AddCommGroup V] [Module K V] [FiniteDimensional K V] [AddCommGroup Q] [Module K Q]
+    {L : V →ₗ[K] V →ₗ[K] Q} (hL : L.IsRefl) (hinj : Function.Injective L)
+    (hQ : Module.finrank K Q = 1) (W : Submodule K V) :
+    (W.orthogonalBilin L).orthogonalBilin L = W := by
+  obtain ⟨e, hnd⟩ := exists_nondegenerate_compr₂_of_injective hinj hQ
+  have h := BilinForm.orthogonal_orthogonal hnd (hL.compr₂_of_injective e.injective) W
+  rwa [BilinForm.orthogonal, BilinForm.orthogonal,
+    Submodule.orthogonalBilin_compr₂_of_injective e.injective,
+    Submodule.orthogonalBilin_compr₂_of_injective e.injective] at h
 
 end LinearMap
 
