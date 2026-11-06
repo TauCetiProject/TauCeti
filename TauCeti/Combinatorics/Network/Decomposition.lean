@@ -603,10 +603,10 @@ theorem pairwise_disjoint_arrows (hf : ∀ ⦃x y : V⦄ (e : Q x y), f e ≤ 1)
 
 end PathCycleDecomposition
 
-/-- An integer `s`–`t` flow between distinct vertices carrying at most one unit on every arrow
-carries as many directed `s`–`t` paths as its value, no two of which traverse a common arrow:
-every arrow of these paths carries one unit of the flow. -/
-theorem Flow.exists_paths_card_eq_val {cap : Assignment Q ℤ} {s t : V} (hst : s ≠ t)
+/-- An integer `s`–`t` flow carrying at most one unit on every arrow carries as many directed
+`s`–`t` paths as its value, no two of which traverse a common arrow: every arrow of these paths
+carries one unit of the flow. -/
+theorem Flow.exists_paths_card_eq_val {cap : Assignment Q ℤ} {s t : V}
     (f : Flow cap s t) (hf : ∀ ⦃x y : V⦄ (e : Q x y), f.toFun e ≤ 1) :
     ∃ (k : ℕ) (P : Fin k → ArrowWalk Q s t), (k : ℤ) = f.val ∧ (∀ i, (P i).IsPath) ∧
       (∀ i, ∀ a ∈ (P i).arrows, f.toFun a.2.2 = 1) ∧
