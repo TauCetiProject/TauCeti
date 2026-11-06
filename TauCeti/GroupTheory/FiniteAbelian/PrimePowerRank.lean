@@ -13,18 +13,20 @@ import Mathlib.Data.Fintype.EquivFin
 import Mathlib.LinearAlgebra.Pi
 
 /-!
-# Rank-two finite abelian groups of prime-power exponent
+# Finite abelian groups of prime-power exponent and given rank
 
-A finite abelian group killed by `p ^ k`, of order `p ^ (2 * k)`, and with exactly `p ^ 2`
-elements killed by `p` is the product of two cyclic groups of order `p ^ k`.  This is the
-rank-two prime-power case of the structure theorem for finite abelian groups.
+A finite abelian group killed by `p ^ k`, of order `p ^ (r * k)`, and with exactly `p ^ r`
+elements killed by `p` is the product of `r` cyclic groups of order `p ^ k`.  This is the
+homogeneous prime-power case of the structure theorem for finite abelian groups, and the
+rank-two case is recorded separately.
 
 The criterion is useful when the total order and the first torsion layer are easier to count than
 explicit generators.  It determines both the number of cyclic factors and their exponents.
 
 ## Main result
 
-* `TauCeti.AddCommGroup.nonempty_addEquiv_prod_zmod_primePow`: the rank-two characterisation.
+* `TauCeti.AddCommGroup.nonempty_addEquiv_pi_zmod_primePow`: the rank-`r` characterisation.
+* `TauCeti.AddCommGroup.nonempty_addEquiv_prod_zmod_primePow`: the rank-two case.
 -/
 
 public section
@@ -35,14 +37,14 @@ open scoped DirectSum
 
 variable {G : Type*} [AddCommGroup G]
 
-/-- **Rank-two prime-power characterisation.** An abelian group killed by `p ^ k`, with
-order `p ^ (2 * k)` and `p ^ 2` elements killed by `p`, is additively equivalent to
-`ZMod (p ^ k) × ZMod (p ^ k)`. -/
-theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
+/-- **Rank-`r` prime-power characterisation.** An abelian group killed by `p ^ k`, with
+order `p ^ (r * k)` and `p ^ r` elements killed by `p`, is additively equivalent to
+`Fin r → ZMod (p ^ k)`. -/
+theorem nonempty_addEquiv_pi_zmod_primePow {p k r : ℕ} (hp : p.Prime)
     (hpow : ∀ x : G, p ^ k • x = 0)
-    (hcard : Nat.card G = p ^ (2 * k))
-    (hcardp : Nat.card (AddSubgroup.torsionBy G (p : ℤ)) = p ^ 2) :
-    Nonempty (G ≃+ ZMod (p ^ k) × ZMod (p ^ k)) := by
+    (hcard : Nat.card G = p ^ (r * k))
+    (hcardp : Nat.card (AddSubgroup.torsionBy G (p : ℤ)) = p ^ r) :
+    Nonempty (G ≃+ (Fin r → ZMod (p ^ k))) := by
   classical
   have : Finite G := Nat.finite_of_card_ne_zero (hcard ▸ pow_ne_zero _ hp.ne_zero)
   obtain ⟨ι, hι, n, hn, ⟨e⟩⟩ := AddCommGroup.equiv_directSum_zmod_of_finite' G
@@ -61,7 +63,7 @@ theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
     rw [Nat.pos_iff_ne_zero]
     intro hai
     simpa [ha i, hai] using hn i
-  have hcard_prod : ∏ i, n i = p ^ (2 * k) := by
+  have hcard_prod : ∏ i, n i = p ^ (r * k) := by
     rw [← hcard, Nat.card_congr E.toEquiv, Nat.card_pi]
     simp only [Nat.card_zmod]
   -- Every nontrivial cyclic factor contributes exactly `p` points to the first torsion layer.
@@ -80,12 +82,12 @@ theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
         simpa only [Nat.card_zmod] using
           Nat.card_congr (TauCeti.zmodTorsionByEquiv p j).symm.toEquiv
       _ = p ^ Fintype.card ι := by simp
-  have hιcard : Fintype.card ι = 2 := by
-    have ht : p ^ Fintype.card ι = p ^ 2 := by
+  have hιcard : Fintype.card ι = r := by
+    have ht : p ^ Fintype.card ι = p ^ r := by
       rw [← hcard_torsion_pi, ← hcardp]
       exact Nat.card_congr (AddEquiv.torsionByCongr E (p : ℤ)).symm.toEquiv
     exact Nat.pow_right_injective hp.two_le ht
-  have hsum : ∑ i, a i = 2 * k := by
+  have hsum : ∑ i, a i = r * k := by
     apply Nat.pow_right_injective hp.two_le
     dsimp only
     rw [← Finset.prod_pow_eq_pow_sum Finset.univ a p]
@@ -96,13 +98,23 @@ theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
     have hai : a i < k := Nat.lt_of_not_ge hki
     have hlt : ∑ j, a j < ∑ _j : ι, k :=
       Finset.sum_lt_sum (fun j _ ↦ ha_le j) ⟨i, Finset.mem_univ i, hai⟩
-    simp only [Finset.sum_const, Finset.card_univ, hιcard, nsmul_eq_mul] at hlt
+    simp only [Finset.sum_const, Finset.card_univ, hιcard, nsmul_eq_mul, Nat.cast_id] at hlt
     omega
-  let r : ι ≃ Fin 2 := Fintype.equivFinOfCardEq hιcard
+  let e : ι ≃ Fin r := Fintype.equivFinOfCardEq hιcard
   refine ⟨E |>.trans (AddEquiv.piCongrRight fun i ↦
       (ZMod.ringEquivCongr (by rw [ha i, ha_eq i])).toAddEquiv) |>.trans
-      (AddEquiv.arrowCongr r (AddEquiv.refl (ZMod (p ^ k)))) |>.trans
-      (LinearEquiv.finTwoArrow ℕ (ZMod (p ^ k))).toAddEquiv⟩
+      (AddEquiv.arrowCongr e (AddEquiv.refl (ZMod (p ^ k))))⟩
+
+/-- **Rank-two prime-power characterisation.** An abelian group killed by `p ^ k`, with
+order `p ^ (2 * k)` and `p ^ 2` elements killed by `p`, is additively equivalent to
+`ZMod (p ^ k) × ZMod (p ^ k)`. -/
+theorem nonempty_addEquiv_prod_zmod_primePow {p k : ℕ} (hp : p.Prime)
+    (hpow : ∀ x : G, p ^ k • x = 0)
+    (hcard : Nat.card G = p ^ (2 * k))
+    (hcardp : Nat.card (AddSubgroup.torsionBy G (p : ℤ)) = p ^ 2) :
+    Nonempty (G ≃+ ZMod (p ^ k) × ZMod (p ^ k)) :=
+  (nonempty_addEquiv_pi_zmod_primePow hp hpow hcard hcardp).map fun e ↦
+    e.trans (LinearEquiv.finTwoArrow ℕ (ZMod (p ^ k))).toAddEquiv
 
 end TauCeti.AddCommGroup
 
