@@ -20,7 +20,7 @@ import TauCeti.Topology.Sheaves.Flasque.Basic
 # Vanishing of degree one Čech cohomology implies vanishing of sheaf cohomology
 
 Let `F` be a sheaf of abelian groups on a topological space `X` and `W` an open subset of `X`. If
-the Čech cohomology `Ȟ¹(W, F)` vanishes, in the cover-colimit sense of
+the Čech cohomology `ČH¹(W, F)` vanishes, in the cover-colimit sense of
 `TauCeti.Topology.cechCohomology` and for the restriction `V ↦ F(V)` of `F` to the subspace `W`,
 then so does the sheaf cohomology `H¹(W, F)`
 (`TauCeti.Topology.subsingleton_H'_one_of_isZero_cechCohomology`).
@@ -37,12 +37,12 @@ presheaves `0 ⟶ F ⟶ I ⟶ G ⟶ 0` and `0 ⟶ G ⟶ Q ⟶ C ⟶ 0` are exact
 their restrictions to `W` give long exact sequences of cover-colimit Čech cohomology
 (`TauCeti.CategoryTheory.cechCohomology_exact₂`, `cechCohomology_exact₃`).
 
-* From `Ȟ⁰(W, I) ⟶ Ȟ⁰(W, G) ⟶ Ȟ¹(W, F) = 0`, the first map is onto.
+* From `ČH⁰(W, I) ⟶ ČH⁰(W, G) ⟶ ČH¹(W, F) = 0`, the first map is onto.
 * Every section of `Q` lifts to `I` near each point, so every section of `C` is locally zero, and
-  `Ȟ⁰(W, C) = 0` (`TauCeti.Topology.isZero_cechCohomology_zero_obj_of_locally_eq_zero`). From
-  `Ȟ⁰(W, G) ⟶ Ȟ⁰(W, Q) ⟶ Ȟ⁰(W, C) = 0`, the first map is onto.
+  `ČH⁰(W, C) = 0` (`TauCeti.Topology.isZero_cechCohomology_zero_obj_of_locally_eq_zero`). From
+  `ČH⁰(W, G) ⟶ ČH⁰(W, Q) ⟶ ČH⁰(W, C) = 0`, the first map is onto.
 
-So `Ȟ⁰(W, I) ⟶ Ȟ⁰(W, Q)` is onto. As `I` and `Q` are sheaves, this map is `I(W) ⟶ Q(W)`
+So `ČH⁰(W, I) ⟶ ČH⁰(W, Q)` is onto. As `I` and `Q` are sheaves, this map is `I(W) ⟶ Q(W)`
 (`TauCeti.Topology.cechCohomologyZeroIso_hom_naturality`).
 
 ## Main results
@@ -148,16 +148,16 @@ private lemma surjective_app_functor_obj_top (W : Opens X)
         (cechComplexFunctor U.toFormalCoproduct.obj)).ShortExact :=
     TauCeti.CategoryTheory.shortExact_map_cechComplexFunctor _ _ fun _ _ ↦
       imageCokernelSequence_map_shortExact F _
-  -- `Ȟ⁰(W, I) ⟶ Ȟ⁰(W, G)` is onto, as `Ȟ¹(W, F) = 0`
+  -- `ČH⁰(W, I) ⟶ ČH⁰(W, G)` is onto, as `ČH¹(W, F) = 0`
   have h₁ : Epi ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (injectiveImageSequence F).g)) :=
     (ShortComplex.exact_iff_epi _ (h.eq_zero_of_tgt _)).1
       (TauCeti.CategoryTheory.cechCohomology_exact₃ _ _ hS₁ 0)
-  -- `Ȟ⁰(W, G) ⟶ Ȟ⁰(W, Q)` is onto, as `Ȟ⁰(W, C) = 0`
+  -- `ČH⁰(W, G) ⟶ ČH⁰(W, Q)` is onto, as `ČH⁰(W, C) = 0`
   have h₂ : Epi ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (imageCokernelSequence F).f)) :=
     (ShortComplex.exact_iff_epi _ ((isZero_cechCohomology_zero_obj_of_locally_eq_zero _
       (restrict_imageCokernelSequence_locally_eq_zero W)).eq_zero_of_tgt _)).1
       (TauCeti.CategoryTheory.cechCohomology_exact₂ _ _ hS₂ 0)
-  -- so `Ȟ⁰(W, I) ⟶ Ȟ⁰(W, Q)` is onto, for the restrictions of `I` and `Q` as sheaves on `W`
+  -- so `ČH⁰(W, I) ⟶ ČH⁰(W, Q)` is onto, for the restrictions of `I` and `Q` as sheaves on `W`
   have := W.isOpenEmbedding.functor_isContinuous
   let P := Φ.sheafPushforwardContinuous AddCommGrpCat.{u}
     (Opens.grothendieckTopology Y) (Opens.grothendieckTopology X)
