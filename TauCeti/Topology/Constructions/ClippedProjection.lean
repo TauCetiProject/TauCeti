@@ -21,7 +21,7 @@ already contained in or disjoint from the full projection of `s`.
 The conditions are that the projection of `s` is open and that the part of `s` lying over `Oᶜ` is
 closed and lies, locally over `X`, over compact subsets of `Y`. The projection of that part is then
 closed (`IsClosed.isClosed_image_fst_of_locally_subset_isCompact`, a form of the tube lemma), so
-the complement of the clipped projection inside `X` splits into two disjoint closed sets: the
+the complement of the clipped projection inside `X` is covered by two disjoint closed sets: the
 complement of the projection of `s` and the projection of the part over `Oᶜ`. A preconnected set
 missing the clipped projection lies in one of them. No compactness of the complement of the
 projection of `s` is needed.
@@ -40,7 +40,7 @@ the graphs can be pulled back over its open simplices.
 * `IsPreconnected.subset_or_disjoint_image_fst`: a preconnected set compatible with the clipped
   projection of `s` is compatible with the projection of `s`.
 * `IsPreconnected.subset_or_disjoint_image_fst_of_isBounded`: the same in metric spaces, for `s`
-  whose parts over bounded subsets of `X` are bounded.
+  whose parts over `Oᶜ` and over bounded subsets of `X` are bounded.
 
 ## References
 
@@ -87,7 +87,7 @@ theorem IsPreconnected.subset_or_disjoint_image_fst {C : Set X} (hC : IsPreconne
   have hsub {t : Set Y} : Prod.fst '' (s ∩ Prod.snd ⁻¹' t) ⊆ Prod.fst '' s :=
     image_mono inter_subset_left
   refine h.elim (fun h ↦ .inl (h.trans hsub)) fun h ↦ ?_
-  -- The complement of the clipped projection splits into the complement of the projection of
+  -- The complement of the clipped projection is covered by the complement of the projection of
   -- `s` and the projection `H` of the part of `s` over `Oᶜ`, which is closed.
   have hH : IsClosed (Prod.fst '' (s ∩ Prod.snd ⁻¹' Oᶜ)) :=
     hsO.isClosed_image_fst_of_locally_subset_isCompact fun x ↦
@@ -109,20 +109,20 @@ section Metric
 
 variable [PseudoMetricSpace X] [PseudoMetricSpace Y] [ProperSpace Y]
 
-/-- Let `s ⊆ X × Y` have open projection to `X`, and suppose that the part of `s` lying over each
-bounded subset of `X` is bounded. If the part of `s` lying over `Oᶜ` is closed, then a preconnected
-set which is contained in, or disjoint from, the projection of the part of `s` lying over `O` is
+/-- Let `s ⊆ X × Y` have open projection to `X`, and suppose that the part of `s` lying over `Oᶜ`
+is closed and that its part over each bounded subset of `X` is bounded. Then a preconnected set
+which is contained in, or disjoint from, the projection of the part of `s` lying over `O` is
 contained in, or disjoint from, the projection of `s`. -/
 theorem IsPreconnected.subset_or_disjoint_image_fst_of_isBounded {C : Set X}
     (hC : IsPreconnected C) {s : Set (X × Y)} {O : Set Y} (hs : IsOpen (Prod.fst '' s))
     (hsO : IsClosed (s ∩ Prod.snd ⁻¹' Oᶜ))
-    (hb : ∀ B : Set X, IsBounded B → IsBounded (s ∩ Prod.fst ⁻¹' B))
+    (hb : ∀ B : Set X, IsBounded B → IsBounded (s ∩ Prod.snd ⁻¹' Oᶜ ∩ Prod.fst ⁻¹' B))
     (h : C ⊆ Prod.fst '' (s ∩ Prod.snd ⁻¹' O) ∨ Disjoint C (Prod.fst '' (s ∩ Prod.snd ⁻¹' O))) :
     C ⊆ Prod.fst '' s ∨ Disjoint C (Prod.fst '' s) := by
   refine hC.subset_or_disjoint_image_fst hs hsO (fun x ↦ ?_) h
-  have hB : IsBounded (Prod.snd '' (s ∩ Prod.fst ⁻¹' Metric.ball x 1)) :=
+  have hB : IsBounded (Prod.snd '' (s ∩ Prod.snd ⁻¹' Oᶜ ∩ Prod.fst ⁻¹' Metric.ball x 1)) :=
     (hb _ Metric.isBounded_ball).image_snd
   exact ⟨Metric.ball x 1, Metric.ball_mem_nhds x one_pos, _, hB.isCompact_closure,
-    fun p hp hpV _ ↦ subset_closure ⟨p, ⟨hp, hpV⟩, rfl⟩⟩
+    fun p hp hpV hpO ↦ subset_closure ⟨p, ⟨⟨hp, hpO⟩, hpV⟩, rfl⟩⟩
 
 end Metric
