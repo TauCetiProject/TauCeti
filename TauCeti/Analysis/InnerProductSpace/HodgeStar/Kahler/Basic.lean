@@ -7,11 +7,10 @@ module
 
 public import TauCeti.Analysis.InnerProductSpace.ExteriorPower.Basic
 public import TauCeti.Analysis.InnerProductSpace.HodgeStar.Isometry
-public import TauCeti.Geometry.Symplectic.AlmostComplex
+public import TauCeti.Geometry.Symplectic.Complex.InnerProductSpace
 -- Private: orthonormal coordinates and the `4 × 4` determinant are used only in proofs.
 import TauCeti.Analysis.InnerProductSpace.Orthonormal.Sum
 import TauCeti.LinearAlgebra.Matrix.Determinant.FinFour
-import Mathlib.Analysis.InnerProductSpace.PiL2
 
 /-!
 # The Kähler two-vector of an orthogonal complex structure
@@ -38,7 +37,8 @@ orthogonal complement: `D_J² η = 2 ⟪ω, η⟫ ω - 4 η`. This is the comple
 self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`; this is what makes the principal symbol of
 the anti-self-dual deformation operator complex linear.
 
-Statements in dimension four take a positively oriented orthonormal basis `e` with
+The Hodge-star and self-duality results in dimension four take a positively oriented
+orthonormal basis `e` with
 `J e₀ = e₁` and `J e₂ = e₃` as a witness that the orientation is the complex one; the
 conclusions do not depend on the choice of such a frame.
 
@@ -64,6 +64,10 @@ In the namespace `TauCeti.AlmostComplexStructure`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
 
+The supporting norm-preservation and four-frame construction lemmas live in
+`TauCeti.Geometry.Symplectic.Complex.InnerProductSpace` and
+`TauCeti.Geometry.Symplectic.Complex.OrthonormalBasis`, respectively.
+
 ## References
 
 * S. K. Donaldson and P. B. Kronheimer, *The Geometry of Four-Manifolds*, Oxford (1990).
@@ -87,6 +91,11 @@ represents the two-form `ω(u, w) = ⟪J u, w⟫` (`inner_kahlerForm_ιMulti`), 
 on the basis. -/
 def kahlerForm (J : AlmostComplexStructure V) : ⋀[ℝ]^2 V :=
   (2⁻¹ : ℝ) • ∑ i, ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)]
+
+/-- The Kähler two-vector is half the sum of `bᵢ ∧ J bᵢ` in the standard orthonormal basis. -/
+theorem kahlerForm_def (J : AlmostComplexStructure V) :
+    J.kahlerForm = (2⁻¹ : ℝ) • ∑ i,
+      ιMulti ℝ 2 ![stdOrthonormalBasis ℝ V i, J (stdOrthonormalBasis ℝ V i)] := (rfl)
 
 section Orthogonal
 
@@ -118,10 +127,9 @@ theorem inner_kahlerForm_ιMulti (u w : V) :
 /-- `⟪ω, ω⟫ = dim V / 2`: in a unitary frame `ω = e₁ ∧ e₂ + e₃ ∧ e₄ + ⋯` is a sum of
 `dim V / 2` orthonormal two-vectors. -/
 theorem inner_kahlerForm_self : ⟪J.kahlerForm, J.kahlerForm⟫ = finrank ℝ V / 2 := by
-  have hn (v : V) : ‖J v‖ = ‖v‖ := by
-    rw [norm_eq_sqrt_real_inner, hJ, ← norm_eq_sqrt_real_inner]
   nth_rewrite 2 [kahlerForm]
-  simp [inner_sum, real_inner_smul_right, inner_kahlerForm_ιMulti hJ, hn, div_eq_inv_mul]
+  simp [inner_sum, real_inner_smul_right, inner_kahlerForm_ιMulti hJ, norm_apply hJ,
+    div_eq_inv_mul]
 
 /-- `‖ω‖² = dim V / 2`, the simp normal form of `inner_kahlerForm_self`. -/
 @[simp]
