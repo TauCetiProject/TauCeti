@@ -28,7 +28,7 @@ open in `X` and its inclusion is nullhomotopic, then every class of positive deg
 zero on `U`, since nullhomotopic maps vanish on positive-degree cohomology, so by the long exact
 sequence of the pair `(X, U)` it lifts to `Hᵖ(X, U; k)`
 (`TauCeti.exists_singularCohomologyπ_eq_of_nullhomotopic`). The relative cup product
-`Hᵖ(X, U; k) × H^q(X, V; k) ⟶ Hᵖ⁺ᑫ(X, U ∪ V; k)` of open sets then shows that a product of `r`
+`Hᵖ(X, U; k) × H^q(X, V; k) ⟶ H^(p+q)(X, U ∪ V; k)` of open sets then shows that a product of `r`
 positive-degree classes lifts to `H*(X, U₁ ∪ ⋯ ∪ U_r; k)` for any `r` such open sets
 (`TauCeti.IsCupProduct.exists_singularCohomologyπ_iUnion_eq`). If the `Uᵢ` cover `X`, this
 relative cohomology vanishes, so the product does: no product of `r` positive-degree classes is
