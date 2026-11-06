@@ -32,11 +32,13 @@ linear (not algebra) isomorphism `CliffordAlgebra Q ≃ₗ[R] ExteriorAlgebra R 
 quadratic form. Deforming the form therefore deforms the multiplication and nothing else, and the
 underlying module of `CliffordAlgebra Q` is as free, and as large, as the exterior algebra of `M`.
 
-This file records that. Over a commutative ring in which `2` is invertible, `CliffordAlgebra Q` is a
-free `R`-module whenever `M` is, with an explicit basis
-`CliffordAlgebra.basis Q b : Basis (Finset I) R (CliffordAlgebra Q)` attached to a basis `b`
-of `M` indexed by a linearly ordered `I`, and it is finite of rank `2 ^ finrank R M` whenever `M` is
-finite free. The `2 ^ n` is `∑ₖ (n choose k)` (`finrank_eq_sum_choose`), the count that a
+This file records that. Over every commutative ring, `CliffordAlgebra Q` is a free `R`-module
+whenever `M` is free and a finite `R`-module whenever `M` is finite (`CliffordAlgebra.instFree`,
+`CliffordAlgebra.instFinite`). Over a commutative ring in which `2` is invertible, there is
+moreover an explicit basis
+`CliffordAlgebra.basis Q b : Basis (Finset I) R (CliffordAlgebra Q)` attached to a basis `b` of `M`
+indexed by a linearly ordered `I`, and `CliffordAlgebra Q` has rank `2 ^ finrank R M` whenever `M`
+is finite free. The `2 ^ n` is `∑ₖ (n choose k)` (`finrank_eq_sum_choose`), the count that a
 degree-graded argument would produce one exterior power at a time; here it is the count of subsets
 of a basis index set instead, because the basis is transported from Mathlib's basis
 `Module.Basis.ExteriorAlgebra` of the exterior algebra, indexed by finite subsets.
@@ -122,21 +124,21 @@ section General
 variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
   (Q : QuadraticForm R M)
 
-/-- The Clifford algebra of a free module is a free module, over every commutative ring: for a
-well-ordered basis `b`, `-Q` is the quadratic form of the triangular bilinear form
-`(-Q).toBilin b`, so `changeFormEquiv` identifies it linearly with the exterior algebra, with no
-division by `2`. -/
+/-- The Clifford algebra of a free module is a free module, over every commutative ring. -/
 instance instFree [Module.Free R M] : Module.Free R (CliffordAlgebra Q) := by
   classical
+  -- For a well-ordered basis `b`, `-Q` is the quadratic form of the triangular bilinear form
+  -- `(-Q).toBilin b`, so `changeFormEquiv` identifies the algebra linearly with the exterior
+  -- algebra, with no division by `2`.
   let _ : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
   have h : ((-Q).toBilin (Module.Free.chooseBasis R M)).toQuadraticMap = 0 - Q := by
     rw [QuadraticMap.toQuadraticMap_toBilin, zero_sub]
   exact Module.Free.of_equiv (changeFormEquiv h).symm
 
-/-- The Clifford algebra of a finite module is a finite module, over every commutative ring: it is
-a quotient of the Clifford algebra of a finite free module, which is finite by the same
-`changeFormEquiv` argument as `CliffordAlgebra.instFree`. -/
+/-- The Clifford algebra of a finite module is a finite module, over every commutative ring. -/
 instance instFinite [Module.Finite R M] : Module.Finite R (CliffordAlgebra Q) := by
+  -- It is a quotient of the Clifford algebra of a finite free module, which is finite by the same
+  -- `changeFormEquiv` argument as `CliffordAlgebra.instFree`.
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
   have h : ((-(Q.comp f)).toBilin (Pi.basisFun R (Fin n))).toQuadraticMap = 0 - Q.comp f := by
     rw [QuadraticMap.toQuadraticMap_toBilin, zero_sub]
