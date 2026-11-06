@@ -281,14 +281,8 @@ tends to one at infinity. -/
 theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}
     (hs : 1 < s) {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m s)
     (hcont : Continuous x) :
-    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-  have h := (tendsto_sectionValue_mul_inv_pow hs hx hcont).norm.pow 2
-  rw [norm_one, one_pow] at h
-  refine h.congr' ?_
-  filter_upwards [eventually_ne_zero_and_rOut_le f] with z hz
-  rw [norm_mul, norm_inv, norm_pow, norm_div]
-  simp only [norm_real, norm_norm, div_self (norm_ne_zero_iff.2 hz.1), one_pow, inv_one, mul_one]
-  exact sq_norm_sectionValue x z
+    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) :=
+  tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow (tendsto_sectionValue_mul_inv_pow hs hx hcont)
 
 /-- **The modulus bound in the affine field space.** For `s > 1`, every vortex in `A_m^s` with
 differentiable connection and `C²` section satisfies `|α| ≤ 1` everywhere. -/

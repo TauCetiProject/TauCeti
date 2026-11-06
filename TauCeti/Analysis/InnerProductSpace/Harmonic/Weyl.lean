@@ -166,7 +166,7 @@ globally integrable one. -/
 private theorem integrable_laplacian_smul (hw : LocallyIntegrableOn w Ω μ) (φ : 𝓓(Ω, ℝ)) :
     Integrable (fun x ↦ Δ (φ : E → ℝ) x • w x) μ := by
   simpa only [TestFunction.laplacianCLM_apply] using
-    integrable_smul_of_locallyIntegrableOn hw (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ)
+    TestFunction.integrable_smul (LineDeriv.laplacianCLM ℝ E (𝓓(Ω, ℝ)) φ) hw
 
 /-- Replacing `w` by a function agreeing with it almost everywhere on `Ω` preserves weak
 harmonicity: only the restriction of `w` to `Ω` is seen. -/
