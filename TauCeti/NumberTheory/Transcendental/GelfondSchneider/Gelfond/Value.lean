@@ -51,6 +51,68 @@ open Finset Module NumberField
 
 namespace TauCeti
 
+/-- The factor `r r ^ ((r + 1) / 2) r ^ (r / 2) = r ^ (r + 3 / 2)` is at most `4 ^ r r ^ r`. -/
+theorem gelfond_mul_rpow_mul_rpow_le {r : ℕ} (hr : 1 ≤ r) :
+    (r : ℝ) * (r : ℝ) ^ (((r : ℝ) + 1) / 2) * (r : ℝ) ^ ((r : ℝ) / 2) ≤
+      4 ^ r * (r : ℝ) ^ r := by
+  have hr' : (1 : ℝ) ≤ r := by exact_mod_cast hr
+  have hr₀ : (0 : ℝ) < r := by linarith
+  calc (r : ℝ) * (r : ℝ) ^ (((r : ℝ) + 1) / 2) * (r : ℝ) ^ ((r : ℝ) / 2)
+      = (r : ℝ) ^ ((r : ℝ) + 3 / 2) := by
+        nth_rewrite 1 [← Real.rpow_one (r : ℝ)]
+        rw [← Real.rpow_add hr₀, ← Real.rpow_add hr₀]
+        congr 1
+        ring
+    _ ≤ (r : ℝ) ^ ((r + 2 : ℕ) : ℝ) :=
+        Real.rpow_le_rpow_of_exponent_le hr' (by push_cast; linarith)
+    _ = (r : ℝ) ^ 2 * (r : ℝ) ^ r := by
+        rw [Real.rpow_natCast, pow_add, mul_comm]
+    _ ≤ 4 ^ r * (r : ℝ) ^ r := by
+        gcongr
+        have : (r : ℝ) ≤ 2 ^ r := by exact_mod_cast r.lt_two_pow_self.le
+        calc (r : ℝ) ^ 2 ≤ (2 ^ r) ^ 2 := pow_le_pow_left₀ (by positivity) this 2
+          _ = 4 ^ r := by rw [← pow_mul, mul_comm, pow_mul]; norm_num
+
+/-- The bound `c ^ n n ^ ((n + 1) / 2) ≤ max 1 |c| ^ r r ^ ((r + 1) / 2)` for `1 ≤ n ≤ r`. -/
+theorem gelfond_house_factor_le {c : ℝ} {n r : ℕ} (hn : 1 ≤ n) (hnr : n ≤ r) :
+    c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) ≤
+      max 1 |c| ^ r * (r : ℝ) ^ (((r : ℝ) + 1) / 2) := by
+  have hn' : (1 : ℝ) ≤ n := by exact_mod_cast hn
+  have hnr' : (n : ℝ) ≤ r := by exact_mod_cast hnr
+  have h₂ : c ^ n ≤ max 1 |c| ^ r :=
+    calc c ^ n ≤ |c| ^ n := (le_abs_self _).trans (abs_pow c n).le
+      _ ≤ max 1 |c| ^ n := pow_le_pow_left₀ (abs_nonneg c) (le_max_right _ _) n
+      _ ≤ max 1 |c| ^ r := pow_le_pow_right₀ (le_max_left _ _) hnr
+  have h₃ : (n : ℝ) ^ (((n : ℝ) + 1) / 2) ≤ (r : ℝ) ^ (((r : ℝ) + 1) / 2) :=
+    (Real.rpow_le_rpow (by positivity) hnr' (by positivity)).trans
+      (Real.rpow_le_rpow_of_exponent_le (hn'.trans hnr') (by linarith))
+  exact (mul_le_mul_of_nonneg_right h₂ (by positivity)).trans
+    (mul_le_mul_of_nonneg_left h₃ (by positivity))
+
+/-- The power of `H` in the term bound is at most `(H ^ (1 + 4 m ^ 2)) ^ r`. -/
+theorem gelfond_pow_add_le {H : ℝ} {m n q r : ℕ} (hH : 1 ≤ H) (hq : q * q = 2 * m * n)
+    (hnr : n ≤ r) : H ^ (r + 2 * q * m) ≤ (H ^ (1 + 4 * m ^ 2)) ^ r := by
+  rw [← pow_mul]
+  refine pow_le_pow_right₀ hH ?_
+  have := gelfond_two_mul_mul_le hq hnr
+  rw [add_mul, one_mul]
+  omega
+
+/-- The house of a double sum `∑ a b, x a b * y a b` over `Fin q × Fin q` is at most `q ^ 2 B C`
+when `house (x a b) ≤ B` and `house (y a b) ≤ C` for all `a b`. -/
+private theorem house_sum_sum_mul_le {K : Type*} [Field K] [NumberField K] {q : ℕ} {B C : ℝ}
+    (x y : Fin q → Fin q → K) (hx : ∀ a b, NumberField.house (x a b) ≤ B)
+    (hy : ∀ a b, NumberField.house (y a b) ≤ C) :
+    NumberField.house (∑ a, ∑ b, x a b * y a b) ≤ ((q * q : ℕ) : ℝ) * B * C := by
+  refine (NumberField.house_sum_le_sum_house _ _).trans ?_
+  refine (sum_le_sum fun a _ ↦ NumberField.house_sum_le_sum_house _ _).trans ?_
+  refine (sum_le_sum fun a _ ↦ sum_le_sum fun b _ ↦ (NumberField.house_mul_le _ _).trans
+    (mul_le_mul (hx a b) (hy a b) (NumberField.house_nonneg _) ?_)).trans (le_of_eq ?_)
+  · exact (NumberField.house_nonneg _).trans (hx a b)
+  · simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
+    push_cast
+    ring
+
 /-- The house bound for Gelfond's value `ρ`: if `q ^ 2 = 2 m n` with `m, n ≥ 1` and `n ≤ r`, the
 bound `q ^ 2 (c ^ n n ^ ((n + 1) / 2)) (q ^ r H ^ (r + 2 q m))` is at most `X ^ r r ^ r` with
 `X = 16 m ^ 2 max(1, |c|) H ^ (1 + 4 m ^ 2)`. -/
@@ -71,51 +133,18 @@ private theorem gelfond_value_bound_le {c H : ℝ} {m n q r : ℕ} (hm : 1 ≤ m
     rw [hq]
     push_cast
     gcongr
-  have h₂ : c ^ n ≤ c' ^ r :=
-    calc c ^ n ≤ |c| ^ n := (le_abs_self _).trans (abs_pow c n).le
-      _ ≤ c' ^ n := pow_le_pow_left₀ (abs_nonneg c) (le_max_right _ _) n
-      _ ≤ c' ^ r := pow_le_pow_right₀ hc' hnr
-  have h₃ : (n : ℝ) ^ (((n : ℝ) + 1) / 2) ≤ (r : ℝ) ^ (((r : ℝ) + 1) / 2) :=
-    (Real.rpow_le_rpow (by positivity) hnr' (by positivity)).trans
-      (Real.rpow_le_rpow_of_exponent_le hr' (by linarith))
   have h₄ : (q : ℝ) ^ r ≤ (2 * m) ^ r * (r : ℝ) ^ ((r : ℝ) / 2) :=
     (gelfond_natCast_pow_le (k := r) (j := r) hm hq (by omega)).trans
       (mul_le_mul_of_nonneg_left (Real.rpow_le_rpow (by positivity) hnr' (by positivity))
         (by positivity))
-  have h₅ : H ^ (r + 2 * q * m) ≤ (H ^ (1 + 4 * m ^ 2)) ^ r := by
-    rw [← pow_mul]
-    refine pow_le_pow_right₀ hH ?_
-    have := gelfond_two_mul_mul_le hq hnr
-    rw [add_mul, one_mul]
-    omega
-  -- The powers of `r`: `r r ^ ((r + 1) / 2) r ^ (r / 2) = r ^ (r + 3 / 2) ≤ 4 ^ r r ^ r`.
-  have h₆ : (r : ℝ) * (r : ℝ) ^ (((r : ℝ) + 1) / 2) * (r : ℝ) ^ ((r : ℝ) / 2) ≤
-      4 ^ r * (r : ℝ) ^ r := by
-    have hr₀ : (0 : ℝ) < r := by linarith
-    calc (r : ℝ) * (r : ℝ) ^ (((r : ℝ) + 1) / 2) * (r : ℝ) ^ ((r : ℝ) / 2)
-        = (r : ℝ) ^ ((r : ℝ) + 3 / 2) := by
-          nth_rewrite 1 [← Real.rpow_one (r : ℝ)]
-          rw [← Real.rpow_add hr₀, ← Real.rpow_add hr₀]
-          congr 1
-          ring
-      _ ≤ (r : ℝ) ^ ((r + 2 : ℕ) : ℝ) :=
-          Real.rpow_le_rpow_of_exponent_le hr' (by push_cast; linarith)
-      _ = (r : ℝ) ^ 2 * (r : ℝ) ^ r := by
-          rw [Real.rpow_natCast, pow_add, mul_comm]
-      _ ≤ 4 ^ r * (r : ℝ) ^ r := by
-          gcongr
-          have : (r : ℝ) ≤ 2 ^ r := by exact_mod_cast r.lt_two_pow_self.le
-          calc (r : ℝ) ^ 2 ≤ (2 ^ r) ^ 2 := pow_le_pow_left₀ (by positivity) this 2
-            _ = 4 ^ r := by rw [← pow_mul, mul_comm, pow_mul]; norm_num
+  have h₅ := gelfond_pow_add_le (m := m) hH hq hnr
+  have h₆ := gelfond_mul_rpow_mul_rpow_le hr
   have h₇ : (2 * m : ℝ) ≤ (2 * m) ^ r := le_self_pow₀ (by linarith) (by omega)
   calc ((q * q : ℕ) : ℝ) * (c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2)) *
         ((q : ℝ) ^ r * H ^ (r + 2 * q * m))
       ≤ (2 * m * r) * (c' ^ r * (r : ℝ) ^ (((r : ℝ) + 1) / 2)) *
           ((2 * m) ^ r * (r : ℝ) ^ ((r : ℝ) / 2) * (H ^ (1 + 4 * m ^ 2)) ^ r) := by
-        have hcn : c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2) ≤
-            c' ^ r * (r : ℝ) ^ (((r : ℝ) + 1) / 2) :=
-          (mul_le_mul_of_nonneg_right h₂ (by positivity)).trans
-            (mul_le_mul_of_nonneg_left h₃ (by positivity))
+        have hcn := gelfond_house_factor_le (c := c) hn hnr
         have hq' : (0 : ℝ) ≤ ((q * q : ℕ) : ℝ) := by positivity
         calc ((q * q : ℕ) : ℝ) * (c ^ n * (n : ℝ) ^ (((n : ℝ) + 1) / 2)) *
               ((q : ℝ) ^ r * H ^ (r + 2 * q * m))
@@ -182,28 +211,16 @@ theorem exists_one_le_pow_mul_norm_gelfond_value (α β γ : K) (m : ℕ) (c : �
       (η a b).isIntegral_coe.mul (ht a b).1
   have hx0 : (c₀ : K) ^ N * ρ ≠ 0 := mul_ne_zero (pow_ne_zero _ (Int.cast_ne_zero.2 hc₀)) hρ
   have hxhouse : NumberField.house ((c₀ : K) ^ N * ρ) ≤ X ^ r * (r : ℝ) ^ r := by
-    refine le_trans ?_ (gelfond_value_bound_le hm hn hq hnr hH)
     rw [hx]
-    refine (NumberField.house_sum_le_sum_house _ _).trans ?_
-    refine (sum_le_sum fun a _ ↦ NumberField.house_sum_le_sum_house _ _).trans ?_
-    refine (sum_le_sum fun a _ ↦ sum_le_sum fun b _ ↦ (NumberField.house_mul_le _ _).trans
-      (mul_le_mul (hη a b) (ht a b).2 (NumberField.house_nonneg _) ?_)).trans (le_of_eq ?_)
-    · exact (NumberField.house_nonneg _).trans (hη a b)
-    · simp only [sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
-      push_cast
-      ring
+    refine (house_sum_sum_mul_le _ _ hη ?_).trans (gelfond_value_bound_le hm hn hq hnr hH)
+    exact fun a b ↦ (ht a b).2
   -- Liouville's inequality for `x`, and `|σ x| = |c₀| ^ N |σ ρ| ≤ H' ^ r |σ ρ|`.
   have hL := NumberField.one_le_norm_mul_house_pow hxint hx0 σ
   have hσx : ‖σ ((c₀ : K) ^ N * ρ)‖ ≤ H' ^ r * ‖σ ρ‖ := by
     rw [map_mul, norm_mul, map_pow, map_intCast, norm_pow, Complex.norm_intCast]
     gcongr
     calc |(c₀ : ℝ)| ^ N ≤ H ^ N := pow_le_pow_left₀ (abs_nonneg _) hc₀H N
-      _ ≤ H' ^ r := by
-        rw [← pow_mul]
-        refine pow_le_pow_right₀ hH ?_
-        have := gelfond_two_mul_mul_le hq hnr
-        rw [add_mul, one_mul]
-        omega
+      _ ≤ H' ^ r := gelfond_pow_add_le hH hq hnr
   have hX : X ^ r * (r : ℝ) ^ r ≤ max 1 X ^ r * (r : ℝ) ^ r :=
     mul_le_mul_of_nonneg_right (pow_le_pow_left₀ (by positivity) (le_max_right _ _) r)
       (by positivity)
