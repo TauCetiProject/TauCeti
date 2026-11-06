@@ -37,6 +37,7 @@ other way.
 
 The equation is not symmetric in `ψ` and `ψ.symm`, so this provides the symmetry law for
 intertwining relations. -/
+@[simp]
 theorem symm_comp_eq_comp_symm_iff (ψ : M ≃* M') :
     (ψ.symm : M' →* M).comp F' = F.comp (ψ.symm : M' →* M) ↔
       (ψ : M →* M').comp F = F'.comp (ψ : M →* M') :=
