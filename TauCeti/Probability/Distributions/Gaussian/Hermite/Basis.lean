@@ -38,7 +38,7 @@ That is the form multivariate Gaussian `L²` and chaos expansions consume, and i
   `TauCeti.hermiteHilbertBasis` through `TauCeti.weightL2Isometry`.
 * `TauCeti.sqrt_gaussianPDFReal_smul_gaussianHermiteHilbertBasis` — that envelope computed on the
   public basis vector itself, a.e. against `volume`.
-* `TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis` — the same identification at the
+* `TauCeti.coeFn_weightL2Isometry_gaussianHermiteHilbertBasis` — the same identification at the
   `TauCeti.weightL2Isometry` level: the image of the `n`-th basis vector is `2^{-1/4} • ψₙ(·/√2)`.
 -/
 
@@ -219,8 +219,8 @@ basis representative from `γ`-a.e. to `volume`-a.e., which is legitimate becaus
 density never vanishes.
 
 `√w`-scaling is the forward map of `TauCeti.weightL2Isometry`, so this is the pointwise content of
-`TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis` below, which states the same fact at the
-isometry level. -/
+`TauCeti.coeFn_weightL2Isometry_gaussianHermiteHilbertBasis` below, which states the same fact at
+the isometry level. -/
 theorem sqrt_gaussianPDFReal_smul_gaussianHermiteHilbertBasis (n : ℕ) :
     (fun x : ℝ => Real.sqrt (gaussianPDFReal 0 1 x)
         • (gaussianHermiteHilbertBasis 𝕜 n : ℝ → 𝕜) x)
@@ -247,7 +247,7 @@ vector is transported along that equality of measures before the isometry is app
 the fixed function `gaussianPDFReal 0 1`, whose positivity and measurability are supplied here
 rather than left to the caller; by proof irrelevance this still applies to
 `TauCeti.weightL2Isometry` built from any other proofs of those two side conditions. -/
-theorem weightL2Isometry_gaussianHermiteHilbertBasis (n : ℕ) :
+theorem coeFn_weightL2Isometry_gaussianHermiteHilbertBasis (n : ℕ) :
     weightL2Isometry 𝕜 volume (fun x : ℝ => gaussianPDFReal 0 1 x)
         (Filter.Eventually.of_forall fun x => gaussianPDFReal_pos 0 1 x one_ne_zero) (by fun_prop)
         (cast (congrArg (fun m : Measure ℝ => (Lp 𝕜 2 m : Type _))

@@ -10,6 +10,7 @@ public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import TauCeti.MeasureTheory.Function.WeightL2Isometry
 import TauCeti.Analysis.InnerProductSpace.HilbertBasis.Map
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # From an orthogonality relation to a Hilbert basis of a weighted measure
@@ -55,9 +56,9 @@ re-derive.
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
+
+namespace TauCeti
 
 open scoped ENNReal NNReal
 
@@ -230,15 +231,11 @@ theorem coeFn_hilbertBasisOfOrthogonalSystem {μ : Measure α}
       (Submodule.span 𝕜 (Set.range (bareNormalizedLp (𝕜 := 𝕜) f w c hmem)))ᗮ = ⊥) (n : ℕ) :
     ⇑(hilbertBasisOfOrthogonalSystem f w c hwpos hwm hc horth hmem hcomplete n)
       =ᵐ[μ] fun x => (algebraMap ℝ 𝕜) (f n x * Real.sqrt (w x) / Real.sqrt (c n)) := by
-  have hac : μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
-    withDensity_absolutelyContinuous' hwm.ennreal_ofReal <| by
-      filter_upwards [hwpos] with x hx
-      simp only [ne_eq, ENNReal.ofReal_eq_zero, not_le]
-      exact hx
   rw [coe_hilbertBasisOfOrthogonalSystem f w c hwpos hwm hc horth hmem hcomplete n]
   filter_upwards [coeFn_weightL2Isometry 𝕜 μ w hwpos hwm
       (bareNormalizedLp (𝕜 := 𝕜) f w c hmem n),
-    (coeFn_bareNormalizedLp (𝕜 := 𝕜) f w c hmem n).filter_mono hac.ae_le] with x hx hbare
+    (coeFn_bareNormalizedLp (𝕜 := 𝕜) f w c hmem n).filter_mono
+      (absolutelyContinuous_withDensity_ofReal hwm hwpos).ae_le] with x hx hbare
   rw [hx, hbare, Algebra.smul_def, ← map_mul]
   congr 1
   ring

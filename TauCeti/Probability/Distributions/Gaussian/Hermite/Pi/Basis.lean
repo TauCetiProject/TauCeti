@@ -22,11 +22,11 @@ builds a Hilbert basis of `L²(Measure.pi μ)` from coordinatewise bases, and
 
 The file then relates this measure-side basis to the function-side multi-index Hermite-function
 basis `TauCeti.hermiteFunctionPiBasis` of `L²(volume^ι)`. As in one dimension
-(`TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis`), the two are *not* interchanged by the
-weight-to-function isometry alone: because `ψₙ` is built on the rescaled argument `x√2`, the image
-of `Ψ_a` under `TauCeti.weightL2Isometry` for the joint Gaussian density is the **dilated** product
-`∏ᵢ 2^{-1/4} ψ_{aᵢ}(xᵢ/√2)`. The dilation and the `2^{-1/4}` appear once per coordinate, which is
-exactly the statement the roadmap asks for.
+(`TauCeti.coeFn_weightL2Isometry_gaussianHermiteHilbertBasis`), the two are *not* interchanged by
+the weight-to-function isometry alone: because `ψₙ` is built on the rescaled argument `x√2`, the
+image of `Ψ_a` under `TauCeti.weightL2Isometry` for the joint Gaussian density is the **dilated**
+product `∏ᵢ 2^{-1/4} ψ_{aᵢ}(xᵢ/√2)`. The dilation and the `2^{-1/4}` appear once per coordinate,
+which is exactly the statement the roadmap asks for.
 
 ## Main statements
 
@@ -37,7 +37,7 @@ exactly the statement the roadmap asks for.
   product `∏ᵢ H_{aᵢ}(xᵢ)/√(aᵢ!)`.
 * `TauCeti.sqrt_prod_gaussianPDFReal_smul_gaussianHermitePiBasis`: scaling the `a`-th vector by
   the square root of the joint Gaussian density gives `∏ᵢ 2^{-1/4} ψ_{aᵢ}(xᵢ/√2)`.
-* `TauCeti.weightL2Isometry_gaussianHermitePiBasis`: the same identification at the
+* `TauCeti.coeFn_weightL2Isometry_gaussianHermitePiBasis`: the same identification at the
   `TauCeti.weightL2Isometry` level.
 -/
 
@@ -128,7 +128,7 @@ applied. The
 positivity and measurability of the joint density are supplied here rather than left to the caller;
 by proof irrelevance the statement still applies to `TauCeti.weightL2Isometry` built from any other
 proofs of those two side conditions. -/
-theorem weightL2Isometry_gaussianHermitePiBasis (a : ι → ℕ) :
+theorem coeFn_weightL2Isometry_gaussianHermitePiBasis (a : ι → ℕ) :
     weightL2Isometry 𝕜 (Measure.pi fun _ : ι => (volume : Measure ℝ))
         (fun x : ι → ℝ => ∏ i, gaussianPDFReal 0 1 (x i))
         (Filter.Eventually.of_forall (prod_gaussianPDFReal_pos ι))

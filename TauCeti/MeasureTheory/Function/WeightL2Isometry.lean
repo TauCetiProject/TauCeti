@@ -8,6 +8,7 @@ module
 public import Mathlib.MeasureTheory.Function.L2Space
 public import Mathlib.MeasureTheory.Measure.WithDensity
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
 # The weight ↔ measure isometry `L²(w·μ) ≃ₗᵢ L²(μ)`
@@ -39,9 +40,9 @@ The construction is purely measure-theoretic, so it is stated over an arbitrary 
 
 public section
 
-namespace TauCeti
-
 open MeasureTheory
+
+namespace TauCeti
 
 open scoped ENNReal NNReal
 
@@ -67,17 +68,12 @@ theorem eLpNorm_sqrt_smul_eq_eLpNorm_withDensity (hwm : AEMeasurable w μ)
   filter_upwards [hw_nonneg] with x hx
   simp [enorm_smul, Real.enorm_of_nonneg, mul_pow, ← ENNReal.ofReal_pow, hx]
 
-/-- `μ` is absolutely continuous with respect to `w · μ` (uses `w > 0` a.e.). -/
-private theorem absolutelyContinuous_withDensity (hwpos : ∀ᵐ x ∂μ, 0 < w x)
-    (hwm : AEMeasurable w μ) : μ ≪ μ.withDensity fun x => ENNReal.ofReal (w x) :=
-  withDensity_absolutelyContinuous' hwm.ennreal_ofReal (by simpa using hwpos)
-
 /-- The forward direction `√w · f` of a class in `L²(w·μ)` is in `L²(μ)`. -/
 private theorem memLp_sqrt_smul (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMeasurable w μ)
     (f : Lp E 2 (μ.withDensity fun x => ENNReal.ofReal (w x))) :
     MemLp (fun x => √(w x) • (f : α → E) x) 2 μ := by
   rw [memLp_iff, eLpNorm_sqrt_smul_eq_eLpNorm_withDensity μ w hwm (hwpos.mono fun _ h => h.le)
-    ((Lp.aestronglyMeasurable f).mono_ac (absolutelyContinuous_withDensity μ w hwpos hwm))]
+    ((Lp.aestronglyMeasurable f).mono_ac (absolutelyContinuous_withDensity_ofReal hwm hwpos))]
   exact Lp.eLpNorm_lt_top f
 
 /-- The inverse direction `(√w)⁻¹ · g` of a class in `L²(μ)` is in `L²(w·μ)`. -/
@@ -101,12 +97,12 @@ noncomputable def weightL2Isometry (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMe
   map_add' f₁ f₂ := by
     rw [← MemLp.toLp_add, MemLp.toLp_eq_toLp_iff]
     filter_upwards [(Lp.coeFn_add f₁ f₂).filter_mono
-      (absolutelyContinuous_withDensity μ w hwpos hwm).ae_le] with x hx
+      (absolutelyContinuous_withDensity_ofReal hwm hwpos).ae_le] with x hx
     simp only [Pi.add_apply, hx, smul_add]
   map_smul' c f := by
     rw [RingHom.id_apply, ← MemLp.toLp_const_smul, MemLp.toLp_eq_toLp_iff]
     filter_upwards [(Lp.coeFn_smul c f).filter_mono
-      (absolutelyContinuous_withDensity μ w hwpos hwm).ae_le] with x hx
+      (absolutelyContinuous_withDensity_ofReal hwm hwpos).ae_le] with x hx
     rw [Pi.smul_apply, hx, Pi.smul_apply, smul_comm]
   left_inv f := by
     have hac := withDensity_absolutelyContinuous μ fun x => ENNReal.ofReal (w x)
@@ -121,13 +117,13 @@ noncomputable def weightL2Isometry (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMe
     filter_upwards [MemLp.coeFn_toLp
         (memLp_sqrt_smul μ w hwpos hwm ((memLp_inv_sqrt_smul μ w hwpos hwm g).toLp _)),
       (MemLp.coeFn_toLp (memLp_inv_sqrt_smul μ w hwpos hwm g)).filter_mono
-        (absolutelyContinuous_withDensity μ w hwpos hwm).ae_le,
+        (absolutelyContinuous_withDensity_ofReal hwm hwpos).ae_le,
       hwpos] with x h1 h2 hx
     rw [h1, h2, smul_smul, mul_inv_cancel₀ (Real.sqrt_pos.2 hx).ne', one_smul]
   -- The forward map is `MemLp.toLp (√w • f)` by construction, so `Lp.norm_toLp` applies to it.
   norm_map' f := (Lp.norm_toLp _ (memLp_sqrt_smul μ w hwpos hwm f)).trans <| by
     rw [Lp.norm_def, eLpNorm_sqrt_smul_eq_eLpNorm_withDensity μ w hwm (hwpos.mono fun _ h => h.le)
-      ((Lp.aestronglyMeasurable f).mono_ac (absolutelyContinuous_withDensity μ w hwpos hwm))]
+      ((Lp.aestronglyMeasurable f).mono_ac (absolutelyContinuous_withDensity_ofReal hwm hwpos))]
 
 /-- The forward isometry is multiplication by `√w`. -/
 theorem coeFn_weightL2Isometry (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEMeasurable w μ)
@@ -140,6 +136,6 @@ theorem coeFn_weightL2Isometry_symm (hwpos : ∀ᵐ x ∂μ, 0 < w x) (hwm : AEM
     (g : Lp E 2 μ) :
     (weightL2Isometry 𝕜 μ w hwpos hwm).symm g =ᵐ[μ] fun x => (√(w x))⁻¹ • (g : α → E) x :=
   (MemLp.coeFn_toLp (memLp_inv_sqrt_smul μ w hwpos hwm g)).filter_mono
-    (absolutelyContinuous_withDensity μ w hwpos hwm).ae_le
+    (absolutelyContinuous_withDensity_ofReal hwm hwpos).ae_le
 
 end TauCeti

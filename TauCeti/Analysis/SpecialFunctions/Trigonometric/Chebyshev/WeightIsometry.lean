@@ -21,10 +21,11 @@ The Chebyshev polynomials come in two normalizations: the bare polynomials as a 
 from the same bridge.
 
 This file proves that they are the *same* basis seen through the weight-change isometry. The
-Gaussian instance of the same statement (`TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis`) has
-to carry the dilation `u = x√2`, because the Hermite functions are built on a rescaled argument; the
-Chebyshev `Tₙ` are not, so here the identification is exact and can be stated at the level of bases
-rather than of individual vectors.
+Gaussian instance of the same statement
+(`TauCeti.coeFn_weightL2Isometry_gaussianHermiteHilbertBasis`) has to carry the dilation `u = x√2`,
+because the Hermite functions are built on a rescaled argument; the Chebyshev `Tₙ` are not, so here
+the identification is exact and can be stated at the level of bases rather than of individual
+vectors.
 
 The isometry rests on the measure identity `measureT = w · (volume|_{(-1,1]})`, recorded as
 `TauCeti.chebyshevMeasureT_eq_withDensity` with the rest of the Chebyshev measure API in
@@ -72,7 +73,7 @@ noncomputable def chebyshevWeightL2Isometry :
 
 /-- The forward isometry multiplies a representative by `√w = (1-x²)^{-1/4}`. Without this pin the
 definition would only assert that the two `L²` spaces are abstractly isometric. -/
-theorem chebyshevWeightL2Isometry_apply (f : Lp 𝕜 2 (measureT : Measure ℝ)) :
+theorem coeFn_chebyshevWeightL2Isometry (f : Lp 𝕜 2 (measureT : Measure ℝ)) :
     ⇑(chebyshevWeightL2Isometry 𝕜 f) =ᵐ[volume.restrict (Set.Ioc (-1 : ℝ) 1)]
       fun x => √(√(1 - x ^ 2)⁻¹) • (f : ℝ → 𝕜) x := by
   have happ : chebyshevWeightL2Isometry 𝕜 f
@@ -84,7 +85,7 @@ theorem chebyshevWeightL2Isometry_apply (f : Lp 𝕜 2 (measureT : Measure ℝ))
   simp only [coeFn_castLpₗᵢ]
 
 /-- The inverse isometry divides a representative by `√w`. -/
-theorem chebyshevWeightL2Isometry_symm_apply (g : Lp 𝕜 2 (volume.restrict (Set.Ioc (-1 : ℝ) 1))) :
+theorem coeFn_chebyshevWeightL2Isometry_symm (g : Lp 𝕜 2 (volume.restrict (Set.Ioc (-1 : ℝ) 1))) :
     ⇑((chebyshevWeightL2Isometry 𝕜).symm g) =ᵐ[volume.restrict (Set.Ioc (-1 : ℝ) 1)]
       fun x => (√(√(1 - x ^ 2)⁻¹))⁻¹ • (g : ℝ → 𝕜) x := by
   have hsymm : (chebyshevWeightL2Isometry 𝕜).symm g
@@ -106,7 +107,7 @@ changes — no dilation of the argument and no change of normalizing constant. -
 theorem chebyshevWeightL2Isometry_normalizedChebyshevTLp (n : ℕ) :
     chebyshevWeightL2Isometry 𝕜 (normalizedChebyshevTLp 𝕜 n) = chebyshevTEnvelopeLp 𝕜 n := by
   refine Lp.ext ?_
-  filter_upwards [chebyshevWeightL2Isometry_apply 𝕜 (normalizedChebyshevTLp 𝕜 n),
+  filter_upwards [coeFn_chebyshevWeightL2Isometry 𝕜 (normalizedChebyshevTLp 𝕜 n),
     (coeFn_normalizedChebyshevTLp (𝕜 := 𝕜) n).filter_mono
       volume_restrict_absolutelyContinuous_measureT.ae_le,
     coeFn_chebyshevTEnvelopeLp 𝕜 n] with x hiso hmode henv
@@ -116,8 +117,8 @@ theorem chebyshevWeightL2Isometry_normalizedChebyshevTLp (n : ℕ) :
 bare-polynomial basis of `L²(measureT)` across the weight-change isometry gives exactly the envelope
 basis of `L²((-1, 1]; dx)`.
 
-Unlike the Gaussian instance `TauCeti.weightL2Isometry_gaussianHermiteHilbertBasis`, this needs no
-dilation, so it is an equality of bases rather than of individual vectors up to a change of
+Unlike the Gaussian instance `TauCeti.coeFn_weightL2Isometry_gaussianHermiteHilbertBasis`, this
+needs no dilation, so it is an equality of bases rather than of individual vectors up to a change of
 variables. -/
 @[simp]
 theorem chebyshevTHilbertBasis_mapₗᵢ :
