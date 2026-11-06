@@ -182,7 +182,7 @@ private theorem W1p.lintegral_mul_value_sub_le (hp : (finrank ℝ E : ℝ≥0) <
 error of `phi` times the `L¹` norm of `∇ v`, plus the sup norm of `v` times the `L¹` error of
 the gradients. -/
 private theorem W1p.lintegral_mulGradient_sub_le (hp : (finrank ℝ E : ℝ≥0) < p) (V : Opens E)
-    [IsFiniteMeasure (mu.restrict (V : Set E))] (phi : TestFunction (⊤ : Opens E) ℝ ⊤)
+    (phi : TestFunction (⊤ : Opens E) ℝ ⊤)
     (a u v : W1p mu ⊤ (p : ℝ≥0∞)) (hphi : W1p.ofTestFunctionₗ mu ⊤ (p : ℝ≥0∞) phi = a) :
     ∫⁻ x in (V : Set E),
         ‖innerSL ℝ ((phi : E → ℝ) x • W1p.gradient v x +
