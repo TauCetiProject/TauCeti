@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 public import TauCeti.Analysis.Calculus.ContDiff.Convolution
 public import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.Analysis.Distribution.TestFunction.Convergence
 
 /-!
 # Mollification in the test-function topology
@@ -115,40 +116,13 @@ private theorem tendsto_mollify_of_support_subset {ι : Type*} {l : Filter ι}
     {K : Compacts E} (hKΩ : (K : Set E) ⊆ Ω) (hφK : tsupport φ ⊆ K)
     (hK : ∀ i, closedBall (0 : E) (ρ i).rOut + tsupport φ ⊆ (K : Set E)) :
     Tendsto (fun i => mollify φ μ (ρ i) ((hK i).trans hKΩ)) l (𝓝 φ) := by
-  let φK : 𝓓_{K}(E, F) := .of_support_subset φ.contDiff ((subset_tsupport _).trans hφK)
-  let ψ : ι → 𝓓_{K}(E, F) := fun i => .of_support_subset
-    (mollify φ μ (ρ i) ((hK i).trans hKΩ)).contDiff
-    ((subset_tsupport _).trans
-      (((ρ i).tsupport_normed_convolution_subset (g := (φ : E → F))).trans (hK i)))
-  have hφKcoe : (φK : E → F) = φ := by
-    funext x
-    simp only [φK, ContDiffMapSupportedIn.coe_of_support_subset]
-  have hlim : Tendsto ψ l (𝓝 φK) := by
-    rw [(ContDiffMapSupportedIn.isUniformEmbedding_pi_structureMapCLM
-      ℝ).isEmbedding.tendsto_nhds_iff]
-    apply tendsto_pi_nhds.2
-    intro n
-    apply BoundedContinuousFunction.tendsto_iff_tendstoUniformly.2
-    have hc := φ.contDiff.continuous_iteratedFDeriv (m := n) (by simp)
-    have hu := (φ.hasCompactSupport.iteratedFDeriv n).uniformContinuous_of_continuous hc
-    have ht := ContDiffBump.tendstoUniformly_normed_convolution (μ := μ) hρ hu
-    convert ht using 1
-    · funext i x
-      simp only [Function.comp_apply, ContinuousLinearMap.pi_apply,
-        ContDiffMapSupportedIn.structureMapCLM_top_apply]
-      exact congrFun (iteratedFDeriv_mollify φ μ (ρ i) ((hK i).trans hKΩ) n) x
-    · funext x
-      simp only [ContinuousLinearMap.pi_apply,
-        ContDiffMapSupportedIn.structureMapCLM_top_apply, hφKcoe]
-  have ht := (continuous_ofSupportedIn hKΩ).tendsto φK |>.comp hlim
-  convert ht using 1
-  · funext i
-    ext x
-    simp only [Function.comp_apply, coe_ofSupportedIn, ψ,
-      ContDiffMapSupportedIn.coe_of_support_subset]
-  · apply congrArg nhds
-    ext x
-    simp only [coe_ofSupportedIn, hφKcoe]
+  refine tendsto_of_tendstoUniformly_iteratedFDeriv K.isCompact hKΩ (fun i ↦
+    ((ρ i).tsupport_normed_convolution_subset (g := (φ : E → F))).trans (hK i)) hφK
+    fun n _ ↦ ?_
+  have hc := φ.contDiff.continuous_iteratedFDeriv (m := n) (by simp)
+  have hu := (φ.hasCompactSupport.iteratedFDeriv n).uniformContinuous_of_continuous hc
+  simpa only [iteratedFDeriv_mollify] using
+    ContDiffBump.tendstoUniformly_normed_convolution (μ := μ) hρ hu
 
 /-- Shrinking normalized bumps approximate a test function in its LF topology whenever
 the closed `rOut`-enlargement of `tsupport φ` stays inside `Ω` for every index. -/
