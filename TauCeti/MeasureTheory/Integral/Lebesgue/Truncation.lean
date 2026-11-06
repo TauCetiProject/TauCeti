@@ -21,9 +21,6 @@ integral needs to be finite.
 * `TauCeti.tendsto_lintegral_min_atTop`: `∫⁻ x, min (f x) M ∂μ → ∫⁻ x, f x ∂μ` as `M → ∞`.
 * `TauCeti.lintegral_enorm_rpow_eq_setLIntegral`: the `q`-th power integral of a truncation to a
   measurable set is the truncated integral.
-* `TauCeti.setLIntegral_enorm_rpow_lt_congr`, `TauCeti.setLIntegral_enorm_rpow_le_congr`:
-  truncated integrals of `‖v‖ₑ ^ q` do not change when the truncating function is replaced by an
-  almost everywhere equal one.
 -/
 
 public section
@@ -61,25 +58,5 @@ theorem lintegral_enorm_rpow_eq_setLIntegral {E : Type*} [TopologicalSpace E]
   refine lintegral_congr_ae ?_
   filter_upwards [hg] with x hx
   by_cases hxR : x ∈ R <;> simp [hx, hxR, ENNReal.zero_rpow_of_pos hq]
-
-/-- Truncating `v` at a height does not change, up to a null set, the integral over the part
-where `‖v‖` is above that height, when `v` is replaced by an almost everywhere equal function. -/
-theorem setLIntegral_enorm_rpow_lt_congr {G : Type*} [TopologicalSpace G]
-    [ESeminormedAddMonoid G] {q : ℝ} {v g : α → G} (hvg : v =ᵐ[μ] g) (a : ℝ≥0∞) :
-    ∫⁻ x in {x | a < ‖g x‖ₑ}, ‖v x‖ₑ ^ q ∂μ = ∫⁻ x in {x | a < ‖v x‖ₑ}, ‖v x‖ₑ ^ q ∂μ := by
-  have hsets : {x | a < ‖v x‖ₑ} =ᵐ[μ] {x | a < ‖g x‖ₑ} := by
-    filter_upwards [hvg] with x hx
-    exact congrArg (fun z : ℝ≥0∞ => a < z) (congrArg enorm hx)
-  rw [Measure.restrict_congr_set hsets]
-
-/-- The analogue of `setLIntegral_enorm_rpow_lt_congr` for the part where `‖v‖` is at most the
-height. -/
-theorem setLIntegral_enorm_rpow_le_congr {G : Type*} [TopologicalSpace G]
-    [ESeminormedAddMonoid G] {q : ℝ} {v g : α → G} (hvg : v =ᵐ[μ] g) (a : ℝ≥0∞) :
-    ∫⁻ x in {x | ‖g x‖ₑ ≤ a}, ‖v x‖ₑ ^ q ∂μ = ∫⁻ x in {x | ‖v x‖ₑ ≤ a}, ‖v x‖ₑ ^ q ∂μ := by
-  have hsets : {x | ‖v x‖ₑ ≤ a} =ᵐ[μ] {x | ‖g x‖ₑ ≤ a} := by
-    filter_upwards [hvg] with x hx
-    exact congrArg (fun z : ℝ≥0∞ => z ≤ a) (congrArg enorm hx)
-  rw [Measure.restrict_congr_set hsets]
 
 end TauCeti

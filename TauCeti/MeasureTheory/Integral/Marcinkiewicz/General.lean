@@ -489,7 +489,7 @@ theorem setOf_ofReal_lt_ae_le_union {g₁ g₂ : α → G} (ht : 0 < t) (hd : 0 
 
 omit [MeasurableSpace G] [OpensMeasurableSpace G] in
 /-- A weak-type bound at the height `r` bounds the measure of the superlevel set at that height. -/
-theorem meas_ofReal_lt_le_of_weak {r : ℝ} {B : ℝ≥0∞} {w : α → G} (hq : 0 < q) (hr : 0 < r)
+theorem meas_ofReal_lt_le_of_weak {r : ℝ} {B : ℝ≥0∞} {w : α → G} (hr : 0 < r)
     (hweak : ENNReal.ofReal r ^ q * ν {y | ENNReal.ofReal r < T w y} ≤
       B * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ) :
     ν {y | ENNReal.ofReal r < T w y} ≤
@@ -498,7 +498,8 @@ theorem meas_ofReal_lt_le_of_weak {r : ℝ} {B : ℝ≥0∞} {w : α → G} (hq 
     rw [← ENNReal.rpow_neg, ENNReal.ofReal_rpow_of_pos hr]
   refine ((ENNReal.mul_le_iff_le_inv
     (ENNReal.rpow_pos (ENNReal.ofReal_pos.2 hr) ENNReal.ofReal_ne_top).ne'
-    (ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofReal_ne_top)).mp hweak).trans_eq ?_
+    (ENNReal.rpow_ne_top_of_ne_zero (ENNReal.ofReal_pos.2 hr).ne'
+      ENNReal.ofReal_ne_top)).mp hweak).trans_eq ?_
   rw [hinv]
   ring
 
@@ -542,14 +543,14 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
     exact hadd g₁ g₂ hg₁meas hg₂meas
   have hS₀ : ∫⁻ x in S, ‖v x‖ₑ ^ p₀ ∂μ =
       ∫⁻ x in {x | ENNReal.ofReal (c * t) < ‖v x‖ₑ}, ‖v x‖ₑ ^ p₀ ∂μ :=
-    setLIntegral_enorm_rpow_lt_congr hv.ae_eq_mk _
+    setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => ENNReal.ofReal (c * t) < ‖z‖ₑ).symm
   have hS₁ : ∫⁻ x in Sᶜ, ‖v x‖ₑ ^ p₁ ∂μ =
       ∫⁻ x in {x | ‖v x‖ₑ ≤ ENNReal.ofReal (c * t)}, ‖v x‖ₑ ^ p₁ ∂μ := by
     have hSc : Sᶜ = {x | ‖g x‖ₑ ≤ ENNReal.ofReal (c * t)} := by
       ext x
       simp [hSdef]
     rw [hSc]
-    exact setLIntegral_enorm_rpow_le_congr hv.ae_eq_mk _
+    exact setLIntegral_congr (hv.ae_eq_mk.fun_comp fun z => ‖z‖ₑ ≤ ENNReal.ofReal (c * t)).symm
   calc ν {y | ENNReal.ofReal t < T v y}
       ≤ ν ({y | ENNReal.ofReal (d * t) < T g₁ y} ∪ {y | ENNReal.ofReal (e * t) < T g₂ y}) :=
         measure_mono_ae (setOf_ofReal_lt_ae_le_union ht hd he hde hTv)
@@ -557,8 +558,8 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
         measure_union_le _ _
     _ ≤ A₀ * ENNReal.ofReal ((d * t) ^ (-p₀)) * ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ +
           A₁ * ENNReal.ofReal ((e * t) ^ (-p₁)) * ∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ :=
-        add_le_add (meas_ofReal_lt_le_of_weak hp₀ (by positivity) (hweak₀ g₁ hg₁meas _))
-          (meas_ofReal_lt_le_of_weak hp₁ (by positivity) (hweak₁ g₂ hg₂meas _))
+        add_le_add (meas_ofReal_lt_le_of_weak (by positivity) (hweak₀ g₁ hg₁meas _))
+          (meas_ofReal_lt_le_of_weak (by positivity) (hweak₁ g₂ hg₂meas _))
     _ = _ := by
         rw [lintegral_enorm_rpow_eq_setLIntegral hSmeas Filter.EventuallyEq.rfl hp₀,
           lintegral_enorm_rpow_eq_setLIntegral hSmeas.compl Filter.EventuallyEq.rfl hp₁, hS₀, hS₁,
@@ -636,14 +637,14 @@ private theorem meas_lt_enorm_le_add_setLIntegral (T : Lp E p₁ μ →L[𝕜] L
   -- The part of `f` above the height `s`, through the weak-type bound.
   have h₁ : ν {y | s / 2 < ‖T f₁ y‖ₑ} ≤
       2 ^ p₀.toReal * (s ^ p₀.toReal)⁻¹ * (A * ∫⁻ x in S, ‖f x‖ₑ ^ p₀.toReal ∂μ) := by
-    refine measure_le_two_rpow_mul_inv_rpow_mul hs hs' hq₀ ?_
+    refine measure_le_two_rpow_mul_inv_rpow_mul hs hs' ?_
     rw [← lintegral_enorm_rpow_eq_setLIntegral hS hm₁.coeFn_toLp hq₀]
     exact hweak f₁ (s / 2)
   -- The part of `f` below the height `s`, through Chebyshev's inequality and the `L^{p₁}` bound.
   have h₂ : ν {y | s / 2 ≤ ‖T f₂ y‖ₑ} ≤
       2 ^ p₁.toReal * (s ^ p₁.toReal)⁻¹ *
         (‖T‖ₑ ^ p₁.toReal * ∫⁻ x in Sᶜ, ‖f x‖ₑ ^ p₁.toReal ∂μ) := by
-    refine measure_le_two_rpow_mul_inv_rpow_mul hs hs' hq₁
+    refine measure_le_two_rpow_mul_inv_rpow_mul hs hs'
       ((mul_meas_ge_le_pow_eLpNorm' (μ := ν) hp₁0 hp₁ _).trans ?_)
     rw [← Lp.enorm_def, ← lintegral_enorm_rpow_eq_setLIntegral hS.compl hm₂.coeFn_toLp hq₁,
       lintegral_rpow_enorm_eq_rpow_eLpNorm' hq₁, ← eLpNorm_eq_eLpNorm' hp₁0 hp₁

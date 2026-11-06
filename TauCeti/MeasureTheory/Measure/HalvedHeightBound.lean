@@ -31,15 +31,16 @@ open scoped ENNReal
 /-- A bound on `(s / 2) ^ q * ν X` bounds `ν X`. -/
 theorem measure_le_two_rpow_mul_inv_rpow_mul {β : Type*} [MeasurableSpace β] {ν : Measure β}
     {q : ℝ} {s : ℝ≥0∞}
-    (hs : s ≠ 0) (hs' : s ≠ ∞) (hq : 0 < q) {X : Set β} {B : ℝ≥0∞}
+    (hs : s ≠ 0) (hs' : s ≠ ∞) {X : Set β} {B : ℝ≥0∞}
     (h : (s / 2) ^ q * ν X ≤ B) : ν X ≤ 2 ^ q * (s ^ q)⁻¹ * B := by
   have hs2 : s / 2 ≠ 0 := ENNReal.div_ne_zero.2 ⟨hs, ENNReal.ofNat_ne_top⟩
   have hs2' : s / 2 ≠ ∞ := ENNReal.div_ne_top hs' two_ne_zero
   rw [ENNReal.mul_le_iff_le_inv (ENNReal.rpow_pos (pos_iff_ne_zero.2 hs2) hs2').ne'
-    (ENNReal.rpow_ne_top_of_nonneg hq.le hs2')] at h
+    (ENNReal.rpow_ne_top_of_ne_zero hs2 hs2')] at h
   convert h using 2
-  rw [ENNReal.div_rpow_of_nonneg _ _ hq.le, ENNReal.inv_div
-    (Or.inl (ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofNat_ne_top))
-    (Or.inl (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'), div_eq_mul_inv]
+  rw [div_eq_mul_inv, ENNReal.mul_rpow_of_ne_zero hs (by simp), ENNReal.inv_rpow]
+  rw [ENNReal.mul_inv
+    (Or.inr (ENNReal.inv_ne_top.2 (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'))
+    (Or.inl (ENNReal.rpow_ne_top_of_ne_zero hs hs')), inv_inv, mul_comm]
 
 end TauCeti
