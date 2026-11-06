@@ -33,6 +33,8 @@ the basis-independent Killing contraction and root-space projection API.
   skew-adjoint endomorphism.
 * `CliffordAlgebra.adjointCliffordHom_eq_sum_bivector`: the adjoint lift as a `1 / 4`-scaled sum
   against a Killing-dual basis.
+* `CliffordAlgebra.four_smul_adjointCliffordHom_eq_sum_ι_mul_ι`: the same formula without the
+  bivector, as a sum of products of two Clifford generators.
 
 ## References
 
@@ -203,5 +205,33 @@ theorem adjointCliffordHom_eq_sum_bivector {ι : Type w} [Fintype ι]
   congr 1
   rw [← mul_inv_rev]
   norm_num
+
+/-- **The adjoint quadratic lift as a sum of products of generators.** Four times the lift of `x` is
+the sum of the products of the generators of `[x, b i]` and of the Killing-dual basis vectors.
+Passing from bivectors to products costs nothing, because the scalar part of the sum is the trace
+of `ad x`, which vanishes. -/
+theorem four_smul_adjointCliffordHom_eq_sum_ι_mul_ι {ι' : Type w} [Fintype ι']
+    [DecidableEq ι'] {L : Type v} [LieRing L] [LieAlgebra K L]
+    [_root_.LieAlgebra.IsKilling K L]
+    (b : Module.Basis ι' K L) (x : L) :
+    (4 : K) • @adjointCliffordHom K L _ _ _ b.finiteDimensional_of_finite _ _ x =
+      ∑ i, ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) ⁅x, b i⁆ *
+        ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) (killingDualBasis b i) := by
+  have hprod (y z : L) :
+      ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) y *
+          ι (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) z =
+        bivector (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L) y z +
+          killingForm K L y z •
+            (1 : CliffordAlgebra (_root_.TauCeti.LieAlgebra.killingQuadraticForm K L)) := by
+    rw [ι_mul_ι_eq_bivector_add, _root_.TauCeti.LieAlgebra.polar_killingQuadraticForm,
+      Algebra.algebraMap_eq_smul_one, smul_smul, invOf_mul_cancel_left]
+  have h4 : (4 : K) ≠ 0 := by
+    have h22 : (4 : K) = 2 * 2 := by norm_num
+    rw [h22]
+    exact mul_ne_zero (Invertible.ne_zero (2 : K)) (Invertible.ne_zero (2 : K))
+  simp_rw [hprod, Finset.sum_add_distrib, ← Finset.sum_smul,
+    sum_killingForm_lie_killingDualBasis_eq_zero, zero_smul, add_zero]
+  rw [adjointCliffordHom_eq_sum_bivector b x, smul_smul, mul_inv_cancel₀ h4, one_smul]
+  simp only [adjointBivector_apply]
 
 end CliffordAlgebra

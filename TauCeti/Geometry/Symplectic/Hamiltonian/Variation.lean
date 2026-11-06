@@ -43,10 +43,11 @@ theorem contDiffAt_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
     ω.toBilinForm.toContinuousBilinearMap.inverse.contDiff.contDiffAt.comp (p, x)
       (hK'.fderiv contDiffAt_snd le_rfl)
 
-/-- A jointly `C^(n+1)` Hamiltonian family has jointly `C^n` Hamiltonian vector fields. -/
-theorem contDiff_hamiltonianVectorField_uncurry (ω : SymplecticForm V) {K : P → V → ℝ}
-    {n : WithTop ℕ∞} (hK : ContDiff ℝ (n + 1) (Function.uncurry K)) :
-    ContDiff ℝ n fun w : P × V ↦ ω.hamiltonianVectorField (K w.1) w.2 :=
+/-- A jointly `C^(n+1)` Hamiltonian family has jointly `C^n` Hamiltonian vector fields. This is
+the global form of `contDiffAt_hamiltonianVectorField_uncurry`. -/
+theorem contDiff_hamiltonianVectorField_uncurry (ω : SymplecticForm V)
+    {K : P → V → ℝ} {n : WithTop ℕ∞} (hK : ContDiff ℝ (n + 1) (Function.uncurry K)) :
+    ContDiff ℝ n (fun w : P × V ↦ ω.hamiltonianVectorField (K w.1) w.2) :=
   contDiff_iff_contDiffAt.2 fun _ ↦ ω.contDiffAt_hamiltonianVectorField_uncurry hK.contDiffAt
 
 /-- Along a continuous path `x`, the linearized Hamiltonian vector fields

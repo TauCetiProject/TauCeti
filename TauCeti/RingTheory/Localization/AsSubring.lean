@@ -41,26 +41,18 @@ variable {A K : Type*} [CommRing A] [Field K] [Algebra A K] [IsFractionRing A K]
 when some `s ∈ S` has `s * z ∈ A`. -/
 theorem mem_ofField_iff_exists_mul_mem_range {z : K} :
     z ∈ ofField K S hS ↔ ∃ s ∈ S, algebraMap A K s * z ∈ (algebraMap A K).range := by
-  rw [ofField, Subalgebra.copy_eq, mem_range_mapToFractionRing_iff_ofField]
-  constructor
-  · rintro ⟨a, s, hs, rfl⟩
-    have hs0 : algebraMap A K s ≠ 0 := (map_isUnit_of_le K S hS ⟨s, hs⟩).ne_zero
-    exact ⟨s, hs, a, by rw [mul_left_comm, mul_inv_cancel₀ hs0, mul_one]⟩
-  · rintro ⟨s, hs, a, ha⟩
-    have hs0 : algebraMap A K s ≠ 0 := (map_isUnit_of_le K S hS ⟨s, hs⟩).ne_zero
-    exact ⟨a, s, hs, by rw [ha, mul_comm (algebraMap A K s) z, mul_inv_cancel_right₀ hs0]⟩
+  rw [ofField, Subalgebra.copy_eq, mem_range_mapToFractionRing_iff_ofField, exists_comm]
+  refine exists_congr fun s ↦ ?_
+  simp only [exists_prop, RingHom.mem_range, exists_and_left]
+  refine and_congr_right fun hs ↦ exists_congr fun a ↦ ?_
+  rw [eq_mul_inv_iff_mul_eq₀ (map_isUnit_of_le K S hS ⟨s, hs⟩).ne_zero, mul_comm, eq_comm]
 
 /-- **Membership in `A[1/x] ⊆ K`**: `z` lies in the localization of `A` away from `x` exactly when
 some power of `x` clears its denominator, `x ^ n * z ∈ A`. -/
 theorem mem_ofField_powers_iff (x : A) (hx : Submonoid.powers x ≤ A⁰) {z : K} :
     z ∈ ofField K (Submonoid.powers x) hx ↔
       ∃ n : ℕ, algebraMap A K x ^ n * z ∈ (algebraMap A K).range := by
-  rw [mem_ofField_iff_exists_mul_mem_range]
-  constructor
-  · rintro ⟨s, ⟨n, rfl⟩, h⟩
-    exact ⟨n, by rwa [map_pow] at h⟩
-  · rintro ⟨n, h⟩
-    exact ⟨x ^ n, Submonoid.pow_mem _ (Submonoid.mem_powers x) n, by rwa [map_pow]⟩
+  simp [mem_ofField_iff_exists_mul_mem_range, Submonoid.mem_powers_iff]
 
 /-- The localization of a Dedekind domain at a submonoid of nonzero elements, realized inside its
 fraction field, is a Dedekind domain. -/

@@ -94,11 +94,9 @@ private theorem homogeneousPartToShift_hom (f : M →ₗ[A] N) (r : ℤ) :
 omit [GradedAlgebra 𝒜] in
 private theorem isHomogeneous_hom_to_shift {j : ℤ} (f : M ⟶ N.shiftObj j) :
     LinearMap.IsHomogeneous f.hom M.grading.piece N.grading.piece (-j) := by
-  rw [LinearMap.isHomogeneous_def]
-  intro p x hx
-  have h := f.isHomogeneous.map_mem hx
-  rw [mem_shiftObj_piece_iff] at h
-  simpa only [add_zero, sub_eq_add_neg] using h
+  simpa only [zero_sub] using
+    (_root_.LinearMap.isHomogeneous_shiftObj_iff (M := M) (N := N) f.hom j 0).1
+      f.isHomogeneous
 
 /-- The degree-`-j` homogeneous part of a sum of graded maps recovers its `j`-th summand. -/
 private theorem homogeneousPartOfGradedSMul_homShiftDirectSumMap
