@@ -138,7 +138,7 @@ omit [NormMulClass R] in
 /-- Multiplication by a unit `u` of the ring of restricted power series is undone by multiplication
 by another such unit. -/
 private theorem exists_isUnit_mul_mul_eq {u : PowerSeries.IsRestricted.subring (R := R) c}
-    (hu : IsUnit u) (g : PowerSeries R) :
+    {g : PowerSeries R} (hu : IsUnit u) :
     ∃ v : PowerSeries.IsRestricted.subring (R := R) c, IsUnit v ∧
       (v : PowerSeries R) * ((u : PowerSeries R) * g) = g := by
   obtain ⟨w, rfl⟩ := hu
@@ -152,7 +152,7 @@ theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R :
     {g : PowerSeries R} (h : IsDistinguished c s ((u : PowerSeries R) * g)) (hc : 0 < c)
     (hu : IsUnit u) : IsDistinguished c s g := by
   let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
-  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq hu g
+  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq (g := g) hu
   have hd := (isDistinguished_zero_of_isUnit hc hv).mul h hc (norm_mul _ _)
   rwa [zero_add, hvg] at hd
 
@@ -162,7 +162,7 @@ theorem IsLowestDominant.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R 
     {g : PowerSeries R} (h : IsLowestDominant c s ((u : PowerSeries R) * g)) (hc : 0 < c)
     (hu : IsUnit u) : IsLowestDominant c s g := by
   let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
-  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq hu g
+  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq (g := g) hu
   have hv0 := isDistinguished_zero_of_isUnit hc hv
   have hl := hv0.isLowestDominant_zero.mul h hc hv0.hasGaussNorm h.hasGaussNorm (norm_mul _ _)
   rwa [zero_add, hvg] at hl

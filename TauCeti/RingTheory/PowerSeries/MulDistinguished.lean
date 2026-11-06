@@ -36,7 +36,7 @@ extension.
 
 ## Main results
 
-* `TauCeti.PowerSeries.gaussNorm_map_of_norm_eq`: a norm-preserving coefficient homomorphism
+* `PowerSeries.gaussNorm_map_of_norm_eq`: a norm-preserving coefficient homomorphism
   preserves the Gauss norm.
 * `TauCeti.PowerSeries.isMulDistinguished_iff_isUnit`: over a ring with multiplicative norm, a
   series is multiplicatively distinguished exactly when it is distinguished with invertible
@@ -70,8 +70,8 @@ variable {R : Type*} [SeminormedRing R] {c : ℝ} {s k : ℕ} {g q : PowerSeries
 
 variable {S : Type*} [SeminormedRing S] in
 /-- A norm-preserving coefficient homomorphism preserves the Gauss norm at every radius. -/
-theorem gaussNorm_map_of_norm_eq (φ : R →+* S) (hφ : ∀ a, ‖φ a‖ = ‖a‖) (g : PowerSeries R)
-    (c : ℝ) : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
+theorem _root_.PowerSeries.gaussNorm_map_of_norm_eq (φ : R →+* S) (hφ : ∀ a, ‖φ a‖ = ‖a‖)
+    (g : PowerSeries R) (c : ℝ) : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
   simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
 
 variable {S : Type*} [SeminormedRing S] in
@@ -79,7 +79,7 @@ variable {S : Type*} [SeminormedRing S] in
 radius and degree. Neither completeness nor surjectivity is required. -/
 theorem IsDistinguished.map (hf : IsDistinguished c s g) (φ : R →+* S)
     (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsDistinguished c s (PowerSeries.map φ g) := by
-  have hn := gaussNorm_map_of_norm_eq φ hφ g c
+  have hn := g.gaussNorm_map_of_norm_eq φ hφ c
   exact ⟨by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
     fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
       hf.norm_coeff_mul_pow_lt n hn'⟩
@@ -89,7 +89,7 @@ variable {S : Type*} [SeminormedRing S] in
 radius. Neither completeness nor surjectivity is required. -/
 theorem IsLowestDominant.map (hf : IsLowestDominant c s g) (φ : R →+* S)
     (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsLowestDominant c s (PowerSeries.map φ g) := by
-  have hn := gaussNorm_map_of_norm_eq φ hφ g c
+  have hn := g.gaussNorm_map_of_norm_eq φ hφ c
   exact ⟨hn ▸ hf.gaussNorm_pos,
     by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
     fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
