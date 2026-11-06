@@ -7,7 +7,7 @@ module
 
 -- `TauCeti.Algebra.Central.TensorProduct` is imported publicly: `Algebra.IsCentral` occurs in every
 -- statement below, and the centralizer computation
--- `TauCeti.Algebra.TensorProduct.forall_commute_tmul_one_iff` that the forward direction runs on
+-- `Algebra.TensorProduct.forall_commute_tmul_one_iff` that the forward direction runs on
 -- lives there.
 public import TauCeti.Algebra.Central.TensorProduct
 -- Non-public: neither appears in the type of an exported declaration. `Algebra.TensorProduct.comm`
@@ -48,7 +48,7 @@ Central *simplicity* of a scalar extension, its degree, and the compatibility of
 
 The forward direction is stated over a commutative semiring `K` and a commutative `K`-algebra `L`
 that is free as a `K`-module, the hypotheses the centralizer computation
-`TauCeti.Algebra.TensorProduct.forall_commute_tmul_one_iff` needs; a field extension is the case of
+`Algebra.TensorProduct.forall_commute_tmul_one_iff` needs; a field extension is the case of
 interest and satisfies them. The converse genuinely needs `K` to be a field: it splits off a
 `K`-linear retraction `L → K` of the structure map, which is where the vector-space hypothesis
 enters, and `L` need only be a nontrivial commutative `K`-algebra.
@@ -83,7 +83,7 @@ variable (K L A : Type*) [CommSemiring K] [CommSemiring L] [Algebra K L] [Module
 `L`.
 
 Freeness of `L` and centrality of `A` are both used, through the centralizer computation
-`TauCeti.Algebra.TensorProduct.forall_commute_tmul_one_iff`: an element of `L ⊗[K] A` commuting with
+`Algebra.TensorProduct.forall_commute_tmul_one_iff`: an element of `L ⊗[K] A` commuting with
 every `1 ⊗ₜ a` is of the form `l ⊗ₜ 1`, that is, a scalar. Centrality of `A` cannot be dropped, and
 `ℂ ⊗[ℝ] ℂ` is the standard witness. -/
 instance baseChange [Algebra.IsCentral K A] : Algebra.IsCentral L (L ⊗[K] A) where
