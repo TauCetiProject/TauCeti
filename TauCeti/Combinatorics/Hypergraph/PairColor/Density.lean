@@ -173,4 +173,16 @@ theorem pairColorDensity_congr {κ V : Type*} {S T : PairColorSystem κ V} {s t 
     rw [h p.1 (mem_product.1 hp).1 p.2 (mem_product.1 hp).2]
   simp only [pairColorDensity_def, hf]
 
+/-- Restriction along an embedding preserves every pair-color density on the image sets,
+including overlapping sets and empty distinct-pair supports. -/
+@[simp]
+theorem pairColorDensity_comap {W : Type*} (S : PairColorSystem κ W) (f : V ↪ W)
+    (c : κ) (s t : Finset V) :
+    pairColorDensity (S.comap f) c s t = pairColorDensity S c (s.map f) (t.map f) := by
+  classical
+  simp only [pairColorDensity_def, ← prodMap_map_product, filter_map,
+    Function.Embedding.coe_prodMap, Function.comp_def, Prod.map_fst, Prod.map_snd,
+    PairColorSystem.colorOfPair_comap, ne_eq, f.injective.eq_iff, card_map]
+  rfl
+
 end TauCeti

@@ -118,7 +118,7 @@ theorem exists_bounded_exact_character_table :
   have : NeZero e := ⟨he ▸ Monoid.exponent_ne_zero_of_finite⟩
   let τ := finCongr d.numClasses_eq_card_conjClasses
   choose table omega htable homega _ _ hbound using
-    exists_exact_character_and_central_values (G := G) e he
+    exists_exact_character_and_central_values (G := G) e (he.symm ▸ dvd_rfl)
   refine ⟨⟨fun i k ↦ omega (τ i) (d.classOf k), fun i k ↦ table (τ i) (d.classOf k),
     fun i ↦ characterDegree ℂ (τ i)⟩,
     d.isCyclotomicCharacterTableSpec_of_complexEmbedding_eq e (fun _ _ ↦ homega _ _)

@@ -107,6 +107,18 @@ theorem Cube.boundary_eq_empty {N : Type*} [IsEmpty N] : Cube.boundary N = ∅ :
   Set.eq_empty_of_forall_notMem fun _ ⟨i, _⟩ ↦ isEmptyElim i
 
 open scoped Topology unitInterval in
+/-- The boundary of a cube over a finite index type is closed: it is the finite union of the
+faces `{y | y i = 0}` and `{y | y i = 1}`. -/
+theorem Cube.isClosed_boundary {N : Type*} [Finite N] : IsClosed (Cube.boundary N) := by
+  have h : Cube.boundary N = ⋃ i, ({y : I^N | y i = 0} ∪ {y | y i = 1}) := by
+    ext y
+    simp [Cube.boundary]
+  rw [h]
+  exact isClosed_iUnion_of_finite fun i ↦
+    (isClosed_eq (continuous_apply i) continuous_const).union
+      (isClosed_eq (continuous_apply i) continuous_const)
+
+open scoped Topology unitInterval in
 /-- A point of the cube `I^(Fin (n + 1))` lies on its boundary exactly when its first coordinate
 is `0` or `1`, or its remaining coordinates `Fin.tail y` lie on the boundary of `I^(Fin n)`. -/
 theorem Cube.boundary_fin_succ_iff {n : ℕ} {y : I^(Fin (n + 1))} :

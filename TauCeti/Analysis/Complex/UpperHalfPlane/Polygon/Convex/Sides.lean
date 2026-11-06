@@ -42,6 +42,8 @@ the polygon is the closure of its interior.
 * `ConvexPolygon.geodesicSegment_inter_interior_carrier_nonempty`: two distinct points of the
   polygon not on a common side span a segment through the interior.
 * `ConvexPolygon.frontier_carrier`: the boundary is the union of the sides.
+* `ConvexPolygon.mem_interior_or_mem_side_or_vertex_eq_inl`: a point of the polygon is interior,
+  a nonendpoint side point, or a finite vertex.
 * `ConvexPolygon.volume_frontier_carrier`: the boundary is a null set.
 * `ConvexPolygon.nonempty_interior_carrier`, `ConvexPolygon.closure_interior_carrier`: the
   interior is nonempty and dense in the polygon.
@@ -308,6 +310,22 @@ theorem frontier_carrier : frontier P.carrier = ⋃ i, P.side i := by
   have hz := P.carrier_subset_closure_leftHalfPlane k hzc
   rw [closure_leftHalfPlane] at hz
   exact mem_iUnion.2 ⟨k, P.carrier_inter_range_sideGeodesic k ▸ ⟨hzc, hz.resolve_left hk⟩⟩
+
+/-- A point of a convex polygon is an interior point, a point of a side other than its finite
+endpoints, or a finite vertex. -/
+theorem mem_interior_or_mem_side_or_vertex_eq_inl {z : ℍ} (hz : z ∈ P.carrier) :
+    z ∈ interior P.carrier ∨
+      (∃ i, z ∈ P.side i ∧ P.vertex i ≠ .inl z ∧ P.vertex (i + 1) ≠ .inl z) ∨
+        ∃ j, P.vertex j = .inl z := by
+  by_cases hzi : z ∈ interior P.carrier
+  · exact Or.inl hzi
+  have hzf : z ∈ frontier P.carrier := P.isClosed_carrier.frontier_eq ▸ ⟨hz, hzi⟩
+  obtain ⟨i, hi⟩ := mem_iUnion.mp (P.frontier_carrier ▸ hzf)
+  by_cases h₀ : P.vertex i = .inl z
+  · exact Or.inr (Or.inr ⟨i, h₀⟩)
+  by_cases h₁ : P.vertex (i + 1) = .inl z
+  · exact Or.inr (Or.inr ⟨i + 1, h₁⟩)
+  exact Or.inr (Or.inl ⟨i, hi, h₀, h₁⟩)
 
 /-- The boundary of a convex polygon is a null set: it is the union of finitely many sides, each
 contained in a geodesic line. -/

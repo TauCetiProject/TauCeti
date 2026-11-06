@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.DeRham.PoincarePairing
+public import TauCeti.Geometry.Manifold.DeRham.Integration.Surjective
 public import Mathlib.Geometry.Manifold.Instances.Icc
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 import TauCeti.Geometry.Manifold.DeRham.NormedSpace
@@ -34,7 +34,7 @@ smooth `F`; by the fundamental theorem of calculus `F` is constant on each of th
 of the complement of a large interval containing the support of `φ`, and the two constants differ
 by the integral of `φ`. When that integral vanishes, `F` minus the common constant is compactly
 supported. Surjectivity comes from a normalized bump function times `dx`
-(`Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one`).
+(`TauCeti.compactlySupportedDeRhamCohomology.surjective_integral`).
 
 ## Main declarations
 
@@ -107,13 +107,8 @@ theorem mem_exactCompactlySupportedForms_one_real {φ : SmoothForm 𝓘(ℝ, ℝ
 /-- Integration `H¹_c(ℝ) → ℝ` against the standard orientation is bijective. -/
 private theorem bijective_integral_standard :
     Function.Bijective (compactlySupportedDeRhamCohomology.integral Manifold.Orientation.real) := by
-  obtain ⟨φ₁, hφ₁⟩ : ∃ φ : compactlySupportedClosedForms 𝓘(ℝ, ℝ) ℝ 1,
-      integralTopForm Manifold.Orientation.real φ.1.1 = 1 := by
-    rw [Manifold.Orientation.real_eq_model]
-    exact Module.Basis.exists_compactlySupportedClosedForms_integralTopForm_model_eq_one
-      (Module.Basis.singleton (Fin 1) ℝ) _
-  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_, fun y ↦
-    ⟨y • compactlySupportedDeRhamCohomology.mk _ 1 φ₁, by simp [hφ₁]⟩⟩
+  refine ⟨(injective_iff_map_eq_zero _).mpr fun x hx ↦ ?_,
+    compactlySupportedDeRhamCohomology.surjective_integral Manifold.Orientation.real⟩
   obtain ⟨φ, rfl⟩ := compactlySupportedDeRhamCohomology.mk_surjective _ 1 x
   have hφ := (mem_compactlySupportedClosedForms _).mp φ.2
   rw [compactlySupportedDeRhamCohomology.integral_mk,

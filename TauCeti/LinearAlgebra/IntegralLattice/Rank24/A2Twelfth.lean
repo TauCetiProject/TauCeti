@@ -77,14 +77,15 @@ glued along that code.
   ternary image in the Golay code.
 * `TauCeti.four_le_sum_glueMinimum_of_mem_a2TwelfthGlueSubgroup`: nonzero table words have
   minimum norm at least `4`.
-* `TauCeti.a2TwelfthLattice`: the glued lattice, with `mem_a2TwelfthLattice_carrier_iff`,
-  `isEven_a2TwelfthLattice`, `isUnimodular_a2TwelfthLattice`, `isPosDef_a2TwelfthLattice`,
-  `finrank_a2TwelfthLattice`, and the root-sublattice equality
+* `TauCeti.a2TwelfthLattice`: the glued lattice, with `a2TwelfthLattice_def`,
+  `mem_a2TwelfthLattice_carrier_iff`, `isEven_a2TwelfthLattice`, `isUnimodular_a2TwelfthLattice`,
+  `isPosDef_a2TwelfthLattice`, `finrank_a2TwelfthLattice`, and the root-sublattice equality
   `span_vectorsOfNorm_two_a2TwelfthLattice`.
 * `TauCeti.a2TwelfthRootIsometry`: the signed coordinate change from `R` to `(A₂)¹²`, with
   `discriminantGroupEquiv_a2TwelfthRootIsometry_glueWordIsometry`.
 * `TauCeti.a2TwelfthTernaryGolayIsometry`: the isometry from `a2TwelfthLattice` onto the ternary
-  Golay gluing of `(A₂)¹²`.
+  Golay gluing of `(A₂)¹²`, with `a2TwelfthTernaryGolayIsometry_apply` and
+  `a2TwelfthTernaryGolayIsometry_eq_a2TwelfthRootIsometry`.
 
 ## References
 
@@ -327,7 +328,7 @@ noncomputable def a2TwelfthLattice : IntegralLattice (Fin 12 → Fin (A 2).rank 
   gluedLattice (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2) (fun _ ↦ valid_A.mpr one_le_two)
     a2TwelfthGlueSubgroup isLagrangian_a2TwelfthGlueSubgroup.isIsotropic
 
-/-- The named `A₂¹²` lattice is gluing along the table subgroup. -/
+/-- The named `A₂¹²` lattice is gluing along the checked ternary glue subgroup. -/
 theorem a2TwelfthLattice_def :
     a2TwelfthLattice =
       gluedLattice (fun _ : Fin 12 ↦ A 2) (fun _ ↦ isSimplyLaced_A 2)
@@ -517,5 +518,12 @@ theorem a2TwelfthTernaryGolayIsometry_apply (x : Fin 12 → Fin (A 2).rank → �
   erw [IntegralLattice.Isometry.trans_apply, IntegralLattice.Isometry.ofEq_apply,
     IntegralLattice.Isometry.ofIsotropicSubgroups_apply]
   exact a2TwelfthRootIsometry_apply x j
+
+/-- `a2TwelfthTernaryGolayIsometry` acts on the ambient space by `a2TwelfthRootIsometry`. -/
+theorem a2TwelfthTernaryGolayIsometry_eq_a2TwelfthRootIsometry
+    (x : Fin 12 → Fin (A 2).rank → ℚ) :
+    a2TwelfthTernaryGolayIsometry x = a2TwelfthRootIsometry x :=
+  funext fun j ↦ (a2TwelfthTernaryGolayIsometry_apply x j).trans
+    (a2TwelfthRootIsometry_apply x j).symm
 
 end TauCeti

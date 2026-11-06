@@ -179,4 +179,22 @@ theorem integrableOn_legendrePi_algebraic_integrand {k α2 : ℝ} (hk : k ^ 2 < 
   rw [intervalIntegrable_iff_integrableOn_Icc_of_le (by norm_num)] at h
   exact h.congr_fun (thirdKind_algebraic_integrand k α2) measurableSet_Icc
 
+/-! ### The complete integral of the first kind as a Lebesgue integral -/
+
+/-- For `k ^ 2 < 1`, the complete integral of the first kind is the Lebesgue integral of its
+algebraic integrand over `(0, 1)`: `K(k) = ∫⁻ t in (0, 1), ((1 - t²)(1 - k² t²))^(-1/2)`, as an
+identity in `ℝ≥0∞`. This is the form in which `K` arises from substitutions in Lebesgue integrals
+of nonnegative functions. -/
+theorem ofReal_legendreK_eq_lintegral_algebraic {k : ℝ} (hk : k ^ 2 < 1) :
+    ENNReal.ofReal (legendreK k) = ∫⁻ t in Ioo (0 : ℝ) 1,
+      ENNReal.ofReal (((1 - t ^ 2) * (1 - k ^ 2 * t ^ 2)) ^ (-1 / 2 : ℝ)) := by
+  rw [legendreK_eq_integral_algebraic, intervalIntegral.integral_of_le zero_le_one,
+    integral_Ioc_eq_integral_Ioo]
+  refine ofReal_integral_eq_lintegral_ofReal
+    ((integrableOn_legendreF_algebraic_integrand hk).mono_set
+      (Ioo_subset_Icc_self.trans (Icc_subset_Icc (by norm_num) le_rfl)))
+    (ae_restrict_of_forall_mem measurableSet_Ioo fun t ht ↦ rpow_nonneg ?_ _)
+  have ht' : t ^ 2 < 1 := by nlinarith [ht.1, ht.2]
+  exact mul_nonneg (by linarith) (by nlinarith [sq_nonneg k, sq_nonneg t])
+
 end TauCeti.Real

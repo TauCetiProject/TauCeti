@@ -5,14 +5,20 @@ Authors: Codex
 -/
 module
 
+public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.RingHom.Flat
 
 /-!
-# Transporting local flatness across ring isomorphisms
+# Flat ring homomorphisms
 
 A commutative square whose horizontal maps are isomorphisms transports flatness after
 localizing the target at corresponding primes. This lets symmetry arguments reduce
 flatness of a morphism to flatness at one point.
+
+The file also states the equational criterion for flatness for a ring homomorphism
+`g : A →+* B`, without an `Algebra A B` instance
+(`RingHom.Flat.exists_eq_sum_mul_of_sum_mul_eq_zero`). This form applies to endomorphisms such
+as Frobenius, where `B = A` already carries its own `A`-module structure.
 -/
 
 public section
@@ -44,5 +50,18 @@ theorem flat_localization_comap_iff (f : R →+* S) (g : R' →+* S')
     _ ↔ _ := by
       rw [he]
       exact Flat.comp_iff_of_bijective_right (g := eR.toRingHom) eR.bijective
+
+/-- **Equational criterion for flatness** of a ring homomorphism: if `g : A →+* B` is flat, every
+relation `∑ⱼ g (fⱼ) xⱼ = 0` in `B` is trivial, that is, `xⱼ = ∑ᵢ g (aⱼᵢ) yᵢ` for some `aⱼᵢ ∈ A` and
+`yᵢ ∈ B` with `∑ⱼ fⱼ aⱼᵢ = 0` for every `i`. -/
+theorem Flat.exists_eq_sum_mul_of_sum_mul_eq_zero {A B : Type*} [CommRing A] [CommRing B]
+    {g : A →+* B} (hg : g.Flat) {ι : Type*} [Fintype ι] {f : ι → A} {x : ι → B}
+    (h : ∑ j, g (f j) * x j = 0) :
+    ∃ (k : ℕ) (a : ι → Fin k → A) (y : Fin k → B),
+      (∀ j, x j = ∑ i, g (a j i) * y i) ∧ ∀ i, ∑ j, f j * a j i = 0 := by
+  algebraize [g]
+  obtain ⟨k, a, y, hxy, ha⟩ := Module.Flat.isTrivialRelation_of_sum_smul_eq_zero (R := A)
+    (M := B) (f := f) (x := x) (by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using h)
+  exact ⟨k, a, y, fun j ↦ by simpa [Algebra.smul_def, RingHom.algebraMap_toAlgebra] using hxy j, ha⟩
 
 end RingHom

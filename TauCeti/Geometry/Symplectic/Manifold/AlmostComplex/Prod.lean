@@ -21,8 +21,10 @@ the monodromy to preserve one fixed almost complex structure.
 
 The evaluation formula splits the associated quadratic form into horizontal and vertical
 terms. Compatible vertical families therefore give a compatible block structure for the
-product two-form. Equivariance under a product map reduces to equivariance of its two
-blocks; for a translation and a monodromy map this is precisely the vertical seam equation.
+product two-form. When the vertical family also depends smoothly on a parameter, so does the
+block structure (`TauCeti.SmoothAlmostComplexStructure.contMDiff_prodFamily_family`).
+Equivariance under a product map reduces to equivariance of its two blocks; for a translation
+and a monodromy map this is precisely the vertical seam equation.
 
 ## References
 
@@ -42,10 +44,10 @@ namespace TauCeti.SmoothAlmostComplexStructure
 variable {E H P F H' M : Type*}
   [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
-  [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞ P] [T2Space P]
+  [TopologicalSpace P] [ChartedSpace H P] [IsManifold I ∞ P]
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
-  [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [T2Space M]
+  [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M]
   (J : SmoothAlmostComplexStructure I P)
   (K : ∀ p : P × M, AlmostComplexStructure (TangentSpace I' p.2))
   (hK : ContMDiff (I.prod I') (I'.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
@@ -59,17 +61,45 @@ private def prodFamilyEndomorphism (p : P × M) :
   -- representation; the public evaluation lemma uses their canonical identification.
   (J.toEndomorphism p.1).prodMap (K p).toLinearMap.toContinuousLinearMap
 
+section Family
+
+variable {EΛ HΛ Λ : Type*} [NormedAddCommGroup EΛ] [NormedSpace ℝ EΛ] [TopologicalSpace HΛ]
+  {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ] [ChartedSpace HΛ Λ]
+
+/-- For vertical families `K λ` depending smoothly on a parameter in `Λ`, the block endomorphisms
+depend smoothly on the parameter and the point. -/
+private theorem contMDiff_prodFamilyEndomorphism_family
+    {K : Λ → ∀ p : P × M, AlmostComplexStructure (TangentSpace I' p.2)}
+    (hK : ContMDiff (IΛ.prod (I.prod I')) (I'.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
+      (fun r : Λ × (P × M) ↦ TotalSpace.mk' (F →L[ℝ] F)
+        (E := fun x : M ↦ TangentSpace I' x →L[ℝ] TangentSpace I' x)
+        r.2.2 (K r.1 r.2).toLinearMap.toContinuousLinearMap)) :
+    ContMDiff (IΛ.prod (I.prod I')) ((I.prod I').prod 𝓘(ℝ, (E × F) →L[ℝ] E × F)) ∞
+      (fun r : Λ × (P × M) ↦ TotalSpace.mk' ((E × F) →L[ℝ] E × F)
+        (E := fun p : P × M ↦ TangentSpace (I.prod I') p →L[ℝ] TangentSpace (I.prod I') p) r.2
+        (prodFamilyEndomorphism J (K r.1) r.2)) := by
+  -- On total spaces, the block structure acts separately on the two tangent components.
+  refine (TauCeti.contMDiff_hom_bundle_prod_iff _).2 ?_
+  have hsplit := contMDiff_equivTangentBundleProd.comp
+    (contMDiff_snd : ContMDiff (IΛ.prod (I.prod I').tangent) (I.prod I').tangent ∞
+      (Prod.snd : Λ × TangentBundle (I.prod I') (P × M) → _))
+  have hhorizontal := J.contMDiff_apply (contMDiff_fst.comp
+    ((contMDiff_proj (TangentSpace (I.prod I'))).comp contMDiff_snd)) hsplit.fst
+  have hvertical := (hK.comp (contMDiff_fst.prodMk
+    ((contMDiff_proj (TangentSpace (I.prod I'))).comp contMDiff_snd))).clm_bundle_apply
+      hsplit.snd
+  exact contMDiff_equivTangentBundleProd_symm.comp (hhorizontal.prodMk hvertical)
+
+end Family
+
 include hK in
 private theorem contMDiff_prodFamilyEndomorphism :
     ContMDiff (I.prod I') ((I.prod I').prod 𝓘(ℝ, (E × F) →L[ℝ] E × F)) ∞
       (fun p ↦ TotalSpace.mk' ((E × F) →L[ℝ] E × F) p
-        (prodFamilyEndomorphism J K p)) := by
-  apply (Manifold.contMDiff_hom_iff _).2
-  intro V hV
-  have hsplit := contMDiff_equivTangentBundleProd.comp hV
-  have hhorizontal := J.contMDiff_apply contMDiff_fst hsplit.fst
-  have hvertical := hK.clm_bundle_apply hsplit.snd
-  exact contMDiff_equivTangentBundleProd_symm.comp (hhorizontal.prodMk hvertical)
+        (prodFamilyEndomorphism J K p)) :=
+  -- This is the case of the constant family, with parameter in `P × M` itself.
+  (contMDiff_prodFamilyEndomorphism_family J (IΛ := I.prod I') (K := fun _ : P × M ↦ K)
+    (hK.comp contMDiff_snd)).comp (contMDiff_id.prodMk contMDiff_id)
 
 /-- The smooth block structure on `P × M` with horizontal block `J` and a jointly smooth
 vertical family `K_(p,x)`. The vertical block may depend on both coordinates. -/
@@ -79,6 +109,24 @@ def prodFamily : SmoothAlmostComplexStructure (I.prod I') (P × M) where
     intro p
     ext v
     exact Prod.ext (J.apply_apply p.1 v.1) ((K p).apply_apply v.2)
+
+/-- For vertical families `K λ` depending smoothly on a parameter `λ` in a manifold `Λ`, the
+block structures `prodFamily J (K λ)` depend smoothly on the parameter: `(λ, p) ↦ (prodFamily J
+(K λ))_p` is a smooth section of the tangent endomorphism bundle along the projection
+`Λ × (P × M) → P × M`. -/
+theorem contMDiff_prodFamily_family {EΛ HΛ Λ : Type*} [NormedAddCommGroup EΛ]
+    [NormedSpace ℝ EΛ] [TopologicalSpace HΛ] {IΛ : ModelWithCorners ℝ EΛ HΛ} [TopologicalSpace Λ]
+    [ChartedSpace HΛ Λ] {K : Λ → ∀ p : P × M, AlmostComplexStructure (TangentSpace I' p.2)}
+    (hK : ContMDiff (IΛ.prod (I.prod I')) (I'.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
+      (fun r : Λ × (P × M) ↦ TotalSpace.mk' (F →L[ℝ] F)
+        (E := fun x : M ↦ TangentSpace I' x →L[ℝ] TangentSpace I' x)
+        r.2.2 (K r.1 r.2).toLinearMap.toContinuousLinearMap)) :
+    ContMDiff (IΛ.prod (I.prod I')) ((I.prod I').prod 𝓘(ℝ, (E × F) →L[ℝ] E × F)) ∞
+      (fun r : Λ × (P × M) ↦ TotalSpace.mk' ((E × F) →L[ℝ] E × F)
+        (E := fun p : P × M ↦ TangentSpace (I.prod I') p →L[ℝ] TangentSpace (I.prod I') p) r.2
+        ((prodFamily J (K r.1) (hK.comp (contMDiff_const.prodMk contMDiff_id))).toEndomorphism
+          r.2)) :=
+  contMDiff_prodFamilyEndomorphism_family J hK
 
 /-- A block structure acts separately on the two components of a product tangent vector. -/
 @[simp]
@@ -195,7 +243,7 @@ namespace TauCeti.SmoothAlmostComplexStructure
 variable {F H' M : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace H'] {I' : ModelWithCorners ℝ F H'}
-  [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M] [T2Space M]
+  [TopologicalSpace M] [ChartedSpace H' M] [IsManifold I' ∞ M]
   (K : ∀ p : (ℝ × ℝ) × M, AlmostComplexStructure (TangentSpace I' p.2))
   (hK : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I') (I'.prod 𝓘(ℝ, F →L[ℝ] F)) ∞
     (fun p ↦ TotalSpace.mk' (F →L[ℝ] F)

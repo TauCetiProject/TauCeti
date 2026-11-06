@@ -109,11 +109,10 @@ theorem siegelFunction_half_half_eq_eta {τ : ℂ} (hτ : 0 < τ.im) :
 `g₁ = g_{(1/2, 0)}`. -/
 theorem siegelFunction_zero_half_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![0, 1 / 2] (-1 / τ) = -I * siegelFunction ![1 / 2, 0] τ := by
-  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
+  have hτ₀ : τ ≠ 0 := UpperHalfPlane.ne_zero ⟨τ, hτ⟩
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have hτ₂ : 0 < (τ / 2).im := by simpa using hτ
-  have him : 0 < (-1 / τ).im := by
-    simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
+  have him : 0 < (-1 / τ).im := im_neg_one_div_pos hτ
   have harg : 2 * (-1 / τ) = -1 / (τ / 2) := by field_simp
   rw [siegelFunction_zero_half_eq_eta him,
     siegelFunction_half_zero_eq_eta hτ, harg, div_pow, div_pow,
@@ -124,11 +123,10 @@ theorem siegelFunction_zero_half_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) 
 `g₁ = g_{(1/2, 0)}`. -/
 theorem siegelFunction_half_zero_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 0] (-1 / τ) = I * siegelFunction ![0, 1 / 2] τ := by
-  have hτ₀ : τ ≠ 0 := fun h ↦ by simp [h] at hτ
+  have hτ₀ : τ ≠ 0 := UpperHalfPlane.ne_zero ⟨τ, hτ⟩
   have hη : η τ ≠ 0 := _root_.ModularForm.eta_ne_zero hτ
   have hτ₂ : 0 < (2 * τ).im := by simpa using hτ
-  have him : 0 < (-1 / τ).im := by
-    simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
+  have him : 0 < (-1 / τ).im := im_neg_one_div_pos hτ
   have hI (x : ℂ) : I * (2 * I * x) = -2 * x := by linear_combination 2 * x * I_sq
   have harg : -1 / τ / 2 = -1 / (2 * τ) := by field_simp
   rw [siegelFunction_half_zero_eq_eta him,
@@ -140,8 +138,7 @@ theorem siegelFunction_half_zero_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) 
 theorem siegelFunction_half_half_apply_neg_one_div {τ : ℂ} (hτ : 0 < τ.im) :
     siegelFunction ![1 / 2, 1 / 2] (-1 / τ) = siegelFunction ![1 / 2, 1 / 2] τ := by
   -- Compare `g₀ g₁ g₂ = 2 ζ₈` at `-1/τ` and at `τ`: the factors `g₀ g₁` agree.
-  have him : 0 < (-1 / τ).im := by
-    simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
+  have him : 0 < (-1 / τ).im := im_neg_one_div_pos hτ
   have h₁ := siegelFunction_zero_half_mul_half_zero_mul_half_half him
   rw [siegelFunction_zero_half_apply_neg_one_div hτ,
     siegelFunction_half_zero_apply_neg_one_div hτ] at h₁

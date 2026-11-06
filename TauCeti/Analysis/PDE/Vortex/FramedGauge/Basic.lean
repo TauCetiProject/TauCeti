@@ -427,4 +427,18 @@ theorem exp_mem_framedGaugeGroup {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f)
       ((ofRealCLM.contDiff.comp hf).mul (contDiff_const (c := I))).cexp
   · simpa only [Circle.exp_zero, Function.comp_def] using (Circle.exp.continuous.tendsto 0).comp ht
 
+/-- **The framed gauge action is free at a field with nowhere dense zeros.** If the section of
+`y` is nonzero on a dense set, then a smooth framed gauge is determined by its action on `y`. -/
+theorem framedGaugeGroup_smul_left_injective {y : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hdense : Dense {z | sectionValue y z ≠ 0}) :
+    Function.Injective fun u : framedGaugeGroup ↦ u • y := by
+  intro u v huv
+  have hc (u : framedGaugeGroup) : Continuous fun z ↦ ((u.val z : Circle) : ℂ) :=
+    ((mem_framedGaugeGroup _).mp u.property).1.continuous
+  refine Subtype.ext (funext fun z ↦ Circle.ext ?_)
+  refine congrFun ((hc u).ext_on hdense (hc v) fun w hw ↦ ?_) z
+  have hw' := congrArg (fun x ↦ sectionValue x w) huv
+  simp only [framedGaugeGroup_smul, sectionValue_gaugeTransform] at hw'
+  exact mul_right_cancel₀ hw hw'
+
 end TauCeti.Vortex

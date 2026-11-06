@@ -157,6 +157,11 @@ theorem localMass_sub_le : localMass (f - g) U ≤ localMass f U + localMass g U
 theorem mass_sub_le : mass (f - g) ≤ mass f + mass g := by
   simpa [sub_eq_add_neg] using mass_add_le (f := f) (g := -g)
 
+/-- The mass of a finite sum is at most the sum of the masses. -/
+theorem mass_sum_le {ι : Type*} (s : Finset ι) (f : ι → 𝓓^{n}(Ω, F) → V) :
+    mass (∑ i ∈ s, f i) ≤ ∑ i ∈ s, mass (f i) :=
+  Finset.le_sum_of_subadditive _ mass_zero.le (fun _ _ ↦ mass_add_le) s f
+
 /-- Changing the values of test functions by a linear isometric equivalence preserves mass. -/
 @[simp]
 theorem mass_comp_postcompCLM_linearIsometryEquiv {G : Type*} [NormedAddCommGroup G]
@@ -322,6 +327,12 @@ theorem mass_comp_monoCLM {Ω' : Opens E} (h : Ω' ≤ Ω) :
     let ψ : 𝓓^{n}(Ω', F) := ⟨φ, φ.contDiff, φ.hasCompactSupport, hφU⟩
     have hψ : ι ψ = φ := TestFunction.ext fun x => by simp [hι, ψ]
     simpa [hψ] using enorm_le_mass (f := f ∘ ι) (φ := ψ) hφ
+
+/-- Restriction to an open subset does not increase mass. -/
+theorem mass_comp_monoCLM_le {Ω' : Opens E} (h : Ω' ≤ Ω) :
+    mass (f ∘ (TestFunction.monoCLM ℝ : 𝓓^{n}(Ω', F) →L[ℝ] 𝓓^{n}(Ω, F))) ≤ mass f := by
+  rw [mass_comp_monoCLM h]
+  exact localMass_le_mass
 
 /-- The local mass of an open restriction is the local mass on the intersection with its domain.
 The testing set `U` need not be open or measurable. -/
