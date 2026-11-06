@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Fourier.FourierTransform
 public import Mathlib.Analysis.InnerProductSpace.Adjoint
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
 # Linear change of variables for the Fourier transform
@@ -22,10 +23,14 @@ The Jacobian factor comes from Mathlib's
 integral, so no integrability hypothesis is necessary. They apply to functions with values in any
 complex normed space, including Schwartz functions by coercion.
 
+For a dilation `x ↦ R⁻¹ • x`, `R > 0`, the law reads `𝓕⁻ (f (R⁻¹ • ·)) y = R ^ n • 𝓕⁻ f (R • y)`,
+where `n` is the dimension: dilating a symbol by `R` concentrates its kernel at scale `R⁻¹`.
+
 ## Main results
 
 * `ContinuousLinearEquiv.fourier_comp`: change of variables for the Fourier transform.
 * `ContinuousLinearEquiv.fourierInv_comp`: the corresponding inverse-transform formula.
+* `TauCeti.fourierInv_comp_inv_smul`: the inverse Fourier transform of a dilation.
 -/
 
 public section
@@ -64,5 +69,16 @@ theorem _root_.ContinuousLinearEquiv.fourierInv_comp (A : E ≃L[ℝ] E) (f : E 
     𝓕⁻ (f ∘ A) y = |A.toLinearEquiv.toLinearMap.det|⁻¹ •
       𝓕⁻ f (ContinuousLinearMap.adjoint (A.symm : E →L[ℝ] E) y) := by
   simp only [Real.fourierInv_eq_fourier_neg, A.fourier_comp, map_neg]
+
+/-- **The inverse Fourier transform of a dilation.** For `R > 0`,
+`𝓕⁻ (f (R⁻¹ • ·)) y = R ^ n • 𝓕⁻ f (R • y)`, where `n` is the dimension of `E`. This is
+`ContinuousLinearEquiv.fourierInv_comp` for the dilation `x ↦ R⁻¹ • x`, with the determinant and
+the adjoint computed. -/
+theorem fourierInv_comp_inv_smul (f : E → F) {R : ℝ} (hR : 0 < R) (y : E) :
+    𝓕⁻ (fun x ↦ f (R⁻¹ • x)) y = R ^ Module.finrank ℝ E • 𝓕⁻ f (R • y) := by
+  simp only [Real.fourierInv_eq]
+  rw [← Measure.integral_comp_inv_smul_of_nonneg volume _ hR.le]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+  simp [inner_smul_left, inner_smul_right, hR.ne']
 
 end TauCeti
