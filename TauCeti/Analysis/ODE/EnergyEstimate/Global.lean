@@ -204,32 +204,6 @@ theorem exists_pos_forall_integral_norm_deriv_sq_add_mul_integral_norm_sq_le
 
 /-! ### Hyperbolic limits -/
 
-/-- The arithmetic combining the estimates for `Y = ∫ ‖u‖²` and `X = ∫ ‖u'‖²` in terms of
-`Z = ∫ ‖u' + A u‖²` and `W = ∫_{[-R, R]} ‖u‖²`. -/
-private theorem add_le_mul_add_mul {X Y Z W a b c m : ℝ} (hc : 0 < c) (ha : 0 ≤ a) (hb : 0 ≤ b)
-    (hZ : 0 ≤ Z) (hW : 0 ≤ W) (hY : c / 2 * Y ≤ a * Z + b * W)
-    (hX : X ≤ 2 * Z + 2 * m ^ 2 * Y) :
-    X + Y ≤ (2 + (2 * m ^ 2 + 1) * (2 / c) * (a + b)) * Z +
-      (2 + (2 * m ^ 2 + 1) * (2 / c) * (a + b)) * W := by
-  have hY' : Y ≤ 2 / c * (a * Z + b * W) := by
-    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
-    linarith
-  set k := (2 * m ^ 2 + 1) * (2 / c)
-  have hk : 0 ≤ k := by positivity
-  have h₁ : k * (a * Z) ≤ k * ((a + b) * Z) :=
-    mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (by linarith) hZ) hk
-  have h₂ : k * (b * W) ≤ k * ((a + b) * W) :=
-    mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (by linarith) hW) hk
-  have h₃ : (2 * m ^ 2 + 1) * Y ≤ (2 * m ^ 2 + 1) * (2 / c * (a * Z + b * W)) :=
-    mul_le_mul_of_nonneg_left hY' (by positivity)
-  have h₄ : (2 * m ^ 2 + 1) * (2 / c * (a * Z + b * W)) = k * (a * Z) + k * (b * W) := by
-    ring
-  have h₅ : (2 + k * (a + b)) * Z + (2 + k * (a + b)) * W =
-      2 * Z + 2 * W + k * ((a + b) * Z) + k * ((a + b) * W) := by
-    ring
-  rw [h₅]
-  nlinarith
-
 /-- **The trajectory estimate for hyperbolic limits on test paths.** Let `A` be a continuous
 family of operators whose limits `A±` at `±∞` have Lyapunov forms. Then there are `R > 0` and
 `C ≥ 0` with
@@ -295,9 +269,20 @@ theorem exists_pos_nonneg_forall_integral_norm_deriv_sq_add_integral_norm_sq_le_
     (fun s hs v ↦ by
       have := mul_le_mul_of_nonneg_right (hK' s hs) (sq_nonneg ‖v‖)
       linarith [(S s).neg_mul_norm_sq_le_inner_sub (A s) (deriv S s) v])
-  exact add_le_mul_add_mul hc (by positivity) (by positivity)
-    (integral_nonneg fun _ ↦ by positivity)
-    (setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity) hY
-    (integral_norm_deriv_sq_le hA hu hcu hMA)
+  have hX := integral_norm_deriv_sq_le hA hu hcu hMA
+  have hZ : 0 ≤ ∫ s, ‖deriv u s + A s (u s)‖ ^ 2 := integral_nonneg fun _ ↦ by positivity
+  have hW : 0 ≤ ∫ s in Icc (-R) R, ‖u s‖ ^ 2 :=
+    setIntegral_nonneg measurableSet_Icc fun _ _ ↦ by positivity
+  -- Solve `hY` for `∫ ‖u‖²` and substitute the result into `hX`.
+  set a := (‖Sm‖ + ‖Sp - Sm‖) ^ 2 / (2 * c)
+  set b := K + c
+  have hY' : (∫ s, ‖u s‖ ^ 2) ≤ 2 / c * (a * (∫ s, ‖deriv u s + A s (u s)‖ ^ 2) +
+      b * ∫ s in Icc (-R) R, ‖u s‖ ^ 2) := by
+    rw [div_mul_eq_mul_div, le_div_iff₀ hc]
+    linarith
+  have hk : 0 ≤ (2 * MA ^ 2 + 1) * (2 / c) := by positivity
+  nlinarith [mul_le_mul_of_nonneg_left hY' (by positivity : (0 : ℝ) ≤ 2 * MA ^ 2 + 1),
+    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ b)) hZ,
+    mul_nonneg (mul_nonneg hk (by positivity : (0 : ℝ) ≤ a)) hW]
 
 end TauCeti
