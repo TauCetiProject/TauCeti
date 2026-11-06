@@ -81,8 +81,7 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_specialFiberι_eq_prod_vanishing
         toBase.specialFiberMultiplicity π η := by
   have hπm : π ∈ maximalIdeal R := hπ ▸ Ideal.mem_span_singleton_self π
   -- If `R` is a field, then the generic point maps to the closed point, the only point of `Spec R`.
-  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
-  have hπ0 : π ≠ 0 := fun h ↦ hR (by rw [hπ, h, Ideal.span_singleton_eq_bot])
+  have hπ0 := toBase.ne_zero_of_base_ne_closedPoint hη hπ
   have := fun x ↦ TauCeti.AlgebraicGeometry.IsRegular.uniqueFactorizationMonoid_stalk x (hX x)
   rw [ker_specialFiberι_eq_ofIdealTop_span toBase hπ,
     Scheme.IdealSheafData.ofIdealTop_span_singleton_eq_prod_vanishingIdeal

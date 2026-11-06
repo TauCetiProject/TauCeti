@@ -166,8 +166,7 @@ theorem intersectionNumber_self_nonpos_of_base_eq_closedPoint (hX : ∀ x : X, c
         (LineBundleClass.mk (isEffectiveCartier_vanishingIdeal_closure_singleton_of_isRegular
           hX j.2).toInvertibleSheaf)⁻¹ ≤ 0 := by
   -- If `R` were a field, its generic point would map to the closed point.
-  have hR := toBase.maximalIdeal_ne_bot_of_base_ne_closedPoint hη
-  have hπ0 : π ≠ 0 := fun h ↦ hR (by rw [hπ, h, Ideal.span_singleton_eq_bot])
+  have hπ0 := toBase.ne_zero_of_base_ne_closedPoint hη hπ
   have hm := toBase.specialFiberMultiplicity_pos hη (hπ ▸ Ideal.mem_span_singleton_self π) hπ0 j hj
   refine nonpos_of_mul_nonpos_right ?_ (Nat.cast_pos.mpr hm)
   rw [toBase.specialFiberMultiplicity_mul_intersectionNumber_self k hX hη hπ hreg hj, neg_nonpos]
