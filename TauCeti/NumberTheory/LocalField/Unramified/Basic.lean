@@ -113,23 +113,26 @@ separable, the other half of Mathlib's criterion
 nonarchimedean local fields, whose residue fields are finite and hence perfect, so it is not a
 field of the class: `Algebra.IsSeparable 𝓀[K] 𝓀[L]` is an instance.
 
-The predicate is about an extension of local fields with compatible valuations, so the local
-field structure of `K` and the compatibility `ValuativeExtension K L` are parameters of the
-class although `ramificationIndex K L` does not mention them. -/
-class IsUnramified [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
-    [ValuativeExtension K L] : Prop where
+Like `ramificationIndex` and `IsTotallyRamified`, the predicate takes only the valuation of `L`
+as a parameter; the compatibility `ValuativeExtension K L` is a hypothesis of the theorems that
+use it. -/
+class IsUnramified : Prop where
   /-- The ramification index of an unramified extension is `1`. -/
   ramificationIndex_eq_one : ramificationIndex K L = 1
 
 attribute [simp] IsUnramified.ramificationIndex_eq_one
 
 variable (K L) in
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeExtension K L] in
 /-- **An extension of nonarchimedean local fields is unramified exactly when `e(L/K) = 1`.** -/
 theorem isUnramified_iff_ramificationIndex_eq_one :
     IsUnramified K L ↔ ramificationIndex K L = 1 :=
   ⟨fun _ ↦ IsUnramified.ramificationIndex_eq_one, fun h ↦ ⟨h⟩⟩
 
 variable (K L) in
+omit [ValuativeRel K] [TopologicalSpace K] [IsNonarchimedeanLocalField K]
+  [ValuativeExtension K L] in
 /-- **An extension of nonarchimedean local fields is unramified exactly when the normalized value
 group of `K` is carried onto the normalized value group of `L`.** This is the form the definition
 takes for a general valued field: the map of value groups is injective in any case, so
@@ -200,6 +203,7 @@ theorem IsUnramified.inertiaDegree_eq_finrank [IsUnramified K L] :
   (isUnramified_iff_inertiaDegree_eq_finrank K L).1 ‹_›
 
 variable (K L) in
+omit [ValuativeExtension K L] in
 /-- An unramified extension of nonarchimedean local fields is tamely ramified: its ramification
 index `1` is prime to the residue characteristic. -/
 theorem IsUnramified.isTamelyRamified [IsUnramified K L] : IsTamelyRamified K L := by
@@ -212,6 +216,7 @@ variable (K L) (M : Type*) [Field M] [ValuativeRel M] [TopologicalSpace M]
   [IsNonarchimedeanLocalField M] [Algebra L M] [Algebra K M] [IsScalarTower K L M]
   [ValuativeExtension L M] [ValuativeExtension K M]
 
+omit [ValuativeExtension K M] in
 /-- **Unramifiedness in a tower** `M/L/K`: the extension `M/K` is unramified exactly when both
 `L/K` and `M/L` are. -/
 theorem isUnramified_tower_iff :
@@ -219,14 +224,17 @@ theorem isUnramified_tower_iff :
   simp only [isUnramified_iff_ramificationIndex_eq_one,
     ramificationIndex_tower (K := K) (L := L) M, mul_eq_one]
 
+omit [ValuativeExtension K M] in
 /-- Unramifiedness is transitive in a tower `M/L/K`. -/
 theorem IsUnramified.trans [IsUnramified K L] [IsUnramified L M] : IsUnramified K M :=
   (isUnramified_tower_iff K L M).2 ⟨‹_›, ‹_›⟩
 
+omit [ValuativeExtension K M] in
 /-- The bottom step of an unramified tower is unramified. -/
 theorem IsUnramified.tower_bot [IsUnramified K M] : IsUnramified K L :=
   ((isUnramified_tower_iff K L M).1 ‹_›).1
 
+omit [ValuativeExtension K M] in
 /-- The top step of an unramified tower is unramified. -/
 theorem IsUnramified.tower_top [IsUnramified K M] : IsUnramified L M :=
   ((isUnramified_tower_iff K L M).1 ‹_›).2
