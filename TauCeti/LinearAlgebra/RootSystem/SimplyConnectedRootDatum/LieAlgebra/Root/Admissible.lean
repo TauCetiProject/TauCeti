@@ -44,29 +44,16 @@ variable {V : Type*} [AddCommGroup V] [Module ℚ V]
   [LieRingModule (t.lieAlgebra ht) V] [LieModule ℚ (t.lieAlgebra ht) V]
   [FiniteDimensional ℚ V]
 
-/-- Every Chevalley root vector acts with integral divided powers on any additive subgroup
-stable under the simple-generator Kostant form. -/
-theorem dividedPower_chevalleySystem_apply_mem (M : AddSubgroup V)
-    (hM : ∀ u ∈ t.kostantForm ht, ∀ v ∈ M,
-      representation ℚ (t.lieAlgebra ht) V u v ∈ M)
-    (γ : Fin t.numRoots) (n : ℕ) {v : V} (hv : v ∈ M) :
-    Associative.dividedPower n (toEnd ℚ (t.lieAlgebra ht) V
-      (t.chevalleySystem ht γ)) v ∈ M := by
-  have hstable : ∀ u ∈ UniversalEnvelopingAlgebra.kostantForm
-      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h, ∀ v ∈ M,
-      representation ℚ (t.lieAlgebra ht) V u v ∈ M := by
-    simpa only [kostantForm_def, LieAlgebra.Basis.kostantForm_def] using hM
-  have hnil (i : Fin t.rank ⊕ Fin t.rank) :
-      IsNilpotent (representation ℚ (t.lieAlgebra ht) V
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
-    rcases i with i | i
-    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inl] using
-        ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_e (K := ℚ) (M := V)
-    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inr] using
-        ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_f (K := ℚ) (M := V)
-  simpa only [representation_ι, Module.End.smul_def] using
-    dividedPower_chevalleySystem_smul_mem
-      (representation ℚ (t.lieAlgebra ht) V) M hstable hnil γ n v hv
+/-- The numbered root generators act nilpotently on every finite-dimensional rational
+module of the pinned Lie algebra. -/
+theorem isNilpotent_representation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank) :
+    IsNilpotent (representation ℚ (t.lieAlgebra ht) V
+      (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
+  rcases i with i | i
+  · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inl] using
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_e (K := ℚ) (M := V)
+  · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inr] using
+      ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_f (K := ℚ) (M := V)
 
 /-- The all-root Kostant form preserves every subgroup stable under the simple-generator
 form. The Cartan generators are unchanged. -/
@@ -82,16 +69,9 @@ theorem kostantForm_chevalleySystem_apply_mem (M : AddSubgroup V)
       (t.lieBasis ht).rootGenerator (t.lieBasis ht).h, ∀ v ∈ M,
       representation ℚ (t.lieAlgebra ht) V u v ∈ M := by
     simpa only [kostantForm_def, LieAlgebra.Basis.kostantForm_def] using hM
-  have hnil (i : Fin t.rank ⊕ Fin t.rank) :
-      IsNilpotent (representation ℚ (t.lieAlgebra ht) V
-        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
-    rcases i with i | i
-    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inl] using
-        ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_e (K := ℚ) (M := V)
-    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inr] using
-        ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_f (K := ℚ) (M := V)
   exact kostantForm_chevalleySystem_smul_mem
-    (representation ℚ (t.lieAlgebra ht) V) M hstable hnil u hu v hv
+    (representation ℚ (t.lieAlgebra ht) V) M hstable
+    (t.isNilpotent_representation_rootGenerator ht) u hu v hv
 
 /-- The full-weight lattice is preserved by the all-root Kostant form of the pinned
 Chevalley system. -/
