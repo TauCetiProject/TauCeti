@@ -147,8 +147,9 @@ theorem _root_.MeasureTheory.Measure.eq_of_map_sq_eq_of_map_neg_eq_self (μ ν :
     linarith
   intro ρ _ hρ
   have hsym (s : Set ℝ) (hs : MeasurableSet s) : ρ.real (-s) = ρ.real s := by
-    nth_rw 2 [← hρ]
-    exact (map_measureReal_apply (by fun_prop) hs).symm
+    have := map_measureReal_apply (μ := ρ) (f := fun y : ℝ ↦ -y) (by fun_prop) hs
+    rw [hρ, Set.neg_preimage] at this
+    exact this.symm
   rw [map_measureReal_apply (by fun_prop) MeasurableSet.univ, preimage_univ]
   split_ifs with hx
   · rw [map_measureReal_apply (by fun_prop) measurableSet_Iic,
