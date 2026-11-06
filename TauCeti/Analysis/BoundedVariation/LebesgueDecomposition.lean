@@ -159,6 +159,39 @@ theorem integral_divergenceCLM_mul_eq_neg_integral_inner_acDerivativeDensity_sub
   rw [integral_divergenceCLM_mul_eq_neg_integral_inner_polarDensity hu hfin, ← hsplit]
   simp only [acDerivativeDensity_def, inner_smul_right, smul_eq_mul, neg_add, sub_eq_add_neg, lam]
 
+omit hu hfin in
+/-- A locally integrable function against `ν ≪ ρ`, weighted by the real Radon–Nikodym density
+`dν/dρ`, is locally integrable against `ρ`. -/
+theorem locallyIntegrable_rnDeriv_toReal_smul {α F : Type*} [MeasurableSpace α]
+    [TopologicalSpace α] [OpensMeasurableSpace α] [T2Space α] [LocallyCompactSpace α]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {ν ρ : Measure α} [SigmaFinite ν] [SigmaFinite ρ] (hνρ : ν ≪ ρ) {g : α → F}
+    (hg : LocallyIntegrable g ν) :
+    LocallyIntegrable (fun x => (ν.rnDeriv ρ x).toReal • g x) ρ := by
+  refine locallyIntegrable_iff.2 fun K hK => ?_
+  have hi := (integrable_rnDeriv_smul_iff hνρ).2
+    ((integrable_indicator_iff hK.measurableSet).2 (hg.integrableOn_isCompact hK))
+  apply (integrable_indicator_iff hK.measurableSet).1
+  convert hi using 1
+  ext x
+  by_cases hx : x ∈ K <;> simp [hx]
+
+omit hu hfin [FiniteDimensional ℝ E] in
+/-- The pairing of a test field `φ` supported in `U`, with `‖φ x‖ ≤ 1`, against a density `v`, is
+bounded in norm by the `‖v‖ₑ`-weighted measure of `U`. -/
+theorem enorm_integral_inner_le_withDensity {U : Opens E} {φ : 𝓓(Ω, E)} (hφU : tsupport φ ⊆ U)
+    (hφ : ∀ x, ‖φ x‖ ≤ 1) (m : Measure Ω) (v : Ω → E) :
+    ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤ m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' (U : Set E)) := by
+  rw [withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe),
+    ← lintegral_indicator (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
+  refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
+  by_cases hx : x ∈ ((↑) ⁻¹' (U : Set E) : Set Ω)
+  · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
+    exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
+      (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
+  · have hzero : φ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx (hφU hx')
+    simp [hx, hzero]
+
 /-- **Uniqueness of the absolutely continuous derivative density.** Any locally integrable
 `g` representing `Du` together with a locally integrable density against a measure singular
 to `ν` agrees with `acDerivativeDensity` at `ν`-almost every point. -/
@@ -190,31 +223,11 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
   -- Transfer the difference of the absolutely continuous densities to the common measure.
   let f := fun x => (ν.rnDeriv ρ x).toReal • (g x - acDerivativeDensity μ Ω u ν x)
   have hg' := hg.sub (locallyIntegrable_acDerivativeDensity hu hfin ν)
-  have hf : LocallyIntegrable f ρ := by
-    refine locallyIntegrable_iff.2 fun K hK => ?_
-    have hi := (integrable_rnDeriv_smul_iff hνρ).2
-      ((integrable_indicator_iff hK.measurableSet).2 (hg'.integrableOn_isCompact hK))
-    apply (integrable_indicator_iff hK.measurableSet).1
-    convert hi using 1
-    ext x
-    by_cases hx : x ∈ K <;> simp [f, hx]
+  have hf : LocallyIntegrable f ρ := locallyIntegrable_rnDeriv_toReal_smul hνρ hg'
   have hle := ae_enorm_le_of_forall_enorm_integral_inner_le hf
     (Measure.measurable_rnDeriv η ρ)
     (fun K hK => ne_top_of_le_ne_top hK.measure_lt_top.ne (Measure.setLIntegral_rnDeriv_le K))
     fun U hU φ hφU hφ => by
-      -- Bound each singular pairing by its norm measure on the support of the test field.
-      have hbound (m : Measure Ω) (v : Ω → E) :
-          ‖∫ x : Ω, ⟪φ x, v x⟫ ∂m‖ₑ ≤
-            m.withDensity (fun x => ‖v x‖ₑ) ((↑) ⁻¹' (U : Set E)) := by
-        rw [withDensity_apply _ (U.isOpen.measurableSet.preimage measurable_subtype_coe),
-          ← lintegral_indicator (U.isOpen.measurableSet.preimage measurable_subtype_coe)]
-        refine (enorm_integral_le_lintegral_enorm _).trans (lintegral_mono fun x => ?_)
-        by_cases hx : x ∈ ((↑) ⁻¹' (U : Set E) : Set Ω)
-        · rw [indicator_of_mem hx, ← ofReal_norm, ← ofReal_norm]
-          exact ENNReal.ofReal_le_ofReal ((norm_inner_le_norm _ _).trans
-            (mul_le_of_le_one_left (norm_nonneg _) (hφ x)))
-        · have hzero : φ x = 0 := image_eq_zero_of_notMem_tsupport fun hx' => hx (hφU hx')
-          simp [hx, hzero]
       have hint {v : Ω → E} (hv : LocallyIntegrable v ν) :
           Integrable (fun x : Ω => ⟪φ x, v x⟫) ν :=
         (φ.integrable_bilin_subtype (innerSL ℝ) hv).congr
@@ -232,7 +245,8 @@ theorem ae_eq_acDerivativeDensity [SigmaFinite ν] {g τ : Ω → E} {ξ : Measu
       rw [heq, Measure.setLIntegral_rnDeriv hηρ]
       exact enorm_sub_le.trans (by
         simpa only [η, _root_.add_apply, add_comm] using add_le_add
-          (hbound ω (polarDensity μ Ω u)) (hbound ξ τ))
+          (enorm_integral_inner_le_withDensity hφU hφ ω (polarDensity μ Ω u))
+          (enorm_integral_inner_le_withDensity hφU hφ ξ τ))
   -- The singular bound vanishes ν-a.e., while the density of ν in ρ is positive there.
   filter_upwards [hνρ.ae_le hle, Measure.rnDeriv_eq_zero_of_mutuallySingular hην hνρ,
     Measure.rnDeriv_pos hνρ, hνρ.ae_le (Measure.rnDeriv_ne_top ν ρ)] with x hx hz hp ht
