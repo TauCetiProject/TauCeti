@@ -8,8 +8,8 @@ module
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import TauCeti.Analysis.Convex.RegionBetween
 public import TauCeti.Analysis.Convex.SimplicialComplex.Restrict
-import TauCeti.Analysis.Convex.Intrinsic
 import TauCeti.Analysis.Convex.SimplicialComplex.Carrier
+import TauCeti.Data.Set.Prod
 import TauCeti.Analysis.Convex.SimplicialComplex.Subdivision
 
 /-!
@@ -412,37 +412,6 @@ theorem sUnion_rectilinearCells (hS : ∀ p ∈ S, p.1 ∈ K.faces)
       (mem_closedRegionBetween.2 ⟨hxs, hay', hyb'⟩)
     exact ⟨D, hD, intrinsicInterior_subset hzD⟩
 
-/-- A continuous affine function taking values on both sides of `y ∈ Icc l r` at two points of the
-intersection of convex sets `s` and `B` has its graph over `s` meeting the box `B ×ˢ Icc l r`. -/
-private theorem graphOn_inter_prod_nonempty {s B : Set E} (hs : Convex ℝ s) (hB : Convex ℝ B)
-    {f : E →ᴬ[ℝ] ℝ} {x₁ x₂ : E} {y l r : ℝ} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s) (hB₁ : x₁ ∈ B)
-    (hB₂ : x₂ ∈ B) (hf₁ : f x₁ ≤ y) (hf₂ : y ≤ f x₂) (hy : y ∈ Icc l r) :
-    (s.graphOn f ∩ B ×ˢ Icc l r).Nonempty := by
-  obtain ⟨x, hx, hfx⟩ := (convex_segment x₁ x₂).isPreconnected.intermediate_value
-    (left_mem_segment ℝ x₁ x₂) (right_mem_segment ℝ x₁ x₂) f.continuous.continuousOn ⟨hf₁, hf₂⟩
-  exact ⟨(x, y), mem_graphOn.2 ⟨hs.segment_subset hx₁ hx₂ hx, hfx⟩,
-    hB.segment_subset hB₁ hB₂ hx, hy⟩
-
-/-- If two bands over a convex set `s` meet a box `B ×ˢ Icc l r` over a convex set `B`, the first
-lying below the second, and the lower graph of the second band misses the box, then the upper
-section of the first band crosses the box. -/
-private theorem graphOn_inter_prod_nonempty_of_le {s B : Set E} (hs : Convex ℝ s)
-    (hB : Convex ℝ B) {a₁ b₁ a₂ b₂ : E →ᴬ[ℝ] ℝ} {l r : ℝ} (h : ∀ x ∈ s, b₁ x ≤ a₂ x)
-    (hU₁ : (closedRegionBetween a₁ b₁ s ∩ B ×ˢ Icc l r).Nonempty)
-    (hU₂ : (closedRegionBetween a₂ b₂ s ∩ B ×ˢ Icc l r).Nonempty)
-    (hna₂ : ¬(s.graphOn a₂ ∩ B ×ˢ Icc l r).Nonempty) :
-    (s.graphOn b₁ ∩ B ×ˢ Icc l r).Nonempty := by
-  obtain ⟨p₁, hp₁, hpB₁, hpy₁⟩ := hU₁
-  obtain ⟨p₂, hp₂, hpB₂, hpy₂⟩ := hU₂
-  obtain ⟨hps₁, -, hpb₁⟩ := mem_closedRegionBetween.1 hp₁
-  obtain ⟨hps₂, hap₂, -⟩ := mem_closedRegionBetween.1 hp₂
-  -- above `p₂`, the lower section of the second band passes below the box
-  have h₂ : a₂ p₂.1 < l := by
-    by_contra! h'
-    exact hna₂ ⟨(p₂.1, a₂ p₂.1), mem_graphOn.2 ⟨hps₂, rfl⟩, hpB₂, h', hap₂.trans hpy₂.2⟩
-  exact graphOn_inter_prod_nonempty hs hB hps₂ hps₁ hpB₂ hpB₁ (y := l)
-    ((h _ hps₂).trans h₂.le) (hpy₁.1.trans hpb₁) ⟨le_rfl, hpy₁.1.trans hpy₁.2⟩
-
 /-- Over a face, at most one band between consecutive sections meets a box `B ×ˢ Icc l r` over a
 convex set `B` while both of its bounding graphs miss it: two such bands would be ordered, and the
 upper section of the lower band would cross the box. -/
@@ -461,9 +430,9 @@ private theorem band_eq_of_not_nonempty (hSle : IsTotalOnVertices S) {s : Finset
   have hconv := convex_convexHull ℝ (s : Set E)
   rcases band_trichotomy hSle ha₁ hb₁ h₁ ha₂ hb₂ h₂ with h | h | h
   · exact h
-  · exact (hnb₁ (graphOn_inter_prod_nonempty_of_le hconv hB
+  · exact (hnb₁ (graphOn_inter_prod_nonempty_of_le hconv hB b₁.continuous.continuousOn
       (fun _ hx ↦ le_of_forall_le_of_mem_convexHull h hx) hU₁ hU₂ hna₂)).elim
-  · exact (hnb₂ (graphOn_inter_prod_nonempty_of_le hconv hB
+  · exact (hnb₂ (graphOn_inter_prod_nonempty_of_le hconv hB b₂.continuous.continuousOn
       (fun _ hx ↦ le_of_forall_le_of_mem_convexHull h hx) hU₂ hU₁ hna₁)).elim
 
 /-- A band between consecutive sections is determined by the graph of its lower section, and also
@@ -483,10 +452,8 @@ private theorem band_eq_of_graphOn_eq (hS : ∀ p ∈ S, p.1 ∈ K.faces) (hSle 
     ((K.face_subset_face_iff (hS _ ha₂) (hS _ ha₁)).1 hs.ge)
   -- and the given graphs are equal as functions on the vertices
   have hgr : ∀ {f g : E →ᴬ[ℝ] ℝ}, (convexHull ℝ (s₁ : Set E)).graphOn f =
-      (convexHull ℝ (s₁ : Set E)).graphOn g → ∀ x ∈ s₁, f x = g x := fun {f g} hfg x hx ↦ by
-    have : (x, f x) ∈ (convexHull ℝ (s₁ : Set E)).graphOn g :=
-      hfg ▸ mem_graphOn.2 ⟨subset_convexHull ℝ _ hx, rfl⟩
-    exact (mem_graphOn.1 this).2.symm
+      (convexHull ℝ (s₁ : Set E)).graphOn g → ∀ x ∈ s₁, f x = g x := fun hfg x hx ↦
+    graphOn_inj.mp hfg (subset_convexHull ℝ _ hx)
   obtain ⟨v₁, hv₁, hlt₁⟩ := h₁.exists_lt
   obtain ⟨v₂, hv₂, hlt₂⟩ := h₂.exists_lt
   rcases band_trichotomy hSle ha₁ hb₁ h₁ ha₂ hb₂ h₂ with h' | h' | h'
@@ -495,19 +462,6 @@ private theorem band_eq_of_graphOn_eq (hS : ∀ p ∈ S, p.1 ∈ K.faces) (hSle 
     linarith [h' v₁ hv₁, h' v₂ hv₂, hgr h v₁ hv₁, hgr h v₂ hv₂]
 
 /-! ### Constant sections at integer heights -/
-
-/-- The graph of a constant section over a set `s` is the slice `s ×ˢ {y}`. -/
-private theorem graphOn_const (s : Set E) (y : ℝ) :
-    s.graphOn (ContinuousAffineMap.const ℝ E y) = s ×ˢ {y} := by
-  ext ⟨x, z⟩
-  simp [eq_comm]
-
-/-- The band between two constant sections over a set `s` is the prism `s ×ˢ Icc y₁ y₂`. -/
-private theorem closedRegionBetween_const (s : Set E) (y₁ y₂ : ℝ) :
-    closedRegionBetween (ContinuousAffineMap.const ℝ E y₁) (ContinuousAffineMap.const ℝ E y₂) s =
-      s ×ˢ Icc y₁ y₂ := by
-  ext ⟨x, z⟩
-  simp
 
 /-- The constant sections at integer heights over the faces of `K`. -/
 private abbrev integerSections (K : SimplicialComplex ℝ E) : Set (Finset E × (E →ᴬ[ℝ] ℝ)) :=
@@ -537,7 +491,7 @@ private theorem locallyFinite_rectilinearGraphs_integerSections
     Subtype.val_injective.injOn).subset ?_
   rintro ⟨_, ⟨s, a⟩, ⟨hs, n, hn⟩, rfl⟩ ⟨⟨x, y⟩, hxy, hxV, hy⟩
   obtain rfl : a = _ := hn
-  simp only [graphOn_const] at hxy ⊢
+  simp only [ContinuousAffineMap.coe_const, graphOn_const] at hxy ⊢
   obtain ⟨hx, rfl⟩ : x ∈ convexHull ℝ (s : Set E) ∧ y = n := by simpa using hxy
   exact ⟨(⟨s, hs⟩, n), ⟨⟨x, hx, hxV⟩, hy⟩, rfl⟩
 
@@ -548,7 +502,7 @@ private theorem prod_Icc_mem_rectilinearCells {s : Finset E} (hs : s ∈ K.faces
   obtain ⟨v, hv⟩ := K.nonempty_of_mem_faces hs
   refine .inr ⟨s, ContinuousAffineMap.const ℝ E (n : ℝ),
     ContinuousAffineMap.const ℝ E ((n + 1 : ℤ) : ℝ), ⟨hs, n, rfl⟩, ⟨hs, n + 1, rfl⟩,
-    ⟨fun x _ ↦ by simp, ⟨v, hv, by simp⟩, ?_⟩, by rw [closedRegionBetween_const]; push_cast; rfl⟩
+    ⟨fun x _ ↦ by simp, ⟨v, hv, by simp⟩, ?_⟩, by simp⟩
   rintro _ ⟨-, m, rfl⟩ hnm hmn
   have h₁ : n ≤ m := by exact_mod_cast (show (n : ℝ) ≤ m by simpa using hnm v hv)
   have h₂ : m ≤ n + 1 := by
@@ -565,10 +519,10 @@ private theorem exists_subset_prod_Icc (hC : C ∈ rectilinearCells (integerSect
     ⟨s, _, _, ⟨hs, n, rfl⟩, ⟨-, m, rfl⟩, ⟨-, ⟨v, hv, -⟩, hcons⟩, rfl⟩
   · obtain rfl : a = _ := hn
     refine ⟨s, hs, n, ?_⟩
-    simp only [graphOn_const]
+    simp only [ContinuousAffineMap.coe_const, graphOn_const]
     exact prod_mono le_rfl (singleton_subset_iff.2 ⟨le_rfl, by linarith⟩)
   · refine ⟨s, hs, n, ?_⟩
-    rw [closedRegionBetween_const]
+    simp only [ContinuousAffineMap.coe_const, closedRegionBetween_const]
     refine prod_mono le_rfl (Icc_subset_Icc le_rfl ?_)
     -- the constant section at height `n + 1` cannot lie strictly between `n` and `m`
     by_contra! hm
