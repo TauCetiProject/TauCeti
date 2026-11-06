@@ -25,13 +25,13 @@ open CategoryTheory CategoryTheory.Limits Opposite TauCeti
 example : Nat.card (Pro.const.obj (Fin 2) ⟶ Pro.const.obj (Fin 3)) = 9 := by
   calc
     _ = Nat.card (Fin 2 → Fin 3) := Nat.card_congr
-      ((Functor.FullyFaithful.ofFullyFaithful Pro.const).homEquiv.symm.trans TypeCat.homEquiv)
+      (Pro.const.fullyFaithful.homEquiv.symm.trans TypeCat.homEquiv)
     _ = 9 := by simp
 
 -- The empty object has exactly one map to a point, not the other way around.
 example : Unique (Pro.const.obj PEmpty ⟶ Pro.const.obj PUnit) := by
   let e : (PEmpty → PUnit) ≃ (Pro.const.obj PEmpty ⟶ Pro.const.obj PUnit) :=
-    TypeCat.homEquiv.symm.trans (Functor.FullyFaithful.ofFullyFaithful Pro.const).homEquiv
+    TypeCat.homEquiv.symm.trans Pro.const.fullyFaithful.homEquiv
   exact e.uniqueCongr inferInstance
 
 example : IsEmpty (Pro.const.obj PUnit ⟶ Pro.const.obj PEmpty) := by
@@ -47,17 +47,22 @@ example (n : ℕᵒᵖ) :
       Pro.π ((Functor.const ℕᵒᵖ).obj Bool) n = 𝟙 _ := by
   simp
 
+-- The lift API is usable without unfolding the presentation cone.
+example (c : Cone (((Functor.const ℕᵒᵖ).obj Bool) ⋙ Pro.const)) (n : ℕᵒᵖ) :
+    Pro.lift c ≫ Pro.π ((Functor.const ℕᵒᵖ).obj Bool) n = c.π.app n := by
+  simp only [Pro.lift_π]
+
 -- The induced map on the tower really has the prescribed nonidentity coordinate.
 example (n : ℕᵒᵖ) :
-    Pro.mkMap ((Functor.const ℕᵒᵖ).map (↾Bool.not)) ≫
+    Pro.lim.map ((Functor.const ℕᵒᵖ).map (↾Bool.not)) ≫
       Pro.π ((Functor.const ℕᵒᵖ).obj Bool) n =
     Pro.π ((Functor.const ℕᵒᵖ).obj Bool) n ≫ Pro.const.map (↾Bool.not) := by
   simp
 
-example : Pro.mkMap ((Functor.const ℕᵒᵖ).map (↾Bool.not)) ≠ 𝟙 _ := by
+example : Pro.lim.map ((Functor.const ℕᵒᵖ).map (↾Bool.not)) ≠ 𝟙 _ := by
   intro h
   have heq := congrArg (fun f ↦ f ≫ Pro.π ((Functor.const ℕᵒᵖ).obj Bool) (op 0)) h
-  simp only [Pro.mkMap_π, Functor.const_obj_obj, Functor.const_map_app,
+  simp only [Pro.lim_map_π, Functor.const_obj_obj, Functor.const_map_app,
     Category.id_comp] at heq
   have hmap : Pro.const.map (↾Bool.not) = 𝟙 (Pro.const.obj Bool) := by
     apply (cancel_epi (Pro.mkConstIso (I := ℕᵒᵖ) Bool).hom).mp

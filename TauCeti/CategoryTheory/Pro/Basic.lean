@@ -47,21 +47,44 @@ namespace Pro
 variable {C : Type u} [Category.{v} C]
 
 /-- The fully faithful embedding as constant pro-objects. -/
+@[expose]
 def const : C ⥤ Pro C := Ind.yoneda.rightOp
 
 instance : const (C := C) |>.Full := inferInstanceAs Ind.yoneda.rightOp.Full
 instance : const (C := C) |>.Faithful := inferInstanceAs Ind.yoneda.rightOp.Faithful
 
+/-- The constant-object embedding is fully faithful. -/
+protected def const.fullyFaithful : (const (C := C)).FullyFaithful :=
+  Ind.yoneda.fullyFaithful.rightOp
+
+/-- A constant pro-object is the opposite of the corresponding ind-representable. -/
+theorem const_obj (X : C) : const.obj X = op (Ind.yoneda.obj (op X)) := (rfl)
+
+/-- The constant-object embedding acts on maps by opposite Yoneda. -/
+theorem const_map {X Y : C} (f : X ⟶ Y) :
+    const.map f = (Ind.yoneda.map f.op).op := (rfl)
+
 variable {I : Type v} [SmallCategory I] [IsCofiltered I]
 
 attribute [local instance] IsCofiltered.isConnected
 
+/-- The functor sending a cofiltered diagram in `C` to its pro-object, dual to `Ind.lim`. -/
+@[expose]
+def lim : (I ⥤ C) ⥤ Pro C := (Functor.opHom I C ⋙ Ind.lim Iᵒᵖ).rightOp
+
 /-- The pro-object presented by a small cofiltered diagram. -/
-def mk (F : I ⥤ C) : Pro C := op ((Ind.lim Iᵒᵖ).obj F.op)
+abbrev mk (F : I ⥤ C) : Pro C := lim.obj F
+
+/-- A presented pro-object is the opposite of the ind-limit of the opposite diagram. -/
+theorem mk_def (F : I ⥤ C) : mk F = op ((Ind.lim Iᵒᵖ).obj F.op) := (rfl)
 
 /-- The canonical projection from a presented pro-object to one of its stages. -/
 def π (F : I ⥤ C) (i : I) : mk F ⟶ const.obj (F.obj i) :=
   (colimit.ι (F.op ⋙ Ind.yoneda) (op i)).op
+
+/-- Stage projections are the opposites of the ind-presentation's colimit inclusions. -/
+theorem π_def (F : I ⥤ C) (i : I) :
+    π F i = (colimit.ι (F.op ⋙ Ind.yoneda) (op i)).op := (rfl)
 
 /-- Stage projections commute with transition maps. -/
 @[reassoc (attr := simp)]
@@ -69,8 +92,8 @@ theorem π_naturality (F : I ⥤ C) {i j : I} (a : i ⟶ j) :
     π F i ≫ const.map (F.map a) = π F j :=
   congrArg Quiver.Hom.op (colimit.w (F.op ⋙ Ind.yoneda) a.op)
 
-/-- The stage projections form a cone. Its vertex is exposed so that the cone's
-legs and universal maps have source and target `mk F` without transports. -/
+/-- The stage projections form a cone. The body is exposed so that the vertex in
+`mkCone_π_app` is definitionally `mk F`, without equality transports. -/
 @[expose]
 def mkCone (F : I ⥤ C) : Cone (F ⋙ const) where
   pt := mk F
@@ -90,32 +113,28 @@ theorem mkCone_pt (F : I ⥤ C) : (mkCone F).pt = mk F := (rfl)
 @[simp]
 theorem mkCone_π_app (F : I ⥤ C) (i : I) : (mkCone F).π.app i = π F i := (rfl)
 
+/-- The universal map from a cone to the pro-object presented by its diagram. -/
+def lift {F : I ⥤ C} (c : Cone (F ⋙ const)) : c.pt ⟶ mk F :=
+  (mkConeIsLimit F).lift c
+
+/-- The universal map has the prescribed stage projections. -/
+@[reassoc (attr := simp)]
+theorem lift_π {F : I ⥤ C} (c : Cone (F ⋙ const)) (i : I) :
+    lift c ≫ π F i = c.π.app i :=
+  (mkConeIsLimit F).fac c i
+
 /-- Morphisms into a presented pro-object are determined by their stage projections. -/
 @[ext]
 theorem hom_ext {F : I ⥤ C} {X : Pro C} {f g : X ⟶ mk F}
     (h : ∀ i, f ≫ π F i = g ≫ π F i) : f = g :=
   (mkConeIsLimit F).hom_ext h
 
-/-- A natural transformation of cofiltered diagrams induces a morphism of pro-objects. -/
-def mkMap {F G : I ⥤ C} (α : F ⟶ G) : mk F ⟶ mk G :=
-  (mkConeIsLimit G).map (mkCone F) (Functor.whiskerRight α const)
-
 /-- The induced pro-morphism has the specified map at each stage. -/
 @[reassoc (attr := simp)]
-theorem mkMap_π {F G : I ⥤ C} (α : F ⟶ G) (i : I) :
-    mkMap α ≫ π G i = π F i ≫ const.map (α.app i) :=
-  (mkConeIsLimit G).map_π (mkCone F) (Functor.whiskerRight α const) i
-
-@[simp]
-theorem mkMap_id (F : I ⥤ C) : mkMap (𝟙 F) = 𝟙 (mk F) := by
-  apply hom_ext
-  simp
-
-@[simp]
-theorem mkMap_comp {F G H : I ⥤ C} (α : F ⟶ G) (β : G ⟶ H) :
-    mkMap (α ≫ β) = mkMap α ≫ mkMap β := by
-  apply hom_ext
-  simp
+theorem lim_map_π {F G : I ⥤ C} (α : F ⟶ G) (i : I) :
+    lim.map α ≫ π G i = π F i ≫ const.map (α.app i) :=
+  congrArg Quiver.Hom.op
+    (colimit.ι_map (Functor.whiskerRight (NatTrans.op α) Ind.yoneda) (op i))
 
 /-- A constant cofiltered presentation gives the corresponding constant pro-object. -/
 def mkConstIso (X : C) : mk ((Functor.const I).obj X) ≅ const.obj X :=
@@ -127,20 +146,20 @@ def mkConstIso (X : C) : mk ((Functor.const I).obj X) ≅ const.obj X :=
 @[simp]
 theorem π_const (X : C) (i : I) :
     π ((Functor.const I).obj X) i = (mkConstIso (I := I) X).hom := by
-  -- Reduce the dual-colimit vertex to compare the two presentation cones.
-  simpa [mkConstIso, mk, mkCone, π, Ind.lim] using
-    ((mkConeIsLimit ((Functor.const I).obj X)).conePointUniqueUpToIso_hom_comp
-      ((IsLimit.postcomposeInvEquiv (Functor.constComp I X const)
-        (constCone I (const.obj X))).symm (isLimitConstCone I (const.obj X))) i).symm
+  have h := (mkConeIsLimit ((Functor.const I).obj X)).conePointUniqueUpToIso_hom_comp
+    ((IsLimit.postcomposeInvEquiv (Functor.constComp I X const)
+      (constCone I (const.obj X))).symm (isLimitConstCone I (const.obj X))) i
+  -- Unfold the cone to normalize the equality's ambient Hom type from `(mkCone _).pt` to `mk _`.
+  simpa [mkConstIso, mkCone] using h.symm
 
 /-- The constant-presentation comparison is natural in the constant object. -/
 @[reassoc (attr := simp)]
-theorem mkMap_mkConstIso_hom {X Y : C} (f : X ⟶ Y) :
-    mkMap ((Functor.const I).map f) ≫ (mkConstIso Y).hom =
+theorem lim_map_mkConstIso_hom {X Y : C} (f : X ⟶ Y) :
+    lim.map ((Functor.const I).map f) ≫ (mkConstIso Y).hom =
       (mkConstIso X).hom ≫ const.map f := by
   let i : I := Classical.choice (IsCofiltered.nonempty (C := I))
   simpa only [π_const, Functor.const_map_app] using
-    mkMap_π ((Functor.const I).map f) i
+    lim_map_π ((Functor.const I).map f) i
 
 end Pro
 end TauCeti
