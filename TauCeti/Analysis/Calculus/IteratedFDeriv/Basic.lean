@@ -14,7 +14,9 @@ The `i`-th iterated derivative of the `m`-th iterated derivative of a function h
 as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFDeriv_fderiv`, the
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The file also supplies the two-variable currying isometry used to identify
-continuous multilinear second derivatives with curried bilinear maps.
+continuous multilinear second derivatives with curried bilinear maps, and the identity
+`fderiv_fderiv_eq_continuousMultilinearCurryFin2` exhibiting the second Fréchet derivative as the
+curried second iterated derivative.
 -/
 
 public section
@@ -50,6 +52,12 @@ end CurryFin2
 
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+
+/-- The second Fréchet derivative is the curried second iterated derivative. -/
+theorem fderiv_fderiv_eq_continuousMultilinearCurryFin2 (f : E → F) (x : E) :
+    fderiv 𝕜 (fderiv 𝕜 f) x = continuousMultilinearCurryFin2 𝕜 E F (iteratedFDeriv 𝕜 2 f x) := by
+  ext v w
+  simp [iteratedFDeriv_two_apply]
 
 /-- The `i`-th iterated derivative of the `m`-th iterated derivative of `f` has the same norm as
 the `(i + m)`-th iterated derivative of `f`. -/

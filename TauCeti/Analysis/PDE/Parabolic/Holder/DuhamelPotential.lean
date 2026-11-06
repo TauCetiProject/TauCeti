@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Gradient
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.HeatEquation
 public import TauCeti.Analysis.PDE.HeatKernel.DuhamelPotential.Holder
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+import TauCeti.Analysis.SpecialFunctions.Pow.Real
 
 /-!
 # The Duhamel heat potential as a bounded map on a slab
@@ -417,13 +418,6 @@ private theorem holderOnWith_forcing (f : HolderSpace α (slab (E := E) 0 T) F) 
   rw [h p hp, h q hq]
   exact holderWith_nnnorm f ⟨p, hp⟩ ⟨q, hq⟩
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- The curried second iterated derivative is the second Fréchet derivative. -/
-private theorem fderiv_fderiv_eq_curry (g : E → F) (x : E) :
-    fderiv ℝ (fderiv ℝ g) x = continuousMultilinearCurryFin2 ℝ E F (iteratedFDeriv ℝ 2 g x) := by
-  ext v w
-  simp [_root_.iteratedFDeriv_two_apply]
-
 /-- The spatial Hessian of the Duhamel potential of the clamped forcing, on the slab. -/
 private def hessian (f : HolderSpace α (slab (E := E) 0 T) F) (p : slab (E := E) 0 T) :
     E →L[ℝ] E →L[ℝ] F :=
@@ -467,7 +461,7 @@ private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
     · simp only [← h0, heatDuhamelPotential_zero, fderiv_zero, Pi.zero_apply]
       rw [ContinuousLinearMap.opNorm_zero]
       positivity
-    rw [fderiv_fderiv_eq_curry, LinearIsometryEquiv.norm_map]
+    rw [fderiv_fderiv_eq_continuousMultilinearCurryFin2, LinearIsometryEquiv.norm_map]
     calc _ ≤ C₂ * ‖f‖₊ * (t : ℝ) ^ ((α : ℝ) / 2) :=
           hC₂ (stronglyMeasurable_forcing f) hfM hH ht x
       _ ≤ C₂.toNNReal * ‖f‖ * (T : ℝ) ^ ((α : ℝ) / 2) := by
@@ -485,12 +479,13 @@ private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
       rw [hessian_slabMk, hessian_slabMk]
       rcases t.2.1.eq_or_lt with h0 | ht
       · simp [← h0]
-      rw [fderiv_fderiv_eq_curry, fderiv_fderiv_eq_curry, LinearIsometryEquiv.edist_map]
+      rw [fderiv_fderiv_eq_continuousMultilinearCurryFin2,
+        fderiv_fderiv_eq_continuousMultilinearCurryFin2, LinearIsometryEquiv.edist_map]
       exact hCs (stronglyMeasurable_forcing f) hfM hH ht x y
     have htm : timeEHolderNorm (α / 2) (hessian f) ≤ ((Ct * ‖f‖₊ : ℝ≥0) : ENNReal) := by
       refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-      rw [hessian_slabMk, hessian_slabMk, fderiv_fderiv_eq_curry, fderiv_fderiv_eq_curry,
-        LinearIsometryEquiv.edist_map]
+      rw [hessian_slabMk, hessian_slabMk, fderiv_fderiv_eq_continuousMultilinearCurryFin2,
+        fderiv_fderiv_eq_continuousMultilinearCurryFin2, LinearIsometryEquiv.edist_map]
       exact hCt (stronglyMeasurable_forcing f) hfM hH x t t.2 s s.2
     refine eHolderNorm_le_iff.1 ((eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α _).trans
       ((add_le_add hsp htm).trans ?_))
@@ -551,19 +546,6 @@ private local instance hessianNormedAddCommGroup : NormedAddCommGroup (E →L[�
 /-- A local shortcut for scalar operations on Hessians, needed for the same reason. -/
 private local instance hessianNormedSpace : NormedSpace ℝ (E →L[ℝ] E →L[ℝ] F) := inferInstance
 
-/-- The trace `H ↦ ∑ᵢ H eᵢ eᵢ` of a bilinear map in the standard orthonormal basis, so that
-`Δ g x` is the trace of `fderiv ℝ (fderiv ℝ g) x` (`TauCeti.laplacian_eq_traceL`). -/
-private def traceL : (E →L[ℝ] E →L[ℝ] F) →L[ℝ] F :=
-  ∑ i, (ContinuousLinearMap.apply ℝ F (stdOrthonormalBasis ℝ E i)).comp
-    (ContinuousLinearMap.apply ℝ (E →L[ℝ] F) (stdOrthonormalBasis ℝ E i))
-
-omit [MeasurableSpace E] [BorelSpace E] [CompleteSpace F] in
-/-- `traceL` is the functional of `TauCeti.laplacian_eq_traceL`: it sends the second derivative of
-`g` at `x` to `Δ g x`. -/
-private theorem traceL_fderiv_fderiv (g : E → F) (x : E) :
-    traceL (fderiv ℝ (fderiv ℝ g) x) = Δ g x :=
-  (laplacian_eq_traceL g x).symm
-
 /-- The time-derivative field `Δw + f` of the Duhamel potential, as an element of the bounded
 parabolic Hölder space. -/
 private def timeField (hα₀ : 0 < α) (hα₁ : α < 1) (f : HolderSpace α (slab (E := E) 0 T) F) :
@@ -578,7 +560,7 @@ private theorem timeField_apply (hα₀ : 0 < α) (hα₁ : α < 1)
         (p : ParabolicSpaceTime E).space + f p := by
   rw [timeField, HolderSpace.add_apply, ContinuousLinearMap.compHolder₂_apply,
     HolderSpace.const_apply, ContinuousLinearMap.id_apply, hessianHolder_apply, hessian,
-    traceL_fderiv_fderiv]
+    ← laplacian_eq_traceL]
 
 private theorem norm_timeField_le (hα₀ : 0 < α) (hα₁ : α < 1)
     (f : HolderSpace α (slab (E := E) 0 T) F) :
@@ -634,13 +616,6 @@ private theorem potentialTwo_apply (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (0 
       heatDuhamelPotentialHolderL hα₀ (hα₁.trans one_lt_two).le f p := by
   rw [potentialTwo, ParabolicC2HolderSpace.mk_apply, HolderSpace.toBoundedContinuousFunction_apply]
 
-/-- `T ^ e ≤ 1 + T` for `0 ≤ e ≤ 1`. -/
-private theorem rpow_le_one_add {T e : ℝ} (hT : 0 ≤ T) (he₀ : 0 ≤ e) (he₁ : e ≤ 1) :
-    T ^ e ≤ 1 + T := by
-  rcases le_total T 1 with h | h
-  · linarith [Real.rpow_le_one hT h he₀]
-  · linarith [Real.rpow_le_self_of_one_le h he₁]
-
 /-- The constant of the operator-norm bound, depending only on `α`, `E` and `F`. -/
 private def duhamelConstant (hα₀ : 0 < α) (hα₁ : α < 1) : ℝ :=
   2 + gradientConstant (E := E) (F := F) +
@@ -677,9 +652,9 @@ private theorem norm_potentialTwo_le (hα₀ : 0 < α) (hα₁ : α < 1) (hT : (
   -- Each power of `T` is at most `1 + T`.
   have hs : √T ≤ 1 + T := by
     rw [Real.sqrt_eq_rpow]
-    exact rpow_le_one_add hT0 (by norm_num) (by norm_num)
+    exact Real.rpow_le_one_add hT0 (by norm_num) (by norm_num)
   have hp : (T : ℝ) ^ ((α : ℝ) / 2) ≤ 1 + T :=
-    rpow_le_one_add hT0 (by positivity) (by linarith [show (α : ℝ) < 1 from hα₁])
+    Real.rpow_le_one_add hT0 (by positivity) (by linarith [show (α : ℝ) < 1 from hα₁])
   rw [ParabolicC2HolderSpace.norm_eq, potentialTwo, valueL_mk, spatialFDerivL_mk,
     spatialSecondFDerivL_mk, timeDerivL_mk, duhamelConstant]
   have hH : ‖hessianHolder hα₀ hα₁ f‖ ≤ 2 * Ch * (1 + T) * ‖f‖ := by
