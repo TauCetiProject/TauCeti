@@ -230,20 +230,6 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis_ne_jacobiSym (hι : Fin
 
 /-! ### The Gauss sums of `√2 ℤ b` and the squared Landsberg–Schaar identity -/
 
-/-- The `ℤ`-basis `r b` of the lattice `r ℤ b`, for `r ≠ 0`. -/
-private noncomputable def smulSpanBasis {r : ℝ} (hr : r ≠ 0) :
-    Basis ι ℤ (r • span ℤ (Set.range b) : Submodule ℤ E) :=
-  ((b.toBasis.isUnitSMul fun _ ↦ hr.isUnit).restrictScalars ℤ).map
-    (LinearEquiv.ofEq _ _ (by
-      rw [← Submodule.span_smul, ← Set.range_smul]
-      congr 2
-      ext i
-      simp [Basis.isUnitSMul_apply]))
-
-private theorem coe_smulSpanBasis {r : ℝ} (hr : r ≠ 0) (i : ι) :
-    (smulSpanBasis b hr i : E) = r • b i := by
-  simp [smulSpanBasis, Basis.isUnitSMul_apply]
-
 /-- `‖∑ i, nᵢ • r b i‖² = r² ∑ i, nᵢ²`, since `b` is orthonormal. -/
 private theorem norm_sum_zsmul_smul_sq (r : ℝ) (n : ι → ℤ) :
     ‖∑ i, n i • (r • b i)‖ ^ 2 = r ^ 2 * ∑ i, (n i : ℝ) ^ 2 := by
@@ -297,8 +283,14 @@ theorem gaussSum_sqrt_two_smul_span_orthonormalBasis_eq_pow (a : ℤ) (c : ℕ) 
     gaussSum (√2 • span ℤ (Set.range b)) (isEven_sqrt_two_smul_span_orthonormalBasis b) a c =
       (∑ u ∈ Finset.range c, cexp (2 * π * I * a * u ^ 2 / c)) ^ Fintype.card ι := by
   have hc : (c : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne c)
-  rw [gaussSum_def, sum_quotient_eq_pow b (smulSpanBasis b (NeZero.ne √(2 : ℝ)))
-    (coe_smulSpanBasis b _) c rfl (a / (2 * c)) _ fun v ↦ ?_, Real.sq_sqrt zero_le_two]
+  let B₀ : Basis ι ℤ (span ℤ (Set.range b)) :=
+    (b.toBasis.restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (by rw [b.coe_toBasis]))
+  have hB₀ (i : ι) : (B₀ i : E) = b i := by
+    simp only [B₀, Basis.map_apply, LinearEquiv.coe_ofEq_apply, Basis.restrictScalars_apply]
+    exact congrFun b.coe_toBasis i
+  rw [gaussSum_def, sum_quotient_eq_pow b (basisSmul B₀ (NeZero.ne √(2 : ℝ)))
+    (fun i ↦ by rw [coe_basisSmul_apply, hB₀]) c rfl (a / (2 * c)) _ fun v ↦ ?_,
+    Real.sq_sqrt zero_le_two]
   · refine congrArg (· ^ _) (Finset.sum_congr rfl fun u _ ↦ congrArg cexp ?_)
     push_cast
     field_simp
@@ -325,9 +317,14 @@ theorem dualGaussSum_sqrt_two_smul_span_orthonormalBasis_eq_pow (t : ℤ) (a : �
     field_simp
     push_cast
     linear_combination (a : ℝ) * this
-  let B := (smulSpanBasis b (inv_ne_zero h2)).map (LinearEquiv.ofEq _ _ hdual.symm)
+  let B₀ : Basis ι ℤ (span ℤ (Set.range b)) :=
+    (b.toBasis.restrictScalars ℤ).map (LinearEquiv.ofEq _ _ (by rw [b.coe_toBasis]))
+  have hB₀ (i : ι) : (B₀ i : E) = b i := by
+    simp only [B₀, Basis.map_apply, LinearEquiv.coe_ofEq_apply, Basis.restrictScalars_apply]
+    exact congrFun b.coe_toBasis i
+  let B := (basisSmul B₀ (inv_ne_zero h2)).map (LinearEquiv.ofEq _ _ hdual.symm)
   have hB (i : ι) : (B i : E) = (√(2 : ℝ))⁻¹ • b i := by
-    simp [B, Basis.map_apply, coe_smulSpanBasis]
+    simp [B, hB₀]
   rw [dualGaussSum_def, sum_quotient_eq_pow b B hB (2 * a) (by rw [hsmul]) (t / (2 * a)) _
     fun v ↦ ?_, inv_pow, Real.sq_sqrt zero_le_two]
   · refine congrArg (· ^ _) (Finset.sum_congr rfl fun u _ ↦ congrArg cexp ?_)
