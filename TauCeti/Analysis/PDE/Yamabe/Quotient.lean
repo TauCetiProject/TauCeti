@@ -114,9 +114,8 @@ theorem yamabeQuotient_def (u : M → ℝ) :
 variable {I}
 
 /-- **Scale invariance of the Yamabe quotient.** In dimension `n > 2`, multiplying a
-differentiable function by a nonzero constant does not change its Yamabe quotient. -/
-theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} (hu : MDifferentiable I 𝓘(ℝ) u)
-    {c : ℝ} (hc : c ≠ 0) :
+function by a nonzero constant does not change its Yamabe quotient. -/
+theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} {c : ℝ} (hc : c ≠ 0) :
     yamabeQuotient I (c • u) = yamabeQuotient I u := by
   have hp := criticalExponent_pos hn
   have hnum : ∀ x, conformalCoefficient (finrank ℝ E) * ‖mgradient I (c • u) x‖ ^ 2 +
@@ -124,7 +123,7 @@ theorem yamabeQuotient_smul (hn : 2 < finrank ℝ E) {u : M → ℝ} (hu : MDiff
       c ^ 2 * (conformalCoefficient (finrank ℝ E) * ‖mgradient I u x‖ ^ 2 +
         (CovariantDerivative.leviCivitaConnection I M).scalarCurvature x * u x ^ 2) := by
     intro x
-    rw [mgradient_smul c hu, Pi.smul_apply, Pi.smul_apply, norm_smul, Real.norm_eq_abs, mul_pow,
+    rw [mgradient_smul c, Pi.smul_apply, Pi.smul_apply, norm_smul, Real.norm_eq_abs, mul_pow,
       sq_abs, smul_eq_mul]
     ring
   have hden : ∀ x, |(c • u) x| ^ criticalExponent (finrank ℝ E) =
@@ -173,8 +172,7 @@ private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : Cont
   set ev : M → ℝ := fun x ↦ a * ‖mgradient I v x‖ ^ 2 + S x * v x ^ 2
   have hgrad (t : ℝ) : mgradient I (u + t • v) = mgradient I u + t • mgradient I v := by
     rw [mgradient_add (hu.mdifferentiable one_ne_zero)
-      ((hv.mdifferentiable one_ne_zero).const_smul t), mgradient_smul t
-      (hv.mdifferentiable one_ne_zero)]
+      ((hv.mdifferentiable one_ne_zero).const_smul t), mgradient_smul t]
   have hpt (t : ℝ) (x : M) : a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2 =
       eu x + 2 * t * b x + t ^ 2 * ev x := by
     simp only [hgrad, Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev, norm_add_sq_real,
