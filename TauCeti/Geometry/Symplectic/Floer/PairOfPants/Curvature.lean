@@ -66,11 +66,11 @@ the output monomials of the pair-of-pants product.
 
 The two-sided constant `B₀ + B₁ + B_∞` does not behave well under a change of normalization
 `H_q ↦ H_q + c_q(t)`, which leaves the Floer equation unchanged and shifts the actions of the ends
-by `∫₀¹ c_q`. The sharp constant is one-sided. Since `β' ≥ 0`, the curvature `±β'(±s - 1) H_q(t)`
-on the end `q` only increases when `H_q` is replaced by a function of time `h_q ≤ H_q` on an input
-end, or by `h_∞ ≥ H_∞` on the output end. Comparing with the perturbation of the target-independent
-Hamiltonians `h_q`, whose integrated curvature is `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞` by the energy
-identity for a constant map, gives
+by `∫₀¹ c_q`. A one-sided constant transforms correctly. Since `β' ≥ 0`, the curvature
+`±β'(±s - 1) H_q(t)` on the end `q` can only decrease when `H_q` is replaced by a function of time
+`h_q ≤ H_q` on an input end, or by `h_∞ ≥ H_∞` on the output end. Comparing with the perturbation
+of the target-independent Hamiltonians `h_q`, whose integrated curvature is
+`∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞` by the energy identity for a constant map, gives
 
 `∫₀¹ h_0 + ∫₀¹ h_1 - ∫₀¹ h_∞ ≤ ∫_S R_K(u)`.
 
@@ -179,6 +179,28 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : Symplec
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
     ω.hamiltonianCurvature_pairOfPantsEndComponent (hH q) hz hHt]
 
+/-- **The curvature on an end.** The curvature is a two-form, so on the end `q` it is
+`±β'(±s - 1) H_q(t)` divided by the Jacobian of the end chart. -/
+private theorem det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart
+    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    {q : Puncture} {ζ : ℝ × ℝ} (hζ : 0 < q.endSign * ζ.1) (x : V) :
+    (fderiv ℝ (endChart q) ζ).det * ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        (endChart q ζ) x =
+      q.endSign * deriv smoothTransition (q.endSign * ζ.1 - 1) * H q ζ.2 x := by
+  have hS := endChart_mem_thricePuncturedSphereReal hζ
+  have k := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := ζ)
+    (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+    (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+    (x := x) ((contDiff_endChart q 2).contDiffAt)
+    (differentiableAt_pairOfPantsPerturbation_domain hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation_domain hH hHs hS _ Complex.I)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
+    (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
+  rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs hζ] at k
+  exact k.symm
+
 /-- **The curvature is supported on the ends.** At a point of `S` where the signed longitudinal
 coordinate of every end is less than `1`, the perturbation vanishes nearby, and so does its
 curvature. -/
@@ -242,19 +264,11 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
   calc _ ≤ ∫⁻ z in endStrip q,
         ENNReal.ofReal (deriv smoothTransition (q.endSign * z.1 - 1)) * ENNReal.ofReal (B q) := by
         refine setLIntegral_mono' hmeas fun z hz ↦ ?_
-        have hz' := endSign_mul_pos_of_mem_endStrip hz
-        have hS := endChart_mem_thricePuncturedSphereReal hz'
         -- The curvature is a two-form, and in the coordinates of the end it is `±β' H_q`.
-        have key := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := z)
-          (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          (x := u (endChart q z)) ((contDiff_endChart q 2).contDiffAt)
-          (differentiableAt_pairOfPantsPerturbation_domain hH hHs hS _ 1)
-          (differentiableAt_pairOfPantsPerturbation_domain hH hHs hS _ Complex.I)
-          (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ 1)
-          (differentiableAt_pairOfPantsPerturbation_target hH hHs hS _ Complex.I)
-        rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs hz'] at key
-        rw [← Real.enorm_eq_ofReal_abs, ← enorm_mul, ← key, Real.enorm_eq_ofReal_abs, abs_mul,
+        rw [← Real.enorm_eq_ofReal_abs, ← enorm_mul,
+          det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs
+            (endSign_mul_pos_of_mem_endStrip hz),
+          Real.enorm_eq_ofReal_abs, abs_mul,
           abs_mul, abs_endSign, abs_of_nonneg (hψ _), one_mul, ← ENNReal.ofReal_mul (hψ _)]
         exact ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB q _ _) (hψ _))
     _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s},
@@ -369,25 +383,10 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_le_of_endSign_mul_le (ω : 
     have hζ' := endSign_mul_pos_of_mem_endStrip hζ
     -- In the coordinates of the end the curvature is `±β'(±s - 1)` times the Hamiltonian of the
     -- end, and it scales by the Jacobian of the end chart.
-    have key (G : Puncture → ℝ → V → ℝ) (hG : ∀ q, Periodic (G q) 1)
-        (hGs : ∀ q, ContDiff ℝ 1 (uncurry (G q))) (w : V) :
-        (fderiv ℝ (endChart q) ζ).det * ω.hamiltonianCurvature
-            (fun z x ↦ pairOfPantsPerturbation G (Complex.equivRealProdCLM.symm z) x 1)
-            (fun z x ↦ pairOfPantsPerturbation G (Complex.equivRealProdCLM.symm z) x Complex.I)
-            (endChart q ζ) w =
-          q.endSign * deriv smoothTransition (q.endSign * ζ.1 - 1) * G q ζ.2 w := by
-      have k := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := ζ)
-        (Ks := fun z x ↦ pairOfPantsPerturbation G (Complex.equivRealProdCLM.symm z) x 1)
-        (Kt := fun z x ↦ pairOfPantsPerturbation G (Complex.equivRealProdCLM.symm z) x Complex.I)
-        (x := w) ((contDiff_endChart q 2).contDiffAt)
-        (differentiableAt_pairOfPantsPerturbation_domain hG hGs hS _ 1)
-        (differentiableAt_pairOfPantsPerturbation_domain hG hGs hS _ Complex.I)
-        (differentiableAt_pairOfPantsPerturbation_target hG hGs hS _ 1)
-        (differentiableAt_pairOfPantsPerturbation_target hG hGs hS _ Complex.I)
-      rw [hamiltonianCurvature_perturbationPullback_endChart ω hG hGs hζ'] at k
-      exact k.symm
     refine le_of_mul_le_mul_left ?_ (det_fderiv_endChart_pos q ζ)
-    rw [key _ hh' hhs', key H hH hHs, mul_comm q.endSign, mul_assoc, mul_assoc]
+    rw [det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hh' hhs' hζ',
+      det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs hζ',
+      mul_comm q.endSign, mul_assoc, mul_assoc]
     exact mul_le_mul_of_nonneg_left (hhH q ζ.2 x) smoothTransition.monotone.deriv_nonneg
   · simp only [not_exists, not_lt] at hq
     have hq' (q : Puncture) :
@@ -426,19 +425,12 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Sym
   obtain ⟨w, hw, rfl⟩ := mem_image_endChart hz (q := q) (by linarith)
   have hw₂ : 2 < q.endSign * w.1 := by rwa [re_endCoord_endChart] at hq
   -- In the coordinates of the end the curvature is `±β'(±s - 1) H_q(t)`, and `β' = 0` there.
-  have key := ω.hamiltonianCurvature_perturbationPullback (φ := endChart q) (w := w)
-    (Ks := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-    (Kt := fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-    (x := x) ((contDiff_endChart q 2).contDiffAt)
-    (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz _ 1)
-    (differentiableAt_pairOfPantsPerturbation_domain hH hHs hz _ Complex.I)
-    (differentiableAt_pairOfPantsPerturbation_target hH hHs hz _ 1)
-    (differentiableAt_pairOfPantsPerturbation_target hH hHs hz _ Complex.I)
+  have key := det_mul_hamiltonianCurvature_pairOfPantsPerturbation_endChart ω hH hHs
+    (by linarith : 0 < q.endSign * w.1) x
   have hβ : deriv smoothTransition (q.endSign * w.1 - 1) = 0 :=
     smoothTransition.deriv_of_one_lt (by linarith)
-  rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs (by linarith) x, hβ, mul_zero,
-    zero_mul] at key
-  exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_endChart_pos q w).ne'
+  rw [hβ, mul_zero, zero_mul] at key
+  exact (mul_eq_zero.1 key).resolve_left (det_fderiv_endChart_pos q w).ne'
 
 /-- The end pieces lie in the truncation. -/
 private theorem image_endPiece_subset (q : Puncture) {R : ℝ} (hR : 1 ≤ R) :
