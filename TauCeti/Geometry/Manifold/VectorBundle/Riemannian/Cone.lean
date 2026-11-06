@@ -62,10 +62,12 @@ theorem isOpen_setOf_forall_pos_symmetricSection_frameTopology
     let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
     IsOpen {σ : Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ,
         fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯ |
-      ∀ x ∈ K, ∀ v : V x, v ≠ 0 → 0 < (σ x : V x →L[ℝ] V x →L[ℝ] ℝ) v v} :=
-  ContMDiffSection.isOpen_setOf_forall_mem e U hU hcover hK
-    (TauCeti.isOpen_setOf_forall_bilinear_bundle_apply_self_pos.preimage
-      TauCeti.continuous_totalSpace_coe_symmetricBilinearMaps)
+      ∀ x ∈ K, ∀ v : V x, v ≠ 0 → 0 < (σ x : V x →L[ℝ] V x →L[ℝ] ℝ) v v} := by
+  let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
+  exact hK.isOpen_setOf_forall_mem_forall_bilinear_apply_self_pos
+    (fun σ x ↦ (σ x : V x →L[ℝ] V x →L[ℝ] ℝ))
+    (TauCeti.continuous_totalSpace_coe_symmetricBilinearMaps.comp
+      (ContMDiffSection.continuous_totalSpace_eval e U hU hcover))
 
 /-- On a compact base, the metric cone of positive-definite symmetric sections is open in the
 compact derivative topology. In particular this applies to smooth metrics on the tangent bundle. -/

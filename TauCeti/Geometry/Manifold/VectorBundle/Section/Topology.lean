@@ -24,8 +24,7 @@ embedding into the product of weak Whitney coefficient spaces. Its image consist
 of tuples satisfying the actual bundle transition law, as proved in `Section.Gluing`.
 Thus this topology retains the gluing equations when taking coefficient limits.
 Point evaluation is continuous, and the section space is Hausdorff. When the source model is
-locally compact, evaluation is jointly continuous in the section and base point. Consequently,
-requiring a section to take values in an open subset of the total space on a compact set is open.
+locally compact, evaluation is jointly continuous in the section and base point.
 
 The topology is supplied explicitly, rather than installed globally, since the frame domains
 are parameters. The results here concern a specified family of frame domains; no comparison
@@ -259,19 +258,6 @@ theorem continuous_totalSpace_eval (hcover : ∀ x, ∃ i, x ∈ U i) :
     (g := fun p : Cₛ^n⟮I; F, V⟯ × M ↦ TotalSpace.mk' F p.2 (p.1 p.2))
     (x := (s, ⟨x, hi⟩))).mp
   exact (hlocal i).continuousAt
-
-/-- On a compact set of base points, requiring a section to take values in an open subset of
-the total space is open in the compact derivative topology. -/
-theorem isOpen_setOf_forall_mem (hcover : ∀ x, ∃ i, x ∈ U i)
-    {K : Set M} (hK : IsCompact K) {W : Set (TotalSpace F V)} (hW : IsOpen W) :
-    let _ := frameTopology (I := I) (n := n) e U hU
-    IsOpen {s : Cₛ^n⟮I; F, V⟯ | ∀ x ∈ K, TotalSpace.mk' F x (s x) ∈ W} := by
-  let _ := frameTopology (I := I) (n := n) e U hU
-  let f : Cₛ^n⟮I; F, V⟯ → C(M, TotalSpace F V) :=
-    fun s ↦ ⟨fun x ↦ TotalSpace.mk' F x (s x), s.contMDiff.continuous⟩
-  have hf : Continuous f := ContinuousMap.continuous_of_continuous_uncurry _
-    (continuous_totalSpace_eval e U hU hcover)
-  exact (ContinuousMap.isOpen_setOfPred_mapsTo hK hW).preimage hf
 
 end Evaluation
 

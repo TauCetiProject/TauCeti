@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Topology.VectorBundle.Constructions
 public import Mathlib.Topology.VectorBundle.Hom
-public import TauCeti.Topology.Algebra.Module.SymmetricBilinear
+public import TauCeti.Topology.Algebra.Module.SymmetricBilinear.Basic
 
 /-!
 # The vector bundle of symmetric bilinear maps
@@ -322,7 +322,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
 
 /-- In the chosen trivializations, a symmetric bilinear map has the same coordinates in the
 symmetric bundle and in the bundle of all bilinear maps. -/
-theorem Manifold.coe_trivializationAt_symmetricBilinearMaps_snd {x₀ x : B}
+theorem coe_trivializationAt_symmetricBilinearMaps_snd {x₀ x : B}
     (hx : x ∈ (trivializationAt F V x₀).baseSet) (b : symmetricBilinearMaps 𝕜 (V x) G) :
     ((trivializationAt (symmetricBilinearMaps 𝕜 F G)
         (fun x ↦ symmetricBilinearMaps 𝕜 (V x) G) x₀ ⟨x, b⟩).2 :
@@ -349,6 +349,6 @@ theorem continuous_totalSpace_coe_symmetricBilinearMaps :
   refine h.congr_of_eventuallyEq ?_
   filter_upwards [hc.1.preimage_mem_nhds ((trivializationAt F V p.1).open_baseSet.mem_nhds
     (mem_baseSet_trivializationAt F V p.1))] with q hq
-  exact (Manifold.coe_trivializationAt_symmetricBilinearMaps_snd hq q.2).symm
+  exact (coe_trivializationAt_symmetricBilinearMaps_snd hq q.2).symm
 
 end TauCeti
