@@ -109,16 +109,16 @@ theorem isSheafFor_of_bijective_app (α : P ⟶ P') {X : C} {R : Presieve X}
 
 /-- **The sheaf condition for a family of arrows from a refining presieve.** Let `f i : X i ⟶ W`
 be arrows, `S` a presieve on `W` for which `P` satisfies the sheaf condition and which factors
-through the arrows `f i`, and `T i` a presieve on `X i` for which `P` is separated and whose
-members composed with `f i` lie in `S`. Then `P` satisfies the sheaf condition for the family
+through the arrows `f i`, and `T i` a presieve on `X i` for which `P` is separated and which
+factors through `S` along `f i`. Then `P` satisfies the sheaf condition for the family
 `f`. This is `Presieve.isSheafFor_of_factorsThru` for `Presieve.ofArrows X f`. -/
 theorem isSheafFor_ofArrows_of_factorsThru {W : C} {ι : Type*} {X : ι → C} (f : ∀ i, X i ⟶ W)
     (T : ∀ i, Presieve (X i)) (hsep : ∀ i, (T i).IsSeparatedFor P) {S : Presieve W}
     (hS : S.IsSheafFor P) (hfac : S.FactorsThru (ofArrows X f))
-    (href : ∀ i ⦃U : C⦄ (g : U ⟶ X i), T i g → S (g ≫ f i)) :
+    (href : ∀ i, (T i).FactorsThruAlong S (f i)) :
     (ofArrows X f).IsSheafFor P := by
   refine isSheafFor_of_factorsThru _ hfac hS fun Z e he ↦ ?_
   obtain ⟨i⟩ := he
-  exact ⟨T i, hsep i, fun U g hg ↦ ⟨U, 𝟙 U, g ≫ f i, href i g hg, Category.id_comp _⟩⟩
+  exact ⟨T i, hsep i, href i⟩
 
 end CategoryTheory.Presieve

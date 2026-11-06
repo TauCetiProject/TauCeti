@@ -123,7 +123,7 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_isUnit_of_isSheafFor [IsHuberRin
     (fun t ↦ (laurentSieve Aplus R (W ⊓ spaBasicOpen Aplus T t)).arrows)
     (fun t ↦ (hlaurent R (hWt t)).isSeparatedFor) (hlaurent R hW)
     (fun _ g hg ↦ laurentSieve_mul_inverse_le_ofArrows_inf_spaBasicOpen hT hu W g hg)
-    fun t Z g hg ↦ ?_
+    fun t Z g hg ↦ ⟨Z, 𝟙 Z, _, ?_, Category.id_comp _⟩
   rw [← laurentSieve_pullback R (homOfLE inf_le_left : W ⊓ spaBasicOpen Aplus T t ⟶ W)] at hg
   exact hg
 
@@ -321,7 +321,8 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_isSheafFor
     refine Presieve.isSheafFor_ofArrows_of_factorsThru _
       (fun J ↦ (laurentSieve Aplus R (Y J)).arrows)
       (fun J ↦ (hlaurent R (hY J)).isSeparatedFor) (hlaurent R hW) (fun U g hg ↦ ?_)
-      fun J U g hg ↦ (laurentSieve_apply _).mpr ((laurentSieve_apply g).mp hg)
+      fun J U g hg ↦
+        ⟨U, 𝟙 U, _, (laurentSieve_apply _).mpr ((laurentSieve_apply g).mp hg), Category.id_comp _⟩
     obtain ⟨J, hJ⟩ := hRY g le_rfl hg
     exact ⟨Y J, homOfLE hJ, homOfLE inf_le_left, Presieve.ofArrows.mk J, rfl⟩
   -- every member of `S` lies in a piece of the standard cover, and on each piece the Laurent
@@ -334,7 +335,8 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_isSheafFor
     (fun _ ↦ (hlaurent R
       (inf_mem_spaRationalOpens hW (spaBasicOpen_mem_spaRationalOpens hTopen))).isSeparatedFor)
     hS (fun U g hg ↦ ?_)
-    fun t U g hg ↦ ⟨hRY g inf_le_left hg, t, t.2, g.le.trans inf_le_right⟩
+    fun t U g hg ↦ ⟨U, 𝟙 U, _, ⟨hRY g inf_le_left hg, t, t.2, g.le.trans inf_le_right⟩,
+      Category.id_comp _⟩
   obtain ⟨-, t, ht, hUt⟩ := hg
   exact ⟨W ⊓ spaBasicOpen Aplus T t, homOfLE (le_inf g.le hUt), homOfLE inf_le_left,
     Presieve.ofArrows.mk (⟨t, ht⟩ : T), rfl⟩
