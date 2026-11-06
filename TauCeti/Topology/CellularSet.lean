@@ -50,6 +50,8 @@ of compact sets with diameters tending to `0`. The collapse is their pointwise l
 ## Main results
 
 * `TauCeti.isCellularSet_iff`: the witnesses of cellularity.
+* `TauCeti.IsCellularSet.isCompact`, `TauCeti.IsCellularSet.nonempty`: in a Hausdorff space, a
+  cellular set is a nonempty compact set.
 * `TauCeti.exists_collapse_iInter`: the intersection of a nested sequence of compact sets with
   Euclidean interiors is collapsed to one point by a continuous surjection whose other fibres are
   singletons.
@@ -239,6 +241,30 @@ theorem isCellularSet_iff (E : Type*) [NormedAddCommGroup E] {M : Type*} [Topolo
       (∀ i, InjOn (e i) (closedBall 0 1)) ∧
       (∀ i, e (i + 1) '' closedBall 0 1 ⊆ e i '' ball 0 1) ∧ ⋂ i, e i '' closedBall 0 1 = X :=
   Iff.rfl
+
+/-- A cellular set in a Hausdorff space, modelled on a proper space, is closed. -/
+theorem IsCellularSet.isClosed {E : Type*} [NormedAddCommGroup E] [ProperSpace E] {M : Type*}
+    [TopologicalSpace M] [T2Space M] {X : Set M} (hX : IsCellularSet E X) : IsClosed X := by
+  obtain ⟨e, hec, -, -, rfl⟩ := (isCellularSet_iff E).1 hX
+  exact isClosed_iInter fun i ↦ ((isCompact_closedBall 0 1).image_of_continuousOn (hec i)).isClosed
+
+/-- A cellular set in a Hausdorff space, modelled on a proper space, is compact. -/
+theorem IsCellularSet.isCompact {E : Type*} [NormedAddCommGroup E] [ProperSpace E] {M : Type*}
+    [TopologicalSpace M] [T2Space M] {X : Set M} (hX : IsCellularSet E X) : IsCompact X := by
+  obtain ⟨e, hec, -, -, hX'⟩ := (isCellularSet_iff E).1 hX
+  exact ((isCompact_closedBall 0 1).image_of_continuousOn (hec 0)).of_isClosed_subset hX.isClosed
+    (hX' ▸ iInter_subset _ 0)
+
+/-- A cellular set in a Hausdorff space, modelled on a proper space, is nonempty. -/
+theorem IsCellularSet.nonempty {E : Type*} [NormedAddCommGroup E] [ProperSpace E] {M : Type*}
+    [TopologicalSpace M] [T2Space M] {X : Set M} (hX : IsCellularSet E X) : X.Nonempty := by
+  obtain ⟨e, hec, -, hsub, rfl⟩ := (isCellularSet_iff E).1 hX
+  have hQc (i : ℕ) : IsCompact (e i '' closedBall 0 1) :=
+    (isCompact_closedBall 0 1).image_of_continuousOn (hec i)
+  exact IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed _
+    (fun i ↦ (hsub i).trans (image_mono ball_subset_closedBall))
+    (fun i ↦ ⟨e i 0, mem_image_of_mem _ (mem_closedBall_self zero_le_one)⟩) (hQc 0)
+    fun i ↦ (hQc i).isClosed
 
 /-- **Collapsing a cellular set.** Let `M` be a metric space which is a topological manifold
 modelled on a finite-dimensional real normed space `E`, and `X ⊆ M` a cellular set. For every open

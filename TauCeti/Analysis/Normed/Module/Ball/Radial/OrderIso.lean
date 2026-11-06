@@ -116,15 +116,14 @@ end OrderIso
 namespace TauCeti
 
 /-- **Squeezing a closed ball.** For every `δ > 0` there is a homeomorphism of `E` which fixes every
-point of norm at least `2 * r` and maps the closed ball `closedBall 0 r` into `closedBall 0 δ`.
-It is radial: the norm `t` is rescaled by the piecewise linear map
-`t ↦ min t (max (δ / r * t) (2 * t - 2 * r))`. -/
+point of norm at least `2 * r` and maps the closed ball `closedBall 0 r` into `closedBall 0 δ`. -/
 theorem exists_homeomorph_mapsTo_closedBall {r δ : ℝ} (hδ : 0 < δ) :
     ∃ ρ : E ≃ₜ E, (∀ x, 2 * r ≤ ‖x‖ → ρ x = x) ∧
       MapsTo ρ (closedBall 0 r) (closedBall 0 δ) := by
   rcases le_or_gt r δ with hrδ | hδr
   · exact ⟨Homeomorph.refl E, fun _ _ ↦ rfl, fun x hx ↦ closedBall_subset_closedBall hrδ hx⟩
   have hr : 0 < r := hδ.trans hδr
+  -- A radial homeomorphism rescaling the norm by a piecewise linear map.
   set φ : ℝ → ℝ := fun t ↦ min t (max (δ / r * t) (2 * t - 2 * r)) with hφ_def
   have hk : 0 < δ / r := div_pos hδ hr
   have hk1 : δ / r ≤ 1 := (div_le_one hr).2 hδr.le
