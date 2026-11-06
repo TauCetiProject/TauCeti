@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Geometry.Manifold.Flow.TimeDependent
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.SmoothEmbedding.Extension
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 public import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Topology.Compactness.LocallyCompact
+import TauCeti.Geometry.Manifold.VectorField.Prod
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.Instances.Icc
 
@@ -97,7 +97,8 @@ private theorem exists_section_eq_velocity {n m : ℕ∞} [IsManifold I n M] {G 
   -- The velocity of the track: the image of the unit time vector under its differential.
   let v : (q : ℝ × M) → TangentSpace (𝓘(ℝ, ℝ).prod J) (Γ q) := fun q =>
     mfderiv (𝓘(ℝ, ℝ).prod I) (𝓘(ℝ, ℝ).prod J) Γ q ((1 : ℝ), (0 : E))
-  have hv := contMDiff_mfderiv_apply_one_zero hΓ hmn
+  have hv := TauCeti.Manifold.contMDiff_mfderiv_apply_one_zero (J := 𝓘(ℝ, ℝ).prod J) (m := m) hΓ
+    (by exact_mod_cast hmn)
   -- Extend the velocity from the compact part of the track over `[c, d]`.
   have hK : IsCompact (Γ '' (Icc c d ×ˢ A)) := (isCompact_Icc.prod hA).image hΓ.continuous
   have himage : (fun q : W => Γ q) '' (Subtype.val ⁻¹' (Icc c d ×ˢ A)) =
