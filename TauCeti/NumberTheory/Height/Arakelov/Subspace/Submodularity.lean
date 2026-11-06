@@ -108,7 +108,9 @@ theorem arakelovMulHeight_plucker_overlap_le {p q r : ℕ}
     ← finprod_mul_distrib (FinitePlace.hasFiniteMulSupport_iSup h2)
       (FinitePlace.hasFiniteMulSupport_iSup h3)]
   apply mul_le_mul
-  · have hf (a : ℕ) : Fintype.ofFinite (powersetCard ι a) =
+  · -- The height factors use Fintype.ofFinite, whereas the local inequality uses
+    -- the powersetCard instance induced by the chosen Fintype on ι. Align them.
+    have hf (a : ℕ) : Fintype.ofFinite (powersetCard ι a) =
           powersetCard.instFintypeElemFinset ι a := Subsingleton.elim _ _
     exact Finset.prod_le_prod₀ (fun _ _ ↦ by positivity) fun w _ ↦ by
       rw [hf p, hf (p + (q + r)), hf (p + q), hf (p + r)]

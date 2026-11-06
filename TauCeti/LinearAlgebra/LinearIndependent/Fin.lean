@@ -22,14 +22,17 @@ open Submodule Set
 
 variable {R V : Type*} {p q : ℕ}
 
+/-- Reindexing a concatenation by the sum equivalence gives the sum eliminator. -/
+theorem Fin.append_comp_finSumFinEquiv {α : Type*} (x : Fin p → α) (y : Fin q → α) :
+    Fin.append x y ∘ finSumFinEquiv = Sum.elim x y := by
+  ext (i | i) <;> simp
+
 /-- The span of a concatenation is the sum of the two spans. -/
 theorem Submodule.span_range_fin_append [Semiring R] [AddCommMonoid V] [Module R V]
     (x : Fin p → V) (y : Fin q → V) :
     span R (range (Fin.append x y)) = span R (range x) ⊔ span R (range y) := by
   rw [← EquivLike.range_comp (Fin.append x y) finSumFinEquiv]
-  -- Unfold the equivalence's forward map to use Mathlib's sum-elimination identity.
-  simp only [finSumFinEquiv, Equiv.coe_fn_mk, Fin.append_comp_sumElim,
-    Sum.elim_range, span_union]
+  rw [Fin.append_comp_finSumFinEquiv, Sum.elim_range, span_union]
 
 namespace TauCeti
 
@@ -41,9 +44,8 @@ theorem linearIndependent_fin_append [Ring R] [AddCommGroup V] [Module R V]
       LinearIndependent R x ∧ LinearIndependent R y ∧
         Disjoint (span R (range x)) (span R (range y)) := by
   rw [← linearIndependent_equiv finSumFinEquiv]
-  -- Unfold the equivalence's forward map to use Mathlib's sum-elimination identity.
-  simp only [finSumFinEquiv, Equiv.coe_fn_mk, Fin.append_comp_sumElim,
-    linearIndependent_sum, Sum.elim_comp_inl, Sum.elim_comp_inr]
+  simp only [Fin.append_comp_finSumFinEquiv, linearIndependent_sum,
+    Sum.elim_comp_inl, Sum.elim_comp_inr]
 
 end TauCeti
 
