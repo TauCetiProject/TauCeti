@@ -286,43 +286,35 @@ theorem gromovProkhorovEDist_triangle (μ : Measure X) (ν : Measure Y) (ρ : Me
 
 end Triangle
 
+/-- **Pushing forward along an isometry does not increase the distance.** No measurability of open
+sets is needed: the metric coupling is composed with the coupling of `X` and `X'` along `T`. -/
+theorem gromovProkhorovEDist_map_le {T : X → X'} (hT : Isometry T) (hTm : AEMeasurable T μ)
+    (ν : Measure Y) : gromovProkhorovEDist (μ.map T) ν ≤ gromovProkhorovEDist μ ν := by
+  refine le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_
+  obtain ⟨f, hf, h₁, h₂⟩ := exists_isMetricCoupling_of_gromovProkhorovEDist_lt hδ
+  refine gromovProkhorovEDist_le_of_isMetricCoupling
+    ((IsMetricCoupling.of_isometry isometry_id hT).comp hf) (fun A' hA' ↦ ?_) fun C hC ↦ ?_
+  · obtain ⟨M, hMsub, hM, hMeq⟩ := (hTm.nullMeasurable hA').exists_measurable_subset_ae_eq
+    rw [Measure.map_apply_of_aemeasurable hTm hA', ← measure_congr hMeq]
+    refine (h₁ M hM).trans (add_le_add_left (measure_mono ?_) _)
+    rintro y ⟨x, hx, hxy⟩
+    exact ⟨T x, hMsub hx, (iInf_le _ x).trans_lt (by simpa using hxy)⟩
+  · refine (h₂ C hC).trans (add_le_add_left ((measure_mono ?_).trans
+      (Measure.le_map_apply hTm _)) _)
+    rintro x ⟨y, hy, hxy⟩
+    exact ⟨y, hy, (iInf_le _ x).trans_lt (by simpa using hxy)⟩
+
 /-- **Invariance under isometries.** Replacing a measure by its pushforward along an isometry does
 not change its Gromov–Prokhorov distance to any measure. -/
 theorem gromovProkhorovEDist_map_left [OpensMeasurableSpace X']
     {T : X → X'} (hT : Isometry T) (hTm : AEMeasurable T μ) (ν : Measure Y) :
     gromovProkhorovEDist (μ.map T) ν = gromovProkhorovEDist μ ν := by
-  refine le_antisymm (le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_)
-    (le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_)
-  · obtain ⟨f, hf, h₁, h₂⟩ := exists_isMetricCoupling_of_gromovProkhorovEDist_lt hδ
-    refine gromovProkhorovEDist_le_of_isMetricCoupling
-      ((IsMetricCoupling.of_isometry isometry_id hT).comp hf) (fun A' hA' ↦ ?_) fun C hC ↦ ?_
-    · obtain ⟨M, hMsub, hM, hMeq⟩ := (hTm.nullMeasurable hA').exists_measurable_subset_ae_eq
-      rw [Measure.map_apply_of_aemeasurable hTm hA', ← measure_congr hMeq]
-      refine (h₁ M hM).trans (add_le_add_left (measure_mono ?_) _)
-      rintro y ⟨x, hx, hxy⟩
-      exact ⟨T x, hMsub hx, (iInf_le _ x).trans_lt (by simpa using hxy)⟩
-    · refine (h₂ C hC).trans (add_le_add_left ((measure_mono ?_).trans
-        (Measure.le_map_apply hTm _)) _)
-      rintro x ⟨y, hy, hxy⟩
-      exact ⟨y, hy, (iInf_le _ x).trans_lt (by simpa using hxy)⟩
-  · obtain ⟨f, hf, h₁, h₂⟩ := exists_isMetricCoupling_of_gromovProkhorovEDist_lt hδ
-    refine gromovProkhorovEDist_le_of_isMetricCoupling
-      ((IsMetricCoupling.of_isometry hT isometry_id).comp hf) (fun A hA ↦ ?_) fun C hC ↦ ?_
-    · refine (Measure.le_map_apply_image hTm A).trans <| (measure_mono subset_closure).trans <|
-        (h₁ _ isClosed_closure.measurableSet).trans (add_le_add_left (measure_mono ?_) _)
-      rintro y ⟨x', hx', hxy⟩
-      obtain ⟨r, hr0, hr⟩ := ENNReal.lt_iff_exists_add_pos_lt.1 hxy
-      obtain ⟨_, ⟨x, hx, rfl⟩, hxx'⟩ := EMetric.mem_closure_iff.1 hx' r (by exact_mod_cast hr0)
-      refine ⟨x, hx, (iInf_le _ x').trans_lt ?_⟩
-      calc edist (T x) (id x') + f x' y = f x' y + edist x' (T x) := by
-            rw [add_comm, id, edist_comm]
-        _ < f x' y + r := ENNReal.add_lt_add_left (hxy.trans_le le_top).ne hxx'
-        _ < δ := hr
-    · refine (h₂ C hC).trans (add_le_add_left ?_ _)
-      rw [Measure.map_apply_of_aemeasurable hTm (hf.swap.isOpen_setOf_exists_lt C δ).measurableSet]
-      refine measure_mono ?_
-      rintro x ⟨y, hy, hxy⟩
-      exact ⟨y, hy, (iInf_le _ (T x)).trans_lt (by simpa using hxy)⟩
+  refine (gromovProkhorovEDist_map_le hT hTm ν).antisymm ?_
+  calc gromovProkhorovEDist μ ν
+      ≤ gromovProkhorovEDist μ (μ.map T) + gromovProkhorovEDist (μ.map T) ν :=
+        gromovProkhorovEDist_triangle _ _ _
+    _ = gromovProkhorovEDist (μ.map T) ν := by
+        rw [gromovProkhorovEDist_map_eq_zero hT hTm, zero_add]
 
 section Coupling
 
