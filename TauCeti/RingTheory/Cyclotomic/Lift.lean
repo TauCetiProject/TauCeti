@@ -238,8 +238,7 @@ primitive root: every coordinate of `0` vanishes, so every residue does. -/
 @[simp]
 theorem conjugateResidues_zero {α : ZMod p} : conjugateResidues α (0 : Cyclotomic e) = 0 := by
   funext j
-  rw [conjugateResidues_apply, reduce_eq_sum]
-  simp
+  simp [conjugateResidues_apply]
 
 /-- The residue tuple of `1` is `1`. -/
 @[simp]
@@ -253,14 +252,14 @@ is additive in the coordinates. -/
 theorem conjugateResidues_add {α : ZMod p} (x y : Cyclotomic e) :
     conjugateResidues α (x + y) = conjugateResidues α x + conjugateResidues α y := by
   funext j
-  simp [conjugateResidues_apply, reduce_eq_sum, coeff_add, Finset.sum_add_distrib, add_mul]
+  simp [conjugateResidues_apply]
 
 /-- Residue tuples negate.  This needs no primitive root either. -/
 @[simp]
 theorem conjugateResidues_neg {α : ZMod p} (x : Cyclotomic e) :
     conjugateResidues α (-x) = -conjugateResidues α x := by
   funext j
-  simp [conjugateResidues_apply, reduce_eq_sum, coeff_neg]
+  simp [conjugateResidues_apply]
 
 /-- Residue tuples multiply. -/
 @[simp]
