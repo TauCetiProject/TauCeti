@@ -147,16 +147,21 @@
     } catch (_) { if (token === lookupGeneration && queue === data.queue && route().params.get("pr") === pr) { errorText = "PR lookup unavailable; last successful records are retained."; render(); } }
   }
   async function loadBatch(id) {
+    var queue = data.queue; if (!queue || !manifest) return;
+    var scope = manifest.scope, ref = queue.batch_shards[Number(BigInt(id) % 64n)];
     var token = ++generation, same = selectedBatch === id; selectedBatch = id;
+    function current() { return token === generation && selectedBatch === id && manifest.scope === scope && ref && data.queue && (data.queue.batch_shards[Number(BigInt(id) % 64n)] || {}).url === ref.url; }
+    if (!same) { detail = null; members = []; memberPages = []; page = 0; render(); }
     try {
-      var shard = await get(data.queue.batch_shards[Number(BigInt(id) % 64n)]), batch = shard.batches.find(function (b) { return b.id === id; });
+      var shard = await get(ref); if (!current()) return;
+      var batch = shard.batches.find(function (b) { return b.id === id; });
       if (!batch) { errorText = "Batch is outside the retained detail window."; render(); return; }
-      var value = await get(batch.detail);
+      var value = await get(batch.detail); if (!current()) return;
       var loaded = await records(value.member_pages);
       var attempts = await records(value.attempt_pages), tasks = await records(value.task_pages), events = await records(value.event_pages);
-      if (token !== generation) return;
+      if (!current()) return;
       detail = value; members = loaded; memberPages = value.member_pages; detail.attempts = attempts; detail.tasks = tasks; detail.events = events; if (!same) page = 0; errorText = ""; render();
-    } catch (_) { errorText = "Batch details unavailable; last successful detail is retained."; render(); }
+    } catch (_) { if (current()) { errorText = "Batch details unavailable; last successful detail for this batch is retained."; render(); } }
   }
   function timeline(container, attempts, tasks) {
     var items = attempts.map(function (a) { return { label: "CI attempt " + a.id + " · v" + a.version + " · " + a.status + " / " + (a.conclusion || a.outcome), start: a.dispatched_at, end: a.completed_at || a.cancelled_at, url: a.url, detail: a }; }).concat(tasks.map(function (t) { return { label: t.kind + " task " + t.id + " · " + t.state, start: t.created_at, end: t.resolved_at, progress: t.progress }; }));
@@ -227,6 +232,8 @@
     view.append(select("Batch", choices, selectedBatch || (choices[0] || {}).value, function (id) { location.hash = batchURL(id); }));
     if (!detail) { view.append(empty("Select a batch to load bounded detail pages.")); return; }
     append(view, heading("Batch " + detail.batch.id + " · " + detail.batch.state), link("Exact candidate " + detail.batch.tip.slice(0, 12), "https://github.com/" + detail.batch.repository + "/commit/" + detail.batch.tip));
+    var latest = data.queue.batches.find(function (b) { return b.id === detail.batch.id; });
+    if (latest && (latest.version !== detail.batch.version || latest.tip !== detail.batch.tip)) view.append(note("Showing last successful details for version " + detail.batch.version + "; current version " + latest.version + " is loading.", "ops-warning"));
     view.append(note("Created " + timestamp(detail.batch.created_at) + " · sealed " + timestamp(detail.batch.sealed_at) + " · first dispatched " + timestamp(detail.batch.first_dispatch_at)));
     view.append(note("Background preparation: " + (detail.batch.pre_rebase_state || "unknown") + ". Authoritative staging CI is dispatched only for the head."));
     if (!detail.member_details_complete) view.append(note("Member details are partial; the authoritative batch size is " + detail.batch.size + ".", "ops-warning"));
@@ -442,7 +449,7 @@
       if (response.status !== 304) {
         if (!response.ok) throw new Error("Operations manifest unavailable");
         var next = await response.json(); if (next.schema !== "tauceti.operations.manifest/v1") throw new Error("Unsupported manifest");
-        if (manifest && manifest.scope !== next.scope) { data = {}; cache.clear(); jobs = []; workflows = []; detail = null; members = []; prResult = null; hostHistories.clear(); selectedHistoryHost = null; historyGeneration++; errorText = ""; }
+        if (manifest && manifest.scope !== next.scope) { data = {}; cache.clear(); jobs = []; workflows = []; detail = null; members = []; prResult = null; selectedBatch = null; generation++; hostHistories.clear(); selectedHistoryHost = null; historyGeneration++; errorText = ""; }
         var previous = manifest;
         manifest = Object.assign({}, next, { domains: Object.assign({}, next.domains) });
         Object.keys(next.domains).forEach(function (kind) { if (previous && data[kind]) manifest.domains[kind] = previous.domains[kind]; });
