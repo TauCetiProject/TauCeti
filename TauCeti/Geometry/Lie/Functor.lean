@@ -108,7 +108,7 @@ private theorem tangent_comp_monoidHom
 the derivative of `F ∘ φ` at the identity along the bracket of the invariant fields of `X` and `Y`
 is the derivative of `F` along the bracket of their images. -/
 private theorem mvfderiv_comp_mlieBracket_mulInvariantVectorField
-    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [T2Space G']
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
     (φ : ContMDiffMonoidMorphism I I' ∞ G G') (X Y : GroupLieAlgebra I G)
     (F : C^∞⟮I', G'; ℝ⟯) :
     mvfderiv I ((F : G' → ℝ) ∘ φ) 1
