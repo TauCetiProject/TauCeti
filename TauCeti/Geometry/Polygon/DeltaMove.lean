@@ -507,7 +507,7 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
     fin_cases j <;> rfl
   -- Measured from `b`, the sides `d - b = v - u` and `c - b = v` of the triangle `bdc` are
   -- linearly independent.
-  have hind := TauCeti.affineIndependent_vadd_vsub_of_linearIndependent_pair hli
+  have hind := TauCeti.affineIndependent_vsub_vadd_of_linearIndependent_pair hli
   have hpoints : t.toPolygon.vertices = t.points := rfl
   have h01 : finRotate 3 0 = 1 := by decide
   have h12 : finRotate 3 1 = 2 := by decide
