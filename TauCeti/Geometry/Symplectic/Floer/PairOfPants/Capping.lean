@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 
 /-!
@@ -239,6 +240,12 @@ private theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2
     Complex.norm_ofNat]
   linarith
 
+/-- On the disc `‖w‖ ≤ exp (-2π) / 2`, the point `w` is not the point `1`. -/
+private theorem ne_one_of_norm_le {w : ℂ} (hw : ‖w‖ ≤ Real.exp (-(2 * π)) / 2) : w ≠ 1 := by
+  rintro rfl
+  rw [norm_one] at hw
+  linarith [Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos] : -(2 * π) < 0)]
+
 /-- **The pole disc.** The positive plane perturbation vanishes where `‖w‖ ≥ exp (-2π) / 2`,
 where the longitudinal coordinate `s` of the end at `0` is at most `1`. This region is a
 neighbourhood of the pole `∞` in the sphere `ℂ ∪ {∞}`, and it contains the point `1`. -/
@@ -325,10 +332,7 @@ theorem contMDiffAt_positivePlanePerturbation {n : ℕ∞} (hH : Periodic H 1)
     filter_upwards [continuous_fst.norm.continuousAt.eventually (lt_mem_nhds hlt)] with p hp
     exact positivePlanePerturbation_eq_zero_of_le_norm hp.le p.2
   · -- On it, the point lies in the pair of pants with one nonzero input.
-    have hw₁ : w ≠ 1 := by
-      rintro rfl
-      rw [norm_one] at hle
-      linarith [Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos] : -(2 * π) < 0)]
+    have hw₁ : w ≠ 1 := ne_one_of_norm_le hle
     rw [← pairOfPantsPerturbation_single_zero]
     exact contMDiffAt_pairOfPantsPerturbation
       (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
@@ -437,10 +441,7 @@ theorem contMDiffAt_plumbedPerturbation_single_zero {n : ℕ∞} (hHa : ∀ r, P
     filter_upwards [continuous_fst.norm.continuousAt.eventually (lt_mem_nhds hlt)] with p hp
     exact plumbedPerturbation_single_zero_eq_zero (by linarith) hp.le p.2
   · -- On it, the point lies in the plumbed four-punctured sphere.
-    have hw₁ : w ≠ 1 := by
-      rintro rfl
-      rw [norm_one] at hle
-      linarith [Real.exp_lt_one_iff.2 (by linarith [Real.pi_pos] : -(2 * π) < 0)]
+    have hw₁ : w ≠ 1 := ne_one_of_norm_le hle
     exact contMDiffAt_plumbedPerturbation (by simp) hHa
       (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) (hHa inf)) hHas
       (forall_single zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
@@ -480,14 +481,8 @@ private theorem contDiff_negativePlanePerturbation_apply (hH : Periodic H 1)
     (hHs : ContDiff ℝ 1 (uncurry H)) (v : ℂ) :
     ContDiff ℝ 1
       (uncurry fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v) := by
-  have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry H) := by
-    have h := hHs.contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have h : ContMDiff 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × V => negativePlanePerturbation H p.1 p.2) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact contMDiff_negativePlanePerturbation hH hHs'
+  have h := contMDiff_prod_modelWithCornersSelf_iff.1 (contMDiff_negativePlanePerturbation hH
+    (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))
   exact (h.contDiff.comp ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
     contDiff_snd)).clm_apply contDiff_const
 
@@ -612,18 +607,11 @@ private theorem contDiffOn_positivePlanePerturbation_apply (hH : Periodic H 1)
     ContDiffOn ℝ 1
       (uncurry fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x v)
       ({z | Complex.equivRealProdCLM.symm z ≠ 0} ×ˢ univ) := by
-  have hHs' : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry H) := by
-    have h := hHs.contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  rintro ⟨z, x⟩ ⟨hz, -⟩
-  have h : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × V => positivePlanePerturbation H p.1 p.2)
-      (Complex.equivRealProdCLM.symm z, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact contMDiffAt_positivePlanePerturbation hH hHs' hz x
-  exact ((h.contDiffAt.comp (z, x) ((Complex.equivRealProdCLM.symm.contDiff.comp
-    contDiff_fst).prodMk contDiff_snd).contDiffAt).clm_apply contDiffAt_const).contDiffWithinAt
+  have hHs' := contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff
+  have h := (contMDiffOn_prod_modelWithCornersSelf_iff (s := {p : ℂ × V | p.1 ≠ 0})).1 fun p hp =>
+    (contMDiffAt_positivePlanePerturbation hH hHs' hp p.2).contMDiffWithinAt
+  exact (h.contDiffOn.comp ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk
+    contDiff_snd).contDiffOn fun _ (hz : _ ∈ _ ×ˢ univ) => hz.1).clm_apply contDiffOn_const
 
 /-- A point of the truncation `S_R` outside the annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ ρ` lies outside
 the circle `‖w‖ = ρ`, hence in the region `‖w‖ > exp (-2π) / 2` when `ρ ≥ exp (-2π) / 2`. -/
@@ -656,6 +644,45 @@ private theorem lt_norm_of_mem_annulus_of_notMem_truncation {R ρ : ℝ} (hR : 0
       exact hT ⟨⟨hD', h₁⟩, by simpa using h⟩
     linarith
   · linarith
+
+/-- The Floer energy, area and curvature densities of the positive plane perturbation are
+integrable on the compact annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ ρ`, which avoids the input puncture
+`0`, for a map `u` which is `C¹` off `0`. -/
+private theorem integrableOn_annulus_positivePlanePerturbation (ω : SymplecticForm V)
+    (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) {u : ℝ × ℝ → V}
+    (hu : ContDiffOn ℝ 1 u {z | Complex.equivRealProdCLM.symm z ≠ 0}) (R ρ : ℝ) :
+    IntegrableOn (ω.floerEnergyDensity
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) u)
+        (Complex.equivRealProdCLM.symm ⁻¹'
+          (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))) ∧
+      IntegrableOn (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag))
+        (Complex.equivRealProdCLM.symm ⁻¹'
+          (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))) ∧
+      IntegrableOn (fun z ↦ ω.hamiltonianCurvature
+          (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ positivePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z))
+        (Complex.equivRealProdCLM.symm ⁻¹'
+          (Metric.closedBall 0 ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))) := by
+  set U := {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0}
+  set D := Complex.equivRealProdCLM.symm ⁻¹'
+    (Metric.closedBall (0 : ℂ) ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))
+  have hU : IsOpen U := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
+  have hDU : D ⊆ U := fun z hz h => by
+    have h' := hz.2
+    simp only [Metric.mem_ball, dist_zero_right, h, norm_zero, not_lt] at h'
+    linarith [Real.exp_pos (-(2 * π * R))]
+  have hD : IsCompact D := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
+  have hKs := contDiffOn_positivePlanePerturbation_apply hH hHs 1
+  have hKt := contDiffOn_positivePlanePerturbation_apply hH hHs Complex.I
+  have hdu := hu.continuousOn_fderiv_of_isOpen hU le_rfl
+  exact ⟨((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hDU).integrableOn_compact hD,
+    ((ω.continuousOn_apply_comp (hdu.clm_apply continuousOn_const)
+      (hdu.clm_apply continuousOn_const)).mono hDU).integrableOn_compact hD,
+    ((ω.continuousOn_hamiltonianCurvature_comp hU hu.continuousOn hKs hKt).mono
+      hDU).integrableOn_compact hD⟩
 
 /-- **The energy identity on annuli of the positive plane.** Let `K` be the positive plane
 perturbation of a period-one `C¹` Hamiltonian `H`, with components `K_s(z) = K(z)(1)` and
@@ -701,7 +728,7 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
     simp [Pi.single_eq_of_ne hr]] at hT
   simp only [Pi.single_eq_same, endSign_zero, one_mul] at hT
   simp only [pairOfPantsPerturbation_single_zero] at hET hcurvT
-  set U := {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0}
+  obtain ⟨hE, harea, hcurv⟩ := ω.integrableOn_annulus_positivePlanePerturbation hH hHs hu R ρ
   set D := Complex.equivRealProdCLM.symm ⁻¹'
     (Metric.closedBall (0 : ℂ) ρ \ Metric.ball 0 (Real.exp (-(2 * π * R)) / 2))
   set T := Complex.equivRealProdCLM.symm ⁻¹' truncation R
@@ -723,28 +750,10 @@ theorem integral_floerEnergyDensity_positivePlanePerturbation_closedBall_sdiff_b
   have hDT {z : ℝ × ℝ} (hz : z ∈ D \ (T ∩ D)) :
       Real.exp (-(2 * π)) / 2 < ‖Complex.equivRealProdCLM.symm z‖ :=
     lt_norm_of_mem_annulus_of_notMem_truncation (by linarith) hz.1 fun h => hz.2 ⟨h, hz.1⟩
-  -- The three integrands are continuous off `0`, hence integrable on the compact annulus.
-  have hU : IsOpen U := isOpen_ne_fun Complex.equivRealProdCLM.symm.continuous continuous_const
-  have hDU : D ⊆ U := fun z hz h => by
-    have h' := hz.2
-    simp only [Metric.mem_ball, dist_zero_right, h, norm_zero, not_lt] at h'
-    linarith [Real.exp_pos (-(2 * π * R))]
-  have hD : IsCompact D := Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
-    ((isCompact_closedBall _ _).diff Metric.isOpen_ball)
   have hTm : MeasurableSet T := (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
     (isCompact_truncation R)).isClosed.measurableSet
-  have hDm : MeasurableSet D := hD.isClosed.measurableSet
-  have hKs := contDiffOn_positivePlanePerturbation_apply hH hHs 1
-  have hKt := contDiffOn_positivePlanePerturbation_apply hH hHs Complex.I
-  have hdu := hu.continuousOn_fderiv_of_isOpen hU le_rfl
-  have hE := ((ω.continuousOn_floerEnergyDensity hU hu hKs hKt).mono hDU).integrableOn_compact
-    (μ := volume) hD
-  have harea : IntegrableOn
-      (fun z ↦ ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag)) D :=
-    ((ω.continuousOn_apply_comp (hdu.clm_apply continuousOn_const)
-      (hdu.clm_apply continuousOn_const)).mono hDU).integrableOn_compact (μ := volume) hD
-  have hcurv := ((ω.continuousOn_hamiltonianCurvature_comp hU hu.continuousOn hKs hKt).mono
-    hDU).integrableOn_compact (μ := volume) hD
+  have hDm : MeasurableSet D := (Complex.equivRealProdCLM.symm.toHomeomorph.isCompact_preimage.2
+    ((isCompact_closedBall _ _).diff Metric.isOpen_ball)).isClosed.measurableSet
   have h₁ := ω.integral_floerEnergyDensity_sub_add_eq_of_subset inter_subset_left
     (hTm.diff (hTm.inter hDm)) hET hareaT hcurvT fun z hz => hK (hTD hz)
   have h₂ := ω.integral_floerEnergyDensity_sub_add_eq_of_subset inter_subset_right
