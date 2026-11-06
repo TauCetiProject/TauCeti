@@ -124,6 +124,17 @@ theorem mem_exactForms_succ (p q : ℕ)
         (ofComplexManifold E M).delBar ψ.1 = φ.1 := by
   simp only [exactForms, LinearMap.mem_range, Subtype.ext_iff, coe_delBarType]
 
+/-- A type form is exact if, after identifying its antiholomorphic degree with a successor,
+it is the Dolbeault differential of a type form in the preceding degree. -/
+theorem mem_exactForms_of_eq_delBar {p q n : ℕ} (hq : q = n + 1)
+    (φ : (ofComplexManifold E M).typeForms (F := F) p q)
+    (α : (ofComplexManifold E M).typeForms (F := F) p n)
+    (hφ : LinearEquiv.cast (R := ℝ) (M := fun k ↦ SmoothForm 𝓘(ℝ, E) M F k)
+      (congrArg (p + ·) hq) φ.1 = (ofComplexManifold E M).delBar α.1) :
+    φ ∈ exactForms E M F p q := by
+  subst q
+  exact (mem_exactForms_succ p n φ).mpr ⟨α, hφ.symm⟩
+
 /-- Every `∂bar`-exact form is `∂bar`-closed. -/
 theorem exactForms_le_closedForms (p q : ℕ) :
     exactForms E M F p q ≤ closedForms E M F p q := by
