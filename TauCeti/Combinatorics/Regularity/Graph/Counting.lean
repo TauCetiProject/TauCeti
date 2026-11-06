@@ -91,6 +91,29 @@ private lemma IsUniform.abs_sum_sum_mul_patternWeight_sub_le (h : G.IsUniform ε
       ring
     · simp [patternWeight, he, hxy]
 
+omit [LinearOrder 𝕜] [IsStrictOrderedRing 𝕜] in
+/-- Telescoping split of the triple sum of a product of three kernels against the product of
+their densities: replace the three factors by their densities one at a time. -/
+private lemma sum_sum_sum_mul_sub_card_mul_eq {s₀ s₁ s₂ : Finset α} (a b c : α → α → 𝕜)
+    (p q r : 𝕜) :
+    ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, a x y * b x z * c y z -
+      (#s₀ * #s₁ * #s₂ : 𝕜) * (p * q * r) =
+      ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) +
+        p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q) +
+        p * q * ∑ _x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r) := by
+  have e₁ : ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) =
+      ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, b x z * c y z * (a x y - p) := by
+    rw [sum_comm]
+    exact sum_congr rfl fun _ _ ↦ sum_comm
+  have e₃ : (#s₀ * #s₁ * #s₂ : 𝕜) * (p * q * r) =
+      ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
+    simp only [sum_const, nsmul_eq_mul]
+    ring
+  rw [e₁, sum_comm (s := s₁), e₃]
+  simp only [mul_sum, ← sum_add_distrib, ← sum_sub_distrib]
+  refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
+  ring
+
 /-- The counting lemma for a triple of cells, with the three pattern conditions explicit. -/
 private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Decidable e₀₁] [Decidable e₀₂]
     [Decidable e₁₂] {s₀ s₁ s₂ : Finset α} (h₀₁ : G.IsUniform ε s₀ s₁)
@@ -119,23 +142,7 @@ private lemma abs_sum_patternWeight_sub_le (e₀₁ e₀₂ e₁₂ : Prop) [Dec
   have hc₁ := patternWeight_le_one (G := G) (𝕜 := 𝕜) e₁₂
   -- Replace the three indicators by their densities one at a time: each difference is a test of
   -- one pair against functions with values in `[0, 1]`, summed over the remaining vertex.
-  have hsplit : ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, a x y * b x z * c y z -
-      (#s₀ * #s₁ * #s₂ : 𝕜) * (p * q * r) =
-      ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) +
-        p * ∑ y ∈ s₁, ∑ x ∈ s₀, ∑ z ∈ s₂, 1 * c y z * (b x z - q) +
-        p * q * ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, 1 * 1 * (c y z - r) := by
-    have e₁ : ∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p) =
-        ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, b x z * c y z * (a x y - p) := by
-      rw [sum_comm]
-      exact sum_congr rfl fun _ _ ↦ sum_comm
-    have e₃ : (#s₀ * #s₁ * #s₂ : 𝕜) * (p * q * r) =
-        ∑ x ∈ s₀, ∑ y ∈ s₁, ∑ z ∈ s₂, p * q * r := by
-      simp only [sum_const, nsmul_eq_mul]
-      ring
-    rw [e₁, sum_comm (s := s₁), e₃]
-    simp only [mul_sum, ← sum_add_distrib, ← sum_sub_distrib]
-    refine sum_congr rfl fun x _ ↦ sum_congr rfl fun y _ ↦ sum_congr rfl fun z _ ↦ ?_
-    ring
+  have hsplit := sum_sum_sum_mul_sub_card_mul_eq (s₀ := s₀) (s₁ := s₁) (s₂ := s₂) a b c p q r
   have h₁ : |∑ z ∈ s₂, ∑ x ∈ s₀, ∑ y ∈ s₁, b x z * c y z * (a x y - p)| ≤
       ε * (#s₀ * #s₁ * #s₂) :=
     (abs_sum_le_card_nsmul fun z _ ↦
