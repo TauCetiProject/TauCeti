@@ -23,7 +23,8 @@ under the explicit hypothesis `x ≠ 0`, together with the Laplacian of the dipo
 `x ↦ ⟪a, x⟫ ‖x‖^p`.  The critical exponents give the functions `‖x‖^(2 - dim E)` and
 `⟪a, x⟫ ‖x‖^(-dim E)`, harmonic away from the origin, from which the Poisson kernel of a ball is
 assembled. The logarithm of the norm, the limit of `(‖x‖ ^ p - 1) / p` as `p → 0`, has
-derivative `‖x‖⁻² ⟨x, ·⟩` and Laplacian `(dim E - 2) / ‖x‖²` away from the origin. From these
+derivative `‖x‖⁻² ⟨x, ·⟩` and Laplacian `(dim E - 2) / ‖x‖²` away from the origin; its smooth
+regularization `log (‖x‖² + c)`, `c > 0`, has an explicit Laplacian everywhere. From these
 follow the gradient and the Laplacian of a radial function `w(log ‖x‖) - log ‖x‖`, the conformal
 exponent of a rotationally symmetric metric written over flat space.
 
@@ -53,6 +54,8 @@ chain-rule argument while replacing the global exponent hypothesis with the loca
   harmonic radial and dipole powers.
 * `hasFDerivAt_log_norm_of_ne`, `laplacian_log_norm_of_ne`: the derivative and the Laplacian of
   `x ↦ log ‖x‖` away from zero.
+* `laplacian_log_norm_sq_add`: the Laplacian of the smooth regularization
+  `x ↦ log (‖x‖ ^ 2 + c)`, `c > 0`, of `2 log ‖x‖`.
 * `norm_gradient_comp_log_norm_sub_log_norm`, `laplacian_comp_log_norm_sub_log_norm`: the norm of
   the gradient and the Laplacian of `x ↦ w(log ‖x‖) - log ‖x‖` away from zero.
 * `exists_contDiff_eq_comp_log_norm_sub_log_norm`: a smooth function on `E` equal to
@@ -453,6 +456,28 @@ theorem laplacian_log_norm_of_ne {x : E} (hx : x ≠ 0) :
   rw [hcomp, ContDiffAt.laplacian_comp (q := fun y : E ↦ ‖y‖ ^ 2)
     ((Real.contDiffAt_log.2 ht).div_const _) (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq,
     hlog, norm_gradient_eq_norm_fderiv]
+  simp [fderiv_norm_sq_apply, RCLike.norm_nsmul ℝ, innerSL_apply_norm]
+  field_simp
+  ring
+
+/-- For `c > 0`, the smooth regularization `x ↦ log (‖x‖ ^ 2 + c)` of `2 log ‖x‖` has Laplacian
+`(2 dim E (‖x‖ ^ 2 + c) - 4 ‖x‖ ^ 2) / (‖x‖ ^ 2 + c) ^ 2` everywhere. In the plane this is
+`4 c / (‖x‖ ^ 2 + c) ^ 2`. -/
+theorem laplacian_log_norm_sq_add {c : ℝ} (hc : 0 < c) (x : E) :
+    Δ (fun y : E ↦ Real.log (‖y‖ ^ 2 + c)) x =
+      (2 * Module.finrank ℝ E * (‖x‖ ^ 2 + c) - 4 * ‖x‖ ^ 2) / (‖x‖ ^ 2 + c) ^ 2 := by
+  have ht : ‖x‖ ^ 2 + c ≠ 0 := by positivity
+  have hcomp : (fun y : E ↦ Real.log (‖y‖ ^ 2 + c)) =
+      (fun t ↦ Real.log (t + c)) ∘ fun y : E ↦ ‖y‖ ^ 2 := rfl
+  have hd : deriv (fun t : ℝ ↦ Real.log (t + c)) = fun t ↦ (t + c)⁻¹ := by
+    funext t
+    rw [deriv_comp_add_const, Real.deriv_log]
+  have hdd : deriv (fun t : ℝ ↦ (t + c)⁻¹) (‖x‖ ^ 2) = -((‖x‖ ^ 2 + c) ^ 2)⁻¹ := by
+    rw [deriv_comp_add_const (f := fun t : ℝ ↦ t⁻¹), deriv_inv]
+  have hF : ContDiffAt ℝ 2 (fun t : ℝ ↦ Real.log (t + c)) (‖x‖ ^ 2) :=
+    (Real.contDiffAt_log.2 ht).comp (‖x‖ ^ 2) (contDiffAt_id.add contDiffAt_const)
+  rw [hcomp, ContDiffAt.laplacian_comp (q := fun y : E ↦ ‖y‖ ^ 2) hF
+    (contDiff_norm_sq ℝ).contDiffAt, laplacian_norm_sq, hd, hdd, norm_gradient_eq_norm_fderiv]
   simp [fderiv_norm_sq_apply, RCLike.norm_nsmul ℝ, innerSL_apply_norm]
   field_simp
   ring

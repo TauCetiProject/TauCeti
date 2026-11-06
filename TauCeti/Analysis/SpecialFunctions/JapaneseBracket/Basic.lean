@@ -59,6 +59,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
   bounded error.
 * `TauCeti.integral_rpow_neg_one_add_norm_sq`: the value of the integral on a real inner
   product space, for its canonical Lebesgue measure.
+* `TauCeti.integral_rpow_neg_sq_add_norm_sq`: the value of the integral of the rescaled bracket
+  `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c > 0`, on a real inner product space.
 -/
 
 public section
@@ -398,5 +400,31 @@ theorem integral_rpow_neg_one_add_norm_sq {r : ℝ} (hr : (finrank ℝ V : ℝ) 
   have hΓ := Gamma_pos_of_pos (show 0 < (d : ℝ) / 2 by positivity)
   rw [hmoment, volume_real_unitBall, beta, Gamma_add_one (by positivity), hsum, ← hd]
   field_simp
+
+/-- **The integral of the rescaled Japanese bracket.** On a real inner product space `V` of
+dimension `d < r`, for `c > 0`,
+`∫ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2) = c ^ (d - r) π ^ (d / 2) Γ((r - d) / 2) / Γ(r / 2)`.
+The case `c = 1` is `integral_rpow_neg_one_add_norm_sq`. -/
+theorem integral_rpow_neg_sq_add_norm_sq {c r : ℝ} (hc : 0 < c) (hr : (finrank ℝ V : ℝ) < r) :
+    ∫ x : V, (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2) =
+      c ^ ((finrank ℝ V : ℝ) - r) *
+        (π ^ ((finrank ℝ V : ℝ) / 2) * Gamma ((r - finrank ℝ V) / 2) / Gamma (r / 2)) := by
+  have hc2 : c ^ 2 ≠ 0 := by positivity
+  -- Factor out `c ^ 2`, leaving the unit bracket at `c⁻¹ x`.
+  have hpt : ∀ x : V, (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2) =
+      (c ^ 2) ^ (-r / 2) * (1 + ‖c⁻¹ • x‖ ^ 2) ^ (-r / 2) := by
+    intro x
+    rw [← Real.mul_rpow (by positivity) (by positivity), norm_smul, mul_pow, norm_inv,
+      Real.norm_eq_abs, inv_pow, sq_abs, mul_add, mul_one, mul_inv_cancel_left₀ hc2]
+  simp_rw [hpt]
+  rw [integral_const_mul, Measure.integral_comp_smul volume
+    (fun x : V ↦ (1 + ‖x‖ ^ 2) ^ (-r / 2)) c⁻¹, integral_rpow_neg_one_add_norm_sq hr,
+    smul_eq_mul, ← mul_assoc]
+  congr 1
+  rw [inv_pow, inv_inv, abs_of_pos (by positivity), ← Real.rpow_natCast c (finrank ℝ V),
+    ← Real.rpow_natCast c 2, ← Real.rpow_mul hc.le, ← Real.rpow_add hc]
+  congr 1
+  push_cast
+  ring
 
 end TauCeti
