@@ -191,6 +191,18 @@ theorem kummerLog_add (x y : KummerCoeff F n) :
   rw [kummerLog, map_add, ZMod.val_add]
   rfl
 
+/-- A Galois element moves an `n`-th root `α` of `a` by the root of unity
+`ζ ^ kummerLog hζ (kummerCocycle hα σ)`. -/
+theorem apply_eq_pow_kummerLog_mul {α : (SeparableClosure F)ˣ} {a : Fˣ}
+    (hα : α ^ n = Units.map (algebraMap F (SeparableClosure F)).toMonoidHom a)
+    (σ : AbsoluteGaloisGroup F) :
+    (σ : SeparableClosure F →* SeparableClosure F) (α : SeparableClosure F) =
+      algebraMap F (SeparableClosure F) ζ ^ kummerLog hζ (kummerCocycle hα σ) * α := by
+  have hσα := coe_toMul_eq_pow_kummerLog hζ (kummerCocycle hα σ)
+  rw [toMul_kummerCocycle, Units.val_mul, AlgEquiv.smul_units_def, Units.coe_map,
+    Units.val_inv_eq_inv_val, mul_inv_eq_iff_eq_mul₀ α.ne_zero] at hσα
+  exact hσα
+
 end Log
 
 /-! ### The coefficient pairing of a primitive root -/
