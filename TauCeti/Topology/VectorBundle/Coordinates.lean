@@ -105,6 +105,12 @@ def inChartCoordinates (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 
 variable (Z : VectorBundleCore 𝕜 B F ι) (W : VectorBundleCore 𝕜 B G κ)
   (V : VectorBundleCore 𝕜 B H ν)
 
+/-- The chart expression of a fibre map is its composite with the transitions from the source
+chart and to the target chart. -/
+theorem inChartCoordinates_def (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) :
+    Z.inChartCoordinates W i j x ϕ =
+      (W.coordChange (W.indexAt x) j x).comp (ϕ.comp (Z.coordChange i (Z.indexAt x) x)) := (rfl)
+
 @[simp] theorem inChartCoordinates_apply (i : ι) (j : κ) (x : B) (ϕ : F →L[𝕜] G) (v : F) :
     Z.inChartCoordinates W i j x ϕ v =
       W.coordChange (W.indexAt x) j x (ϕ (Z.coordChange i (Z.indexAt x) x v)) := (rfl)
