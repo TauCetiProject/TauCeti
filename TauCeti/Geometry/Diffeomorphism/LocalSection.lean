@@ -6,10 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Diffeomorphism.Action
-public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Homogeneity
 public import TauCeti.Geometry.Diffeomorphism.Inversion
-public import TauCeti.Topology.Algebra.GroupAction.OrbitTrivialization
-public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
+public import TauCeti.Geometry.Manifold.Flow.Complete
+public import TauCeti.Geometry.Manifold.IntegralCurve.GlobalFlow
+public import TauCeti.Geometry.Manifold.VectorField.Chart
+public import TauCeti.Topology.Algebra.Group.Quotient.LocalSection
 
 /-!
 # Local sections of evaluation on the diffeomorphism group
@@ -24,19 +25,19 @@ chosen to fix every point outside a compact subset of any prescribed neighbourho
 
 The section is built from coordinate-ball motions. Fix a basis `b₁, …, bₖ` of the model space
 and a bump function `ρ` equal to `1` near `x` in the chart at `x`. The constant field `bᵢ` read in
-the chart and cut off by `ρ` is a compactly supported vector field on `M`; let `φᵢ(t)` be its
-time-`t` map. Near `x` its flow lines are straight lines in the chart, so for `z` close to `x`
-with `e z - e x = ∑ dᵢ bᵢ`, where `e` is the chart, the composite `φ₁(d₁) ∘ ⋯ ∘ φₖ(dₖ)` carries
-`x` to `z`. Each `φᵢ(t)` depends smoothly on `t` and the point, so the composite is a jointly
-smooth family of diffeomorphisms parametrized by `d`, hence a continuous map into `Diff(M)`.
+the chart and cut off by `ρ` is a compactly supported vector field on `M`
+(`TauCeti.bumpChartField`); let `φᵢ(t)` be its time-`t` map. Near `x` its flow lines are straight
+lines in the chart, so for `z` close to `x` with `e z - e x = ∑ dᵢ bᵢ`, where `e` is the chart, the
+composite `φ₁(d₁) ∘ ⋯ ∘ φₖ(dₖ)` carries `x` to `z`. Each `φᵢ(t)` depends smoothly on `t` and the
+point, so the composite is a jointly smooth family of diffeomorphisms parametrized by `d`, hence a
+continuous map into `Diff(M)`.
 
-Consequently evaluation at `x₀` is a locally trivial principal bundle over the orbit `O` of `x₀`,
-with structure group the stabilizer `H` of `x₀`: over a neighbourhood of each point of `O` it has
-the trivialization `g ↦ (g x₀, σ (g x₀)⁻¹ * g)` with inverse `(z, h) ↦ σ z * h`, for a local
-section `σ` (`TauCeti.exists_trivialization_diffeomorph_apply`), and these trivializations are
-equivariant for right multiplication by `H`. The local sections also show that every orbit is
-open, hence open and closed in `M` (`TauCeti.isClopen_orbit_diffeomorph`), so the orbit is all of
-`M` when `M` is connected (`TauCeti.orbit_diffeomorph_eq_univ`).
+Consequently evaluation at `x₀` is a locally trivial principal bundle over the orbit of `x₀`,
+with structure group the stabilizer `H` of `x₀`: over a neighbourhood of each point of the orbit
+it has the trivialization `g ↦ (g x₀, σ (g x₀)⁻¹ * g)` with inverse `(z, h) ↦ σ z * h`, for a
+local section `σ` (`TauCeti.exists_trivialization_diffeomorph_apply`), and these trivializations
+are equivariant for right multiplication by `H`. The orbits themselves are open and closed by the
+homogeneity lemma (`TauCeti.isClopen_orbit_diffeomorph`).
 
 ## Main results
 
@@ -45,9 +46,7 @@ open, hence open and closed in `M` (`TauCeti.isClopen_orbit_diffeomorph`), so th
   neighbourhood.
 * `TauCeti.exists_trivialization_diffeomorph_apply`: evaluation at `x₀` is trivial, with fibre the
   stabilizer of `x₀` and equivariantly for its right action, over a neighbourhood of each point of
-  the orbit of `x₀`.
-* `TauCeti.isClopen_orbit_diffeomorph`: the orbits of `Diff(M)` are open and closed.
-* `TauCeti.orbit_diffeomorph_eq_univ`: on a connected manifold, `Diff(M)` acts transitively.
+  the orbit of `x₀`, by the chart `g ↦ (g x₀, σ (g x₀)⁻¹ * g)` of a continuous local section `σ`.
 
 ## References
 
@@ -59,7 +58,7 @@ open, hence open and closed in `M` (`TauCeti.isClopen_orbit_diffeomorph`), so th
 
 public section
 
-open Set Filter Topology MulAction
+open Set Filter Metric Topology MulAction
 open scoped Manifold ContDiff TauCeti.DiffeomorphWeakWhitney
 
 namespace TauCeti
@@ -68,103 +67,49 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [T2Space M] [BoundarylessManifold I M] {n : ℕ∞ω} [IsManifold I n M] {m : ℕ∞}
 
-/-! ### Products of smooth families of diffeomorphisms -/
-
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold I n M] in
-/-- A finite product of jointly `C^m` families of diffeomorphisms is jointly `C^m`. -/
-private theorem contMDiff_list_prod_apply {E' H' P : Type*} [NormedAddCommGroup E']
-    [NormedSpace ℝ E'] [TopologicalSpace H'] {I' : ModelWithCorners ℝ E' H'} [TopologicalSpace P]
-    [ChartedSpace H' P] (l : List (P → M ≃ₘ^m⟮I, I⟯ M))
-    (hl : ∀ f ∈ l, ContMDiff (I'.prod I) I m fun q : P × M ↦ f q.1 q.2) :
-    ContMDiff (I'.prod I) I m fun q : P × M ↦ (l.map (· q.1)).prod q.2 := by
-  induction l with
-  | nil => exact contMDiff_snd
-  | cons f l ih =>
-    simp only [List.map_cons, List.prod_cons, Diffeomorph.mul_apply]
-    exact (hl f List.mem_cons_self).comp
-      (contMDiff_fst.prodMk (ih fun g hg ↦ hl g (List.mem_cons_of_mem f hg)))
-
 /-! ### Coordinate motions -/
 
 section ChartMotion
 
-variable (x : M) (ρ : ContDiffBump (extChartAt I x x)) (v : E)
+variable {x : M} {ρ : ContDiffBump (extChartAt I x x)} (v : E) [IsManifold I 1 M]
 
-/-- The constant vector field `v` read in the chart at `x` and cut off by the bump function `ρ`. -/
-private noncomputable def bumpField (z : M) : TangentSpace I z :=
-  chartField x (fun p : E ↦ ((ρ p : ℝ) • v : E)) z
-
-variable {x ρ}
-
-omit [T2Space M] [BoundarylessManifold I M] [IsManifold I n M] in
-/-- The compact set of `M` outside which the cut-off fields vanish: the image under the inverse
-chart of the closed ball of radius `ρ.rOut`. -/
-private theorem isCompact_image_closedBall
-    (hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) :
-    IsCompact ((extChartAt I x).symm '' Metric.closedBall (extChartAt I x x) ρ.rOut) :=
-  (isCompact_closedBall _ _).image_of_continuousOn ((continuousOn_extChartAt_symm x).mono hρ)
-
-omit [T2Space M] [BoundarylessManifold I M] [IsManifold I n M] in
-private theorem bump_smul_eq_zero {p : E} (hp : p ∉ Metric.closedBall (extChartAt I x x) ρ.rOut) :
-    ((ρ p : ℝ) • v : E) = 0 := by
-  have hρp : ρ p = 0 := Function.notMem_support.1 fun h ↦
-    hp (Metric.ball_subset_closedBall (ρ.support_eq ▸ h))
-  rw [hρp, zero_smul]
-
-omit [T2Space M] [BoundarylessManifold I M] [IsManifold I n M] in
-private theorem bumpField_eq_zero {z : M}
-    (hz : z ∉ (extChartAt I x).symm '' Metric.closedBall (extChartAt I x x) ρ.rOut) :
-    bumpField x ρ v z = 0 :=
-  chartField_eq_zero (fun _ hp ↦ bump_smul_eq_zero v hp) hz
-
-variable [IsManifold I 1 M]
-
-omit [BoundarylessManifold I M] in
-private theorem contMDiff_bumpField (hmn : (m : ℕ∞ω) + 1 ≤ n)
-    (hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) :
-    ContMDiff I I.tangent m fun z ↦ (⟨z, bumpField x ρ v z⟩ : TangentBundle I M) := by
-  have hw : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent m
-      (fun p ↦ (⟨p, ((ρ p : ℝ) • v : E)⟩ : TangentBundle 𝓘(ℝ, E) E)) :=
-    contMDiff_vectorSpace_iff_contDiff.2 (ρ.contDiff.smul contDiff_const)
-  exact contMDiff_chartField hmn hw (isCompact_closedBall _ _) hρ fun _ hp ↦
-    bump_smul_eq_zero v hp
-
-private theorem isCompleteVectorField_bumpField (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
-    (hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) :
-    IsCompleteVectorField (bumpField x ρ v) :=
+private theorem isCompleteVectorField_bumpChartField (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
+    (hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) :
+    IsCompleteVectorField (bumpChartField x ρ v) :=
   isCompleteVectorField_of_isCompact_of_eq_zero_off
-    ((contMDiff_bumpField v hmn hρ).of_le (by exact_mod_cast hm)) (isCompact_image_closedBall hρ)
-    fun _ hz ↦ bumpField_eq_zero v hz
+    ((contMDiff_bumpChartField v hmn hρ).of_le (by exact_mod_cast hm))
+    (isCompact_extChartAt_symm_image_closedBall hρ) fun _ hz ↦ bumpChartField_eq_zero v hz
 
 variable [IsManifold I m M]
 
-/-- The time-`t` map of the cut-off coordinate field `bumpField x ρ v`. -/
+/-- The time-`t` map of the cut-off coordinate field `bumpChartField x ρ v`. -/
 private noncomputable def bumpFlow (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
-    (hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) (v : E)
+    (hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) (v : E)
     (t : ℝ) : M ≃ₘ^m⟮I, I⟯ M :=
-  globalFlowDiffeomorph (isCompleteVectorField_bumpField v hm hmn hρ) hm
-    (contMDiff_bumpField v hmn hρ) t
+  globalFlowDiffeomorph (isCompleteVectorField_bumpChartField v hm hmn hρ) hm
+    (contMDiff_bumpChartField v hmn hρ) t
 
 variable {hm : 1 ≤ m} {hmn : (m : ℕ∞ω) + 1 ≤ n}
-  {hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target}
+  {hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target}
 
 private theorem bumpFlow_apply (t : ℝ) (z : M) :
-    bumpFlow hm hmn hρ v t z = maximalIntegralCurve (bumpField x ρ v) z t := by
+    bumpFlow hm hmn hρ v t z = maximalIntegralCurve (bumpChartField x ρ v) z t := by
   rw [bumpFlow, globalFlowDiffeomorph_apply, globalFlow_apply]
 
 /-- The time-`t` maps of a cut-off coordinate field are jointly `C^m` in the time and the point. -/
 private theorem contMDiff_bumpFlow :
     ContMDiff (𝓘(ℝ, ℝ).prod I) I m fun p : ℝ × M ↦ bumpFlow hm hmn hρ v p.1 p.2 := by
-  refine (contMDiff_globalFlow_uncurry (isCompleteVectorField_bumpField v hm hmn hρ) hm
-    (contMDiff_bumpField v hmn hρ)).congr fun p ↦ ?_
+  refine (contMDiff_globalFlow_uncurry (isCompleteVectorField_bumpChartField v hm hmn hρ) hm
+    (contMDiff_bumpChartField v hmn hρ)).congr fun p ↦ ?_
   rw [bumpFlow, globalFlowDiffeomorph_apply]
 
 /-- The cut-off coordinate motions fix every point outside the support of the bump function. -/
 private theorem bumpFlow_apply_of_notMem {z : M}
-    (hz : z ∉ (extChartAt I x).symm '' Metric.closedBall (extChartAt I x x) ρ.rOut) (t : ℝ) :
+    (hz : z ∉ (extChartAt I x).symm '' closedBall (extChartAt I x x) ρ.rOut) (t : ℝ) :
     bumpFlow hm hmn hρ v t z = z := by
   rw [bumpFlow, globalFlowDiffeomorph_apply]
-  exact globalFlow_eq_of_isMIntegralCurve _ _ (isMIntegralCurve_const (bumpField_eq_zero v hz)) t
+  exact globalFlow_eq_of_isMIntegralCurve _ _
+    (isMIntegralCurve_const (bumpChartField_eq_zero v hz)) t
 
 /-- Near `x`, the cut-off coordinate motion along `v` is translation by `t • v` in the chart. -/
 private theorem bumpFlow_extChartAt_symm {c : E} {t : ℝ}
@@ -174,7 +119,7 @@ private theorem bumpFlow_extChartAt_symm {c : E} {t : ℝ}
   set R := (ρ.rIn - ‖c - extChartAt I x x‖) / (‖v‖ + 1) with hR
   have hv1 : 0 < ‖v‖ + 1 := by positivity
   have htR : |t| < R := by rw [hR, lt_div_iff₀ hv1]; linarith
-  have hseg : ∀ s ∈ Ioo (-R) R, c + s • v ∈ Metric.ball (extChartAt I x x) ρ.rIn := fun s hs ↦ by
+  have hseg : ∀ s ∈ Ioo (-R) R, c + s • v ∈ ball (extChartAt I x x) ρ.rIn := fun s hs ↦ by
     have hs' : |s| * (‖v‖ + 1) < ρ.rIn - ‖c - extChartAt I x x‖ := by
       rw [← lt_div_iff₀ hv1]
       exact abs_lt.2 hs
@@ -182,19 +127,11 @@ private theorem bumpFlow_extChartAt_symm {c : E} {t : ℝ}
     calc ‖c - extChartAt I x x + s • v‖ ≤ ‖c - extChartAt I x x‖ + |s| * ‖v‖ := by
           rw [← Real.norm_eq_abs, ← norm_smul]; exact norm_add_le _ _
       _ < ρ.rIn := by nlinarith [abs_nonneg s]
-  have hballt : Metric.ball (extChartAt I x x) ρ.rIn ⊆ (extChartAt I x).target :=
-    (Metric.ball_subset_closedBall.trans (Metric.closedBall_subset_closedBall
-      ρ.rIn_lt_rOut.le)).trans hρ
-  have hcurve : IsMIntegralCurveOn (fun s ↦ (extChartAt I x).symm (c + s • v))
-      (bumpField x ρ v) (Ioo (-R) R) := fun s hs ↦
-    (hasMFDerivAt_chartField Metric.isOpen_ball hballt (fun p hp ↦ by
-      -- `TangentSpace 𝓘(ℝ, E) p` is `E` by definition.
-      simp only [ρ.one_of_mem_closedBall (Metric.ball_subset_closedBall hp), one_smul]
-      rfl) (hseg s hs)).hasMFDerivWithinAt
   have hR0 : (0 : ℝ) ∈ Ioo (-R) R := ⟨by linarith [abs_nonneg t], by linarith [abs_nonneg t]⟩
   rw [bumpFlow_apply]
-  exact hcurve.eqOn_maximalIntegralCurve ((contMDiff_bumpField v hmn hρ).of_le
-    (by exact_mod_cast hm)) hR0 (by simp) (abs_lt.1 htR)
+  exact (isMIntegralCurveOn_bumpChartField v hρ hseg).eqOn_maximalIntegralCurve
+    ((contMDiff_bumpChartField v hmn hρ).of_le (by exact_mod_cast hm)) hR0 (by simp)
+    (abs_lt.1 htR)
 
 omit [FiniteDimensional ℝ E] in
 private theorem norm_list_sum_smul_le (l : List (ℝ × E)) :
@@ -232,13 +169,13 @@ private theorem list_prod_bumpFlow_extChartAt_symm (l : List (ℝ × E)) {c : E}
 /-- The composite of the cut-off coordinate motions along the vectors of the basis
 `Module.finBasis ℝ E`, for the times given by the coordinates of `d`. -/
 private noncomputable def coordMotion (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
-    (hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) (d : E) :
+    (hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target) (d : E) :
     M ≃ₘ^m⟮I, I⟯ M :=
   ((List.ofFn fun i ↦ ((Module.finBasis ℝ E).repr d i, Module.finBasis ℝ E i)).map
     fun p ↦ bumpFlow hm hmn hρ p.2 p.1).prod
 
 variable {hm : 1 ≤ m} {hmn : (m : ℕ∞ω) + 1 ≤ n}
-  {hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target}
+  {hρ : closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target}
 
 private theorem coordMotion_zero : coordMotion hm hmn hρ (0 : E) = 1 := by
   simp only [coordMotion, map_zero, Finsupp.coe_zero, Pi.zero_apply, List.map_ofFn]
@@ -250,8 +187,9 @@ private theorem coordMotion_zero : coordMotion hm hmn hρ (0 : E) = 1 := by
 
 private theorem contMDiff_coordMotion :
     ContMDiff (𝓘(ℝ, E).prod I) I m fun q : E × M ↦ coordMotion hm hmn hρ q.1 q.2 := by
-  have h := contMDiff_list_prod_apply (I' := 𝓘(ℝ, E)) (List.ofFn fun (i : Fin _) (d : E) ↦
-    bumpFlow hm hmn hρ (Module.finBasis ℝ E i) ((Module.finBasis ℝ E).repr d i)) fun f hf ↦ by
+  have h := Diffeomorph.contMDiff_list_prod_apply (I' := 𝓘(ℝ, E))
+    (List.ofFn fun (i : Fin _) (d : E) ↦
+      bumpFlow hm hmn hρ (Module.finBasis ℝ E i) ((Module.finBasis ℝ E).repr d i)) fun f hf ↦ by
       obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hf
       have hcoord : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, ℝ) m fun d : E ↦ (Module.finBasis ℝ E).repr d i :=
         (LinearMap.toContinuousLinearMap ((Module.finBasis ℝ E).coord i)).contDiff.contMDiff
@@ -269,7 +207,7 @@ private theorem coordMotion_extChartAt_symm {d : E}
       using hd
 
 private theorem coordMotion_apply_of_notMem {z : M}
-    (hz : z ∉ (extChartAt I x).symm '' Metric.closedBall (extChartAt I x x) ρ.rOut) (d : E) :
+    (hz : z ∉ (extChartAt I x).symm '' closedBall (extChartAt I x x) ρ.rOut) (d : E) :
     coordMotion hm hmn hρ d z = z := by
   rw [coordMotion]
   induction (List.ofFn fun i ↦ ((Module.finBasis ℝ E).repr d i, Module.finBasis ℝ E i)) with
@@ -295,20 +233,9 @@ theorem exists_continuousOn_diffeomorph_apply_eq (hm : 1 ≤ m) (hmn : (m : ℕ�
     ∃ U ∈ 𝓝 x, IsOpen U ∧ ∃ (K : Set M) (s : M → M ≃ₘ^m⟮I, I⟯ M), IsCompact K ∧ K ⊆ V ∧
       ContinuousOn s U ∧ s x = 1 ∧ (∀ z ∈ U, s z x = z) ∧ ∀ z, EqOn (s z) id Kᶜ := by
   have : IsManifold I 1 M := .of_le (by exact_mod_cast hm : (1 : ℕ∞ω) ≤ m)
-  -- A ball around `x` in the interior of the chart target whose preimage lies in `V`.
-  have hW : IsOpen (interior (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' V) :=
-    ((continuousOn_extChartAt_symm x).mono interior_subset).isOpen_inter_preimage
-      isOpen_interior hV
-  have hxW :
-      extChartAt I x x ∈ interior (extChartAt I x).target ∩ (extChartAt I x).symm ⁻¹' V :=
-    ⟨(I.isInteriorPoint_iff).1 BoundarylessManifold.isInteriorPoint, by
-      rwa [mem_preimage, extChartAt_to_inv]⟩
-  obtain ⟨r, hr, hrW⟩ := Metric.isOpen_iff.1 hW (extChartAt I x x) hxW
-  let ρ : ContDiffBump (extChartAt I x x) := ⟨r / 2, 3 * r / 4, by positivity, by linarith⟩
-  have hKr : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ Metric.ball (extChartAt I x x) r :=
-    Metric.closedBall_subset_ball (by change 3 * r / 4 < r; linarith)
-  have hρ : Metric.closedBall (extChartAt I x x) ρ.rOut ⊆ (extChartAt I x).target :=
-    fun p hp ↦ interior_subset (hrW (hKr hp)).1
+  -- A bump function around `x` in the chart, supported in the chart target and in the image of
+  -- `V`.
+  obtain ⟨ρ, hρ, hρV⟩ := exists_contDiffBump_extChartAt_subset (I := I) hV hx
   -- The displacements `d` for which the coordinate motions stay in the ball where `ρ = 1`.
   set D : Set E := {d | ∑ i, |(Module.finBasis ℝ E).repr d i| *
     (‖Module.finBasis ℝ E i‖ + 1) < ρ.rIn} with hD
@@ -322,12 +249,10 @@ theorem exists_continuousOn_diffeomorph_apply_eq (hm : 1 ≤ m) (hmn : (m : ℕ�
   have hxU : x ∈ U := ⟨mem_extChartAt_source x, ⟨0, hD0, zero_add _⟩⟩
   have hfam := contMDiff_coordMotion (hm := hm) (hmn := hmn) (hρ := hρ)
   refine ⟨U, hUo.mem_nhds hxU, hUo,
-    (extChartAt I x).symm '' Metric.closedBall (extChartAt I x x) ρ.rOut,
+    (extChartAt I x).symm '' closedBall (extChartAt I x x) ρ.rOut,
     fun z ↦ coordMotion hm hmn hρ (extChartAt I x z - extChartAt I x x),
-    isCompact_image_closedBall hρ, ?_, ?_, by simp [coordMotion_zero], fun z hz ↦ ?_,
-    fun z y hy ↦ coordMotion_apply_of_notMem hy _⟩
-  · rintro _ ⟨p, hp, rfl⟩
-    exact (hrW (hKr hp)).2
+    isCompact_extChartAt_symm_image_closedBall hρ, hρV, ?_, by simp [coordMotion_zero],
+    fun z hz ↦ ?_, fun z y hy ↦ coordMotion_apply_of_notMem hy _⟩
   · exact (hfam.continuous_diffeomorphWeakWhitney.comp_continuousOn
       (((continuousOn_extChartAt x).sub continuousOn_const).mono inter_subset_left))
   · obtain ⟨d, hd, hdz⟩ := hz.2
@@ -339,63 +264,54 @@ theorem exists_continuousOn_diffeomorph_apply_eq (hm : 1 ≤ m) (hmn : (m : ℕ�
 
 /-! ### Local triviality of evaluation -/
 
-omit [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] [IsManifold I n M] in
-/-- On a compact manifold, evaluation `g ↦ g • x₀ = g x₀` of `C^m` diffeomorphisms is continuous
-for the weak Whitney topology. -/
-private theorem continuous_smul_diffeomorph (x₀ : M) :
-    Continuous fun g : M ≃ₘ^m⟮I, I⟯ M ↦ g • x₀ :=
-  Diffeomorph.continuous_eval_const x₀
+omit [FiniteDimensional ℝ E] [T2Space M] [IsManifold I n M] [BoundarylessManifold I M]
+  [CompactSpace M] [IsManifold I m M] in
+/-- Two diffeomorphisms agree at `x₀` exactly when they differ on the right by an element of the
+stabilizer of `x₀`. -/
+private theorem apply_eq_apply_iff_inv_mul_mem_stabilizer (x₀ : M) (a b : M ≃ₘ^m⟮I, I⟯ M) :
+    a x₀ = b x₀ ↔ a⁻¹ * b ∈ stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀ := by
+  rw [mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, Diffeomorph.smul_def, Diffeomorph.smul_def,
+    eq_comm]
 
 /-- A local section of evaluation at `x₀` over a neighbourhood of any point `y` of the orbit of
 `x₀`. -/
-private theorem exists_continuousOn_smul_eq (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) {x₀ y : M}
-    (hy : y ∈ orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) :
+private theorem exists_continuousOn_apply_eq_of_mem_orbit (hm : 1 ≤ m)
+    (hmn : (m : ℕ∞ω) + 1 ≤ n) {x₀ y : M} (hy : y ∈ orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) :
     ∃ U, IsOpen U ∧ y ∈ U ∧ ∃ σ : M → M ≃ₘ^m⟮I, I⟯ M, ContinuousOn σ U ∧
-      ∀ z ∈ U, σ z • x₀ = z := by
-  obtain ⟨g, rfl⟩ := hy
+      ∀ z ∈ U, σ z x₀ = z := by
+  obtain ⟨g, rfl⟩ := mem_orbit_iff.1 hy
+  rw [Diffeomorph.smul_def]
   obtain ⟨U, hUx, hU, -, s, -, -, hs, -, hsU, -⟩ :=
-    exists_continuousOn_diffeomorph_apply_eq (I := I) hm hmn isOpen_univ (mem_univ (g • x₀))
-  exact ⟨U, hU, mem_of_mem_nhds hUx, fun z ↦ s z * g, hs.mul continuousOn_const,
-    fun z hz ↦ hsU z hz⟩
+    exists_continuousOn_diffeomorph_apply_eq (I := I) hm hmn isOpen_univ (mem_univ (g x₀))
+  refine ⟨U, hU, mem_of_mem_nhds hUx, fun z ↦ s z * g, hs.mul continuousOn_const, fun z hz ↦ ?_⟩
+  rw [Diffeomorph.mul_apply]
+  exact hsU z hz
 
 /-- **Evaluation is a locally trivial principal bundle.** Let `M` be a compact boundaryless `C^n`
 manifold modelled on a finite-dimensional space, `1 ≤ m` with `m + 1 ≤ n`, and `x₀ : M`. Over a
 neighbourhood of every point `y` of the orbit of `x₀` under `Diff(M)`, evaluation
-`g ↦ g x₀ : Diff(M) → M` has a trivialization with fibre the stabilizer `H` of `x₀`, equivariant
-for right multiplication by `H`. -/
+`g ↦ g x₀ : Diff(M) → M` has a trivialization `e` with fibre the stabilizer `H` of `x₀`, equivariant
+for right multiplication by `H`. It is the chart of a section `σ` of evaluation, continuous on the
+base of `e`: `e` sends `g` to `(g x₀, σ (g x₀)⁻¹ * g)`, and its inverse sends `(z, h)` to
+`σ z * h`. -/
 theorem exists_trivialization_diffeomorph_apply (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
     {x₀ y : M} (hy : y ∈ orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) :
-    ∃ e : Bundle.Trivialization (stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀)
-        (fun g : M ≃ₘ^m⟮I, I⟯ M ↦ g x₀),
-      y ∈ e.baseSet ∧ ∀ g ∈ e.source, ∀ h : stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀,
+    ∃ (σ : M → M ≃ₘ^m⟮I, I⟯ M) (e : Bundle.Trivialization (stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀)
+        (fun g : M ≃ₘ^m⟮I, I⟯ M ↦ g x₀)),
+      y ∈ e.baseSet ∧ ContinuousOn σ e.baseSet ∧ (∀ z ∈ e.baseSet, σ z x₀ = z) ∧
+      (∀ g ∈ e.source, ((e g).2 : M ≃ₘ^m⟮I, I⟯ M) = (σ (g x₀))⁻¹ * g) ∧
+      (∀ p, e.toOpenPartialHomeomorph.symm p = σ p.1 * p.2) ∧
+      ∀ g ∈ e.source, ∀ h : stabilizer (M ≃ₘ^m⟮I, I⟯ M) x₀,
         e (g * h) = ((e g).1, (e g).2 * h) := by
-  obtain ⟨U, hU, hyU, σ, hσ, hσU⟩ := exists_continuousOn_smul_eq hm hmn hy
-  exact ⟨orbitMapTrivialization x₀ (continuous_smul_diffeomorph x₀) U hU σ hσ hσU,
-    by simpa using hyU, fun g hg h ↦ orbitMapTrivialization_apply_mul
-      (by simpa [Bundle.Trivialization.mem_source] using hg) h⟩
-
-/-- The orbits of the diffeomorphism group of a compact manifold are open. -/
-theorem isOpen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) (x₀ : M) :
-    IsOpen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) := by
-  refine isOpen_iff_mem_nhds.2 fun y hy ↦ ?_
-  obtain ⟨U, hU, hyU, σ, -, hσU⟩ := exists_continuousOn_smul_eq hm hmn hy
-  exact mem_of_superset (hU.mem_nhds hyU) fun z hz ↦ ⟨σ z, hσU z hz⟩
-
-/-- The orbits of the diffeomorphism group of a compact manifold are open and closed. -/
-theorem isClopen_orbit_diffeomorph (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n) (x₀ : M) :
-    IsClopen (orbit (M ≃ₘ^m⟮I, I⟯ M) x₀) := by
-  refine ⟨isOpen_compl_iff.1 (isOpen_iff_mem_nhds.2 fun z hz ↦ ?_),
-    isOpen_orbit_diffeomorph hm hmn x₀⟩
-  refine mem_of_superset ((isOpen_orbit_diffeomorph (I := I) hm hmn z).mem_nhds (mem_orbit_self z))
-    fun w hw hw₀ ↦ hz ?_
-  rw [← (orbit_eq_iff.2 hw).symm.trans (orbit_eq_iff.2 hw₀)]
-  exact mem_orbit_self z
-
-/-- **Transitivity.** The diffeomorphism group of a connected compact manifold acts transitively.
--/
-theorem orbit_diffeomorph_eq_univ [PreconnectedSpace M] (hm : 1 ≤ m) (hmn : (m : ℕ∞ω) + 1 ≤ n)
-    (x₀ : M) : orbit (M ≃ₘ^m⟮I, I⟯ M) x₀ = univ :=
-  (isClopen_orbit_diffeomorph (I := I) hm hmn x₀).eq_univ ⟨x₀, mem_orbit_self x₀⟩
+  obtain ⟨U, hU, hyU, σ, hσ, hσU⟩ := exists_continuousOn_apply_eq_of_mem_orbit hm hmn hy
+  let e := (stabilizer _ x₀).trivializationOfLocalSection (Diffeomorph.continuous_eval_const x₀)
+    (apply_eq_apply_iff_inv_mul_mem_stabilizer x₀) U hU σ hσ hσU
+  have he : e.baseSet = U := Subgroup.trivializationOfLocalSection_baseSet
+  have hsource (g : M ≃ₘ^m⟮I, I⟯ M) (hg : g ∈ e.source) : g x₀ ∈ U := he ▸ e.mem_source.1 hg
+  refine ⟨σ, e, he ▸ hyU, he ▸ hσ, he ▸ hσU,
+    fun g hg ↦ Subgroup.trivializationOfLocalSection_fiberCoordinate (hsource g hg),
+    Subgroup.trivializationOfLocalSection_symm_apply,
+    fun g hg h ↦ Subgroup.trivializationOfLocalSection_apply_mul (g := g) (hsource g hg) h⟩
 
 end LocalSection
 
