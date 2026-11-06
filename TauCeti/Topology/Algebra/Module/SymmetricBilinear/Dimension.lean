@@ -48,7 +48,7 @@ def symmetricBilinearCoordinates (b : Basis ι 𝕜 V) :
     refine ⟨B.toContinuousBilinearMap, (mem_symmetricBilinearMaps 𝕜 V G _).2 fun v w ↦ ?_⟩
     have h : B = B.flip := b.ext fun i ↦ b.ext fun j ↦ by
       simp [B, Sym2.eq_swap]
-    exact congrArg (fun C : V →ₗ[𝕜] V →ₗ[𝕜] G ↦ C v w) h
+    simpa using LinearMap.congr_fun₂ h v w
   left_inv B := by
     apply Subtype.ext
     apply ContinuousLinearMap.coe_injective
@@ -65,11 +65,11 @@ def symmetricBilinearCoordinates (b : Basis ι 𝕜 V) :
   map_add' B C := by
     funext p
     induction p using Sym2.ind with
-    | _ i j => rfl
+    | _ i j => simp
   map_smul' c B := by
     funext p
     induction p using Sym2.ind with
-    | _ i j => rfl
+    | _ i j => simp
 
 /-- Symmetric coordinates are evaluation on the corresponding pair of basis vectors. -/
 @[simp]
@@ -105,7 +105,7 @@ theorem finrank_symmetricBilinearMaps :
   simp [Sym2.card, Nat.choose_two_right, Nat.mul_comm]
 
 /-- The symmetric scalar-valued bilinear forms have dimension `n * (n + 1) / 2`. -/
-theorem finrank_symmetricBilinearForms :
+theorem finrank_symmetricBilinearMaps_self :
     finrank 𝕜 (symmetricBilinearMaps 𝕜 V 𝕜) =
       finrank 𝕜 V * (finrank 𝕜 V + 1) / 2 := by
   simp [finrank_symmetricBilinearMaps]
@@ -116,13 +116,14 @@ namespace ContinuousLinearMap
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] [NeZero (2 : 𝕜)]
   {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕜 G]
 
-/-- Symmetrization has rank `n * (n + 1) / 2` for scalar-valued forms. -/
-theorem finrank_range_symmetrizeBilinear [FiniteDimensional 𝕜 V] :
+/-- Symmetrization has rank `n * (n + 1) / 2` times the codomain dimension. -/
+theorem finrank_range_symmetrizeBilinear [FiniteDimensional 𝕜 V] [FiniteDimensional 𝕜 G] :
     finrank 𝕜 (LinearMap.range
-      (symmetrizeBilinear (𝕜 := 𝕜) (V := V) (G := 𝕜)).toLinearMap) =
-      finrank 𝕜 V * (finrank 𝕜 V + 1) / 2 := by
+      (symmetrizeBilinear (𝕜 := 𝕜) (V := V) (G := G)).toLinearMap) =
+      (finrank 𝕜 V * (finrank 𝕜 V + 1) / 2) * finrank 𝕜 G := by
   rw [LinearMap.range_eq_top.mpr symmetrizeBilinear_surjective,
-    finrank_top, finrank_symmetricBilinearForms]
+    finrank_top, finrank_symmetricBilinearMaps]
 
 end ContinuousLinearMap
