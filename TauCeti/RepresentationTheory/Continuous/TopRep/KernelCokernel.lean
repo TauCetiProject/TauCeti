@@ -39,23 +39,10 @@ open CategoryTheory Limits
 
 variable {k G : Type*} [Ring k] [TopologicalSpace k] [Monoid G] {A B : TopRep k G} (f : A ⟶ B)
 
-/-- The operators of `A` preserve the kernel of a morphism out of `A`. -/
-theorem ρ_apply_mem_ker (g : G) (a : A) (ha : a ∈ f.hom.ker) :
-    A.ρ g a ∈ f.hom.ker := by
-  rw [LinearMap.mem_ker] at ha ⊢
-  simp only [ContinuousLinearMap.coe_coe, ContIntertwiningMap.toContinuousLinearMap_apply] at ha ⊢
-  rw [hom_comm_apply, ha, map_zero]
-
-/-- The operators of `B` preserve the range of a morphism into `B`. -/
-theorem ρ_apply_mem_range (g : G) (b : B) (hb : b ∈ f.hom.range) :
-    B.ρ g b ∈ f.hom.range := by
-  obtain ⟨a, rfl⟩ := hb
-  exact ⟨A.ρ g a, hom_comm_apply f g a⟩
-
 /-- The kernel of a morphism of continuous representations: the kernel of the underlying linear
 map with the subspace topology and the restricted action. -/
 abbrev ker : TopRep k G :=
-  .of (A.ρ.subrepresentation _ (ρ_apply_mem_ker f))
+  .of f.hom.kerRepresentation
 
 /-- The inclusion of the kernel of a morphism. -/
 def kerι : ker f ⟶ A :=
@@ -102,7 +89,7 @@ def isLimitKer : IsLimit (KernelFork.ofι (kerι f) (kerι_comp f)) :=
 /-- The cokernel of a morphism of continuous representations: the quotient by the range of the
 underlying linear map, with the quotient topology and the descended action. -/
 abbrev coker : TopRep k G :=
-  .of (B.ρ.quotient _ (ρ_apply_mem_range f))
+  .of f.hom.cokerRepresentation
 
 /-- The projection onto the cokernel of a morphism. -/
 def cokerπ : B ⟶ coker f :=
