@@ -65,32 +65,13 @@ theorem coheight_zeroLocus_eq_height_map {A : CommRingCat.{u}} (I : Ideal A) (x 
     (hx : I ≤ x.asIdeal) :
     coheight (⟨x, hx⟩ : {y : Spec A | I ≤ y.asIdeal}) =
       (x.asIdeal.map (Ideal.Quotient.mk I)).height := by
-  let π := Spec.map (CommRingCat.ofHom (Ideal.Quotient.mk I))
-  have hπ : IsInducing π := (PrimeSpectrum.isClosedEmbedding_comap_of_surjective _ _
-    Ideal.Quotient.mk_surjective).isInducing
-  -- The closed immersion `π` is an embedding for the specialization orders.
-  have hlt {a b : Spec (.of (A ⧸ I))} : π a < π b ↔ a < b :=
-    and_congr hπ.specializes_iff (not_congr hπ.specializes_iff)
-  have hrange (y : Spec A) : y ∈ Set.range π ↔ I ≤ y.asIdeal := by
-    have h := Set.ext_iff.mp
-      (range_comap_of_surjective _ _ (Ideal.Quotient.mk_surjective (I := I))) y
-    rw [Ideal.mk_ker] at h
-    exact h.trans SetLike.coe_subset_coe
-  have := x.isPrime
-  let z : Spec (.of (A ⧸ I)) := ⟨x.asIdeal.map (Ideal.Quotient.mk I),
-    Ideal.map_isPrime_of_surjective Ideal.Quotient.mk_surjective (by rwa [Ideal.mk_ker])⟩
-  have hπz : π z = x := PrimeSpectrum.ext (Ideal.comap_map_of_surjective' _
-    Ideal.Quotient.mk_surjective _ |>.trans (by rw [Ideal.mk_ker, sup_eq_left.mpr hx]))
-  let F : Spec (.of (A ⧸ I)) → {y : Spec A | I ≤ y.asIdeal} :=
-    fun w ↦ ⟨π w, (hrange _).mp ⟨w, rfl⟩⟩
-  refine (idealHeight_eq_coheight _ z).symm ▸ ?_
-  have hxz : (⟨x, hx⟩ : {y : Spec A | I ≤ y.asIdeal}) = F z := Subtype.ext hπz.symm
-  rw [hxz]
-  refine (coheight_eq_of_strictMono F
-    (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h))
-    (fun w b h ↦ ?_) z).symm
-  obtain ⟨w', hw'⟩ := (hrange b).mpr b.2
-  exact ⟨w', hlt.mp (by rw [hw']; exact h), Subtype.ext hw'⟩
+  let e : {y : Spec A | I ≤ y.asIdeal} ≃o (PrimeSpectrum.zeroLocus (R := A) I)ᵒᵈ :=
+    { toEquiv := (Equiv.refl _).trans OrderDual.toDual
+      map_rel_iff' := fun {a b} ↦ PrimeSpectrum.le_iff_specializes b.1 a.1 }
+  rw [← coheight_orderIso e, ← height_ofDual,
+    ← height_orderIso I.primeSpectrumQuotientOrderIsoZeroLocus.symm,
+    ← PrimeSpectrum.height_eq_orderHeight]
+  congr 1
 
 end TauCeti.AlgebraicGeometry
 
