@@ -70,28 +70,26 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpac
 variable {f : E → F} {f' : E →L[𝕜] F} {a : E}
 
 omit [CompleteSpace E] [CompleteSpace F] [ProperSpace 𝕜] [NormedSpace 𝕜 F] in
-/-- On a set `N` where `‖x - y‖` is controlled by `‖f x - f y‖` and `‖P x - P y‖`, the map
-`x ↦ (f x, P x)` into `F × K` is a uniform inducing map, when `f` is uniformly continuous on `N`
-and `P` lands in the subspace `K`. -/
-private theorem isUniformInducing_restrict_prodMk_codRestrict {N : Set E} {K : Submodule 𝕜 E}
-    {C : ℝ} (hC : 0 < C) (hfu : UniformContinuous (N.domRestrict f)) (P : E →L[𝕜] E)
-    (hPmem : ∀ x, P x ∈ K)
-    (key : ∀ x ∈ N, ∀ y ∈ N, ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖P x - P y‖) :
-    IsUniformInducing fun x : N => (f (x : E), P.codRestrict K hPmem (x : E)) := by
-  set Θ : N → F × K := fun x => (f (x : E), P.codRestrict K hPmem (x : E))
+/-- On a set `N` where `‖x - y‖` is controlled by `‖f x - f y‖` and `‖Q x - Q y‖`, the map
+`x ↦ (f x, Q x)` into `F × K` is a uniform inducing map, when `f` is uniformly continuous on `N`
+and `Q` is a continuous linear map into a normed space `K`. -/
+private theorem isUniformInducing_restrict_prodMk {N : Set E} {K : Type*} [NormedAddCommGroup K]
+    [NormedSpace 𝕜 K] {C : ℝ} (hC : 0 ≤ C) (hfu : UniformContinuous (N.domRestrict f))
+    (Q : E →L[𝕜] K)
+    (key : ∀ x ∈ N, ∀ y ∈ N, ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖Q x - Q y‖) :
+    IsUniformInducing fun x : N => (f (x : E), Q (x : E)) := by
+  set Θ : N → F × K := fun x => (f (x : E), Q (x : E))
   have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
     refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
     have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
       simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
-    -- The subspace coordinate has the norm induced from `E`, and `P.codRestrict` coerces to `P`.
-    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
-      simpa only [Prod.snd_sub, Θ, ← Submodule.norm_coe, Submodule.coe_sub,
-        ContinuousLinearMap.coe_codRestrict_apply] using norm_snd_le (Θ x - Θ y)
-    have hfC := mul_le_mul_of_nonneg_left hf hC.le
+    have hQ : ‖Q (x : E) - Q (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.snd_sub, Θ] using norm_snd_le (Θ x - Θ y)
+    have hfC := mul_le_mul_of_nonneg_left hf hC
     rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
     nlinarith [key (x : E) x.2 (y : E) y.2]
   exact hanti.isUniformInducing <| hfu.prodMk
-    ((P.codRestrict K hPmem).lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
+    (Q.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
 
 /-- **Local properness of a map with upper semi-Fredholm derivative.** If `f` is strictly
 differentiable at `a` and its derivative there has closed range and finite-dimensional
@@ -120,16 +118,6 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     (Metric.closedBall_subset_ball (by linarith)).trans hball
   have happN : ApproximatesLinearOn f f' N ε := happ.mono_set hNs
   have hcontOn : ContinuousOn f N := happN.continuousOn
-  -- the two-sided bound on `N`
-  have hCε : C * (ε : ℝ) = 1 / 2 := by rw [hεcoe]; field_simp
-  have key : ∀ x ∈ N, ∀ y ∈ N,
-      ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖P x - P y‖ := by
-    intro x hx y hy
-    have h := happN.one_sub_mul_norm_sub_le (P := P) hC.le (fun z _ ↦ hest z) hx hy
-    rw [hCε] at h
-    linarith
-  refine ⟨N, Metric.closedBall_mem_nhds a (by linarith), fun L hL => ?_⟩
-  -- the compact box the projection lands in
   have hPmem : ∀ x, P x ∈ f'.ker := by
     intro x
     rw [← hPrange]
@@ -137,13 +125,26 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
   let _ : FiniteDimensional 𝕜 f'.ker := hfinite
   have : ProperSpace f'.ker := FiniteDimensional.proper 𝕜 f'.ker
   let Pker : E →L[𝕜] f'.ker := P.codRestrict f'.ker hPmem
+  -- the two-sided bound on `N`
+  have hCε : C * (ε : ℝ) = 1 / 2 := by rw [hεcoe]; field_simp
+  have key : ∀ x ∈ N, ∀ y ∈ N,
+      ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖Pker x - Pker y‖ := by
+    intro x hx y hy
+    have h := happN.one_sub_mul_norm_sub_le (P := P) hC.le (fun z _ ↦ hest z) hx hy
+    rw [hCε] at h
+    have hP : ‖Pker x - Pker y‖ = ‖P x - P y‖ := by
+      rw [← Submodule.norm_coe, Submodule.coe_sub]; rfl
+    rw [hP]
+    linarith
+  refine ⟨N, Metric.closedBall_mem_nhds a (by linarith), fun L hL => ?_⟩
+  -- the compact box the projection lands in
   let Kp := closure (Pker '' N)
   have hKpc : IsCompact Kp :=
     (Pker.lipschitzWith.isBounded_image Metric.isBounded_closedBall).isCompact_closure
   have hPN : ∀ x ∈ N, Pker x ∈ Kp := fun x hx => subset_closure ⟨x, hx, rfl⟩
   -- the anti-Lipschitz coordinate on `N`
-  have hind := isUniformInducing_restrict_prodMk_codRestrict hC
-    happN.lipschitzWith.uniformContinuous P hPmem key
+  have hind := isUniformInducing_restrict_prodMk hC.le
+    happN.lipschitzWith.uniformContinuous Pker key
   -- total boundedness, then compactness
   have htb : TotallyBounded
       ((Subtype.val : N → E) '' (Subtype.val : N → E) ⁻¹' (f ⁻¹' L)) := by
