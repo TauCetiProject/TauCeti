@@ -51,9 +51,9 @@ unstable sets.
 * `TauCeti.IsNondegenerateCriticalPoint.morseIndex_lt_of_mem_closure_stableSet_inter_stableSet`
   and its time reversal: iterating breaks through convergent Morse--Smale trajectories strictly
   lowers the Morse index.
-* `TauCeti.IsNondegenerateCriticalPoint.isClosed_unstableSet_inter_stableSet_inter_level` and
-  `finite_unstableSet_inter_stableSet_inter_level`: an index-one trajectory slice is closed, and
-  is finite when it is contained in a compact set.
+* `TauCeti.IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level` and
+  `TauCeti.IsNondegenerateCriticalPoint.finite_unstableSet_inter_stableSet_inter_level`: an
+  index-one trajectory slice is closed, and is finite when it is contained in a compact set.
 
 ## References
 
@@ -416,12 +416,16 @@ theorem morseIndex_lt_of_mem_closure_unstableSet_inter_unstableSet
       simp only [List.length_cons] at hlen
       omega
 
+end IsNondegenerateCriticalPoint
+
+namespace IsMorseSmale
+
 /-- **An index-one Morse trajectory slice is closed.** Assume that points in the closures of the
 relevant stable and unstable manifolds converge to nondegenerate critical points, and that all
 such manifolds meet transversally. If the Morse indices of `p` and `q` differ by one, then their
 connecting set, cut at any value strictly between `f q` and `f p`, is closed. -/
 theorem isClosed_unstableSet_inter_stableSet_inter_level
-    (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    {p q : E} (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
     (hind : morseIndex f p = morseIndex f q + 1) {c : ℝ} (hc : f q < c ∧ c < f p)
     (hconvS : ∀ {z}, z ∈ closure (Flow.stableSet (negativeGradientFlow f hf) q) →
       ∃ b, IsNondegenerateCriticalPoint f b ∧
@@ -478,10 +482,15 @@ theorem isClosed_unstableSet_inter_stableSet_inter_level
   have := hpa hap
   omega
 
-/-- **A compact index-one Morse trajectory slice is finite.** Under the hypotheses of
-`isClosed_unstableSet_inter_stableSet_inter_level`, if the slice is contained in a compact set
-then it is finite. This is the finiteness needed to define the coefficient of the Morse
-differential. -/
+end IsMorseSmale
+
+namespace IsNondegenerateCriticalPoint
+
+/-- **A compact index-one Morse trajectory slice is finite.** Assume that `p` and `q` are
+nondegenerate critical points and that the hypotheses of
+`IsMorseSmale.isClosed_unstableSet_inter_stableSet_inter_level` hold. If the slice is contained in
+a compact set, then it is finite. This is the finiteness needed to define the coefficient of the
+Morse differential. -/
 theorem finite_unstableSet_inter_stableSet_inter_level
     (hp : IsNondegenerateCriticalPoint f p) (hq : IsNondegenerateCriticalPoint f q)
     (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
@@ -501,7 +510,7 @@ theorem finite_unstableSet_inter_stableSet_inter_level
   -- The slice is a closed subset of a compact set, and Morse--Smale transversality together with
   -- the index difference makes it discrete.
   apply (hC.of_isClosed_subset
-    (isClosed_unstableSet_inter_stableSet_inter_level hfs hf hind hc hconvS hconvU htr)
+    (htr.isClosed_unstableSet_inter_stableSet_inter_level hfs hf hind hc hconvS hconvU)
     hsub).finite
   exact hp.isDiscrete_unstableSet_inter_stableSet_level hq hfs hf hind
     (fun y hy ↦ htr.transverse_at hp hq hy.1)
