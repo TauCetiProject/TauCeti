@@ -24,7 +24,7 @@ These statements concern the existing centralizer Hopf ideal and projective orbi
 scheme of the actual adjoint representation, not just matrix tangent spaces. The
 comparison uses `cotangentDualLieEquivSl`, Cartier smoothness of centralizers, and
 the general adjoint orbit dimension theorem. All dimension equations are additive.
-The zero-size centralizer and orbit dimensions are stated separately.
+The orbit formulas include size zero; the zero-size centralizer is treated separately.
 
 ## References
 
@@ -42,6 +42,17 @@ universe u
 
 variable {k : Type u} [Field k] {n : ℕ}
 
+/-- The dimension of the scheme-theoretic centralizer in `SLₙ` equals the dimension of
+its trace-zero matrix Lie centralizer. -/
+theorem ringKrullDim_quotient_centralizerHopfIdeal_eq_finrank_ker_ad_sl [CharZero k]
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
+    ringKrullDim (coordinateHopfAlgebra k n ⧸
+        (centralizerHopfIdeal (coordinateHopfAlgebra k n) x).toIdeal) =
+      finrank k (LinearMap.ker
+        (ad k (LieAlgebra.SpecialLinear.sl (Fin n) k) (cotangentDualLieEquivSl n x))) := by
+  rw [ringKrullDim_quotient_centralizerHopfIdeal,
+    ← (cotangentDualLieEquivSl n).finrank_ker_ad_apply x]
+
 /-- The scheme-theoretic centralizer of a nilpotent element of `Lie(SLₙ)` has dimension
 `∑ⱼ (λ'ⱼ)² - 1`. Positive size is necessary for the subtraction of one. -/
 theorem ringKrullDim_quotient_centralizerHopfIdeal_add_one_eq_sum_sq_conjugate_parts
@@ -54,8 +65,7 @@ theorem ringKrullDim_quotient_centralizerHopfIdeal_add_one_eq_sum_sq_conjugate_p
       (((End.jordanPartition (toLinAlgEquiv'
         (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)) hx).conjugate.parts.map
           (· ^ 2)).sum : ℕ) := by
-  rw [ringKrullDim_quotient_centralizerHopfIdeal,
-    ← (cotangentDualLieEquivSl n).finrank_ker_ad_apply x]
+  rw [ringKrullDim_quotient_centralizerHopfIdeal_eq_finrank_ker_ad_sl]
   exact_mod_cast finrank_ker_ad_sl_add_one_eq_sum_sq_conjugate_parts
     (by simpa using hn) (cotangentDualLieEquivSl n x) hx
 
@@ -65,8 +75,7 @@ theorem ringKrullDim_quotient_centralizerHopfIdeal_zero [CharZero k]
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k 0))) :
     ringKrullDim (coordinateHopfAlgebra k 0 ⧸
       (centralizerHopfIdeal (coordinateHopfAlgebra k 0) x).toIdeal) = 0 := by
-  rw [ringKrullDim_quotient_centralizerHopfIdeal,
-    ← (cotangentDualLieEquivSl 0).finrank_ker_ad_apply x]
+  rw [ringKrullDim_quotient_centralizerHopfIdeal_eq_finrank_ker_ad_sl]
   simp [Module.finrank_eq_zero_of_subsingleton]
 
 section Orbit
@@ -75,9 +84,22 @@ attribute [local instance] Derivation.adjointComodule Comodule.prodTrivial
 
 variable [CharZero k] [IsAlgClosed k]
 
+/-- The dimension of an adjoint orbit in `SLₙ` equals the rank of the adjoint map
+on its trace-zero matrix Lie algebra. -/
+theorem topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n))) :
+    topologicalKrullDim (Set.range (Comodule.projectiveOrbitMap
+        (H := coordinateHopfAlgebra k n)
+        ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)) × k)
+        (Module.isUnimodular_mk_one x))) =
+      finrank k (LinearMap.range
+        (ad k (LieAlgebra.SpecialLinear.sl (Fin n) k) (cotangentDualLieEquivSl n x))) := by
+  rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad,
+    ← (cotangentDualLieEquivSl n).finrank_range_ad_apply x]
+
 /-- The actual adjoint orbit of a nilpotent element of `Lie(SLₙ)` has dimension
 `n² - ∑ⱼ (λ'ⱼ)²`. -/
-theorem topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts (hn : n ≠ 0)
+theorem topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
     (hx : IsNilpotent (toLinAlgEquiv'
       (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k))) :
@@ -88,14 +110,33 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts 
       (((End.jordanPartition (toLinAlgEquiv'
         (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)) hx).conjugate.parts.map
           (· ^ 2)).sum : ℕ) = n ^ 2 := by
-  rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad,
-    ← (cotangentDualLieEquivSl n).finrank_range_ad_apply x]
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl]
   norm_cast
-  simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_sum_sq_conjugate_parts
-    (by simpa using hn) (cotangentDualLieEquivSl n x) hx
+  by_cases hn : n = 0
+  · subst n
+    rw [← Matrix.finrank_centralizer_eq_sum_sq_conjugate_jordanPartition]
+    simp [Module.finrank_eq_zero_of_subsingleton]
+  · simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_sum_sq_conjugate_parts
+      (by simpa using hn) (cotangentDualLieEquivSl n x) hx
+
+/-- The adjoint orbit of a nilpotent element in `SLₙ` has dimension at most `n² - n`. -/
+theorem topologicalKrullDim_range_projectiveOrbitMap_add_le
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
+    (hx : IsNilpotent (toLinAlgEquiv'
+      (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k))) :
+    topologicalKrullDim (Set.range (Comodule.projectiveOrbitMap
+        (H := coordinateHopfAlgebra k n)
+        ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)) × k)
+        (Module.isUnimodular_mk_one x))) + n ≤ n ^ 2 := by
+  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
+  have hle := (End.jordanPartition _ hx).conjugate.le_sum_sq_parts
+  have hcard := finrank_fin_fun k (n := n)
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
+  norm_cast at h ⊢
+  omega
 
 /-- The regular Jordan type `(n)` is characterized by adjoint orbit dimension `n² - n`. -/
-theorem topologicalKrullDim_range_projectiveOrbitMap_add_eq_iff (hn : n ≠ 0)
+theorem topologicalKrullDim_range_projectiveOrbitMap_add_eq_iff
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
     (hx : IsNilpotent (toLinAlgEquiv'
       (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k))) :
@@ -106,15 +147,36 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_eq_iff (hn : n ≠ 0)
       End.jordanPartition (toLinAlgEquiv'
         (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)) hx =
           Nat.Partition.indiscrete _ := by
-  rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad,
-    ← (cotangentDualLieEquivSl n).finrank_range_ad_apply x]
-  norm_cast
-  simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_eq_iff
-    (by simpa using hn) (cotangentDualLieEquivSl n x) hx
+  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
+  have hcard := finrank_fin_fun k (n := n)
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
+  norm_cast at h ⊢
+  conv_rhs => rw [← Nat.Partition.sum_sq_conjugate_parts_eq_self_iff]
+  omega
+
+/-- Away from the regular Jordan type, a nilpotent adjoint orbit in `SLₙ` has dimension
+at most `n² - n - 2`. -/
+theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_le
+    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
+    (hx : IsNilpotent (toLinAlgEquiv'
+      (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)))
+    (hreg : End.jordanPartition (toLinAlgEquiv'
+      (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)) hx ≠
+        Nat.Partition.indiscrete _) :
+    topologicalKrullDim (Set.range (Comodule.projectiveOrbitMap
+        (H := coordinateHopfAlgebra k n)
+        ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)) × k)
+        (Module.isUnimodular_mk_one x))) + n + 2 ≤ n ^ 2 := by
+  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
+  have hle := Nat.Partition.add_two_le_sum_sq_conjugate_parts _ hreg
+  have hcard := finrank_fin_fun k (n := n)
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
+  norm_cast at h ⊢
+  omega
 
 /-- The subregular Jordan type `(n - 1, 1)` is characterized by adjoint orbit dimension
-`n² - n - 2`. The equivalence has no solutions at size one. -/
-theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_eq_iff (hn : n ≠ 0)
+`n² - n - 2`. The equivalence has no solutions at sizes zero and one. -/
+theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_eq_iff
     (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k n)))
     (hx : IsNilpotent (toLinAlgEquiv'
       (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k))) :
@@ -124,23 +186,17 @@ theorem topologicalKrullDim_range_projectiveOrbitMap_add_add_two_eq_iff (hn : n 
         (Module.isUnimodular_mk_one x))) + n + 2 = n ^ 2 ↔
       (End.jordanPartition (toLinAlgEquiv'
         (cotangentDualLieEquivSl n x : Matrix (Fin n) (Fin n) k)) hx).parts = {n - 1, 1} := by
-  rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad,
-    ← (cotangentDualLieEquivSl n).finrank_range_ad_apply x]
-  norm_cast
-  simpa only [Fintype.card_fin] using finrank_range_ad_sl_add_card_add_two_eq_iff
-    (by simpa using hn) (cotangentDualLieEquivSl n x) hx
-
-/-- The adjoint orbit in the zero-size special linear group has dimension zero. -/
-@[simp]
-theorem topologicalKrullDim_range_projectiveOrbitMap_zero
-    (x : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k 0))) :
-    topologicalKrullDim (Set.range (Comodule.projectiveOrbitMap
-      (H := coordinateHopfAlgebra k 0)
-      ((x, 1) : Module.Dual k (Bialgebra.CotangentSpace k (coordinateHopfAlgebra k 0)) × k)
-      (Module.isUnimodular_mk_one x))) = 0 := by
-  rw [topologicalKrullDim_range_projectiveOrbitMap_mk_one_eq_finrank_range_ad,
-    ← (cotangentDualLieEquivSl 0).finrank_range_ad_apply x]
-  simp [Module.finrank_eq_zero_of_subsingleton]
+  have h := topologicalKrullDim_range_projectiveOrbitMap_add_sum_sq_conjugate_parts x hx
+  have hcard := finrank_fin_fun k (n := n)
+  have hsub := Nat.Partition.sum_sq_conjugate_parts_eq_add_two_iff (End.jordanPartition _ hx)
+  -- Rewrite only the size in the multiset, not the partition's dependent type.
+  have hparts : ({finrank k (Fin n → k) - 1, 1} : Multiset ℕ) = {n - 1, 1} := by
+    rw [hcard]
+  rw [hparts] at hsub
+  rw [topologicalKrullDim_range_projectiveOrbitMap_eq_finrank_range_ad_sl] at h ⊢
+  norm_cast at h ⊢
+  conv_rhs => rw [← hsub]
+  omega
 
 end Orbit
 
