@@ -57,7 +57,7 @@ instance isContMDiff_exteriorPower_obj (j : ℕ) (A : FiniteRankBundleCore 𝕜 
 regularity `∞`, this is the holomorphic determinant line bundle of a holomorphic core. -/
 instance isContMDiff_det (A : FiniteRankBundleCore 𝕜 B) [A.core.IsContMDiff I n] :
     A.det.core.IsContMDiff I n :=
-  isContMDiff_exteriorPower_obj A.rank A
+  det_def A ▸ isContMDiff_exteriorPower_obj A.rank A
 
 /-- The exterior powers of a bundle map between `C^n` cores with `C^n` map of total spaces have
 `C^n` maps of total spaces. -/

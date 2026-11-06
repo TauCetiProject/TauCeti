@@ -239,8 +239,6 @@ noncomputable def exteriorPowerOneNatIso :
 
 /-- The determinant line of a finite-rank core of rank `r`: its exterior power `⋀^r A` in the top
 degree, with fibres the top exterior powers of the fibres of `A`. -/
--- Expose the body so that the coordinate model `Fin A.det.rank → 𝕜` reduces.
-@[expose]
 noncomputable def det (A : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore 𝕜 B :=
   (exteriorPower 𝕜 B A.rank).obj A
 
@@ -248,8 +246,8 @@ noncomputable def det (A : FiniteRankBundleCore 𝕜 B) : FiniteRankBundleCore �
 theorem det_def (A : FiniteRankBundleCore 𝕜 B) : A.det = (exteriorPower 𝕜 B A.rank).obj A := (rfl)
 
 /-- The determinant line has rank one. -/
-theorem rank_det (A : FiniteRankBundleCore 𝕜 B) : A.det.rank = 1 :=
-  Nat.choose_self A.rank
+@[simp] theorem rank_det (A : FiniteRankBundleCore 𝕜 B) : A.det.rank = 1 := by
+  rw [det_def, rank_exteriorPower_obj, Nat.choose_self]
 
 @[simp] theorem localTriv_baseSet_det (A : FiniteRankBundleCore 𝕜 B) (i : B) :
     (A.det.core.localTriv i).baseSet = A.core.baseSet i := (rfl)
@@ -258,8 +256,9 @@ theorem rank_det (A : FiniteRankBundleCore 𝕜 B) : A.det.rank = 1 :=
 transitions of the core. -/
 @[simp] theorem coordChange_det (A : FiniteRankBundleCore 𝕜 B) (i i' x : B) :
     A.det.core.coordChange i i' x =
-      (A.core.coordChange i i' x).det • ContinuousLinearMap.id 𝕜 (Fin A.det.rank → 𝕜) :=
-  ContinuousLinearMap.exteriorPowerCoords_self _
+      (A.core.coordChange i i' x).det • ContinuousLinearMap.id 𝕜 (Fin A.det.rank → 𝕜) := by
+  rw [det_def, coordChange_exteriorPower_obj]
+  exact ContinuousLinearMap.exteriorPowerCoords_self _
 
 end FiniteRankBundleCore
 end TauCeti
