@@ -229,7 +229,7 @@ private theorem geometricReflection_mul_mul_geometricReflection_mul :
     one_mul, M.geometricReflection_mul_self i]
 
 /-- A vector orthogonal to both simple roots is fixed by every power of the rotation. -/
-private theorem pow_geometricReflection_mul_apply_of_eq_zero {v : B →₀ ℝ}
+private theorem pow_geometricReflection_mul_apply_eq_self {v : B →₀ ℝ}
     (h : M.geometricForm (Finsupp.single i 1) v = 0)
     (h' : M.geometricForm (Finsupp.single i' 1) v = 0) (k : ℕ) :
     ((M.geometricReflection i * M.geometricReflection i') ^ k) v = v := by
@@ -337,7 +337,7 @@ private theorem geometricReflection_mul_pow_eq_one (hm : 2 ≤ M i i') :
       ring
   -- the orthogonal part is fixed by every power, the planar part by the `M i i'`-th one
   rw [← sub_add_cancel v (x • Finsupp.single i (1 : ℝ) + y • Finsupp.single i' (1 : ℝ)),
-    map_add, M.pow_geometricReflection_mul_apply_of_eq_zero i i' hx hy, map_add, map_smul, map_smul,
+    map_add, M.pow_geometricReflection_mul_apply_eq_self i i' hx hy, map_add, map_smul, map_smul,
     M.pow_geometricReflection_mul_apply_single_left i i' hs hm0,
     M.pow_geometricReflection_mul_apply_single_right i i' hs hm0]
 
