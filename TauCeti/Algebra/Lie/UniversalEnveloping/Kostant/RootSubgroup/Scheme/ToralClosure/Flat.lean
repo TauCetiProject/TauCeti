@@ -18,7 +18,8 @@ and therefore flat over `ℤ`. Scalar extension to any characteristic-zero commu
 is schematically dominant; in particular, its rational generic fibre is schematically dense
 in the integral closure.
 
-These flatness and density instances also apply to
+The instance `flat_kostantToralGroupScheme` and the general density instance
+`TauCeti.isSchemeTheoreticallyDominant_genericFiberι_int` also apply to
 `TauCeti.DynkinType.ChevalleyDatum.groupScheme`, which abbreviates `kostantToralGroupScheme`
 with the datum's representation, lattice, basis, and actual coordinate weights.
 
@@ -70,13 +71,5 @@ instance isTorsionFree_kostantToralCoordinateHopfAlgebra :
 instance flat_kostantToralGroupScheme :
     Flat (kostantToralGroupScheme e h ρ M hM hnil b wt).X.hom :=
   (moduleFlat_iff_flat_hopfSpec ℤ _).mp inferInstance
-
-/-- Scalar extension to a characteristic-zero commutative ring is schematically dominant
-on the integral Kostant toral closure. -/
-instance isSchemeTheoreticallyDominant_genericFiberι_kostantToralGroupScheme
-    (K : Type) [CommRing K] [CharZero K] :
-    IsSchemeTheoreticallyDominant
-      (genericFiberι ℤ K (kostantToralGroupScheme e h ρ M hM hnil b wt).X.hom) :=
-  TauCeti.isSchemeTheoreticallyDominant_genericFiberι ℤ K Int.cast_injective _
 
 end TauCeti.UniversalEnvelopingAlgebra
