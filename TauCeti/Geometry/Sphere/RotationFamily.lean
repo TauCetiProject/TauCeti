@@ -317,7 +317,7 @@ theorem ncard_preimage_sphereRotationFamily_singleton {q : sphere (0 : E) 1} (hp
 
 /-! ### Smoothness and regular values -/
 
-local instance : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+local instance factTwoPiPosSphereRotationFamily : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
 
 variable {m : ℕ} [Fact (finrank ℝ E = m + 1 + 1)]
 
