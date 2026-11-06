@@ -124,8 +124,7 @@ private theorem existsUnique_jumpCoefficient
     ∃! u : W1p volume Omega 2, u - g ∈ w1p0Submodule volume Omega 2 ∧
       ∀ v : W1p0 volume Omega 2,
         energyFormH1 (jumpCoefficient n) 0 0 u (v : W1p volume Omega 2) = 0 := by
-  have hRb := hb.subset_ball_lt 0 (0 : EuclideanSpace ℝ (Fin (n + 1)))
-  obtain ⟨R, hR, hball⟩ := hRb
+  obtain ⟨R, hball⟩ := hb.subset_ball (0 : EuclideanSpace ℝ (Fin (n + 1)))
   have hzero : ∀ v : W1p0 volume Omega 2, ∫ x in Omega,
       (0 : Lp ℝ 2 (volume.restrict (Omega : Set (EuclideanSpace ℝ (Fin (n + 1)))))) x *
         W1p.value (v : W1p volume Omega 2) x = 0 := fun v => by
@@ -137,8 +136,8 @@ private theorem existsUnique_jumpCoefficient
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
       (b := 0) (c := 0) (uniformlyEllipticOn_jumpCoefficient _)
       stronglyMeasurable_jumpCoefficient.aestronglyMeasurable aestronglyMeasurable_const
-      aestronglyMeasurable_const le_rfl (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
-      (fun _ _ => le_rfl) hR.le hball (by simp) 0 g
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) 0 g
   simpa only [hzero] using hexu
 
 /-- **De Giorgi's theorem on an equation with a discontinuous coefficient.** There is
