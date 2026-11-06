@@ -85,12 +85,7 @@ private theorem fderiv_neumannBarrier_I (z : ℂ) :
   have hsq := (hasStrictFDerivAt_norm_sq z).hasFDerivAt.const_mul (4⁻¹ : ℝ)
   have hφ : HasFDerivAt neumannBarrier _ z := hre.add hsq
   rw [hφ.fderiv]
-  simp only [Nat.cast_ofNat, Nat.add_one_sub_one, pow_one, mul_one, add_apply,
-    ContinuousLinearMap.comp_apply, ContinuousLinearMap.coe_restrictScalars',
-    ContinuousLinearMap.toSpanSingleton_apply, smul_eq_mul, reCLM_apply, mul_re, I_re, re_ofNat,
-    sub_re, div_ofNat_re, zero_div, sub_zero, im_ofNat, sub_im, div_ofNat_im, I_im, one_div,
-    zero_mul, mul_im, add_zero, one_mul, zero_sub, smul_apply, coe_innerSL_apply, Complex.inner,
-    conj_re, conj_im, mul_neg, sub_neg_eq_add, zero_add, nsmul_eq_mul]
+  simp [Complex.inner, mul_re, mul_im]
   ring
 
 /-- **The weak maximum principle on a rectangle with Neumann conditions on two sides.** Let `f`
