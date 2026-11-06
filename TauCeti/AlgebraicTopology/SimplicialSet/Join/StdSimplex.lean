@@ -32,7 +32,8 @@ projections are right and left fibrations.
 * `SSet.join.yonedaEquiv_inl_comp_stdSimplexIso_hom`,
   `SSet.join.yonedaEquiv_inr_comp_stdSimplexIso_hom`: under `SSet.join.stdSimplexIso`, the vertex
   `j` of `Δ[n]` is the vertex `j` of `Δ[n + m + 1]` and the vertex `j` of `Δ[m]` is the vertex
-  `n + 1 + j`.
+  `n + 1 + j`. In particular (`SSet.join.yonedaEquiv_inl_comp_stdSimplexIso_hom_eq_edge`),
+  `Δ[1]` is the edge of `Δ[1 + m + 1]` from `0` to `1`.
 * `SSet.join.preimage_unionJoin_horn_boundary`: `(Λ[n, i] ⋆ Δ[m]) ∪ (Δ[n] ⋆ ∂Δ[m])` corresponds to
   `Λ[n + m + 1, i]`, for `n ≠ 0`.
 * `SSet.join.preimage_unionJoin_boundary_horn`: `(∂Δ[n] ⋆ Δ[m]) ∪ (Δ[n] ⋆ Λ[m, j])` corresponds to
@@ -314,6 +315,14 @@ lemma yonedaEquiv_inl_comp_stdSimplexIso_hom (j : Fin (n + 1)) :
     leftVertex, JoinData.congr_left_app he _ _ (by rwa [← he, obj₀Equiv_symm_mem_joinFiber_iff]),
     JoinData.precomp_left_app]
   exact congrArg (fun v : Δ[n] _⦋0⦌ ↦ (v 0 : ℕ)) (univ_left_app_inl_app _ _)
+
+/-- Under `Δ[1] ⋆ Δ[m] ≅ Δ[1 + m + 1]`, `Δ[1]` is the edge from `0` to `1`. -/
+lemma yonedaEquiv_inl_comp_stdSimplexIso_hom_eq_edge (m : ℕ) :
+    yonedaEquiv (inl Δ[1] Δ[m] ≫ (stdSimplexIso 1 m).hom) =
+      stdSimplex.edge (1 + m + 1) 0 1 (Fin.zero_le _) := by
+  refine stdSimplex.ext _ _ fun j ↦ ?_
+  rw [yonedaEquiv_inl_comp_stdSimplexIso_hom]
+  fin_cases j <;> rfl
 
 /-- Under `Δ[n] ⋆ Δ[m] ≅ Δ[n + m + 1]`, `Δ[m]` is the face on the last `m + 1` vertices. -/
 @[simp]
