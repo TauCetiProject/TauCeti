@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Group.CrossedHom.LabuteComm
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.Prescription
 public import TauCeti.Topology.Algebra.Group.Profinite.ProP.MinimalPresentation
 
@@ -45,6 +46,9 @@ canonical character of each normal form is found (Labute, Theorem 4).
   homomorphism of the free group for `χ ∘ mk` with any prescribed values on the generators that
   kills the relators; `…_forall_freeProPGen_eq_ite` is the Kronecker case on a presentation on
   `Fin n`, the form in which the relator computations read off one coefficient at a time.
+* `TauCeti.HasPrescriptionProperty.apply_presentedProPGen_eq_one_of_partner`: the partner step, a
+  character with the prescription property is trivial at a generator whose partner in a
+  commutator factor of the relators is covered by a vanishing hypothesis.
 
 ## References
 
@@ -212,6 +216,53 @@ theorem exists_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite {n : ℕ}
   let ⟨F, _, hF, hFv, hFr⟩ := hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite
     hrels hj
   ⟨F, hF, hFv, hFr⟩
+
+end HasPrescriptionProperty
+
+/-! ### The partner step -/
+
+namespace HasPrescriptionProperty
+
+section Partner
+
+variable {n : ℕ} {rels : Set (freeProP p (Fin n))}
+  {χ : presentedProP p (Fin n) rels →ₜ* ℤ_[p]ˣ}
+
+/-- **The partner step.** If every crossed homomorphism with `F (x_i) = δ_{ij}` (for `t ≤ j < n`)
+killing the relators vanishes on the commutator factor `(x_a, x_{a+1})`, `a ≡ s mod 2`, containing
+`x_j`, then a character with the prescription property is trivial at every `x_i`, `s ≤ i`, whose
+partner in its factor lies in that range. -/
+theorem apply_presentedProPGen_eq_one_of_partner
+    (hχ : HasPrescriptionProperty χ) (hrels : rels ⊆ proPFrattini p (freeProP p (Fin n)))
+    {s t : ℕ} (hval : ∀ j, t ≤ j → j < n → ∀ F : freeProP p (Fin n) → ℤ_[p], Continuous F →
+      IsCrossedHom (χ.comp (presentedProP.mk p rels)) F →
+      (∀ i, F (freeProPGen p n i) = if i = j then 1 else 0) → (∀ r ∈ rels, F r = 0) →
+      F (labuteComm (freeProPGen p n (2 * ((j - s) / 2) + s))
+        (freeProPGen p n (2 * ((j - s) / 2) + s + 1))) = 0)
+    {i : ℕ} (hsi : s ≤ i) (heven : Even (i - s) → t ≤ i + 1 ∧ i + 1 < n)
+    (hodd : Odd (i - s) → t + 1 ≤ i ∧ i < n) :
+    χ (presentedProPGen p n rels i) = 1 := by
+  rw [← presentedProP.comp_mk_freeProPGen]
+  rcases Nat.even_or_odd (i - s) with he | ho
+  · obtain ⟨ht, hi⟩ := heven he
+    obtain ⟨m, hm⟩ := he
+    obtain ⟨F, hFc, hF, hFv, hFr⟩ :=
+      hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels hi
+    have hc := hval (i + 1) ht hi F hFc hF hFv hFr
+    rw [(by omega : 2 * ((i + 1 - s) / 2) + s = i)] at hc
+    exact hF.eq_one_of_map_labuteComm_eq_zero_right (by rw [hFv, ite_eq_right (by omega)])
+      (by rw [hFv, ite_eq_left rfl]) hc
+  · obtain ⟨ht, hi⟩ := hodd ho
+    obtain ⟨m, hm⟩ := ho
+    obtain ⟨F, hFc, hF, hFv, hFr⟩ :=
+      hχ.exists_continuous_isCrossedHom_comp_mk_forall_freeProPGen_eq_ite hrels
+        (by omega : i - 1 < n)
+    have hc := hval (i - 1) (by omega) (by omega) F hFc hF hFv hFr
+    rw [(by omega : 2 * ((i - 1 - s) / 2) + s = i - 1), (by omega : i - 1 + 1 = i)] at hc
+    exact hF.eq_one_of_map_labuteComm_eq_zero_left (by rw [hFv, ite_eq_left rfl])
+      (by rw [hFv, ite_eq_right (by omega)]) hc
+
+end Partner
 
 end HasPrescriptionProperty
 
