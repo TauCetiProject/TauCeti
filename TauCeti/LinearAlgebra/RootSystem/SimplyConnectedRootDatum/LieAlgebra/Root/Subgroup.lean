@@ -133,6 +133,21 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
       (isNilpotent_ad_rootGenerator_inl i) (isNilpotent_ad_rootGenerator_inr i)]
     exact dividedPower_weylAut_smul_mem _ _ ρ M hM (hnil (.inl i)) (hnil (.inr i)) _ _ _ n (hz n)
 
+include hM hnil in
+/-- The all-root Kostant form preserves a subgroup stable under the simple-generator form
+when the simple generators act nilpotently. The Cartan generators are unchanged. -/
+theorem kostantForm_chevalleySystem_apply_mem_of_isNilpotent :
+    ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
+      ∀ v ∈ M, ρ u v ∈ M := by
+  intro u hu v hv
+  apply kostantForm_apply_mem (t.chevalleySystem ht) (t.lieBasis ht).h
+    ρ M.toIntSubmodule _ _ u hu hv
+  · intro γ n w hw
+    rw [Associative.map_dividedPower]
+    exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil γ n w hw
+  · intro i n w hw
+    exact hM _ (ringChoose_mem_kostantForm _ _ i n) w hw
+
 /-! ## The root subgroups -/
 
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
