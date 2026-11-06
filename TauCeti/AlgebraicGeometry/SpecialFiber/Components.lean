@@ -50,6 +50,8 @@ notation on the structure morphism.
 
 * `TauCeti.range_specialFiberι`: the special fibre of a scheme over a local ring is the preimage
   of the closed point;
+* `AlgebraicGeometry.Scheme.Hom.maximalIdeal_ne_bot_of_base_ne_closedPoint`: a local ring over
+  which some point of a scheme lies away from the closed point is not a field;
 * `PrimeSpectrum.mem_asIdeal_iff_eq_closedPoint`: in a local ring of dimension at most one, a
   nonzero element of the maximal ideal lies in a prime exactly when that prime is the maximal
   ideal;
@@ -105,6 +107,14 @@ theorem range_specialFiberι :
         congrArg (fun g : toBase.fiber (closedPoint R) ⟶ X ↦ Set.range g)
           (specialFiberIsoFiberClosedPoint_inv_specialFiberι (.of R) toBase)
     _ = toBase ⁻¹' {closedPoint R} := Scheme.Hom.range_fiberι toBase (closedPoint R)
+
+variable {R} in
+/-- If some point of a scheme over a local ring does not lie over the closed point, then the local
+ring is not a field: over a field every point maps to the closed point. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.maximalIdeal_ne_bot_of_base_ne_closedPoint {x : X}
+    (hx : toBase x ≠ closedPoint R) : maximalIdeal R ≠ ⊥ := fun h ↦
+  hx (PrimeSpectrum.ext (le_antisymm (le_maximalIdeal (toBase x).isPrime.ne_top)
+    (h.le.trans bot_le)))
 
 end LocalRing
 

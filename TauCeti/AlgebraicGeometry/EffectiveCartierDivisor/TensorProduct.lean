@@ -31,6 +31,8 @@ of `I_D`, inverting gives `[𝒪_X(D + E)] = [𝒪_X(D)] * [𝒪_X(E)]`, which i
 
 * `Scheme.IdealSheafData.tensorProductSheafIso`: `I ⊗ J ≅ I * J` when `J` is effective Cartier,
   with `Scheme.IdealSheafData.tensorProductSheafIso_hom_tmul` computing it on pure tensors;
+* `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_congr`: the line-bundle class of
+  an effective Cartier divisor depends only on its ideal sheaf;
 * `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_mul`: the line-bundle class of
   the ideal sheaf of `D + E` is the product of the classes of the ideal sheaves of `D` and `E`.
   `TauCeti.AlgebraicGeometry.LineBundleClass.mk_toInvertibleSheaf_top`,
@@ -214,6 +216,12 @@ namespace TauCeti.AlgebraicGeometry.LineBundleClass
 open _root_.AlgebraicGeometry _root_.AlgebraicGeometry.Scheme.IdealSheafData
 
 variable {X : Scheme.{u}} {I J : X.IdealSheafData}
+
+/-- The line-bundle class of an effective Cartier divisor depends only on its ideal sheaf. -/
+theorem mk_toInvertibleSheaf_congr (hI : I.IsEffectiveCartier) (hJ : J.IsEffectiveCartier)
+    (e : I = J) : mk hI.toInvertibleSheaf = mk hJ.toInvertibleSheaf := by
+  subst e
+  rfl
 
 /-- The line-bundle class of the ideal sheaf of a sum `D + E` of effective Cartier divisors is the
 product of the classes of the ideal sheaves of `D` and `E`. -/
