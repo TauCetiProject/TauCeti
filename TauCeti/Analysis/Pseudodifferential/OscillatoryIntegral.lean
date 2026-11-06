@@ -315,7 +315,7 @@ theorem tendsto_integral_cutoff_smul_quantizeSchwartzValue [CompleteSpace V]
     le_add_of_nonneg_left (integral_nonneg fun _ ↦ norm_nonneg _)
   have hbound : ∀ ξ, ∀ k, ∫ y, ‖iteratedFDeriv ℝ k u y‖ ≤ K →
       ∫ y, ‖iteratedFDeriv ℝ k (fun y ↦ L ξ (u y)) y‖ ≤ C * K * (1 + ‖ξ‖ ^ 2) ^ (m / 2) :=
-    fun ξ k hk ↦ (u.integral_norm_iteratedFDeriv_clm_comp_le (L ξ) k).trans <| by
+    fun ξ k hk ↦ (u.integral_norm_iteratedFDeriv_comp_left_le (L ξ) k).trans <| by
       rw [mul_right_comm]
       exact mul_le_mul (hL ξ) hk (integral_nonneg fun _ ↦ norm_nonneg _) (by positivity)
   have hmeas' : AEStronglyMeasurable fun p : E × E ↦ L p.2 (u p.1) := by
@@ -329,7 +329,7 @@ theorem tendsto_integral_cutoff_smul_quantizeSchwartzValue [CompleteSpace V]
   have key := tendsto_integral_cutoff_smul_oscillatoryIntegral (b := fun p ↦ L p.2 (u p.1))
     (N := N) hmeas'
     (fun ξ ↦ ((L ξ).contDiff.comp (u.smooth ⊤)).of_le (mod_cast le_top))
-    (fun ξ k _ ↦ u.integrable_iteratedFDeriv_clm_comp (L ξ) k)
+    (fun ξ k _ ↦ u.integrable_iteratedFDeriv_comp_left (L ξ) k)
     (fun ξ ↦ by simpa only [norm_iteratedFDeriv_zero] using hbound ξ 0 (by simpa using hK₀))
     (fun ξ ↦ hbound ξ N hKN)
     (by simp only [N]; push_cast; linarith [Nat.lt_floor_add_one m]) hχ hχs hχ0
