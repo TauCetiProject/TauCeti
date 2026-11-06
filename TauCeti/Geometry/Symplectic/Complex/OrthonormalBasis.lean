@@ -32,6 +32,8 @@ structure: transport multiplication by `i` along a real linear isometry with `�
   exist.
 * `TauCeti.AlmostComplexStructure.exists_forall_norm_apply_eq`: orthogonal almost complex
   structures exist in even dimension.
+* `OrthonormalBasis.exists_almostComplexStructure_finFour`: every orthonormal four-frame carries
+  an almost complex structure with `J e₀ = e₁` and `J e₂ = e₃`, without an orientation assumption.
 
 ## References
 
@@ -100,3 +102,21 @@ theorem exists_forall_norm_apply_eq (hV : Even (finrank ℝ V)) :
   · simp [L, norm_smul]
 
 end TauCeti.AlmostComplexStructure
+
+namespace OrthonormalBasis
+
+variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
+
+/-- An orthonormal four-frame carries an almost complex structure rotating its two coordinate
+planes: `J e₀ = e₁` and `J e₂ = e₃`. -/
+theorem exists_almostComplexStructure_finFour (e : OrthonormalBasis (Fin 4) ℝ V) :
+    ∃ J : TauCeti.AlmostComplexStructure V, J (e 0) = e 1 ∧ J (e 2) = e 3 := by
+  let L := e.toBasis.constr ℝ ![e 1, -e 0, e 3, -e 2]
+  have hL (i : Fin 4) : L (e i) = ![e 1, -e 0, e 3, -e 2] i := e.toBasis.constr_basis ℝ _ i
+  have hsquare : L.comp L = -LinearMap.id := by
+    apply e.toBasis.ext
+    intro i
+    fin_cases i <;> simp [LinearMap.comp_apply, hL, map_neg]
+  exact ⟨⟨L, hsquare⟩, hL 0, hL 2⟩
+
+end OrthonormalBasis
