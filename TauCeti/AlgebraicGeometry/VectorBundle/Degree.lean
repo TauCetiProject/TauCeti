@@ -77,7 +77,7 @@ Lemma 0AYX. Writing `L` as a difference of effective Cartier divisors reduces th
 
 public section
 
-open CategoryTheory Limits MonoidalCategory AlgebraicGeometry Order Scheme.Modules
+open CategoryTheory Limits AlgebraicGeometry Order Scheme.Modules
 open Module (finrank)
 
 namespace TauCeti
@@ -245,18 +245,19 @@ theorem vectorBundleDegree_twist_toInvertibleSheaf {I : X.IdealSheafData}
 section Curve
 
 variable [IsIntegral X] [IsProper (X ↘ Spec (.of k))] [RelativeDimensionLE 1 (X ↘ Spec (.of k))]
-  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0)]
-  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
 /-- Twisting by a line bundle `L` on an integral proper curve preserves finiteness of `H⁰` and
 `H¹`, and changes the degree by `r · deg L`. Write `[L] = [𝒪_X(D₁)] [𝒪_X(D₂)]⁻¹` with `D₁` and
 `D₂` effective; then `(E ⊗ L) ⊗ 𝒪_X(-D₁) ≅ E ⊗ 𝒪_X(-D₂)`, and both sides are computed by
-`vectorBundleDegree_twist_toInvertibleSheaf`. -/
+`vectorBundleDegree_twist_toInvertibleSheaf`. Only the degree formula needs `H⁰(X, 𝒪_X)` and
+`H¹(X, 𝒪_X)` finite-dimensional. -/
 private theorem finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist
     (E : FixedRank X r) [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
     [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)] (L : InvertibleSheaf X) :
     (∀ i < 2, FiniteDimensional k (Scheme.Modules.Cohomology (E.twist L).obj.obj i)) ∧
-      vectorBundleDegree k (E.twist L) = vectorBundleDegree k E + r * L.eulerDegree k := by
+      ∀ [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0)]
+        [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)],
+        vectorBundleDegree k (E.twist L) = vectorBundleDegree k E + r * L.eulerDegree k := by
   have : IsNoetherian X := isNoetherian_of_finiteType (X ↘ Spec (.of k))
   obtain ⟨D₁, D₂, hD₁, hD₂, hD⟩ :=
     Scheme.CartierDivisor.exists_isEffective_toLineBundleClass_mul_inv_eq
@@ -277,10 +278,8 @@ private theorem finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist
   -- Hence `(E ⊗ L) ⊗ 𝒪_X(-D₁) ≅ E ⊗ 𝒪_X(-D₂)`.
   let e' : ((E.twist L).twist hI₁.toInvertibleSheaf).obj.obj ≅
       (E.twist hI₂.toInvertibleSheaf).obj.obj :=
-    eqToIso (by rw [twist_obj_obj, twist_obj_obj]) ≪≫ α_ _ _ _ ≪≫
-      whiskerLeftIso E.obj.obj
-        ((InvertibleSheaf.tensorProductObjIso _ _).symm ≪≫ e) ≪≫
-      eqToIso (by rw [twist_obj_obj])
+    (Scheme.Modules.isFiniteLocallyFree X).ι.mapIso ((toFiniteLocallyFree X r).mapIso
+      (twistTensorProductIso E L _ ≪≫ twistCongr (Iso.refl E) (ObjectProperty.isoMk _ e)))
   -- `E ⊗ 𝒪_X(-D₂)`, hence `(E ⊗ L) ⊗ 𝒪_X(-D₁)`, hence `E ⊗ L` has finite `H⁰` and `H¹`.
   have hiff (I : X.IdealSheafData) (hI : I.IsEffectiveCartier)
       [IsFinite (I.subschemeι ≫ X ↘ Spec (.of k))] (F : FixedRank X r) :
@@ -292,7 +291,7 @@ private theorem finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist
   have hfin : ∀ i < 2, FiniteDimensional k (Scheme.Modules.Cohomology (E.twist L).obj.obj i) :=
     (hiff _ hI₁ _).mp fun i hi ↦ (finiteDimensional_cohomology_congr k e' i).mpr
       ((hiff _ hI₂ E).mpr (fun j hj ↦ by interval_cases j <;> infer_instance) i hi)
-  refine ⟨hfin, ?_⟩
+  refine ⟨hfin, fun {_ _} ↦ ?_⟩
   have := hfin 0 (by norm_num)
   have := hfin 1 (by norm_num)
   have h₁ := vectorBundleDegree_twist_toInvertibleSheaf k hI₁ (E.twist L) default
@@ -309,14 +308,16 @@ private theorem finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist
   linear_combination h₂ - h₁ + h₃
 
 /-- **Twisting preserves finiteness of cohomology.** On an integral scheme `X`, proper over `k`
-with fibres of dimension at most one and with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`,
-if a vector bundle `E` of constant rank has finite-dimensional `H⁰` and `H¹`, then so does its
-twist `E ⊗ L` by any line bundle `L`. -/
+with fibres of dimension at most one, if a vector bundle `E` of constant rank has
+finite-dimensional `H⁰` and `H¹`, then so does its twist `E ⊗ L` by any line bundle `L`. -/
 theorem finiteDimensional_cohomology_twist (E : FixedRank X r)
     [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 0)]
     [FiniteDimensional k (Scheme.Modules.Cohomology E.obj.obj 1)] (L : InvertibleSheaf X) {i : ℕ}
     (hi : i < 2) : FiniteDimensional k (Scheme.Modules.Cohomology (E.twist L).obj.obj i) :=
   (finiteDimensional_cohomology_twist_and_vectorBundleDegree_twist k E L).1 i hi
+
+variable [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 0)]
+  [FiniteDimensional k (Scheme.Modules.Cohomology (InvertibleSheaf.trivial X).obj 1)]
 
 /-- **Twisting by a line bundle.** On an integral scheme `X`, proper over `k` with fibres of
 dimension at most one and with finite-dimensional `H⁰(X, 𝒪_X)` and `H¹(X, 𝒪_X)`, let `E` be a

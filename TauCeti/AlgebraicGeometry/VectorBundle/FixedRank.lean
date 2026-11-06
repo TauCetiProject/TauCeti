@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicGeometry.LineBundle.TensorProduct
 public import TauCeti.AlgebraicGeometry.VectorBundle.Functoriality
 public import TauCeti.AlgebraicGeometry.VectorBundle.Rank
 
@@ -27,7 +28,8 @@ morphisms; it only changes which equivalent rank-one condition is bundled with t
 * `FiniteLocallyFreeSheaf.FixedRank.pullback`: pullback of fixed-rank sheaves, with its identity
   and composition comparisons `FixedRank.pullbackId` and `FixedRank.pullbackComp`;
 * `FiniteLocallyFreeSheaf.FixedRank.twist`: the twist `E ⊗ L` of a fixed-rank sheaf by an
-  invertible sheaf;
+  invertible sheaf, with its isomorphisms `FixedRank.twistCongr`, `FixedRank.twistTrivialIso` and
+  `FixedRank.twistTensorProductIso`;
 * `InvertibleSheaf.fixedRankOneEquiv`: the equivalence between invertible sheaves and finite
   locally free sheaves of fixed rank one.
 -/
@@ -197,6 +199,31 @@ def twist (E : FixedRank X r) (L : InvertibleSheaf X) : FixedRank X r :=
 theorem twist_obj_obj (E : FixedRank X r) (L : InvertibleSheaf X) :
     (E.twist L).obj.obj = E.obj.obj ⊗ L.obj :=
   (rfl)
+
+/-- Twisting transports isomorphisms in both factors: `E ≅ F` and `L ≅ M` give
+`E ⊗ L ≅ F ⊗ M`. -/
+def twistCongr {E F : FixedRank X r} {L M : InvertibleSheaf X} (e : E ≅ F) (f : L ≅ M) :
+    E.twist L ≅ F.twist M :=
+  ObjectProperty.isoMk _
+    (tensorIso ((toFiniteLocallyFree X r).mapIso e)
+      ((InvertibleSheaf.toFiniteLocallyFree X).mapIso f))
+
+/-- Twisting by the trivial line bundle is the identity: `E ⊗ 𝒪_X ≅ E`. -/
+def twistTrivialIso (E : FixedRank X r) : E.twist (InvertibleSheaf.trivial X) ≅ E :=
+  ObjectProperty.isoMk _
+    (whiskerLeftIso E.obj
+        (ObjectProperty.isoMk (Scheme.Modules.isFiniteLocallyFree X)
+          (InvertibleSheaf.trivialObjIsoUnit X) :
+          (InvertibleSheaf.toFiniteLocallyFree X).obj (InvertibleSheaf.trivial X) ≅ 𝟙_ _) ≪≫
+      ρ_ E.obj)
+
+/-- Twisting twice is twisting by the tensor product: `(E ⊗ L) ⊗ M ≅ E ⊗ (L ⊗ M)`. -/
+def twistTensorProductIso (E : FixedRank X r) (L M : InvertibleSheaf X) :
+    (E.twist L).twist M ≅ E.twist (InvertibleSheaf.tensorProduct L M) :=
+  ObjectProperty.isoMk _
+    (α_ _ _ _ ≪≫ whiskerLeftIso E.obj
+      (ObjectProperty.isoMk (Scheme.Modules.isFiniteLocallyFree X)
+        (InvertibleSheaf.tensorProductObjIso L M).symm))
 
 end FixedRank
 
