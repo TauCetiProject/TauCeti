@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.MeanValue.Basic
-import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 
 /-!
@@ -71,13 +70,10 @@ theorem tendsto_cocompact_of_integrableOn_of_laplacian_nonneg
     · simp [g, hy]
   -- The integral of `g` outside the ball of radius `r` tends to zero as `r → ∞`.
   have htail : Tendsto (fun r : ℝ ↦ ∫ y in {y : E | r < ‖y‖}, g y ∂μ) atTop (𝓝 0) := by
-    have h := tendsto_integral_filter_of_dominated_convergence (μ := μ) (l := atTop)
-      (F := fun r ↦ {y : E | r < ‖y‖}.indicator g) (f := 0) (fun y ↦ ‖g y‖)
-      (.of_forall fun r ↦ (hg.indicator (hT r)).aestronglyMeasurable)
-      (.of_forall fun r ↦ .of_forall fun y ↦ norm_indicator_le_norm_self _ _) hg.norm
-      (.of_forall fun y ↦ tendsto_const_nhds.congr' <|
-        (eventually_gt_atTop ‖y‖).mono fun r hr ↦ by simp [not_lt.mpr hr.le])
-    simpa [integral_indicator (hT _)] using h
+    have hempty : ⋂ r : ℝ, {y : E | r < ‖y‖} = ∅ :=
+      eq_empty_of_forall_notMem fun y hy ↦ lt_irrefl ‖y‖ (mem_iInter.mp hy ‖y‖)
+    simpa [hempty] using tendsto_setIntegral_of_antitone (μ := μ) hT
+      (fun r r' h y hy ↦ lt_of_le_of_lt h hy) ⟨0, hg.integrableOn⟩
   -- The sub-mean-value inequality on unit balls far out.
   have hV : 0 < μ.real (ball (0 : E) 1) :=
     ENNReal.toReal_pos (measure_ball_pos μ 0 one_pos).ne' measure_ball_lt_top.ne

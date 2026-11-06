@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Vortex.Energy
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
+import TauCeti.Analysis.InnerProductSpace.Laplacian.FDeriv
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Kato
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Liouville
 import TauCeti.Analysis.SpecialFunctions.Exp.Shift
@@ -43,7 +43,8 @@ equation `Δ (∇u) = (|α|² / 4) ∇u`. Hence:
   balls then gives `|∇u| → 0` at infinity.
 * By the Kato inequality the regularized norms `√(|∇u|² + δ) - √δ` are subsolutions of
   `-Δ + |α|² / 4`, and `|α|² / 4 > c²` outside a large disc. The exterior comparison principle
-  bounds them by a multiple of `exp (-c |z|)` uniformly in `δ`, and letting `δ → 0` gives
+  bounds them by a multiple of `exp (-c |z|)` uniformly in `δ`, and letting `δ → 0`
+  (`TauCeti.norm_le_mul_exp_of_laplacian_eq_smul`) gives
   `|∇ log |α|²| ≤ K exp (-c |z|)` for `c < 1 / 2`
   (`TauCeti.Vortex.exists_norm_gradient_log_normSq_le_mul_exp`).
 
@@ -122,18 +123,21 @@ private theorem covariantDerivative_norm_sq_eq {z : ℂ}
   field_simp
   linarith
 
-/-- Off the zeros of the section of a vortex, the gradient of `u = log |α|²` solves the
-linearization `Δ (∇u) = (|α|² / 4) ∇u` of the scalar equation `Δ u = (exp u - 1) / 4`. -/
-private theorem laplacian_gradient_log_normSq
+/-- Off the zeros of the section of a vortex, the gradient of `u = log |α|²` is `C²` and solves
+the linearization `Δ (∇u) = (|α|² / 4) ∇u` of the scalar equation `Δ u = (exp u - 1) / 4`. -/
+private theorem contDiffAt_gradient_log_normSq_and_laplacian
     (hb₁ : Differentiable ℝ (fun w ↦ x w 0)) (hb₂ : Differentiable ℝ (fun w ↦ x w 1))
     (hp : ContDiff ℝ 3 (fun w ↦ x w 2)) (hq : ContDiff ℝ 3 (fun w ↦ x w 3))
     (hsol : ∀ z, equation x z = 0) {z : ℂ} (hα : 0 < 4 * (x z 2 ^ 2 + x z 3 ^ 2)) :
-    Δ (∇ fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
-      (4 * (x z 2 ^ 2 + x z 3 ^ 2) / 4) • ∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z := by
+    ContDiffAt ℝ 2 (∇ fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z ∧
+      Δ (∇ fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z =
+        (4 * (x z 2 ^ 2 + x z 3 ^ 2) / 4) •
+          ∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z := by
   set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)
   have hs : ContDiff ℝ 3 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
   have hsd : DifferentiableAt ℝ s z := hs.differentiable (by norm_num) z
   have hu : ContDiffAt ℝ 3 (fun w ↦ Real.log (s w)) z := hs.contDiffAt.log hα.ne'
+  refine ⟨hu.gradient_right (by norm_num), ?_⟩
   -- Near `z` the scalar equation `Δ log |α|² = (|α|² - 1) / 4` holds.
   have hΔ : Δ (fun w ↦ Real.log (s w)) =ᶠ[𝓝 z] fun w ↦ 4⁻¹ * (s w - 1) := by
     filter_upwards [hs.continuous.continuousAt.eventually (lt_mem_nhds hα)] with w hw
@@ -166,27 +170,24 @@ private theorem tendsto_norm_gradient_log_normSq
   set u : ℂ → ℝ := fun w ↦ Real.log (s w)
   have hp₂ : ContDiff ℝ 2 (fun w ↦ x w 2) := hp.of_le (by norm_num)
   have hq₂ : ContDiff ℝ 2 (fun w ↦ x w 3) := hq.of_le (by norm_num)
-  have hs : ContDiff ℝ 3 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
   have hspos : ∀ z, R ≤ ‖z‖ → 0 < s z := fun z hz ↦ by linarith [hshalf z hz]
-  have hg : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 (∇ u) z := fun z hz ↦
-    (hs.contDiffAt.log (hspos z hz).ne').gradient_right (by norm_num)
-  have hΔg : ∀ z, R ≤ ‖z‖ → Δ (∇ u) z = (s z / 4) • ∇ u z := fun z hz ↦
-    laplacian_gradient_log_normSq hb₁ hb₂ hp hq hsol (hspos z hz)
+  have hg : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 (∇ u) z ∧ Δ (∇ u) z = (s z / 4) • ∇ u z :=
+    fun z hz ↦ contDiffAt_gradient_log_normSq_and_laplacian hb₁ hb₂ hp hq hsol (hspos z hz)
   have hnormsq : Tendsto (fun z ↦ ‖∇ u z‖ ^ 2) (cocompact ℂ) (𝓝 0) := by
     have hS : MeasurableSet {z : ℂ | R < ‖z‖} := measurableSet_lt measurable_const measurable_norm
     have he := integrable_covariantDerivative_norm_sq volume hb₁ hb₂ hp₂ hq₂ hsol hlim
     refine tendsto_cocompact_of_integrableOn_of_laplacian_nonneg (μ := volume)
-      (fun z hz ↦ (hg z hz.le).norm_sq ℝ) ?_ (fun z _ ↦ sq_nonneg _) fun z hz ↦ ?_
+      (fun z hz ↦ (hg z hz.le).1.norm_sq ℝ) ?_ (fun z _ ↦ sq_nonneg _) fun z hz ↦ ?_
     · refine (he.integrableOn.const_mul 4).mono' ?_ ?_
       · exact ContinuousOn.aestronglyMeasurable (fun z hz ↦
-          ((hg z (le_of_lt hz)).continuousAt.norm.pow 2).continuousWithinAt) hS
+          ((hg z (le_of_lt hz)).1.continuousAt.norm.pow 2).continuousWithinAt) hS
       · refine (ae_restrict_iff' hS).mpr (.of_forall fun z hz ↦ ?_)
         have hz' : R ≤ ‖z‖ := le_of_lt hz
         rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _),
           covariantDerivative_norm_sq_eq (hp₂.differentiable (by norm_num) z)
             (hq₂.differentiable (by norm_num) z) (hsol z) (hspos z hz')]
         nlinarith [hshalf z hz', sq_nonneg ‖∇ u z‖]
-    · rw [(hg z hz.le).laplacian_norm_sq orthonormalBasisOneI, hΔg z hz.le, inner_smul_right,
+    · rw [(hg z hz.le).1.laplacian_norm_sq orthonormalBasisOneI, (hg z hz.le).2, inner_smul_right,
         real_inner_self_eq_norm_sq]
       have := hspos z hz.le
       positivity
@@ -204,7 +205,6 @@ private theorem exists_norm_gradient_log_normSq_le_mul_exp_of_nonneg
       ‖∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ≤ K * Real.exp (-(c * ‖z‖)) := by
   set s : ℂ → ℝ := fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)
   set u : ℂ → ℝ := fun w ↦ Real.log (s w)
-  have hs : ContDiff ℝ 3 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
   -- Outside a disc of radius `R`, `|α|² > 4 c²` and `|α|² > 1 / 2`.
   have hthr : max (4 * c ^ 2) (1 / 2) < 1 := max_lt (by nlinarith) (by norm_num)
   obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
@@ -215,55 +215,21 @@ private theorem exists_norm_gradient_log_normSq_le_mul_exp_of_nonneg
     fun z hz ↦ hR₀ ((le_max_left _ _).trans hz)
   have hshalf : ∀ z, R ≤ ‖z‖ → 1 / 2 < s z := fun z hz ↦ (le_max_right _ _).trans_lt (hsR z hz)
   have hspos : ∀ z, R ≤ ‖z‖ → 0 < s z := fun z hz ↦ by linarith [hshalf z hz]
-  have hg : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 (∇ u) z := fun z hz ↦
-    (hs.contDiffAt.log (hspos z hz).ne').gradient_right (by norm_num)
-  have hΔg : ∀ z, R ≤ ‖z‖ → Δ (∇ u) z = (s z / 4) • ∇ u z := fun z hz ↦
-    laplacian_gradient_log_normSq hb₁ hb₂ hp hq hsol (hspos z hz)
+  have hg : ∀ z, R ≤ ‖z‖ → ContDiffAt ℝ 2 (∇ u) z ∧ Δ (∇ u) z = (s z / 4) • ∇ u z :=
+    fun z hz ↦ contDiffAt_gradient_log_normSq_and_laplacian hb₁ hb₂ hp hq hsol (hspos z hz)
   have hnorm := tendsto_norm_gradient_log_normSq hb₁ hb₂ hp hq hsol hlim hshalf
   -- A bound for `|∇u|` on the sphere of radius `R`.
-  have hcont : ContinuousOn (fun z ↦ ‖∇ u z‖) {z | R ≤ ‖z‖} := fun z hz ↦
-    (hg z hz).continuousAt.norm.continuousWithinAt
+  have hcont : ContinuousOn (∇ u) {z | R ≤ ‖z‖} := fun z hz ↦
+    (hg z hz).1.continuousAt.continuousWithinAt
   obtain ⟨M, hM⟩ := (isCompact_sphere (0 : ℂ) R).exists_bound_of_continuousOn
     (hcont.mono fun z hz ↦ by simp [mem_sphere_zero_iff_norm.mp hz])
-  -- For each `δ > 0`, the exterior comparison principle applied to the Kato subsolution.
-  have hδ : ∀ δ : ℝ, 0 < δ → ∀ z, R ≤ ‖z‖ →
-      √(‖∇ u z‖ ^ 2 + δ) - √δ ≤ max M 0 * Real.exp (-(c * (‖z‖ - R))) := by
-    intro δ hδ z hz
-    have hle : ∀ t : ℝ, 0 ≤ t → √(t ^ 2 + δ) - √δ ≤ t := fun t ht ↦ by
-      have : √(t ^ 2 + δ) ≤ √((t + √δ) ^ 2) := Real.sqrt_le_sqrt (by
-        nlinarith [Real.sq_sqrt hδ.le, Real.sqrt_nonneg δ])
-      rw [Real.sqrt_sq (by positivity)] at this
-      linarith
-    have hge : ∀ t : ℝ, 0 ≤ √(t ^ 2 + δ) - √δ := fun t ↦
-      sub_nonneg.mpr (Real.sqrt_le_sqrt (by nlinarith [sq_nonneg t]))
-    refine TauCeti.le_mul_exp_of_sq_mul_le_laplacian (u := fun y ↦ √(‖∇ u y‖ ^ 2 + δ) - √δ)
-      hR hc₀ (le_max_right _ _) (fun w hw ↦
-      ((((hcont w hw).pow 2).add continuousWithinAt_const).sqrt.sub continuousWithinAt_const))
-      (fun w hw ↦ ((((hg w hw.le).norm_sq ℝ).add contDiffAt_const).sqrt (by positivity)).sub
-        contDiffAt_const) (fun w hw ↦ ?_) (fun w hw ↦ ?_) ?_ hz
-    · have hwR := hw.le
-      have hsq : ContDiffAt ℝ 2 (fun y ↦ √(‖∇ u y‖ ^ 2 + δ)) w :=
-        (((hg w hwR).norm_sq ℝ).add contDiffAt_const).sqrt (by positivity)
-      have hΔsub : Δ (fun y ↦ √(‖∇ u y‖ ^ 2 + δ) - √δ) w = Δ (fun y ↦ √(‖∇ u y‖ ^ 2 + δ)) w :=
-        (hsq.laplacian_sub (contDiffAt_const (c := √δ))).trans (by simp [laplacian_const])
-      rw [hΔsub]
-      have hkato := (hg w hwR).mul_sqrt_norm_sq_add_sub_le_laplacian (hΔg w hwR)
-        (by linarith [hspos w hwR]) hδ
-      have hc4 : c ^ 2 ≤ s w / 4 := by linarith [(le_max_left _ _).trans_lt (hsR w hwR)]
-      exact (mul_le_mul_of_nonneg_right hc4 (hge _)).trans hkato
-    · exact (hle _ (norm_nonneg _)).trans (((le_abs_self _).trans
-        (hM w (mem_sphere_zero_iff_norm.mpr hw))).trans (le_max_left _ _))
-    · have hφ : Continuous fun t : ℝ ↦ √(t ^ 2 + δ) - √δ :=
-        ((continuous_id.pow 2).add continuous_const).sqrt.sub continuous_const
-      simpa [Function.comp_def] using (hφ.tendsto 0).comp hnorm
-  -- Let `δ → 0`.
+  -- The Kato decay estimate for `Δ (∇u) = (|α|² / 4) ∇u`, where `|α|² / 4 > c²`.
   refine ⟨R, max M 0 * Real.exp (c * R), by positivity, fun z hz ↦ ⟨hshalf z hz, ?_⟩⟩
-  have hconv : Tendsto (fun δ : ℝ ↦ √(‖∇ u z‖ ^ 2 + δ) - √δ) (𝓝[>] 0) (𝓝 ‖∇ u z‖) := by
-    have hψ : Continuous fun δ : ℝ ↦ √(‖∇ u z‖ ^ 2 + δ) - √δ :=
-      (continuous_const.add continuous_id).sqrt.sub Real.continuous_sqrt
-    simpa [Real.sqrt_sq (norm_nonneg _)] using
-      (hψ.tendsto (0 : ℝ)).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
-  have hbound := le_of_tendsto hconv (eventually_mem_nhdsWithin.mono fun δ hδ' ↦ hδ δ hδ' z hz)
+  have hbound := norm_le_mul_exp_of_laplacian_eq_smul (k := fun w ↦ s w / 4) hR hc₀
+    (le_max_right _ _) hcont (fun w hw ↦ (hg w hw.le).1) (fun w hw ↦ (hg w hw.le).2)
+    (fun w hw ↦ by linarith [(le_max_left _ _).trans_lt (hsR w hw.le)])
+    (fun w hw ↦ (hM w (mem_sphere_zero_iff_norm.mpr hw)).trans (le_max_left _ _))
+    (tendsto_zero_iff_norm_tendsto_zero.mpr hnorm) hz
   rwa [exp_neg_mul_sub, ← mul_assoc] at hbound
 
 /-- **Exponential decay of the gradient of `log |α|²` at a plane vortex.** Outside a disc, a vortex

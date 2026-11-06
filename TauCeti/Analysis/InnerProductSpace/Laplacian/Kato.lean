@@ -7,20 +7,14 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Laplacian
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
+public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.Analysis.Calculus.Gradient.Basic
 import TauCeti.Analysis.Calculus.Gradient
-import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
-import TauCeti.Analysis.Calculus.SecondDerivative
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
+import TauCeti.Analysis.InnerProductSpace.Laplacian.ExponentialDecay
 
 /-!
-# Derivatives of solutions of `Δ g = k g` and a Kato subsolution
-
-On a finite-dimensional real inner product space the Laplacian commutes with derivatives of `C³`
-maps: `Δ (∂ᵥ u) = ∂ᵥ (Δ u)` (`ContDiffAt.laplacian_fderiv_apply`, `ContDiffAt.laplacian_fderiv`),
-and `Δ (∇ u) = ∇ (Δ u)` for real functions (`ContDiffAt.laplacian_gradient`).
-So the derivatives of a solution of a semilinear equation `Δ u = F(u)` satisfy the linearized
-equation `Δ (∂ᵥ u) = F'(u) ∂ᵥ u`.
+# A Kato subsolution for `Δ g = k g`
 
 For a vector-valued `g` with `Δ g = k g`, `k ≥ 0`, the Bochner identity
 `Δ ‖g‖² = 2 ‖Dg‖² + 2 k ‖g‖²` and the Kato inequality `|∇ ‖g‖| ≤ ‖Dg‖` show that `‖g‖` is a
@@ -33,6 +27,11 @@ As `δ → 0` the function `w - √δ` increases to `‖g‖`, so a comparison p
 `w - √δ` with bounds uniform in `δ` transfers to `‖g‖` itself. This gives exponential decay of
 `‖g‖` at every rate below `√k`, whereas the Bochner identity alone only makes `‖g‖²` a
 subsolution of `-Δ + 2k`, which gives `‖g‖` the slower rates below `√(k / 2)`.
+
+Combined with the exterior comparison principle `TauCeti.le_mul_exp_of_sq_mul_le_laplacian`:
+if `Δ g = k g` with `c² ≤ k` outside the ball of radius `R`, `‖g‖ ≤ M` on its boundary sphere
+and `g → 0` at infinity, then `‖g x‖ ≤ M exp (-c (‖x‖ - R))`
+(`TauCeti.norm_le_mul_exp_of_laplacian_eq_smul`).
 
 ## References
 
@@ -49,59 +48,8 @@ namespace TauCeti
 open InnerProductSpace Laplacian Filter Topology
 open scoped Gradient RealInnerProductSpace
 
-variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- **The Laplacian commutes with directional derivatives.** For a map `u` which is `C³` at `x`,
-`Δ (∂ᵥ u) = ∂ᵥ (Δ u)` at `x`. -/
-theorem _root_.ContDiffAt.laplacian_fderiv_apply {u : E → F} {x : E} (hu : ContDiffAt ℝ 3 u x)
-    (v : E) : Δ (fun y ↦ fderiv ℝ u y v) x = fderiv ℝ (Δ u) x v := by
-  set b := stdOrthonormalBasis ℝ E
-  have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) x := hu.fderiv_right (m := 2) (by norm_num)
-  have hD2 : ContDiffAt ℝ 1 (fderiv ℝ (fderiv ℝ u)) x := hDu.fderiv_right (m := 1) (by norm_num)
-  have hD2d : DifferentiableAt ℝ (fderiv ℝ (fderiv ℝ u)) x := hD2.differentiableAt (by norm_num)
-  -- `Δ u` is the sum of the diagonal second derivatives in the basis `b`, at every point.
-  have hΔ : Δ u = fun y ↦ ∑ i, fderiv ℝ (fderiv ℝ u) y (b i) (b i) := by
-    funext y
-    rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis u b) y]
-    simp [iteratedFDeriv_two_apply]
-  have hd (i : Fin (Module.finrank ℝ E)) :
-      DifferentiableAt ℝ (fun y ↦ fderiv ℝ (fderiv ℝ u) y (b i) (b i)) x :=
-    (hD2d.clm_apply (differentiableAt_const _)).clm_apply (differentiableAt_const _)
-  rw [congrFun (laplacian_eq_iteratedFDeriv_orthonormalBasis _ b) x, hΔ,
-    fderiv_fun_sum fun i _ ↦ hd i]
-  simp only [iteratedFDeriv_two_apply, Matrix.cons_val_zero, Matrix.cons_val_one,
-    Matrix.cons_val_fin_one, FunLike.coe_sum, Finset.sum_apply]
-  refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rw [fderiv_fderiv_fderiv_apply hu, fderiv_clm_apply_const_apply
-      (hD2d.clm_apply (differentiableAt_const _)),
-    fderiv_clm_apply_const_apply hD2d,
-    fderiv_fderiv_fderiv_apply_comm hu (by simp) (b i) (b i) v,
-    hDu.isSymmSndFDerivAt (by norm_num [minSmoothness_of_isRCLikeNormedField]) (b i) v]
-
-/-- **The Laplacian commutes with the derivative.** For a map `u` which is `C³` at `x`,
-`Δ (Du) = D (Δ u)` at `x`, as continuous linear maps. -/
-theorem _root_.ContDiffAt.laplacian_fderiv {u : E → F} {x : E} (hu : ContDiffAt ℝ 3 u x) :
-    Δ (fderiv ℝ u) x = fderiv ℝ (Δ u) x := by
-  have hDu : ContDiffAt ℝ 2 (fderiv ℝ u) x := hu.fderiv_right (m := 2) (by norm_num)
-  ext v
-  rw [← hu.laplacian_fderiv_apply v]
-  exact (hDu.laplacian_CLM_comp_left (l := ContinuousLinearMap.apply ℝ F v)).symm
-
-/-- **The Laplacian commutes with the gradient.** For a real function `u` which is `C³` at `x`,
-`Δ (∇ u) = ∇ (Δ u)` at `x`. -/
-theorem _root_.ContDiffAt.laplacian_gradient {u : E → ℝ} {x : E} (hu : ContDiffAt ℝ 3 u x) :
-    Δ (∇ u) x = ∇ (Δ u) x := by
-  have hg : ContDiffAt ℝ 2 (∇ u) x := hu.gradient_right (by norm_num)
-  refine ext_inner_left ℝ fun a ↦ ?_
-  have hcomp : (innerSL ℝ a ∘ ∇ u) = fun y ↦ fderiv ℝ u y a := by
-    funext y
-    simp [inner_gradient_right]
-  have h := hg.laplacian_CLM_comp_left (l := innerSL ℝ a)
-  rw [hcomp, hu.laplacian_fderiv_apply, Function.comp_apply, innerSL_apply_apply] at h
-  rw [← h, inner_gradient_right, conj_trivial]
-
-variable [NormedAddCommGroup G] [InnerProductSpace ℝ G]
+variable {E G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup G] [InnerProductSpace ℝ G]
 
 /-- **A Kato subsolution.** Let `g` be `C²` at `x` with `Δ g = k g` at `x`, where `k ≥ 0`. For
 `δ > 0` the regularized norm `w = √(‖g‖² + δ)` satisfies `k (w - √δ) ≤ Δ w` at `x`. As `δ → 0`,
@@ -166,5 +114,50 @@ theorem _root_.ContDiffAt.mul_sqrt_norm_sq_add_sub_le_laplacian {g : E → G} {x
     have hvx : v x = w x * w x - δ := by rw [hww]; ring
     nlinarith [mul_nonneg hk (mul_nonneg (Real.sqrt_nonneg δ) (sub_nonneg.mpr hsδ))]
   exact le_of_mul_le_mul_left hmain hwx
+
+/-- **Exponential decay of solutions of `Δ g = k g`.** Let `g` be continuous on the exterior
+`‖x‖ ≥ R` of a ball and `C²` with `Δ g = k g` outside the closed ball, where `c² ≤ k` there and
+`c ≥ 0`. If `‖g‖ ≤ M` on the sphere `‖x‖ = R` and `g → 0` at infinity, then
+`‖g x‖ ≤ M exp (-c (‖x‖ - R))` for every `x` with `‖x‖ ≥ R`. The proof applies the comparison
+principle to the Kato subsolutions `√(‖g‖² + δ) - √δ` and lets `δ → 0`. -/
+theorem norm_le_mul_exp_of_laplacian_eq_smul {g : E → G} {k : E → ℝ} {R c M : ℝ} (hR : 0 < R)
+    (hc : 0 ≤ c) (hM : 0 ≤ M) (hcont : ContinuousOn g {x | R ≤ ‖x‖})
+    (hcd : ∀ x, R < ‖x‖ → ContDiffAt ℝ 2 g x) (hΔ : ∀ x, R < ‖x‖ → Δ g x = k x • g x)
+    (hk : ∀ x, R < ‖x‖ → c ^ 2 ≤ k x) (hbdry : ∀ x, ‖x‖ = R → ‖g x‖ ≤ M)
+    (hlim : Tendsto g (cocompact E) (𝓝 0)) {x : E} (hx : R ≤ ‖x‖) :
+    ‖g x‖ ≤ M * Real.exp (-(c * (‖x‖ - R))) := by
+  -- For each `δ > 0`, the exterior comparison principle applied to the Kato subsolution.
+  have hδ : ∀ δ : ℝ, 0 < δ → √(‖g x‖ ^ 2 + δ) - √δ ≤ M * Real.exp (-(c * (‖x‖ - R))) := by
+    intro δ hδ
+    have hle : ∀ t : ℝ, 0 ≤ t → √(t ^ 2 + δ) - √δ ≤ t := fun t ht ↦ by
+      have : √(t ^ 2 + δ) ≤ √((t + √δ) ^ 2) := Real.sqrt_le_sqrt (by
+        nlinarith [Real.sq_sqrt hδ.le, Real.sqrt_nonneg δ])
+      rw [Real.sqrt_sq (by positivity)] at this
+      linarith
+    have hge : ∀ t : ℝ, 0 ≤ √(t ^ 2 + δ) - √δ := fun t ↦
+      sub_nonneg.mpr (Real.sqrt_le_sqrt (by nlinarith [sq_nonneg t]))
+    have hsq : ∀ y, R < ‖y‖ → ContDiffAt ℝ 2 (fun y ↦ √(‖g y‖ ^ 2 + δ)) y := fun y hy ↦
+      (((hcd y hy).norm_sq ℝ).add contDiffAt_const).sqrt (by positivity)
+    refine le_mul_exp_of_sq_mul_le_laplacian (u := fun y ↦ √(‖g y‖ ^ 2 + δ) - √δ) hR hc hM
+      (fun y hy ↦ ((((hcont y hy).norm.pow 2).add continuousWithinAt_const).sqrt.sub
+        continuousWithinAt_const)) (fun y hy ↦ (hsq y hy).sub contDiffAt_const)
+      (fun y hy ↦ ?_) (fun y hy ↦ (hle _ (norm_nonneg _)).trans (hbdry y hy)) ?_ hx
+    · have hΔsub : Δ (fun y ↦ √(‖g y‖ ^ 2 + δ) - √δ) y = Δ (fun y ↦ √(‖g y‖ ^ 2 + δ)) y :=
+        ((hsq y hy).laplacian_sub (contDiffAt_const (c := √δ))).trans (by simp [laplacian_const])
+      rw [hΔsub]
+      exact (mul_le_mul_of_nonneg_right (hk y hy) (hge _)).trans
+        ((hcd y hy).mul_sqrt_norm_sq_add_sub_le_laplacian (hΔ y hy)
+          ((sq_nonneg c).trans (hk y hy)) hδ)
+    · have hφ : Continuous fun t : ℝ ↦ √(t ^ 2 + δ) - √δ :=
+        ((continuous_id.pow 2).add continuous_const).sqrt.sub continuous_const
+      simpa [Function.comp_def] using
+        (hφ.tendsto 0).comp (tendsto_zero_iff_norm_tendsto_zero.mp hlim)
+  -- Let `δ → 0`.
+  have hconv : Tendsto (fun δ : ℝ ↦ √(‖g x‖ ^ 2 + δ) - √δ) (𝓝[>] 0) (𝓝 ‖g x‖) := by
+    have hψ : Continuous fun δ : ℝ ↦ √(‖g x‖ ^ 2 + δ) - √δ :=
+      (continuous_const.add continuous_id).sqrt.sub Real.continuous_sqrt
+    simpa [Real.sqrt_sq (norm_nonneg _)] using
+      (hψ.tendsto (0 : ℝ)).mono_left (nhdsWithin_le_nhds (s := Set.Ioi 0))
+  exact le_of_tendsto hconv (eventually_mem_nhdsWithin.mono hδ)
 
 end TauCeti
