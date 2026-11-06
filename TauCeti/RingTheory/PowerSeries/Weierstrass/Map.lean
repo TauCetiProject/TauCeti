@@ -122,7 +122,7 @@ theorem IsMulDistinguished.isNormMulUnit_restrictedMap_and_gaussNorm_map_eq_of_m
   have : NormOneClass S := hg'.normOneClass
   have hgr : g.IsRestricted c := h ▸ e.2.mul (isRestricted_polynomial ω)
   obtain ⟨u, p, hu, hp, hn, hmul⟩ :=
-    hg'.exists_isNormMulUnit_isMonicOfDegree_mul_eq (hgr.map φ hφ)
+    hg'.exists_isNormMulUnit_isMonicOfDegree_mul_eq (MvPowerSeries.isRestricted_map _ φ hφ hgr)
   have hp' := (isMulDistinguished_iff_gaussNorm_eq (Fact.out : 0 < c) hp).mpr hn
   obtain ⟨rfl, rfl⟩ := hp'.eq_and_eq_map_of_mul_eq_map_mul φ hφ Fact.out hp hωm he (by rw [h, hmul])
   exact ⟨hu, hn⟩
