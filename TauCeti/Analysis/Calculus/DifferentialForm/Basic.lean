@@ -23,7 +23,9 @@ in the coefficient space, and `TauCeti.extDerivWithin_smul_field` extends `extDe
 scalars, such as `ℂ`, that act on the coefficients but not on the domain, and
 `TauCeti.extDerivWithin_function_smul` is the Leibniz rule for multiplication by a scalar
 function. `DifferentiableAt.extDerivWithin` is the exterior-derivative version of
-`DifferentiableAt.fderivWithin`.
+`DifferentiableAt.fderivWithin`, and `TauCeti.tsupport_extDeriv_subset` and
+`HasCompactSupport.extDeriv` are the versions of `tsupport_fderiv_subset` and
+`HasCompactSupport.fderiv`.
 -/
 
 public section
@@ -134,6 +136,17 @@ theorem extDeriv_function_smul {c : E → 𝕜} (hc : DifferentiableAt 𝕜 c x)
   simpa only [extDerivWithin_univ, fderivWithin_univ] using
     extDerivWithin_function_smul uniqueDiffWithinAt_univ hc.differentiableWithinAt
       hω.differentiableWithinAt
+
+/-- The exterior derivative of a form vanishes wherever the form vanishes near the point, so its
+topological support lies in that of the form. -/
+theorem tsupport_extDeriv_subset : tsupport (extDeriv ω) ⊆ tsupport ω :=
+  (tsupport_comp_subset (ContinuousAlternatingMap.alternatizeUncurryFinCLM 𝕜 E F).map_zero
+    (fderiv 𝕜 ω)).trans (tsupport_fderiv_subset 𝕜)
+
+/-- The exterior derivative of a compactly supported form is compactly supported. -/
+theorem _root_.HasCompactSupport.extDeriv (hω : HasCompactSupport ω) :
+    HasCompactSupport (extDeriv ω) :=
+  hω.mono' (subset_tsupport _ |>.trans tsupport_extDeriv_subset)
 
 end TauCeti
 

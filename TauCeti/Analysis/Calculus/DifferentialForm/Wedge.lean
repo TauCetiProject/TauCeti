@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.ContinuousLinearMap
+public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import Mathlib.Analysis.Calculus.ContDiff.Comp
 public import Mathlib.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Uncurry
@@ -23,7 +24,8 @@ derivative, `d (φ ∧ ψ) = dφ ∧ ψ + (-1) ^ k • φ ∧ dψ` for a `k`-for
 (`TauCeti.extDerivWithin_pairedWedge`).
 
 The construction uses `ContinuousAlternatingMap.pairedWedgeCLM` and Mathlib's calculus of
-application of continuous linear maps. These results provide the coefficient calculus for wedge
+application of continuous linear maps; `ContDiff.wedge` specializes the regularity statement to
+the real wedge of real-valued forms. These results provide the coefficient calculus for wedge
 products of smooth bundle-valued forms. The wedge normalization follows John M. Lee,
 *Introduction to Smooth Manifolds*, second edition, Chapter 14.
 -/
@@ -86,6 +88,12 @@ variable {X E F₁ F₂ F₃ : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
     (hμ : ContDiff ℝ n μ) (hφ : ContDiff ℝ n φ) (hψ : ContDiff ℝ n ψ) :
     ContDiff ℝ n (fun y ↦ pairedWedge (μ y) (μ y).continuous₂ (φ y) (ψ y)) :=
   contDiff_iff_contDiffAt.mpr fun _ ↦ hμ.contDiffAt.pairedWedge hφ.contDiffAt hψ.contDiffAt
+
+/-- The real wedge of `C^n` families of real-valued forms is `C^n`. -/
+@[fun_prop] theorem _root_.ContDiff.wedge {φ : X → E [⋀^Fin k]→L[ℝ] ℝ}
+    {ψ : X → E [⋀^Fin l]→L[ℝ] ℝ} (hφ : ContDiff ℝ n φ) (hψ : ContDiff ℝ n ψ) :
+    ContDiff ℝ n fun y ↦ wedge (φ y) (ψ y) := by
+  simpa only [wedge_def] using contDiff_const.pairedWedge hφ hψ
 
 /-- The paired wedge of differentiable families is differentiable within a set at a point. -/
 @[fun_prop] theorem _root_.DifferentiableWithinAt.pairedWedge
