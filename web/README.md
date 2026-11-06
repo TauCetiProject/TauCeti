@@ -60,3 +60,13 @@ The operations reader samples every five seconds while visible. Hidden tabs paus
 polling; failures retain the last successful data and back off up to one minute.
 The shorter healthy interval reduces accumulated exporter/publication/browser
 delay. It changes display sampling only, never build or agent execution time.
+
+The default Now and Runners views show pool activity, not individual job cards.
+Builds / All jobs switches the count scope; pool links and Inspect jobs open a
+secondary paginated job table. Host rows open detailed telemetry on selection.
+Pool completion counts come from the publisher's `pool_activity` aggregate,
+independent of its bounded job-list sample. Missing activity remains unknown;
+partial coverage is labelled. Completion windows are minute aligned, with
+failures and cancellations visible alongside totals. No job age creates an
+automatic stalled verdict. The browser suite checks the main/detail separation,
+counts above the sample limit, scope switching and mobile completion visibility.

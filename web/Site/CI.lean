@@ -2,31 +2,18 @@ import VersoBlog
 open Verso Genre Blog
 open Verso.Output Verso.Output.Html
 
-/-- Cached reports update independently of the site build; static charts remain fallbacks. -/
-def liveStatus : Html := {{
-  <section class="ci-live" data-ci-live="true" aria-label="Current CI activity">
-    <div class="ci-live-heading">
-      <h2>"Jobs right now"</h2>
-      <p data-ci-status="true" role="status">"Loading live counts…"</p>
-    </div>
-    <dl class="ci-live-counts" data-ci-counts="true"></dl>
-    <p class="ci-live-backlog" data-ci-backlog="true" hidden="hidden"></p>
-    <noscript>"Enable JavaScript for live counts and automatic chart updates."</noscript>
-  </section>
-  <script src="static/ci-live.js" defer="defer"></script>
-}}
-
 /-- Prepared operational snapshots update without a website build. -/
 def operations : Html := {{
   <section id="operations" class="ci-operations" data-operations="true" aria-label="Queue and runner operations">
-    <p class="ops-status" data-ops-health="true" role="status">"Loading queue and runner observations…"</p>
+    <p class="ops-status" data-ops-health="true">"Loading queue and runner observations…"</p>
+    <span class="ops-announcement" data-ops-announcement="true" role="status"></span>
     <nav class="ops-tabs" aria-label="Operations views">
       <a href="ci/#now" data-ops-tab="now">"Now"</a>
       <a href="ci/#queue" data-ops-tab="queue">"Queue"</a>
       <a href="ci/#runners" data-ops-tab="runners">"Runners"</a>
       <a href="ci/#history" data-ops-tab="history">"History"</a>
     </nav>
-    <div data-ops-view="true" aria-live="polite"></div>
+    <div data-ops-view="true"></div>
     <noscript>"Enable JavaScript for the live queue, PR lookup and runner views. Historical charts follow below."</noscript>
   </section>
   <script src="static/ci-operations.js" defer="defer"></script>
@@ -95,9 +82,6 @@ The merge queue, CI jobs and dedicated hosts share this operational view. Each s
 :::
 
 :::blob recentFleetGraph
-:::
-
-:::blob liveStatus
 :::
 
 # Understanding the fleet
@@ -211,7 +195,7 @@ The data comes from [TauCetiCI](https://github.com/TauCetiProject/TauCetiCI). It
 service receives GitHub workflow and job events, repairs current missing data and samples optional details
 within a shared GitHub request budget. New and corrected records update the affected time
 buckets. Reports update independently of this website's build, and the page checks for published
-operations updates every fifteen seconds while visible; historical charts keep their separate cadence. Reading this page does not trigger GitHub API requests.
+operations updates every five seconds while visible; historical charts keep their separate cadence. Reading this page does not trigger GitHub API requests.
 During validation or an outage, the page retains its static or last successful reports.
 
 The [live report manifest](https://ci-data.taucetiproject.org/v1/ci/manifest.json) records
