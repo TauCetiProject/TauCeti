@@ -426,9 +426,9 @@ private theorem dgId_cone_coneHomOfHomotopy_dgId_zero
       dgComp_extensionInr_extensionSnd_assoc, add_zero, zero_add] <;>
     rw [← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0),
       ← dgComp_assoc R _ _ _ (add_zero 0) (add_zero 0) (add_zero 0), ← add_dgComp]
-  · rw [dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr, dgId_dgComp]
+  · rw [extension_total, dgId_dgComp]
   · rw [← EnrichedFunctor.dgMap_dgComp, ← EnrichedFunctor.dgMap_dgComp, ← map_add,
-      dgComp_extensionFst_extensionInl_add_dgComp_extensionSnd_extensionInr,
+      extension_total,
       EnrichedFunctor.dgMap_dgId, dgId_dgComp]
 
 /-- The comparison morphism `cone (cone u ⟶ cone w) ⟶ cone v` followed by its inverse
