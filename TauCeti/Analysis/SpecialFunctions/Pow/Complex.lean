@@ -47,6 +47,9 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
 * `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
   reals.
+* `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
+  arguments add in the principal range.
+* `TauCeti.mul_cpow_of_re_pos` -- the right-half-plane specialization.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
 * `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
@@ -106,6 +109,28 @@ theorem ofReal_prod_cpow {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀
   | insert i s hi ih =>
     rw [Finset.prod_insert hi, Finset.prod_insert hi, ofReal_mul, ofReal_mul_cpow (hf i (by simp)),
       ← ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
+
+/-- A principal power splits across a product when the sum of the arguments lies in the
+principal range `(-π, π]`, including when either factor is zero. -/
+theorem mul_cpow_of_arg_add_mem {x y : ℂ}
+    (h : arg x + arg y ∈ Set.Ioc (-Real.pi) Real.pi) (w : ℂ) :
+    (x * y) ^ w = x ^ w * y ^ w := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [zero_cpow hw]
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [zero_cpow hw]
+  rw [cpow_def_of_ne_zero (mul_ne_zero hx hy), cpow_def_of_ne_zero hx,
+    cpow_def_of_ne_zero hy, log_mul hx hy h, add_mul, exp_add]
+
+/-- A principal power splits across a product of two numbers in the open right half-plane.
+Their arguments add without crossing the branch cut. -/
+theorem mul_cpow_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) (w : ℂ) :
+    (x * y) ^ w = x ^ w * y ^ w := by
+  have hax := abs_lt.mp (abs_arg_lt_pi_div_two_iff.mpr (Or.inl hx))
+  have hay := abs_lt.mp (abs_arg_lt_pi_div_two_iff.mpr (Or.inl hy))
+  exact mul_cpow_of_arg_add_mem ⟨by linarith, by linarith⟩ w
 
 /-- A principal complex power of a natural power of a nonnegative real multiplies the exponents:
 `((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s)`.  The argument of `(r : ℂ)` is `0`, so the principal branch

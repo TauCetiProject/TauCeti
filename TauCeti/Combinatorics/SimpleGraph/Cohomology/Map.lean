@@ -161,7 +161,7 @@ private theorem exists_coboundary_of_eq_coboundary_map (f : A →* B) (hf : Func
   apply Subtype.ext
   funext d
   have hroot : componentRoot G d.snd = componentRoot G d.fst :=
-    (componentRoot_eq_of_adj G d.symm.adj).symm
+    (componentRoot_eq_componentRoot_iff G).2 d.adj.reachable.symm
   refine hf (by
     rw [coboundary_apply, map_div, hprod, hprod, hroot, hψ' d, div_div, mul_div_cancel])
 
