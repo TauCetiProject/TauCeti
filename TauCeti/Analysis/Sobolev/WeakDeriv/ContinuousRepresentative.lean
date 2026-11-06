@@ -49,6 +49,53 @@ variable {E F : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace �
   {mu : Measure E} [mu.IsAddHaarMeasure] {Omega : Opens E}
   {u : E → F} {U : E → E →L[ℝ] F}
 
+/-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
+converges uniformly on the half-radius ball. -/
+private theorem tendstoUniformlyOn_convolution_indicator_ball {F' : Type*} [NormedAddCommGroup F']
+    [NormedSpace ℝ F'] [CompleteSpace F'] {x : E} {r : ℝ} (hr : 0 < r) {V : E → F'}
+    (hV : IntegrableOn V (ball x r) mu) (hVc : ContinuousOn V (ball x r))
+    {phi : ℕ → ContDiffBump (0 : E)} (hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0)) :
+    TendstoUniformlyOn (fun n => (ball x r).indicator V ⋆[
+      (ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu)
+      ((ball x r).indicator V) atTop (ball x (r / 2)) := by
+  let F := fun n => (ball x r).indicator V ⋆[
+    (ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu
+  have hVm : AEStronglyMeasurable ((ball x r).indicator V) mu :=
+    (hV.integrable_indicator measurableSet_ball).aestronglyMeasurable
+  -- The mollifications converge locally uniformly throughout the larger ball.
+  have hlocal : TendstoLocallyUniformlyOn F ((ball x r).indicator V) atTop (ball x r) := by
+    rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
+    intro y hy
+    have hcont : ContinuousAt ((ball x r).indicator V) y :=
+      (hVc.congr fun z hz => indicator_of_mem hz V).continuousAt (isOpen_ball.mem_nhds hy)
+    have hconv : Tendsto (fun p : ℕ × E => F p.1 p.2) (atTop ×ˢ 𝓝 y)
+        (𝓝 (((ball x r).indicator V) y)) := by
+      simp only [F, convolution_flip]
+      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
+        (Eventually.of_forall fun _ => hVm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
+    apply tendsto_uniformity_iff_dist_tendsto_zero.2
+    simpa only [dist_self, Function.comp_apply] using
+      (hcont.tendsto.comp tendsto_snd).dist hconv
+  have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
+  exact ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
+    (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
+
+omit [MeasurableSpace E] [NormedSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E] in
+/-- A sequence of bumps with outer radii tending to `0`, each at most `r / 4`, and with outer radius
+at most twice the inner radius. -/
+private theorem exists_contDiffBump_seq {r : ℝ} (hr : 0 < r) :
+    ∃ phi : ℕ → ContDiffBump (0 : E), Tendsto (fun n => (phi n).rOut) atTop (𝓝 0) ∧
+      (∀ n, (phi n).rOut ≤ r / 4) ∧ ∀ n, (phi n).rOut ≤ 2 * (phi n).rIn := by
+  let phi : ℕ → ContDiffBump (0 : E) := fun n =>
+    ⟨(r / (4 * ((n : ℝ) + 1))) / 2, r / (4 * ((n : ℝ) + 1)), by positivity,
+      half_lt_self (by positivity)⟩
+  refine ⟨phi, ?_, fun n => ?_, fun n => by dsimp [phi]; linarith⟩
+  · simpa [phi, div_mul_eq_div_div, div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using
+      tendsto_one_div_add_atTop_nhds_zero_nat.const_mul (r / 4)
+  · dsimp [phi]
+    apply div_le_div_of_nonneg_left hr.le (by positivity)
+    nlinarith [Nat.cast_nonneg (α := ℝ) n]
+
 /- Locally, mollifications have derivatives converging uniformly on a smaller ball.
 `ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable` supplies convergence of their
 values at one point, and `cauchy_map_of_uniformCauchySeqOn_fderiv` propagates it over the ball.
@@ -60,17 +107,7 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     ∃ g : E → F, ContDiffOn ℝ 1 g (ball x (r / 2)) ∧
       u =ᵐ[mu.restrict (ball x (r / 2))] g := by
   let := h.completeSpace
-  let phi : ℕ → ContDiffBump (0 : E) := fun n =>
-    ⟨(r / (4 * ((n : ℝ) + 1))) / 2, r / (4 * ((n : ℝ) + 1)), by positivity,
-      half_lt_self (by positivity)⟩
-  have hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0) := by
-    simpa [phi, div_mul_eq_div_div, div_eq_mul_inv, mul_assoc, mul_comm, mul_left_comm] using
-      tendsto_one_div_add_atTop_nhds_zero_nat.const_mul (r / 4)
-  have hsmall : ∀ n, (phi n).rOut ≤ r / 4 := by
-    intro n
-    dsimp [phi]
-    apply div_le_div_of_nonneg_left hr.le (by positivity)
-    nlinarith [Nat.cast_nonneg (α := ℝ) n]
+  obtain ⟨phi, hphi, hsmall, hK⟩ := exists_contDiffBump_seq (E := E) hr
   let f := fun n => (ball x r).indicator u ⋆[
     (ContinuousLinearMap.lsmul ℝ ℝ).flip, mu] (phi n).normed mu
   let f' := fun n => (ball x r).indicator U ⋆[
@@ -82,31 +119,14 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     apply closedBall_subset_ball'
     have := mem_ball.1 hy
     linarith [hsmall n]
-  have hUm : AEStronglyMeasurable ((ball x r).indicator U) mu :=
-    (hU.integrable_indicator measurableSet_ball).aestronglyMeasurable
-  -- The mollified derivative converges locally uniformly throughout the larger ball.
-  have hlocal : TendstoLocallyUniformlyOn f' ((ball x r).indicator U) atTop (ball x r) := by
-    rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
-    intro y hy
-    have hcont : ContinuousAt ((ball x r).indicator U) y :=
-      (hUc.congr fun z hz => indicator_of_mem hz U).continuousAt (isOpen_ball.mem_nhds hy)
-    have hconv : Tendsto (fun p : ℕ × E => f' p.1 p.2) (atTop ×ˢ 𝓝 y)
-        (𝓝 (((ball x r).indicator U) y)) := by
-      simp only [f', convolution_flip]
-      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
-        (Eventually.of_forall fun _ => hUm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
-    apply tendsto_uniformity_iff_dist_tendsto_zero.2
-    simpa only [dist_self, Function.comp_apply] using
-      (hcont.tendsto.comp tendsto_snd).dist hconv
   have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
   have hunif : TendstoUniformlyOn f' ((ball x r).indicator U) atTop (ball x (r / 2)) :=
-    ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
-      (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
+    tendstoUniformlyOn_convolution_indicator_ball hr hU hUc hphi
   -- Almost everywhere convergence of the values supplies a single anchor point.
   have hae : ∀ᵐ y ∂mu, Tendsto (fun n => f n y) atTop (𝓝 ((ball x r).indicator u y)) := by
     simp only [f, convolution_flip]
     apply ContDiffBump.ae_convolution_tendsto_right_of_locallyIntegrable hphi
-      (K := 2) (Eventually.of_forall fun n => by dsimp [phi]; linarith)
+      (K := 2) (Eventually.of_forall hK)
     exact (hu.integrable_indicator measurableSet_ball).locallyIntegrable
   obtain ⟨y₀, hy₀, hy₀lim⟩ := Measure.exists_mem_of_measure_ne_zero_of_ae
     (measure_ball_pos mu x (half_pos hr)).ne' (ae_restrict_of_ae hae)
