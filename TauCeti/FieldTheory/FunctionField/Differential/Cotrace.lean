@@ -349,28 +349,6 @@ theorem conorm_add_different_le_weilDifferentialDivisor (hF : IsFunctionField k 
     weilDifferentialCotrace_mem_weilDifferentialFiltration hF hF' ω
       (isGreatest_weilDifferentialDivisor hF hex ω.2 _).1
 
-omit [FiniteDimensional F F'] [Algebra.IsSeparable F F'] in
-open scoped Classical in
-/-- The fibre-constant relative repartition that is `z` over `P` and `0` elsewhere. -/
-private theorem single_mem_relativeRepartitionSpace (P : Place k F) (z : F') :
-    Pi.single P z ∈ relativeRepartitionSpace k F F' :=
-  mem_relativeRepartitionSpace_iff.mpr <| Filter.eventually_cofinite.mpr <|
-    (Set.finite_singleton P).subset fun Q hQ ↦ by
-      by_contra hQP
-      exact hQ (by simp [Pi.single_eq_of_ne hQP, isIntegral_zero])
-
-omit [Algebra.IsSeparable F F'] in
-open scoped Classical in
-/-- The trace of the fibre-constant repartition `z` over `P` is `Tr z` at `P`. -/
-private theorem repartitionTrace_single (hF : IsFunctionField k F) (P : Place k F) (z : F') :
-    repartitionTrace k F F' hF ⟨_, single_mem_relativeRepartitionSpace P z⟩ =
-      singleRepartition P (Algebra.trace F F' z) :=
-  Subtype.ext <| funext fun Q ↦ by
-    rw [repartitionTrace_apply]
-    rcases eq_or_ne Q P with rfl | hQ
-    · simp
-    · simp [hQ, singleRepartition_of_ne hQ]
-
 open AlgebraicGeometry in
 /-- **The divisor of the cotrace** (Stichtenoth, Theorem 3.4.6): `(Cotr ω) = Con (ω) + Diff(F'/F)`
 for every nonzero Weil differential `ω` of `F / k`. -/
