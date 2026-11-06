@@ -35,8 +35,8 @@ ideal classes.
 
 If the presentation map is surjective, the isomorphism
 `(ι → ℤ) ⧸ relationLattice I ≃ₗ[ℤ] Additive (ClassGroup R)` is Mathlib's
-`(presentation I).quotKerEquivOfSurjective hI`, which evaluates on classes by
-`LinearMap.quotKerEquivOfSurjective_apply_mk`.
+`(presentation I).quotKerEquivOfSurjective hI`, transported along `relationLattice_def`, which
+evaluates on classes by `LinearMap.quotKerEquivOfSurjective_apply_mk`.
 
 ## Main results
 
@@ -77,6 +77,10 @@ noncomputable def presentation : (ι → ℤ) →ₗ[ℤ] Additive (ClassGroup R
 `∏ i, [I i] ^ e i = 1`, the kernel of the presentation map. -/
 noncomputable def relationLattice : Submodule ℤ (ι → ℤ) :=
   LinearMap.ker (presentation I)
+
+/-- The relation lattice is the kernel of the presentation map. -/
+theorem relationLattice_def : relationLattice I = LinearMap.ker (presentation I) :=
+  (rfl)
 
 variable {I}
 
