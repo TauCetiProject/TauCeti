@@ -78,6 +78,12 @@ public theorem det_blockDiagonal' {o R : Type*} {m : o → Type*} [Fintype o] [D
   -- `(Equiv.sigmaSubtype i).symm j`, so the definition is unfolded to see that it is `⟨i, j⟩`.
   simp [toSquareBlock_def, Equiv.sigmaSubtype]
 
+/-- Restricting to a square block commutes with any entrywise map. -/
+@[simp]
+public theorem toSquareBlockProp_map {m R S : Type*} (M : Matrix m m R) (p : m → Prop)
+    (f : R → S) : (M.map f).toSquareBlockProp p = (M.toSquareBlockProp p).map f :=
+  (rfl)
+
 /-! ### Leading blocks -/
 
 section LeadingBlocks
