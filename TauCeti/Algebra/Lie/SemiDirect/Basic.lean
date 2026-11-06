@@ -44,6 +44,10 @@ product, and solvable when both factors are, because it is an extension of `L` b
 * `LieIdeal.semiDirectSumHom`: the Lie homomorphism `↥S ⋊⁅ψ⁆ ↥H →ₗ⁅R⁆ L` given by `(s, h) ↦ s + h`.
 * `LieIdeal.semiDirectSumEquiv`: that homomorphism as an isomorphism, when the underlying
   submodules of `S` and `H` are complementary.
+* `LieDerivation.lineHom`: a single derivation `D`, as the Lie homomorphism `t ↦ t • D` out of the
+  one-dimensional abelian Lie algebra `R`. The semidirect sum `L ⋊⁅D.lineHom⁆ R` adjoins `D` to `L`
+  as an element `inr 1` whose bracket with `inl x` is `inl (D x)`
+  (`LieDerivation.lie_inr_lineHom_one_inl`).
 
 ## Main statements
 
@@ -297,3 +301,31 @@ theorem exists_lieEquiv_semiDirectSum_ker_projr :
   LieIdeal.exists_lieEquiv_semiDirectSum _ _ (isCompl_ker_projr_range_inr ψ)
 
 end LieAlgebra.SemiDirectSum
+
+namespace LieDerivation
+
+-- The ring of scalars is used as a one-dimensional abelian Lie algebra.
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+open LieAlgebra.SemiDirectSum
+
+variable {R L : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
+
+/-- The derivation `D`, as the Lie homomorphism `t ↦ t • D` out of the one-dimensional abelian Lie
+algebra `R`. The semidirect sum `L ⋊⁅D.lineHom⁆ R` adjoins `D` to `L`. -/
+def lineHom (D : LieDerivation R L L) : R →ₗ⁅R⁆ LieDerivation R L L where
+  toLinearMap := LinearMap.toSpanSingleton R _ D
+  map_lie' := fun {a b} ↦ by simp [Ring.lie_def, mul_comm, smul_lie, lie_smul]
+
+/-- `D.lineHom` sends `t` to `t • D`. -/
+@[simp]
+theorem lineHom_apply (D : LieDerivation R L L) (t : R) : D.lineHom t = t • D :=
+  LinearMap.toSpanSingleton_apply R _ D t
+
+/-- In the semidirect sum adjoining `D`, the bracket of the adjoined generator with `x` is `D x`. -/
+theorem lie_inr_lineHom_one_inl (D : LieDerivation R L L) (x : L) :
+    ⁅inr D.lineHom (1 : R), inl D.lineHom x⁆ = inl D.lineHom (D x) := by
+  simp only [inl_eq_mk, inr_eq_mk, lie_eq_mk]
+  ext <;> simp [Ring.lie_def]
+
+end LieDerivation

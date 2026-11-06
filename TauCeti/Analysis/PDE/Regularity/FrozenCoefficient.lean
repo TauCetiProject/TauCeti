@@ -222,9 +222,8 @@ theorem UniformlyEllipticOn.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_l
   obtain ⟨w, ⟨huw, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
       (b := 0) (c := 0) hA aestronglyMeasurable_const aestronglyMeasurable_const
-      aestronglyMeasurable_const le_rfl (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
-      (fun _ _ => le_rfl) (le_max_right r 0) (hBr.trans (ball_subset_ball (le_max_left r 0)))
-      (by simpa using hA.pos) 0 (W1p.restrictL hB u)
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hBr (by simpa using hA.pos) 0 (W1p.restrictL hB u)
   have hw0 : ∀ v : W1p0 volume B 2,
       energyFormH1 (fun _ => a x₀) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
     rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
