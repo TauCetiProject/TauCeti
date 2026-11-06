@@ -70,6 +70,13 @@ two summands, smoothed by the two restrictions of the state
   `TauCeti.PDCode.SmoothingEquiv.resolvedCircleCongr_symm`,
   `TauCeti.PDCode.SmoothingEquiv.resolvedCircleCongr_trans`: the identity, inverse and
   composition laws.
+* `TauCeti.PDCode.SmoothingEquiv.image_crossingCircleCongr_circlesAt`,
+  `TauCeti.PDCode.SmoothingEquiv.card_circlesAt_eq`: transport carrying the slots of a crossing
+  bijectively carries the circles through it, and so their number.
+* `TauCeti.PDCode.SmoothingEquiv.resolvedCircleCongr_saddleResolvedCircleMap`: induced circle
+  bijections commute with saddle correspondences.
+* `TauCeti.PDCode.eqvGen_circleStep_disjointUnion_iff`: two half-edges of a disjoint union lie on
+  one circle exactly when they do so within one summand.
 
 ## References
 
