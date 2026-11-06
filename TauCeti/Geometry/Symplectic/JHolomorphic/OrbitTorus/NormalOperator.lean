@@ -131,16 +131,51 @@ theorem orbitTorusOperator_smul (c : ℝ) :
   simp only [orbitTorusOperator_apply, fderiv_const_smul_field, Pi.smul_apply,
     smul_apply, map_smul, smul_add]
 
-/-- The cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫` of `‖D u‖²` integrates to zero over the fundamental
-rectangle: it is half of `∂s ⟪u, S u + J₀ ∂t u⟫ - ∂t ⟪u, J₀ ∂s u⟫`, and both potentials are
-periodic because the twists square to one. -/
-private theorem setIntegral_inner_fderiv_eq_zero
+/-- Pointwise, the cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫` is half of the difference of the
+`s`-derivative `φ₁` of `⟪u, S u⟫ + ⟪u, J₀ ∂t u⟫` and the `t`-derivative `φ₂` of `⟪u, J₀ ∂s u⟫`,
+by symmetry of `S` and of the second derivative and skew-adjointness of `J₀`. -/
+private theorem inner_fderiv_eq_half_sub
     (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
+    (hu : ContDiff ℝ 2 u) (z : ℝ × ℝ) :
+    ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)⟫ =
+      ((⟪u z, S z.2 (fderiv ℝ u z stdComplexLineReal)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineReal, S z.2 (u z)⟫) +
+        (⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineReal stdComplexLineImag)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag)⟫) -
+        (⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineImag stdComplexLineReal)⟫ +
+        ⟪fderiv ℝ u z stdComplexLineImag, J₀ (fderiv ℝ u z stdComplexLineReal)⟫)) / 2 := by
+  have k₁ : ⟪u z, S z.2 (fderiv ℝ u z stdComplexLineReal)⟫ =
+      ⟪fderiv ℝ u z stdComplexLineReal, S z.2 (u z)⟫ := by
+    rw [← hS, real_inner_comm]
+  have k₂ : ⟪fderiv ℝ u z stdComplexLineImag, J₀ (fderiv ℝ u z stdComplexLineReal)⟫ =
+      -⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag)⟫ := by
+    rw [← hJ₀, real_inner_comm]
+  have k₃ : fderiv ℝ (fderiv ℝ u) z stdComplexLineReal stdComplexLineImag =
+      fderiv ℝ (fderiv ℝ u) z stdComplexLineImag stdComplexLineReal :=
+    hu.contDiffAt.isSymmSndFDerivAt (by simp) _ _
+  simp only [inner_add_right, k₁, k₂, k₃]
+  ring
+
+/-- The two potentials `φ₁` and `φ₂` of the cross term (see `inner_fderiv_eq_half_sub`) are
+continuous and integrate to zero over the fundamental rectangle: both primitives are periodic
+because the twists square to one. -/
+private theorem continuous_and_setIntegral_potentials_eq_zero
     (hScont : Continuous S) (hu : ContDiff ℝ 2 u) (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1)
     (hs : ∀ s t, u (s + 1, t) = ε₁ • u (s, t)) (ht : ∀ s t, u (s, t + d) = ε₂ • u (s, t)) :
-    ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d,
-      ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)⟫ =
-      0 := by
+    (Continuous fun z : ℝ × ℝ => (⟪u z, S z.2 (fderiv ℝ u z stdComplexLineReal)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineReal, S z.2 (u z)⟫) +
+        (⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineReal stdComplexLineImag)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag)⟫)) ∧
+      (∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d, (⟪u z, S z.2 (fderiv ℝ u z stdComplexLineReal)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineReal, S z.2 (u z)⟫) +
+        (⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineReal stdComplexLineImag)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag)⟫)) = 0 ∧
+      (Continuous fun z : ℝ × ℝ =>
+        ⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineImag stdComplexLineReal)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineImag, J₀ (fderiv ℝ u z stdComplexLineReal)⟫) ∧
+      ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d,
+        (⟪u z, J₀ (fderiv ℝ (fderiv ℝ u) z stdComplexLineImag stdComplexLineReal)⟫ +
+          ⟪fderiv ℝ u z stdComplexLineImag, J₀ (fderiv ℝ u z stdComplexLineReal)⟫) = 0 := by
   set e₁ := stdComplexLineReal
   set e₂ := stdComplexLineImag
   have hu1 : Differentiable ℝ u := hu.differentiable (by norm_num)
@@ -191,20 +226,23 @@ private theorem setIntegral_inner_fderiv_eq_zero
     simp only [h0, h0', map_smul, smul_apply, real_inner_smul_left,
       real_inner_smul_right]
     linear_combination ⟪u (s, 0), J₀ (fderiv ℝ u (s, 0) e₁)⟫ * hε₂
-  have hpt : (fun z : ℝ × ℝ => ⟪fderiv ℝ u z e₁, J₀ (fderiv ℝ u z e₂) + S z.2 (u z)⟫) =
-      fun z => (φ₁ z - φ₂ z) / 2 := by
-    funext z
-    have k₁ : ⟪u z, S z.2 (fderiv ℝ u z e₁)⟫ = ⟪fderiv ℝ u z e₁, S z.2 (u z)⟫ := by
-      rw [← hS, real_inner_comm]
-    have k₂ : ⟪fderiv ℝ u z e₂, J₀ (fderiv ℝ u z e₁)⟫ =
-        -⟪fderiv ℝ u z e₁, J₀ (fderiv ℝ u z e₂)⟫ := by
-      rw [← hJ₀, real_inner_comm]
-    have k₃ : fderiv ℝ (fderiv ℝ u) z e₁ e₂ = fderiv ℝ (fderiv ℝ u) z e₂ e₁ :=
-      hu.contDiffAt.isSymmSndFDerivAt (by simp) e₁ e₂
-    simp only [φ₁, φ₂, inner_add_right, k₁, k₂, k₃]
-    ring
+  exact ⟨hφ₁, h₁, hφ₂, h₂⟩
+
+/-- The cross term `⟪∂s u, J₀ ∂t u + S(t) u⟫` of `‖D u‖²` integrates to zero over the fundamental
+rectangle: it is half of `∂s ⟪u, S u + J₀ ∂t u⟫ - ∂t ⟪u, J₀ ∂s u⟫`, and both potentials are
+periodic because the twists square to one. -/
+private theorem setIntegral_inner_fderiv_eq_zero
+    (hJ₀ : ∀ x y, ⟪J₀ x, y⟫ = -⟪x, J₀ y⟫) (hS : ∀ t x y, ⟪S t x, y⟫ = ⟪x, S t y⟫)
+    (hScont : Continuous S) (hu : ContDiff ℝ 2 u) (hε₁ : ε₁ ^ 2 = 1) (hε₂ : ε₂ ^ 2 = 1)
+    (hs : ∀ s t, u (s + 1, t) = ε₁ • u (s, t)) (ht : ∀ s t, u (s, t + d) = ε₂ • u (s, t)) :
+    ∫ z in Icc (0 : ℝ) 1 ×ˢ Icc 0 d,
+      ⟪fderiv ℝ u z stdComplexLineReal, J₀ (fderiv ℝ u z stdComplexLineImag) + S z.2 (u z)⟫ =
+      0 := by
+  obtain ⟨hφ₁, h₁, hφ₂, h₂⟩ := continuous_and_setIntegral_potentials_eq_zero hScont hu hε₁ hε₂
+    hs ht
   have hR : IsCompact (Icc (0 : ℝ) 1 ×ˢ Icc 0 d) := isCompact_Icc.prod isCompact_Icc
-  rw [hpt, integral_div, integral_sub (hφ₁.continuousOn.integrableOn_compact hR)
+  simp only [inner_fderiv_eq_half_sub hJ₀ hS hu]
+  rw [integral_div, integral_sub (hφ₁.continuousOn.integrableOn_compact hR)
     (hφ₂.continuousOn.integrableOn_compact hR), h₁, h₂, sub_self, zero_div]
 
 /-- **The energy identity for the orbit-torus operator.** For a `C²` map `u` which is twisted
