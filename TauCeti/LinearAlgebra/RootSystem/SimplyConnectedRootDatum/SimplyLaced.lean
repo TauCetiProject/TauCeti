@@ -117,4 +117,65 @@ theorem coroot_reflectionPerm_simpleIndex (i : Fin t.rank) (k : Fin t.numRoots) 
     t.pairing_eq_coroot_vecMul_dotProduct ht hs, coroot_simpleIndex,
     vecMul_dotProduct_comm hs.isSymm_cartanMatrix, dotProduct_single, mul_one]
 
+/-! ## Root strings through a root sum -/
+
+include hs in
+/-- The Cartan pairing of a simply-laced pinned datum is symmetric. -/
+theorem pairing_simplyConnectedRootDatum_symm (α β : Fin t.numRoots) :
+    (t.simplyConnectedRootDatum ht).pairing α β =
+      (t.simplyConnectedRootDatum ht).pairing β α := by
+  rw [t.pairing_eq_coroot_vecMul_dotProduct ht hs,
+    t.pairing_eq_coroot_vecMul_dotProduct ht hs,
+    vecMul_dotProduct_comm hs.isSymm_cartanMatrix]
+
+variable {t ht}
+
+include hs
+
+/-- If the sum of two roots is a root in a simply-laced type, their Cartan pairing is `-1`. -/
+theorem pairing_eq_neg_one_of_root_eq_add {α β γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
+    (t.simplyConnectedRootDatum ht).pairing α β = -1 := by
+  have hα := RootPairing.pairing_eq_add_of_root_eq_add (l := α) hγ
+  have hβ := RootPairing.pairing_eq_add_of_root_eq_add (l := β) hγ
+  have hself := RootPairing.pairing_eq_add_of_root_eq_add (l := γ) hγ
+  simp only [RootPairing.pairing_same] at hα hβ hself
+  rw [t.pairing_simplyConnectedRootDatum_symm ht hs β α] at hα
+  rw [t.pairing_simplyConnectedRootDatum_symm ht hs α γ,
+    t.pairing_simplyConnectedRootDatum_symm ht hs β γ] at hself
+  omega
+
+/-- In a simply-laced type, a root sum `γ = α + β` cannot be extended to `α + γ`. -/
+theorem root_add_notMem_of_root_eq_add {α β γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
+    (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ ∉
+      Set.range (t.simplyConnectedRootDatum ht).root := by
+  rintro ⟨δ, hδ⟩
+  have h₁ := pairing_eq_neg_one_of_root_eq_add hs hγ
+  have h₂ := pairing_eq_neg_one_of_root_eq_add hs hδ
+  have h₃ := RootPairing.pairing_eq_add_of_root_eq_add (l := α) hγ
+  rw [t.pairing_simplyConnectedRootDatum_symm ht hs γ α,
+    t.pairing_simplyConnectedRootDatum_symm ht hs β α] at h₃
+  simp only [RootPairing.pairing_same] at h₃
+  omega
+
+/-- In a simply-laced type, a root sum `γ = α + β` is not opposite to `α`. -/
+theorem root_add_ne_zero_of_root_eq_add {α β γ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β) :
+    (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ ≠ 0 := by
+  intro hzero
+  have h₁ := pairing_eq_neg_one_of_root_eq_add hs hγ
+  have h₂ := RootPairing.pairing_eq_add_of_root_eq_add (l := α) hγ
+  have h₃ := congrArg
+    (fun x => (t.simplyConnectedRootDatum ht).toLinearMap x
+      ((t.simplyConnectedRootDatum ht).coroot α)) hzero
+  simp only [map_add, map_zero, LinearMap.add_apply, LinearMap.zero_apply,
+    RootPairing.root_coroot_eq_pairing, RootPairing.pairing_same] at h₃
+  simp only [RootPairing.pairing_same] at h₂
+  rw [t.pairing_simplyConnectedRootDatum_symm ht hs β α] at h₂
+  omega
+
 end TauCeti.DynkinType
