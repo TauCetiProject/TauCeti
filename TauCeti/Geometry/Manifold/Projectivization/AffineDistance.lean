@@ -70,27 +70,17 @@ namespace TauCeti
 variable {𝕜 : Type u} [RCLike 𝕜] {n : ℕ} {E H : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
 
-/-- The reciprocal transform `(1 + ‖z - a‖²)⁻¹` of the squared distance takes values in `(0, 1]`. -/
-private theorem inv_one_add_norm_sq_sub_le_one {F : Type*} [NormedAddCommGroup F] (x a : F) :
-    (1 + ‖x - a‖ ^ 2)⁻¹ ≤ 1 :=
-  inv_le_one_of_one_le₀ (le_add_of_nonneg_right (by positivity))
-
 variable {X : Set (ℙ 𝕜 (Fin (n + 1) → 𝕜))} {i : Fin (n + 1)} {Z : Set (Fin n → 𝕜)}
   {a : EuclideanSpace 𝕜 (Fin n)} {ε : ℝ}
 
-/-- The affine part `X ∩ U_i` of `X` is homeomorphic to its image `Z` under the affine chart. -/
-private def affinePartHomeomorph (hZ : affineChart i '' (X ∩ affineOpen i) = Z) :
-    ↥(X ∩ affineOpen i) ≃ₜ Z :=
-  (affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource (by simp) (by simpa using hZ)
-
 /-- On the affine part of `X`, the function `affineChartInvOneAddDistSq i a` is the reciprocal
 transform of the squared distance on `Z`. -/
-private theorem inv_one_add_norm_sq_sub_affinePartHomeomorph
+private theorem inv_one_add_norm_sub_sq_interAffineOpenHomeomorph
     (hZ : affineChart i '' (X ∩ affineOpen i) = Z) (y : ↥(X ∩ affineOpen i)) :
-    (1 + ‖WithLp.toLp 2 (affinePartHomeomorph hZ y : Fin n → 𝕜) - a‖ ^ 2)⁻¹ =
+    (1 + ‖WithLp.toLp 2 (interAffineOpenHomeomorph hZ y : Fin n → 𝕜) - a‖ ^ 2)⁻¹ =
       affineChartInvOneAddDistSq i a y := by
   rw [affineChartInvOneAddDistSq_of_mem y.2.2, dist_eq_norm]
-  simp [affinePartHomeomorph]
+  simp
 
 /-- **Excision onto the affine part.** For `ε > 0`, the inclusion of the sublevel pair
 `({g ≤ ε + 1}, {g ≤ ε})` of `g = (1 + ‖z - a‖²)⁻¹` on `Z` into `(X, X ∩ {F ≤ ε})` induces
@@ -109,10 +99,10 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
     (continuous_affineChartInvOneAddDistSq i a).comp continuous_subtype_val
   -- The affine part of `X`, as a subspace of `X`, is the image of `Z`.
   let φ : C({z | g z ≤ ε + 1}, X) :=
-    ⟨inclusion inter_subset_left ∘ (affinePartHomeomorph hZ).symm ∘ Subtype.val, by fun_prop⟩
+    ⟨inclusion inter_subset_left ∘ (interAffineOpenHomeomorph hZ).symm ∘ Subtype.val, by fun_prop⟩
   have hφ (z : {z | g z ≤ ε + 1}) : affineChartInvOneAddDistSq i a (φ z) = g z := by
-    have : (φ z : ℙ 𝕜 (Fin (n + 1) → 𝕜)) = ((affinePartHomeomorph hZ).symm z : _) := rfl
-    rw [this, ← inv_one_add_norm_sq_sub_affinePartHomeomorph hZ, Homeomorph.apply_symm_apply]
+    have : (φ z : ℙ 𝕜 (Fin (n + 1) → 𝕜)) = ((interAffineOpenHomeomorph hZ).symm z : _) := rfl
+    rw [this, ← inv_one_add_norm_sub_sq_interAffineOpenHomeomorph hZ, Homeomorph.apply_symm_apply]
   let f := TopPair.ofInclusionMap (X := TopCat.of Z) (Y := TopCat.of (ℙ 𝕜 (Fin (n + 1) → 𝕜)))
     (sublevel_mono g (by linarith : ε ≤ ε + 1))
     (inter_subset_left : X ∩ {x | affineChartInvOneAddDistSq i a x ≤ ε} ⊆ X) φ
@@ -124,7 +114,7 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
   have hemb : IsEmbedding (TopPair.Hom.fst f) := by
     rw [hfφ]
     exact (IsEmbedding.inclusion inter_subset_left).comp
-      ((affinePartHomeomorph hZ).symm.isEmbedding.comp IsEmbedding.subtypeVal)
+      ((interAffineOpenHomeomorph hZ).symm.isEmbedding.comp IsEmbedding.subtypeVal)
   -- The open set `{F < ε}` lies in the subspace and `{0 < F}` in the image of `Z`; they cover `X`.
   let U : Bool → Set X := fun b ↦
     bif b then {x | affineChartInvOneAddDistSq i a x < ε}
@@ -144,8 +134,8 @@ private theorem isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair
         refine Or.inr ?_
         rintro ⟨x, hxX⟩ (hx : 0 < affineChartInvOneAddDistSq i a x)
         have hxU : x ∈ affineOpen i := (affineChartInvOneAddDistSq_pos_iff i a).1 hx
-        set z := affinePartHomeomorph hZ ⟨x, hxX, hxU⟩
-        have h₁ := inv_one_add_norm_sq_sub_le_one (WithLp.toLp 2 (z : Fin n → 𝕜)) a
+        set z := interAffineOpenHomeomorph hZ ⟨x, hxX, hxU⟩
+        have h₁ := inv_one_add_norm_sub_sq_le_one (WithLp.toLp 2 (z : Fin n → 𝕜)) a
         refine ⟨⟨z, (by linarith : g z ≤ ε + 1)⟩, (hf _).trans (Subtype.ext ?_)⟩
         simp [φ, z]
       · refine Or.inl ?_
@@ -175,7 +165,7 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
   refine isZero_singularHomology_inter_setOf_le_of_isZero_sublevelPair hZ hε R j ?_
   set ρ : Z → ℝ := fun z ↦ ‖WithLp.toLp 2 (z : Fin n → 𝕜) - a‖ ^ 2
   have hρ₀ (z : Z) : 1 + ρ z ≠ 0 := by positivity
-  have hg₁ (z : Z) : (1 + ρ z)⁻¹ ≤ 1 := inv_one_add_norm_sq_sub_le_one _ a
+  have hg₁ (z : Z) : (1 + ρ z)⁻¹ ≤ 1 := inv_one_add_norm_sub_sq_le_one _ a
   -- The band `{ε ≤ (1 + ρ)⁻¹}` is the image of the compact set `X ∩ {ε ≤ F}` in the chart.
   have hcompact : IsCompact ((fun z ↦ (1 + ρ z)⁻¹) ⁻¹' Icc ε (ε + 1)) := by
     have hK : IsCompact {y : ↥(X ∩ affineOpen i) | ε ≤ affineChartInvOneAddDistSq i a y} := by
@@ -185,13 +175,13 @@ theorem isZero_singularHomology_inter_setOf_affineChartInvOneAddDistSq_le
       exact ⟨fun ⟨y, hy, hyx⟩ ↦ hyx ▸ ⟨y.2.1, hy⟩, fun hx ↦
         ⟨⟨x, hx.1, setOf_le_affineChartInvOneAddDistSq_subset_affineOpen i a hε hx.2⟩, hx.2,
           rfl⟩⟩
-    convert hK.image (affinePartHomeomorph hZ).continuous using 1
+    convert hK.image (interAffineOpenHomeomorph hZ).continuous using 1
     ext z
-    obtain ⟨y, rfl⟩ := (affinePartHomeomorph hZ).surjective z
-    have hy := inv_one_add_norm_sq_sub_affinePartHomeomorph (a := a) hZ y
-    have hy₁ := hg₁ (affinePartHomeomorph hZ y)
+    obtain ⟨y, rfl⟩ := (interAffineOpenHomeomorph hZ).surjective z
+    have hy := inv_one_add_norm_sub_sq_interAffineOpenHomeomorph (a := a) hZ y
+    have hy₁ := hg₁ (interAffineOpenHomeomorph hZ y)
     simp only [ρ, mem_preimage, mem_Icc, mem_image, mem_ofPred_eq,
-      (affinePartHomeomorph hZ).injective.eq_iff, exists_eq_right] at hy₁ ⊢
+      (interAffineOpenHomeomorph hZ).injective.eq_iff, exists_eq_right] at hy₁ ⊢
     rw [hy] at hy₁ ⊢
     exact ⟨And.left, fun h ↦ ⟨h, by linarith⟩⟩
   -- Every critical point of `(1 + ρ)⁻¹` is one of `ρ`, where its index is `m` minus that of `ρ`.

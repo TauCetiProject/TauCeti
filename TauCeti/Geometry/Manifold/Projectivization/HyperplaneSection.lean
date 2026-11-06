@@ -93,8 +93,7 @@ theorem exists_mem_connectedComponentIn_notMem_affineOpen {E G : Type*} [NormedA
     rw [connectedComponentIn_eq_image hL]
     exact isClosed_connectedComponent.isCompact.image continuous_subtype_val
   -- Transport the component of `⟨L, hLY⟩` in `Y` to `Z` through the affine chart.
-  let e : Y ≃ₜ Z := (Projectivization.affineOpenPartialHomeomorph i).homeomorphOfImageSubsetSource
-    (by simp [Y]) (by simpa using hZ)
+  let e : Y ≃ₜ Z := Projectivization.interAffineOpenHomeomorph hZ
   have : LocallyConnectedSpace G := I.toHomeomorph.locallyConnectedSpace
   have : LocallyConnectedSpace Z := ChartedSpace.locallyConnectedSpace G Z
   have : LocallyConnectedSpace Y := e.locallyConnectedSpace
