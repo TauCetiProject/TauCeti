@@ -44,8 +44,10 @@ the autonomous Hamiltonian vector field.
   `TauCeti.SymplecticForm.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`: the evolution
   maps are differentiable, and along an orbit `x` the derivative of the evolution is the
   propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ζ' = dX_{H_t}(x(t)) ζ`.
-* `TauCeti.SymplecticForm.apply_dysonSeriesLeft_fderiv_hamiltonianVectorField`: consequently this
-  propagator is a path of symplectic maps.
+* `TauCeti.SymplecticForm.apply_dysonSeriesLeft`: the propagator of a continuous infinitesimally
+  symplectic path is symplectic; in particular
+  (`TauCeti.SymplecticForm.apply_dysonSeriesLeft_fderiv_hamiltonianVectorField`) so is the
+  propagator of the linearized Hamiltonian equation along any continuous path.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow_const`: recovery of the autonomous flow.
 * `TauCeti.SymplecticForm.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField`: a
   time-dependent function `F` changes along a solution at the rate `∂_t F + {F_t, H_t}`; in
@@ -261,21 +263,43 @@ theorem fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft (omega : Symplect
     (omega.contDiff_hamiltonianVectorField_uncurry (n := 1) hH)]
   simp only [horbit]
 
-/-- **The propagator of the linearized Hamiltonian equation is symplectic.** Along an orbit `x`
-of a jointly `C²` time-dependent Hamiltonian whose suspended vector field is globally Lipschitz,
-the propagator of `ζ' = S_r ζ`, with `S_r = dX_{H_{s + r}}(x(s + r))`, preserves `ω`. -/
+/-- **The propagator of an infinitesimally symplectic path is symplectic.** If `S` is a
+continuous path of operators with `ω(S_r u, w) + ω(u, S_r w) = 0`, then the propagator of
+`ζ' = S_r ζ` preserves `ω`. -/
+theorem apply_dysonSeriesLeft (omega : SymplecticForm V) {S : ℝ → V →L[ℝ] V}
+    (hS : Continuous S) (hskew : ∀ r u w, omega (S r u) w + omega u (S r w) = 0) (t : ℝ)
+    (u w : V) :
+    omega (dysonSeriesLeft S t u) (dysonSeriesLeft S t w) = omega u w := by
+  have hd (r : ℝ) : HasDerivAt
+      (fun q ↦ omega (dysonSeriesLeft S q u) (dysonSeriesLeft S q w)) 0 r := by
+    have hp := omega.toBilinForm.toContinuousBilinearMap.hasDerivAt_of_bilinear
+      (fun _ ↦ hasDerivAt_dysonSeriesLeft_apply hS u r)
+      (fun _ ↦ hasDerivAt_dysonSeriesLeft_apply hS w r)
+    simp only [LinearMap.toContinuousBilinearMap_apply] at hp
+    convert hp using 1
+    rw [add_comm, hskew]
+  have hc := is_const_of_deriv_eq_zero (fun r ↦ (hd r).differentiableAt)
+    (fun r ↦ (hd r).deriv) t 0
+  simpa [dysonSeriesLeft_zero] using hc
+
+/-- **The propagator of the linearized Hamiltonian equation is symplectic.** Along a continuous
+path `x` and for a jointly `C²` time-dependent Hamiltonian, the propagator of `ζ' = S_r ζ`, with
+`S_r = dX_{H_{s + r}}(x(s + r))`, preserves `ω`. By
+`fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`, along an orbit this propagator is the
+derivative of the evolution. -/
 theorem apply_dysonSeriesLeft_fderiv_hamiltonianVectorField (omega : SymplecticForm V)
-    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
-    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
-    (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) (s t : ℝ) (u v : V) :
+    {H : ℝ → V → ℝ} (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V} (hx : Continuous x)
+    (s t : ℝ) (u v : V) :
     omega (dysonSeriesLeft
         (fun r ↦ fderiv ℝ (omega.hamiltonianVectorField (H (s + r))) (x (s + r))) t u)
       (dysonSeriesLeft
         (fun r ↦ fderiv ℝ (omega.hamiltonianVectorField (H (s + r))) (x (s + r))) t v) =
-      omega u v := by
-  have h := omega.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft hX hH hx s (s + t)
-  rw [add_sub_cancel_left] at h
-  rw [← h, omega.apply_fderiv_timeDependentHamiltonianFlow hX hH]
+      omega u v :=
+  omega.apply_dysonSeriesLeft
+    ((omega.continuous_fderiv_hamiltonianVectorField_comp hH hx).comp
+      (continuous_const.add continuous_id))
+    (fun r ↦ omega.apply_fderiv_hamiltonianVectorField_add
+      (hH.comp (contDiff_prodMk_right (s + r))).contDiffAt) t u v
 
 /-- A Lipschitz autonomous Hamiltonian vector field has a Lipschitz time suspension. -/
 theorem lipschitzWith_timeDependentHamiltonianSuspension_const (omega : SymplecticForm V)
