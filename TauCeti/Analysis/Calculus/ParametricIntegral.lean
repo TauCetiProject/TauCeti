@@ -364,13 +364,13 @@ theorem contDiffOn_integral_smul_of_contDiffOn {G : Type v} [NormedAddCommGroup 
   simp only [Function.comp_apply, hsmul, ContinuousLinearEquiv.integral_comp_comm,
     ContinuousLinearEquiv.apply_symm_apply]
 
-omit [NormedSpace ℝ P] in
 /-- The first-order remainder of an integral against a weight over a compact parameter space is
 the integral of the pointwise remainder: if `F` and a candidate partial derivative `D` are
 continuous along `{x} × ι(α)` and `{x₀} × ι(α)`, then the integral of
 `g y • F (x, ι y)`, minus that of `g y • F (x₀, ι y)`, minus the integral of
 `g y • D (x₀, ι y)` applied to `x - x₀`, is the integral of the pointwise remainder. -/
-theorem integral_smul_sub_sub_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+private theorem integral_smul_sub_sub_apply {P : Type*} [TopologicalSpace P] {ι : α → P}
+    {W : Set (E × P)} {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     {F : E × P → G} {D : E × P → E →L[ℝ] G} (hg : Integrable g μ) (hι : Continuous ι)
     (hF : ContinuousOn F W) (hD : ContinuousOn D W) {x x₀ : E} (hx : ∀ y, (x, ι y) ∈ W)
     (hx₀ : ∀ y, (x₀, ι y) ∈ W) :
