@@ -132,6 +132,97 @@ theorem orientationAt_twoDiskBoundaryOrientation (x : B ⊕ B) :
   | inl x => exact doubleBoundaryLift_orientationAt diskOrientationLift.boundary false x
   | inr x => exact doubleBoundaryLift_orientationAt diskOrientationLift.boundary true x
 
+/-- The boundary loop of the first disk, followed by the inclusion of the `i`-th summand. -/
+local notation "arc " i:max => unitDiskBoundaryLoop.map (continuous_componentInclusion i)
+
+private theorem extend_map_componentInclusion (i : Bool) (t : ℝ) :
+    (arc i).extend t =
+      componentInclusion i (unitDiskBoundaryLoop.extend t) := rfl
+
+/-- The open arcs of the two boundary components cover everything off the two seam points. -/
+private theorem iUnion_image_extend_map_componentInclusion :
+    (⋃ i : Bool, (arc i).extend '' Ioo (0 : ℝ) 1) =
+      (range fun i : Bool ↦ componentInclusion i
+        (sphereDiffeomorphBoundaryClosedBall (n := 1) (Circle.exp (-Real.pi))))ᶜ := by
+  have hi (i : Bool) : (arc i).extend '' Ioo (0 : ℝ) 1 =
+      componentInclusion i '' {(sphereDiffeomorphBoundaryClosedBall (n := 1)
+        (Circle.exp (-Real.pi)))}ᶜ := by
+    -- Expose composition of the mapped path extension before transporting its image.
+    change (componentInclusion i ∘ unitDiskBoundaryLoop.extend) '' Ioo (0 : ℝ) 1 = _
+    rw [image_comp, unitDiskBoundaryLoop_image]
+  simp only [hi]
+  ext x
+  cases x
+  all_goals
+    rename_i x
+    have h : (∃ y : B, y ≠ sphereDiffeomorphBoundaryClosedBall (n := 1)
+        (Circle.exp (-Real.pi)) ∧ y = x) ↔
+        x ≠ sphereDiffeomorphBoundaryClosedBall (n := 1) (Circle.exp (-Real.pi)) := by
+      simp only [exists_eq_right]
+    simp only [Subtype.exists] at h
+    simpa [componentInclusion] using h
+
+private theorem pairwise_disjoint_image_extend_map_componentInclusion :
+    Pairwise (fun i j : Bool ↦ Disjoint
+      ((arc i).extend '' Ioo (0 : ℝ) 1)
+      ((arc j).extend '' Ioo (0 : ℝ) 1)) := by
+  intro i j hij
+  cases i <;> cases j <;> try contradiction
+  all_goals
+    rw [Set.disjoint_left]
+    rintro x ⟨s, hs, rfl⟩ ⟨t, ht, he⟩
+    contradiction
+
+private theorem injOn_extend_map_componentInclusion (i : Bool) :
+    InjOn (arc i).extend (Ioo (0 : ℝ) 1) := by
+  intro s hs t ht he
+  apply unitDiskBoundaryLoop_injOn hs ht
+  cases i
+  · exact Sum.inl_injective he
+  · exact Sum.inr_injective he
+
+/-- A positively oriented tangent equivalence along each boundary component's open arc. -/
+private theorem exists_tangentEquiv_extend_map_componentInclusion (i : Bool) (z : E₁) :
+    ∃ e : E₁ ≃L[ℝ] TangentSpace (𝓡 1) ((arc i).extend (z 0)),
+      z 0 ∈ Ioo (0 : ℝ) 1 →
+      HasMFDerivAt (𝓡 1) (𝓡 1) (fun w : E₁ ↦ (arc i).extend (w 0)) z
+        (e.toContinuousLinearMap.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap) ∧
+      Orientation.map (Fin 1) e.toLinearEquiv
+        (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
+        (doubleBoundaryLift diskOrientationLift.boundary).orientationAt
+          ((arc i).extend (z 0)) := by
+  by_cases hz : z 0 ∈ Ioo (0 : ℝ) 1
+  · obtain ⟨e, hd, ho⟩ := exists_unitDiskBoundaryLoop_positive_tangentEquiv
+      (Manifold.Orientation.closedBall (n := 2) Complex.basisOneI.orientation)
+      (Manifold.Orientation.map_orientationAt_closedBall (n := 2)
+        Complex.basisOneI.orientation) z hz
+    let ecomp := e.trans (componentTangentEquiv i (unitDiskBoundaryLoop.extend (z 0)))
+    refine ⟨ecomp, fun _ ↦ ?_⟩
+    constructor
+    · have hinc : HasMFDerivAt (𝓡 1) (𝓡 1) (componentInclusion i)
+          (unitDiskBoundaryLoop.extend (z 0))
+          (componentTangentEquiv i
+            (unitDiskBoundaryLoop.extend (z 0))).toContinuousLinearMap := by
+        rw [componentTangentEquiv_eq_mfderiv]
+        cases i
+        · exact (hasMFDerivAt_inl (I := 𝓡 1)).mdifferentiableAt.hasMFDerivAt
+        · exact (hasMFDerivAt_inr (I := 𝓡 1)).mdifferentiableAt.hasMFDerivAt
+      -- Normalize the mapped path base point before comparing the composed tangent maps.
+      have hcomposition := hinc.comp z hd
+      convert! hcomposition using 1
+    · rw [extend_map_componentInclusion, doubleBoundaryLift_orientationAt]
+      -- The inclusion tangent equivalence is the identity on the shared Euclidean model.
+      have hecomp : ecomp.toLinearEquiv = e.toLinearEquiv := by
+        apply LinearEquiv.ext
+        intro v
+        exact componentTangentEquiv_apply i _ (e v)
+      rw [hecomp]
+      rw [← diskOrientationLift_mk, boundaryOrientation_mk,
+        Manifold.Orientation.orientationAt_mk] at ho
+      exact ho
+  · exact ⟨(tangentSpaceCastModel (𝓡 1) ((arc i).extend (z 0))).symm,
+      fun h ↦ (hz h).elim⟩
+
 /-- The canonical integral over two actual disk-boundary components is the sum of their
 counterclockwise curve integrals. Their planar maps agree, so the sum is twice either integral. -/
 theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P) (hQ : Continuous Q) :
@@ -154,78 +245,10 @@ theorem integralTopForm_twoDiskBoundaries (P Q : ℂ → ℝ) (hP : Continuous P
       (isSmoothEmbedding_subtypeVal_boundary (n := 1) D
         (by simp : (1 : ℕ∞ω) ≠ 0)).contMDiff
     exact h.sumElim h
-  have hqext (i : Bool) (t : ℝ) : (q i).extend t =
-      componentInclusion i (unitDiskBoundaryLoop.extend t) := rfl
-  have himage : (⋃ i, (q i).extend '' Ioo (0 : ℝ) 1) = (range p)ᶜ := by
-    have hi (i : Bool) : (q i).extend '' Ioo (0 : ℝ) 1 =
-        componentInclusion i '' {(sphereDiffeomorphBoundaryClosedBall (n := 1)
-          (Circle.exp (-Real.pi)))}ᶜ := by
-      -- Expose composition of the mapped path extension before transporting its image.
-      change (componentInclusion i ∘ unitDiskBoundaryLoop.extend) '' Ioo (0 : ℝ) 1 = _
-      rw [image_comp, unitDiskBoundaryLoop_image]
-    simp only [hi]
-    ext x
-    cases x
-    all_goals
-      rename_i x
-      have h : (∃ y : B, y ≠ sphereDiffeomorphBoundaryClosedBall (n := 1)
-          (Circle.exp (-Real.pi)) ∧ y = x) ↔
-          x ≠ sphereDiffeomorphBoundaryClosedBall (n := 1) (Circle.exp (-Real.pi)) := by
-        simp only [exists_eq_right]
-      simp only [Subtype.exists] at h
-      simpa [componentInclusion, p] using h
-  have hdisj : Pairwise (fun i j : Bool ↦ Disjoint
-      ((q i).extend '' Ioo (0 : ℝ) 1) ((q j).extend '' Ioo (0 : ℝ) 1)) := by
-    intro i j hij
-    cases i <;> cases j <;> try contradiction
-    all_goals
-      rw [Set.disjoint_left]
-      rintro x ⟨s, hs, rfl⟩ ⟨t, ht, he⟩
-      contradiction
-  have hinj (i : Bool) : InjOn (q i).extend (Ioo (0 : ℝ) 1) := by
-    intro s hs t ht he
-    apply unitDiskBoundaryLoop_injOn hs ht
-    cases i
-    · exact Sum.inl_injective he
-    · exact Sum.inr_injective he
-  have he (i : Bool) (z : E₁) : ∃ e : E₁ ≃L[ℝ] TangentSpace (𝓡 1) ((q i).extend (z 0)),
-      ∀ hz : z 0 ∈ Ioo (0 : ℝ) 1,
-      HasMFDerivAt (𝓡 1) (𝓡 1) (fun w : E₁ ↦ (q i).extend (w 0)) z
-        (e.toContinuousLinearMap.comp (NormedSpace.fromTangentSpace z).toContinuousLinearMap) ∧
-      Orientation.map (Fin 1) e.toLinearEquiv
-        (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis.orientation =
-        (doubleBoundaryLift l).orientationAt ((q i).extend (z 0)) := by
-    by_cases hz : z 0 ∈ Ioo (0 : ℝ) 1
-    · obtain ⟨e, hd, ho⟩ := exists_unitDiskBoundaryLoop_positive_tangentEquiv
-        (Manifold.Orientation.closedBall (n := 2) Complex.basisOneI.orientation)
-        (Manifold.Orientation.map_orientationAt_closedBall (n := 2)
-          Complex.basisOneI.orientation) z hz
-      let ecomp := e.trans (componentTangentEquiv i (unitDiskBoundaryLoop.extend (z 0)))
-      refine ⟨ecomp, fun _ ↦ ?_⟩
-      constructor
-      · have hinc : HasMFDerivAt (𝓡 1) (𝓡 1) (componentInclusion i)
-            (unitDiskBoundaryLoop.extend (z 0))
-            (componentTangentEquiv i
-              (unitDiskBoundaryLoop.extend (z 0))).toContinuousLinearMap := by
-          rw [componentTangentEquiv_eq_mfderiv]
-          cases i
-          · exact (hasMFDerivAt_inl (I := 𝓡 1)).mdifferentiableAt.hasMFDerivAt
-          · exact (hasMFDerivAt_inr (I := 𝓡 1)).mdifferentiableAt.hasMFDerivAt
-        -- Normalize the mapped path base point before comparing the composed tangent maps.
-        have hcomposition := hinc.comp z hd
-        convert! hcomposition using 1
-      · rw [hqext, doubleBoundaryLift_orientationAt]
-        -- The inclusion tangent equivalence is the identity on the shared Euclidean model.
-        have hecomp : ecomp.toLinearEquiv = e.toLinearEquiv := by
-          apply LinearEquiv.ext
-          intro v
-          exact componentTangentEquiv_apply i _ (e v)
-        rw [hecomp]
-        rw [← diskOrientationLift_mk, boundaryOrientation_mk,
-          Manifold.Orientation.orientationAt_mk] at ho
-        exact ho
-    · exact ⟨(tangentSpaceCastModel (𝓡 1) ((q i).extend (z 0))).symm,
-        fun h ↦ (hz h).elim⟩
+  have himage := iUnion_image_extend_map_componentInclusion
+  have hdisj := pairwise_disjoint_image_extend_map_componentInclusion
+  have hinj := injOn_extend_map_componentInclusion
+  have he := exists_tangentEquiv_extend_map_componentInclusion
   choose e he using he
   have hr := integralTopForm_mpullback_eq_sum_curveIntegral
     (Manifold.Orientation.mk (doubleBoundaryLift l)) p p q
