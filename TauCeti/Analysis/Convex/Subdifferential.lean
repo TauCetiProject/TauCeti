@@ -310,6 +310,27 @@ theorem mem_subdifferential_iff_add_fenchelConjugate_eq :
     exact (mem_subdifferential_iff_forall_sub_le B hr).2 fun x' =>
       hF ▸ sub_le_fenchelConjugate B f x' y
 
+/-- **The Fenchel–Young inequality** between real representatives, `B x y ≤ (f x).toReal +
+(f⋆ y).toReal`, at points where `f x` and `f⋆ y` are both finite. -/
+theorem le_toReal_add_toReal_fenchelConjugate (hbot : f x ≠ ⊥) (hx : f x ≠ ⊤)
+    (hy : fenchelConjugate B f y ≠ ⊤) : B x y ≤ (f x).toReal + (fenchelConjugate B f y).toReal := by
+  have h := le_add_fenchelConjugate B hbot (fenchelConjugate_ne_bot B hx y)
+  rwa [← EReal.coe_toReal hx hbot, ← EReal.coe_toReal hy (fenchelConjugate_ne_bot B hx y),
+    ← EReal.coe_add, EReal.coe_le_coe_iff] at h
+
+/-- On the subdifferential graph, `f x` and `f⋆ y` are finite and the Fenchel–Young equality holds
+between their real representatives: `(f x).toReal + (f⋆ y).toReal = B x y`. -/
+theorem toReal_add_toReal_fenchelConjugate_eq_of_mem_subdifferential
+    (h : y ∈ subdifferential B f x) :
+    f x ≠ ⊤ ∧ fenchelConjugate B f y ≠ ⊤ ∧
+      (f x).toReal + (fenchelConjugate B f y).toReal = B x y := by
+  have hx := ne_top_of_mem_subdifferential B h
+  have hbot := ne_bot_of_mem_subdifferential B h
+  have hF := fenchelConjugate_eq_of_mem_subdifferential B h
+  rw [← EReal.coe_toReal hx hbot, ← EReal.coe_sub] at hF
+  rw [hF]
+  exact ⟨hx, EReal.coe_ne_top _, by rw [EReal.toReal_coe]; ring⟩
+
 /-! ### Convexity and closedness -/
 
 /-- Where `f x = r` is real, the subdifferential is the intersection over `x'` of the affine
