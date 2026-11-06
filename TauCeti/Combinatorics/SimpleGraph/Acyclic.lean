@@ -7,16 +7,17 @@ module
 
 public import Mathlib.Combinatorics.SimpleGraph.Acyclic
 
-import Mathlib.Tactic.Linarith
-
 /-!
 # Paths and degrees in acyclic simple graphs
 
-This file records consequences of acyclicity for paths and bounds the degree of a
-nonempty finite regular forest.
+This file records consequences of acyclicity for paths and for degrees: a nonempty finite
+forest has a vertex of degree at most one, so a nonempty finite regular forest has degree at
+most one.
 
 ## Main results
 
+* `SimpleGraph.IsAcyclic.exists_degree_le_one`: a nonempty finite forest has a vertex of degree
+  at most one.
 * `SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree`: a nonempty finite regular
   forest has degree at most one.
 * `SimpleGraph.IsAcyclic.not_adj_getVert_of_add_one_lt`: nonconsecutive vertices of a path
@@ -73,17 +74,26 @@ theorem _root_.SimpleGraph.IsAcyclic.not_adj_of_adj_start_of_adj_end {V : Type*}
     hadj.isPath_toWalk hb (by simp [hb.ne, ne_of_mem_of_not_mem q.end_mem_support ha'])
   simp [hadj.ne', hb'] at hmem
 
+/-- **A nonempty finite forest has a vertex of degree at most one**: an isolated vertex or a
+leaf. -/
+theorem _root_.SimpleGraph.IsAcyclic.exists_degree_le_one {V : Type*} {G : SimpleGraph V}
+    [DecidableRel G.Adj] [Fintype V] [Nonempty V] (hG : G.IsAcyclic) : ∃ v, G.degree v ≤ 1 := by
+  classical
+  by_contra! h
+  -- Every degree is at least two, so the degree sum `2 #E` is at least `2 #V`, while a forest has
+  -- at most `#V - 1` edges.
+  have he := hG.ncard_edgeSet_add_one_le_card
+  have hs := G.sum_degrees_eq_twice_card_edges
+  rw [← G.coe_edgeFinset, Set.ncard_coe_finset] at he
+  have hle : ∑ _v : V, 2 ≤ ∑ v, G.degree v := Finset.sum_le_sum fun v _ ↦ h v
+  simp only [Finset.sum_const, Finset.card_univ, smul_eq_mul, Fintype.card_eq_nat_card] at hle
+  omega
+
 /-- A nonempty finite regular forest has degree at most one. -/
 theorem _root_.SimpleGraph.IsAcyclic.degree_le_one_of_isRegularOfDegree
     {V : Type*} {G : SimpleGraph V} [DecidableRel G.Adj] [Fintype V] [Nonempty V] {d : ℕ}
     (hG : G.IsAcyclic) (hd : G.IsRegularOfDegree d) : d ≤ 1 := by
-  classical
-  have he := hG.ncard_edgeSet_add_one_le_card
-  have hs := G.sum_degrees_eq_twice_card_edges
-  simp only [hd.degree_eq, Finset.sum_const, Finset.card_univ, smul_eq_mul] at hs
-  rw [← G.coe_edgeFinset, Set.ncard_coe_finset] at he
-  rw [Fintype.card_eq_nat_card] at hs
-  have hv : 0 < Nat.card V := Nat.card_pos
-  nlinarith
+  obtain ⟨v, hv⟩ := hG.exists_degree_le_one
+  exact hd.degree_eq v ▸ hv
 
 end TauCeti
