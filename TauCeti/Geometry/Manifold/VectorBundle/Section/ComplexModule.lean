@@ -119,7 +119,7 @@ variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E']
 /-- Pullback intertwines complex smooth-function multiplication with composition of
 functions. -/
 @[simp]
-theorem pullback_complexFunction_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; G, W⟯)
+theorem pullback_smul_complexFunction (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; G, W⟯)
     (g : C^n⟮I', N; I, M⟯) :
     (f • s).pullback g = f.comp g • s.pullback g := by
   ext x
@@ -131,7 +131,7 @@ theorem pullback_complexFunction_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (
 /-- Restriction intertwines complex smooth-function multiplication with restriction of
 functions. -/
 @[simp]
-theorem restrict_complexFunction_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; G, W⟯)
+theorem restrict_smul_complexFunction (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯) (s : Cₛ^n⟮I; G, W⟯)
     (U : Opens M) :
     (f • s).restrict U =
       f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U := by
@@ -159,7 +159,7 @@ theorem ofReal_smul (f : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; G, W⟯) :
     ContMDiffMap.ofReal f • s = f • s := by
   ext x
   simp only [complexFunction_smul_apply, ContMDiffMap.ofReal_apply, smul_apply]
-  simpa using algebraMap_smul ℂ (f x) (s x)
+  exact (RCLike.real_smul_eq_coe_smul (K := ℂ) (f x) (s x)).symm
 
 /-- Splitting a complex function `f = u + i v` into real and imaginary parts splits its action:
 `f • s = u • s + v • (i • s)`, where `i • s` is the fibrewise complex structure applied to `s`. -/
@@ -169,9 +169,9 @@ theorem complexFunction_smul_eq_re_smul_add_im_smul (f : C^n⟮I, M; 𝓘(ℝ, �
   ext x
   simp only [complexFunction_smul_apply, coe_add, Pi.add_apply, smul_apply,
     coe_smul_of_normedAlgebra, Pi.smul_apply, ContMDiffMap.re_apply, ContMDiffMap.im_apply]
-  have h (r : ℝ) (v : W x) : (r : ℂ) • v = r • v := by simpa using algebraMap_smul ℂ r v
   conv_lhs => rw [← Complex.re_add_im (f x)]
-  rw [add_smul, mul_smul, h, h]
+  rw [add_smul, mul_smul]
+  congr 1 <;> exact (RCLike.real_smul_eq_coe_smul (K := ℂ) _ _).symm
 
 end Constants
 
