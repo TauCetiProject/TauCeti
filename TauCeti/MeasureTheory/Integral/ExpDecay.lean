@@ -36,6 +36,7 @@ inclusion.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.memLp_exp_neg_mul_abs`: `exp (-(a * |·|))` lies in every `Lᵖ` when `0 < a`.
 * `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
   `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
@@ -133,6 +134,25 @@ theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
   simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
     (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
+
+/-- The two-sided exponential lies in every `Lᵖ` space on the line. -/
+theorem memLp_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (p : ℝ≥0∞) :
+    MemLp (fun x : ℝ ↦ Real.exp (-(a * |x|))) p := by
+  have hmeas : AEStronglyMeasurable (fun x : ℝ ↦ Real.exp (-(a * |x|))) :=
+    (by fun_prop : Continuous fun x : ℝ ↦ Real.exp (-(a * |x|))).aestronglyMeasurable
+  rcases eq_or_ne p 0 with rfl | hp₀
+  · exact memLp_zero_iff_aestronglyMeasurable.2 hmeas
+  rcases eq_or_ne p ∞ with rfl | hp
+  · refine memLp_top_of_bound hmeas 1 (.of_forall fun x ↦ ?_)
+    rw [Real.norm_of_nonneg (Real.exp_pos _).le, Real.exp_le_one_iff, neg_nonpos]
+    positivity
+  refine (memLp_norm_rpow_iff hmeas hp₀ hp).1 ?_
+  rw [ENNReal.div_self hp₀ hp, memLp_one_iff_integrable]
+  refine (integrable_exp_neg_mul_abs (mul_pos ha (ENNReal.toReal_pos hp₀ hp))).congr
+    (.of_forall fun x ↦ ?_)
+  dsimp only
+  rw [Real.norm_of_nonneg (Real.exp_pos _).le, ← Real.exp_mul]
+  ring_nf
 
 /-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
 the line. -/

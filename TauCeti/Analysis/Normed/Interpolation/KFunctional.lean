@@ -20,13 +20,15 @@ We prove the basic properties of `K` from Bergh–Löfström, §3.1:
 
 * `K(1, ·)` is the sum norm (`kFunctional_one`);
 * for fixed `t ≥ 0`, `K(t, ·)` is a seminorm (`kFunctional_add_le`, `kFunctional_smul`),
-  and for `t > 0` a norm equivalent to the sum norm, with
-  `min 1 t * ‖u‖ ≤ K(t, u) ≤ max 1 t * ‖u‖`;
+  Lipschitz for the sum norm (`abs_kFunctional_sub_le`), and for `t > 0` a norm equivalent to the
+  sum norm, with `min 1 t * ‖u‖ ≤ K(t, u) ≤ max 1 t * ‖u‖`;
 * for fixed `u`, `t ↦ K(t, u)` is nonnegative, monotone and concave on `[0, ∞)`, and
   `K(t, u) ≤ max 1 (t / s) * K(s, u)` for `s > 0`;
 * elements of `X₀`, `X₁` and the intersection satisfy `K(t, x₀) ≤ ‖x₀‖`, `K(t, x₁) ≤ t ‖x₁‖`
   and `K(t, x) ≤ min 1 t * ‖x‖`;
-* for the couple `(X, X)`, `K(t, u) = min 1 t * ‖u‖` (`kFunctional_refl`).
+* for the couple `(X, X)`, `K(t, u) = min 1 t * ‖u‖` (`kFunctional_refl`);
+* a map of couples whose restrictions to `X₀` and `X₁` have norms at most `M₀ > 0` and `M₁`
+  satisfies `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)` (`kFunctional_map_le`).
 
 ## References
 
@@ -218,6 +220,61 @@ theorem kFunctional_smul (ht : 0 ≤ t) (c : 𝕜) (u : C.SumSpace) :
           exact kFunctional_smul_le ht _ _
       _ = C.kFunctional t (c • u) := by
           rw [norm_inv, ← mul_assoc, mul_inv_cancel₀ (norm_ne_zero_iff.2 hc), one_mul]
+
+/-- `K(t, -u) = K(t, u)`. -/
+@[simp]
+theorem kFunctional_neg (ht : 0 ≤ t) (u : C.SumSpace) :
+    C.kFunctional t (-u) = C.kFunctional t u := by
+  simpa using kFunctional_smul ht (-1 : 𝕜) u
+
+/-- For `t ≥ 0`, `K(t, ·)` is Lipschitz for the sum norm, with constant `max 1 t`. -/
+theorem abs_kFunctional_sub_le (ht : 0 ≤ t) (u v : C.SumSpace) :
+    |C.kFunctional t u - C.kFunctional t v| ≤ max 1 t * ‖u - v‖ := by
+  have hu := kFunctional_add_le ht v (u - v)
+  have hv := kFunctional_add_le ht u (v - u)
+  have huv := kFunctional_le_max_one_mul_norm ht (u - v)
+  have hvu := kFunctional_le_max_one_mul_norm ht (v - u)
+  rw [add_sub_cancel] at hu hv
+  rw [norm_sub_rev] at hvu
+  rw [abs_sub_le_iff]
+  constructor <;> linarith
+
+theorem lipschitzWith_kFunctional (ht : 0 ≤ t) :
+    LipschitzWith (max 1 t).toNNReal (C.kFunctional t) :=
+  LipschitzWith.of_dist_le_mul fun u v => by
+    rw [Real.dist_eq, dist_eq_norm, Real.coe_toNNReal _ (le_max_of_le_left zero_le_one)]
+    exact abs_kFunctional_sub_le ht u v
+
+theorem continuous_kFunctional (ht : 0 ≤ t) : Continuous (C.kFunctional t) :=
+  (lipschitzWith_kFunctional ht).continuous
+
+section Map
+
+variable {Y₀ Y₁ W : Type*} [NormedAddCommGroup Y₀] [NormedSpace 𝕜 Y₀]
+  [NormedAddCommGroup Y₁] [NormedSpace 𝕜 Y₁] [AddCommGroup W] [Module 𝕜 W] [TopologicalSpace W]
+  [ContinuousAdd W] {D : CompatibleCouple 𝕜 Y₀ Y₁ W}
+  {F : Type*} [FunLike F C.SumSpace D.SumSpace] [AddHomClass F C.SumSpace D.SumSpace]
+  {T : F} {T₀ : X₀ → Y₀} {T₁ : X₁ → Y₁} {M₀ M₁ : ℝ}
+
+/-- The `K`-functional under a map of couples: if a map `T` of the sum spaces restricts to maps
+`T₀ : X₀ → Y₀` and `T₁ : X₁ → Y₁` with `‖T₀ x‖ ≤ M₀ ‖x‖` and `‖T₁ x‖ ≤ M₁ ‖x‖`, where `M₀ > 0`,
+then `K(t, T u) ≤ M₀ K(t M₁ / M₀, u)`. -/
+theorem kFunctional_map_le (h₀ : ∀ x, T (C.fstToSum x) = D.fstToSum (T₀ x))
+    (h₁ : ∀ x, T (C.sndToSum x) = D.sndToSum (T₁ x))
+    (hT₀ : ∀ x, ‖T₀ x‖ ≤ M₀ * ‖x‖) (hT₁ : ∀ x, ‖T₁ x‖ ≤ M₁ * ‖x‖) (hM₀ : 0 < M₀)
+    (ht : 0 ≤ t) (u : C.SumSpace) :
+    D.kFunctional t (T u) ≤ M₀ * C.kFunctional (t * M₁ / M₀) u := by
+  conv_rhs => rw [kFunctional, Real.mul_iInf_of_nonneg hM₀.le]
+  have := nonempty_decomposition u
+  refine le_ciInf fun ⟨⟨x₀, x₁⟩, h⟩ => (kFunctional_le ht (x₀ := T₀ x₀) (x₁ := T₁ x₁) ?_).trans ?_
+  · rw [← h₀, ← h₁, ← map_add, h]
+  · calc ‖T₀ x₀‖ + t * ‖T₁ x₁‖ ≤ M₀ * ‖x₀‖ + t * (M₁ * ‖x₁‖) := by
+          gcongr
+          exacts [hT₀ x₀, hT₁ x₁]
+      _ = M₀ * (‖x₀‖ + t * M₁ / M₀ * ‖x₁‖) := by
+          field_simp
+
+end Map
 
 section Refl
 
