@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Legendre
+import TauCeti.Analysis.Calculus.ContDiff.Prod
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Analysis.Calculus.ImplicitContDiff
 
@@ -127,18 +128,6 @@ theorem fderiv_cotangentGeneratingSum_comp_graph_apply
     fderiv_slice_left hF, ContinuousLinearMap.comp_apply, inl_apply,
     fderiv_cotangentGeneratingSum_apply hS hT]
 
-private theorem eventually_differentiableAt_cotangentGeneratingSum_inputs
-    {S : V × W → ℝ} {T : W × U → ℝ} {x : (V × U) × W}
-    (hS : ContDiffAt ℝ 2 S (x.1.1, x.2)) (hT : ContDiffAt ℝ 2 T (x.2, x.1.2)) :
-    ∀ᶠ z in 𝓝 x,
-      DifferentiableAt ℝ S (z.1.1, z.2) ∧ DifferentiableAt ℝ T (z.2, z.1.2) := by
-  have h₁ := ((continuousAt_fst (p := x)).fst.prodMk continuousAt_snd).eventually
-    (hS.eventually (by simp))
-  have h₂ := ((continuousAt_snd (p := x)).prodMk continuousAt_fst.snd).eventually
-    (hT.eventually (by simp))
-  exact (h₁.mono fun _ h ↦ h.differentiableAt two_ne_zero).and
-    (h₂.mono fun _ h ↦ h.differentiableAt two_ne_zero)
-
 private theorem eventually_cotangentGeneratingSum_comp_graph_relations
     {S : V × W → ℝ} {T : W × U → ℝ} {b : V × U → W}
     {q : V} {a : W} {Q : U}
@@ -231,7 +220,7 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
     simpa only [R, Function.comp_def, id_eq] using
       (hFat.of_le (by gcongr; norm_num : n + 1 ≤ n + 2)).comp (q, Q)
         (contDiffAt_id.prodMk hb)
-  have hs := eventually_differentiableAt_cotangentGeneratingSum_inputs
+  have hs := eventually_differentiableAt_comp_prod_assoc (n := 2) (by simp) (by simp)
     (x := ((q, Q), a)) hS₂ hT₂
   have hmatching : ∀ᶠ x in 𝓝 ((q, Q), a),
       cotangentGeneratingTarget S (x.1.1, x.2) =
