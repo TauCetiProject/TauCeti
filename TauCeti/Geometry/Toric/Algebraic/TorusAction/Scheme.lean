@@ -74,9 +74,7 @@ theorem affineToricSchemeAction_comp_specMap_algebraMap :
 
 /-! ### Naturality -/
 
-private theorem mapsTo_bot
-    {N' : Type} {V' : Type*} [AddCommGroup N'] [AddCommGroup V'] [Module ℝ V']
-    {i' : N' →+ V'} (f : N →+ N') (g : V →ₗ[ℝ] V') (_hfg : ∀ n, g (i n) = i' (f n)) :
+private theorem mapsTo_bot {V' : Type*} [AddCommGroup V'] [Module ℝ V'] (g : V →ₗ[ℝ] V') :
     Set.MapsTo g (⊥ : PointedCone ℝ V) (⊥ : PointedCone ℝ V') := by
   simp [Set.MapsTo]
 
@@ -97,13 +95,13 @@ noncomputable def affineToricSchemeActionMap
           (affineCoordinateRing hi' (⊥ : PointedCone ℝ V')))))
         (Spec.map (CommRingCat.ofHom (algebraMap ℂ (affineCoordinateRing hi' τ)))) :=
   pullback.map _ _ _ _
-    (affineToricSchemeMap hi hi' f g hfg (mapsTo_bot f g hfg))
+    (affineToricSchemeMap hi hi' f g hfg (mapsTo_bot g))
     (affineToricSchemeMap hi hi' f g hfg hστ) (𝟙 _)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom
         (affineCoordinateRingMap hi hi' f g hfg
-          (mapsTo_bot f g hfg)).toRingHom)) (Spec (.of ℂ))).symm)
+          (mapsTo_bot g)).toRingHom)) (Spec (.of ℂ))).symm)
     (by
       rw [Category.comp_id, affineToricSchemeMap_def]
       exact (comp_over (Spec.map (CommRingCat.ofHom
