@@ -73,26 +73,6 @@ namespace Colored3Graph
 
 variable [DecidableEq κ] (H : Colored3Graph κ V)
 
-/-- Every polyad over `S` that is not `(η, r)`-top-regular has `r` subpolyads whose union carries
-at least an `η`-proportion of its support and whose relative density in some top color deviates
-from that of the polyad by at least `η`. -/
-theorem exists_subpolyads_witnessing_irregularity (S : PairSkeleton3 κ₂ V) {η : ℝ} (r : ℕ) :
-    ∃ Q : (P : Polyad3 S) → Fin r → Subpolyad3 P, ∀ P : Polyad3 S,
-      ¬H.IsTopRegularOverPolyad P η r → ∃ c,
-        η * #P.support ≤ #(Subpolyad3.unionSupport (Q P)) ∧
-          η ≤ |(H.relDensityOn c (Subpolyad3.unionSupport (Q P)) : ℝ) - H.relativeDensity c P| := by
-  classical
-  have hw (P : Polyad3 S) : ∃ Q : Fin r → Subpolyad3 P, ¬H.IsTopRegularOverPolyad P η r →
-      ∃ c, η * #P.support ≤ #(Subpolyad3.unionSupport Q) ∧
-        η ≤ |(H.relDensityOn c (Subpolyad3.unionSupport Q) : ℝ) - H.relativeDensity c P| := by
-    by_cases hP : H.IsTopRegularOverPolyad P η r
-    · exact ⟨fun _ ↦ Subpolyad3.ofSubcells P ∅ ∅ ∅, fun h ↦ (h hP).elim⟩
-    · simp only [isTopRegularOverPolyad_iff, not_forall, not_le] at hP
-      obtain ⟨c, Q, hQ, hdev⟩ := hP
-      exact ⟨Q, fun _ ↦ ⟨c, hQ, hdev.le⟩⟩
-  choose Q hQ using hw
-  exact ⟨Q, hQ⟩
-
 open Classical in
 /-- **One round of top regularization.** Refining the pair palette of `S` along witnesses of
 `(η, r)`-top irregularity gives a skeleton `T` with the same vertex cells, whose pair colors
@@ -109,7 +89,7 @@ theorem exists_refinement_polyadEnergy_add_le [Fintype κ] [Fintype κ₂] (S : 
       (∀ c, π (T.pairColors.rev c) = S.pairColors.rev (π c)) ∧
       η ^ 3 * ((∑ P : Polyad3 S with ¬H.IsTopRegularOverPolyad P η r, (#P.support : ℝ)) /
           (Fintype.card V).descFactorial 3) + H.polyadEnergy S ≤ H.polyadEnergy T := by
-  obtain ⟨Q, hQ⟩ := H.exists_subpolyads_witnessing_irregularity S r
+  obtain ⟨Q, hQ⟩ := H.exists_subpolyads_witnessing_irregularity r S
   -- Resolve all witnesses by one bounded refinement, then rename its palette to `Fin m`.
   obtain ⟨κ', _, T, π, hcard, hV, hπ, hrev, hA⟩ :=
     S.exists_bounded_refinement_subpolyads (fun i : Polyad3 S × Fin r ↦ i.1) fun i ↦ Q i.1 i.2
