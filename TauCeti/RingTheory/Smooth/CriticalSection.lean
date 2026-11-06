@@ -33,8 +33,9 @@ plus an element of `(x) ^ 2`: there are an étale `A`-algebra `A'`, an étale `W
 and `h ∈ A'` with `f - h ∈ (x) ^ 2` in `W'`. With two coordinates `p, q` this says
 `f = h + a p² + b p q + c q²` with `a, b, c ∈ W'`. This is the second-order normal form of the
 equation of a plane curve near a point where its partial derivatives cut out the section. Up to
-sign it is the shape `a p² + b p q + c q² - h` from which `TauCeti.exists_etale_nodeAlgebra_hom`
-builds étale charts of a node, when the quadratic part is nondegenerate and split at `P`.
+sign it is the shape `a p² + b p q + c q² - h` from which
+`Module.Basis.exists_etale_nodeAlgebra_hom` builds étale charts of a node, when the quadratic
+part is nondegenerate and split at `P`.
 
 One may take `A' = W ⧸ (x)`. As it is unramified over `A`, the diagonal of
 `Spec A' ×_A Spec A'` is the locus where some `t ∈ A' ⊗[A] A'` is invertible, with
@@ -54,7 +55,7 @@ variables it puts `f`, étale locally around `P`, in the form `h + a s² + b s t
 `P'` the Hessian of `f` along `s, t` is the transposed inverse of its Hessian along `b`, and the
 Hessian of the quadratic form has determinant `-(b² - 4ac)`
 (`TauCeti.algebraMap_residueField_det_hessian_ne_zero_iff`). This is the input shape of
-`TauCeti.exists_etale_nodeAlgebra_hom`, up to the sign of `h`; that theorem further asks the
+`Module.Basis.exists_etale_nodeAlgebra_hom`, up to the sign of `h`; that theorem further asks the
 quadratic form to split over `κ(P')`.
 
 ## Main results
