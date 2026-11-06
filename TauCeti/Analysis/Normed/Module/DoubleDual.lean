@@ -18,6 +18,9 @@ When the scalar field is proper, a norm-bounded set has weakly compact closure i
 weak-star closure of its bidual image lies in the range of the canonical map. This extends Mathlib's
 `NormedSpace.isCompact_closure_of_isBounded` to seminormed spaces, using the inducing property
 to transfer Banach–Alaoglu compactness back to the weak topology.
+In particular, in a reflexive seminormed space over a proper field, where the canonical map is
+surjective, every norm-bounded set has weakly compact closure
+(`TauCeti.isCompact_closure_toWeakSpace`).
 -/
 
 public section
@@ -35,6 +38,15 @@ theorem isInducing_inclusionInDoubleDualWeak :
     IsInducing (inclusionInDoubleDualWeak 𝕜 E) where
   -- Both topologies are induced by evaluation against the continuous dual.
   eq_induced := Eq.symm induced_compose
+
+/-- An element of the bidual lies in the canonical image of `E` iff it does when viewed in the
+weak-star bidual. -/
+theorem toWeakDual_mem_range_inclusionInDoubleDualWeak_iff
+    (Φ : StrongDual 𝕜 (StrongDual 𝕜 E)) :
+    StrongDual.toWeakDual Φ ∈ range (inclusionInDoubleDualWeak 𝕜 E) ↔
+      Φ ∈ range (inclusionInDoubleDual 𝕜 E) := by
+  simp only [mem_range, inclusionInDoubleDualWeak_apply, EmbeddingLike.apply_eq_iff_eq,
+    (toWeakSpace 𝕜 E).symm.surjective.exists]
 
 variable [ProperSpace 𝕜]
 
@@ -59,3 +71,26 @@ theorem isCompact_closure_weakSpace_of_isBounded (s : Set (WeakSpace 𝕜 E))
   exact (double_dual_bound 𝕜 E _).trans (hr _ (by simpa using hx))
 
 end NormedSpace
+
+namespace TauCeti
+
+open NormedSpace
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [ProperSpace 𝕜]
+  [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- In a reflexive seminormed space over a proper nontrivially normed field, every norm-bounded
+set has weakly compact closure. -/
+theorem isCompact_closure_toWeakSpace
+    (hE : Function.Surjective (inclusionInDoubleDual 𝕜 E)) {s : Set E} (hs : IsBounded s) :
+    IsCompact (closure (toWeakSpace 𝕜 E '' s)) := by
+  apply NormedSpace.isCompact_closure_weakSpace_of_isBounded 𝕜 E
+  · simpa only [preimage_image_eq _ (toWeakSpace 𝕜 E).injective] using hs
+  · intro φ _
+    obtain ⟨x, hx⟩ := hE (WeakDual.toStrongDual φ)
+    refine ⟨toWeakSpace 𝕜 E x, ?_⟩
+    apply WeakDual.toStrongDual.injective
+    simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
+      StrongDual.toStrongDual_toWeakDual] using hx
+
+end TauCeti

@@ -5,9 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Dynamics.Flow.Periodic
 public import TauCeti.Dynamics.Flow.TimeDependent
-public import TauCeti.Dynamics.Flow.Variational
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Flow
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Variation
 public import TauCeti.Analysis.Calculus.ParametricFDeriv
@@ -42,17 +40,16 @@ the autonomous Hamiltonian vector field.
   evolution preserves the symplectic form.
 * `TauCeti.SymplecticForm.apply_fderiv_timeDependentHamiltonianFlow_of_contDiff_suspension`: the
   same under a `C¹` suspended field and `C²` fixed-time Hamiltonians.
+* `TauCeti.SymplecticForm.differentiable_timeDependentHamiltonianFlow` and
+  `TauCeti.SymplecticForm.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`: the evolution
+  maps are differentiable, and along an orbit `x` the derivative of the evolution is the
+  propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ζ' = dX_{H_t}(x(t)) ζ`.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow_const`: recovery of the autonomous flow.
 * `TauCeti.SymplecticForm.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField`: a
   time-dependent function `F` changes along a solution at the rate `∂_t F + {F_t, H_t}`; in
   particular (`..._self`) the energy changes at the rate `∂_t H`.
 * `TauCeti.SymplecticForm.forall_apply_timeDependentHamiltonianFlow_eq_iff`: a differentiable
   `F` is conserved by the evolution exactly when `∂_t F + {F_t, H_t} = 0`.
-* `TauCeti.SymplecticForm.fderiv_timeDependentFlow_hamiltonianVectorField`: for a jointly `C²`
-  Hamiltonian, the derivative of the flow along a trajectory is the propagator (left Dyson series)
-  of the linearized Hamiltonian equation `ζ' = dX_{H_t}(φ(0, t) x) ζ`.
-* `TauCeti.SymplecticForm.periodic_fderiv_hamiltonianVectorField_timeDependentFlow`: along a
-  one-periodic orbit of a one-periodic Hamiltonian these linearized coefficients are one-periodic.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of time-dependent
 Hamiltonian vector fields and flows.
@@ -233,6 +230,35 @@ theorem eq_timeDependentHamiltonianFlow (omega : SymplecticForm V) (H : ℝ → 
     y t = omega.timeDependentHamiltonianFlow H hX s t (y s) :=
   eq_timeDependentFlow _ hX hy s t
 
+/-- Each evolution map of a jointly `C²` time-dependent Hamiltonian is differentiable. -/
+theorem differentiable_timeDependentHamiltonianFlow (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) (s t : ℝ) :
+    Differentiable ℝ (omega.timeDependentHamiltonianFlow H hX s t) := by
+  rw [omega.timeDependentHamiltonianFlow_eq H hX]
+  exact differentiable_timeDependentFlow _
+    (omega.contDiff_hamiltonianVectorField_uncurry (n := 1) hH) s t
+
+/-- **The linearized evolution along an orbit.** Let `x` be an orbit of a jointly `C²`
+time-dependent Hamiltonian `H` whose suspended vector field is globally Lipschitz,
+`x' = X_{H_t}(x)`. Then the derivative at `x(s)` of the evolution from time `s` to time `t` is
+the propagator from `0` to `t - s` of the linearized Hamiltonian equation `ζ' = S_r ζ` along `x`,
+with `S_r = dX_{H_{s + r}}(x(s + r))`. For a one-periodic orbit and `s = 0`, the return map
+`Ψ(1)` of `ζ' = dX_{H_r}(x(r)) ζ` is thus the derivative of the time-one map at its fixed point
+`x(0)`. -/
+theorem fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft (omega : SymplecticForm V)
+    {H : ℝ → V → ℝ} {K : ℝ≥0} (hX : LipschitzWith K (omega.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (Function.uncurry H)) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (omega.hamiltonianVectorField (H t) (x t)) t) (s t : ℝ) :
+    fderiv ℝ (omega.timeDependentHamiltonianFlow H hX s t) (x s) =
+      dysonSeriesLeft
+        (fun r ↦ fderiv ℝ (omega.hamiltonianVectorField (H (s + r))) (x (s + r))) (t - s) := by
+  have horbit (r : ℝ) := (omega.eq_timeDependentHamiltonianFlow H hX hx s r).symm
+  rw [timeDependentHamiltonianFlow_eq] at horbit ⊢
+  rw [fderiv_timeDependentFlow_eq_dysonSeriesLeft _
+    (omega.contDiff_hamiltonianVectorField_uncurry (n := 1) hH)]
+  simp only [horbit]
+
 /-- A Lipschitz autonomous Hamiltonian vector field has a Lipschitz time suspension. -/
 theorem lipschitzWith_timeDependentHamiltonianSuspension_const (omega : SymplecticForm V)
     (H : V → ℝ) {K : ℝ≥0} (hX : LipschitzWith K (omega.hamiltonianVectorField H)) :
@@ -309,48 +335,6 @@ theorem forall_apply_timeDependentHamiltonianFlow_eq_iff (omega : SymplecticForm
       fun u ↦ (h u _) ▸ hderiv s u x
     rw [is_const_of_deriv_eq_zero (fun u ↦ (hzero u).differentiableAt)
       (fun u ↦ (hzero u).deriv) t s, timeDependentHamiltonianFlow_self]
-
-section Linearization
-
-variable (omega : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
-  (hv : LipschitzWith K (timeDependentSuspension fun t ↦ omega.hamiltonianVectorField (H t)))
-
-/-- **The linearized Hamiltonian flow is the propagator of the linearized equation.** For a jointly
-`C²` Hamiltonian, the derivative `Dφ(0, t)(x)` of its flow is the propagator `Ψ(t)` of the
-linearized Hamiltonian equation `ζ' = S_τ ζ` along the trajectory of `x`, where
-`S_τ = dX_{H_τ}(φ(0, τ) x)`. -/
-theorem fderiv_timeDependentFlow_hamiltonianVectorField (hH : ContDiff ℝ 2 (uncurry H)) (t : ℝ)
-    (x : V) :
-    fderiv ℝ (timeDependentFlow _ hv 0 t) x =
-      dysonSeriesLeft (fun τ ↦ fderiv ℝ (omega.hamiltonianVectorField (H τ))
-        (timeDependentFlow _ hv 0 τ x)) t := by
-  simpa using fderiv_timeDependentFlow_eq_dysonSeriesLeft hv
-    (omega.contDiff_hamiltonianVectorField_uncurry (n := 1) hH) 0 t x
-
-/-- Along a one-periodic orbit of a one-periodic Hamiltonian, the linearized Hamiltonian vector
-fields `S_t = dX_{H_t}(φ(0, t) x)` are one-periodic. -/
-theorem periodic_fderiv_hamiltonianVectorField_timeDependentFlow (hHp : Periodic H 1) {x : V}
-    (hx : IsFixedPt (timeDependentFlow _ hv 0 1) x) :
-    Periodic (fun t ↦ fderiv ℝ (omega.hamiltonianVectorField (H t))
-      (timeDependentFlow _ hv 0 t x)) 1 := by
-  have hX : Periodic (fun t ↦ omega.hamiltonianVectorField (H t)) 1 := fun t ↦ by
-    simp only [hHp t]
-  have horb := (periodic_timeDependentFlow_iff hv hX 0 x).2 (by simpa using hx)
-  intro t
-  simp only [hHp t, horb t]
-
-/-- The linearized Hamiltonian vector fields `S_t = dX_{H_t}(φ(0, t) x)` along a trajectory of a
-jointly `C²` Hamiltonian depend continuously on time. -/
-theorem continuous_fderiv_hamiltonianVectorField_timeDependentFlow
-    (hH : ContDiff ℝ 2 (uncurry H)) (x : V) :
-    Continuous fun t ↦
-      fderiv ℝ (omega.hamiltonianVectorField (H t)) (timeDependentFlow _ hv 0 t x) := by
-  have hx : Continuous fun t ↦ timeDependentFlow _ hv 0 t x :=
-    (continuous_timeDependentFlow _ hv).comp
-      (by fun_prop : Continuous fun t : ℝ ↦ (((0 : ℝ), t), x))
-  exact omega.continuous_fderiv_hamiltonianVectorField_comp hH hx
-
-end Linearization
 
 end TauCeti.SymplecticForm
 

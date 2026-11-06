@@ -171,8 +171,8 @@ instance : Category.{v} (OrbitCategory D n) where
           exact ShiftedHom.comp_assoc _ _ _ _ _ (by ring)
 
 instance : Preadditive (OrbitCategory D n) where
-  add_comp _ _ _ f f' g := DFunLike.congr_fun (map_add _ f f') g
-  comp_add _ _ _ f g g' := map_add _ g g'
+  add_comp _ _ _ f f' g := by simp only [CategoryStruct.comp, map_add, AddMonoidHom.add_apply]
+  comp_add _ _ _ f g g' := by simp only [CategoryStruct.comp, map_add]
 
 /-- The inclusion of the homogeneous piece of degree `i`, the morphisms `X ⟶ Y⟦n * i⟧` of `D`,
 into the orbit hom group from `X` to `Y`. -/
@@ -364,9 +364,12 @@ theorem liftMap_homOf {X Y : D} (i : ℤ) (f : ShiftedHom X Y (n * i)) :
 `φ : [n] ⋙ G ≅ G` to the orbit category `D/[n]`. It is `G` on objects, and acts on morphisms by
 `liftMap G φ`. -/
 -- Exposed so that `(lift G φ).obj X` is visibly `G.obj X.obj`: the statements comparing the
--- descent with `G` (`projectionCompLift`, `lift_map_homOf`) need this to typecheck. The
--- direct-sum implementation of the action on morphisms stays behind the unexposed `liftMap`.
-@[expose]
+-- descent with `G` (`projectionCompLift`, `lift_map_homOf`) need this to typecheck. Implicitly
+-- reducible, like `CategoryTheory.Quotient.lift`, so that unification of implicit arguments
+-- identifies `(lift G φ).obj ⟨X⟩` with `G.obj X`, and `simp` and `rw` apply to morphisms typed at
+-- either. The direct-sum implementation of the action on morphisms stays behind the unexposed
+-- `liftMap`.
+@[expose, implicit_reducible]
 def lift : OrbitCategory D n ⥤ E where
   obj X := G.obj X.obj
   map {X Y} := liftMap G φ X Y
@@ -412,8 +415,6 @@ theorem lift_map_projection_map {X Y : D} (f : X ⟶ Y) :
   rw [projection_map, lift_map_homOf, Iso.periodicityZPow_zero_hom_app]
   simp only [ShiftedHom.mk₀, ← Functor.map_comp, Category.assoc, Iso.inv_hom_id_app,
     Functor.id_obj, Category.comp_id]
-  -- The two sides agree up to unfolding the objects of `lift G φ`.
-  rfl
 
 /-- The descent sends a degree-zero piece `f : X ⟶ Y` to `G.map f`. This is
 `lift_map_projection_map` in the form `simp` sees, since `simp` unfolds the reducible
@@ -447,8 +448,6 @@ theorem lift_map_periodicity_hom_app (X : D) :
   rw [shiftNatIso_hom_app, shiftIso_hom, lift_map_homOf, Iso.periodicityZPow_one_hom_app]
   simp only [Functor.comp_obj, eqToHom_map_comp_assoc, eqToHom_refl, CategoryTheory.Functor.map_id,
     Category.id_comp]
-  -- The two sides agree up to unfolding the objects of `lift G φ`.
-  rfl
 
 section Uniqueness
 
@@ -513,11 +512,8 @@ def isoLift (he : ∀ X : D, F.map (periodicity.hom.app X) ≫ e.hom.app X =
       have hf := e.hom.naturality f
       simp only [Functor.comp_map] at hf
       simp only [Iso.app_hom, lift_map_homOf]
-      rw [homOf_eq_projection_map_comp_shiftIso_hom, F.map_comp]
-      -- The composite is typed at the objects of `lift G φ`; reassociate it at those of `G`.
-      calc _ = F.map (projection.map f) ≫ F.map (shiftIso Y (n * i) i rfl).hom ≫ e.hom.app Y :=
-            Category.assoc _ _ _
-        _ = _ := by rw [hS, reassoc_of% hf]; rfl
+      rw [homOf_eq_projection_map_comp_shiftIso_hom, F.map_comp, Category.assoc, hS,
+        reassoc_of% hf]
 
 @[simp]
 theorem isoLift_hom_app (he : ∀ X : D, F.map (periodicity.hom.app X) ≫ e.hom.app X =
@@ -578,11 +574,21 @@ def mapPeriodicity :
   (Functor.associator _ _ _).symm ≪≫ Functor.isoWhiskerRight (F.commShiftIso n) _ ≪≫
     Functor.associator _ _ _ ≪≫ Functor.isoWhiskerLeft F periodicity
 
+omit [Preadditive D] [∀ (a : ℤ), (shiftFunctor D a).Additive] [F.Additive] in
+/-- The component of `mapPeriodicity F` at `X`: the projected shift comparison of `F` followed by
+the periodicity isomorphism of the projection from `D'`. -/
+@[simp]
+theorem mapPeriodicity_hom_app (X : D) :
+    (mapPeriodicity (n := n) F).hom.app X =
+      projection.map ((F.commShiftIso n).hom.app X) ≫ periodicity.hom.app (F.obj X) := by
+  simp [mapPeriodicity]
+
 /-- The functor `D/[n] ⥤ D'/[n]` induced on orbit categories by an additive functor commuting
 with the shifts: the descent of `F` followed by the projection. -/
--- Exposed, like `lift`, so that `(map F).obj X` is visibly `⟨F.obj X.obj⟩`, which the
--- statements comparing descents along `map F` need in order to typecheck.
-@[expose]
+-- Exposed and implicitly reducible, like `lift`, so that `(map F).obj X` is visibly
+-- `⟨F.obj X.obj⟩`, which the statements comparing descents along `map F` need in order to
+-- typecheck and their proofs need in order to rewrite with lemmas about `map F`.
+@[expose, implicit_reducible]
 def map : OrbitCategory D n ⥤ OrbitCategory D' n :=
   lift (F ⋙ projection) (mapPeriodicity F)
 
@@ -604,14 +610,8 @@ projected shift comparison of `F` followed by the periodicity isomorphism of the
 from `D'`. -/
 theorem map_map_periodicity_hom_app (X : D) :
     (map (n := n) F).map (periodicity.hom.app X) =
-      projection.map ((F.commShiftIso n).hom.app X) ≫ periodicity.hom.app (F.obj X) := by
-  refine (lift_map_periodicity_hom_app _ _ X).trans ?_
-  simp only [mapPeriodicity, Iso.trans_hom, Iso.symm_hom, NatTrans.comp_app,
-    Functor.associator_inv_app, Functor.isoWhiskerRight_hom, Functor.whiskerRight_app,
-    Functor.associator_hom_app, Functor.isoWhiskerLeft_hom, Functor.whiskerLeft_app,
-    Category.id_comp]
-  -- The two sides agree up to unfolding the objects of `lift (F ⋙ projection) _`.
-  rfl
+      projection.map ((F.commShiftIso n).hom.app X) ≫ periodicity.hom.app (F.obj X) :=
+  (lift_map_periodicity_hom_app _ _ X).trans (mapPeriodicity_hom_app F X)
 
 omit [Preadditive D] [∀ (a : ℤ), (shiftFunctor D a).Additive] [F.Additive] in
 /-- The powers of `mapPeriodicity F` are the projected shift comparisons of `F` followed by the
@@ -663,18 +663,6 @@ theorem map_map_homOf {X Y : D} (i : ℤ) (f : ShiftedHom X Y (n * i)) :
   rw [mapPeriodicity_periodicityZPow_hom_app, homOf_eq_projection_map_comp_shiftIso_hom,
     ShiftedHom.map, Functor.map_comp, Category.assoc, Functor.comp_map]
 
-/-- The induced functor sends a degree-zero piece `f : X ⟶ Y` to the degree-zero piece
-`F.map f`. This is `map_map_projection_map` in the form `simp` sees, since `simp` unfolds the
-reducible `projection.map f` to this piece. -/
--- High priority so that it fires before the general `map_map_homOf`.
-@[simp high]
-theorem map_map_homOf_mk₀ {X Y : D} (f : X ⟶ Y) :
-    (map F).map (homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) f) :
-      (⟨X⟩ : OrbitCategory D n) ⟶ ⟨Y⟩) =
-      (homOf 0 (ShiftedHom.mk₀ (n * 0) (by simp) (F.map f)) :
-        (⟨F.obj X⟩ : OrbitCategory D' n) ⟶ ⟨F.obj Y⟩) :=
-  map_map_projection_map F f
-
 variable {E : Type*} [Category E] [Preadditive E] {G : D ⥤ E} [G.Additive]
   {φ : shiftFunctor D n ⋙ G ≅ G} {G' : D' ⥤ E} [G'.Additive] {φ' : shiftFunctor D' n ⋙ G' ≅ G'}
 
@@ -682,14 +670,9 @@ variable {E : Type*} [Category E] [Preadditive E] {G : D ⥤ E} [G.Additive]
 projection from `D` to the shift comparison of `F` followed by `φ'`. -/
 theorem lift_map_map_periodicity_hom_app (X : D) :
     (lift G' φ').map ((map F).map (periodicity.hom.app X)) =
-      G'.map ((F.commShiftIso n).hom.app X) ≫ φ'.hom.app (F.obj X) :=
-  -- `map_map_periodicity_hom_app` is typed at the objects of `map F`, which are those of
-  -- `F ⋙ projection` only after unfolding `map`, so it is applied by unification rather than
-  -- by rewriting.
-  (congrArg (lift G' φ').map (map_map_periodicity_hom_app F X)).trans
-    (((lift G' φ').map_comp (projection.map ((F.commShiftIso n).hom.app X))
-      (periodicity.hom.app (F.obj X))).trans
-        (by rw [lift_map_projection_map, lift_map_periodicity_hom_app]; rfl))
+      G'.map ((F.commShiftIso n).hom.app X) ≫ φ'.hom.app (F.obj X) := by
+  rw [map_map_periodicity_hom_app, Functor.map_comp, lift_map_projection_map,
+    lift_map_periodicity_hom_app]
 
 /-- Descent along the induced functor on orbit categories. If `e : F ⋙ G' ≅ G` carries the
 periodicity isomorphism `φ'` of `G'`, transported along the shift comparison of `F`, to the
@@ -701,17 +684,11 @@ def mapCompLiftIso (e : F ⋙ G' ≅ G)
     map (n := n) F ⋙ lift G' φ' ≅ lift G φ :=
   isoLift (map F ⋙ lift G' φ')
     (NatIso.ofComponents (fun X ↦ e.app X) fun f ↦ by
-      rw [Functor.comp_map, Functor.comp_map, map_map_projection_map]
-      -- `projection.map (F.map f)` is typed at the objects of `map F` only after unfolding `map`,
-      -- so `lift_map_projection_map` is applied by unification rather than by rewriting.
-      exact (congrArg (· ≫ e.hom.app _) (lift_map_projection_map G' φ' (F.map f))).trans
-        (e.hom.naturality f))
+      rw [Functor.comp_map, Functor.comp_map, map_map_projection_map, lift_map_projection_map]
+      exact e.hom.naturality f)
     fun X ↦ by
-      -- The morphisms below are typed at the objects of `map F` and of the descents, which are
-      -- those of `F ⋙ G'` and `G` only after unfolding `map` and `lift`; the identities are
-      -- therefore chained by unification rather than by rewriting.
-      exact (congrArg (· ≫ e.hom.app X) (lift_map_map_periodicity_hom_app F X)).trans
-        ((Category.assoc _ _ _).trans (he X))
+      rw [Functor.comp_map, lift_map_map_periodicity_hom_app, Category.assoc]
+      exact he X
 
 @[simp]
 theorem mapCompLiftIso_hom_app (e : F ⋙ G' ≅ G)

@@ -34,7 +34,9 @@ of the set oracles.
 
 * `Set.oneOneReducible_jump_of_recursiveIn`: every set c.e. in `Z`, that is, the domain of a
   partial function recursive in `Z.oracle`, reduces one-one to the jump;
-  `Set.turingReducible_jump_of_recursiveIn`: so the jump decides it.
+  `Set.turingReducible_jump_of_recursiveIn`: so the jump decides it;
+  `Set.oneOneReducible_jump_of_rePred`, `Set.turingReducible_jump_of_rePred`: in particular, every
+  c.e. set reduces one-one and Turing to `Z'`.
 * `Set.oneOneEquiv_jump_pairedJump`: the diagonal and paired halting sets relative to `Z` are
   one-one equivalent.
 * `Set.oneOneReducible_jump`, `Set.turingReducible_jump`: `Z` reduces to its jump.
@@ -43,6 +45,8 @@ of the set oracles.
   `B`, then `A'` reduces one-one, and hence Turing, to `B'`.
 * `Set.oneOneEquiv_jump_jump`, `Set.turingEquivalent_jump_jump`: Turing equivalent sets have
   one-one equivalent, and hence Turing equivalent, jumps.
+* `Set.degree_mem_Ioo_of_incomparable`: Turing incomparable sets below `(∅ : Set ℕ).jump` have
+  degrees strictly between the computable degree and `(∅ : Set ℕ).jump`.
 
 ## References
 
@@ -120,6 +124,21 @@ in the oracle of `Z` has an oracle Turing reducible to that of `Z'`. -/
 theorem turingReducible_jump_of_recursiveIn {f : ℕ →. ℕ} (hf : Nat.RecursiveIn {Z.oracle} f) :
     TuringReducible {x | (f x).Dom}.oracle Z.jump.oracle :=
   (oneOneReducible_jump_of_recursiveIn Z hf).to_many_one.turingReducible_oracle
+
+/-- Every c.e. set reduces one-one to the jump of `Z`. -/
+theorem oneOneReducible_jump_of_rePred {A : Set ℕ} (hA : REPred (· ∈ A)) :
+    OneOneReducible (· ∈ A) (· ∈ Z.jump) := by
+  have hf : Nat.RecursiveIn {Z.oracle}
+      fun x => (Part.assert (x ∈ A) fun _ => Part.some ()).map fun _ => 0 :=
+    (Partrec.nat_iff.1 (Partrec.map hA (Computable.const 0).to₂)).recursiveIn
+  have hdom : (fun x => ((Part.assert (x ∈ A) fun _ => Part.some ()).map fun _ => 0).Dom) =
+      (· ∈ A) := by ext x; simp [Part.assert]
+  exact hdom ▸ oneOneReducible_jump_of_recursiveIn Z hf
+
+/-- The jump of `Z` decides every c.e. set. -/
+theorem turingReducible_jump_of_rePred {A : Set ℕ} (hA : REPred (· ∈ A)) :
+    TuringReducible A.oracle Z.jump.oracle :=
+  (oneOneReducible_jump_of_rePred Z hA).to_many_one.turingReducible_oracle
 
 /-- **The diagonal and paired halting sets are one-one equivalent**, relative to every set `Z`. -/
 theorem oneOneEquiv_jump_pairedJump : OneOneEquiv (· ∈ Z.jump) (· ∈ Z.pairedJump) := by
@@ -201,5 +220,18 @@ theorem oneOneEquiv_jump_jump (h : TuringEquivalent A.oracle B.oracle) :
 theorem turingEquivalent_jump_jump (h : TuringEquivalent A.oracle B.oracle) :
     TuringEquivalent A.jump.oracle B.jump.oracle :=
   ⟨turingReducible_jump_jump h.1, turingReducible_jump_jump h.2⟩
+
+/-- If `A` and `B` are Turing incomparable sets both Turing reducible to `(∅ : Set ℕ).jump`, then
+the Turing degree of `A` lies strictly between the computable degree and `(∅ : Set ℕ).jump`. -/
+theorem degree_mem_Ioo_of_incomparable
+    (hA : TuringReducible A.oracle (∅ : Set ℕ).jump.oracle)
+    (hB : TuringReducible B.oracle (∅ : Set ℕ).jump.oracle)
+    (hAB : ¬TuringReducible A.oracle B.oracle) (hBA : ¬TuringReducible B.oracle A.oracle) :
+    toAntisymmetrization TuringReducible A.oracle ∈
+      Set.Ioo (toAntisymmetrization TuringReducible (∅ : Set ℕ).oracle)
+        (toAntisymmetrization TuringReducible (∅ : Set ℕ).jump.oracle) := by
+  simp only [Set.mem_Ioo, lt_iff_le_not_ge, TauCeti.turingDegree_le_iff]
+  exact ⟨⟨empty_turingReducible _, fun h => hAB (h.trans (empty_turingReducible _))⟩,
+    ⟨hA, fun h => hBA (hB.trans h)⟩⟩
 
 end Set

@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+public import Mathlib.Analysis.Calculus.Deriv.Comp
 public import Mathlib.Analysis.Calculus.FDeriv.Pi
 
 /-!
@@ -14,18 +16,29 @@ A function `f` on a finite product `∀ i, E i` which is differentiable at `y` i
 each variable separately: the slice `x ↦ f (update y i x)` through `y` in the `i`-th coordinate is
 differentiable at `y i`.
 
+Conversely, for a finite family of functions `φ i : 𝕜 → 𝕜`, the *separated sum*
+`z ↦ ∑ i, φ i (z i)` on `ι → 𝕜` has derivative `∑ i, φ i' (y i) • dzᵢ` at `y`, so its critical
+points are the points whose coordinates are critical points of the summands.
+
 ## Main declarations
 
 * `DifferentiableWithinAt.comp_update`: the slice of a function differentiable within a set, within
   any set of coordinates which `update y i` maps into it.
 * `DifferentiableAt.comp_update`: the slice of a function differentiable at a point.
+* `TauCeti.hasFDerivAt_sum_comp_eval`, `TauCeti.fderiv_sum_comp_eval`: the derivative of a
+  separated sum.
+* `TauCeti.fderiv_sum_comp_eval_eventuallyEq`: the same formula for the derivative near a point at
+  which the summands are continuously differentiable.
+* `TauCeti.fderiv_sum_comp_eval_eq_zero_iff`: the critical points of a separated sum.
 -/
 
 public section
 
-open Function
+open Filter Function Topology ContinuousLinearMap
 
 namespace TauCeti
+
+section Update
 
 variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Finite ι] [DecidableEq ι]
   {E : ι → Type*} [∀ i, NormedAddCommGroup (E i)] [∀ i, NormedSpace 𝕜 (E i)]
@@ -49,5 +62,44 @@ theorem _root_.DifferentiableAt.comp_update (h : DifferentiableAt 𝕜 f y) (i :
     DifferentiableAt 𝕜 (fun x => f (update y i x)) (y i) := by
   simpa only [differentiableWithinAt_univ] using
     h.differentiableWithinAt.comp_update i (Set.mapsTo_univ _ Set.univ)
+
+end Update
+
+section SumCompEval
+
+variable {𝕜 ι : Type*} [NontriviallyNormedField 𝕜] [Fintype ι] {φ : ι → 𝕜 → 𝕜} {y : ι → 𝕜}
+
+/-- The derivative of the separated sum `z ↦ ∑ i, φ i (z i)` at `y` is `∑ i, φ i' (y i) • dzᵢ`. -/
+theorem hasFDerivAt_sum_comp_eval {φ' : ι → 𝕜} (hφ : ∀ i, HasDerivAt (φ i) (φ' i) (y i)) :
+    HasFDerivAt (fun z : ι → 𝕜 ↦ ∑ i, φ i (z i)) (∑ i, φ' i • (proj i : (ι → 𝕜) →L[𝕜] 𝕜)) y :=
+  HasFDerivAt.fun_sum fun i _ ↦ (hφ i).comp_hasFDerivAt y (hasFDerivAt_apply i y)
+
+/-- The derivative of a separated sum of differentiable functions. -/
+theorem fderiv_sum_comp_eval (hφ : ∀ i, DifferentiableAt 𝕜 (φ i) (y i)) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∑ i, φ i (z i)) y =
+      ∑ i, deriv (φ i) (y i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜) :=
+  (hasFDerivAt_sum_comp_eval fun i ↦ (hφ i).hasDerivAt).fderiv
+
+/-- **Critical points of a separated sum.** For differentiable summands, `y` is a critical point
+of `z ↦ ∑ i, φ i (z i)` exactly when every `y i` is a critical point of `φ i`. -/
+theorem fderiv_sum_comp_eval_eq_zero_iff (hφ : ∀ i, DifferentiableAt 𝕜 (φ i) (y i)) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∑ i, φ i (z i)) y = 0 ↔ ∀ i, deriv (φ i) (y i) = 0 := by
+  classical
+  rw [fderiv_sum_comp_eval hφ]
+  refine ⟨fun h i ↦ ?_, fun h ↦ by ext; simp [h]⟩
+  simpa [Pi.single_apply] using DFunLike.congr_fun h (Pi.single i 1)
+
+/-- Near a point at which every summand is continuously differentiable, the derivative of a
+separated sum is given by the formula of `TauCeti.fderiv_sum_comp_eval`. -/
+theorem fderiv_sum_comp_eval_eventuallyEq (hφ : ∀ i, ContDiffAt 𝕜 1 (φ i) (y i)) :
+    fderiv 𝕜 (fun z : ι → 𝕜 ↦ ∑ i, φ i (z i)) =ᶠ[𝓝 y]
+      fun z ↦ ∑ i, deriv (φ i) (z i) • (proj i : (ι → 𝕜) →L[𝕜] 𝕜) := by
+  have hdiff : ∀ i, ∀ᶠ z : ι → 𝕜 in 𝓝 y, DifferentiableAt 𝕜 (φ i) (z i) := fun i ↦
+    (continuous_apply i).continuousAt.eventually
+      (((hφ i).eventually (by simp)).mono fun t ht ↦ ht.differentiableAt (by simp))
+  filter_upwards [eventually_all.2 hdiff] with z hz
+  exact fderiv_sum_comp_eval hz
+
+end SumCompEval
 
 end TauCeti

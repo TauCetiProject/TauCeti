@@ -70,7 +70,8 @@ decreases, as in the implication from `CD(K, N)` to `CD(K', N)` for `K' ≤ K`.
   `σ_{K,N}^{(t)}(θ)` is infinite exactly when `N π² ≤ K θ²`; for `N > 1`, `τ_{K,N}^{(t)}(θ)`
   is infinite exactly when `(N - 1) π² ≤ K θ²`.
 * `TauCeti.distortionTau_eq_top_of_lt`: for `K > 0`, `τ_{K,N}^{(t)}(θ)` is infinite beyond the
-  Bonnet–Myers distance `π √((N - 1) / K)`.
+  Bonnet–Myers distance `π √((N - 1) / K)`, and `TauCeti.distortionSigma_eq_top_of_lt`: for `K > 0`
+  and `N > 0`, `σ_{K,N}^{(t)}(θ)` is infinite beyond `π √(N / K)`.
 * `TauCeti.distortionSigma_time_one`, `TauCeti.distortionTau_time_one`: below the critical
   distance both coefficients equal `1` at time `1`.
 
@@ -266,6 +267,15 @@ theorem distortionSigma_eq_top_iff (hN : 0 < N) :
   · simp [sigmaOf_of_neg hD] at h
   · simp [hD, sigmaOf_zero] at h
   · simp [sigmaOf_of_pos hD hπ] at h
+
+/-- For `K > 0` and `N > 0`, the coefficient `σ_{K,N}^{(t)}(θ)` is infinite beyond the critical
+distance `π √(N / K)`. -/
+theorem distortionSigma_eq_top_of_lt (hK : 0 < K) (hN : 0 < N) (h : π * √(N / K) < θ) :
+    distortionSigma K N t θ = ⊤ := by
+  refine distortionSigma_eq_top_of_le hN ?_
+  have hsq := pow_lt_pow_left₀ h (by positivity) two_ne_zero
+  rw [mul_pow, Real.sq_sqrt (div_nonneg hN.le hK.le), mul_div_assoc', div_lt_iff₀ hK] at hsq
+  linarith
 
 /-- Below the critical distance, `σ_{K,N}^{(1)}(θ) = 1`. -/
 @[simp]

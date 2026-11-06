@@ -36,6 +36,8 @@ direction `w`; its derivative involves the second derivative of `u`.
   the constant `B.flip + B`.
 * `ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply`: the derivative of
   `y ↦ B (u y) (∂_w u y)` at a point where `u` is `C²`.
+* `ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply`: `y ↦ B (u y) (∂_w u y)` is `C^n` at a
+  point where `u` is `C^(n+1)`.
 * `ContinuousLinearMap.contDiff_precomp_comp`: the pullback `(v, w) ↦ B (L v) (L w)` of a
   continuous bilinear map `B` along a continuous linear map `L` depends smoothly on `(B, L)`.
 * `ContinuousLinearMap.iteratedFDeriv_pullbackBilinL_comp`: the iterated derivatives of a family
@@ -111,6 +113,13 @@ theorem _root_.ContinuousLinearMap.hasFDerivAt_bilinear_fderiv_apply (B : F →L
         B.precompL E (fderiv 𝕜 u z) (fderiv 𝕜 u z w)) z :=
   B.hasFDerivAt_of_bilinear (hu.differentiableAt (by norm_num)).hasFDerivAt
     (hu.hasFDerivAt_fderiv_apply le_rfl w)
+
+/-- If `u` is `C^(n+1)` at `z`, then `y ↦ B (u y) (∂_w u y)` is `C^n` at `z`. -/
+theorem _root_.ContinuousLinearMap.contDiffAt_bilinear_fderiv_apply (B : F →L[𝕜] F →L[𝕜] G)
+    {u : E → F} {z : E} (hu : ContDiffAt 𝕜 (n + 1) u z) (w : E) :
+    ContDiffAt 𝕜 n (fun y ↦ B (u y) (fderiv 𝕜 u y w)) z :=
+  (B.contDiff.contDiffAt.comp z (hu.of_le le_self_add)).clm_apply
+    ((hu.fderiv_right le_rfl).clm_apply contDiffAt_const)
 
 /-- The pullback `(v, w) ↦ B (L v) (L w)` of a continuous bilinear map `B` along a continuous linear
 map `L` is `C^n` as a function of the pair `(B, L)`. -/

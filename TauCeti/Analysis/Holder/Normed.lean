@@ -28,6 +28,8 @@ parallel notion of Hölder continuity.
 * `TauCeti.HolderSpace`: bounded continuous globally `α`-Hölder functions.
 * `TauCeti.HolderSpace.instNormedAddCommGroup`: the supremum-plus-Hölder normed group structure.
 * `TauCeti.HolderSpace.instCompleteSpace`: completeness when the codomain is complete.
+* `TauCeti.HolderSpace.holderWith`: the Hölder bound with the canonical seminorm.
+* `TauCeti.supportedHolderSubmodule`: the Hölder subspace supported in a prescribed set.
 * `TauCeti.HolderSpace.constL`, `TauCeti.HolderSpace.evalCLM`, and
   `TauCeti.HolderSpace.toBoundedContinuousFunctionCLM`: continuous linear maps for constants,
   evaluation, and inclusion, with operator-norm bounds.
@@ -167,6 +169,11 @@ theorem smul_apply (c : ℝ) (f : HolderSpace α X Y) (x : X) : (c • f) x = c 
 
 @[simp]
 theorem neg_apply (f : HolderSpace α X Y) (x : X) : (-f) x = -f x := (rfl)
+
+/-- A bounded Hölder function is Hölder with its canonical Hölder seminorm. -/
+theorem holderWith (f : HolderSpace α X Y) :
+    HolderWith (nnHolderNorm α (f : X → Y)) α (f : X → Y) := by
+  simpa only [coe_toBoundedContinuousFunction] using f.memHolder.holderWith
 
 /-- The underlying bounded continuous function determines a Hölder-space element. -/
 theorem toBoundedContinuousFunction_injective :
@@ -553,5 +560,33 @@ theorem norm_compLipschitzL_le_one (hg : LipschitzWith 1 g) :
 end compLipschitz
 
 end HolderSpace
+
+/-- Bounded Hölder functions vanishing off a prescribed set, as a normed subspace of the
+native supremum-plus-Hölder space. The domain, codomain and support set are arbitrary. -/
+def supportedHolderSubmodule {X Y : Type*} [MetricSpace X] [NormedAddCommGroup Y]
+    [NormedSpace ℝ Y] (α : ℝ≥0) (s : Set X) : Submodule ℝ (HolderSpace α X Y) where
+  carrier := {f | ∀ z ∉ s, f z = 0}
+  zero_mem' := by simp
+  add_mem' := by
+    intro f g hf hg z hz
+    simp [hf z hz, hg z hz]
+  smul_mem' := by
+    intro a f hf z hz
+    simp [hf z hz]
+
+/-- Membership in the fixed-support Hölder subspace is vanishing off the support set. -/
+@[simp]
+theorem mem_supportedHolderSubmodule_iff {X Y : Type*} [MetricSpace X]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {α : ℝ≥0} {s : Set X}
+    {f : HolderSpace α X Y} :
+    f ∈ supportedHolderSubmodule α s ↔ ∀ z ∉ s, f z = 0 := Iff.rfl
+
+/-- A bounded Hölder function in the fixed-support submodule is supported in that set. -/
+theorem support_subset_of_mem_supportedHolderSubmodule {X Y : Type*} [MetricSpace X]
+    [NormedAddCommGroup Y] [NormedSpace ℝ Y] {α : ℝ≥0} {s : Set X}
+    {f : HolderSpace α X Y} (hf : f ∈ supportedHolderSubmodule α s) : Function.support f ⊆ s := by
+  intro z hz
+  by_contra h
+  exact hz (hf z h)
 
 end TauCeti

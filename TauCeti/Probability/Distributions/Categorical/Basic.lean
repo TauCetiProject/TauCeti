@@ -176,6 +176,8 @@ theorem map_categoricalMeasure (f : I → J) (p : StdSimplex NNReal I) :
 
 end Aggregation
 
+
+
 section Multinomial
 
 variable [Fintype I] [MeasurableSpace I] [MeasurableSingletonClass I]
@@ -281,7 +283,7 @@ theorem cdf_map_categoricalMeasure (p : StdSimplex NNReal I) (label : I → ℝ)
     cdf ((categoricalMeasure p).map label) x =
       ∑ i with label i ≤ x, (p.weights i : ℝ) := by
   classical
-  rw [Measure.cdf_map _ label (measurable_of_finite label)]
+  rw [Measure.cdf_map _ label (measurable_of_finite label).aemeasurable]
   have hpreimage : label ⁻¹' Iic x = (Finset.univ.filter fun i ↦ label i ≤ x : Finset I) := by
     ext i
     simp
