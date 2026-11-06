@@ -21,13 +21,18 @@ finite-dimensional), the derivatives are bounded on the compact sets `K × {‖�
 `ξ` to the unit sphere gives the estimate `≤ C ‖ξ‖ ^ (m - l)` for `x ∈ K` and `ξ ≠ 0`
 (`TauCeti.exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq`).
 
-For a map `m` on a proper real normed space that is `C^N` away from the origin and homogeneous of
-degree `0`, that is `m (t • ξ) = m ξ` for every `t > 0`, this gives the decay
-`‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` for `k ≤ N` (`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`).
-This is Mihlin's condition for a Fourier multiplier symbol, so every symbol that is smooth away
-from the origin and homogeneous of degree `0` is an `Lᵖ` multiplier for `1 < p < ∞`. The same
-estimates for homogeneous symbols of any degree underlie the symbol classes of pseudodifferential
-operators.
+For a map `h` on a proper real normed space that is `C^N` away from the origin and positively
+homogeneous of degree `d`, this gives `‖D^k h ξ‖ ≤ A ‖ξ‖ ^ (d - k)` for `k ≤ N`
+(`TauCeti.exists_norm_iteratedFDeriv_le_mul_rpow_of_smul_eq`). For `d = 0` this is the decay
+`‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` (`TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`), Mihlin's
+condition for a Fourier multiplier symbol, so every symbol that is smooth away from the origin and
+homogeneous of degree `0` is an `Lᵖ` multiplier for `1 < p < ∞`. The same estimates for
+homogeneous symbols of any degree underlie the symbol classes of pseudodifferential operators.
+For `d ≤ 0` the derivatives are bounded away from any neighbourhood of the origin, so a smooth map
+that agrees outside a ball with such a homogeneous map has bounded derivatives
+(`TauCeti.exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq`); this is how a winding phase
+`(z / |z|) ^ m` or an angular form `dθ`, made smooth by a cutoff at the origin, is seen to be a
+multiplier on Sobolev spaces.
 
 ## Main results
 
@@ -38,8 +43,12 @@ operators.
   the directions are rescaled by `‖ξ‖⁻¹`.
 * `TauCeti.exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq`: the estimate
   `‖∂_x^j ∂_ξ^l f (x, ξ)‖ ≤ C ‖ξ‖ ^ (m - l)` for `x` in a compact set and `ξ ≠ 0`.
+* `TauCeti.exists_norm_iteratedFDeriv_le_mul_rpow_of_smul_eq`: the estimate
+  `‖D^k h ξ‖ ≤ A ‖ξ‖ ^ (d - k)` for maps homogeneous of degree `d`.
 * `TauCeti.exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq`: Mihlin's condition for maps
   homogeneous of degree `0`.
+* `TauCeti.exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq`: bounded derivatives of a smooth map
+  that agrees outside a ball with a map homogeneous of degree `d ≤ 0`.
 
 ## References
 
@@ -170,43 +179,85 @@ theorem exists_norm_iteratedFDeriv_append_le_of_smul_snd_eq [ProperSpace F] {K :
   rw [hprod, Real.rpow_sub (norm_pos_iff.mpr hξ), Real.rpow_natCast, inv_pow]
   ring
 
-/-- **Homogeneous maps of degree zero satisfy Mihlin's condition.** Let `m` be a map on a proper
-(for instance finite-dimensional) real normed space that is `C^N` away from the origin and
-homogeneous of degree `0`, that is `m (t • ξ) = m ξ` for every `t > 0`. Then there is a constant
-`A` with `‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` for every `k ≤ N` and every `ξ ≠ 0`. -/
+/-- For a map `h` on a proper real normed space that is `C^N` away from the origin and positively
+homogeneous of degree `d`, that is `h (t • ξ) = t ^ d • h ξ` for `t > 0` and `ξ ≠ 0`, the
+derivatives satisfy `‖D^k h ξ‖ ≤ A ‖ξ‖ ^ (d - k)` for `k ≤ N` and `ξ ≠ 0`. -/
+theorem exists_norm_iteratedFDeriv_le_mul_rpow_of_smul_eq {W G : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [ProperSpace W] [NormedAddCommGroup G] [NormedSpace ℝ G] {h : W → G}
+    {d : ℝ} {N : ℕ} (hh : ContDiffOn ℝ N h {0}ᶜ)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ ξ, ξ ≠ 0 → h (t • ξ) = t ^ d • h ξ) :
+    ∃ A : ℝ≥0, ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k h ξ‖ ≤ A * ‖ξ‖ ^ (d - k) := by
+  -- Regard `h` as a map of `(x, ξ)` that does not depend on `x`, homogeneous of degree `d` in `ξ`.
+  set P : W × W →L[ℝ] W := ContinuousLinearMap.snd ℝ W W
+  have hU : IsOpen ({0}ᶜ : Set W) := isOpen_compl_singleton
+  have hf : ContDiffOn ℝ N (h ∘ P) {p | p.2 ≠ 0} := hh.comp P.contDiff.contDiffOn fun _ hp => hp
+  have hhom' : ∀ (x ξ : W), ξ ≠ 0 → ∀ t : ℝ, 0 < t →
+      (h ∘ P) (x, t • ξ) = t ^ d • (h ∘ P) (x, ξ) := fun _ ξ hξ t ht => by
+    simp [P, hhom t ht ξ hξ]
+  have hbd : ∀ k ≤ N, ∃ C : ℝ, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k h ξ‖ ≤ C * ‖ξ‖ ^ (d - k) := by
+    intro k hk
+    obtain ⟨C, hC, hb⟩ := exists_norm_iteratedFDeriv_le_of_smul_snd_eq (K := {0})
+      isCompact_singleton hf hhom' (mod_cast hk)
+    refine ⟨C, fun ξ hξ => ?_⟩
+    have hnξ : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ
+    refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun w => ?_
+    -- The derivative of `h ∘ P` in the directions `(0, w i)` is the derivative of `h`.
+    have key := P.iteratedFDerivWithin_comp_right hh hU.uniqueDiffOn
+      (hU.preimage P.continuous).uniqueDiffOn (x := (0, ξ)) hξ (i := k) (mod_cast hk)
+    rw [iteratedFDerivWithin_of_isOpen k (hU.preimage P.continuous) hξ,
+      iteratedFDerivWithin_of_isOpen (x := P (0, ξ)) k hU hξ] at key
+    have hD : iteratedFDeriv ℝ k (h ∘ P) (0, ξ) (fun i => (0, w i)) =
+        iteratedFDeriv ℝ k h ξ w := by
+      simpa [P] using congr($key fun i => ((0 : W), w i))
+    have hprod : ∏ i, ‖((0 : W), ‖ξ‖⁻¹ • w i)‖ = ‖ξ‖⁻¹ ^ k * ∏ i, ‖w i‖ := by
+      simp [norm_smul, Finset.prod_mul_distrib, mul_nonneg]
+    refine (hD ▸ hb 0 rfl ξ hξ fun i => (0, w i)).trans_eq ?_
+    rw [hprod, Real.rpow_sub hnξ, Real.rpow_natCast, inv_pow, div_eq_mul_inv]
+    ring
+  choose! C hC using hbd
+  refine ⟨∑ k ∈ Finset.range (N + 1), (C k).toNNReal, fun k hk ξ hξ ↦ (hC k hk ξ hξ).trans ?_⟩
+  rw [NNReal.coe_sum]
+  refine mul_le_mul_of_nonneg_right ((Real.le_coe_toNNReal _).trans ?_) (by positivity)
+  exact Finset.single_le_sum (f := fun k ↦ ((C k).toNNReal : ℝ)) (fun _ _ ↦ NNReal.coe_nonneg _)
+    (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+
+/-- For a map `m` on a proper real normed space that is `C^N` away from the origin and homogeneous
+of degree `0`, that is `m (t • ξ) = m ξ` for every `t > 0`, the derivatives decay like
+`‖D^k m ξ‖ ≤ A / ‖ξ‖ ^ k` for `k ≤ N`. This is Mihlin's condition for a Fourier multiplier
+symbol. -/
 theorem exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq {W G : Type*} [NormedAddCommGroup W]
     [NormedSpace ℝ W] [ProperSpace W] [NormedAddCommGroup G] [NormedSpace ℝ G] {m : W → G}
     {N : ℕ} (hm : ContDiffOn ℝ N m {0}ᶜ) (hhom : ∀ t : ℝ, 0 < t → ∀ ξ, m (t • ξ) = m ξ) :
     ∃ A : ℝ≥0, ∀ k ≤ N, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ A / ‖ξ‖ ^ k := by
-  -- Regard `m` as a map of `(x, ξ)` that does not depend on `x`, homogeneous of degree `0` in `ξ`.
-  set P : W × W →L[ℝ] W := ContinuousLinearMap.snd ℝ W W
-  have hU : IsOpen ({0}ᶜ : Set W) := isOpen_compl_singleton
-  have hf : ContDiffOn ℝ N (m ∘ P) {p | p.2 ≠ 0} := hm.comp P.contDiff.contDiffOn fun _ hp => hp
-  have hhom' : ∀ (x ξ : W), ξ ≠ 0 → ∀ t : ℝ, 0 < t →
-      (m ∘ P) (x, t • ξ) = t ^ (0 : ℝ) • (m ∘ P) (x, ξ) := fun _ _ _ t ht => by
-    simp [P, hhom t ht]
-  have hbd : ∀ k ≤ N, ∃ C : ℝ, ∀ ξ ≠ 0, ‖iteratedFDeriv ℝ k m ξ‖ ≤ C / ‖ξ‖ ^ k := by
-    intro k hk
-    obtain ⟨C, hC, h⟩ := exists_norm_iteratedFDeriv_le_of_smul_snd_eq (K := {0})
-      isCompact_singleton hf hhom' (mod_cast hk)
-    refine ⟨C, fun ξ hξ => ?_⟩
-    rw [div_eq_mul_inv, ← inv_pow]
-    refine ContinuousMultilinearMap.opNorm_le_bound (by positivity) fun w => ?_
-    -- The derivative of `m ∘ P` in the directions `(0, w i)` is the derivative of `m`.
-    have key := P.iteratedFDerivWithin_comp_right hm hU.uniqueDiffOn
-      (hU.preimage P.continuous).uniqueDiffOn (x := (0, ξ)) hξ (i := k) (mod_cast hk)
-    rw [iteratedFDerivWithin_of_isOpen k (hU.preimage P.continuous) hξ,
-      iteratedFDerivWithin_of_isOpen (x := P (0, ξ)) k hU hξ] at key
-    have hD : iteratedFDeriv ℝ k (m ∘ P) (0, ξ) (fun i => (0, w i)) =
-        iteratedFDeriv ℝ k m ξ w := by
-      simpa [P] using congr($key fun i => ((0 : W), w i))
-    refine (hD ▸ h 0 rfl ξ hξ fun i => (0, w i)).trans_eq ?_
-    simp [norm_smul, Finset.prod_mul_distrib, mul_nonneg, mul_assoc]
-  choose! C hC using hbd
-  refine ⟨∑ k ∈ Finset.range (N + 1), (C k).toNNReal, fun k hk ξ hξ ↦ (hC k hk ξ hξ).trans ?_⟩
-  rw [NNReal.coe_sum]
-  refine div_le_div_of_nonneg_right ((Real.le_coe_toNNReal _).trans ?_) (by positivity)
-  exact Finset.single_le_sum (f := fun k ↦ ((C k).toNNReal : ℝ)) (fun _ _ ↦ NNReal.coe_nonneg _)
-    (Finset.mem_range.2 (Nat.lt_succ_of_le hk))
+  obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_mul_rpow_of_smul_eq (d := 0) hm
+    fun t ht ξ _ => by rw [hhom t ht, Real.rpow_zero, one_smul]
+  refine ⟨A, fun k hk ξ hξ => (hA k hk ξ hξ).trans_eq ?_⟩
+  rw [zero_sub, Real.rpow_neg (norm_nonneg ξ), Real.rpow_natCast, div_eq_mul_inv]
+
+/-- A `C^N` map that agrees outside a ball with a map that is `C^N` away from the origin and
+positively homogeneous of degree `d ≤ 0` has bounded derivatives of every order `k ≤ N`. -/
+theorem exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq {W G : Type*} [NormedAddCommGroup W]
+    [NormedSpace ℝ W] [ProperSpace W] [NormedAddCommGroup G] [NormedSpace ℝ G] {g h : W → G}
+    {d : ℝ} (hd : d ≤ 0) {N : ℕ} (hg : ContDiff ℝ N g) (hh : ContDiffOn ℝ N h {0}ᶜ)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ ξ, ξ ≠ 0 → h (t • ξ) = t ^ d • h ξ) {R : ℝ}
+    (heq : ∀ ξ, R ≤ ‖ξ‖ → g ξ = h ξ) :
+    ∀ k ≤ N, ∃ C, ∀ ξ, ‖iteratedFDeriv ℝ k g ξ‖ ≤ C := by
+  intro k hk
+  obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_mul_rpow_of_smul_eq hh hhom
+  -- On a closed ball the derivative is bounded by continuity.
+  obtain ⟨C, hC⟩ := (isCompact_closedBall (0 : W) (max R 1)).exists_bound_of_continuousOn
+    (hg.continuous_iteratedFDeriv (mod_cast hk)).continuousOn
+  refine ⟨max C A, fun ξ => ?_⟩
+  by_cases hξ : ‖ξ‖ ≤ max R 1
+  · exact (hC ξ (mem_closedBall_zero_iff.2 hξ)).trans (le_max_left _ _)
+  -- Outside it, `g` agrees with `h` near `ξ`, and `‖ξ‖ ^ (d - k) ≤ 1` since `‖ξ‖ ≥ 1`.
+  rw [not_le] at hξ
+  have h1 : 1 ≤ ‖ξ‖ := (le_max_right R 1).trans hξ.le
+  have hev : g =ᶠ[nhds ξ] h := by
+    filter_upwards [(isOpen_lt continuous_const continuous_norm).mem_nhds
+      ((le_max_left R 1).trans_lt hξ)] with ζ hζ using heq ζ hζ.le
+  rw [(hev.iteratedFDeriv ℝ k).eq_of_nhds]
+  refine (hA k hk ξ (norm_pos_iff.1 (by linarith))).trans ((le_max_right C A).trans' ?_)
+  exact mul_le_of_le_one_right A.2 (Real.rpow_le_one_of_one_le_of_nonpos h1 (by linarith))
 
 end TauCeti

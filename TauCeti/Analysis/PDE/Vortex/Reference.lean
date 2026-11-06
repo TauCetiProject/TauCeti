@@ -6,6 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+public import Mathlib.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.Distribution.TemperateGrowth
 
 /-!
 # Smooth winding reference fields on the plane
@@ -19,6 +22,10 @@ The cutoff removes the angular singularity on a neighborhood of the origin.
 The end formulas, rotation laws and compact support of changes of cutoff are proved
 explicitly. The latter allows different references to define the same affine Sobolev
 space. These reference pairs are not asserted to solve the vortex equations.
+
+Outside the disc the section is homogeneous of degree `0` and the connection of degree `-1`,
+so both have bounded derivatives of every order and in particular temperate growth. This makes
+their coefficients multipliers on the Sobolev spaces of integer order.
 
 ## References
 
@@ -104,6 +111,24 @@ theorem referenceConnection_eq_angular (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z
     referenceConnection f m z v = -(m : ℂ) * I * ((v / z).im : ℂ) := by
   simp [referenceConnection, cutoff_eq_one f hz, div_eq_mul_inv, mul_comm]
 
+/-- The winding phase `(z / ‖z‖) ^ m` is smooth away from the origin. -/
+private theorem contDiffAt_div_norm_pow (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
+    ContDiffAt ℝ ∞ (fun w : ℂ ↦ (w / (‖w‖ : ℂ)) ^ m) z := by
+  have hn : ContDiffAt ℝ ∞ (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
+    ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
+  have hp : ContDiffAt ℝ ∞ (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
+    simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
+      contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
+  exact hp.pow m
+
+/-- The angular one-form `-i m dθ`, `dθ_z(v) = Im(v / z)`, is smooth away from the origin. -/
+private theorem contDiffAt_angular (m : ℕ) {z : ℂ} (hz : z ≠ 0) :
+    ContDiffAt ℝ ∞ (fun w : ℂ ↦ (-(m : ℂ) * I) •
+      ((ofRealCLM.comp imCLM).comp (ContinuousLinearMap.mul ℝ ℂ w⁻¹))) z := by
+  have h : ContDiffAt ℝ ∞ (fun w : ℂ ↦ ContinuousLinearMap.mul ℝ ℂ w⁻¹) z :=
+    (ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z (contDiffAt_id.inv hz)
+  exact (contDiffAt_const.clm_comp h).const_smul _
+
 /-- The section is smooth even at the origin. -/
 theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     ContDiff ℝ ∞ (referenceSection f m) := by
@@ -113,12 +138,8 @@ theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     apply (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
     filter_upwards [cutoff_eventuallyEq_zero f] with z hz
     simp [referenceSection, hz]
-  · have hn : ContDiffAt ℝ ∞ (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
-      ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
-    have hp : ContDiffAt ℝ ∞ (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
-      simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
-        contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
-    exact (ofRealCLM.contDiff.comp (contDiff_cutoff f)).contDiffAt.mul (hp.pow m)
+  · exact (ofRealCLM.contDiff.comp (contDiff_cutoff f)).contDiffAt.mul
+      (contDiffAt_div_norm_pow m hz)
 
 /-- The connection is a smooth map into the space of one-forms, including at the origin. -/
 theorem contDiff_referenceConnection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
@@ -183,5 +204,55 @@ theorem hasCompactSupport_referenceConnection_sub (f g : ContDiffBump (0 : ℝ))
   intro z hz
   simp only [Function.mem_support, Pi.sub_apply, ne_eq, sub_eq_zero] at *
   exact fun h ↦ hz (by simp [referenceConnection, h])
+
+/-! ### Bounded derivatives -/
+
+private theorem rOut_le_sq_of_sqrt_le (f : ContDiffBump (0 : ℝ)) {z : ℂ}
+    (hz : √f.rOut ≤ ‖z‖) : f.rOut ≤ ‖z‖ ^ 2 := by
+  nlinarith [Real.sq_sqrt f.rOut_pos.le, Real.sqrt_nonneg f.rOut]
+
+/-- The reference section has bounded derivatives of every order: outside a disc it is the
+phase `(z / ‖z‖) ^ m`, which is homogeneous of degree `0`. -/
+theorem exists_norm_iteratedFDeriv_referenceSection_le (f : ContDiffBump (0 : ℝ)) (m n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceSection f m) z‖ ≤ C := by
+  refine exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq le_rfl (N := n)
+    ((contDiff_referenceSection f m).of_le (by exact_mod_cast le_top))
+    (h := fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m)
+    (fun z hz ↦ ((contDiffAt_div_norm_pow m hz).of_le (by exact_mod_cast le_top)).contDiffWithinAt)
+    (fun t ht z _ ↦ ?_) (fun z hz ↦ referenceSection_eq_phase f m (rOut_le_sq_of_sqrt_le f hz))
+    n le_rfl
+  rw [Real.rpow_zero, one_smul, norm_smul, Real.norm_of_nonneg ht.le, Complex.real_smul]
+  push_cast
+  rw [mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
+
+/-- The reference connection has bounded derivatives of every order: outside a disc it is the
+angular one-form `-i m dθ`, which is homogeneous of degree `-1`. -/
+theorem exists_norm_iteratedFDeriv_referenceConnection_le (f : ContDiffBump (0 : ℝ)) (m n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceConnection f m) z‖ ≤ C := by
+  refine exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq (d := -1) (by norm_num) (N := n)
+    (R := √f.rOut)
+    ((contDiff_referenceConnection f m).of_le (by exact_mod_cast le_top))
+    (h := fun z : ℂ ↦ (-(m : ℂ) * I) •
+      ((ofRealCLM.comp imCLM).comp (ContinuousLinearMap.mul ℝ ℂ z⁻¹)))
+    (fun z hz ↦ ((contDiffAt_angular m hz).of_le (by exact_mod_cast le_top)).contDiffWithinAt)
+    (fun t ht z _ ↦ ContinuousLinearMap.ext fun v ↦ ?_) (fun z hz ↦ ?_) n le_rfl
+  · simp only [smul_apply, ContinuousLinearMap.comp_apply,
+      ContinuousLinearMap.mul_apply', Complex.real_smul, mul_inv, smul_eq_mul, imCLM_apply,
+      ofRealCLM_apply, Real.rpow_neg_one, ← ofReal_inv, mul_assoc, im_ofReal_mul]
+    push_cast
+    ring
+  · simp [referenceConnection, cutoff_eq_one f (rOut_le_sq_of_sqrt_le f hz)]
+
+/-- The reference section has temperate growth. -/
+theorem hasTemperateGrowth_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
+    (referenceSection f m).HasTemperateGrowth :=
+  .of_norm_iteratedFDeriv_le (contDiff_referenceSection f m)
+    (exists_norm_iteratedFDeriv_referenceSection_le f m)
+
+/-- The reference connection has temperate growth. -/
+theorem hasTemperateGrowth_referenceConnection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
+    (referenceConnection f m).HasTemperateGrowth :=
+  .of_norm_iteratedFDeriv_le (contDiff_referenceConnection f m)
+    (exists_norm_iteratedFDeriv_referenceConnection_le f m)
 
 end TauCeti.Vortex
