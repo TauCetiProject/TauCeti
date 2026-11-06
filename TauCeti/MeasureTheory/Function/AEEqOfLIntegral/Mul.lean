@@ -12,13 +12,13 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 
 Two functions whose second moments and mixed moment all agree are almost everywhere equal: the
 function `(g₂ - g₁)²` has integral `T - 2 T + T = 0`, hence vanishes almost everywhere
-(`TauCeti.ae_eq_of_integral_mul_eq_of_integral_sq_eq`). The same holds for two finite-valued
-`ℝ≥0∞`-valued functions with equal finite lower moments (`TauCeti.ae_eq_of_lintegral_mul_eq`).
+(`TauCeti.ae_eq_of_integral_mul_eq_of_integral_sq_eq`). The same holds for two a.e.-measurable
+`ℝ≥0∞`-valued functions whose moments `∫⁻ u * u`, `∫⁻ u * v`, `∫⁻ v * v` all equal the same finite
+value (`TauCeti.ae_eq_of_lintegral_mul_eq`).
 
 The polarisation lemma `TauCeti.ae_eq_of_integral_mul_eq_of_integral_sq_eq` is adapted from
 `cameronfreer/exchangeability` (`Probability/CondExp.lean`, pin
-`e0532e59ceff23edab44dda9ab0655debbc9cc22`), as stated in
-`TauCeti/Probability/Independence/Conditional.lean`, from which it was moved.
+`e0532e59ceff23edab44dda9ab0655debbc9cc22`).
 -/
 
 public section
