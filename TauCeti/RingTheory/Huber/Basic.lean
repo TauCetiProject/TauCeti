@@ -7,7 +7,7 @@ module
 
 public import Mathlib.RingTheory.AdicCompletion.Topology
 public import Mathlib.RingTheory.Finiteness.Ideal
-public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+public import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic

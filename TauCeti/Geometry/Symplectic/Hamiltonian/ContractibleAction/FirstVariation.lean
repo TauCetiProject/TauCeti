@@ -115,7 +115,7 @@ theorem IsWeaklyExact.hasDerivAt_capArea (hφ : IsSmoothForm I 0 φ) (hw : IsWea
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1)]) s₀ := by
   obtain ⟨u, hu⟩ := hcap
   set f : ℝ → F := fun s ↦ ∫ t in (0 : ℝ)..1,
-    mpullback 𝓘(ℝ, ℝ × ℝ) I w φ (s, t) ![(1, 0), (0, 1)]
+    TauCeti.mpullback 𝓘(ℝ, ℝ × ℝ) I w φ (s, t) ![(1, 0), (0, 1)]
   have hf : Continuous f := continuous_integral_mpullback hφ (hwc.of_le one_le_two) 0 1
   -- the cap area of `w (s, ·)` is that of `w (s₀, ·)` plus the area swept from `s` to `s₀`
   have heq : (fun s ↦ capArea φ fun t ↦ w (s, t)) =
