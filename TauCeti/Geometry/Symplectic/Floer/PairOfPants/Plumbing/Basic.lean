@@ -76,6 +76,7 @@ public noncomputable section
 
 open Set Real Manifold Topology Function
 open TauCeti.ThricePuncturedSphere TauCeti.ThricePuncturedSphere.Puncture
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 
 namespace TauCeti.Floer
 
@@ -131,56 +132,17 @@ open Floer MeasureTheory
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
   {Ha Hb : Puncture → ℝ → V → ℝ} {q : Puncture} {L : ℝ}
 
-/-- The plumbing map in the real coordinates `ℝ × ℝ ≃ ℂ`. -/
-private noncomputable def plumbingChart (q : Puncture) (L : ℝ) : ℝ × ℝ → ℝ × ℝ :=
-  Complex.equivRealProdCLM ∘ q.plumbingMap L ∘ Complex.equivRealProdCLM.symm
+private theorem contDiff_realChart_plumbingMap (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
+    ContDiff ℝ n (realChart (q.plumbingMap L)) := by
+  have hψ : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
+    funext (plumbingMap_apply q L)
+  exact contDiff_realChart (by rw [hψ]; fun_prop)
 
-private theorem plumbingChart_apply (q : Puncture) (L : ℝ) (z : ℝ × ℝ) :
-    plumbingChart q L z =
-      Complex.equivRealProdCLM (q.plumbingMap L (Complex.equivRealProdCLM.symm z)) :=
-  (rfl)
-
-private theorem contDiff_plumbingChart (q : Puncture) (L : ℝ) {n : WithTop ℕ∞} :
-    ContDiff ℝ n (plumbingChart q L) := by
-  have hψ : ContDiff ℝ n (q.plumbingMap L) := by
-    have h : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
-      funext (plumbingMap_apply q L)
-    rw [h]
-    fun_prop
-  exact Complex.equivRealProdCLM.contDiff.comp (hψ.comp Complex.equivRealProdCLM.symm.contDiff)
-
-private theorem injective_plumbingChart (q : Puncture) (L : ℝ) :
-    Injective (plumbingChart q L) :=
-  Complex.equivRealProdCLM.injective.comp
-    ((q.plumbingMap_injective L).comp Complex.equivRealProdCLM.symm.injective)
-
-private theorem fderiv_plumbingChart_apply (q : Puncture) (L : ℝ) (z v : ℝ × ℝ) :
-    fderiv ℝ (plumbingChart q L) z v = Complex.equivRealProdCLM
-      (q.plumbingFactor L * Complex.equivRealProdCLM.symm v) := by
-  have h := ((q.hasDerivAt_plumbingMap L
-    (Complex.equivRealProdCLM.symm z)).hasFDerivAt.restrictScalars ℝ)
-  rw [plumbingChart, (Complex.equivRealProdCLM.hasFDerivAt.comp z
-    (h.comp z Complex.equivRealProdCLM.symm.hasFDerivAt)).fderiv]
-  simp [mul_comm]
-
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-/-- The pullback along the plumbing chart of a datum `P` on `ℂ`, written in the real
-coordinates through its values on `1` and `i`, evaluates `P` at the image under the plumbing
-map on the image of the tangent vector. -/
-private theorem perturbationPullback_plumbingChart (P : ℂ → V → ℂ →L[ℝ] ℝ) (v w : ℝ × ℝ)
-    (x : V) :
-    perturbationPullback (plumbingChart q L)
-        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) v w x =
-      P (q.plumbingMap L (Complex.equivRealProdCLM.symm w)) x
-        (q.plumbingFactor L * Complex.equivRealProdCLM.symm v) := by
-  -- A real-linear functional `κ` on `ℂ` satisfies `κ ξ = Re ξ · κ 1 + Im ξ · κ i`.
-  have hκ (κ : ℂ →L[ℝ] ℝ) (ξ : ℂ) : ξ.re * κ 1 + ξ.im * κ Complex.I = κ ξ := by
-    have hξ : ξ = ξ.re • (1 : ℂ) + ξ.im • Complex.I := by simp
-    conv_rhs => rw [hξ]
-    rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
-  rw [perturbationPullback_apply, fderiv_plumbingChart_apply, plumbingChart_apply,
-    ContinuousLinearEquiv.symm_apply_apply, Complex.equivRealProdCLM_apply, hκ]
+private theorem injective_realChart_plumbingMap (q : Puncture) (L : ℝ) :
+    Injective (realChart (q.plumbingMap L)) := fun a b h ↦ by
+  rw [realChart_apply, realChart_apply] at h
+  exact Complex.equivRealProdCLM.symm.injective
+    (q.plumbingMap_injective L (Complex.equivRealProdCLM.injective h))
 
 /-- At points other than the four punctures, the plumbed perturbation of `C¹` Hamiltonians is
 differentiable jointly in the domain and target points. -/
@@ -240,11 +202,11 @@ private theorem hamiltonianCurvature_perturbationPullback_plumbedPerturbation
     (hz : Complex.equivRealProdCLM.symm z ≠ 0)
     (hre : -(L / 2) < (inf.endCoord (Complex.equivRealProdCLM.symm z)).re) :
     ω.hamiltonianCurvature
-        (perturbationPullback (plumbingChart q L)
+        (perturbationPullback (realChart (q.plumbingMap L))
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x
             Complex.I) stdComplexLineReal)
-        (perturbationPullback (plumbingChart q L)
+        (perturbationPullback (realChart (q.plumbingMap L))
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) x
             Complex.I) stdComplexLineImag) z =
@@ -259,8 +221,10 @@ private theorem hamiltonianCurvature_perturbationPullback_plumbedPerturbation
   have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
     apply Complex.ext <;> simp [stdComplexLineImag_eq]
   exact ω.hamiltonianCurvature_congr_of_eventuallyEq
-    (hP.mono fun z' hz' ↦ funext fun x ↦ by rw [perturbationPullback_plumbingChart, h₁, hz'])
-    (hP.mono fun z' hz' ↦ funext fun x ↦ by rw [perturbationPullback_plumbingChart, hI, hz'])
+    (hP.mono fun z' hz' ↦ funext fun x ↦ by
+      rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _), h₁, hz'])
+    (hP.mono fun z' hz' ↦ funext fun x ↦ by
+      rw [perturbationPullback_realChart _ (q.hasDerivAt_plumbingMap L _), hI, hz'])
 
 /-- On the part `A` of the plane off the collar `Re z > L/2` of the end `q`, the integrated
 curvature of the plumbed perturbation is that of the receiving pair of pants, and so is at most
@@ -300,7 +264,7 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
     (hHb : ∀ r, Periodic (Hb r) 1) (hHas : ∀ r, ContDiff ℝ 1 (uncurry (Ha r)))
     (hHbs : ∀ r, ContDiff ℝ 1 (uncurry (Hb r))) (hab : Hb q = Ha inf) (hL : 4 < L)
     {Ba : Puncture → ℝ} (hBa : ∀ r t x, |Ha r t x| ≤ Ba r) (u : ℝ × ℝ → V) :
-    ∫⁻ z in plumbingChart q L '' {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
+    ∫⁻ z in realChart (q.plumbingMap L) '' {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0 ∧
         Complex.equivRealProdCLM.symm z ≠ 1 ∧
         -(L / 2) < (inf.endCoord (Complex.equivRealProdCLM.symm z)).re},
       ‖ω.hamiltonianCurvature
@@ -320,33 +284,34 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
   -- perturbation is differentiable.
   have hdiff {w : ℝ × ℝ} (hw : w ∈ S) (y : V) :
       DifferentiableAt ℝ (fun p : ℂ × V ↦ plumbedPerturbation Ha Hb q L p.1 p.2)
-        (Complex.equivRealProdCLM.symm (plumbingChart q L w), y) := by
+        (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w), y) := by
     refine differentiableAt_plumbedPerturbation hq hHa hHb hHas hHbs hab hL ?_ y
-    rw [plumbingChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+    rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_,
       fun h ↦ hw.2.1 (q.plumbingMap_injective L h)⟩
     rw [endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L hw.1]
     linarith [hw.2.2]
   have hdom {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
       (fun z ↦ plumbedPerturbation Ha Hb q L (Complex.equivRealProdCLM.symm z) y v)
-      (plumbingChart q L w) :=
+      (realChart (q.plumbingMap L) w) :=
     ((hdiff hw y).comp (f := fun z ↦ (Complex.equivRealProdCLM.symm z, y))
-      (plumbingChart q L w) (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
+      (realChart (q.plumbingMap L) w) (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
         (differentiableAt_const y))).clm_apply (differentiableAt_const v)
   have htgt {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
       (fun y ↦ plumbedPerturbation Ha Hb q L
-        (Complex.equivRealProdCLM.symm (plumbingChart q L w)) y v) y :=
-    ((hdiff hw y).comp (f := fun y ↦ (Complex.equivRealProdCLM.symm (plumbingChart q L w), y))
+        (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w)) y v) y :=
+    ((hdiff hw y).comp
+      (f := fun y ↦ (Complex.equivRealProdCLM.symm (realChart (q.plumbingMap L) w), y))
       y ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
       (differentiableAt_const v)
-  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_plumbingChart q L).injOn
-    (fun w _ ↦ (contDiff_plumbingChart q L).contDiffAt)
+  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_realChart_plumbingMap q L).injOn
+    (fun w _ ↦ (contDiff_realChart_plumbingMap q L).contDiffAt)
     (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I)]
   calc _ = ∫⁻ w in S, ‖ω.hamiltonianCurvature
           (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x 1)
           (fun z x ↦ pairOfPantsPerturbation Ha (Complex.equivRealProdCLM.symm z) x Complex.I)
-          w ((u ∘ plumbingChart q L) w)‖ₑ :=
+          w ((u ∘ realChart (q.plumbingMap L)) w)‖ₑ :=
         setLIntegral_congr_fun hSm fun w hw ↦ by
           rw [hamiltonianCurvature_perturbationPullback_plumbedPerturbation ω hq hab hL hw.1
             hw.2.2, comp_apply]
@@ -380,7 +345,7 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (ω : Symple
     -(L / 2) < (inf.endCoord (Complex.equivRealProdCLM.symm z)).re}
   set N : Set (ℝ × ℝ) :=
     {Complex.equivRealProdCLM q.endCenter, Complex.equivRealProdCLM (q.plumbingMap L 1)}
-  have hcover : univ ⊆ (A ∪ plumbingChart q L '' S) ∪ N := by
+  have hcover : univ ⊆ (A ∪ realChart (q.plumbingMap L) '' S) ∪ N := by
     intro z _
     by_cases h₀ : Complex.equivRealProdCLM.symm z = q.endCenter
     · exact Or.inr (by simp [N, ← h₀])
@@ -396,7 +361,7 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le (ω : Symple
         exact h₁ (by rw [← h, plumbingMap_sub_endCenter_div])
       · rw [re_endCoord_inf_sub_endCenter_div q L h₀]
         linarith
-    · rw [plumbingChart_apply, ContinuousLinearEquiv.symm_apply_apply,
+    · rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply,
         plumbingMap_sub_endCenter_div, ContinuousLinearEquiv.apply_symm_apply]
   have hN : volume N = 0 := by
     rw [Measure.volume_eq_prod]

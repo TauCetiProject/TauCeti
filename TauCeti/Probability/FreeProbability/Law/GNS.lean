@@ -51,7 +51,7 @@ theorem law_eq_map_diagMeasure (φ : A →ₚ[ℂ] ℂ) (π : A →⋆ₐ[ℂ] (
     φ.law a = ((π a).diagMeasure ξ).map (fun z : spectrum ℂ (π a) => (z : ℂ).re) := by
   have hπa : IsSelfAdjoint (π a) := ha.map π
   let _ : IsStarNormal (π a) := hπa.isStarNormal
-  refine ((eq_law_iff ha).2 fun f hf => ?_).symm
+  refine (eq_law_iff.2 fun f hf => ?_).symm
   rw [integral_map (by fun_prop) (by fun_prop), ← integral_complex_ofReal]
   rw [(π a).integral_diagMeasure_eq_inner_cfc ξ (fun z => (f z.re : ℂ)),
     cfc_comp_re f (π a) hf.continuousOn, hπa.coe_realPart,

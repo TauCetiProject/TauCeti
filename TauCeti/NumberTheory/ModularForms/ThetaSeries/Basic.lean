@@ -39,8 +39,8 @@ half-planes and locally uniformly on `ℍ`, and are holomorphic, both as functio
 `{z | 0 < im z}` and in the manifold sense on `ℍ`, which is what a bundled modular form requires.
 
 The series `θ_{γ+L}` depends only on the class of `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`. For a
-subgroup `M ≤ L`, splitting `L` into the classes of `L` modulo `M` writes `Θ_L` as the sum of the
-series `θ_{y+M}` over those classes.
+subgroup `M ≤ L`, splitting `L` into the classes of `L` modulo `M` writes `θ_{γ+L}` as the sum of
+the series `θ_{γ+y+M}` over those classes, and in particular `Θ_L` as the sum of the `θ_{y+M}`.
 
 ## Main definitions
 
@@ -55,8 +55,9 @@ series `θ_{y+M}` over those classes.
   `γ` modulo `L`, and `θ_{-γ+L} = θ_{γ+L}`.
 * `ZLattice.summable_norm_thetaCoset`, `ZLattice.summable_thetaCoset`: the series converge
   absolutely at every `τ : ℍ`.
-* `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`, `Θ_L` is the sum of the `θ_{y+M}` over the classes
-  `y` of `L` modulo `M`.
+* `ZLattice.hasSum_thetaCoset_add_out`, `ZLattice.hasSum_thetaCoset_out`: for `M ≤ L`, `θ_{γ+L}`
+  is the sum of the `θ_{γ+y+M}`, and `Θ_L` the sum of the `θ_{y+M}`, over the classes `y` of `L`
+  modulo `M`.
 * `ZLattice.hasSumUniformlyOn_thetaCoset`: uniform convergence on `{τ | y ≤ im τ}` for `0 < y`.
 * `ZLattice.hasSumLocallyUniformly_thetaCoset`: locally uniform convergence on `ℍ`.
 * `ZLattice.differentiableOn_thetaCoset`, `ZLattice.mdifferentiable_thetaCoset`: holomorphy.
@@ -155,13 +156,13 @@ theorem thetaCoset_neg (γ : E) : thetaCoset L (-γ) = thetaCoset L γ := by
   refine tsum_congr fun v => ?_
   rw [Equiv.neg_apply, Submodule.coe_neg, ← neg_add, norm_neg]
 
-/-- The sum of theta terms over the fiber of the quotient map `L → L / M` is the theta
-series of the translate of `M` by a representative of that class. -/
-theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
+/-- The sum of the terms of `θ_{γ+L}` over the fiber of the quotient map `L → L / M` is the theta
+series of the translate of `M` by `γ` plus a representative of that class. -/
+theorem tsum_thetaCosetTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L) (γ : E)
     (y : L ⧸ M.submoduleOf L) (τ : ℍ) :
     ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L),
-      cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
-        thetaCoset M (Quotient.out y : L) τ := by
+      cexp (π * I * (‖γ + ((b : L) : E)‖ ^ 2 : ℝ) * τ) =
+        thetaCoset M (γ + (Quotient.out y : L)) τ := by
   -- The fiber is identified with the kernel `M.submoduleOf L`, and then with `M`.
   let f := (M.submoduleOf L).mkQ.toAddMonoidHom
   have hker (x : L) : x ∈ M.submoduleOf L ↔ x ∈ f.ker := by simp [f]
@@ -175,7 +176,16 @@ theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
     have hv : (((Submodule.submoduleOfEquivOfLe hML).symm v : L) : E) = v := rfl
     simp [e, AddMonoidHom.fiberEquivKer_symm_apply, hv]
   rw [thetaCoset_apply, ← e.tsum_eq]
-  exact tsum_congr fun v => by rw [he]
+  exact tsum_congr fun v => by rw [he, add_assoc]
+
+/-- The sum of theta terms over the fiber of the quotient map `L → L / M` is the theta
+series of the translate of `M` by a representative of that class. -/
+theorem tsum_thetaTerm_fiber {M : Submodule ℤ E} (hML : M ≤ L)
+    (y : L ⧸ M.submoduleOf L) (τ : ℍ) :
+    ∑' b : (Submodule.Quotient.mk ⁻¹' {y} : Set L),
+      cexp (π * I * (‖((b : L) : E)‖ ^ 2 : ℝ) * τ) =
+        thetaCoset M (Quotient.out y : L) τ := by
+  simpa using tsum_thetaCosetTerm_fiber L hML 0 y τ
 
 variable [NormedSpace ℝ E] [FiniteDimensional ℝ E] [DiscreteTopology L]
 
@@ -199,15 +209,23 @@ theorem summable_thetaSeries (τ : ℍ) :
     Summable fun v : L => cexp (π * I * (‖(v : E)‖ ^ 2 : ℝ) * τ) := by
   simpa using summable_thetaCoset L 0 τ
 
+/-- **Splitting the theta series of a translate into cosets.** For `M ≤ L` and `γ : E`, the theta
+series of `γ + L` is the sum of the theta series of the translates `γ + y + M` over the classes `y`
+of `L` modulo `M`, each class represented by `Quotient.out` (by `thetaCoset_eq_of_sub_mem` the
+representative does not matter). The sum is finite when `M` has finite index in `L`. -/
+theorem hasSum_thetaCoset_add_out {M : Submodule ℤ E} (hML : M ≤ L) (γ : E) (τ : ℍ) :
+    HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M (γ + ((Quotient.out y : L) : E)) τ)
+      (thetaCoset L γ τ) := by
+  rw [← funext (fun y ↦ tsum_thetaCosetTerm_fiber L hML γ y τ), thetaCoset_apply]
+  exact (summable_thetaCoset L γ τ).hasSum.tsum_fiberwise _
+
 /-- **Splitting a theta series into cosets.** For `M ≤ L`, the theta series of `L` is the sum of
 the theta series of the translates `y + M` over the classes `y` of `L` modulo `M`, each class
-represented by `Quotient.out` (by `thetaCoset_eq_of_sub_mem` the representative does not matter).
-The sum is finite when `M` has finite index in `L`. -/
+represented by `Quotient.out`. The sum is finite when `M` has finite index in `L`. -/
 theorem hasSum_thetaCoset_out {M : Submodule ℤ E} (hML : M ≤ L) (τ : ℍ) :
     HasSum (fun y : L ⧸ M.submoduleOf L => thetaCoset M ((Quotient.out y : L) : E) τ)
       (thetaSeries L τ) := by
-  rw [← funext (fun y ↦ tsum_thetaTerm_fiber L hML y τ), thetaSeries_apply]
-  exact (summable_thetaSeries L τ).hasSum.tsum_fiberwise _
+  simpa using hasSum_thetaCoset_add_out L hML 0 τ
 
 /-- The theta series of a translate converges uniformly on each half-plane `{τ | y ≤ im τ}` with
 `0 < y`. -/

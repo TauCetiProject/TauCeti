@@ -161,6 +161,30 @@ end ChartField
 variable [FiniteDimensional ℝ E] [T2Space M] [BoundarylessManifold I M] {n : ℕ∞ω}
   [IsManifold I n M] {m : ℕ∞}
 
+omit [FiniteDimensional ℝ E] in
+/-- If `w = d` on the chart ball of radius `r / 2` about `x`, with `‖d‖ < r / 4`, the flow of the
+chart field carries `x` to the chart point `e x + d` at time one. -/
+private theorem maximalIntegralCurve_chartField_one [IsManifold I 1 M] {x : M}
+    {w : (p : E) → TangentSpace 𝓘(ℝ, E) p}
+    (hv : ContMDiff I I.tangent 1 (fun z ↦ (⟨z, chartField x w z⟩ : TangentBundle I M)))
+    {r : ℝ} (hballt : ball (extChartAt I x x) r ⊆ (extChartAt I x).target) {d : E}
+    (hdr : ‖d‖ < r / 4) (hwd : ∀ p ∈ ball (extChartAt I x x) (r / 2), w p = d) :
+    maximalIntegralCurve (chartField (I := I) x w) x 1 =
+      (extChartAt I x).symm (extChartAt I x x + d) := by
+  have hseg : ∀ s ∈ Ioo (-2 : ℝ) 2,
+      extChartAt I x x + s • d ∈ ball (extChartAt I x x) (r / 2) := fun s hs ↦ by
+    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
+    have hs' : |s| < 2 := abs_lt.2 hs
+    nlinarith [abs_nonneg s, norm_nonneg d]
+  have hcurve : IsMIntegralCurveOn (fun s ↦ (extChartAt I x).symm (extChartAt I x x + s • d))
+      (chartField x w) (Ioo (-2) 2) := fun s hs ↦
+    (hasMFDerivAt_chartField isOpen_ball
+      ((ball_subset_ball (by linarith [norm_nonneg d])).trans hballt) hwd
+      (hseg s hs)).hasMFDerivWithinAt
+  rw [hcurve.eqOn_maximalIntegralCurve (x := x) hv (by norm_num) (by simp)
+    (by norm_num : (1 : ℝ) ∈ Ioo (-2) 2)]
+  simp only [one_smul]
+
 /-- Every point near `x` is reached from `x` by a diffeotopy fixing everything outside a compact
 subset of a given open neighbourhood `U` of `x`. -/
 private theorem eventually_exists_diffeotopy_final_apply_eq (hm : 1 ≤ m)
@@ -211,21 +235,10 @@ private theorem eventually_exists_diffeotopy_final_apply_eq (hm : 1 ≤ m)
     _, hL, ?_, compactlySupportedFlowDiffeotopy_eqOn_compl hm hv hL _ 1, ?_⟩
   · rintro _ ⟨p, hp, rfl⟩
     exact (hrW (hKr hp)).2
-  -- The segment `s ↦ e.symm (e x + s • d)` is the flow line of `x`.
-  have hseg : ∀ s ∈ Ioo (-2 : ℝ) 2, e x + s • d ∈ ball (e x) (r / 2) := fun s hs ↦ by
-    rw [mem_ball, dist_eq_norm, add_sub_cancel_left, norm_smul, Real.norm_eq_abs]
-    have hs' : |s| < 2 := abs_lt.2 hs
-    nlinarith [abs_nonneg s, norm_nonneg d]
-  have hcurve : IsMIntegralCurveOn (fun s ↦ e.symm (e x + s • d)) (chartField x w)
-      (Ioo (-2) 2) := fun s hs ↦
-    (hasMFDerivAt_chartField isOpen_ball ((ball_subset_ball (by linarith)).trans hballt) hwd
-      (hseg s hs)).hasMFDerivWithinAt
-  have h1 := hcurve.eqOn_maximalIntegralCurve (x := x) (hv.of_le (by exact_mod_cast hm))
-    (by norm_num) (by simp [he]) (by norm_num : (1 : ℝ) ∈ Ioo (-2) 2)
   rw [Diffeotopy.final_apply, compactlySupportedFlowDiffeotopy_apply]
   dsimp only
-  rw [Set.Icc.coe_one, one_mul, h1]
-  simp only [one_smul, hd, add_sub_cancel, e.left_inv hys]
+  rw [Set.Icc.coe_one, one_mul, maximalIntegralCurve_chartField_one
+    (hv.of_le (by exact_mod_cast hm)) hballt hdr hwd, ← he, hd, add_sub_cancel, e.left_inv hys]
 
 /-- **Homogeneity lemma.** For two points `x` and `y` of a preconnected open subset `U` of a
 finite-dimensional boundaryless manifold, some diffeotopy fixing everything outside a compact
