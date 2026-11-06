@@ -64,6 +64,36 @@ variable [Algebra.FiniteType k C] [IsReduced C]
 variable [AddCommGroup M] [Module k M] [Comodule k C M]
 variable [Field K] [Algebra k K] [IsAlgClosed K]
 
+omit [Algebra.FiniteType k C] [IsReduced C] [IsAlgClosed K] in
+/-- Pointwise stability makes every matrix coefficient through the quotient by `N` vanish at
+each geometric point, for elements of `N`. -/
+private theorem apply_matrixCoefficient_comp_mkQ_eq_zero (N : Submodule k M)
+    (hN : ∀ (g : C →ₐ[k] K) {m : M}, m ∈ N →
+      Comodule.endOfPoint M g (1 ⊗ₜ[k] m) ∈ N.baseChange K)
+    (g : C →ₐ[k] K) {m : M} (hm : m ∈ N) (φ : (M ⧸ N) →ₗ[k] k) :
+    g (Comodule.matrixCoefficient (R := k) (C := C) (φ.comp N.mkQ) m) = 0 := by
+  obtain ⟨y, hy⟩ := hN g hm
+  have hyq : N.mkQ.baseChange K (Comodule.endOfPoint M g (1 ⊗ₜ[k] m)) = 0 := by
+    rw [← hy, ← LinearMap.comp_apply, ← LinearMap.baseChange_comp]
+    have hcomp : N.mkQ.comp N.subtype = 0 := by
+      simpa using (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero
+    rw [hcomp, LinearMap.baseChange_zero, LinearMap.zero_apply]
+  have heval := congrArg
+    (fun t ↦ TauCeti.Module.Dual.baseChangeEvaluation
+      (R := k) (M := M ⧸ N) (A := K) (1 ⊗ₜ[k] φ) t) hyq
+  rw [map_zero, Module.Dual.baseChangeEvaluation_one_tmul_baseChange] at heval
+  simpa only [Comodule.baseChangeEvaluation_endOfPoint_tmul, one_mul] using heval
+
+omit [Coalgebra k C] [Algebra.FiniteType k C] [IsReduced C] in
+/-- Applying a functional `f` on `Q'` to a tensor in `Q' ⊗ C` agrees with applying any extension
+`φ` of `f` along `ι : Q' → Q` to its image in `Q ⊗ C`. -/
+private theorem lid_rTensor_eq_of_comp_subtype {Q Q' : Type*} [AddCommGroup Q] [Module k Q]
+    [AddCommGroup Q'] [Module k Q'] (f : Q' →ₗ[k] k) (φ : Q →ₗ[k] k) (ι : Q' →ₗ[k] Q)
+    (hφ : φ.comp ι = f) (z' : Q' ⊗[k] C) :
+    TensorProduct.lid k C (LinearMap.rTensor C f z') =
+      TensorProduct.lid k C (LinearMap.rTensor C φ (LinearMap.rTensor C ι z')) := by
+  rw [← LinearMap.rTensor_comp_apply, hφ]
+
 /-- If every geometric point preserves the scalar extension of a submodule, the coaction of
 each element of that submodule belongs to its tensor product with the coefficient coalgebra.
 
@@ -92,43 +122,11 @@ theorem coact_mem_range_of_forall_endOfPoint_tmul_mem_baseChange
       obtain ⟨φ, hφ⟩ := LinearMap.exists_extend (b.coord i)
       apply TauCeti.eq_of_forall_algHom_apply_eq (k := k) (K := K)
       intro g
-      obtain ⟨y, hy⟩ := hN g hm
-      have hyq : q.baseChange K (Comodule.endOfPoint M g (1 ⊗ₜ[k] m)) = 0 := by
-        rw [← hy]
-        rw [← LinearMap.comp_apply, ← LinearMap.baseChange_comp]
-        have hcomp : q.comp N.subtype = 0 := by
-          simpa [q] using (LinearMap.exact_subtype_mkQ N).linearMap_comp_eq_zero
-        rw [hcomp, LinearMap.baseChange_zero, LinearMap.zero_apply]
-      have heval := congrArg
-        (fun t ↦ TauCeti.Module.Dual.baseChangeEvaluation
-          (R := k) (M := Q) (A := K) (1 ⊗ₜ[k] φ) t) hyq
-      rw [map_zero] at heval
-      have hcoeff :
-          g (Comodule.matrixCoefficient (R := k) (C := C) (φ.comp q) m) = 0 := by
-        rw [Module.Dual.baseChangeEvaluation_one_tmul_baseChange] at heval
-        simpa only [Comodule.baseChangeEvaluation_endOfPoint_tmul, one_mul] using heval
-      rw [map_zero]
-      rw [← hcoeff]
+      rw [map_zero, ← apply_matrixCoefficient_comp_mkQ_eq_zero N hN g hm φ]
       congr 1
-      rw [Comodule.matrixCoefficient_def]
-      calc
-        TensorProduct.lid k C (LinearMap.rTensor C (b.coord i) z') =
-            TensorProduct.lid k C (LinearMap.rTensor C (φ.comp Q'.subtype) z') := by
-              rw [hφ]
-        _ = TensorProduct.lid k C
-            (LinearMap.rTensor C φ (LinearMap.rTensor C Q'.subtype z')) := by
-              rw [LinearMap.rTensor_comp_apply]
-        _ = TensorProduct.lid k C (LinearMap.rTensor C φ z) := by rw [hz']
-        _ = TensorProduct.lid k C
-            (LinearMap.rTensor C φ
-              (LinearMap.rTensor C q (Comodule.coact (R := k) (C := C) m))) := rfl
-        _ = TensorProduct.lid k C
-            (LinearMap.rTensor C (φ.comp q) (Comodule.coact (R := k) (C := C) m)) := by
-              rw [LinearMap.rTensor_comp_apply]
-        _ = TensorProduct.lid k C
-            (TensorProduct.map (φ.comp q) LinearMap.id
-              (Comodule.coact (R := k) (C := C) m)) := by
-              rw [LinearMap.rTensor_def]
+      rw [Comodule.matrixCoefficient_def,
+        lid_rTensor_eq_of_comp_subtype (b.coord i) φ Q'.subtype hφ z', hz',
+        ← LinearMap.rTensor_comp_apply, LinearMap.rTensor_def]
     rw [← hz', hz'zero, map_zero]
   have hzker : Comodule.coact (R := k) (C := C) (M := M) m ∈
       LinearMap.ker (LinearMap.rTensor C q) := by
