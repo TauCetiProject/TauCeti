@@ -36,6 +36,10 @@ vector-field pullback along a parametric family.
 * `HasDerivAt.clm_inverse_of_completeSpace`: the Banach-space specialization for an inverse family.
 * `HasDerivAt.clm_inverse_apply_of_completeSpace`: the Banach-space specialization acting on a
   vector curve.
+* `ContDiffAt.ringInverse` and `ContDiff.ringInverse`: the ring inverse of a `C^n` family of units
+  is `C^n`.
+* `deriv_eq_mul_sub_mul_of_mul_eq_mul`: the velocity of a family `K` with `K t * P t = P t * C`
+  and `P` of velocity `Z` through `1`.
 
 -/
 
@@ -191,3 +195,36 @@ theorem HasDerivAt.clm_inverse_apply_of_completeSpace [CompleteSpace E]
       ((A t₀).inverse w' - (A t₀).inverse (A' ((A t₀).inverse (w t₀)))) t₀ := by
   exact hA.clm_inverse_apply hA0Inv
     (DifferentiableAt.clm_inverse_of_completeSpace hA.differentiableAt hA0Inv) hw
+
+section RingInverse
+
+variable {R : Type*} [NormedRing R] [NormedAlgebra 𝕜 R] [HasSummableGeomSeries R]
+  {X : Type*} [NormedAddCommGroup X] [NormedSpace 𝕜 X] {n : WithTop ℕ∞}
+
+/-- The ring inverse of a `C^n` family is `C^n` at a point where the family takes a unit value. -/
+theorem ContDiffAt.ringInverse {f : X → R} {x : X} (hf : ContDiffAt 𝕜 n f x)
+    (hfx : IsUnit (f x)) : ContDiffAt 𝕜 n (fun y => Ring.inverse (f y)) x := by
+  obtain ⟨u, hu⟩ := hfx
+  have hi := contDiffAt_ringInverse (n := n) 𝕜 u
+  rw [hu] at hi
+  exact hi.comp x hf
+
+/-- The ring inverse of a `C^n` family of units is `C^n`. -/
+theorem ContDiff.ringInverse {f : X → R} (hf : ContDiff 𝕜 n f) (hfu : ∀ x, IsUnit (f x)) :
+    ContDiff 𝕜 n (fun y => Ring.inverse (f y)) :=
+  contDiff_iff_contDiffAt.2 fun x => hf.contDiffAt.ringInverse (hfu x)
+
+omit [HasSummableGeomSeries R] in
+/-- If `K t * P t = P t * C` for all `t`, `P t₀ = 1`, `K t₀ = C`, `P` has derivative `Z` at `t₀`
+and `K` is differentiable at `t₀`, then `K` has derivative `Z * C - C * Z` at `t₀`. -/
+theorem deriv_eq_mul_sub_mul_of_mul_eq_mul {P K : 𝕜 → R} {Z C : R} {t₀ : 𝕜}
+    (hK : DifferentiableAt 𝕜 K t₀) (hP : HasDerivAt P Z t₀) (hKP : ∀ t, K t * P t = P t * C)
+    (hP0 : P t₀ = 1) (hK0 : K t₀ = C) : deriv K t₀ = Z * C - C * Z := by
+  have hL : HasDerivAt (fun t => K t * P t) (deriv K t₀ * P t₀ + K t₀ * Z) t₀ :=
+    hK.hasDerivAt.mul hP
+  have heq := hL.unique ((hP.mul (hasDerivAt_const t₀ C)).congr_of_eventuallyEq
+    (Filter.Eventually.of_forall hKP))
+  simp only [hP0, hK0, mul_one, mul_zero, add_zero] at heq
+  exact eq_sub_of_add_eq heq
+
+end RingInverse
