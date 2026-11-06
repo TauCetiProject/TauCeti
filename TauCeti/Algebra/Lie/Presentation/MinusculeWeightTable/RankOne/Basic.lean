@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.Basic
-public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic
+public import Mathlib.LinearAlgebra.Matrix.SpecialLinearGroup
 
 /-!
 # Rank-one representations on a minuscule weight basis
@@ -34,7 +34,6 @@ carrier built on the table.
   on diagonal matrices.
 * `TauCeti.MinusculeWeightTable.sl2BlockSL_injective`: the representation is faithful as soon as
   the node has a weight of coordinate `-1`.
-* `TauCeti.MinusculeWeightTable.sl2BlockSL_diag2nUnit`: a unit diagonal acts by weight powers.
 
 ## References
 
@@ -224,17 +223,15 @@ theorem sl2BlockMatrix_diagonal (i : B) (d : Fin 2 → R) :
   all_goals by_cases hab : a = b
   all_goals simp [sl2BlockMatrix_apply, Matrix.one_apply, hb, hab]
 
-/-- The determinant-one unit diagonal acts by the integer powers specified by the weights. -/
-@[simp]
-theorem sl2BlockSL_diag2nUnit (i : B) (u : Rˣ) :
-    T.sl2BlockSL i (Matrix.SpecialLinearGroup.diag2nUnit
-      (by decide : (0 : Fin 2) ≠ 1) u) = diagGL (fun a ↦ u ^ T.weight a i) := by
-  apply Units.ext
-  rw [T.coe_sl2BlockSL, Matrix.SpecialLinearGroup.diag2nUnit_coe,
-    T.sl2BlockMatrix_diagonal, diagGL_coe]
+omit [Fintype ι] in
+/-- A determinant-one unit diagonal acts by the integral minuscule weights. -/
+theorem sl2BlockMatrix_diagonal_unit (i : B) (u : Rˣ) :
+    T.sl2BlockMatrix i (Matrix.diagonal
+      (fun r : Fin 2 ↦ if r = 0 then (u : R) else if r = 1 then ((u⁻¹ : Rˣ) : R) else 1)) =
+      Matrix.diagonal (fun a ↦ ((u ^ T.weight a i : Rˣ) : R)) := by
+  rw [sl2BlockMatrix_diagonal]
   congr 1
   funext a
-  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h
-  all_goals simp [h]
+  rcases T.weight_eq_neg_one_or_eq_zero_or_eq_one a i with h | h | h <;> simp [h]
 
 end TauCeti.MinusculeWeightTable
