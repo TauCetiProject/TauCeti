@@ -9,7 +9,8 @@ public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import Mathlib.Topology.Algebra.Support
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
-import TauCeti.Analysis.Calculus.Sard.FlatStratum
+import Mathlib.Analysis.Normed.Module.FiniteDimension
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Flat
 
 /-!
 # Cut-offs of flat functions are small in `C^r`
@@ -18,9 +19,10 @@ Let `u` be a `C^{r+1}` function whose derivatives of order at most `r` vanish at
 let `χ` be a `C^r` function supported in the closed unit ball. The localizations
 `z ↦ χ (ε⁻¹ • (z - y)) • u z` of `u` to the balls `closedBall y ε` are small in `C^r`: their
 derivatives of order at most `r` are bounded by `C * ε` for `0 < ε ≤ 1`
-(`TauCeti.exists_norm_iteratedFDeriv_smul_le_mul`). Each derivative of order `l` of the rescaled
-cut-off costs `ε⁻ˡ` (`TauCeti.iteratedFDeriv_comp_smul_sub`), while on `closedBall y ε` the
-derivative of order `j ≤ r` of `u` is `O(ε ^ (r + 1 - j))`; the Leibniz rule balances these.
+(`TauCeti.exists_norm_iteratedFDeriv_smul_le_mul`). The rescaled cut-off is supported in
+`closedBall y ε` (`TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall`) and each of its
+derivatives of order `l` costs `ε⁻ˡ`, while on `closedBall y ε` the derivative of order `j ≤ r` of
+`u` is `O(ε ^ (r + 1 - j))`; the Leibniz rule balances these.
 
 This is the estimate behind Peetre's theorem on local operators: an operator that sees only the
 `C^r` size of its input near a point cannot see a function that is flat to order `r` there.
@@ -39,13 +41,16 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 namespace TauCeti
 
-/-- The iterated derivatives of a rescaled translate `z ↦ χ (a • (z - y))`. -/
-theorem iteratedFDeriv_comp_smul_sub {χ : E → F} {l : ℕ} (hχ : ContDiff ℝ l χ) (a : ℝ)
-    (y z : E) :
-    iteratedFDeriv ℝ l (fun z ↦ χ (a • (z - y))) z =
-      a ^ l • iteratedFDeriv ℝ l χ (a • (z - y)) := by
-  rw [iteratedFDeriv_comp_sub (f := fun w ↦ χ (a • w)) l y z,
-    iteratedFDeriv_comp_const_smul a hχ]
+/-- Rescaling a function supported in the closed unit ball to `z ↦ χ (ε⁻¹ • (z - y))` gives a
+function supported in `closedBall y ε`. -/
+theorem tsupport_comp_inv_smul_sub_subset_closedBall {α : Type*} [Zero α] {χ : E → α}
+    (hχs : tsupport χ ⊆ closedBall 0 1) {ε : ℝ} (hε : 0 < ε) (y : E) :
+    tsupport (fun z ↦ χ (ε⁻¹ • (z - y))) ⊆ closedBall y ε := by
+  intro z hz
+  have h := hχs (tsupport_comp_subset_preimage χ (f := fun z ↦ ε⁻¹ • (z - y)) (by fun_prop) hz)
+  rw [mem_closedBall, dist_zero_right, norm_smul, norm_inv, Real.norm_of_nonneg hε.le,
+    inv_mul_le_iff₀ hε, mul_one] at h
+  rwa [mem_closedBall, dist_eq_norm]
 
 /-- Cut-offs of a function that is flat to order `r` at `y` are small in `C^r`: if the derivatives
 of the `C^{r+1}` function `u` of order at most `r` vanish at `y` and `χ` is a `C^r` function
@@ -83,14 +88,9 @@ theorem exists_norm_iteratedFDeriv_smul_le_mul [FiniteDimensional ℝ E] {χ : E
   by_cases hz : z ∈ closedBall y ε
   swap
   · -- Away from `closedBall y ε` the function vanishes identically near `z`.
-    have hsupp : z ∉ tsupport fun z ↦ χ (ε⁻¹ • (z - y)) • u z := by
-      intro hz'
-      refine hz ?_
-      have h := hχs (tsupport_comp_subset_preimage χ (f := fun z ↦ ε⁻¹ • (z - y))
-        (by fun_prop) (tsupport_smul_subset_left _ u hz'))
-      rw [mem_closedBall, dist_zero_right, norm_smul, norm_inv,
-        Real.norm_of_nonneg hε.le, inv_mul_le_iff₀ hε, mul_one] at h
-      rwa [mem_closedBall, dist_eq_norm]
+    have hsupp : z ∉ tsupport fun z ↦ χ (ε⁻¹ • (z - y)) • u z := fun hz' ↦
+      hz (tsupport_comp_inv_smul_sub_subset_closedBall hχs hε y
+        (tsupport_smul_subset_left _ u hz'))
     rw [Function.notMem_support.mp fun h ↦ hsupp (support_iteratedFDeriv_subset i h), norm_zero]
     positivity
   have hzy : ‖z - y‖ ≤ ε := by rwa [mem_closedBall, dist_eq_norm] at hz
@@ -104,7 +104,8 @@ theorem exists_norm_iteratedFDeriv_smul_le_mul [FiniteDimensional ℝ E] {χ : E
         ‖iteratedFDeriv ℝ (i - l) u z‖ ≤ (i.choose l : ℝ) * (c' * M * ε) := by
     intro l hl
     have hli : l ≤ i := Nat.lt_succ_iff.mp (Finset.mem_range.mp hl)
-    rw [iteratedFDeriv_comp_smul_sub (hχ.of_le (by exact_mod_cast hli.trans hi)), norm_smul,
+    rw [iteratedFDeriv_comp_sub (f := fun w ↦ χ (ε⁻¹ • w)) l y z,
+      iteratedFDeriv_comp_const_smul ε⁻¹ (hχ.of_le (by exact_mod_cast hli.trans hi)), norm_smul,
       norm_pow, norm_inv, Real.norm_of_nonneg hε.le, mul_assoc]
     refine mul_le_mul_of_nonneg_left ?_ (Nat.cast_nonneg _)
     calc (ε⁻¹ ^ l * ‖iteratedFDeriv ℝ l χ (ε⁻¹ • (z - y))‖) * ‖iteratedFDeriv ℝ (i - l) u z‖

@@ -245,9 +245,6 @@ private noncomputable def unitBump : ContDiffBump (0 : E) := ⟨1 / 2, 1, by nor
 omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
 private theorem unitBump_rIn : (unitBump : ContDiffBump (0 : E)).rIn = 1 / 2 := rfl
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-private theorem unitBump_rOut : (unitBump : ContDiffBump (0 : E)).rOut = 1 := rfl
-
 /-- The smooth function `z ↦ χ (ε⁻¹ • (z - y)) • u z` localizing `u` to `closedBall y ε`, for the
 bump `χ = unitBump`. -/
 private noncomputable def cutoff (y : E) (ε : ℝ) (u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) :
@@ -261,13 +258,9 @@ private theorem coe_cutoff (y : E) (ε : ℝ) (u : C^∞⟮𝓘(ℝ, E), E; 𝓘
 
 private theorem tsupport_cutoff_subset_closedBall {y : E} {ε : ℝ} (hε : 0 < ε)
     (u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) : tsupport (cutoff y ε u : E → F) ⊆ closedBall y ε := by
-  intro z hz
-  rw [coe_cutoff] at hz
-  have h := unitBump.tsupport_eq.subset (tsupport_comp_subset_preimage _
-    (f := fun z ↦ ε⁻¹ • (z - y)) (by fun_prop) (tsupport_smul_subset_left _ _ hz))
-  rw [unitBump_rOut, mem_closedBall, dist_zero_right, norm_smul, norm_inv,
-    Real.norm_of_nonneg hε.le, inv_mul_le_iff₀ hε, mul_one] at h
-  rwa [mem_closedBall, dist_eq_norm]
+  rw [coe_cutoff]
+  exact (tsupport_smul_subset_left _ _).trans
+    (TauCeti.tsupport_comp_inv_smul_sub_subset_closedBall unitBump.tsupport_eq.subset hε y)
 
 private theorem tsupport_cutoff_subset (y : E) (ε : ℝ) (u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯) :
     tsupport (cutoff y ε u : E → F) ⊆ tsupport (u : E → F) := by
@@ -284,6 +277,12 @@ private theorem cutoff_eventuallyEq {y : E} {ε : ℝ} (hε : 0 < ε)
   rw [unitBump_rIn, mem_closedBall, dist_zero_right, norm_smul, norm_inv,
     Real.norm_of_nonneg hε.le, inv_mul_le_iff₀ hε]
   linarith
+
+/-- Letting `δ → 0⁺`: if `a ≤ c * δ` for every `δ ∈ Ioc 0 δ₀`, then `a ≤ 0`. -/
+private theorem le_zero_of_forall_mem_Ioc_le_mul {a c δ₀ : ℝ} (hδ₀ : 0 < δ₀)
+    (h : ∀ δ ∈ Ioc 0 δ₀, a ≤ c * δ) : a ≤ 0 :=
+  ge_of_tendsto (((continuous_const_mul c).tendsto' 0 0 (mul_zero _)).mono_left
+    (nhdsWithin_le_nhds (s := Ioi 0))) (eventually_of_mem (Ioc_mem_nhdsGT hδ₀) h)
 
 /-- The cut-offs of a function that is flat to order `r` at `y` are `O(ε)` in `C^r`. -/
 private theorem exists_norm_iteratedFDeriv_cutoff_le {u : C^∞⟮𝓘(ℝ, E), E; 𝓘(ℝ, F), F⟯} {y : E}
@@ -322,10 +321,8 @@ private theorem norm_apply_le_of_iteratedFDeriv_eq_zero
   have hd : 0 < dist y' x₀ := dist_pos.mpr hne
   suffices ‖P w y'‖ - C * M ≤ 0 by linarith
   -- Let `δ → 0⁺` in `‖P w y'‖ - C * M ≤ C * Kw * δ`.
-  refine ge_of_tendsto (((continuous_const_mul (C * Kw)).tendsto' 0 0 (mul_zero _)).mono_left
-    (nhdsWithin_le_nhds (s := Ioi 0))) ?_
-  filter_upwards [Ioc_mem_nhdsGT (show (0 : ℝ) < min 1 (dist y' x₀ / 2) by positivity)]
-    with δ ⟨hδ, hδle⟩
+  refine le_zero_of_forall_mem_Ioc_le_mul (c := C * Kw)
+    (show (0 : ℝ) < min 1 (dist y' x₀ / 2) by positivity) fun δ ⟨hδ, hδle⟩ ↦ ?_
   have hδ1 : δ ≤ 1 := hδle.trans (min_le_left _ _)
   have hδd : δ < dist y' x₀ := by linarith [min_le_right 1 (dist y' x₀ / 2)]
   set v := w - cutoff x₀ δ w
@@ -372,16 +369,15 @@ theorem exists_forall_mem_ball_apply_eq_zero (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(
   obtain ⟨K, hK⟩ := exists_norm_iteratedFDeriv_cutoff_le hflat
   rcases eq_or_ne y x₀ with rfl | hne
   · -- At the centre, bound `P` of the cut-offs at nearby points and use continuity.
+    -- A trivial `E` forces `u = 0`; otherwise `(𝓝[≠] y).NeBot`, needed for `le_of_tendsto` below.
     rcases subsingleton_or_nontrivial E with hE | hE
     · have h0 : u y = 0 := by
         simpa [norm_iteratedFDeriv_zero] using congrArg norm (hflat 0 (Nat.zero_le r))
       have hu : u = 0 := ContMDiffMap.ext fun z ↦ by simpa [Subsingleton.elim z y] using h0
       simp [hu]
     -- Let `ε → 0⁺` in `‖(P u) y‖ ≤ C * K * ε`.
-    refine norm_le_zero_iff.mp (ge_of_tendsto (((continuous_const_mul (C * K)).tendsto' 0 0
-      (mul_zero _)).mono_left (nhdsWithin_le_nhds (s := Ioi 0))) ?_)
-    filter_upwards [Ioc_mem_nhdsGT (show (0 : ℝ) < min 1 (ρ / 2) by positivity)]
-      with ε ⟨hε, hεle⟩
+    refine norm_le_zero_iff.mp (le_zero_of_forall_mem_Ioc_le_mul (c := C * K)
+      (show (0 : ℝ) < min 1 (ρ / 2) by positivity) fun ε ⟨hε, hεle⟩ ↦ ?_)
     have hε1 : ε ≤ 1 := hεle.trans (min_le_left _ _)
     have hερ : ε < ρ := by linarith [min_le_right 1 (ρ / 2)]
     have hws : tsupport (cutoff y ε u : E → F) ⊆ ball y ρ :=
@@ -403,11 +399,9 @@ theorem exists_forall_mem_ball_apply_eq_zero (P : C^∞⟮𝓘(ℝ, E), E; 𝓘(
     have hd : 0 < dist y x₀ := dist_pos.mpr hne
     have hd' : 0 < ρ - dist y x₀ := sub_pos.mpr (mem_ball.mp hy)
     -- Let `ε → 0⁺` in `‖(P u) y‖ ≤ C * K * ε`.
-    refine norm_le_zero_iff.mp (ge_of_tendsto (((continuous_const_mul (C * K)).tendsto' 0 0
-      (mul_zero _)).mono_left (nhdsWithin_le_nhds (s := Ioi 0))) ?_)
-    filter_upwards [Ioc_mem_nhdsGT
-      (show (0 : ℝ) < min 1 (min (dist y x₀) (ρ - dist y x₀) / 2) by positivity)]
-      with ε ⟨hε, hεle⟩
+    refine norm_le_zero_iff.mp (le_zero_of_forall_mem_Ioc_le_mul (c := C * K)
+      (show (0 : ℝ) < min 1 (min (dist y x₀) (ρ - dist y x₀) / 2) by positivity)
+      fun ε ⟨hε, hεle⟩ ↦ ?_)
     have hε1 : ε ≤ 1 := hεle.trans (min_le_left _ _)
     have hεd : ε < dist y x₀ := by
       linarith [min_le_right 1 (min (dist y x₀) (ρ - dist y x₀) / 2),
