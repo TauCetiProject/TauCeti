@@ -57,6 +57,15 @@ theorem RoughForm.ofFunction_apply {I : ModelWithCorners ℝ E H} {M : Type*} [T
     (f : M → F) (x : M) (v : Fin 0 → TangentSpace I x) :
     RoughForm.ofFunction I f x v = f x := (rfl)
 
+/-- The `0`-form of a function at a point is the constant alternating map of degree zero with
+value `f x`. -/
+theorem RoughForm.ofFunction_apply_eq_constOfIsEmpty {I : ModelWithCorners ℝ E H} {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] {F : Type*} [AddCommGroup F] [Module ℝ F]
+    [TopologicalSpace F] (f : M → F) (x : M) :
+    RoughForm.ofFunction I f x =
+      ContinuousAlternatingMap.constOfIsEmpty ℝ (TangentSpace I x) (Fin 0) (f x) :=
+  (rfl)
+
 /-- The `0`-form of a scalar multiple of a function is the scalar multiple of its `0`-form. -/
 @[simp]
 theorem RoughForm.ofFunction_smul {I : ModelWithCorners ℝ E H} {M : Type*} [TopologicalSpace M]
