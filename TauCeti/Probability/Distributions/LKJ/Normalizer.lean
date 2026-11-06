@@ -6,7 +6,7 @@ Authors: Codex
 module
 
 public import TauCeti.Analysis.SpecialFunctions.Beta
-public import TauCeti.Analysis.Matrix.PartialCorrelation
+public import TauCeti.Analysis.Matrix.PartialCorrelation.Basic
 import TauCeti.Probability.Distributions.Beta.Measurability
 
 /-!
