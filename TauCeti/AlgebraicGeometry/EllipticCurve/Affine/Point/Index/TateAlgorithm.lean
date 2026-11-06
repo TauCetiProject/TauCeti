@@ -173,6 +173,56 @@ namespace Affine
 variable {F Γ₀ : Type*} [Field F] [LinearOrderedCommGroupWithZero Γ₀] (v : Valuation F Γ₀)
   {W : Affine F} [IsIntegral v.valuationSubring W] [DecidableEq F]
 
+/-- **At the symbol `IV`, Tate's local index is the point-group index.** -/
+private theorem index_nonsingularReduction_eq_tateLocalIndex_of_isTateTerminal_IV
+    [HenselianLocalRing v.valuationSubring] {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .IV) :
+    (W.nonsingularReduction v).index =
+      (integralModel v.valuationSubring W).tateLocalIndex ϖ .IV := by
+  classical
+  let Wo := integralModel v.valuationSubring W
+  obtain ⟨-, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -, -⟩ := isTateTerminal_IV.1 h
+  have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
+  have hroot := hasTateYRoot_iff_exists_residue_root (W := Wo) (m := 1) hϖ hϖ0
+    (by simpa [Wo] using h₃) (by simpa [Wo] using h₆)
+  by_cases hr : Wo.HasTateYRoot ϖ 1
+  · obtain ⟨t, ht⟩ := hroot.mp hr
+    rw [index_nonsingularReduction_eq_three_of_isTateTerminal_IV v hϖ h h₃ h₆ ht]
+    exact (tateLocalIndex_IV_of_hasTateYRoot hr).symm
+  · have hnroot (t : ResidueField v.valuationSubring) :
+        t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0 := by
+      intro ht
+      exact hr (hroot.mpr ⟨t, ht⟩)
+    rw [nonsingularReduction_eq_top_of_isTateTerminal_IV v hϖ h h₃ h₆ hnroot,
+      AddSubgroup.index_top]
+    exact (tateLocalIndex_IV_of_not_hasTateYRoot hr).symm
+
+/-- **At the symbol `IV*`, Tate's local index is the point-group index.** -/
+private theorem index_nonsingularReduction_eq_tateLocalIndex_of_isTateTerminal_IVStar
+    [HenselianLocalRing v.valuationSubring] {ϖ : v.valuationSubring}
+    (hϖ : maximalIdeal v.valuationSubring = Ideal.span {ϖ})
+    (h : (integralModel v.valuationSubring W).IsTateTerminal ϖ .IVStar) :
+    (W.nonsingularReduction v).index =
+      (integralModel v.valuationSubring W).tateLocalIndex ϖ .IVStar := by
+  classical
+  let Wo := integralModel v.valuationSubring W
+  obtain ⟨-, -, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
+  have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
+  have hroot := hasTateYRoot_iff_exists_residue_root (W := Wo) (m := 2) hϖ hϖ0
+    (by simpa [Wo] using h₃) (by norm_num [Wo]; exact h₆)
+  by_cases hr : Wo.HasTateYRoot ϖ 2
+  · rw [index_nonsingularReduction_eq_three_of_isTateTerminal_IVStar v hϖ h h₃ h₆
+      (hroot.mp hr)]
+    exact (tateLocalIndex_IVStar_of_hasTateYRoot hr).symm
+  · have hnroot (t : ResidueField v.valuationSubring) :
+        t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0 := by
+      intro ht
+      exact hr (hroot.mpr ⟨t, ht⟩)
+    rw [nonsingularReduction_eq_top_of_isTateTerminal_IVStar v hϖ h h₃ h₆ hnroot,
+      AddSubgroup.index_top]
+    exact (tateLocalIndex_IVStar_of_not_hasTateYRoot hr).symm
+
 /-- **At every additive symbol outside `Iₙ*` with `n ≥ 1`, Tate's local index is the point-group
 index.** Suppose that `ϖ` generates the maximal ideal of the Henselian valuation ring, its residue
 field is perfect, and Tate's algorithm stops on the integral model at a symbol other than `Iₙ` or
@@ -188,7 +238,6 @@ theorem index_nonsingularReduction_eq_tateLocalIndex_of_ne_I_of_ne_IStar_add_one
     (W.nonsingularReduction v).index =
       (integralModel v.valuationSubring W).tateLocalIndex ϖ s := by
   classical
-  let Wo := integralModel v.valuationSubring W
   rcases s with (_ | n) | _ | _ | _ | (_ | n) | _ | _ | _
   · exact absurd rfl (hsI 0)
   · exact absurd rfl (hsI (n + 1))
@@ -201,40 +250,12 @@ theorem index_nonsingularReduction_eq_tateLocalIndex_of_ne_I_of_ne_IStar_add_one
     exact tateLocalIndex_II.symm
   · rw [index_nonsingularReduction_eq_two_of_isTateTerminal_III v hϖ h]
     exact tateLocalIndex_III.symm
-  · obtain ⟨-, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -, -⟩ := isTateTerminal_IV.1 h
-    have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
-    have hroot := hasTateYRoot_iff_exists_residue_root (W := Wo) (m := 1) hϖ hϖ0
-      (by simpa [Wo] using h₃) (by simpa [Wo] using h₆)
-    by_cases hr : Wo.HasTateYRoot ϖ 1
-    · obtain ⟨t, ht⟩ := hroot.mp hr
-      rw [index_nonsingularReduction_eq_three_of_isTateTerminal_IV v hϖ h h₃ h₆ ht]
-      exact (tateLocalIndex_IV_of_hasTateYRoot hr).symm
-    · have hnroot (t : ResidueField v.valuationSubring) :
-          t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0 := by
-        intro ht
-        exact hr (hroot.mpr ⟨t, ht⟩)
-      rw [nonsingularReduction_eq_top_of_isTateTerminal_IV v hϖ h h₃ h₆ hnroot,
-        AddSubgroup.index_top]
-      exact (tateLocalIndex_IV_of_not_hasTateYRoot hr).symm
+  · exact index_nonsingularReduction_eq_tateLocalIndex_of_isTateTerminal_IV v hϖ h
   · obtain ⟨-, ⟨A₂, h₂⟩, -, ⟨A₄, h₄⟩, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IStar_zero.1 h
     rw [index_nonsingularReduction_eq_of_isTateTerminal_IStar_zero v hϖ h h₂ h₄ h₆,
       tateLocalIndex_IStar_zero, natCard_tateCubicRoots_eq hϖ (h.ne_zero (by simp)) h₂ h₄ h₆]
   · exact absurd rfl (hsIStar n)
-  · obtain ⟨-, -, ⟨A₃, h₃⟩, -, ⟨A₆, h₆⟩, -⟩ := isTateTerminal_IVStar.1 h
-    have hϖ0 : ϖ ≠ 0 := h.ne_zero (by simp)
-    have hroot := hasTateYRoot_iff_exists_residue_root (W := Wo) (m := 2) hϖ hϖ0
-      (by simpa [Wo] using h₃) (by norm_num [Wo]; exact h₆)
-    by_cases hr : Wo.HasTateYRoot ϖ 2
-    · rw [index_nonsingularReduction_eq_three_of_isTateTerminal_IVStar v hϖ h h₃ h₆
-        (hroot.mp hr)]
-      exact (tateLocalIndex_IVStar_of_hasTateYRoot hr).symm
-    · have hnroot (t : ResidueField v.valuationSubring) :
-          t ^ 2 + residue _ A₃ * t - residue _ A₆ ≠ 0 := by
-        intro ht
-        exact hr (hroot.mpr ⟨t, ht⟩)
-      rw [nonsingularReduction_eq_top_of_isTateTerminal_IVStar v hϖ h h₃ h₆ hnroot,
-        AddSubgroup.index_top]
-      exact (tateLocalIndex_IVStar_of_not_hasTateYRoot hr).symm
+  · exact index_nonsingularReduction_eq_tateLocalIndex_of_isTateTerminal_IVStar v hϖ h
   · rw [index_nonsingularReduction_eq_two_of_isTateTerminal_IIIStar v hϖ h]
     exact tateLocalIndex_IIIStar.symm
   · rw [nonsingularReduction_eq_top_of_isTateTerminal_IIStar v hϖ h,
