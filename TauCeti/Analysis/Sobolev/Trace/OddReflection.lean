@@ -95,11 +95,11 @@ private theorem inner_sub_normalLinearReflection_eq (w w' v : WithLp 2 (ℝ × E
   obtain ⟨⟨t, z⟩⟩ := v
   simp [WithLp.prod_inner_apply, inner_sub_left, ← WithLp.toLp_sub]
 
-/-- **The odd reflection of second-order data.** Let `f`, `G` and `D` vanish off the half-space
-`{x | a < x.fst}` and lie in `Lᵖ`, let `G` be the weak gradient of `f` on the whole space, let
-`x ↦ D x c` be the weak gradient of the component `⟪G, c⟫` on the half-space for every `c`, and
-let `D` be symmetric. Then the odd reflection `x ↦ f x - f (ρ x)` is the value of a function in
-`W^{2,p}(ℝ × E)` whose weak Hessian is `x ↦ D x - R ∘ D (ρ x) ∘ R`. -/
+/-- **The odd reflection of second-order data.** Let `f`, `G` and `D` lie in `Lᵖ`, let `G` and `D`
+vanish off the half-space `{x | a < x.fst}`, let `G` be the weak gradient of `f` on the whole
+space, let `x ↦ D x c` be the weak gradient of the component `⟪G, c⟫` on the half-space for
+every `c`, and let `D` be symmetric. Then the odd reflection `x ↦ f x - f (ρ x)` is the value of
+a function in `W^{2,p}(ℝ × E)` whose weak Hessian is `x ↦ D x - R ∘ D (ρ x) ∘ R`. -/
 private theorem exists_wkp_two_sub_comp_normalReflection {a : ℝ}
     {f : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
     {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
