@@ -69,12 +69,22 @@ variable [IsDirectedOrder ι] (hφt : ∀ i j (h : i ≤ j) a, φ j (t i j h a) 
   (hcover : ∀ x : L, ∃ i a, φ i a = x)
 
 include hφt hcover in
-/-- Two elements of the colimit lift to a common stage. -/
-private theorem exists_eq_eq (x y : L) : ∃ i, ∃ a b : A i, φ i a = x ∧ φ i b = y := by
-  obtain ⟨i, a, rfl⟩ := hcover x
-  obtain ⟨j, b, rfl⟩ := hcover y
-  obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
-  exact ⟨k, t i k hik a, t j k hjk b, hφt i k hik a, hφt j k hjk b⟩
+/-- Finitely many elements of the colimit lift to a common stage. -/
+theorem exists_lift (S : Finset L) : ∃ i, ∃ g : L → A i, ∀ x ∈ S, φ i (g x) = x := by
+  classical
+  induction S using Finset.induction_on with
+  | empty =>
+    obtain ⟨i, -⟩ := hcover 0
+    exact ⟨i, 0, by simp⟩
+  | insert a S _ ih =>
+    obtain ⟨i, g, hg⟩ := ih
+    obtain ⟨j, b, rfl⟩ := hcover a
+    obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
+    refine ⟨k, fun x ↦ if x = φ j b then t j k hjk b else t i k hik (g x), fun x hx ↦ ?_⟩
+    by_cases hxa : x = φ j b
+    · simp only [hxa, ↓reduceIte, hφt]
+    · simp only [hxa, ↓reduceIte, hφt]
+      exact hg x ((Finset.mem_insert.mp hx).resolve_left hxa)
 
 include hφt hcover in
 /-- **The valuation spectrum of a colimit embeds into the product of the spectra of the
@@ -82,17 +92,22 @@ stages.** If every element of `L` comes from some stage of a directed system wit
 maps `φᵢ : Aᵢ → L`, then `v ↦ (comap φᵢ v)ᵢ` is a topological embedding
 `Spv L → ∏ᵢ Spv Aᵢ`. -/
 theorem isEmbedding_pi_comap : IsEmbedding fun (v : Spv L) i ↦ comap (φ i) v := by
+  classical
   refine ⟨⟨le_antisymm (continuous_iff_le_induced.mp
     (continuous_pi fun i ↦ continuous_comap (φ i))) ?_⟩, fun v w h ↦ ?_⟩
   · rw [instTopologicalSpace_eq_generateFrom]
     refine le_generateFrom fun U ⟨x, y, hU⟩ ↦ ?_
-    obtain ⟨i, a, b, rfl, rfl⟩ := exists_eq_eq hφt hcover x y
+    obtain ⟨i, g, hg⟩ := exists_lift hφt hcover {x, y}
+    obtain ⟨a, b, rfl, rfl⟩ : ∃ a b : A i, φ i a = x ∧ φ i b = y :=
+      ⟨g x, g y, hg x (by simp), hg y (by simp)⟩
     refine isOpen_induced_iff.mpr ⟨(fun w : ∀ i, Spv (A i) ↦ w i) ⁻¹' basicOpen a b,
       (isOpen_basicOpen a b).preimage (continuous_apply i), ?_⟩
     rw [hU, ← comap_preimage_basicOpen]
     rfl
   · refine ext' fun x y ↦ ?_
-    obtain ⟨i, a, b, rfl, rfl⟩ := exists_eq_eq hφt hcover x y
+    obtain ⟨i, g, hg⟩ := exists_lift hφt hcover {x, y}
+    obtain ⟨a, b, rfl, rfl⟩ : ∃ a b : A i, φ i a = x ∧ φ i b = y :=
+      ⟨g x, g y, hg x (by simp), hg y (by simp)⟩
     rw [← comap_vle, ← comap_vle, congr_fun h i]
 
 variable [DirectedSystem A fun i j h ↦ t i j h]
@@ -101,7 +116,7 @@ variable [DirectedSystem A fun i j h ↦ t i j h]
 include hφt hker in
 /-- Two pairs of elements of stages `i` and `j` with the same images in the colimit become equal
 at a common later stage. -/
-private theorem exists_eq_eq_of_eq_eq {i j : ι} {a b : A i} {a' b' : A j}
+theorem exists_eq_eq_of_eq_eq {i j : ι} {a b : A i} {a' b' : A j}
     (ha : φ i a = φ j a') (hb : φ i b = φ j b') :
     ∃ k, ∃ (hik : i ≤ k) (hjk : j ≤ k),
       t i k hik a = t j k hjk a' ∧ t i k hik b = t j k hjk b' := by
@@ -156,5 +171,13 @@ noncomputable def directLimitHomeomorph :
 theorem directLimitHomeomorph_apply_coe (v : Spv L) (i : ι) :
     (directLimitHomeomorph hφt hcover hker v : ∀ i, Spv (A i)) i = comap (φ i) v :=
   (rfl)
+
+/-- The point of `Spv L` glued from a compatible family pulls back to the `i`-th member of the
+family along `φᵢ`. -/
+@[simp]
+theorem comap_directLimitHomeomorph_symm_apply
+    (w : {w : ∀ i, Spv (A i) | ∀ i j (h : i ≤ j), comap (t i j h) (w j) = w i}) (i : ι) :
+    comap (φ i) ((directLimitHomeomorph hφt hcover hker).symm w) = (w : ∀ i, Spv (A i)) i := by
+  rw [← directLimitHomeomorph_apply_coe hφt hcover hker, Homeomorph.apply_symm_apply]
 
 end TauCeti.ValuationSpectrum

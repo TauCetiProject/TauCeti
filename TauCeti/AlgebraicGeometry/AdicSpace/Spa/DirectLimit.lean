@@ -84,21 +84,22 @@ include hφt hcover in
 of a directed system of topological rings `Aᵢ` with continuous transition maps, and let
 `(L₀, I)` be a pair of definition of `L` whose ideal of definition consists of images of
 topologically nilpotent elements of the stages. A point of `Spv L` whose pullbacks to all the
-`Aᵢ` are continuous is continuous.
-
-By Huber's criterion it suffices that `v ≤ 1` on `I` and that `v` has cofinal values on a finite
-generating set of `I`. An element of `I` is the image of a topologically nilpotent `y ∈ Aᵢ`,
-at which the continuous pullback is `< 1`. For cofinality, a positive element of the value group
-of `v` is a ratio `v(r)/v(u)`; at a stage where `y`, `r` and `u` all live, the continuous
-pullback makes `{x | v(x) < v(r)/v(u)}` open, so it contains a power of the image of `y`. -/
+`Aᵢ` are continuous is continuous. -/
 theorem isContinuous_of_forall_isContinuous_comap [∀ i, ContinuousConstSMul (A i)ᵐᵒᵖ (A i)]
     [SeparatelyContinuousAdd L] (ht : ∀ i j (h : i ≤ j), Continuous (t i j h))
     (P : Huber.PairOfDefinition L)
     (hP : ∀ a ∈ P.idealOfDefinition, ∃ i, ∃ y : A i, IsTopologicallyNilpotent y ∧ φ i y = a)
     {v : Spv L} (hv : ∀ i, (comap (φ i) v).IsContinuous) : v.IsContinuous := by
+  classical
   have hw : ∀ i, (v.valuation.comap (φ i)).IsContinuous := fun i ↦ by
     simpa only [← ofValuation_valuation v, comap_ofValuation, isContinuous_ofValuation_iff]
       using hv i
+  -- By Huber's criterion it suffices that `v ≤ 1` on `I` and that `v` has cofinal values on a
+  -- finite generating set of `I`. An element of `I` is the image of a topologically nilpotent
+  -- `y ∈ Aᵢ`, at which the continuous pullback is `< 1`. For cofinality, a positive element of
+  -- the value group of `v` is a ratio `v(r)/v(u)`; at a stage where `y`, `r` and `u` all live,
+  -- the continuous pullback makes `{x | v(x) < v(r)/v(u)}` open, so it contains a power of the
+  -- image of `y`.
   obtain ⟨s, hs⟩ := P.fg_idealOfDefinition
   refine (isContinuous_def v).mpr (P.isContinuous_of_forall_cofinalValue v.valuation hs
     (fun a ha ↦ ?_) fun x hx ↦ ?_)
@@ -111,13 +112,11 @@ theorem isContinuous_of_forall_isContinuous_comap [∀ i, ContinuousConstSMul (A
     obtain ⟨r, u, hr, hu, hru⟩ := v.valuation.exists_div_eq_of_unit (Units.mk0 γ hγ.ne')
     simp only [Units.val_mk0] at hru
     -- move `y`, a lift of `r` and a lift of `u` to a common stage `m`
-    obtain ⟨j, r', rfl⟩ := hcover r
-    obtain ⟨k, u', rfl⟩ := hcover u
-    obtain ⟨l, hil, hjl⟩ := directed_of (· ≤ ·) i j
-    obtain ⟨m, hlm, hkm⟩ := directed_of (· ≤ ·) l k
-    have him := hil.trans hlm
-    have hjm := hjl.trans hlm
-    have hu' : v.valuation.comap (φ m) (t k m hkm u') ≠ 0 := by
+    obtain ⟨j, g, hg⟩ := exists_lift hφt hcover {r, u}
+    obtain ⟨r', u', rfl, rfl⟩ : ∃ r' u' : A j, φ j r' = r ∧ φ j u' = u :=
+      ⟨g r, g u, hg r (by simp), hg u (by simp)⟩
+    obtain ⟨m, him, hjm⟩ := directed_of (· ≤ ·) i j
+    have hu' : v.valuation.comap (φ m) (t j m hjm u') ≠ 0 := by
       simpa only [comap_apply, hφt] using hu.ne'
     obtain ⟨n, hn⟩ := exists_pow_lt_of_isTopologicallyNilpotent
       (((hw m).isOpen_lt_div (t j m hjm r') hu').mem_nhds
@@ -126,7 +125,7 @@ theorem isContinuous_of_forall_isContinuous_comap [∀ i, ContinuousConstSMul (A
       (hy.map (ht i m him))
     refine ⟨n, ?_⟩
     have hemb : MonoidWithZeroHom.ValueGroup₀.embedding γ =
-        v.valuation (φ j r') / v.valuation (φ k u') := by
+        v.valuation (φ j r') / v.valuation (φ j u') := by
       rw [← hru, map_div₀, embedding_restrict, embedding_restrict]
     rw [← map_pow, restrict_lt_iff_lt_embedding, hemb, map_pow, ← hyx]
     simpa only [comap_apply, hφt] using hn
@@ -137,9 +136,7 @@ nilpotent elements.** Let `Qᵢ ⊆ Aᵢ` be subrings of power-bounded elements 
 transition maps (for instance compatible rings of definition `A_{i,0}`), and let `(L₀, I)` be a
 pair of definition of `L` with `L₀` contained in the union of the images of the `Qᵢ` and
 `I = ϖ L₀` for the image of a topologically nilpotent `ϖ ∈ A_{i₀}`. Then every element of `I` is
-the image of a topologically nilpotent element of some stage: `c ϖ` with `c` the image of
-`c' ∈ Qⱼ` is the image of the product of the power-bounded `c'` and the topologically nilpotent
-`ϖ` at a stage above `i₀` and `j`. This is the hypothesis of
+the image of a topologically nilpotent element of some stage. This is the hypothesis of
 `isContinuous_of_forall_isContinuous_comap` for a filtered colimit of Tate pairs. -/
 theorem exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition
     (ht : ∀ i j (h : i ≤ j), Continuous (t i j h)) (Q : ∀ i, Subring (A i))
@@ -152,6 +149,8 @@ theorem exists_isTopologicallyNilpotent_eq_of_mem_idealOfDefinition
     ∃ i, ∃ y : A i, IsTopologicallyNilpotent y ∧ φ i y = a := by
   rw [hI, Ideal.mem_span_singleton'] at ha
   obtain ⟨c, rfl⟩ := ha
+  -- `c ϖ` with `c` the image of `c' ∈ Qⱼ` is the image of the product of the power-bounded `c'`
+  -- and the topologically nilpotent `ϖ` at a stage above `i₀` and `j`
   obtain ⟨j, c', hc', hc'c⟩ := hP c c.2
   obtain ⟨k, hjk, hi₀k⟩ := directed_of (· ≤ ·) j i₀
   refine ⟨k, t j k hjk c' * t i₀ k hi₀k ϖ,
@@ -254,32 +253,24 @@ theorem spaDirectLimitHomeomorph_apply_coe (v : spa Lplus) (i : ι) :
       ∀ i, spa (Aplus i)) i = spaComap (φ i) (hφc i) (Aplus i) Lplus (hφplus i) v :=
   (rfl)
 
+/-- The point of `Spa(L, L⁺)` glued from a compatible family pulls back to the `i`-th member of
+the family along `φᵢ`. -/
+@[simp]
+theorem spaComap_spaDirectLimitHomeomorph_symm_apply
+    (w : {w : ∀ i, spa (Aplus i) | ∀ i j (h : i ≤ j),
+      spaComap (t i j h) (ht i j h) (Aplus i) (Aplus j) (htplus i j h) (w j) = w i}) (i : ι) :
+    spaComap (φ i) (hφc i) (Aplus i) Lplus (hφplus i)
+        ((spaDirectLimitHomeomorph Aplus Lplus hφc hφplus hφt hcover ht htplus hker P hP
+          hLplus).symm w) = (w : ∀ i, spa (Aplus i)) i := by
+  rw [← spaDirectLimitHomeomorph_apply_coe Aplus Lplus hφc hφplus hφt hcover ht htplus hker P hP
+    hLplus, Homeomorph.apply_symm_apply]
+
 end Spa
 
 section Rational
 
 variable [IsDirectedOrder ι] (hφt : ∀ i j (h : i ≤ j) a, φ j (t i j h a) = φ i a)
   (hcover : ∀ x : L, ∃ i a, φ i a = x)
-
-omit [∀ i, TopologicalSpace (A i)] [TopologicalSpace L] in
-include hφt hcover in
-/-- Finitely many elements of the colimit lift to a common stage. -/
-private theorem exists_lift (S : Finset L) :
-    ∃ i, ∃ g : L → A i, ∀ x ∈ S, φ i (g x) = x := by
-  classical
-  induction S using Finset.induction_on with
-  | empty =>
-    obtain ⟨i, -⟩ := hcover 0
-    exact ⟨i, 0, by simp⟩
-  | insert a S _ ih =>
-    obtain ⟨i, g, hg⟩ := ih
-    obtain ⟨j, b, rfl⟩ := hcover a
-    obtain ⟨k, hik, hjk⟩ := directed_of (· ≤ ·) i j
-    refine ⟨k, fun x ↦ if x = φ j b then t j k hjk b else t i k hik (g x), fun x hx ↦ ?_⟩
-    by_cases hxa : x = φ j b
-    · simp only [hxa, ↓reduceIte, hφt]
-    · simp only [hxa, ↓reduceIte, hφt]
-      exact hg x ((Finset.mem_insert.mp hx).resolve_left hxa)
 
 variable (hker : ∀ i (a b : A i), φ i a = φ i b → ∃ j, ∃ h : i ≤ j, t i j h a = t i j h b)
 
