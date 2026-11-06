@@ -153,42 +153,6 @@ private lemma integral_Ioi_studentTPDFReal_tail (hν : 0 < ν) {y : ℝ} (hy : 0
     hbeta_tail]
   rw [← mul_assoc, studentT_tail_normalizing_const hν]
 
-/-- A Student t law gives the same mass to `Iic x` as to `Ioi (-x)`, by symmetry about the
-origin and because points are null. -/
-private lemma studentTMeasure_real_Iic_eq_real_Ioi_neg (ν x : ℝ) :
-    (studentTMeasure ν).real (Iic x) = (studentTMeasure ν).real (Ioi (-x)) := by
-  have hpre : (fun w : ℝ => -w) ⁻¹' (Iic x) = Ici (-x) := by
-    ext w
-    simp [le_iff_eq_or_lt]
-  have hnull : (studentTMeasure ν) ({-x} : Set ℝ) = 0 := by
-    exact (studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x))
-  have h5 : Ici (-x) = Ioi (-x) ∪ ({-x} : Set ℝ) := by
-    ext w
-    simp [le_iff_eq_or_lt]
-  have hdis : Disjoint (Ioi (-x)) ({-x} : Set ℝ) := by
-    rw [Set.disjoint_left]
-    intro w hw1 hw2
-    have heq : w = -x := hw2
-    rw [heq] at hw1
-    exact lt_irrefl (-x) hw1
-  have hcic : (studentTMeasure ν) (Ici (-x)) = (studentTMeasure ν) (Ioi (-x)) := by
-    rw [h5, measure_union hdis (measurableSet_singleton _), hnull, add_zero]
-  have hmap : (studentTMeasure ν).map (fun w : ℝ => -w) = studentTMeasure ν :=
-    studentTMeasure_map_neg ν
-  have hmap_apply : ∀ (t : Set ℝ), MeasurableSet t →
-      ((studentTMeasure ν).map (fun w : ℝ => -w)) t =
-        (studentTMeasure ν) ((fun w : ℝ => -w) ⁻¹' t) :=
-    fun t ht => Measure.map_apply measurable_neg ht
-  have h2 : (studentTMeasure ν) (Iic x) = (studentTMeasure ν) (Ici (-x)) := by
-    have h3 : ((studentTMeasure ν).map (fun w : ℝ => -w)) (Iic x) =
-        (studentTMeasure ν) (Ici (-x)) := by
-      rw [hmap_apply (Iic x) measurableSet_Iic, hpre]
-    have h4 : (studentTMeasure ν) (Iic x) =
-        ((studentTMeasure ν).map (fun w : ℝ => -w)) (Iic x) := by
-      rw [hmap]
-    rw [h4, h3]
-  rw [Measure.real, Measure.real, h2, hcic]
-
 /-- **The cumulative distribution function of a Student t law.** Writing
 `z = ν / (ν + x ^ 2)`, it is `regularizedIncompleteBeta (ν / 2) (1 / 2) z / 2` for `x < 0` and
 `1 - regularizedIncompleteBeta (ν / 2) (1 / 2) z / 2` for `0 ≤ x`. -/

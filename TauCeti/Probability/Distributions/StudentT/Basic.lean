@@ -40,6 +40,7 @@ hypothesis.
 * `hasPDF_of_hasLaw_studentTMeasure`, `pdf_eq_studentTPDF_of_hasLaw_studentTMeasure` and
   `rnDeriv_studentTMeasure` — the `HasPDF` bridge, the density, and the Radon–Nikodym derivative;
 * `studentTMeasure_map_neg` — the law is invariant under reflection in the origin;
+* `studentTMeasure_real_Iic_eq_real_Ioi_neg` — the mass of `Iic x` equals that of `Ioi (-x)`;
 * `studentTMeasure_one` — one degree of freedom gives the standard Cauchy law
   `ProbabilityTheory.cauchyMeasure 0 1`;
 * `measurable_studentTMeasure` — the family is measurable in its parameter, so it can be used as a
@@ -299,6 +300,21 @@ theorem studentTMeasure_map_neg (ν : ℝ) :
 /-- Student's t law is invariant under negation, including its invalid zero-measure branch. -/
 instance isNegInvariant_studentTMeasure (ν : ℝ) : (studentTMeasure ν).IsNegInvariant :=
   ⟨studentTMeasure_map_neg ν⟩
+
+/-- A Student t law gives the same mass to `Iic x` as to `Ioi (-x)`, by symmetry about the
+origin and because points are null. -/
+theorem studentTMeasure_real_Iic_eq_real_Ioi_neg (ν x : ℝ) :
+    (studentTMeasure ν).real (Iic x) = (studentTMeasure ν).real (Ioi (-x)) := by
+  have hpre : (fun w : ℝ => -w) ⁻¹' (Iic x) = Ici (-x) := by
+    ext w
+    simp [le_iff_eq_or_lt]
+  have hnull : (studentTMeasure ν) ({-x} : Set ℝ) = 0 :=
+    (studentTMeasure_absolutelyContinuous ν) (measure_singleton (-x))
+  have hcic := (measure_congr (Ioi_ae_eq_Ici' hnull)).symm
+  have h2 : (studentTMeasure ν) (Iic x) = (studentTMeasure ν) (Ici (-x)) := by
+    conv_lhs => rw [← studentTMeasure_map_neg ν]
+    rw [Measure.map_apply measurable_neg measurableSet_Iic, hpre]
+  rw [Measure.real, Measure.real, h2, hcic]
 
 /-! ### One degree of freedom -/
 
