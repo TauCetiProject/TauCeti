@@ -52,6 +52,7 @@ functor theorem.
   than the linear one lie in the augmentation ideal.
 * `TauCeti.LazardRing.coeff_single_hurewicz_coeff_nsmulSeries`: the coefficient of `bₙ` in the
   Hurewicz image of `aₘ` is `k^m - k` if `m = n + 1`, and `0` otherwise.
+* `TauCeti.LazardRing.lazardGcd_dvd_pow_succ_sub`: `d_(n+1)` divides `k^(n + 1) - k`.
 * `TauCeti.LazardRing.cotangentBasis_repr_toCotangent_coeff_nsmulSeries`: the class of `a_(n+1)`
   in `I ⧸ I²` is `((k^(n + 1) - k) / d_(n+1)) • xₙ`.
 * `TauCeti.LazardRing.coeff_nsmulSeries_sub_smul_generator_mem_sq`: the same congruence in `L`.
@@ -129,6 +130,14 @@ theorem coeff_single_hurewicz_coeff_nsmulSeries (k m : ℕ) (n : ℕ+) :
   · subst hm₂
     simp
   · simp
+
+/-- `d_(n+1)` divides `k^(n + 1) - k` for every `k`: by the Hurewicz homomorphism, this is the
+coefficient of `bₙ` in the image of the coefficient of `X^(n + 1)` in `[k](X)`. -/
+theorem lazardGcd_dvd_pow_succ_sub (k : ℕ) (n : ℕ+) :
+    (lazardGcd ((n : ℕ) + 1) : ℤ) ∣ (k : ℤ) ^ ((n : ℕ) + 1) - k := by
+  have h := lazardGcd_dvd_coeff_single_hurewicz n
+    (PowerSeries.coeff ((n : ℕ) + 1) (formalGroup.nsmulSeries k))
+  simpa only [coeff_single_hurewicz_coeff_nsmulSeries, ↓reduceIte] using h
 
 /-- The coefficient of `X^(n + 1)` in `[k](X)`, as an element of the augmentation ideal. -/
 private abbrev coeffNSMul (k : ℕ) (n : ℕ+) : augmentationIdeal :=
@@ -225,8 +234,7 @@ theorem coeff_nsmulSeries_mem_of_ne_prime_pow {m : ℕ} (hm : 2 ≤ m) (hpm : �
     rintro ⟨j, hj⟩
     exact hpm j hj
   have hdc : d * c = p * ((p : ℤ) ^ (n : ℕ) - 1) := by
-    rw [Int.mul_ediv_cancel'
-      ⟨_, by simpa using (lazardGcd_mul_cotangentBasis_repr_coeffNSMul p n n).symm⟩]
+    rw [Int.mul_ediv_cancel' (lazardGcd_dvd_pow_succ_sub p n)]
     ring
   obtain ⟨c', hc'⟩ : (p : ℤ) ∣ c :=
     ((Nat.prime_iff_prime_int.1 hp).dvd_or_dvd (hdc ▸ dvd_mul_right _ _)).resolve_left hpd
