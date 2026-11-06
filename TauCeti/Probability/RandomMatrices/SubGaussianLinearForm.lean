@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.NNReal.Basic
+public import Mathlib.Basic.NNReal.Basic
 public import Mathlib.Probability.Independence.Basic
 public import Mathlib.Probability.Moments.SubGaussian
 
@@ -43,36 +43,34 @@ theorem measureReal_abs_sum_mul_ge_le_of_iIndepFun
     exact h_indep.comp (fun i x ↦ a i * x) (by intro i; fun_prop)
   have hY : ∀ i, HasSubgaussianMGF (Y i) (a2 i * c) μ := by
     intro i
-    simpa [Y, a2] using (hX i).const_mul (a i)
+    exact (hX i).const_mul (a i)
   have hS : HasSubgaussianMGF S (c * ∑ i, a2 i) μ := by
     have hsum := HasSubgaussianMGF.sum_of_iIndepFun hY_indep
       (c := fun i ↦ a2 i * c) (s := Finset.univ) (by
         intro i hi
         exact hY i)
-    simpa [S, Y, a2, Finset.sum_mul, mul_comm] using hsum
+    have hc : ∑ i, a2 i * c = c * ∑ i, a2 i := by
+      rw [← Finset.sum_mul, mul_comm]
+    rw [← hc]
+    exact hsum
   have hset : {ω | t ≤ |S ω|} =
       {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
     ext ω
-    by_cases hS_nonneg : 0 ≤ S ω
-    · simp only [Set.mem_setOf_eq, abs_of_nonneg hS_nonneg, Set.mem_union]
-      constructor
-      · exact fun h ↦ Or.inl h
-      · rintro (h | h)
-        · exact h
-        · have hneg : -S ω ≤ 0 := neg_nonpos.mpr hS_nonneg
-          linarith
-    · have hS_nonpos : S ω ≤ 0 := le_of_not_ge hS_nonneg
-      simp only [Set.mem_setOf_eq, abs_of_nonpos hS_nonpos, Set.mem_union]
-      constructor
-      · intro h
-        right
-        linarith
-      · rintro (h | h)
-        · linarith
-        · exact h
+    constructor
+    · intro h
+      have h' : t ≤ |S ω| := h
+      rcases le_total 0 (S ω) with h0 | h0
+      · left
+        rwa [abs_of_nonneg h0] at h'
+      · right
+        rwa [abs_of_nonpos h0] at h'
+    · rintro (h | h)
+      · have h' : t ≤ S ω := h
+        exact h'.trans (le_abs_self _)
+      · have h' : t ≤ -S ω := h
+        exact h'.trans (neg_le_abs _)
   have hset' : {ω | t ≤ |∑ i, a i * X i ω|} =
-      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := by
-    simpa [S, Y] using hset
+      {ω | t ≤ S ω} ∪ {ω | t ≤ -S ω} := hset
   calc
     μ.real {ω | t ≤ |∑ i, a i * X i ω|} =
         μ.real ({ω | t ≤ S ω} ∪ {ω | t ≤ -S ω}) := by
