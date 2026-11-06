@@ -87,7 +87,7 @@ private lemma isLerayProd_of_finset {F : Sheaf (Opens.grothendieckTopology X) Ad
 
 variable (U) in
 /-- The sequence of Čech complexes of `0 ⟶ F ⟶ I ⟶ Q ⟶ 0` for the cover `U`. -/
-private abbrev cechSeq (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
+abbrev cechSeq (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
     ShortComplex (CochainComplex AddCommGrpCat.{u} ℕ) :=
   -- this is `((injectiveCokernelSequence F).map (sheafToPresheaf _ _)).map (cechComplexFunctor U)`,
   -- restated so that its objects are syntactically the Čech complexes of `F`, `I` and `Q`
@@ -114,7 +114,7 @@ private lemma isLerayProd_cokernel {F : Sheaf (Opens.grothendieckTopology X) Add
 variable (U) in
 /-- A morphism `F ⟶ G` induces a morphism of the sequences of Čech complexes of the chosen
 injective cokernel sequences, through `TauCeti.injectiveCokernelSequenceMap`. -/
-private def cechSeqMap {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+def cechSeqMap {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
     (f : F ⟶ G) : cechSeq U F ⟶ cechSeq U G where
   τ₁ := (cechComplexFunctor U).map f.hom
   τ₂ := (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₂.hom
@@ -125,6 +125,26 @@ private def cechSeqMap {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat
   comm₂₃ := by
     simp only [injectiveCokernelSequenceMap_τ₂, injectiveCokernelSequenceMap_τ₃,
       ← Functor.map_comp, ← InducedCategory.comp_hom, cokernel.π_desc]
+
+/-- On the first term, the chosen Čech sequence map is the original coefficient morphism. -/
+@[simp]
+theorem cechSeqMap_τ₁ {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (f : F ⟶ G) : (cechSeqMap U f).τ₁ = (cechComplexFunctor U).map f.hom := by
+  rfl
+
+/-- On the injective term, the Čech sequence map is induced by the chosen injective lift. -/
+@[simp]
+theorem cechSeqMap_τ₂ {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (f : F ⟶ G) : (cechSeqMap U f).τ₂ =
+      (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₂.hom := by
+  rfl
+
+/-- On the quotient term, the Čech sequence map is induced by the chosen quotient map. -/
+@[simp]
+theorem cechSeqMap_τ₃ {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (f : F ⟶ G) : (cechSeqMap U f).τ₃ =
+      (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₃.hom := by
+  rfl
 
 variable (U)
 
