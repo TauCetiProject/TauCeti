@@ -477,6 +477,12 @@ theorem toGridRectangle_eq :
       { left := R.left, right := R.right, bottom := x R.left, top := x R.right } :=
   rfl
 
+/-- Membership in the covered columns of the rectangle underlying a rectangle between states is
+membership in the half-open cyclic interval between its side columns. -/
+theorem mem_coveredColumns (c : Fin n) :
+    c ∈ R.toGridRectangle.coveredColumns ↔ c ∈ Grid.cIco R.left R.right := by
+  rw [GridRectangle.mem_coveredColumns, toGridRectangle_left, toGridRectangle_right]
+
 /-- Membership in the interior of an oriented rectangle is membership in the open cyclic
 intervals between its side columns and the corresponding source-state rows. -/
 theorem mem_toGridRectangle_interior {p : Fin n × Fin n} :
