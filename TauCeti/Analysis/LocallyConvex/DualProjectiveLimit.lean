@@ -159,14 +159,13 @@ seminorms `f ↦ ‖f j‖`. -/
 theorem withSeminorms :
     WithSeminorms (𝕜 := 𝕜) (E := dualProjectiveLimit T) fun j : ℕ ↦
       (normSeminorm 𝕜 (StrongDual 𝕜 (B j))).comp (coord T j).toLinearMap := by
-  rw [SeminormFamily.withSeminorms_iff_nhds_eq_iInf, nhds_subtype, nhds_pi, Filter.pi,
-    Filter.comap_iInf]
-  refine iInf_congr fun j ↦ ?_
-  rw [Filter.comap_comap, Submodule.coe_zero, Pi.zero_apply, ← comap_norm_nhds_zero,
-    Filter.comap_comap]
-  exact congrArg (Filter.comap · _) (funext fun f ↦ by
-    simp only [Function.comp_apply, Function.eval, Seminorm.comp_apply, coe_normSeminorm,
-      ContinuousLinearMap.coe_coe, coord_apply])
+  have h := LinearMap.withSeminorms_induced (E := dualProjectiveLimit T) (σ₁₂ := RingHom.id 𝕜)
+    ((withSeminorms_pi fun j ↦ norm_withSeminorms 𝕜 (StrongDual 𝕜 (B j))).congr_equiv
+      (Equiv.sigmaPUnit ℕ).symm) (dualProjectiveLimit T).subtype
+  convert h using 1
+  · ext j f
+    simp [SeminormFamily.comp_apply, SeminormFamily.sigma, Equiv.sigmaPUnit]
+  · rfl
 
 /-- Every continuous seminorm on the projective limit is bounded by a multiple of a single
 coordinate norm `f ↦ ‖f j‖`. -/
@@ -217,8 +216,10 @@ theorem exists_norm_le_forall_apply_eq {j : ℕ} (hT : (T j).IsWeaklyCompact)
       ∀ f, φ f = (f : ∀ n, StrongDual 𝕜 (B n)) (j + 1) x := by
   -- `φ` vanishes on the kernel of the `j`-th coordinate, so it descends to its range.
   set π : dualProjectiveLimit T →ₗ[𝕜] StrongDual 𝕜 (B j) := (coord T j).toLinearMap
+  have hπ (f : dualProjectiveLimit T) : π f = (f : ∀ n, StrongDual 𝕜 (B n)) j := coord_apply j f
   have hdesc {f f' : dualProjectiveLimit T} (h : π f = π f') : φ f = φ f' := by
-    have hj : (f : ∀ n, StrongDual 𝕜 (B n)) j = (f' : ∀ n, StrongDual 𝕜 (B n)) j := h
+    have hj : (f : ∀ n, StrongDual 𝕜 (B n)) j = (f' : ∀ n, StrongDual 𝕜 (B n)) j := by
+      rwa [hπ, hπ] at h
     have h0 : φ (f - f') = 0 := by simpa [hj] using hφ (f - f')
     rwa [← sub_eq_zero, ← map_sub]
   obtain ⟨ψ, hψ⟩ : ∃ ψ : LinearMap.range π →ₗ[𝕜] 𝕜,
@@ -238,9 +239,9 @@ theorem exists_norm_le_forall_apply_eq {j : ℕ} (hT : (T j).IsWeaklyCompact)
       exact hφ f)
   refine ⟨x, hx, fun f ↦ ?_⟩
   have hmem : ((f : ∀ n, StrongDual 𝕜 (B n)) (j + 1)).comp (T j) ∈ LinearMap.range π :=
-    LinearMap.mem_range.2 ⟨f, (apply_succ_comp f j).symm⟩
+    LinearMap.mem_range.2 ⟨f, (hπ f).trans (apply_succ_comp f j).symm⟩
   calc φ f = ψ ⟨π f, LinearMap.mem_range_self π f⟩ := (hψ f).symm
-    _ = ψ ⟨_, hmem⟩ := congrArg ψ (Subtype.ext (apply_succ_comp f j).symm)
+    _ = ψ ⟨_, hmem⟩ := congrArg ψ (Subtype.ext ((hπ f).trans (apply_succ_comp f j).symm))
     _ = _ := (hrep _ hmem).symm
 
 /-- **Uniform representation of bounded families.** If the bonding maps are weakly compact, in
