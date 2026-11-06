@@ -49,6 +49,8 @@ concatenation in the matching direction.
   `π_M (Ω^ N X x) const ≃* π_(M ⊕ N) X x`.**
 * `HomotopyGroup.piLoopSpaceMulEquiv`, `HomotopyGroup.pathLoopSpaceMulEquiv`: its `π_n` forms,
   the latter for Mathlib's loop space `Ω X x`.
+* `HomotopyGroup.fundamentalGroupLoopSpaceMulEquiv`: its degree-one form
+  `π₁(Ω X x, refl x) ≃* π₂(X, x)`, with the fundamental group of the loop space.
 
 ## References
 
@@ -369,6 +371,19 @@ theorem pathLoopSpaceMulEquiv_symm_mk (m : ℕ) (q : Ω^ (Fin (m + 2)) X x) :
           (GenLoop.homeomorphOfUnique_const (Fin 1)) a)
       (piLoopSpaceMulEquiv_symm_mk m 1 q)).trans <|
       (homeomorphMulEquivOfEq_apply _ _ _).trans (map_mk _ _ _)
+
+/-- **The fundamental group of the loop space is the second homotopy group**:
+`π₁(Ω X x, refl x) ≃* π₂(X, x)`, the case `m = 0` of `pathLoopSpaceMulEquiv` read through
+`pi1MulEquivFundamentalGroup`. A loop of loops `s ↦ γ_s` at the constant loop is the square
+`(s, t) ↦ γ_s t`, which sends the boundary of the square to `x`. -/
+noncomputable def fundamentalGroupLoopSpaceMulEquiv :
+    FundamentalGroup (Ω X x) (Path.refl x) ≃* π_ 2 X x :=
+  pi1MulEquivFundamentalGroup.symm.trans (pathLoopSpaceMulEquiv 0)
+
+theorem fundamentalGroupLoopSpaceMulEquiv_apply (a : FundamentalGroup (Ω X x) (Path.refl x)) :
+    fundamentalGroupLoopSpaceMulEquiv a =
+      pathLoopSpaceMulEquiv 0 (pi1MulEquivFundamentalGroup.symm a) :=
+  by rw [fundamentalGroupLoopSpaceMulEquiv.eq_1]; rfl
 
 section Natural
 
