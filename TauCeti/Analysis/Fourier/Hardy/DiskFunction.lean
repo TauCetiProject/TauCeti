@@ -108,13 +108,11 @@ theorem diskFunction_add (y : HardySpace) (hw : ‖w‖ < 1) :
   simp only [← hardyBasis_repr, ← add_mul] at h
   simpa only [← hardyBasis_repr, map_add, lp.coeFn_add, Pi.add_apply] using h
 
-/-- On the open unit disk the disk function depends linearly on the Hardy function. -/
-theorem diskFunction_smul (c : ℂ) (hw : ‖w‖ < 1) :
+/-- The disk function depends linearly on the Hardy function. -/
+theorem diskFunction_smul (c : ℂ) :
     (c • x).diskFunction w = c * x.diskFunction w := by
-  refine ((c • x).hasSum_diskFunction hw).unique ?_
-  have h := (x.hasSum_diskFunction hw).mul_left c
-  simp only [← hardyBasis_repr, ← mul_assoc] at h
-  simpa only [← hardyBasis_repr, map_smul, lp.coeFn_smul, Pi.smul_apply, smul_eq_mul] using h
+  simp only [diskFunction, ← hardyBasis_repr, map_smul, lp.coeFn_smul, Pi.smul_apply,
+    smul_eq_mul, mul_assoc, tsum_mul_left]
 
 /-- The coefficient series of the disk function, as a formal power series in one variable. -/
 private abbrev diskSeries : FormalMultilinearSeries ℂ ℂ ℂ :=
