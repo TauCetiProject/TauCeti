@@ -345,6 +345,7 @@ theorem cuspIntegral_symm (F : ℍ → ℂ) (a b : OnePoint ℚ) :
   rcases eq_or_ne a b with rfl | hab
   · simp
   obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   have h₀ : (g * mapGL ℚ S) • ((0 : ℚ) : OnePoint ℚ) = g • ∞ := by
     rw [mul_smul, mapGL_S_smul_zero]
   have hinf : (g * mapGL ℚ S) • (∞ : OnePoint ℚ) = g • ((0 : ℚ) : OnePoint ℚ) := by
@@ -361,6 +362,7 @@ theorem cuspIntegral_slash (F : ℍ → ℂ) {γ : GL (Fin 2) ℚ}
   rcases eq_or_ne a b with rfl | hab
   · simp
   obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   have hγg : 0 < ((γ * g : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
     rw [Units.val_mul, Matrix.det_mul]
     exact mul_pos hγ hg
@@ -375,6 +377,7 @@ theorem cuspIntegral_smul (c : ℂ) (F : ℍ → ℂ) (a b : OnePoint ℚ) :
   rcases eq_or_ne a b with rfl | hab
   · simp
   obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hab
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   rw [cuspIntegral_smul_zero_smul_infty _ hg, cuspIntegral_smul_zero_smul_infty _ hg,
     geodesicIntegral_smul hg]
 
@@ -433,6 +436,7 @@ private theorem exists_cuspValue {F : ℍ → ℂ} {Φ : ℂ → ℂ} (hΦ : ∀
   rcases eq_or_ne x y with rfl | hxy
   · simp
   obtain ⟨g, hg, rfl, rfl⟩ := exists_smul_zero_smul_infty hxy
+  replace hg : 0 < (g : Matrix (Fin 2) (Fin 2) ℚ).det := hg ▸ one_pos
   rw [cuspIntegral_smul_zero_smul_infty F hg, geodesicIntegral_eq_axisLimit_sub hΦ hint hg,
     hV g hg, hV _ (det_mul_mapGL_S_pos hg), mul_smul, mapGL_S_smul_infty]
 
