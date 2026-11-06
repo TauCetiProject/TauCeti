@@ -116,7 +116,7 @@ theorem integrable_covariantDerivative_norm_sq
     Integrable (fun z ↦ ‖covariantDerivative x z 1‖ ^ 2 +
       ‖covariantDerivative x z I‖ ^ 2) μ := by
   let s := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)
-  have hs : ContDiff ℝ 2 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hs : ContDiff ℝ 2 s := contDiff_normSq hp hq
   have hsi : Integrable (fun z ↦ 1 - s z) μ :=
     integrable_one_sub_normSq μ hb₁ hb₂ hp hq hsol hlim
   have hs1 : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim
