@@ -31,7 +31,8 @@ of the restricted sheaf in `TauCeti.CategoryTheory.Sites.SheafCohomology.Over`.
 * `TauCeti.CategoryTheory.PresheafExtensionByZero.functor`: extension by zero of presheaves.
 * `TauCeti.CategoryTheory.PresheafExtensionByZero.adjunction`: its adjunction to restriction.
 * `TauCeti.CategoryTheory.SheafExtensionByZero.preservesFiniteLimits_sheafPullback`: left
-  exactness of Mathlib's canonical extension functor for abelian sheaves.
+  exactness of Mathlib's canonical extension functor for sheaves with values in a category with
+  a zero object and finite limits.
 
 ## References
 
@@ -295,28 +296,35 @@ end PresheafExtensionByZero
 
 namespace SheafExtensionByZero
 
-variable (J : GrothendieckTopology P) [HasSheafify J AddCommGrpCat.{u}]
+variable {D : Type v} [Category.{w} D] [HasZeroObject D] [HasZeroMorphisms D]
+  (J : GrothendieckTopology P) [HasSheafify J D]
 
-private def extension : Sheaf (J.over U) AddCommGrpCat.{u} ⥤ Sheaf J AddCommGrpCat.{u} :=
+private def extension : Sheaf (J.over U) D ⥤ Sheaf J D :=
   sheafToPresheaf (J.over U) _ ⋙ PresheafExtensionByZero.functor U ⋙ presheafToSheaf J _
 
-private def extensionAdjunction : extension U J ⊣ J.overPullback AddCommGrpCat.{u} U :=
-  ((PresheafExtensionByZero.adjunction U).comp
-    (sheafificationAdjunction J AddCommGrpCat.{u})).restrictFullyFaithful
-      (fullyFaithfulSheafToPresheaf (J.over U) _) (Functor.FullyFaithful.id _)
-      (Iso.refl _) (Iso.refl _)
+private def extensionAdjunction : extension U J ⊣ J.overPullback D U :=
+  ((PresheafExtensionByZero.adjunction U).comp (sheafificationAdjunction J D)).restrictFullyFaithful
+    (fullyFaithfulSheafToPresheaf (J.over U) _) (Functor.FullyFaithful.id _)
+    (Iso.refl _) (Iso.refl _)
 
-private instance : PreservesFiniteLimits (extension U J) := by
+/-- On a preorder site, restriction to a lower interval has a left adjoint. -/
+instance isRightAdjoint_sheafPushforwardContinuous_forget :
+    ((Over.forget U).sheafPushforwardContinuous D (J.over U) J).IsRightAdjoint :=
+  (extensionAdjunction U J).isRightAdjoint
+
+variable [HasFiniteLimits D]
+
+private instance : PreservesFiniteLimits (extension (D := D) U J) := by
   unfold extension
   infer_instance
 
 /-- On a preorder site, the left adjoint to restriction to a lower interval is exact.
 In particular, this applies to extension by zero along an open inclusion. -/
 instance preservesFiniteLimits_sheafPullback :
-    PreservesFiniteLimits ((Over.forget U).sheafPullback AddCommGrpCat.{u} (J.over U) J) :=
+    PreservesFiniteLimits ((Over.forget U).sheafPullback D (J.over U) J) :=
   preservesFiniteLimits_of_natIso
     ((extensionAdjunction U J).leftAdjointUniq
-      ((Over.forget U).sheafAdjunctionContinuous AddCommGrpCat.{u} (J.over U) J))
+      ((Over.forget U).sheafAdjunctionContinuous D (J.over U) J))
 
 end SheafExtensionByZero
 
