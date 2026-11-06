@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Complex.LinearPart
 public import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
+import TauCeti.Analysis.Complex.Conformal.PseudoHyperbolic
 import Mathlib.LinearAlgebra.Complex.Determinant
 import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 
@@ -59,11 +60,6 @@ theorem norm_linearMap_sub_id_le (μ : ℂ) :
   intro z
   simp [linearMap_apply]
 
-/-- The positive affine Jacobian factor on the unit coefficient disc. -/
-theorem one_sub_normSq_pos {μ : ℂ} (hμ : ‖μ‖ < 1) : 0 < 1 - Complex.normSq μ := by
-  rw [Complex.normSq_eq_norm_sq]
-  nlinarith [norm_nonneg μ]
-
 private theorem linearMap_sub_conj (μ z : ℂ) :
     linearMap μ (z - μ * conj z) = (1 - Complex.normSq μ) • z := by
   simp only [linearMap_apply, map_sub, map_mul, conj_conj, Complex.real_smul]
@@ -81,17 +77,21 @@ private theorem sub_conj_linearMap (μ z : ℂ) :
 private theorem left_inverse (μ : ℂ) (hμ : ‖μ‖ < 1) :
     Function.LeftInverse (fun z => (1 - Complex.normSq μ)⁻¹ • (z - μ * conj z))
       (linearMap μ) := by
+  have hpos : 0 < 1 - Complex.normSq μ := by
+    simpa only [Complex.normSq_eq_norm_sq] using one_sub_sq_norm_pos_of_norm_lt_one hμ
   intro z
   dsimp only
-  rw [sub_conj_linearMap, smul_smul, inv_mul_cancel₀ (one_sub_normSq_pos hμ).ne', one_smul]
+  rw [sub_conj_linearMap, smul_smul, inv_mul_cancel₀ hpos.ne', one_smul]
 
 private theorem right_inverse (μ : ℂ) (hμ : ‖μ‖ < 1) :
     Function.RightInverse (fun z => (1 - Complex.normSq μ)⁻¹ • (z - μ * conj z))
       (linearMap μ) := by
+  have hpos : 0 < 1 - Complex.normSq μ := by
+    simpa only [Complex.normSq_eq_norm_sq] using one_sub_sq_norm_pos_of_norm_lt_one hμ
   intro z
   dsimp only
   rw [map_smul, linearMap_sub_conj, smul_smul,
-    inv_mul_cancel₀ (one_sub_normSq_pos hμ).ne', one_smul]
+    inv_mul_cancel₀ hpos.ne', one_smul]
 
 /-- The actual continuous real-linear equivalence of the affine Beltrami map for `‖μ‖ < 1`. -/
 def linearEquiv (μ : ℂ) (hμ : ‖μ‖ < 1) : ℂ ≃L[ℝ] ℂ :=
@@ -252,8 +252,8 @@ theorem antilinearMap_mem_cayleyBall_iff (μ : ℂ) :
     simp only [area_std, ContinuousLinearMap.coe_coe, antilinearMap_apply,
       Complex.normSq_mul, Complex.normSq_conj]
     have hm : Complex.normSq μ < 1 := by
-      have := one_sub_normSq_pos h
-      linarith
+      simpa only [Complex.normSq_eq_norm_sq] using
+        sub_pos.mp (one_sub_sq_norm_pos_of_norm_lt_one h)
     simpa using mul_lt_mul_of_pos_right hm (Complex.normSq_pos.mpr hz)
 
 /-- Evaluation at one identifies the native plane Cayley ball with the complex unit disc. -/
