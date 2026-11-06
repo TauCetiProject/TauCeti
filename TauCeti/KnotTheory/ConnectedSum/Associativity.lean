@@ -560,9 +560,8 @@ private theorem pathThree_one : pathThree 1 = ![1, capPoint, -1] := by
   · simp [pathThree]
   · simp only [pathThree, Set.Icc.coe_one, mul_one]
     exact circleExp_pi_add_three_pi_div_four
-  · simp only [pathThree, Set.Icc.coe_one, mul_one]
-    rw [show 3 * π / 4 + π / 4 = π by ring, Circle.exp_pi]
-    rfl
+  · have hangle : 3 * π / 4 + π / 4 = π := by ring
+    simp [pathThree, hangle, Circle.exp_pi]
 
 /-- At the end of `pathTwo` both caps are in the closed right half-plane, close to the real axis. -/
 private theorem re_pathTwo_one (j : Fin 2) :
@@ -664,8 +663,8 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
       (hL : IsCapPosition ι capRadius L) (hL' : IsCapPosition ι capRadius L') :
       SmoothEmbedding.Concordant (connectedSum L L' (hL.isConnectedSumPosition hr)
         (hL'.isConnectedSumPosition hr)) (capSum (hcap₂ L L' hL hL' 1)) := by
-    rw [connectedSum_eq_capSum (hcap₂ L L' hL hL' 0) (congrFun pathTwo_zero 0)
-      (congrFun pathTwo_zero 1)]
+    rw [connectedSum_eq_capSum (hcap₂ L L' hL hL' 0) (by simp [pathTwo_zero])
+      (by simp [pathTwo_zero])]
     exact SmoothEmbedding.Concordant.of_smoothIsotopic
       (smoothIsotopic_capSum contMDiff_pathTwo (hcap₂ L L' hL hL')) (by simp) le_rfl
   refine ⟨P, Q, hP, hQ, ?_, ?_, ?_⟩
@@ -675,11 +674,11 @@ theorem exists_concordant_connectedSum_assoc (h₁ : IsConnectedSumPosition ι K
     -- `1, -1, -capPoint`. The second slides to the first.
     have hA : connectedSum P L₃ hP (ha₃.isConnectedSumPosition hr) = capSum (hcap₃ 1) :=
       connectedSum_capSum_eq (hcap₂ L₁ L₂ ha₁ ha₂ 1) (hcap₃ 1)
-        (by rw [pathThree_one, pathTwo_one]; rfl) (by rw [pathThree_one, pathTwo_one]; rfl)
-        (congrFun pathThree_one 2) hpos hpos' hP _
+        (by simp [pathThree_one, pathTwo_one]) (by simp [pathThree_one, pathTwo_one])
+        (by simp [pathThree_one]) hpos hpos' hP _
     have hB : connectedSum L₁ Q (ha₁.isConnectedSumPosition hr) hQ = capSum (hcap₃ 0) :=
-      connectedSum_capSum_eq' (hcap₂ L₂ L₃ ha₂ ha₃ 1) (hcap₃ 0) (congrFun pathThree_zero 0)
-        (by rw [pathThree_zero, pathTwo_one]; rfl) (by rw [pathThree_zero, pathTwo_one]; rfl) hpos
+      connectedSum_capSum_eq' (hcap₂ L₂ L₃ ha₂ ha₃ 1) (hcap₃ 0) (by simp [pathThree_zero])
+        (by simp [pathThree_zero, pathTwo_one]) (by simp [pathThree_zero, pathTwo_one]) hpos
         hpos' _ hQ
     refine ((concordant_connectedSum_right hP hF₃).trans ?_).trans
       (concordant_connectedSum_left hF₁ hQ).symm
