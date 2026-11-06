@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
+public import TauCeti.Analysis.Calculus.ContDiff.ClosedInterval
 public import TauCeti.Analysis.Calculus.Splice
 public import TauCeti.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Module.HahnBanach
@@ -17,8 +18,6 @@ public import TauCeti.Geometry.Manifold.SmoothEmbedding.Diffeomorph
 public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
 public import TauCeti.Topology.Circle.Arc
 public import Mathlib.Geometry.Manifold.Algebra.SMul
-
-import TauCeti.Analysis.Calculus.MeanValue
 
 /-!
 # Straightening a circle embedding near a point
@@ -426,9 +425,9 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 variable [T2Space M]
 
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
-/-- For scales `δ` small enough, the spliced curves stay on the arc `|t| < 2 δ` inside the chart
-`φ` and over the point `K 1`, whose chart image is the common value of `k` and `l` at `0`, away
-from the image under `K` of the rest of the circle. -/
+/-- For scales `δ < ρ / 2` small enough, for every weight `s ∈ [0, 1]` and every `|t| < 2 δ` the
+spliced curve at `t` lies in `φ.target`, and its preimage under `φ` avoids the image under `K` of
+the circle outside the arc `|arg z| < ρ`. Here `k` and `l` take the value `φ (K 1)` at `0`. -/
 private theorem exists_scale_splice_mem_target (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M)
     {φ : OpenPartialHomeomorph M E} (hpφ : K 1 ∈ φ.source) {k l : ℝ → E} {r ρ : ℝ} (hr : 0 < r)
     (hρ0 : 0 < ρ) (hρr : ρ < r) (hrπ : r ≤ Real.pi) (hkC : ContinuousOn k (Ioo (-r) r))
@@ -478,8 +477,17 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   have hφ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, E)) (n := ∞) p
   have hpφ : p ∈ φ.source := mem_chart_source E p
   -- Step 1: an arc `|arg z| < r` inside `U`, along which `K` and `L` stay in the chart `φ`.
-  obtain ⟨r, hr, hrπ, hrU, hKφ, hLφ⟩ := exists_centeredArc_subset_and_mem_of_isOpen
-    K.contMDiff.continuous hL.continuous h₀ φ.open_source hpφ hU
+  have hKS : K ⁻¹' φ.source ∈ 𝓝 (1 : Circle) :=
+    K.contMDiff.continuous.continuousAt.preimage_mem_nhds (φ.open_source.mem_nhds hpφ)
+  have hLS : L ⁻¹' φ.source ∈ 𝓝 (1 : Circle) :=
+    hL.continuous.continuousAt.preimage_mem_nhds (φ.open_source.mem_nhds (h₀ ▸ hpφ))
+  obtain ⟨r, hr, hrπ, hrV⟩ :=
+    exists_centeredArc_subset_of_mem_nhds (inter_mem hU (inter_mem hKS hLS))
+  have hrU : Circle.centeredArc r ⊆ U := fun z hz => (hrV hz).1
+  have harc (t : ℝ) (ht : |t| < r) : Circle.exp t ∈ Circle.centeredArc r :=
+    ⟨t, ht, rfl⟩
+  have hKφ (t : ℝ) (ht : |t| < r) : K (Circle.exp t) ∈ φ.source := (hrV (harc t ht)).2.1
+  have hLφ (t : ℝ) (ht : |t| < r) : L (Circle.exp t) ∈ φ.source := (hrV (harc t ht)).2.2
   -- Step 2: `K` and `L` read in the chart along the circle have the same nonzero velocity at `0`.
   set k : ℝ → E := fun t => φ (K (Circle.exp t))
   set l : ℝ → E := fun t => φ (L (Circle.exp t))
@@ -487,7 +495,9 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   have hlC := contDiffOn_chartAt_comp_circleExp p hL hLφ
   have hk0 : k 0 = φ p := by simp only [k, Circle.exp_zero, hp]
   have hl0 : l 0 = φ p := by simp only [l, Circle.exp_zero, ← h₀]
-  obtain ⟨hd, hv⟩ := deriv_chartAt_comp_circleExp_eq_and_ne_zero K hL h₀ h₁
+  have hd := deriv_chartAt_comp_circleExp_eq (K.contMDiff.mdifferentiableAt (by simp))
+    (hL.mdifferentiableAt (by simp)) h₀ h₁
+  have hv := deriv_chartAt_comp_circleExp_ne_zero (K.isImmersion.isImmersionAt 1)
   -- Step 3: the spliced curves are regular on a fixed interval `[-ρ, ρ]`.
   obtain ⟨ℓ, ρ, hρ0, hρr, hpos⟩ := exists_pos_deriv_splice hr (hkC.of_le (by simp))
     (hlC.of_le (by simp)) (hk0.trans hl0.symm) hd hv

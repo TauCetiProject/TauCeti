@@ -27,6 +27,9 @@ The endpoint argument uses Mathlib's
 `iteratedDerivWithin_succ` and the native criterion for `ContDiffOn` in terms of iterated
 derivatives. No completeness assumption on the codomain is needed.
 
+`TauCeti.exists_norm_deriv_sub_lt` says that the velocity of a `C¹` curve on `(-r, r)` stays near
+its velocity at `0`, by continuity of the derivative.
+
 `ContDiffOn.isBounded_image_deriv` bounds the derivative of a `C¹` function on a closed interval:
 it agrees with the continuous within-interval derivative away from the two endpoints.
 -/
@@ -140,3 +143,20 @@ theorem ContDiffOn.isBounded_image_deriv {F : Type*} [NormedAddCommGroup F] [Nor
   · simp
   exact Or.inl ⟨t, ht, derivWithin_of_mem_nhds (Icc_mem_nhds (ht.1.lt_of_ne' hta)
     (ht.2.lt_of_ne htb))⟩
+
+namespace TauCeti
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- A `C¹` curve on `(-r, r)` has velocity within `ε` of its velocity `v` at `0` near `0`. -/
+theorem exists_norm_deriv_sub_lt {f : ℝ → F} {r ε : ℝ} {v : F}
+    (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hr : 0 < r) (hf0 : deriv f 0 = v) (hε : 0 < ε) :
+    ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
+  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
+  have := (hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt
+    (hI.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩)
+  obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε
+  exact ⟨ρ, hρ, fun t ht => by
+    simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
+
+end TauCeti

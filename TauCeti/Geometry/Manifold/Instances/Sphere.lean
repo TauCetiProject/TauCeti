@@ -98,6 +98,11 @@ allowing the entire path or loop to be read in one stereographic chart.
 * `TauCeti.toSpanSingleton_deriv_comp_circleExp`,
   `TauCeti.toSpanSingleton_deriv_chart_comp_circleExp`: the chain rule for a map of the circle read
   along `Circle.exp`, into a normed space or, through a chart, into a manifold.
+* `TauCeti.contDiffOn_chartAt_comp_circleExp`: a smooth map of the circle, read in a chart along
+  `Circle.exp` on an arc, is smooth.
+* `TauCeti.deriv_chartAt_comp_circleExp_eq`, `TauCeti.deriv_chartAt_comp_circleExp_ne_zero`: two
+  maps of the circle agreeing to first order at `1` have the same velocity at `0` when read in a
+  chart at their common value along `Circle.exp`, and that velocity is nonzero for an immersion.
 * `TauCeti.mfderiv_eq_of_deriv_comp_circleExp_eq`: two maps of the circle into a normed space
   with the same velocity at `t` along `Circle.exp` have the same derivative at `exp (t i)`.
 * `TauCeti.deriv_comp_circleExp_ne_zero_and_range_mfderiv`: lifting a `C¹` immersed circle
@@ -555,35 +560,47 @@ theorem contDiffOn_chartAt_comp_circleExp {f : Circle → M} {r : ℝ} (p : M)
   contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_chart (x := p)).comp
     (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
 
-/-- If a smooth embedding `K` of the circle and a smooth map `L` agree to first order at `1`, then
-read in a chart at `K 1` along `Circle.exp` they have the same velocity at `0`, which is nonzero. -/
-theorem deriv_chartAt_comp_circleExp_eq_and_ne_zero
-    (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) {L : Circle → M}
-    (hL : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ L) (h₀ : K 1 = L 1)
-    (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 = mfderiv (𝓡 1) 𝓘(ℝ, E) L 1) :
+/-- If two maps `K` and `L` of the circle, differentiable at `1`, agree to first order there, then
+read in a chart at `K 1` along `Circle.exp` they have the same velocity at `0`. -/
+theorem deriv_chartAt_comp_circleExp_eq {K L : Circle → M}
+    (hK : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) K 1) (hL : MDifferentiableAt (𝓡 1) 𝓘(ℝ, E) L 1)
+    (h₀ : K 1 = L 1) (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 = mfderiv (𝓡 1) 𝓘(ℝ, E) L 1) :
     deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 =
-        deriv (fun t => chartAt E (K 1) (L (Circle.exp t))) 0 ∧
-      deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 ≠ 0 := by
+      deriv (fun t => chartAt E (K 1) (L (Circle.exp t))) 0 := by
   have hφ : chartAt E (K 1) ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
     IsManifold.chart_mem_maximalAtlas _
   have hpφ : K 1 ∈ (chartAt E (K 1)).source := mem_chart_source E _
-  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (K.contMDiff.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero])
-  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (hL.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero, ← h₀])
+  rw [← Circle.exp_zero] at hK hL
+  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp) hK hφ
+    (by rwa [Circle.exp_zero])
+  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp) hL hφ
+    (by rwa [Circle.exp_zero, ← h₀])
   rw [Circle.exp_zero] at hvK hvL
   rw [← h₁, ← h₀] at hvL
-  refine ⟨by simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm), fun h0 => ?_⟩
-  have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E (K 1)) (K 1)
-      (mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ))) = 0 := by
-    have h := (congrArg (fun T => T 1) hvK).symm
+  simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm)
+
+/-- A map of the circle which is an immersion at `1`, read in a chart at its value at `1` along
+`Circle.exp`, has nonzero velocity at `0`. -/
+theorem deriv_chartAt_comp_circleExp_ne_zero {f : Circle → M}
+    (hf : IsImmersionAt (𝓡 1) 𝓘(ℝ, E) ∞ f 1) :
+    deriv (fun t => chartAt E (f 1) (f (Circle.exp t))) 0 ≠ 0 := fun h0 => by
+  have hφ : chartAt E (f 1) ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas _
+  have hpφ : f 1 ∈ (chartAt E (f 1)).source := mem_chart_source E _
+  have hv := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
+    (by rw [Circle.exp_zero]; exact hf.contMDiffAt.mdifferentiableAt (by simp)) hφ
+    (by rwa [Circle.exp_zero])
+  rw [Circle.exp_zero] at hv
+  have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E (f 1)) (f 1)
+      (mfderiv (𝓡 1) 𝓘(ℝ, E) f 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ))) = 0 := by
+    have h := (congrArg (fun T => T 1) hv).symm
     simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
     exact h.trans h0
-  have hφi := (((chartAt E (K 1)).isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hpφ).isDiffImmersionAt
+  have hφi := (((chartAt E (f 1)).isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hpφ).isDiffImmersionAt
     (by simp)).mfderiv_injective
-  have hKi := (K.isImmersion.isImmersionAt 1).mfderiv_injective (by simp)
+  have hfi := hf.mfderiv_injective (by simp)
   exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp 0
-    ((hKi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
+    ((hfi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
       (map_zero _).symm))
 
 end ChartAlongCircleExp
