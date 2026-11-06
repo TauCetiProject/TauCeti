@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
+public import TauCeti.NumberTheory.NumberField.InfinitePlace.Completion.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.Analysis.AbsoluteValue.Equivalence
 public import TauCeti.NumberTheory.NumberField.Units.Signature.Integer
@@ -198,16 +199,6 @@ private theorem exists_mixed_approximation
         simp only [a, mixedAbsoluteValue] at hw
         exact hw.trans_le (Finset.inf'_le ρ (Finset.mem_univ (Sum.inr w)))
 
-omit [NumberField K] in
-/-- The number field is dense in each of its completions at an infinite place. -/
-theorem _root_.NumberField.InfinitePlace.Completion.denseRange_algebraMap (v : InfinitePlace K) :
-    DenseRange (fun x : K => algebraMap K v.Completion x) := by
-  simp only [InfinitePlace.Completion.algebraMap_apply]
-  change DenseRange (((↑) : WithAbs v.1 → v.Completion) ∘ (WithAbs.equiv v.1).symm)
-  exact (InfinitePlace.Completion.denseRange_coe (v := v)).comp
-    (WithAbs.equiv v.1).symm.surjective.denseRange
-    (InfinitePlace.Completion.continuous_coe (v := v))
-
 /-- A field element that is close to `a` for the normalized valuation of `v` has its image in the
 completion close to that of `a`, in the restricted valuation of the completion. -/
 private theorem restrict_algebraMap_sub_lt (v : HeightOneSpectrum (RingOfIntegers K)) {x a : K}
@@ -282,13 +273,6 @@ theorem weakApproximation_denseRange
       InfinitePlace.Completion.norm_coe]
     exact hxinf w
 
-omit [NumberField K] in
-/-- An infinite place restricts on `ℚ` to the real absolute value. -/
-private theorem infinitePlace_apply_ratCast (w : InfinitePlace K) (r : ℚ) :
-    w (r : K) = Rat.AbsoluteValue.real r := by
-  rw [InfinitePlace.map_ratCast, Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs,
-    ← Real.norm_eq_abs, Rat.norm_cast_real]
-
 /-- The absolute values of a number field coming from its embeddings into `AlgebraicClosure ℚ_[p]`,
 into `AlgebraicClosure ℚ_[ℓ]` for the primes `ℓ` of a finite set, and from its infinite places form
 a finite set of absolute values each of which restricts on `ℚ` to a standard one. -/
@@ -315,7 +299,7 @@ private theorem exists_finset_isStandard_restrict (p : ℕ) [Fact p.Prime] {L : 
     · exact ⟨_, .padic p, place_ratCast_padicAlgCl p φ⟩
     · have : Fact ℓ.1.Prime := ⟨hL ℓ.1 ℓ.2⟩
       exact ⟨_, .padic ℓ.1, place_ratCast_padicAlgCl ℓ.1 φ⟩
-    · exact ⟨_, .real, infinitePlace_apply_ratCast w⟩
+    · exact ⟨_, .real, InfinitePlace.apply_ratCast_eq_real w⟩
   · simp only [Sp, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
     exact Or.inl (Or.inl ⟨φ, rfl⟩)
   · simp only [SL, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and,
@@ -324,31 +308,33 @@ private theorem exists_finset_isStandard_restrict (p : ℕ) [Fact p.Prime] {L : 
   · simp only [Si, Finset.mem_union, Finset.mem_image, Finset.mem_univ, true_and]
     exact Or.inr ⟨w, rfl⟩
 
+/-- The `p`-adic absolute value of `p` is less than `1`. -/
+private theorem padic_natCast_lt_one (p : ℕ) [Fact p.Prime] : Rat.AbsoluteValue.padic p p < 1 := by
+  rw [Rat.AbsoluteValue.padic_eq_padicNorm]
+  exact_mod_cast padicNorm.padicNorm_p_lt_one_of_prime (p := p)
+
 omit [NumberField K] in
 /-- An absolute value restricting to the `p`-adic one at `p` differs from every absolute value
 sending `p` to `1`. -/
 private theorem ne_of_apply_natCast_eq_one {p : ℕ} [Fact p.Prime] {v₀ v : AbsoluteValue K ℝ}
     (hv₀p : v₀ (p : ℚ) = Rat.AbsoluteValue.padic p p) (hv : v (p : ℚ) = 1) : v ≠ v₀ := by
   rintro rfl
-  rw [hv₀p, Rat.AbsoluteValue.padic_eq_padicNorm, padicNorm.padicNorm_p_of_prime] at hv
-  have : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-  push_cast at hv
-  exact (inv_lt_one_of_one_lt₀ this).ne hv
+  exact (padic_natCast_lt_one p).ne (hv₀p.symm.trans hv)
 
 omit [NumberField K] in
 /-- An absolute value restricting to the `p`-adic one at `p` is not an infinite place. -/
 private theorem infinitePlace_ne_of_apply_natCast {p : ℕ} [Fact p.Prime] {v₀ : AbsoluteValue K ℝ}
     (hv₀p : v₀ (p : ℚ) = Rat.AbsoluteValue.padic p p) (w : InfinitePlace K) : w.1 ≠ v₀ := by
   intro hw
-  have := congr($hw (p : ℚ))
-  have hwp : w.1 (p : ℚ) = Rat.AbsoluteValue.real p := infinitePlace_apply_ratCast w p
-  rw [hwp, Rat.AbsoluteValue.real_eq_abs, hv₀p,
-    Rat.AbsoluteValue.padic_eq_padicNorm, padicNorm.padicNorm_p_of_prime] at this
-  have h1 : (1 : ℝ) < p := by exact_mod_cast (Fact.out : p.Prime).one_lt
-  have h2 : ((p : ℚ)⁻¹ : ℝ) < 1 := by push_cast; exact inv_lt_one_of_one_lt₀ h1
-  rw [abs_of_pos (by exact_mod_cast (Fact.out : p.Prime).pos)] at this
-  push_cast at this h2
-  linarith
+  -- The infinite place sends `p` to `|p| ≥ 1`, while `v₀` sends it below `1`.
+  have h1 : (1 : ℝ) ≤ Rat.AbsoluteValue.real p := by
+    rw [Rat.AbsoluteValue.real_eq_abs]
+    push_cast
+    rw [abs_of_nonneg (Nat.cast_nonneg _)]
+    exact_mod_cast (Fact.out : p.Prime).one_le
+  have hwp : w.1 (p : ℚ) = Rat.AbsoluteValue.real p := InfinitePlace.apply_ratCast_eq_real w p
+  rw [hw, hv₀p] at hwp
+  exact (padic_natCast_lt_one p).not_ge (hwp ▸ h1)
 
 /-- **Approximation at Galois `p`-adic embeddings.** Let
 `K ⊆ AlgebraicClosure ℚ_[p]` be a number field Galois over `ℚ`, let `y₀ ∈ K`, and let `L` be a

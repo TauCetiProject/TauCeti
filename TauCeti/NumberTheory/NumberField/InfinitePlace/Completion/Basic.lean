@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.NumberField.Completion.InfinitePlace
+public import Mathlib.NumberTheory.Ostrowski
 public import TauCeti.Analysis.Normed.Ring.WithAbs
 
 /-!
@@ -18,7 +19,8 @@ places. For a number field, its restriction agrees with the normalization in
 idele norm.
 
 `NumberField.InfinitePlace.Completion.norm_algebraMap` compares the completion norm with the place
-absolute value on the dense base field, and
+absolute value on the dense base field, `NumberField.InfinitePlace.Completion.denseRange_algebraMap`
+says that the base field is dense in the completion, and
 `NumberField.InfinitePlace.Completion.funext_of_continuous` says that continuous maps out of the
 completion are determined by their values on it. The normalized value is continuous.
 
@@ -78,6 +80,19 @@ theorem Completion.norm_algebraMap (w : InfinitePlace K) (x : K) :
     ‖algebraMap K w.Completion x‖ = w x := by
   rw [Completion.algebraMap_apply]
   exact Completion.norm_coe w (WithAbs.toAbs w.1 x)
+
+/-- The number field is dense in each of its completions at an infinite place. -/
+theorem Completion.denseRange_algebraMap (v : InfinitePlace K) :
+    DenseRange (fun x : K => algebraMap K v.Completion x) := by
+  simp only [Completion.algebraMap_apply]
+  exact (Completion.denseRange_coe (v := v)).comp (WithAbs.toAbs_surjective v.1).denseRange
+    (Completion.continuous_coe (v := v))
+
+/-- An infinite place restricts on `ℚ` to the real absolute value. -/
+theorem apply_ratCast_eq_real (w : InfinitePlace K) (r : ℚ) :
+    w (r : K) = Rat.AbsoluteValue.real r := by
+  rw [InfinitePlace.map_ratCast, Rat.AbsoluteValue.real_eq_abs, Rat.cast_abs,
+    ← Real.norm_eq_abs, Rat.norm_cast_real]
 
 /-- Two continuous maps out of an archimedean completion `K_w` into a Hausdorff space agree once
 they agree on `K`. -/
