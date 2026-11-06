@@ -52,6 +52,6 @@ theorem exists_isArithFrobAt_and_restrictScalars_eq (Q : Ideal (𝓞 L)) [Q.IsPr
   obtain ⟨τ, hτ⟩ := NumberField.exists_isArithFrobAt
     (K := ↥(fixedField (Subgroup.zpowers σ))) Q hσ.ne_bot
   exact ⟨τ, hτ, NumberField.restrictScalars_eq_of_inertiaDeg_eq_one hσ hτ
-    (inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt Q hσ.ne_bot hσ)⟩
+    (inertiaDeg_under_fixedField_eq_one_of_isArithFrobAt Q hσ)⟩
 
 end Ideal
