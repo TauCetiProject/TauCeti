@@ -71,6 +71,7 @@ theorem chartVariation_of_mem {t : ℝ} (ht : t ∈ J) (s : ℝ) :
   simp [chartVariation, ht]
 
 /-- Outside `J`, the chart variation is `γ`. -/
+@[simp]
 theorem chartVariation_of_notMem {t : ℝ} (ht : t ∉ J) (s : ℝ) :
     chartVariation I γ x₀ J φ e s t = γ t := by
   simp [chartVariation, ht]

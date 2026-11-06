@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Cotangent.GeneratingFunction.Basic
-public import TauCeti.Geometry.Manifold.MFDeriv.Chart
-public import TauCeti.Geometry.Manifold.MFDeriv.Parametric
+public import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
+public import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Basic
 import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 

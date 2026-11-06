@@ -10,10 +10,10 @@ public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
-import TauCeti.Geometry.Manifold.MFDeriv.ChartVariation
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
-import TauCeti.Geometry.Manifold.MFDeriv.ParametricIntegral
-import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Parametric.Integral
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # The first variation of the action functional and its critical loops
@@ -99,16 +99,6 @@ private theorem isLoopCylinder_comp_prodMap {w : ℝ × ℝ → M} (hwc : ContMD
   apply_zero t := by simp
   apply_one t := by simp
 
-/-- The pullback of a two-form along a map of the plane, evaluated on the coordinate vectors, is
-the form evaluated on the partial derivatives `∂_s w` and `∂_t w`. -/
-private theorem mpullback_apply_coordinate (φ : RoughForm I M F 2) (w : ℝ × ℝ → M) (z : ℝ × ℝ) :
-    mpullback 𝓘(ℝ, ℝ × ℝ) I w φ z ![(1, 0), (0, 1)] =
-      φ (w z) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w z (1, 0), mfderiv 𝓘(ℝ, ℝ × ℝ) I w z (0, 1)] := by
-  rw [mpullback_apply]
-  congr 1
-  funext i
-  fin_cases i <;> rfl
-
 section CapArea
 
 variable [IsManifold I 1 M] [CompleteSpace F] {φ : RoughForm I M F 2} {w : ℝ × ℝ → M}
@@ -141,19 +131,8 @@ theorem IsWeaklyExact.hasDerivAt_capArea (hφ : IsSmoothForm I 0 φ) (hw : IsWea
   rw [heq]
   convert ((hf.integral_hasStrictDerivAt s₀ s₀).hasDerivAt.const_sub
     (capArea φ fun t ↦ w (s₀, t))) using 2
-  exact intervalIntegral.integral_congr fun t _ ↦ (mpullback_apply_coordinate φ w (s₀, t)).symm
-
-omit [CompleteSpace F] in
-/-- For a continuous form `φ` and a `C¹` map `w` of the plane, the integrand
-`t ↦ φ(∂_s w, ∂_t w)(s₀, t)` of the first variation of the cap area is continuous. -/
-private theorem continuous_apply_mfderiv (hφ : IsSmoothForm I 0 φ)
-    (hwc : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 w) (s₀ : ℝ) :
-    Continuous fun t ↦ φ (w (s₀, t)) ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0),
-      mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1)] := by
-  have hc : Continuous fun z ↦ mpullback 𝓘(ℝ, ℝ × ℝ) I w φ z ![(1, 0), (0, 1)] :=
-    (hφ.continuous_mpullback_apply hwc ![(1, 0), (0, 1)]).congr fun _ ↦ rfl
-  exact (hc.comp (continuous_const.prodMk continuous_id :
-    Continuous fun t : ℝ ↦ (s₀, t))).congr fun t ↦ mpullback_apply_coordinate φ w (s₀, t)
+  exact intervalIntegral.integral_congr fun t _ ↦
+    (mpullback_apply_pair w φ (s₀, t) (1, 0) (0, 1)).symm
 
 end CapArea
 
@@ -197,7 +176,8 @@ theorem hasDerivAt_contractibleLoopAction (h : σ.IsNondegenerate) (hw : IsWeakl
   refine (intervalIntegral.integral_congr fun t _ ↦
     h.apply_sub_hamiltonianVectorField (H t) (w (s₀, t)) _ _).trans ?_
   exact intervalIntegral.integral_sub
-    ((continuous_apply_mfderiv hσ (hwc.of_le one_le_two) s₀).neg.intervalIntegrable _ _)
+    (((hσ.continuous_apply_mfderiv (hwc.of_le one_le_two) (1, 0) (0, 1)).comp
+      (continuous_const.prodMk continuous_id)).neg.intervalIntegrable _ _)
     ((Manifold.continuous_mvfderiv_apply_mfderiv hH (hwc.of_le one_le_two) s₀).intervalIntegrable
       _ _)
 
@@ -209,7 +189,8 @@ private theorem continuous_apply_sub_hamiltonianVectorField (h : σ.IsNondegener
     Continuous fun t ↦ σ.1 (w (s₀, t))
       ![mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (0, 1) - σ.hamiltonianVectorField (H t) (w (s₀, t)),
         mfderiv 𝓘(ℝ, ℝ × ℝ) I w (s₀, t) (1, 0)] :=
-  ((continuous_apply_mfderiv (σ.isSmoothForm.of_le (by simp)) hwc s₀).neg.sub
+  ((((σ.isSmoothForm.of_le (by simp)).continuous_apply_mfderiv hwc (1, 0) (0, 1)).comp
+    (continuous_const.prodMk continuous_id)).neg.sub
     (Manifold.continuous_mvfderiv_apply_mfderiv hH hwc s₀)).congr fun t ↦
     (h.apply_sub_hamiltonianVectorField (H t) (w (s₀, t)) _ _).symm
 

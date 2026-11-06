@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Smooth finite-group linearization

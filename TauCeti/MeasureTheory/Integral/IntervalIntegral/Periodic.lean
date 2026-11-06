@@ -37,6 +37,8 @@ onto the fundamental interval `(F 0, F 0 + T]`, and applies the change of variab
 * `AddCircle.map_volume_le_of_lift_of_leftInverse` and
   `AddCircle.map_haarAddCircle_le_of_lift_of_leftInverse`: if `0 < F' ≤ M`, then a measurable
   left inverse of `φ` pushes the measure of the circle forward to at most `M` times itself.
+* `Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero`: a continuous periodic function which
+  is nonnegative over a period and has integral zero over a period vanishes inside that period.
 -/
 
 public section
@@ -144,3 +146,24 @@ theorem map_haarAddCircle_le_of_lift_of_leftInverse (hpos : ∀ x, 0 < F' x) {M 
 end Pushforward
 
 end AddCircle
+
+/-- A continuous `T`-periodic function which is nonnegative on `[a, a + T]` and whose integral over
+a period vanishes, vanishes on `(a, a + T)`. -/
+theorem Function.Periodic.eqOn_zero_of_intervalIntegral_eq_zero {f : ℝ → ℝ} {T : ℝ}
+    (hper : Function.Periodic f T) (hf : Continuous f) {a : ℝ}
+    (hnn : ∀ t ∈ Icc a (a + T), 0 ≤ f t) (hint : ∫ t in 0..T, f t = 0) :
+    EqOn f 0 (Ioo a (a + T)) := by
+  intro t ht
+  have hab : a ≤ a + T := (ht.1.trans ht.2).le
+  have hint' : ∫ t in a..a + T, f t = 0 := by
+    rw [hper.intervalIntegral_add_eq a 0, zero_add]
+    exact hint
+  have hzero := (intervalIntegral.integral_eq_zero_iff_of_nonneg_ae
+    (ae_restrict_of_forall_mem (measurableSet_Ioc.union measurableSet_Ioc) fun t ht ↦ by
+      rcases ht with ht | ht
+      · exact hnn t (Ioc_subset_Icc_self ht)
+      · exact absurd (ht.1.trans_le ht.2) (not_lt.mpr hab))
+    (hf.intervalIntegrable _ _)).mp hint'
+  exact Measure.eqOn_open_of_ae_eq (ae_restrict_of_ae_restrict_of_subset
+    (fun t ht ↦ Or.inl (Ioo_subset_Ioc_self ht)) hzero) isOpen_Ioo hf.continuousOn
+    continuousOn_const ht

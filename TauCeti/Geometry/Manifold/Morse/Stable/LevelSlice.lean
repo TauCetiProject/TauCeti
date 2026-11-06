@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Morse.Stable.Transversality
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.Dynamics.Flow.Lyapunov
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Level slices of transverse trajectories of an adapted pseudo-gradient

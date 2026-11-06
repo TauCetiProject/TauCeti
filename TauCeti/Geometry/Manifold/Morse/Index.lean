@@ -9,7 +9,7 @@ public import Mathlib.Geometry.Manifold.Diffeomorph
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Geometry.Manifold.Morse.Basic
 import TauCeti.Analysis.Calculus.DerivativeTest
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # The Morse index on a smooth manifold

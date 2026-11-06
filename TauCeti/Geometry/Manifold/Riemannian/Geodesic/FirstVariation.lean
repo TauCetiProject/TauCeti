@@ -8,7 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import TauCeti.Geometry.Manifold.MFDeriv.ChartVariation
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Variation
 
 /-!
 # Geodesics are the critical points of the energy
