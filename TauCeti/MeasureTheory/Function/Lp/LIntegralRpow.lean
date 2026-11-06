@@ -152,28 +152,29 @@ function with its derivative; only a topology and an extended norm on each is ne
 
 Only the function on the left has to be a.e. strongly measurable: without that its `Lᵖ` seminorm
 is `∞` by definition, whatever the integral bound says, while a non-measurable `w` only makes the
-right-hand side larger. -/
-theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+right-hand side larger. The two integrals may be taken against different measures `μ` and `ν`, as
+when an estimate is transported by a change of variables. -/
+theorem eLpNorm_le_eLpNorm_of_lintegral_rpow_le {α : Type*} [MeasurableSpace α] {μ ν : Measure α}
     {G H : Type*} [ENorm G] [TopologicalSpace G] [ENorm H] [TopologicalSpace H]
     {v : α → G} {w : α → H} {c : ℝ}
     (hc : 0 ≤ c) {p : ℝ≥0∞} (hp₀ : p ≠ 0) (hp : p ≠ ∞) (hv : AEStronglyMeasurable v μ)
     (h : ∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ ≤
-      ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) :
-    eLpNorm v p μ ≤ ENNReal.ofReal c * eLpNorm w p μ := by
+      ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) :
+    eLpNorm v p μ ≤ ENNReal.ofReal c * eLpNorm w p ν := by
   have hr0 : (0 : ℝ) < p.toReal := ENNReal.toReal_pos hp₀ hp
-  have hwle : (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) ≤ eLpNorm w p μ := by
-    by_cases hw : AEStronglyMeasurable w μ
+  have hwle : (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) ≤ eLpNorm w p ν := by
+    by_cases hw : AEStronglyMeasurable w ν
     · exact (eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp hw).ge
     · simp [eLpNorm_of_not_aestronglyMeasurable hw]
   rw [eLpNorm_eq_lintegral_rpow_enorm_toReal hp₀ hp hv]
   calc (∫⁻ x, ‖v x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal)
-      ≤ (ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) :=
+      ≤ (ENNReal.ofReal (c ^ p.toReal) * ∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) :=
         ENNReal.rpow_le_rpow h (by positivity)
-    _ = ENNReal.ofReal c * (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂μ) ^ (1 / p.toReal) := by
+    _ = ENNReal.ofReal c * (∫⁻ x, ‖w x‖ₑ ^ p.toReal ∂ν) ^ (1 / p.toReal) := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ (by positivity),
           ← ENNReal.ofReal_rpow_of_nonneg hc hr0.le, ← ENNReal.rpow_mul,
           mul_one_div_cancel hr0.ne', ENNReal.rpow_one]
-    _ ≤ ENNReal.ofReal c * eLpNorm w p μ := by gcongr
+    _ ≤ ENNReal.ofReal c * eLpNorm w p ν := by gcongr
 
 /-- **Hölder's inequality in extended-valued `∫⁻` form**, raised to the power `r`: the `L¹`
 integral of `u : α → ℝ≥0∞` is controlled by its `L^r` integral at the cost of the factor

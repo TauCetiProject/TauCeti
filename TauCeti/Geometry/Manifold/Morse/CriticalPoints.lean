@@ -81,6 +81,10 @@ polynomial in the Morse inequalities.
   counts in the connected components, when there are finitely many.
 * `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
   additivity of the total count over finite open partitions and over connected components.
+* `TauCeti.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum` and
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg`: the signed count
+  `∑ᵢ (-1)ⁱ cᵢ` is the sum of `(-1)^λ` over the critical points, and the signed counts of `f` and
+  `-f` differ by the factor `(-1)ᵐ`.
 
 ## References
 
@@ -592,6 +596,34 @@ theorem sum_criticalCount_eq_totalCriticalCount :
     ← Fin.sum_univ_eq_sum_range]
   rfl
 
+/-- The signed count `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `f`, by index, is the sum of `(-1)^λ`
+over the critical points, `λ` being the Morse index, when the critical set is a finite set `s`.
+Here `n` is any bound for the dimension of `M`. -/
+theorem sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum (s : Finset M)
+    (hs : (s : Set M) = criticalPoints I f) {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
+      ∑ x ∈ s, (-1 : ℤ) ^ manifoldMorseIndex I f x := by
+  rw [← Finset.sum_fiberwise_of_maps_to (g := manifoldMorseIndex I f)
+    (t := Finset.range (n + 1)) fun x _ ↦
+      Finset.mem_range.2 (Nat.lt_succ_of_le (manifoldMorseIndex_le_finrank.trans hn))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hi : {x ∈ criticalPoints I f | manifoldMorseIndex I f x = i} =
+      ↑({x ∈ s | manifoldMorseIndex I f x = i} : Finset M) := by
+    ext x
+    simp [← hs]
+  rw [Finset.sum_congr rfl fun x hx ↦ by rw [(Finset.mem_filter.1 hx).2], criticalCount_def, hi,
+    encard_coe_eq_coe_finsetCard]
+  simp [mul_comm]
+
+/-- Terms of index above the dimension of `M` do not contribute to a signed count
+`∑ᵢ (-1)ⁱ cᵢ` of critical points, so it may be truncated at `dim M`. -/
+theorem sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le {n : ℕ}
+    (hn : Module.finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
+      ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
+  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun i hi hi' ↦ ?_).symm
+  rw [criticalCount_eq_zero_of_finrank_lt (by simp_all), ENat.toNat_zero, Nat.cast_zero, mul_zero]
+
 variable [I.Boundaryless]
 
 /-- **Duality of critical counts.** Replacing a Morse function by its negation exchanges the
@@ -604,6 +636,24 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
   have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
+
+/-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a boundaryless manifold of
+dimension `m`, the signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by
+the factor `(-1)ᵐ`, since the critical points of index `i` of `-f` are those of index `m - i`
+of `f`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg (hf : IsMorse I f) {n : ℕ}
+    (hn : Module.finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I (-f) i).toNat =
+      (-1) ^ Module.finrank ℝ E *
+        ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
+  rw [sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le hn,
+    sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le hn, Finset.mul_sum,
+    ← Finset.sum_range_reflect]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hi : i ≤ Module.finrank ℝ E := Nat.le_of_lt_succ (Finset.mem_range.1 hi)
+  rw [add_tsub_cancel_right, hf.criticalCount_neg (Nat.sub_le _ _), Nat.sub_sub_self hi]
+  obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le' hi
+  simp [hd, pow_add, mul_assoc, ← mul_assoc ((-1 : ℤ) ^ i), ← mul_pow]
 
 end FiniteDimensional
 

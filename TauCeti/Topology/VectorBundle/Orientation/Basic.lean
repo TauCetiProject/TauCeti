@@ -45,6 +45,8 @@ preconnected base these are all of its orientations
 * `TauCeti.VectorBundleOrientation.ofEventually`: an orientation from local constancy in chosen
   trivializations of the atlas.
 * `TauCeti.VectorBundleOrientation.trivial`: the constant orientations of a trivial bundle.
+* `TauCeti.VectorBundleOrientation.pullback`: the pullback of an orientation along a continuous
+  map of bases.
 
 ## Main results
 
@@ -276,6 +278,32 @@ theorem trivial_apply (o : Orientation ℝ F ι) (b : B) : trivial B o b = o :=
 @[simp]
 theorem neg_trivial (o : Orientation ℝ F ι) : -trivial B o = trivial B (-o) :=
   ext fun _ ↦ (rfl)
+
+section Pullback
+
+variable {B' : Type*} [TopologicalSpace B'] (f : C(B', B))
+
+/-- **The pullback of an orientation** along a continuous map `f : B' → B`: the orientation of the
+pullback bundle `f*E` whose fibre over `b'` is oriented as the fibre of `E` over `f b'`. -/
+def pullback (o : VectorBundleOrientation F E ι) : VectorBundleOrientation F ((⇑f) *ᵖ E) ι where
+  toFun b' := o (f b')
+  eventually_mapOrientation_eq' b' := by
+    -- The preferred trivialization of `f*E` at `b'` is the pullback of that of `E` at `f b'`,
+    -- in which fibre orientations read as in the original trivialization.
+    filter_upwards [f.continuous.continuousAt.eventually (o.eventually_mapOrientation_eq' (f b'))]
+      with x hx hx'
+    exact ((trivializationAt F E (f b')).mapOrientation_pullback f hx' _).trans <|
+      (hx _).trans ((trivializationAt F E (f b')).mapOrientation_pullback f _ _).symm
+
+@[simp]
+theorem pullback_apply (o : VectorBundleOrientation F E ι) (b' : B') : o.pullback f b' = o (f b') :=
+  (rfl)
+
+@[simp]
+theorem pullback_neg (o : VectorBundleOrientation F E ι) : (-o).pullback f = -o.pullback f :=
+  ext fun _ ↦ (rfl)
+
+end Pullback
 
 /-- The set of points where two orientations agree is open. -/
 theorem isOpen_setOf_eq (o o' : VectorBundleOrientation F E ι) :

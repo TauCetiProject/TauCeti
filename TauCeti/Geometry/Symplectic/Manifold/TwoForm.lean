@@ -9,6 +9,7 @@ public import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.LocalDiffeomorph
 public import TauCeti.Geometry.Manifold.TwoForm.Closed
+public import TauCeti.Geometry.Manifold.TwoForm.Pullback
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Basic
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
 
@@ -49,6 +50,10 @@ example.
   local diffeomorphism the converse holds as well.
 * `IsLocalDiffeomorph.isSymplectic_mpullback_iff`: a surjective local diffeomorphism pulls a
   two-form back to a symplectic form exactly when the form is symplectic.
+* `TauCeti.SmoothTwoForm.isNondegenerate_iff_forall_ker_bilinFormAt_mpullback`: nondegeneracy
+  characterized by pullback kernels along a surjective smooth map with surjective derivatives.
+* `TauCeti.SmoothTwoForm.isSymplectic_iff_of_mpullback_eq`: a form on the base of such a map is
+  symplectic exactly when its pullback is closed and has kernel equal to the derivative’s kernel.
 * `TauCeti.SmoothTwoForm.Tames` and `TauCeti.SmoothTwoForm.Compatible`: the unbundled pointwise
   relations to a smooth almost complex structure.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.tames_iff`, `invariant_iff`, and `compatible_iff`: these
@@ -103,6 +108,13 @@ lemma isNondegenerate_iff_separatingLeft :
     apply h x v
     intro w
     simpa only [SmoothForm.bilinFormAt_apply] using hv w
+
+/-- Fiberwise nondegeneracy says that the null space `{v | ∀ w, form x v w = 0}` of the form is
+zero at every point. -/
+lemma isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot :
+    form.IsNondegenerate ↔ ∀ x, LinearMap.ker (form.bilinFormAt x) = ⊥ := by
+  simp only [isNondegenerate_iff_separatingLeft, LinearMap.ker_eq_bot', LinearMap.ext_iff,
+    SmoothForm.bilinFormAt_apply, LinearMap.zero_apply]
 
 /-- On a manifold of positive dimension, a fiberwise nondegenerate smooth two-form vanishes
 nowhere. -/
@@ -211,6 +223,43 @@ theorem _root_.IsLocalDiffeomorph.isSymplectic_mpullback_iff {f : M₂ → M}
       (hf.isNondegenerate_mpullback_iff hsurj).2 h.isNondegenerate⟩⟩
 
 end Transport
+
+section Pullback
+
+open Function
+
+variable {E H Z E' H' Q : Type*}
+  [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+  [TopologicalSpace Z] [ChartedSpace H Z] [IsManifold I ∞ Z]
+  [NormedAddCommGroup E'] [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'}
+  [TopologicalSpace Q] [ChartedSpace H' Q] [IsManifold J ∞ Q]
+  {p : Z → Q} {σ : SmoothTwoForm I Z} {η : SmoothTwoForm J Q}
+
+/-- For a surjective `p` with surjective derivatives, `η` is nondegenerate exactly when, at every
+point `z`, the null space of the pullback `p^* η` is the kernel of the derivative of `p`. -/
+theorem isNondegenerate_iff_forall_ker_bilinFormAt_mpullback (hp : ContMDiff I J ∞ p)
+    (hsurj : Surjective p) (hdp : ∀ z, Surjective (mfderiv I J p z)) :
+    η.IsNondegenerate ↔ ∀ z, LinearMap.ker ((SmoothForm.mpullback p hp η).bilinFormAt z) =
+      (mfderiv I J p z).ker := by
+  simp only [ker_bilinFormAt_mpullback hp η (hdp _), ← Submodule.comap_bot,
+    isNondegenerate_iff_forall_ker_bilinFormAt_eq_bot]
+  refine ⟨fun h z ↦ by rw [h], fun h y ↦ ?_⟩
+  obtain ⟨z, rfl⟩ := hsurj y
+  exact Submodule.comap_injective_of_surjective (hdp z) (h z)
+
+/-- **Symplectic forms through a smooth surjection.** If `p` is a surjective smooth map with
+surjective derivatives and `p^* η = σ`, then `η` is symplectic exactly when `σ` is closed and its
+null space at every point is the kernel of the derivative of `p`. -/
+theorem isSymplectic_iff_of_mpullback_eq (hp : ContMDiff I J ∞ p) (hsurj : Surjective p)
+    (hdp : ∀ z, Surjective (mfderiv I J p z)) (hη : SmoothForm.mpullback p hp η = σ) :
+    η.IsSymplectic ↔
+      σ.IsClosed ∧ ∀ z, LinearMap.ker (σ.bilinFormAt z) = (mfderiv I J p z).ker := by
+  subst hη
+  rw [SmoothForm.isClosed_mpullback_iff_of_surjective hp hsurj hdp,
+    ← isNondegenerate_iff_forall_ker_bilinFormAt_mpullback hp hsurj hdp]
+  exact ⟨fun h ↦ ⟨h.isClosed, h.isNondegenerate⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+end Pullback
 
 /-- A smooth two-form tames a smooth almost complex structure when
 `form_x(v, J_x v) > 0` for every nonzero tangent vector. -/
