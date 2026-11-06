@@ -694,6 +694,14 @@ theorem MulAction.orbitRelQuotientCongr_symm_mk (φ : G ≃* H) (e : X ≃ Y)
 
 end Congr
 
+/-- An equivariant injection preserves point stabilizers. -/
+theorem MulAction.stabilizer_eq_of_injective {Y : Type*} [MulAction G Y]
+    (f : X → Y) (hf : Function.Injective f)
+    (he : ∀ (g : G) (x : X), f (g • x) = g • f x) (x : X) :
+    _root_.MulAction.stabilizer G (f x) = _root_.MulAction.stabilizer G x := by
+  ext g
+  simp only [_root_.MulAction.mem_stabilizer_iff, ← he, hf.eq_iff]
+
 section Sum
 
 variable {Y : Type*} [MulAction G Y]

@@ -71,6 +71,18 @@ theorem discriminantExponent_fixedField_stabilizer_out
   obtain ⟨σ, rfl⟩ := MulAction.exists_smul_out_eq hx
   exact (discriminantExponent_fixedField_stabilizer_smul K σ ω.out).symm
 
+private theorem discriminantExponent_fixedField_stabilizer_out_of_injective
+    (f : X → Y) (hf : Function.Injective f)
+    (he : ∀ (σ : Gal(SeparableClosure K/K)) (x : X), f (σ • x) = σ • f x)
+    {ω : orbitRel.Quotient Gal(SeparableClosure K/K) Y} {x : X}
+    (hx : (Quotient.mk'' (f x) : orbitRel.Quotient Gal(SeparableClosure K/K) Y) = ω) :
+    (IntermediateField.fixedField
+      (stabilizer Gal(SeparableClosure K/K) ω.out)).discriminantExponent =
+        (IntermediateField.fixedField
+          (stabilizer Gal(SeparableClosure K/K) x)).discriminantExponent := by
+  rw [discriminantExponent_fixedField_stabilizer_out K hx,
+    MulAction.stabilizer_eq_of_injective f hf he]
+
 /-- The sum of the discriminant exponents of the fixed fields of point stabilizers, one per
 orbit. An infinite fixed field contributes zero; infinitely many nonzero summands give a total
 of zero. -/
@@ -105,12 +117,7 @@ theorem orbitDiscriminantExponent_eq_of_equiv (e : X ≃ Y)
   intro ω
   have hE : (Quotient.mk'' (e ω.out) : orbitRel.Quotient Gal(SeparableClosure K/K) Y) = E ω := by
     rw [← MulAction.orbitRelQuotientCongr_mk (MulEquiv.refl _) e he, Quotient.out_eq']
-  rw [discriminantExponent_fixedField_stabilizer_out K hE]
-  have hstab : stabilizer Gal(SeparableClosure K/K) (e ω.out) =
-      stabilizer Gal(SeparableClosure K/K) ω.out := by
-    ext σ
-    simp only [mem_stabilizer_iff, ← he, e.injective.eq_iff]
-  rw [hstab]
+  exact (discriminantExponent_fixedField_stabilizer_out_of_injective K e e.injective he hE).symm
 
 /-- A transitive action has the discriminant exponent of the fixed field of any point
 stabilizer. The point supplies nonemptiness. -/
@@ -169,26 +176,16 @@ theorem orbitDiscriminantExponent_sum
   rw [Fintype.sum_sum_type]
   congr 1
   · rw [orbitDiscriminantExponent_def, finsum_eq_sum_of_fintype]
-    apply Finset.sum_congr rfl
-    intro ω _
-    have hE : (Quotient.mk'' (Sum.inl ω.out) :
-        orbitRel.Quotient Gal(SeparableClosure K/K) (X ⊕ Y)) = E.symm (.inl ω) := by
-      apply E.injective
-      simp [E]
-    rw [discriminantExponent_fixedField_stabilizer_out K hE]
-    congr 2
-    ext σ
-    simp [mem_stabilizer_iff]
+    refine Finset.sum_congr rfl fun ω _ ↦
+      discriminantExponent_fixedField_stabilizer_out_of_injective K
+        Sum.inl Sum.inl_injective (fun _ _ ↦ rfl) ?_
+    apply E.injective
+    simp [E]
   · rw [orbitDiscriminantExponent_def, finsum_eq_sum_of_fintype]
-    apply Finset.sum_congr rfl
-    intro ω _
-    have hE : (Quotient.mk'' (Sum.inr ω.out) :
-        orbitRel.Quotient Gal(SeparableClosure K/K) (X ⊕ Y)) = E.symm (.inr ω) := by
-      apply E.injective
-      simp [E]
-    rw [discriminantExponent_fixedField_stabilizer_out K hE]
-    congr 2
-    ext σ
-    simp [mem_stabilizer_iff]
+    refine Finset.sum_congr rfl fun ω _ ↦
+      discriminantExponent_fixedField_stabilizer_out_of_injective K
+        Sum.inr Sum.inr_injective (fun _ _ ↦ rfl) ?_
+    apply E.injective
+    simp [E]
 
 end TauCeti
