@@ -38,8 +38,8 @@ The three factors are the subgroups `unitarySubgroup (GL (Fin n) 𝕜)`,
 `A` consists of real matrices, which act on `𝕜ⁿ` through
 `Matrix.GeneralLinearGroup.map (algebraMap ℝ 𝕜)`; for `𝕜 = ℝ` this map is the identity. The
 homeomorphism `TauCeti.iwasawaHomeomorph 𝕜 n : K × A × N ≃ₜ GL n 𝕜` is given by multiplication. The
-statement is topological: that the factors also depend smoothly on `g`, making the decomposition a
-diffeomorphism, is not proved here.
+statement here is topological; the real smooth diffeomorphism is supplied in
+`TauCeti/Geometry/Lie/Iwasawa.lean`.
 
 ## The construction
 
@@ -64,6 +64,10 @@ diffeomorphism, is not proved here.
 ## Main results
 
 * `TauCeti.iwasawaHomeomorph_apply`: the decomposition multiplies the three factors.
+* `TauCeti.iwasawaHomeomorph_symm_unitary_eq_iff`: the unitary factor is characterized by the
+  positive upper-triangular remainder.
+* `TauCeti.coe_iwasawaHomeomorph_symm_diagonal`,
+  `TauCeti.coe_iwasawaHomeomorph_symm_unitriangular`: formulas for the other two factors.
 * `Matrix.GeneralLinearGroup.existsUnique_iwasawa`: every invertible matrix over `𝕜` is uniquely
   `k a u`.
 
@@ -349,6 +353,46 @@ theorem iwasawaHomeomorph_apply
     iwasawaHomeomorph 𝕜 n x = (x.1 : GL (Fin n) 𝕜) *
       GeneralLinearGroup.map (algebraMap ℝ 𝕜) (x.2.1 : GL (Fin n) ℝ) * (x.2.2 : GL (Fin n) 𝕜) :=
   (rfl)
+
+private lemma iwasawaHomeomorph_symm_apply (g : GL (Fin n) 𝕜) :
+    (iwasawaHomeomorph 𝕜 n).symm g =
+      (⟨iwasawaUnitary g, iwasawaUnitary_mem g⟩,
+        ⟨iwasawaDiagonal g, iwasawaDiagonal_mem g⟩,
+        ⟨iwasawaUnitriangular g, iwasawaUnitriangular_mem g⟩) := by
+  -- This is the accessor for the inverse function defined by `iwasawaHomeomorph`; the
+  -- `Homeomorph.symm` application reduces directly to that defining tuple of subgroup elements.
+  rfl
+
+/-- The unitary factor is characterized by the positive upper-triangular remainder. -/
+theorem iwasawaHomeomorph_symm_unitary_eq_iff (g k : GL (Fin n) 𝕜)
+    (hk : k ∈ unitarySubgroup (GL (Fin n) 𝕜)) :
+    (((iwasawaHomeomorph 𝕜 n).symm g).1 : GL (Fin n) 𝕜) = k ↔
+      ((k⁻¹ * g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜).IsUpperTriangular ∧
+        ∀ i, 0 < ((k⁻¹ * g : GL (Fin n) 𝕜) : Matrix (Fin n) (Fin n) 𝕜) i i := by
+  rw [iwasawaHomeomorph_symm_apply]
+  constructor
+  · rintro rfl
+    exact isPosUpper_iwasawaTriangular g
+  · intro hb
+    simpa only [mul_inv_cancel_left] using
+      (iwasawaUnitary_mul (k := k) (b := k⁻¹ * g) hk hb)
+
+/-- The real diagonal factor consists of the real parts of the triangular remainder's diagonal. -/
+theorem coe_iwasawaHomeomorph_symm_diagonal (g : GL (Fin n) 𝕜) :
+    ((((iwasawaHomeomorph 𝕜 n).symm g).2.1 : GL (Fin n) ℝ) : Matrix (Fin n) (Fin n) ℝ) =
+      diagonal (fun i ↦ RCLike.re
+        (Units.val ((((iwasawaHomeomorph 𝕜 n).symm g).1 : GL (Fin n) 𝕜)⁻¹ * g) i i)) := by
+  rw [iwasawaHomeomorph_symm_apply]
+  exact coe_iwasawaDiagonal g
+
+/-- The unitriangular factor is the triangular remainder divided on the left by its diagonal. -/
+theorem coe_iwasawaHomeomorph_symm_unitriangular (g : GL (Fin n) 𝕜) :
+    (((iwasawaHomeomorph 𝕜 n).symm g).2.2 : GL (Fin n) 𝕜) =
+      (GeneralLinearGroup.map (algebraMap ℝ 𝕜)
+        (((iwasawaHomeomorph 𝕜 n).symm g).2.1 : GL (Fin n) ℝ))⁻¹ *
+          ((((iwasawaHomeomorph 𝕜 n).symm g).1 : GL (Fin n) 𝕜)⁻¹ * g) := by
+  rw [iwasawaHomeomorph_symm_apply]
+  simp only [iwasawaUnitriangular, iwasawaTriangular]
 
 end TauCeti
 
