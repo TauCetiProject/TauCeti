@@ -50,9 +50,10 @@ manifold, infinitesimal equivariance (vanishing of `c`) makes the defect constan
 component of `G` (`TauCeti.SmoothTwoForm.IsMomentMap.momentDefect_eq_of_mem_connectedComponent`), so
 zero on the identity component. For a preconnected group it therefore implies coadjoint equivariance
 (`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`). A
-disconnected group needs in addition a component condition: equivariance holds exactly when the
-cocycle vanishes and the defect vanishes at one element of each connected component
-(`IsMomentMap.isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul`).
+disconnected group needs in addition a component condition: by
+`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul`
+equivariance holds exactly when the cocycle vanishes and the defect vanishes at one element of each
+connected component.
 
 Shifting `μ` by a constant `ν ∈ 𝔤*` changes the defect by the coboundary `ν - Ad*_g ν`
 (`TauCeti.momentDefect_add_const`). Consequently, on a preconnected manifold the group-level moment
@@ -101,9 +102,9 @@ a free action, every value of `μ` is a regular value.
 * `TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_of_momentCocycle_eq_zero`: for a
   preconnected group acting by symplectomorphisms of a preconnected manifold, a moment map whose
   cocycle vanishes at one point is coadjoint-equivariant.
-* `IsMomentMap.isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul`:
-  for a possibly disconnected group, equivariance is the vanishing of the cocycle together with
-  equivariance at one element of each connected component.
+* For a possibly disconnected group, equivariance is the vanishing of the cocycle together with
+  equivariance at one element of each connected component:
+`TauCeti.SmoothTwoForm.IsMomentMap.isEquivariantMomentMap_iff_momentCocycle_eq_zero_and_apply_smul`
 * `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_iff_discreteTopology_stabilizer`: at a
   point where the form is nondegenerate, `dμ_x` is surjective exactly when the stabilizer of `x` is
   discrete; `TauCeti.SmoothTwoForm.IsMomentMap.differential_surjective_of_stabilizer_eq_bot` is the
@@ -401,9 +402,8 @@ theorem mvfderiv_momentDefect_one (h : σ.IsMomentMap (InfinitesimalAction.funda
 
 /-- **The defect is constant on the connected components of the group.** Let `G` act by
 symplectomorphisms of a preconnected manifold, and let `μ` be a moment map of the action by
-fundamental vector fields whose cocycle vanishes at one point. Then the defect has vanishing
-derivative in `g`, so it takes the same value at any two elements of one connected component of
-`G`. -/
+fundamental vector fields whose cocycle vanishes at one point. Then
+`momentDefect μ k x = momentDefect μ g x` whenever `k` lies in the connected component of `g`. -/
 theorem momentDefect_eq_of_mem_connectedComponent [PreconnectedSpace M]
     (h : σ.IsMomentMap (InfinitesimalAction.fundamental I G I' M) μ)
     (hσ : ∀ g : G, SmoothForm.mpullback (fun x : M ↦ g • x)
