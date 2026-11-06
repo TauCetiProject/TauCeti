@@ -84,11 +84,56 @@ private theorem genericY_sq_add_eq :
   have h := (equation_iff _ _).mp (equation_genericX_genericY W)
   simpa [WeierstrassCurve.baseChange] using h
 
+/-- `F(x)⟮y / x²⟯ = F(W)`: for `x ≠ 0` the generator `y` of `F(W)` over `F(x)` is recovered from
+`y / x²`, whose equation has coefficients in `F[1 / x]`. -/
+private theorem adjoin_genericY_mul_inv_sq_eq_top :
+    letI := ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    (RatFunc F)⟮genericY W * (genericX W)⁻¹ ^ 2⟯ = ⊤ := by
+  let hx := transcendental_genericX W
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_polynomial_ratFunc W
+  have hX : algebraMap (RatFunc F) W.FunctionField RatFunc.X = genericX W :=
+    algebraMap_ratFuncAlgebraOfTranscendental_X hx
+  have hx0 : genericX W ≠ 0 := hx.ne_zero
+  set x := genericX W
+  set y := genericY W
+  refine top_le_iff.mp ((adjoin_genericY_eq_top W (RatFunc F)).symm.le.trans ?_)
+  rw [IntermediateField.adjoin_simple_le_iff]
+  have hy : y = algebraMap (RatFunc F) W.FunctionField (RatFunc.X ^ 2) * (y * x⁻¹ ^ 2) := by
+    rw [map_pow, hX]
+    field_simp
+  have hmem := mul_mem
+    (IntermediateField.algebraMap_mem (RatFunc F)⟮y * x⁻¹ ^ 2⟯ (RatFunc.X ^ 2))
+    (IntermediateField.mem_adjoin_simple_self (RatFunc F) (y * x⁻¹ ^ 2))
+  rwa [← hy] at hmem
+
+/-- The invariant differential denominator rescaled by `x⁻²`: `2 (y / x²) + a₁ / x + a₃ / x²` equals
+`(2y + a₁x + a₃) / x²`. -/
+private theorem two_mul_genericY_mul_inv_sq_add_eq :
+    letI := ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    2 * (genericY W * (genericX W)⁻¹ ^ 2) + algebraMap (RatFunc F) W.FunctionField
+        (algebraMap F (RatFunc F) W.a₁ * RatFunc.X⁻¹ +
+          algebraMap F (RatFunc F) W.a₃ * RatFunc.X⁻¹ ^ 2) =
+      invariantDifferentialDenom W * (genericX W ^ 2)⁻¹ := by
+  let hx := transcendental_genericX W
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  have hX : algebraMap (RatFunc F) W.FunctionField RatFunc.X = genericX W :=
+    algebraMap_ratFuncAlgebraOfTranscendental_X hx
+  have hC (c : F) : algebraMap (RatFunc F) W.FunctionField (algebraMap F (RatFunc F) c) =
+      algebraMap F W.FunctionField c :=
+    (IsScalarTower.algebraMap_apply F (RatFunc F) W.FunctionField c).symm
+  have hx0 : genericX W ≠ 0 := hx.ne_zero
+  simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC, invariantDifferentialDenom_def]
+  field_simp
+  ring
+
 variable [W.IsElliptic]
 
-/-- **The local bound behind `(ω) = 0`**: at every place `P` of `F(W)`, the different exponent of
-`F(W) / F(x)` is at most `ord_P (2y + a₁x + a₃) + 2 max(-ord_P x, 0)`. -/
-private theorem differentExponent_le (P : Place F W.FunctionField) :
+/-- **The local bound where `x` is regular**: if `ord_P x ≥ 0`, the different exponent is at
+most `ord_P (2y + a₁x + a₃)`, by the Weierstrass equation for `y` itself. -/
+private theorem differentExponent_le_of_ord_nonneg (P : Place F W.FunctionField)
+    (hxP : 0 ≤ P.ord (genericX W)) :
     letI := ratFuncAlgebraOfTranscendental (transcendental_genericX W)
     letI := isScalarTower_ratFuncAlgebraOfTranscendental (transcendental_genericX W)
     letI := isFunctionField_iff_functionField.mp W.isFunctionField
@@ -115,73 +160,100 @@ private theorem differentExponent_le (P : Place F W.FunctionField) :
     invariantDifferentialDenom_def W
   -- `omega` treats `genericX W` and its abbreviation `x` as distinct atoms.
   have hxx : P.ord (genericX W) = P.ord x := rfl
-  rcases le_or_gt 0 (P.ord x) with hxP | hxP
-  · -- `x` is regular at `P`: use the Weierstrass equation for `y` itself.
-    have hxi : x ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr hxP
-    have hu : 2 * y + algebraMap (RatFunc F) W.FunctionField
-        (algebraMap F (RatFunc F) W.a₁ * RatFunc.X + algebraMap F (RatFunc F) W.a₃) =
-        invariantDifferentialDenom W := by
-      simp only [map_add, map_mul, hX, hC, hden]
-      ring
-    have h := Place.differentExponent_le_ord_two_mul_add F (RatFunc F) (P' := P)
-      (u := algebraMap F (RatFunc F) W.a₁ * RatFunc.X + algebraMap F (RatFunc F) W.a₃)
-      (v := RatFunc.X ^ 3 + algebraMap F (RatFunc F) W.a₂ * RatFunc.X ^ 2 +
-        algebraMap F (RatFunc F) W.a₄ * RatFunc.X + algebraMap F (RatFunc F) W.a₆) (z := y)
-      (by simp only [map_add, map_mul, hX, hC]; exact add_mem (mul_mem (hc _) hxi) (hc _))
-      (by
-        simp only [map_add, map_mul, map_pow, hX, hC]
-        exact add_mem (add_mem (add_mem (pow_mem hxi _) (mul_mem (hc _) (pow_mem hxi _)))
-          (mul_mem (hc _) hxi)) (hc _))
-      (adjoin_genericY_eq_top W (RatFunc F))
-      (by simp only [map_add, map_mul, map_pow, hX, hC]; linear_combination heq)
-      (by rw [hu]; exact invariantDifferentialDenom_ne_zero W)
-    rw [hu] at h
+  have hxi : x ∈ P.integers := P.mem_integers_iff_ord_nonneg.mpr hxP
+  have hu : 2 * y + algebraMap (RatFunc F) W.FunctionField
+      (algebraMap F (RatFunc F) W.a₁ * RatFunc.X + algebraMap F (RatFunc F) W.a₃) =
+      invariantDifferentialDenom W := by
+    simp only [map_add, map_mul, hX, hC, hden]
+    ring
+  have h := Place.differentExponent_le_ord_two_mul_add F (RatFunc F) (P' := P)
+    (u := algebraMap F (RatFunc F) W.a₁ * RatFunc.X + algebraMap F (RatFunc F) W.a₃)
+    (v := RatFunc.X ^ 3 + algebraMap F (RatFunc F) W.a₂ * RatFunc.X ^ 2 +
+      algebraMap F (RatFunc F) W.a₄ * RatFunc.X + algebraMap F (RatFunc F) W.a₆) (z := y)
+    (by simp only [map_add, map_mul, hX, hC]; exact add_mem (mul_mem (hc _) hxi) (hc _))
+    (by
+      simp only [map_add, map_mul, map_pow, hX, hC]
+      exact add_mem (add_mem (add_mem (pow_mem hxi _) (mul_mem (hc _) (pow_mem hxi _)))
+        (mul_mem (hc _) hxi)) (hc _))
+    (adjoin_genericY_eq_top W (RatFunc F))
+    (by simp only [map_add, map_mul, map_pow, hX, hC]; linear_combination heq)
+    (by rw [hu]; exact invariantDifferentialDenom_ne_zero W)
+  rw [hu] at h
+  omega
+
+/-- **The local bound at a pole of `x`**: if `ord_P x < 0`, the different exponent is at most
+`ord_P (2y + a₁x + a₃) + 2 (-ord_P x)`, by the equation for `y / x²` with coefficients in
+`F[1 / x]`. -/
+private theorem differentExponent_le_of_ord_neg (P : Place F W.FunctionField)
+    (hxP : P.ord (genericX W) < 0) :
+    letI := ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    letI := isScalarTower_ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    letI := isFunctionField_iff_functionField.mp W.isFunctionField
+    letI := isSeparable_ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    (Place.differentExponent F (RatFunc F) P : ℤ) ≤
+      P.ord (invariantDifferentialDenom W) + 2 * (-P.ord (genericX W) ⊔ 0) := by
+  let hx := transcendental_genericX W
+  let _ := ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_ratFuncAlgebraOfTranscendental hx
+  let _ := isFunctionField_iff_functionField.mp W.isFunctionField
+  let _ := isSeparable_ratFuncAlgebraOfTranscendental hx
+  let _ := isScalarTower_polynomial_ratFunc W
+  have heq := genericY_sq_add_eq W
+  set x := genericX W
+  set y := genericY W
+  have hX : algebraMap (RatFunc F) W.FunctionField RatFunc.X = x :=
+    algebraMap_ratFuncAlgebraOfTranscendental_X hx
+  have hC (c : F) : algebraMap (RatFunc F) W.FunctionField (algebraMap F (RatFunc F) c) =
+      algebraMap F W.FunctionField c :=
+    (IsScalarTower.algebraMap_apply F (RatFunc F) W.FunctionField c).symm
+  have hc (c : F) : algebraMap F W.FunctionField c ∈ P.integers := P.algebraMap_mem_integers c
+  have hden : invariantDifferentialDenom W =
+      2 * y + algebraMap F W.FunctionField W.a₁ * x + algebraMap F W.FunctionField W.a₃ :=
+    invariantDifferentialDenom_def W
+  -- `omega` treats `genericX W` and its abbreviation `x` as distinct atoms.
+  have hxx : P.ord (genericX W) = P.ord x := rfl
+  have hx0 : x ≠ 0 := hx.ne_zero
+  have hti : x⁻¹ ∈ P.integers := by
+    rw [P.mem_integers_iff_ord_nonneg, P.ord_inv]
     omega
-  · -- `x` has a pole at `P`: use the equation for `y / x²`, with coefficients in `F[1 / x]`.
-    have hx0 : x ≠ 0 := hx.ne_zero
-    have hti : x⁻¹ ∈ P.integers := by
-      rw [P.mem_integers_iff_ord_nonneg, P.ord_inv]
-      omega
-    have hgen : (RatFunc F)⟮y * x⁻¹ ^ 2⟯ = ⊤ := by
-      refine top_le_iff.mp ((adjoin_genericY_eq_top W (RatFunc F)).symm.le.trans ?_)
-      rw [IntermediateField.adjoin_simple_le_iff]
-      have hy : y = algebraMap (RatFunc F) W.FunctionField (RatFunc.X ^ 2) * (y * x⁻¹ ^ 2) := by
-        rw [map_pow, hX]
-        field_simp
-      have hmem := mul_mem
-        (IntermediateField.algebraMap_mem (RatFunc F)⟮y * x⁻¹ ^ 2⟯ (RatFunc.X ^ 2))
-        (IntermediateField.mem_adjoin_simple_self (RatFunc F) (y * x⁻¹ ^ 2))
-      rwa [← hy] at hmem
-    have hu : 2 * (y * x⁻¹ ^ 2) + algebraMap (RatFunc F) W.FunctionField
-        (algebraMap F (RatFunc F) W.a₁ * RatFunc.X⁻¹ +
-          algebraMap F (RatFunc F) W.a₃ * RatFunc.X⁻¹ ^ 2) =
-        invariantDifferentialDenom W * (x ^ 2)⁻¹ := by
-      simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC, hden]
+  have hgen := adjoin_genericY_mul_inv_sq_eq_top W
+  have hu := two_mul_genericY_mul_inv_sq_add_eq W
+  have hx2 : (x ^ 2)⁻¹ ≠ 0 := inv_ne_zero (pow_ne_zero _ hx0)
+  have h := Place.differentExponent_le_ord_two_mul_add F (RatFunc F) (P' := P)
+    (u := algebraMap F (RatFunc F) W.a₁ * RatFunc.X⁻¹ +
+      algebraMap F (RatFunc F) W.a₃ * RatFunc.X⁻¹ ^ 2)
+    (v := RatFunc.X⁻¹ + algebraMap F (RatFunc F) W.a₂ * RatFunc.X⁻¹ ^ 2 +
+      algebraMap F (RatFunc F) W.a₄ * RatFunc.X⁻¹ ^ 3 +
+      algebraMap F (RatFunc F) W.a₆ * RatFunc.X⁻¹ ^ 4) (z := y * x⁻¹ ^ 2)
+    (by
+      simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
+      exact add_mem (mul_mem (hc _) hti) (mul_mem (hc _) (pow_mem hti _)))
+    (by
+      simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
+      exact add_mem (add_mem (add_mem hti (mul_mem (hc _) (pow_mem hti _)))
+        (mul_mem (hc _) (pow_mem hti _))) (mul_mem (hc _) (pow_mem hti _)))
+    hgen
+    (by
+      simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
       field_simp
-      ring
-    have hx2 : (x ^ 2)⁻¹ ≠ 0 := inv_ne_zero (pow_ne_zero _ hx0)
-    have h := Place.differentExponent_le_ord_two_mul_add F (RatFunc F) (P' := P)
-      (u := algebraMap F (RatFunc F) W.a₁ * RatFunc.X⁻¹ +
-        algebraMap F (RatFunc F) W.a₃ * RatFunc.X⁻¹ ^ 2)
-      (v := RatFunc.X⁻¹ + algebraMap F (RatFunc F) W.a₂ * RatFunc.X⁻¹ ^ 2 +
-        algebraMap F (RatFunc F) W.a₄ * RatFunc.X⁻¹ ^ 3 +
-        algebraMap F (RatFunc F) W.a₆ * RatFunc.X⁻¹ ^ 4) (z := y * x⁻¹ ^ 2)
-      (by
-        simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
-        exact add_mem (mul_mem (hc _) hti) (mul_mem (hc _) (pow_mem hti _)))
-      (by
-        simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
-        exact add_mem (add_mem (add_mem hti (mul_mem (hc _) (pow_mem hti _)))
-          (mul_mem (hc _) (pow_mem hti _))) (mul_mem (hc _) (pow_mem hti _)))
-      hgen
-      (by
-        simp only [map_add, map_mul, map_pow, map_inv₀, hX, hC]
-        field_simp
-        linear_combination heq)
-      (by rw [hu]; exact mul_ne_zero (invariantDifferentialDenom_ne_zero W) hx2)
-    rw [hu, P.ord_mul (invariantDifferentialDenom_ne_zero W) hx2, P.ord_inv, P.ord_pow] at h
-    push_cast at h
-    omega
+      linear_combination heq)
+    (by rw [hu]; exact mul_ne_zero (invariantDifferentialDenom_ne_zero W) hx2)
+  rw [hu, P.ord_mul (invariantDifferentialDenom_ne_zero W) hx2, P.ord_inv, P.ord_pow] at h
+  push_cast at h
+  omega
+
+/-- **The local bound behind `(ω) = 0`**: at every place `P` of `F(W)`, the different exponent of
+`F(W) / F(x)` is at most `ord_P (2y + a₁x + a₃) + 2 max(-ord_P x, 0)`. -/
+private theorem differentExponent_le (P : Place F W.FunctionField) :
+    letI := ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    letI := isScalarTower_ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    letI := isFunctionField_iff_functionField.mp W.isFunctionField
+    letI := isSeparable_ratFuncAlgebraOfTranscendental (transcendental_genericX W)
+    (Place.differentExponent F (RatFunc F) P : ℤ) ≤
+      P.ord (invariantDifferentialDenom W) + 2 * (-P.ord (genericX W) ⊔ 0) := by
+  rcases le_or_gt 0 (P.ord (genericX W)) with hxP | hxP
+  · exact differentExponent_le_of_ord_nonneg W P hxP
+  · exact differentExponent_le_of_ord_neg W P hxP
 
 end Local
 
