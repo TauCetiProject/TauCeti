@@ -88,7 +88,8 @@ variable {ι : Type*} [Fintype ι] {mu : Measure (EuclideanSpace ℝ ι)}
 
 /-- One step of De Giorgi's iteration: the De Giorgi isoperimetric inequality between the levels
 `l < l'`, together with the energy bound at `l` and a lower density bound for `{u ≤ l}`, controls
-the square of `|{u ≥ l'}|` by the measure of the strip `{l < u < l'}`, when `M - l = 2 (l' - l)`. -/
+the square of `|{u ≥ l'}|` by the measure of the strip `u ⁻¹' Ioo l l'`, when
+`M - l = 2 (l' - l)`. -/
 private theorem sq_measureReal_le_of_setIntegral_le
     {u : W1p mu Omega 2} {x₀ : EuclideanSpace ℝ ι} {R M Q θ l l' : ℝ} (hR : 0 < R)
     (hball : ball x₀ R ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (hθ : 0 < θ) (hQ : 0 ≤ Q)
@@ -99,7 +100,7 @@ private theorem sq_measureReal_le_of_setIntegral_le
     (hθl : θ * mu.real (ball x₀ R) ≤ (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ l}) :
     (mu.restrict (ball x₀ R)).real {x | l' ≤ W1p.value u x} ^ 2 ≤
       (2 ^ (finrank ℝ (EuclideanSpace ℝ ι) + 2) * √Q / θ) ^ 2 * mu.real (ball x₀ R) *
-        (mu.restrict (ball x₀ R)).real {x | l < W1p.value u x ∧ W1p.value u x < l'} := by
+        (mu.restrict (ball x₀ R)).real (W1p.value u ⁻¹' Ioo l l') := by
   set n := finrank ℝ (EuclideanSpace ℝ ι)
   set V := mu.real (ball x₀ R)
   have hVeq : V = R ^ n * mu.real (ball 0 1) := mu.addHaar_real_ball_of_pos x₀ hR
@@ -119,7 +120,7 @@ private theorem sq_measureReal_le_of_setIntegral_le
     _ ≤ (h * (mu.restrict (ball x₀ R)).real {x | l' ≤ W1p.value u x} *
           (mu.restrict (ball x₀ R)).real {x | W1p.value u x ≤ l}) ^ 2 := by gcongr
     _ ≤ (2 ^ (n + 1) * R * V) ^ 2 *
-          (mu.restrict (ball x₀ R)).real {x | l < W1p.value u x ∧ W1p.value u x < l'} *
+          (mu.restrict (ball x₀ R)).real (W1p.value u ⁻¹' Ioo l l') *
           (Q * (2 * h) ^ 2 / R ^ 2 * V) :=
         hiso.trans (mul_le_mul_of_nonneg_left hE (mul_nonneg (sq_nonneg _) measureReal_nonneg))
     _ = _ := by
@@ -163,7 +164,7 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
   have hd : 0 < d := sub_pos.2 hkM
   set lev : ℕ → ℝ := fun j => M - d / 2 ^ j
   set A : ℕ → ℝ := fun j => nu.real {x | lev j ≤ W1p.value u x}
-  set D : ℕ → ℝ := fun j => nu.real {x | lev j < W1p.value u x ∧ W1p.value u x < lev (j + 1)}
+  set D : ℕ → ℝ := fun j => nu.real (W1p.value u ⁻¹' Ioo (lev j) (lev (j + 1)))
   have hV : 0 < V := ENNReal.toReal_pos (measure_ball_pos mu x₀ hR).ne' measure_ball_lt_top.ne
   -- The energy bound at the level `k` forces `Q ≥ 0`.
   have hQ : 0 ≤ Q := by
@@ -192,8 +193,7 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
   -- Sum the steps over the pairwise disjoint strips.
   have hDsum : ∑ j ∈ Finset.range J, D j ≤ V :=
     (sum_measureReal_le_measureReal_univ
-      (fun j _ => ((Lp.stronglyMeasurable _).measurable measurableSet_Ioo :
-        MeasurableSet (W1p.value u ⁻¹' Ioo (lev j) (lev (j + 1)))))
+      (fun j _ => (Lp.stronglyMeasurable _).measurable measurableSet_Ioo)
       fun i _ j _ hij => (hlev_mono.pairwise_disjoint_on_Ioo_succ hij).preimage _).trans_eq
       (measureReal_restrict_apply_univ _)
   have hA_anti : ∀ {i j : ℕ}, i ≤ j → A j ≤ A i := fun hij =>
