@@ -188,7 +188,7 @@ private theorem sum_mul_eq_of_mul_eq_one {R : Type*} [CommRing R] {w t z q : R} 
       _ = _ := by rw [hw]; ring
 
 include hϖ in
-/-- **The coefficients of the lift have norm at most the interval norm.** The lift
+/-- **The lift has Gauss norm at most the interval norm.** The lift
 `b / [ϖ]ᵐ + ∑_{i < m} ([yᵢ] / [ϖ]^(m + n (m - i))) X^(m - i)` of `y / (p [ϖ])ᵐ`, where
 `y = ∑_{i < m} [yᵢ] pⁱ + pᵐ b` and `X` has Gauss norm one, has Gauss norm at most the norm of
 `y / (p [ϖ])ᵐ` in the interval ring, when `v(ϖ)ⁿ = ρ₁`. -/
