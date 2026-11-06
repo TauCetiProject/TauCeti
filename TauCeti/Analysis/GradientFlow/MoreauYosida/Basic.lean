@@ -53,7 +53,8 @@ take energies with values in `(-∞, ∞]`; here `φ` may take the value `⊥`, 
   `φ (u N) + ∑_{n < N} d(u n, u (n + 1))² / (2τ) ≤ φ (u 0)` along a minimizing movement sequence.
 * `TauCeti.moreauYosida_eq_iInf` and `TauCeti.mem_moreauYosidaResolvent_iff_isMinOn`: on a
   pseudometric space, `φ_τ(x)` is the infimum of the penalized energy over all points and `J_τ x`
-  is its set of global minimizers.
+  is its set of global minimizers; `TauCeti.apply_add_le_apply_add_of_mem_moreauYosidaResolvent`
+  is the minimality of a resolvent step with the real penalty `dist x z ^ 2 / (2τ)`.
 * `TauCeti.moreauYosida_half_norm_sq`: on a seminormed real inner product space, the Moreau–Yosida
   approximation of `‖·‖² / 2` is `‖x‖² / (2 (1 + τ))`.
 * `TauCeti.moreauYosidaResolvent_half_norm_sq`: on a normed real inner product space, the resolvent
@@ -333,6 +334,15 @@ theorem mem_moreauYosidaResolvent_iff_isMinOn :
       IsMinOn (fun z ↦ φ z + (edist x z ^ 2 / (2 * τ) : ℝ≥0∞)) univ y := by
   simp only [mem_moreauYosidaResolvent_iff, ne_eq, edist_ne_top, not_false_eq_true,
     forall_const, true_and, isMinOn_univ_iff]
+
+/-- On a pseudometric space with a time step `τ > 0`, a resolvent step `y ∈ J_τ x` minimizes the
+penalized energy `z ↦ φ z + d(x, z)² / (2τ)`, written with the real penalty. -/
+theorem apply_add_le_apply_add_of_mem_moreauYosidaResolvent (hτ : 0 < τ)
+    (hy : y ∈ moreauYosidaResolvent φ τ x) (z : X) :
+    φ y + ((dist x y ^ 2 / (2 * τ) : ℝ) : EReal) ≤
+      φ z + ((dist x z ^ 2 / (2 * τ) : ℝ) : EReal) := by
+  rw [mem_moreauYosidaResolvent_iff_isMinOn, isMinOn_univ_iff] at hy
+  simpa only [coe_edist_sq_div_eq_coe_dist_sq_div hτ] using hy z
 
 end PseudoMetricSpace
 
