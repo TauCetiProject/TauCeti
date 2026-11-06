@@ -34,6 +34,9 @@ comonadicity theorem applies.
 
 ## Main declarations
 
+* `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.preservesFiniteLimits_pullback_specMap`,
+  `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.reflectsIsomorphisms_pullback_specMap`: pullback
+  along `Spec φ` is left exact for flat `φ` and conservative for faithfully flat `φ`;
 * `TauCeti.AlgebraicGeometry.QuasicoherentSheaf.comonadicPullbackSpecMap`: for faithfully flat
   `φ`, pullback of quasi-coherent modules along `Spec φ` is comonadic;
   `isEquivalence_comparison_pullbackPushforwardSpecMapAdjunction` states this for the
@@ -59,6 +62,29 @@ noncomputable section
 
 variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
 
+/-- Pullback of quasi-coherent modules along `Spec φ` is extension of scalars along `φ`,
+conjugated by `tildeEquiv`. -/
+private def extendScalarsConjIso :
+    (tildeEquiv (R := R)).inverse ⋙ ModuleCat.extendScalars φ.hom ⋙
+      (tildeEquiv (R := S)).functor ≅ pullback (Spec.map φ) :=
+  Functor.isoWhiskerLeft _ (tildeEquivFunctorCompPullbackIso φ).symm ≪≫
+    (Functor.associator _ _ _).symm ≪≫
+    Functor.isoWhiskerRight (tildeEquiv (R := R)).counitIso _ ≪≫ Functor.leftUnitor _
+
+/-- For a flat ring map `φ`, pullback of quasi-coherent modules along `Spec φ` preserves finite
+limits, as extension of scalars along `φ` does. -/
+theorem preservesFiniteLimits_pullback_specMap (hφ : φ.hom.Flat) :
+    PreservesFiniteLimits (pullback (Spec.map φ)) := by
+  have := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hφ
+  exact preservesFiniteLimits_of_natIso (extendScalarsConjIso φ)
+
+/-- For a faithfully flat ring map `φ`, pullback of quasi-coherent modules along `Spec φ` reflects
+isomorphisms, as extension of scalars along `φ` does. -/
+theorem reflectsIsomorphisms_pullback_specMap (hφ : φ.hom.FaithfullyFlat) :
+    (pullback (Spec.map φ)).ReflectsIsomorphisms := by
+  have := ModuleCat.reflectsIsomorphisms_extendScalars_of_faithfullyFlat hφ
+  exact reflectsIsomorphisms_of_iso (extendScalarsConjIso φ)
+
 /-- **Faithfully flat descent for quasi-coherent modules on affine schemes.** For a faithfully
 flat ring map `φ : R ⟶ S`, pullback of quasi-coherent modules along `Spec φ` is comonadic, with
 right adjoint `pushforwardSpecMap φ`: the comparison functor from quasi-coherent modules on
@@ -67,16 +93,8 @@ Mathlib's `comonadicExtendScalars` transported along `tildeEquiv`. -/
 @[instance_reducible]
 def comonadicPullbackSpecMap (hφ : φ.hom.FaithfullyFlat) :
     ComonadicLeftAdjoint (pullback (Spec.map φ)) := by
-  -- Pullback along `Spec φ` is extension of scalars, conjugated by `tildeEquiv`.
-  let e : (tildeEquiv (R := R)).inverse ⋙ ModuleCat.extendScalars φ.hom ⋙
-      (tildeEquiv (R := S)).functor ≅ pullback (Spec.map φ) :=
-    Functor.isoWhiskerLeft _ (tildeEquivFunctorCompPullbackIso φ).symm ≪≫
-      (Functor.associator _ _ _).symm ≪≫
-      Functor.isoWhiskerRight (tildeEquiv (R := R)).counitIso _ ≪≫ Functor.leftUnitor _
-  have := ModuleCat.preservesFiniteLimits_extendScalars_of_flat hφ.flat
-  have := ModuleCat.reflectsIsomorphisms_extendScalars_of_faithfullyFlat hφ
-  have : PreservesFiniteLimits (pullback (Spec.map φ)) := preservesFiniteLimits_of_natIso e
-  have : (pullback (Spec.map φ)).ReflectsIsomorphisms := reflectsIsomorphisms_of_iso e
+  have := preservesFiniteLimits_pullback_specMap φ hφ.flat
+  have := reflectsIsomorphisms_pullback_specMap φ hφ
   have : Comonad.HasEqualizerOfIsCosplitPair (pullback (Spec.map φ)) :=
     ⟨fun _ _ _ ↦ inferInstance⟩
   have : Comonad.PreservesLimitOfIsCosplitPair (pullback (Spec.map φ)) :=

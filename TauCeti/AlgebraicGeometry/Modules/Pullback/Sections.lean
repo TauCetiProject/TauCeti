@@ -16,7 +16,8 @@ These maps commute with coefficient maps, restriction, and composition of scheme
 The composition equation identifies direct and iterated pullback through the canonical
 pullback-composition isomorphism, so sections can be compared across successive morphisms.
 Along the inclusion `U.ι` of an open, pulling back sections over `U` is a bijection onto the global
-sections of the pullback (`Scheme.Modules.bijective_pullbackSectionsLE_ι`).
+sections of the pullback (`Scheme.Modules.bijective_pullbackSectionsLE_ι`). A morphism out of a
+pullback is determined by its values on pulled-back sections (`Scheme.Modules.pullback_hom_ext`).
 -/
 
 public section
@@ -171,6 +172,23 @@ lemma pullbackSections_comp_of_eq {gf : Z ⟶ X} (h : f ≫ g = gf) (s : Γ(M, �
     pullbackSections f ((pullback g).obj M) ⊤ (pullbackSections g M ⊤ s) := by
   subst h
   exact pullbackSections_comp g M ⊤ f s
+
+/-- A morphism out of a pullback `g^* M` is determined by its values on the pullbacks of the
+sections of `M`. -/
+theorem _root_.AlgebraicGeometry.Scheme.Modules.pullback_hom_ext {g : Y ⟶ X} {M : X.Modules}
+    {N : Y.Modules} {φ ψ : (pullback g).obj M ⟶ N}
+    (h : ∀ (U : X.Opens) (s : Γ(M, U)),
+      φ.app (g ⁻¹ᵁ U) (pullbackSections g M U s) = ψ.app (g ⁻¹ᵁ U) (pullbackSections g M U s)) :
+    φ = ψ := by
+  apply ((pullbackPushforwardAdjunction g).homEquiv _ _).injective
+  refine Scheme.Modules.hom_ext _ _ fun U ↦ ?_
+  ext s
+  simp only [Adjunction.homEquiv_unit, Scheme.Modules.Hom.comp_app,
+    Scheme.Modules.pushforward_map_app]
+  have h' := h U s
+  rw [pullbackSections_apply] at h'
+  exact (ConcreteCategory.comp_apply _ _ s).trans
+    (h'.trans (ConcreteCategory.comp_apply _ _ s).symm)
 
 open MonoidalCategory in
 /-- The pullback of the global section `1` of the structure sheaf is the global section `1`,
