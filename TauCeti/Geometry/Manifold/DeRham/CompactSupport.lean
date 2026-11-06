@@ -264,6 +264,21 @@ theorem compactlySupportedClosedForms_le_closedForms (k : ℕ) :
     compactlySupportedClosedForms I M k ≤ closedForms I M k :=
   inf_le_right
 
+/-- In degree at least the model dimension, every compactly supported form is closed. -/
+def compactlySupportedForms.toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) :
+    compactlySupportedForms I M k →ₗ[ℝ] compactlySupportedClosedForms I M k :=
+  LinearMap.codRestrict _ (compactlySupportedForms I M k).subtype fun φ ↦
+    (mem_compactlySupportedClosedForms I).mpr
+      ⟨φ.2, mem_closedForms_of_finrank_le I h φ.1⟩
+
+/-- Viewing a top-degree compactly supported form as closed does not change the smooth form. -/
+@[simp]
+theorem compactlySupportedForms.coe_toClosedOfFinrankLe [FiniteDimensional ℝ E] {k : ℕ}
+    (h : Module.finrank ℝ E ≤ k) (φ : compactlySupportedForms I M k) :
+    (toClosedOfFinrankLe I h φ : SmoothForm I M ℝ k) = φ :=
+  (rfl)
+
 variable (M) in
 /-- Compactly supported exact forms are exterior derivatives of compactly supported forms in
 positive degree, and zero in degree zero. -/
