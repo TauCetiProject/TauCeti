@@ -44,6 +44,8 @@ partial logarithmic series, and bounds its distance to the logarithm by a harmon
 
 ## Main declarations
 
+* `TauCeti.one_add_norm_sq_rpow_mul_norm_le`: one power of `‖x‖` costs one order of the
+  Japanese bracket, `⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)`.
 * `TauCeti.integrable_rpow_neg_sq_add_norm_sq`: the rescaled bracket
   `x ↦ (c ^ 2 + ‖x‖ ^ 2) ^ (-r / 2)`, `c ≠ 0`, is integrable for every additive Haar measure.
 * `TauCeti.integrable_norm_rpow_mul_rpow_neg_one_add_norm_sq`,
@@ -66,6 +68,14 @@ public section
 namespace TauCeti
 
 open Filter MeasureTheory Metric Module ProbabilityTheory Real Set Topology
+
+/-- One power of `‖x‖` costs one order of the Japanese bracket `⟨x⟩ = (1 + ‖x‖ ^ 2) ^ (1 / 2)`:
+`⟨x⟩ ^ m ‖x‖ ≤ ⟨x⟩ ^ (m + 1)` for every real `m`. -/
+theorem one_add_norm_sq_rpow_mul_norm_le {E : Type*} [NormedAddCommGroup E] (x : E) (m : ℝ) :
+    (1 + ‖x‖ ^ 2) ^ (m / 2) * ‖x‖ ≤ (1 + ‖x‖ ^ 2) ^ ((m + 1) / 2) := by
+  rw [add_div, Real.rpow_add (by positivity), ← Real.sqrt_eq_rpow]
+  gcongr
+  exact Real.le_sqrt_of_sq_le (by linarith)
 
 variable {V : Type*} [NormedAddCommGroup V] [MeasurableSpace V] [BorelSpace V]
 
