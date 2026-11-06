@@ -49,8 +49,8 @@ whenever `Q ≠ 0, 1`, and its value at `Q = 1` is the removable limit.
 * `TauCeti.wenzlParam_inv`: the inversion symmetry `a_d(Q⁻¹) = a_d(Q)`.
 * `TauCeti.wenzlParam_neg_two_sq`: the Jones value `a_(-2)(q ^ 2) = (q + q⁻¹)⁻²`.
 * `TauCeti.wenzlParam_exp_mul_I`: `a_k(exp (2 θ i)) = sin ((k + 1) θ) / (2 cos θ sin (k θ))`;
-  `TauCeti.wenzlParam_exp_two_pi_I_div`, `TauCeti.wenzlParam_exp_neg_two_pi_I_div` and
-  `TauCeti.wenzlParam_exp_two_pi_I_div_two_mul` give the real values at the roots of unity
+  `TauCeti.wenzlParam_exp_two_pi_mul_I_div`, `TauCeti.wenzlParam_exp_neg_two_pi_mul_I_div` and
+  `TauCeti.wenzlParam_exp_two_pi_mul_I_div_two_mul` give the real values at the roots of unity
   `exp (± 2 π i / l)` and the middle value `a_m = 1 / 2` for `l = 2 * m`.
 * `TauCeti.wenzlParam_add_of_pow_eq_one`: `a_d` is periodic in `d` modulo the order of `Q`; in
   particular `a_(l - 2) = a_(-2)` when `Q ^ l = 1`.
@@ -209,8 +209,10 @@ theorem wenzlParam_neg_two (Q : K) : wenzlParam (-2) Q = Q / (1 + Q) ^ 2 := by
 
 /-- **The Jones parameter.** At `Q = q ^ 2`, `a_(-2)(Q) = (q + q⁻¹)⁻²`, the parameter `τ` of the
 Jones quotient. -/
-theorem wenzlParam_neg_two_sq {q : K} (hq : q ≠ 0) :
+theorem wenzlParam_neg_two_sq (q : K) :
     wenzlParam (-2) (q ^ 2) = ((q + q⁻¹) ^ 2)⁻¹ := by
+  rcases eq_or_ne q 0 with rfl | hq
+  · simp [wenzlParam_neg_two]
   rw [wenzlParam_neg_two, show q + q⁻¹ = (1 + q ^ 2) / q by field_simp; ring, div_pow, inv_div]
 
 /-! ### Geometric weights -/
@@ -280,6 +282,11 @@ section RootOfUnity
 open Complex
 open scoped Real
 
+private lemma cos_pi_div_pos {x : ℝ} (hx : 2 < x) : 0 < Real.cos (π / x) := by
+  have hx₀ : 0 < x := by linarith
+  refine Real.cos_pos_of_mem_Ioo ⟨by linarith [div_pos Real.pi_pos hx₀, Real.pi_pos], ?_⟩
+  rwa [div_lt_div_iff_of_pos_left Real.pi_pos hx₀ two_pos]
+
 /-- **The trigonometric form.** At `Q = exp (2 θ i)`,
 `a_k(Q) = sin ((k + 1) θ) / (2 * cos θ * sin (k θ))`, whenever `cos θ ≠ 0` and `sin (k θ) ≠ 0`. -/
 theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin (k * θ) ≠ 0) :
@@ -312,14 +319,11 @@ theorem wenzlParam_exp_mul_I (k : ℤ) {θ : ℂ} (hθ : cos θ ≠ 0) (hk : sin
 
 /-- **The values at the roots of unity.** For `l ≥ 3` and `0 < k < l`, at `Q = exp (2 π i / l)`,
 `a_k(Q) = sin ((k + 1) π / l) / (2 * cos (π / l) * sin (k π / l))`, a real number. -/
-theorem wenzlParam_exp_two_pi_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
+theorem wenzlParam_exp_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     wenzlParam (k : ℤ) (exp (2 * π * I / l)) =
       ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
   have hl₀ : (0 : ℝ) < l := by exact_mod_cast (by omega : 0 < l)
-  have hcos : 0 < Real.cos (π / l) := by
-    refine Real.cos_pos_of_mem_Ioo ⟨by linarith [div_pos Real.pi_pos hl₀, Real.pi_pos], ?_⟩
-    rw [div_lt_div_iff_of_pos_left Real.pi_pos hl₀ two_pos]
-    exact_mod_cast (by omega : 2 < l)
+  have hcos : 0 < Real.cos (π / l) := cos_pi_div_pos (by exact_mod_cast (by omega : 2 < l))
   have hsin : 0 < Real.sin (k * π / l) := by
     refine Real.sin_pos_of_pos_of_lt_pi (by positivity) ?_
     rw [div_lt_iff₀ hl₀, mul_comm π]
@@ -333,22 +337,19 @@ theorem wenzlParam_exp_two_pi_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (
 
 /-- The values at the conjugate roots of unity `Q = exp (-2 π i / l)` agree with those at
 `exp (2 π i / l)`. -/
-theorem wenzlParam_exp_neg_two_pi_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
+theorem wenzlParam_exp_neg_two_pi_mul_I_div {l k : ℕ} (hl : 3 ≤ l) (hk₀ : 0 < k) (hkl : k < l) :
     wenzlParam (k : ℤ) (exp (-(2 * π * I / l))) =
       ↑(Real.sin ((k + 1) * π / l) / (2 * Real.cos (π / l) * Real.sin (k * π / l))) := by
-  rw [exp_neg, wenzlParam_inv, wenzlParam_exp_two_pi_I_div hl hk₀ hkl]
+  rw [exp_neg, wenzlParam_inv, wenzlParam_exp_two_pi_mul_I_div hl hk₀ hkl]
 
 /-- **The middle value.** For `l = 2 * m ≥ 4`, at `Q = exp (2 π i / l)`, `a_m(Q) = 1 / 2`. -/
-theorem wenzlParam_exp_two_pi_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
+theorem wenzlParam_exp_two_pi_mul_I_div_two_mul {m : ℕ} (hm : 2 ≤ m) :
     wenzlParam (m : ℤ) (exp (2 * π * I / (2 * m))) = 1 / 2 := by
-  have h := wenzlParam_exp_two_pi_I_div (l := 2 * m) (k := m) (by omega) (by omega) (by omega)
+  have h := wenzlParam_exp_two_pi_mul_I_div (l := 2 * m) (k := m) (by omega) (by omega) (by omega)
   simp only [Nat.cast_mul, Nat.cast_ofNat] at h
-  have hm₀ : (0 : ℝ) < 2 * m := by positivity
   have hcos : Real.cos (π / (2 * m)) ≠ 0 := by
-    refine (Real.cos_pos_of_mem_Ioo ⟨by linarith [div_pos Real.pi_pos hm₀, Real.pi_pos], ?_⟩).ne'
-    rw [div_lt_div_iff_of_pos_left Real.pi_pos hm₀ two_pos]
     have : (2 : ℝ) ≤ m := by exact_mod_cast hm
-    linarith
+    exact (cos_pi_div_pos (by linarith)).ne'
   -- With `θ = π / (2 * m)`: `sin ((m + 1) θ) = cos θ` and `sin (m θ) = 1`.
   have h₁ : (m + 1) * π / (2 * m) = π / (2 * m) + π / 2 := by field_simp; ring
   have h₂ : m * π / (2 * m) = π / 2 := by field_simp
