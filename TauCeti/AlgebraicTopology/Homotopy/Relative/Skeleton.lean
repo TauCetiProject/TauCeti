@@ -8,6 +8,7 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Exact
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
 public import TauCeti.Topology.CWComplex.Classical.Skeleton.Compression
+public import TauCeti.Topology.Homotopy.HomotopyGroup.ConnectedMap
 public import TauCeti.Topology.Homotopy.HomotopyGroup.LoopSpace
 
 /-!
@@ -47,6 +48,7 @@ follow from the exact homotopy sequence of the pair `(C, Xⁿ)`.
   `k ≤ n`.
 * `TauCeti.injective_homotopyGroupMap_skeletonLT`: `π_k(Xⁿ, a) → π_k(C, a)` is injective for
   `k < n`.
+* `TauCeti.isNConnected_inclusion_skeletonLT`: the inclusion `Xⁿ ↪ C` is an `n`-connected map.
 
 ## References
 
@@ -169,5 +171,14 @@ theorem injective_homotopyGroupMap_skeletonLT {N : Type v} [Finite N] (hN : Nat.
     -- Both sides are the identity of `π_k(A, a)`, once read on the subspace of the pair and once
     -- on `A`; these are the same group.
     rfl
+
+/-- **The inclusion of the `n`-skeleton is an `n`-connected map** (Hatcher, Corollary 4.12). If `A`
+is the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then the inclusion
+`A ↪ C` is `n`-connected. -/
+theorem isNConnected_inclusion_skeletonLT (hA : (skeletonLT C (n + 1) : Set X) = A)
+    (hAC : A ⊆ C) : (ContinuousMap.inclusion hAC).IsNConnected n where
+  exists_joined := exists_joined_skeletonLT hA hAC
+  injective k hk := injective_homotopyGroupMap_skeletonLT (by simpa using hk) hA hAC
+  surjective k hk := surjective_homotopyGroupMap_skeletonLT (by simpa using hk) hA hAC
 
 end TauCeti
