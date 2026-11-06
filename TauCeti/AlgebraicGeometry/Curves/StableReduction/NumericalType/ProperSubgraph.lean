@@ -10,6 +10,7 @@ import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.NormNum
 import Mathlib.Tactic.Ring
+import TauCeti.Data.Int.MulEqTwo
 
 /-!
 # Proper subgraphs of `(-2)`-indices in a numerical type
@@ -986,22 +987,6 @@ theorem intersection_eq_zero_of_chain_six (hcard : 6 < Fintype.card T.Component)
     linarith
   exact ⟨zgi, zgj, zgk, zgl, zhj, zhk, zhl, zik, zil, zjl⟩
 
-/-- A positive integer product equal to `2` has factors `1` and `2` in some order. -/
-private lemma factors_eq_one_two_of_mul_eq_two {a b : ℤ} (ha : 0 < a) (hb : 0 < b)
-    (hab : a * b = 2) : (a = 1 ∧ b = 2) ∨ (a = 2 ∧ b = 1) := by
-  have ha_le : a ≤ a * b := le_mul_of_one_le_right ha.le (by omega)
-  have hb_le : b ≤ a * b := le_mul_of_one_le_left hb.le (by omega)
-  have ha_two : a ≤ 2 := by omega
-  have hb_two : b ≤ 2 := by omega
-  interval_cases a <;> interval_cases b <;> omega
-
-/-- A positive integer product equal to `1` has both factors equal to `1`. -/
-private lemma eq_one_of_mul_eq_one_of_pos {a b : ℤ} (ha : 0 < a) (hb : 0 < b)
-    (hab : a * b = 1) : a = 1 ∧ b = 1 := by
-  have ha_le : a ≤ a * b := le_mul_of_one_le_right ha.le (by omega)
-  have hb_le : b ≤ a * b := le_mul_of_one_le_left hb.le (by omega)
-  omega
-
 /-- The intersection form of six distinct components of a chain in a numerical type with more than
 six components is negative on nonzero vectors, once the non-adjacent intersections vanish. -/
 private theorem chain_six_form_neg (hcard : 6 < Fintype.card T.Component)
@@ -1064,22 +1049,26 @@ private theorem chain_six_end_ratios_not_both_two
     (hbad : p₁ * q₁ = 2 ∧ p₅ * q₅ = 2) : False := by
   have factor_pos {a w e : ℤ} (hw : 0 < w) (he : 0 < e) (ha : e = w * a) : 0 < a :=
     pos_of_mul_pos_right (ha ▸ he) hw.le
-  obtain ⟨hp₂, hq₂⟩ := eq_one_of_mul_eq_one_of_pos
-    (factor_pos (by simp : (0 : ℤ) < T.weight h) ehi ap₂)
-    (factor_pos (by simp : (0 : ℤ) < T.weight i) ehi aq₂) hmids.1
-  obtain ⟨hp₃, hq₃⟩ := eq_one_of_mul_eq_one_of_pos
-    (factor_pos (by simp : (0 : ℤ) < T.weight i) eij ap₃)
-    (factor_pos (by simp : (0 : ℤ) < T.weight j) eij aq₃) hmids.2.1
-  obtain ⟨hp₄, hq₄⟩ := eq_one_of_mul_eq_one_of_pos
-    (factor_pos (by simp : (0 : ℤ) < T.weight j) ejk ap₄)
-    (factor_pos (by simp : (0 : ℤ) < T.weight k) ejk aq₄) hmids.2.2
+  have hp₂0 := factor_pos (by simp : (0 : ℤ) < T.weight h) ehi ap₂
+  have hq₂0 := factor_pos (by simp : (0 : ℤ) < T.weight i) ehi aq₂
+  obtain ⟨hp₂, hq₂⟩ : p₂ = 1 ∧ q₂ = 1 :=
+    ⟨Int.eq_one_of_mul_eq_one_right hp₂0.le hmids.1,
+      Int.eq_one_of_mul_eq_one_left hq₂0.le hmids.1⟩
+  have hp₃0 := factor_pos (by simp : (0 : ℤ) < T.weight i) eij ap₃
+  have hq₃0 := factor_pos (by simp : (0 : ℤ) < T.weight j) eij aq₃
+  obtain ⟨hp₃, hq₃⟩ : p₃ = 1 ∧ q₃ = 1 :=
+    ⟨Int.eq_one_of_mul_eq_one_right hp₃0.le hmids.2.1,
+      Int.eq_one_of_mul_eq_one_left hq₃0.le hmids.2.1⟩
+  have hp₄0 := factor_pos (by simp : (0 : ℤ) < T.weight j) ejk ap₄
+  have hq₄0 := factor_pos (by simp : (0 : ℤ) < T.weight k) ejk aq₄
+  obtain ⟨hp₄, hq₄⟩ : p₄ = 1 ∧ q₄ = 1 :=
+    ⟨Int.eq_one_of_mul_eq_one_right hp₄0.le hmids.2.2,
+      Int.eq_one_of_mul_eq_one_left hq₄0.le hmids.2.2⟩
   subst p₂; subst q₂; subst p₃; subst q₃; subst p₄; subst q₄
-  have hpq₁ := factors_eq_one_two_of_mul_eq_two
-    (factor_pos (by simp : (0 : ℤ) < T.weight g) egh ap₁)
-    (factor_pos (by simp : (0 : ℤ) < T.weight h) egh aq₁) hbad.1
-  have hpq₅ := factors_eq_one_two_of_mul_eq_two
-    (factor_pos (by simp : (0 : ℤ) < T.weight k) ekl ap₅)
-    (factor_pos (by simp : (0 : ℤ) < T.weight l) ekl aq₅) hbad.2
+  have hpq₁ := Int.eq_one_and_eq_two_or_of_mul_eq_two
+    (factor_pos (by simp : (0 : ℤ) < T.weight g) egh ap₁).le hbad.1
+  have hpq₅ := Int.eq_one_and_eq_two_or_of_mul_eq_two
+    (factor_pos (by simp : (0 : ℤ) < T.weight k) ekl ap₅).le hbad.2
   rcases hpq₁ with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
   · rcases hpq₅ with ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩
     · -- The orientations `g ⇒ h` and `k ⇒ l` have kernel vector `(1, 2, 2, 2, 2, 2)`.
