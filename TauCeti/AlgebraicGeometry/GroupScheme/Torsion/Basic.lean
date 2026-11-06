@@ -62,6 +62,7 @@ commutative group schemes.
 
 * `TauCeti.GroupScheme.exists_comp_torsionι_iff`: the points of `G[n]` are the points of `G`
   killed by `n`.
+* `TauCeti.GroupScheme.torsion_zpow_eq_one`: `G[n]` is killed by `n`.
 * `TauCeti.GroupScheme.isPullback_torsionι`: `G[n]` is the fibre of multiplication by `n` over the
   unit section.
 * `TauCeti.GroupScheme.torsionBaseChangeIso_hom_hom_hom_comp_torsionMap`: the base-change
@@ -168,6 +169,13 @@ theorem exists_comp_torsionι_iff (x : Z ⟶ G.X) : (∃ y, y ≫ torsionι G n 
   refine ⟨?_, fun hx ↦ ⟨torsionLift x hx, torsionLift_ι x hx⟩⟩
   rintro ⟨y, rfl⟩
   rw [← GrpObj.comp_zpow, torsionι_zpow, comp_one]
+
+/-- **The `n`-torsion is killed by `n`.** Every point of `G[n]` is killed by `n` in the group of
+points of `G[n]`. -/
+@[simp]
+theorem torsion_zpow_eq_one (y : Z ⟶ (torsion G n).X) : y ^ n = 1 :=
+  torsion_hom_ext G (by rw [GrpObj.zpow_comp, ← GrpObj.comp_zpow, torsionι_zpow, comp_one,
+    MonObj.one_comp])
 
 /-- A homomorphism into `G` killed by `n` factors through the `n`-torsion as a homomorphism. -/
 instance isMonHom_torsionLift {Z : Over S} [MonObj Z] (x : Z ⟶ G.X) [IsMonHom x]
