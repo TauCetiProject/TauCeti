@@ -54,4 +54,19 @@ theorem toRiemannianMetric_ofLE (g : ContMDiffRiemannianMetric IB n F E) (h : m 
     (g.ofLE h).toRiemannianMetric = g.toRiemannianMetric :=
   (rfl)
 
+/-- The native fibre inner product installed from a metric evaluates to that metric. -/
+theorem inner_eq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul ℝ (E x)]
+    (g : ContMDiffRiemannianMetric IB n F E) (x : B) (v w : E x) :
+    letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+    Inner.inner ℝ v w = g.inner x v w := by
+  rfl
+
+/-- The squared fibre norm installed from a metric is its diagonal value. -/
+theorem norm_sq [∀ x, IsTopologicalAddGroup (E x)] [∀ x, ContinuousConstSMul ℝ (E x)]
+    (g : ContMDiffRiemannianMetric IB n F E) (x : B) (v : E x) :
+    letI : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+    ‖v‖ ^ 2 = g.inner x v v := by
+  let : RiemannianBundle E := ⟨g.toRiemannianMetric⟩
+  exact norm_sq_eq_re_inner (𝕜 := ℝ) v
+
 end Bundle.ContMDiffRiemannianMetric
