@@ -25,8 +25,9 @@ a `g` on the left loses no norm, `‖g * q‖ = ‖g‖ * ‖q‖`, and if `q` i
 assumed. When the norm of `R` is multiplicative, the extra condition says only that the
 distinguished coefficient is a unit.
 
-Norm-preserving coefficient homomorphisms preserve distinguishedness and multiplicative
-distinguishedness, so these divisor hypotheses survive isometric coefficient extension.
+Norm-preserving coefficient homomorphisms preserve distinguishedness, lowest dominant degrees
+and multiplicative distinguishedness, so these divisor hypotheses survive isometric coefficient
+extension.
 
 ## Main definitions
 
@@ -73,6 +74,18 @@ theorem IsDistinguished.map (hf : IsDistinguished c s g) (φ : R →+* S)
   have hn : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
     simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
   exact ⟨by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
+    fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
+      hf.norm_coeff_mul_pow_lt n hn'⟩
+
+variable {S : Type*} [SeminormedRing S] in
+/-- A norm-preserving coefficient homomorphism preserves the lowest dominant degree, at the same
+radius. Neither completeness nor surjectivity is required. -/
+theorem IsLowestDominant.map (hf : IsLowestDominant c s g) (φ : R →+* S)
+    (hφ : ∀ a, ‖φ a‖ = ‖a‖) : IsLowestDominant c s (PowerSeries.map φ g) := by
+  have hn : (PowerSeries.map φ g).gaussNorm norm c = g.gaussNorm norm c := by
+    simp only [PowerSeries.gaussNorm_eq, PowerSeries.coeff_map, hφ]
+  exact ⟨hn ▸ hf.gaussNorm_pos,
+    by simpa only [PowerSeries.coeff_map, hφ, hn] using hf.norm_coeff_mul_pow_eq,
     fun n hn' ↦ by simpa only [PowerSeries.coeff_map, hφ, hn] using
       hf.norm_coeff_mul_pow_lt n hn'⟩
 

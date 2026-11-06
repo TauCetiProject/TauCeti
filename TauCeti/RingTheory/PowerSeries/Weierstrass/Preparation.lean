@@ -77,6 +77,8 @@ degree `s`. This is the route to noetherianity of the Tate algebra.
 * `TauCeti.PowerSeries.IsDistinguished.of_isUnit_mul` and
   `TauCeti.PowerSeries.natDegree_eq_of_isUnit_mul`: multiplying by such a unit leaves the
   distinguished degree unchanged, so any polynomial factor of degree at most `s` has degree `s`.
+* `TauCeti.PowerSeries.IsLowestDominant.of_isUnit_mul`: multiplying by such a unit leaves the
+  lowest dominant degree unchanged.
 
 ## References
 
@@ -150,6 +152,22 @@ theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R :
     rw [← mul_assoc, hvu, one_mul]
   have hd := (isDistinguished_zero_of_isUnit hc hv).mul h hc (norm_mul _ _)
   rwa [zero_add, hvg] at hd
+
+/-- Multiplying by a unit of the ring of restricted power series leaves the lowest dominant degree
+unchanged. -/
+theorem IsLowestDominant.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R := R) c}
+    {g : PowerSeries R} (h : IsLowestDominant c s ((u : PowerSeries R) * g)) (hc : 0 < c)
+    (hg : g.IsRestricted c) (hu : IsUnit u) : IsLowestDominant c s g := by
+  let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
+  have hg0 : g ≠ 0 := fun hg0 ↦ h.ne_zero (by rw [hg0, mul_zero])
+  obtain ⟨t, ht⟩ := exists_isLowestDominant hc hg hg0
+  -- The unit is distinguished of degree `0`, so its lowest dominant degree is `0` as well.
+  have hu0 := isDistinguished_zero_of_isUnit hc hu
+  have hul : IsLowestDominant c 0 (u : PowerSeries R) :=
+    ⟨hu0.gaussNorm_pos, hu0.norm_coeff_mul_pow_eq, fun m hm ↦ absurd hm m.not_lt_zero⟩
+  have hmul := hul.mul ht hc hu0.hasGaussNorm (hasGaussNorm_of_isRestricted hg) (norm_mul _ _)
+  rw [zero_add] at hmul
+  rwa [h.unique hmul]
 
 /-- If `f` is distinguished of degree `s` at a positive radius `c`, `u` is a unit of the ring of
 series restricted at `c`, and `u * P = f` for a polynomial `P` of degree at most `s`, then `P` has
