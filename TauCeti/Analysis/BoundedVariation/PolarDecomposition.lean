@@ -342,7 +342,7 @@ theorem polarDensity_const_sub [μ.IsAddHaarMeasure] (c : ℝ) :
     rw [← variationMeasure_const_sub (u := u) c] at hσ ⊢
     refine (ae_eq_polarDensity hv.1 hv.2 hσ fun φ => ?_).symm
     have hiu : Integrable (fun x => divergenceCLM φ x * u x) μ := by
-      simpa using integrable_smul_of_locallyIntegrableOn hu.1 (divergenceCLM φ)
+      simpa using TestFunction.integrable_smul (divergenceCLM φ) hu.1
     have hic : Integrable (fun x => divergenceCLM φ x * c) μ :=
       ((divergenceCLM φ).integrable ((locallyIntegrable_const 1).locallyIntegrableOn _)).mul_const c
     simp_rw [mul_sub]
