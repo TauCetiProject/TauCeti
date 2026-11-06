@@ -52,7 +52,7 @@ subalgebra they generate by `TauCeti.Lie.lieSubalgebraOfSubgroup_induction`.
   is abelian.
 * `TauCeti.Lie.isLieAbelian_of_isMulCommutative`: the Lie algebra of a commutative Lie group is
   abelian.
-* `TauCeti.Lie.image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`: a closed connected
+* `TauCeti.Lie.image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected`: a closed preconnected
   commutative subgroup is the exponential image of its Lie algebra.
 * `TauCeti.Lie.mem_centralizer_iff_forall_Ad_apply_eq_self`: an element centralizes a closed
   preconnected subgroup exactly when its adjoint action fixes its Lie algebra pointwise.
@@ -183,9 +183,9 @@ instance isLieAbelian_of_isMulCommutative [IsMulCommutative G] :
       (mem_lieSubalgebraOfSubgroup_of_forall fun _ => Subgroup.mem_top _)
 
 
-/-- **A closed connected commutative subgroup is the exponential image of its Lie algebra.** -/
-theorem image_lieExp_lieSubalgebraOfSubgroup_of_isConnected {K : Subgroup G} [IsMulCommutative K]
-    (hK : IsClosed (K : Set G)) (hconn : IsConnected (K : Set G)) :
+/-- **A closed preconnected commutative subgroup is the exponential image of its Lie algebra.** -/
+theorem image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected {K : Subgroup G}
+    [IsMulCommutative K] (hK : IsClosed (K : Set G)) (hconn : IsPreconnected (K : Set G)) :
     lieExp (I := I) '' (lieSubalgebraOfSubgroup (I := I) K : Set (LeftInvariantDerivation I G)) =
       K := by
   refine Set.Subset.antisymm ?_ fun k hk => ?_
@@ -200,7 +200,7 @@ theorem image_lieExp_lieSubalgebraOfSubgroup_of_isConnected {K : Subgroup G} [Is
     finiteDimensional_leftInvariantDerivation
       (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))
   let _ : IsTopologicalGroup G := topologicalGroup_of_lieGroup I ∞
-  have _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn.isPreconnected
+  have _ : PreconnectedSpace K := isPreconnected_iff_preconnectedSpace.mp hconn
   obtain ⟨X, hX⟩ := lieExp_surjective_of_preconnectedSpace
     (I := 𝓘(ℝ, (lieSubalgebraOfSubgroup (I := I) K).toSubmodule)) (G := K) ⟨k, hk⟩
   refine ⟨d.lieMapSubtypeVal X, d.lieMapSubtypeVal_mem_lieSubalgebraOfSubgroup X, ?_⟩

@@ -23,7 +23,8 @@ A **torus** of a topological group `G` is a compact connected commutative subgro
 finite-dimensional real Lie group `G`:
 
 * a torus is the exponential image of its Lie algebra, `T = lieExp '' Lie(T)`, since a closed
-  connected commutative subgroup is (`image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`); so
+  connected commutative subgroup is
+  (`image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected`); so
   a torus is determined by its Lie algebra, and a torus whose Lie algebra is maximal among those
   of the tori containing a given torus is a maximal torus: every torus lies in a maximal torus;
 * for a maximal torus `T` of a compact `G`, the centralizer of `T` has the same Lie algebra as `T`,
@@ -39,7 +40,7 @@ finite-dimensional real Lie group `G`:
 ## Main results
 
 * `TauCeti.Lie.IsTorus.image_lieExp_lieSubalgebraOfSubgroup`: a torus is the exponential image of
-  its Lie algebra (the case of `image_lieExp_lieSubalgebraOfSubgroup_of_isConnected`).
+  its Lie algebra (the case of `image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected`).
 * `TauCeti.Lie.IsTorus.eq_of_lieSubalgebraOfSubgroup_eq`: a torus is determined by its Lie
   algebra.
 * `TauCeti.Lie.IsTorus.exists_isMaximalTorus_le` and `TauCeti.Lie.exists_isMaximalTorus`: every
@@ -169,7 +170,8 @@ theorem IsTorus.image_lieExp_lieSubalgebraOfSubgroup {T : Subgroup G} (hT : IsTo
     lieExp (I := I) '' (lieSubalgebraOfSubgroup (I := I) T : Set (LeftInvariantDerivation I G)) =
       T :=
   have := hT.isMulCommutative
-  image_lieExp_lieSubalgebraOfSubgroup_of_isConnected hT.isClosed hT.isConnected
+  image_lieExp_lieSubalgebraOfSubgroup_of_isPreconnected hT.isClosed
+    hT.isConnected.isPreconnected
 
 /-- **A torus is determined by its Lie algebra.** -/
 theorem IsTorus.eq_of_lieSubalgebraOfSubgroup_eq {T T' : Subgroup G} (hT : IsTorus T)
