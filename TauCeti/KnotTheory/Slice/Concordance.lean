@@ -400,7 +400,7 @@ then flatten the cone extension to the coordinate plane. -/
 private theorem exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding
     (hΨ : IsTopologicalSliceDisc K₀ Ψ) {z : ℂ} {W : Set E} (hW : IsOpen W)
     {Θ : E → EuclideanSpace ℝ (Fin 2) × EuclideanSpace ℝ (Fin (n - 1))}
-    (hΘc : ContinuousOn Θ W) (hΘinj : InjOn Θ W) (hΘW : IsOpenEmbedding (W.domRestrict Θ))
+    (hΘW : IsOpenEmbedding (W.domRestrict Θ))
     (hslice : ∀ w, coneExt Ψ w ∈ W → (Θ (coneExt Ψ w)).2 = 0) (hz : coneExt Ψ z ∈ W) :
     ∃ U : Set ℂ, IsOpen U ∧ z ∈ U ∧
       IsLocallyFlat (EuclideanHalfSpace 2) (EuclideanSpace ℝ (Fin (n - 1)))
@@ -412,6 +412,8 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding
   let h₀ : ℂ → EuclideanSpace ℝ (Fin 2) := fun w => (Θ (coneExt Ψ w)).1
   have hΘext {w : ℂ} (hw : w ∈ U) : Θ (coneExt Ψ w) = (h₀ w, 0) :=
     Prod.ext rfl (hslice _ hw)
+  have hΘc : ContinuousOn Θ W := continuousOn_iff_continuous_domRestrict.2 hΘW.continuous
+  have hΘinj : InjOn Θ W := Set.injOn_iff_injective.2 hΘW.injective
   have hh₀c : ContinuousOn h₀ U :=
     continuous_fst.comp_continuousOn (hΘc.comp hc.continuousOn fun _ hw => hw)
   have hh₀inj : InjOn h₀ U := by
@@ -487,7 +489,7 @@ private theorem exists_isLocallyFlat_coneExt_comp_coe (hΨ : IsTopologicalSliceD
     have := (hφ.mem_iff hw').1 (mem_range_self _)
     simp only [Θ, radialRetractionToClosedBall_coneExt hΨ]
     exact this.2
-  exact exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding hΨ hW hΘc hΘinj hΘW hslice
+  exact exists_isLocallyFlat_coneExt_comp_coe_of_isOpenEmbedding hΨ hW hΘW hslice
     (by simpa only [W, mem_preimage, radialRetractionToClosedBall_coneExt hΨ] using hφz)
 
 /-- **The cone extension of a locally flat slice disc is locally flat.** Extending a locally flat
