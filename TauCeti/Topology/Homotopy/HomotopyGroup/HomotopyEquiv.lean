@@ -187,6 +187,13 @@ theorem equivOfHomotopyEquiv_apply (e : X ≃ₕ Y) (x : X) (a : HomotopyGroup N
     equivOfHomotopyEquiv e x a = map e.toFun rfl a :=
   (rfl)
 
+/-- **The homotopy groups of a contractible space are trivial**, in every dimension and at every
+base point, since such a space is homotopy equivalent to a point. -/
+instance subsingleton_of_contractibleSpace [ContractibleSpace X] {x : X} :
+    Subsingleton (HomotopyGroup N X x) :=
+  (map_bijective_of_homotopyEquiv (N := N) (ContractibleSpace.hequiv_unit X).some x).injective
+    |>.subsingleton
+
 /-- **A homotopy equivalence induces a group isomorphism on homotopy groups.** In positive
 dimensions the bijection induced by a homotopy equivalence is a group isomorphism, being induced
 by a continuous map. -/
