@@ -586,6 +586,11 @@ the squares it covers. -/
 noncomputable def OMonomial (r : GridRectangle n) : MvPolynomial (Fin n) R :=
   G.squaresMonomial R r.coveredSquares
 
+/-- The weight of a rectangle is the monomial of the squares it covers. -/
+theorem OMonomial_eq_squaresMonomial (r : GridRectangle n) :
+    G.OMonomial R r = G.squaresMonomial R r.coveredSquares :=
+  (rfl)
+
 /-- The rectangle monomial of a column-swapped diagram renames the variables of the original
 monomial by the same swap, provided the rectangle either covers both columns or covers
 neither. -/

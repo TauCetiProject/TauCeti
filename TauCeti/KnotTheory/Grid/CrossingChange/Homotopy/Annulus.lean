@@ -98,6 +98,11 @@ the product of the variables of the `O`-markings in `crossingChangeAnnulusSquare
 noncomputable def crossingChangeAnnulusWeight : MvPolynomial (Fin n) R :=
   G.squaresMonomial R (crossingChangeAnnulusSquares C t)
 
+/-- The annulus weight is the monomial of the annulus squares. -/
+theorem crossingChangeAnnulusWeight_eq_squaresMonomial :
+    G.crossingChangeAnnulusWeight R C t = G.squaresMonomial R (crossingChangeAnnulusSquares C t) :=
+  (rfl)
+
 /-- The annulus weight is the product of the variables of the `O`-markings in the annulus
 squares. -/
 theorem crossingChangeAnnulusWeight_def :
