@@ -8,6 +8,9 @@ module
 public import TauCeti.Probability.Renewal.LocalBound
 public import Mathlib.MeasureTheory.Group.Convolution
 public import Mathlib.Topology.ContinuousMap.CompactlySupported
+import TauCeti.MeasureTheory.Group.Convolution.IntervalBound
+import TauCeti.Topology.ContinuousMap.CompactlySupported
+import Mathlib.MeasureTheory.Group.IntegralConvolution
 import Mathlib.MeasureTheory.Integral.CompactlySupported
 import Mathlib.MeasureTheory.Integral.Prod
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
@@ -39,6 +42,9 @@ measure, identifies every limit of the translates.
 
 * `MeasureTheory.Measure.map_renewalMeasure_eq_dirac_add_conv`: the translated renewal equation
   `Uₜ = δ_{-t} + F ∗ Uₜ`.
+* `MeasureTheory.Measure.measure_Icc_le_of_tendsto_integral`: a locally finite vague limit `η` of
+  translates `U_{t i}` inherits the local renewal bound, `η [a, b] ≤ U [0, b - a + 2]`, so its
+  masses of intervals of a fixed length are bounded uniformly in their position.
 * `MeasureTheory.Measure.map_coe_conv_eq_self_of_tendsto_integral`: a locally finite vague limit
   `η` of translates `U_{t i}` with `t i → ∞` satisfies `F ∗ η = η`.
 
@@ -47,7 +53,7 @@ measure, identifies every limit of the translates.
 Testing the translated renewal equation against `f` gives `∫ f dUₜ = f (-t) + ∫ ψ dUₜ` with
 `ψ z = ∫ f (x + z) dF(x)`. The difficulty is that `f` is compactly supported but `ψ` need not be,
 because `F` may have unbounded support. The local renewal bound `U [t, t + h] ≤ U [0, h]`
-(`MeasureTheory.Measure.renewalMeasure_Icc_add_le`) bounds the mass of the translates, and of
+(`MeasureTheory.Measure.map_renewalMeasure_Icc_le`) bounds the mass of the translates, and of
 their limit, on intervals of a fixed length uniformly in their position. Splitting `F` into its
 parts on `[0, M]` and on `(M, ∞)` then shows that the second part contributes at most a constant
 multiple of `F (M, ∞)` to every integral, uniformly along the translates, and the first part gives
@@ -90,76 +96,7 @@ theorem map_renewalMeasure_eq_dirac_add_conv [SFinite μ] (t : ℝ) :
 
 section Harmonic
 
-variable {μ}
-
-/-- The translates of the renewal measure inherit the local renewal bound: their mass on an
-interval is at most the renewal mass of an initial interval of the same length. -/
-private theorem map_renewalMeasure_Icc_le [IsProbabilityMeasure μ] (t a b : ℝ) :
-    μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t) (Icc a b) ≤
-      μ.renewalMeasure (Iic (b - a).toNNReal) := by
-  rw [map_apply (by fun_prop) measurableSet_Icc]
-  refine (measure_mono fun s hs ↦ ?_).trans
-    (μ.renewalMeasure_Icc_add_le (a + t).toNNReal (b - a).toNNReal)
-  simp only [mem_preimage, mem_Icc] at hs
-  constructor
-  · exact Real.toNNReal_le_iff_le_coe.mpr (by linarith)
-  · rw [← NNReal.coe_le_coe, NNReal.coe_add, Real.coe_toNNReal', Real.coe_toNNReal']
-    linarith [le_max_left (a + t) 0, le_max_left (b - a) 0]
-
-private theorem isLocallyFiniteMeasure_map_renewalMeasure [IsProbabilityMeasure μ]
-    (hμ : μ {0} < 1) (t : ℝ) :
-    IsLocallyFiniteMeasure (μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t)) :=
-  ⟨fun x ↦ ⟨Icc (x - 1) (x + 1), Icc_mem_nhds (by linarith) (by linarith),
-    (map_renewalMeasure_Icc_le t _ _).trans_lt (μ.renewalMeasure_Iic_lt_top hμ _)⟩⟩
-
-/-- A function dominated by `C` times the indicator of `[a, b]` has translates whose integrals are
-at most `C * B`, when `B` bounds the masses of all translates of `[a, b]`. -/
-private theorem lintegral_comp_add_le {ν : Measure ℝ} {g : ℝ → ℝ≥0∞} {a b : ℝ} {C B : ℝ≥0∞}
-    (hg : ∀ y, g y ≤ (Icc a b).indicator (fun _ ↦ C) y)
-    (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (x : ℝ) :
-    ∫⁻ z, g (x + z) ∂ν ≤ C * B := by
-  calc ∫⁻ z, g (x + z) ∂ν ≤ ∫⁻ z, (Icc (-x + a) (-x + b)).indicator (fun _ ↦ C) z ∂ν := by
-        refine lintegral_mono fun z ↦ (hg _).trans_eq ?_
-        by_cases hz : z ∈ Icc (-x + a) (-x + b)
-        · rw [indicator_of_mem hz, indicator_of_mem (show x + z ∈ Icc a b from
-            ⟨by linarith [hz.1], by linarith [hz.2]⟩)]
-        · rw [indicator_of_notMem hz, indicator_of_notMem (show x + z ∉ Icc a b from fun h ↦
-            hz ⟨by linarith [h.1], by linarith [h.2]⟩)]
-    _ = C * ν (Icc (-x + a) (-x + b)) := lintegral_indicator_const measurableSet_Icc C
-    _ ≤ C * B := by gcongr; exact hν _
-
-/-- A compactly supported continuous function is dominated by a multiple of the indicator of a
-compact interval. -/
-private theorem exists_enorm_le_indicator (f : C_c(ℝ, ℝ)) :
-    ∃ (C : ℝ≥0) (a b : ℝ), ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ (C : ℝ≥0∞)) y := by
-  obtain ⟨C, hC⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
-  obtain ⟨a, ha⟩ := f.hasCompactSupport.isCompact.bddBelow
-  obtain ⟨b, hb⟩ := f.hasCompactSupport.isCompact.bddAbove
-  refine ⟨C.toNNReal, a, b, fun y ↦ ?_⟩
-  by_cases hy : y ∈ tsupport f
-  · rw [indicator_of_mem (show y ∈ Icc a b from ⟨ha hy, hb hy⟩), ← ofReal_norm]
-    exact ENNReal.ofReal_le_ofReal (hC y)
-  · simp [image_eq_zero_of_notMem_tsupport hy]
-
-private theorem eq_zero_of_enorm_le_indicator {f : ℝ → ℝ} {a b : ℝ} {C : ℝ≥0∞}
-    (hf : ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ C) y) {y : ℝ} (hy : y ∉ Icc a b) :
-    f y = 0 := by
-  have := hf y
-  rwa [indicator_of_notMem hy, nonpos_iff_eq_zero, enorm_eq_zero] at this
-
-private theorem integrable_comp_add [IsFiniteMeasure μ] (f : C_c(ℝ, ℝ)) (z : ℝ) :
-    Integrable (fun x : ℝ≥0 ↦ f (x + z)) μ := by
-  obtain ⟨C, hC⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
-  exact .of_bound (by fun_prop) C (ae_of_all _ fun x ↦ hC _)
-
-private theorem continuous_setIntegral_comp_add [IsFiniteMeasure μ] (f : C_c(ℝ, ℝ))
-    (S : Set ℝ≥0) :
-    Continuous fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ := by
-  obtain ⟨C, hC⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
-  exact continuous_of_dominated (bound := fun _ ↦ C) (fun z ↦ by fun_prop)
-    (fun z ↦ ae_of_all _ fun x ↦ hC _) (integrable_const C) (ae_of_all _ fun x ↦ by fun_prop)
-
-variable {ν : Measure ℝ} {f : C_c(ℝ, ℝ)} {a b : ℝ} {C : ℝ≥0} {B : ℝ≥0∞}
+variable {μ} {ν : Measure ℝ} {f : C_c(ℝ, ℝ)} {a b : ℝ} {C : ℝ≥0} {B : ℝ≥0∞}
 
 /-- The part of `x ↦ f (x + z)` integrated over `S` contributes at most `C * B * μ S` to every
 integral against a measure whose translated intervals have mass at most `B`. -/
@@ -171,36 +108,43 @@ private theorem lintegral_enorm_setIntegral_le [IsFiniteMeasure μ] [SFinite ν]
         lintegral_mono fun z ↦ enorm_integral_le_lintegral_enorm _
     _ = ∫⁻ x in S, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ :=
         lintegral_lintegral_swap (by fun_prop)
-    _ ≤ ∫⁻ x in S, C * B ∂μ := lintegral_mono fun x ↦ lintegral_comp_add_le hf hν x
+    _ ≤ ∫⁻ x in S, C * B ∂μ :=
+        lintegral_mono fun x ↦ lintegral_comp_add_le_of_le_indicator hf hν x
     _ = C * B * μ S := setLIntegral_const S _
 
 private theorem integrable_setIntegral_comp_add [IsFiniteMeasure μ] [SFinite ν]
     (hf : ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ (C : ℝ≥0∞)) y)
     (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (hB : B ≠ ∞) (S : Set ℝ≥0) :
-    Integrable (fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ) ν :=
-  ⟨(continuous_setIntegral_comp_add f S).aestronglyMeasurable,
-    (lintegral_enorm_setIntegral_le hf hν S).trans_lt
-      (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.coe_lt_top hB.lt_top) (measure_lt_top μ S))⟩
+    Integrable (fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ) ν := by
+  obtain ⟨D, hD⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
+  have hcont : Continuous fun z : ℝ ↦ ∫ x in S, f (x + z) ∂μ :=
+    continuous_of_dominated (bound := fun _ ↦ D) (fun z ↦ by fun_prop)
+      (fun z ↦ ae_of_all _ fun x ↦ hD _) (integrable_const D) (ae_of_all _ fun x ↦ by fun_prop)
+  exact ⟨hcont.aestronglyMeasurable, (lintegral_enorm_setIntegral_le hf hν S).trans_lt
+    (ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.coe_lt_top hB.lt_top) (measure_lt_top μ S))⟩
 
 /-- Integrating against `μ ∗ ν` is integrating `z ↦ ∫ f (x + z) dμ(x)` against `ν`. -/
 private theorem integral_map_coe_conv [IsFiniteMeasure μ] [SFinite ν]
     (hf : ∀ y, ‖f y‖ₑ ≤ (Icc a b).indicator (fun _ ↦ (C : ℝ≥0∞)) y)
     (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (hB : B ≠ ∞) :
     ∫ y, f y ∂(μ.map ((↑) : ℝ≥0 → ℝ) ∗ ν) = ∫ z, ∫ x, f (x + z) ∂μ ∂ν := by
-  have hprod : (μ.map ((↑) : ℝ≥0 → ℝ)).prod ν = (μ.prod ν).map (Prod.map (↑) id) := by
-    simpa using map_prod_map μ ν measurable_coe_nnreal_real measurable_id
-  have hint : Integrable (fun p : ℝ≥0 × ℝ ↦ f (p.1 + p.2)) (μ.prod ν) := by
-    refine ⟨(by fun_prop : Continuous fun p : ℝ≥0 × ℝ ↦ f (p.1 + p.2)).aestronglyMeasurable, ?_⟩
-    rw [HasFiniteIntegral, lintegral_prod _ (by fun_prop)]
-    calc ∫⁻ x, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ ≤ ∫⁻ x, (C : ℝ≥0∞) * B ∂μ :=
-          lintegral_mono fun x ↦ lintegral_comp_add_le hf hν x
+  have hint : Integrable f (ν ∗ μ.map ((↑) : ℝ≥0 → ℝ)) := by
+    refine ⟨(map_continuous f).aestronglyMeasurable, ?_⟩
+    rw [HasFiniteIntegral, ← Measure.conv_comm, lintegral_conv (by fun_prop)]
+    calc ∫⁻ y, ∫⁻ z, ‖f (y + z)‖ₑ ∂ν ∂μ.map ((↑) : ℝ≥0 → ℝ)
+        ≤ ∫⁻ x, ∫⁻ z, ‖f (x + z)‖ₑ ∂ν ∂μ :=
+          lintegral_map_le _ measurable_coe_nnreal_real.aemeasurable
+      _ ≤ ∫⁻ x, (C : ℝ≥0∞) * B ∂μ :=
+          lintegral_mono fun x ↦ lintegral_comp_add_le_of_le_indicator hf hν x
       _ < ∞ := by
-        rw [lintegral_const]
-        exact ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.coe_lt_top hB.lt_top)
-          (measure_lt_top μ _)
-  rw [Measure.conv, hprod, map_map (by fun_prop) (by fun_prop),
-    integral_map (by fun_prop) (map_continuous f).aestronglyMeasurable]
-  exact integral_prod_symm _ hint
+          rw [lintegral_const]
+          exact ENNReal.mul_lt_top (ENNReal.mul_lt_top ENNReal.coe_lt_top hB.lt_top)
+            (measure_lt_top μ _)
+  rw [Measure.conv_comm, integral_conv hint]
+  refine integral_congr_ae (ae_of_all _ fun z ↦ ?_)
+  dsimp only
+  rw [integral_map measurable_coe_nnreal_real.aemeasurable (by fun_prop)]
+  simp_rw [add_comm z]
 
 /-- The part of `x ↦ f (x + z)` over `(n, ∞)` is uniformly small: splitting the integral over
 `[0, n]` changes the integral against `ν` by at most `C * B * μ (n, ∞)`. -/
@@ -209,9 +153,11 @@ private theorem dist_integral_setIntegral_Iic_le [IsFiniteMeasure μ] [SFinite �
     (hν : ∀ c, ν (Icc (c + a) (c + b)) ≤ B) (hB : B ≠ ∞) (n : ℝ≥0) :
     dist (∫ z, ∫ x, f (x + z) ∂μ ∂ν) (∫ z, ∫ x in Iic n, f (x + z) ∂μ ∂ν) ≤
       (C * B * μ (Iic n)ᶜ).toReal := by
+  obtain ⟨D, hD⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
   have hsplit (z : ℝ) : ∫ x, f (x + z) ∂μ =
       ∫ x in Iic n, f (x + z) ∂μ + ∫ x in (Iic n)ᶜ, f (x + z) ∂μ :=
-    (integral_add_compl measurableSet_Iic (integrable_comp_add f z)).symm
+    (integral_add_compl measurableSet_Iic
+      (.of_bound (by fun_prop) D (ae_of_all _ fun x ↦ hD _))).symm
   simp_rw [hsplit]
   rw [integral_add (integrable_setIntegral_comp_add hf hν hB _)
     (integrable_setIntegral_comp_add hf hν hB _), dist_eq_norm, add_sub_cancel_left,
@@ -226,8 +172,9 @@ private theorem hasCompactSupport_setIntegral_Iic
     HasCompactSupport fun z : ℝ ↦ ∫ x in Iic n, f (x + z) ∂μ := by
   refine HasCompactSupport.intro (isCompact_Icc (a := a - n) (b := b)) fun z hz ↦
     setIntegral_eq_zero_of_forall_eq_zero fun x hx ↦ ?_
-  exact eq_zero_of_enorm_le_indicator hf fun h ↦
+  have hxz : (x : ℝ) + z ∉ Icc a b := fun h ↦
     hz ⟨by linarith [h.1, NNReal.coe_le_coe.mpr hx], by linarith [h.2, x.coe_nonneg]⟩
+  simpa [indicator_of_notMem hxz] using hf (x + z)
 
 /-- If the integrals of compactly supported test functions converge along a family of measures
 whose translated intervals have uniformly bounded mass, then so do the integrals of
@@ -259,21 +206,23 @@ private theorem tendsto_integral_integral_comp_add [IsFiniteMeasure μ] {ι : Ty
   intro ε hε
   obtain ⟨n, hn⟩ := (he.eventually (gt_mem_nhds (by positivity : 0 < ε / 3))).exists
   -- On `[0, n]` the function is a compactly supported test function.
+  obtain ⟨D, hD⟩ := (map_continuous f).bounded_above_of_compact_support f.hasCompactSupport
   let g : C_c(ℝ, ℝ) := ⟨⟨fun z ↦ ∫ x in Iic (n : ℝ≥0), f (x + z) ∂μ,
-    continuous_setIntegral_comp_add f _⟩, hasCompactSupport_setIntegral_Iic hf _⟩
+    continuous_of_dominated (bound := fun _ ↦ D) (fun z ↦ by fun_prop)
+      (fun z ↦ ae_of_all _ fun x ↦ hD _) (integrable_const D) (ae_of_all _ fun x ↦ by fun_prop)⟩,
+    hasCompactSupport_setIntegral_Iic hf _⟩
   filter_upwards [Metric.tendsto_nhds.1 (hlim g) (ε / 3) (by positivity)] with i hi
+  simp only [g, CompactlySupportedContinuousMap.coe_mk, ContinuousMap.coe_mk] at hi
   have h1 := dist_integral_setIntegral_Iic_le (μ := μ) hf (hν' i) hB n
   have h2 := dist_integral_setIntegral_Iic_le (μ := μ) hf hν hB n
   rw [dist_comm] at h2
-  have h3 : dist (∫ z, ∫ x in Iic (n : ℝ≥0), f (x + z) ∂μ ∂ν' i)
-      (∫ z, ∫ x in Iic (n : ℝ≥0), f (x + z) ∂μ ∂ν) < ε / 3 := hi
   linarith [dist_triangle4 (∫ z, ∫ x, f (x + z) ∂μ ∂ν' i)
     (∫ z, ∫ x in Iic (n : ℝ≥0), f (x + z) ∂μ ∂ν' i)
     (∫ z, ∫ x in Iic (n : ℝ≥0), f (x + z) ∂μ ∂ν) (∫ z, ∫ x, f (x + z) ∂μ ∂ν)]
 
 /-- A locally finite vague limit of translates of the renewal measure inherits the local renewal
 bound, up to enlarging the length of the interval by `2`. -/
-private theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (hμ : μ {0} < 1)
+theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (hμ : μ {0} < 1)
     {ι : Type*} {l : Filter ι} [l.NeBot] {t : ι → ℝ} {η : Measure ℝ} [IsLocallyFiniteMeasure η]
     (hη : ∀ f : C_c(ℝ, ℝ), Tendsto (fun i ↦ ∫ x, f x ∂μ.renewalMeasure.map
       (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) l (𝓝 (∫ x, f x ∂η))) (a b : ℝ) :
@@ -295,7 +244,7 @@ private theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (h�
     _ = ENNReal.ofReal (∫ x, gc x ∂η) := (hlin η).symm
     _ ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
         refine le_of_tendsto' ((ENNReal.continuous_ofReal.tendsto _).comp (hη gc)) fun i ↦ ?_
-        have := isLocallyFiniteMeasure_map_renewalMeasure hμ (t i)
+        have := μ.isLocallyFiniteMeasure_map_renewalMeasure hμ (t i)
         rw [Function.comp_apply, hlin]
         calc ∫⁻ x, ENNReal.ofReal (gc x) ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)
             ≤ ∫⁻ x, (Icc (a - 1) (b + 1)).indicator 1 x
@@ -307,22 +256,7 @@ private theorem measure_Icc_le_of_tendsto_integral [IsProbabilityMeasure μ] (h�
               lintegral_indicator_one measurableSet_Icc
           _ ≤ μ.renewalMeasure (Iic (b - a + 2).toNNReal) := by
               rw [show b - a + 2 = b + 1 - (a - 1) by ring]
-              exact map_renewalMeasure_Icc_le (t i) (a - 1) (b + 1)
-
-/-- Convolving with a probability measure preserves uniformly bounded masses of intervals of
-length `2`, and hence local finiteness. -/
-private theorem isLocallyFiniteMeasure_map_coe_conv [IsProbabilityMeasure μ] {η : Measure ℝ}
-    [SFinite η] (hη : ∀ c, η (Icc c (c + 2)) ≤ B) (hB : B ≠ ∞) :
-    IsLocallyFiniteMeasure (μ.map ((↑) : ℝ≥0 → ℝ) ∗ η) := by
-  refine ⟨fun x ↦ ⟨Icc (x - 1) (x + 1), Icc_mem_nhds (by linarith) (by linarith), ?_⟩⟩
-  rw [← lintegral_indicator_one measurableSet_Icc,
-    lintegral_conv (measurable_one.indicator measurableSet_Icc)]
-  have hη' (c : ℝ) : η (Icc (c + (x - 1)) (c + (x + 1))) ≤ B := by
-    simpa [show c + (x + 1) = c + (x - 1) + 2 by ring] using hη (c + (x - 1))
-  calc ∫⁻ y, ∫⁻ z, (Icc (x - 1) (x + 1)).indicator 1 (y + z) ∂η ∂μ.map ((↑) : ℝ≥0 → ℝ)
-      ≤ ∫⁻ y, 1 * B ∂μ.map ((↑) : ℝ≥0 → ℝ) :=
-        lintegral_mono fun y ↦ lintegral_comp_add_le (fun _ ↦ le_rfl) hη' y
-    _ < ∞ := by simp [lintegral_const, measure_univ, hB.lt_top]
+              exact μ.map_renewalMeasure_Icc_le (t i) (a - 1) (b + 1)
 
 end Harmonic
 
@@ -344,15 +278,15 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
     μ.map ((↑) : ℝ≥0 → ℝ) ∗ η = η := by
   -- Local finiteness of the translates makes test functions integrable against them.
   have hU (i : ι) : IsLocallyFiniteMeasure (μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) :=
-    isLocallyFiniteMeasure_map_renewalMeasure hμ _
+    μ.isLocallyFiniteMeasure_map_renewalMeasure hμ _
   -- The convolution `μ ∗ η` is locally finite, since `η` has uniformly bounded interval masses.
   have : IsLocallyFiniteMeasure (μ.map ((↑) : ℝ≥0 → ℝ) ∗ η) :=
-    isLocallyFiniteMeasure_map_coe_conv (fun c ↦ by
+    isLocallyFiniteMeasure_conv_of_measure_Icc_le two_pos (fun c ↦ by
       simpa [show (2 : ℝ≥0) + 2 = 4 by norm_num] using
         measure_Icc_le_of_tendsto_integral hμ hη c (c + 2))
       (μ.renewalMeasure_Iic_lt_top hμ (4 : ℝ).toNNReal).ne
   refine ext_of_integral_eq_on_compactlySupported fun f ↦ ?_
-  obtain ⟨C, a, b, hf⟩ := exists_enorm_le_indicator f
+  obtain ⟨C, a, b, hf⟩ := f.exists_enorm_le_indicator
   set B := μ.renewalMeasure (Iic (b - a + 2).toNNReal)
   have hB : B ≠ ∞ := (μ.renewalMeasure_Iic_lt_top hμ _).ne
   have hBη (c : ℝ) : η (Icc (c + a) (c + b)) ≤ B := by
@@ -360,7 +294,7 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
       measure_Icc_le_of_tendsto_integral hμ hη (c + a) (c + b)
   have hBU (i : ι) (c : ℝ) :
       μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i) (Icc (c + a) (c + b)) ≤ B :=
-    (map_renewalMeasure_Icc_le _ _ _).trans (measure_mono (Iic_subset_Iic.mpr
+    (μ.map_renewalMeasure_Icc_le _ _ _).trans (measure_mono (Iic_subset_Iic.mpr
       (Real.toNNReal_le_toNNReal (by linarith))))
   -- By the translated renewal equation, `∫ f dUᵢ = f (-tᵢ) + ∫ ψ dUᵢ` for
   -- `ψ z = ∫ f (x + z) dμ(x)`, and `f (-tᵢ)` vanishes eventually.
@@ -374,7 +308,8 @@ theorem map_coe_conv_eq_self_of_tendsto_integral (hμ : μ {0} < 1) {ι : Type*}
   have hlim : Tendsto (fun i ↦ f (-t i)) l (𝓝 0) := by
     refine tendsto_const_nhds.congr' ?_
     filter_upwards [ht.eventually (eventually_gt_atTop (-a))] with i hi
-    exact (eq_zero_of_enorm_le_indicator hf fun h ↦ by linarith [h.1]).symm
+    have hti : -t i ∉ Icc a b := fun h ↦ by linarith [h.1]
+    exact (by simpa [indicator_of_notMem hti] using hf (-t i) : f (-t i) = 0).symm
   have h1 : Tendsto (fun i ↦ ∫ z, ∫ x, f (x + z) ∂μ
       ∂μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t i)) l (𝓝 (∫ x, f x ∂η)) := by
     have := (hη f).sub hlim

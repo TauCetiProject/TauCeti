@@ -33,6 +33,9 @@ renewal theorem and the key renewal theorem.
   `U [t, t + h] ≤ U [0, h]`.
 * `MeasureTheory.Measure.renewalFunction_add_le` — the uniform increment bound
   `m (t + h) ≤ m t + U [0, h]`.
+* `MeasureTheory.Measure.map_renewalMeasure_Icc_le` — the same bound for the translates
+  `U.map (s ↦ s - t)` on the real line, which are locally finite when `F {0} < 1`
+  (`MeasureTheory.Measure.isLocallyFiniteMeasure_map_renewalMeasure`).
 
 ## Implementation notes
 
@@ -199,5 +202,27 @@ theorem renewalFunction_add_le (t h : ℝ≥0) :
         add_le_add le_rfl (renewalMeasure_Icc_add_le μ t h)
     _ = 1 + (μ.renewalFunction t + μ.renewalMeasure (Iic h)) := by
         rw [renewalMeasure_Iic, add_assoc]
+
+/-- **The local renewal bound for translates.** The translates `U.map (s ↦ s - t)` of the renewal
+measure, regarded as measures on the real line, give every interval at most the renewal mass of an
+initial interval of the same length. -/
+theorem map_renewalMeasure_Icc_le (t a b : ℝ) :
+    μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t) (Icc a b) ≤
+      μ.renewalMeasure (Iic (b - a).toNNReal) := by
+  rw [map_apply (by fun_prop) measurableSet_Icc]
+  refine (measure_mono fun s hs ↦ ?_).trans
+    (μ.renewalMeasure_Icc_add_le (a + t).toNNReal (b - a).toNNReal)
+  simp only [mem_preimage, mem_Icc] at hs
+  constructor
+  · exact Real.toNNReal_le_iff_le_coe.mpr (by linarith)
+  · rw [← NNReal.coe_le_coe, NNReal.coe_add, Real.coe_toNNReal', Real.coe_toNNReal']
+    linarith [le_max_left (a + t) 0, le_max_left (b - a) 0]
+
+/-- When `μ {0} < 1`, the translates `U.map (s ↦ s - t)` of the renewal measure are locally finite
+measures on the real line. -/
+theorem isLocallyFiniteMeasure_map_renewalMeasure (hμ : μ {0} < 1) (t : ℝ) :
+    IsLocallyFiniteMeasure (μ.renewalMeasure.map (fun s : ℝ≥0 ↦ (s : ℝ) - t)) :=
+  ⟨fun x ↦ ⟨Icc (x - 1) (x + 1), Icc_mem_nhds (by linarith) (by linarith),
+    (μ.map_renewalMeasure_Icc_le t _ _).trans_lt (μ.renewalMeasure_Iic_lt_top hμ _)⟩⟩
 
 end MeasureTheory.Measure
