@@ -22,6 +22,9 @@ This file also records naturality of the re-associated crossing
 two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms,
 and the unitor identity `(λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom` expressed through the braiding
 `β_ X (𝟙_ C)` of `X` past the tensor unit.
+
+It also records that the inverse tensorator `δ` of a braided functor commutes with the braiding
+(`CategoryTheory.Functor.δ_braiding`), the `δ`-form of `Functor.map_braiding`.
 -/
 
 public section
