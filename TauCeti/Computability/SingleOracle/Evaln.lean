@@ -457,8 +457,8 @@ theorem evaln_sound {O : ℕ →. ℕ} {k : ℕ} {c : Code} (h : evaln σ k c n 
   split_ifs at hy with hz
   exact hσ z hz y hy
 
-/-- The `rfind'` case of `exists_evaln_eq_some_of_mem_eval`: induction on the remaining search
-distance `y - m`. -/
+/-- The `rfind'` case of `exists_evaln_eq_some_of_mem_eval`: if every value of the body `cf` is the
+output of a successful run of `evaln` against `σ`, then so is every value of `rfind' cf`. -/
 private theorem exists_evaln_eq_some_of_mem_eval_rfind' {O : ℕ →. ℕ} {cf : Code} {y : ℕ}
     (hf : ∀ {n y : ℕ}, y ∈ eval O cf n → ∃ k d, evaln σ k cf n = some d ∧ d.output = y)
     (h : y ∈ eval O (rfind' cf) n) : ∃ k d, evaln σ k (rfind' cf) n = some d ∧ d.output = y := by
