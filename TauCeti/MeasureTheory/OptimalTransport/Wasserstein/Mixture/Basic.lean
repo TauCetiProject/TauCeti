@@ -21,8 +21,9 @@ convexity of `TauCeti.transportCost_smul` and `TauCeti.transportCost_sum_le` rea
 bridge `TauCeti.wassersteinEDist_rpow_eq_transportCost` for the cost `edist ^ p`.
 
 The weights are only required to be finite and need not sum to `1`, and the laws are arbitrary
-measures. The ground distance must be jointly measurable, since the transport cost is computed
-through it, but `1 ≤ p` is not used. The exponent is
+measures. For the weighted mixture results the ground distance must be jointly measurable, since
+the transport cost is computed through it, but `1 ≤ p` is not used. The additive subadditivity
+`TauCeti.wassersteinEDist_add_rpow_le` needs no measurability hypothesis. The exponent is
 finite: at `p = ∞` the power `p.toReal` is `0`, and the corresponding estimate instead bounds
 the distance of the mixtures by the largest distance of a pair with positive weight, which is a
 different statement not proved here.
@@ -103,17 +104,6 @@ theorem wassersteinEDist_add_rpow_le (μ μ' ν ν' : Measure X) :
     obtain ⟨π, hπ, h⟩ := wassersteinEDist_lt_iff.1
       ((ENNReal.lt_rpow_inv_iff hr).2 hc : wassersteinEDist p μ ν < c ^ p.toReal⁻¹)
     exact ⟨π, hπ, (ENNReal.lt_rpow_inv_iff hr).1 h⟩
-  -- the powered objective is subadditive in the coupling
-  have sub (π π' : Measure (X × X)) :
-      eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (π + π') ^ p.toReal
-        ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π ^ p.toReal
-          + eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π' ^ p.toReal := by
-    by_cases hm : AEMeasurable (fun z : X × X ↦ edist z.1 z.2) π ∧
-        AEMeasurable (fun z : X × X ↦ edist z.1 z.2) π'
-    · rw [eLpNorm_rpow_eq_lintegral hp0 hp (hm.1.add_measure hm.2), lintegral_add_measure,
-        eLpNorm_rpow_eq_lintegral hp0 hp hm.1, eLpNorm_rpow_eq_lintegral hp0 hp hm.2]
-    · rcases not_and_or.1 hm with h | h <;>
-        simp [eLpNorm_of_not_aestronglyMeasurable fun h' ↦ h h'.aemeasurable, hr]
   refine ENNReal.le_of_forall_pos_le_add fun ε hε hb ↦ ?_
   have hδ : (ε / 2 : ℝ≥0∞) ≠ 0 := by simp [hε.ne']
   obtain ⟨π, hπ, h₁⟩ := key μ ν (ENNReal.lt_add_right (ne_top_of_lt (lt_of_le_of_lt le_self_add hb))
@@ -122,7 +112,7 @@ theorem wassersteinEDist_add_rpow_le (μ μ' ν ν' : Measure X) :
     (ne_top_of_lt (lt_of_le_of_lt le_add_self hb)) hδ)
   calc _ ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (π + π') ^ p.toReal :=
         ENNReal.rpow_le_rpow (wassersteinEDist_le (hπ.add hπ') p) hr.le
-    _ ≤ _ := sub π π'
+    _ ≤ _ := eLpNorm_add_measure_rpow_le hp0 hp _ π π'
     _ ≤ _ := add_le_add h₁.le h₂.le
     _ = _ := by rw [add_add_add_comm, ENNReal.add_halves]
 
