@@ -40,15 +40,6 @@ variable {E F G : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [Finit
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
   [NormedAddCommGroup G] [NormedSpace ℂ G] [CompleteSpace G]
 
-/-- Applying a continuous linear map `L` to the values of a Schwartz function `u` applies `L` to
-the pairings of its tempered distribution. -/
-theorem SchwartzMap.toTemperedDistributionCLM_postcompCLM_apply (L : F →L[ℂ] G) (u : 𝓢(E, F))
-    (φ : 𝓢(E, ℂ)) :
-    ((u.postcompCLM L : 𝓢(E, G)) : 𝓢'(E, G)) φ = L ((u : 𝓢'(E, F)) φ) := by
-  have hφu : Integrable (fun x ↦ φ x • u x) := φ.integrable.smul_of_top_left u.memLp_top
-  rw [SchwartzMap.coe_apply, SchwartzMap.coe_apply, ← L.integral_comp_comm hφu]
-  simp only [postcompCLM_apply, map_smul]
-
 namespace BesselPotentialSpace
 
 variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
