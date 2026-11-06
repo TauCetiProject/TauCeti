@@ -25,35 +25,10 @@ open scoped Topology
 
 namespace TauCeti
 
-/-- The Mellin transform of a positive linear denominator. -/
-theorem integral_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
-    ∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (x + a) =
-      a ^ (s - 1) * (π / sin (π * s)) := by
-  have hbase : ∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (1 + x) = π / sin (π * s) := by
-    have h := integral_rpow_mul_one_add_rpow hs (by linarith : 0 < 1 - s)
-    simpa [ProbabilityTheory.beta, Gamma_mul_Gamma_one_sub, rpow_neg_one, div_eq_mul_inv] using h
-  have h := integral_comp_mul_left_Ioi (fun x : ℝ ↦ x ^ (s - 1) / (x + a)) 0 ha
-  rw [mul_zero, smul_eq_mul] at h
-  calc
-    _ = ∫ x in Ioi (0 : ℝ), a ^ (s - 1) * (x ^ (s - 1) / (1 + x)) := by
-      rw [← mul_inv_cancel_left₀ ha.ne' (∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (x + a)),
-        ← h, ← integral_const_mul]
-      refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ ?_
-      rw [mul_rpow ha.le hx.le]
-      field_simp
-      ring
-    _ = _ := by rw [integral_const_mul, hbase]
-
-/-- Integrability of the Mellin kernel with a positive linear denominator. -/
-theorem integrableOn_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
-    IntegrableOn (fun x : ℝ ↦ x ^ (s - 1) / (x + a)) (Ioi 0) := by
-  apply Integrable.of_integral_ne_zero
-  rw [integral_rpow_div_add s a hs hs1 ha]
-  have : 0 < sin (π * s) := sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [pi_pos])
-  positivity
-
-/-- The Laplace transform of the real sine-compensated exponential kernel. -/
-theorem integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin {s a : ℝ} (hs : 0 < s) (ha : 0 ≤ a) :
+/-- The Laplace transform of the real sine-compensated exponential kernel, for
+`0 < s` and `0 < s + a`. -/
+theorem integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin {s a : ℝ}
+    (hs : 0 < s) (ha : 0 < s + a) :
     ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * (exp (-a * x) - 1 + a * sin x) =
       (s + a)⁻¹ - s⁻¹ + a / (1 + s ^ 2) := by
   have hC : (-s + Complex.I : ℂ).re < 0 := by simpa using hs

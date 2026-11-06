@@ -58,6 +58,8 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `TauCeti.integral_rpow_mul_one_add_sq_rpow` — the radial form
   `∫ y in Ioi 0, y ^ (s - 1) * (1 + y ^ 2) ^ (-r / 2) = Β(s / 2, (r - s) / 2) / 2` of the second
   integral, obtained by substituting `u = y ^ 2`;
+* `TauCeti.integral_rpow_div_add` and `TauCeti.integrableOn_rpow_div_add` — the Mellin
+  transform and integrability of `x ^ (s - 1) / (x + a)` for `0 < s < 1` and `0 < a`;
 * `TauCeti.integral_rpow_div_one_add_sq` and `TauCeti.integral_rpow_div_sq_add_sq` — the Mellin
   transform `∫ y in Ioi 0, y ^ (s - 1) / (y ^ 2 + t ^ 2) = |t| ^ (s - 2) * π / (2 sin (π s / 2))`
   for `0 < s < 2`, by Euler's reflection formula, with
@@ -562,6 +564,35 @@ theorem integral_rpow_mul_one_add_sq_rpow {r : ℝ} (hs : 0 < s) (hsr : s < r) :
   rw [← hpow, Real.rpow_two, hexp, abs_two, show (2 : ℝ) - 1 = 1 by norm_num, Real.rpow_one,
     smul_eq_mul]
   ring
+
+/-- The Mellin transform of a positive linear denominator. -/
+theorem integral_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
+    ∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (x + a) =
+      a ^ (s - 1) * (Real.pi / Real.sin (Real.pi * s)) := by
+  have hbase : ∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (1 + x) = Real.pi / Real.sin (Real.pi * s) := by
+    have h := integral_rpow_mul_one_add_rpow hs (by linarith : 0 < 1 - s)
+    simpa [ProbabilityTheory.beta, Real.Gamma_mul_Gamma_one_sub, Real.rpow_neg_one,
+      div_eq_mul_inv] using h
+  have h := integral_comp_mul_left_Ioi (fun x : ℝ ↦ x ^ (s - 1) / (x + a)) 0 ha
+  rw [mul_zero, smul_eq_mul] at h
+  calc
+    _ = ∫ x in Ioi (0 : ℝ), a ^ (s - 1) * (x ^ (s - 1) / (1 + x)) := by
+      rw [← mul_inv_cancel_left₀ ha.ne' (∫ x in Ioi (0 : ℝ), x ^ (s - 1) / (x + a)),
+        ← h, ← integral_const_mul]
+      refine setIntegral_congr_fun measurableSet_Ioi fun x (hx : 0 < x) ↦ ?_
+      rw [Real.mul_rpow ha.le hx.le]
+      field_simp
+      ring
+    _ = _ := by rw [integral_const_mul, hbase]
+
+/-- Integrability of the Mellin kernel with a positive linear denominator. -/
+theorem integrableOn_rpow_div_add (s a : ℝ) (hs : 0 < s) (hs1 : s < 1) (ha : 0 < a) :
+    IntegrableOn (fun x : ℝ ↦ x ^ (s - 1) / (x + a)) (Ioi 0) := by
+  apply Integrable.of_integral_ne_zero
+  rw [integral_rpow_div_add s a hs hs1 ha]
+  have : 0 < Real.sin (Real.pi * s) :=
+    Real.sin_pos_of_pos_of_lt_pi (by positivity) (by nlinarith [Real.pi_pos])
+  positivity
 
 /-- **The Mellin transform of `1 / (1 + y ^ 2)`.** For `0 < s < 2`,
 `∫ y in Ioi 0, y ^ (s - 1) / (1 + y ^ 2) = π / (2 * sin (π * s / 2))`. This is the radial

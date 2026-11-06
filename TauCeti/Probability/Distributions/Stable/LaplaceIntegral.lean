@@ -70,7 +70,7 @@ private theorem integral_compensatedLevy_eq_mellin {α a : ℝ}
       ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * (exp (-a * x) - 1 + a * sin x)) =
       ∫ s in Ioi (0 : ℝ), s ^ α * ((s + a)⁻¹ - s⁻¹ + a / (1 + s ^ 2)) := by
     exact setIntegral_congr_fun measurableSet_Ioi fun s hs ↦ by
-      rw [integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin hs ha]
+      rw [integral_Ioi_exp_neg_mul_mul_exp_sub_one_add_sin hs (add_pos_of_pos_of_nonneg hs ha)]
   rw [hinner, add_comm 1 α, ← mul_assoc]
   congr 1
   field_simp
