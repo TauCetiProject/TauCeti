@@ -108,6 +108,41 @@ theorem covariantDerivative_eq_re_mul_add_im_mul (x : ℂ → EuclideanSpace ℝ
   push_cast
   ring
 
+/-- The derivative of the section in the real field coordinates:
+`∂_v α = 2 (∂_v p + i ∂_v q)`. -/
+theorem fderiv_sectionValue_apply {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) (v : ℂ) :
+    fderiv ℝ (sectionValue x) z v =
+      2 * ((fderiv ℝ (fun w ↦ x w 2) z v : ℂ) + (fderiv ℝ (fun w ↦ x w 3) z v : ℂ) * I) := by
+  have hp : DifferentiableAt ℝ (fun w ↦ x w 2) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) 2).differentiableAt.comp z hx :)
+  have hq : DifferentiableAt ℝ (fun w ↦ x w 3) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) 3).differentiableAt.comp z hx :)
+  have hcastp := (ofRealCLM.hasFDerivAt.comp z hp.hasFDerivAt).fderiv
+  have hcastq := (ofRealCLM.hasFDerivAt.comp z hq.hasFDerivAt).fderiv
+  simp only [Function.comp_def, ofRealCLM_apply] at hcastp hcastq
+  rw [funext (sectionValue_apply x)]
+  simp (disch := fun_prop) [fderiv_fun_add, fderiv_fun_mul, hcastp, hcastq]
+  ring
+
+/-- The real part of the covariant derivative in the real field coordinates:
+`Re ∇_v α = 2 (∂_v p - b(v) q)`. -/
+theorem re_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) (v : ℂ) :
+    (covariantDerivative x z v).re =
+      2 * (fderiv ℝ (fun w ↦ x w 2) z v - (x z 0 * v.re + x z 1 * v.im) * x z 3) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hx, sectionValue_apply]
+  ring
+
+/-- The imaginary part of the covariant derivative in the real field coordinates:
+`Im ∇_v α = 2 (∂_v q + b(v) p)`. -/
+theorem im_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hx : DifferentiableAt ℝ x z) (v : ℂ) :
+    (covariantDerivative x z v).im =
+      2 * (fderiv ℝ (fun w ↦ x w 3) z v + (x z 0 * v.re + x z 1 * v.im) * x z 2) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hx, sectionValue_apply]
+  ring
+
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
