@@ -459,18 +459,10 @@ theorem addVal_norm (z : 𝒪[L]) :
   let _ : FiniteDimensional K L := finite_of_valuativeExtension K L
   obtain ⟨ϖ, hϖ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[L]
   obtain ⟨π, hπ⟩ := IsDiscreteValuationRing.exists_irreducible 𝒪[K]
-  -- The norm of a uniformizer of `L` generates `N_{L/K}(𝓂[L]) = 𝓂[K] ^ f`.
+  -- The norm of a uniformizer of `L` is associated to `π ^ f`.
   have hN : IsDiscreteValuationRing.addVal 𝒪[K] (Algebra.norm 𝒪[K] ϖ) = inertiaDegree K L := by
-    -- The ideal norm of `𝓂[L] = (ϖ)` is the principal ideal of `N(ϖ)`.
-    have hrel : Ideal.relNorm 𝒪[K] 𝓂[L] = Ideal.span {Algebra.norm 𝒪[K] ϖ} := by
-      rw [hϖ.maximalIdeal_eq, Ideal.relNorm_singleton, Algebra.intNorm_eq_norm]
-    -- On the other hand it is `𝓂[K] ^ f = (π ^ f)`.
-    have hpow : 𝓂[K] ^ inertiaDegree K L = Ideal.span {π ^ inertiaDegree K L} := by
-      rw [hπ.maximalIdeal_eq, Ideal.span_singleton_pow]
-    have hspan : Ideal.span {Algebra.norm 𝒪[K] ϖ} = Ideal.span {π ^ inertiaDegree K L} := by
-      rw [← hrel, ← hpow, relNorm_maximalIdeal_eq_maximalIdeal_pow]
     rw [(IsDiscreteValuationRing.addVal_eq_iff_associated _ _).2
-      (Ideal.span_singleton_eq_span_singleton.1 hspan)]
+      (associated_norm_irreducible_pow K L hπ hϖ)]
     simp only [IsDiscreteValuationRing.addVal_pow,
       IsDiscreteValuationRing.addVal_uniformizer hπ, nsmul_one]
   rcases eq_or_ne z 0 with rfl | hz
