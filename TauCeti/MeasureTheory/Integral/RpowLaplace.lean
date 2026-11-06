@@ -33,6 +33,8 @@ integrals of rational Laplace transforms. For the sine-compensated kernel
 * `TauCeti.integrableOn_rpow_smul_integral_exp_neg_mul_smul`: the power-weighted Laplace
   transform is integrable on the positive half-line.
 * `TauCeti.integral_Ioi_rpow_neg_smul`: the exchange identity displayed above.
+* `TauCeti.integral_Ioi_exp_neg_mul_mul_sin`: the Laplace transform
+  `1 / (1 + s ^ 2)` of `sin` on the positive half-line.
 * `TauCeti.integral_Ioi_exp_neg_mul_smul_cexp_sub_one_sub_sin`: the Laplace transform
   `(s - i t)⁻¹ - s⁻¹ - i t / (1 + s ^ 2)` of the sine-compensated kernel.
 -/
@@ -123,6 +125,30 @@ theorem integral_Ioi_rpow_neg_smul [CompleteSpace E] (hα : -1 < α)
       congr 1
       refine setIntegral_congr_fun measurableSet_Ioi fun s _ ↦ ?_
       simp only [mul_smul, integral_smul]
+
+/-- **The Laplace transform of sine.** For `0 < s`, the Laplace transform of `sin` on the
+positive half-line is `1 / (1 + s ^ 2)`. -/
+theorem integral_Ioi_exp_neg_mul_mul_sin {s : ℝ} (hs : 0 < s) :
+    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * sin x = 1 / (1 + s ^ 2) := by
+  let a : ℂ := -s + Complex.I
+  have ha : a.re < 0 := by simpa [a] using hs
+  have hint := integrableOn_exp_mul_complex_Ioi ha 0
+  calc
+    ∫ x in Ioi (0 : ℝ), exp (-(x * s)) * sin x =
+        ∫ x in Ioi (0 : ℝ), (Complex.exp (a * x)).im := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun x _ ↦ ?_
+      rw [Complex.exp_im]
+      simp [a, mul_comm]
+    _ = (∫ x in Ioi (0 : ℝ), Complex.exp (a * x)).im := integral_im hint
+    _ = 1 / (1 + s ^ 2) := by
+      have hre : a.re = -s := by simp [a]
+      have him : a.im = 1 := by simp [a]
+      rw [integral_exp_mul_complex_Ioi ha 0, Complex.ofReal_zero, mul_zero, Complex.exp_zero,
+        Complex.div_im]
+      simp only [hre, him, Complex.neg_im, Complex.one_im, Complex.neg_re, Complex.one_re,
+        neg_one_mul, Complex.normSq_apply]
+      field_simp [show s ^ 2 + 1 ≠ 0 by positivity]
+      ring
 
 /-- **The Laplace transform of the sine-compensated kernel.** For `0 < s`, the kernel
 `x ↦ exp (i t x) - 1 - i t sin x` has Laplace transform
