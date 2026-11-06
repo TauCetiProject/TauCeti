@@ -56,6 +56,9 @@ form they recover the vector-space definitions.
 
 ## Main results
 
+* `SmoothTwoForm.floerEnergyDensity_zero`, `SmoothTwoForm.hamiltonianCurvature_zero_left`,
+  `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`: the energy density of the zero
+  datum, the curvature of a datum `K_t dt`, and the locality of the curvature.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
@@ -98,6 +101,24 @@ theorem hamiltonianCurvature_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ �
       fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal -
         fderiv ℝ (fun w ↦ Ks w x) z stdComplexLineImag - ω.poissonBracket (Ks z) (Kt z) x :=
   (rfl)
+
+/-- Without a `ds` component, the curvature of `K = K_t dt` is `∂_s K_t`. -/
+theorem hamiltonianCurvature_zero_left (ω : SmoothTwoForm I M) (Kt : ℝ × ℝ → M → ℝ)
+    (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) Kt z x =
+      fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal := by
+  simp [hamiltonianCurvature_def]
+
+/-- The curvature at a point depends only on the germs of the components of the datum there. -/
+theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[nhds z] Ks')
+    (ht : Kt =ᶠ[nhds z] Kt') :
+    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
+  ext x
+  have hs' : (fun w ↦ Ks w x) =ᶠ[nhds z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
+  have ht' : (fun w ↦ Kt w x) =ᶠ[nhds z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
+    hs.eq_of_nhds, ht.eq_of_nhds]
 
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
@@ -166,6 +187,15 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
       SmoothBundleForm.eval₂ ω (u z) (ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal)
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
+
+/-- For the zero perturbation the Floer energy density is the symplectic area density
+`ω(∂_s u, ∂_t u)`. -/
+@[simp]
+theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
+      SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def, hamiltonianVectorField_const]
 
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
