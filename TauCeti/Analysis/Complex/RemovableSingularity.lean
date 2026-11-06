@@ -114,13 +114,11 @@ theorem exists_analyticOnNhd_prod_eqOn (hU : IsOpen U) (hs : IsOpen s)
   have hne : ∀ ζ ∈ sphere z₀ ρ, ζ ≠ z₀ := fun ζ hζ => ne_of_mem_sphere hζ hρ.ne'
   have hH : AnalyticAt ℂ
       (fun x : V × ℂ => (2 * π * I)⁻¹ • ∮ ζ in C(z₀, ρ), (ζ - x.2)⁻¹ • f (x.1, ζ)) (w₀, z₀) := by
-    refine (analyticAt_circleIntegral (f := fun y : (V × ℂ) × ℂ => (y.2 - y.1.2)⁻¹ • f (y.1.1, y.2))
-      fun ζ hζ => ?_).const_smul
-    rw [abs_of_pos hρ] at hζ
-    refine ((analyticAt_snd.sub (analyticAt_snd.comp analyticAt_fst)).inv
-      (sub_ne_zero.2 (hne ζ hζ))).smul ?_
-    exact (hf (w₀, ζ) ⟨hw₀, hρs (sphere_subset_closedBall hζ), hne ζ hζ⟩).comp_of_eq
-      ((analyticAt_fst.comp analyticAt_fst).prod analyticAt_snd) rfl
+    refine (analyticAt_circleIntegral_sub_inv_smul (fun ζ hζ => ?_) ?_).const_smul
+    · rw [abs_of_pos hρ] at hζ
+      exact hf (w₀, ζ) ⟨hw₀, hρs (sphere_subset_closedBall hζ), hne ζ hζ⟩
+    · rw [abs_of_pos hρ]
+      exact fun h => hne z₀ h rfl
   refine hH.congr ?_
   filter_upwards [prod_mem_nhds (hU.mem_nhds hw₀) (ball_mem_nhds z₀ hρ)] with ⟨w, z⟩ ⟨hw, hz⟩
   have hd := (differentiableOn_update_limUnder_slice hs hf hw (hb hz₀ w hw)).mono hρs

@@ -9,7 +9,9 @@ public import Mathlib.Analysis.Analytic.Order
 public import Mathlib.Analysis.Analytic.Polynomial
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Polynomial.Degree.TrailingDegree
+public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.Algebra.Polynomial.Reverse
+import Mathlib.Topology.Algebra.Polynomial
 
 /-!
 # Analytic order of polynomial evaluation
@@ -18,6 +20,9 @@ At zero, the analytic order of polynomial evaluation equals its trailing degree,
 infinite order for the zero polynomial. This connects coefficient calculations for polynomial
 slices to the analytic order used in preparation theorems. At an arbitrary point, the analytic
 order of a nonzero polynomial function is the root multiplicity of the polynomial there.
+Consequently, an analytic unit does not change the multiplicities of the roots, and over an
+algebraically closed field a monic polynomial is determined, up to such units, by its germs at its
+roots.
 
 Dividing a power by the evaluation of the reversal of a nonzero polynomial gives a function
 analytic at zero, since the reversal takes the nonzero leading coefficient there. This is the
@@ -76,5 +81,69 @@ theorem analyticAt_pow_div_eval_reverse {p : Polynomial 𝕜} (hp : p ≠ 0) (n 
     AnalyticAt 𝕜 (fun w : 𝕜 ↦ w ^ n / p.reverse.eval w) 0 :=
   ((analyticAt_id (𝕜 := 𝕜)).pow _).div ((AnalyticOnNhd.eval_polynomial _) 0 (Set.mem_univ _))
     (eval_zero_reverse_ne_zero hp)
+
+/-- Polynomials which agree near `ζ` up to analytic units have the same multiplicity at `ζ`. -/
+theorem rootMultiplicity_eq_of_mul_eval_eventuallyEq {p q : Polynomial 𝕜} (hp : p ≠ 0) (hq : q ≠ 0)
+    {v₁ v₂ : 𝕜 → 𝕜} {ζ : 𝕜} (hv₁ : AnalyticAt 𝕜 v₁ ζ) (hv₂ : AnalyticAt 𝕜 v₂ ζ)
+    (h₁ : v₁ ζ ≠ 0) (h₂ : v₂ ζ ≠ 0)
+    (h : (v₁ * fun w ↦ p.eval w) =ᶠ[𝓝 ζ] v₂ * fun w ↦ q.eval w) :
+    p.rootMultiplicity ζ = q.rootMultiplicity ζ := by
+  have hord₁ := analyticOrderAt_mul hv₁ (AnalyticOnNhd.eval_polynomial p ζ (Set.mem_univ ζ))
+  have hord₂ := analyticOrderAt_mul hv₂ (AnalyticOnNhd.eval_polynomial q ζ (Set.mem_univ ζ))
+  rw [hv₁.analyticOrderAt_eq_zero.2 h₁, zero_add, analyticOrderAt_eval hp] at hord₁
+  rw [hv₂.analyticOrderAt_eq_zero.2 h₂, zero_add, analyticOrderAt_eval hq] at hord₂
+  exact_mod_cast hord₁.symm.trans ((analyticOrderAt_congr h).trans hord₂)
+
+/-- Two functions continuous at `w` which agree near `w` after multiplication by a nonzero
+polynomial agree at `w`. -/
+theorem eq_of_eventually_mul_eval_eq {p : Polynomial 𝕜} (hp : p ≠ 0) {v₁ v₂ : 𝕜 → 𝕜} {w : 𝕜}
+    (h₁ : ContinuousAt v₁ w) (h₂ : ContinuousAt v₂ w)
+    (h : ∀ᶠ t in 𝓝 w, v₁ t * p.eval t = v₂ t * p.eval t) : v₁ w = v₂ w := by
+  have hne : ∀ᶠ t in 𝓝[≠] w, p.eval t ≠ 0 :=
+    (eventually_eval_ne_zero_codiscrete hp).filter_mono (nhdsNE_le_codiscrete w)
+  exact tendsto_nhds_unique_of_eventuallyEq (h₁.tendsto.mono_left nhdsWithin_le_nhds)
+    (h₂.tendsto.mono_left nhdsWithin_le_nhds)
+    (((h.filter_mono nhdsWithin_le_nhds).and hne).mono fun _ ht ↦ mul_right_cancel₀ ht.2 ht.1)
+
+section IsAlgClosed
+
+variable [IsAlgClosed 𝕜]
+
+/-- If `g = p * h` with `p` monic with no root but `a` and `h` a unit at `a`, and `g` has order `d`
+at `a`, then `p = (X - C a) ^ d`. -/
+theorem Monic.eq_X_sub_C_pow_of_analyticOrderAt_eq {g h : 𝕜 → 𝕜} {p : Polynomial 𝕜} {a : 𝕜} {d : ℕ}
+    (hp : p.Monic) (hroot : ∀ ζ, p.IsRoot ζ → ζ = a) (hh : AnalyticAt 𝕜 h a) (hh0 : h a ≠ 0)
+    (hg : ∀ w, g w = p.eval w * h w) (hd : analyticOrderAt g a = d) : p = (X - C a) ^ d := by
+  classical
+  have hgfun : (fun w ↦ p.eval w) * h = g := _root_.funext fun w ↦ (hg w).symm
+  have hord := analyticOrderAt_mul (AnalyticOnNhd.eval_polynomial p a (Set.mem_univ a)) hh
+  rw [hgfun, hd, hh.analyticOrderAt_eq_zero.2 hh0, add_zero,
+    analyticOrderAt_eval hp.ne_zero] at hord
+  have hmul : p.rootMultiplicity a = d := by exact_mod_cast hord.symm
+  have hroots : p.roots = Multiset.replicate d a := by
+    refine Multiset.eq_replicate.2 ⟨?_, fun b hb ↦ hroot b (isRoot_of_mem_roots hb)⟩
+    rw [← hmul, ← count_roots]
+    exact (Multiset.count_eq_card.2 fun x hx ↦ (hroot x (isRoot_of_mem_roots hx)).symm).symm
+  rw [(IsAlgClosed.splits p).eq_prod_roots_of_monic hp, hroots]
+  simp
+
+/-- Two monic polynomials with all their roots in an open set, agreeing there up to analytic units,
+are equal. -/
+theorem Monic.eq_of_forall_mem_mul_eval_eq {p q : Polynomial 𝕜} (hp : p.Monic) (hq : q.Monic)
+    {v₁ v₂ : 𝕜 → 𝕜} {U : Set 𝕜} (hU : IsOpen U) (hroot₁ : ∀ ζ, p.IsRoot ζ → ζ ∈ U)
+    (hroot₂ : ∀ ζ, q.IsRoot ζ → ζ ∈ U) (hv₁ : ∀ w ∈ U, AnalyticAt 𝕜 v₁ w ∧ v₁ w ≠ 0)
+    (hv₂ : ∀ w ∈ U, AnalyticAt 𝕜 v₂ w ∧ v₂ w ≠ 0)
+    (h : ∀ w ∈ U, v₁ w * p.eval w = v₂ w * q.eval w) : p = q := by
+  classical
+  have hroots : p.roots = q.roots := Multiset.ext.2 fun ζ ↦ by
+    rw [count_roots, count_roots]
+    by_cases hζ : ζ ∈ U
+    · exact rootMultiplicity_eq_of_mul_eval_eventuallyEq hp.ne_zero hq.ne_zero (hv₁ ζ hζ).1
+        (hv₂ ζ hζ).1 (hv₁ ζ hζ).2 (hv₂ ζ hζ).2 (eventually_of_mem (hU.mem_nhds hζ) h)
+    · rw [rootMultiplicity_eq_zero (mt (hroot₁ ζ) hζ), rootMultiplicity_eq_zero (mt (hroot₂ ζ) hζ)]
+  rw [(IsAlgClosed.splits p).eq_prod_roots_of_monic hp,
+    (IsAlgClosed.splits q).eq_prod_roots_of_monic hq, hroots]
+
+end IsAlgClosed
 
 end Polynomial

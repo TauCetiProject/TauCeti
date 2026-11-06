@@ -53,6 +53,8 @@ ordered lift of the (unordered) inverse chart, not analyticity of a preferred ro
 
 * `TauCeti.Polynomial.analyticAt_eval_monicOfCoeff`: the free monic polynomial is analytic in its
   coefficients and its argument jointly.
+* `AnalyticAt.eval_monicOfCoeff`: consequently it is analytic along analytic families of
+  coefficients and arguments.
 * `TauCeti.Polynomial.exists_analyticAt_isRoot_monicOfCoeff`: **a simple root moves analytically**
   with the coefficients.
 * `TauCeti.Polynomial.exists_analyticAt_monicOfCoeff_eq_prod_X_sub_C`: a monic polynomial with `n`
@@ -112,6 +114,13 @@ theorem analyticAt_eval_monicOfCoeff (q : (Fin n → 𝕜) × 𝕜) :
       analyticAt_fst
   simp only [eval_monicOfCoeff]
   exact (hsnd.pow n).add (Finset.univ.analyticAt_fun_sum fun i _ => (hfst i).mul (hsnd.pow _))
+
+/-- The free monic polynomial is analytic along analytic families of coefficients and arguments. -/
+theorem _root_.AnalyticAt.eval_monicOfCoeff {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+    {c : E → Fin n → 𝕜} {r : E → 𝕜} {x : E} (hc : AnalyticAt 𝕜 c x) (hr : AnalyticAt 𝕜 r x) :
+    AnalyticAt 𝕜 (fun y => (monicOfCoeff (c y)).eval (r y)) x :=
+  AnalyticAt.comp_of_eq (g := fun q : (Fin n → 𝕜) × 𝕜 => (monicOfCoeff q.1).eval q.2)
+    (f := fun y => (c y, r y)) (analyticAt_eval_monicOfCoeff (c x, r x)) (hc.prod hr) rfl
 
 end Elementary
 

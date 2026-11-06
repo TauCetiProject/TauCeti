@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Calculus.FDeriv.Add
 public import Mathlib.Analysis.Calculus.FDeriv.Prod
+import Mathlib.Analysis.Calculus.Deriv.Comp
+import Mathlib.Analysis.Calculus.Deriv.Prod
 
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.Prod
@@ -48,6 +50,8 @@ variable vanishes everywhere is constant along every horizontal line.
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
+* `TauCeti.deriv_slice_right`: the derivative of a scalar slice is the partial derivative of `f` in
+  the direction `(0, 1)`.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
@@ -110,6 +114,12 @@ restricted to the second factor. -/
 theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
     fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
   (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
+
+/-- The derivative of the slice `fun y ↦ f (a, y)` in a scalar variable is the partial derivative
+of `f` in the direction `(0, 1)`. -/
+theorem deriv_slice_right {f : E × 𝕜 → G} {y : 𝕜} (hf : DifferentiableAt 𝕜 f (a, y)) :
+    deriv (fun y ↦ f (a, y)) y = fderiv 𝕜 f (a, y) (0, 1) :=
+  (hf.hasFDerivAt.comp_hasDerivAt y ((hasDerivAt_const y a).prodMk (hasDerivAt_id y))).deriv
 
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
 `f` in the first variable plus its derivative in the second variable applied to the derivative

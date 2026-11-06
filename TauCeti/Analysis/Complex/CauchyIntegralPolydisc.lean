@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.MeasureTheory.Integral.Torus.ContinuousMap
 import Mathlib.Analysis.Analytic.Constructions
+import Mathlib.Analysis.Calculus.FDeriv.Analytic
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.Calculus.FDeriv.Prod
 import Mathlib.Topology.Algebra.Module.FiniteDimension
@@ -59,6 +60,10 @@ distinguished boundary is the torus `T(c, R)` of Mathlib's `torusIntegral`.
 * `TauCeti.hasFDerivAt_integral_smul_of_analyticAt`: an integral `q ↦ ∫ a, g a • f (q, φ a) ∂μ`,
   with `g` integrable and `φ` continuous with values in a compact set `K`, whose integrand is
   jointly analytic along `{p} × K` may be differentiated under the integral sign at `p`.
+* `TauCeti.analyticAt_circleIntegral_sub_inv_smul`,
+  `TauCeti.analyticAt_circleIntegral_mul_fderiv_div`: the Cauchy integral and the logarithmic
+  contour integral of a jointly analytic function depend analytically on the parameter.
+* `TauCeti.circleIntegral_sub_inv_smul_div_eq`: the Cauchy integral formula for a quotient.
 * `TauCeti.analyticAt_integral_smul`: for a parameter in a finite-dimensional complex normed
   space, such an integral is analytic in the parameter. Only analyticity near `{p} × K` is needed,
   so the integrand may be singular elsewhere.
@@ -491,6 +496,45 @@ theorem analyticOnNhd_circleIntegral {s : Set V} (hf : AnalyticOnNhd ℂ f (s ×
     AnalyticOnNhd ℂ (fun p => ∮ ζ in C(c, R), f (p, ζ)) s :=
   fun _p hp => analyticAt_circleIntegral fun _ζ hζ => hf _ ⟨hp, hζ⟩
 
+/-- **Analytic dependence of a Cauchy integral on a parameter and on the evaluation point.** If `f`
+is jointly analytic at every point of `{p₀} × sphere c |R|`, and `z₀` is off the circle, then
+`(p, z) ↦ ∮ ζ in C(c, R), (ζ - z)⁻¹ • f (p, ζ)` is analytic at `(p₀, z₀)`. -/
+theorem analyticAt_circleIntegral_sub_inv_smul {p₀ : V} {z₀ : ℂ}
+    (hf : ∀ ζ ∈ sphere c |R|, AnalyticAt ℂ f (p₀, ζ)) (hz₀ : z₀ ∉ sphere c |R|) :
+    AnalyticAt ℂ (fun x : V × ℂ => ∮ ζ in C(c, R), (ζ - x.2)⁻¹ • f (x.1, ζ)) (p₀, z₀) := by
+  refine analyticAt_circleIntegral (f := fun y : (V × ℂ) × ℂ => (y.2 - y.1.2)⁻¹ • f (y.1.1, y.2))
+    fun ζ hζ => ?_
+  refine ((analyticAt_snd.sub (analyticAt_snd.comp analyticAt_fst)).inv
+    (sub_ne_zero.2 (ne_of_mem_of_not_mem hζ hz₀))).smul ?_
+  exact (hf ζ hζ).comp_of_eq ((analyticAt_fst.comp analyticAt_fst).prod analyticAt_snd) rfl
+
+/-- **Analytic dependence of a logarithmic contour integral on a parameter.** If `g` is jointly
+analytic and nonzero at every point of `{p₀} × sphere c |R|`, and `φ` is analytic on the circle,
+then the integral of `φ` against the logarithmic derivative of `g` in the contour variable is
+analytic at `p₀`. -/
+theorem analyticAt_circleIntegral_mul_fderiv_div {g : V × ℂ → ℂ} {φ : ℂ → ℂ} {p₀ : V}
+    (hg : ∀ ζ ∈ sphere c |R|, AnalyticAt ℂ g (p₀, ζ)) (hg0 : ∀ ζ ∈ sphere c |R|, g (p₀, ζ) ≠ 0)
+    (hφ : ∀ ζ ∈ sphere c |R|, AnalyticAt ℂ φ ζ) :
+    AnalyticAt ℂ (fun p => ∮ ζ in C(c, R), φ ζ * (fderiv ℂ g (p, ζ) (0, 1) / g (p, ζ))) p₀ := by
+  refine analyticAt_circleIntegral (f := fun q : V × ℂ => φ q.2 * (fderiv ℂ g q (0, 1) / g q))
+    fun ζ hζ => ?_
+  have hderiv : AnalyticAt ℂ (fun q : V × ℂ => fderiv ℂ g q (0, 1)) (p₀, ζ) :=
+    (ContinuousLinearMap.apply ℂ ℂ ((0, 1) : V × ℂ)).analyticAt _ |>.comp (hg ζ hζ).fderiv
+  exact ((hφ ζ hζ).comp_of_eq analyticAt_snd rfl).mul (hderiv.div (hg ζ hζ) (hg0 ζ hζ))
+
 end Parametric
+
+/-- The Cauchy integral formula recovers `h` from the boundary values of a quotient `g / p`, where
+`g = p * h` and `p` does not vanish on the circle. -/
+theorem circleIntegral_sub_inv_smul_div_eq {g p h : ℂ → ℂ} {c w : ℂ} {R : ℝ} (hR : 0 < R)
+    (hh : AnalyticOnNhd ℂ h (closedBall c R)) (hg : ∀ ξ ∈ sphere c R, g ξ = p ξ * h ξ)
+    (hp : ∀ ξ ∈ sphere c R, p ξ ≠ 0) (hw : w ∈ ball c R) :
+    (2 * π * I)⁻¹ • ∮ ξ in C(c, R), (ξ - w)⁻¹ • (g ξ / p ξ) = h w := by
+  have hcongr : EqOn (fun ξ => (ξ - w)⁻¹ • (g ξ / p ξ)) (fun ξ => (ξ - w)⁻¹ • h ξ)
+      (sphere c R) := fun ξ hξ => by
+    simp only [hg ξ hξ, mul_div_cancel_left₀ _ (hp ξ hξ)]
+  rw [circleIntegral.integral_congr hR.le hcongr]
+  exact (hh.differentiableOn.diffContOnCl_ball subset_rfl
+    ).two_pi_i_inv_smul_circleIntegral_sub_inv_smul hw
 
 end TauCeti

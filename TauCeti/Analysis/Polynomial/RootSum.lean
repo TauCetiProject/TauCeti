@@ -57,11 +57,16 @@ circle is a continuous linear functional on `C(sphere w r, ℂ)`.
 
 * `Polynomial.circleIntegral_mul_derivative_div_eval`: the argument principle for a polynomial,
   weighted by a holomorphic function.
+* `TauCeti.circleIntegral_mul_deriv_div_eq_sum_roots`: the same on a disc for the logarithmic
+  derivative of a polynomial times a zero-free holomorphic function.
 * `TauCeti.Polynomial.analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff`: such a contour
   integral depends analytically on the coefficients of a monic polynomial not vanishing on the
   circle.
 * `TauCeti.analyticAt_esymm_of_forall_analyticAt_sum_map_pow`: analyticity passes from the power
   sums of a family of multisets to its elementary symmetric functions.
+* `TauCeti.Polynomial.analyticAt_coeff_of_forall_analyticAt_esymm_roots`: analyticity passes from
+  the elementary symmetric functions of the roots of a family of monic polynomials to their
+  coefficients.
 * `TauCeti.Sym.analyticAt_sum_map_filter_coeffEquiv_symm`: **sums of a holomorphic function over
   the roots lying in a region are analytic in the coefficients**, colliding roots included, provided
   no root lies on the frontier of the region; `TauCeti.Sym.analyticAt_sum_map_coeffEquiv_symm` is
@@ -166,6 +171,25 @@ theorem analyticAt_circleIntegral_mul_derivative_div_monicOfCoeff {g : ℂ → �
 
 end Circle
 
+section Coeff
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [IsAlgClosed 𝕜] [NormedAddCommGroup E]
+  [NormedSpace 𝕜 E]
+
+/-- The lower coefficients of a family of monic polynomials of degree `d` are analytic when the
+elementary symmetric functions of their roots are. -/
+theorem analyticAt_coeff_of_forall_analyticAt_esymm_roots {d : ℕ} {P : E → 𝕜[X]} {x₀ : E}
+    (hm : ∀ᶠ x in 𝓝 x₀, (P x).Monic) (hdeg : ∀ᶠ x in 𝓝 x₀, (P x).natDegree = d)
+    (hsym : ∀ k, AnalyticAt 𝕜 (fun x => (P x).roots.esymm k) x₀) :
+    AnalyticAt 𝕜 (fun x (i : Fin d) => (P x).coeff i) x₀ := by
+  refine analyticAt_pi_iff.2 fun i =>
+    ((analyticAt_const (v := ((-1 : 𝕜) ^ (d - i)))).mul (hsym (d - i))).congr ?_
+  filter_upwards [hm, hdeg] with x hmx hx
+  rw [coeff_eq_esymm_roots_of_card (IsAlgClosed.splits (P x)).natDegree_eq_card_roots.symm
+    (hx ▸ i.2.le), hmx.leadingCoeff, hx, one_mul, Pi.mul_apply]
+
+end Coeff
+
 end Polynomial
 
 section Trace
@@ -226,6 +250,47 @@ theorem _root_.Polynomial.circleIntegral_mul_derivative_div_eval (p : ℂ[X]) (h
   have hpt : p.eval t ≠ 0 := fun h => hp t ((mem_roots hp0).2 h) ht
   rw [(IsAlgClosed.splits p).eval_derivative_div_eval_of_ne_zero hpt, ← Multiset.sum_map_mul_left]
   simp [mul_comm]
+
+/-- **The argument principle on a disc, weighted by a holomorphic function.** If `g = p * h`, with
+`h` holomorphic and zero-free on a closed disc and every root of `p` in the open disc, then
+integrating `φ`, holomorphic on the closed disc, against the logarithmic derivative of `g` over the
+circle gives `2πi` times the sum of the values of `φ` at the roots of `p`, counted with
+multiplicity. -/
+theorem circleIntegral_mul_deriv_div_eq_sum_roots {g h φ : ℂ → ℂ} {p : ℂ[X]} {c : ℂ} {R : ℝ}
+    (hR : 0 < R) (hroots : ∀ ζ, p.IsRoot ζ → ζ ∈ ball c R)
+    (hh : AnalyticOnNhd ℂ h (closedBall c R)) (hh0 : ∀ w ∈ closedBall c R, h w ≠ 0)
+    (hφ : AnalyticOnNhd ℂ φ (closedBall c R)) (hg : ∀ w, g w = p.eval w * h w) :
+    ∮ w in C(c, R), φ w * (deriv g w / g w) =
+      2 * π * Complex.I * (p.roots.map φ).sum := by
+  classical
+  have hsph {w : ℂ} (hw : w ∈ sphere c R) : w ∈ closedBall c R := sphere_subset_closedBall hw
+  have hp {w : ℂ} (hw : w ∈ sphere c R) : p.eval w ≠ 0 := fun h0 =>
+    (mem_ball.1 (hroots w h0)).ne (mem_sphere.1 hw)
+  have hgfun : g = fun w => p.eval w * h w := funext hg
+  have hlog : Set.EqOn (fun w => φ w * (deriv g w / g w))
+      (fun w => φ w * (p.derivative.eval w / p.eval w) + φ w * (deriv h w / h w))
+      (sphere c R) := by
+    intro w hw
+    have hderiv : deriv g w = p.derivative.eval w * h w + p.eval w * deriv h w := by
+      rw [hgfun, deriv_fun_mul p.differentiable.differentiableAt
+        (hh w (hsph hw)).differentiableAt, Polynomial.deriv]
+    have hh' := hh0 w (hsph hw)
+    have hp' := hp hw
+    simp only [hderiv, hg w]
+    field_simp
+  have hquot : AnalyticOnNhd ℂ (fun w => φ w * (deriv h w / h w)) (closedBall c R) :=
+    hφ.mul (hh.deriv.div hh hh0)
+  have hweight : DiffContOnCl ℂ φ (ball c R) := hφ.differentiableOn.diffContOnCl_ball subset_rfl
+  have hint₁ : CircleIntegrable (fun w => φ w * (p.derivative.eval w / p.eval w)) c R :=
+    ContinuousOn.circleIntegrable hR.le <| (hφ.continuousOn.mono fun _ => hsph).mul <|
+      p.derivative.continuous.continuousOn.div p.continuous.continuousOn fun _ hw => hp hw
+  have hint₂ : CircleIntegrable (fun w => φ w * (deriv h w / h w)) c R :=
+    ContinuousOn.circleIntegrable hR.le (hquot.continuousOn.mono fun _ => hsph)
+  rw [circleIntegral.integral_congr hR.le hlog, circleIntegral.integral_add hint₁ hint₂,
+    p.circleIntegral_mul_derivative_div_eval hR hweight fun z hz hzs =>
+      (mem_ball.1 (hroots z (isRoot_of_mem_roots hz))).ne (mem_sphere.1 hzs),
+    (hquot.differentiableOn.diffContOnCl_ball subset_rfl).circleIntegral_eq_zero hR.le, add_zero,
+    Multiset.filter_eq_self.2 fun z hz => hroots z (isRoot_of_mem_roots hz)]
 
 end Trace
 
