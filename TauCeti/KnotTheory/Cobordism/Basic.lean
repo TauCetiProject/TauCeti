@@ -658,7 +658,7 @@ private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c �
     rw [glueFun_of_le C hc (by rw [hx]; linarith [min_le_right ε (1 / 2)]), hx]
 
 /-- Near height `1` the glued surface is the cylinder over `K₂`. -/
-private theorem exists_pos_range_glueFun_inter_le_snd (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
+private theorem exists_pos_range_glueFun_inter_le_snd (hc : 0 < c)
     (hS : IsCylinderFrom S (1 - 2 * c)) :
     ∃ ε > 0, range (glueFun C S hc) ∩ {p | 1 - ε ≤ p.2} = range K₂ ×ˢ Ici (1 - ε) := by
   -- Above height `1 - c δ` the new surface is the rescaled final collar of `C`.
@@ -704,7 +704,7 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
     isEmbedding_glueFun C hc hS⟩
   isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc hc₂ hS
   exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂ hS
-  exists_pos_range_inter_le_snd := exists_pos_range_glueFun_inter_le_snd C hc hc₂ hS
+  exists_pos_range_inter_le_snd := exists_pos_range_glueFun_inter_le_snd C hc hS
 
 variable (S) in
 /-- The width of the collar of `S` used to compose it with a concordance. -/
