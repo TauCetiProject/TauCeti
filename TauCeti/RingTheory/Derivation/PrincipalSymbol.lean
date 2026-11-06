@@ -16,11 +16,11 @@ public import Mathlib.RingTheory.Ideal.Cotangent
 Let `A` be a commutative `R`-algebra and `D : M →ₗ[R] N` a differential operator of order at
 most `m` between `A`-modules, in Grothendieck's sense (`TauCeti.differentialOperators`). For
 `a₁, …, aₘ : A` the iterated commutator `[⋯[D, a₁], …, aₘ]` is `A`-linear. As a function of the
-`aᵢ` it is symmetric, additive, and a derivation in each slot, and it vanishes identically
-exactly when `D` has order at most `m - 1`. Classically, for the smooth functions on a manifold
-acting on smooth sections of vector bundles, its value at `a₁ = ⋯ = aₘ = f` is `m!` times the
-principal symbol of `D` evaluated at the covector `df`, so the multilinear map is `m!` times the
-polarization of the principal symbol.
+`aᵢ` it is symmetric, additive, and a derivation in each slot, and for `m ≥ 1` it vanishes
+identically exactly when `D` has order at most `m - 1`. Classically, for the smooth functions on
+a manifold acting on smooth sections of vector bundles, its value at `a₁ = ⋯ = aₘ = f` is `m!`
+times the principal symbol of `D` evaluated at the covector `df`, so the multilinear map is `m!`
+times the polarization of the principal symbol.
 
 The derivation property shows that the value modulo an ideal `I` depends only on the classes
 of the `aᵢ ∈ I` in the algebraic cotangent module `I / I²`. For the vanishing ideal `I_x` of a
@@ -46,12 +46,12 @@ at `x`, a symmetric multilinear map `T_x*M × ⋯ × T_x*M → Hom(E_x, F_x)`.
 * `TauCeti.commutatorSymbol_update_mul`: the Leibniz rule in each slot.
 * `TauCeti.commutatorSymbol_comp_const`: on the diagonal, commutator symbols multiply under
   composition, up to the binomial coefficient `(m + k).choose m`.
-* `TauCeti.commutatorSymbol_derivation`: the commutator symbol of a derivation `δ` at `f` is
+* `Derivation.commutatorSymbol_derivation`: the commutator symbol of a derivation `δ` at `f` is
   multiplication by `δ f`.
 * `TauCeti.cotangentSymbol_toCotangent`: the cotangent symbol on classes of elements of `I`;
   `TauCeti.cotangentSymbol_comp_perm` and `TauCeti.cotangentSymbol_comp_const` give its symmetry
   and its composition law.
-* `TauCeti.commutatorSymbol_derivative_comp_derivative`: for `∂²` on `R[X]` the commutator
+* `Polynomial.commutatorSymbol_derivative_comp_derivative`: for `∂²` on `R[X]` the commutator
   symbol at `(X, X)` is multiplication by `2`.
 
 ## References
@@ -246,8 +246,8 @@ theorem commutatorSymbol_const_apply {m : ℕ} (D : differentialOperators R A M 
 
 /-- Composition multiplies commutator symbols on the diagonal: for `P` of order at most `m` and
 `Q` of order at most `k`, the commutator symbol of `P ∘ Q` at `f` is `(m + k).choose m` times the
-composition of the commutator symbols at `f`. Dividing by factorials, principal symbols
-multiply. -/
+composition of the commutator symbols at `f`. When `(m + k)!` is invertible in `A`, dividing by
+factorials shows that principal symbols multiply. -/
 theorem commutatorSymbol_comp_const {m k : ℕ} (P : differentialOperators R A N O m)
     (Q : differentialOperators R A M N k) (f : A) :
     commutatorSymbol R A M O (m + k)
@@ -275,7 +275,7 @@ theorem commutatorSymbol_one_apply (D : differentialOperators R A A N 1) (f g : 
   abel
 
 /-- The commutator symbol of a derivation `δ` at `f` is multiplication by `δ f`. -/
-theorem commutatorSymbol_derivation (δ : Derivation R A N) (f g : A) :
+theorem _root_.Derivation.commutatorSymbol_derivation (δ : Derivation R A N) (f g : A) :
     commutatorSymbol R A A N 1 ⟨δ, δ.mem_differentialOperators_one⟩ ![f] g = g • δ f := by
   rw [commutatorSymbol_one_apply]
   simp
@@ -290,7 +290,7 @@ variable {R : Type*} {A M N O : Type*} [CommSemiring R] [CommRing A] [Algebra R 
   [AddCommGroup M] [Module A M] [Module R M] [IsScalarTower R A M]
   [AddCommGroup N] [Module A N] [Module R N] [IsScalarTower R A N]
   [AddCommGroup O] [Module A O] [Module R O] [IsScalarTower R A O]
-  (I : Ideal A)
+  {I : Ideal A}
 
 /-- Modulo `I`, the commutator symbol vanishes when one entry lies in `I ^ 2`. -/
 theorem commutatorSymbol_update_apply_mem_smul_top {m : ℕ} (D : differentialOperators R A M N m)
@@ -311,23 +311,20 @@ theorem commutatorSymbol_apply_sub_mem_smul_top {m : ℕ} (D : differentialOpera
     {a b : Fin m → A} (h : ∀ i, a i - b i ∈ I ^ 2) (x : M) :
     commutatorSymbol R A M N m D a x - commutatorSymbol R A M N m D b x ∈
       I • (⊤ : Submodule A N) := by
-  classical
-  -- Replace the entries of `b` by those of `a` one slot at a time.
-  suffices ∀ s : Finset (Fin m), commutatorSymbol R A M N m D (s.piecewise a b) x -
-      commutatorSymbol R A M N m D b x ∈ I • (⊤ : Submodule A N) by
-    simpa using this Finset.univ
-  intro s
-  induction s using Finset.induction_on with
-  | empty => simp
-  | insert i s hi ih =>
-    have hc : update (s.piecewise a b) i (b i) = s.piecewise a b := by
-      rw [← s.piecewise_eq_of_notMem a b hi, update_eq_self]
-    rw [Finset.piecewise_insert,
-      ← sub_add_sub_cancel _ (commutatorSymbol R A M N m D (s.piecewise a b) x)]
-    refine add_mem ?_ ih
-    have := commutatorSymbol_update_apply_mem_smul_top I D (s.piecewise a b) i (h i) x
-    rwa [MultilinearMap.map_update_sub, LinearMap.sub_apply, hc] at this
+  -- Telescope from `b` to `a` one slot at a time.
+  have h' := (commutatorSymbol R A M N m D).map_sub_map_piecewise a b Finset.univ
+  rw [Finset.piecewise_univ] at h'
+  rw [← LinearMap.sub_apply, h', LinearMap.sum_apply]
+  refine Submodule.sum_mem _ fun i _ ↦ ?_
+  convert commutatorSymbol_update_apply_mem_smul_top D (fun j ↦ if j < i then a j else b j) i
+    (h i) x using 3
+  ext j
+  rcases lt_trichotomy j i with hj | rfl | hj
+  · simp [hj, hj.ne]
+  · simp
+  · simp [hj.not_gt, hj.ne, hj.ne']
 
+variable (I) in
 /-- A representative in `I` of a cotangent class. -/
 private noncomputable def cotangentRep (ω : I.Cotangent) : I :=
   surjInv I.toCotangent_surjective ω
@@ -335,10 +332,6 @@ private noncomputable def cotangentRep (ω : I.Cotangent) : I :=
 private theorem toCotangent_cotangentRep (ω : I.Cotangent) :
     I.toCotangent (cotangentRep I ω) = ω :=
   surjInv_eq I.toCotangent_surjective ω
-
-private theorem mk_smul_cotangent (c : A) (ω : I.Cotangent) :
-    Ideal.Quotient.mk I c • ω = c • ω := by
-  rw [← Ideal.Quotient.algebraMap_eq, algebraMap_smul]
 
 /-- The commutator symbol reduced modulo `I` at representatives `a` of cotangent classes
 does not depend on the representatives. -/
@@ -349,7 +342,7 @@ private theorem reduceModIdeal_commutatorSymbol_eq {m : ℕ} (D : differentialOp
   refine LinearMap.ext fun q ↦ ?_
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   rw [LinearMap.reduceModIdeal_apply, LinearMap.reduceModIdeal_apply]
-  exact (Submodule.Quotient.eq _).2 (commutatorSymbol_apply_sub_mem_smul_top I D h x)
+  exact (Submodule.Quotient.eq _).2 (commutatorSymbol_apply_sub_mem_smul_top D h x)
 
 /-- Changing one cotangent class to the class of `z ∈ I` amounts, modulo `I`, to changing
 the corresponding representative to `z`. -/
@@ -359,13 +352,13 @@ private theorem reduceModIdeal_commutatorSymbol_update {m : ℕ}
         fun j ↦ (cotangentRep I (update ω i (I.toCotangent z) j) : A)) =
       LinearMap.reduceModIdeal I (commutatorSymbol R A M N m D
         (update (fun j ↦ (cotangentRep I (ω j) : A)) i z)) := by
-  refine reduceModIdeal_commutatorSymbol_eq I D fun j ↦ ?_
+  refine reduceModIdeal_commutatorSymbol_eq D fun j ↦ ?_
   rcases eq_or_ne j i with rfl | hj
   · simp only [update_self]
-    exact I.toCotangent_eq.1 (toCotangent_cotangentRep I _)
+    exact I.toCotangent_eq.1 (toCotangent_cotangentRep _)
   · simp only [update_of_ne hj, sub_self, zero_mem]
 
-variable (R) in
+variable (R I) in
 /-- The commutator symbol of `D`, descended to the cotangent module `I / I²` of an ideal `I`:
 the `A ⧸ I`-multilinear map sending the classes of `a₁, …, aₘ ∈ I` to the reduction modulo `I` of
 the iterated commutator `[⋯[D, a₁], …, aₘ]` (`cotangentSymbol_toCotangent`). For the vanishing
@@ -387,9 +380,10 @@ noncomputable def cotangentSymbol {m : ℕ} (D : differentialOperators R A M N m
     obtain rfl : ‹DecidableEq (Fin m)› = instDecidableEqFin m := Subsingleton.elim _ _
     obtain ⟨c, rfl⟩ := Ideal.Quotient.mk_surjective c
     obtain ⟨y, rfl⟩ := I.toCotangent_surjective u
-    rw [mk_smul_cotangent, ← map_smul I.toCotangent c y, reduceModIdeal_commutatorSymbol_update,
-      reduceModIdeal_commutatorSymbol_update, Submodule.coe_smul, smul_eq_mul,
-      commutatorSymbol_update_mul, map_add]
+    rw [show Ideal.Quotient.mk I c • I.toCotangent y = c • I.toCotangent y from
+        algebraMap_smul (A ⧸ I) c _, ← map_smul I.toCotangent c y,
+      reduceModIdeal_commutatorSymbol_update, reduceModIdeal_commutatorSymbol_update,
+      Submodule.coe_smul, smul_eq_mul, commutatorSymbol_update_mul, map_add]
     -- The second Leibniz term is a multiple of `y ∈ I`, so it vanishes modulo `I`.
     refine LinearMap.ext fun q ↦ ?_
     obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
@@ -410,8 +404,8 @@ theorem cotangentSymbol_toCotangent {m : ℕ} (D : differentialOperators R A M N
   have h : LinearMap.reduceModIdeal I
       (commutatorSymbol R A M N m D fun i ↦ (cotangentRep I (I.toCotangent (a i)) : A)) =
         LinearMap.reduceModIdeal I (commutatorSymbol R A M N m D fun i ↦ a i) :=
-    reduceModIdeal_commutatorSymbol_eq I D fun i ↦
-      I.toCotangent_eq.1 (toCotangent_cotangentRep I _)
+    reduceModIdeal_commutatorSymbol_eq D fun i ↦
+      I.toCotangent_eq.1 (toCotangent_cotangentRep _)
   exact congr($h (Submodule.Quotient.mk x))
 
 /-- The cotangent symbol is symmetric. -/
@@ -419,13 +413,13 @@ theorem cotangentSymbol_comp_perm {m : ℕ} (D : differentialOperators R A M N m
     (ω : Fin m → I.Cotangent) (σ : Equiv.Perm (Fin m)) :
     cotangentSymbol R I D (ω ∘ σ) = cotangentSymbol R I D ω := by
   obtain ⟨a, rfl⟩ : ∃ a : Fin m → I, (fun i ↦ I.toCotangent (a i)) = ω :=
-    ⟨fun i ↦ cotangentRep I (ω i), funext fun i ↦ toCotangent_cotangentRep I _⟩
+    ⟨fun i ↦ cotangentRep I (ω i), funext fun i ↦ toCotangent_cotangentRep _⟩
   refine LinearMap.ext fun q ↦ ?_
   obtain ⟨x, rfl⟩ := Submodule.Quotient.mk_surjective _ q
   calc cotangentSymbol R I D ((fun i ↦ I.toCotangent (a i)) ∘ σ) (Submodule.Quotient.mk x)
       = Submodule.Quotient.mk (p := (I • ⊤ : Submodule A N))
           (commutatorSymbol R A M N m D ((fun i ↦ (a i : A)) ∘ σ) x) :=
-        cotangentSymbol_toCotangent I D (a ∘ σ) x
+        cotangentSymbol_toCotangent D (a ∘ σ) x
     _ = _ := by rw [commutatorSymbol_comp_perm, cotangentSymbol_toCotangent]
 
 /-- Composition multiplies cotangent symbols on the diagonal: for `P` of order at most `m` and
@@ -444,7 +438,7 @@ theorem cotangentSymbol_comp_const {m k : ℕ} (P : differentialOperators R A N 
   have h := congr($(commutatorSymbol_comp_const P Q (y : A)) x)
   simp only [LinearMap.smul_apply, LinearMap.comp_apply] at h
   simp only [LinearMap.smul_apply, LinearMap.comp_apply,
-    cotangentSymbol_toCotangent I _ (fun _ ↦ y), h, Submodule.Quotient.mk_smul]
+    cotangentSymbol_toCotangent _ (fun _ ↦ y), h, Submodule.Quotient.mk_smul]
 
 end Cotangent
 
@@ -452,8 +446,10 @@ end Cotangent
 
 open Polynomial in
 /-- The commutator symbol of the second derivative on `R[X]` at `(X, X)` is multiplication by
-`2`: the polarized principal symbol of `∂²` at `dX` is `1`. -/
-theorem commutatorSymbol_derivative_comp_derivative {R : Type*} [CommRing R] (p : R[X]) :
+`2`. When `2` is invertible in `R`, dividing by `2!` gives the value `1` of the principal symbol
+of `∂²` at `dX`. -/
+theorem _root_.Polynomial.commutatorSymbol_derivative_comp_derivative {R : Type*} [CommRing R]
+    (p : R[X]) :
     commutatorSymbol R R[X] R[X] R[X] 2
       ⟨derivative ∘ₗ derivative, derivative_comp_derivative_mem_differentialOperators_two⟩
       ![X, X] p = 2 * p := by
