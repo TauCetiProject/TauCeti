@@ -92,7 +92,7 @@ divisor-sum coefficient formula; here they are statements about `EigenformAwayFr
 
 public section
 
-open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup
+open Matrix.SpecialLinearGroup UpperHalfPlane CongruenceSubgroup TauCeti
 
 open scoped MatrixGroups
 
