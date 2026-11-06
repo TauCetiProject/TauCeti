@@ -154,7 +154,9 @@ theorem IsEntire.sum {ι : Type*} {s : Finset ι} {f : ι → R⟦X⟧} (hf : �
 coefficientwise. -/
 theorem IsEntire.map {S : Type*} [NormedRing S] (hf : f.IsEntire) (φ : R →+* S) {C : ℝ}
     (hφ : ∀ x, ‖φ x‖ ≤ C * ‖x‖) : (map φ f).IsEntire :=
-  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`.
+  -- `PowerSeries.map φ` is `MvPowerSeries.map φ` in the single variable `Unit`, and
+  -- `MvPowerSeries.map φ f` is definitionally `fun t ↦ φ (coeff t f)`, the series that
+  -- `isRestricted_map` shows to be restricted.
   fun r ↦ MvPowerSeries.isRestricted_map _ φ hφ (hf r)
 
 /-- Over a normed ring, if `‖a‖ < 1` then `∑ a^(n²) Xⁿ` is entire: at the radius `r`, its
