@@ -46,8 +46,9 @@ Here `K` is Peetre's `K`-functional `CompatibleCouple.kFunctional` and `dt / t` 
   (`KMethodSpace.map_id`, `KMethodSpace.map_comp`). Thus the real method is an exact
   interpolation functor of exponent `θ`.
 * `CompatibleCouple.kMethodConst_eq`: `c_{θ,q} = (θ (1 - θ) q) ^ (-1 / q)` for `0 < θ < 1` and
-  finite `q ≠ 0`; by `CompatibleCouple.kMethodENorm_refl`, for the couple `(X, X)` the norm is
-  `‖u‖_{θ,q} = c_{θ,q} ‖u‖`. For instance `c_{1/2,2} = 2 ^ (1 / 2)`.
+  finite `q ≠ 0`, and `c_{θ,∞} = 1` for `0 ≤ θ ≤ 1` (`CompatibleCouple.kMethodConst_top`); by
+  `CompatibleCouple.kMethodENorm_refl`, for the couple `(X, X)` the norm is
+  `‖u‖_{θ,q} = c_{θ,q} ‖u‖`. For instance `c_{1/2,2} = 2 ^ (1 / 2)` and `c_{1/2,∞} = 1`.
 
 ## References
 
@@ -70,7 +71,7 @@ namespace CompatibleCouple
 unit vector for the couple `(X, X)` (`kMethodENorm_refl`), and bounds the norm of the inclusion
 of the intersection into the real interpolation space. It is finite for `0 < θ < 1`
 (`kMethodConst_lt_top`), with the value `(θ (1 - θ) q) ^ (-1 / q)` for finite `q ≠ 0`
-(`kMethodConst_eq`). -/
+(`kMethodConst_eq`) and the value `1` for `q = ∞` (`kMethodConst_top`). -/
 def kMethodConst (θ : ℝ) (q : ℝ≥0∞) : ℝ≥0∞ :=
   eLpNorm (fun t : ℝ => t ^ (-θ) * min 1 t) q multHaar
 
@@ -135,6 +136,27 @@ theorem kMethodConst_ne_zero (θ : ℝ) {q : ℝ≥0∞} (hq : q ≠ 0) : kMetho
   obtain ⟨t, ht, hft⟩ := (ae_pos_multHaar.and h).exists
   exact (mul_pos (Real.rpow_pos_of_pos ht _) (lt_min one_pos ht)).ne' hft
 
+/-- For `0 ≤ θ ≤ 1`, `c_{θ,∞} = 1`, so for the couple `(X, X)` the `K`-method norm with
+`q = ∞` is the norm of `X` (`kMethodENorm_refl`). -/
+theorem kMethodConst_top {θ : ℝ} (hθ : θ ∈ Icc 0 1) : kMethodConst θ ∞ = 1 := by
+  have hg : AEStronglyMeasurable (fun t : ℝ => t ^ (-θ) * min 1 t) (volume.map Real.exp) :=
+    map_volume_exp ▸ (continuousOn_rpow_neg_mul_min θ).aestronglyMeasurable_multHaar
+  have hcont : Continuous fun s : ℝ => ‖Real.exp s ^ (-θ) * min 1 (Real.exp s)‖ₑ :=
+    ((Real.continuous_exp.rpow_const fun s => Or.inl (Real.exp_pos s).ne').mul
+      (continuous_const.min Real.continuous_exp)).enorm
+  rw [kMethodConst, ← map_volume_exp, eLpNorm_map_measure hg Real.measurable_exp.aemeasurable,
+    eLpNorm_exponent_top (hg.comp_aemeasurable Real.measurable_exp.aemeasurable), eLpNormEssSup,
+    Function.comp_def, ← iSup_eq_essSup fun s _ hs =>
+      (isOpen_lt continuous_const hcont).measure_ne_zero volume ⟨s, hs⟩]
+  refine le_antisymm (iSup_le fun s => ?_) (le_iSup_of_le 0 (by simp))
+  have ht := Real.exp_pos s
+  rw [Real.enorm_of_nonneg (by positivity), ENNReal.ofReal_le_one]
+  rcases le_total (Real.exp s) 1 with h | h
+  · rw [min_eq_right h, ← Real.rpow_add_one ht.ne']
+    exact Real.rpow_le_one ht.le h (by linarith [hθ.2])
+  · rw [min_eq_left h, mul_one]
+    exact Real.rpow_le_one_of_one_le_of_nonpos h (by linarith [hθ.1])
+
 /-- `c_{θ,q}` is finite for `0 < θ < 1`, so the intersection embeds into the real
 interpolation space. -/
 theorem kMethodConst_lt_top {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (q : ℝ≥0∞) : kMethodConst θ q < ∞ := by
@@ -143,17 +165,8 @@ theorem kMethodConst_lt_top {θ : ℝ} (hθ : θ ∈ Ioo 0 1) (q : ℝ≥0∞) :
       ((continuousOn_rpow_neg_mul_min θ).aestronglyMeasurable_multHaar)]
     exact ENNReal.zero_lt_top
   rcases eq_or_ne q ∞ with rfl | hq
-  · rw [kMethodConst]
-    refine lt_of_le_of_lt (eLpNorm_le_of_ae_bound (C := 1)
-      ((continuousOn_rpow_neg_mul_min θ).aestronglyMeasurable_multHaar) ?_) ?_
-    · filter_upwards [ae_pos_multHaar] with t ht
-      rw [Real.norm_of_nonneg (by positivity)]
-      rcases le_total t 1 with h | h
-      · rw [min_eq_right h, ← Real.rpow_add_one ht.ne']
-        exact Real.rpow_le_one ht.le h (by linarith [hθ.2])
-      · rw [min_eq_left h, mul_one]
-        exact Real.rpow_le_one_of_one_le_of_nonpos h (by linarith [hθ.1])
-    · simp [multHaar_def]
+  · rw [kMethodConst_top (Ioo_subset_Icc_self hθ)]
+    exact ENNReal.one_lt_top
   · rw [kMethodConst_eq hθ hq0 hq]
     exact ENNReal.ofReal_lt_top
 
