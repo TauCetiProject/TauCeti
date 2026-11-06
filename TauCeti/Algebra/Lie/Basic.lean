@@ -56,6 +56,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `LieHom.map_ad_pow`: a Lie homomorphism carries `(ad x) ^ n y` to `(ad (f x)) ^ n (f y)`.
 * `LieEquiv.map_engel`: a Lie algebra isomorphism carries the Engel subalgebra of `x` onto that
   of its image.
+* `LieEquiv.ker_ad_apply`: a Lie algebra isomorphism carries the centralizer of `x` onto that of
+  its image.
 * `LieHom.isNilpotent_ad_of_surjective`: adjoint nilpotence descends along a surjective
   Lie homomorphism.
 * `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
@@ -442,6 +444,37 @@ theorem _root_.LieEquiv.map_engel (e : L ≃ₗ⁅R⁆ L') (x : L) :
     exact ⟨n, by simpa [hn] using (e.toLieHom.map_ad_pow x n z).symm⟩
   · simp [hn]
 
+section Centralizer
+
+open LieAlgebra LinearMap Module
+
+variable {R : Type*} {L : Type u} {L' : Type v} [CommRing R] [LieRing L] [LieAlgebra R L]
+  [LieRing L'] [LieAlgebra R L']
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image. -/
+theorem _root_.LieEquiv.ker_ad_apply (e : L ≃ₗ⁅R⁆ L') (x : L) :
+    ker (ad R L' (e x)) = (ker (ad R L x)).map (e.toLinearEquiv : L →ₗ[R] L') := by
+  rw [← conj_ad_apply, LinearEquiv.conj_apply, ker_comp, LinearEquiv.ker_comp,
+    Submodule.comap_equiv_eq_map_symm, LinearEquiv.symm_symm]
+
+/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
+so the two have the same dimension. -/
+@[simp]
+theorem _root_.LieEquiv.finrank_ker_ad_apply (e : L ≃ₗ⁅R⁆ L') (x : L) :
+    finrank R (ker (ad R L' (e x))) = finrank R (ker (ad R L x)) := by
+  rw [e.ker_ad_apply, LinearEquiv.finrank_map_eq]
+
+/-- A Lie algebra isomorphism carries the centralizer of `x` onto the centralizer of its image,
+so the two have the same cardinal dimension, up to universe lifting. -/
+theorem _root_.LieEquiv.lift_rank_ker_ad_apply (e : L ≃ₗ⁅R⁆ L') (x : L) :
+    Cardinal.lift.{u} (Module.rank R (ker (ad R L' (e x)))) =
+      Cardinal.lift.{v} (Module.rank R (ker (ad R L x))) := by
+  rw [e.ker_ad_apply, LinearEquiv.lift_rank_map_eq]
+
+end Centralizer
+
 /-- Adjoint nilpotence descends along a surjective Lie homomorphism. In particular it descends
 to a quotient by any Lie ideal, without a finiteness or characteristic hypothesis. -/
 theorem _root_.LieHom.isNilpotent_ad_of_surjective
@@ -453,6 +486,15 @@ theorem _root_.LieHom.isNilpotent_ad_of_surjective
   obtain ⟨z, rfl⟩ := hf y
   rw [← f.map_ad_pow, hn]
   simp
+
+/-- A Lie algebra isomorphism preserves and reflects ad-nilpotence, without finiteness or
+characteristic assumptions. -/
+@[simp]
+theorem _root_.LieEquiv.isNilpotent_ad_apply_iff (e : L ≃ₗ⁅R⁆ L') (x : L) :
+    IsNilpotent (LieAlgebra.ad R L' (e x)) ↔ IsNilpotent (LieAlgebra.ad R L x) := by
+  refine ⟨fun h ↦ ?_, e.toLieHom.isNilpotent_ad_of_surjective e.surjective⟩
+  simpa only [LieEquiv.coe_toLieHom, LieEquiv.symm_apply_apply] using
+    e.symm.toLieHom.isNilpotent_ad_of_surjective e.symm.surjective h
 
 variable (f : L →ₗ⁅R⁆ L') (I : LieIdeal R L')
 

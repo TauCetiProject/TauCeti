@@ -24,6 +24,9 @@ then vacuous at that point, where the form contributes its value with a negative
 
 ## Main results
 
+* `TauCeti.setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target`: a nonnegative function
+  continuous and integrable on a chart target has positive integral if it is positive at one
+  target point, for any measure positive on nonempty open sets.
 * `TauCeti.integralTopForm_nonneg`: the integral of a nonnegative top form is nonnegative.
 * `TauCeti.integralTopForm_pos`: the integral of a continuous, compactly supported, nonnegative
   top form that is positive somewhere is positive.
@@ -53,6 +56,30 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M] {k : ℕ}
+
+omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
+/-- A nonnegative function continuous on a chart target has positive integral on that target
+for any measure positive on nonempty open sets, if it is integrable there and positive at one
+target point. This also applies at boundary points, since the interior of the target is dense
+in the target. -/
+theorem setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target
+    [MeasurableSpace E] {μ : Measure E} [μ.IsOpenPosMeasure] (α : M) {g : E → ℝ}
+    (hnn : ∀ y, 0 ≤ g y) (hint : IntegrableOn g (extChartAt I α).target μ)
+    (hcont : ContinuousOn g (extChartAt I α).target) {y₀ : E}
+    (hy₀ : y₀ ∈ (extChartAt I α).target) (hg₀ : 0 < g y₀) :
+    0 < ∫ y in (extChartAt I α).target, g y ∂μ := by
+  rw [setIntegral_pos_iff_support_of_nonneg_ae (Filter.Eventually.of_forall hnn) hint]
+  -- Positivity reaches an open subset of the interior, including from a boundary point.
+  let V := interior (extChartAt I α).target ∩ g ⁻¹' Ioi 0
+  have hV : IsOpen V :=
+    (hcont.mono interior_subset).isOpen_inter_preimage isOpen_interior isOpen_Ioi
+  obtain ⟨U, hUo, hxU, hUg⟩ := mem_nhdsWithin.mp
+    ((hcont.continuousWithinAt hy₀).eventually (lt_mem_nhds hg₀))
+  obtain ⟨z, hzU, hz⟩ := mem_closure_iff.mp
+    (extChartAt_target_subset_closure_interior hy₀) U hUo hxU
+  have hVne : V.Nonempty := ⟨z, hz, hUg ⟨hzU, interior_subset hz⟩⟩
+  refine (hV.measure_pos μ hVne).trans_le (measure_mono fun y hy ↦ ?_)
+  exact ⟨(ne_of_gt hy.2 : g y ≠ 0), interior_subset hy.1⟩
 
 /-- In a preferred chart, the signed coefficient of a top form at the chart image of `x`, with the
 sign of the model basis, is a positive multiple of the form's value on any positively oriented
@@ -144,21 +171,8 @@ private theorem setIntegral_signBasis_mul_signedInChartAt_pos [NeZero k] [Measur
     obtain ⟨r, hr, h⟩ := exists_pos_signBasis_mul_signedInChartAt_eq l φ b hx₀ c₀ hc₀
     simp only [g, h]
     exact mul_pos hr hφ₀
-  rw [setIntegral_pos_iff_support_of_nonneg_ae
-    (Filter.Eventually.of_forall fun y ↦ signBasis_mul_signedInChartAt_nonneg l hnn b α y)
-    hint.integrableOn]
-  -- `g` is positive on a nonempty open subset of the interior of the target, which has positive
-  -- Haar measure even when `x₀` is a boundary point.
-  let V := interior (extChartAt I α).target ∩ g ⁻¹' Ioi 0
-  have hV : IsOpen V :=
-    (hcont.mono interior_subset).isOpen_inter_preimage isOpen_interior isOpen_Ioi
-  obtain ⟨U, hUo, hxU, hUg⟩ := mem_nhdsWithin.mp
-    ((hcont.continuousWithinAt hy₀).eventually (lt_mem_nhds hg₀))
-  obtain ⟨z, hzU, hz⟩ := mem_closure_iff.mp
-    (extChartAt_target_subset_closure_interior hy₀) U hUo hxU
-  have hVne : V.Nonempty := ⟨z, hz, hUg ⟨hzU, interior_subset hz⟩⟩
-  refine (hV.measure_pos b.addHaar hVne).trans_le (measure_mono fun y hy ↦ ?_)
-  exact ⟨(ne_of_gt hy.2 : g y ≠ 0), interior_subset hy.1⟩
+  exact setIntegral_pos_of_nonneg_of_pos_at_extChartAt_target (μ := b.addHaar) α
+    (signBasis_mul_signedInChartAt_nonneg l hnn b α) hint.integrableOn hcont hy₀ hg₀
 
 /-- **Nonnegativity of integration.** On an oriented manifold of positive dimension, a top form
 that is nonnegative on every positively oriented tangent basis has nonnegative integral. No

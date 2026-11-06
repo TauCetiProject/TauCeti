@@ -187,7 +187,7 @@ theorem mem_adjointWeightSpace_generatedWeightTorusCoordinateMap_iff
           (derivationComp (B := R) (generatedCoordinateMap R).hom
             (Derivation.cotangentLinearEquiv (B := R) x)) a b = 0 := by
   have hG := generatedCoordinateHopfAlgebra_def R
-  have hq := generatedCoordinateMap_comp_eqToIso_hom R
+  have hq := generatedCoordinateMap_comp_eqToHom R
   have hπ := generatedCoordinateMap_comp_generatedWeightTorusCoordinateMap R
   -- Abstract the named presentation and its finiteness proof before transporting to the quotient.
   generalize_proofs at *
@@ -195,7 +195,7 @@ theorem mem_adjointWeightSpace_generatedWeightTorusCoordinateMap_iff
   generalize generatedWeightTorusCoordinateMap R = π at *
   generalize generatedCoordinateHopfAlgebra R = G at *
   subst G
-  simp only [eqToIso_refl, Iso.refl_hom, Category.comp_id] at hq
+  simp only [eqToHom_refl, Category.comp_id] at hq
   rw [hq] at hπ ⊢
   rw [CommHopfAlgCat.hom_mkQuotient]
   have hπ' : π.hom.comp (Bialgebra.Quotient.mkBialgHom (generatedDefiningIdeal R).toIdeal) =

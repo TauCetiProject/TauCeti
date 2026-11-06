@@ -7,9 +7,14 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.Basic
 public import Mathlib.Dynamics.FixedPoints.Defs
+public import Mathlib.Dynamics.PeriodicPts.Defs
+public import Mathlib.LinearAlgebra.Determinant
+public import TauCeti.Geometry.Manifold.MFDeriv.Basic
 import Mathlib.Analysis.Calculus.FDeriv.Equiv
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Dynamics.FixedPoints.Topology
+import Mathlib.LinearAlgebra.Eigenspace.Basic
+import Mathlib.Order.Interval.Finset.Nat
 import Mathlib.Topology.DiscreteSubset
 
 /-!
@@ -35,10 +40,21 @@ nondegenerate has only finitely many fixed points
 (`TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`): its fixed-point set is closed, hence
 compact, and discrete.
 
+At a fixed point the differential of `f^[n]` is `(df_x) ^ n`, so `x` is a nondegenerate fixed point
+of `f^[n]` exactly when `(df_x) ^ n` fixes no nonzero vector. For a periodic point of period `k`,
+the differential of `f^[k]` is the return map of its orbit, and its `m`-th power is the return map
+of the `m`-fold cover. A map is nondegenerate up to period `N`
+(`TauCeti.IsNondegenerateUpToPeriod`) when every periodic orbit of period at most `N` is
+nondegenerate. On a compact manifold such a map has finitely many periodic points of each period
+at most `N`. A vector with `D v = -v` is fixed by `D ^ 2`, so nondegeneracy up to period `2 * N`
+excludes both eigenvalues `1` and `-1` from the return maps of all covers of period at most `N`.
+
 ## Main definitions
 
 * `TauCeti.IsNondegenerateFixedPt I f x`: `x` is a fixed point of `f`, `f` is differentiable at
   `x`, and `df_x` fixes no nonzero tangent vector.
+* `TauCeti.IsNondegenerateUpToPeriod I f N`: every periodic point of positive period `k ≤ N` is a
+  nondegenerate fixed point of `f^[k]`.
 
 ## Main results
 
@@ -47,6 +63,18 @@ compact, and discrete.
 * `TauCeti.finite_fixedPoints_of_isNondegenerateFixedPt`: on a compact manifold modelled on a
   finite-dimensional space over a complete field, a continuous map whose fixed points are all
   nondegenerate has finitely many fixed points.
+* `TauCeti.isNondegenerateFixedPt_iterate_iff`: at a fixed point with differential `D`, the point is
+  a nondegenerate fixed point of `f^[n]` exactly when `D ^ n` fixes no nonzero vector.
+* `TauCeti.IsNondegenerateFixedPt.eq_zero_of_pow_apply_eq_smul`: at a nondegenerate fixed point of
+  `f^[m * j]`, no `ε` with `ε ^ j = 1` is an eigenvalue of `D ^ m`.
+* `TauCeti.IsNondegenerateUpToPeriod.finite_ptsOfPeriod`,
+  `TauCeti.IsNondegenerateUpToPeriod.finite_setOf_isPeriodicPt`: finitely many periodic points of
+  period at most `N` on a compact manifold.
+* `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`,
+  `TauCeti.IsNondegenerateUpToPeriod.det_smul_one_sub_pow_ne_zero`: nondegeneracy up to period
+  `N` excludes every `ε` with `ε ^ j = 1` as an eigenvalue of the return map of the `m`-fold cover
+  of an orbit of period `k` when `k * m * j ≤ N`. For `j = 2`, nondegeneracy up to period `2 * N`
+  excludes the eigenvalues `±1` of the return maps of all covers of period at most `N`.
 
 ## References
 
@@ -148,5 +176,164 @@ theorem finite_fixedPoints_of_isNondegenerateFixedPt [CompleteSpace 𝕜] [Finit
     (h : ∀ x ∈ fixedPoints f, IsNondegenerateFixedPt I f x) : (fixedPoints f).Finite :=
   (isClosed_fixedPoints hf).isCompact.finite <| isDiscrete_iff_nhdsNE.2 fun x hx ↦
     inf_principal_eq_bot.2 (h x hx).eventually_not_isFixedPt
+
+/-! ### Iterates
+
+At a fixed point `x` of `f` the chain rule makes the differential of the iterate `f^[n]` the
+`n`-th power of `df_x` (`HasMFDerivAt.iterate`). For a periodic point of period `k`, applied to
+`f^[k]`, this says that the return map of the `m`-fold cover of the periodic orbit is the `m`-th
+power of the return map of the orbit. -/
+
+/-- At a fixed point `x` of `f` with differential `D`, the point `x` is a nondegenerate fixed point
+of `f^[n]` exactly when `D ^ n` fixes no nonzero tangent vector. -/
+theorem isNondegenerateFixedPt_iterate_iff {D : TangentSpace I x →L[𝕜] TangentSpace I x}
+    (hD : HasMFDerivAt I I f x D) (hx : IsFixedPt f x) {n : ℕ} :
+    IsNondegenerateFixedPt I f^[n] x ↔ ∀ v : TangentSpace I x, (D ^ n) v = v → v = 0 := by
+  have hDn := hD.iterate hx.eq n
+  rw [isNondegenerateFixedPt_iff, hDn.mfderiv]
+  exact ⟨fun h ↦ h.2.2, fun h ↦ ⟨hx.iterate n, hDn.mdifferentiableAt, h⟩⟩
+
+namespace IsNondegenerateFixedPt
+
+/-- **Roots of unity are not eigenvalues at a nondegenerate fixed point of an iterate.** Let `f`
+fix `x` with differential `D`. If `x` is a nondegenerate fixed point of `f^[m * j]` and
+`ε ^ j = 1`, then `(D ^ m) v = ε • v` only for `v = 0`. For `j = 2` this excludes both eigenvalues
+`1` and `-1` of `D ^ m`. -/
+theorem eq_zero_of_pow_apply_eq_smul {D : TangentSpace I x →L[𝕜] TangentSpace I x}
+    (hD : HasMFDerivAt I I f x D) (hx : IsFixedPt f x) {m j : ℕ}
+    (h : IsNondegenerateFixedPt I f^[m * j] x) {ε : 𝕜} (hε : ε ^ j = 1) {v : TangentSpace I x}
+    (hv : (D ^ m) v = ε • v) : v = 0 := by
+  refine (isNondegenerateFixedPt_iterate_iff hD hx).1 h v ?_
+  rcases eq_or_ne v 0 with rfl | hv0
+  · exact map_zero _
+  have hev : Module.End.HasEigenvector (↑(D ^ m) : TangentSpace I x →ₗ[𝕜] TangentSpace I x) ε v :=
+    ⟨Module.End.mem_eigenspace_iff.2 hv, hv0⟩
+  have hj := hev.pow_apply j
+  rw [← ContinuousLinearMap.toLinearMap_pow, hε, one_smul] at hj
+  rwa [pow_mul]
+
+/-- A fixed point of `f` at which `f` is differentiable is nondegenerate as soon as it is a
+nondegenerate fixed point of some iterate `f^[n]`. -/
+theorem of_iterate (hf : MDifferentiableAt I I f x) (hx : IsFixedPt f x) {n : ℕ}
+    (h : IsNondegenerateFixedPt I f^[n] x) : IsNondegenerateFixedPt I f x := by
+  -- Name the differential with the endomorphism type that `HasMFDerivAt.iterate` expects.
+  let D : TangentSpace I x →L[𝕜] TangentSpace I x := mfderiv I I f x
+  have hD : HasMFDerivAt I I f x D := hf.hasMFDerivAt
+  rw [← one_mul n] at h
+  refine ⟨hx, hf, fun v hv ↦ h.eq_zero_of_pow_apply_eq_smul hD hx (one_pow n) ?_⟩
+  rwa [pow_one, one_smul]
+
+end IsNondegenerateFixedPt
+
+/-! ### Nondegeneracy up to a period
+
+A map is nondegenerate up to period `N` when every periodic orbit of period at most `N` is
+nondegenerate. On a compact manifold such a map has finitely many periodic points of each of these
+periods. Since the return map of the `m`-fold cover of an orbit of period `k` is the `m`-th power of
+the return map of the orbit, nondegeneracy up to period `2 * N` also excludes the eigenvalue `-1`
+from the return maps of all covers of period at most `N`. In the count of pseudoholomorphic tori in
+a symplectic suspension, these two eigenvalues govern the normal operators twisted by the trivial
+and by the nontrivial sign character along the orbit. -/
+
+variable (I) in
+/-- A map `f : M → M` is **nondegenerate up to period `N`** when every periodic point of `f` with a
+positive period `k ≤ N` is a nondegenerate fixed point of `f^[k]`: the return map of no periodic
+orbit of period at most `N` has the eigenvalue `1`. A map that is nondegenerate up to every period
+is called strongly nondegenerate. -/
+def IsNondegenerateUpToPeriod (f : M → M) (N : ℕ) : Prop :=
+  ∀ ⦃k : ℕ⦄, 0 < k → k ≤ N → ∀ ⦃x : M⦄, IsPeriodicPt f k x → IsNondegenerateFixedPt I f^[k] x
+
+/-- The defining characterization of nondegeneracy up to a period. -/
+theorem isNondegenerateUpToPeriod_iff {N : ℕ} :
+    IsNondegenerateUpToPeriod I f N ↔
+      ∀ ⦃k : ℕ⦄, 0 < k → k ≤ N → ∀ ⦃x : M⦄, IsPeriodicPt f k x →
+        IsNondegenerateFixedPt I f^[k] x :=
+  Iff.rfl
+
+/-- Every map is nondegenerate up to period `0`. -/
+@[simp]
+theorem isNondegenerateUpToPeriod_zero : IsNondegenerateUpToPeriod I f 0 :=
+  fun _ hk hk0 ↦ absurd hk (by omega)
+
+namespace IsNondegenerateUpToPeriod
+
+variable {N : ℕ}
+
+/-- Nondegeneracy up to period `N` implies nondegeneracy up to every smaller period. -/
+theorem mono (h : IsNondegenerateUpToPeriod I f N) {N' : ℕ} (hN : N' ≤ N) :
+    IsNondegenerateUpToPeriod I f N' :=
+  fun _ hk hkN _ hx ↦ h hk (hkN.trans hN) hx
+
+/-- A periodic point of positive period `k ≤ N` of a map nondegenerate up to period `N` is a
+nondegenerate fixed point of `f^[k]`. -/
+theorem isNondegenerateFixedPt (h : IsNondegenerateUpToPeriod I f N) {k : ℕ} (hk : 0 < k)
+    (hkN : k ≤ N) (hx : IsPeriodicPt f k x) : IsNondegenerateFixedPt I f^[k] x :=
+  h hk hkN hx
+
+/-- **Covers of nondegenerate orbits and roots of unity.** Let `f` be nondegenerate up to period
+`N`, let `x` be a periodic point of period `k > 0`, and let `D` be the differential of `f^[k]` at
+`x`, the return map of its orbit. If `k * m * j ≤ N` with `m, j > 0` and `ε ^ j = 1`, then
+`(D ^ m) v = ε • v` forces `v = 0`: the return map `D ^ m` of the `m`-fold cover does not have the
+eigenvalue `ε`. For `j = 2`, nondegeneracy up to period `2 * N` excludes both eigenvalues `1` and
+`-1` of the return maps of all covers of period `k * m ≤ N`. -/
+theorem eq_zero_of_pow_apply_eq_smul (h : IsNondegenerateUpToPeriod I f N) {k m j : ℕ}
+    (hk : 0 < k) (hm : 0 < m) (hj : 0 < j) (hkmj : k * m * j ≤ N) (hx : IsPeriodicPt f k x)
+    {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D) {ε : 𝕜}
+    (hε : ε ^ j = 1) {v : TangentSpace I x} (hv : (D ^ m) v = ε • v) : v = 0 := by
+  have hnd := h (by positivity) (by rwa [← mul_assoc]) (hx.mul_const (m * j))
+  rw [iterate_mul] at hnd
+  exact hnd.eq_zero_of_pow_apply_eq_smul hD hx.isFixedPt hε hv
+
+/-- **Covers of nondegenerate orbits.** Let `f` be nondegenerate up to period `N`, let `x` be a
+periodic point of period `k > 0`, and let `D` be the differential of `f^[k]` at `x`, the return map
+of its orbit. If `k * m ≤ N` with `m > 0`, then the return map `D ^ m` of the `m`-fold cover fixes
+no nonzero tangent vector. -/
+theorem eq_zero_of_pow_apply_eq (h : IsNondegenerateUpToPeriod I f N) {k m : ℕ} (hk : 0 < k)
+    (hm : 0 < m) (hkm : k * m ≤ N) (hx : IsPeriodicPt f k x)
+    {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D)
+    {v : TangentSpace I x} (hv : (D ^ m) v = v) : v = 0 :=
+  h.eq_zero_of_pow_apply_eq_smul hk hm one_pos (by rwa [mul_one]) hx hD (one_pow 1)
+    (by rwa [one_smul])
+
+/-- **Determinant form of `TauCeti.IsNondegenerateUpToPeriod.eq_zero_of_pow_apply_eq_smul`.** In
+finite dimension, if `f` is nondegenerate up to period `N`, `x` has period `k > 0` and `D` is the
+differential of `f^[k]` at `x`, then `det (ε - D ^ m) ≠ 0` for `ε ^ j = 1`, `m, j > 0` and
+`k * m * j ≤ N`. For `j = 2`, nondegeneracy up to period `2 * N` gives `det (±1 - D ^ m) ≠ 0` for
+all covers of period `k * m ≤ N`. -/
+theorem det_smul_one_sub_pow_ne_zero [FiniteDimensional 𝕜 E]
+    (h : IsNondegenerateUpToPeriod I f N) {k m j : ℕ} (hk : 0 < k) (hm : 0 < m) (hj : 0 < j)
+    (hkmj : k * m * j ≤ N) (hx : IsPeriodicPt f k x)
+    {D : TangentSpace I x →L[𝕜] TangentSpace I x} (hD : HasMFDerivAt I I f^[k] x D) {ε : 𝕜}
+    (hε : ε ^ j = 1) :
+    LinearMap.det
+      ((ε • 1 - D ^ m : TangentSpace I x →L[𝕜] TangentSpace I x) :
+        TangentSpace I x →ₗ[𝕜] TangentSpace I x) ≠ 0 := by
+  -- The tangent space is the model space `E`.
+  have : FiniteDimensional 𝕜 (TangentSpace I x) := ‹FiniteDimensional 𝕜 E›
+  rw [Ne, LinearMap.det_eq_zero_iff_ker_ne_bot, not_not, eq_bot_iff]
+  intro v hv
+  refine (Submodule.mem_bot 𝕜).2 (h.eq_zero_of_pow_apply_eq_smul hk hm hj hkmj hx hD hε ?_)
+  simpa [sub_eq_zero, eq_comm (b := ε • v), ← ContinuousLinearMap.toLinearMap_pow] using hv
+
+variable [CompleteSpace 𝕜] [FiniteDimensional 𝕜 E] [CompactSpace M] [T2Space M]
+
+/-- **Finiteness of nondegenerate periodic points.** On a compact manifold modelled on a
+finite-dimensional space over a complete field, a continuous map nondegenerate up to period `N`
+has only finitely many periodic points of each positive period `k ≤ N`. -/
+theorem finite_ptsOfPeriod (h : IsNondegenerateUpToPeriod I f N) (hf : Continuous f) {k : ℕ}
+    (hk : 0 < k) (hkN : k ≤ N) : (ptsOfPeriod f k).Finite :=
+  -- `ptsOfPeriod f k` is by definition the fixed-point set of `f^[k]`.
+  finite_fixedPoints_of_isNondegenerateFixedPt (hf.iterate k) fun _ hx ↦ h hk hkN hx
+
+/-- On a compact manifold modelled on a finite-dimensional space over a complete field, a
+continuous map nondegenerate up to period `N` has only finitely many points of some positive
+period at most `N`. -/
+theorem finite_setOf_isPeriodicPt (h : IsNondegenerateUpToPeriod I f N) (hf : Continuous f) :
+    {x | ∃ k, 0 < k ∧ k ≤ N ∧ IsPeriodicPt f k x}.Finite := by
+  refine ((Set.finite_Icc 1 N).biUnion fun k hk ↦ h.finite_ptsOfPeriod hf hk.1 hk.2).subset ?_
+  rintro x ⟨k, hk, hkN, hx⟩
+  exact Set.mem_biUnion ⟨hk, hkN⟩ hx
+
+end IsNondegenerateUpToPeriod
 
 end TauCeti
