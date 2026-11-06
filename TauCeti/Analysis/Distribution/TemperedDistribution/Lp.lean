@@ -208,6 +208,17 @@ open scoped ENNReal SchwartzMap FourierTransform Convolution
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
 
+/-- An `eLpNorm` bound by `‖𝓕⁻ σ‖₁` in `ℝ≥0∞` gives the real bound by `∫ ‖𝓕⁻ σ‖`, as long as the
+other factor is finite. -/
+private theorem toReal_le_integral_norm_fourierInv_mul (σ : 𝓢(E, ℂ)) {a b : ℝ≥0∞} (hb : b ≠ ∞)
+    (h : a ≤ eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume * b) :
+    a.toReal ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * b.toReal := by
+  have hK := (𝓕⁻ σ : 𝓢(E, ℂ)).integrable (μ := volume)
+  rw [SchwartzMap.fourierInv_coe] at hK
+  rw [integral_norm_eq_lintegral_enorm hK.1, ← eLpNorm_one_eq_lintegral_enorm hK.1,
+    ← ENNReal.toReal_mul]
+  exact ENNReal.toReal_mono (ENNReal.mul_ne_top (memLp_one_iff_integrable.2 hK).eLpNorm_ne_top hb) h
+
 /-- The case `p < ∞` of `TemperedDistribution.exists_fourierMultiplierCLM_eq_and_norm_le`: the
 bound holds on the dense Schwartz functions, and extends. -/
 private theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_ne_top {p : ℝ≥0∞} [Fact (1 ≤ p)]
@@ -215,19 +226,12 @@ private theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_ne_top {p : ℝ≥
     ∃ g : Lp F p (volume : Measure E), fourierMultiplierCLM F σ (f : 𝓢'(E, F)) = g ∧
       ‖g‖ ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * ‖f‖ := by
   set M : 𝓢(E, F) →L[ℂ] 𝓢(E, F) := SchwartzMap.fourierMultiplierCLM F σ
-  have hK : ∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖ = (eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume).toReal := by
-    rw [← SchwartzMap.fourierInv_coe, eLpNorm_one_eq_lintegral_enorm
-      (𝓕⁻ σ : 𝓢(E, ℂ)).continuous.aestronglyMeasurable,
-      integral_norm_eq_lintegral_enorm (𝓕⁻ σ : 𝓢(E, ℂ)).continuous.aestronglyMeasurable]
   have hM : ∀ φ : 𝓢(E, F), ‖(M φ).toLp p‖ ≤ (∫ x, ‖𝓕⁻ (σ : E → ℂ) x‖) * ‖φ.toLp p‖ := by
     intro φ
     have h := SchwartzMap.eLpNorm_fourierMultiplierCLM_le σ φ (Fact.out : 1 ≤ p)
     rw [Lp.norm_def, Lp.norm_def, eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _),
-      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _), hK, ← ENNReal.toReal_mul]
-    have hK_fin : eLpNorm (𝓕⁻ (σ : E → ℂ)) 1 volume ≠ ∞ := by
-      rw [← SchwartzMap.fourierInv_coe]
-      exact ((𝓕⁻ σ : 𝓢(E, ℂ)).memLp 1 volume).eLpNorm_ne_top
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top hK_fin ((φ.memLp p volume).eLpNorm_ne_top)) h
+      eLpNorm_congr_ae (SchwartzMap.coeFn_toLp _ p _)]
+    exact toReal_le_integral_norm_fourierInv_mul σ (φ.memLp p volume).eLpNorm_ne_top h
   refine (fourierMultiplierCLM F σ ∘L
     Lp.toTemperedDistributionCLM F volume p).exists_apply_eq_toTemperedDistribution_and_norm_le
       hp M (fun φ ↦ ?_) hM f
@@ -237,8 +241,7 @@ private theorem exists_fourierMultiplierCLM_eq_and_norm_le_of_ne_top {p : ℝ≥
 
 /-- **A multiplier with Schwartz symbol is convolution with its kernel on `L^∞`.** For
 `f ∈ L^∞` and `K = 𝓕⁻ σ`, the tempered distribution `T_σ f` pairs with a Schwartz function `u` as
-the function `K ⋆ f`. Both sides are iterated integrals of `(x, y) ↦ (K (y - x) * u y) • f x`, in
-the two orders, so they agree by Fubini's theorem. -/
+the function `K ⋆ f`. -/
 theorem fourierMultiplierCLM_toTemperedDistribution_apply_eq_integral_convolution (σ : 𝓢(E, ℂ))
     (f : Lp F ∞ (volume : Measure E)) (u : 𝓢(E, ℂ)) :
     fourierMultiplierCLM F σ (f : 𝓢'(E, F)) u =
@@ -303,10 +306,8 @@ private theorem exists_fourierMultiplierCLM_eq_and_norm_le_top (σ : 𝓢(E, ℂ
     rw [fourierMultiplierCLM_toTemperedDistribution_apply_eq_integral_convolution,
       Lp.toTemperedDistribution_apply]
     exact integral_congr_ae ((MemLp.coeFn_toLp hh).mono fun y hy ↦ congrArg (u y • ·) hy.symm)
-  · have hKn : ∫ x, ‖K x‖ = (eLpNorm K 1 volume).toReal := by
-      rw [eLpNorm_one_eq_lintegral_enorm hKi.1, integral_norm_eq_lintegral_enorm hKi.1]
-    rw [Lp.norm_toLp, Lp.norm_def, hKn, ← ENNReal.toReal_mul]
-    exact ENNReal.toReal_mono (ENNReal.mul_ne_top hK1 (Lp.eLpNorm_ne_top f)) hh_le
+  · rw [Lp.norm_toLp, Lp.norm_def]
+    exact toReal_le_integral_norm_fourierInv_mul σ (Lp.eLpNorm_ne_top f) hh_le
 
 /-- **`Lᵖ` bound for a multiplier with Schwartz symbol.** For `1 ≤ p ≤ ∞`, the Fourier multiplier
 with a Schwartz symbol `σ` maps every `f ∈ Lᵖ` to a function `g ∈ Lᵖ` with
