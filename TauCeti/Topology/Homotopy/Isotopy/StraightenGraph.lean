@@ -7,12 +7,11 @@ module
 
 public import Mathlib.Analysis.Convex.Segment
 public import TauCeti.Topology.Homotopy.Isotopy.Push
-import Mathlib.Topology.Algebra.Module.Equiv.Basic
-import Mathlib.Topology.Homeomorph.Lemmas
 import Mathlib.Topology.Maps.Proper.Basic
-import Mathlib.Topology.Order.IntermediateValue
 import Mathlib.Topology.Order.ProjIcc
+import TauCeti.Topology.Algebra.Module.Complement
 import TauCeti.Topology.Homotopy.AmbientIsotopyConj
+import TauCeti.Topology.Order.Interval
 
 /-!
 # Straightening a graph onto the zero section
@@ -316,68 +315,6 @@ end AmbientIsotopy
 
 /-! ### Straightening an arc onto its chord -/
 
-section ArcCoordinates
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-
-/-- A continuous strictly increasing function `f` on `[a, b]` has a continuous inverse `τ` on its
-range `[c, d]`, extended to all of `ℝ` by being constant outside `[c, d]` (that is, `τ` is the
-inverse composed with the clamp `projIcc c d`). -/
-theorem exists_continuous_projIcc_inverse {f : ℝ → ℝ} {a b c d : ℝ} (hab : a ≤ b)
-    (hf : ContinuousOn f (Icc a b)) (hm : StrictMonoOn f (Icc a b)) (hc : f a = c) (hd : f b = d)
-    (hcd : c ≤ d) :
-    ∃ τ : ℝ → ℝ, Continuous τ ∧ (∀ r, τ r ∈ Icc a b) ∧ (∀ s ∈ Icc a b, f s ∈ Icc c d) ∧
-      (∀ r, f (τ r) = projIcc c d hcd r) ∧ ∀ s ∈ Icc a b, τ (f s) = s := by
-  subst hc hd
-  have ha : a ∈ Icc a b := left_mem_Icc.2 hab
-  have hb : b ∈ Icc a b := right_mem_Icc.2 hab
-  let g : Icc a b → Icc (f a) (f b) := fun s ↦
-    ⟨f s, hm.monotoneOn ha s.2 s.2.1, hm.monotoneOn s.2 hb s.2.2⟩
-  have hg_cont : Continuous g :=
-    Continuous.subtype_mk (continuousOn_iff_continuous_domRestrict.1 hf) _
-  have hg_bij : Function.Bijective g := by
-    refine ⟨fun s s' h ↦ Subtype.ext (hm.injOn s.2 s'.2 (congrArg Subtype.val h)), fun r ↦ ?_⟩
-    obtain ⟨s, hs, hsr⟩ := intermediate_value_Icc hab hf r.2
-    exact ⟨⟨s, hs⟩, Subtype.ext hsr⟩
-  -- `homeoOfEquivCompactToT2` only adds continuity data to the equivalence `Equiv.ofBijective g`,
-  -- and Mathlib states no lemma for its coercion.
-  let F : Icc a b ≃ₜ Icc (f a) (f b) :=
-    hg_cont.homeoOfEquivCompactToT2 (f := Equiv.ofBijective g hg_bij)
-  have hF (s : Icc a b) : (F s : ℝ) = f s := rfl
-  refine ⟨fun r ↦ F.symm (projIcc (f a) (f b) hcd r),
-    continuous_subtype_val.comp (F.symm.continuous.comp continuous_projIcc), fun r ↦ (F.symm _).2,
-    fun s hs ↦ (g ⟨s, hs⟩).2, fun r ↦ ?_, fun s hs ↦ ?_⟩
-  · rw [← hF, Homeomorph.apply_symm_apply]
-  · have : projIcc (f a) (f b) hcd (f s) = F ⟨s, hs⟩ :=
-      Subtype.ext (by rw [hF, projIcc_of_mem]; exact (F ⟨s, hs⟩).2)
-    simp only [this, Homeomorph.symm_apply_apply]
-
-/-- **Coordinates along a vector** `u` on which a continuous linear functional `φ` takes the value
-`L ≠ 0`, based at `p`: a homeomorphism `E ≃ₜ ℝ × ker φ` sending `x` to
-`(φ (x - p), (x - p) - (φ (x - p) / L) • u)`, with inverse `y ↦ p + (y.1 / L) • u + y.2`. -/
-theorem exists_homeomorph_prod_ker {φ : StrongDual ℝ E} {u : E} {L : ℝ} (hu : φ u = L)
-    (hL : L ≠ 0) (p : E) :
-    ∃ e : E ≃ₜ ℝ × LinearMap.ker (φ : E →ₗ[ℝ] ℝ), (∀ x, (e x).1 = φ (x - p)) ∧
-      (∀ x, ((e x).2 : E) = (x - p) - (φ (x - p) / L) • u) ∧
-      ∀ y, e.symm y = p + (y.1 / L) • u + y.2 := by
-  let ψ : ℝ →L[ℝ] E := ContinuousLinearMap.toSpanSingleton ℝ (L⁻¹ • u)
-  have hψ (r : ℝ) : ψ r = (r / L) • u := by
-    rw [ContinuousLinearMap.toSpanSingleton_apply, smul_smul, div_eq_mul_inv]
-  have hψφ : Function.RightInverse ψ φ := fun r ↦ by
-    rw [hψ, map_smul, hu, smul_eq_mul, div_mul_cancel₀ _ hL]
-  refine ⟨(Homeomorph.subRight p).trans
-    (ContinuousLinearEquiv.equivOfRightInverse φ ψ hψφ).toHomeomorph, fun x ↦ ?_, fun x ↦ ?_,
-    fun y ↦ ?_⟩
-  · simp only [Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
-      ContinuousLinearEquiv.fst_equivOfRightInverse, Homeomorph.coe_subRight]
-  · simp only [Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
-      ContinuousLinearEquiv.snd_equivOfRightInverse, Homeomorph.coe_subRight, hψ]
-  · simp only [Homeomorph.symm_trans_apply, ContinuousLinearEquiv.coe_symm_toHomeomorph,
-      ContinuousLinearEquiv.equivOfRightInverse_symm_apply, hψ, Homeomorph.subRight_symm_apply]
-    abel
-
-end ArcCoordinates
-
 namespace AmbientIsotopy
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
@@ -447,8 +384,8 @@ private theorem image_eq_segment_of_apply_eq {γ : ℝ → E} {a b : ℝ} {F : E
     refine ⟨γ (τ (θ * L)), mem_image_of_mem γ (hτ_mem _), ?_⟩
     rw [hfin _ hr, mul_div_cancel_right₀ _ hL.ne']
 
-/-- A point `x = p + (s / L) • u + w` over the open chord, with `w` smaller than `3 * G` where `G`
-vanishes outside `(0, L)` and is at most `2 * D`, lies within `7 * D` of `p`. -/
+/-- If `x = p + (s / L) • u + w` with `‖u‖ ≤ D`, `‖w‖ < 3 * G`, `G ≤ 2 * D`, and `G = 0` whenever
+`s ∉ (0, L)`, then `0 < s < L` and `‖x - p‖ < 7 * D`. -/
 private theorem moved_point_bounds {x p u w : E} {s L D G : ℝ} (hL : 0 < L) (huD : ‖u‖ ≤ D)
     (hx : x = p + (s / L) • u + w) (hG0 : s ≤ 0 ∨ L ≤ s → G = 0) (hG : G ≤ 2 * D)
     (hw : ‖w‖ < 3 * G) : 0 < s ∧ s < L ∧ ‖x - p‖ < 7 * D := by
@@ -489,10 +426,14 @@ theorem exists_final_image_eq_segment {γ : ℝ → E} {a b : ℝ} (hab : a < b)
   set L := φ (γ b - γ a) with hL_def
   have hL : 0 < L := by simpa [hL_def, sub_pos] using hφ ha hb hab
   have hφb : φ (γ b) = φ (γ a) + L := by rw [hL_def, map_sub]; ring
-  obtain ⟨τ, hτ_cont, hτ_mem, hρ, hτ, hτ_self⟩ := exists_continuous_projIcc_inverse
+  obtain ⟨τ, hτ_cont, hτ_mem, hτ', hτ_self⟩ := exists_continuous_projIcc_inverse
     (f := fun t ↦ φ (γ t) - φ (γ a)) (c := 0) (d := L) hab.le
     ((φ.continuous.comp_continuousOn hγ).sub continuousOn_const)
-    (fun s hs t ht h ↦ sub_lt_sub_right (hφ hs ht h) _) (sub_self _) (by rw [hφb]; ring) hL.le
+    (fun s hs t ht h ↦ sub_lt_sub_right (hφ hs ht h) _) (sub_self _) (by rw [hφb]; ring)
+  have hτ (r : ℝ) : φ (γ (τ r)) - φ (γ a) = projIcc 0 L hL.le r := by
+    rw [hτ' r, coe_projIcc, min_comm]
+  have hρ (s : ℝ) (hs : s ∈ Icc a b) : φ (γ s) - φ (γ a) ∈ Icc 0 L :=
+    ⟨sub_nonneg.2 (hφ.monotoneOn ha hs hs.1), by linarith [hφ.monotoneOn hs hb hs.2]⟩
   obtain ⟨g, hg, hg_zero, hg_le⟩ := exists_chordProfile hγ hφ hD hL hφb hτ_cont hτ_mem hτ
   obtain ⟨e, he₁, he₂, he_symm⟩ := exists_homeomorph_prod_ker hL_def.symm hL.ne' (γ a)
   have h3 : (2 : ℝ) < 3 := by norm_num
