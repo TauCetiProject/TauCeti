@@ -18,6 +18,8 @@ import Mathlib.Tactic.Abel
 Topological complementedness is preserved by continuous semilinear equivalences, allowing
 continuous projections to be transported between different presentations of a module. It is also
 preserved by restriction of scalars.
+A continuous linear map is unchanged by the projection along its kernel onto a topological
+complement of that kernel.
 A continuous linear quotient map admits a continuous linear section exactly when its kernel is
 continuously complemented; the section is obtained by descending the complementary projection
 through the quotient.
@@ -79,9 +81,18 @@ namespace ContinuousLinearMap
 
 open Topology
 
-variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E]
-  [TopologicalSpace E] [ContinuousSub E]
+variable {R E F : Type*} [Ring R] [AddCommGroup E] [Module R E] [TopologicalSpace E]
   [AddCommGroup F] [Module R F] [TopologicalSpace F]
+
+/-- A continuous linear map is unchanged by the projection along its kernel onto a topological
+complement of that kernel. -/
+theorem apply_projectionL_ker (f : E →L[R] F) {q : Submodule R E} (h : q.IsTopCompl f.ker)
+    (x : E) : f (q.projectionL f.ker h x) = f x := by
+  have hk : f (f.ker.projection q h.isCompl.symm x) = 0 :=
+    LinearMap.mem_ker.mp (Submodule.projection_apply_mem _ x)
+  simpa [hk] using congrArg f (Submodule.projection_add_projection_eq_self h.isCompl x)
+
+variable [ContinuousSub E]
 
 /-- A continuous linear quotient map admits a continuous linear right inverse if and only if its
 kernel is continuously complemented. -/
@@ -97,11 +108,7 @@ theorem exists_rightInverse_iff_closedComplemented_ker (f : E →L[R] F) (hf : I
   have hs (x : E) : s (f x) = g x := LinearMap.equivOfSurjective_apply hf.surjective hg
   refine ⟨⟨s, hf.continuous_iff.mpr (g.continuous.congr fun x ↦ (hs x).symm)⟩, fun y ↦ ?_⟩
   obtain ⟨x, rfl⟩ := hf.surjective y
-  have hk : f (f.ker.projectionL q hq x) = 0 :=
-    LinearMap.mem_ker.mp (Submodule.projectionL_apply_mem hq x)
-  have hgx : f (g x) = f x := by
-    rw [Submodule.projectionL_eq_self_sub_projectionL hq, map_sub, hk, sub_zero]
-  simpa [hs] using hgx
+  exact (congrArg f (hs x)).trans (f.apply_projectionL_ker hq.symm x)
 
 end ContinuousLinearMap
 
