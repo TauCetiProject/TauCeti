@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Calculus.IteratedFDeriv.Prod
 public import TauCeti.Analysis.Calculus.IteratedFDeriv.Reciprocal
 public import TauCeti.Geometry.Manifold.Instances.CircleFamily.Pullback
 
@@ -59,18 +60,6 @@ private theorem contDiff_coe_period (hp : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ) n p) 
     ContDiff ℝ n (fun x ↦ (p x : ℝ)) :=
   contMDiff_iff_contDiff.mp (contMDiff_subtype_val.comp hp)
 
-/-- The first coordinate of a product has iterated derivatives of positive order of norm at
-most one. -/
-private theorem norm_iteratedFDeriv_fst_le_one {k : ℕ} (hk : 1 ≤ k) (z : E × ℝ) :
-    ‖iteratedFDeriv ℝ k (Prod.fst : E × ℝ → E) z‖ ≤ 1 := by
-  obtain ⟨j, rfl⟩ := Nat.exists_eq_add_of_le' hk
-  rcases j with _ | j
-  · rw [norm_iteratedFDeriv_one, fderiv_fst]
-    exact ContinuousLinearMap.norm_fst_le ℝ E ℝ
-  · have h : iteratedFDeriv ℝ (j + 2) (Prod.fst : E × ℝ → E) z = 0 :=
-      (ContinuousLinearMap.fst ℝ E ℝ).iteratedFDeriv_add_two j z
-    simp [h]
-
 /-- **Uniform derivative bounds for the real normalization.** Let `p` be a `C^n` positive period
 function and `1 ≤ k ≤ n`. At a point `(b, t)` with `|t| ≤ R`, `ε ≤ p b` for some `0 < ε ≤ 1`, and
 `‖D^i p b‖ ≤ C` for `1 ≤ i ≤ k` with `1 ≤ C`, the `k`-th iterated derivative of
@@ -104,9 +93,9 @@ theorem norm_iteratedFDeriv_realNormalization_le (hp : ContMDiff 𝓘(ℝ, E) �
           (one_le_pow₀ (by exact_mod_cast Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero _)))
           (one_le_pow₀ hC)
   have hlast : ‖iteratedFDeriv ℝ (m + 1) (fun x ↦ (p x : ℝ)⁻¹) z.1‖ ≤ X :=
-    norm_iteratedFDeriv_inv_comp_le hq hpos hε hε₁ hpz hC hD
+    norm_iteratedFDeriv_inv_comp_le hq hε hε₁ hpz hC hD
   have hprev : ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖ ≤ X := by
-    have h := norm_iteratedFDeriv_inv_comp_le (hq.of_le (by exact_mod_cast Nat.le_succ m)) hpos
+    have h := norm_iteratedFDeriv_inv_comp_le (hq.of_le (by exact_mod_cast Nat.le_succ m))
       hε hε₁ hpz hC fun i hi₁ hi ↦ hD i hi₁ (hi.trans (Nat.le_succ m))
     calc ((m + 1 : ℕ) : ℝ) * ‖iteratedFDeriv ℝ m (fun x ↦ (p x : ℝ)⁻¹) z.1‖
         ≤ ((m + 1 : ℕ) : ℝ) * ((m ! : ℝ) ^ 2 * C ^ m / ε ^ (m + 1)) := by gcongr
