@@ -150,8 +150,7 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
         4 * π * ∑ z ∈ hfin.toFinset, (n z : ℝ) * planarNewtonianKernel (w - z) := by
   set L : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))
   set K : ℂ → ℝ := fun w ↦ ∑ z ∈ hfin.toFinset, (n z : ℝ) * planarNewtonianKernel (w - z)
-  have hs : ContDiff ℝ 2 (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) :=
-    contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hs : ContDiff ℝ 2 (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := contDiff_normSq hp hq
   have hsne : ∀ {w}, sectionValue x w ≠ 0 → 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≠ 0 := fun hw ↦ by
     rw [← sq_norm_sectionValue]
     exact pow_ne_zero 2 (norm_ne_zero_iff.mpr hw)
