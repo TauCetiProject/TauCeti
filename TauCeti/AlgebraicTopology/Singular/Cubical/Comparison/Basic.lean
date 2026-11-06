@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Homology.QuasiIso
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Models
 
 /-!
@@ -47,7 +48,8 @@ invariance, the long exact sequence of a pair, excision) are transported to cubi
   comparison maps are compatible with the augmentations.
 * `TauCeti.singularToCubical_app_f_zero_simplexChain` and
   `TauCeti.cubicalToSingular_app_f_zero_ofCube`: in degree zero the comparison maps send a point
-  to the same point.
+  to the same point, and so do the comparison isomorphisms on zeroth homology
+  (`TauCeti.singularCubicalHomologyIso_inv_homologyπ_ofCube_point`).
 * `TauCeti.cubicalToSingularGen_zero` and `TauCeti.singularToCubicalGen_zero`: in degree zero the
   model generators are the point simplex and the point cube.
 * `TauCeti.TopCat.isIso_singularHomologyMap_of_quasiIso`: a map inducing a quasi-isomorphism of
@@ -419,6 +421,41 @@ def singularCubicalHomologyNatIso (n : ℕ) :
 theorem singularCubicalHomologyNatIso_app (n : ℕ) (X : TopCat.{u}) :
     (singularCubicalHomologyNatIso k n).app X = singularCubicalHomologyIso k X n :=
   (rfl)
+
+variable (k) in
+/-- **The comparison sends the class of a point to the class of the point**: in zeroth homology,
+the class of the point cube at `x` corresponds to the class `singularHomology₀Section` of `x`. -/
+theorem singularCubicalHomologyIso_inv_homologyπ_ofCube_point {X : TopCat.{u}} (x : X) :
+    (singularCubicalHomologyIso k X 0).inv
+        (((normalizedCubicalChainComplex k).obj X).homologyπ 0
+          (((normalizedCubicalChainComplex k).obj X).cycles₀Iso.inv
+            ((normalizedCubicalChainComplexXEquiv X 0).symm
+              (NormalizedCubicalChain.ofCube X k (SingularCube.point x))))) =
+      singularHomology₀Section (ModuleCat.of k k) x 1 := by
+  let K := (normalizedCubicalChainComplex k).obj X
+  let L := (TopCat.toSSet.obj X).chainComplex (ModuleCat.of k k)
+  -- The class of a vertex is the class of the zero-cycle given by the vertex.
+  have hv : (TopCat.toSSet.obj X).ιChainComplex (R := ModuleCat.of k k)
+      (TopCat.toSSetObj₀Equiv.symm x) ≫ L.cycles₀Iso.inv = L.liftCycles
+        ((TopCat.toSSet.obj X).ιChainComplex (R := ModuleCat.of k k)
+          (TopCat.toSSetObj₀Equiv.symm x)) 0 (by simp) (by simp) := by
+    apply (cancel_mono (L.iCycles 0)).1
+    simp only [Category.assoc, HomologicalComplex.iCyclesIso_inv_hom_id,
+      HomologicalComplex.liftCycles_i]
+    exact Category.comp_id _
+  have hφ : K.cycles₀Iso.inv ≫ K.homologyπ 0 ≫
+      HomologicalComplex.homologyMap ((cubicalToSingular k).app X) 0 =
+        ((cubicalToSingular k).app X).f 0 ≫ L.cycles₀Iso.inv ≫ L.homologyπ 0 := by
+    rw [HomologicalComplex.homologyπ_naturality, ← Category.assoc,
+      ChainComplex.cycles₀Iso_inv_naturality, Category.assoc]
+    -- The singular chains of `X` are the chains of its singular simplicial set `L`.
+    rfl
+  rw [singularCubicalHomologyIso_inv, singularHomology₀Section_def, SSet.ιHomology₀_eq, ← hv]
+  refine (ConcreteCategory.congr_hom hφ _).trans ?_
+  refine (congrArg (L.cycles₀Iso.inv ≫ L.homologyπ 0).hom
+    (cubicalToSingular_app_f_zero_ofCube (k := k) x)).trans ?_
+  -- The chain of the vertex is the image of `1` under the inclusion of the vertex summand.
+  rfl
 
 namespace TopCat
 

@@ -60,6 +60,12 @@ lemma cubePoint_down (t : I) : (cubePoint.{w} t).down = fun _ ↦ t := by
 def cubeEnd (t : I) (ht : t = 0 ∨ t = 1) : (cubeBoundaryPair.{w} 1).snd :=
   ⟨cubePoint t, ⟨0, ht⟩⟩
 
+/-- The endpoint `t` of `∂I¹` is the point `t` of the cube `I¹`. -/
+@[simp]
+lemma coe_cubeEnd (t : I) (ht : t = 0 ∨ t = 1) :
+    (cubeEnd.{w} t ht).val = cubePoint t :=
+  (rfl)
+
 /-- The standard singular `1`-simplex of the cube `I¹`, from `0` to `1`. -/
 def cubeSimplex : (TopCat.toSSet.obj (cubeBoundaryPair.{w} 1).fst) _⦋1⦌ :=
   ((cubeBoundaryPair.{w} 1).fst.toSSetObjEquiv _).symm
