@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.TopAdj
+public import Mathlib.AlgebraicTopology.SimplicialSet.ProdStdSimplexOne
 public import Mathlib.Topology.Homotopy.TopCat.Basic
-public import TauCeti.AlgebraicTopology.SimplicialSet.ProdStdSimplexOne
+public import TauCeti.AlgebraicTopology.SimplicialSet.TopAdj
 public import TauCeti.AlgebraicTopology.SimplicialSet.TrivialFibration
 public import TauCeti.AlgebraicTopology.SimplicialSet.WeakEquivalence
+
+import TauCeti.Geometry.Convex.ConvexSpace.Defs
 
 /-!
 # Geometric realization of simplicial homotopies
@@ -31,16 +33,15 @@ vertices `(0, 0), …, (k, 0), (k, 1), …, (p, 1)`, covers the points `(s, t)` 
 `s₀ + ⋯ + s_(k-1) ≤ 1 - t ≤ s₀ + ⋯ + s_k`.
 
 The pieces must agree on overlaps, and the triangulations must be natural in `Δ[p]`, including
-under degeneracies. Both follow from one fact (`SSet.prodStdSimplex.toTopObjMk_eq_of_map_eq`): a
-point of `|Δ[p] ⊗ Δ[q]|` is determined by the distribution of its barycentric coordinates on the
-vertices `Fin (p + 1) × Fin (q + 1)`. Indeed every point lies in the interior of the realization of
-a nondegenerate simplex, a chain of vertices which the distribution determines. The distribution of
-the point `(s, t)` of the prism is the comonotone coupling of `s` with the distribution `(1 - t, t)`
-on `Fin 2`, which is natural in `s`.
+under degeneracies. Both follow from one fact (`SSet.prodStdSimplex.toTopObjMk_eq_of_map_eq`): the
+point `SSet.toTopObjMk x w` of `|Δ[p] ⊗ Δ[q]|` with barycentric coordinates `w` in a simplex `x` is
+determined by the distribution of `w` on the vertices `Fin (p + 1) × Fin (q + 1)`. Indeed every
+point lies in the interior of the realization of a nondegenerate simplex, a chain of vertices which
+the distribution determines. The distribution of the point `(s, t)` of the prism is the comonotone
+coupling of `s` with the distribution `(1 - t, t)` on `Fin 2`, which is natural in `s`.
 
 ## Main declarations
 
-* `SSet.toTopObjMk x w`: the point of `|X|` with barycentric coordinates `w` in the simplex `x`.
 * `SSet.prodStdSimplex.toTopObjMk_eq_of_map_eq`: points of `|Δ[p] ⊗ Δ[q]|` are determined by their
   coordinates on the vertices.
 * `SSet.prodStdSimplex₁.prism`: the triangulation `Δᵖ × I → |Δ[p] ⊗ Δ[1]|` of the prism, natural
@@ -68,66 +69,21 @@ namespace SSet
 
 variable {X Y : SSet.{u}}
 
-/-- The point of the geometric realization `|X|` with barycentric coordinates `w` in the
-realization of the `n`-simplex `x` of `X`: the value at `w` of the singular simplex
-`(sSetTopAdj.unit.app X).app _ x` of `|X|`. -/
-noncomputable def toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) : |X| :=
-  TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.unit.app X).app _ x) w
-
-/-- The point of `|X|` given by an `n`-simplex depends continuously on its coordinates. -/
-@[fun_prop]
-lemma continuous_toTopObjMk {n : ℕ} (x : X _⦋n⦌) : Continuous (toTopObjMk x) :=
-  (TopCat.toSSetObjEquiv _ _ ((sSetTopAdj.unit.app X).app _ x)).continuous
-
-/-- The realization of a map sends the point of a simplex to the point of its image. -/
-@[simp]
-lemma toTop_map_toTopObjMk (f : X ⟶ Y) {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))) :
-    toTop.map f (toTopObjMk x w) = toTopObjMk (f.app _ x) w := by
-  have h := ConcreteCategory.congr_hom (NatTrans.congr_app (sSetTopAdj.unit.naturality f) _) x
-  dsimp at h
-  rw [toTopObjMk, toTopObjMk, h]
-  rfl
-
-/-- The point of a face or degeneracy of a simplex is the point of the simplex with the
-transported coordinates. -/
-lemma toTopObjMk_map {m n : ℕ} (θ : ⦋m⦌ ⟶ ⦋n⦌) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (m + 1))) :
-    toTopObjMk (X.map θ.op x) w = toTopObjMk x (StdSimplex.map θ w) := by
-  have h := ConcreteCategory.congr_hom ((sSetTopAdj.unit.app X).naturality θ.op) x
-  dsimp at h
-  rw [toTopObjMk, toTopObjMk, h]
-  rfl
-
-/-- Two continuous maps out of `|X|` agree once they agree on the points of all simplices. -/
-lemma toTop_hom_ext {T : TopCat.{u}} {g₁ g₂ : |X| ⟶ T}
-    (h : ∀ (n : ℕ) (x : X _⦋n⦌) (w : StdSimplex ℝ (Fin (n + 1))),
-      g₁ (toTopObjMk x w) = g₂ (toTopObjMk x w)) : g₁ = g₂ := by
-  apply (sSetTopAdj.homEquiv X T).injective
-  ext ⟨n⟩ x
-  induction n using SimplexCategory.rec with | _ n => ?_
-  apply (T.toSSetObjEquiv _).injective
-  ext w
-  rw [Adjunction.homEquiv_unit, Adjunction.homEquiv_unit]
-  exact h n x w
-
 namespace prodStdSimplex
 
 variable {p q : ℕ}
 
-/-- The barycentric coordinates supported on the range of an injective map, pulled back along it. -/
-private noncomputable def comapWeights {α β : Type*} {g : α → β} (hg : Function.Injective g)
-    (w : StdSimplex ℝ β) (h : ↑w.weights.support ⊆ Set.range g) : StdSimplex ℝ α where
-  weights := Finsupp.comapDomain g w.weights hg.injOn
-  nonneg a := by simp
-  total := by
-    have := w.total
-    rwa [← Finsupp.mapDomain_comapDomain g hg w.weights h,
-      Finsupp.sum_mapDomain_index (by simp) (by simp)] at this
+/-- The vertices of a face of a simplex of `Δ[p] ⊗ Δ[q]` are those of the simplex, reindexed by
+`Fin.succAbove`. -/
+private lemma objEquiv_δ {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋n + 1⦌) (j : Fin (n + 2)) :
+    ⇑(objEquiv ((Δ[p] ⊗ Δ[q]).δ j x)) = objEquiv x ∘ j.succAbove :=
+  funext (objEquiv_δ_apply x j)
 
-private lemma map_comapWeights {α β : Type*} {g : α → β} (hg : Function.Injective g)
-    (w : StdSimplex ℝ β) (h : ↑w.weights.support ⊆ Set.range g) :
-    StdSimplex.map g (comapWeights hg w h) = w := by
-  rw [← StdSimplex.weights_inj, StdSimplex.weights_map]
-  exact Finsupp.mapDomain_comapDomain g hg w.weights h
+/-- The vertices of a degeneracy of a simplex of `Δ[p] ⊗ Δ[q]` are those of the simplex,
+reindexed by `Fin.predAbove`. -/
+private lemma objEquiv_σ {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋n⦌) (j : Fin (n + 1)) :
+    ⇑(objEquiv ((Δ[p] ⊗ Δ[q]).σ j x)) = objEquiv x ∘ j.predAbove :=
+  funext (objEquiv_map_apply x (SimplexCategory.σ j))
 
 /-- A simplex of `Δ[p] ⊗ Δ[q]` with the same vertex at `j` and `j + 1` is the degeneracy `σ j` of
 its face opposite `j + 1`. -/
@@ -136,8 +92,7 @@ private lemma σ_δ_succ_of_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : SSet.{u}) _⦋n
     (Δ[p] ⊗ Δ[q]).σ j ((Δ[p] ⊗ Δ[q]).δ j.succ x) = x := by
   apply objEquiv.injective
   refine OrderHom.ext _ _ (funext fun k ↦ ?_)
-  -- The vertices of a face or degeneracy are those of `x` reindexed (`objEquiv_map_apply`).
-  change objEquiv x (j.succ.succAbove (j.predAbove k)) = objEquiv x k
+  rw [objEquiv_σ, Function.comp_apply, objEquiv_δ, Function.comp_apply]
   rcases lt_trichotomy k j.succ with hk | hk | hk
   · rw [Fin.predAbove_of_le_castSucc _ _ (Fin.le_castSucc_iff.2 hk),
       Fin.succAbove_of_castSucc_lt _ _ (by simpa [Fin.lt_def] using hk), Fin.castSucc_castPred]
@@ -167,15 +122,13 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
       intro i hi
       exact Fin.exists_succAbove_eq (fun h ↦ by simp [h, hj] at hi)
     obtain ⟨r, y, w'', hy, hw'', h₁, h₂⟩ :=
-      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (comapWeights Fin.succAbove_right_injective w hsupp)
+      ih n (by lia) ((Δ[p] ⊗ Δ[q]).δ j x) (StdSimplex.comap Fin.succAbove_right_injective w hsupp)
     refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
     · rw [← h₁, SimplicialObject.δ, toTopObjMk_map]
-      exact congrArg _ (map_comapWeights _ w hsupp).symm
+      exact congrArg _ (StdSimplex.map_comap _ w hsupp).symm
     · rw [← h₂]
-      conv_lhs => rw [← map_comapWeights Fin.succAbove_right_injective w hsupp]
-      -- The vertices of the face `δ j x` are those of `x` reindexed by `j.succAbove`.
-      rw [StdSimplex.map_map]
-      rfl
+      conv_lhs => rw [← StdSimplex.map_comap Fin.succAbove_right_injective w hsupp]
+      rw [StdSimplex.map_map, objEquiv_δ, Function.comp_def]
   · push Not at h0
     by_cases hi : Function.Injective (objEquiv x)
     · exact ⟨n, x, w, hi, h0, rfl, rfl⟩
@@ -194,12 +147,10 @@ private lemma exists_injective_toTopObjMk_eq {n : ℕ} (x : (Δ[p] ⊗ Δ[q] : S
     refine ⟨r, y, w'', hy, hw'', ?_, ?_⟩
     · rw [← h₁]
       conv_lhs => rw [hx]
-      rw [SimplicialObject.σ, toTopObjMk_map]
-      rfl
-    · -- The vertices of `x = σ j (δ j.succ x)` are those of the face reindexed by `j.predAbove`.
-      rw [← h₂, StdSimplex.map_map]
+      rw [SimplicialObject.σ, toTopObjMk_map, SimplexCategory.coe_σ]
+    · rw [← h₂, StdSimplex.map_map]
       conv_lhs => rw [hx]
-      rfl
+      rw [objEquiv_σ, Function.comp_def]
 
 /-- Two points of the realizations of simplices of `Δ[p] ⊗ Δ[q]` with injective vertex maps and
 nowhere vanishing coordinates agree if their coordinates have the same distribution on the
@@ -305,37 +256,6 @@ private lemma eq_of_cumSum_eq {n : ℕ} {g g' : Fin (n + 1) → ℝ}
   have := h (i.val + 1)
   rwa [cumSum_succ, cumSum_succ, h, add_right_inj] at this
 
-/-- For a monotone map `f`, the `j` with `f j < N` form an initial segment. -/
-private lemma exists_lt_iff_lt {m n : ℕ} (f : Fin (m + 1) →o Fin (n + 1)) (N : ℕ) :
-    ∃ a : ℕ, ∀ j, (f j).val < N ↔ j.val < a := by
-  classical
-  refine ⟨(Finset.univ.filter fun j ↦ (f j).val < N).card, fun j ↦ ⟨fun hj ↦ ?_, fun hj ↦ ?_⟩⟩
-  · have : Finset.Iic j ⊆ Finset.univ.filter fun j ↦ (f j).val < N := fun i hi ↦ by
-      simp only [Finset.mem_Iic] at hi
-      simpa using lt_of_le_of_lt (Fin.le_def.1 (f.monotone hi)) hj
-    simpa [Fin.card_Iic] using Finset.card_le_card this
-  · by_contra hj'
-    have : (Finset.univ.filter fun j ↦ (f j).val < N) ⊆ Finset.Iio j := fun i hi ↦ by
-      simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hi
-      simp only [Finset.mem_Iio]
-      by_contra hij
-      exact hj' (lt_of_le_of_lt (Fin.le_def.1 (f.monotone (not_lt.1 hij))) hi)
-    have := Finset.card_le_card this
-    simp only [Fin.card_Iio] at this
-    lia
-
-/-- Sums of the coordinates of a pushforward over a set are sums over its preimage. -/
-private lemma sum_filter_weights_map {α β : Type*} [Fintype α] [Fintype β] (g : α → β)
-    (w : StdSimplex ℝ α) (P : β → Prop) [DecidablePred P] :
-    ∑ b ∈ Finset.univ.filter P, (StdSimplex.map g w).weights b =
-      ∑ a ∈ Finset.univ.filter (fun a ↦ P (g a)), w.weights a := by
-  classical
-  rw [Finset.sum_filter, Finset.sum_filter, StdSimplex.weights_map,
-    ← Finsupp.sum_fintype (Finsupp.mapDomain g w.weights) (fun b r ↦ if P b then r else 0)
-      (by simp),
-    Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ by split_ifs <;> simp),
-    Finsupp.sum_fintype _ _ (by simp)]
-
 private lemma cumSum_mono {n : ℕ} {g : Fin (n + 1) → ℝ} (hg : 0 ≤ g) : Monotone (cumSum g) :=
   fun _ _ h ↦ Finset.sum_le_sum_of_subset_of_nonneg
     (fun j hj ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hj ⊢; lia)
@@ -347,8 +267,8 @@ private lemma sum_filter_prod {n : ℕ} (h : Fin (n + 1) × Fin 2 → ℝ) (P : 
       ∑ i ∈ Finset.univ.filter P, h (i, b) := by
   rw [Finset.sum_filter, Finset.sum_filter, Fintype.sum_prod_type]
   refine Finset.sum_congr rfl fun i _ ↦ ?_
-  rcases (by decide : ∀ b : Fin 2, b = 0 ∨ b = 1) b with rfl | rfl <;>
-    by_cases hP : P i <;> simp [hP]
+  revert b
+  refine Fin.forall_fin_two.2 ⟨?_, ?_⟩ <;> by_cases hP : P i <;> simp [hP]
 
 /-! ### The prism -/
 
@@ -489,7 +409,8 @@ private lemma support_prismMeasure_subset {k : Fin (p + 1)} {z : StdSimplex ℝ 
   simp only [Finset.mem_coe, Finsupp.mem_support_iff] at hx
   obtain ⟨hk₁, hk₂⟩ := hz
   have hmono := cumSum_mono z.1.nonneg
-  rcases (by decide : ∀ b : Fin 2, b = 0 ∨ b = 1) b with rfl | rfl
+  revert b
+  refine Fin.forall_fin_two.2 ⟨fun hx ↦ ?_, fun hx ↦ ?_⟩
   · by_cases hi : i ≤ k
     · exact ⟨i.castSucc, objEquiv_nonDegenerateEquiv_castSucc.{u} k i hi⟩
     · refine absurd ?_ hx
@@ -513,14 +434,14 @@ private lemma support_prismMeasure_subset {k : Fin (p + 1)} {z : StdSimplex ℝ 
 point of the `k`th piece of the prism. -/
 private noncomputable def pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) : StdSimplex ℝ (Fin (p + 2)) :=
-  prodStdSimplex.comapWeights (injective_objEquiv_nonDegenerateEquiv.{u} k) _
+  StdSimplex.comap (injective_objEquiv_nonDegenerateEquiv.{u} k) _
     (support_prismMeasure_subset hz)
 
 private lemma map_pieceWeights (k : Fin (p + 1)) (z : StdSimplex ℝ (Fin (p + 1)) × I)
     (hz : z ∈ piece k) :
     StdSimplex.map (prodStdSimplex.objEquiv (nonDegenerateEquiv.{u} k).val)
       (pieceWeights.{u} k z hz) = prismMeasure z.1 z.2 :=
-  prodStdSimplex.map_comapWeights _ _ _
+  StdSimplex.map_comap _ _ _
 
 private lemma continuous_pieceWeights (k : Fin (p + 1)) :
     Continuous fun z : piece k ↦ pieceWeights.{u} k z.1 z.2 := by
@@ -573,11 +494,17 @@ private lemma map_prismMeasure {m n : ℕ} (f : Fin (m + 1) →o Fin (n + 1))
   revert i
   rw [← funext_iff]
   refine eq_of_cumSum_eq fun N ↦ ?_
-  obtain ⟨a, ha⟩ := exists_lt_iff_lt f N
+  -- The `j` with `f j < N` form an initial segment, since `f` is monotone.
+  obtain ⟨a, ha⟩ : ∃ a : ℕ, ∀ j, (f j).val < N ↔ j.val < a := by
+    have hs : IsLowerSet {j | (f j).val < N} := fun _ _ h hj ↦
+      (Fin.le_def.1 (f.monotone h)).trans_lt hj
+    rcases hs.eq_univ_or_Iio with h | ⟨a, h⟩
+    · exact ⟨m + 1, fun j ↦ ⟨fun _ ↦ j.isLt, fun _ ↦ (Set.ext_iff.1 h j).2 (Set.mem_univ j)⟩⟩
+    · exact ⟨a, fun j ↦ (Set.ext_iff.1 h j).trans (Set.mem_Iio.trans Fin.lt_def)⟩
   have hcum : cumSum (StdSimplex.map f s).weights N = cumSum s.weights a := by
-    rw [cumSum, sum_filter_weights_map f s (fun i ↦ i.val < N), cumSum]
+    rw [cumSum, StdSimplex.sum_filter_weights_map f s (fun i ↦ i.val < N), cumSum]
     exact Finset.sum_congr (Finset.filter_congr fun j _ ↦ ha j) fun _ _ ↦ rfl
-  have h₁ := sum_filter_weights_map (Prod.map f id) (prismMeasure s t)
+  have h₁ := StdSimplex.sum_filter_weights_map (Prod.map f id) (prismMeasure s t)
     (fun x ↦ x.1.val < N ∧ x.2 = b)
   simp only [Prod.map_fst, Prod.map_snd, id] at h₁
   rw [sum_filter_prod (fun x ↦ (StdSimplex.map (Prod.map f id) (prismMeasure s t)).weights x)
@@ -587,6 +514,15 @@ private lemma map_prismMeasure {m n : ℕ} (f : Fin (m + 1) →o Fin (n + 1))
   simp only [prismMeasure_weights, prismWeights]
   rw [sum_sub_cumSum s.weights (clamp _ b), sum_sub_cumSum _ (clamp _ b), hcum]
 
+/-- The vertices of the image of a simplex of `Δ[m] ⊗ Δ[1]` under `f ▷ Δ[1]` are those of the
+simplex, with `f` applied to the first coordinates. -/
+private lemma objEquiv_whiskerRight_app {m n r : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌)
+    (y : (Δ[m] ⊗ Δ[1] : SSet.{u}) _⦋r⦌) :
+    ⇑(prodStdSimplex.objEquiv ((SSet.stdSimplex.map f ▷ Δ[1]).app _ y)) =
+      Prod.map f id ∘ prodStdSimplex.objEquiv y :=
+  funext fun i ↦ Prod.ext (prodStdSimplex.objEquiv_apply_fst _ i)
+    (prodStdSimplex.objEquiv_apply_snd _ i)
+
 /-- The triangulation of the prism is natural in the simplex. -/
 lemma prism_naturality {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : StdSimplex ℝ (Fin (m + 1))) (t : I) :
     toTop.map (SSet.stdSimplex.map f ▷ Δ[1]) (prism.{u} m (s, t)) =
@@ -594,50 +530,58 @@ lemma prism_naturality {m n : ℕ} (f : ⦋m⦌ ⟶ ⦋n⦌) (s : StdSimplex ℝ
   obtain ⟨k, hk⟩ := exists_mem_piece (s, t)
   rw [prism_eq _ _ (map_pieceWeights.{u} k (s, t) hk), toTop_map_toTopObjMk]
   refine (prism_eq _ _ ?_).symm
-  rw [← map_prismMeasure, ← map_pieceWeights.{u} k (s, t) hk, StdSimplex.map_map]
-  -- The vertices of the image of a simplex under `f ▷ Δ[1]` are those of the simplex, with `f`
-  -- applied to the first coordinates.
-  rfl
+  rw [← map_prismMeasure, ← map_pieceWeights.{u} k (s, t) hk, StdSimplex.map_map,
+    objEquiv_whiskerRight_app, Function.comp_def]
+
+/-- At the ends `t = 0` and `t = 1`, the clamps cutting the prism are the identity on `[0, 1]`
+for the vertices `(i, b)` at that end, with `t = b`, and constant for the other vertices. -/
+private lemma clamp_one_sub_of_mem_Icc {a : ℝ} (ha₀ : 0 ≤ a) (ha₁ : a ≤ 1) (b b' : Fin 2) :
+    clamp (1 - (b : ℕ)) b' a = if b' = b then a else 1 - (b : ℕ) := by
+  revert b b'
+  refine Fin.forall_fin_two.2 ⟨Fin.forall_fin_two.2 ⟨?_, ?_⟩, Fin.forall_fin_two.2 ⟨?_, ?_⟩⟩ <;>
+    simp [ha₀, ha₁]
+
+/-- At the end `t = b` of the prism, all the coordinates of `(s, t)` lie on the vertices
+`(i, b)`. -/
+private lemma prismMeasure_of_eq {t : I} {b : Fin 2} (ht : (t : ℝ) = (b : ℕ))
+    (s : StdSimplex ℝ (Fin (p + 1))) : prismMeasure s t = StdSimplex.map (fun i ↦ (i, b)) s := by
+  have hinj : Function.Injective fun i : Fin (p + 1) ↦ (i, b) := fun _ _ h ↦ congrArg Prod.fst h
+  rw [← StdSimplex.weights_inj]
+  ext ⟨i, b'⟩
+  rw [prismMeasure_weights, prismWeights, ht,
+    clamp_one_sub_of_mem_Icc (cumSum_nonneg _ _) (cumSum_le_one _ _),
+    clamp_one_sub_of_mem_Icc (cumSum_nonneg _ _) (cumSum_le_one _ _), cumSum_succ]
+  split_ifs with hb
+  · subst hb
+    rw [StdSimplex.weights_map_apply_of_injective hinj]
+    ring
+  · rw [sub_self, StdSimplex.weights_map, Finsupp.mapDomain_of_notMem_range]
+    rintro ⟨j, hj⟩
+    exact hb (congrArg Prod.snd hj).symm
+
+/-- If the vertices of the image of the identity simplex under `ι : Δ[p] ⟶ Δ[p] ⊗ Δ[1]` are the
+`(i, b)`, then the end `t = b` of the triangulation of the prism is the realization of `ι`. -/
+private lemma prism_of_eq {t : I} {b : Fin 2} (ht : (t : ℝ) = (b : ℕ)) (ι : Δ[p] ⟶ Δ[p] ⊗ Δ[1])
+    (hι : ⇑(prodStdSimplex.objEquiv (ι.app _ (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)))) =
+      fun i ↦ (i, b))
+    (s : StdSimplex ℝ (Fin (p + 1))) :
+    prism.{u} p (s, t) = toTop.map ι (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s) := by
+  rw [toTop_map_toTopObjMk]
+  exact prism_eq _ _ (by rw [hι, prismMeasure_of_eq ht])
 
 /-- The bottom face `t = 0` of the triangulation of the prism is the bottom inclusion `ι₀`. -/
 lemma prism_zero (s : StdSimplex ℝ (Fin (p + 1))) :
-    prism.{u} p (s, 0) = toTop.map ι₀ (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s) := by
-  rw [toTop_map_toTopObjMk]
-  refine prism_eq _ _ ?_
-  rw [← StdSimplex.weights_inj, StdSimplex.weights_map]
-  have hinj : Function.Injective fun i : Fin (p + 1) ↦ (i, (0 : Fin 2)) :=
-    fun _ _ h ↦ congrArg Prod.fst h
-  -- The vertices of the bottom inclusion of the identity simplex are the `(i, 0)`.
-  change Finsupp.mapDomain (fun i ↦ (i, 0)) s.weights = _
-  ext ⟨i, b⟩
-  rcases (by decide : ∀ b : Fin 2, b = 0 ∨ b = 1) b with rfl | rfl
-  · rw [Finsupp.mapDomain_apply_of_injective hinj, prismMeasure_weights]
-    simp only [prismWeights, clamp_zero, Set.Icc.coe_zero, sub_zero]
-    rw [min_eq_left (cumSum_le_one _ _), min_eq_left (cumSum_le_one _ _), cumSum_succ]
-    ring
-  · rw [Finsupp.mapDomain_of_notMem_range _ _ (by simp), prismMeasure_weights]
-    simp only [prismWeights, clamp_one, Set.Icc.coe_zero, sub_zero]
-    rw [max_eq_right (cumSum_le_one _ _), max_eq_right (cumSum_le_one _ _), sub_self]
+    prism.{u} p (s, 0) = toTop.map ι₀ (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s) :=
+  prism_of_eq (b := 0) (by simp) _
+    (funext fun i ↦ Prod.ext (prodStdSimplex.objEquiv_apply_fst _ i)
+      (prodStdSimplex.objEquiv_apply_snd _ i)) s
 
 /-- The top face `t = 1` of the triangulation of the prism is the top inclusion `ι₁`. -/
 lemma prism_one (s : StdSimplex ℝ (Fin (p + 1))) :
-    prism.{u} p (s, 1) = toTop.map ι₁ (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s) := by
-  rw [toTop_map_toTopObjMk]
-  refine prism_eq _ _ ?_
-  rw [← StdSimplex.weights_inj, StdSimplex.weights_map]
-  have hinj : Function.Injective fun i : Fin (p + 1) ↦ (i, (1 : Fin 2)) :=
-    fun _ _ h ↦ congrArg Prod.fst h
-  -- The vertices of the top inclusion of the identity simplex are the `(i, 1)`.
-  change Finsupp.mapDomain (fun i ↦ (i, 1)) s.weights = _
-  ext ⟨i, b⟩
-  rcases (by decide : ∀ b : Fin 2, b = 0 ∨ b = 1) b with rfl | rfl
-  · rw [Finsupp.mapDomain_of_notMem_range _ _ (by simp), prismMeasure_weights]
-    simp only [prismWeights, clamp_zero, Set.Icc.coe_one, sub_self]
-    rw [min_eq_right (cumSum_nonneg _ _), min_eq_right (cumSum_nonneg _ _), sub_self]
-  · rw [Finsupp.mapDomain_apply_of_injective hinj, prismMeasure_weights]
-    simp only [prismWeights, clamp_one, Set.Icc.coe_one, sub_self]
-    rw [max_eq_left (cumSum_nonneg _ _), max_eq_left (cumSum_nonneg _ _), cumSum_succ]
-    ring
+    prism.{u} p (s, 1) = toTop.map ι₁ (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋p⦌)) s) :=
+  prism_of_eq (b := 1) (by simp) _
+    (funext fun i ↦ Prod.ext (prodStdSimplex.objEquiv_apply_fst _ i)
+      (prodStdSimplex.objEquiv_apply_snd _ i)) s
 
 end prodStdSimplex₁
 
@@ -665,10 +609,9 @@ private noncomputable def cylinderPaths :
     simp only [TypeCat.Fun.toFun_apply, ConcreteCategory.comp_apply, TypeCat.ofHom_apply,
       Equiv.apply_symm_apply, ContinuousMap.curry_apply, ContinuousMap.comp_apply]
     rw [← yonedaEquiv_symm_naturality_left, MonoidalCategory.comp_whiskerRight, Functor.map_comp,
-      TopCat.hom_comp, ContinuousMap.comp_apply, prodStdSimplex₁.prism_naturality]
-    -- Both sides are now the singular simplex over `x` precomposed with `StdSimplex.map f`
-    -- (`TopCat.toSSetObjEquiv_naturality_apply`).
-    rfl
+      TopCat.hom_comp, ContinuousMap.comp_apply, prodStdSimplex₁.prism_naturality,
+      TopCat.toSSetObjEquiv_naturality_apply, Equiv.apply_symm_apply, ContinuousMap.curry_apply,
+      ContinuousMap.comp_apply]
 
 /-- The value of a continuous map out of `|X|` at the point of a simplex is the value of the
 corresponding singular simplex. -/
@@ -705,32 +648,34 @@ lemma toTopCylinder_toTopObjMk {n : ℕ} (x : X _⦋n⦌) (w : StdSimplex ℝ (F
   rw [Equiv.apply_symm_apply] at h
   exact DFunLike.congr_fun h t
 
+/-- If at the end `t` the triangulation of every prism is the realization of `j`, for a natural
+family `j : Z ⟶ Z ⊗ Δ[1]`, then so is the triangulation of the realized cylinder. -/
+private lemma toTopCylinder_of_prism {t : I} (j : ∀ {Z : SSet.{u}}, Z ⟶ Z ⊗ Δ[1])
+    (hj : ∀ {Z Z' : SSet.{u}} (f : Z ⟶ Z'), j ≫ f ▷ Δ[1] = f ≫ j)
+    (hprism : ∀ (n : ℕ) (s : StdSimplex ℝ (Fin (n + 1))), prodStdSimplex₁.prism n (s, t) =
+      toTop.map j (toTopObjMk (stdSimplex.objEquiv.symm (𝟙 ⦋n⦌)) s))
+    (z : |X|) : toTopCylinder X (z, t) = toTop.map j z := by
+  refine ConcreteCategory.congr_hom (toTop_hom_ext (g₁ := TopCat.ofHom
+    ((toTopCylinder X).comp ⟨fun z ↦ (z, t), by fun_prop⟩)) fun n x w ↦ ?_) z
+  refine (TopCat.ofHom_apply _ _).trans ?_
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+  rw [toTopCylinder_toTopObjMk, hprism, toTop_map_toTopObjMk, toTop_map_toTopObjMk,
+    toTop_map_toTopObjMk, whiskerRight_app_app_objEquiv_symm_id x j j (hj _)]
+
 /-- The bottom of the triangulation of the realized cylinder is the realization of `ι₀`. -/
 @[simp]
-lemma toTopCylinder_zero (z : |X|) : toTopCylinder X (z, 0) = toTop.map ι₀ z := by
-  refine ConcreteCategory.congr_hom (toTop_hom_ext (g₁ := TopCat.ofHom
-    ((toTopCylinder X).comp ⟨fun z ↦ (z, 0), by fun_prop⟩)) fun n x w ↦ ?_) z
-  -- Unfold the evaluation of the composite continuous map.
-  change toTopCylinder X (toTopObjMk x w, 0) = _
-  rw [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_zero, toTop_map_toTopObjMk,
-    toTop_map_toTopObjMk, toTop_map_toTopObjMk,
-    whiskerRight_app_app_objEquiv_symm_id x ι₀ ι₀ (ι₀_comp _)]
+lemma toTopCylinder_zero (z : |X|) : toTopCylinder X (z, 0) = toTop.map ι₀ z :=
+  toTopCylinder_of_prism ι₀ ι₀_comp (fun _ ↦ prodStdSimplex₁.prism_zero) z
 
 /-- The top of the triangulation of the realized cylinder is the realization of `ι₁`. -/
 @[simp]
-lemma toTopCylinder_one (z : |X|) : toTopCylinder X (z, 1) = toTop.map ι₁ z := by
-  refine ConcreteCategory.congr_hom (toTop_hom_ext (g₁ := TopCat.ofHom
-    ((toTopCylinder X).comp ⟨fun z ↦ (z, 1), by fun_prop⟩)) fun n x w ↦ ?_) z
-  -- Unfold the evaluation of the composite continuous map.
-  change toTopCylinder X (toTopObjMk x w, 1) = _
-  rw [toTopCylinder_toTopObjMk, prodStdSimplex₁.prism_one, toTop_map_toTopObjMk,
-    toTop_map_toTopObjMk, toTop_map_toTopObjMk,
-    whiskerRight_app_app_objEquiv_symm_id x ι₁ ι₁ (ι₁_comp _)]
+lemma toTopCylinder_one (z : |X|) : toTopCylinder X (z, 1) = toTop.map ι₁ z :=
+  toTopCylinder_of_prism ι₁ ι₁_comp (fun _ ↦ prodStdSimplex₁.prism_one) z
 
 /-- The realization of a simplicial homotopy `H` between `f` and `g`: the homotopy between `|f|` and
 `|g|` given by the realization of `H.h : X ⊗ Δ[1] ⟶ Y` composed with the triangulation of the
 realized cylinder. -/
-noncomputable def Homotopy.toTop {f g : X ⟶ Y} (H : Homotopy f g) :
+@[expose] noncomputable def Homotopy.toTop {f g : X ⟶ Y} (H : Homotopy f g) :
     TopCat.Homotopy (SSet.toTop.map f) (SSet.toTop.map g) where
   -- Inside this declaration `toTop` would refer to `SSet.Homotopy.toTop` itself.
   toFun z := SSet.toTop.map H.h (toTopCylinder X (z.2, z.1))
@@ -740,7 +685,15 @@ noncomputable def Homotopy.toTop {f g : X ⟶ Y} (H : Homotopy f g) :
   map_one_left z := by
     rw [toTopCylinder_one, ← ConcreteCategory.comp_apply, ← Functor.map_comp, H.h₁]
 
+/-- The realization of a simplicial homotopy at time `t` is the realization of the homotopy
+applied to the triangulation of the realized cylinder. -/
+@[simp]
+lemma Homotopy.toTop_apply {f g : X ⟶ Y} (H : Homotopy f g) (t : I) (z : |X|) :
+    H.toTop (t, z) = SSet.toTop.map H.h (toTopCylinder X (z, t)) :=
+  rfl
+
 /-- The realization of a simplicial homotopy equivalence is a homotopy equivalence. -/
+@[expose, simps toFun invFun]
 noncomputable def toTopHomotopyEquiv (f : X ⟶ Y) (g : Y ⟶ X) (H₁ : Homotopy (f ≫ g) (𝟙 X))
     (H₂ : Homotopy (g ≫ f) (𝟙 Y)) : ContinuousMap.HomotopyEquiv |X| |Y| where
   toFun := (toTop.map f).hom

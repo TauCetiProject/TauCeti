@@ -12,7 +12,8 @@ public import Mathlib.Geometry.Convex.ConvexSpace.Defs
 
 Complements to Mathlib's `Convexity.StdSimplex` about the maps `StdSimplex.map f`.  An arbitrary
 map adds weights over its fibres.  An injective map embeds a standard simplex as a face of a larger
-one and keeps the weights of a point, so it is injective.  For `f = j.succAbove` its image is the
+one and keeps the weights of a point, so it is injective; a point supported on its range comes from
+the smaller simplex (`StdSimplex.comap`).  For `f = j.succAbove` its image is the
 facet on which the `j`-th weight vanishes; for the last vertex this facet is the smaller simplex
 with a zero last weight appended.  A function taking a constant value on every facet
 takes that value wherever some weight vanishes.  Two facets, opposite `j < k`, meet in the
@@ -74,6 +75,47 @@ theorem map_injective {f : X → Y} (hf : f.Injective) : (map (R := R) f).Inject
   intro x y h
   ext a
   rw [← weights_map_apply_of_injective hf, h, weights_map_apply_of_injective hf]
+
+/-- Sums of the weights of a mapped standard simplex over a set are sums of the weights over its
+preimage. -/
+theorem sum_filter_weights_map [Fintype X] [Fintype Y] (f : X → Y) (x : StdSimplex R X)
+    (P : Y → Prop) [DecidablePred P] :
+    ∑ y ∈ Finset.univ.filter P, (x.map f).weights y =
+      ∑ a ∈ Finset.univ.filter (fun a ↦ P (f a)), x.weights a := by
+  classical
+  rw [Finset.sum_filter, Finset.sum_filter, weights_map,
+    ← Finsupp.sum_fintype (Finsupp.mapDomain f x.weights) (fun y r ↦ if P y then r else 0)
+      (by simp),
+    Finsupp.sum_mapDomain_index (by simp) (fun _ _ _ ↦ by split_ifs <;> simp),
+    Finsupp.sum_fintype _ _ (by simp)]
+
+/-- A point of `StdSimplex R Y` whose weights are supported on the range of an injective map
+`f : X → Y`, pulled back to `StdSimplex R X`: a right inverse of `StdSimplex.map f` on its range
+(`StdSimplex.map_comap`). -/
+@[expose] noncomputable def comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+    (h : ↑y.weights.support ⊆ Set.range f) : StdSimplex R X where
+  weights := Finsupp.comapDomain f y.weights hf.injOn
+  nonneg a := by simp
+  total := by
+    have := y.total
+    rwa [← Finsupp.mapDomain_comapDomain f hf y.weights h,
+      Finsupp.sum_mapDomain_index (by simp) (by simp)] at this
+
+omit [IsStrictOrderedRing R] in
+/-- The weights of a pulled back point are the pulled back weights. -/
+@[simp]
+theorem weights_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+    (h : ↑y.weights.support ⊆ Set.range f) :
+    (comap hf y h).weights = Finsupp.comapDomain f y.weights hf.injOn :=
+  rfl
+
+/-- Pulling back a point along an injective map whose range contains its support, and then mapping
+forward again, recovers the point. -/
+@[simp]
+theorem map_comap {f : X → Y} (hf : f.Injective) (y : StdSimplex R Y)
+    (h : ↑y.weights.support ⊆ Set.range f) : (comap hf y h).map f = y := by
+  rw [← weights_inj, weights_map, weights_comap]
+  exact Finsupp.mapDomain_comapDomain f hf y.weights h
 
 /-- A point of a standard simplex lies on the facet opposite `j` exactly when its `j`-th weight
 vanishes. -/
