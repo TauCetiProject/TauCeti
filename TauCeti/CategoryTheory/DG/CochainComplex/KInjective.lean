@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Homology.DerivedCategory.KInjective
-public import TauCeti.AlgebraicTopology.DGNerve.HomotopyCategory
+public import TauCeti.AlgebraicTopology.DGNerve.Equivalence
 public import TauCeti.CategoryTheory.DG.CochainComplex.HomotopyCategory
 public import TauCeti.CategoryTheory.DG.QuasiEquivalence
 
@@ -46,6 +46,9 @@ chain maps and the coherences among them, which the derived category forgets.
   of a chain map `f` to `Qh` of its homotopy class.
 * The comparison functor is full and faithful, and, under `TauCeti.HasKInjectiveResolutions C`,
   essentially surjective, so it is an equivalence.
+* `TauCeti.KInjectiveDGCategory.isEquivalence_edgeMk_iff_quasiIso`: an edge represented by a
+  chain map is an equivalence precisely when that map is a quasi-isomorphism. Equivalently,
+  every integer cohomology map is invertible.
 
 ## References
 
@@ -188,6 +191,41 @@ theorem dgNerveHomotopyCategoryEquiv_functor [HasKInjectiveResolutions C] :
     (dgNerveHomotopyCategoryEquiv R C).functor =
       dgNerve.fromHomotopyCategory R (KInjectiveDGCategory C) ⋙ toDerivedCategory R C := by
   simp [dgNerveHomotopyCategoryEquiv]
+
+omit [HasDerivedCategory C] in
+/-- An edge represented by a map of K-injective complexes is an equivalence in the dg nerve
+exactly when the map is a quasi-isomorphism. Existence of K-injective resolutions for other
+complexes is not required. -/
+theorem isEquivalence_edgeMk_iff_quasiIso {K L : CochainComplex C ℤ} [K.IsKInjective]
+    [L.IsKInjective] (f : K ⟶ L)
+    (hf : CochainComplex.HomComplex.Cochain.ofHom f ∈
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := by
+        apply (mem_dgCycles R).2
+        rw [DGFullSubcategory.dgDifferential_eq, dgDifferential_linearHomComplex]
+        exact CochainComplex.HomComplex.δ_ofHom f) :
+    (dgNerve.edgeMk R (KInjectiveDGCategory C) ⟨_, hf⟩).IsEquivalence ↔ QuasiIso f := by
+  let := HasDerivedCategory.standard C
+  rw [dgNerve.isEquivalence_edgeMk_iff]
+  refine (isIso_iff_of_reflects_iso _ (toDerivedCategory R C)).symm.trans ?_
+  have h := congrArg (fun g ↦ IsIso g) (toDerivedCategory_map_homOf R C f hf)
+  exact (Iff.of_eq h).trans ((DerivedCategory.isIso_Qh_map_iff _).trans
+    ((HomotopyCategory.quotient_map_mem_quasiIso_iff f).trans
+      (HomologicalComplex.mem_quasiIso_iff f)))
+
+omit [HasDerivedCategory C] in
+/-- Equivalences between K-injective models are detected by their maps on every integer
+cohomology object; there is no boundedness restriction. -/
+theorem isEquivalence_edgeMk_iff_isIso_homologyMap {K L : CochainComplex C ℤ}
+    [K.IsKInjective] [L.IsKInjective] (f : K ⟶ L)
+    (hf : CochainComplex.HomComplex.Cochain.ofHom f ∈
+      dgCycles R (⟨K, ‹_›⟩ : KInjectiveDGCategory C) ⟨L, ‹_›⟩ := by
+        apply (mem_dgCycles R).2
+        rw [DGFullSubcategory.dgDifferential_eq, dgDifferential_linearHomComplex]
+        exact CochainComplex.HomComplex.δ_ofHom f) :
+    (dgNerve.edgeMk R (KInjectiveDGCategory C) ⟨_, hf⟩).IsEquivalence ↔
+      ∀ n : ℤ, IsIso (HomologicalComplex.homologyMap f n) := by
+  rw [isEquivalence_edgeMk_iff_quasiIso R C f hf, quasiIso_iff]
+  exact forall_congr' fun n ↦ quasiIsoAt_iff_isIso_homologyMap f n
 
 end KInjectiveDGCategory
 
