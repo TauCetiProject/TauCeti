@@ -113,7 +113,6 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.fi
       Gamma ((Module.finrank ℝ E : ℝ) / 2) *
         ((‖η‖ / 2) ^ (-((Module.finrank ℝ E : ℝ) / 2 - 1)) *
           besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖) := by
-  have hκ : 0 < ‖η‖ := norm_pos_iff.2 hη
   -- `⟪-η, x⟫` has the law of `⟪η, x⟫`, so the exponential moment is that of `cosh ⟪η, x⟫`
   have hsymm : ∫ x : sphere (0 : E) 1, exp ⟪-η, (x : E)⟫ ∂uniformSphereMeasure E =
       ∫ x : sphere (0 : E) 1, exp ⟪η, (x : E)⟫ ∂uniformSphereMeasure E := by
@@ -142,7 +141,7 @@ theorem integral_exp_inner_uniformSphereMeasure_eq_besselI (hd : 2 ≤ Module.fi
     simp only [hF, pow_mul]
     gcongr ?_ / _
     exact pow_le_pow_left₀ (sq_nonneg _) (sq_le_sq.2 hx) j
-  have hseries := (hasSum_besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) hκ).mul_left
+  have hseries := (hasSum_besselI ((Module.finrank ℝ E : ℝ) / 2 - 1) ‖η‖).mul_left
     (Gamma ((Module.finrank ℝ E : ℝ) / 2) * (‖η‖ / 2) ^ (1 - (Module.finrank ℝ E : ℝ) / 2))
   have hsum := hasSum_integral_of_summable_integral_norm hF_int (by
     simp_rw [Real.norm_of_nonneg (hF_nonneg _ _), hF,
