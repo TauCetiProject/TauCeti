@@ -28,6 +28,11 @@
   function badges(values) { var node = el("div", undefined, "ops-badges"); values.forEach(function (v) { node.append(el("span", v)); }); return node; }
   function heading(text) { return el("h3", text); }
   function empty(text) { return note(text, "ops-empty"); }
+  function taskBuild(container, progress) {
+    var b = progress && progress.build;
+    if (!b) return;
+    container.append(note("Reported " + b.stage + " build tasks " + b.completed_tasks + " / " + b.total_tasks + " · sampled " + age(b.sampled_at) + " (" + freshness(b.sampled_at,60) + ") · log output " + age(b.log_updated_at) + " · " + (b.last_progress_at ? "last observed count increase " + age(b.last_progress_at) : "count increase unobserved (first sample or reset)") + ". Log output alone does not establish build progress."));
+  }
   function route() {
     var parts = location.hash.slice(1).split("?"), params = new URLSearchParams(parts[1] || location.search);
     var inferred = params.has("pr") || params.has("batch") ? "queue" : params.has("host") || params.has("run") ? "runners" : "now";
@@ -102,7 +107,7 @@
           attempt.url ? link("Run " + attempt.run_id + " / attempt " + (attempt.run_attempt || "unknown"), attempt.url) : note("No run has been bound yet."),
           note(job ? "Build provider " + job.pool + (host ? " · host " + host.host.alias + " · VM " + host.slot.instance_id : " · assigned host unknown") + " · " + job.status : "Assigned provider/job details have not been joined for this exact run attempt."));
       }
-      (head.active_tasks || []).forEach(function (task) { container.append(note("Open " + task.kind + " task " + task.id + " · " + (task.progress && task.progress.state || "worker phase unknown"))); });
+      (head.active_tasks || []).forEach(function (task) { container.append(note("Open " + task.kind + " task " + task.id + " · " + (task.progress && task.progress.state || "worker phase unknown") + " · phase recorded " + age(task.progress && task.progress.observed_at))); taskBuild(container, task.progress); });
       if (head.first_dispatch_at) container.append(note("Head first dispatched " + age(head.first_dispatch_at) + "."));
       var claims = (queue.claims || []).filter(function (c) { return c.batch_id === head.id; });
       container.append(note(claims.length ? claims.map(function (c) { return c.operation + " by " + c.worker + " · lease expires " + timestamp(c.expires_at); }).join("; ") : "No active operation claim was observed on the head."));
@@ -177,6 +182,7 @@
       if (i.progress && i.progress.coverage === "observed") {
         var p = i.progress;
         row.append(note("Worker phase " + p.state + " · observed " + age(p.observed_at) + " · " + p.providers.join(", ") + " / " + p.models.join(", ") + " · recorded cost subtotal $" + p.cost.recorded_usd.toFixed(2) + " (" + p.cost.recorded_attempts + " known attempts; " + p.cost.unknown_attempts + " missing estimates)"));
+        taskBuild(row, p);
         var tokenLabels = {input_tokens:"input", cached_input_tokens:"cached input", output_tokens:"output", reasoning_output_tokens:"reasoning output", total_tokens:"total"};
         row.append(note("Recorded tokens · " + (p.usage ? Object.keys(tokenLabels).map(function (key) { var u=p.usage[key]; return tokenLabels[key] + ": " + (u && u.recorded_attempts ? u.recorded_tokens + " recorded (" + u.recorded_attempts + " known attempts; " + u.unknown_attempts + " missing)" : "unknown"); }).join(" · ") : "unavailable") + ". Live or unretained attempts may be absent."));
       }
