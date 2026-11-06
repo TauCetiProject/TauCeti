@@ -91,6 +91,15 @@ def partialCorrelationCholesky (z : strictLowerTriangle p → ℝ) : Matrix (Fin
   fun i j ↦ (if j < i then partialCorrelationRow z i j else if i = j then 1 else 0) *
     ∏ k ∈ Finset.Iio j, Real.sqrt (1 - partialCorrelationRow z i k ^ 2)
 
+/-- The entry formula for the partial-correlation triangular factor, with its residual product
+indexed by the preceding columns. -/
+theorem partialCorrelationCholesky_apply (z : strictLowerTriangle p → ℝ) (i j : Fin p) :
+    partialCorrelationCholesky z i j =
+      (if h : j < i then z ⟨(i, j), h⟩ else if i = j then 1 else 0) *
+        ∏ k ∈ Finset.Iio j,
+          Real.sqrt (1 - (if h : k < i then z ⟨(i, k), h⟩ else 0) ^ 2) := by
+  by_cases h : j < i <;> simp [partialCorrelationCholesky, partialCorrelationRow, h]
+
 /-- The Gram matrix associated to partial correlations. On the open cube it is a
 positive-definite correlation matrix. -/
 def partialCorrelationGram (z : strictLowerTriangle p → ℝ) : Matrix (Fin p) (Fin p) ℝ :=
