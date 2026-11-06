@@ -141,7 +141,9 @@ theorem equivAt_op_smul (b : B) (p : P b) (g : G) :
     τ.equivAt b (op g • p) = τ.equivAt b p * g :=
   τ.toTrivialization.snd_apply_smul (τ.mem_baseSet b) p g
 
-private def ofEquiv (e : ∀ b, P b ≃ G)
+/-- Assemble global coordinates from equivariant fibre equivalences with jointly continuous
+forward and inverse maps. -/
+def ofEquiv (e : ∀ b, P b ≃ G)
     (hc : Continuous fun p : TotalSpace G P ↦ (p.proj, e p.proj p.2))
     (hi : Continuous fun x : B × G ↦ (⟨x.1, (e x.1).symm x.2⟩ : TotalSpace G P))
     (he : ∀ b (p : P b) (g : G), e b (op g • p) = e b p * g) :
@@ -165,6 +167,15 @@ private def ofEquiv (e : ∀ b, P b ≃ G)
   proj_toFun _ _ := rfl
   baseSet_eq_univ := rfl
   isEquivariant := ⟨fun b _ p g ↦ he b p g⟩
+
+/-- The assembled global trivialization has the prescribed fibre coordinates. -/
+@[simp]
+theorem equivAt_ofEquiv (e : ∀ b, P b ≃ G)
+    (hc : Continuous fun p : TotalSpace G P ↦ (p.proj, e p.proj p.2))
+    (hi : Continuous fun x : B × G ↦ (⟨x.1, (e x.1).symm x.2⟩ : TotalSpace G P))
+    (he : ∀ b (p : P b) (g : G), e b (op g • p) = e b p * g) (b : B) (p : P b) :
+    (ofEquiv e hc hi he).equivAt b p = e b p :=
+  (rfl)
 
 /-- The section whose group coordinate is the identity. -/
 def sectionValue (b : B) : P b := (τ.equivAt b).symm 1
@@ -290,7 +301,8 @@ theorem gauge_one : τ.gauge 1 = τ := by
   ext b p
   simp
 
-/-- Successive left gauge changes multiply in their order of application. -/
+/-- Applying `a` and then `c` is the single gauge change by `c * a`;
+later gauges multiply on the left. -/
 @[simp]
 theorem gauge_gauge (a c : C(B, G)) : (τ.gauge a).gauge c = τ.gauge (c * a) := by
   ext b p
@@ -347,6 +359,7 @@ theorem gaugeEquiv_symm_apply : τ.gaugeEquiv.symm υ = τ.transition υ :=
   (rfl)
 
 /-- Changing reference from `τ` through `υ` composes the transition gauges on the left. -/
+@[simp]
 theorem transition_mul_transition (ρ : GlobalTrivialization G P) :
     υ.transition ρ * τ.transition υ = τ.transition ρ := by
   ext b
@@ -364,6 +377,7 @@ theorem transition_self : τ.transition τ = 1 := by
   simp
 
 /-- Reversing a transition inverts its gauge. -/
+@[simp]
 theorem inv_transition : (τ.transition υ)⁻¹ = υ.transition τ := by
   rw [inv_eq_iff_mul_eq_one, transition_mul_transition, transition_self]
 
@@ -402,8 +416,16 @@ def pullback : GlobalTrivialization G ((⇑f) *ᵖ P) :=
 /-- Pullback reads the coordinate over the image base point. -/
 @[simp]
 theorem equivAt_pullback (b : B') (p : ((⇑f) *ᵖ P) b) :
-    (τ.pullback f).equivAt b p = τ.equivAt (f b) p :=
-  (rfl)
+    (τ.pullback f).equivAt b p = τ.equivAt (f b) p := by
+  let := τ.nonempty_fibres
+  calc
+    (τ.pullback f).equivAt b p = (τ.toTrivialization.pullback f ⟨b, p⟩).2 :=
+      (τ.pullback f).equivAt_apply b p
+    _ = (τ.toTrivialization (Pullback.lift f ⟨b, p⟩)).2 :=
+      congrArg Prod.snd (τ.toTrivialization.pullback_apply f ⟨b, p⟩)
+    _ = (τ.toTrivialization ⟨f b, p⟩).2 :=
+      congrArg (fun q ↦ (τ.toTrivialization q).2) (Pullback.lift_mk f b p)
+    _ = τ.equivAt (f b) p := (τ.equivAt_apply (f b) p).symm
 
 /-- The selected section pulls back by composition on the base. -/
 @[simp]
@@ -428,7 +450,13 @@ variable [IsTopologicalGroup G]
 theorem pullback_gauge (a : C(B, G)) :
     (τ.gauge a).pullback f = (τ.pullback f).gauge (a.comp f) := by
   ext b p
-  rfl
+  calc
+    ((τ.gauge a).pullback f).equivAt b p = (τ.gauge a).equivAt (f b) p :=
+      (τ.gauge a).equivAt_pullback f b p
+    _ = a (f b) * τ.equivAt (f b) p := τ.equivAt_gauge a (f b) p
+    _ = ((τ.pullback f).gauge (a.comp f)).equivAt b p := by
+      rw [(τ.pullback f).equivAt_gauge, ContinuousMap.comp_apply]
+      exact congrArg (a (f b) * ·) (τ.equivAt_pullback f b p).symm
 
 end Pullback
 
