@@ -31,7 +31,7 @@ control the primitive prime divisors of `a ^ n - b ^ n` (the Bang–Zsigmondy th
 * `TauCeti.homogeneousCyclotomic_eq_sum`: `Φ_n(a, b)` as the sum `∑_{k + l = φ(n)} c_k a^k b^l`.
 * `TauCeti.homogeneousCyclotomic_one_right`, `TauCeti.homogeneousCyclotomic_eq_eval_div_mul_pow`:
   `Φ_n(a, 1) = Φ_n(a)`, and `Φ_n(a, b) = Φ_n(a / b) b ^ φ(n)` for `b ≠ 0` in a field.
-* `TauCeti.map_homogeneousCyclotomic`: ring homomorphisms commute with `Φ_n(·, ·)`.
+* `RingHom.map_homogeneousCyclotomic`: ring homomorphisms commute with `Φ_n(·, ·)`.
 * `TauCeti.homogeneousCyclotomic_mul_mul`: `Φ_n(c a, c b) = c ^ φ(n) Φ_n(a, b)`.
 * `TauCeti.homogeneousCyclotomic_zero`, `_one`, `_two`, `_three`, `_six`, `_prime`,
   `_prime_pow`: closed forms, including `Φ_p(a, b) = ∑_{i < p} a ^ i b ^ (p - 1 - i)` and
@@ -105,7 +105,7 @@ theorem homogeneousCyclotomic_eq_eval_div_mul_pow {K : Type*} [Field K] (n : ℕ
 
 /-- Ring homomorphisms commute with homogeneous cyclotomic values. -/
 @[simp]
-theorem map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b : R) :
+theorem _root_.RingHom.map_homogeneousCyclotomic (f : R →+* S) (n : ℕ) (a b : R) :
     f (homogeneousCyclotomic n a b) = homogeneousCyclotomic n (f a) (f b) := by
   rw [homogeneousCyclotomic_def, homogeneousCyclotomic_def, MvPolynomial.map_eval,
     ← homogenize_map, map_cyclotomic, ← FinVec.map_eq]

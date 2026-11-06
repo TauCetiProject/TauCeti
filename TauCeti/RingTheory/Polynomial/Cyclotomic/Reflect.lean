@@ -16,10 +16,6 @@ directions: over any commutative ring, reflecting `cyclotomic n R` at its degree
 `cyclotomic n R`, so its coefficients of index `k` and `φ(n) - k` agree for `k ≤ φ(n)`. The
 exception is `Φ_1 = X - 1`, whose reflection `1 - X` is `-Φ_1`.
 
-The proof is by strong induction through the factorization `X ^ n - 1 = ∏_{d ∣ n} Φ_d`: the
-reflection of `X ^ n - 1` at `n` is `-(X ^ n - 1)`, the proper divisors of `n ≥ 2` contribute the
-single sign of `Φ_1`, and the remaining factor is cancelled because it is monic.
-
 Palindromicity is what makes the two-variable cyclotomic values `Φ_n(a, b)` symmetric in `a`
 and `b` for `n ≠ 1`.
 
@@ -37,8 +33,12 @@ namespace Polynomial
 
 variable {R : Type*} [CommRing R]
 
-/-- Reflecting `Φ_n` at `φ(n)` negates it when `n = 1` and fixes it otherwise; this is the
-statement carried through the strong induction behind `Polynomial.reflect_cyclotomic`. -/
+/- The proof is by strong induction through the factorization `X ^ n - 1 = ∏_{d ∣ n} Φ_d`: the
+reflection of `X ^ n - 1` at `n` is `-(X ^ n - 1)`, the proper divisors of `n ≥ 2` contribute the
+single sign of `Φ_1`, and the remaining factor is cancelled because it is monic. The statement
+below, covering `n = 1` as well, is the one carried through that induction. -/
+
+/-- Reflecting `Φ_n` at `φ(n)` negates it when `n = 1` and fixes it otherwise. -/
 private theorem reflect_cyclotomic_eq_C_mul (n : ℕ) :
     (cyclotomic n R).reflect n.totient = C (if n = 1 then -1 else 1) * cyclotomic n R := by
   induction n using Nat.strong_induction_on with | _ n ih
