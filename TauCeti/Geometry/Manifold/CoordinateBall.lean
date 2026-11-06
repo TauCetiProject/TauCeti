@@ -5,11 +5,14 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
-public import Mathlib.Geometry.Manifold.ChartedSpace
+public import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
+public import Mathlib.Geometry.Manifold.IsManifold.Basic
 
 /-!
-# Disjoint coordinate balls about finitely many points
+# Coordinate balls
+
+A coordinate ball about a point `x` of a space charted on a real normed space `E` is an open
+embedding of a ball of `E`, or of `E` itself, into the space, sending the centre to `x`.
 
 Let `X` be a Hausdorff space charted on a real normed space `E`. Finitely many points of `X` have
 pairwise disjoint coordinate balls about them: for a finite `S ⊆ X` and `r > 0`, there is an open
@@ -17,9 +20,16 @@ embedding of `S × ball 0 r` into `X` sending `(s, 0)` to `s`. The proof builds 
 inverse of the chart at `s` precomposed with an affine rescaling, and sends distinct slices into
 the disjoint open sets given by `Set.Finite.t2_separation`.
 
+On a manifold without boundary modelled on `E`, through any model with corners `I`, coordinate
+balls form a neighbourhood basis: every neighbourhood of `x` contains the range of an open
+embedding `E → M` sending `0` to `x`. In particular every point has arbitrarily small open
+neighbourhoods homeomorphic to `E`.
+
 ## Main results
 
 * `Set.Finite.exists_isOpenEmbedding_prod_ball`: the open embedding of `S × ball 0 r`.
+* `TauCeti.exists_isOpenEmbedding_range_subset`: a coordinate ball `E → M` inside a prescribed
+  neighbourhood.
 -/
 
 public section
@@ -77,3 +87,37 @@ theorem exists_isOpenEmbedding_prod_ball (hS : S.Finite) {r : ℝ} (hr : 0 < r) 
       (by rintro _ ⟨_, ⟨z, -, rfl⟩, rfl⟩; exact (hεW s (hball s z.2)).1)
 
 end Set.Finite
+
+namespace TauCeti
+
+variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
+  [TopologicalSpace M] [ChartedSpace H M]
+
+/-- **Coordinate balls form a neighbourhood basis.** On a space charted on `H` through a model `I`
+without boundary, every neighbourhood `s` of a point `x` contains the range of an open embedding
+`e : E → M` with `e 0 = x`. -/
+theorem exists_isOpenEmbedding_range_subset (I : ModelWithCorners ℝ E H) [I.Boundaryless] {x : M}
+    {s : Set M} (hs : s ∈ 𝓝 x) :
+    ∃ e : E → M, e 0 = x ∧ IsOpenEmbedding e ∧ range e ⊆ s := by
+  -- The chart at `x`, read in `E` and restricted to the interior of `s`.
+  let c := ((chartAt H x).trans I.toHomeomorph.toOpenPartialHomeomorph).restrOpen (interior s)
+    isOpen_interior
+  have hx : x ∈ c.source := by
+    simp [c, mem_interior_iff_mem_nhds.2 hs]
+  obtain ⟨r, hr, hball⟩ := isOpen_iff.mp c.open_target (c x) (c.map_source hx)
+  -- A homeomorphism of `E` onto a ball about `c x` inside the chart target.
+  let b := OpenPartialHomeomorph.univBall (c x) r
+  have hb (v : E) : b v ∈ c.target := hball <| by
+    rw [← OpenPartialHomeomorph.univBall_target (c x) hr]
+    exact b.map_source (by simp [b])
+  let φ := b.trans c.symm
+  have hφ : φ.source = univ := by
+    rw [OpenPartialHomeomorph.trans_source, OpenPartialHomeomorph.univBall_source,
+      OpenPartialHomeomorph.symm_source, univ_inter]
+    exact eq_univ_of_forall hb
+  refine ⟨φ, ?_, φ.isOpenEmbedding hφ, ?_⟩
+  · simp [φ, b, c.left_inv hx]
+  · rintro _ ⟨v, rfl⟩
+    exact interior_subset (c.map_target (hb v)).2
+
+end TauCeti
