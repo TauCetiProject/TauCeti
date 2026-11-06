@@ -240,6 +240,21 @@ theorem IsManifoldNondegenerateCriticalPoint.eventually_notMem_criticalPoints
 
 end Chart
 
+/-- A nondegenerate critical point is a critical point. No boundary hypothesis is needed: the
+coordinate expression has zero Fréchet derivative, hence zero derivative within the range of the
+model with corners. -/
+theorem IsManifoldNondegenerateCriticalPoint.mem_criticalPoints
+    (h : IsManifoldNondegenerateCriticalPoint I f x) : x ∈ criticalPoints I f := by
+  have h' := (isManifoldNondegenerateCriticalPoint_iff I).1 h
+  by_cases hf : MDifferentiableAt I 𝓘(ℝ) f x
+  · rw [_root_.TauCeti.mem_criticalPoints, hf.mvfderiv, writtenInExtChartAt,
+      extChartAt_model_space_eq_id, PartialEquiv.refl_coe, Function.id_comp,
+      (h'.contDiffAt.differentiableAt (by simp)).fderivWithin
+        (I.uniqueDiffOn _ (mem_range_self _)), h'.fderiv_eq_zero]
+    rfl
+  · rw [mem_criticalPoints_iff_mfderiv_eq_zero]
+    exact mfderiv_zero_of_not_mdifferentiableAt hf
+
 section Boundaryless
 
 variable [I.Boundaryless]
@@ -258,12 +273,6 @@ theorem mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero :
       fderiv_zero_of_not_differentiableAt
         (mt mdifferentiableAt_iff_differentiableAt_comp_extChartAt_symm.2 hf)]
     simp only
-
-/-- A nondegenerate critical point is a critical point. -/
-theorem IsManifoldNondegenerateCriticalPoint.mem_criticalPoints
-    (h : IsManifoldNondegenerateCriticalPoint I f x) : x ∈ criticalPoints I f :=
-  mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero.2
-    ((isManifoldNondegenerateCriticalPoint_iff I).1 h).fderiv_eq_zero
 
 /-- A function is Morse on `s` exactly when it is smooth on `s` and each of its critical points in
 `s` is nondegenerate. -/
