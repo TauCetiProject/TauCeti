@@ -56,7 +56,7 @@ The proof has three steps.
   for a `P`-resolution `K` of `X`, and
   `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_comp_homologyMap`, its
   characterization through any injective resolution.
-* `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_naturality`: compatibility with
+* `CategoryTheory.Functor.rightDerivedObjIsoOfResolution_hom_naturality`: compatibility with
   morphisms of augmented resolutions.
 * `CategoryTheory.Functor.rightDerivedIsoOfResolution`: the natural isomorphism for a
   functorial adapted resolution.
@@ -323,7 +323,7 @@ lemma rightDerivedObjIsoOfResolution_hom_comp_homologyMap (n : ℕ) (I : Injecti
 /-- The computation by adapted resolutions is natural in a morphism of augmented resolutions.
 The map on the resolutions need not be a quasi-isomorphism. -/
 @[reassoc]
-lemma rightDerivedObjIsoOfResolution_naturality {Y : C} {L : CochainComplex C ℕ}
+lemma rightDerivedObjIsoOfResolution_hom_naturality {Y : C} {L : CochainComplex C ℕ}
     (κ : (single₀ C).obj Y ⟶ L) [QuasiIso κ] (hL : ∀ n, P (L.X n))
     (f : X ⟶ Y) (φ : K ⟶ L) (hφ : ι ≫ φ = (single₀ C).map f ≫ κ) (n : ℕ) :
     (F.rightDerived n).map f ≫ (F.rightDerivedObjIsoOfResolution P hinj hP hF κ hL n).hom =
@@ -364,7 +364,7 @@ noncomputable def rightDerivedIsoOfResolution (K : C ⥤ CochainComplex C ℕ)
     (ι : single₀ C ⟶ K) [∀ X, QuasiIso (ι.app X)] (hK : ∀ X n, P ((K.obj X).X n)) (n : ℕ) :
     F.rightDerived n ≅ K ⋙ F.mapHomologicalComplex _ ⋙ HomologicalComplex.homologyFunctor _ _ n :=
   NatIso.ofComponents (fun X ↦ F.rightDerivedObjIsoOfResolution P hinj hP hF (ι.app X) (hK X) n)
-    (fun f ↦ F.rightDerivedObjIsoOfResolution_naturality P hinj hP hF
+    (fun f ↦ F.rightDerivedObjIsoOfResolution_hom_naturality P hinj hP hF
       (ι.app _) (hK _) (ι.app _) (hK _) f (K.map f) (ι.naturality f).symm n)
 
 /-- Components of the natural comparison are the comparisons for the individual resolutions. -/

@@ -63,15 +63,6 @@ lemma rightDerivedΓIsoGodement_app (n : ℕ)
         (isFlasque_godementResolution_obj_X (ModuleCat.{u} R) X F) n := by
   simp [rightDerivedΓIsoGodement]
 
-end TauCeti.Topology
-
-namespace CategoryTheory.Sheaf
-
-open TauCeti.Topology
-
-variable {X : TopCat.{u}} {R : Type u} [CommRing R]
-  [(Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).Additive]
-
 /-- The Godement comparison is induced by any augmentation-preserving map to any injective
 resolution. In particular the comparison is independent of all such choices. -/
 @[reassoc]
@@ -81,12 +72,12 @@ lemma rightDerivedΓIsoGodement_hom_comp_homologyMap
     (φ : (godementResolution (ModuleCat.{u} R) X).obj F ⟶ I.cocomplex)
     (hφ : (toGodementResolution (ModuleCat.{u} R) X).app F ≫ φ = I.ι) :
     (rightDerivedΓIsoGodement (X := X) (R := R) n).hom.app F ≫
-      ((Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _ ⋙
+      ((Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)).mapHomologicalComplex _ ⋙
         HomologicalComplex.homologyFunctor _ _ n).map φ =
-      (I.isoRightDerivedObj (Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)) n).hom := by
+      (I.isoRightDerivedObj (Sheaf.Γ (Opens.grothendieckTopology X) (ModuleCat.{u} R)) n).hom := by
   simpa only [← Iso.app_hom, rightDerivedΓIsoGodement_app] using
-    rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap
+    Sheaf.rightDerivedΓObjIsoOfIsFlasque_hom_comp_homologyMap
       ((toGodementResolution (ModuleCat.{u} R) X).app F)
       (isFlasque_godementResolution_obj_X (ModuleCat.{u} R) X F) n I φ hφ
 
-end CategoryTheory.Sheaf
+end TauCeti.Topology
