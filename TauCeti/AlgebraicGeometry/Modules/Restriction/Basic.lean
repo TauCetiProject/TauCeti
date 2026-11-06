@@ -32,8 +32,10 @@ isomorphism on those sections restricts to an isomorphism
 unit of the restriction--pushforward adjunction is an isomorphism on sections
 (`AlgebraicGeometry.Scheme.Modules.isIso_restrictAdjunction_unit_app_app`). Restriction along an
 isomorphism of schemes reflects isomorphisms, a submodule containing one that is everything over
-an open is everything over it, and restriction to the slice site over an open preserves
-epimorphisms.
+an open is everything over it, a morphism that is an isomorphism over the image of an open
+immersion is one over every smaller image
+(`AlgebraicGeometry.Scheme.Modules.isIso_restrictFunctor_map_of_opensRange_le`), and restriction
+to the slice site over an open preserves epimorphisms.
 
 The adjunction is Mathlib's `SheafOfModules.PullbackConstruction.adjunction`; the underlying
 presheaf right adjoint is `PresheafOfModules.instIsRightAdjointPushforward`.
@@ -193,6 +195,26 @@ theorem isIso_restrictFunctor_map_of_fac {X U : Scheme.{u}} (j : U ⟶ X) [IsOpe
   have : Epi ((restrictFunctor j).map i) :=
     epi_of_epi_fac (((restrictFunctor j).map_comp g i).symm.trans (by rw [hg]))
   exact isIso_of_mono_of_epi _
+
+/-- Restriction along an open immersion `g` factors through restriction along any open immersion
+whose image contains that of `g`: if `f` and `g` are open immersions with
+`g.opensRange ≤ f.opensRange`, then `restrictFunctor g` is restriction along `f` followed by
+restriction along the lift of `g` through `f`. -/
+noncomputable def restrictFunctorIsoOfOpensRangeLE {X Y Z : Scheme.{u}} (f : Y ⟶ X)
+    [IsOpenImmersion f] (g : Z ⟶ X) [IsOpenImmersion g] (h : g.opensRange ≤ f.opensRange) :
+    restrictFunctor g ≅ restrictFunctor f ⋙
+      restrictFunctor (IsOpenImmersion.lift f g
+        (by simpa only [Scheme.Hom.coe_opensRange] using SetLike.coe_subset_coe.mpr h)) :=
+  restrictFunctorCongr (IsOpenImmersion.lift_fac _ _ _).symm ≪≫ restrictFunctorComp _ _
+
+/-- A morphism of modules that is an isomorphism over the image of an open immersion `f` is an
+isomorphism over the image of every open immersion `g` with `g.opensRange ≤ f.opensRange`. -/
+theorem isIso_restrictFunctor_map_of_opensRange_le {X Y Z : Scheme.{u}} (f : Y ⟶ X)
+    [IsOpenImmersion f] (g : Z ⟶ X) [IsOpenImmersion g] (h : g.opensRange ≤ f.opensRange)
+    {M N : X.Modules} (φ : M ⟶ N) [IsIso ((restrictFunctor f).map φ)] :
+    IsIso ((restrictFunctor g).map φ) :=
+  (NatIso.isIso_map_iff (restrictFunctorIsoOfOpensRangeLE f g h) φ).mpr
+    (inferInstanceAs (IsIso ((restrictFunctor _).map ((restrictFunctor f).map φ))))
 
 /-- Restriction to the slice site over an open preserves epimorphisms: up to the open-subscheme
 equivalence it is restriction to the open subscheme, a left adjoint. -/
