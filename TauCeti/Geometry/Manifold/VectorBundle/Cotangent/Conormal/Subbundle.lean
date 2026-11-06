@@ -9,7 +9,6 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import Mathlib.Geometry.Manifold.VectorBundle.Pullback
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.Cotangent.Conormal.Basic
-public import TauCeti.Geometry.Manifold.VectorBundle.Euler
 public import TauCeti.Geometry.Manifold.VectorBundle.Subbundle
 import TauCeti.Analysis.Calculus.QuotientRange
 import TauCeti.Geometry.Manifold.MFDeriv.Coordinates
@@ -36,12 +35,10 @@ injective at every `q : Q`, the conormal spaces admit `C^n` local frames
 `i q₀` to a `C^n` local basis of `conormalSpace J I i`. Via `TauCeti.IsSubbundleFrameOn`, this makes
 `conormalSpace J I i` a `C^n` vector bundle of rank `k` over `Q` (`conormalFiberBundle`,
 `conormalVectorBundle`, `conormalContMDiffVectorBundle`) with `C^n` canonical inclusion into `T*M`
-(`contMDiff_conormalInclusion`), which carries the Euler vector field of the conormal bundle to that
-of `T*M` (`mfderiv_conormalInclusion_vectorBundleEulerField`), and model dimension `dim M`
-(`finrank_conormalBundleModel`), without assuming `Q` or `M` boundaryless. When `Q` is boundaryless
-and `i` is a `C^m` smooth embedding (`n + 1 ≤ m`),
-`TauCeti.isSmoothEmbedding_lift_totalSpace_subbundle` shows `conormalInclusion` is a `C^n` smooth
-embedding (`isSmoothEmbedding_conormalInclusion`). Point, full-manifold, product, and
+(`contMDiff_conormalInclusion`) and model dimension `dim M` (`finrank_conormalBundleModel`), without
+assuming `Q` or `M` boundaryless. When `Q` is boundaryless and `i` is a `C^m` smooth embedding
+(`n + 1 ≤ m`), `TauCeti.isSmoothEmbedding_lift_totalSpace_subbundle` shows `conormalInclusion` is a
+`C^n` smooth embedding (`isSmoothEmbedding_conormalInclusion`). Point, full-manifold, product, and
 slice examples are in `Conormal.Basic` and `Conormal.Prod`.
 
 ## Main definitions and results
@@ -58,8 +55,6 @@ slice examples are in `Conormal.Basic` and `Conormal.Prod`.
   `conormalContMDiffVectorBundle`, `contMDiff_conormalInclusion`,
   `isSmoothEmbedding_conormalInclusion`: `C^n` vector subbundle structure and `C^n` smooth embedding
   into `T*M`.
-* `TauCeti.CotangentBundle.mfderiv_conormalInclusion_vectorBundleEulerField`: the inclusion carries
-  the Euler vector field of the conormal bundle to that of `T*M`.
 
 ## References
 
@@ -628,28 +623,6 @@ theorem contMDiff_conormalInclusion {i : Q → M} (hi : ContMDiff J I m i) (hmn 
     ⟨(htriv ▸ he : hX.trivialization ic hU ∈ _)⟩
   exact hX.isSubbundleFrameOn.contMDiffAt_totalSpace_subbundle hU (hX.contMDiffOn_pullback ic hU)
     (p := ⟨z.proj, z.2⟩) hzU
-
-/-- **The conormal inclusion preserves Euler fields.** The canonical inclusion of the conormal
-bundle of `i` into `T*M` is linear on fibres, so it carries the Euler vector field of the conormal
-bundle to the Euler vector field `p ∂_p` of `T*M`. -/
-theorem mfderiv_conormalInclusion_vectorBundleEulerField {i : Q → M} (hi : ContMDiff J I m i)
-    (hmn : n + 1 ≤ m) (hinj : ∀ q, Injective (mfderiv J I i q))
-    (hk : finrank 𝕜 F + k = finrank 𝕜 E) (hn : n ≠ 0)
-    (z : TotalSpace (Fin k → 𝕜) fun q ↦ conormalSpace J I i q) :
-    haveI : IsManifold I 1 M := .of_le ((le_add_left le_rfl).trans hmn)
-    letI := conormalFiberBundle hi hmn hinj hk
-    letI := conormalVectorBundle hi hmn hinj hk
-    mfderiv (J.prod 𝓘(𝕜, Fin k → 𝕜)) (I.prod 𝓘(𝕜, E →L[𝕜] 𝕜))
-        (conormalInclusion (Fin k → 𝕜) J I i) z (vectorBundleEulerField J z) =
-      vectorBundleEulerField I (conormalInclusion (Fin k → 𝕜) J I i z) := by
-  have : IsManifold I 1 M := .of_le ((le_add_left le_rfl).trans hmn)
-  let := conormalFiberBundle hi hmn hinj hk
-  let := conormalVectorBundle hi hmn hinj hk
-  refine mfderiv_vectorBundleEulerField_of_smul
-    ((contMDiff_conormalInclusion hi hmn hinj hk z).mdifferentiableAt hn) fun t ↦ ?_
-  -- `conormalInclusion` is `(q, p) ↦ (i q, p)`, and the coercion of a scalar multiple in the
-  -- conormal subspace is the scalar multiple of the coercion.
-  exact TotalSpace.ext rfl (heq_of_eq (Submodule.coe_smul t z.2))
 
 omit [IsRCLikeNormedField 𝕜] [FiniteDimensional 𝕜 E] in
 /-- **Dimension of the conormal bundle model.** When `finrank 𝕜 F + k = finrank 𝕜 E`, the model

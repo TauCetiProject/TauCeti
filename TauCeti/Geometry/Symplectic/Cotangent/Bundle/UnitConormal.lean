@@ -24,7 +24,7 @@ preimage of the unit cosphere bundle `S*M` under the inclusion of `N*Q`.
 
 The norm of covectors is homogeneous of degree one along the fibres, and the inclusion of `N*Q`
 into `T*M` is linear on fibres, so it carries the Euler vector field of `N*Q` to that of `T*M`
-(`TauCeti.CotangentBundle.mfderiv_conormalInclusion_vectorBundleEulerField`). The differential of
+(`TauCeti.mfderiv_vectorBundleEulerField_of_linear`). The differential of
 the norm therefore sends the Euler field to `1` along the unit conormal bundle, so that it is a
 regular level of the norm on `N*Q`. It carries the atlas of regular levels
 (`TauCeti.CotangentBundle.unitConormalChartedSpace`), for which it is a smooth manifold of
@@ -180,7 +180,9 @@ theorem isRegularValue_norm_snd_conormalInclusion (hi : ContMDiff J I ∞ i)
       (contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk z).mdifferentiableAt (by simp)
     have h := mfderiv_comp_apply (g := fun w : CotangentBundle I M ↦ ‖w.2‖) z hnorm hι
       (vectorBundleEulerField J z)
-    rw [mfderiv_conormalInclusion_vectorBundleEulerField hi (by simp) hinj hk (by simp),
+    -- The conormal inclusion is linear on fibres, so it preserves Euler fields.
+    rw [mfderiv_vectorBundleEulerField_of_linear (fun q ↦ (conormalSpace J I i q).subtype)
+      (conormalInclusion_apply (Fin k → ℝ) J I i) hι,
       mfderiv_norm_snd_vectorBundleEulerField hne] at h
     exact h
   -- The differential is onto `ℝ`, whose tangent spaces are `ℝ` itself.

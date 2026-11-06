@@ -152,21 +152,21 @@ ray `t ↦ t • z` the norm is `t ↦ |t| ‖z.2‖`. -/
 theorem mfderiv_norm_snd_vectorBundleEulerField {z : CotangentBundle I M} (hz : z.2 ≠ 0) :
     mfderiv (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) (fun z : CotangentBundle I M ↦ ‖z.2‖) z
       (vectorBundleEulerField I z) = ‖z.2‖ := by
-  have : IsManifold I (1 + 1) M := by norm_num; infer_instance
-  -- Near `t = 1`, the norm along the ray `t ↦ t • z` is `t ↦ t * ‖z.2‖`.
-  have hray : HasDerivAt ((fun z : CotangentBundle I M ↦ ‖z.2‖) ∘
-      fun t : ℝ ↦ (⟨z.proj, t • z.2⟩ : CotangentBundle I M)) ‖z.2‖ 1 := by
+  set f : CotangentBundle I M → ℝ := fun z ↦ ‖z.2‖
+  have hf : MDifferentiableAt (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) 𝓘(ℝ) f z := by
+    have : IsManifold I (1 + 1) M := by norm_num; infer_instance
+    exact (contMDiffAt_norm_snd (n := 1) hz).mdifferentiableAt one_ne_zero
+  -- Near `t = 1`, the norm along the ray is `t ↦ t * ‖z.2‖`.
+  have hray : HasDerivAt (f ∘ fun t : ℝ ↦ (⟨z.proj, t • z.2⟩ : CotangentBundle I M)) ‖z.2‖ 1 := by
     refine (hasDerivAt_mul_const ‖z.2‖).congr_of_eventuallyEq ?_
     filter_upwards [lt_mem_nhds one_pos] with t ht
     -- This is `norm_smul`; instance search does not find `NormSMulClass` for covectors of the
     -- Riemannian fibre norm, so it is supplied from the `NormedSpace` instance.
     exact ((NormedSpace.toNormSMulClass (𝕜 := ℝ) (E := TangentSpace I z.proj →L[ℝ] ℝ)).norm_smul
       t z.2).trans (by rw [Real.norm_of_nonneg ht.le])
-  rw [mfderiv_vectorBundleEulerField
-      ((contMDiffAt_norm_snd (n := 1) hz).mdifferentiableAt one_ne_zero),
-    hray.hasFDerivAt.hasMFDerivAt.mfderiv]
-  -- `toSpanSingleton v` sends `1` to `1 • v`; `simp` cannot see this, since `1` lives in the
-  -- tangent space of `ℝ` at `1`.
+  rw [mfderiv_vectorBundleEulerField hf, hray.hasFDerivAt.hasMFDerivAt.mfderiv]
+  -- `toSpanSingleton ℝ v` sends `1` to `1 • v`. The lemma `toSpanSingleton_apply` cannot be used by
+  -- `rw` here, since the derivative is typed as a map between tangent spaces of `ℝ`.
   exact one_smul ℝ _
 
 /-- **Covectors other than zero are regular points of the norm.** Every covector `z` with
