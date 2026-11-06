@@ -108,8 +108,9 @@ private theorem not_isProperPower_mk_take_period {v : List (α × Bool)}
     rwa [toWord_mk, hb.isReduced.reduce_eq, toWord_pow,
       reduceCyclically.reduce_flatten_replicate isReduced_toWord,
       ite_eq_right (by omega : ¬n = 0)] at this
-  have hc : reduceCyclically.conjugator y.toWord = [] :=
-    IsCyclicallyReduced.eq_nil_of_append_append_invRev (hword ▸ hb)
+  have hc : reduceCyclically.conjugator y.toWord = [] := by
+    by_contra hc
+    exact not_isCyclicallyReduced_append_append_invRev hc _ (hword ▸ hb)
   rw [hc, nil_append, invRev,
     map_nil, reverse_nil, append_nil] at hword
   set v' := reduceCyclically y.toWord
