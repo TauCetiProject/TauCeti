@@ -37,6 +37,7 @@ finite Newton face for a real additive valuation are
 
 * `TauCeti.PowerSeries.IsDistinguished.norm_le_of_eval_eq_zero`: the roots of a monic polynomial
   distinguished in its full degree lie in the closed disc.
+* `TauCeti.PowerSeries.gaussNorm_X_sub_C`: the Gauss norm of `X - b` at `c ≥ 0` is `max c ‖b‖`.
 * `TauCeti.PowerSeries.IsDistinguished.card_filter_roots_norm_le_le` and
   `TauCeti.PowerSeries.IsDistinguished.card_filter_roots_norm_le_eq`: the distinguished degree
   bounds, and for a split polynomial equals, the number of roots in the closed disc.
@@ -87,26 +88,32 @@ section LinearFactor
 
 variable {R : Type*} [NormedRing R] [NormOneClass R] {c : ℝ}
 
-/-- The Gauss norm at `c` of a linear polynomial `X - b` with `c ≤ ‖b‖` is `‖b‖`, attained by the
-constant term. -/
-private theorem gaussNorm_X_sub_C_of_le {b : R} (hb : c ≤ ‖b‖) :
-    (PowerSeries.X - PowerSeries.C b : PowerSeries R).gaussNorm norm c = ‖b‖ := by
+/-- The Gauss norm at a radius `c ≥ 0` of the linear series `X - b` is `max c ‖b‖`. This is the
+power series counterpart of `Polynomial.gaussNorm_X_sub_C`, for a norm that need not be
+multiplicative. -/
+@[simp]
+theorem gaussNorm_X_sub_C (hc : 0 ≤ c) (b : R) :
+    (PowerSeries.X - PowerSeries.C b : PowerSeries R).gaussNorm norm c = max c ‖b‖ := by
   have : Nontrivial R := NormOneClass.nontrivial
-  rw [gaussNorm_eq_of_forall_le (s := 0)]
-  · simp
-  · intro m
-    rcases m with _ | _ | m
-    · simp
-    · simpa using hb
-    · simp [PowerSeries.coeff_X]
+  have hle : ∀ m, ‖(PowerSeries.X - PowerSeries.C b : PowerSeries R).coeff m‖ * c ^ m ≤
+      max c ‖b‖ := by
+    rintro (_ | _ | m) <;> simp [PowerSeries.coeff_X, hc]
+  have hb : BddAbove (Set.range fun m ↦
+      ‖(PowerSeries.X - PowerSeries.C b : PowerSeries R).coeff m‖ * c ^ m) :=
+    ⟨_, Set.forall_mem_range.mpr hle⟩
+  refine le_antisymm ((PowerSeries.gaussNorm_eq _ _ _).trans_le (ciSup_le hle)) (max_le ?_ ?_)
+  · simpa using PowerSeries.le_gaussNorm norm c _ hb 1
+  · simpa using PowerSeries.le_gaussNorm norm c _ hb 0
 
 /-- A linear polynomial `X - b` whose root lies outside the closed disc of radius `c > 0` is
 distinguished of degree `0` at `c`: its Gauss norm `‖b‖` is attained only by the constant term. -/
 theorem isDistinguished_zero_X_sub_C (hc : 0 < c) {b : R} (hb : c < ‖b‖) :
     IsDistinguished c 0 (PowerSeries.X - PowerSeries.C b) := by
   have : Nontrivial R := NormOneClass.nontrivial
-  refine ⟨by simp [gaussNorm_X_sub_C_of_le hb.le], fun m hm ↦ ?_⟩
-  rw [gaussNorm_X_sub_C_of_le hb.le]
+  have hn := gaussNorm_X_sub_C hc.le b
+  rw [max_eq_right hb.le] at hn
+  refine ⟨by simp [hn], fun m hm ↦ ?_⟩
+  rw [hn]
   rcases m with _ | _ | m
   · omega
   · simpa using hb
@@ -116,9 +123,9 @@ theorem isDistinguished_zero_X_sub_C (hc : 0 < c) {b : R} (hb : c < ‖b‖) :
 lowest dominant degree `0` at `c`: its Gauss norm `‖b‖` is attained by the constant term. -/
 theorem isLowestDominant_zero_X_sub_C (hc : 0 < c) {b : R} (hb : c ≤ ‖b‖) :
     IsLowestDominant c 0 (PowerSeries.X - PowerSeries.C b) := by
-  refine ⟨?_, by simp [gaussNorm_X_sub_C_of_le hb], fun m hm ↦ absurd hm m.not_lt_zero⟩
-  rw [gaussNorm_X_sub_C_of_le hb]
-  exact hc.trans_le hb
+  have hn := gaussNorm_X_sub_C hc.le b
+  rw [max_eq_right hb] at hn
+  exact ⟨by rw [hn]; exact hc.trans_le hb, by simp [hn], fun m hm ↦ absurd hm m.not_lt_zero⟩
 
 end LinearFactor
 

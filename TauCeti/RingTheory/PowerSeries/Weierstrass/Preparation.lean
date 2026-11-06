@@ -134,22 +134,25 @@ theorem isDistinguished_zero_of_isUnit [Nontrivial R] (hc : 0 < c)
   have hi0 : i = 0 := by omega
   rwa [hi0] at hi
 
+omit [NormMulClass R] in
+/-- Multiplication by a unit `u` of the ring of restricted power series is undone by multiplication
+by another such unit. -/
+private theorem exists_isUnit_mul_mul_eq {u : PowerSeries.IsRestricted.subring (R := R) c}
+    (hu : IsUnit u) (g : PowerSeries R) :
+    ∃ v : PowerSeries.IsRestricted.subring (R := R) c, IsUnit v ∧
+      (v : PowerSeries R) * ((u : PowerSeries R) * g) = g := by
+  obtain ⟨w, rfl⟩ := hu
+  refine ⟨(w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ),
+    Units.isUnit (w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ), ?_⟩
+  rw [← mul_assoc, ← Subring.coe_mul, w.inv_mul, Subring.coe_one, one_mul]
+
 /-- Multiplying by a unit of the ring of restricted power series leaves the distinguished degree
 unchanged. -/
 theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R := R) c}
     {g : PowerSeries R} (h : IsDistinguished c s ((u : PowerSeries R) * g)) (hc : 0 < c)
     (hu : IsUnit u) : IsDistinguished c s g := by
   let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
-  obtain ⟨w, rfl⟩ := hu
-  obtain ⟨v, hv, hvu⟩ : ∃ v : PowerSeries.IsRestricted.subring (R := R) c, IsUnit v ∧
-      (v : PowerSeries R) * ((w : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R)
-        = 1 :=
-    ⟨(w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ),
-      Units.isUnit (w⁻¹ : (PowerSeries.IsRestricted.subring (R := R) c)ˣ),
-      by rw [← Subring.coe_mul, w.inv_mul, Subring.coe_one]⟩
-  have hvg : (v : PowerSeries R)
-      * (((w : PowerSeries.IsRestricted.subring (R := R) c) : PowerSeries R) * g) = g := by
-    rw [← mul_assoc, hvu, one_mul]
+  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq hu g
   have hd := (isDistinguished_zero_of_isUnit hc hv).mul h hc (norm_mul _ _)
   rwa [zero_add, hvg] at hd
 
@@ -157,15 +160,12 @@ theorem IsDistinguished.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R :
 unchanged. -/
 theorem IsLowestDominant.of_isUnit_mul {u : PowerSeries.IsRestricted.subring (R := R) c}
     {g : PowerSeries R} (h : IsLowestDominant c s ((u : PowerSeries R) * g)) (hc : 0 < c)
-    (hg : g.IsRestricted c) (hu : IsUnit u) : IsLowestDominant c s g := by
+    (hu : IsUnit u) : IsLowestDominant c s g := by
   let _ : Nontrivial R := nontrivial_of_ne _ _ h.coeff_ne_zero
-  have hg0 : g ≠ 0 := fun hg0 ↦ h.ne_zero (by rw [hg0, mul_zero])
-  obtain ⟨t, ht⟩ := exists_isLowestDominant hc hg hg0
-  have hu0 := isDistinguished_zero_of_isUnit hc hu
-  have hmul := hu0.isLowestDominant_zero.mul ht hc hu0.hasGaussNorm
-    (hasGaussNorm_of_isRestricted hg) (norm_mul _ _)
-  rw [zero_add] at hmul
-  rwa [h.unique hmul]
+  obtain ⟨v, hv, hvg⟩ := exists_isUnit_mul_mul_eq hu g
+  have hv0 := isDistinguished_zero_of_isUnit hc hv
+  have hl := hv0.isLowestDominant_zero.mul h hc hv0.hasGaussNorm h.hasGaussNorm (norm_mul _ _)
+  rwa [zero_add, hvg] at hl
 
 /-- If `f` is distinguished of degree `s` at a positive radius `c`, `u` is a unit of the ring of
 series restricted at `c`, and `u * P = f` for a polynomial `P` of degree at most `s`, then `P` has
