@@ -58,12 +58,6 @@ theorem contDiffOn_extend (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) (g :
   rw [← heq] at hf
   exact (contMDiffAt_subtype_iff.mp hf).contMDiffWithinAt
 
-/-- Every inherited source chart of an open subset of a normed space has that open subset as
-its extended target. -/
-theorem extChartAt_opens_target (x : U) :
-    (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
-  simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
-
 /-- The derivative of a native map on an open source, bundled as a continuous map on that source.
 The arbitrary values of the chosen extension outside the source do not affect its derivatives. -/
 def openIteratedFDerivContinuousMap (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯)
@@ -88,19 +82,19 @@ theorem chartIteratedFDeriv_opens_apply
       ⟨z, by
         -- Opens uses a membership carrier; expose its underlying set for the target equality.
         change (z : E) ∈ (U : Set E)
-        rw [← extChartAt_opens_target (𝕜 := 𝕜) U x]
+        rw [← Opens.extChartAt_opens_target (𝕜 := 𝕜) U x]
         exact z.2⟩ := by
   rw [chartIteratedFDeriv_self_target_apply, openIteratedFDerivContinuousMap_apply]
-  simp only [extChartAt_opens_target]
+  simp only [Opens.extChartAt_opens_target]
   apply iteratedFDerivWithin_congr _ (by
-        rw [← extChartAt_opens_target (𝕜 := 𝕜) U x]
+        rw [← Opens.extChartAt_opens_target (𝕜 := 𝕜) U x]
         exact z.2)
   intro y hy
   have hc : ((extChartAt 𝓘(𝕜, E) x).symm y : E) = y := by
     simpa only [extChartAt_model_space_eq_id, PartialEquiv.refl_symm,
       PartialEquiv.refl_coe, id_eq] using
       U.coe_extChartAt_symm_apply (I := 𝓘(𝕜, E)) x
-        (by simpa only [extChartAt_opens_target] using hy)
+        (by simpa only [Opens.extChartAt_opens_target] using hy)
   have he : (extChartAt 𝓘(𝕜, E) x).symm y = (⟨y, hy⟩ : U) := Subtype.ext hc
   simp only [Function.comp_apply, he]
   exact (Subtype.val_injective.extend_apply f (fun _ ↦ 0) ⟨y, hy⟩).symm
@@ -117,32 +111,32 @@ theorem openWeakWhitneyJet_apply (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F�
     openWeakWhitneyJet U f m = openIteratedFDerivContinuousMap U f m m.2 := by
   rfl
 
-/-- The target of an inherited chart is canonically homeomorphic to the open source. -/
-def openChartTargetHomeomorph (x : U) : (extChartAt 𝓘(𝕜, E) x).target ≃ₜ U :=
-  Homeomorph.setCongr (extChartAt_opens_target U x)
-
 /-- Every native chart-derivative map is open-source differentiation followed by restriction
 along the canonical chart-target homeomorphism. -/
 theorem chartIteratedFDeriv_opens_eq
     (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) (x : U) (m : ℕ) (hm : m ≤ n) :
     chartIteratedFDeriv f x m hm = (openIteratedFDerivContinuousMap U f m hm).comp
-      ⟨openChartTargetHomeomorph (𝕜 := 𝕜) U x,
-        (openChartTargetHomeomorph (𝕜 := 𝕜) U x).continuous⟩ := by
+      ⟨Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x,
+        (Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).continuous⟩ := by
   apply ContinuousMap.ext
   intro z
-  exact chartIteratedFDeriv_opens_apply U f x m hm z
+  simp only [ContinuousMap.comp_apply, ContinuousMap.coe_mk]
+  convert chartIteratedFDeriv_opens_apply U f x m hm z using 1
+  congr 1
+  apply Subtype.ext
+  exact Opens.coe_openChartTargetHomeomorph_apply (𝕜 := 𝕜) U x z
 
 /-- Conversely, any one inherited chart records every open-source derivative. -/
 theorem openIteratedFDerivContinuousMap_eq
     (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) (x : U) (m : ℕ) (hm : m ≤ n) :
     openIteratedFDerivContinuousMap U f m hm = (chartIteratedFDeriv f x m hm).comp
-      ⟨(openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm,
-        (openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm.continuous⟩ := by
+      ⟨(Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm,
+        (Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm.continuous⟩ := by
   rw [chartIteratedFDeriv_opens_eq]
   apply ContinuousMap.ext
   intro z
   exact congrArg (openIteratedFDerivContinuousMap U f m hm)
-    ((openChartTargetHomeomorph (𝕜 := 𝕜) U x).apply_symm_apply z).symm
+    ((Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).apply_symm_apply z).symm
 
 /-- The full open-source jet is injective, since its zeroth coefficient recovers the values. -/
 theorem openWeakWhitneyJet_injective :
@@ -167,8 +161,8 @@ theorem continuous_openWeakWhitneyJet :
     apply continuous_pi
     intro m
     let toTarget : C(U, (extChartAt 𝓘(𝕜, E) x).target) :=
-      ⟨(openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm,
-        (openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm.continuous⟩
+      ⟨(Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm,
+        (Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).symm.continuous⟩
     exact ((ContinuousMap.continuous_precomp toTarget).comp
       (continuous_chartIteratedFDeriv x m m.2)).congr fun f ↦
         (openIteratedFDerivContinuousMap_eq U f x m m.2).symm
@@ -187,8 +181,8 @@ theorem isInducing_openWeakWhitneyJet :
     apply continuous_manifoldWeakWhitney_iff_compact_chartIteratedFDeriv.mpr
     intro x m hm K
     let toSource : C((extChartAt 𝓘(𝕜, E) x).target, U) :=
-      ⟨openChartTargetHomeomorph (𝕜 := 𝕜) U x,
-        (openChartTargetHomeomorph (𝕜 := 𝕜) U x).continuous⟩
+      ⟨Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x,
+        (Opens.openChartTargetHomeomorph (𝕜 := 𝕜) U x).continuous⟩
     have h := (ContinuousMap.continuous_restrict (K : Set _)).comp
       ((ContinuousMap.continuous_precomp toSource).comp
         ((continuous_apply (⟨m, hm⟩ : {m : ℕ // m ≤ n})).comp
@@ -216,7 +210,7 @@ theorem isUniformEmbedding_openWeakWhitneyJet :
     IsUniformEmbedding (openWeakWhitneyJet (𝕜 := 𝕜) (F := F) (n := n) U) :=
   Embedding.to_isUniformEmbedding _ (isEmbedding_openWeakWhitneyJet U)
 
-/-- A sigma-compact open source gives a countably generated derivative uniformity. Countability
+/-- A sigma-compact open source gives a countably generated derivative uniformity. Sigma-compactness
 of the source is assumed explicitly; no countability of the target as a set is required. -/
 theorem isCountablyGenerated_openWeakWhitney [LocallyCompactSpace E] [SigmaCompactSpace U] :
     IsCountablyGenerated (𝓤 C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) := by
