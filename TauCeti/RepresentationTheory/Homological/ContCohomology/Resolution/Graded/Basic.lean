@@ -10,6 +10,7 @@ public import TauCeti.RepresentationTheory.Homological.ContCohomology.CompactDis
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Resolution.Contraction
 public import TauCeti.RepresentationTheory.Continuous.TopRep.Discrete
 public import TauCeti.RepresentationTheory.Homological.ContCohomology.Functoriality
+public import TauCeti.RepresentationTheory.Homological.ContCohomology.SmoothDiscrete.Restriction
 
 /-!
 # The graded module of the coinduced resolution
@@ -51,6 +52,8 @@ to contract a tensor power of total resolutions onto the tensor power of the coe
 * `TauCeti.smoothGradedResolutionFunctor` packages the smooth total resolution functorially.
 * `TauCeti.smoothGradedResolutionAugmentation` is its natural coefficient augmentation, and
   `TauCeti.smoothGradedResolutionDifferential` its differential.
+* `TauCeti.smoothGradedResolutionResMap` compares the restriction of the smooth total resolution
+  along a continuous homomorphism with the smooth total resolution of the restriction.
 * `gradedResolutionProjection` and `gradedResolutionHomotopy` contract the total resolution:
   `gradedResolutionProjection_augmentation` and
   `gradedResolutionDifferential_gradedResolutionHomotopy_add` are the contraction identities, and
@@ -943,5 +946,52 @@ theorem smoothGradedResolutionDifferential_hom_apply
     (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (x : A.obj.gradedResolutionModule) :
     (smoothGradedResolutionDifferential A).hom.hom x = A.obj.gradedResolutionDifferential x :=
   (rfl)
+
+section ResMap
+
+variable {H : Type v} [Group H] [TopologicalSpace H] [IsTopologicalGroup H] [CompactSpace H]
+  (φ : H →* G) (hφ : Continuous φ)
+
+/-- **Restriction of the smooth total resolution.** The restriction along a continuous
+homomorphism `φ : H →* G` of the total resolution of `A`, compared with the total resolution of
+the restriction of `A`: it pulls back cochains along `φ` (`TopRep.gradedResolutionTopRepResMap`). -/
+noncomputable def smoothGradedResolutionResMap (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    (smoothResFunctor R φ hφ).obj ((smoothGradedResolutionFunctor (R := R) (G := G)).obj A) ⟶
+      (smoothGradedResolutionFunctor (R := R) (G := H)).obj ((smoothResFunctor R φ hφ).obj A) :=
+  ObjectProperty.homMk (TopRep.gradedResolutionTopRepResMap ⟨φ, hφ⟩ (𝟙 _))
+
+/-- The restriction of the smooth total resolution pulls back cochains along `φ`. -/
+theorem smoothGradedResolutionResMap_hom_hom_apply
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (x : A.obj.gradedResolutionModule) :
+    (smoothGradedResolutionResMap φ hφ A).hom.hom x =
+      TopRep.gradedResolutionMap ⟨φ, hφ⟩ (𝟙 _) x :=
+  TopRep.gradedResolutionTopRepResMap_apply _ _ x
+
+/-- The restriction of the smooth total resolution preserves degrees. -/
+theorem isHomogeneous_smoothGradedResolutionResMap
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) :
+    LinearMap.IsHomogeneous (smoothGradedResolutionResMap φ hφ A).hom.hom.toLinearMap
+      A.obj.gradedResolutionPiece ((smoothResFunctor R φ hφ).obj A).obj.gradedResolutionPiece 0 :=
+  TopRep.isHomogeneous_gradedResolutionTopRepResMap _ _
+
+/-- The restriction of the smooth total resolution commutes with the total differentials. -/
+theorem smoothGradedResolutionResMap_differential
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (x : A.obj.gradedResolutionModule) :
+    (smoothGradedResolutionResMap φ hφ A).hom.hom (A.obj.gradedResolutionDifferential x) =
+      ((smoothResFunctor R φ hφ).obj A).obj.gradedResolutionDifferential
+        ((smoothGradedResolutionResMap φ hφ A).hom.hom x) := by
+  rw [smoothGradedResolutionResMap_hom_hom_apply, smoothGradedResolutionResMap_hom_hom_apply]
+  exact TopRep.gradedResolutionMap_differential _ _ x
+
+/-- The restriction of the smooth total resolution commutes with the augmentations. -/
+@[simp↓]
+theorem smoothGradedResolutionResMap_augmentation
+    (A : SmoothDiscreteTopRep.{u, v, max v w} R G) (x : A.obj.V) :
+    (smoothGradedResolutionResMap φ hφ A).hom.hom (A.obj.gradedResolutionAugmentation x) =
+      ((smoothResFunctor R φ hφ).obj A).obj.gradedResolutionAugmentation x := by
+  rw [smoothGradedResolutionResMap_hom_hom_apply]
+  exact TopRep.gradedResolutionMap_augmentation _ _ x
+
+end ResMap
 
 end TauCeti

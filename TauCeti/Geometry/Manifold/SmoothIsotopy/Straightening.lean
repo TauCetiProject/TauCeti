@@ -5,9 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 public import Mathlib.Analysis.Calculus.Deriv.MeanValue
+public import TauCeti.Analysis.Calculus.Splice
+public import TauCeti.Analysis.Calculus.MeanValue
 public import Mathlib.Analysis.Normed.Module.HahnBanach
+public import TauCeti.Analysis.Normed.Operator.Mul
 public import TauCeti.Geometry.Manifold.Immersion.Differential
 public import TauCeti.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
@@ -34,7 +36,8 @@ knot.
 The isotopy is a splice in a chart. Reading `K` and `L` along the arc `z₀ exp (t i)`, `|t|` small,
 in a chart at `K z₀` gives two curves `k` and `l` in the model space with `k 0 = l 0` and
 `k' 0 = l' 0 = v ≠ 0`. With a smooth cutoff `χ` which is `1` on `[-1, 1]` and vanishes off
-`(-2, 2)`, the curves `k + s χ (t / δ) (l - k)` for `s ∈ [0, 1]` run from `k` to a curve which is
+`(-2, 2)`, the curves `k + s χ (t / δ) (l - k)` for `s ∈ [0, 1]` (splices of `k` with
+`k + s (l - k)` in the sense of `TauCeti.spliceAlong`) run from `k` to a curve which is
 `l` on `[-δ, δ]`, and all of them are `k` off `(-2δ, 2δ)`. Since `l - k` vanishes to first order at
 `0`, the term coming from the derivative of the cutoff has size `δ⁻¹ · o(δ)`, so on a fixed
 interval `[-ρ, ρ]` all these curves have velocity close to `v`, uniformly in `δ` and `s`. A linear
@@ -63,129 +66,73 @@ namespace TauCeti
 
 section Splice
 
-/-- A fixed smooth cutoff on the line: it is `1` on `[-1, 1]`, vanishes off `(-2, 2)`, and takes
-values in `[0, 1]`. -/
-private def cutoff : ℝ → ℝ :=
-  (⟨1, 2, one_pos, one_lt_two⟩ : ContDiffBump (0 : ℝ))
-
-private theorem cutoff_eq_one {x : ℝ} (hx : |x| ≤ 1) : cutoff x = 1 :=
-  ContDiffBump.one_of_mem_closedBall _ (by simpa [Real.dist_eq] using hx)
-
-private theorem cutoff_eq_zero {x : ℝ} (hx : 2 ≤ |x|) : cutoff x = 0 :=
-  ContDiffBump.zero_of_le_dist _ (by simpa [Real.dist_eq] using hx)
-
-private theorem cutoff_nonneg (x : ℝ) : 0 ≤ cutoff x := ContDiffBump.nonneg _
-
-private theorem cutoff_le_one (x : ℝ) : cutoff x ≤ 1 := ContDiffBump.le_one _
-
-private theorem contDiff_cutoff : ContDiff ℝ ∞ cutoff := ContDiffBump.contDiff _
-
-private theorem deriv_cutoff_eq_zero {x : ℝ} (hx : 2 < |x|) : deriv cutoff x = 0 := by
-  have h : cutoff =ᶠ[𝓝 x] fun _ => (0 : ℝ) := by
-    filter_upwards [(isOpen_lt continuous_const continuous_abs).mem_nhds hx] with y hy
-    exact cutoff_eq_zero (le_of_lt hy)
-  rw [h.deriv_eq, deriv_const]
-
-private theorem exists_abs_deriv_cutoff_le : ∃ B, ∀ x, |deriv cutoff x| ≤ B :=
-  ((contDiff_cutoff.continuous_deriv (by simp)).bounded_above_of_compact_support
-    (ContDiffBump.hasCompactSupport _).deriv)
-
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
 
 /-- The curve `k` with its stretch over `[-δ, δ]` replaced by the curve `l`: the convex combination
-of `k t` and `l t` with weight `s` times the cutoff at scale `δ`. For `s = 1` it is `l` on
-`[-δ, δ]`, and for every `s` it is `k` off `(-2δ, 2δ)`. -/
-private def splice (k l : ℝ → E) (δ s t : ℝ) : E :=
-  k t + (s * cutoff (δ⁻¹ * t)) • (l t - k t)
+of `k t` and `l t` with weight `s` times the cutoff `spliceCutoff` at scale `δ`. It is the splice of
+`k` with the convex combination `k + s (l - k)`. For `s = 1` it is `l` on `[-δ, δ]`, and for every
+`s` it is `k` off `(-2δ, 2δ)`. -/
+private def splice (k l : ℝ → E) (δ s : ℝ) : ℝ → E :=
+  spliceAlong (ContinuousLinearMap.id ℝ ℝ) k (fun t => k t + s • (l t - k t)) δ
 
-private theorem weight_le_one {s : ℝ} (hs : s ∈ Icc (0 : ℝ) 1) (x : ℝ) : s * cutoff x ≤ 1 :=
-  (mul_le_mul hs.2 (cutoff_le_one x) (cutoff_nonneg x) zero_le_one).trans_eq (one_mul 1)
-
-private theorem splice_zero (k l : ℝ → E) (δ t : ℝ) : splice k l δ 0 t = k t := by
-  simp [splice]
+private theorem splice_zero (k l : ℝ → E) (δ t : ℝ) : splice k l δ 0 t = k t :=
+  spliceAlong_of_eq (by simp)
 
 private theorem splice_of_le_abs {k l : ℝ → E} {δ : ℝ} (hδ : 0 < δ) (s : ℝ) {t : ℝ}
-    (ht : 2 * δ ≤ |t|) : splice k l δ s t = k t := by
-  rw [splice, cutoff_eq_zero, mul_zero, zero_smul, add_zero]
-  rwa [abs_mul, abs_inv, abs_of_pos hδ, le_inv_mul_iff₀ hδ, mul_comm]
+    (ht : 2 * δ ≤ |t|) : splice k l δ s t = k t :=
+  spliceAlong_of_le_abs hδ ht
 
 private theorem splice_one_of_abs_le {k l : ℝ → E} {δ : ℝ} (hδ : 0 < δ) {t : ℝ}
     (ht : |t| ≤ δ) : splice k l δ 1 t = l t := by
-  rw [splice, cutoff_eq_one, one_mul, one_smul, add_sub_cancel]
-  rwa [abs_mul, abs_inv, abs_of_pos hδ, inv_mul_le_iff₀ hδ, mul_one]
+  rw [splice, spliceAlong_of_abs_le hδ ht, one_smul, add_sub_cancel]
 
 /-- For `s ∈ [0, 1]` the spliced curve is a convex combination of the two curves, so it stays in
 any convex set containing both. -/
 private theorem splice_mem {k l : ℝ → E} {S : Set E} (hS : Convex ℝ S) (δ : ℝ) {s : ℝ}
-    (hs : s ∈ Icc (0 : ℝ) 1) {t : ℝ} (hk : k t ∈ S) (hl : l t ∈ S) : splice k l δ s t ∈ S := by
-  have h0 : 0 ≤ s * cutoff (δ⁻¹ * t) := mul_nonneg hs.1 (cutoff_nonneg _)
-  have h1 : s * cutoff (δ⁻¹ * t) ≤ 1 := weight_le_one hs _
-  have := hS.add_smul_sub_mem hk hl ⟨h0, h1⟩
-  simpa [splice] using this
+    (hs : s ∈ Icc (0 : ℝ) 1) {t : ℝ} (hk : k t ∈ S) (hl : l t ∈ S) : splice k l δ s t ∈ S :=
+  spliceAlong_mem hS hk (hS.add_smul_sub_mem hk hl hs)
 
 private theorem contDiffOn_splice {k l : ℝ → E} {T : Set ℝ}
     (hk : ContDiffOn ℝ ∞ k T) (hl : ContDiffOn ℝ ∞ l T) (δ : ℝ) :
     ContDiffOn ℝ ∞ (fun p : ℝ × ℝ => splice k l δ p.1 p.2) (univ ×ˢ T) := by
+  -- Jointly in `(s, t)`, the splice is a splice along the second coordinate.
   have hk' := hk.comp contDiffOn_snd fun (p : ℝ × ℝ) (hp : p ∈ univ ×ˢ T) => hp.2
   have hl' := hl.comp contDiffOn_snd fun (p : ℝ × ℝ) (hp : p ∈ univ ×ˢ T) => hp.2
-  have hc : ContDiff ℝ ∞ fun p : ℝ × ℝ => p.1 * cutoff (δ⁻¹ * p.2) :=
-    contDiff_fst.mul (contDiff_cutoff.comp (contDiff_const.mul contDiff_snd))
-  exact hk'.add (hc.contDiffOn.smul (hl'.sub hk'))
-
-private theorem hasDerivAt_splice {k l : ℝ → E} {δ s t : ℝ} {k' l' : E} (hk : HasDerivAt k k' t)
-    (hl : HasDerivAt l l' t) :
-    HasDerivAt (splice k l δ s)
-      (k' + ((s * cutoff (δ⁻¹ * t)) • (l' - k') +
-        (s * (δ⁻¹ * deriv cutoff (δ⁻¹ * t))) • (l t - k t))) t := by
-  have hc : HasDerivAt (fun t => s * cutoff (δ⁻¹ * t)) (s * (δ⁻¹ * deriv cutoff (δ⁻¹ * t))) t :=
-    ((((contDiff_cutoff.differentiable (by simp)) _).hasDerivAt.comp t
-      ((hasDerivAt_id t).const_mul δ⁻¹ |>.congr_deriv (mul_one _))).const_mul s).congr_deriv
-      (by simp only [id]; ring)
-  exact hk.add (hc.smul (hl.sub hk))
+  refine (contDiffOn_spliceAlong hk' (hk'.add (contDiffOn_fst.smul (hl'.sub hk')))
+    (ContinuousLinearMap.snd ℝ ℝ ℝ) δ).congr fun p _ => ?_
+  simp [splice, spliceAlong_apply]
 
 /-- **The velocity of a spliced curve.** If the velocities `k'` and `l'` of `k` and `l` at `t` are
 within `ε` of `v`, `‖l t - k t‖ ≤ 2 ε |t|`, and `B` bounds the derivative of the cutoff, then at
-every scale `δ > 0` and weight `s ∈ [0, 1]` the spliced curve has velocity within `(3 + 4 B) ε` of
-`v` at `t`. -/
+every scale `δ > 0` and weight `s ∈ [0, 1]` the spliced curve is differentiable at `t` with velocity
+within `(3 + 4 B) ε` of `v`. -/
 private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t ε B : ℝ} (hδ : 0 < δ)
-    (hs : s ∈ Icc (0 : ℝ) 1) (hB : ∀ x, |deriv cutoff x| ≤ B) (hk : HasDerivAt k k' t)
+    (hs : s ∈ Icc (0 : ℝ) 1) (hB : ∀ x, |deriv spliceCutoff x| ≤ B) (hk : HasDerivAt k k' t)
     (hl : HasDerivAt l l' t) (hk' : ‖k' - v‖ ≤ ε) (hl' : ‖l' - v‖ ≤ ε)
     (hlk : ‖l t - k t‖ ≤ 2 * ε * |t|) :
-    ‖deriv (splice k l δ s) t - v‖ ≤ (3 + 4 * B) * ε := by
-  have hε : 0 ≤ ε := (norm_nonneg _).trans hk'
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
-  -- The term from the derivative of the cutoff vanishes unless `|t| ≤ 2δ`, where `l t - k t` is
-  -- at most `4 ε δ`; so it is at most `4 B ε`.
-  have hcorr : ‖(s * (δ⁻¹ * deriv cutoff (δ⁻¹ * t))) • (l t - k t)‖ ≤ 4 * B * ε := by
-    rw [norm_smul, Real.norm_eq_abs, abs_mul, abs_mul, abs_of_nonneg hs.1, abs_inv,
-      abs_of_pos hδ]
-    by_cases h2 : 2 < |δ⁻¹ * t|
-    · rw [deriv_cutoff_eq_zero h2, abs_zero, mul_zero, mul_zero, zero_mul]; positivity
-    · rw [not_lt, abs_mul, abs_inv, abs_of_pos hδ, inv_mul_le_iff₀ hδ] at h2
-      calc s * (δ⁻¹ * |deriv cutoff (δ⁻¹ * t)|) * ‖l t - k t‖
-          ≤ 1 * (δ⁻¹ * B) * (2 * ε * |t|) := by
-            gcongr
-            · exact hs.2
-            · exact hB _
-        _ ≤ 1 * (δ⁻¹ * B) * (2 * ε * (δ * 2)) := by gcongr
-        _ = 4 * B * ε := by field_simp; ring
-  have hmid : ‖(s * cutoff (δ⁻¹ * t)) • (l' - k')‖ ≤ 2 * ε := by
-    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg (mul_nonneg hs.1 (cutoff_nonneg _))]
-    calc s * cutoff (δ⁻¹ * t) * ‖l' - k'‖ ≤ 1 * (ε + ε) := by
-          gcongr
-          · exact weight_le_one hs _
-          · exact (norm_sub_le_norm_sub_add_norm_sub l' v k').trans
-              (by rw [norm_sub_rev v]; linarith)
-      _ = 2 * ε := by ring
-  rw [(hasDerivAt_splice hk hl).deriv]
-  calc _ = ‖(k' - v) + ((s * cutoff (δ⁻¹ * t)) • (l' - k') +
-          (s * (δ⁻¹ * deriv cutoff (δ⁻¹ * t))) • (l t - k t))‖ := by
-        congr 1; abel
-    _ ≤ ‖k' - v‖ + (‖(s * cutoff (δ⁻¹ * t)) • (l' - k')‖ +
-          ‖(s * (δ⁻¹ * deriv cutoff (δ⁻¹ * t))) • (l t - k t)‖) :=
-        (norm_add_le _ _).trans (by gcongr; exact norm_add_le _ _)
-    _ ≤ ε + (2 * ε + 4 * B * ε) := by gcongr
-    _ = (3 + 4 * B) * ε := by ring
+    DifferentiableAt ℝ (splice k l δ s) t ∧ ‖deriv (splice k l δ s) t - v‖ ≤ (3 + 4 * B) * ε := by
+  -- The convex combination `k + s (l - k)` has velocity within `ε` of `v`, and is within
+  -- `2 ε |t|` of `k`.
+  have hls : HasDerivAt (fun t => k t + s • (l t - k t)) (k' + s • (l' - k')) t :=
+    hk.add ((hl.sub hk).const_smul s)
+  have hls' : ‖(k' + s • (l' - k')) - v‖ ≤ ε := by
+    simpa [dist_eq_norm] using (convex_closedBall v ε).add_smul_sub_mem
+      (by simpa [dist_eq_norm] using hk') (by simpa [dist_eq_norm] using hl') hs
+  have hlks : ‖(k t + s • (l t - k t)) - k t‖ ≤ 2 * ε * |t| := by
+    rw [add_sub_cancel_left, norm_smul, Real.norm_eq_abs, abs_of_nonneg hs.1]
+    exact (mul_le_of_le_one_left (norm_nonneg _) hs.2).trans hlk
+  obtain ⟨h', hh', hh'v⟩ := exists_hasFDerivAt_spliceAlong_sub_le hδ
+    ContinuousLinearMap.norm_id_le hB hk.hasFDerivAt hls.hasFDerivAt
+    (by simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using hk')
+    (by simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using hls')
+    (A := ContinuousLinearMap.toSpanSingleton ℝ v) hlks
+  replace hh' : HasFDerivAt (splice k l δ s) h' t := hh'
+  refine ⟨hh'.differentiableAt, ?_⟩
+  rw [hh'.hasDerivAt.deriv]
+  calc ‖h' 1 - v‖ = ‖(h' - ContinuousLinearMap.toSpanSingleton ℝ v) 1‖ := by simp
+    _ ≤ ‖h' - ContinuousLinearMap.toSpanSingleton ℝ v‖ * ‖(1 : ℝ)‖ :=
+        ContinuousLinearMap.le_opNorm _ _
+    _ ≤ (3 + 4 * B) * ε := by rw [norm_one, mul_one]; exact hh'v
 
 /-- **The spliced curves are uniformly regular.** If `k` and `l` are `C¹` near `0`, agree at `0`
 and have the same nonzero velocity `v` there, then on a fixed interval `[-ρ, ρ]` the velocity of
@@ -202,7 +149,7 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
   set v := deriv k 0
   obtain ⟨ℓ, hℓ, hℓv⟩ := exists_dual_vector ℝ v (norm_ne_zero_iff.2 hv)
   replace hℓv : ℓ v = ‖v‖ := by simpa using hℓv
-  obtain ⟨B, hB⟩ := exists_abs_deriv_cutoff_le
+  obtain ⟨B, hB⟩ := exists_abs_deriv_spliceCutoff_le
   have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
   have hv0 : 0 < ‖v‖ := norm_pos_iff.2 hv
   set ε := ‖v‖ / (4 * B + 4) with hε
@@ -237,21 +184,23 @@ private theorem exists_pos_deriv_splice {k l : ℝ → E} {r : ℝ} (hr : 0 < r)
     (hl.contDiffAt (hI.mem_nhds ht)).differentiableAt one_ne_zero
   -- Mean value estimate: `l - k` vanishes to first order at `0`.
   have hlk (t : ℝ) (ht : t ∈ Icc (-ρ) ρ) : ‖l t - k t‖ ≤ 2 * ε * |t| := by
-    have h := (convex_Icc (-ρ) ρ).norm_image_sub_le_of_norm_deriv_le (f := fun t => l t - k t)
-      (C := 2 * ε) (fun x hx => (hdl x (hlt x hx).2.2).sub (hdk x (hlt x hx).2.2))
+    have h := (convex_Icc (-ρ) ρ).norm_sub_le_of_norm_hasFDerivWithin_sub_le
+      (A := ContinuousLinearMap.toSpanSingleton ℝ v)
+      (fun x hx => (hdk x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
+      (fun x hx => (hdl x (hlt x hx).2.2).hasDerivAt.hasFDerivAt.hasFDerivWithinAt)
       (fun x hx => by
-        rw [deriv_fun_sub (hdl x (hlt x hx).2.2) (hdk x (hlt x hx).2.2)]
-        refine (norm_sub_le_norm_sub_add_norm_sub _ v _).trans ?_
-        rw [norm_sub_rev v]
-        linarith [hk₁ x (hlt x hx).1, hl₁ x (hlt x hx).2.1])
-      ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ ht
-    simpa [h0, Real.norm_eq_abs] using h
+        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hk₁ x (hlt x hx).1).le)
+      (fun x hx => by
+        simpa only [ContinuousLinearMap.norm_toSpanSingleton_sub] using (hl₁ x (hlt x hx).2.1).le)
+      ht ⟨neg_nonpos.2 hρ0.le, hρ0.le⟩ h0
+    simpa [Real.norm_eq_abs] using h
   refine ⟨ℓ, ρ, hρ0, hρr, fun δ hδ s hs t ht => ?_⟩
   obtain ⟨htk, htl, htI⟩ := hlt t ht
   have hk' := (hdk t htI).hasDerivAt
   have hl' := (hdl t htI).hasDerivAt
-  refine ⟨(hasDerivAt_splice (δ := δ) (s := s) hk' hl').differentiableAt, ?_⟩
-  have hDv := norm_deriv_splice_sub_le hδ hs hB hk' hl' (hk₁ t htk).le (hl₁ t htl).le (hlk t ht)
+  obtain ⟨hD, hDv⟩ :=
+    norm_deriv_splice_sub_le hδ hs hB hk' hl' (hk₁ t htk).le (hl₁ t htl).le (hlk t ht)
+  refine ⟨hD, ?_⟩
   set D := deriv (splice k l δ s) t
   -- `ℓ D ≥ ‖v‖ - ‖D - v‖ > 0`.
   have hℓD : |ℓ (D - v)| ≤ ‖D - v‖ := by

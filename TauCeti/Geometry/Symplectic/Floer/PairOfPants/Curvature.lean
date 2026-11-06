@@ -168,7 +168,7 @@ private theorem setLIntegral_image_endChart_le (ω : SymplecticForm V)
         z (u z)‖ₑ ≤ ENNReal.ofReal (B q) := by
   have hβ : ∫⁻ s, ‖deriv (fun σ ↦ smoothTransition (σ - 1)) (q.endSign * s)‖ₑ = 1 := by
     simp_rw [deriv_comp_sub_const, Real.enorm_eq_ofReal smoothTransition.monotone.deriv_nonneg]
-    rw [smoothTransition.lintegral_ofReal_deriv_mul_sub q.endSign_ne_zero, abs_endSign, inv_one,
+    rw [smoothTransition.lintegral_ofReal_deriv_mul_sub _ q.endSign_ne_zero, abs_endSign, inv_one,
       ENNReal.ofReal_one]
   refine (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le
     (P := fun σ ↦ smoothTransition (σ - 1))

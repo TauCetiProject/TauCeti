@@ -512,9 +512,9 @@ private theorem setLIntegral_image_endChart_cappedPerturbation_le [FiniteDimensi
           exact abs_deriv_cappedEndProfile_le _ _
       _ = ENNReal.ofReal |a| * 2 := by
           rw [lintegral_const_mul' _ _ ENNReal.ofReal_ne_top, lintegral_add_left hm₁, hf₁, hf₂,
-            smoothTransition.lintegral_ofReal_deriv_mul_sub q.endSign_ne_zero,
-            smoothTransition.lintegral_ofReal_deriv_sub_mul q.endSign_ne_zero, abs_endSign, inv_one,
-            ENNReal.ofReal_one, one_add_one_eq_two]
+            smoothTransition.lintegral_ofReal_deriv_mul_sub _ q.endSign_ne_zero,
+            smoothTransition.lintegral_ofReal_deriv_sub_mul _ q.endSign_ne_zero, abs_endSign,
+            inv_one, ENNReal.ofReal_one, one_add_one_eq_two]
       _ = _ := by
           rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (abs_nonneg a), mul_comm]
   exact (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le
