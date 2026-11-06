@@ -129,6 +129,13 @@ lemma branch_intersection_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork t c bra
     rw [hd_lt hi', hd_last] at h
     exact h
 
+/-- On the chain part, sums against `d` and `c` agree. -/
+private lemma sum_range_intersection_d_eq {t : ℕ} {c d : ℕ → T.Component} (y : ℕ → ℤ)
+    (hd_lt : ∀ {i}, i < t → d i = c i) (a : T.Component) :
+    (∑ j ∈ range t, T.intersection a (d j) * y j) =
+      ∑ j ∈ range t, T.intersection a (c j) * y j :=
+  Finset.sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
+
 private lemma affine_interior_sum_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
     {w : ℕ+} (d : ℕ → T.Component) (y : ℕ → ℤ)
     (hd_lt : ∀ {j}, j < t → d j = c j) (hd_t : d t = branch)
@@ -139,26 +146,16 @@ private lemma affine_interior_sum_eq_zero (hf : T.IsSelfIntersectionMinusTwoFork
     ∑ j ∈ range (t + 1), T.intersection (d i) (d j) * y j = 0 := by
   have hforkCard := hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
   have hchainCard : t < Fintype.card T.Component := by omega
-  have hprefix : (∑ j ∈ range t, T.intersection (c i) (d j) * y j) =
-      ∑ j ∈ range t, T.intersection (c i) (c j) * y j :=
-    Finset.sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
   have hprev : T.intersection (c (i - 1)) (c i) = w := by
     have hprev_succ : i - 1 + 1 = i := by omega
     simpa only [hprev_succ] using hedge (i - 1) (by omega) (by omega)
-  rw [sum_range_succ, hd_lt hit, hd_t, hprefix,
+  rw [sum_range_succ, hd_lt hit, hd_t, sum_range_intersection_d_eq y hd_lt (c i),
     hf.toIsSelfIntersectionMinusTwoChain.interior_sum_eq hchainCard y (by omega) (by omega),
     hyInterior (j := i - 1) (by omega) (by omega), hyInterior (j := i) (by omega) (by omega),
     hyInterior (j := i + 1) (by omega) (by omega), T.intersection_comm, hprev,
     hf.intersection_self i hit, hinterior i (by omega) (by omega), hedge i (by omega) (by omega),
     hf.branch_intersection_eq_zero hit hic, zero_mul, add_zero]
   ring
-
-/-- On the chain part, sums against `d` and `c` agree. -/
-private lemma sum_range_intersection_d_eq {t : ℕ} {c d : ℕ → T.Component} (y : ℕ → ℤ)
-    (hd_lt : ∀ {i}, i < t → d i = c i) (a : T.Component) :
-    (∑ j ∈ range t, T.intersection a (d j) * y j) =
-      ∑ j ∈ range t, T.intersection a (c j) * y j :=
-  Finset.sum_congr rfl fun j hj ↦ by rw [hd_lt (mem_range.mp hj)]
 
 /-- The branch row of the affine fork certificate is nonnegative. -/
 private lemma affine_branch_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
@@ -209,8 +206,7 @@ private lemma affine_next_left_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork
   rw [hf.branch_intersection_eq_zero (by omega) (by omega), zero_mul, add_zero]
   exact hrow1.ge
 
-/-- The row of the affine fork certificate at the chain vertex next to the branch point is
-nonnegative. -/
+/-- The row of the affine fork certificate at the branch point `c (t - 2)` is nonnegative. -/
 private lemma affine_fork_row_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
     (ht : 4 < t) (hchainCard : t < Fintype.card T.Component) {w : ℕ+} (d : ℕ → T.Component)
     (y : ℕ → ℤ) (hd_lt : ∀ {i}, i < t → d i = c i) (hd_t : d t = branch)
@@ -285,15 +281,16 @@ private lemma affine_sum_nonneg (hf : T.IsSelfIntersectionMinusTwoFork t c branc
   exact Eq.ge (affine_interior_sum_eq_zero hf d y hd_lt hd_t hyInterior
     hinterior hedge hi1 hit hic hilast)
 
-/-- If the first chain component has an exceptional weight, the first two rows of the affine
-fork certificate with first coefficient `α` vanish (with `α` times the first intersection
-number equal to `2 * w`). -/
+/-- If the first chain component has an exceptional weight, there is a positive `α` for which the
+first row of the affine fork certificate vanishes, with `α` times the first intersection number
+equal to `2 * w`. -/
 private lemma exists_left_certificate (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
-    (hcard : t + 1 < Fintype.card T.Component) (ht : 4 < t) {w : ℕ+}
+    (ht : 4 < t) {w : ℕ+}
     (hinterior : ∀ i, 0 < i → i + 1 < t → (T.weight (c i) : ℤ) = w)
     (hexceptional : (T.weight (c 0) : ℤ) = 2 * w ∨ 2 * (T.weight (c 0) : ℤ) = w) :
     ∃ α : ℤ, 0 < α ∧ T.intersection (c 0) (c 1) * α = 2 * w ∧
       T.intersection (c 0) (c 0) * α + T.intersection (c 0) (c 1) * 2 = 0 := by
+  have hforkCard := hf.toIsSelfIntersectionMinusTwoChain.le_card_snoc hf.branch_ne
   rcases hexceptional with h | h
   · have h01 : T.intersection (c 0) (c 1) = 2 * w := by
       rw [T.intersection_eq_max_weight (by omega)
@@ -330,7 +327,7 @@ private lemma left_weight_eq (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
   rcases hWleft with h | hexceptional
   · exact h
   · exfalso
-    obtain ⟨α, hαpos, h01α, hrow0⟩ := exists_left_certificate hf hcard ht hinterior hexceptional
+    obtain ⟨α, hαpos, h01α, hrow0⟩ := exists_left_certificate hf ht hinterior hexceptional
     have hrow1 : T.intersection (c 1) (c 0) * α + T.intersection (c 1) (c 1) * 2 +
         T.intersection (c 1) (c 2) * 2 = 0 := by
       rw [T.intersection_comm (c 1) (c 0), hf.intersection_self 1 (by omega),
