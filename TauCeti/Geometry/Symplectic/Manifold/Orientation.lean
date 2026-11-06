@@ -237,6 +237,7 @@ variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [FiniteDimension
 
 /-- The symplectic orientation of a constant symplectic form on a vector space `V` is the constant
 orientation given at every point by the linear symplectic orientation of the form. -/
+@[simp]
 theorem orientation_constSmooth (omegaForm : SymplecticForm V) (hk : finrank ℝ V = k) :
     (isNondegenerate_constSmooth omegaForm).orientation hk =
       Manifold.Orientation.model (omegaForm.orientation hk) (by rw [Fintype.card_fin, hk]) := by

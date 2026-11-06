@@ -314,6 +314,7 @@ end SymplecticForm
 
 /-- The symplectic orientation of the standard form `dx ∧ dy` on the plane `ℝ × ℝ` is the standard
 orientation, in which the basis `((1, 0), (0, 1))` is positive. -/
+@[simp]
 theorem orientation_stdSymplecticForm_real (hk : finrank ℝ (ℝ × ℝ) = 2) :
     (stdSymplecticForm (V := ℝ)).orientation hk = (Basis.finTwoProd ℝ).orientation := by
   set e := finProdFinEquiv.trans (finCongr (by norm_num : 1 * 2 = 2))
