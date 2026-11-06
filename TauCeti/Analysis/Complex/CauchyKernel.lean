@@ -20,7 +20,8 @@ import TauCeti.MeasureTheory.Function.Lp.Translation
 
 The complex reciprocal and its norm are locally integrable. Their integrals over a disk admit a
 uniform bound in terms of the radius when the pole lies in that disk. Compact truncation of the
-kernel also gives local `L¹` continuity as the pole varies.
+kernel also gives local `L¹` continuity as the pole varies. The Cauchy integral of complex
+data splits into the integrals of their real and imaginary parts.
 -/
 
 public section
@@ -119,5 +120,30 @@ theorem tendsto_integral_norm_sub_inv_sub_sub_inv_closedBall {ι : Type*} {l : F
   rw [heq]
   exact setIntegral_le_integral ((hk.comp_sub_right (wn n)).sub (hk.comp_sub_right w)).norm
     (Eventually.of_forall fun _ ↦ norm_nonneg _)
+
+/-- The Cauchy integral of complex data is the corresponding complex combination of the
+integrals of its real and imaginary parts. -/
+theorem integral_sub_inv_mul_eq_re_add_I_mul_im {f : ℂ → ℂ}
+    (hf : Continuous f) (hc : HasCompactSupport f) (w : ℂ) :
+    (∫ z, (w - z)⁻¹ * f z) = (∫ z, (w - z)⁻¹ * ((f z).re : ℂ)) +
+      Complex.I * (∫ z, (w - z)⁻¹ * ((f z).im : ℂ)) := by
+  have hRe : Integrable (fun z ↦ (w - z)⁻¹ * ((f z).re : ℂ)) := by
+    simpa only [smul_eq_mul, Function.comp_apply] using
+      (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
+        (Complex.continuous_ofReal.comp (Complex.continuous_re.comp hf))
+        (hc.comp_left (g := fun z : ℂ ↦ (z.re : ℂ)) (by simp))
+  have hIm : Integrable (fun z ↦ (w - z)⁻¹ * ((f z).im : ℂ)) := by
+    simpa only [smul_eq_mul, Function.comp_apply] using
+      (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
+        (Complex.continuous_ofReal.comp (Complex.continuous_im.comp hf))
+        (hc.comp_left (g := fun z : ℂ ↦ (z.im : ℂ)) (by simp))
+  have heq (z : ℂ) : (w - z)⁻¹ * f z =
+      (w - z)⁻¹ * ((f z).re : ℂ) + Complex.I * ((w - z)⁻¹ * ((f z).im : ℂ)) := by
+    calc
+      _ = (w - z)⁻¹ * (((f z).re : ℂ) + Complex.I * ((f z).im : ℂ)) := by
+        rw [mul_comm Complex.I, (f z).re_add_im]
+      _ = _ := by ring
+  simp_rw [heq]
+  rw [integral_add hRe (hIm.const_mul Complex.I), integral_const_mul]
 
 end TauCeti
