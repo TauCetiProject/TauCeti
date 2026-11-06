@@ -88,6 +88,20 @@ replaceDomain('queue',q=>{q.observed_at=new Date(fixture.clock-120000).toISOStri
 await page.clock.fastForward(20000);
 await page.waitForFunction(()=>document.querySelector('.ops-source')?.textContent.includes('queue · delayed'));
 assert.equal(await page.locator('.ops-table tbody tr').count(),100);
+// A pending job snapshot cannot hold a healthy queue update behind its request.
+replaceDomain('queue',q=>{q.observed_at=new Date(fixture.clock+35000).toISOString();});
+replaceDomain('jobs',j=>{j.received_at=new Date(fixture.clock+35000).toISOString();});
+const pendingJobs=JSON.parse(fixture.objects[manifestKey]).domains.jobs.url;
+let releaseJobs;
+const jobsGate=new Promise(resolve=>{releaseJobs=resolve;});
+await page.route('https://ci-data.taucetiproject.org'+pendingJobs,async route=>{
+  await jobsGate;
+  return route.fulfill({status:200,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:fixture.objects['public'+pendingJobs]});
+});
+try {
+  await page.clock.fastForward(15000);
+  await page.waitForFunction(()=>document.querySelector('.ops-source')?.textContent.includes('queue · observed'),{},{timeout:3000});
+} finally { releaseJobs(); }
 replaceDomain('hosts',h=>{h.hosts[0].connected=false;h.hosts[0].observed_at=new Date(fixture.clock-120000).toISOString();});
 await page.getByRole('link',{name:'Runners',exact:true}).click();
 await page.clock.fastForward(20000);

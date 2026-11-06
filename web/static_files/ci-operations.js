@@ -3,7 +3,7 @@
   "use strict";
   var root = document.querySelector("[data-operations]");
   if (!root) return;
-  var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, delay = 15000;
+  var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, polling = false, delay = 15000;
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
   var selectedHistoryHost, hostHistoryRecords = [], historyMetric = "busy_slots";
   var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", repoFilter = "all", workflowFilter = "all", platformFilter = "all", hostFilter = "all", ageFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
@@ -367,29 +367,37 @@
     }
   }
   async function poll() {
-    if (document.hidden) return;
+    if (document.hidden || polling) return;
+    polling = true;
+    var started = Date.now();
     try {
       var response = await fetch(origin + "/v1/operations/manifest.json", { credentials: "omit", headers: etag ? { "If-None-Match": etag } : {}, signal: AbortSignal.timeout(10000) });
       if (response.status !== 304) {
         if (!response.ok) throw new Error("Operations manifest unavailable");
         var next = await response.json(); if (next.schema !== "tauceti.operations.manifest/v1") throw new Error("Unsupported manifest");
         if (manifest && manifest.scope !== next.scope) { data = {}; cache.clear(); jobs = []; workflows = []; detail = null; members = []; prResult = null; }
+        var previous = manifest;
+        manifest = Object.assign({}, next, { domains: Object.assign({}, next.domains) });
+        Object.keys(next.domains).forEach(function (kind) { if (previous && data[kind]) manifest.domains[kind] = previous.domains[kind]; });
         var changes = await Promise.all(Object.entries(next.domains).map(async function (entry) {
           if (!entry[1].url) return;
-          try { var value = await get(entry[1]); if (entry[0] === "jobs") { value.loaded_jobs = await records(value.job_pages); value.loaded_workflows = await records(value.workflow_pages); } return [entry[0], value]; } catch (_) { return null; }
+          try {
+            var value = await get(entry[1]);
+            if (entry[0] === "jobs") { value.loaded_jobs = await records(value.job_pages); value.loaded_workflows = await records(value.workflow_pages); jobs = value.loaded_jobs; workflows = value.loaded_workflows; }
+            data[entry[0]] = value; manifest.domains[entry[0]] = entry[1]; render();
+            return [entry[0], value];
+          } catch (_) { return null; }
         }));
-        changes.filter(Boolean).forEach(function (entry) { data[entry[0]] = entry[1]; });
-        // Individual failed domains retain their last successful reference and source time.
-        if (manifest) Object.keys(next.domains).forEach(function (kind) { if (!changes.some(function (c) { return c && c[0] === kind; }) && data[kind]) next.domains[kind] = manifest.domains[kind]; });
-        manifest = next; etag = changes.filter(Boolean).length === Object.values(next.domains).filter(function (d) { return d.url; }).length ? response.headers.get("etag") : null;
-        if (data.jobs) { jobs = data.jobs.loaded_jobs; workflows = data.jobs.loaded_workflows; }
+        // Slow or failed domains retain their own facts without delaying healthy ones.
+        etag = changes.filter(Boolean).length === Object.values(next.domains).filter(function (d) { return d.url; }).length ? response.headers.get("etag") : null;
         if (route().tab === "history" && data.host_history && data.host_history.hosts.length) await loadHostHistory(selectedHistoryHost || data.host_history.hosts[0].machine_id);
         if (detail && selectedBatch && data.queue && route().tab === "queue") await loadBatch(selectedBatch);
       }
       disconnected = false; delay = 15000; render();
       if (data.queue && route().tab === "queue" && !detail) await navigate();
     } catch (_) { disconnected = true; delay = Math.min(60000, delay * 2); render(); }
-    clearTimeout(timer); if (!document.hidden) timer = setTimeout(poll, delay);
+    polling = false;
+    clearTimeout(timer); if (!document.hidden) timer = setTimeout(poll, Math.max(0, delay - (Date.now() - started)));
   }
   window.addEventListener("hashchange", navigate);
   document.addEventListener("visibilitychange", function () { clearTimeout(timer); if (!document.hidden) poll(); });
