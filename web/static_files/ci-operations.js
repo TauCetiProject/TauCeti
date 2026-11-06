@@ -7,6 +7,7 @@
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
   var selectedHistoryHost, hostHistoryRecords = [], historyMetric = "busy_slots";
   var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", repoFilter = "all", workflowFilter = "all", platformFilter = "all", hostFilter = "all", ageFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
+  var waitingPage = 0, waitingOpen = false;
   var view = root.querySelector("[data-ops-view]"), health = root.querySelector("[data-ops-health]");
   function el(tag, text, cls) { var node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (cls) node.className = cls; return node; }
   function append(parent) { Array.prototype.slice.call(arguments, 1).forEach(function (node) { if (node) parent.append(node); }); return parent; }
@@ -113,6 +114,11 @@
     var service = queue.service || {};
     configuration.append(note("Controller " + (service.controller || "unknown") + " · revision " + (service.revision || "unknown") + " · publication " + (service.publication_enabled === true ? "enabled" : service.publication_enabled === false ? "disabled" : "unknown") + " · status observed " + age(queue.status_observed_at)));
     Object.entries(queue.settings || {}).forEach(function (entry) { configuration.append(note(entry[0].replaceAll("_", " ") + ": " + entry[1])); });
+    var dispatch = queue.dispatch_config;
+    if (dispatch) {
+      configuration.append(link("Dispatch policy at " + dispatch.revision.slice(0,12), "https://github.com/" + dispatch.repository + "/commit/" + dispatch.revision));
+      configuration.append(note("Configured Namespace build ceiling " + dispatch.namespace_build_cap + " · PR order " + dispatch.pr_order.join(" → ") + " · staging order " + dispatch.staging_order.join(" → ") + ". Runtime overrides are not observed; assignments are shown with each job."));
+    } else configuration.append(note("Dispatch policy and cloud build ceilings are not observed in this snapshot."));
     container.append(configuration);
     queue.workers.forEach(function (w) { container.append(note(w.id + " · " + (w.state || "unknown state") + " · heartbeat " + age(w.observed_at) + " · " + freshness(w.observed_at, 60))); });
   }
@@ -196,6 +202,22 @@
         });
       });
     }
+    var waiting = el("details", undefined, "ops-waiting"); waiting.open = waitingOpen;
+    waiting.addEventListener("toggle", function () { if (waiting.isConnected) waitingOpen = waiting.open; });
+    waiting.append(el("summary", "Approved waiting inputs · " + data.queue.counts.waiting));
+    if (data.queue.waiting_error) waiting.append(note("Waiting details could not refresh. Retained records were observed " + age(data.queue.waiting_observed_at) + ".", "ops-warning"));
+    if (!data.queue.loaded_waiting) waiting.append(note("Waiting details are unavailable or loading; PR search remains available."));
+    else {
+      var inputs = data.queue.loaded_waiting, list = el("ul", undefined, "ops-inputs");
+      if (!inputs.length) waiting.append(note("No waiting inputs in this observation; source coverage is shown above."));
+      waitingPage = Math.min(waitingPage, Math.max(0, Math.ceil(inputs.length / 100) - 1));
+      inputs.slice(waitingPage * 100, (waitingPage + 1) * 100).forEach(function (i) {
+        var row = el("li"); append(row, link("PR #" + i.pr, "#queue?pr=" + i.pr), note(i.title + " · " + i.state + " · approved " + timestamp(i.approved_at) + " · " + age(i.approved_at)), link("Accepted " + i.accepted_head.slice(0,12), "https://github.com/" + i.repository + "/commit/" + i.accepted_head));
+        if (i.no_repair) row.append(note("Agents may not edit this contribution."));
+        list.append(row);
+      }); waiting.append(list); pager(waiting, waitingPage, inputs.length, function (p) { waitingPage = p; render(); });
+    }
+    view.append(waiting);
     var choices = data.queue.batches.map(function (b) { return { value: b.id, label: "Batch " + b.id + " · " + b.state + " · v" + b.version + " · " + b.size + " members" }; });
     view.append(select("Batch", choices, selectedBatch || (choices[0] || {}).value, function (id) { location.hash = batchURL(id); }));
     if (!detail) { view.append(empty("Select a batch to load bounded detail pages.")); return; }
@@ -244,6 +266,13 @@
       card.append(note("CI ceiling " + (h.ci_max_jobs ?? "unknown") + " jobs · classes " + (admission.ci_kinds ? admission.ci_kinds.join(", ") : "unknown") + " · staging reservation " + (admission.staging_slots ?? "unknown") + " · CI RAM budget " + (admission.memory_budget_gib ?? "unknown") + " GiB · worker limit " + (h.worker_limit ?? "unknown")));
       if (admission.reservation_error) card.append(note("Staging reservation configuration needs attention.", "ops-warning"));
       card.append(note("Worker rounds in 24h · finished " + (activity.finished_rounds ?? "unknown") + " · failed " + (activity.failed_rounds ?? "unknown") + " · outcomes unconfirmed " + (activity.unknown_rounds ?? "unknown") + " · activity prepared " + age(activity.observed_at)));
+      if (h.worker_memory) {
+        var memory = h.worker_memory;
+        function gib(value) { return value === null || value === undefined ? "unknown" : (value / 1073741824).toFixed(1) + " GiB"; }
+        card.append(note("Worker RAM · working set " + gib(memory.working_set) + " · charged " + gib(memory.charged) + " · limit " + gib(memory.maximum) + " · OOM-kill counter " + (memory.oom_kill ?? "unknown") + ". This counter does not identify individual failed jobs."));
+      }
+      if (h.worker_admission) card.append(note("Worker admission · " + (h.worker_admission.state || "unknown").replaceAll("_", " ") + " · " + (h.worker_admission.reason || "unknown").replaceAll("_", " ")));
+      if (h.ci_cooldown) card.append(note("CI launch cooldown until " + timestamp(h.ci_cooldown.until) + ". Existing work can continue."));
       (h.slots || []).forEach(function (s) { card.append(note("Slot " + s.slot + " · " + s.phase + " · " + (s.busy ? "busy" : "not marked busy") + " · runner " + (s.runner_id || "unknown") + " · VM " + (s.instance_id || "unknown") + " · configured guest " + (s.vcpus ?? "unknown") + " CPUs / " + (s.memory_gib ?? "unknown") + " GiB")); });
       (h.workers || []).forEach(function (w) { card.append(note("Worker " + w.id + " · " + w.state + " · " + (w.alive ? "reported alive" : "not marked alive") + " · heartbeat " + age(w.observed_at) + " · " + freshness(w.observed_at, 60))); });
       if (!(h.slots || []).length) card.append(note("No slots in this observation. This does not establish available capacity.")); view.append(card);
@@ -403,7 +432,13 @@
           try {
             var value = await get(entry[1]);
             if (entry[0] === "jobs") { value.loaded_jobs = await records(value.job_pages); value.loaded_workflows = await records(value.workflow_pages); jobs = value.loaded_jobs; workflows = value.loaded_workflows; }
+            if (entry[0] === "queue" && data.queue) { value.loaded_waiting = data.queue.loaded_waiting; value.waiting_observed_at = data.queue.waiting_observed_at; }
             data[entry[0]] = value; manifest.domains[entry[0]] = entry[1]; render();
+            if (entry[0] === "queue" && value.waiting_pages) {
+              try { value.loaded_waiting = await records(value.waiting_pages); value.waiting_observed_at = value.observed_at; value.waiting_error = false; }
+              catch (_) { value.waiting_error = true; }
+              render();
+            }
             return [entry[0], value];
           } catch (_) { return null; }
         }));
