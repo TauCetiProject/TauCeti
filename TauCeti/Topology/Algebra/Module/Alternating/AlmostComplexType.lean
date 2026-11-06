@@ -664,25 +664,22 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
     have hP : ∀ pq ∈ Finset.antidiagonal (n + 1), P.eval (typeEigenvalue pq) = 0 :=
       fun pq hpq ↦ Lagrange.eval_nodal_at_node hpq
     -- Shifting the nodes by `±I` sends the degree-`n` eigenvalues to degree-`n + 1` ones, so `P`
-    -- annihilates the shifted derivations on degree-`n` forms. By `aeval_comp`, evaluating `P` at
-    -- the shifted derivation is evaluating the shifted polynomial at the derivation.
-    have hplus : aeval (J.alternatingDerivation + algebraMap ℂ _ I :
-        Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
-      have h := hvan (P.comp (X + C I)) fun ⟨p, q⟩ hpq ↦ by
-        rw [eval_comp]
-        convert hP (p + 1, q) (by simpa [Finset.mem_antidiagonal, add_right_comm] using hpq)
-          using 2
-        simp [typeEigenvalue]
-        ring
+    -- annihilates the shifted derivations on degree-`n` forms.
+    have hshift (c : ℂ) (hc : ∀ pq ∈ Finset.antidiagonal n,
+        P.eval (typeEigenvalue pq + c) = 0) : aeval (J.alternatingDerivation + algebraMap ℂ _ c :
+          Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
+      have h := hvan (P.comp (X + C c)) fun pq hpq ↦ by simpa using hc pq hpq
       simpa [aeval_comp] using h
+    have hplus := hshift I fun ⟨p, q⟩ hpq ↦ by
+      convert hP (p + 1, q) (by simpa [Finset.mem_antidiagonal, add_right_comm] using hpq) using 2
+      simp [typeEigenvalue]
+      ring
     have hminus : aeval (J.alternatingDerivation - algebraMap ℂ _ I :
         Module.End ℂ (V [⋀^Fin n]→L[ℝ] F)) P = 0 := by
-      have h := hvan (P.comp (X - C I)) fun ⟨p, q⟩ hpq ↦ by
-        rw [eval_comp]
+      simpa [sub_eq_add_neg] using hshift (-I) fun ⟨p, q⟩ hpq ↦ by
         convert hP (p, q + 1) (by simpa [Finset.mem_antidiagonal, ← add_assoc] using hpq) using 2
         simp [typeEigenvalue]
         ring
-      simpa [aeval_comp] using h
     ext ω w
     set Ω := aeval (J.alternatingDerivation : Module.End ℂ (V [⋀^Fin (n + 1)]→L[ℝ] F)) P ω
     have hint : ∀ v, curryLeftTopologicalLinear ℂ v Ω = 0 := by
@@ -697,12 +694,7 @@ private lemma aeval_alternatingDerivation_nodal (hJ : ∀ v, J (J v) = -v) (k : 
       simp only [LinearMap.zero_apply, LinearMap.sub_apply, LinearMap.add_apply,
         LinearMap.smul_apply] at h₁ h₂
       have h₃ : (2 : ℂ) • curryLeftTopologicalLinear ℂ v Ω = 0 := by
-        rw [two_smul]
-        calc curryLeftTopologicalLinear ℂ v Ω + curryLeftTopologicalLinear ℂ v Ω
-            = (curryLeftTopologicalLinear ℂ v Ω - I • curryLeftTopologicalLinear ℂ (J v) Ω) +
-                (curryLeftTopologicalLinear ℂ v Ω + I • curryLeftTopologicalLinear ℂ (J v) Ω) := by
-              abel
-          _ = 0 := by rw [← h₁, ← h₂, add_zero]
+        linear_combination (norm := module) -h₁ - h₂
       exact (smul_eq_zero.1 h₃).resolve_left two_ne_zero
     rw [LinearMap.zero_apply, ← Fin.cons_self_tail w]
     simpa [Matrix.vecCons] using congrArg (fun T ↦ T (Fin.tail w)) (hint (w 0))
