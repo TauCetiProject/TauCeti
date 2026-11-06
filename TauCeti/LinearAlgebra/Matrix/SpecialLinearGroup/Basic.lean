@@ -72,8 +72,8 @@ proof is independent of the source's.
   `γ⁻¹` for `γ = [a, b; c, d] ∈ SL₂(ℤ)` is `(-c, a)`, in any commutative ring; and
   `Matrix.SpecialLinearGroup.neg_vecMul_inv`: replacing `γ` by `-γ` negates `v ᵥ* γ⁻¹`.
 * `Matrix.SpecialLinearGroup` is countable when its coefficient ring is.
-* `Matrix.SpecialLinearGroup.coe_ne_zero`: a matrix of determinant one over a nontrivial ring is
-  nonzero.
+* `Matrix.SpecialLinearGroup.coe_ne_zero`: a square matrix of determinant one over a nontrivial
+  ring, indexed by a nonempty type, is nonzero.
 * `Matrix.SpecialLinearGroup.fin_two_mul_sub_mul_eq_one`: the determinant-one identity in
   coordinates, with `intCast_fin_two_mul_sub_mul_eq_one` its cast from `SL₂(ℤ)` to any
   nonassociative ring.
@@ -121,7 +121,8 @@ instance {R : Type*} [CommRing R] [Countable R] {n : Type*} [Fintype n] [Decidab
   letI : Countable (Matrix n n R) := inferInstanceAs (Countable (n → n → R))
   inferInstanceAs (Countable { A : Matrix n n R // A.det = 1 })
 
-/-- A matrix of determinant one over a nontrivial ring is nonzero. -/
+/-- A square matrix of determinant one over a nontrivial ring, indexed by a nonempty type, is
+nonzero. -/
 theorem coe_ne_zero {R : Type*} [CommRing R] [Nontrivial R] {n : Type*} [Fintype n]
     [DecidableEq n] [Nonempty n] (A : SpecialLinearGroup n R) : (A : Matrix n n R) ≠ 0 := fun h ↦
   A.det_ne_zero (by rw [h, det_zero])
