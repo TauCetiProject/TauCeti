@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Direct
+public import TauCeti.AlgebraicTopology.Cohomology.Twisted.Direct.Basic
 
 /-!
 # Pullback of singular cochains with local coefficients
