@@ -199,31 +199,6 @@ private theorem integral_truncated_eq_add_of_exit_points {γ : ℝ → ℂ} {g :
     integral_truncated_eq_of_left_exit h_lb hcₗ hεₗ hεm hanti h_far_L,
     integral_truncated_eq_of_right_exit h_ub hcᵣ hεᵣ hεm hmono h_far_R]
 
-/-- Away from the crossing, the curve stays a uniform distance from `s`: on the two outer pieces
-`[l, t₀ - ρ]` and `[t₀ + ρ, u]` of the window, where `t₀` is the only point mapped to `s`. -/
-private theorem exists_pos_forall_le_norm_sub_of_unique {γ : ℝ → ℂ} {s : ℂ} {l t₀ u ρ : ℝ}
-    (hlt : l < t₀) (htu : t₀ < u) (hρ_pos : 0 < ρ) (hlρ : l ≤ t₀ - ρ) (hρu : t₀ + ρ ≤ u)
-    (hγ_cont : ContinuousOn γ (Icc l u)) (h_unique : ∀ t ∈ Icc l u, γ t = s → t = t₀) :
-    ∃ m : ℝ, 0 < m ∧ (∀ t ∈ Icc l (t₀ - ρ), m ≤ ‖γ t - s‖) ∧
-      ∀ t ∈ Icc (t₀ + ρ) u, m ≤ ‖γ t - s‖ := by
-  obtain ⟨mL, hmL_pos, h_far_L⟩ := exists_curve_dist_lower_bound
-    (a := l) (b := t₀ - ρ) (w := s)
-    (hγ_cont.mono (by rw [uIcc_of_le hlρ]; exact Icc_subset_Icc le_rfl (by linarith)))
-    (fun t ht h_eq => by
-      rw [uIcc_of_le hlρ] at ht
-      have ht_eq := h_unique t ⟨ht.1, by linarith [ht.2]⟩ h_eq
-      linarith [ht.2])
-  obtain ⟨mR, hmR_pos, h_far_R⟩ := exists_curve_dist_lower_bound
-    (a := t₀ + ρ) (b := u) (w := s)
-    (hγ_cont.mono (by rw [uIcc_of_le hρu]; exact Icc_subset_Icc (by linarith) le_rfl))
-    (fun t ht h_eq => by
-      rw [uIcc_of_le hρu] at ht
-      have ht_eq := h_unique t ⟨by linarith [ht.1], ht.2⟩ h_eq
-      linarith [ht.1])
-  refine ⟨min mL mR, lt_min hmL_pos hmR_pos, fun t ht => (min_le_left mL mR).trans
-    (h_far_L t (by rwa [uIcc_of_le hlρ])), fun t ht => (min_le_right mL mR).trans
-    (h_far_R t (by rwa [uIcc_of_le hρu]))⟩
-
 /-- **Shared window-splitting core.** At a transverse crossing `γ t₀ = s` (non-zero one-sided
 derivative limits `L_R`, `L_L`, unique crossing on the window `[l, u]`), there are
 exit-time functions `τL, τR` tending to `t₀` one-sidedly with exit radius exactly `ε`, such
@@ -286,8 +261,8 @@ theorem exists_exit_times_truncated_integral_split {γ : ℝ → ℂ} {s : ℂ} 
   refine ⟨τL, τR, h_toL, h_toR, h_radL, h_radR,
     h_memL.mono fun ε hε => ⟨by linarith [hε.1], hε.2⟩,
     h_memR.mono fun ε hε => ⟨hε.1, by linarith [hε.2]⟩, ?_⟩
-  obtain ⟨m, hm_pos, h_far_L, h_far_R⟩ := exists_pos_forall_le_norm_sub_of_unique hlt htu hρ_pos
-    (by linarith) (by linarith) hγ_cont h_unique
+  obtain ⟨m, hm_pos, h_far_L, h_far_R⟩ := exists_window_dist_lower_bound hγ_cont h_unique hρ_pos
+    (by linarith) (by linarith)
   filter_upwards [h_radL, h_radR, h_memL, h_memR, Ioo_mem_nhdsGT hm_pos]
     with ε hεL hεR hτL hτR hεm
   have h_lb : l ≤ τL ε := by linarith [hτL.1, hρ_le_r, hlr]
