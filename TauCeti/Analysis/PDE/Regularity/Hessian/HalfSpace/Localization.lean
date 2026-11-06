@@ -49,14 +49,15 @@ Multiplying by `ζ` preserves `W^{2,p}(Ω)`
 
 `tr (A ∘ D²(ζ u)) = ζ f + tr (A ∘ T)`,
 
-where `|tr (A ∘ T)| ≤ N Λ ‖T‖` on the support `K` of `ζ` and `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ |u|` pointwise.
+where `|tr (A ∘ T)| ≤ N Λ ‖T‖` on the support `K` of `ζ` (`TauCeti.exists_lp_traceCLM_comp_le`)
+and `‖T‖ ≤ 2 M₁ ‖∇u‖ + M₂ |u|` pointwise.
 
 Since `ζ u` vanishes off `K` and `H ∩ K ⊆ Ω`, its extension by zero lies in `W^{2,p}(H)`
 (`TauCeti.Wkp.exists_value_ae_eq_indicator_of_isClosed`), with weak Hessian the extension by zero
 of `D²(ζ u)` (`TauCeti.Wkp.iteratedGradient_ae_eq_indicator_of_isClosed`). Its first-order part
-lies in `W^{1,p}_0(H)` (`TauCeti.W1p.localizeL_restrictL_mem_w1p0Submodule`, applied with a cutoff
-equal to one on `K` and supported in `U`), and it vanishes off `K`, where the coefficients are close
-to `A₀`. The half-space estimate therefore bounds `‖D²(ζ u)‖` by `(C / λ)` times the `Lᵖ` norm of
+lies in `W^{1,p}_0(H)` (`TauCeti.W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact`, since `Ω` and
+`H` agree on `U ⊇ K`), and it vanishes off `K`, where the coefficients are close to `A₀`.
+The half-space estimate therefore bounds `‖D²(ζ u)‖` by `(C / λ)` times the `Lᵖ` norm of
 `ζ f + tr (A ∘ T)`, and `ζ D²u = D²(ζ u) - T`.
 
 ## References
@@ -76,55 +77,6 @@ namespace TauCeti
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] {p : ℝ≥0∞} [Fact (1 ≤ p)]
-
-/-- **Zero boundary values on the model half-space.** Let `Ω ∩ U = H ∩ U` for the half-space `H`,
-and let `v ∈ W^{1,p}_0(Ω)` vanish off a compact set `K ⊆ U`. Then a function on `H` that agrees with
-`v` on `Ω` and vanishes elsewhere lies in `W^{1,p}_0(H)`. -/
-private theorem mem_w1p0Submodule_normalHalfSpace_of_value_ae_eq (hp_top : p ≠ ⊤) {a : ℝ}
-    {Omega U : Opens (WithLp 2 (ℝ × E))}
-    (hΩU : (Omega : Set (WithLp 2 (ℝ × E))) ∩ U =
-      (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ∩ U)
-    {K : Set (WithLp 2 (ℝ × E))} (hK : IsCompact K) (hKU : K ⊆ U)
-    {v : W1p (volume : Measure (WithLp 2 (ℝ × E))) Omega p} (hv : v ∈ w1p0Submodule volume Omega p)
-    (hvK : ∀ᵐ x ∂volume.restrict (Omega : Set (WithLp 2 (ℝ × E))), x ∉ K → W1p.value v x = 0)
-    (w : W1p (volume : Measure (WithLp 2 (ℝ × E))) (normalHalfSpace a) p)
-    (hw : W1p.value w =ᵐ[volume.restrict (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E)))]
-      (Omega : Set (WithLp 2 (ℝ × E))).indicator (W1p.value v)) :
-    w ∈ w1p0Submodule volume (normalHalfSpace a) p := by
-  obtain ⟨ψ, M, hψ, -, hψ1, -, hψs, hM, hψM, hgM⟩ :=
-    hK.exists_contDiff_cutoff_with_bounds U.isOpen hKU
-  have hψK : ∀ x ∈ K, ψ x = 1 := fun x hx => interior_subset (hψ1 hx)
-  -- Inside `U` the two domains agree, and `ψ` is supported there.
-  have hHΩ : (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))) ∩ tsupport ψ ⊆ Omega :=
-    fun x hx => ((hΩU.symm ▸ ⟨hx.1, hψs hx.2⟩ : x ∈ (Omega : Set _) ∩ U)).1
-  have hΩH : (Omega : Set (WithLp 2 (ℝ × E))) ∩ tsupport ψ ⊆ normalHalfSpace (E := E) a :=
-    fun x hx => ((hΩU ▸ ⟨hx.1, hψs hx.2⟩ : x ∈ (normalHalfSpace (E := E) a : Set _) ∩ U)).1
-  -- Localizing `v` to `H` by `ψ`, which is one on `K`, gives `w`.
-  have hmem := W1p.localizeL_restrictL_mem_w1p0Submodule (V := normalHalfSpace a) hp_top hψ hM
-    (fun x _ => hψM x) (fun x _ => hgM x) hHΩ hΩH hv
-  convert hmem using 1
-  refine W1p.ext_value (Lp.ext ?_)
-  have hm : MeasurableSet ((Omega ⊓ normalHalfSpace a : Opens (WithLp 2 (ℝ × E))) :
-      Set (WithLp 2 (ℝ × E))) := (Omega ⊓ normalHalfSpace a).isOpen.measurableSet
-  filter_upwards [hw, W1p.value_localizeL_ae (μ := volume) (p := p)
-      (inf_le_right : Omega ⊓ normalHalfSpace a ≤ normalHalfSpace a) hψ hM
-      (fun x _ => hψM x) (fun x _ => hgM x) (fun _ hx => ⟨hHΩ hx, hx.1⟩)
-      (W1p.restrictL inf_le_left v),
-    ae_restrict_of_ae ((ae_restrict_iff' hm).1
-      (W1p.value_restrictL_ae (inf_le_left : Omega ⊓ normalHalfSpace a ≤ Omega) v)),
-    ae_restrict_of_ae ((ae_restrict_iff' Omega.isOpen.measurableSet).1 hvK),
-    ae_restrict_mem (normalHalfSpace (E := E) a).isOpen.measurableSet] with x h₁ h₂ h₃ h₄ hxH
-  rw [h₁, h₂]
-  by_cases hxΩ : x ∈ (Omega : Set (WithLp 2 (ℝ × E)))
-  · have hx : x ∈ ((Omega ⊓ normalHalfSpace a : Opens (WithLp 2 (ℝ × E))) :
-        Set (WithLp 2 (ℝ × E))) := Opens.mem_inf.2 ⟨hxΩ, hxH⟩
-    rw [indicator_of_mem hxΩ, indicator_of_mem hx, h₃ hx, smul_eq_mul]
-    by_cases hxK : x ∈ K
-    · rw [hψK x hxK, one_mul]
-    · rw [h₄ hxΩ hxK, mul_zero]
-  · have hx : x ∉ ((Omega ⊓ normalHalfSpace a : Opens (WithLp 2 (ℝ × E))) :
-        Set (WithLp 2 (ℝ × E))) := fun hx => hxΩ (Opens.mem_inf.1 hx).1
-    rw [indicator_of_notMem hxΩ, indicator_of_notMem hx]
 
 /-- **The half-space estimate near a flat boundary portion.** Let `Ω ∩ U = H ∩ U` for the half-space
 `H`, and let `w ∈ W^{2,p}(Ω)`, with first-order part in `W^{1,p}_0(Ω)`, vanish off a compact set
@@ -167,11 +119,9 @@ private theorem exists_norm_iteratedGradient_le_of_inter_eq_normalHalfSpace_inte
     hK.isClosed hHK 2 w hwK
   have hWD := Wkp.iteratedGradient_ae_eq_indicator_of_isClosed hK.isClosed hHK 1 hwK hW
   have hW0 : Wkp.firstOrder 1 W ∈ w1p0Submodule volume (normalHalfSpace a) p := by
-    refine mem_w1p0Submodule_normalHalfSpace_of_value_ae_eq hp_top hΩU hK hKU hw0 ?_ _ ?_
-    · simpa only [Wkp.firstOrder_succ, Wkp.firstOrder_zero, ← Wkp.value_one, ← Wkp.value_succ]
-        using hwK
-    · simpa only [Wkp.firstOrder_succ, Wkp.firstOrder_zero, ← Wkp.value_one, ← Wkp.value_succ]
-        using hW
+    refine W1p.mem_w1p0Submodule_of_inter_eq_of_isCompact hp_top hΩU hK hKU hw0 ?_ ?_
+    · simpa only [Wkp.value_firstOrder] using hwK
+    · simpa only [Wkp.value_firstOrder] using hW
   have hWK : ∀ᵐ x ∂volume.restrict (normalHalfSpace (E := E) a : Set (WithLp 2 (ℝ × E))),
       x ∉ K → Wkp.value 2 W x = 0 := by
     filter_upwards [hW, ae_restrict_of_ae ((ae_restrict_iff' hΩm).1 hwK)] with x h1 h2 hxK
@@ -220,43 +170,6 @@ private theorem exists_norm_iteratedGradient_le_of_inter_eq_normalHalfSpace_inte
     exact eLpNorm_mono_measure _ Measure.restrict_le_self
   rw [hD]
   exact hkey.trans (by gcongr)
-
-omit [Fact (1 ≤ p)] in
-/-- The trace `tr (A ∘ G)` of a field `G ∈ Lᵖ` vanishing off `K` against a measurable coefficient
-field `A` bounded by `Λ` on `K` lies in `Lᵖ`, with norm at most `N Λ ‖G‖`, `N = dim (ℝ × E)`. -/
-private theorem exists_lp_traceCLM_comp_le {Ω K : Set (WithLp 2 (ℝ × E))}
-    {A : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {Λ : ℝ}
-    (hA_meas : AEStronglyMeasurable A (volume.restrict Ω))
-    (hAΛ : ∀ᵐ x ∂volume.restrict Ω, x ∈ K → ‖A x‖ ≤ Λ)
-    (G : Lp (IteratedGradient (WithLp 2 (ℝ × E)) 1) p (volume.restrict Ω))
-    (hG : ∀ᵐ x ∂volume.restrict Ω, x ∉ K → G x = 0) :
-    ∃ g : Lp ℝ p (volume.restrict Ω),
-      (∀ᵐ x ∂volume.restrict Ω, g x = traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L G x)) ∧
-        ‖g‖ ≤ Module.finrank ℝ (WithLp 2 (ℝ × E)) * Λ * ‖G‖ := by
-  generalize hN : (Module.finrank ℝ (WithLp 2 (ℝ × E)) : ℝ) = N
-  have hN0 : 0 ≤ N := hN ▸ Nat.cast_nonneg _
-  have hmeas : AEStronglyMeasurable (fun x => traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L G x))
-      (volume.restrict Ω) :=
-    Continuous.comp_aestronglyMeasurable₂
-      (g := fun (B M : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) =>
-        traceCLM ℝ (WithLp 2 (ℝ × E)) (B ∘L M))
-      ((traceCLM ℝ (WithLp 2 (ℝ × E))).continuous.comp (continuous_fst.clm_comp continuous_snd))
-      hA_meas (Lp.aestronglyMeasurable G)
-  have hle : ∀ᵐ x ∂volume.restrict Ω,
-      ‖traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L G x)‖ ≤ N * Λ * ‖G x‖ := by
-    filter_upwards [hG, hAΛ] with x h1 h2
-    by_cases hx : x ∈ K
-    · calc ‖traceCLM ℝ (WithLp 2 (ℝ × E)) (A x ∘L G x)‖ ≤ N * ‖A x ∘L G x‖ :=
-            hN ▸ ContinuousLinearMap.norm_traceCLM_le _
-        _ ≤ N * (‖A x‖ * ‖G x‖) :=
-            mul_le_mul_of_nonneg_left ((A x).opNorm_comp_le (G x)) hN0
-        _ ≤ N * (Λ * ‖G x‖) :=
-            mul_le_mul_of_nonneg_left (mul_le_mul_of_nonneg_right (h2 hx) (norm_nonneg _)) hN0
-        _ = N * Λ * ‖G x‖ := by ring
-    · rw [h1 hx, ContinuousLinearMap.comp_zero, map_zero, norm_zero, norm_zero, mul_zero]
-  have hmem := (Lp.memLp G).of_le_mul hmeas hle
-  exact ⟨hmem.toLp _, hmem.coeFn_toLp, Lp.norm_le_mul_norm_of_ae_le_mul
-    (by filter_upwards [hmem.coeFn_toLp, hle] with x h1 h2; rwa [h1])⟩
 
 /-- **The localized Calderón–Zygmund estimate near a flat boundary.** Let `1 < p < ∞`. There are
 constants `C` and `δ > 0`, depending only on `E` and `p`, with the following property. Let
@@ -337,7 +250,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_traceCLM_comp_eq_of_norm_sub_l
     obtain ⟨v, hv⟩ := hu0
     have hfo : Wkp.firstOrder 1 w = (v : W1p volume Omega p) := by
       refine W1p.ext_value (Lp.ext ?_)
-      rw [Wkp.firstOrder_succ, Wkp.firstOrder_zero, ← Wkp.value_one, ← Wkp.value_succ]
+      rw [Wkp.value_firstOrder]
       exact hwv.trans hv.symm
     exact hfo ▸ v.2
   -- The half-space estimate for `ζ u`, and `ζ D²u = D²(ζ u) - T`.
