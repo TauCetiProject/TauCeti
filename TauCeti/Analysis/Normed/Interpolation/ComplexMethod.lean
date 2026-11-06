@@ -64,6 +64,8 @@ open scoped ZeroAtInfty
 
 namespace TauCeti
 
+open Complex.HadamardThreeLines
+
 namespace CompatibleCouple
 
 variable {X₀ X₁ V : Type*}
@@ -197,11 +199,9 @@ theorem isStripFunction_stripFunction (g : C.stripTraces) :
         rw [hEq.image_eq]
         exact hF.isBounded
       apply_mul_I t :=
-        (hEq (mul_I_mem_verticalClosedStrip_iff.2 (left_mem_Icc.2 zero_le_one))).trans
-          (hF.apply_mul_I t)
+        (hEq (by simp)).trans (hF.apply_mul_I t)
       apply_one_add_mul_I t :=
-        (hEq (one_add_mul_I_mem_verticalClosedStrip_iff.2 (right_mem_Icc.2 zero_le_one))).trans
-          (hF.apply_one_add_mul_I t) }
+        (hEq (by simp)).trans (hF.apply_one_add_mul_I t) }
 
 variable {C} in
 theorem stripFunction_eq {g : C.stripTraces} {F : ℂ → C.SumSpace} (hF : C.IsStripFunction F g)
@@ -300,12 +300,10 @@ theorem isClosed_stripTraces [CompleteSpace X₀] [CompleteSpace X₁] :
   · refine isBounded_iff_forall_norm_le.2 ⟨‖g‖, ?_⟩
     rintro _ ⟨z, hz, rfl⟩
     exact hbound hz
-  · refine tendsto_nhds_unique
-      (hlimz ((mul_I_mem_verticalClosedStrip_iff (t := t)).2 (left_mem_Icc.2 zero_le_one))) ?_
+  · refine tendsto_nhds_unique (hlimz (by simp)) ?_
     simp_rw [(hF _).apply_mul_I]
     exact (C.fstToSum.continuous.tendsto _).comp (hfst t)
-  · refine tendsto_nhds_unique (hlimz
-      ((one_add_mul_I_mem_verticalClosedStrip_iff (t := t)).2 (right_mem_Icc.2 zero_le_one))) ?_
+  · refine tendsto_nhds_unique (hlimz (by simp)) ?_
     simp_rw [(hF _).apply_one_add_mul_I]
     exact (C.sndToSum.continuous.tendsto _).comp (hsnd t)
 
@@ -394,7 +392,7 @@ theorem exists_toSum_eq_iff (hθ : θ ∈ Icc 0 1) {u : C.SumSpace} :
     exact ⟨_, g, C.isStripFunction_stripFunction g, rfl⟩
   · rintro ⟨F, g, hF, rfl⟩
     exact ⟨mk θ ⟨g, F, hF⟩, by
-      simpa using stripFunction_eq hF (ofReal_mem_verticalClosedStrip_iff.2 hθ)⟩
+      simpa using stripFunction_eq hF (by simpa using hθ)⟩
 
 end ComplexMethodSpace
 
@@ -489,7 +487,7 @@ private theorem stripEval_gaussianTrace {δ : ℝ} (hδ : 0 < δ) {θ : ℝ} (h�
     C.stripEval θ ⟨C.gaussianTrace hδ θ x, C.gaussianTrace_mem hδ θ x⟩ =
       C.fstToSum (C.interFst x) := by
   rw [stripEval_apply, stripFunction_eq (C.isStripFunction_gaussian hδ θ x)
-    (ofReal_mem_verticalClosedStrip_iff.2 hθ)]
+    (by simpa using hθ)]
   simp [gaussian]
 
 namespace ComplexMethodSpace
@@ -605,10 +603,8 @@ private theorem exists_isStripFunction_smul_comp (A : C.SumSpace →L[ℂ] D.Sum
     {g : C₀(ℝ, X₀) × C₀(ℝ, X₁)} (hF : C.IsStripFunction F g) :
     ∃ g' : C₀(ℝ, Y₀) × C₀(ℝ, Y₁), D.IsStripFunction (fun z => c z • A (F z)) g' ∧
       (∀ t, g'.1 t = c (t * I) • A₀ (g.1 t)) ∧ ∀ t, g'.2 t = c (1 + t * I) • A₁ (g.2 t) := by
-  have hK₀ (t : ℝ) : ‖c (t * I)‖ ≤ K :=
-    hK _ (mul_I_mem_verticalClosedStrip_iff.2 (left_mem_Icc.2 zero_le_one))
-  have hK₁ (t : ℝ) : ‖c (1 + t * I)‖ ≤ K :=
-    hK _ (one_add_mul_I_mem_verticalClosedStrip_iff.2 (right_mem_Icc.2 zero_le_one))
+  have hK₀ (t : ℝ) : ‖c (t * I)‖ ≤ K := hK _ (by simp)
+  have hK₁ (t : ℝ) : ‖c (1 + t * I)‖ ≤ K := hK _ (by simp)
   have hcont₀ : Continuous fun t : ℝ => c (t * I) := hc.continuous.comp (by fun_prop)
   have hcont₁ : Continuous fun t : ℝ => c (1 + t * I) := hc.continuous.comp (by fun_prop)
   refine ⟨(⟨⟨fun t => c (t * I) • A₀ (g.1 t),
@@ -797,7 +793,7 @@ private theorem norm_scaleFactor_smul_map_mk_le (hθ : θ ∈ Icc 0 1) {M₀ M�
   have hv : mk θ ⟨g', _, hg'⟩ = scaleFactor M₀ M₁ θ • map θ T₀ T₁ h (mk θ g) :=
     toSum_injective <| by
       rw [map_smul, toSum_map, toSum_mk, toSum_mk, stripEval_apply, stripEval_apply,
-        stripFunction_eq hg' (ofReal_mem_verticalClosedStrip_iff.2 hθ)]
+        stripFunction_eq hg' (by simpa using hθ)]
   have hg'g : ‖g'‖ ≤ ‖g‖ := norm_prod_le_iff.2
     ⟨(ZeroAtInftyContinuousMap.norm_le (norm_nonneg _)).2 fun t => ?_,
       (ZeroAtInftyContinuousMap.norm_le (norm_nonneg _)).2 fun t => ?_⟩

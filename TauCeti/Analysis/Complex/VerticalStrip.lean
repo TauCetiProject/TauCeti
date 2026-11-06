@@ -13,15 +13,15 @@ public import Mathlib.Analysis.Complex.Hadamard
 Mathlib's three-lines theorem is stated on the open strip `verticalStrip a b` and the closed
 strip `verticalClosedStrip a b`, the preimages of `Ioo a b` and `Icc a b` under `Complex.re`.
 This file records their membership criteria, the topological facts used when applying
-`DiffContOnCl` on the strip, and the membership of real points and of points on the vertical
-lines through `0` and `1`.
+`DiffContOnCl` on the strip, and the membership criterion for a point `x + t * I` in terms of
+its real part `x`.
 -/
 
 public section
 
-namespace TauCeti
-
 open Complex Complex.HadamardThreeLines Set
+
+namespace TauCeti.Complex.HadamardThreeLines
 
 variable {a b : ℝ} {z : ℂ}
 
@@ -47,16 +47,12 @@ theorem closure_verticalStrip_subset (a b : ℝ) :
     closure (verticalStrip a b) ⊆ verticalClosedStrip a b :=
   closure_minimal (verticalStrip_subset_verticalClosedStrip a b) (isClosed_verticalClosedStrip a b)
 
-theorem ofReal_mem_verticalClosedStrip_iff {x : ℝ} :
-    (x : ℂ) ∈ verticalClosedStrip a b ↔ x ∈ Icc a b := by
+theorem ofReal_add_mul_I_mem_verticalStrip_iff {x t : ℝ} :
+    ((x : ℂ) + t * I) ∈ verticalStrip a b ↔ x ∈ Ioo a b := by
   simp
 
-theorem mul_I_mem_verticalClosedStrip_iff {t : ℝ} :
-    (t * I : ℂ) ∈ verticalClosedStrip a b ↔ 0 ∈ Icc a b := by
+theorem ofReal_add_mul_I_mem_verticalClosedStrip_iff {x t : ℝ} :
+    ((x : ℂ) + t * I) ∈ verticalClosedStrip a b ↔ x ∈ Icc a b := by
   simp
 
-theorem one_add_mul_I_mem_verticalClosedStrip_iff {t : ℝ} :
-    (1 + t * I : ℂ) ∈ verticalClosedStrip a b ↔ 1 ∈ Icc a b := by
-  simp
-
-end TauCeti
+end TauCeti.Complex.HadamardThreeLines
