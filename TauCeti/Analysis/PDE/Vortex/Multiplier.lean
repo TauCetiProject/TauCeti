@@ -42,26 +42,20 @@ theorem mulVec_mem_sobolevFields_natCast (k : ℕ)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields k) :
     (fun z ↦ WithLp.toLp 2 (fun i ↦ ∑ j : Fin 4, A i j z * y z j)) ∈
       sobolevFields k := by
-  apply mem_sobolevFields.mpr
-  intro i
-  have hentry (j : Fin 4) : ∃ v : Lp ℝ 2 (volume : Measure ℂ),
-      v ∈ realSobolevSubmodule ℂ k 2 ∧
-        (v : ℂ → ℝ) =ᵐ[volume] fun z ↦ A i j z * y z j := by
-    obtain ⟨u, hu, huS⟩ := mem_sobolevFields.mp hy j
+  refine mem_sobolevFields.mpr fun i ↦ ?_
+  have hentry (j : Fin 4) : (fun z ↦ A i j z * y z j) ∈ realSobolevFunctions ℂ k 2 := by
+    obtain ⟨u, hu, huS⟩ := mem_realSobolevFunctions.mp (mem_sobolevFields.mp hy j)
     obtain ⟨M, hM, hMbound⟩ := hbound i j
     obtain ⟨v, hvS, hv⟩ :=
       exists_mem_realSobolevSubmodule_ae_eq_mul_of_bounded_derivatives
         (by norm_num : (1 : ENNReal) < 2) (by norm_num : (2 : ENNReal) ≠ ⊤)
         k (hA i j) hM hMbound (mem_realSobolevSubmodule.mpr huS)
-    refine ⟨v, hvS, ?_⟩
+    refine mem_realSobolevFunctions_of_ae_eq (coeFn_mem_realSobolevFunctions hvS) ?_
     filter_upwards [hv, hu] with z hvz huz
     rw [hvz, huz]
-  choose v hvS hv using hentry
-  refine ⟨∑ j, v j, ?_, mem_realSobolevSubmodule.mp
-    (Submodule.sum_mem _ fun j _ ↦ hvS j)⟩
-  filter_upwards [Lp.coeFn_finsetSum Finset.univ v, Filter.eventually_all.mpr hv] with z hz hvz
-  simp only [hz, Finset.sum_apply]
-  exact Finset.sum_congr rfl fun j _ ↦ hvz j
+  convert Submodule.sum_mem _ (t := Finset.univ) fun j _ ↦ hentry j using 1
+  ext z
+  simp
 
 /-- Multiplication by a smooth real coefficient with bounded derivatives through order `k`
 preserves the integer-order Sobolev direction space of plane-vortex fields. No decay of the
