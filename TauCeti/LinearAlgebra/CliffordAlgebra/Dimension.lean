@@ -18,7 +18,8 @@ import TauCeti.LinearAlgebra.Dual.Lemmas
 -- Private: `Module.Basis.map_exteriorAlgebra` proves the naturality of the basis.
 import TauCeti.LinearAlgebra.ExteriorAlgebra.Subspace
 import Mathlib.LinearAlgebra.FreeModule.Finite.Matrix
--- Private: `QuadraticMap.toBilin` writes `-Q` as a triangular bilinear form.
+-- Private: `LinearMap.BilinMap.toQuadraticMap_surjective` writes `-Q` as the quadratic form of a
+-- bilinear form.
 import Mathlib.LinearAlgebra.QuadraticForm.Basis
 
 /-!
@@ -126,23 +127,18 @@ variable {R : Type u} {M : Type v} [CommRing R] [AddCommGroup M] [Module R M]
 
 /-- The Clifford algebra of a free module is a free module, over every commutative ring. -/
 instance instFree [Module.Free R M] : Module.Free R (CliffordAlgebra Q) := by
-  classical
-  -- For a well-ordered basis `b`, `-Q` is the quadratic form of the triangular bilinear form
-  -- `(-Q).toBilin b`, so `changeFormEquiv` identifies the algebra linearly with the exterior
-  -- algebra, with no division by `2`.
-  let _ : LinearOrder (Module.Free.ChooseBasisIndex R M) := linearOrderOfSTO WellOrderingRel
-  have h : ((-Q).toBilin (Module.Free.chooseBasis R M)).toQuadraticMap = 0 - Q := by
-    rw [QuadraticMap.toQuadraticMap_toBilin, zero_sub]
-  exact Module.Free.of_equiv (changeFormEquiv h).symm
+  -- `M` being free, `-Q` is the quadratic form of a bilinear form `B`, so `changeFormEquiv`
+  -- identifies the algebra linearly with the exterior algebra, with no division by `2`.
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-Q)
+  exact Module.Free.of_equiv (changeFormEquiv (hB.trans (zero_sub Q).symm)).symm
 
 /-- The Clifford algebra of a finite module is a finite module, over every commutative ring. -/
 instance instFinite [Module.Finite R M] : Module.Finite R (CliffordAlgebra Q) := by
   -- It is a quotient of the Clifford algebra of a finite free module, which is finite by the same
   -- `changeFormEquiv` argument as `CliffordAlgebra.instFree`.
   obtain ⟨n, f, hf⟩ := Module.Finite.exists_fin' R M
-  have h : ((-(Q.comp f)).toBilin (Pi.basisFun R (Fin n))).toQuadraticMap = 0 - Q.comp f := by
-    rw [QuadraticMap.toQuadraticMap_toBilin, zero_sub]
-  have := Module.Finite.equiv (changeFormEquiv h).symm
+  obtain ⟨B, hB⟩ := LinearMap.BilinMap.toQuadraticMap_surjective (-(Q.comp f))
+  have := Module.Finite.equiv (changeFormEquiv (hB.trans (zero_sub (Q.comp f)).symm)).symm
   exact Module.Finite.of_surjective (map (Q₁ := Q.comp f) ⟨f, fun _ ↦ rfl⟩).toLinearMap
     (map_surjective _ hf)
 
