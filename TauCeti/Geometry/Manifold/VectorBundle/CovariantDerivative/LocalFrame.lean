@@ -183,9 +183,14 @@ theorem frameCovariantDerivative_eq_symmL_comp {g : M → F}
   have hterm (i : ι) :
       mvfderiv I (LinearMap.piApply (e.localFrameCoeff I b i) σ) x v = b.coord i (A v) := by
     let k : F →L[𝕜] 𝕜 := LinearMap.toContinuousLinearMap (b.coord i)
+    have hk : (fun z ↦ b.coord i (g z)) = ⇑k ∘ g := by
+      rw [Function.comp_def]
+      simp [k]
     have h := (((ContinuousLinearMap.hasMFDerivAt k).comp x hg).congr_of_eventuallyEq
-      (hcoeff i : _ =ᶠ[𝓝 x] ⇑k ∘ g)).mfderiv
+      (hk ▸ hcoeff i)).mfderiv
     rw [mvfderiv_apply_eq_mfderiv_apply, LinearMap.piApply_apply, h]
+    -- `tangentSpaceCast` and `fromTangentSpace` are the identity of the model space `𝕜` and
+    -- `LinearMap.toContinuousLinearMap` has the same underlying function, so this is `rfl`.
     rfl
   simp only [hterm]
   have h1 : e.symmL 𝕜 x (A v) = e.symmL 𝕜 x (∑ i, b.coord i (A v) • b i) := by
