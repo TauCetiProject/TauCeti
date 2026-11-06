@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Schauder
 import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
 import Mathlib.Analysis.Normed.Operator.Bilinear
 
 /-!
@@ -46,27 +47,6 @@ private theorem norm_newtonianToCauchy_le : ‖newtonianToCauchy‖ ≤ 4 := by
       simp only [norm_real, norm_mul, norm_I, one_mul, Real.norm_eq_abs]
       linarith
 
-private theorem norm_secondFDeriv_sub_le (u : ℂ → ℝ) (x y : ℂ) :
-    ‖fderiv ℝ (fderiv ℝ u) x - fderiv ℝ (fderiv ℝ u) y‖ ≤
-      ‖iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y‖ := by
-  apply opNorm_le_bound _ (norm_nonneg _)
-  intro v
-  apply opNorm_le_bound _ (by positivity)
-  intro w
-  have h := (iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y).le_opNorm ![v, w]
-  simpa only [sub_apply, iteratedFDeriv_two_apply,
-    Fin.prod_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one, mul_assoc] using h
-
-private theorem norm_secondFDeriv_le (u : ℂ → ℝ) (x : ℂ) :
-    ‖fderiv ℝ (fderiv ℝ u) x‖ ≤ ‖iteratedFDeriv ℝ 2 u x‖ := by
-  apply opNorm_le_bound _ (norm_nonneg _)
-  intro v
-  apply opNorm_le_bound _ (by positivity)
-  intro w
-  have h := (iteratedFDeriv ℝ 2 u x).le_opNorm ![v, w]
-  simpa only [iteratedFDeriv_two_apply, Fin.prod_univ_two, Matrix.cons_val_zero,
-    Matrix.cons_val_one, mul_assoc] using h
-
 /-- The actual normalized Cauchy transform of smooth compactly supported real data gains one
 Hölder derivative on each fixed output disc. The estimate uses only the source supremum and
 Hölder constant. -/
@@ -81,18 +61,16 @@ theorem exists_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_real
   obtain ⟨C, hC⟩ :=
     exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution hα hα1 c hr hR
   refine ⟨4 * C, fun {f H M} hf hs hH hM ↦ ?_⟩
-  dsimp only
-  let T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f z : ℂ)
+  intro T
   let u := planarNewtonianKernel ⋆ f
-  change ContDiff ℝ ∞ T ∧ HolderOnWith ((4 * C) * (H + M)) α (fderiv ℝ T)
-    (closedBall c R) ∧ ∀ x ∈ closedBall c R, ‖fderiv ℝ T x‖ ≤ (4 * C : ℝ≥0) * (H + M)
   have hc := HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) hs
   have hu : ContDiff ℝ ∞ u := contDiff_planarNewtonianKernel_convolution hf hc
   have hDu : ContDiff ℝ ∞ (fderiv ℝ u) := hu.fderiv_right (by simp)
   have hT : T = newtonianToCauchy ∘ fderiv ℝ u := by
     funext w
     rw [Function.comp_apply, newtonianToCauchy_apply]
-    exact hc.pi_inv_smul_integral_sub_inv_smul_eq_newtonian_deriv (hf.of_le (by simp)) w
+    exact hc.pi_inv_smul_integral_sub_inv_smul_eq_fderiv_planarNewtonianKernel_convolution
+      (hf.of_le (by simp)) w
   have hDT (x : ℂ) : fderiv ℝ T x = newtonianToCauchy.comp (fderiv ℝ (fderiv ℝ u) x) := by
     rw [hT]
     exact (newtonianToCauchy.hasFDerivAt.comp x
@@ -106,7 +84,7 @@ theorem exists_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_real
       _ ≤ ‖newtonianToCauchy‖ * ‖fderiv ℝ (fderiv ℝ u) x - fderiv ℝ (fderiv ℝ u) y‖ :=
         opNorm_comp_le _ _
       _ ≤ 4 * ‖iteratedFDeriv ℝ 2 u x - iteratedFDeriv ℝ 2 u y‖ :=
-        mul_le_mul norm_newtonianToCauchy_le (norm_secondFDeriv_sub_le u x y)
+        mul_le_mul norm_newtonianToCauchy_le (norm_fderiv_fderiv_sub (𝕜 := ℝ) u x y).le
           (norm_nonneg (fderiv ℝ (fderiv ℝ u) x - fderiv ℝ (fderiv ℝ u) y)) (by norm_num)
       _ ≤ 4 * ((C * (H + M) : ℝ≥0) * dist x y ^ (α : ℝ)) := by
         apply mul_le_mul_of_nonneg_left _ (by norm_num : (0 : ℝ) ≤ 4)
@@ -116,7 +94,8 @@ theorem exists_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_real
     calc
       _ ≤ ‖newtonianToCauchy‖ * ‖fderiv ℝ (fderiv ℝ u) x‖ := opNorm_comp_le _ _
       _ ≤ 4 * ‖iteratedFDeriv ℝ 2 u x‖ :=
-        mul_le_mul norm_newtonianToCauchy_le (norm_secondFDeriv_le u x)
+        mul_le_mul norm_newtonianToCauchy_le (by
+          rw [← norm_iteratedFDeriv_one (𝕜 := ℝ) (fderiv ℝ u), norm_iteratedFDeriv_fderiv])
           (norm_nonneg (fderiv ℝ (fderiv ℝ u) x)) (by norm_num)
       _ ≤ 4 * ((C * (H + M) : ℝ≥0) : ℝ) := by gcongr; exact hDS x hx
       _ = _ := by push_cast; ring

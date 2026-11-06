@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
-public import TauCeti.Analysis.Holder.Normed
 public import TauCeti.Analysis.Complex.CauchyKernel
 public import TauCeti.Analysis.Convolution.Holder
 import Mathlib.MeasureTheory.Group.Integral
@@ -20,7 +19,8 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 
 The input support and output disc are fixed separately. Truncating the reciprocal kernel at the
 sum of their radii preserves the actual Cauchy integral and yields bounds in the Hölder norm.
-The normalization is `π⁻¹`, for the convention `\bar∂ = (∂₁ + I ∂ᵢ)/2`.
+The normalization is `π⁻¹`, with conjugate Wirtinger operator
+`(2 : ℂ)⁻¹ • (D f 1 + I • D f I)`, where `D f` is the real Fréchet derivative.
 
 ## References
 
@@ -28,7 +28,7 @@ The normalization is `π⁻¹`, for the convention `\bar∂ = (∂₁ + I ∂ᵢ
 * The Cauchy/Beurling Hölder development in `t4v1/damian_formalizare`,
   `MorseFloer/Part2/CauchyPompeiu.lean` and `CauchyHolder.lean`, uses a Cauchy transform with
   normalization `(2π)⁻¹` for twice the conjugate Wirtinger derivative. The normalization here
-  is twice that transform. No external source code is copied or adapted.
+  is twice that transform.
 -/
 
 public noncomputable section
@@ -58,11 +58,6 @@ theorem integral_sub_inv_smul_eq_truncatedCauchyKernel_smul
   apply integral_congr_ae
   exact ae_of_all _ fun z ↦ (truncatedCauchyKernel_smul_eq hs hw z).symm
 
-private lemma integrable_truncatedCauchyKernel_smul (hf : Continuous f)
-    {M : ℝ} (hM : ∀ z, ‖f z‖ ≤ M) (ρ : ℝ) (w : ℂ) :
-    Integrable (fun z ↦ truncatedCauchyKernel ρ z • f (w - z)) := by
-  exact integrable_kernel_smul_sub (integrable_truncatedCauchyKernel ρ) hf hM w
-
 /-- The normalized Cauchy transform has a fixed-disc supremum bound `2(r+R) M` whenever the
 source is supported in the input disc and bounded by `M`. -/
 theorem norm_pi_inv_smul_integral_sub_inv_smul_le
@@ -70,15 +65,9 @@ theorem norm_pi_inv_smul_integral_sub_inv_smul_le
     {M : ℝ} (hM : ∀ z, ‖f z‖ ≤ M) (hw : w ∈ closedBall c R) :
     ‖(Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z‖ ≤ 2 * (r + R) * M := by
   rw [integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw, norm_smul]
-  have hb : ‖∫ z, truncatedCauchyKernel (r + R) z • f (w - z)‖ ≤
-      (2 * Real.pi * (r + R)) * M := by
-    calc
-      _ ≤ ∫ z : ℂ, ‖truncatedCauchyKernel (r + R) z‖ * M :=
-        norm_integral_le_of_norm_le ((integrable_truncatedCauchyKernel (r + R)).norm.mul_const M)
-          (ae_of_all _ fun z ↦ by
-            rw [norm_smul]
-            exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _))
-      _ = _ := by rw [integral_mul_const, integral_norm_truncatedCauchyKernel (add_nonneg hr hR)]
+  have hb := norm_integral_kernel_smul_sub_le
+    (integrable_truncatedCauchyKernel (r + R)) hM w
+  rw [integral_norm_truncatedCauchyKernel (add_nonneg hr hR)] at hb
   calc
     _ ≤ ‖(Real.pi : ℂ)⁻¹‖ * ((2 * Real.pi * (r + R)) * M) :=
       mul_le_mul_of_nonneg_left hb (norm_nonneg _)
@@ -96,33 +85,25 @@ theorem holderOnWith_pi_inv_smul_integral_sub_inv_smul
   have hc := HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) hs
   have hf' := hf.continuous hα
   obtain ⟨M, hM⟩ := hf'.bounded_above_of_compact_support hc
-  apply HolderOnWith.of_dist_le
+  have h := (holderWith_integral_kernel_smul_sub
+    (integrable_truncatedCauchyKernel (r + R)) hα hf hM)
+  have hscaled := (h.smul ((Real.pi : ℂ)⁻¹)).holderOnWith (closedBall c R)
+  have hconst : ((∫ z, ‖truncatedCauchyKernel (r + R) z‖).toNNReal * H) *
+      ‖(Real.pi : ℂ)⁻¹‖₊ =
+        (2 * (r + R)).toNNReal * H := by
+    apply NNReal.eq
+    rw [integral_norm_truncatedCauchyKernel (add_nonneg hr hR)]
+    simp only [NNReal.coe_mul, coe_nnnorm]
+    rw [
+      Real.coe_toNNReal _ (by positivity), Real.coe_toNNReal _ (by positivity)]
+    simp only [norm_inv, norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos]
+    field_simp
+  rw [hconst] at hscaled
   intro w hw v hv
-  rw [dist_eq_norm, ← smul_sub,
-    integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw,
-    integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hv,
-    ← integral_sub (integrable_truncatedCauchyKernel_smul hf' hM (r + R) w)
-      (integrable_truncatedCauchyKernel_smul hf' hM (r + R) v), norm_smul]
-  have hb : ‖∫ z : ℂ, truncatedCauchyKernel (r + R) z • f (w - z) -
-        truncatedCauchyKernel (r + R) z • f (v - z)‖ ≤
-      (2 * Real.pi * (r + R)) * (H * dist w v ^ (α : ℝ)) := by
-    calc
-      _ ≤ ∫ z : ℂ, ‖truncatedCauchyKernel (r + R) z‖ * (H * dist w v ^ (α : ℝ)) :=
-        norm_integral_le_of_norm_le
-          ((integrable_truncatedCauchyKernel (r + R)).norm.mul_const _)
-          (ae_of_all _ fun z ↦ by
-            rw [← smul_sub, norm_smul]
-            apply mul_le_mul_of_nonneg_left _ (norm_nonneg _)
-            simpa only [dist_sub_right, dist_eq_norm, sub_sub_sub_cancel_right] using
-              hf.dist_le (w - z) (v - z))
-      _ = _ := by rw [integral_mul_const, integral_norm_truncatedCauchyKernel (add_nonneg hr hR)]
-  calc
-    _ ≤ ‖(Real.pi : ℂ)⁻¹‖ * ((2 * Real.pi * (r + R)) * (H * dist w v ^ (α : ℝ))) :=
-      mul_le_mul_of_nonneg_left hb (norm_nonneg _)
-    _ = _ := by
-      rw [NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
-      simp only [norm_inv, norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos]
-      field_simp
+  dsimp only
+  rw [integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hw,
+    integral_sub_inv_smul_eq_truncatedCauchyKernel_smul hs hv]
+  exact hscaled w hw v hv
 
 /-- Uniformly bounded pointwise convergence on one fixed support disc passes through the
 actual normalized Cauchy integral, including when the limiting source is only continuous. -/

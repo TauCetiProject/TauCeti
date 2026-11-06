@@ -67,7 +67,7 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_laplacian_complex
   · simpa only [heN, one_pow, NNReal.one_rpow, mul_one, holderOnWith_univ] using hH'
   · have hnorm := e.norm_iteratedFDeriv_comp_right u (e.symm x) 2
     have hh := hD (e.symm x)
-    change ‖iteratedFDeriv ℝ 2 (u ∘ e) (e.symm x)‖ ≤ _ at hh
+    dsimp only [v] at hh
     rw [hnorm, e.apply_symm_apply] at hh
     exact hh
 

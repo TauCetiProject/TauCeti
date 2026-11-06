@@ -38,33 +38,9 @@ namespace TauCeti
 
 variable {f : ℂ → ℝ}
 
-/-- The derivative of a smooth-data Newtonian potential can be taken on the weak derivative
-of the logarithmic kernel, although that kernel is singular at zero. -/
-theorem _root_.HasCompactSupport.fderiv_planarNewtonianKernel_convolution_apply
-    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w v : ℂ) :
-    fderiv ℝ (planarNewtonianKernel ⋆ f) w v =
-      ∫ z, fderiv ℝ planarNewtonianKernel z v * f (w - z) := by
-  have hD := hc.hasFDerivAt_convolution_right (ContinuousLinearMap.lsmul ℝ ℝ)
-    locallyIntegrable_planarNewtonianKernel hf w
-  rw [hD.fderiv, convolution_precompR_apply _ locallyIntegrable_planarNewtonianKernel
-    (hc.fderiv ℝ) (hf.continuous_fderiv one_ne_zero), convolution_def]
-  simp only [lsmul_apply, smul_eq_mul]
-  let g : ℂ → ℝ := fun z ↦ f (w - z)
-  have hg : ContDiff ℝ 1 g := hf.comp (contDiff_const.sub contDiff_id)
-  have hcg : HasCompactSupport g := hc.comp_homeomorph (Homeomorph.subLeft w)
-  have hderiv (z : ℂ) : fderiv ℝ g z v = -fderiv ℝ f (w - z) v := by
-    have h := ((hf.differentiable one_ne_zero (w - z)).hasFDerivAt.comp z
-      ((hasFDerivAt_const w z).sub (hasFDerivAt_id z))).fderiv
-    simpa only [g, Function.comp_def, zero_sub, ContinuousLinearMap.comp_neg,
-      ContinuousLinearMap.comp_id, neg_apply] using congrArg (fun L : ℂ →L[ℝ] ℝ ↦ L v) h
-  have h := integral_planarNewtonianKernel_mul_fderiv_eq_neg_fderiv_mul hg hcg v
-  simp_rw [hderiv, mul_neg] at h
-  rw [integral_neg] at h
-  exact neg_injective h
-
 /-- The normalized reciprocal is the complex combination of the two real derivatives of the
 logarithmic fundamental solution. -/
-theorem pi_inv_mul_inv_eq_planarNewtonianKernel_fderiv {z : ℂ} (hz : z ≠ 0) :
+theorem pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel {z : ℂ} (hz : z ≠ 0) :
     (Real.pi : ℂ)⁻¹ * z⁻¹ =
       -2 * ((fderiv ℝ planarNewtonianKernel z 1 : ℂ) -
         Complex.I * (fderiv ℝ planarNewtonianKernel z Complex.I : ℂ)) := by
@@ -73,9 +49,17 @@ theorem pi_inv_mul_inv_eq_planarNewtonianKernel_fderiv {z : ℂ} (hz : z ≠ 0) 
     simp [fderiv_planarNewtonianKernel_apply hz, Complex.normSq_eq_norm_sq] <;>
     field_simp [Real.pi_ne_zero, hn] <;> simp [pow_two]
 
+end TauCeti
+
+namespace HasCompactSupport
+
+open TauCeti
+
+variable {f : ℂ → ℝ}
+
 /-- The normalized Cauchy transform of real data is minus four times the complex-linear
 Wirtinger derivative of its Newtonian potential, expressed in the two real directions. -/
-theorem _root_.HasCompactSupport.pi_inv_smul_integral_sub_inv_smul_eq_newtonian_deriv
+theorem pi_inv_smul_integral_sub_inv_smul_eq_fderiv_planarNewtonianKernel_convolution
     (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
     (Real.pi : ℂ)⁻¹ • (∫ z, (w - z)⁻¹ • (f z : ℂ)) =
       -2 * ((fderiv ℝ (planarNewtonianKernel ⋆ f) w 1 : ℂ) -
@@ -110,7 +94,7 @@ theorem _root_.HasCompactSupport.pi_inv_smul_integral_sub_inv_smul_eq_newtonian_
         I * (fderiv ℝ planarNewtonianKernel z I : ℂ)) * (f (w - z) : ℂ) := by
       apply integral_congr_ae
       filter_upwards [volume.ae_ne (0 : ℂ)] with z hz
-      rw [pi_inv_mul_inv_eq_planarNewtonianKernel_fderiv hz]
+      rw [pi_inv_mul_inv_eq_fderiv_planarNewtonianKernel hz]
     _ = ∫ z, (-2 : ℂ) * ((fderiv ℝ planarNewtonianKernel z 1 : ℂ) * (f (w - z) : ℂ) -
         I * ((fderiv ℝ planarNewtonianKernel z I : ℂ) * (f (w - z) : ℂ))) := by
       congr 1
@@ -124,9 +108,27 @@ theorem _root_.HasCompactSupport.pi_inv_smul_integral_sub_inv_smul_eq_newtonian_
         ← hc.fderiv_planarNewtonianKernel_convolution_apply hf w 1,
         ← hc.fderiv_planarNewtonianKernel_convolution_apply hf w I]
 
+end HasCompactSupport
+
+namespace TauCeti
+
+variable {f : ℂ → ℝ}
+
+private theorem re_im_pi_inv_smul_integral_sub_inv_smul
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
+    ((Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f z : ℂ)).re =
+        -2 * fderiv ℝ (planarNewtonianKernel ⋆ f) w 1 ∧
+      ((Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f z : ℂ)).im =
+        2 * fderiv ℝ (planarNewtonianKernel ⋆ f) w I := by
+  rw [hc.pi_inv_smul_integral_sub_inv_smul_eq_fderiv_planarNewtonianKernel_convolution hf w]
+  simp only [Complex.mul_re, Complex.mul_im, Complex.neg_re, Complex.neg_im,
+    show (2 : ℂ).re = 2 from rfl, show (2 : ℂ).im = 0 from rfl, Complex.sub_re, Complex.sub_im,
+    Complex.ofReal_re, Complex.ofReal_im, Complex.I_re, Complex.I_im]
+  constructor <;> ring
+
 /-- The two real first derivatives of a Newtonian potential preserve Hölder estimates on a
 fixed output disc. The bound is independent of all derivatives of the smooth source. -/
-theorem holderOnWith_fderiv_planarNewtonianKernel_convolution
+theorem holderOnWith_fderiv_planarNewtonianKernel_convolution_apply_one_and_apply_I
     {c : ℂ} {r R : ℝ} {H α : ℝ≥0} (hα : 0 < α) (hf : HolderWith H α f)
     (hf1 : ContDiff ℝ 1 f) (hr : 0 ≤ r) (hR : 0 ≤ R)
     (hs : Function.support f ⊆ Metric.closedBall c r) :
@@ -139,14 +141,11 @@ theorem holderOnWith_fderiv_planarNewtonianKernel_convolution
     simpa only [RCLike.ofReal_eq_complex_ofReal, Function.comp_def, one_mul,
       NNReal.one_rpow, mul_one, NNReal.coe_one, NNReal.rpow_one] using
         (RCLike.lipschitzWith_ofReal (K := ℂ)).holderWith.comp hf
-  have hsC : Function.support (fun z ↦ (f z : ℂ)) ⊆ Metric.closedBall c r := by
-    intro z hz
-    apply hs
-    intro h
-    exact hz (by change (f z : ℂ) = 0; rw [h]; simp)
+  have hsC : Function.support (fun z ↦ (f z : ℂ)) ⊆ Metric.closedBall c r :=
+    (Function.support_comp_subset Complex.ofReal_zero f).trans hs
   have hT := holderOnWith_pi_inv_smul_integral_sub_inv_smul hα hfC hr hR hsC
   let T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f z : ℂ)
-  have hEq (w : ℂ) := hc.pi_inv_smul_integral_sub_inv_smul_eq_newtonian_deriv hf1 w
+  have hEq (w : ℂ) := re_im_pi_inv_smul_integral_sub_inv_smul hc hf1 w
   have hdist (x y : ℂ) :
       dist (fderiv ℝ (planarNewtonianKernel ⋆ f) x 1)
           (fderiv ℝ (planarNewtonianKernel ⋆ f) y 1) ≤ dist (T x) (T y) ∧
@@ -155,16 +154,12 @@ theorem holderOnWith_fderiv_planarNewtonianKernel_convolution
     have hre : (T x - T y).re = -2 *
         (fderiv ℝ (planarNewtonianKernel ⋆ f) x 1 -
           fderiv ℝ (planarNewtonianKernel ⋆ f) y 1) := by
-      dsimp only [T]
-      rw [hEq x, hEq y]
-      simp
+      rw [Complex.sub_re, (hEq x).1, (hEq y).1]
       ring
     have him : (T x - T y).im = 2 *
         (fderiv ℝ (planarNewtonianKernel ⋆ f) x I -
           fderiv ℝ (planarNewtonianKernel ⋆ f) y I) := by
-      dsimp only [T]
-      rw [hEq x, hEq y]
-      simp
+      rw [Complex.sub_im, (hEq x).2, (hEq y).2]
       ring
     have hrn := abs_re_le_norm (T x - T y)
     have hin := abs_im_le_norm (T x - T y)
@@ -183,31 +178,20 @@ theorem holderOnWith_fderiv_planarNewtonianKernel_convolution
 
 /-- The first directional derivatives of a Newtonian potential have uniform fixed-disc bounds
 depending on the source supremum, without using its derivatives. -/
-theorem norm_fderiv_planarNewtonianKernel_convolution_le
+theorem abs_fderiv_planarNewtonianKernel_convolution_apply_one_le_and_apply_I_le
     {c w : ℂ} {r R M : ℝ} (hf : ContDiff ℝ 1 f) (hr : 0 ≤ r) (hR : 0 ≤ R)
     (hs : Function.support f ⊆ Metric.closedBall c r) (hM : ∀ z, ‖f z‖ ≤ M)
     (hw : w ∈ Metric.closedBall c R) :
     |fderiv ℝ (planarNewtonianKernel ⋆ f) w 1| ≤ 2 * (r + R) * M ∧
       |fderiv ℝ (planarNewtonianKernel ⋆ f) w I| ≤ 2 * (r + R) * M := by
   have hc := HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) hs
-  have hsC : Function.support (fun z ↦ (f z : ℂ)) ⊆ Metric.closedBall c r := by
-    intro z hz
-    apply hs
-    intro h
-    exact hz (by change (f z : ℂ) = 0; rw [h]; simp)
+  have hsC : Function.support (fun z ↦ (f z : ℂ)) ⊆ Metric.closedBall c r :=
+    (Function.support_comp_subset Complex.ofReal_zero f).trans hs
   have hMC (z : ℂ) : ‖(f z : ℂ)‖ ≤ M := by simpa using hM z
   let T : ℂ := (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f z : ℂ)
   have hT : ‖T‖ ≤ 2 * (r + R) * M :=
     norm_pi_inv_smul_integral_sub_inv_smul_le hr hR hsC hMC hw
-  have hEq := hc.pi_inv_smul_integral_sub_inv_smul_eq_newtonian_deriv hf w
-  have hre : T.re = -2 * fderiv ℝ (planarNewtonianKernel ⋆ f) w 1 := by
-    dsimp only [T]
-    rw [hEq]
-    simp
-  have him : T.im = 2 * fderiv ℝ (planarNewtonianKernel ⋆ f) w I := by
-    dsimp only [T]
-    rw [hEq]
-    simp
+  obtain ⟨hre, him⟩ := re_im_pi_inv_smul_integral_sub_inv_smul hc hf w
   have hrn := abs_re_le_norm T
   have hin := abs_im_le_norm T
   rw [hre, abs_mul] at hrn

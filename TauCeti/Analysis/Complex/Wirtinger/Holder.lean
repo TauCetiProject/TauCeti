@@ -45,8 +45,8 @@ theorem norm_wirtingerDeriv_apply_sub_le (x y : V) (v : V) :
   simpa only [norm_neg, norm_smul, norm_I, one_mul] using
     (fderiv ℝ g x - fderiv ℝ g y).le_opNorm (I • v)
 
-/-- A Hölder bound for the real derivative gives the same bound for its complex-linear part
-in a unit direction, and the direction norm in general. -/
+/-- A `K`-Hölder bound for the real derivative gives a `K ‖v‖`-Hölder bound for its
+complex-linear part applied to `v`. -/
 theorem _root_.HolderOnWith.wirtingerDeriv_apply {K α : ℝ≥0} {s : Set V}
     (h : HolderOnWith K α (fderiv ℝ g) s) (v : V) :
     HolderOnWith (K * ‖v‖₊) α (fun x ↦ wirtingerDeriv g x v) s := by

@@ -26,15 +26,15 @@ open scoped NNReal
 
 namespace TauCeti
 
-variable {𝕜 F : Type*} [RCLike 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+variable {E 𝕜 F : Type*} [NormedAddCommGroup E] [RCLike 𝕜] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
   [NormedSpace ℝ F]
-  {K : ℂ → 𝕜} {f : ℂ → F} {M : ℝ}
+  {K : E → 𝕜} {f : E → F} {M : ℝ}
 
 omit [NormedSpace ℝ F] in
 /-- A kernel cutoff at the sum of the support and output radii leaves its convolution
 integrand unchanged on the output disc. -/
-theorem indicator_kernel_smul_sub_eq {c w : ℂ} {r R : ℝ}
-    (hs : Function.support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) (z : ℂ) :
+theorem indicator_kernel_smul_sub_eq {c w : E} {r R : ℝ}
+    (hs : Function.support f ⊆ closedBall c r) (hw : w ∈ closedBall c R) (z : E) :
     (closedBall 0 (r + R)).indicator K z • f (w - z) = K z • f (w - z) := by
   by_cases hz : z ∈ closedBall 0 (r + R)
   · rw [indicator_of_mem hz]
@@ -51,11 +51,14 @@ theorem indicator_kernel_smul_sub_eq {c w : ℂ} {r R : ℝ}
       exact hz (mem_closedBall_zero_iff.mpr hz')
     simp only [hf, smul_zero]
 
+variable [MeasurableSpace E] [OpensMeasurableSpace E]
+  [SecondCountableTopologyEither E F] {μ : Measure E}
+
 omit [NormedSpace ℝ F] in
 /-- A bounded continuous function is integrable against every translate of an integrable
 scalar kernel. -/
-theorem integrable_kernel_smul_sub (hK : Integrable K) (hf : Continuous f)
-    (hM : ∀ x, ‖f x‖ ≤ M) (w : ℂ) : Integrable (fun z ↦ K z • f (w - z)) := by
+theorem integrable_kernel_smul_sub (hK : Integrable K μ) (hf : Continuous f)
+    (hM : ∀ x, ‖f x‖ ≤ M) (w : E) : Integrable (fun z ↦ K z • f (w - z)) μ := by
   apply (hK.norm.mul_const M).mono'
   · exact hK.aestronglyMeasurable.smul
       ((hf.comp (continuous_const.sub continuous_id)).aestronglyMeasurable)
@@ -63,12 +66,13 @@ theorem integrable_kernel_smul_sub (hK : Integrable K) (hf : Continuous f)
       rw [norm_smul]
       exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _)
 
+omit [OpensMeasurableSpace E] [SecondCountableTopologyEither E F] in
 /-- An integrable scalar kernel multiplies the uniform bound by its `L¹` norm. -/
-theorem norm_integral_kernel_smul_sub_le (hK : Integrable K)
-    (hM : ∀ x, ‖f x‖ ≤ M) (w : ℂ) :
-    ‖∫ z, K z • f (w - z)‖ ≤ (∫ z, ‖K z‖) * M := by
+theorem norm_integral_kernel_smul_sub_le (hK : Integrable K μ)
+    (hM : ∀ x, ‖f x‖ ≤ M) (w : E) :
+    ‖∫ z, K z • f (w - z) ∂μ‖ ≤ (∫ z, ‖K z‖ ∂μ) * M := by
   calc
-    _ ≤ ∫ z : ℂ, ‖K z‖ * M := norm_integral_le_of_norm_le (hK.norm.mul_const M)
+    _ ≤ ∫ z : E, ‖K z‖ * M ∂μ := norm_integral_le_of_norm_le (hK.norm.mul_const M)
       (ae_of_all _ fun z ↦ by
         rw [norm_smul]
         exact mul_le_mul_of_nonneg_left (hM _) (norm_nonneg _))
@@ -76,9 +80,9 @@ theorem norm_integral_kernel_smul_sub_le (hK : Integrable K)
 
 /-- An integrable scalar kernel preserves a Hölder exponent and multiplies its constant by
 its `L¹` norm. Boundedness ensures that every convolution integral is well-defined. -/
-theorem holderWith_integral_kernel_smul_sub (hK : Integrable K)
+theorem holderWith_integral_kernel_smul_sub (hK : Integrable K μ)
     {H α : ℝ≥0} (hα : 0 < α) (hf : HolderWith H α f) (hM : ∀ x, ‖f x‖ ≤ M) :
-    HolderWith ((∫ z, ‖K z‖).toNNReal * H) α (fun w ↦ ∫ z, K z • f (w - z)) := by
+    HolderWith ((∫ z, ‖K z‖ ∂μ).toNNReal * H) α (fun w ↦ ∫ z, K z • f (w - z) ∂μ) := by
   rw [← holderOnWith_univ]
   apply HolderOnWith.of_dist_le
   intro w _ v _
@@ -86,7 +90,7 @@ theorem holderWith_integral_kernel_smul_sub (hK : Integrable K)
     (integrable_kernel_smul_sub hK (hf.continuous hα) hM w)
     (integrable_kernel_smul_sub hK (hf.continuous hα) hM v)]
   calc
-    _ ≤ ∫ z : ℂ, ‖K z‖ * (H * dist w v ^ (α : ℝ)) :=
+    _ ≤ ∫ z : E, ‖K z‖ * (H * dist w v ^ (α : ℝ)) ∂μ :=
       norm_integral_le_of_norm_le (hK.norm.mul_const _)
         (ae_of_all _ fun z ↦ by
           rw [← smul_sub, norm_smul]

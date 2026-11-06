@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Pompeiu.Schauder
-public import TauCeti.Analysis.Complex.Pompeiu.Approximation
+public import TauCeti.Analysis.Calculus.BumpFunction.HolderApproximation
 import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.Topology.MetricSpace.Equicontinuity
@@ -17,7 +17,8 @@ import TauCeti.Topology.MetricSpace.Holder
 /-!
 # The Cauchy transform gains one Hölder derivative
 
-For real Hölder sources on one fixed support disc, the actual normalized Cauchy integral is
+The gain is first proved for real Hölder sources on one fixed support disc and then extended
+to complex sources through their real and imaginary parts. The actual normalized Cauchy integral is
 `C¹` on an output neighborhood, and its derivative has a uniform Hölder and supremum bound on
 the output disc. Smooth normalized bump approximations preserve the source bounds. Their
 Cauchy derivatives have a uniformly convergent subsequence by Arzelà–Ascoli; the derivative
@@ -39,6 +40,60 @@ private theorem conjWirtingerDeriv_normalizedCauchy_smooth {f : ℂ → ℂ}
     hc.conjWirtingerDeriv_integral_sub_inv_smul_apply_one hf w]
   simp [Real.pi_ne_zero]
 
+private theorem exists_tendstoUniformlyOn_fderiv_holderOnWith
+    {Tn : ℕ → ℂ → ℂ} {c : ℂ} {R : ℝ} {B α : ℝ≥0} (hα : 0 < α)
+    (hSmooth : ∀ n, ContDiff ℝ ∞ (Tn n))
+    (hHolder : ∀ n, HolderOnWith B α (fderiv ℝ (Tn n)) (closedBall c R))
+    (hNorm : ∀ n x, x ∈ closedBall c R → ‖fderiv ℝ (Tn n) x‖ ≤ B) :
+    ∃ φ : ℕ → ℕ, StrictMono φ ∧ ∃ G : ℂ → ℂ →L[ℝ] ℂ,
+      TendstoUniformlyOn (fun n ↦ fderiv ℝ (Tn (φ n))) G atTop (closedBall c R) ∧
+      HolderOnWith B α G (closedBall c R) ∧
+      ∀ x ∈ closedBall c R, ‖G x‖ ≤ B := by
+  classical
+  let K := closedBall c R
+  have : CompactSpace K := isCompact_iff_compactSpace.mp (isCompact_closedBall c R)
+  let V (n : ℕ) : K →ᵇ (ℂ →L[ℝ] ℂ) := BoundedContinuousFunction.mkOfCompact
+    ⟨fun x ↦ fderiv ℝ (Tn n) x, ((hSmooth n).continuous_fderiv (by simp)).comp
+      continuous_subtype_val⟩
+  have hEqui : Equicontinuous ((↑) : range V → K → (ℂ →L[ℝ] ℂ)) := by
+    apply Metric.equicontinuous_of_continuity_modulus
+      (fun t : ℝ ↦ B * t ^ (α : ℝ))
+    · have hc : Continuous (fun t : ℝ ↦ B * t ^ (α : ℝ)) :=
+        continuous_const.mul (Real.continuous_rpow_const α.coe_nonneg)
+      simpa only [Real.zero_rpow (NNReal.coe_pos.mpr hα).ne', mul_zero] using hc.tendsto 0
+    · intro x y q
+      rcases q with ⟨_, n, rfl⟩
+      exact (hHolder n).dist_le x.property y.property
+  have hCompact := BoundedContinuousFunction.arzela_ascoli
+    (closedBall (0 : ℂ →L[ℝ] ℂ) B) (isCompact_closedBall _ _) (range V)
+    (fun q x hq ↦ by
+      rcases hq with ⟨n, rfl⟩
+      exact mem_closedBall_zero_iff.mpr (hNorm n x x.property)) hEqui
+  obtain ⟨q, -, φ, hφ, hVlim⟩ := hCompact.tendsto_subseq
+    (fun n ↦ subset_closure (mem_range_self n))
+  have hUnif : TendstoUniformly (fun n ↦ (V (φ n) : K → (ℂ →L[ℝ] ℂ))) q atTop :=
+    BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp hVlim
+  let G (x : ℂ) : ℂ →L[ℝ] ℂ := if hx : x ∈ K then q ⟨x, hx⟩ else 0
+  have hG (x : ℂ) (hx : x ∈ K) : G x = q ⟨x, hx⟩ := by
+    dsimp only [G]
+    rw [dite_eq_left hx]
+  have hUnifOn : TendstoUniformlyOn (fun n ↦ fderiv ℝ (Tn (φ n))) G atTop K := by
+    rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
+    convert hUnif using 1
+    · funext n x
+      rfl
+    · funext x
+      exact hG x x.property
+  have hGHolder : HolderOnWith B α G K := by
+    apply HolderOnWith.of_dist_le
+    intro x hx y hy
+    exact le_of_tendsto ((hUnifOn.tendsto_at hx).dist (hUnifOn.tendsto_at hy))
+      (Eventually.of_forall fun n ↦ (hHolder (φ n)).dist_le hx hy)
+  have hGNorm (x : ℂ) (hx : x ∈ K) : ‖G x‖ ≤ B :=
+    le_of_tendsto (hUnifOn.tendsto_at hx).norm
+      (Eventually.of_forall fun n ↦ hNorm (φ n) x hx)
+  exact ⟨φ, hφ, G, hUnifOn, hGHolder, hGNorm⟩
+
 /-- The actual Cauchy transform gains one Hölder derivative for real sources, with separately
 fixed support and output discs. Its `C¹` neighborhood contains the closed output disc. -/
 theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_real
@@ -55,11 +110,8 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_
   obtain ⟨C, hC⟩ := exists_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_real
     hα hα1 c (by linarith : 0 ≤ r + 1) (by linarith : 0 ≤ R + 1)
   refine ⟨C, fun {f H M} hs hf hM ↦ ?_⟩
-  let T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • (f z : ℂ)
-  change ContDiffOn ℝ 1 T (ball c (R + 1)) ∧
-    HolderOnWith (C * (H + M)) α (fderiv ℝ T) (closedBall c R) ∧
-      (∀ x ∈ closedBall c R, ‖fderiv ℝ T x‖ ≤ C * (H + M)) ∧
-      ∀ x ∈ ball c (R + 1), conjWirtingerDeriv T x 1 = (f x : ℂ)
+  intro T
+  -- Smooth probability-kernel approximants preserve both source bounds and one support disc.
   obtain ⟨g, hgsmooth, hgs, hgH, hgM, hglim⟩ :=
     exists_contDiff_support_subset_holderWith_tendstoUniformly hα hf hM hs
   let Tn (n : ℕ) : ℂ → ℂ := fun w ↦
@@ -68,65 +120,22 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_
       HolderOnWith (C * (H + M)) α (fderiv ℝ (Tn n)) (closedBall c (R + 1)) ∧
       ∀ x ∈ closedBall c (R + 1), ‖fderiv ℝ (Tn n) x‖ ≤ C * (H + M) :=
     hC (hgsmooth n) (hgs n) (hgH n) (hgM n)
-  let K := closedBall c (R + 1)
-  have : CompactSpace K := isCompact_iff_compactSpace.mp (isCompact_closedBall c (R + 1))
-  let V (n : ℕ) : K →ᵇ (ℂ →L[ℝ] ℂ) := BoundedContinuousFunction.mkOfCompact
-    ⟨fun x ↦ fderiv ℝ (Tn n) x, ((hSmooth n).1.continuous_fderiv (by simp)).comp
-      continuous_subtype_val⟩
-  have hEqui : Equicontinuous ((↑) : range V → K → (ℂ →L[ℝ] ℂ)) := by
-    apply Metric.equicontinuous_of_continuity_modulus
-      (fun t : ℝ ↦ (C * (H + M) : ℝ≥0) * t ^ (α : ℝ))
-    · have hc : Continuous (fun t : ℝ ↦ (C * (H + M) : ℝ≥0) * t ^ (α : ℝ)) :=
-        continuous_const.mul (Real.continuous_rpow_const α.coe_nonneg)
-      simpa only [Real.zero_rpow (NNReal.coe_pos.mpr hα).ne', mul_zero] using hc.tendsto 0
-    · intro x y q
-      rcases q with ⟨_, n, rfl⟩
-      exact (hSmooth n).2.1.dist_le x.property y.property
-  have hCompact := BoundedContinuousFunction.arzela_ascoli
-    (closedBall (0 : ℂ →L[ℝ] ℂ) (C * (H + M))) (isCompact_closedBall _ _) (range V)
-    (fun q x hq ↦ by
-      rcases hq with ⟨n, rfl⟩
-      exact mem_closedBall_zero_iff.mpr ((hSmooth n).2.2 x x.property)) hEqui
-  obtain ⟨q, -, φ, hφ, hVlim⟩ := hCompact.tendsto_subseq
-    (fun n ↦ subset_closure (mem_range_self n))
-  have hUnif : TendstoUniformly (fun n ↦ (V (φ n) : K → (ℂ →L[ℝ] ℂ))) q atTop :=
-    BoundedContinuousFunction.tendsto_iff_tendstoUniformly.mp hVlim
-  let G (x : ℂ) : ℂ →L[ℝ] ℂ := if hx : x ∈ K then q ⟨x, hx⟩ else 0
-  have hG (x : ℂ) (hx : x ∈ K) : G x = q ⟨x, hx⟩ := by
-    dsimp only [G]
-    rw [dite_eq_left hx]
-  have hUnifOn : TendstoUniformlyOn (fun n ↦ fderiv ℝ (Tn (φ n))) G atTop K := by
-    rw [tendstoUniformlyOn_iff_tendstoUniformly_comp_coe]
-    convert hUnif using 1
-    · funext n x
-      rfl
-    · funext x
-      exact hG x x.property
-  have hGHolder : HolderOnWith (C * (H + M)) α G K := by
-    apply HolderOnWith.of_dist_le
-    intro x hx y hy
-    exact le_of_tendsto ((hUnifOn.tendsto_at hx).dist (hUnifOn.tendsto_at hy))
-      (Eventually.of_forall fun n ↦ (hSmooth (φ n)).2.1.dist_le hx hy)
-  have hGNorm (x : ℂ) (hx : x ∈ K) : ‖G x‖ ≤ (C * (H + M) : ℝ≥0) :=
-    le_of_tendsto (hUnifOn.tendsto_at hx).norm
-      (Eventually.of_forall fun n ↦ (hSmooth (φ n)).2.2 x hx)
-  have hgsC (n : ℕ) : Function.support (fun z ↦ (g n z : ℂ)) ⊆ closedBall c (r + 1) := by
-    intro z hz
-    apply hgs n
-    intro h
-    exact hz (by change (g n z : ℂ) = 0; rw [h]; simp)
-  have hfsC : Function.support (fun z ↦ (f z : ℂ)) ⊆ closedBall c (r + 1) := by
-    intro z hz
-    apply (closedBall_subset_closedBall (by linarith : r ≤ r + 1))
-    apply hs
-    intro h
-    exact hz (by change (f z : ℂ) = 0; rw [h]; simp)
+  -- Compactness of the uniformly Hölder derivative fields produces a uniform derivative limit.
+  obtain ⟨φ, hφ, G, hUnifOn, hGHolder, hGNorm⟩ :=
+    exists_tendstoUniformlyOn_fderiv_holderOnWith hα
+      (fun n ↦ (hSmooth n).1) (fun n ↦ (hSmooth n).2.1) (fun n ↦ (hSmooth n).2.2)
+  have hgsC (n : ℕ) : Function.support (fun z ↦ (g n z : ℂ)) ⊆ closedBall c (r + 1) :=
+    (Function.support_comp_subset Complex.ofReal_zero (g n)).trans (hgs n)
+  have hfsC : Function.support (fun z ↦ (f z : ℂ)) ⊆ closedBall c (r + 1) :=
+    (Function.support_comp_subset Complex.ofReal_zero f).trans
+      (hs.trans (closedBall_subset_closedBall (by linarith : r ≤ r + 1)))
   have hTlim (x : ℂ) : Tendsto (fun n ↦ Tn n x) atTop (𝓝 (T x)) := by
     apply tendsto_pi_inv_smul_integral_sub_inv_smul
       (fun n ↦ continuous_ofReal.comp (hgsmooth n).continuous) hgsC hfsC
       (M := (M : ℝ)) (fun n z ↦ by simpa only [Function.comp_apply, norm_real] using hgM n z)
     intro z
     exact continuous_ofReal.continuousAt.tendsto.comp (hglim.tendsto_at z)
+  -- The function and derivative limits identify the actual derivative of the Cauchy integral.
   have hDeriv (x : ℂ) (hx : x ∈ ball c (R + 1)) : HasFDerivAt T (G x) x :=
     hasFDerivAt_of_tendstoUniformlyOn isOpen_ball (hUnifOn.mono ball_subset_closedBall)
       (fun n y _ ↦ ((hSmooth (φ n)).1.differentiable (by simp) y).hasFDerivAt)
@@ -146,7 +155,8 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_
     exact hGHolder x (ball_subset_closedBall (hsub hx)) y (ball_subset_closedBall (hsub hy))
   · rw [hDf x (hsub hx)]
     exact hGNorm x (ball_subset_closedBall (hsub hx))
-  · let L : (ℂ →L[ℝ] ℂ) → ℂ := fun A ↦ (2 : ℂ)⁻¹ • (A 1 + I • A I)
+  · -- Pass the normalized Wirtinger equation through the derivative and source limits.
+    let L : (ℂ →L[ℝ] ℂ) → ℂ := fun A ↦ (2 : ℂ)⁻¹ • (A 1 + I • A I)
     have hL : Continuous L := by fun_prop
     have hleft := hL.continuousAt.tendsto.comp
       (hUnifOn.tendsto_at (ball_subset_closedBall hx))
@@ -167,31 +177,8 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_
     have heq := tendsto_nhds_unique hleft hright
     simpa only [conjWirtingerDeriv_apply, hDf x hx, smul_eq_mul, mul_one, L] using heq
 
-private theorem integral_sub_inv_mul_eq_re_add_I_mul_im {f : ℂ → ℂ}
-    (hf : Continuous f) (hc : HasCompactSupport f) (w : ℂ) :
-    (∫ z, (w - z)⁻¹ * f z) = (∫ z, (w - z)⁻¹ * ((f z).re : ℂ)) +
-      I * (∫ z, (w - z)⁻¹ * ((f z).im : ℂ)) := by
-  have hRe : Integrable (fun z ↦ (w - z)⁻¹ * ((f z).re : ℂ)) := by
-    simpa only [smul_eq_mul, Function.comp_apply] using
-      (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
-        (continuous_ofReal.comp (continuous_re.comp hf))
-        (hc.comp_left (g := fun z : ℂ ↦ (z.re : ℂ)) (by simp))
-  have hIm : Integrable (fun z ↦ (w - z)⁻¹ * ((f z).im : ℂ)) := by
-    simpa only [smul_eq_mul, Function.comp_apply] using
-      (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
-        (continuous_ofReal.comp (continuous_im.comp hf))
-        (hc.comp_left (g := fun z : ℂ ↦ (z.im : ℂ)) (by simp))
-  have heq (z : ℂ) : (w - z)⁻¹ * f z =
-      (w - z)⁻¹ * ((f z).re : ℂ) + I * ((w - z)⁻¹ * ((f z).im : ℂ)) := by
-    calc
-      _ = (w - z)⁻¹ * (((f z).re : ℂ) + I * ((f z).im : ℂ)) := by
-        rw [mul_comm I, (f z).re_add_im]
-      _ = _ := by ring
-  simp_rw [heq]
-  rw [integral_add hRe (hIm.const_mul I), integral_const_mul]
-
-/-- The actual normalized Cauchy transform maps compactly supported complex Hölder sources to
-`C^{1,α}` on every fixed output disc, with a bound depending only on the two discs and `α`. -/
+/-- The actual Cauchy transform of complex Hölder data is `C¹` near the output disc, and its
+derivative has supremum and `α`-Hölder constant at most `C (H + M)` on that disc. -/
 theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (c : ℂ) {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R) :
@@ -205,23 +192,13 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
   obtain ⟨C, hC⟩ :=
     exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_real hα hα1 c hr hR
   refine ⟨2 * C, fun {f H M} hs hf hM ↦ ?_⟩
-  let T : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z
+  intro T
   let Tr : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • ((f z).re : ℂ)
   let Ti : ℂ → ℂ := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • ((f z).im : ℂ)
-  change ContDiffOn ℝ 1 T (ball c (R + 1)) ∧
-    HolderOnWith ((2 * C) * (H + M)) α (fderiv ℝ T) (closedBall c R) ∧
-      (∀ x ∈ closedBall c R, ‖fderiv ℝ T x‖ ≤ (2 * C : ℝ≥0) * (H + M)) ∧
-      ∀ x ∈ ball c (R + 1), conjWirtingerDeriv T x 1 = f x
-  have hsRe : Function.support (fun z ↦ (f z).re) ⊆ closedBall c r := by
-    intro z hz
-    apply hs
-    intro h
-    exact hz (by change (f z).re = 0; rw [h]; simp)
-  have hsIm : Function.support (fun z ↦ (f z).im) ⊆ closedBall c r := by
-    intro z hz
-    apply hs
-    intro h
-    exact hz (by change (f z).im = 0; rw [h]; simp)
+  have hsRe : Function.support (fun z ↦ (f z).re) ⊆ closedBall c r :=
+    (Function.support_comp_subset Complex.zero_re f).trans hs
+  have hsIm : Function.support (fun z ↦ (f z).im) ⊆ closedBall c r :=
+    (Function.support_comp_subset Complex.zero_im f).trans hs
   have hRe : HolderWith H α (fun z ↦ (f z).re) := by
     simpa only [RCLike.re_eq_complex_re, Function.comp_def, one_mul, NNReal.coe_one,
       NNReal.rpow_one] using (RCLike.lipschitzWith_re (K := ℂ)).holderWith.comp hf
@@ -275,10 +252,8 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
         simp only [norm_smul, norm_I, one_mul]
         exact add_le_add (hNr x hx) (hNi x hx)
       _ = _ := by push_cast; ring
-  · have hrx := hIr x hx
-    have hix := hIi x hx
-    change conjWirtingerDeriv Tr x 1 = ((f x).re : ℂ) at hrx
-    change conjWirtingerDeriv Ti x 1 = ((f x).im : ℂ) at hix
+  · have hrx : conjWirtingerDeriv Tr x 1 = ((f x).re : ℂ) := hIr x hx
+    have hix : conjWirtingerDeriv Ti x 1 = ((f x).im : ℂ) := hIi x hx
     simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one] at hrx hix ⊢
     rw [hDT x hx]
     simp only [add_apply, smul_apply, smul_eq_mul]

@@ -28,29 +28,6 @@ open scoped Convolution NNReal ContDiff Gradient
 
 namespace TauCeti
 
-private theorem laplacian_mul_complex {χ u : ℂ → ℝ} (hχ : ContDiff ℝ 2 χ)
-    (hu : ContDiff ℝ 2 u) (x : ℂ) :
-    Δ (fun y ↦ χ y * u y) x = χ x * Δ u x + u x * Δ χ x +
-      2 * (fderiv ℝ χ x 1 * fderiv ℝ u x 1 + fderiv ℝ χ x I * fderiv ℝ u x I) := by
-  rw [hχ.contDiffAt.laplacian_fun_mul hu.contDiffAt]
-  have hgrad : ⟪∇ χ x, ∇ u x⟫_ℝ =
-      fderiv ℝ χ x 1 * fderiv ℝ u x 1 + fderiv ℝ χ x I * fderiv ℝ u x I := by
-    rw [← orthonormalBasisOneI.sum_inner_mul_inner (∇ χ x) (∇ u x)]
-    simp only [Fin.sum_univ_two]
-    simp_rw [inner_gradient_left, real_inner_comm (∇ u x), inner_gradient_left]
-    simp [orthonormalBasisOneI]
-  rw [hgrad]
-  ring
-
-private theorem contDiff_one_laplacian {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) :
-    ContDiff ℝ 1 (Δ χ) := by
-  rw [laplacian_eq_iteratedFDeriv_complexPlane]
-  simp_rw [iteratedFDeriv_two_apply]
-  have hD : ContDiff ℝ 1 (fderiv ℝ (fderiv ℝ χ)) :=
-    (hχ.fderiv_right (m := 2) (by simp)).fderiv_right le_rfl
-  exact ((hD.clm_apply contDiff_const).clm_apply contDiff_const).add
-    ((hD.clm_apply contDiff_const).clm_apply contDiff_const)
-
 /-- On fixed support and output discs, the Hessian of the Newtonian potential of smooth real
 data is Hölder and bounded, with a constant independent of derivatives of the source. -/
 theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
@@ -72,7 +49,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
     (hχ.of_le (by simp : (1 : WithTop ℕ∞) ≤ ∞)).exists_holderWith_and_norm_le_of_hasCompactSupport
       hcχ hα1.le
   obtain ⟨C₂, hC₂, hN₂⟩ :=
-    (contDiff_one_laplacian hχ).exists_holderWith_and_norm_le_of_hasCompactSupport
+    (hχ.laplacian (m := 1) (by simp)).exists_holderWith_and_norm_le_of_hasCompactSupport
       hcχ.laplacian hα1.le
   have hχD (v : ℂ) : ContDiff ℝ 1 (fun x ↦ fderiv ℝ χ x v) :=
     (hχ.fderiv_right (m := 1) (by simp)).clm_apply contDiff_const
@@ -94,13 +71,15 @@ theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
   have hUN (x : ℂ) (hx : x ∈ s) : ‖u x‖ ≤ (J * M : ℝ≥0) := by
     convert norm_planarNewtonianKernel_convolution_le hs hM hx using 1
     rw [NNReal.coe_mul, Real.coe_toNNReal _ (integral_nonneg fun z ↦ norm_nonneg _)]
-  have hDU := holderOnWith_fderiv_planarNewtonianKernel_convolution hα hH
-    (hf.of_le (by simp)) hr (by linarith : 0 ≤ R + 2) hs
+  have hDU :=
+    holderOnWith_fderiv_planarNewtonianKernel_convolution_apply_one_and_apply_I
+      hα hH (hf.of_le (by simp)) hr (by linarith : 0 ≤ R + 2) hs
   have hDUN (x : ℂ) (hx : x ∈ s) :
       ‖fderiv ℝ u x 1‖ ≤ (D * M : ℝ≥0) ∧ ‖fderiv ℝ u x I‖ ≤ (D * M : ℝ≥0) := by
     simpa only [Real.norm_eq_abs, NNReal.coe_mul, D,
       Real.coe_toNNReal _ (by positivity : 0 ≤ 2 * (r + (R + 2)))] using
-      norm_fderiv_planarNewtonianKernel_convolution_le (hf.of_le (by simp)) hr
+      abs_fderiv_planarNewtonianKernel_convolution_apply_one_le_and_apply_I_le
+        (hf.of_le (by simp)) hr
         (by linarith : 0 ≤ R + 2) hs hM hx
   have hχ0 (x : ℂ) (hx : x ∉ s) : χ x = 0 :=
     image_eq_zero_of_notMem_tsupport (fun h ↦ hx (hχs h))
@@ -123,7 +102,8 @@ theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
       simp only [Real.nnnorm_ofNat]
       ring
     · funext x
-      rw [laplacian_mul_complex (hχ.of_le (by simp)) (hu.of_le (by simp)),
+      rw [((hχ.of_le (by simp : (2 : WithTop ℕ∞) ≤ ∞)).contDiffAt).laplacian_fun_mul_complex
+        ((hu.of_le (by simp)).contDiffAt),
         laplacian_planarNewtonianKernel_convolution (hf.of_le (by simp)) hcf]
       simp only [Pi.neg_apply, Pi.add_apply, Pi.smul_apply, smul_eq_mul, u]
       ring
@@ -141,7 +121,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_planarNewtonianKernel_convolution
       (by exact lt_of_le_of_lt (mem_closedBall.mp hx) (by dsimp [b]; linarith))
     have hxu : (fun y ↦ χ y * u y) =ᶠ[𝓝 x] u := by
       filter_upwards [hb] with y hy
-      change χ y = 1 at hy
+      simp only [Pi.one_apply] at hy
       rw [hy, one_mul]
     exact (hxu.iteratedFDeriv ℝ 2).eq_of_nhds
   have hconst : C * (A * (H + M) + C₀ * J * M) ≤
