@@ -329,7 +329,7 @@ theorem IsConsecutiveOn.eqOn_or_isConsecutiveOn (h : IsConsecutiveOn f s i j)
   · exact (hi hy ▸ hj hy ▸ hle (fun x hx ↦ (h.lt x hx).le) y hy).lt_of_ne (hne y hy)
   -- a section of `g` strictly between the two is the restriction of some member `f i'`
   obtain ⟨i', hi'⟩ := hlf.exists_apply_eq_of_mem_closure_iUnion_graphOn hf subset_union_left
-    (union_subset subset_closure hs₀) (.inr hy) (hg k ⟨y, hy, rfl⟩)
+    (.inr hy) (hg k ⟨y, hy, rfl⟩)
   obtain ⟨x, hx⟩ := closure_nonempty_iff.1 ⟨y, hs₀ hy⟩
   rw [← hi', ← hi hy, ← hj hy] at hk
   -- which then lies strictly between `f i` and `f j` on all of `s`
