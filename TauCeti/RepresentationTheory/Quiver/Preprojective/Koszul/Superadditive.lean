@@ -346,26 +346,12 @@ private theorem two_mul_weighted_finrank_le_add {S : Type*} [CommRing S] [Linear
       ∑ w : Q, δ w * (Module.finrank k (E (j + 2) (Symmetrify.of.obj i)
         (Symmetrify.of.obj w)) : S) +
       ∑ w : Q, δ w * (Module.finrank k (E j (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S) := by
-  calc 2 * ∑ w : Q, δ w * (Module.finrank k (E (j + 1) (Symmetrify.of.obj i)
-          (Symmetrify.of.obj w)) : S)
-      = ∑ w : Q, 2 * δ w *
-          (Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S) := by
-        simp only [Finset.mul_sum, mul_assoc]
-    _ ≤ ∑ w : Q, (∑ v : Q,
-          ((Fintype.card (w ⟶ v) + Fintype.card (v ⟶ w) : ℕ) : S) * δ v) *
-          (Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S) :=
-        Finset.sum_le_sum fun w _ => mul_le_mul_of_nonneg_right (hδle w) (Nat.cast_nonneg _)
-    _ = ∑ v : Q, δ v *
-          ((∑ w : Q, Fintype.card (Symmetrify.of.obj w ⟶ Symmetrify.of.obj v) *
-            Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : ℕ) :
-              S) := by
-        simp only [Finset.sum_mul, Finset.mul_sum, Nat.cast_sum, Nat.cast_mul,
-          card_symmetrify_hom]
-        rw [Finset.sum_comm]
-        refine Finset.sum_congr rfl fun v _ => Finset.sum_congr rfl fun w _ => ?_
-        push_cast
-        ring
-    _ = _ := by simp only [hv, Nat.cast_add, mul_add, Finset.sum_add_distrib]
+  refine (two_mul_sum_mul_le_sum_mul_sum_mul
+    (fun i j => ((Fintype.card (i ⟶ j) + Fintype.card (j ⟶ i) : ℕ) : S)) hδle
+    (e := fun w => (Module.finrank k (E (j + 1) (Symmetrify.of.obj i) (Symmetrify.of.obj w)) : S))
+    fun w => Nat.cast_nonneg _).trans_eq ?_
+  simp only [← card_symmetrify_hom, ← Nat.cast_mul, ← Nat.cast_sum, hv, Nat.cast_add, mul_add,
+    Finset.sum_add_distrib]
 
 /-- Exactness of the Koszul complex at its left end in every degree and on every graded corner, for
 a quiver whose underlying multigraph carries a positive superadditive weight. -/
