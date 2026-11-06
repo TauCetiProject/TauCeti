@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.LocalField.MassFormula.Basic
 public import TauCeti.NumberTheory.LocalField.Unramified.Factorization
+public import TauCeti.NumberTheory.LocalField.Unramified.Maximal
 
 /-!
 # The unramified part of a finite subextension
