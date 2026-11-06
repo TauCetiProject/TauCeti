@@ -205,8 +205,10 @@ point `y` of differentiability is the gradient: `p = ∇ u y`. -/
 theorem eq_gradient_of_forall_le {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [CompleteSpace E] {u : E → ℝ} {s : Set E} {y p : E} (hs : s ∈ 𝓝 y)
     (hu : DifferentiableAt ℝ u y) (hp : ∀ x ∈ s, u x ≤ u y + ⟪p, x - y⟫_ℝ) : p = ∇ u y := by
-  have h0 := (isLocalMax_sub_inner_of_forall_le hs hp).hasFDerivAt_eq_zero
-    (hu.hasFDerivAt.sub (innerSL ℝ p).hasFDerivAt)
+  have hmax : IsLocalMax (u - ⇑(innerSL ℝ p)) y :=
+    (isLocalMax_sub_inner_of_forall_le hs hp).congr
+      (.of_forall fun x => by simp only [Pi.sub_apply, innerSL_apply_apply])
+  have h0 := hmax.hasFDerivAt_eq_zero (hu.hasFDerivAt.sub (innerSL ℝ p).hasFDerivAt)
   rw [sub_eq_zero] at h0
   rw [gradient, h0, eq_comm, LinearIsometryEquiv.symm_apply_eq]
   ext z

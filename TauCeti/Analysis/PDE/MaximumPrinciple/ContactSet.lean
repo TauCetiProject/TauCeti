@@ -93,8 +93,10 @@ theorem fderiv_fderiv_self_nonpos_of_mem_upperContactSet (hΩ : IsOpen Ω)
   obtain ⟨hyΩ, p, hp⟩ := hy
   have hyΩ' := hΩ.mem_nhds hyΩ
   have hu' := hu.contDiffAt hyΩ'
+  have hmax : IsLocalMax (fun x => u x - innerSL ℝ p x) y := by
+    simpa only [innerSL_apply_apply] using isLocalMax_sub_inner_of_forall_le hyΩ' hp
   have h := fderiv_fderiv_self_nonpos_of_isLocalMax
-    (hu'.sub (innerSL ℝ p).contDiff.contDiffAt) (isLocalMax_sub_inner_of_forall_le hyΩ' hp) w
+    (hu'.sub (innerSL ℝ p).contDiff.contDiffAt) hmax w
   rwa [fderiv_fderiv_sub_clm (g := u) ?_ (innerSL ℝ p)] at h
   filter_upwards [hyΩ'] with z hz
   exact (hu.contDiffAt (hΩ.mem_nhds hz)).differentiableAt two_ne_zero
