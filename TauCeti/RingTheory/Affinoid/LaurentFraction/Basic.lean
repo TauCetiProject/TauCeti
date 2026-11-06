@@ -8,8 +8,6 @@ module
 public import TauCeti.RingTheory.Affinoid.Restricted
 
 import TauCeti.Topology.Algebra.Ring.Ideal
-import TauCeti.RingTheory.Huber.ClosedSubmodule
-import TauCeti.RingTheory.Huber.Normed
 
 /-!
 # Laurent fractions of affinoid algebras
@@ -162,16 +160,6 @@ algebra `A⟨X₁, …, X_r, Y₁, …, Y_s⟩`. -/
 theorem isAffinoidAlgebra (f : Fin r → A) (g : Fin s → A) :
     IsAffinoidAlgebra K (LaurentFraction f g) :=
   (hA.isRestricted_subring (τ := Fin (r + s))).quotient _
-
-include hA in
-/-- The ideal defining a Laurent fraction of an affinoid algebra is closed. -/
-theorem isClosed_laurentFractionIdeal (f : Fin r → A) (g : Fin s → A) :
-    IsClosed (laurentFractionIdeal f g : Set
-      (IsRestricted.subring (R := A) (fun _ : Fin (r + s) ↦ 1))) := by
-  have := (hA.isRestricted_subring (τ := Fin (r + s))).isNoetherianRing
-  have := IsTateRing.of_normedAlgebra K
-    (IsRestricted.subring (R := A) (fun _ : Fin (r + s) ↦ 1))
-  exact Huber.isClosed_of_isNoetherian _
 
 variable {B : Type*} [NormedCommRing B] [NormedAlgebra K B] [IsUltrametricDist B]
   [CompleteSpace B] (hB : IsAffinoidAlgebra K B)

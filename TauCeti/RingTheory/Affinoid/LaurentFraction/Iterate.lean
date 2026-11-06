@@ -83,8 +83,10 @@ presentation as a topological `K`-algebra. No equality of quotient norms is asse
 noncomputable def iterateEquiv : C ≃A[K] D := by
   let hC := isAffinoidAlgebra hφ.isAffinoidAlgebra (φ ∘ f') (φ ∘ g')
   let hD := isAffinoidAlgebra hA (Fin.append f f') (Fin.append g g')
-  haveI := isClosed_laurentFractionIdeal hA (Fin.append f f') (Fin.append g g')
-  haveI := isClosed_laurentFractionIdeal hφ.isAffinoidAlgebra (φ ∘ f') (φ ∘ g')
+  haveI := (hA.isRestricted_subring (τ := Fin (r + r' + (s + s')))).isClosed_ideal
+    (laurentFractionIdeal (Fin.append f f') (Fin.append g g'))
+  haveI := (hφ.isAffinoidAlgebra.isRestricted_subring (τ := Fin (r' + s'))).isClosed_ideal
+    (laurentFractionIdeal (φ ∘ f') (φ ∘ g'))
   haveI := hC.isNoetherianRing
   exact IsAffinoidAlgebra.toContinuousAlgEquiv (K := K) (A := C) (B := D) hD
     ((isAffinoidSubdomainMap_iterate hφ hA f' g').algEquiv (isAffinoidSubdomainMap hA))
