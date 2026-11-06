@@ -95,16 +95,37 @@ theorem zeroSectionDivisor_pow_comap_projModelFormalPoint (n : ℕ) :
 The series `s` need only admit substitution; it need not be an invertible parameter. -/
 -- Compute the pullback before simplification changes the substitution morphism.
 @[simp↓]
-theorem zeroSectionDivisor_pow_comap_subst_projModelFormalPoint {s : R⟦X⟧} (hs : HasSubst s)
+theorem zeroSectionDivisor_pow_comap_subst_projModelFormalPoint {τ : Type}
+    {s : MvPowerSeries τ R} (hs : HasSubst s)
     (n : ℕ) :
     (W.zeroSectionDivisor ^ n).comap
         (Spec.map (CommRingCat.ofHom (substAlgHom hs).toRingHom) ≫ W.projModelFormalPoint) =
-      ofIdealTop ((Ideal.span {s ^ n}).map (Scheme.ΓSpecIso (.of R⟦X⟧)).inv.hom) := by
+      ofIdealTop ((Ideal.span {s ^ n}).map
+        (Scheme.ΓSpecIso (.of (MvPowerSeries τ R))).inv.hom) := by
   rw [comap_comp, zeroSectionDivisor_pow_comap_projModelFormalPoint, comap_ofIdealTop,
     Ideal.map_map, ← CommRingCat.hom_comp, ← Scheme.ΓSpecIso_inv_naturality,
     CommRingCat.hom_comp, ← Ideal.map_map]
   congr 1
   simp [Ideal.map_span, substAlgHom_X]
+
+/-- A formal point, reparametrised by `X ↦ s` and then evaluated along a ring map `φ`,
+lies on `n[0]` exactly when `φ(sⁿ) = 0`. The coefficient ring may be nonreduced. -/
+theorem zeroSectionDivisor_pow_le_ker_subst_projModelFormalPoint_iff
+    {τ : Type} {B : Type u} [CommRing B] {s : MvPowerSeries τ R} (hs : HasSubst s)
+    (φ : MvPowerSeries τ R →+* B) (n : ℕ) :
+    W.zeroSectionDivisor ^ n ≤
+        (Spec.map (CommRingCat.ofHom φ) ≫
+          Spec.map (CommRingCat.ofHom (substAlgHom hs).toRingHom) ≫
+            W.projModelFormalPoint).ker ↔ φ (s ^ n) = 0 := by
+  rw [← map_ker, le_map_iff_comap_le,
+    W.zeroSectionDivisor_pow_comap_subst_projModelFormalPoint hs,
+    Scheme.Hom.ker_Spec_map, CommRingCat.hom_ofHom,
+    ← Scheme.IdealSheafData.equivOfIsAffine_symm_apply,
+    ← Scheme.IdealSheafData.equivOfIsAffine_symm_apply, map_le_map_iff,
+    Ideal.map_le_iff_le_comap, Ideal.comap_map_of_bijective _
+      (ConcreteCategory.bijective_of_isIso
+        (Scheme.ΓSpecIso (.of (MvPowerSeries τ R))).inv),
+    Ideal.span_singleton_le_iff_mem, RingHom.mem_ker]
 
 /-- An invertible formal parameter change `X ↦ X * v`, with `v` a unit, preserves the ideal
 of every multiple of the zero section. No reducedness assumption on `R` is needed. -/
