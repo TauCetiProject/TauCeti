@@ -49,12 +49,13 @@ variable {E E₀ E' F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] 
   [NormedAddCommGroup F] [NormedSpace ℝ F] {f : E → E₀} {g : E → E'}
 
 omit [FiniteDimensional ℝ E] in
-/-- **Second derivatives of a convolution fall on the compactly supported factor.** If `f` is
-locally integrable and `g` is `C²` with compact support, then the second derivative of `f ⋆ g` in
-the directions `v`, `w` is the convolution of `f` with the second derivative of `g`. -/
-theorem HasCompactSupport.iteratedFDeriv_two_convolution_right_apply (L : E₀ →L[ℝ] E' →L[ℝ] F)
+/-- **Iterated directional derivatives of a convolution fall on the compactly supported
+factor.** If `f` is locally integrable and `g` is `C²` with compact support, then the derivative
+in the direction `v` of the derivative of `f ⋆ g` in the direction `w` is the convolution of `f`
+with the corresponding second derivative of `g`. -/
+theorem HasCompactSupport.fderiv_fderiv_convolution_right_apply (L : E₀ →L[ℝ] E' →L[ℝ] F)
     (hcg : HasCompactSupport g) (hf : LocallyIntegrable f μ) (hg : ContDiff ℝ 2 g) (x v w : E) :
-    iteratedFDeriv ℝ 2 (f ⋆[L, μ] g) x ![v, w] =
+    fderiv ℝ (fun y => fderiv ℝ (f ⋆[L, μ] g) y w) x v =
       (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z w) y v) x := by
   have hfw : ContDiff ℝ 1 fun y => fderiv ℝ g y w :=
     (hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const
@@ -62,13 +63,23 @@ theorem HasCompactSupport.iteratedFDeriv_two_convolution_right_apply (L : E₀ �
     (hcg.fderiv (𝕜 := ℝ)).comp_left (g := fun A : E →L[ℝ] E' => A w) (zero_apply w)
   have h₁ : (fun y => fderiv ℝ (f ⋆[L, μ] g) y w) = f ⋆[L, μ] fun y => fderiv ℝ g y w :=
     funext fun y => hcg.fderiv_convolution_right_apply L hf (hg.of_le (by norm_num)) y w
+  rw [h₁, hcw.fderiv_convolution_right_apply L hf hfw x v]
+
+omit [FiniteDimensional ℝ E] in
+/-- **Second derivatives of a convolution fall on the compactly supported factor.** If `f` is
+locally integrable and `g` is `C²` with compact support, then the second derivative of `f ⋆ g` in
+the directions `v`, `w` is the convolution of `f` with the second derivative of `g`. -/
+theorem HasCompactSupport.iteratedFDeriv_two_convolution_right_apply (L : E₀ →L[ℝ] E' →L[ℝ] F)
+    (hcg : HasCompactSupport g) (hf : LocallyIntegrable f μ) (hg : ContDiff ℝ 2 g) (x v w : E) :
+    iteratedFDeriv ℝ 2 (f ⋆[L, μ] g) x ![v, w] =
+      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z w) y v) x := by
   have hdu : DifferentiableAt ℝ (fderiv ℝ (f ⋆[L, μ] g)) x :=
     ((hcg.contDiff_convolution_right L hf hg).fderiv_right (m := 1) (by norm_num)).differentiable
       one_ne_zero x
   rw [iteratedFDeriv_two_apply]
   simp only [Matrix.cons_val_zero, Matrix.cons_val_one]
-  rw [← TauCeti.fderiv_clm_apply_const_apply hdu w v, h₁,
-    hcw.fderiv_convolution_right_apply L hf hfw x v]
+  rw [← TauCeti.fderiv_clm_apply_const_apply hdu w v]
+  exact hcg.fderiv_fderiv_convolution_right_apply L hf hg x v w
 
 /-- **The Laplacian of a convolution.** If `f` is locally integrable and `g` is `C²` with compact
 support, then `Δ (f ⋆ g) = f ⋆ Δ g`. -/
@@ -83,14 +94,8 @@ theorem HasCompactSupport.laplacian_convolution_right (L : E₀ →L[ℝ] E' →
       (hg.fderiv_right (m := 1) (by norm_num)).clm_apply contDiff_const⟩
   -- Each second directional derivative of `f ⋆ g` is the convolution of `f` with that of `g`.
   have hterm : ∀ x v, fderiv ℝ (fun y => fderiv ℝ (f ⋆[L, μ] g) y v) x v =
-      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z v) y v) x := fun x v => by
-    have h := hcg.iteratedFDeriv_two_convolution_right_apply L hf hg x v v
-    have hdu : DifferentiableAt ℝ (fderiv ℝ (f ⋆[L, μ] g)) x :=
-      ((hcg.contDiff_convolution_right L hf hg).fderiv_right (m := 1) (by norm_num)).differentiable
-        one_ne_zero x
-    rw [iteratedFDeriv_two_apply] at h
-    simp only [Matrix.cons_val_zero, Matrix.cons_val_one] at h
-    rwa [← TauCeti.fderiv_clm_apply_const_apply hdu v v] at h
+      (f ⋆[L, μ] fun y => fderiv ℝ (fun z => fderiv ℝ g z v) y v) x := fun x v =>
+    hcg.fderiv_fderiv_convolution_right_apply L hf hg x v v
   funext x
   have hu : DifferentiableAt ℝ (fderiv ℝ (f ⋆[L, μ] g)) x :=
     ((hcg.contDiff_convolution_right L hf hg).fderiv_right (m := 1) (by norm_num)).differentiable
