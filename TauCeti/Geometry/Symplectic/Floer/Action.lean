@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Area.Basic
 public import TauCeti.Geometry.Symplectic.Floer.Energy
-import Mathlib.MeasureTheory.Integral.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.MeasureTheory.Integral.Lebesgue.Strip
 
 /-!
@@ -57,14 +57,9 @@ energy is the difference of the limiting actions minus the integral of `∂_s H`
 (`SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral`).
 The cylindrical statements above are the special case of an `s`-independent family.
 
-For a solution with tame `J`, the action therefore drops by at most the integral of `∂_s H` along
+For a solution with tame `J`, the action therefore drops by at most the integral of `-∂_s H` along
 `u` (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`), and it does not drop
-for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_of_monotone`). For
-the linear homotopy `H_{(s, t)} = H⁰_t + β(s) (H¹_t - H⁰_t)` with monotone `C¹` profile `β`, it
-drops by at most `(β(b) - β(a)) ∫₀¹ B` whenever `H⁰_t - H¹_t ≤ B(t)` along `u`
-(`SymplecticForm.hamiltonianAction_le_hamiltonianAction_add_of_linearHomotopy`). This is at most
-`∫₀¹ B` for every profile with values in `[0, 1]`, so it is uniform over stretched homotopies
-`β(s / λ)`.
+for a monotone homotopy (`SymplecticForm.hamiltonianAction_le_hamiltonianAction_of_monotone`).
 
 ## Main definitions
 
@@ -82,9 +77,8 @@ drops by at most `(β(b) - β(a)) ∫₀¹ B` whenever `H⁰_t - H¹_t ≤ B(t)`
   identity of a continuation cylinder over a rectangle.
 * `SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`: the action estimate along
   a continuation cylinder over a rectangle.
-* `SymplecticForm.hamiltonianAction_le_hamiltonianAction_of_monotone` and
-  `SymplecticForm.hamiltonianAction_le_hamiltonianAction_add_of_linearHomotopy`: the action along
-  continuation cylinders of monotone and of linear homotopies.
+* `SymplecticForm.hamiltonianAction_le_hamiltonianAction_of_monotone`: the action does not drop
+  along a continuation cylinder of a monotone homotopy.
 * `SymplecticForm.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral`: the
   energy identity of a continuation cylinder over the whole cylinder.
 
@@ -187,77 +181,12 @@ theorem hamiltonianAction_le_hamiltonianAction_of_monotone (ω : SymplecticForm 
       ω.hamiltonianAction (fun t ↦ H (b, t)) (fun t ↦ u (b, t)) := by
   have h := ω.hamiltonianAction_le_hamiltonianAction_sub_integral hJ hH hU hu hab hRU hper hfloer
   -- `∂_s H` is the derivative of the monotone functions `s ↦ H_{(s, t)}(x)`.
-  have hderiv (z : ℝ × ℝ) (x : V) :
-      fderiv ℝ (fun w ↦ H w x) z stdComplexLineReal = deriv (fun s ↦ H (s, z.2) x) z.1 :=
-    (ω.hamiltonianCurvature_zero_left H z x).symm.trans <| ω.hamiltonianCurvature_homotopy <|
-      (hH.differentiable one_ne_zero (z, x)).comp (f := fun w : ℝ × ℝ ↦ (w, x)) z
-        (differentiableAt_id.prodMk (differentiableAt_const _))
   have hnonneg : 0 ≤ ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal :=
     setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
-      rw [hderiv]
+      rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero (u := fun w ↦ H w (u z))
+        ((hH.differentiable one_ne_zero (z, u z)).comp (f := fun w : ℝ × ℝ ↦ (w, u z)) z
+          (differentiableAt_id.prodMk (differentiableAt_const _)))]
       exact (hmono z.2 (u z)).deriv_nonneg
-  linarith
-
-/-- **The action estimate for a linear homotopy.** Let `H⁰` and `H¹` be `C¹` time-dependent
-Hamiltonians, let `β` be a monotone `C¹` function, and let `H_{(s, t)} = H⁰_t + β(s) (H¹_t - H⁰_t)`.
-Under the hypotheses of
-`TauCeti.SymplecticForm.hamiltonianAction_le_hamiltonianAction_sub_integral`, if
-`H⁰_t - H¹_t ≤ B(t)` along `u` for a function `B` integrable on `[0, 1]`, then the action of the
-loop at `s = a` for `H(a, ·)` is at most the action of the loop at `s = b` for `H(b, ·)` plus
-`(β(b) - β(a)) ∫₀¹ B`. When `β` takes values in `[0, 1]` and `B ≥ 0`, the error term is at most
-`∫₀¹ B`, whatever the profile `β`; in particular it does not depend on how far the homotopy is
-stretched. -/
-theorem hamiltonianAction_le_hamiltonianAction_add_of_linearHomotopy (ω : SymplecticForm V)
-    {J : ℝ × ℝ → AlmostComplexStructure V} (hJ : ∀ z ∈ Icc a b ×ˢ Icc 0 1, ω.Tames (J z))
-    {H₀ H₁ : ℝ → V → ℝ} (hH₀ : ContDiff ℝ 1 (uncurry H₀)) (hH₁ : ContDiff ℝ 1 (uncurry H₁))
-    {β : ℝ → ℝ} (hβ : ContDiff ℝ 1 β) (hβm : Monotone β) (hU : IsOpen U)
-    (hu : ContDiffOn ℝ 2 u U) (hab : a ≤ b) (hRU : Icc a b ×ˢ Icc 0 1 ⊆ U)
-    (hper : ∀ s ∈ Icc a b, u (s, 1) = u (s, 0))
-    (hfloer : ∀ z ∈ Icc a b ×ˢ Icc 0 1, fderiv ℝ u z stdComplexLineReal +
-      J z (fderiv ℝ u z stdComplexLineImag -
-        ω.hamiltonianVectorField (fun x ↦ H₀ z.2 x + β z.1 * (H₁ z.2 x - H₀ z.2 x)) (u z)) = 0)
-    {B : ℝ → ℝ} (hB : IntegrableOn B (Icc 0 1))
-    (hHB : ∀ z ∈ Icc a b ×ˢ Icc 0 1, H₀ z.2 (u z) - H₁ z.2 (u z) ≤ B z.2) :
-    ω.hamiltonianAction (fun t x ↦ H₀ t x + β a * (H₁ t x - H₀ t x)) (fun t ↦ u (a, t)) ≤
-      ω.hamiltonianAction (fun t x ↦ H₀ t x + β b * (H₁ t x - H₀ t x)) (fun t ↦ u (b, t)) +
-        (β b - β a) * ∫ t in (0 : ℝ)..1, B t := by
-  have hR : MeasurableSet (Icc a b ×ˢ Icc (0 : ℝ) 1) := measurableSet_Icc.prod measurableSet_Icc
-  have hH : ContDiff ℝ 1 (uncurry fun (w : ℝ × ℝ) x ↦ H₀ w.2 x + β w.1 * (H₁ w.2 x - H₀ w.2 x)) :=
-    (contDiff_uncurry_cylindrical hH₀).add ((hβ.comp (contDiff_fst.comp contDiff_fst)).mul
-      ((contDiff_uncurry_cylindrical hH₁).sub (contDiff_uncurry_cylindrical hH₀)))
-  have hβ' : Continuous (deriv β) := hβ.continuous_deriv le_rfl
-  -- `∂_s H = β'(s) (H¹_t - H⁰_t)`, so `-∂_s H ≤ β'(s) B(t)` along `u`.
-  have hderiv (z : ℝ × ℝ) (x : V) :
-      fderiv ℝ (fun w : ℝ × ℝ ↦ H₀ w.2 x + β w.1 * (H₁ w.2 x - H₀ w.2 x)) z stdComplexLineReal =
-        deriv β z.1 * (H₁ z.2 x - H₀ z.2 x) := by
-    rw [← ω.hamiltonianCurvature_zero_left (fun w x ↦ H₀ w.2 x + β w.1 * (H₁ w.2 x - H₀ w.2 x)),
-      ω.hamiltonianCurvature_homotopy ((hH.differentiable one_ne_zero (z, x)).comp
-        (f := fun w : ℝ × ℝ ↦ (w, x)) z (differentiableAt_id.prodMk (differentiableAt_const _)))]
-    dsimp only
-    rw [deriv_const_add, deriv_mul_const (hβ.differentiable one_ne_zero z.1)]
-  have h := ω.hamiltonianAction_le_hamiltonianAction_sub_integral hJ hH hU hu hab hRU hper hfloer
-  simp only [hderiv] at h
-  have hcurv : IntegrableOn (fun z : ℝ × ℝ ↦ deriv β z.1 * (H₁ z.2 (u z) - H₀ z.2 (u z)))
-      (Icc a b ×ˢ Icc 0 1) := by
-    have hp : ContinuousOn (fun z : ℝ × ℝ ↦ (z.2, u z)) U :=
-      continuous_snd.continuousOn.prodMk hu.continuousOn
-    exact (((hβ'.comp continuous_fst).continuousOn.mul
-      ((hH₁.continuous.comp_continuousOn hp).sub (hH₀.continuous.comp_continuousOn hp))).mono
-        hRU).integrableOn_compact (isCompact_Icc.prod isCompact_Icc)
-  have hg : IntegrableOn (fun z : ℝ × ℝ ↦ deriv β z.1 * B z.2) (Icc a b ×ˢ Icc 0 1) := by
-    rw [IntegrableOn, Measure.volume_eq_prod, ← Measure.prod_restrict]
-    exact Integrable.mul_prod hβ'.continuousOn.integrableOn_Icc hB
-  have hle := setIntegral_mono_on hcurv.neg hg hR fun z hz ↦ by
-    rw [Pi.neg_apply, ← mul_neg, neg_sub]
-    exact mul_le_mul_of_nonneg_left (hHB z hz) hβm.deriv_nonneg
-  have hint : ∫ z in Icc a b ×ˢ Icc 0 1, deriv β z.1 * B z.2 =
-      (β b - β a) * ∫ t in (0 : ℝ)..1, B t := by
-    rw [Measure.volume_eq_prod, setIntegral_prod_mul, integral_Icc_eq_integral_Ioc,
-      integral_Icc_eq_integral_Ioc, ← intervalIntegral.integral_of_le hab,
-      ← intervalIntegral.integral_of_le zero_le_one,
-      intervalIntegral.integral_deriv_eq_sub (fun x _ ↦ hβ.differentiable one_ne_zero x)
-        (hβ'.intervalIntegrable _ _)]
-  simp only [Pi.neg_apply, integral_neg] at hle
   linarith
 
 /-- **The energy of a continuation cylinder.** Let `H_{(s, t)}` be a `C¹` family of Hamiltonians
@@ -333,9 +262,10 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub (ω : SymplecticFor
       ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
   -- A cylindrical family does not depend on `s`.
   have h0 (z : ℝ × ℝ) (x : V) : fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z stdComplexLineReal = 0 :=
-    (ω.hamiltonianCurvature_zero_left _ z x).symm.trans (ω.hamiltonianCurvature_cylindrical H z x)
-  simpa [h0] using ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral
-    (H := fun w ↦ H w.2) (contDiff_uncurry_cylindrical hH) hU hu hab hRU hper
+    stdComplexLineReal_eq ▸ fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
+  simpa only [h0, integral_zero, sub_zero] using
+    ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral
+      (H := fun w ↦ H w.2) (contDiff_uncurry_cylindrical hH) hU hu hab hRU hper
 
 /-- The Floer energy density of a solution of the Floer equation
 `∂_s u + J (∂_t u - X_{H_t}(u)) = 0` for the cylindrical perturbation `K = H_t dt` is
@@ -381,10 +311,11 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
       ENNReal.ofReal (A₂ - A₁) := by
   have h0 (z : ℝ × ℝ) (x : V) : fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z stdComplexLineReal = 0 :=
-    (ω.hamiltonianCurvature_zero_left _ z x).symm.trans (ω.hamiltonianCurvature_cylindrical H z x)
-  simpa [h0] using ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral
-    (H := fun w ↦ H w.2) (J := fun _ ↦ J) (fun _ _ ↦ hJ) (contDiff_uncurry_cylindrical hH) hU hu
-    hRU hper hfloer (by simp [h0]) hbot htop
+    stdComplexLineReal_eq ▸ fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
+  simpa only [h0, integral_zero, sub_zero] using
+    ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral
+      (H := fun w ↦ H w.2) (J := fun _ ↦ J) (fun _ _ ↦ hJ) (contDiff_uncurry_cylindrical hH) hU hu
+      hRU hper hfloer (by simp only [h0]; exact integrableOn_zero) hbot htop
 
 end Energy
 

@@ -39,6 +39,8 @@ variable vanishes everywhere is constant along every horizontal line.
   derivatives of its summands.
 * `TauCeti.hasDerivAt_prodMk_left`, `TauCeti.hasDerivAt_prodMk_right`: the coordinate lines
   through a point have velocities `(1, 0)` and `(0, 1)`.
+* `TauCeti.fderiv_apply_mk_one_zero`: the derivative along `(1, 0)` is the derivative of the
+  horizontal slice.
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
@@ -202,6 +204,12 @@ theorem hasDerivAt_prodMk_left (s : 𝕜) (b : F) :
 theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
     HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
   (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
+
+/-- The derivative of a function of a scalar first variable along `(1, 0)` is the derivative of
+its horizontal slice `s ↦ u (s, z.2)`. -/
+theorem fderiv_apply_mk_one_zero {z : 𝕜 × F} (hu : DifferentiableAt 𝕜 u z) :
+    fderiv 𝕜 u z (1, 0) = deriv (fun s ↦ u (s, z.2)) z.1 :=
+  (hu.hasFDerivAt.comp_hasDerivAt z.1 (hasDerivAt_prodMk_left z.1 z.2)).deriv.symm
 
 /-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(1, 0)`. -/

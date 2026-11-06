@@ -142,10 +142,8 @@ theorem hamiltonianCurvature_cylindrical (ω : SymplecticForm V) (H : ℝ → V 
 theorem hamiltonianCurvature_homotopy (ω : SymplecticForm V) {H : ℝ × ℝ → V → ℝ} {z : ℝ × ℝ}
     {x : V} (hH : DifferentiableAt ℝ (fun w ↦ H w x) z) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) H z x = deriv (fun s ↦ H (s, z.2) x) z.1 := by
-  rw [hamiltonianCurvature_zero_left]
-  have h : HasDerivAt (fun s : ℝ ↦ ((s, z.2) : ℝ × ℝ)) stdComplexLineReal z.1 :=
-    (hasDerivAt_id z.1).prodMk (hasDerivAt_const z.1 z.2)
-  exact ((hH.hasFDerivAt.comp_hasDerivAt z.1 h).deriv).symm
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact fderiv_apply_mk_one_zero hH
 
 /-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
 theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → ℝ} {H : ℝ → V → ℝ}
