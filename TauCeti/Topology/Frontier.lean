@@ -125,6 +125,17 @@ theorem _root_.IsPreconnected.inter_frontier_nonempty (hS : IsPreconnected S)
   · obtain ⟨x, hxS, hxV⟩ := h₁
     exact interior_subset (h hxS) hxV
 
+/-- **A preconnected set missing the frontier lies in the interior or in the exterior.** If `S` is
+preconnected and disjoint from `frontier V`, then `S ⊆ interior V` or `S ⊆ (closure V)ᶜ`. -/
+theorem _root_.IsPreconnected.subset_interior_or_subset_compl_closure (hS : IsPreconnected S)
+    (h : Disjoint S (frontier V)) : S ⊆ interior V ∨ S ⊆ (closure V)ᶜ := by
+  have hsub : S ⊆ interior V ∪ interior Vᶜ := by
+    rw [← compl_frontier_eq_union_interior]
+    exact fun x hx hxf => h.le_bot ⟨hx, hxf⟩
+  rw [interior_compl] at hsub
+  exact hS.subset_or_subset isOpen_interior isClosed_closure.isOpen_compl
+    (disjoint_compl_right.mono_left (interior_subset.trans subset_closure)) hsub
+
 end Straddle
 
 section ImageSplit
