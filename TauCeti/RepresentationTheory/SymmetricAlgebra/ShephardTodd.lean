@@ -9,13 +9,11 @@ public import TauCeti.RepresentationTheory.Pseudoreflection
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Flat
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.RegularLocalRing
 import TauCeti.LinearAlgebra.SymmetricAlgebra.KrullDimension
-import Mathlib.RingTheory.AlgebraicIndependent.Basic
 import TauCeti.Data.Multiset.CountLE
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Regular
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
 import TauCeti.RepresentationTheory.SymmetricAlgebra.FiniteType
 import TauCeti.RepresentationTheory.SymmetricAlgebra.ProductOfDegrees
-import TauCeti.RingTheory.GradedAlgebra.AlgebraicIndependent
 import TauCeti.RingTheory.RegularLocalRing.ProjectiveDimension
 
 /-!
@@ -169,19 +167,6 @@ end Pseudoreflection
 section Converse
 
 open Module Finset
-
-/-- The quotients of `V` and of `V*` by the fixed spaces of `g` have the same dimension, so `ρ` and
-its contragredient `ρ.dual` have the same pseudoreflections. -/
-private theorem finrank_quotient_fixedSubmodule_dual {K G V : Type*} [Field K] [Group G]
-    [AddCommGroup V] [Module K V] (ρ : Representation K G V) (g : G) :
-    finrank K (Dual K V ⧸ (ρ.dual g).fixedSubmodule) = finrank K (V ⧸ (ρ g).fixedSubmodule) := by
-  have h : (ρ g⁻¹).dualMap - LinearMap.id = (ρ g⁻¹ - LinearMap.id).dualMap := by
-    rw [LinearMap.dualMap_def (_ - _), map_sub, ← LinearMap.dualMap_def, ← LinearMap.dualMap_def,
-      LinearMap.dualMap_id]
-  rw [← fixedSubmodule_inv ρ g, dual_apply, ← LinearMap.dualMap_def,
-    LinearMap.fixedSubmodule_eq_ker, LinearMap.fixedSubmodule_eq_ker, h,
-    (LinearMap.quotKerEquivRange _).finrank_eq, (LinearMap.quotKerEquivRange _).finrank_eq,
-    LinearMap.finrank_range_dualMap_eq_finrank_range]
 
 variable {K G V : Type*} [Field K] [CharZero K] [Group G] [Finite G] [AddCommGroup V] [Module K V]
   [FiniteDimensional K V] (ρ : Representation K G V)
