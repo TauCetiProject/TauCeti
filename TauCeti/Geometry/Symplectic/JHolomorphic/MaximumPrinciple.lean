@@ -42,8 +42,8 @@ ends `|ℜ z| ≥ T` into `{ρ ≤ R}`
 The statements are in local coordinates, with `ρ`, `α` and `J` on the model space `V`, and cover
 only unperturbed `J`-holomorphic curves: `J` depends on the point of `V` but not on the point of
 the domain, and the equation carries no Hamiltonian term. Floer strips with a domain-dependent
-`J` or a Hamiltonian perturbation, and the passage from a manifold to local coordinates, are not
-treated here.
+`J` or a Hamiltonian perturbation are not treated here. The same statements for curves in an almost
+complex manifold are in `TauCeti/Geometry/Symplectic/Manifold/MaximumPrinciple.lean`.
 
 The results live in the organisational namespace `TauCeti.JHolomorphic`: their names describe
 conclusions about `ρ ∘ u`, which only hold for curves solving the Cauchy--Riemann equation.
@@ -191,23 +191,16 @@ theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
     (h₀ : ∀ z : ℂ, z.im = 0 → ρ (u z) ≤ R) (h₁ : ∀ z : ℂ, z.im = 1 → ρ (u z) ≤ R)
     (hends : ∀ z : ℂ, T ≤ |z.re| → 0 ≤ z.im → z.im ≤ 1 → ρ (u z) ≤ R)
     (hz₀ : 0 ≤ z.im) (hz₁ : z.im ≤ 1) : ρ (u z) ≤ R := by
-  -- Apply the maximum principle on a rectangle `[-S, S] × [0, 1]` containing `z`, with `S ≥ T`.
-  set S := max T |z.re|
-  have hS : 0 ≤ S := (abs_nonneg _).trans (le_max_right _ _)
-  have hsub : Icc (-S) S ×ℂ Icc 0 1 ⊆ univ ×ℂ Icc 0 1 := fun w hw ↦ ⟨mem_univ _, hw.2⟩
-  refine comp_le_of_comp_le_frontier (isCompact_Icc.reProdIm isCompact_Icc)
-    (hf.mono hsub) (fun w hw ↦ ?_) (fun w hw ↦ ?_) hρ hα hJsq hρJ htame (fun w hw ↦ ?_)
-    ⟨abs_le.mp (le_max_right _ _), hz₀, hz₁⟩
-  · rw [interior_reProdIm, interior_Icc, interior_Icc] at hw
-    exact hu w hw.2.1 hw.2.2
-  · rw [interior_reProdIm, interior_Icc, interior_Icc] at hw
-    exact hCR w hw.2.1 hw.2.2
-  · rw [frontier_reProdIm, closure_Icc, closure_Icc, frontier_Icc zero_le_one,
-      frontier_Icc (by linarith)] at hw
-    rcases hw with ⟨-, hw | hw⟩ | ⟨hw, hw₀, hw₁⟩
-    · exact h₀ w hw
-    · exact h₁ w hw
-    · refine hends w ?_ hw₀ hw₁
-      rcases hw with hw | hw <;> rw [hw] <;> simp [S, abs_of_nonneg hS]
+  -- `ρ ∘ u` is subharmonic wherever it exceeds `R`, so the weak maximum principle on the strip
+  -- above the level `R` applies.
+  refine le_of_laplacian_nonneg_of_lt_le_strip hf (fun w hw₀ hw₁ hRw ↦ ?_)
+    (fun w hw₀ hw₁ hRw ↦ ?_) h₀ h₁ hends hz₀ hz₁
+  · exact (hρ _ hRw).comp w (hu w hw₀ hw₁)
+  · have hnhds : ∀ᶠ x in 𝓝 (u w), R < ρ x := (hρ _ hRw).continuousAt.eventually (lt_mem_nhds hRw)
+    have hopen : IsOpen {w : ℂ | 0 < w.im ∧ w.im < 1} :=
+      (isOpen_lt continuous_const continuous_im).inter (isOpen_lt continuous_im continuous_const)
+    exact laplacian_comp_nonneg_of_fderiv_comp_eq_neg (hu w hw₀ hw₁)
+      (Filter.eventually_of_mem (hopen.mem_nhds ⟨hw₀, hw₁⟩) fun y hy ↦ hCR y hy.1 hy.2)
+      (hρ _ hRw) (hα _ hRw) (hnhds.mono hJsq) (hnhds.mono hρJ) (htame _ hRw)
 
 end TauCeti.JHolomorphic

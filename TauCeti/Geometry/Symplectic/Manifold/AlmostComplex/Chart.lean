@@ -22,6 +22,9 @@ derivative at the chart point anticommutes with `J x`.
 ## Main declarations
 
 * `TauCeti.SmoothAlmostComplexStructure.inChart`: the almost complex structure read in a chart.
+* `TauCeti.SmoothAlmostComplexStructure.inChart_apply_eq_mfderiv`,
+  `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_apply_eq_mfderiv`: it is `J`
+  conjugated by the derivatives of the chart and of its inverse.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_inChart`: it squares to `-1` on the chart target.
 * `TauCeti.SmoothAlmostComplexStructure.inChart_extChartAt_self`: it is `J x` at the chart point.
 * `TauCeti.SmoothAlmostComplexStructure.fderivWithin_inChart_apply_apply`: its derivative at the
@@ -71,6 +74,34 @@ theorem inChart_extChartAt_apply {y : M} (hy : y ∈ (extChartAt I x).source) (u
   rw [(extChartAt I x).left_inv hy,
     Trivialization.continuousLinearMapAt_apply_of_mem (R := ℝ) _ hy',
     Trivialization.symmL_apply _ hy']
+
+/-- On the chart target, the almost complex structure read in the chart is `J` at the
+corresponding point, conjugated by the derivatives of the chart and of its inverse. -/
+theorem inChart_apply_eq_mfderiv {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
+    J.inChart x z w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) ((extChartAt I x).symm z)
+        (J ((extChartAt I x).symm z)
+          (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I) z w)) := by
+  have hz' : (extChartAt I x).symm z ∈ (chartAt H x).source := by
+    rw [← extChartAt_source I]
+    exact (extChartAt I x).map_target hz
+  rw [inChart_def, ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt hz',
+    TangentBundle.symmL_trivializationAt hz', (extChartAt I x).right_inv hz]
+  rfl
+
+/-- At the image of a point `y` of the chart at `x`, the almost complex structure read in the chart
+is `J y`, conjugated by the derivatives of the chart at `y` and of its inverse. -/
+theorem inChart_extChartAt_apply_eq_mfderiv {y : M} (hy : y ∈ (extChartAt I x).source) (w : E) :
+    J.inChart x (extChartAt I x y) w =
+      mfderiv I 𝓘(ℝ, E) (extChartAt I x) y
+        (J y (mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (Set.range I)
+          (extChartAt I x y) w)) := by
+  have hy' : y ∈ (chartAt H x).source := by rwa [← extChartAt_source I]
+  rw [inChart_def, (extChartAt I x).left_inv hy, ContinuousLinearMap.inCoordinates,
+    TangentBundle.continuousLinearMapAt_trivializationAt hy',
+    TangentBundle.symmL_trivializationAt hy']
+  rfl
 
 /-- In the chart, the almost complex structure still squares to `-1`. -/
 theorem inChart_inChart {z : E} (hz : z ∈ (extChartAt I x).target) (w : E) :
