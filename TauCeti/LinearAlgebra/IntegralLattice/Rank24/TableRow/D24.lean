@@ -38,9 +38,6 @@ open IntegralLattice DynkinType
 local instance : Unique (Fin RootfulNiemeierType.d24.components.length) :=
   inferInstanceAs (Unique (Fin 1))
 
-/-- The Niemeier lattice of the `D₂₄` row, using the table's isotropic gluing. -/
-noncomputable abbrev d24Lattice := RootfulNiemeierType.d24.lattice
-
 /-- The simple-root coordinate isometry from the root lattice of the `D₂₄` row
 to the integer checkerboard lattice. -/
 noncomputable def d24RootIsometry :
@@ -159,7 +156,7 @@ theorem map_glueSubgroup_d24_eq_checkerboardSpinorSubgroup :
 /-- The actual table-glued `D₂₄` lattice is isometric to `D₂₄⁺`, by the same
 coordinate map as its root lattice. -/
 noncomputable def d24CheckerboardIsometry :
-    IntegralLattice.Isometry d24Lattice (checkerboardPlusLattice 24 (by decide)) :=
+    IntegralLattice.Isometry niemeierD24 (checkerboardPlusLattice 24 (by decide)) :=
   (IntegralLattice.Isometry.ofEq ((RootfulNiemeierType.lattice_def _).trans
     (gluedLattice_def _ _ _ _ _))).trans
     ((d24RootIsometry.ofIsotropicSubgroups _ _ _
@@ -192,24 +189,13 @@ theorem d24CheckerboardIsometry_symm_apply (y : Fin 24 → ℚ) :
 
 /-- A vector of the table ambient space belongs to `D₂₄` exactly when its
 checkerboard coordinates lie in the integer checkerboard lattice or its spinor coset. -/
-theorem mem_d24Lattice_carrier_iff
+theorem mem_niemeierD24_carrier_iff
     (x : ∀ i, Fin (RootfulNiemeierType.d24.componentType i).rank → ℚ) :
-    x ∈ d24Lattice.carrier ↔
+    x ∈ niemeierD24.carrier ↔
       d24RootIsometry x ∈ checkerboardCarrier 24 ∨
         d24RootIsometry x - checkerboardSpinor 24 ∈ checkerboardCarrier 24 := by
   rw [← d24CheckerboardIsometry.apply_mem_carrier_iff,
     checkerboardPlusLattice_carrier, mem_checkerboardPlusCarrier_iff 24 (by decide),
     d24CheckerboardIsometry_apply, checkerboardLattice_carrier]
-
-/-- The `D₂₄` table lattice is unimodular. -/
-theorem isUnimodular_d24Lattice : d24Lattice.IsUnimodular :=
-  RootfulNiemeierType.d24.isUnimodular_lattice
-
-/-- The roots of the table-glued lattice span exactly its embedded `D₂₄` root lattice. -/
-theorem span_vectorsOfNorm_two_d24Lattice :
-    Submodule.span ℤ ((fun x : d24Lattice ↦
-      (x : ∀ i, Fin (RootfulNiemeierType.d24.componentType i).rank → ℚ)) ''
-        d24Lattice.vectorsOfNorm 2) = RootfulNiemeierType.d24.rootLattice.carrier :=
-  RootfulNiemeierType.d24.span_vectorsOfNorm_two_lattice
 
 end TauCeti
