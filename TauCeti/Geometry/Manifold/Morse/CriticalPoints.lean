@@ -80,6 +80,9 @@ polynomial in the Morse inequalities.
   points, with `TauCeti.sum_criticalCount_eq_totalCriticalCount`,
   `TauCeti.IsMorse.totalCriticalCount_ne_top`, `TauCeti.two_le_totalCriticalCount` and
   `TauCeti.IsMorse.criticalCount_neg`.
+* `TauCeti.criticalCount_zero_ne_zero` and `TauCeti.IsMorse.criticalCount_finrank_ne_zero`: on a
+  nonempty compact manifold the minimum is a critical point of index `0` and, for a Morse function,
+  the maximum is one of index the dimension.
 * `TauCeti.exists_isMinOn_isMaxOn_of_totalCriticalCount_eq_two`, with
   `IsMinOn.eq_of_le_of_two_criticalPoints` and `IsMaxOn.eq_of_le_of_two_criticalPoints`: a function
   with exactly two critical points is constant or has them as its unique minimum and maximum.
@@ -762,5 +765,28 @@ theorem IsMorse.criticalCount_ne_top (hf : IsMorse I f) (j : ℕ) : criticalCoun
   ne_top_of_le_ne_top hf.totalCriticalCount_ne_top (criticalCount_le_totalCriticalCount j)
 
 end Compact
+
+/-! ### Critical points of extreme index -/
+
+section Extreme
+
+variable [FiniteDimensional ℝ E] [I.Boundaryless] [CompactSpace M] [Nonempty M]
+
+/-- A `C²` function on a nonempty compact boundaryless manifold has a critical point of index `0`,
+at a point of minimum. -/
+theorem criticalCount_zero_ne_zero (hf : ContMDiff I 𝓘(ℝ) 2 f) : criticalCount I f 0 ≠ 0 := by
+  obtain ⟨x, -, hx⟩ := isCompact_univ.exists_isMinOn univ_nonempty hf.continuous.continuousOn
+  have hmin : IsLocalMin f x := hx.isLocalMin Filter.univ_mem
+  rw [criticalCount_def, Ne, encard_eq_zero, ← Ne, ← nonempty_iff_ne_empty]
+  exact ⟨x, hmin.mem_criticalPoints, manifoldMorseIndex_eq_zero_of_isLocalMin (hf x) hmin⟩
+
+/-- A Morse function on a nonempty compact boundaryless manifold has a critical point of index
+the dimension of the manifold, at a point of maximum. -/
+theorem IsMorse.criticalCount_finrank_ne_zero (hf : IsMorse I f) :
+    criticalCount I f (Module.finrank ℝ E) ≠ 0 := by
+  have h := criticalCount_zero_ne_zero (I := I) (hf.neg.contMDiff.of_le (by norm_cast))
+  rwa [hf.criticalCount_neg (Nat.zero_le _), Nat.sub_zero] at h
+
+end Extreme
 
 end TauCeti

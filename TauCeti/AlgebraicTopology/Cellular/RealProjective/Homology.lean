@@ -38,6 +38,8 @@ computes the singular homology of `RPᴺ`. The undetermined units do not affect 
 * `TauCeti.RealProjectiveSpace.singularHomologyIntLinearEquivOfOdd` and
   `TauCeti.RealProjectiveSpace.isZero_singularHomology_int_of_even`: integrally, `Hₖ(RPᴺ; ℤ)` is
   `ℤ/2` for odd `k < N` and vanishes for even `k > 0`.
+* `TauCeti.RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero`: over a division ring in
+  which `2 = 0`, `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero above.
 
 ## References
 
@@ -253,5 +255,28 @@ theorem isZero_singularHomology_int_of_even (hk : Even k) (hk0 : k ≠ 0) :
     IsZero (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} ℤ) k).obj
       (ModuleCat.of ℤ ℤ)).obj (TopCat.of (RealProjectiveSpace N))) :=
   isZero_singularHomology_of_even ℤ (isRegular_iff_ne_zero.2 two_ne_zero).right hk hk0
+
+/-- **Homology of real projective space in characteristic two.** If `2 = 0` in the division ring
+`R`, then `Hₖ(RPᴺ; R)` is one-dimensional for `k ≤ N` and zero for `k > N`. -/
+theorem finrank_singularHomology_of_two_eq_zero {R : Type} [DivisionRing R] (h2 : (2 : R) = 0)
+    (k : ℕ) :
+    Module.finrank R (((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} R) k).obj
+      (ModuleCat.of R R)).obj (TopCat.of (RealProjectiveSpace N))) = if k ≤ N then 1 else 0 := by
+  split_ifs with hkN
+  · rcases Nat.even_or_odd k with hk | hk
+    · rcases eq_or_ne k 0 with rfl | hk0
+      · exact (singularHomologyZeroLinearEquiv R).finrank_eq.trans (Module.finrank_self R)
+      · have hker : LinearMap.ker (LinearMap.toSpanSingleton R R 2) = ⊤ := by
+          rw [h2, LinearMap.toSpanSingleton_zero, LinearMap.ker_zero]
+        exact ((singularHomologyLinearEquivOfEven R hk hk0 hkN).trans
+          (LinearEquiv.ofTop _ hker)).finrank_eq.trans (Module.finrank_self R)
+    · rcases hkN.lt_or_eq with hkN | rfl
+      · have hspan : R ∙ (2 : R) = ⊥ := by rw [h2, Submodule.span_singleton_eq_bot]
+        exact ((singularHomologyLinearEquivOfOdd R hk hkN).trans
+          (Submodule.quotEquivOfEqBot _ hspan)).finrank_eq.trans (Module.finrank_self R)
+      · exact (singularHomologyTopLinearEquivOfOdd R hk).finrank_eq.trans (Module.finrank_self R)
+  · have := ModuleCat.isZero_iff_subsingleton.1
+      (isZero_singularHomology_of_lt (N := N) R (Nat.lt_of_not_le hkN))
+    exact Module.finrank_zero_of_subsingleton
 
 end TauCeti.RealProjectiveSpace

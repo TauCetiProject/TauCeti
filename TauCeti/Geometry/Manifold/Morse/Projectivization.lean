@@ -48,6 +48,8 @@ at the origin is `2 ∑ j, (ν j - w k) ⟪v j, v' j⟫`. Each coordinate of `�
   `dim_ℝ 𝕜 * #{i | w i < w k}`.
 * `TauCeti.totalCriticalCount_projectiveMomentFunction` and
   `TauCeti.criticalCount_projectiveMomentFunction`: the critical counts.
+* `TauCeti.criticalCount_projectiveMomentFunction_eq_ite`: for distinct weights there is exactly
+  one critical point of each index `0, d, 2d, …, nd`, where `d = dim_ℝ 𝕜`.
 * `TauCeti.manifoldMorseIndex_projectiveMomentFunction_natCast_complex`: on `ℂℙⁿ` with the
   standard weights, `[eₖ]` has index `2 * k`.
 
@@ -446,6 +448,52 @@ theorem criticalCount_projectiveMomentFunction {w : Fin (n + 1) → ℝ} (hw : I
     exact ⟨k, by rwa [← manifoldMorseIndex_projectiveMomentFunction], rfl⟩
   · rintro ⟨k, hk, rfl⟩
     exact ⟨⟨k, rfl⟩, by rwa [manifoldMorseIndex_projectiveMomentFunction]⟩
+
+/-- For pairwise distinct weights, distinct coordinates have distinct numbers of weights below
+them. -/
+private theorem ncard_setOf_lt_injective {w : Fin (n + 1) → ℝ} (hw : Injective w) :
+    Injective fun k ↦ {i | w i < w k}.ncard := by
+  have hlt {k k' : Fin (n + 1)} (h : w k < w k') :
+      {i | w i < w k}.ncard < {i | w i < w k'}.ncard := by
+    refine ncard_lt_ncard ⟨fun i (hi : w i < w k) ↦ (show w i < w k' from hi.trans h),
+      fun hsub ↦ lt_irrefl (w k) (hsub (show w k < w k' from h))⟩ (toFinite _)
+  intro k k' hkk'
+  by_contra hne
+  rcases lt_or_gt_of_ne (hw.ne hne) with h | h
+  · exact (hlt h).ne hkk'
+  · exact (hlt h).ne' hkk'
+
+/-- At most `n` of the `n + 1` weights lie below a given one. -/
+private theorem ncard_setOf_lt_le (w : Fin (n + 1) → ℝ) (k : Fin (n + 1)) :
+    {i | w i < w k}.ncard ≤ n := by
+  have hsub : {i | w i < w k} ⊆ {k}ᶜ := fun i (hi : w i < w k) (h : i = k) ↦
+    lt_irrefl (w k) (h ▸ hi)
+  calc _ ≤ ({k}ᶜ : Set (Fin (n + 1))).ncard := ncard_le_ncard hsub
+    _ = n := by rw [ncard_compl, ncard_singleton, Nat.card_eq_fintype_card, Fintype.card_fin]; rfl
+
+/-- For pairwise distinct weights, the moment function has exactly one critical point of each
+index `j` which is a multiple of the real dimension of `𝕜` and at most that dimension times `n`,
+and no others. -/
+theorem criticalCount_projectiveMomentFunction_eq_ite {w : Fin (n + 1) → ℝ} (hw : Injective w)
+    (j : ℕ) :
+    criticalCount 𝓘(ℝ, Fin n → 𝕜) (projectiveMomentFunction 𝕜 w) j =
+      if Module.finrank ℝ 𝕜 ∣ j ∧ j ≤ Module.finrank ℝ 𝕜 * n then 1 else 0 := by
+  have hd : 0 < Module.finrank ℝ 𝕜 := Module.finrank_pos
+  -- Counting the weights below `w k` is a bijection of `Fin (n + 1)`.
+  let r : Fin (n + 1) → Fin (n + 1) := fun k ↦
+    ⟨{i | w i < w k}.ncard, Nat.lt_succ_of_le (ncard_setOf_lt_le w k)⟩
+  have hr : Bijective r := Finite.injective_iff_bijective.1 fun k k' h ↦
+    ncard_setOf_lt_injective hw (congrArg Fin.val h)
+  rw [criticalCount_projectiveMomentFunction hw]
+  split_ifs with h
+  · obtain ⟨⟨j', rfl⟩, hj⟩ := h
+    obtain ⟨k, hk⟩ := hr.2 ⟨j', Nat.lt_succ_of_le (Nat.le_of_mul_le_mul_left hj hd)⟩
+    refine encard_eq_one.2 ⟨k, ext fun k' ↦ ?_⟩
+    simp only [mem_ofPred_eq, mem_singleton_iff, Nat.mul_left_cancel_iff hd]
+    exact ⟨fun h' ↦ hr.1 (Fin.ext (h'.trans (congrArg Fin.val hk).symm)),
+      fun h' ↦ h' ▸ congrArg Fin.val hk⟩
+  · refine encard_eq_zero.2 (eq_empty_iff_forall_notMem.2 fun k (hk : _ * _ = j) ↦ h ?_)
+    exact ⟨⟨_, hk.symm⟩, hk ▸ Nat.mul_le_mul_left _ (ncard_setOf_lt_le w k)⟩
 
 /-! ### The standard weights -/
 
