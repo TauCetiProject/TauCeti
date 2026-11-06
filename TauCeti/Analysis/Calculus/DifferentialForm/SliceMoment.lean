@@ -74,11 +74,11 @@ def sliceMoment (T : E × ℂ → (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (g : ℂ 
 theorem sliceMoment_def (T : E × ℂ → (E × ℂ) [⋀^Fin 2]→L[ℝ] ℝ) (g : ℂ → F) (z : E) :
     sliceMoment T g z = ∫ w, T (z, w) ![(0, 1), (0, I)] • g w := (rfl)
 
-/-- A weighted coefficient of a form supported over `K` integrates over `K` only. -/
-private theorem integral_smul_eq_setIntegral (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (z : E)
-    (A : Fin 2 → E × ℂ) (g : ℂ → F) :
-    ∫ w, T (z, w) A • g w = ∫ w in K, T (z, w) A • g w :=
-  (setIntegral_eq_integral_of_forall_compl_eq_zero fun w hw ↦ by simp [hT z w hw]).symm
+/-- The slice moment of a form supported over `K` integrates over `K` only. -/
+private theorem sliceMoment_eq_setIntegral (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (g : ℂ → F) :
+    sliceMoment T g = fun z ↦ ∫ w in K, T (z, w) ![(0, 1), (0, I)] • g w :=
+  funext fun z ↦
+    (setIntegral_eq_integral_of_forall_compl_eq_zero fun w hw ↦ by simp [hT z w hw]).symm
 
 /-- A form vanishing over the open set `ℂ \ K` has vanishing derivative there. -/
 private theorem fderiv_eq_zero_of_notMem (hK : IsClosed K) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0)
@@ -108,10 +108,7 @@ and `g` are `Cⁿ`, then the slice moment `z ↦ ∫ g dμ_z` is `Cⁿ`. -/
 theorem contDiff_sliceMoment {n : ℕ∞} (hK : IsCompact K) (hTc : ContDiff ℝ n T)
     (hg : ContDiff ℝ n g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) :
     ContDiff ℝ n (sliceMoment T g) := by
-  have h : sliceMoment T g = fun z ↦ ∫ w in K, T (z, w) ![(0, 1), (0, I)] • g w := by
-    funext z
-    exact integral_smul_eq_setIntegral hT z _ g
-  rw [h]
+  rw [sliceMoment_eq_setIntegral hT]
   exact ContDiff.parametric_integral hK subset_rfl hK.measure_lt_top.ne
     (((ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ _).contDiff.comp hTc).smul
       (hg.comp contDiff_snd))
@@ -146,6 +143,23 @@ private theorem integrable_of_vanishing {G : Type*} [NormedAddCommGroup G] {f : 
     (hK : IsCompact K) (hf : Continuous f) (h : ∀ w ∉ K, f w = 0) : Integrable f :=
   hf.integrable_of_hasCompactSupport (HasCompactSupport.intro hK h)
 
+/-- A fibre derivative of a coefficient of `T`, weighted by `g`, is integrable on the fibre. -/
+private theorem integrable_fderiv_coeff_smul (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
+    (hg : Continuous g) (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (z : E) (A : Fin 2 → E × ℂ) (u : ℂ) :
+    Integrable fun w ↦ fderiv ℝ T (z, w) (0, u) A • g w :=
+  integrable_of_vanishing hK (((ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
+    (((hTc.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right z)).clm_apply
+      continuous_const)).smul hg) fun w hw ↦ by
+    simp [fderiv_eq_zero_of_notMem hK.isClosed hT z hw]
+
+/-- A coefficient of `T`, weighted by a continuous `g`, is integrable on the fibre. -/
+private theorem integrable_coeff_smul {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {g : ℂ → G} (hK : IsCompact K) (hTc : ContDiff ℝ 1 T) (hg : Continuous g)
+    (hT : ∀ z, ∀ w ∉ K, T (z, w) = 0) (z : E) (A : Fin 2 → E × ℂ) :
+    Integrable fun w ↦ T (z, w) A • g w :=
+  integrable_of_vanishing hK (((ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
+    (hTc.continuous.comp (Continuous.prodMk_right z))).smul hg) fun w hw ↦ by simp [hT z w hw]
+
 /-- **Integration by parts along a fibre.** A fibre derivative of a coefficient of `T`, weighted
 by `g`, integrates to minus the coefficient weighted by the derivative of `g`. -/
 private theorem integral_fderiv_coeff_smul (hK : IsCompact K) (hTc : ContDiff ℝ 1 T)
@@ -154,24 +168,15 @@ private theorem integral_fderiv_coeff_smul (hK : IsCompact K) (hTc : ContDiff �
     ∫ w, fderiv ℝ T (z, w) (0, u) A • g w = -∫ w, T (z, w) A • fderiv ℝ g w u := by
   have hfd (w : ℂ) : fderiv ℝ (fun w' ↦ T (z, w') A) w u = fderiv ℝ T (z, w) (0, u) A := by
     simp [(hasFDerivAt_coeff_fiber hTc z w A).fderiv]
-  have hcT : Continuous fun w : ℂ ↦ T (z, w) A :=
-    (ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
-      (hTc.continuous.comp (Continuous.prodMk_right z))
-  have hcD : Continuous fun w : ℂ ↦ fderiv ℝ T (z, w) (0, u) A :=
-    (ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
-      (((hTc.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right z)).clm_apply
-        continuous_const)
-  have hcg := hg.continuous
   have hcg' : Continuous fun w ↦ fderiv ℝ g w u :=
     (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
   have h := integral_smul_fderiv_eq_neg_fderiv_smul_of_integrable (μ := volume)
     (f := fun w' ↦ T (z, w') A) (g := g) (v := u)
     (by
       simp only [hfd]
-      exact integrable_of_vanishing hK (hcD.smul hcg) fun w hw ↦ by
-        simp [fderiv_eq_zero_of_notMem hK.isClosed hT z hw])
-    (integrable_of_vanishing hK (hcT.smul hcg') fun w hw ↦ by simp [hT z w hw])
-    (integrable_of_vanishing hK (hcT.smul hcg) fun w hw ↦ by simp [hT z w hw])
+      exact integrable_fderiv_coeff_smul hK hTc hg.continuous hT z A u)
+    (integrable_coeff_smul hK hTc hcg' hT z A)
+    (integrable_coeff_smul hK hTc hg.continuous hT z A)
     (fun w _ ↦ (hasFDerivAt_coeff_fiber hTc z w A).differentiableAt)
     (fun w _ ↦ (hg.differentiable one_ne_zero) w)
   simp only [hfd] at h
@@ -194,9 +199,7 @@ theorem fderiv_sliceMoment_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T) (hg
   have hf : ContDiff ℝ 1 (Function.uncurry f) :=
     ((ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ e).contDiff.comp hTc).smul
       (hg.comp contDiff_snd)
-  have hm : sliceMoment T g = fun z' ↦ ∫ w in K, f z' w := by
-    funext z'
-    exact integral_smul_eq_setIntegral hT z' e g
+  have hm : sliceMoment T g = fun z' ↦ ∫ w in K, f z' w := sliceMoment_eq_setIntegral hT g
   -- Differentiate under the integral sign over the compact set `K`.
   have hD := hasFDerivAt_integral_of_contDiffOn (μ := volume) (x₀ := z) (u := univ) univ_mem hK
     hK.measure_lt_top.ne subset_rfl hf.contDiffOn
@@ -212,22 +215,10 @@ theorem fderiv_sliceMoment_apply (hK : IsCompact K) (hTc : ContDiff ℝ 1 T) (hg
   rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun w hw ↦ by
     simp [fderiv_eq_zero_of_notMem hK.isClosed hT z hw]]
   simp only [he, fderiv_apply_base_eq hTc (hdT _) v, sub_smul]
-  have hcD (u : ℂ) (A : Fin 2 → E × ℂ) : Continuous fun w : ℂ ↦ fderiv ℝ T (z, w) (0, u) A :=
-    (ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
-      (((hTc.continuous_fderiv one_ne_zero).comp (Continuous.prodMk_right z)).clm_apply
-        continuous_const)
-  have hi (u : ℂ) (A : Fin 2 → E × ℂ) :
-      Integrable fun w ↦ fderiv ℝ T (z, w) (0, u) A • g w :=
-    integrable_of_vanishing hK ((hcD u A).smul hg.continuous) fun w hw ↦ by
-      simp [fderiv_eq_zero_of_notMem hK.isClosed hT z hw]
-  have hcT (A : Fin 2 → E × ℂ) : Continuous fun w : ℂ ↦ T (z, w) A :=
-    (ContinuousAlternatingMap.apply ℝ (E × ℂ) ℝ A).continuous.comp
-      (hTc.continuous.comp (Continuous.prodMk_right z))
-  have hj (u : ℂ) (A : Fin 2 → E × ℂ) : Integrable fun w ↦ T (z, w) A • fderiv ℝ g w u :=
-    integrable_of_vanishing hK ((hcT A).smul
-      ((hg.continuous_fderiv one_ne_zero).clm_apply continuous_const)) fun w hw ↦ by
-      simp [hT z w hw]
-  rw [integral_sub (hi 1 _) (hi I _), integral_sub (hj I _) (hj 1 _),
+  have hi := integrable_fderiv_coeff_smul hK hTc hg.continuous hT z
+  have hj (u : ℂ) (A : Fin 2 → E × ℂ) := integrable_coeff_smul hK hTc
+    ((hg.continuous_fderiv one_ne_zero).clm_apply (continuous_const (y := u))) hT z A
+  rw [integral_sub (hi _ 1) (hi _ I), integral_sub (hj I _) (hj 1 _),
     integral_fderiv_coeff_smul hK hTc hg hT, integral_fderiv_coeff_smul hK hTc hg hT]
   abel
 
