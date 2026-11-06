@@ -611,63 +611,46 @@ theorem qExpansion_coeff_of_coe_eq_weightedEisensteinSeries {𝒢 : Subgroup (GL
     (ModularFormClass.qExpansion_coeff_unique (Nat.cast_pos.mpr (NeZero.pos N)) hN h n).symm
   intro τ
   set q := cexp (2 * π * I * τ / N)
-  have hq : Function.Periodic.qParam N τ = q := by
-    simp [Function.Periodic.qParam, q]
+  have hq : Function.Periodic.qParam N τ = q := by simp [Function.Periodic.qParam, q]
   -- the double series over `ℤ × ℤ` converges absolutely
-  have hcomp (x y : ℤ) : ((↑) : ℤ → ZMod N) ∘ ![x, y] = ![(x : ZMod N), (y : ZMod N)] := by
-    ext i
-    fin_cases i <;> rfl
   set F : ℤ × ℤ → ℂ := fun p ↦
     W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] τ with hF
-  have hFs : Summable F := by
-    refine ((finTwoArrowEquiv ℤ).symm.summable_iff.mpr
-      (summable_norm_weightedEisensteinSummand W (by exact_mod_cast hk : (3 : ℤ) ≤ k) τ).of_norm
-      ).congr fun p ↦ ?_
-    simp only [Function.comp_apply, finTwoArrowEquiv_symm_apply, hcomp, hF]
-  have hfτ : f τ = ∑' p, F p := by
-    rw [hf, weightedEisensteinSeries_def, ← (finTwoArrowEquiv ℤ).symm.tsum_eq]
-    simp [hF, hcomp]
+  have hcomp (x y : ℤ) : ((↑) : ℤ → ZMod N) ∘ ![x, y] = ![(x : ZMod N), (y : ZMod N)] :=
+    (FinVec.map_eq _ _).symm
+  have hFs : Summable F := ((finTwoArrowEquiv ℤ).symm.summable_iff.mpr
+    (summable_norm_weightedEisensteinSummand W (by exact_mod_cast hk : (3 : ℤ) ≤ k) τ).of_norm
+    ).congr fun p ↦ by simp only [Function.comp_apply, finTwoArrowEquiv_symm_apply, hcomp, hF]
   -- the double series over `(c, m)` of the nonconstant terms converges absolutely
   set T : ℕ → ℕ → ℂ := fun c m ↦
     𝓕 (fun d ↦ W ![(c : ZMod N), d] + (-1) ^ k * W ![-(c : ZMod N), -d]) (-(m : ZMod N)) *
       (m : ℂ) ^ (k - 1) * q ^ (c * m) with hT
   have hTs : Summable fun p : ℕ+ × ℕ+ ↦ T p.1 p.2 := (summable_norm_weightedTerm W τ).of_norm
   -- split the rows into `c = 0`, `c ≥ 1` and `c ≤ -1`, and fold `c` with `-c`
-  have hrows : Summable fun c : ℤ ↦ ∑' d, F (c, d) := hFs.prod
   have hpos : Summable fun c : ℕ+ ↦ ∑' d, F (((c : ℕ) : ℤ), d) :=
-    hrows.comp_injective (Nat.cast_injective.comp PNat.coe_injective)
+    hFs.prod.comp_injective (Nat.cast_injective.comp PNat.coe_injective)
   have hneg : Summable fun c : ℕ+ ↦ ∑' d, F (-((c : ℕ) : ℤ), d) :=
-    hrows.comp_injective (neg_injective.comp (Nat.cast_injective.comp PNat.coe_injective))
-  have hfold : ∑' p, F p = ∑' d, F (0, d) + K * ∑' p : ℕ+ × ℕ+, T p.1 p.2 := by
-    rw [hFs.tsum_prod, tsum_int_eq_zero_add_tsum_pnat hrows, add_assoc,
-      ← hpos.tsum_add hneg, hTs.tsum_prod, ← tsum_mul_left]
-    congr 1
-    refine tsum_congr fun c ↦ ?_
-    simp only [hF, Int.cast_natCast, Int.cast_neg]
-    rw [tsum_row_add_tsum_row_neg W (k := k) (by omega) τ c
-      (by simpa only [hF, Int.cast_natCast] using hFs.prod_factor ((c : ℕ) : ℤ))
-      (by simpa only [hF, Int.cast_natCast, Int.cast_neg] using hFs.prod_factor (-((c : ℕ) : ℤ)))]
+    hFs.prod.comp_injective (neg_injective.comp (Nat.cast_injective.comp PNat.coe_injective))
   -- regroup by `n = c m`; each group carries `q ^ n`
   have hgroup (n : ℕ+) : ∑ x ∈ (n : ℕ).divisorsAntidiagonal, T x.1 x.2 = a n * q ^ (n : ℕ) := by
     rw [ha, Finset.sum_mul]
-    refine Finset.sum_congr rfl fun x hx ↦ ?_
-    simp only [hT]
-    rw [(Nat.mem_divisorsAntidiagonal.mp hx).1]
+    exact Finset.sum_congr rfl fun x hx ↦ by simp only [hT, (Nat.mem_divisorsAntidiagonal.mp hx).1]
   have H := (hTs.hasSum.sum_divisorsAntidiagonal).mul_left K
   simp_rw [hgroup] at H
-  have H' := (hasSum_pnat_iff (f := fun n : ℕ ↦ K * (a n * q ^ n))).mp H
-  have hconst := hasSum_ite_eq 0 (∑' d : ℤ, W ![0, (d : ZMod N)] * (d : ℂ) ^ (-(k : ℤ)))
-  convert! H'.add hconst using 1
+  convert! ((hasSum_pnat_iff (f := fun n : ℕ ↦ K * (a n * q ^ n))).mp H).add
+    (hasSum_ite_eq 0 (∑' d : ℤ, W ![0, (d : ZMod N)] * (d : ℂ) ^ (-(k : ℤ)))) using 1
   · ext m
-    rcases eq_or_ne m 0 with rfl | hm
-    · simp [b, a, hq]
-    · simp [b, hm, hq, mul_assoc]
-  · rw [hfτ, hfold]
+    rcases eq_or_ne m 0 with rfl | hm <;> simp [b, a, mul_assoc, *]
+  · rw [hf, weightedEisensteinSeries_def, ← (finTwoArrowEquiv ℤ).symm.tsum_eq]
+    simp only [finTwoArrowEquiv_symm_apply, hcomp, ← hF]
+    rw [hFs.tsum_prod, tsum_int_eq_zero_add_tsum_pnat hFs.prod, add_assoc,
+      ← hpos.tsum_add hneg, hTs.tsum_prod, ← tsum_mul_left]
     simp only [a, Nat.divisorsAntidiagonal_zero, Finset.sum_empty, zero_mul, mul_zero, add_zero]
-    rw [add_comm]
-    congr 1
-    refine tsum_congr fun d ↦ ?_
-    simp [hF, eisSummand]
+    refine (add_comm _ _).trans (congrArg₂ (· + ·) (tsum_congr fun c ↦ ?_) ?_)
+    · simp only [hF, Int.cast_natCast, Int.cast_neg]
+      rw [tsum_row_add_tsum_row_neg W (k := k) (by omega) τ c
+        (by simpa only [hF, Int.cast_natCast] using hFs.prod_factor ((c : ℕ) : ℤ))
+        (by simpa only [hF, Int.cast_natCast, Int.cast_neg] using hFs.prod_factor (-((c : ℕ) : ℤ)))]
+    · exact tsum_congr fun d ↦ by simp [hF, eisSummand]
 
 end Weighted
 
