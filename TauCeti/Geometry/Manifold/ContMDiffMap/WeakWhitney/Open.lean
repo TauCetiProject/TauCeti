@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Topology
+public import TauCeti.Geometry.Manifold.ContMDiffMap.Extension
 public import TauCeti.Geometry.Manifold.ContMDiffMap.WeakWhitney.Complete
 public import TauCeti.Geometry.Manifold.ExtChartAt
 public import Mathlib.Topology.Metrizable.Uniformity
@@ -45,18 +46,6 @@ namespace ContMDiffMap
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
   [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {n : ℕ∞ω} (U : Opens E)
-
-/-- Extending a native smooth map arbitrarily outside an open source preserves differentiability
-on the original source. -/
-theorem contDiffOn_extend (f : C^n⟮𝓘(𝕜, E), U; 𝓘(𝕜, F), F⟯) (g : E → F) :
-    ContDiffOn 𝕜 n (Function.extend Subtype.val f g) U := by
-  apply ContMDiffOn.contDiffOn
-  intro x hx
-  have hf := f.contMDiff ⟨x, hx⟩
-  have heq : (fun z : U ↦ Function.extend Subtype.val f g (z : E)) = f :=
-    Function.extend_comp Subtype.val_injective _ _
-  rw [← heq] at hf
-  exact (contMDiffAt_subtype_iff.mp hf).contMDiffWithinAt
 
 /-- The derivative of a native map on an open source, bundled as a continuous map on that source.
 The arbitrary values of the chosen extension outside the source do not affect its derivatives. -/
