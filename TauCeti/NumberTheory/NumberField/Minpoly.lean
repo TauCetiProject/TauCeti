@@ -19,8 +19,6 @@ the second is the first with its coefficients cast to `ℚ`.
 
 * `NumberField.RingOfIntegers.minpoly_rat_coe`:
   `minpoly ℚ (x : K) = (minpoly ℤ x).map (algebraMap ℤ ℚ)`.
-* `TauCeti.NumberField.minpoly_rat_eq_of_aeval_eq_zero`: a root of `minpoly ℚ x` in a nontrivial
-  `ℚ`-algebra has the same minimal polynomial over `ℚ` as `x`.
 * `TauCeti.NumberField.minpoly_int_eq_of_aeval_eq_zero`: a root of `minpoly ℚ x` in a commutative
   `ℚ`-algebra that is a domain has the same minimal polynomial over `ℤ` as `x`.
 * `TauCeti.NumberField.minpoly_two_mul_sub_one_of_minpoly_eq_X_sq_sub_X_add`: an algebraic
@@ -65,20 +63,13 @@ theorem isIntegral_of_aeval_eq_zero {β : M}
   ⟨minpoly ℤ θ, minpoly.monic θ.isIntegral, by
     rwa [aeval_minpoly_rat_eq_aeval_minpoly_int] at hβ⟩
 
-/-- A root of `minpoly ℚ θ` in a nontrivial `ℚ`-algebra has that polynomial as its minimal
-polynomial over `ℚ`. -/
-theorem minpoly_rat_eq_of_aeval_eq_zero [Nontrivial M] {β : M}
-    (hβ : aeval β (minpoly ℚ (θ : K)) = 0) : minpoly ℚ β = minpoly ℚ (θ : K) :=
-  (minpoly.eq_of_irreducible_of_monic (minpoly.irreducible (IsIntegral.of_finite ℚ _)) hβ
-    (minpoly.monic (IsIntegral.of_finite ℚ _))).symm
-
 end RingTarget
 
 /-- A root of `minpoly ℚ θ` in a commutative `ℚ`-algebra that is a domain has the same minimal
 polynomial over `ℤ` as `θ`. -/
 theorem minpoly_int_eq_of_aeval_eq_zero {M : Type*} [CommRing M] [IsDomain M] [Algebra ℚ M]
     {β : M} (hβ : aeval β (minpoly ℚ (θ : K)) = 0) : minpoly ℤ β = minpoly ℤ θ := by
-  have h := minpoly_rat_eq_of_aeval_eq_zero hβ
+  have h := ((minpoly.eq_iff_aeval_minpoly_eq_zero (IsIntegral.of_finite ℚ (θ : K))).mpr hβ).symm
   rw [minpoly.isIntegrallyClosed_eq_field_fractions' ℚ (isIntegral_of_aeval_eq_zero hβ),
     _root_.NumberField.RingOfIntegers.minpoly_rat_coe] at h
   exact Polynomial.map_injective _ (algebraMap ℤ ℚ).injective_int h
