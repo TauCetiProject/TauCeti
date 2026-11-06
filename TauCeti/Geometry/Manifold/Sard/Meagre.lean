@@ -23,7 +23,9 @@ Consequently an everywhere rank-deficient real analytic map has meagre image.
 We use the existing Sard--Smale theorem in finite-dimensional coordinate domains. The
 regular-point comparison in arbitrary extended charts identifies the critical points in those
 domains. Meagreness is preserved by chart inverses, and a countable neighborhood subcover in the
-source gives the global assertion. No decomposition of analytic zero sets is needed.
+source gives the global assertion; this reduction to charts holds for maps between manifolds
+modelled on arbitrary normed spaces (`TauCeti.isMeagre_image_of_forall_isMeagre_image_extChartAt`).
+No decomposition of analytic zero sets is needed.
 
 ## References
 
@@ -41,6 +43,62 @@ open scoped ContDiff Manifold Topology
 
 namespace TauCeti
 
+section Charts
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
+  {H' : Type*} [TopologicalSpace H'] {J : ModelWithCorners 𝕜 E' H'} [J.Boundaryless]
+  {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
+  {f : M → N} {s : Set M}
+
+/-- **Meagre images can be detected in charts.** Let `f` be continuous at the points of a
+Lindelöf set `s`. Suppose that for every pair of points `x₀` and `y₀`, the coordinate expression
+`extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm` sends the chart image of the points of `s` lying in
+the two chart sources to a meagre subset of the model of `N`. Then `f '' s` is meagre. The target
+is without boundary, so that its extended charts are open partial homeomorphisms. -/
+theorem isMeagre_image_of_forall_isMeagre_image_extChartAt [LindelofSpace s]
+    (hf : ∀ x ∈ s, ContinuousAt f x)
+    (hchart : ∀ (x₀ : M) (y₀ : N), IsMeagre ((extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) ''
+      (extChartAt I x₀ '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source)))) :
+    IsMeagre (f '' s) := by
+  -- The image of the points of `s` seen by the charts at `x₀` and `y₀` is meagre.
+  have hpair (x₀ : M) (y₀ : N) :
+      IsMeagre (f '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source)) := by
+    let g : E → E' := extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm
+    let u := s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source
+    -- The boundaryless extended chart is an open partial homeomorphism.
+    let e := (chartAt H' y₀).transHomeomorph J.toHomeomorph
+    -- Both chart constructions have forward map J ∘ chartAt H' y₀: transHomeomorph
+    -- composes with J.toHomeomorph, whose forward map is J, while extChartAt extends by J.
+    have he (y : N) : e y = extChartAt J y₀ y := rfl
+    have hmem : g '' (extChartAt I x₀ '' u) ⊆ e.target := by
+      rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
+      have hxc : x ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hx.1.2
+      simpa only [g, comp_apply, (extChartAt I x₀).left_inv hxc, ← he] using e.map_source hx.2
+    have h := e.symm.isMeagre_image (hchart x₀ y₀) hmem
+    have himage : e.symm '' (g '' (extChartAt I x₀ '' u)) = f '' u := by
+      rw [image_image, image_image]
+      apply image_congr
+      intro x hx
+      have hxc : x ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hx.1.2
+      simp only [comp_apply, g, (extChartAt I x₀).left_inv hxc, ← he, e.left_inv hx.2]
+    rwa [himage] at h
+  -- Countably many pairs of charts cover `s`.
+  let U := fun x : M ↦ (chartAt H x).source ∩ f ⁻¹' (chartAt H' (f x)).source
+  have hU : ∀ x ∈ s, U x ∈ 𝓝 x := fun x hx ↦
+    inter_mem (chart_source_mem_nhds H x)
+      ((hf x hx).preimage_mem_nhds (chart_source_mem_nhds H' (f x)))
+  obtain ⟨t, htc, -, hcover⟩ := (IsLindelof.of_coe (s := s)).elim_nhds_subcover U hU
+  refine (isMeagre_biUnion htc fun x _ ↦ hpair x (f x)).mono ?_
+  rintro _ ⟨x, hx, rfl⟩
+  obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 (hcover hx)
+  exact mem_iUnion₂.2 ⟨z, hz, x, ⟨⟨hx, hxz.1⟩, hxz.2⟩, rfl⟩
+
+end Charts
+
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
@@ -49,12 +107,13 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ∞ N]
   {f : M → N} {s : Set M}
 
-/-- The image of critical points seen by a fixed pair of charts is meagre in the target
-manifold. -/
-private theorem isMeagre_image_inter_charts
+omit [J.Boundaryless] in
+/-- The critical points seen by a fixed pair of charts have meagre coordinate image. -/
+private theorem isMeagre_image_extChartAt_inter_charts
     (hf : ∀ x ∈ s, ContMDiffAt I J ∞ f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x)
     (x₀ : M) (y₀ : N) :
-    IsMeagre (f '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source)) := by
+    IsMeagre ((extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) ''
+      (extChartAt I x₀ '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source))) := by
   let g : E → E' := extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm
   let u := s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source
   let v := extChartAt I x₀ '' u
@@ -67,30 +126,12 @@ private theorem isMeagre_image_inter_charts
     have h := isRegularPoint_iff_surjective_fderivWithin
       ((hf x hx.1.1).mdifferentiableAt (by simp)) hx.1.2 hx.2
     simpa only [I.range_eq_univ, fderivWithin_univ] using (h.not.mp (hs x hx.1.1))
-  have hgv : IsMeagre (g '' v) := by
-    have h := isMeagre_image_criticalPoints_of_isFredholm (U := v) hgs
-      (fun z _ ↦ (fderiv ℝ g z).isFredholm_of_finiteDimensional)
-      (fun _ _ ↦ by exact_mod_cast le_top)
-    apply h.mono
-    rintro _ ⟨z, hz, rfl⟩
-    exact ⟨z, ⟨hz, hcrit z hz⟩, rfl⟩
-  -- The boundaryless extended chart is an open partial homeomorphism.
-  let e := (chartAt H' y₀).transHomeomorph J.toHomeomorph
-  -- Both chart constructions have forward map J ∘ chartAt H' y₀: transHomeomorph
-  -- composes with J.toHomeomorph, whose forward map is J, while extChartAt extends by J.
-  have he (y : N) : e y = extChartAt J y₀ y := rfl
-  have hmem : g '' v ⊆ e.target := by
-    rintro _ ⟨_, ⟨x, hx, rfl⟩, rfl⟩
-    have hxc : x ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hx.1.2
-    simpa only [g, comp_apply, (extChartAt I x₀).left_inv hxc, ← he] using e.map_source hx.2
-  have h := e.symm.isMeagre_image hgv hmem
-  have himage : e.symm '' (g '' v) = f '' u := by
-    rw [image_image, image_image]
-    apply image_congr
-    intro x hx
-    have hxc : x ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hx.1.2
-    simp only [comp_apply, g, (extChartAt I x₀).left_inv hxc, ← he, e.left_inv hx.2]
-  rwa [himage] at h
+  have h := isMeagre_image_criticalPoints_of_isFredholm (U := v) hgs
+    (fun z _ ↦ (fderiv ℝ g z).isFredholm_of_finiteDimensional)
+    (fun _ _ ↦ by exact_mod_cast le_top)
+  apply h.mono
+  rintro _ ⟨z, hz, rfl⟩
+  exact ⟨z, ⟨hz, hcrit z hz⟩, rfl⟩
 
 /-- **Sard's theorem, in Baire category form.** The image of a Lindelöf set of critical points
 at which a map is smooth is meagre. Both manifolds are finite-dimensional and without boundary;
@@ -98,16 +139,9 @@ their dimensions may differ. Smoothness is required in the ambient manifold at p
 not merely within `s`. -/
 theorem isMeagre_image_of_not_isRegularPoint [LindelofSpace s]
     (hf : ∀ x ∈ s, ContMDiffAt I J ∞ f x) (hs : ∀ x ∈ s, ¬ IsRegularPoint I J f x) :
-    IsMeagre (f '' s) := by
-  let U := fun x : M ↦ (chartAt H x).source ∩ f ⁻¹' (chartAt H' (f x)).source
-  have hU : ∀ x ∈ s, U x ∈ 𝓝 x := fun x hx ↦
-    inter_mem (chart_source_mem_nhds H x)
-      ((hf x hx).continuousAt.preimage_mem_nhds (chart_source_mem_nhds H' (f x)))
-  obtain ⟨t, htc, -, hcover⟩ := (IsLindelof.of_coe (s := s)).elim_nhds_subcover U hU
-  refine (isMeagre_biUnion htc fun x _ ↦ isMeagre_image_inter_charts hf hs x (f x)).mono ?_
-  rintro _ ⟨x, hx, rfl⟩
-  obtain ⟨z, hz, hxz⟩ := mem_iUnion₂.1 (hcover hx)
-  exact mem_iUnion₂.2 ⟨z, hz, x, ⟨⟨hx, hxz.1⟩, hxz.2⟩, rfl⟩
+    IsMeagre (f '' s) :=
+  isMeagre_image_of_forall_isMeagre_image_extChartAt (fun x hx ↦ (hf x hx).continuousAt)
+    (isMeagre_image_extChartAt_inter_charts hf hs)
 
 /-- The critical values of a smooth map from a Lindelöf finite-dimensional manifold without
 boundary form a meagre set. -/
