@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Diffeomorphism.Diffeotopy.Flow
 import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-import Mathlib.Geometry.Manifold.VectorField.Pullback
+public import Mathlib.Geometry.Manifold.VectorField.Pullback
 
 /-!
 # Homogeneity of connected manifolds
@@ -27,6 +27,13 @@ of `U`.
 
 This is the first step in comparing two ball embeddings in a connected manifold (the disc
 theorem): it moves the centre of one ball to the centre of the other.
+
+## Main declarations
+
+* `TauCeti.chartField`: a vector field on the model space, read in the extended chart at a point
+  and extended by zero; `TauCeti.contMDiff_chartField` shows it is smooth when the field is
+  supported in a compact subset of the chart target, and `TauCeti.hasMFDerivAt_chartField` that
+  straight segments along which the field is constant are its integral curves.
 
 ## Main results
 
@@ -64,30 +71,36 @@ variable {x z : M} {w : (p : E) → TangentSpace 𝓘(ℝ, E) p}
 
 /-- A vector field `w` on the model space, read in the extended chart at `x` and extended by zero
 outside the chart domain. -/
-private def chartField (x : M) (w : (p : E) → TangentSpace 𝓘(ℝ, E) p) (z : M) :
+def chartField (x : M) (w : (p : E) → TangentSpace 𝓘(ℝ, E) p) (z : M) :
     TangentSpace I z :=
   letI := Classical.dec (z ∈ (extChartAt I x).source)
   if z ∈ (extChartAt I x).source then mpullback I 𝓘(ℝ, E) (extChartAt I x) w z else 0
 
-private theorem chartField_of_mem (hz : z ∈ (extChartAt I x).source) :
+/-- On the chart domain, the chart field is the pullback of `w` by the extended chart. -/
+theorem chartField_of_mem (hz : z ∈ (extChartAt I x).source) :
     chartField (I := I) x w z = mpullback I 𝓘(ℝ, E) (extChartAt I x) w z := by
+  simp only [chartField, hz, ↓reduceIte]
+
+/-- Outside the chart domain, the chart field vanishes. -/
+theorem chartField_of_notMem (hz : z ∉ (extChartAt I x).source) :
+    chartField (I := I) x w z = 0 := by
   simp only [chartField, hz, ↓reduceIte]
 
 /-- If `w` vanishes outside `K ⊆ target`, the chart field vanishes outside the preimage of
 `K`. -/
-private theorem chartField_eq_zero {K : Set E}
+theorem chartField_eq_zero {K : Set E}
     (hwK : ∀ p ∉ K, w p = 0) (hz : z ∉ (extChartAt I x).symm '' K) :
     chartField (I := I) x w z = 0 := by
   by_cases hs : z ∈ (extChartAt I x).source
   · have hK : extChartAt I x z ∉ K := fun h ↦ hz ⟨_, h, (extChartAt I x).left_inv hs⟩
     rw [chartField_of_mem hs, mpullback_apply, hwK _ hK, map_zero]
-  · simp only [chartField, hs, ↓reduceIte]
+  · exact chartField_of_notMem hs
 
 variable [IsManifold I 1 M]
 
 /-- Along a segment in the chart on which `w` is the constant `d`, the chart field is the image of
 `d` under the derivative of the inverse chart. -/
-private theorem chartField_extChartAt_symm {p : E} {d : TangentSpace 𝓘(ℝ, E) p}
+theorem chartField_extChartAt_symm {p : E} {d : TangentSpace 𝓘(ℝ, E) p}
     (hp : p ∈ (extChartAt I x).target) (hwp : w p = d) :
     chartField (I := I) x w ((extChartAt I x).symm p) =
       mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) p d := by
@@ -100,7 +113,7 @@ private theorem chartField_extChartAt_symm {p : E} {d : TangentSpace 𝓘(ℝ, E
 
 /-- A segment in a chart, along which `w` is the constant `d`, is an integral curve of the chart
 field at every time at which it stays in an open set where `w = d`. -/
-private theorem hasMFDerivAt_chartField {c d : E} {V : Set E}
+theorem hasMFDerivAt_chartField {c d : E} {V : Set E}
     (hV : IsOpen V) (hVt : V ⊆ (extChartAt I x).target) (hwV : ∀ p ∈ V, w p = d) {t : ℝ}
     (ht : c + t • d ∈ V) :
     HasMFDerivAt 𝓘(ℝ, ℝ) I (fun s : ℝ ↦ (extChartAt I x).symm (c + s • d)) t
@@ -131,7 +144,7 @@ private theorem hasMFDerivAt_chartField {c d : E} {V : Set E}
 
 /-- The chart field of a `C^m` vector field supported in a compact subset of the chart target is
 a `C^m` vector field on `M`, provided `M` is `C^(m + 1)`. -/
-private theorem contMDiff_chartField [CompleteSpace E] [T2Space M] {n m : ℕ∞ω}
+theorem contMDiff_chartField [CompleteSpace E] [T2Space M] {n m : ℕ∞ω}
     [IsManifold I n M] (hmn : m + 1 ≤ n)
     (hw : ContMDiff 𝓘(ℝ, E) 𝓘(ℝ, E).tangent m (fun p ↦ (⟨p, w p⟩ : TangentBundle 𝓘(ℝ, E) E)))
     {K : Set E} (hK : IsCompact K) (hKt : K ⊆ (extChartAt I x).target) (hwK : ∀ p ∉ K, w p = 0) :

@@ -10,7 +10,7 @@ public import Mathlib.Topology.Algebra.MulAction
 public import Mathlib.Topology.FiberBundle.Trivialization
 
 /-!
-# Trivializations of orbit projections from equivariant maps
+# Trivializations of orbit projections and orbit maps
 
 Let a topological group `G` act continuously on `X`, and let `π : X → X ⧸ G` be the projection
 to the orbit space, with its quotient topology. Over an open set `W` of orbits, a continuous map
@@ -24,6 +24,15 @@ actions; see for instance Husemoller, *Fibre Bundles*, Chapter 4. It turns the c
 equivariant maps into the construction of principal-bundle charts, using Mathlib's
 `Trivialization`.
 
+Dually, let `G` act on `X` and fix `x₀ : X`, with continuous orbit map `g ↦ g • x₀`. A section
+`σ` of the orbit map, continuous on an open set `U ⊆ X` with `σ z • x₀ = z` on `U`, trivializes
+the orbit map over `U` with fibre the stabilizer `H` of `x₀`: the map
+`g ↦ (g • x₀, σ (g • x₀)⁻¹ * g)` is a homeomorphism from the preimage of `U` onto `U × H`, with
+inverse `(z, h) ↦ σ z * h`, and it intertwines right multiplication by `H` on `G` with right
+multiplication on the fibre. So the orbit map is a principal `H`-bundle over every open set
+carrying a continuous local section, the classical way of exhibiting `G → G ⧸ H` as a principal
+bundle (Steenrod, *The Topology of Fibre Bundles*, §7).
+
 ## Main definitions and results
 
 * `TauCeti.orbitTrivialization`: the trivialization of the orbit projection over `W` determined
@@ -32,6 +41,10 @@ equivariant maps into the construction of principal-bundle charts, using Mathlib
   and its inverse.
 * `TauCeti.orbitTrivialization_apply_smul`: the chart intertwines the action on `X` with left
   multiplication on the fibre `G`.
+* `TauCeti.orbitMapTrivialization`: the trivialization of the orbit map `g ↦ g • x₀` over `U`,
+  with fibre the stabilizer of `x₀`, determined by a continuous local section over `U`.
+* `TauCeti.orbitMapTrivialization_apply_mul`: the chart intertwines right multiplication by the
+  stabilizer on `G` with right multiplication on the fibre.
 -/
 
 public section
@@ -124,5 +137,101 @@ theorem orbitTrivialization_apply_smul (g : G) {x : X} (hx : Quotient.mk (orbitR
       ((orbitTrivialization W hW u hu hu_smul x).1,
         g * (orbitTrivialization W hW u hu hu_smul x).2) := by
   simp only [orbitTrivialization_apply, hu_smul g x hx, orbitRel.Quotient.quotient_smul_eq]
+
+/-! ### Trivializations of orbit maps from local sections -/
+
+section OrbitMap
+
+variable {G X : Type*} [Group G] [MulAction G X] {x₀ : X} {U : Set X} {σ : X → G}
+
+/-- The fibre coordinate of `orbitMapTrivialization`: on the preimage of `U` it is
+`σ (g • x₀)⁻¹ * g`, which fixes `x₀`, and elsewhere it is `1`. -/
+private noncomputable def orbitMapFibre (x₀ : X) (U : Set X) (σ : X → G)
+    (hσ_smul : ∀ z ∈ U, σ z • x₀ = z) (g : G) : stabilizer G x₀ :=
+  letI := Classical.dec (g • x₀ ∈ U)
+  if h : g • x₀ ∈ U then
+    ⟨(σ (g • x₀))⁻¹ * g, by rw [mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, hσ_smul _ h]⟩
+  else 1
+
+private theorem coe_orbitMapFibre {hσ_smul : ∀ z ∈ U, σ z • x₀ = z} {g : G} (hg : g • x₀ ∈ U) :
+    (orbitMapFibre x₀ U σ hσ_smul g : G) = (σ (g • x₀))⁻¹ * g := by
+  simp only [orbitMapFibre, hg, ↓reduceDIte]
+
+variable [TopologicalSpace G] [IsTopologicalGroup G] [TopologicalSpace X]
+
+/-- The trivialization of the orbit map `g ↦ g • x₀` over an open set `U`, with fibre the
+stabilizer of `x₀`, determined by a section `σ` of the orbit map continuous on `U`. It sends `g`
+over `U` to `(g • x₀, σ (g • x₀)⁻¹ * g)`, and its inverse sends `(z, h)` to `σ z * h`. -/
+noncomputable def orbitMapTrivialization (x₀ : X) (hx₀ : Continuous fun g : G ↦ g • x₀)
+    (U : Set X) (hU : IsOpen U) (σ : X → G) (hσ : ContinuousOn σ U)
+    (hσ_smul : ∀ z ∈ U, σ z • x₀ = z) :
+    Trivialization (stabilizer G x₀) fun g : G ↦ g • x₀ where
+  toFun g := (g • x₀, orbitMapFibre x₀ U σ hσ_smul g)
+  invFun p := σ p.1 * p.2
+  source := (fun g : G ↦ g • x₀) ⁻¹' U
+  target := U ×ˢ univ
+  map_source' _ hg := ⟨hg, mem_univ _⟩
+  map_target' p hp := by
+    rw [mem_preimage, mul_smul, mem_stabilizer_iff.1 p.2.2, hσ_smul _ hp.1]
+    exact hp.1
+  left_inv' g hg := by
+    simp only [coe_orbitMapFibre hg, mul_inv_cancel_left]
+  right_inv' p hp := by
+    have hp' : (σ p.1 * p.2) • x₀ = p.1 := by
+      rw [mul_smul, mem_stabilizer_iff.1 p.2.2, hσ_smul _ hp.1]
+    have hmem : (σ p.1 * p.2) • x₀ ∈ U := hp'.symm ▸ hp.1
+    refine Prod.ext hp' (Subtype.ext ?_)
+    rw [coe_orbitMapFibre hmem, hp', inv_mul_cancel_left]
+  open_source := hU.preimage hx₀
+  open_target := hU.prod isOpen_univ
+  continuousOn_toFun := by
+    refine hx₀.continuousOn.prodMk ?_
+    rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
+    exact ((hσ.comp hx₀.continuousOn fun _ hg ↦ hg).inv.mul continuousOn_id).congr
+      fun g hg ↦ coe_orbitMapFibre hg
+  continuousOn_invFun :=
+    (hσ.comp (continuousOn_fst (s := U ×ˢ univ)) fun _ hp ↦ hp.1).mul
+      (continuous_subtype_val.comp_continuousOn continuousOn_snd)
+  baseSet := U
+  open_baseSet := hU
+  source_eq := rfl
+  target_eq := rfl
+  proj_toFun _ _ := rfl
+
+variable {hx₀ : Continuous fun g : G ↦ g • x₀} {hU : IsOpen U} {hσ : ContinuousOn σ U}
+  {hσ_smul : ∀ z ∈ U, σ z • x₀ = z}
+
+/-- Over `U`, `orbitMapTrivialization` sends `g` to `(g • x₀, σ (g • x₀)⁻¹ * g)`. -/
+theorem orbitMapTrivialization_apply {g : G} (hg : g • x₀ ∈ U) :
+    orbitMapTrivialization x₀ hx₀ U hU σ hσ hσ_smul g =
+      (g • x₀, ⟨(σ (g • x₀))⁻¹ * g, by
+        rw [mem_stabilizer_iff, mul_smul, inv_smul_eq_iff, hσ_smul _ hg]⟩) :=
+  Prod.ext rfl (Subtype.ext (coe_orbitMapFibre (hσ_smul := hσ_smul) hg))
+
+/-- The inverse of `orbitMapTrivialization` sends `(z, h)` to `σ z * h`. -/
+@[simp]
+theorem orbitMapTrivialization_symm_apply (p : X × stabilizer G x₀) :
+    (orbitMapTrivialization x₀ hx₀ U hU σ hσ hσ_smul).toOpenPartialHomeomorph.symm p =
+      σ p.1 * p.2 :=
+  (rfl)
+
+/-- The base of `orbitMapTrivialization` is the open set carrying the section. -/
+@[simp]
+theorem orbitMapTrivialization_baseSet :
+    (orbitMapTrivialization x₀ hx₀ U hU σ hσ hσ_smul).baseSet = U :=
+  (rfl)
+
+/-- `orbitMapTrivialization` intertwines right multiplication by the stabilizer of `x₀` on `G`
+with right multiplication on the fibre. -/
+theorem orbitMapTrivialization_apply_mul {g : G} (hg : g • x₀ ∈ U) (h : stabilizer G x₀) :
+    orbitMapTrivialization x₀ hx₀ U hU σ hσ hσ_smul (g * h) =
+      ((orbitMapTrivialization x₀ hx₀ U hU σ hσ hσ_smul g).1,
+        (orbitMapTrivialization x₀ hx₀ U hU σ hσ hσ_smul g).2 * h) := by
+  have hgh : (g * h) • x₀ = g • x₀ := by rw [mul_smul, mem_stabilizer_iff.1 h.2]
+  rw [orbitMapTrivialization_apply hg, orbitMapTrivialization_apply (hgh.symm ▸ hg)]
+  refine Prod.ext hgh (Subtype.ext ?_)
+  simp only [Subgroup.coe_mul, hgh, mul_assoc]
+
+end OrbitMap
 
 end TauCeti
