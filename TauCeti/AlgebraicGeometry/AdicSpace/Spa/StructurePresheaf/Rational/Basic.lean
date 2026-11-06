@@ -55,7 +55,7 @@ the common refinement `k` of `i` and `j`, which presents `R(i) ∩ R(j) = R(j)`.
   through each other along comparison morphisms.
 * `TauCeti.ValuationSpectrum.isIso_presentationLimitπ` : the projection at an index whose
   rational subset contains `V` is an isomorphism.
-* `TauCeti.ValuationSpectrum.bijective_presentationLimitRationalIso_apply` : sections over `R(p)`
+* `TauCeti.ValuationSpectrum.bijective_presentationLimitRationalIso_hom` : sections over `R(p)`
   are in bijection with `A⟨p⟩`, read through the isomorphism and the equality transport.
 * `TauCeti.ValuationSpectrum.presentationLimitRationalIso_inv_comp_map_comp_hom` : between rational
   opens, the restriction maps of `presentationLimitPresheaf` are the comparison morphisms.
@@ -278,7 +278,7 @@ variable (Aplus) in
 /-- Read through `presentationLimitRationalIso` and the transport along the equality of objects
 `completionLocObj_obj`, sections of the presentation limit over `R(p)` are in bijection with the
 elements of the completed rational localisation `A⟨p⟩`. -/
-theorem bijective_presentationLimitRationalIso_apply
+theorem bijective_presentationLimitRationalIso_hom
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a) (p : Presentation P)
     (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
     Function.Bijective fun z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den) ↦

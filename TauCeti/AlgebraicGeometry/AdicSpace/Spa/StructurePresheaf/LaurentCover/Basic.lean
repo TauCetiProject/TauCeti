@@ -173,7 +173,7 @@ private theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff (p :
           ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c) =
         (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
           ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z) :=
-  (bijective_presentationLimitRationalIso_apply Aplus hAplus p hp).1.eq_iff.symm.trans
+  (bijective_presentationLimitRationalIso_hom Aplus hAplus p hp).1.eq_iff.symm.trans
     (rationalIso_map_top_apply hAplus p hp c).congr_left
 
 end Top
@@ -525,11 +525,11 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
       ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1
         ((presentationLimitMap hEq.le).hom.1 z)))
   obtain ⟨x₁, rfl⟩ :=
-    (bijective_presentationLimitRationalIso_apply Aplus hAplus (p true) (hp true)).2 u
+    (bijective_presentationLimitRationalIso_hom Aplus hAplus (p true) (hp true)).2 u
   obtain ⟨x₂, rfl⟩ :=
-    (bijective_presentationLimitRationalIso_apply Aplus hAplus (p false) (hp false)).2 v
+    (bijective_presentationLimitRationalIso_hom Aplus hAplus (p false) (hp false)).2 v
   refine ⟨(x₁, x₂),
-    (bijective_presentationLimitRationalIso_apply Aplus hAplus q hq).1.comp hInv.injective ?_⟩
+    (bijective_presentationLimitRationalIso_hom Aplus hAplus q hq).1.comp hInv.injective ?_⟩
   simp only [Function.comp_apply, map_sub, presentationLimitMap_apply_presentationLimitMap_apply,
     rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
     rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂]
