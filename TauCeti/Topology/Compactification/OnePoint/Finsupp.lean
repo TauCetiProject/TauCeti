@@ -79,13 +79,6 @@ variable (M : Type v) [AddCommMonoid M] [TopologicalSpace M] [DiscreteTopology M
 
 variable (S)
 
-omit [DiscreteTopology S] in
-private theorem apply_infty_eq_zero
-    (f : (ContinuousMap.evalCLM R (∞ : OnePoint S) : C(OnePoint S, M) →L[R] M).ker) :
-    (f : C(OnePoint S, M)) ∞ = 0 := by
-  simpa only [LinearMap.mem_ker, ContinuousLinearMap.coe_coe, ContinuousMap.evalCLM_apply] using
-    f.2
-
 /-- **Continuous maps vanishing at infinity are finitely supported functions.** For a discrete
 space `S` and a discrete topological module `M`, restriction to `S` identifies the continuous maps
 `S⁺ → M` vanishing at `∞` with the finitely supported functions `S →₀ M`, as `R`-modules. The
@@ -96,11 +89,13 @@ noncomputable def finsuppLinearEquivKerEvalInfty :
   map_add' g₁ g₂ := by ext x; induction x using OnePoint.rec <;> simp
   map_smul' c g := by ext x; induction x using OnePoint.rec <;> simp
   invFun f := Finsupp.ofSupportFinite (fun s ↦ f.1 s) <| by
-    simpa [apply_infty_eq_zero, Function.support] using finite_setOf_apply_coe_ne_apply_infty f.1
+    have h : f.1 ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
+    simpa [h, Function.support] using finite_setOf_apply_coe_ne_apply_infty f.1
   left_inv g := by ext; simp
   right_inv f := by
+    have h : f.1 ∞ = 0 := LinearMap.map_coe_ker (ContinuousMap.evalCLM R ∞).toLinearMap f
     ext x
-    induction x using OnePoint.rec <;> simp [apply_infty_eq_zero]
+    induction x using OnePoint.rec <;> simp [h]
 
 @[simp]
 theorem coe_finsuppLinearEquivKerEvalInfty_apply (g : S →₀ M) :
