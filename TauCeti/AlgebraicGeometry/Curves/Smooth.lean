@@ -60,8 +60,6 @@ theorem IsCurveOver.smoothOfRelativeDimension_one_of_perfectField [PerfectField 
   have : IsLocallyNoetherian X := LocallyOfFiniteType.isLocallyNoetherian (X ↘ Spec (.of k))
   have (x : X) : IsRegularLocalRing (X.presheaf.stalk x) := by
     have := IsCurveOver.valuationRing_stalk k X x
-    have hN : IsNoetherianRing (X.presheaf.stalk x) := inferInstance
-    have : IsPrincipalIdealRing (X.presheaf.stalk x) := (IsBezout.tfae.out 1 2).mp hN
     infer_instance
   have := smooth_of_isRegularLocalRing_stalk (X ↘ Spec (.of k))
   exact smoothOfRelativeDimension_of_topologicalKrullDim_eq _

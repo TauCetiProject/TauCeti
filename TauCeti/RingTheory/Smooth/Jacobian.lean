@@ -96,7 +96,7 @@ theorem formallySmooth_quotient_of_basis_kaehlerDifferential (b : Module.Basis (
     exact hN.symm
   have hv : Submodule.span κ (Set.range fun t ↦ (1 : κ) ⊗ₜ[Q] v t) = ⊤ := by
     rw [← Submodule.baseChange_top, ← hvN, Submodule.baseChange_span, ← Set.range_comp]
-    rfl
+    simp [Function.comp_def, TensorProduct.mk_apply]
   let bκ := Algebra.TensorProduct.basis κ b
   have himg (t : τ) : cotangentComplexBaseChange K _ Q κ ((1 : κ) ⊗ₜ v t) = bκ (.inl t) := by
     rw [cotangentComplexBaseChange_tmul, one_smul, kerToTensor_apply,
@@ -145,7 +145,7 @@ theorem formallySmooth_of_ker_eq_span_of_sum_mul_mem_sq [IsLocalRing P] [IsLocal
     exact hker.symm
   have hv : Submodule.span κ (Set.range fun t ↦ (1 : κ) ⊗ₜ[P] v t) = ⊤ := by
     rw [← Submodule.baseChange_top, ← hvN, Submodule.baseChange_span, ← Set.range_comp]
-    rfl
+    simp [Function.comp_def, TensorProduct.mk_apply]
   refine LinearMap.injective_of_linearIndependent hv ?_
   rw [Fintype.linearIndependent_iff]
   intro c hc t
