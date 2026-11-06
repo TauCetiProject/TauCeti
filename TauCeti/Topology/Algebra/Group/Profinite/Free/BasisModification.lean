@@ -706,12 +706,12 @@ theorem degreeZeroBasis_repr_degreeOneDeriv (ρ : gradedPiece p (freeProP p X) 1
       rcases lt_trichotomy i k with hik | rfl | hki
       · rw [degreeOneForm_dualBasis_of_lt _ hik, Module.Basis.repr_self]
         split_ifs <;> subst_vars <;>
-          simp_all [← degreeZeroBasis_apply, Module.Basis.repr_self, hik.ne]
+          simp_all [hik.ne]
       · rw [degreeOneForm_dualBasis_self, Module.Basis.repr_self]
-        split_ifs <;> subst_vars <;> simp_all [← degreeZeroBasis_apply, Module.Basis.repr_self]
+        split_ifs <;> subst_vars <;> simp_all
       · rw [degreeOneForm_dualBasis_of_gt _ hki, Module.Basis.repr_self]
         split_ifs <;> subst_vars <;>
-          simp_all [← degreeZeroBasis_apply, Module.Basis.repr_self, hki.ne']
+          simp_all [hki.ne']
     · dsimp only at hab
       rw [degreeOneDeriv_degreeOneBasis_inr, map_sub]
       simp only [Module.Basis.coord_apply]
@@ -720,14 +720,14 @@ theorem degreeZeroBasis_repr_degreeOneDeriv (ρ : gradedPiece p (freeProP p X) 1
         -- If `b = i` then `a < b = i < k`, so the coordinate of `ξ_a` at `k` vanishes.
         have hak : b = i → a ≠ k := fun hb ha ↦ ((hab.trans_eq hb).trans hik).ne ha
         split_ifs <;> subst_vars <;>
-          simp_all [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply, hik.ne]
+          simp_all [Finsupp.single_apply, hik.ne]
       · rw [degreeOneForm_dualBasis_self, Module.Basis.repr_self]
-        split_ifs <;> subst_vars <;> simp_all [← degreeZeroBasis_apply, Module.Basis.repr_self]
+        split_ifs <;> subst_vars <;> simp_all
       · rw [degreeOneForm_dualBasis_of_gt _ hki, Module.Basis.repr_self]
         -- If `a = i` then `k < i = a < b`, so the coordinate of `ξ_b` at `k` vanishes.
         have hbk : a = i → b ≠ k := fun ha hb ↦ ((hki.trans_eq ha.symm).trans hab).ne hb.symm
         split_ifs <;> subst_vars <;>
-          simp_all [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply, hki.ne']
+          simp_all [Finsupp.single_apply, hki.ne']
   have := LinearMap.congr_fun key ρ
   simpa only [LinearMap.comp_apply, LinearMap.flip_apply, Module.Basis.coord_apply] using this
 
@@ -1267,12 +1267,6 @@ private theorem repr_smul_gradedPow_add_gradedBracket_mem_range_two (hm : 1 ≤ 
   refine Finset.sum_congr rfl fun i _ ↦ ?_
   rw [map_smul, Finsupp.smul_apply, smul_eq_mul, degreeZeroBasis_repr_degreeOneDeriv, hcol i]
 
-/-- The coordinate of the class of a generator `a` at `ξ_i` is `1` if `a = i` and `0` otherwise. -/
-private theorem degreeZeroBasis_repr_gradedMkZero [Fact p.Prime] (a i : X) :
-    (degreeZeroBasis p X).repr (gradedMkZero p (freeProP p X) (of a)) i =
-      if a = i then 1 else 0 := by
-  rw [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply]
-
 section DyadicPow
 
 variable {ρ : gradedPiece 2 (freeProP 2 X) 1} {i₁ : X}
@@ -1283,9 +1277,9 @@ variable {ρ : gradedPiece 2 (freeProP 2 X) 1} {i₁ : X}
       LinearMap.range (basisModificationDelta 2 X hm ρ))
 include hkey
 
-/-- Although `π` is not additive on `gr_0(F)`, its defect does not obstruct the argument: modulo
-`Im δ_ρ`, a bracket `[v, y]` is `-ψ(y) • π v`, where `ψ(y)` is the coordinate of `y` at `ξ_{i₁}`;
-so once `π v` lies in the sum, so does every bracket `[v, y]`. -/
+/-- Under `hkey`, if `π v` lies in `Im δ_ρ ⊔ gradedPowIterSpan {i₁}ᶜ (m + 1)`, then so does every
+bracket `[v, y]` with `y ∈ gr_0(F)`. Indeed `hkey` says that, modulo `Im δ_ρ`, the bracket `[v, y]`
+is `-ψ(y) • π v`, where `ψ(y)` is the coordinate of `y` at `ξ_{i₁}`. -/
 private theorem gradedBracket_mem_range_sup_gradedPowIterSpan_of_gradedPow_mem (hm : 1 ≤ m)
     (v : gradedPiece 2 (freeProP 2 X) m)
     (hv : gradedPow 2 (freeProP 2 X) m v ∈
@@ -1298,9 +1292,11 @@ private theorem gradedBracket_mem_range_sup_gradedPowIterSpan_of_gradedPow_mem (
     (gradedBracket 2 (freeProP 2 X) m 0 v y)]
   exact sub_mem (Submodule.mem_sup_left (hkey m hm v y)) (Submodule.smul_mem _ _ hv)
 
-/-- `π [ξ_a, y]` lies in the sum for `a ≠ i₁`: it is `[π ξ_a, y] + [[ξ_a, y], ξ_a]`, where the
-second bracket lies in `Im δ_ρ` since `ψ(ξ_a) = 0`, and the first is `-ψ(y) • π² ξ_a`
-modulo `Im δ_ρ`, with `π² ξ_a` in the span since `a ≠ i₁`. -/
+/-- Under `hkey`, for `a ≠ i₁` and `y ∈ gr_0(F)`, the element `π [ξ_a, y]` lies in the submodule
+`Im δ_ρ ⊔ gradedPowIterSpan {i₁}ᶜ 2`.
+Here `ψ` is the coordinate of `degreeZeroBasis` at `i₁`. The proof writes `π [ξ_a, y]` as
+`[π ξ_a, y] + [[ξ_a, y], ξ_a]`: the second bracket lies in `Im δ_ρ` since `ψ(ξ_a) = 0`, and the
+first is `-ψ(y) • π² ξ_a` modulo `Im δ_ρ`, with `π² ξ_a` in the span since `a ≠ i₁`. -/
 private theorem gradedPow_gradedBracket_mem_range_sup_gradedPowIterSpan_of_ne (a : X)
     (ha : a ≠ i₁) (y : gradedPiece 2 (freeProP 2 X) 0) :
     gradedPow 2 (freeProP 2 X) 1 (gradedBracket 2 (freeProP 2 X) 0 0
@@ -1317,8 +1313,9 @@ private theorem gradedPow_gradedBracket_mem_range_sup_gradedPowIterSpan_of_ne (a
   refine add_mem (gradedBracket_mem_range_sup_gradedPowIterSpan_of_gradedPow_mem hkey le_rfl _
     (Submodule.mem_sup_right hspan) y) (nsmul_mem (Submodule.mem_sup_left h₂) _)
 
-/-- `π v` lies in the sum for every `v ∈ gr_1(F)`: `gr_1(F)` is spanned by the `π ξ_i` and the
-`[ξ_j, ξ_k]`, and `π` is linear on it. -/
+/-- Under `hkey`, `π v` lies in `Im δ_ρ ⊔ gradedPowIterSpan {i₁}ᶜ 2` for every `v ∈ gr_1(F)`.
+The proof uses that `gr_1(F)` is spanned by the `π ξ_i` and the `[ξ_j, ξ_k]`, and that `π` is linear
+on it. -/
 private theorem gradedPow_mem_range_sup_gradedPowIterSpan_one
     (v : gradedPiece 2 (freeProP 2 X) 1) :
     gradedPow 2 (freeProP 2 X) 1 v ∈

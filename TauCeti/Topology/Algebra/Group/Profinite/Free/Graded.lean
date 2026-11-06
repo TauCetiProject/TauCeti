@@ -409,6 +409,13 @@ theorem degreeZeroBasis_apply (i : X) :
   -- The identification `gr_0(F) ≅ F ⧸ Φ(F)` carries `x'_i` to the class `⟦x_i⟧`.
   simp
 
+/-- The coordinate of the class of a generator `a` at `ξ_i` is `1` if `a = i` and `0` otherwise. -/
+@[simp]
+theorem degreeZeroBasis_repr_gradedMkZero (a i : X) :
+    (degreeZeroBasis p X).repr (gradedMkZero p (freeProP p X) (of a)) i =
+      if a = i then 1 else 0 := by
+  rw [← degreeZeroBasis_apply, Module.Basis.repr_self, Finsupp.single_apply]
+
 omit [Finite X] in
 /-- **The dimension of `gr_1` of a free pro-`p` group of finite rank** is `#X + (#X choose 2)`:
 `gr_1(F) ≅ 𝔽_p^X ⊕ Λ²(𝔽_p^X)`. -/
