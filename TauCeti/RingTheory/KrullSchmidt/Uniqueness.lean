@@ -78,6 +78,25 @@ variable {A : Type u} [Ring A]
 
 /-! ### The exchange induction -/
 
+/-- A relation `R` between the index types of two decompositions that holds along an equivalence of
+the complements of `i₀` and `j₀` and also holds at `i₀, j₀` is realised by an equivalence of the
+whole index types. -/
+theorem exists_equiv_forall_of_equiv_subtype_ne {ι κ : Type*}
+    {R : ι → κ → Prop} {i₀ : ι} {j₀ : κ} (e : {i // i ≠ i₀} ≃ {j // j ≠ j₀}) (h₀ : R i₀ j₀)
+    (h : ∀ i : {i // i ≠ i₀}, R i (e i)) : ∃ e' : ι ≃ κ, ∀ i, R i (e' i) := by
+  classical
+  refine ⟨(Equiv.optionSubtypeNe i₀).symm.trans
+    ((Equiv.optionCongr e).trans (Equiv.optionSubtypeNe j₀)), fun i ↦ ?_⟩
+  rcases eq_or_ne i i₀ with rfl | hi
+  · have hnone : ((Equiv.optionSubtypeNe i).symm.trans
+        ((Equiv.optionCongr e).trans (Equiv.optionSubtypeNe j₀))) i = j₀ := by
+      rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_self]
+      rfl
+    rwa [hnone]
+  · rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_of_ne hi,
+      Equiv.optionCongr_apply, Option.map_some, Equiv.optionSubtypeNe_some]
+    exact h ⟨i, hi⟩
+
 /-- The induction behind `TauCeti.exists_equiv_linearEquiv_of_isLocalRing_end`, stated with the
 ambient module universally quantified because the inductive step passes to a proper submodule of
 it. -/
@@ -139,19 +158,9 @@ private theorem exists_equiv_linearEquiv_aux :
     (fun i ↦ have := hPloc i; (hPP' i).some.conjRingEquiv.isLocalRing) hQi hQs
     (fun j ↦ (hQind j).of_linearEquiv (hQQ' j).some.symm)
   -- Extend the matching by `i₀ ↦ j₀`.
-  refine ⟨(Equiv.optionSubtypeNe i₀).symm.trans
-    ((Equiv.optionCongr e').trans (Equiv.optionSubtypeNe j₀)), fun i ↦ ?_⟩
-  rcases eq_or_ne i i₀ with rfl | hi
-  · refine ⟨?_⟩
-    have hnone : ((Equiv.optionSubtypeNe i).symm.trans
-        ((Equiv.optionCongr e').trans (Equiv.optionSubtypeNe j₀))) i = j₀ := by
-      rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_self]
-      rfl
-    rw [hnone]
-    exact e₀
-  · rw [Equiv.trans_apply, Equiv.trans_apply, Equiv.optionSubtypeNe_symm_of_ne hi,
-      Equiv.optionCongr_apply, Option.map_some, Equiv.optionSubtypeNe_some]
-    exact ⟨(hPP' ⟨i, hi⟩).some ≪≫ₗ (he' ⟨i, hi⟩).some ≪≫ₗ (hQQ' (e' ⟨i, hi⟩)).some⟩
+  exact exists_equiv_forall_of_equiv_subtype_ne
+    (R := fun i j ↦ Nonempty (P i ≃ₗ[A] Q j)) e' ⟨e₀⟩ fun i ↦
+    ⟨(hPP' i).some ≪≫ₗ (he' i).some ≪≫ₗ (hQQ' (e' i)).some⟩
 
 /-! ### The Krull-Schmidt theorem -/
 
