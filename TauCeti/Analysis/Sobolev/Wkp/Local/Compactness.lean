@@ -41,18 +41,6 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [InnerProductSpa
   [FiniteDimensional ℝ E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega V : Opens E} {p : ENNReal} [Fact (1 ≤ p)]
 
-private theorem norm_le_norm_lowerOrder_add_norm_iteratedGradient (k : ℕ)
-    (u : Wkp mu Omega p (k + 1)) :
-    ‖u‖ ≤ ‖lowerOrder k u‖ + ‖iteratedGradient k u‖ := by
-  cases k with
-  | zero =>
-      rw [lowerOrder_zero, iteratedGradient_zero]
-      exact W1p.norm_le_norm_value_add_norm_gradient u
-  | succ k =>
-      have h := norm_sq_eq_norm_lowerOrder_sq_add_norm_iteratedGradient_sq_succ k u
-      nlinarith [norm_nonneg u, norm_nonneg (lowerOrder (k + 1) u),
-        norm_nonneg (iteratedGradient (k + 1) u)]
-
 private theorem isCompactOperator_of_components {X : Type*}
     [NormedAddCommGroup X] [NormedSpace ℝ X] (k : ℕ)
     (T : X →L[ℝ] Wkp mu V p (k + 1))
