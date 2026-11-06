@@ -26,8 +26,8 @@ turns an estimate on the displacement into an estimate on the distance. The map 
 to `u i`, for the least index `i` of a dense sequence `u` with `dist x (u i) < δ` when that index
 is smaller than a cutoff `n`, and to `u 0` otherwise. The displacement is then at most `δ` off the
 tail set of points whose least index is at least `n`, and those tail sets decrease to the empty
-set, so the finite `p`-moment about `u 0` makes their contribution vanish by dominated
-convergence.
+set, so, the finite `p`-moment about `u 0` making `μ.withDensity (edist (u 0) · ^ p)` a finite
+measure, their contribution vanishes by continuity of measure from above.
 
 This file also provides the finite-support transport estimate and the approximation of a finitely
 supported law by one whose weights have a common natural denominator, the rounding of the weights
