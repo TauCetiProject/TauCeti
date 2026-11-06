@@ -40,10 +40,11 @@ straightens any prescribed nonzero tangent vector at `x₀` to `(0, EuclideanSpa
 `(EuclideanSpace.single 0 1, 0)`.
 
 The proof reads `form` in the preferred extended chart at `x₀` on the interior of its target,
-applies the flat Moser–Darboux theorem
-`TauCeti.exists_diffeomorph_eventually_compContinuousLinearMap_fderiv_eq`, centers the resulting
-coordinate diffeomorphism by translation, and transports the constant model form along continuous
-linear symplectomorphisms.
+applies the centred flat Moser–Darboux theorem
+`TauCeti.exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv`, composes its
+diffeomorphism with the extended chart restricted to an open set
+(`TauCeti.exists_partialDiffeomorph_comp_extChartAt`), and transports the constant model form along
+continuous linear symplectomorphisms.
 
 ## Main declarations
 
@@ -143,38 +144,6 @@ variable {E H M : Type*}
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M]
 
-omit [FiniteDimensional ℝ E] in
-/-- A diffeomorphism of the model space, composed with the extended chart at `x₀` restricted to the
-preimage of an open set `V₀` inside the interior of the chart target, is a smooth partial
-diffeomorphism with source the restricted chart source, and its differential at a point of the
-source is the differential of the diffeomorphism after that of the extended chart. -/
-private theorem exists_partialDiffeomorph_comp_extChartAt (x₀ : M) {V₀ : Set E} (hV₀ : IsOpen V₀)
-    (hV₀W : V₀ ⊆ interior (extChartAt I x₀).target) (Φ : E ≃ₘ^∞⟮𝓘(ℝ, E), 𝓘(ℝ, E)⟯ E) :
-    ∃ chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞,
-      chart.source = (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀ ∧
-        (∀ y, chart y = Φ (extChartAt I x₀ y)) ∧
-        ∀ x ∈ chart.source, ∀ u : TangentSpace I x, mvfderiv I chart x u =
-          fderiv ℝ Φ (extChartAt I x₀ x) (mvfderiv I (extChartAt I x₀) x u) := by
-  let e₀ := extChartPartialDiffeomorph I ∞ x₀
-  let S : Set M := (extChartAt I x₀).source ∩ extChartAt I x₀ ⁻¹' V₀
-  have hS_open : IsOpen S := isOpen_extChartAt_preimage' (I := I) x₀ hV₀
-  have hS_sub : S ⊆ e₀.source := by
-    rw [extChartPartialDiffeomorph_source]
-    exact inter_subset_inter_right _ (preimage_mono hV₀W)
-  let chart : PartialDiffeomorph I 𝓘(ℝ, E) M E ∞ :=
-    (e₀.restrOpen S hS_open).trans Φ.toPartialDiffeomorph
-  have hchart_src : chart.source = S := by
-    simp [chart, inter_eq_right.2 hS_sub]
-  have hchart_coe (y : M) : chart y = Φ (extChartAt I x₀ y) := by
-    simp [chart, e₀]
-  refine ⟨chart, hchart_src, hchart_coe, fun x hx u ↦ ?_⟩
-  have hx_chart : x ∈ (chartAt H x₀).source := by
-    simpa only [extChartAt_source] using (hchart_src ▸ hx : x ∈ S).1
-  have hΦ_diff : Differentiable ℝ Φ :=
-    (contMDiff_iff_contDiff.1 Φ.contMDiff).differentiable (by simp)
-  rw [show ⇑chart = ⇑Φ ∘ ⇑(extChartAt I x₀) from funext hchart_coe,
-    mvfderiv_comp_apply_of_differentiableAt (hΦ_diff _) (mdifferentiableAt_extChartAt hx_chart)]
-
 /-- **Darboux's theorem at an interior point.** Around any interior point `x₀` of a smooth manifold
 carrying a symplectic two-form `form`, there are a smooth partial diffeomorphism `chart` into the
 model space `E` with `x₀ ∈ chart.source` and `chart x₀ = 0` and a constant symplectic form `form₀`
@@ -210,7 +179,8 @@ theorem IsSymplectic.exists_darbouxChart_of_isInteriorPoint
       le_top isOpen_interior hy₀W (form.isSmoothForm.contDiffOn_inChartAt_interior_target x₀)
       (fun z hz ↦ hform.isClosed.extDeriv_inChartAt_eq_zero x₀ hz) hnd
   obtain ⟨chart, hchart_src, hchart_coe, hmvf⟩ :=
-    exists_partialDiffeomorph_comp_extChartAt x₀ hV₀_open hV₀_sub Φ_flat
+    exists_partialDiffeomorph_comp_extChartAt I ∞ x₀ hV₀_open hV₀_sub
+      (by exact_mod_cast le_top) Φ_flat
   have hx₀_src : x₀ ∈ chart.source := by
     rw [hchart_src]
     exact ⟨mem_extChartAt_source x₀, hy₀V₀⟩

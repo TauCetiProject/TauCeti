@@ -192,9 +192,6 @@ theorem exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv
   have hr0 : (r : WithTop ℕ∞) ≠ 0 := by
     have : (1 : WithTop ℕ∞) ≤ r := by exact_mod_cast hr
     exact (lt_of_lt_of_le zero_lt_one this).ne'
-  have hψ_diff : Differentiable ℝ ψ := (contMDiff_iff_contDiff.1 ψ.contMDiff).differentiable hr0
-  have hψsymm_diff : Differentiable ℝ ψ.symm :=
-    (contMDiff_iff_contDiff.1 ψ.symm.contMDiff).differentiable hr0
   let Φ : V ≃ₘ^r⟮𝓘(ℝ, V), 𝓘(ℝ, V)⟯ V :=
     ψ.symm.trans (Diffeomorph.smulAdd r (1 : ℝ) (-x₀) one_ne_zero)
   have hΦ_coe : ⇑Φ = fun y ↦ ψ.symm y - x₀ := by
@@ -202,10 +199,6 @@ theorem exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv
     simp [Φ, sub_eq_add_neg]
   refine ⟨Φ, V₀, by rw [hΦ_coe]; simp [hψsymm], hV₀_open, hx₀V₀, fun y hy ↦ (hV₀_sub hy).2,
     fun y hy ↦ ?_⟩
-  have hcomp : (fderiv ℝ ψ (ψ.symm y)).comp (fderiv ℝ ψ.symm y) = ContinuousLinearMap.id ℝ V := by
-    have hc := (fderiv_comp y (hψ_diff (ψ.symm y)) (hψsymm_diff y)).symm
-    have hid : ⇑ψ ∘ ⇑ψ.symm = id := funext ψ.apply_symm_apply
-    rwa [hid, fderiv_id] at hc
   have hzy : (ω y).compContinuousLinearMap (fderiv ℝ ψ (ψ.symm y)) = ω x₀ := by
     have := (hV₀_sub hy).1
     simpa only [mem_ofPred_eq, ψ.apply_symm_apply] using this
@@ -214,6 +207,6 @@ theorem exists_diffeomorph_centered_forall_mem_eq_compContinuousLinearMap_fderiv
   simp only [ContinuousAlternatingMap.compContinuousLinearMap_apply]
   congr 1
   ext i
-  exact (DFunLike.congr_fun hcomp (v i)).symm
+  exact (ψ.fderiv_apply_fderiv_symm_apply hr0 y (v i)).symm
 
 end TauCeti
