@@ -351,65 +351,27 @@ private theorem continuous_edgeParam (i : Fin n) : Continuous (σ.edgeParam i) :
   unfold edgeParam
   fun_prop
 
-private theorem mem_ball_iff {x : Fin 1 → ℝ} : x ∈ ball 0 1 ↔ x 0 ∈ Ioo (-1) 1 := by
-  rw [Pi.mem_ball_unique, Real.ball_eq_Ioo]
-  simp
-
-private theorem mem_closedBall_iff {x : Fin 1 → ℝ} : x ∈ closedBall 0 1 ↔ x 0 ∈ Icc (-1) 1 := by
-  rw [Pi.mem_closedBall_unique, Real.closedBall_eq_Icc]
-  simp
-
-private theorem edgeParam_symm (i : Fin n) (t : ℝ) :
-    σ.edgeParam i (fun _ ↦ 2 * t / σ.edgeLength i - 1) = t := by
-  have := (σ.edgeLength_pos i).ne'
-  simp only [edgeParam]
-  field_simp
+/-- `edgeParam` is evaluation at the only coordinate, followed by the affine map
+`s ↦ edgeLength i / 2 * (s + 1)`. -/
+private theorem edgeParam_eq_comp (i : Fin n) :
+    σ.edgeParam i = (σ.edgeLength i / 2 * ·) ∘ (· + 1) ∘ Function.eval default := by
+  ext x
+  simp only [edgeParam, Function.comp_apply, Function.eval, Fin.default_eq_zero]
   ring
 
 private theorem image_edgeParam_ball (i : Fin n) :
     σ.edgeParam i '' ball 0 1 = Ioo 0 (σ.edgeLength i) := by
-  have hℓ := σ.edgeLength_pos i
-  ext t
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    rw [mem_ball_iff] at hx
-    simp only [edgeParam, mem_Ioo]
-    constructor
-    · have : 0 < x 0 + 1 := by linarith [hx.1]
-      positivity
-    · rw [div_lt_iff₀ two_pos]
-      nlinarith [hx.2]
-  · rintro ⟨h0, h1⟩
-    refine ⟨fun _ ↦ 2 * t / σ.edgeLength i - 1, mem_ball_iff.2 ⟨?_, ?_⟩, σ.edgeParam_symm i t⟩
-    · have : 0 < 2 * t / σ.edgeLength i := by positivity
-      linarith
-    · have : 2 * t / σ.edgeLength i < 2 := by
-        rw [div_lt_iff₀ hℓ]
-        linarith
-      linarith
+  rw [σ.edgeParam_eq_comp i, image_comp, image_comp, Pi.ball_unique,
+    image_preimage_eq _ (Function.surjective_eval _), Real.ball_eq_Ioo, image_add_const_Ioo,
+    image_mul_left_Ioo (half_pos (σ.edgeLength_pos i))]
+  norm_num
 
 private theorem image_edgeParam_closedBall (i : Fin n) :
     σ.edgeParam i '' closedBall 0 1 = Icc 0 (σ.edgeLength i) := by
-  have hℓ := σ.edgeLength_pos i
-  ext t
-  constructor
-  · rintro ⟨x, hx, rfl⟩
-    rw [mem_closedBall_iff] at hx
-    simp only [edgeParam, mem_Icc]
-    constructor
-    · have : 0 ≤ x 0 + 1 := by linarith [hx.1]
-      positivity
-    · rw [div_le_iff₀ two_pos]
-      nlinarith [hx.2]
-  · rintro ⟨h0, h1⟩
-    refine ⟨fun _ ↦ 2 * t / σ.edgeLength i - 1, mem_closedBall_iff.2 ⟨?_, ?_⟩,
-      σ.edgeParam_symm i t⟩
-    · have : 0 ≤ 2 * t / σ.edgeLength i := by positivity
-      linarith
-    · have : 2 * t / σ.edgeLength i ≤ 2 := by
-        rw [div_le_iff₀ hℓ]
-        linarith
-      linarith
+  rw [σ.edgeParam_eq_comp i, image_comp, image_comp, Pi.closedBall_unique,
+    image_preimage_eq _ (Function.surjective_eval _), Real.closedBall_eq_Icc, image_add_const_Icc,
+    image_mul_left_Icc' (half_pos (σ.edgeLength_pos i))]
+  norm_num
 
 private theorem edgeParam_of_mem_sphere (i : Fin n) {x : Fin 1 → ℝ} (hx : x ∈ sphere 0 1) :
     σ.edgeParam i x = 0 ∨ σ.edgeParam i x = σ.edgeLength i := by
