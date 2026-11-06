@@ -22,7 +22,8 @@ Picard iteration in a weighted space of bounded continuous functions on the whol
 In the other direction, `1 / cosh x ^ 2`, the derivative of `Real.tanh`, is integrable on the line
 with integral `2`: `TauCeti.integrable_one_div_cosh_sq` and `TauCeti.integral_one_div_cosh_sq`.
 So `(cosh x)⁻¹` is square integrable (`TauCeti.memLp_inv_cosh`), which makes it the decaying
-solution of `v' = -tanh(s) v`.
+solution of `v' = -tanh(s) v`. This scalar equation describes both the kernel of `d/ds + tanh` and
+the cokernel (the kernel of the formal adjoint) of `d/ds - tanh`.
 -/
 
 public section
