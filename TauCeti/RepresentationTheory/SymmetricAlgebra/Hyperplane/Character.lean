@@ -56,9 +56,8 @@ theorem det_injective_on_dual_inertia_span_singleton_ι (hG : (Nat.card G : K) �
   apply (ρ g).eq_one_of_det_eq_one_of_pow_eq_one (LinearMap.ker ℓ)
     (ℓ.finrank_quotient_ker_eq_one_of_ne_zero hℓ)
   · intro x hx
-    have hfix := dual_symmetricAlgebra_mem_inertia_span_singleton_ι_iff.1 g.2 hx
-    simpa only [LinearMap.mem_ker, LinearMap.sub_apply, one_apply_eq_self, sub_eq_zero]
-      using hfix
+    exact LinearMap.mem_fixedSubmodule_iff.1
+      ((ρ.mem_dual_inertia_span_singleton_ι_iff_le_fixedSubmodule).1 g.2 hx)
   · exact hg
   · exact hG
   · rw [← map_pow, pow_card_eq_one', map_one]
