@@ -5,7 +5,7 @@ Authors: Jon Crall, Claude Opus 5, OpenAI GPT-6
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Yosida
+public import TauCeti.Analysis.InnerProductSpace.LinearPMap.Yosida.Basic
 public import Mathlib.Data.PNat.Basic
 public import Mathlib.Analysis.SpecialFunctions.Exponential
 public import Mathlib.Analysis.CStarAlgebra.Exponential
