@@ -61,9 +61,11 @@ are the basic examples of the latter
   subset of the target.
 * `TauCeti.isImmersion_comp_subtypeVal_iff`, `TauCeti.isImmersion_iff_of_isOpenCover`:
   restriction to open source subsets and locality on open covers for finite-dimensional targets.
-* `TauCeti.isImmersion_subtypeVal_comp_iff`: immersions into open target subsets.
 * `Manifold.IsImmersion.codRestrict`: an immersion with image in an open subset is an immersion
   into that open submanifold.
+* `TauCeti.isImmersion_subtypeVal_comp_iff`, `TauCeti.isSmoothEmbedding_subtypeVal_comp_iff`,
+  `Manifold.IsSmoothEmbedding.comp_subtypeVal`: immersions and smooth embeddings into an open
+  submanifold, and smooth embeddings restricted to an open subset of the source.
 * `Manifold.IsImmersion.isLocalDiffeomorph`: an immersion of a boundaryless manifold into a
   manifold modelled on a space of the same finite dimension is a local diffeomorphism.
 
@@ -341,17 +343,25 @@ theorem _root_.Manifold.IsImmersion.codRestrict [IsManifold J n N] (hf : IsImmer
     (congrArg Φ.symm (by simp [Φ] : f x = Φ ⟨f x, h x⟩)).trans (Φ.left_inv (by simp [Φ]))
   exact hcomp ▸ isImmersion_isLocalDiffeomorphAt_comp hk hf
 
-/-- A map into an open submanifold is an immersion exactly when its composite with the
-inclusion is an immersion. -/
-@[simp]
-theorem isImmersion_subtypeVal_comp_iff [IsManifold J n N]
-    {U : TopologicalSpace.Opens N} {g : M → U} :
-    IsImmersion I J n ((Subtype.val : U → N) ∘ g) ↔ IsImmersion I J n g := by
-  constructor
-  · intro h
-    simpa only [Function.comp_apply, Subtype.coe_eta] using
-      h.codRestrict U (fun x ↦ (g x).property)
-  · exact isImmersion_isLocalDiffeomorphAt_comp fun x ↦ isLocalDiffeomorph_subtype_val (g x)
+/-- A map into an open submanifold `U` is an immersion exactly when its composition with the
+inclusion of `U` is. -/
+theorem isImmersion_subtypeVal_comp_iff [IsManifold J n N] {U : TopologicalSpace.Opens N}
+    {g : M → U} : IsImmersion I J n (Subtype.val ∘ g) ↔ IsImmersion I J n g :=
+  ⟨fun h ↦ h.codRestrict U fun x ↦ (g x).2,
+    isImmersion_isLocalDiffeomorphAt_comp fun _ ↦ isLocalDiffeomorph_subtype_val _⟩
+
+/-- A map into an open submanifold `U` is a smooth embedding exactly when its composition with the
+inclusion of `U` is. -/
+theorem isSmoothEmbedding_subtypeVal_comp_iff [IsManifold J n N] {U : TopologicalSpace.Opens N}
+    {g : M → U} : IsSmoothEmbedding I J n (Subtype.val ∘ g) ↔ IsSmoothEmbedding I J n g := by
+  rw [isSmoothEmbedding_iff, isSmoothEmbedding_iff, isImmersion_subtypeVal_comp_iff,
+    IsEmbedding.subtypeVal.of_comp_iff]
+
+/-- Restricting a smooth embedding to an open subset of its source gives a smooth embedding. -/
+theorem _root_.Manifold.IsSmoothEmbedding.comp_subtypeVal [IsManifold I n M]
+    (h : IsSmoothEmbedding I J n f) (U : TopologicalSpace.Opens M) :
+    IsSmoothEmbedding I J n (f ∘ (Subtype.val : U → M)) :=
+  isSmoothEmbedding_comp_isLocalDiffeomorph isLocalDiffeomorph_subtype_val IsEmbedding.subtypeVal h
 
 section InverseFunctionTheorem
 
