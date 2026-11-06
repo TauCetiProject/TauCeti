@@ -295,6 +295,62 @@ private theorem Tames.exists_pos_norm_smul_lt_one_and_pos {J : AlmostComplexStru
   nlinarith
 
 
+/-- Conjugating a fixed endomorphism by a smooth family of invertible endomorphisms is smooth. -/
+private theorem contDiff_mul_mul_ringInverse {P : ℝ → V →L[ℝ] V} (hP : ContDiff ℝ ⊤ P)
+    (hPu : ∀ t, IsUnit (P t)) (Jc : V →L[ℝ] V) :
+    ContDiff ℝ ⊤ fun t => P t * Jc * Ring.inverse (P t) := by
+  refine contDiff_iff_contDiffAt.2 fun t => ?_
+  obtain ⟨u, hu⟩ := hPu t
+  have hi : ContDiffAt ℝ ⊤ (fun t => Ring.inverse (P t)) t := by
+    have hi := contDiffAt_ringInverse (n := ⊤) ℝ u
+    rw [hu] at hi
+    exact hi.comp t hP.contDiffAt
+  exact (hP.contDiffAt.mul contDiffAt_const).mul hi
+
+omit [FiniteDimensional ℝ V] in
+/-- If `K t * P t = P t * Jc` with `P 0 = 1` and `K 0 = Jc`, and `P` has velocity `Z` at `0`, then
+a smooth `K` has velocity `Z * Jc - Jc * Z` at `0`. -/
+private theorem deriv_zero_eq_of_mul_eq {P K : ℝ → V →L[ℝ] V} {Z Jc : V →L[ℝ] V}
+    (hKs : ContDiff ℝ ⊤ K) (hP' : HasDerivAt P Z 0) (hKP : ∀ t, K t * P t = P t * Jc)
+    (hP0 : P 0 = 1) (hK0 : K 0 = Jc) : deriv K 0 = Z * Jc - Jc * Z := by
+  have hK : HasDerivAt K (deriv K 0) 0 := ((hKs.differentiable (by simp)) 0).hasDerivAt
+  have hL : HasDerivAt (fun t => K t * P t) (deriv K 0 * P 0 + K 0 * Z) 0 := hK.mul hP'
+  rw [show (fun t => K t * P t) = fun t => P t * Jc from funext hKP] at hL
+  have heq := hL.unique (hP'.mul (hasDerivAt_const 0 Jc))
+  simp only [hP0, hK0, mul_one, mul_zero, add_zero] at heq
+  exact eq_sub_of_add_eq heq
+
+/-- Writing `v = P w` for an invertible `P`, the form `ω(v, (P J P⁻¹) v)` is `ω(P w, P (J w))`. -/
+private theorem Tames.pos_apply_mul_mul_ringInverse {J : AlmostComplexStructure V}
+    {P : V →L[ℝ] V} (hP : IsUnit P) (hpos : ∀ w, w ≠ 0 → 0 < ω (P w) (P (J w))) {v : V}
+    (hv : v ≠ 0) :
+    0 < ω v ((P * LinearMap.toContinuousLinearMap J.toLinearMap * Ring.inverse P) v) := by
+  obtain ⟨u, hu⟩ := hP
+  set w := (↑u⁻¹ : V →L[ℝ] V) v
+  have hvw : v = P w := by
+    have h1 : ((u : V →L[ℝ] V) * ↑u⁻¹) v = v := by rw [Units.mul_inv, one_apply_eq_self]
+    rw [← hu]
+    exact h1.symm
+  have hw : w ≠ 0 := by
+    rintro hw0
+    exact hv (by rw [hvw, hw0, map_zero])
+  have hKv : (P * LinearMap.toContinuousLinearMap J.toLinearMap * Ring.inverse P) v = P (J w) := by
+    simp only [← hu, Ring.inverse_unit, mul_apply_eq_comp, w, LinearMap.coe_toContinuousLinearMap']
+  rw [hKv, hvw]
+  exact hpos w hw
+
+omit [FiniteDimensional ℝ V] in
+/-- If `J² = -1` and `Y` anticommutes with `J`, then `Z = -(1/2) Y J` satisfies `Z J - J Z = Y`. -/
+private theorem mul_sub_mul_eq_of_anticomm {Jc Y Z : V →L[ℝ] V} (hJJ : Jc * Jc = -1)
+    (hYJ : Jc * Y = -(Y * Jc)) (hZ : Z = -(1 / 2 : ℝ) • (Y * Jc)) : Z * Jc - Jc * Z = Y := by
+  have hZJ : Z * Jc = (1 / 2 : ℝ) • Y := by
+    simp [hZ, mul_assoc, hJJ]
+  have hJZ : Jc * Z = -((1 / 2 : ℝ) • Y) := by
+    simp only [hZ, mul_smul_comm, ← mul_assoc, hYJ]
+    simp [mul_assoc, hJJ]
+  rw [hZJ, hJZ]
+  module
+
 /-- **Every tame variation is a velocity.** For an `ω`-tame `J` and a continuous endomorphism
 `Y` anticommuting with `J`, there is a curve of `ω`-tame structures through `J`, defined and
 analytic on the whole real line, with velocity `Y` at `0`. The curve conjugates `J` by
@@ -339,51 +395,21 @@ theorem Tames.exists_contDiff_hasDerivAt {J : AlmostComplexStructure V} (h : ω.
       ContinuousLinearEquiv.coe_symm_toLinearEquiv, he, he']
   have hP0 : P 0 = 1 := by simp [P, hφ0]
   have hK0 : K 0 = Jc := by simp [K, hP0]
-  have hKs : ContDiff ℝ ⊤ K := by
-    refine contDiff_iff_contDiffAt.2 fun t => ?_
-    obtain ⟨u, hu⟩ := hPu t
-    have hP : ContDiffAt ℝ ⊤ P t := (contDiff_const.add (hφs.smul contDiff_const)).contDiffAt
-    have hi : ContDiffAt ℝ ⊤ (fun t => Ring.inverse (P t)) t := by
-      have hi := contDiffAt_ringInverse (n := ⊤) ℝ u
-      rw [hu] at hi
-      exact hi.comp t hP
-    exact (hP.mul contDiffAt_const).mul hi
+  have hKs : ContDiff ℝ ⊤ K :=
+    contDiff_mul_mul_ringInverse (contDiff_const.add (hφs.smul contDiff_const)) hPu Jc
   refine ⟨c, fun t v hv => ?_, AlmostComplexStructure.toLinearMap_injective ?_, hcK ▸ hKs, ?_⟩
-  · -- Writing `v = P t w`, the form `ω(v, c t v)` is `ω(P t w, P t (J w))`.
-    obtain ⟨u, hu⟩ := hPu t
-    set w := (↑u⁻¹ : V →L[ℝ] V) v
-    have hvw : v = P t w := by
-      have h1 : ((u : V →L[ℝ] V) * ↑u⁻¹) v = v := by rw [Units.mul_inv, one_apply_eq_self]
-      rw [← hu]
-      exact h1.symm
-    have hw : w ≠ 0 := by
-      rintro hw0
-      exact hv (by rw [hvw, hw0, map_zero])
-    have hKv : K t v = P t (J w) := by
-      simp only [K, ← hu, Ring.inverse_unit, mul_apply_eq_comp, w, Jc,
-        LinearMap.coe_toContinuousLinearMap']
-    have hcv : c t v = K t v := congrArg (fun A : V →L[ℝ] V => A v) (congrFun hcK t)
-    rw [hcv, hKv, hvw]
-    exact (hsmall _ (hφ t)).2 w hw
+  · rw [show c t v = K t v from congrArg (fun A : V →L[ℝ] V => A v) (congrFun hcK t)]
+    exact Tames.pos_apply_mul_mul_ringInverse (hPu t) (hsmall _ (hφ t)).2 hv
   · ext v
     simpa [hK0, Jc] using congrArg (fun A : V →L[ℝ] V => A v) (congrFun hcK 0)
   -- Differentiate the identity `K t * P t = P t * J` at `0`.
   rw [hcK]
   have hK : HasDerivAt K (deriv K 0) 0 := ((hKs.differentiable (by simp)) 0).hasDerivAt
   have hP' : HasDerivAt P Z 0 := ((hφd.smul_const Z).const_add 1).congr_deriv (one_smul ℝ Z)
-  have hL : HasDerivAt (fun t => K t * P t) (deriv K 0 * P 0 + K 0 * Z) 0 := hK.mul hP'
-  have hR : HasDerivAt (fun t => P t * Jc) (Z * Jc + P 0 * 0) 0 :=
-    hP'.mul (hasDerivAt_const 0 Jc)
-  rw [show (fun t => K t * P t) = fun t => P t * Jc from funext hKP] at hL
-  have heq := hL.unique hR
-  have hZJ : Z * Jc = (1 / 2 : ℝ) • Y := by
-    simp [Z, mul_assoc, hJJ]
-  have hJZ : Jc * Z = -((1 / 2 : ℝ) • Y) := by
-    simp only [Z, mul_smul_comm, ← mul_assoc, hYJ]
-    simp [mul_assoc, hJJ]
   have hK' : deriv K 0 = Y := by
-    simp only [hP0, hK0, mul_one, mul_zero, add_zero, hZJ, hJZ] at heq
-    linear_combination (norm := module) heq
+    rw [deriv_zero_eq_of_mul_eq hKs hP' hKP hP0 hK0]
+    exact mul_sub_mul_eq_of_anticomm hJJ hYJ rfl
+  have hK : HasDerivAt K (deriv K 0) 0 := ((hKs.differentiable (by simp)) 0).hasDerivAt
   rwa [hK'] at hK
 
 /-- **The tangent space at a tame structure consists of velocities.** For an `ω`-tame `J`, a
