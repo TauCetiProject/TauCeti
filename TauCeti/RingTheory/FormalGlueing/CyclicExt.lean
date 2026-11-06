@@ -56,24 +56,10 @@ theorem postcomp_ext_mk_one_bijective_of_cohomologyMap_bijective
     Function.Bijective ((Ext.mk₀ (ModuleCat.ofHom (TensorProduct.mk R S N 1))).postcompOfLinear
       R (ModuleCat.of R (R ⧸ LinearMap.range φ)) (add_zero 1)) := by
   apply postcomp_ext_bijective_of_cohomologyMap_bijective φ N _ hH
-  -- The obstruction source is killed by the image ideal, hence is ideal-power torsion.
-  have hT : Ideal.primaryComponent ((koszulComplex φ).homology 1) (LinearMap.range φ) = ⊤ := by
-    apply top_unique
-    intro z _
-    apply (Ideal.primaryComponent_mem _ _ _).mpr
-    refine ⟨1, ?_⟩
-    rw [pow_one, Submodule.mem_torsionBySet_iff]
-    rintro ⟨r, m, rfl⟩
-    exact smul_homology_eq_zero φ m 1 z
   intro a b hab
   apply ModuleCat.hom_ext
-  apply (baseChangeHom_bijective_of_primaryComponent_eq_top_left
-    (S := S) hI hfg (N := N) hT).1
-  -- Equality after postcomposition with the unit implies equality after scalar extension.
-  apply TensorProduct.AlgebraTensorModule.ext
-  intro s z
-  have hz := congrArg (fun f : (koszulComplex φ).homology 1 ⟶
-    ModuleCat.of R (S ⊗[R] N) ↦ f.hom z) hab
-  simpa [TensorProduct.smul_tmul'] using congrArg (fun t : S ⊗[R] N ↦ s • t) hz
+  apply tensorProduct_mk_comp_injective_of_primaryComponent_eq_top hI hfg
+    (primaryComponent_homology_eq_top φ 1)
+  exact congrArg ModuleCat.Hom.hom hab
 
 end TauCeti.koszulComplex
