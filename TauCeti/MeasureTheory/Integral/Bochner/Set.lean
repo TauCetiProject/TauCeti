@@ -7,6 +7,7 @@ module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -15,9 +16,10 @@ Mathlib's `continuousOn_integral_of_compact_support` gives continuity of a param
 a set. This file records its global form: a jointly continuous integrand which vanishes unless the
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
 measure which is finite on compact sets. It also records that the indicator function of a
-bounded interval `[a, b)` is integrable against a locally finite measure, and that a continuous
-square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
-on nonempty open sets.
+bounded interval `[a, b)` is integrable against a locally finite measure, and, against a measure
+positive on nonempty open sets, that a continuous square-integrable function `h` with
+`∫ conj (h x) * h x = 0` vanishes and that a nonnegative function continuous on an open set and
+vanishing there off a compact subset has positive integral over it unless it vanishes there.
 
 ## Main statements
 
@@ -26,6 +28,8 @@ on nonempty open sets.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
+* `ContinuousOn.setIntegral_pos_of_nonneg_ne_zero`: a function continuous and nonnegative on an open
+  set, vanishing there off a compact subset and somewhere nonzero, has positive integral over it.
 -/
 
 public section
@@ -68,3 +72,18 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
+
+/-- A real function continuous and nonnegative on an open set `s`, vanishing on `s` outside a
+compact subset `K ⊆ s` and nonzero at some point of `s`, has positive integral over `s`, against a
+measure finite on compact sets and positive on nonempty open sets. Unlike
+`Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero`, nothing is assumed outside `s`. -/
+theorem ContinuousOn.setIntegral_pos_of_nonneg_ne_zero {X : Type*} [TopologicalSpace X]
+    [T2Space X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
+    [IsFiniteMeasureOnCompacts μ] {f : X → ℝ} {s K : Set X} {x : X} (hs : IsOpen s)
+    (hf : ContinuousOn f s) (hK : IsCompact K) (hKs : K ⊆ s) (hfK : ∀ y ∈ s \ K, f y = 0)
+    (hf0 : ∀ y ∈ s, 0 ≤ f y) (hx : x ∈ s) (hfx : f x ≠ 0) : 0 < ∫ y in s, f y ∂μ := by
+  rw [setIntegral_pos_iff_support_of_nonneg_ae (ae_restrict_of_forall_mem hs.measurableSet hf0)
+    (((hf.mono hKs).integrableOn_compact hK).of_forall_sdiff_eq_zero hs.measurableSet hfK)]
+  -- The points of `s` where `f` is nonzero form a nonempty open set.
+  exact ((hf.isOpen_inter_preimage hs isOpen_compl_singleton).measure_pos μ ⟨x, hx, hfx⟩).trans_le
+    (measure_mono fun y hy => ⟨hy.2, hy.1⟩)

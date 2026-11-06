@@ -60,6 +60,10 @@ on tangent fibers rather than restating the linear algebra.
   (`TauCeti.SymplecticForm.mem_compatibleTangentSpace_iff_isSelfAdjoint`). The smooth
   characterizations of these spaces as velocities of curves of tame, respectively compatible,
   structures are in `TauCeti.Geometry.Symplectic.Cayley.Tangent`.
+* `TauCeti.SymplecticForm.Invariant.add_mul_mul_mem_compatibleTangentSpace_of_skew`: averaging an
+  `ω`-skew endomorphism `A` to `A + J A J` gives a compatible variation of every `ω`-invariant `J`,
+  and `TauCeti.AlmostComplexStructure.mul_mul_eq_of_mem_tangentSpace`: this average is `2 A` when
+  `A` is already tangent at `J`.
 * `TauCeti.SymplecticForm.Compatible.exists_mem_compatibleTangentSpace_apply_eq`: for a compatible
   `J`, compatible variations reach every vector at every nonzero vector. This is the pointwise
   range statement for variations of the almost complex structure in transversality arguments
@@ -331,6 +335,12 @@ theorem mem_tangentSpace_iff_apply {J : AlmostComplexStructure V} {Y : Module.En
   refine forall_congr' fun v => ?_
   simp only [LinearMap.add_apply, mul_apply_eq_comp, LinearMap.zero_apply]
   exact add_eq_zero_iff_eq_neg
+
+/-- Conjugating a tangent vector at `J` by `J` fixes it: `J Y J = Y` whenever `Y J + J Y = 0`. -/
+theorem mul_mul_eq_of_mem_tangentSpace {J : AlmostComplexStructure V} {Y : Module.End ℝ V}
+    (hY : Y ∈ J.tangentSpace) : J.toLinearMap * Y * J.toLinearMap = Y := by
+  ext v
+  simp [mem_tangentSpace_iff_apply.1 hY]
 
 end AlmostComplexStructure
 
@@ -830,6 +840,26 @@ private theorem Invariant.add_mul_mul_mem_compatibleTangentSpace (h : ω.Invaria
     AlmostComplexStructure.apply_apply, map_neg, map_add] at h₀ h₁ ⊢
   beta_reduce at h₀ h₁ h₂ h₃ ⊢
   linarith
+
+/-- **Averaging an `ω`-skew endomorphism into the compatible tangent space.** If `ω` is
+`J`-invariant and `A` is skew-adjoint for `ω`, then `A + J A J` lies in the compatible tangent
+space of `J`. The endomorphism `A` need not anticommute with `J`, so one fixed `A` gives a
+variation at every `ω`-invariant structure at once; at a structure where `A` is already a tangent
+vector the average is `2 A` (`AlmostComplexStructure.mul_mul_eq_of_mem_tangentSpace`). -/
+theorem Invariant.add_mul_mul_mem_compatibleTangentSpace_of_skew (h : ω.Invariant J)
+    {A : Module.End ℝ V} (hA : ∀ v w, ω (A v) w + ω v (A w) = 0) :
+    A + J.toLinearMap * A * J.toLinearMap ∈ ω.compatibleTangentSpace J := by
+  refine mem_compatibleTangentSpace.2 ⟨fun v => ?_, fun v w => ?_⟩
+  · simp only [LinearMap.add_apply, mul_apply_eq_comp, AlmostComplexStructure.apply_apply,
+      map_neg, map_add]
+    abel
+  · have h₁ := h.apply_add_apply_eq_zero (A (J v)) w
+    have h₂ := hA (J v) (J w)
+    have h₃ := h.apply_add_apply_eq_zero v (A (J w))
+    have h₄ := hA v w
+    simp only [LinearMap.add_apply, mul_apply_eq_comp, map_add, LinearMap.add_apply]
+    beta_reduce at h₁ h₂ h₃ h₄ ⊢
+    linarith
 
 /-- **Variations of compatible structures reach every vector.** For an `ω`-compatible `J`, a
 nonzero vector `ξ` and any vector `η`, some variation `Y` in the compatible tangent space at `J`

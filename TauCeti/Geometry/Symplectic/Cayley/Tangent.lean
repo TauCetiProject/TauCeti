@@ -54,6 +54,11 @@ structures:
 The curves are defined on the whole real line by composing a line with the bounded
 reparametrization `TauCeti.exists_contDiff_hasDerivAt_abs_le`.
 
+For a `Cⁿ` family of compatible structures `J p` over a parameter space, the tangent vectors fit
+together: `TauCeti.SymplecticForm.exists_contDiff_mem_compatibleTangentSpace_apply_eq` gives a `Cⁿ`
+field of compatible variations, `Y p` tangent at `J p` for every `p`, with any prescribed value
+`Y p₀ ξ = η` at a nonzero vector `ξ`.
+
 The companion algebraic statement, in `TauCeti.Geometry.Symplectic.AlmostComplex`, is that
 compatible variations reach every vector at every nonzero vector: for `ξ ≠ 0` and any
 `η` there is `Y` in the compatible tangent space with `Y ξ = η`
@@ -399,6 +404,36 @@ theorem Tames.mem_tangentSpace_iff_exists_hasDerivAt {J : AlmostComplexStructure
     exact ⟨c, hc, hc0, hd⟩
   · rintro ⟨c, -, rfl, hd⟩
     simpa using AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt hd.hasFDerivAt 1
+
+/-! ### Fields of compatible variations -/
+
+/-- **Fields of compatible variations with a prescribed value.** Let `J` be a `Cⁿ` family of
+complex structures preserving `ω`, compatible with `ω` at `p₀`. For a nonzero vector `ξ` and any
+vector `η` there is a `Cⁿ` field `Y` of compatible variations, `Y p` in the compatible tangent
+space of `J p` for every `p`, with `Y p₀ ξ = η`. The field is `A + J A J` for a compatible
+variation `A` at `J p₀` with `A ξ = η / 2`. -/
+theorem exists_contDiff_mem_compatibleTangentSpace_apply_eq {n : ℕ∞}
+    {J : P → AlmostComplexStructure V} (hJ : ∀ p, ω.Invariant (J p))
+    (hJs : ContDiff ℝ n fun p => LinearMap.toContinuousLinearMap (J p).toLinearMap) {p₀ : P}
+    (h₀ : ω.Compatible (J p₀)) {ξ : V} (hξ : ξ ≠ 0) (η : V) :
+    ∃ Y : P → V →L[ℝ] V, ContDiff ℝ n Y ∧
+      (∀ p, (Y p : Module.End ℝ V) ∈ ω.compatibleTangentSpace (J p)) ∧ Y p₀ ξ = η := by
+  obtain ⟨A, hA, hAξ⟩ := h₀.exists_mem_compatibleTangentSpace_apply_eq hξ ((1 / 2 : ℝ) • η)
+  set Jc : P → V →L[ℝ] V := fun p => LinearMap.toContinuousLinearMap (J p).toLinearMap
+  set Ac : V →L[ℝ] V := LinearMap.toContinuousLinearMap A
+  have hcoe (p : P) : ((Ac + Jc p * Ac * Jc p : V →L[ℝ] V) : Module.End ℝ V) =
+      A + (J p).toLinearMap * A * (J p).toLinearMap := by
+    ext v
+    simp [Ac, Jc]
+  refine ⟨fun p => Ac + Jc p * Ac * Jc p, contDiff_const.add ((hJs.mul contDiff_const).mul hJs),
+    fun p => ?_, ?_⟩
+  · rw [hcoe]
+    exact (hJ p).add_mul_mul_mem_compatibleTangentSpace_of_skew (mem_compatibleTangentSpace.1 hA).2
+  · have h₂ := congrArg (fun L : Module.End ℝ V => L ξ) (hcoe p₀)
+    simp only [AlmostComplexStructure.mul_mul_eq_of_mem_tangentSpace
+      (compatibleTangentSpace_le_tangentSpace hA), LinearMap.add_apply, hAξ] at h₂
+    rw [← ContinuousLinearMap.coe_coe, h₂, ← add_smul]
+    norm_num
 
 end SymplecticForm
 
