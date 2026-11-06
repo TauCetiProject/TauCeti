@@ -35,7 +35,12 @@ Mathlib's `TopCat.diskBoundary n` is the universe lift of the unit sphere of
 in that universe be applied to it.  In particular the boundary of the `0`-disk is empty, and a
 point of the boundary `S⁰` of the `1`-disk is determined by its coordinate
 (`TauCeti.diskBoundary_one_ext`).  The antipodal map of the boundary sphere is
-`TauCeti.diskBoundaryNeg`.
+`TauCeti.diskBoundaryNeg`, an involutive automorphism `TauCeti.diskBoundaryNegIso`; it is the
+restriction of the antipodal automorphism `TauCeti.diskNeg` of the disk
+(`TauCeti.diskBoundaryNeg_comp_diskBoundaryInclusion`), so `TauCeti.diskNeg` is an automorphism of
+the pair `(D^n, ∂D^n)`.  Such automorphisms reparametrize attached cells without changing the
+attached space; for `n = 1` it is the reflection `r = -id` of `D¹ = [-1, 1]`, which exchanges the
+two points of `S⁰`.
 
 The disk is also homeomorphic to the closed unit ball of the sup norm on `Fin n → ℝ`, with its
 boundary going to the unit sphere (`TauCeti.diskHomeomorphClosedBall`); this is how the disk is
@@ -188,6 +193,45 @@ lemma diskBoundaryNeg_apply_down {n : ℕ} (x : TopCat.diskBoundary.{u} n) :
 lemma diskBoundaryNeg_diskBoundaryNeg_apply {n : ℕ} (x : TopCat.diskBoundary.{u} n) :
     diskBoundaryNeg n (diskBoundaryNeg n x) = x :=
   ULift.ext (neg_neg x.down)
+
+/-- The antipodal map of the boundary sphere of the `n`-disk, as an involutive automorphism whose
+`hom` and `inv` are both `TauCeti.diskBoundaryNeg n`. -/
+def diskBoundaryNegIso (n : ℕ) : TopCat.diskBoundary.{u} n ≅ TopCat.diskBoundary.{u} n :=
+  TopCat.isoOfHomeo (Homeomorph.ulift.trans ((Homeomorph.neg _).trans Homeomorph.ulift.symm))
+
+@[simp]
+lemma diskBoundaryNegIso_hom (n : ℕ) : (diskBoundaryNegIso.{u} n).hom = diskBoundaryNeg n :=
+  (rfl)
+
+@[simp]
+lemma diskBoundaryNegIso_inv (n : ℕ) : (diskBoundaryNegIso.{u} n).inv = diskBoundaryNeg n :=
+  (rfl)
+
+/-- The antipodal map `x ↦ -x` of the disk `TopCat.disk n`, as an automorphism. It restricts on
+the boundary sphere to `TauCeti.diskBoundaryNeg`
+(`TauCeti.diskBoundaryNeg_comp_diskBoundaryInclusion`), so it is an automorphism of the pair
+`(D^n, ∂D^n)`. -/
+def diskNeg (n : ℕ) : TopCat.disk.{u} n ≅ TopCat.disk.{u} n :=
+  TopCat.isoOfHomeo (Homeomorph.ulift.trans ((Homeomorph.neg _).trans Homeomorph.ulift.symm))
+
+@[simp]
+lemma diskNeg_hom_apply_down {n : ℕ} (x : TopCat.disk.{u} n) :
+    ((diskNeg n).hom x).down = -x.down :=
+  (rfl)
+
+/-- The antipodal map of the disk is an involution. -/
+@[simp]
+lemma diskNeg_inv (n : ℕ) : (diskNeg.{u} n).inv = (diskNeg n).hom :=
+  (rfl)
+
+/-- The antipodal map of the disk restricts on the boundary sphere to the antipodal map of the
+sphere. -/
+@[reassoc]
+lemma diskBoundaryNeg_comp_diskBoundaryInclusion (n : ℕ) :
+    diskBoundaryNeg n ≫ TopCat.diskBoundaryInclusion.{u} n =
+      TopCat.diskBoundaryInclusion n ≫ (diskNeg n).hom := by
+  ext x
+  exact ULift.ext (Subtype.ext (by simp [TopCat.coe_diskBoundaryInclusion_apply_down]))
 
 /-- The homeomorphism from the Euclidean closed unit disk `TopCat.disk n` onto the closed unit ball
 of the sup norm on `Fin n → ℝ`: the radial rescaling `ContinuousLinearEquiv.unitBallHomeomorph` of

@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicTopology.Disk.Antipodal
+public import TauCeti.AlgebraicTopology.Disk
 public import TauCeti.Geometry.Manifold.Morse.Cell.Comparison
 public import Mathlib.Topology.Homotopy.Basic
 
@@ -331,14 +331,10 @@ theorem exists_negDoubleWellChart_morseCellAttachment_iso :
         ∀ i, morseCellAttachmentCell (fun _ ↦ negDoubleWellChart) (fun _ ↦ 1) _ _ _ _ i ≫ e.hom =
           (diskNeg 1).hom ≫
             morseCellAttachmentCell (fun _ ↦ doubleWellChart) (fun _ ↦ 1) _ _ _ _ i := by
-  let h' : TopCat.diskBoundary.{0} 1 ≅ TopCat.diskBoundary.{0} 1 :=
-    { hom := diskBoundaryNeg 1
-      inv := diskBoundaryNeg 1
-      hom_inv_id := by ext s; exact diskBoundaryNeg_diskBoundaryNeg_apply s
-      inv_hom_id := by ext s; exact diskBoundaryNeg_diskBoundaryNeg_apply s }
   exact ⟨morseCellAttachmentIsoOfAttachingMap _ _ _ _ _ _ _ _ _ (fun _ ↦ diskNeg 1)
-      (fun _ ↦ h') (fun _ ↦ diskBoundaryNeg_comp_diskBoundaryInclusion 1)
-      (fun _ ↦ negDoubleWellChart_morseAttachingMap),
+      (fun _ ↦ diskBoundaryNegIso 1)
+      (fun _ ↦ by rw [diskBoundaryNegIso_hom]; exact diskBoundaryNeg_comp_diskBoundaryInclusion 1)
+      (fun _ ↦ by rw [diskBoundaryNegIso_hom]; exact negDoubleWellChart_morseAttachingMap),
     by simp, fun _ ↦ by simp⟩
 
 end TauCeti
