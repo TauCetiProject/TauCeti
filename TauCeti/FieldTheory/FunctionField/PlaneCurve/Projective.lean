@@ -416,7 +416,7 @@ private theorem irreducible_map_dehomogenize_two (hG : G.IsHomogeneous d)
 `g' = G(X₀ + c X₁, X₁, 1) / G(c, 1, 0)` of a smooth projective plane curve with a point
 `(x : y : 1)` is irreducible of total degree `d` with the coefficient of `Y^d` equal to `1`, and is
 smooth in both affine charts. -/
-private theorem exists_sheared_dehomogenize (hG : G.IsHomogeneous d)
+private theorem irreducible_dehomogenize_linearSubst_shear (hG : G.IsHomogeneous d)
     (hsm : ∀ b : Fin 3 → K, b ≠ 0 → aeval b G = 0 → ∃ l, aeval b (pderiv l G) ≠ 0)
     {x y : F} (h : aeval ![x, y, 1] G = 0) {c : k} (hc : eval ![c, 1, 0] G ≠ 0) :
     let g' := dehomogenize 2 (C (eval ![c, 1, 0] G)⁻¹ * linearSubst (shear c) G)
@@ -508,7 +508,7 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
     simpa using RingHom.mem_ker.mp (hle (Submodule.mem_top (x := 1)))
   obtain ⟨c, hc, hcab⟩ := exists_eval_ne_zero_and_mul_add_ne_zero hG
     (aeval_X_one_zero_ne_zero (K := K) hG hsm h) hcard hab
-  obtain ⟨hirr', hlead, hdeg', hsmA, hsmI⟩ := exists_sheared_dehomogenize hG hsm h hc
+  obtain ⟨hirr', hlead, hdeg', hsmA, hsmI⟩ := irreducible_dehomogenize_linearSubst_shear hG hsm h hc
   set μ := (eval ![c, 1, 0] G)⁻¹ with hμ
   have hμ0 : μ ≠ 0 := inv_ne_zero hc
   set g' := dehomogenize 2 (C μ * linearSubst (shear c) G) with hg'_def
@@ -531,7 +531,7 @@ private theorem exists_aeval_sub_mul_eq_zero (hG : G.IsHomogeneous d)
   -- If `u` were algebraic, so would be `y` (a root of the monic `g'(u, Y)`) and `x = u + c y`.
   have hu : Transcendental k u := fun hua ↦
     hx (hxu ▸ hua.add ((isAlgebraic_algebraMap c).mul
-      (Polynomial.Bivariate.isAlgebraic_of_isAlgebraic_of_aeval_eq_zero hlead hroot hua)))
+      (Polynomial.Bivariate.isAlgebraic_of_isAlgebraic_of_aeval_eq_zero hlead hua hroot)))
   exact ⟨c, g', hc, hu, hirr', hlead, hdeg', hsmA, hsmI, hroot,
     hpd ▸ mul_ne_zero ((map_ne_zero _).mpr hμ0) hcab⟩
 

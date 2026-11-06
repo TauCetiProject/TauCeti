@@ -504,7 +504,7 @@ open scoped IntermediateField in
 theorem isAlgebraic_of_isAlgebraic_of_aeval_eq_zero {k F : Type*} [Field k] [Field F]
     [Algebra k F] {φ : MvPolynomial (Fin 2) k}
     (hlead : φ.coeff (Finsupp.single 1 φ.totalDegree) = 1) {u y : F}
-    (hroot : MvPolynomial.aeval ![u, y] φ = 0) (hu : IsAlgebraic k u) : IsAlgebraic k y := by
+    (hu : IsAlgebraic k u) (hroot : MvPolynomial.aeval ![u, y] φ = 0) : IsAlgebraic k y := by
   have := IntermediateField.isAlgebraic_adjoin_simple hu.isIntegral
   have hdegL : (φ.map (algebraMap k k⟮u⟯)).totalDegree ≤ φ.totalDegree :=
     Finset.sup_mono (MvPolynomial.support_map_subset _ _)
