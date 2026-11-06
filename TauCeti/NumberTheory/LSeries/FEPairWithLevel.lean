@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.NumberTheory.LSeries.AbstractFuncEq
+public import TauCeti.NumberTheory.LSeries.AbstractFuncEq
 import Mathlib.Analysis.Complex.CauchyIntegral
 import Mathlib.Analysis.Normed.Module.Connected
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
@@ -51,6 +51,11 @@ that of `g`. Combined with Mathlib's functional equation it gives the Mellin pri
 * `TauCeti.FEPairWithLevel.Λ`: the completed function, the continued Mellin transform of `f - f₀`.
 * `TauCeti.FEPairWithLevel.hasMellin`, `differentiableAt_Λ`, `Λ_residue_zero`, `Λ_residue_k`:
   its Mellin representation, regularity and residues.
+* `TauCeti.FEPairWithLevel.meromorphic_Λ`, `analyticAt_Λ_iff`, `meromorphicOrderAt_Λ_zero`
+  and `meromorphicOrderAt_Λ_k`: meromorphic continuation with the exact simple poles detected
+  by the constant terms.
+* `TauCeti.FEPairWithLevel.differentiable_Λ_iff` and `hasMellin_of_constants_eq_zero`: the
+  entire case and its globally convergent Mellin integral.
 * `TauCeti.FEPairWithLevel.toWeakFEPair_symm_Λ`: the dual side of the transport is `N ^ s` times
   the completed function of `g`.
 * `TauCeti.FEPairWithLevel.Λ_eq` and `Λ_eventuallyEq`: the functional equation at level `N`, off
@@ -353,6 +358,37 @@ when `g₀ = 0`. -/
 theorem differentiableAt_Λ {s : ℂ} (hs : s ≠ 0 ∨ P.f₀ = 0) (hs' : s ≠ P.k ∨ P.g₀ = 0) :
     DifferentiableAt ℂ P.Λ s :=
   P.toWeakFEPair.differentiableAt_Λ hs hs'
+
+/-- The continued Mellin transform at a positive level is meromorphic on the plane. -/
+theorem meromorphic_Λ [CompleteSpace E] : Meromorphic P.Λ := P.toWeakFEPair.meromorphic_Λ
+
+/-- Regularity of the continued Mellin transform is determined exactly by the constant terms. -/
+@[simp]
+theorem analyticAt_Λ_iff [CompleteSpace E] (s : ℂ) : AnalyticAt ℂ P.Λ s ↔
+    (s ≠ 0 ∨ P.f₀ = 0) ∧ (s ≠ P.k ∨ P.g₀ = 0) :=
+  P.toWeakFEPair.analyticAt_Λ_iff s
+
+/-- The constant term of the kernel gives a simple pole at zero when it is nonzero. -/
+theorem meromorphicOrderAt_Λ_zero [CompleteSpace E] (hf : P.f₀ ≠ 0) :
+    meromorphicOrderAt P.Λ 0 = (-1 : ℤ) := P.toWeakFEPair.meromorphicOrderAt_Λ_zero hf
+
+/-- The dual constant term gives a simple pole at the weight when it is nonzero.
+The level changes the residue but not the order of this pole. -/
+theorem meromorphicOrderAt_Λ_k [CompleteSpace E] (hg : P.g₀ ≠ 0) :
+    meromorphicOrderAt P.Λ P.k = (-1 : ℤ) := P.toWeakFEPair.meromorphicOrderAt_Λ_k hg
+
+/-- A level pair has an entire completion exactly when both constant terms vanish. -/
+@[simp]
+theorem differentiable_Λ_iff [CompleteSpace E] : Differentiable ℂ P.Λ ↔ P.f₀ = 0 ∧ P.g₀ = 0 := by
+  rw [← toWeakFEPair_Λ, WeakFEPair.differentiable_Λ_iff]
+  exact ⟨fun h ↦ ⟨h.hf₀, h.hg₀⟩, fun h ↦ ⟨h.1, h.2⟩⟩
+
+/-- With zero constant terms the Mellin integral converges at every complex argument,
+not only in the original right half-plane. -/
+theorem hasMellin_of_constants_eq_zero (hf : P.f₀ = 0) (hg : P.g₀ = 0)
+    (s : ℂ) : HasMellin P.f s (P.Λ s) := by
+  have h : IsStrongFEPair P.toWeakFEPair := ⟨hf, hg⟩
+  exact h.hasMellin s
 
 /-- The residue of `Λ` at `s = 0` is `-f₀`. -/
 theorem Λ_residue_zero : Tendsto (fun s ↦ s • P.Λ s) (𝓝[≠] 0) (𝓝 (-P.f₀)) :=
