@@ -68,7 +68,7 @@ theorem subsingleton_clusterSetOn_of_polynomial_root
 /-- A bounded continuous root section extends continuously to the closure of its base when
 all specializations there are nonzero and the base has preconnected approach regions.
 The base need not be open or full-dimensional. -/
-theorem continuousOn_extendFrom_polynomial_root
+theorem continuousOn_extendFrom_of_polynomial_root
     (hp : ContinuousOn (fun z : X × ℝ ↦ (p z.1).eval z.2) (closure U ×ˢ univ))
     (hf : ContinuousOn f U) (hroot : ∀ y ∈ U, (p y).eval (f y) = 0)
     (hbdd : Bornology.IsBounded (f '' U)) (hne : ∀ x ∈ closure U, p x ≠ 0)

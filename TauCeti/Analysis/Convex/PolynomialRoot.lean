@@ -5,18 +5,17 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.LocallyConvex.WithSeminorms
+public import TauCeti.Analysis.Convex.ClusterSet
 public import TauCeti.Topology.Algebra.Polynomial.Basic
 public import TauCeti.Topology.Algebra.Polynomial.RootExtension
 public import Mathlib.Topology.Algebra.MvPolynomial
-import Mathlib.Analysis.Convex.PathConnected
 
 /-!
 # Extension of bounded roots over convex bases
 
 A bounded continuous root of a polynomial family on a convex base extends continuously
-to the closed base, provided every boundary specialization is nonzero. The convex base
-can be a relative simplex interior: it need not be open in its ambient vector space.
+to the closed base, provided every specialization over the closed base is nonzero. The convex
+base can be a relative simplex interior: it need not be open in its ambient vector space.
 The extension continues to solve the polynomial equation and retains any closed interval
 bound on the original section. This is the root-extension step used to lift a base
 triangulation through cylindrical sections.
@@ -42,15 +41,13 @@ variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [Conti
 
 /-- A bounded continuous root section on a convex base extends to its closure if evaluation
 is continuous there and no specialization is the zero polynomial. -/
-theorem continuousOn_extendFrom_polynomial_root (hU : Convex ℝ U) {p : E → Polynomial ℝ}
+theorem continuousOn_extendFrom_of_polynomial_root (hU : Convex ℝ U) {p : E → Polynomial ℝ}
     (hp : ContinuousOn (fun z : E × ℝ ↦ (p z.1).eval z.2) (closure U ×ˢ univ))
     (hf : ContinuousOn f U) (hroot : ∀ x ∈ U, (p x).eval (f x) = 0)
     (hbdd : Bornology.IsBounded (f '' U)) (hne : ∀ x ∈ closure U, p x ≠ 0) :
-    ContinuousOn (extendFrom U f) (closure U) := by
-  refine TauCeti.continuousOn_extendFrom_polynomial_root hp hf hroot hbdd hne
-    fun x _ ↦ isPreconnectedApproachAt_def.mpr fun s hs ↦ ?_
-  obtain ⟨t, ⟨ht, htc⟩, hts⟩ := (LocallyConvexSpace.convex_basis (𝕜 := ℝ) x).mem_iff.mp hs
-  exact ⟨t, ht, hts, (hU.inter htc).isPreconnected⟩
+    ContinuousOn (extendFrom U f) (closure U) :=
+  TauCeti.continuousOn_extendFrom_of_polynomial_root hp hf hroot hbdd hne
+    fun x _ ↦ hU.isPreconnectedApproachAt x
 
 end Convex
 
@@ -73,7 +70,7 @@ theorem exists_continuousOn_closure_eqOn_root (P : Polynomial (MvPolynomial ι �
       (d := P.natDegree)
       (fun i _ ↦ by simpa only [coeff_map] using (P.coeff i).continuous_eval)
       (fun _ ↦ natDegree_map_le)
-  have hF := hU.continuousOn_extendFrom_polynomial_root hP.continuousOn hf hroot
+  have hF := hU.continuousOn_extendFrom_of_polynomial_root hP.continuousOn hf hroot
     (isCompact_Icc.isBounded.subset hbdd.image_subset) hne
   have heq : EqOn (extendFrom U f) f U := fun x hx ↦ extendFrom_extends hf x hx
   refine ⟨extendFrom U f, hF, heq, ?_, fun x hx ↦
