@@ -24,8 +24,9 @@ projects to scalar coordinates using `toW1pL`, applies
 Finite dimensionality of the target is essential: constant fields valued in an infinite
 orthonormal sequence already obstruct local norm compactness.
 
-In particular this supplies compact restriction of `W^{1,2}(ℝ,F)` paths to bounded intervals,
-the compact error term in the Fredholm estimates for first-order trajectory operators.
+In particular this supplies compact restriction of `W^{1,2}(ℝ,F)` paths to bounded intervals
+(`TauCeti.WeakDerivStep.isCompactOperator_smul_restrictBaseL`), the compact error term in the
+Fredholm estimates for first-order trajectory operators.
 
 ## Reference
 
@@ -87,5 +88,15 @@ theorem isCompactOperator_restrictBaseL [FiniteDimensional ℝ F]
   rw [heq]
   -- Compact operators form a submodule, so finite coordinate reconstruction preserves compactness.
   exact (compactOperator (RingHom.id ℝ) _ _).sum_mem fun i _ ↦ hC i
+
+/-- Restriction of `W^{1,2}(ℝ, F)` paths to a bounded interval, scaled by a constant, is
+compact. -/
+theorem isCompactOperator_smul_restrictBaseL [FiniteDimensional ℝ F] (K R : ℝ) :
+    IsCompactOperator (K • restrictBaseL
+      (ContinuousLinearMap.id ℝ (Lp F 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))
+      (V := ⟨Ioo (-R) R, isOpen_Ioo⟩) le_top) := by
+  rw [FunLike.coe_smul]
+  exact (isCompactOperator_restrictBaseL _ (by norm_num)
+    (Metric.isBounded_Ioo (-R) R).isCompact_closure (by simp)).smul K
 
 end TauCeti.WeakDerivStep
