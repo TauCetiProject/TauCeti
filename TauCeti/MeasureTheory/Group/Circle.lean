@@ -7,20 +7,23 @@ module
 
 public import Mathlib.MeasureTheory.Group.Circle
 public import Mathlib.MeasureTheory.Integral.CircleAverage
+import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.MeasureTheory.Function.L1Space.HasFiniteIntegral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
 /-!
 # Measures on the circle
 
-This file defines the measure on `Circle` obtained from a continuous nonnegative density on the
-unit circle with respect to normalized arc length. Its integral is identified with Mathlib's
-`Real.circleAverage`.
+This file defines the measure on `Circle` obtained from a nonnegative density on the unit circle
+with respect to normalized arc length. For a circle-integrable density it is finite, and its
+integral is identified with Mathlib's `Real.circleAverage`.
 
 ## Main definitions and results
 
 * `TauCeti.circleDensityMeasure`: normalized arc length weighted by a density.
-* `TauCeti.isFiniteMeasure_circleDensityMeasure`: a continuous density gives a finite measure.
+* `TauCeti.isFiniteMeasure_circleDensityMeasure`: a circle-integrable density gives a finite
+  measure.
 * `TauCeti.integral_circleDensityMeasure`: integration against the weighted measure is a circle
   average.
 * `TauCeti.circleAverage_sub_zpow`: the circle average of `(z - c) ^ n` is `1` for `n = 0` and
@@ -44,41 +47,50 @@ def circleDensityMeasure (φ : ℂ → ℝ) : Measure Circle :=
   ((volume.restrict (Ioc 0 (2 * π))).withDensity
     fun θ ↦ ENNReal.ofReal ((2 * π)⁻¹ * φ (circleMap 0 1 θ))).map Circle.exp
 
-private lemma continuous_comp_circleMap {φ : ℂ → ℝ} (hφ : ContinuousOn φ (sphere 0 1)) :
-    Continuous fun θ ↦ φ (circleMap 0 1 θ) :=
-  hφ.comp_continuous (continuous_circleMap 0 1) fun θ ↦ circleMap_mem_sphere 0 zero_le_one θ
-
-/-- A measure on `Circle` given by a continuous density with respect to normalized arc length is
-finite. -/
-theorem isFiniteMeasure_circleDensityMeasure {φ : ℂ → ℝ}
-    (hφ : ContinuousOn φ (sphere 0 1)) : IsFiniteMeasure (circleDensityMeasure φ) := by
-  have hint : IntegrableOn (fun θ ↦ (2 * π)⁻¹ * φ (circleMap 0 1 θ)) (Ioc 0 (2 * π)) :=
-    ((continuous_const.mul (continuous_comp_circleMap hφ)).integrableOn_Icc).mono_set
-      Ioc_subset_Icc_self
-  have := isFiniteMeasure_withDensity_ofReal hint.hasFiniteIntegral
+/-- A measure on `Circle` given by a circle-integrable density with respect to normalized arc
+length is finite. -/
+theorem isFiniteMeasure_circleDensityMeasure {φ : ℂ → ℝ} (hφ : CircleIntegrable φ 0 1) :
+    IsFiniteMeasure (circleDensityMeasure φ) := by
+  have := isFiniteMeasure_withDensity_ofReal (hφ.1.const_mul (2 * π)⁻¹).hasFiniteIntegral
   unfold circleDensityMeasure
   infer_instance
 
-/-- Integration against a continuous nonnegative density on `Circle` is the corresponding
-normalized circle average. -/
+/-- Integration against a measure on `Circle` with a nonnegative circle-integrable density is the
+corresponding normalized circle average. No regularity is required of the integrand `g`. -/
 theorem integral_circleDensityMeasure {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {φ : ℂ → ℝ} (hφ : ContinuousOn φ (sphere 0 1))
-    (hφ₀ : ∀ z ∈ sphere (0 : ℂ) 1, 0 ≤ φ z) {g : ℂ → E} (hg : ContinuousOn g (sphere 0 1)) :
+    {φ : ℂ → ℝ} (hφ : CircleIntegrable φ 0 1) (hφ₀ : ∀ z ∈ sphere (0 : ℂ) 1, 0 ≤ φ z)
+    (g : ℂ → E) :
     ∫ z : Circle, g z ∂circleDensityMeasure φ = circleAverage (fun ζ ↦ φ ζ • g ζ) 0 1 := by
-  have hgc : Continuous fun z : Circle ↦ g z :=
-    hg.comp_continuous continuous_subtype_val fun z ↦ by simp
-  have hexp : ∀ θ : ℝ, (Circle.exp θ : ℂ) = circleMap 0 1 θ := fun θ ↦ by
-    simp [Circle.coe_exp, circleMap]
-  have hmeas : Measurable fun θ ↦ ENNReal.ofReal ((2 * π)⁻¹ * φ (circleMap 0 1 θ)) :=
-    (continuous_const.mul (continuous_comp_circleMap hφ)).measurable.ennreal_ofReal
-  rw [circleDensityMeasure, integral_map Circle.exp.continuous.aemeasurable
-    hgc.aestronglyMeasurable, integral_withDensity_eq_integral_toReal_smul hmeas
+  set ν := (volume.restrict (Ioc 0 (2 * π))).withDensity
+    fun θ ↦ ENNReal.ofReal ((2 * π)⁻¹ * φ (circleMap 0 1 θ))
+  -- `ν` lives on `Ioc 0 (2 * π)`, on which `Circle.exp` is a measurable embedding.
+  have hν : (ν.comap Subtype.val).map ((↑) : Ioc (0 : ℝ) (0 + 2 * π) → ℝ) = ν := by
+    rw [map_comap_subtype_coe measurableSet_Ioc, zero_add, restrict_withDensity measurableSet_Ioc,
+      Measure.restrict_restrict_of_subset subset_rfl]
+  have : Fact (0 < 2 * π) := ⟨two_pi_pos⟩
+  have he : MeasurableEmbedding (Circle.exp ∘ ((↑) : Ioc (0 : ℝ) (0 + 2 * π) → ℝ)) :=
+    (Homeomorph.toMeasurableEquiv AddCircle.homeomorphCircle').measurableEmbedding.comp
+      (AddCircle.measurableEquivIoc (2 * π) 0).symm.measurableEmbedding
+  have hmap : ∫ z : Circle, g z ∂ν.map Circle.exp = ∫ θ, g (Circle.exp θ) ∂ν := by
+    calc ∫ z : Circle, g z ∂ν.map Circle.exp
+        = ∫ z : Circle, g z ∂(ν.comap Subtype.val).map
+            (Circle.exp ∘ ((↑) : Ioc (0 : ℝ) (0 + 2 * π) → ℝ)) := by
+          rw [← Measure.map_map Circle.exp.continuous.measurable measurable_subtype_coe, hν]
+      _ = ∫ θ, g (Circle.exp θ) ∂(ν.comap Subtype.val).map Subtype.val := by
+          rw [he.integral_map, (MeasurableEmbedding.subtype_coe measurableSet_Ioc).integral_map]
+          rfl
+      _ = ∫ θ, g (Circle.exp θ) ∂ν := by rw [hν]
+  have hd : AEMeasurable (fun θ ↦ ENNReal.ofReal ((2 * π)⁻¹ * φ (circleMap 0 1 θ)))
+      (volume.restrict (Ioc 0 (2 * π))) :=
+    (hφ.1.const_mul _).aestronglyMeasurable.aemeasurable.ennreal_ofReal
+  rw [circleDensityMeasure, hmap, integral_withDensity_eq_integral_toReal_smul₀ hd
     (Eventually.of_forall fun _ ↦ ENNReal.ofReal_lt_top), circleAverage_def,
     intervalIntegral.integral_of_le (by positivity), ← integral_smul]
   refine integral_congr_ae (Eventually.of_forall fun θ ↦ ?_)
   have h₀ : 0 ≤ (2 * π)⁻¹ * φ (circleMap 0 1 θ) :=
     mul_nonneg (by positivity) (hφ₀ _ (circleMap_mem_sphere 0 zero_le_one θ))
-  simp only [hexp, ENNReal.toReal_ofReal h₀, smul_smul]
+  simp only [ENNReal.toReal_ofReal h₀, smul_smul]
+  simp [Circle.coe_exp, circleMap]
 
 /-- **Orthogonality of the characters of the circle.** The normalized circle average of an
 integer power `(z - c) ^ n` over a circle centred at `c` is `1` for `n = 0` and `0` otherwise. -/
