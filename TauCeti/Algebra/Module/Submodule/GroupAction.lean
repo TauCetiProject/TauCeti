@@ -114,7 +114,8 @@ class of `γ • x` (`Submodule.quotientToModuleEnd_mk`). It is the quotient rep
 `Representation.quotient` of `DistribMulAction.toModuleEnd`, with the invariance of `V` stated
 elementwise. -/
 def quotientToModuleEnd (hV : ∀ γ : Γ, ∀ x ∈ V, γ • x ∈ V) : Γ →* Module.End R (M ⧸ V) :=
-  Representation.quotient (DistribMulAction.toModuleEnd R M) V hV
+  Representation.quotient (DistribMulAction.toModuleEnd R M) V fun γ x hx => by
+    simpa using hV γ x hx
 
 /-- The induced action sends the class of `x` to the class of `γ • x`. -/
 @[simp]
