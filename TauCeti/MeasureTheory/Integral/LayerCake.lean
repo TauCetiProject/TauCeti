@@ -52,10 +52,12 @@ the integral over all levels `t` of the indicators of its superlevel sets `{u > 
 
 The truncated power formula `∫ min(f, k) ^ δ = δ ∫_0^k m {f > t} t ^ (δ - 1) dt` is recorded
 together with bounds on its right side for a constant height and for distribution functions of
-rescaled functions `g / ε` with respect to the weights `g` and `h ^ q`, with `ε ≤ 1`. These are
-the estimates that convert a level-set inequality into a reverse Hölder inequality with a higher
-exponent, as in Gehring's lemma; the truncation at `k` keeps every integral finite and is removed
-by monotone convergence.
+rescaled functions: `g / ε` with respect to the weight `g`, for `ε ≤ 1`, and `h / ε` with respect
+to the weight `h ^ q`. These are the estimates that convert a level-set inequality into a reverse
+Hölder inequality with a higher exponent, as in Gehring's lemma. The truncation at `k` bounds the
+truncated factor `min g k ^ δ` by `k ^ δ`, so the truncated integrals are finite whenever the
+underlying weighted integral `∫ g ^ q` is finite, as in the finite-integral case of Gehring's
+argument; the truncation is then removed by monotone convergence.
 
 ## Main statements
 
@@ -74,16 +76,16 @@ by monotone convergence.
 * `MeasureTheory.Measure.exists_strictMono_ae_tendsto_measure_symmDiff_setOf_lt` — along a
   subsequence of an `L¹`-convergent sequence, the superlevel sets converge in measure at almost
   every level;
-* `TauCeti.measurable_measure_ofReal_lt` — the distribution function `t ↦ m {f > t}` is
-  measurable;
-* `TauCeti.lintegral_min_rpow_eq` — the integral of a truncated power `min f k ^ p`, level by
-  level up to the cap `k`;
-* `TauCeti.tendsto_lintegral_mul_min_rpow` — the truncated integrals `∫ g ^ q min(g, k) ^ δ`
-  increase to `∫ g ^ (q + δ)` as `k → ∞`;
-* `TauCeti.ofReal_mul_setLIntegral_measure_lt_const_le`,
-  `TauCeti.ofReal_mul_setLIntegral_withDensity_lt_le` and
-  `TauCeti.ofReal_mul_setLIntegral_withDensity_rpow_lt_le` — truncated layer-cake bounds for a
-  constant, for `g / ε` weighted by `g`, and for `h / ε` weighted by `h ^ q`;
+* `MeasureTheory.Measure.measurable_measure_ofReal_lt` — the distribution function
+  `t ↦ m {f > t}` is measurable;
+* `MeasureTheory.Measure.lintegral_min_rpow_eq` — the integral of a truncated power
+  `min f k ^ p`, level by level up to the cap `k`;
+* `MeasureTheory.Measure.tendsto_lintegral_mul_min_rpow` — the truncated integrals
+  `∫ g ^ q min(g, k) ^ δ` increase to `∫ g ^ (q + δ)` as `k → ∞`;
+* `MeasureTheory.Measure.ofReal_mul_setLIntegral_measure_lt_const_le`,
+  `MeasureTheory.Measure.ofReal_mul_setLIntegral_withDensity_lt_le` and
+  `MeasureTheory.Measure.ofReal_mul_setLIntegral_withDensity_rpow_lt_le` — truncated layer-cake
+  bounds for a constant, for `g / ε` weighted by `g`, and for `h / ε` weighted by `h ^ q`;
 * `TauCeti.lintegral_ofReal_sub_eq_lintegral_measure` — the integral of a positive part
   `(g - f)⁺`, level by level;
 * `TauCeti.lintegral_sub_eq_lintegral_measure_sdiff` — the integral of a truncated difference
@@ -248,6 +250,12 @@ theorem lintegral_enorm_sub_eq_lintegral_measure_symmDiff (m : Measure α) [SFin
       simp only [Set.mem_symmDiff, Set.mem_ofPred_eq]
       rw [hfa, hga]
 
+end TauCeti
+
+namespace MeasureTheory.Measure
+
+variable {α : Type*} [MeasurableSpace α]
+
 /-- **The layer cake formula for a truncation.** For `p > 0` and a cap `k`, the integral of
 `min f k ^ p` is `p` times the integral of `m {t < f} t ^ (p - 1)` over the heights `0 < t < k`. -/
 theorem lintegral_min_rpow_eq (m : Measure α) {f : α → ℝ≥0∞} (hf : AEMeasurable f m) (k : ℝ≥0)
@@ -374,8 +382,7 @@ theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : α → �
 integrating `δ t ^ (δ - 1)` against its distribution function gives at most
 `ε ^ (-δ) ∫ h ^ (q + δ)`. -/
 theorem ofReal_mul_setLIntegral_withDensity_rpow_lt_le (m : Measure α) {h : α → ℝ≥0∞}
-    (hh : Measurable h) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (k : ℝ≥0) {q δ : ℝ} (hq : 0 ≤ q)
-    (hδ : 0 < δ) :
+    (hh : Measurable h) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (k : ℝ≥0) {q δ : ℝ} (hq : 0 ≤ q) (hδ : 0 < δ) :
     ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), m.withDensity (fun x => h x ^ q)
         {x | ENNReal.ofReal t < h x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
       ε⁻¹ ^ δ * ∫⁻ x, h x ^ (q + δ) ∂m := by
@@ -387,18 +394,12 @@ theorem ofReal_mul_setLIntegral_withDensity_rpow_lt_le (m : Measure α) {h : α 
   simp only [Pi.mul_apply]
   calc h x ^ q * min (h x * ε⁻¹) k ^ δ ≤ h x ^ q * (ε⁻¹ ^ δ * h x ^ δ) := by
         gcongr
-        refine (ENNReal.min_mul_inv_rpow_le _ _ hε1 hδ.le).trans ?_
+        rw [← ENNReal.mul_rpow_of_nonneg _ _ hδ.le, mul_comm]
         gcongr
         exact min_le_left _ _
     _ = ε⁻¹ ^ δ * h x ^ (q + δ) := by
         rw [ENNReal.rpow_add_of_nonneg _ _ hq hδ.le]
         ring
-
-end TauCeti
-
-namespace MeasureTheory.Measure
-
-variable {α : Type*} [MeasurableSpace α]
 
 /-- Thresholding a real function at a level separated from `0` and `1` by `δ > 0`
 approximates a set in measure, with error at most its `L¹` distance from the indicator

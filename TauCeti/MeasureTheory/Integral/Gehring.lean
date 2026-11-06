@@ -410,24 +410,24 @@ private theorem setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ�
         ← lintegral_indicator hh'']
       exact hlev
   -- Measurability of the pieces in `t`.
-  have hAm : Measurable A := measurable_measure_ofReal_lt _ _
-  have hN₁m : Measurable N₁ := measurable_measure_ofReal_lt _ _
-  have hN₂m : Measurable N₂ := measurable_measure_ofReal_lt _ _
+  have hAm : Measurable A := Measure.measurable_measure_ofReal_lt _ _
+  have hN₁m : Measurable N₁ := Measure.measurable_measure_ofReal_lt _ _
+  have hN₂m : Measurable N₂ := Measure.measurable_measure_ofReal_lt _ _
   have hpowm : Measurable fun t : ℝ => ENNReal.ofReal t ^ (q - 1) :=
     ENNReal.measurable_ofReal.pow_const _
   -- The three layer cake bounds.
   have hIA : ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), A t * w t ≤
       ENNReal.ofReal (t₀ ^ δ) * ∫⁻ x in ball x₀ r, g x ^ q ∂μ := by
-    refine (ofReal_mul_setLIntegral_measure_lt_const_le ν ht₀ k hδ).trans_eq ?_
+    refine (Measure.ofReal_mul_setLIntegral_measure_lt_const_le ν ht₀ k hδ).trans_eq ?_
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
-  have hIB := ofReal_mul_setLIntegral_withDensity_lt_le (μ.restrict (ball x₀ s)) hg hε0 hε1 b k
-    hq hδ
-  have hIC := ofReal_mul_setLIntegral_withDensity_rpow_lt_le (μ.restrict (ball x₀ s)) hh hε0 hε1
-    k hq0.le hδ
+  have hIB := Measure.ofReal_mul_setLIntegral_withDensity_lt_le (μ.restrict (ball x₀ s)) hg hε0 hε1
+    b k hq hδ
+  have hIC := Measure.ofReal_mul_setLIntegral_withDensity_rpow_lt_le (μ.restrict (ball x₀ s)) hh
+    hε0 k hq0.le hδ
   -- Assemble.
   have hlhs : ∫⁻ x in ball x₀ r, g x ^ q * min (g x) k ^ δ ∂μ =
       ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), ν {x | ENNReal.ofReal t < g x} * w t := by
-    rw [← lintegral_min_rpow_eq ν hg.aemeasurable k hδ,
+    rw [← Measure.lintegral_min_rpow_eq ν hg.aemeasurable k hδ,
       lintegral_withDensity_eq_lintegral_mul _ hGm ((hg.min measurable_const).pow_const _)]
     rfl
   rw [hlhs]
@@ -595,7 +595,7 @@ private theorem exists_setLAverage_rpow_add_le_of_measurable {q : ℝ} (hq : 1 <
     exact le_top
   -- Let the truncation level tend to infinity.
   have hk := toReal_setLIntegral_mul_min_rpow_le hq hε hε0 hε1 hδ hθE hC₀ hg hh hR hRH hIg hIh
-  have hlim := tendsto_lintegral_mul_min_rpow (μ.restrict (ball x₀ (R / 2))) hg hq0.le hδ
+  have hlim := Measure.tendsto_lintegral_mul_min_rpow (μ.restrict (ball x₀ (R / 2))) hg hq0.le hδ
   have hJ := le_of_tendsto' hlim fun k => hk k
   -- Rewrite both sides in terms of real numbers.
   set m := μ (ball x₀ (R / 2))
