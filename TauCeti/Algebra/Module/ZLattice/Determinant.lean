@@ -268,6 +268,11 @@ theorem IsIntegral.inv_covolume_eq_inv_sqrt_card_discriminantGroup (h : IsIntegr
     (covolume L volume)⁻¹ = (Real.sqrt (Nat.card (DiscriminantGroup L)))⁻¹ := by
   rw [inv_covolume_eq_inv_sqrt_det, h.det_eq_card_discriminantGroup]
 
+/-- For an integral lattice the covolume is the square root of the discriminant group's order. -/
+theorem IsIntegral.covolume_eq_sqrt_card_discriminantGroup (h : IsIntegral L) :
+    covolume L volume = Real.sqrt (Nat.card (DiscriminantGroup L)) :=
+  inv_injective h.inv_covolume_eq_inv_sqrt_card_discriminantGroup
+
 /-- The discriminant group of an integral lattice is finite. -/
 theorem IsIntegral.finite_discriminantGroup (h : IsIntegral L) : Finite (DiscriminantGroup L) :=
   Nat.finite_of_card_ne_zero <| by
