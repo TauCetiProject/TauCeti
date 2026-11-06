@@ -463,7 +463,8 @@ variable [NormedSpace ℝ F] [CompleteSpace F]
 good-`λ` inequality `K γ m s + σ (γ s)`, with `2^p K γ = 1 / 2` and `σ` antitone, then substituting
 `t = 2 s` bounds `∫₀ᴺ m(t) t^(p-1) dt` by half of itself plus `2^p γ^(-p) J`, where `J` is the
 layer cake integral of `σ`. -/
-private theorem lintegral_Ioo_mul_rpow_le_inv_two_mul_add {m σ : ℝ → ℝ≥0∞} {p γ N : ℝ} (hγ : 0 < γ)
+private theorem setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add
+    {m σ : ℝ → ℝ≥0∞} {p γ N : ℝ} (hγ : 0 < γ)
     (hN : 0 ≤ N) {K J : ℝ≥0∞} (hK : K ≠ ∞) (hσ : Antitone σ)
     (hlevel : ∀ s : ℝ, 0 < s → m (2 * s) ≤ K * ENNReal.ofReal γ * m s + σ (γ * s))
     (hJ : ∫⁻ s in Ioi (0 : ℝ), σ (γ * s) * ENNReal.ofReal (s ^ (p - 1)) =
@@ -486,6 +487,7 @@ private theorem lintegral_Ioo_mul_rpow_le_inv_two_mul_add {m σ : ℝ → ℝ≥
     simp
   have hσw : Measurable fun s => σ (γ * s) * w s :=
     ((hσ.comp_monotone fun _ _ h => mul_le_mul_of_nonneg_left h hγ.le).measurable).mul hw
+  -- fold the `set` abbreviations `I`, `w` in the goal; `set` cannot abstract under the binder
   change I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J)
   calc I N = ENNReal.ofReal (2 ^ p) * ∫⁻ s in Ioo 0 (N / 2), m (2 * s) * w s := by
         rw [hscale, ← mul_assoc, h2p, one_mul]
@@ -552,7 +554,7 @@ private theorem setLIntegral_volume_czUnion_mul_rpow_le [Nonempty ι] {f : (ι �
     ofReal_two_rpow_mul_two_pow_mul_ofReal_two_rpow n p
   -- Substituting `t = 2 s` and applying the good-`λ` inequality bounds `I N` by `I N / 2 + …`.
   have hstep : I N ≤ 2⁻¹ * I N + ENNReal.ofReal (2 ^ p) * (ENNReal.ofReal (γ ^ (-p)) * J) :=
-    lintegral_Ioo_mul_rpow_le_inv_two_mul_add hγ hN (by simp [K]) hσ hlevel hJ hconst
+    setLIntegral_Ioo_mul_rpow_le_inv_two_mul_add hγ hN (by simp [K]) hσ hlevel hJ hconst
   -- Since `I N` is finite, the first term is absorbed.
   have hhalf : 2⁻¹ * I N ≠ ∞ :=
     ENNReal.mul_ne_top (by simp) (setLIntegral_volume_czUnion_mul_rpow_ne_top hf hp hN)
