@@ -48,8 +48,8 @@ permutes the root functionals, and permutes the coroots compatibly, preserving t
 * `RootPairing.weylGroup.ext` says two Weyl-group elements agreeing on the weight space are
   equal.
 * `RootPairing.weylGroup.eq_one_of_forall_smul_root_eq` says a Weyl-group element fixing every root
-  of a finite crystallographic root pairing over a domain of characteristic zero is the identity,
-  whether or not the roots span.
+  of a finite anisotropic root pairing over a domain is the identity, whether or not the roots
+  span.
 * `RootPairing.weylGroup.ofIdx_weylGroupToPerm_eq_conj` says that conjugating a simple
   reflection by a Weyl-group element gives the reflection in the image root index.
 * `RootPairing.reflection_weylGroupToPerm_smul` says the reflection in the image `w β` of a root
@@ -276,11 +276,10 @@ theorem weylGroup.eq_one_of_smul_eq_self
   exact Subtype.ext (by simpa using hw)
 
 variable {P} in
-/-- A Weyl-group element fixing every root of a finite crystallographic root pairing over a domain
-of characteristic zero is the identity. The roots need not span the weight space. -/
-theorem weylGroup.eq_one_of_forall_smul_root_eq [Finite ι] [IsDomain R] [CharZero R]
-    [P.IsCrystallographic] {w : P.weylGroup} (hfix : ∀ i, w • P.root i = P.root i) : w = 1 := by
-  have := Fintype.ofFinite ι
+/-- A Weyl-group element fixing every root of a finite anisotropic root pairing over a domain is the
+identity. The roots need not span the weight space. -/
+theorem weylGroup.eq_one_of_forall_smul_root_eq [Fintype ι] [IsDomain R] [P.IsAnisotropic]
+    {w : P.weylGroup} (hfix : ∀ i, w • P.root i = P.root i) : w = 1 := by
   have hidx : ∀ i, (w : P.Aut).indexEquiv i = i := fun i =>
     P.root.injective (by rw [Equiv.root_indexEquiv_eq_smul]; exact hfix i)
   have hcor : ∀ i x, P.coroot' i ((w : P.Aut) • x) = P.coroot' i x := fun i x => by

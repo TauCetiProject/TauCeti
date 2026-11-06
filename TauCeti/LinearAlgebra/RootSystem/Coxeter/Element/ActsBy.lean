@@ -14,27 +14,27 @@ public import Mathlib.LinearAlgebra.RootSystem.CartanMatrix
 # From Weyl-group elements to integer matrices on the simple roots
 
 For a base `b` of a root pairing `P`, an element `w` of the Weyl group *acts by* the integer matrix
-`W` (`TauCeti.Coxeter.ActsBy b w W`) if `w • αⱼ = ∑ₖ W k j • αₖ` for every simple root `αⱼ`.
+`W` (`RootPairing.Base.ActsBy b w W`) if `w • αⱼ = ∑ₖ W k j • αₖ` for every simple root `αⱼ`.
 Acting-by is multiplicative, and the simple reflection `sᵢ` acts by `reflMatrix b.cartanMatrix i`.
-For a finite crystallographic root pairing over a domain of characteristic zero the action is
-faithful (`RootPairing.weylGroup.eq_one_of_forall_smul_root_eq`; the roots need not span), so the
-order of `w` is the order of `W`.
+The action is faithful for a finite anisotropic root pairing over a domain, in particular for a
+crystallographic one in characteristic zero (`RootPairing.weylGroup.eq_one_of_forall_smul_root_eq`;
+the roots need not span), so the order of `w` is the order of `W`.
 
 ## Main results
 
-* `TauCeti.Coxeter.actsBy_wordProd`: a word in the simple reflections acts by the product of the
+* `RootPairing.Base.actsBy_wordProd`: a word in the simple reflections acts by the product of the
   corresponding reflection matrices.
-* `TauCeti.Coxeter.orderOf_eq_of_actsBy`: if `w` acts by `W`, then `orderOf w = orderOf W`.
-* `TauCeti.Coxeter.orderOf_wordProd_of_cartanMatrix_eq`: for a base whose Cartan matrix is `A` up to
-  a relabelling `e`, the Coxeter element spelled in the order `e` has the order of
+* `RootPairing.Base.ActsBy.orderOf_eq`: if `w` acts by `W`, then `orderOf w = orderOf W`.
+* `RootPairing.Base.orderOf_wordProd_of_cartanMatrix_eq`: for a base whose Cartan matrix is `A` up
+  to a relabelling `e`, the Coxeter element spelled in the order `e` has the order of
   `coxeterElement A`.
 -/
 
 public section
 
-open Matrix RootPairing Submodule
+open Matrix Submodule TauCeti
 
-namespace TauCeti.Coxeter
+namespace RootPairing.Base
 
 variable {ι R M N : Type*} [DecidableEq ι] [CommRing R] [AddCommGroup M] [Module R M]
   [AddCommGroup N] [Module R N] {P : RootPairing ι R M N}
@@ -44,7 +44,7 @@ def ActsBy (b : P.Base) (w : P.weylGroup) (W : Matrix b.support b.support ℤ) :
   ∀ j : b.support, w • P.root j = ∑ k, W k j • P.root k
 
 omit [DecidableEq ι] in
-/-- The defining property of `TauCeti.Coxeter.ActsBy`. -/
+/-- The defining property of `RootPairing.Base.ActsBy`. -/
 theorem actsBy_iff {b : P.Base} {w : P.weylGroup} {W : Matrix b.support b.support ℤ} :
     ActsBy b w W ↔ ∀ j : b.support, w • P.root j = ∑ k, W k j • P.root k :=
   Iff.rfl
@@ -100,8 +100,9 @@ theorem actsBy_wordProd (b : P.Base) (l : List b.support) :
       (actsBy_ofIdx b i).mul ih
 
 /-- An element acting trivially on the simple roots is trivial. -/
-theorem eq_one_of_actsBy_one [Finite ι] [IsDomain R] [CharZero R] {b : P.Base}
+theorem ActsBy.eq_one [Finite ι] [IsDomain R] [CharZero R] {b : P.Base}
     {w : P.weylGroup} (h : ActsBy b w 1) : w = 1 := by
+  have := Fintype.ofFinite ι
   have hfix : ∀ j : b.support, w • P.root j = P.root j := fun j => by
     simpa [Matrix.one_apply, ite_smul] using h j
   have hspan : ∀ x ∈ span ℤ (P.root '' b.support), w • x = x := by
@@ -115,7 +116,7 @@ theorem eq_one_of_actsBy_one [Finite ι] [IsDomain R] [CharZero R] {b : P.Base}
 
 omit [DecidableEq ι] [P.IsCrystallographic] in
 /-- The matrix by which an element acts is unique. -/
-theorem eq_of_actsBy_of_actsBy [CharZero R] {b : P.Base} {w : P.weylGroup}
+theorem ActsBy.unique [CharZero R] {b : P.Base} {w : P.weylGroup}
     {V W : Matrix b.support b.support ℤ} (hV : ActsBy b w V) (hW : ActsBy b w W) : V = W := by
   have hli : LinearIndependent ℤ (fun k : b.support => P.root k) :=
     b.linearIndepOn_root.restrict_scalars' ℤ
@@ -125,12 +126,12 @@ theorem eq_of_actsBy_of_actsBy [CharZero R] {b : P.Base} {w : P.weylGroup}
   exact sub_eq_zero.1 (Fintype.linearIndependent_iff.1 hli _ h0 k)
 
 /-- If `w` acts by the integer matrix `W`, then `w` and `W` have the same order. -/
-theorem orderOf_eq_of_actsBy [CharZero R] [Finite ι] [IsDomain R] {b : P.Base}
+theorem ActsBy.orderOf_eq [CharZero R] [Finite ι] [IsDomain R] {b : P.Base}
     {w : P.weylGroup} {W : Matrix b.support b.support ℤ} (h : ActsBy b w W) :
     orderOf w = orderOf W := by
   refine orderOf_eq_orderOf_iff.2 fun k => ⟨fun hk => ?_, fun hk => ?_⟩
-  · exact eq_of_actsBy_of_actsBy (h.pow k) (by simpa [hk] using actsBy_one b)
-  · exact eq_one_of_actsBy_one (by simpa [hk] using h.pow k)
+  · exact (h.pow k).unique (by simpa [hk] using actsBy_one b)
+  · exact ActsBy.eq_one (by simpa [hk] using h.pow k)
 
 /-! ### Relabelling along a Dynkin numbering -/
 
@@ -144,8 +145,8 @@ theorem prod_reflMatrix_eq {n : ℕ} (b : P.Base) (A : Matrix (Fin n) (Fin n) �
   rw [hC, coxeterElement, map_list_prod, List.map_map, List.map_map]
   congr 1
   refine List.map_congr_left fun i _ => ?_
-  simp only [Function.comp_apply, reflMatrix_submatrix, Equiv.apply_symm_apply,
-    coe_reindexAlgEquiv, reindex_apply, Equiv.symm_symm]
+  simp only [Function.comp_apply, reflMatrix_submatrix, _root_.Equiv.apply_symm_apply,
+    coe_reindexAlgEquiv, reindex_apply, _root_.Equiv.symm_symm]
 
 omit [DecidableEq ι] in
 /-- **The Weyl-group Coxeter element has the order of the Coxeter element of its Cartan
@@ -156,10 +157,10 @@ theorem orderOf_wordProd_of_cartanMatrix_eq [CharZero R] [Finite ι] [IsDomain R
     (hA : ∀ i j, b.cartanMatrix i j = A (e i) (e j)) :
     orderOf (wordProd P b ((List.finRange n).map e.symm)) = orderOf (coxeterElement A) := by
   classical
-  rw [orderOf_eq_of_actsBy (actsBy_wordProd b _), prod_reflMatrix_eq b A e hA]
+  rw [(actsBy_wordProd b _).orderOf_eq, prod_reflMatrix_eq b A e hA]
   exact orderOf_injective (reindexAlgEquiv ℤ ℤ e.symm).toRingEquiv.toMulEquiv.toMonoidHom
     (reindexAlgEquiv ℤ ℤ e.symm).injective _
 
-end TauCeti.Coxeter
+end RootPairing.Base
 
 end

@@ -19,15 +19,13 @@ element of an exceptional type are computed by the kernel on explicit integer ma
 
 ## Main definitions
 
-* `TauCeti.Coxeter.reflMatrix`: the matrix of a simple reflection on the simple roots.
-* `TauCeti.Coxeter.coxeterElement`: the product of the simple reflections in the numbering order.
+* `Matrix.reflMatrix`: the matrix of a simple reflection on the simple roots.
+* `Matrix.coxeterElement`: the product of the simple reflections in the numbering order.
 -/
 
 public section
 
-open Matrix
-
-namespace TauCeti.Coxeter
+namespace Matrix
 
 /-- The simple reflection `sᵢ` in the simple-root basis: `sᵢ αⱼ = αⱼ - A j i • αᵢ`. -/
 @[expose] def reflMatrix {κ : Type*} [DecidableEq κ] (A : Matrix κ κ ℤ) (i : κ) : Matrix κ κ ℤ :=
@@ -50,6 +48,6 @@ theorem reflMatrix_submatrix {κ : Type*} [DecidableEq κ] {n : ℕ} (A : Matrix
 @[expose] def coxeterElement {n : ℕ} (A : Matrix (Fin n) (Fin n) ℤ) : Matrix (Fin n) (Fin n) ℤ :=
   ((List.finRange n).map (reflMatrix A)).prod
 
-end TauCeti.Coxeter
+end Matrix
 
 end

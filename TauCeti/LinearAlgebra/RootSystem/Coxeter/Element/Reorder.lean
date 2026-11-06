@@ -17,14 +17,21 @@ public import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 The two moves that relate the Coxeter elements of a forest Dynkin diagram.
 
-* **Commutation.** `TauCeti.Coxeter.wordProd_eq_of_perm`: two orderings of the same simple
+* **Commutation.** `RootPairing.Base.wordProd_eq_of_perm`: two orderings of the same simple
   reflections spell the same element if the inverted pairs are orthogonal, i.e. have Cartan entry
   zero. This specializes `List.prod_map_eq_of_perm`.
-* **Cyclic shift.** `TauCeti.Coxeter.orderOf_wordProd_cons_eq`: moving the first letter of a word to
-  the end does not change the order of its product, since `s w` and `w s` are conjugate.
+* **Cyclic shift.** `RootPairing.Base.orderOf_wordProd_cons_eq`: moving the first letter of a word
+  to the end does not change the order of its product, since `s w` and `w s` are conjugate.
 
 For a forest, every ordering of the simple reflections is reached from any other by these moves:
 this is the content of `List.eq_of_isElimOrder`.
+
+## Main results
+
+* `RootPairing.Base.wordProd_eq_of_commEquiv`: commuting non-adjacent letters does not change the
+  element a word spells.
+* `RootPairing.Base.orderOf_wordProd_eq_of_isElimOrder`: for a base whose Dynkin diagram has an
+  elimination order, all Coxeter elements have the same order.
 
 ## References
 
@@ -35,9 +42,9 @@ this is the content of `List.eq_of_isElimOrder`.
 
 public section
 
-open RootPairing
+open TauCeti
 
-namespace TauCeti.Coxeter
+namespace RootPairing.Base
 
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N]
   [Module R N] {P : RootPairing ι R M N}
@@ -64,6 +71,25 @@ theorem orderOf_wordProd_cons_eq (b : P.Base) (i : b.support) (l : List b.suppor
     wordProd_nil, mul_one]
   exact SemiconjBy.orderOf_eq (wordProd P b l) (mul_assoc _ _ _).symm
 
-end TauCeti.Coxeter
+/-- Commuting non-adjacent letters of a word does not change the element it spells. -/
+theorem wordProd_eq_of_commEquiv [P.IsCrystallographic] [IsDomain R] [CharZero R] (b : P.Base)
+    {l l' : List b.support} (hce : List.CommEquiv (fun x y => b.cartanMatrix x y ≠ 0) l l') :
+    wordProd P b l = wordProd P b l' := by
+  obtain ⟨hp, h⟩ := List.commEquiv_iff.1 hce
+  exact wordProd_eq_of_perm b hp fun x y hxy hyx => not_not.1 (h x y hxy hyx)
+
+/-- **All Coxeter elements have the same order** when the Dynkin diagram of the base has an
+elimination order. -/
+theorem orderOf_wordProd_eq_of_isElimOrder [P.IsCrystallographic] [IsDomain R] [CharZero R]
+    (b : P.Base) {S : List b.support} (hnd : S.Nodup)
+    (hel : List.IsElimOrder (fun x y => b.cartanMatrix x y ≠ 0) S) {l l' : List b.support}
+    (hl : l.Perm S) (hl' : l'.Perm S) :
+    orderOf (wordProd P b l) = orderOf (wordProd P b l') :=
+  List.eq_of_isElimOrder (fun _ _ h h' => h (b.cartanMatrix_apply_eq_zero_iff_symm.2 h')) hnd hel
+    (fun l => orderOf (wordProd P b l))
+    (fun _ _ _ hce => congrArg orderOf (wordProd_eq_of_commEquiv b hce))
+    (fun a t _ => orderOf_wordProd_cons_eq b a t) hl hl'
+
+end RootPairing.Base
 
 end

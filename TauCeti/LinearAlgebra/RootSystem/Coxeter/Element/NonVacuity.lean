@@ -63,30 +63,30 @@ polynomial `Φ₁₂ Φ₃` on the simple roots. -/
 theorem charpoly_e6SimplyConnectedRootDatum {l : List e6SimplyConnectedBase.support}
     (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix e6SimplyConnectedBase.support e6SimplyConnectedBase.support ℤ}
-    (hW : ActsBy e6SimplyConnectedBase (wordProd e6SimplyConnectedRootDatum e6SimplyConnectedBase l)
-      W) :
+    (hW : e6SimplyConnectedBase.ActsBy
+      (wordProd e6SimplyConnectedRootDatum e6SimplyConnectedBase l) W) :
     W.charpoly = cyclotomic 12 ℤ * cyclotomic 3 ℤ :=
-  charpoly_of_actsBy_of_hasCartanType_E6 hasCartanType_e6SimplyConnectedRootDatum hnd hall hW
+  charpoly_of_hasCartanType_E6_of_actsBy hasCartanType_e6SimplyConnectedRootDatum hnd hall hW
 
 /-- Every Coxeter element of the simply connected root datum of type `E₇` has characteristic
 polynomial `Φ₁₈ Φ₂` on the simple roots. -/
 theorem charpoly_e7SimplyConnectedRootDatum {l : List e7SimplyConnectedBase.support}
     (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix e7SimplyConnectedBase.support e7SimplyConnectedBase.support ℤ}
-    (hW : ActsBy e7SimplyConnectedBase (wordProd e7SimplyConnectedRootDatum e7SimplyConnectedBase l)
-      W) :
+    (hW : e7SimplyConnectedBase.ActsBy
+      (wordProd e7SimplyConnectedRootDatum e7SimplyConnectedBase l) W) :
     W.charpoly = cyclotomic 18 ℤ * cyclotomic 2 ℤ :=
-  charpoly_of_actsBy_of_hasCartanType_E7 hasCartanType_e7SimplyConnectedRootDatum hnd hall hW
+  charpoly_of_hasCartanType_E7_of_actsBy hasCartanType_e7SimplyConnectedRootDatum hnd hall hW
 
 /-- Every Coxeter element of the simply connected root datum of type `E₈` has characteristic
 polynomial `Φ₃₀` on the simple roots. -/
 theorem charpoly_e8SimplyConnectedRootDatum {l : List e8SimplyConnectedBase.support}
     (hnd : l.Nodup) (hall : ∀ i, i ∈ l)
     {W : Matrix e8SimplyConnectedBase.support e8SimplyConnectedBase.support ℤ}
-    (hW : ActsBy e8SimplyConnectedBase (wordProd e8SimplyConnectedRootDatum e8SimplyConnectedBase l)
-      W) :
+    (hW : e8SimplyConnectedBase.ActsBy
+      (wordProd e8SimplyConnectedRootDatum e8SimplyConnectedBase l) W) :
     W.charpoly = cyclotomic 30 ℤ :=
-  charpoly_of_actsBy_of_hasCartanType_E8 hasCartanType_e8SimplyConnectedRootDatum hnd hall hW
+  charpoly_of_hasCartanType_E8_of_actsBy hasCartanType_e8SimplyConnectedRootDatum hnd hall hW
 
 end TauCeti.Coxeter
 
