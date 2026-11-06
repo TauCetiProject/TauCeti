@@ -89,8 +89,11 @@ theorem π_def (F : I ⥤ C) (i : I) :
 /-- Stage projections commute with transition maps. -/
 @[reassoc (attr := simp)]
 theorem π_naturality (F : I ⥤ C) {i j : I} (a : i ⟶ j) :
-    π F i ≫ const.map (F.map a) = π F j :=
-  congrArg Quiver.Hom.op (colimit.w (F.op ⋙ Ind.yoneda) a.op)
+    π F i ≫ const.map (F.map a) = π F j := by
+  rw [const_map]
+  -- By `π_def`, the legs are opposite colimit inclusions; taking opposites reverses
+  -- composition as in `op_comp`, turning the colimit relation into this cone relation.
+  exact congrArg Quiver.Hom.op (colimit.w (F.op ⋙ Ind.yoneda) a.op)
 
 /-- The stage projections form a cone. The body is exposed so that the vertex in
 `mkCone_π_app` is definitionally `mk F`, without equality transports. -/
@@ -103,6 +106,8 @@ def mkCone (F : I ⥤ C) : Cone (F ⋙ const) where
 
 /-- A cofiltered presentation realizes its pro-object as a limit of constant objects. -/
 def mkConeIsLimit (F : I ⥤ C) : IsLimit (mkCone F) :=
+  -- `mkCone F` is definitionally `coneRightOpOfCocone (colimit.cocone (F.op ⋙ Ind.yoneda))`:
+  -- `mk_def` identifies the vertex, and `π_def` identifies each leg with an opposite inclusion.
   isLimitConeRightOpOfCocone (F.op ⋙ Ind.yoneda) (colimit.isColimit _)
 
 /-- The vertex of the presentation cone is the presented pro-object. -/
@@ -133,6 +138,9 @@ theorem hom_ext {F : I ⥤ C} {X : Pro C} {f g : X ⟶ mk F}
 @[reassoc (attr := simp)]
 theorem lim_map_π {F G : I ⥤ C} (α : F ⟶ G) (i : I) :
     lim.map α ≫ π G i = π F i ≫ const.map (α.app i) :=
+  -- Unfolding `lim`, `rightOp`, `Functor.opHom` and `Ind.lim` (whiskering by Yoneda then
+  -- `colim`) identifies `lim.map α` with `(colim.map (whiskerRight (NatTrans.op α)
+  -- Ind.yoneda)).op`. Together with `π_def` and `const_map`, this is the opposite of `ι_map`.
   congrArg Quiver.Hom.op
     (colimit.ι_map (Functor.whiskerRight (NatTrans.op α) Ind.yoneda) (op i))
 
