@@ -36,12 +36,6 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
-private theorem map_neg_eq_map_affine (μ : Measure ℝ) :
-    μ.map Neg.neg = μ.map (fun x : ℝ ↦ 0 + -1 * x) := by
-  congr 1
-  funext x
-  simp
-
 /-- The exponential-integrability domain of a fully left-skewed stable law of shape one half is
 the nonnegative half-line. -/
 theorem integrableExpSet_id_stableMeasure_one_half_neg_one {s : ℝ≥0} (hs : 0 < s) (m : ℝ) :
@@ -55,20 +49,22 @@ theorem integrableExpSet_id_stableMeasure_one_half_neg_one {s : ℝ≥0} (hs : 0
 
 /-- The moment-generating function of a fully left-skewed stable law of shape one half on its
 exponential-integrability domain. -/
-theorem mgf_id_stableMeasure_one_half_neg_one {s : ℝ≥0} (hs : 0 < s) (m : ℝ) {t : ℝ}
-    (ht : 0 ≤ t) :
+theorem mgf_id_stableMeasure_one_half_neg_one (s : ℝ≥0) (m : ℝ) {t : ℝ} (ht : 0 ≤ t) :
     mgf id (stableMeasure 2⁻¹ (-1) s m) t = exp ((m + s) * t - √(2 * s * t)) := by
-  rw [stableMeasure_one_half_neg_one hs, map_neg_eq_map_affine, mgf_id_map_affine]
+  rcases eq_or_ne s 0 with rfl | hs
+  · rw [stableMeasure_zero_scale (by norm_num) (by norm_num), mgf_dirac']
+    simp [mul_comm]
+  have hspos : 0 < s := pos_iff_ne_zero.mpr hs
+  rw [stableMeasure_one_half_neg_one hspos, map_neg_eq_map_affine, mgf_id_map_affine]
   simp only [zero_mul, exp_zero, one_mul, neg_one_mul]
-  rw [mgf_id_levyMeasure (by exact_mod_cast hs) (-m - s) (by linarith : -t ≤ 0)]
+  rw [mgf_id_levyMeasure (by exact_mod_cast hspos) (-m - s) (by linarith : -t ≤ 0)]
   congr 1
   congr 1 <;> ring_nf
 
 /-- The cumulant-generating function of a fully left-skewed stable law of shape one half on its
 exponential-integrability domain. -/
-theorem cgf_id_stableMeasure_one_half_neg_one {s : ℝ≥0} (hs : 0 < s) (m : ℝ) {t : ℝ}
-    (ht : 0 ≤ t) :
+theorem cgf_id_stableMeasure_one_half_neg_one (s : ℝ≥0) (m : ℝ) {t : ℝ} (ht : 0 ≤ t) :
     cgf id (stableMeasure 2⁻¹ (-1) s m) t = (m + s) * t - √(2 * s * t) := by
-  rw [cgf, mgf_id_stableMeasure_one_half_neg_one hs m ht, log_exp]
+  rw [cgf, mgf_id_stableMeasure_one_half_neg_one s m ht, log_exp]
 
 end TauCeti.Probability
