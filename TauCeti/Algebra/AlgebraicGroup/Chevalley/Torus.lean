@@ -108,14 +108,9 @@ these are exactly the characters that factor through `P / Λ(D)`. -/
 theorem mem_ker_fullWeightTorusRestriction_iff (s : Fin t.rank → Aˣ) :
     s ∈ (D.fullWeightTorusRestriction A).ker ↔
       ∀ μ : D.weightLattice, torusCharacter s (μ : Fin t.rank → ℤ) = 1 := by
-  rw [MonoidHom.mem_ker]
-  constructor
-  · intro hs μ
-    rw [← D.torusCharacter_fullWeightTorusRestriction A s μ, hs]
-    simp [torusCharacter_def]
-  · intro hs
-    exact funext fun i =>
-      (D.fullWeightTorusRestriction_apply A s i).trans (hs (D.weightLatticeBasis i))
+  rw [fullWeightTorusRestriction, mem_ker_torusPointMap_iff,
+    Subtype.forall, ← D.range_weightLatticeEmbedding]
+  simp only [LinearMap.mem_range, forall_exists_index, forall_apply_eq_imp_iff]
 
 /-- **The full-weight parametrization factors through the actual torus.** Its weights are the
 original weights, whereas the actual torus acts through their coordinates in `Λ(D)`. -/

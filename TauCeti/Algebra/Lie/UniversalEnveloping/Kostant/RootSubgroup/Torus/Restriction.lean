@@ -48,9 +48,8 @@ theorem kostantTorusMatrix_eq_iff (wt : Fin n → κ → ℤ) (wt' : Fin n → �
 theorem kostantTorusMatrix_torusPointMap [DecidableEq κ] (wt : Fin n → κ → ℤ)
     (φ : (κ → ℤ) →ₗ[ℤ] (ν → ℤ)) (s : ν → Aˣ) :
     kostantTorusMatrix M b wt (torusPointMap φ s) =
-      kostantTorusMatrix M b (fun i => φ (wt i)) s :=
-  (kostantTorusMatrix_eq_iff M b _ _ _ _).2
-    ((b.baseChange A).weightTorus_torusPointMap wt φ s)
+      kostantTorusMatrix M b (fun i => φ (wt i)) s := by
+  simp only [kostantTorusMatrix_apply, torusCharacter_torusPointMap]
 
 /-- For spanning coordinate weights, a torus matrix is reached by the ambient-lattice
 parametrization precisely when its parameter extends along the lattice map. -/
