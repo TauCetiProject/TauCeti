@@ -135,4 +135,22 @@ theorem mem_range_realization_coe_iff {K : AbstractSimplicialComplex ι} {z : ι
       ⟨hnn, ?_, hsupp⟩⟩, by simp⟩
     rwa [Finsupp.sum_fintype _ _ (fun _ => rfl)]
 
+/-- On a finite vertex type, a coordinate vector is the coordinate vector of a point of the closed
+simplex on `σ` exactly when it is nonnegative, vanishes off `σ`, and sums to one. -/
+theorem mem_range_standardSimplex_coe_iff {σ : Finset ι} {z : ι → ℝ} :
+    z ∈ range (fun x : StandardSimplex σ => (x.1 : ι → ℝ)) ↔
+      (∀ i, 0 ≤ z i) ∧ (∀ i ∉ σ, z i = 0) ∧ ∑ i, z i = 1 := by
+  constructor
+  · rintro ⟨x, rfl⟩
+    refine ⟨StandardSimplex.nonneg x, fun i hi => Finsupp.notMem_support_iff.mp fun h =>
+      hi (StandardSimplex.support_subset x h), ?_⟩
+    have hsum := StandardSimplex.sum_eq_one x
+    rwa [Finsupp.sum_fintype _ _ (fun _ => rfl)] at hsum
+  · rintro ⟨hnn, hzero, hsum⟩
+    refine ⟨⟨Finsupp.equivFunOnFinite.symm z, ?_⟩, by simp⟩
+    rw [Finset.coe_image, mem_standardSimplex_iff]
+    refine ⟨hnn, by rwa [Finsupp.sum_fintype _ _ (fun _ => rfl)], fun i hi => ?_⟩
+    by_contra h
+    exact Finsupp.mem_support_iff.mp hi (hzero i h)
+
 end AbstractSimplicialComplex
