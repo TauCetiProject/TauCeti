@@ -67,7 +67,9 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 * `Orientation.inner_hodgeStar_apply`: the characterization `⟪⋆x, y⟫ = vol (x ∧ y)`.
 * `Orientation.hodgeStar_basis`: the formula `⋆ e_I = ε(I) e_{Iᶜ}` on an orthonormal basis.
 * `Orientation.hodgeStar_hodgeStar`: `⋆⋆x = (-1) ^ (k * l) x`, and
-  `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree.
+  `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree, so that
+  `Orientation.hodgeStar_smul_sub_hodgeStar_of_even`: the anti-self-dual part `(x - ⋆x) / 2` is
+  anti-self-dual.
 * `Orientation.trace_hodgeStar`: in a positive middle degree the Hodge star is trace free, so
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_one` and
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
@@ -243,6 +245,14 @@ anti-self-dual two-forms are the `±1` eigenspaces of `⋆`. -/
 theorem hodgeStar_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
     (x : ⋀[ℝ]^k V) : o.hodgeStar hkk (o.hodgeStar hkk x) = x := by
   rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
+
+/-- In an even middle degree, every multiple of `x - ⋆x` is anti-self-dual. In particular the
+anti-self-dual part `(x - ⋆x) / 2` of `x` satisfies `⋆((x - ⋆x) / 2) = -((x - ⋆x) / 2)`. -/
+theorem hodgeStar_smul_sub_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
+    (c : ℝ) (x : ⋀[ℝ]^k V) :
+    o.hodgeStar hkk (c • (x - o.hodgeStar hkk x)) = -(c • (x - o.hodgeStar hkk x)) := by
+  rw [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even hk]
+  module
 
 /-- In a positive middle degree, `k + k = finrank ℝ V` with `0 < k`, the Hodge star is trace free:
 it sends each vector `e_I` of the basis of `⋀ᵏ V` induced by an orthonormal basis to a multiple of
