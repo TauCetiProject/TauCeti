@@ -12,6 +12,7 @@ import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
 import TauCeti.MeasureTheory.Integral.SchurTest
+import TauCeti.Topology.MetricSpace.Pseudo.Defs
 
 /-!
 # Riesz potentials
@@ -20,7 +21,8 @@ Let `E` be a real normed space of finite dimension `n ≥ 1` with an additive Ha
 let `ω = μ(B(0, 1))`. The **Riesz kernel** of order `α ∈ (0, n)` is `‖x - y‖ ^ (α - n)`, and the
 Riesz potential of a function is its integral against this kernel. This file proves the two kinds
 of `Lᵖ`-`L^q` estimates for Riesz potentials: the non-sharp ones on a set of finite measure, and
-the sharp Hardy–Littlewood–Sobolev inequality on the whole space.
+the Hardy–Littlewood–Sobolev inequality on the whole space, at the exponent `q` forced by scaling.
+The constant there is only shown to exist; its best value is not computed.
 
 ## Riesz potentials on sets of finite measure
 
@@ -64,10 +66,14 @@ The **Hardy–Littlewood–Sobolev inequality** (`TauCeti.eLpNorm_rieszPotential
 
 `‖I_α f‖_q ≤ C ‖f‖_p`,
 
-with `C` depending only on `μ`, `α` and `p`. This is the endpoint `δ = κ` excluded on sets of
-finite measure above, and the exponent `q` is forced by scaling. It is the fractional integration
-theorem behind the non-endpoint Strichartz estimates, where it is applied in the time variable,
-and behind the Sobolev embedding of the Bessel-potential spaces.
+with `C` depending only on `μ`, `α` and `p`. Since `q ∈ ℝ≥0` and `0⁻¹ = 0`, the relation also
+admits `q = 0`, the case `α p = n`; there the bound is a degenerate one whose left side vanishes
+by the convention `eLpNorm _ 0 = 0`. It has content only for `q ≠ 0`, that is, `α p < n`.
+
+This is the endpoint `δ = κ` excluded on sets of finite measure above, and the exponent `q` is
+forced by scaling. It is the fractional integration theorem behind the non-endpoint Strichartz
+estimates, where it is applied in the time variable, and behind the Sobolev embedding of the
+Bessel-potential spaces.
 
 The proof is Hedberg's. Split the integral defining `I_α f (x)` into dyadic shells
 `r ≤ ‖x - y‖ < 2 r` with `r = R 2ᵏ`, `k ∈ ℤ`. On a shell the kernel is at most `r ^ (α - n)`
@@ -93,6 +99,8 @@ Hardy–Littlewood–Sobolev inequality when `p > 1`. The strong-type bound fail
 * `TauCeti.eLpNorm_setLIntegral_enorm_sub_rpow_mul_le`: the `Lᵖ`-`L^q` bound for the potential on
   a set of finite measure.
 * `TauCeti.rieszPotential`: the Riesz potential `I_α f` of order `α` on the whole space.
+* `TauCeti.rieszPotential_zero`, `TauCeti.rieszPotential_add_le`,
+  `TauCeti.rieszPotential_const_smul`: `I_α` is sublinear.
 * `TauCeti.rieszPotential_le_mul_maximalFunction_rpow_mul_eLpNorm_rpow`: Hedberg's inequality.
 * `TauCeti.eLpNorm_rieszPotential_le`: the Hardy–Littlewood–Sobolev inequality.
 
@@ -302,6 +310,20 @@ section WholeSpace
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
 
+/-- For `p ≥ 1` the exponent `1 - 1 / p` of the measure in Hölder's inequality on a ball is
+nonnegative. -/
+private theorem one_sub_one_div_nonneg {p : ℝ≥0} (hp : 1 ≤ p) : 0 ≤ 1 - 1 / (p : ℝ) :=
+  sub_nonneg.2 (div_le_one_of_le₀ (by exact_mod_cast hp) p.coe_nonneg)
+
+omit [MeasurableSpace E] in
+/-- The Hedberg exponent: if `0 < α`, `0 < p` and `α p < n`, then `0 < n` and `θ = α p / n` lies
+strictly between `0` and `1`. -/
+private theorem finrank_pos_and_div_pos_and_one_sub_pos {α : ℝ} (hα : 0 < α) {p : ℝ≥0}
+    (hp : 0 < p) (hαp : α * p < finrank ℝ E) :
+    (0 : ℝ) < finrank ℝ E ∧ 0 < α * p / finrank ℝ E ∧ 0 < 1 - α * p / finrank ℝ E := by
+  have hd : (0 : ℝ) < finrank ℝ E := (mul_pos hα (by exact_mod_cast hp)).trans hαp
+  exact ⟨hd, by positivity, by rw [sub_pos, div_lt_one hd]; exact hαp⟩
+
 section Definition
 
 variable [ENorm F]
@@ -337,7 +359,43 @@ theorem rieszPotential_enorm (μ : Measure E) (α : ℝ) (f : E → F) :
     rieszPotential μ α (fun y => ‖f y‖ₑ) = rieszPotential μ α f :=
   funext fun _ => rieszPotential_congr_ae (.of_forall fun _ => by simp)
 
+/-- The Riesz potential is positively homogeneous: scaling `f` by `c` scales `I_α f` by `‖c‖ₑ`. -/
+@[simp]
+theorem rieszPotential_const_smul {𝕜 : Type*} [NNNorm 𝕜] [SMul 𝕜 F] [ENormSMulClass 𝕜 F]
+    (μ : Measure E) (α : ℝ) (c : 𝕜) (f : E → F) (x : E) :
+    rieszPotential μ α (c • f) x = ‖c‖ₑ * rieszPotential μ α f x := by
+  rw [rieszPotential_def, rieszPotential_def, ← lintegral_const_mul' _ _ enorm_ne_top]
+  exact lintegral_congr fun y => by rw [Pi.smul_apply, enorm_smul, mul_left_comm]
+
 end Definition
+
+section Sublinear
+
+variable {G : Type*} [TopologicalSpace G] [ESeminormedAddMonoid G] {μ : Measure E} {α : ℝ}
+  {f g : E → G}
+
+/-- The Riesz potential of the zero function is zero. -/
+@[simp]
+theorem rieszPotential_zero (μ : Measure E) (α : ℝ) (x : E) :
+    rieszPotential μ α (0 : E → G) x = 0 := by
+  simp [rieszPotential_def]
+
+/-- The Riesz potential is subadditive. Only the norm of the first summand need be measurable. -/
+theorem rieszPotential_add_le [BorelSpace E] (hf : AEMeasurable (fun y => ‖f y‖ₑ) μ) (x : E) :
+    rieszPotential μ α (f + g) x ≤ rieszPotential μ α f x + rieszPotential μ α g x := by
+  have hk : Measurable fun y : E => ‖x - y‖ₑ ^ (α - finrank ℝ E) := by fun_prop
+  calc rieszPotential μ α (f + g) x
+      ≤ ∫⁻ y, (‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖f y‖ₑ +
+          ‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖g y‖ₑ) ∂μ := by
+        rw [rieszPotential_def]
+        refine lintegral_mono fun y => ?_
+        rw [← mul_add]
+        gcongr
+        exact enorm_add_le (f y) (g y)
+    _ = rieszPotential μ α f x + rieszPotential μ α g x :=
+        lintegral_add_left' (hk.aemeasurable.mul hf) _
+
+end Sublinear
 
 variable [BorelSpace E] [TopologicalSpace F] [ContinuousENorm F] {μ : Measure E} {α : ℝ}
   {f : E → F} {x : E}
@@ -373,20 +431,6 @@ theorem aemeasurable_rieszPotential [FiniteDimensional ℝ E] [SFinite μ]
     funext (rieszPotential_def μ α f)]
   exact (hk.aemeasurable.mul hf.comp_snd).lintegral_prod_right'
 
-omit [NormedSpace ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- Every point other than `x` lies in a dyadic shell `R 2ᵏ ≤ ‖x - y‖ < 2 R 2ᵏ`, `k ∈ ℤ`. -/
-private theorem compl_singleton_subset_iUnion_shell {R : ℝ} (hR : 0 < R) :
-    {x}ᶜ ⊆ ⋃ k : ℤ, ball x (2 * (R * 2 ^ k)) \ ball x (R * 2 ^ k) := by
-  intro y hy
-  have hxy : 0 < ‖x - y‖ / R := div_pos (norm_pos_iff.2 (sub_ne_zero.2 (Ne.symm hy))) hR
-  obtain ⟨k, hk₁, hk₂⟩ := exists_mem_Ico_zpow hxy one_lt_two
-  refine mem_iUnion.2 ⟨k, ?_, ?_⟩
-  · rw [mem_ball', dist_eq_norm]
-    rw [zpow_add_one₀ two_ne_zero, div_lt_iff₀ hR] at hk₂
-    linarith
-  · rw [mem_ball', dist_eq_norm, not_lt]
-    rwa [le_div_iff₀ hR, mul_comm] at hk₁
-
 /-- **The dyadic shell decomposition** of the Riesz potential: for every radius `R > 0`,
 `I_α f (x)` is at most the sum over `k ∈ ℤ` of `(R 2ᵏ) ^ (α - n)` times the integral of `‖f‖`
 over the ball `B(x, 2 R 2ᵏ)`. -/
@@ -401,7 +445,10 @@ private theorem rieszPotential_le_tsum [Nontrivial E] [FiniteDimensional ℝ E]
         rw [setLIntegral_congr hnull, setLIntegral_univ, rieszPotential_def]
     _ ≤ ∫⁻ y in ⋃ k : ℤ, ball x (2 * (R * 2 ^ k)) \ ball x (R * 2 ^ k),
           ‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖f y‖ₑ ∂μ :=
-        lintegral_mono_set (compl_singleton_subset_iUnion_shell hR)
+        lintegral_mono_set (by
+          rw [← closedBall_zero, ← iUnion_ball_diff_ball_mul_zpow x hR one_lt_two]
+          exact (iUnion_congr fun k => by
+            rw [zpow_add_one₀ two_ne_zero, ← mul_assoc, mul_comm _ (2 : ℝ)]).subset)
     _ ≤ ∑' k : ℤ, ∫⁻ y in ball x (2 * (R * 2 ^ k)) \ ball x (R * 2 ^ k),
           ‖x - y‖ₑ ^ (α - finrank ℝ E) * ‖f y‖ₑ ∂μ :=
         lintegral_iUnion_le _ _
@@ -441,10 +488,7 @@ private theorem ofReal_rpow_mul_setLIntegral_ball_le_eLpNorm [Nontrivial E]
     ENNReal.ofReal (r ^ (α - finrank ℝ E)) * ∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ ≤
       ENNReal.ofReal (2 ^ ((finrank ℝ E : ℝ) * (1 - 1 / p)) * r ^ (α - finrank ℝ E / p)) *
         μ (ball 0 1) ^ (1 - 1 / (p : ℝ)) * eLpNorm f p μ := by
-  have hp₀ : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp
-  have hs : 0 ≤ 1 - 1 / (p : ℝ) := by
-    rw [sub_nonneg, div_le_one hp₀]
-    exact_mod_cast hp
+  have hs := one_sub_one_div_nonneg hp
   have hHolder : ∫⁻ y in ball x (2 * r), ‖f y‖ₑ ∂μ ≤
       eLpNorm f p μ * μ (ball x (2 * r)) ^ (1 - 1 / (p : ℝ)) := by
     have := eLpNorm_le_eLpNorm_mul_rpow_measure_univ (μ := μ.restrict (ball x (2 * r)))
@@ -548,16 +592,13 @@ omit [BorelSpace E] in
 private theorem hedbergFarConst_ne_top [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure] {p : ℝ≥0}
     (hp : 1 ≤ p) (hαp : α * p < finrank ℝ E) : hedbergFarConst μ α p ≠ ∞ := by
   have hp₀ : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp
-  have hs : 0 ≤ 1 - 1 / (p : ℝ) := by
-    rw [sub_nonneg, div_le_one hp₀]
-    exact_mod_cast hp
   have hσ : ENNReal.ofReal (2 ^ (α - finrank ℝ E / p)) < 1 := by
     refine ENNReal.ofReal_lt_one.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two ?_)
     rw [sub_neg, lt_div_iff₀ hp₀]
     exact hαp
   rw [hedbergFarConst]
   exact ENNReal.mul_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top
-    (ENNReal.rpow_ne_top_of_nonneg hs measure_ball_lt_top.ne))
+    (ENNReal.rpow_ne_top_of_nonneg (one_sub_one_div_nonneg hp) measure_ball_lt_top.ne))
     (ENNReal.inv_ne_top.2 (tsub_pos_of_lt hσ).ne')
 
 /-- The radius balancing the two terms of Hedberg's splitting: for `M, N ∈ (0, ∞)` the radius
@@ -601,13 +642,12 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
       maximalFunction μ f x ^ (1 - α * p / finrank ℝ E) *
         eLpNorm f p μ ^ (α * p / finrank ℝ E) := by
   have hp₀ : (0 : ℝ) < p := by exact_mod_cast zero_lt_one.trans_le hp
-  have hd : (0 : ℝ) < finrank ℝ E := (mul_pos hα hp₀).trans hαp
+  obtain ⟨hd, hθ₀, hθ₁⟩ :=
+    finrank_pos_and_div_pos_and_one_sub_pos hα (zero_lt_one.trans_le hp) hαp
   have : Nontrivial E := Module.finrank_pos_iff.1 (by exact_mod_cast hd)
   have hαd : α ≤ finrank ℝ E :=
     (le_mul_of_one_le_right hα.le (by exact_mod_cast hp)).trans hαp.le
   set θ := α * p / finrank ℝ E with hθ
-  have hθ₀ : 0 < θ := by positivity
-  have hθ₁ : 0 < 1 - θ := by rw [sub_pos, hθ, div_lt_one hd]; exact hαp
   have hC : hedbergNearConst μ α + hedbergFarConst μ α p ≠ 0 :=
     (add_pos_of_pos_of_nonneg (pos_iff_ne_zero.2 hedbergNearConst_ne_zero) zero_le).ne'
   set M := maximalFunction μ f x with hM_def
@@ -631,8 +671,8 @@ private theorem rieszPotential_le_hedbergConst [FiniteDimensional ℝ E] [μ.IsA
       filter_upwards [(eLpNorm_eq_zero_iff (f := fun y => ‖f y‖ₑ) (p := p) (by positivity)).1
         (by rw [eLpNorm_enorm _ hf]; exact hN₀)] with y hy
       simpa using hy
-    rw [rieszPotential_congr_ae hf₀]
-    simp [rieszPotential_def]
+    rw [rieszPotential_congr_ae hf₀, rieszPotential_zero]
+    exact zero_le
   rcases eq_or_ne M ∞ with hMt | hMt
   · rw [hMt, ENNReal.top_rpow_of_pos hθ₁, ENNReal.mul_top hC,
       ENNReal.top_mul (by
@@ -698,39 +738,32 @@ private theorem mul_lt_and_mul_ofReal_one_sub_eq {α n : ℝ} (hn : 0 < n) {p q 
     rw [← ENNReal.ofReal_coe_nnreal, ← ENNReal.ofReal_mul (by positivity), this,
       ENNReal.ofReal_coe_nnreal]
 
-/-- The Hardy–Littlewood–Sobolev inequality with an explicit constant, for `n > 0`: `K` is the
-constant of the strong-type `(p, p)` maximal inequality. -/
+/-- The Hardy–Littlewood–Sobolev inequality at a single function `f`, for `n > 0`, given a
+constant `K` for the strong-type `(p, p)` maximal inequality at `f`. -/
 private theorem eLpNorm_rieszPotential_le_mul [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
-    (hα : 0 < α) {p q : ℝ≥0} (hp : 1 < p) (hαp : α * p < finrank ℝ E)
+    (hα : 0 < α) {p q : ℝ≥0} (hp : 1 ≤ p) (hαp : α * p < finrank ℝ E)
     (hqp : (q : ℝ≥0∞) * ENNReal.ofReal (1 - α * p / finrank ℝ E) = p) (hq : q ≠ 0) {f : E → F}
-    (hf : eLpNorm f p μ ≠ ∞) :
+    (hf : AEStronglyMeasurable f μ) {K : ℝ≥0∞}
+    (hK : eLpNorm (maximalFunction μ f) p μ ≤ K * eLpNorm f p μ) :
     eLpNorm (rieszPotential μ α f) q μ ≤ (hedbergNearConst μ α + hedbergFarConst μ α p) *
-      ((ENNReal.ofReal (2 * p * 2 ^ ((p : ℝ) - 1) / ((p : ℝ) - 1)) * 4 ^ finrank ℝ E) ^
-        (1 / (p : ℝ))) ^ (1 - α * p / finrank ℝ E) * eLpNorm f p μ := by
-  have hd : (0 : ℝ) < finrank ℝ E := (mul_pos hα (by exact_mod_cast zero_lt_one.trans hp)).trans hαp
+      K ^ (1 - α * p / finrank ℝ E) * eLpNorm f p μ := by
+  obtain ⟨-, hθ₀, hθ₁⟩ := finrank_pos_and_div_pos_and_one_sub_pos hα (zero_lt_one.trans_le hp) hαp
   set θ := α * p / finrank ℝ E with hθ
-  have hθ₀ : 0 < θ := by positivity
-  have hθ₁ : 0 < 1 - θ := by rw [sub_pos, hθ, div_lt_one hd]; exact hαp
   set C₀ := hedbergNearConst μ α + hedbergFarConst μ α p with hC₀
-  set K : ℝ≥0∞ := (ENNReal.ofReal (2 * p * 2 ^ ((p : ℝ) - 1) / ((p : ℝ) - 1)) *
-    4 ^ finrank ℝ E) ^ (1 / (p : ℝ)) with hK
   set N := eLpNorm f p μ with hN
-  have hfm : AEStronglyMeasurable f μ := aestronglyMeasurable_of_eLpNorm_ne_top hf
   have hM : AEStronglyMeasurable (maximalFunction μ f) μ :=
     (measurable_maximalFunction μ f).aestronglyMeasurable
   calc eLpNorm (rieszPotential μ α f) q μ
       ≤ eLpNorm (fun x => C₀ * N ^ θ * ‖maximalFunction μ f x‖ₑ ^ (1 - θ)) q μ := by
-        refine eLpNorm_mono_enorm (aemeasurable_rieszPotential hfm.enorm).aestronglyMeasurable
+        refine eLpNorm_mono_enorm (aemeasurable_rieszPotential hf.enorm).aestronglyMeasurable
           fun x => ?_
         simp only [enorm_eq_self]
-        refine (rieszPotential_le_hedbergConst hα hp.le hαp f x).trans_eq ?_
+        refine (rieszPotential_le_hedbergConst hα hp hαp f x).trans_eq ?_
         rw [← hθ, ← hC₀, ← hN]
         ring
     _ = C₀ * N ^ θ * eLpNorm (maximalFunction μ f) p μ ^ (1 - θ) := by
         rw [eLpNorm_const_mul_ennreal_of_pos (by positivity), eLpNorm_enorm_rpow _ hM hθ₁, hqp]
-    _ ≤ C₀ * N ^ θ * (K * N) ^ (1 - θ) := by
-        gcongr
-        exact eLpNorm_maximalFunction_le μ hfm.enorm (by exact_mod_cast hp) ENNReal.coe_ne_top
+    _ ≤ C₀ * N ^ θ * (K * N) ^ (1 - θ) := by gcongr
     _ = C₀ * K ^ (1 - θ) * N := by
         rw [ENNReal.mul_rpow_of_nonneg _ _ hθ₁.le, show C₀ * N ^ θ * (K ^ (1 - θ) * N ^ (1 - θ)) =
           C₀ * K ^ (1 - θ) * (N ^ θ * N ^ (1 - θ)) by ring,
@@ -741,7 +774,10 @@ private theorem eLpNorm_rieszPotential_le_mul [FiniteDimensional ℝ E] [μ.IsAd
 
 `‖I_α f‖_q ≤ C ‖f‖_p`,
 
-with `C` depending only on `μ`, `α` and `p`. -/
+with `C` depending only on `μ`, `α` and `p`.
+
+The bound has content only for `q ≠ 0`, equivalently `α p < n`. The hypothesis also admits
+`q = 0` (the case `α p = n`, since `0⁻¹ = 0`), where it holds only because `eLpNorm _ 0 = 0`. -/
 theorem eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure E) [μ.IsAddHaarMeasure]
     (hα : 0 < α) {p q : ℝ≥0} (hp : 1 < p)
     (hpq : (q : ℝ)⁻¹ = (p : ℝ)⁻¹ - α / finrank ℝ E) :
@@ -759,34 +795,28 @@ theorem eLpNorm_rieszPotential_le [FiniteDimensional ℝ E] (μ : Measure E) [μ
   · refine ⟨0, fun f => ?_⟩
     have : rieszPotential μ α f = 0 := funext fun x => rieszPotential_eq_zero_of_subsingleton hα
     simp [this]
-  have hp' : (1 : ℝ) < p := by exact_mod_cast hp
   obtain ⟨hαp, hqp⟩ := mul_lt_and_mul_ofReal_one_sub_eq (by exact_mod_cast Module.finrank_pos)
     (zero_lt_one.trans hp) hq hpq
-  have hθ₁ : 0 < 1 - α * p / finrank ℝ E := by
-    rw [sub_pos, div_lt_one (by exact_mod_cast Module.finrank_pos)]
-    exact hαp
-  -- The constant `C₀ K ^ (1 - θ)` is finite and nonzero.
-  set K₀ := ENNReal.ofReal (2 * p * 2 ^ ((p : ℝ) - 1) / ((p : ℝ) - 1)) * 4 ^ finrank ℝ E
-  have hK₀ : K₀ ≠ ∞ :=
-    ENNReal.mul_ne_top ENNReal.ofReal_ne_top (ENNReal.pow_ne_top ENNReal.ofNat_ne_top)
-  have hK₀' : 0 < K₀ := by
-    have : (0 : ℝ) < p - 1 := by linarith
-    exact ENNReal.mul_pos (ENNReal.ofReal_pos.2 (by positivity)).ne' (by simp)
-  have hKtop : K₀ ^ (1 / (p : ℝ)) ≠ ∞ := ENNReal.rpow_ne_top_of_nonneg (by positivity) hK₀
-  have hK : (K₀ ^ (1 / (p : ℝ))) ^ (1 - α * p / finrank ℝ E) ≠ 0 :=
-    (ENNReal.rpow_pos (ENNReal.rpow_pos hK₀' hK₀) hKtop).ne'
-  have hC : (hedbergNearConst μ α + hedbergFarConst μ α p) *
-      (K₀ ^ (1 / (p : ℝ))) ^ (1 - α * p / finrank ℝ E) ≠ ∞ :=
+  obtain ⟨-, -, hθ₁⟩ := finrank_pos_and_div_pos_and_one_sub_pos hα (zero_lt_one.trans hp) hαp
+  -- The strong-type maximal inequality with some constant `K`. The constant below uses `K + 1`,
+  -- which keeps it nonzero, so that it also covers `‖f‖_p = ∞`.
+  obtain ⟨K, hK⟩ := exists_eLpNorm_maximalFunction_le (F := F) μ (p := p)
+    (by exact_mod_cast hp) ENNReal.coe_ne_top
+  set C₀ := hedbergNearConst μ α + hedbergFarConst μ α p
+  have hK₁ : ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E) ≠ 0 :=
+    (ENNReal.rpow_pos (by positivity) (by simp)).ne'
+  have hC : C₀ * ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E) ≠ ∞ :=
     ENNReal.mul_ne_top (ENNReal.add_ne_top.2 ⟨hedbergNearConst_ne_top hα,
-      hedbergFarConst_ne_top hp.le hαp⟩) (ENNReal.rpow_ne_top_of_nonneg hθ₁.le hKtop)
-  refine ⟨((hedbergNearConst μ α + hedbergFarConst μ α p) *
-    (K₀ ^ (1 / (p : ℝ))) ^ (1 - α * p / finrank ℝ E)).toNNReal, fun f => ?_⟩
+      hedbergFarConst_ne_top hp.le hαp⟩) (ENNReal.rpow_ne_top_of_nonneg hθ₁.le (by simp))
+  refine ⟨(C₀ * ((K : ℝ≥0∞) + 1) ^ (1 - α * p / finrank ℝ E)).toNNReal, fun f => ?_⟩
   rw [ENNReal.coe_toNNReal hC]
   rcases eq_or_ne (eLpNorm f p μ) ∞ with hN | hN
   · rw [hN, ENNReal.mul_top (mul_ne_zero (add_pos_of_pos_of_nonneg
-      (pos_iff_ne_zero.2 hedbergNearConst_ne_zero) zero_le).ne' hK)]
+      (pos_iff_ne_zero.2 hedbergNearConst_ne_zero) zero_le).ne' hK₁)]
     exact le_top
-  exact eLpNorm_rieszPotential_le_mul hα hp hαp hqp hq hN
+  have hf := aestronglyMeasurable_of_eLpNorm_ne_top hN
+  exact eLpNorm_rieszPotential_le_mul hα hp.le hαp hqp hq hf
+    ((hK f hf.enorm).trans (by gcongr; exact le_self_add))
 
 end WholeSpace
 
