@@ -124,11 +124,14 @@ def restrictIso (U : Opens (TopCat.of M)) :
   ObjectProperty.isoMk _ <| NatIso.ofComponents
     (fun V ↦ (sectionsRingEquiv IM I R V.unop).toRingCatIso) (fun _ ↦ rfl)
 
+-- Stored simp keys keep the carrier of `TopCat.of M` as a projection, which simp reduces in the
+-- goal, so the simp lemmas below keep the section, point and open-set terms out of the index.
 /-- The restriction isomorphism evaluates a section at the corresponding point of `M`. -/
 @[simp]
 theorem restrictIso_hom_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     (f : C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, R⟯) (x : V) :
-    DFunLike.coe (F := C^∞⟮IM, V; I, R⟯) ((restrictIso IM I R U).hom.hom.app (op V) f) x =
+    @DFunLike.coe (no_index C^∞⟮IM, V; I, R⟯) (no_index ↥V) (fun _ ↦ R) _
+        (no_index ((restrictIso IM I R U).hom.hom.app (op V) f)) x =
       f ⟨x.1.1, x.1, x.2, rfl⟩ :=
   (rfl)
 
@@ -137,8 +140,11 @@ of `V`. -/
 @[simp]
 theorem restrictIso_inv_app_apply (U : Opens (TopCat.of M)) (V : Opens U)
     (g : C^∞⟮IM, V; I, R⟯) (x : V) :
-    DFunLike.coe (F := C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, R⟯)
-      ((restrictIso IM I R U).inv.hom.app (op V) g) ⟨x.1.1, x.1, x.2, rfl⟩ = g x :=
+    @DFunLike.coe (no_index C^∞⟮IM, U.isOpenEmbedding.isOpenMap.functor.obj V; I, R⟯)
+        (no_index ↥(U.isOpenEmbedding.isOpenMap.functor.obj V)) (fun _ ↦ R) _
+        (no_index ((restrictIso IM I R U).inv.hom.app (op V) g))
+        (no_index ⟨x.1.1, x.1, x.2, rfl⟩) =
+      g x :=
   (rfl)
 
 /-- The restriction of the sheaf of smooth functions to the over site of an open subset `U`,
@@ -151,7 +157,7 @@ def overIso (U : Opens (TopCat.of M)) :
 isomorphism. -/
 @[simp]
 theorem overIso_hom_app (U : Opens (TopCat.of M)) (V : Opens U) :
-    (overIso IM I R U).hom.hom.app (op V) = (restrictIso IM I R U).hom.hom.app (op V) :=
+    (overIso IM I R U).hom.hom.app (no_index (op V)) = (restrictIso IM I R U).hom.hom.app (op V) :=
   (rfl)
 
 /-- The stalk at a point `x` of an open subset `U` of the sheaf of smooth functions on `U` is the
@@ -165,7 +171,7 @@ def stalkIso (U : Opens (TopCat.of M)) (x : U) :
 
 /-- The stalk comparison sends the germ of a smooth function on an open subset `V` of `U` to the
 germ of the corresponding smooth function on the image of `V` in `M`. -/
-@[simp, reassoc (attr := simp), elementwise (attr := simp)]
+@[reassoc (attr := simp), elementwise (attr := simp)]
 theorem germ_stalkIso_hom (U : Opens (TopCat.of M)) (V : Opens U) (x : U) (hx : x ∈ V) :
     (smoothSheafRing IM I U R).presheaf.germ V x hx ≫ (stalkIso IM I R U x).hom =
       (restrictIso IM I R U).inv.hom.app (op V) ≫
