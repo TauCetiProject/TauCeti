@@ -142,9 +142,7 @@ theorem IsMetricCompatible.derivWeylTensor_eq_mvfderiv_sub
   have hd (S : Π y : M, TangentSpace I y) (hS : CMDiff ∞ (T% S)) : MDiffAt (T% S) x :=
     hS.mdifferentiableAt (by simp)
   -- The Riemann part is the covariant derivative of `⟨R(U, V)W, Z⟩`.
-  have hR := hcov.inner_derivCurvature (extend E d) hU hV hW hZ x
-  simp only [extend_apply_self] at hR
-  rw [derivCurvature_apply, ← derivCurvatureTensor_apply cov cov x d hU hV hW] at hR
+  have hR := hcov.inner_derivCurvatureTensor cov x d hU hV hW hZ
   have hRd : MDiffAt (fun y ↦ inner ℝ (curvature y (U y) (V y) (W y)) (Z y)) x := by
     have h := TauCeti.Manifold.mdifferentiableAt_inner
       (hd _ (cov.contMDiff_curvatureOperator hU hV hW)) (hd Z hZ)

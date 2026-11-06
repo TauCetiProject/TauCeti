@@ -71,7 +71,7 @@ theorem pointsMap_simpleWeylPoint {A : Type v} {B : Type w} [CommRing A] [CommRi
 
 /-- The pinned representative sends the positive simple-root subgroup to its opposite,
 with the integral sign convention retained in characteristic two. -/
-@[simp]
+@[simp↓]
 theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 4) (A : Type v) [CommRing A]
     [Algebra (ZMod 2) A] (u : A) :
     simpleWeylPoint i A * rootSubgroupPoints (.inl i) A (Multiplicative.ofAdd u) *
@@ -84,7 +84,7 @@ theorem simpleWeylPoint_conj_rootSubgroupPoints (i : Fin 4) (A : Type v) [CommRi
 
 /-- The prime-field representative acts on the weight torus by the simple reflection of
 the simply connected type-F₄ datum. -/
-@[simp]
+@[simp↓]
 theorem simpleWeylPoint_conj_weightTorusPoints (i : Fin 4) (A : Type v) [CommRing A]
     [Algebra (ZMod 2) A] (s : Fin 4 → Aˣ) :
     simpleWeylPoint i A * weightTorusPoints A s * (simpleWeylPoint i A)⁻¹ =
