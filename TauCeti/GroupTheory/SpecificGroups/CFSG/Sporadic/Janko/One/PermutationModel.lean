@@ -154,7 +154,20 @@ theorem presentationImage_zero : presentationImage ⟨0, by simp⟩ = a⁻¹ := 
 @[simp]
 theorem presentationImage_one : presentationImage ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
--- Separate kernel checks keep each declaration within the default heartbeat budget.
+-- Evaluate the long relators over the image table's grid. The smaller finite quantifiers
+-- keep call-by-value evaluation within the default recursion and heartbeat budgets.
+private theorem perm_eq_one_of_rows (p : Equiv.Perm (Fin 266))
+    (h : ∀ i : Fin 19, ∀ j : Fin 14,
+      p ⟨i.val * 14 + j.val, by omega⟩ = ⟨i.val * 14 + j.val, by omega⟩) : p = 1 := by
+  apply Equiv.ext
+  intro i
+  change p i = i
+  have hi : (⟨(i.val / 14) * 14 + i.val % 14, by omega⟩ : Fin 266) = i := by
+    apply Fin.ext
+    change (i.val / 14) * 14 + i.val % 14 = i.val
+    omega
+  simpa only [hi] using h ⟨i.val / 14, by omega⟩ ⟨i.val % 14, by omega⟩
+
 private theorem relator_zero :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[0]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_zero,
@@ -172,21 +185,24 @@ private theorem relator_two :
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply perm_eq_one_of_rows
+  decide_cbv
 
 private theorem relator_three :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[3]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply perm_eq_one_of_rows
+  decide_cbv
 
 private theorem relator_four :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[4]'(by simp)) = 1 := by
   simp only [Sporadic.j1Presentation_transcribed, List.getElem_cons_succ, List.getElem_cons_zero,
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
-  decide +kernel
+  apply perm_eq_one_of_rows
+  decide_cbv
 
 /-- All five transcribed relators hold on the inverse ATLAS pair. -/
 theorem lift_presentationImage_toFreeGroup_eq_one
