@@ -194,7 +194,7 @@ theorem standardResolutionSequence_g :
 /-- The standard resolution sequence is short exact as a sequence of cochain complexes.
 In particular, its exactness holds in every cohomological degree, with the twisted arrow
 differential rather than an unrelated grading on the ungraded sequence. -/
-theorem standardResolutionSequence_shortExact :
+theorem shortExact_standardResolutionSequence :
     (standardResolutionSequence k Q wt d hd hdε).ShortExact := by
   refine HomologicalComplex.shortExact_of_degreewise_shortExact
     (C := ModuleCat.{max u v w} k) (c := ComplexShape.up ℤ)
