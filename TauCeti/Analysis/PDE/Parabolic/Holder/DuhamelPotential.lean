@@ -461,7 +461,7 @@ private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
     · simp only [← h0, heatDuhamelPotential_zero, fderiv_zero, Pi.zero_apply]
       rw [ContinuousLinearMap.opNorm_zero]
       positivity
-    rw [fderiv_fderiv_eq_continuousMultilinearCurryFin2, LinearIsometryEquiv.norm_map]
+    rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.norm_map]
     calc _ ≤ C₂ * ‖f‖₊ * (t : ℝ) ^ ((α : ℝ) / 2) :=
           hC₂ (stronglyMeasurable_forcing f) hfM hH ht x
       _ ≤ C₂.toNNReal * ‖f‖ * (T : ℝ) ^ ((α : ℝ) / 2) := by
@@ -479,13 +479,13 @@ private theorem exists_hessian_bounds (hα₀ : 0 < α) (hα₁ : α < 1) :
       rw [hessian_slabMk, hessian_slabMk]
       rcases t.2.1.eq_or_lt with h0 | ht
       · simp [← h0]
-      rw [fderiv_fderiv_eq_continuousMultilinearCurryFin2,
-        fderiv_fderiv_eq_continuousMultilinearCurryFin2, LinearIsometryEquiv.edist_map]
+      rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two,
+        ← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.edist_map]
       exact hCs (stronglyMeasurable_forcing f) hfM hH ht x y
     have htm : timeEHolderNorm (α / 2) (hessian f) ≤ ((Ct * ‖f‖₊ : ℝ≥0) : ENNReal) := by
       refine timeEHolderNorm_le_iff.2 fun x t s => ?_
-      rw [hessian_slabMk, hessian_slabMk, fderiv_fderiv_eq_continuousMultilinearCurryFin2,
-        fderiv_fderiv_eq_continuousMultilinearCurryFin2, LinearIsometryEquiv.edist_map]
+      rw [hessian_slabMk, hessian_slabMk, ← continuousMultilinearCurryFin2_iteratedFDeriv_two,
+        ← continuousMultilinearCurryFin2_iteratedFDeriv_two, LinearIsometryEquiv.edist_map]
       exact hCt (stronglyMeasurable_forcing f) hfM hH x t t.2 s s.2
     refine eHolderNorm_le_iff.1 ((eHolderNorm_le_spaceEHolderNorm_add_timeEHolderNorm α _).trans
       ((add_le_add hsp htm).trans ?_))
