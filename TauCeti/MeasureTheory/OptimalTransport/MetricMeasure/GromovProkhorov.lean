@@ -286,8 +286,9 @@ theorem gromovProkhorovEDist_triangle (μ : Measure X) (ν : Measure Y) (ρ : Me
 
 end Triangle
 
-/-- **Pushing forward along an isometry does not increase the distance.** No measurability of open
-sets is needed: the metric coupling is composed with the coupling of `X` and `X'` along `T`. -/
+/-- **Pushing forward along an isometry does not increase the distance.** This holds for the
+Gromov–Prokhorov distance to any measure, and no `OpensMeasurableSpace` assumption is needed on
+either space. -/
 theorem gromovProkhorovEDist_map_le {T : X → X'} (hT : Isometry T) (hTm : AEMeasurable T μ)
     (ν : Measure Y) : gromovProkhorovEDist (μ.map T) ν ≤ gromovProkhorovEDist μ ν := by
   refine le_of_forall_gt_imp_ge_of_dense fun δ hδ ↦ ?_
