@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.MeasureTheory.Integral.Lebesgue.Truncation
 public import TauCeti.MeasureTheory.Integral.Marcinkiewicz.Basic
 public import TauCeti.MeasureTheory.Integral.Prod
+public import TauCeti.MeasureTheory.Measure.HalvedHeightBound
 
 /-!
 # Marcinkiewicz interpolation between two finite exponents
@@ -259,24 +261,6 @@ private theorem meas_mul_rpow_le_add {t : ℝ} (ht : 0 < t)
             ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ p₁ ∂μ := by ring
     _ = _ := by rw [hpow p₀, hpow p₁]; ring
 
-/-- The weighted upper truncated integral of `f ^ q` is measurable in the height. -/
-private theorem measurable_rpow_mul_setLIntegral_lt [SFinite μ] (hf : Measurable f) (q s : ℝ) :
-    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
-      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ :=
-  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
-    (measurable_setLIntegral_of_measurableSet (R := fun t x => ENNReal.ofReal (c * t) < f x)
-      (measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd))
-      (hf.pow_const q).aemeasurable)
-
-/-- The weighted lower truncated integral of `f ^ q` is measurable in the height. -/
-private theorem measurable_rpow_mul_setLIntegral_le [SFinite μ] (hf : Measurable f) (q s : ℝ) :
-    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
-      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ :=
-  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
-    (measurable_setLIntegral_of_measurableSet (R := fun t x => f x ≤ ENNReal.ofReal (c * t))
-      (measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal))
-      (hf.pow_const q).aemeasurable)
-
 /-- The upper truncated double integral, through the first half of the truncation estimate. -/
 private theorem lintegral_rpow_sub_sub_one_mul_setLIntegral_lt_le [SFinite μ]
     (hf : AEMeasurable f μ) (hp₀ : 0 < p₀) (hlt₀ : p₀ < p) (hc : 0 < c) :
@@ -475,30 +459,6 @@ theorem lintegral_rpow_le_of_meas_ofReal_lt_le
   rw [← hset₀, ← hset₁]
   exact h t ht
 
-/-- The `q`-th power integral of a truncation of `f` is a truncated integral of `‖f‖ ^ q`. -/
-theorem lintegral_enorm_rpow_eq_setLIntegral {E : Type*} [TopologicalSpace E]
-    [ESeminormedAddMonoid E] {f g : α → E} {R : Set α} (hR : MeasurableSet R)
-    (hg : g =ᵐ[μ] R.indicator f) (hq : 0 < q) :
-    ∫⁻ x, ‖g x‖ₑ ^ q ∂μ = ∫⁻ x in R, ‖f x‖ₑ ^ q ∂μ := by
-  rw [← lintegral_indicator hR]
-  refine lintegral_congr_ae ?_
-  filter_upwards [hg] with x hx
-  by_cases hxR : x ∈ R <;> simp [hx, hxR, ENNReal.zero_rpow_of_pos hq]
-
-/-- A bound on `(s / 2) ^ q * ν X` bounds `ν X`. -/
-theorem measure_le_two_rpow_mul_inv_rpow_mul {s : ℝ≥0∞}
-    (hs : s ≠ 0) (hs' : s ≠ ∞) (hq : 0 < q) {X : Set β} {B : ℝ≥0∞}
-    (h : (s / 2) ^ q * ν X ≤ B) : ν X ≤ 2 ^ q * (s ^ q)⁻¹ * B := by
-  have hs2 : s / 2 ≠ 0 := ENNReal.div_ne_zero.2 ⟨hs, ENNReal.ofNat_ne_top⟩
-  have hs2' : s / 2 ≠ ∞ := ENNReal.div_ne_top hs' two_ne_zero
-  rw [ENNReal.mul_le_iff_le_inv (ENNReal.rpow_pos (pos_iff_ne_zero.2 hs2) hs2').ne'
-    (ENNReal.rpow_ne_top_of_nonneg hq.le hs2')] at h
-  convert h using 2
-  rw [ENNReal.div_rpow_of_nonneg _ _ hq.le, ENNReal.inv_div
-    (Or.inl (ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofNat_ne_top))
-    (Or.inl (ENNReal.rpow_pos two_pos ENNReal.ofNat_ne_top).ne'), div_eq_mul_inv]
-
-
 section Operator
 
 variable {G : Type*} [MeasurableSpace G] [TopologicalSpace G] [OpensMeasurableSpace G]
@@ -527,48 +487,20 @@ theorem setOf_ofReal_lt_ae_le_union {g₁ g₂ : α → G} (ht : 0 < t) (hd : 0 
       _ ≤ ENNReal.ofReal t := ENNReal.ofReal_le_ofReal (by nlinarith)
   exact absurd (hy'.trans_le hle) (lt_irrefl _)
 
-omit [OpensMeasurableSpace G] in
-/-- A weak-type bound turns into a bound on the measure of a superlevel set at the height `r`. -/
-theorem meas_ofReal_lt_le_of_weak {r : ℝ} {B : ℝ≥0∞} {w : α → G} (hw : AEMeasurable w μ)
-    (hq : 0 < q) (hr : 0 < r)
-    (hweak : ∀ (h : α → G), AEMeasurable h μ → ∀ r' : ℝ≥0∞,
-      r' ^ q * ν {y | r' < T h y} ≤ B * ∫⁻ x, ‖h x‖ₑ ^ q ∂μ) :
+omit [MeasurableSpace G] [OpensMeasurableSpace G] in
+/-- A weak-type bound at the height `r` bounds the measure of the superlevel set at that height. -/
+theorem meas_ofReal_lt_le_of_weak {r : ℝ} {B : ℝ≥0∞} {w : α → G} (hq : 0 < q) (hr : 0 < r)
+    (hweak : ENNReal.ofReal r ^ q * ν {y | ENNReal.ofReal r < T w y} ≤
+      B * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ) :
     ν {y | ENNReal.ofReal r < T w y} ≤
       B * ENNReal.ofReal (r ^ (-q)) * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ := by
-  have hpos : (0 : ℝ≥0∞) < ENNReal.ofReal r ^ q :=
-    ENNReal.rpow_pos (ENNReal.ofReal_pos.2 hr) ENNReal.ofReal_ne_top
-  have htop : ENNReal.ofReal r ^ q ≠ ∞ :=
-    ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofReal_ne_top
   have hinv : (ENNReal.ofReal r ^ q)⁻¹ = ENNReal.ofReal (r ^ (-q)) := by
     rw [← ENNReal.rpow_neg, ENNReal.ofReal_rpow_of_pos hr]
-  calc ν {y | ENNReal.ofReal r < T w y}
-      = (ENNReal.ofReal r ^ q)⁻¹ *
-          (ENNReal.ofReal r ^ q * ν {y | ENNReal.ofReal r < T w y}) := by
-        rw [← mul_assoc, ENNReal.inv_mul_cancel hpos.ne' htop, one_mul]
-    _ ≤ (ENNReal.ofReal r ^ q)⁻¹ * (B * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ) :=
-        mul_le_mul_right (hweak w hw _) _
-    _ = B * ENNReal.ofReal (r ^ (-q)) * ∫⁻ x, ‖w x‖ₑ ^ q ∂μ := by rw [hinv]; ring
-
-omit [MeasurableSpace G] [OpensMeasurableSpace G] in
-/-- Truncating `v` at a height does not change, up to a null set, the integral over the part
-where `‖v‖` is above that height, when `v` is replaced by an almost everywhere equal function. -/
-theorem setLIntegral_enorm_rpow_lt_congr {g : α → G} (hvg : v =ᵐ[μ] g) (a : ℝ≥0∞) :
-    ∫⁻ x in {x | a < ‖g x‖ₑ}, ‖v x‖ₑ ^ q ∂μ = ∫⁻ x in {x | a < ‖v x‖ₑ}, ‖v x‖ₑ ^ q ∂μ := by
-  have hsets : {x | a < ‖v x‖ₑ} =ᵐ[μ] {x | a < ‖g x‖ₑ} := by
-    filter_upwards [hvg] with x hx
-    exact congrArg (fun z : ℝ≥0∞ => a < z) (congrArg enorm hx)
-  rw [Measure.restrict_congr_set hsets]
-
-omit [MeasurableSpace G] [OpensMeasurableSpace G] in
-/-- The analogue of `setLIntegral_enorm_rpow_lt_congr` for the part where `‖v‖` is at most the
-height. -/
-theorem setLIntegral_enorm_rpow_le_congr {g : α → G} (hvg : v =ᵐ[μ] g) (a : ℝ≥0∞) :
-    ∫⁻ x in {x | ‖g x‖ₑ ≤ a}, ‖v x‖ₑ ^ q ∂μ = ∫⁻ x in {x | ‖v x‖ₑ ≤ a}, ‖v x‖ₑ ^ q ∂μ := by
-  have hsets : {x | ‖v x‖ₑ ≤ a} =ᵐ[μ] {x | ‖g x‖ₑ ≤ a} := by
-    filter_upwards [hvg] with x hx
-    exact congrArg (fun z : ℝ≥0∞ => z ≤ a) (congrArg enorm hx)
-  rw [Measure.restrict_congr_set hsets]
-
+  refine ((ENNReal.mul_le_iff_le_inv
+    (ENNReal.rpow_pos (ENNReal.ofReal_pos.2 hr) ENNReal.ofReal_ne_top).ne'
+    (ENNReal.rpow_ne_top_of_nonneg hq.le ENNReal.ofReal_ne_top)).mp hweak).trans_eq ?_
+  rw [hinv]
+  ring
 
 /-- The reusable operator-level truncation argument for Marcinkiewicz interpolation between two
 finite exponents.
@@ -625,8 +557,8 @@ theorem meas_ofReal_lt_le_add_setLIntegral (hv : AEMeasurable v μ) (ht : 0 < t)
         measure_union_le _ _
     _ ≤ A₀ * ENNReal.ofReal ((d * t) ^ (-p₀)) * ∫⁻ x, ‖g₁ x‖ₑ ^ p₀ ∂μ +
           A₁ * ENNReal.ofReal ((e * t) ^ (-p₁)) * ∫⁻ x, ‖g₂ x‖ₑ ^ p₁ ∂μ :=
-        add_le_add (meas_ofReal_lt_le_of_weak hg₁meas hp₀ (by positivity) hweak₀)
-          (meas_ofReal_lt_le_of_weak hg₂meas hp₁ (by positivity) hweak₁)
+        add_le_add (meas_ofReal_lt_le_of_weak hp₀ (by positivity) (hweak₀ g₁ hg₁meas _))
+          (meas_ofReal_lt_le_of_weak hp₁ (by positivity) (hweak₁ g₂ hg₂meas _))
     _ = _ := by
         rw [lintegral_enorm_rpow_eq_setLIntegral hSmeas Filter.EventuallyEq.rfl hp₀,
           lintegral_enorm_rpow_eq_setLIntegral hSmeas.compl Filter.EventuallyEq.rfl hp₁, hS₀, hS₁,

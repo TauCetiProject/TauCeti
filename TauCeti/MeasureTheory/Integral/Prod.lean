@@ -189,4 +189,24 @@ theorem setIntegral_eq_zero_of_forall_prod {ρ : Measure (α × β)} {f : α × 
   exact setIntegral_eq_zero_of_isPiSystem le_rfl generateFrom_prod.symm isPiSystem_prod hf huniv
     fun _ ⟨s, hs, t, ht, h⟩ => h ▸ hrect s hs t ht
 
+/-- The weighted upper truncated integral of `f ^ q` is measurable in the height. -/
+theorem measurable_rpow_mul_setLIntegral_lt {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]
+    (hf : Measurable f) (q s : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
+      ∫⁻ x in {x | ENNReal.ofReal (c * t) < f x}, f x ^ q ∂μ :=
+  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
+    (measurable_setLIntegral_of_measurableSet (R := fun t x => ENNReal.ofReal (c * t) < f x)
+      (measurableSet_lt ((measurable_fst.const_mul c).ennreal_ofReal) (hf.comp measurable_snd))
+      (hf.pow_const q).aemeasurable)
+
+/-- The weighted lower truncated integral of `f ^ q` is measurable in the height. -/
+theorem measurable_rpow_mul_setLIntegral_le {f : α → ℝ≥0∞} {c : ℝ} [SFinite μ]
+    (hf : Measurable f) (q s : ℝ) :
+    Measurable fun t : ℝ => ENNReal.ofReal (t ^ s) *
+      ∫⁻ x in {x | f x ≤ ENNReal.ofReal (c * t)}, f x ^ q ∂μ :=
+  ((measurable_id.pow measurable_const).ennreal_ofReal).mul
+    (measurable_setLIntegral_of_measurableSet (R := fun t x => f x ≤ ENNReal.ofReal (c * t))
+      (measurableSet_le (hf.comp measurable_snd) ((measurable_fst.const_mul c).ennreal_ofReal))
+      (hf.pow_const q).aemeasurable)
+
 end TauCeti
