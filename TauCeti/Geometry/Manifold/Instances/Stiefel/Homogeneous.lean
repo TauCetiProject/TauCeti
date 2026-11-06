@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.InnerProductSpace.Orthonormal.Extension
+public import TauCeti.Analysis.InnerProductSpace.Gram.Rigidity
 public import TauCeti.Geometry.Manifold.Instances.Stiefel
 public import TauCeti.Geometry.Sphere.LinearIsometry
 public import TauCeti.LinearAlgebra.OrthogonalGroup
@@ -16,10 +16,10 @@ public import TauCeti.Topology.Grassmannian.Orthonormal
 
 Linear isometries of a real inner product space `E` act on its orthonormal `k`-frames
 `TauCeti.stiefel E k`, vector by vector (`TauCeti.stiefel.instMulAction`). Projecting a frame to
-one of its vectors, a point of the unit sphere, is equivariant (`TauCeti.stiefel.stiefelProj_smul`),
+one of its vectors, a point of the unit sphere, is equivariant (`TauCeti.stiefelProj_smul`),
 and when `E` is finite-dimensional the action is transitive
-(`TauCeti.stiefel.instIsPretransitive`): two orthonormal frames extend to orthonormal bases, and
-the linear isometry exchanging the bases moves one frame to the other.
+(`TauCeti.stiefel.instIsPretransitive`): two orthonormal frames have the same Gram matrix, so a
+linear isometry moves one to the other (`TauCeti.exists_linearIsometryEquiv_of_inner_eq`).
 
 On Euclidean space `ℝᴺ` the Stiefel manifold, which carries the smooth structure, has the same
 points as the orthonormal frames `TauCeti.finiteOrthonormalFrame ℝ r N` of the Grassmannian
@@ -38,7 +38,7 @@ for `n ≥ 3`.
 ## Main declarations
 
 * `TauCeti.stiefel.instMulAction`: linear isometries act on orthonormal frames.
-* `TauCeti.stiefel.stiefelProj_smul`: the projections to the sphere are equivariant.
+* `TauCeti.stiefelProj_smul`: the projections to the sphere are equivariant.
 * `TauCeti.stiefel.instIsPretransitive`: the action is transitive in finite dimension.
 * `TauCeti.stiefel.finiteOrthonormalFrameHomeomorph`: the Stiefel manifold of `ℝᴺ` is homeomorphic
   to the orthonormal frames of the Grassmannian theory.
@@ -80,7 +80,7 @@ theorem stiefel.coe_smul (e : E ≃ₗᵢ[ℝ] E) (v : stiefel E k) :
 /-- Projecting a frame to one of its vectors, a point of the unit sphere, is equivariant for the
 actions of linear isometries on frames and on the sphere. -/
 @[simp]
-theorem stiefel.stiefelProj_smul (e : E ≃ₗᵢ[ℝ] E) (i : Fin k) (v : stiefel E k) :
+theorem stiefelProj_smul (e : E ≃ₗᵢ[ℝ] E) (i : Fin k) (v : stiefel E k) :
     stiefelProj E k i (e • v) = e • stiefelProj E k i v :=
   Subtype.ext (by simp)
 
@@ -89,9 +89,11 @@ inner product space. -/
 instance stiefel.instIsPretransitive [FiniteDimensional ℝ E] :
     IsPretransitive (E ≃ₗᵢ[ℝ] E) (stiefel E k) where
   exists_smul_eq v w := by
-    obtain ⟨e, he⟩ := (mem_stiefel_iff.1 v.2).exists_linearIsometryEquiv_comp_eq
-      (mem_stiefel_iff.1 w.2)
-    exact ⟨e, Subtype.ext he⟩
+    classical
+    obtain ⟨e, he⟩ := exists_linearIsometryEquiv_of_inner_eq (𝕜 := ℝ) (v := v.1) (w := w.1)
+      fun i j ↦ by rw [orthonormal_iff_ite.1 (mem_stiefel_iff.1 v.2),
+        orthonormal_iff_ite.1 (mem_stiefel_iff.1 w.2)]
+    exact ⟨e, Subtype.ext (funext he)⟩
 
 end Action
 
