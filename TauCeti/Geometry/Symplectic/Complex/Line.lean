@@ -11,6 +11,7 @@ import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
 public import TauCeti.Geometry.Symplectic.Complex.Module.Basic
 public import TauCeti.Geometry.Symplectic.StandardCompatible
 public import TauCeti.Geometry.Symplectic.SymplecticTransport
+public import TauCeti.Geometry.Symplectic.Lagrangian.Basic
 
 /-!
 # The standard compatible triple on the complex line
@@ -41,6 +42,8 @@ conjugating the coordinates exchanges them.
 * `TauCeti.stdComplexSymplecticForm_tames_iff_im_pos` and
   `TauCeti.stdComplexSymplecticForm_tames_or_tames_transport_conj`: the orientation criterion
   and coverage of both components by the usual and conjugate real coordinates.
+* `TauCeti.isLagrangian_stdComplexSymplecticForm_of_finrank_eq_one`: every real line in `ℂ`
+  is Lagrangian for the standard area form.
 
 The conventions follow McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*,
 Section 2.1: the standard complex line is `ℝ²` with `J(x, y) = (-y, x)` and
@@ -208,5 +211,20 @@ theorem stdComplexSymplecticForm_tames_or_tames_transport_conj (J : AlmostComple
       stdComplexSymplecticForm.Tames (J.transport Complex.conjCLE.toLinearEquiv) := by
   rw [stdComplexSymplecticForm_tames_iff_im_pos, stdComplexSymplecticForm_tames_transport_conj_iff]
   exact (lt_or_gt_of_ne (AlmostComplexStructure.im_apply_one_ne_zero J)).symm
+
+/-- Every real one-dimensional subspace of the complex plane is Lagrangian for its
+standard symplectic area form. -/
+theorem isLagrangian_stdComplexSymplecticForm_of_finrank_eq_one {L : Submodule ℝ ℂ}
+    (hL : Module.finrank ℝ L = 1) : stdComplexSymplecticForm.IsLagrangian L := by
+  have hne : L ≠ ⊥ := by
+    intro h
+    have hz : Module.finrank ℝ L = 0 := Submodule.finrank_eq_zero.2 h
+    omega
+  obtain ⟨v, hv, hv0⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hne
+  have hs := eq_span_singleton_of_mem_of_finrank_eq_one hL hv hv0
+  have hi : stdComplexSymplecticForm.IsIsotropic L := by
+    rw [hs, SymplecticForm.isIsotropic_span_iff]
+    simpa only [Set.mem_singleton_iff, forall_eq] using stdComplexSymplecticForm.isAlt v
+  exact hi.isLagrangian_of_finrank (by simp [hL])
 
 end TauCeti
