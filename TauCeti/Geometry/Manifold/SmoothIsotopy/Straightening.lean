@@ -505,9 +505,10 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   have hlC := contDiffOn_chartAt_comp_circleExp p hL hLφ
   have hk0 : k 0 = φ p := by simp only [k, Circle.exp_zero, hp]
   have hl0 : l 0 = φ p := by simp only [l, Circle.exp_zero, ← h₀]
-  have hd := deriv_chartAt_comp_circleExp_eq (K.contMDiff.mdifferentiableAt (by simp))
-    (hL.mdifferentiableAt (by simp)) h₀ h₁
-  have hv := deriv_chartAt_comp_circleExp_ne_zero (K.isImmersion.isImmersionAt 1)
+  have hn0 : (∞ : WithTop ℕ∞) ≠ 0 := by simp
+  have hd := deriv_chartAt_comp_circleExp_eq hn0 (K.contMDiff.mdifferentiableAt hn0)
+    (hL.mdifferentiableAt hn0) h₀ h₁
+  have hv := deriv_chartAt_comp_circleExp_ne_zero hn0 (K.isImmersion.isImmersionAt 1)
   -- Step 3: the spliced curves are regular on a fixed interval `[-ρ, ρ]`.
   obtain ⟨ℓ, ρ, hρ0, hρr, hpos⟩ := exists_pos_deriv_splice hr (hkC.of_le (by simp))
     (hlC.of_le (by simp)) (hk0.trans hl0.symm) hd hv
