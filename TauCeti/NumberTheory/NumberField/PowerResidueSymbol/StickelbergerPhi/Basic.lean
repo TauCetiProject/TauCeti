@@ -58,6 +58,10 @@ the Eisenstein reciprocity law.
   and every ideal `A` whose norm is prime to `m`.
 * `Ideal.map_stickelbergerPhi`: `σ (Φ(A)) = Φ(σ A)` for every ring isomorphism `σ` of rings of
   integers, in particular for every automorphism of `K`.
+* `Ideal.apply_stickelbergerPhi_eq_gaussSum_pow`: `σ (Φ(P)) = g(χ_P ^ c, ψ)^m` for an automorphism
+  `σ` of `𝓞 K` raising the `m`-th roots of unity to the power `c`.
+* `Ideal.stickelbergerPhi_mul_apply_eq_absNorm_pow`: `Φ(P) σ(Φ(P)) = N(P)^m` for an automorphism
+  `σ` inverting the `m`-th roots of unity.
 * `Ideal.stickelbergerPhi_modEq`: `Φ(P) ≡ -1 (mod m)` for `m` prime and every maximal ideal `P`
   whose norm is prime to `m`.
 * `Ideal.stickelbergerPhi_modEq_neg_one_pow`: `Φ(A) ≡ (-1)^r (mod m)` for `m` prime and every ideal
@@ -263,6 +267,64 @@ theorem map_stickelbergerPhi (A : Ideal (𝓞 K)) (σ : 𝓞 K ≃+* 𝓞 L) :
       stickelbergerPhi_mul (hσ hP.ne_zero) (hσ hA), map_mul, ih, map_stickelbergerPhi_of_isMaximal]
 
 end Galois
+
+/-- **`Φ(P)` under an automorphism acting on roots of unity by a power.** Let `σ` be a ring
+automorphism of `𝓞 K` with `σ ζ = ζ ^ c` for every `m`-th root of unity `ζ`, such as the element
+`σ_c` of the Galois group of a cyclotomic field. Under the hypotheses of
+`Ideal.stickelbergerPhi_prime`, `f (σ (Φ(P))) = g(χ_P ^ c, ψ)^m`, the character `χ_P ^ c` being
+pushed to `R` along `f`. -/
+theorem apply_stickelbergerPhi_eq_gaussSum_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
+    [Fintype (𝓞 K ⧸ P)] (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K) {c : ℕ}
+    (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ c) {R : Type*} [CommRing R] [IsDomain R]
+    {f : 𝓞 K →+* R} (hf : Function.Injective f) {ψ : AddChar (𝓞 K ⧸ P) R}
+    (hψ : ψ.IsPrimitive) :
+    f (σ (stickelbergerPhi P m)) =
+      gaussSum (((powerResidueSymbol P m)⁻¹ ^ c).ringHomComp f) ψ ^ m := by
+  have h := stickelbergerPhi_prime P hP hm (f := f.comp σ.toRingHom) (hf.comp σ.injective) hψ
+  rw [RingHom.comp_apply, RingEquiv.toRingHom_eq_coe, RingEquiv.coe_toRingHom] at h
+  rw [h]
+  congr 2
+  -- `σ` raises the values of `χ_P`, which are `m`-th roots of unity on units, to the power `c`.
+  refine MulChar.ext fun u ↦ ?_
+  have h1 : (powerResidueSymbol P m)⁻¹ ^ m = 1 := by
+    have := pow_orderOf_eq_one (powerResidueSymbol P m)
+    rw [orderOf_powerResidueSymbol hP] at this
+    rw [inv_pow, this, inv_one]
+  have hu : ((powerResidueSymbol P m)⁻¹ u) ^ m = 1 := by
+    rw [← MulChar.pow_apply_coe, h1, MulChar.one_apply_coe]
+  rw [MulChar.ringHomComp_apply, MulChar.ringHomComp_apply, RingHom.comp_apply,
+    RingEquiv.coe_toRingHom, hσ _ hu, MulChar.pow_apply_coe]
+
+/-- **`Φ(P)` times its conjugate.** Let `σ` be a ring automorphism of `𝓞 K` inverting every
+`m`-th root of unity, such as complex conjugation on a cyclotomic field. If `m ≥ 2` and the norm
+of the maximal ideal `P` is prime to `m`, then `Φ(P) σ(Φ(P)) = N(P)^m`. -/
+theorem stickelbergerPhi_mul_apply_eq_absNorm_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
+    (hP : (absNorm P).Coprime m) (hm : 2 ≤ m) (σ : 𝓞 K ≃+* 𝓞 K)
+    (hσ : ∀ ζ : 𝓞 K, ζ ^ m = 1 → σ ζ = ζ ^ (m - 1)) :
+    stickelbergerPhi P m * σ (stickelbergerPhi P m) = (absNorm P : 𝓞 K) ^ m := by
+  let _ := Ideal.Quotient.field P
+  let _ := Fintype.ofFinite (𝓞 K ⧸ P)
+  -- Read both factors as Gauss sum powers in `ℂ`.
+  let f := (Classical.arbitrary (K →+* ℂ)).comp (algebraMap (𝓞 K) K)
+  have hf : Function.Injective f :=
+    (Classical.arbitrary (K →+* ℂ)).injective.comp (FaithfulSMul.algebraMap_injective _ _)
+  have hψ := AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive (𝓞 K ⧸ P)
+  have h₁ := stickelbergerPhi_prime P hP hm hf hψ
+  have h₂ := apply_stickelbergerPhi_eq_gaussSum_pow P hP hm σ hσ hf hψ
+  set χ := (powerResidueSymbol P m)⁻¹.ringHomComp f
+  have hχ : orderOf χ = m := by
+    rw [MulChar.orderOf_ringHomComp hf, orderOf_inv, orderOf_powerResidueSymbol hP]
+  have hχ1 : χ ≠ 1 := by
+    rw [Ne, ← orderOf_eq_one_iff, hχ]
+    lia
+  have h := gaussSum_mul_gaussSum_pow_orderOf_sub_one hχ1 hψ
+  rw [hχ] at h
+  rw [← MulChar.ringHomComp_pow] at h₂
+  apply hf
+  -- `(g(χ, ψ) g(χ ^ (m - 1), ψ))^m = (χ(-1) N(P))^m`, and `χ(-1)^m = 1`.
+  rw [map_mul, h₁, h₂, ← mul_pow, h, mul_pow, ← MulChar.pow_apply' χ (NeZero.ne m),
+    ← hχ, pow_orderOf_eq_one, MulChar.one_apply (isUnit_one.neg), one_mul, map_pow, map_natCast,
+    absNorm_eq_natCard, Nat.card_eq_fintype_card]
 
 /-- **`Φ(P)` is `-1` modulo `m`.** If `m` is prime and `P` is a maximal ideal whose norm is prime
 to `m`, then `Φ(P) ≡ -1` modulo `m 𝓞 K`. -/
