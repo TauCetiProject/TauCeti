@@ -82,6 +82,51 @@ variable {ι : Type*} [Fintype ι] [DecidableEq ι] {mu : Measure (EuclideanSpac
   {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ} {lam Lam c : ℝ} {K : ℝ≥0} {ν : EuclideanSpace ℝ ι}
 
 omit [DecidableEq ι] in
+/-- **The energy integrand splits along `ν` and the hyperplane.** For a test function `φ`, the
+integrand `a(∇φ, ∇u)` is the sum of a normal part, in which `∂_ν φ` multiplies
+`∑ⱼ ⟪ν', a eⱼ⟫ ∂ⱼu` for `ν' = ν / ‖ν‖²`, and tangential parts, in which `∂_{P eᵢ} φ`
+multiplies `aⁱʲ ∂ⱼu` for the projection `P` onto the hyperplane orthogonal to `ν`. -/
+private theorem setIntegral_matrixBilinearForm_gradient_ofTestFunction_eq
+    (φ : 𝓓(Omega, ℝ)) (U : W1p mu Omega 2) :
+    ∫ x in Omega, matrixBilinearForm (a x)
+        (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x) (W1p.gradient U x) ∂mu =
+      ∫ x in Omega, (lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x ν •
+        ∑ j, matrixBilinearForm (a x) ((‖ν‖ ^ 2)⁻¹ • ν) (EuclideanSpace.basisFun ι ℝ j) •
+          ⟪W1p.gradient U x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ +
+        ∑ i, ∑ j, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x
+            (EuclideanSpace.basisFun ι ℝ i -
+              (⟪EuclideanSpace.basisFun ι ℝ i, ν⟫_ℝ / ‖ν‖ ^ 2) • ν) •
+          (matrixBilinearForm (a x) (EuclideanSpace.basisFun ι ℝ i)
+            (EuclideanSpace.basisFun ι ℝ j) • ⟪W1p.gradient U x, EuclideanSpace.basisFun ι ℝ j⟫_ℝ))
+        ∂mu := by
+  have hφ : Differentiable ℝ (φ : EuclideanSpace ℝ ι → ℝ) := φ.contDiff.differentiable (by simp)
+  refine integral_congr_ae ?_
+  filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
+  rw [W1p.gradient_ofTestFunctionₗ, hx,
+    (EuclideanSpace.basisFun ι ℝ).bilin_eq_inner_mul_sum_add_sum_sum (matrixBilinearForm (a x)) ν]
+  simp only [inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum]
+
+omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
+/-- Testing the weak derivative `-(f + ∑ᵢⱼ Gᵢⱼ)` against a test function `φ` gives
+`∫_Ω f φ + ∑ᵢⱼ ∫ φ Gᵢⱼ`. -/
+private theorem neg_integral_smul_neg_add_sum_eq {f : EuclideanSpace ℝ ι → ℝ}
+    {G : ι → ι → EuclideanSpace ℝ ι → ℝ} (φ : 𝓓(Omega, ℝ))
+    (hfloc : LocallyIntegrableOn f Omega mu)
+    (hIG : ∀ i j, Integrable (fun x => (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x) mu) :
+    -∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • -(f x + ∑ i, ∑ j, G i j x) ∂mu =
+      (∫ x in Omega, f x * φ x ∂mu) +
+        ∑ i, ∑ j, ∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x ∂mu := by
+  simp only [smul_neg, integral_neg, neg_neg, smul_add, Finset.smul_sum]
+  rw [integral_add (integrable_smul_of_locallyIntegrableOn hfloc φ)
+    (integrable_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j),
+    integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j]
+  congr 1
+  · rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
+      simp [φ.zero_on_compl hx]]
+    simp only [smul_eq_mul, mul_comm]
+  · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
+
+omit [DecidableEq ι] in
 /-- **The equation gives a normal derivative.** Let `u ∈ H¹(Ω)` satisfy `a(u, φ) = ∫_Ω f φ` for
 every test function `φ`, where `a` is the energy form of a coefficient field continuous on `Ω`.
 Let `ν' = ν / ‖ν‖²` and let `P z = z - (⟪z, ν⟫ / ‖ν‖²) ν` be the projection onto the hyperplane
@@ -105,12 +150,11 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
   set b := EuclideanSpace.basisFun ι ℝ
   set ν' : EuclideanSpace ℝ ι := (‖ν‖ ^ 2)⁻¹ • ν
   set P : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι := fun z => z - (⟪z, ν⟫_ℝ / ‖ν‖ ^ 2) • ν
-  have hΩ : IsLocallyClosed (Omega : Set (EuclideanSpace ℝ ι)) := Omega.isOpen.isLocallyClosed
   have hloc : ∀ p j, LocallyIntegrableOn (fun x => matrixBilinearForm (a x) p (b j) •
       ⟪W1p.gradient U x, b j⟫_ℝ) Omega mu := fun p j => by
     have h := ((W1p.hasWeakFDerivOn U).hasWeakLineDerivOn (b j)).locallyIntegrableOn_deriv
     simp only [innerSL_apply_apply] at h
-    exact h.continuousOn_smul hΩ (ha p (b j))
+    exact h.continuousOn_smul Omega.isOpen.isLocallyClosed (ha p (b j))
   have hW := locallyIntegrableOn_finsetSum Finset.univ fun j _ => hloc ν' j
   have hGloc : LocallyIntegrableOn (fun x => ∑ i, ∑ j, G i j x) Omega mu :=
     locallyIntegrableOn_finsetSum Finset.univ fun i _ =>
@@ -133,19 +177,8 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
       ∑ i, ∑ j, ∫ x, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (P (b i)) •
         (matrixBilinearForm (a x) (b i) (b j) • ⟪W1p.gradient U x, b j⟫_ℝ) ∂mu =
       ∫ x in Omega, f x * φ x ∂mu := by
-    have hpt : ∫ x in Omega, matrixBilinearForm (a x)
-          (W1p.gradient (W1p.ofTestFunctionₗ mu Omega 2 φ) x) (W1p.gradient U x) ∂mu =
-        ∫ x in Omega, (lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x ν •
-          ∑ j, matrixBilinearForm (a x) ν' (b j) • ⟪W1p.gradient U x, b j⟫_ℝ +
-          ∑ i, ∑ j, lineDeriv ℝ (φ : EuclideanSpace ℝ ι → ℝ) x (P (b i)) •
-            (matrixBilinearForm (a x) (b i) (b j) • ⟪W1p.gradient U x, b j⟫_ℝ)) ∂mu := by
-      refine integral_congr_ae ?_
-      filter_upwards [gradientTestFunctionLp_apply_ae (mu := mu) 2 φ] with x hx
-      rw [W1p.gradient_ofTestFunctionₗ, hx,
-        b.bilin_eq_inner_mul_sum_add_sum_sum (matrixBilinearForm (a x)) ν]
-      simp only [inner_gradient_left, (hφ x).lineDeriv_eq_fderiv, smul_eq_mul, Finset.mul_sum,
-        ν', P, b]
-    rw [← hU φ, energyFormH1_zero_zero_eq_setIntegral, hpt,
+    rw [← hU φ, energyFormH1_zero_zero_eq_setIntegral,
+      setIntegral_matrixBilinearForm_gradient_ofTestFunction_eq (mu := mu) (a := a) (ν := ν) φ U,
       integral_add hIW.integrableOn (integrable_finsetSum _ fun i _ =>
         integrable_finsetSum _ fun j _ => (hI (P (b i)) (b i) j).integrableOn),
       integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ =>
@@ -161,23 +194,35 @@ private theorem hasWeakLineDerivOn_sum_smul_inner_gradient
       (matrixBilinearForm (a x) (b i) (b j) • ⟪W1p.gradient U x, b j⟫_ℝ) ∂mu =
         -∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x ∂mu := fun i j =>
     (hG i j).integral_lineDeriv_smul_eq_neg_integral_smul φ
-  have hIG : ∀ i j, Integrable (fun x => (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x) mu :=
-    fun i j => integrable_smul_of_locallyIntegrableOn (hG i j).locallyIntegrableOn_deriv φ
-  have hR : -∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • -(f x + ∑ i, ∑ j, G i j x) ∂mu =
-      (∫ x in Omega, f x * φ x ∂mu) +
-        ∑ i, ∑ j, ∫ x, (φ : EuclideanSpace ℝ ι → ℝ) x • G i j x ∂mu := by
-    simp only [smul_neg, integral_neg, neg_neg, smul_add, Finset.smul_sum]
-    rw [integral_add (integrable_smul_of_locallyIntegrableOn hfloc φ)
-      (integrable_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j),
-      integral_finsetSum _ fun i _ => integrable_finsetSum _ fun j _ => hIG i j]
-    congr 1
-    · rw [setIntegral_eq_integral_of_forall_compl_eq_zero fun x hx => by
-        simp [φ.zero_on_compl hx]]
-      simp only [smul_eq_mul, mul_comm]
-    · exact Finset.sum_congr rfl fun i _ => integral_finsetSum _ fun j _ => hIG i j
+  have hR := neg_integral_smul_neg_add_sum_eq φ hfloc fun i j =>
+    integrable_smul_of_locallyIntegrableOn (hG i j).locallyIntegrableOn_deriv φ
   rw [hR, ← heq]
   simp only [htan, Finset.sum_neg_distrib]
   ring
+
+omit [DecidableEq ι] in
+/-- **Dividing out a positive coefficient.** If `q` is Lipschitz on `Ω` and bounded below by
+`m > 0`, and the product `q ∂_ν u` has an `L²(Ω)` weak derivative in the direction `ν` lying in
+`L²(Ω)`, then so does `∂_ν u`: multiply by the bounded Lipschitz factor `q⁻¹`. -/
+private theorem exists_hasWeakLineDerivOn_inner_gradient_of_mul {U : W1p mu Omega 2}
+    {q u g : EuclideanSpace ℝ ι → ℝ} {K' m : ℝ≥0} (hm : 0 < m)
+    (hqm : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), (m : ℝ) ≤ q x)
+    (hqL : LipschitzOnWith K' q Omega) (h : HasWeakLineDerivOn mu Omega u g ν)
+    (hu : ∀ x, u x = q x * ⟪W1p.gradient U x, ν⟫_ℝ)
+    (hqu : MemLp (fun x => q x * ⟪W1p.gradient U x, ν⟫_ℝ) 2 (mu.restrict Omega))
+    (hg : MemLp g 2 (mu.restrict Omega)) :
+    ∃ G : Lp ℝ 2 (mu.restrict Omega),
+      HasWeakLineDerivOn mu Omega (fun x => ⟪W1p.gradient U x, ν⟫_ℝ) G ν := by
+  obtain rfl : u = fun x => q x * ⟪W1p.gradient U x, ν⟫_ℝ := funext hu
+  have hm' : (0 : ℝ) < m := hm
+  have hrL := hqL.inv_of_le_norm hm fun x hx => (hqm x hx).trans (Real.le_norm_self (q x))
+  have hrb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖(q x)⁻¹‖ ≤ (m : ℝ)⁻¹ := fun x hx => by
+    rw [Real.norm_eq_abs, abs_inv, abs_of_pos (hm'.trans_le (hqm x hx))]
+    exact inv_anti₀ hm' (hqm x hx)
+  obtain ⟨G', hG'⟩ := h.exists_lp_lipschitzOnWith_smul hrL hrb hqu hg
+  refine ⟨G', hG'.congr_ae ?_⟩
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet] with x hx
+  rw [smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (hm'.trans_le (hqm x hx)).ne', one_mul]
 
 /-- **The normal second derivative.** Let `ν ≠ 0`, let `a` be uniformly elliptic and bounded on
 `Ω`, with `x ↦ a(x)` Lipschitz on `Ω` as a bilinear form, and let `u ∈ H¹(Ω)` satisfy
@@ -238,30 +283,17 @@ private theorem exists_hasWeakLineDerivOn_inner_gradient_normal (hν : ν ≠ 0)
     (inv_ne_zero hN.ne') hν)) 2)
   have hcm : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), m ≤ β ν' ν' x := fun x hx => by
     simpa only [m, β, matrixBilinearForm_self] using ha.lower_bound hx ν'
-  set r : EuclideanSpace ℝ ι → ℝ := fun x => (β ν' ν' x)⁻¹
-  have hrL : LipschitzOnWith (K * ‖ν'‖₊ * ‖ν'‖₊ / ⟨m, hm.le⟩ ^ 2) r Omega :=
-    (hβL ν' ν').inv_of_le_norm hm fun x hx =>
-      (hcm x hx).trans (Real.le_norm_self (β ν' ν' x))
-  have hrb : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖r x‖ ≤ m⁻¹ := fun x hx => by
-    have hx' := hm.trans_le (hcm x hx)
-    rw [Real.norm_eq_abs, abs_inv, abs_of_pos hx']
-    exact inv_anti₀ hm (hcm x hx)
   -- Multiplying by `⟪ν', a ν'⟫⁻¹` gives the normal second derivative.
-  have hRm : MemLp (fun x => (∑ j, β ν' (b j) x • ⟪W1p.gradient U x, b j⟫_ℝ) -
-      ∑ j, β ν' (b j) x • ⟪W1p.gradient U x, P (b j)⟫_ℝ) 2 (mu.restrict Omega) := by
-    simp only [hRc]
-    exact (memLp_top_of_bound ((hβL ν' ν').continuousOn.aestronglyMeasurable hΩm)
+  have hRm : MemLp (fun x => β ν' ν' x * ⟪W1p.gradient U x, ν⟫_ℝ) 2 (mu.restrict Omega) :=
+    (memLp_top_of_bound ((hβL ν' ν').continuousOn.aestronglyMeasurable hΩm)
       (Lam * ‖ν'‖ * ‖ν'‖) ((ae_restrict_mem hΩm).mono fun x hx =>
         ha.norm_point_matrixBilinearForm_le hx ν' ν')).mul (hgrad ν)
   have hR'm : MemLp (fun x => -(f x + ∑ i, ∑ j, G i j x) - ∑ j, T j x) 2
       (mu.restrict Omega) :=
     ((Lp.memLp f).add (memLp_finsetSum _ fun i _ => memLp_finsetSum _ fun j _ =>
       Lp.memLp (G i j))).neg.sub (memLp_finsetSum _ fun j _ => Lp.memLp (T j))
-  obtain ⟨G', hG'⟩ := hR.exists_lp_lipschitzOnWith_smul hrL hrb hRm hR'm
-  refine ⟨G', hG'.congr_ae ?_⟩
-  filter_upwards [ae_restrict_mem hΩm] with x hx
-  refine (congrArg (fun t => (β ν' ν' x)⁻¹ • t) (hRc x)).trans ?_
-  rw [smul_eq_mul, ← mul_assoc, inv_mul_cancel₀ (hm.trans_le (hcm x hx)).ne', one_mul]
+  exact exists_hasWeakLineDerivOn_inner_gradient_of_mul (m := ⟨m, hm.le⟩) hm hcm (hβL ν' ν') hR
+    (fun x => hRc x) hRm hR'm
 
 /-- **Second derivatives up to the boundary.** Let `ν ≠ 0` and let `Ω` be mapped into itself by
 every translation orthogonal to `ν`, as a half-space `{x | c < ⟪x, ν⟫}` or a slab is. Let `a` be
