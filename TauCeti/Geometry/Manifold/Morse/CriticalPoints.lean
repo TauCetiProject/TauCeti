@@ -12,6 +12,7 @@ public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.RegularValue
 public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
+import Mathlib.Algebra.BigOperators.ModEq
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
@@ -81,10 +82,11 @@ polynomial in the Morse inequalities.
   counts in the connected components, when there are finitely many.
 * `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
   additivity of the total count over finite open partitions and over connected components.
-* `TauCeti.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum` and
+* `TauCeti.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum`,
+  `TauCeti.toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount` and
   `TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg`: the signed count
-  `∑ᵢ (-1)ⁱ cᵢ` is the sum of `(-1)^λ` over the critical points, and the signed counts of `f` and
-  `-f` differ by the factor `(-1)ᵐ`.
+  `∑ᵢ (-1)ⁱ cᵢ` is the sum of `(-1)^λ` over the critical points, it has the parity of the number
+  of critical points, and the signed counts of `f` and `-f` differ by the factor `(-1)ᵐ`.
 
 ## References
 
@@ -623,6 +625,21 @@ theorem sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le {n : ℕ}
       ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
   refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun i hi hi' ↦ ?_).symm
   rw [criticalCount_eq_zero_of_finrank_lt (by simp_all), ENat.toNat_zero, Nat.cast_zero, mul_zero]
+
+/-- **Parity of the critical count.** If `f` has finitely many critical points, their number is
+congruent modulo `2` to the signed count `∑ᵢ (-1)ⁱ cᵢ`, for any bound `n` of the dimension of
+`M`. -/
+theorem toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount
+    (h : (criticalPoints I f).Finite) {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
+    ((totalCriticalCount I f).toNat : ℤ) ≡
+      ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat [ZMOD 2] := by
+  rw [sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum h.toFinset h.coe_toFinset hn,
+    totalCriticalCount_def, h.encard_eq_coe_toFinset_card, ENat.toNat_natCast,
+    Finset.card_eq_sum_ones]
+  push_cast
+  refine Int.ModEq.sum fun x _ ↦ ?_
+  exact (by simpa using ((show (-1 : ℤ) ≡ 1 [ZMOD 2] by decide).pow (manifoldMorseIndex I f x)) :
+    (-1 : ℤ) ^ manifoldMorseIndex I f x ≡ 1 [ZMOD 2]).symm
 
 variable [I.Boundaryless]
 
