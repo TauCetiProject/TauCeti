@@ -12,15 +12,21 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.Analysis.Calculus.MeanValue
 
 /-!
-# Rigidity of left quaternionic quotient differentiation
+# Rigidity of quaternionic quotient differentiation
 
 On a connected open subset of the real quaternions, the functions with a left quotient
-slope at every point are exactly `q ↦ a + q * b`. No continuity of the derivative is assumed.
+slope at every point are exactly `q ↦ a + q * b`, those with a right quotient slope at every
+point are exactly `q ↦ a + b * q`, and those with both are exactly `q ↦ a + r • q` with `r`
+real. No continuity of the derivative is assumed.
 
-The real derivative becomes complex-linear in `Quaternion.leftComplexCoords`. The
-several-variable complex analyticity theorem then supplies smoothness. Symmetry of the
-second derivative forces the slope to have zero derivative, so it is constant on each
-connected open component. Integrating the resulting constant derivative gives the affine form.
+For the left classification, the real derivative becomes complex-linear in
+`Quaternion.leftComplexCoords`. The several-variable complex analyticity theorem then supplies
+smoothness. Symmetry of the second derivative forces the slope to have zero derivative, so it is
+constant on each connected open component. Integrating the resulting constant derivative gives
+the affine form. The right classification follows by the reflection `x ↦ star (f (star x))`,
+which exchanges left and right slopes and maps a connected open set `s` to the connected open
+set `star s`. In the two-sided case a left and a right slope at a single point already coincide
+and are real.
 
 ## References
 
@@ -33,7 +39,7 @@ connected open component. Integrating the resulting constant derivative gives th
 public section
 
 open Filter Topology Quaternion Set
-open scoped ContDiff
+open scoped ContDiff Pointwise
 
 namespace TauCeti
 
@@ -154,5 +160,80 @@ theorem leftQuotientDifferentiableOn_iff_affine_on_connectedComponentIn (hs : Is
     have hmem := hs.connectedComponentIn.mem_nhds (mem_connectedComponentIn hq)
     exact ((hasLeftQuotientFDerivAt_mul_const b q).const_add a).congr_of_eventuallyEq
       (eventually_of_mem hmem fun x hx ↦ hab x hx) |>.leftQuotientDifferentiableAt
+
+/-- **Right quotient rigidity.** On a connected open set (including the empty set),
+pointwise existence of a right quotient slope is equivalent to a single right-affine formula.
+Only the function's values on the set are constrained. -/
+theorem rightQuotient_rigidity (hs : IsOpen s) (hc : IsPreconnected s) :
+    RightQuotientDifferentiableOn f s ↔ ∃ a b : ℍ, ∀ q ∈ s, f q = a + b * q := by
+  have hs' : IsOpen (star s) := hs.preimage continuous_star
+  have hc' : IsPreconnected (star s) := by
+    simpa only [image_star] using hc.image _ continuous_star.continuousOn
+  rw [← leftQuotientDifferentiableOn_star_star_iff, leftQuotient_rigidity hs' hc']
+  constructor
+  · rintro ⟨a, b, hab⟩
+    refine ⟨star a, star b, fun q hq ↦ ?_⟩
+    simpa using congrArg star (hab (star q) (by simpa using hq))
+  · rintro ⟨a, b, hab⟩
+    refine ⟨star a, star b, fun x hx ↦ ?_⟩
+    simp [hab (star x) hx]
+
+/-- On a nonempty connected open set the intercept and the right quotient slope in the
+rigidity theorem are unique. -/
+theorem RightQuotientDifferentiableOn.existsUnique_affine
+    (hf : RightQuotientDifferentiableOn f s) (hs : IsOpen s) (hc : IsPreconnected s)
+    (hne : s.Nonempty) : ∃! p : ℍ × ℍ, ∀ q ∈ s, f q = p.1 + p.2 * q := by
+  obtain ⟨a, b, hab⟩ := (rightQuotient_rigidity hs hc).mp hf
+  obtain ⟨q, hq⟩ := hne
+  have hder (c d : ℍ) (hcd : ∀ x ∈ s, f x = c + d * x) :
+      HasRightQuotientFDerivAt f q d :=
+    ((hasRightQuotientFDerivAt_const_mul d q).const_add c).congr_of_eventuallyEq
+      (eventually_of_mem (hs.mem_nhds hq) hcd)
+  refine ⟨(a, b), hab, ?_⟩
+  rintro ⟨c, d⟩ hcd
+  have hdb := (hder c d hcd).unique (hder a b hab)
+  apply Prod.ext
+  · dsimp only
+    apply add_right_cancel (b := b * q)
+    simpa only [hdb] using (hcd q hq).symm.trans (hab q hq)
+  · exact hdb
+
+/-- On an arbitrary open set, right quotient differentiability is equivalent to an affine
+formula on each connected component; different components may have different slopes. -/
+theorem rightQuotientDifferentiableOn_iff_affine_on_connectedComponentIn (hs : IsOpen s) :
+    RightQuotientDifferentiableOn f s ↔
+      ∀ q ∈ s, ∃ a b : ℍ, ∀ x ∈ connectedComponentIn s q, f x = a + b * x := by
+  have hrig (q : ℍ) := rightQuotient_rigidity (f := f) hs.connectedComponentIn
+    (isPreconnected_connectedComponentIn (F := s) (x := q))
+  constructor
+  · intro hf q _
+    exact (hrig q).mp (hf.mono (connectedComponentIn_subset s q))
+  · intro hf
+    exact rightQuotientDifferentiableOn_iff.mpr fun q hq ↦
+      rightQuotientDifferentiableOn_iff.mp ((hrig q).mpr (hf q hq)) q (mem_connectedComponentIn hq)
+
+/-- **Two-sided quotient rigidity.** On a connected open set (including the empty set),
+pointwise existence of both a left and a right quotient slope is equivalent to the affine
+formula `q ↦ a + r • q` with a real slope `r`. -/
+theorem twoSidedQuotient_rigidity (hs : IsOpen s) (hc : IsPreconnected s) :
+    LeftQuotientDifferentiableOn f s ∧ RightQuotientDifferentiableOn f s ↔
+      ∃ (a : ℍ) (r : ℝ), ∀ q ∈ s, f q = a + r • q := by
+  constructor
+  · rintro ⟨hl, hr⟩
+    obtain ⟨a, b, hab⟩ := (leftQuotient_rigidity hs hc).mp hl
+    rcases s.eq_empty_or_nonempty with rfl | ⟨q, hq⟩
+    · exact ⟨0, 0, by simp⟩
+    have hb : HasLeftQuotientFDerivAt f q b :=
+      ((hasLeftQuotientFDerivAt_mul_const b q).const_add a).congr_of_eventuallyEq
+        (eventually_of_mem (hs.mem_nhds hq) hab)
+    obtain ⟨c, hqc⟩ := rightQuotientDifferentiableAt_iff.mp
+      (rightQuotientDifferentiableOn_iff.mp hr q hq)
+    have hre : (b.re : ℍ) = b := by
+      simpa [hb.im_eq_zero_of_hasRightQuotientFDerivAt hqc] using re_add_im b
+    refine ⟨a, b.re, fun x hx ↦ ?_⟩
+    rw [hab x hx, ← hre, mul_coe_eq_smul, re_coe]
+  · rintro ⟨a, r, h⟩
+    exact ⟨(leftQuotient_rigidity hs hc).mpr ⟨a, r, fun x hx ↦ by rw [h x hx, mul_coe_eq_smul]⟩,
+      (rightQuotient_rigidity hs hc).mpr ⟨a, r, fun x hx ↦ by rw [h x hx, coe_mul_eq_smul]⟩⟩
 
 end TauCeti

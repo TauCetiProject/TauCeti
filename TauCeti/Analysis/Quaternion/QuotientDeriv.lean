@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Mul
 public import Mathlib.Analysis.Quaternion
 public import TauCeti.Algebra.Central.Quaternion
 public import TauCeti.Analysis.Calculus.FDeriv.Remainder
+import Mathlib.Analysis.Calculus.FDeriv.Star
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -56,6 +57,10 @@ The order of multiplication is part of every statement.
   derivative at `1`.
 * `TauCeti.HasLeftQuotientFDerivAt.comp` and `TauCeti.HasRightQuotientFDerivAt.comp`: the chain
   rules, with left slope `c * b` and right slope `a * c` for an inner slope `c`.
+* `TauCeti.HasRightQuotientFDerivAt.star_star` and `TauCeti.HasLeftQuotientFDerivAt.star_star`:
+  reflecting `f` to `x ↦ star (f (star x))` turns a right slope `a` at `q` into the left slope
+  `star a` at `star q`, and conversely; `TauCeti.leftQuotientDifferentiableOn_star_star_iff` and
+  its right counterpart transport the setwise predicates to the reflected set `star s`.
 
 ## References
 
@@ -71,7 +76,7 @@ The order of multiplication is part of every statement.
 public section
 
 open Filter Topology
-open scoped Quaternion
+open scoped Quaternion Pointwise
 
 namespace TauCeti
 
@@ -596,5 +601,81 @@ theorem comp (q : ℍ) (hf : HasRightQuotientFDerivAt f (g q) a)
     simp [mul_assoc]
 
 end HasRightQuotientFDerivAt
+
+/-! ### Reflection -/
+
+/-- Reflecting `f` in both argument and value turns a right slope `a` at `q` into the left slope
+`star a` at `star q`: the real derivative becomes `h ↦ star (a * star h) = h * star a`. -/
+theorem HasRightQuotientFDerivAt.star_star (hf : HasRightQuotientFDerivAt f q a) :
+    HasLeftQuotientFDerivAt (fun x ↦ star (f (star x))) (star q) (star a) := by
+  -- `HasFDerivAt.star_star` needs `StarModule ℝ ℍ`, which Mathlib does not provide as an instance.
+  let : StarModule ℝ ℍ := ⟨fun r h ↦ by simp⟩
+  rw [hasLeftQuotientFDerivAt_iff_hasFDerivAt]
+  refine hf.hasFDerivAt.star_star.congr_fderiv (ContinuousLinearMap.ext fun h ↦ ?_)
+  simp
+
+/-- Reflecting `f` in both argument and value turns a left slope `b` at `q` into the right slope
+`star b` at `star q`: the real derivative becomes `h ↦ star (star h * b) = star b * h`. -/
+theorem HasLeftQuotientFDerivAt.star_star (hf : HasLeftQuotientFDerivAt f q b) :
+    HasRightQuotientFDerivAt (fun x ↦ star (f (star x))) (star q) (star b) := by
+  -- `HasFDerivAt.star_star` needs `StarModule ℝ ℍ`, which Mathlib does not provide as an instance.
+  let : StarModule ℝ ℍ := ⟨fun r h ↦ by simp⟩
+  rw [hasRightQuotientFDerivAt_iff_hasFDerivAt]
+  refine hf.hasFDerivAt.star_star.congr_fderiv (ContinuousLinearMap.ext fun h ↦ ?_)
+  simp
+
+/-- The reflection of `f` has left slope `b` at `star q` exactly when `f` has right slope
+`star b` at `q`. -/
+@[simp]
+theorem hasLeftQuotientFDerivAt_star_star_iff :
+    HasLeftQuotientFDerivAt (fun x ↦ star (f (star x))) (star q) b ↔
+      HasRightQuotientFDerivAt f q (star b) :=
+  ⟨fun hf ↦ by simpa using hf.star_star, fun hf ↦ by simpa using hf.star_star⟩
+
+/-- The reflection of `f` has right slope `a` at `star q` exactly when `f` has left slope
+`star a` at `q`. -/
+@[simp]
+theorem hasRightQuotientFDerivAt_star_star_iff :
+    HasRightQuotientFDerivAt (fun x ↦ star (f (star x))) (star q) a ↔
+      HasLeftQuotientFDerivAt f q (star a) :=
+  ⟨fun hf ↦ by simpa using hf.star_star, fun hf ↦ by simpa using hf.star_star⟩
+
+/-- Reflection exchanges pointwise left and right quotient differentiability. -/
+@[simp]
+theorem leftQuotientDifferentiableAt_star_star_iff :
+    LeftQuotientDifferentiableAt (fun x ↦ star (f (star x))) (star q) ↔
+      RightQuotientDifferentiableAt f q := by
+  rw [leftQuotientDifferentiableAt_iff, rightQuotientDifferentiableAt_iff]
+  exact ⟨fun ⟨b, hb⟩ ↦ ⟨star b, by simpa using hb⟩, fun ⟨a, ha⟩ ↦ ⟨star a, by simpa using ha⟩⟩
+
+/-- Reflection exchanges pointwise right and left quotient differentiability. -/
+@[simp]
+theorem rightQuotientDifferentiableAt_star_star_iff :
+    RightQuotientDifferentiableAt (fun x ↦ star (f (star x))) (star q) ↔
+      LeftQuotientDifferentiableAt f q := by
+  rw [rightQuotientDifferentiableAt_iff, leftQuotientDifferentiableAt_iff]
+  exact ⟨fun ⟨a, ha⟩ ↦ ⟨star a, by simpa using ha⟩, fun ⟨b, hb⟩ ↦ ⟨star b, by simpa using hb⟩⟩
+
+/-- The reflection of `f` is left quotient differentiable on the reflected set `star s` exactly
+when `f` is right quotient differentiable on `s`. -/
+@[simp]
+theorem leftQuotientDifferentiableOn_star_star_iff {s : Set ℍ} :
+    LeftQuotientDifferentiableOn (fun x ↦ star (f (star x))) (star s) ↔
+      RightQuotientDifferentiableOn f s := by
+  rw [leftQuotientDifferentiableOn_iff, rightQuotientDifferentiableOn_iff]
+  refine ⟨fun hf q hq ↦ ?_, fun hf x hx ↦ ?_⟩
+  · simpa using hf (star q) (by simpa using hq)
+  · simpa using leftQuotientDifferentiableAt_star_star_iff.mpr (hf (star x) hx)
+
+/-- The reflection of `f` is right quotient differentiable on the reflected set `star s` exactly
+when `f` is left quotient differentiable on `s`. -/
+@[simp]
+theorem rightQuotientDifferentiableOn_star_star_iff {s : Set ℍ} :
+    RightQuotientDifferentiableOn (fun x ↦ star (f (star x))) (star s) ↔
+      LeftQuotientDifferentiableOn f s := by
+  rw [rightQuotientDifferentiableOn_iff, leftQuotientDifferentiableOn_iff]
+  refine ⟨fun hf q hq ↦ ?_, fun hf x hx ↦ ?_⟩
+  · simpa using hf (star q) (by simpa using hq)
+  · simpa using rightQuotientDifferentiableAt_star_star_iff.mpr (hf (star x) hx)
 
 end TauCeti
