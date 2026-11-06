@@ -16,8 +16,7 @@ import Mathlib.Tactic.LinearCombination
 For a crossed homomorphism `F` for a character `χ : H → Rˣ` (`TauCeti.IsCrossedHom`), the value on
 Labute's commutator `(x, y) = x⁻¹y⁻¹xy` is determined by the values on `x` and `y`:
 `χ x * χ y * F (x, y) = (1 - χ y) F x + (χ x - 1) F y`. This file records this identity, its
-consequences for vanishing and for triviality of `χ`, and the sums of the values on the commutator
-factors of a normal-form word `(x₁, x₂)(x₃, x₄) ⋯` when `F` is a Kronecker delta on the generators.
+consequences for vanishing and for triviality of `χ`, and the value on a product of commutators.
 
 ## Main declarations
 
@@ -26,9 +25,6 @@ factors of a normal-form word `(x₁, x₂)(x₃, x₄) ⋯` when `F` is a Krone
   vanishing at `(x, y)`.
 * `TauCeti.IsCrossedHom.map_list_range_prod_labuteComm`: the value on a product of commutators is
   the sum of the values on the factors.
-* `TauCeti.IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite`,
-  `TauCeti.IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite_one`: for a Kronecker delta, only
-  the commutator factor containing the generator contributes.
 -/
 
 public section
@@ -93,41 +89,5 @@ theorem IsCrossedHom.map_list_range_prod_labuteComm (m : ℕ) (x y : ℕ → H) 
       forall_apply_eq_imp_iff₂]
     intro i _
     rw [map_labuteComm, labuteComm_eq_one]
-
-/-- For `n` even and a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `2 ≤ j < n`, only
-the factor containing `x_j` contributes to the sum of its values on the commutators
-`(x₃, x₄), …, (x_{n-1}, x_n)` (the `0`-based pairs `(x (2i+2), x (2i+3))` for `i < n / 2 - 1`): the
-sum is the value on the factor `(x (2 ((j-2)/2) + 2), x (2 ((j-2)/2) + 3))`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite {n j : ℕ} (hn : Even n) (hj₂ : 2 ≤ j)
-    (hj : j < n) {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range (n / 2 - 1), F (labuteComm (x (2 * i + 2)) (x (2 * i + 3))) =
-      F (labuteComm (x (2 * ((j - 2) / 2) + 2)) (x (2 * ((j - 2) / 2) + 3))) := by
-  obtain ⟨k, rfl⟩ := hn
-  exact Finset.sum_eq_single _
-    (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-      (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
-    fun h0 ↦ absurd (mem_range.2 (by omega)) h0
-
-/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `1 ≤ j < n`, only the factor
-containing `x_j` contributes to the sum of its values on the commutators
-`(x₂, x₃), …` (the `0`-based pairs `(x (2i+1), x (2i+2))` for `i < n / 2`): the sum is the value on
-the factor `(x (2 ((j-1)/2) + 1), x (2 ((j-1)/2) + 2))`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_of_forall_eq_ite_one {n j : ℕ} (hj₁ : 1 ≤ j)
-    (hj : j < n) {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range (n / 2), F (labuteComm (x (2 * i + 1)) (x (2 * i + 2))) =
-      F (labuteComm (x (2 * ((j - 1) / 2) + 1)) (x (2 * ((j - 1) / 2) + 2))) :=
-  Finset.sum_eq_single _
-    (fun i _ hi ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-      (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)]))
-    fun h0 ↦ absurd (mem_range.2 (by omega)) h0
-
-/-- For a crossed homomorphism `F` with `F (x_i) = δ_{ij}` for some `j < 2`, the sum of its values
-on the commutators `(x₃, x₄), …, (x_{n-1}, x_n)` (the `0`-based pairs `(x (2i+2), x (2i+3))` for
-`i < n / 2 - 1`) is `0`. -/
-theorem IsCrossedHom.sum_map_labuteComm_eq_zero_of_forall_eq_ite (n : ℕ) {j : ℕ} (hj : j < 2)
-    {x : ℕ → H} (hFv : ∀ i, F (x i) = if i = j then 1 else 0) :
-    ∑ i ∈ range (n / 2 - 1), F (labuteComm (x (2 * i + 2)) (x (2 * i + 3))) = 0 :=
-  Finset.sum_eq_zero fun i _ ↦ hF.map_labuteComm_eq_zero_of_eq_zero
-    (by rw [hFv, ite_eq_right (by omega)]) (by rw [hFv, ite_eq_right (by omega)])
 
 end TauCeti
