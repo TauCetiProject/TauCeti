@@ -73,6 +73,76 @@ private theorem exists_polynomial_shared_roots (D : LazardDelineation F S) :
     exact ⟨i, Polynomial.rootMultiplicity_pos'.1
       (by rw [D.rootMultiplicity_root (k i) i x]; exact hk i)⟩
 
+/-- The number of elements of the shared root set below `t` is the number of Lazard roots
+below `t`. -/
+private theorem card_filter_lt_eq (D : LazardDelineation F S) (x : S) {Z : Finset ℝ}
+    (hZ : Z = Finset.univ.image (fun i ↦ D.root i x)) (t : ℝ) :
+    (Z.filter (· < t)).card = (Finset.univ.filter (fun i ↦ D.root i x < t)).card := by
+  rw [hZ, Finset.filter_image]
+  exact Finset.card_image_of_injective _ (D.strictMono_root x).injective
+
+/-- At a root, its rank in the shared root set is its index in the ordered list. -/
+private theorem root_eq_iff (D : LazardDelineation F S) (x : S) {Z : Finset ℝ}
+    (hZ : Z = Finset.univ.image (fun i ↦ D.root i x)) (t : ℝ) (i : Fin D.count) :
+    D.root i x = t ↔ t ∈ Z ∧ (Z.filter (· < t)).card = i.val := by
+  have hrank (j : Fin D.count) : (Z.filter (· < D.root j x)).card = j.val := by
+    rw [card_filter_lt_eq D x hZ]
+    simpa only [(D.strictMono_root x).lt_iff_lt, Finset.filter_gt_eq_Iio] using Fin.card_Iio j
+  constructor
+  · rintro rfl
+    exact ⟨by rw [hZ]; exact Finset.mem_image_of_mem _ (Finset.mem_univ i), hrank i⟩
+  · rintro ⟨ht, hc⟩
+    rw [hZ] at ht
+    obtain ⟨j, _, rfl⟩ := Finset.mem_image.1 ht
+    rw [Fin.ext ((hrank j).symm.trans hc)]
+
+/-- A point of a sector lies off the shared root set, with the sector index below it. -/
+private theorem notMem_and_card_of_mem_sectorSet (D : LazardDelineation F S) (x : S)
+    {Z : Finset ℝ} (hZ : Z = Finset.univ.image (fun i ↦ D.root i x)) (t : ℝ)
+    (j : Fin (D.count + 1)) (ht : (x, t) ∈ sectorSet D.root j) :
+    t ∉ Z ∧ (Z.filter (· < t)).card = j.val := by
+  have hnot : t ∉ Z := by
+    rw [hZ]
+    rintro h
+    obtain ⟨i, _, hi⟩ := Finset.mem_image.1 h
+    exact disjoint_left.1 (disjoint_sectionSet_sectorSet D.root i j)
+      (mem_sectionSet.2 hi) ht
+  refine ⟨hnot, ?_⟩
+  rw [card_filter_lt_eq D x hZ]
+  have heq : Finset.univ.filter (fun i ↦ D.root i x < t) =
+      Finset.univ.filter (fun i : Fin D.count ↦ i.val < j.val) := by
+    ext i
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+    exact ⟨fun hi ↦ by
+      by_contra h
+      exact hi.not_gt ((mem_sectorSet.1 ht).2 i
+        (by simpa only [Fin.le_def, Fin.val_castSucc] using le_of_not_gt h)),
+      fun hi ↦ (mem_sectorSet.1 ht).1 i (by simpa only [Fin.lt_def, Fin.val_castSucc] using hi)⟩
+  rw [heq, Fin.card_filter_val_lt, min_eq_right (by omega)]
+
+/-- Away from all roots, the number of roots below a point identifies its sector. -/
+private theorem mem_sectorSet_of_notMem_of_card (D : LazardDelineation F S) (x : S)
+    {Z : Finset ℝ} (hZ : Z = Finset.univ.image (fun i ↦ D.root i x)) (t : ℝ)
+    (j : Fin (D.count + 1)) (hnot : t ∉ Z) (hc : (Z.filter (· < t)).card = j.val) :
+    (x, t) ∈ sectorSet D.root j := by
+  have hless (i : Fin D.count) : i.val < (Z.filter (· < t)).card ↔ D.root i x < t := by
+    rw [card_filter_lt_eq D x hZ]
+    exact Fin.lt_card_filter_univ_iff_apply_of_imp _
+      (fun a b hab ha ↦ ((D.strictMono_root x).monotone hab).trans_lt ha)
+  rw [mem_sectorSet]
+  constructor
+  · intro i hi
+    exact (hless i).1 (by simpa only [hc, Fin.lt_def, Fin.val_castSucc] using hi)
+  · intro i hi
+    have hne : D.root i x ≠ t := by
+      intro h
+      apply hnot
+      rw [hZ, ← h]
+      exact Finset.mem_image_of_mem _ (Finset.mem_univ i)
+    exact lt_of_le_of_ne (le_of_not_gt fun h ↦
+      (not_lt_of_ge hi)
+        (by simpa only [hc, Fin.lt_def, Fin.val_castSucc] using (hless i).2 h)) hne.symm
+
 /-- A Lazard delineation over a semialgebraic base is a semialgebraic
 stack, even where the ordinary fibers are nullified. Repeated and shared roots are counted
 once, and zero members and an empty root list are allowed. The input family may be infinite:
@@ -82,69 +152,14 @@ theorem isSemialgebraicStack (D : LazardDelineation F S)
   classical
   obtain ⟨G, hG⟩ := exists_polynomial_shared_roots D
   let Z (x : S) := G.biUnion fun p ↦ (p.map (MvPolynomial.eval x.1)).roots.toFinset
-  have hZ (x : S) : Z x = Finset.univ.image (fun i ↦ D.root i x) := hG x
-  have hcard (x : S) (t : ℝ) :
-      (Z x |>.filter (· < t)).card = (Finset.univ.filter (fun i ↦ D.root i x < t)).card := by
-    rw [hZ, Finset.filter_image]
-    exact Finset.card_image_of_injective _ (D.strictMono_root x).injective
-  -- At a root, its rank is its index in the ordered list.
   have hsection (x : S) (t : ℝ) (i : Fin D.count) :
-      D.root i x = t ↔ t ∈ Z x ∧ (Z x |>.filter (· < t)).card = i.val := by
-    have hrank (j : Fin D.count) :
-        (Z x |>.filter (· < D.root j x)).card = j.val := by
-      rw [hcard]
-      simpa only [(D.strictMono_root x).lt_iff_lt, Finset.filter_gt_eq_Iio] using Fin.card_Iio j
-    constructor
-    · rintro rfl
-      exact ⟨by rw [hZ]; exact Finset.mem_image_of_mem _ (Finset.mem_univ i), hrank i⟩
-    · rintro ⟨ht, hc⟩
-      rw [hZ] at ht
-      obtain ⟨j, _, rfl⟩ := Finset.mem_image.1 ht
-      have hij : j = i := Fin.ext ((hrank j).symm.trans hc)
-      rw [hij]
-  -- Away from all roots, the number below the point identifies its sector.
+      D.root i x = t ↔ t ∈ Z x ∧ (Z x |>.filter (· < t)).card = i.val :=
+    root_eq_iff D x (hG x) t i
   have hsector (x : S) (t : ℝ) (j : Fin (D.count + 1)) :
       (x, t) ∈ sectorSet D.root j ↔
-        t ∉ Z x ∧ (Z x |>.filter (· < t)).card = j.val := by
-    have hless (i : Fin D.count) :
-        i.val < (Z x |>.filter (· < t)).card ↔ D.root i x < t := by
-      rw [hcard]
-      exact Fin.lt_card_filter_univ_iff_apply_of_imp _
-        (fun a b hab ha ↦ ((D.strictMono_root x).monotone hab).trans_lt ha)
-    constructor
-    · intro ht
-      have hnot : t ∉ Z x := by
-        rw [hZ]
-        rintro h
-        obtain ⟨i, _, hi⟩ := Finset.mem_image.1 h
-        exact disjoint_left.1 (disjoint_sectionSet_sectorSet D.root i j)
-          (mem_sectionSet.2 hi) ht
-      refine ⟨hnot, ?_⟩
-      rw [hcard]
-      have heq : Finset.univ.filter (fun i ↦ D.root i x < t) =
-          Finset.univ.filter (fun i : Fin D.count ↦ i.val < j.val) := by
-        ext i
-        simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-        exact ⟨fun hi ↦ by
-          by_contra h
-          exact hi.not_gt ((mem_sectorSet.1 ht).2 i
-            (by simpa only [Fin.le_def, Fin.val_castSucc] using le_of_not_gt h)),
-          fun hi ↦ (mem_sectorSet.1 ht).1 i (by simpa only [Fin.lt_def, Fin.val_castSucc] using hi)⟩
-      rw [heq, Fin.card_filter_val_lt, min_eq_right (by omega)]
-    · rintro ⟨hnot, hc⟩
-      rw [mem_sectorSet]
-      constructor
-      · intro i hi
-        exact (hless i).1 (by simpa only [hc, Fin.lt_def, Fin.val_castSucc] using hi)
-      · intro i hi
-        have hne : D.root i x ≠ t := by
-          intro h
-          apply hnot
-          rw [hZ, ← h]
-          exact Finset.mem_image_of_mem _ (Finset.mem_univ i)
-        exact lt_of_le_of_ne (le_of_not_gt fun h ↦
-          (not_lt_of_ge hi)
-            (by simpa only [hc, Fin.lt_def, Fin.val_castSucc] using (hless i).2 h)) hne.symm
+        t ∉ Z x ∧ (Z x |>.filter (· < t)).card = j.val :=
+    ⟨notMem_and_card_of_mem_sectorSet D x (hG x) t j,
+      fun h ↦ mem_sectorSet_of_notMem_of_card D x (hG x) t j h.1 h.2⟩
   refine ⟨D.continuous_root, D.strictMono_root, fun i ↦ ?_, fun j ↦ ?_⟩
   · convert hS.preimage_tail.inter
       (G.isSemialgebraic_setOf_mem_biUnion_roots_card_lt i.val) using 1
