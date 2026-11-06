@@ -154,12 +154,14 @@ theorem sSeries_eq_shift_substInvOfIsUnit :
     (isUnit_coeff_one_freeCumulantSeries_sub_one φ a hmean)).eq_X_mul_shift_add_const
 
 /-- The right inverse equation `(C - 1)(X * S) = X`. -/
+@[simp]
 theorem freeCumulantSeries_sub_one_subst_X_mul_sSeries :
     (freeCumulantSeries φ a - 1).subst (X * sSeries φ a hmean) = X := by
   rw [X_mul_sSeries_eq_substInvOfIsUnit a hφ hmean]
   exact (freeCumulantSeries φ a - 1).subst_substInvOfIsUnit_right (by simp) _
 
 /-- The left inverse equation `(X * S)(C - 1) = X`. -/
+@[simp]
 theorem X_mul_sSeries_subst_freeCumulantSeries_sub_one :
     (X * sSeries φ a hmean).subst (freeCumulantSeries φ a - 1) = X := by
   rw [X_mul_sSeries_eq_substInvOfIsUnit a hφ hmean]
