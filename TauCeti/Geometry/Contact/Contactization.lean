@@ -78,8 +78,9 @@ into `W × ℝ` are exactly the lifts of the exact Lagrangian immersions of `W`.
   the Legendrian lift of an exact Lagrangian immersion.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_isHorizontalMap_contactization`:
   a half-dimensional map is exact Lagrangian exactly when its lift is horizontal.
-* `TauCeti.IsLegendrianImmersion.isExactLagrangianMap_contactization`: the projection of a
-  Legendrian immersion into the contactization is an exact Lagrangian immersion.
+* `TauCeti.IsLegendrianImmersion.isImmersion_fst_contactization` and
+  `TauCeti.IsLegendrianImmersion.isExactLagrangianMap_contactization`: the projection of a
+  Legendrian immersion into the contactization is an immersion and an exact Lagrangian map.
 * `TauCeti.CotangentBundle.isContactForm_contactization_liouvilleForm`: the one-jet space of a
   manifold is a contact manifold.
 
@@ -399,9 +400,8 @@ theorem _root_.TauCeti.IsLegendrianImmersion.isImmersion_fst_contactization
     ext j
     fin_cases j
     rfl
-  refine isImmersion_iff_forall_isImmersionAt.2 fun x ↦
-    hι.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (Set.mem_univ x) (by simp)
-      |>.2 fun v w hvw ↦ hL.isImmersion.mfderiv_injective (by simp) x ?_
+  refine hι.isImmersion_of_injective_mfderiv (by simp) fun x v w hvw ↦
+    hL.isImmersion.mfderiv_injective (by simp) x ?_
   rw [mfderiv_prodMk (hι.mdifferentiable (by simp) x) (hh.mdifferentiable (by simp) x)]
   exact Prod.ext hvw ((hdh x v).trans (by rw [hvw]; exact (hdh x w).symm))
 
