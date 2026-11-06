@@ -212,9 +212,9 @@ theorem IsValuationSaturated.exists_add_sum_smul_mem {M : Submodule (Valued.inte
   have hball (n : ℕ) (c : ι → K) (hc : c ∈ A n) (t : ι → K)
       (htc : ∀ i, dist (t i) (c i) ≤ ‖(a n : K)‖⁻¹) : t ∈ A n := by
     have hmem (i : ι) : (a n : K) * (t i - c i) ∈ Valued.integer K := by
-      rw [Valued.integer.mem_iff, norm_mul, ← dist_eq_norm,
-        ← mul_inv_cancel₀ (norm_ne_zero_iff.2 (ha0 n))]
-      exact mul_le_mul_of_nonneg_left (htc i) (norm_nonneg _)
+      rw [Valued.integer.mem_iff, norm_mul, ← dist_eq_norm]
+      exact (mul_le_mul_of_nonneg_left (htc i) (norm_nonneg _)).trans_eq
+        (mul_inv_cancel₀ (norm_ne_zero_iff.2 (ha0 n)))
     rw [hA] at hc ⊢
     convert M.add_mem hc (M.sum_mem (t := .univ) fun i _ ↦ M.smul_mem ⟨_, hmem i⟩ (he i)) using 1
     simp only [Valued.integer.smul_def, add_assoc, ← Finset.sum_add_distrib, ← add_smul]
@@ -244,9 +244,10 @@ theorem IsValuationSaturated.exists_add_sum_smul_mem {M : Submodule (Valued.inte
   -- `a 0` is a nonzero scalar, hence a nonzerodivisor on the `K`-vector space `E`.
   refine ⟨t, hM.mem_of_forall_smul_mem (ham 0) (fun x y hxy ↦ smul_right_injective E (ha0 0)
     (by simpa only [Valued.integer.smul_def] using hxy)) fun b hb ↦ ?_⟩
-  obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 (hcof b hb).choose_spec
+  obtain ⟨n, hn⟩ := hcof b hb
+  obtain ⟨d, hd⟩ := Valued.integer.dvd_iff_norm_le.2 hn
   rw [hd, mul_comm, mul_smul]
-  exact M.smul_mem d (ht _)
+  exact M.smul_mem d (ht n)
 
 /-- The image of an `𝓂[K]`-saturated lattice `M ⊆ ι → K` under the `i`-th coordinate is
 saturated, provided the sublattice of `M` on which this coordinate vanishes has a finite basis. -/
@@ -354,21 +355,25 @@ theorem exists_basis_of_isValuationSaturated (hK : ∀ r : ℝ, 0 < r → ∃ x 
       (isValuationSaturated_map_proj hM i bN)
     rcases eq_or_ne q 0 with rfl | hq0
     · have hNM : N = M := inf_eq_left.2 fun x hx ↦ by
-        have h : x i ∈ M.map (LinearMap.proj i) := Submodule.mem_map_of_mem hx
+        have h : x i ∈ M.map (LinearMap.proj i) :=
+          Submodule.mem_map.2 ⟨x, hx, LinearMap.proj_apply i x⟩
         rwa [hq, Submodule.span_singleton_eq_bot.2 rfl, Submodule.mem_bot] at h
       exact ⟨k, hk.trans (Finset.card_le_card (Finset.subset_insert i s)),
         ⟨bN.map (LinearEquiv.ofEq N M hNM)⟩⟩
     -- Otherwise a lift `y ∈ M` of the generator `q` extends the basis of `N` to one of `M`.
-    obtain ⟨y, hy, hyi : y i = q⟩ := Submodule.mem_map.1
-      (show q ∈ M.map (LinearMap.proj i) from hq ▸ Submodule.mem_span_singleton_self q)
+    have hqQ : q ∈ M.map (LinearMap.proj i) := hq ▸ Submodule.mem_span_singleton_self q
+    obtain ⟨y, hy, hyi⟩ := Submodule.mem_map.1 hqQ
+    rw [LinearMap.proj_apply] at hyi
     refine ⟨k + 1, by rw [Finset.card_insert_of_notMem hi]; omega,
       ⟨Module.Basis.mkFinConsOfLE y hy bN inf_le_left (fun c x hx hcx ↦ ?_) fun z hz ↦ ?_⟩⟩
     · have h := congrFun hcx i
       simp only [Pi.add_apply, Pi.smul_apply, Valued.integer.smul_def, smul_eq_mul, hyi,
         ((hN x).1 hx).2, Pi.zero_apply, add_zero] at h
       exact Subtype.ext ((mul_eq_zero_iff_right hq0).1 h)
-    · obtain ⟨d, hd⟩ := Submodule.mem_span_singleton.1
-        (show z i ∈ Valued.integer K ∙ q by rw [← hq]; exact Submodule.mem_map_of_mem hz)
+    · have hzi : z i ∈ Valued.integer K ∙ q := by
+        rw [← hq]
+        exact Submodule.mem_map.2 ⟨z, hz, LinearMap.proj_apply i z⟩
+      obtain ⟨d, hd⟩ := Submodule.mem_span_singleton.1 hzi
       refine ⟨-d, M.add_mem hz (M.smul_mem _ hy), ?_⟩
       simp [Valued.integer.smul_def, hyi, ← hd]
 
