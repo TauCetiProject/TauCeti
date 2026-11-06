@@ -114,10 +114,11 @@ private theorem demushkinWordNeTwo_mul_prod_tail_eq (a : Fin (k + 2) → ℤ_[2]
     List.drop_succ_cons, List.drop_zero]
 
 /-- **Extending the tail normalisation to the first two generators.** Let `e'` be an automorphism
-of the free pro-`2` group on `k` generators carrying the tail relator `w₀ · T` to `w_q`. Then an
-automorphism `E` of the free pro-`2` group on `k + 2` generators fixes the head
-`x₁^{2+α} (x₁, x₂)` and carries the embedded tail relator to `x₃^{q} (x₃, x₄) ⋯ (x_{n-1}, x_n)`,
-so it carries their product to the product of the head with that word. -/
+of the free pro-`2` group on `k` generators carrying `demushkinWordNeTwo 0 k _ * T` to
+`demushkinWordNeTwo q k _`. Then there is a continuous automorphism `E` of the free pro-`2` group
+on `k + 2` generators carrying `x₁^{2+α} (x₁, x₂) · ι (demushkinWordNeTwo 0 k _ * T)` to
+`x₁^{2+α} (x₁, x₂) · demushkinWordNeTwo q k (x₃, …, x_{k+2})`, where `ι` embeds the free group on
+`k` generators via the generators `x₃, …, x_{k+2}`. -/
 private theorem exists_continuousMulEquiv_apply_head_mul_map_succ_succ (α : ℤ_[2])
     (T : freeProP 2 (Fin k)) (q : ℕ) (e' : freeProP 2 (Fin k) ≃ₜ* freeProP 2 (Fin k))
     (he' : e' (demushkinWordNeTwo 0 k (freeProPGen 2 k) * T) =
