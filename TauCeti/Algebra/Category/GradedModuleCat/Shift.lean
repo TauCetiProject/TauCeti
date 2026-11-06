@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Category.GradedModuleCat.Basic
+public import TauCeti.LinearAlgebra.Graded.Shift
 
 /-!
 # Integer powers of the grading shift
@@ -141,3 +142,24 @@ theorem shiftPowCompToModuleCatIso_inv_app_hom (j : ℤ) (M : GradedModuleCat.{v
   rfl
 
 end TauCeti.GradedModuleCat
+
+namespace LinearMap
+
+universe v v' uk uA
+
+/-- Shifting the target graded module by `n` subtracts `n` from the degree measured in
+its original grading. -/
+@[simp]
+theorem isHomogeneous_shiftObj_iff
+    {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
+    {𝒜 : ℤ → Submodule k A} {M : TauCeti.GradedModuleCat.{v} 𝒜}
+    {N : TauCeti.GradedModuleCat.{v'} 𝒜} (f : M →ₗ[A] N) (n q : ℤ) :
+    TauCeti.LinearMap.IsHomogeneous f M.grading.piece (N.shiftObj n).grading.piece q ↔
+      TauCeti.LinearMap.IsHomogeneous f M.grading.piece N.grading.piece (q - n) := by
+  -- `shiftObj n` uses the internal shift by `-n`, opposite to the family-shift convention.
+  have hpiece : (N.shiftObj n).grading.piece = TauCeti.Graded.shift N.grading.piece (-n) := by
+    funext p
+    rw [TauCeti.InternalGrading.shift_piece, TauCeti.Graded.shift_apply]
+  rw [hpiece, TauCeti.LinearMap.isHomogeneous_shift_target_iff, sub_eq_add_neg]
+
+end LinearMap
