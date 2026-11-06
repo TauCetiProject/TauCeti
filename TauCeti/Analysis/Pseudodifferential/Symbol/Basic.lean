@@ -161,12 +161,12 @@ theorem HasCompactSpatialSupport.hasCompactSupport_slice {a : Symbol n V W m}
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
   exact HasCompactSupport.intro hK fun x hx ↦ hKa x hx ξ
 
-/-- On a compact set of positions, a symbol of order `m` grows at most like `⟨ξ⟩ ^ m`. -/
-theorem exists_norm_coefficient_le (a : Symbol n V W m) {K : Set (CoordinateSpace n)}
+/-- A symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in the position. -/
+theorem exists_bound_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
     (hK : IsCompact K) :
     ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
-  obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK [] []
-  exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+  obtain ⟨C, hC, hCK⟩ := a.exists_bound K hK [] []
+  exact ⟨C, hC, fun x hx ξ ↦ by simpa [mixedDeriv_nil_nil] using hCK x hx ξ⟩
 
 section Module
 
@@ -405,6 +405,30 @@ theorem mixedDeriv_spatialDeriv (j : Fin n) (a : Symbol n V W m) (α β : List (
       fun p => coordinateDeriv [j] (fun y => a.coefficient (y, p.2)) p.1 :=
     funext fun p => coefficient_spatialDeriv j a p.1 p.2
   rw [h, mixedDeriv_coordinateDeriv_fst a.contDiff_coefficient]
+
+/-- The position derivative of a symbol in the `j`-th coordinate direction is the coefficient of
+its spatial derivative `∂_{x_j} a`. -/
+theorem fderiv_coefficient_single (a : Symbol n V W m) (j : Fin n) (x ξ : CoordinateSpace n) :
+    fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x (EuclideanSpace.single j 1) =
+      (spatialDeriv j a).coefficient (x, ξ) := by
+  rw [coefficient_spatialDeriv, coordinateDeriv_cons, coordinateDeriv_nil]
+
+/-- The position derivative of a symbol of order `m` is bounded by `C ⟨ξ⟩ ^ m` locally uniformly in
+the position. -/
+theorem exists_bound_fderiv_coefficient (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ,
+      ‖fderiv ℝ (fun y ↦ a.coefficient (y, ξ)) x‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  choose C hC0 hC using fun j ↦ (spatialDeriv j a).exists_bound_coefficient K hK
+  obtain ⟨D, -, hD⟩ :=
+    (EuclideanSpace.basisFun (Fin n) ℝ).toBasis.exists_opNorm_le (F := V →L[ℂ] W)
+  refine ⟨D * ∑ j, C j, fun x hx ξ ↦ ?_⟩
+  rw [mul_assoc]
+  refine hD (mul_nonneg (Finset.sum_nonneg fun j _ ↦ hC0 j) (by positivity)) fun j ↦ ?_
+  rw [OrthonormalBasis.coe_toBasis, EuclideanSpace.basisFun_apply, fderiv_coefficient_single]
+  refine (hC j x hx ξ).trans ?_
+  gcongr
+  exact Finset.single_le_sum (fun i _ ↦ hC0 i) (Finset.mem_univ j)
 
 theorem IsUniform.frequencyDeriv {a : Symbol n V W m} (ha : a.IsUniform) (j : Fin n) :
     (frequencyDeriv j a).IsUniform := by

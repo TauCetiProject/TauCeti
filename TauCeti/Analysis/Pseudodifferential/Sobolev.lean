@@ -194,7 +194,7 @@ private theorem HasCompactSpatialSupport.integrable_fourierChar_smul_apply
     Integrable (fun p : CoordinateSpace n × CoordinateSpace n ↦
       𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, (2 * π) • p.2) (𝓕 u p.2)) (volume.prod volume) := by
   obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
-  obtain ⟨C, hC0, hC⟩ := exists_norm_coefficient_le a hK
+  obtain ⟨C, hC0, hC⟩ := a.exists_bound_coefficient K hK
   have hFcont : Continuous fun p : CoordinateSpace n × CoordinateSpace n ↦
       𝐞 (-⟪p.1, ξ - p.2⟫) • a.coefficient (p.1, (2 * π) • p.2) (𝓕 u p.2) :=
     (Real.continuous_fourierChar.comp (by fun_prop)).smul
