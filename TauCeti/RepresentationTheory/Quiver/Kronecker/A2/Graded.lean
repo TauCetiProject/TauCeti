@@ -112,7 +112,30 @@ theorem submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 :
   fin_cases i <;> fin_cases j <;>
     simp [-gradedCartanMatrix_apply, Matrix.mul_apply, Matrix.one_apply,
       sum_univ, Nat.card_eq_fintype_card] at hs ht ⊢ <;>
-    simp_all [-gradedCartanMatrix_apply]; linear_combination ht
+    simp_all [-gradedCartanMatrix_apply]
+  -- Only entry (1, 0) remains: `ht` gives its value via `-q + C₁₀ = 0`.
+  -- Simplification does not rearrange this additive equation, so solve it linearly.
+  linear_combination ht
+
+/-- Each graded vertex-projective class maps to the corresponding column of the graded
+Cartan matrix, expressed in the source-first vertex-simple basis. -/
+theorem gradedCartanMap_gradedVertexProjectiveClass (j : Fin 2) :
+    gradedCartanMap (PathAlgebra.integerGrade k (Kronecker A))
+        (PathAlgebra.gradedVertexProjectiveClass k (Kronecker A) (![src, tgt] j)) =
+      gradedCartanMatrixA2 0 j •
+          PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A) src +
+        gradedCartanMatrixA2 1 j •
+          PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A) tgt := by
+  let _ := PathAlgebra.integerGradedAlgebra k (Kronecker A)
+  have h := gradedCartanMap_basis_apply_eq_sum (PathAlgebra.integerGrade k (Kronecker A))
+    (PathAlgebra.gradedVertexProjectiveClassBasis k (Kronecker A))
+    (PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A)) (![src, tgt] j)
+  rw [PathAlgebra.gradedVertexProjectiveClassBasis_apply] at h
+  rw [h]
+  have hs := congrFun₂ (submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 (A := A) k) 0 j
+  have ht := congrFun₂ (submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 (A := A) k) 1 j
+  simp only [Matrix.submatrix_apply, Matrix.cons_val_zero, Matrix.cons_val_one] at hs ht
+  rw [sum_univ, hs, ht]
 
 /-- The graded Cartan map sends the source projective to `[S₁] + q[S₂]`. This is an equality
 of classes in the actual Laurent Grothendieck group of finite graded path-algebra modules. -/
@@ -122,34 +145,14 @@ theorem gradedCartanMap_gradedVertexProjectiveClass_src :
       PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A) src +
         (T 1 : LaurentPolynomial ℤ) •
           PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A) tgt := by
-  let _ := PathAlgebra.integerGradedAlgebra k (Kronecker A)
-  have h := gradedCartanMap_basis_apply_eq_sum (PathAlgebra.integerGrade k (Kronecker A))
-    (PathAlgebra.gradedVertexProjectiveClassBasis k (Kronecker A))
-    (PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A)) src
-  rw [PathAlgebra.gradedVertexProjectiveClassBasis_apply] at h
-  rw [h]
-  have hs := congrFun₂ (submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 (A := A) k) 0 0
-  have ht := congrFun₂ (submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 (A := A) k) 1 0
-  simp only [Matrix.submatrix_apply, gradedCartanMatrixA2_apply, Matrix.of_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at hs ht
-  rw [sum_univ, hs, ht, one_smul]
+  simpa using gradedCartanMap_gradedVertexProjectiveClass (A := A) k 0
 
 /-- The graded Cartan map sends the target projective to `[S₂]`, without an internal shift. -/
 theorem gradedCartanMap_gradedVertexProjectiveClass_tgt :
     gradedCartanMap (PathAlgebra.integerGrade k (Kronecker A))
         (PathAlgebra.gradedVertexProjectiveClass k (Kronecker A) tgt) =
       PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A) tgt := by
-  let _ := PathAlgebra.integerGradedAlgebra k (Kronecker A)
-  have h := gradedCartanMap_basis_apply_eq_sum (PathAlgebra.integerGrade k (Kronecker A))
-    (PathAlgebra.gradedVertexProjectiveClassBasis k (Kronecker A))
-    (PathAlgebra.gradedVertexSimpleClassBasis k (Kronecker A)) tgt
-  rw [PathAlgebra.gradedVertexProjectiveClassBasis_apply] at h
-  rw [h]
-  have hs := congrFun₂ (submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 (A := A) k) 0 1
-  have ht := congrFun₂ (submatrix_gradedCartanMatrix_eq_gradedCartanMatrixA2 (A := A) k) 1 1
-  simp only [Matrix.submatrix_apply, gradedCartanMatrixA2_apply, Matrix.of_apply,
-    Matrix.cons_val_zero, Matrix.cons_val_one, Matrix.cons_val_fin_one] at hs ht
-  rw [sum_univ, hs, ht, zero_smul, one_smul, zero_add]
+  simpa using gradedCartanMap_gradedVertexProjectiveClass (A := A) k 1
 
 variable [HasExt.{max u v}
   (GradedModuleCat.{max u v} (PathAlgebra.integerGrade k (Kronecker A)))]
