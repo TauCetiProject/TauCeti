@@ -139,6 +139,9 @@ lemma pullback_map_unit_comp_pushforwardBaseChange_app (w : CommSq g' f' f g) (N
     w.w.symm s
   have h₃ := Scheme.Hom.pullbackSectionsLE_comp f N U g' (f ⁻¹ᵁ U) le_rfl (W := f' ⁻¹ᵁ g ⁻¹ᵁ U)
     (by rw [← Scheme.Hom.comp_preimage, ← Scheme.Hom.comp_preimage, w.w]) s
+  -- The goal is typed by sections of `f'_* g'^* f^* N` over `g⁻¹ U`, while `h₁`, `h₂` and `h₃` are
+  -- stated for sections of `g'^* f^* N` over `f'⁻¹ g⁻¹ U`. They agree only up to unfolding, so
+  -- `rw` and `simp` do not see the composites, and the chain is closed by `Eq.trans` instead.
   refine Eq.symm ((ConcreteCategory.comp_apply _ _ _).trans ?_)
   refine (congrArg _ h₁).trans ((ConcreteCategory.comp_apply _ _ _).trans ?_)
   exact (congrArg _ h₂).trans h₃

@@ -48,6 +48,9 @@ effectivity of descent data is not treated here.
   Proposition 35.5.2 (023T), descent of quasi-coherent modules along fpqc coverings.
 * A. Grothendieck, *Revêtements étales et groupe fondamental* (SGA 1), Exposé VIII,
   Théorème 1.1.
+* J. Bénabou, J. Roubaud, *Monades et descente*, C. R. Acad. Sci. Paris Sér. A-B 270 (1970),
+  A96–A98: with base change, descent data are coalgebras for the comonad `f^* f_*`.
+* G. Janelidze, W. Tholen, *Facets of descent, I*, Appl. Categ. Structures 2 (1994), 245–281.
 -/
 
 public section
@@ -66,7 +69,8 @@ variable {X S : Scheme.{u}} (f : X ⟶ S)
 quasi-separated, and modules `A`, `B` on `S` with `B` quasi-coherent, a morphism
 `g : f^* A ⟶ f^* B` is a morphism of coalgebras for the comonad `f^* f_*` if and only if it is
 compatible with the canonical isomorphisms `p₂^* f^* M ≅ (p₂ ≫ f)^* M = (p₁ ≫ f)^* M ≅ p₁^* f^* M`
-on `X ×_S X`, for `M = A, B`. -/
+on `X ×_S X`, for `M = A, B`. This is the morphism-level case of the Bénabou–Roubaud theorem:
+when base change holds, descent data along `f` are coalgebras for `f^* f_*`. -/
 theorem comp_pullback_map_unit_app_eq_iff [QuasiCompact f] [QuasiSeparated f] [Flat f]
     {A B : S.Modules} [B.IsQuasicoherent] (g : (pullback f).obj A ⟶ (pullback f).obj B) :
     g ≫ (pullback f).map ((pullbackPushforwardAdjunction f).unit.app B) =
@@ -134,7 +138,10 @@ theorem qcohPseudofunctor_descentData_hom_comm {X Y : Scheme.{u}} (f : X ⟶ Y)
         (qcohPseudofunctor.map (pullback.fst f f).op.toLoc).toFunctor.map g :=
     ψ.comm (pullback.snd f f ≫ f) (i₁ := PUnit.unit) (i₂ := PUnit.unit) (pullback.snd f f)
       (pullback.fst f f) rfl pullback.condition
-  -- Read it on underlying modules through the inclusion of quasi-coherent modules.
+  -- Read it on underlying modules through the inclusion of quasi-coherent modules. The category
+  -- `qcohPseudofunctor.obj T` is `QuasicoherentSheaf T` only up to unfolding, so Mathlib's
+  -- `ObjectProperty.ι_map` and `ObjectProperty.FullSubcategory.comp_hom` do not apply to `hψ`;
+  -- `hι` states `ι_map` for this category.
   let ι : qcohPseudofunctor.obj ⟨op (pullback f f)⟩ ⥤ (pullback f f).Modules :=
     (isQuasicoherent.prop _).ι
   have hι {E F} (a : E ⟶ F) : ι.map a = a.hom := rfl
@@ -157,52 +164,6 @@ theorem qcohPseudofunctor_descentData_hom_comm {X Y : Scheme.{u}} (f : X ⟶ Y)
 
 variable {R S : CommRingCat.{u}} (φ : R ⟶ S)
 
-/-- Pullback of quasi-coherent modules along `Spec φ`, as the lift of pullback of modules to the
-full subcategories of quasi-coherent modules. This is the form of the functor
-`qcohPseudofunctor.map` in which descent data are stated, and it agrees definitionally with
-pullback of modules on underlying modules; it equals `QuasicoherentSheaf.pullback (Spec.map φ)`
-only propositionally (`QuasicoherentSheaf.pullback_def`). -/
-private abbrev pullbackLift : QuasicoherentSheaf (Spec R) ⥤ QuasicoherentSheaf (Spec S) :=
-  (_root_.SheafOfModules.isQuasicoherent (Spec S).ringCatSheaf).lift
-    ((_root_.SheafOfModules.isQuasicoherent (Spec R).ringCatSheaf).ι ⋙
-      Scheme.Modules.pullback (Spec.map φ))
-    fun E ↦ Scheme.Modules.isQuasicoherent_pullback (Spec.map φ) E.obj
-
-/-- The adjunction between `pullbackLift φ` and `pushforwardSpecMap φ`, whose unit and counit are
-those of `Scheme.Modules.pullbackPushforwardAdjunction` on underlying modules by definition. -/
-private def pullbackPushforwardAdjunction :
-    pullbackLift φ ⊣ QuasicoherentSheaf.pushforwardSpecMap φ where
-  unit :=
-    { app A := ObjectProperty.homMk
-        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app A.obj)
-      naturality _ _ x := ObjectProperty.hom_ext _
-        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.naturality x.hom) }
-  counit :=
-    { app B := ObjectProperty.homMk
-        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).counit.app B.obj)
-      naturality _ _ x := ObjectProperty.hom_ext _
-        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).counit.naturality x.hom) }
-  left_triangle_components A := ObjectProperty.hom_ext _
-    ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).left_triangle_components A.obj)
-  right_triangle_components B := ObjectProperty.hom_ext _
-    ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).right_triangle_components B.obj)
-
-/-- For faithfully flat `φ`, `pullbackLift φ` is comonadic: Beck's comonadicity theorem applies as
-in `QuasicoherentSheaf.comonadicPullbackSpecMap`. -/
-private theorem isEquivalence_comparison_pullbackPushforwardAdjunction
-    (hφ : φ.hom.FaithfullyFlat) :
-    (Comonad.comparison (pullbackPushforwardAdjunction φ)).IsEquivalence := by
-  have hL : pullbackLift φ = QuasicoherentSheaf.pullback (Spec.map φ) :=
-    (QuasicoherentSheaf.pullback_def _).symm
-  have : PreservesFiniteLimits (pullbackLift φ) :=
-    hL ▸ QuasicoherentSheaf.preservesFiniteLimits_pullback_specMap φ hφ.flat
-  have : (pullbackLift φ).ReflectsIsomorphisms :=
-    hL ▸ QuasicoherentSheaf.reflectsIsomorphisms_pullback_specMap φ hφ
-  have : Comonad.HasEqualizerOfIsCosplitPair (pullbackLift φ) := ⟨fun _ _ _ ↦ inferInstance⟩
-  have : Comonad.PreservesLimitOfIsCosplitPair (pullbackLift φ) := ⟨fun _ _ _ ↦ inferInstance⟩
-  exact (Comonad.comonadicOfHasPreservesFSplitEqualizersOfReflectsIsomorphisms
-    (pullbackPushforwardAdjunction φ)).eqv
-
 /-- **Descent of morphisms of quasi-coherent modules along a faithfully flat map of affine
 schemes.** For a faithfully flat ring map `φ : R ⟶ S`, `qcohPseudofunctor` is a prestack for the
 covering `{Spec φ : Spec S ⟶ Spec R}`: a morphism `f^* A ⟶ f^* B` of quasi-coherent modules on
@@ -213,9 +174,9 @@ theorem qcohPseudofunctor_isPrestackFor_singleton_specMap (hφ : φ.hom.Faithful
   rw [← Presieve.ofArrows_pUnit.{0}, Pseudofunctor.isPrestackFor_ofArrows_iff,
     Functor.FullyFaithful.nonempty_iff_map_bijective]
   rintro (A : QuasicoherentSheaf (Spec R)) (B : QuasicoherentSheaf (Spec R))
-  have := isEquivalence_comparison_pullbackPushforwardAdjunction φ hφ
+  have := isEquivalence_comparison_qcohPseudofunctorMapSpecMapAdjunction φ hφ
   have : Flat (Spec.map φ) := Flat.SpecMap_iff.2 hφ.flat
-  let K := Comonad.comparison (pullbackPushforwardAdjunction φ)
+  let K := Comonad.comparison (qcohPseudofunctorMapSpecMapAdjunction φ)
   refine ⟨fun h₁ h₂ e ↦ K.map_injective (Comonad.Coalgebra.Hom.ext ?_), fun ψ ↦ ?_⟩
   · exact congr(Pseudofunctor.DescentData.Hom.hom $e PUnit.unit)
   -- `ψ` satisfies the descent condition, so it is a morphism of coalgebras for `f^* f_*`, and
