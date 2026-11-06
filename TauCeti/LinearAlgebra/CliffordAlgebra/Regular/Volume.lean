@@ -7,34 +7,35 @@ module
 
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Regular.Basic
 public import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Complex
-import TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Basic
 import TauCeti.LinearAlgebra.CliffordAlgebra.OrthogonalBasis
 
 /-!
 # Volume operators on real regular Clifford spinors
 
 The external opposite-sign action on a regular Clifford module is parity-twisted right
-multiplication. For an orthogonal ordered list of vectors, its product is ordinary right
-multiplication by the corresponding Clifford product in even length, and parity followed
-by right multiplication in odd length. In particular the positive external volume on
-negative regular spinors is right multiplication by the raw negative volume in even rank.
+multiplication. The ordered-product formulas in
+`TauCeti.LinearAlgebra.CliffordAlgebra.Regular.Basic` identify the action of an orthogonal
+product with right multiplication in even length, and parity followed by right multiplication
+in odd length. Here these formulas show that the positive external volume on negative regular
+spinors is right multiplication by the raw negative volume in even rank.
 
-In rank divisible by four the raw negative volume squares to one. Left and right
-multiplication by it recover the grade involution. These identities distinguish the
-external volume signs from complex chirality; in rank four chirality is minus the raw
-left volume, whereas in rank eight it is the raw left volume.
+In rank divisible by four, `CliffordAlgebra.volumeElement_mul_self` and
+`CliffordAlgebra.involute_eq_volumeElement_mul_mul` in
+`TauCeti.LinearAlgebra.CliffordAlgebra.VolumeElement.Oriented` show that the raw negative
+volume squares to one and its left and right multiplication recover the grade involution.
+Here we compare the external volume with complex chirality: in rank four chirality is minus
+the raw left volume, whereas in rank eight it is the raw left volume.
 
 The action is the existing `CliffordAlgebra.parityTwistedRightAction`; the volume
 is `CliffordAlgebra.volumeElement`, defined through the Clifford/exterior equivalence.
-No global norm, star or Clifford module instance is introduced. The ordered-product
-statements work over any commutative ring, including in characteristic two.
+No global norm, star or Clifford module instance is introduced.
 
 ## Main results
 
-* `CliffordAlgebra.parityTwistedRightAction_prod_map_ι`: the action of an arbitrary
-  ordered product, with its reversal and crossing signs.
 * `CliffordAlgebra.parityTwistedRightAction_volumeElement`: the frame-independent
   formula for the external volume in every rank.
+* `CliffordAlgebra.parityTwistedRightAction_volumeElement_of_even`: in even rank, the
+  external volume acts by ordinary right multiplication by the original volume.
 * `CliffordAlgebra.parityTwistedRightAction_volumeElement_of_involute_eq_self` and
   `CliffordAlgebra.parityTwistedRightAction_volumeElement_of_involute_eq_neg`: the
   left-volume comparison on the two parity sectors in even rank.
@@ -50,56 +51,6 @@ statements work over any commutative ring, including in characteristic two.
 public section
 
 namespace CliffordAlgebra
-
-variable {R M : Type*} [CommRing R] [AddCommGroup M] [Module R M]
-  (Q : QuadraticForm R M)
-
-/-- On an ordered product, the external action is reversal followed by right multiplication,
-with the crossing sign and one grade involution for each vector. No orthogonality is needed. -/
-theorem parityTwistedRightAction_prod_map_ι (l : List M) (s : CliffordAlgebra Q) :
-    parityTwistedRightAction Q (l.map (ι (-Q))).prod s =
-      (-1 : R) ^ l.length.choose 2 •
-        ((involute : CliffordAlgebra Q → CliffordAlgebra Q)^[l.length] s *
-          reverse (l.map (ι Q)).prod) := by
-  induction l with
-  | nil => simp
-  | cons v l ih =>
-    rw [List.map_cons, List.prod_cons, map_mul, mul_apply_eq_comp,
-      parityTwistedRightAction_ι, parityTwistedRight_apply, ih]
-    -- The new vector crosses all previous factors, adding their length to the sign exponent.
-    have hchoose : (l.length + 1).choose 2 = l.length + l.length.choose 2 := by
-      simp [Nat.choose_succ_succ]
-    simp only [map_smul, map_mul, ← reverse_involute, involute_prod_map_ι,
-      mul_smul_comm, smul_mul_assoc, smul_smul, List.map_cons, List.prod_cons,
-      reverse.map_mul, reverse_ι, List.length_cons, Function.iterate_succ_apply',
-      hchoose, pow_add, mul_assoc]
-    rw [mul_comm ((-1 : R) ^ l.length.choose 2)]
-
-/-- For an orthogonal ordered product the reversal and crossing signs cancel. -/
-theorem parityTwistedRightAction_prod_map_ι_of_pairwise_isOrtho {l : List M}
-    (hl : l.Pairwise Q.IsOrtho) (s : CliffordAlgebra Q) :
-    parityTwistedRightAction Q (l.map (ι (-Q))).prod s =
-      (involute : CliffordAlgebra Q → CliffordAlgebra Q)^[l.length] s *
-        (l.map (ι Q)).prod := by
-  rw [parityTwistedRightAction_prod_map_ι, reverse_prod_map_ι_of_pairwise_isOrtho hl,
-    mul_smul_comm, smul_smul, ← mul_pow]
-  simp
-
-/-- An even orthogonal product in the external algebra acts by right multiplication
-by the same ordered product in the original algebra. -/
-theorem parityTwistedRightAction_prod_map_ι_of_even {l : List M}
-    (hl : l.Pairwise Q.IsOrtho) (hlen : Even l.length) (s : CliffordAlgebra Q) :
-    parityTwistedRightAction Q (l.map (ι (-Q))).prod s = s * (l.map (ι Q)).prod := by
-  rw [parityTwistedRightAction_prod_map_ι_of_pairwise_isOrtho Q hl,
-    involute_involutive.iterate_even hlen, Function.id_def]
-
-/-- An odd orthogonal product in the external algebra acts by parity followed by right
-multiplication by the same ordered product in the original algebra. -/
-theorem parityTwistedRightAction_prod_map_ι_of_odd {l : List M}
-    (hl : l.Pairwise Q.IsOrtho) (hlen : Odd l.length) (s : CliffordAlgebra Q) :
-    parityTwistedRightAction Q (l.map (ι (-Q))).prod s = involute s * (l.map (ι Q)).prod := by
-  rw [parityTwistedRightAction_prod_map_ι_of_pairwise_isOrtho Q hl,
-    involute_involutive.iterate_odd hlen]
 
 section Real
 
