@@ -138,21 +138,6 @@ private theorem rationalIso_map_apply (p q : Presentation P)
     completionLocObjHom_hom]
   exact eqToHom_symm_apply_eqToHom_apply _ _
 
--- Read through `presentationLimitRationalIso` and the equality transport, sections over `R(p)` are
--- exactly the elements of the completed rational localisation `A⟨p⟩`.
-private theorem bijective_rationalIso_apply (p : Presentation P)
-    (hp : IsOpen (Ideal.span (p.num : Set A) : Set A)) :
-    Function.Bijective fun z : presentationLimit (P := P) Aplus (spaBasicOpen Aplus p.num p.den) ↦
-      (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-        ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z) :=
-  ⟨(injective_eqToHom _).comp <| Function.LeftInverse.injective
-      (presentationLimitRationalIso Aplus hAplus p hp).hom_inv_id_apply,
-    fun u ↦ ⟨(presentationLimitRationalIso Aplus hAplus p hp).inv.hom.1
-        ((eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower).symm).1 u),
-      (congrArg (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
-        ((presentationLimitRationalIso Aplus hAplus p hp).inv_hom_id_apply _)).trans
-          (eqToHom_symm_apply_eqToHom_apply _ _)⟩⟩
-
 end Rational
 
 /-! ### Restriction from the whole spectrum -/
@@ -188,7 +173,7 @@ private theorem presentationLimitMap_apply_toPresentationLimit_apply_eq_iff (p :
           ((eqToHom (CompleteSeparatedTopCommRingCat.of_obj A)).1 c) =
         (eqToHom (completionLocObj_obj P p.num p.den _ p.hasDenominatorPower)).1
           ((presentationLimitRationalIso Aplus hAplus p hp).hom.hom.1 z) :=
-  (bijective_rationalIso_apply hAplus p hp).1.eq_iff.symm.trans
+  (bijective_presentationLimitRationalIso_apply Aplus hAplus p hp).1.eq_iff.symm.trans
     (rationalIso_map_top_apply hAplus p hp c).congr_left
 
 end Top
@@ -539,9 +524,12 @@ theorem surjective_presentationLimitMap_sub_laurentCoverOpen
     ((eqToHom (completionLocObj_obj P q.num q.den _ q.hasDenominatorPower)).1
       ((presentationLimitRationalIso Aplus hAplus q hq).hom.hom.1
         ((presentationLimitMap hEq.le).hom.1 z)))
-  obtain ⟨x₁, rfl⟩ := (bijective_rationalIso_apply hAplus (p true) (hp true)).2 u
-  obtain ⟨x₂, rfl⟩ := (bijective_rationalIso_apply hAplus (p false) (hp false)).2 v
-  refine ⟨(x₁, x₂), (bijective_rationalIso_apply hAplus q hq).1.comp hInv.injective ?_⟩
+  obtain ⟨x₁, rfl⟩ :=
+    (bijective_presentationLimitRationalIso_apply Aplus hAplus (p true) (hp true)).2 u
+  obtain ⟨x₂, rfl⟩ :=
+    (bijective_presentationLimitRationalIso_apply Aplus hAplus (p false) (hp false)).2 v
+  refine ⟨(x₁, x₂),
+    (bijective_presentationLimitRationalIso_apply Aplus hAplus q hq).1.comp hInv.injective ?_⟩
   simp only [Function.comp_apply, map_sub, presentationLimitMap_apply_presentationLimitMap_apply,
     rationalIso_map_apply hAplus (p true) q (hp true) hq f rfl hT₁,
     rationalIso_map_apply hAplus (p false) q (hp false) hq 1 (mul_comm 1 f) hT₂]
