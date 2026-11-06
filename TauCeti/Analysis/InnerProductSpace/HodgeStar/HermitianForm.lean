@@ -132,8 +132,8 @@ theorem exists_norm_eq_one_inner_ιMulti_apply_eq_neg {η : ⋀[ℝ]^2 V}
     rw [← inner_twoVectorContraction_apply, inner_apply_left hJ, neg_neg]
   -- Since `K` commutes with `J`, `T² = -K² = l²`.
   have hTT (w : V) : J (K (J (K w))) = l ^ 2 • w := by
-    have hc := LinearMap.congr_fun (twoVectorContraction_comp_of_hodgeStar_eq_neg h₀ h₂ hkl he hη)
-      (K w)
+    have hc := LinearMap.congr_fun
+      (twoVectorContraction_comp_comm_of_hodgeStar_eq_neg h₀ h₂ hkl he hη) (K w)
     have hK := LinearMap.congr_fun (twoVectorContraction_comp_self o hkl (Or.inr hη)) w
     simp only [LinearMap.comp_apply, LinearMap.smul_apply, LinearMap.id_apply] at hc hK
     rw [hc, J.apply_apply, hK, div_pow, Real.sq_sqrt zero_le_two, neg_smul, neg_neg]
@@ -143,7 +143,7 @@ theorem exists_norm_eq_one_inner_ιMulti_apply_eq_neg {η : ⋀[ℝ]^2 V}
     have hl : 0 < l := by
       have := norm_pos_iff.2 hη₀
       positivity
-    have hω := inner_kahlerForm_of_hodgeStar_eq_neg h₀ h₂ hkl he hη
+    have hω := inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hη
     have hT (v : V) : ⟪η, ιMulti ℝ 2 ![v, J v]⟫ = l * ‖v‖ ^ 2 := by
       rw [hQ, eq_neg_of_add_eq_zero_left (h v), inner_neg_left, neg_neg, real_inner_smul_left,
         real_inner_self_eq_norm_sq]
@@ -168,12 +168,9 @@ include he h₀ h₂ in
 theorem le_inner_ιMulti_apply (F : ⋀[ℝ]^2 V) (v : V) :
     (⟪J.kahlerForm, F⟫ / 2 - ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2) * ‖v‖ ^ 2 ≤
       ⟪F, ιMulti ℝ 2 ![v, J v]⟫ := by
-  have hJ (v : V) : ‖J v‖ = ‖v‖ := by
-    rw [norm_eq_sqrt_real_inner, inner_apply_apply_of_orthonormalBasis h₀ h₂,
-      ← norm_eq_sqrt_real_inner]
   have h := TauCeti.abs_inner_ιMulti_le o hkl
     (Or.inr (o.hodgeStar_smul_sub_hodgeStar even_two hkl 2⁻¹ F)) v (J v)
-  rw [hJ, mul_assoc, ← pow_two] at h
+  rw [norm_apply (inner_apply_apply_of_orthonormalBasis h₀ h₂), mul_assoc, ← pow_two] at h
   rw [inner_ιMulti_apply_eq_add h₀ h₂ hkl he F v]
   linarith [neg_abs_le ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J v]⟫]
 

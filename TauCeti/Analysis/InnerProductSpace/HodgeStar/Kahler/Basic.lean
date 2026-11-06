@@ -64,9 +64,9 @@ In the namespace `TauCeti.AlmostComplexStructure`:
 * `hodgeStar_kahlerForm`: `⋆ω = ω` for the complex orientation.
 * `lieMap_lieMap_of_hodgeStar_eq_self`:
   `D_J² η = 2 ⟪ω, η⟫ ω - 4 η` for self-dual `η`.
-* `lieMap_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`; hence the contraction by `η`
-  commutes with `J` (`twoVectorContraction_comp_of_hodgeStar_eq_neg`) and `⟪ω, η⟫ = 0`
-  (`inner_kahlerForm_of_hodgeStar_eq_neg`).
+* `lieMap_eq_zero_of_hodgeStar_eq_neg`: `D_J η = 0` for anti-self-dual `η`; hence the contraction
+  by `η` commutes with `J` (`twoVectorContraction_comp_comm_of_hodgeStar_eq_neg`) and `⟪ω, η⟫ = 0`
+  (`inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg`).
 * `ιMulti_sub_ιMulti_add_hodgeStar`: the self-dual part of `ξ ∧ J a - J ξ ∧ a` is `⟪ξ, a⟫ ω`.
 
 The supporting norm-preservation and four-frame construction lemmas live in
@@ -316,7 +316,7 @@ private theorem lieMap_sub_hodgeStar (x : ⋀[ℝ]^2 V) :
 include he h₀ h₂ in
 /-- **`J` acts trivially on the anti-self-dual two-forms**: for `⋆η = -η`, `D_J η = 0`.
 Anti-self-dual forms are `J`-invariant, of type `(1, 1)` and orthogonal to `ω`. -/
-theorem lieMap_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η) :
+theorem lieMap_eq_zero_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η) :
     exteriorPower.lieMap 2 J.toLinearMap η = 0 := by
   have h := lieMap_sub_hodgeStar h₀ h₂ hkl he η
   rw [hη, sub_neg_eq_add, ← two_smul ℝ, map_smul] at h
@@ -325,18 +325,18 @@ theorem lieMap_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η
 include he h₀ h₂ in
 /-- **The contraction by an anti-self-dual two-vector is complex linear**: for `⋆η = -η`, the
 operator `u ↦ u ⌟ η` commutes with `J`. -/
-theorem twoVectorContraction_comp_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V}
+theorem twoVectorContraction_comp_comm_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V}
     (hη : o.hodgeStar hkl η = -η) :
     twoVectorContraction η ∘ₗ J.toLinearMap = J.toLinearMap ∘ₗ twoVectorContraction η := by
   have h := twoVectorContraction_lieMap
     (inner_apply_left (inner_apply_apply_of_orthonormalBasis h₀ h₂)) η
-  rw [lieMap_of_hodgeStar_eq_neg h₀ h₂ hkl he hη, twoVectorContraction_zero] at h
+  rw [lieMap_eq_zero_of_hodgeStar_eq_neg h₀ h₂ hkl he hη, twoVectorContraction_zero] at h
   exact (sub_eq_zero.1 h.symm).symm
 
 include he h₀ h₂ in
 /-- The Kähler two-vector is orthogonal to the anti-self-dual two-forms: `⟪ω, η⟫ = 0` for
 `⋆η = -η`. -/
-theorem inner_kahlerForm_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η) :
+theorem inner_kahlerForm_eq_zero_of_hodgeStar_eq_neg {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = -η) :
     ⟪J.kahlerForm, η⟫ = 0 := by
   have h := o.isSymmetric_hodgeStar_of_even even_two hkl J.kahlerForm η
   simp only [LinearEquiv.coe_coe, hodgeStar_kahlerForm h₀ h₂ hkl he, hη, inner_neg_right] at h
