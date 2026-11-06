@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.Analysis.SpecialFunctions.Pow.Integral
+public import TauCeti.MeasureTheory.Integral.LayerCake
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
 import Mathlib.Analysis.Asymptotics.Theta
 import Mathlib.MeasureTheory.Integral.Asymptotics
@@ -42,75 +42,6 @@ namespace TauCeti
 
 variable {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω} [IsFiniteMeasure μ]
   {f : Ω → ℝ} {p a c : ℝ}
-
-omit [IsFiniteMeasure μ] in
-private theorem measurable_weighted_tail (f : Ω → ℝ) (p : ℝ) :
-    Measurable fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1) := by
-  have hm : Measurable fun t : ℝ ↦ μ {x | t < f x} :=
-    Antitone.measurable fun _ _ h ↦ measure_mono fun _ hx ↦ h.trans_lt hx
-  exact hm.ennreal_toReal.mul (by fun_prop)
-
-/-- The layer-cake integrability test for positive real powers on a finite measure space.
-The function may be nonnegative only almost everywhere. -/
-theorem integrable_rpow_iff_integrableOn_weighted_tail
-    (hf : AEMeasurable f μ) (hfn : 0 ≤ᵐ[μ] f) (hp : 0 < p) :
-    Integrable (fun x ↦ f x ^ p) μ ↔
-      IntegrableOn (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1)) (Ioi 0) := by
-  have hpow : AEStronglyMeasurable (fun x ↦ f x ^ p) μ :=
-    (hf.pow_const p).aestronglyMeasurable
-  have hnonneg : 0 ≤ᵐ[μ] fun x ↦ f x ^ p := hfn.mono fun _ hx ↦ rpow_nonneg hx _
-  rw [← lintegral_ofReal_ne_top_iff_integrable hpow hnonneg,
-    ← lt_top_iff_ne_top,
-    lintegral_rpow_eq_lintegral_meas_lt_mul μ hfn hf hp]
-  have heq : (∫⁻ t in Ioi (0 : ℝ), μ {x | t < f x} * ENNReal.ofReal (t ^ (p - 1))) =
-      ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (μ.real {x | t < f x} * t ^ (p - 1)) := by
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-    rw [ENNReal.ofReal_mul measureReal_nonneg, measureReal_def,
-      ENNReal.ofReal_toReal (measure_ne_top μ _)]
-  rw [heq, ENNReal.mul_lt_top_iff]
-  have htail : 0 ≤ᵐ[volume.restrict (Ioi (0 : ℝ))]
-      fun t ↦ μ.real {x | t < f x} * t ^ (p - 1) := by
-    filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-    exact mul_nonneg measureReal_nonneg (rpow_nonneg ht.le _)
-  rw [IntegrableOn, ← lintegral_ofReal_ne_top_iff_integrable
-    (measurable_weighted_tail f p).aestronglyMeasurable htail, ← lt_top_iff_ne_top]
-  simp only [ENNReal.ofReal_lt_top, true_and, ENNReal.ofReal_eq_zero, not_le.mpr hp,
-    false_or, or_iff_left_iff_imp]
-  intro hz
-  rw [hz]
-  exact ENNReal.zero_lt_top
-
-private theorem integrableOn_weighted_tail_Ioc (f : Ω → ℝ) (hp : 0 < p) {b : ℝ} :
-    IntegrableOn (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1)) (Ioc 0 b) := by
-  have hpow : IntegrableOn (fun t : ℝ ↦ t ^ (p - 1)) (Ioc 0 b) :=
-    (intervalIntegral.intervalIntegrable_rpow' (by linarith : -1 < p - 1)).1
-  refine (hpow.const_mul (μ.real univ)).mono'
-    (measurable_weighted_tail f p).aestronglyMeasurable ?_
-  filter_upwards [ae_restrict_mem measurableSet_Ioc] with t ht
-  rw [Real.norm_eq_abs, abs_of_nonneg
-    (mul_nonneg measureReal_nonneg (rpow_nonneg ht.1.le _))]
-  exact mul_le_mul_of_nonneg_right (measureReal_mono (subset_univ _)) (rpow_nonneg ht.1.le _)
-
-/-- On a finite measure space, only the behavior of the weighted tail at infinity matters
-for the existence of a positive real-power moment. -/
-theorem integrable_rpow_iff_integrableAtFilter_weighted_tail
-    (hf : AEMeasurable f μ) (hfn : 0 ≤ᵐ[μ] f) (hp : 0 < p) :
-    Integrable (fun x ↦ f x ^ p) μ ↔
-      IntegrableAtFilter (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1)) atTop := by
-  rw [integrable_rpow_iff_integrableOn_weighted_tail hf hfn hp]
-  constructor
-  · intro h
-    exact ⟨Ioi 0, Ioi_mem_atTop 0, h⟩
-  · rintro ⟨s, hs, hint⟩
-    obtain ⟨b, hb⟩ := mem_atTop_sets.mp hs
-    have htail : IntegrableOn (fun t : ℝ ↦ μ.real {x | t < f x} * t ^ (p - 1))
-        (Ioi (max b 0)) :=
-      hint.mono_set fun t ht ↦ hb t ((le_max_left b 0).trans ht.le)
-    have hbounded := integrableOn_weighted_tail_Ioc (μ := μ) (b := max b 0) f hp
-    have hcover : Ioc 0 (max b 0) ∪ Ioi (max b 0) = Ioi 0 :=
-      Ioc_union_Ioi_eq_Ioi (le_max_right b 0)
-    rw [← hcover]
-    exact hbounded.union htail
 
 /-- A nonzero finite power-law tail constant determines the exact positive moment threshold,
 including non-integrability at the critical exponent. No density or probability normalization
