@@ -207,7 +207,9 @@ variable (K) in
 /-- **Containment of lattices is detected by completions.** If `R` is not a field, a submodule
 `p` of an `R`-module `M` is contained in a submodule `q` if and only if
 `𝒪_v ⊗[R] p ⊆ 𝒪_v ⊗[R] q` inside `𝒪_v ⊗[R] M` for the ring of integers `𝒪_v` of every completion.
-No finiteness is needed. -/
+No finiteness is needed. This is the analogue, for the family of completions, of Mathlib's
+`Submodule.baseChange_le_iff` for a single faithfully flat algebra, and the proof follows the proof
+of that lemma. -/
 theorem le_iff_forall_baseChange_adicCompletionIntegers_le (hR : ¬IsField R)
     {p q : Submodule R M} :
     p ≤ q ↔ ∀ v : HeightOneSpectrum R,
@@ -225,7 +227,9 @@ theorem le_iff_forall_baseChange_adicCompletionIntegers_le (hR : ¬IsField R)
 variable (K) in
 /-- **Lattices are determined by their completions.** If `R` is not a field, two submodules `p`
 and `q` of an `R`-module `M` are equal if and only if `𝒪_v ⊗[R] p = 𝒪_v ⊗[R] q` inside
-`𝒪_v ⊗[R] M` for the ring of integers `𝒪_v` of every completion. No finiteness is needed. -/
+`𝒪_v ⊗[R] M` for the ring of integers `𝒪_v` of every completion. No finiteness is needed. This is
+the analogue, for the family of completions, of Mathlib's `Submodule.baseChange_inj`, and the proof
+follows the proof of that lemma. -/
 theorem eq_iff_forall_baseChange_adicCompletionIntegers_eq (hR : ¬IsField R)
     {p q : Submodule R M} :
     p = q ↔ ∀ v : HeightOneSpectrum R,
