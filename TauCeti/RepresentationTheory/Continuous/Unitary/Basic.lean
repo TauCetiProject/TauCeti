@@ -16,7 +16,9 @@ This file defines when a continuous representation preserves a real or complex i
 characterizes unitarity through norm preservation, isometries, and Mathlib's `unitary` submonoid of
 continuous linear operators, and records the basic inner-product identities, the coefficient bound,
 and that unitarity passes to restrictions. For a group, each action map of a unitary representation
-is bundled as a linear isometric equivalence, `IsUnitary.toLinearIsometryEquiv`.
+is bundled as a linear isometric equivalence, `IsUnitary.toLinearIsometryEquiv`, and the adjoint of
+an intertwining map between unitary representations intertwines them in the reverse direction,
+`ContIntertwiningMap.adjoint`.
 
 The operator characterizations reuse Mathlib's adjoint and unitary-operator theory.
 
@@ -213,3 +215,39 @@ end IsUnitary
 end Group
 
 end ContRepresentation
+
+namespace ContIntertwiningMap
+
+variable {𝕜 G V W : Type*} [RCLike 𝕜] [Group G] [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
+  [CompleteSpace V] [NormedAddCommGroup W] [InnerProductSpace 𝕜 W] [CompleteSpace W]
+  {π : ContRepresentation 𝕜 G V} {ρ : ContRepresentation 𝕜 G W}
+
+/-- **The adjoint of an intertwining map between unitary representations** intertwines them in the
+reverse direction: the adjoint of each action operator is the action of the inverse element. -/
+noncomputable def adjoint (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) :
+    ContIntertwiningMap ρ π where
+  toContinuousLinearMap := ContinuousLinearMap.adjoint T.toContinuousLinearMap
+  isIntertwining' g := by
+    simpa only [ContinuousLinearMap.adjoint_comp, hπ.adjoint_eq_inv, hρ.adjoint_eq_inv,
+      inv_inv] using (congrArg ContinuousLinearMap.adjoint (T.isIntertwining' g⁻¹)).symm
+
+/-- The underlying operator of the adjoint intertwining map is the adjoint operator. -/
+@[simp]
+theorem toContinuousLinearMap_adjoint (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary)
+    (hρ : ρ.IsUnitary) :
+    (T.adjoint hπ hρ).toContinuousLinearMap = ContinuousLinearMap.adjoint T.toContinuousLinearMap :=
+  (rfl)
+
+/-- The adjoint intertwining map applies as the adjoint operator. -/
+@[simp]
+theorem adjoint_apply (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) (w : W) :
+    T.adjoint hπ hρ w = ContinuousLinearMap.adjoint T.toContinuousLinearMap w :=
+  (rfl)
+
+/-- Taking the adjoint of an intertwining map twice returns the original map. -/
+@[simp]
+theorem adjoint_adjoint (T : ContIntertwiningMap π ρ) (hπ : π.IsUnitary) (hρ : ρ.IsUnitary) :
+    (T.adjoint hπ hρ).adjoint hρ hπ = T :=
+  ext <| ContinuousLinearMap.adjoint_adjoint T.toContinuousLinearMap
+
+end ContIntertwiningMap
