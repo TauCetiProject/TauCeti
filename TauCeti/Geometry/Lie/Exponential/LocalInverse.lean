@@ -460,6 +460,22 @@ theorem exists_injOn_mulInvariantExp_modelSpace [FiniteDimensional ℝ E] [LieGr
   rw [mulInvariantExpOpenPartialHomeomorph_apply, mulInvariantExpOpenPartialHomeomorph_apply]
   exact congrArg (extChartAt I (1 : G)) hxy
 
+/-- A `C^n` open partial homeomorphism of a complete normed space (`1 ≤ n`) whose derivative is
+invertible at every point of its source has a `C^n` inverse on its target. -/
+theorem OpenPartialHomeomorph.contDiffOn_symm_of_isUnit_fderiv [CompleteSpace E] {n : ℕ∞ω}
+    (ψ : OpenPartialHomeomorph E E) (hψ : ContDiffOn ℝ n ψ ψ.source)
+    (hunit : ∀ x ∈ ψ.source, IsUnit (fderiv ℝ ψ x)) (hn : n ≠ 0) :
+    ContDiffOn ℝ n ψ.symm ψ.target := by
+  intro y hy
+  have hx := ψ.map_target hy
+  have hat : ContDiffAt ℝ n ψ (ψ.symm y) :=
+    (hψ _ hx).contDiffAt (ψ.open_source.mem_nhds hx)
+  obtain ⟨A, hA⟩ := hunit _ hx
+  refine (ψ.contDiffAt_symm hy (f₀' := ContinuousLinearEquiv.ofUnit A) ?_ hat).contDiffWithinAt
+  rw [show ((ContinuousLinearEquiv.ofUnit A : E ≃L[ℝ] E) : E →L[ℝ] E) =
+      fderiv ℝ ψ (ψ.symm y) from hA]
+  exact (hat.differentiableAt hn).hasFDerivAt
+
 /-- A smooth partial diffeomorphism for the fully charted exponential, whose source stays inside
 the identity chart. -/
 private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional ℝ E]
@@ -503,54 +519,26 @@ private theorem exists_mulInvariantExpChartPartialDiffeomorph [FiniteDimensional
     exact (ContinuousLinearEquiv.toUnit (ContinuousLinearEquiv.refl ℝ E)).isUnit
   let φ := mulInvariantExpOpenPartialHomeomorph (I := I) (G := G)
   let ψ := φ.restrOpen U hUopen
-  have hψ_apply (x : E) : ψ x = F x := by
-    exact mulInvariantExpOpenPartialHomeomorph_apply (I := I) (G := G) x
-  have hzeroψ : (0 : E) ∈ ψ.source := by
-    rw [OpenPartialHomeomorph.restrOpen_source]
-    exact ⟨zero_mem_mulInvariantExpOpenPartialHomeomorph_source (I := I) (G := G), hzeroU⟩
+  have hψF : (ψ : E → E) = F := funext fun x =>
+    mulInvariantExpOpenPartialHomeomorph_apply (I := I) (G := G) x
+  have hzeroψ : (0 : E) ∈ ψ.source :=
+    ⟨zero_mem_mulInvariantExpOpenPartialHomeomorph_source (I := I) (G := G), hzeroU⟩
   have hψsmooth : ContDiffOn ℝ ∞ ψ ψ.source := by
-    rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-    apply hF.mono
-    intro x hx
-    rw [OpenPartialHomeomorph.restrOpen_source] at hx
-    exact hx.2.1
-  -- At every target point the derivative is invertible, so smoothness of the global forward map
+    rw [hψF]
+    exact hF.mono fun x hx => hx.2.1
+  -- At every source point the derivative is invertible, so smoothness of the global forward map
   -- bootstraps the homeomorphism's inverse to `C∞` on the entire fixed target neighborhood.
   have hψsymmSmooth : ContDiffOn ℝ ∞ ψ.symm ψ.target := by
-    intro y hy
-    have hxy := ψ.map_target hy
-    have hxyU : ψ.symm y ∈ U := by
-      rw [OpenPartialHomeomorph.restrOpen_source] at hxy
-      exact hxy.2
-    have hxyS : ψ.symm y ∈ S := hxyU.1
-    have hFxy : ContDiffAt ℝ ∞ F (ψ.symm y) :=
-      (hF (ψ.symm y) hxyS).contDiffAt (hSopen.mem_nhds hxyS)
-    obtain ⟨A, hA⟩ := hxyU.2
-    apply (ψ.contDiffAt_symm hy (f₀' := ContinuousLinearEquiv.ofUnit A) ?_ ?_).contDiffWithinAt
-    · rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-      rw [show ((ContinuousLinearEquiv.ofUnit A : E ≃L[ℝ] E) : E →L[ℝ] E) =
-          fderiv ℝ F (ψ.symm y) by exact hA]
-      exact (hFxy.differentiableAt (by simp)).hasFDerivAt
-    · rw [show (ψ : E → E) = F by funext x; exact hψ_apply x]
-      exact hFxy
-  let d : PartialDiffeomorph 𝓘(ℝ, E) 𝓘(ℝ, E) E E ∞ := {
-    toPartialEquiv := ψ.toPartialEquiv
-    open_source := ψ.open_source
-    open_target := ψ.open_target
-    contMDiffOn_toFun := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact hψsmooth
-    contMDiffOn_invFun := by
-      rw [contMDiffOn_iff_contDiffOn]
-      exact hψsymmSmooth
-  }
-  refine ⟨d, hzeroψ, ?_, ?_⟩
-  · intro x hx
-    change x ∈ ψ.source at hx
-    rw [OpenPartialHomeomorph.restrOpen_source] at hx
-    exact hx.2.1
-  · funext x
-    exact (hψ_apply x).symm
+    refine ψ.contDiffOn_symm_of_isUnit_fderiv hψsmooth (fun x hx => ?_) (by simp)
+    rw [hψF]
+    exact hx.2.2
+  have hd := TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph_toPartialEquiv ψ hψsmooth
+    hψsymmSmooth
+  have hdsrc := congrArg PartialEquiv.source hd
+  refine ⟨TauCeti.PartialDiffeomorph.ofOpenPartialHomeomorph ψ hψsmooth hψsymmSmooth,
+    hdsrc ▸ hzeroψ, fun x hx => ?_, hψF.symm.trans (congrArg (⇑) hd).symm⟩
+  rw [hdsrc] at hx
+  exact hx.2.1
 
 /-- The fully charted exponential is a smooth local diffeomorphism at zero. -/
 theorem isLocalDiffeomorphAt_mulInvariantExpChart_zero [FiniteDimensional ℝ E]
