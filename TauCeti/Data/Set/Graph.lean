@@ -36,6 +36,7 @@ noncomputable def graphValue (hG : InjOn Prod.fst G) (x : Prod.fst '' G) : Y :=
 theorem graphValue_mem (hG : InjOn Prod.fst G) (x : Prod.fst '' G) :
     ((x : X), hG.graphValue x) ∈ G := by
   let e := hG.bijOn_image.equiv Prod.fst
+  -- The forward map of this Set.BijOn.equiv is definitionally the first projection.
   have hx : (e.symm x).val.1 = (x : X) := congrArg Subtype.val (e.apply_symm_apply x)
   have hm : ((e.symm x).val.1, (e.symm x).val.2) ∈ G := (e.symm x).property
   dsimp only [graphValue]
@@ -54,9 +55,17 @@ theorem graphValue_eq_iff (hG : InjOn Prod.fst G) (x : Prod.fst '' G) (y : Y) :
   refine ⟨fun h ↦ h ▸ hG.graphValue_mem x, fun h ↦ ?_⟩
   exact congrArg Prod.snd (hG (hG.graphValue_mem x) h rfl)
 
+/-- Evaluating the function defined by a graph of an existing function recovers that function. -/
+@[simp]
+theorem graphValue_graphOn {s : Set X} {f : X → Y} (x : Prod.fst '' s.graphOn f) :
+    (fst_injOn_graph : InjOn Prod.fst (s.graphOn f)).graphValue x = f x := by
+  apply (graphValue_eq_iff _ _ _).2
+  have hx : (x : X) ∈ s := by simpa only [image_fst_graphOn] using x.property
+  simp [hx]
+
 /-- The graph is exactly the range of its domain parametrization. -/
 @[simp]
-theorem range_graphValue (hG : InjOn Prod.fst G) :
+theorem range_prodMk_graphValue (hG : InjOn Prod.fst G) :
     range (fun x : Prod.fst '' G ↦ ((x : X), hG.graphValue x)) = G := by
   ext p
   constructor

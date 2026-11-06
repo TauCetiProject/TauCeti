@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.MeasureTheory.Constructions.Polish.FunctionalGraph
+import TauCeti.MeasureTheory.Constructions.Polish.Graph
 
 /-!
 # Evaluating functions from their Borel graphs
@@ -23,9 +23,7 @@ variable {X Y : Type*} {s : Set X} {f : X → Y}
 -- Recover the original function, even if the domain is a proper subset.
 example (x : Prod.fst '' s.graphOn f) :
     (fst_injOn_graph : InjOn Prod.fst (s.graphOn f)).graphValue x = f x := by
-  apply (Set.InjOn.graphValue_eq_iff _ _ _).2
-  have hx : (x : X) ∈ s := by simpa only [image_fst_graphOn] using x.property
-  simp [hx]
+  simp
 
 end Evaluation
 
