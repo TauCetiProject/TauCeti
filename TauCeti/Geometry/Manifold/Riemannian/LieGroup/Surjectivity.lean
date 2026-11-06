@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.LieGroup.Geodesic
-import TauCeti.Geometry.Manifold.Riemannian.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Distance
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Minimizing
 import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Completeness
 import TauCeti.Geometry.Manifold.Riemannian.LieGroup.LeftInvariant
