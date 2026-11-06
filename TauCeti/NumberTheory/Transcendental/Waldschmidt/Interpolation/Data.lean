@@ -8,6 +8,9 @@ module
 public import Mathlib.Algebra.Polynomial.Taylor
 public import TauCeti.Analysis.MvPolynomial.Deriv
 public import TauCeti.RingTheory.MvPolynomial.RestrictTotalDegree
+import Mathlib.Algebra.Polynomial.Eval.SMul
+import TauCeti.Algebra.MvPolynomial.PDeriv
+import TauCeti.Algebra.MvPolynomial.Polynomial
 
 /-!
 # The interpolation data of Waldschmidt's linear forms estimate
@@ -81,6 +84,8 @@ rows and columns of the interpolation matrix, hence its rank, unchanged.
   `γ_P = (∑ₖ P^{[k]}(t) (∂ᵏF/∂z₀ᵏ)(s · y)) α^(t s)`.
 * `TauCeti.sum_mul_iteratedDeriv_waldschmidtFunction`: the entry identity for the operator
   `P(∂/∂z₀)`.
+* `TauCeti.waldschmidtOperatorEntry_prod_aeval_X`: the entry of a separated row `∏ᵢ Qᵢ(zᵢ)`,
+  in which the derivatives in `z₀` only see the first factor.
 * `TauCeti.span_image_waldschmidtOperatorEntry_sequence`: on the derivative side, the columns for
   the operators `P₀(∂), …, P_{N-1}(∂)` of a polynomial sequence span the same space as those for
   `1, ∂, …, ∂^{N-1}`.
@@ -460,5 +465,32 @@ theorem span_image_waldschmidtOperatorEntry_prod_sequence {K : Type*} [Field K] 
     S.span_prod_aeval_X_eq_restrictTotalDegree fun i _ ↦
       isUnit_iff_ne_zero.2 (Polynomial.leadingCoeff_ne_zero.2 (S.ne_zero i)),
     restrictTotalDegree_eq_span]
+
+
+/-- **The entry of a separated row.** For one-variable polynomials `Q₀, …, Q_{m-1}`, the entry of
+the operator `P(∂/∂z₀)` on the row `∏ᵢ Qᵢ(zᵢ)` at the grid point `x = s · y` is
+`(∑ₖ P⁽ᵏ⁾(t) Q₀^{[k]}(x₀)) Q₁(x₁) ⋯ Q_{m-1}(x_{m-1}) α₁^(t s₁) ⋯ αₘ^(t sₘ)`, where `P⁽ᵏ⁾` is the
+`k`-th derivative of `P` and `Q₀^{[k]}` the `k`-th Hasse derivative of `Q₀`. -/
+theorem waldschmidtOperatorEntry_prod_aeval_X {K : Type*} [Field K] (α b : Fin (n + 1) → K)
+    (t : ℤ) (s : Fin (n + 1) → ℤ) (Q : Fin (n + 1) → Polynomial K) (P : Polynomial K) :
+    waldschmidtOperatorEntry α b t s (∏ i, Polynomial.aeval (X i) (Q i)) P =
+      (∑ k ∈ range (P.natDegree + 1), (Polynomial.derivative^[k] P).eval (t : K) *
+          (Polynomial.hasseDeriv k (Q 0)).eval (waldschmidtPoint b s 0)) *
+        (∏ i : Fin n, (Q i.succ).eval (waldschmidtPoint b s i.succ)) * ∏ j, α j ^ (t * s j) := by
+  classical
+  have herase : ∏ i ∈ univ.erase (0 : Fin (n + 1)), (Q i).eval (waldschmidtPoint b s i) =
+      ∏ i : Fin n, (Q i.succ).eval (waldschmidtPoint b s i.succ) := by
+    simp only [Fin.univ_succ, erase_cons, prod_map, Function.Embedding.coeFn_mk]
+  rw [waldschmidtOperatorEntry_eq_sum_hasseDeriv]
+  congr 1
+  rw [sum_mul]
+  refine sum_congr rfl fun k _ ↦ ?_
+  have hd (p : Polynomial K) (x : K) :
+      (Polynomial.derivative^[k] p).eval x = k.factorial * (Polynomial.hasseDeriv k p).eval x := by
+    rw [← Polynomial.factorial_smul_hasseDeriv, LinearMap.smul_apply, Polynomial.eval_smul,
+      nsmul_eq_mul]
+  rw [iterate_pderiv_prod_aeval_X (mem_univ (0 : Fin (n + 1)))]
+  simp only [map_mul, map_prod, eval_polynomial_aeval, eval_X, hd, ← herase]
+  ring
 
 end TauCeti

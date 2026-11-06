@@ -36,7 +36,7 @@ rotation of the disc coordinate centred there, in
   the quotient `t = (x - θ₀ y) / (x - θ₂ y)`, a linear fractional function of `x / y`, is not
   `1` when `θ₀ ≠ θ₂` and `y ≠ 0`, and the inverse transformation recovers
   `x / y = (θ₀ - t θ₂) / (1 - t)`. These are used in the reduction of Thue equations to unit
-  equations, in `TauCeti/NumberTheory/UnitEquation/Thue.lean`.
+  equations, in `TauCeti/NumberTheory/UnitEquation/Thue/Basic.lean`.
 -/
 
 public section

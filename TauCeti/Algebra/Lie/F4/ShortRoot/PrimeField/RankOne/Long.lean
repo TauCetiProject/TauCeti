@@ -20,7 +20,7 @@ integral closure. No such identification, nor agreement with the independently p
 connected group scheme, is asserted here.
 
 The construction follows the image and containment argument in
-`TauCeti.Algebra.Lie.E7.Minuscule.RankOne`, using `TauCeti.F4ShortRoot.longRankOneGL` for the
+`TauCeti.Algebra.Lie.E7.Minuscule.RankOne.Basic`, using `TauCeti.F4ShortRoot.longRankOneGL` for the
 actual matrix action.
 
 ## References

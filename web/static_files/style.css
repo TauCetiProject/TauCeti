@@ -521,3 +521,30 @@ a.pb-chip:hover { text-decoration: none; border-color: var(--teal); }
   .ci-live-waiting { display: block; margin-top: .2rem; }
   .ci-live-waiting::before { content: none; }
 }
+
+/* Queue and runner operations. Long identities wrap; detail tables page at 100. */
+.ci-operations { border: 1px solid var(--border-color, #b9c4cc); border-radius: .6rem; padding: 1rem; margin-block: 1.5rem 2rem; }
+.ops-tabs { display: flex; gap: .5rem; flex-wrap: wrap; border-bottom: 1px solid #9aaab6; padding-bottom: .75rem; }
+.ops-tabs a { padding: .45rem .8rem; border-radius: .3rem; }
+.ops-tabs a[aria-current] { background: #1c5367; color: white; text-decoration: none; }
+.ops-status, .ops-source, .ops-note { font-size: .9rem; overflow-wrap: anywhere; }
+.ops-warning { border-left: .25rem solid #bc7411; padding-left: .7rem; }
+.ops-empty { padding: .8rem; border: 1px dashed #9aaab6; }
+.ops-badges, .ops-filters, .ops-pager, .ops-search { display: flex; flex-wrap: wrap; align-items: center; gap: .6rem; margin-block: .75rem; }
+.ops-filters > label { min-width: 0; max-width: 100%; }
+.ops-badges span { border: 1px solid #9aaab6; border-radius: .25rem; padding: .15rem .4rem; font-size: .82rem; }
+.ci-operations button, .ci-operations select, .ci-operations input { font: inherit; padding: .35rem .5rem; max-width: 100%; }
+.ci-operations a:focus-visible, .ci-operations button:focus-visible, .ci-operations input:focus-visible, .ci-operations select:focus-visible { outline: 3px solid #b37c19; outline-offset: 3px; }
+.ops-job, .ops-host, .ops-interval { padding-block: .8rem; border-bottom: 1px solid #9aaab6; overflow-wrap: anywhere; }
+.ops-host { border: 1px solid #9aaab6; border-radius: .4rem; padding: .8rem; margin-block: .75rem; }
+.ops-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: .9rem; }
+.ops-table th, .ops-table td { text-align: left; vertical-align: top; padding: .5rem; border-bottom: 1px solid #9aaab6; overflow-wrap: anywhere; }
+.ops-table th:first-child { width: 23%; } .ops-table th:nth-child(2) { width: 23%; }
+.ops-track { height: .55rem; background: #adbcc24d; margin-block: .5rem; }
+.ops-track span { display: block; height: 100%; background: #327c90; }
+@media (max-width: 600px) { .ci-operations { padding: .6rem; } .ops-table th, .ops-table td { padding: .3rem; } }
+
+.ops-history-chart { display: block; width: 100%; color: #68d5d1; border-bottom: 1px solid #9aaab6; }
+
+.ops-scroll { max-width: 100%; min-width: 0; overflow: auto; }
+.ops-pools { min-width: 36rem; }

@@ -41,6 +41,7 @@ are only real-linear.
 * `cliffordRestriction_quadraticTwoForm_apply_self`: `C(i q(ψ)) ψ = (‖ψ‖² / 2) ψ`.
 * `quadraticTwoForm_smul`, `quadraticTwoForm_smul_of_norm_eq_one`: `q(c ψ) = |c|² q(ψ)`; in
   particular `q` is invariant under unit phases.
+* `quadraticTwoForm_sqrt_smul`: `q(√r ψ) = r q(ψ)` for `0 ≤ r`.
 * `norm_quadraticTwoForm`, `norm_quadraticTwoForm_sq`: `‖q(ψ)‖ = ‖ψ‖² / (2 √2)`, that is
   `‖q(ψ)‖² = ‖ψ‖⁴ / 8`; in particular `q(ψ) = 0` only for `ψ = 0`
   (`quadraticTwoForm_eq_zero_iff`).
@@ -145,6 +146,12 @@ theorem quadraticTwoForm_smul_of_norm_eq_one {u : ℂ} (hu : ‖u‖ = 1)
     (ψ : positiveHalfSpinors o ρ) :
     quadraticTwoForm o ρ hkl (u • ψ) = quadraticTwoForm o ρ hkl ψ := by
   rw [quadraticTwoForm_smul, hu, one_pow, one_smul]
+
+/-- `q(√r ψ) = r q(ψ)` for `0 ≤ r`, the scaling behind Taubes's normalization `Ψ = √r (…)`. -/
+theorem quadraticTwoForm_sqrt_smul {r : ℝ} (hr : 0 ≤ r) (ψ : positiveHalfSpinors o ρ) :
+    quadraticTwoForm o ρ hkl (((√r : ℝ) : ℂ) • ψ) = r • quadraticTwoForm o ρ hkl ψ := by
+  rw [quadraticTwoForm_smul, Complex.norm_real, Real.norm_of_nonneg (Real.sqrt_nonneg r),
+    Real.sq_sqrt hr]
 
 /-- `q(0) = 0`. -/
 @[simp]

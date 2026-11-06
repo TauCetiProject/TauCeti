@@ -55,6 +55,25 @@ namespace TauCeti.LSeries
 
 variable {f : ℝ → ℂ} {G : ℂ → ℂ} {M T R δ : ℝ}
 
+/-- For `R, δ > 0` and `w₁`, `w₂` continuous along the detour `newmanDetour R δ`, the detour
+integral of `w₁ - w₂` against Newman's kernel `exp (T z) (1 + z² / R²) / z` is the difference of
+the detour integrals of `w₁` and of `w₂`. -/
+private theorem integral_newmanDetour_sub_mul_kernel {w₁ w₂ : ℂ → ℂ} (hR : 0 < R) (hδ : 0 < δ)
+    (hw₁ : ContinuousOn (fun s ↦ w₁ (newmanDetour R δ s)) [[(-1 : ℝ), 1]])
+    (hw₂ : ContinuousOn (fun s ↦ w₂ (newmanDetour R δ s)) [[(-1 : ℝ), 1]]) :
+    ∫ s in (-1 : ℝ)..1, deriv (newmanDetour R δ) s *
+        ((w₁ (newmanDetour R δ s) - w₂ (newmanDetour R δ s)) * cexp (T * newmanDetour R δ s) *
+          (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s) =
+      (∫ s in (-1 : ℝ)..1, deriv (newmanDetour R δ) s *
+        (w₁ (newmanDetour R δ s) * cexp (T * newmanDetour R δ s) *
+          (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s)) -
+      ∫ s in (-1 : ℝ)..1, deriv (newmanDetour R δ) s *
+        (w₂ (newmanDetour R δ s) * cexp (T * newmanDetour R δ s) *
+          (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s) := by
+  rw [← intervalIntegral.integral_sub (intervalIntegrable_newmanDetour_mul_kernel hR hδ hw₁)
+    (intervalIntegrable_newmanDetour_mul_kernel hR hδ hw₂)]
+  exact intervalIntegral.integral_congr fun s _ ↦ by ring
+
 /-- **Newman's contour identity.** Let `G` be holomorphic on an open convex set `U` containing
 the right semicircle of radius `R > 0` and the detour `newmanDetour R δ` with `δ > 0`, and let
 `G_T z = ∫ t in 0..T, f t * exp (-z t)`. Against Newman's kernel
@@ -96,22 +115,45 @@ theorem integral_right_semicircle_add_integral_newmanDetour_mul_kernel {U : Set 
     (fun _ _ ↦ mem_univ _) (fun _ _ ↦ mem_univ _)
   -- Split the detour integral of `(G - G_T) k_T`; both parts are continuous on `[-1, 1]`.
   have hI : [[(-1 : ℝ), 1]] = Icc (-1) 1 := uIcc_of_le (by norm_num)
-  have hint₁ := intervalIntegrable_newmanDetour_mul_kernel (T := T) hR hδ
+  have hsplit := integral_newmanDetour_sub_mul_kernel (T := T)
+    (w₂ := fun z ↦ ∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) hR hδ
     (hG.continuousOn.comp (continuous_newmanDetour R δ).continuousOn fun s hs ↦ hdet s (hI ▸ hs))
-  have hint₂ := intervalIntegrable_newmanDetour_mul_kernel (T := T)
-    (w := fun z ↦ ∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) hR hδ
     (hGT.continuous.comp_continuousOn (continuous_newmanDetour R δ).continuousOn)
   have h0 : (G 0 - ∫ t in (0 : ℝ)..T, f t * cexp (-0 * t)) * cexp (T * 0) *
       (1 + 0 ^ 2 / (R : ℂ) ^ 2) = G 0 - ∫ t in (0 : ℝ)..T, f t := by
     simp
   beta_reduce at hC hL
-  rw [h0] at hC
-  rw [show (∫ s in (-1 : ℝ)..1, deriv (newmanDetour R δ) s *
-      ((G (newmanDetour R δ s) - ∫ t in (0 : ℝ)..T, f t * cexp (-newmanDetour R δ s * t)) *
-        cexp (T * newmanDetour R δ s) * (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) /
-          newmanDetour R δ s)) = _ from (intervalIntegral.integral_congr fun s _ ↦ by ring).trans
-    (intervalIntegral.integral_sub hint₁ hint₂), ← hL] at hC
+  rw [h0, hsplit, ← hL] at hC
   linear_combination hC
+
+/-- Newman's estimate at a fixed radius and time: for `T ≥ 0`, `‖G 0 - ∫ t in 0..T, f t‖` is at
+most `2 M / R` plus the norm of the detour integral of `G k_T` divided by `2πi`. The two
+semicircle contributions of the contour identity give the `2 M / R`. -/
+private theorem norm_sub_intervalIntegral_le_add_norm_integral_newmanDetour {U : Set ℂ}
+    (hf : AEStronglyMeasurable f (volume.restrict (Ici 0)))
+    (hbound : ∀ t ∈ Ici (0 : ℝ), ‖f t‖ ≤ M)
+    (hLaplace : ∀ z : ℂ, 0 < z.re → G z = ∫ t in Ici (0 : ℝ), f t * cexp (-z * t))
+    (hR : 0 < R) (hδ : 0 < δ) (hT : 0 ≤ T) (hU : IsOpen U) (hconv : Convex ℝ U)
+    (hG : DifferentiableOn ℂ G U) (hcirc : ∀ θ ∈ Icc (-π / 2) (π / 2), circleMap 0 R θ ∈ U)
+    (hdet : ∀ s ∈ Icc (-1 : ℝ) 1, newmanDetour R δ s ∈ U) :
+    ‖G 0 - ∫ t in (0 : ℝ)..T, f t‖ ≤ 2 * M / R + ‖(∫ s in (-1 : ℝ)..1,
+      deriv (newmanDetour R δ) s * (G (newmanDetour R δ s) * cexp (T * newmanDetour R δ s) *
+        (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s)) / (2 * π * I)‖ := by
+  have hfT : IntervalIntegrable f volume 0 T :=
+    (intervalIntegrable_iff_integrableOn_Ioc_of_le hT).mpr <|
+      IntegrableOn.of_bound measure_Ioc_lt_top
+        (hf.mono_set (Ioc_subset_Ioi_self.trans Ioi_subset_Ici_self)) M
+        (ae_restrict_of_forall_mem measurableSet_Ioc fun t ht ↦ hbound t (le_of_lt ht.1))
+  have hid := integral_right_semicircle_add_integral_newmanDetour_mul_kernel hfT hR hδ hU hconv
+    hG hcirc hdet
+  have h2πI : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
+  have hR' := norm_integral_right_semicircle_mul_kernel_le hf hbound hLaplace hR hT
+  have hL' := norm_integral_left_semicircle_mul_kernel_le (f := f) (fun t ht ↦ hbound t ht.1) hR hT
+  -- Solve the contour identity for `G 0 - ∫ t in 0..T, f t` and bound the three terms.
+  rw [← mul_div_cancel_left₀ (G 0 - ∫ t in (0 : ℝ)..T, f t) h2πI, eq_sub_of_add_eq hid.symm,
+    sub_div, add_div]
+  refine (norm_sub_le_of_le (norm_add_le _ _) le_rfl).trans ?_
+  linarith [show 2 * M / R = M / R + M / R by ring]
 
 /-- **Newman's estimate at a fixed radius.** Let `f` be measurable and bounded by `M` on
 `[0, ∞)`, and let `G` be holomorphic on an open set `Ω` containing the closed half-plane
@@ -131,34 +173,8 @@ theorem eventually_norm_sub_intervalIntegral_le {Ω : Set ℂ}
   rw [zero_div] at hD
   filter_upwards [eventually_ge_atTop 0, (hD.norm.eventually (ge_mem_nhds (by simpa using hε)))]
     with T hT hDT
-  have hfT : IntervalIntegrable f volume 0 T :=
-    (intervalIntegrable_iff_integrableOn_Ioc_of_le hT).mpr <|
-      IntegrableOn.of_bound measure_Ioc_lt_top
-        (hf.mono_set (Ioc_subset_Ioi_self.trans Ioi_subset_Ici_self)) M
-        (ae_restrict_of_forall_mem measurableSet_Ioc fun t ht ↦ hbound t (le_of_lt ht.1))
-  have hid := integral_right_semicircle_add_integral_newmanDetour_mul_kernel hfT hR hδ hU hconv
-    (hG.mono hUΩ) hcirc hdet
-  have h2πI : (2 * π * I : ℂ) ≠ 0 := by simp [Real.pi_ne_zero]
-  have hR' := norm_integral_right_semicircle_mul_kernel_le hf hbound hLaplace hR hT
-  have hL' := norm_integral_left_semicircle_mul_kernel_le (f := f) (fun t ht ↦ hbound t ht.1) hR hT
-  set A := ∫ θ in (-π / 2)..(π / 2), circleMap 0 R θ * I *
-    ((G (circleMap 0 R θ) - ∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
-      cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) / circleMap 0 R θ)
-  set B := ∫ s in (-1 : ℝ)..1, deriv (newmanDetour R δ) s *
-    (G (newmanDetour R δ s) * cexp (T * newmanDetour R δ s) *
-      (1 + newmanDetour R δ s ^ 2 / (R : ℂ) ^ 2) / newmanDetour R δ s)
-  set C := ∫ θ in (π / 2)..(3 * π / 2), circleMap 0 R θ * I *
-    ((∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
-      cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) / circleMap 0 R θ)
-  have he : G 0 - ∫ t in (0 : ℝ)..T, f t =
-      A / (2 * π * I) + B / (2 * π * I) - C / (2 * π * I) := by
-    rw [← add_div, ← sub_div, eq_div_iff h2πI]
-    linear_combination -hid
-  rw [he]
-  calc _ ≤ ‖A / (2 * π * I)‖ + ‖B / (2 * π * I)‖ + ‖C / (2 * π * I)‖ := norm_sub_le_of_le
-        (norm_add_le _ _) le_rfl
-    _ ≤ M / R + ε + M / R := by gcongr
-    _ = 2 * M / R + ε := by ring
+  exact (norm_sub_intervalIntegral_le_add_norm_integral_newmanDetour hf hbound hLaplace hR hδ hT
+    hU hconv (hG.mono hUΩ) hcirc hdet).trans (by gcongr)
 
 /-- **Newman's Tauberian theorem.** Let `f : ℝ → ℂ` be measurable and bounded on `[0, ∞)`, and
 let `G` be holomorphic on an open set `Ω` containing the closed half-plane `0 ≤ re z`, agreeing
