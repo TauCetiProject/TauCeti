@@ -161,12 +161,11 @@ theorem _root_.HasFDerivAt.exists_negative_disk_homotopy_polarFactor
   obtain ⟨L, hL, hA, δ, hδ, hδW, hδV, hcont, hbd⟩ :=
     hT.exists_small_disk_derivativeRescale hT0 hWo hW0 hWc hWQ hV
   -- The negative column of `A` pulls `Q` back to `-‖u‖²`, so its negative block expands norms.
-  have hcol (u : E) : ‖(A (u, 0)).1‖ ^ 2 - ‖(A (u, 0)).2‖ ^ 2 = ‖u‖ ^ 2 := by
-    simpa [hT.fderiv] using hT.differentiableAt.norm_sq_sub_fderiv hT0 hQ (u, 0)
   set C := A.comp (ContinuousLinearMap.inl ℝ E F)
   set B := (ContinuousLinearMap.fst ℝ E F).comp C
-  have hcol' (u : E) : ‖(C u).1‖ ^ 2 - ‖(C u).2‖ ^ 2 = ‖u‖ ^ 2 := hcol u
-  have hexp : ∀ u, ‖u‖ ≤ ‖B u‖ := C.norm_le_norm_fst_of_norm_sq_sub hcol'
+  have hcol (u : E) : ‖(C u).1‖ ^ 2 - ‖(C u).2‖ ^ 2 = ‖u‖ ^ 2 := by
+    simpa [C, hT.fderiv] using hT.differentiableAt.norm_sq_sub_fderiv hT0 hQ (u, 0)
+  have hexp : ∀ u, ‖u‖ ≤ ‖B u‖ := C.norm_le_norm_fst_of_norm_sq_sub hcol
   -- Points of the small disk and their images under `A` stay in the controlled balls.
   have hmem (u : Metric.closedBall (0 : E) δ) :
       ((u : E), (0 : F)) ∈ Metric.closedBall (0 : E × F) δ := by
@@ -214,7 +213,7 @@ theorem _root_.HasFDerivAt.exists_negative_disk_homotopy_polarFactor
       map_one_left := fun u ↦ by simp [g₂, B]
       prop' := fun t u ↦ by
         simp only [ContinuousMap.coe_mk]
-        refine ⟨hCV u ?_, C.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hcol'
+        refine ⟨hCV u ?_, C.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hcol
           (hσ t) u⟩
         rw [Prod.norm_def, Prod.norm_def, norm_smul, Real.norm_eq_abs]
         exact max_le_max le_rfl (mul_le_of_le_one_left (norm_nonneg _) (hσ t)) }
