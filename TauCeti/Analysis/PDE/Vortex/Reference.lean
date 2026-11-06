@@ -6,6 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
+public import Mathlib.Analysis.Distribution.Sobolev
+import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import TauCeti.Analysis.Calculus.IteratedFDeriv.Homogeneous
+import TauCeti.Analysis.Distribution.TemperateGrowth
+import TauCeti.Analysis.Sobolev.BesselPotential.SmoothMultiplier
 
 /-!
 # Smooth winding reference fields on the plane
@@ -19,6 +24,15 @@ The cutoff removes the angular singularity on a neighborhood of the origin.
 The end formulas, rotation laws and compact support of changes of cutoff are proved
 explicitly. The latter allows different references to define the same affine Sobolev
 space. These reference pairs are not asserted to solve the vortex equations.
+
+Outside a disc the section is homogeneous of degree `0` and the connection of degree `-1`, so all
+their derivatives are bounded (`exists_norm_iteratedFDeriv_referenceSection_le`,
+`exists_norm_iteratedFDeriv_referenceConnection_le`), and they have temperate growth. Consequently,
+for `1 < p < ∞`, multiplication by the reference section or by a coefficient of the reference
+connection maps each integer-order Bessel-potential space `H^{k,p}(ℂ; F)` into itself
+(`memSobolev_smulLeftCLM_referenceSection`, `memSobolev_smulLeftCLM_referenceConnection_apply`).
+These are the products of reference coefficients with Sobolev increments in the vortex equations
+and gauge action on the affine field space.
 
 ## References
 
@@ -104,6 +118,18 @@ theorem referenceConnection_eq_angular (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z
     referenceConnection f m z v = -(m : ℂ) * I * ((v / z).im : ℂ) := by
   simp [referenceConnection, cutoff_eq_one f hz, div_eq_mul_inv, mul_comm]
 
+/-- The winding phase `(z / ‖z‖)^m` is smooth away from the origin. -/
+private theorem contDiffOn_phase (m : ℕ) {N : WithTop ℕ∞} :
+    ContDiffOn ℝ N (fun z : ℂ ↦ (z / (‖z‖ : ℂ)) ^ m) {0}ᶜ := by
+  intro z hz
+  have hz : z ≠ 0 := hz
+  have hn : ContDiffAt ℝ N (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
+    ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
+  have hp : ContDiffAt ℝ N (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
+    simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
+      contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
+  exact (hp.pow m).contDiffWithinAt
+
 /-- The section is smooth even at the origin. -/
 theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     ContDiff ℝ ∞ (referenceSection f m) := by
@@ -113,12 +139,8 @@ theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     apply (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
     filter_upwards [cutoff_eventuallyEq_zero f] with z hz
     simp [referenceSection, hz]
-  · have hn : ContDiffAt ℝ ∞ (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
-      ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
-    have hp : ContDiffAt ℝ ∞ (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
-      simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
-        contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
-    exact (ofRealCLM.contDiff.comp (contDiff_cutoff f)).contDiffAt.mul (hp.pow m)
+  · exact (ofRealCLM.contDiff.comp (contDiff_cutoff f)).contDiffAt.mul
+      ((contDiffOn_phase m).contDiffAt (isOpen_compl_singleton.mem_nhds hz))
 
 /-- The connection is a smooth map into the space of one-forms, including at the origin. -/
 theorem contDiff_referenceConnection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
@@ -183,5 +205,108 @@ theorem hasCompactSupport_referenceConnection_sub (f g : ContDiffBump (0 : ℝ))
   intro z hz
   simp only [Function.mem_support, Pi.sub_apply, ne_eq, sub_eq_zero] at *
   exact fun h ↦ hz (by simp [referenceConnection, h])
+
+/-! ### Bounded derivatives and Sobolev multiplication -/
+
+/-- The winding phase is homogeneous of degree `0`. -/
+private theorem phase_smul (m : ℕ) {t : ℝ} (ht : 0 < t) (z : ℂ) :
+    (t • z / (‖t • z‖ : ℂ)) ^ m = (z / (‖z‖ : ℂ)) ^ m := by
+  rcases eq_or_ne z 0 with rfl | hz
+  · simp
+  rw [norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
+    mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
+
+/-- The angular connection `-i m dθ` is smooth away from the origin. -/
+private theorem contDiffOn_angular (m : ℕ) {N : WithTop ℕ∞} :
+    ContDiffOn ℝ N (fun z : ℂ ↦ (-(m : ℂ) * I) •
+      ((ofRealCLM.comp imCLM).comp (ContinuousLinearMap.mul ℝ ℂ z⁻¹))) {0}ᶜ := fun z hz ↦
+  ((contDiffAt_const.clm_comp ((ContinuousLinearMap.mul ℝ ℂ).contDiff.contDiffAt.comp z
+    (contDiffAt_inv ℝ hz))).const_smul _).contDiffWithinAt
+
+/-- The angular connection `-i m dθ` is homogeneous of degree `-1`. -/
+private theorem angular_smul (m : ℕ) (t : ℝ) (z : ℂ) :
+    (-(m : ℂ) * I) • ((ofRealCLM.comp imCLM).comp (ContinuousLinearMap.mul ℝ ℂ (t • z)⁻¹)) =
+      t ^ (-1 : ℤ) • ((-(m : ℂ) * I) •
+        ((ofRealCLM.comp imCLM).comp (ContinuousLinearMap.mul ℝ ℂ z⁻¹))) := by
+  ext v
+  simp [real_smul]
+  ring
+
+/-- Outside the disc of radius `max 1 f.rOut` the squared radius exceeds `f.rOut`. -/
+private theorem rOut_le_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ} (hz : max 1 f.rOut < ‖z‖) :
+    f.rOut ≤ ‖z‖ ^ 2 := by
+  have h1 : 1 < ‖z‖ := (le_max_left _ _).trans_lt hz
+  nlinarith [le_max_right 1 f.rOut]
+
+/-- Every iterated derivative of the reference section is bounded. -/
+theorem exists_norm_iteratedFDeriv_referenceSection_le (f : ContDiffBump (0 : ℝ)) (m n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceSection f m) z‖ ≤ C :=
+  exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq (d := 0) le_rfl
+    ((contDiff_referenceSection f m).of_le (by exact_mod_cast le_top)) (contDiffOn_phase m)
+    (fun t ht z _ ↦ by rw [zpow_zero, one_smul, phase_smul m ht])
+    (fun _ hz ↦ referenceSection_eq_phase f m (rOut_le_norm_sq f hz)) n le_rfl
+
+/-- Every iterated derivative of the reference connection is bounded. -/
+theorem exists_norm_iteratedFDeriv_referenceConnection_le (f : ContDiffBump (0 : ℝ)) (m n : ℕ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (referenceConnection f m) z‖ ≤ C := by
+  refine exists_norm_iteratedFDeriv_le_of_eq_of_smul_eq (d := -1) (by norm_num)
+    ((contDiff_referenceConnection f m).of_le (by exact_mod_cast le_top))
+    (contDiffOn_angular m) (fun t _ z _ ↦ angular_smul m t z) (R := max 1 f.rOut)
+    (fun z hz ↦ ?_) n le_rfl
+  ext v
+  rw [referenceConnection_eq_angular f m (rOut_le_norm_sq f hz)]
+  simp [div_eq_mul_inv, mul_comm]
+
+/-- Every iterated derivative of a coefficient `z ↦ a_m(z) v` of the reference connection is
+bounded. -/
+theorem exists_norm_iteratedFDeriv_referenceConnection_apply_le (f : ContDiffBump (0 : ℝ))
+    (m n : ℕ) (v : ℂ) :
+    ∃ C, ∀ z, ‖iteratedFDeriv ℝ n (fun z ↦ referenceConnection f m z v) z‖ ≤ C := by
+  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_referenceConnection_le f m n
+  refine ⟨‖ContinuousLinearMap.apply ℝ ℂ v‖ * C, fun z ↦ ?_⟩
+  refine ((ContinuousLinearMap.apply ℝ ℂ v).norm_iteratedFDeriv_comp_left
+    (contDiff_referenceConnection f m).contDiffAt (by exact_mod_cast le_top)).trans ?_
+  gcongr
+  exact hC z
+
+/-- The reference section has temperate growth. -/
+theorem hasTemperateGrowth_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
+    (referenceSection f m).HasTemperateGrowth :=
+  .of_norm_iteratedFDeriv_le (contDiff_referenceSection f m)
+    (exists_norm_iteratedFDeriv_referenceSection_le f m)
+
+/-- Each coefficient `z ↦ a_m(z) v` of the reference connection has temperate growth. -/
+theorem hasTemperateGrowth_referenceConnection_apply (f : ContDiffBump (0 : ℝ)) (m : ℕ) (v : ℂ) :
+    (fun z ↦ referenceConnection f m z v).HasTemperateGrowth :=
+  .of_norm_iteratedFDeriv_le
+    ((ContinuousLinearMap.apply ℝ ℂ v).contDiff.comp (contDiff_referenceConnection f m))
+    fun n ↦ exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n v
+
+section Sobolev
+
+open TemperedDistribution
+open scoped SchwartzMap
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
+  {p : ENNReal} [Fact (1 ≤ p)]
+
+/-- **Multiplication by the reference section preserves `H^{k,p}`**, for `1 < p < ∞` and every
+natural order `k`. -/
+theorem memSobolev_smulLeftCLM_referenceSection (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (f : ContDiffBump (0 : ℝ)) (m : ℕ) {k : ℕ} {u : 𝓢'(ℂ, F)} (hu : MemSobolev k p u) :
+    MemSobolev k p (smulLeftCLM F (referenceSection f m) u) :=
+  hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top (hasTemperateGrowth_referenceSection f m)
+    fun n _ ↦ exists_norm_iteratedFDeriv_referenceSection_le f m n
+
+/-- **Multiplication by a coefficient `z ↦ a_m(z) v` of the reference connection preserves
+`H^{k,p}`**, for `1 < p < ∞` and every natural order `k`. -/
+theorem memSobolev_smulLeftCLM_referenceConnection_apply (hp : 1 < p) (hp_top : p ≠ ⊤)
+    (f : ContDiffBump (0 : ℝ)) (m : ℕ) (v : ℂ) {k : ℕ} {u : 𝓢'(ℂ, F)} (hu : MemSobolev k p u) :
+    MemSobolev k p (smulLeftCLM F (fun z ↦ referenceConnection f m z v) u) :=
+  hu.smulLeftCLM_of_norm_iteratedFDeriv_le hp hp_top
+    (hasTemperateGrowth_referenceConnection_apply f m v)
+    fun n _ ↦ exists_norm_iteratedFDeriv_referenceConnection_apply_le f m n v
+
+end Sobolev
 
 end TauCeti.Vortex
