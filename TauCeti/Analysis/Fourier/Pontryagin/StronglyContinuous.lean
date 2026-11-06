@@ -133,6 +133,23 @@ private lemma continuousOn_dual : ContinuousOn (dual π hcont hπ) (support π h
   refine (π.continuous_integratedCharacterToPontryaginDual hcont _ _ _ hπ).congr fun ω ↦ ?_
   simp [dual, ω.2]
 
+/-- The integrated operator `π(f) - 1` sends `ξ` to `π(f) ξ - ξ`. -/
+private lemma op_sub_one_apply (f : G →₁[Measure.addHaar] ℂ) (ξ : H) :
+    ((op π hcont hπ f - 1 : algebra π hcont hπ) : H →L[ℂ] H) ξ =
+      π.integratedOperatorL1 hcont hπ.exists_norm_le Measure.addHaar f ξ - ξ := by
+  simp
+
+/-- Some `π(f) - 1` moves `ξ` by at most `δ`, since `π(f) ξ` approximates `ξ`. -/
+private lemma exists_norm_op_sub_one_le (ξ : H) {δ : ℝ} (hδ : 0 < δ) :
+    ∃ f : G →₁[Measure.addHaar] ℂ,
+      ‖((op π hcont hπ f - 1 : algebra π hcont hπ) : H →L[ℂ] H) ξ‖ ≤ δ := by
+  obtain ⟨_, ⟨f, rfl⟩, hf⟩ := Metric.mem_closure_iff.mp
+    (π.mem_closure_range_integratedOperatorL1_apply (hcont := hcont)
+      (hbdd := hπ.exists_norm_le) (μ := Measure.addHaar) ξ) δ hδ
+  refine ⟨f, ?_⟩
+  rw [op_sub_one_apply, ← dist_eq_norm, dist_comm]
+  exact hf.le
+
 /-- A vector-state measure gives zero mass to characters annihilating all integrated operators. -/
 private lemma ae_mem_support [MeasurableSpace (characterSpace ℂ (algebra π hcont hπ))]
     [BorelSpace (characterSpace ℂ (algebra π hcont hπ))]
@@ -142,10 +159,7 @@ private lemma ae_mem_support [MeasurableSpace (characterSpace ℂ (algebra π hc
   rw [ae_iff]
   refine le_antisymm (ENNReal.le_of_forall_pos_le_add fun ε hε _ ↦ ?_) bot_le
   have hεreal : 0 < (ε : ℝ) := by exact_mod_cast hε
-  obtain ⟨_, ⟨f, rfl⟩, hf⟩ := Metric.mem_closure_iff.mp
-    (π.mem_closure_range_integratedOperatorL1_apply (hcont := hcont)
-      (hbdd := hπ.exists_norm_le) (μ := Measure.addHaar) ξ)
-    (Real.sqrt ε) (Real.sqrt_pos.mpr hεreal)
+  obtain ⟨f, ha⟩ := exists_norm_op_sub_one_le π hcont hπ ξ (Real.sqrt_pos.mpr hεreal)
   let a := op π hcont hπ f - 1
   have hint : Integrable (fun ω : characterSpace ℂ (algebra π hcont hπ) ↦ ‖ω a‖ ^ 2) ν :=
     ((gelfandTransform ℂ _ a).continuous.norm.pow 2).integrable_of_hasCompactSupport
@@ -159,8 +173,6 @@ private lemma ae_mem_support [MeasurableSpace (characterSpace ℂ (algebra π hc
         exact hω ((π.mem_integratedCharacterSet_iff hcont _ _ _ ω).mpr ⟨f, h⟩)
       simp [a, hzero])
   rw [(algebra π hcont hπ).integral_norm_sq_eq_norm_apply_sq hrep a] at hbound
-  have ha : ‖(a : H →L[ℂ] H) ξ‖ < Real.sqrt ε := by
-    simpa [a, dist_eq_norm, norm_sub_rev] using hf
   have hsq : ‖(a : H →L[ℂ] H) ξ‖ ^ 2 ≤ (ε : ℝ) := by
     nlinarith [Real.sq_sqrt hεreal.le, norm_nonneg ((a : H →L[ℂ] H) ξ)]
   simpa using hbound.trans (ENNReal.ofReal_le_ofReal hsq)
@@ -203,6 +215,35 @@ private lemma measurable_dual [MeasurableSpace (characterSpace ℂ (algebra π h
   exact (continuousOn_dual π hcont hπ).measurable_piecewise continuousOn_const
     (π.isOpen_integratedCharacterSet hcont _ _ _).measurableSet
 
+/-- If `ν` represents the vector functional of `ξ` on the integrated algebra, then for
+`a = π(f) - 1`, `⟪ξ, π(g) ξ⟫ - ∫ χ_ω(g) dν = ∫ χ_ω(g) ω(a) dν - ⟪ξ, π(g) (a ξ)⟫`. -/
+private lemma inner_sub_integral_dual_eq [MeasurableSpace (characterSpace ℂ (algebra π hcont hπ))]
+    [BorelSpace (characterSpace ℂ (algebra π hcont hπ))]
+    {ν : Measure (characterSpace ℂ (algebra π hcont hπ))} [IsFiniteMeasure ν] {ξ : H}
+    (hrep : ∀ a : algebra π hcont hπ, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂ν)
+    (f : G →₁[Measure.addHaar] ℂ) (g : G) :
+    ⟪ξ, π (.ofAdd g) ξ⟫_ℂ - ∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) ∂ν =
+      ∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) * ω (op π hcont hπ f - 1) ∂ν -
+        ⟪ξ, π (.ofAdd g) (((op π hcont hπ f - 1 : algebra π hcont hπ) : H →L[ℂ] H) ξ)⟫_ℂ := by
+  have hint (a : algebra π hcont hπ) :
+      Integrable (fun ω : characterSpace ℂ (algebra π hcont hπ) ↦ ω a) ν :=
+    (gelfandTransform ℂ _ a).continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
+  have hχ : Integrable (fun ω ↦ (dual π hcont hπ ω (.ofAdd g) : ℂ)) ν :=
+    .of_bound ((PontryaginDual.continuous_coe_eval_const _).measurable.comp
+      (measurable_dual π hcont hπ)).aestronglyMeasurable 1 (.of_forall fun ω ↦ by simp)
+  -- Through `π(f)`, the matrix coefficient is an integral by the translation equation.
+  have hf' : ⟪ξ, π (.ofAdd g)
+      (π.integratedOperatorL1 hcont hπ.exists_norm_le Measure.addHaar f ξ)⟫_ℂ =
+      ∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) * ω (op π hcont hπ f) ∂ν := by
+    rw [← integral_congr_ae (.of_forall fun ω ↦ apply_translate π hcont hπ ω g f), ← hrep]
+    simp
+  have hωa (ω : characterSpace ℂ (algebra π hcont hπ)) :
+      ω (op π hcont hπ f - 1) = ω (op π hcont hπ f) - 1 := by simp
+  simp_rw [hωa, mul_sub, mul_one]
+  rw [integral_sub ((hint _).bdd_mul hχ.aestronglyMeasurable (c := 1)
+    (.of_forall fun ω ↦ by simp)) hχ, ← hf', op_sub_one_apply, map_sub, inner_sub_right]
+  ring
+
 /-- **The matrix coefficient is the integral of the group characters.** If `ν` represents the
 positive vector functional of `ξ` on the integrated algebra, then
 `⟪ξ, π(g) ξ⟫ = ∫ χ_ω(g) dν(ω)`. -/
@@ -211,42 +252,14 @@ private lemma inner_eq_integral_dual [MeasurableSpace (characterSpace ℂ (algeb
     {ν : Measure (characterSpace ℂ (algebra π hcont hπ))} [IsFiniteMeasure ν] {ξ : H}
     (hrep : ∀ a : algebra π hcont hπ, ⟪ξ, (a : H →L[ℂ] H) ξ⟫_ℂ = ∫ ω, ω a ∂ν) (g : G) :
     ⟪ξ, π (.ofAdd g) ξ⟫_ℂ = ∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) ∂ν := by
-  set A := algebra π hcont hπ
-  have hint (a : A) : Integrable (fun ω : characterSpace ℂ A ↦ ω a) ν :=
-    (gelfandTransform ℂ A a).continuous.integrable_of_hasCompactSupport (.of_compactSpace _)
-  have hχ : Integrable (fun ω ↦ (dual π hcont hπ ω (.ofAdd g) : ℂ)) ν :=
-    .of_bound ((PontryaginDual.continuous_coe_eval_const _).measurable.comp
-      (measurable_dual π hcont hπ)).aestronglyMeasurable 1 (.of_forall fun ω ↦ by simp)
   -- Approximate `ξ` by `π(f) ξ` to within `δ`, where `δ` is scaled to the target accuracy `ε`.
   set C := ‖ξ‖ + ν.real Set.univ + 1
   have hC : 0 < C := by positivity
   refine eq_of_forall_dist_le fun ε hε ↦ ?_
   set δ := ε / C
   have hδ : 0 < δ := div_pos hε hC
-  obtain ⟨_, ⟨f, rfl⟩, hf⟩ := Metric.mem_closure_iff.mp
-    (π.mem_closure_range_integratedOperatorL1_apply (hcont := hcont)
-      (hbdd := hπ.exists_norm_le) (μ := Measure.addHaar) ξ) δ hδ
-  set a : A := op π hcont hπ f - 1
-  have ha : (a : H →L[ℂ] H) ξ =
-      π.integratedOperatorL1 hcont hπ.exists_norm_le Measure.addHaar f ξ - ξ := by
-    simp [a]
-  have had : ‖(a : H →L[ℂ] H) ξ‖ ≤ δ := by
-    rw [ha, ← dist_eq_norm, dist_comm]
-    exact hf.le
-  -- Through `π(f)`, the matrix coefficient is an integral by the translation equation.
-  have hf' : ⟪ξ, π (.ofAdd g)
-      (π.integratedOperatorL1 hcont hπ.exists_norm_le Measure.addHaar f ξ)⟫_ℂ =
-      ∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) * ω (op π hcont hπ f) ∂ν := by
-    rw [← integral_congr_ae (.of_forall fun ω ↦ apply_translate π hcont hπ ω g f), ← hrep]
-    simp
-  have hsplit : ⟪ξ, π (.ofAdd g) ξ⟫_ℂ - ∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) ∂ν =
-      ∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) * ω a ∂ν -
-        ⟪ξ, π (.ofAdd g) ((a : H →L[ℂ] H) ξ)⟫_ℂ := by
-    have hωa (ω : characterSpace ℂ A) : ω a = ω (op π hcont hπ f) - 1 := by simp [a]
-    simp_rw [hωa, mul_sub, mul_one]
-    rw [integral_sub ((hint _).bdd_mul hχ.aestronglyMeasurable (c := 1)
-      (.of_forall fun ω ↦ by simp)) hχ, ← hf', ha, map_sub, inner_sub_right]
-    ring
+  obtain ⟨f, had⟩ := exists_norm_op_sub_one_le π hcont hπ ξ hδ
+  set a : algebra π hcont hπ := op π hcont hπ f - 1
   -- Each error term is at most a multiple of `δ`.
   have hL1 : ‖∫ ω, (dual π hcont hπ ω (.ofAdd g) : ℂ) * ω a ∂ν‖ ≤
       δ * ν.real Set.univ + δ := by
@@ -259,7 +272,7 @@ private lemma inner_eq_integral_dual [MeasurableSpace (characterSpace ℂ (algeb
     rw [hπ.norm_map]
     gcongr
   calc dist _ _ ≤ (δ * ν.real Set.univ + δ) + ‖ξ‖ * δ := by
-        rw [dist_eq_norm, hsplit]
+        rw [dist_eq_norm, inner_sub_integral_dual_eq π hcont hπ hrep f g]
         exact (norm_sub_le _ _).trans (add_le_add hL1 hinner)
     _ = ε := by
         simp only [δ, C]
