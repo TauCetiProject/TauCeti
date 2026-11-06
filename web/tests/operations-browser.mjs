@@ -130,6 +130,9 @@ replaceDomain('queue',q=>{
   const batch=shard.batches.find(b=>b.id==='1');
   const detail=JSON.parse(fixture.objects['public'+batch.detail.url]);
   detail.event_pages.push(store({schema:'tauceti.operations.events/v1',records:[{at:new Date(fixture.clock+35000).toISOString(),kind:'publication_before_jobs_ready'}]}));
+  const task={id:'21',kind:'rebase_conflict',state:'open',created_at:new Date(fixture.clock-90000).toISOString(),resolved_at:null,progress:{coverage:'observed',state:'sources_ready',observed_at:new Date(fixture.clock-90000).toISOString(),providers:[],models:[],cost:{recorded_usd:0,recorded_attempts:0,unknown_attempts:0},build:{stage:'preparation',completed_tasks:58742,total_tasks:60357,sampled_at:new Date(fixture.clock+35000).toISOString(),log_updated_at:new Date(fixture.clock+35000).toISOString(),last_progress_at:null}}};
+  detail.task_pages.push(store({schema:'tauceti.operations.tasks/v1',records:[task]}));
+  q.batches.find(b=>b.id==='1').active_tasks=[task];
   batch.detail=store(detail);q.batches.find(b=>b.id==='1').detail=batch.detail;q.batch_shards[1]=store(shard);
 });
 replaceDomain('jobs',j=>{j.received_at=new Date(fixture.clock+35000).toISOString();});
@@ -144,6 +147,8 @@ try {
   await page.clock.fastForward(15000);
   await page.waitForFunction(()=>document.querySelector('.ops-source')?.textContent.includes('queue · observed'),{},{timeout:3000});
   await page.getByText(/publication_before_jobs_ready/).waitFor({timeout:3000});
+  await page.getByText(/Reported preparation build tasks 58742 \/ 60357/).first().waitFor({timeout:3000});
+  assert.ok((await page.locator('[data-ops-view]').innerText()).includes('count increase unobserved (first sample or reset)'));
 } finally { releaseJobs(); }
 replaceDomain('hosts',h=>{h.hosts[0].connected=false;h.hosts[0].observed_at=new Date(fixture.clock-120000).toISOString();});
 await page.getByRole('link',{name:'Runners',exact:true}).click();
