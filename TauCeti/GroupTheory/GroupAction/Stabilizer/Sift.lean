@@ -47,7 +47,7 @@ the lists.
 * `Subgroup.natCard_eq_prod_length_of_sift`: the order of a group from successful sifts.
 * `Subgroup.stabilizerChain_eq_bot_of_sift`: the points form a base.
 * `TauCeti.transversalCheck`, `TauCeti.siftCheck`: the finite hypotheses as checks that `decide`
-  can run.
+  can run, unpacked by `TauCeti.transversalCheck_eq_true_iff` and `TauCeti.siftCheck_eq_true_iff`.
 * `Subgroup.natCard_eq_prod_length_of_siftCheck`, `Subgroup.stabilizerChain_eq_bot_of_siftCheck`:
   the same conclusions from these checks and a list of generators of `H` that sift.
 
@@ -150,6 +150,23 @@ check in an importing module. -/
 @[expose] def siftCheck (b : ℕ → α) (T : ℕ → List G) (k i : ℕ) : Bool :=
   ((List.range k).filter (i ≤ ·)).all fun j ↦ (T j).all fun s ↦
     (T i).all fun r ↦ sift b T i (k - i) 1 (s * r)
+
+omit [DecidableEq G] in
+/-- `transversalCheck b T k` holds exactly when, for every `i < k`, the list `T i` is nonempty, its
+elements fix `b 0, …, b (i - 1)`, and their images of `b i` are distinct. -/
+theorem transversalCheck_eq_true_iff {k : ℕ} :
+    transversalCheck b T k = true ↔ ∀ i < k, T i ≠ [] ∧ (∀ r ∈ T i, ∀ j < i, r • b j = b j) ∧
+      ((T i).map (· • b i)).Nodup := by
+  simp only [transversalCheck, List.all_eq_true, List.mem_range, Bool.and_eq_true,
+    Bool.not_eq_true', List.isEmpty_eq_false_iff, decide_eq_true_eq, and_assoc]
+
+/-- `siftCheck b T k i` holds exactly when, for `i ≤ j < k`, every product `s * r` with `s ∈ T j`
+and `r ∈ T i` sifts through `T i, …, T (k - 1)`. -/
+theorem siftCheck_eq_true_iff {k i : ℕ} :
+    siftCheck b T k i = true ↔
+      ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i, sift b T i (k - i) 1 (s * r) = true := by
+  simp only [siftCheck, List.all_eq_true, List.mem_filter, List.mem_range, decide_eq_true_eq,
+    and_imp]
 
 end TauCeti
 
@@ -264,20 +281,15 @@ private theorem hypotheses_of_siftCheck {gens : List G} (hT : ∀ i < k, ∀ r �
       (∀ i < k, ((T i).map (· • b i)).Nodup) ∧ H ≤ closure {r | ∃ i < k, r ∈ T i} ∧
       ∀ i < k, ∀ j < k, i ≤ j → ∀ s ∈ T j, ∀ r ∈ T i,
         TauCeti.sift b T i (k - i) 1 (s * r) = true := by
-  simp only [TauCeti.transversalCheck, List.all_eq_true, List.mem_range, Bool.and_eq_true,
-    Bool.not_eq_true', List.isEmpty_eq_false_iff, decide_eq_true_eq] at htrans
+  rw [TauCeti.transversalCheck_eq_true_iff] at htrans
   simp only [List.all_eq_true] at hgens
-  refine ⟨fun i hi r hr ↦ (mem_stabilizerChain_iff _ _).2 ⟨hT i hi r hr, (htrans i hi).1.2 r hr⟩,
-    fun i hi ↦ (htrans i hi).1.1, fun i hi ↦ (htrans i hi).2, hH.trans ((closure_le _).2 ?_), ?_⟩
+  refine ⟨fun i hi r hr ↦ (mem_stabilizerChain_iff _ _).2 ⟨hT i hi r hr, (htrans i hi).2.1 r hr⟩,
+    fun i hi ↦ (htrans i hi).1, fun i hi ↦ (htrans i hi).2.2, hH.trans ((closure_le _).2 ?_), ?_⟩
   · intro g hg
     have := TauCeti.inv_mul_mem_closure_of_sift (hgens g hg)
     rwa [inv_one, one_mul, zero_add, show {r | ∃ j, 0 ≤ j ∧ j < k ∧ r ∈ T j} =
       {r | ∃ i < k, r ∈ T i} by simp] at this
-  · intro i hi j hj hij s hs r hr
-    have h := hsift i hi
-    simp only [TauCeti.siftCheck, List.all_eq_true, List.mem_filter, List.mem_range,
-      decide_eq_true_eq] at h
-    exact h j ⟨hj, hij⟩ s hs r hr
+  · exact fun i hi ↦ TauCeti.siftCheck_eq_true_iff.1 (hsift i hi)
 
 /-- **The order of a group from sifting checks.** A form of `natCard_eq_prod_length_of_sift` whose
 finite hypotheses are the checks `TauCeti.transversalCheck` and `TauCeti.siftCheck`, which `decide`
