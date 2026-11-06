@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.Pullback.IsPullback.Defs
-public import Mathlib.Topology.Category.TopCat.Limits.Basic
+public import TauCeti.Topology.Category.TopCat.Pushout
 public import TauCeti.Topology.Homotopy.Extension.Basic
+public import TauCeti.Topology.Homotopy.HomotopyEquiv
 
 /-!
 # Homotopy invariance of attaching along a cofibration
@@ -39,8 +39,9 @@ On `Y`, the composite `ψ ∘ φ` is then joined to `j₀` by two homotopies, th
 retraces the first over `B`, so `TauCeti.HasHomotopyExtensionProperty.homotopicRel_of_retracing`
 gives a homotopy fixing `B`. Such a homotopy, together with the constant homotopy on `Z`, descends
 to a homotopy on the pushout fixing `Z`
-(`CategoryTheory.IsPushout.homotopicRel_of_homotopicRel_comp_inl`), since the product of the
-pushout with the locally compact interval is again a pushout. The same descent shows that the
+(`CategoryTheory.IsPushout.homotopicRel_of_homotopicRel_comp_inl`), glued by
+`CategoryTheory.IsPushout.homotopyDesc` since the product of the pushout with the locally compact
+interval is again a pushout. The same descent shows that the
 image of `Z` in `Z ∪_a Y` has the homotopy extension property
 (`CategoryTheory.IsPushout.hasHomotopyExtensionProperty_range_inr`).
 
@@ -48,14 +49,11 @@ For the change of `Z`, let `F` and `F'` be the maps induced by `f` and `g`. Reat
 homotopy `g ∘ f ∘ a ≃ a` gives a homotopy equivalence `E : Z ∪_{a ≫ f ≫ g} Y → Z ∪_a Y` with
 `E ∘ F' ∘ F` homotopic to the identity, by the reattaching homotopy on `Y` and `g ∘ f ≃ id` on `Z`.
 The same argument with the roles of `f` and `g` exchanged gives `F'` a left homotopy inverse, while
-`E ∘ F` is a right homotopy inverse of `F'`; hence `F'` is a homotopy equivalence and `F' ∘ E` is
+`F ∘ E` is a right homotopy inverse of `F'`; hence `F'` is a homotopy equivalence and `E ∘ F'` is
 a two-sided homotopy inverse of `F`.
 
 ## Main declarations
 
-* `CategoryTheory.IsPushout.cylinderDesc` and `CategoryTheory.IsPushout.homotopyDesc`: maps out of
-  the cylinder `I × P`, and homotopies between maps out of `P`, glued from compatible ones on
-  `Y` and `Z`.
 * `CategoryTheory.IsPushout.hasHomotopyExtensionProperty_range_inr`: attaching along a cofibration
   gives a cofibration.
 * `CategoryTheory.IsPushout.homotopicRel_of_homotopicRel_comp_inl`: two maps out of `Z ∪_a Y`
@@ -88,83 +86,6 @@ namespace CategoryTheory.IsPushout
 
 universe u
 
-section CylinderDesc
-
-variable {B Y Z P : TopCat.{u}} {i : B ⟶ Y} {a : B ⟶ Z} {j : Y ⟶ P} {k : Z ⟶ P}
-  {W : Type u} [TopologicalSpace W]
-
-/-- Two continuous maps out of a pushout in `TopCat` agree as soon as they agree on both legs. -/
-theorem continuousMap_ext (h : IsPushout i a j k) {f g : C(P, W)}
-    (hj : ∀ y, f (j y) = g (j y)) (hk : ∀ z, f (k z) = g (k z)) : f = g := by
-  have : TopCat.ofHom (X := P) (Y := TopCat.of W) f = TopCat.ofHom g :=
-    h.hom_ext (by ext y; exact hj y) (by ext z; exact hk z)
-  exact congrArg TopCat.Hom.hom this
-
-/-- The map `P → C(I, W)` glued from the curried maps `F` and `G`. -/
-private def cylinderCurry (h : IsPushout i a j k) (F : C(I × Y, W)) (G : C(I × Z, W))
-    (hFG : ∀ t b, F (t, i b) = G (t, a b)) : P ⟶ TopCat.of C(I, W) :=
-  h.desc (TopCat.ofHom (F.comp ContinuousMap.prodSwap).curry)
-    (TopCat.ofHom (G.comp ContinuousMap.prodSwap).curry) (by ext b t; exact hFG t b)
-
-/-- The map out of the cylinder `I × P` on a pushout `P = Z ∪_a Y` glued from maps
-`F : I × Y → W` and `G : I × Z → W` which agree along the attaching map. Since `I` is locally
-compact, it is the uncurried map out of `P` glued from the curried maps into `C(I, W)`; this is the
-form in which homotopies are glued on `P`. -/
-def cylinderDesc (h : IsPushout i a j k) (F : C(I × Y, W)) (G : C(I × Z, W))
-    (hFG : ∀ t b, F (t, i b) = G (t, a b)) : C(I × P, W) :=
-  ⟨fun p ↦ h.cylinderCurry F G hFG p.2 p.1,
-    continuous_eval.comp
-      (((h.cylinderCurry F G hFG).hom.continuous.comp continuous_snd).prodMk continuous_fst)⟩
-
-variable (h : IsPushout i a j k) (F : C(I × Y, W)) (G : C(I × Z, W))
-  (hFG : ∀ t b, F (t, i b) = G (t, a b))
-
-/-- On the cylinder over `Y`, the glued map `CategoryTheory.IsPushout.cylinderDesc` is `F`. -/
-@[simp]
-theorem cylinderDesc_inl (t : I) (y : Y) : h.cylinderDesc F G hFG (t, j y) = F (t, y) := by
-  have hy : h.cylinderCurry F G hFG (j y) = (F.comp ContinuousMap.prodSwap).curry y :=
-    ConcreteCategory.congr_hom (h.inl_desc _ _ _) y
-  exact congrArg (fun g : C(I, W) ↦ g t) hy
-
-/-- On the cylinder over `Z`, the glued map `CategoryTheory.IsPushout.cylinderDesc` is `G`. -/
-@[simp]
-theorem cylinderDesc_inr (t : I) (z : Z) : h.cylinderDesc F G hFG (t, k z) = G (t, z) := by
-  have hz : h.cylinderCurry F G hFG (k z) = (G.comp ContinuousMap.prodSwap).curry z :=
-    ConcreteCategory.congr_hom (h.inr_desc _ _ _) z
-  exact congrArg (fun g : C(I, W) ↦ g t) hz
-
-omit hFG in
-/-- The homotopy between two maps out of a pushout `P = Z ∪_a Y` glued from homotopies of their
-restrictions to `Y` and to `Z` which agree along the attaching map. -/
-def homotopyDesc {f g : C(P, W)} (HY : (f.comp j.hom).Homotopy (g.comp j.hom))
-    (HZ : (f.comp k.hom).Homotopy (g.comp k.hom)) (hYZ : ∀ t b, HY (t, i b) = HZ (t, a b)) :
-    f.Homotopy g where
-  toContinuousMap := h.cylinderDesc HY.toContinuousMap HZ.toContinuousMap hYZ
-  map_zero_left p := congrArg (fun g : C(P, W) ↦ g p)
-    (h.continuousMap_ext (f := ⟨fun p ↦ h.cylinderDesc HY.toContinuousMap HZ.toContinuousMap hYZ
-      (0, p), by fun_prop⟩) (fun y ↦ by simp) (fun z ↦ by simp))
-  map_one_left p := congrArg (fun g : C(P, W) ↦ g p)
-    (h.continuousMap_ext (f := ⟨fun p ↦ h.cylinderDesc HY.toContinuousMap HZ.toContinuousMap hYZ
-      (1, p), by fun_prop⟩) (fun y ↦ by simp) (fun z ↦ by simp))
-
-omit hFG in
-/-- On `Y`, the glued homotopy `CategoryTheory.IsPushout.homotopyDesc` is `HY`. -/
-@[simp]
-theorem homotopyDesc_apply_inl {f g : C(P, W)} (HY : (f.comp j.hom).Homotopy (g.comp j.hom))
-    (HZ : (f.comp k.hom).Homotopy (g.comp k.hom)) (hYZ : ∀ t b, HY (t, i b) = HZ (t, a b))
-    (t : I) (y : Y) : h.homotopyDesc HY HZ hYZ (t, j y) = HY (t, y) :=
-  h.cylinderDesc_inl _ _ hYZ t y
-
-omit hFG in
-/-- On `Z`, the glued homotopy `CategoryTheory.IsPushout.homotopyDesc` is `HZ`. -/
-@[simp]
-theorem homotopyDesc_apply_inr {f g : C(P, W)} (HY : (f.comp j.hom).Homotopy (g.comp j.hom))
-    (HZ : (f.comp k.hom).Homotopy (g.comp k.hom)) (hYZ : ∀ t b, HY (t, i b) = HZ (t, a b))
-    (t : I) (z : Z) : h.homotopyDesc HY HZ hYZ (t, k z) = HZ (t, z) :=
-  h.cylinderDesc_inr _ _ hYZ t z
-
-end CylinderDesc
-
 variable {B Y Z P : TopCat.{u}} {i : B ⟶ Y} {a : B ⟶ Z} {j : Y ⟶ P} {k : Z ⟶ P}
 
 /-- A map out of `I × B`, read on `I × range i` through the inverse of an embedding `i`. -/
@@ -184,7 +105,6 @@ theorem hasHomotopyExtensionProperty_range_inr (h : IsPushout i a j k) (hi : IsE
     HasHomotopyExtensionProperty (range k) := by
   rw [hasHomotopyExtensionProperty_iff]
   intro W _ f H hH
-  have hw (b : B) : j (i b) = k (a b) := by simpa using ConcreteCategory.congr_hom h.w b
   -- The homotopy on `Z` read off `H`, transported along `a` to the image of `B` and extended over
   -- `Y` from `f ∘ j`; it is then glued with the homotopy on `Z`.
   let HZ : C(I × Z, W) := H.comp ⟨fun p ↦ (p.1, ⟨k p.2, mem_range_self _⟩), by fun_prop⟩
@@ -193,13 +113,12 @@ theorem hasHomotopyExtensionProperty_range_inr (h : IsPushout i a j k) (hi : IsE
   obtain ⟨GY, hGY₀, hGY⟩ := hA.exists_extension (f.comp j.hom) (rangeLift hi HB) fun y ↦ by
     obtain ⟨_, b, rfl⟩ := y
     rw [rangeLift_apply]
-    simp [HB, hHZ, hH, hw]
+    simp [HB, hHZ, hH, h.w_apply]
   have hcompat (t : I) (b : B) : GY (t, i b) = HZ (t, a b) :=
     (hGY t ⟨i b, mem_range_self b⟩).trans (rangeLift_apply hi HB t b)
   refine ⟨h.cylinderDesc GY HZ hcompat, fun p ↦ ?_, fun t q ↦ ?_⟩
-  · have := h.continuousMap_ext (f := ⟨fun p ↦ h.cylinderDesc GY HZ hcompat (0, p), by fun_prop⟩)
-      (g := f) (fun y ↦ by simpa using hGY₀ y) (fun z ↦ by simpa [hHZ] using hH ⟨k z, _⟩)
-    exact congrArg (fun g : C(P, W) ↦ g p) this
+  · exact h.cylinderDesc_apply_eq _ _ hcompat 0 (fun y ↦ by simpa using hGY₀ y)
+      (fun z ↦ by simpa [hHZ] using hH ⟨k z, _⟩) p
   · obtain ⟨_, z, rfl⟩ := q
     simp [hHZ]
 
@@ -211,11 +130,10 @@ theorem homotopicRel_of_homotopicRel_comp_inl (h : IsPushout i a j k) {W : Type 
     (hj : (f.comp j.hom).HomotopicRel (g.comp j.hom) (range i)) :
     f.HomotopicRel g (range k) := by
   obtain ⟨L⟩ := hj
-  have hw (b : B) : j (i b) = k (a b) := by simpa using ConcreteCategory.congr_hom h.w b
   let HZ : (f.comp k.hom).Homotopy (g.comp k.hom) :=
     (Homotopy.refl _).cast rfl (ContinuousMap.ext hk)
   let M := h.homotopyDesc L.toHomotopy HZ fun t b ↦ by
-    simp [HZ, L.eq_fst t (mem_range_self b), hw]
+    simp [HZ, L.eq_fst t (mem_range_self b), h.w_apply]
   exact ⟨{ toHomotopy := M
            prop' := fun t p hp ↦ by
              obtain ⟨z, rfl⟩ := hp
@@ -239,7 +157,7 @@ theorem exists_homotopy_inl_comp (h₀ : IsPushout i a₀ j₀ k₀) (h₁ : IsP
   obtain ⟨G, hG₀, hG⟩ := hA.exists_extension j₁.hom (rangeLift hi KB) fun y ↦ by
     obtain ⟨_, b, rfl⟩ := y
     rw [rangeLift_apply]
-    simpa [KB] using (ConcreteCategory.congr_hom h₁.w b).symm
+    simpa [KB] using (h₁.w_apply b).symm
   have hGi (t : I) (b : B) : G (t, i b) = k₁ (K (σ t, b)) :=
     (hG t ⟨i b, mem_range_self b⟩).trans (rangeLift_apply hi KB t b)
   -- The end of `G` agrees with `k₁ ∘ a₀` on `B`, so it descends to `Z ∪_{a₀} Y`.
@@ -358,26 +276,14 @@ theorem exists_homotopic_id_of_homotopic_id (h : IsPushout i a j k)
     (h₂.inr_desc _ _ _)
   -- `Fg ≫ E` is a left homotopy inverse of `F`; it remains to see that it is a right one.
   refine ⟨Fg ≫ E, by simp [Fg, hk₂], by simpa using hFE, ?_⟩
-  have hc {X X' X'' : TopCat.{u}} {f₀ f₁ : X ⟶ X'} {g₀ g₁ : X' ⟶ X''}
-      (hf : f₀.hom.Homotopic f₁.hom) (hg : g₀.hom.Homotopic g₁.hom) :
-      (f₀ ≫ g₀).hom.Homotopic (f₁ ≫ g₁).hom :=
-    hg.comp hf
-  have hr {X X' : TopCat.{u}} (f : X ⟶ X') : f.hom.Homotopic f.hom := .refl _
-  -- `E ≫ F` is a right homotopy inverse of `Fg`.
-  have hx : (E ≫ F ≫ Fg).hom.Homotopic (ContinuousMap.id _) := by
-    have h₁ := hc (hr (E ≫ F ≫ Fg)) (g₀ := 𝟙 _) hEψ.symm
-    have h₂ := hc (hc (hr E) (g₁ := 𝟙 _) hFE) (hr ψ)
-    simp only [Category.comp_id, Category.assoc] at h₁ h₂
-    exact h₁.trans (h₂.trans hEψ)
-  -- `Ff ≫ E'` is a left homotopy inverse of `Fg`, hence homotopic to `E ≫ F`.
-  have hL : (Ff ≫ E').hom.Homotopic (E ≫ F).hom := by
-    have h₁ := hc (f₀ := 𝟙 _) hx.symm (hr (Ff ≫ E'))
-    have h₂ := hc (hr (E ≫ F)) (g₁ := 𝟙 _) hFE'
-    simp only [Category.comp_id, Category.id_comp, Category.assoc] at h₁ h₂
-    exact h₁.trans h₂
-  -- Hence `Fg ≫ E ≫ F ≃ Fg ≫ Ff ≫ E' ≃ id`.
-  have := (hc (hr Fg) hL).symm.trans hFE'
-  simpa [Category.assoc] using this
+  simp only [TopCat.hom_comp] at hFE hEψ hFE' ⊢
+  -- `ψ` is a left and `F ≫ Fg` a right homotopy inverse of `E`, so `F ≫ Fg` is a left one too.
+  have hx : ((Fg.hom.comp F.hom).comp E.hom).Homotopic (ContinuousMap.id _) :=
+    ((hEψ.homotopic_of_comp_homotopic_id (r := Fg.hom.comp F.hom) hFE).symm.comp
+      (.refl E.hom)).trans hEψ
+  -- `Ff ≫ E'` is a left and `E ≫ F` a right homotopy inverse of `Fg`, so `E ≫ F` is a left one too.
+  exact ((hFE'.homotopic_of_comp_homotopic_id (r := F.hom.comp E.hom) hx).symm.comp
+    (.refl Fg.hom)).trans hFE'
 
 end ChangeOfBase
 
