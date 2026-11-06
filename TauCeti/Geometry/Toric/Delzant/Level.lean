@@ -366,7 +366,8 @@ theorem weightGenerator_neg_eq_zero_iff {x : EuclideanSpace ℝ ι × EuclideanS
     rw [AddMonoidHom.mem_ker, facetTorusHom_coe, LinearMap.mem_ker.1 ht,
       QuotientAddGroup.mk_zero]
   have h0 := eq_zero_of_mem_ker_facetTorusHom hi (isSmoothVertex_def.1 hv) hker fun j hj ↦ by
-    rw [show t j = 0 by simpa using h j (hvx j hj), QuotientAddGroup.mk_zero]
+    have htj : t j = 0 := by simpa using h j (hvx j hj)
+    rw [htj, QuotientAddGroup.mk_zero]
   funext j
   obtain ⟨k, hk⟩ := (AddCircle.coe_eq_zero_iff (0 : ℝ)).1 (congrFun h0 j)
   simpa using hk.symm
