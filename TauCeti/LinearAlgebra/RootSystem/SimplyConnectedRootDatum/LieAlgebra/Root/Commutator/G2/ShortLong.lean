@@ -129,6 +129,32 @@ private theorem three_step_brackets {α β γ δ ε ζ : Fin t.numRoots}
           t.structureConstant ht α β) * ·) hc₃'
       _ = _ := by ring
 
+private theorem g2_short_long_exclusions (α β : Fin 12)
+    (hadd : g2SimplyConnectedRootDatum.root α +
+      g2SimplyConnectedRootDatum.root β ∈ Set.range g2SimplyConnectedRootDatum.root)
+    (hthree : g2SimplyConnectedRootDatum.root β +
+      (3 : ℕ) • g2SimplyConnectedRootDatum.root α ∈
+        Set.range g2SimplyConnectedRootDatum.root) :
+    ∀ ξ : Fin 12,
+      g2SimplyConnectedRootDatum.root ξ ≠
+        4 • g2SimplyConnectedRootDatum.root α + g2SimplyConnectedRootDatum.root β ∧
+      g2SimplyConnectedRootDatum.root ξ ≠
+        4 • g2SimplyConnectedRootDatum.root α + 2 • g2SimplyConnectedRootDatum.root β ∧
+      g2SimplyConnectedRootDatum.root ξ ≠
+        g2SimplyConnectedRootDatum.root α + 2 • g2SimplyConnectedRootDatum.root β ∧
+      g2SimplyConnectedRootDatum.root ξ ≠
+        5 • g2SimplyConnectedRootDatum.root α + 2 • g2SimplyConnectedRootDatum.root β ∧
+      g2SimplyConnectedRootDatum.root ξ ≠
+        4 • g2SimplyConnectedRootDatum.root α + 3 • g2SimplyConnectedRootDatum.root β ∧
+      g2SimplyConnectedRootDatum.root ξ ≠
+        5 • g2SimplyConnectedRootDatum.root α + 3 • g2SimplyConnectedRootDatum.root β ∧
+      g2SimplyConnectedRootDatum.root ξ ≠
+        6 • g2SimplyConnectedRootDatum.root α +
+          3 • g2SimplyConnectedRootDatum.root β := by
+  simp only [g2SimplyConnectedRootDatum_root, Set.mem_range, g2Root_apply] at hadd hthree ⊢
+  revert α β
+  decide +kernel
+
 private theorem short_long_exclusions (ht : G2.Valid) (α β : Fin G2.numRoots)
     (hadd : (G2.simplyConnectedRootDatum ht).root α +
       (G2.simplyConnectedRootDatum ht).root β ∈ Set.range (G2.simplyConnectedRootDatum ht).root)
@@ -152,13 +178,9 @@ private theorem short_long_exclusions (ht : G2.Valid) (α β : Fin G2.numRoots)
         6 • (G2.simplyConnectedRootDatum ht).root α +
           3 • (G2.simplyConnectedRootDatum ht).root β := by
   revert α β
-  -- Normalize the binders too, so the finite table is read at its native index types.
-  simp only [simplyConnectedRootDatum_G2, numRoots, rank]
-  -- Full-transparency rewriting identifies the uniform coordinate instances with the table.
-  erw [g2SimplyConnectedRootDatum_root]
-  dsimp +instances only [rank, numRoots]
-  simp only [Set.mem_range, g2Root_apply]
-  decide +kernel
+  -- Normalize coordinate types inside the instances as well as the binders.
+  simpa +instances only [simplyConnectedRootDatum_G2, numRoots_G2, rank_G2] using
+    g2_short_long_exclusions
 
 private theorem short_long_vanishing (ht : G2.Valid) {α β γ δ ε ζ : Fin G2.numRoots}
     (hγ : (G2.simplyConnectedRootDatum ht).root γ =
@@ -214,6 +236,7 @@ variable (hM : ∀ u ∈ kostantForm (G2.lieBasis ht).rootGenerator (G2.lieBasis
 variable (hnil : ∀ i, IsNilpotent
   (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((G2.lieBasis ht).rootGenerator i))))
 
+-- Match tensor products to the ℤ-algebra instance stored by each CommAlgCat object.
 attribute [local instance high] Algebra.toModule
 
 /-- The four-factor short–long root collection formula on every Kostant-stable lattice.
