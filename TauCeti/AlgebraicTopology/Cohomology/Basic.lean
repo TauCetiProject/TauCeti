@@ -36,7 +36,8 @@ take `C := ModuleCat k` and `R := k`: then `Cₙ(X; k)` is the free `k`-module o
 * `SSet.constCochain`: the constant `0`-cochain with value `e : R ⟶ M` on every
   vertex of a simplicial set. `TopCat.constSingularCocycle` is the cocycle it defines
   for a space `X`. For `e` the unit of a ring of coefficients, its class is the unit of the
-  cup product.
+  cup product. Its class is preserved by pull-back along continuous maps
+  (`TopCat.singularCohomologyMap_homologyπ_constSingularCocycle`).
 
 ## References
 
@@ -216,5 +217,22 @@ lemma iCycles_constSingularCocycle (X : TopCat.{w}) (k : Type*) [Ring k] [Linear
     (X.singularCochainComplex R k M).iCycles 0 (X.constSingularCocycle k e) =
       (toSSet.obj X).constCochain e :=
   HomologicalComplex.iCycles_moduleCatCyclesMk _ _ _ _ _ _
+
+/-- Pulling back the class of a constant `0`-cocycle along a continuous map gives the class of the
+constant `0`-cocycle with the same value. -/
+@[simp]
+lemma singularCohomologyMap_homologyπ_constSingularCocycle {X Y : TopCat.{w}} (f : X ⟶ Y)
+    (k : Type*) [Ring k] [Linear k C] (e : R ⟶ M) :
+    TopCat.singularCohomologyMap f 0
+        ((Y.singularCochainComplex R k M).homologyπ 0 (Y.constSingularCocycle k e)) =
+      (X.singularCochainComplex R k M).homologyπ 0 (X.constSingularCocycle k e) := by
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.homologyπ_naturality,
+    ConcreteCategory.comp_apply]
+  congr 1
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [← ConcreteCategory.comp_apply, HomologicalComplex.cyclesMap_i, ConcreteCategory.comp_apply,
+    iCycles_constSingularCocycle, iCycles_constSingularCocycle]
+  refine (singularCochainComplexMap_f_apply f 0 _).trans (SSet.chainComplex_hom_ext fun x ↦ ?_)
+  simp [SSet.ι_chainComplexMap_f_assoc]
 
 end TopCat

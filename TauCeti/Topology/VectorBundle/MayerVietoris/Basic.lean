@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicTopology.Cohomology.UniversalCoefficient
 public import TauCeti.AlgebraicTopology.Singular.ProdThomPair
-public import TauCeti.Topology.VectorBundle.ThomClass
+public import TauCeti.Topology.VectorBundle.Thom.Class
 import TauCeti.Algebra.Category.ModuleCat.Biproducts
 import TauCeti.AlgebraicTopology.Cohomology.MayerVietoris.Pair
 
@@ -22,7 +22,7 @@ complement of its zero section. For a subset `W` of the base, the Thom pair of t
 
 Over a subset of the base set of a linear trivialization `e`, the trivialization identifies this
 pair with the Thom pair `(W × F, W × (F ∖ {0}))` of the product bundle
-(`Bundle.Trivialization.thomPairOverIso`, in `TauCeti.Topology.VectorBundle.ThomClass`), whose
+(`Bundle.Trivialization.thomPairOverIso`, in `TauCeti.Topology.VectorBundle.Thom.Class`), whose
 relative homology vanishes below the rank. The
 Mayer–Vietoris sequence of the two pairs over open sets `U` and `V`
 (`TopCat.isZero_singularHomology_ofInclusion_union`) propagates this vanishing from `U`, `V` and
@@ -49,7 +49,7 @@ which agree over `U ∩ V` glue to a class over `U ∪ V`
 (`TauCeti.exists_singularCohomology_thomPairOver_union`). Over a single trivializing set, a class
 in the top degree `r` is determined by its restrictions to the fibre pairs `(E_b, E_b ∖ {0})`
 (`Bundle.Trivialization.singularCohomology_thomPairOver_ext`, in
-`TauCeti.Topology.VectorBundle.ThomClass`). Since `Hʳ⁻¹` vanishes over finite
+`TauCeti.Topology.VectorBundle.Thom.Class`). Since `Hʳ⁻¹` vanishes over finite
 unions of trivializing open sets, induction on the number of sets gives the same over such a union
 (`TauCeti.singularCohomology_thomPairOver_biUnion_ext`), and shows that classes over the sets
 with the same restrictions to the fibres where two sets meet glue to a class over the union
