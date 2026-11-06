@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Measure.Regular
 public import Mathlib.Topology.UrysohnsLemma
 
 /-!
-# Baire sets and compact hulls
+# Baire sets and hulls
 
 The Baire σ-algebra is the smallest σ-algebra making every continuous real-valued function
 measurable. It is contained in the Borel σ-algebra, but the two need not coincide without
@@ -21,7 +21,9 @@ finite measure has a compact Baire-measurable superset of the same measure, insi
 prescribed open neighbourhood. The hull is a countable intersection of level sets of compactly
 supported continuous functions. This supplies compact Baire approximations for comparing Borel
 and Baire measure theory, in particular for Haar measures on groups without second countability.
-It does not assert that every Borel set belongs to the completion of the Baire σ-algebra.
+For measures finite on compact sets, countable unions of these hulls give σ-compact Baire
+hulls of σ-compact sets with null excess. These results do not assert that every Borel set
+belongs to the completion of the Baire σ-algebra.
 
 ## References
 
@@ -104,5 +106,24 @@ theorem _root_.IsCompact.exists_baire_hull [T2Space X] [LocallyCompactSpace X]
   apply le_zero_iff.1
   simpa only [ENNReal.ofReal_zero] using ge_of_tendsto'
     (ENNReal.tendsto_ofReal tendsto_one_div_add_atTop_nhds_zero_nat) hbound
+
+/-- A σ-compact set has a σ-compact Baire-measurable hull with null excess, inside any
+prescribed open neighbourhood. No σ-finiteness assumption on the measure is needed. -/
+theorem _root_.IsSigmaCompact.exists_baire_hull [T2Space X] [LocallyCompactSpace X]
+    [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X}
+    [μ.OuterRegular] [IsFiniteMeasureOnCompacts μ] {s U : Set X} (hs : IsSigmaCompact s)
+    (hU : IsOpen U) (hsU : s ⊆ U) :
+    ∃ B : Set X, s ⊆ B ∧ B ⊆ U ∧ IsSigmaCompact B ∧ MeasurableSet[TauCeti.baire X] B ∧
+      μ (B \ s) = 0 := by
+  obtain ⟨K, hK, rfl⟩ := hs
+  have hhull (n : ℕ) := (hK n).exists_baire_hull (μ := μ) (hK n).measure_ne_top hU
+    ((subset_iUnion K n).trans hsU)
+  choose B hKB hBU hBc hBm hBμ using hhull
+  refine ⟨⋃ n, B n, iUnion_mono hKB, iUnion_subset hBU,
+    isSigmaCompact_iUnion_of_isCompact B hBc, MeasurableSet.iUnion hBm, ?_⟩
+  refine measure_mono_null ?_ (measure_iUnion_null hBμ)
+  intro x hx
+  obtain ⟨n, hn⟩ := mem_iUnion.1 hx.1
+  exact mem_iUnion.2 ⟨n, hn, fun hxn => hx.2 (mem_iUnion.2 ⟨n, hxn⟩)⟩
 
 end TauCeti
