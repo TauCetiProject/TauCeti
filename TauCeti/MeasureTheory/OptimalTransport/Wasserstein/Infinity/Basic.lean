@@ -17,8 +17,8 @@ import TauCeti.MeasureTheory.OptimalTransport.Compactness
 
 At `p = ∞` the Wasserstein distance `TauCeti.wassersteinEDist ∞ μ ν` is the infimum, over the
 couplings `π` of `μ` and `ν`, of the `π`-essential supremum of the ground distance
-(`TauCeti.wassersteinEDist_top`). This file proves, on a Polish metric space, the two facts that
-tie this endpoint to the finite exponents and make it usable:
+(`TauCeti.wassersteinEDist_top`). On an extended pseudometric space with Polish topology, this file
+proves two facts that tie this endpoint to the finite exponents and make it usable:
 
 * the infimum is attained, between any two finite measures that admit a coupling;
 * for probability measures, `W_∞ (μ, ν)` is the supremum of the finite-exponent distances
@@ -62,8 +62,7 @@ open scoped ENNReal NNReal Topology
 
 namespace TauCeti
 
-variable {X : Type*} [MetricSpace X] [MeasurableSpace X] [BorelSpace X]
-  [SecondCountableTopology X] [CompleteSpace X]
+variable {X : Type*} [PseudoEMetricSpace X] [PolishSpace X] [MeasurableSpace X] [BorelSpace X]
 
 /-- A coupling of two probability measures whose essential-supremum displacement is bounded by
 the supremum of the finite-exponent Wasserstein distances. -/
@@ -87,14 +86,17 @@ private theorem exists_isCoupling_eLpNorm_top_le_iSup (μ ν : Measure X) [IsPro
     rw [← h, ENNReal.rpow_le_rpow_iff (hqpos n)]
   let t : ℕ → Set (ProbabilityMeasure (X × X)) := fun n ↦
     {π | IsCoupling π.toMeasure μ ν} ∩ {π | ∫⁻ z, d z ^ (q n : ℝ) ∂π.toMeasure ≤ L ^ (q n : ℝ)}
+  have hclosed (n : ℕ) : IsClosed {π : ProbabilityMeasure (X × X) |
+      ∫⁻ z, d z ^ (q n : ℝ) ∂π.toMeasure ≤ L ^ (q n : ℝ)} := by
+    -- Weak integration uses only the topology, so choose a compatible finite pseudometric on
+    -- the product. The cost `d` still uses the original, possibly infinite, ground distance.
+    let := TopologicalSpace.pseudoMetrizableSpacePseudoMetric (X × X)
+    exact isClosed_setOfPred_lintegral_le_probabilityMeasure
+      (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous _
   have htcl (n : ℕ) : IsClosed (t n) :=
-    (isClosed_setOfPred_isCoupling μ' ν').inter
-      (isClosed_setOfPred_lintegral_le_probabilityMeasure
-        (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous _)
+    (isClosed_setOfPred_isCoupling μ' ν').inter (hclosed n)
   have ht0 : IsCompact (t 0) :=
-    (isCompact_setOfPred_isCoupling_of_polishSpace μ' ν').inter_right
-      (isClosed_setOfPred_lintegral_le_probabilityMeasure
-        (ENNReal.continuous_rpow_const.comp continuous_edist).lowerSemicontinuous _)
+    (isCompact_setOfPred_isCoupling_of_polishSpace μ' ν').inter_right (hclosed 0)
   have htd (n : ℕ) : t (n + 1) ⊆ t n := by
     rintro π ⟨hπ, hle⟩
     refine ⟨hπ, (hiff n π).2 ((eLpNorm_le_eLpNorm_of_exponent_le
@@ -118,8 +120,9 @@ private theorem exists_isCoupling_eLpNorm_top_le_iSup (μ ν : Measure X) [IsPro
     (tendsto_eLpNorm_atTop measurable_edist.aestronglyMeasurable).comp hq
   exact le_of_tendsto' hlim fun n ↦ (hiff n π).1 (hπ n).2
 
-/-- **`W_∞` is the supremum of the finite-exponent Wasserstein distances.** On a Polish metric
-space, if `μ` is a probability measure then `W_∞ (μ, ν) = ⨆ p < ∞, W_p (μ, ν)` in `[0, ∞]`. By
+/-- **`W_∞` is the supremum of the finite-exponent Wasserstein distances.** On an extended
+pseudometric space with Polish topology, if `μ` is a probability measure then
+`W_∞ (μ, ν) = ⨆ p < ∞, W_p (μ, ν)` in `[0, ∞]`. By
 monotonicity in the exponent the supremum may equally be taken over `1 ≤ p < ∞`. -/
 theorem wassersteinEDist_top_eq_iSup (μ ν : Measure X) [IsProbabilityMeasure μ] :
     wassersteinEDist ∞ μ ν = ⨆ p : ℝ≥0, wassersteinEDist p μ ν := by
@@ -132,7 +135,8 @@ theorem wassersteinEDist_top_eq_iSup (μ ν : Measure X) [IsProbabilityMeasure �
     exact (wassersteinEDist_le hπ ∞).trans hle
   · simp [wassersteinEDist_eq_top_of_not_exists_isCoupling hcoup]
 
-/-- **`W_p` converges to `W_∞`.** On a Polish metric space, if `μ` is a probability measure then
+/-- **`W_p` converges to `W_∞`.** On an extended pseudometric space with Polish topology, if
+`μ` is a probability measure then
 `W_p (μ, ν)` tends to `W_∞ (μ, ν)` in `[0, ∞]` as the exponent `p` tends to infinity. -/
 theorem tendsto_wassersteinEDist_atTop (μ ν : Measure X) [IsProbabilityMeasure μ] :
     Tendsto (fun p : ℝ≥0 ↦ wassersteinEDist p μ ν) atTop (𝓝 (wassersteinEDist ∞ μ ν)) := by
@@ -140,7 +144,8 @@ theorem tendsto_wassersteinEDist_atTop (μ ν : Measure X) [IsProbabilityMeasure
   exact tendsto_atTop_iSup fun p q hpq ↦
     wassersteinEDist_mono_exponent (ENNReal.coe_le_coe.2 hpq) μ ν
 
-/-- **Attainment at the infinite exponent.** On a Polish metric space, the infimum defining
+/-- **Attainment at the infinite exponent.** On an extended pseudometric space with Polish
+topology, the infimum defining
 `W_∞ (μ, ν)` between two finite measures that admit a coupling is a minimum: some coupling has
 essential-supremum displacement exactly `W_∞ (μ, ν)`. -/
 theorem exists_isCoupling_eLpNorm_top_eq_wassersteinEDist (μ ν : Measure X) [IsFiniteMeasure μ]
