@@ -41,6 +41,7 @@ to the Chevalley commutator formula for the root subgroups `x_α(u) = Σₙ uⁿ
 * `TauCeti.DynkinType.lie_chevalleySystem_eq_structureConstant_zsmul` and
   `TauCeti.DynkinType.eq_structureConstant_iff`: the defining bracket equation and its uniqueness.
 * `TauCeti.DynkinType.structureConstant_eq_natCast_or_eq_neg_natCast`: `N_{α,β} = ±(r + 1)`.
+* `TauCeti.DynkinType.chainBotCoeff_add_one_dvd_structureConstant`: `r + 1` divides `N_{α,β}`.
 * `TauCeti.DynkinType.structureConstant_ne_zero` and `TauCeti.DynkinType.structureConstant_eq_zero`:
   the constant vanishes exactly when `α + β` is not a root.
 * `TauCeti.DynkinType.structureConstant_skew`: `N_{β,α} = -N_{α,β}`.
@@ -147,6 +148,15 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast {α β : Fin t.numRoots}
   exact (t.isChevalleySystem_chevalleySystem ht).intStructureConstant_eq_natCast_or_eq_neg_natCast
     _ _ _ (LieSubalgebra.isNonZero_coe_root _) (LieSubalgebra.isNonZero_coe_root _)
     (LieSubalgebra.isNonZero_coe_root _) (coe_rootEquiv_eq_add_iff.2 hγ)
+
+/-- The descending root-string length plus one divides the structure constant at a root sum. -/
+theorem chainBotCoeff_add_one_dvd_structureConstant {α β : Fin t.numRoots}
+    (h : (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β ∈
+      Set.range (t.simplyConnectedRootDatum ht).root) :
+    (((t.simplyConnectedRootDatum ht).chainBotCoeff α β + 1 : ℕ) : ℤ) ∣
+      t.structureConstant ht α β := by
+  rcases structureConstant_eq_natCast_or_eq_neg_natCast h with h | h <;>
+    simp only [h, dvd_neg, dvd_refl]
 
 /-- The structure constant of a genuine root sum is nonzero. -/
 theorem structureConstant_ne_zero {α β : Fin t.numRoots}

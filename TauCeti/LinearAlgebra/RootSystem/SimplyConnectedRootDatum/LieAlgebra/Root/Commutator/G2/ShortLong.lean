@@ -23,6 +23,7 @@ integer structure constants.
 The coefficients are computed in ℤ before mapping to the value ring. In particular, the
 divisions by two and three below do not require these numbers to be invertible in that ring.
 The formula retains the signs of the chosen Chevalley system.
+`g2_short_long_coefficients_isUnit` shows that all four integer coefficients are units.
 
 The transport of scaled root operators follows
 `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul`;
@@ -68,19 +69,18 @@ private theorem short_long_exclusions (i j : Fin 12)
     simp only [g2SimplyConnectedRootDatum_pairing, g2Root_apply, g2Coroot_apply] at hpair <;>
     rw [g2Length_apply] at hi hj <;> revert i j <;> decide +kernel
 
-private theorem short_long_constants (i j k l m o : Fin 12)
+private theorem short_long_chainBotCoeff (i j k l o : Fin 12)
     (hi : g2Length i = 1) (hj : g2Length j = 3)
     (hk : g2SimplyConnectedRootDatum.root k =
       g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i)
     (hl : g2SimplyConnectedRootDatum.root l =
       g2SimplyConnectedRootDatum.root k + g2SimplyConnectedRootDatum.root i)
-    (hm : g2SimplyConnectedRootDatum.root m =
-      g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root i)
     (ho : g2SimplyConnectedRootDatum.root o =
       g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root k) :
-    2 ∣ G2.structureConstant valid_G2 i k ∧
-      3 ∣ G2.structureConstant valid_G2 i l ∧
-      3 ∣ G2.structureConstant valid_G2 l k := by
+    (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i j = 0 ∧
+      (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i k = 1 ∧
+      (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i l = 2 ∧
+      (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff l k = 2 := by
   let P := g2SimplyConnectedRootDatum
   have hroot : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk.trans (add_comm _ _)⟩
   have hlin := P.linearIndependent_of_add_mem_range_root' hroot
@@ -100,32 +100,8 @@ private theorem short_long_constants (i j k l m o : Fin 12)
   have hbotlk : P.chainBotCoeff l k = 2 :=
     g2_chainBotCoeff_eq_two_of_short_add_short_eq_long l k o hllen hklen holen
       (ho.trans (add_comm _ _))
-  have hc := structureConstant_eq_natCast_or_eq_neg_natCast
-    (t := G2) (ht := valid_G2) (α := i) (β := k)
-    (by rw [simplyConnectedRootDatum_G2]; exact ⟨l, hl.trans (add_comm _ _)⟩)
-  have hd := structureConstant_eq_natCast_or_eq_neg_natCast
-    (t := G2) (ht := valid_G2) (α := i) (β := l)
-    (by rw [simplyConnectedRootDatum_G2]; exact ⟨m, hm.trans (add_comm _ _)⟩)
-  have he := structureConstant_eq_natCast_or_eq_neg_natCast
-    (t := G2) (ht := valid_G2) (α := l) (β := k)
-    (by rw [simplyConnectedRootDatum_G2]; exact ⟨o, ho⟩)
-  have hbk : (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i k = 1 := by
-    rw [simplyConnectedRootDatum_G2]
-    exact hbotk
-  have hbl : (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff i l = 2 := by
-    rw [simplyConnectedRootDatum_G2]
-    exact hbotl
-  have hblk : (G2.simplyConnectedRootDatum valid_G2).chainBotCoeff l k = 2 := by
-    rw [simplyConnectedRootDatum_G2]
-    exact hbotlk
-  rw [hbk] at hc
-  rw [hbl] at hd
-  rw [hblk] at he
-  constructor
-  · rcases hc with h | h <;> rw [h] <;> norm_num
-  constructor
-  · rcases hd with h | h <;> rw [h] <;> norm_num
-  · rcases he with h | h <;> rw [h] <;> norm_num
+  rw [simplyConnectedRootDatum_G2]
+  exact ⟨hbot, hbotk, hbotl, hbotlk⟩
 
 section Configuration
 
@@ -138,6 +114,44 @@ variable (hm : g2SimplyConnectedRootDatum.root m =
   g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root i)
 variable (ho : g2SimplyConnectedRootDatum.root o =
   g2SimplyConnectedRootDatum.root l + g2SimplyConnectedRootDatum.root k)
+
+include hi hj hk hl hm ho in
+private theorem short_long_constants :
+    2 ∣ G2.structureConstant valid_G2 i k ∧
+      3 ∣ G2.structureConstant valid_G2 i l ∧
+      3 ∣ G2.structureConstant valid_G2 l k := by
+  obtain ⟨_, hik, hil, hlk⟩ := short_long_chainBotCoeff i j k l o hi hj hk hl ho
+  have dvd {p q r : Fin G2.numRoots}
+      (h : g2SimplyConnectedRootDatum.root r =
+        g2SimplyConnectedRootDatum.root p + g2SimplyConnectedRootDatum.root q) :=
+    chainBotCoeff_add_one_dvd_structureConstant (t := G2) (ht := valid_G2)
+      (α := p) (β := q) (by rw [simplyConnectedRootDatum_G2]; exact ⟨r, h⟩)
+  simpa only [hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat] using
+    And.intro (dvd (hl.trans (add_comm _ _)))
+      (And.intro (dvd (hm.trans (add_comm _ _))) (dvd ho))
+
+include hi hj hk hl hm ho in
+/-- The four integer coefficients in the short–long `G₂` straightening formula are units
+(that is, each is `1` or `-1`). The divisions are taken in `ℤ`, before any base change. -/
+theorem g2_short_long_coefficients_isUnit :
+    let c := G2.structureConstant valid_G2 i j
+    let d := c * (G2.structureConstant valid_G2 i k / 2)
+    let a := d * (G2.structureConstant valid_G2 i l / 3)
+    let b := d * c * (G2.structureConstant valid_G2 l k / 3)
+    IsUnit c ∧ IsUnit d ∧ IsUnit a ∧ IsUnit b := by
+  obtain ⟨hij, hik, hil, hlk⟩ := short_long_chainBotCoeff i j k l o hi hj hk hl ho
+  have values {p q r : Fin G2.numRoots}
+      (h : g2SimplyConnectedRootDatum.root r =
+        g2SimplyConnectedRootDatum.root p + g2SimplyConnectedRootDatum.root q) :=
+    structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := valid_G2)
+      (α := p) (β := q) (by rw [simplyConnectedRootDatum_G2]; exact ⟨r, h⟩)
+  have hc := values (hk.trans (add_comm _ _))
+  have hd := values (hl.trans (add_comm _ _))
+  have ha := values (hm.trans (add_comm _ _))
+  have hb := values ho
+  simp only [hij, hik, hil, hlk, Nat.reduceAdd, Nat.cast_ofNat] at hc hd ha hb
+  rcases hc with hc | hc <;> rcases hd with hd | hd <;>
+    rcases ha with ha | ha <;> rcases hb with hb | hb <;> norm_num [hc, hd, ha, hb]
 
 include hi hj hk hl hm ho in
 private theorem short_long_scaled_brackets :
