@@ -225,25 +225,38 @@ private lemma squareMoment_profile {p : ℝ} {t : ℝ} (ht : 0 < t)
       ((2 / t) ^ (finrank ℝ E - 2) * t ^ p) *
         (‖t⁻¹ • (x - b)‖ ^ p *
           (1 + ‖t⁻¹ • (x - b)‖ ^ 2) ^ (-(2 * ((finrank ℝ E : ℝ) - 2)) / 2)) := by
+  have hnorm_scale : ‖x - b‖ = t * ‖t⁻¹ • (x - b)‖ := by
+    simp only [norm_smul, norm_inv, Real.norm_of_nonneg ht.le, ← mul_assoc,
+      mul_inv_cancel₀ ht.ne', one_mul]
   have hnorm : ‖x - b‖ ^ p = t ^ p * ‖t⁻¹ • (x - b)‖ ^ p := by
-    rw [norm_smul, norm_inv, Real.norm_of_nonneg ht.le,
-      Real.mul_rpow (inv_nonneg.2 ht.le) (norm_nonneg _), ← mul_assoc,
-      ← Real.mul_rpow ht.le (inv_nonneg.2 ht.le), mul_inv_cancel₀ ht.ne', Real.one_rpow, one_mul]
+    rw [hnorm_scale, Real.mul_rpow ht.le (norm_nonneg _)]
   have hexp : -(2 * ((finrank ℝ E : ℝ) - 2)) / 2 = -((finrank ℝ E - 2 : ℕ) : ℝ) := by
     rw [Nat.cast_sub hn]
     push_cast
     ring
-  have hb := bubble_zero_smul ht (t⁻¹ • (x - b))
-  rw [smul_inv_smul₀ ht.ne', bubble_zero_sub] at hb
-  have hscale : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
+  have hscale_exp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
       -((finrank ℝ E - 2 : ℕ) : ℝ) := by
     rw [Nat.cast_sub hn]
     push_cast
     ring
-  rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hscale,
-    Real.rpow_neg ht.le, Real.rpow_natCast, bubble_sq hn zero_le_one,
-    sub_zero, one_pow, mul_one, div_pow, hexp, Real.rpow_neg (by positivity),
-    Real.rpow_natCast, hnorm, div_pow]
+  have hscale : (t ^ (-(((finrank ℝ E : ℝ) - 2) / 2))) ^ 2 =
+      (t ^ (finrank ℝ E - 2))⁻¹ := by
+    rw [← Real.rpow_mul_natCast ht.le, hscale_exp, Real.rpow_neg ht.le, Real.rpow_natCast]
+  have hbubble : bubble t b x ^ 2 = (t ^ (finrank ℝ E - 2))⁻¹ *
+      bubble 1 0 (t⁻¹ • (x - b)) ^ 2 := by
+    have hb := bubble_zero_smul ht (t⁻¹ • (x - b))
+    rw [smul_inv_smul₀ ht.ne', bubble_zero_sub] at hb
+    rw [hb, mul_pow, hscale]
+  have hprofile : bubble 1 0 (t⁻¹ • (x - b)) ^ 2 =
+      (2 : ℝ) ^ (finrank ℝ E - 2) / (1 + ‖t⁻¹ • (x - b)‖ ^ 2) ^ (finrank ℝ E - 2) := by
+    simpa only [sub_zero, one_pow, mul_one, div_pow] using
+      bubble_sq hn zero_le_one (0 : E) (t⁻¹ • (x - b))
+  have hprofile_exp :
+      (1 + ‖t⁻¹ • (x - b)‖ ^ 2) ^ (-(2 * ((finrank ℝ E : ℝ) - 2)) / 2) =
+        ((1 + ‖t⁻¹ • (x - b)‖ ^ 2) ^ (finrank ℝ E - 2))⁻¹ := by
+    rw [hexp, Real.rpow_neg (by positivity), Real.rpow_natCast]
+  rw [hprofile_exp]
+  simp only [hnorm, hbubble, hprofile, div_eq_mul_inv]
   ring
 
 omit [FiniteDimensional ℝ E] in

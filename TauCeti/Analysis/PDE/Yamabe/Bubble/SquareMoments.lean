@@ -54,14 +54,20 @@ private lemma squareMoment_rescale (μ : Measure E) [μ.IsAddHaarMeasure]
   have hpoint (z : E) : f (b + t • z) =
       t ^ (p - ((finrank ℝ E : ℝ) - 2)) *
         (χ (b + t • z) * (‖z‖ ^ p * bubble 1 0 z ^ 2)) := by
-    dsimp [f]
-    rw [add_sub_cancel_left, ← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht,
-      norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg _), mul_pow,
-      ← Real.rpow_mul_natCast ht.le]
+    have hnorm : ‖t • z‖ ^ p = t ^ p * ‖z‖ ^ p := by
+      simp only [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg _)]
     have hexp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
         -((finrank ℝ E : ℝ) - 2) := by push_cast; ring
-    rw [hexp, show p - ((finrank ℝ E : ℝ) - 2) =
-      p + -((finrank ℝ E : ℝ) - 2) by ring, Real.rpow_add ht]
+    have hbubble : bubble t b (b + t • z) ^ 2 =
+        t ^ (-((finrank ℝ E : ℝ) - 2)) * bubble 1 0 z ^ 2 := by
+      have hb : bubble t b (b + t • z) =
+          t ^ (-(((finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 z := by
+        rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht]
+      rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hexp]
+    have hpower : t ^ (p - ((finrank ℝ E : ℝ) - 2)) =
+        t ^ p * t ^ (-((finrank ℝ E : ℝ) - 2)) := by
+      rw [sub_eq_add_neg, Real.rpow_add ht]
+    simp only [f, add_sub_cancel_left, hnorm, hbubble, hpower]
     ring
   have hpower : t ^ finrank ℝ E * t ^ (p - ((finrank ℝ E : ℝ) - 2)) = t ^ (p + 2) := by
     rw [← Real.rpow_natCast, ← Real.rpow_add ht]
@@ -72,8 +78,9 @@ private lemma squareMoment_rescale (μ : Measure E) [μ.IsAddHaarMeasure]
 
 omit [FiniteDimensional ℝ E] in
 /-- Outside a ball on which a bounded measurable cutoff equals one, its error in a finite
-square moment is bounded by the exterior decay factor `(2 * t / r) ^ (n - 2)` times the
-moment at scale `r`. In particular the error has order `t ^ (n - 2)` at fixed `r > 0`. -/
+square moment is bounded by `(C + 1) * (2 * t / r) ^ (n - 2)` times the moment at scale `r`,
+where `‖χ x‖ ≤ C` for every `x`. In particular the error has order `t ^ (n - 2)` at fixed
+`r > 0`. -/
 theorem abs_integral_cutoff_norm_sub_rpow_mul_bubble_sq_sub_le
     (μ : Measure E) [μ.IsAddHaarMeasure] {p : ℝ} (hp : 0 ≤ p)
     (hpn : p < (finrank ℝ E : ℝ) - 4) {χ : E → ℝ} (hχ : Measurable χ)
