@@ -13,14 +13,14 @@ public import TauCeti.LinearAlgebra.Complex.Module
 /-!
 # Sections of complex bundles as modules over complex-valued functions
 
-Let `V` be a complex vector bundle over a real manifold `M`, and let `A_ℂ = C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯`
-be the complex-valued functions on `M`, which are real smooth but not holomorphic. Pointwise
-multiplication makes the `C^n` sections of `V` an `A_ℂ`-module
-(`ContMDiffSection.instModuleContMDiffMapOfNormedAlgebra`, for the extension `ℝ ⊆ ℂ`). This is
-the module on which complex differential operators between complex bundles over a real base act,
-in the same way as `ContMDiffSection.instModuleContMDiffMap` makes sections of a real bundle a
-module over the real functions. This file relates the `A_ℂ`-action to the complex structure of
-the fibres and to complexification.
+Let `V` be a complex vector bundle over a real manifold `M`, and let
+`A_ℂ = C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯` be the complex-valued `C^n` functions on `M`, where differentiability
+is taken over `ℝ`, so they are not required to be holomorphic. Pointwise multiplication makes
+the `C^n` sections of `V` an `A_ℂ`-module (`ContMDiffSection.instModuleContMDiffMapOfNormedAlgebra`,
+for the extension `ℝ ⊆ ℂ`). This is the module on which complex differential operators between
+complex bundles over a real base act, in the same way as `ContMDiffSection.instModuleContMDiffMap`
+makes sections of a real bundle a module over the real functions. This file relates the
+`A_ℂ`-action to the complex structure of the fibres and to complexification.
 
 Complex scalars act through constant functions and real functions through their complex
 inclusion. Writing `J s = I • s` for fibrewise multiplication by `i`, a function
@@ -117,24 +117,40 @@ theorem imaginaryPartLinearMap_smul (f : C^n⟮IB, B; 𝓘(ℝ, ℂ), ℂ⟯)
       f.re • imaginaryPartLinearMap IB F n E σ + f.im • realPartLinearMap IB F n E σ :=
   ext fun x ↦ by simp [ContMDiffMap.re_apply, ContMDiffMap.im_apply]
 
-/-- The real inclusion `s ↦ 1 ⊗ s` intertwines the real and complex function actions. -/
+/-- Taking real parts commutes with the real function action. -/
+@[simp]
+theorem realPartLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯)
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    realPartLinearMap IB F n E (f • σ) = f • realPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp
+
+/-- Taking imaginary parts commutes with the real function action. -/
+@[simp]
+theorem imaginaryPartLinearMap_smul_function (f : C^n⟮IB, B; ℝ⟯)
+    (σ : Cₛ^n⟮IB; Complexification F, fun x ↦ ℂ ⊗[ℝ] E x⟯) :
+    imaginaryPartLinearMap IB F n E (f • σ) = f • imaginaryPartLinearMap IB F n E σ :=
+  ext fun x ↦ by simp
+
+/-- The real inclusion `s ↦ 1 ⊗ s` commutes with the real function action. -/
+@[simp]
 theorem oneTmulLinearMap_smul (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
-    oneTmulLinearMap IB F n E (f • s) = ContMDiffMap.ofReal f • oneTmulLinearMap IB F n E s :=
+    oneTmulLinearMap IB F n E (f • s) = f • oneTmulLinearMap IB F n E s :=
   ext fun x ↦ by simp [TensorProduct.tmul_smul]
 
-/-- The imaginary inclusion `s ↦ i ⊗ s` intertwines the real and complex function actions. -/
+/-- The imaginary inclusion `s ↦ i ⊗ s` commutes with the real function action. -/
+@[simp]
 theorem ITmulLinearMap_smul (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
-    ITmulLinearMap IB F n E (f • s) = ContMDiffMap.ofReal f • ITmulLinearMap IB F n E s :=
+    ITmulLinearMap IB F n E (f • s) = f • ITmulLinearMap IB F n E s :=
   ext fun x ↦ by simp [TensorProduct.tmul_smul]
 
 /-- The identification of `ℂ ⊗[ℝ] Γ(E)` with the sections of `ℂ ⊗[ℝ] E` carries the real
-function action on the second tensor factor to the action of the corresponding complex
-function. -/
+function action on the second tensor factor to the real function action on sections of
+`ℂ ⊗[ℝ] E`. -/
 theorem complexificationEquiv_tmul_smul (z : ℂ) (f : C^n⟮IB, B; ℝ⟯) (s : Cₛ^n⟮IB; F, E⟯) :
     complexificationEquiv IB F n E (z ⊗ₜ[ℝ] (f • s)) =
-      ContMDiffMap.ofReal f • complexificationEquiv IB F n E (z ⊗ₜ[ℝ] s) := by
+      f • complexificationEquiv IB F n E (z ⊗ₜ[ℝ] s) := by
   rw [complexificationEquiv_tmul_eq_smul, complexificationEquiv_tmul_eq_smul, oneTmulLinearMap_smul,
-    smul_comm]
+    ← ofReal_smul, ← ofReal_smul, smul_comm]
 
 end Complexification
 

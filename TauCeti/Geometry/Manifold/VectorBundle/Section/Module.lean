@@ -252,10 +252,8 @@ theorem pullback_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜
 theorem restrict_smul_function_of_normedAlgebra (f : C^n⟮I, M; 𝓘(𝕜, 𝕜'), 𝕜'⟯)
     (s : Cₛ^n⟮I; F, V⟯) (U : Opens M) :
     (f • s).restrict U =
-      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U := by
-  ext x
-  simp only [ContinuousMap.coe_mk, restrict_apply, smul_apply_of_normedAlgebra]
-  exact rfl
+      f.comp (⟨Subtype.val, contMDiff_subtype_val⟩ : C^n⟮I, U; I, M⟯) • s.restrict U :=
+  pullback_smul_function_of_normedAlgebra f s _
 
 end Pullback
 
