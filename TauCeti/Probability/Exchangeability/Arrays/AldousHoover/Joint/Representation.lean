@@ -586,8 +586,8 @@ private theorem exists_map_vertexLayerData_eq [Nonempty α] [IsProbabilityMeasur
   rw [hΘφ, ← Measure.map_map hV (hφ.prodMap measurable_id),
     ← Measure.map_prod_map _ _ hφ measurable_id, Measure.map_id, hφB, hvcode']
 
-/-- The vertices `3 a`, `3 a + 1` and `3 a + 2` split `ℕ` into three disjoint infinite families,
-the first two injective and the third strictly increasing. -/
+/-- There are three families of vertices with pairwise disjoint ranges, the first two injective and
+the third strictly increasing. For example, take the vertices `3 a`, `3 a + 1` and `3 a + 2`. -/
 private theorem exists_injective_strictMono_disjoint_ranges :
     ∃ e d g : ℕ → ℕ, Function.Injective e ∧ Function.Injective d ∧ StrictMono g ∧
       Disjoint (Set.range e) (Set.range d) ∧ Disjoint (Set.range e) (Set.range g) ∧
@@ -602,7 +602,7 @@ omit [StandardBorelSpace α] in
 /-- Coding the visible pairs from the generated vertex data and the cell variables, and assembling
 the array along the visible vertices, reproduces the law of the array. -/
 private theorem map_assembleArray_pairCoding_eq [IsProbabilityMeasure ρ]
-    (hρ : JointlyExchangeable ρ fun p x => x p) {e d g : ℕ → ℕ} (hg : StrictMono g)
+    (hρ : JointlyExchangeable ρ fun p x => x p) {e d g : ℕ → ℕ} (hg : Function.Injective g)
     {Θ : I × (ℕ → I) →
       ((ℕ × ℕ → α) × (ℕ → (ℕ → α × α) × α)) × (ℕ → (ℕ → α × α) × α)}
     (hΘ : Measurable Θ)
@@ -628,14 +628,16 @@ private theorem map_assembleArray_pairCoding_eq [IsProbabilityMeasure ρ]
         assembleArray (Θ r.1).2 fun t => G (visibleSquareContext t (Θ r.1)) (r.2 t)) =
       ((fun r : _ × ({t : ℕ × ℕ // t.1 < t.2} → α × α) => assembleArray r.1.2 r.2) ∘
         fun q : _ × ({t : ℕ × ℕ // t.1 < t.2} → I) =>
-          (q.1, fun t => G (visibleSquareContext t q.1) (q.2 t))) ∘ Prod.map Θ id := rfl
+          (q.1, fun t => G (visibleSquareContext t q.1) (q.2 t))) ∘ Prod.map Θ id := by
+    funext r
+    simp only [Function.comp_apply, Prod.map_fst, Prod.map_snd, id_eq]
   rw [hAΘ,
     ← Measure.map_map (hA'.comp hΛ) (hΘ.prodMap measurable_id),
     ← Measure.map_prod_map _ _ hΘ measurable_id, Measure.map_id, hΘlaw,
     ← Measure.map_map hA' hΛ, hGcode, Measure.map_map hA' (hR.prodMk (measurable_visiblePairs g))]
   exact (congrArg (ρ.map ·) (funext (assembleArray_visiblePairs e d g))).trans
     ((hρ.map_arrayBlock_diag_eq (fun p => (measurable_pi_apply p).aemeasurable)
-      hg.injective).trans Measure.map_id')
+      hg).trans Measure.map_id')
 
 omit [StandardBorelSpace α] in
 /-- The pair `(F (u₀, u j, u k, s), F (u₀, u k, u j, s))` of a coding `F` read with the two
@@ -661,8 +663,8 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
   -- A probability law on arrays forces the value space to be nonempty.
   obtain ⟨x₀, -⟩ := nonempty_of_measure_ne_zero (μ := ρ) (s := Set.univ) (by simp)
   have : Nonempty α := ⟨x₀ (0, 0)⟩
-  -- Hide the vertices `3 a`, keep the vertices `3 a + 1` as a reservoir, and read the array along
-  -- the visible vertices `3 a + 2`.
+  -- Hide the vertices `e`, keep the vertices `d` as a reservoir, and read the array along the
+  -- visible vertices `g`.
   obtain ⟨e, d, g, he, hd, hg, hed, heg, hdg⟩ := exists_injective_strictMono_disjoint_ranges
   have hge (i : ℕ) : g i ∉ Set.range e := fun h => Set.disjoint_left.1 heg h ⟨i, rfl⟩
   -- The outer two layers: the hidden square and the reservoir data are coded by the global
@@ -697,7 +699,8 @@ theorem JointlyExchangeable.exists_map_jointArray_eq [IsProbabilityMeasure ρ]
   -- has the law of the array.
   have hindex : (μ₀.prod (Measure.infinitePi fun _ : {t : ℕ × ℕ // t.1 < t.2} =>
       (volume : Measure I))).map (A ∘ fun r => (r.1, fun t => Gt t r.1 (r.2 t))) = ρ :=
-    map_assembleArray_pairCoding_eq hρ hg hΘ hΘlaw hG hGcode
+    by simpa only [A, Gt, μ₀, Function.comp_def] using
+      map_assembleArray_pairCoding_eq hρ hg.injective hΘ hΘlaw hG hGcode
   -- Orienting each pair by its vertex variables instead does not change the law of its coding.
   have hae (t : {t : ℕ × ℕ // t.1 < t.2}) :
       ∀ᵐ q ∂μ₀, (volume : Measure I).map (Gt t q) = (volume : Measure I).map (Φt t q) := by
