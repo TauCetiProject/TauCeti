@@ -51,6 +51,8 @@ The summation identity also holds over arbitrary rings; no division by `m + 1` i
   of the falling factorials of degree `2k + 1` at `x + k + 1` and at `x + k`.
 * `TauCeti.factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one`: the values of the weighted
   polynomial at the integers are divisible by `(2k + 1)!`.
+* `TauCeti.fwdDiff_descPochhammer_succ_eval`: the forward difference of the falling factorial of
+  degree `n + 1` is `n + 1` times the one of degree `n`.
 * `TauCeti.fwdDiff_iter_descPochhammer_eval`: the `k`-th forward difference of the falling
   factorial of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling factorial of degree
   `j - k`.
@@ -293,30 +295,38 @@ theorem factorial_dvd_two_mul_add_one_mul_prod_sub_mul_add_add_one (k : ℕ) (x 
 
 open scoped fwdDiff
 
+/-- **One forward difference of a falling factorial.** The forward difference of the falling
+factorial of degree `n + 1` is `n + 1` times the falling factorial of degree `n`. -/
+theorem fwdDiff_descPochhammer_succ_eval {R : Type*} [Ring R] (n : ℕ) :
+    Δ_[1] (fun x : R ↦ (descPochhammer R (n + 1)).eval x) =
+      fun x ↦ ((n + 1 : ℕ) : R) * (descPochhammer R n).eval x := by
+  funext x
+  -- the falling factorial at `x` commutes with `x`, as it is an integral polynomial in `x`
+  have hx : Commute ((descPochhammer R n).eval x) x := by
+    rw [← descPochhammer_map (Int.castRingHom R), eval_map, ← algebraMap_int_eq, ← aeval_def]
+    simpa using (commute_X (descPochhammer ℤ n)).symm.map (aeval x)
+  rw [fwdDiff, descPochhammer_succ_eval_add_one, descPochhammer_succ_eval,
+    (hx.sub_right (Nat.cast_commute n _).symm).eq, ← sub_mul, add_sub_sub_cancel,
+    Nat.cast_add_one, add_comm (1 : R)]
+
 /-- **Forward differences of falling factorials.** The `k`-th forward difference of the falling
 factorial `x (x - 1) ⋯ (x - j + 1)` of degree `j` is `j (j - 1) ⋯ (j - k + 1)` times the falling
 factorial of degree `j - k`. In particular it vanishes for `k > j`. -/
 theorem fwdDiff_iter_descPochhammer_eval {R : Type*} [Ring R] (j k : ℕ) :
     Δ_[1]^[k] (fun x : R ↦ (descPochhammer R j).eval x) =
       fun x ↦ (j.descFactorial k : R) * (descPochhammer R (j - k)).eval x := by
-  induction k with
+  induction k generalizing j with
   | zero => simp
   | succ k ih =>
-    rw [Function.iterate_succ_apply', ih]
-    funext x
-    rcases Nat.lt_or_ge k j with h | h
-    · obtain ⟨i, hi⟩ : ∃ i, j - k = i + 1 := ⟨j - k - 1, by omega⟩
-      -- the falling factorial at `x` commutes with `x`, as it is an integral polynomial in `x`
-      have hx : Commute ((descPochhammer R i).eval x) x := by
-        rw [← descPochhammer_map (Int.castRingHom R), eval_map, ← algebraMap_int_eq,
-          ← aeval_def]
-        simpa using (commute_X (descPochhammer ℤ i)).symm.map (aeval x)
-      rw [fwdDiff, hi, descPochhammer_succ_eval_add_one, descPochhammer_succ_eval,
-        show j - (k + 1) = i by omega, Nat.descFactorial_succ, hi, ← mul_sub,
-        (hx.sub_right (Nat.cast_commute i _).symm).eq, ← sub_mul, add_sub_sub_cancel, ← mul_assoc,
-        add_comm (1 : R), ← Nat.cast_add_one, ← Nat.cast_mul, mul_comm]
-    · simp [fwdDiff, Nat.descFactorial_succ, show j - k = 0 by omega,
-        show j - (k + 1) = 0 by omega]
+    rw [Function.iterate_succ_apply]
+    cases j with
+    | zero => simp [Function.iterate_fixed]
+    | succ i =>
+      rw [fwdDiff_descPochhammer_succ_eval]
+      change Δ_[1]^[k] (((i + 1 : ℕ) : R) • fun x ↦ (descPochhammer R i).eval x) = _
+      rw [fwdDiff_iter_const_smul, ih, Nat.succ_descFactorial_succ, Nat.add_sub_add_right]
+      funext x
+      simp [mul_assoc]
 
 /-- **Powers in the falling-factorial basis.** In any ring, `x ^ m` is the sum of the
 falling factorials of degree `j ≤ m` at `x`, weighted by the Stirling numbers of the second kind
