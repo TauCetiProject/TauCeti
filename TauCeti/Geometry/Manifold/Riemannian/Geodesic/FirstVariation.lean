@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation
+public import TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic
 public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.Basic
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 
@@ -13,13 +13,13 @@ import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
 # Geodesics are the critical points of the energy
 
 The first variation formula `TauCeti.Manifold.IsFixedEndpointVariation.hasDerivAt_energy` of
-`TauCeti.Geometry.Manifold.Riemannian.FirstVariation` expresses the derivative at `s = 0` of the
-energy of a fixed-endpoint variation `F` of `γ = F 0` as `-∫_a^b ⟪V(t), D_t γ'(t)⟫ dt`.  This file
-proves the variational characterization of geodesics: on a boundaryless `C^n` manifold with
-`2 ≤ n ≤ ∞`, a curve which is `C^n` near `[a, b]` is a critical point of the energy between `a`
-and `b` among `C^n` variations (`TauCeti.Manifold.IsEnergyCritical`) exactly when it is a geodesic
-on the open interval between `a` and `b`.  In particular, for `n = ∞`, a smooth curve is critical
-among smooth variations with fixed endpoints exactly when it is a geodesic.
+`TauCeti.Geometry.Manifold.Riemannian.FirstVariation.Basic` expresses the derivative at `s = 0`
+of the energy of a fixed-endpoint variation `F` of `γ = F 0` as `-∫_a^b ⟪V(t), D_t γ'(t)⟫ dt`.
+This file proves the variational characterization of geodesics: on a boundaryless `C^n` manifold
+with `2 ≤ n ≤ ∞`, a curve which is `C^n` near `[a, b]` is a critical point of the energy between
+`a` and `b` among `C^n` variations (`TauCeti.Manifold.IsEnergyCritical`) exactly when it is a
+geodesic on the open interval between `a` and `b`.  In particular, for `n = ∞`, a smooth curve
+is critical among smooth variations with fixed endpoints exactly when it is a geodesic.
 
 Along a geodesic the covariant acceleration `D_t γ'` vanishes, so the first variation vanishes.
 Conversely, suppose `D_t γ'(t₀) ≠ 0` at an interior parameter `t₀`.  In the extended chart at
