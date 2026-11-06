@@ -74,14 +74,19 @@ theorem agreeCount_le_min (σ : Perm (Fin n)) (τ : Perm (Fin m)) :
 theorem agreeCount_one_one : agreeCount (1 : Perm (Fin n)) (1 : Perm (Fin m)) = min n m := by
   simp [agreeCount_def]
 
+/-- In equal degree, the number of agreements is the number of points where the two permutations
+take the same value. -/
+theorem agreeCount_eq_card_eq (σ τ : Perm (Fin n)) :
+    agreeCount σ τ = #{i : Fin n | σ i = τ i} := by
+  refine card_equiv (finCongr (min_self n)) fun j => ?_
+  have hj : j.castLE (min_le_left n n) = finCongr (min_self n) j := Fin.ext rfl
+  simp [hj, Fin.val_inj]
+
 /-- In equal degree, the agreements and the Hamming distance partition the points. -/
 theorem agreeCount_add_hammingDist (σ τ : Perm (Fin n)) :
     agreeCount σ τ + hammingDist ⇑σ ⇑τ = n := by
-  have hcount : agreeCount σ τ = #{i : Fin n | σ i = τ i} := by
-    refine card_equiv (finCongr (min_self n)) fun j => ?_
-    have hj : j.castLE (min_le_left n n) = finCongr (min_self n) j := Fin.ext rfl
-    simp [hj, Fin.val_inj]
-  rw [hcount, hammingDist, card_filter_add_card_filter_not, card_univ, Fintype.card_fin]
+  rw [agreeCount_eq_card_eq, hammingDist, card_filter_add_card_filter_not, card_univ,
+    Fintype.card_fin]
 
 /-- The distance with errors is symmetric. -/
 theorem distErr_comm (σ : Perm (Fin n)) (τ : Perm (Fin m)) : distErr σ τ = distErr τ σ := by
@@ -120,7 +125,8 @@ theorem distErr_eq_hammingDist_div [NeZero n] (σ τ : Perm (Fin n)) :
   have hn : (n : ℝ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne n)
   have h : (agreeCount σ τ : ℝ) + hammingDist ⇑σ ⇑τ = n := by
     exact_mod_cast agreeCount_add_hammingDist σ τ
-  rw [distErr_def, max_self, eq_div_iff hn, sub_mul, div_mul_cancel₀ _ hn, one_mul]
+  rw [distErr_def, max_self]
+  field_simp
   linarith
 
 /-- In equal degree `n ≠ 0`, the distance with errors is the moved-point norm of the quotient,
