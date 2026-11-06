@@ -175,7 +175,7 @@ theorem different_nonneg : 0 ≤ different k' F' hF := by
 
 /-- The different divisor has nonnegative degree, the input the Hurwitz genus formula reads it
 through. -/
-theorem zero_le_degree_different : 0 ≤ degree (different k' F' hF) :=
+theorem degree_different_nonneg : 0 ≤ degree (different k' F' hF) :=
   degree_nonneg (different_nonneg k' F' hF)
 
 /-- **The support of the different divisor is the set of ramified places** (Stichtenoth,

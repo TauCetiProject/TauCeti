@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import TauCeti.AlgebraicGeometry.WeilDivisor.FractionalIdealDivisor.Basic
 
 /-!

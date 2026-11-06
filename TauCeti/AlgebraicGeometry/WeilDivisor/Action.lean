@@ -30,7 +30,7 @@ acting on its divisors, register it globally.
 * `TauCeti.AlgebraicGeometry.WeilDivisor.degree_smul` and
   `TauCeti.AlgebraicGeometry.WeilDivisor.weightedDegree_smul`: an action preserves the
   unweighted degree, and transports a weighted degree to the weight composed with the action;
-* `TauCeti.AlgebraicGeometry.WeilDivisor.zero_le_smul_iff` and
+* `TauCeti.AlgebraicGeometry.WeilDivisor.smul_nonneg_iff` and
   `TauCeti.AlgebraicGeometry.WeilDivisor.smul_le_smul_iff`: the action preserves effectivity and
   the coefficientwise order.
 -/
@@ -97,7 +97,7 @@ theorem smul_le_smul_iff {D E : WeilDivisor X} : g • D ≤ g • E ↔ D ≤ E
 
 /-- The action preserves effectivity of Weil divisors. -/
 @[simp]
-theorem zero_le_smul_iff {D : WeilDivisor X} : 0 ≤ g • D ↔ 0 ≤ D := by
+theorem smul_nonneg_iff {D : WeilDivisor X} : 0 ≤ g • D ↔ 0 ≤ D := by
   simp only [nonneg_iff, coeff_smul]
   exact ⟨fun h x ↦ by simpa using h (g • x), fun h x ↦ h _⟩
 

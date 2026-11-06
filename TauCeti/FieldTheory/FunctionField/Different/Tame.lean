@@ -397,7 +397,7 @@ theorem coeff_tameDifferent (P' : Place k' F') :
   (rfl)
 
 /-- **The tame different is effective**: every ramification index is positive. -/
-theorem zero_le_tameDifferent : 0 ≤ tameDifferent k' F' hF := by
+theorem tameDifferent_nonneg : 0 ≤ tameDifferent k' F' hF := by
   refine (WeilDivisor.nonneg_iff _).mpr fun P' ↦ ?_
   have := Place.ramificationIdx_pos F P'
   rw [coeff_tameDifferent]

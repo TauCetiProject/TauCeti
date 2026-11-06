@@ -9,7 +9,6 @@ public import Mathlib.Data.Finsupp.Weight
 public import Mathlib.Data.Finsupp.Order
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Algebra.Order.Ring.Int
-public import Mathlib.Algebra.Order.Monoid.Submonoid
 public import Mathlib.Topology.Separation.Basic
 import Mathlib.Tactic.NormNum.Basic
 import Mathlib.Tactic.Ring
@@ -161,7 +160,7 @@ lemma exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : 0 ≤ D) (hD0 : D �
   push Not at h
   apply hD0
   ext x
-  exact le_antisymm (h x) (hD x)
+  exact le_antisymm (h x) (coeff_nonneg hD x)
 
 /-- The divisor of a single point is effective. -/
 @[simp]
@@ -226,8 +225,8 @@ lemma pushforward_comp (g : Y → Z) (f : X → Y) :
 lemma pushforward_nonneg {D : WeilDivisor X} (hD : 0 ≤ D) (f : X → Y) :
     0 ≤ pushforward f D := by
   classical
+  rw [nonneg_iff]
   intro y
-  change 0 ≤ coeff (pushforward f D) y
   rw [coeff_pushforward]
   exact Finset.sum_nonneg fun x _ => coeff_nonneg hD x
 

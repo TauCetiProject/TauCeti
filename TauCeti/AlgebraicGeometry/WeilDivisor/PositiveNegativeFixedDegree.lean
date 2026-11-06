@@ -60,7 +60,7 @@ lemma coe_negPart (D : WeilDivisor X) : (negPart D : WeilDivisor X) = D⁻ :=
 
 /-- If a divisor is already effective, its packaged positive part is the divisor itself, up to
 the degree-index cast. -/
-lemma posPart_coe (D : EffectiveDivisorOfDegree X d) :
+lemma posPart_coe_eq_cast_self (D : EffectiveDivisorOfDegree X d) :
     posPart (D : WeilDivisor X) =
       EffectiveDivisorOfDegree.cast (by
         rw [posPart_eq_self.mpr D.coe_nonneg, D.degree_eq]
@@ -69,7 +69,7 @@ lemma posPart_coe (D : EffectiveDivisorOfDegree X d) :
   simp
 
 /-- If a divisor is effective, its packaged negative part is the zero divisor. -/
-lemma negPart_coe (D : EffectiveDivisorOfDegree X d) :
+lemma negPart_coe_eq_cast_zero (D : EffectiveDivisorOfDegree X d) :
     negPart (D : WeilDivisor X) =
       EffectiveDivisorOfDegree.cast (by
         rw [negPart_eq_zero.mpr D.coe_nonneg]
