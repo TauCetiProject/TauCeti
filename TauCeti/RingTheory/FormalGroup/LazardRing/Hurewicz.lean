@@ -10,7 +10,7 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Lazard
 public import TauCeti.RingTheory.FormalGroup.LazardRing.Indecomposable
 -- Proof-only: homogeneity of the transported additive law, and evaluation in the dual numbers.
 import Mathlib.Algebra.MvPolynomial.Monad
-import TauCeti.RingTheory.FormalGroup.Rescale
+import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 import TauCeti.RingTheory.MvPolynomial.DualNumber
 
 /-!

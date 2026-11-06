@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Pseudodifferential.HomogeneousSymbol
-public import TauCeti.Analysis.Pseudodifferential.Symbol
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
 import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
@@ -86,20 +86,24 @@ private theorem exists_bound_smul_coefficient (χ : FrequencyCutoff (CoordinateS
   obtain ⟨B, hB⟩ := (hK.prod (isCompact_closedBall (0 : CoordinateSpace n) 2))
     |>.exists_bound_of_continuousOn
       ((a.contDiff_smul_coefficient χ).mixedDeriv α β).continuous.continuousOn
-  refine ⟨C * 2 ^ (|r| / 2) + max B 0 * 5 ^ (|r| / 2), by positivity, fun x hx ξ => ?_⟩
+  refine ⟨C * 2 ^ (|r| / 2) + max B 0 * (1 + 2 ^ 2) ^ (|r| / 2), by positivity, fun x hx ξ => ?_⟩
   have hw : 0 ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by positivity
   rcases le_or_gt ‖ξ‖ 2 with hξ | hξ
   · have h := hB (x, ξ) (Set.mk_mem_prod hx (mem_closedBall_zero_iff.2 hξ))
+    have h1 : (1 : ℝ) ≤ (1 + 2 ^ 2) ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+      calc (1 : ℝ) = (1 + 2 ^ 2) ^ (|r| / 2) * (1 + 2 ^ 2) ^ (-|r| / 2) := by
+            rw [← Real.rpow_add (by norm_num), neg_div, add_neg_cancel, Real.rpow_zero]
+        _ ≤ _ := mul_le_mul_of_nonneg_left
+            (one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r) (by positivity)
     calc _ ≤ max B 0 := h.trans (le_max_left _ _)
-      _ ≤ max B 0 * (5 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
-          le_mul_of_one_le_right (le_max_right _ _)
-            (Real.one_le_five_rpow_mul_one_add_sq_rpow (by rwa [abs_norm]) r)
+      _ ≤ max B 0 * ((1 + 2 ^ 2) ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
+          le_mul_of_one_le_right (le_max_right _ _) h1
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_left (by positivity)
   · rw [mixedDeriv_smul_coefficient_of_two_lt_norm χ a α β x hξ]
     have hξ0 : ξ ≠ 0 := norm_pos_iff.1 (by linarith)
     calc _ ≤ C * ‖ξ‖ ^ r := hCK x hx ξ hξ0
       _ ≤ C * (2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2)) :=
-          mul_le_mul_of_nonneg_left (Real.rpow_le_two_rpow_mul_one_add_sq_rpow (by linarith) r) hC
+          mul_le_mul_of_nonneg_left (norm_rpow_le_one_add_norm_sq_rpow (by linarith) r) hC
       _ ≤ _ := by rw [add_mul, ← mul_assoc]; exact le_add_of_nonneg_right (by positivity)
 
 /-- The cut-off term `χ(ξ) • a(x, ξ)` of a homogeneous symbol `a` of degree `m`, a symbol of
