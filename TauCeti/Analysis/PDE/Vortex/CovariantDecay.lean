@@ -266,54 +266,36 @@ theorem exists_covariantDerivative_norm_sq_le_mul_exp
   set c' := max (c / 2) 0
   obtain ⟨R, K, hK₀, hK⟩ := exists_norm_gradient_log_normSq_le_mul_exp_of_nonneg hb₁ hb₂ hp hq
     hsol hlim (c := c') (le_max_right _ 0) (max_lt (by linarith) (by norm_num))
-  -- Inside the disc, the continuous energy density is bounded.
+  -- The energy density is continuous, so a bound outside a disc extends to the whole plane.
   have hS : ContDiff ℝ 3 (sectionValue x) := by
     rw [funext (sectionValue_apply x)]
     exact contDiff_const.mul ((ofRealCLM.contDiff.comp hp).add
       ((ofRealCLM.contDiff.comp hq).mul contDiff_const))
-  have hDcont (v : ℂ) : Continuous fun z ↦ covariantDerivative x z v := by
-    simp only [covariantDerivative_apply]
-    exact ((hS.continuous_fderiv (by norm_num)).clm_apply continuous_const).add
-      ((continuous_const.mul (continuous_ofReal.comp ((hb₁.continuous.mul continuous_const).add
-        (hb₂.continuous.mul continuous_const)))).mul hS.continuous)
+  have hDcont (v : ℂ) := continuous_covariantDerivative hb₁.continuous hb₂.continuous
+    (hS.of_le (by norm_num)) v
   have hecont : Continuous e := ((hDcont 1).norm.pow 2).add ((hDcont I).norm.pow 2)
-  obtain ⟨B, hB⟩ := (isCompact_closedBall (0 : ℂ) R).exists_bound_of_continuousOn
-    hecont.continuousOn
-  refine ⟨max (K ^ 2 / 2) (max B 0 * Real.exp (|c| * R)), fun z ↦ ?_⟩
-  rcases le_or_gt R ‖z‖ with hz | hz
-  · -- Outside, `|d_a α|² = |α|² |∇u|² / 2 ≤ |∇u|² / 2` and `2 c' ≥ c`.
-    obtain ⟨hhalf, hgrad⟩ := hK z hz
-    have hs₁ := normSq_le_one_of_tendsto hb₁ hb₂ hp₂ hq₂ hsol hlim z
-    have heq := covariantDerivative_norm_sq_eq (hp₂.differentiable (by norm_num) z)
-      (hq₂.differentiable (by norm_num) z) (hsol z) (by linarith)
-    have hexp : Real.exp (-(c' * ‖z‖)) ^ 2 ≤ Real.exp (-(c * ‖z‖)) := by
-      rw [← Real.exp_nat_mul, Real.exp_le_exp]
-      have : c ≤ 2 * c' := by linarith [le_max_left (c / 2) 0]
-      push_cast
-      nlinarith [norm_nonneg z]
-    have hgrad₀ : 0 ≤ ‖∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ := norm_nonneg _
-    calc e z = 4 * (x z 2 ^ 2 + x z 3 ^ 2) *
-          ‖∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ^ 2 / 2 := heq
-      _ ≤ (K * Real.exp (-(c' * ‖z‖))) ^ 2 / 2 := by
-          gcongr
-          calc _ ≤ 1 * ‖∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ^ 2 := by
-                gcongr
-            _ ≤ _ := by rw [one_mul]; gcongr
-      _ = K ^ 2 / 2 * Real.exp (-(c' * ‖z‖)) ^ 2 := by ring
-      _ ≤ K ^ 2 / 2 * Real.exp (-(c * ‖z‖)) := by gcongr
-      _ ≤ _ := by gcongr; exact le_max_left _ _
-  · -- Inside, `e ≤ B` and `exp (|c| R) exp (-c |z|) ≥ 1`.
-    have hBz : e z ≤ max B 0 := ((le_abs_self _).trans (by simpa using hB z (by
-      simpa using hz.le))).trans (le_max_left _ _)
-    have hone : 1 ≤ Real.exp (|c| * R) * Real.exp (-(c * ‖z‖)) := by
-      rw [← Real.exp_add]
-      refine Real.one_le_exp ?_
-      linarith [mul_le_mul_of_nonneg_left hz.le (abs_nonneg c),
-        mul_le_mul_of_nonneg_right (le_abs_self c) (norm_nonneg z)]
-    calc e z ≤ max B 0 * (Real.exp (|c| * R) * Real.exp (-(c * ‖z‖))) :=
-          hBz.trans (le_mul_of_one_le_right (le_max_right _ _) hone)
-      _ = max B 0 * Real.exp (|c| * R) * Real.exp (-(c * ‖z‖)) := by ring
-      _ ≤ _ := by gcongr; exact le_max_right _ _
+  refine (TauCeti.exists_le_mul_exp_of_continuousOn_closedBall hecont.continuousOn (R := R)
+    (K := K ^ 2 / 2) fun z hz ↦ ?_).imp fun _ h ↦ h.2
+  -- Outside, `|d_a α|² = |α|² |∇u|² / 2 ≤ |∇u|² / 2` and `2 c' ≥ c`.
+  obtain ⟨hhalf, hgrad⟩ := hK z hz
+  have hs₁ := normSq_le_one_of_tendsto hb₁ hb₂ hp₂ hq₂ hsol hlim z
+  have heq := covariantDerivative_norm_sq_eq (hp₂.differentiable (by norm_num) z)
+    (hq₂.differentiable (by norm_num) z) (hsol z) (by linarith)
+  have hexp : Real.exp (-(c' * ‖z‖)) ^ 2 ≤ Real.exp (-(c * ‖z‖)) := by
+    rw [← Real.exp_nat_mul, Real.exp_le_exp]
+    have : c ≤ 2 * c' := by linarith [le_max_left (c / 2) 0]
+    push_cast
+    nlinarith [norm_nonneg z]
+  have hgrad₀ : 0 ≤ ‖∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ := norm_nonneg _
+  calc e z = 4 * (x z 2 ^ 2 + x z 3 ^ 2) *
+        ‖∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ^ 2 / 2 := heq
+    _ ≤ (K * Real.exp (-(c' * ‖z‖))) ^ 2 / 2 := by
+        gcongr
+        calc _ ≤ 1 * ‖∇ (fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))) z‖ ^ 2 := by
+              gcongr
+          _ ≤ _ := by rw [one_mul]; gcongr
+    _ = K ^ 2 / 2 * Real.exp (-(c' * ‖z‖)) ^ 2 := by ring
+    _ ≤ K ^ 2 / 2 * Real.exp (-(c * ‖z‖)) := by gcongr
 
 /-- **Exponential decay of the covariant derivative of a plane vortex.** A vortex on the whole
 plane whose section satisfies `|α| → 1` at infinity has `|d_a α (v)| ≤ K |v| exp (-c |z|)` for every

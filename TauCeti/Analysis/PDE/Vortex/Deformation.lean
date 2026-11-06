@@ -108,6 +108,17 @@ theorem covariantDerivative_eq_re_mul_add_im_mul (x : ℂ → EuclideanSpace ℝ
   push_cast
   ring
 
+/-- The covariant derivative in a fixed direction is continuous for a `C¹` section and a continuous
+connection. -/
+theorem continuous_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hb₁ : Continuous fun w ↦ x w 0) (hb₂ : Continuous fun w ↦ x w 1)
+    (hS : ContDiff ℝ 1 (sectionValue x)) (v : ℂ) :
+    Continuous fun z ↦ covariantDerivative x z v := by
+  simp only [covariantDerivative_apply]
+  exact ((hS.continuous_fderiv one_ne_zero).clm_apply continuous_const).add
+    ((continuous_const.mul (continuous_ofReal.comp ((hb₁.mul continuous_const).add
+      (hb₂.mul continuous_const)))).mul hS.continuous)
+
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
