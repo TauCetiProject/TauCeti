@@ -26,12 +26,13 @@ variable {V : Type u} [CommRing V]
 
 -- The unit `V → (V^a)_* = Hom(V^a, V^a)` sends `r` to `r • 𝟙`.
 example (S : BasicSetup V) (r : V) :
-    ((adjElements S).unit.app (ModuleCat.of V V)).hom r = r • 𝟙 _ := by
+    dsimp% only [Functor.id_obj, Functor.comp_obj]
+      ((adjElements S).unit.app (ModuleCat.of V V)).hom r =
+      (r • 𝟙 _ : (toAlmost S).obj (ModuleCat.of V V) ⟶ (toAlmost S).obj (ModuleCat.of V V)) := by
   have h : ModuleCat.ofHom (LinearMap.toSpanSingleton V V r) = r • 𝟙 (ModuleCat.of V V) := by
     ext
     simp
   rw [adjElements_unit_app_apply, h, Functor.map_smul, CategoryTheory.Functor.map_id]
-  rfl
 
 -- For the classical setup `(V, V)`, the unit `N → (N^a)_*` is an isomorphism.
 example (N : ModuleCat.{u} V) : IsIso ((adjElements (classical V)).unit.app N) :=

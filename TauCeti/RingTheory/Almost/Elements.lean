@@ -32,8 +32,9 @@ Both functors come from the firm-module model of almost modules
 (`TauCeti.Almost.Module.firmEquiv`): `M_!` is the firm module representing `M`, and the right
 adjoint is Bhatt's functor `j_* : N ↦ Hom_V(m~, N)` on firm modules. The adjunction for almost
 elements is transported to the Hom-functor `Hom(V^a, −)` through the bijection
-`Hom(V^a, M) ≅ Hom_V(V, M_*) = M_*`, and `(N^a)_* ≅ Hom_V(m~, N)` is the almost-Hom formula
-`TauCeti.Almost.Module.homLinearEquiv` for `Hom(V^a, N^a)`.
+`Hom(V^a, M) ≅ Hom_V(V, Hom_V(m~, M_!)) ≅ Hom_V(m~, M_!)` given by that adjunction, and
+`(N^a)_* ≅ Hom_V(m~, N)` is the almost-Hom formula `TauCeti.Almost.Module.homLinearEquiv` for
+`Hom(V^a, N^a)`.
 
 ## Main definitions
 
@@ -50,6 +51,8 @@ elements is transported to the Hom-functor `Hom(V^a, −)` through the bijection
 
 * `TauCeti.Almost.Module.adjElements_homEquiv_apply`: the adjunction sends `f : N^a → M` to
   `n ↦ (V → N, 1 ↦ n)^a ≫ f`.
+* `TauCeti.Almost.Module.toAlmost_map_toSpanSingleton_comp_adjElements_counit_app`: the counit
+  `(M_*)^a → M` sends the almostification of `1 ↦ x` to the almost element `x`.
 * `TauCeti.Almost.Module.adjShriek_counit_app`: the counit `(N^a)_! → N` is the action map.
 * `TauCeti.Almost.Module.fullyFaithfulElements` and `TauCeti.Almost.Module.fullyFaithfulShriek`:
   both adjoints are fully faithful, so the counit `(M_*)^a → M` and the unit `M → (M_!)^a` are
@@ -122,8 +125,9 @@ private noncomputable def adjFirmHomLinearEquiv (N : ModuleCat.{u} V) (M : Modul
     ((toAlmost S).obj N ⟶ M) ≃ₗ[V] (N ⟶ (elementsFirm S).obj M) where
   __ := (adjFirm S).homAddEquiv N M
   map_smul' r f := by
-    change (adjFirm S).homEquiv N M (r • f) = r • (adjFirm S).homEquiv N M f
-    simp only [Adjunction.homEquiv_unit, Functor.map_smul, Linear.comp_smul]
+    simp only [AddEquiv.toEquiv_eq_coe, Equiv.toFun_as_coe, AddEquiv.coe_toEquiv,
+      Adjunction.homAddEquiv_apply, Adjunction.homEquiv_unit, Functor.map_smul, Linear.comp_smul,
+      RingHom.id_apply]
 
 /-- The bijection `Hom(V^a, M) ≅ Hom_V(V, Hom_V(m~, M_!)) ≅ Hom_V(m~, M_!)`. -/
 private noncomputable def elementsFirmLinearEquiv (M : Module S) :
@@ -159,6 +163,7 @@ noncomputable def adjElements : toAlmost S ⊣ elements S :=
 
 /-- The adjunction `adjElements` sends `f : N^a → M` to the linear map `N → Hom(V^a, M)`,
 `n ↦ (V → N, 1 ↦ n)^a ≫ f`. -/
+@[simp]
 theorem adjElements_homEquiv_apply (N : ModuleCat.{u} V) (M : Module S)
     (f : (toAlmost S).obj N ⟶ M) (n : N) :
     ((adjElements S).homEquiv N M f).hom n =
@@ -174,11 +179,23 @@ theorem adjElements_homEquiv_apply (N : ModuleCat.{u} V) (M : Module S)
   rw [Adjunction.homEquiv_naturality_left_symm, Equiv.symm_apply_apply]
 
 /-- The unit `N → (N^a)_*` of `adjElements` sends `n` to the almostification of `1 ↦ n`. -/
+@[simp]
 theorem adjElements_unit_app_apply (N : ModuleCat.{u} V) (n : N) :
-    ((adjElements S).unit.app N).hom n =
+    dsimp% only [Functor.id_obj, Functor.comp_obj] ((adjElements S).unit.app N).hom n =
       (toAlmost S).map (ModuleCat.ofHom (LinearMap.toSpanSingleton V N n)) := by
   have h := adjElements_homEquiv_apply S N _ (𝟙 _) n
   rwa [Adjunction.homEquiv_id, Category.comp_id] at h
+
+/-- The counit `(M_*)^a → M` of `adjElements` sends the almostification of `1 ↦ x : V → M_*` to
+the almost element `x : V^a → M` itself. -/
+@[simp]
+theorem toAlmost_map_toSpanSingleton_comp_adjElements_counit_app (M : Module S)
+    (x : (toAlmost S).obj (ModuleCat.of V V) ⟶ M) :
+    (toAlmost S).map (ModuleCat.ofHom (LinearMap.toSpanSingleton V ((elements S).obj M) x)) ≫
+      (adjElements S).counit.app M = x := by
+  have h := adjElements_homEquiv_apply S _ M ((adjElements S).counit.app M) x
+  rw [Adjunction.homEquiv_unit, Adjunction.right_triangle_components] at h
+  exact h.symm.trans (ModuleCat.id_apply ((elements S).obj M) x)
 
 /-- The functor of almost elements is fully faithful (Gabber–Ramero, Proposition 2.2.13(ii)). -/
 noncomputable def fullyFaithfulElements : (elements S).FullyFaithful :=
@@ -224,9 +241,10 @@ noncomputable def toAlmostCompElementsIso :
 
 /-- The isomorphism `(N^a)_* ≅ Hom_V(m~, N)` is the almost-Hom formula `homLinearEquiv` for
 `Hom(V^a, N^a)`, composed with `m~ ≅ m~ ⊗[V] V`. -/
+@[simp]
 theorem toAlmostCompElementsIso_hom_app_apply (N : ModuleCat.{u} V)
     (f : (toAlmost S).obj (ModuleCat.of V V) ⟶ (toAlmost S).obj N) :
-    ((toAlmostCompElementsIso S).hom.app N).hom f = ModuleCat.ofHom
+    dsimp% only [Functor.comp_obj] ((toAlmostCompElementsIso S).hom.app N).hom f = ModuleCat.ofHom
       (homLinearEquiv S _ N f ∘ₗ (TensorProduct.rid V S.tilde).symm.toLinearMap) :=
   toAlmostElementsEquiv_apply S N f
 
@@ -244,6 +262,15 @@ theorem isAlmostIso_adjElements_unit_app (N : ModuleCat.{u} V) :
 It is left adjoint to almostification (`adjShriek`). -/
 noncomputable def shriek : Module S ⥤ ModuleCat.{u} V :=
   (firmEquiv S).functor ⋙ S.isFirm.ι
+
+/-- `M_!` is the underlying module of the firm representative `(firmEquiv S).functor.obj M`. -/
+theorem shriek_obj (M : Module S) :
+    (shriek S).obj M = S.isFirm.ι.obj ((firmEquiv S).functor.obj M) :=
+  (rfl)
+
+/-- The module `M_!` is firm. -/
+theorem isFirm_shriek_obj (M : Module S) : S.isFirm ((shriek S).obj M) :=
+  ((firmEquiv S).functor.obj M).property
 
 /-- **`(−)_!` is left adjoint to almostification** (Gabber–Ramero, Proposition 2.2.21):
 `Hom_V(M_!, N) ≅ Hom(M, N^a)`. -/
@@ -279,24 +306,26 @@ noncomputable def toAlmostCompShriekIso :
 theorem adjShriek_counit_app (N : ModuleCat.{u} V) :
     (adjShriek S).counit.app N =
       (toAlmostCompShriekIso S).hom.app N ≫ ModuleCat.ofHom (S.tildeAct N) := by
-  -- Unfold the counit of the transported composite adjunction and the comparison isomorphism.
+  -- The counit of an adjunction transported along `ofNatIsoRight` is the old counit precomposed
+  -- with the image of the comparison isomorphism (`Adjunction.ofNatIsoRight_counit`). Since
+  -- `shriek` is not exposed, its unfolding `(firmEquiv S).functor ⋙ S.isFirm.ι` is reached by
+  -- `rfl` rather than by `simp`.
   have h1 : (adjShriek S).counit.app N =
-      (shriek S).map ((Iso.isoCompInverse (toAlmostCompFirmIso S)).hom.app N) ≫
+      ((firmEquiv S).functor ⋙ S.isFirm.ι).map
+          ((Iso.isoCompInverse (toAlmostCompFirmIso S)).hom.app N) ≫
         ((firmEquiv S).toAdjunction.comp S.firmInclusionAdj).counit.app N :=
     rfl
+  -- The associator and `liftCompιIso` are identity isomorphisms, so `toAlmostCompShriekIso` is
+  -- definitionally the whiskering of `toAlmostCompFirmIso`; as `h1`, this unfolds `shriek`, which
+  -- `simp` cannot see through.
   have h2 : (toAlmostCompShriekIso S).hom.app N =
       S.isFirm.ι.map ((toAlmostCompFirmIso S).hom.app N) :=
     rfl
   have h3 : (firmEquiv S).functor.map ((Iso.isoCompInverse (toAlmostCompFirmIso S)).hom.app N) ≫
       (firmEquiv S).counit.app (S.firm.obj N) = (toAlmostCompFirmIso S).hom.app N := by
     simp [Iso.isoCompInverse_hom_app]
-  rw [h1, h2, Adjunction.comp_counit_app]
-  -- `shriek` is `(firmEquiv S).functor ⋙ S.isFirm.ι`, and the counit of the equivalence's
-  -- adjunction is its counit.
-  change S.isFirm.ι.map ((firmEquiv S).functor.map
-      ((Iso.isoCompInverse (toAlmostCompFirmIso S)).hom.app N)) ≫
-    S.isFirm.ι.map ((firmEquiv S).counit.app (S.firm.obj N)) ≫ S.firmInclusionAdj.counit.app N = _
-  rw [← Category.assoc, ← Functor.map_comp, h3]
+  rw [h1, h2, Adjunction.comp_counit_app, Functor.comp_map, Equivalence.toAdjunction_counit,
+    ← Category.assoc, ← Functor.map_comp, h3]
   congr 1
   exact ModuleCat.hom_ext (S.firmInclusionAdj_counit_app_hom N)
 
@@ -324,9 +353,10 @@ isomorphism `M ≅ (M_!)^a` of `adjShriek`. -/
 theorem shriekToElements_app (M : Module S) :
     (shriekToElements S).app M = (adjElements S).homEquiv _ _ (inv ((adjShriek S).unit.app M)) := by
   rw [Adjunction.Triple.leftToRight_app, Adjunction.homEquiv_unit, Functor.map_inv]
-  rfl
+  simp only [adjTriple]
 
 /-- The map `M_! → M_*` sends `x` to `(V → M_!, 1 ↦ x)^a` followed by `(M_!)^a ≅ M`. -/
+@[simp]
 theorem shriekToElements_app_apply (M : Module S) (x : (shriek S).obj M) :
     ((shriekToElements S).app M).hom x =
       (toAlmost S).map (ModuleCat.ofHom (LinearMap.toSpanSingleton V _ x)) ≫
