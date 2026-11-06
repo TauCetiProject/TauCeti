@@ -150,17 +150,19 @@ theorem norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul {u w : Wkp mu O
   exact (norm_leibnizRemainder_le zeta _ _ x).trans (by gcongr <;> apply_assumption)
 
 /-- **The weak Hessian of a cutoff.** If `u, w ∈ W^{2,p}(Ω)` and `w = η u` almost everywhere on `Ω`
-for a smooth compactly supported `η` with `|η| ≤ 1`, `‖∇η‖ ≤ c₁` and `‖D²η‖ ≤ c₂`, then
+for a smooth `η` with `|η| ≤ 1`, `‖∇η‖ ≤ c₁` and `‖D²η‖ ≤ c₂`, then
 
 `‖D²w‖ ≤ ‖D²u‖ + 2 c₁ ‖∇u‖ + c₂ ‖u‖`. -/
 theorem norm_iteratedGradient_one_le_of_value_ae_eq_mul {u w : Wkp mu Omega p 2} {c₁ c₂ : ℝ}
-    (hzeta : ContDiff ℝ ∞ zeta) (hcpt : HasCompactSupport zeta) (habs : ∀ x, |zeta x| ≤ 1)
+    (hzeta : ContDiff ℝ ∞ zeta) (habs : ∀ x, |zeta x| ≤ 1)
     (hg : ∀ x, ‖∇ zeta x‖ ≤ c₁) (hh : ∀ x, ‖fderiv ℝ (∇ zeta) x‖ ≤ c₂)
     (hw : (value 2 w : E → ℝ) =ᵐ[mu.restrict Omega] fun x => zeta x * value 2 u x) :
     ‖iteratedGradient 1 w‖ ≤ ‖iteratedGradient 1 u‖ +
       (2 * c₁ * ‖iteratedGradient 0 (lowerOrder 1 u)‖ + c₂ * ‖value 2 u‖) := by
   have hzu : MemLp (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) :=
-    (hzeta.continuous.memLp_top_of_hasCompactSupport hcpt (mu.restrict Omega)).smul (Lp.memLp _)
+    (memLp_top_of_bound hzeta.continuous.aestronglyMeasurable 1
+      (Filter.Eventually.of_forall fun x => by simpa [Real.norm_eq_abs] using habs x)).smul
+      (Lp.memLp _)
   have hzun : ‖hzu.toLp _‖ ≤ ‖iteratedGradient 1 u‖ := by
     refine Lp.norm_le_norm_of_ae_le ?_
     filter_upwards [hzu.coeFn_toLp] with x hx

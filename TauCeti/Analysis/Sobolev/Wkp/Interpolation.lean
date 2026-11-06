@@ -376,7 +376,7 @@ theorem Wkp.lpNorm_gradient_ball_le_of_cutoff (hp_top : p ≠ ⊤) {u : Wkp mu O
     rw [h2, hη1 hx, hev.gradient_eq, gradient_fun_const]
     simp
   have hstep1 := lpNorm_le_norm_of_ae_eq_of_le (Measure.restrict_mono hsU le_rfl) hgs
-  have hstep2 := Wkp.norm_iteratedGradient_one_le_of_value_ae_eq_mul hη hcpt habs hg hh hwv
+  have hstep2 := Wkp.norm_iteratedGradient_one_le_of_value_ae_eq_mul hη habs hg hh hwv
   have hstep3 : ‖Wkp.value 2 w‖ ≤ ‖Wkp.value 2 u‖ := by
     refine Lp.norm_le_norm_of_ae_le ?_
     filter_upwards [hwv] with x hx
