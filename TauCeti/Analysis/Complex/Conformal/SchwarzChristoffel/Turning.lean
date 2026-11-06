@@ -103,9 +103,9 @@ theorem affineIndependent_schwarzChristoffelBoundary_of_adjacent (a e : ι → �
       simp only [map_mul, conj_ofReal, conj_I, ofReal_sub]
       ring_nf
     have him := congrArg Complex.im h
-    rw [Complex.exp_ofReal_mul_I_im, show schwarzChristoffelEdgeAngle a e q -
-      schwarzChristoffelEdgeAngle a e p = -(Real.pi * ∑ i with a i = q, e i) by linarith,
-      Real.sin_neg] at him
+    have hdelta : schwarzChristoffelEdgeAngle a e q - schwarzChristoffelEdgeAngle a e p =
+        -(Real.pi * ∑ i with a i = q, e i) := by linarith [hangle]
+    rw [Complex.exp_ofReal_mul_I_im, hdelta, Real.sin_neg] at him
     simp only [Complex.mul_im, conj_re, conj_im] at him
     intro h0
     exact hqSin (by linarith)
