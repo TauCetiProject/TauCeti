@@ -7,7 +7,6 @@ module
 
 public import TauCeti.LowDimTopology.Heegaard.Admissibility
 public import TauCeti.LowDimTopology.Heegaard.MaslovIndex
-import Mathlib.Tactic.Linarith
 
 /-!
 # Weak admissibility for a fixed spin^c structure
@@ -90,7 +89,9 @@ variable {n : ℕ} {Point Region Basepoint : Type*}
 variable (H) in
 /-- Weak admissibility at the generator `x`, for the region Euler characteristics `χ`: every
 nonzero periodic domain of Maslov index zero at `x` has both positive and negative coefficients.
-This is weak admissibility for the spin^c structure of `x`. -/
+On a genuine Heegaard diagram with its region Euler characteristics `χ`, this corresponds by
+Ozsváth–Szabó Theorem 4.9 to weak admissibility for the spin^c structure `s_z(x)`; that
+identification is not formalized. -/
 def WeaklyAdmissibleAt (χ : Region → ℤ) (x : H.Generator) : Prop :=
   ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0 → P ≠ 0 → (∃ r, 0 < P r) ∧ ∃ r, P r < 0
 
@@ -109,21 +110,10 @@ Maslov index zero at `x` is zero. -/
 theorem weaklyAdmissibleAt_iff :
     H.WeaklyAdmissibleAt χ x ↔
       ∀ P ∈ H.periodicDomains, H.maslovIndex χ x x P = 0 → 0 ≤ P → P = 0 := by
-  constructor
-  · intro h P hP hμ hnonneg
-    by_contra hne
-    obtain ⟨r, hr⟩ := (h P hP hμ hne).2
-    exact (hnonneg r).not_gt hr
-  · intro h P hP hμ hne
-    refine ⟨?_, ?_⟩
-    · by_contra hpos
-      push Not at hpos
-      refine hne (neg_eq_zero.mp (h (-P) (neg_mem hP) (by rw [map_neg, hμ, neg_zero])
-        fun r => ?_))
-      simpa using hpos r
-    · by_contra hneg
-      push Not at hneg
-      exact hne (h P hP hμ hneg)
+  have := AddSubgroup.forall_exists_pos_and_neg_iff_forall_nonneg_eq_zero
+    (H.periodicDomains ⊓ (H.maslovIndex χ x x).ker)
+  simp only [AddSubgroup.mem_inf, AddMonoidHom.mem_ker, and_imp] at this
+  exact this
 
 /-- Weak admissibility at a generator is the same at generators joined by a domain: a periodic
 domain has the same Maslov index at both. -/
@@ -162,6 +152,18 @@ theorem weaklyAdmissibleAt_iff_exists_pos_forall_sum_mul_eq_zero :
   simp only [AddSubgroup.mem_inf, AddMonoidHom.mem_ker, and_imp] at this
   rw [weaklyAdmissibleAt_iff, this]
 
+/-- Two domains from `x` to `y` with the same basepoint multiplicities and the same Maslov index
+differ by a periodic domain of Maslov index zero at `y`. -/
+theorem IsDomainBetween.sub_mem_periodicDomains_inf_ker_maslovIndex {D D' : Region → ℤ}
+    (hD : H.IsDomainBetween x y D) (hD' : H.IsDomainBetween x y D')
+    (hz : ∀ z, D' (H.basepoint z) = D (H.basepoint z))
+    (hμ : H.maslovIndex χ x y D' = H.maslovIndex χ x y D) :
+    D' - D ∈ H.periodicDomains ⊓ (H.maslovIndex χ y y).ker := by
+  have hP : D' - D ∈ H.periodicDomains := hD.sub_mem_periodicDomains_iff.mpr ⟨hD', hz⟩
+  have hsum := hD.maslovIndex_add χ (isDomainBetween_self_iff.mpr hP).1
+  rw [add_sub_cancel, hμ, left_eq_add] at hsum
+  exact ⟨hP, hsum⟩
+
 /-- If an area form `A` vanishes on the periodic domains of Maslov index zero at `y`, then all
 domains from `x` to `y` with the same basepoint multiplicities and the same Maslov index have the
 same area. -/
@@ -170,32 +172,22 @@ theorem IsDomainBetween.sum_mul_eq_of_maslovIndex_eq {A : Region → ℝ}
     {D D' : Region → ℤ} (hD : H.IsDomainBetween x y D) (hD' : H.IsDomainBetween x y D')
     (hz : ∀ z, D' (H.basepoint z) = D (H.basepoint z))
     (hμ : H.maslovIndex χ x y D' = H.maslovIndex χ x y D) :
-    ∑ r, A r * D' r = ∑ r, A r * D r := by
-  have hP : D' - D ∈ H.periodicDomains := hD.sub_mem_periodicDomains_iff.mpr ⟨hD', hz⟩
-  have hsum := hD.maslovIndex_add χ (isDomainBetween_self_iff.mpr hP).1
-  rw [add_sub_cancel, hμ, left_eq_add] at hsum
-  simpa [mul_sub, sum_sub_distrib, sub_eq_zero] using hA _ hP hsum
+    ∑ r, A r * D' r = ∑ r, A r * D r :=
+  sum_mul_intCast_eq_of_sub_mem (P := H.periodicDomains ⊓ (H.maslovIndex χ y y).ker)
+    (fun P hP => hA P hP.1 hP.2) (hD.sub_mem_periodicDomains_inf_ker_maslovIndex hD' hz hμ)
 
 /-- In a diagram weakly admissible at `y`, only finitely many nonnegative domains connect `x` to
 `y` with prescribed basepoint multiplicities `k` and Maslov index `m`. -/
 theorem WeaklyAdmissibleAt.finite_setOf_isDomainBetween_basepoint_eq_nonneg_index
     (hH : H.WeaklyAdmissibleAt χ y) (x : H.Generator) (k : Basepoint → ℤ) (m : ℚ) :
     {D : Region → ℤ | H.IsDomainBetween x y D ∧
-      (∀ z, D (H.basepoint z) = k z) ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite := by
-  refine IsAntichain.finite_of_partiallyWellOrderedOn (r := (· ≤ ·)) ?_ ?_
-  · -- Two comparable elements differ by a nonnegative periodic domain of Maslov index zero.
-    rintro D ⟨hD, hDz, -, hDm⟩ D' ⟨hD', hD'z, -, hD'm⟩ hne hle
-    have hP : D' - D ∈ H.periodicDomains :=
-      hD.sub_mem_periodicDomains_iff.mpr ⟨hD', by simp [hDz, hD'z]⟩
-    have hsum := hD.maslovIndex_add χ (isDomainBetween_self_iff.mpr hP).1
-    rw [add_sub_cancel, hDm, hD'm, left_eq_add] at hsum
-    exact hne (sub_eq_zero.mp
-      (weaklyAdmissibleAt_iff.mp hH _ hP hsum (sub_nonneg.mpr hle))).symm
-  · -- The set is partially well-ordered, being inside the image of `Region → ℕ` (Dickson).
-    refine ((Set.isPWO_of_wellQuasiOrderedLE (Set.univ : Set (Region → ℕ))).image_of_monotone
-      (f := fun a r => (a r : ℤ)) fun a b hab r => Int.ofNat_le.mpr (hab r)).mono ?_
-    rintro D ⟨-, -, hD, -⟩
-    exact ⟨fun r => (D r).toNat, trivial, funext fun r => Int.toNat_of_nonneg (hD r)⟩
+      (∀ z, D (H.basepoint z) = k z) ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite :=
+  -- Any two of these domains differ by a periodic domain of Maslov index zero at `y`.
+  AddSubgroup.finite_of_forall_sub_mem (P := H.periodicDomains ⊓ (H.maslovIndex χ y y).ker)
+    (fun P hP => weaklyAdmissibleAt_iff.mp hH P hP.1 hP.2) (fun _ hD => hD.2.2.1)
+    fun _ ⟨hD, hDz, _, hDm⟩ _ ⟨hD', hD'z, _, hD'm⟩ =>
+      hD.sub_mem_periodicDomains_inf_ker_maslovIndex hD' (by simp [hDz, hD'z])
+        (hD'm.trans hDm.symm)
 
 /-- A diagram is weakly admissible at `y` exactly when, for every generator `x`, basepoint
 multiplicities `k` and Maslov index `m`, only finitely many nonnegative domains connect `x` to
@@ -207,14 +199,13 @@ theorem weaklyAdmissibleAt_iff_forall_finite :
       {D : Region → ℤ | H.IsDomainBetween x y D ∧
         (∀ z, D (H.basepoint z) = k z) ∧ 0 ≤ D ∧ H.maslovIndex χ x y D = m}.Finite := by
   refine ⟨fun hH => hH.finite_setOf_isDomainBetween_basepoint_eq_nonneg_index,
-    fun hfin => weaklyAdmissibleAt_iff.mpr fun P hP hμ hP₀ => ?_⟩
-  by_contra hne
-  have hinj : Function.Injective fun j : ℕ => j • P := fun a b h =>
-    Nat.cast_injective (R := ℤ) (smul_left_injective ℤ hne (by simpa only [natCast_zsmul] using h))
-  refine Set.infinite_of_injective_forall_mem hinj (fun j => ?_) (hfin y 0 0)
-  have hjP := H.periodicDomains.nsmul_mem hP j
-  obtain ⟨hdom, hz⟩ := isDomainBetween_self_iff.mpr hjP
-  exact ⟨hdom, hz, nsmul_nonneg hP₀ j, by rw [map_nsmul, hμ, smul_zero]⟩
+    fun hfin => weaklyAdmissibleAt_iff.mpr fun P hP hμ hP₀ =>
+      (H.periodicDomains ⊓ (H.maslovIndex χ y y).ker).finite_setOf_mem_nonneg_iff.mp
+        ((hfin y 0 0).subset ?_) P ⟨hP, hμ⟩ hP₀⟩
+  -- The nonnegative periodic domains of Maslov index zero are domains from `y` to itself.
+  rintro Q ⟨⟨hQ, hQμ⟩, hQ₀⟩
+  obtain ⟨hdom, hz⟩ := isDomainBetween_self_iff.mpr hQ
+  exact ⟨hdom, hz, hQ₀, hQμ⟩
 
 end HeegaardRegionSystem
 

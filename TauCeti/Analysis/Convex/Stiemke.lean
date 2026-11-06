@@ -35,6 +35,8 @@ domain has signed area zero.
   element is `0` spans a real subspace whose only nonnegative element is `0`.
 * `TauCeti.exists_pos_forall_sum_mul_intCast_eq_zero_iff`: Stiemke's lemma for a subgroup of
   `ι → ℤ`.
+* `TauCeti.sum_mul_intCast_eq_of_sub_mem`: a real vector orthogonal to a subgroup of `ι → ℤ`
+  pairs equally with all vectors of a coset.
 
 ## References
 
@@ -209,5 +211,12 @@ theorem exists_pos_forall_sum_mul_intCast_eq_zero_iff [Fintype ι] {P : AddSubgr
     obtain ⟨w, hw, hwV⟩ := exists_pos_forall_sum_mul_eq_zero_iff.mpr fun v hv hv₀ =>
       eq_zero_of_mem_span_intCast_of_nonneg hP hv hv₀
     exact ⟨w, hw, fun p hp => hwV _ (Submodule.subset_span ⟨p, hp, rfl⟩)⟩
+
+/-- A real vector `w` orthogonal to every element of a subgroup `P` of `ι → ℤ` pairs equally with
+any two vectors that differ by an element of `P`. -/
+theorem sum_mul_intCast_eq_of_sub_mem [Fintype ι] {P : AddSubgroup (ι → ℤ)} {w : ι → ℝ}
+    (hw : ∀ p ∈ P, ∑ i, w i * p i = 0) {v v' : ι → ℤ} (h : v' - v ∈ P) :
+    ∑ i, w i * v' i = ∑ i, w i * v i := by
+  simpa [mul_sub, sum_sub_distrib, sub_eq_zero] using hw _ h
 
 end TauCeti
