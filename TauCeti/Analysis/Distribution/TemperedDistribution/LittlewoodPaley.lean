@@ -39,10 +39,14 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock`: the Littlewood–Paley block `Δⱼ`.
 * `TemperedDistribution.sum_littlewoodPaleyBlock_range`: the partial sums are the low-pass
   truncations by `φ (2^{-N} ·)`.
-* `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`.
+* `TemperedDistribution.tendsto_sum_littlewoodPaleyBlock`: `u = ∑ⱼ Δⱼ u` in `𝓢'(E, F)`; in
+  particular `u` is determined by its blocks (`eq_of_forall_littlewoodPaleyBlock_eq`).
 * `TemperedDistribution.exists_littlewoodPaleyBlock_compL_eq_zero`: almost orthogonality.
 * `TemperedDistribution.littlewoodPaleyBlock_besselPotential_comm`: the blocks commute with the
   Bessel potentials.
+* `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
+  whose Fourier transform is carried by the region where `ψⱼ = 1` is its own `j`-th block and has
+  no other block.
 
 ## References
 
@@ -106,6 +110,12 @@ theorem tendsto_sum_littlewoodPaleyBlock (u : 𝓢'(E, F)) :
     ((fourierCLM ℂ 𝓢(E, ℂ)).continuous.tendsto _).comp
       (SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow φ (𝓕⁻ f))
   rwa [fourierCLM_apply, FourierTransform.fourier_fourierInv_eq] at h
+
+/-- A tempered distribution is determined by its Littlewood–Paley blocks. -/
+theorem eq_of_forall_littlewoodPaleyBlock_eq {u v : 𝓢'(E, F)}
+    (h : ∀ j, littlewoodPaleyBlock F φ j u = littlewoodPaleyBlock F φ j v) : u = v :=
+  tendsto_nhds_unique (tendsto_sum_littlewoodPaleyBlock φ u) <| by
+    simpa only [h] using tendsto_sum_littlewoodPaleyBlock φ v
 
 /-- The composition of two Littlewood–Paley blocks is the Fourier multiplier by the product of
 the two pieces. -/
@@ -173,5 +183,27 @@ theorem littlewoodPaleyBlock_toTemperedDistributionCLM_eq [CompleteSpace F] (j :
   rw [littlewoodPaleyBlock_apply]
   exact fourierMultiplierCLM_toTemperedDistributionCLM_eq
     (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley j) f
+
+/-- **A Schwartz function carried by one block.** If on the support of the Fourier transform of
+a Schwartz function `f` the piece `ψⱼ` equals `1` and every other piece `ψₖ` vanishes, then
+`Δⱼ f = f` and `Δₖ f = 0` for `k ≠ j`. -/
+theorem littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite [CompleteSpace F] {j : ℕ}
+    {f : 𝓢(E, F)}
+    (hf : ∀ k ξ, 𝓕 f ξ ≠ 0 → φ.inhomogeneousLittlewoodPaley k ξ = if k = j then 1 else 0)
+    (k : ℕ) :
+    littlewoodPaleyBlock F φ k (f : 𝓢'(E, F)) = if k = j then (f : 𝓢'(E, F)) else 0 := by
+  have h : SchwartzMap.smulLeftCLM F (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley k ξ : ℂ)) (𝓕 f) =
+      if k = j then 𝓕 f else 0 := by
+    ext ξ
+    rw [SchwartzMap.smulLeftCLM_apply_apply
+      (φ.hasTemperateGrowth_ofReal_inhomogeneousLittlewoodPaley k)]
+    by_cases hξ : 𝓕 f ξ = 0
+    · split_ifs <;> simp [hξ]
+    · rw [hf k ξ hξ]
+      split_ifs <;> simp
+  rw [littlewoodPaleyBlock_toTemperedDistributionCLM_eq, SchwartzMap.fourierMultiplierCLM_apply, h]
+  split_ifs
+  · rw [FourierTransform.fourierInv_fourier_eq]
+  · simp
 
 end TemperedDistribution
