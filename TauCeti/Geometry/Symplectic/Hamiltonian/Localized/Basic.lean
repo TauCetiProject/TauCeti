@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Localized.Manifold
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
-import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
 # Localized Hamiltonians with prescribed vector field
@@ -82,25 +82,26 @@ theorem exists_contDiff_hamiltonianVectorField_comp_eq_smul (ω : SymplecticForm
     rintro _ ⟨z, hz, rfl⟩
     exact hΩU z (hρΩ hz)
   -- A smooth cutoff equal to `1` near this graph, with compact support in `U`.
-  obtain ⟨L, hL, hCL, hLU⟩ := exists_compact_between hC hU hCU
-  obtain ⟨χ, hχ1, hχ0, -⟩ :=
-    exists_contMDiffMap_one_nhds_of_subset_interior (n := (⊤ : ℕ∞)) 𝓘(ℝ, P × V) hC.isClosed hCL
-  have hχ : ContDiff ℝ (⊤ : ℕ∞) χ := contMDiff_iff_contDiff.mp χ.contMDiff
-  have hχL : support χ ⊆ L := fun p hp ↦ by_contra fun h ↦ hp (hχ0 p h)
+  obtain ⟨χ, hχ, -, hχ1, hχc, hχU⟩ := hC.exists_contDiff_cutoff hU hCU
   let ℓ : V →L[ℝ] ℝ := LinearMap.toContinuousLinearMap (ω.toBilinForm v)
+  -- The variation is `χ` times the smooth function `(z, x) ↦ ρ z * ℓ x`.
+  have hδK : uncurry (fun z x ↦ ρ z * (χ (z, x) * ℓ x)) =
+      χ * fun p : P × V ↦ ρ p.1 * ℓ p.2 := by
+    ext ⟨z, x⟩
+    simp only [uncurry_apply_pair, Pi.mul_apply]
+    ring
   refine ⟨fun z x ↦ ρ z * (χ (z, x) * ℓ x), ?_, ?_, ?_, fun z ↦ ?_⟩
   · exact (hρ.comp contDiff_fst).mul (hχ.mul (ℓ.contDiff.comp contDiff_snd))
-  · refine HasCompactSupport.intro hL fun ⟨z, x⟩ hp ↦ ?_
-    simp [show χ (z, x) = 0 from hχ0 _ hp]
-  · refine (closure_minimal (fun ⟨z, x⟩ hp ↦ hχL ?_) hL.isClosed).trans hLU
-    rw [mem_support] at hp ⊢
-    exact fun h ↦ hp (by simp [h])
+  · rw [hδK]
+    exact hχc.mul_right
+  · rw [hδK]
+    exact (tsupport_mul_subset_left).trans hχU
   · by_cases hz : z ∈ tsupport ρ
     · -- Near `u z`, the cutoff is `1` and the variation is the linear Hamiltonian `ρ z • ω v`.
       have hmem : (z, u z) ∈ C := mem_image_of_mem _ hz
       have hev : ∀ᶠ x in 𝓝 (u z), χ (z, x) = 1 :=
         ((continuous_const.prodMk continuous_id).tendsto (u z)).eventually
-          (hχ1.filter_mono (nhds_le_nhdsSet hmem))
+          (mem_interior_iff_mem_nhds.mp (hχ1 hmem))
       have heq : (fun x ↦ ρ z * (χ (z, x) * ℓ x)) =ᶠ[𝓝 (u z)] fun x ↦ ρ z * ω v x :=
         hev.mono fun x hx ↦ by simp [hx, ℓ]
       rw [hamiltonianVectorField_def, heq.fderiv_eq, ← hamiltonianVectorField_def,

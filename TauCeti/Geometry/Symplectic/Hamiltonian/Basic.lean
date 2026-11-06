@@ -99,10 +99,9 @@ theorem hamiltonianVectorField_contraction (ω : SymplecticForm V) (v x : V) :
     ω.hamiltonianVectorField (fun y ↦ ω v y) x = v := by
   rw [eq_comm, eq_hamiltonianVectorField_iff]
   intro w
-  have h : HasFDerivAt (fun y ↦ ω v y) (LinearMap.toContinuousLinearMap (ω.toBilinForm v)) x :=
-    (LinearMap.toContinuousLinearMap (ω.toBilinForm v)).hasFDerivAt
-  rw [h.fderiv]
-  rfl
+  -- By definition of the coercion, `ω v` is the linear functional `ω.toBilinForm v`.
+  change ω.toBilinForm v w = fderiv ℝ (ω.toBilinForm v) x w
+  rw [← LinearMap.coe_toContinuousLinearMap' (ω.toBilinForm v), ContinuousLinearMap.fderiv]
 
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
