@@ -6,9 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.Deriv.Comp
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Calculus.FDeriv.Analytic
 public import Mathlib.Analysis.Matrix.Normed
 public import TauCeti.LinearAlgebra.Matrix.Adjugate.Basic
+import Mathlib.Analysis.Calculus.ContDiff.CPolynomial
+import Mathlib.Analysis.Calculus.ContDiff.Comp
 import Mathlib.Analysis.Calculus.Deriv.Mul
 
 /-!
@@ -43,7 +46,7 @@ The normed structure on matrices is Mathlib's `L∞` operator norm, available th
 
 public section
 
-open scoped Matrix Matrix.Norms.Operator
+open scoped Matrix Matrix.Norms.Operator ContDiff
 
 namespace Matrix
 
@@ -57,6 +60,13 @@ private noncomputable def detMultilinear :
       change Continuous (fun M : n → n → 𝕜 => (Matrix.of M).det)
       simp only [det_apply, Matrix.of_apply]
       fun_prop }
+
+/-- The determinant is smooth, including at singular matrices. -/
+@[fun_prop]
+theorem contDiff_det {r : ℕ∞ω} : ContDiff 𝕜 r (det : Matrix n n 𝕜 → 𝕜) := by
+  let L : Matrix n n 𝕜 →L[𝕜] (n → n → 𝕜) :=
+    { (Matrix.ofLinearEquiv 𝕜).symm.toLinearMap with cont := by exact continuous_id }
+  exact (detMultilinear (n := n) (𝕜 := 𝕜)).contDiff.comp L.contDiff
 
 /-- The determinant is differentiable at every matrix over a nontrivially normed field. -/
 theorem differentiable_det : Differentiable 𝕜 (det : Matrix n n 𝕜 → 𝕜) :=
@@ -117,3 +127,29 @@ theorem hasFDerivAt_det {A : Matrix n n 𝕜} (hA : IsUnit A.det) :
   exact fderiv_det_apply hA H
 
 end Matrix
+
+namespace ContinuousLinearMap
+
+variable {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] [CompleteSpace 𝕜]
+
+/-- The determinant of an endomorphism of a finite-dimensional normed space is smooth. -/
+@[fun_prop]
+theorem contDiff_det {r : ℕ∞ω} :
+    ContDiff 𝕜 r (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) := by
+  let b := Module.finBasis 𝕜 E
+  let L : (E →L[𝕜] E) →L[𝕜] Matrix (Fin (Module.finrank 𝕜 E))
+      (Fin (Module.finrank 𝕜 E)) 𝕜 :=
+    { (LinearMap.toMatrix b b).toLinearMap.comp (ContinuousLinearMap.coeLM 𝕜) with
+      cont := ((LinearMap.toMatrix b b).toLinearMap.comp
+        (ContinuousLinearMap.coeLM 𝕜)).continuous_of_finiteDimensional }
+  have h := (Matrix.contDiff_det (𝕜 := 𝕜) (n := Fin (Module.finrank 𝕜 E)) (r := r)).comp
+    L.contDiff
+  have hL (f : E →L[𝕜] E) : L f = LinearMap.toMatrix b b (f : E →ₗ[𝕜] E) := (rfl)
+  have hfun : Matrix.det ∘ (L : (E →L[𝕜] E) → _) =
+      (fun f : E →L[𝕜] E ↦ LinearMap.det (f : E →ₗ[𝕜] E)) := by
+    funext f
+    exact (congrArg Matrix.det (hL f)).trans (LinearMap.det_toMatrix b _)
+  exact hfun ▸ h
+
+end ContinuousLinearMap
