@@ -108,66 +108,139 @@ private theorem exists_mem_pathComponentOne_coe_eq_algebraMap_mul (hQ : Q ≠ 0)
   · exact ⟨spinGroup.negOne Q hQ * z, mul_mem hneg hz, by
       rw [Submonoid.coe_mul, spinGroup.coe_negOne, map_neg, map_one]⟩
 
+/-- The identity path component of the Spin group is closed under joining. -/
+private theorem mem_pathComponentOne_of_joined {x y : spinGroup Q} (h : Joined x y)
+    (hy : y ∈ Subgroup.pathComponentOne (spinGroup Q)) :
+    x ∈ Subgroup.pathComponentOne (spinGroup Q) :=
+  mem_pathComponent_iff.mpr ((mem_pathComponent_iff.mp hy).trans h.symm)
+
 variable [TopologicalSpace V] [IsModuleTopology ℝ V]
 
-/-- **The peeling induction.** If `-1` is in the identity path component of the Spin group, then
-so is every product of an even number `n` of vectors of norm `±1` whose norms multiply to one. Each
-step moves one factor inside its level set to reach `±` a product of `n - 2` such vectors. -/
-private theorem mem_pathComponentOne_of_coe_eq_prod_map_ι (hQ : Q ≠ 0)
-    (hneg : spinGroup.negOne Q hQ ∈ Subgroup.pathComponentOne (spinGroup Q)) (n : ℕ) :
-    ∀ l : List V, l.length = n → (∀ v ∈ l, Q v = 1 ∨ Q v = -1) → Even n →
-      (l.map Q).prod = 1 → ∀ x : spinGroup Q, (x : CliffordAlgebra Q) = (l.map (ι Q)).prod →
-        x ∈ Subgroup.pathComponentOne (spinGroup Q) := by
+/-- The peeling step when the first two factors have the same norm: move `b` to `±a`, after which
+the first two factors become `±1`. The shorter product is supplied by `hshort`. -/
+private theorem mem_pathComponentOne_cons_cons_of_apply_eq (hQ : Q ≠ 0)
+    (hneg : spinGroup.negOne Q hQ ∈ Subgroup.pathComponentOne (spinGroup Q)) {n : ℕ}
+    (he : Even n) {a b : V} {t : List V} (hn : t.length + 1 + 1 = n)
+    (ha : Q a = 1 ∨ Q a = -1) (hab : Q b = Q a) (ht : ∀ v ∈ t, Q v = 1 ∨ Q v = -1)
+    (hshort : ∀ t : List V, t.length + 2 = n → (∀ v ∈ t, Q v = 1 ∨ Q v = -1) →
+      (t.map Q).prod = 1 →
+        ∃ z ∈ Subgroup.pathComponentOne (spinGroup Q), (z : CliffordAlgebra Q) =
+          (t.map (ι Q)).prod)
+    (hQl : Q a * (Q b * (t.map Q).prod) = 1) {x : spinGroup Q}
+    (hx : (x : CliffordAlgebra Q) = ι Q a * (ι Q b * (t.map (ι Q)).prod)) :
+    x ∈ Subgroup.pathComponentOne (spinGroup Q) := by
   let _ := IsModuleTopology.toContinuousAdd ℝ V
-  set H := Subgroup.pathComponentOne (spinGroup Q)
-  have hjoin {x y : spinGroup Q} (h : Joined x y) (hy : y ∈ H) : x ∈ H :=
-    mem_pathComponent_iff.mpr ((mem_pathComponent_iff.mp hy).trans h.symm)
-  -- Strong induction on the length: a list of length `0` gives `1`, length `1` is odd, and for
-  -- `a :: b :: t` one move inside a level set reaches `±` a product of a list of length `n - 2`.
-  induction n using Nat.strong_induction_on with
-  | _ n ih =>
-  intro l hn hl he hQl x hx
-  -- The product of a list of length `n - 2` lies in `H`, by induction.
-  have hshort (t : List V) (ht : t.length + 2 = n) (htl : ∀ v ∈ t, Q v = 1 ∨ Q v = -1)
-      (htQ : (t.map Q).prod = 1) : ∃ z ∈ H, (z : CliffordAlgebra Q) = (t.map (ι Q)).prod := by
-    have hte : Even t.length := by rw [← ht] at he; simpa [parity_simps] using he
-    exact ⟨⟨_, prod_map_ι_mem_spinGroup hte htQ⟩,
-      ih t.length (by omega) t rfl htl hte htQ _ rfl, rfl⟩
-  rcases l with _ | ⟨a, _ | ⟨b, t⟩⟩
-  · rw [show x = 1 from Subtype.ext (by simpa using hx)]
-    exact one_mem H
-  · simp only [List.length_cons, List.length_nil, zero_add] at hn
-    exact absurd (hn ▸ he) (by decide)
-  simp only [List.length_cons] at hn
-  have ha := hl a (by simp)
-  have hb := hl b (by simp)
-  have ht (v : V) (hv : v ∈ t) := hl v (by simp [hv])
   have ha2 := mul_self_eq_one_iff.mpr ha
+  obtain ⟨a', hpath, s, hs, has⟩ := exists_joinedIn_ι_mul_ι_eq_algebraMap ha hab
+  obtain ⟨z, hz, hzc⟩ := hshort t (by omega) ht (by
+    rw [hab] at hQl
+    linear_combination hQl - (t.map Q).prod * ha2)
+  obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
+  refine mem_pathComponentOne_of_joined
+    (joined_of_coe_eq_prod_mul_ι_mul_prod (l₁ := [a]) (l₂ := t) ?_ ?_ hpath ?_ ?_) hy
+  · convert he using 1
+    simp only [List.length_cons, List.length_nil]
+    omega
+  · simpa [mul_assoc] using hQl
+  · simp [hx, mul_assoc]
+  · simp [hyc, hzc, ← has]
+
+/-- The peeling step when the first two factors have opposite norms and the third factor `c` has
+the norm of `a`: move `c` to `±a`, after which the first three factors become `±` a single vector
+of norm `Q b`. The shorter product is supplied by `hshort`. -/
+private theorem mem_pathComponentOne_cons_cons_cons_of_apply_eq_left (hQ : Q ≠ 0)
+    (hneg : spinGroup.negOne Q hQ ∈ Subgroup.pathComponentOne (spinGroup Q)) {n : ℕ}
+    {a b c : V} {t : List V} (hlen : Even ([a, b].length + t.length + 1))
+    (hn : t.length + 1 + 1 + 1 = n) (ha : Q a = 1 ∨ Q a = -1) (hb : Q b = 1 ∨ Q b = -1)
+    (hca : Q c = Q a) (ht' : ∀ v ∈ t, Q v = 1 ∨ Q v = -1)
+    (hshort : ∀ t : List V, t.length + 2 = n → (∀ v ∈ t, Q v = 1 ∨ Q v = -1) →
+      (t.map Q).prod = 1 →
+        ∃ z ∈ Subgroup.pathComponentOne (spinGroup Q), (z : CliffordAlgebra Q) =
+          (t.map (ι Q)).prod)
+    (hQ₃ : ([a, b].map Q).prod * Q c * (t.map Q).prod = 1) {x : spinGroup Q}
+    (hx₃ : (x : CliffordAlgebra Q) =
+      ([a, b].map (ι Q)).prod * ι Q c * (t.map (ι Q)).prod) :
+    x ∈ Subgroup.pathComponentOne (spinGroup Q) := by
+  let _ := IsModuleTopology.toContinuousAdd ℝ V
+  have ha2 := mul_self_eq_one_iff.mpr ha
+  obtain ⟨a', hpath, s, hs, w, hw, haw⟩ :=
+    exists_joinedIn_ι_mul_ι_mul_ι_eq_smul_ι (b := b) ha hca
+  obtain ⟨z, hz, hzc⟩ := hshort (w :: t) (by simp only [List.length_cons]; omega)
+    (fun v hv ↦ by
+      rcases List.mem_cons.mp hv with rfl | hv
+      exacts [hw ▸ hb, ht' v hv])
+    (by
+      have hQl := hQ₃
+      rw [hca] at hQl
+      simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at hQl
+      simp only [List.map_cons, List.prod_cons, hw]
+      linear_combination hQl - Q b * (t.map Q).prod * ha2)
+  obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
+  refine mem_pathComponentOne_of_joined
+    (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_) hy
+  simp only [hyc, hzc, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
+  rw [haw, mul_assoc]
+
+/-- The peeling step when the first two factors have opposite norms and the third factor `c` has
+the norm of `b`: move `c` to `±b`, after which the factors `b, c` become `±1`. The shorter product
+is supplied by `hshort`. -/
+private theorem mem_pathComponentOne_cons_cons_cons_of_apply_eq_right (hQ : Q ≠ 0)
+    (hneg : spinGroup.negOne Q hQ ∈ Subgroup.pathComponentOne (spinGroup Q)) {n : ℕ}
+    {a b c : V} {t : List V} (hlen : Even ([a, b].length + t.length + 1))
+    (hn : t.length + 1 + 1 + 1 = n) (ha : Q a = 1 ∨ Q a = -1) (hb : Q b = 1 ∨ Q b = -1)
+    (hcb : Q c = Q b) (ht' : ∀ v ∈ t, Q v = 1 ∨ Q v = -1)
+    (hshort : ∀ t : List V, t.length + 2 = n → (∀ v ∈ t, Q v = 1 ∨ Q v = -1) →
+      (t.map Q).prod = 1 →
+        ∃ z ∈ Subgroup.pathComponentOne (spinGroup Q), (z : CliffordAlgebra Q) =
+          (t.map (ι Q)).prod)
+    (hQ₃ : ([a, b].map Q).prod * Q c * (t.map Q).prod = 1) {x : spinGroup Q}
+    (hx₃ : (x : CliffordAlgebra Q) =
+      ([a, b].map (ι Q)).prod * ι Q c * (t.map (ι Q)).prod) :
+    x ∈ Subgroup.pathComponentOne (spinGroup Q) := by
+  let _ := IsModuleTopology.toContinuousAdd ℝ V
   have hb2 := mul_self_eq_one_iff.mpr hb
-  simp only [List.map_cons, List.prod_cons] at hQl hx
-  by_cases hab : Q b = Q a
-  · -- Move `b` to `±a`; the first two factors become `±1`.
-    obtain ⟨a', hpath, s, hs, has⟩ := exists_joinedIn_ι_mul_ι_eq_algebraMap ha hab
-    obtain ⟨z, hz, hzc⟩ := hshort t (by omega) ht (by
-      rw [hab] at hQl
-      linear_combination hQl - (t.map Q).prod * ha2)
-    obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
-    refine hjoin (joined_of_coe_eq_prod_mul_ι_mul_prod (l₁ := [a]) (l₂ := t) ?_ ?_ hpath ?_ ?_) hy
-    · convert he using 1
-      simp only [List.length_cons, List.length_nil]
-      omega
-    · simpa [mul_assoc] using hQl
-    · simp [hx, mul_assoc]
-    · simp [hyc, hzc, ← has]
+  obtain ⟨b', hpath, s, hs, hbs⟩ := exists_joinedIn_ι_mul_ι_eq_algebraMap hb hcb
+  obtain ⟨z, hz, hzc⟩ := hshort (a :: t) (by simp only [List.length_cons]; omega)
+    (fun v hv ↦ by
+      rcases List.mem_cons.mp hv with rfl | hv
+      exacts [ha, ht' v hv])
+    (by
+      have hQl := hQ₃
+      rw [hcb] at hQl
+      simp only [List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one] at hQl
+      simp only [List.map_cons, List.prod_cons]
+      linear_combination hQl - Q a * (t.map Q).prod * hb2)
+  obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
+  refine mem_pathComponentOne_of_joined
+    (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_) hy
+  simp only [hyc, hzc, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
+  rw [mul_assoc (ι Q a), hbs, ← Algebra.commutes, mul_assoc]
+
+/-- The peeling step when the first two factors have opposite norms: the third factor `c` has the
+norm of `a` or of `b`, and the corresponding move reaches a shorter product, supplied by
+`hshort`. -/
+private theorem mem_pathComponentOne_cons_cons_of_apply_ne (hQ : Q ≠ 0)
+    (hneg : spinGroup.negOne Q hQ ∈ Subgroup.pathComponentOne (spinGroup Q)) {n : ℕ}
+    (he : Even n) {a b : V} {t : List V} (hn : t.length + 1 + 1 = n)
+    (ha : Q a = 1 ∨ Q a = -1) (hb : Q b = 1 ∨ Q b = -1) (hab : ¬Q b = Q a)
+    (ht : ∀ v ∈ t, Q v = 1 ∨ Q v = -1)
+    (hshort : ∀ t : List V, t.length + 2 = n → (∀ v ∈ t, Q v = 1 ∨ Q v = -1) →
+      (t.map Q).prod = 1 →
+        ∃ z ∈ Subgroup.pathComponentOne (spinGroup Q), (z : CliffordAlgebra Q) =
+          (t.map (ι Q)).prod)
+    (hQl : Q a * (Q b * (t.map Q).prod) = 1) {x : spinGroup Q}
+    (hx : (x : CliffordAlgebra Q) = ι Q a * (ι Q b * (t.map (ι Q)).prod)) :
+    x ∈ Subgroup.pathComponentOne (spinGroup Q) := by
   -- The first two factors have opposite norms, so there is a third factor `c`.
   have hba : Q b = -Q a := by
-    have h : (Q b - Q a) * (Q b + Q a) = 0 := by linear_combination hb2 - ha2
+    have h : (Q b - Q a) * (Q b + Q a) = 0 := by
+      linear_combination mul_self_eq_one_iff.mpr hb - mul_self_eq_one_iff.mpr ha
     rcases mul_eq_zero.mp h with h | h
     · exact absurd (sub_eq_zero.mp h) hab
     · linear_combination h
   rcases t with _ | ⟨c, t⟩
   · simp only [List.map_nil, List.prod_nil, mul_one, hba] at hQl
-    nlinarith
+    nlinarith [mul_self_eq_one_iff.mpr ha, mul_self_eq_one_iff.mpr hb]
   have hc := ht c (by simp)
   have ht' (v : V) (hv : v ∈ t) := ht v (by simp [hv])
   simp only [List.length_cons] at hn
@@ -181,42 +254,51 @@ private theorem mem_pathComponentOne_of_coe_eq_prod_map_ι (hQ : Q ≠ 0)
       ([a, b].map (ι Q)).prod * ι Q c * (t.map (ι Q)).prod := by
     simp [hx, mul_assoc]
   by_cases hca : Q c = Q a
-  · -- Move `c` to `±a`; the first three factors become `±` a single vector `w` of norm `Q b`.
-    obtain ⟨a', hpath, s, hs, w, hw, haw⟩ :=
-      exists_joinedIn_ι_mul_ι_mul_ι_eq_smul_ι (b := b) ha hca
-    obtain ⟨z, hz, hzc⟩ := hshort (w :: t) (by simp only [List.length_cons]; omega)
-      (fun v hv ↦ by
-        rcases List.mem_cons.mp hv with rfl | hv
-        exacts [hw ▸ hb, ht' v hv])
-      (by
-        rw [hca] at hQl
-        simp only [List.map_cons, List.prod_cons, hw]
-        linear_combination hQl - Q b * (t.map Q).prod * ha2)
-    obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
-    refine hjoin (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_) hy
-    simp only [hyc, hzc, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-    rw [haw, mul_assoc]
-  · -- Otherwise `Q c = Q b`: move `c` to `±b`; the factors `b, c` become `±1`.
-    have hcb : Q c = Q b := by
-      have h : (Q c - Q b) * (Q c - Q a) = 0 := by
-        rw [hba]
-        linear_combination mul_self_eq_one_iff.mpr hc - ha2
-      rcases mul_eq_zero.mp h with h | h
-      · exact sub_eq_zero.mp h
-      · exact absurd (sub_eq_zero.mp h) hca
-    obtain ⟨b', hpath, s, hs, hbs⟩ := exists_joinedIn_ι_mul_ι_eq_algebraMap hb hcb
-    obtain ⟨z, hz, hzc⟩ := hshort (a :: t) (by simp only [List.length_cons]; omega)
-      (fun v hv ↦ by
-        rcases List.mem_cons.mp hv with rfl | hv
-        exacts [ha, ht' v hv])
-      (by
-        rw [hcb] at hQl
-        simp only [List.map_cons, List.prod_cons]
-        linear_combination hQl - Q a * (t.map Q).prod * hb2)
-    obtain ⟨y, hy, hyc⟩ := exists_mem_pathComponentOne_coe_eq_algebraMap_mul hQ hneg hs hz
-    refine hjoin (joined_of_coe_eq_prod_mul_ι_mul_prod hlen hQ₃ hpath hx₃ ?_) hy
-    simp only [hyc, hzc, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-    rw [mul_assoc (ι Q a), hbs, ← Algebra.commutes, mul_assoc]
+  · exact mem_pathComponentOne_cons_cons_cons_of_apply_eq_left hQ hneg hlen hn ha hb hca ht'
+      hshort hQ₃ hx₃
+  · refine mem_pathComponentOne_cons_cons_cons_of_apply_eq_right hQ hneg hlen hn ha hb ?_ ht'
+      hshort hQ₃ hx₃
+    have h : (Q c - Q b) * (Q c - Q a) = 0 := by
+      rw [hba]
+      linear_combination mul_self_eq_one_iff.mpr hc - mul_self_eq_one_iff.mpr ha
+    rcases mul_eq_zero.mp h with h | h
+    · exact sub_eq_zero.mp h
+    · exact absurd (sub_eq_zero.mp h) hca
+
+/-- **The peeling induction.** If `-1` is in the identity path component of the Spin group, then
+so is every product of an even number `n` of vectors of norm `±1` whose norms multiply to one. Each
+step moves one factor inside its level set to reach `±` a product of `n - 2` such vectors. -/
+private theorem mem_pathComponentOne_of_coe_eq_prod_map_ι (hQ : Q ≠ 0)
+    (hneg : spinGroup.negOne Q hQ ∈ Subgroup.pathComponentOne (spinGroup Q)) (n : ℕ) :
+    ∀ l : List V, l.length = n → (∀ v ∈ l, Q v = 1 ∨ Q v = -1) → Even n →
+      (l.map Q).prod = 1 → ∀ x : spinGroup Q, (x : CliffordAlgebra Q) = (l.map (ι Q)).prod →
+        x ∈ Subgroup.pathComponentOne (spinGroup Q) := by
+  -- Strong induction on the length: a list of length `0` gives `1`, length `1` is odd, and for
+  -- `a :: b :: t` one move inside a level set reaches `±` a product of a list of length `n - 2`.
+  induction n using Nat.strong_induction_on with
+  | _ n ih =>
+  intro l hn hl he hQl x hx
+  -- The product of a list of length `n - 2` lies in the component, by induction.
+  have hshort (t : List V) (ht : t.length + 2 = n) (htl : ∀ v ∈ t, Q v = 1 ∨ Q v = -1)
+      (htQ : (t.map Q).prod = 1) :
+      ∃ z ∈ Subgroup.pathComponentOne (spinGroup Q),
+        (z : CliffordAlgebra Q) = (t.map (ι Q)).prod := by
+    have hte : Even t.length := by rw [← ht] at he; simpa [parity_simps] using he
+    exact ⟨⟨_, prod_map_ι_mem_spinGroup hte htQ⟩,
+      ih t.length (by omega) t rfl htl hte htQ _ rfl, rfl⟩
+  rcases l with _ | ⟨a, _ | ⟨b, t⟩⟩
+  · rw [show x = 1 from Subtype.ext (by simpa using hx)]
+    exact one_mem _
+  · simp only [List.length_cons, List.length_nil, zero_add] at hn
+    exact absurd (hn ▸ he) (by decide)
+  simp only [List.length_cons] at hn
+  have ha := hl a (by simp)
+  have hb := hl b (by simp)
+  have ht (v : V) (hv : v ∈ t) := hl v (by simp [hv])
+  simp only [List.map_cons, List.prod_cons] at hQl hx
+  by_cases hab : Q b = Q a
+  · exact mem_pathComponentOne_cons_cons_of_apply_eq hQ hneg he hn ha hab ht hshort hQl hx
+  exact mem_pathComponentOne_cons_cons_of_apply_ne hQ hneg he hn ha hb hab ht hshort hQl hx
 
 /-- **Real Spin groups with a definite plane are path-connected.** The Spin group of a quadratic
 form on a real vector space is path-connected when the form has two orthogonal vectors whose norms
