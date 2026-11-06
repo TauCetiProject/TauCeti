@@ -112,12 +112,11 @@ theorem isOpenMap_toProjectivization : IsOpenMap (toProjectivization n ℂ) := b
     (⟨v, hv⟩ : {v : Matrix n n ℂ // v ≠ 0})).eventually
       (h₁.and (hcont.continuousAt.eventually_ne hv0))] with ⟨w, hw⟩ ⟨hwO, hw0⟩
   -- Near `v`, the normalized matrix has determinant one and lies in `O`.
-  have hdet : ((f w.det)⁻¹ • w).det = 1 := by
-    rw [det_smul, inv_pow, hfk, inv_mul_cancel₀ hw0]
-  let B : SpecialLinearGroup n ℂ := ⟨_, hdet⟩
-  refine ⟨B, (Set.ext_iff.1 hOU B).1 hwO, ?_⟩
-  rw [toProjectivization_mk, Projectivization.mk'_eq_mk]
-  exact (Projectivization.mk_eq_mk_iff' ℂ _ _ _ _).2 ⟨(f w.det)⁻¹, rfl⟩
+  obtain ⟨B, hB, hBw⟩ := exists_coe_eq_inv_smul_of_pow_eq_det hw
+    (fun h ↦ hw0 (by rw [← hfk w.det, h, zero_pow hk])) (hfk w.det)
+  refine ⟨B, (Set.ext_iff.1 hOU B).1 (by rwa [← hB] at hwO), ?_⟩
+  rw [Projectivization.mk'_eq_mk]
+  exact hBw
 
 /-- `PSL(n, ℂ)` is an open subset of the projective space of `n × n` matrices. -/
 theorem isOpenEmbedding_toProjectivization : IsOpenEmbedding (toProjectivization n ℂ) :=

@@ -109,6 +109,14 @@ theorem _root_.Matrix.det_rep_mk_ne_zero_iff {A : Matrix n n K} (hA : A ≠ 0) :
   obtain ⟨a, ha⟩ := Projectivization.exists_smul_eq_mk_rep K A hA
   rw [← ha, Units.smul_def, det_smul, mul_ne_zero_iff, and_iff_right (pow_ne_zero _ a.ne_zero)]
 
+/-- If `c ^ n = det A` for a nonzero `c`, then `c⁻¹ • A` is a matrix of `SL(n, K)` whose class
+maps to the line of `A`. -/
+theorem exists_coe_eq_inv_smul_of_pow_eq_det {A : Matrix n n K} (hA : A ≠ 0) {c : K} (hc0 : c ≠ 0)
+    (hc : c ^ Fintype.card n = A.det) : ∃ B : SpecialLinearGroup n K,
+      (B : Matrix n n K) = c⁻¹ • A ∧ toProjectivization n K B = .mk K A hA := by
+  refine ⟨⟨c⁻¹ • A, by simp [← hc, hc0]⟩, rfl, ?_⟩
+  exact (Projectivization.mk_eq_mk_iff' K _ _ _ _).2 ⟨c⁻¹, rfl⟩
+
 /-- The line of a nonzero matrix `A` comes from `PSL(n, K)` exactly when `det A` is the `n`-th
 power of a unit. -/
 theorem mk_mem_range_toProjectivization_iff {A : Matrix n n K} (hA : A ≠ 0) :
@@ -118,19 +126,12 @@ theorem mk_mem_range_toProjectivization_iff {A : Matrix n n K} (hA : A ≠ 0) :
   · rintro ⟨g, hg⟩
     induction g using QuotientGroup.induction_on with | H B => ?_
     obtain ⟨a, ha⟩ := (Projectivization.mk_eq_mk_iff K _ _ _ _).1 hg
-    refine ⟨a⁻¹, ?_⟩
     have hdet := congrArg det ha
     rw [Units.smul_def, det_smul, B.det_coe] at hdet
-    rw [Units.val_inv_eq_inv_val, inv_pow, eq_comm, ← mul_eq_one_iff_eq_inv₀
-      (pow_ne_zero _ a.ne_zero), mul_comm, hdet]
+    exact ⟨a⁻¹, by simpa using (eq_inv_of_mul_eq_one_right hdet).symm⟩
   · rintro ⟨c, hc⟩
-    have hdet : ((c⁻¹ : Kˣ) • A).det = 1 := by
-      rw [Units.smul_def, det_smul, ← hc, Units.val_inv_eq_inv_val, inv_pow,
-        inv_mul_cancel₀ (pow_ne_zero _ c.ne_zero)]
-    let B : SpecialLinearGroup n K := ⟨_, hdet⟩
-    refine ⟨B, ?_⟩
-    rw [toProjectivization_mk]
-    exact (Projectivization.mk_eq_mk_iff K _ _ _ _).2 ⟨c⁻¹, rfl⟩
+    obtain ⟨B, -, hB⟩ := exists_coe_eq_inv_smul_of_pow_eq_det hA c.ne_zero hc
+    exact ⟨B, hB⟩
 
 /-- Over an algebraically closed field, the image of `PSL(n, K)` in the projective space of
 matrices is the locus of lines of invertible matrices. -/
