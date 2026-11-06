@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.ConstantExtension.IntegralBasis
 public import TauCeti.FieldTheory.FunctionField.Place.Degree
 public import TauCeti.FieldTheory.FunctionField.Place.Extension.Fibre
 public import TauCeti.FieldTheory.IntermediateField.Adjoin.Embeddings
+import TauCeti.LinearAlgebra.Span.Basic
 
 /-!
 # Residue fields in a constant field extension
@@ -116,23 +117,6 @@ private theorem span_range_algebraMap_residueField_eq_top_of_finiteDimensional
     ← Algebra.smul_def]
   exact Submodule.smul_mem _ _ (Submodule.subset_span (Set.mem_range_self _))
 
-/-- A ring homomorphism `f : R → S` carries `span_A T` into `span_B T'` as soon as it carries
-every generator in `T` into `span_B T'` and the image of every scalar in `A` is a scalar in `B`.
-Unlike `Submodule.apply_mem_span_image_of_mem_span`, no ring map `A → B` is required. -/
-private theorem map_mem_span_of_forall_exists {A B R S : Type*} [CommSemiring A] [CommSemiring B]
-    [Semiring R] [Semiring S] [Algebra A R] [Algebra B S] (f : R →+* S) (T : Set R) (T' : Set S)
-    (hA : ∀ r : A, ∃ b : B, f (algebraMap A R r) = algebraMap B S b)
-    (hT : ∀ t ∈ T, f t ∈ Submodule.span B T') {z : R} (hz : z ∈ Submodule.span A T) :
-    f z ∈ Submodule.span B T' := by
-  induction hz using Submodule.span_induction with
-  | mem x hx => exact hT x hx
-  | zero => simp
-  | add x y _ _ hx hy => simpa using add_mem hx hy
-  | smul r x _ hx =>
-    obtain ⟨b, hb⟩ := hA r
-    rw [Algebra.smul_def, map_mul, hb, ← Algebra.smul_def]
-    exact Submodule.smul_mem _ _ hx
-
 /-- **The residue field of a constant field extension is spanned by the constants**: for a
 separable algebraic constant field extension `F' = F · k'` of `F / k` with exact constant field
 `k`, finite or not, the residue field of a place `P'` of `F' / k'` is spanned over the residue
@@ -172,7 +156,8 @@ theorem span_range_algebraMap_residueField_eq_top_of_constantCompositum_eq_top
     rw [IsLocalRing.ResidueField.algebraMap_residue]
     exact congrArg _ (Subtype.ext (by simp [Q]))
   rw [← hg]
-  refine map_mem_span_of_forall_exists (algebraMap Q.ResidueField P'.ResidueField) _ _ ?_ ?_ hmem
+  refine Submodule.map_mem_span_of_forall_exists
+    (algebraMap Q.ResidueField P'.ResidueField) _ _ ?_ ?_ hmem
   · -- A coefficient from the residue field of `Q ∩ F` is a coefficient from `F_P`.
     intro r
     obtain ⟨a, rfl⟩ := IsLocalRing.residue_surjective r
