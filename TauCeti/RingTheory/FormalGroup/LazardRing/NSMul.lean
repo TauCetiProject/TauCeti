@@ -35,9 +35,10 @@ For a prime `p`, the coefficient `vⱼ` of `X^(pʲ)` in the `p`-series generates
 `n + 1 = pʲ` the formula reads `vⱼ ≡ (p^n - 1) • xₙ` modulo `I²`, so modulo `p` and decomposables
 `vⱼ ≡ -x_(pʲ - 1)`: Landweber's element `vⱼ` is, up to sign, the generator `x_(pʲ - 1)` of the
 polynomial ring `L ⧸ p = 𝔽ₚ[x₁, x₂, …]` modulo decomposables. In all other degrees `m ≥ 2` the
-coefficient `aₘ` of the `p`-series lies in `(p) + I²`. Hence
+coefficient `aₘ` of the `p`-series lies in `(p) + I²`. Hence, coefficientwise, in
+`(L ⧸ ((p) + I²))⟦X⟧`
 
-  `[p](X) ≡ -∑_(j ≥ 1) x_(pʲ - 1) X^(pʲ)  (mod p L⟦X⟧ + I² L⟦X⟧)`.
+  `[p](X) = -∑_(j ≥ 1) x_(pʲ - 1) X^(pʲ)`.
 
 This is the input for replacing the generators `x_(pʲ - 1)` by the `vⱼ`, from which the sequence
 `p, v₁, v₂, …` is regular in `L` and the ideals `I_n` are prime, as used in Landweber's exact

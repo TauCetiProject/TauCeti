@@ -360,15 +360,17 @@ theorem nsmulSeries_ofStrictCoeffs_single_smul_𝔾ₐ (n : ℕ+) {e : R} (he : 
   have hψ : PowerSeries.HasSubst ψ := .of_constantCoeff_zero' (by simp [ψ])
   -- `[k]` is conjugated by the isomorphism `φ = X + e X^(n + 1)` from `[k](X) = k X` on `X + Y`,
   -- and `φ⁻¹ = X - e X^(n + 1)`.
-  rw [← zsmulSeries_natCast, (smulIso _ 𝔾ₐ).zsmulSeries_eq_subst, zsmulSeries_natCast,
-    smulIso_toHom_toPowerSeries, smulIso_invHom_toPowerSeries,
-    FormalCoordinate.inv_ofStrictCoeffs_single_of_mul_self_eq_zero n he,
-    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single,
-    FormalCoordinate.toPowerSeries_ofStrictCoeffs_single, nsmulSeries_𝔾ₐ,
-    ← map_natCast PowerSeries.C, PowerSeries.subst_X_add_C_mul_X_pow hk, ← PowerSeries.C_apply]
-  rw [PowerSeries.subst_add hψ, PowerSeries.subst_mul hψ, PowerSeries.subst_mul hψ,
-    PowerSeries.subst_pow hψ, PowerSeries.subst_mul hψ, PowerSeries.subst_X hψ,
-    PowerSeries.subst_C, PowerSeries.subst_C, ← PowerSeries.C_apply, ← PowerSeries.C_apply]
+  have hconj : (FormalCoordinate.ofStrictCoeffs (Pi.single n e) • 𝔾ₐ).nsmulSeries k =
+      (PowerSeries.C (k : R) * PowerSeries.X +
+        PowerSeries.C e * (PowerSeries.C (k : R) * PowerSeries.X) ^ ((n : ℕ) + 1)).subst ψ := by
+    rw [← zsmulSeries_natCast, (smulIso _ 𝔾ₐ).zsmulSeries_eq_subst, zsmulSeries_natCast]
+    simp only [smulIso_toHom_toPowerSeries, smulIso_invHom_toPowerSeries,
+      FormalCoordinate.inv_ofStrictCoeffs_single_of_mul_self_eq_zero n he,
+      FormalCoordinate.toPowerSeries_ofStrictCoeffs_single, nsmulSeries_𝔾ₐ]
+    rw [← map_natCast PowerSeries.C, PowerSeries.subst_X_add_C_mul_X_pow hk, ← PowerSeries.C_apply]
+  rw [hconj]
+  simp only [PowerSeries.subst_add hψ, PowerSeries.subst_mul hψ, PowerSeries.subst_pow hψ,
+    PowerSeries.subst_X hψ, PowerSeries.subst_C, ← PowerSeries.C_apply]
   -- `e (k ψ)^(n + 1) = e (k X)^(n + 1)`, since `e · e = 0`.
   have hkψ : PowerSeries.C (k : R) * ψ = PowerSeries.C (k : R) * PowerSeries.X +
       PowerSeries.C (-e) * (PowerSeries.C (k : R) * PowerSeries.X ^ ((n : ℕ) + 1)) := by
