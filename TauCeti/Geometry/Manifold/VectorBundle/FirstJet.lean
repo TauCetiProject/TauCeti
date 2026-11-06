@@ -32,14 +32,19 @@ change of charts.
 * `TauCeti.firstJetBundleCore` and `TauCeti.FirstJetBundle`: the vector bundle core and the
   first-jet bundle itself, a `C^n` vector bundle when `V` and `M` are `C^(n+1)`
   (`TauCeti.FirstJetBundle.contMDiffVectorBundle`).
+* `TauCeti.FirstJetBundle.localRep`: the local representative of a section in a chart and
+  trivialization. Local representatives in two charts are related by the coordinate change of `V`
+  and the change of charts (`TauCeti.FirstJetBundle.localRep_eventuallyEq_fibreCoordChange`).
 * `TauCeti.FirstJetBundle.jet`: the first jet `j¹s(x)` of a section. In every chart it is the value
   and the chart derivative of the local representative
   (`TauCeti.FirstJetBundle.trivializationAt_jet`), and it is a `C^n` section of `J¹V` for a
   `C^(n+1)` section `s` (`TauCeti.FirstJetBundle.contMDiff_jet`).
   For the trivial bundle over a model space it is `(s x, fderiv 𝕜 s x)`.
 * `TauCeti.FirstJetBundle.value` and `TauCeti.FirstJetBundle.ofDeriv`: the fibres of the projection
-  `J¹V → V` and of the inclusion `T*M ⊗ V = Hom(TM, V) → J¹V`. The projection sends `j¹s(x)` to
-  `s x` and is surjective, the inclusion is injective, and the sequence
+  `J¹V → V` and of the inclusion `Hom(TM, V) → J¹V` of continuous linear maps (for
+  finite-dimensional fibres, `Hom(TM, V) = T*M ⊗ V`). The projection sends `j¹s(x)` to
+  `s x` and is surjective, the inclusion is injective, their composite is zero
+  (`TauCeti.FirstJetBundle.value_comp_ofDeriv`), and the sequence
   `0 → Hom(TₓM, Vₓ) → J¹Vₓ → Vₓ → 0` is exact (`TauCeti.FirstJetBundle.range_ofDeriv`). The
   inclusion is intrinsic: in every chart it reads `L` in that chart and trivialization
   (`TauCeti.FirstJetBundle.coordChange_ofDeriv`).
@@ -186,17 +191,17 @@ theorem coordChange_self_apply {i y : M} (hy : y ∈ baseSet (H := H) F V i)
     · filter_upwards [mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hy'
         ((isOpen_baseSet F V i).mem_nhds hy))] with z hz
       ext w
-      exact (trivializationAt F V i).coordChangeL_self_apply 𝕜 hz.1 w
+      exact (trivializationAt F V i).coordChangeL_same_apply 𝕜 hz.1 w
     · ext w
       rw [fibreCoordChange_extChartAt hy.2]
-      exact (trivializationAt F V i).coordChangeL_self_apply 𝕜 hy.1 w
+      exact (trivializationAt F V i).coordChangeL_same_apply 𝕜 hy.1 w
   have hc : tangentCoordChange I i i y = ContinuousLinearMap.id 𝕜 E := by
     ext w
     exact tangentCoordChange_self hy'
   rw [coordChange_apply, hderiv, hc]
-  refine Prod.ext ((trivializationAt F V i).coordChangeL_self_apply 𝕜 hy.1 v.1) ?_
+  refine Prod.ext ((trivializationAt F V i).coordChangeL_same_apply 𝕜 hy.1 v.1) ?_
   ext w
-  simp [(trivializationAt F V i).coordChangeL_self_apply 𝕜 hy.1]
+  simp [(trivializationAt F V i).coordChangeL_same_apply 𝕜 hy.1]
 
 variable [ContMDiffVectorBundle 1 F V I]
 
@@ -313,8 +318,8 @@ abbrev FirstJetBundle : M → Type _ :=
   (firstJetBundleCore I F V).Fiber
 
 omit [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] in
-/-- The first-jet bundle of a `C^(n+1)` vector bundle over a `C^(n+1)` manifold is a `C^n`
-vector bundle. -/
+/-- The vector bundle core of the first-jet bundle of a `C^(n+1)` vector bundle over a `C^(n+1)`
+manifold has `C^n` coordinate changes. -/
 theorem firstJetBundleCore_isContMDiff {n : ℕ∞ω} [IsManifold I (n + 1) M]
     [ContMDiffVectorBundle (n + 1) F V I] :
     haveI : IsManifold I 1 M := .of_le (n := n + 1) le_add_self
@@ -366,6 +371,52 @@ theorem localRep_extChartAt (s : ∀ x, V x) {i y : M} (hy : y ∈ (chartAt H i)
     localRep I F s i (extChartAt I i y) = (trivializationAt F V i ⟨y, s y⟩).2 := by
   rw [localRep, (extChartAt I i).left_inv (by rwa [extChartAt_source])]
 
+omit [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] in
+/-- The local representative in the chart and trivialization at `i` of a section that is `C^n` at
+a point `y` of the first-jet chart domain at `i` is `C^n` within `range I` at the image of `y`. -/
+theorem contDiffWithinAt_localRep {n : ℕ∞ω} [IsManifold I n M] [ContMDiffVectorBundle n F V I]
+    {s : ∀ x, V x} {i y : M}
+    (hs : ContMDiffAt I (I.prod 𝓘(𝕜, F)) n (fun x ↦ TotalSpace.mk' F x (s x)) y)
+    (hi : y ∈ baseSet (H := H) F V i) :
+    ContDiffWithinAt 𝕜 n (localRep I F s i) (range I) (extChartAt I i y) := by
+  have hy : y ∈ (extChartAt I i).source := by rw [extChartAt_source]; exact hi.2
+  have h₁ : ContMDiffAt I 𝓘(𝕜, F) n (fun x ↦ (trivializationAt F V i ⟨x, s x⟩).2)
+      ((extChartAt I i).symm (extChartAt I i y)) := by
+    rw [(extChartAt I i).left_inv hy]
+    exact ((trivializationAt F V i).contMDiffAt_section_iff hi.1).1 hs
+  exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h₁.comp_contMDiffWithinAt _
+    (contMDiffWithinAt_extChartAt_symm_range i ((extChartAt I i).map_source hy)))
+
+/-- The local representative in the chart and trivialization at `i` of a section that is
+differentiable at a point `y` of the first-jet chart domain at `i` is differentiable within
+`range I` at the image of `y`. -/
+theorem differentiableWithinAt_localRep {s : ∀ x, V x} {i y : M}
+    (hs : MDifferentiableAt I (I.prod 𝓘(𝕜, F)) (fun x ↦ TotalSpace.mk' F x (s x)) y)
+    (hi : y ∈ baseSet (H := H) F V i) :
+    DifferentiableWithinAt 𝕜 (localRep I F s i) (range I) (extChartAt I i y) := by
+  have hy : y ∈ (extChartAt I i).source := by rw [extChartAt_source]; exact hi.2
+  have h₁ : MDifferentiableAt I 𝓘(𝕜, F) (fun x ↦ (trivializationAt F V i ⟨x, s x⟩).2)
+      ((extChartAt I i).symm (extChartAt I i y)) := by
+    rw [(extChartAt I i).left_inv hy]
+    exact ((trivializationAt F V i).mdifferentiableAt_section_iff I s hi.1).1 hs
+  exact mdifferentiableWithinAt_iff_differentiableWithinAt.1 (h₁.comp_mdifferentiableWithinAt _
+    (mdifferentiableWithinAt_extChartAt_symm ((extChartAt I i).map_source hy)))
+
+omit [IsManifold I 1 M] [ContMDiffVectorBundle 1 F V I] in
+/-- **Transformation law for local representatives.** Near the image of a point `y` of the
+first-jet chart domains at `i` and `j`, the local representative at `j` is the coordinate change
+of `V` from `i` to `j` applied to the local representative at `i` after the change of charts. -/
+theorem localRep_eventuallyEq_fibreCoordChange (s : ∀ x, V x) {i j y : M}
+    (hi : y ∈ baseSet (H := H) F V i) (hj : y ∈ baseSet (H := H) F V j) :
+    localRep I F s j =ᶠ[𝓝[range I] (extChartAt I j y)] fun z ↦ fibreCoordChange I F V i j z
+      (localRep I F s i ((extChartAt I i ∘ (extChartAt I j).symm) z)) := by
+  have hyj : y ∈ (extChartAt I j).source := by rw [extChartAt_source]; exact hj.2
+  filter_upwards [mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hyj
+    (((isOpen_baseSet F V i).inter (isOpen_baseSet F V j)).mem_nhds ⟨hi, hj⟩))] with z hz
+  rw [Function.comp_apply, localRep_extChartAt I F s hz.1.2, fibreCoordChange,
+    ContinuousLinearEquiv.coe_coe,
+    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨_, s _⟩) hz.1.1 hz.2.1, localRep]
+
 /-- The first jet `j¹s(x)` of a section `s` of `V` at `x`: the value at `x` and the chart
 derivative at `x` of the local representative of `s` in the chart and trivialization at `x`. -/
 def jet (s : ∀ x, V x) (x : M) : FirstJetBundle I F V x :=
@@ -395,52 +446,33 @@ theorem coordChange_jet {s : ∀ x, V x} {y : M}
   have hy := mem_baseSet_self (H := H) F V y
   have hyi : y ∈ (extChartAt I i).source := by rw [extChartAt_source]; exact hi.2
   have hyy : y ∈ (extChartAt I y).source := by rw [extChartAt_source]; exact hy.2
-  have hval : ∀ w ∈ (trivializationAt F V y).baseSet ∩ (trivializationAt F V i).baseSet,
-      ((trivializationAt F V y).coordChangeL 𝕜 (trivializationAt F V i) w : F →L[𝕜] F)
-        (trivializationAt F V y ⟨w, s w⟩).2 = (trivializationAt F V i ⟨w, s w⟩).2 := by
-    intro w hw
-    rw [ContinuousLinearEquiv.coe_coe, Trivialization.coordChangeL_apply _ _ hw,
-      Trivialization.symm_apply_apply_mk _ hw.1]
+  have hval : ((trivializationAt F V y).coordChangeL 𝕜 (trivializationAt F V i) y : F →L[𝕜] F)
+      (trivializationAt F V y ⟨y, s y⟩).2 = (trivializationAt F V i ⟨y, s y⟩).2 :=
+    Trivialization.coordChangeL_apply_snd 𝕜 _ _ (p := ⟨y, s y⟩) hy.1 hi.1
   -- The local representative at `y` is differentiable, and so is the one at `i`.
   have hrep : HasFDerivWithinAt (localRep I F s y)
       (fderivWithin 𝕜 (localRep I F s y) (range I) (extChartAt I y y)) (range I)
       ((extChartAt I y ∘ (extChartAt I i).symm) (extChartAt I i y)) := by
     rw [Function.comp_apply, (extChartAt I i).left_inv hyi]
-    exact ((mdifferentiableAt_section I s).1 hs).differentiableWithinAt_writtenInExtChartAt
-      |>.hasFDerivWithinAt
+    exact (differentiableWithinAt_localRep I F hs hy).hasFDerivWithinAt
   have hcomp := ((contDiffWithinAt_fibreCoordChange (n := 1) hy.1 hi).differentiableWithinAt
     one_ne_zero).hasFDerivWithinAt.clm_apply (hrep.comp _
       (hasFDerivWithinAt_tangentCoordChange ⟨hyi, hyy⟩) fun z _ ↦ by
         rw [Function.comp_apply, extChartAt_coe]; exact mem_range_self _)
-  have hU : IsOpen ((trivializationAt F V y).baseSet ∩ (trivializationAt F V i).baseSet ∩
-      ((chartAt H y).source ∩ (chartAt H i).source)) :=
-    ((trivializationAt F V y).open_baseSet.inter (trivializationAt F V i).open_baseSet).inter
-      ((chartAt H y).open_source.inter (chartAt H i).open_source)
-  -- Near the chart point, the local representative at `i` is the coordinate change of `V`
-  -- applied to the local representative at `y` after the change of charts.
-  have heq : ∀ᶠ z in 𝓝[range I] (extChartAt I i y), localRep I F s i z =
-      fibreCoordChange I F V y i z
-        (localRep I F s y ((extChartAt I y ∘ (extChartAt I i).symm) z)) := by
-    have hmem : ∀ᶠ z in 𝓝[range I] (extChartAt I i y), (extChartAt I i).symm z ∈
-        (trivializationAt F V y).baseSet ∩ (trivializationAt F V i).baseSet ∩
-          ((chartAt H y).source ∩ (chartAt H i).source) :=
-      mem_nhdsWithin_of_mem_nhds (extChartAt_preimage_mem_nhds' hyi
-        (hU.mem_nhds ⟨⟨hy.1, hi.1⟩, hy.2, hi.2⟩))
-    filter_upwards [hmem] with z hz
-    rw [Function.comp_apply, localRep_extChartAt I F s hz.2.1, fibreCoordChange, hval _ hz.1,
-      localRep]
-  -- Differentiating that identity by the product and chain rules gives the jet transformation.
-  have hD := (hcomp.congr_of_eventuallyEq heq ?_).fderivWithin
+  -- Differentiating the transformation law for local representatives by the product and chain
+  -- rules gives the jet transformation.
+  have hD := (hcomp.congr_of_eventuallyEq
+    (localRep_eventuallyEq_fibreCoordChange I F s hy hi) ?_).fderivWithin
     (I.uniqueDiffOn _ (extChartAt_target_subset_range i ((extChartAt I i).map_source hyi)))
   · refine (coordChange_apply I F V y i y _).trans ?_
     rw [hD]
     simp only [Function.comp_apply, (extChartAt I i).left_inv hyi, localRep_extChartAt I F s hy.2,
       fibreCoordChange_extChartAt hi.2]
     refine Prod.ext ?_ ?_
-    · simpa using hval y ⟨hy.1, hi.1⟩
+    · simpa using hval
     · rw [jet_fst, jet_snd, add_comm]
   · simp only [Function.comp_apply, (extChartAt I i).left_inv hyi, localRep_extChartAt I F s hy.2,
-      fibreCoordChange_extChartAt hi.2, hval y ⟨hy.1, hi.1⟩, localRep_extChartAt I F s hi.2]
+      fibreCoordChange_extChartAt hi.2, hval, localRep_extChartAt I F s hi.2]
 
 /-- The preferred trivialization of `J¹V` at `i` reads a first jet in the chart and
 trivialization of `V` at `i`. -/
@@ -500,12 +532,7 @@ theorem contMDiffOn_jet {n : ℕ∞ω} [IsManifold I (n + 1) M] [ContMDiffVector
   -- The value coordinate.
   have hval := (contMDiffAt_section x₀).1 hsx₀
   -- The derivative coordinate: the chart derivative of the local representative.
-  have hrep : ContDiffWithinAt 𝕜 (n + 1) (localRep I F s x₀) (range I) (extChartAt I x₀ x₀) := by
-    have h₁ : ContMDiffAt I 𝓘(𝕜, F) (n + 1) (fun x ↦ (trivializationAt F V x₀ ⟨x, s x⟩).2)
-        ((extChartAt I x₀).symm (extChartAt I x₀ x₀)) := by
-      rwa [(extChartAt I x₀).left_inv hx₀']
-    exact contMDiffWithinAt_iff_contDiffWithinAt.1 (h₁.comp_contMDiffWithinAt _
-      (contMDiffWithinAt_extChartAt_symm_range x₀ ((extChartAt I x₀).map_source hx₀')))
+  have hrep := contDiffWithinAt_localRep I F hsx₀ (mem_baseSet_self (H := H) F V x₀)
   have hderiv : ContMDiffAt I 𝓘(𝕜, E →L[𝕜] F) n
       (fun x ↦ fderivWithin 𝕜 (localRep I F s x₀) (range I) (extChartAt I x₀ x)) x₀ := by
     have h₂ := contMDiffWithinAt_iff_contDiffWithinAt.2 (hrep.fderivWithin_right I.uniqueDiffOn
@@ -542,17 +569,13 @@ section Kernel
 
 variable [∀ x, IsTopologicalAddGroup (V x)] [∀ x, ContinuousSMul 𝕜 (V x)]
 
-/-- The inclusion of `Hom(TₓM, Vₓ) = T*ₓM ⊗ Vₓ` into the first jets at `x`: a homomorphism
-`L` gives the jet with value `0` whose chart derivative is `L` read in the trivialization at
-`x`. -/
-def ofDeriv (x : M) : (TangentSpace I x →L[𝕜] V x) →ₗ[𝕜] FirstJetBundle I F V x where
-  toFun L := ((0 : F), ((trivializationAt F V x).continuousLinearMapAt 𝕜 x).comp L)
-  map_add' L L' := by
-    refine Prod.ext (add_zero 0).symm ?_
-    exact ContinuousLinearMap.comp_add _ _ _
-  map_smul' c L := by
-    refine Prod.ext (smul_zero c).symm ?_
-    exact ContinuousLinearMap.comp_smul _ _ _
+/-- The inclusion of the continuous linear maps `Hom(TₓM, Vₓ)` into the first jets at `x`: a
+homomorphism `L` gives the jet with value `0` whose chart derivative is `L` read in the
+trivialization at `x`. -/
+def ofDeriv (x : M) : (TangentSpace I x →L[𝕜] V x) →L[𝕜] FirstJetBundle I F V x :=
+  ContinuousLinearMap.inr 𝕜 F (E →L[𝕜] F) ∘L
+    ContinuousLinearMap.postcomp (TangentSpace I x)
+      ((trivializationAt F V x).continuousLinearMapAt 𝕜 x)
 
 /-- The jet of `L` has value coordinate `0` and derivative coordinate `L` read in the
 trivialization at `x`. -/
@@ -572,13 +595,25 @@ theorem ofDeriv_injective (x : M) : Function.Injective (ofDeriv I F (V := V) x) 
   rw [← (trivializationAt F V x).symmL_continuousLinearMapAt (R := 𝕜) hx (L v), h2,
     (trivializationAt F V x).symmL_continuousLinearMapAt hx]
 
-/-- **The first-jet sequence `0 → T*M ⊗ V → J¹V → V → 0` is exact in the middle**: the first jets
-with value zero are exactly the images of `Hom(TₓM, Vₓ)`. -/
+/-- The value of the jet of a homomorphism `L` is zero. -/
+theorem value_ofDeriv (x : M) (L : TangentSpace I x →L[𝕜] V x) :
+    value I F x (ofDeriv I F x L) = 0 :=
+  (value_eq_zero_iff I F x _).2 rfl
+
+/-- The composite `Hom(TₓM, Vₓ) → J¹Vₓ → Vₓ` of the first-jet sequence is zero. -/
+@[simp]
+theorem value_comp_ofDeriv (x : M) : value I F x ∘L ofDeriv I F (V := V) x = 0 :=
+  ContinuousLinearMap.ext (value_ofDeriv I F x)
+
+/-- **The first-jet sequence `0 → Hom(TₓM, Vₓ) → J¹Vₓ → Vₓ → 0` is exact in the middle**: the
+first jets with value zero are exactly the images of `Hom(TₓM, Vₓ)`. -/
 theorem range_ofDeriv (x : M) :
-    LinearMap.range (ofDeriv I F (V := V) x) = LinearMap.ker (value I F x).toLinearMap := by
+    LinearMap.range (ofDeriv I F (V := V) x).toLinearMap =
+      LinearMap.ker (value I F x).toLinearMap := by
   have hx := mem_baseSet_trivializationAt F V x
   ext j
-  rw [LinearMap.mem_range, LinearMap.mem_ker, ContinuousLinearMap.coe_coe, value_eq_zero_iff]
+  simp only [LinearMap.mem_range, LinearMap.mem_ker, ContinuousLinearMap.coe_coe]
+  rw [value_eq_zero_iff]
   refine ⟨?_, fun hj ↦ ⟨((trivializationAt F V x).symmL 𝕜 x).comp j.2, Prod.ext hj.symm ?_⟩⟩
   · rintro ⟨L, rfl⟩
     rfl
@@ -589,12 +624,12 @@ theorem range_ofDeriv (x : M) :
 of `L` has value zero and its chart derivative is `L` read in that chart and trivialization. -/
 theorem coordChange_ofDeriv {y i : M} (hi : y ∈ baseSet (H := H) F V i)
     (L : TangentSpace I y →L[𝕜] V y) :
-    (coordChange I F V y i y (ofDeriv I F y L)).1 = 0 ∧
-      ∀ v : E, (coordChange I F V y i y (ofDeriv I F y L)).2 v =
-        (trivializationAt F V i).continuousLinearMapAt 𝕜 y (L (tangentCoordChange I i y y v)) := by
+    coordChange I F V y i y (ofDeriv I F y L) =
+      ((0 : F), ((trivializationAt F V i).continuousLinearMapAt 𝕜 y).comp
+        (L.comp (tangentCoordChange I i y y : E →L[𝕜] TangentSpace I y))) := by
   have hy := mem_baseSet_trivializationAt F V y
-  have h := coordChange_apply I F V y i y (ofDeriv I F y L)
-  refine ⟨(congrArg Prod.fst h).trans (map_zero _), fun v ↦ (congrArg (fun p ↦ p.2 v) h).trans ?_⟩
+  refine (coordChange_apply I F V y i y _).trans (Prod.ext (map_zero _) ?_)
+  ext v
   have hL : (trivializationAt F V y).symm y ((trivializationAt F V y).continuousLinearMapAt 𝕜 y
       (L (tangentCoordChange I i y y v))) = L (tangentCoordChange I i y y v) := by
     rw [Trivialization.continuousLinearMapAt_apply_of_mem (R := 𝕜) _ hy,

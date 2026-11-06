@@ -29,14 +29,15 @@ trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` o
 of the first followed by the coordinate change from the first to the second
 (`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Linear coordinate changes
 satisfy the identity and cocycle laws over the relevant base sets
-(`Bundle.Trivialization.coordChangeL_self_apply`,
-`Bundle.Trivialization.coordChangeL_coordChangeL_apply`).
+(`Bundle.Trivialization.coordChangeL_same_apply`,
+`Bundle.Trivialization.coordChangeL_coordChangeL_apply`), and send the coordinate of a point in
+the first trivialization to its coordinate in the second
+(`Bundle.Trivialization.coordChangeL_apply_snd`).
 
-exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). We also record
-the product trivialization's fibrewise inverse (`Bundle.Trivialization.prod_symm_apply'`), the
-preferred trivialization of a direct-sum fibre bundle (`FiberBundle.trivializationAt_prod`), and
-scalar restriction of linear trivializations and coordinate changes
-(`Bundle.Trivialization.isLinear_restrictScalars`,
+We also record the product trivialization's fibrewise inverse
+(`Bundle.Trivialization.prod_symm_apply'`), the preferred trivialization of a direct-sum fibre
+bundle (`FiberBundle.trivializationAt_prod`), and scalar restriction of linear trivializations
+and coordinate changes (`Bundle.Trivialization.isLinear_restrictScalars`,
 `Bundle.Trivialization.restrictScalars_coordChangeL`).
 -/
 
@@ -120,7 +121,7 @@ omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
 /-- The coordinate change from a linear trivialization to itself is the identity over its base
 set. -/
 @[simp]
-theorem coordChangeL_self_apply (hb : b ∈ e.baseSet) (v : F) : e.coordChangeL 𝕜 e b v = v := by
+theorem coordChangeL_same_apply (hb : b ∈ e.baseSet) (v : F) : e.coordChangeL 𝕜 e b v = v := by
   rw [e.coordChangeL_apply' e ⟨hb, hb⟩]
   exact e.coordChange_same_apply hb v
 
@@ -135,6 +136,14 @@ theorem coordChangeL_coordChangeL_apply (e'' : Trivialization F (π F E)) [e''.I
   rw [e'.coordChangeL_apply' e'' ⟨hb', hb''⟩, e.coordChangeL_apply' e' ⟨hb, hb'⟩,
     e.coordChangeL_apply' e'' ⟨hb, hb''⟩]
   exact e.coordChange_coordChange e' e'' hb hb' v
+
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- The linear coordinate change from `e` to `e'` sends the coordinate of a point in `e` to its
+coordinate in `e'`. -/
+theorem coordChangeL_apply_snd {p : TotalSpace F E} (hb : p.proj ∈ e.baseSet)
+    (hb' : p.proj ∈ e'.baseSet) : e.coordChangeL 𝕜 e' p.proj (e p).2 = (e' p).2 := by
+  rw [e.coordChangeL_apply' e' ⟨hb, hb'⟩]
+  exact e.coordChange_apply_snd e' hb
 
 end Bundle.Trivialization
 
