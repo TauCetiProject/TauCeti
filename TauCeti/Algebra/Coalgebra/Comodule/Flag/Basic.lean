@@ -51,6 +51,23 @@ open scoped TensorProduct
 
 namespace Module.Basis
 
+/-- A vector of a submodule spanned by basis vectors has zero coordinate at every basis vector
+outside the submodule. -/
+theorem repr_eq_zero_of_mem_of_notMem {R M ι : Type*} [CommRing R] [AddCommGroup M]
+    [Module R M] (cb : Basis ι R M) {S : Submodule R M}
+    (hS : S = Submodule.span R (cb '' {j | cb j ∈ S})) {j : ι} (hj : cb j ∉ S) {z : M}
+    (hz : z ∈ S) : cb.repr z j = 0 := by
+  have hker : S ≤ LinearMap.ker (cb.coord j) := by
+    rw [hS]
+    refine Submodule.span_le.mpr ?_
+    rintro _ ⟨l, hl, rfl⟩
+    apply LinearMap.mem_ker.mpr
+    have hjl : j ≠ l := by
+      rintro rfl
+      exact hj hl
+    simp [Basis.coord_apply, hjl]
+  simpa only [Basis.coord_apply] using LinearMap.mem_ker.mp (hker hz)
+
 /-- A complete flag spanned by subsets of a basis separates any two distinct basis vectors. -/
 theorem exists_flag_separating {R M ι : Type*} [CommRing R] [Nontrivial R]
     [AddCommGroup M] [Module R M] {n : ℕ} (cb : Basis ι R M) (bas : Basis (Fin n) R M)
@@ -80,34 +97,25 @@ theorem exists_flag_separating {R M ι : Type*} [CommRing R] [Nontrivial R]
   have hb : cb b ∉ bas.flag i.castSucc := fun h ↦ ha ((hsame _).mpr h)
   have har' : cb a ∈ bas.flag i.succ := by simpa only [hi] using har
   have hbr' : cb b ∈ bas.flag i.succ := (hsame _).mp har'
-  have hzero (j : ι) (hj : cb j ∉ bas.flag i.castSucc) {z : M}
-      (hz : z ∈ bas.flag i.castSucc) : cb.repr z j = 0 := by
-    have hker : bas.flag i.castSucc ≤ LinearMap.ker (cb.coord j) := by
-      rw [hcoord]
-      refine Submodule.span_le.mpr ?_
-      rintro _ ⟨l, hl, rfl⟩
-      apply LinearMap.mem_ker.mpr
-      have hjl : j ≠ l := by
-        rintro rfl
-        exact hj hl
-      simp [Basis.coord_apply, hjl]
-    simpa only [Basis.coord_apply] using LinearMap.mem_ker.mp (hker hz)
+  have hzero {j : ι} (hj : cb j ∉ bas.flag i.castSucc) {z : M} (hz : z ∈ bas.flag i.castSucc) :
+      cb.repr z j = 0 :=
+    repr_eq_zero_of_mem_of_notMem cb (hcoord _) hj hz
   rw [bas.flag_succ] at har' hbr'
   obtain ⟨va, hva, ua, hua, hsum_a⟩ := Submodule.mem_sup.mp har'
   obtain ⟨vb, hvb, ub, hub, hsum_b⟩ := Submodule.mem_sup.mp hbr'
   obtain ⟨x, rfl⟩ := Submodule.mem_span_singleton.mp hva
   obtain ⟨y, rfl⟩ := Submodule.mem_span_singleton.mp hvb
   have hxa : x * cb.coord a (bas i) = 1 := by
-    simpa [Basis.coord_apply, hzero a ha hua] using
+    simpa [Basis.coord_apply, hzero ha hua] using
       congrArg (cb.coord a) hsum_a
   have hxb : x * cb.coord b (bas i) = 0 := by
-    simpa [Basis.coord_apply, hab, hab.symm, hzero b hb hua] using
+    simpa [Basis.coord_apply, hab, hab.symm, hzero hb hua] using
       congrArg (cb.coord b) hsum_a
   have hya : y * cb.coord a (bas i) = 0 := by
-    simpa [Basis.coord_apply, hab, hab.symm, hzero a ha hub] using
+    simpa [Basis.coord_apply, hab, hab.symm, hzero ha hub] using
       congrArg (cb.coord a) hsum_b
   have hyb : y * cb.coord b (bas i) = 1 := by
-    simpa [Basis.coord_apply, hzero b hb hub] using
+    simpa [Basis.coord_apply, hzero hb hub] using
       congrArg (cb.coord b) hsum_b
   apply one_ne_zero (α := R)
   calc
