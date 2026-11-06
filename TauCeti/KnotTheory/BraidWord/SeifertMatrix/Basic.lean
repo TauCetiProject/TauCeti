@@ -1019,12 +1019,6 @@ private theorem seifertEntry_append_singleton_eq_sum {a b : ℕ × ℕ}
     exact seifertEntry_append_singleton_of_lt ha.1 (snd_lt_length_of_ne ha ha2) hb.1
       (snd_lt_length_of_ne hb hb2)
 
-omit hm hm' in
-private theorem fst_lt_snd_and_snd_lt_length_add_one (c : seifertLoops (n := n) (x :: v)) :
-    c.1.1 < c.1.2 ∧ c.1.2 < v.length + 1 := by
-  have hc := (mem_seifertLoops _).1 c.2
-  exact ⟨hc.1, by simpa using hc.2.1⟩
-
 /-- The loops of `x :: v` are carried to those of `v ++ [x]` by lowering both ends by one, except
 that a loop through the first letter goes to the loop through the moved letter. -/
 private theorem exists_rotate_map :
@@ -1038,17 +1032,20 @@ private theorem exists_rotate_map :
     have hl : levelAt (n := n) (x :: v) c.1.2 = some (x.1 : ℕ) := by
       rw [hc.2.2.1, h0, levelAt_cons_zero]
     have := not_lt.1 fun h ↦ hm' _ h hl
-    have := (fst_lt_snd_and_snd_lt_length_add_one c).1
+    have := ((mem_seifertLoops _).1 c.2).fst_lt_snd
     omega
   refine ⟨fun c ↦
     ⟨if c.1.1 = 0 then (m - 1, v.length) else (c.1.1 - 1, c.1.2 - 1), by
       rw [mem_seifertLoops]
       split_ifs with h0
       · exact isSeifertLoop_sub_one_length hm hm' (hm0 c h0)
-      · have := fst_lt_snd_and_snd_lt_length_add_one c
+      · have hc := (mem_seifertLoops _).1 c.2
+        have h1 := hc.fst_lt_snd
+        have h2 := hc.snd_lt_length
+        simp only [List.length_cons] at h2
         rw [isSeifertLoop_append_singleton_iff_cons x v (by omega),
           sub_one_add_one_pair h0 (by omega)]
-        exact (mem_seifertLoops _).1 c.2⟩,
+        exact hc⟩,
     fun c h0 ↦ by simp [h0], fun c h0 ↦ by simp [h0]⟩
 
 /-- The map `κ` of `exists_rotate_map` is a bijection. -/
@@ -1057,12 +1054,16 @@ private theorem bijective_of_rotate_map
     (hκ : ∀ c, c.1.1 ≠ 0 → (κ c).1 = (c.1.1 - 1, c.1.2 - 1))
     (hκ₀ : ∀ c, c.1.1 = 0 → (κ c).1 = (m - 1, v.length)) : Function.Bijective κ := by
   refine ⟨fun c d h ↦ Subtype.ext ?_, fun a ↦ ?_⟩
-  · have hc := fst_lt_snd_and_snd_lt_length_add_one c
-    have hd := fst_lt_snd_and_snd_lt_length_add_one d
+  · have hc := (mem_seifertLoops _).1 c.2
+    have hd := (mem_seifertLoops _).1 d.2
+    have hc1 := hc.fst_lt_snd
+    have hc2 := hc.snd_lt_length
+    have hd1 := hd.fst_lt_snd
+    have hd2 := hd.snd_lt_length
+    simp only [List.length_cons] at hc2 hd2
     have h' := congrArg Subtype.val h
     by_cases h0 : c.1.1 = 0 <;> by_cases h0' : d.1.1 = 0
-    · exact ((mem_seifertLoops _).1 c.2).eq_of_fst_eq ((mem_seifertLoops _).1 d.2)
-        (h0.trans h0'.symm)
+    · exact hc.eq_of_fst_eq hd (h0.trans h0'.symm)
     · rw [hκ₀ c h0, hκ d h0', Prod.mk.injEq] at h'
       omega
     · rw [hκ c h0, hκ₀ d h0', Prod.mk.injEq] at h'
@@ -1102,7 +1103,10 @@ private theorem isUnit_det_rotateRow
     Matrix.of fun c d ↦ rotateRow x v (κ c) d with hPdef
   have hrow : ∀ c d : seifertLoops (n := n) (x :: v), c.1.1 ≠ 0 →
       rotateRow x v (κ c) d = (1 : Matrix _ _ ℤ) c d := fun c d h0 ↦ by
-    have := fst_lt_snd_and_snd_lt_length_add_one c
+    have hc := (mem_seifertLoops _).1 c.2
+    have h1 := hc.fst_lt_snd
+    have h2 := hc.snd_lt_length
+    simp only [List.length_cons] at h2
     have hne : c.1.2 - 1 ≠ v.length := by omega
     rw [rotateRow, hκ c h0, Matrix.one_apply]
     simp only [hne, ↓reduceIte, sub_one_add_one_pair h0 (by omega), eq_comm (a := d.1),
