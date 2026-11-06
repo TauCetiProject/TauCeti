@@ -206,7 +206,7 @@ private def detLineCokerProdMap :
     ((Submodule.quotEquivOfEq _ _ (range_prodMap f g)).trans
       (Submodule.quotientProdEquiv _ _)).detLineCongr.symm
 
-/-- `detLineCokerProdMap` sends `(ȳ₁ ∧ ⋯ ∧ ȳₐ) ⊗ (ȳ'₁ ∧ ⋯ ∧ ȳ'_b)` to the wedge product of the
+/-- `detLineCokerProdMap` sends `[y₁] ∧ ⋯ ∧ [yₐ] ⊗ [y'₁] ∧ ⋯ ∧ [y'_b]` to the wedge product of the
 classes of `(yᵢ, 0)` followed by those of `(0, y'ⱼ)`. -/
 private theorem coe_detLineCokerProdMap_tmul (y : Fin (finrank K (N ⧸ range f)) → N)
     (y' : Fin (finrank K (N' ⧸ range g)) → N') :
