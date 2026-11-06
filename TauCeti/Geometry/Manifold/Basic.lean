@@ -13,13 +13,16 @@ public import Mathlib.Geometry.Manifold.Instances.Real
 This file packages the dimension-independent topological hypotheses used by manifold constructions.
 The chart structure is supplied by a `ChartedSpace` instance over the Euclidean half-space
 (boundary allowed) or the Euclidean space (boundaryless) model. Every charted space is a
-topological manifold (Mathlib's instance `IsManifold I 0 M`), so the predicates record only the
-separation, countability, compactness, and connectedness conditions, as the typeclasses
-`T2Space`, `SecondCountableTopology`, `CompactSpace`, and `ConnectedSpace`. The file also provides
-the standard surface and three-manifold specializations used by geometric-topology APIs.
+topological manifold (Mathlib's instance `IsManifold I 0 M`). The predicates retain this condition
+to record the chosen model and atlas, while their `iff` lemmas characterize them by the remaining
+conditions: `T2Space`, `SecondCountableTopology`, `CompactSpace`, and `ConnectedSpace`. The file
+also provides the standard surface and three-manifold specializations used by geometric-topology
+APIs.
 -/
 
 public section
+
+open scoped Manifold
 
 namespace TauCeti
 
@@ -29,7 +32,8 @@ variable {S M : Type*} [TopologicalSpace S] [TopologicalSpace M]
 half-space model. -/
 def IsCompactConnectedManifold (n : ℕ) [NeZero n] (X : Type*) [TopologicalSpace X]
     [ChartedSpace (EuclideanHalfSpace n) X] : Prop :=
-  T2Space X ∧ SecondCountableTopology X ∧ CompactSpace X ∧ ConnectedSpace X
+  T2Space X ∧ SecondCountableTopology X ∧ IsManifold (𝓡∂ n) 0 X ∧
+    CompactSpace X ∧ ConnectedSpace X
 
 /-- The defining separation, countability, compactness, and connectedness conditions for
 `IsCompactConnectedManifold`. -/
@@ -38,7 +42,8 @@ theorem isCompactConnectedManifold_iff (n : ℕ) [NeZero n] (X : Type*) [Topolog
     [ChartedSpace (EuclideanHalfSpace n) X] :
     IsCompactConnectedManifold n X ↔
       T2Space X ∧ SecondCountableTopology X ∧ CompactSpace X ∧ ConnectedSpace X :=
-  Iff.rfl
+  ⟨fun ⟨hT, hS, _, hC, hN⟩ ↦ ⟨hT, hS, hC, hN⟩,
+    fun ⟨hT, hS, hC, hN⟩ ↦ ⟨hT, hS, inferInstance, hC, hN⟩⟩
 
 /-- The usual compactness, connectedness, separation, and countability typeclasses supply
 `IsCompactConnectedManifold n X`. -/
@@ -46,12 +51,13 @@ theorem isCompactConnectedManifold (n : ℕ) [NeZero n] (X : Type*) [Topological
     [ChartedSpace (EuclideanHalfSpace n) X]
     [T2Space X] [SecondCountableTopology X] [CompactSpace X] [ConnectedSpace X] :
     IsCompactConnectedManifold n X :=
-  ⟨‹_›, ‹_›, ‹_›, ‹_›⟩
+  ⟨‹_›, ‹_›, inferInstance, ‹_›, ‹_›⟩
 
 /-- A compact, connected, Hausdorff, second-countable, boundaryless topological `n`-manifold. -/
 def IsClosedConnectedManifold (n : ℕ) (X : Type*) [TopologicalSpace X]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] : Prop :=
-  T2Space X ∧ SecondCountableTopology X ∧ CompactSpace X ∧ ConnectedSpace X
+  T2Space X ∧ SecondCountableTopology X ∧ IsManifold (𝓡 n) 0 X ∧
+    CompactSpace X ∧ ConnectedSpace X
 
 /-- The defining separation, countability, compactness, and connectedness conditions for
 `IsClosedConnectedManifold`. -/
@@ -60,7 +66,8 @@ theorem isClosedConnectedManifold_iff (n : ℕ) (X : Type*) [TopologicalSpace X]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) X] :
     IsClosedConnectedManifold n X ↔
       T2Space X ∧ SecondCountableTopology X ∧ CompactSpace X ∧ ConnectedSpace X :=
-  Iff.rfl
+  ⟨fun ⟨hT, hS, _, hC, hN⟩ ↦ ⟨hT, hS, hC, hN⟩,
+    fun ⟨hT, hS, hC, hN⟩ ↦ ⟨hT, hS, inferInstance, hC, hN⟩⟩
 
 /-- The usual compactness, connectedness, separation, and countability typeclasses supply
 `IsClosedConnectedManifold n X`. -/
@@ -68,7 +75,7 @@ theorem isClosedConnectedManifold (n : ℕ) (X : Type*) [TopologicalSpace X]
     [ChartedSpace (EuclideanSpace ℝ (Fin n)) X]
     [T2Space X] [SecondCountableTopology X] [CompactSpace X] [ConnectedSpace X] :
     IsClosedConnectedManifold n X :=
-  ⟨‹_›, ‹_›, ‹_›, ‹_›⟩
+  ⟨‹_›, ‹_›, inferInstance, ‹_›, ‹_›⟩
 
 /-- A compact connected surface, allowing a nonempty boundary, in the standard Euclidean
 half-space model. -/
