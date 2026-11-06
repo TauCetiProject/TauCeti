@@ -196,15 +196,6 @@ private theorem IsClassifying.comp {X T X' T' : Scheme.{u}} {π : X ⟶ T} {zero
   ⟨hab.paste_horiz h.1, by simp [reassoc_of% h₀, h.2.1],
     fun i ↦ by simp [reassoc_of% (hτ i), h.2.2 i]⟩
 
--- Morphisms out of `S` are determined on the bases of the charts of an atlas.
-private theorem hom_ext_baseMap (A : PointedWeierstrassAtlas E.structureMap E.zero)
-    {Z : Scheme.{u}} {x y : S ⟶ Z} (h : ∀ i, (A.chart i).baseMap ≫ x = (A.chart i).baseMap ≫ y) :
-    x = y :=
-  A.hom_ext (𝟙 S) x y fun i ↦ by
-    have hc : pullback.fst (𝟙 S) (A.chart i).baseMap = pullback.snd _ _ ≫ (A.chart i).baseMap := by
-      simpa using pullback.condition (f := 𝟙 S) (g := (A.chart i).baseMap)
-    rw [hc, Category.assoc, Category.assoc, h]
-
 variable {σ : ι → (S ⟶ E.carrier)} (hσ : ∀ i, σ i ≫ E.structureMap = 𝟙 S)
 
 -- A classifying pair of `E` restricts to a classifying pair of the model of every chart.
@@ -239,8 +230,9 @@ private theorem IsClassifying.unique {f f' : S ⟶ B} {g g' : E.carrier ⟶ U}
   obtain ⟨A⟩ := E.localModel
   have key (i) := IsClassifying.eq_of_chart hσ hc (A.chart i) (hg.chart hσ (A.chart i))
     (hg'.chart hσ (A.chart i))
-  refine ⟨hom_ext_baseMap A fun i ↦ ?_, A.hom_ext_of_toTotal g g' fun i ↦ ?_⟩
-  · rw [← cancel_epi (A.chart i).baseIso.inv]
+  refine ⟨A.openCover.hom_ext _ _ fun i ↦ ?_, A.hom_ext_of_toTotal g g' fun i ↦ ?_⟩
+  · dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    rw [← cancel_epi (A.chart i).baseIso.inv]
     simpa using (key i).1
   · rw [← cancel_epi (A.chart i).modelIso.inv]
     simpa using (key i).2
@@ -327,13 +319,11 @@ private theorem toTotal_glueTotal :
 private theorem isClassifying_glue :
     IsClassifying p t₀ t E.structureMap E.zero σ (glueBase hσ hc) (glueTotal hσ hc) := by
   obtain ⟨A⟩ := E.localModel
-  refine ⟨?_, hom_ext_baseMap A fun i ↦ ?_, fun j ↦ hom_ext_baseMap A fun i ↦ ?_⟩
+  refine ⟨?_, A.openCover.hom_ext _ _ fun i ↦ ?_, fun j ↦ A.openCover.hom_ext _ _ fun i ↦ ?_⟩
   · -- cartesian, checked over the cover of `S` by the chart bases of `A`
-    let 𝒰 : S.OpenCover := Scheme.Cover.mkOfCovers A.index (fun i ↦ (A.chart i).base)
-      (fun i ↦ (A.chart i).baseMap) A.covers
-    refine (Scheme.isPullback_of_openCover _ _ _ _ 𝒰 fun i ↦ ?_).flip
-    -- the maps of `𝒰` are the chart base maps, and those of its pullback along `E.structureMap`
-    -- are the projections; `simp` does not see through `Scheme.Cover.mkOfCovers` here
+    refine (Scheme.isPullback_of_openCover _ _ _ _ A.openCover fun i ↦ ?_).flip
+    -- the maps of `A.openCover` are the chart base maps, and those of its pullback along
+    -- `E.structureMap` are the projections; `simp` does not see through the pullback cover here
     change IsPullback (pullback.snd E.structureMap (A.chart i).baseMap)
       (pullback.fst E.structureMap (A.chart i).baseMap ≫ glueTotal hσ hc)
       ((A.chart i).baseMap ≫ glueBase hσ hc) p
@@ -343,10 +333,12 @@ private theorem isClassifying_glue :
     exact (isClassifying_chartBase hσ hc (A.chart i)).1.flip.of_iso
       ((A.chart i).modelIso.symm ≪≫ (A.chart i).isPullback.isoPullback) (A.chart i).baseIso.symm
       (.refl _) (.refl _) (by simp [Iso.eq_inv_comp]) (by simp) (by simp) (by simp)
-  · rw [← (A.chart i).pulledZero_toTotal_assoc, toTotal_glueTotal,
+  · dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    rw [← (A.chart i).pulledZero_toTotal_assoc, toTotal_glueTotal,
       (A.chart i).modelIso_zero_assoc, (isClassifying_chartBase hσ hc _).2.1,
       baseMap_glueBase_assoc]
-  · rw [← chartPoint_toTotal_assoc _ (hσ j), toTotal_glueTotal,
+  · dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    rw [← chartPoint_toTotal_assoc _ (hσ j), toTotal_glueTotal,
       reassoc_of% chartPoint_modelIso_hom _ (hσ j), (isClassifying_chartBase hσ hc _).2.2 j,
       baseMap_glueBase_assoc]
 
