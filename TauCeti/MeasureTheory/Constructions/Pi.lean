@@ -253,37 +253,6 @@ theorem measurePreserving_piSplitAt (μ : ∀ i, Measure (α i)) [∀ i, SigmaFi
     (measurePreserving_piEquivPiSubtypeProd μ (· = i₀))
 
 omit [Fintype ι] in
-/-- Reading the coordinate `a` of the pair of single-coordinate assignments `u`, `v`, glued by
-`MeasurableEquiv.piFinsetUnion`, gives `u`. -/
-private theorem piFinsetUnion_single_apply_left {a b : ι} (hab : a ≠ b) (u : α a) (v : α b)
-    (ha : a ∈ ({a} : Finset ι) ∪ {b}) :
-    MeasurableEquiv.piFinsetUnion α (Finset.disjoint_singleton.2 hab)
-      ((MeasurableEquiv.piUnique fun i : ({a} : Finset ι) => α i).symm u,
-        (MeasurableEquiv.piUnique fun i : ({b} : Finset ι) => α i).symm v) ⟨a, ha⟩ = u := by
-  -- `MeasurableEquiv.piFinsetUnion` is by definition `Equiv.piFinsetUnion` carrying the
-  -- measurability proofs, and Mathlib states the componentwise lemmas
-  -- `Equiv.piFinsetUnion_left`/`_right` only for the bare equivalence.
-  change Equiv.piFinsetUnion α (Finset.disjoint_singleton.2 hab) _ ⟨a, ha⟩ = u
-  rw [Equiv.piFinsetUnion_left α _ (by simp) ha]
-  simp only [MeasurableEquiv.piUnique_symm_apply]
-  unfold uniqueElim
-  rfl
-
-omit [Fintype ι] in
-/-- Reading the coordinate `b` of the pair of single-coordinate assignments `u`, `v`, glued by
-`MeasurableEquiv.piFinsetUnion`, gives `v`. -/
-private theorem piFinsetUnion_single_apply_right {a b : ι} (hab : a ≠ b) (u : α a) (v : α b)
-    (hb : b ∈ ({a} : Finset ι) ∪ {b}) :
-    MeasurableEquiv.piFinsetUnion α (Finset.disjoint_singleton.2 hab)
-      ((MeasurableEquiv.piUnique fun i : ({a} : Finset ι) => α i).symm u,
-        (MeasurableEquiv.piUnique fun i : ({b} : Finset ι) => α i).symm v) ⟨b, hb⟩ = v := by
-  change Equiv.piFinsetUnion α (Finset.disjoint_singleton.2 hab) _ ⟨b, hb⟩ = v
-  rw [Equiv.piFinsetUnion_right α _ (by simp) hb]
-  simp only [MeasurableEquiv.piUnique_symm_apply]
-  unfold uniqueElim
-  rfl
-
-omit [Fintype ι] in
 /-- Recombining the glued pair `(u, v)` on the coordinates `{a, b}` with the remaining coordinates
 of `w` is the double update of `w`. -/
 private theorem piEquivPiSubtypeProd_symm_piFinsetUnion_apply {a b : ι} (hab : a ≠ b)
@@ -294,25 +263,10 @@ private theorem piEquivPiSubtypeProd_symm_piFinsetUnion_apply {a b : ι} (hab : 
           (MeasurableEquiv.piUnique fun i : ({b} : Finset ι) => α i).symm v)),
         (MeasurableEquiv.piEquivPiSubtypeProd α (fun i => i ∈ ({a} : Finset ι) ∪ {b}) w).2) =
       update (update w a u) b v := by
-  funext i
-  rw [show ∀ (x : ∀ i : Subtype fun i => i ∈ ({a} : Finset ι) ∪ {b}, α i)
-      (y : ∀ i : {i // i ∉ ({a} : Finset ι) ∪ {b}}, α i),
-      (MeasurableEquiv.piEquivPiSubtypeProd α fun i => i ∈ ({a} : Finset ι) ∪ {b}).symm (x, y) i =
-      if hi : i ∈ ({a} : Finset ι) ∪ {b} then x ⟨i, hi⟩ else y ⟨i, hi⟩ from fun x y =>
-    Equiv.piEquivPiSubtypeProd_symm_apply _ α (x, y) i]
-  by_cases hia : i = a
-  · subst i
-    simp only [Finset.mem_union, Finset.mem_singleton, true_or, dite_true]
-    rw [piFinsetUnion_single_apply_left hab]
-    simp [hab]
-  · by_cases hib : i = b
-    · subst i
-      rw [update_self]
-      simp only [Finset.mem_union, Finset.mem_singleton, or_true, dite_true]
-      rw [piFinsetUnion_single_apply_right hab]
-    · simp only [Finset.mem_union, Finset.mem_singleton, hia, hib, false_or, dite_false]
-      rw [update_of_ne hib, update_of_ne hia]
-      rfl
+  rw [update_eq_updateFinset, update_eq_updateFinset,
+    updateFinset_updateFinset (Finset.disjoint_singleton.2 hab)]
+  simp only [MeasurableEquiv.piUnique_symm_apply]
+  rfl
 
 /-- Overwriting the two distinct coordinates `a` and `b` of a product-distributed assignment by an
 independent pair leaves the product law unchanged. -/
@@ -364,6 +318,8 @@ theorem measurePreserving_update_update (μ : ∀ i, Measure (α i))
       (congrArg (fun m => m.prod (Measure.pi fun i : {i // ¬p i} => μ i)) hpi)
   have hrefresh := (MeasurePreserving.symm splitEquiv hsplit).comp hcombine'
   refine hrefresh.congr (by fun_prop) (ae_of_all _ fun w => ?_)
+  -- `MeasurePreserving.comp` stores the composite function definitionally, so the pointwise
+  -- statement of the helper applies as it stands.
   exact piEquivPiSubtypeProd_symm_piFinsetUnion_apply hab w.1 w.2.1 w.2.2
 
 section FinArrow
