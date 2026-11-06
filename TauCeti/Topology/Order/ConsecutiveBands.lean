@@ -24,8 +24,8 @@ together with the graphs of the members over `s` they are the strata of the fami
 `TauCeti.bandStrata f s`. These strata
 
 * cover the cylinder `s ×ˢ univ` when `s` is preconnected and, over each point of `s`, the values
-  of the family are unbounded above and below with only finitely many in each compact interval
-  (`TauCeti.sUnion_bandStrata`);
+  of the family are unbounded above and below with only finitely many distinct values in each
+  compact interval (`TauCeti.sUnion_bandStrata`);
 * are pairwise disjoint (`TauCeti.pairwiseDisjoint_bandStrata`);
 * form a locally finite family when the graphs do and `s` meets arbitrarily small neighbourhoods
   of every point in a preconnected set (`TauCeti.locallyFinite_bandStrata`). This holds, for
@@ -158,56 +158,42 @@ section Cover
 
 variable [TopologicalSpace X]
 
-/-- Over a preconnected base, two members of the family satisfy `f i ≤ f j` on all of `s` or
-`f j < f i` on all of `s`. -/
-private theorem forall_le_or_forall_lt (hs : IsPreconnected s) (hf : ∀ i, ContinuousOn (f i) s)
-    (hsep : ∀ i j, EqOn (f i) (f j) s ∨ ∀ x ∈ s, f i x ≠ f j x) (i j : ι) :
-    (∀ x ∈ s, f i x ≤ f j x) ∨ ∀ x ∈ s, f j x < f i x := by
-  rcases hsep i j with he | hne
-  · exact .inl fun x hx ↦ (he hx).le
-  · exact (hs.forall_lt_or_forall_lt (hf i) (hf j) hne).imp (fun h x hx ↦ (h x hx).le) id
-
-/-- Over a preconnected base, a member of the family lying strictly below another at one point
-lies strictly below it everywhere. -/
-private theorem forall_lt_of_lt (hs : IsPreconnected s) (hf : ∀ i, ContinuousOn (f i) s)
-    (hsep : ∀ i j, EqOn (f i) (f j) s ∨ ∀ x ∈ s, f i x ≠ f j x) {x : X} (hx : x ∈ s)
-    (hlt : f i x < f j x) : ∀ y ∈ s, f i y < f j y :=
-  (forall_le_or_forall_lt hs hf hsep j i).resolve_left fun h ↦ (h x hx).not_gt hlt
-
 /-- Over a preconnected base, a point `(x, t)` of the cylinder `s ×ˢ univ` which lies on no
 graph of the family lies in the open band between two consecutive members, provided that some
 values of the family at `x` lie below `t` and some lie above `t`, and that only finitely many
-lie in each compact interval. -/
+distinct values lie in each compact interval. -/
 theorem exists_isConsecutiveOn_mem_regionBetween (hs : IsPreconnected s)
     (hf : ∀ i, ContinuousOn (f i) s)
     (hsep : ∀ i j, EqOn (f i) (f j) s ∨ ∀ x ∈ s, f i x ≠ f j x) {x : X} {t : ℝ} (hx : x ∈ s)
-    (hfin : ∀ a b, {i | f i x ∈ Icc a b}.Finite) (hlo : ∃ i, f i x < t) (hhi : ∃ j, t < f j x)
-    (ht : ∀ i, f i x ≠ t) :
+    (hfin : ∀ a b, (range (fun i ↦ f i x) ∩ Icc a b).Finite) (hlo : ∃ i, f i x < t)
+    (hhi : ∃ j, t < f j x) (ht : ∀ i, f i x ≠ t) :
     ∃ i j, IsConsecutiveOn f s i j ∧ (x, t) ∈ regionBetween (f i) (f j) s := by
   obtain ⟨i₀, hi₀⟩ := hlo
   obtain ⟨j₀, hj₀⟩ := hhi
   -- the highest value below `t` and the lowest value above `t`
-  obtain ⟨i, ⟨hi₁, hi₂⟩, himax⟩ := exists_max_image {k | f k x ∈ Icc (f i₀ x) t}
-    (fun k ↦ f k x) (hfin _ _) ⟨i₀, le_rfl, hi₀.le⟩
-  obtain ⟨j, ⟨hj₁, hj₂⟩, hjmin⟩ := exists_min_image {k | f k x ∈ Icc t (f j₀ x)}
-    (fun k ↦ f k x) (hfin _ _) ⟨j₀, hj₀.le, le_rfl⟩
+  obtain ⟨_, ⟨⟨i, rfl⟩, hi₁, hi₂⟩, himax⟩ := exists_max_image
+    (range (fun k ↦ f k x) ∩ Icc (f i₀ x) t) id (hfin _ _) ⟨_, ⟨i₀, rfl⟩, le_rfl, hi₀.le⟩
+  obtain ⟨_, ⟨⟨j, rfl⟩, hj₁, hj₂⟩, hjmin⟩ := exists_min_image
+    (range (fun k ↦ f k x) ∩ Icc t (f j₀ x)) id (hfin _ _) ⟨_, ⟨j₀, rfl⟩, hj₀.le, le_rfl⟩
   have hit : f i x < t := hi₂.lt_of_ne (ht i)
   have htj : t < f j x := hj₁.lt_of_ne (ht j).symm
-  refine ⟨i, j, ⟨forall_lt_of_lt hs hf hsep hx (hit.trans htj), fun k y hy hk ↦ ?_⟩, hx, hit, htj⟩
-  have h₁ := forall_lt_of_lt hs hf hsep hy hk.1 x hx
-  have h₂ := forall_lt_of_lt hs hf hsep hy hk.2 x hx
+  have hlt : ∀ {i j y}, y ∈ s → f i y < f j y → ∀ z ∈ s, f i z < f j z :=
+    fun hy hlt ↦ hs.forall_lt_of_lt (hf _) (hf _) (hsep _ _) hy hlt
+  refine ⟨i, j, ⟨hlt hx (hit.trans htj), fun k y hy hk ↦ ?_⟩, hx, hit, htj⟩
+  have h₁ := hlt hy hk.1 x hx
+  have h₂ := hlt hy hk.2 x hx
   rcases lt_trichotomy (f k x) t with hkt | hkt | hkt
-  · exact (himax k ⟨hi₁.trans h₁.le, hkt.le⟩).not_gt h₁
+  · exact (himax _ ⟨⟨k, rfl⟩, hi₁.trans h₁.le, hkt.le⟩).not_gt h₁
   · exact ht k hkt
-  · exact (hjmin k ⟨hkt.le, h₂.le.trans hj₂⟩).not_gt h₂
+  · exact (hjmin _ ⟨⟨k, rfl⟩, hkt.le, h₂.le.trans hj₂⟩).not_gt h₂
 
 /-- The strata of a family over a preconnected base cover the cylinder over the base, provided
 that at every point of the base the values of the family are unbounded above and below, with only
-finitely many in each compact interval. The finiteness condition holds when the graphs form a
-locally finite family, by `LocallyFinite.finite_setOf_apply_mem_Icc`. -/
+finitely many distinct values in each compact interval. The finiteness condition follows from
+`LocallyFinite.finite_setOf_apply_mem_Icc` when the graphs form a locally finite family. -/
 theorem sUnion_bandStrata (hs : IsPreconnected s) (hf : ∀ i, ContinuousOn (f i) s)
     (hsep : ∀ i j, EqOn (f i) (f j) s ∨ ∀ x ∈ s, f i x ≠ f j x)
-    (hfin : ∀ x ∈ s, ∀ a b, {i | f i x ∈ Icc a b}.Finite)
+    (hfin : ∀ x ∈ s, ∀ a b, (range (fun i ↦ f i x) ∩ Icc a b).Finite)
     (hunb : ∀ x ∈ s, ∀ t, (∃ i, f i x < t) ∧ ∃ j, t < f j x) :
     ⋃₀ bandStrata f s = s ×ˢ (univ : Set ℝ) := by
   refine Subset.antisymm (sUnion_subset ?_) ?_
@@ -321,26 +307,6 @@ the closure of a band over `s` meets the cylinder over `s₀` in strata of `g`. 
 
 variable [TopologicalSpace X] {κ : Type*} {g : κ → X → ℝ} {s₀ : Set X} {k₁ k₂ : κ}
 
-/-- An inequality between two functions continuous on `s ∪ s₀` which holds on `s` persists on
-`s₀ ⊆ closure s`. -/
-private theorem le_of_forall_le {φ ψ : X → ℝ} (hs₀ : s₀ ⊆ closure s)
-    (hφ : ContinuousOn φ (s ∪ s₀)) (hψ : ContinuousOn ψ (s ∪ s₀)) (h : ∀ x ∈ s, φ x ≤ ψ x)
-    {y : X} (hy : y ∈ s₀) : φ y ≤ ψ y :=
-  ContinuousWithinAt.closure_le (hs₀ hy) ((hφ y (.inr hy)).mono subset_union_left)
-    ((hψ y (.inr hy)).mono subset_union_left) h
-
-/-- If a point over `s₀ ⊆ closure s` lies in the closure of the union of a locally finite family
-of graphs over `s` whose functions are continuous on `s ∪ s₀`, then it lies on one of their graphs
-over `s₀`. -/
-private theorem exists_apply_eq_of_mem_closure (hs₀ : s₀ ⊆ closure s)
-    (hf : ∀ i, ContinuousOn (f i) (s ∪ s₀)) (hlf : LocallyFinite fun i ↦ s.graphOn (f i))
-    {y : X} {t : ℝ} (hy : y ∈ s₀) (ht : (y, t) ∈ closure (⋃ i, s.graphOn (f i))) :
-    ∃ i, f i y = t := by
-  rw [hlf.closure_iUnion, mem_iUnion] at ht
-  obtain ⟨i, hi⟩ := ht
-  have h := (hf i).closure_graphOn_inter subset_union_left (union_subset subset_closure hs₀)
-  exact ⟨i, (mem_graphOn.1 (h.subset ⟨hi, .inr hy, trivial⟩)).2⟩
-
 /-- **Consecutive sections restrict to equal or consecutive sections on a face.** Let `s` be
 preconnected and `s₀ ⊆ closure s`, let the members of `f` be continuous on `s ∪ s₀` with a locally
 finite family of graphs over `s`, and let every graph of the family `g` over `s₀` lie in the
@@ -357,17 +323,19 @@ theorem IsConsecutiveOn.eqOn_or_isConsecutiveOn (h : IsConsecutiveOn f s i j)
     EqOn (g k₁) (g k₂) s₀ ∨ IsConsecutiveOn g s₀ k₁ k₂ := by
   have hfs : ∀ i, ContinuousOn (f i) s := fun i ↦ (hf i).mono subset_union_left
   have hle : ∀ {i j}, (∀ x ∈ s, f i x ≤ f j x) → ∀ y ∈ s₀, f i y ≤ f j y :=
-    fun h y hy ↦ le_of_forall_le hs₀ (hf _) (hf _) h hy
+    fun h y hy ↦ ContinuousWithinAt.closure_le (hs₀ hy)
+      ((hf _ y (.inr hy)).mono subset_union_left) ((hf _ y (.inr hy)).mono subset_union_left) h
   refine (hsep₀ k₁ k₂).imp id fun hne ↦ ⟨fun y hy ↦ ?_, fun k y hy hk ↦ ?_⟩
   · exact (hi hy ▸ hj hy ▸ hle (fun x hx ↦ (h.lt x hx).le) y hy).lt_of_ne (hne y hy)
   -- a section of `g` strictly between the two is the restriction of some member `f i'`
-  obtain ⟨i', hi'⟩ := exists_apply_eq_of_mem_closure hs₀ hf hlf hy (hg k ⟨y, hy, rfl⟩)
+  obtain ⟨i', hi'⟩ := hlf.exists_apply_eq_of_mem_closure_iUnion_graphOn hf subset_union_left
+    (union_subset subset_closure hs₀) (.inr hy) (hg k ⟨y, hy, rfl⟩)
   obtain ⟨x, hx⟩ := closure_nonempty_iff.1 ⟨y, hs₀ hy⟩
   rw [← hi', ← hi hy, ← hj hy] at hk
   -- which then lies strictly between `f i` and `f j` on all of `s`
-  have h₁ := (forall_le_or_forall_lt hs hfs hsep i' i).resolve_left
+  have h₁ := (hs.forall_le_or_forall_lt (hfs i') (hfs i) (hsep i' i)).resolve_left
     fun h' ↦ (hle h' y hy).not_gt hk.1
-  have h₂ := (forall_le_or_forall_lt hs hfs hsep j i').resolve_left
+  have h₂ := (hs.forall_le_or_forall_lt (hfs j) (hfs i') (hsep j i')).resolve_left
     fun h' ↦ (hle h' y hy).not_gt hk.2
   exact h.notMem_Ioo i' x hx ⟨h₁ x hx, h₂ x hx⟩
 

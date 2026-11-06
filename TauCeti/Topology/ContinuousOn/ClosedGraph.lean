@@ -14,7 +14,9 @@ A function whose graph over a set `s` is closed and whose values on `s` lie in a
 continuous on `s`. This is the relative form of Mathlib's `continuous_of_isClosed_graph`; it
 identifies a bounded single-valued closure of a graph with a continuous function.
 Conversely, `ContinuousOn.closure_graphOn_inter` recovers a continuous function's graph from
-its restriction to a relatively dense subset. This permits extending a description of a graph
+its restriction to a relatively dense subset, and
+`LocallyFinite.exists_apply_eq_of_mem_closure_iUnion_graphOn` does the same for the closure of a
+locally finite union of such graphs. This permits extending a description of a graph
 across an exceptional locus without making any choices of values there.
 -/
 
@@ -77,3 +79,15 @@ theorem ContinuousOn.closure_graphOn_inter [T2Space Y] {f : X → Y} {s t : Set 
     refine ⟨?_, hx, mem_univ _⟩
     simpa only [graphOn, id_eq] using
       (continuousWithinAt_id.prodMk ((hf x hx).mono hts)).mem_closure_image (hst hx)
+
+/-- If the graphs over a relatively dense subset `t ⊆ s` of a family of functions continuous on `s`
+form a locally finite family, then every point over `s` in the closure of their union lies on the
+graph of one of the functions. -/
+theorem LocallyFinite.exists_apply_eq_of_mem_closure_iUnion_graphOn [T2Space Y] {ι : Type*}
+    {f : ι → X → Y} {s t : Set X} (hlf : LocallyFinite fun i ↦ t.graphOn (f i))
+    (hf : ∀ i, ContinuousOn (f i) s) (hts : t ⊆ s) (hst : s ⊆ closure t) {x : X} {y : Y}
+    (hx : x ∈ s) (hxy : (x, y) ∈ closure (⋃ i, t.graphOn (f i))) : ∃ i, f i x = y := by
+  rw [hlf.closure_iUnion, mem_iUnion] at hxy
+  obtain ⟨i, hi⟩ := hxy
+  exact ⟨i, (mem_graphOn.1 (((hf i).closure_graphOn_inter hts hst).subset
+    ⟨hi, hx, trivial⟩)).2⟩
