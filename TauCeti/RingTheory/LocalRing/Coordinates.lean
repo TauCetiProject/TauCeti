@@ -184,22 +184,22 @@ theorem span_residue_apply_eq_top_of_le_span_sup_sq [Finite ι]
   exact residue_apply_mem_span_range_of_mem_span hw hu
 
 /-- If elements `u` and `w` of `𝔪` together span `𝔪` modulo `𝔪²`, then the gradients of `w` and of
-a subfamily `u ∘ a` span `κⁿ` as soon as the gradients of `u ∘ a` span those of all of `u`. -/
+any family `v` span `κⁿ` as soon as the gradients of `v` span those of all of `u`. -/
 theorem span_residue_apply_sum_elim_eq_top [Finite ι] {κ' τ : Type*}
     (hx : ∀ i, x i ∈ maximalIdeal Q)
     (hD : ∀ i j, D i (x j) = if i = j then 1 else 0) {u : κ → Q} {w : κ' → Q}
     (hu : ∀ k, u k ∈ maximalIdeal Q) (hw : ∀ k, w k ∈ maximalIdeal Q)
-    (h : maximalIdeal Q ≤ Ideal.span (Set.range (Sum.elim u w)) ⊔ maximalIdeal Q ^ 2) (a : τ → κ)
-    (hspan : Submodule.span (ResidueField Q) (Set.range fun t i ↦ residue Q (D i (u (a t)))) =
-      Submodule.span (ResidueField Q) (Set.range fun k i ↦ residue Q (D i (u k)))) :
+    (h : maximalIdeal Q ≤ Ideal.span (Set.range (Sum.elim u w)) ⊔ maximalIdeal Q ^ 2) {v : τ → Q}
+    (hspan : Submodule.span (ResidueField Q) (Set.range fun k i ↦ residue Q (D i (u k))) ≤
+      Submodule.span (ResidueField Q) (Set.range fun t i ↦ residue Q (D i (v t)))) :
     Submodule.span (ResidueField Q)
-      (Set.range fun k i ↦ residue Q (D i (Sum.elim (u ∘ a) w k))) = ⊤ := by
+      (Set.range fun k i ↦ residue Q (D i (Sum.elim v w k))) = ⊤ := by
   rw [eq_top_iff, ← span_residue_apply_eq_top_of_le_span_sup_sq hx hD (Sum.forall.2 ⟨hu, hw⟩) h,
     Submodule.span_le]
   rintro _ ⟨s | j, rfl⟩
   · have hs : (fun i ↦ residue Q (D i (u s))) ∈
-        Submodule.span (ResidueField Q) (Set.range fun t i ↦ residue Q (D i (u (a t)))) :=
-      hspan ▸ Submodule.subset_span ⟨s, rfl⟩
+        Submodule.span (ResidueField Q) (Set.range fun t i ↦ residue Q (D i (v t))) :=
+      hspan (Submodule.subset_span ⟨s, rfl⟩)
     refine Submodule.span_mono ?_ hs
     rintro _ ⟨t, rfl⟩
     exact ⟨.inl t, rfl⟩
@@ -364,7 +364,7 @@ theorem exists_minimal_presentation [Finite σ] (b : Basis ι Q Ω[Q⁄K]) {x : 
   have hspz : Submodule.span (ResidueField Q) (Set.range (grad ∘ Sum.elim (g ∘ a) y)) = ⊤ :=
     span_residue_apply_sum_elim_eq_top (fun i ↦ hx ▸ Ideal.subset_span ⟨i, rfl⟩) hD hg𝔪 hy𝔪
       (by rwa [Set.Sum.elim_range, Ideal.span_union, sup_comm (Ideal.span _), sup_assoc, ← hg])
-      a hspan
+      hspan.ge
   -- There are `n` new coordinates, so their differentials form a basis of `Ω[Q⁄K]` ...
   have hcard : Fintype.card (τ ⊕ Fin e) = Fintype.card ι := by
     have := Module.finrank_eq_card_basis (Basis.mk hliz hspz.ge)
