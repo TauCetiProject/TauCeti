@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Fourier.Hardy.Hankel
+public import TauCeti.Analysis.Fourier.Hardy.Hankel.Basic
 public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
 /-!
