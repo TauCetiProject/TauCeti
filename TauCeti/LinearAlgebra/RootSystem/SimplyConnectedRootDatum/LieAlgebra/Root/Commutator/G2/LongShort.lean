@@ -52,20 +52,41 @@ private theorem long_short_output_lengths (i j k : Fin 12)
   decide +kernel
 
 -- The seven sums appearing in the vanishing brackets of the straightening identity.
+private def long_short_excludedSums (i j : Fin 12) : Set (Fin 2 → ℤ) :=
+  {4 • g2Root i + g2Root j, 4 • g2Root i + 2 • g2Root j,
+    g2Root i + 2 • g2Root j, 5 • g2Root i + 2 • g2Root j,
+    4 • g2Root i + 3 • g2Root j, 5 • g2Root i + 3 • g2Root j,
+    6 • g2Root i + 3 • g2Root j}
+
 private theorem long_short_exclusions (i j : Fin 12)
     (hi : g2Length i = 1) (hj : g2Length j = 3)
     (hadd : g2Root i + g2Root j ∈ range g2Root) :
-    ∀ v ∈ ({4 • g2Root i + g2Root j, 4 • g2Root i + 2 • g2Root j,
-      g2Root i + 2 • g2Root j, 5 • g2Root i + 2 • g2Root j,
-      4 • g2Root i + 3 • g2Root j, 5 • g2Root i + 3 • g2Root j,
-      6 • g2Root i + 3 • g2Root j} : Set (Fin 2 → ℤ)), v ∉ range g2Root ∧ v ≠ 0 := by
-  simp only [mem_insert_iff, mem_singleton_iff, forall_eq_or_imp, forall_eq,
-    mem_range, not_exists, g2Root_apply, g2Length_apply] at hi hj hadd ⊢
+    ∀ v ∈ long_short_excludedSums i j, v ∉ range g2Root ∧ v ≠ 0 := by
+  simp only [long_short_excludedSums, mem_insert_iff, mem_singleton_iff, forall_eq_or_imp,
+    forall_eq, mem_range, not_exists, g2Root_apply, g2Length_apply] at hi hj hadd ⊢
   revert i j
   decide +kernel
 
 variable {ht : G2.Valid}
 variable {α β γ δ ε ζ : Fin 12}
+
+private theorem g2_root_eq_add_of_coordinates {i j k : Fin 12}
+    (h : g2Root k = g2Root i + g2Root j) :
+    (G2.simplyConnectedRootDatum ht).root k =
+      (G2.simplyConnectedRootDatum ht).root i + (G2.simplyConnectedRootDatum ht).root j := by
+  rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]
+  exact h
+
+private theorem long_short_coordinates
+    (hγ : g2Root γ = g2Root α + g2Root β)
+    (hδ : g2Root δ = g2Root α + g2Root γ)
+    (hε : g2Root ε = g2Root α + g2Root δ)
+    (hζ : g2Root ζ = g2Root δ + g2Root γ) :
+    g2Root δ = 2 • g2Root α + g2Root β ∧
+      g2Root ε = 3 • g2Root α + g2Root β ∧
+      g2Root ζ = 3 • g2Root α + 2 • g2Root β := by
+  rw [hζ, hε, hδ, hγ]
+  exact ⟨by abel, by abel, by abel⟩
 
 private theorem long_short_divisibility
     (hα : g2Length α = 1) (hβ : g2Length β = 3)
@@ -88,8 +109,7 @@ private theorem long_short_divisibility
       (i := α) (j := γ) ⟨δ, by simpa only [g2SimplyConnectedRootDatum_root] using hδ⟩
     simpa [hbγ] using g2SimplyConnectedRootDatum.chainBotCoeff_of_add hli'
       (by simpa only [g2SimplyConnectedRootDatum_root] using hδ.trans (add_comm _ _))
-  have hδcoord : g2Root δ = 2 • g2Root α + g2Root β := by rw [hδ, hγ]; abel
-  have hζcoord : g2Root ζ = 3 • g2Root α + 2 • g2Root β := by rw [hζ, hδcoord, hγ]; abel
+  obtain ⟨hδcoord, _, hζcoord⟩ := long_short_coordinates hγ hδ hε hζ
   have hγlen := g2Length_eq_one_of_long_add_short_eq_root β α γ hβ hα
     (by simpa only [g2SimplyConnectedRootDatum_root] using hγ.trans (add_comm _ _))
   have hbζ := g2_chainBotCoeff_eq_two_of_short_add_short_eq_long δ γ ζ
@@ -97,20 +117,17 @@ private theorem long_short_divisibility
     ((long_short_output_lengths α β ζ hα hβ).2 hζcoord)
     (by simpa only [g2SimplyConnectedRootDatum_root] using hζ.trans (add_comm _ _))
   have hc2 := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := α) (β := γ) ⟨δ, by
-      rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact hδ⟩
+    (α := α) (β := γ) ⟨δ, g2_root_eq_add_of_coordinates hδ⟩
   have hc3 := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := α) (β := δ) ⟨ε, by
-      rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact hε⟩
+    (α := α) (β := δ) ⟨ε, g2_root_eq_add_of_coordinates hε⟩
   have hc3' := structureConstant_eq_natCast_or_eq_neg_natCast (t := G2) (ht := ht)
-    (α := δ) (β := γ) ⟨ζ, by
-      rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact hζ⟩
-  have hbγ' : (G2.simplyConnectedRootDatum ht).chainBotCoeff α γ = 1 := by
-    rw [simplyConnectedRootDatum_G2]; exact hbγ
-  have hbδ' : (G2.simplyConnectedRootDatum ht).chainBotCoeff α δ = 2 := by
-    rw [simplyConnectedRootDatum_G2]; exact hbδ
-  have hbζ' : (G2.simplyConnectedRootDatum ht).chainBotCoeff δ γ = 2 := by
-    rw [simplyConnectedRootDatum_G2]; exact hbζ
+    (α := δ) (β := γ) ⟨ζ, g2_root_eq_add_of_coordinates hζ⟩
+  obtain ⟨hbγ', hbδ', hbζ'⟩ :
+      (G2.simplyConnectedRootDatum ht).chainBotCoeff α γ = 1 ∧
+        (G2.simplyConnectedRootDatum ht).chainBotCoeff α δ = 2 ∧
+        (G2.simplyConnectedRootDatum ht).chainBotCoeff δ γ = 2 := by
+    rw [simplyConnectedRootDatum_G2]
+    exact ⟨hbγ, hbδ, hbζ⟩
   omega
 
 private theorem long_short_zero_brackets
@@ -124,18 +141,12 @@ private theorem long_short_zero_brackets
       (⁅e δ, e ε⁆ = 0) ∧ (⁅e γ, e ζ⁆ = 0) ∧ (⁅e δ, e ζ⁆ = 0) ∧
       (⁅e ε, e ζ⁆ = 0) := by
   have hex := long_short_exclusions α β hα hβ ⟨γ, hγ⟩
-  have hz (i j : Fin 12) (h : g2Root i + g2Root j ∈
-      ({4 • g2Root α + g2Root β, 4 • g2Root α + 2 • g2Root β,
-        g2Root α + 2 • g2Root β, 5 • g2Root α + 2 • g2Root β,
-        4 • g2Root α + 3 • g2Root β, 5 • g2Root α + 3 • g2Root β,
-        6 • g2Root α + 3 • g2Root β} : Set (Fin 2 → ℤ))) :
+  have hz (i j : Fin 12) (h : g2Root i + g2Root j ∈ long_short_excludedSums α β) :
       ⁅G2.chevalleySystem ht i, G2.chevalleySystem ht j⁆ = 0 :=
     lie_chevalleySystem_eq_zero (t := G2) (ht := ht)
       (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact (hex _ h).1)
       (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact (hex _ h).2)
-  have hδcoord : g2Root δ = 2 • g2Root α + g2Root β := by rw [hδ, hγ]; abel
-  have hεcoord : g2Root ε = 3 • g2Root α + g2Root β := by rw [hε, hδcoord]; abel
-  have hζcoord : g2Root ζ = 3 • g2Root α + 2 • g2Root β := by rw [hζ, hδcoord, hγ]; abel
+  obtain ⟨hδcoord, hεcoord, hζcoord⟩ := long_short_coordinates hγ hδ hε hζ
   have h1 : g2Root α + g2Root ε = 4 • g2Root α + g2Root β := by rw [hεcoord]; abel
   have h2 : g2Root α + g2Root ζ = 4 • g2Root α + 2 • g2Root β := by rw [hζcoord]; abel
   have h3 : g2Root β + g2Root γ = g2Root α + 2 • g2Root β := by rw [hγ]; abel
@@ -146,8 +157,13 @@ private theorem long_short_zero_brackets
     rw [hδcoord, hζcoord]; abel
   have h7 : g2Root ε + g2Root ζ = 6 • g2Root α + 3 • g2Root β := by
     rw [hεcoord, hζcoord]; abel
-  exact ⟨hz _ _ (by simp [h1]), hz _ _ (by simp [h2]), hz _ _ (by simp [h3]),
-    hz _ _ (by simp [h4]), hz _ _ (by simp [h5]), hz _ _ (by simp [h6]), hz _ _ (by simp [h7])⟩
+  exact ⟨hz _ _ (by simp [long_short_excludedSums, h1]),
+    hz _ _ (by simp [long_short_excludedSums, h2]),
+    hz _ _ (by simp [long_short_excludedSums, h3]),
+    hz _ _ (by simp [long_short_excludedSums, h4]),
+    hz _ _ (by simp [long_short_excludedSums, h5]),
+    hz _ _ (by simp [long_short_excludedSums, h6]),
+    hz _ _ (by simp [long_short_excludedSums, h7])⟩
 
 noncomputable section
 
@@ -174,17 +190,17 @@ private theorem long_short_scaled_brackets
   obtain ⟨h2, h3, h3'⟩ := long_short_divisibility (ht := ht) hα hβ hγ hδ hε hζ
   dsimp only
   refine ⟨lie_chevalleySystem_eq_structureConstant_zsmul
-    (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact hγ), ?_, ?_, ?_⟩
+    (g2_root_eq_add_of_coordinates hγ), ?_, ?_, ?_⟩
   · rw [lie_chevalleySystem_eq_structureConstant_zsmul
-      (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact hδ), smul_smul]
+      (g2_root_eq_add_of_coordinates hδ), smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h2]
   · rw [lie_chevalleySystem_eq_structureConstant_zsmul
-      (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact hε), smul_smul]
+      (g2_root_eq_add_of_coordinates hε), smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h3]
   · rw [lie_chevalleySystem_eq_structureConstant_zsmul
-      (by rw [simplyConnectedRootDatum_G2, g2SimplyConnectedRootDatum_root]; exact hζ), smul_smul]
+      (g2_root_eq_add_of_coordinates hζ), smul_smul]
     congr 1
     rw [mul_left_comm, Int.mul_ediv_cancel' h3']
 
