@@ -107,6 +107,36 @@ theorem exists_forall_finite_image_preimage_of_finite_image_preimage
   · rw [← Scheme.Hom.comp_apply, morphismRestrict_ι, Scheme.Hom.comp_apply, hx', hhx]
   · rw [Scheme.Hom.comp_apply, hx', ← Scheme.Hom.comp_apply, Scheme.Hom.toImage_imageι]
 
+/-- If `f : X × Y ⟶ Z` sends the fibre `X × {y₀}` over a `K`-point `y₀` of `Y` to a single
+`K`-point `z₀` of `Z`, then `(pr₂, f) : X × Y ⟶ Y × Z` has finite image on the fibre of `pr₂`
+over `y₀`. -/
+private lemma finite_image_preimage_lift_snd_of_fibre {X Y Z : Over (Spec (.of K))}
+    (f : X ⊗ Y ⟶ Z) (y₀ : 𝟙_ _ ⟶ Y) (z₀ : 𝟙_ _ ⟶ Z)
+    (hf : lift (𝟙 X) (toUnit X ≫ y₀) ≫ f = toUnit X ≫ z₀) :
+    ((lift (snd X Y) f).left '' (((lift (snd X Y) f).left ≫ (fst Y Z).left) ⁻¹'
+      {y₀.left (IsLocalRing.closedPoint K)})).Finite := by
+  let γ : X ⊗ Y ⟶ Y ⊗ Z := lift (snd X Y) f
+  have hγ : γ.left ≫ (fst Y Z).left = (snd X Y).left := by
+    rw [← Over.comp_left, lift_fst]
+  -- For a `K`-point `y` of `Y`, the map `(x, y') ↦ (x, y)` factors through `x ↦ (x, y)`.
+  have hfibre (y : 𝟙_ _ ⟶ Y) :
+      X ◁ (toUnit Y ≫ y) = fst X Y ≫ lift (𝟙 X) (toUnit X ≫ y) := by
+    ext1 <;> simp
+  -- The fibre of `X × Y ⟶ Y` over `y₀` is sent by `γ` to the single point `(y₀, z₀)`.
+  rw [hγ, preimage_snd_left_eq_range_whiskerLeft_left, ← Set.range_comp, ← TopCat.coe_comp,
+    ← Scheme.Hom.comp_base, ← Over.comp_left]
+  have : X ◁ (toUnit Y ≫ y₀) ≫ γ = toUnit (X ⊗ Y) ≫ lift y₀ z₀ := by
+    ext1
+    · simp [γ]
+    · rw [Category.assoc, lift_snd, hfibre, Category.assoc, hf]
+      simp
+  rw [this, Over.comp_left, Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp]
+  have : Finite (𝟙_ (Over (Spec (.of K)))).left :=
+    have : Subsingleton (𝟙_ (Over (Spec (.of K)))).left :=
+      inferInstanceAs (Subsingleton (Spec (.of K)))
+    Finite.of_subsingleton
+  exact (Set.finite_range _).subset (Set.image_subset_range _ _)
+
 /-- **The rigidity lemma** over an algebraically closed field `K`. Let `X` be proper over `K`, `Y`
 locally of finite type over `K` with `X × Y` integral, and `Z` separated and locally of finite
 type over `K`. If `f : X × Y ⟶ Z` sends the fibre `X × {y₀}` over a `K`-point `y₀` of `Y` to a
@@ -128,25 +158,8 @@ theorem eq_snd_comp_lift_comp_of_isAlgClosed [IsAlgClosed K] {X Y Z : Over (Spec
   have : IsProper γ.left := .of_comp _ (fst Y Z).left
   have : LocallyOfFiniteType (X ⊗ Y).hom := by dsimp; infer_instance
   have : JacobsonSpace (X ⊗ Y).left := LocallyOfFiniteType.jacobsonSpace (X ⊗ Y).hom
-  -- For a `K`-point `y` of `Y`, the map `(x, y') ↦ (x, y)` factors through `x ↦ (x, y)`.
-  have hfibre (y : 𝟙_ _ ⟶ Y) :
-      X ◁ (toUnit Y ≫ y) = fst X Y ≫ lift (𝟙 X) (toUnit X ≫ y) := by
-    ext1 <;> simp
-  -- The fibre of `X × Y ⟶ Y` over `y₀` is sent by `γ` to the single point `(y₀, z₀)`.
-  have H : (γ.left '' ((γ.left ≫ (fst Y Z).left) ⁻¹' {y₀.left point})).Finite := by
-    rw [hγ, preimage_snd_left_eq_range_whiskerLeft_left, ← Set.range_comp, ← TopCat.coe_comp,
-      ← Scheme.Hom.comp_base, ← Over.comp_left]
-    have : X ◁ (toUnit Y ≫ y₀) ≫ γ = toUnit (X ⊗ Y) ≫ lift y₀ z₀ := by
-      ext1
-      · simp [γ]
-      · rw [Category.assoc, lift_snd, hfibre, Category.assoc, hf]
-        simp
-    rw [this, Over.comp_left, Scheme.Hom.comp_base, TopCat.coe_comp, Set.range_comp]
-    have : Finite (𝟙_ (Over (Spec (.of K)))).left :=
-      have : Subsingleton (𝟙_ (Over (Spec (.of K)))).left :=
-        inferInstanceAs (Subsingleton (Spec (.of K)))
-      Finite.of_subsingleton
-    exact (Set.finite_range _).subset (Set.image_subset_range _ _)
+  have H : (γ.left '' ((γ.left ≫ (fst Y Z).left) ⁻¹' {y₀.left point})).Finite :=
+    finite_image_preimage_lift_snd_of_fibre f y₀ z₀ hf
   -- By Zariski's main theorem, `γ` has finite image on the fibres over a neighbourhood `U`
   -- of `y₀`.
   obtain ⟨U, hy₀U, hU⟩ := exists_forall_finite_image_preimage_of_finite_image_preimage
