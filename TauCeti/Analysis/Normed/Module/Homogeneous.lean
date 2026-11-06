@@ -80,6 +80,96 @@ theorem exists_pos_mul_norm_le (hL : Continuous L) (hne : ∀ v, v ≠ 0 → L v
   rw [hLv, mul_comm]
   exact mul_le_mul_of_nonneg_left (hmin hu) (norm_nonneg v)
 
+omit [FiniteDimensional ℝ E] in
+/-- The ratio `‖L v‖ / ‖v‖` is constant along open rays. -/
+private theorem norm_map_div_norm_smul (hhom : ∀ c : ℝ, 0 ≤ c → ∀ v, L (c • v) = c • L v)
+    {a : ℝ} (ha : 0 < a) (v : E) : ‖L (a • v)‖ / ‖a • v‖ = ‖L v‖ / ‖v‖ := by
+  rw [hhom a ha.le, norm_smul, norm_smul, Real.norm_of_nonneg ha.le, mul_div_mul_left _ _ ha.ne']
+
+omit [FiniteDimensional ℝ E] in
+/-- The radial rescaling `σ v = (‖L v‖ / ‖v‖) • v` and `τ w = (‖w‖ / ‖L w‖) • w` are inverse to
+each other. -/
+private theorem radial_leftInverse_rightInverse (hne : ∀ v, v ≠ 0 → L v ≠ 0)
+    (hhom : ∀ c : ℝ, 0 ≤ c → ∀ v, L (c • v) = c • L v) {σ τ : E → E}
+    (hσ : ∀ v, σ v = (‖L v‖ / ‖v‖) • v) (hτ : ∀ w, τ w = (‖w‖ / ‖L w‖) • w) :
+    Function.LeftInverse τ σ ∧ Function.RightInverse τ σ := by
+  have hpos {v : E} (hv : v ≠ 0) : 0 < ‖L v‖ := norm_pos_iff.2 (hne v hv)
+  have hray {a : ℝ} (ha : 0 < a) (v : E) : ‖a • v‖ / ‖L (a • v)‖ = ‖v‖ / ‖L v‖ := by
+    rw [← inv_div, norm_map_div_norm_smul hhom ha, inv_div]
+  constructor
+  · intro v
+    rcases eq_or_ne v 0 with rfl | hv
+    · simp [hσ, hτ]
+    rw [hτ, hσ]
+    have h : ‖v‖ / ‖L v‖ * (‖L v‖ / ‖v‖) = 1 := by
+      field_simp [norm_ne_zero_iff.2 hv, (hpos hv).ne']
+    rw [hray (div_pos (hpos hv) (norm_pos_iff.2 hv)), smul_smul, h, one_smul]
+  · intro w
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp [hσ, hτ]
+    rw [hσ, hτ]
+    have h : ‖L w‖ / ‖w‖ * (‖w‖ / ‖L w‖) = 1 := by
+      field_simp [norm_ne_zero_iff.2 hw, (hpos hw).ne']
+    rw [norm_map_div_norm_smul hhom (div_pos (norm_pos_iff.2 hw) (hpos hw)), smul_smul, h,
+      one_smul]
+
+omit [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
+/-- The radial rescaling `σ v = (‖L v‖ / ‖v‖) • v` turns `‖v‖` into `‖L v‖`. -/
+private theorem norm_radial (hL0 : L 0 = 0) {σ : E → E}
+    (hσ : ∀ v, σ v = (‖L v‖ / ‖v‖) • v) (v : E) : ‖σ v‖ = ‖L v‖ := by
+  rcases eq_or_ne v 0 with rfl | hv
+  · simp [hσ, hL0]
+  rw [hσ, norm_smul, Real.norm_of_nonneg (div_nonneg (norm_nonneg _) (norm_nonneg _)),
+    div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)]
+
+omit [FiniteDimensional ℝ E] in
+/-- The radial rescaling `σ v = (‖L v‖ / ‖v‖) • v` commutes with nonnegative scalars. -/
+private theorem radial_smul (hhom : ∀ c : ℝ, 0 ≤ c → ∀ v, L (c • v) = c • L v) {σ : E → E}
+    (hσ : ∀ v, σ v = (‖L v‖ / ‖v‖) • v) (c : ℝ) (hc : 0 ≤ c) (v : E) :
+    σ (c • v) = c • σ v := by
+  rcases hc.eq_or_lt with rfl | hc
+  · simp [hσ]
+  rw [hσ, hσ, norm_map_div_norm_smul hhom hc, smul_comm]
+
+omit [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
+/-- Continuity of the radial rescaling `σ v = (‖L v‖ / ‖v‖) • v`. Away from the origin it is that
+of the formula; at the origin, `‖σ v‖ = ‖L v‖` tends to zero. -/
+private theorem continuous_radial (hL : Continuous L) (hL0 : L 0 = 0) {σ : E → E}
+    (hσ : ∀ v, σ v = (‖L v‖ / ‖v‖) • v) : Continuous σ := by
+  refine continuous_iff_continuousAt.2 fun v => ?_
+  rcases eq_or_ne v 0 with rfl | hv
+  · have h0 : σ 0 = 0 := by simp [hσ]
+    rw [ContinuousAt, h0, tendsto_zero_iff_norm_tendsto_zero]
+    simp only [norm_radial hL0 hσ]
+    simpa [hL0] using hL.norm.tendsto 0
+  · rw [show σ = fun v => (‖L v‖ / ‖v‖) • v from funext hσ]
+    exact (hL.norm.continuousAt.div continuous_norm.continuousAt
+      (norm_ne_zero_iff.2 hv)).smul continuousAt_id
+
+omit [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
+/-- Continuity of `τ w = (‖w‖ / ‖L w‖) • w`, given a positive lower bound `‖L w‖ ≥ m * ‖w‖`.
+At the origin, `‖τ w‖ ≤ m⁻¹ * ‖w‖` tends to zero. -/
+private theorem continuous_radial_inv (hL : Continuous L) (hne : ∀ v, v ≠ 0 → L v ≠ 0) {m : ℝ}
+    (hm : 0 < m) (hmL : ∀ w, m * ‖w‖ ≤ ‖L w‖) {τ : E → E}
+    (hτ : ∀ w, τ w = (‖w‖ / ‖L w‖) • w) : Continuous τ := by
+  have hpos {v : E} (hv : v ≠ 0) : 0 < ‖L v‖ := norm_pos_iff.2 (hne v hv)
+  have hτle (w : E) : ‖τ w‖ ≤ m⁻¹ * ‖w‖ := by
+    rcases eq_or_ne w 0 with rfl | hw
+    · simp [hτ]
+    rw [hτ, norm_smul, Real.norm_of_nonneg (div_pos (norm_pos_iff.2 hw) (hpos hw)).le,
+      div_mul_eq_mul_div, div_le_iff₀ (hpos hw)]
+    calc ‖w‖ * ‖w‖ = m⁻¹ * ‖w‖ * (m * ‖w‖) := by field_simp
+      _ ≤ m⁻¹ * ‖w‖ * ‖L w‖ := by gcongr; exact hmL w
+  refine continuous_iff_continuousAt.2 fun w => ?_
+  rcases eq_or_ne w 0 with rfl | hw
+  · have h0 : τ 0 = 0 := by simp [hτ]
+    rw [ContinuousAt, h0, tendsto_zero_iff_norm_tendsto_zero]
+    exact squeeze_zero (fun _ => norm_nonneg _) hτle
+      (by simpa using (tendsto_norm_zero (E := E)).const_mul m⁻¹)
+  · rw [show τ = fun w => (‖w‖ / ‖L w‖) • w from funext hτ]
+    exact (continuous_norm.continuousAt.div hL.norm.continuousAt (hpos hw).ne').smul
+      continuousAt_id
+
 /-- **Radial normalization.** Let `L : E → F` be continuous and positively homogeneous, vanishing
 only at the origin, with `E` a finite-dimensional real normed space. Then some homeomorphism `σ`
 of `E` commutes with nonnegative scalars, moves every vector `v` along its ray (`σ v = a • v` with
@@ -90,74 +180,19 @@ theorem exists_homeomorph_norm_eq (hL : Continuous L) (hne : ∀ v, v ≠ 0 → 
     ∃ σ : E ≃ₜ E, (∀ c : ℝ, 0 ≤ c → ∀ v, σ (c • v) = c • σ v) ∧
       (∀ v, ∃ a : ℝ, 0 < a ∧ σ v = a • v) ∧ ∀ v, ‖σ v‖ = ‖L v‖ := by
   have hL0 : L 0 = 0 := by simpa using hhom 0 le_rfl 0
-  have hLne {v : E} (hv : v ≠ 0) : ‖L v‖ ≠ 0 := norm_ne_zero_iff.2 (hne v hv)
   obtain ⟨m, hm, hmL⟩ := hL.exists_pos_mul_norm_le hne hhom
-  have hpos {v : E} (hv : v ≠ 0) : 0 < ‖L v‖ := lt_of_le_of_ne (norm_nonneg _) (hLne hv).symm
   -- The rescaling `σ` and its inverse `τ` multiply each vector by a factor constant on its ray.
   let σ : E → E := fun v => (‖L v‖ / ‖v‖) • v
   let τ : E → E := fun w => (‖w‖ / ‖L w‖) • w
-  have hnormL {a : ℝ} (ha : 0 < a) (v : E) : ‖L (a • v)‖ = a * ‖L v‖ := by
-    rw [hhom a ha.le, norm_smul, Real.norm_of_nonneg ha.le]
-  have hσray {a : ℝ} (ha : 0 < a) (v : E) : ‖L (a • v)‖ / ‖a • v‖ = ‖L v‖ / ‖v‖ := by
-    rw [hnormL ha, norm_smul, Real.norm_of_nonneg ha.le, mul_div_mul_left _ _ ha.ne']
-  have hτray {a : ℝ} (ha : 0 < a) (v : E) : ‖a • v‖ / ‖L (a • v)‖ = ‖v‖ / ‖L v‖ := by
-    rw [hnormL ha, norm_smul, Real.norm_of_nonneg ha.le, mul_div_mul_left _ _ ha.ne']
-  have hστ (w : E) : σ (τ w) = w := by
-    rcases eq_or_ne w 0 with rfl | hw
-    · simp [σ, τ]
-    simp only [σ, τ]
-    have h : ‖L w‖ / ‖w‖ * (‖w‖ / ‖L w‖) = 1 := by
-      field_simp [norm_ne_zero_iff.2 hw, hLne hw]
-    rw [hσray (div_pos (norm_pos_iff.2 hw) (hpos hw)), smul_smul, h, one_smul]
-  have hτσ (v : E) : τ (σ v) = v := by
-    rcases eq_or_ne v 0 with rfl | hv
-    · simp [σ, τ]
-    simp only [σ, τ]
-    have h : ‖v‖ / ‖L v‖ * (‖L v‖ / ‖v‖) = 1 := by
-      field_simp [norm_ne_zero_iff.2 hv, hLne hv]
-    rw [hτray (div_pos (hpos hv) (norm_pos_iff.2 hv)), smul_smul, h, one_smul]
-  have hσnorm (v : E) : ‖σ v‖ = ‖L v‖ := by
-    rcases eq_or_ne v 0 with rfl | hv
-    · simp [σ, hL0]
-    simp only [σ]
-    rw [norm_smul, Real.norm_of_nonneg (div_pos (hpos hv) (norm_pos_iff.2 hv)).le,
-      div_mul_cancel₀ _ (norm_ne_zero_iff.2 hv)]
-  have hσsmul (c : ℝ) (hc : 0 ≤ c) (v : E) : σ (c • v) = c • σ v := by
-    rcases hc.eq_or_lt with rfl | hc
-    · simp [σ]
-    simp only [σ]
-    rw [hσray hc, smul_comm]
-  -- Continuity away from the origin is that of the formulas. At the origin, `‖σ v‖ = ‖L v‖` and
-  -- `‖τ w‖ ≤ m⁻¹ * ‖w‖` tend to zero.
-  have hσcont : Continuous σ := by
-    refine continuous_iff_continuousAt.2 fun v => ?_
-    rcases eq_or_ne v 0 with rfl | hv
-    · have h0 : σ 0 = 0 := by simp [σ]
-      rw [ContinuousAt, h0, tendsto_zero_iff_norm_tendsto_zero]
-      simp only [hσnorm]
-      simpa [hL0] using hL.norm.tendsto 0
-    · exact ((hL.norm.continuousAt.div continuous_norm.continuousAt
-        (norm_ne_zero_iff.2 hv)).smul continuousAt_id)
-  have hτle (w : E) : ‖τ w‖ ≤ m⁻¹ * ‖w‖ := by
-    rcases eq_or_ne w 0 with rfl | hw
-    · simp [τ]
-    simp only [τ]
-    rw [norm_smul, Real.norm_of_nonneg (div_pos (norm_pos_iff.2 hw) (hpos hw)).le,
-      div_mul_eq_mul_div, div_le_iff₀ (hpos hw)]
-    calc ‖w‖ * ‖w‖ = m⁻¹ * ‖w‖ * (m * ‖w‖) := by field_simp
-      _ ≤ m⁻¹ * ‖w‖ * ‖L w‖ := by gcongr; exact hmL w
-  have hτcont : Continuous τ := by
-    refine continuous_iff_continuousAt.2 fun w => ?_
-    rcases eq_or_ne w 0 with rfl | hw
-    · have h0 : τ 0 = 0 := by simp [τ]
-      rw [ContinuousAt, h0, tendsto_zero_iff_norm_tendsto_zero]
-      exact squeeze_zero (fun _ => norm_nonneg _) hτle
-        (by simpa using (tendsto_norm_zero (E := E)).const_mul m⁻¹)
-    · exact (continuous_norm.continuousAt.div hL.norm.continuousAt (hLne hw)).smul
-        continuousAt_id
-  refine ⟨⟨⟨σ, τ, hτσ, hστ⟩, hσcont, hτcont⟩, hσsmul, fun v => ?_, hσnorm⟩
+  have hσ : ∀ v, σ v = (‖L v‖ / ‖v‖) • v := fun _ => rfl
+  have hτ : ∀ w, τ w = (‖w‖ / ‖L w‖) • w := fun _ => rfl
+  obtain ⟨hτσ, hστ⟩ := radial_leftInverse_rightInverse hne hhom hσ hτ
+  refine ⟨⟨⟨σ, τ, hτσ, hστ⟩, continuous_radial hL hL0 hσ,
+    continuous_radial_inv hL hne hm hmL hτ⟩, radial_smul hhom hσ, fun v => ?_,
+    norm_radial hL0 hσ⟩
   rcases eq_or_ne v 0 with rfl | hv
   · exact ⟨1, one_pos, by simp [σ]⟩
-  · exact ⟨_, div_pos (hpos hv) (norm_pos_iff.2 hv), rfl⟩
+  · exact ⟨_, div_pos (norm_pos_iff.2 (hne v hv)) (norm_pos_iff.2 hv), rfl⟩
+
 
 end Continuous
