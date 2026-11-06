@@ -10,6 +10,8 @@ public import TauCeti.Analysis.Complex.Wirtinger.Holomorphic
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import Mathlib.Analysis.Complex.CauchyIntegral
+import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 
 /-!
 # Weak conjugate Wirtinger derivatives
@@ -30,7 +32,9 @@ compatible with continuous complex-linear maps. Its value is unique almost every
 `HasWeakFDerivOn.hasWeakConjWirtingerDerivOn` compare it with the native real weak derivatives.
 `hasWeakConjWirtingerDerivOn_of_contDiffOn` compares it with the classical normalized operator;
 for real `C¹` maps, its vanishing is equivalent to holomorphy.
-`hasWeakConjWirtingerDerivOn_conj` computes the weak derivative of conjugation as `1`.
+Every holomorphic map solves the distributional equation.
+`hasWeakConjWirtingerDerivOn_conj` computes the weak derivative of conjugation as `1`,
+which rules out an almost-everywhere equal holomorphic representative on nonempty open sets.
 
 ## References
 
@@ -306,5 +310,25 @@ theorem hasWeakConjWirtingerDerivOn_zero_iff_of_contDiffOn
     rw [Filter.EventuallyEq, ae_restrict_iff' Ω.isOpen.measurableSet]
     filter_upwards [] with z hz
     simp [(h.differentiableAt (Ω.isOpen.mem_nhds hz)).conjWirtingerDeriv_eq_zero]
+
+/-- Every holomorphic function with Banach coefficients solves the distributional equation. -/
+theorem _root_.DifferentiableOn.hasWeakConjWirtingerDerivOn_zero
+    [CompleteSpace F] [μ.IsAddHaarMeasure] (h : DifferentiableOn ℂ u Ω) :
+    HasWeakConjWirtingerDerivOn μ Ω u 0 :=
+  (hasWeakConjWirtingerDerivOn_zero_iff_of_contDiffOn
+    ((h.contDiffOn Ω.isOpen).restrict_scalars ℝ)).2 h
+
+/-- Conjugation cannot agree almost everywhere with a holomorphic function on a nonempty
+open set: its weak `\bar∂` derivative is `1`, while a holomorphic representative has
+derivative `0`. -/
+theorem not_exists_differentiableOn_ae_eq_conj [μ.IsAddHaarMeasure]
+    (hΩ : (Ω : Set ℂ).Nonempty) :
+    ¬ ∃ v : ℂ → ℂ, DifferentiableOn ℂ v Ω ∧ (conj : ℂ → ℂ) =ᵐ[μ.restrict Ω] v := by
+  rintro ⟨v, hv, hae⟩
+  have hzero := hv.hasWeakConjWirtingerDerivOn_zero.congr_ae hae.symm
+  have he := (hasWeakConjWirtingerDerivOn_conj (μ := μ) (Ω := Ω)).ae_eq hzero
+  have hμ : μ (Ω : Set ℂ) = 0 := by
+    simpa [Filter.EventuallyEq, ae_iff] using he
+  exact (Ω.isOpen.measure_pos (μ := μ) hΩ).ne' hμ
 
 end TauCeti

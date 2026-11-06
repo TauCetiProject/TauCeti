@@ -8,8 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Wirtinger.Weak
 public import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 import TauCeti.Analysis.Distribution.TestFunction.LineDeriv
-import Mathlib.Analysis.Complex.CauchyIntegral
-import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 
 /-!
@@ -31,9 +29,8 @@ of the original function, or a Sobolev exponent, are assumed.
 * `HasWeakConjWirtingerDerivOn.exists_differentiableOn_ae_eq`: Weyl's lemma for finite-dimensional
   complex coefficients.
 * `HasWeakConjWirtingerDerivOn.differentiableOn`: a continuous solution is itself holomorphic.
-* `DifferentiableOn.hasWeakConjWirtingerDerivOn_zero`: every holomorphic map solves the equation.
-* `not_exists_differentiableOn_ae_eq_conj`: conjugation cannot have a holomorphic representative
-  on a nonempty open set, using its weak derivative calculation from `Wirtinger.Weak`.
+The converse for holomorphic maps and the elementary conjugation counterexample live in
+`Wirtinger.Weak`.
 
 ## References
 
@@ -129,13 +126,6 @@ theorem HasWeakConjWirtingerDerivOn.differentiableOn
   obtain ⟨v, hv, huv⟩ := h.exists_differentiableOn_ae_eq
   exact hv.congr (Measure.eqOn_open_of_ae_eq huv Ω.isOpen hu hv.continuousOn)
 
-/-- Every holomorphic function with Banach coefficients solves the distributional equation. -/
-theorem _root_.DifferentiableOn.hasWeakConjWirtingerDerivOn_zero
-    [CompleteSpace F] [μ.IsAddHaarMeasure] (h : DifferentiableOn ℂ u Ω) :
-    HasWeakConjWirtingerDerivOn μ Ω u 0 :=
-  (hasWeakConjWirtingerDerivOn_zero_iff_of_contDiffOn
-    ((h.contDiffOn Ω.isOpen).restrict_scalars ℝ)).2 h
-
 /-- The distributional equation is equivalent to existence of an almost-everywhere equal
 holomorphic representative. -/
 theorem hasWeakConjWirtingerDerivOn_zero_iff_exists_differentiableOn_ae_eq
@@ -155,17 +145,5 @@ theorem hasWeakConjWirtingerDerivOn_zero_iff_of_continuousOn
   have := FiniteDimensional.complete ℂ F
   exact ⟨fun h ↦ h.differentiableOn hu, DifferentiableOn.hasWeakConjWirtingerDerivOn_zero⟩
 
-/-- Conjugation cannot agree almost everywhere with a holomorphic function on a nonempty
-open set: its weak `\bar∂` derivative is `1`, while a holomorphic representative has
-derivative `0`. -/
-theorem not_exists_differentiableOn_ae_eq_conj [μ.IsAddHaarMeasure]
-    (hΩ : (Ω : Set ℂ).Nonempty) :
-    ¬ ∃ v : ℂ → ℂ, DifferentiableOn ℂ v Ω ∧ (conj : ℂ → ℂ) =ᵐ[μ.restrict Ω] v := by
-  rintro ⟨v, hv, hae⟩
-  have hzero := hv.hasWeakConjWirtingerDerivOn_zero.congr_ae hae.symm
-  have he := (hasWeakConjWirtingerDerivOn_conj (μ := μ) (Ω := Ω)).ae_eq hzero
-  have hμ : μ (Ω : Set ℂ) = 0 := by
-    simpa [Filter.EventuallyEq, ae_iff] using he
-  exact (Ω.isOpen.measure_pos (μ := μ) hΩ).ne' hμ
 
 end TauCeti
