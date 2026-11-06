@@ -220,6 +220,18 @@ instance IsUniversalHomeomorphism.of_isIso (f : X ⟶ Y) [IsIso f] :
   (isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective f).mpr
     ⟨inferInstance, inferInstance, inferInstance⟩
 
+/-- **Being a universal homeomorphism is local on the target**, since being universally closed,
+universally injective and surjective are. -/
+instance isUniversalHomeomorphism_isZariskiLocalAtTarget :
+    IsZariskiLocalAtTarget @IsUniversalHomeomorphism.{u} :=
+  .mk' (fun f U hf ↦ MorphismProperty.of_isPullback (isPullback_morphismRestrict f U).flip hf)
+    fun f _ U hU H ↦ by
+      simp only [isUniversalHomeomorphism_iff_universallyClosed_universallyInjective_surjective]
+        at H ⊢
+      exact ⟨IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (H i).1,
+        IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (H i).2.1,
+        IsZariskiLocalAtTarget.of_iSup_eq_top U hU fun i ↦ (H i).2.2⟩
+
 /-- The homeomorphism of underlying spaces induced by a universal homeomorphism of schemes. -/
 noncomputable def IsUniversalHomeomorphism.homeomorph
     (f : X ⟶ Y) [IsUniversalHomeomorphism f] : X ≃ₜ Y :=

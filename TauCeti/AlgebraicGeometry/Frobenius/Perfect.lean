@@ -148,6 +148,26 @@ theorem of_etale (f : X ⟶ Y) [Etale f] [h : IsPerfect Y p] : IsPerfect X p :=
 instance opens [IsPerfect X p] (U : X.Opens) : IsPerfect U p :=
   of_etale U.ι
 
+/-- **Being perfect is local**: a scheme with an open cover by perfect schemes is perfect. Every
+local ring of `X` is a local ring of a member of the cover, so it is a perfect ring in which `p`
+vanishes. -/
+theorem of_openCover (𝒰 : X.OpenCover) [∀ i, IsPerfect (𝒰.X i) p] : IsPerfect X p := by
+  -- The stalk of `X` at the image of `y ∈ 𝒰.X i` is that of `𝒰.X i` at `y`.
+  have key (x : X) : (p : X.presheaf.stalk x) = 0 ∧ PerfectRing (X.presheaf.stalk x) p := by
+    obtain ⟨i, y, rfl⟩ := 𝒰.exists_eq x
+    let e := (asIso ((𝒰.f i).stalkMap y)).commRingCatIsoToRingEquiv
+    refine ⟨e.injective ?_, ⟨?_⟩⟩
+    · rw [map_natCast, map_zero, ← map_natCast ((𝒰.X i).presheaf.germ ⊤ y trivial).hom,
+        IsPerfect.natCast_eq_zero, map_zero]
+    · convert e.symm.bijective.comp
+        ((PerfectRing.bijective_frobenius (R := (𝒰.X i).presheaf.stalk y) (p := p)).comp
+          e.bijective) using 1
+      ext z
+      simp [← map_pow]
+  refine isPerfect_iff_perfectRing_stalk.2 ⟨?_, fun x ↦ (key x).2⟩
+  refine TopCat.Presheaf.section_ext X.sheaf ⊤ _ _ fun x hx ↦ ?_
+  exact (map_natCast (X.presheaf.germ ⊤ x hx).hom p).trans ((key x).1.trans (map_zero _).symm)
+
 /-- **A fibre product of perfect schemes over a perfect scheme is perfect**: its absolute Frobenius
 is the map induced by the absolute Frobenii of the factors and of the base. -/
 instance pullback (f : X ⟶ S) (g : Y ⟶ S) [hX : IsPerfect X p] [hY : IsPerfect Y p]

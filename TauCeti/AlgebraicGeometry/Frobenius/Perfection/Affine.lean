@@ -25,7 +25,8 @@ for every `p`-radical ring map `φ : A ⟶ B` (Mathlib's `IsPRadical`), of which
   `Spec.map φ` is a coreflection of `Spec A` into perfect schemes.
 
 These are the affine building blocks of the perfection `X ↦ X^perf` of an arbitrary scheme over
-`𝔽_p`, which is affine-locally `Spec (PerfectClosure A p)`.
+`𝔽_p` (`AlgebraicGeometry.Scheme.perfection`), which is affine-locally the spectrum of a perfect
+closure of the ring of sections.
 
 ## Main results
 
