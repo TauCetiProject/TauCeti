@@ -11,19 +11,22 @@ public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.G2.Lengt
 /-!
 # Root strings in the pinned `G₂` root datum
 
-This file records the root-string calculations that distinguish the short-root span in
-characteristic three.  For the pinned datum `TauCeti.DynkinType.g2SimplyConnectedRootDatum` they
-say:
+This file records root-string calculations for the short-root span in characteristic three
+and for the long–short Chevalley straightening relation. For the pinned datum
+`TauCeti.DynkinType.g2SimplyConnectedRootDatum` they say:
 
 * a long root pairs by a multiple of three with every short coroot;
 * whenever a long root plus a short root is a root, the resulting root is short;
-* whenever two short roots add to a long root, their root string has bottom coefficient two.
+* whenever two short roots add to a long root, their root string has bottom coefficient two;
+* a short root and a long root whose sum is a root have descending string coefficient zero
+  and ascending coefficient three.
 
-The last statement means that the corresponding Chevalley bracket coefficient is
-`±(2 + 1) = ±3`, the sign depending on the choice of Chevalley basis.  Thus all three results are
+The coefficient-two statement means that the corresponding Chevalley bracket coefficient is
+`±(2 + 1) = ±3`, the sign depending on the choice of Chevalley basis.  The first three results are
 the integral root-datum input for proving that the span of the short root spaces, together with
 the short coroot directions, is an ideal after base change to characteristic three.
-Constructing that Lie ideal and identifying the induced exceptional isogeny are later steps.
+The four-term long–short string gives the exact factors two and three that occur in the
+successive divided brackets used by straightening.
 
 The short–long root-string calculations also identify the lengths of `2α + β` and
 `3α + 2β`, and show that `β - α` is not a root when `α` is short, `β` is long and
@@ -39,6 +42,8 @@ root-subgroup straightening formula with four correction factors at
   and a short root is short.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_two_of_short_add_short_eq_long`: two short roots whose sum
   is long have bottom root-string coefficient two.
+* `TauCeti.DynkinType.g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long`:
+  the four-term string starting at a long root in a short-root direction.
 * `TauCeti.DynkinType.g2_root_sub_notMem_range_of_short_add_long_eq_root`: subtracting a short
   root from a long root is not a root when their sum is a root.
 * `TauCeti.DynkinType.g2Length_eq_one_of_two_smul_short_add_long_eq_root`: a root `2α + β`
@@ -136,6 +141,28 @@ theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
   rw [hpairIn] at hstring
   omega
 
+/-- A short root and a long root whose sum is a root start a four-term root string:
+its descending coefficient is zero and its ascending coefficient is three. -/
+theorem g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long
+    (i j : Fin 12) (hi : g2Length i = 1) (hj : g2Length j = 3)
+    (hadd : g2SimplyConnectedRootDatum.root i + g2SimplyConnectedRootDatum.root j ∈
+      range g2SimplyConnectedRootDatum.root) :
+    g2SimplyConnectedRootDatum.chainBotCoeff i j = 0 ∧
+      g2SimplyConnectedRootDatum.chainTopCoeff i j = 3 := by
+  have hp : g2SimplyConnectedRootDatum.pairing j i = -3 := by
+    simp only [mem_range, g2SimplyConnectedRootDatum_root, g2SimplyConnectedRootDatum_pairing,
+      g2Root_apply, g2Coroot_apply] at hadd ⊢
+    rw [g2Length_apply] at hi hj
+    revert i j
+    decide +kernel
+  have hli := g2SimplyConnectedRootDatum.linearIndependent_of_add_mem_range_root' hadd
+  have hs := g2SimplyConnectedRootDatum.chainBotCoeff_sub_chainTopCoeff hli
+  have hb := g2SimplyConnectedRootDatum.chainBotCoeff_add_chainTopCoeff_le_three (i := i) (j := j)
+  have hp' : g2SimplyConnectedRootDatum.pairingIn ℤ j i = -3 := by
+    simpa using (g2SimplyConnectedRootDatum.algebraMap_pairingIn ℤ j i).trans hp
+  rw [hp'] at hs
+  omega
+
 /-- If a short root plus a long root is a root, subtracting the short root from the long
 one is not a root. Thus the short-root string through the long root starts at that root. -/
 theorem g2_root_sub_notMem_range_of_short_add_long_eq_root (i j k : Fin 12)
@@ -216,9 +243,7 @@ theorem g2_chainBotCoeff_of_short_add_long_eq_root (i j k l o : Fin 12)
   have hroot : P.root i + P.root j ∈ Set.range P.root := ⟨k, hk⟩
   have hlin := P.linearIndependent_of_add_mem_range_root' hroot
   have hbot : P.chainBotCoeff i j = 0 :=
-    P.chainBotCoeff_eq_zero_iff.mpr
-      (.inr (g2_root_sub_notMem_range_of_short_add_long_eq_root i j k hi hj
-        (hk.trans (add_comm _ _))))
+    (g2_chainBotCoeff_eq_zero_and_chainTopCoeff_eq_three_of_short_long i j hi hj hroot).1
   have hbotk : P.chainBotCoeff i k = 1 := by
     rw [P.chainBotCoeff_of_add hlin (hk.trans (add_comm _ _)), hbot]
   have hlin' := P.linearIndependent_of_add_mem_range_root' ⟨l, hl⟩
