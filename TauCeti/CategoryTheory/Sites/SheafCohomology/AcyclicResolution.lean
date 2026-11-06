@@ -32,7 +32,10 @@ abelian sheaf `ℤ_V` on `V`, and morphisms `ℤ_V ⟶ G` are the sections of `G
 exact sequences `0 ⟶ Zʲ ⟶ Kʲ ⟶ Zʲ⁺¹ ⟶ 0` of cycles. In particular, if `Hⁿ⁺¹(V, F) = 0`, then the
 complex of sections is exact in degree `n + 1`
 (`CategoryTheory.Sheaf.H'.exists_d_hom_app_eq_of_resolution`), which is how derived functors are
-shown to vanish.
+shown to vanish. Bundled, the classes give an additive equivalence between `Hⁿ(V, F)` and the
+cohomology of the complex of sections (`CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution`, the
+case of `CochainComplex.extAddEquivHomology` for the sections functor corepresented by `ℤ_V`),
+natural in `V`.
 
 ## Main declarations
 
@@ -42,6 +45,10 @@ shown to vanish.
   `CategoryTheory.Sheaf.H'.resolutionClass_zero_eq_zero_iff` and
   `CategoryTheory.Sheaf.H'.resolutionClass_succ_eq_zero_iff`: the classes of sections exhaust
   `Hⁿ(V, F)`, and the sections with zero class are exactly the boundaries.
+* `CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution`: `Hⁿ(V, F) ≃+ Hⁿ(K(V))`, with
+  `CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution_resolutionClass` (it sends the class of a
+  section to the cohomology class of the section) and
+  `CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution_naturality` (restriction along `V' ⟶ V`).
 * `CategoryTheory.Sheaf.H'.exists_d_hom_app_eq_of_resolution`: if `Hⁿ⁺¹(V, F) = 0` and the terms
   of a resolution `K` of `F` are acyclic over `V`, then every cycle of `K(V)` in degree `n + 1` is
   a boundary.
@@ -176,6 +183,59 @@ theorem exists_d_hom_app_eq_of_resolution (n : ℕ) (hF : Subsingleton (F.H' (n 
     (s : (K.X (n + 1)).obj.obj (op V)) (hs : (K.d (n + 1) (n + 2)).hom.app (op V) s = 0) :
     ∃ t : (K.X n).obj.obj (op V), (K.d n (n + 1)).hom.app (op V) t = s :=
   (resolutionClass_succ_eq_zero_iff ι hι hι' hK V hKV s hs).1 (Subsingleton.elim _ _)
+
+omit [HasSheafify J AddCommGrpCat.{v}] in
+/-- The functor of sections over an object of the site is additive. -/
+instance {A : Type*} [Category* A] [Preadditive A] (X : Cᵒᵖ) :
+    ((sheafSections J A).obj X).Additive :=
+  inferInstanceAs (sheafToPresheaf J A ⋙ (evaluation Cᵒᵖ A).obj X).Additive
+
+/-- **Sheaf cohomology from an acyclic resolution.** Let `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` be a resolution of
+a sheaf of abelian groups `F` whose terms have no cohomology in positive degrees over an object `V`
+of the site. Then `Hⁿ(V, F)` is additively equivalent to the cohomology in degree `n` of the
+complex of sections `K⁰(V) ⟶ K¹(V) ⟶ ⋯`; it sends `resolutionClass` of a section to the cohomology
+class of that section (`CategoryTheory.Sheaf.H'.addEquivHomologyOfResolution_resolutionClass`). -/
+noncomputable def addEquivHomologyOfResolution (n : ℕ) :
+    F.H' n V ≃+
+      ((((sheafSections J AddCommGrpCat.{v}).obj (op V)).mapHomologicalComplex _).obj K).homology
+        n :=
+  (F.H'AddEquivExt n V).trans <| K.extAddEquivHomology ι hι hι' hK
+    (by simpa only [sheafH'_eq] using hKV) _ (freeYonedaSheafCorepresentableBy J V) n
+
+/-- `addEquivHomologyOfResolution` sends the class of a section `s` of `Kⁿ` over `V` killed by the
+differential to the cohomology class of `s` in the complex of sections. -/
+theorem addEquivHomologyOfResolution_resolutionClass {n : ℕ} (s : (K.X n).obj.obj (op V))
+    (hs : (K.d n (n + 1)).hom.app (op V) s = 0)
+    (c : ((((sheafSections J AddCommGrpCat.{v}).obj (op V)).mapHomologicalComplex _).obj
+      K).cycles n)
+    (hc : ((((sheafSections J AddCommGrpCat.{v}).obj (op V)).mapHomologicalComplex _).obj
+      K).iCycles n c = s) :
+    addEquivHomologyOfResolution ι hι hι' hK V hKV n (resolutionClass ι hι hι' hK V s hs) =
+      ((((sheafSections J AddCommGrpCat.{v}).obj (op V)).mapHomologicalComplex _).obj K).homologyπ
+        n c := by
+  rw [addEquivHomologyOfResolution, resolutionClass_def, AddEquiv.trans_apply,
+    AddEquiv.apply_symm_apply]
+  exact CochainComplex.extAddEquivHomology_extMk ι hι hι' hK _ _ _ _ _ c
+    (by rw [freeYonedaSheafCorepresentableBy_homEquiv, AddEquiv.apply_symm_apply, hc])
+
+/-- **Naturality of sheaf cohomology from an acyclic resolution** in the object of the site: for
+`i : V' ⟶ V`, the restriction map `Hⁿ(V, F) ⟶ Hⁿ(V', F)` of the cohomology presheaf corresponds to
+the map induced in cohomology by restricting sections `K(V) ⟶ K(V')`. -/
+theorem addEquivHomologyOfResolution_naturality {V V' : C} (i : V' ⟶ V)
+    (hKV : ∀ j k, Subsingleton ((K.X j).H' (k + 1) V))
+    (hKV' : ∀ j k, Subsingleton ((K.X j).H' (k + 1) V')) (n : ℕ) (x : F.H' n V) :
+    addEquivHomologyOfResolution ι hι hι' hK V' hKV' n ((F.cohomologyPresheaf n).map i.op x) =
+      HomologicalComplex.homologyMap ((NatTrans.mapHomologicalComplex
+        ((sheafSections J AddCommGrpCat.{v}).map i.op) _).app K) n
+        (addEquivHomologyOfResolution ι hι hι' hK V hKV n x) := by
+  rw [addEquivHomologyOfResolution, addEquivHomologyOfResolution, AddEquiv.trans_apply,
+    AddEquiv.trans_apply, cohomologyPresheaf_map_apply]
+  exact CochainComplex.extAddEquivHomology_naturality ι hι hι' hK _ _
+    (freeYonedaSheafCorepresentableBy J V) _ ((freeYonedaSheafFunctor J).map i)
+    (freeYonedaSheafCorepresentableBy J V') ((sheafSections J AddCommGrpCat.{v}).map i.op)
+    (fun f ↦ by
+      rw [freeYonedaSheafCorepresentableBy_homEquiv, freeYonedaSheafCorepresentableBy_homEquiv]
+      exact freeYonedaSheafSectionsEquiv_naturality_left J i _ f) _
 
 end H'
 

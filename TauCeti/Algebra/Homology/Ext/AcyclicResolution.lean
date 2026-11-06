@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.ShortComplex.Ab
 public import TauCeti.Algebra.Homology.Ext.Basic
 public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
+public import TauCeti.CategoryTheory.Preadditive.Corepresentable
 
 /-!
 # Computing `Ext` from a resolution acyclic for `Hom(P, -)`
@@ -29,11 +31,19 @@ exact sequence `0 ⟶ F ⟶ K⁰ ⟶ ⋯ ⟶ Kⁿ ⟶ Zⁿ⁺¹ ⟶ 0`. A cocycl
 `Kⁿ`. Hence every class arises from a cocycle (`CochainComplex.extMk_surjective`), and a cocycle
 gives zero exactly when it is a coboundary (`CochainComplex.extMk_succ_eq_zero_iff`).
 
+The statement is bundled for any additive functor `G : C ⥤ Ab` corepresented by `P` in place of
+`Hom(P, -)`: then `Extⁿ(P, F)` is additively equivalent to the cohomology of the complex `G(K)` in
+degree `n` (`CochainComplex.extAddEquivHomology`). For the functor of sections over an object `V`
+of a site, corepresented by the free abelian sheaf on `V`, this is the computation of sheaf
+cohomology by the sections of an acyclic resolution.
+
 ## Main definitions
 
 * `CochainComplex.resolutionExtClass`: the class in `Extⁿ⁺¹(Zⁿ⁺¹, F)` of the truncated
   resolution.
 * `CochainComplex.extMk`: the class in `Extⁿ(P, F)` of a cocycle `P ⟶ Kⁿ`.
+* `CochainComplex.extAddEquivHomology`: the additive equivalence `Extⁿ(P, F) ≃+ Hⁿ(G(K))` for an
+  additive functor `G : C ⥤ Ab` corepresented by `P`.
 
 ## Main results
 
@@ -45,6 +55,10 @@ gives zero exactly when it is a coboundary (`CochainComplex.extMk_succ_eq_zero_i
 * `CochainComplex.extMk_surjective`, `CochainComplex.extMk_zero_eq_zero_iff` and
   `CochainComplex.extMk_succ_eq_zero_iff`: `extMk` identifies `Extⁿ(P, F)` with the cohomology
   of `Hom(P, K)`.
+* `CochainComplex.extAddEquivHomology_extMk`: `extAddEquivHomology` sends the class of a cocycle to
+  the cohomology class of the corresponding cycle of `G(K)`.
+* `CochainComplex.extAddEquivHomology_naturality`: `extAddEquivHomology` is natural in the
+  corepresenting object.
 
 ## References
 
@@ -56,7 +70,7 @@ public section
 
 open CategoryTheory Limits Abelian
 
-universe w v u
+universe t w v u
 
 namespace CochainComplex
 
@@ -287,4 +301,171 @@ theorem extMk_succ_eq_zero_iff {n : ℕ} (f : P ⟶ K.X (n + 1))
     congr 1
     simp [← cancel_mono (K.iCycles (n + 1)), hg]
 
+section Corepresentable
+
+/-! ### Corepresentable functors
+
+Let `G : C ⥤ Ab` be an additive functor corepresented by `P`, for instance `Hom(P, -)`, or the
+sections over an object `V` of a site, corepresented by the free abelian sheaf on `V`. A cocycle
+`P ⟶ Kⁿ` of `Hom(P, K)` is then a cycle of the complex `G(K)`, and `extMk` becomes an additive
+equivalence between `Extⁿ(P, F)` and the cohomology of `G(K)`. The functor `G` is kept general
+because `Hom(P, -)` and the sections functor land in different universes. -/
+
+variable (G : C ⥤ AddCommGrpCat.{t}) [G.Additive]
+  (R : (G ⋙ forget AddCommGrpCat).CorepresentableBy P)
+
+omit [HasExt C] in
+private lemma homAddEquiv_symm_iCycles_comp_d {n : ℕ}
+    (c : ((G.mapHomologicalComplex _).obj K).cycles n) :
+    (R.homAddEquiv _).symm (((G.mapHomologicalComplex _).obj K).iCycles n c) ≫
+      K.d n (n + 1) = 0 := by
+  rw [R.homAddEquiv_symm_apply, R.homEquiv_symm_comp, ← R.homAddEquiv_symm_apply,
+    AddEquiv.map_eq_zero_iff]
+  exact ConcreteCategory.congr_hom (((G.mapHomologicalComplex _).obj K).iCycles_d n (n + 1)) c
+
+/-- The class in `Extⁿ(P, F)` of a cycle of `G(K)` in degree `n`. -/
+private noncomputable def cyclesToExt (n : ℕ) :
+    ((G.mapHomologicalComplex _).obj K).cycles n →+ Ext.{w} P F n where
+  toFun c := K.extMk ι hι hι' hK _ (homAddEquiv_symm_iCycles_comp_d G R c)
+  map_zero' := by simp only [map_zero, ← K.extMk_zero ι hι hι' hK (P := P) (n := n)]
+  map_add' c c' := by simp only [map_add, ← K.extMk_add]
+
+private lemma cyclesToExt_apply {n : ℕ} (c : ((G.mapHomologicalComplex _).obj K).cycles n) :
+    cyclesToExt ι hι hι' hK G R n c =
+      K.extMk ι hι hι' hK _ (homAddEquiv_symm_iCycles_comp_d G R c) :=
+  (rfl)
+
+omit [HasExt C] in
+private lemma injective_iCycles (n : ℕ) :
+    Function.Injective (((G.mapHomologicalComplex _).obj K).iCycles n) :=
+  (AddCommGrpCat.mono_iff_injective _).1 inferInstance
+
+omit [HasExt C] in
+private lemma iCycles_toCycles_apply (k : ℕ) (y : G.obj (K.X k)) :
+    ((G.mapHomologicalComplex _).obj K).iCycles (k + 1)
+      (((G.mapHomologicalComplex _).obj K).toCycles k (k + 1) y) = G.map (K.d k (k + 1)) y :=
+  ConcreteCategory.congr_hom (((G.mapHomologicalComplex _).obj K).toCycles_i k (k + 1)) y
+
+omit [HasExt C] in
+/-- The element of `G(Kⁿ)` corresponding to a cocycle `P ⟶ Kⁿ` is a cycle of `G(K)`. -/
+private lemma exists_iCycles_eq {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0) :
+    ∃ c, ((G.mapHomologicalComplex _).obj K).iCycles n c = R.homEquiv f := by
+  have hx : (((G.mapHomologicalComplex _).obj K).sc n).g (R.homEquiv f) = 0 := by
+    -- The second map of `sc n` is the differential `d n (next n)` by definition; rewriting
+    -- `next n` to `n + 1` inside `sc n` itself fails, as the motive is not type correct.
+    change ((G.mapHomologicalComplex _).obj K).d n ((ComplexShape.up ℕ).next n) _ = 0
+    rw [CochainComplex.next]
+    exact (R.homEquiv_comp _ _).symm.trans (by rw [hf, ← R.homAddEquiv_apply, map_zero])
+  exact ⟨(((G.mapHomologicalComplex _).obj K).sc n).abCyclesIso.inv ⟨_, hx⟩,
+    ShortComplex.abCyclesIso_inv_apply_iCycles _ _⟩
+
+include hP in
+private lemma surjective_cyclesToExt (n : ℕ) :
+    Function.Surjective (cyclesToExt ι hι hι' hK G R n) := by
+  intro α
+  obtain ⟨f, hf, rfl⟩ := K.extMk_surjective ι hι hι' hK hP α
+  obtain ⟨c, hc⟩ := exists_iCycles_eq G R f hf
+  refine ⟨c, ?_⟩
+  rw [cyclesToExt_apply]
+  congr 1
+  rw [R.homAddEquiv_symm_apply, Equiv.symm_apply_eq]
+  exact hc
+
+omit [HasExt C] in
+private lemma homologyπ_eq_zero_iff (k : ℕ)
+    (c : ((G.mapHomologicalComplex _).obj K).cycles (k + 1)) :
+    ((G.mapHomologicalComplex _).obj K).homologyπ (k + 1) c = 0 ↔
+      ∃ y, ((G.mapHomologicalComplex _).obj K).toCycles k (k + 1) y = c := by
+  have hex := ShortComplex.exact_of_g_is_cokernel (ShortComplex.mk _ _
+    (((G.mapHomologicalComplex _).obj K).toCycles_comp_homologyπ k (k + 1)))
+    (((G.mapHomologicalComplex _).obj K).homologyIsCokernel k (k + 1) (by simp))
+  refine ⟨fun h ↦ (ShortComplex.ab_exact_iff _).1 hex c h, ?_⟩
+  rintro ⟨y, rfl⟩
+  exact ConcreteCategory.congr_hom
+    (((G.mapHomologicalComplex _).obj K).toCycles_comp_homologyπ k (k + 1)) y
+
+include hP in
+/-- A cycle of `G(K)` has zero class in `Ext` exactly when it is a boundary. -/
+private lemma ker_cyclesToExt (n : ℕ) :
+    (cyclesToExt ι hι hι' hK G R n).ker =
+      (((G.mapHomologicalComplex _).obj K).homologyπ n).hom.ker := by
+  ext c
+  rw [AddMonoidHom.mem_ker, AddMonoidHom.mem_ker]
+  cases n with
+  | zero =>
+    rw [cyclesToExt_apply, K.extMk_zero_eq_zero_iff, AddEquiv.map_eq_zero_iff,
+      map_eq_zero_iff _ (injective_iCycles G 0), map_eq_zero_iff _
+        ((AddCommGrpCat.mono_iff_injective _).1 inferInstance)]
+  | succ k =>
+    rw [cyclesToExt_apply, K.extMk_succ_eq_zero_iff ι hι hι' hK hP, homologyπ_eq_zero_iff]
+    refine ⟨fun ⟨g, hg⟩ ↦ ⟨R.homAddEquiv _ g, injective_iCycles G (k + 1) ?_⟩,
+      fun ⟨y, hy⟩ ↦ ⟨(R.homAddEquiv _).symm y, ?_⟩⟩
+    · rw [iCycles_toCycles_apply, ← (R.homAddEquiv _).apply_symm_apply
+        (((G.mapHomologicalComplex _).obj K).iCycles (k + 1) c), ← hg, R.homAddEquiv_apply,
+        R.homAddEquiv_apply]
+      exact (R.homEquiv_comp _ _).symm
+    · rw [R.homAddEquiv_symm_apply, R.homEquiv_symm_comp, ← R.homAddEquiv_symm_apply, ← hy,
+        iCycles_toCycles_apply]
+      -- `(G ⋙ forget AddCommGrpCat).map g` is `G.map g` on elements
+      rfl
+
+/-- **`Ext` from an acyclic resolution.** Let `G : C ⥤ Ab` be an additive functor corepresented
+by `P`, and let `0 ⟶ F ⟶ K⁰ ⟶ K¹ ⟶ ⋯` be a resolution of `F` with `Extᵏ⁺¹(P, Kʲ) = 0` for all
+`j` and `k`. Then `Extⁿ(P, F)` is additively equivalent to the cohomology of the complex `G(K)` in
+degree `n`: the class of a cocycle `P ⟶ Kⁿ` corresponds to the cohomology class of the cycle of
+`G(K)` it corresponds to (`CochainComplex.extAddEquivHomology_extMk`). -/
+noncomputable def extAddEquivHomology (n : ℕ) :
+    Ext.{w} P F n ≃+ ((G.mapHomologicalComplex _).obj K).homology n :=
+  (QuotientAddGroup.quotientKerEquivOfSurjective _
+      (surjective_cyclesToExt ι hι hι' hK hP G R n)).symm.trans <|
+    (QuotientAddGroup.quotientAddEquivOfEq (ker_cyclesToExt ι hι hι' hK hP G R n)).trans <|
+      QuotientAddGroup.quotientKerEquivOfSurjective _
+        ((AddCommGrpCat.epi_iff_surjective _).1 inferInstance)
+
+/-- `extAddEquivHomology` sends the class of a cocycle `f : P ⟶ Kⁿ` to the cohomology class of
+the cycle `c` of `G(K)` corresponding to `f` under the corepresentation. -/
+theorem extAddEquivHomology_extMk {n : ℕ} (f : P ⟶ K.X n) (hf : f ≫ K.d n (n + 1) = 0)
+    (c : ((G.mapHomologicalComplex _).obj K).cycles n)
+    (hc : ((G.mapHomologicalComplex _).obj K).iCycles n c = R.homEquiv f) :
+    K.extAddEquivHomology ι hι hι' hK hP G R n (K.extMk ι hι hι' hK f hf) =
+      ((G.mapHomologicalComplex _).obj K).homologyπ n c := by
+  have h₁ : K.extMk ι hι hι' hK f hf = cyclesToExt ι hι hι' hK G R n c := by
+    rw [cyclesToExt_apply]
+    congr 1
+    rw [R.homAddEquiv_symm_apply, eq_comm, Equiv.symm_apply_eq]
+    exact hc
+  have h₂ : (QuotientAddGroup.quotientKerEquivOfSurjective _
+      (surjective_cyclesToExt ι hι hι' hK hP G R n)).symm (cyclesToExt ι hι hι' hK G R n c) =
+        (c : _ ⧸ AddMonoidHom.ker _) :=
+    (AddEquiv.symm_apply_eq _).2 (QuotientAddGroup.kerLift_mk _ c).symm
+  rw [h₁, extAddEquivHomology, AddEquiv.trans_apply, AddEquiv.trans_apply, h₂,
+    QuotientAddGroup.quotientAddEquivOfEq_mk]
+  exact QuotientAddGroup.kerLift_mk (((G.mapHomologicalComplex _).obj K).homologyπ n).hom c
+
+variable {P' : C} (hP' : ∀ j k, Subsingleton (Ext.{w} P' (K.X j) (k + 1))) (a : P' ⟶ P)
+  {G' : C ⥤ AddCommGrpCat.{t}} [G'.Additive]
+  (R' : (G' ⋙ forget AddCommGrpCat).CorepresentableBy P') (τ : G ⟶ G')
+  (hτ : ∀ {X : C} (f : P ⟶ X), R'.homEquiv (a ≫ f) = τ.app X (R.homEquiv f))
+
+include hτ in
+/-- **Naturality of `Ext` from an acyclic resolution** in the corepresenting object: if
+`τ : G ⟶ G'` corresponds to precomposition with `a : P' ⟶ P` under the corepresentations, then
+`extAddEquivHomology` carries precomposition with `a` on `Extⁿ(P, F)` to the map induced by `τ`
+on the cohomology of `G(K) ⟶ G'(K)`. -/
+theorem extAddEquivHomology_naturality {n : ℕ} (x : Ext.{w} P F n) :
+    K.extAddEquivHomology ι hι hι' hK hP' G' R' n ((Ext.mk₀ a).comp x (zero_add n)) =
+      HomologicalComplex.homologyMap ((NatTrans.mapHomologicalComplex τ _).app K) n
+        (K.extAddEquivHomology ι hι hι' hK hP G R n x) := by
+  obtain ⟨f, hf, rfl⟩ := K.extMk_surjective ι hι hι' hK hP x
+  obtain ⟨c, hc⟩ := exists_iCycles_eq G R f hf
+  rw [K.mk₀_comp_extMk, extAddEquivHomology_extMk ι hι hι' hK hP G R f hf c hc,
+    extAddEquivHomology_extMk ι hι hι' hK hP' G' R' _ _
+      (HomologicalComplex.cyclesMap ((NatTrans.mapHomologicalComplex τ _).app K) n c)]
+  · exact (ConcreteCategory.congr_hom (HomologicalComplex.homologyπ_naturality _ n) c).symm
+  · rw [hτ, ← hc]
+    exact ConcreteCategory.congr_hom (HomologicalComplex.cyclesMap_i _ n) c
+
+end Corepresentable
+
 end CochainComplex
+
