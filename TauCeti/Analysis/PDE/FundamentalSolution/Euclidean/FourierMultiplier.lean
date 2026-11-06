@@ -85,6 +85,40 @@ open scoped Convolution ContDiff
 variable {n : ℕ} {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
   {φ : EuclideanSpace ℝ (Fin n) → F}
 
+open scoped Laplacian in
+/-- Off the annulus `R ≤ ‖x‖ ≤ 2R`, the truncation `χ u` of a function with `Δu = -φ` satisfies
+`Δ(χ u) + φ = 0`: it equals `u` inside `ball 0 R`, and it and `φ` vanish off `closedBall 0 (2R)`. -/
+private theorem laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm {u : EuclideanSpace ℝ (Fin n) → F}
+    {χ : EuclideanSpace ℝ (Fin n) → ℝ} {R₀ R : ℝ} (hΔu : Δ u = -φ)
+    (hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0) (hR₀R : R₀ ≤ 2 * R)
+    (hχ1 : ∀ x, ‖x‖ < R → χ =ᶠ[𝓝 x] fun _ => 1) (hχ0 : ∀ x, 2 * R < ‖x‖ → χ =ᶠ[𝓝 x] fun _ => 0)
+    {x : EuclideanSpace ℝ (Fin n)} (hx : ‖x‖ < R ∨ 2 * R < ‖x‖) :
+    Δ (fun y => χ y • u y) x + φ x = 0 := by
+  rcases hx with hxR | hx2R
+  · -- Inside `ball 0 R` the truncation is `u` itself, and `Δu = -φ`.
+    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] u := by
+      filter_upwards [hχ1 x hxR] with y hy
+      rw [hy, one_smul]
+    rw [(laplacian_congr_nhds h).eq_of_nhds, hΔu, Pi.neg_apply, neg_add_cancel]
+  · -- Off `closedBall 0 (2R)` the truncation vanishes identically, and so does `φ`.
+    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] fun _ => (0 : F) := by
+      filter_upwards [hχ0 x hx2R] with y hy
+      rw [hy, zero_smul]
+    rw [(laplacian_congr_nhds h).eq_of_nhds, laplacian_const, hφx x (by linarith), add_zero,
+      Pi.zero_apply]
+
+/-- For `n ≥ 3` and `R / 2 ≤ t`, the faster decay `t ^ (1 - n)` is at most
+`2 (R / 2) ^ (2 - n)` once `1 ≤ R`. -/
+private theorem rpow_one_sub_le_two_mul_rpow_two_sub {R t : ℝ} (hn : 3 ≤ n) (hR : 1 ≤ R)
+    (ht : R / 2 ≤ t) : t ^ (1 - (n : ℝ)) ≤ 2 * (R / 2) ^ (2 - (n : ℝ)) := by
+  have hnℝ : (3 : ℝ) ≤ n := by exact_mod_cast hn
+  have hR0 : 0 < R := zero_lt_one.trans_le hR
+  have hexp : 1 - (n : ℝ) = 2 - n - 1 := by ring
+  refine (Real.rpow_le_rpow_of_nonpos (by positivity) ht (by linarith)).trans ?_
+  rw [hexp, Real.rpow_sub_one (by positivity), div_le_iff₀ (by positivity)]
+  have : 0 ≤ (R / 2) ^ (2 - (n : ℝ)) := by positivity
+  nlinarith
+
 open scoped Laplacian Gradient in
 /-- **The truncation error of the Newtonian potential.** Let `φ` be smooth with support in
 `closedBall 0 R₀`, let `u = Gₙ ⋆ φ`, and let `χ` be a cutoff equal to `1` on `ball 0 R` and to `0`
@@ -119,37 +153,20 @@ private theorem norm_laplacian_smul_newtonianKernel_convolution_add_le [Complete
   have hφx : ∀ y : EuclideanSpace ℝ (Fin n), R₀ < ‖y‖ → φ y = 0 := fun y hy =>
     image_eq_zero_of_notMem_tsupport fun h => (mem_closedBall_zero_iff.1 (hR₀ h)).not_gt hy
   have hA₀ := integral_nonneg (μ := volume) (f := fun y => ‖φ y‖) fun y => norm_nonneg _
-  have hbound_nonneg : 0 ≤ (4 * Cd + Cn) * C * (∫ y, ‖φ y‖) * R⁻¹ * (R / 2) ^ (2 - (n : ℝ)) := by
-    positivity
-  rcases lt_or_ge ‖x‖ R with hxR | hxR
-  · -- Inside `ball 0 R` the truncation is `u` itself, and `Δu = -φ`.
-    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] u := by
-      filter_upwards [hχ1 x hxR] with y hy
-      rw [hy, one_smul]
-    rw [(laplacian_congr_nhds h).eq_of_nhds, hΔu, Pi.neg_apply, neg_add_cancel, norm_zero]
-    exact indicator_nonneg (fun _ _ => hbound_nonneg) x
-  rcases lt_or_ge (2 * R) ‖x‖ with hx2R | hx2R
-  · -- Off `closedBall 0 (2R)` the truncation vanishes identically, and so does `φ`.
-    have h : (fun y => χ y • u y) =ᶠ[𝓝 x] fun _ => (0 : F) := by
-      filter_upwards [hχ0 x hx2R] with y hy
-      rw [hy, zero_smul]
-    rw [(laplacian_congr_nhds h).eq_of_nhds, laplacian_const, hφx x (by linarith), add_zero,
-      Pi.zero_apply, norm_zero]
-    exact indicator_nonneg (fun _ _ => hbound_nonneg) x
+  by_cases hann : ‖x‖ < R ∨ 2 * R < ‖x‖
+  · rw [laplacian_smul_add_eq_zero_of_norm_lt_or_lt_norm hΔu hφx (by linarith) hχ1 hχ0 hann,
+      norm_zero]
+    exact indicator_nonneg (fun _ _ => by positivity) x
+  push Not at hann
+  obtain ⟨hxR, hx2R⟩ := hann
   -- On the annulus, expand `Δ(χ u)` by the Leibniz rule.
   have hxR₀ : R / 2 ≤ ‖x‖ - R₀ := by linarith
   have hpow : (‖x‖ - R₀) ^ (2 - (n : ℝ)) ≤ (R / 2) ^ (2 - (n : ℝ)) :=
     Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)
   -- Since `1 ≤ R`, the faster decay `(R / 2) ^ (1 - n)` of `Du` is at most `2 (R / 2) ^ (2 - n)`.
-  have hpow₁ : (‖x‖ - R₀) ^ (1 - (n : ℝ)) ≤ 2 * (R / 2) ^ (2 - (n : ℝ)) := by
-    have hexp : 1 - (n : ℝ) = 2 - n - 1 := by ring
-    refine (Real.rpow_le_rpow_of_nonpos (by positivity) hxR₀ (by linarith)).trans ?_
-    rw [hexp, Real.rpow_sub_one (by positivity), div_le_iff₀ (by positivity)]
-    have : 0 ≤ (R / 2) ^ (2 - (n : ℝ)) := by positivity
-    nlinarith
+  have hpow₁ := rpow_one_sub_le_two_mul_rpow_two_sub hn hR hxR₀
   have hgrad : ‖∇ χ x‖ ≤ C / R := by
-    rw [gradient, LinearIsometryEquiv.norm_map]
-    exact hχ' x
+    simpa only [gradient, LinearIsometryEquiv.norm_map] using hχ' x
   rw [indicator_of_mem (mem_closedBall_zero_iff.2 hx2R),
     (hχ.contDiffAt.of_le (by simp)).laplacian_fun_smul (hu.contDiffAt.of_le (by simp)), hΔu,
     Pi.neg_apply, hφx x (by linarith), neg_zero, smul_zero, zero_add, add_zero]
@@ -395,16 +412,14 @@ theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral (hn : 3 ≤ n)
       (Nat.one_div_pos_of_nat (n := k))
   have hφL : ∀ k, MemLp (φ k) 2 := fun k =>
     (hφ k).continuous.memLp_of_hasCompactSupport (μ := volume) (hφc k)
+  have hφlim : Tendsto (fun k => eLpNorm (φ k - f') 2 volume) atTop (𝓝 0) :=
+    tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
+      (by simpa only [ENNReal.ofReal_zero] using
+        ENNReal.tendsto_ofReal (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)))
+      (fun _ => bot_le) fun k => (eLpNorm_sub_comm _ _ _ _).trans_le (hφf k)
   have hΦ : Tendsto (fun k => (hφL k).toLp (φ k)) atTop (𝓝 f) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    refine squeeze_zero (fun k => norm_nonneg _) (fun k => ?_)
-      tendsto_one_div_add_atTop_nhds_zero_nat
-    have h : ⇑((hφL k).toLp (φ k) - f) =ᵐ[volume] φ k - f' := by
-      filter_upwards [Lp.coeFn_sub ((hφL k).toLp (φ k)) f, (hφL k).coeFn_toLp, hff']
-        with x h₁ h₂ h₃
-      rw [h₁, Pi.sub_apply, h₂, h₃, Pi.sub_apply]
-    rw [Lp.norm_def, eLpNorm_congr_ae h, eLpNorm_sub_comm]
-    exact ENNReal.toReal_le_of_le_ofReal (by positivity) (hφf k)
+    rw [← Lp.toLp_coeFn f (Lp.memLp f), ← hf'L.toLp_congr (Lp.memLp f) hff'.symm]
+    exact (Lp.tendsto_Lp_iff_tendsto_eLpNorm'' φ hφL f' hf'L).2 hφlim
   obtain ⟨ns, hns, hae⟩ :=
     (tendstoInMeasure_of_tendsto_Lp ((T.continuous.tendsto f).comp hΦ)).exists_seq_tendsto_ae
   have hsmooth : ∀ᵐ x, ∀ k, T ((hφL k).toLp (φ k)) x =
@@ -426,37 +441,13 @@ theorem ae_fourierMultiplierCLM_hessianSymbolLp_eq_neg_integral (hn : 3 ≤ n)
     rw [hxk k, iteratedFDeriv_two_newtonianKernel_convolution_apply_of_notMem_tsupport
       ((hφ k).of_le (by simp)) (hφc k) (fun h => hxη (hφW k hk h)) v w]
   -- The kernel integrals of `φ k` converge to that of `f'`, by the Cauchy–Schwarz bound.
-  have hf'W : ∀ y, y ∉ cthickening η s → f' y = 0 := fun y hy =>
-    hf'0 y fun h => hy (self_subset_cthickening s h)
-  have hconv : Tendsto (fun k => ∫ y, iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w] •
-      φ k y) atTop (𝓝 (∫ y, iteratedFDeriv ℝ 2 (newtonianKernel n) (x - y) ![v, w] • f' y)) := by
-    rw [tendsto_iff_norm_sub_tendsto_zero]
-    have hlim := (tendsto_one_div_add_atTop_nhds_zero_nat).const_mul
-      (B * (volume (cthickening η s) ^ (1 / 2 : ℝ)).toReal)
-    rw [mul_zero] at hlim
-    refine squeeze_zero_norm' ?_ hlim
-    filter_upwards [hsmall] with k hk
-    have hφk0 : ∀ y, y ∉ cthickening η s → φ k y = 0 := fun y hy =>
-      image_eq_zero_of_notMem_tsupport fun h => hy (hφW k hk h)
-    have hW := hs.cthickening (r := η)
-    have hkm := hkc.aestronglyMeasurable (μ := volume) hW.measurableSet
-    have hkB' := ae_restrict_of_forall_mem (μ := volume) hW.measurableSet hkB
-    obtain ⟨hint₁, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measure_lt_top.ne hB
-      hkm hkB' one_le_two (hφL k) (ae_of_all _ hφk0)
-    obtain ⟨hint₂, -⟩ := integrable_smul_and_norm_integral_smul_le hW.measure_lt_top.ne hB
-      hkm hkB' one_le_two hf'L (ae_of_all _ hf'W)
-    obtain ⟨-, hle⟩ := integrable_smul_and_norm_integral_smul_le hW.measure_lt_top.ne hB
-      hkm hkB' one_le_two ((hφL k).sub hf'L)
-      (ae_of_all _ fun y hy => by simp [hφk0 y hy, hf'W y hy])
-    have h12 : (1 : ℝ) - 1 / (2 : ENNReal).toReal = 1 / 2 := by norm_num
-    rw [h12] at hle
-    rw [norm_norm, ← integral_sub hint₁ hint₂]
-    simp_rw [← smul_sub]
-    refine hle.trans ?_
-    rw [ENNReal.toReal_mul, ← mul_assoc]
-    refine mul_le_mul_of_nonneg_left ?_ (mul_nonneg hB ENNReal.toReal_nonneg)
-    rw [eLpNorm_sub_comm]
-    exact ENNReal.toReal_le_of_le_ofReal (by positivity) (hφf k)
+  have hW := hs.cthickening (r := η)
+  have hconv := tendsto_integral_smul_of_tendsto_eLpNorm_sub (μ := volume)
+    hW.measure_lt_top.ne hB (hkc.aestronglyMeasurable hW.measurableSet)
+    (ae_restrict_of_forall_mem hW.measurableSet hkB) one_le_two hφL hf'L
+    (hsmall.mono fun k hk => ae_of_all _ fun y hy =>
+      image_eq_zero_of_notMem_tsupport fun h => hy (hφW k hk h))
+    (ae_of_all _ fun y hy => hf'0 y fun h => hy (self_subset_cthickening s h)) hφlim
   exact tendsto_nhds_unique hx ((hconv.comp hns.tendsto_atTop).neg.congr'
     ((hns.tendsto_atTop.eventually hev).mono fun _ h => h.symm))
 
