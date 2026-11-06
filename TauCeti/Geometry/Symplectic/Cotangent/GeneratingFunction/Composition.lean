@@ -156,19 +156,14 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
         cotangentGeneratingTarget S (x.1.1, x.2) =
           cotangentGeneratingSource T (x.2, x.1.2) ↔ b x.1 = x.2) := by
   let F := cotangentGeneratingSum S T
-  have hS₂ : ContDiffAt ℝ 2 S (q, a) := hS.of_le (by simp)
-  have hT₂ : ContDiffAt ℝ 2 T (a, Q) := hT.of_le (by simp)
   have hF : ContDiffAt ℝ (n + 2) F ((q, Q), a) := contDiffAt_cotangentGeneratingSum hS hT
-  have hF₂ : ContDiffAt ℝ 2 F ((q, Q), a) := hF.of_le (by simp)
   let G : (V × U) × W → StrongDual ℝ W := fun x ↦ (cotangentGeneratingTarget F x).2
-  have hG : ContDiffAt ℝ (n + 1) G ((q, Q), a) :=
-    (contDiffAt_cotangentGeneratingTarget (n := n + 1)
-      (by convert hF using 1; norm_num [add_assoc])).snd
-  have hz : G ((q, Q), a) = 0 :=
-    (cotangentGeneratingTarget_sum_snd_eq_zero_iff
-      (hS₂.differentiableAt two_ne_zero) (hT₂.differentiableAt two_ne_zero)).2 hmatch
-  have hGder := (hasFDerivAt_cotangentGeneratingTarget
-    ((hF₂.fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)).snd.fderiv
+  have hG : ContDiffAt ℝ (n + 1) G ((q, Q), a) := (contDiffAt_cotangentGeneratingTarget
+    (n := n + 1) (by convert hF using 1; norm_num [add_assoc])).snd
+  have hz : G ((q, Q), a) = 0 := (cotangentGeneratingTarget_sum_snd_eq_zero_iff
+    (hS.differentiableAt (by simp)) (hT.differentiableAt (by simp))).2 hmatch
+  have hGder := (hasFDerivAt_cotangentGeneratingTarget (((hF.of_le (by simp : (2 : WithTop ℕ∞) ≤
+    n + 2)).fderiv_right (m := 1) le_rfl).differentiableAt one_ne_zero)).snd.fderiv
   -- The negative intermediate Hessian is the spatial derivative of the matching equation.
   have hinv : (fderiv ℝ G ((q, Q), a) ∘L inr ℝ (V × U) W).IsInvertible := by
     convert hH using 1
@@ -181,25 +176,18 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
   let b := hG.implicitFunction (by simp) hinv
   have hb₀ : b (q, Q) = a := hG.implicitFunction_apply_self (by simp) hinv
   have hb : ContDiffAt ℝ (n + 1) b (q, Q) := hG.contDiffAt_implicitFunction (by simp) hinv
-  have hcrit : ∀ᶠ y in 𝓝 (q, Q), G (y, b y) = 0 := by
-    simpa only [hz] using hG.eventually_apply_implicitFunction (by simp) hinv
   have hunique : ∀ᶠ x in 𝓝 ((q, Q), a), G x = 0 ↔ b x.1 = x.2 := by
     simpa only [hz] using hG.eventually_apply_eq_iff_implicitFunction (by simp) hinv
   let R : V × U → ℝ := fun y ↦ F (y, b y)
-  have hFat : ContDiffAt ℝ (n + 2) F ((q, Q), b (q, Q)) := by
-    simpa only [hb₀] using hF
-  have hR : ContDiffAt ℝ (n + 1) R (q, Q) := by
-    simpa only [R, Function.comp_def, id_eq] using
-      (hFat.of_le (by gcongr; norm_num : n + 1 ≤ n + 2)).comp (q, Q)
-        (contDiffAt_id.prodMk hb)
+  have hR : ContDiffAt ℝ (n + 1) R (q, Q) := ContDiffAt.comp₂ (g := F)
+    (hb₀ ▸ hF.of_le (by gcongr; norm_num : n + 1 ≤ n + 2)) contDiffAt_id hb
   have hs : ∀ᶠ x in 𝓝 ((q, Q), a),
-      DifferentiableAt ℝ S (x.1.1, x.2) ∧ DifferentiableAt ℝ T (x.2, x.1.2) := by
-    have h₁ := ((continuousAt_fst (p := ((q, Q), a))).fst.prodMk continuousAt_snd).eventually
-      (hS₂.eventually (by simp))
-    have h₂ := ((continuousAt_snd (p := ((q, Q), a))).prodMk continuousAt_fst.snd).eventually
-      (hT₂.eventually (by simp))
-    exact (h₁.mono fun _ h ↦ h.differentiableAt two_ne_zero).and
-      (h₂.mono fun _ h ↦ h.differentiableAt two_ne_zero)
+      DifferentiableAt ℝ S (x.1.1, x.2) ∧ DifferentiableAt ℝ T (x.2, x.1.2) :=
+    (((continuousAt_fst (p := ((q, Q), a))).fst.prodMk continuousAt_snd).eventually
+      ((hS.of_le (by simp : (2 : WithTop ℕ∞) ≤ n + 2)).eventually (by simp))).and
+      (((continuousAt_snd (p := ((q, Q), a))).prodMk continuousAt_fst.snd).eventually
+      ((hT.of_le (by simp : (2 : WithTop ℕ∞) ≤ n + 2)).eventually (by simp)))
+      |>.mono fun _ h ↦ ⟨h.1.differentiableAt two_ne_zero, h.2.differentiableAt two_ne_zero⟩
   have hto : Tendsto (fun y ↦ (y, b y)) (𝓝 (q, Q)) (𝓝 ((q, Q), a)) := by
     simpa only [hb₀, id_eq] using (continuousAt_id.prodMk hb.continuousAt).tendsto
   -- Along the constructed branch, the critical-value derivative gives both endpoint covectors.
@@ -207,24 +195,18 @@ theorem exists_cotangentGeneratingComposition {n : WithTop ℕ∞}
       cotangentGeneratingTarget S (y.1, b y) = cotangentGeneratingSource T (b y, y.2) ∧
       cotangentGeneratingSource R y = cotangentGeneratingSource S (y.1, b y) ∧
       cotangentGeneratingTarget R y = cotangentGeneratingTarget T (b y, y.2) := by
-    filter_upwards [hcrit, hto.eventually hs,
-      (hb.of_le (by simp : (1 : WithTop ℕ∞) ≤ n + 1)).eventually (by simp)] with y hcy hsy hby
+    filter_upwards [hto.eventually (hunique.and hs),
+      (hb.of_le (by simp : (1 : WithTop ℕ∞) ≤ n + 1)).eventually (by simp)] with y hy hby
     have hmatchy := (cotangentGeneratingTarget_sum_snd_eq_zero_iff
-      (x := (y, b y)) hsy.1 hsy.2).1 hcy
-    have hd := fderiv_cotangentGeneratingSum_comp_graph_apply hsy.1 hsy.2
+      (x := (y, b y)) hy.2.1 hy.2.2).1 (hy.1.2 rfl)
+    have hd := fderiv_cotangentGeneratingSum_comp_graph_apply hy.2.1 hy.2.2
       (hby.differentiableAt one_ne_zero) hmatchy
-    refine ⟨hmatchy, ?_, ?_⟩
-    · apply Prod.ext (by simp)
-      ext u
-      simp [cotangentGeneratingSource_snd_apply, R, F, hd, ← Prod.zero_eq_mk]
-    · apply Prod.ext (by simp)
-      ext u
-      simp [cotangentGeneratingTarget_snd_apply, R, F, hd, ← Prod.zero_eq_mk]
+    refine ⟨hmatchy, ?_, ?_⟩ <;> refine Prod.ext (by simp) (ContinuousLinearMap.ext fun u ↦ ?_) <;>
+      simp [cotangentGeneratingSource_snd_apply, cotangentGeneratingTarget_snd_apply, R, F, hd,
+        ← Prod.zero_eq_mk]
   obtain ⟨D, hD, hopen, hmem⟩ := mem_nhds_iff.1 hrelations
-  refine ⟨b, R, D, hopen, hmem, hb₀, fun _ ↦ rfl, hb, hR,
-    fun y hy ↦ hD hy, ?_⟩
-  filter_upwards [hunique, hs] with x hx hxs
-  exact (cotangentGeneratingTarget_sum_snd_eq_zero_iff hxs.1 hxs.2).symm.trans hx
+  refine ⟨b, R, D, hopen, hmem, hb₀, fun _ ↦ rfl, hb, hR, fun y hy ↦ hD hy, (hunique.and hs).mono
+    fun x hx ↦ (cotangentGeneratingTarget_sum_snd_eq_zero_iff hx.2.1 hx.2.2).symm.trans hx.1⟩
 
 end Elimination
 
