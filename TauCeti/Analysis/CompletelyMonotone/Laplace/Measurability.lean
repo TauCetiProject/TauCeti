@@ -120,27 +120,12 @@ private lemma integrable_of_continuous_Icc {ν : Measure ↥(Set.Icc (0 : ℝ) 1
     {f : ↥(Set.Icc (0 : ℝ) 1) → ℝ} (hf : Continuous f) : Integrable f ν :=
   hf.integrable_of_hasCompactSupport (HasCompactSupport.of_compactSpace f)
 
-/-- **Measurability from Laplace transforms.** A family of finite measures on `ℝ≥0` indexed by a
-measurable space is measurable for the Giry σ-algebra as soon as each of the functions
-`a ↦ laplaceTransform (μ a) n`, for `n : ℕ`, is measurable.
-
-Only the natural-number values of the transforms are used, matching the determinacy statement
-`TauCeti.Measure.ext_of_forall_laplaceTransform_natCast_eq`. -/
-theorem measurable_of_measurable_laplaceTransform_natCast {α : Type*} [MeasurableSpace α]
-    {μ : α → Measure ℝ≥0} [∀ a, IsFiniteMeasure (μ a)]
-    (h : ∀ n : ℕ, Measurable fun a => laplaceTransform (μ a) n) :
-    Measurable μ := by
-  set ν : α → Measure ↥(Set.Icc (0 : ℝ) 1) := fun a => (μ a).map expNegUnitInterval with hνdef
-  -- The moments of the image measures are measurable in the parameter.
-  have hmom : ∀ n : ℕ, Measurable fun a => ∫ x, ((x : ℝ)) ^ n ∂(ν a) := by
-    intro n
-    have hrw : (fun a => ∫ x, ((x : ℝ)) ^ n ∂(ν a))
-        = fun a => laplaceTransform (μ a) n := by
-      funext a
-      simpa only [hνdef] using integral_pow_map_expNegUnitInterval (μ a) n
-    rw [hrw]
-    exact h n
-  -- Hence so are the integrals of polynomials.
+/-- If the moments `a ↦ ∫ x, x ^ n ∂ν a` of a family of finite measures on `[0, 1]` are
+measurable, then so is `a ↦ ∫ x, g x ∂ν a` for every continuous `g`. -/
+theorem measurable_integral_continuousMap_Icc_of_measurable_integral_pow {α : Type*}
+    [MeasurableSpace α] {ν : α → Measure ↥(Set.Icc (0 : ℝ) 1)} [∀ a, IsFiniteMeasure (ν a)]
+    (hmom : ∀ n : ℕ, Measurable fun a => ∫ x, ((x : ℝ)) ^ n ∂(ν a))
+    (g : C(↥(Set.Icc (0 : ℝ) 1), ℝ)) : Measurable fun a => ∫ x, g x ∂(ν a) := by
   have hpoly : ∀ p : Polynomial ℝ, Measurable fun a => ∫ x, p.eval ((x : ℝ)) ∂(ν a) := by
     intro p
     have hrw : (fun a => ∫ x, p.eval ((x : ℝ)) ∂(ν a))
@@ -154,7 +139,6 @@ theorem measurable_of_measurable_laplaceTransform_natCast {α : Type*} [Measurab
       simp_rw [integral_const_mul]
     rw [hrw]
     exact Finset.measurable_sum _ fun i _ => measurable_const.mul (hmom i)
-  -- Weierstrass approximation extends this to all continuous functions.
   have hcont : ∀ g : C(↥(Set.Icc (0 : ℝ) 1), ℝ), Measurable fun a => ∫ x, g x ∂(ν a) := by
     intro g
     have happrox : ∀ n : ℕ, ∃ p : Polynomial ℝ,
@@ -183,6 +167,14 @@ theorem measurable_of_measurable_laplaceTransform_natCast {α : Type*} [Measurab
     rw [tendsto_iff_norm_sub_tendsto_zero]
     refine squeeze_zero (fun n => norm_nonneg _) key ?_
     simpa using tendsto_one_div_add_atTop_nhds_zero_nat.mul_const ((ν a).real Set.univ)
+  exact hcont g
+
+/-- A family of finite measures on `[0, 1]` is measurable for the Giry σ-algebra as soon as
+`a ↦ ∫ x, g x ∂ν a` is measurable for every continuous `g`. -/
+theorem measurable_measure_Icc_of_measurable_integral_continuousMap {α : Type*}
+    [MeasurableSpace α] {ν : α → Measure ↥(Set.Icc (0 : ℝ) 1)} [∀ a, IsFiniteMeasure (ν a)]
+    (hcont : ∀ g : C(↥(Set.Icc (0 : ℝ) 1), ℝ), Measurable fun a => ∫ x, g x ∂(ν a)) :
+    Measurable ν := by
   -- Non-negative bounded continuous test functions, in `ℝ≥0∞` form.
   have hlint : ∀ g : ↥(Set.Icc (0 : ℝ) 1) →ᵇ ℝ≥0,
       Measurable fun a => ∫⁻ x, (g x : ℝ≥0∞) ∂(ν a) := by
@@ -205,10 +197,33 @@ theorem measurable_of_measurable_laplaceTransform_natCast {α : Type*} [Measurab
     rw [hrw]
     exact Measurable.liminf fun n => hlint (hF.apprSeq n)
   -- The closed sets are a π-system generating the Borel σ-algebra.
-  have hνmeas : Measurable ν := by
-    refine Measurable.measure_of_isPiSystem ?_ isPiSystem_isClosed
-      (fun F hF => hclosed F hF) (hclosed _ isClosed_univ)
-    rw [BorelSpace.measurable_eq (α := ↥(Set.Icc (0 : ℝ) 1)), borel_eq_generateFrom_isClosed]
+  refine Measurable.measure_of_isPiSystem ?_ isPiSystem_isClosed
+    (fun F hF => hclosed F hF) (hclosed _ isClosed_univ)
+  rw [BorelSpace.measurable_eq (α := ↥(Set.Icc (0 : ℝ) 1)), borel_eq_generateFrom_isClosed]
+
+/-- **Measurability from Laplace transforms.** A family of finite measures on `ℝ≥0` indexed by a
+measurable space is measurable for the Giry σ-algebra as soon as each of the functions
+`a ↦ laplaceTransform (μ a) n`, for `n : ℕ`, is measurable.
+
+Only the natural-number values of the transforms are used, matching the determinacy statement
+`TauCeti.Measure.ext_of_forall_laplaceTransform_natCast_eq`. -/
+theorem measurable_of_measurable_laplaceTransform_natCast {α : Type*} [MeasurableSpace α]
+    {μ : α → Measure ℝ≥0} [∀ a, IsFiniteMeasure (μ a)]
+    (h : ∀ n : ℕ, Measurable fun a => laplaceTransform (μ a) n) :
+    Measurable μ := by
+  set ν : α → Measure ↥(Set.Icc (0 : ℝ) 1) := fun a => (μ a).map expNegUnitInterval with hνdef
+  -- The moments of the image measures are measurable in the parameter.
+  have hmom : ∀ n : ℕ, Measurable fun a => ∫ x, ((x : ℝ)) ^ n ∂(ν a) := by
+    intro n
+    have hrw : (fun a => ∫ x, ((x : ℝ)) ^ n ∂(ν a))
+        = fun a => laplaceTransform (μ a) n := by
+      funext a
+      simpa only [hνdef] using integral_pow_map_expNegUnitInterval (μ a) n
+    rw [hrw]
+    exact h n
+  have hνmeas : Measurable ν :=
+    measurable_measure_Icc_of_measurable_integral_continuousMap
+      (measurable_integral_continuousMap_Icc_of_measurable_integral_pow hmom)
   -- Undo the change of variables.
   have hrw : μ = fun a => (ν a).map negLogNNReal := by
     funext a
