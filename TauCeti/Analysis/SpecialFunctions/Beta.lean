@@ -51,6 +51,9 @@ and `TauCeti/Probability/Distributions/StudentT/Basic.lean` normalizes its densi
 * `TauCeti.intervalIntegrable_one_sub_rpow_rpow` and `TauCeti.integral_one_sub_rpow_rpow` — the
   power-substituted form `∫ t in 0..1, (1 - t ^ p) ^ (b - 1) = Β(p⁻¹, b) / p` of the beta
   integral, obtained by substituting `u = t ^ p`;
+* `TauCeti.integral_one_sub_sq_rpow` — the centered form
+  `∫ z in Ioo (-1) 1, (1 - z ^ 2) ^ (a - 1) = Β(1/2, a)`, obtained from the symmetric beta
+  integral by the affine substitution `z = 2 t - 1` and Legendre's duplication formula;
 * `TauCeti.integrableOn_rpow_mul_one_add_rpow_iff` and
   `TauCeti.integral_rpow_mul_one_add_rpow` — Euler's second beta integral and its sharp
   integrability criterion,
@@ -858,3 +861,37 @@ theorem tendsto_natCast_mul_beta_atTop {s : ℝ} (hs : 1 < s) :
   ring
 
 end ProbabilityTheory
+
+namespace TauCeti
+
+open MeasureTheory ProbabilityTheory Set
+
+/-- Euler's beta integral in centered form: for `0 < a`, the integral of `(1 - z ^ 2) ^ (a - 1)`
+over `(-1, 1)` is `Β(1/2, a)`. -/
+theorem integral_one_sub_sq_rpow {a : ℝ} (ha : 0 < a) :
+    ∫ z in Ioo (-1 : ℝ) 1, (1 - z ^ 2) ^ (a - 1) = beta (1 / 2) a := by
+  have hpoint : EqOn (fun x : ℝ ↦ (1 - (-1 + 2 * x) ^ 2) ^ (a - 1))
+      (fun x ↦ (4 : ℝ) ^ (a - 1) * (x ^ (a - 1) * (1 - x) ^ (a - 1))) (uIcc 0 1) := by
+    intro x hx
+    rw [uIcc_of_le zero_le_one] at hx
+    have harg : 1 - (-1 + 2 * x) ^ 2 = 4 * (x * (1 - x)) := by ring
+    simp only [harg]
+    rw [Real.mul_rpow (by norm_num) (mul_nonneg hx.1 (sub_nonneg.2 hx.2)),
+      Real.mul_rpow hx.1 (sub_nonneg.2 hx.2)]
+  have hpow : 2 * (4 : ℝ) ^ (a - 1) = 2 ^ (2 * a - 1) := by
+    calc
+      2 * (4 : ℝ) ^ (a - 1) = (2 : ℝ) ^ (1 : ℝ) * ((2 : ℝ) ^ (2 : ℝ)) ^ (a - 1) := by
+        norm_num [Real.rpow_one, Real.rpow_two]
+      _ = (2 : ℝ) ^ (1 + 2 * (a - 1)) := by
+        rw [← Real.rpow_mul (by norm_num), ← Real.rpow_add (by norm_num)]
+      _ = (2 : ℝ) ^ (2 * a - 1) := by congr 1; ring
+  have hsub := intervalIntegral.integral_comp_add_mul (a := 0) (b := 1)
+    (fun z : ℝ ↦ (1 - z ^ 2) ^ (a - 1)) two_ne_zero (-1)
+  rw [intervalIntegral.integral_congr hpoint, intervalIntegral.integral_const_mul,
+    integral_rpow_mul_one_sub_rpow ha ha] at hsub
+  norm_num at hsub
+  rw [setIntegral_congr_set Ioo_ae_eq_Ioc, ← intervalIntegral.integral_of_le (by norm_num),
+    beta_one_half_left_eq_two_rpow_mul_beta_self ha, ← hpow, mul_assoc, hsub]
+  ring
+
+end TauCeti
