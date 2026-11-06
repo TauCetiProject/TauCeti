@@ -7,10 +7,13 @@ module
 
 public import Mathlib.LinearAlgebra.SymplecticGroup
 public import Mathlib.LinearAlgebra.UnitaryGroup
+public import TauCeti.LinearAlgebra.Matrix.IdealEntries
+public import TauCeti.LinearAlgebra.Matrix.Symmetric
 
 -- Non-public: `noncomm_ring` normalises the conjugation identities below, and the Schur complement
 -- evaluates `det J`, but no statement mentions either.
 import Mathlib.LinearAlgebra.Matrix.SchurComplement
+import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Tactic.NoncommRing
 
 /-!
@@ -49,7 +52,12 @@ specialisation of `SymplecticGroup.fromBlocks_mem_iff`.
 * `Matrix.J_mul_mul_J_mul_J`: sandwiching twice by `J` is the identity.
 * `Matrix.transpose_mul_J_mul_transpose` and `Matrix.mul_J_mul_transpose_apply_self`: the
   congruence transform `C * J * Cᵀ` of `J` by a rectangular matrix is alternating, that is
-  antisymmetric with zero diagonal, in every characteristic.
+  antisymmetric with zero diagonal, in every characteristic;
+  `Matrix.transpose_mul_J_mul_transpose_sub_J` and `Matrix.mul_J_mul_transpose_apply_self_sub_J`
+  say the same of the defect `M * J * Mᵀ - J` of a square matrix `M`.
+* `Matrix.exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero`: the linearized symplectic
+  equation `E + X * J + J * Xᵀ = 0` is solvable with entries of `X` in an ideal `I` for every
+  alternating `E` with entries in `I`, without dividing by two.
 * `SymplecticGroup.transpose_eq_J_conj_inv`: the transpose of a symplectic matrix is the
   `J`-conjugate of its inverse; `SymplecticGroup.mem_of_J_conj_eq_transpose` is its converse, a
   matrix whose `J`-conjugate is its inverse transpose is symplectic.
@@ -182,6 +190,47 @@ entries are the values of the standard alternating form on pairs of rows of `C`.
 theorem mul_J_mul_transpose_apply_self {m : Type*} (C : Matrix m (l ⊕ l) R) (i : m) :
     (C * J l R * Cᵀ) i i = 0 := by
   simp [J, Matrix.mul_apply, Fintype.sum_sum_type, Matrix.one_apply, mul_comm]
+
+/-- The defect `M * J * Mᵀ - J` of a matrix is antisymmetric. -/
+theorem transpose_mul_J_mul_transpose_sub_J (M : Matrix (l ⊕ l) (l ⊕ l) R) :
+    (M * J l R * Mᵀ - J l R)ᵀ = -(M * J l R * Mᵀ - J l R) := by
+  rw [transpose_sub, transpose_mul_J_mul_transpose, J_transpose, neg_sub_neg, neg_sub]
+
+/-- The defect `M * J * Mᵀ - J` of a matrix has zero diagonal. -/
+theorem mul_J_mul_transpose_apply_self_sub_J (M : Matrix (l ⊕ l) (l ⊕ l) R) (i : l ⊕ l) :
+    (M * J l R * Mᵀ - J l R) i i = 0 := by
+  rw [Matrix.sub_apply, mul_J_mul_transpose_apply_self]
+  simpa using mul_J_mul_transpose_apply_self (1 : Matrix (l ⊕ l) (l ⊕ l) R) i
+
+/-- **The linearized symplectic equation is solvable over an ideal.** An alternating matrix `E`
+with entries in an ideal `I` is minus the linearized symplectic defect `X * J + J * Xᵀ` of a
+matrix `X` with entries in `I`. The matrix `X` is built from `Matrix.subTransposeEqEquiv`, which
+avoids division by two, so this holds in every characteristic. -/
+theorem exists_entries_mem_add_mul_J_add_J_mul_transpose_eq_zero (I : Ideal R)
+    (E : Matrix (l ⊕ l) (l ⊕ l) R) (hE_mem : ∀ i j, E i j ∈ I) (hE_transpose : Eᵀ = -E)
+    (hE_diag : ∀ i, E i i = 0) :
+    ∃ X : Matrix (l ⊕ l) (l ⊕ l) R, (∀ i j, X i j ∈ I) ∧ E + X * J l R + J l R * Xᵀ = 0 := by
+  let _ : LinearOrder (l ⊕ l) := (Fintype.equivFin (l ⊕ l)).linearOrder
+  have hQ : (-E)ᵀ = -(-E) := by rw [transpose_neg, hE_transpose]
+  have hQd : ∀ i, (-E) i i = 0 := fun i => by simp [hE_diag]
+  let Y : Matrix (l ⊕ l) (l ⊕ l) R := ((subTransposeEqEquiv hQ hQd).symm 0).1
+  have hY_mem : ∀ i j, Y i j ∈ I := fun i j => by
+    simp only [Y, coe_subTransposeEqEquiv_symm_apply, Pi.zero_apply, zero_add]
+    split_ifs
+    · exact I.neg_mem (hE_mem i j)
+    · exact I.zero_mem
+  have hY_sub : Y - Yᵀ = -E := ((subTransposeEqEquiv hQ hQd).symm 0).2
+  have hX_mul_J : -(Y * J l R) * J l R = Y := by
+    rw [Matrix.neg_mul, Matrix.mul_assoc, J_squared]
+    simp
+  have hJ_mul_Xt : J l R * (-(Y * J l R))ᵀ = -Yᵀ := by
+    simp [transpose_mul, J_transpose, ← Matrix.mul_assoc, J_squared]
+  refine ⟨-(Y * J l R), fun i j => ?_, ?_⟩
+  · simpa using I.neg_mem (by simpa using mul_mul_apply_mem hY_mem 1 (J l R) i j)
+  · rw [hX_mul_J, hJ_mul_Xt]
+    calc
+      E + Y + -Yᵀ = E + (Y - Yᵀ) := by abel
+      _ = 0 := by rw [hY_sub, add_neg_cancel]
 
 end Matrix
 
