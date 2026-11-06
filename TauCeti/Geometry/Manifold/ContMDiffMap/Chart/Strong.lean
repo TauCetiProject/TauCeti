@@ -8,6 +8,8 @@ module
 public import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.Seminorm
 public import Mathlib.Topology.Compactness.LocallyFinite
 public import Mathlib.Topology.MetricSpace.Thickening
+import TauCeti.Geometry.Manifold.ContMDiffMap.Chart.CoordinateChange
+import TauCeti.Topology.LocallyFinite.Basic
 
 /-!
 # The strong Whitney topology for vector-valued maps
@@ -39,6 +41,13 @@ neighbourhoods, for every finite order at most `n`.
 * `ContMDiffMap.manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology`: on a compact
   manifold the two topologies agree, so that compact chart `C^k` seminorm balls generate the
   strong topology there.
+* `ContMDiffMap.hasBasis_nhds_manifoldStrongWhitney_atlasCkControl`: **chart-family
+  independence**. The same neighbourhoods may be read in arbitrary charts of the maximal atlas
+  (`ContMDiffMap.AtlasCkControl`), and for any family of such charts covering `M`, those read in
+  charts of the family alone form a basis of the neighbourhoods of `f`. The analytic input is the
+  coordinate-change estimate `ContMDiffMap.exists_norm_iteratedFDerivWithin_comp_extend_symm_le`,
+  applied on finitely many compact pieces of each coordinate set
+  (`ContMDiffMap.AtlasCkControl.exists_ball_subset`).
 
 The topology is not a global instance; use `open scoped TauCeti.ManifoldStrongWhitney` to select
 it.
@@ -352,6 +361,242 @@ theorem manifoldStrongWhitneyTopology_eq_manifoldWeakWhitneyTopology [CompactSpa
       exact c.isOpen_ball_manifoldWeakWhitney f
 
 end Compact
+
+/-! ### Strong neighbourhoods in arbitrary charts -/
+
+section Atlas
+
+open IsManifold
+
+omit [IsManifold I n M]
+
+variable (I M n) in
+/-- The data of a strong `C^k` neighbourhood read in arbitrary charts: charts `chart i` of the
+`C^n` maximal atlas, compact sets `compact i` in the targets of their extended charts, whose
+images in `M` form a locally finite family, a derivative order `order` at most `n`, and a positive
+tolerance for each member. Unlike a `StrongCkControl`, it need not use the preferred charts of
+`M`. -/
+structure AtlasCkControl where
+  /-- The index type of the family of compact coordinate sets. -/
+  ι : Type u
+  /-- The chart carrying the `i`th compact set. -/
+  chart : ι → OpenPartialHomeomorph M H
+  /-- Every chart belongs to the `C^n` maximal atlas. -/
+  chart_mem : ∀ i, chart i ∈ maximalAtlas I n M
+  /-- The `i`th compact coordinate set, in the target of the `i`th extended chart. -/
+  compact : ∀ i, Compacts ((chart i).extend I).target
+  /-- The derivative order controlled on every member of the family. -/
+  order : ℕ
+  /-- The derivative order is one at which the maps are differentiable. -/
+  order_le : (order : WithTop ℕ∞) ≤ n
+  /-- The tolerance on the `i`th compact coordinate set. -/
+  tolerance : ι → ℝ
+  /-- Every tolerance is positive. -/
+  tolerance_pos : ∀ i, 0 < tolerance i
+  /-- The images in `M` of the compact coordinate sets form a locally finite family. -/
+  locallyFinite : LocallyFinite fun i ↦ ((chart i).extend I).symm ''
+    (Subtype.val '' (compact i : Set ((chart i).extend I).target))
+
+namespace AtlasCkControl
+
+/-- The strong `C^k` neighbourhood of `f` determined by an atlas control: the maps `g` such that
+every coordinate derivative of `g - f` through order `c.order` is smaller than `c.tolerance i` on
+`c.compact i`, for every `i`. -/
+def ball (c : AtlasCkControl I M n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    Set C^n⟮I, M; 𝓘(𝕜, F), F⟯ :=
+  {g | ∀ i (m : ℕ), m ≤ c.order → ∀ z ∈ c.compact i,
+    ‖iteratedFDerivWithin 𝕜 m (⇑(g - f) ∘ ((c.chart i).extend I).symm)
+      ((c.chart i).extend I).target z‖ < c.tolerance i}
+
+@[simp]
+theorem mem_ball {c : AtlasCkControl I M n} {f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯} :
+    g ∈ c.ball f ↔ ∀ i (m : ℕ), m ≤ c.order → ∀ z ∈ c.compact i,
+      ‖iteratedFDerivWithin 𝕜 m (⇑(g - f) ∘ ((c.chart i).extend I).symm)
+        ((c.chart i).extend I).target z‖ < c.tolerance i :=
+  Iff.rfl
+
+end AtlasCkControl
+
+omit [ChartedSpace H M] in
+/-- A compact coordinate set of a chart `e` is covered by finitely many compact pieces, each in
+the overlap of `e` with the chart `σ x` at some point `x`. -/
+private theorem exists_finite_cover_extendCoordChange_source
+    (σ : M → OpenPartialHomeomorph M H) (hσ : ∀ x, x ∈ (σ x).source)
+    (e : OpenPartialHomeomorph M H) {K : Set E} (hK : IsCompact K)
+    (hKt : K ⊆ (e.extend I).target) :
+    ∃ (N : ℕ) (p : Fin N → M) (P : Fin N → Set E), (∀ j, IsCompact (P j)) ∧ (∀ j, P j ⊆ K) ∧
+      (∀ j, P j ⊆ (I.extendCoordChange e (σ (p j))).source) ∧ K ⊆ ⋃ j, P j := by
+  classical
+  -- Each point of `K` has an open neighbourhood whose trace on `K` lies in a chart overlap.
+  have hnhds (z : K) : (I.extendCoordChange e (σ ((e.extend I).symm z))).source ∈ 𝓝[K] (z : E) := by
+    refine nhdsWithin_mono _ (hKt.trans (e.extend_target_subset_range (I := I)))
+      (I.extendCoordChange_source_mem_nhdsWithin ?_)
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source, (σ _).extend_source]
+    exact ⟨hKt z.2, hσ _⟩
+  choose u hu hzu huK using fun z : K ↦ mem_nhdsWithin.mp (hnhds z)
+  obtain ⟨t, ht⟩ := hK.elim_finite_subcover u hu fun z hz ↦ mem_iUnion.mpr ⟨⟨z, hz⟩, hzu _⟩
+  obtain ⟨Q, hQc, hQu, hKQ⟩ := hK.finite_compact_cover t u (fun z _ ↦ hu z)
+    (by simpa only [iUnion_subtype] using ht)
+  have hQK (z : K) (hz : z ∈ t) : Q z ⊆ K := hKQ ▸ subset_biUnion_of_mem (u := Q) hz
+  refine ⟨t.card, fun j ↦ (e.extend I).symm (t.equivFin.symm j).1,
+    fun j ↦ Q (t.equivFin.symm j), fun j ↦ hQc _, fun j ↦ hQK _ (t.equivFin.symm j).2,
+    fun j w hw ↦ huK _ ⟨hQu _ hw, hQK _ (t.equivFin.symm j).2 hw⟩, fun z hz ↦ ?_⟩
+  rw [hKQ] at hz
+  obtain ⟨y, hy, hzy⟩ := mem_iUnion₂.mp hz
+  exact mem_iUnion.mpr ⟨t.equivFin ⟨y, hy⟩, by simpa using hzy⟩
+
+/-- Refinement of an atlas control into charts chosen by `σ`. Each compact set of the control is
+cut into finitely many compact pieces lying in chart overlaps, the pieces are moved into the
+charts `σ x` and each tolerance is divided by twice the coordinate-change constant of its piece. -/
+private theorem AtlasCkControl.exists_refinement (c : AtlasCkControl I M n)
+    (σ : M → OpenPartialHomeomorph M H) (hσ : ∀ x, σ x ∈ maximalAtlas I n M)
+    (hσx : ∀ x, x ∈ (σ x).source) :
+    ∃ (ι' : Type u) (p : ι' → M) (K : ∀ j, Compacts ((σ (p j)).extend I).target)
+      (δ : ι' → ℝ), (∀ j, 0 < δ j) ∧
+      LocallyFinite (fun j ↦ ((σ (p j)).extend I).symm ''
+        (Subtype.val '' (K j : Set ((σ (p j)).extend I).target))) ∧
+      ∀ f g : C^n⟮I, M; 𝓘(𝕜, F), F⟯,
+        (∀ j (m : ℕ), m ≤ c.order → ∀ z ∈ K j,
+          ‖iteratedFDerivWithin 𝕜 m (⇑(g - f) ∘ ((σ (p j)).extend I).symm)
+            ((σ (p j)).extend I).target z‖ < δ j) → g ∈ c.ball f := by
+  choose N p P hPc hPK hPs hcov using fun i ↦
+    exists_finite_cover_extendCoordChange_source σ hσx (c.chart i)
+      ((c.compact i).isCompact.image continuous_subtype_val) (Subtype.coe_image_subset _ _)
+  choose C hCpos hC using fun i j ↦ exists_norm_iteratedFDerivWithin_comp_extend_symm_le
+    (F := F) (c.chart_mem i) (hσ (p i j)) (hPc i j) (hPs i j) c.order c.order_le
+  -- The pieces, moved into the charts `σ (p i j)`.
+  let τ (i : c.ι) (j : Fin (N i)) := I.extendCoordChange (c.chart i) (σ (p i j))
+  have hS (i : c.ι) (j : Fin (N i)) : IsCompact (τ i j '' P i j) :=
+    (hPc i j).image_of_continuousOn
+      ((I.contDiffOn_extendCoordChange (c.chart_mem i) (hσ (p i j))).continuousOn.mono (hPs i j))
+  have hSt (i : c.ι) (j : Fin (N i)) : τ i j '' P i j ⊆ ((σ (p i j)).extend I).target := by
+    rintro _ ⟨y, hy, rfl⟩
+    have h := (τ i j).map_source (hPs i j hy)
+    rw [PartialEquiv.trans_target] at h
+    exact h.1
+  have hSt' (i : c.ι) (j : Fin (N i)) :
+      τ i j '' P i j ⊆ range ((↑) : ((σ (p i j)).extend I).target → E) := by
+    simpa only [Subtype.range_coe] using hSt i j
+  refine ⟨Σ i, Fin (N i), fun j ↦ p j.1 j.2,
+    fun j ↦ ⟨(↑) ⁻¹' (τ j.1 j.2 '' P j.1 j.2),
+      Topology.IsInducing.subtypeVal.isCompact_preimage' (hS _ _) (hSt' _ _)⟩,
+    fun j ↦ c.tolerance j.1 / (2 * C j.1 j.2),
+    fun j ↦ div_pos (c.tolerance_pos _) (mul_pos two_pos (hCpos _ _)), ?_, ?_⟩
+  · -- Each piece lies in the member of the original family it was cut from.
+    refine c.locallyFinite.comp_sigma_fst.subset fun ⟨i, j⟩ ↦ ?_
+    dsimp only [Compacts.coe_mk]
+    rw [image_preimage_eq_of_subset (hSt' i j)]
+    rintro _ ⟨_, ⟨y, hy, rfl⟩, rfl⟩
+    have hy' := hPs i j hy
+    rw [PartialEquiv.trans_source, PartialEquiv.symm_source, (σ _).extend_source] at hy'
+    refine ⟨y, hPK i j hy, ?_⟩
+    -- The change of charts is, by definition, the composite of the two extended charts.
+    exact ((σ (p i j)).extend_left_inv hy'.2).symm
+  · intro f g hg
+    refine AtlasCkControl.mem_ball.mpr fun i m hm z hz ↦ ?_
+    obtain ⟨j, hj⟩ := mem_iUnion.mp (hcov i ⟨z, hz, rfl⟩)
+    have hbound := hC i j (g - f) (c.tolerance i / (2 * C i j)) (fun m' hm' y hy ↦
+      (hg ⟨i, j⟩ m' hm' ⟨τ i j y, hSt i j ⟨y, hy, rfl⟩⟩ ⟨y, hy, rfl⟩).le) m hm z hj
+    calc _ ≤ C i j * (c.tolerance i / (2 * C i j)) := hbound
+      _ = c.tolerance i / 2 := by field_simp [(hCpos i j).ne']
+      _ < c.tolerance i := half_lt_self (c.tolerance_pos i)
+
+/-- **Chart-family independence of strong neighbourhoods.** Let `A` be a family of charts of the
+maximal atlas whose sources cover `M`. Every atlas control can be refined to one with the same
+derivative order whose charts all belong to `A`, and whose neighbourhood of each map lies in the
+neighbourhood of that map given by the original control. -/
+theorem AtlasCkControl.exists_ball_subset (c : AtlasCkControl I M n)
+    {A : Set (OpenPartialHomeomorph M H)} (hA : A ⊆ maximalAtlas I n M)
+    (hcover : ∀ x, ∃ e ∈ A, x ∈ e.source) :
+    ∃ c' : AtlasCkControl I M n, (∀ i, c'.chart i ∈ A) ∧ c'.order = c.order ∧
+      ∀ f : C^n⟮I, M; 𝓘(𝕜, F), F⟯, c'.ball f ⊆ c.ball f := by
+  choose σ hσA hσx using hcover
+  obtain ⟨ι', p, K, δ, hδ, hlf, hsub⟩ :=
+    c.exists_refinement (F := F) σ (fun x ↦ hA (hσA x)) hσx
+  exact ⟨⟨ι', fun j ↦ σ (p j), fun j ↦ hA (hσA _), K, c.order, c.order_le, δ, hδ, hlf⟩,
+    fun j ↦ hσA _, rfl, fun f g hg ↦ hsub f g hg⟩
+
+end Atlas
+
+section AtlasStrong
+
+open IsManifold
+
+/-- A strong `C^k` control read as an atlas control, with the preferred charts at its centres. -/
+@[expose] def StrongCkControl.toAtlasCkControl (c : StrongCkControl I M n) :
+    AtlasCkControl I M n where
+  ι := c.ι
+  chart i := chartAt H (c.center i)
+  chart_mem i := chart_mem_maximalAtlas (c.center i)
+  compact := c.compact
+  order := c.order
+  order_le := c.order_le
+  tolerance := c.tolerance
+  tolerance_pos := c.tolerance_pos
+  locallyFinite := c.locallyFinite
+
+@[simp]
+theorem StrongCkControl.toAtlasCkControl_chart (c : StrongCkControl I M n) (i : c.ι) :
+    c.toAtlasCkControl.chart i = chartAt H (c.center i) :=
+  rfl
+
+@[simp]
+theorem StrongCkControl.toAtlasCkControl_order (c : StrongCkControl I M n) :
+    c.toAtlasCkControl.order = c.order :=
+  rfl
+
+/-- Reading a strong `C^k` control in its preferred charts does not change its neighbourhoods. -/
+@[simp]
+theorem StrongCkControl.ball_toAtlasCkControl (c : StrongCkControl I M n)
+    (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) : c.toAtlasCkControl.ball f = c.ball f := by
+  ext g
+  rw [AtlasCkControl.mem_ball, StrongCkControl.mem_ball]
+  refine forall_congr' fun i ↦ ?_
+  rw [chartCkSeminorm_lt_iff _ _ _ _ _ (c.tolerance_pos i)]
+  simp only [chartIteratedFDeriv_self_target_apply]
+  -- The preferred extended chart is, by definition, the extension of the preferred chart.
+  exact Iff.rfl
+
+section Strong
+
+attribute [local instance] manifoldStrongWhitneyTopology
+
+/-- **Strong neighbourhoods in arbitrary charts.** The neighbourhood of `f` given by an atlas
+control, read in arbitrary charts of the maximal atlas, is a neighbourhood of `f` in the strong
+Whitney topology. -/
+theorem AtlasCkControl.ball_mem_nhds (c : AtlasCkControl I M n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    c.ball f ∈ 𝓝 f := by
+  obtain ⟨ι', p, K, δ, hδ, hlf, hsub⟩ :=
+    c.exists_refinement (F := F) (chartAt H) chart_mem_maximalAtlas (mem_chart_source H)
+  -- The refinement into preferred charts is a strong `C^k` control. Read back in its preferred
+  -- charts it is literally the refinement, so its balls are those of the refinement.
+  let c₀ : StrongCkControl I M n := ⟨ι', p, K, c.order, c.order_le, δ, hδ, hlf⟩
+  refine mem_nhds_manifoldStrongWhitney_iff.mpr ⟨c₀, fun g hg ↦ hsub f g ?_⟩
+  rw [← c₀.ball_toAtlasCkControl, AtlasCkControl.mem_ball] at hg
+  exact hg
+
+/-- A neighbourhood given by an atlas control contains its centre. -/
+theorem AtlasCkControl.mem_ball_self (c : AtlasCkControl I M n) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    f ∈ c.ball f :=
+  mem_of_mem_nhds (c.ball_mem_nhds f)
+
+/-- **Chart-family independence of the strong Whitney topology.** For any family `A` of charts of
+the maximal atlas whose sources cover `M`, the strong `C^k` neighbourhoods of `f` read in charts
+from `A` form a basis of the neighbourhood filter of `f`. Taking for `A` the whole maximal atlas
+gives the neighbourhoods of Hirsch, *Differential Topology*, Chapter 2, §1, which use arbitrary
+charts of the atlas rather than preferred ones. -/
+theorem hasBasis_nhds_manifoldStrongWhitney_atlasCkControl
+    {A : Set (OpenPartialHomeomorph M H)} (hA : A ⊆ maximalAtlas I n M)
+    (hcover : ∀ x, ∃ e ∈ A, x ∈ e.source) (f : C^n⟮I, M; 𝓘(𝕜, F), F⟯) :
+    (𝓝 f).HasBasis (fun c : AtlasCkControl I M n ↦ ∀ i, c.chart i ∈ A) fun c ↦ c.ball f := by
+  refine ⟨fun s ↦ ⟨fun hs ↦ ?_, fun ⟨c, _, hcs⟩ ↦ mem_of_superset (c.ball_mem_nhds f) hcs⟩⟩
+  obtain ⟨c₀, hc₀⟩ := mem_nhds_manifoldStrongWhitney_iff.mp hs
+  obtain ⟨c, hcA, -, hsub⟩ := c₀.toAtlasCkControl.exists_ball_subset (F := F) hA hcover
+  exact ⟨c, hcA, ((hsub f).trans (c₀.ball_toAtlasCkControl f).le).trans hc₀⟩
+
+end Strong
+
+end AtlasStrong
 
 end ContMDiffMap
 
