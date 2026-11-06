@@ -135,8 +135,7 @@ theorem anchorDeriv_const_right (a : Cₛ^∞⟮I; F, V⟯) (c : ℝ) :
     A.anchorDeriv a (ContMDiffMap.const c) = 0 := by
   ext x
   simp only [anchorDeriv_apply, ContMDiffMap.coe_zero, Pi.zero_apply]
-  rw [show ⇑(ContMDiffMap.const c : C^∞⟮I, M; ℝ⟯) = fun _ ↦ c from rfl, mvfderiv_const,
-    _root_.zero_apply]
+  rw [ContMDiffMap.const, ContMDiffMap.coeFn_mk, mvfderiv_const, _root_.zero_apply]
 
 /-- The derivative of the zero function along the anchor vanishes. -/
 @[simp]
