@@ -30,6 +30,7 @@ compatible with continuous complex-linear maps. Its value is unique almost every
 `HasWeakFDerivOn.hasWeakConjWirtingerDerivOn` compare it with the native real weak derivatives.
 `hasWeakConjWirtingerDerivOn_of_contDiffOn` compares it with the classical normalized operator;
 for real `C¹` maps, its vanishing is equivalent to holomorphy.
+`hasWeakConjWirtingerDerivOn_conj` computes the weak derivative of conjugation as `1`.
 
 ## References
 
@@ -40,7 +41,7 @@ for real `C¹` maps, its vanishing is equivalent to holomorphy.
 public noncomputable section
 
 open Complex MeasureTheory TopologicalSpace
-open scoped ContDiff Distributions
+open scoped ContDiff Distributions ComplexConjugate
 
 namespace TauCeti
 
@@ -267,6 +268,20 @@ theorem hasWeakConjWirtingerDerivOn_of_contDiffOn [CompleteSpace F] [μ.IsAddHaa
     (fun z hz ↦ (hu.differentiableOn one_ne_zero).differentiableAt (Ω.isOpen.mem_nhds hz))
   simpa only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one] using
     h.hasWeakConjWirtingerDerivOn
+
+/-- Conjugation has normalized weak `\bar∂` derivative `1`, fixing both its sign and factor. -/
+theorem hasWeakConjWirtingerDerivOn_conj [μ.IsAddHaarMeasure] :
+    HasWeakConjWirtingerDerivOn μ Ω conj (fun _ ↦ (1 : ℂ)) := by
+  have hcoe : (Complex.conjCLE : ℂ → ℂ) = conj := funext Complex.conjCLE_apply
+  have hc : ContDiffOn ℝ 1 (conj : ℂ → ℂ) Ω := by
+    simpa only [hcoe] using
+      (Complex.conjCLE.contDiff.contDiffOn : ContDiffOn ℝ 1 (fun z ↦ Complex.conjCLE z) Ω)
+  have hd (z : ℂ) : conjWirtingerDeriv (conj : ℂ → ℂ) z 1 = 1 := by
+    have hf : HasFDerivAt (conj : ℂ → ℂ) Complex.conjCLE.toContinuousLinearMap z := by
+      simpa only [hcoe] using Complex.conjCLE.hasFDerivAt (x := z)
+    rw [conjWirtingerDeriv_apply, hf.fderiv]
+    norm_num [smul_eq_mul, Complex.conjCLE_apply]
+  simpa only [hd] using hasWeakConjWirtingerDerivOn_of_contDiffOn (μ := μ) hc
 
 /-- For a function of class `C¹` over `ℝ`, the weak equation `\bar∂u=0` is precisely holomorphy. -/
 theorem hasWeakConjWirtingerDerivOn_zero_iff_of_contDiffOn

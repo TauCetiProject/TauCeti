@@ -32,8 +32,8 @@ of the original function, or a Sobolev exponent, are assumed.
   complex coefficients.
 * `HasWeakConjWirtingerDerivOn.differentiableOn`: a continuous solution is itself holomorphic.
 * `DifferentiableOn.hasWeakConjWirtingerDerivOn_zero`: every holomorphic map solves the equation.
-* `hasWeakConjWirtingerDerivOn_conj` and `not_exists_differentiableOn_ae_eq_conj`: the conjugation
-  example has derivative `1` and cannot have a holomorphic representative on a nonempty open set.
+* `not_exists_differentiableOn_ae_eq_conj`: conjugation cannot have a holomorphic representative
+  on a nonempty open set, using its weak derivative calculation from `Wirtinger.Weak`.
 
 ## References
 
@@ -154,20 +154,6 @@ theorem hasWeakConjWirtingerDerivOn_zero_iff_of_continuousOn
     HasWeakConjWirtingerDerivOn μ Ω u 0 ↔ DifferentiableOn ℂ u Ω := by
   have := FiniteDimensional.complete ℂ F
   exact ⟨fun h ↦ h.differentiableOn hu, DifferentiableOn.hasWeakConjWirtingerDerivOn_zero⟩
-
-/-- Conjugation has normalized weak `\bar∂` derivative `1`, fixing both its sign and factor. -/
-theorem hasWeakConjWirtingerDerivOn_conj [μ.IsAddHaarMeasure] :
-    HasWeakConjWirtingerDerivOn μ Ω conj (fun _ ↦ (1 : ℂ)) := by
-  have hcoe : (Complex.conjCLE : ℂ → ℂ) = conj := funext Complex.conjCLE_apply
-  have hc : ContDiffOn ℝ 1 (conj : ℂ → ℂ) Ω := by
-    simpa only [hcoe] using
-      (Complex.conjCLE.contDiff.contDiffOn : ContDiffOn ℝ 1 (fun z ↦ Complex.conjCLE z) Ω)
-  have hd (z : ℂ) : conjWirtingerDeriv (conj : ℂ → ℂ) z 1 = 1 := by
-    have hf : HasFDerivAt (conj : ℂ → ℂ) Complex.conjCLE.toContinuousLinearMap z := by
-      simpa only [hcoe] using Complex.conjCLE.hasFDerivAt (x := z)
-    rw [conjWirtingerDeriv_apply, hf.fderiv]
-    norm_num [smul_eq_mul, Complex.conjCLE_apply]
-  simpa only [hd] using hasWeakConjWirtingerDerivOn_of_contDiffOn (μ := μ) hc
 
 /-- Conjugation cannot agree almost everywhere with a holomorphic function on a nonempty
 open set: its weak `\bar∂` derivative is `1`, while a holomorphic representative has
