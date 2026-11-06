@@ -47,10 +47,11 @@ local notation "Base'" => ModuleCat.restrictScalars (MvPolynomial.C :
 
 /-- The coefficient action on source homology is the action selected by
 `ModuleCat.restrictScalars` along the inclusion of constant polynomials. -/
-local instance : Module R (hG.simplyBlockedHomology R i) :=
+local instance transposeSourceCoefficientModule : Module R (hG.simplyBlockedHomology R i) :=
   Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ i} R)
 /-- The coefficient action on reflected homology is restriction along constant polynomials. -/
-local instance : Module R ((hG').simplyBlockedHomology R (G.O i)) :=
+local instance transposeTargetCoefficientModule :
+    Module R ((hG').simplyBlockedHomology R (G.O i)) :=
   Module.compHom _ (MvPolynomial.C : R →+* MvPolynomial {c : Fin n // c ≠ G.O i} R)
 
 /-- Diagonal reflection on homology, linear over the coefficient ring. The underlying
