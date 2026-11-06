@@ -128,8 +128,8 @@ theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ →
     (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
       deriv β z.1 * H z.2 x := by
-  rw [hamiltonianCurvature_zero_left]
-  exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact fderiv_mul_apply_one_zero (h := fun t ↦ H t x) hβ hH
 
 /-- The curvature only depends on the germs of the perturbation data at the domain point. -/
 theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
