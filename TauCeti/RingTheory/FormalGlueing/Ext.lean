@@ -8,7 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Descent
 public import Mathlib.Algebra.Category.ModuleCat.Ext.HasExt
 public import TauCeti.Algebra.Category.ModuleCat.ChangeOfRings
-public import TauCeti.Algebra.Homology.Ext.MapInjective
+public import TauCeti.Algebra.Homology.Ext.Map.Injective
 public import TauCeti.Algebra.Homology.Ext.Descent
 public import TauCeti.RingTheory.FormalGlueing.Torsion
 public import TauCeti.Algebra.Module.Torsion.Presentation

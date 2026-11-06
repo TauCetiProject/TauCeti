@@ -17,7 +17,7 @@ import TauCeti.Analysis.Polynomial.RootSum
 Let `f : X → Y` be a map between Riemann surfaces. Its **fibre multiset** over `y`
 (`TauCeti.RiemannSurface.fiberMultiset f y`) is the multiset of points of `f ⁻¹' {y}`, each repeated
 according to the local multiplicity of `f` there. For a finite holomorphic map from a compact
-connected Riemann surface to a connected one, it has as many elements as the degree of `f`,
+Riemann surface to a connected one, it has as many elements as the degree of `f`,
 whatever `y` is.
 
 The main result of this file is that symmetric functions of the values of a holomorphic function
@@ -54,7 +54,7 @@ functions of the values of the meromorphic function along the fibres of `β`.
 * `TauCeti.RiemannSurface.count_fiberMultiset` and `TauCeti.RiemannSurface.mem_fiberMultiset`: the
   multiplicity of a point in a finite fibre multiset is its local multiplicity.
 * `TauCeti.RiemannSurface.FiniteHolomorphicMap.card_fiberMultiset`: every fibre multiset of a
-  finite holomorphic map from a compact connected Riemann surface to a connected one has the
+  finite holomorphic map from a compact Riemann surface to a connected one has the
   degree as cardinality.
 * `TauCeti.RiemannSurface.analyticAt_sum_map_fiberMultiset`: sums of a holomorphic function over
   the fibre multisets are holomorphic on the target, across branch values included.
@@ -131,7 +131,7 @@ variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 /-- **The fibre multisets of a finite holomorphic map have the degree as cardinality.** -/
 @[simp]
 theorem FiniteHolomorphicMap.card_fiberMultiset [CompactSpace X] [T2Space X] [T2Space Y]
-    [PreconnectedSpace X] [PreconnectedSpace Y] (f : FiniteHolomorphicMap X Y) (y : Y) :
+    [PreconnectedSpace Y] (f : FiniteHolomorphicMap X Y) (y : Y) :
     Multiset.card (fiberMultiset f y) = degree f := by
   rw [RiemannSurface.card_fiberMultiset (f.finite_fiber y),
     fiberMultiplicitySum_eq_sum (f.finite_fiber y), degree_eq_fiber_sum f y]
