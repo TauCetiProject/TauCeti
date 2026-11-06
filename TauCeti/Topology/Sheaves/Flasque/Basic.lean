@@ -29,7 +29,6 @@ surjective. This file proves that a flasque sheaf has no higher cohomology.
   cohomology in every positive degree over every open subset;
 * `TauCeti.Topology.subsingleton_H_succ_of_isFlasque`: the same statement for the cohomology
   of the whole space;
-* `TauCeti.Topology.isFlasque_skyscraperSheaf`: skyscraper sheaves are flasque, and hence acyclic;
 * `TopCat.Presheaf.isFlasque_comp` and `TopCat.Presheaf.isFlasque_comp_iff`: flasqueness is
   preserved by composing with a functor that preserves epimorphisms, and reflected when the
   functor also reflects them, such as forgetting a module structure;
@@ -149,12 +148,6 @@ instance subsingleton_H_succ_of_isFlasque
     (f := ConcreteCategory.hom
       (F.cohomologyPresheafObjIsoH (n + 1) isTerminalTop).inv)
     ((ConcreteCategory.bijective_of_isIso _).injective)
-
-/-- A skyscraper sheaf of abelian groups is flasque. -/
-instance isFlasque_skyscraperSheaf (p₀ : X) (A : AddCommGrpCat.{u})
-    [(U : Opens X) → Decidable (p₀ ∈ U)] :
-    TopCat.Presheaf.IsFlasque (skyscraperSheaf p₀ A).obj :=
-  isFlasque_skyscraperSheaf_of_hasZeroObject p₀ A
 
 end
 
