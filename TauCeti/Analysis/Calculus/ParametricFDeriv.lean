@@ -385,6 +385,27 @@ theorem hasDerivAt_spatialFDeriv {F : 𝕜 × E → F'} {t : 𝕜} {x : E}
     exact (fderiv_timeSlice hs).symm)
   simpa only [flip_apply, hTime.fderiv] using hSpatial
 
+/-- If `W` is the parameter velocity of a jointly smooth family `G` at time `t` near `x`, then the
+parameter derivative of the spatial Jacobian of `G` at `x` is the derivative of `W` at `x`. -/
+theorem hasDerivAt_fderiv_slice_of_eventually_hasDerivAt {G : 𝕜 × E → E} {W : E → E} {t : 𝕜}
+    {x : E} (hG : ContDiffAt 𝕜 (minSmoothness 𝕜 2) G (t, x))
+    (hvel : ∀ᶠ z in 𝓝 x, HasDerivAt (fun u ↦ G (u, z)) (W z) t) :
+    HasDerivAt (fun u ↦ fderiv 𝕜 (fun z ↦ G (u, z)) x) (fderiv 𝕜 W x) t := by
+  have hdiff : ∀ᶠ p in 𝓝 (t, x), DifferentiableAt 𝕜 G p :=
+    ((hG.of_le (le_trans (by norm_num) le_minSmoothness)).eventually (by simp)).mono
+      fun _ hz ↦ hz.differentiableAt one_ne_zero
+  have htime : timeFDeriv G t =ᶠ[𝓝 x] W := by
+    have hd : ∀ᶠ z in 𝓝 x, DifferentiableAt 𝕜 G (t, z) :=
+      ((continuous_const.prodMk continuous_id).tendsto x).eventually hdiff
+    filter_upwards [hvel, hd] with z hz hdz
+    exact (hasDerivAt_parameterCurve hdz).unique hz
+  rw [← htime.fderiv_eq]
+  refine (hasDerivAt_spatialFDeriv hG).congr_of_eventuallyEq ?_
+  have hd : ∀ᶠ u in 𝓝 t, DifferentiableAt 𝕜 G (u, x) :=
+    ((continuous_id.prodMk continuous_const).tendsto t).eventually hdiff
+  filter_upwards [hd] with u hu
+  exact fderiv_timeSlice hu
+
 /-- For a sufficiently smooth parametric map, the parameter derivative of its spatial Jacobian,
 applied to `w`, is the spatial derivative of its parameter-velocity field applied to `w`. -/
 theorem deriv_spatialFDeriv_apply {F : 𝕜 × E → F'} {t : 𝕜} {x w : E}
