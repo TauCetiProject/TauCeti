@@ -166,12 +166,8 @@ theorem ofReal_smul (f : C^n⟮I, M; ℝ⟯) (s : Cₛ^n⟮I; G, W⟯) :
 theorem complexFunction_smul_eq_re_smul_add_im_smul (f : C^n⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯)
     (s : Cₛ^n⟮I; G, W⟯) :
     f • s = f.re • s + f.im • (Complex.I • s) := by
-  ext x
-  simp only [complexFunction_smul_apply, coe_add, Pi.add_apply, smul_apply,
-    coe_smul_of_normedAlgebra, Pi.smul_apply, ContMDiffMap.re_apply, ContMDiffMap.im_apply]
-  conv_lhs => rw [← Complex.re_add_im (f x)]
-  rw [add_smul, mul_smul]
-  congr 1 <;> exact (RCLike.real_smul_eq_coe_smul (K := ℂ) _ _).symm
+  conv_lhs => rw [← f.ofReal_re_add_I_smul_im]
+  rw [add_smul, smul_assoc, smul_comm Complex.I, ofReal_smul, ofReal_smul]
 
 end Constants
 
