@@ -191,8 +191,14 @@ theorem eq_top_of_bijective_aeval_symmetricAlgebraInvariants_dual_of_pseudorefle
   have := Fintype.ofFinite H
   have := Fintype.ofFinite ι
   have := Fintype.ofFinite κ
-  -- The contragredient of the restriction to `H` is the restriction of the contragredient.
-  have hdual : dual (ρ.comp H.subtype) = MonoidHom.comp ρ.dual H.subtype := rfl
+  -- Since `Sym(V*)^G ⊆ Sym(V*)^H`, algebraic independence of the `f i` bounds, for every `n`, the
+  -- number of `f i` of degree at most `n` by the number of `g j` of degree at most `n`.
+  -- The `g j` are invariants of `dual (ρ.comp H.subtype)`, which is `ρ.dual.comp H.subtype`.
+  have hle (n : ℕ) : #{i | d i ≤ n} ≤ #{j | e j ≤ n} := by
+    revert g
+    rw [dual_comp]
+    intro g hg hgbij
+    exact ρ.dual.card_filter_le_le_card_filter_le_of_comp_subtype hf hbij.1 hg hgbij.2 n
   have hρd : Function.Injective ρ.dual := ρ.dual_injective_iff.2 hρ
   have hρHd : Function.Injective (dual (ρ.comp H.subtype)) :=
     (dual_injective_iff (ρ.comp H.subtype)).2 (hρ.comp Subtype.val_injective)
@@ -210,16 +216,11 @@ theorem eq_top_of_bijective_aeval_symmetricAlgebraInvariants_dual_of_pseudorefle
   have hsum : ∑ i, d i = ∑ j, e j := by
     rw [ρ.dual.sum_eq_finrank_add_card_of_mk_finrank_mul_prod_eq_one hρd hHilbG,
       (dual (ρ.comp H.subtype)).sum_eq_finrank_add_card_of_mk_finrank_mul_prod_eq_one hρHd hHilbH,
-      hdual, hN]
+      dual_comp, hN]
   have hcard : Fintype.card ι = Fintype.card κ := by
     simp only [← Nat.card_eq_fintype_card,
       ρ.dual.card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants hbij,
       (dual (ρ.comp H.subtype)).card_eq_finrank_of_bijective_aeval_symmetricAlgebraInvariants hgbij]
-  -- Since `Sym(V*)^G ⊆ Sym(V*)^H`, algebraic independence of the `f i` bounds, for every `n`, the
-  -- number of `f i` of degree at most `n` by the number of `g j` of degree at most `n`.
-  -- The `g j` are invariants of `ρ.dual.comp H.subtype`, which is `dual (ρ.comp H.subtype)`.
-  have hle (n : ℕ) : #{i | d i ≤ n} ≤ #{j | e j ≤ n} :=
-    ρ.dual.card_filter_le_le_card_filter_le_of_comp_subtype hf hbij.1 (g := g) hg hgbij.2 n
   -- So the two multisets of degrees coincide, and `#G = ∏ d i = ∏ e j = #H`.
   have hmap : univ.val.map d = univ.val.map e :=
     Multiset.eq_of_forall_countP_le_le_of_sum_le (by simpa using hcard)
