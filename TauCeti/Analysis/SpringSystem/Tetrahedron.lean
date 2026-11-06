@@ -163,8 +163,10 @@ private theorem sum_vecMulVec_perm_mulVec_tetrahedronCenteredVertex (σ : Equiv.
 /-- The symmetries of the tetrahedron: `σ ∈ S₄` acts on `ℝ³` by the matrix
 `R_σ = ∑ᵢ q_{σ i} qᵢᵀ`, the unique linear map with `R_σ qᵢ = q_{σ i}`
 (`tetrahedronSymmetryMatrix_mulVec`). These matrices are orthogonal
-(`tetrahedronSymmetryMatrix_mem_orthogonalGroup`); even permutations are rotations and odd ones
-are reflections. -/
+(`tetrahedronSymmetryMatrix_mem_orthogonalGroup`). Even permutations preserve orientation (the
+identity, rotations by `2π/3` about vertex axes and by `π` about edge-midpoint axes); odd ones
+reverse it (transpositions act by plane reflections, four-cycles by rotoreflections of order
+four). -/
 noncomputable def tetrahedronSymmetryMatrix :
     Equiv.Perm (Fin 4) →* Matrix (Fin 3) (Fin 3) ℝ where
   toFun σ := ∑ i, vecMulVec (tetrahedronCenteredVertex (σ i)) (tetrahedronCenteredVertex i)
@@ -213,8 +215,8 @@ theorem tetrahedronSymmetryMatrix_mem_orthogonalGroup (σ : Equiv.Perm (Fin 4)) 
 /-! ### Displacements -/
 
 /-- The representation of `S₄` on displacements `u ∈ ℝ^(Fin 4 × Fin 3)`:
-`(σ • u)ᵢ = R_σ u_{σ⁻¹ i}`, moving the displacement of vertex `i` to vertex `σ i` and rotating
-it with the tetrahedron (`curry_tetrahedronDisplacementRep`). -/
+`(σ • u)ᵢ = R_σ u_{σ⁻¹ i}`, moving the displacement of vertex `i` to vertex `σ i` and
+transforming it by `R_σ` (`curry_tetrahedronDisplacementRep`). -/
 noncomputable def tetrahedronDisplacementRep :
     Representation ℝ (Equiv.Perm (Fin 4)) (Fin 4 × Fin 3 → ℝ) where
   toFun σ :=
@@ -263,6 +265,13 @@ noncomputable def tetrahedronEdgeVector (i j : Fin 4) : Fin 4 × Fin 3 → ℝ :
   Function.uncurry (Pi.single i (tetrahedronVertex i - tetrahedronVertex j) -
     Pi.single j (tetrahedronVertex i - tetrahedronVertex j))
 
+/-- The blocks of `z_{ij}`: `pᵢ - pⱼ` at `i`, minus the same vector at `j`. -/
+theorem curry_tetrahedronEdgeVector (i j : Fin 4) :
+    Function.curry (tetrahedronEdgeVector i j) =
+      Pi.single i (tetrahedronVertex i - tetrahedronVertex j) -
+        Pi.single j (tetrahedronVertex i - tetrahedronVertex j) :=
+  Function.curry_uncurry _
+
 /-- `z_{ji} = z_{ij}`: the edge vector depends only on the edge. -/
 theorem tetrahedronEdgeVector_comm (i j : Fin 4) :
     tetrahedronEdgeVector j i = tetrahedronEdgeVector i j := by
@@ -275,6 +284,25 @@ theorem tetrahedronEdgeVector_comm (i j : Fin 4) :
 @[simp]
 theorem tetrahedronEdgeVector_self (i : Fin 4) : tetrahedronEdgeVector i i = 0 := by
   ext p; simp [tetrahedronEdgeVector, Function.uncurry]
+
+/-- The block of `z_{ij}` at `i` is `pᵢ - pⱼ`. -/
+@[simp]
+theorem curry_tetrahedronEdgeVector_left (i j : Fin 4) :
+    Function.curry (tetrahedronEdgeVector i j) i = tetrahedronVertex i - tetrahedronVertex j := by
+  rw [curry_tetrahedronEdgeVector]
+  by_cases h : i = j <;> simp [h]
+
+/-- The block of `z_{ij}` at `j` is `pⱼ - pᵢ`. -/
+@[simp]
+theorem curry_tetrahedronEdgeVector_right (i j : Fin 4) :
+    Function.curry (tetrahedronEdgeVector i j) j = tetrahedronVertex j - tetrahedronVertex i := by
+  rw [tetrahedronEdgeVector_comm, curry_tetrahedronEdgeVector_left]
+
+/-- The blocks of `z_{ij}` away from `i` and `j` vanish. -/
+@[simp]
+theorem curry_tetrahedronEdgeVector_of_ne (i j : Fin 4) {m : Fin 4} (hi : m ≠ i) (hj : m ≠ j) :
+    Function.curry (tetrahedronEdgeVector i j) m = 0 := by
+  simp [curry_tetrahedronEdgeVector, hi, hj]
 
 /-- The symmetries permute the edge vectors: `σ • z_{ij} = z_{σ i, σ j}`. -/
 @[simp]
@@ -300,10 +328,7 @@ noncomputable def tetrahedronSpringMatrix : Matrix (Fin 4 × Fin 3) (Fin 4 × Fi
 
 private theorem sum_Ioi_fin_four {M : Type*} [AddCommMonoid M] (f : Fin 4 → Fin 4 → M) :
     ∑ i, ∑ j ∈ Finset.Ioi i, f i j = f 0 1 + f 0 2 + f 0 3 + f 1 2 + f 1 3 + f 2 3 := by
-  rw [Fin.sum_univ_four, show Finset.Ioi (0 : Fin 4) = {1, 2, 3} by decide,
-    show Finset.Ioi (1 : Fin 4) = {2, 3} by decide, show Finset.Ioi (2 : Fin 4) = {3} by decide,
-    show Finset.Ioi (3 : Fin 4) = ∅ by decide]
-  simp [add_assoc]
+  simp [Fin.sum_univ_succ, Fin.sum_Ioi_succ, add_assoc]
 
 /-- Summing over ordered pairs counts each edge twice: `2 H = -∑_{i,j} z_{ij} z_{ij}ᵀ`. -/
 theorem two_smul_tetrahedronSpringMatrix :
