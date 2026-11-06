@@ -43,6 +43,8 @@ difference of dimensions of spaces of square-integrable solutions is
   linearly equivalent to `TauCeti.squareIntegrableSolutions A`.
 * `TauCeti.WeakDerivStep.finrank_ker_trajectoryOperator`: the kernel of `D_A` on
   `W^{1,2}(ℝ, F)` has the dimension of `TauCeti.squareIntegrableSolutions A`.
+* `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`: for finite-dimensional `F`,
+  the kernel of `D_A` on `W^{1,2}(ℝ, F)` is finite dimensional.
 
 ## References
 
@@ -313,6 +315,16 @@ theorem finrank_ker_trajectoryOperator (hA : Continuous A)
     Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker =
       Module.finrank ℝ (squareIntegrableSolutions A) :=
   (kerTrajectoryOperatorEquiv hA AL hAL).finrank_eq
+
+/-- **The kernel of the trajectory operator is finite dimensional.** For a continuous family `A` of
+operators on a finite-dimensional real normed space `F`, the solutions in `W^{1,2}(ℝ, F)` of
+`u' + A u = 0` form a finite-dimensional space: they are determined by their values at time `0`.
+No assumption on the behaviour of `A` at `±∞` is needed. -/
+theorem finiteDimensional_ker_trajectoryOperator [FiniteDimensional ℝ F] (hA : Continuous A)
+    (AL : Lp (F →L[ℝ] F) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
+    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
+    FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).ker :=
+  (kerTrajectoryOperatorEquiv hA AL hAL).symm.finiteDimensional
 
 end SquareIntegrable
 

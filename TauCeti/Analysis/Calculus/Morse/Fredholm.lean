@@ -135,7 +135,7 @@ theorem finrank_ker_trajectoryOperator_hessianOperator_pos
     0 < Module.finrank ℝ (trajectoryOperator (p := 2) AL).ker := by
   have hA : Continuous fun s ↦ hessianOperator f (γ s) :=
     (hf.contDiff_hessianOperator (m := 0) (by norm_num)).continuous.comp hγ.continuous
-  have := (kerTrajectoryOperatorEquiv hA AL hAL).symm.finiteDimensional
+  have := finiteDimensional_ker_trajectoryOperator hA AL hAL
   obtain ⟨u, hu, hux⟩ := exists_trajectoryOperator_hessianOperator_eq_zero hγ hf hbot htop hAL
   obtain ⟨t, ht⟩ := hγ.exists_gradient_ne_zero hbot htop hpq
   refine Module.finrank_pos_iff_exists_ne_zero.2 ⟨⟨u, hu⟩, fun h0 ↦ ht ?_⟩

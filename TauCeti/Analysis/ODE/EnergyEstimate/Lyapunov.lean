@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Operator.Compact.Estimate
 public import TauCeti.Analysis.ODE.EnergyEstimate.Cokernel
 public import TauCeti.Analysis.ODE.EnergyEstimate.Global
 import TauCeti.Analysis.ODE.TrajectoryOperator.DegenerateLimit
+import TauCeti.Analysis.ODE.TrajectoryOperator.Kernel
 
 /-!
 # The trajectory operator with hyperbolic limits
@@ -44,21 +45,22 @@ bounded interval `[-R, R]`, the right side controls `∫ ‖u‖²` up to an err
 `‖u‖²_{W^{1,2}} ≤ C ‖D_A u‖²_{L²} + C ‖u‖²_{L²(-R, R)}`
 
 first on test paths (in `TauCeti.Analysis.ODE.EnergyEstimate.Global`) and then, by density, on
-`W^{1,2}(ℝ, E)`. Restriction to a bounded interval is compact, so Peetre's lemma gives a
-finite-dimensional kernel and a closed range. The cokernel is the
+`W^{1,2}(ℝ, E)`. Restriction to a bounded interval is compact, so Peetre's lemma gives a closed
+range. The kernel is finite dimensional for every continuous family, since a solution is determined
+by its value at time `0` (`TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator`).
+The cokernel is the
 orthogonal complement of the range, which lies in the kernel of the formal adjoint
 `-d/ds + A†` (`TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_le_map_ker`). That operator
-is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `D_{-A†}`. The family
-`-A†` has limits `-A±†`, which again have Lyapunov forms
-(`ContinuousLinearMap.HasLyapunovForm.neg_adjoint`), so that kernel is finite dimensional too.
+is `-D_{-A†}`, where `D_{-A†} = d/ds - A†`, so it has the same kernel as `D_{-A†}`, which is
+finite dimensional. The family `-A†` has limits `-A±†`, which again have Lyapunov forms
+(`ContinuousLinearMap.HasLyapunovForm.neg_adjoint`), so `D_{-A†}` is Fredholm too.
 
 ## Main declarations
 
 * `TauCeti.WeakDerivStep.exists_norm_sq_le_mul_norm_trajectoryOperator_sq_add_of_hasLyapunovForm`:
   the estimate on `W^{1,2}(ℝ, E)`.
-* `TauCeti.WeakDerivStep.finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm` and
-  `TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm`: the kernel of
-  `D_A` is finite dimensional and its range is closed.
+* `TauCeti.WeakDerivStep.isClosed_range_trajectoryOperator_of_hasLyapunovForm`: the range of
+  `D_A` is closed.
 * `TauCeti.WeakDerivStep.finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm`: the
   cokernel of `D_A` is finite dimensional.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator_of_hasLyapunovForm`: `D_A` is Fredholm.
@@ -140,21 +142,6 @@ private theorem exists_norm_le_mul_norm_trajectoryOperator_add_of_hasLyapunovFor
   rw [mul_pow, Real.sq_sqrt hC]
   nlinarith [mul_nonneg hC (mul_nonneg ha hb)]
 
-/-- **The kernel of the trajectory operator is finite dimensional for hyperbolic limits.** For a
-continuous family of operators whose limits at `±∞` have Lyapunov forms, the solutions in
-`W^{1,2}(ℝ, E)` of `u' + A u = 0` form a finite-dimensional space. -/
-theorem finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm
-    (hA : Continuous A) {Aminus Aplus : E →L[ℝ] E}
-    (hminus : Aminus.HasLyapunovForm) (hplus : Aplus.HasLyapunovForm)
-    (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
-    (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
-    FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).ker := by
-  obtain ⟨R, -, K, -, hest⟩ := exists_norm_le_mul_norm_trajectoryOperator_add_of_hasLyapunovForm
-    hA hminus hplus hbot htop AL hAL
-  exact (trajectoryOperator (p := 2) AL).finiteDimensional_ker_of_compact_estimate
-    (isCompactOperator_smul_restrictBaseL K R) hest
-
 /-- **The range of the trajectory operator is closed for hyperbolic limits.** For a continuous
 family of operators whose limits at `±∞` have Lyapunov forms, the image of `u ↦ u' + A u` from
 `W^{1,2}(ℝ, E)` is a closed subspace of `L²(ℝ, E)`. -/
@@ -185,15 +172,12 @@ theorem finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm
   have := (isClosed_range_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
     hAL).completeSpace_coe
   obtain ⟨BL, hBL⟩ := exists_ae_eq_adjoint AL hAL
-  -- The coefficient `-A†` of `D_{-A†}` has limits `-A±†`, which have Lyapunov forms.
   have hadj := (ContinuousLinearMap.adjoint : (E →L[ℝ] E) ≃ₗᵢ⋆[ℝ] (E →L[ℝ] E)).continuous
   have hnegBL : ⇑(-BL) =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)]
       fun s ↦ -ContinuousLinearMap.adjoint (A s) := by
     filter_upwards [Lp.coeFn_neg BL, hBL] with s hs hBs
     rw [hs, Pi.neg_apply, hBs]
-  have := finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm (hadj.comp hA).neg
-    hminus.neg_adjoint hplus.neg_adjoint ((hadj.tendsto Aminus).comp hbot).neg
-    ((hadj.tendsto Aplus).comp htop).neg (-BL) hnegBL
+  have := finiteDimensional_ker_trajectoryOperator (hadj.comp hA).neg (-BL) hnegBL
   -- The orthogonal complement of the range lies in the image of the kernel of `D_{-A†}`.
   have : FiniteDimensional ℝ (trajectoryOperator (p := 2) AL).rangeᗮ :=
     Submodule.finiteDimensional_of_le
@@ -212,8 +196,7 @@ theorem isFredholm_trajectoryOperator_of_hasLyapunovForm
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A) :
     (trajectoryOperator (p := 2) AL).IsFredholm :=
-  .of_finite_ker_coker _
-    (finiteDimensional_ker_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL hAL)
+  .of_finite_ker_coker _ (finiteDimensional_ker_trajectoryOperator hA AL hAL)
     (finiteDimensional_coker_trajectoryOperator_of_hasLyapunovForm hA hminus hplus hbot htop AL
       hAL)
 
