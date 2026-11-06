@@ -385,7 +385,7 @@ theorem exists_boundedContinuousFunction_of_eq_iInf_sub [PseudoMetricSpace X]
     rwa [← funext hψ] at h
   have hφu : UniformContinuous φ := by
     have h := uniformContinuous_iInf_sub_of_uniformContinuous (c := fun z : Y × X ↦ c (z.2, z.1))
-      (φ := ψ) (hc.comp (uniformContinuous_snd.prodMk uniformContinuous_fst)) hbφ
+      (φ := ψ) (hc.comp uniformContinuous_swap) hbφ
     rwa [← funext hφ] at h
   set C := |m| + max (M - φ x₀) 0 + max (M - ψ y₀) 0
   exact ⟨.ofNormedAddCommGroup φ hφu.continuous C fun x ↦ abs_le.2

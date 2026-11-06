@@ -7,7 +7,6 @@ module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Metric
 public import Mathlib.MeasureTheory.Function.SimpleFuncDense
-public import Mathlib.Probability.ProbabilityMassFunction.Basic
 public import Mathlib.Topology.MetricSpace.HausdorffDistance
 public import Mathlib.Topology.UniformSpace.Cauchy
 
@@ -25,8 +24,6 @@ totally bounded set into finitely many small cells.
   nearest-point projection, sending every point to a point of the set at minimal distance.
 * `TauCeti.exists_measurable_dist_lt` — a totally bounded pseudometric space admits a measurable map
   to a finite type whose indexed approximation point is uniformly close to every point.
-* `TauCeti.exists_measurable_dist_lt_pmf` — the same, together with the probability mass function
-  that a probability measure induces on the finite type.
 * `TotallyBounded.exists_measurable_dist_lt` — a measurable totally bounded set is the union of
   finitely many measurable cells of small diameter, labelled by a measurable map that gives its
   complement a label of its own.
@@ -117,18 +114,6 @@ theorem exists_measurable_dist_lt (X : Type u) [PseudoMetricSpace X] [Measurable
             (MeasureTheory.SimpleFunc.nearestPtInd_le e N x).trans_lt hN]
         rw [← edist_lt_ofReal, hqv, edist_comm]
         exact hnear.trans_lt (edist_lt_ofReal.2 (by simpa [he, dist_comm] using hi))
-
-/-- A probability measure on a totally bounded space, pushed forward to the cells of a measurable
-`δ`-net of it, is a probability mass function on the net. -/
-theorem exists_measurable_dist_lt_pmf {Z : Type*} [PseudoMetricSpace Z]
-    [MeasurableSpace Z] [OpensMeasurableSpace Z] (ρ : MeasureTheory.Measure Z)
-    [MeasureTheory.IsProbabilityMeasure ρ] (hZ : TotallyBounded (Set.univ : Set Z))
-    {δ : ℝ} (hδ : 0 < δ) :
-    ∃ (n : ℕ) (v : Fin n → Z) (q : Z → Fin n), Measurable q ∧ (∀ z, dist z (v (q z)) < δ) ∧
-      ∃ p : PMF (Fin n), ∀ i, p i = ρ (q ⁻¹' {i}) := by
-  obtain ⟨n, v, q, hq, hv⟩ := exists_measurable_dist_lt Z hZ hδ
-  exact ⟨n, v, q, hq, hv, (ρ.map q).toPMF,
-    fun i ↦ MeasureTheory.Measure.map_apply hq (measurableSet_singleton i)⟩
 
 /-- **A measurable partition of a totally bounded set into small cells.** In a pseudometric space
 whose open sets are measurable, a measurable totally bounded set `s` admits, for every `δ > 0`, a

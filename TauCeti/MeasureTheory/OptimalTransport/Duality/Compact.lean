@@ -156,7 +156,7 @@ theorem exists_continuous_feasible_pair_dominating (hc : Continuous c)
   refine ⟨φ', ψ', ?_, (uniformContinuous_iInf_sub_of_uniformContinuous hcu hbddψ).continuous, ?_,
     hφle, hψle⟩
   · exact (uniformContinuous_iInf_sub_of_uniformContinuous (c := fun q : Y × X ↦ c (q.2, q.1))
-      (hcu.comp (uniformContinuous_snd.prodMk uniformContinuous_fst)) hbddφ).continuous
+      (hcu.comp uniformContinuous_swap) hbddφ).continuous
   · intro x y
     have h := cTransformSymm_add_le c (fun y ↦ (ψ' y : EReal)) x y
     rw [hφcoe, ← EReal.coe_add] at h
@@ -330,10 +330,14 @@ theorem exists_continuous_forall_add_le_transportCost_le [IsProbabilityMeasure �
   -- discretise both factors finely enough that the cost varies by less than `ε / 2`
   have hcu : UniformContinuous c := CompactSpace.uniformContinuous_of_continuous hc
   obtain ⟨δ, hδ, hcδ⟩ := Metric.uniformContinuous_iff.1 hcu (ε / 2) (by positivity)
-  obtain ⟨n, v, qX, hqX, hvX, pμ, hpμ⟩ :=
-    exists_measurable_dist_lt_pmf μ isCompact_univ.totallyBounded hδ
-  obtain ⟨m, w, qY, hqY, hwY, pν, hpν⟩ :=
-    exists_measurable_dist_lt_pmf ν isCompact_univ.totallyBounded hδ
+  obtain ⟨n, v, qX, hqX, hvX⟩ := exists_measurable_dist_lt X isCompact_univ.totallyBounded hδ
+  obtain ⟨m, w, qY, hqY, hwY⟩ := exists_measurable_dist_lt Y isCompact_univ.totallyBounded hδ
+  set pμ : PMF (Fin n) := (μ.map qX).toPMF
+  set pν : PMF (Fin m) := (ν.map qY).toPMF
+  have hpμ : ∀ i, pμ i = μ (qX ⁻¹' {i}) := fun i ↦
+    (Measure.toPMF_apply _ i).trans (Measure.map_apply hqX (measurableSet_singleton i))
+  have hpν : ∀ i, pν i = ν (qY ⁻¹' {i}) := fun i ↦
+    (Measure.toPMF_apply _ i).trans (Measure.map_apply hqY (measurableSet_singleton i))
   have hosc : ∀ x y, |c (x, y) - c (v (qX x), w (qY y))| < ε / 2 := fun x y ↦ by
     have hd : dist ((x, y) : X × Y) (v (qX x), w (qY y)) < δ := by
       rw [Prod.dist_eq]
