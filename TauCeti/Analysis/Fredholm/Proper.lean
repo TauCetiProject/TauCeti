@@ -69,6 +69,30 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpac
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
 variable {f : E → F} {f' : E →L[𝕜] F} {a : E}
 
+omit [CompleteSpace E] [CompleteSpace F] [ProperSpace 𝕜] [NormedSpace 𝕜 F] in
+/-- On a set `N` where `‖x - y‖` is controlled by `‖f x - f y‖` and `‖P x - P y‖`, the map
+`x ↦ (f x, P x)` into `F × K` is a uniform inducing map, when `f` is uniformly continuous on `N`
+and `P` lands in the subspace `K`. -/
+private theorem isUniformInducing_restrict_prodMk_codRestrict {N : Set E} {K : Submodule 𝕜 E}
+    {C : ℝ} (hC : 0 < C) (hfu : UniformContinuous (N.domRestrict f)) (P : E →L[𝕜] E)
+    (hPmem : ∀ x, P x ∈ K)
+    (key : ∀ x ∈ N, ∀ y ∈ N, ‖x - y‖ ≤ 2 * (C * ‖f x - f y‖) + 2 * ‖P x - P y‖) :
+    IsUniformInducing fun x : N => (f (x : E), P.codRestrict K hPmem (x : E)) := by
+  set Θ : N → F × K := fun x => (f (x : E), P.codRestrict K hPmem (x : E))
+  have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
+    refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
+    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
+    -- The subspace coordinate has the norm induced from `E`, and `P.codRestrict` coerces to `P`.
+    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
+      simpa only [Prod.snd_sub, Θ, ← Submodule.norm_coe, Submodule.coe_sub,
+        ContinuousLinearMap.coe_codRestrict_apply] using norm_snd_le (Θ x - Θ y)
+    have hfC := mul_le_mul_of_nonneg_left hf hC.le
+    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
+    nlinarith [key (x : E) x.2 (y : E) y.2]
+  exact hanti.isUniformInducing <| hfu.prodMk
+    ((P.codRestrict K hPmem).lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
+
 /-- **Local properness of a map with upper semi-Fredholm derivative.** If `f` is strictly
 differentiable at `a` and its derivative there has closed range and finite-dimensional
 complemented kernel, then `f` is proper on a neighbourhood `N` of `a`: the part of the preimage of
@@ -118,22 +142,8 @@ theorem _root_.HasStrictFDerivAt.exists_mem_nhds_forall_isCompact_inter_preimage
     (Pker.lipschitzWith.isBounded_image Metric.isBounded_closedBall).isCompact_closure
   have hPN : ∀ x ∈ N, Pker x ∈ Kp := fun x hx => subset_closure ⟨x, hx, rfl⟩
   -- the anti-Lipschitz coordinate on `N`
-  set Θ : N → F × f'.ker := fun x => (f (x : E), Pker (x : E))
-  have hanti : AntilipschitzWith (.mk (2 * C + 2) (by positivity)) Θ := by
-    refine AntilipschitzWith.of_le_mul_dist fun x y => ?_
-    have hf : ‖f (x : E) - f (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
-      simpa only [Prod.fst_sub, Θ] using norm_fst_le (Θ x - Θ y)
-    -- The kernel coordinate has the norm induced from `E`, and `Pker` coerces to `P`.
-    have hP : ‖P (x : E) - P (y : E)‖ ≤ ‖Θ x - Θ y‖ := by
-      simpa only [Prod.snd_sub, Θ, ← Submodule.norm_coe, Submodule.coe_sub, Pker,
-        ContinuousLinearMap.coe_codRestrict_apply] using norm_snd_le (Θ x - Θ y)
-    have hfC := mul_le_mul_of_nonneg_left hf hC.le
-    rw [Subtype.dist_eq, dist_eq_norm, dist_eq_norm, NNReal.coe_mk]
-    nlinarith [key (x : E) x.2 (y : E) y.2]
-  have hΘcont : UniformContinuous Θ :=
-    happN.lipschitzWith.uniformContinuous.prodMk
-      (Pker.lipschitzWith.uniformContinuous.comp uniformContinuous_subtype_val)
-  have hind : IsUniformInducing Θ := hanti.isUniformInducing hΘcont
+  have hind := isUniformInducing_restrict_prodMk_codRestrict hC
+    happN.lipschitzWith.uniformContinuous P hPmem key
   -- total boundedness, then compactness
   have htb : TotallyBounded
       ((Subtype.val : N → E) '' (Subtype.val : N → E) ⁻¹' (f ⁻¹' L)) := by
