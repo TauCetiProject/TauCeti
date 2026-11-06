@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.TotallyReal.Complex
 import Mathlib.Analysis.Calculus.FDeriv.Pi
 import Mathlib.Analysis.Calculus.FDeriv.RestrictScalars
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Calculus.FDeriv.Comp
 import TauCeti.Geometry.Manifold.Complex.Chart
 import TauCeti.LinearAlgebra.TotallyReal.Finrank
 
@@ -78,6 +79,45 @@ private theorem coe_diagonalSmulRight (v : Fin n → ℂ) :
       LinearMap.pi fun i => (LinearMap.proj i : (Fin n → ℝ) →ₗ[ℝ] ℝ).smulRight (v i) :=
   LinearMap.ext fun _ => rfl
 
+omit [IsManifold 𝓘(ℂ) 1 α] in
+/-- Distinct points `p i` have pairwise disjoint open neighbourhoods `V i` inside the domains of
+the charts of `α` at them. -/
+private theorem exists_pairwise_disjoint_isOpen_subset_chartAt_source {p : Fin n → α}
+    (hinj : Function.Injective p) :
+    ∃ V : Fin n → Set α, (∀ i, IsOpen (V i)) ∧ (∀ i, V i ⊆ (chartAt ℂ (p i)).source) ∧
+      (∀ i, p i ∈ V i) ∧ Pairwise (Function.onFun Disjoint V) := by
+  obtain ⟨U, hU, hUdisj⟩ := (Set.finite_range p).t2_separation
+  refine ⟨fun i => U (p i) ∩ (chartAt ℂ (p i)).source,
+    fun i => (hU (p i)).2.inter (chartAt ℂ (p i)).open_source, fun i => Set.inter_subset_right,
+    fun i => ⟨(hU (p i)).1, mem_chart_source ℂ (p i)⟩, fun i j hij => ?_⟩
+  exact (hUdisj (Set.mem_range_self i) (Set.mem_range_self j) (hinj.ne hij)).mono
+    Set.inter_subset_left Set.inter_subset_left
+
+omit [T2Space α] [IsManifold 𝓘(ℂ) 1 α] in
+/-- Near a tuple `p` of points in disjoint coordinate patches `V i`, the elementary-symmetric chart
+with one block per point reads the tuple `w` as its negated coordinates `(φᵢ(wᵢ))ᵢ`, where `φᵢ` is
+the chart of `α` at `p i`. -/
+private theorem eventually_mem_source_symOpenPartialHomeomorph_ofFn {p : Fin n → α}
+    {V : Fin n → Set α} (hVo : ∀ i, IsOpen (V i)) (hpV : ∀ i, p i ∈ V i)
+    (hVsub : ∀ i, V i ⊆ (chartAt ℂ (p i)).source) (hVdisj : Pairwise (Function.onFun Disjoint V))
+    (hm : ∑ _i : Fin n, 1 = n) (hq : Nonempty (∀ i, Sym ↥(V i) 1)) :
+    ∀ᶠ w in 𝓝 p,
+      Sym.ofFn w ∈ (symOpenPartialHomeomorph (fun i => chartAt ℂ (p i)) V (fun _ => 1) hm hVo
+        hVsub hVdisj (Equiv.sigmaUnique (Fin n) fun _ => Fin 1) hq).source ∧
+      symOpenPartialHomeomorph (fun i => chartAt ℂ (p i)) V (fun _ => 1) hm hVo hVsub hVdisj
+        (Equiv.sigmaUnique (Fin n) fun _ => Fin 1) hq (Sym.ofFn w) =
+        -fun j => chartAt ℂ (p j) (w j) := by
+  filter_upwards [isOpen_set_pi Set.finite_univ (fun i _ => hVo i) |>.mem_nhds
+    fun i _ => hpV i] with w hw
+  have hsum : Sym.ofFn w =
+      Sym.sumSubtype V (fun _ => 1) hm fun i => Sym.ofFn fun _ => ⟨w i, hw i trivial⟩ := by
+    rw [Sym.sumSubtype_ofFn hm (Equiv.sigmaUnique (Fin n) fun _ => Fin 1)]
+    rfl
+  rw [hsum, symOpenPartialHomeomorph_source, symOpenPartialHomeomorph_apply]
+  refine ⟨Set.mem_range_self _, funext fun j => ?_⟩
+  rw [piSigmaConstHomeomorph_apply, Equiv.sigmaUnique_symm_apply]
+  exact Sym.coeffEquiv_one_apply (by simp [Sym.map_ofFn])
+
 /-- Near a tuple `p` of pairwise distinct points, every chart of the symmetric power is a function
 of the product coordinates `(φᵢ(wᵢ))ᵢ`, where `φᵢ` is the chart of `α` at `p i`, and this function
 is complex-differentiable at `p` with injective derivative. -/
@@ -88,14 +128,7 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
       Function.Injective T' ∧ HasFDerivAt T T' (fun j => chartAt ℂ (p j) (p j)) ∧
       ∀ᶠ w in 𝓝 p, symChartAt (K := ℂ) s (Sym.ofFn w) = T fun j => chartAt ℂ (p j) (w j) := by
   -- disjoint coordinate patches around the distinct points `p i`
-  obtain ⟨U, hU, hUdisj⟩ := (Set.finite_range p).t2_separation
-  set V : Fin n → Set α := fun i => U (p i) ∩ (chartAt ℂ (p i)).source
-  have hVo : ∀ i, IsOpen (V i) := fun i => (hU (p i)).2.inter (chartAt ℂ (p i)).open_source
-  have hVsub : ∀ i, V i ⊆ (chartAt ℂ (p i)).source := fun i => Set.inter_subset_right
-  have hpV : ∀ i, p i ∈ V i := fun i => ⟨(hU (p i)).1, mem_chart_source ℂ (p i)⟩
-  have hVdisj : Pairwise (Function.onFun Disjoint V) := fun i j hij =>
-    (hUdisj (Set.mem_range_self i) (Set.mem_range_self j) (hinj.ne hij)).mono
-      Set.inter_subset_left Set.inter_subset_left
+  obtain ⟨V, hVo, hVsub, hpV, hVdisj⟩ := exists_pairwise_disjoint_isOpen_subset_chartAt_source hinj
   have hm : ∑ _i : Fin n, 1 = n := by simp
   set e : (Σ _i : Fin n, Fin 1) ≃ Fin n := Equiv.sigmaUnique (Fin n) fun _ => Fin 1
   have hq : Nonempty (∀ i, Sym ↥(V i) 1) := ⟨fun i => Sym.ofFn fun _ => ⟨p i, hpV i⟩⟩
@@ -103,17 +136,8 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
   set C := symOpenPartialHomeomorph (fun i => chartAt ℂ (p i)) V (fun _ => 1) hm hVo hVsub
     hVdisj e hq with hC
   have hC_apply : ∀ᶠ w in 𝓝 p, Sym.ofFn w ∈ C.source ∧
-      C (Sym.ofFn w) = -fun j => chartAt ℂ (p j) (w j) := by
-    filter_upwards [isOpen_set_pi Set.finite_univ (fun i _ => hVo i) |>.mem_nhds
-      fun i _ => hpV i] with w hw
-    have hsum : Sym.ofFn w =
-        Sym.sumSubtype V (fun _ => 1) hm fun i => Sym.ofFn fun _ => ⟨w i, hw i trivial⟩ := by
-      rw [Sym.sumSubtype_ofFn hm e]
-      rfl
-    rw [hsum, hC, symOpenPartialHomeomorph_source, symOpenPartialHomeomorph_apply]
-    refine ⟨Set.mem_range_self _, funext fun j => ?_⟩
-    rw [piSigmaConstHomeomorph_apply, Equiv.sigmaUnique_symm_apply]
-    exact Sym.coeffEquiv_one_apply (by simp [Sym.map_ofFn])
+      C (Sym.ofFn w) = -fun j => chartAt ℂ (p j) (w j) :=
+    eventually_mem_source_symOpenPartialHomeomorph_ofFn hVo hpV hVsub hVdisj hm hq
   obtain ⟨hpC, hCp⟩ := hC_apply.self_of_nhds
   -- the given chart `D` is also elementary-symmetric, so both transitions are analytic
   obtain ⟨W, r, hr, hWo, hWsub, hWdisj, e', hr', hs'⟩ := symChartAt_spec (K := ℂ) s
@@ -145,13 +169,9 @@ private theorem exists_injective_hasFDerivAt_symChartAt_ofFn {p : Fin n → α}
           (D.open_source.mem_nhds (by rwa [C.left_inv hpC]))
       filter_upwards [h₁, h₂] with c hc₁ hc₂
       simp only [Function.comp_apply, hT₀, D.left_inv hc₂, C.right_inv hc₁, id]
-    have hS' : HasFDerivAt (fun c => C (D.symm c))
-        (fderiv ℂ (fun c => C (D.symm c)) (T₀ (C (Sym.ofFn p))))
-        (T₀ (C (Sym.ofFn p))) := by
-      simpa only [hT₀, C.left_inv hpC] using hS.differentiableAt.hasFDerivAt
-    have hcomp := ((hS'.comp _ hT₀').congr_of_eventuallyEq hST.symm).unique (hasFDerivAt_id _)
-    exact Function.LeftInverse.injective fun a => by
-      simpa using congrArg (fun L : (Fin n → ℂ) →L[ℂ] (Fin n → ℂ) => L a) hcomp
+    refine hT₀'.injective_of_eventuallyEq_id
+      (g' := fderiv ℂ (fun c => C (D.symm c)) (T₀ (C (Sym.ofFn p)))) ?_ hST
+    simpa only [hT₀, C.left_inv hpC] using hS.differentiableAt.hasFDerivAt
   -- compose with the negation, which turns the coordinates of `C` into the product coordinates
   refine ⟨fun c => T₀ (-c), (fderiv ℂ T₀ (C (Sym.ofFn p))).comp (-ContinuousLinearMap.id ℂ _),
     hinjT₀.comp neg_injective, ?_, ?_⟩
