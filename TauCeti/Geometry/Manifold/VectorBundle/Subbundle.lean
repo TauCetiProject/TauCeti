@@ -30,7 +30,10 @@ sends a vector of `V y` to its coordinates in the basis `X · y`; with the subsp
 trivializations make `V` a topological vector bundle. This file shows that when the sections
 `X i` are `C^n`, the coordinate changes between such trivializations are `C^n`. This is the
 compatibility condition for the trivializations of `C^n` local frames to form a `C^n` vector
-bundle structure on `V`, a `C^n` subbundle of `E`;
+bundle structure on `V`, a `C^n` subbundle of `E`. When `V` has `C^n` local frames of a fixed
+finite size near every point (`TauCeti.HasLocalContMDiffSubbundleFrames`), the atlas of all their
+trivializations is such a structure
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`);
 `TauCeti.IsContMDiffDistribution.contMDiffVectorBundle` assembles it for the distributions of a
 manifold.
 
@@ -57,6 +60,9 @@ inclusion is a `C^n` family of split injections `A x : F' →L[𝕜] F`; adjoini
   trivialization of `E`, form a `C^n` family of operators.
 * `TauCeti.IsSubbundleFrameOn.contMDiffOn_coordChangeL`: the coordinate changes between the
   trivializations of two `C^n` local frames of `V` are `C^n` on the intersection of their domains.
+* `TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`: **smooth local frame
+  criterion**: a family of subspaces with `C^n` local frames of a fixed finite size near every
+  point is a `C^n` subbundle of `E`.
 * `TauCeti.IsSubbundleFrameOn.contMDiffAt_totalSpace_subbundle`: the canonical inclusion of a
   frame-trivialized `C^n` subbundle into `TotalSpace F E` is `C^n`.
 * `TauCeti.isImmersion_totalSpace_subbundle`, `TauCeti.isSmoothEmbedding_totalSpace_subbundle`:
@@ -185,6 +191,123 @@ theorem contMDiffAt_totalSpace_subbundle {X : ι → Π x, E x} {U : Set B}
 end TauCeti.IsSubbundleFrameOn
 
 namespace TauCeti
+
+section ContMDiffFrames
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB}
+  {B : Type*} [TopologicalSpace B] [ChartedSpace HB B] {n : ℕ∞ω}
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] {E : B → Type*}
+  [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [FiberBundle F E] {ι : Type*}
+
+variable (IB n F ι) in
+/-- Every point of the base has an open neighbourhood carrying a local frame of the family of
+subspaces `V`, indexed by `ι`, whose members are `C^n` sections of `E`. Over `ℝ` or `ℂ`, when `ι`
+is finite and `E` is a `C^n` vector bundle, such a family, with the subspace topology, is a `C^n`
+vector bundle with model fibre `ι → 𝕜`, a `C^n` subbundle of `E`
+(`TauCeti.HasLocalContMDiffSubbundleFrames.contMDiffVectorBundle`). -/
+def HasLocalContMDiffSubbundleFrames (V : Π x, Submodule 𝕜 (E x)) : Prop :=
+  ∀ x, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧
+    ∃ X : ι → Π x, E x, IsSubbundleFrameOn F V X U ∧ ∀ i, CMDiff[U] n (T% (X i))
+
+variable {V : Π x, Submodule 𝕜 (E x)}
+
+/-- Unfolding `TauCeti.HasLocalContMDiffSubbundleFrames`. -/
+theorem hasLocalContMDiffSubbundleFrames_iff :
+    HasLocalContMDiffSubbundleFrames IB n F ι V ↔
+      ∀ x, ∃ U : Set B, IsOpen U ∧ x ∈ U ∧
+        ∃ X : ι → Π x, E x, IsSubbundleFrameOn F V X U ∧ ∀ i, CMDiff[U] n (T% (X i)) :=
+  Iff.rfl
+
+namespace HasLocalContMDiffSubbundleFrames
+
+/-- `C^n` local frames are in particular continuous local frames. -/
+theorem hasLocalSubbundleFrames (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    HasLocalSubbundleFrames F ι V :=
+  hasLocalSubbundleFrames_iff.mpr fun x ↦ by
+    obtain ⟨U, hU, hx, X, hX, -⟩ := hV x
+    exact ⟨U, hU, hx, X, hX⟩
+
+/-- `C^n` local frames are `C^m` local frames for every `m ≤ n`. -/
+theorem of_le {m : ℕ∞ω} (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) (hmn : m ≤ n) :
+    HasLocalContMDiffSubbundleFrames IB m F ι V := fun x ↦ by
+  obtain ⟨U, hU, hx, X, hX, hXn⟩ := hV x
+  exact ⟨U, hU, hx, X, hX, fun i ↦ (hXn i).of_le hmn⟩
+
+variable [VectorBundle 𝕜 F E] [IsRCLikeNormedField 𝕜]
+
+/-- A family of subspaces with `C^n` local frames indexed by a finite type `ι` near every point is
+a fibre bundle with fibre `ι → 𝕜`, the topology of its total space being that of a subspace of the
+total space of `E`. Its trivializations are those of all `C^n` local frames of `V` on open sets
+(`TauCeti.IsSubbundleFrameOn.trivialization`). Use this definition as a local instance; it chooses
+a local frame near every point. -/
+@[instance_reducible]
+def fiberBundle [Finite ι] (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜) V
+    FiberBundle (ι → 𝕜) fun x ↦ V x :=
+  letI := subbundleTopology F (F' := ι → 𝕜) V
+  let U := fun x ↦ (hV x).choose
+  have hU := fun x ↦ (hV x).choose_spec
+  let X := fun x ↦ (hU x).2.2.choose
+  have hX := fun x ↦ (hU x).2.2.choose_spec
+  { totalSpaceMk_isInducing' := isInducing_totalSpaceMk_subbundle F (ι → 𝕜) V
+    trivializationAtlas' :=
+      {e | ∃ (U : Set B) (hU : IsOpen U) (Y : ι → Π x, E x) (hY : IsSubbundleFrameOn F V Y U),
+        (∀ i, CMDiff[U] n (T% (Y i))) ∧ hY.trivialization hU = e}
+    trivializationAt' := fun x ↦ (hX x).1.trivialization (hU x).1
+    mem_baseSet_trivializationAt' := fun x ↦ by
+      rw [IsSubbundleFrameOn.trivialization_baseSet]
+      exact (hU x).2.1
+    trivialization_mem_atlas' := fun x ↦ ⟨U x, (hU x).1, X x, (hX x).1, (hX x).2, rfl⟩ }
+
+/-- The trivializations of `hV.fiberBundle` are the trivializations of the `C^n` local frames of
+`V` on open sets. -/
+theorem mem_trivializationAtlas_fiberBundle_iff [Finite ι]
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V)
+    (e : letI := subbundleTopology F (F' := ι → 𝕜) V
+      Trivialization (ι → 𝕜) (π (ι → 𝕜) fun x ↦ V x)) :
+    letI := subbundleTopology F (F' := ι → 𝕜) V
+    letI := hV.fiberBundle
+    e ∈ trivializationAtlas (ι → 𝕜) (fun x ↦ V x) ↔
+      ∃ (U : Set B) (hU : IsOpen U) (Y : ι → Π x, E x) (hY : IsSubbundleFrameOn F V Y U),
+        (∀ i, CMDiff[U] n (T% (Y i))) ∧ hY.trivialization hU = e :=
+  Iff.rfl
+
+/-- A family of subspaces with `C^n` local frames indexed by a finite type `ι` near every point,
+with the subspace topology of the total space of `E` and the atlas of `hV.fiberBundle`, is a
+topological vector bundle with model fibre `ι → 𝕜`. -/
+theorem vectorBundle [Fintype ι] (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜) V
+    letI := hV.fiberBundle
+    VectorBundle 𝕜 (ι → 𝕜) fun x ↦ V x :=
+  vectorBundle_of_forall_mem_trivializationAtlas hV.fiberBundle fun e he ↦ by
+    obtain ⟨U, hU, Y, hY, -, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e).mp he
+    exact ⟨U, hU, Y, hY, rfl⟩
+
+/-- **Smooth local frame criterion for subbundles.** If `E` is a `C^n` vector bundle and the
+family of subspaces `V` has `C^n` local frames indexed by a finite type `ι` near every point, then
+`V`, with the subspace topology of the total space of `E` and the atlas of `hV.fiberBundle`, is a
+`C^n` vector bundle with model fibre `ι → 𝕜`: a `C^n` subbundle of `E`. -/
+theorem contMDiffVectorBundle [Fintype ι] [ContMDiffVectorBundle n F E IB]
+    (hV : HasLocalContMDiffSubbundleFrames IB n F ι V) :
+    letI := subbundleTopology F (F' := ι → 𝕜) V
+    letI := hV.fiberBundle
+    letI := hV.vectorBundle
+    ContMDiffVectorBundle n (ι → 𝕜) (fun x ↦ V x) IB := by
+  let := subbundleTopology F (F' := ι → 𝕜) V
+  let := hV.fiberBundle
+  let := hV.vectorBundle
+  refine ⟨fun e e' he he' ↦ ?_⟩
+  obtain ⟨U, hU, Y, hY, hYn, rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e).mp he.out
+  obtain ⟨U', hU', Y', hY', hYn', rfl⟩ := (mem_trivializationAtlas_fiberBundle_iff hV e').mp he'.out
+  simpa only [IsSubbundleFrameOn.trivialization_baseSet] using
+    hY.contMDiffOn_coordChangeL hU hYn hY' hU' hYn'
+
+end HasLocalContMDiffSubbundleFrames
+
+end ContMDiffFrames
 
 section SubbundleInclusion
 
