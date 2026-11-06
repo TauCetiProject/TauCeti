@@ -34,12 +34,11 @@ public section
 namespace TauCeti
 
 /-- **The conjugation-transfer lemma.** Let `φ` be an endomorphism of a group `G` and `pow` a self
-map of `G` commuting with conjugation. If `φ x = c⁻¹ * pow x * c`, then for every `q` the image of
+map of `G` commuting with conjugation by `q` at `x`. If `φ x = c⁻¹ * pow x * c`, then the image of
 the conjugate `q * x * q⁻¹` is the conjugate of `pow (q * x * q⁻¹)` by `q * c * (φ q)⁻¹`. -/
 theorem map_conj_eq_conj_of_map_eq_conj {G M : Type*} [Group G] [FunLike M G G]
-    [MonoidHomClass M G G] (φ : M) (pow : G → G)
-    (hpow : ∀ q x : G, pow (q * x * q⁻¹) = q * pow x * q⁻¹) {x c : G}
-    (hx : φ x = c⁻¹ * pow x * c) (q : G) :
+    [MonoidHomClass M G G] (φ : M) (pow : G → G) {x c q : G}
+    (hpow : pow (q * x * q⁻¹) = q * pow x * q⁻¹) (hx : φ x = c⁻¹ * pow x * c) :
     φ (q * x * q⁻¹) = (q * c * (φ q)⁻¹)⁻¹ * pow (q * x * q⁻¹) * (q * c * (φ q)⁻¹) := by
   rw [map_mul, map_mul, map_inv, hx, hpow]
   group
