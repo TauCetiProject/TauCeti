@@ -48,6 +48,34 @@ namespace TauCeti
 
 variable {K : Type*} [Field K]
 
+/-- If `x` solves the `r` linear equations of Thue's construction, with the `k`-th row having
+coefficient `choose i k * b ^ (m + 1) * α ^ (i - k)` at the `i`-th coordinate of `P` and
+`choose i k * b ^ (m + 1) * α ^ (i - k + 1)` at that of `-Q`, then `(X - α) ^ r` divides
+`P - α Q`. -/
+private theorem thue_X_sub_C_pow_dvd_map_sub [CharZero K] {b : ℕ} (hb : 0 < b) (α : K) {r m : ℕ}
+    (x : Fin (m + 1) ⊕ Fin (m + 1) → ℤ)
+    (hk : ∀ k : Fin r,
+      ∑ i : Fin (m + 1), ((i : ℕ).choose k : K) * ((b : K) ^ (m + 1) * α ^ ((i : ℕ) - k)) *
+          (x (.inl i) : K) +
+        ∑ i : Fin (m + 1), ((i : ℕ).choose k : K) *
+          ((b : K) ^ (m + 1) * α ^ ((i : ℕ) - k + 1)) * (x (.inr i) : K) = 0) :
+    (X - C α) ^ r ∣ (ofFn (m + 1) fun i ↦ x (.inl i)).map (Int.castRingHom K) -
+      C α * (ofFn (m + 1) fun i ↦ -x (.inr i)).map (Int.castRingHom K) := by
+  classical
+  have hmap : (ofFn (m + 1) fun i ↦ x (.inl i)).map (Int.castRingHom K) -
+      C α * (ofFn (m + 1) fun i ↦ -x (.inr i)).map (Int.castRingHom K) =
+        ofFn (m + 1) fun i ↦ (x (.inl i) : K) + α * x (.inr i) := by
+    ext n
+    by_cases hn : n < m + 1
+    · simp [hn]
+    · simp [not_lt.mp hn]
+  rw [hmap, X_sub_C_pow_dvd_ofFn_iff]
+  intro k hk'
+  have hb' : (b : K) ^ (m + 1) ≠ 0 := pow_ne_zero _ (by exact_mod_cast hb.ne')
+  refine (mul_eq_zero.mp ?_).resolve_left hb'
+  rw [← hk ⟨k, hk'⟩, mul_sum, ← sum_add_distrib]
+  exact sum_congr rfl fun i _ ↦ by ring
+
 /-- Thue's auxiliary polynomials over a number field `K` of degree `d`, for any `m` with
 `d r < 2 (m + 1)`, with the coefficient bound of Siegel's lemma. -/
 private theorem exists_thue_auxiliary_polynomials_of_numberField [NumberField K] (α : K)
@@ -97,22 +125,10 @@ private theorem exists_thue_auxiliary_polynomials_of_numberField [NumberField K]
     rcases j with i | i
     · simpa [P, ofFn_coeff_eq_val_of_lt _ i.is_lt] using congrArg (coeff · i) h.1
     · simpa [Q, ofFn_coeff_eq_val_of_lt _ i.is_lt] using congrArg (coeff · i) h.2
-  · have hmap : P.map (Int.castRingHom K) - C α * Q.map (Int.castRingHom K) =
-        ofFn (m + 1) fun i ↦ (x (.inl i) : K) + α * x (.inr i) := by
-      ext n
-      by_cases hn : n < m + 1
-      · simp [P, Q, hn]
-      · simp [P, Q, not_lt.mp hn]
-    rw [hmap, X_sub_C_pow_dvd_ofFn_iff]
-    intro k hk
+  · refine thue_X_sub_C_pow_dvd_map_sub hb α x fun k ↦ ?_
     -- `(a k j : K)` is `e k j` by `RingOfIntegers.map_mk`, which holds by `rfl`.
-    have hk' : ∑ j, e ⟨k, hk⟩ j * (x j : K) = 0 :=
-      sum_mul_intCast_eq_zero_of_mulVec_eq_zero hax ⟨k, hk⟩
-    simp only [Fintype.sum_sum_type, e, Sum.elim_inl, Sum.elim_inr] at hk'
-    have hb' : (b : K) ^ (m + 1) ≠ 0 := pow_ne_zero _ (by exact_mod_cast hb.ne')
-    refine (mul_eq_zero.mp ?_).resolve_left hb'
-    rw [← hk', mul_sum, ← sum_add_distrib]
-    exact sum_congr rfl fun i _ ↦ by ring
+    have hk : ∑ j, e k j * (x j : K) = 0 := sum_mul_intCast_eq_zero_of_mulVec_eq_zero hax k
+    simpa only [Fintype.sum_sum_type, e, Sum.elim_inl, Sum.elim_inr] using hk
   · -- Coefficients outside `Fin (m + 1)` vanish; the others are coordinates of `x`.
     have hN : (Fintype.card (Fin (m + 1) ⊕ Fin (m + 1)) : ℝ) = 2 * (m + 1) := by
       simp only [Fintype.card_sum, Fintype.card_fin, Nat.cast_add, Nat.cast_one]
