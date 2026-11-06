@@ -515,4 +515,22 @@ theorem exists_contDiff_antitone_cutoff_abs_deriv_le {a b v τ : ℝ} (hab : a <
     exact (mul_le_of_le_one_right hc0 (hψle r)).trans hcτ
   · simp only [hderiv, hψ0 r hr, mul_zero, neg_zero]
 
+/-- The first two derivatives of `Real.smoothTransition` are bounded and vanish on the negative
+half-line. -/
+theorem exists_norm_deriv_smoothTransition_le :
+    ∃ L₁ L₂ : ℝ, 0 ≤ L₁ ∧ 0 ≤ L₂ ∧ (∀ τ, ‖deriv Real.smoothTransition τ‖ ≤ L₁) ∧
+      (∀ τ, ‖deriv (deriv Real.smoothTransition) τ‖ ≤ L₂) ∧
+      (∀ τ < 0, deriv Real.smoothTransition τ = 0) ∧
+      ∀ τ < 0, deriv (deriv Real.smoothTransition) τ = 0 := by
+  have hS : ContDiff ℝ ∞ Real.smoothTransition := Real.smoothTransition.contDiff
+  obtain ⟨L₁, hL₁⟩ := (hS.iterate_deriv 1).continuous.bounded_above_of_compact_support
+    Real.smoothTransition.hasCompactSupport_deriv
+  obtain ⟨L₂, hL₂⟩ := (hS.iterate_deriv 2).continuous.bounded_above_of_compact_support
+    Real.smoothTransition.hasCompactSupport_deriv.deriv
+  refine ⟨L₁, L₂, (norm_nonneg _).trans (hL₁ 0), (norm_nonneg _).trans (hL₂ 0), hL₁, hL₂,
+    fun τ hτ => Real.smoothTransition.deriv_of_neg hτ, fun τ hτ => ?_⟩
+  have h : deriv Real.smoothTransition =ᶠ[𝓝 τ] fun _ => 0 :=
+    Filter.eventually_of_mem (Iio_mem_nhds hτ) fun _ ht => Real.smoothTransition.deriv_of_neg ht
+  rw [h.deriv_eq, deriv_const]
+
 end TauCeti

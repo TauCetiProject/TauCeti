@@ -15,6 +15,10 @@ import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Algebra.Order.Field.SquareGap
+import TauCeti.Analysis.Calculus.Deriv.AffineProfile
+import TauCeti.Analysis.Calculus.FDeriv.RadialField
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -350,130 +354,6 @@ theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyN
     ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
   (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
 
-/-- The first two derivatives of `Real.smoothTransition` are bounded and vanish on the negative
-half-line. -/
-theorem exists_norm_deriv_smoothTransition_le :
-    ∃ L₁ L₂ : ℝ, 0 ≤ L₁ ∧ 0 ≤ L₂ ∧ (∀ τ, ‖deriv Real.smoothTransition τ‖ ≤ L₁) ∧
-      (∀ τ, ‖deriv (deriv Real.smoothTransition) τ‖ ≤ L₂) ∧
-      (∀ τ < 0, deriv Real.smoothTransition τ = 0) ∧
-      ∀ τ < 0, deriv (deriv Real.smoothTransition) τ = 0 := by
-  have hS : ContDiff ℝ ∞ Real.smoothTransition := Real.smoothTransition.contDiff
-  obtain ⟨L₁, hL₁⟩ := (hS.iterate_deriv 1).continuous.bounded_above_of_compact_support
-    Real.smoothTransition.hasCompactSupport_deriv
-  obtain ⟨L₂, hL₂⟩ := (hS.iterate_deriv 2).continuous.bounded_above_of_compact_support
-    Real.smoothTransition.hasCompactSupport_deriv.deriv
-  refine ⟨L₁, L₂, (norm_nonneg _).trans (hL₁ 0), (norm_nonneg _).trans (hL₂ 0), hL₁, hL₂,
-    fun τ hτ => Real.smoothTransition.deriv_of_neg hτ, fun τ hτ => ?_⟩
-  have h : deriv Real.smoothTransition =ᶠ[𝓝 τ] fun _ => 0 :=
-    Filter.eventually_of_mem (Iio_mem_nhds hτ) fun _ ht => Real.smoothTransition.deriv_of_neg ht
-  rw [h.deriv_eq, deriv_const]
-
-/-- The gradient of `y ↦ S ((A - ‖y - x₀‖ ^ 2) / D)` at `x`, for smooth `S`. -/
-theorem gradient_comp_sub_norm_sq [InnerProductSpace ℝ E] [CompleteSpace E] {S : ℝ → ℝ}
-    (hS : ContDiff ℝ ∞ S) (x₀ : E) (A D : ℝ) (x : E) :
-    ∇ (fun y => S ((A - ‖y - x₀‖ ^ 2) / D)) x =
-      (-(2 / D) * deriv S ((A - ‖x - x₀‖ ^ 2) / D)) • (x - x₀) := by
-  have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • (innerSL ℝ (x - x₀)).comp
-      (ContinuousLinearMap.id ℝ E)) x := ((hasFDerivAt_id x).sub_const x₀).norm_sq
-  have h2 : HasFDerivAt (fun y => (A - ‖y - x₀‖ ^ 2) / D)
-      ((-(1 / D)) • 2 • innerSL ℝ (x - x₀)) x := by
-    have := HasFDerivAt.mul_const (HasFDerivAt.const_sub h1 A) D⁻¹
-    convert this using 1
-    · funext y
-      simp [div_eq_mul_inv]
-    · ext v
-      simp
-  have h3 := ((hS.differentiable (by simp)) _).hasDerivAt.comp_hasFDerivAt x h2
-  refine (hasFDerivAt_iff_hasGradientAt.1 h3).gradient.trans ?_
-  rw [LinearIsometryEquiv.symm_apply_eq]
-  ext v
-  simp
-  ring
-
-/-- The derivative of `τ ↦ k * φ ((A - τ) / D)`. -/
-theorem hasDerivAt_mul_comp_sub_div {φ : ℝ → ℝ} (hφ : Differentiable ℝ φ) (k A D τ : ℝ) :
-    HasDerivAt (fun τ => k * φ ((A - τ) / D)) (k * (deriv φ ((A - τ) / D) * (-1 / D))) τ := by
-  have h1 : HasDerivAt (fun τ : ℝ => (A - τ) / D) (-1 / D) τ := by
-    simpa using ((hasDerivAt_id τ).const_sub A).div_const D
-  exact ((hφ _).hasDerivAt.comp τ h1).const_mul k
-
-/-- The Fréchet derivative of the radial field `y ↦ c (‖y - x₀‖ ^ 2) • (y - x₀)`. -/
-theorem hasFDerivAt_smul_sub_norm_sq [InnerProductSpace ℝ E] {c c' : ℝ → ℝ}
-    (hcd : ∀ τ, HasDerivAt c (c' τ) τ) (x₀ x : E) :
-    HasFDerivAt (fun y => c (‖y - x₀‖ ^ 2) • (y - x₀))
-      (c (‖x - x₀‖ ^ 2) • ContinuousLinearMap.id ℝ E +
-        (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)) x := by
-  have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
-    simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
-  exact ((hcd _).comp_hasFDerivAt x h1).smul ((hasFDerivAt_id x).sub_const x₀)
-
-/-- A function `φ` bounded by `L` and vanishing on the negative half-line gives
-`τ ↦ k * φ ((A - τ) / D)`, which is bounded by `|k| * L` and vanishes for `τ > A`. -/
-theorem abs_mul_comp_sub_div_le {φ : ℝ → ℝ} {L : ℝ} (hL : ∀ τ, ‖φ τ‖ ≤ L)
-    (hneg : ∀ τ < 0, φ τ = 0) {D : ℝ} (hD : 0 < D) (k A : ℝ) :
-    (∀ τ, |k * φ ((A - τ) / D)| ≤ |k| * L) ∧ ∀ τ, A < τ → k * φ ((A - τ) / D) = 0 :=
-  ⟨fun τ => by
-    rw [abs_mul]
-    gcongr
-    exact (Real.norm_eq_abs _).symm.le.trans (hL _),
-  fun τ hτ => by rw [hneg _ (div_neg_of_neg_of_pos (by linarith) hD), mul_zero]⟩
-
-/-- Norm bound for a radial vector field `c (‖y - x₀‖ ^ 2) • (y - x₀)` with `c` bounded by `a` and
-vanishing beyond the squared radius `R ^ 2`. -/
-theorem norm_smul_sub_le [NormedSpace ℝ E] {c : ℝ → ℝ} {a R : ℝ} (hc : ∀ τ, |c τ| ≤ a)
-    (hc0 : ∀ τ, R ^ 2 < τ → c τ = 0) (hR : 0 ≤ R) (x₀ x : E) :
-    ‖c (‖x - x₀‖ ^ 2) • (x - x₀)‖ ≤ a * R := by
-  rw [norm_smul, Real.norm_eq_abs]
-  rcases le_or_gt ‖x - x₀‖ R with hx | hx
-  · exact mul_le_mul (hc _) hx (norm_nonneg _) ((abs_nonneg _).trans (hc 0))
-  · rw [hc0 _ (pow_lt_pow_left₀ hx hR two_ne_zero), abs_zero, zero_mul]
-    exact mul_nonneg ((abs_nonneg _).trans (hc 0)) hR
-
-/-- Norm bound for the derivative of a radial vector field, in the form given by
-`hasFDerivAt_smul_sub_norm_sq`, with `c` and `c'` bounded by `a` and `b` and vanishing beyond the
-squared radius `R ^ 2`. -/
-theorem norm_hessian_radial_le [InnerProductSpace ℝ E] {c c' : ℝ → ℝ} {a b R : ℝ}
-    (hc : ∀ τ, |c τ| ≤ a) (hc' : ∀ τ, |c' τ| ≤ b) (hc0 : ∀ τ, R ^ 2 < τ → c τ = 0)
-    (hc'0 : ∀ τ, R ^ 2 < τ → c' τ = 0) (hR : 0 ≤ R) (x₀ x : E) :
-    ‖c (‖x - x₀‖ ^ 2) • ContinuousLinearMap.id ℝ E +
-      (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)‖ ≤ a + 2 * b * R ^ 2 := by
-  have ha := (abs_nonneg _).trans (hc 0)
-  have hb := (abs_nonneg _).trans (hc' 0)
-  rw [← Nat.cast_smul_eq_nsmul ℝ]
-  refine (norm_add_le _ _).trans ?_
-  rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply, norm_smul, norm_smul,
-    innerSL_apply_norm, Real.norm_eq_abs, Real.norm_eq_abs]
-  have hid : ‖ContinuousLinearMap.id ℝ E‖ ≤ 1 := ContinuousLinearMap.norm_id_le
-  rcases le_or_gt ‖x - x₀‖ R with hx | hx
-  · calc |c (‖x - x₀‖ ^ 2)| * ‖ContinuousLinearMap.id ℝ E‖ +
-          |c' (‖x - x₀‖ ^ 2)| * (‖((2 : ℕ) : ℝ)‖ * ‖x - x₀‖) * ‖x - x₀‖
-        ≤ a * 1 + b * (2 * R) * R := by
-          gcongr
-          · exact hc _
-          · exact hc' _
-          · norm_num
-      _ = a + 2 * b * R ^ 2 := by ring
-  · have h2 : R ^ 2 < ‖x - x₀‖ ^ 2 := pow_lt_pow_left₀ hx hR two_ne_zero
-    rw [hc0 _ h2, hc'0 _ h2, abs_zero, zero_mul, zero_mul, zero_mul, zero_add]
-    positivity
-
-/-- Facts about the radii `0 ≤ r < R` of a radial cutoff: with `D = R ^ 2 - r ^ 2`, one has
-`0 < D`, `(R - r) ^ 2 ≤ D`, `R / D ≤ 1 / (R - r)` and `R ^ 2 / D ^ 2 ≤ 1 / (R - r) ^ 2`. -/
-private theorem radius_gap_facts {r R : ℝ} (hr : 0 ≤ r) (hrR : r < R) :
-    0 < R ^ 2 - r ^ 2 ∧ (R - r) ^ 2 ≤ R ^ 2 - r ^ 2 ∧ R / (R ^ 2 - r ^ 2) ≤ 1 / (R - r) ∧
-      R ^ 2 / (R ^ 2 - r ^ 2) ^ 2 ≤ 1 / (R - r) ^ 2 := by
-  have hRr : 0 < R - r := sub_pos.2 hrR
-  have hD : (R - r) * R ≤ R ^ 2 - r ^ 2 := by nlinarith
-  have hD' : (R - r) ^ 2 ≤ R ^ 2 - r ^ 2 := by nlinarith
-  have hD0 : 0 < R ^ 2 - r ^ 2 := lt_of_lt_of_le (by positivity) hD'
-  have hR : 0 < R := hr.trans_lt hrR
-  have hRD : R / (R ^ 2 - r ^ 2) ≤ 1 / (R - r) := by
-    rw [div_le_div_iff₀ hD0 hRr]
-    linarith
-  refine ⟨hD0, hD', hRD, ?_⟩
-  rw [← div_pow, one_div, ← inv_pow, ← one_div]
-  exact pow_le_pow_left₀ (by positivity) hRD 2
-
 /-- The radial profile `Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))` is a
 smooth function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and with topological
 support in `closedBall x₀ R`. -/
@@ -522,7 +402,10 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   have hS1 : ContDiff ℝ ∞ (deriv S) := hS.iterate_deriv 1
   obtain ⟨L₁, L₂, hL₁0, hL₂0, hL₁, hL₂, hS1neg, hS2neg⟩ := exists_norm_deriv_smoothTransition_le
   refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩
-  obtain ⟨hD0, hD', hRD, hRD2⟩ := radius_gap_facts hr hrR
+  have hD0 := sq_sub_sq_pos_of_lt hr hrR
+  have hD' := sub_sq_le_sq_sub_sq hr hrR
+  have hRD := div_sq_sub_sq_le_one_div_sub hr hrR
+  have hRD2 := sq_div_sq_sub_sq_sq_le_one_div_sq hr hrR
   have hRr : 0 < R - r := sub_pos.2 hrR
   have hR : 0 < R := hr.trans_lt hrR
   obtain ⟨hψ1, hψ2, hψ3, hψ4⟩ := smoothTransition_radial_cutoff hr hrR x₀
@@ -531,17 +414,17 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
   set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
   set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D) with hc'
   have hcd : ∀ τ, HasDerivAt c (c' τ) τ := fun τ =>
-    (hasDerivAt_mul_comp_sub_div (hS1.differentiable (by simp)) _ _ _ τ).congr_deriv
+    (((hS1.differentiable (by simp)) _).hasDerivAt_mul_comp_sub_div _ _ _ τ).congr_deriv
       (by simp only [c']; field_simp)
   have hgrad : ∇ (fun y : E => Real.smoothTransition ((R ^ 2 - ‖y - x₀‖ ^ 2) / D)) =
       fun y => c (‖y - x₀‖ ^ 2) • (y - x₀) :=
-    funext fun x => gradient_comp_sub_norm_sq hS x₀ _ _ x
+    funext fun x => ((hS.differentiable (by simp)) _).gradient_comp_sub_norm_sq x₀ _ _ x
   obtain ⟨hcb, hc0⟩ := abs_mul_comp_sub_div_le hL₁ hS1neg hD0 (-(2 / D)) (R ^ 2)
   obtain ⟨hc'b, hc'0⟩ := abs_mul_comp_sub_div_le hL₂ hS2neg hD0 (2 / D ^ 2) (R ^ 2)
   rw [abs_neg, abs_of_pos (by positivity)] at hcb
   rw [abs_of_pos (by positivity)] at hc'b
   refine ⟨_, hψ1, hψ2, hψ3, hψ4, fun x => ?_, fun x => ?_⟩
-  · rw [gradient_comp_sub_norm_sq hS]
+  · rw [hgrad]
     refine (norm_smul_sub_le hcb hc0 hR.le x₀ x).trans ?_
     calc 2 / D * L₁ * R = 2 * L₁ * (R / D) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r)) := by gcongr
@@ -549,8 +432,8 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
           rw [mul_one_div]
           gcongr
           linarith
-  · rw [hgrad, (hasFDerivAt_smul_sub_norm_sq hcd x₀ x).fderiv]
-    refine (norm_hessian_radial_le hcb hc'b hc0 hc'0 hR.le x₀ x).trans ?_
+  · rw [hgrad, ((hcd _).hasFDerivAt_smul_sub_norm_sq x₀ x).fderiv]
+    refine (norm_smul_id_add_smulRight_le hcb hc'b hc0 hc'0 hR.le x₀ x).trans ?_
     calc 2 / D * L₁ + 2 * (2 / D ^ 2 * L₂) * R ^ 2
         = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
       _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by gcongr

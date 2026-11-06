@@ -228,4 +228,28 @@ theorem norm_iteratedFDeriv_two_sub_le_sum {E ι : Type*} [NormedAddCommGroup E]
         · exact norm_inner_le_norm _ _
     _ = _ := by ring
 
+/-- The gradient of `y ↦ S ((A - ‖y - x₀‖ ^ 2) / D)` at `x`, for `S` differentiable at the value
+`(A - ‖x - x₀‖ ^ 2) / D`. -/
+theorem _root_.DifferentiableAt.gradient_comp_sub_norm_sq {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {S : ℝ → ℝ} (x₀ : E) (A D : ℝ) (x : E)
+    (hS : DifferentiableAt ℝ S ((A - ‖x - x₀‖ ^ 2) / D)) :
+    ∇ (fun y => S ((A - ‖y - x₀‖ ^ 2) / D)) x =
+      (-(2 / D) * deriv S ((A - ‖x - x₀‖ ^ 2) / D)) • (x - x₀) := by
+  have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • (innerSL ℝ (x - x₀)).comp
+      (ContinuousLinearMap.id ℝ E)) x := ((hasFDerivAt_id x).sub_const x₀).norm_sq
+  have h2 : HasFDerivAt (fun y => (A - ‖y - x₀‖ ^ 2) / D)
+      ((-(1 / D)) • 2 • innerSL ℝ (x - x₀)) x := by
+    have := HasFDerivAt.mul_const (HasFDerivAt.const_sub h1 A) D⁻¹
+    convert this using 1
+    · funext y
+      simp [div_eq_mul_inv]
+    · ext v
+      simp
+  have h3 := hS.hasDerivAt.comp_hasFDerivAt x h2
+  refine (hasFDerivAt_iff_hasGradientAt.1 h3).gradient.trans ?_
+  rw [LinearIsometryEquiv.symm_apply_eq]
+  ext v
+  simp
+  ring
+
 end TauCeti
