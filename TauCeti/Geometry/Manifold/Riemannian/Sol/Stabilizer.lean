@@ -81,23 +81,12 @@ private theorem derivative_commutes (Φ : Isom J Sol) {ε : ℝ}
     simp
   simpa only [hc, ContinuousLinearEquiv.apply_symm_apply] using hread
 
-private theorem diagonal_derivative (Φ : Isom J Sol) (hfix : Φ 1 = 1)
-    (hd : ∀ (p : Sol) (u : TangentSpace J p),
-      (tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p u)).2.2 =
-        (tangentSpaceCastModel J p u).2.2) :
-    ∃ a b : ℝ, (a = 1 ∨ a = -1) ∧ (b = 1 ∨ b = -1) ∧ ∀ u : P,
-      tangentSpaceCastModel J (Φ 1)
-        (mfderiv J J Φ 1 ((tangentSpaceCastModel J (1 : Sol)).symm u)) =
-          (a * u.1, b * u.2.1, u.2.2) := by
-  let A : P →L[ℝ] P := (tangentSpaceCastModel J (Φ 1)).toContinuousLinearMap.comp
-    ((mfderiv J J Φ 1).comp (tangentSpaceCastModel J (1 : Sol)).symm.toContinuousLinearMap)
-  have hz (u : P) : (A u).2.2 = u.2.2 := by
-    simpa only [A, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-      ContinuousLinearEquiv.apply_symm_apply] using
-      hd 1 ((tangentSpaceCastModel J (1 : Sol)).symm u)
-  have hc (u : P) : A (u.1, -u.2.1, 0) = ((A u).1, -(A u).2.1, 0) := by
-    simpa [A] using derivative_commutes Φ (ε := 1) (by simpa using hd) 1 u
-  -- The distinct eigenvalues force each coordinate axis to be invariant.
+/-- A linear map of `ℝ³` that preserves the vertical coordinate and intertwines the map
+`(x, y, z) ↦ (x, -y, 0)` with itself preserves each coordinate axis, and fixes the vertical one. -/
+private theorem axes_of_vertical_of_commute (A : P →L[ℝ] P) (hz : ∀ u : P, (A u).2.2 = u.2.2)
+    (hc : ∀ u : P, A (u.1, -u.2.1, 0) = ((A u).1, -(A u).2.1, 0)) :
+    A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) ∧ A (0, 1, 0) = (0, (A (0, 1, 0)).2.1, 0) ∧
+      A (0, 0, 1) = (0, 0, 1) := by
   have h₁ : A (1, 0, 0) = ((A (1, 0, 0)).1, 0, 0) := by
     have h := congrArg (fun v : P => v.2.1) (hc (1, 0, 0))
     simp only [neg_zero] at h
@@ -119,6 +108,26 @@ private theorem diagonal_derivative (Φ : Isom J Sol) (hfix : Φ 1 = 1)
     exact Prod.ext (congrArg Prod.fst h).symm
       (Prod.ext (by have := congrArg (fun v : P => v.2.1) h; dsimp at this; linarith)
         (hz (0, 0, 1)))
+  exact ⟨h₁, h₂, h₃⟩
+
+private theorem diagonal_derivative (Φ : Isom J Sol) (hfix : Φ 1 = 1)
+    (hd : ∀ (p : Sol) (u : TangentSpace J p),
+      (tangentSpaceCastModel J (Φ p) (mfderiv J J Φ p u)).2.2 =
+        (tangentSpaceCastModel J p u).2.2) :
+    ∃ a b : ℝ, (a = 1 ∨ a = -1) ∧ (b = 1 ∨ b = -1) ∧ ∀ u : P,
+      tangentSpaceCastModel J (Φ 1)
+        (mfderiv J J Φ 1 ((tangentSpaceCastModel J (1 : Sol)).symm u)) =
+          (a * u.1, b * u.2.1, u.2.2) := by
+  let A : P →L[ℝ] P := (tangentSpaceCastModel J (Φ 1)).toContinuousLinearMap.comp
+    ((mfderiv J J Φ 1).comp (tangentSpaceCastModel J (1 : Sol)).symm.toContinuousLinearMap)
+  have hz (u : P) : (A u).2.2 = u.2.2 := by
+    simpa only [A, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply] using
+      hd 1 ((tangentSpaceCastModel J (1 : Sol)).symm u)
+  have hc (u : P) : A (u.1, -u.2.1, 0) = ((A u).1, -(A u).2.1, 0) := by
+    simpa [A] using derivative_commutes Φ (ε := 1) (by simpa using hd) 1 u
+  -- The distinct eigenvalues force each coordinate axis to be invariant.
+  obtain ⟨h₁, h₂, h₃⟩ := axes_of_vertical_of_commute A hz hc
   -- At the identity the metric is Euclidean, so the two horizontal factors are signs.
   have hnorm (u : P) : (A u).1 ^ 2 + (A u).2.1 ^ 2 + (A u).2.2 ^ 2 =
       u.1 ^ 2 + u.2.1 ^ 2 + u.2.2 ^ 2 := by
