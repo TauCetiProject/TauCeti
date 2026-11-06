@@ -64,6 +64,11 @@ theorem holomorphicStalkFDeriv_zero : e.holomorphicStalkFDeriv x hx 0 = 0 := by
   rw [holomorphicStalkFDeriv_eq e x hx (f := 0) (by simp)]
   simp [Function.comp_def]
 
+@[simp]
+theorem holomorphicStalkFDeriv_one : e.holomorphicStalkFDeriv x hx 1 = 0 := by
+  rw [holomorphicStalkFDeriv_eq e x hx (f := 1) (by simp)]
+  simp [Function.comp_def]
+
 variable (he : e ∈ maximalAtlas 𝓘(ℂ, E) ω X)
 
 include he in
@@ -79,6 +84,25 @@ theorem holomorphicStalkFDeriv_add
     holomorphicStalkFDeriv_eq e x hx (hf _ _), holomorphicStalkFDeriv_eq e x hx (hg _ _)]
   exact fderiv_add (e.analyticAt_comp_symm_of_toFilterGerm_eq he hx (hf _ _)).differentiableAt
     (e.analyticAt_comp_symm_of_toFilterGerm_eq he hx (hg _ _)).differentiableAt
+
+include he in
+/-- Differentiation of holomorphic germs commutes with negation. -/
+@[simp]
+theorem holomorphicStalkFDeriv_neg
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) :
+    e.holomorphicStalkFDeriv x hx (-s) = -e.holomorphicStalkFDeriv x hx s := by
+  apply eq_neg_of_add_eq_zero_left
+  rw [← e.holomorphicStalkFDeriv_add x hx he, neg_add_cancel, holomorphicStalkFDeriv_zero]
+
+include he in
+/-- Differentiation of holomorphic germs commutes with subtraction. -/
+@[simp]
+theorem holomorphicStalkFDeriv_sub
+    (s t : (holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x) :
+    e.holomorphicStalkFDeriv x hx (s - t) =
+      e.holomorphicStalkFDeriv x hx s - e.holomorphicStalkFDeriv x hx t := by
+  simp only [sub_eq_add_neg, e.holomorphicStalkFDeriv_add x hx he,
+    e.holomorphicStalkFDeriv_neg x hx he]
 
 include he in
 /-- The Leibniz rule for the derivative of holomorphic germs. -/
