@@ -165,6 +165,7 @@ lemma naturality_id'_inv (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) 
 /-- The composition condition of a strong transformation, for a `1`-morphism `fg` equal to a
 composite `f ≫ g`, stated with the comparisons `F.mapComp' f g fg` and `G.mapComp' f g fg`. This
 generalizes `StrongTrans.naturality_comp_hom`. -/
+@[to_app]
 lemma naturality_comp'_hom (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
     (h : f ≫ g = fg) :
     (η.naturality fg).hom =

@@ -9,8 +9,13 @@ public import TauCeti.Analysis.InnerProductSpace.Harmonic.Decay
 public import Mathlib.Analysis.Normed.Lp.MeasurableSpace
 public import Mathlib.LinearAlgebra.QuadraticForm.Basic
 public import TauCeti.Analysis.PDE.Regularity.Classical
+import TauCeti.Analysis.PDE.Regularity.HarmonicReplacement
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
 import TauCeti.Analysis.PDE.Ellipticity.ConstantCoefficient
+import TauCeti.Analysis.PDE.EnergyForm.Restriction
+import TauCeti.Analysis.Sobolev.W1p.Restriction
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Decay estimates for elliptic equations with constant coefficients
@@ -39,6 +44,16 @@ estimates for equations with variable coefficients: on each ball the coefficient
 the centre, and the solution is compared with a solution of the resulting constant-coefficient
 equation. The Laplacian, the case `A = 1`, is not enough there, since the frozen coefficient
 matrix is an arbitrary elliptic matrix.
+
+The comparison itself is carried out here for a weak solution in `H¹(Ω)` of
+`-div(A ∇u) = -div G` with `G` merely square integrable: the `A`-harmonic replacement `w` of `u`
+on `B_r` has the decay above, and the energy estimate `λ ‖∇(u - w)‖_{L²(B_r)} ≤ ‖G - c‖_{L²(B_r)}`
+measures the distance between them. For `0 < ρ ≤ r` this gives
+
+`ψ(ρ) ≤ 4 D (ρ / r)^(n + 2) ψ(r) + ((4 D + 2) / λ²) ∫_{B_r} ‖G - c‖²`
+
+in dimension `n`, where `ψ(t) = ∫_{B_t} ‖∇u - (∇u)_t‖²` and `D` is the constant of the decay
+estimate for the gradient.
 
 ## The argument
 
@@ -75,6 +90,8 @@ classically, whose gradient is the weak gradient almost everywhere
 * `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero`:
   decay of the `L²` mean oscillation of the weak gradient of a weak solution in `H¹(Ω)`, with
   exponent `n + 2`.
+* `TauCeti.PDE.setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq`:
+  the comparison with the frozen problem for `-div(A ∇u) = -div G` with `G ∈ L²`.
 
 ## References
 
@@ -303,6 +320,123 @@ theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyForm
     hlam hA hA' hg hLg hint hρ hρR
 
 end Weak
+
+section Comparison
+
+open scoped Distributions InnerProductSpace
+
+variable {n : ℕ} {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
+  {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} {x₀ : EuclideanSpace ℝ (Fin (n + 1))} {ρ r : ℝ}
+
+/-- **Comparison with the frozen problem for constant coefficients.** Let `A` be a constant
+coefficient matrix, uniformly elliptic with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` solve
+`-div(A ∇u) = -div G` weakly on an open set `Ω ⊆ ℝ^{n+1}`, that is
+`∫_Ω ⟨A ∇u, ∇φ⟩ = ∫_Ω ⟨G, ∇φ⟩` for every test function `φ`. Let `ball x₀ r ⊆ Ω` and let `c` be a
+constant vector with `G - c` square integrable on `ball x₀ r`. Then for `0 < ρ ≤ r` the square mean
+oscillation `ψ(t) = ∫_{B_t} ‖∇u - (∇u)_{B_t}‖²` of the gradient satisfies
+
+`ψ(ρ) ≤ 4 D (ρ / r)^(n + 3) ψ(r) + ((4 D + 2) / λ²) ∫_{B_r} ‖G - c‖²`,
+
+with `D = 2^(3n + 13) (n + 2)² (Λ / λ)^((n + 3) / 2)`. No regularity of `G` and no boundary
+condition on `u` is assumed. -/
+theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energyFormH1_eq
+    {lam Lam : ℝ} (hA : UniformlyEllipticOn (ball x₀ r) (fun _ => A) lam Lam)
+    {u : W1p volume Omega 2}
+    {G : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))}
+    (hu : ∀ φ : 𝓓(Omega, ℝ),
+      energyFormH1 (fun _ => A) 0 0 u (W1p.ofTestFunctionₗ volume Omega 2 φ) =
+        ∫ x in Omega, ⟪G x, ∇ (φ : EuclideanSpace ℝ (Fin (n + 1)) → ℝ) x⟫_ℝ)
+    (hball : ball x₀ r ⊆ Omega) {c : EuclideanSpace ℝ (Fin (n + 1))}
+    (hGc : MemLp (fun x => G x - c) 2 (volume.restrict (ball x₀ r))) (hρ : 0 < ρ)
+    (hρr : ρ ≤ r) :
+    ∫ x in ball x₀ ρ, ‖W1p.gradient u x - ⨍ y in ball x₀ ρ, W1p.gradient u y‖ ^ 2 ≤
+      4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) * (ρ / r) ^ (n + 3) *
+          (∫ x in ball x₀ r, ‖W1p.gradient u x - ⨍ y in ball x₀ r, W1p.gradient u y‖ ^ 2) +
+        (4 * (2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3)) + 2) / lam ^ 2 *
+          ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
+  have hr : 0 < r := hρ.trans_le hρr
+  set B : Opens (EuclideanSpace ℝ (Fin (n + 1))) := ⟨ball x₀ r, isOpen_ball⟩
+  have hB : B ≤ Omega := hball
+  have hlam : 0 < lam := hA.pos
+  have hx₀ : x₀ ∈ ball x₀ r := mem_ball_self hr
+  have hAu : ∀ ξ : EuclideanSpace ℝ (Fin (n + 1)), A.toQuadraticForm' ξ ≤ Lam * ‖ξ‖ ^ 2 :=
+    fun ξ => (le_abs_self _).trans
+      (abs_toQuadraticForm'_le_of_abs_dotProduct_mulVec_le (hA.upper_bound hx₀) ξ)
+  -- The `A`-harmonic replacement `w` of `u` on `B_r`.
+  obtain ⟨w, ⟨hwu, hw⟩, -⟩ :=
+    UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
+      (Omega := B) (b := 0) (c := 0) hA aestronglyMeasurable_const aestronglyMeasurable_const
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) subset_rfl (by simpa using hlam) 0
+      (W1p.restrictL hB u)
+  have hw0 : ∀ v : W1p0 volume B 2,
+      energyFormH1 (fun _ => A) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
+    rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
+  have huw : W1p.restrictL hB u - w ∈ w1p0Submodule volume B 2 := by
+    have h := (ClosedSubmodule.mem_toSubmodule_iff (w - W1p.restrictL hB u)
+      (w1p0Submodule volume B 2)).2 hwu
+    exact (ClosedSubmodule.mem_toSubmodule_iff _ _).1 (sub_mem_comm_iff.1 h)
+  -- The energy distance between `u` and `w` is controlled by `G - c`.
+  have hAB : UniformlyEllipticOn (B : Set (EuclideanSpace ℝ (Fin (n + 1)))) (fun _ => A) lam Lam :=
+    hA
+  have hGcB : MemLp (fun x => G x - c) 2
+      (volume.restrict (B : Set (EuclideanSpace ℝ (Fin (n + 1))))) := hGc
+  have hrep : ∀ v : W1p0 volume B 2,
+      energyFormH1 (fun _ => A) 0 0 (W1p.restrictL hB u) (v : W1p volume B 2) =
+        ⟪hGcB.toLp, W1p.gradient (v : W1p volume B 2)⟫_ℝ :=
+    forall_energyFormH1_restrictL_eq_inner hB
+      (memLp_top_const (energyIntegrand A 0 0)) hu hGcB
+  have hest : lam * ‖W1p.gradient (W1p.restrictL hB u - w)‖ ≤ ‖hGcB.toLp‖ :=
+    hAB.mul_norm_gradient_sub_le aestronglyMeasurable_const huw hw0 hrep
+  have hGn : ‖hGcB.toLp‖ ^ 2 = ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
+    rw [← Lp.integral_norm_sq_eq_norm_sq]
+    refine integral_congr_ae ?_
+    filter_upwards [hGcB.coeFn_toLp] with x hx
+    rw [hx]
+  -- The gradient of the replacement decays from `B_r` to `B_ρ`.
+  have hdec := setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero
+    hlam (hA.lower_bound hx₀) hAu hw0 (x₀ := x₀) (R := r) subset_rfl
+    (⨍ y in ball x₀ r, W1p.gradient u y) hρ.le hρr
+  have hfm : MemLp
+      (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
+      (volume.restrict (ball x₀ r)) :=
+    (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono hball le_rfl)
+  have hHm : MemLp
+      (W1p.gradient w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
+      (volume.restrict (ball x₀ r)) := Lp.memLp (W1p.gradient w)
+  have hcomp := setIntegral_norm_sub_setAverage_sq_le_add_of_subset (ball_subset_ball hρr)
+    measure_ball_lt_top.ne hfm hHm (by positivity) hdec
+  obtain ⟨D, hDdef⟩ : ∃ D : ℝ, D = 2 ^ (3 * n + 13) * (n + 2) ^ 2 * √(Lam / lam) ^ (n + 3) :=
+    ⟨_, rfl⟩
+  obtain ⟨q, hqdef⟩ : ∃ q : ℝ, q = (ρ / r) ^ (n + 3) := ⟨_, rfl⟩
+  have hK : 2 ^ (3 * Fintype.card (Fin (n + 1)) + 10) * ((Fintype.card (Fin (n + 1)) : ℝ) + 1) ^ 2 *
+      √(Lam / lam) ^ (Fintype.card (Fin (n + 1)) + 2) * (ρ / r) ^ (Fintype.card (Fin (n + 1)) + 2) =
+        D * q := by
+    rw [hDdef, hqdef, Fintype.card_fin]
+    push_cast
+    ring
+  rw [hK] at hcomp
+  have hq1 : q ≤ 1 := hqdef ▸ pow_le_one₀ (by positivity) ((div_le_one hr).2 hρr)
+  have hD : 0 ≤ D := hDdef ▸ by positivity
+  have hE0 : 0 ≤ ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 :=
+    integral_nonneg fun _ => by positivity
+  have hE' : ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
+      (∫ x in ball x₀ r, ‖G x - c‖ ^ 2) / lam ^ 2 := by
+    calc ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2
+        = ‖W1p.gradient (W1p.restrictL hB u - w)‖ ^ 2 :=
+          W1p.setIntegral_norm_gradient_sub_sq_eq hB u w
+      _ ≤ _ := by
+          rw [← hGn, le_div_iff₀ (by positivity), ← mul_pow, mul_comm]
+          exact pow_le_pow_left₀ (by positivity) hest 2
+  have h1 : (4 * (D * q) + 2) * ∫ x in ball x₀ r, ‖W1p.gradient u x - W1p.gradient w x‖ ^ 2 ≤
+      (4 * D + 2) / lam ^ 2 * ∫ x in ball x₀ r, ‖G x - c‖ ^ 2 := by
+    rw [div_mul_eq_mul_div, mul_div_assoc]
+    exact mul_le_mul (by nlinarith) hE' hE0 (by positivity)
+  rw [← hDdef, ← hqdef]
+  refine hcomp.trans (add_le_add (le_of_eq ?_) h1)
+  ring
+
+end Comparison
 
 end PDE
 

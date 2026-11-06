@@ -48,6 +48,8 @@ are those of its summands, so its tangent coordinate changes are those of the su
 * `TauCeti.Manifold.continuousLinearMapAt_trivializationAt_self` and
   `TauCeti.Manifold.symmL_trivializationAt_self`: the canonical trivialization at `x` and its
   inverse act as the identity on the fibre over `x`.
+* `TauCeti.Manifold.inTangentCoordinates_eq_self_of_eq`: a field of linear maps read in the tangent
+  coordinates of a point with the same base points is unchanged.
 * `TauCeti.Manifold.localFrame_trivializationAt_self`: consequently its local frame at `x` is the
   chosen basis of the model space.
 * `TauCeti.Manifold.inverse_mfderiv_extChartAt`: the inverse of the differential of an extended
@@ -194,6 +196,27 @@ theorem symmL_trivializationAt_self (x : M) (v : E) :
     (trivializationAt E (TangentSpace I) x).symmL 𝕜 x v = v := by
   rw [TangentBundle.symmL_trivializationAt_eq_core (mem_chart_source H x)]
   exact (tangentBundleCore I M).coordChange_self (achart H x) x (mem_chart_source H x) v
+
+/-- At a point `x` whose base points `f x` and `g x` agree with those of `x₀`, reading `ϕ x` in the
+tangent coordinates of `x₀` changes nothing: both coordinate changes are from a chart to itself. -/
+theorem inTangentCoordinates_eq_self_of_eq {E' H' M' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] [IsManifold I' 1 M'] (f : N → M) (g : N → M')
+    (ϕ : Π x : N, TangentSpace I (f x) →L[𝕜] TangentSpace I' (g x)) {x₀ x : N}
+    (hf : f x = f x₀) (hg : g x = g x₀) :
+    inTangentCoordinates I I' f g ϕ x₀ x = ϕ x := by
+  rw [inTangentCoordinates_eq _ _ _ (by rw [hf]; exact mem_chart_source H _)
+    (by rw [hg]; exact mem_chart_source H' _)]
+  have h₁ : achart H (f x₀) = achart H (f x) := by rw [hf]
+  have h₂ : achart H' (g x₀) = achart H' (g x) := by rw [hg]
+  ext v
+  simp only [ContinuousLinearMap.comp_apply, h₁, h₂,
+    (tangentBundleCore I' M').coordChange_self (achart H' (g x)) (g x)
+      (mem_chart_source H' (g x))]
+  -- `ContinuousLinearMap.comp_apply` does not fire on the inner composition, whose source is
+  -- `TangentSpace I (f x)` rather than `E`; it is applied by definition.
+  exact congrArg (ϕ x) ((tangentBundleCore I M).coordChange_self (achart H (f x)) (f x)
+    (mem_chart_source H (f x)) v)
 
 /-- The differential of the extended chart at `x₀`, at a point `x` of its source, is inverted by
 the inverse of the canonical tangent-bundle trivialization at `x₀`.  This is the inverse form of
@@ -717,6 +740,12 @@ theorem mfderiv_subtype_val {U : Opens M} (x : U) :
     fderivWithin_id
       (I.uniqueDiffOn.uniqueDiffWithinAt hxRange)]
   rfl
+
+/-- The differential of an open-submanifold inclusion is injective. -/
+theorem mfderiv_subtype_val_injective {U : Opens M} (x : U) :
+    Function.Injective (mfderiv I I (Subtype.val : U → M) x) := by
+  rw [mfderiv_subtype_val]
+  exact (tangentSpaceOpenEquiv (I := I) x).injective
 
 /-- The tangent map of an open submanifold's inclusion identifies its tangent vectors with
 ambient tangent vectors through `tangentSpaceOpenEquiv`. -/
