@@ -7,8 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
-import TauCeti.RingTheory.Nilpotent.RootString.Basic
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.MultiplyLacedRelations
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!
@@ -22,11 +21,11 @@ no factorial is inverted in the value ring. The result therefore holds over ever
 ring, including characteristic two, and for any Kostant-stable lattice with nilpotent simple
 root operators.
 
-The proof specializes `TauCeti.baseChangeExp_conj_of_commutator_eq_two_nsmul` to the pinned
-Chevalley system, discharging its bracket hypotheses from the integral root datum. The operator
-translation follows
-`TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupPoints_mul_of_lie_lie_eq`;
-here the all-root maps act directly on the scalar-extended lattice rather than on scheme points.
+The proof specializes
+`TauCeti.UniversalEnvelopingAlgebra.commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq'`
+to the pinned Chevalley system, discharging its bracket hypotheses from the integral root datum.
+The all-root Kostant form preserves the same lattice, and its parametrized root subgroups agree
+with the native all-root maps.
 
 ## References
 
@@ -56,35 +55,28 @@ private theorem doublyLaced_vanishing_brackets {α β γ δ : Fin t.numRoots}
     (hβγ : (t.simplyConnectedRootDatum ht).root β + (t.simplyConnectedRootDatum ht).root γ ∉
       Set.range (t.simplyConnectedRootDatum ht).root) :
     ⁅t.chevalleySystem ht α, t.chevalleySystem ht δ⁆ = 0 ∧
-      ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 := by
+      ⁅t.chevalleySystem ht β, t.chevalleySystem ht γ⁆ = 0 ∧
+      ⁅t.chevalleySystem ht β, t.chevalleySystem ht δ⁆ = 0 := by
   have := t.isReduced_simplyConnectedRootDatum ht
   have hlin := (t.simplyConnectedRootDatum ht).linearIndependent_of_add_mem_range_root'
     (i := α) (j := β) ⟨γ, hγ⟩
-  constructor
-  · refine lie_chevalleySystem_eq_zero hαδ fun hz => ?_
-    have hs : ∑ i : Fin 2, (![3, 1] : Fin 2 → ℤ) i •
-        ![(t.simplyConnectedRootDatum ht).root α,
-          (t.simplyConnectedRootDatum ht).root β] i = 0 := by
-      calc _ = (t.simplyConnectedRootDatum ht).root α +
-            (t.simplyConnectedRootDatum ht).root δ := by
-              simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-                one_smul, hδ, hγ]
-              module
-           _ = 0 := hz
-    have := (Fintype.linearIndependent_iff.mp hlin _ hs) 1
+  have hind := LinearIndependent.pair_iff.mp hlin
+  refine ⟨lie_chevalleySystem_eq_zero hαδ fun hz => ?_,
+    lie_chevalleySystem_eq_zero hβγ fun hz => ?_, ?_⟩
+  · have := (hind 3 1 (by rw [hδ, hγ] at hz; linear_combination hz)).1
     norm_num at this
-  · refine lie_chevalleySystem_eq_zero hβγ fun hz => ?_
-    have hs : ∑ i : Fin 2, (![1, 2] : Fin 2 → ℤ) i •
-        ![(t.simplyConnectedRootDatum ht).root α,
-          (t.simplyConnectedRootDatum ht).root β] i = 0 := by
-      calc _ = (t.simplyConnectedRootDatum ht).root β +
-            (t.simplyConnectedRootDatum ht).root γ := by
-              simp only [Fin.sum_univ_two, Matrix.cons_val_zero, Matrix.cons_val_one,
-                one_smul, hγ]
-              module
-           _ = 0 := hz
-    have := (Fintype.linearIndependent_iff.mp hlin _ hs) 0
+  · have := (hind 1 2 (by rw [hγ] at hz; linear_combination hz)).1
     norm_num at this
+  · have hsum : (t.simplyConnectedRootDatum ht).root β +
+        (t.simplyConnectedRootDatum ht).root δ =
+          2 • (t.simplyConnectedRootDatum ht).root γ := by
+      rw [hδ, hγ]
+      module
+    refine lie_chevalleySystem_eq_zero ?_ fun hz => ?_
+    · rw [hsum]
+      exact (t.simplyConnectedRootDatum ht).nsmul_notMem_range_root (n := 2)
+    · have := (hind 2 2 (by rw [hδ, hγ] at hz; linear_combination hz)).1
+      norm_num at this
 
 variable {V : Type*} [AddCommGroup V] [Module ℚ V]
 variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
@@ -117,62 +109,43 @@ theorem commutatorElement_chevalleyRootSubgroup_of_add_eq_of_add_eq
           (Multiplicative.ofAdd
             (((t.structureConstant ht α β * t.structureConstant ht α γ / 2 : ℤ) : A) *
               (u ^ 2 * v))) := by
-  obtain ⟨hil, hjk⟩ := doublyLaced_vanishing_brackets hγ hδ hαδ hβγ
+  obtain ⟨hil, hjk, hjl⟩ := doublyLaced_vanishing_brackets hγ hδ hαδ hβγ
   let e := t.chevalleySystem ht
-  let X := fun η => ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e η))
-  let c := t.structureConstant ht α β
   let d := t.structureConstant ht α β * t.structureConstant ht α γ / 2
-  -- Translate the two root-string brackets to the rational operator algebra.
-  have hxy : X α * X β = X β * X α + c • X γ :=
-    mul_eq_mul_add_zsmul_of_lie_eq ρ (lie_chevalleySystem_eq_structureConstant_zsmul hγ)
-  have hdiv : 2 * d = c * t.structureConstant ht α γ :=
+  have hdiv : 2 * d = t.structureConstant ht α β * t.structureConstant ht α γ :=
     Int.mul_ediv_cancel' (two_dvd_structureConstant_mul_structureConstant hγ)
-  have hxz : X α * (c • X γ) = (c • X γ) * X α + 2 • (d • X δ) := by
-    have hb : c • ⁅e α, e γ⁆ = (2 * d) • e δ := by
-      rw [lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul, hdiv]
-    simpa only [one_zsmul, one_mul] using
-      (zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-        (p := 1) (q := c) (r := d) (n := 2) (by simpa using hb))
-  have hxw : Commute (X α) (d • X δ) :=
-    (commute_of_lie_eq_zero ρ hil).smul_right d
-  have hyz : Commute (X β) (c • X γ) :=
-    (commute_of_lie_eq_zero ρ hjk).smul_right c
-  have hyw : Commute (X β) (d • X δ) :=
-    hyz.of_commutator_eq_of_commutator_eq_smul_left hxy
-      (by simpa only [← Nat.cast_smul_eq_nsmul ℚ, Nat.cast_ofNat] using hxz)
-      (isUnit_iff_ne_zero.mpr (by norm_num : (2 : ℚ) ≠ 0))
-  -- Integral divided powers let the exponential identity descend to every value ring.
-  have hstable (k : ℤ) (η : Fin t.numRoots) (n : ℕ) :
-      ∀ w ∈ M, Associative.dividedPower n (k • X η) • w ∈ M := by
-    intro w hw
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (dividedPower_chevalleySystem_smul_mem ρ M hM hnil η n w hw) _
-  have hcomm := commute_baseChangeExp M hyw
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β) (hstable d δ) v (u ^ 2 * v)
-  have hconj := baseChangeExp_conj_of_commutator_eq_two_nsmul M hxy hxz hxw hyz
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
-    ((isNilpotent_apply_ι_chevalleySystem ρ hnil γ).smul c)
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil α)
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β)
-    (hstable c γ) (hstable d δ) u v
-  -- Move the β factor to the right and cancel it against its inverse.
-  have hyzExp := commute_baseChangeExp M hyz
-    (dividedPower_chevalleySystem_smul_mem ρ M hM hnil β) (hstable c γ) v (u * v)
-  rw [hyzExp.eq, mul_assoc (baseChangeExp (c • X γ) M (hstable c γ) (u * v)),
-    hcomm.eq, ← mul_assoc] at hconj
-  rw [commutatorElement_def,
-    ← (chevalleyRootSubgroup ρ M hM hnil α A).map_inv,
-    ← (chevalleyRootSubgroup ρ M hM hnil β A).map_inv,
-    ← ofAdd_neg, ← ofAdd_neg]
-  refine Units.ext ?_
-  simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-  rw [hconj, mul_assoc,
-    ← baseChangeExp_add _ M _ (isNilpotent_apply_ι_chevalleySystem ρ hnil β),
-    add_neg_cancel, baseChangeExp_zero _ M _ (isNilpotent_apply_ι_chevalleySystem ρ hnil β),
-    mul_one, baseChangeExp_zsmul c M _ _
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ),
-    baseChangeExp_zsmul d M _ _ (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)]
+  have hiij : ⁅e α, ⁅e α, e β⁆⁆ = (2 * d) • e δ := by
+    rw [lie_chevalleySystem_eq_structureConstant_zsmul hγ, lie_zsmul,
+      lie_chevalleySystem_eq_structureConstant_zsmul hδ, smul_smul, hdiv]
+  -- The same lattice is stable under the all-root Kostant form.
+  have hM' : ∀ z ∈ kostantForm e (t.lieBasis ht).h, ∀ w ∈ M, ρ z w ∈ M := by
+    intro z hz w hw
+    refine kostantForm_apply_mem e (t.lieBasis ht).h ρ M.toIntSubmodule ?_ ?_ z hz hw
+    · intro η n w hw
+      rw [Associative.map_dividedPower]
+      exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil η n w hw
+    · intro i n w hw
+      exact hM _ (ringChoose_mem_kostantForm _ _ i n) w hw
+  have heq (η : Fin t.numRoots) : chevalleyRootSubgroup ρ M hM hnil η A =
+      kostantRootSubgroupParam e (t.lieBasis ht).h ρ M hM' η
+        (isNilpotent_apply_ι_chevalleySystem ρ hnil η) A := by
+    refine MonoidHom.ext fun w => Units.ext <| LinearMap.ext fun z => ?_
+    rw [chevalleyRootSubgroup_val, kostantRootSubgroupParam_val_apply]
+  simp_rw [heq, kostantRootSubgroupParam_apply]
+  -- Normalize the stored integer algebra to match the generic Kostant relation.
+  obtain ⟨R, _, _⟩ := A
+  rename_i hR hA
+  cases Subsingleton.elim hA (Ring.toIntAlgebra R)
+  simpa only [MulEquiv.apply_symm_apply, toAdd_ofAdd] using
+    commutatorElement_kostantRootSubgroupPoints_of_lie_lie_eq' e (t.lieBasis ht).h ρ M hM'
+      (A := R)
+      (lie_chevalleySystem_eq_structureConstant_zsmul hγ) hiij hil hjk hjl
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ)
+      (isNilpotent_apply_ι_chevalleySystem ρ hnil δ)
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := R)).symm (Multiplicative.ofAdd u))
+      ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := R)).symm (Multiplicative.ofAdd v))
 
 end
 
