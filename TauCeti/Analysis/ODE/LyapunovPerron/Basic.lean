@@ -125,6 +125,21 @@ variable [CompleteSpace X]
 
 variable {A P : X →L[ℝ] X} {K α : ℝ≥0} {M : ℝ} {g g₁ g₂ : ℝ → X} {t : ℝ}
 
+/-- A continuous function on `[0, ∞)` with right derivative `A (z t)` at every `t ≥ 0` is the linear
+flow `t ↦ exp (t • A) (z 0)` of its initial value, by uniqueness for the linear equation. -/
+theorem eq_exp_smul_apply_of_hasDerivWithinAt {z : ℝ → X}
+    (hz_cont : ContinuousOn z (Ici 0))
+    (hz : ∀ t ∈ Ici (0 : ℝ), HasDerivWithinAt z (A (z t)) (Ici t) t)
+    (ht : 0 ≤ t) :
+    z t = exp (t • A) (z 0) :=
+  ODE_solution_unique_of_mem_Icc_right (v := fun _ x ↦ A x) (s := fun _ ↦ univ)
+    (K := ‖A‖₊) (fun _ _ ↦ A.lipschitzWith.lipschitzOnWith)
+    (hz_cont.mono Icc_subset_Ici_self) (fun t ht ↦ hz t ht.1) (fun _ _ ↦ mem_univ _)
+    (((differentiable_exp_smul_const ℝ A).continuous.clm_apply continuous_const).continuousOn)
+    (fun t _ ↦ ((hasDerivAt_exp_smul_const' A t).clm_apply
+      (hasDerivAt_const t (z 0))).hasDerivWithinAt.congr_deriv (by simp [mul_apply_eq_comp]))
+    (fun _ _ ↦ mem_univ _) (by simp) ⟨ht, le_rfl⟩
+
 section Estimates
 
 variable (hu : ∀ t : ℝ, t ≤ 0 → ∀ v : X, ‖exp (t • A) (v - P v)‖ ≤ K * Real.exp (α * t) * ‖v‖)
@@ -679,16 +694,9 @@ theorem eqOn_lyapunovPerronSolution_of_isIntegralCurveOn (hP : IsIdempotentElem 
     simp only [z, g, hγ t ht, map_sub]
     abel
   -- By uniqueness for the linear equation, `z t = exp (t A) (z 0)`.
-  have hz_exp (t : ℝ) (ht : 0 ≤ t) : z t = exp (t • A) (z 0) := by
-    have hw_cont : Continuous w := continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt
-    refine ODE_solution_unique_of_mem_Icc_right (v := fun _ x ↦ A x) (s := fun _ ↦ univ)
-      (K := ‖A‖₊) (fun _ _ ↦ A.lipschitzWith.lipschitzOnWith)
-      ((hy_cont.sub hw_cont.continuousOn).mono Icc_subset_Ici_self)
-      (fun t ht ↦ hz t ht.1) (fun _ _ ↦ mem_univ _)
-      (((differentiable_exp_smul_const ℝ A).continuous.clm_apply continuous_const).continuousOn)
-      (fun t _ ↦ ((hasDerivAt_exp_smul_const' A t).clm_apply
-        (hasDerivAt_const t (z 0))).hasDerivWithinAt.congr_deriv (by simp [mul_apply_eq_comp]))
-      (fun _ _ ↦ mem_univ _) (by simp [z]) ⟨ht, le_rfl⟩
+  have hz_exp (t : ℝ) (ht : 0 ≤ t) : z t = exp (t • A) (z 0) :=
+    eq_exp_smul_apply_of_hasDerivWithinAt
+      (hy_cont.sub (continuous_iff_continuousAt.2 fun t ↦ (hw t).continuousAt).continuousOn) hz ht
   -- `z 0` has vanishing `P`-component and a bounded forward orbit, so it is zero.
   have hz0 : z 0 = 0 := by
     refine eq_zero_of_norm_exp_smul_apply_le hu hα hAP ?_ (C := B + (K * ‖y 0‖ +
