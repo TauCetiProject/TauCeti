@@ -313,8 +313,8 @@ end TauCeti
 
 * `IsMulTorsion.exists_prime_orderOf_mem`: a nontrivial subgroup of a torsion group contains an
   element of prime order.
-* `IsMulTorsionFree.exists_forall_pow_mul_ne_one`: in a torsion-free group, `H ^ k * z ≠ 1` for
-  all large `k` when `H ≠ 1`.
+* `exists_forall_pow_ne_of_not_isOfFinOrder`: an element `H` of infinite order has `H ^ k ≠ a` for
+  all large `k`.
 -/
 
 section PrimeOrder
@@ -337,15 +337,15 @@ section TorsionFree
 
 variable {G : Type*} [Group G]
 
-/-- In a torsion-free group, for `H ≠ 1` and any `z`, `H ^ k * z ≠ 1` for all large `k`: the
-equation `H ^ k = z⁻¹` holds for at most one `k`. -/
-theorem IsMulTorsionFree.exists_forall_pow_mul_ne_one [IsMulTorsionFree G] {H : G} (hH : H ≠ 1)
-    (z : G) : ∃ N : ℕ, ∀ k, N ≤ k → H ^ k * z ≠ 1 := by
-  by_cases hk : ∃ k : ℕ, H ^ k * z = 1
+/-- An element of infinite order has `H ^ k ≠ a` for all large `k`: the equation `H ^ k = a` holds
+for at most one `k`. -/
+theorem exists_forall_pow_ne_of_not_isOfFinOrder {H : G} (hH : ¬IsOfFinOrder H) (a : G) :
+    ∃ N : ℕ, ∀ k, N ≤ k → H ^ k ≠ a := by
+  have hinj := injective_pow_iff_not_isOfFinOrder.2 hH
+  by_cases hk : ∃ k : ℕ, H ^ k = a
   · obtain ⟨k₀, hk₀⟩ := hk
     refine ⟨k₀ + 1, fun k hk h => ?_⟩
-    have := (IsMulTorsionFree.pow_right_inj hH).1
-      ((mul_eq_one_iff_eq_inv.1 h).trans (mul_eq_one_iff_eq_inv.1 hk₀).symm)
+    have := hinj (h.trans hk₀.symm)
     omega
   · push Not at hk
     exact ⟨0, fun k _ => hk k⟩

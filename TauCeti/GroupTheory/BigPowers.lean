@@ -205,8 +205,9 @@ theorem exists_prod_map_pow_mul_ne_one (hBP : IsBP G) (hG : IsCSA G) {u : G} (hu
   rcases Hs with _ | ⟨H₁, _ | ⟨H₂, rest⟩⟩
   · exact absurd rfl hne
   · -- A single conjugate.
-    obtain ⟨N, hN⟩ := IsMulTorsionFree.exists_forall_pow_mul_ne_one (hne1 H₁ (by simp)) z
-    exact ⟨N, fun k hk ↦ by simpa using hN k hk⟩
+    obtain ⟨N, hN⟩ := exists_forall_pow_ne_of_not_isOfFinOrder
+      (not_isOfFinOrder_of_isMulTorsionFree (hne1 H₁ (by simp))) z⁻¹
+    exact ⟨N, fun k hk h ↦ hN k hk (by simpa [mul_eq_one_iff_eq_inv] using h)⟩
   · -- Several conjugates: if `P = H₁ ^ k ⋯ Hₘ ^ k` equals `z⁻¹`, then
     -- `P * Y ^ k * P⁻¹ * Z ^ k = 1` for `Y = W * u * W⁻¹` and `Z = z⁻¹ * Y⁻¹ * z`, which the big
     -- powers property excludes once `W` is chosen so that `Y` commutes with neither `Hₘ` nor
@@ -414,12 +415,13 @@ private theorem exists_forall_conjProd_singleton_ne [IsMulTorsionFree G] {u : G}
     ∃ N : ℕ, ∀ k : ℕ, N ≤ k → conjProd u k [p] ≠ a := by
   have hH : p.1 * u ^ p.2 * p.1⁻¹ ≠ 1 := fun h => hp <|
     (IsMulTorsionFree.zpow_eq_one_iff_right hu).1 (by simpa using h)
-  obtain ⟨N, hN⟩ := IsMulTorsionFree.exists_forall_pow_mul_ne_one hH a⁻¹
+  obtain ⟨N, hN⟩ := exists_forall_pow_ne_of_not_isOfFinOrder
+    (not_isOfFinOrder_of_isMulTorsionFree hH) a
   refine ⟨N, fun k hk h => hN k hk ?_⟩
   have hk' : (p.1 * u ^ p.2 * p.1⁻¹) ^ k = conjProd u k [p] := by
     simp only [conjProd, List.map_singleton, List.prod_singleton, ← zpow_natCast, conj_zpow]
     group
-  rw [hk', h, mul_inv_cancel]
+  rw [hk', h]
 
 /-- A product `∏ᵢ aᵢ * u ^ (k * eᵢ) * aᵢ⁻¹` in which factors with conjugators in one coset of
 `C_G(u)` have exponents of the same sign avoids any given element `a` for all large `k`. -/
