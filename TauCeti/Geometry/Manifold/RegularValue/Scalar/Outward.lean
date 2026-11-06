@@ -80,7 +80,8 @@ theorem isOutwardPointing_scalarRegularSublevel_iff (hreg : IsRegularValue I �
     rw [scalarRegularSublevelChartedSpace_chartAt] at hw ⊢
     rw [scalarRegularSublevelChartAt_apply_zero_of_eq hf hreg hn hx hw]
     ring
-  rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num) hchart, neg_one_mul, neg_lt_zero]
+  rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num)
+    (Filter.eventually_of_mem (chart_source_mem_nhds _ x) hchart), neg_one_mul, neg_lt_zero]
 
 section Band
 
@@ -103,7 +104,8 @@ theorem isOutwardPointing_scalarRegularBand_iff_of_eq_left {x : f ⁻¹' Icc a b
       (chartAt (EuclideanHalfSpace (n + 1)) x w).1 0 = 1 * (f w - a) := by
     rw [scalarRegularBandChartedSpace_chartAt] at hw ⊢
     rw [scalarRegularBandChartAt_apply_zero_of_eq_left hf hn ha hb hx hw, one_mul]
-  rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb one_ne_zero hchart, one_mul]
+  rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb one_ne_zero
+    (Filter.eventually_of_mem (chart_source_mem_nhds _ x) hchart), one_mul]
 
 /-- **The outward co-orientation of a band at its upper level.** At a point `x` of the upper level
 `f⁻¹(b)` of a band `f⁻¹([a, b])` between regular values, a tangent vector `v` of the band points
@@ -123,7 +125,8 @@ theorem isOutwardPointing_scalarRegularBand_iff_of_eq_right {x : f ⁻¹' Icc a 
     rw [scalarRegularBandChartedSpace_chartAt] at hw ⊢
     rw [scalarRegularBandChartAt_apply_zero_of_eq_right hf hn ha hb hab hx hw]
     ring
-  rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num) hchart, neg_one_mul, neg_lt_zero]
+  rw [isOutwardPointing_iff_mul_mvfderiv_neg hxb (by norm_num)
+    (Filter.eventually_of_mem (chart_source_mem_nhds _ x) hchart), neg_one_mul, neg_lt_zero]
 
 end Band
 
