@@ -7,8 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.StructureConstant
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
-import TauCeti.RingTheory.Nilpotent.ChevalleyCommutator
-import TauCeti.RingTheory.Nilpotent.RootString.G2.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.G2.Basic
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
 /-!
@@ -66,8 +65,8 @@ private theorem three_step_divisions {α β γ δ ε ζ : Fin t.numRoots}
   have hbot : P.chainBotCoeff α β = 0 := by omega
   have hbotγ : P.chainBotCoeff α γ = 1 := by
     rw [P.chainBotCoeff_of_add hli (hγ.trans (add_comm _ _)), hbot]
-  have hliγ := P.linearIndependent_of_add_mem_range_root'
-    (show P.root α + P.root γ ∈ Set.range P.root from ⟨δ, hδ⟩)
+  have haddγ : P.root α + P.root γ ∈ Set.range P.root := ⟨δ, hδ⟩
+  have hliγ := P.linearIndependent_of_add_mem_range_root' haddγ
   have hbotδ : P.chainBotCoeff α δ = 2 := by
     rw [P.chainBotCoeff_of_add hliγ (hδ.trans (add_comm _ _)), hbotγ]
   have hliδγ := P.linearIndependent_of_add_mem_range_root' ⟨ζ, hζ⟩
@@ -242,57 +241,31 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long {α β γ δ ε ζ : Fin G2.n
         x ε A (Multiplicative.ofAdd ((a : A) * (u ^ 3 * v))) *
         x ζ A (Multiplicative.ofAdd ((b : A) * (u ^ 3 * v ^ 2))) *
         x α A (Multiplicative.ofAdd u) := by
-  let N := G2.structureConstant ht
-  let c := N α β
-  let d := c * (N α γ / 2)
-  let a := d * (N α δ / 3)
-  let b := d * c * (N δ γ / 3)
   obtain ⟨hik, hil, hlk⟩ := three_step_brackets hγ hδ hε hζ
   have hij := lie_chevalleySystem_eq_structureConstant_zsmul hγ
   obtain ⟨him, hio, hjk, hlm, hko, hlo, hmo⟩ := short_long_vanishing ht hγ hδ hε hζ
-  -- Translate the native Lie brackets into the scaled associative commutator relations.
-  let E (i : Fin G2.numRoots) := ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ
-    (G2.chevalleySystem ht i))
+  -- Extend stability from simple generators to the all-root Kostant form.
   have hstable := dividedPower_chevalleySystem_smul_mem ρ M hM hnil
-  have hscaled (z : ℤ) (i : Fin G2.numRoots) :
-      ∀ n, ∀ w ∈ M, Associative.dividedPower n (z • E i) • w ∈ M := by
-    intro n w hw
-    rw [Associative.dividedPower_zsmul, smul_assoc]
-    exact M.zsmul_mem (hstable i n w hw) _
-  have hxy : E α * E β = E β * E α + c • E γ :=
-    mul_eq_mul_add_zsmul_of_lie_eq ρ hij
-  have hxz : E α * (c • E γ) = (c • E γ) * E α + 2 • (d • E δ) := by
-    simpa only [one_zsmul] using zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-      (p := 1) (q := c) (r := d) (n := 2) (by simpa using hik)
-  have hxw : E α * (d • E δ) = (d • E δ) * E α + 3 • (a • E ε) := by
-    simpa only [one_zsmul] using zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ
-      (p := 1) (q := d) (r := a) (n := 3) (by simpa using hil)
-  have hwz : (d • E δ) * (c • E γ) = (c • E γ) * (d • E δ) + 3 • (b • E ζ) :=
-    zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq ρ hlk
-  -- Apply the integral exponential identity and put integer factors back in the parameters.
-  refine Units.ext ?_
-  simp only [Units.val_mul, chevalleyRootSubgroup_val, toAdd_ofAdd]
-  rw [← baseChangeExp_zsmul c M (hstable γ) (hscaled c γ)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil γ),
-    ← baseChangeExp_zsmul d M (hstable δ) (hscaled d δ)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil δ),
-    ← baseChangeExp_zsmul a M (hstable ε) (hscaled a ε)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil ε),
-    ← baseChangeExp_zsmul b M (hstable ζ) (hscaled b ζ)
-      (isNilpotent_apply_ι_chevalleySystem ρ hnil ζ)]
-  exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_three_nsmul M hxy hxz hxw hwz
-    ((commute_of_lie_eq_zero ρ him).smul_right a)
-    ((commute_of_lie_eq_zero ρ hio).smul_right b)
-    ((commute_of_lie_eq_zero ρ hjk).smul_right c)
-    (((commute_of_lie_eq_zero ρ hlm).smul_left d).smul_right a)
-    (((commute_of_lie_eq_zero ρ hko).smul_left c).smul_right b)
-    (((commute_of_lie_eq_zero ρ hlo).smul_left d).smul_right b)
-    (((commute_of_lie_eq_zero ρ hmo).smul_left a).smul_right b)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil α)
-    (isNilpotent_apply_ι_chevalleySystem ρ hnil β)
-    ((isNilpotent_apply_ι_chevalleySystem ρ hnil γ).smul c)
-    ((isNilpotent_apply_ι_chevalleySystem ρ hnil δ).smul d)
-    (hstable α) (hstable β) (hscaled c γ) (hscaled d δ) (hscaled a ε) (hscaled b ζ) u v
+  have hall : ∀ z ∈ kostantForm (G2.chevalleySystem ht) (G2.lieBasis ht).h,
+      ∀ w ∈ M, ρ z w ∈ M := by
+    intro z hz w hw
+    apply kostantForm_apply_mem (G2.chevalleySystem ht) (G2.lieBasis ht).h ρ
+      M.toIntSubmodule _ _ z hz hw
+    · intro i n y hy
+      rw [Associative.map_dividedPower]
+      exact hstable i n y hy
+    · intro i n y hy
+      exact hM _ (ringChoose_mem_kostantForm _ _ i n) y hy
+  let hroot := isNilpotent_apply_ι_chevalleySystem ρ hnil
+  have hcollection := kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul'
+    (G2.chevalleySystem ht) (G2.lieBasis ht).h ρ M hall hij hik hil hlk
+    him hio hjk hlm hko hlo hmo (hroot α) (hroot β) (hroot γ) (hroot δ) (hroot ε) (hroot ζ)
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
+    ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
+  -- Both root-subgroup interfaces act by the same divided-power exponentials.
+  apply Units.ext
+  simpa only [Units.val_mul, chevalleyRootSubgroup_val, kostantRootSubgroupPoints_val,
+    MulEquiv.apply_symm_apply, toAdd_ofAdd] using congrArg Units.val hcollection
 
 end Lattice
 
