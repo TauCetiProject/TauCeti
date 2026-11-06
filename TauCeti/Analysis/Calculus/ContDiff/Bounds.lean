@@ -6,9 +6,15 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 
 /-!
-# Derivative bounds: linear changes of variables and products
+# Derivative bounds: linear changes of variables, products, and compact sets
+
+This file collects bounds on iterated derivatives. Two follow from their continuity on compact
+sets: a uniform bound for a linear change of variables, and a bound by any power of the Japanese
+bracket near the zero frequency. The Leibniz bound also controls the vanishing order of a product.
 
 Fix maps `τ : E → F` and `L : E → (G →L H)` that are `C^n` on `s`. The operator
 `φ ↦ (z ↦ L z (φ (τ z)))` is linear in `φ`, and by the Leibniz and Faà di Bruno bounds its
@@ -20,6 +26,11 @@ derivative of `z ↦ L z (φ i (τ z))`.
 This is the estimate behind continuity of such operators for topologies of uniform convergence of
 derivatives on compact sets: a bilinear form read in one chart is of this shape in any other
 chart, with `τ` the transition map and `L z` the pullback along its derivative.
+
+A `C^k` function of a position `x` and a frequency `ξ` has bounded derivatives for `x` in a compact
+set and `ξ` in a ball, and the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)` is bounded above and
+below on a ball. So these derivatives are bounded by every power of the Japanese bracket, which is
+how symbol estimates are proved near the zero frequency, where no decay is needed.
 
 The Leibniz bound also shows that orders of vanishing add under products: if the derivatives of
 `f` of order less than `a` and those of `g` of order less than `b` vanish at `x`, then so do the
@@ -34,6 +45,9 @@ derivatives of `f * g` of order less than `a + b`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
   convergence to zero.
 * `TauCeti.iteratedFDeriv_mul_eq_zero_of_lt`: orders of vanishing at a point add under products.
+* `ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le`: for `x` in a compact set
+  and `ξ` in a ball, the derivatives of a `C^k` function of `(x, ξ)` are bounded by every power of
+  the Japanese bracket `(1 + ‖ξ‖ ^ 2) ^ (1 / 2)`.
 -/
 
 public section
@@ -120,6 +134,26 @@ theorem ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp {ι : 
     _ < ε := by
       rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith [abs_nonneg C]
+
+/-- A `C^k` function on `E × F` satisfies, for `x` in a compact set and `ξ` in a ball, the
+estimate `‖D^k f(x, ξ)‖ ≤ C (1 + ‖ξ‖ ^ 2) ^ (r / 2)` for every real `r`: the derivative is bounded
+there, and the weight is bounded below. -/
+theorem ContDiff.exists_norm_iteratedFDeriv_le_one_add_norm_sq_rpow_of_norm_le {E F G : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [ProperSpace F] [NormedAddCommGroup G] [NormedSpace ℝ G] {k : ℕ}
+    {f : E × F → G} (hf : ContDiff ℝ k f) {K : Set E} (hK : IsCompact K) (R r : ℝ) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ : F, ‖ξ‖ ≤ R →
+      ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (r / 2) := by
+  obtain ⟨C, hC⟩ := (hK.prod (isCompact_closedBall (0 : F) R)).exists_bound_of_continuousOn
+    (hf.continuous_iteratedFDeriv le_rfl).continuousOn
+  have hw : (0 : ℝ) < (1 + R ^ 2) ^ (-|r| / 2) := by positivity
+  refine ⟨max C 0 / (1 + R ^ 2) ^ (-|r| / 2), by positivity, fun x hx ξ hξ ↦ ?_⟩
+  calc ‖iteratedFDeriv ℝ k f (x, ξ)‖ ≤ max C 0 :=
+        (hC (x, ξ) ⟨hx, by simpa using hξ⟩).trans (le_max_left _ _)
+    _ = max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + R ^ 2) ^ (-|r| / 2) := by field_simp
+    _ ≤ max C 0 / (1 + R ^ 2) ^ (-|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
+        mul_le_mul_of_nonneg_left (TauCeti.one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow hξ r)
+          (by positivity)
 
 namespace TauCeti
 
