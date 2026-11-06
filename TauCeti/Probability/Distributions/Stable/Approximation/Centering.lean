@@ -9,12 +9,12 @@ public import TauCeti.Probability.Distributions.Stable.Approximation.Support
 import TauCeti.Analysis.SpecialFunctions.Integrals.PowerSin
 
 /-!
-# Divergent centering of fully skewed stable approximations
+# Divergent centering of skewed stable approximations
 
-At shapes `1 ≤ α < 2`, the sine compensator of a fully positively skewed stable
-Lévy measure tends to positive infinity as the jump cutoff tends to zero. Reflection
-gives negative infinity at full negative skewness. Every fixed right half-line, respectively
-left half-line, eventually lies in the support of the corresponding compensated
+At shapes `1 ≤ α < 2`, the sine compensator of a stable Lévy measure tends to positive
+infinity for positive skewness and negative infinity for negative skewness as the jump
+cutoff tends to zero. At full positive, respectively negative, skewness, every fixed right,
+respectively left, half-line eventually lies in the support of the corresponding compensated
 compound-Poisson approximations, although every retained jump has the same sign.
 
 These facts account for the unbounded compensating translations in support arguments for
@@ -36,18 +36,22 @@ open scoped Topology
 
 namespace TauCeti.Probability
 
-private lemma integral_sin_cutoff_one {α ε : ℝ} (hα : α ∈ Ioo 0 2) (hε : 0 < ε) :
-    (∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α 1) =
-      (2 * (Gamma (1 + α) * sin (π * α / 2) / π)) *
+private lemma integral_sin_cutoff {α β ε : ℝ} (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1)
+    (hε : 0 < ε) :
+    (∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α β) =
+      (2 * β * (Gamma (1 + α) * sin (π * α / 2) / π)) *
         ∫ x in Ioi ε, x ^ (-(α + 1)) * sin x := by
   have hs : MeasurableSet {x : ℝ | ε < |x|} := by measurability
-  let _ := isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (α := α) (β := 1) hε
-  have hi : IntegrableOn sin {x : ℝ | ε < |x|} (stableLevyMeasure α 1) :=
+  let _ := isFiniteMeasure_stableLevyMeasure_restrict_abs_gt (α := α) (β := β) hε
+  have hi : IntegrableOn sin {x : ℝ | ε < |x|} (stableLevyMeasure α β) :=
     Integrable.of_bound (by fun_prop) 1
       (ae_of_all _ fun x ↦ by simpa using abs_sin_le_one x)
   rw [← integral_indicator hs,
-    integral_stableLevyMeasure_eq hα (by norm_num) ((integrable_indicator_iff hs).mpr hi)]
-  simp only [sub_self, mul_zero, smul_eq_mul]
+    integral_stableLevyMeasure_eq hα hβ ((integrable_indicator_iff hs).mpr hi)]
+  have hneg (x : ℝ) : {x : ℝ | ε < |x|}.indicator sin (-x) =
+      -{x : ℝ | ε < |x|}.indicator sin x := by
+    by_cases hx : ε < |x| <;> simp [indicator, abs_neg, hx]
+  simp_rw [smul_eq_mul, hneg, mul_neg, integral_neg]
   have heq : (∫ x in Ioi (0 : ℝ), x ^ (-(α + 1)) *
       {x : ℝ | ε < |x|}.indicator sin x) =
       ∫ x in Ioi ε, x ^ (-(α + 1)) * sin x := by
@@ -63,35 +67,36 @@ private lemma integral_sin_cutoff_one {α ε : ℝ} (hα : α ∈ Ioo 0 2) (hε 
   rw [heq]
   ring
 
-private lemma integral_sin_cutoff_neg_one (α ε : ℝ) :
-    (∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α (-1)) =
-      -(∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α 1) := by
-  rw [← map_neg_stableLevyMeasure α 1,
-    setIntegral_map (by measurability) (by fun_prop) measurable_neg.aemeasurable]
-  simp only [preimage_ofPred_eq, abs_neg, sin_neg]
-  rw [integral_neg]
-
-/-- For shape at least one and full positive skewness, the cutoff sine compensator diverges
+/-- For shape at least one and positive skewness, the cutoff sine compensator diverges
 to positive infinity, including at shape one. -/
-theorem tendsto_integral_sin_stableLevyMeasure_one_atTop {α : ℝ} (hα : α ∈ Ico 1 2) :
-    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α 1)
+theorem tendsto_integral_sin_stableLevyMeasure_atTop {α β : ℝ} (hα : α ∈ Ico 1 2)
+    (hβ : 0 < β) (hβ1 : β ≤ 1) :
+    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α β)
       (𝓝[>] 0) atTop := by
   have ha : α ∈ Ioo 0 2 := ⟨by linarith [hα.1], hα.2⟩
   have ht := Tendsto.const_mul_atTop
-    (mul_pos zero_lt_two (stableLevyDensity_coefficient_pos ha))
+    (mul_pos (mul_pos zero_lt_two hβ) (stableLevyDensity_coefficient_pos ha))
     (TauCeti.tendsto_integral_rpow_mul_sin_Ioi_nhdsGT_zero
       (a := -(α + 1)) (by linarith [hα.1]))
   apply ht.congr'
   filter_upwards [self_mem_nhdsWithin] with ε hε
-  exact (integral_sin_cutoff_one ha hε).symm
+  exact (integral_sin_cutoff ha (abs_le.mpr ⟨by linarith, hβ1⟩) hε).symm
 
-/-- For shape at least one and full negative skewness, the cutoff sine compensator diverges
+/-- For shape at least one and negative skewness, the cutoff sine compensator diverges
 to negative infinity. -/
-theorem tendsto_integral_sin_stableLevyMeasure_neg_one_atBot {α : ℝ} (hα : α ∈ Ico 1 2) :
-    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α (-1))
+theorem tendsto_integral_sin_stableLevyMeasure_atBot {α β : ℝ} (hα : α ∈ Ico 1 2)
+    (hβ : β < 0) (hβ1 : -1 ≤ β) :
+    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, sin x ∂stableLevyMeasure α β)
       (𝓝[>] 0) atBot := by
-  simp_rw [integral_sin_cutoff_neg_one]
-  exact tendsto_neg_atBot_iff.mpr (tendsto_integral_sin_stableLevyMeasure_one_atTop hα)
+  have ha : α ∈ Ioo 0 2 := ⟨by linarith [hα.1], hα.2⟩
+  have ht := Tendsto.const_mul_atTop_of_neg
+    (mul_neg_of_neg_of_pos (mul_neg_of_pos_of_neg zero_lt_two hβ)
+      (stableLevyDensity_coefficient_pos ha))
+    (TauCeti.tendsto_integral_rpow_mul_sin_Ioi_nhdsGT_zero
+      (a := -(α + 1)) (by linarith [hα.1]))
+  apply ht.congr'
+  filter_upwards [self_mem_nhdsWithin] with ε hε
+  exact (integral_sin_cutoff ha (abs_le.mpr ⟨hβ1, by linarith⟩) hε).symm
 
 /-- Every fixed right half-line eventually lies in the support of the fully positively
 skewed compensated approximations when the shape is at least one. -/
@@ -100,7 +105,8 @@ theorem eventually_Ici_subset_support_stableCompensatedPoissonMeasure_one {α : 
     ∀ᶠ ε : ℝ in 𝓝[>] 0, Ici x ⊆ (stableCompensatedPoissonMeasure α 1 ε).support := by
   filter_upwards [self_mem_nhdsWithin,
     (eventually_lt_nhds zero_lt_one).filter_mono nhdsWithin_le_nhds,
-    (tendsto_integral_sin_stableLevyMeasure_one_atTop hα).eventually_ge_atTop (1 - x)]
+    (tendsto_integral_sin_stableLevyMeasure_atTop hα zero_lt_one le_rfl).eventually_ge_atTop
+      (1 - x)]
       with ε hε hε1 hc
   rw [support_stableCompensatedPoissonMeasure_one ⟨by linarith [hα.1], hα.2⟩ hε]
   intro y hy
@@ -114,7 +120,8 @@ theorem eventually_Iic_subset_support_stableCompensatedPoissonMeasure_neg_one {�
     ∀ᶠ ε : ℝ in 𝓝[>] 0, Iic x ⊆ (stableCompensatedPoissonMeasure α (-1) ε).support := by
   filter_upwards [self_mem_nhdsWithin,
     (eventually_lt_nhds zero_lt_one).filter_mono nhdsWithin_le_nhds,
-    (tendsto_integral_sin_stableLevyMeasure_neg_one_atBot hα).eventually_le_atBot (-1 - x)]
+    (tendsto_integral_sin_stableLevyMeasure_atBot hα neg_one_lt_zero le_rfl).eventually_le_atBot
+      (-1 - x)]
       with ε hε hε1 hc
   rw [support_stableCompensatedPoissonMeasure_neg_one ⟨by linarith [hα.1], hα.2⟩ hε]
   intro y hy
