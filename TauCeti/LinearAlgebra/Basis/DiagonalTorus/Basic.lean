@@ -328,6 +328,17 @@ theorem weightChar_const (z : ℤ) (s : κ → Rˣ) :
     weightChar R (fun _ ↦ z) s = (∏ j, s j) ^ z := by
   rw [weightChar_apply, torusCharacter_def, prod_zpow]
 
+/-- Negating one coordinate of a weight is inverting that coordinate of the torus point. -/
+theorem weightChar_update_neg [DecidableEq κ] (μ : κ → ℤ) (c : κ) (s : κ → Rˣ) :
+    weightChar R (Function.update μ c (-μ c)) s =
+      weightChar R μ (Function.update s c (s c)⁻¹) := by
+  rw [weightChar_apply, weightChar_apply, torusCharacter_def, torusCharacter_def]
+  refine Finset.prod_congr rfl fun j _ ↦ ?_
+  by_cases hjc : j = c
+  · subst hjc
+    simp [_root_.zpow_neg]
+  · simp [Function.update_of_ne hjc]
+
 end WeightChar
 
 /-! ## Separating weights -/

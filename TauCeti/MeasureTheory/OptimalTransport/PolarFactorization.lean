@@ -141,12 +141,13 @@ theorem ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp (hUρ : m.ma
   rw [hω', hω]
 
 /-- **Brenier's polar factorization.** Let `(α, m)` be a probability space and `U : α → E` an
-a.e. measurable map into a finite-dimensional real inner product space, and let `P` be a
-probability law on `E`. Suppose that `P` and the law of `U` are absolutely continuous with
-respect to an additive Haar measure and that the optimal cost between them for `‖x - y‖ ^ 2 / 2`
-is finite, as it is for laws with finite second moment. Then there is a convex, lower
-semicontinuous `u : E → EReal` that never takes the value `⊥`, finite near `P`-almost every point
-with differentiable real representative there, such that:
+a.e. measurable map into a finite-dimensional real inner product space, and let `P` be a measure
+on `E`. Suppose that `P` and the law of `U` are absolutely continuous with respect to an additive
+Haar measure and that the optimal cost between them for `‖x - y‖ ^ 2 / 2` is finite, as it is for
+laws with finite second moment. Then `P` is a probability law, since a coupling with the law of
+`U` has the same total mass, and there is a convex, lower semicontinuous `u : E → EReal` that
+never takes the value `⊥`, finite near `P`-almost every point with differentiable real
+representative there, such that:
 
 * the gradient `∇u` is an optimal transport map from `P` to the law of `U`, the monotone
   rearrangement of `U` on `(E, P)`;
@@ -157,7 +158,7 @@ The factor `s` is determined by `u`
 (`TauCeti.ae_eq_gradient_fenchelConjugate_comp_of_ae_eq_gradient_comp`) and is the unique map of
 law `P` minimising the quadratic cost to `U`
 (`TauCeti.ae_eq_of_lintegral_norm_sub_sq_div_two_le`). -/
-theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m] [IsProbabilityMeasure P]
+theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m]
     (hU : AEMeasurable U m) (hUρ : m.map U ≪ ρ) (hP : P ≪ ρ)
     (hfin : transportCost (fun z : E × E => ENNReal.ofReal (‖z.1 - z.2‖ ^ 2 / 2)) P (m.map U) ≠ ∞) :
     ∃ u : E → EReal, Convex ℝ {p : E × ℝ | u p.1 ≤ p.2} ∧ LowerSemicontinuous u ∧
@@ -168,6 +169,9 @@ theorem exists_hasLaw_and_ae_eq_gradient_comp [IsProbabilityMeasure m] [IsProbab
       HasLaw ((∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ U) P m ∧
       U =ᵐ[m] (∇ fun x => (u x).toReal) ∘
         (∇ fun y => (fenchelConjugate (innerₗ E) u y).toReal) ∘ U := by
+  have : IsProbabilityMeasure P := by
+    obtain ⟨π, hπ⟩ := exists_isCoupling_of_transportCost_ne_top hfin
+    exact ⟨by rw [hπ.measure_univ_eq, measure_univ]⟩
   obtain ⟨u, hconv, hlsc, hbot, hdiff, -, hT, hS, -, hinv⟩ :=
     exists_isKantorovichOptimalTransportMap_gradient_and_gradient_fenchelConjugate hP hUρ hfin
   refine ⟨u, hconv, hlsc, hbot, hdiff, hT, hS.toHasLaw.comp (hasLaw_map hU), ?_⟩

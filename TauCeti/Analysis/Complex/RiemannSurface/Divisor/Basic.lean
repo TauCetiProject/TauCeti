@@ -112,9 +112,9 @@ theorem divisorPullback_ofPoint (f : FiniteHolomorphicMap X Y) (y : Y) :
   · simp [hxy, f.finite_fiber y |>.mem_toFinset]
   · simp [hxy, WeilDivisor.coeff_ofPoint_of_ne hxy, f.finite_fiber y |>.mem_toFinset]
 
-section Connected
+section Manifold
 
-variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y] [PreconnectedSpace X]
+variable [IsManifold 𝓘(ℂ) 1 X] [IsManifold 𝓘(ℂ) 1 Y]
 
 /-- The support of a pulled-back divisor is the preimage of the original support. -/
 @[simp]
@@ -168,7 +168,7 @@ theorem degree_divisorPullback (f : FiniteHolomorphicMap X Y)
 
 end Compact
 
-end Connected
+end Manifold
 
 end TauCeti.RiemannSurface
 
