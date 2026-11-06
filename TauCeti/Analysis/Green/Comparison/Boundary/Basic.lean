@@ -72,7 +72,7 @@ theorem inChartAt_mpullback_manifoldOneForm_eq_circulationFun
   -- Name the canonical inverse projection so the derivative chain rule matches the parameter map.
   change (mpullback _ _ f (manifoldOneForm P Q)).inChartAt α (lineParam t)
     (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis = circulationFun P Q (g ∘ lineParam) t
-  rw [RoughForm.inChartAt_mpullback_modelSpace _ f α ht' (hf _),
+  rw [RoughForm.inChartAt_mpullback_modelSpace _ f α ht',
     ContinuousAlternatingMap.compContinuousLinearMap_apply,
     manifoldOneForm_apply, circulationFun_eq_oneForm, hγ.deriv,
     _root_.ModelWithCorners.range_eq_univ, fderivWithin_univ, lineParam_one]

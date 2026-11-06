@@ -98,11 +98,7 @@ theorem inChartAt_mpullback_rectangle_bot
       ω (z.1 0 + a, z.2 0 + c) (fun i ↦
         (NormedSpace.fromTangentSpace (𝕜 := ℝ) (z.1 0 + a, z.2 0 + c)).symm
           (![(1, 0), (0, 1)] i)) := by
-  have hf := ((contMDiff_subtypeVal_Icc (x := a) (y := b) (n := 1)).comp
-    contMDiff_fst).prodMk_space ((contMDiff_subtypeVal_Icc (x := c) (y := d) (n := 1)).comp
-      contMDiff_snd)
-  dsimp only [Function.comp_def] at hf
-  rw [ω.inChartAt_mpullback_modelSpace _ ⊥ hz (hf.mdifferentiable one_ne_zero _)]
+  rw [ω.inChartAt_mpullback_modelSpace _ ⊥ hz]
   have hd := (hasFDerivWithinAt_subtypeVal_extChartAt_rectangle_symm ⊥ hz).fderivWithin
     (((𝓡∂ 1).prod (𝓡∂ 1)).uniqueDiffOn _ (extChartAt_target_subset_range _ hz))
   have he := subtypeVal_extChartAt_rectangle_symm ⊥ hz

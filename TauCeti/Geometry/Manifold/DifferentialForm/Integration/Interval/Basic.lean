@@ -43,9 +43,7 @@ theorem inChartAt_mpullback_subtypeVal_Icc
       (EuclideanSpace.basisFun (Fin 1) ℝ).toBasis =
       (if (α : ℝ) < b then (1 : ℝ) else -1) *
         ω ((extChartAt (𝓡∂ 1) α).symm z : ℝ) (fun _ ↦ 1) := by
-  have hf := (contMDiff_subtypeVal_Icc (x := a) (y := b) (n := 1)
-    ((extChartAt (𝓡∂ 1) α).symm z)).mdifferentiableAt one_ne_zero
-  rw [RoughForm.inChartAt_mpullback_modelSpace ω _ α hz hf]
+  rw [RoughForm.inChartAt_mpullback_modelSpace ω _ α hz]
   have hd := (hasFDerivWithinAt_subtypeVal_extChartAt_Icc_symm α hz).fderivWithin
     ((𝓡∂ 1).uniqueDiffOn z (extChartAt_target_subset_range α hz))
   simp only [Function.comp_def]

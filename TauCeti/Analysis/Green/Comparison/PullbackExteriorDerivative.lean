@@ -61,8 +61,8 @@ theorem _root_.ContMDiff.mextDeriv_mpullback_manifoldOneForm_apply {f : M → �
       fun y ↦ ((manifoldOneForm P Q).inChartAt (f x) (T y)).compContinuousLinearMap
         (fderivWithin ℝ T (range I) y) := by
     filter_upwards [extChartAt_target_mem_nhdsWithin (I := I) x] with y hy
-    rw [RoughForm.inChartAt_mpullback_modelSpace _ f x hy
-      ((hf _).mdifferentiableAt (by norm_num)), RoughForm.inChartAt_modelSpace]
+    rw [RoughForm.inChartAt_mpullback_modelSpace _ f x hy,
+      RoughForm.inChartAt_modelSpace]
     rfl
   have hTx : T z = f x := by simp only [T, z, Function.comp_apply, extChartAt_to_inv]
   have hω : DifferentiableWithinAt ℝ ((manifoldOneForm P Q).inChartAt (f x))
@@ -76,8 +76,7 @@ theorem _root_.ContMDiff.mextDeriv_mpullback_manifoldOneForm_apply {f : M → �
     extDeriv_manifoldOneForm_inChartAt hP hQ]
   rw [← RoughForm.inChartAt_extChartAt_self
     (mpullback I 𝓘(ℝ, ℂ) f manifoldAreaForm) x,
-    RoughForm.inChartAt_mpullback_modelSpace _ f x (mem_extChartAt_target x)
-      ((hf _).mdifferentiableAt (by norm_num))]
+    RoughForm.inChartAt_mpullback_modelSpace _ f x (mem_extChartAt_target x)]
   ext v
   -- Evaluate the composed alternating maps on v and identify the model tangent fiber with ℂ.
   change curl P Q (f x) • Complex.orientation.volumeFormL

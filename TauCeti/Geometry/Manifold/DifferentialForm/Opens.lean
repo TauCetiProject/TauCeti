@@ -269,7 +269,7 @@ theorem RoughForm.inChartAt_mpullback_inclusion_eventuallyEq {U W : Opens M} (h 
   have hmf : mfderivWithin 𝓘(ℝ, E) I (Opens.inclusion h ∘ (extChartAt I x).symm) (range I) z =
       mfderivWithin 𝓘(ℝ, E) I (extChartAt I (Opens.inclusion h x)).symm (range I) z :=
     (hev'.filter_mono nhdsWithin_le_nhds).symm.mfderivWithin_eq hev'.self_of_nhds.symm
-  rw [inChartAt_mpullback γ _ x hz ((contMDiff_inclusion h).mdifferentiableAt one_ne_zero), hmf,
+  rw [inChartAt_mpullback γ _ x hz, hmf,
     ← Function.comp_apply (f := Opens.inclusion h), ← hev'.self_of_nhds]
   ext v
   exact (inChartAt_apply γ (Opens.inclusion h x) z v).symm

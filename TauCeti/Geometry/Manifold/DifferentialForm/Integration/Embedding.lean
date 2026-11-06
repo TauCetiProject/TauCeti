@@ -108,8 +108,7 @@ theorem signedInChartAt_mpullback_eq_abs_det (l : Manifold.OrientationLift I M (
         (range I) (extChartAt I α x)).det| *
           ω (f x) (fun i ↦ (NormedSpace.fromTangentSpace (f x)).symm (b i)) := by
   rw [RoughForm.signedInChartAt_apply_of_mem_source _ _ _ _ hx,
-    RoughForm.inChartAt_mpullback_modelSpace ω f α ((extChartAt I α).map_source hx)
-      (by simpa only [(extChartAt I α).left_inv hx] using hf x),
+    RoughForm.inChartAt_mpullback_modelSpace ω f α ((extChartAt I α).map_source hx),
     (extChartAt I α).left_inv hx]
   let D := fderivWithin ℝ (f ∘ (extChartAt I α).symm) (range I) (extChartAt I α x)
   have he : ((ω (f x)).compContinuousLinearMap
