@@ -256,6 +256,12 @@ theorem integrable_realKernel : Integrable realKernel := by
   rw [Real.norm_eq_abs, ← div_eq_mul_inv, div_div]
   exact abs_realKernel_le t
 
+/-- The real Haagerup–Zsidó kernel times a sine is integrable. -/
+theorem integrable_realKernel_mul_sin (x : ℝ) :
+    Integrable fun t ↦ realKernel t * Real.sin (x * t) :=
+  integrable_realKernel.mul_bdd (c := 1) (by fun_prop)
+    (.of_forall fun t ↦ by simpa using Real.abs_sin_le_one _)
+
 /-- The Haagerup–Zsidó kernel is integrable on `ℝ`. -/
 theorem integrable_reciprocalKernel : Integrable reciprocalKernel := by
   refine integrable_realKernel.norm.mono' measurable_reciprocalKernel.aestronglyMeasurable
