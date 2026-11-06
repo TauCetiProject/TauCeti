@@ -309,7 +309,8 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
   have hstep (v : S) : ‖tateNodeStep q (U v) s - s‖ ≤ ‖s‖ ^ 2 := by
     have h := norm_pow_sub_one_le_norm_sub_one (hU₁ v).le 3
     rw [sub_sub_cancel_left, norm_neg, hU v] at h
-    rw [tateNodeStep, show ∀ c E : K, c * (s - E) - s = (c - 1) * s - c * E by intros; ring]
+    have hrw (c E : K) : c * (s - E) - s = (c - 1) * s - c * E := by ring
+    rw [tateNodeStep, hrw]
     refine (IsUltrametricDist.norm_sub_le_max _ _).trans (max_le ?_ ?_)
     · rw [norm_mul, sq]
       exact mul_le_mul_of_nonneg_right h (norm_nonneg _)
@@ -325,8 +326,9 @@ private theorem exists_tateUniformizationX_add_tateUniformizationY_eq (q : Kˣ)
       (g := fun _ ↦ 1 - ((U w : Kˣ) : K)) zero_le_one (norm_nonneg _) (fun _ _ ↦ (hU₁ v).le)
       (fun _ _ ↦ (hU₁ w).le) fun _ _ ↦ by rw [sub_sub_sub_cancel_left, norm_sub_rev]
     simp only [Finset.prod_const, Finset.card_univ, Fintype.card_fin, one_pow, mul_one] at h
-    rw [tateNodeStep, tateNodeStep, show ∀ c d E F : K,
-      c * (s - E) - d * (s - F) = (c - d) * (s - E) + d * (F - E) by intros; ring]
+    have hrw (c d E F : K) :
+        c * (s - E) - d * (s - F) = (c - d) * (s - E) + d * (F - E) := by ring
+    rw [tateNodeStep, tateNodeStep, hrw]
     refine (IsUltrametricDist.norm_add_le_max _ _).trans (max_le ?_ ?_)
     · rw [norm_mul, mul_comm ‖s‖]
       exact mul_le_mul (h.trans_eq (norm_sub_rev _ _))
