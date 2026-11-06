@@ -70,12 +70,8 @@ private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
   holderWith_heatDuhamelPotential
     (continuous_timeExtension T.coe_nonneg f.continuous).stronglyMeasurable
     (fun s _ x => by
-      simpa only [HolderSpace.coe_toBoundedContinuousFunction, coe_nnnorm] using
-        (norm_timeExtension_le T.coe_nonneg f.toBoundedContinuousFunction s x).trans
-          f.norm_toBoundedContinuousFunction_le)
-    (fun s _ => holderWith_timeExtension T.coe_nonneg (f := f) (by
-      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-        f.memHolder.holderWith.mono f.nnHolderNorm_le) s) hα hα₂
+      simpa only [coe_nnnorm] using norm_timeExtension_holderSpace_le T.coe_nonneg f s x)
+    (fun s _ => holderWith_timeExtension_holderSpace T.coe_nonneg f s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
     (p : slab (E := E) 0 T) :
@@ -85,10 +81,8 @@ private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T
   have hp := (slabTime p).2
   rw [coe_slabTime] at hp
   exact ((norm_heatDuhamelPotential_le hp.1
-    (ae_of_all _ fun s => ae_of_all _ fun x => by
-      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-        (norm_timeExtension_le T.coe_nonneg f.toBoundedContinuousFunction s x).trans
-          f.norm_toBoundedContinuousFunction_le) _).trans
+    (ae_of_all _ fun s => ae_of_all _ fun x =>
+      norm_timeExtension_holderSpace_le T.coe_nonneg f s x) _).trans
     (mul_le_mul_of_nonneg_left hp.2 (norm_nonneg f))).trans_eq (mul_comm _ _)
 
 private def potentialBCF (hα : 0 < α) (hα₂ : α ≤ 2)
