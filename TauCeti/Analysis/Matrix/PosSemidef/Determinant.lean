@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Matrix.Spectrum
 public import TauCeti.Analysis.Matrix.Sqrt
 public import TauCeti.LinearAlgebra.Matrix.SchurComplement
 public import TauCeti.LinearAlgebra.Matrix.PosSemidef
+import TauCeti.Analysis.MeanInequalities
 
 /-!
 # Determinant inequalities for positive-semidefinite matrices
@@ -17,8 +18,14 @@ The determinant is monotone on the positive-semidefinite cone. Hadamard--Fischer
 bounds a block determinant by the product of its diagonal-block determinants.
 The overlapping-block version is the local Gram determinant inequality used
 when comparing the Euclidean volumes of an intersection and a sum of subspaces.
-All statements include singular matrices and empty blocks, over either real or
+All these statements include singular matrices and empty blocks, over either real or
 complex scalars.
+
+For positive-semidefinite real matrices `A` and `B` of size `n`, the determinant-trace
+inequality `det A * det B ≤ (tr (A * B) / n) ^ n` is AM-GM for the eigenvalues of
+`√A * B * √A`. With `B` the negated Hessian of a function at a point of its upper contact set
+and `A` the coefficient matrix of a non-divergence-form operator, it bounds the Jacobian of the
+gradient map by the operator, which is how the Aleksandrov–Bakelman–Pucci estimate uses it.
 
 ## References
 
@@ -146,5 +153,52 @@ theorem PosSemidef.det_mul_det_fromBlocks_le
         (A.det * (F - Cᴴ * A⁻¹ * C).det) := by ring
 
 end Blocks
+
+section Trace
+
+variable [Fintype n]
+
+/-- The trace of the product of two positive-semidefinite matrices is nonnegative. -/
+theorem PosSemidef.trace_mul_nonneg {A B : Matrix n n 𝕜} (hA : A.PosSemidef)
+    (hB : B.PosSemidef) : 0 ≤ (A * B).trace := by
+  classical
+  have hS : (CFC.sqrt A).IsHermitian :=
+    (nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)).isHermitian
+  have hC : (CFC.sqrt A * B * CFC.sqrt A).PosSemidef := by
+    simpa only [hS.eq] using hB.mul_mul_conjTranspose_same (CFC.sqrt A)
+  rw [trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt B]
+  exact hC.trace_nonneg
+
+variable [DecidableEq n]
+
+/-- **AM-GM for the eigenvalues** of a positive-semidefinite real matrix:
+`det A ≤ (tr A / n) ^ n`, where `n` is the size of `A`. -/
+theorem PosSemidef.det_le_trace_div_card_pow {A : Matrix n n ℝ} (hA : A.PosSemidef) :
+    A.det ≤ (A.trace / Fintype.card n) ^ Fintype.card n := by
+  have hdet : A.det = ∏ i, hA.isHermitian.eigenvalues i := by
+    simpa using hA.isHermitian.det_eq_prod_eigenvalues
+  have htr : A.trace = ∑ i, hA.isHermitian.eigenvalues i := by
+    simpa using hA.isHermitian.trace_eq_sum_eigenvalues
+  rw [hdet, htr]
+  simpa using Real.prod_le_sum_div_card_pow Finset.univ fun i _ => hA.eigenvalues_nonneg i
+
+/-- **The determinant-trace inequality.** For positive-semidefinite real matrices `A` and `B` of
+size `n`, `det A * det B ≤ (tr (A * B) / n) ^ n`. With `A = I` this is AM-GM for the eigenvalues
+of `B`; in general it bounds the determinant of `B` by the trace of `A * B`. -/
+theorem PosSemidef.det_mul_det_le_trace_mul_div_card_pow {A B : Matrix n n ℝ}
+    (hA : A.PosSemidef) (hB : B.PosSemidef) :
+    A.det * B.det ≤ ((A * B).trace / Fintype.card n) ^ Fintype.card n := by
+  -- Pass to the positive-semidefinite sandwich `√A * B * √A`, which has the same determinant
+  -- and trace as `A * B`.
+  have hS : (CFC.sqrt A).IsHermitian :=
+    (nonneg_iff_posSemidef.mp (CFC.sqrt_nonneg A)).isHermitian
+  have hC : (CFC.sqrt A * B * CFC.sqrt A).PosSemidef := by
+    simpa only [hS.eq] using hB.mul_mul_conjTranspose_same (CFC.sqrt A)
+  have hdet : (CFC.sqrt A * B * CFC.sqrt A).det = A.det * B.det := by
+    rw [det_mul, det_mul, mul_right_comm, ← det_mul, CFC.sqrt_mul_sqrt_self A hA.nonneg]
+  rw [← hdet, trace_mul_comm, ← hA.trace_sqrt_mul_mul_sqrt B]
+  exact hC.det_le_trace_div_card_pow
+
+end Trace
 
 end Matrix

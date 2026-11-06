@@ -45,6 +45,8 @@ hyperplane sections in the Kneser–Süss equality argument for Brunn–Minkowsk
 ## Main statements
 
 * `Real.prod_rpow_add_prod_rpow_le_prod_add_rpow`: the weighted geometric mean is superadditive.
+* `Real.prod_le_sum_div_card_pow`: the unweighted AM-GM inequality in product form,
+  `∏ i ∈ s, z i ≤ ((∑ i ∈ s, z i) / #s) ^ #s`.
 * `Real.geom_mean_le_arith_mean2_weighted_div_mul`,
   `Real.geom_mean_lt_arith_mean2_weighted_div_mul`: two-point weighted AM-GM after normalizing
   by positive scalars, with the strict form.
@@ -94,6 +96,23 @@ theorem prod_rpow_add_prod_rpow_le_prod_add_rpow {ι : Type*} (s : Finset ι) {w
     _ ≤ ∑ i ∈ s, w i := Finset.sum_le_sum fun i hi =>
         mul_le_of_le_one_right (hw i hi) (div_self_le_one _)
     _ = 1 := hw'
+
+/-- **AM-GM inequality** in product form: the product of finitely many nonnegative reals is at most
+the power of their arithmetic mean, `∏ i ∈ s, z i ≤ ((∑ i ∈ s, z i) / #s) ^ #s`. -/
+theorem prod_le_sum_div_card_pow {ι : Type*} (s : Finset ι) {z : ι → ℝ}
+    (hz : ∀ i ∈ s, 0 ≤ z i) : ∏ i ∈ s, z i ≤ ((∑ i ∈ s, z i) / s.card) ^ s.card := by
+  rcases s.eq_empty_or_nonempty with rfl | hs
+  · simp
+  have hn : (s.card : ℝ) ≠ 0 := Nat.cast_ne_zero.2 hs.card_pos.ne'
+  have hw : ∑ _i ∈ s, (s.card : ℝ)⁻¹ = 1 := by
+    rw [Finset.sum_const, nsmul_eq_mul, mul_inv_cancel₀ hn]
+  have h := geom_mean_le_arith_mean_weighted s (fun _ => (s.card : ℝ)⁻¹) z
+    (fun _ _ => inv_nonneg.2 (Nat.cast_nonneg _)) hw hz
+  rw [finsetProd_rpow s z hz, ← Finset.mul_sum, inv_mul_eq_div] at h
+  calc ∏ i ∈ s, z i = ((∏ i ∈ s, z i) ^ (s.card⁻¹ : ℝ)) ^ s.card :=
+        (rpow_inv_natCast_pow (Finset.prod_nonneg hz) hs.card_pos.ne').symm
+    _ ≤ ((∑ i ∈ s, z i) / s.card) ^ s.card :=
+        pow_le_pow_left₀ (rpow_nonneg (Finset.prod_nonneg hz) _) h _
 
 /-- Splitting a weighted geometric mean through positive normalizers `a` and `b`:
 `A ^ (1 - θ) * B ^ θ = (A / a) ^ (1 - θ) * (B / b) ^ θ * (a ^ (1 - θ) * b ^ θ)`. -/
