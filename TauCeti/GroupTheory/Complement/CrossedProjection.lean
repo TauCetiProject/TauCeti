@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.GroupExtension.Quotient
+public import TauCeti.GroupTheory.GroupExtension.Quotient.Basic
 public import TauCeti.Algebra.GroupAction.TypeTags
 public import TauCeti.RepresentationTheory.Homological.GroupCohomology.Cocycle
 public import TauCeti.GroupTheory.GroupAction.ConjAct
