@@ -7,6 +7,7 @@ module
 
 public import Mathlib.FieldTheory.Separable
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
+public import Mathlib.RingTheory.IntegralClosure.IsIntegralClosure.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.RegularLocalRing.Defs
@@ -19,6 +20,9 @@ import TauCeti.Algebra.Algebra.NatCast
 import TauCeti.RingTheory.AdjoinRoot.Basic
 import TauCeti.RingTheory.DiscreteValuationRing.MinimalPrime
 import TauCeti.RingTheory.RegularLocalRing.Basic
+import TauCeti.RingTheory.Flat.NonZeroDivisors
+import TauCeti.RingTheory.IntegralClosure.Transfer
+import TauCeti.RingTheory.Smooth.GeometricallyReduced
 
 /-!
 # The local model in Abhyankar's lemma for discrete valuation rings
@@ -49,12 +53,24 @@ is also a uniformizer of the Kummer extension `A[π ^ (1 / n)]`
 extension, these results say that the local rings of `D` have ramification index one and
 separable residue fields.
 
+The model is also the integral closure in the root extraction. When `ϖ` is a nonzerodivisor with
+`B ⧸ (ϖ)` reduced, `u` is a unit, `e` is invertible in `B` and `d ≠ 0`, the model is the standard
+cover of `B[y]/(y ^ e − u)` along `ϖ y`, whose quotient by `ϖ y` is étale over `B ⧸ (ϖ)`, hence
+reduced. So `D` is the integral closure of `B` in its localization away from `ϖ`
+(`TauCeti.isIntegralClosure_abhyankarModel`), and therefore in the root extraction
+`B[x]/(x ^ (e d) − u ϖ ^ e)` with `ϖ` inverted (`TauCeti.abhyankarModelIntegralClosureAlgEquiv`).
+For a discrete valuation ring `B` with uniformizer `ϖ` and fraction field `L = B[1 / ϖ]`, that
+ring is `L[x]/(x ^ n − π)`, which is `L ⊗_K K[π ^ (1 / n)]` in the situation above: `D` is the
+integral closure of `B` in it.
+
 ## Main definitions
 
 * `TauCeti.abhyankarModel ϖ u e d`: the ring `(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)`.
 * `TauCeti.abhyankarModelRoot ϖ u e d`: its element `x`.
 * `TauCeti.abhyankarModelAwayAlgEquiv`: after inverting `ϖ`, the root extraction
   `B[x]/(x ^ (e d) − u ϖ ^ e)` is isomorphic to `D`, compatibly with the roots.
+* `TauCeti.abhyankarModelIntegralClosureAlgEquiv`: the integral closure of `B` in the root
+  extraction with `ϖ` inverted is isomorphic to `D`, compatibly with the roots.
 
 ## Main results
 
@@ -66,6 +82,13 @@ separable residue fields.
   the isomorphism away from `ϖ` sends `x` to `x`, and its inverse sends `y` to `x ^ d / ϖ`.
 * `TauCeti.abhyankarModelRoot_mem_nonZeroDivisors`: for `e, d ≠ 0`, `x` is a nonzerodivisor when
   `ϖ` and `u` are.
+* `TauCeti.isIntegralClosure_abhyankarModel`: for `ϖ` a nonzerodivisor with `B ⧸ (ϖ)` reduced,
+  `u` a unit, `e` invertible in `B` and `d ≠ 0`, the model is the integral closure of `B` in its
+  localization away from `ϖ`.
+* `TauCeti.algebraMap_abhyankarModelIntegralClosureAlgEquiv`,
+  `TauCeti.coe_abhyankarModelIntegralClosureAlgEquiv_symm_root`: the identification of the
+  integral closure of the root extraction with the model is induced by
+  `TauCeti.abhyankarModelAwayAlgEquiv`, and matches the roots.
 * `TauCeti.isRegularLocalRing_abhyankarModel`, `TauCeti.isDiscreteValuationRing_abhyankarModel`,
   `TauCeti.maximalIdeal_eq_span_abhyankarModelRoot`: over a discrete valuation ring with
   uniformizer `ϖ`, for `u` a unit, `e` invertible in `B` and `d ≠ 0`, the local rings at maximal
@@ -500,5 +523,136 @@ theorem isSeparable_abhyankarModel_quotient (hϖ : ϖ ∈ maximalIdeal B) (hu : 
 
 end LocalRing
 
+section IntegralClosure
+
+variable {ϖ u : B} {e d : ℕ}
+
+variable (Dϖ : Type*) [CommRing Dϖ] [Algebra (abhyankarModel ϖ u e d) Dϖ]
+  [IsLocalization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ) Dϖ] [Algebra B Dϖ]
+  [IsScalarTower B (abhyankarModel ϖ u e d) Dϖ]
+
+/-- **The Abhyankar model is the integral closure of `B` away from `ϖ`.** Let `ϖ` be a
+nonzerodivisor of `B` with `B ⧸ (ϖ)` reduced, let `u` be a unit and `e` invertible in `B`, and
+`d ≠ 0`. Then `(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)` is the integral closure of `B` in its
+localization away from `ϖ`. This applies to a discrete valuation ring `B` with uniformizer `ϖ`. -/
+theorem isIntegralClosure_abhyankarModel [IsReduced (B ⧸ Ideal.span {ϖ})]
+    (hϖ : ϖ ∈ nonZeroDivisors B) (hu : IsUnit u) (he : IsUnit (e : B)) (hd : d ≠ 0) :
+    IsIntegralClosure (abhyankarModel ϖ u e d) B Dϖ := by
+  -- `X ^ e − u` is monic and `y` is a unit; when `e = 0` the ring `B` is trivial, as `0` is a unit.
+  obtain ⟨hmonic, hy⟩ : (X ^ e - C u).Monic ∧ IsUnit (AdjoinRoot.root (X ^ e - C u)) := by
+    rcases eq_or_ne e 0 with rfl | he₀
+    · have : Subsingleton B := subsingleton_of_zero_eq_one (by simpa using he)
+      have : Subsingleton (standardTameCover B u 0) := Module.subsingleton B _
+      exact ⟨monic_of_subsingleton _, isUnit_of_subsingleton _⟩
+    · exact ⟨monic_X_pow_sub_C _ he₀, AdjoinRoot.isUnit_root_X_pow_sub_C hu he₀⟩
+  have := hmonic.free_adjoinRoot
+  have := hmonic.finite_adjoinRoot
+  -- The model is the standard cover of `B' = B[y]/(y ^ e − u)` along `f = ϖ y`. As `y` is a unit,
+  -- `Dϖ` is the localization of the model away from `f`, in which it is integrally closed.
+  let B' := standardTameCover B u e
+  let f := algebraMap B B' ϖ * AdjoinRoot.root (X ^ e - C u)
+  let _ : Algebra B' Dϖ :=
+    ((algebraMap (abhyankarModel ϖ u e d) Dϖ).comp (algebraMap B' _)).toAlgebra
+  have : IsScalarTower B' (abhyankarModel ϖ u e d) Dϖ := .of_algebraMap_eq' rfl
+  have : IsScalarTower B B' Dϖ := .of_algebraMap_eq fun b ↦ by
+    rw [RingHom.algebraMap_toAlgebra, RingHom.comp_apply,
+      ← IsScalarTower.algebraMap_apply B B' (abhyankarModel ϖ u e d),
+      ← IsScalarTower.algebraMap_apply B (abhyankarModel ϖ u e d) Dϖ]
+  have : IsLocalization.Away (algebraMap B' (abhyankarModel ϖ u e d) f) Dϖ :=
+    .of_associated (r := algebraMap B (abhyankarModel ϖ u e d) ϖ)
+      ⟨(hy.map (algebraMap B' (abhyankarModel ϖ u e d))).unit, by
+        rw [IsUnit.unit_spec, IsScalarTower.algebraMap_apply B B' (abhyankarModel ϖ u e d)]
+        exact (map_mul _ _ _).symm⟩
+  -- `B'` modulo `f`, that is modulo `ϖ`, is étale over the reduced ring `B ⧸ (ϖ)`, so reduced.
+  have : IsReduced (B' ⧸ Ideal.span {f}) := by
+    have := standardTameCover_etale hu he
+    have := isReduced_quotient_map_of_smooth B B' (Ideal.span {ϖ})
+    rwa [Ideal.map_span, Set.image_singleton, ← Ideal.span_singleton_mul_right_unit hy] at this
+  have : IsIntegralClosure (abhyankarModel ϖ u e d) B' Dϖ :=
+    standardTameCover_isIntegralClosure
+      (mul_mem (Module.Flat.algebraMap_mem_nonZeroDivisors hϖ) hy.mem_nonZeroDivisors) hd Dϖ
+  exact IsIntegralClosure.tower_bot (A := B')
+
+variable (ϖ u e d) (Cϖ : Type*) [CommRing Cϖ]
+  [Algebra (standardTameCover B (u * ϖ ^ e) (e * d)) Cϖ]
+  [IsLocalization.Away (algebraMap B (standardTameCover B (u * ϖ ^ e) (e * d)) ϖ) Cϖ]
+  [Algebra B Cϖ] [IsScalarTower B (standardTameCover B (u * ϖ ^ e) (e * d)) Cϖ]
+
+/-- **The Abhyankar model is the integral closure of the root extraction.** Let `ϖ` be a
+nonzerodivisor of `B` with `B ⧸ (ϖ)` reduced, let `u` be a unit and `e` invertible in `B`, and
+`d ≠ 0`. The integral closure of `B` in the localization away from `ϖ` of the root extraction
+`B[x]/(x ^ (e d) − u ϖ ^ e)` is isomorphic to the Abhyankar model
+`(B[y]/(y ^ e − u))[x]/(x ^ d − ϖ y)`, compatibly with `abhyankarModelAwayAlgEquiv`
+(`TauCeti.algebraMap_abhyankarModelIntegralClosureAlgEquiv`); in particular `x` corresponds to `x`.
+For a discrete valuation ring `B` with fraction field `L = B[1/ϖ]`, that localization is
+`L[x]/(x ^ (e d) − u ϖ ^ e)`. -/
+noncomputable def abhyankarModelIntegralClosureAlgEquiv [IsReduced (B ⧸ Ideal.span {ϖ})]
+    (hϖ : ϖ ∈ nonZeroDivisors B) (hu : IsUnit u) (he : IsUnit (e : B)) (hd : d ≠ 0) :
+    integralClosure B Cϖ ≃ₐ[B] abhyankarModel ϖ u e d :=
+  have := isIntegralClosure_abhyankarModel
+    (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) hϖ hu he hd
+  (abhyankarModelAwayAlgEquiv ϖ u e d Cϖ
+    (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ))).mapIntegralClosure.trans
+    (IsIntegralClosure.equiv B (integralClosure B _)
+      (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) (abhyankarModel ϖ u e d))
+
+/-- The isomorphism `abhyankarModelIntegralClosureAlgEquiv` is induced by
+`abhyankarModelAwayAlgEquiv`: after inverting `ϖ` in the Abhyankar model, it is
+`abhyankarModelAwayAlgEquiv` on the integral closure. -/
+@[simp]
+theorem algebraMap_abhyankarModelIntegralClosureAlgEquiv [IsReduced (B ⧸ Ideal.span {ϖ})]
+    (hϖ : ϖ ∈ nonZeroDivisors B) (hu : IsUnit u) (he : IsUnit (e : B)) (hd : d ≠ 0)
+    (z : integralClosure B Cϖ) :
+    algebraMap _ Dϖ (abhyankarModelIntegralClosureAlgEquiv ϖ u e d Cϖ hϖ hu he hd z) =
+      abhyankarModelAwayAlgEquiv ϖ u e d Cϖ Dϖ z := by
+  have := isIntegralClosure_abhyankarModel
+    (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) hϖ hu he hd
+  -- The isomorphism is defined through the localization `Localization.Away ϖ`; transport it to
+  -- `Dϖ` along the canonical isomorphism `σ` of localizations of the Abhyankar model.
+  let σ : Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ) ≃ₐ[abhyankarModel ϖ u e d]
+      Dϖ :=
+    IsLocalization.algEquiv (.powers (algebraMap B (abhyankarModel ϖ u e d) ϖ))
+      (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) Dϖ
+  have hσ : (σ.restrictScalars B :
+      Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ) →ₐ[B] Dϖ).comp
+        (abhyankarModelAwayAlgEquiv ϖ u e d Cϖ
+          (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) :
+          Cϖ →ₐ[B] Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) =
+        abhyankarModelAwayAlgEquiv ϖ u e d Cϖ Dϖ := by
+    apply IsLocalization.algHom_ext
+      (.powers (algebraMap B (standardTameCover B (u * ϖ ^ e) (e * d)) ϖ))
+    ext
+    -- `IsLocalization.algHom_ext` states its hypothesis with `Algebra.algHom`, which is
+    -- `IsScalarTower.toAlgHom`; this restates its value as `algebraMap`.
+    have hC (c : standardTameCover B (u * ϖ ^ e) (e * d)) :
+        Algebra.algHom B _ Cϖ c = algebraMap _ Cϖ c := rfl
+    simp only [AlgHom.comp_apply, AlgEquiv.coe_toAlgHom, AlgEquiv.restrictScalars_apply, hC,
+      abhyankarModelAwayAlgEquiv_root, AlgEquiv.commutes]
+  calc algebraMap _ Dϖ (abhyankarModelIntegralClosureAlgEquiv ϖ u e d Cϖ hϖ hu he hd z)
+    _ = σ (algebraMap _ (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ))
+          (abhyankarModelIntegralClosureAlgEquiv ϖ u e d Cϖ hϖ hu he hd z)) :=
+        (σ.commutes _).symm
+    _ = σ (abhyankarModelAwayAlgEquiv ϖ u e d Cϖ
+          (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ)) z) := by
+        rw [abhyankarModelIntegralClosureAlgEquiv, AlgEquiv.trans_apply,
+          IsIntegralClosure.algebraMap_equiv]
+        simp only [Subalgebra.algebraMap_eq, Algebra.algebraMap_self, RingHomCompTriple.comp_eq,
+          AlgHom.coe_toRingHom, Subalgebra.coe_val, AlgEquiv.coe_mapIntegralClosure]
+    _ = _ := DFunLike.congr_fun hσ (z : Cϖ)
+
+/-- The isomorphism `abhyankarModelIntegralClosureAlgEquiv` identifies the root `x` of the root
+extraction with the root `x` of the Abhyankar model. -/
+@[simp]
+theorem coe_abhyankarModelIntegralClosureAlgEquiv_symm_root [IsReduced (B ⧸ Ideal.span {ϖ})]
+    (hϖ : ϖ ∈ nonZeroDivisors B) (hu : IsUnit u) (he : IsUnit (e : B)) (hd : d ≠ 0) :
+    ((abhyankarModelIntegralClosureAlgEquiv ϖ u e d Cϖ hϖ hu he hd).symm
+        (abhyankarModelRoot ϖ u e d) : Cϖ) =
+      algebraMap _ Cϖ (AdjoinRoot.root (X ^ (e * d) - C (u * ϖ ^ e))) := by
+  apply (abhyankarModelAwayAlgEquiv ϖ u e d Cϖ
+    (Localization.Away (algebraMap B (abhyankarModel ϖ u e d) ϖ))).injective
+  rw [← algebraMap_abhyankarModelIntegralClosureAlgEquiv ϖ u e d _ Cϖ hϖ hu he hd,
+    AlgEquiv.apply_symm_apply, abhyankarModelAwayAlgEquiv_root]
+
+end IntegralClosure
 
 end TauCeti
