@@ -470,32 +470,13 @@ theorem toPolygon_insertVertex_one (t : Affine.Triangle R P) (c : P) :
   congrArg Polygon.mk <| (Polygon.insertVertex_vertices _ _ _).trans <| funext fun j => by
     fin_cases j <;> rfl
 
-/-- If the sides `b - a` and `d - a` are linearly independent, then so are the sides `d - b` and
-`c - b` of the triangle `bdc`, where `c = b + (d - a)` is the fourth vertex of the parallelogram
-`abcd`. -/
-private lemma affineIndependent_parallelogram {a b d : P}
-    (hli : LinearIndependent R ![b -ᵥ a, d -ᵥ a]) :
-    AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b] := by
-  rw [affineIndependent_iff_linearIndependent_vsub R _ 0,
-    ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
-  have hdb : d -ᵥ b = (d -ᵥ a) - (b -ᵥ a) := (vsub_sub_vsub_cancel_right d b a).symm
-  have hcb : ((d -ᵥ a) +ᵥ b) -ᵥ b = d -ᵥ a := vadd_vsub _ _
-  have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] := by
-    simpa only [sub_eq_add_neg, add_comm (d -ᵥ a), LinearIndependent.pair_add_left_iff,
-      LinearIndependent.pair_neg_left_iff] using hli
-  convert hli' using 1
-  ext j
-  fin_cases j
-  · exact hdb
-  · exact hcb
-
 variable [PartialOrder R] [IsOrderedAddMonoid R]
 
 omit [IsOrderedAddMonoid R] in
 /-- A point of the triangle `bdc`, where `c = b + (d - a)`, is `a + (w₀ + w₂) • u + (w₁ + w₂) • v`
 for the sides `u = b - a` and `v = d - a` and barycentric weights `w` of the triangle. -/
 private lemma exists_weights_of_mem_closedInterior_parallelogram {a b d x : P}
-    {hind : AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b]}
+    (hind : AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b])
     (hx : x ∈ (⟨_, hind⟩ : Affine.Triangle R P).closedInterior) :
     ∃ w : Fin 3 → R, (∀ j, 0 ≤ w j) ∧ w 0 + w 1 + w 2 = 1 ∧
       x -ᵥ a = (w 0 + w 2) • (b -ᵥ a) + (w 1 + w 2) • (d -ᵥ a) := by
@@ -526,14 +507,14 @@ theorem isDeltaMove_parallelogram (t : Affine.Triangle R P) :
     fin_cases j <;> rfl
   -- Measured from `b`, the sides `d - b = v - u` and `c - b = v` of the triangle `bdc` are
   -- linearly independent.
-  have hind := affineIndependent_parallelogram hli
+  have hind := TauCeti.affineIndependent_vadd_vsub_of_linearIndependent_pair hli
   have hpoints : t.toPolygon.vertices = t.points := rfl
   have h01 : finRotate 3 0 = 1 := by decide
   have h12 : finRotate 3 1 = 2 := by decide
   have h20 : finRotate 3 2 = 0 := by decide
   refine ⟨by rwa [hpoints, h12], fun k hk x ⟨hxk, hxT⟩ => ?_⟩
   obtain ⟨w, hw0, hw1, hx⟩ :=
-    exists_weights_of_mem_closedInterior_parallelogram (a := a) (b := b) (d := d) (hind := hind) hxT
+    exists_weights_of_mem_closedInterior_parallelogram hind hxT
   rw [Polygon.edgeSet, hpoints] at hxk
   rw [hpoints, h12]
   have hk' : k = 0 ∨ k = 2 := by

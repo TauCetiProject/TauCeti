@@ -7,6 +7,7 @@ module
 
 public import Mathlib.LinearAlgebra.AffineSpace.Independent
 public import Mathlib.LinearAlgebra.AffineSpace.Midpoint
+import Mathlib.LinearAlgebra.LinearIndependent.Lemmas
 import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
@@ -147,5 +148,30 @@ theorem affineIndependent_iff_det_ne_zero {x y z : k × k} :
       linear_combination (y.1 - x.1) * h₂ - (y.2 - x.2) * h₁
 
 end Independent
+
+section Parallelogram
+
+variable {R V P : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+
+/-- If the sides `b - a` and `d - a` are linearly independent, then so are the sides `d - b` and
+`c - b` of the triangle `bdc`, where `c = b + (d - a)` is the fourth vertex of the parallelogram
+`abcd`. -/
+theorem affineIndependent_vadd_vsub_of_linearIndependent_pair {a b d : P}
+    (hli : LinearIndependent R ![b -ᵥ a, d -ᵥ a]) :
+    AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b] := by
+  rw [affineIndependent_iff_linearIndependent_vsub R _ 0,
+    ← linearIndependent_equiv (finSuccAboveEquiv (0 : Fin 3))]
+  have hdb : d -ᵥ b = (d -ᵥ a) - (b -ᵥ a) := (vsub_sub_vsub_cancel_right d b a).symm
+  have hcb : ((d -ᵥ a) +ᵥ b) -ᵥ b = d -ᵥ a := vadd_vsub _ _
+  have hli' : LinearIndependent R ![(d -ᵥ a) - (b -ᵥ a), d -ᵥ a] := by
+    simpa only [sub_eq_add_neg, add_comm (d -ᵥ a), LinearIndependent.pair_add_left_iff,
+      LinearIndependent.pair_neg_left_iff] using hli
+  convert hli' using 1
+  ext j
+  fin_cases j
+  · exact hdb
+  · exact hcb
+
+end Parallelogram
 
 end TauCeti
