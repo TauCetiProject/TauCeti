@@ -121,13 +121,13 @@ private lemma ker_lift_le_comap_galoisSubgroup :
 /-- On the relation module, the equivariant map induced by `β` is the map of abelianizations
 induced by `φ`. -/
 private lemma relationModuleToAbelianizationProPEquivariant_toMonoidHom
-    (hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)))
     (β : MonoidAlgebra.relationModule ℤ_[p] (L ≃ₐ[K] L) g
       →ₗ[MonoidAlgebra ℤ_[p] (L ≃ₐ[K] L)] Additive ↑(padicCompletionUnits p L))
     (hβ_apply : IsRelationModuleMapOfPresentation p K L hg j φ hφ β)
     (hRV : (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker ≤
       (galoisSubgroup K L j).toSubgroup.comap φ.toMonoidHom) :
-    letI := freeProfiniteGroup.presentationClassModuleAction p hd
+    letI := freeProfiniteGroup.presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
     letI := galoisClassModuleAction p K L j
     (relationModuleToAbelianizationProPEquivariant p K L hg β j).toMonoidHom =
       abelianizationProPMap p φ.toMonoidHom φ.continuous hRV := by
@@ -182,7 +182,7 @@ private theorem explicitCoeff2_contCohomologyClass_of_presentation
         simp [X]
   let k := relationModuleToAbelianizationProPEquivariant p K L hg β j
   have hk_map := relationModuleToAbelianizationProPEquivariant_toMonoidHom p K L hg j φ hφ
-    hd β hβ_apply hRV
+    β hβ_apply hRV
   have hinl : ψ.toMonoidHom.comp X.toGroupExtension.inl =
       Y.toGroupExtension.inl.comp k.toMonoidHom := by
     rw [hk_map]
