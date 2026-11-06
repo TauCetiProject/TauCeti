@@ -78,7 +78,7 @@ theorem different_eq_zero :
     norm_num at hg
     omega
   exact (Divisor.eq_of_le_of_degree_eq W₁.isFunctionField
-    (Divisor.zero_le_different F W₁.FunctionField W₂.isFunctionField)
+    (Divisor.different_nonneg F W₁.FunctionField W₂.isFunctionField)
     (by rw [map_zero, hzero])).symm
 
 include φ h in

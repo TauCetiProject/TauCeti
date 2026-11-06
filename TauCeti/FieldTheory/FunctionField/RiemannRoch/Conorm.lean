@@ -138,7 +138,7 @@ theorem mem_span_pair_of_mem_adjoin (hF : IsFunctionField k F) {x : F}
       Nat.cast_one]
   have hdim : Divisor.dim (Divisor.poles hK₀ u) ≤ 2 := by
     have := Divisor.dim_le_degree_posPart_add_one hK₀ hex₀ (Divisor.poles hK₀ u)
-    rw [posPart_eq_self.mpr (Divisor.isEffective_poles hK₀ u).zero_le, hdeg] at this
+    rw [posPart_eq_self.mpr (Divisor.poles_nonneg hK₀ u), hdeg] at this
     omega
   -- So `L((x)_∞) = k + k x` inside `k(x)`.
   have hspan : Submodule.span k {(1 : k⟮x⟯), x₀} = riemannRochSpace (Divisor.poles hK₀ u) := by
@@ -149,7 +149,7 @@ theorem mem_span_pair_of_mem_adjoin (hF : IsFunctionField k F) {x : F}
     have := finiteDimensional_riemannRochSpace hK₀ (Divisor.poles hK₀ u)
     refine Submodule.eq_of_le_of_finrank_le ?_ (by rw [hcard, ← Divisor.dim_def]; exact hdim)
     rw [Submodule.span_le, Set.insert_subset_iff, Set.singleton_subset_iff]
-    exact ⟨one_mem_riemannRochSpace_iff.mpr (Divisor.isEffective_poles hK₀ u).zero_le,
+    exact ⟨one_mem_riemannRochSpace_iff.mpr (Divisor.poles_nonneg hK₀ u),
       mem_riemannRochSpace_poles hK₀ u⟩
   -- The function `z` descends to `L((x)_∞)` computed in `k(x)`.
   have hw : (⟨z, hzx⟩ : k⟮x⟯) ∈ riemannRochSpace (Divisor.poles hK₀ u) := by
