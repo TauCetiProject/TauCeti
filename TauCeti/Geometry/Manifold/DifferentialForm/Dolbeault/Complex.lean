@@ -78,9 +78,10 @@ theorem dolbeaultComplex_d_apply (p q : ℕ) (φ : (dolbeaultComplex E M F p).X 
     ModuleCat.comp_apply, ModuleCat.ofHom_apply]
 
 -- Fix the scalar ring before searching for the group structure on nested submodules of forms;
--- otherwise synthesis for closed forms and their quotient exceeds the default instance budget.
+-- otherwise synthesis for closed forms and their quotient exceeds the default instance budget,
+-- here and in importing modules.
 /-- The native additive group of type forms, with complex coefficients fixed. -/
-local instance typeFormsAddCommGroup (p q : ℕ) :
+instance typeFormsAddCommGroup (p q : ℕ) :
     AddCommGroup ((ofComplexManifold E M).typeForms (F := F) p q) :=
   Submodule.addCommGroup _
 
