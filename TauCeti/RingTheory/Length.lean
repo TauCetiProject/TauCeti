@@ -47,6 +47,10 @@ applies to the quotients appearing here without any further appeal to defeq.
 * `TauCeti.length_quotient_anti`: `M ⧸ Q` is no longer than `M ⧸ P` when `P ≤ Q`.
 * `TauCeti.length_quotient_eq_length_map_add_length_quotient_sup`: additivity along a filtration.
 * `TauCeti.length_map_mkQ`: the length of the image of `N` in `M ⧸ P`.
+* `TauCeti.length_quotient_eq_length_quotient_comap_subtype_add`: for `P ≤ N`, the length of
+  `M ⧸ P` is that of `N ⧸ P` plus that of `M ⧸ N`.
+* `TauCeti.length_quotient_comap_subtype_range_map`: for an injective `φ`, `φ(M) ⧸ φ(N)` has the
+  length of `M ⧸ N`.
 * `TauCeti.length_le_of_forall_fg`: a bound on all finitely generated submodules bounds the
   length.
 * `TauCeti.isFiniteLength_of_tower`: finite length over `R` gives finite length over any `A`
@@ -120,6 +124,22 @@ theorem length_map_mkQ (N P : Submodule A M) :
     rw [LinearMap.range_comp, Submodule.range_subtype]
   rw [← hran, ← hker]
   exact ((LinearMap.quotKerEquivRange (P.mkQ ∘ₗ N.subtype)).length_eq).symm
+
+/-- For submodules `P ≤ N`, the quotient `M ⧸ P` is filtered by `N ⧸ P` and `M ⧸ N`. -/
+theorem length_quotient_eq_length_quotient_comap_subtype_add {P N : Submodule A M} (h : P ≤ N) :
+    Module.length A (M ⧸ P) =
+      Module.length A (↥N ⧸ P.comap N.subtype) + Module.length A (M ⧸ N) := by
+  rw [length_quotient_eq_length_map_add_length_quotient_sup N P, length_map_mkQ, sup_eq_right.2 h]
+
+/-- An injective linear map `φ` induces `φ(M) ⧸ φ(N) ≃ M ⧸ N`, so these have the same length. -/
+theorem length_quotient_comap_subtype_range_map {M' : Type*} [AddCommGroup M'] [Module A M']
+    {φ : M →ₗ[A] M'} (hφ : Function.Injective φ) (N : Submodule A M) :
+    Module.length A (↥(LinearMap.range φ) ⧸ (N.map φ).comap (LinearMap.range φ).subtype) =
+      Module.length A (M ⧸ N) := by
+  refine (Submodule.Quotient.equiv N _ (LinearEquiv.ofInjective φ hφ) ?_).length_eq.symm
+  ext ⟨x, hx⟩
+  simp only [Submodule.mem_map, Submodule.mem_comap, Submodule.subtype_apply,
+    LinearEquiv.coe_coe, Subtype.ext_iff, LinearEquiv.ofInjective_apply]
 
 /-- **Length is detected by finitely generated submodules.** -/
 theorem length_le_of_forall_fg {c : ℕ∞} (h : ∀ N : Submodule A M, N.FG → Module.length A N ≤ c) :
