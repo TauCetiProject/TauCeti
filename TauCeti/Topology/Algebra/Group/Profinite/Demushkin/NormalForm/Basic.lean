@@ -25,7 +25,7 @@ takes a natural number `q`, and the two `q = 2` words take a natural-number leve
 `x₁² (x₂, x₃)(x₄, x₅) ⋯ (x_{n-1}, x_n)` is `demushkinWordTwoOddTop`, and the even form of rank two,
 `x₁^{2+α} (x₁, x₂)`, where `x₃ = 1` makes the even word read the same for every `f`, is
 `demushkinWordTwoRankTwo`. The even `f = ∞` form of rank at least four is not presented here.
-This file defines the commutator and the five words on an arbitrary tuple `x : ℕ → H` of group
+This file defines the five words on an arbitrary tuple `x : ℕ → H` of group
 elements, so that the same word can be read in a free pro-`p` group and in any group that
 receives it. Read on the `ℕ`-indexed generators `TauCeti.freeProPGen` and
 `TauCeti.presentedProPGen`, which are `1` out of range, the words carry no index-bound side
@@ -40,7 +40,6 @@ the presented group has topological generator rank exactly `n`.
 
 ## Main definitions
 
-* `TauCeti.labuteComm`: Labute's commutator `(x, y) = x⁻¹y⁻¹xy`.
 * `TauCeti.demushkinWordNeTwo`, `TauCeti.demushkinWordTwoOdd`, `TauCeti.demushkinWordTwoEven`:
   the three normal-form relator words, on an arbitrary tuple; `TauCeti.demushkinWordTwoOddTop`:
   the odd word at level `f = ∞`, `x₁² (x₂, x₃) ⋯ (x_{n-1}, x_n)`;
@@ -87,36 +86,10 @@ section LabuteComm
 
 variable {H : Type*} [Group H]
 
-/-- Labute's commutator lies in the commutator subgroup. -/
-theorem labuteComm_mem_commutator (x y : H) : labuteComm x y ∈ commutator H := by
-  rw [labuteComm_eq_commutatorElement_inv_inv]
-  exact Subgroup.commutator_mem_commutator (Subgroup.mem_top _) (Subgroup.mem_top _)
-
 /-- Labute's commutator lies in the pro-`p` Frattini subgroup of a topological group. -/
 theorem labuteComm_mem_proPFrattini [TopologicalSpace H] {p : ℕ} (hp : p.Prime) (x y : H) :
     labuteComm x y ∈ proPFrattini p H :=
   commutator_le_proPFrattini hp (labuteComm_mem_commutator x y)
-
-/-- Labute's commutator `(x, y) = x⁻¹ (y⁻¹ x y)` of an element `x` of a normal subgroup `N` with
-any `y` lies in `N`. -/
-theorem labuteComm_mem_of_mem_left {N : Subgroup H} [N.Normal] {x : H} (hx : x ∈ N) (y : H) :
-    labuteComm x y ∈ N := by
-  rw [labuteComm_def, mul_assoc, mul_assoc]
-  exact N.mul_mem (N.inv_mem hx) (by simpa only [mul_assoc] using ‹N.Normal›.conj_mem' _ hx y)
-
-/-- Labute's commutator of two elements of a subgroup `N` lies in `⁅N, N⁆`. -/
-theorem labuteComm_mem_commutator_of_mem {N : Subgroup H} {x y : H} (hx : x ∈ N) (hy : y ∈ N) :
-    labuteComm x y ∈ ⁅N, N⁆ := by
-  rw [labuteComm_eq_commutatorElement_inv_inv]
-  exact Subgroup.commutator_mem_commutator (N.inv_mem hx) (N.inv_mem hy)
-
-/-- A product of Labute's commutators of elements of a subgroup `N` lies in `⁅N, N⁆`. -/
-theorem list_prod_map_labuteComm_range_mem_commutator {N : Subgroup H} (m : ℕ) {a b : ℕ → H}
-    (ha : ∀ i < m, a i ∈ N) (hb : ∀ i < m, b i ∈ N) :
-    ((List.range m).map fun i ↦ labuteComm (a i) (b i)).prod ∈ ⁅N, N⁆ := by
-  refine Subgroup.list_prod_mem _ ?_
-  simpa only [List.forall_mem_map, List.mem_range] using
-    fun i hi ↦ labuteComm_mem_commutator_of_mem (ha i hi) (hb i hi)
 
 end LabuteComm
 
