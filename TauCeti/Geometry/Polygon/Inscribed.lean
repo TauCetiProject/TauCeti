@@ -241,7 +241,7 @@ private theorem FineMesh.dist_le (hF : FineMesh γ T δ η h K) {u v : ℝ} (hu 
 /-- Two edges `i < j` of an inscribed polygon which are consecutive across the end of the period
 meet only at their common vertex: `i` is the successor of `j`, and `x` is the vertex `i`. -/
 private theorem FineMesh.eq_finRotate_of_mem_edges_of_wrap {h₀ : ℝ}
-    (hF : FineMesh γ T δ η h₀ K) {n : ℕ} [NeZero n] {h : ℝ} (hh : 0 < h)
+    (hF : FineMesh γ T δ η h₀ K) {n : ℕ} {h : ℝ} (hh : 0 < h)
     (hnh : (n : ℝ) * h = T) (hhδ : h ≤ δ)
     {i j : Fin n} {r : ℕ} (hr : (j : ℕ) = i + r + 1) (hrn : r + 1 ≤ n)
     (hB : ((n - (r + 1) : ℕ) : ℝ) * h ≤ 2 * δ) (hj : (j : ℝ) * h = i * h + (r + 1 : ℕ) * h)
