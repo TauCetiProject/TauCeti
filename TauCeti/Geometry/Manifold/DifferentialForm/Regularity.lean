@@ -562,6 +562,16 @@ theorem mextDerivₗ_zero_apply [IsManifold I 2 M] (f : SmoothForm I M F 0) (x :
 
 namespace SmoothForm
 
+/-- The `0`-form of a smooth function, as a smooth form. -/
+def ofFunction [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) : SmoothForm I M F 0 :=
+  ⟨RoughForm.ofFunction I f, (isSmoothForm_ofFunction_iff.mpr f.contMDiff).mem_smoothBundleForms⟩
+
+/-- The rough form underlying the smooth `0`-form of a function is its rough `0`-form. -/
+@[simp]
+theorem coe_ofFunction [IsManifold I 1 M] (f : C^∞⟮I, M; 𝓘(ℝ, F), F⟯) :
+    (ofFunction f : RoughForm I M F 0) = RoughForm.ofFunction I f :=
+  (rfl)
+
 /-- The exterior derivative commutes with transport across an equality of degrees. -/
 theorem mextDerivₗ_cast [IsManifold I 2 M]
     {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
