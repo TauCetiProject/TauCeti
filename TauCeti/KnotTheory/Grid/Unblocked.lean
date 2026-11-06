@@ -78,6 +78,9 @@ assignment, which `SignAssignment/Differential.lean` does.
   carry, counted with multiplicity, depend only on their union and their intersection.
 * `TauCeti.GridDiagram.squaresMonomial_union_mul_inter`: the monomials of a union and an
   intersection of two sets of squares multiply to the product of the two monomials.
+* `TauCeti.GridDiagram.squaresMonomial_ne_zero`, `TauCeti.GridDiagram.totalDegree_squaresMonomial`:
+  the monomial of a set of squares is nonzero, of degree the number of `O`-marked columns the
+  squares meet.
 * `TauCeti.GridDiagram.totalDegree_OMonomial`: the weight of a rectangle is a squarefree monomial
   whose degree is the number of `O`-markings the rectangle covers.
 * `TauCeti.GridDiagram.OMonomial_eq_prod_coveredSquares`: the weight of a rectangle as a product
@@ -568,6 +571,22 @@ theorem squaresMonomial_eq_one_of_disjoint {S : Finset (Fin n × Fin n)} (h : Di
 theorem squaresMonomial_empty : G.squaresMonomial R ∅ = 1 :=
   G.squaresMonomial_eq_one_of_disjoint R (Finset.disjoint_empty_left _)
 
+/-- The monomial of a set of squares is never zero. -/
+theorem squaresMonomial_ne_zero [Nontrivial R] (S : Finset (Fin n × Fin n)) :
+    G.squaresMonomial R S ≠ 0 := by
+  rw [squaresMonomial_eq_monomial]
+  simp
+
+/-- The monomial of a set of squares has total degree the number of `O`-marked columns the
+squares meet. -/
+theorem totalDegree_squaresMonomial [Nontrivial R] (S : Finset (Fin n × Fin n)) :
+    (G.squaresMonomial R S).totalDegree = (G.OColumnsOfSquares S).card := by
+  rw [squaresMonomial_eq_monomial, totalDegree_monomial _ (one_ne_zero (α := R)),
+    Finsupp.sum_fintype _ _ fun _ => rfl]
+  simp only [Finsupp.finsetSum_apply]
+  rw [Finset.sum_comm]
+  simp
+
 /-- The monomials of the union and of the intersection of two sets of squares multiply to the
 product of their monomials. -/
 theorem squaresMonomial_union_mul_inter (A B : Finset (Fin n × Fin n)) :
@@ -625,9 +644,8 @@ theorem exists_mem_of_mem_support_sum_OMonomial {x y : GridState n}
   exact MvPolynomial.support_monomial_subset hdr
 
 /-- The weight of a rectangle is never zero. -/
-theorem OMonomial_ne_zero [Nontrivial R] (r : GridRectangle n) : G.OMonomial R r ≠ 0 := by
-  rw [OMonomial_eq_monomial]
-  simp
+theorem OMonomial_ne_zero [Nontrivial R] (r : GridRectangle n) : G.OMonomial R r ≠ 0 :=
+  G.squaresMonomial_ne_zero R _
 
 /-- The weight of a rectangle is the product, over the squares it covers, of the variable of the
 square's column at the `O`-marked squares and of `1` elsewhere.
@@ -647,12 +665,8 @@ With each variable `V_c` in Maslov degree `-2` and Alexander degree `-1`, this s
 weight shifts the two gradings of the target generator by `-2` and `-1` times the number of
 covered `O`-markings. -/
 theorem totalDegree_OMonomial [Nontrivial R] (r : GridRectangle n) :
-    (G.OMonomial R r).totalDegree = (G.OColumns r).card := by
-  rw [OMonomial_eq_monomial, totalDegree_monomial _ (one_ne_zero (α := R)),
-    Finsupp.sum_fintype _ _ fun _ => rfl]
-  simp only [Finsupp.finsetSum_apply]
-  rw [Finset.sum_comm]
-  simp
+    (G.OMonomial R r).totalDegree = (G.OColumns r).card :=
+  G.totalDegree_squaresMonomial R _
 
 /-! ### The rectangles the unblocked differential counts -/
 
