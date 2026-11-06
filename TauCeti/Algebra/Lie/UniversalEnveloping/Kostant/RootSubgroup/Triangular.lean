@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Coordinate
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 public import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.UpperUnitriangular.Basic
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
 
 /-!
 # Triangularity of positive Kostant root subgroups
@@ -24,6 +25,8 @@ subgroup in the Chevalley--Demazure construction.
 
 ## Main declarations
 
+* `TauCeti.UniversalEnvelopingAlgebra.kostantRootSubgroupMatrix_apply_eq_one_of_forall_weight_ne`:
+  an entry is that of the identity if no positive root multiple connects its two weights.
 * `TauCeti.UniversalEnvelopingAlgebra.repr_integralDividedPower_eq_zero_of_not_lt`: positive
   divided powers have no coordinate on or below their source basis vector.
 * `TauCeti.UniversalEnvelopingAlgebra.isUpperUnitriangular_kostantRootSubgroupMatrix`: a positive
@@ -105,6 +108,37 @@ theorem isUpperTriangular_toMatrix_integralDividedPower
 
 variable (i : ι)
 variable (hnil : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
+
+omit [LinearOrder η] in
+include e hM in
+/-- A root-subgroup matrix agrees with the identity at an entry where no positive multiple of its
+root connects the source and target weights. No ordering or positivity of the root is needed. -/
+theorem kostantRootSubgroupMatrix_apply_eq_one_of_forall_weight_ne [DecidableEq η]
+    {A : Type*} [CommRing A]
+    (hwt : ∀ x, IsCartanWeightVector h ρ (wt x) ((b x : M) : V))
+    (hα : ∀ j, ⁅h j, e i⁆ = (α j : ℚ) • e i)
+    (f : WithConv (SymmetricAlgebra ℤ ℤ →ₐ[ℤ] A)) {r s : η}
+    (hrs : ∀ n : ℕ, 0 < n → wt r ≠ wt s + n • α) :
+    kostantRootSubgroupMatrix e h ρ M hM i hnil b f r s = (1 : Matrix η η A) r s := by
+  classical
+  let X (n : ℕ) := LinearMap.toMatrix b b
+    (integralDividedPower (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) M n
+      (fun _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM i n hv))
+  have hX (n : ℕ) (hn : 0 < n) : X n r s = 0 := by
+    dsimp only [X]
+    rw [LinearMap.toMatrix_apply]
+    apply repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt
+    · rw [coe_integralDividedPower_apply]
+      exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
+    · exact hrs n hn
+  have hX0 : X 0 = 1 := by simp [X, integralDividedPower_zero, LinearMap.toMatrix_one]
+  have hsum := kostantRootSubgroupMatrix_eq_sum e h ρ M hM i hnil b
+    (nilpotencyClass (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))) + 1) X (by omega)
+    (fun n _ s => by simp [X, LinearMap.toMatrix_apply]) f
+  rw [hsum, Finset.sum_range_succ', hX0]
+  simp only [pow_zero, one_smul, Matrix.map_one Int.cast Int.cast_zero Int.cast_one,
+    Matrix.add_apply, Matrix.one_apply, Matrix.sum_apply, Matrix.smul_apply, Matrix.map_apply]
+  simp [hX]
 
 include e hM in
 /-- A positive Kostant root-subgroup point is upper unitriangular in an ordered weight basis over
