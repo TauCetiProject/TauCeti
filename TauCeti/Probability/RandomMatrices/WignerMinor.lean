@@ -74,8 +74,7 @@ private theorem measurable_wignerMatrixOfArray (n : ℕ) :
   · obtain rfl := Fin.ext h
     simp only [wignerMatrixOfArray, wignerMatrix_apply, lt_self_iff_false]
     fun_prop
-  ·
-    have hEq :
+  · have hEq :
         (fun g : StrictUpper ⊕ ℕ → ℂ ↦ wignerMatrixOfArray n g i j) =
           fun g ↦ ((Real.sqrt n)⁻¹ : ℂ) *
             star (g (Sum.inl (⟨(j.val, i.val), h⟩ : StrictUpper))) := by
@@ -126,17 +125,17 @@ theorem indepFun_wignerMatrix_minor {Ω : Type*} [MeasurableSpace Ω] {μ : Meas
   simp only [Function.comp_apply, Matrix.submatrix_apply, wignerMatrixOfArray,
     wignerMatrix_apply, Fin.val_castSucc]
   by_cases hij : i.val < j.val
-  · simp only [dif_pos hij]
+  · simp only [dite_eq_left hij]
     rw [Function.extend_val_apply (inl_mem_wignerMinorCornerIndices (j.isLt))]
     simp
   · by_cases hji : j.val < i.val
-    · simp only [dif_neg hij, dif_pos hji]
+    · simp only [dite_eq_right hij, dite_eq_left hji]
       rw [Function.extend_val_apply (inl_mem_wignerMinorCornerIndices (i.isLt))]
       simp
     · have hEq : i = j := Fin.ext (Nat.le_antisymm (Nat.le_of_not_gt hji)
         (Nat.le_of_not_gt hij))
       subst j
-      simp only [lt_self_iff_false, if_false]
+      simp only [lt_self_iff_false]
       rw [Function.extend_val_apply (inr_mem_wignerMinorCornerIndices i.isLt)]
       simp
 
