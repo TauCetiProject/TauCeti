@@ -212,6 +212,32 @@ private theorem perWindow_truncated_integral_eq_log_form {γ : ℝ → ℂ} {s :
       (fun t ht => h_slit_R τr t hτR.1 ht.1 ht.2),
     log_sum_decomp h_ne_minus h_ne_L h_ne_R h_ne_plus (by rw [hradL, hradR])]
 
+/-- The sum of the two boundary arguments along the exit times converges to the sum of the
+boundary arguments of the one-sided derivative limits. -/
+private theorem arg_sum_exitTimes_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t₀ u : ℝ} {L_R L_L : ℂ}
+    {τL τR : ℝ → ℝ} (h_at : γ t₀ = s) (h_deriv_R : HasDerivWithinAt γ L_R (Ioi t₀) t₀)
+    (h_deriv_L : HasDerivWithinAt γ L_L (Iio t₀) t₀)
+    (h_slit_plus : (γ u - s) / L_R ∈ Complex.slitPlane)
+    (h_slit_minus : (-L_L) / (γ l - s) ∈ Complex.slitPlane)
+    (h_toL : Tendsto τL (𝓝[>] (0 : ℝ)) (𝓝[<] t₀))
+    (h_toR : Tendsto τR (𝓝[>] (0 : ℝ)) (𝓝[>] t₀)) :
+    Tendsto (fun ε : ℝ =>
+      ((γ (τL ε) - s) / (γ l - s)).arg + ((γ u - s) / (γ (τR ε) - s)).arg) (𝓝[>] (0 : ℝ))
+      (𝓝 (((-L_L) / (γ l - s)).arg + ((γ u - s) / L_R).arg)) := by
+  have h_endpoint_R : t₀ + (u - t₀) = u := by ring
+  have h_endpoint_L : t₀ - (t₀ - l) = l := by ring
+  have h_argR : Tendsto (fun ε : ℝ => Complex.arg ((γ u - s) / (γ (τR ε) - s)))
+      (𝓝[>] (0 : ℝ)) (𝓝 ((γ u - s) / L_R).arg) := by
+    simpa only [h_endpoint_R] using
+      arg_annular_quotient_exitTime_tendsto_right (r := u - t₀) h_deriv_R h_at
+        (by simpa only [h_endpoint_R] using h_slit_plus) h_toR
+  have h_argL : Tendsto (fun ε : ℝ => Complex.arg ((γ (τL ε) - s) / (γ l - s)))
+      (𝓝[>] (0 : ℝ)) (𝓝 ((-L_L) / (γ l - s)).arg) := by
+    simpa only [h_endpoint_L] using
+      arg_annular_quotient_exitTime_tendsto_left (r := t₀ - l) h_deriv_L h_at
+        (by simpa only [h_endpoint_L] using h_slit_minus) h_toL
+  exact h_argL.add h_argR
+
 /-- **The per-window principal value at a simple pole**: at a transverse crossing `γ t₀ = s`
 with unique crossing on the window, non-zero one-sided derivative limits, and the slit-plane
 inputs at the window radius, the `ε`-truncated window integral of `(γ t - s)⁻¹ * deriv γ t`
@@ -260,18 +286,6 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
         (hderiv_int.mono_set (by
           rw [uIcc_of_le hab, uIcc_of_le (by linarith)]
           exact Icc_subset_Icc (by linarith) (by linarith))) hε)
-  have h_endpoint_R : t₀ + (u - t₀) = u := by ring
-  have h_endpoint_L : t₀ - (t₀ - l) = l := by ring
-  have h_argR : Tendsto (fun ε : ℝ => Complex.arg ((γ u - s) / (γ (τR ε) - s)))
-      (𝓝[>] (0 : ℝ)) (𝓝 ((γ u - s) / L_R).arg) := by
-    simpa only [h_endpoint_R] using
-      arg_annular_quotient_exitTime_tendsto_right (r := u - t₀) h_deriv_R h_at
-        (by simpa only [h_endpoint_R] using h_slit_plus) h_toR
-  have h_argL : Tendsto (fun ε : ℝ => Complex.arg ((γ (τL ε) - s) / (γ l - s)))
-      (𝓝[>] (0 : ℝ)) (𝓝 ((-L_L) / (γ l - s)).arg) := by
-    simpa only [h_endpoint_L] using
-      arg_annular_quotient_exitTime_tendsto_left (r := t₀ - l) h_deriv_L h_at
-        (by simpa only [h_endpoint_L] using h_slit_minus) h_toL
   have h_ev : (fun ε : ℝ => ∫ t in l..u,
       if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0) =ᶠ[𝓝[>] (0 : ℝ)]
       fun ε => ((Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ : ℝ) : ℂ) +
@@ -282,11 +296,8 @@ theorem perWindow_truncated_integral_tendsto {γ : ℝ → ℂ} {s : ℂ} {l t�
     exact perWindow_truncated_integral_eq_log_form hP hγ_cont hγ_diffP hderiv_int
       h_unique h_slit_R h_slit_L hτL hτR hradL hradR hε_pos hsplit
   refine Tendsto.congr' h_ev.symm (tendsto_const_nhds.add ?_)
-  have h_sum : Tendsto (fun ε : ℝ =>
-      ((γ (τL ε) - s) / (γ l - s)).arg +
-        ((γ u - s) / (γ (τR ε) - s)).arg) (𝓝[>] (0 : ℝ))
-      (𝓝 (((-L_L) / (γ l - s)).arg + ((γ u - s) / L_R).arg)) :=
-    h_argL.add h_argR
+  have h_sum := arg_sum_exitTimes_tendsto h_at h_deriv_R h_deriv_L h_slit_plus h_slit_minus
+    h_toL h_toR
   exact ((Complex.continuous_ofReal.tendsto _).comp h_sum).mul tendsto_const_nhds
 
 end TauCeti.Contour
