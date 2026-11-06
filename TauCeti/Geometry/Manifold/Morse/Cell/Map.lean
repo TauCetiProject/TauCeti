@@ -103,6 +103,13 @@ theorem morseCellMap_def (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
 theorem morseCellMap_zero (hk : k ≤ n) : morseCellMap ψ hk ε 0 = ψ.symm 0 := by
   simp [morseCellMap_def]
 
+/-- Scaling the parameter of a characteristic disc rescales its width quadratically. -/
+theorem morseCellMap_smul (hk : k ≤ n) {a : ℝ} (ha : 0 ≤ a)
+    (w : EuclideanSpace ℝ (Fin k)) :
+    morseCellMap ψ hk ε (a • w) = morseCellMap ψ hk (ε * a ^ 2) w := by
+  simp only [morseCellMap_def, map_smul, smul_smul, Real.sqrt_mul' ε (sq_nonneg a),
+    Real.sqrt_sq ha]
+
 private theorem norm_smul_piLpExtendByZero (hk : k ≤ n) (w : EuclideanSpace ℝ (Fin k)) :
     ‖√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb hk) w‖ = √ε * ‖w‖ := by
   rw [norm_smul, LinearIsometry.norm_map, Real.norm_of_nonneg (Real.sqrt_nonneg _)]
