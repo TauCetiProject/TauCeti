@@ -462,6 +462,22 @@ private theorem isRecut_symm_of_right_eq_right {D E : GridRectangleDecomposition
     · rw [hEtop₁, GridRectangleBetween.top_def]
     · rw [hEbot₂, hDtop₂]
 
+/-- If the intermediate state of a recut is a column swap, then the side columns of its two
+rectangles are read off the rows they occupy: the first rectangle's columns are those of the
+source state in its rows, and the second rectangle's columns are the swapped columns. -/
+private theorem recut_sideColumns_of_middle_eq_swapColumns {E : GridRectangleDecomposition x z}
+    {a b p q c d : Fin n} (hEmid : E.middle = x.swapColumns a b)
+    (hb₁ : E.first.bottom = x p) (ht₁ : E.first.top = x q)
+    (hb₂ : E.second.bottom = x c) (ht₂ : E.second.top = x d) :
+    E.first.left = p ∧ E.first.right = q ∧
+      E.second.left = Equiv.swap a b c ∧ E.second.right = Equiv.swap a b d :=
+  ⟨x.toPerm.injective (E.first.bottom_def.symm.trans hb₁),
+    x.toPerm.injective (E.first.top_def.symm.trans ht₁),
+    GridState.eq_swap_of_swapColumns_apply_eq
+      (by rw [← hEmid]; exact E.second.bottom_def.symm.trans hb₂),
+    GridState.eq_swap_of_swapColumns_apply_eq
+      (by rw [← hEmid]; exact E.second.top_def.symm.trans ht₂)⟩
+
 /-- The terminal-side-column branch of `isRecut_symm_of_left_eq_right`: when the recut has both
 its rectangles on the same terminal side column, the side data of the original decomposition
 describes it as a recut of the recut. -/
@@ -476,14 +492,9 @@ private theorem isRecut_symm_of_left_eq_right_of_terminal {D E : GridRectangleDe
       E.IsRecutOfLeftEqRight D ∨ E.IsRecutOfRightEqLeft D := by
   have hEmid' : E.middle = x.swapColumns D.second.left D.first.right := by
     rw [hEmid, hDbot₂, GridRectangleBetween.top_def, GridState.swapColumns_eq_swapRows]
-  have hxEl₁ : x E.first.left = x D.second.left := by exact hE₁.trans hDbot₂
-  have hEl₁ : E.first.left = D.second.left := x.toPerm.injective hxEl₁
-  have hxEr₁ : x E.first.right = x D.first.right := by exact hEt₁
-  have hEr₁ : E.first.right = D.first.right := x.toPerm.injective hxEr₁
-  have hEl₂ : E.second.left = Equiv.swap D.second.left D.first.right D.first.left :=
-    GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
-  have hEr₂ : E.second.right = Equiv.swap D.second.left D.first.right D.second.left :=
-    GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEt₂.trans hDbot₂)
+  obtain ⟨hEl₁, hEr₁, hEl₂, hEr₂⟩ := recut_sideColumns_of_middle_eq_swapColumns hEmid'
+    (hE₁.trans hDbot₂) (hEt₁.trans D.first.top_def) (hE₂.trans D.first.bottom_def)
+    (hEt₂.trans hDbot₂)
   rw [Equiv.swap_apply_of_ne_of_ne hvm.symm D.first.left_ne_right] at hEl₂
   rw [Equiv.swap_apply_left] at hEr₂
   refine Or.inr (Or.inl ⟨hEr₁.trans hEr₂.symm, hEl₂.symm, ?_, Or.inr ⟨?_, ?_, ?_, ?_⟩⟩)
@@ -523,14 +534,9 @@ private theorem isRecut_symm_of_left_eq_right {D E : GridRectangleDecomposition 
   · -- the recut has both its rectangles on the same initial side column
     have hEmid' : E.middle = x.swapColumns D.second.left D.first.left := by
       rw [hEmid, hDbot₂, GridRectangleBetween.bottom_def, GridState.swapColumns_eq_swapRows]
-    have hxEl₁ : x E.first.left = x D.second.left := by exact hE₁.trans hDbot₂
-    have hEl₁ : E.first.left = D.second.left := x.toPerm.injective hxEl₁
-    have hxEr₁ : x E.first.right = x D.first.left := by exact hEt₁
-    have hEr₁ : E.first.right = D.first.left := x.toPerm.injective hxEr₁
-    have hEl₂ : E.second.left = Equiv.swap D.second.left D.first.left D.first.left :=
-      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
-    have hEr₂ : E.second.right = Equiv.swap D.second.left D.first.left D.first.right :=
-      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEt₂)
+    obtain ⟨hEl₁, hEr₁, hEl₂, hEr₂⟩ := recut_sideColumns_of_middle_eq_swapColumns hEmid'
+      (hE₁.trans hDbot₂) (hEt₁.trans D.first.bottom_def) (hE₂.trans D.first.bottom_def)
+      (hEt₂.trans D.first.top_def)
     rw [Equiv.swap_apply_right] at hEl₂
     rw [Equiv.swap_apply_of_ne_of_ne hother D.first.left_ne_right.symm] at hEr₂
     refine Or.inl ⟨hEl₁.trans hEl₂.symm, hEr₂.symm, ?_, Or.inl ⟨?_, ?_, ?_, ?_⟩⟩
@@ -558,14 +564,9 @@ private theorem isRecut_symm_of_right_eq_left_of_initial {D E : GridRectangleDec
       E.IsRecutOfLeftEqRight D ∨ E.IsRecutOfRightEqLeft D := by
   have hEmid' : E.middle = x.swapColumns D.first.left D.second.right := by
     rw [hEmid, hDtop₂, GridRectangleBetween.bottom_def, GridState.swapColumns_eq_swapRows]
-  have hxEl₁ : x E.first.left = x D.first.left := by exact hEb₁
-  have hEl₁ : E.first.left = D.first.left := x.toPerm.injective hxEl₁
-  have hxEr₁ : x E.first.right = x D.second.right := by exact hE₁.trans hDtop₂
-  have hEr₁ : E.first.right = D.second.right := x.toPerm.injective hxEr₁
-  have hEl₂ : E.second.left = Equiv.swap D.first.left D.second.right D.second.right :=
-    GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂.trans hDtop₂)
-  have hEr₂ : E.second.right = Equiv.swap D.first.left D.second.right D.first.right :=
-    GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
+  obtain ⟨hEl₁, hEr₁, hEl₂, hEr₂⟩ := recut_sideColumns_of_middle_eq_swapColumns hEmid'
+    (hEb₁.trans D.first.bottom_def) (hE₁.trans hDtop₂) (hEb₂.trans hDtop₂)
+    (hE₂.trans D.first.top_def)
   rw [Equiv.swap_apply_right] at hEl₂
   rw [Equiv.swap_apply_of_ne_of_ne D.first.left_ne_right.symm hvm.symm] at hEr₂
   refine Or.inl ⟨hEl₁.trans hEl₂.symm, hEr₂.symm, hEr₁.symm, Or.inr ⟨?_, ?_, ?_, ?_⟩⟩
@@ -602,14 +603,9 @@ private theorem isRecut_symm_of_right_eq_left {D E : GridRectangleDecomposition 
   · -- the recut has both its rectangles on the same terminal side column
     have hEmid' : E.middle = x.swapColumns D.first.right D.second.right := by
       rw [hEmid, hDtop₂, GridRectangleBetween.top_def, GridState.swapColumns_eq_swapRows]
-    have hxEl₁ : x E.first.left = x D.first.right := by exact hEb₁
-    have hEl₁ : E.first.left = D.first.right := x.toPerm.injective hxEl₁
-    have hxEr₁ : x E.first.right = x D.second.right := by exact hE₁.trans hDtop₂
-    have hEr₁ : E.first.right = D.second.right := x.toPerm.injective hxEr₁
-    have hEl₂ : E.second.left = Equiv.swap D.first.right D.second.right D.first.left :=
-      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hEb₂)
-    have hEr₂ : E.second.right = Equiv.swap D.first.right D.second.right D.first.right :=
-      GridState.eq_swap_of_swapColumns_apply_eq (by rw [← hEmid']; exact hE₂)
+    obtain ⟨hEl₁, hEr₁, hEl₂, hEr₂⟩ := recut_sideColumns_of_middle_eq_swapColumns hEmid'
+      (hEb₁.trans D.first.top_def) (hE₁.trans hDtop₂) (hEb₂.trans D.first.bottom_def)
+      (hE₂.trans D.first.top_def)
     rw [Equiv.swap_apply_of_ne_of_ne D.first.left_ne_right hother] at hEl₂
     rw [Equiv.swap_apply_left] at hEr₂
     refine Or.inr (Or.inl ⟨hEr₁.trans hEr₂.symm, hEl₂.symm, ?_, Or.inl ⟨?_, ?_, ?_, ?_⟩⟩)
