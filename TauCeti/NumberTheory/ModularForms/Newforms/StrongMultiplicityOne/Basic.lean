@@ -37,8 +37,9 @@ newforms it is also new, and old and new are disjoint, so it is zero.
 
 Miyake states the theorem on the Fourier coefficients rather than the eigenvalues, at the good
 indices outside a finite set. Those coefficients also determine the nebentypus, so that form needs
-no hypothesis on it (`Newform.eq_of_forall_notMem_qExpansion_coeff_eq`, in the `Nebentypus` file
-of this directory, together with its cross-level analogue).
+no hypothesis on it (`Newform.eq_of_forall_notMem_qExpansion_coeff_eq`, in
+`TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Nebentypus`, together with its
+cross-level analogue).
 
 Across unrelated levels, two newforms `f`, `g` of levels `N`, `M` whose nebentypes induce the
 same character modulo `lcm N M` and whose eigenvalues agree at all but finitely many primes

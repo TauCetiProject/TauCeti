@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
+public import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 public import TauCeti.NumberTheory.ModularForms.Newforms.Fields
 import TauCeti.NumberTheory.DirichletCharacter.PrimeValues
 
@@ -98,9 +98,7 @@ theorem χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq {L : ℕ} [NeZe
   have := congrArg MulChar.toUnitHom
     (DirichletCharacter.changeLevel_eq_changeLevel_of_eventually_apply_prime_eq hN hM
       (eventually_dirichletLift_apply_prime_eq_of_forall_notMem_qExpansion_coeff_eq f g h))
-  rwa [DirichletCharacter.changeLevel_toUnitHom, DirichletCharacter.changeLevel_toUnitHom,
-    MulChar.toUnitHom_eq, MulChar.toUnitHom_eq, dirichletLift_equivToUnitHom,
-    dirichletLift_equivToUnitHom] at this
+  rwa [changeLevel_dirichletLift_toUnitHom, changeLevel_dirichletLift_toUnitHom] at this
 
 /-- **Newforms of the same level with the same coefficients at the good indices outside a finite
 set have the same nebentypus.** -/
@@ -122,8 +120,8 @@ theorem eq_of_forall_notMem_qExpansion_coeff_eq {f g : Newform N k} {S : Finset 
     f = g :=
   eq_of_forall_notMem_prime_eigenvalue_eq (χ_eq_of_forall_notMem_qExpansion_coeff_eq h)
     fun p hp hpN hpS ↦ by
-      rw [← f.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f.isNorm ⟨p, hp.pos⟩ hpN,
-        ← g.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue g.isNorm ⟨p, hp.pos⟩ hpN]
+      rw [← f.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpN,
+        ← g.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpN]
       exact h ⟨p, hp.pos⟩ hpN hpS
 
 /-- **Strong multiplicity one** (Miyake, Theorem 4.6.12, fixed level): two newforms of level `N`
@@ -133,8 +131,7 @@ theorem eq_of_forall_notMem_eigenvalue_eq {f g : Newform N k} {S : Finset ℕ}
     (h : ∀ (n : ℕ+) (hn : Nat.Coprime n N), (n : ℕ) ∉ S → f.eigenvalue n hn = g.eigenvalue n hn) :
     f = g :=
   eq_of_forall_notMem_qExpansion_coeff_eq fun n hn hnS ↦ by
-    rw [f.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f.isNorm n hn,
-      g.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue g.isNorm n hn]
+    rw [f.qExpansion_coeff_eq_eigenvalue n hn, g.qExpansion_coeff_eq_eigenvalue n hn]
     exact h n hn hnS
 
 /-- **Strong multiplicity one across levels, on Fourier coefficients** (Miyake, Theorem 4.6.19,
@@ -150,8 +147,8 @@ theorem level_eq_and_coe_eq_of_forall_notMem_qExpansion_coeff_eq (f : Newform N 
   have : NeZero (Nat.lcm N M) := ⟨Nat.lcm_ne_zero (NeZero.ne N) (NeZero.ne M)⟩
   refine level_eq_and_coe_eq_of_forall_notMem_prime_eigenvalue_eq f g (S := S)
     (χ_comp_unitsMap_eq_of_forall_notMem_qExpansion_coeff_eq f g _ _ h) fun p hp hpN hpM hpS ↦ ?_
-  rw [← f.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue f.isNorm ⟨p, hp.pos⟩ hpN,
-    ← g.toEigenformAwayFromLevel.qExpansion_coeff_eq_eigenvalue g.isNorm ⟨p, hp.pos⟩ hpM]
+  rw [← f.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpN,
+    ← g.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ hpM]
   exact h ⟨p, hp.pos⟩ hpN hpM hpS
 
 end Newform
