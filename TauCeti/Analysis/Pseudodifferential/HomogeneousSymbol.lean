@@ -354,12 +354,14 @@ theorem coefficient_id {x : X} {ξ : E} (hξ : ξ ≠ 0) :
 
 /-- Composing with the identity symbol on the right does nothing, up to transport of the
 degree. -/
+@[simp]
 theorem comp_id (b : HomogeneousSymbol X E V W m) :
     b.comp (id X E V) = b.castDegree (add_zero m).symm :=
   ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]
 
 /-- Composing with the identity symbol on the left does nothing, up to transport of the
 degree. -/
+@[simp]
 theorem id_comp (a : HomogeneousSymbol X E V W m) :
     (id X E W).comp a = a.castDegree (zero_add m).symm :=
   ext_of_ne_zero fun _ _ hξ ↦ by simp [hξ]

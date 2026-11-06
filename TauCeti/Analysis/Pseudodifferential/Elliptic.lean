@@ -167,10 +167,12 @@ theorem coefficient_comp_coefficient_inverse {x : X} {ξ : E} (hξ : ξ ≠ 0) :
   (ha x ξ hξ).self_comp_inverse
 
 /-- The inverse is a left inverse for `HomogeneousSymbol.comp`. -/
+@[simp]
 theorem inverse_comp : (a.inverse ha).comp a = (id X E V).castDegree (neg_add_cancel m).symm :=
   ext_of_ne_zero fun x ξ hξ ↦ by simp [(ha x ξ hξ).inverse_comp_self, hξ]
 
 /-- The inverse is a right inverse for `HomogeneousSymbol.comp`. -/
+@[simp]
 theorem comp_inverse : a.comp (a.inverse ha) = (id X E W).castDegree (add_neg_cancel m).symm :=
   ext_of_ne_zero fun x ξ hξ ↦ by simp [(ha x ξ hξ).self_comp_inverse, hξ]
 
