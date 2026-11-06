@@ -32,6 +32,7 @@ The evaluations of such sums at odd moduli are in `TauCeti.NumberTheory.Quadrati
 
 ## Main results
 
+* `AddChar.map_sum_eq_prod`: an additive character turns finite sums into products.
 * `Matrix.sum_addChar_dotProduct_transpose_mul_mul_mulVec`: invariance under congruence.
 * `Matrix.sum_addChar_dotProduct_fromBlocks_zero_zero_mulVec`: multiplicativity over block
   diagonal matrices.
@@ -43,6 +44,17 @@ The evaluations of such sums at odd moduli are in `TauCeti.NumberTheory.Quadrati
 public section
 
 open scoped Matrix
+
+namespace AddChar
+
+/-- An additive character turns a finite sum into the product of its values. -/
+theorem map_sum_eq_prod {ι A M : Type*} [AddCommMonoid A] [CommMonoid M] (ψ : AddChar A M)
+    (s : Finset ι) (f : ι → A) : ψ (∑ i ∈ s, f i) = ∏ i ∈ s, ψ (f i) := by
+  induction s using Finset.cons_induction with
+  | empty => simp
+  | cons a s ha ih => rw [Finset.sum_cons, map_add_eq_mul, ih, Finset.prod_cons]
+
+end AddChar
 
 namespace Matrix
 
@@ -82,9 +94,7 @@ theorem sum_addChar_dotProduct_diagonal_mulVec (d : n → S) :
     ∑ x : n → S, ψ (x ⬝ᵥ diagonal d *ᵥ x) = ∏ i, ∑ y : S, ψ (d i * y ^ 2) := by
   rw [Fintype.prod_sum]
   refine Fintype.sum_congr _ _ fun x ↦ ?_
-  have h := map_prod ψ.toMonoidHom (fun i ↦ Multiplicative.ofAdd (d i * x i ^ 2)) Finset.univ
-  simp only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd] at h
-  simp only [mulVec_diagonal, dotProduct, ← h]
+  simp only [mulVec_diagonal, dotProduct, ← AddChar.map_sum_eq_prod]
   exact congrArg ψ (Finset.sum_congr rfl fun i _ ↦ by ring)
 
 end Matrix

@@ -181,13 +181,7 @@ private theorem sum_stdAddChar_dotProduct_diagonal_map_mulVec_eq {k : ℕ} (hk :
   rw [Matrix.diagonal_map (map_zero _), Matrix.sum_addChar_dotProduct_diagonal_mulVec]
   simp_rw [PadicInt.sum_stdAddChar_toZModPow_mul_sq_eq_χ₈ hk (hd _)]
   -- The additive character turns the sum of the entries into a product.
-  have hψ : stdAddChar (PadicInt.toZModPow 3 (∑ i, d i)) =
-      ∏ i, stdAddChar (PadicInt.toZModPow 3 (d i)) := by
-    have h := map_prod stdAddChar.toMonoidHom
-      (fun i ↦ Multiplicative.ofAdd (PadicInt.toZModPow 3 (d i))) Finset.univ
-    simp only [AddChar.toMonoidHom_apply, ← ofAdd_sum, toAdd_ofAdd] at h
-    rw [map_sum, h]
-  rw [hψ]
+  rw [map_sum, AddChar.map_sum_eq_prod]
   simp only [Finset.prod_mul_distrib, Finset.prod_const, Finset.card_univ, ← pow_mul',
     Finset.prod_pow, map_prod, Int.cast_prod]
 
