@@ -59,6 +59,101 @@ variable {𝕜 E G M : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 
   [IsManifold 𝓘(𝕜, E) n M] {q e : OpenPartialHomeomorph M E} {L : Submodule 𝕜 E}
   {s s' U : Set M} {y : M} {g : M → 𝕜} {P : E →L[𝕜] G} {v : E}
 
+/-- The linear-algebra core of `exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top`.
+If `T` has dimension `dim G + 1`, `T` and the kernel of a surjection `π` span the space, `T` and
+the kernel of a linear form `dg` span the space, and some `v ∈ T` with `dg v ≠ 0` lies in the
+kernel of `π`, then `π` is injective on `T ⊓ ker dg`, which has the dimension of `G`. -/
+theorem injOn_inf_ker_and_finrank_inf_ker_eq [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 G]
+    {T : Submodule 𝕜 E} {π : E →ₗ[𝕜] G} {dg : E →ₗ[𝕜] 𝕜} {v : E}
+    (hπs : Function.Surjective π) (hTπ : T ⊔ LinearMap.ker π = ⊤) (htrK : T ⊔ LinearMap.ker dg = ⊤)
+    (hdim : Module.finrank 𝕜 T = Module.finrank 𝕜 G + 1) (hvs : v ∈ T) (hvπ : π v = 0)
+    (hgv : dg v ≠ 0) :
+    (∀ w ∈ T ⊓ LinearMap.ker dg, π w = 0 → w = 0) ∧
+      Module.finrank 𝕜 ↥(T ⊓ LinearMap.ker dg) = Module.finrank 𝕜 G := by
+  have hv0 : v ≠ 0 := by rintro rfl; exact hgv (map_zero _)
+  have hkerπ := LinearMap.finrank_range_add_finrank_ker π
+  rw [LinearMap.range_eq_top_of_surjective _ hπs, finrank_top] at hkerπ
+  have hdim₁ := Submodule.finrank_sup_add_finrank_inf_eq T (LinearMap.ker π)
+  rw [hTπ, finrank_top] at hdim₁
+  have hline : T ⊓ LinearMap.ker π = 𝕜 ∙ v :=
+    (Submodule.eq_of_le_of_finrank_eq
+      ((Submodule.span_singleton_le_iff_mem v _).2 (Submodule.mem_inf.2 ⟨hvs, hvπ⟩))
+      (by rw [finrank_span_singleton hv0]; omega)).symm
+  refine ⟨?_, ?_⟩
+  · rintro w ⟨hwT, hwK⟩ hw
+    have hwv : w ∈ T ⊓ LinearMap.ker π := Submodule.mem_inf.2 ⟨hwT, hw⟩
+    rw [hline] at hwv
+    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hwv
+    have hc : c * dg v = 0 := by simpa using hwK
+    rw [(mul_eq_zero.1 hc).resolve_right hgv, zero_smul]
+  · have hkerdg := LinearMap.finrank_range_add_finrank_ker dg
+    rw [LinearMap.range_eq_top_of_surjective _ (LinearMap.surjective_of_ne_zero fun h ↦
+      hgv (by simpa using LinearMap.congr_fun h v)), finrank_top, Module.finrank_self] at hkerdg
+    have hdim₂ := Submodule.finrank_sup_add_finrank_inf_eq T (LinearMap.ker dg)
+    rw [htrK, finrank_top] at hdim₂
+    omega
+
+/-- A composite `P ∘ D` restricted to a subspace `F` of the same dimension as the target is
+invertible once it is injective. -/
+theorem isInvertible_comp_comp_subtypeL [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 G]
+    (P : E →L[𝕜] G) (D : E →L[𝕜] E) (F : Submodule 𝕜 E)
+    (hdimF : Module.finrank 𝕜 F = Module.finrank 𝕜 G) (hinj : ∀ z ∈ F, P (D z) = 0 → z = 0) :
+    (P ∘L D ∘L F.subtypeL).IsInvertible := by
+  have hinj' : Function.Injective ((P ∘L D ∘L F.subtypeL : F →L[𝕜] G) : F →ₗ[𝕜] G) := by
+    refine (injective_iff_map_eq_zero _).2 fun z hz ↦ Subtype.ext ?_
+    simpa using hinj z z.2 hz
+  have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdimF).1 hinj'
+  exact ⟨(LinearEquiv.ofBijective _ ⟨hinj', hsurj⟩).toContinuousLinearEquiv, rfl⟩
+
+omit [ChartedSpace E M] in
+/-- The parametrization `z ↦ q.symm (q y + z)` of a set `A` flattened by the chart `q` onto a
+linear subspace `F` is continuous at `0`, sends `0` to `y`, takes values in `A` near `0`, and
+reaches every point of `A` near `y` from arbitrarily small parameters. -/
+theorem IsSliceChart.parametrization_properties {q : OpenPartialHomeomorph M E}
+    {F : Submodule 𝕜 E} {A : Set M} (hq : IsSliceChart q (F : Set E) A) (hyq : y ∈ q.source)
+    (hyA : y ∈ A) :
+    q.symm (q y + ((0 : F) : E)) = y ∧
+      ContinuousAt (fun z : F ↦ q.symm (q y + (z : E))) 0 ∧
+      (∀ᶠ z : F in 𝓝 0, q.symm (q y + (z : E)) ∈ A) ∧
+      ∀ V ∈ 𝓝 (0 : F), ∀ᶠ w in 𝓝 y, w ∈ A → ∃ z ∈ V, q.symm (q y + (z : E)) = w := by
+  have hyF : q y ∈ F := (isSliceChart_iff.1 hq y hyq).1 hyA
+  have hcont : Continuous fun z : F ↦ q y + (z : E) := continuous_const.add continuous_subtype_val
+  refine ⟨by simp [q.left_inv hyq], ?_, ?_, ?_⟩
+  · refine ContinuousAt.comp (f := fun z : F ↦ q y + (z : E)) ?_ hcont.continuousAt
+    simpa using q.continuousAt_symm (q.map_source hyq)
+  · have hyt : q.target ∈ 𝓝 (q y + ((0 : F) : E)) := by
+      simpa using q.open_target.mem_nhds (q.map_source hyq)
+    filter_upwards [hcont.continuousAt.preimage_mem_nhds hyt] with z hz
+    exact (isSliceChart_iff.1 hq _ (q.map_target hz)).2
+      (by rw [q.right_inv hz]; exact F.add_mem hyF z.2)
+  · intro V hV
+    obtain ⟨V', hV', hV'V⟩ := (mem_nhds_subtype _ _ _).1 hV
+    have hlim : Tendsto (fun w ↦ q w - q y) (𝓝 y) (𝓝 0) := by
+      have h := ((q.continuousAt hyq).tendsto).sub_const (q y)
+      rwa [sub_self] at h
+    filter_upwards [hlim (by simpa using hV'), q.open_source.mem_nhds hyq] with w hwV hwq hwA
+    have hwF : q w ∈ F := (isSliceChart_iff.1 hq w hwq).1 hwA
+    refine ⟨⟨q w - q y, F.sub_mem hwF hyF⟩, hV'V hwV, ?_⟩
+    simp [q.left_inv hwq]
+
+omit [IsManifold 𝓘(𝕜, E) n M] in
+/-- In charts `q` and `e` of the maximal atlas around `y`, the parametrization
+`z ↦ q.symm (q y + z)` of a subspace `F` is strictly differentiable at `0` in the chart `e`, with
+derivative the derivative of the transition `e ∘ q.symm` at `q y` restricted to `F`. -/
+theorem hasStrictFDerivAt_comp_symm_add_subtypeL (hn : n ≠ 0)
+    (hq : q ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M) (he : e ∈ IsManifold.maximalAtlas 𝓘(𝕜, E) n M)
+    (hyq : y ∈ q.source) (hye : y ∈ e.source) (F : Submodule 𝕜 E) :
+    HasStrictFDerivAt (fun z : F ↦ e (q.symm (q y + (z : E))))
+      (fderiv 𝕜 (q.symm.trans e) (q y) ∘L F.subtypeL) 0 := by
+  have hyτ : q y ∈ (q.symm.trans e).source := by
+    simp [q.map_source hyq, q.left_inv hyq, hye]
+  have hτ : HasStrictFDerivAt (q.symm.trans e) (fderiv 𝕜 (q.symm.trans e) (q y))
+      (q y + ((0 : F) : E)) := by
+    simpa using (contDiffAt_symm_trans_of_mem_maximalAtlas hq he hyτ).hasStrictFDerivAt_fderiv hn
+  have hlin : HasStrictFDerivAt (fun z : F ↦ q y + (z : E)) F.subtypeL 0 :=
+    F.subtypeL.hasStrictFDerivAt.const_add _
+  exact HasStrictFDerivAt.comp (f := fun z : F ↦ q y + (z : E)) 0 hτ hlin
+
 /-- **A level disc transverse to a projection.** Let a chart of the maximal atlas flatten `s` near a
 point `y` of `s ∩ s'`, where the tangent spaces of `s` and `s'` span the model space, and let `e`
 be a chart around `y` and `P : E →L[𝕜] G` a surjective linear map with `P ∘ e = 0` on `s'` near
@@ -95,7 +190,6 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   -- In finite dimensions every subspace is complemented.
   have hcc (p : Submodule 𝕜 E) : p.ClosedComplemented :=
     .of_finiteDimensional_quotient (Submodule.closed_of_finiteDimensional _)
-  have hv0 : v ≠ 0 := by rintro rfl; exact hgv (map_zero _)
   have hrange : dg.range = ⊤ :=
     LinearMap.range_eq_top_of_surjective _ (LinearMap.surjective_of_ne_zero fun h ↦
       hgv (by simpa using LinearMap.congr_fun h v))
@@ -114,7 +208,6 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   -- tangent space at `y`, which is the same type.
   replace hs₀ : IsSliceChart q' (F : Set E) (s ∩ g ⁻¹' {g y}) := hs₀
   replace hmT : mtangentConeAt 𝓘(𝕜, E) (s ∩ g ⁻¹' {g y}) y = F := hmT
-  have hyF : q' y ∈ F := (isSliceChart_iff.1 hs₀ y hyq').1 ⟨hys, rfl⟩
   -- Derivatives of the transitions from the preferred chart at `y` to `q'` and to `e`.
   have hchart := IsManifold.chart_mem_maximalAtlas (I := 𝓘(𝕜, E)) (n := n) y
   obtain ⟨A', hA'⟩ := exists_hasFDerivAt_symm_trans (z := chartAt E y y) hn hchart hq'
@@ -133,74 +226,23 @@ theorem exists_param_inter_preimage_of_span_mtangentConeAt_sup_eq_top [FiniteDim
   -- transversality its kernel meets `T` in a line, spanned by `v`. That line meets `ker dg` only
   -- in `0`, so `π` is injective on `F`, and `F` has the dimension of `G`.
   set π : E →ₗ[𝕜] G := ((P ∘L (Ae : E →L[𝕜] E) : E →L[𝕜] G) : E →ₗ[𝕜] G)
-  have hπs : Function.Surjective π := hP.comp Ae.surjective
   have hT'π : Submodule.span 𝕜 (mtangentConeAt 𝓘(𝕜, E) s' y) ≤ LinearMap.ker π :=
     Submodule.span_le.2 fun u hu ↦ map_mtangentConeAt_eq_zero hAe hye hys' hs'P hu
-  have hTπ : T ⊔ LinearMap.ker π = ⊤ := top_unique (htr ▸ sup_le_sup_left hT'π T)
-  have hkerπ := LinearMap.finrank_range_add_finrank_ker π
-  rw [LinearMap.range_eq_top_of_surjective _ hπs, finrank_top] at hkerπ
-  have hdim₁ := Submodule.finrank_sup_add_finrank_inf_eq T (LinearMap.ker π)
-  rw [hTπ, finrank_top] at hdim₁
-  have hline : T ⊓ LinearMap.ker π = 𝕜 ∙ v :=
-    (Submodule.eq_of_le_of_finrank_eq
-      ((Submodule.span_singleton_le_iff_mem v _).2 (Submodule.mem_inf.2 ⟨hvs, hT'π hvs'⟩))
-      (by rw [finrank_span_singleton hv0]; omega)).symm
-  have hπinj : ∀ w ∈ F, π w = 0 → w = 0 := by
-    rintro w ⟨hwT, hwK⟩ hw
-    have hwv : w ∈ T ⊓ LinearMap.ker π := Submodule.mem_inf.2 ⟨hwT, hw⟩
-    rw [hline] at hwv
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.1 hwv
-    have hc : c * dg v = 0 := by simpa using hwK
-    rw [(mul_eq_zero.1 hc).resolve_right hgv, zero_smul]
-  have hkerdg := LinearMap.finrank_range_add_finrank_ker (dg : E →ₗ[𝕜] 𝕜)
-  rw [LinearMap.range_eq_top_of_surjective _ (LinearMap.range_eq_top.1 hrange), finrank_top,
-    Module.finrank_self] at hkerdg
-  have hdim₂ := Submodule.finrank_sup_add_finrank_inf_eq T dg.ker
-  rw [htrK, finrank_top, ← hF] at hdim₂
-  have hdimF : Module.finrank 𝕜 F = Module.finrank 𝕜 G := by omega
+  obtain ⟨hπinj, hdimF⟩ := injOn_inf_ker_and_finrank_inf_ker_eq (π := π) (dg := dg) (v := v)
+    (hP.comp Ae.surjective) (top_unique (htr ▸ sup_le_sup_left hT'π T)) htrK hdim hvs
+    (hT'π hvs') hgv
   -- The parametrization `ι z = q'⁻¹ (q' y + z)` of the cut is read in `e` through the transition
-  -- `τ = e ∘ q'⁻¹`, whose derivative `D` at `q' y` satisfies `D ∘ A' = Ae`.
-  set τ := q'.symm.trans e
-  have hyτ : q' y ∈ τ.source := by simp [τ, q'.map_source hyq', q'.left_inv hyq', hye]
-  set D := fderiv 𝕜 τ (q' y)
-  have hτ : HasStrictFDerivAt τ D (q' y) :=
-    (contDiffAt_symm_trans_of_mem_maximalAtlas hq' he hyτ).hasStrictFDerivAt_fderiv hn
+  -- `e ∘ q'⁻¹`, whose derivative `D` at `q' y` satisfies `D ∘ A' = Ae`.
+  set D := fderiv 𝕜 (q'.symm.trans e) (q' y)
   have hDA : D ∘L (A' : E →L[𝕜] E) = Ae := fderiv_symm_trans_comp_eq hn hq' he hyq' hye hA' hAe
   have hDF (z : E) : D z = Ae (A'.symm z) := by
     simpa using congrArg (fun B : E →L[𝕜] E ↦ B (A'.symm z)) hDA
-  set ι : F → M := fun z ↦ q'.symm (q' y + z)
-  have hι0 : ι 0 = y := by simp [ι, q'.left_inv hyq']
-  have hcont : Continuous fun z : F ↦ q' y + (z : E) := continuous_const.add continuous_subtype_val
-  refine ⟨F, ι, D ∘L F.subtypeL, hι0, ?_, ?_, ?_, ?_, ?_⟩
-  · refine ContinuousAt.comp (f := fun z : F ↦ q' y + (z : E)) ?_ hcont.continuousAt
-    simpa using q'.continuousAt_symm (q'.map_source hyq')
-  · have hyt : q'.target ∈ 𝓝 (q' y + ((0 : F) : E)) := by
-      simpa using q'.open_target.mem_nhds (q'.map_source hyq')
-    filter_upwards [hcont.continuousAt.preimage_mem_nhds hyt] with z hz
-    have hmem := (isSliceChart_iff.1 hs₀ _ (q'.map_target hz)).2
-      (by rw [q'.right_inv hz]; exact F.add_mem hyF z.2)
-    exact ⟨hmem.1, hmem.2⟩
-  · have hlin : HasStrictFDerivAt (fun z : F ↦ q' y + (z : E)) F.subtypeL 0 :=
-      F.subtypeL.hasStrictFDerivAt.const_add _
-    have hτ' : HasStrictFDerivAt τ D (q' y + ((0 : F) : E)) := by simpa using hτ
-    exact HasStrictFDerivAt.comp (f := fun z : F ↦ q' y + (z : E)) 0 hτ' hlin
-  · -- `P ∘ D` on `F` is `π ∘ A'⁻¹`, injective since `A'⁻¹` preserves `F`, hence bijective.
-    set Φ : F →L[𝕜] G := P ∘L D ∘L F.subtypeL
-    have hΦ (z : F) : Φ z = π (A'.symm z) := by simp [Φ, π, hDF]
-    have hinj : Function.Injective (Φ : F →ₗ[𝕜] G) := by
-      refine (injective_iff_map_eq_zero _).2 fun z hz ↦ Subtype.ext ?_
-      have h0 := hπinj _ (hA'F z z.2) (by rw [← hΦ]; exact hz)
-      simpa using h0
-    have hsurj := (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdimF).1 hinj
-    exact ⟨(LinearEquiv.ofBijective (Φ : F →ₗ[𝕜] G) ⟨hinj, hsurj⟩).toContinuousLinearEquiv, rfl⟩
-  · intro V hV
-    obtain ⟨V', hV', hV'V⟩ := (mem_nhds_subtype _ _ _).1 hV
-    have hlim : Tendsto (fun w ↦ q' w - q' y) (𝓝 y) (𝓝 0) := by
-      have h := ((q'.continuousAt hyq').tendsto).sub_const (q' y)
-      rwa [sub_self] at h
-    filter_upwards [hlim (by simpa using hV'), q'.open_source.mem_nhds hyq'] with w hwV hwq hws hwg
-    have hwF : q' w ∈ F := (isSliceChart_iff.1 hs₀ w hwq).1 ⟨hws, hwg⟩
-    refine ⟨⟨q' w - q' y, F.sub_mem hwF hyF⟩, hV'V hwV, ?_⟩
-    simp [ι, q'.left_inv hwq]
+  obtain ⟨hι0, hcont, hmem, hreach⟩ := hs₀.parametrization_properties hyq' ⟨hys, rfl⟩
+  refine ⟨F, fun z ↦ q'.symm (q' y + z), D ∘L F.subtypeL, hι0, hcont, hmem,
+    hasStrictFDerivAt_comp_symm_add_subtypeL hn hq' he hyq' hye F, ?_,
+    fun V hV ↦ (hreach V hV).mono fun w hw hws hwg ↦ hw ⟨hws, hwg⟩⟩
+  · refine isInvertible_comp_comp_subtypeL P D F hdimF fun z hz hPz ↦ ?_
+    have h0 := hπinj _ (hA'F z hz) (by simpa [π, hDF] using hPz)
+    simpa using h0
 
 end TauCeti
