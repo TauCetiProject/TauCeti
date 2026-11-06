@@ -10,6 +10,9 @@ public import TauCeti.Analysis.PositiveDefinite.AddGroup
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.InnerProductSpace.Basic
 public import Mathlib.MeasureTheory.Function.L1Space.Integrable
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
+import Mathlib.Analysis.InnerProductSpace.Calculus
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # Fourier atoms
@@ -23,6 +26,7 @@ It uses Mathlib's `2π` Fourier convention.
 * `TauCeti.posSemidef_fourierAtom`: the subtraction kernel attached to a
   Fourier atom is positive definite.
 * `TauCeti.continuous_fourierAtom`: Fourier atoms are continuous in the spatial variable.
+* `TauCeti.contDiff_fourierAtom`: Fourier atoms are smooth in the spatial variable.
 * `TauCeti.continuous_and_isPositiveDefiniteSub_fourierAtom`: the Fourier atom
   `v ↦ fourierAtom v ξ` is continuous and positive definite.
 * `TauCeti.norm_fourierAtom`: Fourier atoms have unit norm.
@@ -117,6 +121,20 @@ theorem continuous_fourierAtom (q : V) : Continuous (fourierAtom q) := by
       Continuous fun v : V => ((Real.fourierChar (-(inner ℝ v q)) : Circle) : ℂ)) using 1
   ext v
   exact (fourierAtom_eq_fourierChar q v).symm
+
+section ContDiff
+
+variable {W : Type*} [NormedAddCommGroup W] [InnerProductSpace ℝ W] {n : WithTop ℕ∞}
+
+/-- Fourier atoms are smooth in the spatial variable. -/
+theorem contDiff_fourierAtom (q : W) : ContDiff ℝ n (fourierAtom q) := by
+  simp_rw [funext (fourierAtom_eq_fourierChar q), Real.fourierChar_apply]
+  exact Complex.contDiff_exp.comp
+    ((Complex.ofRealCLM.contDiff.comp
+      (contDiff_const.mul (contDiff_inner.comp (contDiff_id.prodMk contDiff_const)).neg)).mul
+        contDiff_const)
+
+end ContDiff
 
 /-- The Fourier atom `v ↦ fourierAtom v ξ` is continuous and positive definite: by symmetry of
 the real inner product it is the atom `fourierAtom ξ`, whose subtraction kernel is positive
