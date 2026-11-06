@@ -26,6 +26,8 @@ on nonempty open sets.
 * `TauCeti.integrable_indicator_Ico_one`: the indicator function of `[a, b)` is integrable.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
+* `MeasureTheory.setIntegral_indicator_add_indicator`: the integral over `s` of a sum of two
+  indicators of measurable sets splits over `s ∩ S` and `s ∩ T`.
 -/
 
 public section
@@ -68,3 +70,13 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
+
+/-- The integral over `s` of the sum of two indicators of measurable sets `S` and `T` is the sum of
+the integrals of the integrable functions over `s ∩ S` and `s ∩ T`. -/
+theorem MeasureTheory.setIntegral_indicator_add_indicator {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {s S T : Set α} {A B : α → ℝ} (hS : MeasurableSet S) (hT : MeasurableSet T)
+    (hA : Integrable A μ) (hB : Integrable B μ) :
+    ∫ x in s, (S.indicator A x + T.indicator B x) ∂μ =
+      (∫ x in s ∩ S, A x ∂μ) + ∫ x in s ∩ T, B x ∂μ := by
+  rw [integral_add ((hA.indicator hS).integrableOn) ((hB.indicator hT).integrableOn),
+    setIntegral_indicator hS, setIntegral_indicator hT]
