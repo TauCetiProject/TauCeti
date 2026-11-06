@@ -437,21 +437,6 @@ section Generation
 
 variable [Finite X] (i : X) {m : ℕ}
 
-/-- A bracket `[τ, y]` with a class `y ∈ gr_0(F)` of the free pro-`p` group lies in a subspace
-as soon as the brackets `[τ, ξ_j]` with the generator classes do, by bilinearity. -/
-theorem gradedBracket_mem_of_forall_gradedMkZero_of {τ : gradedPiece p (freeProP p X) m}
-    {W : Submodule (ZMod p) (gradedPiece p (freeProP p X) (m + 0 + 1))}
-    (hW : ∀ j : X, gradedBracket p (freeProP p X) m 0 τ (gradedMkZero p (freeProP p X) (of j)) ∈ W)
-    (y : gradedPiece p (freeProP p X) 0) : gradedBracket p (freeProP p X) m 0 τ y ∈ W := by
-  have hle : span (ZMod p) (gradedMkZero p (freeProP p X) '' Set.range of) ≤
-      W.comap (gradedBracketLinear p (freeProP p X) m 0 τ) := by
-    rw [span_le]
-    rintro _ ⟨_, ⟨j, rfl⟩, rfl⟩
-    rw [SetLike.mem_coe, Submodule.mem_comap, gradedBracketLinear_apply]
-    exact hW j
-  have h := hle (by rw [span_gradedMkZero_image_range_of_eq_top]; exact mem_top : y ∈ _)
-  rwa [Submodule.mem_comap, gradedBracketLinear_apply] at h
-
 /-- **Generation of `gr_{m+1}(X)` from `gr_m(X)`** (Labute, §4, Lemma 2): for `m ≥ 1`, a subspace
 of `gr_{m+1}(F)` containing the `p`-powers `π τ` and the brackets `[τ, ξ_j]` with the generator
 classes, for every `τ ∈ gr_m(X)`, contains `gr_{m+1}(X)`; here `X` is the kernel of the `i`-th
