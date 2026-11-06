@@ -40,7 +40,8 @@ adjunction. Uniqueness holds because `Sym F` is generated in degree one
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraLift`: the morphism `Sym F ⟶ A` of graded
   quasicoherent algebras extending `φ : F ⟶ A₁`, characterized by
   `gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift`, and natural on both
-  sides (`gradedSymmetricAlgebraLift_comp`, `gradedSymmetricAlgebra_map_comp_lift`);
+  sides (`gradedSymmetricAlgebraLift_comp`, `gradedSymmetricAlgebra_map_comp_lift`); it is an
+  epimorphism in degree one when `φ` is an epimorphism (`epi_gradedSymmetricAlgebraLift_one`);
 * `TauCeti.AlgebraicGeometry.gradedSymmetricAlgebraAdjunction`: the adjunction
   `gradedSymmetricAlgebra X ⊣ degreeOne`, whose unit is the identification `F ≅ Sym¹ F`
   (`gradedSymmetricAlgebraAdjunction_unit`) and whose counit `Sym A₁ ⟶ A` extends the identity
@@ -312,6 +313,22 @@ theorem gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift
     gradedSymmetricAlgebraDegreeOneIso_inv_app_hom, degree_map_gradedSymmetricAlgebraLift_hom,
     Category.assoc, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
   exact liftDegree_degreeOne _ _
+
+/-- If `φ : F ⟶ A₁` is an epimorphism of module sheaves, then so is the degree-one component
+`Sym¹ F ⟶ A₁` of `gradedSymmetricAlgebraLift φ`, since it is `φ` through `F ≅ Sym¹ F`. In
+particular `Sym A₁ ⟶ A`, extending the identity of `A₁`, is an epimorphism in degree one. -/
+instance epi_gradedSymmetricAlgebraLift_one {F : QuasicoherentSheaf X}
+    {A : GradedQuasicoherentAlgebra X} (φ : F ⟶ degreeOne.obj A) [Epi φ.hom] :
+    Epi ((gradedSymmetricAlgebraLift φ).hom.hom.hom 1) := by
+  have h := congrArg (·.hom) (gradedSymmetricAlgebraDegreeOneIso_inv_app_comp_degreeOne_map_lift φ)
+  simp only [ObjectProperty.FullSubcategory.comp_hom, degree_map_hom] at h
+  -- The transports are morphisms of `SheafOfModules X.ringCatSheaf`, whose category instance is
+  -- identified with that of `X.Modules` only by unfolding, so typeclass search does not find
+  -- their instances; they are supplied by hand, as in `epi_one_gradedSymmetricAlgebra`.
+  have he {P Q : X.Modules} (p : P = Q) : IsIso (eqToHom p) := (eqToIso p).isIso_hom
+  exact (@epi_comp_iff_of_isIso _ _ _ _ _ _ _ (he _)).mp
+    ((@epi_comp_iff_of_epi _ _ _ _ _ _ (@IsIso.epi_of_iso _ _ _ _ _ (he _)) _).mp
+      (@epi_of_epi_fac _ _ _ _ _ _ _ _ ‹_› h))
 
 variable (X) in
 /-- The graded symmetric algebra functor is left adjoint to the degree-one functor: morphisms of
