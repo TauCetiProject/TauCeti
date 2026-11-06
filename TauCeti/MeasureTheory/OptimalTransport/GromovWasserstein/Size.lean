@@ -46,11 +46,17 @@ def gromovWassersteinSize (p : ℝ≥0∞) (μ : Measure X) (ω : X × X → Z) 
 /-- Kernel size is `1`-Lipschitz with respect to Gromov–Wasserstein distance. The target point
 is shared by the two sizes, and the estimate includes `p = ∞`. -/
 theorem edist_gromovWassersteinSize_le_gromovWassersteinEDist
-    [IsProbabilityMeasure μ] [IsProbabilityMeasure ν] (hp : 1 ≤ p)
+    [IsProbabilityMeasure μ] (hp : 1 ≤ p)
     (hωX : AEStronglyMeasurable ωX (μ.prod μ)) (hωY : AEStronglyMeasurable ωY (ν.prod ν))
     (z₀ : Z) :
     edist (gromovWassersteinSize p μ ωX z₀) (gromovWassersteinSize p ν ωY z₀) ≤
       gromovWassersteinEDist p μ ωX ν ωY := by
+  by_cases hex : ∃ π, IsCoupling π μ ν
+  swap
+  · push Not at hex
+    simp only [gromovWassersteinEDist_def, hex, iInf_false, iInf_top, le_top]
+  obtain ⟨π, hπ⟩ := hex
+  have := hπ.isProbabilityMeasure_right
   let ω₀ : Unit × Unit → Z := fun _ ↦ z₀
   have hμ : gromovWassersteinEDist p μ ωX (Measure.dirac ()) ω₀ =
       gromovWassersteinSize p μ ωX z₀ := by
