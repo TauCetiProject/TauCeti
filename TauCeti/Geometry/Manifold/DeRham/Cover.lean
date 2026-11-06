@@ -127,19 +127,17 @@ theorem SubgroupQuotient.apply_mk_eq_apply_basepoint_add_pathClassIntegral
   let Γ : Path (SubgroupQuotient.basepoint x K) (Quotient.mk'' (mk y (.mk γ))) :=
     { toFun t := Quotient.mk'' (ofBasedPath x ((BasedPath.ofPath γ).initialSegmentFamily t))
       continuous_toFun := continuous_quotient_mk'.comp (by fun_prop)
-      source' := by
-        rw [BasedPath.initialSegmentFamily_zero, ← BasedPath.ofPath_refl, ofBasedPath_ofPath,
-          Path.Homotopic.Quotient.mk_refl, SubgroupQuotient.basepoint_eq_mk]
+      source' := by simp [SubgroupQuotient.basepoint_eq_mk, ← BasedPath.ofPath_refl]
       target' := by simp }
   have hΓ : Γ.map (continuous_subgroupQuotientProj x K) =
       γ.cast (subgroupQuotientProj_basepoint x K) (subgroupQuotientProj_mk x K _) := by
     ext t
     simp [Γ]
-  -- Integrate `df` along `Γ` in two ways.
+  -- Integrate `df` along `Γ` in two ways: downstairs, `Γ` projects to `γ`.
   have h := pathClassIntegral_mextDeriv_ofFunction hf (.mk Γ)
   rw [hdf, pathClassIntegral_mpullback
-    ((isLocalDiffeomorph_subgroupQuotientProj (I := I) (n := 2) x K).contMDiff) hθ hclosed,
-    ← Path.Homotopic.Quotient.mk_map, hΓ, Path.Homotopic.Quotient.mk_cast,
+    ((isLocalDiffeomorph_subgroupQuotientProj (I := I) (n := 2) x K).contMDiff) hθ hclosed] at h
+  simp only [← Path.Homotopic.Quotient.mk_map, hΓ, Path.Homotopic.Quotient.mk_cast,
     pathClassIntegral_cast] at h
   exact eq_add_of_sub_eq' h.symm
 
@@ -158,9 +156,8 @@ theorem apply_deckSubgroupQuotientProjEquivOfNormal_mk_apply [PathConnectedSpace
   induction y using Quotient.inductionOn' with | h e =>
   obtain ⟨y, q⟩ := e
   have hg : pathClassIntegral θ g⁻¹.toPath = -periodHom θ x (Additive.ofMul g) := by
-    rw [← map_neg, ← ofMul_inv, periodHom_apply, toMul_ofMul]
-  rw [deckSubgroupQuotientProjEquivOfNormal_mk_apply, smul_mk,
-    SubgroupQuotient.apply_mk_eq_apply_basepoint_add_pathClassIntegral hθ hclosed hf hdf,
+    simpa using map_neg (periodHom θ x) (Additive.ofMul g)
+  simp only [deckSubgroupQuotientProjEquivOfNormal_mk_apply, smul_mk,
     SubgroupQuotient.apply_mk_eq_apply_basepoint_add_pathClassIntegral hθ hclosed hf hdf,
     pathClassIntegral_trans, hg]
   abel
