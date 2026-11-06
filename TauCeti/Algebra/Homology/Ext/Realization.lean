@@ -87,4 +87,22 @@ theorem exists_hom_iff_extClass_comp_eq {T : ShortComplex C}
     · apply (DerivedCategory.singleFunctor C 0).map_injective
       simpa only [Functor.map_comp, hb₀, singleTriangle_mor₂] using hb₂.symm
 
+/-- Isomorphisms on the endpoints extend to an isomorphism of short exact sequences if
+and only if they respect the associated degree-one extension classes. -/
+theorem exists_iso_iff_extClass_comp_eq {T : ShortComplex C}
+    (hS : S.ShortExact) (hT : T.ShortExact) (a : S.X₁ ≅ T.X₁) (c : S.X₃ ≅ T.X₃) :
+    (∃ e : S ≅ T, e.hom.τ₁ = a.hom ∧ e.hom.τ₃ = c.hom) ↔
+      hS.extClass.comp (Ext.mk₀ a.hom) (add_zero 1) =
+        (Ext.mk₀ c.hom).comp hT.extClass (zero_add 1) := by
+  constructor
+  · rintro ⟨e, h₁, h₃⟩
+    exact (hS.exists_hom_iff_extClass_comp_eq hT a.hom c.hom).mp ⟨e.hom, h₁, h₃⟩
+  · intro h
+    obtain ⟨φ, h₁, h₃⟩ := (hS.exists_hom_iff_extClass_comp_eq hT a.hom c.hom).mpr h
+    have : IsIso φ.τ₁ := h₁ ▸ inferInstance
+    have : IsIso φ.τ₃ := h₃ ▸ inferInstance
+    have : IsIso φ.τ₂ := ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ hS hT
+    have : IsIso φ := ShortComplex.isIso_of_isIso φ
+    exact ⟨asIso φ, h₁, h₃⟩
+
 end CategoryTheory.ShortComplex.ShortExact

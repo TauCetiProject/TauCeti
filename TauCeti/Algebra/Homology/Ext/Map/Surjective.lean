@@ -11,8 +11,9 @@ public import TauCeti.Algebra.Homology.Ext.Realization
 /-!
 # Reconstructing short exact sequences from an Ext comparison
 
-For an exact functor `F`, surjectivity on `Ext¹(X, Y)` reconstructs every short exact
-sequence with endpoints `F(Y)` and `F(X)` as the image of a short exact sequence with
+For an exact functor `F` out of an abelian category with enough projectives, surjectivity
+on `Ext¹(X, Y)` reconstructs every short exact sequence with endpoints `F(Y)` and `F(X)`
+as the image of a short exact sequence with
 endpoints `Y` and `X`. The comparison is an isomorphism on the middle terms and the
 identity on both endpoints, so it preserves the given inclusion and projection.
 
@@ -44,7 +45,7 @@ variable {C : Type u} [Category.{v} C] [Abelian C] [EnoughProjectives C]
 /-- Surjectivity on degree-one extensions reconstructs a prescribed short exact sequence
 as the image of one with the prescribed endpoints. The resulting isomorphism respects
 both the inclusion and the projection. -/
-theorem exists_shortExact_map_of_mapExt_surjective (X Y : C)
+theorem exists_shortExact_map_of_mapExt_one_surjective (X Y : C)
     (hsurj : Function.Surjective (F.mapExtAddHom.{w, w'} X Y 1))
     {E : D} (i : F.obj Y ⟶ E) (p : E ⟶ F.obj X) (hip : i ≫ p = 0)
     (hT : (ShortComplex.mk i p hip).ShortExact) :
@@ -59,14 +60,11 @@ theorem exists_shortExact_map_of_mapExt_surjective (X Y : C)
   have hext : (hS.map_of_exact F).extClass = hT.extClass := by
     rw [← Ext.mapExactFunctor_extClass F hS, hSα]
     exact hα
-  obtain ⟨φ, hφ₁, hφ₃⟩ :=
-    ((hS.map_of_exact F).exists_hom_iff_extClass_comp_eq hT (𝟙 _) (𝟙 _)).mpr
+  obtain ⟨e, he₁, he₃⟩ :=
+    ((hS.map_of_exact F).exists_iso_iff_extClass_comp_eq hT (Iso.refl _) (Iso.refl _)).mpr
       (by simpa using hext)
-  have : IsIso φ.τ₁ := hφ₁ ▸ inferInstance
-  have : IsIso φ.τ₃ := hφ₃ ▸ inferInstance
-  have : IsIso φ.τ₂ := ShortComplex.isIso₂_of_shortExact_of_isIso₁₃ φ (hS.map_of_exact F) hT
-  refine ⟨E₀, i₀, p₀, hi₀p₀, hS, asIso φ.τ₂, ?_, ?_⟩
-  · simpa [hφ₁] using φ.comm₁₂.symm
-  · simpa [hφ₃] using φ.comm₂₃
+  refine ⟨E₀, i₀, p₀, hi₀p₀, hS, ShortComplex.π₂.mapIso e, ?_, ?_⟩
+  · simpa [he₁] using e.hom.comm₁₂.symm
+  · simpa [he₃] using e.hom.comm₂₃
 
 end CategoryTheory.Functor
