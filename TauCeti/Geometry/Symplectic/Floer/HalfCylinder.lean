@@ -185,6 +185,28 @@ theorem monotoneOn_hamiltonianAction_of_floer (hH : ContDiff ℝ 1 (uncurry H))
     (fun s h ↦ by simpa using hper s (hs₁.trans_le h.1) 0) fun z hz ↦ by
       simpa using (ω.isComplexLinearMap_perturbedFDeriv_iff _ _ _ u z).1 (hfloer z (hR hz))
 
+/-- **Pairing with functions of vanishing mean norm.** If the loops `y_i` are bounded by `R` and the
+integrals over `[0, 1]` of the norms of the continuous `d_i` tend to `0`, then so do the integrals
+`∫₀¹ ω(y_i(t), d_i(t)) dt`. -/
+theorem tendsto_integral_apply_of_tendsto_integral_norm {ι : Type*} {l : Filter ι}
+    {y d : ι → ℝ → V} {R : ℝ} (hy : ∀ i t, ‖y i t‖ ≤ R) (hd : ∀ i, Continuous (d i))
+    (hdl : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖d i t‖) l (𝓝 0)) :
+    Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ω (y i t) (d i t)) l (𝓝 0) := by
+  set Bω := ω.toBilinForm.toContinuousBilinearMap
+  have hω : ∀ v w, |ω v w| ≤ ‖Bω‖ * ‖v‖ * ‖w‖ := fun v w ↦ by
+    simpa only [Bω, LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
+      Bω.le_opNorm₂ v w
+  have hlim := hdl.const_mul (‖Bω‖ * R)
+  rw [mul_zero] at hlim
+  refine squeeze_zero_norm (fun i ↦ ?_) hlim
+  rw [← intervalIntegral.integral_const_mul]
+  refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
+    (Eventually.of_forall fun t _ ↦ ?_) ((continuous_const.mul (hd i).norm).intervalIntegrable _ _)
+  rw [Real.norm_eq_abs]
+  refine (hω _ _).trans ?_
+  gcongr
+  exact hy i t
+
 /-- **The action along loops with vanishing defect.** Let `H` be a `C¹` Hamiltonian and let `u` be
 `C¹` on the half-cylinder `s > a`, with loops in a compact set `K`. If the loops at `s_i > a`
 converge pointwise to a solution `x` of `x' = X_{H_t}(x)` and the `L²` norms of their defects
@@ -213,33 +235,12 @@ theorem tendsto_hamiltonianAction_of_tendsto_integral_norm_sq_sliceDefect
       (fun i ↦ (hloop i).continuousOn) (fun i t _ ↦ huK _ (hφa i) t) fun t _ ↦ hux t
   -- The pairing of the loops with their defects tends to `0`.
   obtain ⟨R, hR⟩ := hK.exists_bound_of_continuousOn continuousOn_id
-  set Bω := ω.toBilinForm.toContinuousBilinearMap
-  have hω : ∀ v w, |ω v w| ≤ ‖Bω‖ * ‖v‖ * ‖w‖ := fun v w ↦ by
-    simpa only [Bω, LinearMap.toContinuousBilinearMap_apply, Real.norm_eq_abs] using
-      Bω.le_opNorm₂ v w
   have hpair : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ω (u (φ i, t)) (sliceDefect X u (φ i, t)))
-      l (𝓝 0) := by
-    have hsq : Tendsto (fun i ↦ ‖Bω‖ * R *
-        √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2)) l (𝓝 0) := by
-      have h := ((Real.continuous_sqrt.tendsto 0).comp hdef).const_mul (‖Bω‖ * R)
-      rw [Real.sqrt_zero, mul_zero] at h
-      exact h
-    refine squeeze_zero_norm (fun i ↦ ?_) hsq
-    have hd : Continuous fun t ↦ ‖sliceDefect X u (φ i, t)‖ := (hdefc i).norm
-    have hR0 : 0 ≤ R := (norm_nonneg _).trans (hR _ (huK _ (hφa i) 0))
-    calc ‖∫ t in (0 : ℝ)..1, ω (u (φ i, t)) (sliceDefect X u (φ i, t))‖
-        ≤ ∫ t in (0 : ℝ)..1, ‖Bω‖ * R * ‖sliceDefect X u (φ i, t)‖ := by
-          refine intervalIntegral.norm_integral_le_of_norm_le zero_le_one
-            (Eventually.of_forall fun t _ ↦ ?_) ((continuous_const.mul hd).intervalIntegrable _ _)
-          rw [Real.norm_eq_abs]
-          refine (hω _ _).trans ?_
-          gcongr
-          exact hR _ (huK _ (hφa i) t)
-      _ = ‖Bω‖ * R * ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ :=
-          intervalIntegral.integral_const_mul _ _
-      _ ≤ ‖Bω‖ * R * √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2) := by
-          gcongr
-          exact integral_norm_sliceDefect_le_sqrt hu hX (hφa i) le_rfl zero_le_one le_rfl
+      l (𝓝 0) :=
+    tendsto_integral_apply_of_tendsto_integral_norm (y := fun i t ↦ u (φ i, t))
+      (fun i t ↦ hR _ (huK _ (hφa i) t)) hdefc
+      (tendsto_integral_norm_sliceDefect_of_tendsto_integral_norm_sq hu hX hφa hdef le_rfl
+        zero_le_one le_rfl)
   -- Hence the actions converge.
   have hω1 := hdct (fun p ↦ ω p.2 (X p.1 p.2)) (ω.continuous_apply_comp continuous_snd hX)
   have hH1 := hdct (uncurry H) hH.continuous

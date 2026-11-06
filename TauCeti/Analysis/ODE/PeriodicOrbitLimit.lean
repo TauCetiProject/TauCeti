@@ -222,6 +222,23 @@ theorem integral_norm_sliceDefect_le_sqrt (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ u
             (Eventually.of_forall fun t ↦ sq_nonneg _) (hd.intervalIntegrable _ _)
     _ = _ := one_mul _
 
+/-- **Vanishing defect integrals.** If the `L²` norms of the defects along the loops at `s_i > a`
+tend to `0`, then so do the integrals of the norms of the defects over any subinterval
+`[t₁, t₂]` of `[0, 1]`. -/
+theorem tendsto_integral_norm_sliceDefect_of_tendsto_integral_norm_sq
+    (hu : ContDiffOn ℝ 1 u (Ioi a ×ˢ univ)) (hX : Continuous (uncurry X)) {ι : Type*}
+    {l : Filter ι} {φ : ι → ℝ} (hφa : ∀ i, a < φ i)
+    (hφ : Tendsto (fun i ↦ ∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2) l (𝓝 0))
+    {t₁ t₂ : ℝ} (h₀ : 0 ≤ t₁) (ht : t₁ ≤ t₂) (h₁ : t₂ ≤ 1) :
+    Tendsto (fun i ↦ ∫ t in t₁..t₂, ‖sliceDefect X u (φ i, t)‖) l (𝓝 0) := by
+  have hsq : Tendsto (fun i ↦
+      √(∫ t in (0 : ℝ)..1, ‖sliceDefect X u (φ i, t)‖ ^ 2)) l (𝓝 0) := by
+    have h := (Real.continuous_sqrt.tendsto 0).comp hφ
+    rw [Real.sqrt_zero] at h
+    exact h
+  exact squeeze_zero (fun i ↦ intervalIntegral.integral_nonneg ht fun t _ ↦ norm_nonneg _)
+    (fun i ↦ integral_norm_sliceDefect_le_sqrt hu hX (hφa i) h₀ ht h₁) hsq
+
 end Modulus
 
 section Limit
@@ -250,14 +267,10 @@ theorem sub_eq_integral_of_tendsto_integral_norm_sq_sliceDefect [CompleteSpace V
     tendsto_intervalIntegral_comp_of_tendsto (Φ := uncurry X) (y := fun i τ ↦ u (φ i, τ)) hX hK
       (fun i ↦ (hloop i).continuousOn) (fun i τ _ ↦ huK _ (hφa i) τ) fun τ _ ↦ hx τ
   -- The second integral tends to `0` by the Cauchy–Schwarz inequality.
-  have hD : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, sliceDefect X u (φ i, τ)) l (𝓝 0) := by
-    have hsq : Tendsto (fun i ↦
-        √(∫ τ in (0 : ℝ)..1, ‖sliceDefect X u (φ i, τ)‖ ^ 2)) l (𝓝 0) := by
-      have h := (Real.continuous_sqrt.tendsto 0).comp hφ
-      rw [Real.sqrt_zero] at h
-      exact h
-    exact squeeze_zero_norm (fun i ↦ (intervalIntegral.norm_integral_le_integral_norm ht.1).trans
-      (integral_norm_sliceDefect_le_sqrt hu hX (hφa i) le_rfl ht.1 ht.2)) hsq
+  have hD : Tendsto (fun i ↦ ∫ τ in (0 : ℝ)..t, sliceDefect X u (φ i, τ)) l (𝓝 0) :=
+    squeeze_zero_norm (fun i ↦ intervalIntegral.norm_integral_le_integral_norm ht.1)
+      (tendsto_integral_norm_sliceDefect_of_tendsto_integral_norm_sq hu hX hφa hφ le_rfl ht.1
+        ht.2)
   have hL : Tendsto (fun i ↦ u (φ i, t) - u (φ i, 0)) l (𝓝 (x t - x 0)) := (hx t).sub (hx 0)
   simp_rw [hsplit] at hL
   simpa using (tendsto_nhds_unique (hA.add hD) hL).symm
