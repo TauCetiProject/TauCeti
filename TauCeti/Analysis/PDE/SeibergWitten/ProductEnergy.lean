@@ -69,7 +69,8 @@ variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V] [Fact (fin
   (hQ : ∀ v, Q v = -‖v‖ ^ 2) (hkl : 2 + 2 = finrank ℝ V)
 
 /-- The dimension `Fact` makes the oriented four-space finite-dimensional. -/
-local instance : FiniteDimensional ℝ V := .of_fact_finrank_eq_succ 3
+local instance finiteDimensional_of_fact_finrank_eq_four : FiniteDimensional ℝ V :=
+  .of_fact_finrank_eq_succ 3
 
 include hQ
 
