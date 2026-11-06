@@ -43,31 +43,10 @@ private theorem map_erase_faceIdeal_pow_le [DecidableEq ι]
       ((eraseRingHom f S a).restrict _ _
         fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr) ≤
       (facePair f P hf (p + 1) S).idealOfDefinition ^ i := by
-  let R := Localization.Away (∏ j ∈ S.erase a.1, f j)
-  let T := Localization.Away (∏ j ∈ S, f j)
   let _ := faceTopology f P hf p (S.erase a.1)
   let _ := faceTopology f P hf (p + 1) S
-  let ψ := (eraseRingHom f S a).restrict _ _
-    (fun _ hr ↦ eraseRingHom_mem_ringOfDefinition f P hf p S a hr)
-  have hI : (facePair f P hf p (S.erase a.1)).idealOfDefinition.map ψ ≤
-      (facePair f P hf (p + 1) S).idealOfDefinition := by
-    refine Ideal.map_le_iff_le_comap.mpr fun r hr ↦ ?_
-    rw [Ideal.mem_comap, mem_facePair_idealOfDefinition]
-    have hr' := (mem_facePair_idealOfDefinition f P hf p (S.erase a.1)).mp hr
-    have hr'' := (P.mem_locIdealImage_iff (numerators f p)
-      (∏ j ∈ S.erase a.1, f j) R 1).mpr
-      ⟨_, by simpa only [pow_one] using hr', rfl⟩
-    have h := P.awayLift_mem_locIdealImage (numerators f p) _ R (numerators f (p + 1)) _ T
-      (f a.1) (Finset.prod_erase_mul S f a.2).symm
-      (fun _ ht ↦ mul_mem_numerators f ht a.1) 1 hr''
-    obtain ⟨s, hs, heq⟩ := (P.mem_locIdealImage_iff _ _ T 1).mp h
-    have he : s = ⟨ψ r, by
-        simpa only [facePair_ringOfDefinition] using (ψ r).property⟩ :=
-      Subtype.val_injective (by
-        simpa only [ψ, RingHom.coe_restrict_apply, eraseRingHom_eq_awayLift] using heq)
-    simpa only [pow_one, he] using hs
   rw [Ideal.map_pow]
-  exact pow_le_pow_left' hI i
+  exact pow_le_pow_left' (map_eraseRingHom_idealOfDefinition_le f P hf p S a) i
 
 /-- Restriction from a deleted face preserves every level of the face filtration. -/
 theorem cechLocalizationRestriction_erase_mem_faceFiltration [DecidableEq ι]
