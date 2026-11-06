@@ -200,9 +200,12 @@ of `u ↦ S.realOperator u` alone; the proof combines strong continuity at `r` w
 operator bound supplied by a growth bound. -/
 theorem StronglyContinuousSemigroup.tendsto_realOperator_apply {ι : Type*} {l : Filter ι}
     (S : StronglyContinuousSemigroup X) {f : ι → ℝ} {g : ι → X} {r : ℝ} {z : X}
-    (hf : Filter.Tendsto f l (𝓝 r)) (hf0 : ∀ᶠ i in l, 0 ≤ f i) (hr : 0 ≤ r)
+    (hf : Filter.Tendsto f l (𝓝 r)) (hf0 : ∀ᶠ i in l, 0 ≤ f i)
     (hg : Filter.Tendsto g l (𝓝 z)) :
     Filter.Tendsto (fun i => S.realOperator (f i) (g i)) l (𝓝 (S.realOperator r z)) := by
+  rcases l.eq_or_neBot with rfl | _
+  · simp [Filter.tendsto_bot]
+  have hr : 0 ≤ r := ge_of_tendsto hf hf0
   obtain ⟨omega, M, hb⟩ := S.existsGrowthBound
   have hM : (0 : ℝ) < M := lt_of_lt_of_le zero_lt_one hb.one_le
   -- A single operator-norm bound valid for all times eventually visited by `f`.
@@ -226,7 +229,7 @@ theorem StronglyContinuousSemigroup.continuousOn_realOperator_apply
     {f : Y → ℝ} {g : Y → X} (hf : ContinuousOn f s) (hf0 : ∀ u ∈ s, 0 ≤ f u)
     (hg : ContinuousOn g s) :
     ContinuousOn (fun u => S.realOperator (f u) (g u)) s := fun u hu =>
-  S.tendsto_realOperator_apply (hf u hu) (eventually_nhdsWithin_of_forall hf0) (hf0 u hu) (hg u hu)
+  S.tendsto_realOperator_apply (hf u hu) (eventually_nhdsWithin_of_forall hf0) (hg u hu)
 
 end TauCeti.Semigroups
 
