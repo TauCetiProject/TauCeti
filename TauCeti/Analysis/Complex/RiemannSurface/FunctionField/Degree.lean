@@ -103,6 +103,7 @@ variable {X : Type*} [TopologicalSpace X] [ChartedSpace ℂ X] [IsManifold 𝓘(
 
 /-! ### Symmetric functions of the values along the fibres -/
 
+omit [ConnectedSpace X] in
 /-- Over a point of the sphere whose fibre carries no pole of `f`, each elementary symmetric
 function of the values of `f` along the fibres of `β` is holomorphic, read in the chart there. -/
 private theorem analyticAt_esymm {y₀ : OnePoint ℂ} (hy₀ : ∀ x ∈ β ⁻¹' {y₀}, f x ≠ ∞) (k : ℕ) :
@@ -114,6 +115,7 @@ private theorem analyticAt_esymm {y₀ : OnePoint ℂ} (hy₀ : ∀ x ∈ β ⁻
         with x' hx'
       exact mdifferentiableAt_finitePart hx') k
 
+omit [ConnectedSpace X] in
 /-- Over a point of the sphere whose fibre carries no pole of `f`, each elementary symmetric
 function of the values of `f` along the fibres of `β` is continuous. -/
 private theorem continuousAt_esymm {y₀ : OnePoint ℂ} (hy₀ : ∀ x ∈ β ⁻¹' {y₀}, f x ≠ ∞) (k : ℕ) :

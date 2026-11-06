@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.GroupWithZero.NonZeroDivisors
-public import Mathlib.LinearAlgebra.BilinearForm.IsometryEquiv
 public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.BilinearForm.TensorProduct
 public import Mathlib.LinearAlgebra.Determinant
@@ -31,16 +29,18 @@ together with the API a consumer of the group needs: a Gram-matrix criterion, th
 constraint `(det f) ^ 2 = 1`, functoriality in the module and in the base ring, and stability of
 orthogonal complements.
 
-Mathlib bundles the same notion twice — as a map, `B₁ →bᵢ B₂`, and as an equivalence,
-`LinearMap.BilinForm.IsometryEquiv B₁ B₂`. The bridge to the former
-(`TauCeti.BilinForm.IsIsometry.toIsometry`, `TauCeti.BilinForm.isIsometry_toLinearMap`) lives
-with the predicate; the bridge to the latter is
-`TauCeti.BilinForm.isometryGroupEquivIsometryEquiv` here, an equivalence of *types* between the
-subgroup and `B.IsometryEquiv B`. What is new is the unbundled predicate, which is what lets
-"preserves `B`" be a side condition on an endomorphism one already has — the hypothesis of the
-automatic-invertibility theorem below, and the membership condition of a subgroup — and the group
-structure, needed as soon as one wants subgroups of it, group homomorphisms into it, or a group
-action, none of which a bare type of bundled equivalences provides.
+Mathlib has the notion in three forms: as a bundled map, `B₁ →bᵢ B₂`, as a bundled equivalence,
+`LinearMap.BilinForm.IsometryEquiv B₁ B₂`, and as the unbundled predicate `LinearMap.IsOrthogonal`
+over a commutative ring, which `TauCeti.BilinForm.IsIsometry` agrees with by `Iff.rfl`. The
+predicate here is stated over a commutative semiring and an additive commutative monoid. The bridge
+to the bundled map (`TauCeti.BilinForm.IsIsometry.toIsometry`,
+`TauCeti.BilinForm.isIsometry_toLinearMap`) lives with the predicate; the bridge to the bundled
+equivalence is `TauCeti.BilinForm.isometryGroupEquivIsometryEquiv` here, an equivalence of *types*
+between the subgroup and `B.IsometryEquiv B`. What this file adds is the group structure on the
+isometric automorphisms, needed as soon as one wants subgroups of it, group homomorphisms into it,
+or a group action, none of which a bare type of bundled equivalences provides, together with the
+automatic-invertibility theorem below, which turns "preserves `B`" on an endomorphism one already
+has into membership of the group.
 
 Two statements are worth singling out.
 

@@ -680,6 +680,14 @@ theorem mapTwoTermSupport_shortExact :
   intro j
   exact (F.mapTwoTermSupportDegreewiseSplitting s N j).shortExact
 
+/-- The endpoint replacement of the mapped support short complex is short exact. -/
+theorem mapTwoTermSupportReframed_shortExact {E₁ E₃ : CochainComplex C₂ ℤ ⥤ CochainComplex D ℤ}
+    (u₁ : F.mapBifunctorLeft (.up ℤ) (.up ℤ) ((single C₁ (.up ℤ) s.b).obj s.B) ≅ E₁)
+    (u₃ : F.mapBifunctorLeft (.up ℤ) (.up ℤ) ((single C₁ (.up ℤ) s.a).obj s.A) ≅ E₃) :
+    (F.mapTwoTermSupportReframed s u₁ u₃).ShortExact :=
+  ShortComplex.shortExact_of_iso (F.mapTwoTermSupportReframedIso s u₁ u₃)
+    (F.mapTwoTermSupport_shortExact s)
+
 end Abelian
 
 end CategoryTheory.Functor

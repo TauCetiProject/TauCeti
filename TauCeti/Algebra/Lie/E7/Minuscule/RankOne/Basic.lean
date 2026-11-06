@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.E7.Minuscule.Carrier
-public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne
+public import TauCeti.Algebra.Lie.Presentation.MinusculeWeightTable.RankOne.Basic
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Weyl
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Borel
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Diagonal.Basic

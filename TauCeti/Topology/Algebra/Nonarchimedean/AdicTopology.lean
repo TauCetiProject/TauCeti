@@ -57,6 +57,8 @@ series evaluated at arguments of `I ^ n` is confined to `I ^ n`, in
   openness and containment of one of its powers in a fixed ideal of definition.
 * `IsAdic.exists_pow_succ_le` : some positive power of an ideal of definition lies in any open
   ideal.
+* `IsAdic.exists_pow_succ_le_comap` : a continuous ring homomorphism carries some positive power
+  of an ideal of definition into any open ideal of its target.
 * `IsAdic.radical_eq`, `IsAdic.le_radical`, and `IsAdic.radical` : ideals of definition have
   the same radical, and a finitely generated radical is the largest ideal of definition.
 
@@ -199,6 +201,13 @@ theorem exists_pow_succ_le {J : Ideal R} (hI : IsAdic I) (hJ : IsOpen (J : Set R
     ∃ n : ℕ, I ^ (n + 1) ≤ J := by
   obtain ⟨n, -, hn⟩ := hI.hasBasis_nhds_zero.mem_iff.mp (hJ.mem_nhds J.zero_mem)
   exact ⟨n, (Ideal.pow_le_pow_right n.le_succ).trans hn⟩
+
+/-- A continuous ring homomorphism carries some positive power of an ideal of definition of its
+source into any open ideal of its target. -/
+theorem exists_pow_succ_le_comap {S : Type*} [CommRing S] [TopologicalSpace S] {J : Ideal S}
+    (hI : IsAdic I) (hJ : IsOpen (J : Set S)) {f : R →+* S} (hf : Continuous f) :
+    ∃ n : ℕ, I ^ (n + 1) ≤ J.comap f :=
+  hI.exists_pow_succ_le (hJ.preimage hf)
 
 /-- The radical of an ideal of definition is again an ideal of definition whenever that
 radical is finitely generated, in particular over a noetherian ring (EGA I, Ch. 0, 7.1.7). -/
