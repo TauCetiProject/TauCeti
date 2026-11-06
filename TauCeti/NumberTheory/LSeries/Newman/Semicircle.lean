@@ -43,14 +43,14 @@ namespace TauCeti.LSeries
 variable {f : ℝ → ℂ} {G : ℂ → ℂ} {M T R : ℝ}
 
 private theorem continuousOn_semicircle_integrand {w : ℂ → ℂ} {a b : ℝ}
-    (hR : 0 < R) (hw : ContinuousOn w (circleMap 0 R '' uIcc a b)) :
+    (hR : R ≠ 0) (hw : ContinuousOn w (circleMap 0 R '' uIcc a b)) :
     ContinuousOn (fun θ : ℝ ↦ circleMap 0 R θ * Complex.I *
       (w (circleMap 0 R θ) * cexp (T * circleMap 0 R θ) *
         (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) / circleMap 0 R θ)) (uIcc a b) := by
   have hc := hw.comp (continuous_circleMap 0 R).continuousOn (mapsTo_image _ _)
   exact ((continuous_circleMap 0 R).continuousOn.mul continuousOn_const).mul
     (((hc.mul (by fun_prop)).mul (by fun_prop)).div
-      (continuous_circleMap 0 R).continuousOn (fun θ _ ↦ circleMap_ne_center hR.ne'))
+      (continuous_circleMap 0 R).continuousOn (fun θ _ ↦ circleMap_ne_center hR))
 
 private theorem mul_kernel_eq_zero_of_re_eq_zero {w z : ℂ}
     (hR : 0 < R) (hz : ‖z‖ = R) (hre : z.re = 0) :
@@ -93,12 +93,14 @@ private theorem norm_integral_semicircle_mul_kernel_le {w : ℂ → ℂ} {a b : 
 /-- The right-arc tail integrand is integrable, including both imaginary endpoints, whenever
 the continuation is continuous on that closed arc. -/
 theorem intervalIntegrable_right_semicircle_mul_kernel
-    (hf : IntervalIntegrable f volume 0 T) (hR : 0 < R)
+    (hf : IntervalIntegrable f volume 0 T)
     (hG : ContinuousOn G (circleMap 0 R '' Icc (-π / 2) (π / 2))) :
     IntervalIntegrable (fun θ : ℝ ↦ circleMap 0 R θ * Complex.I *
       ((G (circleMap 0 R θ) - ∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
         cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
           circleMap 0 R θ)) volume (-π / 2) (π / 2) := by
+  obtain rfl | hR := eq_or_ne R 0
+  · simp [circleMap]
   apply ContinuousOn.intervalIntegrable
   apply continuousOn_semicircle_integrand (w := fun z ↦
     G z - ∫ t in (0 : ℝ)..T, f t * cexp (-z * t)) hR
@@ -108,11 +110,13 @@ theorem intervalIntegrable_right_semicircle_mul_kernel
 /-- The truncated-transform kernel integrand along a circle is integrable on every finite
 angle interval, including the imaginary endpoints of either semicircle. -/
 theorem intervalIntegrable_circleMap_intervalIntegral_mul_kernel {a b : ℝ}
-    (hf : IntervalIntegrable f volume 0 T) (hR : 0 < R) :
+    (hf : IntervalIntegrable f volume 0 T) :
     IntervalIntegrable (fun θ : ℝ ↦ circleMap 0 R θ * Complex.I *
       ((∫ t in (0 : ℝ)..T, f t * cexp (-circleMap 0 R θ * t)) *
         cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
           circleMap 0 R θ)) volume a b := by
+  obtain rfl | hR := eq_or_ne R 0
+  · simp [circleMap]
   exact ContinuousOn.intervalIntegrable <| continuousOn_semicircle_integrand hR
     (differentiable_intervalIntegral_mul_cexp_neg_mul hf).continuous.continuousOn
 
@@ -178,7 +182,7 @@ theorem integral_semicircles_intervalIntegral_mul_kernel
       cexp (T * circleMap 0 R θ) * (1 + circleMap 0 R θ ^ 2 / (R : ℂ) ^ 2) /
         circleMap 0 R θ)
   have hI (a b : ℝ) : IntervalIntegrable H volume a b :=
-    intervalIntegrable_circleMap_intervalIntegral_mul_kernel hf hR
+    intervalIntegrable_circleMap_intervalIntegral_mul_kernel hf
   have hp : Function.Periodic H (2 * π) := by
     intro θ
     simp only [H, (periodic_circleMap 0 R) θ]
