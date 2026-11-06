@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.BilinearForm.Diagonalization
 public import TauCeti.Topology.Algebra.Group.Profinite.Demushkin.NormalForm.GradedClass
 public import TauCeti.Topology.Algebra.Group.Profinite.Free.DegreeOneForm
 import Mathlib.Algebra.CharP.Reduced
+import TauCeti.Algebra.BigOperators.Finset.Range
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 
 /-!
@@ -107,40 +108,6 @@ universe u
 -- Preferring the ring path keeps a single additive structure on `ZMod p`, so that the linear maps
 -- into `ZMod p` below are stated over the module structure of `ZMod p` on itself.
 attribute [local instance 2000] Ring.toAddCommGroup
-
-/-- A sum of alternating pairs, evaluated at an index `j = 2a + s + 1` of the first kind: only the
-`a`-th term contributes, and it equals `f (2a + s)`. -/
-theorem sum_range_ite_pair_of_eq_add_one {M : Type*} [AddCommGroup M] (f : ℕ → M)
-    {s a m j : ℕ} (hj : j = 2 * a + s + 1) (ha : a < m) :
-    ∑ b ∈ Finset.range m,
-      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
-        if j = 2 * b + s then f (2 * b + s + 1) else 0) =
-      f (2 * a + s) := by
-  subst hj
-  rw [Finset.sum_eq_single a (fun b _ hb ↦ by
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
-    (fun h ↦ absurd (Finset.mem_range.2 ha) h), ite_eq_left rfl, ite_eq_right (by omega), sub_zero]
-
-/-- A sum of alternating pairs, evaluated at an index `j = 2a + s` of the second kind: only the
-`a`-th term contributes, and it equals `-f (2a + s + 1)`. -/
-theorem sum_range_ite_pair_of_eq {M : Type*} [AddCommGroup M] (f : ℕ → M)
-    {s a m j : ℕ} (hj : j = 2 * a + s) (ha : a < m) :
-    ∑ b ∈ Finset.range m,
-      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
-        if j = 2 * b + s then f (2 * b + s + 1) else 0) =
-      -f (2 * a + s + 1) := by
-  subst hj
-  rw [Finset.sum_eq_single a (fun b _ hb ↦ by
-      rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero])
-    (fun h ↦ absurd (Finset.mem_range.2 ha) h), ite_eq_left rfl, ite_eq_right (by omega), zero_sub]
-
-/-- A sum of alternating pairs vanishes at an index `j < s`, below all the pairs. -/
-theorem sum_range_ite_pair_of_lt {M : Type*} [AddCommGroup M] (f : ℕ → M) {s m j : ℕ}
-    (hj : j < s) :
-    ∑ b ∈ Finset.range m,
-      ((if j = 2 * b + s + 1 then f (2 * b + s) else 0) -
-        if j = 2 * b + s then f (2 * b + s + 1) else 0) = 0 :=
-  Finset.sum_eq_zero fun b _ ↦ by rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero]
 
 namespace freeProP
 
@@ -902,8 +869,8 @@ theorem degreeOneForm_gradedMk_demushkinWordTwoEven_dualBasis_one (hn : 1 < n) {
   rw [degreeOneForm_demushkinWordTwoEven_dualBasis ha hf]
   simp only [one_ne_zero, ite_false, smul_zero, ite_true, sub_zero, zero_add, OfNat.one_ne_ofNat,
     add_zero]
-  rw [Finset.sum_eq_zero fun i _ ↦ by
-    rw [ite_eq_right (by omega), ite_eq_right (by omega), sub_zero], add_zero]
+  rw [sum_range_ite_pair_of_lt (fun k ↦ (χ.toMul (freeProPGen 2 n k)).toAdd)
+    (s := 2) (m := n / 2 - 1) (j := 1) (by omega), add_zero]
 
 /-- **The degree-one form of `x₁^{2+a} (x₁, x₂) x₃^{2^f} (x₃, x₄) ⋯ (x_{n-1}, x_n)` is nondegenerate
 for `n` even, `a` even and `f ≥ 1`**: pairing with the second coordinate character reads off the
