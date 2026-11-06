@@ -282,8 +282,8 @@ private theorem lintegral_le_and_setLIntegral_le {Q : Set E} (hQ : MeasurableSet
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F]
   [BorelSpace F] in
-/-- Every continuous linear map `A` has a right inverse `M` (when it is surjective) and a precision
-`δ > 0` with `δ ‖M‖ < 1` such that the two distortion factors
+/-- For `1 < τ`, every continuous linear map `A` has a precision `δ > 0` and a map `M` such that,
+if `A` is surjective, `M` is a right inverse of `A`, `δ ‖M‖ < 1`, and the two distortion factors
 `(1 - δ ‖M‖)⁻¹ ^ a * (1 + δ ‖M‖) ^ b`, for `(a, b) = (m - k, m)` and `(m, m - k)`, where `m = dim E`
 and `k = dim F`, are at most `τ`. -/
 private theorem exists_rightInverse_and_precision {τ : ℝ≥0} (hτ : 1 < τ) (A : E →L[ℝ] F) :
