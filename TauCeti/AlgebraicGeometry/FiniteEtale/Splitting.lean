@@ -24,11 +24,11 @@ The empty scheme corresponds to the product indexed by `Fin 0`.
 This is the scheme form of `TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorProduct`, transported
 through `TauCeti.FiniteEtaleScheme.spec` and Mathlib's affine pullback comparison.
 
-Counted in the functor-of-points sense, the same extension `L` gives a finite étale scheme of
-rank `n` over `K` exactly `n` points with values in `L`, that is `n` morphisms
-`Spec L ⟶ X` over `Spec K`, and its degree divides `n!`. The rank is Mathlib's
+Counted in the functor-of-points sense, there is a finite Galois extension `L / K` of degree
+dividing `n!` over which a finite étale scheme `X` of rank `n` over `K` has exactly `n` points
+with values in `L`, that is `n` morphisms `Spec L ⟶ X` over `Spec K`. The rank is Mathlib's
 `AlgebraicGeometry.Scheme.Hom.finrank`, so this applies to any finite étale scheme over a field
-whose rank is known, such as the kernel of an isogeny of known degree.
+whose rank is known.
 
 ## References
 
@@ -95,10 +95,10 @@ theorem exists_natCard_hom_eq_finrank_of_isFinite_of_etale {K : Type u} [Field K
   rw [hrank, ← hcard]
   -- The points of `X` with values in `L` are the characters of `A` with values in `L`.
   let eL : Over.mk (Spec.algebraMap K L) ≅ (algSpec (.of K)).obj (op (CommAlgCat.of K L)) :=
-    Over.isoMk (Iso.refl _) (Category.id_comp _)
+    (TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk (R := .of K) (.of K L)).symm
   let eA : Over.mk (Spec.algebraMap K A.obj) ≅
       (algSpec (.of K)).obj (op (CommAlgCat.of K A.obj)) :=
-    Over.isoMk (Iso.refl _) (Category.id_comp _)
+    (TauCeti.AlgebraicGeometry.algSpecObjIsoOverMk (R := .of K) (.of K A.obj)).symm
   exact Nat.card_congr ((Iso.homCongr eL (e.symm ≪≫ eA)).trans
     (TauCeti.AlgebraicGeometry.algSpecHomEquivAlgHom _ _))
 
