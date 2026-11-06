@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
+import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
 
 /-!
@@ -28,13 +29,13 @@ equilibrium measure.
 
 ## Implementation notes
 
-Let `g z = ∫ (z - y)⁻¹ dμ(y)` be the Stieltjes transform, which satisfies `g² - z g + 1 = 0` and has
-negative imaginary part in the upper half-plane. There the complex logarithmic potential
-`H z = ∫ log (z - y) dμ(y)` has derivative `g`, and so does `z g / 2 - log g - 1 / 2`; the two agree
-up to a constant, which vanishes at infinity. Taking real parts gives the potential in the upper
-half-plane, and the quadratic equation identifies the boundary values of `g` on `(-2, 2)`, whose
-modulus is `1` and whose real part is `x / 2`. The potential is continuous up to the real axis by
-dominated convergence.
+Let `m z = ∫ (y - z)⁻¹ dμ(y)` be the resolvent transform, which satisfies `m² + z m + 1 = 0` and
+has positive imaginary part in the upper half-plane. The complex logarithmic potential
+`H z = ∫ log (z - y) dμ(y)` has derivative `-m`, as does the primitive
+`-z m / 2 - log (-m) - 1 / 2`; the two agree up to a constant, which vanishes at infinity. Taking
+real parts gives the potential in the upper half-plane. The quadratic equation identifies the
+boundary values of `m` on `(-2, 2)`, whose modulus is `1` and whose real part is `-x / 2`. The
+potential is continuous up to the real axis by dominated convergence.
 
 ## References
 
@@ -99,6 +100,123 @@ theorem integrable_log_abs_sub_semicircleReal (x : ℝ) :
   refine h1.mono_measure ?_
   rw [← Measure.restrict_smul]
   exact Measure.restrict_mono_measure semicircleReal_zero_one_le _
+
+private theorem tendsto_log_norm_sub_integral (x : ℝ) :
+    Tendsto
+      (fun ε : ℝ ↦ ∫ y : ℝ,
+        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ∂semicircleReal 0 1)
+      (𝓝[>] 0)
+      (𝓝 (∫ y : ℝ, Real.log |x - y| ∂semicircleReal 0 1)) := by
+  let bound : ℝ → ℝ := fun y ↦ ‖Real.log |x - y|‖ + Real.log (|x| + 3)
+  have hbound_integrable : Integrable bound (semicircleReal 0 1) := by
+    have hlog := (integrable_log_abs_sub_semicircleReal x).norm
+    have hconst := integrable_const (Real.log (|x| + 3)) (μ := semicircleReal 0 1)
+    simpa [bound, Real.norm_eq_abs] using hlog.add hconst
+  refine tendsto_integral_filter_of_dominated_convergence bound ?_ ?_ hbound_integrable ?_
+  · filter_upwards [self_mem_nhdsWithin,
+      mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds (by norm_num : (0 : ℝ) < 1))]
+      with ε hε hε1
+    have hεpos : 0 < ε := hε
+    have hmeas : Measurable fun y : ℝ ↦
+        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
+      fun_prop
+    exact hmeas.aestronglyMeasurable
+  · filter_upwards [self_mem_nhdsWithin,
+      mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds (by norm_num : (0 : ℝ) < 1))]
+      with ε hε hε1
+    have hεpos : 0 < ε := hε
+    have hεle : ε ≤ 1 := hε1.le
+    have hnull : semicircleReal 0 1 {x} = 0 := semicircleReal_zero_one_singleton x
+    have hae : ∀ᵐ y ∂semicircleReal 0 1, y ≠ x := by
+      rw [ae_iff]
+      convert hnull using 1
+      simp
+    filter_upwards [ae_mem_Icc_semicircleReal_zero_one,
+      hae] with y hy hxy
+    have hdiff : 0 < |x - y| := abs_pos.mpr (sub_ne_zero.mpr (Ne.symm hxy))
+    have hlow :
+        |x - y| ≤ ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
+      have hre : ((x : ℂ) + (ε : ℂ) * Complex.I - y).re = x - y := by simp
+      rw [← hre]
+      exact Complex.abs_re_le_norm _
+    have hhigh :
+        ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ |x - y| + 1 := by
+      calc
+        ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖
+            = ‖((x - y : ℝ) : ℂ) + (ε : ℂ) * Complex.I‖ := by
+          congr 1
+          push_cast
+          ring
+        _ ≤ ‖((x - y : ℝ) : ℂ)‖ + ‖(ε : ℂ) * Complex.I‖ := norm_add_le _ _
+        _ = |x - y| + ε := by
+          rw [Complex.norm_real, Real.norm_eq_abs]
+          simp [abs_of_pos hεpos]
+        _ ≤ |x - y| + 1 := by linarith
+    have hyabs : |y| ≤ 2 := abs_le.mpr hy
+    have hdiff_le : |x - y| ≤ |x| + 2 := by
+      rw [abs_le]
+      constructor
+      · have hx := neg_abs_le x
+        have hy' := hy.2
+        linarith
+      · have hx := le_abs_self x
+        have hy' := hy.1
+        linarith
+    have hlog_low := Real.log_le_log hdiff hlow
+    have hnormpos : 0 < ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ :=
+      lt_of_lt_of_le hdiff hlow
+    have hlog_high : Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤
+        Real.log (|x| + 3) :=
+      Real.log_le_log hnormpos (by linarith [hhigh, hdiff_le])
+    have hlog_bound :
+        |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤ bound y := by
+      change |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤
+        ‖Real.log |x - y|‖ + Real.log (|x| + 3)
+      apply abs_le.mpr
+      constructor
+      · calc
+          -(‖Real.log |x - y|‖ + Real.log (|x| + 3)) ≤ Real.log |x - y| := by
+            have hconst : 0 ≤ Real.log (|x| + 3) :=
+              Real.log_nonneg (by have := abs_nonneg x; linarith)
+            have hneg : -‖Real.log |x - y|‖ ≤ Real.log |x - y| := by
+              rw [Real.norm_eq_abs]
+              exact neg_abs_le _
+            calc
+              -(‖Real.log |x - y|‖ + Real.log (|x| + 3))
+                  ≤ -‖Real.log |x - y|‖ := by linarith
+              _ ≤ Real.log |x - y| := hneg
+          _ ≤ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := hlog_low
+      · calc
+          Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ Real.log (|x| + 3) :=
+            hlog_high
+          _ ≤ ‖Real.log |x - y|‖ + Real.log (|x| + 3) :=
+            le_add_of_nonneg_left (norm_nonneg _)
+    change ‖Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖‖ ≤ bound y
+    rw [Real.norm_eq_abs]
+    exact hlog_bound
+  · have hnull : semicircleReal 0 1 {x} = 0 := semicircleReal_zero_one_singleton x
+    have hae : ∀ᵐ y ∂semicircleReal 0 1, y ≠ x := by
+      rw [ae_iff]
+      convert hnull using 1
+      simp
+    filter_upwards [hae] with y hxy
+    have harg : ContinuousAt
+        (fun ε : ℝ ↦ (x : ℂ) + (ε : ℂ) * Complex.I - y) 0 := by
+      fun_prop
+    have hnorm : ‖(x : ℂ) - y‖ ≠ 0 := by
+      apply norm_ne_zero_iff.mpr
+      rw [← Complex.ofReal_sub]
+      exact_mod_cast (sub_ne_zero.mpr (Ne.symm hxy))
+    have hnormeq : ‖(x : ℂ) - y‖ = |x - y| := by
+      rw [← Complex.ofReal_sub, Complex.norm_real, Real.norm_eq_abs]
+    have hEnd :
+        Real.log ‖(x : ℂ) + (0 : ℂ) * Complex.I - y‖ = Real.log |x - y| := by
+      have hzero : (x : ℂ) + (0 : ℂ) * Complex.I - y = (x : ℂ) - y := by simp
+      rw [hzero, hnormeq]
+    have hlog := (harg.norm.log (by simpa using hnorm)).tendsto.mono_left
+      (nhdsWithin_le_nhds : 𝓝[>] (0 : ℝ) ≤ 𝓝 0)
+    rw [← hEnd]
+    exact hlog
 
 /-- The Stieltjes transform of the standard semicircle law. -/
 private def m (z : ℂ) : ℂ := resolventTransform (semicircleReal 0 1) z
