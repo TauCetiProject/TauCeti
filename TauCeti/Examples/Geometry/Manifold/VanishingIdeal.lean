@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal
+import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 
 /-!
 # Examples: the vanishing ideal and the cotangent space of `ℝ` at `0`
