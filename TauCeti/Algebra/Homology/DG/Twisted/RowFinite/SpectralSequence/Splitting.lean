@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Category.ModuleCat.AB
 public import Mathlib.CategoryTheory.Limits.Preserves.Shapes.Products
+public import TauCeti.Algebra.Category.ModuleCat.AB
 public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.SpectralSequence
 public import TauCeti.Algebra.Homology.DG.Twisted.SpectralSequence.Splitting
 public import TauCeti.Algebra.Homology.ShortComplex.Colimit
@@ -100,7 +100,8 @@ noncomputable def rowFiniteIndexGradedPieceSingleX (x : {x // ind x = p}) (n : �
 
 /-- `rowFiniteIndexGradedPieceSingleX` inserts an element at `x`. -/
 @[simp]
-theorem rowFiniteIndexGradedPieceComplexXEquiv_singleX (x : {x // ind x = p}) (n : ℤ)
+theorem rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingleX
+    (x : {x // ind x = p}) (n : ℤ)
     (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n
         (rowFiniteIndexGradedPieceSingleX hM ind x n α) : {x // ind x = p} →₀ M) =
@@ -120,18 +121,21 @@ noncomputable def rowFiniteIndexGradedPieceSingle (x : {x // ind x = p}) :
     refine ModuleCat.hom_ext (LinearMap.ext fun α ↦
       (rowFiniteIndexGradedPieceComplexXEquiv hM p (i + 1)).injective (Subtype.ext ?_))
     simp only [ModuleCat.hom_comp, ModuleCat.hom_ofHom, LinearMap.comp_apply]
-    rw [rowFiniteIndexGradedPieceComplexXEquiv_d, rowFiniteIndexGradedPieceComplexXEquiv_singleX,
-      rowFiniteIndexGradedPieceComplexXEquiv_singleX, shiftedModuleComplexXEquiv_d,
+    rw [rowFiniteIndexGradedPieceComplexXEquiv_d,
+      rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingleX,
+      rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingleX,
+      shiftedModuleComplexXEquiv_d,
       Finsupp.mapRange.linearMap_apply, Finsupp.mapRange_single]
 
 /-- `rowFiniteIndexGradedPieceSingle` inserts an element at `x`. -/
 @[simp]
-theorem rowFiniteIndexGradedPieceComplexXEquiv_single_f (x : {x // ind x = p}) (n : ℤ)
+theorem rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingle_f
+    (x : {x // ind x = p}) (n : ℤ)
     (α : (shiftedModuleComplex.{uR, uA, uM, uP} hM p).X n) :
     (rowFiniteIndexGradedPieceComplexXEquiv hM p n
         (((rowFiniteIndexGradedPieceSingle hM ind x).f n).hom α) : {x // ind x = p} →₀ M) =
       Finsupp.single x (shiftedModuleComplexXEquiv hM p n α : M) :=
-  rowFiniteIndexGradedPieceComplexXEquiv_singleX hM ind x n α
+  rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingleX hM ind x n α
 
 /-- Every element of the graded piece is the sum of the insertions of its values at the
 generators of its support. -/
@@ -143,7 +147,8 @@ theorem sum_rowFiniteIndexGradedPieceSingle_f (n : ℤ)
           ⟨_, rowFiniteIndexGradedPieceComplexXEquiv_apply_mem hM ind n f x⟩) = f := by
   refine (rowFiniteIndexGradedPieceComplexXEquiv hM p n).injective (Subtype.ext ?_)
   rw [map_sum, Submodule.coe_sum]
-  simp only [rowFiniteIndexGradedPieceComplexXEquiv_single_f, LinearEquiv.apply_symm_apply]
+  simp only [rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingle_f,
+    LinearEquiv.apply_symm_apply]
   exact Finsupp.sum_single _
 
 /-- Two maps out of a term of the graded piece agree when they agree after every insertion at a
@@ -159,15 +164,6 @@ theorem rowFiniteIndexGradedPieceComplex_hom_ext_X {n : ℤ} {N : ModuleCat.{max
 
 /-! ### The graded piece as a coproduct -/
 
-/-- The projection of `M` onto its homogeneous component of degree `k`. -/
-private noncomputable def gradedProj (k : ℤ) : M →ₗ[R] ℳ k :=
-  DirectSum.component R ℤ (fun i ↦ ℳ i) k ∘ₗ (DirectSum.decomposeLinearEquiv ℳ).toLinearMap
-
-private theorem gradedProj_coe {k : ℤ} (α : ℳ k) : gradedProj (ℳ := ℳ) k (α : M) = α := by
-  rw [gradedProj, LinearMap.comp_apply, LinearEquiv.coe_coe, DirectSum.decomposeLinearEquiv_apply,
-    DirectSum.decompose_coe]
-  exact DirectSum.component.lof_self (M := fun i ↦ ℳ i) ..
-
 /-- The insertions at the generators of index `p` exhibit the degree-`n` term of the graded
 piece of index `p` as a coproduct of copies of `ℳ (n + p)`: a family of maps out of the copies
 is summed over the finite support of a family of coefficients. -/
@@ -177,13 +173,15 @@ noncomputable def isColimitRowFiniteIndexGradedPieceCofanX (n : ℤ) :
   Cofan.IsColimit.mk _
     (fun s ↦ ModuleCat.ofHom <|
       Finsupp.lsum R (fun x ↦ (s.inj x).hom ∘ₗ
-          (shiftedModuleComplexXEquiv hM p n).symm.toLinearMap ∘ₗ gradedProj (n + p)) ∘ₗ
+          (shiftedModuleComplexXEquiv hM p n).symm.toLinearMap ∘ₗ
+            DirectSum.component R ℤ (fun i ↦ ℳ i) (n + p) ∘ₗ
+              (DirectSum.decomposeLinearEquiv ℳ).toLinearMap) ∘ₗ
         (Submodule.subtype _) ∘ₗ (rowFiniteIndexGradedPieceComplexXEquiv hM p n).toLinearMap)
     (fun s x ↦ ModuleCat.hom_ext (LinearMap.ext fun α ↦ by
-      simp [rowFiniteIndexGradedPieceComplexXEquiv_single_f, gradedProj_coe]))
+      simp [rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingle_f]))
     fun s φ hφ ↦ rowFiniteIndexGradedPieceComplex_hom_ext_X hM ind fun x ↦
       (hφ x).trans (ModuleCat.hom_ext (LinearMap.ext fun α ↦ by
-        simp [rowFiniteIndexGradedPieceComplexXEquiv_single_f, gradedProj_coe])).symm
+        simp [rowFiniteIndexGradedPieceComplexXEquiv_rowFiniteIndexGradedPieceSingle_f])).symm
 
 /-- The graded piece of index `p`, as a cofan of copies of `shiftedModuleComplex hM p` with the
 insertions at the generators of index `p`. -/
@@ -202,14 +200,6 @@ noncomputable def isColimitRowFiniteIndexGradedPieceCofan :
 
 /-! ### The cohomology of a graded piece -/
 
-/-- Coproducts indexed by `Type uP` are exact in `ModuleCat.{max uP uM} R`, as they are in
-abelian groups. -/
-private theorem hasExactColimitsOfShape_discrete (J : Type uP) :
-    HasExactColimitsOfShape (Discrete J) (ModuleCat.{max uP uM} R) :=
-  haveI : AB4OfSize.{uP} AddCommGrpCat.{max uP uM} := AB4OfSize_shrink.{uP, uM} _
-  HasExactColimitsOfShape.domain_of_functor _
-    (forget₂ (ModuleCat.{max uP uM} R) AddCommGrpCat.{max uP uM})
-
 /-- The insertions at the generators of index `p` exhibit the cohomology of the graded piece of
 index `p` as a coproduct of copies of the cohomology of `shiftedModuleComplex hM p`: cohomology
 commutes with the coproduct `isColimitRowFiniteIndexGradedPieceCofan`, since coproducts of modules
@@ -218,7 +208,7 @@ noncomputable def isColimitRowFiniteIndexGradedPieceHomologyCofan (n : ℤ) :
     IsColimit (Cofan.mk ((rowFiniteIndexGradedPieceComplex ind hM p).homology n)
       fun x : {x // ind x = p} ↦
         HomologicalComplex.homologyMap (rowFiniteIndexGradedPieceSingle hM ind x) n) :=
-  haveI := hasExactColimitsOfShape_discrete.{uR, uM, uP} (R := R) {x // ind x = p}
+  haveI : AB4OfSize.{uP} (ModuleCat.{max uP uM} R) := AB4OfSize_shrink.{uP, uM} _
   isColimitMapCoconeCofanMkEquiv (HomologicalComplex.homologyFunctor _ _ n) _ _
     (isColimitOfPreserves (HomologicalComplex.homologyFunctor _ _ n)
       (isColimitRowFiniteIndexGradedPieceCofan hM ind))
@@ -246,8 +236,8 @@ theorem ι_rowFiniteIndexGradedPieceHomologyIso_inv (n : ℤ) (x : {x // ind x =
 /-- On the summand of a generator `x`, `rowFiniteIndexGradedPieceHomologyIso` inverts the map in
 cohomology of the insertion at `x`. -/
 @[reassoc (attr := simp)]
-theorem homologyMap_rowFiniteIndexGradedPieceSingle_comp_homologyIso_hom (n : ℤ)
-    (x : {x // ind x = p}) :
+theorem homologyMap_rowFiniteIndexGradedPieceSingle_comp_rowFiniteIndexGradedPieceHomologyIso_hom
+    (n : ℤ) (x : {x // ind x = p}) :
     HomologicalComplex.homologyMap (rowFiniteIndexGradedPieceSingle hM ind x) n ≫
         (rowFiniteIndexGradedPieceHomologyIso hM ind n).hom =
       Sigma.ι (fun _ : {x // ind x = p} ↦ (shiftedModuleComplex.{uR, uA, uM, uP} hM p).homology n)
