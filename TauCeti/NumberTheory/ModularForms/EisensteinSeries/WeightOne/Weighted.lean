@@ -450,8 +450,10 @@ private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hM : 0 < M) {z : ℍ} (hz
   · simp only [hb₀, CharP.cast_eq_zero, zero_mul, zero_add]
     exact le_add_of_nonneg_left (by positivity [cotConst_nonneg M])
   have hx : 1 / (M : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M).im := by
-    have h := im_div_natCast_sub_intCast_mul b₀ b₁ M 0 (z : ℂ)
-    simp only [Int.cast_zero, zero_mul, sub_zero, UpperHalfPlane.coe_im] at h
+    have h : ((b₀ * (z : ℂ) + b₁) / M - ((0 : ℤ) : ℂ) * z).im =
+        ((b₀ : ℝ) / M - ((0 : ℤ) : ℝ)) * z.im := by
+      exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M 0 z
+    simp only [Int.cast_zero, zero_mul, sub_zero] at h
     rw [h]
     have : 1 / (M : ℝ) ≤ b₀ / M := by
       gcongr
@@ -471,7 +473,8 @@ private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m :
   have hM' : (0 : ℝ) < M := by exact_mod_cast hM
   -- the imaginary part of `x - m z` is `(b₀ / M - m) Im z`, with `b₀ / M ≤ 1 - 1 / M`
   have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
-  have him := im_div_natCast_sub_intCast_mul b₀ b₁ M m (z : ℂ)
+  have him : ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * (z : ℂ).im := by
+    exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M m z
   set c : ℝ := b₀ / M
   have hc0 : 0 ≤ c := by positivity
   have him' : ((m : ℂ) * z).im = m * z.im := by simp
@@ -602,7 +605,9 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
         else 0)) := by
   have hM' : (0 : ℝ) < M := by exact_mod_cast (Nat.zero_le _).trans_lt hb
   have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
-  have him := im_div_natCast_sub_intCast_mul b₀ b₁ M
+  have him (m : ℤ) (z : ℍ) :
+      ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * (z : ℂ).im := by
+    exact_mod_cast im_ofReal_mul_add_ofReal_div_sub_ofReal_mul b₀ b₁ M m z
   have hc0 : (0 : ℝ) ≤ b₀ / M := by positivity
   have hM1 : 0 < 1 / (M : ℝ) := div_pos one_pos hM'
   rcases lt_trichotomy m 0 with hm | rfl | hm
@@ -628,8 +633,8 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have h := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M) (c := 1 / M) hM1 fun z ↦ by
         have h := him 0 z
-        simp only [Int.cast_zero, zero_mul, sub_zero, UpperHalfPlane.coe_im] at h
-        rw [h]
+        simp only [Int.cast_zero, zero_mul, sub_zero] at h
+        rw [h, UpperHalfPlane.coe_im]
         have : 1 / (M : ℝ) ≤ b₀ / M := by
           gcongr
           exact_mod_cast Nat.one_le_iff_ne_zero.mpr hb₀

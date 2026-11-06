@@ -11,7 +11,7 @@ import Mathlib.Tactic.Ring
 /-!
 # Imaginary parts of complex affine expressions
 
-The imaginary part of a complex affine expression with natural and integer coefficients factors
+The imaginary part of a complex affine expression with real coefficients factors
 as a real coefficient times the imaginary part of its argument. This reduces imaginary-part
 estimates at division points to real inequalities.
 -/
@@ -20,11 +20,10 @@ public section
 
 namespace Complex
 
-/-- The imaginary part of `(b₀ z + b₁) / M - m z` is `(b₀ / M - m) Im z`. -/
-lemma im_div_natCast_sub_intCast_mul (b₀ b₁ M : ℕ) (m : ℤ) (z : ℂ) :
-    ((b₀ * z + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * z.im := by
-  simp only [sub_im, div_natCast_im, add_im, mul_im, natCast_re, natCast_im,
-    intCast_re, intCast_im, zero_mul, add_zero]
+/-- The imaginary part of `(a z + b) / d - c z` is `(a / d - c) Im z` for real `a b d c`. -/
+lemma im_ofReal_mul_add_ofReal_div_sub_ofReal_mul (a b d c : ℝ) (z : ℂ) :
+    (((a : ℂ) * z + b) / d - c * z).im = (a / d - c) * z.im := by
+  simp only [sub_im, div_ofReal_im, add_im, mul_im, ofReal_re, ofReal_im, zero_mul, add_zero]
   ring
 
 end Complex
