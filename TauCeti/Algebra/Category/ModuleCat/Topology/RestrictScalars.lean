@@ -130,9 +130,8 @@ before, as a topological `ℤ`-module. Both carry the quotient topology of `N`. 
 noncomputable def cokerEquiv :
     coker (restrictScalarsInt.map f) ≃L[ℤ] restrictScalarsInt.obj (coker f) :=
   { Submodule.Quotient.restrictScalarsEquiv ℤ (LinearMap.range (f.hom : M →ₗ[R] N)) with
-    -- Both directions are `Quot.map id`, a lift of the continuous quotient map `Quot.mk`.
-    continuous_toFun := continuous_quot_lift _ continuous_quot_mk
-    continuous_invFun := continuous_quot_lift _ continuous_quot_mk }
+    continuous_toFun := (Submodule.isQuotientMap_mkQ _).continuous_iff.2 continuous_quot_mk
+    continuous_invFun := (Submodule.isQuotientMap_mkQ _).continuous_iff.2 continuous_quot_mk }
 
 /-- `cokerEquiv` sends the class of `x` to the class of `x`. -/
 @[simp]
