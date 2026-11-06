@@ -28,8 +28,8 @@ binary products).
 
 ## References
 
-* The Stacks Project, Proposition 15.91.16 (05ER), the localization comparison for
-  the module of compatible pairs.
+* The Stacks Project, Proposition 15.91.16 (05ER), formal gluing of modules;
+  the localization comparison proved here is a step in its proof.
 -/
 
 public section
@@ -43,18 +43,17 @@ variable {R M N P : Type*} [CommSemiring R]
   [AddCommGroup P] [Module R P]
 
 /-- **Localization of compatible pairs.** If localization at `S` makes `g : N → P`
-bijective, then the map from pairs `(m, n)` satisfying `f m = g n` to the localization
-of `M`, given by `(m, n) ↦ m / 1`, is a localization map. In particular, its target
+bijective, then the map from pairs `(x, y)` satisfying `f x = g y` to a localization
+of `M`, given by `(x, y) ↦ m x`, is a localization map. In particular, its target
 is canonically the localization of the module of compatible pairs. -/
 theorem isLocalizedModule_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[R] P)
-    (S : Submonoid R)
-    (hg : Bijective (IsLocalizedModule.map S
-      (LocalizedModule.mkLinearMap S N) (LocalizedModule.mkLinearMap S P) g)) :
-    IsLocalizedModule S (LocalizedModule.mkLinearMap S M ∘ₗ
-      fst R M N ∘ₗ (ker (f.coprod (-g))).subtype) := by
-  let m := LocalizedModule.mkLinearMap S M
-  let n := LocalizedModule.mkLinearMap S N
-  let p := LocalizedModule.mkLinearMap S P
+    (S : Submonoid R) {M' N' P' : Type*}
+    [AddCommMonoid M'] [Module R M'] [AddCommMonoid N'] [Module R N']
+    [AddCommGroup P'] [Module R P']
+    (m : M →ₗ[R] M') (n : N →ₗ[R] N') (p : P →ₗ[R] P')
+    [IsLocalizedModule S m] [IsLocalizedModule S n] [IsLocalizedModule S p]
+    (hg : Bijective (IsLocalizedModule.map S n p g)) :
+    IsLocalizedModule S (m ∘ₗ fst R M N ∘ₗ (ker (f.coprod (-g))).subtype) := by
   let F := m.prodMap n
   let d := f.coprod (-g)
   let f' := IsLocalizedModule.map S m p f
@@ -67,7 +66,7 @@ theorem isLocalizedModule_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[R] P)
     apply LinearMap.ext
     intro x
     simp [f', g', F, d, IsLocalizedModule.map_apply]
-  let π : ker d' →ₗ[R] LocalizedModule S M :=
+  let π : ker d' →ₗ[R] M' :=
     fst R _ _ ∘ₗ (ker d').subtype
   have hpair (x : ker d') : f' x.val.1 = g' x.val.2 := by
     have hx := x.property
@@ -82,6 +81,10 @@ theorem isLocalizedModule_fst_ker_coprod (f : M →ₗ[R] P) (g : N →ₗ[R] P)
       obtain ⟨y, hy⟩ := hg'.2 (f' x)
       refine ⟨⟨(x, y), ?_⟩, rfl⟩
       simp [mem_ker, hd', hy]
+  let := IsLocalizedModule.module (A := Localization S) S F
+  let := IsLocalizedModule.isScalarTower_module (A := Localization S) S F
+  let := IsLocalizedModule.module (A := Localization S) S p
+  let := IsLocalizedModule.isScalarTower_module (A := Localization S) S p
   have hker := toKerLocalized_isLocalizedModule (S := Localization S) S F p d
   have hcomp : π ∘ₗ toKerIsLocalized S F p d =
       m ∘ₗ fst R M N ∘ₗ (ker d).subtype := by
