@@ -206,6 +206,12 @@ theorem lipschitzWith_slabSpace {a b : ℝ} :
     LipschitzWith 1 fun p : slab (E := E) a b ↦ (p : ParabolicSpaceTime E).space :=
   LipschitzWith.of_edist_le fun p q ↦ edist_space_le (p : ParabolicSpaceTime E) q
 
+/-- The inclusion of a smaller slab into a larger one is `1`-Lipschitz for the parabolic
+distance. -/
+theorem lipschitzWith_inclusion_slab {a b a' b' : ℝ} (ha : a ≤ a') (hb : b' ≤ b) :
+    LipschitzWith 1 (inclusion (slab_subset_slab (E := E) ha hb)) :=
+  LipschitzWith.of_edist_le fun _ _ ↦ le_rfl
+
 /-- A `K`-Lipschitz spatial map acts on a slab as a `max K 1`-Lipschitz map for the parabolic
 distance. -/
 theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ} {K : ℝ≥0}

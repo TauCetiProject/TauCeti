@@ -56,18 +56,13 @@ section Restriction
 
 variable {a' b' : ℝ} (ha : a ≤ a') (hb : b' ≤ b)
 
-omit [NormedSpace ℝ E] in
-private theorem lipschitzWith_inclusion :
-    LipschitzWith 1 (inclusion (slab_subset_slab (E := E) ha hb)) :=
-  LipschitzWith.of_dist_le_mul fun _ _ ↦ by simp [Subtype.dist_eq]
-
 /-- The restriction of an order-two parabolic Hölder map to a smaller slab. -/
 private def restrict (hab' : a' < b') (f : ParabolicC2HolderSpace α E F hab) :
     ParabolicC2HolderSpace α E F hab' :=
   mk ((valueL f).compContinuous (ContinuousMap.inclusion (slab_subset_slab ha hb)))
     ((spatialFDerivL f).compContinuous (ContinuousMap.inclusion (slab_subset_slab ha hb)))
-    (HolderSpace.compLipschitzL _ (lipschitzWith_inclusion ha hb) (spatialSecondFDerivL f))
-    (HolderSpace.compLipschitzL _ (lipschitzWith_inclusion ha hb) (timeDerivL f))
+    (HolderSpace.compLipschitzL _ (lipschitzWith_inclusion_slab ha hb) (spatialSecondFDerivL f))
+    (HolderSpace.compLipschitzL _ (lipschitzWith_inclusion_slab ha hb) (timeDerivL f))
     (fun t x ↦ by
       simpa [ContinuousMap.inclusion] using
         f.hasSpatialFDerivAt (inclusion (Icc_subset_Icc ha hb) t) x)
@@ -90,9 +85,9 @@ private theorem restrict_apply (hab' : a' < b') (f : ParabolicC2HolderSpace α E
 private theorem norm_restrict_le (hab' : a' < b') (f : ParabolicC2HolderSpace α E F hab) :
     ‖restrict ha hb hab' f‖ ≤ ‖f‖ := by
   have hH := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := E →L[ℝ] E →L[ℝ] F)
-    (X := slab (E := E) a b) (X' := slab (E := E) a' b') (lipschitzWith_inclusion ha hb)
+    (X := slab (E := E) a b) (X' := slab (E := E) a' b') (lipschitzWith_inclusion_slab ha hb)
   have hT := HolderSpace.norm_compLipschitzL_le_one (α := α) (Y := F)
-    (X := slab (E := E) a b) (X' := slab (E := E) a' b') (lipschitzWith_inclusion ha hb)
+    (X := slab (E := E) a b) (X' := slab (E := E) a' b') (lipschitzWith_inclusion_slab ha hb)
   rw [norm_eq, norm_eq f, restrict, valueL_mk, spatialFDerivL_mk, spatialSecondFDerivL_mk,
     timeDerivL_mk]
   gcongr
