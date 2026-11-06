@@ -149,7 +149,22 @@ private theorem iterateSteinerSymmetrization_mem {𝒞 : Set (Set E)}
   | zero => exact hs
   | succ n ih => exact hS _ ih _ _
 
-variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E]
+
+theorem measurableSet_iterateSteinerSymmetrization {s : Set E} (hs : MeasurableSet s) (n : ℕ) :
+    MeasurableSet (iterateSteinerSymmetrization e he s n) := by
+  induction n with
+  | zero => exact hs
+  | succ n ih => exact measurableSet_steinerSymmetrization (e n) (he n) ih
+
+variable [FiniteDimensional ℝ E]
+
+/-- Successive Steiner symmetrizations respect equality up to null sets. -/
+theorem iterateSteinerSymmetrization_ae_eq {s u : Set E} (h : s =ᵐ[volume] u) (n : ℕ) :
+    iterateSteinerSymmetrization e he s n =ᵐ[volume] iterateSteinerSymmetrization e he u n := by
+  induction n with
+  | zero => exact h
+  | succ n ih => exact steinerSymmetrization_ae_eq (e n) (he n) ih
 
 theorem nullMeasurableSet_iterateSteinerSymmetrization {s : Set E}
     (hs : NullMeasurableSet s volume) (n : ℕ) :
@@ -192,6 +207,22 @@ theorem antitone_volume_iterateSteinerSymmetrization_symmDiff_ball {s : Set E}
 
 /-! ### Concatenating finitely many symmetrizations -/
 
+/-- **Diagonal splicing.** If the stages `σ j` are sequences such that `σ (j + 1)` agrees with
+`σ j` on its first `N j` terms, and `N` is strictly increasing, then a single sequence agrees with
+every stage `σ j` on its first `N j` terms. -/
+private theorem exists_forall_lt_eq_of_strictMono {α : Type*} (σ : ℕ → ℕ → α) {N : ℕ → ℕ}
+    (hN : StrictMono N) (hσ : ∀ j, ∀ k < N j, σ (j + 1) k = σ j k) :
+    ∃ e : ℕ → α, ∀ j, ∀ k < N j, e k = σ j k := by
+  -- Later stages keep the terms of earlier stages.
+  have hstable {j j' : ℕ} (hjj' : j ≤ j') {k : ℕ} (hk : k < N j) : σ j' k = σ j k := by
+    induction j', hjj' using Nat.le_induction with
+    | base => rfl
+    | succ j' hjj' ih => exact (hσ j' k (hk.trans_le (hN.monotone hjj'))).trans ih
+  refine ⟨fun k => σ (k + 1) k, fun j k hk => ?_⟩
+  rcases le_total (k + 1) j with hkj | hjk
+  · exact (hstable hkj ((Nat.lt_succ_self k).trans_le (hN.id_le (k + 1)))).symm
+  · exact hstable hjk hk
+
 /-- **Concatenation of finite approximations.** Suppose that from every successive Steiner
 symmetral of a null-measurable set `s`, finitely many further symmetrizations reach sets
 arbitrarily close in volume to the centered ball `B = ball 0 r`. Then a single sequence of
@@ -231,31 +262,16 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
   let σ : ℕ → D × ℕ := fun j => Nat.rec (motive := fun _ => D × ℕ) (⟨fun _ => e₀, fun _ => he₀⟩, 0)
     (fun j p => step j p) j
   have hσ (j : ℕ) : σ (j + 1) = step j (σ j) := rfl
-  have hN_succ (j : ℕ) : (σ j).2 + 1 ≤ (σ (j + 1)).2 := by
+  have hN : StrictMono fun j => (σ j).2 := strictMono_nat_of_lt_succ fun j => by
     rw [hσ]
     simp only [step]
     omega
-  have hN_mono : Monotone fun j => (σ j).2 := monotone_nat_of_le_succ fun j => by
-    have := hN_succ j
-    omega
-  have hN_ge (j : ℕ) : j ≤ (σ j).2 := by
-    induction j with
-    | zero => exact Nat.zero_le _
-    | succ j ih => exact (Nat.succ_le_succ ih).trans (hN_succ j)
-  -- Later stages keep the directions of earlier stages.
-  have hstable {j j' : ℕ} (hjj' : j ≤ j') {k : ℕ} (hk : k < (σ j).2) :
-      (σ j').1.1 k = (σ j).1.1 k := by
-    induction j', hjj' using Nat.le_induction with
-    | base => rfl
-    | succ j' hjj' ih =>
-      rw [hσ]
-      exact (hsplice_lt _ _ _ k (hk.trans_le (hN_mono hjj'))).trans ih
   -- The diagonal sequence of directions agrees with stage `j` on its first `N j` terms.
-  let e : D := ⟨fun k => (σ (k + 1)).1.1 k, fun k => (σ (k + 1)).1.2 k⟩
-  have he_eq (j : ℕ) {k : ℕ} (hk : k < (σ j).2) : e.1 k = (σ j).1.1 k := by
-    rcases le_total (k + 1) j with hkj | hjk
-    · exact (hstable hkj ((Nat.lt_succ_self k).trans_le (hN_ge (k + 1)))).symm
-    · exact hstable hjk hk
+  obtain ⟨e', he_eq⟩ := exists_forall_lt_eq_of_strictMono (fun j => (σ j).1.1) hN
+    fun j k hk => by rw [hσ]; exact hsplice_lt _ _ _ k hk
+  let e : D := ⟨e', fun k => by
+    rw [he_eq (k + 1) k ((Nat.lt_succ_self k).trans_le (hN.id_le (k + 1)))]
+    exact (σ (k + 1)).1.2 k⟩
   -- After the steps of stage `j + 1`, the distance to `B` is less than `1 / (j + 1)`.
   have hstep (j : ℕ) (p : D × ℕ) (q : D) (hq : ∀ k < (step j p).2, q.1 k = (step j p).1.1 k) :
       d q (step j p).2 < ((j : ℝ≥0∞) + 1)⁻¹ := by
@@ -267,7 +283,7 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
       (nullMeasurableSet_iterateSteinerSymmetrization _ _ hs _) r (Nat.le_succ _)).trans_lt
         (hf e' N j)
   have hd_stage (j : ℕ) : d e (σ (j + 1)).2 < ((j : ℝ≥0∞) + 1)⁻¹ := by
-    have := hstep j (σ j) e fun k hk => he_eq (j + 1) (by rwa [hσ])
+    have := hstep j (σ j) e fun k hk => he_eq (j + 1) k (by rwa [hσ])
     rwa [← hσ] at this
   refine ⟨e.1, e.2, ENNReal.tendsto_atTop_zero.2 fun ε hε => ?_⟩
   obtain ⟨j, hj⟩ := ENNReal.exists_inv_nat_lt hε.ne'
@@ -279,6 +295,44 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
     _ ≤ ε := hj.le
 
 /-! ### Limit identification -/
+
+/-- **The limit of a minimizing sequence.** Let `O` be a family of null-measurable subsets of
+`ball 0 R` that is closed under the symmetrization `S_e`, and let `t j ∈ O` be a sequence whose
+second moments tend to the infimum of the second moment over `O`. If `t j` converges in volume of
+symmetric differences to `F ⊆ ball 0 R`, then `S_e` does not decrease the second moment of `F`. -/
+private theorem lintegral_norm_sq_le_steinerSymmetrization_of_tendsto {O : Set (Set E)} {R : ℝ}
+    (hOm : ∀ t ∈ O, NullMeasurableSet t volume) (hOR : ∀ t ∈ O, t ⊆ ball 0 R) (e : E)
+    (he : ‖e‖ = 1) (hOS : ∀ t ∈ O, steinerSymmetrization e he t ∈ O) {t : ℕ → Set E}
+    (htO : ∀ j, t j ∈ O)
+    (htM : Tendsto (fun j => ∫⁻ x in t j, ENNReal.ofReal (‖x‖ ^ 2)) atTop
+      (𝓝 (sInf ((fun t => ∫⁻ x in t, ENNReal.ofReal (‖x‖ ^ 2)) '' O))))
+    {F : Set E} (hFm : NullMeasurableSet F volume) (hFR : F ⊆ ball 0 R)
+    (hlim : Tendsto (fun j => volume (t j ∆ F)) atTop (𝓝 0)) :
+    ∫⁻ x in F, ENNReal.ofReal (‖x‖ ^ 2) ≤
+      ∫⁻ x in steinerSymmetrization e he F, ENNReal.ofReal (‖x‖ ^ 2) := by
+  let M : Set E → ℝ≥0∞ := fun t => ∫⁻ x in t, ENNReal.ofReal (‖x‖ ^ 2)
+  -- The second moment is `R²`-Lipschitz, so its value at `F` is at most the infimum.
+  have hclim : Tendsto (fun j => ENNReal.ofReal (R ^ 2) * volume (t j ∆ F)) atTop (𝓝 0) := by
+    simpa using ENNReal.Tendsto.const_mul hlim (Or.inr ENNReal.ofReal_ne_top)
+  have hMF : M F ≤ sInf (M '' O) := by
+    have h := htM.add hclim
+    rw [add_zero] at h
+    refine ge_of_tendsto' h fun j => ?_
+    rw [symmDiff_comm]
+    exact lintegral_norm_sq_le_add_of_subset_closedBall _ (hFR.trans ball_subset_closedBall)
+  -- Symmetrizing along the sequence stays in `O`, and `S_e` contracts symmetric differences.
+  have h := hclim.const_add (M (steinerSymmetrization e he F))
+  rw [add_zero] at h
+  refine hMF.trans (ge_of_tendsto' h fun j => ?_)
+  calc sInf (M '' O) ≤ M (steinerSymmetrization e he (t j)) :=
+        sInf_le (mem_image_of_mem M (hOS _ (htO j)))
+    _ ≤ M (steinerSymmetrization e he F) + ENNReal.ofReal (R ^ 2) *
+          volume (steinerSymmetrization e he (t j) ∆ steinerSymmetrization e he F) :=
+        lintegral_norm_sq_le_add_of_subset_closedBall _
+          ((hOR _ (hOS _ (htO j))).trans ball_subset_closedBall)
+    _ ≤ M (steinerSymmetrization e he F) + ENNReal.ofReal (R ^ 2) * volume (t j ∆ F) := by
+        gcongr _ + _ * ?_
+        exact volume_steinerSymmetrization_symmDiff_le e he (hOm _ (htO j)) hFm
 
 variable [Nontrivial E]
 
@@ -307,10 +361,6 @@ private theorem exists_volume_ball_eq_and_forall_exists_lt {𝒞 : Set (Set E)} 
     exact ⟨e'', he'', n + 1, h s 1⟩
   obtain ⟨e₀, he₀⟩ := exists_norm_eq E zero_le_one
   have hsO : s ∈ O := ⟨fun _ => e₀, fun _ => he₀, 0, rfl⟩
-  -- The second moment is `R²`-Lipschitz along the members of `𝒞`.
-  have hMlip {A : Set E} (hA : A ∈ 𝒞) (A' : Set E) :
-      M A ≤ M A' + ENNReal.ofReal (R ^ 2) * volume (A ∆ A') :=
-    lintegral_norm_sq_le_add_of_subset_closedBall A' ((hR A hA).trans ball_subset_closedBall)
   -- Take a minimizing sequence `t k` of the second moment on `O`.
   obtain ⟨u, -, hu, huO⟩ := exists_seq_tendsto_sInf (S := M '' O) ⟨M s, s, hsO, rfl⟩
     (OrderBot.bddBelow _)
@@ -338,36 +388,15 @@ private theorem exists_volume_ball_eq_and_forall_exists_lt {𝒞 : Set (Set E)} 
     MeasureTheory.measure_eq_of_tendsto_measure_symmDiff (Eventually.of_forall fun j => hvol (φ j))
       hlim
   have hFfin : volume F ≠ ∞ := ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono hFR)
-  -- The limit minimizes the second moment, and so does each of its symmetrals.
-  have hc : ENNReal.ofReal (R ^ 2) ≠ ∞ := ENNReal.ofReal_ne_top
-  have hclim : Tendsto (fun j => ENNReal.ofReal (R ^ 2) * volume (t (φ j) ∆ F)) atTop (𝓝 0) := by
-    simpa using ENNReal.Tendsto.const_mul hlim (Or.inr hc)
-  have hMF : M F ≤ sInf (M '' O) := by
-    have h := (hu.comp hφ.tendsto_atTop).add hclim
-    rw [add_zero] at h
-    refine ge_of_tendsto' h fun j => ?_
-    rw [Function.comp_apply, ← htM, symmDiff_comm]
-    exact lintegral_norm_sq_le_add_of_subset_closedBall _ (hFR.trans ball_subset_closedBall)
-  have hMS (e : E) (he : ‖e‖ = 1) : sInf (M '' O) ≤ M (steinerSymmetrization e he F) := by
-    have h := hclim.const_add (M (steinerSymmetrization e he F))
-    rw [add_zero] at h
-    refine ge_of_tendsto' h fun j => ?_
-    have htj := hO𝒞 (htO (φ j))
-    calc sInf (M '' O) ≤ M (steinerSymmetrization e he (t (φ j))) :=
-          sInf_le (mem_image_of_mem M (hOS (htO (φ j)) e he))
-      _ ≤ M (steinerSymmetrization e he F) + ENNReal.ofReal (R ^ 2) *
-            volume (steinerSymmetrization e he (t (φ j)) ∆ steinerSymmetrization e he F) :=
-          hMlip (hS _ htj e he) _
-      _ ≤ M (steinerSymmetrization e he F) + ENNReal.ofReal (R ^ 2) * volume (t (φ j) ∆ F) := by
-          gcongr _ + _ * ?_
-          exact volume_steinerSymmetrization_symmDiff_le e he (hm _ htj) hFm
-  have hMfin : M F ≠ ∞ := ne_top_of_le_ne_top (ENNReal.mul_ne_top hc hFfin)
+  have hMfin : M F ≠ ∞ := ne_top_of_le_ne_top (ENNReal.mul_ne_top ENNReal.ofReal_ne_top hFfin)
     (lintegral_norm_sq_le_mul_of_subset_closedBall (hFR.trans ball_subset_closedBall))
   -- Hence every symmetrization fixes `F` up to a null set, and `F` is a centered ball.
   have hfix (e : E) (he : ‖e‖ = 1) : steinerSymmetrization e he F =ᵐ[volume] F :=
     ((lintegral_norm_sq_steinerSymmetrization_eq_iff e he hFm hMfin).1
       (le_antisymm (lintegral_norm_sq_steinerSymmetrization_le e he hFm)
-        (hMF.trans (hMS e he)))).symm
+        (lintegral_norm_sq_le_steinerSymmetrization_of_tendsto (fun t ht => hm t (hO𝒞 ht))
+          (fun t ht => hR t (hO𝒞 ht)) e he (fun t ht => hOS ht e he) (fun j => htO (φ j))
+          ((hu.comp hφ.tendsto_atTop).congr fun j => (htM (φ j)).symm) hFm hFR hlim))).symm
   obtain ⟨r, -, hr⟩ := exists_ae_eq_ball_of_forall_steinerSymmetrization_ae_eq hFm hFfin hfix
   refine ⟨r, by rw [← measure_congr hr, hFvol], fun ε hε => ?_⟩
   obtain ⟨j, hj⟩ := (hlim.eventually (gt_mem_nhds hε)).exists
