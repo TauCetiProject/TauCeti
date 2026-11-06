@@ -30,6 +30,7 @@ theorem subgroupOfMulAction_apply {G H : Type*} [Group G] [MulAction G H]
 theorem subgroupOfMulAction_inv_apply {G H : Type*} [Group G] [MulAction G H]
     [FaithfulSMul G H] (g : G) (x : H) :
     (((Equiv.Perm.subgroupOfMulAction G H g : (MulAction.toPermHom G H).range) :
-      Equiv.Perm H)⁻¹) x = g⁻¹ • x := rfl
+      Equiv.Perm H)⁻¹) x = g⁻¹ • x := by
+  simpa only [map_inv, Subgroup.coe_inv] using subgroupOfMulAction_apply g⁻¹ x
 
 end TauCeti
