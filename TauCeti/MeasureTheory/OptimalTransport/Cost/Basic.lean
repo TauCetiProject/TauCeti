@@ -314,6 +314,9 @@ protected theorem map (e : X ≃ᵐ X') (f : Y ≃ᵐ Y') {c : X' × Y' → ℝ�
     IsOptimalCoupling c (π.map (Prod.map e f)) (μ.map e) (ν.map f) where
   toIsCoupling := h.toIsCoupling.map e.measurable f.measurable
   lintegral_eq := by
+    -- `rw [lintegral_map_equiv]` cannot see that `Prod.map e f` is the coercion of the measurable
+    -- equivalence `e.prodCongr f`; the two agree by definition, so `show` states the rewrite
+    -- with `Prod.map e f` and proves it by `lintegral_map_equiv` at `e.prodCongr f`.
     rw [show ∫⁻ z, c z ∂π.map (Prod.map e f) = ∫⁻ z, c (e z.1, f z.2) ∂π from
       lintegral_map_equiv c (e.prodCongr f), ← transportCost_comp_prodMap e f μ ν]
     exact h.lintegral_eq
@@ -324,6 +327,8 @@ protected theorem swap (h : IsOptimalCoupling c π μ ν) :
     IsOptimalCoupling (fun z ↦ c z.swap) (π.map Prod.swap) ν μ where
   toIsCoupling := h.toIsCoupling.swap
   lintegral_eq := by
+    -- As for `map`: `Prod.swap` is, by definition, the coercion of `MeasurableEquiv.prodComm`,
+    -- which is the form `lintegral_map_equiv` needs; `show` states the rewrite with `Prod.swap`.
     rw [show ∫⁻ z, c z.swap ∂π.map Prod.swap = ∫⁻ z, c z ∂π from
       lintegral_map_equiv (μ := π) (fun z : Y × X ↦ c z.swap) MeasurableEquiv.prodComm,
       transportCost_comp_swap μ ν]
