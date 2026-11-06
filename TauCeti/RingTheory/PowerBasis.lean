@@ -26,8 +26,8 @@ along `x ^ 0 = 1` is an `R`-linear map `S → R` sending `1` to `1`. So `R · 1`
   characteristic polynomial the minimal polynomial of the generator. This is the endomorphism form
   of Mathlib's `charpoly_leftMulMatrix`.
 * `PowerBasis.roots_map_minpoly_eq_map_algHom`: in a domain `E`, the roots of the minimal
-  polynomial of the generator are the images of the generator under the `K`-algebra embeddings
-  `L →ₐ[K] E`, each counted once.
+  polynomial of the generator are the images of the generator under the `R`-algebra embeddings
+  `S →ₐ[R] E`, each counted once.
 -/
 
 public section
@@ -71,20 +71,21 @@ theorem PowerBasis.charpoly_lmul_gen {R S : Type*} [CommRing R] [Ring S] [Algebr
 
 open Polynomial in
 /-- The roots in a domain `E` of the minimal polynomial of the generator of a power basis are the
-images of the generator under the `K`-algebra embeddings `L →ₐ[K] E`, each counted once, for any
+images of the generator under the `R`-algebra embeddings `S →ₐ[R] E`, each counted once, for any
 numbering `e` of the embeddings by `Fin pb.dim`. -/
-theorem PowerBasis.roots_map_minpoly_eq_map_algHom {K L E : Type*} [Field K] [Field L]
-    [CommRing E] [IsDomain E] [Algebra K L] [Algebra K E] (pb : PowerBasis K L)
-    (e : Fin pb.dim ≃ (L →ₐ[K] E)) :
-    ((minpoly K pb.gen).map (algebraMap K E)).roots =
+theorem PowerBasis.roots_map_minpoly_eq_map_algHom {R S E : Type*} [CommRing R] [Ring S]
+    [CommRing E] [IsDomain E] [Algebra R S] [Algebra R E] (pb : PowerBasis R S)
+    (e : Fin pb.dim ≃ (S →ₐ[R] E)) :
+    ((minpoly R pb.gen).map (algebraMap R E)).roots =
       Finset.univ.val.map fun i ↦ e i pb.gen := by
+  have := (algebraMap R E).domain_nontrivial
   have hrnodup : (Finset.univ.val.map fun i ↦ e i pb.gen).Nodup := by
     rw [Multiset.nodup_map_iff_of_injective]
     · exact Finset.univ.nodup
     · intro i j hij
       exact e.injective (pb.algHom_ext hij)
   have hle : Finset.univ.val.map (fun i ↦ e i pb.gen) ≤
-      ((minpoly K pb.gen).map (algebraMap K E)).roots :=
+      ((minpoly R pb.gen).map (algebraMap R E)).roots :=
     (Multiset.le_iff_subset hrnodup).2 (by
       intro x hx
       obtain ⟨i, _, rfl⟩ := Multiset.mem_map.mp hx
@@ -92,4 +93,4 @@ theorem PowerBasis.roots_map_minpoly_eq_map_algHom {K L E : Type*} [Field K] [Fi
   refine (Multiset.eq_of_le_of_card_le hle ?_).symm
   rw [Multiset.card_map, Finset.card_val, Finset.card_univ, Fintype.card_fin]
   exact (card_roots' _).trans (by
-    rw [(minpoly.monic pb.isIntegral_gen).natDegree_map (algebraMap K E), pb.natDegree_minpoly])
+    rw [(minpoly.monic pb.isIntegral_gen).natDegree_map (algebraMap R E), pb.natDegree_minpoly])
