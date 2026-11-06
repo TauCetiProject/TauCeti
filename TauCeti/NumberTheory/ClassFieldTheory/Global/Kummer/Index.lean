@@ -234,11 +234,11 @@ theorem exists_auxiliaryKummerIdeleClassSubgroup_index_eq_finrank
 
 /-! ### The Kummer case of the second fundamental inequality -/
 
-/-- **The bound for a field inside the Kummer extension.** If `F` is an intermediate field of
-`SeparableClosure K / K` contained in `K(U_S^{1/p})` where `S` contains the places above `p` and
-generates the ideal class group, then the index of the idele-class norm group of `F` divides
-`[F : K]`. -/
-private theorem index_range_ideleClassNormMap_le_of_le_kummerField [Fact p.Prime]
+/-- **The index divides the degree for a field inside the Kummer extension.** If `F` is an
+intermediate field of `SeparableClosure K / K` contained in `K(U_S^{1/p})` where `S` contains the
+places above `p` and generates the ideal class group, then the index of the idele-class norm group
+of `F` divides `[F : K]`. -/
+private theorem index_range_ideleClassNormMap_dvd_finrank_of_le_kummerField [Fact p.Prime]
     (S : Finset (HeightOneSpectrum (NumberField.RingOfIntegers K)))
     (hS : Subgroup.closure (HeightOneSpectrum.classGroupMk ''
       (S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K)))) = ⊤)
@@ -251,13 +251,8 @@ private theorem index_range_ideleClassNormMap_le_of_le_kummerField [Fact p.Prime
   classical
   let M := kummerField (SeparableClosure K) p
     ((S : Set (HeightOneSpectrum (NumberField.RingOfIntegers K))).unit K)
-  let F' : IntermediateField K M := F.comap M.val
-  have hFM' : F ≤ M.val.fieldRange := by
-    intro x hx
-    exact ⟨⟨x, hFM hx⟩, rfl⟩
-  have hmap : F'.map M.val = F := IntermediateField.map_comap_eq_self hFM'
-  let eFM : F' ≃ₐ[K] F :=
-    (IntermediateField.equivMap F' M.val).trans (IntermediateField.equivOfEq hmap)
+  let F' : IntermediateField K M := IntermediateField.restrict hFM
+  let eFM : F' ≃ₐ[K] F := (IntermediateField.restrictAlgEquiv hFM).symm
   have hF'fin : Module.finrank K F' = Module.finrank K F :=
     LinearEquiv.finrank_eq eFM.toLinearEquiv
   have : NumberField F' := NumberField.of_module_finite K F'
@@ -317,7 +312,7 @@ theorem index_range_ideleClassNormMap_le_of_finrank_prime
     have hwv : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
     refine ⟨w, hwv, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_ w.asIdeal⟩
     exact fun hvram ↦ hv (hFS hvram)
-  have hdvd := index_range_ideleClassNormMap_le_of_le_kummerField S hS hpS F
+  have hdvd := index_range_ideleClassNormMap_dvd_finrank_of_le_kummerField S hS hpS F
     (TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hS (hFfin ▸ dvd_rfl) hram)
   rw [hFfin] at hdvd
   exact (congrArg Subgroup.index
