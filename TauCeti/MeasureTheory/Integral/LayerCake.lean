@@ -614,7 +614,7 @@ theorem integrable_rpow_iff_integrableOn_weighted_tail
     lintegral_rpow_eq_lintegral_meas_lt_mul μ hfn hf hp]
   have heq : (∫⁻ t in Ioi (0 : ℝ), μ {x | t < f x} * ENNReal.ofReal (t ^ (p - 1))) =
       ∫⁻ t in Ioi (0 : ℝ), ENNReal.ofReal (μ.real {x | t < f x} * t ^ (p - 1)) := by
-    refine setLIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+    refine setLIntegral_congr_fun measurableSet_Ioi fun t _ ↦ ?_
     rw [ENNReal.ofReal_mul measureReal_nonneg, measureReal_def,
       ENNReal.ofReal_toReal (measure_ne_top μ _)]
   rw [heq, ENNReal.mul_lt_top_iff]
