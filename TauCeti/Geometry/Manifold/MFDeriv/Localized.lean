@@ -19,6 +19,13 @@ valued functions and also for manifolds with boundary.
 
 This local first-jet realization allows, in particular, localized Hamiltonian perturbations
 with a prescribed differential without requiring a global coordinate chart.
+
+## Main results
+
+* `TauCeti.exists_contMDiffMap_eventuallyEq_extChartAt`: a globally smooth map with the germ of
+  the extended chart at a point.
+* `TauCeti.exists_contMDiff_hasCompactSupport_mvfderiv_eq`: a compactly supported smooth function
+  with prescribed value and derivative at a point.
 -/
 
 public noncomputable section
@@ -32,6 +39,17 @@ variable {E H M F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
   [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **A globally smooth map with the germ of the extended chart.** There is a `C^∞` map `M → E`
+that agrees with `extChartAt I x` on a neighbourhood of `x`. -/
+theorem exists_contMDiffMap_eventuallyEq_extChartAt (x : M) :
+    ∃ F : C^∞⟮I, M; modelWithCornersSelf ℝ E, E⟯, (F : M → E) =ᶠ[𝓝 x] extChartAt I x := by
+  -- Multiplying the chart by a bump function at `x` leaves its germ there and makes the product
+  -- smooth everywhere.
+  let b : SmoothBumpFunction I x := Classical.choice inferInstance
+  refine ⟨⟨fun y ↦ b y • extChartAt I x y, b.contMDiff_smul contMDiffOn_extChartAt⟩, ?_⟩
+  filter_upwards [b.eventuallyEq_one] with y hy
+  simp [hy]
 
 /-- Any prescribed value and derivative at a point of a finite-dimensional Hausdorff real
 manifold are realized by a smooth function compactly supported in any chosen neighborhood. -/
