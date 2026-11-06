@@ -93,9 +93,7 @@ private theorem holderWith_potential (hα : 0 < α) (hα₂ : α ≤ 2)
       simpa only [HolderSpace.coe_toBoundedContinuousFunction, coe_nnnorm] using
         (norm_timeExtension_le T.coe_nonneg f.toBoundedContinuousFunction s x).trans
           f.norm_toBoundedContinuousFunction_le)
-    (fun s _ => holderWith_timeExtension T.coe_nonneg (f := f) (by
-      simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-        f.memHolder.holderWith.mono f.nnHolderNorm_le) s) hα hα₂
+    (fun s _ => holderWith_timeExtension T.coe_nonneg (f := f) f.holderWith_nnnorm s) hα hα₂
 
 private theorem norm_forcing_potential_le (f : HolderSpace α (slab (E := E) 0 T) F)
     (p : slab (E := E) 0 T) :
@@ -393,15 +391,9 @@ private theorem norm_forcing_le (f : HolderSpace α (slab (E := E) 0 T) F) (s : 
       f.norm_toBoundedContinuousFunction_le
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-private theorem holderWith_nnnorm (f : HolderSpace α (slab (E := E) 0 T) F) :
-    HolderWith ‖f‖₊ α f := by
-  simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
-    f.memHolder.holderWith.mono f.nnHolderNorm_le
-
-omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 private theorem holderWith_forcing (f : HolderSpace α (slab (E := E) 0 T) F) (s : ℝ) :
     HolderWith ‖f‖₊ α (forcing (T := T) f s) :=
-  holderWith_timeExtension T.coe_nonneg (holderWith_nnnorm f) s
+  holderWith_timeExtension T.coe_nonneg f.holderWith_nnnorm s
 
 omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
 /-- On the slab the clamped forcing is the slab field itself, so it is parabolically Hölder
@@ -416,7 +408,7 @@ private theorem holderOnWith_forcing (f : HolderSpace α (slab (E := E) 0 T) F) 
   intro p hp q hq
   dsimp only
   rw [h p hp, h q hq]
-  exact holderWith_nnnorm f ⟨p, hp⟩ ⟨q, hq⟩
+  exact f.holderWith_nnnorm ⟨p, hp⟩ ⟨q, hq⟩
 
 /-- The spatial Hessian of the Duhamel potential of the clamped forcing, on the slab. -/
 private def hessian (f : HolderSpace α (slab (E := E) 0 T) F) (p : slab (E := E) 0 T) :
