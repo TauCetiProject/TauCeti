@@ -218,6 +218,7 @@ noncomputable def matrixMap (M : GridState n → GridState n → MvPolynomial (F
   Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x => Finsupp.equivFunOnFinite.symm (M x)
 
 /-- The matrix coefficients of the map with matrix coefficients `M`. -/
+@[simp]
 theorem matrixMap_single_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
     (x y : GridState n) (p : MvPolynomial (Fin n) R) :
     matrixMap R M (Finsupp.single x p) y = p * M x y := by
@@ -225,6 +226,7 @@ theorem matrixMap_single_apply (M : GridState n → GridState n → MvPolynomial
     Finsupp.equivFunOnFinite_symm_apply_apply]
 
 /-- The coefficient formula for the map with matrix coefficients `M` on an arbitrary chain. -/
+@[simp]
 theorem matrixMap_apply_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
     (c : GridChainMinus R n) (y : GridState n) :
     matrixMap R M c y = c.sum fun x p => p * M x y := by
