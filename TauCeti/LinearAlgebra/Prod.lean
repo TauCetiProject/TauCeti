@@ -36,6 +36,8 @@ quadratic forms with the subgroup preserving both summands.
 * `Module.Basis.det_prod`: changes between product bases have the product determinant.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
+* `LinearMap.coprod_comp_prodComm`: precomposing `f.coprod g` with the exchange of factors gives
+  `g.coprod f`, the linear version of `ContinuousLinearMap.coprod_comp_prodComm`.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -123,6 +125,18 @@ theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (
 end CommRing
 
 end LinearEquiv
+
+namespace LinearMap
+
+variable {R M₁ M₂ M₃ : Type*} [Semiring R] [AddCommMonoid M₁] [Module R M₁] [AddCommMonoid M₂]
+  [Module R M₂] [AddCommMonoid M₃] [Module R M₃]
+
+/-- Precomposing a map on a product with the exchange of the factors exchanges its components. -/
+theorem coprod_comp_prodComm (f : M₁ →ₗ[R] M₃) (g : M₂ →ₗ[R] M₃) :
+    f.coprod g ∘ₗ (LinearEquiv.prodComm R M₂ M₁).toLinearMap = g.coprod f := by
+  ext <;> simp
+
+end LinearMap
 
 namespace Module.Basis
 
