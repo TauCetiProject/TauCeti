@@ -250,6 +250,36 @@ theorem abs_hopfLax_norm_rpow_le (hp : p ≠ 0) {C : ℝ} (hφC : ∀ y, |φ y| 
   · exact (hopfLax_norm_rpow_le_self hp ⟨-C, forall_mem_range.2 fun y ↦ (abs_le.1 (hφC y)).1⟩
       ht x).trans (abs_le.1 (hφC x)).2
 
+omit [NormedSpace ℝ E] in
+/-- Far-field bound for the Hopf–Lax functional with the `p`-th power cost: if the time `t` lies in
+`(t₀ / 2, 2 * t₀)`, the point `x` is within `1` of `x₀`, and `y` is farther than
+`2 + |c - m| * (2 * t₀) ^ (p - 1)` from `x₀`, then the penalty `‖x - y‖ ^ p / t ^ (p - 1)` alone
+makes `φ y + ‖x - y‖ ^ p / t ^ (p - 1)` at least `c`, provided `m` is a lower bound of `φ`. -/
+private lemma le_add_norm_rpow_div_of_far {t₀ t m c : ℝ} {x₀ x y : E} (hp : 1 ≤ p) (ht₀ : 0 < t₀)
+    (hm' : ∀ y, m ≤ φ y) (hτ' : t₀ / 2 < t) (hS : t < 2 * t₀) (hx : ‖x - x₀‖ < 1)
+    (hy : 2 + |c - m| * (2 * t₀) ^ (p - 1) < ‖y - x₀‖) :
+    c ≤ φ y + ‖x - y‖ ^ p / t ^ (p - 1) := by
+  have hτ : 0 < t₀ / 2 := half_pos ht₀
+  have hD : 0 < (2 * t₀) ^ (p - 1) := Real.rpow_pos_of_pos (by linarith) _
+  set D := (2 * t₀) ^ (p - 1)
+  have hfar : 2 + |c - m| * D - 1 ≤ ‖x - y‖ := by
+    have := norm_sub_le_norm_sub_add_norm_sub y x x₀
+    rw [norm_sub_rev y x] at this
+    linarith
+  have hR : 2 + |c - m| * D - 1 = 1 + |c - m| * D := by ring
+  have h1 : 1 ≤ ‖x - y‖ := le_trans (by nlinarith [abs_nonneg (c - m)]) hfar
+  have hmax : t ^ (p - 1) ≤ D :=
+    Real.rpow_le_rpow (hτ.trans hτ').le hS.le (by linarith)
+  have hmax0 : 0 < t ^ (p - 1) := Real.rpow_pos_of_pos (hτ.trans hτ') _
+  calc c ≤ m + (2 + |c - m| * D - 1) / D := by
+        rw [hR, add_div, mul_div_assoc, div_self hD.ne', mul_one]
+        linarith [le_abs_self (c - m), one_div_pos.2 hD]
+    _ ≤ m + ‖x - y‖ ^ p / D := by
+        gcongr
+        exact hfar.trans (Real.self_le_rpow_of_one_le h1 hp)
+    _ ≤ m + ‖x - y‖ ^ p / t ^ (p - 1) := by gcongr
+    _ ≤ φ y + ‖x - y‖ ^ p / t ^ (p - 1) := by linarith [hm' y]
+
 /-- **Lower semicontinuity of the Hopf–Lax value for the `p`-th power cost.** In a proper real
 seminormed space, for `1 ≤ p` and a lower semicontinuous initial datum `φ` bounded below, the
 Hopf–Lax value `u (t, x) = inf_y (φ y + ‖x - y‖ ^ p / t ^ (p - 1))` is jointly lower
@@ -303,24 +333,8 @@ theorem lowerSemicontinuousOn_hopfLax_norm_rpow [ProperSpace E] (hp : 1 ≤ p)
   · exact (hqK y hy).le
   -- Far from `x₀`, the penalty alone exceeds `c' - m`.
   rw [Metric.mem_closedBall, not_le, dist_eq_norm] at hy
-  have hfar : R - 1 ≤ ‖q.2 - y‖ := by
-    have := norm_sub_le_norm_sub_add_norm_sub y q.2 x₀
-    rw [norm_sub_rev y q.2] at this
-    linarith
-  have hR : R - 1 = 1 + |c' - m| * D := by simp only [R]; ring
-  have h1 : 1 ≤ ‖q.2 - y‖ := le_trans (by nlinarith [abs_nonneg (c' - m)]) hfar
-  have hmax : max q.1 τ ^ (p - 1) ≤ D := by
-    rw [max_eq_left hτ'.le]
-    exact Real.rpow_le_rpow (hτ.trans hτ').le hS.le (by linarith)
-  have hmax0 : 0 < max q.1 τ ^ (p - 1) := Real.rpow_pos_of_pos (lt_max_of_lt_right hτ) _
-  calc c' ≤ m + (R - 1) / D := by
-        rw [hR, add_div, mul_div_assoc, div_self hD.ne', mul_one]
-        linarith [le_abs_self (c' - m), one_div_pos.2 hD]
-    _ ≤ m + ‖q.2 - y‖ ^ p / D := by
-        gcongr
-        exact hfar.trans (Real.self_le_rpow_of_one_le h1 hp)
-    _ ≤ m + ‖q.2 - y‖ ^ p / max q.1 τ ^ (p - 1) := by gcongr
-    _ ≤ F q y := by simp only [F]; linarith [hm' y]
+  simp only [F, max_eq_left hτ'.le]
+  exact le_add_norm_rpow_div_of_far hp ht₀ hm' hτ' hS hx hy
 
 /-- **Continuity of the Hopf–Lax value for the `p`-th power cost.** In a proper real seminormed
 space, for `1 ≤ p` and a continuous initial datum `φ` bounded below, the Hopf–Lax value
