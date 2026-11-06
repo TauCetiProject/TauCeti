@@ -143,7 +143,7 @@ theorem isNilpotent_kostantSubsystemSubgroup_of_subset_posRoots
     S
     (isCartanWeightVector_coe_orderedWeightBasis (t.lieBasis ht).h D.representation
       D.lattice D.basis D.weight (t.weightDegree ht) D.isCartanWeightVector_basis)
-    (fun γ _ i => t.lie_h_chevalleySystem ht γ i)
+    (fun γ _ i => t.lie_lieBasis_h_chevalleySystem ht γ i)
     (fun γ hγ {_ _ _} hn heq =>
       orderedWeight_lt_of_eq_add_nsmul _ _ (t.weightDegree_root_pos ht (hS hγ)) hn heq) A
 

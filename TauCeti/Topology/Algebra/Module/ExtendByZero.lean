@@ -10,9 +10,9 @@ public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.PiProd
 /-!
 # Continuous linear extension of coordinate functions by zero
 
-Mathlib's `Function.ExtendByZero.linearMap` is continuous for the product topologies:
-each output coordinate is either a fixed input coordinate or zero. No finiteness
-assumption on the coordinate types is needed. For an injective index map, restriction
+Mathlib's `Function.ExtendByZero.linearMap` is continuous for the product topologies of
+module-valued coordinates: each output coordinate is either a fixed input coordinate or zero.
+No finiteness assumption on the coordinate types is needed. For an injective index map, restriction
 recovers the original function, including when the target has unused coordinates.
 
 This construction lets affine coordinate formulas pass to enlarged vertex sets of
@@ -46,17 +46,27 @@ theorem continuous_linearMap : Continuous (linearMap R M e) := by
 
 end Module
 
-variable {ι κ : Type*} (R : Type*) [Semiring R] [TopologicalSpace R] (e : ι → κ)
+variable {ι κ : Type*}
 
-/-- Extension by zero as a continuous linear map between product spaces of coordinates. -/
-noncomputable def continuousLinearMap : (ι → R) →L[R] (κ → R) :=
-  { linearMap R R e with
+section Extension
+
+variable (R M : Type*) [Semiring R] [AddCommMonoid M] [Module R M]
+  [TopologicalSpace M] (e : ι → κ)
+
+/-- Extension by zero as a continuous linear map between product spaces of module-valued
+coordinates. No compatibility of the topology with the module operations is required. -/
+noncomputable def continuousLinearMap : (ι → M) →L[R] (κ → M) :=
+  { linearMap R M e with
     cont := continuous_linearMap R e }
 
 /-- The continuous linear extension uses `Function.extend` with zero outside the image. -/
 @[simp]
-theorem continuousLinearMap_apply (x : ι → R) :
-    continuousLinearMap R e x = Function.extend e x 0 := (rfl)
+theorem continuousLinearMap_apply (x : ι → M) :
+    continuousLinearMap R M e x = Function.extend e x 0 := (rfl)
+
+end Extension
+
+variable (R : Type*) [Semiring R] [TopologicalSpace R] (e : ι → κ)
 
 /-- Restrict coordinate functions along an index map, as a continuous linear map. -/
 def restriction : (κ → R) →L[R] (ι → R) :=
@@ -70,7 +80,7 @@ theorem restriction_apply (x : κ → R) : restriction R e x = x ∘ e := by
 
 /-- Restriction recovers every function extended along an injective index map. -/
 theorem restriction_leftInverse (he : Function.Injective e) :
-    Function.LeftInverse (restriction R e) (continuousLinearMap R e) := by
+    Function.LeftInverse (restriction R e) (continuousLinearMap R R e) := by
   intro x
   ext i
   simp [he]

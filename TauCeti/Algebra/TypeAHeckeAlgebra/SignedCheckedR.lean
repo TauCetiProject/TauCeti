@@ -59,6 +59,7 @@ alphabets of this kind arise from the vector representation of the quantum super
 * `TauCeti.signedCheckedR_mul_comm`: operators on disjoint pairs of strands commute.
 * `TauCeti.signedCheckedR_braid`: the braid relation.
 * `TauCeti.signedCheckedR_single_apply_comm`: the matrix in the word basis is symmetric.
+* `TauCeti.signedCheckedR_apply`: the coefficient of a word in the image of an arbitrary vector.
 * `TauCeti.signedCheckedR_comp_lmapDomain_snoc`: appending a letter intertwines the operators on
   the same two strands of the shorter and longer words.
 * `TauCeti.commute_productDensity_signedCheckedR`: the operators commute with every product
@@ -236,6 +237,25 @@ theorem signedCheckedR_single_apply_comm (s : R) (j k : Fin n) (v w : Fin n → 
     have hv' : w ∘ Equiv.swap j k ≠ v := fun h ↦ hv h.symm
     have hw' : v ∘ Equiv.swap j k ≠ w := fun h ↦ hw h.symm
     split_ifs <;> simp [hvw, Ne.symm hvw, hv', hw']
+
+/-- The coefficient of a word `u` in the image of an arbitrary vector `v` under the signed
+checked R-matrix. Since the matrix is symmetric, it only involves the coefficients of `v` at `u`
+and at the word `u ∘ Equiv.swap j k` exchanging the letters at `j` and `k`. -/
+theorem signedCheckedR_apply (s : R) (j k : Fin n) (v : (Fin n → ι) →₀ R) (u : Fin n → ι) :
+    signedCheckedR pos s j k v u =
+      if u j = u k then (if pos (u j) then s ^ 2 else -1) * v u
+      else if u j < u k then (s ^ 2 - 1) * v u - s * v (u ∘ Equiv.swap j k)
+      else -(s * v (u ∘ Equiv.swap j k)) := by
+  induction v using Finsupp.induction_linear with
+  | zero => simp
+  | add v v' hv hv' =>
+    rw [map_add, add_apply, hv, hv', add_apply, add_apply]
+    split_ifs <;> ring
+  | single w r =>
+    rw [← smul_single_one, map_smul, smul_apply, signedCheckedR_single_apply_comm,
+      signedCheckedR_single_one]
+    split_ifs <;> simp only [sub_apply, smul_apply, neg_apply, single_apply, smul_eq_mul,
+      eq_comm (a := w)] <;> split_ifs <;> ring
 
 /-- Appending a letter intertwines the signed checked R-matrix on two strands with the one on the
 same two strands of the longer words. -/
