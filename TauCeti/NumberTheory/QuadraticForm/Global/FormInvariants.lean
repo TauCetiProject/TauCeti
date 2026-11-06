@@ -213,12 +213,20 @@ open QuadraticMap
 
 namespace TauCeti.NumberField.QuadraticForm
 
+/-- The form `⟨1, a, -a⟩` over a field of characteristic zero is nondegenerate. -/
+theorem nondegenerate_weightedSumSquares_one_self_neg {K : Type*} [Field K] [CharZero K]
+    (a : Kˣ) :
+    (weightedSumSquares K ![1, (a : K), -(a : K)]).Nondegenerate :=
+  QuadraticMap.nondegenerate_weightedSumSquares fun i => by
+    fin_cases i <;> simp [isRegular_iff_ne_zero]
+
 /-- **The local invariants of `⟨1⟩ ⊥ ⟨a, -a⟩`.** Over a number field the system of local
 invariants of `⟨1, a, -a⟩` does not depend on `a`: rank `3`, discriminant the class of `-1`,
 trivial Hasse sign at every finite place, and positive index `2` at every real place. -/
 theorem globalInvariants_weightedSumSquares_one_self_neg {K : Type*} [Field K] [NumberField K]
-    (a : Kˣ) (h : (weightedSumSquares K ![1, (a : K), -(a : K)]).Nondegenerate) :
-    _root_.QuadraticForm.globalInvariants (weightedSumSquares K ![1, (a : K), -(a : K)]) h =
+    (a : Kˣ) :
+    _root_.QuadraticForm.globalInvariants (weightedSumSquares K ![1, (a : K), -(a : K)])
+      (nondegenerate_weightedSumSquares_one_self_neg a) =
       { rank := 3, discr := squareClass (-1), finiteHasse := 1,
         realPositiveIndex := fun _ => 2 } := by
   have he : (weightedSumSquares K ![1, (a : K), -(a : K)]).Equivalent
