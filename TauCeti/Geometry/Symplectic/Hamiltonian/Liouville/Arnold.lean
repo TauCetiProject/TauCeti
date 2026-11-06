@@ -28,6 +28,8 @@ component of a level is compact, and every `X_{Fᵢ}` is complete when `F` is an
 
 ## Main results
 
+* `TauCeti.SmoothTwoForm.IsSymplectic.isLocalDiffeomorphAt_hamiltonianFlowAction_section`: sweeping
+  a local section of `F` through a regular point by the action is a local diffeomorphism.
 * `TauCeti.SmoothTwoForm.IsSymplectic.eventually_exists_hamiltonianFlowAction_apply_eq`: small
   elements of the action reach every nearby point of a regular level.
 * `TauCeti.SmoothTwoForm.IsSymplectic.range_hamiltonianFlowAction_apply`: the orbit of `x` is
@@ -86,14 +88,16 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 include hσ hF hcomm hc
 
-/-- Sweeping a local section `s` of `F` through a regular point `x` by the Hamiltonian flow action,
-`(v, c) ↦ v • s c`, is a local diffeomorphism at `(0, F x)` when `dim M = 2 · |ι|`. -/
-private theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
+/-- **Sweeping a section through a regular point is a local diffeomorphism.** Let `s` be a smooth
+local section of `F` through a regular point `x`, defined on an open set `t`. Sweeping it by the
+Hamiltonian flow action, `(v, c) ↦ v • s c`, is a smooth local diffeomorphism at `(0, F x)` when
+`dim M = 2 · |ι|`. -/
+theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
     (hdim : 2 * Fintype.card ι = finrank ℝ E) {x : M}
     (hx : IsRegularPoint I 𝓘(ℝ, ι → ℝ) F x) {t : Set (ι → ℝ)} (ht : IsOpen t) (hxt : F x ∈ t)
     {s : (ι → ℝ) → M} (hsx : s (F x) = x) (hs : ContMDiffOn 𝓘(ℝ, ι → ℝ) I ∞ s t)
     (hFs : ∀ c ∈ t, F (s c) = c) :
-    IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I 1
+    IsLocalDiffeomorphAt (𝓘(ℝ, ι → ℝ).prod 𝓘(ℝ, ι → ℝ)) I ∞
       (fun p : (ι → ℝ) × (ι → ℝ) ↦ (hσ.hamiltonianFlowAction hF hcomm hc p.1).toMul (s p.2))
       (0, F x) := by
   classical
@@ -160,8 +164,8 @@ private theorem isLocalDiffeomorphAt_hamiltonianFlowAction_section
     exact Prod.ext (funext ha) rfl
   have hfin : finrank ℝ ((ι → ℝ) × (ι → ℝ)) = finrank ℝ E := by
     rw [Module.finrank_prod, Module.finrank_fintype_fun_eq_card, ← hdim, two_mul]
-  exact isLocalDiffeomorphAt_of_mfderiv_eq (hPs.of_le (by simp)) hopen hmem
-    BoundarylessManifold.isInteriorPoint le_rfl
+  exact isLocalDiffeomorphAt_of_mfderiv_eq hPs hopen hmem
+    BoundarylessManifold.isInteriorPoint (by simp)
     (e := (LinearMap.linearEquivOfInjective L.toLinearMap hinj hfin).toContinuousLinearEquiv)
     (ContinuousLinearMap.ext fun w ↦ LinearMap.linearEquivOfInjective_apply hinj hfin w)
 
