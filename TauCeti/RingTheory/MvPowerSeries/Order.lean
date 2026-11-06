@@ -33,7 +33,7 @@ polynomial (`MvPowerSeries.homogeneousComponentPolynomial`), and the lowest-degr
 Products and powers of close series are close: the order of `x y - x' y'` is bounded through
 those of `x - x'` and `y - y'` (`MvPowerSeries.le_order_mul_sub_mul`), and if `x` and `y` have
 zero constant coefficient and `x - y` has order at least `n`, then `xᵏ - yᵏ` has order at least
-`n + k - 1` for `k ≥ 1` (`MvPowerSeries.le_order_pow_sub_pow`). Substitution is Lipschitz for the
+`n + k - 1` (`MvPowerSeries.le_order_pow_sub_pow`). Substitution is Lipschitz for the
 order: if every `a i` and `b i` has zero constant coefficient and `a i - b i` has order at least
 `n` for all `i`, then `f(a) - f(b)` has order at least `n + k - 1` when `f` has order at least `k`
 (`MvPowerSeries.le_order_subst_sub_subst`), and under the same hypotheses, in degrees at most `n`
@@ -329,17 +329,15 @@ theorem le_order_mul_sub_mul {x x' y y' : MvPowerSeries τ R} {m : ℕ∞}
   exact le_order_add (h₁.trans le_order_mul) (h₂.trans le_order_mul)
 
 /-- If `x - y` has order at least `n` and `x`, `y` have zero constant coefficient, then
-`xᵏ - yᵏ` has order at least `n + k - 1` for `k ≥ 1`. -/
+`xᵏ - yᵏ` has order at least `n + k - 1`. -/
 theorem le_order_pow_sub_pow {x y : MvPowerSeries τ R} (hx : constantCoeff x = 0)
-    (hy : constantCoeff y = 0) (hxy : (n : ℕ∞) ≤ (x - y).order) {k : ℕ} (hk : k ≠ 0) :
+    (hy : constantCoeff y = 0) (hxy : (n : ℕ∞) ≤ (x - y).order) {k : ℕ} :
     ((n + k - 1 : ℕ) : ℕ∞) ≤ (x ^ k - y ^ k).order := by
   induction k with
-  | zero => exact absurd rfl hk
+  | zero => simp
   | succ k ih =>
-    rcases Nat.eq_zero_or_pos k with rfl | hk₀
-    · simpa using hxy
     rw [pow_succ, pow_succ]
-    refine le_order_mul_sub_mul ((add_le_add (ih hk₀.ne') (one_le_order_iff_constCoeff_eq_zero.mpr
+    refine le_order_mul_sub_mul ((add_le_add ih (one_le_order_iff_constCoeff_eq_zero.mpr
       hx)).trans' ?_) ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k hy) hxy).trans' ?_)
     · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ n + k - 1 + 1)
     · exact_mod_cast (by omega : n + (k + 1) - 1 ≤ k + n)
@@ -349,28 +347,25 @@ end Ring
 variable [CommRing R]
 
 /-- **Monomials in close arguments are closer.** If the series `a i` and `b i` have zero constant
-coefficient and `a i - b i` has order at least `n` for every `i`, then for `d ≠ 0` the monomials
+coefficient and `a i - b i` has order at least `n` for every `i`, then the monomials
 `aᵈ` and `bᵈ` differ by a series of order at least `n + |d| - 1`. -/
 theorem le_order_prod_pow_sub_prod_pow {ι : Type*} {a b : ι → MvPowerSeries τ R}
     (ha₀ : ∀ i, constantCoeff (a i) = 0) (hb₀ : ∀ i, constantCoeff (b i) = 0)
-    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) {d : ι →₀ ℕ} (hd : d ≠ 0) :
+    (hab : ∀ i, (n : ℕ∞) ≤ (a i - b i).order) (d : ι →₀ ℕ) :
     ((n + d.degree - 1 : ℕ) : ℕ∞) ≤
       ((d.prod fun i k ↦ a i ^ k) - d.prod fun i k ↦ b i ^ k).order := by
   classical
   induction d using Finsupp.induction with
-  | zero => exact absurd rfl hd
+  | zero => simp
   | single_add i k f hi hk ih =>
     have hprod (c : ι → MvPowerSeries τ R) : ((Finsupp.single i k + f).prod fun i k ↦ c i ^ k) =
         c i ^ k * f.prod fun i k ↦ c i ^ k := by
       rw [Finsupp.prod_add_index' (fun _ ↦ pow_zero _) (fun _ _ _ ↦ pow_add _ _ _),
         Finsupp.prod_single_index (h := fun i k ↦ c i ^ k) (pow_zero _)]
     rw [hprod, hprod, map_add, Finsupp.degree_single]
-    rcases eq_or_ne f 0 with rfl | hf
-    · simpa using le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk
-    have hf₀ : f.degree ≠ 0 := fun h ↦ hf ((Finsupp.degree_eq_zero_iff f).mp h)
-    refine le_order_mul_sub_mul ((add_le_add (le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i) hk)
+    refine le_order_mul_sub_mul ((add_le_add (le_order_pow_sub_pow (ha₀ i) (hb₀ i) (hab i))
       (degree_le_order_prod_pow ha₀ f)).trans' ?_)
-      ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k (hb₀ i)) (ih hf)).trans' ?_)
+      ((add_le_add (le_order_pow_of_constantCoeff_eq_zero k (hb₀ i)) ih).trans' ?_)
     · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ n + k - 1 + f.degree)
     · exact_mod_cast (by omega : n + (k + f.degree) - 1 ≤ k + (n + f.degree - 1))
 
@@ -389,7 +384,7 @@ theorem le_order_subst_sub_subst {H : MvPowerSeries σ R} {k : ℕ}
   · simp
   by_cases hdk : d.degree < k
   · rw [coeff_of_lt_order (hH.trans_lt' (by exact_mod_cast hdk)), zero_smul]
-  · rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab hd).trans_lt'
+  · rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab d).trans_lt'
       (by exact_mod_cast (by omega : e.degree < n + d.degree - 1))), smul_zero]
 
 /-- **The linear part of a difference of substitutions.** If the series `a i` and `b i` have zero
@@ -418,7 +413,7 @@ theorem coeff_subst_sub_subst_of_degree_le [Fintype σ] (H : MvPowerSeries σ R)
     · obtain ⟨i, rfl⟩ := (Set.ext_iff.mp Finsupp.range_single_one d).mpr hd₁
       simp
     · refine absurd ?_ hd
-      rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab hd₀).trans_lt'
+      rw [coeff_of_lt_order ((le_order_prod_pow_sub_prod_pow ha₀ hb₀ hab d).trans_lt'
         (by exact_mod_cast (by have := (Finsupp.degree_eq_zero_iff d).not.mpr hd₀; omega :
           e.degree < n + d.degree - 1))), smul_zero]
 
