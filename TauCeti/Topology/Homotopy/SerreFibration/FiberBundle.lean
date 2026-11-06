@@ -162,9 +162,8 @@ private lemma lowerFaces_insert [DecidableEq ι] (a b : ι → ℝ) (T : Finset 
   grind
 
 /-- The upper half of a cut box: given a lift `G₁` of `H` on the lower half that agrees with `g` on
-the lower faces, the lift problem on the upper half relative to the lower faces in the directions
-`T` and `i` (solved by `φ`, equal to `G₁` on the cut and to `g` on the other faces) has a solution
-`G₂` that agrees with `G₁` on the cut and with `g` on the other faces. -/
+the lower faces, and assuming the lifting property of the upper box `h₂`, there is a lift `G₂` of
+`H` on the upper half that agrees with `G₁` on the cut and with `g` on the other lower faces. -/
 private lemma exists_lift_upper_of_cut [DecidableEq ι] {H : (ι → ℝ) → B} {a b : ι → ℝ}
     {T : Finset ι} {i : ι} {s : ℝ} (has : a i ≤ s) {g G₁ : (ι → ℝ) → E}
     (hg : ContinuousOn g (lowerFaces a b T)) (hgH : ∀ x ∈ lowerFaces a b T, p (g x) = H x)
