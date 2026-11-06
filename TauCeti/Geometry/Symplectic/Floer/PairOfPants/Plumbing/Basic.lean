@@ -9,6 +9,7 @@ public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Family
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
 import TauCeti.Geometry.Symplectic.Floer.Pullback
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 
 /-!
 # Plumbing pair-of-pants perturbation data along a neck
@@ -141,17 +142,11 @@ private theorem differentiableAt_plumbedPerturbation (hq : q ≠ inf)
     (x : V) :
     DifferentiableAt ℝ (fun p : ℂ × V ↦ plumbedPerturbation Ha Hb q L p.1 p.2) (w, x) := by
   have hmfd {H : Puncture → ℝ → V → ℝ} (hH : ∀ r, ContDiff ℝ 1 (uncurry (H r))) (r : Puncture) :
-      ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry (H r)) := by
-    have h := (hH r).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
+      ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry (H r)) :=
+    contMDiff_prod_modelWithCornersSelf_iff.2 (hH r).contMDiff
   have h := contMDiffAt_plumbedPerturbation (n := 1) hq hHa hHb (hmfd hHas) (hmfd hHbs) hab hL
     hw x
-  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × V ↦ plumbedPerturbation Ha Hb q L p.1 p.2) (w, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact h
-  exact h'.contDiffAt.differentiableAt one_ne_zero
+  exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt.differentiableAt one_ne_zero
 
 /-- The longitudinal coordinate of an end, in the real coordinates, is measurable. -/
 private theorem measurable_re_endCoord (r : Puncture) :
@@ -281,8 +276,7 @@ private theorem setLIntegral_enorm_hamiltonianCurvature_plumbedPerturbation_le_i
     linarith [hw.2.2]
   rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
     (realChart_injective (q.plumbingMap_injective L)).injOn
-    (fun w _ ↦ (contDiff_realChart
-      (by rw [show q.plumbingMap L = _ from funext (plumbingMap_apply q L)]; fun_prop)).contDiffAt)
+    (fun w _ ↦ (contDiff_realChart (q.contDiff_plumbingMap L)).contDiffAt)
     (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) 1)
     (fun w hw ↦ differentiableAt_domain_of_differentiableAt (hdiff hw _) Complex.I)
     (fun w hw ↦ differentiableAt_target_of_differentiableAt (hdiff hw _) 1)

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Plumbing.Basic
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Algebra.Order.Pi
 
 /-!
 # Capping an input of the pair of pants with a negative PSS plane
@@ -178,8 +179,8 @@ theorem contMDiff_negativePlanePerturbation {n : ℕ∞} (hH : Periodic H 1)
       linarith
     rw [← pairOfPantsPerturbation_single_inf]
     exact contMDiffAt_pairOfPantsPerturbation
-      (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-      (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
+      (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) hH)
+      (Pi.forall_single_of inf (p := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
         contMDiff_const hHs) ⟨w, hw₀, hw₁⟩ x
 
 /-! ### Capping an input of the pair of pants -/
@@ -247,8 +248,8 @@ theorem contMDiffAt_plumbedPerturbation_single_inf {n : ℕ∞} (hq : q ≠ inf)
       have := Real.exp_lt_exp.2 (by nlinarith [Real.pi_pos] : -(2 * π * L) < -(2 * π * (L - 1)))
       linarith [Real.exp_pos (-(2 * π * L))]
     exact contMDiffAt_plumbedPerturbation hq
-      (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
-      (forall_single inf (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
+      (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
+      (Pi.forall_single_of inf (p := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
         contMDiff_const (hHbs q)) hHbs (by simp) hL ⟨hw.resolve_left hc, h₁⟩ x
 
 end TauCeti.Floer
@@ -272,9 +273,9 @@ theorem lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (ω : 
         (fun z x ↦ negativePlanePerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
   have h := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (abs_single_le inf hB) u
+    (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) hH)
+    (Pi.forall_single_of inf (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
+    (Pi.abs_single_le_single inf hB) u
   rwa [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
     simp [Pi.single_eq_of_ne hr], Pi.single_eq_same] at h
 
@@ -326,8 +327,8 @@ theorem integral_floerEnergyDensity_negativePlanePerturbation_closedBall (ω : S
             z (u z) := by
   -- On the truncation, this is the energy identity of the pair of pants with zero inputs.
   have hT := ω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation
-    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
+    (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) hH)
+    (Pi.forall_single_of inf (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
     hu.contDiffOn hR
   rw [pairOfPantsPerturbation_single_inf, Fintype.sum_eq_single inf fun r hr => by
     simp [Pi.single_eq_of_ne hr]] at hT
@@ -426,9 +427,9 @@ theorem lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_single_inf_le
           (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (Bb q) + ∑ r, ENNReal.ofReal (Bb r) := by
   have h := ω.lintegral_enorm_hamiltonianCurvature_plumbedPerturbation_le hq
-    (forall_single inf (P := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
-    (forall_single inf (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHbs q)) hHbs
-    (by simp) hL (abs_single_le inf (hBb q)) hBb u
+    (Pi.forall_single_of inf (p := fun f => Periodic f 1) (fun _ => rfl) (hHb q)) hHb
+    (Pi.forall_single_of inf (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const (hHbs q)) hHbs
+    (by simp) hL (Pi.abs_single_le_single inf (hBb q)) hBb u
   rwa [Fintype.sum_eq_single inf fun r hr => by simp [Pi.single_eq_of_ne hr],
     Pi.single_eq_same] at h
 

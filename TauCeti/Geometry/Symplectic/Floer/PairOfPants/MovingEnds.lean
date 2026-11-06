@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Capping
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Curvature
+import TauCeti.Algebra.Order.Pi
 import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import Mathlib.Geometry.Manifold.Algebra.Monoid
@@ -336,10 +337,10 @@ theorem contMDiffAt_inputEndPerturbation {n : ℕ∞} {H : ℝ → M → ℝ} (h
         ((c, a), (w, x)) hinv.contMDiffAt contMDiffAt_fst
     -- The family that is `H` at `0` and zero elsewhere is periodic and `C^n` at every end.
     have hP : ∀ r, Periodic ((Pi.single zero H : Puncture → ℝ → M → ℝ) r) 1 :=
-      forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) hH
+      Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH
     have hS : ∀ r, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n
         (uncurry ((Pi.single zero H : Puncture → ℝ → M → ℝ) r)) :=
-      forall_single zero (P := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
+      Pi.forall_single_of zero (p := fun f => ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) n (uncurry f))
         contMDiff_const hHs
     exact ((contMDiffAt_pairOfPantsPerturbation hP hS ⟨(w - c) / a, hw₀, hw₁⟩ x).comp
       ((c, a), (w, x))
@@ -392,11 +393,7 @@ private theorem differentiableAt_inputEndPerturbation (hH : Periodic H 1)
     contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff
   have h := (contMDiffAt_inputEndPerturbation (n := 1) hH hmfd ha hw x).comp (w, x)
     (f := fun p : ℂ × V => ((c, a), p)) (contMDiffAt_const.prodMk contMDiffAt_id)
-  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × V ↦ inputEndPerturbation c a H p.1 p.2) (w, x) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact h
-  exact h'.contDiffAt.differentiableAt one_ne_zero
+  exact (contMDiffAt_prod_modelWithCornersSelf_iff.1 h).contDiffAt.differentiableAt one_ne_zero
 
 variable [FiniteDimensional ℝ V]
 
@@ -476,9 +473,9 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
     rw [Measure.volume_eq_prod]
     exact (Set.toFinite _).measure_zero _
   have hP := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
-    (forall_single zero (P := fun f => Periodic f 1) (fun _ => rfl) hH)
-    (forall_single zero (P := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
-    (abs_single_le zero hB) (u ∘ realChart (c + a * ·))
+    (Pi.forall_single_of zero (p := fun f => Periodic f 1) (fun _ => rfl) hH)
+    (Pi.forall_single_of zero (p := fun f => ContDiff ℝ 1 (uncurry f)) contDiff_const hHs)
+    (Pi.abs_single_le_single zero hB) (u ∘ realChart (c + a * ·))
   rw [Fintype.sum_eq_single zero fun r hr => by simp [Pi.single_eq_of_ne hr],
     Pi.single_eq_same] at hP
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
@@ -494,28 +491,6 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
     _ ≤ _ := hP
 
 variable {ι : Type*} [Fintype ι] {c a : ι → ℂ} {H : ι → ℝ → V → ℝ} {Hout : ℝ → V → ℝ}
-
-/-- On an open set where the datum of the sphere is a datum `P`, the integrated curvatures of the
-two data agree. -/
-private theorem setLIntegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_eq
-    (ω : SymplecticForm V) {U : Set (ℝ × ℝ)} (hU : IsOpen U) {P : ℂ → V → ℂ →L[ℝ] ℝ}
-    (hP : ∀ z ∈ U, ∀ x, puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-      = P (Complex.equivRealProdCLM.symm z) x) (u : ℝ × ℝ → V) :
-    ∫⁻ z in U, ‖ω.hamiltonianCurvature
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ puncturedSpherePerturbation c a H Hout (Complex.equivRealProdCLM.symm z) x
-          Complex.I) z (u z)‖ₑ =
-      ∫⁻ z in U, ‖ω.hamiltonianCurvature
-        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ P (Complex.equivRealProdCLM.symm z) x Complex.I) z (u z)‖ₑ := by
-  refine setLIntegral_congr_fun hU.measurableSet fun z hz ↦ ?_
-  have hev : ∀ᶠ z' in 𝓝 z, ∀ x, puncturedSpherePerturbation c a H Hout
-      (Complex.equivRealProdCLM.symm z') x = P (Complex.equivRealProdCLM.symm z') x := by
-    filter_upwards [hU.mem_nhds hz] with z' hz'
-    exact hP z' hz'
-  rw [ω.hamiltonianCurvature_congr_of_eventuallyEq
-    (hev.mono fun z' h ↦ funext fun x ↦ by rw [h x])
-    (hev.mono fun z' h ↦ funext fun x ↦ by rw [h x])]
 
 /-- **The integrated curvature on a sphere with moving input ends is bounded uniformly in the
 configuration.** Let the input ends have period-one `C¹` Hamiltonians `H i` with `|H i| ≤ B i`,
@@ -569,17 +544,23 @@ theorem lintegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_le
       (s := Metric.sphere (c i) (r i)) Metric.isClosed_sphere.measurableSet.nullMeasurableSet
     exact hpre.trans (Measure.addHaar_sphere volume (c i) (r i))
   have hD (i : ι) : ∫⁻ z in D i, f z ≤ ENNReal.ofReal (B i) := by
-    rw [setLIntegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_eq ω (hDo i)
-      fun z hz x ↦ puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
-        (r := r) (fun _ ↦ le_rfl) hsep hout hz x]
-    exact (setLIntegral_le_lintegral _ _).trans
-      (lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le ω (hH i) (hHs i) (ha i)
-        (hB i) u)
+    have h {z} (hz : z ∈ D i) (x : V) :=
+      puncturedSpherePerturbation_eq_inputEndPerturbation_of_norm_sub_lt
+        (H := H) (Hout := Hout) (r := r) (fun _ ↦ le_rfl) hsep hout hz x
+    refine (ω.setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen (hDo i)
+      (fun z hz ↦ funext fun x ↦ by rw [h hz x]) (fun z hz ↦ funext fun x ↦ by rw [h hz x])
+      u).trans_le ((setLIntegral_le_lintegral _ _).trans
+        (lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le ω (hH i) (hHs i) (ha i)
+          (hB i) u))
   have hO : ∫⁻ z in O, f z ≤ ENNReal.ofReal Bout := by
-    rw [setLIntegral_enorm_hamiltonianCurvature_puncturedSpherePerturbation_eq ω hOo
-      fun z hz x ↦ puncturedSpherePerturbation_eq_negativePlanePerturbation (fun i ↦ (hz i).le) x]
-    exact (setLIntegral_le_lintegral _ _).trans
-      (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hHout hHouts hBout u)
+    have h {z} (hz : z ∈ O) (x : V) :=
+      puncturedSpherePerturbation_eq_negativePlanePerturbation (H := H) (Hout := Hout)
+        (fun i ↦ (hz i).le) x
+    refine (ω.setLIntegral_enorm_hamiltonianCurvature_congr_of_isOpen hOo
+      (fun z hz ↦ funext fun x ↦ by rw [h hz x]) (fun z hz ↦ funext fun x ↦ by rw [h hz x])
+      u).trans_le ((setLIntegral_le_lintegral _ _).trans
+        (lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le ω hHout hHouts hBout
+          u))
   calc ∫⁻ z, f z = ∫⁻ z in univ, f z := (setLIntegral_univ _).symm
     _ ≤ ∫⁻ z in ((⋃ i, D i) ∪ O) ∪ N, f z := lintegral_mono_set hcover
     _ ≤ (∫⁻ z in (⋃ i, D i) ∪ O, f z) + ∫⁻ z in N, f z := lintegral_union_le _ _ _
