@@ -175,15 +175,6 @@ private lemma face_upCube_one (t : I) :
   obtain rfl := Subsingleton.elim i 0
   exact Fin.insertNth_apply_same (α := fun _ ↦ I) 0 t y
 
-/-- The endpoint `t` of `∂I¹`, as a point cube of `I¹`, is the point `t` of `I¹`. -/
-private lemma comp_point_cubeEnd (t : I) (ht : t = 0 ∨ t = 1) :
-    (cubeBoundaryPair.{u} 1).map.hom.comp (SingularCube.point (cubeEnd t ht)) =
-      SingularCube.point (cubePoint t) :=
-  ContinuousMap.ext fun _ ↦ by
-    rw [ContinuousMap.comp_apply, SingularCube.point_apply, SingularCube.point_apply]
-    -- The inclusion of the subspace `∂I¹` of the cube pair is the subtype coercion.
-    exact coe_cubeEnd t ht
-
 /-- The fundamental cycle of `∂I¹` is `[0] - [1]`: the boundary of the identity `1`-cube is its
 face at `0` minus its face at `1`. -/
 private lemma cubeBoundaryCycle_zero : cubeBoundaryCycle k 0 = cubeEndsCycle.{u} k := by
@@ -202,9 +193,12 @@ private lemma cubeBoundaryCycle_zero : cubeBoundaryCycle k 0 = cubeEndsCycle.{u}
       (upCube.{u} 1)).trans ?_)
   rw [map_sub, Fin.sum_univ_one]
   simp only [NormalizedCubicalChain.map_ofCube, Fin.val_zero, pow_zero, one_smul,
-    comp_point_cubeEnd]
+    SingularCube.comp_point]
+  -- The inclusion of the subspace `∂I¹` of the cube pair is the subtype coercion.
   exact congrArg₂ (fun a b ↦ NormalizedCubicalChain.ofCube _ k a -
-    NormalizedCubicalChain.ofCube _ k b) (face_upCube_one 0) (face_upCube_one 1)
+    NormalizedCubicalChain.ofCube _ k b)
+    ((face_upCube_one 0).trans (congrArg _ (coe_cubeEnd 0 (Or.inl rfl)).symm))
+    ((face_upCube_one 1).trans (congrArg _ (coe_cubeEnd 1 (Or.inr rfl)).symm))
 
 /-- **The fundamental cycle of the interval is the generator, in singular homology.** Over any
 ring `k`, the class of the fundamental cycle `TauCeti.cubeBoundaryPairCycle` of `(I¹, ∂I¹)`, read
