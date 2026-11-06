@@ -202,7 +202,7 @@ coefficients, `L = ∂ℓ`, `M = ∂²ℓ`, and `T`, `D`, `H`, `V` for the time 
 Hessian and value of `v`, applying `∂ₜ - Aⁱʲ ∂ᵢ∂ⱼ - Bⁱ ∂ᵢ - C` to `W v` gives `W` times the operator
 with first order coefficient `Bⁱ + ∑ⱼ (Aⁱʲ + Aʲⁱ) Lⱼ` and zeroth order coefficient
 `C + ∑ Aⁱʲ (Mᵢⱼ + Lᵢ Lⱼ) + ∑ Bⁱ Lᵢ` applied to `v`. -/
-theorem weighted_parabolic_expression_eq {R : Type*} [CommRing R] (W T V C : R)
+private theorem weighted_parabolic_expression_eq {R : Type*} [CommRing R] (W T V C : R)
     (A H M : ι → ι → R) (B L D : ι → R) :
     W * (T - (∑ i, ∑ j, A i j * H i j + ∑ i, (B i + ∑ j, (A i j + A j i) * L j) * D i +
       (C + ∑ i, ∑ j, A i j * (M i j + L i * L j) + ∑ i, B i * L i) * V)) =
