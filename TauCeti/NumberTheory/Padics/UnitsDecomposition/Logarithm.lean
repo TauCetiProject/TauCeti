@@ -267,19 +267,36 @@ theorem coe_padicUnitsGenerator_zpow (k : ℤ) :
   rw [padicUnitsGenerator, ← Subgroup.coe_zpow, ← map_zpow, ← ofAdd_zsmul,
     coe_unitsPrincipalLogEquiv_symm_apply, toAdd_ofAdd, zsmul_one, PadicInt.coe_intCast]
 
-/-- `γ = exp q` has exact level `padicUnitsDepth p`: it is not congruent to `1` modulo `p q`. -/
-theorem padicUnitsGenerator_notMem_unitsPrincipal_succ :
-    padicUnitsGenerator p ∉ unitsPrincipal p (padicUnitsDepth p + 1) := by
-  intro h
-  have hu := mem_unitsPrincipal_iff_norm.mp h
-  rw [← norm_coe_sub_one, coe_padicUnitsGenerator] at hu
-  -- `log γ = q` has norm `p ^ (-k)`, while a unit of level `k + 1` has logarithm of norm at
-  -- most `p ^ (-(k + 1))`.
+/-- A unit logarithmic coordinate gives a principal unit of exact level `padicUnitsDepth p`. -/
+theorem unitsPrincipalLogEquiv_symm_notMem_unitsPrincipal_succ (u : ℤ_[p]ˣ) :
+    ((unitsPrincipalLogEquiv p).symm (.ofAdd (u : ℤ_[p])) : ℤ_[p]ˣ) ∉
+      unitsPrincipal p (padicUnitsDepth p + 1) := by
+  intro hu
+  have hu := mem_unitsPrincipal_iff_norm.mp hu
+  rw [← norm_coe_sub_one, coe_unitsPrincipalLogEquiv_symm_apply] at hu
+  simp only [toAdd_ofAdd] at hu
   have hlog := Padic.norm_log (one_lt_sub_one_mul_padicUnitsDepth_add 1) hu
-  rw [Padic.log_exp one_lt_sub_one_mul_padicUnitsDepth norm_q.le, norm_q] at hlog
+  rw [Padic.log_exp one_lt_sub_one_mul_padicUnitsDepth
+      (norm_q_mul_le (p := p) (u : ℤ_[p])), norm_mul,
+    norm_q, ← PadicInt.norm_def, PadicInt.norm_units, mul_one] at hlog
   have := hlog.trans_le hu
   rw [zpow_le_zpow_iff_right₀ (by exact_mod_cast hp.out.one_lt)] at this
   omega
+
+/-- `γ = exp q` has exact level `padicUnitsDepth p`: it is not congruent to `1` modulo `p q`. -/
+theorem padicUnitsGenerator_notMem_unitsPrincipal_succ :
+    padicUnitsGenerator p ∉ unitsPrincipal p (padicUnitsDepth p + 1) := by
+  simpa [padicUnitsGenerator] using
+    unitsPrincipalLogEquiv_symm_notMem_unitsPrincipal_succ (1 : ℤ_[p]ˣ)
+
+/-- Replacing the logarithmic coordinate `1` by any `p`-adic unit gives another topological
+generator of `1 + qℤ_p`. This is the meaning of `γ ^ u` for `u : ℤ_pˣ`. -/
+theorem topologicalClosure_zpowers_unitsPrincipalLogEquiv_symm (u : ℤ_[p]ˣ) :
+    (Subgroup.zpowers (((unitsPrincipalLogEquiv p).symm (.ofAdd (u : ℤ_[p]))) :
+      ℤ_[p]ˣ)).topologicalClosure = unitsPrincipal p (padicUnitsDepth p) :=
+  topologicalClosure_zpowers_eq_unitsPrincipal (padicUnitsDepth_pos p)
+    two_le_padicUnitsDepth ((unitsPrincipalLogEquiv p).symm (.ofAdd (u : ℤ_[p]))).2
+    (unitsPrincipalLogEquiv_symm_notMem_unitsPrincipal_succ u)
 
 /-- `γ = exp q` has infinite order. -/
 theorem not_isOfFinOrder_padicUnitsGenerator : ¬IsOfFinOrder (padicUnitsGenerator p) :=
@@ -290,10 +307,9 @@ theorem not_isOfFinOrder_padicUnitsGenerator : ¬IsOfFinOrder (padicUnitsGenerat
 /-- **`γ = exp q` topologically generates `1 + qℤ_p`.** -/
 theorem topologicalClosure_zpowers_padicUnitsGenerator :
     (Subgroup.zpowers (padicUnitsGenerator p)).topologicalClosure =
-      unitsPrincipal p (padicUnitsDepth p) :=
-  topologicalClosure_zpowers_eq_unitsPrincipal (padicUnitsDepth_pos p)
-    two_le_padicUnitsDepth padicUnitsGenerator_mem_unitsPrincipal
-    padicUnitsGenerator_notMem_unitsPrincipal_succ
+      unitsPrincipal p (padicUnitsDepth p) := by
+  simpa [padicUnitsGenerator] using
+    topologicalClosure_zpowers_unitsPrincipalLogEquiv_symm (1 : ℤ_[p]ˣ)
 
 /-! ### The section `ω` of reduction modulo `q` -/
 

@@ -223,6 +223,22 @@ a.card:hover { transform: translateY(-3px); border-color: var(--teal); text-deco
    vertical rhythm the stacked pair has between them. */
 .loc-figure-wide { margin: 2rem 0; }
 .loc-graph { display: block; width: 100%; height: auto; }
+.chart-hover-wrap { position: relative; }
+.chart-hover-wrap img { cursor: crosshair; }
+.chart-hover-wrap img:focus-visible { outline: 2px solid var(--teal); outline-offset: 4px; }
+.chart-hover-guide { position: absolute; border-left: 1px dashed #eef2fb; pointer-events: none; }
+.chart-tooltip {
+  position: fixed; z-index: 100; box-sizing: border-box;
+  width: max-content; max-width: min(420px, calc(100vw - 16px)); max-height: calc(100vh - 16px);
+  overflow: auto; padding: 0.7rem 0.85rem; border-radius: 8px;
+  background: #101936; border: 1px solid #9aa6c9; color: #eef2fb;
+  box-shadow: 0 4px 20px #0008; font: 13px/1.4 Arial, sans-serif;
+}
+.chart-tooltip table { margin: 0.35rem 0 0; width: 100%; border-collapse: collapse; }
+.chart-tooltip th, .chart-tooltip td { border: 0; padding: 0.15rem 0; vertical-align: top; }
+.chart-tooltip th { text-align: left; font-weight: normal; overflow-wrap: anywhere; }
+.chart-tooltip td { text-align: right; padding-left: 1rem; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chart-tooltip small { display: block; margin-top: 0.5rem; color: #9aa6c9; }
 .roadmap-exhaustion { display: block; width: 100%; height: 440px; border: 0; margin: 2rem 0 0; }
 @media (max-width: 640px) {
   .roadmap-exhaustion { height: 720px; }
