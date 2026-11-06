@@ -6,7 +6,7 @@
   var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, delay = 15000;
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
   var selectedHistoryHost, hostHistoryRecords = [], historyMetric = "busy_slots";
-  var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
+  var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", repoFilter = "all", workflowFilter = "all", platformFilter = "all", hostFilter = "all", ageFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
   var view = root.querySelector("[data-ops-view]"), health = root.querySelector("[data-ops-health]");
   function el(tag, text, cls) { var node = document.createElement(tag); if (text !== undefined) node.textContent = text; if (cls) node.className = cls; return node; }
   function append(parent) { Array.prototype.slice.call(arguments, 1).forEach(function (node) { if (node) parent.append(node); }); return parent; }
@@ -26,7 +26,16 @@
   function badges(values) { var node = el("div", undefined, "ops-badges"); values.forEach(function (v) { node.append(el("span", v)); }); return node; }
   function heading(text) { return el("h3", text); }
   function empty(text) { return note(text, "ops-empty"); }
-  function route() { var parts = location.hash.slice(1).split("?"); return { tab: ["now", "queue", "runners", "history"].includes(parts[0]) ? parts[0] : "now", params: new URLSearchParams(parts[1] || "") }; }
+  function route() {
+    var parts = location.hash.slice(1).split("?"), params = new URLSearchParams(parts[1] || location.search);
+    var inferred = params.has("pr") || params.has("batch") ? "queue" : params.has("host") || params.has("run") ? "runners" : "now";
+    return { tab: ["now", "queue", "runners", "history"].includes(parts[0]) ? parts[0] : inferred, params: params };
+  }
+  function platform(job) {
+    var labels = (job.labels || []).join(" ").toLowerCase();
+    var os = /macos|darwin/.test(labels) ? "macOS" : /windows/.test(labels) ? "Windows" : /linux|ubuntu/.test(labels) ? "Linux" : "OS unknown";
+    return os + " / " + (/arm64|aarch64/.test(labels) ? "arm64" : /x64|amd64|x86_64/.test(labels) ? "amd64" : "architecture unknown");
+  }
   function batchURL(id) { return "#queue?batch=" + encodeURIComponent(id); }
   function sourceNote(kind) {
     var source = (manifest && manifest.domains || {})[kind];
@@ -81,7 +90,7 @@
     queue.workers.forEach(function (w) { container.append(note(w.id + " · " + (w.state || "unknown state") + " · heartbeat " + age(w.observed_at) + " · " + freshness(w.observed_at, 60))); });
   }
   function select(label, options, value, change) {
-    var wrap = el("label", label + " "), control = el("select");
+    var wrap = el("label", label + " "), control = el("select"); control.setAttribute("aria-label", label);
     options.forEach(function (o) { var option = el("option", o.label || o); option.value = o.value || o; control.append(option); }); control.value = value;
     control.addEventListener("change", function () { change(control.value); }); wrap.append(control); return wrap;
   }
@@ -176,13 +185,16 @@
     });
     if (data.hosts) (data.hosts.hosts || []).filter(function (h) { return !route().params.get("host") || route().params.get("host") === h.machine_id || route().params.get("host") === h.alias; }).forEach(function (h) {
       var card = el("article", undefined, "ops-host"); card.id = "host-" + h.machine_id;
-      append(card, heading(h.alias), note("Permanent host " + h.machine_id), badges([freshness(h.observed_at, 60), "facts " + age(h.observed_at), "stream " + (h.connected ? age(h.transport_at) : "disconnected") ]));
+      append(card, heading(h.alias), note("Permanent host " + h.machine_id + " · controller " + (h.source_revision || "unknown")), badges([freshness(h.observed_at, 60), "facts " + age(h.observed_at), "stream " + (h.connected ? age(h.transport_at) : "disconnected") ]));
       if (h.slots_truncated || h.workers_truncated) card.append(note("Host slot/worker details are truncated.", "ops-warning"));
-      var r = h.resources || {}, compiler = h.compiler || {};
+      var r = h.resources || {}, compiler = h.compiler || {}, admission = h.admission || {}, activity = h.activity || {};
       append(card, note("CI " + (h.ci_enabled === null || h.ci_enabled === undefined ? "unknown" : h.ci_enabled ? "enabled" : "disabled") + " · workers " + (h.workers_enabled === null || h.workers_enabled === undefined ? "unknown" : h.workers_enabled ? "enabled" : "disabled")),
         note("CPU idle " + (r.cpus && h.cpu_idle_fraction !== null ? Math.round(h.cpu_idle_fraction * 100) + "% of " + r.cpus + " CPUs" : "unknown") + " · RAM available " + (r.memory_available === null || r.memory_available === undefined ? "unknown" : (r.memory_available / 1073741824).toFixed(1) + " GiB") + (h.memory_pressure ? " · memory pressure" : "")),
         note("Compiler admission · " + (compiler.waiting_guests === null || compiler.waiting_guests === undefined ? "unknown" : compiler.waiting_guests + " guests waiting") + " · pressure observer " + freshness(compiler.observed_at, 10)));
-      (h.slots || []).forEach(function (s) { card.append(note("Slot " + s.slot + " · " + s.phase + " · " + (s.busy ? "busy" : "not marked busy") + " · runner " + (s.runner_id || "unknown") + " · VM " + (s.instance_id || "unknown"))); });
+      card.append(note("CI ceiling " + (h.ci_max_jobs ?? "unknown") + " jobs · classes " + (admission.ci_kinds ? admission.ci_kinds.join(", ") : "unknown") + " · staging reservation " + (admission.staging_slots ?? "unknown") + " · CI RAM budget " + (admission.memory_budget_gib ?? "unknown") + " GiB · worker limit " + (h.worker_limit ?? "unknown")));
+      if (admission.reservation_error) card.append(note("Staging reservation configuration needs attention.", "ops-warning"));
+      card.append(note("Worker rounds in 24h · finished " + (activity.finished_rounds ?? "unknown") + " · failed " + (activity.failed_rounds ?? "unknown") + " · outcomes unconfirmed " + (activity.unknown_rounds ?? "unknown") + " · activity prepared " + age(activity.observed_at)));
+      (h.slots || []).forEach(function (s) { card.append(note("Slot " + s.slot + " · " + s.phase + " · " + (s.busy ? "busy" : "not marked busy") + " · runner " + (s.runner_id || "unknown") + " · VM " + (s.instance_id || "unknown") + " · configured guest " + (s.vcpus ?? "unknown") + " CPUs / " + (s.memory_gib ?? "unknown") + " GiB")); });
       (h.workers || []).forEach(function (w) { card.append(note("Worker " + w.id + " · " + w.state + " · heartbeat " + age(w.observed_at))); });
       if (!(h.slots || []).length) card.append(note("No slots in this observation. This does not establish available capacity.")); view.append(card);
     });
@@ -196,11 +208,18 @@
     append(container, heading("CI jobs"), badges([counts.running + " running", counts.queued_jobs + " queued jobs", counts.pending_workflows + " workflows awaiting observed jobs"]));
     var filters = el("div", undefined, "ops-filters"), pools = ["all"].concat(Array.from(new Set(jobs.map(function (j) { return j.pool; }))));
     append(filters, select("Pool", pools, poolFilter, function (v) { poolFilter = v; jobPage = 0; render(); }), select("State", ["all", "active", "completed", "queued", "in_progress"], statusFilter, function (v) { statusFilter = v; jobPage = 0; render(); }), select("Class", ["all", "pr_build", "staging_build", "other_build", "other"], classFilter, function (v) { classFilter = v; jobPage = 0; render(); })); container.append(filters);
+    function options(key) { return ["all"].concat(Array.from(new Set(jobs.map(function (j) { return key(j) || "unknown"; }))).sort()); }
+    append(filters,
+      select("Repository", options(function (j) { return j.repository; }), repoFilter, function (v) { repoFilter = v; jobPage = 0; render(); }),
+      select("Workflow", options(function (j) { return j.workflow; }), workflowFilter, function (v) { workflowFilter = v; jobPage = 0; render(); }),
+      select("Requested OS / architecture", options(platform), platformFilter, function (v) { platformFilter = v; jobPage = 0; render(); }),
+      select("Assigned host", options(function (j) { var h = hostFor(j); return h ? h.host.alias : "unresolved"; }), hostFilter, function (v) { hostFilter = v; jobPage = 0; render(); }),
+      select("Job age", [{value:"all",label:"all"},{value:"1800",label:"at least 30 min"},{value:"3600",label:"at least 1 hour"}], ageFilter, function (v) { ageFilter = v; jobPage = 0; render(); }));
     var deep = route().params;
-    var filtered = jobs.filter(function (j) { return (!deep.get("run") || deep.get("run") === j.run_id) && (!deep.get("attempt") || deep.get("attempt") === String(j.run_attempt)) && (!deep.get("job") || deep.get("job") === j.id) && (poolFilter === "all" || j.pool === poolFilter) && (statusFilter === "all" || (statusFilter === "active" ? j.active : j.status === statusFilter)) && (classFilter === "all" || j.job_class === classFilter); });
+    var filtered = jobs.filter(function (j) { var host = hostFor(j); return (!deep.get("repo") || deep.get("repo") === j.repository) && (repoFilter === "all" || j.repository === repoFilter) && (workflowFilter === "all" || (j.workflow || "unknown") === workflowFilter) && (platformFilter === "all" || platform(j) === platformFilter) && (hostFilter === "all" || (host ? host.host.alias : "unresolved") === hostFilter) && (ageFilter === "all" || (Date.now() - Date.parse(j.created_at)) / 1000 >= Number(ageFilter)) && (!deep.get("run") || deep.get("run") === j.run_id) && (!deep.get("attempt") || deep.get("attempt") === String(j.run_attempt)) && (!deep.get("job") || deep.get("job") === j.id) && (poolFilter === "all" || j.pool === poolFilter) && (statusFilter === "all" || (statusFilter === "active" ? j.active : j.status === statusFilter)) && (classFilter === "all" || j.job_class === classFilter); });
     filtered.slice(jobPage * 100, (jobPage + 1) * 100).forEach(function (j) {
       var row = el("article", undefined, "ops-job"), host = hostFor(j), current = (j.steps || []).find(function (s) { return s.started_at && !s.completed_at; }), progress = j.progress || {};
-      append(row, link(j.repository + " · " + j.name + " · run " + j.run_id + " / " + j.run_attempt + " / job " + j.id, j.url), badges([j.pool, j.status + (j.conclusion ? " / " + j.conclusion : ""), j.job_class]),
+      append(row, link(j.repository + " · " + j.name + " · run " + j.run_id + " / " + j.run_attempt + " / job " + j.id, j.url), badges([j.pool, platform(j), j.status + (j.conclusion ? " / " + j.conclusion : ""), j.job_class]),
         note(host ? "Host " + host.host.alias + " · slot " + host.slot.slot + " · VM " + host.slot.instance_id + " (joined by " + host.evidence + ")" : "Runner " + (j.runner_name || "unassigned") + " · host association unknown"),
         note("Phase: " + (progress.phase || (current && current.name) || (j.status === "queued" ? "waiting for runner / job start" : "unknown")) + " · progress " + (progress.coverage || "unsupported") + (progress.last_progress_at ? " · last change " + age(progress.last_progress_at) : "")));
       if (host && host.slot.compiler) {
@@ -267,6 +286,13 @@
           badges([summary.landed_prs + " unique PR landings", (summary.landed_prs_per_hour || 0).toFixed(1) + " PR/h", summary.nonempty_unique_prs === null ? "Nonempty contribution coverage incomplete" : summary.nonempty_unique_prs + " unique nonempty contributions", summary.empty_member_occurrences + " empty member occurrences"]),
           note("Bors baseline: " + (baseline.landed_prs_per_hour === null ? "unknown" : baseline.landed_prs_per_hour.toFixed(1) + " PR/h") + ". Nonempty contribution and cost comparisons are unavailable for that baseline."),
           note("Recorded agent cost subtotal: $" + cost.recorded_usd.toFixed(2) + " · " + cost.recorded_attempts + " known attempts · " + cost.unknown_attempts + " attempts with missing estimates. Interrupted sessions may be absent."));
+        if (window.criteria) {
+          var scenario = window.criteria.scenario, week = window.criteria.week;
+          view.append(heading("Pilot exit criteria"));
+          view.append(note("110 PRs, two source failures, under 120 minutes · " + scenario.status.replaceAll("_", " ") + " · " + scenario.qualifying_count + " qualifying / " + scenario.eligible_count + " eligible heads. Warm artifacts and zero singleton recovery still require verification."));
+          scenario.qualifying_batches.forEach(function (id) { view.append(link("Qualifying batch " + id, batchURL(id))); });
+          view.append(note("Week above Bors baseline · " + week.status.replaceAll("_", " ") + " · " + week.observed_days.toFixed(2) + " observed days · rate " + (week.rate_above_baseline ? "above" : "not above") + " baseline. Attribution and comment correctness need a separate audit."));
+        }
         var dist = summary.head_dispatch_minutes;
         view.append(note("Head first-dispatch → landing: " + (dist.count ? "median " + dist.median.toFixed(1) + " min · p95 " + dist.p95.toFixed(1) + " min · " + dist.count + " heads" : "no observed landings")));
         var table = el("table", undefined, "ops-table"); append(table, append(el("thead"), append(el("tr"), el("th", "Head"), el("th", "Latency"), el("th", "CI / repair / overlap"))));
