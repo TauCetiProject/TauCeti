@@ -370,8 +370,8 @@ theorem preservesDualForm_map {S T : Type*} [Ring S] [Ring T] (f : S →+* T)
   rwa [hform] at himg
 
 /-- **The span of the alternating matrices `crossBivector` is stable under congruence.** A matrix
-preserving the cross product and fixing the invariant dual form by congruence permutes them
-through the tautological action on their index. -/
+preserving the cross product and fixing the invariant dual form by congruence sends the `k`-th
+one to the combination of all of them with coefficients the entries `g a k` of column `k`. -/
 theorem mul_crossBivector_mul_transpose {g : Matrix (Fin 7) (Fin 7) R} (hg : PreservesG2Cross g)
     (hB : g * invariantDualForm.map (Int.cast : ℤ → R) * gᵀ =
       invariantDualForm.map (Int.cast : ℤ → R))
