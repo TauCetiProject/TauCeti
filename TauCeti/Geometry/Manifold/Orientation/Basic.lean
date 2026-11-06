@@ -82,6 +82,18 @@ def lift {α : Sort*} (f : OrientationLift I M ι → α)
 theorem exists_lift (o : Orientation I M ι) : ∃ l : OrientationLift I M ι, mk l = o :=
   Quotient.inductionOn o fun l ↦ ⟨l, rfl⟩
 
+/-- Every manifold orientation has a lift with any prescribed model orientation, obtained by
+flipping an arbitrary lift if necessary. -/
+theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
+    (m : _root_.Orientation ℝ E ι) :
+    ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
+  obtain ⟨l, rfl⟩ := o.exists_lift
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  · exact ⟨l, rfl, h⟩
+  · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
+      rw [OrientationLift.flip_modelOrientation, h]
+      exact _root_.neg_neg m⟩
+
 /-- Prove a property of orientations by proving it for every source-indexed lift. -/
 @[elab_as_elim]
 theorem inductionOn {p : Orientation I M ι → Prop} (o : Orientation I M ι)
