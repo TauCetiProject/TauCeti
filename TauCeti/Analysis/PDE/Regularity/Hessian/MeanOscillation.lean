@@ -14,6 +14,7 @@ import TauCeti.Analysis.PDE.Regularity.DifferentiatedEquation
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
 import TauCeti.Analysis.Sobolev.Wkp.Restriction
 import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Integral.Average
 
 /-!
 # Mean oscillation of the Hessian for constant-coefficient equations
@@ -115,13 +116,33 @@ private theorem energyFormH1_eq_setIntegral_inner_smul_single
   rw [(φ.contDiff.differentiable (by simp) x).lineDeriv_eq_fderiv, real_inner_comm,
     inner_gradient_left, mul_comm]
 
-/-- Applying a continuous linear map-valued average to a vector is the average of the
-applications. -/
-theorem _root_.ContinuousLinearMap.setAverage_apply {E F : Type*} [NormedAddCommGroup E]
-    [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] {X : Type*} [MeasurableSpace X]
-    {μ : Measure X} {s : Set X} {H : X → E →L[ℝ] F} (hH : IntegrableOn H s μ) (v : E) :
-    (⨍ y in s, H y ∂μ) v = ⨍ y in s, H y v ∂μ := by
-  rw [setAverage_eq, setAverage_eq, smul_apply, ContinuousLinearMap.integral_apply hH]
+/-- The weak Hessian of `u` is square integrable on `Ω`. -/
+private theorem memLp_iteratedGradient_one
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2) :
+    MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) 2
+      (volume.restrict Omega) :=
+  Lp.memLp _
+
+/-- Each column of the weak Hessian of `u` is square integrable on `Ω`. -/
+private theorem memLp_iteratedGradient_one_apply
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    (v : EuclideanSpace ℝ (Fin (n + 1))) :
+    MemLp (fun x => Wkp.iteratedGradient 1 u x v : EuclideanSpace ℝ (Fin (n + 1)) →
+      EuclideanSpace ℝ (Fin (n + 1))) 2 (volume.restrict Omega) :=
+  (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1))) v).comp_memLp'
+    (memLp_iteratedGradient_one u)
+
+/-- The set average of the weak Hessian over a ball in `Ω`, applied to a vector, is the set
+average of the corresponding column. -/
+private theorem setAverage_ball_iteratedGradient_apply
+    (u : Wkp (volume : Measure (EuclideanSpace ℝ (Fin (n + 1)))) Omega 2 2)
+    {t : ℝ} (ht : ball x₀ t ⊆ Omega) (v : EuclideanSpace ℝ (Fin (n + 1))) :
+    (⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) v =
+      ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y v :=
+  ContinuousLinearMap.average_apply
+    ((memLp_iteratedGradient_one u).integrableOn_of_subset one_le_two ht
+      measure_ball_lt_top.ne) v
 
 /-- The gradient of `∂ⱼu`, with `∂ⱼu` the weak line derivative of `u`, is the corresponding
 column of the Hessian, almost everywhere. -/
@@ -154,13 +175,9 @@ private theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_eq
     ∫ x in ball x₀ t, ‖W1p.gradient (D k) x - ⨍ y in ball x₀ t, W1p.gradient (D k) y‖ ^ 2 =
       ∫ x in ball x₀ t, ‖(Wkp.iteratedGradient 1 u x -
         ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2 := by
-  have hH : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict Omega) := Lp.memLp _
   have hct := ae_restrict_of_ae_restrict_of_subset ht hcol
   rw [average_congr hct, integral_congr_ae (hct.mono fun x hx => by rw [hx])]
-  simp only [sub_apply, ContinuousLinearMap.setAverage_apply
-    (hH.integrableOn_of_subset one_le_two ht measure_ball_lt_top.ne)]
+  simp only [sub_apply, setAverage_ball_iteratedGradient_apply u ht]
 
 /-- The square mean oscillation of the Hessian over a ball in `Ω` is controlled by the sum of
 those of its columns, with the factor `n + 1`. -/
@@ -171,20 +188,12 @@ private theorem setIntegral_ball_norm_iteratedGradient_sub_setAverage_sq_le_sum
         ‖Wkp.iteratedGradient 1 u x - ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y‖ ^ 2 ≤
       (n + 1) * ∑ k, ∫ x in ball x₀ t, ‖(Wkp.iteratedGradient 1 u x -
         ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2 := by
-  have hH : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict Omega) := Lp.memLp _
-  have hHk : ∀ k : Fin (n + 1),
-      MemLp (fun x => Wkp.iteratedGradient 1 u x (EuclideanSpace.single k 1) :
-        EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
-        (volume.restrict Omega) := fun k => by
-    have := (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1)))
-      (EuclideanSpace.single k 1)).comp_memLp' hH
-    exact this
+  have hH := memLp_iteratedGradient_one u
   have hint : ∀ k : Fin (n + 1), Integrable (fun x => ‖(Wkp.iteratedGradient 1 u x -
       ⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1)‖ ^ 2)
         (volume.restrict (ball x₀ t)) := fun k =>
-    (hHk k).integrableOn_norm_sub_sq_of_subset ht measure_ball_lt_top.ne
+    (memLp_iteratedGradient_one_apply u (EuclideanSpace.single k 1)
+      ).integrableOn_norm_sub_sq_of_subset ht measure_ball_lt_top.ne
       ((⨍ y in ball x₀ t, Wkp.iteratedGradient 1 u y) (EuclideanSpace.single k 1))
   rw [← integral_finsetSum _ fun k _ => hint k, ← integral_const_mul]
   refine setIntegral_mono_on ?_ ((integrable_finsetSum _ fun k _ => hint k).const_mul _)
@@ -221,9 +230,7 @@ private theorem setIntegral_ball_norm_column_sub_setAverage_sq_le_aux
   have hρΩ : ball x₀ ρ ⊆ Omega := (ball_subset_ball hρr).trans hball
   set e : Fin (n + 1) → EuclideanSpace ℝ (Fin (n + 1)) := fun k => EuclideanSpace.single k 1
     with he
-  have hH : MemLp (Wkp.iteratedGradient 1 u : EuclideanSpace ℝ (Fin (n + 1)) →
-      EuclideanSpace ℝ (Fin (n + 1)) →L[ℝ] EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict Omega) := Lp.memLp _
+  have hH := memLp_iteratedGradient_one u
   -- `f` agrees with a contraction of the Hessian, so it is square integrable.
   have hf : MemLp f 2 (volume.restrict (ball x₀ r)) := by
     refine (((Matrix.contraction A).comp_memLp' hH).ae_eq ?_).mono_measure
@@ -250,11 +257,9 @@ private theorem setIntegral_ball_norm_column_sub_setAverage_sq_le_aux
     simp [he, norm_smul]
   rw [hfe] at h
   refine h.trans (add_le_add_left (mul_le_mul_of_nonneg_left ?_ hK₁0) _)
-  have hHk : MemLp (fun x => Wkp.iteratedGradient 1 u x (e k)) 2 (volume.restrict Omega) :=
-    (ContinuousLinearMap.apply ℝ (EuclideanSpace ℝ (Fin (n + 1))) (e k)).comp_memLp' hH
+  have hHk := memLp_iteratedGradient_one_apply u (e k)
   refine setIntegral_mono_on ?_ ?_ measurableSet_ball fun x _ => ?_
-  · simpa only [sub_apply, ContinuousLinearMap.setAverage_apply
-      (hH.integrableOn_of_subset one_le_two hball measure_ball_lt_top.ne)] using
+  · simpa only [sub_apply, setAverage_ball_iteratedGradient_apply u hball] using
       hHk.integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne _
   · exact hH.integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne _
   · refine pow_le_pow_left₀ (norm_nonneg _) ?_ 2

@@ -71,6 +71,8 @@ exponent restrictions `1 ≤ p < ∞` or `1 ≤ q`.
   average is at most twice its mean oscillation about any constant.
 * `TauCeti.eLpNorm_sub_setAverage_le`: the same factor-`2` comparison for the `Lᵖ` deviation on a
   set of finite measure, `1 ≤ p < ∞`.
+* `ContinuousLinearMap.average_apply`: an average of continuous linear maps, applied to a vector,
+  is the average of the applications.
 * `TauCeti.setLAverage_enorm_sub_const_eq_top`, `TauCeti.setLAverage_enorm_add_const_sub` and
   `TauCeti.setLAverage_enorm_add_sub_le`: the mean oscillation is infinite off integrability on a
   set of finite measure, ignores constants and is subadditive.
@@ -753,5 +755,19 @@ theorem tendsto_average_add_rpow {α : Type*} [MeasurableSpace α]
   exact hlim.const_mul _
 
 end Rpow
+
+section ContinuousLinearMap
+
+variable {X 𝕜 E F : Type*} [MeasurableSpace X] {μ : Measure X} [RCLike 𝕜]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E] [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  [NormedSpace ℝ F]
+
+/-- Applying an average of continuous linear maps to a vector is the average of the
+applications. -/
+theorem _root_.ContinuousLinearMap.average_apply {H : X → E →L[𝕜] F} (hH : Integrable H μ)
+    (v : E) : (⨍ y, H y ∂μ) v = ⨍ y, H y v ∂μ := by
+  rw [average_eq, average_eq, smul_apply, ContinuousLinearMap.integral_apply hH]
+
+end ContinuousLinearMap
 
 end TauCeti
