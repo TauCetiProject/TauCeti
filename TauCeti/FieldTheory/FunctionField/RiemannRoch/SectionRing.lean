@@ -516,7 +516,12 @@ private theorem pow_mem_span_monomialDegreeOne (hF : IsFunctionField k F) {D : D
   set R := c.support.sup r
   have hR (i : ι) : (c i : F) * a ^ R ∈ riemannRochSpace ((m * R) • D) := by
     by_cases hi : i ∈ c.support
-    · exact mul_pow_mem_riemannRochSpace ha (hr i) (Finset.le_sup hi)
+    · have hle : r i ≤ R := Finset.le_sup hi
+      have hmul := mul_pow_mem_riemannRochSpace_add (hr i) ha (R - r i)
+      rw [mul_assoc, ← pow_add, Nat.add_sub_cancel' hle] at hmul
+      convert hmul using 3
+      rw [natCast_zsmul, smul_smul, ← add_smul, mul_comm (R - r i) m, ← mul_add,
+        Nat.add_sub_cancel' hle]
     · rw [Finsupp.notMem_support_iff.mp hi, ZeroMemClass.coe_zero, zero_mul]
       exact zero_mem _
   refine ⟨R + 1, ?_⟩

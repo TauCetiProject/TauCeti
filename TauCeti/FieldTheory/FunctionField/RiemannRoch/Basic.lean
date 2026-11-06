@@ -40,8 +40,8 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
   `f ∈ L(E)`.
 * `TauCeti.one_mem_riemannRochSpace_iff`: `1 ∈ L(D)` exactly when `D` is effective.
 * `TauCeti.mul_mem_riemannRochSpace_add`: multiplication maps `L(A) × L(B)` into `L(A + B)`.
-* `TauCeti.mul_pow_mem_riemannRochSpace`: if `a ∈ L(m D)` and `x aʳ ∈ L(m r D)`, then
-  `x aᴿ ∈ L(m R D)` for every `R ≥ r`.
+* `TauCeti.mul_pow_mem_riemannRochSpace_add`: if `x ∈ L(B)` and `a ∈ L(A)`, then
+  `x aⁿ ∈ L(B + n A)`.
 * `TauCeti.riemannRochSpace_mul_le_riemannRochSpace_add` and
   `TauCeti.riemannRochSpace_pow_le_riemannRochSpace_nsmul`: as products of subspaces,
   `L(A) · L(B) ⊆ L(A + B)` and `L(A)ⁿ ⊆ L(n A)`.
@@ -229,16 +229,11 @@ theorem pow_mem_riemannRochSpace_zsmul {A : Divisor k F} {f : F} (hf : f ∈ rie
     rw [pow_succ, Nat.cast_succ, add_smul, one_smul]
     exact mul_mem_riemannRochSpace_add ih hf
 
-/-- Multiplying by a further power of `a ∈ L(m D)` keeps `x aʳ` in the Riemann–Roch space of
-the corresponding multiple of `D`. -/
-theorem mul_pow_mem_riemannRochSpace {D : Divisor k F} {x a : F} {m r R : ℕ}
-    (ha : a ∈ riemannRochSpace (m • D)) (hx : x * a ^ r ∈ riemannRochSpace ((m * r) • D))
-    (hle : r ≤ R) : x * a ^ R ∈ riemannRochSpace ((m * R) • D) := by
-  have hmul := mul_mem_riemannRochSpace_add hx (pow_mem_riemannRochSpace_zsmul ha (R - r))
-  rw [mul_assoc, ← pow_add, Nat.add_sub_cancel' hle] at hmul
-  convert hmul using 3
-  rw [natCast_zsmul, smul_smul, ← add_smul, mul_comm (R - r) m, ← mul_add,
-    Nat.add_sub_cancel' hle]
+/-- If `x ∈ L(B)` and `a ∈ L(A)`, then `x aⁿ ∈ L(B + n A)`. -/
+theorem mul_pow_mem_riemannRochSpace_add {A B : Divisor k F} {x a : F}
+    (hx : x ∈ riemannRochSpace B) (ha : a ∈ riemannRochSpace A) (n : ℕ) :
+    x * a ^ n ∈ riemannRochSpace (B + (n : ℤ) • A) :=
+  mul_mem_riemannRochSpace_add hx (pow_mem_riemannRochSpace_zsmul ha n)
 
 /-- Products of sections of `L(A)` and `L(B)` span a subspace of `L(A + B)`. -/
 theorem riemannRochSpace_mul_le_riemannRochSpace_add (A B : Divisor k F) :
