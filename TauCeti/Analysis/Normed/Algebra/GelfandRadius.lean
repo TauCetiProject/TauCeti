@@ -29,6 +29,8 @@ idempotents obstruct the separating spaces of algebra homomorphisms.
   of elements of the corner `p R p`.
 * `TauCeti.spectralRadius_eq_gelfandRadius_toLp_inr`: Gelfand's formula for a nonunital complex
   Banach algebra, through its ℓ¹ unitization.
+* `TauCeti.exists_norm_pow_le_of_spectralRadius_lt_one`: an element of a complex Banach algebra
+  with spectral radius less than one has bounded powers.
 -/
 
 public section
@@ -79,5 +81,23 @@ theorem spectralRadius_eq_gelfandRadius_toLp_inr (a : A) :
     ← AlgEquiv.spectrum_eq (WithLp.unitizationAlgEquiv (𝕜 := ℂ) (A := A) ℂ),
     WithLp.unitizationAlgEquiv_apply,
     WithLp.ofLp_toLp, ← Unitization.quasispectrum_eq_spectrum_inr, spectralRadius]
+
+/-- **Bounded powers below spectral radius one.** In a complex Banach algebra, the powers of an
+element of spectral radius less than one are bounded: by Gelfand's formula `‖a ^ n‖ ^ (1 / n)`
+eventually drops below one, so `‖a ^ n‖ ≤ 1` for all large `n`. -/
+theorem exists_norm_pow_le_of_spectralRadius_lt_one {B : Type*} [NormedRing B] [NormedAlgebra ℂ B]
+    [CompleteSpace B] {a : B} (ha : spectralRadius ℂ a < 1) : ∃ C : ℝ, ∀ n : ℕ, ‖a ^ n‖ ≤ C := by
+  obtain ⟨n₀, hn₀⟩ := eventually_atTop.mp
+    (((spectrum.pow_norm_pow_one_div_tendsto_nhds_spectralRadius a).eventually
+      (gt_mem_nhds ha)).and (eventually_gt_atTop 0))
+  refine ⟨max 1 (∑ k ∈ Finset.range n₀, ‖a ^ k‖), fun n ↦ ?_⟩
+  rcases lt_or_ge n n₀ with hn | hn
+  · exact (Finset.single_le_sum (f := fun k ↦ ‖a ^ k‖) (fun _ _ ↦ norm_nonneg _)
+      (Finset.mem_range.mpr hn)).trans (le_max_right _ _)
+  obtain ⟨h, hn0⟩ := hn₀ n hn
+  rw [ENNReal.ofReal_lt_one] at h
+  refine le_trans ?_ (le_max_left _ _)
+  by_contra! h1
+  exact h.not_ge (Real.one_le_rpow h1.le (by positivity))
 
 end TauCeti
