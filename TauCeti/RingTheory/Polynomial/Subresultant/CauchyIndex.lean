@@ -100,6 +100,40 @@ private theorem permanencesMinusVariations_signedPsc_eq_add {p q : K[X]} (hq : q
     linear_combination (sign p.leadingCoeff * sign q.leadingCoeff : ℤ) * h2
   · simp only [hke, mt hodd.1 hke, ↓reduceIte]
 
+/-- Rescaling the tail by the constant `(-1) ^ (m - n).choose 2 * lc ^ (m - ρ)` of a Euclidean step
+does not change permanences minus variations once the leading entry
+`(-1) ^ (m - n).choose 2 * lc ^ (m - n)` is replaced by `lc`, provided the first entry of the tail
+is nonzero. -/
+private theorem permanencesMinusVariations_cons_replicate_zero_append_map_mul {lc a : K}
+    {l : List K} {m n ρ : ℕ} (hlc : lc ≠ 0) (ha : a ≠ 0) (h : n < m) (hρ : ρ < n) :
+    ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n) ::
+        (List.replicate (n - (ρ + 1)) 0 ++
+          (a :: l).map fun x ↦ (-1) ^ (m - n).choose 2 * lc ^ (m - ρ) * x)
+        ).permanencesMinusVariations =
+      (lc :: (List.replicate (n - (ρ + 1)) 0 ++ a :: l)).permanencesMinusVariations := by
+  have hc : (-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ) ≠ 0 := by simp [hlc]
+  rw [List.map_cons, List.permanencesMinusVariations_cons_replicate_zero_append (mul_ne_zero hc ha),
+    ← List.map_cons, List.permanencesMinusVariations_map_mul_left hc,
+    List.permanencesMinusVariations_cons_replicate_zero_append ha]
+  congr 1
+  split_ifs with hk
+  · have hodd : Odd ((m - n) + (m - ρ)) := by
+      obtain ⟨i, hi⟩ := hk
+      exact ⟨m - n + i, by omega⟩
+    have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
+      rw [← pow_mul, mul_comm, pow_mul]
+      simp
+    have hprod : (-1) ^ (m - n).choose 2 * lc ^ (m - n) *
+        ((-1) ^ (m - n).choose 2 * lc ^ (m - ρ)) = lc ^ ((m - n) + (m - ρ)) := by
+      linear_combination (lc ^ (m - n) * lc ^ (m - ρ)) * h1
+    have key : (sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - n)) : ℤ) *
+        sign ((-1 : K) ^ (m - n).choose 2 * lc ^ (m - ρ)) = sign lc := by
+      rw [← SignType.coe_mul, ← sign_mul, hprod]
+      simp [sign_pow, SignType.pow_odd _ hodd]
+    simp only [sign_mul, SignType.coe_mul] at key ⊢
+    linear_combination ((-1) ^ (n - (ρ + 1)).choose 2 * (sign a : ℤ)) * key
+  · rfl
+
 /-- After the leading entry, the signed coefficients of `(p, q)` and of `(q, -(p % q))` have the
 same permanences minus variations. -/
 private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
@@ -118,7 +152,6 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
   set s := signedPsc p q m n
   set t := signedPsc q (-(p % q)) n ρ
   set c : K := (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - ρ) with hcdef
-  have hc : c ≠ 0 := by simp [c, hq']
   -- Below the remainder degree the two coefficient lists are proportional.
   have hst : (List.range (ρ + 1)).reverse.map s =
       ((List.range (ρ + 1)).reverse.map t).map (c * ·) := by
@@ -156,28 +189,8 @@ private theorem permanencesMinusVariations_signedPsc_neg_mod {p q : K[X]}
     have htρ0 : t ρ ≠ 0 := by
       rw [htρ]
       exact mul_ne_zero (pow_ne_zero _ (neg_ne_zero.mpr one_ne_zero)) (pow_ne_zero _ hlc)
-    rw [List.map_cons, List.permanencesMinusVariations_cons_replicate_zero_append
-        (mul_ne_zero hc htρ0), ← List.map_cons, List.permanencesMinusVariations_map_mul_left hc,
-      List.permanencesMinusVariations_cons_replicate_zero_append htρ0]
-    congr 1
-    split_ifs with hk
-    · -- Across an even gap, `s n * c` has the sign of `q.leadingCoeff ^ (odd)`.
-      have hodd : Odd ((m - n) + (m - ρ)) := by
-        obtain ⟨i, hi⟩ := hk
-        exact ⟨m - n + i, by omega⟩
-      have h1 : ((-1 : K) ^ (m - n).choose 2) ^ 2 = 1 := by
-        rw [← pow_mul, mul_comm, pow_mul]
-        simp
-      have hprod : (-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - n) *
-          ((-1) ^ (m - n).choose 2 * q.leadingCoeff ^ (m - ρ)) =
-            q.leadingCoeff ^ ((m - n) + (m - ρ)) := by
-        linear_combination (q.leadingCoeff ^ (m - n) * q.leadingCoeff ^ (m - ρ)) * h1
-      have key : (sign (s n) : ℤ) * sign c = sign q.leadingCoeff := by
-        rw [← SignType.coe_mul, ← sign_mul, hsn, hcdef, hprod]
-        simp [sign_pow, SignType.pow_odd _ hodd]
-      simp only [sign_mul, SignType.coe_mul]
-      linear_combination ((-1) ^ (n - (ρ + 1)).choose 2 * (sign (t ρ) : ℤ)) * key
-    · rfl
+    rw [hsn, hcdef]
+    exact permanencesMinusVariations_cons_replicate_zero_append_map_mul hq' htρ0 h hρ
 
 end Ordered
 
