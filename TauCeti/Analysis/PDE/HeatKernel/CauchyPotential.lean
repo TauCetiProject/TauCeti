@@ -11,8 +11,10 @@ public import TauCeti.Analysis.PDE.HeatKernel.HeatEquation
 public import TauCeti.Analysis.PDE.Parabolic.SpaceTime.Basic
 public import TauCeti.Topology.MetricSpace.Holder
 import Mathlib.Analysis.Calculus.FDeriv.Extend
+import TauCeti.Analysis.Calculus.MeanValue
 import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.Analysis.PDE.HeatKernel.ApproximateIdentity
+import TauCeti.Analysis.SpecialFunctions.Pow.Bounds
 import TauCeti.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -469,80 +471,6 @@ theorem exists_norm_laplacian_heatCauchyPotential_le [CompleteSpace F] :
         mul_le_mul_of_nonneg_left (h2.trans h3) hn
     _ = n * C₂ * H * t ^ ((α : ℝ) / 2 - 1) := by ring
 
-/-- The power law `d ^ β = d * d ^ (β - 1)` for `d > 0`. -/
-private theorem rpow_eq_mul_rpow_sub_one {d : ℝ} (β : ℝ) (hd : 0 < d) :
-    d ^ β = d * d ^ (β - 1) := by
-  rw [rpow_sub_one hd.ne']
-  field_simp
-
-omit [NormedSpace ℝ F] in
-/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
-`a < 0` and every `b`, `‖u b - u a‖ ≤ K |b - a| (-a)^(β - 1)`, where `0 ≤ β ≤ 1`. -/
-private theorem norm_sub_le_of_neg {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hK : 0 ≤ K) (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
-    {a : ℝ} (ha : a < 0) (b : ℝ) : ‖u b - u a‖ ≤ K * (|b - a| * (-a) ^ (β - 1)) := by
-  rw [hneg a ha.le]
-  have hd : 0 < -a := neg_pos.2 ha
-  rcases le_or_gt b 0 with hb | hb
-  · rw [hneg b hb, sub_self, norm_zero]
-    positivity
-  have key : b ^ β ≤ |b - a| * (-a) ^ (β - 1) := by
-    rw [abs_of_pos (by linarith : 0 < b - a)]
-    rcases le_total b (-a) with hba | hba
-    · calc b ^ β ≤ (-a) ^ β := rpow_le_rpow hb.le hba hβ₀
-        _ = -a * (-a) ^ (β - 1) := rpow_eq_mul_rpow_sub_one β hd
-        _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
-    · calc b ^ β = b * b ^ (β - 1) := rpow_eq_mul_rpow_sub_one β hb
-        _ ≤ b * (-a) ^ (β - 1) :=
-          mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos hd hba hβ₁) hb.le
-        _ ≤ (b - a) * (-a) ^ (β - 1) := by gcongr; linarith
-  exact (hrate b hb.le).trans (by gcongr)
-
-/-- Mean value bound near `a > 0`: if `u` has derivative `f' r` of norm at most `D r^(β - 1)` at
-every `r > 0` (`0 ≤ β ≤ 1`), then `‖u b - u a‖ ≤ 2 D |b - a| a^(β - 1)` for `a / 2 ≤ b`. -/
-private theorem norm_sub_le_of_near {u f' : ℝ → F} {β D : ℝ} (hβ₀ : 0 ≤ β) (hβ₁ : β - 1 ≤ 0)
-    (hD : 0 ≤ D)
-    (hderiv : ∀ r, 0 < r → HasDerivAt u (f' r) r) (hbound : ∀ r, 0 < r → ‖f' r‖ ≤ D * r ^ (β - 1))
-    {a b : ℝ} (ha : 0 < a) (hb : a / 2 ≤ b) : ‖u b - u a‖ ≤ 2 * D * (|b - a| * a ^ (β - 1)) := by
-  have ha2 : 0 < a / 2 := half_pos ha
-  have hmv := Convex.norm_image_sub_le_of_norm_hasDerivWithin_le (f := u) (s := Ici (a / 2))
-    (f' := f') (C := D * (a / 2) ^ (β - 1))
-    (fun r hr => (hderiv r (ha2.trans_le hr)).hasDerivWithinAt)
-    (fun r hr => (hbound r (ha2.trans_le hr)).trans
-      (mul_le_mul_of_nonneg_left (rpow_le_rpow_of_nonpos ha2 hr hβ₁) hD))
-    (convex_Ici _) (x := a) (y := b) (mem_Ici.2 (by linarith)) (mem_Ici.2 hb)
-  have hhalf : (a / 2) ^ (β - 1) ≤ 2 * a ^ (β - 1) := by
-    rw [div_rpow ha.le zero_le_two, div_eq_mul_inv, ← rpow_neg zero_le_two, neg_sub, mul_comm]
-    gcongr
-    calc (2 : ℝ) ^ (1 - β) ≤ 2 ^ (1 : ℝ) := rpow_le_rpow_of_exponent_le one_le_two (by linarith)
-      _ = 2 := rpow_one 2
-  rw [Real.norm_eq_abs] at hmv
-  calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
-    _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
-    _ = _ := by ring
-
-omit [NormedSpace ℝ F] in
-/-- If `u` is constant equal to `c` on `(-∞, 0]` and `‖u r - c‖ ≤ K r^β` for `r ≥ 0`, then for
-`a > 0` and `b < a / 2`, `‖u b - u a‖ ≤ 4 K |b - a| a^(β - 1)`. -/
-private theorem norm_sub_le_of_far {u : ℝ → F} {c : F} {β K : ℝ} (hβ₀ : 0 ≤ β) (hK : 0 ≤ K)
-    (hneg : ∀ r ≤ 0, u r = c) (hrate : ∀ r, 0 ≤ r → ‖u r - c‖ ≤ K * r ^ β)
-    {a b : ℝ} (ha : 0 < a) (hb : b < a / 2) :
-    ‖u b - u a‖ ≤ 4 * K * (|b - a| * a ^ (β - 1)) := by
-  have h1 : ‖u b - c‖ ≤ K * a ^ β := by
-    rcases le_or_gt b 0 with hb0 | hb0
-    · rw [hneg b hb0, sub_self, norm_zero]
-      positivity
-    · exact (hrate b hb0.le).trans (by gcongr; linarith)
-  have h3 : a ^ β ≤ 2 * (|b - a| * a ^ (β - 1)) := by
-    rw [rpow_eq_mul_rpow_sub_one β ha, abs_of_neg (by linarith : b - a < 0)]
-    have : 0 ≤ a ^ (β - 1) := by positivity
-    nlinarith
-  calc ‖u b - u a‖ = ‖(u b - c) - (u a - c)‖ := by rw [sub_sub_sub_cancel_right]
-    _ ≤ ‖u b - c‖ + ‖u a - c‖ := norm_sub_le _ _
-    _ ≤ 2 * (K * a ^ β) := by linarith [hrate a ha.le]
-    _ ≤ 2 * (K * (2 * (|b - a| * a ^ (β - 1)))) := by gcongr
-    _ = _ := by ring
-
 /-- **The time-Lipschitz bound of the Cauchy potential.** For `α ≤ 2` there is a constant `C`,
 depending only on `α` and the dimension, with the following property. If `g` is bounded,
 continuous and `α`-Hölder with constant `H`, then for every `a ≠ 0` and every `b`,
@@ -581,7 +509,7 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
     have hd : 0 < -a := neg_pos.2 ha
     have hX : 0 ≤ H * (|b - a| * (-a) ^ (β - 1)) := by positivity
     calc ‖u b - u a‖ ≤ H * Mα * (|b - a| * (-a) ^ (β - 1)) :=
-          norm_sub_le_of_neg hβ₀ hβ₁ hK hneg hrate ha b
+          norm_sub_le_mul_abs_sub_mul_rpow_of_neg_left hβ₀ hβ₁ hK hneg hrate ha b
       _ = Mα * (H * (|b - a| * (-a) ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * (-a) ^ (β - 1))) := by
         gcongr
@@ -591,8 +519,8 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
   have hX : 0 ≤ H * (|b - a| * a ^ (β - 1)) := by positivity
   rcases le_or_gt (a / 2) b with hb | hb
   · -- At positive times the time derivative is the Laplacian, of size `O(H r^(β - 1))`.
-    have := norm_sub_le_of_near (u := u) (f' := fun r => Δ (heatCauchyPotential g r) x)
-      (D := C₂ * H) hβ₀ hβ₁ (by positivity)
+    have := norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt (u := u)
+      (f' := fun r => Δ (heatCauchyPotential g r) x) (D := C₂ * H) hβ₀ hβ₁ (by positivity)
       (fun r hr => hasDerivAt_heatCauchyPotential_of_aestronglyMeasurable
         hgc.aestronglyMeasurable (ae_of_all _ hM) hr x)
       (fun r hr => hC₂ hgc.aestronglyMeasurable (ae_of_all _ hM) hg hr x) ha hb
@@ -603,7 +531,7 @@ theorem exists_norm_heatCauchyPotential_sub_heatCauchyPotential_le_mul [Complete
         linarith
       _ = _ := by ring
   · calc ‖u b - u a‖ ≤ 4 * (H * Mα) * (|b - a| * a ^ (β - 1)) :=
-          norm_sub_le_of_far hβ₀ hK hneg hrate ha hb
+          norm_sub_le_mul_abs_sub_mul_rpow_of_lt_half hβ₀ hK hneg hrate ha hb
       _ = 4 * Mα * (H * (|b - a| * a ^ (β - 1))) := by ring
       _ ≤ (2 * C₂ + 4 * Mα) * (H * (|b - a| * a ^ (β - 1))) := by
         gcongr
