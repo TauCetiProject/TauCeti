@@ -14,7 +14,9 @@ import Mathlib.Algebra.GroupWithZero.Units.Lemmas
 The underlying ring automorphism of an algebra automorphism turns the identity and product of
 `A ≃ₐ[R] A` into the identity and composition of ring equivalences
 (`AlgEquiv.toRingEquiv_one`, `AlgEquiv.toRingEquiv_mul`). For inverses, Mathlib's
-`AlgEquiv.aut_inv` and `AlgEquiv.symm_toRingEquiv` already apply.
+`AlgEquiv.aut_inv` and `AlgEquiv.symm_toRingEquiv` already apply. An algebra with no nontrivial
+automorphisms admits at most one isomorphism from any algebra
+(`AlgEquiv.subsingleton_of_subsingleton_aut`).
 
 The remaining lemmas recover the action of an algebra automorphism on one factor from its action
 on a product or quotient and a fixed cancellable factor. An automorphism negating a nonzero element
@@ -43,6 +45,14 @@ theorem toRingEquiv_mul (σ τ : A ≃ₐ[R] A) :
   (rfl)
 
 end ToRingEquiv
+
+/-- If an algebra `B` has no nontrivial automorphisms, then there is at most one isomorphism from
+any algebra onto `B`. -/
+theorem subsingleton_of_subsingleton_aut {R A B : Type*} [CommSemiring R] [Semiring A]
+    [Semiring B] [Algebra R A] [Algebra R B] [Subsingleton (B ≃ₐ[R] B)] :
+    Subsingleton (A ≃ₐ[R] B) :=
+  ⟨fun e₁ e₂ ↦ AlgEquiv.ext fun x ↦ by
+    simpa using congr($(Subsingleton.elim (e₁.symm.trans e₂) AlgEquiv.refl) (e₁ x)).symm⟩
 
 /-- Cancel a fixed left-regular factor to show that an automorphism fixes the other factor. -/
 theorem apply_eq_self_of_apply_mul_eq_mul {F L : Type*} [CommSemiring F] [Semiring L]
