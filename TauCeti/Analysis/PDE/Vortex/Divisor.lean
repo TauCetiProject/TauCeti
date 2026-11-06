@@ -37,7 +37,9 @@ framing forces the zero divisor to have degree `m` (`TauCeti.Vortex.IsZeroDiviso
 Hence the zeros of a framed degree-`m` vortex section, counted with multiplicity, form a point of
 `Sym ℂ m` (`TauCeti.Vortex.exists_sym_isZeroDivisor`). Only the holomorphicity rows are used; the
 curvature equation is not needed. The identification of the degree with the flux
-`(2π)⁻¹ ∫ i F_a` is `TauCeti.Vortex.integral_curvature_eq_neg_mul_of_tendsto`.
+`(2π)⁻¹ ∫ i F_a` (Jaffe–Taubes, Chapter III) is
+`TauCeti.Vortex.integral_curvature_eq_of_tendsto_sectionValue_mul_inv_pow`. Existence of a vortex
+for a given divisor is not proved here.
 
 The symmetries of the plane vortex equations act on zero divisors as expected. The translation
 `translateField a` moves the divisor by `-a`, the rotation `rotateField u` rotates it by `u⁻¹`,

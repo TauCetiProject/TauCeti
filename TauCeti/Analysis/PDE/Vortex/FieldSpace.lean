@@ -307,17 +307,6 @@ theorem tendsto_sectionValue_mul_inv_pow {f : ContDiffBump (0 : ℝ)} {m : ℕ} 
   rw [referenceSection_eq_phase f m hz2, sub_mul, mul_inv_cancel₀ hphase]
   ring
 
-/-- If the section times the inverse winding phase `(z / |z|)^(-m)` tends to one at infinity,
-then the squared modulus `|α|² = 4 (p² + q²)` tends to one. -/
-theorem tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow {x : ℂ → EuclideanSpace ℝ (Fin 4)}
-    {m : ℕ}
-    (hframe : Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹) (cocompact ℂ) (𝓝 1)) :
-    Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1) := by
-  refine tendsto_normSq_of_tendsto_sectionValue_mul ?_ hframe
-  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
-  have hz : z ≠ 0 := hz
-  simp [hz]
-
 /-- For `s > 1`, the squared modulus `|α|² = 4 (p² + q²)` of a continuous field in `A_m^s`
 tends to one at infinity. -/
 theorem tendsto_normSq_of_mem_framedFieldSpace {f : ContDiffBump (0 : ℝ)} {m : ℕ} {s : ℝ}

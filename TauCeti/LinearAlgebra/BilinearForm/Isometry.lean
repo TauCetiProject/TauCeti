@@ -81,8 +81,8 @@ Two statements are worth singling out.
   membership of a matrix in `Matrix.isometryMatrices` of the Gram matrix.
 * `TauCeti.BilinForm.IsIsometry.det_sq_eq_one`: `(det f) ^ 2 = 1` for an isometry of a form whose
   Gram determinant is a non-zero-divisor.
-* `TauCeti.BilinForm.IsIsometry.det_eq_one`: an isometry of a nondegenerate alternating form on a
-  finite-dimensional vector space has determinant `1`.
+* `TauCeti.BilinForm.IsIsometry.det_eq_one_of_isAlt`: an isometry of a nondegenerate alternating
+  form on a finite-dimensional vector space has determinant `1`.
 * `LinearMap.BilinForm.Isometry.injective`: an isometric embedding of a left-separating form is
   injective.
 * `TauCeti.BilinForm.IsIsometry.bijective`: over an integral domain, an isometry of a
@@ -482,7 +482,8 @@ variable {K V : Type*} [Field K] [AddCommGroup V] [Module K V] [FiniteDimensiona
 /-- **Isometries of a nondegenerate alternating form have determinant one.** On a
 finite-dimensional space the form has a symplectic basis, in which the matrix of an isometry is
 symplectic. -/
-theorem IsIsometry.det_eq_one (hB : B.IsAlt) (hnd : B.Nondegenerate) (hf : IsIsometry B f) :
+theorem IsIsometry.det_eq_one_of_isAlt (hB : B.IsAlt) (hnd : B.Nondegenerate)
+    (hf : IsIsometry B f) :
     LinearMap.det f = 1 := by
   obtain ⟨m, b, hb⟩ := hB.exists_basis_toMatrix_eq_J hnd
   exact hf.det_eq_one_of_toMatrix_eq_J b hb

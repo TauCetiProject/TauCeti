@@ -97,6 +97,18 @@ theorem tendsto_normSq_of_tendsto_sectionValue_mul {l : Filter ℂ}
   filter_upwards [hphase] with z hz
   rw [norm_mul, hz, mul_one, sq_norm_sectionValue]
 
+/-- A field whose section has the degree-`m` end framing `α(z) (z / |z|)^(-m) → 1` has squared
+modulus `|α|² = 4 (p² + q²)` tending to one at infinity. -/
+theorem tendsto_normSq_of_tendsto_sectionValue_mul_inv_pow {m : ℕ}
+    {x : ℂ → EuclideanSpace ℝ (Fin 4)}
+    (hframe : Filter.Tendsto (fun z ↦ sectionValue x z * ((z / (‖z‖ : ℂ)) ^ m)⁻¹)
+      (Filter.cocompact ℂ) (nhds 1)) :
+    Filter.Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (Filter.cocompact ℂ) (nhds 1) := by
+  refine tendsto_normSq_of_tendsto_sectionValue_mul ?_ hframe
+  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with z hz
+  have hz : z ≠ 0 := hz
+  simp [hz]
+
 /-- The covariant derivative `d_a α`, with the charge-one connection `a = i(b₁ ds + b₂ dt)`.
 The argument `v` is an actual real tangent vector to the plane. -/
 def covariantDerivative (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z v : ℂ) : ℂ :=
