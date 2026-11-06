@@ -46,17 +46,10 @@ theorem finiteDimensional_ext_succ_iff_of_subsingleton (n : ℕ)
     FiniteDimensional k (Ext.{w} P S.X₁ (n + 1)) ↔
       FiniteDimensional k (Ext.{w} P S.X₂ (n + 1)) := by
   constructor
-  · intro h
-    have := h
+  · intro _
     exact finiteDimensional_of_exact (exact_postcompOfLinear k hS P (n + 1))
-  · intro h
-    have := h
-    apply finiteDimensional_of_exact
-      (f := Ext.postcompOfLinear hS.extClass k P rfl)
-      (g := Ext.postcompOfLinear (Ext.mk₀ S.f) k P (add_zero (n + 1)))
-    simpa only [coe_postcompOfLinear, AddCommGrpCat.hom_ofHom] using
-      (ShortComplex.ab_exact_iff_function_exact _).1
-        (Ext.covariant_sequence_exact₁' P hS n (n + 1) rfl)
+  · intro _
+    exact finiteDimensional_of_exact (exact_postcompOfLinear₁ k hS P n (n + 1) rfl)
 
 /-- The degree-zero/one dimension difference is additive across a short exact sequence with
 vanishing Ext¹ of the quotient. This needs only the displayed low-degree finiteness. -/
@@ -72,28 +65,21 @@ theorem finrank_ext_zero_sub_finrank_ext_one_add
   have := hS.mono_f
   let f₀ := Ext.postcompOfLinear (Ext.mk₀ S.f) k P (add_zero 0)
   let g₀ := Ext.postcompOfLinear (Ext.mk₀ S.g) k P (add_zero 0)
-  let δ := Ext.postcompOfLinear hS.extClass k P (show 0 + 1 = 1 from rfl)
+  let δ : Ext.{w} P S.X₃ 0 →ₗ[k] Ext.{w} P S.X₁ 1 :=
+    Ext.postcompOfLinear hS.extClass k P rfl
   let f₁ := Ext.postcompOfLinear (Ext.mk₀ S.f) k P (add_zero 1)
   let g₁ := Ext.postcompOfLinear (Ext.mk₀ S.g) k P (add_zero 1)
   have hfg₀ : Function.Exact f₀ g₀ := exact_postcompOfLinear k hS P 0
-  have hgδ : Function.Exact g₀ δ := by
-    simpa only [g₀, δ, coe_postcompOfLinear, AddCommGrpCat.hom_ofHom] using
-      (ShortComplex.ab_exact_iff_function_exact _).1
-        (Ext.covariant_sequence_exact₃' P hS 0 1 rfl)
-  have hδf : Function.Exact δ f₁ := by
-    simpa only [g₀, δ, f₁, coe_postcompOfLinear, AddCommGrpCat.hom_ofHom] using
-      (ShortComplex.ab_exact_iff_function_exact _).1
-        (Ext.covariant_sequence_exact₁' P hS 0 1 rfl)
+  have hgδ : Function.Exact g₀ δ := exact_postcompOfLinear₃ k hS P 0 1 rfl
+  have hδf : Function.Exact δ f₁ := exact_postcompOfLinear₁ k hS P 0 1 rfl
   have hfg₁ : Function.Exact f₁ g₁ := exact_postcompOfLinear k hS P 1
   have hf₀ : Function.Injective f₀ := Ext.postcomp_mk₀_injective_of_mono P S.f
   have hf₁ : Function.Surjective f₁ := fun x ↦ (hfg₁ x).1 (Subsingleton.elim _ _)
-  have hdimf₀ := LinearMap.finrank_range_of_inj hf₀
-  have hdimg₀ := g₀.finrank_range_add_finrank_ker
-  have hdimδ := δ.finrank_range_add_finrank_ker
+  have : FiniteDimensional k (Ext.{w} P S.X₁ 0) := Module.Finite.of_injective f₀ hf₀
+  have hdim := f₀.finrank_sub_finrank_sub_finrank_of_exact g₀ δ f₁ hfg₀ hgδ hδf
+  rw [LinearMap.ker_eq_bot.2 hf₀, finrank_bot] at hdim
   have hdimf₁ := f₁.finrank_range_add_finrank_ker
-  rw [hfg₀.linearMap_ker_eq, hdimf₀] at hdimg₀
-  rw [hgδ.linearMap_ker_eq] at hdimδ
-  rw [hδf.linearMap_ker_eq, LinearMap.range_eq_top.2 hf₁, finrank_top] at hdimf₁
+  rw [LinearMap.range_eq_top.2 hf₁, finrank_top] at hdimf₁
   omega
 
 end TauCeti
