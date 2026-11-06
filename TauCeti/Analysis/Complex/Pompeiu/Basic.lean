@@ -45,8 +45,15 @@ integrand `(z - w)⁻¹ • D u z dz` becomes `∂ᵣ v + i r⁻¹ ∂_θ v` for
 The angular term integrates to zero over each circle, and the radial term integrates to `-u w`
 along each ray.
 
+The normalized `TauCeti.cauchyTransform f w = π⁻¹ ∫ z, (w - z)⁻¹ • f z` inverts
+`bar∂` itself. Its basic integral and convolution formulas, almost-everywhere congruence, and
+compact-support left and right inverse identities are available in this module.
+
 ## Main results
 
+* `TauCeti.cauchyTransform` and `TauCeti.cauchyTransform_apply`: the normalized integral.
+* `HasCompactSupport.conjWirtingerDeriv_cauchyTransform` and
+  `HasCompactSupport.cauchyTransform_conjWirtingerDeriv`: normalized right and left inverses.
 * `HasCompactSupport.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I`:
   the Cauchy–Pompeiu formula.
 * `HasCompactSupport.hasFDerivAt_integral_sub_inv_smul`: the Cauchy transform of a compactly
@@ -69,12 +76,55 @@ along each ray.
 
 public section
 
-open MeasureTheory Complex Set Filter ComplexConjugate
-open scoped Real Topology Convolution
+open MeasureTheory Complex Set Filter ComplexConjugate Metric Function
+open scoped NNReal Real Topology Convolution
 
 namespace TauCeti
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+/-- The planar Cauchy transform with the normalization inverting `bar∂`, using the kernel
+`(w - z)⁻¹`. For rough compactly supported `Lᵖ` data the integral exists almost everywhere. -/
+noncomputable def cauchyTransform (f : ℂ → F) (w : ℂ) : F :=
+  (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z
+
+/-- The defining normalized integral of the Cauchy transform. -/
+theorem cauchyTransform_apply (f : ℂ → F) (w : ℂ) :
+    cauchyTransform f w = (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z := (rfl)
+
+/-- In convolution coordinates the Cauchy transform uses the reciprocal kernel with the same
+positive sign. The variable substitution gives `ξ⁻¹ • f (w - ξ)`. -/
+theorem cauchyTransform_eq_convolution (f : ℂ → F) :
+    cauchyTransform f = fun w ↦ (Real.pi : ℂ)⁻¹ •
+      ((fun z : ℂ ↦ z⁻¹) ⋆[ContinuousLinearMap.lsmul ℝ ℂ] f) w := by
+  funext w
+  rw [cauchyTransform_apply]
+  congr 1
+  simpa only [ContinuousLinearMap.lsmul_apply] using
+    (convolution_eq_swap (L := ContinuousLinearMap.lsmul ℝ ℂ)
+      (f := fun z : ℂ ↦ z⁻¹) (g := f) (x := w)).symm
+
+/-- A supported input may be integrated over its input disc in the Cauchy formula. -/
+theorem cauchyTransform_eq_integral_closedBall {f : ℂ → F} {c : ℂ} {r : ℝ≥0}
+    (hf : support f ⊆ closedBall c (r : ℝ)) (w : ℂ) :
+    cauchyTransform f w =
+      (Real.pi : ℂ)⁻¹ • ∫ z in closedBall c (r : ℝ), (w - z)⁻¹ • f z := by
+  rw [cauchyTransform_apply, setIntegral_eq_integral_of_forall_compl_eq_zero]
+  intro z hz
+  rw [notMem_support.mp (fun h ↦ hz (hf h)), smul_zero]
+
+/-- Almost-everywhere changes in the source leave the actual Cauchy integral unchanged. -/
+theorem cauchyTransform_congr_ae {f g : ℂ → F} (hfg : f =ᵐ[volume] g) :
+    cauchyTransform f = cauchyTransform g := by
+  funext w
+  simp only [cauchyTransform_apply]
+  congr 1
+  exact integral_congr_ae (hfg.mono fun z hz ↦ congrArg (fun v ↦ (w - z)⁻¹ • v) hz)
+
+@[simp]
+theorem cauchyTransform_zero : cauchyTransform (0 : ℂ → F) = 0 := by
+  ext w
+  simp only [cauchyTransform_apply, Pi.zero_apply, smul_zero, integral_zero]
 
 section Polar
 
@@ -288,5 +338,47 @@ theorem differentiableOn_integral_sub_inv_smul_compl {f : ℂ → F} {k : Set �
     DifferentiableOn ℂ (fun w ↦ ∫ z, (w - z)⁻¹ • f z) kᶜ := fun w hw ↦
   ((HasCompactSupport.intro hk hfk).differentiableAt_integral_sub_inv_smul_of_eq_zero hf
     (hfk w hw)).differentiableWithinAt
+
+omit [CompleteSpace F] in
+/-- The real derivative of the Cauchy transform on compactly supported `C¹` data is obtained
+by applying the same kernel to the derivative of the source. -/
+theorem _root_.HasCompactSupport.hasFDerivAt_cauchyTransform {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
+    HasFDerivAt (cauchyTransform f)
+      ((Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • fderiv ℝ f z) w :=
+  (hc.hasFDerivAt_integral_sub_inv_smul hf w).const_smul _
+
+/-- On compactly supported `C¹` data the normalized Cauchy transform is a right inverse of
+`bar∂ = (∂ₛ + i ∂ₜ) / 2`. -/
+theorem _root_.HasCompactSupport.conjWirtingerDeriv_cauchyTransform {f : ℂ → F}
+    (hc : HasCompactSupport f) (hf : ContDiff ℝ 1 f) (w : ℂ) :
+    conjWirtingerDeriv (cauchyTransform f) w 1 = f w := by
+  have hd := hc.hasFDerivAt_integral_sub_inv_smul hf w
+  have he := hc.conjWirtingerDeriv_integral_sub_inv_smul_apply_one hf w
+  rw [show cauchyTransform f = (fun x ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (x - z)⁻¹ • f z) from
+    funext (cauchyTransform_apply f)]
+  have hc0 : conjWirtingerDeriv (fun _ : ℂ ↦ (Real.pi : ℂ)⁻¹) w 1 = 0 := by
+    simp
+  rw [conjWirtingerDeriv_smul_apply (differentiableAt_const _) hd.differentiableAt 1, hc0,
+    zero_smul, add_zero, he, smul_smul, inv_mul_cancel₀ (by exact_mod_cast Real.pi_ne_zero),
+    one_smul]
+
+/-- The normalized Cauchy transform is also a left inverse on compactly supported `C¹` maps:
+applying it to `bar∂ u` recovers `u`, with no boundary term. -/
+theorem _root_.HasCompactSupport.cauchyTransform_conjWirtingerDeriv {u : ℂ → F}
+    (hc : HasCompactSupport u) (hu : ContDiff ℝ 1 u) (w : ℂ) :
+    cauchyTransform (fun z ↦ conjWirtingerDeriv u z 1) w = u w := by
+  rw [cauchyTransform_apply]
+  have heq : (fun z ↦ (w - z)⁻¹ • conjWirtingerDeriv u z 1) =
+      fun z ↦ (2 : ℂ)⁻¹ • ((w - z)⁻¹ •
+        (fderiv ℝ u z 1 + Complex.I • fderiv ℝ u z Complex.I)) := by
+    funext z
+    simp only [conjWirtingerDeriv_apply, smul_eq_mul, mul_one]
+    exact smul_comm _ _ _
+  rw [heq, integral_smul, smul_smul]
+  convert hc.two_pi_inv_smul_integral_sub_inv_smul_fderiv_apply_one_add_I_smul_apply_I hu w
+    using 1
+  congr 1
+  field_simp
 
 end TauCeti
