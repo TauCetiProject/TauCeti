@@ -50,6 +50,8 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
   `m ∈ ℤ`, as a `q`-expansion in `e(z / M)`.
 * `TauCeti.pi_mul_cot_pi_mul_val_div_eq_sum`: the finite Fourier expansion of `π cot (π j / M)`
   at the nonzero residues `j` modulo `M`.
+* `TauCeti.sum_pi_mul_cot_pi_mul_val_div_mul_stdAddChar`: the finite Fourier transform of
+  `j ↦ π cot (π j / M)`, the sawtooth `x ↦ π i (M - 2 x)` vanishing at `x = 0`.
 * `TauCeti.norm_pi_mul_cot_pi_mul_add_pi_mul_I_le`,
   `TauCeti.norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le`: the exponential approach to `∓ π i`.
 -/
@@ -420,5 +422,67 @@ theorem pi_mul_cot_pi_mul_val_div_eq_sum (M : ℕ) [NeZero M] {j : ZMod M} (hj :
   ring_nf
   rw [I_sq]
   ring
+
+/-- **The finite Fourier transform of the cotangent at the division points.** For a residue `x`
+modulo `M`, `∑_{j mod M} π cot (π j / M) e(x j / M)` is `π i (M - 2 x)` if `x ≠ 0`, with
+`0 ≤ x < M` the representative of `x`, and `0` if `x = 0`. The term at `j = 0` is `cot 0 = 0`. -/
+theorem sum_pi_mul_cot_pi_mul_val_div_mul_stdAddChar (M : ℕ) [NeZero M] (x : ZMod M) :
+    ∑ j : ZMod M, π * cot (π * (j.val / M)) * ZMod.stdAddChar (x * j) =
+      if x = 0 then 0 else π * I * (M - 2 * x.val) := by
+  classical
+  have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
+  -- `∑_m m = M (M - 1) / 2`
+  have hsum : ∑ m : ZMod M, (m.val : ℂ) = M * (M - 1) / 2 := by
+    have h := Finset.sum_range_id_mul_two M
+    have h1 : 1 ≤ M := NeZero.one_le
+    rw [ZMod.sum_val_eq_sum_range (fun i ↦ (i : ℂ)), ← Nat.cast_sum, eq_div_iff two_ne_zero]
+    exact_mod_cast (by rw [h, Nat.cast_mul, Nat.cast_sub h1, Nat.cast_one] :
+      ((∑ i ∈ Finset.range M, i) * 2 : ℕ) = (M : ℂ) * (M - 1))
+  -- each cotangent is its finite Fourier expansion, corrected at `j = 0`
+  have hexp (j : ZMod M) : π * cot (π * (j.val / M)) =
+      π * I + 2 * π * I / M * ∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j) -
+        if j = 0 then π * I * M else 0 := by
+    rcases eq_or_ne j 0 with rfl | hj
+    · simp only [ZMod.val_zero, CharP.cast_eq_zero, zero_div, mul_zero, Complex.cot_zero,
+        AddChar.map_zero_eq_one, mul_one, hsum, ↓reduceIte]
+      field_simp
+      ring
+    · rw [TauCeti.pi_mul_cot_pi_mul_val_div_eq_sum M hj]
+      simp [hj]
+  have horth (y : ZMod M) :
+      ∑ j : ZMod M, (ZMod.stdAddChar (y * j) : ℂ) = if y = 0 then (M : ℂ) else 0 := by
+    simpa [mul_comm, ZMod.card] using AddChar.sum_mulShift y (ZMod.isPrimitive_stdAddChar M)
+  have hinner (j : ZMod M) : (∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j)) *
+      ZMod.stdAddChar (x * j) = ∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar ((m + x) * j) := by
+    rw [Finset.sum_mul]
+    refine Finset.sum_congr rfl fun m _ ↦ ?_
+    rw [add_mul, AddChar.map_add_eq_mul, mul_assoc]
+  have hS : ∑ j : ZMod M, (∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j)) *
+      ZMod.stdAddChar (x * j) = M * (-x).val := by
+    rw [Finset.sum_congr rfl fun j _ ↦ hinner j, Finset.sum_comm]
+    simp_rw [← Finset.mul_sum, horth]
+    simp_rw [mul_ite, mul_zero, add_eq_zero_iff_eq_neg, Finset.sum_ite_eq', Finset.mem_univ,
+      ite_true, mul_comm]
+  have hC : ∑ j : ZMod M, (if j = 0 then π * I * M else 0) * ZMod.stdAddChar (x * j) =
+      π * I * M := by
+    simp
+  calc ∑ j : ZMod M, π * cot (π * (j.val / M)) * ZMod.stdAddChar (x * j)
+      = π * I * ∑ j : ZMod M, (ZMod.stdAddChar (x * j) : ℂ) + 2 * π * I / M *
+          ∑ j : ZMod M, (∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j)) *
+            ZMod.stdAddChar (x * j) -
+          ∑ j : ZMod M, (if j = 0 then π * I * M else 0) * ZMod.stdAddChar (x * j) := by
+        rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib, ← Finset.sum_sub_distrib]
+        refine Finset.sum_congr rfl fun j _ ↦ ?_
+        rw [hexp]
+        ring
+    _ = _ := by
+        rw [hS, hC, horth]
+        rcases eq_or_ne x 0 with rfl | hx
+        · simp
+        · have : NeZero x := ⟨hx⟩
+          rw [ZMod.val_neg_of_ne_zero, Nat.cast_sub x.val_lt.le]
+          simp [hx]
+          field_simp
+          ring
 
 end TauCeti

@@ -84,6 +84,12 @@ depend on the choice of representatives (`charWeight_intCast`). -/
 def charWeight (a : Fin 2 → ZMod N) : ℂ :=
   if v ∣ (a 0).val then ψ (((a 0).val / v : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0
 
+/-- The defining formula of the character weight, on the least nonnegative representatives. -/
+theorem charWeight_def (a : Fin 2 → ZMod N) :
+    charWeight N ψ φ a =
+      if v ∣ (a 0).val then ψ (((a 0).val / v : ℕ) : ZMod u) * φ⁻¹ ((a 1).val : ZMod v) else 0 :=
+  (rfl)
+
 variable {N}
 
 /-- The weight at the reduction of an integer pair `x`: `ψ(x₀ / v) φ⁻¹(x₁)` if `v ∣ x₀`,
