@@ -93,9 +93,7 @@ theorem adjoint_precompEquivOfLift {f' : AddCircle T → ℂ} (hf' : ∀ x : ℝ
         mulFourierSeries (fourierCoeff fun x ↦ (f' x)⁻¹) := by
   set P := precompEquivOfLift hF hper hφ hc hcF hMF
   -- `f'` is the derivative of the lift, regarded as a function on the circle.
-  obtain rfl : f' = derivOfLift hF hper hF'.continuous := funext fun y ↦ by
-    obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
-    rw [hf', derivOfLift_coe]
+  obtain rfl := eq_derivOfLift_of_coe hF hper hF'.continuous hf'
   have hf'₀ := derivOfLift_ne_zero hF hper hc hcF hF'.continuous
   -- On `H⁰`, multiplication by the smooth function `1 / f'` is the multiplication operator.
   have hinv := (contDiff_derivOfLift hF hper hF' hF'.continuous).inv fun x ↦ hf'₀ x

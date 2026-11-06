@@ -82,14 +82,6 @@ variable {F F' : ℝ → ℝ} {c M : ℝ} (hF : ∀ x, HasDerivAt F (F' x) x)
   (hper : ∀ x, F (x + T) = F x + T) (hφ : ∀ x : ℝ, φ x = F x) (hc : 0 < c)
   (hcF : ∀ x, c ≤ F' x) (hMF : ∀ x, F' x ≤ M) (hF' : ContDiff ℝ ∞ F')
 
-omit hT in
-include hF' in
-/-- The derivative of a lift with smooth derivative is a smooth function on the circle. -/
-theorem contDiff_derivOfLift (hF'c : Continuous F') :
-    ContDiff ℝ ∞ fun x : ℝ ↦ derivOfLift hF hper hF'c x := by
-  simp only [derivOfLift_coe]
-  exact ofRealCLM.contDiff.comp hF'
-
 /-- The weak chain rule on `H¹`: the derivative of `u ∘ φ` is `F' · (u' ∘ φ)`, with the
 multiplication by the smooth function `F'` acting through its Fourier coefficients. -/
 private theorem derivative_precompOneEquivOfLift_eq {f' : AddCircle T → ℂ}
@@ -100,9 +92,7 @@ private theorem derivative_precompOneEquivOfLift_eq {f' : AddCircle T → ℂ}
         (precompEquivOfLift hF hper hφ hc hcF hMF
           (derivative T (show (0 : ℝ) + 1 ≤ 1 by norm_num) a)) := by
   set g := derivOfLift hF hper hF'.continuous
-  have hfg : ⇑g = f' := funext fun y ↦ by
-    obtain ⟨x, rfl⟩ := QuotientAddGroup.mk_surjective y
-    rw [derivOfLift_coe, hf']
+  have hfg : ⇑g = f' := (eq_derivOfLift_of_coe hF hper _ hf').symm
   rw [← hfg, mulFourierSeries_fourierCoeff_eq_multiplicationOperator
     (contDiff_derivOfLift hF hper hF' _)]
   refine (toLpₗᵢ T).injective (Lp.ext ?_)
