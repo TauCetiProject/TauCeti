@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.AlgebraicTopology.LocalCoefficient.QuotientCovering.Pullback
 public import TauCeti.AlgebraicTopology.Singular.Twisted.GroupHomology
 public import TauCeti.AlgebraicTopology.Singular.ModuleChains.EquivariantMap
 
@@ -188,5 +189,36 @@ theorem twistedHomologyIsoGroupHomology_inv_naturality_over
   rw [Iso.comp_inv_eq, Category.assoc,
     hG.twistedHomologyIsoGroupHomology_hom_naturality_over hH k f hf b hb ξ n,
     Iso.inv_hom_id_assoc]
+
+/-- Pushing twisted homology forward along `b : B ⟶ C` from the pulled-back associated local
+system `b^* L_D` corresponds, via `IsQuotientCoveringMap.associatedLocalSystemBaseChangeIso`, to
+the change-of-group map `groupHomology.map φ (𝟙 (Rep.res φ D))` in group homology. -/
+@[reassoc]
+theorem twistedHomologyIsoGroupHomology_hom_pullback
+    [ContractibleSpace E] [ContractibleSpace F] (D : Rep.{u} k H) (n : ℕ) :
+    twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k D) n ≫
+        (hH.twistedHomologyIsoGroupHomology k D n).hom =
+      twistedHomologyCoefficientMap.{u, u, u}
+          (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).inv n ≫
+        (hG.twistedHomologyIsoGroupHomology k (Rep.res φ D) n).hom ≫
+        groupHomology.map φ (𝟙 (Rep.res φ D)) n := by
+  have h := hG.twistedHomologyIsoGroupHomology_hom_naturality_over hH k f hf b hb
+    (𝟙 (Rep.res φ D)) n
+  rw [associatedTwistedChainMap_def, HomologicalComplex.homologyMap_comp,
+    ← associatedLocalSystemBaseChangeIso_hom] at h
+  calc
+    twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k D) n ≫
+        (hH.twistedHomologyIsoGroupHomology k D n).hom
+      = (twistedHomologyCoefficientMap.{u, u, u}
+            (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).inv n ≫
+          twistedHomologyCoefficientMap.{u, u, u}
+            (hG.associatedLocalSystemBaseChangeIso k hH f hf b hb D).hom n) ≫
+        twistedHomologyMap.{u, u, u} b (hH.associatedLocalSystem k D) n ≫
+        (hH.twistedHomologyIsoGroupHomology k D n).hom := by
+      rw [← twistedHomologyCoefficientMap_comp, Iso.inv_hom_id,
+        twistedHomologyCoefficientMap_id, Category.id_comp]
+    _ = _ := by
+      simp only [Category.assoc] at h ⊢
+      rw [h]
 
 end IsQuotientCoveringMap

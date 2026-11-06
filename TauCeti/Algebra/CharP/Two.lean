@@ -25,6 +25,8 @@ divisors, two roots of `X ^ 2 + t X - s` are equal or differ by `t`
 (`TauCeti.eq_or_eq_add_of_sq_add_mul_eq_of_charTwo`). An algebra endomorphism over a ring of
 characteristic two that translates an element by a scalar is an involution on that element
 (`AlgHom.apply_apply_of_apply_eq_add_algebraMap`), as for the translations permuting these roots.
+
+differentials, and there `a + b = 0` exactly when `a = b` (`TauCeti.add_eq_zero_iff_eq_of_charTwo`).
 -/
 
 public section
@@ -55,6 +57,12 @@ theorem eq_or_eq_add_of_sq_add_mul_eq_of_charTwo {S : Type*} [CommRing S] [NoZer
   rcases mul_eq_zero.mp h with h | h
   · exact Or.inl (by linear_combination h - a * h2)
   · exact Or.inr (by linear_combination h - (a + t) * h2)
+
+/-- In a module over a semiring of characteristic two, `a + b = 0` exactly when `a = b`. -/
+theorem add_eq_zero_iff_eq_of_charTwo (R : Type*) {M : Type*} [Semiring R] [CharP R 2]
+    [AddCommMonoid M] [Module R M] {a b : M} : a + b = 0 ↔ a = b := by
+  refine ⟨fun h => ?_, fun h => h ▸ add_self_eq_zero_of_charTwo R a⟩
+  rw [← add_zero a, ← add_self_eq_zero_of_charTwo R b, ← add_assoc, h, zero_add]
 
 end TauCeti
 

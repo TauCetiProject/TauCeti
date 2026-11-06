@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.RepresentationTheory.Quiver.Preprojective.Signless.Affine.D
 public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import TauCeti.LinearAlgebra.Matrix.Diagonal
 public import TauCeti.LinearAlgebra.Matrix.Kronecker.Basic
@@ -68,7 +69,7 @@ public section
 
 namespace TauCeti
 
-open PathAlgebra DoubledQuiver AInfinity ReducedTensorWords Matrix
+open PathAlgebra DoubledQuiver AInfinity ReducedTensorWords _root_.Matrix
 open scoped Kronecker
 
 universe u w
@@ -249,5 +250,62 @@ theorem not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlge
     simp [List.map_ofFn, Function.comp_def]
   rw [hmap, ← map_list_prod, RingHom.mapMatrix_apply, ← AddMonoidHom.map_trace, htr, map_one]
   exact one_ne_zero
+
+/-- A detected loop gives a nonzero higher Hochschild class. -/
+theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
+    (β : W → W → Matrix m m k) (hβ : ∀ x, ∑ y ∈ H.neighborFinset x, β y x * β x y = 0)
+    (f : H.Copy G) (hH : H.IsBipartite) {n : ℕ} (hn : 1 ≤ n) {u : Fin (n + 2) → H.Dart}
+    (hu : ∀ i, (u i).fst = (u (i + 1)).snd)
+    (htr : trace (List.ofFn fun t ↦ β (u t).fst (u t).snd).prod ≠ 0) :
+    ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
+  classical
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
+    hn _ _
+    (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_ne_zero
+      f hH β hβ hn hu htr)
+
+omit [DecidableRel H.Adj] in
+/-- A detected loop gives a nonzero higher Hochschild class. -/
+theorem not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_eq_one [Nontrivial k]
+    (β : W → W → Matrix m m ℤ) (h₀ : ∀ x y, ¬H.Adj x y → β x y = 0)
+    (h : ∀ x, ∑ y, β y x * β x y = 0) (f : H.Copy G) (hH : H.IsBipartite) {n : ℕ} (hn : 1 ≤ n)
+    {u : Fin (n + 2) → H.Dart} (hu : ∀ i, (u i).fst = (u (i + 1)).snd)
+    (htr : trace (List.ofFn fun t ↦ β (u t).fst (u t).snd).prod = 1) :
+    ¬(𝒵).HochschildVanishesAt ⟨n + 2, by omega⟩ := by
+  classical
+  exact not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_not_exists_eq_obstruction
+    hn _ _
+    (not_exists_hochschildDifferential_eq_obstruction_zigzagLoopAInfinityAlgebra_of_trace_eq_one
+      f hH β h₀ h hn hu htr)
+
+/-- **Graphs containing an affine `Dₙ` have `HH^{4, -2}` nonzero.** If a graph `G` with no isolated
+vertex contains a copy of the affine diagram `Dₙ` (`n ≥ 4`), not necessarily induced, then over
+every nontrivial commutative ring the Hochschild cohomology `HH^{4, -2}` of the strict zigzag
+algebra of `G` is nonzero: the loop operation of the closed walk `1 → 0 → 1 → (n - 1) → 1` at the
+image of the branch node `1` is a Hochschild cocycle which is not a coboundary. -/
+theorem not_hochschildVanishesAt_four_zigzagStrictAInfinityAlgebra_of_isContained
+    [Nontrivial k] {n : ℕ}
+    (hn : 4 ≤ n) (hG : (AffineDynkinType.D n).graph.IsContained G) :
+    ¬(𝒵).HochschildVanishesAt ⟨4, by norm_num⟩ := by
+  obtain ⟨f⟩ := hG
+  have hnodes := AffineDynkinType.nodes_D n
+  let c : Fin (AffineDynkinType.D n).nodes := ⟨1, by omega⟩
+  let a : Fin (AffineDynkinType.D n).nodes := ⟨0, by omega⟩
+  let b : Fin (AffineDynkinType.D n).nodes := ⟨n - 1, by omega⟩
+  have h1n : 1 ≤ n - 2 := by omega
+  have h₁ : (AffineDynkinType.D n).graph.Adj c a :=
+    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inl ⟨rfl, h1n⟩))
+  have h₂ : (AffineDynkinType.D n).graph.Adj c b :=
+    (AffineDynkinType.graph_D_adj hn).2 (Or.inr (Or.inr (Or.inl ⟨rfl, rfl⟩)))
+  refine not_hochschildVanishesAt_zigzagStrictAInfinityAlgebra_of_trace_ne_zero
+    (fun i j : Fin (AffineDynkinType.D n).nodes ↦ affineDMatrix k n i j)
+    (sum_affineDMatrix_mul_affineDMatrix k hn) f (AffineDynkinType.isBipartite_graph_D hn)
+    (n := 2) (by norm_num)
+    (u := ![⟨(b, c), h₂.symm⟩, ⟨(c, b), h₂⟩, ⟨(a, c), h₁.symm⟩, ⟨(c, a), h₁⟩])
+    (fun i ↦ by fin_cases i <;> rfl) ?_
+  have htr := trace_affineDMatrix_backtracks k hn
+  simp only [mul_assoc] at htr
+  simp [List.ofFn_succ, c, a, b, htr]
+
 
 end TauCeti

@@ -8,7 +8,6 @@ module
 public import Mathlib.RingTheory.Etale.Field
 public import TauCeti.RingTheory.Discriminant.BaseChange
 public import TauCeti.RingTheory.Trace.Form
-import Mathlib.Algebra.DualNumber
 import Mathlib.RingTheory.Finiteness.ModuleFinitePresentation
 import Mathlib.RingTheory.Ideal.Nonunits
 import Mathlib.RingTheory.Smooth.Fiber
@@ -66,11 +65,9 @@ fibre case in the proof of Stacks, Lemma 49.3.1 (0BJF). -/
 theorem Algebra.etale_iff_traceForm_nondegenerate (K B : Type*) [Field K] [CommRing B]
     [Algebra K B] [FiniteDimensional K B] :
     Algebra.Etale K B ↔ (Algebra.traceForm K B).Nondegenerate := by
-  classical
   constructor
   · intro hB
     obtain ⟨I, _, Ai, _, _, e, hAi⟩ := (Algebra.Etale.iff_exists_algEquiv_prod K B).mp hB
-    have : Fintype I := Fintype.ofFinite I
     have hfin : ∀ i, Module.Finite K (Ai i) := fun i ↦ (hAi i).1
     have hsep : ∀ i, Algebra.IsSeparable K (Ai i) := fun i ↦ (hAi i).2
     exact (Algebra.traceForm_nondegenerate_congr e).mpr
@@ -119,8 +116,8 @@ theorem Algebra.etale_of_isUnit_discr {A B ι : Type*} [CommRing A] [CommRing B]
 /-- **The discriminant criterion.** A finite free algebra is étale iff the discriminant of a basis
 is a unit. Stacks, Lemma 49.3.1 (0BJF), affine form. -/
 @[stacks 0BJF "affine form"]
-theorem Algebra.etale_iff_isUnit_discr (A B : Type*) [CommRing A] [CommRing B] [Algebra A B]
-    {ι : Type*} [Fintype ι] [DecidableEq ι] (b : Module.Basis ι A B) :
+theorem Algebra.etale_iff_isUnit_discr {A B ι : Type*} [CommRing A] [CommRing B] [Algebra A B]
+    [Fintype ι] [DecidableEq ι] (b : Module.Basis ι A B) :
     Algebra.Etale A B ↔ IsUnit (Algebra.discr A b) := by
   refine ⟨fun hB ↦ ?_, Algebra.etale_of_isUnit_discr b⟩
   by_contra hunit
@@ -136,7 +133,7 @@ theorem Algebra.isUnit_algebraMap_discr_iff_etale_baseChange {A B ι : Type*} [C
     [CommRing B] [Algebra A B] [Fintype ι] [DecidableEq ι] (b : Module.Basis ι A B)
     (A' : Type*) [CommRing A'] [Algebra A A'] :
     IsUnit (algebraMap A A' (Algebra.discr A b)) ↔ Algebra.Etale A' (A' ⊗[A] B) := by
-  rw [Algebra.etale_iff_isUnit_discr _ _ (Algebra.TensorProduct.basis A' b),
+  rw [Algebra.etale_iff_isUnit_discr (Algebra.TensorProduct.basis A' b),
     Algebra.discr_basis_baseChange]
 
 /-- The discriminant of a basis of a finite free algebra is a unit at a prime `𝔭` iff the base
@@ -147,18 +144,5 @@ theorem Algebra.isUnit_discr_localization_iff {A B ι : Type*} [CommRing A]
     IsUnit (algebraMap A (Localization.AtPrime p) (Algebra.discr A b)) ↔
       Algebra.Etale (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] B) :=
   Algebra.isUnit_algebraMap_discr_iff_etale_baseChange b _
-
-/-- The dual numbers over a field are not étale, and the discriminant of every basis vanishes. -/
-example (k : Type*) [Field k] {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι k (DualNumber k)) :
-    ¬ Algebra.Etale k (DualNumber k) ∧ Algebra.discr k b = 0 := by
-  have hnot : ¬ Algebra.Etale k (DualNumber k) := by
-    intro h
-    have : IsReduced (DualNumber k) := Algebra.FormallyUnramified.isReduced_of_field k _
-    have hε : IsNilpotent (DualNumber.eps : DualNumber k) := ⟨2, DualNumber.eps_pow_two⟩
-    simpa using congrArg TrivSqZeroExt.snd hε.eq_zero
-  refine ⟨hnot, ?_⟩
-  by_contra hd
-  exact hnot ((Algebra.etale_iff_isUnit_discr k _ b).mpr (Ne.isUnit hd))
 
 end TauCeti

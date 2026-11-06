@@ -69,6 +69,8 @@ the kernel at the cost of a factor `(t' - s)⁻¹`), which integrates to `O(H h^
 
 * `TauCeti.heatDuhamelPotential`: the Duhamel potential `∫₀ᵗ (K_{t-s} ⋆ f(s, ·))(x) ds`.
 * `TauCeti.norm_heatDuhamelPotential_le`: the bound `‖w(t, x)‖ ≤ M t`.
+* `TauCeti.exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution`: the derivatives
+  `D^m (K_τ ⋆ f(s, ·))(x)` agree with a jointly measurable function of `(s, τ)`.
 * `TauCeti.intervalIntegrable_heatKernel_convolution`,
   `TauCeti.intervalIntegrable_iteratedFDeriv_heatKernel_convolution`,
   `TauCeti.intervalIntegrable_iteratedFDeriv_heatKernel_convolution_of_holderWith`: the time
@@ -178,37 +180,48 @@ theorem norm_heatDuhamelPotential_le (ht : 0 ≤ t)
   filter_upwards [hae] with s hs hsI
   exact norm_heatKernel_convolution_le (sub_pos.2 (hs hsI).1.2) (hs hsI).2 x
 
+/-- **Joint measurability of the derivatives of heat convolutions.** For jointly measurable `f`,
+some jointly strongly measurable function of `(s, τ)` equals `D^m (K_τ ⋆ f(s, ·))(x)` whenever
+`τ > 0` and `f(s, ·)` is essentially bounded. Writing `D^m K_τ` through the parabolic scaling of
+`K_1` makes the convolution integrand jointly measurable in `(s, τ, z)`. -/
+theorem exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution
+    (hf : StronglyMeasurable (Function.uncurry f)) (m : ℕ) (x : E) :
+    ∃ Φ : ℝ × ℝ → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F, StronglyMeasurable Φ ∧
+      ∀ s τ (B : ℝ), 0 < τ → (∀ᵐ y, ‖f s y‖ ≤ B) →
+        Φ (s, τ) = iteratedFDeriv ℝ m (heatKernel τ ⋆ f s) x := by
+  set Ψ : (ℝ × ℝ) × E → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F := fun p =>
+    (p.1.2 ^ (-(finrank ℝ E + m : ℝ) / 2) •
+      iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) (p.1.2 ^ (-1 / 2 : ℝ) • p.2)).smulRight
+        (f p.1.1 (x - p.2))
+  have hΨ : StronglyMeasurable Ψ := by
+    have h₁ : Measurable fun p : (ℝ × ℝ) × E => p.1.2 ^ (-(finrank ℝ E + m : ℝ) / 2) := by
+      fun_prop
+    have h₂ : Measurable fun p : (ℝ × ℝ) × E => p.1.2 ^ (-1 / 2 : ℝ) • p.2 := by fun_prop
+    have h₃ : StronglyMeasurable fun p : (ℝ × ℝ) × E => f p.1.1 (x - p.2) :=
+      hf.comp_measurable (g := fun p : (ℝ × ℝ) × E => (p.1.1, x - p.2)) (by fun_prop)
+    exact (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).continuous₂
+      |>.comp_stronglyMeasurable ((h₁.stronglyMeasurable.smul
+        (((contDiff_heatKernel 1).continuous_iteratedFDeriv le_top).comp_stronglyMeasurable
+          h₂.stronglyMeasurable)).prodMk h₃)
+  refine ⟨fun q => ∫ z, Ψ (q, z), hΨ.integral_prod_right', fun s τ B hτ hB => ?_⟩
+  rw [iteratedFDeriv_heatKernel_convolution (g := f s) hτ
+    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable hB m x]
+  refine integral_congr_ae (ae_of_all _ fun z => ?_)
+  simp only [Ψ, iteratedFDeriv_heatKernel_eq_rpow_smul hτ]
+
 /-- For jointly measurable essentially bounded `f`, the spatial derivatives
-`D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. Writing `D^m K_{t-s}` through the parabolic
-scaling of `K_1` makes the integrand jointly measurable in `(s, z)`. -/
+`D^m (K_{t-s} ⋆ f(s, ·))(x)` are measurable in `s`. -/
 private theorem aestronglyMeasurable_iteratedFDeriv_heatKernel_convolution
     (hf : StronglyMeasurable (Function.uncurry f))
     (hfM : ∀ᵐ s ∂volume.restrict (Ioo 0 t), ∀ᵐ y, ‖f s y‖ ≤ M)
     (ht : 0 < t) (m : ℕ) (x : E) :
     AEStronglyMeasurable (fun s => iteratedFDeriv ℝ m (heatKernel (t - s) ⋆ f s) x)
       (volume.restrict (Ι 0 t)) := by
-  set Φ : ℝ × E → ContinuousMultilinearMap ℝ (fun _ : Fin m => E) F := fun p =>
-    ((t - p.1) ^ (-(finrank ℝ E + m : ℝ) / 2) •
-      iteratedFDeriv ℝ m (heatKernel 1 : E → ℝ) ((t - p.1) ^ (-1 / 2 : ℝ) • p.2)).smulRight
-        (f p.1 (x - p.2))
-  have hΦ : StronglyMeasurable Φ := by
-    have h₁ : Measurable fun p : ℝ × E => (t - p.1) ^ (-(finrank ℝ E + m : ℝ) / 2) := by
-      fun_prop
-    have h₂ : Measurable fun p : ℝ × E => (t - p.1) ^ (-1 / 2 : ℝ) • p.2 := by fun_prop
-    have h₃ : StronglyMeasurable fun p : ℝ × E => f p.1 (x - p.2) :=
-      hf.comp_measurable (g := fun p : ℝ × E => (p.1, x - p.2)) (by fun_prop)
-    exact (ContinuousMultilinearMap.smulRightL ℝ (fun _ : Fin m => E) F).continuous₂
-      |>.comp_stronglyMeasurable ((h₁.stronglyMeasurable.smul
-        (((contDiff_heatKernel 1).continuous_iteratedFDeriv le_top).comp_stronglyMeasurable
-          h₂.stronglyMeasurable)).prodMk h₃)
-  refine (hΦ.integral_prod_right' (ν := volume)).aestronglyMeasurable.congr ?_
+  obtain ⟨Φ, hΦ, hΦeq⟩ := exists_stronglyMeasurable_eq_iteratedFDeriv_heatKernel_convolution hf m x
+  refine (hΦ.comp_measurable (by fun_prop : Measurable fun s : ℝ => (s, t - s))
+    ).aestronglyMeasurable.congr ?_
   filter_upwards [ae_mem_Ioo_and_ae_norm_le ht.le hfM] with s hs
-  have hts : 0 < t - s := sub_pos.2 hs.1.2
-  have hfs : AEStronglyMeasurable (f s) volume :=
-    (hf.comp_measurable measurable_prodMk_left).aestronglyMeasurable
-  rw [iteratedFDeriv_heatKernel_convolution hts hfs hs.2 m x]
-  refine integral_congr_ae (ae_of_all _ fun z => ?_)
-  simp only [Φ, iteratedFDeriv_heatKernel_eq_rpow_smul hts]
+  exact hΦeq s (t - s) M (sub_pos.2 hs.1.2) hs.2
 
 /-- The time slices `K_{t-s} ⋆ f(s, ·)` are smooth for almost every `s ∈ Ι 0 t`. -/
 private theorem ae_contDiff_heatKernel_convolution (hf : StronglyMeasurable (Function.uncurry f))

@@ -50,39 +50,36 @@ abbrev strictLowerTriangle (p : ℕ) := {ij : Fin p × Fin p // ij.2 < ij.1}
 
 variable {p : ℕ}
 
-/-- Grouping the strictly lower positions by column: the zero-based column `j` contains
-`p - 1 - j` positions, so a product over `strictLowerTriangle p` of a factor depending only on
-`p - j - 2` becomes a product over `k ∈ [1, p)` of `k`-th powers. -/
-theorem prod_strictLowerTriangle_eq_prod_Ico {M : Type*} [CommMonoid M] (F : ℕ → M) :
-    ∏ ij : strictLowerTriangle p, F (p - ij.1.2.1 - 2) = ∏ k ∈ Finset.Ico 1 p, F (k - 1) ^ k := by
-  have hcard (j : Fin p) :
-      (Finset.univ.filter fun ij : strictLowerTriangle p ↦ ij.1.2 = j).card = p - 1 - j := by
-    rw [← Fin.card_Ioi j]
-    refine Finset.card_bij (fun ij _ ↦ ij.1.1) (fun ij hij ↦ ?_) (fun ij hij kl hkl h ↦ ?_)
-      fun i hi ↦ ⟨⟨(i, j), Finset.mem_Ioi.1 hi⟩, by simp, rfl⟩
-    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij
-      exact Finset.mem_Ioi.2 (hij ▸ ij.2)
-    · simp only [Finset.mem_filter, Finset.mem_univ, true_and] at hij hkl
-      exact Subtype.ext (Prod.ext h (hij.trans hkl.symm))
-  calc
-    _ = ∏ j : Fin p, ∏ ij : strictLowerTriangle p with ij.1.2 = j, F (p - ij.1.2.1 - 2) :=
-      (Finset.prod_fiberwise _ _ _).symm
-    _ = ∏ j : Fin p, F (p - 1 - j - 1) ^ (p - 1 - j) := by
-      refine Finset.prod_congr rfl fun j _ ↦ ?_
-      rw [Finset.prod_congr rfl fun ij hij ↦ by
-        rw [(Finset.mem_filter.1 hij).2], Finset.prod_const, hcard]
-      congr 2
-      omega
-    _ = ∏ k ∈ Finset.range p, F (k - 1) ^ k :=
-      (Fin.prod_univ_eq_prod_range (fun j ↦ F (p - 1 - j - 1) ^ (p - 1 - j)) p).trans
-        (Finset.prod_range_reflect (fun k ↦ F (k - 1) ^ k) p)
-    _ = _ := by
-      refine (Finset.prod_subset (fun k hk ↦ ?_) fun k hk hk' ↦ ?_).symm
-      · exact Finset.mem_range.2 (Finset.mem_Ico.1 hk).2
-      · obtain rfl : k = 0 := by
-          simp only [Finset.mem_range, Finset.mem_Ico, not_and, not_lt] at hk hk'
-          omega
-        simp
+/-- The strict-lower positions in column `j` correspond to the row indices strictly above `j`. -/
+def strictLowerTriangleColumnEquiv (j : Fin p) :
+    {ij : strictLowerTriangle p // ij.1.2 = j} ≃ Set.Ioi j where
+  toFun ij := ⟨ij.1.1.1, by simpa [ij.2] using ij.1.2⟩
+  invFun i := ⟨⟨(i.1, j), i.2⟩, rfl⟩
+  left_inv ij := by
+    apply Subtype.ext
+    apply Subtype.ext
+    exact Prod.ext rfl ij.2.symm
+  right_inv i := by
+    apply Subtype.ext
+    rfl
+
+/-- The column equivalence sends a strict-lower position to its row index. -/
+@[simp]
+theorem strictLowerTriangleColumnEquiv_apply_coe (j : Fin p)
+    (ij : {ij : strictLowerTriangle p // ij.1.2 = j}) :
+    (strictLowerTriangleColumnEquiv j ij : Fin p) = ij.1.1.1 := by
+  rfl
+
+/-- The inverse column equivalence pairs a row index with the fixed column. -/
+@[simp]
+theorem strictLowerTriangleColumnEquiv_symm_apply_coe (j : Fin p) (i : Set.Ioi j) :
+    ((strictLowerTriangleColumnEquiv j).symm i).1 = ⟨(i.1, j), i.2⟩ := by
+  rfl
+
+/-- Column `j` of the strict lower triangle of a `p × p` matrix has `p - 1 - j` entries. -/
+theorem card_strictLowerTriangle_column (j : Fin p) :
+    Fintype.card {ij : strictLowerTriangle p // ij.1.2 = j} = p - 1 - j.val := by
+  rw [Fintype.card_congr (strictLowerTriangleColumnEquiv j), Fintype.card_Ioi, Fin.card_Ioi]
 
 private def partialCorrelationRow (z : strictLowerTriangle p → ℝ) (i j : Fin p) : ℝ :=
   if h : j < i then z ⟨(i, j), h⟩ else 0

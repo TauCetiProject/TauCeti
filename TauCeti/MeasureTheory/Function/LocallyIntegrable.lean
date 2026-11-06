@@ -54,7 +54,9 @@ lies in `s` is integrable on the whole space.
 
 A function continuous on a compact set is bounded there, so for a measure finite on compact sets
 it lies in every `Lᵖ` on each measurable subset of that compact set.
-In particular, the squared norm of a continuous compactly supported function is integrable.
+In particular, the squared norm of a continuous compactly supported function is integrable, and so
+is the product of a continuous function whose compact support lies in an open set `U` with a
+function continuous on `U`.
 
 For a locally finite measure, the indicator of a constant on a set that is null-measurable for
 the restriction of the measure to `s` is locally integrable on `s`.
@@ -94,6 +96,8 @@ everywhere there with a function that is locally integrable on the whole space a
   every `Lᵖ` on its measurable subsets.
 * `Continuous.integrable_norm_sq_of_hasCompactSupport`: the squared norm of a continuous
   compactly supported function is integrable.
+* `Continuous.integrable_mul_of_continuousOn`: a continuous function compactly supported in an
+  open set `U`, times a function continuous on `U`, is integrable.
 
 ## Attribution
 
@@ -375,6 +379,15 @@ theorem indicator₀ {F : Type*} [TopologicalSpace F] [ESeminormedAddMonoid F] {
   (hg.indicator (measurableSet_toMeasurable μ s)).congr
     (indicator_ae_eq_of_ae_eq_set hs.toMeasurable_ae_eq)
 
+/-- The product of a locally integrable function with an almost everywhere strongly measurable,
+almost everywhere bounded one is locally integrable, the analogue of Mathlib's
+`MeasureTheory.Integrable.mul_bdd`. -/
+theorem mul_bdd {u v : X → 𝕜} {C : ℝ} (hu : LocallyIntegrable u μ)
+    (hv : AEStronglyMeasurable v μ) (hvC : ∀ᵐ x ∂μ, ‖v x‖ ≤ C) :
+    LocallyIntegrable (fun x => u x * v x) μ := fun x => by
+  obtain ⟨s, hs, hus⟩ := hu x
+  exact ⟨s, hs, hus.mul_bdd hv.restrict (ae_restrict_of_ae hvC)⟩
+
 end MeasureTheory.LocallyIntegrable
 
 namespace MeasureTheory.Lp
@@ -403,6 +416,15 @@ theorem Continuous.integrable_norm_sq_of_hasCompactSupport {F : Type*}
     (hf : Continuous f) (hcf : HasCompactSupport f) : Integrable (fun x ↦ ‖f x‖ ^ 2) μ := by
   apply Continuous.integrable_of_hasCompactSupport (by fun_prop)
   exact hcf.comp_left (g := fun v ↦ ‖v‖ ^ 2) (by simp)
+
+/-- The product of a continuous compactly supported function `f`, whose support lies in an open set
+`U`, with a function `g` continuous on `U` is integrable, for any measure finite on compact sets.
+The function `g` need not be continuous, or even bounded, off `U`. -/
+theorem Continuous.integrable_mul_of_continuousOn {R : Type*} [NormedRing R] {f g : X → R}
+    {U : Set X} (hf : Continuous f) (hcf : HasCompactSupport f) (hU : IsOpen U)
+    (hfU : tsupport f ⊆ U) (hg : ContinuousOn g U) : Integrable (fun x ↦ f x * g x) μ :=
+  ((hf.continuousOn.mul hg).continuous_of_tsupport_subset hU
+    (tsupport_mul_subset_left.trans hfU)).integrable_of_hasCompactSupport hcf.mul_right
 
 /-- A function continuous on a compact set `K` lies in every `Lᵖ` on each measurable subset of
 `K`, for a measure that is finite on compact sets: it is bounded there, and the subset has finite

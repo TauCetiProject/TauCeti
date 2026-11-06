@@ -9,7 +9,7 @@ public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Algebra.Group.Submonoid.Finsupp
 import Mathlib.LinearAlgebra.Vandermonde
-import TauCeti.MeasureTheory.Measure.FiniteMeasureExt
+import TauCeti.MeasureTheory.Measure.FiniteMeasure.Ext
 
 /-!
 # Multivariate moment determinacy on a compact set

@@ -49,7 +49,8 @@ lowering the positive coordinates lowers `F`. The two retractions compose.
   strong deformation retracts onto `M_{c-ε}` with the cells of the charts attached.
 * `TauCeti.IsMorse.exists_sublevel_union_cells_deformation`: **Milnor's cell attachment
   theorem** for a Morse function with a compact band around a critical value, with the charts and
-  the width `ε` supplied by `TauCeti.IsMorse.exists_admissible_morseCharts`.
+  the width `ε₀` supplied by `TauCeti.IsMorse.exists_admissible_morseCharts`, valid for all
+  smaller widths too.
 
 ## References
 
@@ -227,7 +228,7 @@ private theorem milnorFunction_symm_scale_le (hμa : Antitone μ)
 
 /-- Milnor's function lies below `c - ε` on the cell `{‖y‖² ≤ ε, yⱼ = 0 for j ≥ k i}` of a
 chart. -/
-private theorem milnorFunction_le_of_mem_cell (hε : 0 < ε) (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
+private theorem milnorFunction_le_of_mem_cell (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
     (hx : x ∈ (ψ i).source) (hxε : ‖ψ i x‖ ^ 2 ≤ ε)
     (hxv : ∀ j : Fin n, k i ≤ j.val → ψ i x j = 0) :
     milnorFunction ψ f c μ x ≤ c - ε := by
@@ -283,7 +284,7 @@ variable [T2Space M]
 
 /-- Away from the images of the closed balls of radius `√(2ε)`, Milnor's function agrees with `f`
 on a neighbourhood. -/
-private theorem milnorFunction_eventuallyEq [Finite ι]
+private theorem milnorFunction_eventuallyEq
     (hx : x ∉ ⋃ i, (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :
     milnorFunction ψ f c μ =ᶠ[𝓝 x] f := by
   have hclosed : IsClosed (⋃ i, (ψ i).toOpenPartialHomeomorph.symm '' closedBall 0 √(2 * ε)) :=
@@ -350,7 +351,7 @@ private theorem le_of_milnorFunction_le (hx : milnorFunction ψ f c μ x ≤ c -
 
 /-- Milnor's function has no critical points in the band `F⁻¹[c - ε, c + ε]`, provided the
 critical points of `f` in the band `f⁻¹[c - ε, c + ε]` lie in the chart sources. -/
-private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc [Finite ι]
+private theorem mfderiv_milnorFunction_ne_zero_of_mem_Icc
     (hε : 0 < ε) (hfs : ContMDiff I 𝓘(ℝ) ∞ f) (hμ : ContDiff ℝ ∞ μ) (hμa : Antitone μ)
     (hμ_nonneg : ∀ r, 0 ≤ μ r) (hμ_eq : ∀ r ≤ ε, μ r = 2 * ε)
     (hcrit : criticalPoints I f ∩ f ⁻¹' Icc (c - ε) (c + ε) ⊆ ⋃ i, (ψ i).source)
@@ -413,7 +414,7 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
   have hX : {x | F x ≤ c + ε} = {x | f x ≤ c + ε} := setOf_milnorFunction_le hψ hf hμ₀ hμ_nonneg
   have hSY : S ⊆ {x | F x ≤ c - ε} :=
     union_subset (fun x hx ↦ (milnorFunction_le hμ_nonneg x).trans hx) <| iUnion_subset
-      fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorFunction_le_of_mem_cell hψ hf hε hμ_eq hxi hxε hxv
+      fun i x ⟨hxi, hxε, hxv⟩ ↦ milnorFunction_le_of_mem_cell hψ hf hμ_eq hxi hxε hxv
   have hab : c - ε ≤ c + ε := by linarith
   have hYX : {x | F x ≤ c - ε} ⊆ {x | F x ≤ c + ε} := fun _ hx ↦ le_trans hx hab
   have hFcompact : IsCompact (F ⁻¹' Icc (c - ε) (c + ε)) :=
@@ -433,26 +434,27 @@ theorem exists_sublevel_union_cells_deformation [Finite ι] (hfs : ContMDiff I �
         (milnorFunction_symm_scale_le hψ hf hμa (hball i) hx.2 hxε hs).trans hx.1))
 
 /-- **Milnor's cell attachment theorem.** Let `f` be a Morse function on a Hausdorff manifold whose
-band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`. Then there are a width `0 < ε ≤ δ` and
+band `f⁻¹[c - δ, c + δ]` is compact, for some `0 < δ`. Then there are a width `0 < ε₀ ≤ δ` and
 normalized Morse charts `ψ p` with pairwise disjoint sources, indexed by the critical points `p`
-on the level `f⁻¹(c)`, with `ψ p p = 0`, with the closed ball of radius `√(2ε)` in the target of
+on the level `f⁻¹(c)`, with `ψ p p = 0`, with the closed ball of radius `√(2ε₀)` in the target of
 `ψ p`, and in which `f = c - Σ_{i < λ} yᵢ² + Σ_{i ≥ λ} yᵢ²`, where `λ` is the Morse index of `f`
-at `p`. The cell at `p` is the disc `{‖y‖² ≤ ε, yᵢ = 0 for i ≥ λ}` of its negative coordinates,
-read in `M` through `ψ p`.
+at `p`. For every width `0 < ε ≤ ε₀`, the cell at `p` is the disc
+`{‖y‖² ≤ ε, yᵢ = 0 for i ≥ λ}` of its negative coordinates, read in `M` through `ψ p`.
 
 The lower sublevel `{f ≤ c - ε}` with these cells attached is a strong deformation retract of
-`{f ≤ c + ε}`: there is a retraction of `{f ≤ c + ε}` onto it, and a homotopy in `{f ≤ c + ε}`
-from this retraction to the identity which fixes it pointwise. -/
+`{f ≤ c + ε}`, for every such `ε`: there is a retraction of `{f ≤ c + ε}` onto it, and a
+homotopy in `{f ≤ c + ε}` from this retraction to the identity which fixes it pointwise. -/
 theorem IsMorse.exists_sublevel_union_cells_deformation (hf : IsMorse I f) {δ : ℝ} (hδ : 0 < δ)
     (hcompact : IsCompact (f ⁻¹' Icc (c - δ) (c + δ))) :
-    ∃ ε, 0 < ε ∧ ε ≤ δ ∧
+    ∃ ε₀, 0 < ε₀ ∧ ε₀ ≤ δ ∧
       ∃ ψ : ↥(criticalPoints I f ∩ f ⁻¹' {c}) →
           PartialDiffeomorph I 𝓘(ℝ, EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) M
             (EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) ∞,
         Pairwise (Disjoint on fun p ↦ (ψ p).source) ∧
-        (∀ p, ↑p ∈ (ψ p).source ∧ ψ p p = 0 ∧ closedBall 0 √(2 * ε) ⊆ (ψ p).target ∧
+        (∀ p, ↑p ∈ (ψ p).source ∧ ψ p p = 0 ∧ closedBall 0 √(2 * ε₀) ⊆ (ψ p).target ∧
           ∀ y ∈ (ψ p).source,
             f y = c + ∑ i, (if i.val < manifoldMorseIndex I f p then -1 else 1) * ψ p y i ^ 2) ∧
+        ∀ ε, 0 < ε → ε ≤ ε₀ →
         ∃ r : C({x | f x ≤ c + ε}, ↥({x | f x ≤ c + ε} ∩ ({x | f x ≤ c - ε} ∪
             ⋃ p, (ψ p).source ∩ ψ p ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧
               ∀ i : Fin (Module.finrank ℝ E), manifoldMorseIndex I f p ≤ i.val → y i = 0}))),
@@ -461,17 +463,19 @@ theorem IsMorse.exists_sublevel_union_cells_deformation (hf : IsMorse I f) {δ :
             (ContinuousMap.id _) {x | (x : M) ∈ {x | f x ≤ c - ε} ∪
               ⋃ p, (ψ p).source ∩ ψ p ⁻¹' {y | ‖y‖ ^ 2 ≤ ε ∧
                 ∀ i : Fin (Module.finrank ℝ E), manifoldMorseIndex I f p ≤ i.val → y i = 0}}) := by
-  obtain ⟨ε, hε, hεδ, hband, ψ, hψ, hψp⟩ :=
+  obtain ⟨ε₀, hε₀, hε₀δ, hband, ψ, hψ, hψp⟩ :=
     hf.exists_admissible_morseCharts hδ hcompact (U := fun _ ↦ univ) fun _ _ ↦ univ_mem
   have : Finite ↥(criticalPoints I f ∩ f ⁻¹' {c}) :=
     ((hf.finite_criticalPoints_inter hcompact).subset
       (inter_subset_inter_right _ (preimage_mono (by simp [hδ.le])))).to_subtype
-  refine ⟨ε, hε, hεδ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
-    TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _ hε
-      (fun p ↦ (hψp p).2.2.2.1) (fun p ↦ (hψp p).2.2.2.2)
+  refine ⟨ε₀, hε₀, hε₀δ, ψ, hψ, fun p ↦ ⟨(hψp p).1, (hψp p).2.2.1, (hψp p).2.2.2⟩,
+    fun ε hε hεε₀ ↦ TauCeti.exists_sublevel_union_cells_deformation hf.contMDiff ψ hψ _ hε
+      (fun p ↦ (closedBall_subset_closedBall (Real.sqrt_le_sqrt (by linarith))).trans
+        (hψp p).2.2.2.1) (fun p ↦ (hψp p).2.2.2.2)
       (hcompact.of_isClosed_subset (isClosed_Icc.preimage hf.contMDiff.continuous)
         (preimage_mono (Icc_subset_Icc (by linarith) (by linarith))))
-      fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.1, hband hx⟩, (hψp _).1⟩⟩
+      fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx.1, hband ⟨hx.1, Icc_subset_Icc (by linarith) (by linarith)
+        hx.2⟩⟩, (hψp _).1⟩⟩
 
 end CellAttachment
 

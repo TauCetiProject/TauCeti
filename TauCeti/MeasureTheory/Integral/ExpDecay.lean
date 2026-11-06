@@ -36,6 +36,8 @@ inclusion.
 * `TauCeti.integrableOn_exp_mul_Iic_iff`: `exp (a * ·)` is integrable on `(-∞, c]` exactly when
   `0 < a`.
 * `TauCeti.integrable_exp_neg_mul_abs`: `exp (-(a * |·|))` is integrable when `0 < a`.
+* `TauCeti.integrable_exp_mul_I_mul_exp_neg_mul_abs`: the same times the oscillation
+  `exp (b * x * I)`.
 * `TauCeti.integrable_exp_neg_mul_norm`: `exp (-(a * ‖·‖))` is integrable on a finite-dimensional
   space when `0 < a`.
 -/
@@ -131,6 +133,14 @@ theorem integrable_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) :
     Integrable (fun x : ℝ ↦ Real.exp (-(a * |x|))) := by
   simpa only [neg_mul] using MeasureTheory.integrable_comp_abs
     (integrableOn_exp_mul_Ioi (a := -a) (by linarith) 0)
+
+/-- The two-sided exponential times a unimodular oscillation `exp (b * x * I)` is integrable on
+the line. -/
+theorem integrable_exp_mul_I_mul_exp_neg_mul_abs {a : ℝ} (ha : 0 < a) (b : ℝ) :
+    Integrable
+      (fun x : ℝ ↦ Complex.exp ((b : ℂ) * x * Complex.I) * (Real.exp (-(a * |x|)) : ℂ)) :=
+  ((integrable_exp_neg_mul_abs ha).ofReal).bdd_mul (c := 1) (by fun_prop)
+    (.of_forall fun x ↦ by simp [Complex.norm_exp])
 
 
 /-- At a nonnegative rate the integrand is bounded below by a positive constant on `(c, ∞)`, a set

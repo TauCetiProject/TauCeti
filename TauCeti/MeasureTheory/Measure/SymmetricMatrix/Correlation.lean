@@ -318,7 +318,7 @@ theorem preimage_correlationMatrix_setOf_posDef :
 
 variable (p) in
 theorem isOpen_posDefCorrelationRegion : IsOpen (posDefCorrelationRegion p) :=
-  (isOpen_setOfPred_posDefMatrix p).preimage (correlationMatrix p).continuous
+  (isOpen_posDefMatrix p).preimage (correlationMatrix p).continuous
 
 variable (p) in
 theorem measurableSet_posDefCorrelationRegion : MeasurableSet (posDefCorrelationRegion p) :=
