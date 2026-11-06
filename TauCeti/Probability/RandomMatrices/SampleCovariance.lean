@@ -24,12 +24,12 @@ namespace TauCeti.Probability
 open Matrix
 
 /-- The sample covariance matrix of `X`, whose columns are the observations. -/
-def sampleCovariance {p q : Type*} [Fintype p] [Fintype q] {𝕜 : Type*}
+def sampleCovariance {p q : Type*} [Fintype q] {𝕜 : Type*}
     [RCLike 𝕜] (X : Matrix p q 𝕜) : Matrix p p 𝕜 :=
   (Fintype.card q : 𝕜)⁻¹ • (X * Xᴴ)
 
 /-- A sample covariance matrix is Hermitian. -/
-theorem sampleCovariance_isHermitian {p q : Type*} [Fintype p] [Fintype q]
+theorem sampleCovariance_isHermitian {p q : Type*} [Fintype q]
     {𝕜 : Type*} [RCLike 𝕜] (X : Matrix p q 𝕜) :
     (sampleCovariance X).IsHermitian := by
   apply (Matrix.isHermitian_mul_conjTranspose_self X).smul
