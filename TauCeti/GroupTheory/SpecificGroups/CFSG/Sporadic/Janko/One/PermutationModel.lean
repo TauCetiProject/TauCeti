@@ -8,6 +8,7 @@ module
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
 import Mathlib.Data.Fin.VecNotation
 import Mathlib.Algebra.Group.Subgroup.Pointwise
+import Mathlib.Tactic.FinCases
 import Mathlib.Tactic.IntervalCases
 
 /-!
@@ -154,8 +155,8 @@ theorem presentationImage_zero : presentationImage ⟨0, by simp⟩ = a⁻¹ := 
 @[simp]
 theorem presentationImage_one : presentationImage ⟨1, by simp⟩ = b⁻¹ := (rfl)
 
--- Evaluate the long relators over the image table's grid. The smaller finite quantifiers
--- keep call-by-value evaluation within the default recursion and heartbeat budgets.
+-- Check the long relators one row at a time. Each kernel decision covers only fourteen
+-- points, avoiding the large intermediate terms from checking all 266 points together.
 private theorem perm_eq_one_of_rows (p : Equiv.Perm (Fin 266))
     (h : ∀ i : Fin 19, ∀ j : Fin 14,
       p ⟨i.val * 14 + j.val, by omega⟩ = ⟨i.val * 14 + j.val, by omega⟩) : p = 1 := by
@@ -186,7 +187,8 @@ private theorem relator_two :
     Relator.eval_pow, Relator.eval_mul, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
   apply perm_eq_one_of_rows
-  decide_cbv
+  intro i
+  fin_cases i <;> decide +kernel
 
 private theorem relator_three :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[3]'(by simp)) = 1 := by
@@ -194,7 +196,8 @@ private theorem relator_three :
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
   apply perm_eq_one_of_rows
-  decide_cbv
+  intro i
+  fin_cases i <;> decide +kernel
 
 private theorem relator_four :
     Relator.eval presentationImage (Sporadic.j1Presentation.transcribed[4]'(by simp)) = 1 := by
@@ -202,7 +205,8 @@ private theorem relator_four :
     Relator.eval_pow, Relator.eval_mul, Relator.eval_inv, Relator.eval_gen,
     presentationImage_zero, presentationImage_one]
   apply perm_eq_one_of_rows
-  decide_cbv
+  intro i
+  fin_cases i <;> decide +kernel
 
 /-- All five transcribed relators hold on the inverse ATLAS pair. -/
 theorem lift_presentationImage_toFreeGroup_eq_one
