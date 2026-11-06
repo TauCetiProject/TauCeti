@@ -63,6 +63,15 @@ theorem isGenusOneAffineE6Shape_iff : T.IsGenusOneAffineE6Shape ↔
   (∀ i j, T.intersection (e i) (e j) =
     -(T.weight (e 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j) := Iff.rfl
 
+open scoped Classical in
+/-- The affine `E₆` Cartan matrix entries, with the conditional indexed by `Fin 7`: the Cartan API
+is indexed by `Fin E6.nodes`, whose implicit decidability instance is opaque outside its
+module, so adjacency is decided classically. -/
+private lemma cartanMatrix_E6_apply (i j : Fin 7) : AffineDynkinType.E6.cartanMatrix i j =
+    if i = j then 2 else if AffineDynkinType.E6.graph.Adj i j then -1 else 0 := by
+  convert AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E6 i j using 1
+  split_ifs <;> first | rfl | contradiction
+
 /-- Overlapping proper E₆ subdiagrams determine every weight and matrix entry. -/
 private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
     (hc : Function.Injective c)
@@ -73,10 +82,7 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
         -(T.weight (c 0) : ℤ) * AffineDynkinType.E6.cartanMatrix i j := by
   classical
   have hcard : 6 < Fintype.card T.Component := by
-    have := Fintype.card_le_of_injective c hc
-    have hdim : Fintype.card (Fin 7) = 7 := Fintype.card_fin _
-    rw [hdim] at this
-    omega
+    exact Nat.lt_of_succ_le (by simpa using Fintype.card_le_of_injective c hc)
   have hne {i j : Fin 7} (h : i ≠ j) : c i ≠ c j := hc.ne h
   -- Each subdiagram omits the end of a different arm. Together they cover every pair.
   obtain ⟨w, hw2, hw1, hwcenter, hw3, hw4, hw5,
@@ -109,27 +115,16 @@ private lemma affineE6_weights_intersections (c : Fin 7 → T.Component)
       (hadj 0 1 (by simp))
   have hw : ∀ i, T.weight (c i) = T.weight (c 0) := by
     intro i
-    fin_cases i
-    · rfl
-    · exact_mod_cast hw1
-    · exact_mod_cast hw2
-    · exact_mod_cast hw3
-    · exact_mod_cast hw4
-    · exact_mod_cast hw5
-    · exact_mod_cast hw6
+    fin_cases i <;> first
+      | rfl | exact_mod_cast hw1 | exact_mod_cast hw2 | exact_mod_cast hw3 | exact_mod_cast hw4
+      | exact_mod_cast hw5 | exact_mod_cast hw6
   refine ⟨hw, ?_⟩
   intro i j
-  -- Use `Fin 7` for the conditional as well as for `c`; the Cartan API is indexed by
-  -- `Fin E6.nodes`, whose implicit decidability instance is opaque outside its module.
-  have hC (i j : Fin 7) : AffineDynkinType.E6.cartanMatrix i j =
-      if i = j then 2 else if AffineDynkinType.E6.graph.Adj i j then -1 else 0 := by
-    convert AffineDynkinType.cartanMatrix_apply AffineDynkinType.isGraphical_E6 i j using 1
-    split_ifs <;> first | rfl | contradiction
   have hG (i j : Fin 7) : AffineDynkinType.E6.graph.Adj i j ↔
       (min (i : ℕ) (j : ℕ), max (i : ℕ) (j : ℕ)) ∈
         [((0 : ℕ), (1 : ℕ)), (1, 2), (0, 3), (3, 4), (0, 5), (5, 6)] :=
     AffineDynkinType.graph_E6_adj i j
-  rw [hC]
+  rw [cartanMatrix_E6_apply]
   simp only [Fin.ext_iff, hG]
   clear hadj hc hne
   fin_cases i <;> fin_cases j <;> norm_num
