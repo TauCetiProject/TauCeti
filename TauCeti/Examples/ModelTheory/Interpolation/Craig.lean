@@ -298,13 +298,50 @@ theorem pcMem_evenFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
       realize_structureOfInvolutive_involution fun x => by simp [f]⟩,
       by simp [S, SentenceInf.realize_def, FormulaInf.realize_def, Fin.snoc_zero, hnofix]⟩
 
+/-- Over `Language.empty`, every finite structure of odd cardinality is in the projective
+class of `oddFiniteSentence`: expand it by an involution with a single fixed point. -/
+private theorem pcMem_oddFiniteSentence_of_odd {M : Type w} [Language.empty.Structure M]
+    (hfin : Finite M) {k : ℕ} (hk : Nat.card M = 2 * k + 1) :
+    LHom.PCMem LHom.sumInl oddFiniteSentence M := by
+  rw [LHom.pcMem_iff]
+  let : Fintype M := Fintype.ofFinite M
+  let e : M ≃ (Fin k ⊕ Fin k) ⊕ Unit := Fintype.equivOfCardEq <| by
+    rw [← Nat.card_eq_fintype_card, hk, Fintype.card_sum, Fintype.card_sum, Fintype.card_fin,
+      Fintype.card_unique, two_mul]
+  let swapOdd := Equiv.sumCongr (Equiv.sumComm (Fin k) (Fin k)) (Equiv.refl Unit)
+  let f : M → M := fun x => e.symm (swapOdd (e x))
+  have hfix_iff : ∀ x, f x = x ↔ x = e.symm (.inr ()) := fun x =>
+    ⟨fun hx => by
+      have hx' : swapOdd (e x) = e x := by simpa [f] using congrArg e hx
+      rcases h : e x with (i | i) | ⟨⟩
+      · simp [swapOdd, h] at hx'
+      · simp [swapOdd, h] at hx'
+      · exact e.injective (by simpa using h),
+     by rintro rfl; simp [f, swapOdd]⟩
+  let S : InvLang.Structure M := structureOfInvolutive f
+  let : InvLang.Structure M := S
+  refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
+  rw [oddFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
+    SentenceInf.realize_inf, SentenceInf.realize_not, realize_infiniteSentence_iff]
+  refine ⟨⟨⟨not_infinite_iff_finite.2 hfin,
+    realize_structureOfInvolutive_involution fun x => by simp [f, swapOdd]⟩, ?_⟩, ?_⟩
+  · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_ex,
+      realize_invAtom, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one,
+      show (0 : Fin 1) = Fin.last 0 from rfl, Fin.snoc_last]
+    exact ⟨e.symm (.inr ()), (hfix_iff (e.symm (.inr ()))).2 rfl⟩
+  · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
+      BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
+      Term.realize_var, Sum.elim_inr, relMap_structureOfInvolutive, Matrix.cons_val_zero,
+      Fin.snoc_apply_zero, Fin.snoc_zero, show (1 : Fin 2) = Fin.last 1 from rfl, Fin.snoc_last]
+    exact fun x y hx hy => ((hfix_iff x).1 hx).trans ((hfix_iff y).1 hy).symm
+
 /-- Over `Language.empty`, the projective class of `oddFiniteSentence` consists of the finite
 structures whose carrier has odd cardinality. -/
 theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     LHom.PCMem LHom.sumInl oddFiniteSentence M ↔ Finite M ∧ Odd (Nat.card M) := by
-  rw [LHom.pcMem_iff]
   constructor
-  · rintro ⟨S, -, hS⟩
+  · intro h
+    obtain ⟨S, -, hS⟩ := LHom.pcMem_iff.1 h
     let : InvLang.Structure M := S
     obtain ⟨h₁, huniq0⟩ := SentenceInf.realize_inf.1 hS
     obtain ⟨h₂, hex0⟩ := SentenceInf.realize_inf.1 h₁
@@ -326,36 +363,7 @@ theorem pcMem_oddFiniteSentence_iff {M : Type w} [Language.empty.Structure M] :
     obtain ⟨y, hy, hne⟩ := Equiv.Perm.exists_fixed_point_of_prime' (p := 2) (n := 1) hdvd hσ hx₀
     exact hne (huniqfix y x₀ hy hx₀)
   · rintro ⟨hfin, k, hk⟩
-    let : Fintype M := Fintype.ofFinite M
-    let e : M ≃ (Fin k ⊕ Fin k) ⊕ Unit := Fintype.equivOfCardEq <| by
-      rw [← Nat.card_eq_fintype_card, hk, Fintype.card_sum, Fintype.card_sum, Fintype.card_fin,
-        Fintype.card_unique, two_mul]
-    let swapOdd := Equiv.sumCongr (Equiv.sumComm (Fin k) (Fin k)) (Equiv.refl Unit)
-    let f : M → M := fun x => e.symm (swapOdd (e x))
-    have hfix_iff : ∀ x, f x = x ↔ x = e.symm (.inr ()) := fun x =>
-      ⟨fun hx => by
-        have hx' : swapOdd (e x) = e x := by simpa [f] using congrArg e hx
-        rcases h : e x with (i | i) | ⟨⟩
-        · simp [swapOdd, h] at hx'
-        · simp [swapOdd, h] at hx'
-        · exact e.injective (by simpa using h),
-       by rintro rfl; simp [f, swapOdd]⟩
-    let S : InvLang.Structure M := structureOfInvolutive f
-    let : InvLang.Structure M := S
-    refine ⟨S, ⟨fun f => isEmptyElim f, fun R => isEmptyElim R⟩, ?_⟩
-    rw [oddFiniteSentence, SentenceInf.realize_inf, SentenceInf.realize_inf,
-      SentenceInf.realize_inf, SentenceInf.realize_not, realize_infiniteSentence_iff]
-    refine ⟨⟨⟨not_infinite_iff_finite.2 hfin,
-      realize_structureOfInvolutive_involution fun x => by simp [f, swapOdd]⟩, ?_⟩, ?_⟩
-    · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_ex,
-        realize_invAtom, relMap_structureOfInvolutive, Matrix.cons_val_zero, Matrix.cons_val_one,
-        show (0 : Fin 1) = Fin.last 0 from rfl, Fin.snoc_last]
-      exact ⟨e.symm (.inr ()), (hfix_iff (e.symm (.inr ()))).2 rfl⟩
-    · simp only [S, SentenceInf.realize_def, FormulaInf.realize_def, BoundedFormulaInf.realize_all,
-        BoundedFormulaInf.realize_imp, BoundedFormulaInf.realize_equal, realize_invAtom, bvar,
-        Term.realize_var, Sum.elim_inr, relMap_structureOfInvolutive, Matrix.cons_val_zero,
-        Fin.snoc_apply_zero, Fin.snoc_zero, show (1 : Fin 2) = Fin.last 1 from rfl, Fin.snoc_last]
-      exact fun x y hx hy => ((hfix_iff x).1 hx).trans ((hfix_iff y).1 hy).symm
+    exact pcMem_oddFiniteSentence_of_odd hfin hk
 
 /-- `evenCardSentence` holds in `M` exactly when `M` is finite of even cardinality. -/
 theorem realize_evenCardSentence_iff (M : Type w) [Language.empty.Structure M] :
