@@ -65,7 +65,9 @@ theorem isOpen_setOf_forall_pos_symmetricSection_frameTopology
       ∀ x ∈ K, ∀ v : V x, v ≠ 0 → 0 < (σ x : V x →L[ℝ] V x →L[ℝ] ℝ) v v} := by
   let _ := ContMDiffSection.frameTopology (I := IB) (n := n) e U hU
   exact hK.isOpen_setOf_forall_mem_forall_bilinear_apply_self_pos
-    (fun σ x ↦ (σ x : V x →L[ℝ] V x →L[ℝ] ℝ))
+    (fun (σ : Cₛ^n⟮IB; symmetricBilinearMaps ℝ F ℝ,
+        fun x ↦ symmetricBilinearMaps ℝ (V x) ℝ⟯) x ↦
+      (σ x : V x →L[ℝ] V x →L[ℝ] ℝ))
     (TauCeti.continuous_totalSpace_coe_symmetricBilinearMaps.comp
       (ContMDiffSection.continuous_totalSpace_eval e U hU hcover))
 
