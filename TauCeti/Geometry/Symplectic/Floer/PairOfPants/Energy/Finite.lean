@@ -42,6 +42,8 @@ input ends and from above on the output end.
   action of the end loops of a Floer solution increases with the end coordinate `s`.
 * `SymplecticForm.lintegral_floerEnergyDensity_pairOfPantsPerturbation_ne_top_iff`: a Floer
   solution has finite energy exactly when the actions of its end loops converge.
+* `SymplecticForm.sum_endSign_mul_hamiltonianAction_le`: for `R ≥ 2`, the signed sum of the end
+  actions of a finite-energy Floer solution is at most its energy plus the integrated curvature.
 * `SymplecticForm.endSign_mul_hamiltonianAction_le_of_tendsto`: for `R ≥ 2`, the action of an end
   loop is at most its limit on the input ends and at least its limit on the output end.
 
@@ -195,6 +197,70 @@ private theorem monotoneOn_endSign_mul_hamiltonianAction (ω : SymplecticForm V)
     exact hle (by rw [mem_ofPred_eq, h]; linarith) (by rw [mem_ofPred_eq, h]; linarith)
       (neg_le_neg hR)
 
+/-- **The end actions are bounded by the energy.** Let `u` be `C²` on `S = ℂ ∖ {0, 1}` and solve
+the Floer equation `(du - X_K)^{0,1} = 0` for the pair-of-pants perturbation `K` and almost complex
+structures `J(z)` tamed by `ω`. If the energy of `u` is finite, then for every `R ≥ 2` the signed
+sum `∑ q, ±A_q(R)` of the actions of the end loops `ℓ_q(t) = u(φ_q(±R + i t))` is at most the
+energy of `u` plus the integrated curvature `∫_S R_K(u)`. -/
+theorem sum_endSign_mul_hamiltonianAction_le (ω : SymplecticForm V)
+    (hH : ∀ q, Periodic (H q) 1) (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
+    (hu : ContDiffOn ℝ 2 u thricePuncturedSphereReal) {J : ℝ × ℝ → AlmostComplexStructure V}
+    (hJ : ∀ z ∈ thricePuncturedSphereReal, ω.Tames (J z))
+    (hfloer : ∀ z ∈ thricePuncturedSphereReal,
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) (J z) (ω.perturbedFDeriv
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z : ℝ × ℝ →ₗ[ℝ] V))
+    (hE : ∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z) ≠ ⊤)
+    {R : ℝ} (hR : 2 ≤ R) :
+    ∑ q, q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+        (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I)))) ≤
+      (∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z)).toReal +
+      ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        z (u z) := by
+  have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
+    fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
+  have hTm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
+    ((isCompact_truncation R).isClosed.preimage
+      Complex.equivRealProdCLM.symm.continuous).measurableSet
+  -- The signed sum of the end actions is the energy over the truncation `S_R` plus the
+  -- integrated curvature.
+  have hid : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z =
+      (∑ q, q.endSign * ω.hamiltonianAction (H q) (fun t ↦ u (Complex.equivRealProdCLM
+          (q.cylindricalEndLift (↑(q.endSign * R) + ↑t * Complex.I))))) -
+        ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+          z (u z) :=
+    ω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
+      hH hHs hu hR
+  -- The energy over `S_R` is at most the total energy, since the energy density is nonnegative.
+  have hint : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z ≤
+      (∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (ω.floerEnergyDensity
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
+        u z)).toReal := by
+    rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hTm fun z hz ↦
+        ω.floerEnergyDensity_nonneg (hJ z (hTS hz)) (hfloer z (hTS hz)))
+      ((integrableOn_truncation_pairOfPantsPerturbation ω hH hHs (hu.of_le one_le_two)
+        R).1.aestronglyMeasurable)]
+    exact ENNReal.toReal_mono hE (lintegral_mono_set hTS)
+  linarith
+
 /-- **Finite energy is equivalent to convergence of the end actions.** Let `K` be the
 pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of
 `S = ℂ ∖ {0, 1}`, and let `u` be a map which is `C²` on `S` and solves the Floer equation
@@ -239,29 +305,8 @@ theorem lintegral_floerEnergyDensity_pairOfPantsPerturbation_ne_top_iff (ω : Sy
     endChart_mem_thricePuncturedSphereReal (by linarith)
   have hmono (q : Puncture) := monotoneOn_endSign_mul_hamiltonianAction ω hH hHs hu (q := q)
     (fun _ hζ ↦ hJ _ (hS hζ)) (fun _ hζ ↦ hfloer _ (hS hζ))
-  -- The signed sum of the end actions is the energy over the truncation `S_R` plus the
-  -- integrated curvature, hence at most `C`.
-  have hsum {R : ℝ} (hR : 2 ≤ R) : ∑ q, q.endSign * A q R ≤ C := by
-    have hTS : Complex.equivRealProdCLM.symm ⁻¹' truncation R ⊆ thricePuncturedSphereReal :=
-      fun z hz ↦ ⟨(mem_truncation.1 hz).1, (mem_truncation.1 hz).2.1⟩
-    have hTm : MeasurableSet (Complex.equivRealProdCLM.symm ⁻¹' truncation R) :=
-      ((isCompact_truncation R).isClosed.preimage
-        Complex.equivRealProdCLM.symm.continuous).measurableSet
-    have hid : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, e z =
-        (∑ q, q.endSign * A q R) - ∫ z in thricePuncturedSphereReal, ω.hamiltonianCurvature
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-          (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
-          z (u z) :=
-      ω.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation_eq_sum_hamiltonianAction
-        hH hHs hu hR
-    have hint : ∫ z in Complex.equivRealProdCLM.symm ⁻¹' truncation R, e z ≤
-        (∫⁻ z in thricePuncturedSphereReal, ENNReal.ofReal (e z)).toReal := by
-      rw [integral_eq_lintegral_of_nonneg_ae (ae_restrict_of_forall_mem hTm fun z hz ↦
-          ω.floerEnergyDensity_nonneg (hJ z (hTS hz)) (hfloer z (hTS hz)))
-        ((integrableOn_truncation_pairOfPantsPerturbation ω hH hHs (hu.of_le one_le_two)
-          R).1.aestronglyMeasurable)]
-      exact ENNReal.toReal_mono hE (lintegral_mono_set hTS)
-    linarith
+  have hsum {R : ℝ} (hR : 2 ≤ R) : ∑ q, q.endSign * A q R ≤ C :=
+    ω.sum_endSign_mul_hamiltonianAction_le hH hHs hu hJ hfloer hE hR
   -- Each signed end action is increasing and bounded above, so it converges.
   have hconv (q : Puncture) : ∃ b, Tendsto (fun R ↦ q.endSign * A q R) atTop (𝓝 b) := by
     set g : ℝ → ℝ := fun R ↦ q.endSign * A q (max R 2)
