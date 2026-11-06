@@ -73,7 +73,8 @@ theorem inducedFunctor_comp_retraction (hr : ∀ s, r (F s) = s)
   have hobj (s : InducedCategory C F) : (inducedFunctor F ⋙ retraction F r e).obj s = s := hr s
   refine Functor.ext hobj fun s t f ↦ ?_
   ext
-  simp [hinv, he]
+  simp only [Functor.comp_map, inducedFunctor_map, retraction_map_hom, Functor.id_map,
+    InducedCategory.comp_hom, InducedCategory.eqToHom_hom, inducedFunctor_obj, hinv, he]
   -- The two sides differ only in how the endpoints of the `eqToHom`s are written.
   rfl
 
