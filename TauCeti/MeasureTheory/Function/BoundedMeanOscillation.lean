@@ -21,9 +21,9 @@ oscillation** (`TauCeti.MemBMO`) when this is finite. The seminorm is the suprem
 maximal function `f^#` (`TauCeti.bmoSeminorm_eq_iSup_sharpMaximalFunction`), it ignores
 constants, is subadditive and homogeneous, and vanishes exactly on the a.e. constant functions
 (`TauCeti.bmoSeminorm_eq_zero_iff`). Bounded functions have bounded mean oscillation, with
-`‖f‖_{BMO} ≤ 2 ‖f‖_∞` (`TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top`). On a normed group with a
-right-invariant measure the seminorm is invariant under translation, and on a finite-dimensional
-real normed space with an additive Haar measure it is invariant under dilation
+`‖f‖_{BMO} ≤ 2 ‖f‖_∞` (`TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top`). On a seminormed group
+with a right-invariant measure the seminorm is invariant under translation, and on a
+finite-dimensional real normed space with an additive Haar measure it is invariant under dilation
 (`TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`). On `ℝⁿ` the
 John–Nirenberg inequality makes a function of bounded mean oscillation exponentially integrable
 on every ball, at a rate controlled by its seminorm
@@ -154,8 +154,9 @@ theorem bmoSeminorm_add_const [CompleteSpace F] (hf : AEStronglyMeasurable f μ)
 
 /-- The BMO seminorm is homogeneous: `‖k • f‖_{BMO} = ‖k‖ₑ ‖f‖_{BMO}`. -/
 @[simp]
-theorem bmoSeminorm_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F]
-    [SMulCommClass ℝ 𝕜 F] (k : 𝕜) : bmoSeminorm (k • f) μ = ‖k‖ₑ * bmoSeminorm f μ := by
+theorem bmoSeminorm_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F]
+    [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) :
+    bmoSeminorm (k • f) μ = ‖k‖ₑ * bmoSeminorm f μ := by
   simp only [bmoSeminorm_eq_iSup_sharpMaximalFunction, sharpMaximalFunction_const_smul,
     ENNReal.mul_iSup]
 
@@ -217,8 +218,8 @@ theorem memBMO_const [IsLocallyFiniteMeasure μ] [CompleteSpace F] (b : F) :
 theorem memBMO_zero : MemBMO (0 : X → F) μ :=
   ⟨locallyIntegrable_zero, by simp⟩
 
-theorem MemBMO.const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
-    (hf : MemBMO f μ) (k : 𝕜) : MemBMO (k • f) μ :=
+theorem MemBMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (hf : MemBMO f μ) (k : 𝕜) : MemBMO (k • f) μ :=
   ⟨hf.1.smul k, by rw [bmoSeminorm_const_smul]; exact ENNReal.mul_lt_top enorm_lt_top hf.2⟩
 
 theorem MemBMO.neg (hf : MemBMO f μ) : MemBMO (-f) μ :=
@@ -241,29 +242,16 @@ theorem _root_.MeasureTheory.MemLp.memBMO [IsLocallyFiniteMeasure μ] (hf : MemL
 
 /-! ### Functions with vanishing BMO seminorm -/
 
-/-- A locally integrable `f` with zero mean oscillation on a ball agrees a.e. on that ball with its
-average. -/
-private theorem ae_restrict_ball_eq_setAverage [ProperSpace X] [IsFiniteMeasureOnCompacts μ]
-    (hf : LocallyIntegrable f μ) (c : X) (r : ℝ)
-    (h : ⨍⁻ y in ball c r, ‖f y - ⨍ z in ball c r, f z ∂μ‖ₑ ∂μ = 0) :
-    ∀ᵐ y ∂μ.restrict (ball c r), f y = ⨍ z in ball c r, f z ∂μ := by
-  rcases eq_or_ne (μ (ball c r)) 0 with hμ | hμ
-  · simp [Measure.restrict_eq_zero.2 hμ]
-  rw [setLAverage_eq, ENNReal.div_eq_zero_iff] at h
-  refine h.elim (fun h => ?_) fun h => absurd h measure_ball_lt_top.ne
-  have hmeas : AEMeasurable (fun y => ‖f y - ⨍ z in ball c r, f z ∂μ‖ₑ) (μ.restrict (ball c r)) :=
-    (((hf.integrableOn_isCompact (isCompact_closedBall c r)).mono_set
-      ball_subset_closedBall).aestronglyMeasurable.sub aestronglyMeasurable_const).enorm
-  filter_upwards [(lintegral_eq_zero_iff' hmeas).1 h] with y hy
-  exact sub_eq_zero.1 (enorm_eq_zero.1 hy)
-
 /-- On a proper space with a measure finite on compact sets, the BMO seminorm of a locally
 integrable function vanishes exactly when the function is a.e. constant. -/
 theorem bmoSeminorm_eq_zero_iff [ProperSpace X] [IsFiniteMeasureOnCompacts μ] [CompleteSpace F]
     (hf : LocallyIntegrable f μ) : bmoSeminorm f μ = 0 ↔ ∃ b : F, f =ᵐ[μ] fun _ => b := by
   refine ⟨fun h => ?_, fun ⟨b, hb⟩ => by rw [bmoSeminorm_congr_ae hb, bmoSeminorm_const]⟩
-  have hball (c : X) (r : ℝ) := ae_restrict_ball_eq_setAverage hf c r
-    (le_antisymm (h ▸ setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r) zero_le)
+  have hball (c : X) (r : ℝ) :=
+    ae_restrict_eq_setAverage_of_setLAverage_enorm_sub_setAverage_eq_zero
+      ((hf.integrableOn_isCompact (isCompact_closedBall c r)).mono_set
+        ball_subset_closedBall).aestronglyMeasurable measure_ball_lt_top.ne
+      (le_antisymm (h ▸ setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ c r) zero_le)
   rcases isEmpty_or_nonempty X with hX | ⟨⟨x₀⟩⟩
   · exact ⟨0, .of_forall fun x => isEmptyElim x⟩
   by_cases hpos : ∃ m : ℕ, μ (ball x₀ m) ≠ 0
@@ -344,8 +332,8 @@ theorem vmoModulus_const [CompleteSpace F] (b : F) (r : ℝ) :
 
 /-- The VMO modulus is homogeneous: `η_{k • f} = ‖k‖ₑ η_f`. -/
 @[simp]
-theorem vmoModulus_const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F]
-    [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (r : ℝ) :
+theorem vmoModulus_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F]
+    [NormSMulClass 𝕜 F] [SMulCommClass ℝ 𝕜 F] (k : 𝕜) (r : ℝ) :
     vmoModulus (k • f) μ r = ‖k‖ₑ * vmoModulus f μ r := by
   simp only [vmoModulus, Pi.smul_apply, setLAverage_enorm_const_smul_sub_setAverage,
     ENNReal.mul_iSup]
@@ -418,8 +406,8 @@ theorem memVMO_const [IsLocallyFiniteMeasure μ] [CompleteSpace F] (b : F) :
     rw [show vmoModulus (fun _ : X => b) μ = fun _ => 0 from funext (vmoModulus_const b)]
     exact tendsto_const_nhds⟩
 
-theorem MemVMO.const_smul {𝕜 : Type*} [NormedField 𝕜] [NormedSpace 𝕜 F] [SMulCommClass ℝ 𝕜 F]
-    (hf : MemVMO f μ) (k : 𝕜) : MemVMO (k • f) μ := by
+theorem MemVMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
+    [SMulCommClass ℝ 𝕜 F] (hf : MemVMO f μ) (k : 𝕜) : MemVMO (k • f) μ := by
   refine ⟨hf.1.const_smul k, ?_⟩
   have h := ENNReal.Tendsto.const_mul hf.2 (Or.inr (show ‖k‖ₑ ≠ ∞ from enorm_ne_top))
   rw [mul_zero] at h
@@ -495,17 +483,6 @@ variable {X Y F : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [PseudoMetric
   [MeasurableSpace Y] [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure X} {ν : Measure Y}
   {a : ℝ≥0∞}
 
-omit [PseudoMetricSpace X] [PseudoMetricSpace Y] in
-/-- Mean oscillations are invariant under a measurable equivalence `e` that pushes `μ` forward to
-a positive finite multiple of `ν`: the mean oscillation of `f ∘ e` on `e ⁻¹' s` is that of `f`
-on `s`. -/
-theorem setLAverage_enorm_sub_setAverage_comp_preimage_of_map_eq_smul {e : X ≃ᵐ Y}
-    (he : μ.map e = a • ν) (ha : a ≠ 0) (ha' : a ≠ ∞) (f : Y → F) (s : Set Y) :
-    ⨍⁻ x in e ⁻¹' s, ‖f (e x) - ⨍ z in e ⁻¹' s, f (e z) ∂μ‖ₑ ∂μ =
-      ⨍⁻ y in s, ‖f y - ⨍ z in s, f z ∂ν‖ₑ ∂ν := by
-  rw [setAverage_comp_preimage_of_map_eq_smul he ha ha' f s]
-  exact setLAverage_comp_preimage_of_map_eq_smul he ha ha' (fun y => ‖f y - ⨍ z in s, f z ∂ν‖ₑ) s
-
 /-- The BMO seminorm is invariant under a measurable equivalence `e` that pushes `μ` forward to a
 positive finite multiple of `ν` and induces a bijection between the open balls of `X` and of
 `Y` by preimage. -/
@@ -526,7 +503,7 @@ private theorem bmoSeminorm_comp_of_map_eq_smul {e : X ≃ᵐ Y} (he : μ.map e 
 
 /-- The BMO seminorm is invariant under translation for a right-invariant measure. -/
 @[simp]
-theorem bmoSeminorm_comp_add_right {G : Type*} [NormedAddCommGroup G] [MeasurableSpace G]
+theorem bmoSeminorm_comp_add_right {G : Type*} [SeminormedAddCommGroup G] [MeasurableSpace G]
     [MeasurableAdd G] {μ : Measure G} [μ.IsAddRightInvariant] (f : G → F) (b : G) :
     bmoSeminorm (fun x => f (x + b)) μ = bmoSeminorm f μ :=
   bmoSeminorm_comp_of_map_eq_smul (e := MeasurableEquiv.addRight b) (a := 1)
