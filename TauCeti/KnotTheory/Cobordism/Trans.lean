@@ -483,6 +483,45 @@ private theorem mem_range_upper_of_mem_range_stackMap {p : sphere (0 : E) 1 × �
       hp'.le).1 hl
   · exact hu
 
+/-- The image of the composite is the union of the lower half with its heights capped at `1 / 2`
+and the upper half with its heights raised to at least `1 / 2`; here the capping maps `P` and `Q`
+are given by their fixed points and their values past the height `1 / 2`. -/
+private theorem range_stackMap_eq_union (P Q : sphere (0 : E) 1 × ℝ → sphere (0 : E) 1 × ℝ)
+    (hPfix : ∀ p : sphere (0 : E) 1 × ℝ, p.2 ≤ 1 / 2 → P p = p)
+    (hQfix : ∀ p : sphere (0 : E) 1 × ℝ, 1 / 2 ≤ p.2 → Q p = p)
+    (hPK : ∀ p : sphere (0 : E) 1 × ℝ, 1 / 2 ≤ p.2 → P p = (p.1, 1 / 2))
+    (hQK : ∀ p : sphere (0 : E) 1 × ℝ, p.2 ≤ 1 / 2 → Q p = (p.1, 1 / 2)) :
+    range (stackMap S₁ S₂) = range (P ∘ lower S₁) ∪ range (Q ∘ upper S₂) := by
+  have h₁ := sub_lt_half S₁
+  have h₂ := half_lt_add S₂
+  ext p
+  rw [mem_range_stackMap_iff, mem_union]
+  constructor
+  · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨y, rfl⟩, hy⟩)
+    · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
+      · exact .inl ⟨x, hPfix _ hle⟩
+      · obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ (h₁.trans hlt).le hx.le).1
+          (mem_range_self x)
+        exact .inr ⟨y, by rw [comp_apply, hy, hQfix _ hlt.le]⟩
+    · rcases le_or_gt (1 / 2) (upper S₂ y).2 with hle | hlt
+      · exact .inr ⟨y, hQfix _ hle⟩
+      · obtain ⟨x, hx⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hy.le (hlt.trans h₂).le).2
+          (mem_range_self y)
+        exact .inl ⟨x, by rw [comp_apply, hx, hPfix _ hlt.le]⟩
+  · rintro (⟨x, rfl⟩ | ⟨y, rfl⟩)
+    · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
+      · rw [comp_apply, hPfix _ hle]
+        exact .inl ⟨mem_range_self x, hle.trans_lt h₂⟩
+      · have hK := (mem_range_lower_iff_of_le S₁ (h₁.trans hlt).le).1 (mem_range_self x)
+        rw [comp_apply, hPK _ hlt.le]
+        exact .inl ⟨(mem_range_lower_iff_of_le S₁ h₁.le).2 hK, h₂⟩
+    · rcases le_or_gt (1 / 2) (upper S₂ y).2 with hle | hlt
+      · rw [comp_apply, hQfix _ hle]
+        exact .inr ⟨mem_range_self y, h₁.trans_le hle⟩
+      · have hK := (mem_range_upper_iff_of_le S₂ (hlt.trans h₂).le).1 (mem_range_self y)
+        rw [comp_apply, hQK _ hlt.le]
+        exact .inr ⟨(mem_range_upper_iff_of_le S₂ h₂.le).2 hK, h₁⟩
+
 /-- The image of the composite is connected: it is the union of the lower half with its heights
 capped at `1 / 2` and the upper half with its heights raised to at least `1 / 2`, two connected
 sets meeting along the circle `K₁` at height `1 / 2`. -/
@@ -510,36 +549,9 @@ private theorem isPreconnected_range_stackMap : IsPreconnected (range (stackMap 
     obtain ⟨y, hy⟩ := (mem_range_upper_iff_of_le S₂ (p := (K₁ 1, 1 / 2)) h₂.le).2
       (mem_range_self (f := ⇑K₁) 1)
     exact ⟨y, by rw [comp_apply, hy, hQfix _ le_rfl]⟩
-  convert hA.union _ hp₀A hp₀B hB using 1
-  ext p
-  rw [mem_range_stackMap_iff, mem_union]
-  constructor
-  · rintro (⟨⟨x, rfl⟩, hx⟩ | ⟨⟨y, rfl⟩, hy⟩)
-    · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
-      · exact .inl ⟨x, hPfix _ hle⟩
-      · obtain ⟨y, hy⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ (h₁.trans hlt).le hx.le).1
-          (mem_range_self x)
-        exact .inr ⟨y, by rw [comp_apply, hy, hQfix _ hlt.le]⟩
-    · rcases le_or_gt (1 / 2) (upper S₂ y).2 with hle | hlt
-      · exact .inr ⟨y, hQfix _ hle⟩
-      · obtain ⟨x, hx⟩ := (mem_range_lower_iff_mem_range_upper S₁ S₂ hy.le (hlt.trans h₂).le).2
-          (mem_range_self y)
-        exact .inl ⟨x, by rw [comp_apply, hx, hPfix _ hlt.le]⟩
-  · rintro (⟨x, rfl⟩ | ⟨y, rfl⟩)
-    · rcases le_or_gt (lower S₁ x).2 (1 / 2) with hle | hlt
-      · rw [comp_apply, hPfix _ hle]
-        exact .inl ⟨mem_range_self x, hle.trans_lt h₂⟩
-      · have hK := (mem_range_lower_iff_of_le S₁ (h₁.trans hlt).le).1 (mem_range_self x)
-        have hPx : P (lower S₁ x) = ((lower S₁ x).1, 1 / 2) := Prod.ext rfl (min_eq_right hlt.le)
-        rw [comp_apply, hPx]
-        exact .inl ⟨(mem_range_lower_iff_of_le S₁ h₁.le).2 hK, h₂⟩
-    · rcases le_or_gt (1 / 2) (upper S₂ y).2 with hle | hlt
-      · rw [comp_apply, hQfix _ hle]
-        exact .inr ⟨mem_range_self y, h₁.trans_le hle⟩
-      · have hK := (mem_range_upper_iff_of_le S₂ (hlt.trans h₂).le).1 (mem_range_self y)
-        have hQy : Q (upper S₂ y) = ((upper S₂ y).1, 1 / 2) := Prod.ext rfl (max_eq_right hlt.le)
-        rw [comp_apply, hQy]
-        exact .inr ⟨(mem_range_upper_iff_of_le S₂ h₂.le).2 hK, h₁⟩
+  rw [range_stackMap_eq_union S₁ S₂ P Q hPfix hQfix (fun p hp ↦ Prod.ext rfl (min_eq_right hp))
+    (fun p hp ↦ Prod.ext rfl (max_eq_right hp))]
+  exact hA.union _ hp₀A hp₀B hB
 
 private instance : ConnectedSpace (Stack S₁ S₂) := by
   have hne : (range (stackMap S₁ S₂)).Nonempty :=
