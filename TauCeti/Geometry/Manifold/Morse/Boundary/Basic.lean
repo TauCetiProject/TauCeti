@@ -102,7 +102,7 @@ theorem neg_morseTrajectorySlice (hf : IsMorse 𝓘(ℝ, E) f) (p q : M) :
   ext z
   simp only [mem_morseTrajectorySlice, hX.neg_flow hf, Flow.unstableSet_reverse,
     Flow.stableSet_reverse, Pi.neg_apply]
-  exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
+  exact ⟨fun ⟨h₁, h₂, _⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, _⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
 
 /-- **Trajectories read off a decomposition of a stable set.** Suppose that, apart from `q` itself,
 the stable set of a critical point `q` is covered by the orbits of points `y i`, where `y i` flows
