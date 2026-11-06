@@ -388,20 +388,6 @@ theorem isotypicProjector_apply_subtype_of_not_equiv
 
 variable [IsAlgClosed k]
 
-omit [FiniteDimensional k V] [IsAlgClosed k] in
-/-- On the underlying module of `rho`, the endomorphism given by the character projector acts as
-the projector. -/
-private lemma equivLinearMapAsModule_isotypicProjector_apply
-    (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
-    (x : rho.toRepresentation.asModule) :
-    Representation.IntertwiningMap.equivLinearMapAsModule _ _
-        (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap x =
-      isotypicProjector rho hrho sigma hsigma (x : V) :=
-  (Representation.IntertwiningMap.equivLinearMapAsModule_apply
-      (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap x).trans
-    (ContIntertwiningMap.toIntertwiningMap_apply (isotypicProjector rho hrho sigma hsigma)
-      (x : V))
-
 /-- The character projector sends every simple submodule of `rho` into the isotypic component. -/
 private lemma equivLinearMapAsModule_isotypicProjector_mem_isotypicComponent
     (hunitary : IsUnitary rho) (sigma : ContRepresentation k G W) (hsigma : Continuous sigma)
@@ -413,7 +399,10 @@ private lemma equivLinearMapAsModule_isotypicProjector_mem_isotypicComponent
       isotypicComponent k[G] rho.toRepresentation.asModule sigma.toRepresentation.asModule := by
   let tau : Subrepresentation rho.toRepresentation := Subrepresentation.ofSubmodule' m
   have htau : IsAtom tau := Subrepresentation.isSimpleModule_asSubmodule_iff.mp hm
-  rw [equivLinearMapAsModule_isotypicProjector_apply]
+  rw [(Representation.IntertwiningMap.equivLinearMapAsModule_apply
+      (isotypicProjector rho hrho sigma hsigma).toIntertwiningMap x).trans
+    (ContIntertwiningMap.toIntertwiningMap_apply (isotypicProjector rho hrho sigma hsigma)
+      (x : V))]
   by_cases he : Nonempty (m ≃ₗ[k[G]] sigma.toRepresentation.asModule)
   · have happly := isotypicProjector_apply_subtype_of_equiv rho hrho hunitary sigma hsigma htau
       he (⟨x, hx⟩ : tau.toSubmodule)
