@@ -43,8 +43,11 @@ await page.clock.install({time:fixture.clock});
 await page.route('https://ci-data.taucetiproject.org/**', route=>{
  const path=new URL(route.request().url()).pathname;
  const body=fixture.objects['public'+path];
- return route.fulfill({status:body?200:404,contentType:'application/json',headers:{'access-control-allow-origin':'*'},body:body||'{}'});
+ return route.fulfill({status:body?200:404,contentType:path.endsWith('.svg')?'image/svg+xml':'application/json',headers:{'access-control-allow-origin':'*'},body:body||'{}'});
 });
+const chartAsset='/v1/ci/assets/'+ 'a'.repeat(64) +'/ci-fleet-72h.svg';
+fixture.objects['public'+chartAsset]='<svg xmlns="http://www.w3.org/2000/svg" width="20" height="5"><rect width="20" height="5" fill="teal"/></svg>';
+fixture.objects['public/v1/ci/manifest.json']=JSON.stringify({schema:'tauceti-ci.manifest/v1',mode:'live',generated_at:new Date(fixture.clock).toISOString(),current:{computed_at:new Date(fixture.clock).toISOString(),as_of:new Date(fixture.clock).toISOString()},assets:{'ci-fleet-72h.svg':{url:chartAsset}},groups:{fleet:{published_at:new Date(fixture.clock).toISOString()}}});
 const initialJobsManifest=JSON.parse(fixture.objects['public/v1/operations/manifest.json']);
 const jobsFixtureKey='public'+initialJobsManifest.domains.jobs.url;
 const jobsFixture=JSON.parse(fixture.objects[jobsFixtureKey]);
@@ -55,6 +58,7 @@ jobsFixture.pool_activity={coverage:'retained_observations',through:new Date(fix
 fixture.objects[jobsFixtureKey]=JSON.stringify(jobsFixture);
 await page.goto(url+'/ci/#queue?batch=1');
 await page.getByRole('heading',{name:'Batch 1 · head',exact:true}).waitFor();
+await page.waitForFunction(url=>document.querySelector('img.loc-graph').src.endsWith(url),chartAsset,{timeout:10000});
 assert.equal(await page.locator('.ops-table tbody tr').count(),100);
 assert.equal(await page.locator('.ops-table img').count(),0);
 assert.ok((await page.locator('[data-ops-view]').innerText()).includes('<img src=x onerror=alert(1)>'));
@@ -235,6 +239,17 @@ replaceDomain('jobs',j=>{j.pool_activity.coverage='unavailable';j.pool_activity.
 await page.clock.fastForward(20000);
 await page.getByText('Completion history unavailable.',{exact:true}).waitFor();
 assert.equal(await page.locator('.ops-completions').count(),0);
+replaceDomain('jobs',j=>{delete j.pool_activity;j.truncated=true;});
+await page.clock.fastForward(20000);
+await page.getByText('Completion history unavailable. Active counts are a bounded sample.',{exact:true}).waitFor();
+assert.ok((await activityRow.locator('td').nth(1).innerText()).startsWith('~'));
+const nextChartAsset=chartAsset.replace('/'+ 'a'.repeat(64) +'/', '/'+ 'b'.repeat(64) +'/');
+fixture.objects['public'+nextChartAsset]=fixture.objects['public'+chartAsset];
+const chartManifest=JSON.parse(fixture.objects['public/v1/ci/manifest.json']);chartManifest.assets['ci-fleet-72h.svg'].url=nextChartAsset;
+fixture.objects['public/v1/ci/manifest.json']=JSON.stringify(chartManifest);
+await page.clock.fastForward(61000);
+await page.waitForFunction(url=>document.querySelector('img.loc-graph').src.endsWith(url),nextChartAsset);
+
 await page.getByRole('link',{name:'Queue',exact:true}).click();
 await page.getByRole('heading',{name:'Batch 1 · head',exact:true}).waitFor();
 // A publisher disconnect retains facts and visibly ages, without false zeros.

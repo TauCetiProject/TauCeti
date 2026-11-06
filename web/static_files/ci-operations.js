@@ -92,8 +92,8 @@
     });
     (data.hosts && data.hosts.pools || []).forEach(function(p) { if (!groups.has(p.id)) groups.set(p.id, null); });
     (data.hosts && data.hosts.hosts || []).forEach(function(h) { if (!groups.has(h.alias)) groups.set(h.alias, null); });
-    var coverage = activity && activity.coverage, partial = coverage === "partial";
-    section.append(note(!activity || coverage === "unavailable" ? "Completion history unavailable." : (partial ? "Partial observations · counts may be incomplete or stale. " : "") + "Completions through " + timestamp(activity.through) + ".", coverage !== "retained_observations" ? "ops-note ops-warning" : "ops-note"));
+    var coverage = activity && activity.coverage, partial = !activity || coverage === "partial";
+    section.append(note(!activity ? "Completion history unavailable. Active counts are a bounded sample." : coverage === "unavailable" ? "Completion history unavailable." : (partial ? "Partial observations · counts may be incomplete or stale. " : "") + "Completions through " + timestamp(activity.through) + ".", coverage !== "retained_observations" ? "ops-note ops-warning" : "ops-note"));
     if (!groups.size) { section.append(empty("Runner activity unavailable.")); container.append(section); return; }
     var table = el("table", undefined, "ops-table ops-pools"), body = el("tbody"); table.setAttribute("role","table"); body.setAttribute("role","rowgroup");
     var titles = ["Pool", "Running", "Waiting", "Oldest running", "Oldest waiting", "Last completion", "1 hour", "3 hours", "24 hours"];

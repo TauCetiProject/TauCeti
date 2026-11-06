@@ -19,6 +19,18 @@ def operations : Html := {{
   <script src="static/ci-operations.js" defer="defer"></script>
 }}
 
+/-- Independent chart refresh, with its source cache behind a disclosure. -/
+def historicalStatus : Html := {{
+  <details class="ci-chart-source ops-diagnostics" data-ci-live="true">
+    <summary>"Historical chart source status"</summary>
+    <p>"Chart publisher cache · all organisation workflow jobs"</p>
+    <p data-ci-status="true">"Loading chart source status…"</p>
+    <dl class="ci-live-counts" data-ci-counts="true"></dl>
+    <p class="ci-live-backlog" data-ci-backlog="true" hidden="hidden"></p>
+  </details>
+  <script src="static/ci-live.js" defer="defer"></script>
+}}
+
 /-- Lead with the recent fleet timeline. -/
 def recentFleetGraph : Html := {{
   <figure class="loc-figure loc-figure-wide">
@@ -79,6 +91,9 @@ def pickerGraph : Html := dailyChart "ci-picker.svg"
 The merge queue, CI jobs and dedicated hosts share this operational view. Each source reports its own freshness.
 
 :::blob operations
+:::
+
+:::blob historicalStatus
 :::
 
 :::blob recentFleetGraph

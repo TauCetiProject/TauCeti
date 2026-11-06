@@ -494,11 +494,8 @@ a.pb-chip:hover { text-decoration: none; border-color: var(--teal); }
 @media (max-width: 520px) { .pb-tiles { grid-template-columns: 1fr 1fr; } }
 @media (prefers-reduced-motion: no-preference) { .pb-row td { transition: background 120ms; } }
 
-.ci-live { margin: 1.5rem 0 2.5rem; padding: 1rem 0; border-block: 1px solid var(--line); }
-.ci-live-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: .4rem 1rem; }
-.ci-live-heading h2 { margin: 0; font-size: 1rem; }
-.ci-live-heading [data-ci-status] { margin: 0; color: var(--muted); font-size: .8rem; }
-.ci-live[data-stale="true"] [data-ci-status] { color: #fbbf24; }
+[data-ci-live][data-stale="true"] [data-ci-status] { color: #fbbf24; }
+.ci-chart-source [data-ci-status] { color: var(--muted); font-size: .8rem; }
 .ci-live-counts { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: 1rem; margin: 1rem 0 0; }
 .ci-live-counts > div { padding-left: 1rem; border-left: 2px solid var(--line); }
 .ci-live-counts > div[data-runner="github"] { border-color: var(--teal); }
@@ -616,3 +613,5 @@ a.pb-chip:hover { text-decoration: none; border-color: var(--teal); }
   .ops-unobserved td:nth-child(2) { flex: 2; font-size: .75rem; }
   .ops-unobserved td::before { display: none !important; }
 }
+
+@media (max-width: 760px) { .ops-unobserved td:first-child { flex: none; min-width: 6.5rem; white-space: nowrap; } }
