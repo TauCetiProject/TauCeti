@@ -206,11 +206,15 @@ private theorem ord_algebraMap_gen_sub (hs : ∀ c : k, c ^ p ≠ s) :
     (irreducible_X_pow_sub_C_of_prime Fact.out hs)]
   simp
 
+omit [CharP k p] in
 /-- In `k(x) / k(x ^ p)`, the place of `x ^ p − s`, for `s` not a `p`-th power, is
 **unramified**: `e = 1`, although the extension is purely inseparable of degree `p`. -/
 theorem ramificationIdx_adicOfIrreducible_X_pow_sub_C (hs : ∀ c : k, c ^ p ≠ s) :
     ramificationIdx k⟮t⟯ (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs)) =
       1 := by
+  have : FiniteDimensional k⟮t⟯ (_root_.RatFunc k) :=
+    Module.finite_of_finrank_pos
+      (by rw [RatFunc.finrank_adjoin_X_pow]; exact (Fact.out : p.Prime).pos)
   have h := ord_algebraMap_restrict k k⟮t⟯
     (adicOfIrreducible (irreducible_X_pow_sub_C_of_prime Fact.out hs))
     (AdjoinSimple.gen k t - algebraMap k k⟮t⟯ s)
