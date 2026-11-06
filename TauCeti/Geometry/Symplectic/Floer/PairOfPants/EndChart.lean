@@ -326,21 +326,6 @@ theorem measurableSet_image_endPiece (q : Puncture) (R : ℝ) :
     (measurableSet_le (measurable_const.mul measurable_id) measurable_const)).prod
     measurableSet_Ico
 
-/-- The cutoff of an end has total increase one along the end. -/
-private theorem lintegral_deriv_smoothTransition_endSign (q : Puncture) :
-    ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) = 1 := by
-  have h₁ : ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (s - 1)) = 1 := by
-    rw [lintegral_sub_right_eq_self (fun s ↦ ENNReal.ofReal (deriv smoothTransition s)) 1,
-      ← ofReal_integral_eq_lintegral_ofReal smoothTransition.integrable_deriv
-        (ae_of_all _ fun _ ↦ smoothTransition.monotone.deriv_nonneg),
-      smoothTransition.integral_deriv, ENNReal.ofReal_one]
-  cases q
-  · simpa using h₁
-  · simpa using h₁
-  · convert smoothTransition.lintegral_ofReal_mul_deriv (-1) one_pos using 4 with s
-    simp only [endSign_inf, one_mul]
-    ring_nf
-
 /-- **Integrals over the image of an end strip.** If the density `det dφ_q · |f ∘ φ_q|` of a
 function `f` in the coordinates of the end `q` is at most `β'(±s - 1) B`, where `β` is the cutoff
 `smoothTransition` of the pair-of-pants perturbation, then the integral of `|f|` over the image of
@@ -378,7 +363,8 @@ theorem lintegral_image_endStrip_le {q : Puncture} {f : ℝ × ℝ → ℝ} {B :
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal B := by
         rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
-          lintegral_deriv_smoothTransition_endSign, one_mul]
+          smoothTransition.lintegral_ofReal_deriv_mul_sub 1 (abs_ne_zero.1 (by simp)), abs_endSign,
+          inv_one, ENNReal.ofReal_one, one_mul]
 
 end Floer
 
