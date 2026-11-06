@@ -310,7 +310,7 @@ private theorem mfderiv_vertical_aux {proj : ManifoldTotalSpace G P → B}
     {s ψ : ManifoldTotalSpace G P → G} {F : B × G → ManifoldTotalSpace G P}
     {O : G → ManifoldTotalSpace G P} {x₀ : ManifoldTotalSpace G P} {g₀ : G}
     (hprojO : proj ∘ O = fun _ ↦ b) (hψO' : ∀ g, ψ (O g) = g)
-    (hOψ : O ∘ ψ = F ∘ fun x ↦ (b, s x)) (hproj₀ : proj x₀ = b)
+    (hOψ : O ∘ ψ = F ∘ fun x ↦ (b, s x))
     (hFid : F ∘ (fun x ↦ (proj x, s x)) =ᶠ[𝓝 x₀] id) (hxO : O g₀ = x₀)
     (hproj : MDifferentiableAt (IB.prod IG) IB proj x₀)
     (hsD : MDifferentiableAt (IB.prod IG) IG s x₀) (hψ : MDifferentiableAt (IB.prod IG) IG ψ x₀)
@@ -328,6 +328,7 @@ private theorem mfderiv_vertical_aux {proj : ManifoldTotalSpace G P → B}
     rw [show ψ ∘ O = id from funext hψO', mfderiv_id] at this
     exact this.symm
   · -- Differentiate `O ∘ ψ = F ∘ (b, s)` and `F ∘ (π, s) = id` at `x₀`.
+    have hproj₀ : proj x₀ = b := hxO ▸ congrFun hprojO g₀
     have h₁ := mfderiv_comp_apply_of_eq x₀ hO hψ (hxO ▸ hψO' g₀) w
     rw [hOψ, mfderiv_comp_apply_of_eq (f := fun x ↦ (b, s x)) x₀ hF
       (mdifferentiableAt_const.prodMk hsD) rfl, mfderiv_prodMk mdifferentiableAt_const hsD,
@@ -388,7 +389,6 @@ private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
       inv_mul_cancel_left]
   have hOψ : O ∘ ψ = F ∘ fun x ↦ (b, s x) := funext fun x ↦ by
     rw [Function.comp_apply, Function.comp_apply, ← hFO, mul_inv_cancel_left]
-  have hproj₀ : proj x₀ = b := congrFun hprojO g₀
   have hFid : F ∘ (fun x ↦ (proj x, s x)) =ᶠ[𝓝 x₀] id := by
     have hx₀ : x₀ ∈ Φ.symm ⁻¹' e.source := by
       simpa only [mem_preimage, x₀, Φ, Homeomorph.symm_apply_apply] using e.mem_source.2 hb
@@ -410,7 +410,7 @@ private theorem mfderiv_smul_aux (hn : n ≠ 0) (p : P b) (g₀ : G) :
   have hF : MDifferentiableAt (IB.prod IG) (IB.prod IG) F (b, s x₀) :=
     (((ManifoldTotalSpace.contMDiffOn_trivialization_symm e).contMDiffAt
       (e.open_target.mem_nhds (e.mem_target.2 hb))).mdifferentiableAt hn)
-  exact mfderiv_vertical_aux hprojO hψO' hOψ hproj₀ hFid rfl hproj hsD hψ hO hF
+  exact mfderiv_vertical_aux hprojO hψO' hOψ hFid rfl hproj hsD hψ hO hF
 
 variable (IB IG) in
 /-- **The orbit maps of a principal bundle have injective derivative.** For a point `p` of the
