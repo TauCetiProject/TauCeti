@@ -10,7 +10,6 @@ public import TauCeti.Geometry.Manifold.GroupAction.Linearization
 public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
-import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 
 /-!
 # Linear-ball charts of proper étale groupoids
@@ -96,14 +95,9 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
   -- Restrict the linear representation to its invariant ball, retaining every group label.
   have hpres (g : Aut x) (v : E) (hv : v ∈ e.target) : σ g v ∈ e.target := by
     rw [het] at hv ⊢
-    exact (congrArg (fun t : Set E ↦ v ∈ t)
-      (σ.toRepresentation.preimage_sumOfConjugatesInnerSublevel g c)).mpr hv
-  let actB : MulAction (Aut x) B :=
-    { smul := fun g v ↦ ⟨σ g v, hpres g v v.2⟩
-      one_smul := fun v ↦ Subtype.ext
-        (congrArg (fun L : E →L[ℝ] E ↦ L v) (map_one σ))
-      mul_smul := fun g h v ↦ Subtype.ext
-        (congrArg (fun L : E →L[ℝ] E ↦ L v) (map_mul σ g h)) }
+    rw [← Set.mem_preimage, σ.preimage_sumOfConjugatesInnerSublevel]
+    exact hv
+  let actB := σ.mulActionOpens B hpres
   let _ := actB
   let f : B → U := fun v ↦ e.symm v
   have hfinj : Function.Injective f := e.symm.isEmbedding_restrict.injective
@@ -111,7 +105,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
     apply e.injOn (e.map_target (g • v).2) (hequiv g _ (e.map_target v.2)).1
     exact (e.right_inv (g • v).2).trans (by
       rw [(hequiv g _ (e.map_target v.2)).2, e.right_inv v.2]
-      rfl)
+      exact σ.val_mulActionOpens_smul B hpres g v)
   let q : B →[Aut x] U := ⟨f, hfequiv⟩
   let A := ActionCategory.map (MonoidHom.id (Aut x)) q
   have : A.Full := (ActionCategory.full_map_iff _ _).2 fun v w g hg ↦
@@ -140,25 +134,12 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
         Quiver.Total C) =
       ⟨_, _, F₀.map ((ActionCategory.totalEquiv (Aut x) U).symm (g, f v)).hom⟩ := by
     -- Label-source coordinates avoid dependent equality of the two target objects.
-    have hA : A.toPrefunctor.mapTotal
-        ((ActionCategory.totalEquiv (Aut x) B).symm (g, v)) =
-        (ActionCategory.totalEquiv (Aut x) U).symm (g, f v) := by
-      apply (ActionCategory.totalEquiv (Aut x) U).injective
-      simp only [ActionCategory.totalEquiv_apply, Prefunctor.mapTotal_hom,
-        Functor.toPrefunctor_map, Prefunctor.mapTotal_left,
-        ActionCategory.totalEquiv_symm_apply_left, Functor.toPrefunctor_obj,
-        Equiv.apply_symm_apply, Prod.mk.injEq, A, ActionCategory.map_map_hom,
-        MonoidHom.id_apply, ActionCategory.totalEquiv_symm_apply_hom_hom,
-        ActionCategory.back_map_obj, true_and]
-      exact congrArg q ((ActionCategory.objEquiv (Aut x) B).left_inv v)
-    exact congrArg F₀.toPrefunctor.mapTotal hA
-  have hsmoothB : ContMDiffConstSMul 𝓘(ℝ, E) n (Aut x) B := by
-    constructor
-    intro g
-    apply (ContMDiff.subtypeVal_comp_iff B _).mp
-    exact (σ g).contDiff.contMDiff.comp contMDiff_subtype_val
+    exact congrArg F₀.toPrefunctor.mapTotal
+      (ActionCategory.mapTotal_totalEquiv_symm (MonoidHom.id (Aut x)) q g v)
+  have hsmoothB := σ.contMDiffConstSMul_mulActionOpens B hpres n
   refine ⟨ι, σ, c, B, actB, (fun v ↦ (f v : C)), z, F, hcpos, het, rfl,
-    congrArg Subtype.val hfz, (fun _ _ ↦ rfl), hsmoothB, U.isOpenEmbedding'.comp hfopen,
+    congrArg Subtype.val hfz, σ.val_mulActionOpens_smul B hpres, hsmoothB,
+    U.isOpenEmbedding'.comp hfopen,
     (fun v ↦ (hfdiff v).comp (hg := isLocalDiffeomorph_subtype_val (f v))), ?_,
     (fun a ↦ (hobj (A.obj a)).trans
       (congrArg Subtype.val

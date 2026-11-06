@@ -6,7 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.GroupAction.GermKernel
+public import Mathlib.Geometry.Manifold.Algebra.SMul
+
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
+import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
@@ -16,7 +19,8 @@ A finite group acting by `C^n` maps on a boundaryless Banach manifold admits an 
 `C^n` chart at each common fixed point, for `1 ≤ n`. Both the chart and its inverse are `C^n`
 on their entire domains. In finite-dimensional real inner product spaces the target can be
 chosen to be an invariant ball for an averaged inner product, inside any prescribed
-neighbourhood of the fixed point.
+neighbourhood of the fixed point. `ContRepresentation.mulActionOpens` restricts the linear
+action to any invariant open subset, with its inclusion formula and smoothness theorem.
 
 This upgrades topological linearization to smooth local models. No faithfulness is required:
 the linear representation has exactly the original ineffective germ kernel.
@@ -35,6 +39,53 @@ public noncomputable section
 
 open Set Filter Topology
 open scoped Manifold ContDiff
+
+namespace ContRepresentation
+
+variable {𝕜 G E : Type*} [NontriviallyNormedField 𝕜] [Monoid G]
+  [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+
+/-- Restrict a continuous representation to an invariant open subset. -/
+@[instance_reducible]
+def mulActionOpens (σ : ContRepresentation 𝕜 G E) (B : TopologicalSpace.Opens E)
+    (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B) : MulAction G B where
+  smul g v := ⟨σ g v, hB g v v.2⟩
+  one_smul v := Subtype.ext
+    (congrArg (fun L : E →L[𝕜] E ↦ L v) (map_one σ))
+  mul_smul g h v := Subtype.ext
+    (congrArg (fun L : E →L[𝕜] E ↦ L v) (map_mul σ g h))
+
+/-- The restricted action agrees with the representation after inclusion. -/
+@[simp]
+theorem val_mulActionOpens_smul (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B)
+    (g : G) (v : B) :
+    letI := σ.mulActionOpens B hB
+    (g • v : B).val = σ g v := by rfl
+
+/-- The restriction of a continuous representation to an invariant open subset is smooth. -/
+theorem contMDiffConstSMul_mulActionOpens (σ : ContRepresentation 𝕜 G E)
+    (B : TopologicalSpace.Opens E) (hB : ∀ g : G, ∀ v ∈ B, σ g v ∈ B)
+    (n : ℕ∞ω) :
+    letI := σ.mulActionOpens B hB
+    ContMDiffConstSMul 𝓘(𝕜, E) n G B := by
+  let _ := σ.mulActionOpens B hB
+  constructor
+  intro g
+  apply (TauCeti.ContMDiff.subtypeVal_comp_iff B _).mp
+  simpa only [Function.comp_def, val_mulActionOpens_smul] using
+    (σ g).contDiff.contMDiff.comp (contMDiff_subtype_val (I := 𝓘(𝕜, E)) (n := n))
+
+/-- Forgetting continuity does not change the underlying operators, so invariance of the
+orbit-sum sublevel set also holds for the continuous-linear-map coercion. -/
+theorem preimage_sumOfConjugatesInnerSublevel {G E : Type*} [Group G] [Fintype G]
+    [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    (σ : ContRepresentation ℝ G E) (g : G) (c : ℝ) :
+    σ g ⁻¹' σ.toRepresentation.sumOfConjugatesInnerSublevel c =
+      σ.toRepresentation.sumOfConjugatesInnerSublevel c :=
+  σ.toRepresentation.preimage_sumOfConjugatesInnerSublevel g c
+
+end ContRepresentation
 
 namespace TauCeti
 
