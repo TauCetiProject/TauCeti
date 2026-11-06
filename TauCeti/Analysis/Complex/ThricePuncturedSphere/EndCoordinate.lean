@@ -216,6 +216,18 @@ theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
   rw [this, Real.log_inv, neg_neg]
   exact div_pos (Real.log_pos one_lt_two) (by positivity)
 
+/-- Off the disc `‖w‖ < exp (-2π) / 2`, the longitudinal coordinate of the end at `0` is at most
+`1`. -/
+theorem re_endCoord_zero_le_one {w : ℂ} (hw : Real.exp (-(2 * π)) / 2 ≤ ‖w‖) :
+    (zero.endCoord w).re ≤ 1 := by
+  have hw₀ : 0 < ‖w‖ := lt_of_lt_of_le (by positivity) hw
+  have hlog : -(2 * π) ≤ Real.log (‖w‖ / (1 / 2)) := by
+    rw [Real.le_log_iff_exp_le (by positivity), le_div_iff₀ (by norm_num)]
+    linarith
+  rw [re_endCoord, endCenter_zero, endScale_zero, sub_zero, norm_div, div_le_one (by positivity)]
+  norm_num at hlog ⊢
+  linarith
+
 /-- A point with nonzero longitudinal coordinate is not the center of the end. -/
 theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
     (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by
@@ -509,6 +521,26 @@ theorem closedBall_sdiff_truncation_subset_ball {R : ℝ} (hR : 0 ≤ R) :
       exact hwT ⟨⟨h₀, h⟩, hwD⟩
     linarith
   · linarith
+
+/-- The truncation `S_R` lies in the closed annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)`. -/
+theorem truncation_subset_closedBall_sdiff_ball (R : ℝ) :
+    truncation R ⊆ Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+      Metric.ball 0 (Real.exp (-(2 * π * R)) / 2) :=
+  fun w hw => by
+    rw [truncation_eq] at hw
+    exact ⟨hw.2, fun h => (not_le.2 (mem_ball_zero_iff.1 h)) hw.1.1⟩
+
+/-- The points of the closed annulus `exp (-2πR) / 2 ≤ ‖w‖ ≤ 2 exp (2πR)` outside the truncation
+`S_R` lie in the open disc of radius `exp (-2πR) / 2` about `1`. -/
+theorem closedBall_sdiff_ball_sdiff_truncation_subset_ball (R : ℝ) :
+    (Metric.closedBall 0 (2 * Real.exp (2 * π * R)) \
+        Metric.ball 0 (Real.exp (-(2 * π * R)) / 2)) \ truncation R ⊆
+      Metric.ball 1 (Real.exp (-(2 * π * R)) / 2) := by
+  rintro w ⟨⟨hwB, hwb⟩, hwT⟩
+  rw [Metric.mem_ball, dist_eq_norm]
+  by_contra! h
+  rw [truncation_eq] at hwT
+  exact hwT ⟨⟨not_lt.1 fun h' => hwb (mem_ball_zero_iff.2 h'), h⟩, hwB⟩
 
 /-- The truncation of the thrice-punctured sphere is compact. -/
 theorem isCompact_truncation (R : ℝ) : IsCompact (truncation R) := by
