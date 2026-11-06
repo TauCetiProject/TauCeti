@@ -42,6 +42,58 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {d a c : ℕ} {R : ℝ}
   {u v : E × ℂ → ℂ} {τ : E → E}
 
+/-- A nonzero constant multiple of a product of linear factors vanishes exactly at the
+`r i`. -/
+theorem isRoot_C_mul_prod_X_sub_C_iff {K ι : Type*} [Field K] [Fintype ι] {l : K} (hl : l ≠ 0)
+    (r : ι → K) (z : K) : (C l * ∏ i, (X - C (r i))).IsRoot z ↔ ∃ i, r i = z := by
+  rw [root_mul, iff_false_intro (not_isRoot_C _ z hl), false_or, isRoot_prod]
+  simp [sub_eq_zero, eq_comm]
+
+omit [FiniteDimensional ℂ E] in
+/-- Two analytic extensions across the hyperplane `z = 0` of conjugation-related branches are
+conjugation-related on the whole ball, provided the branches are on the punctured ball. -/
+private theorem eqOn_conj_comp_of_eqOn_punctured {U : Set E} {R' : ℝ} {k : ℕ} {τ : E → E}
+    {g₁ g₂ r₁ r₂ : E × ℂ → ℂ} (hg₁ : AnalyticOnNhd ℂ g₁ (U ×ˢ ball 0 R'))
+    (hg₂ : AnalyticOnNhd ℂ g₂ (U ×ˢ ball 0 R'))
+    (he₁ : EqOn g₁ (fun b ↦ b.2 ^ k * r₁ b) (U ×ˢ (ball 0 R' \ {0})))
+    (he₂ : EqOn g₂ (fun b ↦ b.2 ^ k * r₂ b) (U ×ˢ (ball 0 R' \ {0})))
+    (hκ : ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R'))
+    (hκT : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') (U ×ˢ ball 0 R'))
+    (hκS : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 R' \ {0}))
+      (U ×ˢ (ball 0 R' \ {0})))
+    (hr : ∀ b ∈ U ×ˢ (ball 0 R' \ {0}), r₂ b = conj (r₁ (τ b.1, conj b.2))) :
+    EqOn g₂ (fun b ↦ conj (g₁ (τ b.1, conj b.2))) (U ×ˢ ball 0 R') := by
+  refine TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
+    hg₂.continuousOn
+    (Complex.continuous_conj.comp_continuousOn (hg₁.continuousOn.comp hκ hκT)) ?_
+  intro b hb
+  simp only [he₂ hb, he₁ (hκS hb), hr b hb, map_mul, map_pow, Complex.conj_conj]
+
+omit [FiniteDimensional ℂ E] in
+/-- Units of conjugation-related Laurent branches at paired base points agree after conjugation
+near the hyperplane `z = 0`, and the exponents agree; the base point need not be fixed by `τ`. -/
+private theorem exponent_eq_and_unit_conj {U : Set E} (hU : IsOpen U) {R' : ℝ} (hR' : 0 < R')
+    {d : ℕ} {r W : Fin d → E × ℂ → ℂ} {e : Fin d → ℤ} {σ : Equiv.Perm (Fin d)} {τ : E → E}
+    (hτ : ContinuousOn τ U) (hτU : MapsTo τ U U)
+    (hWa : ∀ i, ∀ x ∈ U, AnalyticAt ℂ (W i) (x, 0)) (hW0 : ∀ i, ∀ x ∈ U, W i (x, 0) ≠ 0)
+    (hform : ∀ x ∈ U, ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
+      (∀ i, W i b ≠ 0) ∧ (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * W i b))
+    (hσ : ∀ i, ∀ b ∈ U ×ˢ (ball (0 : ℂ) R' \ {0}), r (σ i) b = conj (r i (τ b.1, conj b.2)))
+    {x : E} (hx : x ∈ U) (i : Fin d) :
+    e (σ i) = e i ∧ ∀ᶠ b in 𝓝 (x, (0 : ℂ)), W (σ i) b = conj (W i (τ b.1, conj b.2)) := by
+  have hκt : Tendsto (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (𝓝 (x, (0 : ℂ))) (𝓝 (τ x, (0 : ℂ))) := by
+    simpa only [Prod.map_def, map_zero] using
+      (hτ.continuousAt (hU.mem_nhds hx)).tendsto.prodMap_nhds
+        (Complex.continuous_conj.tendsto (0 : ℂ))
+  apply ((hWa (σ i) x hx).restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj (hW0 (σ i) x hx)
+    ((hWa i (τ x) (hτU hx)).restrictScalars (𝕜 := ℝ)) (hW0 i (τ x) (hτU hx))
+    (hτ.continuousAt (hU.mem_nhds hx))
+  filter_upwards [hform x hx, hκt.eventually (hform (τ x) (hτU hx)),
+    (hU.prod isOpen_ball).mem_nhds (x := (x, (0 : ℂ))) ⟨hx, mem_ball_self hR'⟩]
+    with b hb hκb hbT hb0
+  rw [← hb.2 hb0 (σ i), hσ i b ⟨hbT.1, hbT.2, hb0⟩,
+    hκb.2 (by simpa only [ne_eq, map_eq_zero] using hb0) i]
+
 /-- Construct a nonmonic Puiseux Laurent factorization with conjugation symmetry on the same
 labels. Conjugation preserves the parameter-independent Laurent exponents and interchanges
 the unit germs at paired base points. These unit identities hold across the exceptional
@@ -82,25 +134,17 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
               w x (σ i) b = conj (w ⟨τ x.1, hτU x.2⟩ i (τ b.1, conj b.2)) := by
   obtain ⟨R', hR', hfit, r, g, hra, hg, hr, e, W, hbound, hWa, hW0, hWform⟩ :=
     exists_analyticOnNhd_nonmonic_laurent hU hR hF hdeg hdiscr hu hu0 hv hv0 hlead hconst
-  let w : U → Fin d → E × ℂ → ℂ := fun _ ↦ W
-  have hwa (x : U) (i : Fin d) : AnalyticAt ℂ (w x i) (x.1, 0) :=
-    hWa i _ ⟨x.2, mem_ball_self hR'⟩
-  have hw0 (x : U) (i : Fin d) : w x i (x.1, 0) ≠ 0 :=
-    hW0 i _ ⟨x.2, mem_ball_self hR'⟩
-  have hwform (x : U) : ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),
-      (∀ i, w x i b ≠ 0) ∧ (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * w x i b) := by
+  have hform (x : E) (hx : x ∈ U) : ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
+      (∀ i, W i b ≠ 0) ∧ (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * W i b) := by
     filter_upwards [(hU.prod isOpen_ball).mem_nhds
-      (x := (x.1, (0 : ℂ))) ⟨x.2, mem_ball_self hR'⟩] with b hb
+      (x := (x, (0 : ℂ))) ⟨hx, mem_ball_self hR'⟩] with b hb
     exact ⟨fun i ↦ hW0 i b hb, fun hb0 i ↦ hWform b ⟨hb.1, hb.2, hb0⟩ i⟩
   let S := U ×ˢ (ball (0 : ℂ) R' \ {0})
   let T := U ×ˢ ball (0 : ℂ) R'
   let κ : E × ℂ → E × ℂ := fun b ↦ (τ b.1, conj b.2)
   let q : E × ℂ → E × ℂ := fun b ↦ (b.1, b.2 ^ d.factorial)
-  have hST : S ⊆ T := prod_mono subset_rfl sdiff_subset
-  have hq : MapsTo q S (U ×ˢ (ball 0 R \ {0})) := by
-    intro b hb
-    exact ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2.1,
-      pow_ne_zero _ hb.2.2⟩
+  have hq : MapsTo q S (U ×ˢ (ball 0 R \ {0})) := fun b hb ↦
+    ⟨hb.1, mapsTo_pow_ball_zero d.factorial_ne_zero hfit hb.2.1, pow_ne_zero _ hb.2.2⟩
   have hconjBall : MapsTo conj (ball (0 : ℂ) R') (ball 0 R') := by
     intro z hz
     simpa only [mem_ball_zero_iff, Complex.norm_conj] using hz
@@ -110,12 +154,10 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     hτU.prodMap fun z hz ↦ ⟨hconjBall hz.1, by simpa using hz.2⟩
   have hroot (b : E × ℂ) (hb : b ∈ S) (z : ℂ) :
       (F (q b)).IsRoot z ↔ ∃ i, r i b = z := by
-    have hl : (F (q b)).coeff d ≠ 0 := by
-      rw [hlead _ ⟨(hq hb).1, (hq hb).2.1⟩]
-      exact mul_ne_zero (pow_ne_zero _ (hq hb).2.2) (hu0 _ ⟨(hq hb).1, (hq hb).2.1⟩)
-    rw [(hr b hb).2, root_mul, iff_false_intro (not_isRoot_C _ z hl),
-      false_or, isRoot_prod]
-    simp [sub_eq_zero, eq_comm]
+    obtain ⟨h₁, h₂, h₃⟩ := hq hb
+    rw [(hr b hb).2, isRoot_C_mul_prod_X_sub_C_iff (by
+      rw [hlead _ ⟨h₁, h₂⟩]
+      exact mul_ne_zero (pow_ne_zero _ h₃) (hu0 _ ⟨h₁, h₂⟩))]
   -- The punctured product is connected; conjugation therefore uses one permutation.
   let := isPathConnected_iff_pathConnectedSpace.1
     (isPathConnected_ball_sdiff_singleton (by simp [Complex.rank_real_complex])
@@ -127,35 +169,18 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
   obtain ⟨t₀⟩ : Nonempty ↥(ball (0 : ℂ) R' \ {0}) := inferInstance
   obtain ⟨σ, ⟨hσσ, hσ⟩, -⟩ := TauCeti.existsUnique_root_conj_perm_of_subset_closure
     hSc subset_rfl subset_closure (fun i ↦ (hra i).continuousOn)
-    (fun b hb ↦ (hr b hb).1) hroot (hκ.mono hST) hκS hκS
+    (fun b hb ↦ (hr b hb).1) hroot (hκ.mono (prod_mono subset_rfl sdiff_subset)) hκS hκS
     (fun b hb ↦ Prod.ext (hττ b.1 hb.1) (Complex.conj_conj b.2))
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
-  have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T := by
-    refine TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton (c := (0 : ℂ)) isOpen_ball
-      (hg (σ i)).1.continuousOn
-      (Complex.continuous_conj.comp_continuousOn ((hg i).1.continuousOn.comp hκ hκT)) ?_
-    intro b hb
-    simp only [(hg (σ i)).2 hb, (hg i).2 (hκS hb), hσ i b hb,
-      κ, map_mul, map_pow, Complex.conj_conj]
-  -- Compare units at `x` and `τ x`; a fixed point of `τ` is unnecessary.
-  have hcompat (x : U) (i : Fin d) : e (σ i) = e i ∧
-      ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),
-        w x (σ i) b = conj (w ⟨τ x.1, hτU x.2⟩ i (τ b.1, conj b.2)) := by
-    have hκt : Tendsto κ (𝓝 (x.1, (0 : ℂ))) (𝓝 (τ x.1, (0 : ℂ))) := by
-      simpa only [κ, Prod.map_def, map_zero] using
-        (hτ.continuousAt (hU.mem_nhds x.2)).tendsto.prodMap_nhds
-          (Complex.continuous_conj.tendsto (0 : ℂ))
-    apply ((hwa x (σ i)).restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj (hw0 x (σ i))
-      ((hwa ⟨τ x.1, hτU x.2⟩ i).restrictScalars (𝕜 := ℝ)) (hw0 ⟨τ x.1, hτU x.2⟩ i)
-      (hτ.continuousAt (hU.mem_nhds x.2))
-    filter_upwards [hwform x, hκt.eventually (hwform ⟨τ x.1, hτU x.2⟩),
-      (hU.prod isOpen_ball).mem_nhds (x := (x.1, (0 : ℂ))) ⟨x.2, mem_ball_self hR'⟩]
-      with b hb hκb hbT hb0
-    rw [← hb.2 hb0 (σ i), hσ i b ⟨hbT.1, hbT.2, hb0⟩,
-      hκb.2 (by simpa only [κ, ne_eq, map_eq_zero] using hb0) i]
-  exact ⟨R', hR', hfit, r, g, hra, hg, hr, σ, hσσ, hσ, hgfull,
-    e, w, hbound, fun i ↦ (hcompat x₀ i).1,
-    fun x i ↦ ⟨hwa x i, hw0 x i⟩, hwform, fun x i ↦ (hcompat x i).2⟩
+  have hcompat (x : U) (i : Fin d) := exponent_eq_and_unit_conj hU hR' hτ hτU
+    (fun i y hy ↦ hWa i _ ⟨hy, mem_ball_self hR'⟩) (fun i y hy ↦ hW0 i _ ⟨hy, mem_ball_self hR'⟩)
+    hform hσ x.2 i
+  exact ⟨R', hR', hfit, r, g, hra, hg, hr, σ, hσσ, hσ,
+    fun i ↦ eqOn_conj_comp_of_eqOn_punctured (hg i).1 (hg (σ i)).1 (hg i).2 (hg (σ i)).2 hκ hκT
+      hκS (hσ i),
+    e, fun _ ↦ W, hbound, fun i ↦ (hcompat x₀ i).1,
+    fun x i ↦ ⟨hWa i _ ⟨x.2, mem_ball_self hR'⟩, hW0 i _ ⟨x.2, mem_ball_self hR'⟩⟩,
+    fun x ↦ hform x.1 x.2, fun x i ↦ (hcompat x i).2⟩
 
 end TauCeti.Polynomial
