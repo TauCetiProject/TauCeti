@@ -11,6 +11,7 @@ public import Mathlib.LinearAlgebra.BilinearForm.Orthogonal
 public import Mathlib.LinearAlgebra.Matrix.BilinearForm
 public import Mathlib.LinearAlgebra.PerfectPairing.Basic
 public import Mathlib.LinearAlgebra.Dimension.Free
+public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.RingTheory.LocalRing.Basic
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Data.Matrix.Block
@@ -25,6 +26,7 @@ import TauCeti.LinearAlgebra.Matrix.BilinearForm
 import TauCeti.LinearAlgebra.Matrix.Symmetric
 import TauCeti.LinearAlgebra.Submodule.Compl
 import TauCeti.Order.SupIndep
+import TauCeti.RingTheory.Valuation.FinsetDvd
 
 /-!
 # Modular bilinear forms
@@ -421,6 +423,32 @@ theorem IsSymm.exists_isModular_restrict_isCompl_orthogonal [IsLocalRing R] (hB 
     ((Submodule.eq_bot_iff _).mp h _ (Submodule.subset_span (Set.mem_range_self 0))),
     ?_, hmod, hmod.isCompl_orthogonal hB hd hdvd⟩
   exact Submodule.span_mono (Set.range_subset_iff.mpr fun i ↦ by fin_cases i <;> simp)
+
+/-- Over a discrete valuation ring with uniformizer `π`, a nonzero symmetric bilinear form on a
+finite free module has a nonzero direct summand `S`, complementary to its orthogonal
+`B.orthogonal S`, on which the form is `π ^ k`-modular for some `k`. -/
+theorem IsSymm.exists_ne_bot_isModular_pow_isCompl_orthogonal [IsDomain R]
+    [IsDiscreteValuationRing R] [Free R M] [Module.Finite R M] (hB : B.IsSymm) (hB0 : B ≠ 0)
+    {π : R} (hπ : Irreducible π) :
+    ∃ (S : Submodule R M) (k : ℕ), S ≠ ⊥ ∧ IsCompl S (B.orthogonal S) ∧
+      (B.restrict S).IsModular (π ^ k) := by
+  have : Nontrivial M := by
+    by_contra! h
+    exact hB0 (LinearMap.ext₂ fun x y ↦ by simp [Subsingleton.elim x 0])
+  -- A Gram entry of minimal valuation divides every value of the form.
+  let b := Free.chooseBasis R M
+  have : Nonempty (Free.ChooseBasisIndex R M) := b.index_nonempty
+  obtain ⟨⟨i₀, j₀⟩, hij⟩ :=
+    TauCeti.PreValuationRing.exists_forall_dvd fun q : _ × _ ↦ B (b q.1) (b q.2)
+  have hdvd : ∀ x y, B (b i₀) (b j₀) ∣ B x y :=
+    dvd_apply_of_forall_dvd_basis b fun k l ↦ hij (k, l)
+  have hd0 : B (b i₀) (b j₀) ≠ 0 := fun h ↦
+    hB0 (LinearMap.ext₂ fun x y ↦ zero_dvd_iff.mp (h ▸ hdvd x y))
+  obtain ⟨S, hS0, -, hSmod, hSc⟩ := hB.exists_isModular_restrict_isCompl_orthogonal
+    (mem_nonZeroDivisors_of_ne_zero hd0) hdvd
+  obtain ⟨k, u, hku⟩ := IsDiscreteValuationRing.eq_unit_mul_pow_irreducible hd0 hπ
+  exact ⟨S, k, hS0, hSc, hSmod.of_associated
+    ⟨u⁻¹, by rw [hku, mul_comm, ← mul_assoc, Units.inv_mul, one_mul]⟩⟩
 
 section Gram
 
