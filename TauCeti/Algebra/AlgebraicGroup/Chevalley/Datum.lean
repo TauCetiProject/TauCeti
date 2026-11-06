@@ -10,7 +10,6 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
-public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.WeightLattice
 
 /-!
@@ -233,21 +232,6 @@ theorem isNilpotent_representation_rootGenerator (i : Fin t.rank ⊕ Fin t.rank)
   UniversalEnvelopingAlgebra.isNilpotent_of_isCartanWeightVector (t.lieBasis ht).h
     D.representation D.isCartanWeightVector_basis D.span_range_basis_eq_top
     (t.lie_lieBasis_h_rootGenerator ht i) (t.rootGeneratorWeight_ne_zero ht i)
-
-/-- The admissible lattice of a Chevalley datum is stable under the all-root Kostant form,
-with the same Cartan generators as the simple-generator form. -/
-theorem allRoot_stable :
-    ∀ u ∈ UniversalEnvelopingAlgebra.kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
-      ∀ m ∈ D.lattice, D.representation u m ∈ D.lattice := by
-  apply UniversalEnvelopingAlgebra.kostantForm_apply_mem
-    (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice.toIntSubmodule
-  · intro γ n m hm
-    rw [Associative.map_dividedPower]
-    exact dividedPower_chevalleySystem_smul_mem D.representation D.lattice
-      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator γ n m hm
-  · intro i n m hm
-    exact D.representation_mem_lattice _
-      (UniversalEnvelopingAlgebra.ringChoose_mem_kostantForm _ _ i n) m hm
 
 /-! ## The group scheme -/
 

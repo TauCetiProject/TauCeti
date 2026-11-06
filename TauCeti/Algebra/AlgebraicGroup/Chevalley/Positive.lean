@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.PositiveSubsystem
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Order
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.WeightDegree
@@ -52,7 +53,8 @@ lattice of a Chevalley datum. Positivity is measured in the pinned Bourbaki base
 noncomputable def positiveSubgroup (A : CommAlgCat.{v} ℤ) :
     Subgroup (LinearMap.GeneralLinearGroup A (A ⊗[ℤ] D.lattice)) :=
   kostantSubsystemSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h D.representation
-    D.lattice D.allRoot_stable
+    D.lattice (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
     (isNilpotent_apply_ι_chevalleySystem D.representation
       D.isNilpotent_representation_rootGenerator)
     (posRoots (t.rationalRootSystem ht) (t.rationalBase ht)) A
@@ -130,12 +132,15 @@ theorem isNilpotent_kostantSubsystemSubgroup_of_subset_posRoots
     (hS : S ⊆ posRoots (t.rationalRootSystem ht) (t.rationalBase ht))
     (A : Type v) [CommRing A] :
     Group.IsNilpotent (kostantSubsystemSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h
-      D.representation D.lattice D.allRoot_stable
+      D.representation D.lattice
+      (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
       (isNilpotent_apply_ι_chevalleySystem D.representation
         D.isNilpotent_representation_rootGenerator) S (CommAlgCat.of ℤ A)) := by
   exact isNilpotent_kostantSubsystemSubgroup_of_isPositive
     (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
-    D.allRoot_stable
+    (kostantForm_chevalleySystem_smul_mem D.representation D.lattice
+      D.representation_mem_lattice D.isNilpotent_representation_rootGenerator)
     (isNilpotent_apply_ι_chevalleySystem D.representation
       D.isNilpotent_representation_rootGenerator)
     (orderedWeightBasis (t.weightDegree ht) D.weight D.basis)

@@ -8,7 +8,7 @@ module
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.SimplyConnectedModule.Lattice
 import TauCeti.Algebra.Lie.Sl2.RangeKer
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Conjugate
+import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Subgroup
 
 /-!
 # All-root admissibility of Kostant-stable lattices
@@ -116,15 +116,20 @@ theorem kostantForm_chevalleySystem_apply_mem (M : AddSubgroup V)
       (t.chevalleySystem ht) (t.lieBasis ht).h)
     {v : V} (hv : v ∈ M) :
     representation ℚ (t.lieAlgebra ht) V u v ∈ M := by
-  apply kostantForm_apply_mem (t.chevalleySystem ht) (t.lieBasis ht).h
-    (representation ℚ (t.lieAlgebra ht) V) M.toIntSubmodule _ _ u hu hv
-  · intro γ n w hw
-    rw [Associative.map_dividedPower, representation_ι]
-    exact t.dividedPower_chevalleySystem_apply_mem ht M hM γ n hw
-  · intro i n w hw
-    exact hM _ (by
-      rw [kostantForm_def]
-      exact LieAlgebra.Basis.ringChoose_mem_kostantForm _ i n) w hw
+  have hstable : ∀ u ∈ UniversalEnvelopingAlgebra.kostantForm
+      (t.lieBasis ht).rootGenerator (t.lieBasis ht).h, ∀ v ∈ M,
+      representation ℚ (t.lieAlgebra ht) V u v ∈ M := by
+    simpa only [kostantForm_def, LieAlgebra.Basis.kostantForm_def] using hM
+  have hnil (i : Fin t.rank ⊕ Fin t.rank) :
+      IsNilpotent (representation ℚ (t.lieAlgebra ht) V
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))) := by
+    rcases i with i | i
+    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inl] using
+        ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_e (K := ℚ) (M := V)
+    · simpa only [representation_ι, LieAlgebra.Basis.rootGenerator_inr] using
+        ((t.lieBasis ht).isSl2Triple_rootGenerator i).isNilpotent_toEnd_f (K := ℚ) (M := V)
+  exact kostantForm_chevalleySystem_smul_mem
+    (representation ℚ (t.lieAlgebra ht) V) M hstable hnil u hu v hv
 
 /-- The full-weight lattice is preserved by the all-root Kostant form of the pinned
 Chevalley system. -/
