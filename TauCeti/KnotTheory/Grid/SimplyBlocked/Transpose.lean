@@ -7,6 +7,7 @@ module
 
 public import TauCeti.KnotTheory.Grid.Differential.Transpose
 public import TauCeti.KnotTheory.Grid.SimplyBlocked.Basic
+public import TauCeti.KnotTheory.Grid.Grading.SimplyBlocked
 
 /-!
 # Diagonal reflection of the simply blocked grid complex
@@ -98,3 +99,28 @@ theorem simplyBlockedDifferential_transpose_simplyBlockedTransposeEquiv
     simplyBlockedSpecialization_unblockedDifferential]
 
 end TauCeti.GridDiagram
+
+namespace TauCeti.OddComponentGridDiagram
+
+variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R] (i : Fin n)
+
+/-- Diagonal reflection preserves the Maslov--Alexander bidegree after blocking the reflected
+`O`-marking. This also applies to the one-variable specialization of an odd-component link. -/
+theorem simplyBlockedTransposeEquiv_mem_bigradedChainHatPiece
+    {g : ℤ × ℤ} {c : GridChainHat R n i} (hc : c ∈ G.bigradedChainHatPiece R i g) :
+    G.1.simplyBlockedTransposeEquiv R i c ∈
+      G.transpose.bigradedChainHatPiece R (G.1.O i) g := by
+  classical
+  rw [mem_bigradedChainHatPiece] at hc ⊢
+  intro x e he
+  rw [GridDiagram.simplyBlockedTransposeEquiv_apply, simplyBlockedRenameEquiv_apply,
+    MvPolynomial.support_rename_of_injective
+      (Equiv.injective _), Finset.mem_image] at he
+  obtain ⟨e, he, rfl⟩ := he
+  have hM := G.1.maslovOℤ_transpose x.transpose
+  have hA := G.alexanderℤ_transpose x.transpose
+  rw [GridState.transpose_transpose] at hM hA
+  simpa only [Prod.ext_iff, Prod.fst_sub, Prod.snd_sub, bidegree_fst, bidegree_snd,
+    hM, hA, Finsupp.degree_mapDomain] using hc x.transpose e he
+
+end TauCeti.OddComponentGridDiagram
