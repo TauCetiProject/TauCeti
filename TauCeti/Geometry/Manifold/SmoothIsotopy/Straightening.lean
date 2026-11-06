@@ -18,6 +18,8 @@ public import TauCeti.Geometry.Manifold.SmoothIsotopy.Basic
 public import TauCeti.Topology.Circle.Arc
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 
+import TauCeti.Analysis.Calculus.MeanValue
+
 /-!
 # Straightening a circle embedding near a point
 
@@ -133,17 +135,6 @@ private theorem norm_deriv_splice_sub_le {k l : ℝ → E} {k' l' v : E} {δ s t
     _ ≤ ‖h' - ContinuousLinearMap.toSpanSingleton ℝ v‖ * ‖(1 : ℝ)‖ :=
         ContinuousLinearMap.le_opNorm _ _
     _ ≤ (3 + 4 * B) * ε := by rw [norm_one, mul_one]; exact hh'v
-
-/-- A `C¹` curve on `(-r, r)` has velocity within `ε` of its velocity `v` at `0` near `0`. -/
-private theorem exists_norm_deriv_sub_lt {f : ℝ → E} {r ε : ℝ} {v : E}
-    (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hr : 0 < r) (hf0 : deriv f 0 = v) (hε : 0 < ε) :
-    ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
-  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
-  have := (hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt
-    (hI.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩)
-  obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε
-  exact ⟨ρ, hρ, fun t ht => by
-    simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
 
 /-- **The spliced curves are uniformly regular.** If `k` and `l` are `C¹` near `0`, agree at `0`
 and have the same nonzero velocity `v` there, then on a fixed interval `[-ρ, ρ]` the velocity of
@@ -422,73 +413,6 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimension
 
 variable [T2Space M]
 
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
-  [T2Space M] in
-/-- For continuous maps `K` and `L` of the circle which agree at `1`, with `K 1` in the domain of
-a chart `φ`, some arc `|arg z| < r` inside any neighbourhood `U` of `1` is mapped by both into
-the domain of `φ`. -/
-private theorem exists_centeredArc_subset_and_mem_source {K L : Circle → M} (hK : Continuous K)
-    (hL : Continuous L) (h₀ : K 1 = L 1) {φ : OpenPartialHomeomorph M E} (hpφ : K 1 ∈ φ.source)
-    {U : Set Circle} (hU : U ∈ 𝓝 1) :
-    ∃ r, 0 < r ∧ r ≤ Real.pi ∧ Circle.centeredArc r ⊆ U ∧
-      (∀ t, |t| < r → K (Circle.exp t) ∈ φ.source) ∧
-      (∀ t, |t| < r → L (Circle.exp t) ∈ φ.source) := by
-  have hpre {f : Circle → M} (hf : Continuous f) (hf1 : f 1 ∈ φ.source) :
-      (fun t => f (Circle.exp t)) ⁻¹' φ.source ∈ 𝓝 0 :=
-    (hf.comp Circle.exp.continuous).continuousAt.preimage_mem_nhds
-      (φ.open_source.mem_nhds (by rwa [comp_apply, Circle.exp_zero]))
-  have hU' : Circle.exp ⁻¹' U ∈ 𝓝 0 :=
-    Circle.exp.continuous.continuousAt.preimage_mem_nhds (by rwa [Circle.exp_zero])
-  obtain ⟨r', hr', hball⟩ := Metric.mem_nhds_iff.1
-    (inter_mem hU' (inter_mem (hpre hK hpφ) (hpre hL (h₀ ▸ hpφ))))
-  have hmem {t : ℝ} (ht : |t| < min r' Real.pi) : t ∈ Metric.ball 0 r' := by
-    simpa [Real.dist_eq] using ht.trans_le (min_le_left _ _)
-  refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_,
-    fun t ht => (hball (hmem ht)).2.1, fun t ht => (hball (hmem ht)).2.2⟩
-  rintro _ ⟨t, ht, rfl⟩
-  exact (hball (hmem ht)).1
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- A smooth map of the circle, read in a chart along `Circle.exp` on an arc, is smooth. -/
-private theorem contDiffOn_chartAt_comp_circleExp {f : Circle → M} {r : ℝ} (p : M)
-    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ f)
-    (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ (chartAt E p).source) :
-    ContDiffOn ℝ ∞ (fun t => chartAt E p (f (Circle.exp t))) (Ioo (-r) r) :=
-  contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_chart (x := p)).comp
-    (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
-
-omit [FiniteDimensional ℝ E] [T2Space M] in
-/-- If a smooth embedding `K` of the circle and a smooth map `L` agree to first order at `1`, then
-read in a chart at `K 1` along `Circle.exp` they have the same velocity at `0`, which is nonzero. -/
-private theorem deriv_chartAt_comp_circleExp_eq_and_ne_zero
-    (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) {L : Circle → M}
-    (hL : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ L) (h₀ : K 1 = L 1)
-    (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 = mfderiv (𝓡 1) 𝓘(ℝ, E) L 1) :
-    deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 =
-        deriv (fun t => chartAt E (K 1) (L (Circle.exp t))) 0 ∧
-      deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 ≠ 0 := by
-  have hφ : chartAt E (K 1) ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
-    IsManifold.chart_mem_maximalAtlas _
-  have hpφ : K 1 ∈ (chartAt E (K 1)).source := mem_chart_source E _
-  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (K.contMDiff.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero])
-  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
-    (hL.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero, ← h₀])
-  rw [Circle.exp_zero] at hvK hvL
-  rw [← h₁, ← h₀] at hvL
-  refine ⟨by simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm), fun h0 => ?_⟩
-  have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E (K 1)) (K 1)
-      (mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0 1)) = 0 := by
-    have h := (congrArg (fun T => T 1) hvK).symm
-    simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
-    exact h.trans h0
-  have hφi := (((chartAt E (K 1)).isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hpφ).isDiffImmersionAt
-    (by simp)).mfderiv_injective
-  have hKi := (K.isImmersion.isImmersionAt 1).mfderiv_injective (by simp)
-  exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp 0
-    ((hKi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
-      (map_zero _).symm))
-
 omit [FiniteDimensional ℝ E] [IsManifold 𝓘(ℝ, E) ∞ M] in
 /-- For scales `δ` small enough, the spliced curves stay on the arc `|t| < 2 δ` inside the chart
 `φ` and over the point `K 1`, whose chart image is the common value of `k` and `l` at `0`, away
@@ -542,8 +466,8 @@ private theorem exists_smoothIsotopy_eventuallyEq_of_mfderiv_eq_one
   have hφ := IsManifold.chart_mem_maximalAtlas (I := 𝓘(ℝ, E)) (n := ∞) p
   have hpφ : p ∈ φ.source := mem_chart_source E p
   -- Step 1: an arc `|arg z| < r` inside `U`, along which `K` and `L` stay in the chart `φ`.
-  obtain ⟨r, hr, hrπ, hrU, hKφ, hLφ⟩ := exists_centeredArc_subset_and_mem_source
-    K.contMDiff.continuous hL.continuous h₀ hpφ hU
+  obtain ⟨r, hr, hrπ, hrU, hKφ, hLφ⟩ := exists_centeredArc_subset_and_mem_of_isOpen
+    K.contMDiff.continuous hL.continuous h₀ φ.open_source hpφ hU
   -- Step 2: `K` and `L` read in the chart along the circle have the same nonzero velocity at `0`.
   set k : ℝ → E := fun t => φ (K (Circle.exp t))
   set l : ℝ → E := fun t => φ (L (Circle.exp t))

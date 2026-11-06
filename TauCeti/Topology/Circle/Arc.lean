@@ -51,13 +51,16 @@ open arc.
   pair of angles.
 * `TauCeti.mem_circleExp_image_Icc_neg_iff` — the closed arc `Circle.exp '' Set.Icc (-a) a` is
   where the argument is at most `a` in absolute value.
+* `TauCeti.exists_centeredArc_subset_and_mem_of_isOpen` — an arc about `1` inside a given
+  neighbourhood which two continuous maps of the circle agreeing at `1` send into an open set.
 -/
 
 public section
 
 namespace TauCeti
 
-open Real Set
+open Real Set Function
+open scoped Topology
 
 /-! The statements below are about a *closed arc* `Circle.exp '' Set.Icc a b`. Nothing ties the
 angles to a period, so a consumer may translate them by any multiple of `2 * π`. -/
@@ -148,5 +151,27 @@ theorem mem_circleExp_image_Icc_neg_iff {a : ℝ} {z : Circle} :
   · rw [Circle.arg_exp (by linarith [ht.1]) (by linarith [ht.2])]
     exact abs_le.2 ht
   · exact (Complex.abs_arg_le_pi _).trans haπ
+
+/-- For continuous maps `K` and `L` of the circle which agree at `1`, with `K 1` in an open set
+`S`, some arc `|arg z| < r` inside any neighbourhood `U` of `1` is mapped by both into `S`. -/
+theorem exists_centeredArc_subset_and_mem_of_isOpen {M : Type*} [TopologicalSpace M]
+    {K L : Circle → M} (hK : Continuous K) (hL : Continuous L) (h₀ : K 1 = L 1) {S : Set M}
+    (hS : IsOpen S) (hKS : K 1 ∈ S) {U : Set Circle} (hU : U ∈ 𝓝 1) :
+    ∃ r, 0 < r ∧ r ≤ Real.pi ∧ Circle.centeredArc r ⊆ U ∧
+      (∀ t, |t| < r → K (Circle.exp t) ∈ S) ∧ (∀ t, |t| < r → L (Circle.exp t) ∈ S) := by
+  have hpre {f : Circle → M} (hf : Continuous f) (hf1 : f 1 ∈ S) :
+      (fun t => f (Circle.exp t)) ⁻¹' S ∈ 𝓝 0 :=
+    (hf.comp Circle.exp.continuous).continuousAt.preimage_mem_nhds
+      (hS.mem_nhds (by rwa [comp_apply, Circle.exp_zero]))
+  have hU' : Circle.exp ⁻¹' U ∈ 𝓝 0 :=
+    Circle.exp.continuous.continuousAt.preimage_mem_nhds (by rwa [Circle.exp_zero])
+  obtain ⟨r', hr', hball⟩ := Metric.mem_nhds_iff.1
+    (Filter.inter_mem hU' (Filter.inter_mem (hpre hK hKS) (hpre hL (h₀ ▸ hKS))))
+  have hmem {t : ℝ} (ht : |t| < min r' Real.pi) : t ∈ Metric.ball 0 r' := by
+    simpa [Real.dist_eq] using ht.trans_le (min_le_left _ _)
+  refine ⟨min r' Real.pi, lt_min hr' Real.pi_pos, min_le_right _ _, ?_,
+    fun t ht => (hball (hmem ht)).2.1, fun t ht => (hball (hmem ht)).2.2⟩
+  rintro _ ⟨t, ht, rfl⟩
+  exact (hball (hmem ht)).1
 
 end TauCeti

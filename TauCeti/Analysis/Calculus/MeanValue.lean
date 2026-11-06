@@ -7,7 +7,9 @@ module
 
 public import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.AffineMap
+import Mathlib.Analysis.Calculus.ContDiff.Deriv
 public import Mathlib.Analysis.Calculus.Deriv.Basic
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
@@ -175,3 +177,22 @@ theorem norm_image_sub_le_of_norm_hasDerivWithin_le' {φ : G} {C : ℝ}
   abel
 
 end Convex
+
+namespace TauCeti
+
+open Set
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A `C¹` curve on `(-r, r)` has velocity within `ε` of its velocity `v` at `0` near `0`. -/
+theorem exists_norm_deriv_sub_lt {f : ℝ → E} {r ε : ℝ} {v : E}
+    (hf : ContDiffOn ℝ 1 f (Ioo (-r) r)) (hr : 0 < r) (hf0 : deriv f 0 = v) (hε : 0 < ε) :
+    ∃ ρ > 0, ∀ t, |t| < ρ → ‖deriv f t - v‖ < ε := by
+  have hI : IsOpen (Ioo (-r) r) := isOpen_Ioo
+  have := (hf.continuousOn_deriv_of_isOpen hI le_rfl).continuousAt
+    (hI.mem_nhds ⟨neg_lt_zero.2 hr, hr⟩)
+  obtain ⟨ρ, hρ, h⟩ := Metric.continuousAt_iff.1 this ε hε
+  exact ⟨ρ, hρ, fun t ht => by
+    simpa [dist_eq_norm, hf0] using h (by simpa [Real.dist_eq] using ht)⟩
+
+end TauCeti

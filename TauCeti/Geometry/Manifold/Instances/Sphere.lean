@@ -10,12 +10,15 @@ public import Mathlib.Analysis.Normed.Module.Normalize
 public import Mathlib.Geometry.Manifold.SmoothEmbedding
 public import TauCeti.Analysis.InnerProductSpace.LinearIsometry
 public import TauCeti.Geometry.Manifold.Immersion.Basic
+public import TauCeti.Geometry.Manifold.SmoothEmbedding.Basic
 public import TauCeti.Geometry.Sphere.LinearIsometry
 
 import Mathlib.Analysis.Calculus.Deriv.Linear
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.Algebra.SMul
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
+import TauCeti.Geometry.Manifold.Immersion.Differential
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
@@ -538,6 +541,52 @@ theorem toSpanSingleton_deriv_chart_comp_circleExp {M : Type*} [TopologicalSpace
   have h := toSpanSingleton_deriv_comp_circleExp (f := φ ∘ f) (t := t) (hφd.comp _ hf)
   rw [mfderiv_comp _ hφd hf] at h
   exact h
+
+section ChartAlongCircleExp
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {M : Type*} [TopologicalSpace M]
+  [ChartedSpace E M] [IsManifold 𝓘(ℝ, E) ∞ M]
+
+/-- A smooth map of the circle, read in a chart along `Circle.exp` on an arc, is smooth. -/
+theorem contDiffOn_chartAt_comp_circleExp {f : Circle → M} {r : ℝ} (p : M)
+    (hf : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ f)
+    (hfφ : ∀ t, |t| < r → f (Circle.exp t) ∈ (chartAt E p).source) :
+    ContDiffOn ℝ ∞ (fun t => chartAt E p (f (Circle.exp t))) (Ioo (-r) r) :=
+  contMDiffOn_iff_contDiffOn.1 ((contMDiffOn_chart (x := p)).comp
+    (hf.comp contMDiff_circleExp).contMDiffOn fun t ht => hfφ t (abs_lt.2 ht))
+
+/-- If a smooth embedding `K` of the circle and a smooth map `L` agree to first order at `1`, then
+read in a chart at `K 1` along `Circle.exp` they have the same velocity at `0`, which is nonzero. -/
+theorem deriv_chartAt_comp_circleExp_eq_and_ne_zero
+    (K : SmoothEmbedding (𝓡 1) 𝓘(ℝ, E) ∞ Circle M) {L : Circle → M}
+    (hL : ContMDiff (𝓡 1) 𝓘(ℝ, E) ∞ L) (h₀ : K 1 = L 1)
+    (h₁ : mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 = mfderiv (𝓡 1) 𝓘(ℝ, E) L 1) :
+    deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 =
+        deriv (fun t => chartAt E (K 1) (L (Circle.exp t))) 0 ∧
+      deriv (fun t => chartAt E (K 1) (K (Circle.exp t))) 0 ≠ 0 := by
+  have hφ : chartAt E (K 1) ∈ IsManifold.maximalAtlas 𝓘(ℝ, E) ∞ M :=
+    IsManifold.chart_mem_maximalAtlas _
+  have hpφ : K 1 ∈ (chartAt E (K 1)).source := mem_chart_source E _
+  have hvK := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
+    (K.contMDiff.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero])
+  have hvL := toSpanSingleton_deriv_chart_comp_circleExp (by simp)
+    (hL.mdifferentiableAt (by simp)) hφ (by rwa [Circle.exp_zero, ← h₀])
+  rw [Circle.exp_zero] at hvK hvL
+  rw [← h₁, ← h₀] at hvL
+  refine ⟨by simpa using congrArg (fun T => T 1) (hvK.trans hvL.symm), fun h0 => ?_⟩
+  have h1 : mfderiv 𝓘(ℝ, E) 𝓘(ℝ, E) (chartAt E (K 1)) (K 1)
+      (mfderiv (𝓡 1) 𝓘(ℝ, E) K 1 (mfderiv 𝓘(ℝ, ℝ) (𝓡 1) Circle.exp 0 (1 : ℝ))) = 0 := by
+    have h := (congrArg (fun T => T 1) hvK).symm
+    simp only [ContinuousLinearMap.toSpanSingleton_apply, one_smul] at h
+    exact h.trans h0
+  have hφi := (((chartAt E (K 1)).isLocalDiffeomorphAt_of_mem_maximalAtlas hφ hpφ).isDiffImmersionAt
+    (by simp)).mfderiv_injective
+  have hKi := (K.isImmersion.isImmersionAt 1).mfderiv_injective (by simp)
+  exact one_ne_zero (α := ℝ) (injective_mfderiv_circleExp 0
+    ((hKi ((hφi (h1.trans (map_zero _).symm)).trans (map_zero _).symm)).trans
+      (map_zero _).symm))
+
+end ChartAlongCircleExp
 
 /-- For a `C¹` immersion `f` of the circle, the derivative of `t ↦ f (exp (t i))` is nonzero and
 spans the range of the derivative of `f`. -/
