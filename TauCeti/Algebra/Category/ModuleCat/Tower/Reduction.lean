@@ -85,11 +85,11 @@ variable (M : Type v) [AddCommGroup M] [Module A M]
 the quotient maps `ModuleTower.reductionπ`, with the universal property `ModuleTower.quotientsLift`
 and the ext lemma `ModuleTower.quotients_hom_ext` of the tower of quotients. -/
 noncomputable abbrev reduction : ModuleTower.{v} A :=
-  quotients _ (I.antitone_pow_succ_smul_top M)
+  quotients _ (I.pow_succ_smul_top_antitone M)
 
 /-- The quotient map from `M` onto the `n`-th term `M ⧸ I^{n+1} M` of its reduction. -/
 noncomputable abbrev reductionπ (n : ℕ) : M →ₗ[A] (reduction I M).obj (op n) :=
-  quotientsπ _ (I.antitone_pow_succ_smul_top M) n
+  quotientsπ _ (I.pow_succ_smul_top_antitone M) n
 
 /-- **The reduction of a module is an `I`-adic system.** -/
 theorem isAdicSystem_reduction : (reduction I M).IsAdicSystem I where
@@ -102,7 +102,7 @@ theorem isAdicSystem_reduction : (reduction I M).IsAdicSystem I where
 
 /-- The canonical map `M → lim (M ⧸ I^{n+1} M)` from a module to the limit of its reduction. -/
 noncomputable abbrev toLimReduction : M →ₗ[A] (reduction I M).lim :=
-  toLimQuotients _ (I.antitone_pow_succ_smul_top M)
+  toLimQuotients _ (I.pow_succ_smul_top_antitone M)
 
 /-- The map `M ⧸ I^{n+1} M → M ⧸ I^n M` from the `n`-th term of the reduction to the `n`-th term
 of Mathlib's adic completion. -/
@@ -121,7 +121,7 @@ to the `n`-th term of the reduction. -/
 private noncomputable def ofAdicQuotient (n : ℕ) :
     M ⧸ (I ^ (n + 1) • ⊤ : Submodule A M) →ₗ[A] (reduction I M).obj (op n) :=
   (I ^ (n + 1) • ⊤ : Submodule A M).liftQ (reductionπ I M n)
-    (ker_quotientsπ _ (I.antitone_pow_succ_smul_top M) n).ge
+    (ker_quotientsπ _ (I.pow_succ_smul_top_antitone M) n).ge
 
 private theorem ofAdicQuotient_mk (n : ℕ) (x : M) :
     ofAdicQuotient I M n (Submodule.Quotient.mk x) = reductionπ I M n x :=
@@ -347,7 +347,7 @@ onto with kernel `I^{n+1} lim Mₙ` (`ModuleTower.IsAdicSystem.ker_limπ`), with
 term of the reduction of `lim Mₙ`. -/
 private noncomputable def reductionLimEquiv (n : ℕ) :
     (reduction I F.lim).obj (op n) ≃ₗ[A] F.obj (op n) :=
-  quotientsLiftEquiv _ (I.antitone_pow_succ_smul_top F.lim) n (F.limπ n) (hF.ker_limπ n)
+  quotientsLiftEquiv _ (I.pow_succ_smul_top_antitone F.lim) n (F.limπ n) (hF.ker_limπ n)
     (F.limπ_surjective hF.transition_surjective n)
 
 private theorem reductionLimEquiv_reductionπ (n : ℕ) (x : F.lim) :
@@ -394,7 +394,7 @@ noncomputable def finiteReduction : FGModuleCat.{v} A ⥤ FiniteAdicSystem.{v} I
   (isFiniteAdicSystem I).lift ((ModuleCat.isFG A).ι ⋙ reductionFunctor I) fun M ↦
     (isFiniteAdicSystem_iff I _).2
       ⟨isAdicSystem_reduction I M,
-        .of_surjective _ (quotientsπ_surjective _ (I.antitone_pow_succ_smul_top M) 0)⟩
+        .of_surjective _ (quotientsπ_surjective _ (I.pow_succ_smul_top_antitone M) 0)⟩
 
 instance [IsNoetherianRing A] [IsAdicComplete I A] : (finiteReduction I).Faithful where
   map_injective {M N} u v huv := by

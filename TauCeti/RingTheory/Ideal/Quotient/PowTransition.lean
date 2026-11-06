@@ -18,11 +18,11 @@ public section
 
 namespace Ideal
 
-variable {A : Type*} [CommRing A] (I : Ideal A)
+variable {A : Type*} [Ring A] (I : Ideal A)
 variable (M : Type*) [AddCommGroup M] [Module A M]
 
 /-- The `I`-adic filtration `n ↦ I^{n+1} M` of `M` is decreasing. -/
-theorem antitone_pow_succ_smul_top :
+theorem pow_succ_smul_top_antitone :
     Antitone fun n : ℕ ↦ (I ^ (n + 1) • ⊤ : Submodule A M) :=
   fun _ _ h ↦ Submodule.pow_smul_top_le I M (Nat.add_le_add_right h 1)
 
