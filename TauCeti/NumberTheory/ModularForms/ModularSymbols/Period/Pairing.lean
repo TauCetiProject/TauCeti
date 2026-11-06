@@ -7,6 +7,7 @@ module
 
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Basic
 public import TauCeti.NumberTheory.ModularForms.ModularSymbols.Period.Integral
+import TauCeti.Topology.Compactification.OnePoint.ProjectiveLine
 
 /-!
 # The raw period pairing

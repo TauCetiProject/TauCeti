@@ -53,7 +53,9 @@ stabilizer of a cusp, moved to `∞`, consists of translations.
 * `OnePoint.instMulActionPSL`: the action of `PSL(2, K)` on `OnePoint K`, with `pslMk_smul`.
 * `Matrix.ProjectiveSpecialLinearGroup.toPGL_smul`: the inclusion `PSL(2, K) → PGL(2, K)` is
   compatible with the actions.
-* `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`.
+* `OnePoint.instIsMultiplyPretransitiveGL`: `GL(2, K)` acts 2-transitively on `OnePoint K`, and
+  `OnePoint.exists_smul_zero_smul_infty`: any two distinct points are the images of `0` and `∞`
+  under a matrix of determinant one.
 * `Matrix.ProjectiveSpecialLinearGroup.mk_smul_zero_eq_infty_iff`,
   `mk_smul_infty_eq_infty_iff`, `mk_smul_zero_eq_coe_iff`, `mk_smul_infty_eq_coe_iff`: where the
   class of `!![a, b; c, d]` sends the points `0` and `∞`, in terms of its entries, and
@@ -235,6 +237,21 @@ instance instIsMultiplyPretransitiveGL :
       rfl⟩ : ℙ K (Fin 2 → K) →ₑ[(Matrix.SpecialLinearGroup.toGL : SL(2, K) →* GL (Fin 2) K)]
         OnePoint K))
     (equivProjectivization K).symm.surjective
+
+/-- **Any two distinct points of the projective line are the images of `0` and `∞` under a matrix
+of determinant one.** This is Mathlib's 2-transitivity of `SL(2, K)` on `ℙ K (Fin 2 → K)`,
+transported along `OnePoint.equivProjectivization`. -/
+theorem exists_smul_zero_smul_infty {a b : OnePoint K} (h : a ≠ b) :
+    ∃ g : GL (Fin 2) K, (g : Matrix (Fin 2) (Fin 2) K).det = 1 ∧
+      g • ((0 : K) : OnePoint K) = a ∧ g • (∞ : OnePoint K) = b := by
+  let e := equivProjectivization K
+  obtain ⟨γ, hγ⟩ := MulAction.exists_smul_eq SL(2, K)
+    (Function.Embedding.embFinTwo (e.injective.ne (coe_ne_infty (0 : K))))
+    (Function.Embedding.embFinTwo (e.injective.ne h))
+  refine ⟨γ, by simp, ?_, ?_⟩ <;> apply e.injective <;> rw [equivProjectivization_smul]
+  -- `SL(2, K)` acts on `ℙ K (Fin 2 → K)` as its image in `GL(2, K)` does.
+  exacts [(Function.Embedding.smul_apply γ _ 0).symm.trans (DFunLike.congr_fun hγ 0),
+    (Function.Embedding.smul_apply γ _ 1).symm.trans (DFunLike.congr_fun hγ 1)]
 
 end OnePoint
 

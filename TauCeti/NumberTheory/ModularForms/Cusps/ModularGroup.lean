@@ -10,10 +10,9 @@ public import Mathlib.NumberTheory.ModularForms.Cusps
 /-!
 # Modular-group action on cusps
 
-Any two distinct points of the projective line `OnePoint K` over a field `K` are the images of
-`0` and `∞` under a matrix of determinant one. The standard generators `S` and `T`, and their
-product `T * S`, act on `OnePoint K` by Möbius transformations. For `K = ℚ` these evaluations
-describe the edges in the Manin-symbol relations.
+The standard generators `S` and `T` of the modular group, and their product `T * S`, act on the
+projective line `OnePoint K` over a field `K` by Möbius transformations. For `K = ℚ` these
+evaluations describe the edges in the Manin-symbol relations.
 -/
 
 public section
@@ -24,22 +23,6 @@ open scoped MatrixGroups
 namespace TauCeti
 
 variable {K : Type*} [Field K] [DecidableEq K]
-
-/-- Any two distinct points of `OnePoint K` are the images of `0` and `∞` under a matrix of
-determinant one. -/
-theorem exists_smul_zero_smul_infty {a b : OnePoint K} (h : a ≠ b) :
-    ∃ g : GL (Fin 2) K, (g : Matrix (Fin 2) (Fin 2) K).det = 1 ∧
-      g • ((0 : K) : OnePoint K) = a ∧ g • (∞ : OnePoint K) = b := by
-  obtain ⟨γ, hγ⟩ := OnePoint.exists_mem_SL2 K b
-  -- `γ⁻¹ a` is a finite point `q`, reached from `0` by the translation by `q`
-  obtain ⟨q, hq⟩ : ∃ q : K, (q : OnePoint K) = (mapGL K γ)⁻¹ • a :=
-    OnePoint.ne_infty_iff_exists.mp fun h₀ ↦ h (by rw [← hγ, ← h₀, smul_inv_smul])
-  refine ⟨mapGL K γ * upperRightHom q, ?_, ?_, ?_⟩
-  · simp [Matrix.det_mul, upperRightHom_apply]
-  · rw [mul_smul, ← smul_inv_smul (mapGL K γ) a, ← hq]
-    simp [upperRightHom_apply, smul_some_eq_ite]
-  · rw [mul_smul, ← hγ]
-    simp [upperRightHom_apply, smul_infty_eq_ite]
 
 /-- `S` sends `∞` to `0` under the Möbius action. -/
 @[simp]
