@@ -32,8 +32,10 @@ homology `H_m(M_f, X; R)` vanishes for `m ≤ n`
 the pair gives the stated range.
 
 For the inclusion of the `n`-skeleton of a relative CW complex, which is `n`-connected
-(`TauCeti.isNConnected_inclusion_skeletonLT`), this recovers the classical statement that the
-skeleton carries the homology of the complex below degree `n` (Hatcher, Lemma 2.34(c)).
+(`TauCeti.isNConnected_inclusion_skeletonLT`), this gives surjectivity on homology in degree `n`.
+The isomorphisms below degree `n` are the classical statement that the skeleton carries the
+homology of the complex (Hatcher, Lemma 2.34(c)), already available as
+`TauCeti.isIso_homologyMap_skeletonBasePairToComplex_fst`.
 
 ## Main results
 
@@ -44,10 +46,8 @@ skeleton carries the homology of the complex below degree `n` (Hatcher, Lemma 2.
   isomorphisms on singular homology below degree `n`.
 * `ContinuousMap.IsNConnected.epi_singularHomologyMap`: an `n`-connected map induces surjections
   on singular homology up to degree `n`.
-* `TauCeti.isIso_singularHomologyMap_inclusion_skeletonLT`,
-  `TauCeti.epi_singularHomologyMap_inclusion_skeletonLT`: the inclusion of the `n`-skeleton of a
-  relative CW complex induces isomorphisms on singular homology below degree `n`, and surjections
-  up to degree `n`.
+* `TauCeti.epi_singularHomologyMap_inclusion_skeletonLT`: the inclusion of the `n`-skeleton of a
+  relative CW complex induces surjections on singular homology up to degree `n`.
 
 ## References
 
@@ -154,15 +154,6 @@ open Topology Topology.RelCWComplex
 
 variable {X : Type u} [TopologicalSpace X] [T2Space X] {C D : Set X} [RelCWComplex C D] {n : ℕ}
   {A : Set X} (R : Type u) [Ring R]
-
-/-- **The `n`-skeleton carries the homology of a CW complex below degree `n`** (Hatcher,
-Lemma 2.34(c)). If `A` is the `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then
-the inclusion `A ↪ C` induces an isomorphism `H_m(A; R) ≅ H_m(C; R)` for every `m < n`. -/
-theorem isIso_singularHomologyMap_inclusion_skeletonLT (hA : (skeletonLT C (n + 1) : Set X) = A)
-    (hAC : A ⊆ C) {m : ℕ} (hm : m < n) :
-    IsIso (((singularHomologyFunctor (ModuleCat.{u} R) m).obj (ModuleCat.of R R)).map
-      (TopCat.ofHom (ContinuousMap.inclusion hAC))) :=
-  (isNConnected_inclusion_skeletonLT hA hAC).isIso_singularHomologyMap R hm
 
 /-- **The inclusion of the `n`-skeleton is surjective on homology up to degree `n`.** If `A` is the
 `n`-skeleton `skeletonLT C (n + 1)` of a relative CW complex `C`, then the inclusion `A ↪ C`
