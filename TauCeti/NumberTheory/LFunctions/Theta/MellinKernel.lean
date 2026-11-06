@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Pow.Real
 public import TauCeti.NumberTheory.LFunctions.Theta.Inversion
 public import TauCeti.NumberTheory.LFunctions.Theta.Surface.Invariance
 public import TauCeti.NumberTheory.NumberField.CanonicalEmbedding.TraceDual
@@ -80,10 +81,6 @@ theorem mellinKernel_def (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
 
 /-! ### Continuity -/
 
-private theorem isOpen_setOf_forall_pos : IsOpen {y : realSpace K | ∀ w, 0 < y w} := by
-  simp only [Set.ofPred_forall]
-  exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
-
 open scoped Classical in
 /-- **The kernel is continuous on `(0, ∞)`**, Neukirch's continuity hypothesis in (1.4). For `u`
 near `u₀ > 0` and `x` in a bounded subset of `S`, the parameters `x (u / V_L²)^(1/n)` are bounded
@@ -97,32 +94,24 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hD : IsBounded D)
   have hV : 0 < V := ZLattice.covolume_pos L volume
   set n := (Module.finrank ℚ K : ℝ)
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hD
-  set C' := max C 1
-  -- The points of `S` with coordinates at most `C'`: a measurable set containing `D`.
-  set T : Set (normOneSurface K) := {x | ∀ w, (x : realSpace K) w ≤ C'}
-  have hT : MeasurableSet T := by
-    simp only [T, Set.ofPred_forall]
-    exact MeasurableSet.iInter fun w ↦
-      measurableSet_le ((measurable_pi_apply w).comp measurable_subtype_coe) measurable_const
-  have hDT : Subtype.val ⁻¹' D ⊆ T := fun x hx w ↦
-    (Real.le_norm_self _).trans ((norm_le_pi_norm (x : realSpace K) w).trans
-      ((hC _ hx).trans (le_max_left _ _)))
+  -- The points of `S` of norm at most `C`: a measurable set containing `D`.
+  set T : Set (normOneSurface K) := {x | ‖(x : realSpace K)‖ ≤ C}
+  have hT : MeasurableSet T :=
+    measurableSet_le (measurable_norm.comp measurable_subtype_coe) measurable_const
+  have hDT : Subtype.val ⁻¹' D ⊆ T := fun x hx ↦ hC _ hx
   have hfin : surfaceHaar K (Subtype.val ⁻¹' D) ≠ ⊤ :=
     (surfaceHaar_lt_top_of_isBounded (hD.subset (image_preimage_subset _ _))).ne
   -- A positive lower bound for the parameters, uniform for `x ∈ T` and `u ≥ u₀ / 2`.
   set z : realSpace K := fun _ ↦
-    (C' ^ Module.finrank ℚ K)⁻¹ * (u₀ / 2 / V ^ 2) ^ (1 / n)
+    (max C 1 ^ Module.finrank ℚ K)⁻¹ * (u₀ / 2 / V ^ 2) ^ (1 / n)
   have hz (w : InfinitePlace K) : 0 < z w := by positivity
   have hlow : ∀ x ∈ T, ∀ u, u₀ / 2 ≤ u → ∀ w,
       z w ≤ surfaceScale (x : realSpace K) (u / V ^ 2) w := by
     intro x hx u hu w
-    have hxw : (C' ^ Module.finrank ℚ K)⁻¹ ≤ (x : realSpace K) w :=
-      inv_le_of_inv_le₀ ((mem_normOneSurface.mp x.2).1 w)
-        (inv_le_pow_finrank_of_mem_normOneSurface x.2 (le_max_right _ _) hx w)
     rw [surfaceScale_apply]
-    exact mul_le_mul hxw (Real.rpow_le_rpow (by positivity)
-      (div_le_div_of_nonneg_right hu (sq_nonneg V)) (by positivity)) (by positivity)
-      ((mem_normOneSurface.mp x.2).1 w).le
+    exact mul_le_mul (mem_Icc_of_mem_normOneSurface_of_norm_le x.2 hx w).1
+      (Real.rpow_le_rpow (by positivity) (div_le_div_of_nonneg_right hu (sq_nonneg V))
+        (by positivity)) (by positivity) ((mem_normOneSurface.mp x.2).1 w).le
   -- For fixed `u > 0` the integrand is continuous on `S`; for fixed `x` it is continuous in `u`.
   have hcontx {u : ℝ} (hu : 0 < u) :
       Continuous fun x : normOneSurface K ↦
@@ -134,7 +123,7 @@ theorem continuousOn_mellinKernel {D : Set (realSpace K)} (hD : IsBounded D)
       ContinuousAt (fun u ↦ latticeTheta L (surfaceScale (x : realSpace K) (u / V ^ 2))) u₀ :=
     ContinuousAt.comp (g := latticeTheta L)
       (f := fun u ↦ surfaceScale (x : realSpace K) (u / V ^ 2))
-      ((continuousOn_latticeTheta L).continuousAt (isOpen_setOf_forall_pos.mem_nhds
+      ((continuousOn_latticeTheta L).continuousAt ((isOpen_setOf_forall_lt 0).mem_nhds
         (surfaceScale_pos (mem_normOneSurface.mp x.2).1 (by positivity))))
       (continuous_surfaceScale.comp
         (continuous_const.prodMk (continuous_id.div_const _))).continuousAt
@@ -177,7 +166,7 @@ theorem mellinKernel_inv (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
       push_cast
       field_simp
     rw [latticeTheta_inv L _ (surfaceScale_pos (mem_normOneSurface.mp x.2).1 ht),
-      archNorm_surfaceScale_of_mem_normOneSurface x.2 ht.le, surfaceScale_inv _ ht.le,
+      archNorm_surfaceScale_of_mem_normOneSurface x.2 ht.le, inv_surfaceScale _ ht.le,
       surfaceInv_apply, covolume_mixedDual, hsqrt]
     congr 2
     field_simp
@@ -192,16 +181,6 @@ theorem mellinKernel_inv (D : Set (realSpace K)) (L : Submodule ℤ (mixedSpace 
 
 /-! ### The dual of an ideal lattice -/
 
-/-- `(a t) ^ z = a ^ z t ^ z` for `a > 0` and every real `t`, including `t < 0`, where both sides
-carry the same factor `cos (z π)`. -/
-private theorem mul_rpow_of_pos_left {a : ℝ} (ha : 0 < a) (t z : ℝ) :
-    (a * t) ^ z = a ^ z * t ^ z := by
-  rcases le_or_gt 0 t with ht | ht
-  · exact Real.mul_rpow ha.le ht
-  · rw [Real.rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), Real.rpow_def_of_neg ht,
-      Real.rpow_def_of_pos ha, Real.log_mul ha.ne' ht.ne, add_mul, Real.exp_add]
-    ring
-
 variable (K) in
 /-- The point of the norm-one hypersurface by which the parameters are translated when the
 Euclidean dual of an ideal lattice is read as the lattice of its trace dual: the surface part of
@@ -209,6 +188,9 @@ Euclidean dual of an ideal lattice is read as the lattice of its trace dual: the
 complex coordinates, and `|2 z|² = 4 |z|²`. -/
 def traceShift : realSpace K :=
   surfacePart fun w ↦ (mult w : ℝ) ^ 2
+
+variable (K) in
+theorem traceShift_def : traceShift K = surfacePart fun w ↦ (mult w : ℝ) ^ 2 := (rfl)
 
 theorem traceShift_mem_normOneSurface : traceShift K ∈ normOneSurface K :=
   surfacePart_mem_normOneSurface fun _ ↦ pow_pos (zero_lt_one.trans_le one_le_mult) 2
@@ -232,7 +214,9 @@ private theorem latticeTheta_map_traceToEuclidean (L : Submodule ℤ (mixedSpace
     (traceToEuclidean K).injective L
   rw [latticeTheta_def, latticeTheta_def, ← e.toEquiv.tsum_eq]
   refine tsum_congr fun x ↦ ?_
-  change archGaussian y (traceToEuclidean K (x : mixedSpace K)) = _
+  have he : (e x : mixedSpace K) = traceToEuclidean K x :=
+    Submodule.coe_equivMapOfInjective_apply _ _ _ x
+  rw [LinearEquiv.coe_toEquiv, he]
   simp only [archGaussian_apply, normAtPlace_traceToEuclidean, Pi.mul_apply]
   congr 4 with w
   ring
@@ -277,8 +261,8 @@ theorem mellinKernel_mixedDual_idealLattice {I J : (FractionalIdeal (𝓞 K)⁰ 
       latticeTheta_map_traceToEuclidean, surfaceMul_apply, hrad]
     congr 1
     ext w
-    simp only [Pi.mul_apply, surfaceScale_apply, hc, traceShift, surfacePart_apply _ hN.le,
-      mul_rpow_of_pos_left hN]
+    simp only [Pi.mul_apply, surfaceScale_apply, hc, traceShift_def, surfacePart_apply _ hN.le,
+      Real.mul_rpow_of_pos_left hN]
     field_simp
   have hpre : surfaceMul c ⁻¹' (Subtype.val ⁻¹' ((traceShift K * ·) '' D)) =
       Subtype.val ⁻¹' D := by

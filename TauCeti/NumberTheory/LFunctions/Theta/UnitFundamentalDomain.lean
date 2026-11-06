@@ -281,6 +281,17 @@ theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ n
   · exact h.trans h1
   · exact (le_self_pow₀ h.le mult_ne_zero).trans hpow
 
+/-- A point of the norm-one hypersurface of norm at most `C` has every coordinate between
+`(max C 1 ^ [K : ℚ])⁻¹` and `max C 1`: the sup norm bounds the coordinates above, and on `S` an
+upper bound on all coordinates gives a lower bound (`inv_le_pow_finrank_of_mem_normOneSurface`). -/
+theorem mem_Icc_of_mem_normOneSurface_of_norm_le {y : realSpace K} (hy : y ∈ normOneSurface K)
+    {C : ℝ} (hyC : ‖y‖ ≤ C) (w : InfinitePlace K) :
+    y w ∈ Set.Icc (max C 1 ^ Module.finrank ℚ K)⁻¹ (max C 1) := by
+  have hle (v : InfinitePlace K) : y v ≤ max C 1 :=
+    (Real.le_norm_self _).trans ((norm_le_pi_norm y v).trans (hyC.trans (le_max_left _ _)))
+  exact ⟨inv_le_of_inv_le₀ (hy.1 w)
+    (inv_le_pow_finrank_of_mem_normOneSurface hy (le_max_right _ _) hle w), hle w⟩
+
 /-! ### Unit fundamental domains -/
 
 variable (K) in
@@ -384,9 +395,8 @@ theorem inv (hD : IsUnitFundamentalDomain K D) : IsUnitFundamentalDomain K D⁻�
     have hpos : ∀ w, 0 < y w := fun w ↦ inv_pos.mp (hy'.1 w)
     refine (pi_norm_le_iff_of_nonneg (pow_nonneg (by positivity) _)).mpr fun w ↦ ?_
     rw [Real.norm_of_nonneg (hpos w).le, ← inv_inv (y w)]
-    refine inv_le_pow_finrank_of_mem_normOneSurface hy' (le_max_right _ _) (fun v ↦ ?_) w
-    exact (Real.le_norm_self _).trans ((norm_le_pi_norm y⁻¹ v).trans
-      ((hC _ hy).trans (le_max_left _ _)))
+    exact inv_le_of_inv_le₀ (by positivity)
+      (mem_Icc_of_mem_normOneSurface_of_norm_le hy' (hC _ hy) w).1
   exists_unitScale_mem y hy := by
     obtain ⟨u, hu⟩ := hD.exists_unitScale_mem _ (inv_mem_normOneSurface hy)
     refine ⟨u⁻¹, ?_⟩

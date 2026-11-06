@@ -24,7 +24,8 @@ lattice. This invariance is what allows integration over a fundamental domain on
 surface, rather than a divergent sum over infinitely many generators of each ideal.
 
 The Gaussian decreases as the parameters increase, so the theta series is locally dominated and
-continuous on the positive parameters (`continuousOn_latticeTheta`).
+continuous on the positive parameters (`continuousOn_latticeTheta`), an open set
+(`isOpen_setOf_forall_lt`).
 
 The construction uses `SchwartzMap.gaussian` and `ZLattice.summable_poisson_left`; it does not
 introduce another generic Euclidean Gaussian or a theta function on the upper half-plane.
@@ -193,6 +194,12 @@ theorem norm_latticeTheta_le (L : Submodule ℤ (mixedSpace K)) [DiscreteTopolog
   exact (norm_tsum_le_tsum_norm hy).trans <|
     hy.tsum_le_tsum (fun x ↦ norm_archGaussian_le h x) (summable_archGaussian L z hz).norm
 
+/-- The parameters strictly above a fixed parameter `z` in every coordinate form an open set; for
+`z = 0` this is the domain of the positive parameters. -/
+theorem isOpen_setOf_forall_lt (z : realSpace K) : IsOpen {y : realSpace K | ∀ w, z w < y w} := by
+  simp only [Set.ofPred_forall]
+  exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
+
 /-- The theta series of a discrete lattice is continuous on the positive parameters: near `y₀` it
 is dominated by the theta series at `y₀ / 2`. -/
 theorem continuousOn_latticeTheta (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] :
@@ -200,13 +207,11 @@ theorem continuousOn_latticeTheta (L : Submodule ℤ (mixedSpace K)) [DiscreteTo
   intro y₀ hy₀
   set z : realSpace K := fun w ↦ y₀ w / 2
   have hz (w : InfinitePlace K) : 0 < z w := half_pos (hy₀ w)
-  have hU : IsOpen {y : realSpace K | ∀ w, z w < y w} := by
-    simp only [Set.ofPred_forall]
-    exact isOpen_iInter_of_finite fun w ↦ isOpen_lt continuous_const (continuous_apply w)
   have hcont : ContinuousOn (latticeTheta L) {y : realSpace K | ∀ w, z w < y w} :=
     continuousOn_tsum (fun x ↦ (continuous_archGaussian_left (x : mixedSpace K)).continuousOn)
       (summable_archGaussian L z hz).norm fun x y hy ↦ norm_archGaussian_le (fun w ↦ (hy w).le) _
-  exact (hcont.continuousAt (hU.mem_nhds fun w ↦ half_lt_self (hy₀ w))).continuousWithinAt
+  exact (hcont.continuousAt ((isOpen_setOf_forall_lt z).mem_nhds
+    fun w ↦ half_lt_self (hy₀ w))).continuousWithinAt
 
 /-- The theta series of an ideal lattice descends to the quotient of positive parameters
 by the unit action. No restriction on the unit rank is needed. -/

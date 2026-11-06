@@ -219,14 +219,11 @@ theorem surfaceHaar_lt_top_of_isBounded {A : Set (normOneSurface K)}
   refine (measure_mono (fun x hx ↦ ?_ : A ⊆ surfaceBox k)).trans_lt
     (surfaceHaar_surfaceBox_lt_top k)
   intro w _
-  have hxC (v : InfinitePlace K) : (x : realSpace K) v ≤ C' :=
-    (Real.le_norm_self _).trans ((norm_le_pi_norm (x : realSpace K) v).trans
-      ((hC _ ⟨x, hx, rfl⟩).trans (le_max_left _ _)))
+  obtain ⟨hlo, hhi⟩ := mem_Icc_of_mem_normOneSurface_of_norm_le x.2 (hC _ ⟨x, hx, rfl⟩) w
   refine ⟨?_, ?_⟩
   · rw [inv_le_comm₀ (by positivity) ((mem_normOneSurface.mp x.2).1 w)]
-    exact (inv_le_pow_finrank_of_mem_normOneSurface x.2 (le_max_right _ _) hxC w).trans hk'
-  · exact (hxC w).trans
-      ((le_self_pow₀ (le_max_right _ _) Module.finrank_pos.ne').trans hk')
+    exact (inv_le_of_inv_le₀ (by positivity) hlo).trans hk'
+  · exact hhi.trans ((le_self_pow₀ (le_max_right _ _) Module.finrank_pos.ne').trans hk')
 
 /-! ### The decomposition `dy / y = d*x × dt / t` -/
 

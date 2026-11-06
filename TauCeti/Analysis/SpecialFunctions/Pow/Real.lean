@@ -56,6 +56,10 @@ An exponential upper bound on a nonnegative base passes to its nonnegative real 
 `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
 nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
 
+A positive factor splits off a real power of any real number, including a negative one:
+`(a t) ^ z = a ^ z t ^ z` for `0 < a`. For `t < 0` both sides carry the factor `cos (z π)`. This is
+the form in which a positive rescaling is pulled out of a power without a sign hypothesis.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -76,6 +80,7 @@ nome is turned into bounds on the fractional powers `|q| ^ c` in a product estim
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.mul_rpow_of_pos_left`: `(a t) ^ z = a ^ z t ^ z` for `0 < a` and every real `t`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -182,6 +187,16 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   refine (rpow_le_rpow hA hAt hc).trans_eq ?_
   rw [← exp_mul]
   ring_nf
+
+/-- `(a t) ^ z = a ^ z t ^ z` for `a > 0` and every real `t`, including `t < 0`, where both sides
+carry the same factor `cos (z π)`. -/
+theorem mul_rpow_of_pos_left {a : ℝ} (ha : 0 < a) (t z : ℝ) :
+    (a * t) ^ z = a ^ z * t ^ z := by
+  rcases le_or_gt 0 t with ht | ht
+  · exact mul_rpow ha.le ht
+  · rw [rpow_def_of_neg (mul_neg_of_pos_of_neg ha ht), rpow_def_of_neg ht, rpow_def_of_pos ha,
+      log_mul ha.ne' ht.ne, add_mul, exp_add]
+    ring
 
 end Real
 

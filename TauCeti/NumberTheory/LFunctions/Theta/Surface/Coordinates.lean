@@ -229,7 +229,7 @@ theorem surfacePart_mul {c : realSpace K} (hc : archNorm c = 1) (y : realSpace K
   simp [surfacePart_def, map_mul, hc, mul_assoc]
 
 /-- Inverting a radially scaled parameter inverts both of its coordinates. -/
-theorem surfaceScale_inv (x : realSpace K) {t : ℝ} (ht : 0 ≤ t) :
+theorem inv_surfaceScale (x : realSpace K) {t : ℝ} (ht : 0 ≤ t) :
     (surfaceScale x t)⁻¹ = surfaceScale x⁻¹ t⁻¹ := by
   ext w
   simp only [surfaceScale_apply, Pi.inv_apply, mul_inv, Real.inv_rpow ht]
