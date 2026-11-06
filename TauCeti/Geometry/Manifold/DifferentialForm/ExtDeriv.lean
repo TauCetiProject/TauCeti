@@ -225,7 +225,7 @@ theorem mextDeriv_congr_of_eventuallyEq (h : ∀ᶠ y in 𝓝 x, φ y = η y) :
 theorem mextDerivWithin_zero (s : Set M) (x : M) :
     mextDerivWithin (0 : RoughForm I M F k) s x = 0 := by
   rw [mextDerivWithin_def, RoughForm.inChartAt_zero]
-  exact ContinuousAlternatingMap.extDerivWithin_const 0 _ _
+  exact congrFun (ContinuousAlternatingMap.extDerivWithin_const 0 _) _
 
 @[simp]
 theorem mextDeriv_zero : mextDeriv (0 : RoughForm I M F k) = 0 :=
@@ -342,7 +342,7 @@ theorem mextDeriv_const (ω : E [⋀^Fin k]→L[ℝ] F) :
         ((fun _ ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) = 0 := by
   funext x
   exact (mextDeriv_eq_extDeriv ((fun _ : E ↦ ω) : RoughForm (𝓘(ℝ, E)) E F k) x).trans
-    (ContinuousAlternatingMap.extDeriv_const ω x)
+    (congrFun (ContinuousAlternatingMap.extDeriv_const ω) x)
 
 /-! ### Functions -/
 
