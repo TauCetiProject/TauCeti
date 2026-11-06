@@ -42,6 +42,7 @@ across the whole disc, so its circle integral vanishes.
   winding number is `(2πi)⁻¹` times the ordinary Cauchy-kernel circle integral.
 * `TauCeti.Contour.windingNumber_circleMap_eq_one_of_dist_lt` — `n_w(circle) = 1` for any `w` inside
   the disc.
+* `TauCeti.Contour.continuous_deriv_circleMap` — the derivative of `circleMap c R` is continuous.
 * `TauCeti.Contour.indexIntegral_arc_interval` and `TauCeti.Contour.indexIntegral_arc` — the
   normalized index integral of a circular arc about its centre, `(b − a) / 2π` and `α / 2π`, with
   the specialization `windingNumber_circle` (the full circle, `1`). The two values the valence
@@ -76,6 +77,11 @@ noncomputable section
 open Complex Metric
 
 namespace TauCeti.Contour
+
+/-- The derivative of the circle parametrisation `circleMap c R` is continuous. -/
+theorem continuous_deriv_circleMap (c : ℂ) (R : ℝ) : Continuous (deriv (circleMap c R)) := by
+  rw [funext (deriv_circleMap c R)]
+  fun_prop
 
 /-- **The circular-arc index integral** (Hungerbühler–Wasem (2.4)), on an arbitrary angular
 interval. For the circular arc `γ θ = z₀ + r·e^{iθ}` about its centre `z₀`, traversed over `[a, b]`,
