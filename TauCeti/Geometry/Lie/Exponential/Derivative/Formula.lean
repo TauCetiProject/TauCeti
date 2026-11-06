@@ -80,11 +80,6 @@ private def centeredLog (X Y : LeftInvariantDerivation I G) : LeftInvariantDeriv
     centeredLog (I := I) (G := G) X 0 = 0 := by
   simp only [centeredLog, centeredProduct_zero_right, lieLog_one]
 
-omit [FiniteDimensional ℝ E] [LieGroup I ∞ G] [T2Space G] [BoundarylessManifold I G] in
-private lemma mulInvariantVectorField_apply (v : GroupLieAlgebra I G) (g : G) :
-    mulInvariantVectorField v g = mfderiv I I (g * ·) (1 : G) v := by
-  rw [mulInvariantVectorField]
-
 private def leftDexp (X : LeftInvariantDerivation I G) :
     LeftInvariantDerivation I G →L[ℝ] LeftInvariantDerivation I G :=
   fderiv ℝ (centeredLog (I := I) (G := G) X) 0
