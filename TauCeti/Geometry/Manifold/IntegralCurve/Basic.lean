@@ -24,6 +24,8 @@ continuously differentiable.
 * `IsMIntegralCurveOn.map_of_mfderiv_eq`: a map differentiable along an integral curve whose
   derivative intertwines the vector fields there sends it to an integral curve of the second field.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
+* `IsMIntegralCurveAt.eq_zero_of_eventuallyConst`: an integral curve which is constant near a time
+  passes through a zero of the field there.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
@@ -116,6 +118,20 @@ theorem map_of_mfderiv_eq {f : M → M'} {V : (x : M) → TangentSpace I x}
   refine ⟨s ∩ sf ∩ sVW, Filter.inter_mem (Filter.inter_mem hs hsf) hsVW, ?_⟩
   exact (hγs.mono (Set.inter_subset_left.trans Set.inter_subset_left)).map_of_mfderiv_eq
     (fun t ht ↦ hf t ht.1.2) (fun t ht ↦ hVW t ht.2)
+
+/-- **An integral curve which is constant near a time passes through a zero of the field.** -/
+theorem eq_zero_of_eventuallyConst {v : (x : M) → TangentSpace I x} {γ : ℝ → M} {t : ℝ}
+    (hγ : IsMIntegralCurveAt γ v t) (hc : Filter.EventuallyConst γ (𝓝 t)) : v (γ t) = 0 := by
+  have : Nonempty M := ⟨γ t⟩
+  have hc' : γ =ᶠ[𝓝 t] fun _ ↦ γ t := by
+    obtain ⟨y, hy⟩ := Filter.eventuallyConst_iff_exists_eventuallyEq.1 hc
+    filter_upwards [hy] with s hs
+    rw [hs, hy.self_of_nhds]
+  have h := hγ.hasMFDerivAt.mfderiv.symm.trans
+    ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) (γ t) t).congr_of_eventuallyEq_abuse hc').mfderiv
+  have h1 := congr($h (1 : ℝ))
+  simp only [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul] at h1
+  exact h1.trans (zero_apply _)
 
 end IsMIntegralCurveAt
 

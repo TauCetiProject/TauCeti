@@ -80,17 +80,6 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimen
 
 namespace IsNondegenerate
 
-/-- The orbit of the Hamiltonian vector field through a point of a compact level is defined for
-all time. -/
-private theorem maximalIntegralCurveInterval_eq_univ (hσ : σ.IsNondegenerate)
-    (hF : ContMDiff I 𝓘(ℝ) ∞ F) {x : M} (hK : IsCompact {y | F y = F x}) :
-    maximalIntegralCurveInterval (σ.hamiltonianVectorField F) x = univ := by
-  have hv := hσ.contMDiff_hamiltonianVectorField (n := 1) (by simp) (hF.of_le (by simp))
-  exact maximalIntegralCurveInterval_eq_univ_of_isCompact_of_mapsTo hv
-    (zero_mem_maximalIntegralCurveInterval hv.contMDiffAt) hK fun t ht ↦
-      (isFirstIntegral_iff.2 fun y ↦ σ.poissonBracket_self F y).apply_maximalIntegralCurve hσ
-        (hF.of_le (by simp)) (hF.mdifferentiable (by simp)) ht
-
 /-- A limit of closed characteristics of period at most `τ`, contractible in `M`, through a regular
 point `x` of the level `F⁻¹(s)` whose orbit is defined for all time, is a closed characteristic of
 `F⁻¹(s)` of period at most `τ`, contractible in `M`. -/
@@ -109,9 +98,7 @@ private theorem hasContractibleClosedCharacteristicOfPeriodLE_of_tendsto
   have hpos : 0 < T₀ := hT₀.1.lt_of_ne fun h0 ↦ hX <|
     eq_zero_of_tendsto_of_tendsto_zero hv hγ hper hT hx (h0 ▸ hTl) (by simp [hglob])
   have hint : IsMIntegralCurve (maximalIntegralCurve (σ.hamiltonianVectorField F) x)
-      (σ.hamiltonianVectorField F) := by
-    rw [isMIntegralCurve_iff_isMIntegralCurveOn, ← hglob]
-    exact isMIntegralCurveOn_maximalIntegralCurve hv
+      (σ.hamiltonianVectorField F) := isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv hglob
   have h0 : maximalIntegralCurve (σ.hamiltonianVectorField F) x 0 = x :=
     maximalIntegralCurve_zero (hglob ▸ mem_univ _)
   obtain ⟨g', hg', hg'γ⟩ := exists_nullhomotopic_of_tendsto hv hγ hper hT hnull hx hTl hpos hglob
@@ -126,8 +113,8 @@ private theorem hasContractibleClosedCharacteristicOfPeriodLE_of_tendsto
       |>.eq_zero_of_eventuallyConst
         (eventuallyConst_iff_exists_eventuallyEq.2 ⟨_, Eventually.of_forall hcon⟩)
     exact hX (h0 ▸ hz)
-  · rw [(isFirstIntegral_iff.2 fun y ↦ σ.poissonBracket_self F y).apply_maximalIntegralCurve hσ
-      (hF.of_le (by simp)) (hF.mdifferentiable (by simp)) (hglob ▸ mem_univ t), hFx]
+  · rw [hσ.apply_maximalIntegralCurve_hamiltonianVectorField (hF.of_le (by simp))
+      (hglob ▸ mem_univ t), hFx]
 
 /-- **Closed characteristics pass to the limit at a regular level.** Let `F` be smooth with
 `F⁻¹([a, b])` compact and let `s ∈ (a, b)` be a regular value of `F`. If levels of `F` carrying a
@@ -152,9 +139,10 @@ theorem hasContractibleClosedCharacteristicOfPeriodLE_of_frequently (hσ : σ.Is
   have hFx : F x = s := tendsto_nhds_unique ((hF.continuous.tendsto x).comp hx)
     ((hc.comp hφ.tendsto_atTop).congr fun k ↦ (hlev _ 0).symm)
   -- The orbit through `x` stays in the compact level `F⁻¹(s)`, so it is defined for all time.
-  have hglob := hσ.maximalIntegralCurveInterval_eq_univ hF (x := x) (hcpt.of_isClosed_subset
-    (isClosed_eq hF.continuous continuous_const) fun y (hy : F y = F x) ↦ by
-      simp [hy.trans hFx, hs.1.le, hs.2.le])
+  have hglob := hσ.maximalIntegralCurveInterval_hamiltonianVectorField_eq_univ_of_isCompact
+    (hF.of_le (by simp)) (x := x) (hcpt.of_isClosed_subset
+      (isClosed_eq hF.continuous continuous_const) fun y (hy : F y = F x) ↦ by
+        simp [hy.trans hFx, hs.1.le, hs.2.le])
   exact hσ.hasContractibleClosedCharacteristicOfPeriodLE_of_tendsto hF (fun k ↦ hγ (φ k))
     (fun k ↦ hper (φ k)) (fun k ↦ hT (φ k))
     (fun k ↦ ⟨(ContinuousMap.mk Subtype.val continuous_subtype_val).comp (g (φ k)),

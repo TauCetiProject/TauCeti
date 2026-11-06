@@ -39,10 +39,6 @@ A rest point is the only degenerate limit, so the limit of nonconstant orbits th
 
 ## Main results
 
-* `IsMIntegralCurve.maximalIntegralCurve_eq`: a global integral curve is the maximal integral
-  curve through its initial point.
-* `IsMIntegralCurveAt.eq_zero_of_eventuallyConst`: an integral curve which is constant near a time
-  passes through a zero of the field there.
 * `TauCeti.maximalIntegralCurve_eq_of_tendsto`, `TauCeti.periodic_maximalIntegralCurve_of_tendsto`:
   a limit of periodic orbits returns after the limit period.
 * `TauCeti.eq_zero_of_tendsto_of_tendsto_zero`: periodic orbits with periods tending to `0`
@@ -70,31 +66,8 @@ local notation "𝕀" => unitInterval
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
-  {v : (x : M) → TangentSpace I x} {γ : ℝ → M} {x : M}
-
-/-- **An integral curve which is constant near a time passes through a zero of the field.** -/
-theorem IsMIntegralCurveAt.eq_zero_of_eventuallyConst {t : ℝ} (hγ : IsMIntegralCurveAt γ v t)
-    (hc : EventuallyConst γ (𝓝 t)) : v (γ t) = 0 := by
-  have : Nonempty M := ⟨γ t⟩
-  have hc' : γ =ᶠ[𝓝 t] fun _ ↦ γ t := by
-    obtain ⟨y, hy⟩ := eventuallyConst_iff_exists_eventuallyEq.1 hc
-    filter_upwards [hy] with s hs
-    rw [hs, hy.self_of_nhds]
-  have h := hγ.hasMFDerivAt.mfderiv.symm.trans
-    ((hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) (γ t) t).congr_of_eventuallyEq_abuse hc').mfderiv
-  have h1 := congr($h (1 : ℝ))
-  simp only [ContinuousLinearMap.smulRight_apply, one_apply_eq_self, one_smul] at h1
-  exact h1.trans (zero_apply _)
-
-variable [T2Space M] [IsManifold I 1 M] [BoundarylessManifold I M]
-
-/-- **A global integral curve is the maximal integral curve through its initial point.** -/
-theorem IsMIntegralCurve.maximalIntegralCurve_eq
-    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hγ : IsMIntegralCurve γ v)
-    (t : ℝ) : maximalIntegralCurve v (γ 0) t = γ t := by
-  have habs := abs_nonneg t
-  exact (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve hv
-    ⟨by linarith, by linarith⟩ rfl ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+  {v : (x : M) → TangentSpace I x} {x : M} [T2Space M] [IsManifold I 1 M]
+  [BoundarylessManifold I M]
 
 namespace TauCeti
 
@@ -231,10 +204,8 @@ theorem exists_nullhomotopic_of_tendsto
   have hex : e.symm (e x) = x := extChartAt_to_inv x
   have hret := maximalIntegralCurve_eq_of_tendsto hv hγ hper hx hT (hglob ▸ mem_univ _)
   have hperx := periodic_maximalIntegralCurve_of_tendsto hv hγ hper hx hT hglob
-  have hcx : Continuous (maximalIntegralCurve v x) := by
-    refine IsMIntegralCurve.continuous (v := v) ?_
-    rw [isMIntegralCurve_iff_isMIntegralCurveOn, ← hglob]
-    exact isMIntegralCurveOn_maximalIntegralCurve hv
+  have hcx : Continuous (maximalIntegralCurve v x) :=
+    (isMIntegralCurve_maximalIntegralCurve_of_eq_univ hv hglob).continuous
   -- The limit loop, as a map from the circle `ℝ/T₀ℤ`.
   let g : C(AddCircle T₀, M) :=
     ⟨hperx.lift, (QuotientAddGroup.isQuotientMap_mk _).continuous_iff.2 hcx⟩
