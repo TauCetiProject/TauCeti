@@ -434,15 +434,6 @@ theorem singularCubicalHomologyIso_inv_homologyπ_ofCube_point {X : TopCat.{u}} 
       singularHomology₀Section (ModuleCat.of k k) x 1 := by
   let K := (normalizedCubicalChainComplex k).obj X
   let L := (TopCat.toSSet.obj X).chainComplex (ModuleCat.of k k)
-  -- The class of a vertex is the class of the zero-cycle given by the vertex.
-  have hv : (TopCat.toSSet.obj X).ιChainComplex (R := ModuleCat.of k k)
-      (TopCat.toSSetObj₀Equiv.symm x) ≫ L.cycles₀Iso.inv = L.liftCycles
-        ((TopCat.toSSet.obj X).ιChainComplex (R := ModuleCat.of k k)
-          (TopCat.toSSetObj₀Equiv.symm x)) 0 (by simp) (by simp) := by
-    apply (cancel_mono (L.iCycles 0)).1
-    simp only [Category.assoc, HomologicalComplex.iCyclesIso_inv_hom_id,
-      HomologicalComplex.liftCycles_i]
-    exact Category.comp_id _
   have hφ : K.cycles₀Iso.inv ≫ K.homologyπ 0 ≫
       HomologicalComplex.homologyMap ((cubicalToSingular k).app X) 0 =
         ((cubicalToSingular k).app X).f 0 ≫ L.cycles₀Iso.inv ≫ L.homologyπ 0 := by
@@ -450,7 +441,8 @@ theorem singularCubicalHomologyIso_inv_homologyπ_ofCube_point {X : TopCat.{u}} 
       ChainComplex.cycles₀Iso_inv_naturality, Category.assoc]
     -- The singular chains of `X` are the chains of its singular simplicial set `L`.
     rfl
-  rw [singularCubicalHomologyIso_inv, singularHomology₀Section_def, SSet.ιHomology₀_eq, ← hv]
+  rw [singularCubicalHomologyIso_inv, singularHomology₀Section_def,
+    SSet.ιHomology₀_eq_cycles₀Iso_inv]
   refine (ConcreteCategory.congr_hom hφ _).trans ?_
   refine (congrArg (L.cycles₀Iso.inv ≫ L.homologyπ 0).hom
     (cubicalToSingular_app_f_zero_ofCube (k := k) x)).trans ?_

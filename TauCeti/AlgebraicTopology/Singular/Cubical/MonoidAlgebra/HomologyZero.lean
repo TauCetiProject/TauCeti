@@ -132,20 +132,12 @@ theorem loopZeroChainToGroupAlgebra_ofCube (c : SingularCube (MooreLoopSpace X x
   let L := (TopCat.toSSet.obj T).chainComplex (ModuleCat.of R R)
   let σ := (TopCat.toSSetObj₀Equiv (X := T)).symm γ
   -- First compute the singular homology class through the cubical comparison.
-  have hv : (TopCat.toSSet.obj T).ιChainComplex (R := ModuleCat.of R R) σ ≫
-      L.cycles₀Iso.inv = L.liftCycles
-        ((TopCat.toSSet.obj T).ιChainComplex (R := ModuleCat.of R R) σ) 0
-        (by simp) (by simp) := by
-    apply (cancel_mono (L.iCycles 0)).1
-    simp only [Category.assoc, HomologicalComplex.iCyclesIso_inv_hom_id,
-      HomologicalComplex.liftCycles_i]
-    exact Category.comp_id _
   have hπ : (T.singularHomology₀Iso (ModuleCat.of R R)).hom
       ((L.cycles₀Iso.inv ≫ L.homologyπ 0) (simplexChain σ 1)) =
       (Sigma.ι (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) (.mk γ)) 1 := by
     have vertex := singularHomology₀Section_singularHomology₀Iso_hom
       (X := T) (ModuleCat.of R R) γ
-    rw [singularHomology₀Section_def, SSet.ιHomology₀_eq, ← hv] at vertex
+    rw [singularHomology₀Section_def, SSet.ιHomology₀_eq_cycles₀Iso_inv] at vertex
     exact congrArg (fun f : ModuleCat.of R R ⟶
       ∐ (fun _ : ZerothHomotopy T ↦ ModuleCat.of R R) ↦ f.hom 1) vertex
   -- Next reindex the component coproduct by fundamental-group classes and realize it

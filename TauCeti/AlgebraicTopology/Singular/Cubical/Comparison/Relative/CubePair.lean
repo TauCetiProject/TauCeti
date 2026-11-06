@@ -167,8 +167,9 @@ private lemma cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_zero :
     refine Eq.trans ?_ (NormalizedCubicalChain.boundary_ofCube (X := (cubeBoundaryPair.{u} 1).fst)
       (R := k) (upCube.{u} 1)).symm
     rw [ModuleCat.id_apply, normalizedCubicalChainComplexXEquiv_symm_apply, map_sub,
-      NormalizedCubicalChain.map_ofCube, NormalizedCubicalChain.map_ofCube, Fin.sum_univ_one,
-      Fin.val_zero, pow_zero, one_smul, comp_point_cubeEnd, comp_point_cubeEnd]
+      Fin.sum_univ_one]
+    simp only [NormalizedCubicalChain.map_ofCube, Fin.val_zero, pow_zero, one_smul,
+      comp_point_cubeEnd]
     exact congrArg₂ (fun a b ↦ NormalizedCubicalChain.ofCube _ k a -
       NormalizedCubicalChain.ofCube _ k b) (face_upCube_one 0).symm (face_upCube_one 1).symm
 
@@ -203,7 +204,7 @@ theorem singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero :
   rw [cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle_zero, cubeEndsCycle, map_sub, map_sub,
     map_sub, map_sub, hpt, hpt]
   -- Both sides are `s₀[0] 1 - s₀[1] 1`, the right one written as a difference of morphisms.
-  rfl
+  exact (LinearMap.sub_apply _ _ _).symm
 
 /-- **The fundamental cycle generates the relative cubical homology of the interval.** Over any
 ring `k`, `a ↦ a • [I¹]` is bijective onto `H₁(I¹, ∂I¹; k)`, where `[I¹]` is the class of the
