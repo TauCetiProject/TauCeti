@@ -64,6 +64,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E] {mu : Measure E} [mu.IsAddHaarMeasure]
   {Omega : Opens E} {p : ENNReal} [Fact (1 ≤ p)] {g : E → ℝ} {L : ℝ≥0}
 
+omit [FiniteDimensional ℝ E] in
+/-- The directional derivative of a Lipschitz function `g` with compact support lies in every
+`Lq(Ω)`, being bounded with compact support. -/
+theorem memLp_restrict_lineDeriv {q : ENNReal} (hg : LipschitzWith L g) (hgc : HasCompactSupport g)
+    (v : E) : MemLp (fun x => lineDeriv ℝ g x v) q (mu.restrict Omega) := by
+  have hdgc : HasCompactSupport fun x => lineDeriv ℝ g x v :=
+    hgc.mono' fun x hx => by_contra fun h => hx (lineDeriv_of_notMem_tsupport h v)
+  exact (hdgc.memLp_of_bound (aestronglyMeasurable_lineDeriv hg.continuous mu) (L * ‖v‖)
+    (.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hg)).restrict _
+
 /-- **Integration by parts against Lipschitz functions.** For `1 ≤ p < ∞`, `u ∈ W^{1,p}(Ω)`, a
 Lipschitz function `g` with compact support in `Ω`, and a direction `v`,
 
@@ -79,11 +89,8 @@ theorem W1p.setIntegral_lineDeriv_mul_value_eq_neg (hp : p ≠ ⊤) (u : W1p mu 
   let _ : q.HolderConjugate p := ENNReal.HolderConjugate.symm
   let _ : Fact (1 ≤ q) := ⟨ENNReal.HolderConjugate.one_le _ p⟩
   -- `∂_v g` and `g` are bounded with compact support, so they lie in the dual exponent space.
-  have hdgc : HasCompactSupport fun x => lineDeriv ℝ g x v :=
-    hgc.mono' fun x hx => by_contra fun h => hx (lineDeriv_of_notMem_tsupport h v)
   have hdg : MemLp (fun x => lineDeriv ℝ g x v) q (mu.restrict Omega) :=
-    (hdgc.memLp_of_bound (aestronglyMeasurable_lineDeriv hg.continuous mu) (L * ‖v‖)
-      (.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hg)).restrict _
+    memLp_restrict_lineDeriv hg hgc v
   have hg' : MemLp g q (mu.restrict Omega) :=
     (hg.continuous.memLp_of_hasCompactSupport hgc).restrict _
   -- The two sides, as a continuous linear functional on `W^{1,p}(Ω)`.
@@ -149,11 +156,7 @@ theorem W1p.integrable_lineDeriv_mul_value (u : W1p mu Omega p)
     Integrable (fun x => lineDeriv ℝ g x v * W1p.value u x) (mu.restrict Omega) := by
   let q := ENNReal.conjExponent p
   let _ : q.HolderConjugate p := ENNReal.HolderConjugate.symm
-  have hdgc : HasCompactSupport fun x => lineDeriv ℝ g x v :=
-    hgc.mono' fun x hx => by_contra fun h => hx (lineDeriv_of_notMem_tsupport h v)
-  exact ((hdgc.memLp_of_bound (p := q) (aestronglyMeasurable_lineDeriv hg.continuous mu) (L * ‖v‖)
-    (.of_forall fun _ => norm_lineDeriv_le_of_lipschitz ℝ hg)).restrict _).integrable_mul
-      (Lp.memLp (W1p.value u))
+  exact (memLp_restrict_lineDeriv (q := q) hg hgc v).integrable_mul (Lp.memLp (W1p.value u))
 
 omit [FiniteDimensional ℝ E] in
 /-- The product of a continuous function `g` with compact support and the inner product of the

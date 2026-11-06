@@ -492,10 +492,23 @@ private theorem hasCompactSupport_of_forall_eq_zero_cutoff {ψ : EuclideanSpace 
     (gradient_of_notMem_tsupport hxψ) (divMatrixGradient_eq_zero_of_notMem_tsupport hxψ))
 
 
+/-- An `L²` function times a square-integrable weight is integrable. -/
+private theorem integrable_of_norm_le_mul_memLp {X : Type*} [MeasurableSpace X] {ν : Measure X}
+    {F W g : X → ℝ} (hF : MemLp F 2 ν) (hW : MemLp W 2 ν) (hg : AEStronglyMeasurable g ν)
+    (hle : ∀ x, ‖g x‖ ≤ W x * F x) : Integrable g ν :=
+  (hW.integrable_mul hF).mono' hg (Filter.Eventually.of_forall hle)
+
+/-- A continuous function with compact support is in `L²` of a measure finite on compacts. -/
+private theorem memLp_two_restrict_of_continuous {X : Type*} [MeasurableSpace X]
+    [TopologicalSpace X] [OpensMeasurableSpace X] {ν : Measure X} [IsFiniteMeasureOnCompacts ν]
+    {s : Set X} {W : X → ℝ} (hW : Continuous W) (hWc : HasCompactSupport W) :
+    MemLp W 2 (ν.restrict s) :=
+  (hW.memLp_of_hasCompactSupport hWc).restrict _
+
 /-- The terms of the cutoff computation that pair the weak gradient of `u ∈ H¹(Ω)` with a bounded
 weight supported in `tsupport ψ` are integrable on `Ω`. -/
 private theorem integrable_matrixBilinearForm_gradient_terms
-    (hK : LipschitzWith K fun x => matrixBilinearForm (a x)) (u : W1p mu Omega 2)
+    (hBc : Continuous fun x => matrixBilinearForm (a x)) (u : W1p mu Omega 2)
     {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) (hψc : HasCompactSupport ψ)
     (φ : 𝓓(H, ℝ)) :
     Integrable (fun x => matrixBilinearForm (a x) (ψ x • ∇ φ x + φ x • ∇ ψ x)
@@ -505,7 +518,6 @@ private theorem integrable_matrixBilinearForm_gradient_terms
     Integrable (fun x => φ x * matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x))
       (mu.restrict Omega) := by
   -- Every weight vanishes off `tsupport ψ` and is continuous.
-  have hBc := hK.continuous
   have hψ' := hψ.continuous
   have hφ' := φ.continuous
   have hgψ := ContDiff.continuous_gradient hψ
@@ -514,28 +526,21 @@ private theorem integrable_matrixBilinearForm_gradient_terms
     Continuous.norm (E := EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι →L[ℝ] ℝ) hBc
   have hcs := hasCompactSupport_of_forall_eq_zero_cutoff (a := a) hψc
   have hgu_m := Lp.aestronglyMeasurable (W1p.gradient u)
-  -- An `L²(Ω)` function times a square-integrable weight is integrable on `Ω`.
-  have hint : ∀ {F W g : EuclideanSpace ℝ ι → ℝ}, MemLp F 2 (mu.restrict Omega) →
-      MemLp W 2 (mu.restrict Omega) → AEStronglyMeasurable g (mu.restrict Omega) →
-      (∀ x, ‖g x‖ ≤ W x * F x) → Integrable g (mu.restrict Omega) :=
-    fun hF hW hg hle => (hW.integrable_mul hF).mono' hg (Filter.Eventually.of_forall hle)
-  have hcont : ∀ {W : EuclideanSpace ℝ ι → ℝ}, Continuous W → HasCompactSupport W →
-      MemLp W 2 (mu.restrict Omega) := fun hW hWc =>
-    (hW.memLp_of_hasCompactSupport hWc).restrict _
   have hT1 : Integrable (fun x => matrixBilinearForm (a x) (ψ x • ∇ φ x + φ x • ∇ ψ x)
       (W1p.gradient u x)) (mu.restrict Omega) :=
-    hint (Lp.memLp (W1p.gradient u)).norm
-      (hcont (W := fun x => ‖matrixBilinearForm (a x)‖ * ‖ψ x • ∇ φ x + φ x • ∇ ψ x‖)
+    integrable_of_norm_le_mul_memLp (Lp.memLp (W1p.gradient u)).norm
+      (memLp_two_restrict_of_continuous
+        (W := fun x => ‖matrixBilinearForm (a x)‖ * ‖ψ x • ∇ φ x + φ x • ∇ ψ x‖)
         (by fun_prop)
         (hcs _ fun x h1 h2 _ => by simp [h1, h2]))
       (aestronglyMeasurable_matrixBilinearForm_apply hBc.aestronglyMeasurable
         (Continuous.aestronglyMeasurable (by fun_prop)) hgu_m)
       (fun x => (matrixBilinearForm (a x)).le_opNorm₂ _ _)
   have hW : MemLp (fun x => ‖φ x‖ * (‖matrixBilinearForm (a x)‖ * ‖∇ ψ x‖)) 2 (mu.restrict Omega) :=
-    hcont (by fun_prop) (hcs _ fun x _ h2 _ => by simp [h2])
+    memLp_two_restrict_of_continuous (by fun_prop) (hcs _ fun x _ h2 _ => by simp [h2])
   have hT2 : Integrable (fun x => φ x * matrixBilinearForm (a x) (∇ ψ x) (W1p.gradient u x))
       (mu.restrict Omega) :=
-    hint (Lp.memLp (W1p.gradient u)).norm
+    integrable_of_norm_le_mul_memLp (Lp.memLp (W1p.gradient u)).norm
       hW
       ((Continuous.aestronglyMeasurable (by fun_prop)).mul
         (aestronglyMeasurable_matrixBilinearForm_apply hBc.aestronglyMeasurable
@@ -546,7 +551,7 @@ private theorem integrable_matrixBilinearForm_gradient_terms
         exact (matrixBilinearForm (a x)).le_opNorm₂ _ _)
   have hQ : Integrable (fun x => φ x * matrixBilinearForm (a x) (W1p.gradient u x) (∇ ψ x))
       (mu.restrict Omega) :=
-    hint (Lp.memLp (W1p.gradient u)).norm
+    integrable_of_norm_le_mul_memLp (Lp.memLp (W1p.gradient u)).norm
       hW
       ((Continuous.aestronglyMeasurable (by fun_prop)).mul
         (aestronglyMeasurable_matrixBilinearForm_apply hBc.aestronglyMeasurable hgu_m
@@ -580,14 +585,6 @@ private theorem integrable_value_terms (hM : ∀ x, ‖matrixBilinearForm (a x)�
   obtain ⟨Cφ, hCφ⟩ := hφ'.bounded_above_of_compact_support φ.hasCompactSupport
   have hcs := hasCompactSupport_of_forall_eq_zero_cutoff (a := a) hψc
   have hu_m := Lp.aestronglyMeasurable (W1p.value u)
-  -- An `L²(Ω)` function times a square-integrable weight is integrable on `Ω`.
-  have hint : ∀ {F W g : EuclideanSpace ℝ ι → ℝ}, MemLp F 2 (mu.restrict Omega) →
-      MemLp W 2 (mu.restrict Omega) → AEStronglyMeasurable g (mu.restrict Omega) →
-      (∀ x, ‖g x‖ ≤ W x * F x) → Integrable g (mu.restrict Omega) :=
-    fun hF hW hg hle => (hW.integrable_mul hF).mono' hg (Filter.Eventually.of_forall hle)
-  have hcont : ∀ {W : EuclideanSpace ℝ ι → ℝ}, Continuous W → HasCompactSupport W →
-      MemLp W 2 (mu.restrict Omega) := fun hW hWc =>
-    (hW.memLp_of_hasCompactSupport hWc).restrict _
   -- The one discontinuous weight, `φ div(a ∇ψ)`, is bounded with compact support.
   have hφD : MemLp (fun x => φ x * divMatrixGradient a ψ x) 2 (mu.restrict Omega) :=
     ((hcs _ fun x _ _ h3 => by simp [h3]).memLp_of_bound
@@ -602,15 +599,17 @@ private theorem integrable_value_terms (hM : ∀ x, ‖matrixBilinearForm (a x)�
       + φ x * divMatrixGradient a ψ x)) (mu.restrict Omega) := by
     have hT3' : Integrable (fun x => W1p.value u x * matrixBilinearForm (a x) (∇ φ x) (∇ ψ x))
         (mu.restrict Omega) :=
-      hint (Lp.memLp (W1p.value u)).norm
-        (hcont (W := fun x => ‖matrixBilinearForm (a x) (∇ φ x) (∇ ψ x)‖) (by fun_prop)
+      integrable_of_norm_le_mul_memLp (Lp.memLp (W1p.value u)).norm
+        (memLp_two_restrict_of_continuous
+          (W := fun x => ‖matrixBilinearForm (a x) (∇ φ x) (∇ ψ x)‖) (by fun_prop)
           (hcs _ fun x _ h2 _ => by simp [h2]))
         (hu_m.mul (Continuous.aestronglyMeasurable (by fun_prop)))
         (fun x => by rw [norm_mul, mul_comm])
     exact (hT3'.add hT4).congr (.of_forall fun x => by simp only [Pi.add_apply, mul_add])
   have hP : Integrable (fun x => ψ x * f x * φ x) (mu.restrict Omega) :=
-    hint (Lp.memLp f).norm (hcont (W := fun x => ‖ψ x * φ x‖)
-      (by fun_prop) (hcs _ fun x h1 _ _ => by simp [h1]))
+    integrable_of_norm_le_mul_memLp (Lp.memLp f).norm
+      (memLp_two_restrict_of_continuous (W := fun x => ‖ψ x * φ x‖)
+        (by fun_prop) (hcs _ fun x h1 _ _ => by simp [h1]))
       (((Continuous.aestronglyMeasurable (by fun_prop)).mul (Lp.aestronglyMeasurable f)).mul
         (Continuous.aestronglyMeasurable (by fun_prop)))
       (fun x => by
@@ -637,7 +636,8 @@ private theorem setIntegral_matrixBilinearForm_cutoff_eq
   have hE1 := setIntegral_matrixBilinearForm_smul_add_eq hΩH hu hψ hψc hts φ
   -- Integration by parts moves the derivative off `φ` in the term `u ⟨∇φ, a ∇ψ⟩`.
   have hE2 := setIntegral_value_mul_eq_neg hM hK u hψ hψc hts φ
-  obtain ⟨hT1, hT2, hQ⟩ := integrable_matrixBilinearForm_gradient_terms (a := a) hK u hψ hψc φ
+  obtain ⟨hT1, hT2, hQ⟩ :=
+    integrable_matrixBilinearForm_gradient_terms (a := a) hK.continuous u hψ hψc φ
   obtain ⟨hT3, hT4, hP⟩ := integrable_value_terms hM hK (f := f) u hψ hψc φ
   -- Assemble: both sides are the same combination of the six integrals above.
   calc ∫ x in Omega, matrixBilinearForm (a x) (∇ φ x)
