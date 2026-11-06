@@ -411,7 +411,7 @@ private theorem exists_reflectionWord_of_apply_eq_self
     rw [reflectionWord_restrict_apply_of_isOrtho Q U l a fun u hu ↦
       (QuadraticMap.associated_isOrtho.mp (hu a (Submodule.mem_span_singleton_self _))).symm]
   · have happ := reflectionWord_restrict_apply Q U l ⟨y, hy⟩
-    rw [hlprod, coe_restrictOrthogonal_apply] at happ
+    rw [hlprod, orthogonalGroup.coe_restrictOrthogonal_apply] at happ
     exact happ
 
 /-- The good case of the induction step: an orthogonal map that fixes an anisotropic vector, or
