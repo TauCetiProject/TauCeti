@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.IntegralCurve.Basic
 public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 import Mathlib.Analysis.ODE.ExistUnique
+import Mathlib.Geometry.Manifold.IntegralCurve.Transform
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 
 /-!
@@ -17,7 +18,8 @@ This file records the correspondence between an integral curve and the solution 
 coordinate equation it becomes when read in one fixed extended chart, in both directions, and the
 uniqueness statement that comes with it: two integral curves on an open interval which agree once
 agree throughout, as soon as one of them stays in a fixed chart over which the coordinate field is
-continuously differentiable.
+continuously differentiable. It also identifies the constant integral curves with the zeros of
+the field.
 
 ## Main results
 
@@ -26,6 +28,8 @@ continuously differentiable.
 * `IsMIntegralCurveAt.map_of_mfderiv_eq`: the corresponding result for local integral curves.
 * `IsMIntegralCurveOn.congr`: being an integral curve on a set only depends on the values of the
   curve on that set.
+* `isMIntegralCurve_const_iff`: a constant curve is an integral curve exactly at a zero of the
+  field.
 * `TauCeti.isMIntegralCurve_congr_vectorField`: being an integral curve only depends on the values
   of the vector field along the curve.
 * `IsMIntegralCurveAt.of_extChartAt_symm`: a coordinate solution gives a manifold integral curve.
@@ -93,6 +97,19 @@ theorem congr {V : (x : M) → TangentSpace I x} {γ γ' : ℝ → M} {s : Set �
   rfl
 
 end IsMIntegralCurveOn
+
+/-- **Constant integral curves are the zeros of the field.** The constant curve at `x` is an
+integral curve of `v` exactly when `v x = 0`. -/
+@[simp]
+theorem isMIntegralCurve_const_iff {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+    {v : (x : M) → TangentSpace I x} {x : M} :
+    IsMIntegralCurve (fun _ ↦ x) v ↔ v x = 0 := by
+  refine ⟨fun h ↦ ?_, isMIntegralCurve_const⟩
+  -- The derivative of the constant curve is `0`, and evaluating `1 ↦ v x` at `1` gives `v x`.
+  have h₀ := (h 0).mfderiv
+  rw [mfderiv_const] at h₀
+  have h₁ : v x = ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) (v x) 1 := by simp
+  exact h₁.trans (ContinuousLinearMap.ext_iff.1 h₀ (1 : ℝ)).symm
 
 namespace IsMIntegralCurveAt
 
