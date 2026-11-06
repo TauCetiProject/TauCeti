@@ -24,7 +24,9 @@ pseudo-gradient field adapted to a Morse function `f`, the function is `f` and `
 set of critical points.
 
 Along an orbit converging to `x`, a function antitone along orbits stays above its value at `x`
-in forward time and below it in backward time. Hence a strict maximum of the function is a fixed
+in forward time and below it in backward time. Crossing times of levels are continuous: near a
+point along whose orbit the function strictly decreases, nearby orbits cross its level at nearby
+times. Hence a strict maximum of the function is a fixed
 point with trivial stable set, and a strict minimum is a fixed point with trivial unstable set.
 
 ## Main declarations
@@ -37,6 +39,9 @@ point with trivial stable set, and a strict minimum is a fixed point with trivia
   maximum or minimum of a function antitone along orbits is a fixed point.
 * `Flow.stableSet_eq_singleton_of_antitone` and `Flow.unstableSet_eq_singleton_of_antitone`:
   the stable set of a strict maximum, and the unstable set of a strict minimum, is a point.
+* `Flow.tendsto_zero_of_apply_eq_of_antitone` and `Flow.tendsto_apply_of_apply_eq_of_antitone`:
+  if `u i → w` and `g` is strictly antitone along the orbit of `w`, the times and points at which
+  the orbits of the `u i` cross the level of `w` converge to `0` and to `w`.
 
 ## References
 
@@ -114,6 +119,50 @@ theorem unstableSet_eq_singleton_of_antitone (hg : ContinuousAt g x)
     fun y hy ↦ neg_lt_neg (hmin y hy)
 
 end Limit
+
+section Crossing
+
+variable {φ : Flow ℝ α} {g : α → ℝ} {w : α} {ι : Type*} {l : Filter ι} {u : ι → α} {s : ι → ℝ}
+
+/-- **Crossing times of a level converge.** Let `g` be continuous and antitone along every orbit
+of `φ`, and strictly antitone along the orbit of `w`. If `u i → w` and the orbit of `u i` meets the
+level of `w` at time `s i`, then `s i → 0`. No smoothness is needed, and the times `s i` are not
+assumed to be close to anything in advance, unlike the local implicit-function hitting time
+`TauCeti.flowHittingTime`: monotonicity along the orbits forces them to `0`. -/
+theorem tendsto_zero_of_apply_eq_of_antitone (hg : Continuous g)
+    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hw : StrictAnti fun t ↦ g (φ t w))
+    (hu : Tendsto u l (𝓝 w)) (hs : ∀ᶠ i in l, g (φ (s i) (u i)) = g w) :
+    Tendsto s l (𝓝 0) := by
+  have hval (t : ℝ) : Tendsto (fun i ↦ g (φ t (u i))) l (𝓝 (g (φ t w))) :=
+    ((hg.comp (φ.continuous_toFun t)).tendsto w).comp hu
+  refine tendsto_order.2 ⟨fun t ht ↦ ?_, fun t ht ↦ ?_⟩
+  · -- Before time `t < 0` the orbit of `u i` is still above the level of `w`.
+    have hlt : g w < g (φ t w) := by simpa only [map_zero_apply] using hw ht
+    filter_upwards [hs, (hval t).eventually (eventually_gt_nhds hlt)] with i hi hti
+    by_contra! hle
+    have := hanti (u i) hle
+    simp only [hi] at this
+    exact this.not_gt hti
+  · -- After time `t > 0` it is already below.
+    have hlt : g (φ t w) < g w := by simpa only [map_zero_apply] using hw ht
+    filter_upwards [hs, (hval t).eventually (eventually_lt_nhds hlt)] with i hi hti
+    by_contra! hle
+    have := hanti (u i) hle
+    simp only [hi] at this
+    exact this.not_gt hti
+
+/-- **Crossing points of a level converge.** Under the hypotheses of
+`Flow.tendsto_zero_of_apply_eq_of_antitone`, the points `φ (s i) (u i)` where the orbits of the
+`u i` meet the level of `w` converge to `w`. -/
+theorem tendsto_apply_of_apply_eq_of_antitone (hg : Continuous g)
+    (hanti : ∀ y, Antitone fun t ↦ g (φ t y)) (hw : StrictAnti fun t ↦ g (φ t w))
+    (hu : Tendsto u l (𝓝 w)) (hs : ∀ᶠ i in l, g (φ (s i) (u i)) = g w) :
+    Tendsto (fun i ↦ φ (s i) (u i)) l (𝓝 w) := by
+  have h := (φ.cont'.tendsto (0, w)).comp
+    ((tendsto_zero_of_apply_eq_of_antitone hg hanti hw hu hs).prodMk_nhds hu)
+  simpa only [Function.comp_def, Function.uncurry_apply_pair, map_zero_apply] using h
+
+end Crossing
 
 variable [CompactSpace α] [T2Space α]
 

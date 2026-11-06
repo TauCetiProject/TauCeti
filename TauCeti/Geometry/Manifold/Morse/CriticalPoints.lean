@@ -68,6 +68,8 @@ polynomial in the Morse inequalities.
 * `TauCeti.IsMorse.finite_criticalPoints_inter` and
   `TauCeti.IsMorse.finite_criticalPoints_inter_preimage_Iic`: finiteness on compact sets and on
   sublevel sets of proper functions bounded below.
+* `TauCeti.IsMorse.exists_levels_between_criticalValues`: on a compact manifold, levels `b < a`
+  between `c < d` can be chosen to enclose every critical value strictly between `c` and `d`.
 * `TauCeti.IsMorse.exists_criticalPoints_inter_preimage_Icc_subset`: in a compact band around
   `c`, a Morse function has no critical values close to `c` other than `c` itself.
 * `TauCeti.IsMorse.band_induction`: a property of compact bands between regular values follows
@@ -358,6 +360,40 @@ theorem IsMorse.eventually_eq_of_mem_criticalPoints (hf : IsMorse I f) (x : M) :
 theorem IsMorse.finite_criticalPoints [CompactSpace M] (hf : IsMorse I f) :
     (criticalPoints I f).Finite := by
   simpa using hf.finite_criticalPoints_inter isCompact_univ
+
+/-- **Levels separating the critical values.** For a Morse function on a compact manifold and reals
+`c < d`, there are levels `c < b < a < d` such that every critical value strictly between `c` and
+`d` lies strictly between `b` and `a`. -/
+theorem IsMorse.exists_levels_between_criticalValues [CompactSpace M] (hf : IsMorse I f)
+    {c d : ℝ} (hcd : c < d) :
+    ∃ a b : ℝ, c < b ∧ b < a ∧ a < d ∧
+      ∀ q ∈ criticalPoints I f, c < f q → f q < d → b < f q ∧ f q < a := by
+  -- The critical values strictly between `c` and `d` form a finite set `T`.
+  set T : Set ℝ := f '' (criticalPoints I f ∩ f ⁻¹' Ioo c d)
+  have hT : T.Finite := (hf.finite_criticalPoints.subset inter_subset_left).image _
+  have hA : (insert c T).Finite := hT.insert _
+  have hB : (insert d T).Finite := hT.insert _
+  set A := sSup (insert c T)
+  set B := sInf (insert d T)
+  have hTA : ∀ t ∈ T, t ≤ A := fun t ht ↦ le_csSup hA.bddAbove (mem_insert_of_mem _ ht)
+  have hTB : ∀ t ∈ T, B ≤ t := fun t ht ↦ csInf_le hB.bddBelow (mem_insert_of_mem _ ht)
+  have hcA : c ≤ A := le_csSup hA.bddAbove (mem_insert _ _)
+  have hBd : B ≤ d := csInf_le hB.bddBelow (mem_insert _ _)
+  -- The extreme values `A` and `B` stay strictly between `c` and `d`.
+  have hAmem : A ∈ insert c T := (insert_nonempty _ _).csSup_mem hA
+  have hBmem : B ∈ insert d T := (insert_nonempty _ _).csInf_mem hB
+  have hAd : A < d := by
+    rcases hAmem with h | ⟨q, hq, h⟩
+    · rw [h]; exact hcd
+    · rw [← h]; exact hq.2.2
+  have hcB : c < B := by
+    rcases hBmem with h | ⟨q, hq, h⟩
+    · rw [h]; exact hcd
+    · rw [← h]; exact hq.2.1
+  refine ⟨(A + 3 * d) / 4, (3 * c + B) / 4, by linarith, by linarith, by linarith,
+    fun q hq hcq hqd ↦ ?_⟩
+  have hqT : f q ∈ T := mem_image_of_mem _ ⟨hq, hcq, hqd⟩
+  constructor <;> linarith [hTA _ hqT, hTB _ hqT]
 
 /-- A proper Morse function bounded below has finitely many critical points in each sublevel
 set. -/
