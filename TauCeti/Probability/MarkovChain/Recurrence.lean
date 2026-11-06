@@ -17,8 +17,13 @@ the diagonal Green function, and is constant on communicating classes.
 
 Every state reachable from a recurrent state is recurrent and hits the original state
 almost surely. Consequently a recurrent communicating class is closed. In an irreducible
-chain with a recurrent state, every state is hit almost surely from every initial law.
-These results supply the state-classification input to coupling arguments.
+chain with a recurrent state, every state is hit almost surely from every initial law, and on
+a countable state space almost every path visits every state infinitely often. These results
+supply the state-classification input to coupling arguments.
+
+On a finite nonempty state space some state is recurrent: the chain spends its infinitely many
+time steps among finitely many states, so some diagonal Green function diverges. Hence every
+state of a finite irreducible chain is recurrent.
 
 The first entrance and first return use `hittingAfter` starting at zero and one,
 respectively. The class-property and hitting results need only measurable singletons;
@@ -27,7 +32,7 @@ countability is used for closedness of the communicating class.
 ## References
 
 * J. R. Norris, *Markov Chains*, Cambridge University Press (1997), §1.5, in particular
-  Theorem 1.5.4.
+  Theorems 1.5.4, 1.5.6 and 1.5.7.
 -/
 
 public section
@@ -184,5 +189,59 @@ theorem IsRecurrent.ae_hittingAfter_ne_top_of_isIrreducible [IsIrreducible Measu
   exact Filter.Eventually.of_forall fun z => by
     rw [markovChainKernel_apply]
     exact (hx.of_reaches (hreaches x z)).ae_hittingAfter_ne_top (hreaches z y)
+
+/-- Recurrence of an irreducible chain does not depend on the state. -/
+theorem isRecurrent_iff_isRecurrent [IsIrreducible Measure.count κ] (x y : S) :
+    κ.IsRecurrent x ↔ κ.IsRecurrent y :=
+  Communicates.isRecurrent_iff (isIrreducible_count_iff_forall_communicates.mp ‹_› x y)
+
+/-- In an irreducible chain with a recurrent state on a countable state space, from any initial
+measure, almost every path visits every state infinitely often. -/
+theorem IsRecurrent.ae_forall_infinite_setOf_eq [Countable S] [IsIrreducible Measure.count κ]
+    (hx : κ.IsRecurrent x) (ν : Measure S) :
+    ∀ᵐ ω ∂markovChainLaw ν κ, ∀ y, {n | ω n = y}.Infinite := by
+  have hS : MeasurableSet {ω : ℕ → S | ∀ y, {n | ω n = y}.Infinite} := by
+    simp_rw [← forall_successiveVisit_lt_top_iff (X := fun n (ω : ℕ → S) => ω n),
+      lt_top_iff_ne_top, Set.ofPred_forall]
+    exact MeasurableSet.iInter fun y => MeasurableSet.iInter fun k =>
+      measurableSet_setOf_successiveVisit_ne_top (fun n => measurable_pi_apply n)
+        (measurableSet_singleton y) k
+  rw [Measure.markovChainLaw_eq_comp]
+  refine Measure.ae_comp_of_ae_ae hS (Filter.Eventually.of_forall fun w => ?_)
+  rw [markovChainKernel_apply]
+  -- Started at `w`, the chain enters each recurrent state `y`, and then returns to it forever.
+  refine ae_all_iff.mpr fun y => ?_
+  filter_upwards [hx.ae_hittingAfter_ne_top_of_isIrreducible (Measure.dirac w) y,
+    Measure.ae_infinite_setOf_eq_of_hittingAfter_ne_top (Measure.dirac w) κ
+      ((isRecurrent_iff_isRecurrent x y).mp hx)] with ω hH hω
+  exact hω hH
+
+section Finite
+
+/-- A finite nonempty chain has a recurrent state. The chain started at any state spends its
+infinitely many time steps among finitely many states, so some state `y` has infinite mean number
+of visits, and then `∑ n, (κ ^ n) y {y} = ∞`. -/
+theorem exists_isRecurrent [Finite S] [Nonempty S] : ∃ y, κ.IsRecurrent y := by
+  have := Fintype.ofFinite S
+  obtain ⟨x⟩ := ‹Nonempty S›
+  have htop : ∑ y, ∑' n : ℕ, (κ ^ n) x {y} = ∞ := by
+    rw [← Summable.tsum_finsetSum fun _ _ => CompleteLattice.summable]
+    simp_rw [sum_measure_singleton, Finset.coe_univ, measure_univ]
+    exact ENNReal.tsum_const_eq_top_of_ne_zero one_ne_zero
+  obtain ⟨y, -, hy⟩ := ENNReal.sum_eq_top.mp htop
+  refine ⟨y, isRecurrent_iff_tsum_eq_top.mpr (top_unique ?_)⟩
+  have h := tsum_pow_comp_apply_singleton κ (Measure.dirac x) y
+  simp_rw [Measure.dirac_bind (Kernel.measurable _)] at h
+  rw [← hy, h]
+  exact mul_le_of_le_one_left' prob_le_one
+
+/-- Every state of a finite irreducible chain is recurrent. -/
+theorem isRecurrent_of_finite [Finite S] [IsIrreducible Measure.count κ] (x : S) :
+    κ.IsRecurrent x := by
+  have : Nonempty S := ⟨x⟩
+  obtain ⟨y, hy⟩ := exists_isRecurrent (κ := κ)
+  exact (isRecurrent_iff_isRecurrent y x).mp hy
+
+end Finite
 
 end ProbabilityTheory.Kernel
