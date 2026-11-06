@@ -123,18 +123,6 @@ private lemma one_add_sum_le_prod {ι : Type*} (s : Finset ι) (f : ι → ℝ)
       sub_nonneg.mpr ih'
     nlinarith [mul_nonneg hi0 hs, mul_nonneg hi0 hgap]
 
-private lemma rpow_prod {ι : Type*} (s : Finset ι) (f : ι → ℝ) (p : ℝ)
-    (hf : ∀ i ∈ s, 0 ≤ f i) :
-    (∏ i ∈ s, f i) ^ p = ∏ i ∈ s, f i ^ p := by
-  classical
-  induction s using Finset.induction_on with
-  | empty => simp
-  | @insert i s hi ih =>
-    have hf' : ∀ j ∈ s, 0 ≤ f j := fun j hj => hf j (Finset.mem_insert_of_mem hj)
-    rw [Finset.prod_insert hi, Finset.prod_insert hi,
-      Real.mul_rpow (hf i (Finset.mem_insert_self i s))
-        (Finset.prod_nonneg hf'), ih hf']
-
 private lemma continuous_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 ≤ β) :
     Continuous (gaussianBetaGasWeight n β) := by
   unfold gaussianBetaGasWeight
@@ -224,8 +212,8 @@ theorem integrable_gaussianBetaGasWeight (n : ℕ) {β : ℝ} (hβ : 0 < β) :
         ∑ i : Fin n, (-a * x i ^ 2) by simp [a, Finset.mul_sum]]
       exact Real.exp_sum _ _
     have hqpowprod : q ^ p = ∏ i : Fin n, (1 + |x i|) ^ p := by
-      simpa [q] using rpow_prod (Finset.univ : Finset (Fin n))
-        (fun i => 1 + |x i|) p (fun _ _ => by positivity)
+      exact (Real.finsetProd_rpow (Finset.univ : Finset (Fin n))
+        (fun i => 1 + |x i|) (fun _ _ => by positivity) p).symm
     have hpoint : gaussianBetaGasWeight n β x ≤
         ∏ i : Fin n, ((1 + |x i|) ^ p * exp (-a * x i ^ 2)) := by
       unfold gaussianBetaGasWeight
