@@ -234,19 +234,12 @@ private lemma squareMoment_profile {p : ℝ} {t : ℝ} (ht : 0 < t)
     rw [Nat.cast_sub hn]
     push_cast
     ring
-  have hscale_exp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
-      -((finrank ℝ E - 2 : ℕ) : ℝ) := by
-    rw [Nat.cast_sub hn]
-    push_cast
-    ring
-  have hscale : (t ^ (-(((finrank ℝ E : ℝ) - 2) / 2))) ^ 2 =
-      (t ^ (finrank ℝ E - 2))⁻¹ := by
-    rw [← Real.rpow_mul_natCast ht.le, hscale_exp, Real.rpow_neg ht.le, Real.rpow_natCast]
+  have hscale : t ^ (-((finrank ℝ E : ℝ) - 2)) = (t ^ (finrank ℝ E - 2))⁻¹ := by
+    simp only [Real.rpow_neg ht.le, ← Real.rpow_natCast, Nat.cast_sub hn, Nat.cast_ofNat]
   have hbubble : bubble t b x ^ 2 = (t ^ (finrank ℝ E - 2))⁻¹ *
       bubble 1 0 (t⁻¹ • (x - b)) ^ 2 := by
-    have hb := bubble_zero_smul ht (t⁻¹ • (x - b))
-    rw [smul_inv_smul₀ ht.ne', bubble_zero_sub] at hb
-    rw [hb, mul_pow, hscale]
+    simpa only [smul_inv_smul₀ ht.ne', ← add_sub_assoc, add_sub_cancel_left, hscale] using
+      bubble_sq_add_smul ht b (t⁻¹ • (x - b))
   have hprofile : bubble 1 0 (t⁻¹ • (x - b)) ^ 2 =
       (2 : ℝ) ^ (finrank ℝ E - 2) / (1 + ‖t⁻¹ • (x - b)‖ ^ 2) ^ (finrank ℝ E - 2) := by
     simpa only [sub_zero, one_pow, mul_one, div_pow] using
@@ -302,16 +295,21 @@ theorem integral_norm_sub_rpow_mul_bubble_sq
     integral_sub_right_eq_self (fun y ↦ J (t⁻¹ • y)) b,
     Measure.integral_comp_inv_smul_of_nonneg μ J ht.le,
     integral_norm_rpow_mul_rpow_neg_one_add_norm_sq μ hp (by linarith), smul_eq_mul, hexp]
-  have hscale : (2 / t) ^ (finrank ℝ E - 2) * t ^ finrank ℝ E =
-      2 ^ (finrank ℝ E - 2) * t ^ 2 := by
-    conv_lhs => arg 2; rw [show finrank ℝ E = (finrank ℝ E - 2) + 2 by omega, pow_add]
-    rw [← mul_assoc, ← mul_pow, div_mul_cancel₀ 2 ht.ne']
   have htwo : (2 : ℝ) ^ (finrank ℝ E - 2) = 2 * 2 ^ (finrank ℝ E - 3) := by
     rw [← pow_succ', show finrank ℝ E - 3 + 1 = finrank ℝ E - 2 by omega]
+  have hpower : t ^ finrank ℝ E = t ^ (finrank ℝ E - 2) * t ^ 2 := by
+    rw [← pow_add]
+    congr 1
+    omega
+  have hscale : (2 / t) ^ (finrank ℝ E - 2) * t ^ finrank ℝ E =
+      2 * 2 ^ (finrank ℝ E - 3) * t ^ 2 := by
+    rw [hpower, ← mul_assoc, ← mul_pow, div_mul_cancel₀ 2 ht.ne', htwo]
   rw [Real.rpow_add ht, Real.rpow_two]
-  linear_combination (t ^ p * ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) *
-    beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p - 4) / 2)) / 2) *
-    (hscale + t ^ 2 * htwo)
+  calc
+    _ = ((2 / t) ^ (finrank ℝ E - 2) * t ^ finrank ℝ E) *
+        (t ^ p * ((finrank ℝ E : ℝ) * μ.real (ball (0 : E) 1) *
+          beta (((finrank ℝ E : ℝ) + p) / 2) (((finrank ℝ E : ℝ) - p - 4) / 2)) / 2) := by ring
+    _ = _ := by rw [hscale]; ring
 
 /-! ### Truncated moments at the logarithmic endpoint
 

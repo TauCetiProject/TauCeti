@@ -56,18 +56,10 @@ private lemma squareMoment_rescale (μ : Measure E) [μ.IsAddHaarMeasure]
         (χ (b + t • z) * (‖z‖ ^ p * bubble 1 0 z ^ 2)) := by
     have hnorm : ‖t • z‖ ^ p = t ^ p * ‖z‖ ^ p := by
       simp only [norm_smul, Real.norm_of_nonneg ht.le, Real.mul_rpow ht.le (norm_nonneg _)]
-    have hexp : -(((finrank ℝ E : ℝ) - 2) / 2) * (2 : ℕ) =
-        -((finrank ℝ E : ℝ) - 2) := by push_cast; ring
-    have hbubble : bubble t b (b + t • z) ^ 2 =
-        t ^ (-((finrank ℝ E : ℝ) - 2)) * bubble 1 0 z ^ 2 := by
-      have hb : bubble t b (b + t • z) =
-          t ^ (-(((finrank ℝ E : ℝ) - 2) / 2)) * bubble 1 0 z := by
-        rw [← bubble_zero_sub, add_sub_cancel_left, bubble_zero_smul ht]
-      rw [hb, mul_pow, ← Real.rpow_mul_natCast ht.le, hexp]
     have hpower : t ^ (p - ((finrank ℝ E : ℝ) - 2)) =
         t ^ p * t ^ (-((finrank ℝ E : ℝ) - 2)) := by
       rw [sub_eq_add_neg, Real.rpow_add ht]
-    simp only [f, add_sub_cancel_left, hnorm, hbubble, hpower]
+    simp only [f, add_sub_cancel_left, hnorm, bubble_sq_add_smul ht, hpower]
     ring
   have hpower : t ^ finrank ℝ E * t ^ (p - ((finrank ℝ E : ℝ) - 2)) = t ^ (p + 2) := by
     rw [← Real.rpow_natCast, ← Real.rpow_add ht]
