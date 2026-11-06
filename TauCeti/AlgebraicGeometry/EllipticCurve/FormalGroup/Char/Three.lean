@@ -66,6 +66,12 @@ private theorem tangentNumerator_mul_denom_sq (hb : W.b₂ = 0) :
     simp only [PowerSeries.smul_eq_C_mul, map_mul, map_ofNat]
     linear_combination (norm := (ring_nf; reduce_mod_char!))
   simp only [b₄, map_pow, map_add, map_mul, map_ofNat]
+  -- In characteristic three the left side is
+  -- `(a - b*t - d*w) * (l*D) * D + (c + d*t) * (l*D)^2 + b*w*D^2`.
+  -- The multiplier of `h₁` is its divided difference in `l*D`, replacing that variable
+  -- by `w * (a - b*t + d*w)`. The multiplier of `h₂` then eliminates `a^2` using
+  -- `a^2 = -b`, and the multiplier of `h₃` replaces `D` by its displayed formula.
+  -- The resulting remainder is `-(a*c - d)^2 * w^3`, as `C b₄ = a*c - d`.
   linear_combination (norm := (dsimp only [a, b, c, d, t, w, l, D]; ring_nf; reduce_mod_char!))
     ((a - b * t) * D + (c + d * t) * (l * D + w * (a - b * t + d * w)) - d * w * D) * h₁ +
     (w * (-a * t - b * t ^ 2 + c ^ 2 * w ^ 2 - c * w - d * t * w + 1)) * h₂ +
@@ -81,14 +87,14 @@ private theorem exists_formalThirdRoot_diagonal (hb : W.b₂ = 0) :
     hasSubst_of_constantCoeff_zero fun _ => PowerSeries.constantCoeff_X
   have : CharP (PowerSeries R) 3 :=
     charP_of_injective_ringHom PowerSeries.C_injective 3
-  let σ := substAlgHom (R := R) hX
   let l := PowerSeries.derivative W.formalW
   let v := W.formalW - PowerSeries.X * l
   let D := W.formalInvariantDifferentialDenom
   let d := PowerSeries.invOfUnit D 1
   let E := 1 + C W.a₂ * W.formalSlope + C W.a₄ * W.formalSlope ^ 2 +
     C W.a₆ * W.formalSlope ^ 3
-  let e : PowerSeries R := σ (invOfUnit E 1)
+  let e : PowerSeries R :=
+    subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) (invOfUnit E 1)
   let N := PowerSeries.C W.a₁ * l + PowerSeries.C W.a₂ * v +
     PowerSeries.C W.a₃ * l ^ 2 + 2 * PowerSeries.C W.a₄ * l * v +
       3 * PowerSeries.C W.a₆ * l ^ 2 * v
@@ -96,45 +102,36 @@ private theorem exists_formalThirdRoot_diagonal (hb : W.b₂ = 0) :
   have hd : D * d = 1 := PowerSeries.mul_invOfUnit _ 1
     W.constantCoeff_formalInvariantDifferentialDenom
   have hN : N = -PowerSeries.C (W.b₄ ^ 2) * W.formalW ^ 3 * d ^ 2 := by
-    have h := W.tangentNumerator_mul_denom_sq hb
-    dsimp only at h
-    dsimp [N, l, v, D, d] at *
-    linear_combination (PowerSeries.invOfUnit W.formalInvariantDifferentialDenom 1) ^ 2 * h -
+    have h : N * D ^ 2 = -PowerSeries.C (W.b₄ ^ 2) * W.formalW ^ 3 :=
+      W.tangentNumerator_mul_denom_sq hb
+    linear_combination d ^ 2 * h -
       (N * (D * d + 1)) * hd
   -- Evaluate the chord construction on the diagonal, where its slope is `w'`.
-  have hv : σ W.formalIntercept = v := by
-    dsimp [σ, v, l]
-    rw [formalIntercept_def, map_sub, map_mul, coe_substAlgHom,
+  have hv : subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R))
+      W.formalIntercept = v := by
+    dsimp [v, l]
+    rw [formalIntercept_def, subst_sub hX, subst_mul hX,
       PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.subst_def,
       subst_comp_subst_apply (PowerSeries.HasSubst.X (Sum.inl ())).const hX]
     simp only [subst_X hX, ← PowerSeries.subst_def, PowerSeries.X_subst,
       W.subst_X_formalSlope]
     ring
-  have hv' : subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R))
-      W.formalIntercept = v := by
-    simpa only [σ, coe_substAlgHom] using hv
-  have hroot : σ W.formalThirdRoot = -PowerSeries.X - PowerSeries.X - N * e := by
-    rw [formalThirdRoot_def]
-    dsimp only [σ]
+  have hroot : subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R))
+      W.formalThirdRoot = -PowerSeries.X - PowerSeries.X - N * e := by
+    rw [formalThirdRoot_def, ← coe_substAlgHom hX]
     simp only [map_sub, map_neg, map_add, map_mul, map_pow, map_ofNat,
       coe_substAlgHom, subst_X hX, subst_C]
-    rw [W.subst_X_formalSlope]
-    rw [hv']
-    simp only [N, e, E, σ, l, coe_substAlgHom, PowerSeries.C_eq_algebraMap,
-      c_eq_algebraMap]
+    rw [W.subst_X_formalSlope, hv]
+    simp only [N, e, E, l, PowerSeries.C_eq_algebraMap, c_eq_algebraMap]
   -- Since `w = T³ u` with `u(0) = 1`, the difference has order at least nine.
   refine ⟨PowerSeries.C (W.b₄ ^ 2) * W.formalU ^ 3 * d ^ 2 * e, ?_, ?_⟩
-  · -- The algebra-map and substitution presentations are connected by their public equation.
-    have hσ : σ W.formalThirdRoot =
-        subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) W.formalThirdRoot := by
-      simp only [σ, coe_substAlgHom]
-    rw [← hσ, hroot, hN, W.formalW_eq_X_pow_mul_formalU]
+  · rw [hroot, hN, W.formalW_eq_X_pow_mul_formalU]
     linear_combination (norm := (ring_nf; reduce_mod_char!))
-  · dsimp [d, e, σ]
+  · dsimp [d, e]
     simp only [map_mul, map_pow, PowerSeries.constantCoeff_C,
       constantCoeff_formalU, PowerSeries.constantCoeff_invOfUnit,
       Units.val_one, inv_one, one_pow, mul_one]
-    rw [coe_substAlgHom, PowerSeries.constantCoeff_eq,
+    rw [PowerSeries.constantCoeff_eq,
       constantCoeff_subst_of_constantCoeff_zero hX (fun _ => PowerSeries.constantCoeff_X)]
     simp
 
