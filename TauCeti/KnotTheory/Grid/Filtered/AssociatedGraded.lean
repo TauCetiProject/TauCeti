@@ -51,58 +51,14 @@ abbrev alexanderFiltrationGradedPiece (a : ℤ) : Type _ := by
 -- The same specialization keeps nested instance search in the private quotient maps small.
 private noncomputable local instance : AddCommGroup (GridChainMinus R n) := inferInstance
 
-/-- Extract the degree-`a` component of the existing Alexander grading. -/
-private noncomputable def topPart (a : ℤ) :
-    GridChainMinus R n →ₗ[R] GridChainMinus R n :=
-  ((G.alexanderChainMinusGrading R).piece a).subtype ∘ₗ
-    DirectSum.component R ℤ _ a ∘ₗ
-      (DirectSum.decomposeLinearEquiv (G.alexanderChainMinusGrading R).piece).toLinearMap
-
-private theorem coeff_topPart (a : ℤ) (c : GridChainMinus R n) (x : GridState n)
-    (e : Fin n →₀ ℕ) :
-    (G.topPart R a c x).coeff e =
-      if G.alexanderℤ x - (e.degree : ℤ) = a then (c x).coeff e else 0 := by
-  classical
-  induction c using Finsupp.induction_linear with
-  | zero => simp
-  | add c d hc hd =>
-    simp only [map_add, Finsupp.add_apply, AddMonoidAlgebra.coeff_add, hc, hd]
-    split_ifs <;> simp
-  | single y p =>
-    induction p using MvPolynomial.induction_on' with
-    | add p q hp hq =>
-      simp only [Finsupp.single_add, map_add, Finsupp.add_apply,
-        AddMonoidAlgebra.coeff_add, hp, hq]
-      split_ifs <;> simp
-    | monomial d r =>
-      have hm : Finsupp.single y (monomial d r) ∈
-          (G.alexanderChainMinusGrading R).piece (G.alexanderℤ y - (d.degree : ℤ)) := by
-        simpa only [alexanderChainMinusGrading_piece, monomialBidegree_snd] using
-          G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R _ _
-            (G.single_monomial_mem_bigradedChainMinusPiece R y d r)
-      -- Unfold only the private projection to apply the public decomposition lemmas.
-      change ((DirectSum.decompose (G.alexanderChainMinusGrading R).piece
-        (Finsupp.single y (monomial d r)) a : GridChainMinus R n) x).coeff e = _
-      by_cases ha : G.alexanderℤ y - (d.degree : ℤ) = a
-      · rw [DirectSum.decompose_of_mem_same _ (ha ▸ hm)]
-        by_cases hy : y = x <;> by_cases he : d = e <;> simp_all
-      · rw [DirectSum.decompose_of_mem_ne _ hm ha]
-        by_cases hy : y = x <;> by_cases he : d = e <;> simp_all
-
-private theorem topPart_mem (a : ℤ) (c : GridChainMinus R n) :
-    G.topPart R a c ∈ G.alexanderChainMinusPiece R a := by
-  -- Expose the private projection as a subtype value to use its membership proof.
-  change (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a :
-    GridChainMinus R n) ∈ _
-  simpa only [alexanderChainMinusGrading_piece] using
-    (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property
-
 private theorem sub_topPart_mem {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderFiltration R a) :
-    c - G.topPart R a c ∈ G.alexanderFiltration R (a - 1) := by
+    c - DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a ∈
+      G.alexanderFiltration R (a - 1) := by
   rw [mem_alexanderFiltration] at hc ⊢
   intro x e he
-  rw [Finsupp.sub_apply, MvPolynomial.mem_support_iff, coeff_sub, G.coeff_topPart] at he
+  rw [Finsupp.sub_apply, MvPolynomial.mem_support_iff, coeff_sub,
+    G.coeff_decompose_alexanderChainMinusGrading] at he
   by_cases h : G.alexanderℤ x - (e.degree : ℤ) = a
   · simp [h] at he
   · have hcoeff : (c x).coeff e ≠ 0 := by simpa [h] using he
@@ -111,8 +67,10 @@ private theorem sub_topPart_mem {a : ℤ} {c : GridChainMinus R n}
 
 private theorem mk_topPart (a : ℤ) (c : G.alexanderFiltration R a) :
     (Submodule.Quotient.mk
-      (⟨G.topPart R a c,
-        G.alexanderChainMinusPiece_le_alexanderFiltration R a (G.topPart_mem R a c)⟩ :
+      (⟨DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a,
+        G.alexanderChainMinusPiece_le_alexanderFiltration R a
+          (by simpa only [alexanderChainMinusGrading_piece] using
+            (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property)⟩ :
           G.alexanderFiltration R a) : G.alexanderFiltrationGradedPiece R a) =
       Submodule.Quotient.mk c := by
   apply (Submodule.Quotient.eq _).mpr
@@ -152,7 +110,9 @@ private theorem homogeneousToGraded_bijective (a : ℤ) :
   · intro q
     induction q using Submodule.Quotient.induction_on with
     | _ c =>
-      refine ⟨⟨G.topPart R a c, G.topPart_mem R a c⟩, ?_⟩
+      refine ⟨⟨DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a,
+        by simpa only [alexanderChainMinusGrading_piece] using
+          (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property⟩, ?_⟩
       rw [G.homogeneousToGraded_apply]
       exact G.mk_topPart R a c
 
@@ -191,12 +151,13 @@ theorem coe_alexanderFiltrationGradedEquiv_mk (a : ℤ) (c : G.alexanderFiltrati
       GridChainMinus R n) =
         DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a := by
   have h : G.alexanderFiltrationGradedEquiv R a (Submodule.Quotient.mk c) =
-      ⟨G.topPart R a c, G.topPart_mem R a c⟩ := by
+      ⟨DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a,
+        by simpa only [alexanderChainMinusGrading_piece] using
+          (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property⟩ := by
     apply (G.alexanderFiltrationGradedEquiv R a).symm.injective
     rw [LinearEquiv.symm_apply_apply, G.alexanderFiltrationGradedEquiv_symm_apply]
     exact (G.mk_topPart R a c).symm
   rw [h]
-  rfl
 
 /-- The canonical identification retains exactly the monomials of Alexander degree `a`
 in any representative of a quotient class. -/
@@ -207,7 +168,7 @@ theorem coeff_alexanderFiltrationGradedEquiv_mk (a : ℤ) (c : G.alexanderFiltra
       GridChainMinus R n) x).coeff e =
         if G.alexanderℤ x - (e.degree : ℤ) = a then (c.val x).coeff e else 0 := by
   rw [G.coe_alexanderFiltrationGradedEquiv_mk]
-  exact G.coeff_topPart R a c x e
+  exact G.coeff_decompose_alexanderChainMinusGrading R a c x e
 
 /-- The filtered grid differential induced on `F_a / F_{a-1}`. -/
 noncomputable def alexanderFiltrationGradedDifferential (a : ℤ) :
