@@ -123,16 +123,15 @@ theorem coordinateDeriv_ofFn_eq_iteratedFDeriv {k : ℕ} (r : Fin k → Fin n)
     {f : CoordinateSpace n → A} (hf : ContDiff ℝ k f) (x : CoordinateSpace n) :
     coordinateDeriv (List.ofFn r) f x =
       iteratedFDeriv ℝ k f x fun i => EuclideanSpace.single (r i) 1 := by
-  induction k generalizing x with
-  | zero => simp
-  | succ k ih =>
-    have hd : DifferentiableAt ℝ (iteratedFDeriv ℝ k f) x :=
-      (hf.differentiable_iteratedFDeriv (by exact_mod_cast Nat.lt_succ_self _)) x
-    rw [List.ofFn_succ, coordinateDeriv_cons,
-      funext (ih (fun i => r i.succ) (hf.of_le (by exact_mod_cast Nat.le_succ _))),
-      fderiv_continuousMultilinear_apply_const_apply hd]
-    exact (iteratedFDeriv_succ_apply_left (𝕜 := ℝ) (f := f) (x := x) (n := k)
-      fun i => EuclideanSpace.single (r i) 1).symm
+  rw [coordinateDeriv_eq_iteratedFDeriv _ (by simpa using hf)]
+  -- Transport `coordinateDeriv_eq_iteratedFDeriv` along `(List.ofFn r).length = k`.
+  suffices ∀ (l : List (Fin n)) (hl : l.length = k), (∀ i, l.get i = r (Fin.cast hl i)) →
+      iteratedFDeriv ℝ l.length f x (fun i => EuclideanSpace.single (l.get i) 1) =
+        iteratedFDeriv ℝ k f x fun i => EuclideanSpace.single (r i) 1 from
+    this _ List.length_ofFn fun i => List.get_ofFn r i
+  rintro l rfl hl
+  congr 1 with i
+  rw [hl, Fin.cast_eq_self]
 
 /-- A continuous multilinear map on `ℝⁿ` has norm at most the sum of the norms of its values on
 tuples of standard basis vectors. -/
@@ -162,6 +161,15 @@ theorem norm_iteratedFDeriv_le_sum_coordinateDeriv {k : ℕ} {f : CoordinateSpac
     ‖iteratedFDeriv ℝ k f x‖ ≤ ∑ r : Fin k → Fin n, ‖coordinateDeriv (List.ofFn r) f x‖ := by
   simp only [coordinateDeriv_ofFn_eq_iteratedFDeriv _ hf]
   exact (iteratedFDeriv ℝ k f x).norm_le_sum_single
+
+/-- Coordinate derivatives commute with a continuous linear map applied to the values. -/
+theorem _root_.ContinuousLinearMap.coordinateDeriv_comp_left {B : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] (L : A →L[ℝ] B) (α : List (Fin n)) {f : CoordinateSpace n → A}
+    (hf : ContDiff ℝ α.length f) (x : CoordinateSpace n) :
+    coordinateDeriv α (L ∘ f) x = L (coordinateDeriv α f x) := by
+  rw [coordinateDeriv_eq_iteratedFDeriv α (L.contDiff.comp hf),
+    coordinateDeriv_eq_iteratedFDeriv α hf, L.iteratedFDeriv_comp_left hf.contDiffAt le_rfl,
+    ContinuousLinearMap.compContinuousMultilinearMap_coe, Function.comp_apply]
 
 theorem coordinateDeriv_add (α : List (Fin n)) {f g : CoordinateSpace n → A}
     (hf : ContDiff ℝ α.length f) (hg : ContDiff ℝ α.length g) :
@@ -338,6 +346,17 @@ theorem mixedDeriv_nil_comp_fst (f : CoordinateSpace n → A) (α : List (Fin n)
 section Linear
 
 variable {a b : CoordinateSpace n × CoordinateSpace n → A}
+
+/-- Mixed derivatives commute with a continuous linear map applied to the values. -/
+theorem _root_.ContinuousLinearMap.mixedDeriv_comp_left {B : Type*} [NormedAddCommGroup B]
+    [NormedSpace ℝ B] (L : A →L[ℝ] B) (ha : ContDiff ℝ ∞ a) (α β : List (Fin n))
+    (x ξ : CoordinateSpace n) : mixedDeriv α β (L ∘ a) x ξ = L (mixedDeriv α β a x ξ) := by
+  have h : (fun y => coordinateDeriv β (fun η => (L ∘ a) (y, η)) ξ) =
+      L ∘ fun y => coordinateDeriv β (fun η => a (y, η)) ξ :=
+    funext fun y => L.coordinateDeriv_comp_left β
+      ((ha.comp (contDiff_prodMk_right y)).of_le (by exact_mod_cast le_top)) ξ
+  rw [mixedDeriv_def, h, L.coordinateDeriv_comp_left α
+    ((contDiff_coordinateDeriv_slice ha β ξ).of_le (by exact_mod_cast le_top)), mixedDeriv_def]
 
 theorem mixedDeriv_add (ha : ContDiff ℝ ∞ a) (hb : ContDiff ℝ ∞ b) (α β : List (Fin n))
     (x ξ : CoordinateSpace n) :

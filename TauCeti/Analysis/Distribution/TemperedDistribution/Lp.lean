@@ -47,6 +47,8 @@ function by a function of temperate growth multiplies the function pointwise
 * `MeasureTheory.Lp.ae_eq_of_toTemperedDistribution_apply_eq`: an `Lᵖ` function whose pairings
   with Schwartz functions agree with those of a locally integrable `g` is almost everywhere
   equal to `g`.
+* `MeasureTheory.Lp.toTemperedDistribution_compLp_apply`: applying a continuous linear map to the
+  values of an `Lᵖ` function applies it to its tempered distribution.
 * `MeasureTheory.Lp.fourier_toTemperedDistribution_apply`: the Fourier transform of the tempered
   distribution of an `Lᵖ` function `v` with an integrable representative `f` pairs with `φ` as
   `∫ φ • 𝓕 f`.
@@ -107,6 +109,21 @@ theorem smulLeftCLM_toTemperedDistribution_apply {μ : Measure E} [μ.HasTempera
   rw [TemperedDistribution.smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
   simp only [SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, mul_comm (g _), mul_smul]
 
+omit [FiniteDimensional ℝ E] in
+/-- Applying a continuous linear map `L` to the values of an `Lᵖ` function `u` applies `L` to the
+pairings of its tempered distribution. -/
+theorem toTemperedDistribution_compLp_apply {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+    [CompleteSpace G] {μ : Measure E} [μ.HasTemperateGrowth] {p : ENNReal} [hp : Fact (1 ≤ p)]
+    (L : F →L[ℂ] G) (u : Lp F p μ) (φ : 𝓢(E, ℂ)) :
+    ((L.compLp u : Lp G p μ) : 𝓢'(E, G)) φ = L ((u : 𝓢'(E, F)) φ) := by
+  have : (1 - p⁻¹)⁻¹.HolderConjugate p :=
+    (ENNReal.HolderConjugate.inv_one_sub_inv' hp.out).symm
+  have hφu : Integrable (fun x ↦ φ x • u x) μ :=
+    memLp_one_iff_integrable.1 ((φ.memLp (1 - p⁻¹)⁻¹ (μ := μ)).smul (Lp.memLp u))
+  rw [Lp.toTemperedDistribution_apply, Lp.toTemperedDistribution_apply, ← L.integral_comp_comm hφu]
+  refine integral_congr_ae ((L.coeFn_compLp u).mono fun x hx ↦ ?_)
+  simp only [hx, map_smul]
+
 end NormedSpace
 
 section InnerProductSpace
@@ -125,14 +142,12 @@ theorem fourier_toTemperedDistribution_apply {p : ENNReal} [Fact (1 ≤ p)]
     integral_congr_ae (hvf.mono fun x hx => by rw [hx]), SchwartzMap.fourier_coe]
   -- On functions, `𝓕` is the Fourier integral for the pairing `⟪·, ·⟫`, which is its own flip,
   -- so this is the multiplication formula for that pairing.
-  have hflip : (innerₗ E).flip = innerₗ E := LinearMap.ext₂ fun x y => by simp
   have hL : Continuous fun p : E × E => (innerₗ E) p.1 p.2 := by
     simp only [innerₗ_apply_apply]
     fun_prop
   have h := VectorFourier.integral_fourierIntegral_smul_eq_flip Real.continuous_fourierChar hL
     (φ.integrable (μ := volume)) hf
-  rw [hflip] at h
-  exact h
+  rwa [flip_innerₗ] at h
 
 /-- **The inverse Fourier transform of an `L¹` function as a tempered distribution.** For
 `v ∈ L¹`, the distributional inverse Fourier transform of `v` is the function `𝓕⁻ v` given by the

@@ -21,9 +21,11 @@ packages this inclusion as a continuous linear map and proves that its range is 
 Operators that are first defined and estimated on Schwartz functions, such as
 pseudodifferential operators, therefore extend uniquely to bounded operators on `H^{s,p}`.
 
-For `p = 2` the norm is computed on the Fourier side: the `H^s` norm of `u` is the `L²` norm of
-`⟨ξ⟩ ^ s 𝓕 u`, and more generally an element of `H^s` whose weighted Fourier transform
-`⟨ξ⟩ ^ s 𝓕 u` is represented by `G ∈ L²` has norm `‖G‖`.
+For `p = 2` and values in a complex Hilbert space `F`, the norm is computed on the Fourier side by
+Plancherel's theorem: the `H^s` norm of `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, and more generally
+an element of `H^s` whose weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` is represented by `G ∈ L²`
+has norm `‖G‖`. The weighted Fourier transform of a Schwartz function lies in every `L^q` for any
+normed complex `F`.
 
 ## Main declarations
 
@@ -31,11 +33,11 @@ For `p = 2` the norm is computed on the Fourier side: the `H^s` norm of `u` is t
 * `SchwartzMap.denseRange_toBesselPotentialSpaceCLM`: its range is dense for `p < ∞`.
 * `BesselPotentialSpace.continuousLinearMap_ext`: continuous linear maps out of `H^{s,p}`,
   `p < ∞`, are determined by their values on Schwartz functions.
-* `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: the `H^s` norm is the `L²` norm of
-  the weighted Fourier transform.
-* `SchwartzMap.norm_toBesselPotentialSpaceCLM`: the `H^s` norm of a Schwartz function `u` is the
-  `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`, which is finite
-  (`SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`).
+* `BesselPotentialSpace.norm_eq_of_smulLeftCLM_fourier_eq`: for Hilbert-space values, the `H^s`
+  norm is the `L²` norm of the weighted Fourier transform.
+* `SchwartzMap.norm_toBesselPotentialSpaceCLM`: for Hilbert-space values, the `H^s` norm of a
+  Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`.
+* `SchwartzMap.memLp_one_add_norm_sq_rpow_smul_fourier`: `⟨ξ⟩ ^ s 𝓕 u` lies in every `L^q`.
 
 ## References
 
@@ -68,6 +70,7 @@ def toBesselPotentialSpaceCLM (s : ℝ) (p : ℝ≥0∞) [Fact (1 ≤ p)] :
 
 variable {s : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
+@[simp]
 theorem toLp_toBesselPotentialSpaceCLM (u : 𝓢(E, F)) :
     (toBesselPotentialSpaceCLM s p u).toLp =
       (fourierMultiplierCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) u).toLp p := by
@@ -95,15 +98,13 @@ theorem denseRange_toBesselPotentialSpaceCLM (s : ℝ) (hp : p ≠ ∞) :
 
 omit [CompleteSpace F] in
 /-- The weighted Fourier transform `⟨ξ⟩ ^ s 𝓕 u` of a Schwartz function is a Schwartz function,
-so it lies in every `L^q`; for `q = 2` its norm is the `H^s` norm of `u`
-(`SchwartzMap.norm_toBesselPotentialSpaceCLM`). -/
+so it lies in every `L^q`. When `F` is a complex Hilbert space, its `L²` norm is the `H^s` norm of
+`u` (`SchwartzMap.norm_toBesselPotentialSpaceCLM`). -/
 theorem memLp_one_add_norm_sq_rpow_smul_fourier (s : ℝ) (u : 𝓢(E, F)) (q : ℝ≥0∞) :
     MemLp (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) q volume := by
   have hw : (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)).HasTemperateGrowth := by fun_prop
-  rw [show (fun ξ ↦ (((1 + ‖ξ‖ ^ 2) ^ (s / 2) : ℝ) : ℂ) • 𝓕 u ξ) =
-      ⇑(smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u)) from
-      funext fun ξ ↦ (smulLeftCLM_apply_apply hw _ ξ).symm]
-  exact (smulLeftCLM F _ (𝓕 u)).memLp q volume
+  exact ((smulLeftCLM F (fun x : E ↦ (((1 + ‖x‖ ^ 2) ^ (s / 2) : ℝ) : ℂ)) (𝓕 u)).memLp q
+    volume).ae_eq (.of_forall fun ξ ↦ smulLeftCLM_apply_apply hw _ ξ)
 
 /-- The `H^s` norm of a Schwartz function `u` is the `L²` norm of `⟨ξ⟩ ^ s 𝓕 u`. -/
 theorem norm_toBesselPotentialSpaceCLM {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F]

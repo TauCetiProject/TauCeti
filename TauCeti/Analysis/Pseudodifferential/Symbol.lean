@@ -31,7 +31,9 @@ space, and develop the first operations of the symbol calculus:
 * `TauCeti.Symbol.spatialDeriv`: a spatial derivative `∂_{x_j}` preserves the order;
 * `TauCeti.Symbol.ofSpatial`: a smooth coefficient `f(x)` independent of the frequency, the symbol
   of multiplication by `f`, has order `0`; in particular so does a constant
-  (`TauCeti.Symbol.const`).
+  (`TauCeti.Symbol.const`);
+* `TauCeti.Symbol.map`: a continuous linear map of the coefficient spaces, such as conjugation by
+  isomorphisms of `V` and `W`, preserves the order.
 
 The estimates are only required locally uniformly in `x`. The predicate
 `TauCeti.Symbol.IsUniform` asks for constants independent of `x`, and
@@ -131,6 +133,26 @@ theorem HasCompactSpatialSupport.isUniform {a : Symbol n V W m}
       Filter.eventually_of_mem (hK.isClosed.isOpen_compl.mem_nhds hx) fun y hy => hKa y hy
     rw [mixedDeriv_eq_zero_of_eventually hzero, norm_zero]
     exact mul_nonneg hC (rpow_weight_pos ξ _).le
+
+/-- A position slice `x ↦ a(x, ξ)` of a symbol is smooth. -/
+theorem contDiff_coefficient_slice (a : Symbol n V W m) (ξ : CoordinateSpace n) :
+    ContDiff ℝ ∞ fun x ↦ a.coefficient (x, ξ) :=
+  a.contDiff_coefficient.comp (contDiff_id.prodMk contDiff_const)
+
+/-- A position slice `x ↦ a(x, ξ)` of a symbol with compact spatial support has compact
+support. -/
+theorem HasCompactSpatialSupport.hasCompactSupport_slice {a : Symbol n V W m}
+    (ha : a.HasCompactSpatialSupport) (ξ : CoordinateSpace n) :
+    HasCompactSupport fun x ↦ a.coefficient (x, ξ) := by
+  obtain ⟨K, hK, hKa⟩ := hasCompactSpatialSupport_iff.mp ha
+  exact HasCompactSupport.intro hK fun x hx ↦ hKa x hx ξ
+
+/-- On a compact set of positions, a symbol of order `m` grows at most like `⟨ξ⟩ ^ m`. -/
+theorem exists_norm_coefficient_le (a : Symbol n V W m) {K : Set (CoordinateSpace n)}
+    (hK : IsCompact K) :
+    ∃ C, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, hC0, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
 
 section Module
 
@@ -461,6 +483,36 @@ theorem isUniform_const (T : V →L[ℂ] W) : (const T : Symbol n V W 0).IsUnifo
   · simp [coordinateDeriv_const T hα]
 
 end Spatial
+
+section Map
+
+variable {V' W' : Type*} [NormedAddCommGroup V'] [NormedSpace ℂ V'] [NormedAddCommGroup W']
+  [NormedSpace ℂ W']
+
+/-- The image `x, ξ ↦ Φ (a(x, ξ))` of a symbol under a continuous linear map `Φ` of the coefficient
+spaces is a symbol of the same order. For isomorphisms `e₁ : V ≃L[ℂ] V'` and `e₂ : W ≃L[ℂ] W'`,
+conjugation `T ↦ e₂ ∘ T ∘ e₁⁻¹` transports symbols with coefficients in `V →L[ℂ] W` to symbols
+with coefficients in `V' →L[ℂ] W'`. -/
+def map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m) : Symbol n V' W' m where
+  coefficient := Φ ∘ a.coefficient
+  contDiff_coefficient := Φ.contDiff.comp a.contDiff_coefficient
+  exists_bound K hK α β := by
+    obtain ⟨C, hC0, hC⟩ := a.exists_bound K hK α β
+    refine ⟨‖Φ‖ * C, by positivity, fun x hx ξ ↦ ?_⟩
+    rw [Φ.mixedDeriv_comp_left a.contDiff_coefficient, mul_assoc]
+    exact Φ.le_opNorm_of_le (hC x hx ξ)
+
+@[simp]
+theorem coefficient_map (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) (a : Symbol n V W m)
+    (p : CoordinateSpace n × CoordinateSpace n) : (a.map Φ).coefficient p = Φ (a.coefficient p) :=
+  (rfl)
+
+theorem HasCompactSpatialSupport.map {a : Symbol n V W m} (ha : a.HasCompactSpatialSupport)
+    (Φ : (V →L[ℂ] W) →L[ℝ] (V' →L[ℂ] W')) : (a.map Φ).HasCompactSpatialSupport := by
+  obtain ⟨K, hK, hKa⟩ := ha
+  exact ⟨K, hK, fun x hx ξ ↦ by rw [coefficient_map, hKa x hx ξ, map_zero]⟩
+
+end Map
 
 end Symbol
 
