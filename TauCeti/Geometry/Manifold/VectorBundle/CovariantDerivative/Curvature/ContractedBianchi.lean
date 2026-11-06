@@ -9,12 +9,12 @@ public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Bilinea
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.DifferentiatedSymmetries
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Derivative.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Curvature.Scalar
-import Mathlib.Geometry.Manifold.BumpFunction
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LocalFrame
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Regularity
 import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.Trace
 import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
+import TauCeti.Geometry.Manifold.VectorBundle.LocalFrame
 
 /-!
 # Contracting the covariant derivative of the curvature
@@ -108,6 +108,93 @@ local notation "curvature" => cov.curvatureTensor (I := I) (M := M) (F := E)
 
 omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- Near `x`, the Ricci tensor `Ric(B, C)` is the trace `∑ₖ cₖ(R(Fₖ, B) C)` in a frame `F` of
+globally smooth fields agreeing with the local frame of `e`, so its derivative at `x` is the
+sum of the derivatives of the coefficient functions. -/
+private theorem mvfderiv_ricciTensor_eq_sum_localFrameCoeff
+    (e : Trivialization E (π E (TangentSpace I : M → Type _))) [MemTrivializationAtlas e]
+    (b : Module.Basis (Fin (Module.finrank ℝ E)) ℝ E) {x : M} (hx : x ∈ e.baseSet)
+    {F : Fin (Module.finrank ℝ E) → Π y : M, TangentSpace I y}
+    (hF : ∀ k, CMDiff ∞ (T% (F k))) (hFeq : ∀ k, ∀ᶠ y in 𝓝 x, F k y = e.localFrame b k y)
+    {B C : Π y : M, TangentSpace I y} (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C))
+    (v : TangentSpace I x) :
+    mvfderiv I (fun y ↦ cov.ricciTensor y (B y) (C y)) x v =
+      ∑ k, mvfderiv I (fun y ↦ e.localFrameCoeff I b k y
+        (curvatureOperator cov (F k) B C y)) x v := by
+  have hs (k : Fin (Module.finrank ℝ E)) :
+      CMDiff ∞ (T% (curvatureOperator cov (F k) B C)) :=
+    cov.contMDiff_curvatureOperator (hF k) hB hC
+  -- Near `x`, the Ricci tensor is the trace in the frame.
+  have hRic : (fun y ↦ cov.ricciTensor y (B y) (C y)) =ᶠ[𝓝 x]
+      fun y ↦ ∑ k, e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y) := by
+    filter_upwards [e.open_baseSet.mem_nhds hx, Filter.eventually_all.2 hFeq] with y hy hFy
+    rw [cov.ricciTensor_eq_sum y (e.basisAt b hy)]
+    refine Finset.sum_congr rfl fun k _ ↦ ?_
+    rw [e.localFrameCoeff_apply_of_mem_baseSet b hy (curvatureOperator cov (F k) B C) k,
+      ← e.localFrame_apply_of_mem_baseSet b hy, ← hFy k]
+    exact congrArg (fun w ↦ (e.basisAt b hy).repr w k) (curvatureTensor_apply cov y (hF k) hB hC)
+  have hcoeff (k : Fin (Module.finrank ℝ E)) :
+      MDiffAt (fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) x :=
+    mdifferentiableAt_localFrameCoeff b hx ((hs k).mdifferentiableAt (by simp)) k
+  have hfun : (fun y ↦ ∑ k, e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) =
+      ∑ k, fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y) := by
+    ext y; simp
+  have hH : HasMFDerivAt I 𝓘(ℝ)
+      (∑ k, fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) x
+      (∑ k, mvfderiv I (fun y ↦ e.localFrameCoeff I b k y
+        (curvatureOperator cov (F k) B C y)) x) :=
+    HasMFDerivAt.sum fun k _ ↦ (hcoeff k).hasMFDerivAt
+  rw [hRic.mvfderiv_eq, hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
+  -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
+  exact _root_.sum_apply ..
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
+/-- The local frame formula for `∇_v (R(Fₖ, B) C)`, read in the `k`-th coordinate of a frame `F`
+of globally smooth fields agreeing with the local frame of `e` near `x`. -/
+private theorem localFrameCoeff_cov_curvatureOperator
+    (e : Trivialization E (π E (TangentSpace I : M → Type _))) [MemTrivializationAtlas e]
+    (b : Module.Basis (Fin (Module.finrank ℝ E)) ℝ E) {x : M} (hx : x ∈ e.baseSet)
+    {F : Fin (Module.finrank ℝ E) → Π y : M, TangentSpace I y}
+    (hF : ∀ k, CMDiff ∞ (T% (F k))) (hFeq : ∀ k, ∀ᶠ y in 𝓝 x, F k y = e.localFrame b k y)
+    {B C : Π y : M, TangentSpace I y} (hB : CMDiff ∞ (T% B)) (hC : CMDiff ∞ (T% C))
+    (v : TangentSpace I x) (k : Fin (Module.finrank ℝ E)) :
+    e.localFrameCoeff I b k x (cov (curvatureOperator cov (F k) B C) x v) =
+      mvfderiv I (fun y ↦ e.localFrameCoeff I b k y
+          (curvatureOperator cov (F k) B C y)) x v +
+        ∑ j, e.localFrameCoeff I b j x (curvature x (F k x) (B x) (C x)) *
+          e.localFrameCoeff I b k x (cov (F j) x v) := by
+  have hs : CMDiff ∞ (T% (curvatureOperator cov (F k) B C)) :=
+    cov.contMDiff_curvatureOperator (hF k) hB hC
+  have hsx : curvatureOperator cov (F k) B C x = curvature x (F k x) (B x) (C x) :=
+    (curvatureTensor_apply cov x (hF k) hB hC).symm
+  have hcov' := cov.isCovariantDerivativeOnUniv.mono (Set.subset_univ e.baseSet)
+  have h := congrArg (fun L ↦ e.localFrameCoeff I b k x (L v))
+    (TauCeti.Manifold.covariantDerivative_eq_frameCovariantDerivative_add_sum b hcov' hx
+      (hs.mdifferentiableAt (by simp)))
+  have hloc (j : Fin (Module.finrank ℝ E)) : cov (e.localFrame b j) x = cov (F j) x :=
+    hcov'.congr_of_eventuallyEq
+      ((contMDiffAt_localFrame_of_mem (n := ∞) e b j hx).mdifferentiableAt (by simp))
+      ((hF j).mdifferentiableAt (by simp)) (e.open_baseSet.mem_nhds hx)
+      ((hFeq j).mono fun y hy ↦ hy.symm)
+  simp only [TauCeti.Manifold.frameCovariantDerivative_apply, add_apply,
+    _root_.sum_apply, _root_.smul_apply, map_add, map_sum,
+    map_smul, smul_eq_mul, hloc] at h
+  have hlf (j : Fin (Module.finrank ℝ E)) : e.localFrame b j x = F j x :=
+    ((hFeq j).self_of_nhds).symm
+  have hdual (i j : Fin (Module.finrank ℝ E)) :
+      e.localFrameCoeff I b i x (F j x) = if i = j then 1 else 0 := by
+    rw [← hlf, TauCeti.Manifold.localFrameCoeff_localFrame b hx]
+  have hpi : LinearMap.piApply (e.localFrameCoeff I b k) (curvatureOperator cov (F k) B C) =
+      fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y) := by
+    ext y
+    simp
+  simp only [hlf, hdual, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ,
+    ite_true, hpi, hsx] at h
+  exact h
+
+omit [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
+  [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- Contracting `(∇_v R)(·, B) C` against the output, in a local frame at `x`, gives the
 covariant derivative `(∇_v Ric)(B, C) = v (Ric(B, C)) - Ric(∇_v B, C) - Ric(B, ∇_v C)` of the
 Ricci tensor. The frame is a family of global smooth vector fields `F` forming a basis at `x`,
@@ -129,17 +216,7 @@ theorem exists_frame_sum_derivCurvatureTensor (x : M) :
   let e := trivializationAt E (TangentSpace I : M → Type _) x
   let b := Module.finBasis ℝ E
   have hx : x ∈ e.baseSet := FiberBundle.mem_baseSet_trivializationAt' x
-  have hnhds : e.baseSet ∈ 𝓝 x := e.open_baseSet.mem_nhds hx
-  -- Cut off the trivialization frame by a bump function equal to one near `x`.
-  obtain ⟨ρ, hρ, -⟩ := (SmoothBumpFunction.nhds_basis_support (I := I) hnhds).mem_iff.mp hnhds
-  let F (k : Fin (Module.finrank ℝ E)) : Π y : M, TangentSpace I y :=
-    (ρ : M → ℝ) • e.localFrame b k
-  have hF (k : Fin (Module.finrank ℝ E)) : CMDiff ∞ (T% (F k)) :=
-    ρ.contMDiff.contMDiffOn.smul_section_of_tsupport e.open_baseSet hρ
-      (e.contMDiffOn_localFrame_baseSet _ b k)
-  have hFeq (k : Fin (Module.finrank ℝ E)) : ∀ᶠ y in 𝓝 x, F k y = e.localFrame b k y := by
-    filter_upwards [ρ.eventuallyEq_one] with y hy
-    simp [F, hy]
+  obtain ⟨F, hF, hFeq⟩ := e.exists_contMDiff_eventuallyEq_localFrame (I := I) b hx
   have hFx (k : Fin (Module.finrank ℝ E)) : F k x = e.basisAt b hx k := by
     rw [(hFeq k).self_of_nhds, e.localFrame_apply_of_mem_baseSet b hx]
   let c (k : Fin (Module.finrank ℝ E)) : TangentSpace I x →ₗ[ℝ] ℝ := e.localFrameCoeff I b k x
@@ -148,8 +225,8 @@ theorem exists_frame_sum_derivCurvatureTensor (x : M) :
     obtain ⟨s, -, rfl⟩ := FiberBundle.exists_contMDiff_section_eq I E ∞ w
     exact e.localFrameCoeff_apply_of_mem_baseSet b hx s k
   have hdual (i j : Fin (Module.finrank ℝ E)) : c i (F j x) = if i = j then 1 else 0 := by
-    rw [hc, hFx, Module.Basis.repr_self, Finsupp.single_apply]
-    simp [eq_comm]
+    rw [hFx]
+    exact TauCeti.Manifold.localFrameCoeff_basisAt b hx i j
   have hsum (w : TangentSpace I x) : ∑ i, c i w • F i x = w := by
     simp only [hc, hFx]
     exact (e.basisAt b hx).sum_repr w
@@ -158,74 +235,26 @@ theorem exists_frame_sum_derivCurvatureTensor (x : M) :
     rw [cov.ricciTensor_eq_sum x (e.basisAt b hx)]
     simp only [hc, hFx]
   refine ⟨F, c, hF, hdual, hsum, fun v {B C} hB hC ↦ ?_⟩
-  let s (k : Fin (Module.finrank ℝ E)) := curvatureOperator cov (F k) B C
-  have hs (k : Fin (Module.finrank ℝ E)) : CMDiff ∞ (T% (s k)) :=
-    cov.contMDiff_curvatureOperator (hF k) hB hC
-  have hsx (k : Fin (Module.finrank ℝ E)) : s k x = curvature x (F k x) (B x) (C x) :=
-    (curvatureTensor_apply cov x (hF k) hB hC).symm
-  -- Near `x`, the Ricci tensor is the trace in the frame.
-  have hRic : (fun y ↦ cov.ricciTensor y (B y) (C y)) =ᶠ[𝓝 x]
-      fun y ↦ ∑ k, e.localFrameCoeff I b k y (s k y) := by
-    filter_upwards [ρ.eventuallyEq_one, hnhds] with y hρy hy
-    rw [cov.ricciTensor_eq_sum y (e.basisAt b hy)]
-    refine Finset.sum_congr rfl fun k _ ↦ ?_
-    have hFy : F k y = e.basisAt b hy k := by
-      simp [F, hρy, e.localFrame_apply_of_mem_baseSet b hy]
-    rw [e.localFrameCoeff_apply_of_mem_baseSet b hy (s k) k, ← hFy]
-    exact congrArg (fun w ↦ (e.basisAt b hy).repr w k) (curvatureTensor_apply cov y (hF k) hB hC)
-  have hcoeff (k : Fin (Module.finrank ℝ E)) :
-      MDiffAt (fun y ↦ e.localFrameCoeff I b k y (s k y)) x :=
-    mdifferentiableAt_localFrameCoeff b hx ((hs k).mdifferentiableAt (by simp)) k
-  have hd : mvfderiv I (fun y ↦ cov.ricciTensor y (B y) (C y)) x v =
-      ∑ k, mvfderiv I (fun y ↦ e.localFrameCoeff I b k y (s k y)) x v := by
-    have hfun : (fun y ↦ ∑ k, e.localFrameCoeff I b k y (s k y)) =
-        ∑ k, fun y ↦ e.localFrameCoeff I b k y (s k y) := by
-      ext y; simp
-    have hH : HasMFDerivAt I 𝓘(ℝ) (∑ k, fun y ↦ e.localFrameCoeff I b k y (s k y)) x
-        (∑ k, mvfderiv I (fun y ↦ e.localFrameCoeff I b k y (s k y)) x) :=
-      HasMFDerivAt.sum fun k _ ↦ (hcoeff k).hasMFDerivAt
-    rw [hRic.mvfderiv_eq, hfun, mvfderiv_apply_eq_mfderiv_apply, hH.mfderiv]
-    -- The tangent spaces of `ℝ` in which `mfderiv` takes values are `ℝ` itself.
-    exact _root_.sum_apply ..
-  -- The local frame formula, read in the `k`-th coordinate.
-  have hcov' := cov.isCovariantDerivativeOnUniv.mono (Set.subset_univ e.baseSet)
-  have hframe (k : Fin (Module.finrank ℝ E)) :
-      c k (cov (curvatureOperator cov (F k) B C) x v) =
-        mvfderiv I (fun y ↦ e.localFrameCoeff I b k y (s k y)) x v +
-          ∑ j, c j (s k x) * c k (cov (F j) x v) := by
-    have h := congrArg (fun L ↦ c k (L v))
-      (TauCeti.Manifold.covariantDerivative_eq_frameCovariantDerivative_add_sum b hcov' hx
-        ((hs k).mdifferentiableAt (by simp)))
-    have hloc (j : Fin (Module.finrank ℝ E)) : cov (e.localFrame b j) x = cov (F j) x :=
-      hcov'.congr_of_eventuallyEq
-        ((contMDiffAt_localFrame_of_mem (n := ∞) e b j hx).mdifferentiableAt (by simp))
-        ((hF j).mdifferentiableAt (by simp)) hnhds ((hFeq j).mono fun y hy ↦ hy.symm)
-    simp only [TauCeti.Manifold.frameCovariantDerivative_apply, add_apply,
-      _root_.sum_apply, _root_.smul_apply, map_add, map_sum,
-      map_smul, smul_eq_mul, hloc] at h
-    have hlf (j : Fin (Module.finrank ℝ E)) : e.localFrame b j x = F j x := by
-      rw [hFx, e.localFrame_apply_of_mem_baseSet b hx]
-    have hpi : LinearMap.piApply (e.localFrameCoeff I b k) (s k) =
-        fun y ↦ e.localFrameCoeff I b k y (s k y) := by
-      ext y
-      simp
-    simp only [hlf, hdual, mul_ite, mul_one, mul_zero, Finset.sum_ite_eq, Finset.mem_univ,
-      ite_true, hpi] at h
-    exact h
   -- Expand `∇_v Fₖ` in the frame.
   have hexp (k : Fin (Module.finrank ℝ E)) :
       c k (curvature x (cov (F k) x v) (B x) (C x)) =
-        ∑ j, c j (cov (F k) x v) * c k (s j x) := by
+        ∑ j, c j (cov (F k) x v) * c k (curvature x (F j x) (B x) (C x)) := by
     conv_lhs => rw [← hsum (cov (F k) x v)]
-    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul, hsx]
+    simp only [map_sum, map_smul, LinearMap.sum_apply, LinearMap.smul_apply, smul_eq_mul]
+  have hframe (k : Fin (Module.finrank ℝ E)) :
+      c k (cov (curvatureOperator cov (F k) B C) x v) =
+        mvfderiv I (fun y ↦ e.localFrameCoeff I b k y (curvatureOperator cov (F k) B C y)) x v +
+          ∑ j, c j (curvature x (F k x) (B x) (C x)) * c k (cov (F j) x v) :=
+    localFrameCoeff_cov_curvatureOperator (cov := cov) e b hx hF hFeq hB hC v k
   have hT (k : Fin (Module.finrank ℝ E)) :
       cov.derivCurvatureTensor cov x v (F k x) (B x) (C x) =
         cov (curvatureOperator cov (F k) B C) x v - curvature x (cov (F k) x v) (B x) (C x) -
           curvature x (F k x) (cov B x v) (C x) - curvature x (F k x) (B x) (cov C x v) :=
     derivCurvatureTensor_apply cov cov x v (hF k) hB hC
-  simp only [hT, map_sub, Finset.sum_sub_distrib, hframe, hexp, ← hRicx, hd,
+  simp only [hT, map_sub, Finset.sum_sub_distrib, hframe, hexp, ← hRicx,
+    mvfderiv_ricciTensor_eq_sum_localFrameCoeff (cov := cov) e b hx hF hFeq hB hC v,
     Finset.sum_add_distrib]
-  rw [Finset.sum_comm (f := fun k j ↦ c j (cov (F k) x v) * c k (s j x))]
+  rw [Finset.sum_comm (f := fun k j ↦ c j (cov (F k) x v) * c k (curvature x (F j x) (B x) (C x)))]
   simp only [mul_comm]
   ring
 
