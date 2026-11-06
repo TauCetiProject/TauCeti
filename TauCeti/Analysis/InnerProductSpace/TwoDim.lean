@@ -11,10 +11,13 @@ public import TauCeti.Analysis.InnerProductSpace.Orientation
 /-!
 # The continuous volume form on the complex plane
 
-The continuous oriented volume form is normalized on the standard complex basis `(1, I)`.
+The continuous oriented volume form is normalized on the standard complex basis `(1, I)`. On a
+pair of vectors it is the area form `dx ∧ dy`, `(v, w) ↦ Im (conj v * w)`.
 -/
 
 public section
+
+open ComplexConjugate
 
 noncomputable section
 
@@ -27,5 +30,14 @@ theorem orientation_volumeFormL_one_I :
     Complex.orientation.volumeFormL ![1, I] = 1 := by
   simpa [coe_basisOneI] using
     Complex.orientation.volumeFormL_apply_orthonormal Complex.orthonormalBasisOneI rfl
+
+/-- The continuous volume form of `ℂ` is the area form `dx ∧ dy`: on a pair of vectors `(v, w)` it
+is `Im (conj v * w)`. -/
+theorem orientation_volumeFormL_apply (v : Fin 2 → ℂ) :
+    Complex.orientation.volumeFormL v = (conj (v 0) * v 1).im := by
+  rw [Orientation.volumeFormL_apply, ← Complex.areaForm, Orientation.areaForm_to_volumeForm]
+  congr 1
+  ext i
+  fin_cases i <;> rfl
 
 end Complex

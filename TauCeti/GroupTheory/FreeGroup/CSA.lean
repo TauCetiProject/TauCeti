@@ -191,11 +191,9 @@ theorem not_commute_hnnExtension_of_t_zpowers_sq {α : Type*} (a : α) :
 transitive: `a` commutes with `a ^ 2`, which commutes with the stable letter, but `a` does not. -/
 theorem not_isCommTransitive_hnnExtension_zpowers_sq {α : Type*} (a : α) :
     ¬ IsCommTransitive (HNNExtension (FreeGroup α) (zpowers (FreeGroup.of a ^ 2))
-      (zpowers (FreeGroup.of a ^ 2)) (MulEquiv.refl _)) := fun h =>
-  not_commute_hnnExtension_of_t_zpowers_sq a <| HNNExtension.commute_of_t_iff_mem.2 <|
-    HNNExtension.centralizer_le_of_isCommTransitive h (mem_zpowers _)
-      ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a))
-      (mem_centralizer_singleton_iff.2 (pow_mul_comm' _ 2).symm)
+      (zpowers (FreeGroup.of a ^ 2)) (MulEquiv.refl _)) :=
+  HNNExtension.not_isCommTransitive_zpowers_of_isProperPower (FreeGroup.isProperPower_of_sq a)
+    ((pow_eq_one_iff_left two_ne_zero).not.2 (FreeGroup.of_ne_one a))
 
 /-- The HNN extension of a free group along the identity of `zpowers (a ^ 2)` is not CSA. This
 is the extension of the centralizer of `a ^ 2` taken with `zpowers (a ^ 2)` in place of the full

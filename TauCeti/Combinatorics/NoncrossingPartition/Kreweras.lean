@@ -740,7 +740,7 @@ private theorem exists_ne_mem_part_kreweras_mem_part_rotate_symm
   obtain ⟨htC, hMt⟩ := mem_filter.1 (min'_mem _ htne)
   refine exists_ne_mem_part_kreweras_mem_part_rotate_symm_of_forall
     ((min'_le _ _ (max'_mem _ _)).trans_lt hMt) (by rw [hρ, hmc, (hρ c _).1 htC]) fun a b hb =>
-      π.2.le_and_lt_of_mem_part ρ.2 hπρ (mem_univ m) (by rw [hme]; exact max'_mem _ _)
+      π.2.le_and_lt_of_mem_part ρ.2 hπρ (by rw [hme]; exact max'_mem _ _)
         (fun z hz => min'_le _ _ (hme ▸ hz)) (fun z hz => le_max' _ _ (hme ▸ hz))
         (by rw [hmc]; exact htC) hMt (fun z hz h => min'_le _ _ (mem_filter.2 ⟨hmc ▸ hz, h⟩)) hb
 
