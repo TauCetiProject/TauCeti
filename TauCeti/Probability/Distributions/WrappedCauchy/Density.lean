@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Probability.Distributions.WrappedCauchy.Basic
 public import TauCeti.Probability.Density
+public import Mathlib.Topology.Algebra.InfiniteSum.TsumUniformlyOn
 import TauCeti.Analysis.Complex.Poisson.Integral
+import TauCeti.Analysis.Complex.Poisson.Series
 import TauCeti.MeasureTheory.Integral.Circle.Haar
 import TauCeti.MeasureTheory.Measure.ProbabilityMeasure.Fourier
 
@@ -19,6 +21,13 @@ Haar measure given by the Poisson kernel with pole `exp (-γ) exp (i m)`. In ang
 this is
 
 `(1 - exp (-γ) ^ 2) / (1 + exp (-γ) ^ 2 - 2 * exp (-γ) * cos (θ - m))`.
+
+Expanding the Poisson kernel as a geometric series gives the Fourier-series form: for real
+representatives `a` of `m` and `x` of `θ`,
+
+`wrappedCauchyPDFReal a γ x = 1 + 2 * ∑ n ≥ 1, exp (-γ) ^ n * cos (n * (x - a))`,
+
+and this cosine series converges absolutely and uniformly in `x`, so it may be integrated termwise.
 
 The real and extended nonnegative densities are totalized at scale zero by the zero function. This
 correctly records that the zero-scale Dirac law has no density relative to Haar measure, while the
@@ -139,6 +148,46 @@ theorem continuous_wrappedCauchyPDFReal (m : AddCircle (2 * π)) (γ : ℝ≥0) 
   rcases eq_or_ne γ 0 with rfl | hγ
   · exact continuous_const.congr fun θ ↦ (wrappedCauchyPDFReal_zero_scale m θ).symm
   · exact continuous_wrappedCauchyPDFReal_of_pos m (pos_iff_ne_zero.mpr hγ)
+
+/-- **Fourier series of the wrapped Cauchy density.** At positive scale, in real
+representatives, the density is `1 + 2 * ∑ n ≥ 1, exp (-γ) ^ n * cos (n * (x - a))`.
+
+The series converges absolutely: in `ℝ`, summability is unconditional and therefore equivalent to
+summability of the absolute values (`summable_abs_iff`). -/
+theorem hasSum_wrappedCauchyPDFReal_coe {γ : ℝ≥0} (hγ : 0 < γ) (a x : ℝ) :
+    HasSum (fun n : ℕ ↦ 2 * Real.exp (-(γ : ℝ)) ^ (n + 1) * Real.cos ((n + 1 : ℝ) * (x - a)))
+      (wrappedCauchyPDFReal a γ x - 1) := by
+  have hball := wrappedCauchy_pole_mem_ball (a : AddCircle (2 * π)) hγ
+  rw [Metric.mem_ball, dist_zero_right] at hball
+  have h := hasSum_poissonKernel (c := 0)
+    (w := (Real.exp (-(γ : ℝ)) : ℂ) * (AddCircle.toCircle (a : AddCircle (2 * π)) : ℂ))
+    (z := (AddCircle.toCircle (x : AddCircle (2 * π)) : ℂ)) (by simpa using hball)
+  rw [poissonKernel_eq_wrappedCauchyPDFReal] at h
+  convert h using 2 with n
+  simp only [sub_zero, AddCircle.toCircle_apply_mk, Circle.coe_exp,
+    div_self two_pi_pos.ne', one_mul]
+  -- The `n + 1`-st power of the pole-to-boundary ratio in polar form.
+  have hpow : ((Real.exp (-(γ : ℝ)) : ℂ) * Complex.exp (a * I) / Complex.exp (x * I)) ^ (n + 1) =
+      (Real.exp (-(γ : ℝ)) ^ (n + 1) : ℝ) * Complex.exp (((n + 1 : ℝ) * (a - x) : ℝ) * I) := by
+    rw [mul_div_assoc, ← Complex.exp_sub, mul_pow, ← Complex.exp_nat_mul]
+    push_cast
+    ring_nf
+  rw [hpow, Complex.re_ofReal_mul, Complex.exp_ofReal_mul_I_re, ← neg_sub x a, mul_neg,
+    Real.cos_neg, mul_assoc]
+
+/-- The Fourier series of the wrapped Cauchy density converges uniformly in the real
+representative of the angle, so it may be integrated termwise. -/
+theorem hasSumUniformly_wrappedCauchyPDFReal_coe {γ : ℝ≥0} (hγ : 0 < γ) (a : ℝ) :
+    HasSumUniformly
+      (fun n : ℕ ↦ fun x : ℝ ↦
+        2 * Real.exp (-(γ : ℝ)) ^ (n + 1) * Real.cos ((n + 1 : ℝ) * (x - a)))
+      (fun x ↦ wrappedCauchyPDFReal a γ x - 1) := by
+  have hu : Summable fun n : ℕ ↦ 2 * Real.exp (-(γ : ℝ)) ^ (n + 1) := by
+    simpa using (hasSum_wrappedCauchyPDFReal_coe hγ a a).summable
+  simp_rw [← (hasSum_wrappedCauchyPDFReal_coe hγ a _).tsum_eq, ← hasSumUniformlyOn_univ_iff]
+  exact .of_norm_le_summable hu fun _ _ _ ↦
+    (norm_mul_le_of_le (Real.norm_of_nonneg (by positivity)).le (Real.abs_cos_le_one _)).trans_eq
+      (mul_one _)
 
 /-- The extended wrapped Cauchy density is measurable at every scale. -/
 @[fun_prop]
