@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 public import TauCeti.Topology.EMetricSpace.Ascoli
+public import TauCeti.Topology.MetricSpace.Holder
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Data.EReal.Operations
@@ -423,9 +424,8 @@ theorem exists_eventually_forall_le_apply_and_edist_le_of_forall_mem_moreauYosid
   refine ⟨Amin - (S - Amin) * B, 1 + ENNReal.ofReal (2 * τ' * (S - Amin) * B) ^ (2⁻¹ : ℝ),
     by finiteness, ?_⟩
   filter_upwards [hev] with k ⟨hk1, hkD, hk4⟩ n hn
-  have hxk : edist (U k 0) x₁ ≠ ⊤ := ne_top_of_le_ne_top ENNReal.ofReal_ne_top hkD
   have hA : (Amin : EReal) ≤ moreauYosida φ τ' (U k 0) :=
-    coe_sub_div_le_moreauYosida hτ'τ₀ hm (by positivity) hxk hkD
+    coe_sub_div_le_moreauYosida hτ'τ₀ hm (by positivity) hkD
   obtain ⟨h₁, h₂⟩ :=
     le_apply_and_edist_le_of_forall_mem_moreauYosidaResolvent (hU k) (hτ k) hk4 hA (hS k) hT hn
   refine ⟨h₁, (edist_triangle _ _ _).trans (add_le_add ?_ h₂)⟩
@@ -456,8 +456,8 @@ private theorem apply_le_and_edist_le_rpow_of_forall_mem_moreauYosidaResolvent
     exact this.trans hB
 
 /-- The a priori Hölder-type bound for the interpolant of one minimizing movement sequence:
-`d(u ⌈s / τ⌉₊, u ⌈t / τ⌉₊) ≤ (2 (t - s + τ) (E - A) B) ^ (1 / 2)` for `0 ≤ s ≤ t`, where `B` bounds
-`exp (8 (t + τ) / τ')`. -/
+`d(u ⌈s / τ⌉₊, u ⌈t / τ⌉₊) ≤ (2 (t - s + τ) (E - A) (1 + B)) ^ (1 / 2)` for `0 ≤ s ≤ t`, where
+`B` bounds `exp (8 (t + τ) / τ')`. -/
 private theorem edist_ceil_le_rpow_of_forall_mem_moreauYosidaResolvent
     (hu : ∀ n, u (n + 1) ∈ moreauYosidaResolvent φ τ (u n)) (hτ : 0 < τ) (hττ' : 4 * τ ≤ τ')
     {A E : ℝ} (hA : moreauYosida φ τ' (u 0) = A) (hE : φ (u 0) = E) (hEA : 0 ≤ E - A)
@@ -494,23 +494,6 @@ private theorem limsup_edist_ceil_le_rpow_of_forall_mem_moreauYosidaResolvent
       ≤ limsup (fun k ↦ g (τ k)) atTop := limsup_le_limsup (Eventually.of_forall hle)
     _ = g 0 := ((hg.tendsto 0).comp (NNReal.tendsto_coe.2 hτ0)).limsup_eq
     _ = _ := by simp [g]
-
-/-- A curve on `[0, T]` with `d(u s, u t)² ≤ c |s - t|` is `1/2`-Hölder continuous with constant
-`c ^ (1 / 2)`. -/
-private theorem holderOnWith_of_edist_sq_le {u : ℝ → X} {T c : ℝ} (hc0 : 0 ≤ c)
-    (hsq : ∀ s ∈ Icc 0 T, ∀ t ∈ Icc 0 T, s ≤ t →
-      edist (u s) (u t) ^ 2 ≤ ENNReal.ofReal (c * |s - t|)) :
-    HolderOnWith (c.toNNReal ^ (2⁻¹ : ℝ)) (1 / 2) u (Icc 0 T) := by
-  refine fun s hs t ht ↦
-    ((ENNReal.le_rpow_inv_iff (y := ENNReal.ofReal (c * |s - t|)) two_pos).2 ?_).trans_eq ?_
-  · rw [ENNReal.rpow_two]
-    rcases le_total s t with hst | hst
-    · exact hsq s hs t ht hst
-    · rw [edist_comm, abs_sub_comm]
-      exact hsq t ht s hs hst
-  · rw [ENNReal.coe_rpow_of_nonneg _ (by norm_num), ENNReal.ofNNReal_toNNReal, edist_dist,
-      Real.dist_eq, show ((1 / 2 : ℝ≥0) : ℝ) = 2⁻¹ by norm_num, ENNReal.ofReal_mul hc0,
-      ENNReal.mul_rpow_of_nonneg _ _ (by norm_num)]
 
 end PseudoEMetricSpace
 
@@ -725,7 +708,7 @@ theorem exists_isGeneralizedMinimizingMovement (hl : ∀ y, pure y ≤ l y)
       Real.exp_le_exp.2 (by gcongr; exact ht.2)
     nlinarith [mul_le_mul_of_nonneg_left hB (mul_nonneg (mul_nonneg zero_le_two hEA)
       (sub_nonneg.2 hst))]
-  exact ⟨_, holderOnWith_of_edist_sq_le hc0 hsq⟩
+  exact ⟨_, HolderOnWith.of_edist_sq_le hc0 hsq⟩
 
 end EMetricSpace
 
