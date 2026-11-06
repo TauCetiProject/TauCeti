@@ -345,6 +345,15 @@ theorem numClasses_alternatingGroupFiveClassData :
     alternatingGroupFiveClassData.numClasses = 5 := by
   rfl
 
+/-- The representative numbered `i` is the `i`-th entry of the numbering above. -/
+@[simp]
+theorem rep_alternatingGroupFiveClassData (i : Fin alternatingGroupFiveClassData.numClasses) :
+    alternatingGroupFiveClassData.rep i =
+      ![1, alternatingGroupFiveDoubleTransposition, alternatingGroupFiveThreeCycle,
+        alternatingGroupFiveFiveCycle, alternatingGroupFiveFiveCycle ^ 2]
+        (i.cast numClasses_alternatingGroupFiveClassData) := by
+  fin_cases i <;> rfl
+
 local instance fact_prime_five_alternatingGroupFive : Fact (Nat.Prime 5) := ⟨by decide⟩
 
 /-- The class of the identity in `A₅` has size `1`. -/
@@ -352,24 +361,29 @@ private theorem card_classFinset_zero_alternatingGroupFiveClassData :
     (alternatingGroupFiveClassData.classFinset ⟨0, by simp⟩).card = 1 := by
   rw [alternatingGroupFiveClassData.card_classFinset,
     alternatingGroupFiveClassData.classOf_eq_mk]
-  -- `ClassData.rep` is executable list lookup; the first entry is definitionally `1`.
-  rw [show alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 by rfl]
+  rw [show alternatingGroupFiveClassData.rep ⟨0, by simp⟩ = 1 by simp]
   exact ConjClasses.ncard_carrier_mk_of_mem_center (Subgroup.one_mem _)
+
+/-- A class whose representative has cycle type `c`, and which contains every element of cycle
+type `c`, is the finset of elements of cycle type `c`. -/
+private theorem classFinset_eq_filter_cycleType (j : Fin alternatingGroupFiveClassData.numClasses)
+    (c : Multiset ℕ) (hc : (alternatingGroupFiveClassData.rep j : Equiv.Perm (Fin 5)).cycleType = c)
+    (hconj : ∀ g : A5, (g : Equiv.Perm (Fin 5)).cycleType = c →
+      IsConj (alternatingGroupFiveClassData.rep j) g) :
+    alternatingGroupFiveClassData.classFinset j =
+      ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = c} : Finset A5) := by
+  ext g
+  rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
+  simp only [Finset.mem_filter, Finset.mem_univ, true_and]
+  exact ⟨fun h => (Equiv.Perm.isConj_iff_cycleType_eq.mp
+    ((alternatingGroup (Fin 5)).subtype.map_isConj h)).symm.trans hc, hconj g⟩
 
 /-- The class of the double transpositions in `A₅` has size `15`. -/
 private theorem card_classFinset_one_alternatingGroupFiveClassData :
     (alternatingGroupFiveClassData.classFinset ⟨1, by simp⟩).card = 15 := by
-  have hfinset : alternatingGroupFiveClassData.classFinset ⟨1, by simp⟩ =
-      ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = {2, 2}} : Finset A5) := by
-    ext g
-    rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-    constructor
-    · intro h
-      exact Equiv.Perm.isConj_iff_cycleType_eq.mp
-        ((alternatingGroup (Fin 5)).subtype.map_isConj h) |>.symm.trans
-          cycleType_alternatingGroupFiveDoubleTransposition
-    · exact isConj_alternatingGroupFiveDoubleTransposition_of_cycleType
+  have hfinset := classFinset_eq_filter_cycleType ⟨1, by simp⟩ {2, 2}
+    (by simp) fun g hg => by
+      simpa using isConj_alternatingGroupFiveDoubleTransposition_of_cycleType hg
   rw [hfinset, AlternatingGroup.card_of_cycleType]
   rw [ite_eq_left (by decide)]
   decide
@@ -377,19 +391,10 @@ private theorem card_classFinset_one_alternatingGroupFiveClassData :
 /-- The class of the three-cycles in `A₅` has size `20`. -/
 private theorem card_classFinset_two_alternatingGroupFiveClassData :
     (alternatingGroupFiveClassData.classFinset ⟨2, by simp⟩).card = 20 := by
-  have hfinset : alternatingGroupFiveClassData.classFinset ⟨2, by simp⟩ =
-      ({g : A5 | (g : Equiv.Perm (Fin 5)).cycleType = {3}} : Finset A5) := by
-    ext g
-    rw [alternatingGroupFiveClassData.mem_classFinset_iff_isConj]
-    simp only [Finset.mem_filter, Finset.mem_univ, true_and]
-    constructor
-    · intro h
-      exact Equiv.Perm.isConj_iff_cycleType_eq.mp
-        ((alternatingGroup (Fin 5)).subtype.map_isConj h) |>.symm.trans
-          cycleType_alternatingGroupFiveThreeCycle
-    · intro h
-      exact alternatingGroup.isThreeCycle_isConj (by norm_num)
-        cycleType_alternatingGroupFiveThreeCycle h
+  have hfinset := classFinset_eq_filter_cycleType ⟨2, by simp⟩ {3}
+    (by simp) fun g hg => by
+      simpa using alternatingGroup.isThreeCycle_isConj (by norm_num)
+        cycleType_alternatingGroupFiveThreeCycle hg
   rw [hfinset, AlternatingGroup.card_of_cycleType_singleton (by omega) (by simp)]
   rw [ite_eq_left (by decide)]
   decide
@@ -402,11 +407,9 @@ private theorem card_classFinset_le_twelve_alternatingGroupFiveClassData
   have horder : orderOf alternatingGroupFiveFiveCycle = 5 := by
     apply orderOf_eq_prime <;> decide
   have hrep_three : alternatingGroupFiveClassData.rep ⟨3, by simp⟩ =
-      alternatingGroupFiveFiveCycle := by
-    rfl
+      alternatingGroupFiveFiveCycle := by simp
   have hrep_four : alternatingGroupFiveClassData.rep ⟨4, by simp⟩ =
-      alternatingGroupFiveFiveCycle ^ 2 := by
-    rfl
+      alternatingGroupFiveFiveCycle ^ 2 := by simp
   have hrepOrder : orderOf (alternatingGroupFiveClassData.rep j) = 5 := by
     rcases hj with rfl | rfl
     · rw [hrep_three]
