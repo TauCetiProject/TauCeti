@@ -22,8 +22,8 @@ Massey, *Singular Homology Theory*, Chapter II.
 
 Degenerate cubes are preserved by composition with a continuous map, so the push-forward descends
 to the quotient and the normalized chains are functorial. An injective continuous map also
-reflects degeneracy, so its push-forward on normalized chains is injective; for a topological
-embedding it even has a left inverse, reading the cubes with values in the image back in the source.
+reflects degeneracy, so its push-forward on normalized chains is injective, and even has a left
+inverse.
 
 ## Main definitions
 
@@ -45,8 +45,8 @@ embedding it even has a left inverse, reading the cubes with values in the image
 * `TauCeti.NormalizedCubicalChain.map_boundary`: the boundary is natural.
 * `TauCeti.NormalizedCubicalChain.map_injective`: injective continuous maps induce injective
   push-forwards, including all subspace inclusions.
-* `TauCeti.NormalizedCubicalChain.exists_comp_map_eq_id`: the push-forward along a topological
-  embedding has a left inverse.
+* `TauCeti.NormalizedCubicalChain.exists_comp_map_eq_id`: the push-forward along an injective
+  continuous map has a left inverse.
 
 ## References
 
@@ -346,34 +346,22 @@ theorem ofCube_mem_range_map {f : C(X, Y)} (hf : Topology.IsInducing f) {n : ℕ
   ext y
   exact hg y
 
-/-- The push-forward of normalized chains along a topological embedding has a left inverse. On a
-cube with values in the image of `f` it is the class of the cube read in the source, and it vanishes
-on every other cube. -/
-theorem exists_comp_map_eq_id {f : C(X, Y)} (hf : Topology.IsEmbedding f) (n : ℕ) :
+/-- The push-forward of normalized chains along an injective continuous map has a left inverse. -/
+theorem exists_comp_map_eq_id {f : C(X, Y)} (hf : Function.Injective f) (n : ℕ) :
     ∃ r : NormalizedCubicalChain Y R n →ₗ[R] NormalizedCubicalChain X R n,
       r ∘ₗ map R f n = LinearMap.id := by
   classical
-  -- A cube with values in the range of `f`, read in `X`.
-  let lift (c : SingularCube Y n) (hc : Set.range c ⊆ Set.range f) : SingularCube X n :=
-    ⟨fun y ↦ hf.toHomeomorph.symm ⟨c y, hc ⟨y, rfl⟩⟩,
-      hf.toHomeomorph.symm.continuous.comp (c.continuous.subtype_mk _)⟩
-  have hlift (c : SingularCube Y n) (hc : Set.range c ⊆ Set.range f) (y : Fin n → I) :
-      f (lift c hc y) = c y :=
-    (hf.toHomeomorph_apply_coe _).symm.trans
-      (congrArg Subtype.val (hf.toHomeomorph.apply_symm_apply ⟨c y, hc ⟨y, rfl⟩⟩))
-  refine ⟨desc (fun c ↦ if hc : Set.range c ⊆ Set.range f then ofCube X R (lift c hc) else 0)
+  -- A cube of the form `f ∘ c'` goes to the class of a chosen `c'`, and every other cube to `0`.
+  refine ⟨desc (fun c ↦ if hc : ∃ c', f.comp c' = c then ofCube X R hc.choose else 0)
     fun c hc ↦ ?_, linearMap_ext fun c ↦ ?_⟩
   · split_ifs with hc'
     · refine ofCube_eq_zero R ?_
-      rwa [← SingularCube.isDegenerate_comp_iff_of_injective f hf.injective,
-        show f.comp (lift c hc') = c from ContinuousMap.ext (hlift c hc')]
+      rwa [← SingularCube.isDegenerate_comp_iff_of_injective f hf, hc'.choose_spec]
     · rfl
-  · have hc : Set.range (f.comp c) ⊆ Set.range f := by
-      rw [ContinuousMap.coe_comp]
-      exact Set.range_comp_subset_range _ _
+  · have hc : ∃ c', f.comp c' = f.comp c := ⟨c, rfl⟩
     rw [LinearMap.comp_apply, map_ofCube, desc_ofCube, dite_eq_left_of_eq_true (eq_true hc),
       LinearMap.id_apply]
-    exact congrArg _ (ContinuousMap.ext fun y ↦ hf.injective (hlift _ hc y))
+    exact congrArg _ (ContinuousMap.ext fun y ↦ hf (DFunLike.congr_fun hc.choose_spec y))
 
 /-- The boundary is natural. -/
 theorem map_boundary (f : C(X, Y)) (n : ℕ) :

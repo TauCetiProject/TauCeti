@@ -66,7 +66,8 @@ correspond to a unit of `k`.
 
 * W. S. Massey, *Singular Homology Theory*, GTM 70, Springer, 1980, Chapters II and VII.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 4.2, the Hurewicz map defined by a generator of `Hₙ(Dⁿ, ∂Dⁿ)`.
+  Section 4.2, the Hurewicz map defined by a generator of `Hₙ(Dⁿ, ∂Dⁿ)`, and Section 3.1, the
+  universal coefficient argument behind the transfer of the integral cocycle to `k`.
 -/
 
 public section
@@ -196,12 +197,12 @@ theorem exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_e
 
 /-! ### The fundamental cycle generates over every commutative ring -/
 
-/-- An integral cocycle detecting the fundamental class of the cube pair: a homomorphism from the
+/-- An integral cocycle detecting the fundamental class of the cube pair: a morphism from the
 relative integral `(n + 2)`-chains to `ℤ` that vanishes on boundaries and takes the value `1` on the
 identity cube. -/
 private lemma exists_intCocycle (n : ℕ) :
-    ∃ φ : ((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).X (n + 2) →ₗ[ℤ] ℤ,
-      (∀ x, φ (((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).d (n + 3) (n + 2) x) = 0) ∧
+    ∃ φ : ((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).X (n + 2) ⟶ ModuleCat.of ℤ ℤ,
+      ((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).d (n + 3) (n + 2) ≫ φ = 0 ∧
         φ (TopPair.cubicalChainOfCube ℤ
           (upCube.{0} (n + 2) : SingularCube (cubeBoundaryPair.{0} (n + 2)).fst (n + 2))) = 1 := by
   obtain ⟨ε, hε⟩ :=
@@ -216,23 +217,14 @@ private lemma exists_intCocycle (n : ℕ) :
     rw [LinearMap.smul_apply, ModuleCat.hom_comp, LinearMap.comp_apply, hε, map_zsmul,
       Iso.inv_hom_id_apply, smul_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one,
       one_smul]
-  -- The relative cycles split off the relative chains.
-  let ρ := retraction (K.iCycles (n + 2))
-  have hρ (z : K.cycles (n + 2)) : ρ (K.iCycles (n + 2) z) = z := by
-    rw [← ModuleCat.comp_apply, IsSplitMono.id, ModuleCat.id_apply]
-  refine ⟨τ ∘ₗ (K.homologyπ (n + 2)).hom ∘ₗ ρ.hom, fun y ↦ ?_, ?_⟩
-  · -- A boundary is the image of a cycle whose class vanishes.
-    have hd : K.d (n + 3) (n + 2) y = K.iCycles (n + 2) (K.toCycles (n + 3) (n + 2) y) := by
-      rw [← ModuleCat.comp_apply, K.toCycles_i]
-    have hπ : K.homologyπ (n + 2) (K.toCycles (n + 3) (n + 2) y) = 0 := by
-      rw [← ModuleCat.comp_apply, K.toCycles_comp_homologyπ]
-      simp
-    rw [hd, LinearMap.comp_apply, LinearMap.comp_apply, hρ, hπ, map_zero]
-  · have hc : TopPair.cubicalChainOfCube ℤ
-          (upCube.{0} (n + 2) : SingularCube (cubeBoundaryPair.{0} (n + 2)).fst (n + 2)) =
-        K.iCycles (n + 2) (cubeBoundaryPairCycle ℤ (n + 1)) :=
-      (TopPair.iCycles_cubicalCycleOfCube ℤ _ _).symm
-    rw [hc, LinearMap.comp_apply, LinearMap.comp_apply, hρ, hτ]
+  -- The relative cycles split off the relative chains; the cocycle is the one of
+  -- `TauCeti.ChainComplex.kroneckerSection` for `τ`.
+  refine ⟨retraction (K.iCycles (n + 2)) ≫ K.homologyπ (n + 2) ≫ ModuleCat.ofHom τ, ?_, ?_⟩
+  · rw [← K.toCycles_i, Category.assoc, IsSplitMono.id_assoc]
+    exact (K.toCycles_comp_homologyπ_assoc _ _ _).trans zero_comp
+  · rw [← TopPair.iCycles_cubicalCycleOfCube ℤ _ (mapsTo_upCube_boundary (n + 2)),
+      ← ConcreteCategory.comp_apply, IsSplitMono.id_assoc]
+    exact hτ
 
 variable (k : Type) [CommRing k]
 
@@ -252,41 +244,34 @@ private lemma exists_cocycle (n : ℕ) :
   have hg (c : SingularCube (cubeBoundaryPair.{0} (n + 2)).fst (n + 2))
       (hc : SingularCube.IsDegenerate c) : g c = 0 := by
     simp only [g, TopPair.cubicalChainOfCube_eq_zero ℤ hc, map_zero, Int.cast_zero]
-  let ψ₀ : NormalizedCubicalChain (cubeBoundaryPair.{0} (n + 2)).fst k (n + 2) →ₗ[k] k :=
-    NormalizedCubicalChain.desc g hg
-  have hψ₀ : ψ₀ ∘ₗ NormalizedCubicalChain.map k (cubeBoundaryPair.{0} (n + 2)).map.hom (n + 2) =
-      0 :=
+  have hg₀ : NormalizedCubicalChain.desc g hg ∘ₗ
+      NormalizedCubicalChain.map k (cubeBoundaryPair.{0} (n + 2)).map.hom (n + 2) = 0 :=
     NormalizedCubicalChain.linearMap_ext fun c ↦ by
-      simp only [ψ₀, g, LinearMap.comp_apply, NormalizedCubicalChain.map_ofCube,
-        NormalizedCubicalChain.desc_ofCube, TopPair.cubicalChainOfCube_comp_map, map_zero,
+      simp only [g, LinearMap.comp_apply, NormalizedCubicalChain.map_ofCube,
+        NormalizedCubicalChain.desc_ofCube, TopPair.cubicalChainOfCube_map_comp_eq_zero, map_zero,
         Int.cast_zero, LinearMap.zero_apply]
-  -- `ψ₀` vanishes on boundaries: on the boundary of a cube it is the cocycle condition of `φ`, read
-  -- in `k`.
-  have hψ₀d (y : NormalizedCubicalChain (cubeBoundaryPair.{0} (n + 2)).fst k (n + 3)) :
-      ψ₀ (NormalizedCubicalChain.boundary _ k (n + 2) y) = 0 := by
-    induction y using NormalizedCubicalChain.induction_on with
-    | zero => rw [map_zero, map_zero]
-    | add a b ha hb => rw [map_add, map_add, ha, hb, add_zero]
-    | smul r a ha => rw [map_smul, map_smul, ha, smul_zero]
-    | ofCube c =>
-      have h := congrArg (fun z : ℤ ↦ (z : k)) (hφd (TopPair.cubicalChainOfCube ℤ c))
-      simp only [TopPair.d_cubicalChainOfCube_eq_sum, map_sum, map_sub, map_smul, smul_eq_mul,
-        Int.cast_sum, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, Int.cast_sub,
-        Int.cast_zero] at h
-      simpa [ψ₀, g, NormalizedCubicalChain.boundary_ofCube] using h
-  refine ⟨ModuleCat.ofHom (TopPair.cubicalChainComplexXDesc k ψ₀ hψ₀), ?_, ?_⟩
-  · -- The relative chains are a quotient of the chains of the cube.
-    rw [← cancel_epi ((cokernel.π ((normalizedCubicalChainComplex k).map
-      (cubeBoundaryPair.{0} (n + 2)).map)).f (n + 3)), comp_zero, HomologicalComplex.Hom.comm_assoc]
-    ext y
-    rw [ModuleCat.comp_apply, ModuleCat.comp_apply, ModuleCat.ofHom_apply,
-      TopPair.cubicalChainComplexXDesc_π]
-    exact (congrArg ψ₀ (normalizedCubicalChainComplex_obj_d_apply _ _ y)).trans (hψ₀d y)
-  · -- The identity cube is typed in the cube model, so the evaluation lemmas are applied directly.
+  let ψ := TopPair.cubicalChainComplexXDesc k (NormalizedCubicalChain.desc g hg) hg₀
+  have hψ (c : SingularCube (cubeBoundaryPair.{0} (n + 2)).fst (n + 2)) :
+      ψ (TopPair.cubicalChainOfCube k c) = (φ (TopPair.cubicalChainOfCube ℤ c) : k) :=
+    (TopPair.cubicalChainComplexXDesc_cubicalChainOfCube k _ hg₀ c).trans
+      (NormalizedCubicalChain.desc_ofCube g hg c)
+  -- On the boundary of a cube, `ψ` is the integral cocycle `φ` read in `k`, because the boundary of
+  -- a cube is a sum of its faces with integer coefficients.
+  have hψd (c : SingularCube (cubeBoundaryPair.{0} (n + 2)).fst (n + 3)) :
+      ψ (((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex k).d (n + 3) (n + 2)
+          (TopPair.cubicalChainOfCube k c)) =
+        (φ (((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).d (n + 3) (n + 2)
+          (TopPair.cubicalChainOfCube ℤ c)) : k) := by
+    simp only [TopPair.d_cubicalChainOfCube_eq_sum, map_sum, map_sub, map_smul, hψ, smul_eq_mul,
+      Int.cast_sum, Int.cast_mul, Int.cast_pow, Int.cast_neg, Int.cast_one, Int.cast_sub]
+  refine ⟨ModuleCat.ofHom ψ, ?_, ?_⟩
+  · ext c
+    rw [ModuleCat.hom_comp, LinearMap.comp_apply, ModuleCat.hom_ofHom, hψd,
+      ← ConcreteCategory.comp_apply, hφd]
+    simp
+  · -- The identity cube is typed in the cube model, so `hψ` is applied directly.
     rw [ModuleCat.ofHom_apply]
-    refine (TopPair.cubicalChainComplexXDesc_cubicalChainOfCube k ψ₀ hψ₀ _).trans ?_
-    refine (NormalizedCubicalChain.desc_ofCube g hg _).trans ?_
-    exact (congrArg (fun z : ℤ ↦ (z : k)) hφ).trans Int.cast_one
+    exact (hψ _).trans ((congrArg (fun z : ℤ ↦ (z : k)) hφ).trans Int.cast_one)
 
 /-- **The fundamental cycle generates the relative cubical homology of the cube pair**, over every
 commutative ring `k`: `a ↦ a • [Iⁿ⁺²]` is bijective onto `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; k)`, where `[Iⁿ⁺²]` is
