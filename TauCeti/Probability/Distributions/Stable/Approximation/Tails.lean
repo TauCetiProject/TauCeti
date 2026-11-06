@@ -80,6 +80,6 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Iio_neg
   have h := tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi (β := -β) hα
     (by simpa only [abs_neg] using hβ) hε
   rw [← map_neg_stableCompensatedPoissonMeasure α β ε] at h
-  simpa [map_measureReal_apply measurable_neg measurableSet_Ioi, sub_eq_add_neg] using h
+  simpa only [Measure.real_map_neg_Ioi, sub_eq_add_neg, neg_neg] using h
 
 end TauCeti.Probability

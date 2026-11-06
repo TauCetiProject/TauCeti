@@ -47,18 +47,12 @@ theorem tendsto_rpow_mul_real_compoundPoissonMeasure_Iio_neg
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Iio (-x))) atTop (𝓝 C)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (compoundPoissonMeasure r μ).real (Iio (-x))) atTop
       (𝓝 ((r : ℝ) * C)) := by
-  have reflect (ρ : Measure ℝ) (x : ℝ) :
-      (ρ.map (fun y ↦ -y)).real (Ioi x) = ρ.real (Iio (-x)) := by
-    rw [map_measureReal_apply (by fun_prop) measurableSet_Ioi]
-    congr 1
-    ext y
-    simp
   have h := tendsto_rpow_mul_real_compoundPoissonMeasure_Ioi
-    (μ := μ.map (fun y ↦ -y)) r hα (by simpa only [reflect] using hμ)
+    (μ := μ.map (fun y ↦ -y)) r hα (by simpa only [Measure.real_map_neg_Ioi] using hμ)
   have hmap : (compoundPoissonMeasure r μ).map (fun y ↦ -y) =
       compoundPoissonMeasure r (μ.map (fun y ↦ -y)) := by
     exact map_compoundPoissonMeasure r μ (-AddMonoidHom.id ℝ) measurable_neg
   rw [← hmap] at h
-  simpa only [reflect] using h
+  simpa only [Measure.real_map_neg_Ioi] using h
 
 end TauCeti.Probability

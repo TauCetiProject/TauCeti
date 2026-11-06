@@ -81,9 +81,7 @@ original real mass divided by the real mass of the conditioning event. -/
 theorem cond_real_of_subset {μ : Measure Ω} {s t : Set Ω} (ht : MeasurableSet t)
     (hsub : t ⊆ s) :
     (cond μ s).real t = μ.real t / μ.real s := by
-  rw [measureReal_def, cond_apply' ht, inter_eq_right.mpr hsub,
-    ENNReal.toReal_mul, ENNReal.toReal_inv]
-  simp only [measureReal_def, div_eq_mul_inv, mul_comm]
+  simp [measureReal_def, cond_apply' ht, inter_eq_right.mpr hsub, div_eq_mul_inv, mul_comm]
 
 /-- Scaling an integral under a conditional measure by the finite mass of the conditioning
 event recovers the corresponding set integral. -/

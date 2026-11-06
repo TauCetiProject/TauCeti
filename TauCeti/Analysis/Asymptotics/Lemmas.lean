@@ -225,8 +225,8 @@ theorem Filter.Tendsto.rpow_mul_comp_const_mul {f : ℝ → ℝ} {α C a : ℝ}
   apply hlim.congr'
   filter_upwards [eventually_gt_atTop 0] with x hx
   simp only [Function.comp_apply, id_eq]
-  rw [Real.mul_rpow ha.le hx.le, ← mul_assoc, ← mul_assoc, ← Real.rpow_add ha,
-    neg_add_cancel, Real.rpow_zero, one_mul]
+  rw [Real.mul_rpow ha.le hx.le, Real.rpow_neg ha.le]
+  field_simp [(Real.rpow_pos_of_pos ha α).ne']
 
 /-- A real function with a finite power-law limit of positive exponent tends to zero. -/
 theorem Filter.Tendsto.of_rpow_mul {f : ℝ → ℝ} {α C : ℝ}
@@ -236,7 +236,8 @@ theorem Filter.Tendsto.of_rpow_mul {f : ℝ → ℝ} {α C : ℝ}
   simp only [mul_zero] at hlim
   apply hlim.congr'
   filter_upwards [eventually_gt_atTop 0] with x hx
-  rw [mul_right_comm, ← Real.rpow_add hx, add_neg_cancel, Real.rpow_zero, one_mul]
+  rw [Real.rpow_neg hx.le]
+  field_simp [(Real.rpow_pos_of_pos hx α).ne']
 
 /-- A fixed translation of a real function preserves its finite power-law constant at infinity,
 for any real exponent. -/

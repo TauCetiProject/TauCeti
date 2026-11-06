@@ -7,9 +7,9 @@ module
 
 public import TauCeti.MeasureTheory.Group.Convolution.Power
 public import TauCeti.Analysis.Asymptotics.Lemmas
+public import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Integral.Bind
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
-import TauCeti.MeasureTheory.Measure.Interval
 
 /-!
 # Power-law tails of convolutions
@@ -203,6 +203,26 @@ theorem tendsto_rpow_mul_real_convolutionPower_Ioi {μ : Measure ℝ} [IsProbabi
     simpa only [convolutionPower_succ, probReal_univ, mul_one, one_mul,
       Nat.cast_add_one, add_mul] using tendsto_rpow_mul_real_conv_Ioi hα ih hμ
 
+/-- A uniform normalized tail bound for a probability law gives a polynomial bound of order
+`α + 1` for its convolution powers, including the empty convolution. -/
+theorem rpow_mul_real_convolutionPower_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+    {α K : ℝ} (hα : 0 ≤ α)
+    (hμ : ∀ x : ℝ, 0 < x → x ^ α * μ.real (Ioi x) ≤ K) {x : ℝ} (hx : 0 < x) (n : ℕ) :
+    x ^ α * (μ.convolutionPower n).real (Ioi x) ≤ K * (n : ℝ) ^ (α + 1) := by
+  rcases n.eq_zero_or_pos with rfl | hn
+  · simp [measureReal_def, hx.le, zero_rpow (by positivity : α + 1 ≠ 0)]
+  · have hn' : 0 < (n : ℝ) := by exact_mod_cast hn
+    calc
+      _ ≤ x ^ α * ((n : ℝ) * μ.real (Ioi (x / n))) :=
+        mul_le_mul_of_nonneg_left (real_convolutionPower_Ioi_le μ hn x)
+          (rpow_nonneg hx.le α)
+      _ = (n : ℝ) ^ (α + 1) * ((x / n) ^ α * μ.real (Ioi (x / n))) := by
+        rw [rpow_add hn', rpow_one, div_rpow hx.le hn'.le]
+        field_simp [(rpow_pos_of_pos hn' α).ne']
+      _ ≤ (n : ℝ) ^ (α + 1) * K := mul_le_mul_of_nonneg_left
+        (hμ _ (div_pos hx hn')) (rpow_nonneg hn'.le _)
+      _ = _ := mul_comm _ _
+
 /-- Mixing convolution powers against a count law with a finite moment of order `α + 1`
 multiplies a power-law tail constant by the mean count. Jumps may have either sign, and
 their left tail is unrestricted. The count measure need not be finite. -/
@@ -212,39 +232,7 @@ theorem tendsto_rpow_mul_real_bind_convolutionPower_Ioi {μ : Measure ℝ}
     (hρ : Integrable (fun n : ℕ ↦ (n : ℝ) ^ (α + 1)) ρ) :
     Tendsto (fun x : ℝ ↦ x ^ α * (ρ.bind μ.convolutionPower).real (Ioi x)) atTop
       (𝓝 ((∫ n : ℕ, (n : ℝ) ∂ρ) * C)) := by
-  -- Convergence at infinity and bounded total mass give a uniform normalized tail bound.
-  obtain ⟨T, hT⟩ := eventually_atTop.1 (hμ.eventually (eventually_lt_nhds
-    (lt_add_one C)))
-  let K := max (|C| + 1) ((max T 1) ^ α)
-  have hbound {x : ℝ} (hx : 0 < x) : x ^ α * μ.real (Ioi x) ≤ K := by
-    by_cases hxT : T ≤ x
-    · have hCK : C + 1 ≤ K := by
-        dsimp [K]
-        linarith [le_abs_self C, le_max_left (|C| + 1) ((max T 1) ^ α)]
-      exact (hT x hxT).le.trans hCK
-    · calc
-        _ ≤ x ^ α * 1 := mul_le_mul_of_nonneg_left measureReal_le_one
-          (rpow_nonneg hx.le α)
-        _ ≤ (max T 1) ^ α := by
-          rw [mul_one]
-          exact rpow_le_rpow hx.le ((le_of_not_ge hxT).trans (le_max_left _ _)) hα.le
-        _ ≤ K := le_max_right _ _
-  -- A union bound controls every finite sum by a polynomial in its number of summands.
-  have hsum {x : ℝ} (hx : 0 < x) (n : ℕ) :
-      x ^ α * (μ.convolutionPower n).real (Ioi x) ≤ K * (n : ℝ) ^ (α + 1) := by
-    rcases n.eq_zero_or_pos with rfl | hn
-    · simp [measureReal_def, hx.le, zero_rpow (by linarith : α + 1 ≠ 0)]
-    · have hn' : 0 < (n : ℝ) := by exact_mod_cast hn
-      calc
-        _ ≤ x ^ α * ((n : ℝ) * μ.real (Ioi (x / n))) :=
-          mul_le_mul_of_nonneg_left (real_convolutionPower_Ioi_le μ hn x)
-            (rpow_nonneg hx.le α)
-        _ = (n : ℝ) ^ (α + 1) * ((x / n) ^ α * μ.real (Ioi (x / n))) := by
-          rw [rpow_add hn', rpow_one, div_rpow hx.le hn'.le]
-          field_simp [(rpow_pos_of_pos hn' α).ne']
-        _ ≤ (n : ℝ) ^ (α + 1) * K := mul_le_mul_of_nonneg_left
-          (hbound (div_pos hx hn')) (rpow_nonneg hn'.le _)
-        _ = _ := mul_comm _ _
+  obtain ⟨K, hbound⟩ := μ.exists_rpow_mul_real_Ioi_le hα.le hμ
   -- The count moment dominates the normalized finite-sum tails, so their limits can be mixed.
   have h := tendsto_integral_filter_of_dominated_convergence (μ := ρ)
     (F := fun x : ℝ ↦ fun n : ℕ ↦ x ^ α * (μ.convolutionPower n).real (Ioi x))
@@ -254,7 +242,7 @@ theorem tendsto_rpow_mul_real_bind_convolutionPower_Ioi {μ : Measure ℝ}
       filter_upwards [eventually_gt_atTop 0] with x hx
       exact ae_of_all _ fun n ↦ by
         rw [Real.norm_of_nonneg (mul_nonneg (rpow_nonneg hx.le _) measureReal_nonneg)]
-        exact hsum hx n)
+        exact μ.rpow_mul_real_convolutionPower_Ioi_le hα.le hbound hx n)
     (hρ.const_mul K)
     (ae_of_all _ fun n ↦ tendsto_rpow_mul_real_convolutionPower_Ioi hα hμ n)
   simpa only [integral_const_mul, integral_mul_const,
