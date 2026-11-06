@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.Sets.Opens
-public import TauCeti.Analysis.Pseudodifferential.Symbol
+public import TauCeti.Analysis.Pseudodifferential.Symbol.Basic
 import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 
 /-!
