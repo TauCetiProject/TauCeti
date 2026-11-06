@@ -141,23 +141,8 @@ theorem IsNondegenerate.isContractibleHZAdmissible_comp (hσ : σ.IsNondegenerat
     rcases le_total r b with h | h
     · simpa only [hhigh b le_rfl] using hanti h
     · exact (hhigh r h).ge
-  -- `μ` is locally constant off `[a, b]`, so `μ'` vanishes there and, by continuity, on `Iic a`
-  -- and `Ici b`.
-  have hzero : ∀ r ∉ Ioo a b, deriv μ r = 0 := by
-    have hcl : IsClosed {x | deriv μ x = 0} :=
-      isClosed_eq (hμ.continuous_deriv (by simp)) continuous_const
-    have hlt : Iio a ⊆ {x | deriv μ x = 0} := fun r hr ↦ by
-      have : μ =ᶠ[nhds r] fun _ ↦ μ a :=
-        Filter.eventually_of_mem (Iio_mem_nhds hr) fun x hx ↦ hlow x hx.le
-      simpa using this.deriv_eq
-    have hgt : Ioi b ⊆ {x | deriv μ x = 0} := fun r hr ↦ by
-      have : μ =ᶠ[nhds r] fun _ ↦ 0 :=
-        Filter.eventually_of_mem (Ioi_mem_nhds hr) fun x hx ↦ hhigh x hx.le
-      simpa using this.deriv_eq
-    intro r hr
-    rcases not_and_or.1 (by simpa only [mem_Ioo] using hr) with h | h
-    · exact (closure_Iio (a := a) ▸ closure_minimal hlt hcl) (not_lt.1 h)
-    · exact (closure_Ioi (a := b) ▸ closure_minimal hgt hcl) (not_lt.1 h)
+  -- `μ` is constant off `(a, b)`, so `μ'` vanishes there.
+  have hzero := deriv_eq_zero_of_not_mem_Ioo (hμ.of_le (by simp)) hlow hhigh
   obtain ⟨x₀, hx₀⟩ := ha
   have hFc : Continuous F := hF.continuous
   -- The support of `μ ∘ F` lies in `{F ≤ b}`, since `μ` vanishes on `[b, ∞)`.
