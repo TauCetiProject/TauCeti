@@ -153,22 +153,30 @@ theorem exists_pos_of_mem_closure_range_cartanMatrix_row [P.IsRootSystem] (b : P
   rw [Matrix.mulVec_diagonal, ← hcoord]
   nlinarith [hle k, mul_nonneg (hd k).le (hn k)]
 
-/-- The positive case of `RootPairing.Base.exists_eq_nsmul_pairingIn_of_reflection`, by strong
-induction on the height `∑ⱼ nⱼ` of the weight `∑ⱼ nⱼ αⱼ`. -/
+/-- The positive case of `RootPairing.Base.exists_eq_nsmul_pairingIn_of_reflection`: writing the
+weight as `∑ⱼ nⱼ αⱼ` with `nⱼ ≥ 0`, by strong induction on its height `∑ⱼ nⱼ`. -/
 private theorem exists_eq_nsmul_pairingIn_of_mem_closure [P.IsRootSystem] (b : P.Base)
     {Q : (b.support → ℤ) → Prop}
     (hrefl : ∀ (χ : b.support → ℤ) (i : b.support), Q χ → Q (χ - χ i • b.cartanMatrix.row i))
     (hsign : ∀ χ, Q χ → χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row) ∨
       -χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row))
-    (N : ℕ) (n : b.support →₀ ℤ) (hn : ∀ j, 0 ≤ n j) (hN : ∑ j, n j = N)
-    (hQ : Q (Finsupp.linearCombination ℤ b.cartanMatrix.row n))
-    (hC : Finsupp.linearCombination ℤ b.cartanMatrix.row n ∈
-      AddSubsemigroup.closure (Set.range b.cartanMatrix.row)) :
-    ∃ (j : ι) (m : ℕ), 0 < m ∧ Finsupp.linearCombination ℤ b.cartanMatrix.row n =
-      m • fun k : b.support ↦ P.pairingIn ℤ j k := by
+    {χ : b.support → ℤ} (hχ : Q χ)
+    (hC : χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row)) :
+    ∃ (j : ι) (m : ℕ), 0 < m ∧ χ = m • fun k : b.support ↦ P.pairingIn ℤ j k := by
   classical
-  induction N using Nat.strong_induction_on generalizing n with
+  obtain ⟨n, hn, rfl⟩ :=
+    AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hC
+  suffices ∀ (N : ℕ) (n : b.support →₀ ℤ), (∀ j, 0 ≤ n j) → ∑ j, n j = N →
+      Q (Finsupp.linearCombination ℤ b.cartanMatrix.row n) →
+      Finsupp.linearCombination ℤ b.cartanMatrix.row n ∈
+        AddSubsemigroup.closure (Set.range b.cartanMatrix.row) →
+      ∃ (j : ι) (m : ℕ), 0 < m ∧ Finsupp.linearCombination ℤ b.cartanMatrix.row n =
+        m • fun k : b.support ↦ P.pairingIn ℤ j k from
+    this _ n hn (Int.toNat_of_nonneg (Finset.sum_nonneg fun j _ ↦ hn j)).symm hχ hC
+  intro N
+  induction N using Nat.strong_induction_on with
   | _ N ih =>
+  intro n hn hN hQ hC
   set χ := Finsupp.linearCombination ℤ b.cartanMatrix.row n with hχ
   have hinj := b.linearIndependent_cartanMatrix_row.finsuppLinearCombination_injective
   have hrow (i : b.support) : b.cartanMatrix.row i = fun k : b.support ↦ P.pairingIn ℤ i k := by
@@ -235,21 +243,10 @@ theorem exists_eq_nsmul_pairingIn_of_reflection [P.IsRootSystem] (b : P.Base)
       -χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row))
     {χ : b.support → ℤ} (hχ : Q χ) :
     ∃ (j : ι) (m : ℕ), 0 < m ∧ χ = m • fun k : b.support ↦ P.pairingIn ℤ j k := by
-  have hpos {Q : (b.support → ℤ) → Prop}
-      (hrefl : ∀ (χ : b.support → ℤ) (i : b.support), Q χ → Q (χ - χ i • b.cartanMatrix.row i))
-      (hsign : ∀ χ, Q χ → χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row) ∨
-        -χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row))
-      {χ : b.support → ℤ} (hχ : Q χ)
-      (hC : χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row)) :
-      ∃ (j : ι) (m : ℕ), 0 < m ∧ χ = m • fun k : b.support ↦ P.pairingIn ℤ j k := by
-    obtain ⟨n, hn, rfl⟩ :=
-      AddSubsemigroup.exists_nonneg_linearCombination_eq_of_mem_closure_range hC
-    exact b.exists_eq_nsmul_pairingIn_of_mem_closure hrefl hsign _ n hn
-      (Int.toNat_of_nonneg (Finset.sum_nonneg fun j _ ↦ hn j)).symm hχ hC
   rcases hsign χ hχ with hC | hC
-  · exact hpos hrefl hsign hχ hC
+  · exact b.exists_eq_nsmul_pairingIn_of_mem_closure hrefl hsign hχ hC
   -- A negative weight is the negative of a positive one, for the negated property.
-  obtain ⟨j, m, hm, hjm⟩ := hpos (Q := fun ψ ↦ Q (-ψ))
+  obtain ⟨j, m, hm, hjm⟩ := b.exists_eq_nsmul_pairingIn_of_mem_closure (Q := fun ψ ↦ Q (-ψ))
     (fun ψ i hψ ↦ by
       have hsub : -(ψ - ψ i • b.cartanMatrix.row i) = -ψ - (-ψ) i • b.cartanMatrix.row i := by
         rw [Pi.neg_apply, neg_smul, sub_neg_eq_add, neg_sub, sub_eq_neg_add]

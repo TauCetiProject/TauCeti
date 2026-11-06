@@ -142,6 +142,7 @@ theorem serreLift_lieBasis_injective (b : LieAlgebra.Basis ι H) :
     obtain ⟨j, rfl⟩ := φ.surjective i
     rw [Function.comp_apply, Equiv.symm_apply_apply, rootSystem_coroot_apply,
       LieAlgebra.Basis.coroot_eq_h']
+    -- `b.h' j` is defined as the element `b.h j` of `H`, so its coercion to `L` is `b.h j`.
     rfl
   have hS := (isSerreSystem_lieBasis b).submatrix φ.symm.injective
   rw [hCM', hH] at hS
