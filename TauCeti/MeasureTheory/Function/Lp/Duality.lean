@@ -12,7 +12,11 @@ public import Mathlib.MeasureTheory.Integral.IntegrableOn
 import Mathlib.MeasureTheory.Function.LpSeminorm.CompareExp
 import Mathlib.MeasureTheory.Function.LpSpace.Complete
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
+import TauCeti.Analysis.InnerProductSpace.ExtremalRpow
+import TauCeti.Analysis.Normed.Module.RCLike.Rpow
 import TauCeti.Analysis.SpecialFunctions.Pow.NNReal
+import TauCeti.MeasureTheory.Function.Lp.Norm
+import TauCeti.MeasureTheory.Function.StronglyMeasurable.SpanningSets
 import TauCeti.MeasureTheory.Function.Holder
 
 /-!
@@ -123,33 +127,6 @@ theorem enorm_integral_inner_le {𝕜 H : Type*} [RCLike 𝕜] [NormedAddCommGro
           continuous_inner (ae_of_all _ fun x => by simpa using norm_inner_le_norm (u x) (v x))
           zero_lt_one
 
-section Extremal
-
-variable {𝕜 : Type*} [RCLike 𝕜]
-
-/-- The extremal vector `‖x‖ ^ (r - 2) • x` of the `Lʳ` norm has norm at most `‖x‖ ^ (r - 1)`. -/
-theorem norm_ofReal_rpow_sub_two_smul_le {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
-    (r : ℝ) (x : V) : ‖((‖x‖ ^ (r - 2) : ℝ) : 𝕜) • x‖ ≤ ‖x‖ ^ (r - 1) := by
-  rcases eq_or_ne x 0 with rfl | h0
-  · simp [Real.rpow_nonneg]
-  · have hpos : 0 < ‖x‖ := norm_pos_iff.2 h0
-    rw [norm_smul, RCLike.norm_ofReal, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg _) _),
-      show r - 1 = (r - 2) + 1 by ring, Real.rpow_add hpos, Real.rpow_one]
-
-/-- Pairing a vector with its extremal vector `‖x‖ ^ (r - 2) • x` gives `‖x‖ ^ r`. -/
-theorem inner_ofReal_rpow_sub_two_smul {V : Type*} [NormedAddCommGroup V] [InnerProductSpace 𝕜 V]
-    {r : ℝ} (hr : r ≠ 0) (x : V) :
-    ⟪x, ((‖x‖ ^ (r - 2) : ℝ) : 𝕜) • x⟫_𝕜 = ((‖x‖ ^ r : ℝ) : 𝕜) := by
-  rcases eq_or_ne x 0 with rfl | h0
-  · simp [Real.zero_rpow hr]
-  · have hpos : 0 < ‖x‖ := norm_pos_iff.2 h0
-    rw [inner_smul_right, inner_self_eq_norm_sq_to_K]
-    conv_rhs => rw [show r = (r - 2) + 2 by ring, Real.rpow_add hpos, Real.rpow_two]
-    push_cast
-    ring_nf
-
-end Extremal
-
 /-- If `‖g‖ ≤ ‖f‖ ^ (q - 1)` almost everywhere, then `‖g‖_{q'} ≤ ‖f‖_q ^ (q - 1)` for Hölder
 conjugate exponents `q < ∞` and `q'`. -/
 theorem eLpNorm_le_eLpNorm_rpow_toReal_sub_one {q q' : ℝ≥0∞} [hqq : q.HolderConjugate q']
@@ -168,38 +145,6 @@ namespace MeasureTheory
 variable {α 𝕜 : Type*} {mα : MeasurableSpace α} {μ : Measure α} [RCLike 𝕜]
 
 open TauCeti
-
-/-- For `0 < q < ∞`, the `q`-th power of the `L^q` norm of `f` is the norm of the integral of
-`‖f‖ ^ q`. -/
-theorem MemLp.eLpNorm_rpow_toReal_eq_enorm_integral {V : Type*} [NormedAddCommGroup V]
-    {f : α → V} {q : ℝ≥0∞} (hf : MemLp f q μ) (hq0 : q ≠ 0) (hq : q ≠ ∞) :
-    eLpNorm f q μ ^ q.toReal = ‖∫ x, ((‖f x‖ ^ q.toReal : ℝ) : 𝕜) ∂μ‖ₑ := by
-  have hr := ENNReal.toReal_pos hq0 hq
-  have hI : 0 ≤ ∫ x, ‖f x‖ ^ q.toReal ∂μ :=
-    integral_nonneg fun x => Real.rpow_nonneg (norm_nonneg _) _
-  rw [hf.eLpNorm_eq_integral_rpow_norm hq0 hq, ENNReal.ofReal_rpow_of_nonneg
-    (Real.rpow_nonneg hI _) hr.le, Real.rpow_inv_rpow hI hr.ne', integral_ofReal, ← ofReal_norm,
-    RCLike.norm_ofReal, abs_of_nonneg hI]
-
-/-- Every point eventually lies in `spanningSets μ N ∩ {x | ‖f x‖ ≤ N}`, so the indicator
-functions of these sets multiplied into `f` converge to `f` pointwise. -/
-theorem tendsto_indicator_spanningSets_inter_norm_le [SigmaFinite μ] {V : Type*}
-    [NormedAddCommGroup V] (f : α → V) (x : α) :
-    Filter.Tendsto (fun N : ℕ => (spanningSets μ N ∩ {y | ‖f y‖ ≤ N}).indicator f x)
-      Filter.atTop (nhds (f x)) := by
-  have h1 : ∀ᶠ N in Filter.atTop, x ∈ spanningSets μ N := Filter.eventually_atTop.2
-    ⟨spanningSetsIndex μ x, fun N hN => monotone_spanningSets μ hN (mem_spanningSetsIndex μ x)⟩
-  have h2 : ∀ᶠ N : ℕ in Filter.atTop, ‖f x‖ ≤ N :=
-    tendsto_natCast_atTop_atTop.eventually_ge_atTop _
-  refine tendsto_const_nhds.congr' ?_
-  filter_upwards [h1, h2] with N hN1 hN2
-  exact (Set.indicator_of_mem (show x ∈ spanningSets μ N ∩ {y | ‖f y‖ ≤ N} from ⟨hN1, hN2⟩) f).symm
-
-/-- The set where `f` is bounded by `N` and which lies in the `N`-th spanning set is measurable. -/
-theorem measurableSet_spanningSets_inter_norm_le [SigmaFinite μ] {V : Type*}
-    [NormedAddCommGroup V] {f : α → V} (hf : StronglyMeasurable f) (N : ℕ) :
-    MeasurableSet (spanningSets μ N ∩ {x | ‖f x‖ ≤ N}) :=
-  (measurableSet_spanningSets μ N).inter (measurableSet_le hf.norm.measurable measurable_const)
 
 /-- **Norming by simple functions, `q < ∞`.** Let `q < ∞` and `q'` be Hölder conjugate. If
 `h ∈ L^q` satisfies `‖∫ h g‖ ≤ C ‖g‖_{q'}` for every simple function `g ∈ L^{q'}`, then
