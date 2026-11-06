@@ -5,6 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso
+public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Minimal.Basic
 public import TauCeti.Algebra.Homology.AInfinity.Module.Right.Transfer
 public import TauCeti.Algebra.Homology.Contraction.Linear.Homology
 
@@ -27,7 +29,13 @@ induce the identity on cohomology.
 This is the module version of Kadeishvili's theorem: over a field, every right `A∞` module is
 quasi-isomorphic to a minimal one on its cohomology.  The algebra is not replaced: the minimal
 model is a module over `A` itself, with all of its higher operations transferred from those of
-`M`.
+`M`.  The minimal model is unique up to isomorphism: composing with the projection onto, or the
+inclusion of, the minimal model turns a quasi-isomorphism into `M` from a minimal module, or out of
+`M` to a minimal module, into an isomorphism of right `A∞` modules.  The isomorphism depends on
+the chosen quasi-isomorphism and is not canonical.  It comes from the fact that a
+quasi-isomorphism between minimal modules is an isomorphism
+(`TauCeti.AInfinityRightModuleHom.IsQuasiIso.isIso`, in
+`TauCeti.Algebra.Homology.AInfinity.Module.Right.Hom.Iso`).
 
 ## Main definitions
 
@@ -40,8 +48,8 @@ model is a module over `A` itself, with all of its higher operations transferred
 
 ## Main results
 
-* `TauCeti.AInfinityRightModule.differential_minimalModel`: the minimal model has zero unary
-  operation.
+* `TauCeti.AInfinityRightModule.isMinimal_minimalModel`: the minimal model is minimal, that is,
+  it has zero unary operation.
 * `TauCeti.AInfinityRightModule.isQuasiIso_minimalModelInclusion` and
   `TauCeti.AInfinityRightModule.isQuasiIso_minimalModelProjection`: both morphisms are
   quasi-isomorphisms.
@@ -53,6 +61,10 @@ model is a module over `A` itself, with all of its higher operations transferred
 * `TauCeti.AInfinityRightModule.cohomologyEquivHomology_cohomologyMap_minimalModelInclusion` and
   `TauCeti.AInfinityRightModule.cohomologyMap_minimalModelProjection_cohomologyClass`: both
   morphisms induce the identity on cohomology.
+* `TauCeti.AInfinityRightModule.isIso_minimalModelProjection_comp` and
+  `TauCeti.AInfinityRightModule.isIso_comp_minimalModelInclusion`: **uniqueness of the minimal
+  model**; a quasi-isomorphism from or to a minimal module, composed with the projection onto or
+  the inclusion of the minimal model, is an isomorphism of right `A∞` modules.
 
 ## References
 
@@ -62,9 +74,13 @@ model is a module over `A` itself, with all of its higher operations transferred
 
 public section
 
-namespace TauCeti.AInfinityRightModule
+namespace TauCeti
 
-universe uK uA uM
+universe uK uA uM uN
+
+/-! ### The minimal model over a field -/
+
+namespace AInfinityRightModule
 
 variable {K : Type uK} {A : Type uA} {M : Type uM} [Field K] [AddCommGroup A] [Module K A]
   [AddCommGroup M] [Module K M] {AA : AInfinityAlgebra K A} (MM : AInfinityRightModule AA M)
@@ -92,11 +108,9 @@ theorem minimalModel_grading :
 theorem differential_minimalModel : MM.minimalModel.differential = 0 :=
   differential_transfer ..
 
-/-- Every element of the minimal model is a cycle. -/
-theorem mem_cycles_minimalModel
-    (y : MM.differential.homology MM.differential_comp_self_eq_zero) :
-    y ∈ MM.minimalModel.cycles := by
-  rw [mem_cycles, differential_minimalModel, LinearMap.zero_apply]
+/-- The minimal model is a minimal module. -/
+theorem isMinimal_minimalModel : MM.minimalModel.IsMinimal :=
+  (isMinimal_def _).2 MM.differential_minimalModel
 
 /-- The quasi-isomorphism from the minimal model to the module, extending the choice of cycle
 representatives of homology classes. -/
@@ -136,7 +150,7 @@ minimal model goes to `y`. -/
 theorem cohomologyEquivHomology_cohomologyMap_minimalModelInclusion
     (y : MM.differential.homology MM.differential_comp_self_eq_zero) :
     MM.cohomologyEquivHomology (MM.minimalModelInclusion.cohomologyMap
-      (MM.minimalModel.cohomologyClass (MM.mem_cycles_minimalModel y))) = y := by
+      (MM.minimalModel.cohomologyClass (MM.isMinimal_minimalModel.mem_cycles y))) = y := by
   rw [AInfinityRightModuleHom.cohomologyMap_cohomologyClass,
     cohomologyEquivHomology_cohomologyClass]
   exact MM.homologyπ_linearPart_minimalModelInclusion y
@@ -182,7 +196,8 @@ model. -/
 theorem cohomologyMap_minimalModelProjection_cohomologyClass {x : M} (hx : x ∈ MM.cycles) :
     MM.minimalModelProjection.cohomologyMap (MM.cohomologyClass hx) =
       MM.minimalModel.cohomologyClass
-        (MM.mem_cycles_minimalModel (MM.cohomologyEquivHomology (MM.cohomologyClass hx))) := by
+        (MM.isMinimal_minimalModel.mem_cycles
+          (MM.cohomologyEquivHomology (MM.cohomologyClass hx))) := by
   rw [AInfinityRightModuleHom.cohomologyMap_cohomologyClass]
   congr 1
   rw [cohomologyEquivHomology_cohomologyClass, linearPart_minimalModelProjection_of_mem_ker]
@@ -191,4 +206,32 @@ theorem cohomologyMap_minimalModelProjection_cohomologyClass {x : M} (hx : x ∈
 theorem isQuasiIso_minimalModelProjection : MM.minimalModelProjection.IsQuasiIso :=
   isQuasiIso_transferProjection ..
 
-end TauCeti.AInfinityRightModule
+/-! ### Uniqueness of the minimal model -/
+
+section Uniqueness
+
+variable {N : Type uN} [AddCommGroup N] [Module K N] {NN : AInfinityRightModule AA N}
+
+/-- **Uniqueness of the minimal model**, for a quasi-isomorphism into `M`: if `f` is a
+quasi-isomorphism from a minimal module to `M`, then `f` followed by the projection onto the
+minimal model is an isomorphism of right `A∞` modules. -/
+theorem isIso_minimalModelProjection_comp (hN : NN.IsMinimal)
+    {f : AInfinityRightModuleHom NN MM} (hf : f.IsQuasiIso) :
+    (MM.minimalModelProjection.comp f).IsIso :=
+  (MM.isQuasiIso_minimalModelProjection.comp hf).isIso ((isMinimal_def _).1 hN)
+    MM.differential_minimalModel
+
+/-- **Uniqueness of the minimal model**, for a quasi-isomorphism out of `M`: if `g` is a
+quasi-isomorphism from `M` to a minimal module, then the inclusion of the minimal model followed
+by `g` is an isomorphism of right `A∞` modules. -/
+theorem isIso_comp_minimalModelInclusion (hN : NN.IsMinimal)
+    {g : AInfinityRightModuleHom MM NN} (hg : g.IsQuasiIso) :
+    (g.comp MM.minimalModelInclusion).IsIso :=
+  (hg.comp MM.isQuasiIso_minimalModelInclusion).isIso MM.differential_minimalModel
+    ((isMinimal_def _).1 hN)
+
+end Uniqueness
+
+end AInfinityRightModule
+
+end TauCeti
