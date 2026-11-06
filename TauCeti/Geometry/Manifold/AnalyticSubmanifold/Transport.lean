@@ -135,30 +135,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {N : Type*} [TopologicalSpace N] [ChartedSpace H' N] [IsManifold J ω N]
   {n m d : ℕ}
 
-omit [IsManifold I ω M] [IsManifold J ω N] in
-/-- The coordinate expression of an open partial homeomorphism `Φ`, which is `C^ω` on its source,
-in two `C^ω` charts followed by continuous linear coordinate equivalences is analytic on its
-source. -/
-private theorem analyticOnNhd_extendTrans_symm_trans_map (Φ : OpenPartialHomeomorph M N)
-    (hΦ : ContMDiffOn I J ω Φ Φ.source) {e : E ≃L[𝕜] Fin n → 𝕜} {e' : E' ≃L[𝕜] Fin m → 𝕜}
-    {c : OpenPartialHomeomorph M H} {c' : OpenPartialHomeomorph N H'}
-    (hc : c ∈ IsManifold.maximalAtlas I ω M) (hc' : c' ∈ IsManifold.maximalAtlas J ω N) :
-    AnalyticOnNhd 𝕜 ((c.extendTrans I e.toHomeomorph).symm.trans
-      (Φ.trans (c'.extendTrans J e'.toHomeomorph)))
-      ((c.extendTrans I e.toHomeomorph).symm.trans
-        (Φ.trans (c'.extendTrans J e'.toHomeomorph))).source := by
-  set C_I := c.extendTrans I e.toHomeomorph
-  set Ψ := C_I.symm.trans (Φ.trans (c'.extendTrans J e'.toHomeomorph))
-  refine Ψ.open_source.analyticOn_iff_analyticOnNhd.1
-    ((contDiffOn_omega_iff_analyticOn Ψ.open_source.uniqueDiffOn).1 ?_)
-  rw [← contMDiffOn_iff_contDiffOn]
-  have hstep0 : ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) I ω C_I.symm Ψ.source :=
-    (c.contMDiffOn_extendTrans_symm hc e.symm.contDiff).mono fun _ hv ↦ hv.1
-  have hstep1 : ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) J ω (Φ ∘ C_I.symm) Ψ.source :=
-    hΦ.comp hstep0 fun _ hv ↦ hv.2.1
-  exact ((c'.contMDiffOn_extendTrans hc' e'.contDiff).comp hstep1 fun _ hv ↦ hv.2.2).congr
-    fun _ _ ↦ rfl
-
 /-- An open partial homeomorphism `Φ : OpenPartialHomeomorph M N` that is `C^ω` on its source with
 `C^ω` inverse on its target maps the part of a `d`-dimensional analytic submanifold `s` in
 `Φ.source` to a `d`-dimensional analytic submanifold of `N`, provided `s ∩ Φ.source` is
@@ -175,15 +151,14 @@ theorem isMAnalyticSubmanifold_image (Φ : OpenPartialHomeomorph M N)
   let C_J := (chartAt H' (Φ x)).extendTrans J e'.toHomeomorph
   let Ψ := C_I.symm.trans (Φ.trans C_J)
   have hΨ : AnalyticOnNhd 𝕜 Ψ Ψ.source :=
-    analyticOnNhd_extendTrans_symm_trans_map Φ hΦ (chart_mem_maximalAtlas x)
+    Φ.analyticOnNhd_extendTrans_symm_trans_map hΦ (chart_mem_maximalAtlas x)
       (chart_mem_maximalAtlas (Φ x))
   have hΨ_symm : AnalyticOnNhd 𝕜 Ψ.symm Ψ.target := by
     have hΨs : Ψ.symm = C_J.symm.trans (Φ.symm.trans C_I) := by
       simp only [Ψ, OpenPartialHomeomorph.trans_symm_eq_symm_trans_symm,
         OpenPartialHomeomorph.symm_symm, OpenPartialHomeomorph.trans_assoc]
-    change AnalyticOnNhd 𝕜 Ψ.symm Ψ.symm.source
-    rw [hΨs]
-    exact analyticOnNhd_extendTrans_symm_trans_map Φ.symm hΦs (chart_mem_maximalAtlas (Φ x))
+    rw [← Ψ.symm_source, hΨs]
+    exact Φ.symm.analyticOnNhd_extendTrans_symm_trans_map hΦs (chart_mem_maximalAtlas (Φ x))
       (chart_mem_maximalAtlas x)
   have hxCI : x ∈ C_I.source := by simp [C_I]
   have hxΨ : C_I x ∈ Ψ.source :=
@@ -276,23 +251,6 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H} [I.Boundaryless]
   {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ω M]
   {n d : ℕ} {s : Set M}
-
-/-- An analytic chart is `C^ω` on its source as a map between model vector spaces. -/
-theorem IsAnalyticChart.contMDiffOn {S : Set (Fin n → 𝕜)}
-    {φ : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)} (h : IsAnalyticChart d S φ) :
-    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) ω φ φ.source := by
-  rw [contMDiffOn_iff_contDiffOn]
-  exact (contDiffOn_omega_iff_analyticOn φ.open_source.uniqueDiffOn).2
-    (φ.open_source.analyticOn_iff_analyticOnNhd.2 h.analyticOnNhd)
-
-/-- The inverse of an analytic chart is `C^ω` on its target as a map between model vector
-spaces. -/
-theorem IsAnalyticChart.contMDiffOn_symm {S : Set (Fin n → 𝕜)}
-    {φ : OpenPartialHomeomorph (Fin n → 𝕜) (Fin n → 𝕜)} (h : IsAnalyticChart d S φ) :
-    ContMDiffOn 𝓘(𝕜, Fin n → 𝕜) 𝓘(𝕜, Fin n → 𝕜) ω φ.symm φ.target := by
-  rw [contMDiffOn_iff_contDiffOn]
-  exact (contDiffOn_omega_iff_analyticOn φ.open_target.uniqueDiffOn).2
-    (φ.open_target.analyticOn_iff_analyticOnNhd.2 h.analyticOnNhd_symm)
 
 /-- Private linear-slice chart package induced by `IsMAnalyticSubmanifold I e d s`. -/
 private theorem IsMAnalyticSubmanifold.exists_linearSliceCharts {e : E ≃L[𝕜] Fin n → 𝕜}
