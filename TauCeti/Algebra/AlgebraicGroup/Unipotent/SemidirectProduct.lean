@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.CommHopfAlgCat.SemidirectProduct
 public import TauCeti.Algebra.AlgebraicGroup.Unipotent.Product
+public import TauCeti.GroupTheory.SemidirectProduct
 public import TauCeti.RepresentationTheory.Unipotent.NormalJoin
 
 /-!
@@ -56,6 +57,16 @@ namespace geometricallyUnipotentPointsCommHopfAlgProperty
 
 variable (k : Type u) [Field k]
 
+/-- A unipotent point acts on every finitely generated comodule through an endomorphism `ρ x`
+with `ρ x - 1` nilpotent. -/
+private theorem isNilpotent_pointsRepresentation_sub_one {k : Type u} [Field k]
+    {H : Type u} [Semiring H] [HopfAlgebra k H] {x : WithConv (H →ₐ[k] AlgebraicClosure k)}
+    (hx : HopfAlgebra.IsUnipotentPoint x) (M : FGComoduleCat.{u, u, u} k H) :
+    IsNilpotent
+      (Comodule.pointsRepresentation (R := k) (H := H) (A := AlgebraicClosure k) M x - 1) := by
+  rw [Comodule.pointsRepresentation_apply]
+  exact (HopfAlgebra.isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one x).mp hx M
+
 /-- An internal semidirect product of affine groups with geometrically unipotent points again has
 geometrically unipotent points. -/
 theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
@@ -89,48 +100,27 @@ theorem semidirectProduct (H K : _root_.CommHopfAlgCat.{u} k)
   have hU (x : U) : IsNilpotent (rho x - 1) := by
     let n : X ⟶ CommHopfAlgCat.grpObj H := (ePoint x).left
     let p := CommHopfAlgCat.grpObjPointsMulEquiv H X n
-    have hxright : (ePoint x).right = 1 := by
-      exact x.2
+    have hxright : (ePoint x).right = 1 := x.2
     have hpoint : x = BialgHom.mapDomain A.coordinateInl.hom p := by
       apply ePoint.injective
-      rw [A.pointMulEquiv_mapDomain_coordinateInl]
-      rw [MulEquiv.symm_apply_apply]
+      rw [A.pointMulEquiv_mapDomain_coordinateInl, MulEquiv.symm_apply_apply]
       exact SemidirectProduct.ext rfl hxright
-    have hu := (hH p).mapDomain A.coordinateInl.hom
-    rw [← hpoint] at hu
-    have huM := hu
-    rw [HopfAlgebra.isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one] at huM
-    simpa only [rho, Comodule.pointsRepresentation_apply] using huM M
+    exact isNilpotent_pointsRepresentation_sub_one
+      (hpoint ▸ (hH p).mapDomain A.coordinateInl.hom) M
   have hW (x : W) : IsNilpotent (rho x - 1) := by
     obtain ⟨r, hr⟩ := x.2
     let p := CommHopfAlgCat.grpObjPointsMulEquiv K X r
     have hpoint : x = BialgHom.mapDomain A.coordinateInr.hom p := by
       apply ePoint.injective
-      rw [A.pointMulEquiv_mapDomain_coordinateInr]
-      rw [MulEquiv.symm_apply_apply]
+      rw [A.pointMulEquiv_mapDomain_coordinateInr, MulEquiv.symm_apply_apply]
       exact hr.symm
-    have hu := (hK p).mapDomain A.coordinateInr.hom
-    rw [← hpoint] at hu
-    have huM := hu
-    rw [HopfAlgebra.isUnipotentPoint_iff_forall_isNilpotent_endOfPoint_sub_one] at huM
-    simpa only [rho, Comodule.pointsRepresentation_apply] using huM M
+    exact isNilpotent_pointsRepresentation_sub_one
+      (hpoint ▸ (hK p).mapDomain A.coordinateInr.hom) M
   have hg : g ∈ U ⊔ W := by
-    let qU := ePoint.symm (SemidirectProduct.inl (ePoint g).left)
-    let qW := ePoint.symm (SemidirectProduct.inr (ePoint g).right)
-    have hqU : qU ∈ U := by
-      simp only [U, Subgroup.mem_comap, MonoidHom.mem_ker]
-      simp only [qU, MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply,
-        SemidirectProduct.rightHom_inl]
-    have hqW : qW ∈ W := by
-      simp only [W, Subgroup.mem_comap, MonoidHom.mem_range]
-      exact ⟨(ePoint g).right, by
-        simp only [qW, MulEquiv.coe_toMonoidHom, MulEquiv.apply_symm_apply]⟩
-    have hfactor : g = qU * qW := by
-      apply ePoint.injective
-      simp only [map_mul, qU, qW, MulEquiv.apply_symm_apply,
-        SemidirectProduct.inl_left_mul_inr_right]
-    rw [hfactor]
-    exact Subgroup.mul_mem_sup hqU hqW
+    simp only [U, W]
+    rw [Subgroup.comap_sup_eq ePoint.toMonoidHom _ _ ePoint.surjective,
+      SemidirectProduct.ker_rightHom_sup_range_inr, Subgroup.comap_top]
+    exact Subgroup.mem_top g
   have hgnilpotent := rho.isNilpotent_sub_one_of_mem_sup_of_le_normalizer_isUnipotent
     U W Subgroup.le_normalizer_of_normal hU hW hg
   simpa only [rho, Comodule.pointsRepresentation_apply] using hgnilpotent

@@ -21,6 +21,8 @@ and its image is the join `H ⊔ K`. The corresponding elementwise normal form o
   images of its components.
 * `SemidirectProduct.range_monoidHomSubgroup`: the range of the semidirect-product
   multiplication homomorphism is `H ⊔ K`.
+* `SemidirectProduct.ker_rightHom_sup_range_inr`: the kernel of the projection to the acting group
+  and the acting group generate the semidirect product.
 * `SemidirectProduct.mem_ker_monoidHomSubgroup_iff`: its kernel consists of antidiagonal pairs.
 * `SemidirectProduct.ker_monoidHomSubgroup_le_ker_lift_iff`: an external lift kills this kernel
   exactly when the two maps agree on the intersection.
@@ -54,6 +56,14 @@ theorem range_monoidHomSubgroup (hLE : K ≤ Subgroup.normalizer (H : Set G)) :
   rintro _ ⟨x, rfl⟩
   rw [monoidHomSubgroup_apply]
   exact Subgroup.mul_mem_sup x.left.2 x.right.2
+
+/-- The kernel of the projection of a semidirect product to the acting group, together with the
+image of the acting group, generates the semidirect product. -/
+theorem ker_rightHom_sup_range_inr {N Q : Type*} [Group N] [Group Q] {φ : Q →* MulAut N} :
+    (rightHom : N ⋊[φ] Q →* Q).ker ⊔ (inr : Q →* N ⋊[φ] Q).range = ⊤ := by
+  refine top_unique fun x _ ↦ ?_
+  rw [← inl_left_mul_inr_right x]
+  exact Subgroup.mul_mem_sup (by rw [← range_inl_eq_ker_rightHom]; exact ⟨_, rfl⟩) ⟨_, rfl⟩
 
 variable {D : Type*} [Group D]
 variable (hLE : K ≤ Subgroup.normalizer (H : Set G))
