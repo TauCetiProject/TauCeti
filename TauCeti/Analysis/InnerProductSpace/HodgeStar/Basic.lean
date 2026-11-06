@@ -104,6 +104,13 @@ theorem exteriorPower_innerₗ (k : ℕ) :
 
 end TauCeti
 
+/-- The basis of `⋀ⁿ V` induced by an orthonormal basis `b` of `V` is orthonormal. -/
+theorem OrthonormalBasis.inner_toBasis_exteriorPower {I : Type*} [Fintype I] [LinearOrder I]
+    (b : OrthonormalBasis I ℝ V) (n : ℕ) (u v : powersetCard I n) :
+    ⟪b.toBasis.exteriorPower n u, b.toBasis.exteriorPower n v⟫ = if u = v then 1 else 0 := by
+  rw [← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis,
+    OrthonormalBasis.inner_eq_ite]
+
 namespace Orientation
 
 variable {n : ℕ} [_i : Fact (finrank ℝ V = n)] (o : Orientation ℝ V (Fin n))
@@ -190,10 +197,9 @@ theorem hodgeStar_orthonormalBasis (b : OrthonormalBasis (Fin n) ℝ V) {k l : �
   -- Pair both sides with the orthonormal basis of `⋀ˡ V`.
   refine InnerProductSpace.ext_inner_right_basis (b.toBasis.exteriorPower l) fun t ↦ ?_
   rw [inner_hodgeStar_apply, wedgePairing_exteriorPower_apply, volumeEquiv,
-    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector,
-    ← OrthonormalBasis.toBasis_exteriorPower, OrthonormalBasis.coe_toBasis]
+    LinearEquiv.ofBijective_apply, volumeLinearMap_topVector]
   simp only [Units.smul_def, ← Int.cast_smul_eq_zsmul ℝ, real_inner_smul_left,
-    OrthonormalBasis.inner_eq_ite, smul_eq_mul]
+    OrthonormalBasis.inner_toBasis_exteriorPower, smul_eq_mul]
   -- `s` and `t` are disjoint exactly when `t` is the complement of `s`.
   have hcard : l + k = Fintype.card (Fin n) := by rw [Fintype.card_fin, ← _i.out]; omega
   rw [if_congr (disjoint_comm.trans (powersetCard.disjoint_iff_eq_compl hcard) |>.trans eq_comm)
