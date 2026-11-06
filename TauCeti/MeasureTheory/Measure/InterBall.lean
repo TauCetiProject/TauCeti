@@ -18,9 +18,10 @@ import Mathlib.Topology.MetricSpace.ProperSpace
 
 Let `μ` be a measure finite on compact sets on a proper metric space, and write
 `m(ρ) = μ(s ∩ ball x₀ ρ)` for the measure of a set `s` in the balls about `x₀`. The function `m`
-is monotone in the radius (`TauCeti.monotone_measureReal_inter_ball`), so it is differentiable at
-almost every radius. Where `m` has a right derivative at `r`, the measures
-`μ(s ∩ (ball x₀ (r + h) \ ball x₀ r)) / h` of `s` in thin shells tend to it as `h → 0⁺`
+is monotone in the radius (`TauCeti.monotone_measureReal_inter_ball`), and two concentric balls of
+the same measure agree up to a null set (`TauCeti.ball_ae_eq_ball_of_measure_eq`). Monotonicity
+makes `m` differentiable at almost every radius. Where `m` has a right derivative at `r`, the
+measures `μ(s ∩ (ball x₀ (r + h) \ ball x₀ r)) / h` of `s` in thin shells tend to it as `h → 0⁺`
 (`TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`). These are the
 difference quotients produced by cutting a set by balls with radial cutoffs.
 
@@ -31,6 +32,7 @@ for radii arbitrarily close to `ρ` from the right holds at `ρ` when `f` is rig
 ## Main results
 
 * `TauCeti.monotone_measureReal_inter_ball`: `ρ ↦ μ(s ∩ ball x₀ ρ)` is monotone.
+* `TauCeti.ball_ae_eq_ball_of_measure_eq`: concentric balls of equal measure agree a.e.
 * `TauCeti.tendsto_measure_inter_ball_sdiff_ball_div_of_hasDerivWithinAt`: the lower difference
   quotient of `m` is its right derivative, where that exists.
 * `MeasureTheory.Measure.measure_closedBall_le_of_frequently_le`: a closed-ball bound for radii
@@ -52,6 +54,17 @@ theorem monotone_measureReal_inter_ball (μ : Measure E) [IsFiniteMeasureOnCompa
     (x₀ : E) : Monotone fun ρ => μ.real (s ∩ ball x₀ ρ) := fun _ _ h =>
   measureReal_mono (inter_subset_inter_right _ (ball_subset_ball h))
     (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne)
+
+/-- For a measure finite on compact sets, two concentric open balls of the same measure agree up
+to a null set, since the smaller one is contained in the larger. -/
+theorem ball_ae_eq_ball_of_measure_eq [OpensMeasurableSpace E] {μ : Measure E}
+    [IsFiniteMeasureOnCompacts μ] {x₀ : E} {r r' : ℝ} (h : μ (ball x₀ r) = μ (ball x₀ r')) :
+    ball x₀ r =ᵐ[μ] ball x₀ r' := by
+  rcases le_total r r' with hrr | hrr
+  · exact ae_eq_of_subset_of_measure_ge (ball_subset_ball hrr) h.ge
+      measurableSet_ball.nullMeasurableSet measure_ball_lt_top.ne
+  · exact (ae_eq_of_subset_of_measure_ge (ball_subset_ball hrr) h.le
+      measurableSet_ball.nullMeasurableSet measure_ball_lt_top.ne).symm
 
 /-- The difference quotients `μ(s ∩ (ball x₀ (r + h) \ ball x₀ r)) / h` of
 `m(ρ) = μ(s ∩ ball x₀ ρ)` tend, as `h → 0⁺`, to the right derivative of `m` at `r`, when it

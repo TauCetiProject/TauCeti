@@ -11,6 +11,8 @@ import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Ball
 import TauCeti.MeasureTheory.Measure.Lebesgue.Steiner.Moment
 import TauCeti.Analysis.BoundedVariation.Compactness
 import TauCeti.Analysis.BoundedVariation.Convex
+import TauCeti.MeasureTheory.Measure.InterBall
+import TauCeti.MeasureTheory.OuterMeasure.SymmDiff
 
 /-!
 # Convergence of successive Steiner symmetrizations to a ball
@@ -111,6 +113,18 @@ theorem iterateSteinerSymmetrization_add (s : Set E) (n m : ℕ) :
   | zero => rfl
   | succ m ih => rw [← add_assoc, iterateSteinerSymmetrization_succ, ih]; rfl
 
+/-- Directions can be spliced: some sequence of directions agrees with `e` before `N`, and from
+there on symmetrizes the `N`-th symmetral along `e'`. -/
+theorem exists_iterateSteinerSymmetrization_add_eq (N : ℕ) (e' : ℕ → E) (he' : ∀ k, ‖e' k‖ = 1) :
+    ∃ (e'' : ℕ → E) (he'' : ∀ k, ‖e'' k‖ = 1), (∀ k < N, e'' k = e k) ∧
+      ∀ s m, iterateSteinerSymmetrization e'' he'' s (N + m) =
+        iterateSteinerSymmetrization e' he' (iterateSteinerSymmetrization e he s N) m := by
+  refine ⟨fun k => if k < N then e k else e' (k - N), fun k => by
+    by_cases hk : k < N <;> simp [hk, he, he'], fun k hk => ite_eq_left hk, fun s m => ?_⟩
+  rw [iterateSteinerSymmetrization_add,
+    iterateSteinerSymmetrization_congr _ _ he s fun k hk => ite_eq_left hk]
+  exact iterateSteinerSymmetrization_congr _ _ he' _ fun k _ => by simp
+
 theorem iterateSteinerSymmetrization_mono (n : ℕ) :
     Monotone fun s => iterateSteinerSymmetrization e he s n := by
   induction n with
@@ -203,12 +217,12 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
     exact ⟨⟨e', he'⟩, m, hm⟩
   choose f m hf using h'
   -- Splicing `e'` after the first `N` terms of `e`.
-  let splice : D → ℕ → D → D := fun e N e' =>
-    ⟨fun k => if k < N then e.1 k else e'.1 (k - N), fun k => by
-      by_cases hk : k < N <;> simp [hk, e.2, e'.2]⟩
-  have hsplice_lt (e e' : D) {N k : ℕ} (hk : k < N) : (splice e N e').1 k = e.1 k := ite_eq_left hk
-  have hsplice_add (e e' : D) (N k : ℕ) : (splice e N e').1 (N + k) = e'.1 k := by
-    simp [splice]
+  have h'' (e : D) (N : ℕ) (e' : D) : ∃ e'' : D, (∀ k < N, e''.1 k = e.1 k) ∧
+      ∀ m, iterateSteinerSymmetrization e''.1 e''.2 s (N + m) =
+        iterateSteinerSymmetrization e'.1 e'.2 (iterateSteinerSymmetrization e.1 e.2 s N) m := by
+    obtain ⟨e'', he'', h₁, h₂⟩ := exists_iterateSteinerSymmetrization_add_eq e.1 e.2 N e'.1 e'.2
+    exact ⟨⟨e'', he''⟩, h₁, h₂ s⟩
+  choose splice hsplice_lt hsplice_add using h''
   -- Stage `j` consists of directions `σ j` and a number `N j` of steps after which the distance
   -- to `B` is less than `1 / j`; stage `j + 1` appends the directions chosen from there.
   obtain ⟨e₀, he₀⟩ := exists_norm_eq E zero_le_one
@@ -235,7 +249,7 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
     | base => rfl
     | succ j' hjj' ih =>
       rw [hσ]
-      exact (hsplice_lt _ _ (hk.trans_le (hN_mono hjj'))).trans ih
+      exact (hsplice_lt _ _ _ k (hk.trans_le (hN_mono hjj'))).trans ih
   -- The diagonal sequence of directions agrees with stage `j` on its first `N j` terms.
   let e : D := ⟨fun k => (σ (k + 1)).1.1 k, fun k => (σ (k + 1)).1.2 k⟩
   have he_eq (j : ℕ) {k : ℕ} (hk : k < (σ j).2) : e.1 k = (σ j).1.1 k := by
@@ -248,9 +262,7 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
     obtain ⟨e', N⟩ := p
     dsimp only [d, step] at hq ⊢
     rw [iterateSteinerSymmetrization_congr q.1 q.2 (splice e' N (f e' N j)).2 s hq, add_assoc,
-      iterateSteinerSymmetrization_add,
-      iterateSteinerSymmetrization_congr _ _ e'.2 s fun k hk => hsplice_lt _ _ hk,
-      iterateSteinerSymmetrization_congr _ _ (f e' N j).2 _ fun k _ => hsplice_add _ _ _ _]
+      hsplice_add]
     exact (antitone_volume_iterateSteinerSymmetrization_symmDiff_ball _ _
       (nullMeasurableSet_iterateSteinerSymmetrization _ _ hs _) r (Nat.le_succ _)).trans_lt
         (hf e' N j)
@@ -267,27 +279,6 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball [Nontri
     _ ≤ ε := hj.le
 
 /-! ### Limit identification -/
-
-/-- On subsets of `ball 0 R`, the second moment `∫_t ‖x‖²` is `R²`-Lipschitz for the volume of
-symmetric differences. -/
-private theorem lintegral_norm_sq_le_add {A : Set E} (A' : Set E) {R : ℝ} (hA : A ⊆ ball 0 R) :
-    ∫⁻ x in A, ENNReal.ofReal (‖x‖ ^ 2) ≤
-      (∫⁻ x in A', ENNReal.ofReal (‖x‖ ^ 2)) + ENNReal.ofReal (R ^ 2) * volume (A ∆ A') := by
-  calc ∫⁻ x in A, ENNReal.ofReal (‖x‖ ^ 2)
-      ≤ ∫⁻ x in A' ∪ A \ A', ENNReal.ofReal (‖x‖ ^ 2) :=
-        lintegral_mono_set fun x hx => by by_cases h : x ∈ A' <;> simp [h, hx]
-    _ ≤ (∫⁻ x in A', ENNReal.ofReal (‖x‖ ^ 2)) + ∫⁻ x in A \ A', ENNReal.ofReal (‖x‖ ^ 2) :=
-        lintegral_union_le _ _ _
-    _ ≤ (∫⁻ x in A', ENNReal.ofReal (‖x‖ ^ 2)) + ENNReal.ofReal (R ^ 2) * volume (A ∆ A') := by
-        gcongr
-        calc ∫⁻ x in A \ A', ENNReal.ofReal (‖x‖ ^ 2) ≤ ∫⁻ _ in A \ A', ENNReal.ofReal (R ^ 2) :=
-              setLIntegral_mono measurable_const fun x hx => ENNReal.ofReal_le_ofReal <|
-                pow_le_pow_left₀ (norm_nonneg x)
-                  (mem_ball_zero_iff.1 (hA hx.1)).le 2
-          _ ≤ ENNReal.ofReal (R ^ 2) * volume (A ∆ A') := by
-              rw [setLIntegral_const, symmDiff_def]
-              gcongr
-              exact subset_union_left
 
 variable [Nontrivial E]
 
@@ -311,18 +302,15 @@ private theorem exists_volume_ball_eq_and_forall_exists_lt {𝒞 : Set (Set E)} 
     exact iterateSteinerSymmetrization_mem hS hs e he n
   have hOS {t : Set E} (ht : t ∈ O) (e : E) (he : ‖e‖ = 1) : steinerSymmetrization e he t ∈ O := by
     obtain ⟨e', he', n, rfl⟩ := ht
-    refine ⟨fun k => if k < n then e' k else e, fun k => by by_cases hk : k < n <;> simp [hk, he',
-      he], n + 1, ?_⟩
-    rw [iterateSteinerSymmetrization_succ,
-      iterateSteinerSymmetrization_congr _ _ he' s fun k hk => ite_eq_left hk]
-    congr 1
-    exact ite_eq_right n.lt_irrefl
+    obtain ⟨e'', he'', -, h⟩ :=
+      exists_iterateSteinerSymmetrization_add_eq e' he' n (fun _ => e) fun _ => he
+    exact ⟨e'', he'', n + 1, h s 1⟩
   obtain ⟨e₀, he₀⟩ := exists_norm_eq E zero_le_one
   have hsO : s ∈ O := ⟨fun _ => e₀, fun _ => he₀, 0, rfl⟩
   -- The second moment is `R²`-Lipschitz along the members of `𝒞`.
   have hMlip {A : Set E} (hA : A ∈ 𝒞) (A' : Set E) :
       M A ≤ M A' + ENNReal.ofReal (R ^ 2) * volume (A ∆ A') :=
-    lintegral_norm_sq_le_add A' (hR A hA)
+    lintegral_norm_sq_le_add_of_subset_closedBall A' ((hR A hA).trans ball_subset_closedBall)
   -- Take a minimizing sequence `t k` of the second moment on `O`.
   obtain ⟨u, -, hu, huO⟩ := exists_seq_tendsto_sInf (S := M '' O) ⟨M s, s, hsO, rfl⟩
     (OrderBot.bddBelow _)
@@ -337,25 +325,18 @@ private theorem exists_volume_ball_eq_and_forall_exists_lt {𝒞 : Set (Set E)} 
   have hlim : Tendsto (fun j => volume (t (φ j) ∆ F)) atTop (𝓝 0) := by
     refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds
       (hconv (closedBall 0 R) (isCompact_closedBall 0 R) (subset_univ _)) (fun _ => zero_le)
-      fun j => measure_mono fun x hx => ?_
-    have htR := hR _ (hO𝒞 (htO (φ j)))
-    have := @htR x
-    have := @ball_subset_closedBall E _ 0 R x
-    simp only [F, mem_symmDiff, mem_inter_iff] at hx ⊢
-    tauto
+      fun j => measure_mono ?_
+    -- Since `t (φ j) ⊆ ball 0 R`, cutting `F₀` by the ball cuts the symmetric difference by it.
+    calc t (φ j) ∆ F = (t (φ j) ∆ F₀) ∩ ball 0 R := by
+          rw [inter_symmDiff_distrib_right, inter_eq_left.2 (hR _ (hO𝒞 (htO (φ j))))]
+      _ ⊆ (t (φ j) ∆ F₀) ∩ closedBall 0 R := inter_subset_inter_right _ ball_subset_closedBall
   -- The limit has the volume of `s`.
   have hvol (k : ℕ) : volume (t k) = volume s := by
     obtain ⟨e, he, n, hn⟩ := htO k
     rw [← hn, volume_iterateSteinerSymmetrization e he (hm s hs)]
-  have hFvol : volume F = volume s := by
-    have h₁ := hlim.const_add (volume s)
-    have h₂ := hlim.const_add (volume F)
-    rw [add_zero] at h₁ h₂
-    refine le_antisymm (ge_of_tendsto' h₁ fun j => ?_) (ge_of_tendsto' h₂ fun j => ?_)
-    · rw [← hvol (φ j), add_comm, symmDiff_comm]
-      exact tsub_le_iff_right.1 le_measure_symmDiff
-    · rw [← hvol (φ j), add_comm]
-      exact tsub_le_iff_right.1 le_measure_symmDiff
+  have hFvol : volume F = volume s :=
+    MeasureTheory.measure_eq_of_tendsto_measure_symmDiff (Eventually.of_forall fun j => hvol (φ j))
+      hlim
   have hFfin : volume F ≠ ∞ := ne_top_of_le_ne_top measure_ball_lt_top.ne (measure_mono hFR)
   -- The limit minimizes the second moment, and so does each of its symmetrals.
   have hc : ENNReal.ofReal (R ^ 2) ≠ ∞ := ENNReal.ofReal_ne_top
@@ -366,7 +347,7 @@ private theorem exists_volume_ball_eq_and_forall_exists_lt {𝒞 : Set (Set E)} 
     rw [add_zero] at h
     refine ge_of_tendsto' h fun j => ?_
     rw [Function.comp_apply, ← htM, symmDiff_comm]
-    exact lintegral_norm_sq_le_add _ hFR
+    exact lintegral_norm_sq_le_add_of_subset_closedBall _ (hFR.trans ball_subset_closedBall)
   have hMS (e : E) (he : ‖e‖ = 1) : sInf (M '' O) ≤ M (steinerSymmetrization e he F) := by
     have h := hclim.const_add (M (steinerSymmetrization e he F))
     rw [add_zero] at h
@@ -380,11 +361,8 @@ private theorem exists_volume_ball_eq_and_forall_exists_lt {𝒞 : Set (Set E)} 
       _ ≤ M (steinerSymmetrization e he F) + ENNReal.ofReal (R ^ 2) * volume (t (φ j) ∆ F) := by
           gcongr _ + _ * ?_
           exact volume_steinerSymmetrization_symmDiff_le e he (hm _ htj) hFm
-  have hMfin : M F ≠ ∞ := by
-    have := lintegral_norm_sq_le_add ∅ hFR
-    rw [Measure.restrict_empty, lintegral_zero_measure, zero_add, ← bot_eq_empty,
-      symmDiff_bot] at this
-    exact ne_top_of_le_ne_top (ENNReal.mul_ne_top hc hFfin) this
+  have hMfin : M F ≠ ∞ := ne_top_of_le_ne_top (ENNReal.mul_ne_top hc hFfin)
+    (lintegral_norm_sq_le_mul_of_subset_closedBall (hFR.trans ball_subset_closedBall))
   -- Hence every symmetrization fixes `F` up to a null set, and `F` is a centered ball.
   have hfix (e : E) (he : ‖e‖ = 1) : steinerSymmetrization e he F =ᵐ[volume] F :=
     ((lintegral_norm_sq_steinerSymmetrization_eq_iff e he hFm hMfin).1
@@ -417,12 +395,7 @@ theorem exists_tendsto_volume_iterateSteinerSymmetrization_symmDiff_ball_of_peri
   have hn := iterateSteinerSymmetrization_mem hS hs e he n
   obtain ⟨r', hr', h⟩ := exists_volume_ball_eq_and_forall_exists_lt hS hm hR hP hn
   rw [volume_iterateSteinerSymmetrization e he (hm s hs), ← hr] at hr'
-  have hball : ball (0 : E) r' =ᵐ[volume] ball 0 r := by
-    rcases le_total r' r with hrr | hrr
-    · exact ae_eq_of_subset_of_measure_ge (ball_subset_ball hrr) hr'.ge
-        measurableSet_ball.nullMeasurableSet measure_ball_lt_top.ne
-    · exact (ae_eq_of_subset_of_measure_ge (ball_subset_ball hrr) hr'.le
-        measurableSet_ball.nullMeasurableSet measure_ball_lt_top.ne).symm
+  have hball : ball (0 : E) r' =ᵐ[volume] ball 0 r := ball_ae_eq_ball_of_measure_eq hr'
   obtain ⟨e', he', m, hm'⟩ := h ε hε
   exact ⟨e', he', m, by rwa [← measure_congr (EventuallyEqSet.rfl.symmDiff hball)]⟩
 
