@@ -423,42 +423,6 @@ private lemma cotConst_nonneg (M : ℕ) : 0 ≤ cotConst M := by
   have : 0 ≤ π * (1 / (M : ℝ)) := by positivity
   linarith
 
-/-- `π cot (π u)` is within `cotConst M e^(-2π r)` of `-π i` when `1 / M ≤ Im u` and `r ≤ Im u`. -/
-private lemma norm_cot_add_le {M : ℕ} (hM : 0 < M) {u : ℂ} {r : ℝ} (hu : 1 / (M : ℝ) ≤ u.im)
-    (hr : r ≤ u.im) :
-    ‖π * cot (π * u) + π * Complex.I‖ ≤ cotConst M * Real.exp (-2 * π * r) := by
-  refine (norm_pi_mul_cot_pi_mul_add_pi_mul_I_le (by positivity) hu).trans
-    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (cotConst_nonneg M))
-  nlinarith [Real.pi_pos]
-
-/-- `π cot (π u)` is within `cotConst M e^(-2π r)` of `π i` when `1 / M ≤ -Im u` and
-`r ≤ -Im u`. -/
-private lemma norm_cot_sub_le {M : ℕ} (hM : 0 < M) {u : ℂ} {r : ℝ} (hu : 1 / (M : ℝ) ≤ -u.im)
-    (hr : r ≤ -u.im) :
-    ‖π * cot (π * u) - π * Complex.I‖ ≤ cotConst M * Real.exp (-2 * π * r) := by
-  refine (norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le (by positivity) hu).trans
-    (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (cotConst_nonneg M))
-  nlinarith [Real.pi_pos]
-
-/-- `π cot (π u)` is bounded by `cotConst M + π` when `1 / M ≤ Im u`. -/
-private lemma norm_pi_mul_cot_pi_mul_le {M : ℕ} (hM : 0 < M) {u : ℂ} (hu : 1 / (M : ℝ) ≤ u.im) :
-    ‖π * cot (π * u)‖ ≤ cotConst M + π := by
-  have h := norm_cot_add_le hM hu (r := 0) ((div_pos one_pos (Nat.cast_pos.2 hM)).le.trans hu)
-  simp only [mul_zero, Real.exp_zero, mul_one] at h
-  calc ‖π * cot (π * u)‖ ≤ ‖π * cot (π * u) + π * Complex.I‖ + ‖(π * Complex.I : ℂ)‖ := by
-        simpa using norm_sub_le (π * cot (π * u) + π * Complex.I) (π * Complex.I)
-    _ ≤ cotConst M + π := by simpa [abs_of_pos Real.pi_pos] using h
-
-/-- The sum of `π cot (π u)` and `π cot (π v)` for `u` in the upper and `v` in the lower
-half-plane, at imaginary distance at least `max (1 / M) r` from the real axis, is at most
-`2 cotConst M e^(-2π r)`: the two cotangents approach `-π i` and `π i`. -/
-private lemma norm_cot_add_cot_le {M : ℕ} (hM : 0 < M) {u v : ℂ} {r : ℝ}
-    (hu : 1 / (M : ℝ) ≤ u.im) (hur : r ≤ u.im) (hv : 1 / (M : ℝ) ≤ -v.im) (hvr : r ≤ -v.im) :
-    ‖π * cot (π * u) + π * cot (π * v)‖ ≤ 2 * cotConst M * Real.exp (-2 * π * r) := by
-  have h := norm_add_le (π * cot (π * u) + π * Complex.I) (π * cot (π * v) - π * Complex.I)
-  rw [add_add_sub_cancel] at h
-  linarith [norm_cot_add_le hM hu hur, norm_cot_sub_le hM hv hvr]
-
 /-- The bounds for the cotangent rows at `(b₀ z + b₁) / M`: a summable majorant independent of
 `z` on `1 ≤ Im z`. -/
 private def rowBound (M b₁ : ℕ) (m : ℤ) : ℝ :=
@@ -476,9 +440,8 @@ private lemma summable_rowBound (M b₁ : ℕ) : Summable (rowBound M b₁) :=
 
 /-- The cotangent row `m = 0` at a division point is bounded: it is `π cot (π x)`, which is
 bounded by `cotConst M + π` if `b₀ ≠ 0` and is the constant `π cot (π b₁ / M)` if `b₀ = 0`. -/
-private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hb : b₀ < M) {z : ℍ} (hz : 1 ≤ z.im) :
+private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hM : 0 < M) {z : ℍ} (hz : 1 ≤ z.im) :
     ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) 0 z‖ ≤ rowBound M b₁ 0 := by
-  have hM : 0 < M := by omega
   have hM' : (0 : ℝ) < M := by exact_mod_cast hM
   simp only [cotRow, Int.cast_zero, zero_mul, sub_zero, mul_zero, cot_zero, add_zero, rowBound,
     ↓reduceIte]
@@ -494,7 +457,8 @@ private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hb : b₀ < M) {z : ℍ} 
       gcongr
       exact_mod_cast hb₀
     nlinarith [mul_nonneg (by positivity : (0 : ℝ) ≤ b₀ / M) (sub_nonneg.2 hz)]
-  exact (norm_pi_mul_cot_pi_mul_le hM hx).trans (le_add_of_nonneg_right (norm_nonneg _))
+  exact (norm_pi_mul_cot_pi_mul_le (div_pos one_pos hM') hx).trans
+    (le_add_of_nonneg_right (norm_nonneg _))
 
 /-- **The cotangent rows `m ≠ 0` at a division point are bounded** on `1 ≤ Im z`: for
 `x = (b₀ z + b₁) / M` with `b₀ < M`, the imaginary parts of `x - m z` and of `m z` have opposite
@@ -527,8 +491,8 @@ private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m :
       rw [him']
       nlinarith
     rw [hrow, habs]
-    exact norm_cot_add_cot_le hM (hM1.trans (by linarith)) (by linarith)
-      (hM1.trans (by linarith)) (by linarith)
+    exact norm_pi_mul_cot_pi_mul_add_pi_mul_cot_pi_mul_le (div_pos one_pos hM')
+      (hM1.trans (by linarith)) (by linarith) (hM1.trans (by linarith)) (by linarith)
   · -- `m > 0`: `x - m z` lies in the lower and `m z` in the upper half-plane
     have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
     have habs : |(m : ℝ)| = m := abs_of_pos (by exact_mod_cast hm)
@@ -545,13 +509,14 @@ private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m :
       rw [him']
       nlinarith
     rw [hrow, add_comm, habs]
-    exact norm_cot_add_cot_le hM (hM1.trans (by linarith)) (by linarith) h₁ h₁'
+    exact norm_pi_mul_cot_pi_mul_add_pi_mul_cot_pi_mul_le (div_pos one_pos hM')
+      (hM1.trans (by linarith)) (by linarith) h₁ h₁'
 
 /-- **The cotangent rows at a division point are bounded** on `1 ≤ Im z`. -/
 private lemma norm_cotRow_le {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : ℤ) {z : ℍ} (hz : 1 ≤ z.im) :
     ‖cotRow ((b₀ * (z : ℂ) + b₁) / M) m z‖ ≤ rowBound M b₁ m := by
   rcases eq_or_ne m 0 with rfl | hm
-  · exact norm_cotRow_zero_le hb hz
+  · exact norm_cotRow_zero_le (by omega) hz
   · exact norm_cotRow_le_of_ne_zero hb hm hz
 
 /-- The summable majorant of the rows of the corrected division values on `1 ≤ Im z`. -/
