@@ -31,6 +31,10 @@ the regular-bimodule twisted differential.
   and its differential, characterized on homogeneous elementary vectors.
 * `RowFiniteTwistingCocycle.isDGLeftModule_rowFiniteTwistedDifferential`: the differential
   graded left module laws, with square-zero derived from the row equation and DG Leibniz rule.
+* `rowFiniteTwistedDifferential_eq_zero_iff`: a row of the right degree is a cycle exactly when
+  it satisfies the Maurer–Cartan equation of a generator.
+* The zero cocycle, whose differential is the coefficient differential alone
+  (`rowFiniteTwistedDifferential_zero`).
 * `TwistingCocycle.toRowFinite` and
   `linearEquivFunOnFinite_rowFiniteTwistedDifferential`: recovery of the finite prototype
   through `Finsupp.linearEquivFunOnFinite`.
@@ -152,6 +156,20 @@ theorem ext {m₁ m₂ : RowFiniteTwistingCocycle 𝒜 d P ind}
   congr
   funext x
   exact Finsupp.ext (h x)
+
+omit [GradedAlgebra 𝒜] in
+/-- The zero twisting cocycle. Its free module carries the coefficient differential alone, so it
+is the direct sum of shifted copies of the algebra, one for each generator. -/
+instance : Zero (RowFiniteTwistingCocycle 𝒜 d P ind) where
+  zero :=
+    { m := 0
+      mem_graded := fun _ _ ↦ zero_mem _
+      twisting := fun _ ↦ by simp }
+
+omit [GradedAlgebra 𝒜] in
+@[simp]
+theorem zero_m : (0 : RowFiniteTwistingCocycle 𝒜 d P ind).m = 0 :=
+  (rfl)
 
 end RowFiniteTwistingCocycle
 
@@ -291,6 +309,38 @@ theorem rowFiniteTwistedDifferential_mem_totalGrading
 
 end DifferentialLaws
 
+/-- A row of the shifted degree of a generator of index `i` is a cycle exactly when it satisfies
+the Maurer–Cartan equation of such a generator. So cycles of this degree are precisely the rows
+with which a new generator of index `i` can be attached. -/
+theorem rowFiniteTwistedDifferential_eq_zero_iff (m : P → P →₀ A) {i : ℤ} {r : P →₀ A}
+    (hr : ∀ y, r y ∈ 𝒜 (ind y - i + 1)) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m r = 0 ↔
+      Finsupp.mapRange.linearMap d r = r.sum fun y a ↦ (i - ind y).negOnePow • (a • m y) := by
+  classical
+  have hd : (∑ y ∈ r.support, Finsupp.single y (d (r y))) =
+      Finsupp.mapRange.linearMap d r := by
+    conv_rhs => rw [← Finsupp.sum_single r, Finsupp.sum]
+    rw [map_sum]
+    simp
+  have hsign : ∀ y, (ind y - i + 1).negOnePow = -(i - ind y).negOnePow := fun y ↦ by
+    rw [Int.negOnePow_succ, ← Int.negOnePow_neg (i - ind y)]
+    congr 2
+    omega
+  have hD : rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m r =
+      Finsupp.mapRange.linearMap d r - r.sum fun y a ↦ (i - ind y).negOnePow • (a • m y) := by
+    conv_lhs => rw [← Finsupp.sum_single r, Finsupp.sum, map_sum]
+    simp_rw [rowFiniteTwistedDifferential_single m _ (hr _), hsign, Units.neg_smul]
+    rw [Finset.sum_add_distrib, hd, Finsupp.sum, Finset.sum_neg_distrib, sub_eq_add_neg]
+  rw [hD, sub_eq_zero]
+
+/-- With zero rows, the differential is the coefficient differential alone. -/
+@[simp]
+theorem rowFiniteTwistedDifferential_zero :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (0 : P → P →₀ A) =
+      Finsupp.mapRange.linearMap d := by
+  ext x a y
+  simp [rowFiniteTwistedDifferential, rowFiniteSignedMap]
+
 namespace RowFiniteTwistingCocycle
 
 variable (m : RowFiniteTwistingCocycle 𝒜 d P ind) (h : IsDGAlgebra 𝒜 d)
@@ -306,24 +356,8 @@ theorem differential_single_one (x : P) :
 omit h in
 /-- The Maurer–Cartan equation says that every differential row is a cycle. -/
 theorem differential_row (x : P) :
-    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m (m.m x) = 0 := by
-  classical
-  have hd : (∑ y ∈ (m.m x).support, Finsupp.single y (d (m.m x y))) =
-      Finsupp.mapRange.linearMap d (m.m x) := by
-    conv_rhs => rw [← Finsupp.sum_single (m.m x), Finsupp.sum]
-    rw [map_sum]
-    simp
-  rw [← Finsupp.sum_single (m.m x), Finsupp.sum, map_sum]
-  simp_rw [rowFiniteTwistedDifferential_single m.m _ (m.mem_graded x _)]
-  rw [Finset.sum_add_distrib, hd, m.twisting x]
-  simp only [Finsupp.sum]
-  rw [← Finset.sum_add_distrib]
-  refine Finset.sum_eq_zero fun y _ ↦ ?_
-  have hsign : (ind y - ind x + 1).negOnePow = -(ind x - ind y).negOnePow := by
-    rw [Int.negOnePow_succ, ← Int.negOnePow_neg (ind x - ind y)]
-    congr 2
-    omega
-  rw [hsign, Units.neg_smul, add_neg_cancel]
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) m.m (m.m x) = 0 :=
+  (rowFiniteTwistedDifferential_eq_zero_iff m.m (m.mem_graded x)).mpr (m.twisting x)
 
 /-- The differential squares to zero, first on generators and then by the DG Leibniz rule. -/
 theorem differential_sq_zero (f : P →₀ A) :
