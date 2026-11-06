@@ -34,7 +34,7 @@ only upwards: once `f (γ a) ≥ c`, it stays in `{f > c}` at every later time, 
 field pointing out of a domain `{f ≤ c}` along its boundary are shown never to re-enter it.
 
 Finally, an integral curve along which the vector field vanishes does not move at all: it is a
-constant curve.
+constant curve. Conversely, a constant integral curve sits at a zero of the vector field.
 
 ## Main declarations
 
@@ -46,7 +46,8 @@ constant curve.
 * `IsMIntegralCurveOn.lt_apply_of_le_apply`, `IsMIntegralCurveOn.apply_lt_of_apply_le`: `γ` crosses
   a level of `f` only upwards when `df(v) > 0` along that level.
 * `IsMIntegralCurve.apply_eq_of_forall_eq_zero`: an integral curve along which the vector field
-  vanishes is constant.
+  vanishes is constant; conversely (`IsMIntegralCurve.eq_zero_of_forall_eq`), a constant integral
+  curve sits at a zero of the vector field.
 -/
 
 public section
@@ -96,6 +97,17 @@ theorem apply_eq_of_forall_eq_zero [IsManifold I 1 M] (hγ : IsMIntegralCurve γ
       rw [(hγ u).mfderiv, hv u, ContinuousLinearMap.smulRight_zero]
       -- The two zeros live in the tangent-space and the model-space spelling of one type.
       rfl) t s
+
+/-- **A constant integral curve sits at a zero of the vector field.** -/
+theorem eq_zero_of_forall_eq {x : M} (hγ : IsMIntegralCurve γ v) (hc : ∀ t, γ t = x) :
+    v x = 0 := by
+  have h := hγ 0
+  have hγc : γ = fun _ ↦ x := funext hc
+  rw [hγc] at h
+  have h0 := (hasMFDerivAt_const (I := 𝓘(ℝ, ℝ)) (I' := I) x (0 : ℝ)).mfderiv.symm.trans h.mfderiv
+  have h1 := congr($h0 (1 : ℝ))
+  rw [ContinuousLinearMap.smulRight_one_eq_toSpanSingleton] at h1
+  simpa using h1.symm.trans (zero_apply _)
 
 end IsMIntegralCurve
 

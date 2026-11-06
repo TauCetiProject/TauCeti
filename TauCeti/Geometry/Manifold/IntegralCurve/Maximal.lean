@@ -73,7 +73,8 @@ arbitrary initial time is recovered by translating the parameter with
   this to a compact manifold: **a `C^1` vector field on a compact manifold is complete**
   (stated as `TauCeti.isCompleteVectorField_of_compactSpace`).
 * `maximalIntegralCurveInterval_eq_univ_iff`: the maximal interval is all of `ℝ` exactly when some
-  global integral curve passes through `x` at time `0`.
+  global integral curve passes through `x` at time `0`, and then
+  `IsMIntegralCurve.maximalIntegralCurve_eq` identifies that curve with the maximal one.
 
 ## References
 
@@ -423,3 +424,12 @@ theorem maximalIntegralCurveInterval_eq_univ_iff
   · have habs := abs_nonneg t
     refine (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).subset_maximalIntegralCurveInterval
       ⟨by linarith, by linarith⟩ hx ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
+
+/-- **A global integral curve is the maximal integral curve through its initial point.** -/
+theorem IsMIntegralCurve.maximalIntegralCurve_eq
+    (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (hγ : IsMIntegralCurve γ v) :
+    maximalIntegralCurve v (γ 0) = γ := by
+  funext t
+  have habs := abs_nonneg t
+  exact (hγ.isMIntegralCurveOn (Ioo (-(|t| + 1)) (|t| + 1))).eqOn_maximalIntegralCurve hv
+    ⟨by linarith, by linarith⟩ rfl ⟨by linarith [neg_abs_le t], by linarith [le_abs_self t]⟩
