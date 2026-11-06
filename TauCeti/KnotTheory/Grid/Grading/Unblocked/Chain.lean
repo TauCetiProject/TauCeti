@@ -648,10 +648,9 @@ theorem coeff_decompose_alexanderChainMinusGrading (R : Type*) [CommRing R]
         simpa only [alexanderChainMinusGrading_piece, monomialBidegree_snd, bidegree_snd] using
           G.bigradedChainMinusPiece_le_alexanderChainMinusPiece R _ _
             (G.single_monomial_mem_bigradedChainMinusPiece R y d r)
-      by_cases ha : G.alexanderℤ y - (d.degree : ℤ) = a
-      · rw [DirectSum.decompose_of_mem_same _ (ha ▸ hm)]
-        by_cases hy : y = x <;> by_cases he : d = e <;> simp_all
-      · rw [DirectSum.decompose_of_mem_ne _ hm ha]
+      by_cases ha : G.alexanderℤ y - (d.degree : ℤ) = a <;>
+        [rw [DirectSum.decompose_of_mem_same _ (ha ▸ hm)];
+          rw [DirectSum.decompose_of_mem_ne _ hm ha]] <;>
         by_cases hy : y = x <;> by_cases he : d = e <;> simp_all
 
 /-- The unblocked grid differential is homogeneous of degree zero for the Alexander grading. -/

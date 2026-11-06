@@ -51,6 +51,12 @@ abbrev alexanderFiltrationGradedPiece (a : ℤ) : Type _ := by
 -- The same specialization keeps nested instance search in the private quotient maps small.
 private noncomputable local instance : AddCommGroup (GridChainMinus R n) := inferInstance
 
+private theorem topPart_mem (a : ℤ) (c : GridChainMinus R n) :
+    (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a :
+      GridChainMinus R n) ∈ G.alexanderChainMinusPiece R a := by
+  simpa only [alexanderChainMinusGrading_piece] using
+    (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property
+
 private theorem sub_topPart_mem {a : ℤ} {c : GridChainMinus R n}
     (hc : c ∈ G.alexanderFiltration R a) :
     c - DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a ∈
@@ -69,8 +75,7 @@ private theorem mk_topPart (a : ℤ) (c : G.alexanderFiltration R a) :
     (Submodule.Quotient.mk
       (⟨DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a,
         G.alexanderChainMinusPiece_le_alexanderFiltration R a
-          (by simpa only [alexanderChainMinusGrading_piece] using
-            (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property)⟩ :
+          (G.topPart_mem R a c)⟩ :
           G.alexanderFiltration R a) : G.alexanderFiltrationGradedPiece R a) =
       Submodule.Quotient.mk c := by
   apply (Submodule.Quotient.eq _).mpr
@@ -111,8 +116,7 @@ private theorem homogeneousToGraded_bijective (a : ℤ) :
     induction q using Submodule.Quotient.induction_on with
     | _ c =>
       refine ⟨⟨DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a,
-        by simpa only [alexanderChainMinusGrading_piece] using
-          (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property⟩, ?_⟩
+        G.topPart_mem R a c⟩, ?_⟩
       rw [G.homogeneousToGraded_apply]
       exact G.mk_topPart R a c
 
@@ -152,8 +156,7 @@ theorem coe_alexanderFiltrationGradedEquiv_mk (a : ℤ) (c : G.alexanderFiltrati
         DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a := by
   have h : G.alexanderFiltrationGradedEquiv R a (Submodule.Quotient.mk c) =
       ⟨DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a,
-        by simpa only [alexanderChainMinusGrading_piece] using
-          (DirectSum.decompose (G.alexanderChainMinusGrading R).piece c a).property⟩ := by
+        G.topPart_mem R a c⟩ := by
     apply (G.alexanderFiltrationGradedEquiv R a).symm.injective
     rw [LinearEquiv.symm_apply_apply, G.alexanderFiltrationGradedEquiv_symm_apply]
     exact (G.mk_topPart R a c).symm
