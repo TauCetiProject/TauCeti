@@ -40,6 +40,10 @@ law in `Quadratic/Ramification.lean`: a prime coprime to `2` divides it exactly 
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_ne_zero`: it is nonzero for nonzero `d`.
 * `TauCeti.Multiquadratic.fundamentalDiscriminant_primeDiscriminantRadicand`: a prime discriminant
   is the fundamental discriminant of its own radicand.
+* `TauCeti.Multiquadratic.not_sixteen_dvd_fundamentalDiscriminant`: for squarefree `d` it is not
+  divisible by `16`.
+* `TauCeti.Multiquadratic.eq_of_isEvenPrimeDiscriminant_of_prod_eq_fundamentalDiscriminant`: a set
+  of prime discriminants with product `fundamentalDiscriminant d` has at most one even member.
 -/
 
 public section
@@ -136,5 +140,28 @@ theorem fundamentalDiscriminant_primeDiscriminantRadicand {D : ℤ} (hD : IsPrim
     rcases hev with rfl | rfl | rfl <;> norm_num [fundamentalDiscriminant_def]
   · rw [primeDiscriminantRadicand_oddPrimeDiscriminant hodd,
       fundamentalDiscriminant_of_mod_four_eq_one (oddPrimeDiscriminant_mod_four_eq_one hodd)]
+
+/-- The fundamental discriminant of a squarefree integer is not divisible by `16`: it is either
+the squarefree `d` itself, or `4 * d` with `d` squarefree, hence not divisible by `4`. -/
+theorem not_sixteen_dvd_fundamentalDiscriminant {d : ℤ} (hsf : Squarefree d) :
+    ¬ (16 : ℤ) ∣ fundamentalDiscriminant d := by
+  rw [fundamentalDiscriminant_def]
+  split_ifs with h
+  · omega
+  · intro h16
+    obtain ⟨k, hk⟩ : (4 : ℤ) ∣ d := by omega
+    rcases Int.isUnit_iff.1 (hsf 2 ⟨k, by rw [hk]; ring⟩) with h | h <;> omega
+
+/-- **A set of prime discriminants whose product is the fundamental discriminant of a squarefree
+integer contains at most one even prime discriminant.** Two distinct even prime discriminants
+(among `-4`, `8`, `-8`) have a product divisible by `16`. -/
+theorem eq_of_isEvenPrimeDiscriminant_of_prod_eq_fundamentalDiscriminant {s : Finset ℤ} {d : ℤ}
+    (hsf : Squarefree d) (hprod : ∏ P ∈ s, P = fundamentalDiscriminant d) {P Q : ℤ} (hP : P ∈ s)
+    (hQ : Q ∈ s) (hPe : IsEvenPrimeDiscriminant P) (hQe : IsEvenPrimeDiscriminant Q) : P = Q := by
+  by_contra hne
+  refine not_sixteen_dvd_fundamentalDiscriminant hsf (dvd_trans ?_ (hprod ▸ ?_ : P * Q ∣ _))
+  · rcases hPe with rfl | rfl | rfl <;> rcases hQe with rfl | rfl | rfl <;> simp at hne <;> norm_num
+  · simpa [Finset.prod_pair hne] using
+      Finset.prod_dvd_prod_of_subset {P, Q} s id (by simp [Finset.insert_subset_iff, hP, hQ])
 
 end TauCeti.Multiquadratic
