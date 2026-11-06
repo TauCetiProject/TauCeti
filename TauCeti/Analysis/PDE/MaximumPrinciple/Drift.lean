@@ -125,6 +125,7 @@ private theorem ofReal_mul_enorm_sq_le_ofReal_mul_lintegral
     (hΓ : MeasurableSet Γ) (hgrad : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x ≠ 0 → x ∈ Γ) :
     ENNReal.ofReal lam * ‖W1p.gradient v‖ₑ ^ 2 ≤ ENNReal.ofReal beta *
       ∫⁻ x in Γ, ‖W1p.gradient v x‖ₑ * ‖W1p.value v x‖ₑ ∂mu.restrict Omega := by
+  -- Hölder's inequality on `Γ`, then the Sobolev inequality.
   set μ := mu.restrict Omega
   set f := W1p.value v with hf_def
   set g := W1p.gradient v with hg_def
@@ -156,7 +157,8 @@ private theorem ofReal_mul_enorm_sq_le_ofReal_mul_lintegral
     ENNReal.ofReal_mul' (integral_nonneg fun x ↦ by positivity), hlint] at this
 
 omit [DecidableEq ι] in
-/-- Hölder's inequality on `Γ`, then the Sobolev inequality. -/
+/-- If `‖v‖_q ≤ S ‖∇v‖₂` with `q ≥ 2`, then
+`∫_Γ |∇v| |v| ≤ ‖∇v‖₂ · S ‖∇v‖₂ · |Γ|^{1/2 - 1/q}`. -/
 private theorem lintegral_enorm_gradient_mul_enorm_value_le
     {q : ℝ≥0∞} (hq : 2 ≤ q) {S : ℝ≥0} {v : W1p mu Omega 2}
     (hsob : eLpNorm (W1p.value v) q (mu.restrict Omega) ≤ S * ‖W1p.gradient v‖ₑ)
