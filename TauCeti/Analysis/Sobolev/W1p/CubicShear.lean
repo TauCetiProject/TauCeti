@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Sobolev.W1p.Basic
 public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Analysis.Calculus.BumpFunction.InnerProduct
-import TauCeti.Analysis.Calculus.Gradient
 
 /-!
 # The cubic shear: an `Lᵖ` isometry that is unbounded on `W^{1,p}`
@@ -205,6 +204,8 @@ private theorem ofReal_mul_eLpNorm_fderiv_le {f : EuclideanSpace ℝ (Fin 2) →
         eLpNorm_add_le (f := fun w => ‖∇ (fun w => f (T w)) w‖)
           (g := fun w => ‖∇ f (T w)‖) Fact.out
     _ = _ := by
+        -- `eLpNorm_comp_measurePreserving` rewrites `eLpNorm (g ∘ T)` syntactically, so the
+        -- integrand `fun w => ‖∇ f (T w)‖` is first exhibited as `(fun z => ‖∇ f z‖) ∘ T`.
         rw [eLpNorm_norm _ (measurable_gradient _).aestronglyMeasurable,
           show (fun w => ‖∇ f (T w)‖) = (fun z => ‖∇ f z‖) ∘ T from rfl,
           eLpNorm_comp_measurePreserving (measurable_gradient f).norm.aestronglyMeasurable hT,
@@ -224,23 +225,6 @@ private theorem exists_testFunction : ∃ f : EuclideanSpace ℝ (Fin 2) → ℝ
       simp [β.one_of_mem_closedBall hw]
   rw [hev.fderiv_eq, y.fderiv]
   simp [y]
-
-/-- A smooth compactly supported function on the plane is an element of `W^{1,p}(ℝ²)` whose value
-and weak gradient have the `Lᵖ` norms of the function and of its classical gradient. -/
-private theorem exists_w1p_norm_eq {f : EuclideanSpace ℝ (Fin 2) → ℝ} (hf : ContDiff ℝ 1 f)
-    (hfs : HasCompactSupport f) :
-    ∃ u : W1p (volume : Measure (EuclideanSpace ℝ (Fin 2))) ⊤ p, W1p.value u =ᵐ[volume] f ∧
-      ‖W1p.value u‖ = (eLpNorm f p volume).toReal ∧
-      ‖W1p.gradient u‖ = (eLpNorm (∇ f) p volume).toReal := by
-  have hμ : (volume : Measure (EuclideanSpace ℝ (Fin 2))).restrict
-      ((⊤ : Opens (EuclideanSpace ℝ (Fin 2))) : Set (EuclideanSpace ℝ (Fin 2))) = volume := by
-    simp
-  obtain ⟨u, hv, hg⟩ := W1p.exists_value_gradient_ae_eq_of_contDiffOn (p := p) hf.contDiffOn
-    (by rw [hμ]; exact hf.continuous.memLp_of_hasCompactSupport hfs)
-    (by rw [hμ]; exact hfs.memLp_gradient hf)
-  refine ⟨u, by simpa only [hμ] using hv, ?_, ?_⟩
-  · rw [Lp.norm_def, eLpNorm_congr_ae hv, hμ]
-  · rw [Lp.norm_def, eLpNorm_congr_ae hg, hμ]
 
 /-- **The lower bound from a putative pullback estimate.** If `‖u ∘ φ‖ ≤ C ‖u‖` on `W^{1,p}(ℝ²)`,
 then testing it on the translate by `k e₀` of a smooth function `f` supported in the ball of
@@ -265,10 +249,15 @@ private theorem mul_toReal_eLpNorm_fderiv_le_of_bound {C : ℝ}
   let gk : EuclideanSpace ℝ (Fin 2) → ℝ := fun w => f (cubicShear w - c)
   have hgk : ContDiff ℝ 1 gk := (hfk.comp contDiff_cubicShear).of_le (by simp)
   have hgks : HasCompactSupport gk := hfks.comp_homeomorph cubicShear
-  obtain ⟨u, hu, hu0, hu1⟩ := exists_w1p_norm_eq (p := p) (hfk.of_le (by simp)) hfks
-  obtain ⟨v, hv, -, hv1⟩ := exists_w1p_norm_eq (p := p) hgk hgks
+  obtain ⟨u, hu, -, hu0, hu1⟩ :=
+    W1p.exists_value_gradient_ae_eq_of_hasCompactSupport (mu := volume) (p := p)
+      (hfk.of_le (by simp)) hfks
+  obtain ⟨v, hv, -, -, hv1⟩ :=
+    W1p.exists_value_gradient_ae_eq_of_hasCompactSupport (mu := volume) (p := p) hgk hgks
   -- Translation does not change the norms of `u`.
   have hu0' : ‖W1p.value u‖ = (eLpNorm f p volume).toReal := by
+    -- `eLpNorm_comp_measurePreserving` rewrites `eLpNorm (g ∘ τ)` syntactically, so the
+    -- translate `fk` is first unfolded to the composition `f ∘ fun w => w - c`.
     rw [hu0, show fk = f ∘ fun w => w - c from rfl,
       eLpNorm_comp_measurePreserving hf.continuous.aestronglyMeasurable hτ]
   have hu1' : ‖W1p.gradient u‖ = (eLpNorm (∇ f) p volume).toReal := by
