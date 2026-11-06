@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.EndChart
+public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
@@ -366,17 +366,10 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
           abs_mul, abs_endSign, abs_of_nonneg (hψ _), one_mul, ← ENNReal.ofReal_mul (hψ _)]
         exact ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB q _ _) (hψ _))
     _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s},
-        ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) := by
-        have hm : Measurable fun z : ℝ × ℝ ↦
-            ENNReal.ofReal (deriv smoothTransition (q.endSign * z.1 - 1)) * ENNReal.ofReal (B q) :=
-          (ENNReal.continuous_ofReal.comp
-            (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
-              (by fun_prop))).measurable.mul_const _
-        have hvol : volume (Ico (-1 / 2 : ℝ) (1 / 2)) = 1 := by
-          rw [Real.volume_Ico]
-          norm_num
-        rw [Measure.volume_eq_prod, endStrip_def, setLIntegral_prod _ hm.aemeasurable]
-        simp only [setLIntegral_const, hvol, mul_one]
+        ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) :=
+        setLIntegral_endStrip_fst q ((ENNReal.continuous_ofReal.comp
+          (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
+            (by fun_prop))).measurable.mul_const _)
     _ ≤ ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) :=
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal (B q) := by

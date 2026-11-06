@@ -254,85 +254,40 @@ theorem exists_congruence_of_symmetric_family
       (((ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) (E →L[ℝ] ℝ)).flip
           (G' := E →L[ℝ] E →L[ℝ] ℝ) (B₀ : E →L[ℝ] E →L[ℝ] ℝ)).comp
         ((ContinuousLinearMap.compL ℝ E E ℝ).flip)) with hadjdef
-  have adj_spec : ∀ (T : E →L[ℝ] E) (w w' : E), B₀ (adj T w) w' = B₀ w (T w') := by
-    intro T w w'
-    simp [hadjdef]
-  have hdet : ∀ T₁ T₂ : E →L[ℝ] E, (∀ w w', B₀ (T₁ w) w' = B₀ (T₂ w) w') → T₁ = T₂ := by
-    intro T₁ T₂ h
-    ext w
-    refine B₀.injective ?_
-    ext w'
-    exact h w w'
-  have adj_one : adj 1 = 1 := by
-    refine hdet _ _ fun w w' ↦ ?_
-    rw [adj_spec]
-    simp
-  have adj_mul : ∀ S T : E →L[ℝ] E, adj (S * T) = adj T * adj S := by
-    intro S T
-    refine hdet _ _ fun w w' ↦ ?_
+  have adj_spec (T : E →L[ℝ] E) (w w' : E) : B₀ (adj T w) w' = B₀ w (T w') := by simp [hadjdef]
+  have hdet (T₁ T₂ : E →L[ℝ] E) (h : ∀ w w', B₀ (T₁ w) w' = B₀ (T₂ w) w') : T₁ = T₂ :=
+    ContinuousLinearMap.ext fun w ↦ B₀.injective (ContinuousLinearMap.ext (h w))
+  have adj_one : adj 1 = 1 := hdet _ _ fun w w' ↦ by simp [adj_spec]
+  have adj_mul (S T : E →L[ℝ] E) : adj (S * T) = adj T * adj S := hdet _ _ fun w w' ↦ by
     rw [adj_spec, mul_apply_eq_comp, mul_apply_eq_comp, adj_spec, adj_spec]
-  have hB₀symm : ∀ w w' : E, B₀ w w' = B₀ w' w := by
-    intro w w'
-    have h := hsymm a w w'
-    rw [← hB₀] at h
-    simpa using h
+  have hB₀symm (w w' : E) : B₀ w w' = B₀ w' w := by simpa [← hB₀] using hsymm a w w'
   -- the comparison operator `B₀⁻¹ ∘ B v`
   set C : F → (E →L[ℝ] E) := fun v ↦ (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E).comp (B v) with hCdef
-  have hCapply : ∀ (v : F) (w w' : E), B₀ (C v w) w' = B v w w' := by
-    intro v w w'
-    simp [hCdef]
-  have hCa : C a = 1 := by
-    refine hdet _ _ fun w w' ↦ ?_
-    rw [hCapply, ← hB₀]
-    simp
+  have hCapply (v : F) (w w' : E) : B₀ (C v w) w' = B v w w' := by simp [hCdef]
+  have hCa : C a = 1 := hdet _ _ fun w w' ↦ by simp [hCapply, ← hB₀]
   have hCsmooth : ContDiff ℝ n C := by
-    have h := (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E
+    exact (ContinuousLinearMap.compL ℝ E (E →L[ℝ] ℝ) E
       (B₀.symm : (E →L[ℝ] ℝ) →L[ℝ] E)).contDiff.comp hB
-    exact h
-  have hCadj : ∀ v, adj (C v) = C v := by
-    intro v
-    refine hdet _ _ fun w w' ↦ ?_
-    rw [adj_spec, hCapply, hB₀symm, hCapply, hsymm]
-  let R : F → (E →L[ℝ] E) := fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v)
-  have hRa : R a = 1 := by simp [R, hCa]
-  have hten : Filter.Tendsto C (𝓝 (a : F)) (𝓝 1) :=
-    hCa ▸ hCsmooth.continuous.continuousAt
-  have e1 := hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E))
-  have e2 := hten.eventually
-    (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)
-  have hspec : ∀ᶠ v in 𝓝 (a : F), ∀ w w', B₀ (R v w) (R v w') = B v w w' := by
-    filter_upwards [e1, e2] with v h1 h2
-    have h4 : sqrtNearOne (E →L[ℝ] E) (C v) = adj (sqrtNearOne (E →L[ℝ] E) (C v)) :=
-      (h2 (hCadj v)).symm
-    have hself : ∀ w w' : E, B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w) w'
-        = B₀ w (sqrtNearOne (E →L[ℝ] E) (C v) w') := by
-      intro w w'
-      conv_lhs => rw [h4]
-      exact adj_spec _ w w'
-    intro w w'
-    calc B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w) (sqrtNearOne (E →L[ℝ] E) (C v) w')
-        = B₀ w (sqrtNearOne (E →L[ℝ] E) (C v) (sqrtNearOne (E →L[ℝ] E) (C v) w')) :=
-          hself w _
-      _ = B₀ w ((sqrtNearOne (E →L[ℝ] E) (C v) * sqrtNearOne (E →L[ℝ] E) (C v)) w') := by
-          rw [mul_apply_eq_comp]
-      _ = B₀ w (C v w') := by rw [h1]
-      _ = B v w w' := by
-          rw [hB₀symm w (C v w'), hCapply v w' w]
-          exact hsymm v w' w
+  have hCadj (v : F) : adj (C v) = C v :=
+    hdet _ _ fun w w' ↦ by rw [adj_spec, hCapply, hB₀symm, hCapply, hsymm]
+  have hten : Filter.Tendsto C (𝓝 (a : F)) (𝓝 1) := hCa ▸ hCsmooth.continuous.continuousAt
+  have hspec : ∀ᶠ v in 𝓝 (a : F), ∀ w w', B₀ (sqrtNearOne (E →L[ℝ] E) (C v) w)
+      (sqrtNearOne (E →L[ℝ] E) (C v) w') = B v w w' := by
+    filter_upwards [hten.eventually (eventually_mul_self_sqrtNearOne (A := E →L[ℝ] E)),
+      hten.eventually (eventually_sqrtNearOne_fixed adj.continuous.continuousAt adj_one adj_mul)]
+      with v h1 h2 w w'
+    set R := sqrtNearOne (E →L[ℝ] E) (C v)
+    -- `R` is self-adjoint for `B₀` since `C v` is, `R * R = C v`, and `B₀ (C v ·) = B v`.
+    calc B₀ (R w) (R w') = B₀ (adj R w) (R w') := by rw [h2 (hCadj v)]
+      _ = B₀ w ((R * R) w') := by rw [adj_spec, mul_apply_eq_comp]
+      _ = B v w w' := by rw [h1, hB₀symm, hCapply, hsymm]
   obtain ⟨W, hWsub, hWopen, haW⟩ := mem_nhds_iff.1 hspec
-  let S : Set (E →L[ℝ] E) := {a | AnalyticAt ℝ (sqrtNearOne (E →L[ℝ] E)) a}
-  have hSopen : IsOpen S := isOpen_analyticAt ℝ (sqrtNearOne (E →L[ℝ] E))
-  have h1S : (1 : E →L[ℝ] E) ∈ S := analyticAt_sqrtNearOne
-  let U : Set F := W ∩ C ⁻¹' S
-  have hUopen : IsOpen U := hWopen.inter (hSopen.preimage hCsmooth.continuous)
-  have haU : (a : F) ∈ U := ⟨haW, by simpa [hCa] using h1S⟩
-  refine ⟨R, U, hUopen, haU, hRa, ?_, ?_⟩
-  · intro v hv
-    have hsqrt : ContDiffAt ℝ n (sqrtNearOne (E →L[ℝ] E)) (C v) := hv.2.contDiffAt
-    have hcomp := (hsqrt.comp v hCsmooth.contDiffAt).contDiffWithinAt (s := U)
-    rwa [Function.comp_def] at hcomp
-  · intro v hv
-    exact hWsub hv.1
+  refine ⟨fun v ↦ sqrtNearOne (E →L[ℝ] E) (C v),
+    W ∩ C ⁻¹' {a | AnalyticAt ℝ (sqrtNearOne (E →L[ℝ] E)) a},
+    hWopen.inter ((isOpen_analyticAt ℝ _).preimage hCsmooth.continuous),
+    ⟨haW, by simpa [hCa] using analyticAt_sqrtNearOne⟩, by simp [hCa],
+    fun v hv ↦ (hv.2.contDiffAt.comp v hCsmooth.contDiffAt).contDiffWithinAt,
+    fun v hv ↦ hWsub hv.1⟩
 
 variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
 
@@ -448,71 +403,39 @@ theorem IsNondegenerateCriticalPoint.exists_morse_chart (hf : ContDiff ℝ (n + 
       ContDiffOn ℝ n ψ ψ.source ∧ ContDiffOn ℝ n ψ.symm ψ.target ∧
       ∀ y ∈ ψ.source, f y = f x + (2 : ℝ)⁻¹ * fderiv ℝ (fderiv ℝ f) x (ψ y) (ψ y) := by
   obtain ⟨φ, U, hUopen, h0U, hφ0, hφsmooth, hφderiv, hφeq⟩ := h.exists_normal_form hf hn
-  have hsub : HasFDerivAt (fun y : E ↦ y - x) (ContinuousLinearMap.id ℝ E) x := by
-    simpa using (hasFDerivAt_id (𝕜 := ℝ) x).sub_const x
-  have hΨderiv : HasFDerivAt (φ ∘ fun y : E ↦ y - x)
-      (ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) x := by
-    have hc : HasFDerivAt (φ ∘ fun y : E ↦ y - x)
-        ((ContinuousLinearMap.id ℝ E).comp (ContinuousLinearMap.id ℝ E)) x :=
-      HasFDerivAt.comp x (by simpa using hφderiv) hsub
-    simpa using hc
-  let V : Set E := {y | y - x ∈ U}
+  have hn' : (n : ℕ∞ω) ≠ 0 := by simpa using hn
+  let V : Set E := (fun y ↦ y - x) ⁻¹' U
   have hVopen : IsOpen V := hUopen.preimage (by fun_prop)
   have hxV : x ∈ V := by simp [V, h0U]
-  have hΨsmoothOn : ContDiffOn ℝ n (φ ∘ fun y : E ↦ y - x) V := by
-    intro y hy
-    have hφAt : ContDiffAt ℝ n φ (y - x) :=
-      (hφsmooth (y - x) hy).contDiffAt (hUopen.mem_nhds hy)
-    exact (hφAt.comp y (by fun_prop)).contDiffWithinAt
-  have hΨsmooth : ContDiffAt ℝ n (φ ∘ fun y : E ↦ y - x) x :=
-    (hΨsmoothOn x hxV).contDiffAt (hVopen.mem_nhds hxV)
-  have hΨx : (φ ∘ fun y : E ↦ y - x) x = 0 := by simp [hφ0]
-  have hΨeq : ∀ y ∈ V, f y = f x + (2 : ℝ)⁻¹ *
-      fderiv ℝ (fderiv ℝ f) x ((φ ∘ fun y : E ↦ y - x) y)
-        ((φ ∘ fun y : E ↦ y - x) y) := by
-    intro y hy
-    simpa using hφeq (y - x) hy
-  have hderivInvertible : ∀ᶠ y in 𝓝 x, ∃ e : E ≃L[ℝ] E,
-      (e : E →L[ℝ] E) = fderiv ℝ (φ ∘ fun y : E ↦ y - x) y := by
-    have ht := (hΨsmooth.continuousAt_fderiv (by simpa using hn)).tendsto
-    rw [hΨderiv.fderiv] at ht
-    exact ht.eventually (ContinuousLinearEquiv.refl ℝ E).nhds
+  have hΦsmoothOn : ContDiffOn ℝ n (φ ∘ fun y : E ↦ y - x) V :=
+    hφsmooth.comp (by fun_prop) fun _ hy ↦ hy
+  have hΦsmoothAt {y : E} (hy : y ∈ V) : ContDiffAt ℝ n (φ ∘ fun y : E ↦ y - x) y :=
+    (hΦsmoothOn y hy).contDiffAt (hVopen.mem_nhds hy)
+  have hΦderiv : HasFDerivAt (φ ∘ fun y : E ↦ y - x)
+      (ContinuousLinearEquiv.refl ℝ E : E →L[ℝ] E) x := by
+    simpa using HasFDerivAt.comp x (by simpa using hφderiv) (hasFDerivAt_sub_const (𝕜 := ℝ) x)
   have hgood : {y | y ∈ V ∧ ∃ e : E ≃L[ℝ] E,
-      (e : E →L[ℝ] E) = fderiv ℝ (φ ∘ fun y : E ↦ y - x) y} ∈ 𝓝 x :=
-    Filter.inter_mem (hVopen.mem_nhds hxV) hderivInvertible
+      (e : E →L[ℝ] E) = fderiv ℝ (φ ∘ fun y : E ↦ y - x) y} ∈ 𝓝 x := by
+    have ht := ((hΦsmoothAt hxV).continuousAt_fderiv hn').tendsto
+    rw [hΦderiv.fderiv] at ht
+    exact Filter.inter_mem (hVopen.mem_nhds hxV)
+      (ht.eventually (ContinuousLinearEquiv.refl ℝ E).nhds)
   obtain ⟨W, hWsub, hWopen, hxW⟩ := mem_nhds_iff.1 hgood
-  let p := hΨsmooth.toOpenPartialHomeomorph _ hΨderiv (by simpa using hn)
+  let p := (hΦsmoothAt hxV).toOpenPartialHomeomorph _ hΦderiv hn'
   let ψ := p.restrOpen W hWopen
-  have hxsource : x ∈ ψ.source := by
-    simp only [ψ, OpenPartialHomeomorph.restrOpen_source]
-    exact ⟨hΨsmooth.mem_toOpenPartialHomeomorph_source hΨderiv (by simpa using hn), hxW⟩
-  refine ⟨ψ, hxsource, ?_, ?_, ?_, ?_⟩
-  · simpa [ψ, p] using hΨx
-  · intro y hy
-    simp only [ψ, OpenPartialHomeomorph.restrOpen_source] at hy
-    have hyV := (hWsub hy.2).1
-    have hsmooth := hΨsmoothOn y hyV
-    apply hsmooth.mono
-    intro z hz
-    simp only [ψ, OpenPartialHomeomorph.restrOpen_source] at hz
-    exact (hWsub hz.2).1
-  · intro z hz
-    have hy : ψ.symm z ∈ ψ.source := ψ.map_target hz
-    have hy' := hy
-    simp only [ψ, OpenPartialHomeomorph.restrOpen_source] at hy'
-    obtain ⟨e, he⟩ := (hWsub hy'.2).2
-    have hyV := (hWsub hy'.2).1
-    have hforwardAt : ContDiffAt ℝ n (φ ∘ fun y : E ↦ y - x) (ψ.symm z) :=
-      (hΨsmoothOn (ψ.symm z) hyV).contDiffAt (hVopen.mem_nhds hyV)
-    have hforwardDeriv : HasFDerivAt ψ (e : E →L[ℝ] E) (ψ.symm z) := by
-      have hd : HasFDerivAt (φ ∘ fun y : E ↦ y - x) (e : E →L[ℝ] E) (ψ.symm z) := by
-        rw [he]
-        exact hforwardAt.differentiableAt (by simpa using hn) |>.hasFDerivAt
-      simpa [ψ, p] using hd
-    exact (ψ.contDiffAt_symm hz hforwardDeriv (by simpa [ψ, p] using hforwardAt)).contDiffWithinAt
-  · simp only [ψ, OpenPartialHomeomorph.restrOpen_source]
-    intro y hy
-    simpa [ψ, p] using hΨeq y (hWsub hy.2).1
+  have hψsrc : ψ.source = p.source ∩ W := p.restrOpen_source W hWopen
+  have hψ : ⇑ψ = φ ∘ fun y : E ↦ y - x := by
+    rw [OpenPartialHomeomorph.coe_restrOpen, ContDiffAt.toOpenPartialHomeomorph_coe]
+  refine ⟨ψ, hψsrc ▸ ⟨(hΦsmoothAt hxV).mem_toOpenPartialHomeomorph_source hΦderiv hn', hxW⟩,
+    by simp [hψ, hφ0], ?_, fun z hz ↦ ?_, ?_⟩
+  · rw [hψ, hψsrc]
+    exact hΦsmoothOn.mono fun z hz ↦ (hWsub hz.2).1
+  · obtain ⟨hyV, e, he⟩ := hWsub (hψsrc ▸ ψ.map_target hz).2
+    refine (ψ.contDiffAt_symm hz (f₀' := e) ?_ (hψ ▸ hΦsmoothAt hyV)).contDiffWithinAt
+    rw [hψ, he]
+    exact ((hΦsmoothAt hyV).differentiableAt hn').hasFDerivAt
+  · rw [hψsrc, hψ]
+    exact fun y hy ↦ by simpa using hφeq (y - x) (hWsub hy.2).1
 
 end MorseLemma
 
