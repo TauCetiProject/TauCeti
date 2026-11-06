@@ -39,8 +39,6 @@ variable vanishes everywhere is constant along every horizontal line.
   derivatives of its summands.
 * `TauCeti.hasDerivAt_prodMk_left`, `TauCeti.hasDerivAt_prodMk_right`: the coordinate lines
   through a point have velocities `(1, 0)` and `(0, 1)`.
-* `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
-  a function along the coordinate lines.
 * `TauCeti.hasDerivAt_fderiv_apply_fst`, `TauCeti.hasDerivAt_fderiv_apply_snd`: the partial
   derivatives of a first partial derivative.
 * `TauCeti.apply_eq_apply_zero_of_fderiv_fst_eq_zero`: a function with vanishing partial
@@ -50,6 +48,12 @@ variable vanishes everywhere is constant along every horizontal line.
   is critical at `(a, b)` exactly when both summands are critical at `a` and `b`.
 * `TauCeti.fderiv_slice_left`, `TauCeti.fderiv_slice_right`: the derivatives of the two slices
   of a function on a product are the restrictions of its derivative.
+* `TauCeti.fderiv_comp_snd_apply_mk_zero`: a function of the second variable alone has zero
+  derivative along the first factor.
+* `TauCeti.fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right`: the derivative of a function
+  on a product is the sum of the derivatives of its two slices.
+* `TauCeti.hasDerivAt_slice_right`: the partial derivative of a function in a scalar second
+  variable is its derivative applied to `(0, 1)`.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
@@ -112,6 +116,31 @@ restricted to the second factor. -/
 theorem fderiv_slice_right {f : E × F → G} (hf : DifferentiableAt 𝕜 f (a, b)) :
     fderiv 𝕜 (fun y ↦ f (a, y)) b = (fderiv 𝕜 f (a, b)).comp (ContinuousLinearMap.inr 𝕜 E F) :=
   (hf.hasFDerivAt.comp b (hasFDerivAt_prodMk_right a b)).fderiv
+
+/-- The derivative of a function on a product is the sum of the derivatives of its two slices,
+applied to the two components of the direction. -/
+theorem fderiv_apply_eq_fderiv_slice_left_add_fderiv_slice_right {f : E × F → G}
+    (hf : DifferentiableAt 𝕜 f (a, b)) (w : E × F) :
+    fderiv 𝕜 f (a, b) w =
+      fderiv 𝕜 (fun x ↦ f (x, b)) a w.1 + fderiv 𝕜 (fun y ↦ f (a, y)) b w.2 := by
+  rw [fderiv_slice_left hf, fderiv_slice_right hf]
+  simp only [ContinuousLinearMap.coe_comp, Function.comp_apply, ContinuousLinearMap.inl_apply,
+    ContinuousLinearMap.inr_apply, ← map_add, Prod.mk_add_mk, add_zero, zero_add]
+
+/-- A function of the second variable alone has zero derivative along the first factor. No
+differentiability is needed: otherwise the derivative is zero. -/
+theorem fderiv_comp_snd_apply_mk_zero (f : F → G) (z : E × F) (v : E) :
+    fderiv 𝕜 (fun w : E × F ↦ f w.2) z (v, 0) = 0 := by
+  by_cases hf : DifferentiableAt 𝕜 f z.2
+  · have h : HasFDerivAt (fun w : E × F ↦ f w.2)
+        ((fderiv 𝕜 f z.2).comp (ContinuousLinearMap.snd 𝕜 E F)) z :=
+      hf.hasFDerivAt.comp z hasFDerivAt_snd
+    simp [h.fderiv]
+  · have hf' : ¬DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) z := by
+      intro h
+      have h' : DifferentiableAt 𝕜 (fun w : E × F ↦ f w.2) (z.1, z.2) := h
+      exact hf (h'.comp z.2 (hasFDerivAt_prodMk_right (𝕜 := 𝕜) z.1 z.2).differentiableAt)
+    simp [fderiv_zero_of_not_differentiableAt hf']
 
 /-- **The chain rule along a graph.** The derivative of `fun x ↦ f (x, u x)` is the derivative of
 `f` in the first variable plus its derivative in the second variable applied to the derivative
@@ -188,11 +217,6 @@ theorem hasDerivAt_prodMk_right (a : E) (t : 𝕜) :
     HasDerivAt (fun t : 𝕜 ↦ (a, t)) ((0 : E), (1 : 𝕜)) t :=
   (hasDerivAt_const t a).prodMk (hasDerivAt_id t)
 
-/-- The derivative of `u` along the horizontal line `s ↦ (s, b)` is `fderiv 𝕜 u (s, b) (1, 0)`. -/
-theorem hasDerivAt_slice_left {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 u (s, b)) :
-    HasDerivAt (fun s ↦ u (s, b)) (fderiv 𝕜 u (s, b) (1, 0)) s := by
-  simpa [Function.comp_def] using hu.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
-
 /-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(1, 0)`. -/
 theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 (fderiv 𝕜 u) (s, b))
@@ -204,11 +228,12 @@ theorem hasDerivAt_fderiv_apply_fst {s : 𝕜} {b : F} (hu : DifferentiableAt �
 
 end CoordinateLines
 
-/-- The derivative of `u` along the vertical line `t ↦ (a, t)` is `fderiv 𝕜 u (a, t) (0, 1)`. -/
+/-- Where `u` is differentiable, its partial derivative in the second variable is its derivative
+applied to `(0, 1)`. -/
 theorem hasDerivAt_slice_right {u : E × 𝕜 → G} {a : E} {t : 𝕜}
     (hu : DifferentiableAt 𝕜 u (a, t)) :
-    HasDerivAt (fun t ↦ u (a, t)) (fderiv 𝕜 u (a, t) (0, 1)) t := by
-  simpa [Function.comp_def] using hu.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right a t)
+    HasDerivAt (fun t ↦ u (a, t)) (fderiv 𝕜 u (a, t) (0, 1)) t :=
+  hu.hasFDerivAt.comp_hasDerivAt t (hasDerivAt_prodMk_right a t)
 
 /-- The derivative in the second variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(0, 1)`. -/
@@ -226,7 +251,8 @@ theorem apply_eq_apply_zero_of_fderiv_fst_eq_zero {F G : Type*} [NormedAddCommGr
     (hu : Differentiable ℝ u) (h : ∀ z, fderiv ℝ u z (1, 0) = 0) (s : ℝ) (b : F) :
     u (s, b) = u (0, b) := by
   have hl (s : ℝ) : HasDerivAt (fun s ↦ u (s, b)) 0 s := by
-    simpa [h] using hasDerivAt_slice_left (hu (s, b))
+    simpa [h, Function.comp_def] using
+      (hu _).hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
   exact is_const_of_deriv_eq_zero (fun s ↦ (hl s).differentiableAt) (fun s ↦ (hl s).deriv) s 0
 
 end TauCeti

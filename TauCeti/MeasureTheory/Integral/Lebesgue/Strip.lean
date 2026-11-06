@@ -15,7 +15,9 @@ import Mathlib.Topology.Algebra.InfiniteSum.ENNReal
 /-!
 # Lebesgue integrals over a strip by exhaustion
 
-The strip `ℝ × T` is exhausted by the increasing rectangles `[-n, n] × T`. If the lower Lebesgue
+The strip `ℝ × T` is exhausted by the increasing rectangles `[-n, n] × T`
+(`TauCeti.iUnion_Icc_neg_prod`), so the integrals of a function over these rectangles increase to
+its integral over the strip (`TauCeti.tendsto_setLIntegral_Icc_neg_prod`). If the lower Lebesgue
 integral of an `ℝ≥0∞`-valued function over `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))` for a
 real function `F` with limits `A₁` at `-∞` and `A₂` at `∞`, then its integral over the whole strip
 is `ENNReal.ofReal (A₂ - A₁)` (`TauCeti.setLIntegral_univ_prod_eq_ofReal_of_tendsto`). Since
@@ -48,6 +50,29 @@ namespace TauCeti
 open Function MeasureTheory Set Filter Topology
 open scoped ENNReal
 
+/-- The rectangles `[-n, n] × T` increase with `n`. -/
+theorem monotone_Icc_neg_prod {β : Type*} (T : Set β) :
+    Monotone fun n : ℕ ↦ Icc (-(n : ℝ)) n ×ˢ T := fun _ _ hmn ↦
+  prod_mono (Icc_subset_Icc (neg_le_neg (Nat.cast_le.mpr hmn)) (Nat.cast_le.mpr hmn)) le_rfl
+
+/-- The rectangles `[-n, n] × T` exhaust the strip `ℝ × T`. -/
+theorem iUnion_Icc_neg_prod {β : Type*} (T : Set β) :
+    ⋃ n : ℕ, Icc (-(n : ℝ)) n ×ˢ T = (univ : Set ℝ) ×ˢ T := by
+  refine (iUnion_subset fun n ↦ prod_mono (subset_univ _) le_rfl).antisymm fun z hz ↦ ?_
+  obtain ⟨n, hn⟩ := exists_nat_ge |z.1|
+  exact mem_iUnion.mpr ⟨n, ⟨abs_le.mp hn, hz.2⟩⟩
+
+/-- The integrals of `f` over the rectangles `[-n, n] × T` increase to its integral over the
+strip `ℝ × T`. -/
+theorem tendsto_setLIntegral_Icc_neg_prod {β : Type*} [MeasurableSpace β]
+    (μ : Measure (ℝ × β)) (T : Set β) (f : ℝ × β → ℝ≥0∞) :
+    Tendsto (fun n : ℕ ↦ ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ) atTop
+      (𝓝 (∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ)) := by
+  rw [← iUnion_Icc_neg_prod, setLIntegral_iUnion_of_directed _
+    (monotone_Icc_neg_prod T).directed_le]
+  exact tendsto_atTop_iSup fun _ _ hmn ↦
+    lintegral_mono' (Measure.restrict_mono (monotone_Icc_neg_prod T hmn) le_rfl) le_rfl
+
 /-- **Integrals over a strip by exhaustion.** If the integral of `f` over each rectangle
 `[-n, n] × T` is `ENNReal.ofReal (F(n) - F(-n))`, where `F` tends to `A₁` at `-∞` and to `A₂` at
 `∞`, then the integral of `f` over the strip `ℝ × T` is `ENNReal.ofReal (A₂ - A₁)`, that is
@@ -57,21 +82,8 @@ theorem setLIntegral_univ_prod_eq_ofReal_of_tendsto {β : Type*} [MeasurableSpac
     (hE : ∀ n : ℕ, ∫⁻ z in Icc (-(n : ℝ)) n ×ˢ T, f z ∂μ = ENNReal.ofReal (F n - F (-n)))
     (hbot : Tendsto F atBot (𝓝 A₁)) (htop : Tendsto F atTop (𝓝 A₂)) :
     ∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ = ENNReal.ofReal (A₂ - A₁) := by
-  set R : ℕ → Set (ℝ × β) := fun n ↦ Icc (-(n : ℝ)) n ×ˢ T
-  have hmono : Monotone R := fun m n hmn ↦ prod_mono
-    (Icc_subset_Icc (neg_le_neg (Nat.cast_le.mpr hmn)) (Nat.cast_le.mpr hmn)) le_rfl
-  have hunion : ⋃ n, R n = (univ : Set ℝ) ×ˢ T := by
-    refine (iUnion_subset fun n ↦ prod_mono (subset_univ _) le_rfl).antisymm fun z hz ↦ ?_
-    obtain ⟨n, hn⟩ := exists_nat_ge |z.1|
-    exact mem_iUnion.mpr ⟨n, ⟨abs_le.mp hn, hz.2⟩⟩
-  -- The integrals over the rectangles increase to the integral over the strip.
-  have hlim : Tendsto (fun n ↦ ∫⁻ z in R n, f z ∂μ) atTop
-      (𝓝 (∫⁻ z in (univ : Set ℝ) ×ˢ T, f z ∂μ)) := by
-    rw [← hunion, setLIntegral_iUnion_of_directed _ hmono.directed_le]
-    exact tendsto_atTop_iSup fun m n hmn ↦ lintegral_mono' (Measure.restrict_mono (hmono hmn)
-      le_rfl) le_rfl
-  refine tendsto_nhds_unique hlim ?_
-  simp only [R, hE]
+  refine tendsto_nhds_unique (tendsto_setLIntegral_Icc_neg_prod μ T f) ?_
+  simp only [hE]
   exact (ENNReal.continuous_ofReal.tendsto _).comp
     ((htop.comp tendsto_natCast_atTop_atTop).sub
       (hbot.comp (tendsto_neg_atTop_atBot.comp tendsto_natCast_atTop_atTop)))

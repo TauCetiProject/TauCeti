@@ -18,8 +18,10 @@ vector field of `H` is obtained by inverting contraction with the symplectic for
 Our sign convention is `ω (X_H x) v = dH(x) v`. For `ω = dq ∧ dp`, this gives the
 Hamilton equations `q' = ∂H/∂p`, `p' = -∂H/∂q`.
 
-The characteristic contraction equation determines the field uniquely. Its linearization
-is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
+The characteristic contraction equation determines the field uniquely. Since `dH(X_H) = 0`, a
+differentiable Hamiltonian is constant along every integral curve of `X_H`
+(`TauCeti.SymplecticForm.apply_eq_of_hasDerivAt_hamiltonianVectorField`). The linearization of
+`X_H` is infinitesimally symplectic when `H` is twice continuously differentiable; this is the
 identity used to show that Hamiltonian flows preserve the symplectic form.
 
 For an almost complex structure `J` preserving `ω`, the field `J X_H` is the gradient of `H` for
@@ -31,7 +33,8 @@ family evaluated along a continuous map, the Hamiltonian vector fields vary cont
 
 The Poisson bracket `{F, G} = ω(X_F, X_G)` of two Hamiltonians is the symplectic pairing of their
 Hamiltonian vector fields. With the contraction convention it is `dF(X_G) = -dG(X_F)`; it is
-antisymmetric and vanishes when either argument is constant.
+antisymmetric, vanishes when either argument is constant, and is linear in each argument on
+Hamiltonians differentiable at the point.
 
 See McDuff--Salamon, *Introduction to Symplectic Topology*, the discussion of Hamiltonian
 vector fields and their flows. The construction uses `SymplecticForm` contraction duality.
@@ -97,6 +100,20 @@ theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → �
     fderiv ℝ H x (ω.hamiltonianVectorField H x) = 0 := by
   rw [← ω.apply_hamiltonianVectorField H x, ω.self_eq_zero]
 
+/-- **Conservation of energy.** A Hamiltonian is constant along every integral curve of its
+Hamiltonian vector field on a preconnected open set of times, provided it is differentiable at
+every point of the curve. -/
+theorem apply_eq_of_hasDerivAt_hamiltonianVectorField (ω : SymplecticForm V) {H : V → ℝ}
+    {γ : ℝ → V} {s : Set ℝ} (hs : IsOpen s) (hs' : IsPreconnected s)
+    (hγ : ∀ t ∈ s, HasDerivAt γ (ω.hamiltonianVectorField H (γ t)) t)
+    (hH : ∀ t ∈ s, DifferentiableAt ℝ H (γ t)) {t₀ t : ℝ} (ht₀ : t₀ ∈ s) (ht : t ∈ s) :
+    H (γ t) = H (γ t₀) := by
+  have hd (t : ℝ) (ht : t ∈ s) : HasDerivAt (H ∘ γ) 0 t := by
+    simpa using (hH t ht).hasFDerivAt.comp_hasDerivAt t (hγ t ht)
+  exact hs.is_const_of_deriv_eq_zero hs'
+    (fun t ht ↦ (hd t ht).differentiableAt.differentiableWithinAt) (fun t ht ↦ (hd t ht).deriv)
+    ht ht₀
+
 /-- For a `J`-invariant symplectic form, `J X_H(x)` is the gradient of `H` at `x` for the
 bilinear form `g = ω(·, J ·)`: `g(J X_H(x), w) = dH(x) w`. -/
 theorem Invariant.associatedBilinForm_hamiltonianVectorField {ω : SymplecticForm V}
@@ -153,6 +170,36 @@ theorem hamiltonianVectorField_const_mul_add_const_mul (ω : SymplecticForm V) {
   intro v
   rw [fderiv_fun_add (hF.const_mul a) (hG.const_mul b), fderiv_const_mul hF, fderiv_const_mul hG]
   simp [map_add, map_smul]
+
+/-- The Hamiltonian vector field is additive on finite sums of Hamiltonians differentiable at
+the point: `X_{∑ Fᵢ} = ∑ X_{Fᵢ}`. -/
+theorem hamiltonianVectorField_fun_sum (ω : SymplecticForm V) {ι : Type*} {s : Finset ι}
+    {F : ι → V → ℝ} {x : V} (hF : ∀ i ∈ s, DifferentiableAt ℝ (F i) x) :
+    ω.hamiltonianVectorField (fun y ↦ ∑ i ∈ s, F i y) x =
+      ∑ i ∈ s, ω.hamiltonianVectorField (F i) x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_fun_sum hF]
+  simp [map_sum]
+
+/-- The Hamiltonian vector field of `-H` is `-X_H`. -/
+@[simp]
+theorem hamiltonianVectorField_neg (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
+    ω.hamiltonianVectorField (-H) x = -ω.hamiltonianVectorField H x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  simp [fderiv_neg]
+
+/-- The Hamiltonian vector field of a difference of Hamiltonians differentiable at the point:
+`X_{F - G} = X_F - X_G`. -/
+theorem hamiltonianVectorField_sub (ω : SymplecticForm V) {F G : V → ℝ} {x : V}
+    (hF : DifferentiableAt ℝ F x) (hG : DifferentiableAt ℝ G x) :
+    ω.hamiltonianVectorField (F - G) x =
+      ω.hamiltonianVectorField F x - ω.hamiltonianVectorField G x := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro v
+  rw [fderiv_sub hF hG]
+  simp [map_sub]
 
 section Continuity
 
@@ -271,6 +318,46 @@ theorem poissonBracket_const_mul_left (ω : SymplecticForm V) (c : ℝ) (F G : V
 theorem poissonBracket_const_mul_right (ω : SymplecticForm V) (F : V → ℝ) (c : ℝ) (G : V → ℝ)
     (x : V) : ω.poissonBracket F (fun y ↦ c * G y) x = c * ω.poissonBracket F G x := by
   simp [poissonBracket_def, map_smul]
+
+/-- Negating the first argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_left (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket (-F) G x = -ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- Negating the second argument negates the Poisson bracket. -/
+@[simp]
+theorem poissonBracket_neg_right (ω : SymplecticForm V) (F G : V → ℝ) (x : V) :
+    ω.poissonBracket F (-G) x = -ω.poissonBracket F G x := by
+  simp [poissonBracket_def]
+
+/-- The Poisson bracket is subtractive in its first argument on Hamiltonians differentiable at
+the point. -/
+theorem poissonBracket_sub_left (ω : SymplecticForm V) {F F' : V → ℝ} (G : V → ℝ) {x : V}
+    (hF : DifferentiableAt ℝ F x) (hF' : DifferentiableAt ℝ F' x) :
+    ω.poissonBracket (F - F') G x = ω.poissonBracket F G x - ω.poissonBracket F' G x := by
+  simp only [poissonBracket_eq_fderiv, fderiv_sub hF hF', sub_apply]
+
+/-- The Poisson bracket is subtractive in its second argument on Hamiltonians differentiable at
+the point. -/
+theorem poissonBracket_sub_right (ω : SymplecticForm V) (F : V → ℝ) {G G' : V → ℝ} {x : V}
+    (hG : DifferentiableAt ℝ G x) (hG' : DifferentiableAt ℝ G' x) :
+    ω.poissonBracket F (G - G') x = ω.poissonBracket F G x - ω.poissonBracket F G' x := by
+  simp only [poissonBracket_eq_fderiv, ω.hamiltonianVectorField_sub hG hG', map_sub]
+
+/-- The Poisson bracket is additive in its first argument on finite sums of Hamiltonians
+differentiable at the point: `{∑ Fᵢ, G} = ∑ {Fᵢ, G}`. -/
+theorem poissonBracket_fun_sum_left (ω : SymplecticForm V) {ι : Type*} {s : Finset ι}
+    {F : ι → V → ℝ} (G : V → ℝ) {x : V} (hF : ∀ i ∈ s, DifferentiableAt ℝ (F i) x) :
+    ω.poissonBracket (fun y ↦ ∑ i ∈ s, F i y) G x = ∑ i ∈ s, ω.poissonBracket (F i) G x := by
+  simp only [poissonBracket_eq_fderiv, fderiv_fun_sum hF, sum_apply]
+
+/-- The Poisson bracket is additive in its second argument on finite sums of Hamiltonians
+differentiable at the point: `{F, ∑ Gᵢ} = ∑ {F, Gᵢ}`. -/
+theorem poissonBracket_fun_sum_right (ω : SymplecticForm V) {ι : Type*} {s : Finset ι}
+    (F : V → ℝ) {G : ι → V → ℝ} {x : V} (hG : ∀ i ∈ s, DifferentiableAt ℝ (G i) x) :
+    ω.poissonBracket F (fun y ↦ ∑ i ∈ s, G i y) x = ∑ i ∈ s, ω.poissonBracket F (G i) x := by
+  simp only [poissonBracket_eq_fderiv, ω.hamiltonianVectorField_fun_sum hG, map_sum]
 
 end PoissonBracket
 

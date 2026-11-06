@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coset.Enumeration
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
+public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Mathieu.Eleven
 
 /-!
-# The presented group of `M₁₁` is finite
+# Recognition of the presented group of `M₁₁`
 
 The classification list carries the Mathieu group `M₁₁` as the group `SporadicName.M11.Group`
 defined by the transcribed presentation
@@ -25,9 +25,10 @@ most `7920 = |M₁₁|`, by coset enumeration over the cyclic subgroup `⟨b⟩`
 The certificate is replayed by `TauCeti.CosetEnumeration.run` inside the kernel. It defines
 `1454` points, `2204` steps in all, and the enumeration closes with `720` surviving points; scanning
 the relators also shows `b ^ 11 = 1`. Hence `[G : ⟨b⟩] ≤ 720` and `|⟨b⟩| ≤ 11`, so `|G| ≤ 7920`.
-Nothing here uses a permutation model of `M₁₁`: the bound is derived from the two relators alone.
-Together with a surjection onto a group of order `7920`, such as the surjection onto the
-permutation model in `TauCeti.Sporadic.exists_surjective_M11`, it identifies the presented group.
+The bound is derived from the two relators alone. Comparing it with the order of the canonical
+permutation model upgrades `TauCeti.Sporadic.M11.presentationHom` to an explicit multiplicative
+equivalence with that model, and proves that the presented group has exactly `7920` elements.
+This recognition does not establish simplicity of either group.
 
 The certificate was produced outside Lean by a Felsch-style enumeration with preferred
 definitions, which tracks the power of `b` attached to every edge, and was then pruned to the
@@ -37,6 +38,8 @@ steps that change the table; only its replay is trusted.
 
 * `TauCeti.SporadicName.finite_group_M11`: the presented group of `M₁₁` is finite.
 * `TauCeti.SporadicName.natCard_group_M11_le`: it has at most `7920` elements.
+* `TauCeti.Sporadic.M11.presentationEquiv`: recognition by the canonical presentation map.
+* `TauCeti.SporadicName.natCard_group_M11`: the presented group has `7920` elements.
 
 ## References
 
@@ -261,5 +264,34 @@ instance finite_group_M11 : Finite M11.Group :=
 /-- **The presented group of `M₁₁` has at most `7920` elements.** -/
 theorem natCard_group_M11_le : Nat.card M11.Group ≤ 7920 :=
   GroupPresentation.natCard_le_of_run _ run_M11 (by decide)
+
+end TauCeti.SporadicName
+
+namespace TauCeti.Sporadic.M11
+
+/-- The transcribed presentation of `M₁₁` is isomorphic to the canonical permutation model,
+via the homomorphism sending its generators to `presentationImage`. -/
+noncomputable def presentationEquiv : SporadicName.M11.Group ≃* Sporadic.M11 := by
+  let f := (MulEquiv.subgroupCongr range_presentationHom).toMonoidHom.comp
+    presentationHom.rangeRestrict
+  have hf : Function.Surjective f :=
+    (MulEquiv.subgroupCongr range_presentationHom).surjective.comp
+      presentationHom.rangeRestrict_surjective
+  exact MulEquiv.ofBijective f (hf.bijective_of_nat_card_le
+    (by simpa only [card_M11] using SporadicName.natCard_group_M11_le))
+
+/-- The underlying permutation of the recognition equivalence is the canonical presentation
+homomorphism. -/
+@[simp]
+theorem coe_presentationEquiv (g : SporadicName.M11.Group) :
+    (presentationEquiv g : Equiv.Perm (Fin 11)) = presentationHom g := (rfl)
+
+end TauCeti.Sporadic.M11
+
+namespace TauCeti.SporadicName
+
+/-- The group defined by the transcribed presentation of `M₁₁` has exactly `7920` elements. -/
+theorem natCard_group_M11 : Nat.card M11.Group = 7920 :=
+  (Nat.card_congr Sporadic.M11.presentationEquiv.toEquiv).trans Sporadic.card_M11
 
 end TauCeti.SporadicName

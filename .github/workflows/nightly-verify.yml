@@ -37,7 +37,7 @@ name: Nightly verification
 
 on:
   schedule:
-  - cron: "25 15 * * *"   # daily, offset from stuck-alerts (:50), merge-sweep (:40), housekeeping (:20)
+  - cron: "25 15 * * *"   # daily, offset from stuck-alerts (:50) and housekeeping (:20)
   workflow_dispatch: {}
 
 permissions:
