@@ -164,7 +164,7 @@ theorem adjoin_eq_top_of_eisenstein_of_natDegree_eq_finrank {f : 𝒪[K][X]}
   have : Module.Finite K L := finite_of_valuativeExtension K L
   have hint : IsIntegral 𝒪[K] ξ := IsIntegral.of_finite 𝒪[K] ξ
   have hassoc : Associated (minpoly 𝒪[K] ξ) f :=
-    associated_minpoly_of_eisenstein_isRoot ξ f hf hroot
+    associated_minpoly_of_eisenstein_isRoot hf (notMem_maximalIdeal.mp hf.leading) hroot
   -- The minimal polynomial of `ξ` over `K` comes from that over `𝒪[K]`, of degree `deg f`.
   have hminpoly : minpoly K (ξ : L) = (minpoly 𝒪[K] ξ).map (algebraMap 𝒪[K] K) :=
     minpoly.isIntegrallyClosed_eq_field_fractions K L hint
