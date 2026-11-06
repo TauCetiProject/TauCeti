@@ -493,7 +493,7 @@ private theorem setLIntegral_image_endChart_cappedPerturbation_le [FiniteDimensi
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal (2 * |a|) * ENNReal.ofReal (B q) := by
   have hψ (s : ℝ) : 0 ≤ deriv smoothTransition s := smoothTransition.monotone.deriv_nonneg
-  -- The total variation of the profile along the end, as a function of `s`.
+  -- The densities of the two transition collars, which bound the profile's derivative along `s`.
   set f₁ : ℝ → ENNReal := fun s ↦ ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1))
     with hf₁
   set f₂ : ℝ → ENNReal := fun s ↦ ENNReal.ofReal (deriv smoothTransition (L + 3 - q.endSign * s))
