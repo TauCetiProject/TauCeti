@@ -29,6 +29,11 @@ two such lifts agreeing on `Z` are homotopic
 The constructions follow Mathlib's `CategoryTheory.InjectiveResolution.desc` and
 `CategoryTheory.InjectiveResolution.descHomotopy`, whose source is required to be an injective
 resolution.
+
+The augmentation of an injective resolution `I` of `Z` is also available as
+`CategoryTheory.InjectiveResolution.ι₀ I : Z ⟶ I⁰`, whose source is `Z` itself rather than the
+degree `0` object of the single complex on `Z`, so that it composes with morphisms out of `Z`
+without unfolding the single complex.
 -/
 
 public section
@@ -114,6 +119,33 @@ namespace CategoryTheory.InjectiveResolution
 open CochainComplex HomologicalComplex
 
 variable {C : Type u} [Category.{v} C] [Abelian C]
+
+section Augmentation
+
+variable {Z : C} (I : InjectiveResolution Z)
+
+/-- The augmentation `Z ⟶ I⁰` of an injective resolution, with source `Z` itself rather than the
+degree `0` object of the single complex on `Z`, as for `I.ι.f 0`. -/
+def ι₀ : Z ⟶ I.cocomplex.X 0 :=
+  (fromSingle₀Equiv _ _ I.ι).1
+
+/-- The augmentation `Z ⟶ I⁰` composed with the differential `I⁰ ⟶ I¹` vanishes. -/
+@[reassoc (attr := simp)]
+lemma ι₀_comp_d : I.ι₀ ≫ I.cocomplex.d 0 1 = 0 :=
+  (fromSingle₀Equiv _ _ I.ι).2
+
+/-- `I.ι₀` is the morphism `Z ⟶ I⁰` corresponding to the augmentation `I.ι` of `I`. -/
+@[simp]
+lemma fromSingle₀Equiv_ι : fromSingle₀Equiv _ _ I.ι = ⟨I.ι₀, I.ι₀_comp_d⟩ :=
+  (rfl)
+
+/-- The augmentation `Z ⟶ I⁰` of an injective resolution is a monomorphism. -/
+instance : Mono I.ι₀ := inferInstanceAs (Mono (I.ι.f 0))
+
+/-- An injective resolution `Z ⟶ I⁰ ⟶ I¹` is exact at `I⁰`. -/
+lemma exact_ι₀ : (ShortComplex.mk _ _ I.ι₀_comp_d).Exact := I.exact₀
+
+end Augmentation
 
 section Desc
 
