@@ -39,8 +39,8 @@ string lengths carry no further freedom.
 * `TauCeti.NormalCrystal.dual`: the dual crystal, exchanging `e` with `f`, `ε` with `φ` and
   negating the weight.
 * `TauCeti.NormalCrystal.eIter`, `TauCeti.NormalCrystal.fIter`: iterated root operators.
-* `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals, with identities,
-  composition and duals.
+* `TauCeti.NormalCrystal.StrictHom`: strict morphisms of normal crystals that are defined
+  everywhere (no element is sent to `0`), with identities, composition and duals.
 * `TauCeti.NormalCrystal.StrictIso`: strict isomorphisms of normal crystals, with inverses,
   composition and duals.
 * `TauCeti.NormalCrystal.transport`: the transport of a normal crystal along a bijection of the
@@ -381,7 +381,12 @@ end Strings
 /-- A **strict morphism** of normal crystals: a map of the underlying types preserving weights and
 commuting with the raising operators. It then also preserves the string lengths and commutes with
 the lowering operators (`TauCeti.NormalCrystal.StrictHom.ε_apply`,
-`TauCeti.NormalCrystal.StrictHom.φ_apply`, `TauCeti.NormalCrystal.StrictHom.f_apply`). -/
+`TauCeti.NormalCrystal.StrictHom.φ_apply`, `TauCeti.NormalCrystal.StrictHom.f_apply`).
+
+This is a total map `B → B'`. Kashiwara's strict morphisms are maps `B ⊔ {0} → B' ⊔ {0}` fixing `0`,
+which may also send elements, even whole connected components, to `0`; `StrictHom` is the case in
+which no element is sent to `0`. For isomorphisms (`TauCeti.NormalCrystal.StrictIso`) the two
+conventions agree. -/
 structure StrictHom (c : NormalCrystal P b B) (d : NormalCrystal P b B') where
   /-- The underlying map. -/
   toFun : B → B'
@@ -416,14 +421,17 @@ theorem wt_apply : d.wt (ψ x) = c.wt x := ψ.wt_toFun x
 @[simp]
 theorem e_apply : d.e i (ψ x) = (c.e i x).map ψ := ψ.e_toFun i x
 
+/-- A strict morphism preserves the string lengths `ε i`. -/
 @[simp]
 theorem ε_apply : d.ε i (ψ x) = c.ε i x :=
   c.ε_apply_eq_of_e_map d (ψ.e_apply i) x
 
+/-- A strict morphism preserves the string lengths `φ i`. -/
 @[simp]
 theorem φ_apply : d.φ i (ψ x) = c.φ i x :=
   c.φ_apply_eq_of_e_map d ψ.wt_apply (ψ.e_apply i) x
 
+/-- A strict morphism commutes with the lowering operators. -/
 @[simp]
 theorem f_apply : d.f i (ψ x) = (c.f i x).map ψ :=
   c.f_apply_eq_of_e_map d ψ.wt_apply (ψ.e_apply i) x
