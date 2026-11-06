@@ -119,8 +119,8 @@ theorem sum_range_mul_le_sum_range_of_sum_eq {w c : ℕ → R} {N k : ℕ} (hk :
 initial sum of `d` is nonnegative, the total sum of `d` over the first `N` indices vanishes, `w` is
 strictly decreasing on the first `N` indices, and `∑_{i < N} w i * d i = 0`, then every initial
 sum of `d` up to `N` vanishes. -/
-theorem sum_range_eq_zero_of_sum_mul_eq_zero {R : Type*} [Ring R] [LinearOrder R]
-    [IsStrictOrderedRing R] {d w : ℕ → R} {N : ℕ}
+theorem sum_range_eq_zero_of_sum_mul_eq_zero {R : Type*} [Ring R] [PartialOrder R]
+    [IsOrderedAddMonoid R] [PosMulStrictMono R] {d w : ℕ → R} {N : ℕ}
     (hd : ∀ k < N, 0 ≤ ∑ i ∈ range k, d i) (hdN : ∑ i ∈ range N, d i = 0)
     (hw : ∀ i, i + 1 < N → w (i + 1) < w i) (hwd : ∑ i ∈ range N, w i * d i = 0) :
     ∀ k ≤ N, ∑ i ∈ range k, d i = 0 := by
@@ -137,6 +137,7 @@ theorem sum_range_eq_zero_of_sum_mul_eq_zero {R : Type*} [Ring R] [LinearOrder R
   rcases k with _ | k
   · simp
   have hterm := (sum_eq_zero_iff_of_nonneg hterms).mp hsum k (mem_range.mpr (by omega))
-  exact (mul_eq_zero.mp hterm).resolve_left (sub_ne_zero.mpr (hw k hkN).ne')
+  exact ((hd _ hkN).eq_or_lt.resolve_right fun h ↦
+    (mul_pos (sub_pos.mpr (hw k hkN)) h).ne' hterm).symm
 
 end TauCeti
