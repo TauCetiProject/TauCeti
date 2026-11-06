@@ -57,8 +57,10 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
   `A⟦X⟧`.
 * `PowerSeries.polynomial_map_algebraMap_smul`: the actions of `R[X]` and `S[X]` on `A⟦X⟧` agree
   along a scalar tower `R → S → A`.
-* `PowerSeries.polynomial_C_smul`, `PowerSeries.polynomial_X_pow_smul`: under the action of
-  `R[X]` on `A⟦X⟧`, constants act as scalars and `Xʲ` as multiplication by `Xʲ`.
+* `PowerSeries.polynomial_C_smul`, `PowerSeries.polynomial_X_smul`,
+  `PowerSeries.polynomial_X_pow_smul`, `PowerSeries.polynomial_monomial_smul`: under the action
+  of `R[X]` on `A⟦X⟧`, constants act as scalars, `Xʲ` as multiplication by `Xʲ`, and `a Xʲ` as
+  `a` times multiplication by `Xʲ`.
 * `PowerSeries.smul_derivative_mem`: a submodule over `R[X]` stable under `p • d⁄dX` contains
   `(p * r ^ 2) • x'` whenever it contains `r • x`.
 * `PowerSeries.coeff_eq_zero_of_derivative_eq_zero`: in prime characteristic `p`, a series
@@ -273,6 +275,19 @@ by the power series `Xʲ`. -/
 theorem polynomial_X_pow_smul (j : ℕ) (f : A⟦X⟧) :
     (Polynomial.X ^ j : Polynomial R) • f = X ^ j * f := by
   rw [Algebra.smul_def, algebraMap_apply', Polynomial.coe_pow, Polynomial.coe_X, map_pow, map_X]
+
+/-- The polynomial `X` acts on `A⟦X⟧` through `PowerSeries.algebraPolynomial` as multiplication
+by the power series `X`. -/
+@[simp]
+theorem polynomial_X_smul (f : A⟦X⟧) : (Polynomial.X : Polynomial R) • f = X * f := by
+  simpa using polynomial_X_pow_smul (R := R) 1 f
+
+/-- The monomial `a Xʲ` acts on `A⟦X⟧` through `PowerSeries.algebraPolynomial` as the scalar `a`
+times multiplication by the power series `Xʲ`. -/
+@[simp]
+theorem polynomial_monomial_smul (j : ℕ) (a : R) (f : A⟦X⟧) :
+    (Polynomial.monomial j a : Polynomial R) • f = a • (X ^ j * f) := by
+  rw [← Polynomial.C_mul_X_pow_eq_monomial, mul_smul, polynomial_X_pow_smul, polynomial_C_smul]
 
 /-- Along a scalar tower `R → S → A`, a polynomial over `R` acts on `A⟦X⟧` as its image in
 `S[X]` does. -/
