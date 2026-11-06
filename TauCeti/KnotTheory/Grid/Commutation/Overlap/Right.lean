@@ -739,6 +739,28 @@ theorem OMonomial_mul_OMonomial_recutRightEqRightSecond
       hrectangle hpentagon hsecond).OMonomial_mul_OMonomial_of_isRepartition D
       h.isRepartition G R
 
+/-- Membership in the covered columns of the rectangle underlying a rectangle between states. -/
+private lemma mem_coveredColumns_toGridRectangle {u v : GridState n} (E : GridRectangleBetween u v)
+    (c : Fin n) : c ∈ E.toGridRectangle.coveredColumns ↔ c ∈ Grid.cIco E.left E.right :=
+  Iff.rfl
+
+/-- A rectangle between states whose columns end at a column `m` strictly inside the cyclic
+interval from `l` to the rotation of `a` covers only columns of `cIco l (finRotate n a)` and
+avoids `a`. -/
+private lemma coveredColumns_initial_piece_subset_not_mem
+    {u v : GridState n} (E : GridRectangleBetween u v) {l : Fin n}
+    (hEleft : E.left = l) (hcol : E.right ∈ Grid.cIoo l (finRotate n a)) :
+    E.toGridRectangle.coveredColumns ⊆ Grid.cIco l (finRotate n a) ∧
+    a ∉ E.toGridRectangle.coveredColumns := by
+  refine ⟨fun c hc => ?_, ?_⟩
+  · rw [mem_coveredColumns_toGridRectangle, hEleft] at hc
+    exact Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hc hcol
+  · rw [mem_coveredColumns_toGridRectangle, hEleft]
+    intro haE
+    have htail : a ∈ Grid.cIco E.right (finRotate n a) :=
+      Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol)
+    exact (Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol)) haE htail
+
 /-- Columns of an initial subrectangle of the rectangle in a rectangle--pentagon decomposition whose
 terminal side is common: if the pentagon's initial column splits the rectangle, the initial piece
 covers a subset of the rectangle's columns and avoids the commuted column `a`, which the rectangle
@@ -752,28 +774,17 @@ private lemma coveredColumns_initial_piece_rectangle
     E.toGridRectangle.coveredColumns ⊆ D.rectangle.toGridRectangle.coveredColumns ∧
     a ∉ E.toGridRectangle.coveredColumns ∧
     a ∈ D.rectangle.toGridRectangle.coveredColumns := by
-  have ha : a ∈ D.rectangle.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hcommon, D.pentagon.right_eq]
+  have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
+    simpa only [hcommon, D.pentagon.right_eq] using hcol
+  obtain ⟨hsub, haNot⟩ :=
+    coveredColumns_initial_piece_subset_not_mem (a := a) E hEleft (hEright ▸ hcol')
+  refine ⟨fun c hc => ?_, haNot, ?_⟩
+  · rw [mem_coveredColumns_toGridRectangle, hcommon, D.pentagon.right_eq]
+    exact hsub hc
+  · rw [mem_coveredColumns_toGridRectangle, hcommon, D.pentagon.right_eq]
     exact Grid.self_mem_cIco_finRotate (by
       intro h
       exact D.rectangle.left_ne_right ((h.trans D.pentagon.right_eq.symm).trans hcommon.symm))
-  have haNot : a ∉ E.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
-    intro haE
-    have hcol' : D.pentagon.left ∈ Grid.cIoo D.rectangle.left (finRotate n a) := by
-      simpa only [hcommon, D.pentagon.right_eq] using hcol
-    have htail : a ∈ Grid.cIco D.pentagon.left (finRotate n a) :=
-      Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol')
-    exact (Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol')) haE htail
-  refine ⟨fun c hc => ?_, haNot, ha⟩
-  rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, hEleft, hEright] at hc
-  rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right]
-  rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol]
-  exact Finset.mem_union.mpr (Or.inl hc)
 
 /-- Columns of an initial subrectangle of the pentagon in a rectangle--pentagon decomposition whose
 terminal side is common: if the rectangle's initial column splits the pentagon's columns, the
@@ -786,26 +797,15 @@ private lemma coveredColumns_initial_piece_pentagon
     E.toGridRectangle.coveredColumns ⊆ D.pentagon.toGridRectangle.coveredColumns ∧
     a ∉ E.toGridRectangle.coveredColumns ∧
     finRotate n a ∉ E.toGridRectangle.coveredColumns := by
-  have haNot : a ∉ E.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
-    intro haE
-    have htail : a ∈ Grid.cIco D.rectangle.left (finRotate n a) :=
-      Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol')
-    exact (Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol')) haE htail
-  have hbNot : finRotate n a ∉ E.toGridRectangle.coveredColumns := by
-    rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-      GridRectangleBetween.toGridRectangle_right, hEleft, hEright]
+  obtain ⟨hsub, haNot⟩ :=
+    coveredColumns_initial_piece_subset_not_mem (a := a) E hEleft (hEright ▸ hcol')
+  refine ⟨fun c hc => ?_, haNot, ?_⟩
+  · rw [mem_coveredColumns_toGridRectangle, D.pentagon.right_eq]
+    exact hsub hc
+  · rw [mem_coveredColumns_toGridRectangle, hEleft, hEright]
     intro hb
     exact Grid.right_notMem_cIco D.pentagon.left (finRotate n a)
       (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hb hcol')
-  refine ⟨fun c hc => ?_, haNot, hbNot⟩
-  rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, hEleft, hEright] at hc
-  rw [GridRectangle.mem_coveredColumns, GridRectangleBetween.toGridRectangle_left,
-    GridRectangleBetween.toGridRectangle_right, D.pentagon.right_eq]
-  rw [← Grid.cIco_union_cIco_eq_cIco_of_mem_cIoo hcol']
-  exact Finset.mem_union.mpr (Or.inl hc)
 
 /-- Geometry of the rectangle left after the first terminal-side recut: it keeps the
 original rectangle's rows and occupies its initial column subinterval. -/
