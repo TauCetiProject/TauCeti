@@ -134,6 +134,12 @@ theorem finiteDualValue_mono {φ φ' : ι → ℝ} {ψ ψ' : κ → ℝ} (hφ : 
   · exact mul_le_mul_of_nonneg_left (hφ i) ENNReal.toReal_nonneg
   · exact mul_le_mul_of_nonneg_left (hψ j) ENNReal.toReal_nonneg
 
+/-- The dual value is monotone up to the opposite additive shifts of the two potentials. -/
+theorem finiteDualValue_le_of_le_add_const {φ φ' : ι → ℝ} {ψ ψ' : κ → ℝ} (a : ℝ)
+    (hφ : ∀ i, φ i ≤ φ' i + a) (hψ : ∀ j, ψ j ≤ ψ' j - a) :
+    finiteDualValue μ ν φ ψ ≤ finiteDualValue μ ν φ' ψ' :=
+  (finiteDualValue_mono hφ hψ).trans_eq (finiteDualValue_add_const_sub_const μ ν φ' ψ' a)
+
 /-! ### The standard-simplex picture
 
 Convexity and compactness arguments are run on real-valued plans, which form a closed subset of
@@ -291,6 +297,22 @@ supremum is unchanged by restricting to potentials normalised at a base point.  
 `c`-transforms turn an arbitrary feasible pair into a normalised one with at least the same
 value, and normalised pairs are confined to a box. -/
 
+omit [Fintype ι] [Fintype κ] in
+/-- The infimal `c`-transform of a potential that vanishes at a base point and is bounded above by
+`2 * M` is bounded in absolute value by `3 * M`, when the cost is bounded by `M`. -/
+private theorem abs_iInf_sub_le_three_mul [Finite ι] [Nonempty ι] {M : ℝ} (hM : ∀ q, |c q| ≤ M)
+    {φ₂ : ι → ℝ} (i₀ : ι) (hφ₂i₀ : φ₂ i₀ = 0) (hφ₂ub : ∀ i, φ₂ i ≤ 2 * M) (j : κ) :
+    |⨅ i, (c (i, j) - φ₂ i)| ≤ 3 * M := by
+  have hM0 : 0 ≤ M := (abs_nonneg _).trans (hM (i₀, j))
+  refine abs_le.2 ⟨?_, ?_⟩
+  · obtain ⟨i₁, hi₁⟩ := exists_eq_ciInf_of_finite (f := fun i ↦ c (i, j) - φ₂ i)
+    have := neg_le_of_abs_le (hM (i₁, j))
+    have := hφ₂ub i₁
+    rw [← hi₁]; linarith
+  · have := ciInf_le (Finite.bddBelow_range fun i ↦ c (i, j) - φ₂ i) i₀
+    rw [hφ₂i₀, sub_zero] at this
+    linarith [(le_abs_self _).trans (hM (i₀, j))]
+
 /-- Two infimal transforms and a shift turn a dual-feasible pair into one that is confined to a
 box depending only on a bound for the cost, without decreasing the dual value. -/
 private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
@@ -345,21 +367,11 @@ private theorem exists_bounded_of_feasible [Nonempty ι] [Nonempty κ] {M : ℝ}
   -- Package feasibility and the two uniform bounds, then compare the dual values.
   refine ⟨φ₂, ψ₃, fun i j ↦ by linarith [hψ₃le i j], fun i ↦ ?_, fun j ↦ ?_, ?_⟩
   · exact abs_le.2 ⟨hφ₂lb i, hφ₂ub i⟩
-  · refine abs_le.2 ⟨?_, ?_⟩
-    · obtain ⟨i₁, hi₁⟩ := exists_eq_ciInf_of_finite (f := fun i ↦ c (i, j) - φ₂ i)
-      have := hlb (i₁, j)
-      have := hφ₂ub i₁
-      rw [hψ₃ j, ← hi₁]; linarith
-    · have := hψ₃le i₀ j
-      rw [hφ₂i₀, sub_zero] at this
-      linarith [hub (i₀, j), this]
-  · refine (finiteDualValue_mono hmonoφ hmonoψ).trans ?_
-    have hshift : finiteDualValue μ ν φ₂ ψ₂ = finiteDualValue μ ν φ₁ ψ₁ := by
-      have : (fun i ↦ φ₁ i + -φ₁ i₀) = φ₂ := funext fun i ↦ (hφ₂ i).symm
-      have h' : (fun j ↦ ψ₁ j - -φ₁ i₀) = ψ₂ := funext fun j ↦ (hψ₂ j).symm
-      rw [← this, ← h', finiteDualValue_add_const_sub_const]
-    rw [← hshift]
-    exact finiteDualValue_mono (fun i ↦ le_rfl) hmonoψ₃
+  · rw [hψ₃ j]
+    exact abs_iInf_sub_le_three_mul hM i₀ hφ₂i₀ hφ₂ub j
+  · refine finiteDualValue_le_of_le_add_const (φ₁ i₀) (fun i ↦ ?_) (fun j ↦ ?_)
+    · linarith [hmonoφ i, hφ₂ i]
+    · linarith [hmonoψ j, hψ₂ j, hmonoψ₃ j]
 
 /-- **Dual attainment**: on finite spaces the dual problem has a maximiser. -/
 theorem exists_forall_finiteDualValue_le (c : ι × κ → ℝ) (μ : PMF ι) (ν : PMF κ) :
