@@ -161,7 +161,7 @@ variable {m : Type*} [Fintype m] [DecidableEq m]
 
 /-- The block-diagonal sum of unitary matrices depends continuously on the two blocks. -/
 theorem continuous_sum {α : Type*} [CommRing α] [StarRing α] [TopologicalSpace α] :
-    Continuous (sum : unitaryGroup n α × unitaryGroup m α → unitaryGroup (n ⊕ m) α) := by
+    Continuous (sum : unitaryGroup n α × unitaryGroup m α →* unitaryGroup (n ⊕ m) α) := by
   refine continuous_induced_rng.2 ?_
   rw [show (Subtype.val ∘ sum : unitaryGroup n α × unitaryGroup m α → Matrix (n ⊕ m) (n ⊕ m) α) =
     fun p => fromBlocks (p.1 : Matrix n n α) 0 0 p.2 from funext coe_sum]

@@ -31,7 +31,8 @@ the manifolds of orthonormal frames.
 
 * `Matrix.UnitaryGroup.fromBlocksOne`: the embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)`.
 * `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`.
-* `Matrix.UnitaryGroup.sum`: the block-diagonal sum `diag(U, V)` of two unitary matrices.
+* `Matrix.UnitaryGroup.sum`: the block-diagonal sum `diag(U, V)` of two unitary matrices, as a
+  group morphism `U(n) × U(m) →* U(n + m)`.
 
 ## Main results
 
@@ -168,18 +169,27 @@ namespace UnitaryGroup
 
 variable {n m : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
 
-/-- The **block-diagonal sum** `diag(U, V)` of two unitary matrices, as a unitary matrix. -/
-def sum (p : unitaryGroup n α × unitaryGroup m α) : unitaryGroup (n ⊕ m) α :=
-  ⟨fromBlocks (p.1 : Matrix n n α) 0 0 (p.2 : Matrix m m α), by
+/-- The **block-diagonal sum** `diag(U, V)` of two unitary matrices, as a group morphism
+`U(n) × U(m) →* U(n + m)`. -/
+def sum : unitaryGroup n α × unitaryGroup m α →* unitaryGroup (n ⊕ m) α where
+  toFun p := ⟨fromBlocks (p.1 : Matrix n n α) 0 0 (p.2 : Matrix m m α), by
     rw [mem_unitaryGroup_iff, star_eq_conjTranspose, fromBlocks_conjTranspose, fromBlocks_multiply,
       ← star_eq_conjTranspose, ← star_eq_conjTranspose, mem_unitaryGroup_iff.1 p.1.2,
       mem_unitaryGroup_iff.1 p.2.2]
     simp⟩
+  map_one' := Subtype.ext <| by simp [fromBlocks_one]
+  map_mul' p q := Subtype.ext <| by simp [fromBlocks_multiply]
 
 @[simp]
 theorem coe_sum (p : unitaryGroup n α × unitaryGroup m α) :
     (sum p : Matrix (n ⊕ m) (n ⊕ m) α) = fromBlocks (p.1 : Matrix n n α) 0 0 p.2 :=
   (rfl)
+
+/-- The block-diagonal sum of unitary matrices is injective. -/
+theorem sum_injective : Function.Injective (sum : unitaryGroup n α × unitaryGroup m α →* _) :=
+  fun p q h ↦ by
+    obtain ⟨h₁, -, -, h₂⟩ := fromBlocks_inj.1 (congrArg Subtype.val h)
+    exact Prod.ext (Subtype.ext h₁) (Subtype.ext h₂)
 
 end UnitaryGroup
 

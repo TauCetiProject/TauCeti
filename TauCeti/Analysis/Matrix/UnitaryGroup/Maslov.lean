@@ -109,9 +109,12 @@ theorem spectralAngleSum_diagonal (d : n → ℂ) :
     roots_multiset_prod_X_sub_C, Multiset.map_map, Finset.sum_eq_multiset_sum]
   simp only [angleOffset, Function.comp_def]
 
-/-- The spectral angle sum is additive under block-diagonal sums. -/
-theorem spectralAngleSum_fromBlocks_zero (A : Matrix n n ℂ) (D : Matrix m m ℂ) :
-    spectralAngleSum (fromBlocks A 0 0 D) = spectralAngleSum A + spectralAngleSum D := by
+/-- The spectral angle sum is additive under block upper-triangular, in particular
+block-diagonal, sums. -/
+@[simp]
+theorem spectralAngleSum_fromBlocks_zero₂₁ (A : Matrix n n ℂ) (B : Matrix n m ℂ)
+    (D : Matrix m m ℂ) :
+    spectralAngleSum (fromBlocks A B 0 D) = spectralAngleSum A + spectralAngleSum D := by
   rw [spectralAngleSum, charpoly_fromBlocks_zero₂₁,
     roots_mul (mul_ne_zero (charpoly_monic A).ne_zero (charpoly_monic D).ne_zero),
     Multiset.map_add, Multiset.sum_add, spectralAngleSum, spectralAngleSum]
@@ -145,6 +148,7 @@ theorem souriau_mul_of_mul_transpose_eq_one (U O : unitaryGroup n α)
   rw [Matrix.mul_assoc, ← Matrix.mul_assoc (O : Matrix n n α), hO, Matrix.one_mul]
 
 /-- The Souriau map of a block-diagonal sum is the block-diagonal sum of the Souriau maps. -/
+@[simp]
 theorem souriau_sum (p : unitaryGroup n α × unitaryGroup m α) :
     souriau (sum p) = sum (souriau p.1, souriau p.2) := by
   refine Subtype.ext ?_
@@ -220,7 +224,8 @@ theorem maslovIndex_trans {U V W : unitaryGroup n ℂ} (γ₁ : Path U V) (γ₂
 theorem maslovIndex_symm {U V : unitaryGroup n ℂ} (γ : Path U V) :
     maslovIndex γ.symm = -maslovIndex γ := by
   rw [maslovIndex, maslovIndex,
-    Circle.angleChange_congr (detSouriauPath γ.symm) (detSouriauPath γ).symm fun t => rfl,
+    Circle.angleChange_congr (detSouriauPath γ.symm) (detSouriauPath γ).symm fun t => by
+      simp only [detSouriauPath, Path.map_symm],
     Circle.angleChange_symm]
   ring
 
@@ -231,9 +236,9 @@ theorem maslovIndex_sum {U V : unitaryGroup n ℂ} {U' V' : unitaryGroup m ℂ} 
     maslovIndex ((γ₁.prod γ₂).map continuous_sum) = maslovIndex γ₁ + maslovIndex γ₂ := by
   have hpath : Circle.angleChange (detSouriauPath ((γ₁.prod γ₂).map continuous_sum)) =
       Circle.angleChange ((detSouriauPath γ₁).mul (detSouriauPath γ₂)) :=
-    Circle.angleChange_congr _ _ fun t => by simp [souriau_sum, detCircle_sum]
+    Circle.angleChange_congr _ _ fun t => by simp
   rw [maslovIndex, hpath, Circle.angleChange_mul, maslovIndex, maslovIndex]
-  simp only [souriau_sum, coe_sum, spectralAngleSum_fromBlocks_zero]
+  simp only [souriau_sum, coe_sum, spectralAngleSum_fromBlocks_zero₂₁]
   ring
 
 /-- **The loop case.** If the path of Lagrangians closes up, that is, the frames at the endpoints

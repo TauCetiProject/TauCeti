@@ -38,7 +38,8 @@ which the Maslov index of a loop of totally real subspaces is defined.
 More generally, a path `γ` from `x` to `y`, not necessarily closed, has a well-defined **swept
 angle** `Circle.angleChange γ = θ 1 - θ 0`, for any continuous lift `θ`. Its exponential is
 `y / x`, it is `2π` times the degree on loops, and it is additive under concatenation and pointwise
-products, odd under reversal and invariant under homotopies fixing the endpoints. It is the
+products, odd under reversal and pointwise inversion, and invariant under homotopies fixing the
+endpoints. It is the
 continuous part of the Maslov index of a path of Lagrangian frames.
 
 ## Main declarations
@@ -58,7 +59,7 @@ continuous part of the Maslov index of a path of Lagrangian frames.
 * `Circle.angleChange_eq_sub`: it is `θ 1 - θ 0` for every continuous lift `θ`.
 * `Circle.angleChange_eq_of_homotopic`, `Circle.angleChange_trans`, `Circle.angleChange_mul`:
   it is invariant under homotopies fixing the endpoints and additive under concatenation and
-  pointwise products.
+  pointwise products; the corresponding laws of the degree are derived from these.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
@@ -135,142 +136,6 @@ theorem degree_eq_of_sub_eq {x : Circle} (γ : Path x x) {θ : I → ℝ} (hθ :
 @[simp]
 theorem degree_refl (x : Circle) : degree (Path.refl x) = 0 :=
   degree_eq_of_sub_eq _ continuous_const (fun _ => exp_arg x) (by simp)
-
-/-- **Homotopy invariance of the degree.** If `F` is a homotopy from the loop `γ₀` to the loop
-`γ₁` through loops (`F (s, 0) = F (s, 1)` for every `s`; the basepoint may move), then the two
-loops have the same degree. -/
-theorem degree_eq_of_homotopy {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y) (F : C(I × I, Circle))
-    (h₀ : ∀ t, F (0, t) = γ₀ t) (h₁ : ∀ t, F (1, t) = γ₁ t) (hF : ∀ s, F (s, 0) = F (s, 1)) :
-    degree γ₀ = degree γ₁ := by
-  -- Lift `F`, read with the loop parameter first, starting from a lift of the basepoint path.
-  let G : C(I × I, Circle) := F.comp ⟨Prod.swap, continuous_swap⟩
-  let β : C(I, Circle) := G.comp ⟨fun s => (0, s), by fun_prop⟩
-  have hβ : β 0 = exp (Complex.arg (β 0)) := (exp_arg _).symm
-  let f := isCoveringMap_exp.liftPath β _ hβ
-  have hG0 (s : I) : G (0, s) = exp (f s) :=
-    (congr_fun (isCoveringMap_exp.liftPath_lifts β _ hβ) s).symm
-  let Θ := isCoveringMap_exp.liftHomotopy G f hG0
-  have hΘ (t s : I) : exp (Θ (t, s)) = F (s, t) :=
-    congr_fun (isCoveringMap_exp.liftHomotopy_lifts G f hG0) (t, s)
-  -- The total angle `Θ (1, s) - Θ (0, s)` is a continuous function of `s` with values in `2πℤ`.
-  have hconst := isCoveringMap_exp.const_of_comp
-    (g := fun s : I => Θ (1, s) - Θ (0, s)) (by fun_prop)
-    (fun a b => by simp [exp_sub, hΘ, hF]) 0 1
-  rw [sub_eq_degree_mul γ₀ (θ := fun t => Θ (t, 0)) (by fun_prop)
-      (fun t => (hΘ t 0).trans (h₀ t)),
-    sub_eq_degree_mul γ₁ (θ := fun t => Θ (t, 1)) (by fun_prop)
-      (fun t => (hΘ t 1).trans (h₁ t))] at hconst
-  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0) hconst
-
-/-- Loops that agree pointwise have the same degree, however their basepoints are written. -/
-theorem degree_congr {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y) (h : ∀ t, γ₀ t = γ₁ t) :
-    degree γ₀ = degree γ₁ :=
-  degree_eq_of_homotopy γ₀ γ₁ (γ₀.toContinuousMap.comp ⟨Prod.snd, continuous_snd⟩)
-    (fun _ => rfl) h (fun _ => by simp)
-
-/-- Homotopic loops, relative to their basepoint, have the same degree. -/
-theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.Homotopic γ₁) :
-    degree γ₀ = degree γ₁ := by
-  obtain ⟨F⟩ := h
-  exact degree_eq_of_homotopy γ₀ γ₁ F.toContinuousMap (by simp) (by simp)
-    (fun s => by simp)
-
-/-- The degree of the concatenation of two loops is the sum of their degrees. -/
-@[simp]
-theorem degree_trans {x : Circle} (γ₁ γ₂ : Path x x) :
-    degree (γ₁.trans γ₂) = degree γ₁ + degree γ₂ := by
-  obtain ⟨θ₁, hθ₁', -⟩ := isCoveringMap_exp.exists_path_lifts γ₁.toContinuousMap (Complex.arg x)
-    (by simp [exp_arg])
-  have hθ₁ (t : I) : exp (θ₁ t) = γ₁ t := congr_fun hθ₁' t
-  obtain ⟨θ₂, hθ₂', hθ₂0⟩ := isCoveringMap_exp.exists_path_lifts γ₂.toContinuousMap (θ₁ 1)
-    (by simp [hθ₁])
-  have hθ₂ (t : I) : exp (θ₂ t) = γ₂ t := congr_fun hθ₂' t
-  -- The lift of `γ₂` starts where the lift of `γ₁` ends, so the two lifts concatenate.
-  let Θ₁ : Path (θ₁ 0) (θ₁ 1) := ⟨θ₁, rfl, rfl⟩
-  let Θ₂ : Path (θ₁ 1) (θ₂ 1) := ⟨θ₂, hθ₂0, rfl⟩
-  refine degree_eq_of_sub_eq _ (θ := Θ₁.trans Θ₂) (Θ₁.trans Θ₂).continuous (fun t => ?_) ?_
-  · simp only [Path.trans_apply]
-    split_ifs <;> simp [Θ₁, Θ₂, hθ₁, hθ₂]
-  · have h₁ := sub_eq_degree_mul γ₁ θ₁.continuous hθ₁
-    have h₂ := sub_eq_degree_mul γ₂ θ₂.continuous hθ₂
-    rw [hθ₂0] at h₂
-    simp only [Path.source, Path.target, Int.cast_add]
-    linarith
-
-/-- Reversing a loop negates its degree. -/
-@[simp]
-theorem degree_symm {x : Circle} (γ : Path x x) : degree γ.symm = -degree γ := by
-  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
-    (by simp [exp_arg])
-  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
-  refine degree_eq_of_sub_eq _ (θ := fun t => θ (σ t)) (by fun_prop) (fun t => by simp [hθ]) ?_
-  have h := sub_eq_degree_mul γ θ.continuous hθ
-  simp only [unitInterval.symm_one, unitInterval.symm_zero, Int.cast_neg]
-  linarith
-
-/-- Conjugating a loop by a path does not change its degree: `p⁻¹ ⬝ γ ⬝ p` has the degree of `γ`.
-This is the invariance of the degree under change of basepoint. -/
-theorem degree_symm_trans_trans {x y : Circle} (γ : Path x x) (p : Path x y) :
-    degree (p.symm.trans (γ.trans p)) = degree γ := by
-  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
-    (by simp [exp_arg])
-  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
-  obtain ⟨φ, hφ', hφ0⟩ := isCoveringMap_exp.exists_path_lifts p.toContinuousMap (θ 1)
-    (by simp [hθ])
-  have hφ (t : I) : exp (φ t) = p t := congr_fun hφ' t
-  have hexp : exp (θ 1 - θ 0) = 1 := by simp [exp_sub, hθ]
-  -- Lift `p⁻¹` by the reversed lift of `p`, shifted back by the total angle of `γ`, so that the
-  -- lifts of `p⁻¹`, `γ` and `p` concatenate.
-  let Φ : Path (φ 1 - (θ 1 - θ 0)) (θ 0) :=
-    { toFun := fun t => φ (σ t) - (θ 1 - θ 0)
-      continuous_toFun := by fun_prop
-      source' := by simp
-      target' := by simp [hφ0] }
-  let Θ : Path (θ 0) (θ 1) := ⟨θ, rfl, rfl⟩
-  let Ψ : Path (θ 1) (φ 1) := ⟨φ, hφ0, rfl⟩
-  refine degree_eq_of_sub_eq _ (θ := Φ.trans (Θ.trans Ψ)) (Φ.trans (Θ.trans Ψ)).continuous
-    (fun t => ?_) (by simp [sub_eq_degree_mul γ θ.continuous hθ])
-  simp only [Path.trans_apply, Path.symm_apply]
-  split_ifs <;> simp [Φ, Θ, Ψ, exp_sub, hθ, hφ, hexp]
-
-/-- The degree of the pointwise product of two loops is the sum of their degrees. -/
-@[simp]
-theorem degree_mul {x y : Circle} (γ₁ : Path x x) (γ₂ : Path y y) :
-    degree (γ₁.mul γ₂) = degree γ₁ + degree γ₂ := by
-  obtain ⟨Θ₁, hΘ₁', -⟩ := isCoveringMap_exp.exists_path_lifts γ₁.toContinuousMap (Complex.arg x)
-    (by simp [exp_arg])
-  obtain ⟨Θ₂, hΘ₂', -⟩ := isCoveringMap_exp.exists_path_lifts γ₂.toContinuousMap (Complex.arg y)
-    (by simp [exp_arg])
-  have hΘ₁ (t : I) : exp (Θ₁ t) = γ₁ t := congr_fun hΘ₁' t
-  have hΘ₂ (t : I) : exp (Θ₂ t) = γ₂ t := congr_fun hΘ₂' t
-  refine degree_eq_of_sub_eq _ (θ := fun t => Θ₁ t + Θ₂ t) (by fun_prop)
-    (fun t => by simp [exp_add, hΘ₁, hΘ₂]) ?_
-  rw [Int.cast_add, add_mul, ← sub_eq_degree_mul γ₁ Θ₁.continuous hΘ₁,
-    ← sub_eq_degree_mul γ₂ Θ₂.continuous hΘ₂]
-  ring
-
-/-- The pointwise `n`-th power of a loop has `n` times its degree. -/
-@[simp]
-theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
-    degree (γ.map (continuous_pow n)) = n * degree γ := by
-  induction n with
-  | zero => simpa using degree_congr _ (Path.refl 1) fun t => by simp
-  | succ n ih =>
-    rw [degree_congr _ ((γ.map (continuous_pow n)).mul γ) fun t => by simp [pow_succ], degree_mul,
-      ih]
-    push_cast
-    ring
-
-/-- The pointwise inverse of a loop has the opposite degree. -/
-@[simp]
-theorem degree_inv {x : Circle} (γ : Path x x) : degree γ.inv = -degree γ := by
-  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
-    (by simp [exp_arg])
-  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
-  refine degree_eq_of_sub_eq _ (θ := fun t => -θ t) (by fun_prop)
-    (fun t => by simp [exp_neg, hθ]) ?_
-  rw [Int.cast_neg, neg_mul, ← sub_eq_degree_mul γ θ.continuous hθ]
-  ring
 
 /-! ### The angle swept by a path -/
 
@@ -387,5 +252,106 @@ theorem angleChange_mul {x₁ y₁ x₂ y₂ : Circle} (γ₁ : Path x₁ y₁) 
       (fun t => by simp [exp_add, hθ₁, hθ₂]),
     angleChange_eq_sub γ₁ θ₁.continuous hθ₁, angleChange_eq_sub γ₂ θ₂.continuous hθ₂]
   ring
+
+/-- Inverting a path pointwise negates the angle it sweeps. -/
+@[simp]
+theorem angleChange_inv {x y : Circle} (γ : Path x y) : angleChange γ.inv = -angleChange γ := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  rw [angleChange_eq_sub _ (θ := fun t => -θ t) (by fun_prop) (fun t => by simp [exp_neg, hθ]),
+    angleChange_eq_sub γ θ.continuous hθ]
+  ring
+
+/-- A loop sweeping the angle `n * (2 * π)` has degree `n`. -/
+private theorem degree_eq_of_angleChange_eq {x : Circle} (γ : Path x x) {n : ℤ}
+    (h : angleChange γ = n * (2 * π)) : degree γ = n := by
+  rw [angleChange_eq_degree_mul] at h
+  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0) h
+
+/-! ### Laws of the degree -/
+
+/-- **Homotopy invariance of the degree.** If `F` is a homotopy from the loop `γ₀` to the loop
+`γ₁` through loops (`F (s, 0) = F (s, 1)` for every `s`; the basepoint may move), then the two
+loops have the same degree. -/
+theorem degree_eq_of_homotopy {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y) (F : C(I × I, Circle))
+    (h₀ : ∀ t, F (0, t) = γ₀ t) (h₁ : ∀ t, F (1, t) = γ₁ t) (hF : ∀ s, F (s, 0) = F (s, 1)) :
+    degree γ₀ = degree γ₁ := by
+  -- Lift `F`, read with the loop parameter first, starting from a lift of the basepoint path.
+  let G : C(I × I, Circle) := F.comp ⟨Prod.swap, continuous_swap⟩
+  let β : C(I, Circle) := G.comp ⟨fun s => (0, s), by fun_prop⟩
+  have hβ : β 0 = exp (Complex.arg (β 0)) := (exp_arg _).symm
+  let f := isCoveringMap_exp.liftPath β _ hβ
+  have hG0 (s : I) : G (0, s) = exp (f s) :=
+    (congr_fun (isCoveringMap_exp.liftPath_lifts β _ hβ) s).symm
+  let Θ := isCoveringMap_exp.liftHomotopy G f hG0
+  have hΘ (t s : I) : exp (Θ (t, s)) = F (s, t) :=
+    congr_fun (isCoveringMap_exp.liftHomotopy_lifts G f hG0) (t, s)
+  -- The total angle `Θ (1, s) - Θ (0, s)` is a continuous function of `s` with values in `2πℤ`.
+  have hconst := isCoveringMap_exp.const_of_comp
+    (g := fun s : I => Θ (1, s) - Θ (0, s)) (by fun_prop)
+    (fun a b => by simp [exp_sub, hΘ, hF]) 0 1
+  rw [sub_eq_degree_mul γ₀ (θ := fun t => Θ (t, 0)) (by fun_prop)
+      (fun t => (hΘ t 0).trans (h₀ t)),
+    sub_eq_degree_mul γ₁ (θ := fun t => Θ (t, 1)) (by fun_prop)
+      (fun t => (hΘ t 1).trans (h₁ t))] at hconst
+  exact_mod_cast mul_right_cancel₀ (by positivity : (2 * π : ℝ) ≠ 0) hconst
+
+/-- Loops that agree pointwise have the same degree, however their basepoints are written. -/
+theorem degree_congr {x y : Circle} (γ₀ : Path x x) (γ₁ : Path y y) (h : ∀ t, γ₀ t = γ₁ t) :
+    degree γ₀ = degree γ₁ :=
+  degree_eq_of_homotopy γ₀ γ₁ (γ₀.toContinuousMap.comp ⟨Prod.snd, continuous_snd⟩)
+    (fun _ => rfl) h (fun _ => by simp)
+
+/-- Homotopic loops, relative to their basepoint, have the same degree. -/
+theorem degree_eq_of_homotopic {x : Circle} {γ₀ γ₁ : Path x x} (h : γ₀.Homotopic γ₁) :
+    degree γ₀ = degree γ₁ :=
+  degree_eq_of_angleChange_eq _
+    ((angleChange_eq_of_homotopic h).trans (angleChange_eq_degree_mul γ₁))
+
+/-- The degree of the concatenation of two loops is the sum of their degrees. -/
+@[simp]
+theorem degree_trans {x : Circle} (γ₁ γ₂ : Path x x) :
+    degree (γ₁.trans γ₂) = degree γ₁ + degree γ₂ :=
+  degree_eq_of_angleChange_eq _ (by
+    rw [angleChange_trans, angleChange_eq_degree_mul, angleChange_eq_degree_mul]; push_cast; ring)
+
+/-- Reversing a loop negates its degree. -/
+@[simp]
+theorem degree_symm {x : Circle} (γ : Path x x) : degree γ.symm = -degree γ :=
+  degree_eq_of_angleChange_eq _ (by
+    rw [angleChange_symm, angleChange_eq_degree_mul]; push_cast; ring)
+
+/-- Conjugating a loop by a path does not change its degree: `p⁻¹ ⬝ γ ⬝ p` has the degree of `γ`.
+This is the invariance of the degree under change of basepoint. -/
+theorem degree_symm_trans_trans {x y : Circle} (γ : Path x x) (p : Path x y) :
+    degree (p.symm.trans (γ.trans p)) = degree γ :=
+  degree_eq_of_angleChange_eq _ (by
+    rw [angleChange_trans, angleChange_trans, angleChange_symm, angleChange_eq_degree_mul]; ring)
+
+/-- The degree of the pointwise product of two loops is the sum of their degrees. -/
+@[simp]
+theorem degree_mul {x y : Circle} (γ₁ : Path x x) (γ₂ : Path y y) :
+    degree (γ₁.mul γ₂) = degree γ₁ + degree γ₂ :=
+  degree_eq_of_angleChange_eq _ (by
+    rw [angleChange_mul, angleChange_eq_degree_mul, angleChange_eq_degree_mul]; push_cast; ring)
+
+/-- The pointwise `n`-th power of a loop has `n` times its degree. -/
+@[simp]
+theorem degree_map_pow {x : Circle} (γ : Path x x) (n : ℕ) :
+    degree (γ.map (continuous_pow n)) = n * degree γ := by
+  induction n with
+  | zero => simpa using degree_congr _ (Path.refl 1) fun t => by simp
+  | succ n ih =>
+    rw [degree_congr _ ((γ.map (continuous_pow n)).mul γ) fun t => by simp [pow_succ], degree_mul,
+      ih]
+    push_cast
+    ring
+
+/-- The pointwise inverse of a loop has the opposite degree. -/
+@[simp]
+theorem degree_inv {x : Circle} (γ : Path x x) : degree γ.inv = -degree γ :=
+  degree_eq_of_angleChange_eq _ (by
+    rw [angleChange_inv, angleChange_eq_degree_mul]; push_cast; ring)
 
 end Circle

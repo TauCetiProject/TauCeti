@@ -273,19 +273,13 @@ theorem maslovPhase_sum (A : GLSymplectic n ℝ) (B : GLSymplectic m ℝ) :
   have hW := congrArg Units.val
     (realify_toUnits_unitaryGroupEquivSymplecticInfOrthogonal_symm_apply (polarUnitary B))
   rw [coe_realify, Unitary.val_toUnits_apply] at hV hW
-  have hVW : fromBlocks (V : Matrix n n ℂ) 0 0 (W : Matrix m m ℂ) ∈ unitaryGroup (n ⊕ m) ℂ := by
-    rw [mem_unitaryGroup_iff, star_eq_conjTranspose, fromBlocks_conjTranspose, fromBlocks_multiply,
-      ← star_eq_conjTranspose, ← star_eq_conjTranspose, mem_unitaryGroup_iff.1 V.2,
-      mem_unitaryGroup_iff.1 W.2]
-    simp
-  have key : polarUnitary (sum (A, B)) = unitaryGroupEquivSymplecticInfOrthogonal ⟨_, hVW⟩ := by
+  have key : polarUnitary (sum (A, B)) =
+      unitaryGroupEquivSymplecticInfOrthogonal (UnitaryGroup.sum (V, W)) := by
     refine Subtype.ext (Units.ext ?_)
     rw [coe_polarUnitary_sum, unitaryGroupEquivSymplecticInfOrthogonal_apply, coe_realify,
-      Unitary.val_toUnits_apply, realify_fromBlocks_zero, hV, hW]
+      Unitary.val_toUnits_apply, UnitaryGroup.coe_sum, realify_fromBlocks_zero, hV, hW]
   rw [maslovPhase, key, ContinuousMulEquiv.symm_apply_apply, maslovPhase, maslovPhase]
-  refine Circle.ext ?_
-  rw [Circle.coe_mul, coe_detCircle, coe_detCircle, coe_detCircle]
-  exact det_fromBlocks_zero₂₁ _ _ _
+  exact detCircle_sum (V, W)
 
 /-- **The direct-sum axiom.** The direct sum of two loops of symplectic matrices has the sum of
 their Maslov indices. -/
