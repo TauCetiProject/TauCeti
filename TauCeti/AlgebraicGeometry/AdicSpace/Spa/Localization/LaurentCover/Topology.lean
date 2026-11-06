@@ -44,6 +44,33 @@ variable {A : Type*} [CommRing A] [UniformSpace A] [IsUniformAddGroup A] [IsTopo
   [CompleteSpace A] [T0Space A] [IsTateRing A] [IsStronglyNoetherian A]
   (P : PairOfDefinition A) (f : A)
 
+omit [IsUniformAddGroup A] [CompleteSpace A] [T0Space A] [IsTateRing A]
+  [IsStronglyNoetherian A] in
+/-- The structure of a Laurent-cover piece `Aₛ` and its completion for the packaged uniformity
+`locUniformSpace`: `Aₛ` is a uniform additive group and a topological ring, the actions of `A`
+are continuous (uniformly so on `Aₛ`), and the completion is a Huber ring with countably
+generated uniformity. Bundled so that the two topological statements below set each piece up in
+one line. -/
+private theorem locUniformSpace_completion_facts (T : Set A) (g : A) (S : Type*) [CommRing S]
+    [Algebra A S] [IsLocalization.Away g S] (hden : HasDenominatorPower P T g S) :
+    letI := locUniformSpace P T g S hden
+    ∃ (_ : IsUniformAddGroup S) (_ : IsTopologicalRing S) (_ : ContinuousSMul A S)
+      (_ : UniformContinuousConstSMul A S), IsHuberRing (Completion S) ∧
+        ContinuousSMul A (Completion S) ∧ (uniformity (Completion S)).IsCountablyGenerated := by
+  let _ := locUniformSpace P T g S hden
+  have h₁ := isUniformAddGroup_locUniformSpace P T g S hden
+  have h₂ := isTopologicalRing_locUniformSpace P T g S hden
+  have hS : ContinuousSMul A S := continuousSMul_of_algebraMap A S (by
+    rw [locUniformSpace_toTopologicalSpace]
+    exact continuous_algebraMap_locTopology P T g S hden)
+  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S
+  have _ := isHuberRing_completion_locTopology P T g S hden
+  refine ⟨h₁, h₂, hS, inferInstance, inferInstance, ?_,
+    IsUniformAddGroup.uniformity_countably_generated⟩
+  exact continuousSMul_of_algebraMap A (Completion S) <|
+    (continuous_toCompletionLoc P T g S hden).congr fun a ↦
+      (toCompletionLoc_apply P T g S hden a).trans (Completion.algebraMap_def S A a).symm
+
 section Augmentation
 
 variable (S₁ S₂ : Type*) [CommRing S₁] [Algebra A S₁] [IsLocalization.Away (1 : A) S₁]
@@ -71,23 +98,10 @@ theorem isClosedEmbedding_laurentCover :
   let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
   let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
   let _ := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  -- Use the canonical scalar actions on the localizations and their completions.
-  have _ : ContinuousSMul A S₁ := continuousSMul_of_algebraMap A S₁ (by
-    rw [locUniformSpace_toTopologicalSpace]
-    exact continuous_algebraMap_locTopology P ({f, 1} : Finset A) 1 S₁ hden₁)
-  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₁
-  have _ : ContinuousSMul A S₂ := continuousSMul_of_algebraMap A S₂ (by
-    rw [locUniformSpace_toTopologicalSpace]
-    exact continuous_algebraMap_locTopology P ({1} : Finset A) f S₂ hden₂)
-  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₂
-  have _ := isHuberRing_completion_locTopology P ({f, 1} : Finset A) 1 S₁ hden₁
-  have _ := isHuberRing_completion_locTopology P ({1} : Finset A) f S₂ hden₂
+  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({f, 1} : Finset A) 1 S₁ hden₁
+  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({1} : Finset A) f S₂ hden₂
+  obtain ⟨_, _, _, _, _, _, _⟩ :=
+    locUniformSpace_completion_facts P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   let ρ := RingHom.prod (toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁)
     (toCompletionLoc P ({1} : Finset A) f S₂ hden₂)
   let l := Algebra.linearMap A (Completion S₁ × Completion S₂)
@@ -96,11 +110,6 @@ theorem isClosedEmbedding_laurentCover :
   have hρeq : ρ = algebraMap A (Completion S₁ × Completion S₂) := by
     ext a <;> simp [ρ, Completion.algebraMap_def]
   have hl : Continuous l := by simpa only [l, Algebra.coe_linearMap, ← hρeq] using hρ
-  have _ : ContinuousSMul A (Completion S₁ × Completion S₂) :=
-    continuousSMul_of_algebraMap A _ hl
-  have _ := IsUniformAddGroup.uniformity_countably_generated (α := A)
-  have _ := IsUniformAddGroup.uniformity_countably_generated (α := Completion S₁)
-  have _ := IsUniformAddGroup.uniformity_countably_generated (α := Completion S₂)
   -- Exactness identifies the range with the closed equalizer of the overlap restrictions.
   have hrange : IsClosed (Set.range ρ) := by
     have he := laurentCover_exact P f S₁ S₂ S₁₂ hden₂
@@ -165,65 +174,19 @@ theorem isOpenQuotientMap_laurentCover
   let _ := locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
   let _ := locUniformSpace P ({1} : Finset A) f S₂ hden₂
   let _ := locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  have _ := isUniformAddGroup_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
-  have _ := isTopologicalRing_locUniformSpace P ({f, 1} : Finset A) 1 S₁ hden₁
-  have _ := isUniformAddGroup_locUniformSpace P ({1} : Finset A) f S₂ hden₂
-  have _ := isTopologicalRing_locUniformSpace P ({1} : Finset A) f S₂ hden₂
-  have _ := isUniformAddGroup_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  have _ := isTopologicalRing_locUniformSpace P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  -- Use the canonical scalar actions on the localizations and their completions.
-  have _ : ContinuousSMul A S₁ := continuousSMul_of_algebraMap A S₁ (by
-    rw [locUniformSpace_toTopologicalSpace]
-    exact continuous_algebraMap_locTopology P ({f, 1} : Finset A) 1 S₁ hden₁)
-  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₁
-  have _ : ContinuousSMul A S₂ := continuousSMul_of_algebraMap A S₂ (by
-    rw [locUniformSpace_toTopologicalSpace]
-    exact continuous_algebraMap_locTopology P ({1} : Finset A) f S₂ hden₂)
-  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₂
-  have _ : ContinuousSMul A S₁₂ := continuousSMul_of_algebraMap A S₁₂ (by
-    rw [locUniformSpace_toTopologicalSpace]
-    exact continuous_algebraMap_locTopology P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂)
-  have _ := uniformContinuousConstSMul_of_continuousConstSMul A S₁₂
-  have _ := isHuberRing_completion_locTopology P ({f, 1} : Finset A) 1 S₁ hden₁
-  have _ := isHuberRing_completion_locTopology P ({1} : Finset A) f S₂ hden₂
-  have _ := isHuberRing_completion_locTopology P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
-  have _ : ContinuousSMul A (Completion S₁) :=
-    continuousSMul_of_algebraMap A (Completion S₁) <|
-      (continuous_toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁).congr fun a ↦
-        (toCompletionLoc_apply P ({f, 1} : Finset A) 1 S₁ hden₁ a).trans
-          (Completion.algebraMap_def S₁ A a).symm
-  have _ : ContinuousSMul A (Completion S₂) :=
-    continuousSMul_of_algebraMap A (Completion S₂) <|
-      (continuous_toCompletionLoc P ({1} : Finset A) f S₂ hden₂).congr fun a ↦
-        (toCompletionLoc_apply P ({1} : Finset A) f S₂ hden₂ a).trans
-          (Completion.algebraMap_def S₂ A a).symm
-  have _ : ContinuousSMul A (Completion S₁₂) :=
-    continuousSMul_of_algebraMap A (Completion S₁₂) <|
-      (continuous_toCompletionLoc P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂).congr fun a ↦
-        (toCompletionLoc_apply P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ a).trans
-          (Completion.algebraMap_def S₁₂ A a).symm
-  have _ := IsUniformAddGroup.uniformity_countably_generated (α := Completion S₁)
-  have _ := IsUniformAddGroup.uniformity_countably_generated (α := Completion S₂)
-  have _ := IsUniformAddGroup.uniformity_countably_generated (α := Completion S₁₂)
+  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({f, 1} : Finset A) 1 S₁ hden₁
+  obtain ⟨_, _, _, _, _, _, _⟩ := locUniformSpace_completion_facts P ({1} : Finset A) f S₂ hden₂
+  obtain ⟨_, _, _, _, _, _, _⟩ :=
+    locUniformSpace_completion_facts P ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂
   -- The restriction maps commute with the structure maps, hence are A-linear.
   let r₁ : Completion S₁ →ₐ[A] Completion S₁₂ :=
     { toRingHom := restrictionRingHom P ({f, 1} : Finset A) 1 S₁ hden₁
         ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ f rfl (by simp)
-      commutes' := fun a ↦ by
-        simpa only [RingHom.comp_apply, toCompletionLoc_apply, Completion.algebraMap_def,
-          RingHom.toFun_eq_coe] using
-          RingHom.congr_fun
-            (restrictionRingHom_comp_toCompletionLoc P ({f, 1} : Finset A) 1 S₁ hden₁
-              ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ f rfl (by simp)) a }
+      commutes' := fun a ↦ by simp [Completion.algebraMap_def] }
   let r₂ : Completion S₂ →ₐ[A] Completion S₁₂ :=
     { toRingHom := restrictionRingHom P ({1} : Finset A) f S₂ hden₂
         ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f) (by simp)
-      commutes' := fun a ↦ by
-        simpa only [RingHom.comp_apply, toCompletionLoc_apply, Completion.algebraMap_def,
-          RingHom.toFun_eq_coe] using
-          RingHom.congr_fun
-            (restrictionRingHom_comp_toCompletionLoc P ({1} : Finset A) f S₂ hden₂
-              ({f * f, f, 1} : Finset A) (1 * f) S₁₂ hden₁₂ 1 (mul_comm 1 f) (by simp)) a }
+      commutes' := fun a ↦ by simp [Completion.algebraMap_def] }
   let d := r₁.toLinearMap.comp (LinearMap.fst A (Completion S₁) (Completion S₂)) -
     r₂.toLinearMap.comp (LinearMap.snd A (Completion S₁) (Completion S₂))
   have hd : Continuous d :=
