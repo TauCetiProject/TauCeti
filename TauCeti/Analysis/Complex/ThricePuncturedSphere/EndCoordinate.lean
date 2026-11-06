@@ -197,6 +197,17 @@ theorem re_endCoord_inf_one_pos : 0 < (inf.endCoord 1).re := by
   rw [this, Real.log_inv, neg_neg]
   exact div_pos (Real.log_pos one_lt_two) (by positivity)
 
+/-- On the closed disc `‖w‖ ≤ 2 exp (2πR)` with `R ≥ 0`, the signed longitudinal coordinate `-s` of
+the end at `∞` is at most `R`: the disc is bounded by the circle `s = -R` of that end. -/
+theorem neg_re_endCoord_inf_le {R : ℝ} (hR : 0 ≤ R) {w : ℂ}
+    (hw : ‖w‖ ≤ 2 * Real.exp (2 * π * R)) : -(inf.endCoord w).re ≤ R := by
+  rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_div, neg_neg,
+    div_le_iff₀ (by positivity)]
+  rcases eq_or_ne w 0 with rfl | hw₀
+  · simpa using mul_nonneg hR Real.two_pi_pos.le
+  · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat, mul_comm R]
+    linarith
+
 /-- A point with nonzero longitudinal coordinate is not the center of the end. -/
 theorem ne_endCenter_of_re_endCoord_ne_zero (q : Puncture) {w : ℂ}
     (h : (q.endCoord w).re ≠ 0) : w ≠ q.endCenter := by

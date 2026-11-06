@@ -127,13 +127,7 @@ private theorem abs_single_inf_le {B : ℝ} (hB : ∀ t x, |H t x| ≤ B) (r : P
 about the pole, where the signed longitudinal coordinate `-s` of the end is at most `1`. -/
 theorem negativePlanePerturbation_eq_zero_of_norm_le {w : ℂ} (hw : ‖w‖ ≤ 2 * Real.exp (2 * π))
     (x : M) : negativePlanePerturbation H w x = 0 := by
-  have h : -(inf.endCoord w).re ≤ 1 := by
-    rw [re_endCoord, endCenter_inf, endScale_inf, sub_zero, neg_div, neg_neg,
-      div_le_one (by positivity)]
-    rcases eq_or_ne w 0 with rfl | hw₀
-    · simpa using Real.pi_pos.le
-    · rw [Real.log_le_iff_le_exp (by simpa using hw₀), norm_div, Complex.norm_ofNat]
-      linarith
+  have h := neg_re_endCoord_inf_le zero_le_one (w := w) (by simpa using hw)
   rw [negativePlanePerturbation_def, smoothTransition.zero_of_nonpos (by linarith), zero_mul,
     zero_smul]
 
@@ -215,23 +209,14 @@ theorem plumbedPerturbation_single_inf_eq_zero (hq : q ≠ inf) (hL : 2 < L) {w 
   · -- At the capped puncture itself the datum is that of the receiving pair of pants.
     rw [plumbedPerturbation_def, re_endCoord_endCenter, ite_eq_right (by linarith),
       pairOfPantsPerturbation_endCenter]
-  · have hd : 0 < ‖w - q.endCenter‖ := norm_pos_iff.2 (sub_ne_zero.2 hc)
-    have hlog : Real.log (‖w - q.endCenter‖ / (1 / 2)) ≤ -(2 * π * (L - 1)) := by
-      rw [Real.log_le_iff_le_exp (by positivity), div_le_iff₀ (by norm_num)]
-      linarith
-    have hre : L - 1 ≤ (q.endCoord w).re := by
-      rw [re_endCoord, norm_div, norm_endScale hq, le_div_iff₀ (by positivity)]
-      linarith
-    -- The point corresponds to a point of the pole disc of the plane.
-    have hexp : Real.exp (-(2 * π * (L - 1))) = Real.exp (2 * π) * Real.exp (-(2 * π * L)) := by
-      rw [← Real.exp_add]
-      ring_nf
-    have hw' : ‖(w - q.endCenter) / q.plumbingFactor L‖ ≤ 2 * Real.exp (2 * π) := by
-      rw [norm_div, norm_plumbingFactor, norm_endScale hq, div_le_iff₀ (by positivity)]
-      rw [hexp] at hw
-      linarith
+  · -- Elsewhere the point corresponds to a point of the pole disc of the plane.
+    have hw' : ‖(w - q.endCenter) / q.plumbingFactor L‖ ≤ 2 * Real.exp (2 * π * 1) :=
+      (norm_sub_endCenter_div_plumbingFactor_le_iff hq L 1).2 hw
+    have hre := neg_re_endCoord_inf_le zero_le_one hw'
+    rw [re_endCoord_inf_sub_endCenter_div q L hc] at hre
     rw [plumbedPerturbation_def, ite_eq_left (by linarith), pairOfPantsPerturbation_single_inf,
-      negativePlanePerturbation_eq_zero_of_norm_le hw', ContinuousLinearMap.zero_comp]
+      negativePlanePerturbation_eq_zero_of_norm_le (by simpa using hw'),
+      ContinuousLinearMap.zero_comp]
 
 /-- **The capped datum is smooth.** For period-one Hamiltonians `Hb` of class `C^n` on `ℝ × M` and
 neck length `L > 4`, the perturbation obtained by plumbing the negative plane with Hamiltonian

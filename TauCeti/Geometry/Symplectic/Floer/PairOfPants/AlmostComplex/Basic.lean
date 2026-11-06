@@ -43,7 +43,8 @@ from `0` to the Cayley transform of a tame (or compatible) structure. The result
 * `TauCeti.Floer.pairOfPantsAlmostComplex_cylindricalEndLift`: if `J_q` has period one in `t`,
   then on the part `±s ≥ 2` of the end `q` it is `J_q(t, x)`.
 * `TauCeti.Floer.exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne`: it is `J₀` off the
-  parts `±s > 1` of the three ends.
+  parts `±s > 1` of the three ends; in particular it is `J₀` at the punctures `0` and `1`
+  (`TauCeti.Floer.pairOfPantsAlmostComplex_endCenter`).
 * `TauCeti.Floer.contMDiffAt_pairOfPantsAlmostComplex`: for `C^n` families of period one, it is
   `C^n` on `S × M`.
 
@@ -200,6 +201,16 @@ theorem exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne (h₀ : ω.Comp
   · simp [hc]
   · obtain ⟨h₁, hw⟩ := one_lt_endSign_mul_re_endCoord hc
     exact absurd (q.cylindricalEndLift_endCoord hw) (hne q _ h₁)
+
+/-- The pair-of-pants structure is the base structure `J₀` at the centers `0` and `1` of the
+ends: these points lie on no part `±s > 1` of an end. -/
+theorem pairOfPantsAlmostComplex_endCenter (h₀ : ω.Compatible J₀) (q : Puncture) (x : M) :
+    pairOfPantsAlmostComplex h₀ J hJ q.endCenter x = J₀ := by
+  by_contra h
+  obtain ⟨r, z, hz, hrz⟩ := exists_cylindricalEndLift_of_pairOfPantsAlmostComplex_ne h₀ h
+  have hS := r.cylindricalEndLift_ne_zero_and_ne_one (z := z) (by linarith)
+  rcases q.endCenter_eq_zero_or_eq_one with hc | hc <;> rw [hc] at hrz
+  exacts [hS.1 hrz, hS.2 hrz]
 
 end Algebraic
 
