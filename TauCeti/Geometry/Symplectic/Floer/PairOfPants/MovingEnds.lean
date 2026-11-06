@@ -367,6 +367,7 @@ end TauCeti.Floer
 namespace TauCeti.SymplecticForm
 
 open Floer MeasureTheory
+open TauCeti.Complex (realChart realChart_apply contDiff_realChart)
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V]
 
@@ -387,6 +388,16 @@ private theorem differentiableAt_inputEndPerturbation (hH : Periodic H 1)
     exact h
   exact h'.contDiffAt.differentiableAt one_ne_zero
 
+private theorem hasDerivAt_const_add_mul (c a w : ℂ) : HasDerivAt (c + a * ·) a w := by
+  simpa using ((hasDerivAt_id w).const_mul a).const_add c
+
+private theorem injective_realChart_const_add_mul (c : ℂ) (ha : a ≠ 0) :
+    Injective (realChart (c + a * ·)) := by
+  have h : Injective (c + a * ·) := fun _ _ h => mul_left_cancel₀ ha (add_left_cancel h)
+  intro z w hzw
+  rw [realChart_apply, realChart_apply] at hzw
+  exact Complex.equivRealProdCLM.symm.injective (h (Complex.equivRealProdCLM.injective hzw))
+
 variable [FiniteDimensional ℝ V]
 
 /-- On the image under the affine chart of the plane without its origin, the integrated curvature
@@ -395,7 +406,7 @@ reparametrized map. -/
 private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbation
     (ω : SymplecticForm V) (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H)) (ha : a ≠ 0)
     (u : ℝ × ℝ → V) :
-    ∫⁻ z in complexAffineChart c a '' {z | Complex.equivRealProdCLM.symm z ≠ 0},
+    ∫⁻ z in realChart (c + a * ·) '' {z | Complex.equivRealProdCLM.symm z ≠ 0},
       ‖ω.hamiltonianCurvature
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -404,27 +415,27 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
         (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z)
           x 1)
         (fun z x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm z)
-          x Complex.I) w ((u ∘ complexAffineChart c a) w)‖ₑ := by
+          x Complex.I) w ((u ∘ realChart (c + a * ·)) w)‖ₑ := by
   set S := {z : ℝ × ℝ | Complex.equivRealProdCLM.symm z ≠ 0}
   have hSm : MeasurableSet S :=
     (measurableSet_singleton 0).compl.preimage Complex.equivRealProdCLM.symm.continuous.measurable
   -- The affine chart maps `S` off the center, where the datum is differentiable.
   have hdiff {w : ℝ × ℝ} (hw : w ∈ S) (y : V) :
       DifferentiableAt ℝ (fun p : ℂ × V ↦ inputEndPerturbation c a H p.1 p.2)
-        (Complex.equivRealProdCLM.symm (complexAffineChart c a w), y) := by
+        (Complex.equivRealProdCLM.symm (realChart (c + a * ·) w), y) := by
     refine differentiableAt_inputEndPerturbation hH hHs ha ?_ y
-    rw [complexAffineChart_apply, ContinuousLinearEquiv.symm_apply_apply]
+    rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply]
     exact fun h => hw (by simpa [ha] using h)
   have hdom {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
       (fun z ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) y v)
-      (complexAffineChart c a w) :=
+      (realChart (c + a * ·) w) :=
     ((hdiff hw y).comp (f := fun z ↦ (Complex.equivRealProdCLM.symm z, y))
-      (complexAffineChart c a w) (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
+      (realChart (c + a * ·) w) (Complex.equivRealProdCLM.symm.differentiableAt.prodMk
         (differentiableAt_const y))).clm_apply (differentiableAt_const v)
   have htgt {w : ℝ × ℝ} (hw : w ∈ S) (y : V) (v : ℂ) : DifferentiableAt ℝ
       (fun y ↦ inputEndPerturbation c a H
-        (Complex.equivRealProdCLM.symm (complexAffineChart c a w)) y v) y :=
-    ((hdiff hw y).comp (f := fun y ↦ (Complex.equivRealProdCLM.symm (complexAffineChart c a w), y))
+        (Complex.equivRealProdCLM.symm (realChart (c + a * ·) w)) y v) y :=
+    ((hdiff hw y).comp (f := fun y ↦ (Complex.equivRealProdCLM.symm (realChart (c + a * ·) w), y))
       y ((differentiableAt_const _).prodMk differentiableAt_id)).clm_apply
       (differentiableAt_const v)
   -- The pullback of the datum along the affine chart is the pair-of-pants datum.
@@ -432,15 +443,17 @@ private theorem setLIntegral_image_enorm_hamiltonianCurvature_inputEndPerturbati
     apply Complex.ext <;> simp [stdComplexLineReal_eq]
   have hI : Complex.equivRealProdCLM.symm stdComplexLineImag = Complex.I := by
     apply Complex.ext <;> simp [stdComplexLineImag_eq]
-  have hpull (v : ℝ × ℝ) : perturbationPullback (complexAffineChart c a)
+  have hpull (v : ℝ × ℝ) : perturbationPullback (realChart (c + a * ·))
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x 1)
       (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
       fun w x ↦ pairOfPantsPerturbation (Pi.single zero H) (Complex.equivRealProdCLM.symm w) x
         (Complex.equivRealProdCLM.symm v) := by
     funext w x
-    rw [perturbationPullback_complexAffineChart, inputEndPerturbation_add_mul ha]
-  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm (injective_complexAffineChart c ha).injOn
-    (fun w _ ↦ (contDiff_complexAffineChart c a).contDiffAt)
+    rw [perturbationPullback_realChart _ (hasDerivAt_const_add_mul c a _),
+      inputEndPerturbation_add_mul ha]
+  rw [ω.lintegral_enorm_hamiltonianCurvature_image hSm
+    (injective_realChart_const_add_mul c ha).injOn
+    (fun w _ ↦ (contDiff_realChart (by fun_prop)).contDiffAt)
     (fun w hw ↦ hdom hw _ 1) (fun w hw ↦ hdom hw _ Complex.I)
     (fun w hw ↦ htgt hw _ 1) (fun w hw ↦ htgt hw _ Complex.I), hpull, hpull, h₁, hI]
   rfl
@@ -458,7 +471,7 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
         (fun z x ↦ inputEndPerturbation c a H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ENNReal.ofReal B := by
   -- The plane is, up to the center `c`, the image under the affine chart of `ℂ ∖ {0}`.
-  have hcover : univ ⊆ complexAffineChart c a '' {z | Complex.equivRealProdCLM.symm z ≠ 0} ∪
+  have hcover : univ ⊆ realChart (c + a * ·) '' {z | Complex.equivRealProdCLM.symm z ≠ 0} ∪
       {Complex.equivRealProdCLM c} := by
     intro z _
     by_cases h : Complex.equivRealProdCLM.symm z = c
@@ -466,7 +479,7 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
     · refine Or.inl ⟨Complex.equivRealProdCLM ((Complex.equivRealProdCLM.symm z - c) / a), ?_, ?_⟩
       · rw [Set.mem_ofPred_eq, ContinuousLinearEquiv.symm_apply_apply]
         exact div_ne_zero (sub_ne_zero.2 h) ha
-      · rw [complexAffineChart_apply, ContinuousLinearEquiv.symm_apply_apply, mul_div_cancel₀ _ ha,
+      · rw [realChart_apply, ContinuousLinearEquiv.symm_apply_apply, mul_div_cancel₀ _ ha,
           add_sub_cancel, ContinuousLinearEquiv.apply_symm_apply]
   have hN : volume ({Complex.equivRealProdCLM c} : Set (ℝ × ℝ)) = 0 := by
     rw [Measure.volume_eq_prod]
@@ -480,7 +493,7 @@ theorem lintegral_enorm_hamiltonianCurvature_inputEndPerturbation_le (ω : Sympl
       ⟨hHs, fun _ _ => contDiff_const⟩
   have hP := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hP₁ hP₂
     (B := Pi.single zero B) (fun r t x => by by_cases hr : r = zero <;> simp [hr, hB t x])
-    (u ∘ complexAffineChart c a)
+    (u ∘ realChart (c + a * ·))
   rw [Fintype.sum_eq_single zero fun r hr => by simp [Pi.single_eq_of_ne hr],
     Pi.single_eq_same] at hP
   calc _ = ∫⁻ z in univ, ‖ω.hamiltonianCurvature
