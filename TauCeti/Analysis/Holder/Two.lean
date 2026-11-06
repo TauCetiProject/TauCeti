@@ -272,18 +272,10 @@ theorem memHolder_secondFDeriv (f : C2HolderSpace α E F) :
   rw [f.fderiv_eq_fderivC1_coe]
   exact C1HolderSpace.memHolder_fderiv f.fderivC1
 
-private theorem iteratedFDeriv_two_eq (f : C2HolderSpace α E F) :
-    iteratedFDeriv ℝ 2 (f : E → F) =
-      ((continuousMultilinearCurryFin2 ℝ E F).symm : _ → _) ∘
-        _root_.fderiv ℝ (_root_.fderiv ℝ (f : E → F)) := by
-  funext x
-  ext m
-  rw [iteratedFDeriv_two_apply, Function.comp_apply, continuousMultilinearCurryFin2_symm_apply]
-
 /-- The canonical second iterated Fréchet derivative is globally `α`-Hölder. -/
 theorem memHolder_iteratedFDeriv_two (f : C2HolderSpace α E F) :
     MemHolder α (iteratedFDeriv ℝ 2 (f : E → F)) := by
-  rw [f.iteratedFDeriv_two_eq]
+  rw [iteratedFDeriv_two_eq_comp_fderiv_fderiv]
   simpa using f.memHolder_secondFDeriv.comp
     (continuousMultilinearCurryFin2 ℝ E F).symm.lipschitzWith.holderWith.memHolder
 
