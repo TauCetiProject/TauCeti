@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.TotalVariation.Defs
+public import Mathlib.MeasureTheory.Measure.Dirac.Basic
 public import TauCeti.MeasureTheory.VectorMeasure.Decomposition.Jordan
 import Mathlib.MeasureTheory.VectorMeasure.Variation.SignedMeasure
 
@@ -40,7 +41,9 @@ estimates into total-variation estimates.
 * `MeasureTheory.etvDist_le_of_forall_le_add`: eventwise bounds in both directions bound the
   total variation distance;
 * `MeasureTheory.etvDist_le_two_mul_iff`: for finite measures of equal total mass,
-  `etvDist μ ν ≤ 2 * c` if and only if every measurable event satisfies `μ A ≤ ν A + c`.
+  `etvDist μ ν ≤ 2 * c` if and only if every measurable event satisfies `μ A ≤ ν A + c`;
+* `MeasureTheory.tvDist_dirac_left`: the distance from a point mass to a probability measure
+  is twice its mass outside the point.
 -/
 
 public section
@@ -95,5 +98,29 @@ theorem etvDist_le_two_mul_iff (h : μ univ = ν univ) {c : ℝ≥0∞} :
     etvDist μ ν ≤ 2 * c ↔ ∀ A, MeasurableSet A → μ A ≤ ν A + c := by
   rw [etvDist_eq_two_mul_iSup_sub h, ENNReal.mul_le_mul_iff_right two_ne_zero ENNReal.ofNat_ne_top]
   simp only [iSup_le_iff, tsub_le_iff_left]
+
+omit [IsFiniteMeasure ν] in
+/-- The total variation distance from a point mass to a probability measure is twice the
+probability of missing that point. The factor two is Mathlib's normalization. -/
+@[simp] theorem etvDist_dirac_left [MeasurableSingletonClass α] (x : α) [IsProbabilityMeasure ν] :
+    etvDist (Measure.dirac x) ν = 2 * (1 - ν {x}) := by
+  rw [etvDist_eq_two_mul_iSup_sub (by simp)]
+  congr 1
+  apply le_antisymm
+  · refine iSup₂_le fun A hA => ?_
+    by_cases hx : x ∈ A
+    · rw [Measure.dirac_apply' _ hA, Set.indicator_of_mem hx]
+      exact tsub_le_tsub_left (measure_mono (Set.singleton_subset_iff.mpr hx)) 1
+    · simp [Measure.dirac_apply' _ hA, hx]
+  · simpa using le_iSup₂ (f := fun (A : Set α) (_ : MeasurableSet A) =>
+      Measure.dirac x A - ν A) {x} (measurableSet_singleton x)
+
+omit [IsFiniteMeasure ν] in
+/-- The real-valued total variation distance from a point mass to a probability measure. -/
+@[simp] theorem tvDist_dirac_left [MeasurableSingletonClass α] (x : α) [IsProbabilityMeasure ν] :
+    tvDist (Measure.dirac x) ν = 2 * (1 - ν.real {x}) := by
+  rw [tvDist, etvDist_dirac_left, ENNReal.toReal_mul,
+    ENNReal.toReal_sub_of_le (prob_le_one) (by simp)]
+  simp [Measure.real]
 
 end MeasureTheory

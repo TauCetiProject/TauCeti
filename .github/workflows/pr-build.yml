@@ -88,6 +88,12 @@ jobs:
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+      actions: read
+      id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
     if: ${{ !cancelled() }}
     # Exact fleet labels bind placement to one machine and guest. A failed picker
@@ -151,14 +157,14 @@ jobs:
           fetch-depth: 1
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+          tools-ref: 6376197e008e488d673e482a44f4a2cf921c50e0
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1173,7 +1179,11 @@ jobs:
           # would let candidate code drop a `lake` or `bash` earlier on PATH than the real one and
           # have the later audits run it. The explicit PATH below is the other half of that: it
           # never contains a directory the sandbox can write.
-          python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
+          progress_observer=()
+          if [ -f gate/scripts/ci_live_progress.py ]; then
+            progress_observer=(python3 gate/scripts/ci_live_progress.py --telemetry "$PWD/pr/.lake/telemetry" --)
+          fi
+          "${progress_observer[@]}" python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
             env -i /usr/bin/bwrap --tmpfs / \
             --ro-bind /usr /usr --ro-bind /etc /etc \
             --symlink usr/bin /bin --symlink usr/sbin /sbin \
@@ -1254,8 +1264,28 @@ jobs:
             args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
-          python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+          # The build can change .lake/package artifacts. Any later Lake/Lean
+          # execution stays in a fresh PID/network namespace with no host grants.
+          probe_mounts=()
+          if [ -n "${BASE_SHIM_REGISTRY:-}" ]; then
+            probe_mounts=(--ro-bind "$BASE_SHIM_REGISTRY" "$BASE_SHIM_REGISTRY"
+                          --ro-bind "$BASE_SHIM_ROOT" "$BASE_SHIM_ROOT")
+          fi
+          env -i /usr/bin/bwrap --tmpfs / \
+            --ro-bind /usr /usr --ro-bind /etc /etc \
+            --symlink usr/bin /bin --symlink usr/sbin /sbin \
+            --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+            --dev /dev --proc /proc --tmpfs /tmp \
+            --ro-bind "$HOME/.elan" "$HOME/.elan" \
+            --ro-bind "$PWD/gate" "$PWD/gate" \
+            --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
+            "${probe_mounts[@]}" --remount-ro / \
+            --setenv PATH "$HOME/.elan/bin:/usr/bin:/bin" --setenv HOME "$HOME" \
+            --chdir "$PWD" \
+            --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
+            --unshare-cgroup --disable-userns --die-with-parent --new-session \
+            -- python3 "$PWD/gate/scripts/check-expired-mathlib-shims.py" \
+            --repo-root "$PWD/pr" --manifest "$PWD/pr/TauCeti/mathlib-shims.json" "${args[@]}"
           rc=$?
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
@@ -1265,7 +1295,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1344,7 +1374,7 @@ jobs:
           # status from its result here rather than from a separate workflow. BUMP_BAD is set
           # only when a manifest/toolchain change failed that validator; anything else (no pin
           # change, or a validated forward bump) is a pass. Posting it from this job also means
-          # both required statuses land together, before the auto-merge workflow_run fires.
+          # both required statuses land together for the queue service's admission policy.
           if [ "${{ env.BUMP_BAD }}" = "1" ]; then
             bg_state=failure; bg_desc="Lake pin change is not a validated forward bump — needs human review"
           elif [ "${{ env.BUMP }}" = "1" ] && [ "${{ env.BUMP_VALIDATED }}" != "1" ]; then
@@ -1627,14 +1657,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+          tools-ref: 6376197e008e488d673e482a44f4a2cf921c50e0
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
