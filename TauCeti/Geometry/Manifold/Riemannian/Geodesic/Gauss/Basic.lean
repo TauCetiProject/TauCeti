@@ -120,14 +120,15 @@ private theorem inner_alongCurve_variationField_radialVariation
   rw [zero_smul, add_zero, real_inner_comm v w, ← two_mul] at hderiv_eq
   exact mul_left_cancel₀ two_ne_zero hderiv_eq
 
-/-- **The derivative along the central geodesic.**  The product rule for the variation field
-against the radial velocity, the vanishing acceleration of the central geodesic and the
-metric-compatibility identity above give `d/dt ⟪∂ᵤ F, ∂ₜ F⟫ = ⟪v, w⟫`. -/
+/-- For the radial variation `F`, at every `t ∈ geodesicInterval I M p v`, the inner product
+of the variation field with the central geodesic's velocity has derivative `⟪v, w⟫`. -/
 private theorem hasDerivAt_inner_variationField_radialVariation
     (hF : ∀ u t : ℝ, F u t = riemannianExp I M p (t • (v + u • w))) {t : ℝ}
     (ht : t ∈ geodesicInterval I M p v) :
     HasDerivAt (fun r ↦ inner ℝ (variationField I F r) (curveVelocity I (F 0) r))
       (inner ℝ v w) t := by
+  -- Apply the product rule, the vanishing acceleration of the central geodesic, and the
+  -- metric-compatibility identity above.
   let _ : IsManifold I 2 M := IsManifold.of_le (n := ∞) (by simp)
   let _ : IsManifold I (minSmoothness ℝ 2) M := IsManifold.of_le (n := ∞) (by simp)
   have htExp : t • v ∈ expDomain I M p := mem_geodesicInterval_iff_smul_mem_expDomain.mp ht
