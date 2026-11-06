@@ -324,21 +324,48 @@ private theorem simpleIndex_E8 (ht : E8.Valid) (i : Fin 8) :
       fun k => t.cartanMatrix i k := by
   -- As above, the case split leaves `i` in the dependent motive; `dsimp` exposes its concrete
   -- rank, the branch equations rewrite the dispatcher, and each family's row lemma closes it.
-  cases t <;> dsimp only [rank] at i <;>
-    simp only [simplyConnectedRootDatum_A, simplyConnectedRootDatum_B, simplyConnectedRootDatum_C,
-      simplyConnectedRootDatum_D, simplyConnectedRootDatum_E6, simplyConnectedRootDatum_E7,
-      simplyConnectedRootDatum_E8, simplyConnectedRootDatum_F4, simplyConnectedRootDatum_G2,
-      simpleIndex_A, simpleIndex_B, simpleIndex_C, simpleIndex_D, simpleIndex_E6, simpleIndex_E7,
-      simpleIndex_E8, simpleIndex_F4, simpleIndex_G2, cartanMatrix_A, cartanMatrix_B,
-      cartanMatrix_C, cartanMatrix_D, cartanMatrix_E6, cartanMatrix_E7, cartanMatrix_E8,
-      cartanMatrix_F4, cartanMatrix_G2, e6SimplyConnectedRootDatum_root,
-      e7SimplyConnectedRootDatum_root, e8SimplyConnectedRootDatum_root,
-      f4SimplyConnectedRootDatum_root, g2SimplyConnectedRootDatum_root] <;>
-    first
-      | exact root_typeASimpleIndex _ | exact root_typeBSimpleIndex _
-      | exact root_typeCSimpleIndex _ | exact root_typeDSimpleIndex _ _
-      | exact root_e6SimpleIndex _ | exact root_e7SimpleIndex _ | exact root_e8SimpleIndex _
-      | exact f4Root_castAdd _ | exact g2Root_castAdd _
+  cases t with
+  | A n =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_A, simpleIndex_A, cartanMatrix_A]
+    exact root_typeASimpleIndex _
+  | B n =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_B, simpleIndex_B, cartanMatrix_B]
+    exact root_typeBSimpleIndex _
+  | C n =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_C, simpleIndex_C, cartanMatrix_C]
+    exact root_typeCSimpleIndex _
+  | D n =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_D, simpleIndex_D, cartanMatrix_D]
+    exact root_typeDSimpleIndex _ _
+  | E6 =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_E6, simpleIndex_E6, cartanMatrix_E6,
+      e6SimplyConnectedRootDatum_root]
+    exact root_e6SimpleIndex _
+  | E7 =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_E7, simpleIndex_E7, cartanMatrix_E7,
+      e7SimplyConnectedRootDatum_root]
+    exact root_e7SimpleIndex _
+  | E8 =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_E8, simpleIndex_E8, cartanMatrix_E8,
+      e8SimplyConnectedRootDatum_root]
+    exact root_e8SimpleIndex _
+  | F4 =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_F4, simpleIndex_F4, cartanMatrix_F4,
+      f4SimplyConnectedRootDatum_root]
+    exact f4Root_castAdd _
+  | G2 =>
+    dsimp only [rank] at i
+    simp only [simplyConnectedRootDatum_G2, simpleIndex_G2, cartanMatrix_G2,
+      g2SimplyConnectedRootDatum_root]
+    exact g2Root_castAdd _
 
 /-- The pinned base is supported exactly on the first `t.rank` root indices. -/
 @[simp] theorem mem_support_simplyConnectedBase (t : DynkinType) (ht : t.Valid)
