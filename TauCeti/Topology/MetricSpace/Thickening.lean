@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 public import Mathlib.Topology.MetricSpace.Thickening
 
 import Mathlib.Topology.Compactness.LocallyFinite
@@ -34,12 +35,17 @@ ends have pairwise disjoint closed intervals around them forming a locally finit
 (`TauCeti.exists_closedBall_pairwiseDisjoint_locallyFinite`). An open subset of `X × ℝ` containing
 a vertical line contains a tube around it, whose radius is locally bounded below by positive
 constants (`IsOpen.exists_tube_subset`).
+
+Under a `K`-Lipschitz map with `K > 0`, the `R / K`-thickening of a preimage lies in the preimage
+of the `R`-thickening (`TauCeti.thickening_preimage_subset_preimage_thickening`), and likewise for
+closed thickenings between real normed spaces
+(`TauCeti.cthickening_preimage_subset_preimage_cthickening`).
 -/
 
 public section
 
 open Set Metric Function
-open scoped Topology
+open scoped Topology NNReal
 
 namespace TauCeti
 
@@ -73,6 +79,29 @@ theorem compl_cthickening_eq_setOf_lt_infDist {X : Type*} [PseudoMetricSpace X] 
     (hs : s.Nonempty) {δ : ℝ} (hδ : 0 ≤ δ) : (cthickening δ s)ᶜ = {x | δ < infDist x s} := by
   ext x
   simp [mem_cthickening_iff_infDist_le hs hδ]
+
+/-- Under a `K`-Lipschitz map, with `K > 0`, the `R / K`-thickening of a preimage lies in the
+preimage of the `R`-thickening. -/
+theorem thickening_preimage_subset_preimage_thickening {X Y : Type*} [PseudoMetricSpace X]
+    [PseudoMetricSpace Y] {f : X → Y} {K : ℝ≥0} {R : ℝ} (hf : LipschitzWith K f) (hK : 0 < K)
+    (S : Set Y) : thickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' thickening R S := by
+  intro y hy
+  obtain ⟨z, hz, hyz⟩ := mem_thickening_iff.1 hy
+  refine mem_thickening_iff.2 ⟨f z, mem_preimage.1 hz, (hf.dist_le_mul y z).trans_lt ?_⟩
+  calc (K : ℝ) * dist y z < K * (R / K) := by gcongr
+    _ = R := by field_simp
+
+/-- Under a `K`-Lipschitz map between real normed spaces, with `K > 0`, the closed
+`R / K`-thickening of a preimage lies in the preimage of the closed `R`-thickening, for `R > 0`. -/
+theorem cthickening_preimage_subset_preimage_cthickening {X Y : Type*} [NormedAddCommGroup X]
+    [NormedSpace ℝ X] [NormedAddCommGroup Y] [NormedSpace ℝ Y] {f : X → Y} {K : ℝ≥0}
+    {R : ℝ}
+    (hf : LipschitzWith K f) (hK : 0 < K) (hR : 0 < R) (S : Set Y) :
+    cthickening (R / K) (f ⁻¹' S) ⊆ f ⁻¹' cthickening R S := by
+  have hRK : 0 < R / K := by positivity
+  rw [← closure_thickening hRK, ← closure_thickening hR]
+  exact (closure_mono (thickening_preimage_subset_preimage_thickening hf hK S)).trans
+    (hf.continuous.closure_preimage_subset _)
 
 end TauCeti
 
