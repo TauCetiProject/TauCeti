@@ -182,17 +182,6 @@ theorem apply_mlieBracket (hX : α.IsContactHamiltonianVectorField f X)
     mextDeriv_apply_swap α.1 x (Y x)] at h
   linarith
 
-/-- The derivative of `α(W)` along a contact Hamiltonian vector field `X` of `f`, from
-`L_X α = (R_α f) α`: `X(α(W)) - α([X, W]) = (R_α f) α(W)`. -/
-private theorem mvfderiv_apply_sub_apply_mlieBracket
-    {W : (y : M) → TangentSpace I y} (hX : α.IsContactHamiltonianVectorField f X)
-    (hXd : MDifferentiableAt I I.tangent (fun y ↦ (X y : TangentBundle I M)) x)
-    (hW : MDifferentiableAt I I.tangent (fun y ↦ (W y : TangentBundle I M)) x) :
-    mvfderiv I f x (α.reebVectorField x) * α.1 x ![W x] =
-      mvfderiv I (fun y ↦ α.1 y ![W y]) x (X x) - α.1 x ![mlieBracket I X W x] := by
-  have h := mlieDerivForm_apply_one (V := X) (α.mdifferentiableAt x) hW
-  rwa [hX.mlieDerivForm_apply_eq hXd, ContinuousAlternatingMap.smul_apply, smul_eq_mul] at h
-
 /-- The contraction of `dα` with the bracket of contact Hamiltonian vector fields `X` of `f` and
 `Y` of `g`: `ι_([X, Y]) dα = (X(R_α g) - Y(R_α f)) α - dh`, where
 `h = dα(X, Y) + f R_α(g) - g R_α(f)`. It is obtained by evaluating `d(dα)(X, Y, W) = 0` with the
@@ -267,7 +256,7 @@ private theorem mextDeriv_mlieBracket_apply [CompleteSpace E]
   rw [mvfderiv_fun_sub hAfRg hgRf, mvfderiv_fun_add hA hfRg]
   simp only [add_apply, sub_apply, smul_apply, smul_eq_mul] at hdd hXWY hYWX ⊢
   rw [← hWx]
-  linear_combination hdd - hXWY + hYWX - mvfderiv I g x (α.reebVectorField x) * hLX +
+  linear_combination hdd - hXWY + hYWX + mvfderiv I g x (α.reebVectorField x) * hLX -
     mvfderiv I f x (α.reebVectorField x) * hLY
 
 end IsContactHamiltonianVectorField
