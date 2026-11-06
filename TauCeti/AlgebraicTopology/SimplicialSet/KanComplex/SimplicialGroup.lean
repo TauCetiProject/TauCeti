@@ -141,40 +141,41 @@ private lemma exists_upper_step (b : Fin (m + 2)) (hbi : b.succ ≠ i) (hb : i.v
     · obtain rfl : j = b.succ := Fin.ext (by simpa using hbj.symm)
       rw [δ_mul hX, δ_comp_σ_succ_apply, mul_inv_cancel_left]
 
+/-- Correcting the faces below `i` from the bottom up: for `r ≤ i` there is an `(m + 2)`-simplex
+whose faces `j < r` are the `y j`. -/
+private lemma exists_δ_eq_of_lt (r : ℕ) (hr : r ≤ i.val) :
+    ∃ w : X _⦋m + 2⦌, ∀ (j : Fin (m + 3)) (hj : j ≠ i), j.val < r → X.δ j w = y j hj := by
+  induction r with
+  | zero => exact ⟨1, fun j _ hj => absurd hj (Nat.not_lt_zero _)⟩
+  | succ r ih =>
+    obtain ⟨w, hw⟩ := ih (by omega)
+    obtain ⟨w', hw'⟩ := exists_lower_step hX hy ⟨r, by omega⟩
+      (Fin.ne_of_val_ne (by simp; omega)) w hw
+    exact ⟨w', fun j hj hjr => hw' j hj (by simp; omega)⟩
+
+/-- Correcting the faces above `i` from the top down, keeping those below `i`: for
+`t ≤ m + 2 - i` there is an `(m + 2)`-simplex whose faces `j < i` and `j > m + 2 - t` are the
+`y j`. -/
+private lemma exists_δ_eq_of_lt_or_gt (t : ℕ) (ht : t ≤ m + 2 - i.val) :
+    ∃ w : X _⦋m + 2⦌,
+      (∀ (j : Fin (m + 3)) (hj : j ≠ i), j.val < i.val → X.δ j w = y j hj) ∧
+      ∀ (j : Fin (m + 3)) (hj : j ≠ i), m + 2 - t < j.val → X.δ j w = y j hj := by
+  induction t with
+  | zero =>
+    obtain ⟨w, hw⟩ := exists_δ_eq_of_lt hX hy i.val le_rfl
+    exact ⟨w, hw, fun j _ hj => absurd hj (by omega)⟩
+  | succ t ih =>
+    obtain ⟨w, hw, hw'⟩ := ih (by omega)
+    obtain ⟨w', hw₁, hw₂⟩ := exists_upper_step hX hy ⟨m + 1 - t, by omega⟩
+      (Fin.ne_of_val_ne (by simp; omega)) (by simp; omega) w hw
+      (fun j hj hjt => hw' j hj (by simp at hjt; omega))
+    exact ⟨w', hw₁, fun j hj hjt => hw₂ j hj (by simp; omega)⟩
+
 /-- **Horn filling in a simplicial group**: a compatible family of `m + 1`-simplices on the faces
 `j ≠ i` of an `(m + 2)`-simplex is the family of faces of an `(m + 2)`-simplex. -/
 private lemma exists_δ_eq_of_group : ∃ w : X _⦋m + 2⦌, ∀ (j : Fin (m + 3)) (hj : j ≠ i),
     X.δ j w = y j hj := by
-  -- First correct the faces below `i`, from the bottom up.
-  have hlow : ∀ r ≤ i.val, ∃ w : X _⦋m + 2⦌, ∀ (j : Fin (m + 3)) (hj : j ≠ i), j.val < r →
-      X.δ j w = y j hj := by
-    intro r
-    induction r with
-    | zero => exact fun _ => ⟨1, fun j _ hj => absurd hj (Nat.not_lt_zero _)⟩
-    | succ r ih =>
-      intro hr
-      obtain ⟨w, hw⟩ := ih (by omega)
-      obtain ⟨w', hw'⟩ := exists_lower_step hX hy ⟨r, by omega⟩
-        (Fin.ne_of_val_ne (by simp; omega)) w hw
-      exact ⟨w', fun j hj hjr => hw' j hj (by simp; omega)⟩
-  -- Then correct the faces above `i`, from the top down.
-  have hup : ∀ t ≤ m + 2 - i.val, ∃ w : X _⦋m + 2⦌,
-      (∀ (j : Fin (m + 3)) (hj : j ≠ i), j.val < i.val → X.δ j w = y j hj) ∧
-      ∀ (j : Fin (m + 3)) (hj : j ≠ i), m + 2 - t < j.val → X.δ j w = y j hj := by
-    intro t
-    induction t with
-    | zero =>
-      intro _
-      obtain ⟨w, hw⟩ := hlow i.val le_rfl
-      exact ⟨w, hw, fun j _ hj => absurd hj (by omega)⟩
-    | succ t ih =>
-      intro ht
-      obtain ⟨w, hw, hw'⟩ := ih (by omega)
-      obtain ⟨w', hw₁, hw₂⟩ := exists_upper_step hX hy ⟨m + 1 - t, by omega⟩
-        (Fin.ne_of_val_ne (by simp; omega)) (by simp; omega) w hw
-        (fun j hj hjt => hw' j hj (by simp at hjt; omega))
-      exact ⟨w', hw₁, fun j hj hjt => hw₂ j hj (by simp; omega)⟩
-  obtain ⟨w, hw, hw'⟩ := hup (m + 2 - i.val) le_rfl
+  obtain ⟨w, hw, hw'⟩ := exists_δ_eq_of_lt_or_gt hX hy (m + 2 - i.val) le_rfl
   refine ⟨w, fun j hj => ?_⟩
   rcases lt_or_gt_of_ne (Fin.val_ne_of_ne hj) with h | h
   · exact hw j hj h
