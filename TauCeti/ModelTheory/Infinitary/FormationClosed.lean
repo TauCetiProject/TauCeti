@@ -179,6 +179,14 @@ theorem inf_mem {φ ψ : L.BoundedFormulaω Empty n}
     (⟨n, φ ⊓ ψ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A :=
   hA.inf_mem_iff.2 ⟨hφ, hψ⟩
 
+/-- A finite conjunction of members of a formation-closed fragment is a member. -/
+theorem foldr_inf_mem (l : List (L.BoundedFormulaω Empty n))
+    (h : ∀ φ ∈ l, (⟨n, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
+    (⟨n, l.foldr (· ⊓ ·) ⊤⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  induction l with
+  | nil => exact hA.top_mem n
+  | cons φ l ih => exact hA.inf_mem (h φ (by simp)) (ih fun ψ hψ => h ψ (by simp [hψ]))
+
 /-- A disjunction belongs to a formation-closed fragment exactly when both disjuncts do. -/
 @[simp]
 theorem sup_mem_iff {φ ψ : L.BoundedFormulaω Empty n} :
@@ -239,6 +247,14 @@ theorem exs_mem {φ : L.BoundedFormulaω Empty n}
   induction n with
   | zero => rwa [exs_zero]
   | succ n ih => rw [exs_succ]; exact ih (hA.ex_mem h)
+
+/-- Existentially quantifying the last positions of a member leaves a member. -/
+theorem exsLast_mem {k : ℕ} {φ : L.BoundedFormulaω Empty (n + k)}
+    (h : (⟨n + k, φ⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A) :
+    (⟨n, φ.exsLast⟩ : Σ n, L.BoundedFormulaω Empty n) ∈ A := by
+  induction k with
+  | zero => simpa only [exsLast_zero, Nat.add_zero] using h
+  | succ k ih => simpa only [exsLast_succ] using ih (hA.ex_mem h)
 
 /-- Weakening a member of a formation-closed fragment to more bound positions gives a member. -/
 theorem castLE_mem {m : ℕ} {φ : L.BoundedFormulaω Empty m} (hmn : m ≤ n)
