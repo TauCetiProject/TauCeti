@@ -5,56 +5,45 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
-public import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Positive.FunctionalCalculus
+import TauCeti.Analysis.InnerProductSpace.FunctionalCalculusComparison
 
 /-!
-# Smooth spectral projections of self-adjoint operators in finite dimension
+# Smooth positive and negative spectral projections
 
-Let `T` be a self-adjoint operator on a finite-dimensional inner product space `E`. For a set
-`Ω ⊆ ℝ`, the functional calculus `cfc (Ω.indicator 1) T` of the indicator of `Ω` is the
-orthogonal projection onto the point-spectral subspace of `T` selected by `Ω`, the sum of the
-eigenspaces of `T` at the eigenvalues in `Ω`
-(`ContinuousLinearMap.cfc_indicator_eq_starProjection`).
+For an invertible self-adjoint operator `A` on a finite-dimensional real inner product space,
+the orthogonal projections onto its negative and positive spectral subspaces are
+`(1 - A * (A * A) ^ (-(1 / 2))) / 2` and
+`(1 + A * (A * A) ^ (-(1 / 2))) / 2`, respectively.
+Consequently these native spectral projections depend smoothly, even real analytically, on
+`A` as long as it remains self-adjoint and invertible. No smoothly varying eigenbasis is needed.
 
-For `Ω = (0, ∞)` and `Ω = (-∞, 0)` these are the projections `P₊(T)` and `P₋(T)` onto the
-positive and the negative spectral subspaces of `T`. On a real space they depend smoothly, indeed
-analytically, on `T` as long as `T` stays invertible
-(`ContinuousLinearMap.contDiffOn_cfc_indicator_Ioi` and
-`ContinuousLinearMap.contDiffOn_cfc_indicator_Iio`). The proof uses no eigenvectors: for an
-invertible self-adjoint `T`, `2 P₊(T) = 1 + T |T|⁻¹` and `2 P₋(T) = 1 - T |T|⁻¹`
-(`TauCeti.two_smul_cfc_indicator_Ioi`), where `|T| = √(T T)` is smooth in `T` by the smoothness of
-the positive square root on strictly positive operators
-(`ContinuousLinearMap.contDiffOn_sqrt`), and inversion is smooth on invertible operators.
+These formulas supply smooth local projections for splitting a nondegenerate symmetric form
+into its positive and negative subbundles. They concern the existing
+`Module.End.pointSpectralSubspace` and `Submodule.starProjection`, not new choices of subspaces
+or projections. The invertibility hypothesis excludes eigenvalues crossing zero; dimension zero
+is allowed.
 
-Invertibility cannot be dropped: as `T` crosses a singular operator an eigenvalue changes sign
-and the rank of `P₊(T)` jumps. For a smooth family of nondegenerate symmetric forms, such as the
-normal Hessians along a nondegenerate critical submanifold expressed in local orthonormal frames,
-these results make the positive and negative spectral subspaces the ranges of smoothly
-varying orthogonal projections, without choosing smoothly varying eigenvectors.
-
-## Main results
-
-* `ContinuousLinearMap.cfc_indicator_eq_starProjection`: the spectral projector
-  `cfc (Ω.indicator 1) T` is the orthogonal projection onto the point-spectral subspace of `T`
-  selected by `Ω`.
-* `ContinuousLinearMap.contDiffOn_cfc_indicator_Ioi` and
-  `ContinuousLinearMap.contDiffOn_cfc_indicator_Iio`: the projections onto the positive and the
-  negative spectral subspaces are smooth on the invertible self-adjoint operators.
+For a self-adjoint operator on a finite-dimensional `RCLike` inner product space, the spectral
+projector `cfc (Ω.indicator 1) T` of any set `Ω ⊆ ℝ` is the same orthogonal projection onto
+`Module.End.pointSpectralSubspace T Ω`
+(`ContinuousLinearMap.cfc_indicator_eq_starProjection`), so the formulas above also describe the
+functional-calculus spectral projectors `cfc ((Iio 0).indicator 1) A` and
+`cfc ((Ioi 0).indicator 1) A`.
 
 ## References
 
-* N. J. Higham, *Functions of Matrices: Theory and Computation*, SIAM, 2008, Chapter 5 (the
-  matrix sign function `A (A²)^(-1/2)` and the spectral projectors `(1 ± sign A) / 2`).
-* T. Kato, *Perturbation Theory for Linear Operators*, second edition, Springer, 1976,
-  Chapter II (analytic dependence of spectral projections in finite dimension).
+* R. Bhatia, *Matrix Analysis*, Springer, 1997, Chapter V (matrix functions).
+* R. Bott, *Nondegenerate critical manifolds*, Annals of Mathematics 60 (1954), 248–261.
 -/
 
 public section
 
+noncomputable section
+
 open Set
+open scoped ContDiff
 
 namespace ContinuousLinearMap
 
@@ -81,54 +70,87 @@ theorem cfc_indicator_eq_starProjection (Ω : Set ℝ) {T : E →L[𝕜] E} (hT 
 
 end RCLike
 
-section Real
+variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+  [FiniteDimensional ℝ E]
 
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
+/-- The negative spectral projection of an invertible self-adjoint operator, expressed using
+its inverse absolute value. This formula requires no choice of eigenbasis. -/
+theorem starProjection_pointSpectralSubspace_Iio_zero_eq (A : E →L[ℝ] E) (hA : IsSelfAdjoint A)
+    (hunit : IsUnit A) :
+    (Module.End.pointSpectralSubspace A.toLinearMap (Iio 0)).starProjection =
+      (1 / 2 : ℝ) • (1 - A * (A * A) ^ (-(1 / 2) : ℝ)) := by
+  have hs := isSelfAdjoint_iff_isSymmetric.mp hA
+  apply coe_injective
+  rw [hs.coe_starProjection_pointSpectralSubspace]
+  symm
+  apply (hs.eq_cfc_iff _).mpr
+  intro μ v hv
+  simp only [coe_coe, RCLike.ofReal_real_eq_id, id_eq] at hv
+  by_cases hv0 : v = 0
+  · simp [hv0]
+  have hμ : μ ≠ 0 := by
+    intro hμ
+    apply hv0
+    exact (isUnit_iff_bijective.mp hunit).injective (by simpa [hμ] using hv)
+  -- The inverse square root of `A²` acts by `|μ|⁻¹` on a `μ`-eigenvector.
+  have hpos : 0 ≤ A * A := by simpa only [hA.star_eq] using star_mul_self_nonneg A
+  have heig : (A * A) v = μ ^ 2 • v := by
+    simp only [mul_apply_eq_comp, hv, map_smul, smul_smul, pow_two]
+  have hpow : ((A * A) ^ (-(1 / 2) : ℝ)) v = |μ|⁻¹ • v := by
+    rw [CFC.rpow_eq_cfc_real hpos,
+      cfc_apply_of_apply_eq_smul (fun r : ℝ ↦ r ^ (-(1 / 2) : ℝ)) heig
+        (nonneg_iff_isPositive.mp hpos).isSelfAdjoint]
+    simp only [RCLike.ofReal_real_eq_id, id_eq]
+    congr 1
+    exact (Real.rpow_neg (sq_nonneg μ) (1 / 2)).trans
+      (congrArg Inv.inv ((Real.sqrt_eq_rpow (μ ^ 2)).symm.trans (Real.sqrt_sq_eq_abs μ)))
+  simp only [toLinearMap_smul, toLinearMap_sub, toLinearMap_one, LinearMap.smul_apply,
+    LinearMap.sub_apply, one_apply_eq_self, coe_coe, mul_apply_eq_comp, hpow, map_smul, hv,
+    smul_smul, RCLike.ofReal_real_eq_id, id_eq]
+  by_cases hneg : μ < 0
+  · rw [indicator_of_mem hneg, Pi.one_apply, abs_of_neg hneg]
+    have hratio : (-μ)⁻¹ * μ = -1 := by simp [hμ]
+    rw [hratio]
+    module
+  · rw [indicator_of_notMem hneg, abs_of_pos (lt_of_le_of_ne (le_of_not_gt hneg) hμ.symm),
+      inv_mul_cancel₀ hμ]
+    module
 
-open scoped ContDiff
+/-- The positive spectral projection of an invertible self-adjoint operator, expressed using
+its inverse absolute value. -/
+theorem starProjection_pointSpectralSubspace_Ioi_zero_eq (A : E →L[ℝ] E) (hA : IsSelfAdjoint A)
+    (hunit : IsUnit A) :
+    (Module.End.pointSpectralSubspace A.toLinearMap (Ioi 0)).starProjection =
+      (1 / 2 : ℝ) • (1 + A * (A * A) ^ (-(1 / 2) : ℝ)) := by
+  simpa only [toLinearMap_neg, Module.End.pointSpectralSubspace_neg, neg_Iio, neg_zero,
+    neg_mul_neg, neg_mul, mul_neg, neg_neg, sub_neg_eq_add] using
+    starProjection_pointSpectralSubspace_Iio_zero_eq (-A) hA.neg hunit.neg
 
-/-- On the invertible self-adjoint operators, `T ↦ (T T)^(1/2)⁻¹` is smooth. -/
-private theorem contDiffOn_ringInverse_sqrt_mul_self {n : ℕ∞ω} :
-    ContDiffOn ℝ n (fun T : E →L[ℝ] E ↦ Ring.inverse (CFC.sqrt (T * T)))
-      {T | IsSelfAdjoint T ∧ IsUnit T} := by
-  have hpos {T : E →L[ℝ] E} (hT : IsSelfAdjoint T ∧ IsUnit T) : IsStrictlyPositive (T * T) :=
-    IsStrictlyPositive.iff_of_unital.mpr
-      ⟨by simpa [hT.1.star_eq] using star_mul_self_nonneg T, hT.2.mul hT.2⟩
-  have hsqrt : ContDiffOn ℝ n (fun T : E →L[ℝ] E ↦ CFC.sqrt (T * T))
-      {T | IsSelfAdjoint T ∧ IsUnit T} :=
-    contDiffOn_sqrt.comp (contDiff_id.mul contDiff_id).contDiffOn fun _ hT ↦ hpos hT
-  intro T hT
-  have hu : IsUnit (CFC.sqrt (T * T)) := (IsStrictlyPositive.sqrt (T * T) (hpos hT)).isUnit
-  have h := contDiffAt_ringInverse (𝕜 := ℝ) (n := n) hu.unit
-  rw [hu.unit_spec] at h
-  exact h.comp_contDiffWithinAt T (hsqrt T hT)
+variable {P : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
+  {n : ℕ∞ω} {A : P → E →L[ℝ] E} {s : Set P}
 
-/-- **Smoothness of the positive spectral projection.** On a finite-dimensional real inner
-product space, the orthogonal projection `cfc ((Ioi 0).indicator 1) T` onto the positive spectral
-subspace of `T` depends smoothly on `T` among the invertible self-adjoint operators. -/
-theorem contDiffOn_cfc_indicator_Ioi {n : ℕ∞ω} :
-    ContDiffOn ℝ n (fun T : E →L[ℝ] E ↦ cfc ((Ioi (0 : ℝ)).indicator 1) T)
-      {T | IsSelfAdjoint T ∧ IsUnit T} := by
-  have h := (contDiffOn_const (c := (1 : E →L[ℝ] E))).add
-    (contDiffOn_id.mul (contDiffOn_ringInverse_sqrt_mul_self (n := n)))
-  refine (h.const_smul (2⁻¹ : ℝ)).congr fun T hT ↦ ?_
-  have habs : CFC.sqrt (T * T) = CFC.abs T := by rw [CFC.abs, hT.1.star_eq]
-  rw [id, habs, ← TauCeti.two_smul_cfc_indicator_Ioi hT.2 hT.1, smul_smul]
-  norm_num
+/-- The negative spectral projections of a smooth family of invertible self-adjoint operators
+form a smooth family, including at real analytic regularity. -/
+theorem _root_.ContDiffOn.starProjection_pointSpectralSubspace_Iio_zero (hA : ContDiffOn ℝ n A s)
+    (hself : ∀ x ∈ s, IsSelfAdjoint (A x)) (hunit : ∀ x ∈ s, IsUnit (A x)) :
+    ContDiffOn ℝ n
+      (fun x ↦ (Module.End.pointSpectralSubspace (A x).toLinearMap (Iio 0)).starProjection) s := by
+  have hpos (x) (hx : x ∈ s) : IsStrictlyPositive (A x * A x) :=
+    ((hunit x hx).mul (hunit x hx)).isStrictlyPositive (by
+      simpa only [(hself x hx).star_eq] using star_mul_self_nonneg (A x))
+  have hpow := (contDiffOn_rpow (E := E) (n := n) (-(1 / 2))).comp (hA.mul hA) hpos
+  exact (((contDiffOn_const (c := (1 : E →L[ℝ] E))).sub (hA.mul hpow)).const_smul
+    (1 / 2 : ℝ)).congr
+    fun x hx ↦ starProjection_pointSpectralSubspace_Iio_zero_eq (A x) (hself x hx) (hunit x hx)
 
-/-- **Smoothness of the negative spectral projection.** On a finite-dimensional real inner
-product space, the orthogonal projection `cfc ((Iio 0).indicator 1) T` onto the negative spectral
-subspace of `T` depends smoothly on `T` among the invertible self-adjoint operators. -/
-theorem contDiffOn_cfc_indicator_Iio {n : ℕ∞ω} :
-    ContDiffOn ℝ n (fun T : E →L[ℝ] E ↦ cfc ((Iio (0 : ℝ)).indicator 1) T)
-      {T | IsSelfAdjoint T ∧ IsUnit T} := by
-  have h := (contDiffOn_const (c := (1 : E →L[ℝ] E))).sub
-    (contDiffOn_id.mul (contDiffOn_ringInverse_sqrt_mul_self (n := n)))
-  refine (h.const_smul (2⁻¹ : ℝ)).congr fun T hT ↦ ?_
-  have habs : CFC.sqrt (T * T) = CFC.abs T := by rw [CFC.abs, hT.1.star_eq]
-  rw [id, habs, ← TauCeti.two_smul_cfc_indicator_Iio hT.2 hT.1, smul_smul]
-  norm_num
-
-end Real
+/-- The positive spectral projections of a smooth family of invertible self-adjoint operators
+form a smooth family, including at real analytic regularity. -/
+theorem _root_.ContDiffOn.starProjection_pointSpectralSubspace_Ioi_zero (hA : ContDiffOn ℝ n A s)
+    (hself : ∀ x ∈ s, IsSelfAdjoint (A x)) (hunit : ∀ x ∈ s, IsUnit (A x)) :
+    ContDiffOn ℝ n
+      (fun x ↦ (Module.End.pointSpectralSubspace (A x).toLinearMap (Ioi 0)).starProjection) s := by
+  simpa only [Pi.neg_apply, toLinearMap_neg, Module.End.pointSpectralSubspace_neg,
+    neg_Iio, neg_zero] using hA.neg.starProjection_pointSpectralSubspace_Iio_zero
+      (fun x hx ↦ (hself x hx).neg) (fun x hx ↦ (hunit x hx).neg)
 
 end ContinuousLinearMap

@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Calculus.Morse.Index
 public import TauCeti.Analysis.Calculus.Morse.Linearization
+public import TauCeti.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Projection
 public import TauCeti.Analysis.InnerProductSpace.PointSpectrum
 public import TauCeti.Analysis.InnerProductSpace.Spectral.Projection
 -- Private: used only to turn the finite-dimensional algebraic splitting into a continuous
@@ -398,7 +399,7 @@ theorem commute_neg_hessianOperator_unstableProjection (hf : ContDiffAt ℝ 2 f 
 /-- When the Hessian is injective, the stable projection is the orthogonal spectral projection
 `cfc ((Ioi 0).indicator 1)` of the Hessian onto its positive eigenvalues. In particular it is an
 orthogonal projection, and on the invertible Hessians it depends smoothly on the Hessian
-(`ContinuousLinearMap.contDiffOn_cfc_indicator_Ioi`). -/
+(`ContDiffOn.starProjection_pointSpectralSubspace_Ioi_zero`). -/
 theorem stableProjection_eq_cfc_indicator_Ioi (hf : ContDiffAt ℝ 2 f x)
     (hker : LinearMap.ker (hessianOperator f x).toLinearMap = ⊥) :
     hf.stableProjection hker = cfc ((Ioi (0 : ℝ)).indicator 1) (hessianOperator f x) := by
