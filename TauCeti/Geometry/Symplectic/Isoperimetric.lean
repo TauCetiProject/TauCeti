@@ -107,7 +107,7 @@ theorem abs_integral_fderiv_apply_annulus_le {u : ℂ → V} (z₀ : ℂ)
       (fun θ ↦ (hu _ (hmem θ)).of_le one_le_two)
     simpa only [B, LinearMap.mkContinuous₂_apply, Real.norm_eq_abs, one_mul] using
       h.trans (mul_le_mul_of_nonneg_right hB hE)
-  rw [ω.integral_fderiv_apply_annulus z₀ ha hab hu, abs_mul,
+  rw [ω.integral_fderiv_apply_annulus z₀ ha.le hab hu, abs_mul,
     abs_of_nonneg (by norm_num : (0 : ℝ) ≤ 1 / 2)]
   gcongr
   exact (abs_sub _ _).trans (add_le_add (hloop b ⟨hab, le_rfl⟩)

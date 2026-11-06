@@ -95,7 +95,7 @@ private theorem integral_annulus (ω : SymplecticForm V) {u : ℂ → V} (c : �
     (hu : ∀ z ∈ {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b}, ContDiffAt ℝ 2 u z) :
     ∫ z in {z : ℂ | a ≤ ‖z - c‖ ∧ ‖z - c‖ ≤ b}, ω (fderiv ℝ u z 1) (fderiv ℝ u z I) =
       ω.circleArea u c b - ω.circleArea u c a := by
-  rw [ω.integral_fderiv_apply_annulus c ha hab hu, circleArea, circleArea, mul_sub]
+  rw [ω.integral_fderiv_apply_annulus c ha.le hab hu, circleArea, circleArea, mul_sub]
 
 /-- The truncation `S_R` splits along the circle of radius `3/4` about `1` into the part of the
 annulus `r ≤ ‖z‖ ≤ ρ` outside that circle and the part of the annulus `r ≤ ‖z - 1‖ ≤ 3/4` inside
