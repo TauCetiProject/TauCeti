@@ -15,9 +15,10 @@ import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Commutator.G
 
 For a short root α and a long root β with α + β a root, the positive roots in their
 rank-two subsystem are α, β, α + β, 2α + β, 3α + β and 3α + 2β. This file proves the
-four-factor straightening formula for the native pinned root subgroups on any Kostant-stable
-lattice, over every commutative value ring. All bracket hypotheses are discharged from the
-integral root datum and the pinned integer structure constants.
+straightening formula with four correction factors at α + β, 2α + β, 3α + β and 3α + 2β
+for the native pinned root subgroups on any Kostant-stable lattice, over every commutative
+value ring. All bracket hypotheses are discharged from the integral root datum and the pinned
+integer structure constants.
 
 The coefficients are computed in ℤ before mapping to the value ring. In particular, the
 divisions by two and three below do not require these numbers to be invertible in that ring.
@@ -85,7 +86,7 @@ private theorem short_long_constants (i j k l m o : Fin 12)
   have hlin := P.linearIndependent_of_add_mem_range_root' hroot
   have hbot : P.chainBotCoeff i j = 0 :=
     P.chainBotCoeff_eq_zero_iff.mpr
-      (.inr (g2_root_sub_not_mem_range_of_short_add_long_eq_root i j k hi hj hk))
+      (.inr (g2_root_sub_notMem_range_of_short_add_long_eq_root i j k hi hj hk))
   have hbotk : P.chainBotCoeff i k = 1 := by
     rw [P.chainBotCoeff_of_add hlin hk, hbot]
   have hlin' := P.linearIndependent_of_add_mem_range_root' ⟨l, hl.trans (add_comm _ _)⟩
@@ -238,28 +239,15 @@ theorem chevalleyRootSubgroup_mul_of_g2_short_long
     short_long_zero_brackets i j k l m o hi hj hk hl hm ho
   let e := G2.chevalleySystem valid_G2
   let h := (G2.lieBasis valid_G2).h
-  have hMall : ∀ z ∈ kostantForm e h, ∀ w ∈ M, ρ z w ∈ M := by
-    intro z hz w hw
-    refine kostantForm_apply_mem e h ρ M.toIntSubmodule ?_ ?_ z hz hw
-    · intro r n w hw
-      rw [Associative.map_dividedPower]
-      exact dividedPower_chevalleySystem_smul_mem ρ M hM hnil r n w hw
-    · intro r n w hw
-      exact hM _ (ringChoose_mem_kostantForm _ _ r n) w hw
+  have hMall := kostantForm_apply_mem_of_chevalleySystem ρ M hM hnil
   let nil r := isNilpotent_apply_ι_chevalleySystem ρ hnil r
-  have heq (r : Fin G2.numRoots) (w : Multiplicative A) :
-      kostantRootSubgroupPoints e h ρ M hMall r (nil r)
-          ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm w) =
-        chevalleyRootSubgroup ρ M hM hnil r A w := by
-    apply Units.ext
-    simp only [kostantRootSubgroupPoints_val, chevalleyRootSubgroup_val,
-      MulEquiv.apply_symm_apply, e]
   have H := kostantRootSubgroupPoints_mul_of_lie_eq_three_nsmul' e h ρ M hMall
     hij hik hil hlk him hio hjk hlm hko hlo hmo
     (nil i) (nil j) (nil k) (nil l) (nil m) (nil o)
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd u))
     ((AdditiveGroup.gaPointsMulEquiv (R := ℤ) (A := A)).symm (Multiplicative.ofAdd v))
-  simpa only [heq, MulEquiv.apply_symm_apply, toAdd_ofAdd] using H
+  simpa only [e, h, kostantRootSubgroupPoints_chevalleySystem_eq_chevalleyRootSubgroup ρ M hM hnil,
+    MulEquiv.apply_symm_apply, toAdd_ofAdd] using H
 
 end
 

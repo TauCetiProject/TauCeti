@@ -28,7 +28,8 @@ Constructing that Lie ideal and identifying the induced exceptional isogeny are 
 The short–long root-string calculations also identify the lengths of `2α + β` and
 `3α + 2β`, and show that `β - α` is not a root when `α` is short, `β` is long and
 `α + β` is a root. These determine the integral divided-bracket coefficients in the
-four-factor root-subgroup product formula.
+root-subgroup straightening formula with four correction factors at
+`α + β`, `2α + β`, `3α + β` and `3α + 2β`.
 
 ## Main results
 
@@ -38,6 +39,12 @@ four-factor root-subgroup product formula.
   and a short root is short.
 * `TauCeti.DynkinType.g2_chainBotCoeff_eq_two_of_short_add_short_eq_long`: two short roots whose sum
   is long have bottom root-string coefficient two.
+* `TauCeti.DynkinType.g2_root_sub_notMem_range_of_short_add_long_eq_root`: subtracting a short
+  root from a long root is not a root when their sum is a root.
+* `TauCeti.DynkinType.g2Length_eq_one_of_two_smul_short_add_long_eq_root`: a root `2α + β`
+  with `α` short and `β` long is short.
+* `TauCeti.DynkinType.g2Length_eq_three_of_three_smul_short_add_two_smul_long_eq_root`: a root
+  `3α + 2β` with `α` short and `β` long is long.
 
 ## References
 
@@ -127,7 +134,7 @@ theorem g2_chainBotCoeff_eq_two_of_short_add_short_eq_long (i j k : Fin 12)
 
 /-- If a short root plus a long root is a root, subtracting the short root from the long
 one is not a root. Thus the short-root string through the long root starts at that root. -/
-theorem g2_root_sub_not_mem_range_of_short_add_long_eq_root (i j k : Fin 12)
+theorem g2_root_sub_notMem_range_of_short_add_long_eq_root (i j k : Fin 12)
     (hi : g2Length i = 1) (hj : g2Length j = 3)
     (hk : g2SimplyConnectedRootDatum.root k =
       g2SimplyConnectedRootDatum.root j + g2SimplyConnectedRootDatum.root i) :
