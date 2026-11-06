@@ -15,7 +15,7 @@ import TauCeti.Analysis.PDE.PoissonIntegral.Ball
 
 Let `E` be a real inner product space of finite dimension `n`, and let `u ≥ 0` be harmonic on the
 open ball `B(c, R)`. This file proves **Harnack's inequality with the sharp constant**: for `x`,
-`y` in the closed ball `B̄(c, r)` with `r < R`,
+`y` in the closed ball `closedBall c r` with `r < R`,
 
 `u x ≤ ((R + r) / (R - r)) ^ n * u y`.
 
@@ -101,9 +101,10 @@ private theorem le_mul_and_mul_le_of_harmonicOnNhd_ball_one {n : ℕ} (hn : n �
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {u : E → ℝ} {c x y : E} {r R : ℝ}
 
-/-- Harnack's comparison with the centre on a ball `B̄(c, ρ)` inside the ball `B(c, R)` on which
-`u` is harmonic and nonnegative, in the normalized form with `t = ‖x - c‖ / ρ`. It is the unit-ball
-comparison transported along an isometry of `E` with `ℝⁿ` and the homothety `y ↦ c + ρ • y`. -/
+/-- Harnack's comparison with the centre on a closed ball `closedBall c ρ` inside the ball
+`B(c, R)` on which `u` is harmonic and nonnegative, in the normalized form with
+`t = ‖x - c‖ / ρ`. It is the unit-ball comparison transported along an isometry of `E` with
+`ℝⁿ` and the homothety `y ↦ c + ρ • y`. -/
 private theorem le_mul_and_mul_le_of_lt_of_lt (hn : finrank ℝ E ≠ 0)
     (hu : HarmonicOnNhd u (ball c R)) (hnonneg : ∀ z ∈ ball c R, 0 ≤ u z) {ρ : ℝ}
     (hxρ : dist x c < ρ) (hρR : ρ < R) :
@@ -143,8 +144,8 @@ private theorem le_mul_and_mul_le_of_lt_of_lt (hn : finrank ℝ E ≠ 0)
   rwa [hvz, hv0, hzn] at h
 
 /-- Harnack's comparison with the centre on the ball `B(c, R)` itself, in the normalized form with
-`t = ‖x - c‖ / R`: the comparison on the smaller balls `B̄(c, ρ)`, `ρ < R`, passes to the limit
-`ρ → R`, since both bounds are continuous in `ρ`. -/
+`t = ‖x - c‖ / R`: the comparison on the smaller balls `closedBall c ρ`, `ρ < R`, passes to the
+limit `ρ → R`, since both bounds are continuous in `ρ`. -/
 private theorem le_mul_and_mul_le (hu : HarmonicOnNhd u (ball c R))
     (hnonneg : ∀ z ∈ ball c R, 0 ≤ u z) (hx : x ∈ ball c R) :
     u x ≤ (1 + dist x c / R) / (1 - dist x c / R) ^ (finrank ℝ E - 1) * u c ∧
@@ -215,7 +216,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.sub_div_mul_div_add_pow_mul_le_of
 
 /-- **Harnack's inequality with the sharp constant.** Let `u` be harmonic and nonnegative on the
 ball `B(c, R)` of a real inner product space of finite dimension `n`, and let `r < R`. For `x` and
-`y` in the closed ball `B̄(c, r)`,
+`y` in the closed ball `closedBall c r`,
 
 `u x ≤ ((R + r) / (R - r)) ^ n * u y`. -/
 theorem _root_.InnerProductSpace.HarmonicOnNhd.le_add_div_sub_pow_mul_of_nonneg
@@ -233,7 +234,7 @@ theorem _root_.InnerProductSpace.HarmonicOnNhd.le_add_div_sub_pow_mul_of_nonneg
   obtain ⟨k, hk⟩ := Nat.exists_eq_add_one_of_ne_zero hn
   have hRr : 0 < R - r := sub_pos.mpr hrR
   have huc : 0 ≤ u c := hnonneg c (mem_ball_self hR)
-  -- The comparison with the centre, made uniform over the closed ball `B̄(c, r)`.
+  -- The comparison with the centre, made uniform over the closed ball `closedBall c r`.
   have hux : u x ≤ (R + r) / R * (R / (R - r)) ^ k * u c := by
     refine (hu.le_add_div_mul_div_sub_pow_mul_of_nonneg hnonneg
       (closedBall_subset_ball hrR hx)).trans ?_
