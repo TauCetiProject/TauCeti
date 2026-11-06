@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Comparison
 import TauCeti.Analysis.InnerProductSpace.Coercive
-import TauCeti.Analysis.Normed.Operator.PositiveDeterminant
+import TauCeti.Analysis.Normed.Operator.Determinant
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -249,7 +249,7 @@ theorem isMongeAmpereViscositySubsolution_of_withDensity_le_mongeAmpereMeasure [
   set I := ContinuousLinearMap.id ℝ E
   -- Choose `t > 0` with `det (A + t) < f x₀`.
   obtain ⟨t, htA, ht⟩ : ∃ t : ℝ, (A + t • I).det < f x₀ ∧ 0 < t :=
-    ((((ContinuousLinearMap.tendsto_det_add_smul_id A).eventually (gt_mem_nhds hlt)).filter_mono
+    (((ContinuousLinearMap.eventually_det_add_smul_id_lt hlt).filter_mono
       nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `φ` is convex near `x`,
   -- `u - φ ≤ u x₀ - φ x₀`, `φ` and `∇ φ` are differentiable, and `det (D²φ + t) < f`.
@@ -330,7 +330,10 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
   obtain ⟨κ, hκ, hA⟩ := hApos.exists_pos_mul_norm_sq_le_re_inner hker
   simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real] at hA
   -- Choose `-κ / 2 < t < 0` with `f x₀ < det (A + t)`.
-  obtain ⟨t, ⟨htA, htκ⟩, ht⟩ := ContinuousLinearMap.exists_det_add_smul_id_gt hlt hκ
+  obtain ⟨t, ⟨htA, htκ⟩, ht⟩ : ∃ t : ℝ, (f x₀ < (A + t • I).det ∧ -(κ / 2) < t) ∧ t < 0 :=
+    ((((ContinuousLinearMap.eventually_lt_det_add_smul_id hlt).and
+      (lt_mem_nhds (by linarith : -(κ / 2) < 0))).filter_mono nhdsWithin_le_nhds).and
+      (self_mem_nhdsWithin (s := Iio (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `u - φ ≥ u x₀ - φ x₀`, `φ` and `∇ φ` are
   -- differentiable, `‖D²φ - A‖ < κ / 2`, and `f < det (D²φ + t)`.
   have hev : ∀ᶠ x in 𝓝 x₀, x ∈ Ω ∧ u x₀ - φ x₀ ≤ u x - φ x ∧
@@ -353,8 +356,9 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
   -- The barrier `ψ = φ + (t / 2) ‖· - x₀‖² + c` is convex on `ball x₀ r`, by coercivity of `A`.
   set c := u x₀ - φ x₀ - t * r ^ 2 / 4 with hc
   obtain ⟨hψc, hψcont, hψMA⟩ := convexOn_mongeAmpereMeasure_add_mul_norm_sq μ c hrR hRφ hRd
-    fun x hx v => ContinuousLinearMap.inner_add_smul_id_nonneg_of_norm_sub_lt hA htκ (by
-      simpa [dist_eq_norm] using hRA x hx) v
+    fun x hx v => ContinuousLinearMap.inner_add_smul_id_nonneg_of_norm_sub_le (t := t) hA (by
+      have : ‖fderiv ℝ (∇ φ) x - A‖ < κ / 2 := by simpa [dist_eq_norm] using hRA x hx
+      linarith) v
   -- `MA_u ≤ f dx ≤ det (D²φ + t) dx = MA_ψ` on `ball x₀ r`.
   have hMAB : mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (u x : EReal) else ⊤) ≤
       mongeAmpereMeasure μ
