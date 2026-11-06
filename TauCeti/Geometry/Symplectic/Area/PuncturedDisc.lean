@@ -158,7 +158,7 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
   -- Annular Stokes identifies the same limit with half the outer boundary action.
   have heq (n : ℕ) : (∫ z in A (r n), area z) =
       (1 / 2 : ℝ) * (action b - action (r n)) :=
-    ω.integral_fderiv_apply_annulus z₀ (hr n).1 (hr n).2
+    ω.integral_fderiv_apply_annulus z₀ (hr n).1.le (hr n).2
       (fun z hz ↦ hu z (hsub (hr n).1 hz))
   have hstokes : Tendsto (fun n ↦ (1 / 2 : ℝ) * (action b - action (r n))) atTop
       (𝓝 ((1 / 2 : ℝ) * action b)) := by
