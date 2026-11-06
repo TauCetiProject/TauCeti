@@ -31,6 +31,8 @@ of `f` (`Newform.eq_qExpansion_coeff_one_smul_of_forall_prime_heckeTCuspNat_eq_s
 ## Main definitions
 
 * `HeckeRing.GL2.Newform.toEigenform`: a newform as a full Hecke eigenform.
+* `HeckeRing.GL2.Eigenform.toNewformOfLevelOne`: a normalised level-one full Hecke eigenform as a
+  newform.
 
 ## Main results
 
@@ -188,5 +190,33 @@ theorem heckeTCuspNat_eq_qExpansion_coeff_smul (f : Newform N k) {p : ℕ} (hp :
     (congrArg (· • f.toCuspForm) (f.toEigenform_eigenvalue_eq_qExpansion_coeff ⟨p, hp.pos⟩))
 
 end HeckeRing.GL2.Newform
+
+/-! ### Level-one full eigenforms as newforms -/
+
+namespace HeckeRing.GL2.Eigenform
+
+/-- At level one there are no oldforms (`TauCeti.cuspFormsNew_one`), so every normalized full
+Hecke eigenform is a `Newform`. -/
+noncomputable def toNewformOfLevelOne {k : ℤ} (f : Eigenform 1 k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) : Newform 1 k where
+  toEigenformAwayFromLevel := f.toEigenformAwayFromLevel
+  isNew := by rw [TauCeti.cuspFormsNew_one]; trivial
+  isNorm := by simpa using h₁
+
+/-- `toNewformOfLevelOne` preserves the underlying cusp form. -/
+@[simp]
+theorem toNewformOfLevelOne_toCuspForm {k : ℤ} (f : Eigenform 1 k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) :
+    (f.toNewformOfLevelOne h₁).toCuspForm = f.toCuspForm := by
+  simp [toNewformOfLevelOne]
+
+/-- `toNewformOfLevelOne` preserves the nebentypus character. -/
+@[simp]
+theorem toNewformOfLevelOne_χ {k : ℤ} (f : Eigenform 1 k)
+    (h₁ : (qExpansion 1 f.toCuspForm).coeff 1 = 1) :
+    (f.toNewformOfLevelOne h₁).χ = f.χ := by
+  simp [toNewformOfLevelOne]
+
+end HeckeRing.GL2.Eigenform
 
 end

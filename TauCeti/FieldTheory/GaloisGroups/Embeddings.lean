@@ -96,11 +96,14 @@ transported root. -/
 private theorem map_stabilizer_galEquivNormalClosure_eq_stabilizer (x : E)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField) :
     (stabilizer (minpoly F x).Gal y).map
-      ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) =
+      ((galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x)) :
+        _ →* _) =
       stabilizer Gal(normalClosure F F⟮x⟯ E/F)
-        (splittingFieldEquivNormalClosure x (y : (minpoly F x).SplittingField)) := by
+        (splittingFieldEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+          (Normal.splits' x) (y : (minpoly F x).SplittingField)) := by
   simpa only [MulEquiv.toMonoidHom_eq_coe, fixingSubgroup_adjoin_simple] using
-    map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y
+    map_stabilizer_galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+      (Normal.splits' x) y
 
 /-- Cosets in the polynomial Galois group of a root stabilizer index the embeddings of
 the simple field into its normal closure. -/
@@ -108,10 +111,12 @@ noncomputable def quotientGalStabilizerEquivAlgHomSimpleField (x : E)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField) :
     (minpoly F x).Gal ⧸ stabilizer (minpoly F x).Gal y ≃
       (F⟮x⟯ →ₐ[F] normalClosure F F⟮x⟯ E) := by
-  let e := splittingFieldEquivNormalClosure (F := F) (E := E) x
+  let e := splittingFieldEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+    (Normal.splits' x)
   let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
     ⟨e y, rootSet_mapsTo e.toAlgHom y.2⟩
-  exact (QuotientGroup.congrOfMapEq (galEquivNormalClosure (F := F) (E := E) x)
+  exact (QuotientGroup.congrOfMapEq
+    (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x))
     (map_stabilizer_galEquivNormalClosure_eq_stabilizer x y)).trans
       (quotientStabilizerEquivAlgHomSimpleField x y')
 
@@ -123,20 +128,23 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_mk_gen (x : E)
     (σ : (minpoly F x).Gal) :
     quotientGalStabilizerEquivAlgHomSimpleField x y (QuotientGroup.mk σ)
       (AdjoinSimple.gen F x) =
-      splittingFieldEquivNormalClosure (F := F) (E := E) x (σ • y :
-        (minpoly F x).SplittingField) := by
+      splittingFieldEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x) (σ • y : (minpoly F x).SplittingField) := by
+  let e := splittingFieldEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+    (Normal.splits' x)
   let y' : (minpoly F x).rootSet (normalClosure F F⟮x⟯ E) :=
-    ⟨splittingFieldEquivNormalClosure x y,
-      rootSet_mapsTo (splittingFieldEquivNormalClosure x).toAlgHom y.2⟩
+    ⟨e y, rootSet_mapsTo e.toAlgHom y.2⟩
   -- The composite equivalence is defined with local transports, so `rw` cannot see its
   -- final component until the application is exposed.
   change quotientStabilizerEquivAlgHomSimpleField x y'
-      (QuotientGroup.congrOfMapEq (galEquivNormalClosure x)
+      (QuotientGroup.congrOfMapEq
+        (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x))
         (map_stabilizer_galEquivNormalClosure_eq_stabilizer x y)
         (QuotientGroup.mk σ)) (AdjoinSimple.gen F x) = _
   rw [QuotientGroup.congrOfMapEq_mk]
   rw [quotientStabilizerEquivAlgHomSimpleField_mk_gen]
-  exact galEquivNormalClosure_apply x σ y
+  exact galEquivNormalClosure_apply (Algebra.IsIntegral.isIntegral (R := F) x)
+    (Normal.splits' x) σ y
 
 /-- The polynomial Galois coset-to-embedding equivalence respects postcomposition. -/
 @[simp]
@@ -145,7 +153,8 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_smul (x : E)
     (σ : (minpoly F x).Gal)
     (q : (minpoly F x).Gal ⧸ stabilizer (minpoly F x).Gal y) :
     quotientGalStabilizerEquivAlgHomSimpleField x y (σ • q) =
-      galEquivNormalClosure x σ • quotientGalStabilizerEquivAlgHomSimpleField x y q := by
+      galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x) σ •
+        quotientGalStabilizerEquivAlgHomSimpleField x y q := by
   induction q using Quotient.inductionOn' with
   | _ τ =>
     apply adjoin_algHom_ext F
@@ -155,7 +164,8 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_smul (x : E)
     -- The quotient action on representatives reduces definitionally to multiplication.
     change quotientGalStabilizerEquivAlgHomSimpleField x y
         (QuotientGroup.mk (σ * τ)) (AdjoinSimple.gen F x) =
-      (galEquivNormalClosure x σ • quotientGalStabilizerEquivAlgHomSimpleField x y
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x) σ •
+        quotientGalStabilizerEquivAlgHomSimpleField x y
         (QuotientGroup.mk τ)) (AdjoinSimple.gen F x)
     simp [quotientGalStabilizerEquivAlgHomSimpleField_mk_gen,
       AlgEquiv.smul_algHom_apply, mul_smul]

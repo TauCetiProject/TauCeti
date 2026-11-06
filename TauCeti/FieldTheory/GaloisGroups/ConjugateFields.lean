@@ -114,7 +114,8 @@ noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
     conjugateSimpleFields (F := F) x ≃
       MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) := by
@@ -122,7 +123,8 @@ noncomputable def conjugateSimpleFieldsEquivConjugateSubgroups (x : E)
     finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
-  let e := MulEquiv.conjugateSubgroupsEquiv (galEquivNormalClosure (F := F) (E := E) x)
+  let e := MulEquiv.conjugateSubgroupsEquiv
+    (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x))
     (stabilizer (minpoly F x).Gal y)
   have he : MulAction.orbit (ConjAct (minpoly F x).Gal) (stabilizer (minpoly F x).Gal y) ≃
       MulAction.orbit (ConjAct Gal(normalClosure F F⟮x⟯ E/F))
@@ -139,17 +141,19 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_apply (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (K : conjugateSimpleFields (F := F) x) :
     ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy K).1).map
-      ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) = K.1.fixingSubgroup := by
+      ((galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)) : _ →* _) = K.1.fixingSubgroup := by
   let _ : FiniteDimensional F (normalClosure F F⟮x⟯ E) :=
     finiteDimensional_normalClosure_adjoin_simple (Algebra.IsIntegral.isIntegral x)
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   let E₀ := F⟮x⟯.restrict (le_normalClosure F⟮x⟯)
-  let e := galEquivNormalClosure (F := F) (E := E) x
+  let e := galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x)
   let f := IntermediateField.conjugateFieldsEquivConjugateSubgroups E₀
   let g := MulEquiv.conjugateSubgroupsEquiv e (stabilizer (minpoly F x).Gal y)
   let h : MulAction.orbit (ConjAct (minpoly F x).Gal)
@@ -176,12 +180,14 @@ theorem fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply (
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y)) :
     (((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy).symm H).1).fixingSubgroup =
-      H.1.map ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) := by
+      H.1.map ((galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)) : _ →* _) := by
   rw [← conjugateSimpleFieldsEquivConjugateSubgroups_apply x hsep y hy
     ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy).symm H),
     Equiv.apply_symm_apply]
@@ -193,12 +199,14 @@ theorem conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (H : MulAction.orbit (ConjAct (minpoly F x).Gal)
       (stabilizer (minpoly F x).Gal y)) :
     ((conjugateSimpleFieldsEquivConjugateSubgroups x hsep y hy).symm H).1 =
-      fixedField (H.1.map ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _)) := by
+      fixedField (H.1.map ((galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)) : _ →* _)) := by
   let _ : IsGalois F (normalClosure F F⟮x⟯ E) :=
     isGalois_normalClosure_adjoin_simple x hsep
   rw [← fixingSubgroup_conjugateSimpleFieldsEquivConjugateSubgroups_symm_apply x hsep y hy H,
@@ -254,18 +262,20 @@ subgroup. -/
 private theorem map_normalizer_stabilizer_galEquivNormalClosure (x : E)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
     (Subgroup.normalizer
       (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).map
-        ((galEquivNormalClosure (F := F) (E := E) x) : _ →* _) =
+        ((galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+          (Normal.splits' x)) : _ →* _) =
       Subgroup.normalizer
         ((F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup :
           Set Gal(normalClosure F F⟮x⟯ E/F)) := by
   rw [← hy]
   simpa only [MulEquiv.toMonoidHom_eq_coe] using
     Subgroup.map_equiv_normalizer_eq (stabilizer (minpoly F x).Gal y)
-      (galEquivNormalClosure (F := F) (E := E) x)
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x))
 
 /-- Cosets of the normalizer of a point stabilizer in the polynomial Galois group index
 the conjugate images of the simple field. -/
@@ -273,12 +283,13 @@ noncomputable def quotientGalNormalizerEquivConjugateSimpleFields (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
     (minpoly F x).Gal ⧸
       Subgroup.normalizer (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal) ≃
         conjugateSimpleFields (F := F) x := by
-  let e := galEquivNormalClosure (F := F) (E := E) x
+  let e := galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x)
   have hn := map_normalizer_stabilizer_galEquivNormalClosure x y hy
   exact (QuotientGroup.congrOfMapEq e hn).trans
     (quotientNormalizerEquivConjugateSimpleFields x hsep)
@@ -290,13 +301,15 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_mk (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (σ : (minpoly F x).Gal) :
     ((quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy
       (QuotientGroup.mk σ)).1) =
-        galEquivNormalClosure x σ • (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) := by
-  let e := galEquivNormalClosure (F := F) (E := E) x
+        galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x) σ •
+          (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)) := by
+  let e := galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x)
   have hn := map_normalizer_stabilizer_galEquivNormalClosure x y hy
   -- The composite equivalence is defined with local transports; expose its final
   -- application so the quotient transport rule can rewrite the representative.
@@ -311,7 +324,8 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (q : (minpoly F x).Gal ⧸ stabilizer (minpoly F x).Gal y) :
     (quotientGalStabilizerEquivAlgHomSimpleField x y q).fieldRange =
@@ -319,7 +333,8 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange (x : E)
         (Subgroup.quotientMapOfLE Subgroup.le_normalizer q)).1 := by
   obtain ⟨σ, rfl⟩ := QuotientGroup.mk_surjective q
   let N := normalClosure F F⟮x⟯ E
-  let e := splittingFieldEquivNormalClosure (F := F) (E := E) x
+  let e := splittingFieldEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+    (Normal.splits' x)
   have hgen : (F⟮AdjoinSimple.gen F x⟯ : IntermediateField F F⟮x⟯) = ⊤ := by
     apply (IntermediateField.lift_injective F⟮x⟯)
     rw [IntermediateField.lift_adjoin_simple, IntermediateField.lift_top]
@@ -334,17 +349,21 @@ theorem quotientGalStabilizerEquivAlgHomSimpleField_fieldRange (x : E)
     rw [← InfiniteGalois.fixedField_fixingSubgroup
       (F⟮x⟯.restrict (le_normalClosure F⟮x⟯))]
     congr 1
-    exact (map_stabilizer_galEquivNormalClosure (F := F) (E := E) x y).symm.trans hy
+    exact (map_stabilizer_galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+      (Normal.splits' x) y).symm.trans hy
   rw [hrange, quotientGalStabilizerEquivAlgHomSimpleField_mk_gen,
     Subgroup.quotientMapOfLE_apply_mk, quotientGalNormalizerEquivConjugateSimpleFields_mk]
   have heval : e (σ • (y : (minpoly F x).SplittingField)) =
-      galEquivNormalClosure x σ (e y) :=
-    (galEquivNormalClosure_apply x σ y).symm
+      galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x) σ
+        (e y) :=
+    (galEquivNormalClosure_apply (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x) σ
+      y).symm
   rw [heval]
   simpa only [IntermediateField.adjoin_map, Set.image_singleton,
     AlgEquiv.toAlgHom_apply, AlgEquiv.smul_intermediateField_def] using
     congrArg (fun K : IntermediateField F N ↦
-      K.map (galEquivNormalClosure x σ).toAlgHom) hbase
+      K.map (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x) σ).toAlgHom) hbase
 
 /-- The polynomial normalizer-coset parametrization respects the transported Galois action. -/
 @[simp]
@@ -352,13 +371,14 @@ theorem quotientGalNormalizerEquivConjugateSimpleFields_smul (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup)
     (σ : (minpoly F x).Gal)
     (q : (minpoly F x).Gal ⧸
       Subgroup.normalizer (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)) :
     (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy (σ • q)).1 =
-      galEquivNormalClosure x σ •
+      galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x) σ •
         (quotientGalNormalizerEquivConjugateSimpleFields x hsep y hy q).1 := by
   induction q using Quotient.inductionOn' with
   | _ τ =>
@@ -388,12 +408,13 @@ theorem ncard_conjugateSimpleFields_eq_index_normalizer (x : E)
     (hsep : (minpoly F x).Separable)
     (y : (minpoly F x).rootSet (minpoly F x).SplittingField)
     (hy : (stabilizer (minpoly F x).Gal y).map
-      (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom =
+      (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x)).toMonoidHom =
         (F⟮x⟯.restrict (le_normalClosure F⟮x⟯)).fixingSubgroup) :
     (conjugateSimpleFields (F := F) x).ncard =
       (Subgroup.normalizer
         (stabilizer (minpoly F x).Gal y : Set (minpoly F x).Gal)).index := by
-  let e := galEquivNormalClosure (F := F) (E := E) x
+  let e := galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x) (Normal.splits' x)
   rw [ncard_conjugateSimpleFields (F := F) x hsep, ← hy]
   rw [← Subgroup.map_equiv_normalizer_eq]
   exact Subgroup.index_map_equiv _ e
@@ -404,15 +425,18 @@ of that transported stabilizer. -/
 theorem exists_root_ncard_conjugateSimpleFields_eq_index_normalizer (x : E)
     (hsep : (minpoly F x).Separable) :
     ∃ y : (minpoly F x).rootSet (minpoly F x).SplittingField,
-      (splittingFieldEquivNormalClosure (F := F) (E := E) x y : E) = x ∧
+      (splittingFieldEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+        (Normal.splits' x) y : E) = x ∧
       (conjugateSimpleFields (F := F) x).ncard =
         (Subgroup.normalizer
           (((stabilizer (minpoly F x).Gal y).map
-            (galEquivNormalClosure (F := F) (E := E) x).toMonoidHom :
+            (galEquivNormalClosure (Algebra.IsIntegral.isIntegral (R := F) x)
+              (Normal.splits' x)).toMonoidHom :
               Subgroup Gal(normalClosure F F⟮x⟯ E/F)) :
             Set Gal(normalClosure F F⟮x⟯ E/F))).index := by
   obtain ⟨y, hy, hstabilizer⟩ :=
-    exists_root_map_stabilizer_eq_fixingSubgroup (F := F) (E := E) x
+    exists_root_map_stabilizer_eq_fixingSubgroup (Algebra.IsIntegral.isIntegral (R := F) x)
+      (Normal.splits' x)
   refine ⟨y, hy, ?_⟩
   rw [ncard_conjugateSimpleFields (F := F) x hsep, hstabilizer]
 

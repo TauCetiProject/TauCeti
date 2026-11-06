@@ -9,9 +9,10 @@ public import Mathlib.FieldTheory.Minpoly.Field
 import Mathlib.Algebra.Polynomial.Degree.IsMonicOfDegree
 
 /-!
-# Minimal polynomials of quadratic elements and units
+# Minimal polynomials of quadratic elements, units, and scalar-tower roots
 
-This file collects reusable facts about minimal polynomials of quadratic elements and of units.
+This file collects reusable facts about minimal polynomials of quadratic elements, units, and
+elements annihilated by polynomials over a subring.
 
 ## Main results
 
@@ -21,6 +22,10 @@ This file collects reusable facts about minimal polynomials of quadratic element
   satisfies a monic quadratic relation over its commutative base ring.
 * `minpoly.coeff_zero_ne_zero_of_isUnit`: the minimal polynomial of an integral unit has nonzero
   constant coefficient.
+* `TauCeti.minpoly_eq_map_of_aeval_eq_zero`,
+  `TauCeti.minpoly_eq_map_intCastRingHom_of_aeval_eq_zero`: in a scalar tower `R → F → E` (and in
+  particular for `P : ℤ[X]` via `Int.castRingHom F`), a monic polynomial `P` annihilating `α : E`
+  whose image in `F[X]` is irreducible maps to `minpoly F α`.
 -/
 
 public section
@@ -77,3 +82,29 @@ theorem minpoly.coeff_zero_ne_zero_of_isUnit {A B : Type*} [Field A] [Ring B] [A
     rw [← h, map_mul, aeval_X] at hmx
     exact hu.mul_left_eq_zero.mp hmx
   exact absurd (minpoly.degree_le_of_ne_zero A x hdiv hX) (not_le.mpr (degree_divX_lt hm))
+
+namespace TauCeti
+
+/-- In a scalar tower `R → F → E` over a field `F` and a nontrivial `F`-algebra `E`, if `α : E` is
+annihilated by a monic polynomial `P : R[X]` whose image in `F[X]` is irreducible, then
+`minpoly F α` equals `P.map (algebraMap R F)`. -/
+theorem minpoly_eq_map_of_aeval_eq_zero {R F E : Type*} [CommSemiring R] [Field F] [Ring E]
+    [Nontrivial E] [Algebra R F] [Algebra F E] [Algebra R E] [IsScalarTower R F E] {α : E}
+    {P : R[X]} (hP : P.Monic) (hirr : Irreducible (P.map (algebraMap R F)))
+    (hroot : aeval α P = 0) :
+    minpoly F α = P.map (algebraMap R F) :=
+  (minpoly.eq_of_irreducible_of_monic hirr (by rw [aeval_map_algebraMap, hroot])
+    (hP.map (algebraMap R F))).symm
+
+/-- Over a field `F` and a nontrivial `F`-algebra `E`, if `α : E` is annihilated by a monic
+integral polynomial `P : ℤ[X]` whose image under `Int.castRingHom F` is irreducible, then
+`minpoly F α` equals `P.map (Int.castRingHom F)`. -/
+theorem minpoly_eq_map_intCastRingHom_of_aeval_eq_zero {F E : Type*} [Field F] [Ring E]
+    [Nontrivial E] [Algebra F E] {α : E} {P : ℤ[X]} (hP : P.Monic)
+    (hirr : Irreducible (P.map (Int.castRingHom F))) (hroot : aeval α P = 0) :
+    minpoly F α = P.map (Int.castRingHom F) := by
+  have hhom : Int.castRingHom F = algebraMap ℤ F := RingHom.ext_int _ _
+  rw [hhom] at hirr ⊢
+  exact minpoly_eq_map_of_aeval_eq_zero hP hirr hroot
+
+end TauCeti
