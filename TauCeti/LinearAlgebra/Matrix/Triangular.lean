@@ -66,6 +66,11 @@ Lie-algebra theory.
 * `Matrix.updateCol_mul_updateCol_apply_of_lt` — replacing the same column of both factors of a
   product with an upper-triangular right factor leaves the earlier columns of the product
   unchanged.
+* `Matrix.exists_sum_mul_eq_of_isUpperUnitriangular` — a unitriangular system on a set of rows has
+  a solution supported on the rows together with one further index, equal to one there.
+* `Matrix.updateCol_mul_updateCol_apply_self` — the replaced column of a product of matrices with
+  replaced columns, when the new column of the right factor is supported on a set of rows and one
+  further index.
 * `TauCeti.isUpperTriangular_transvection_iff` — a transvection with its off-diagonal entry
   strictly below the diagonal is upper triangular exactly when its parameter vanishes.
 * `TauCeti.vecMul_injective_of_submatrix_isUpperTriangular` — a rectangular matrix has injective
@@ -485,6 +490,48 @@ theorem updateCol_mul_updateCol_apply_of_lt {T l p : Type*} [NonUnitalNonAssocSe
   split_ifs with hk
   · rw [hk, hH hca, mul_zero, mul_zero]
   · rfl
+
+/-- A unitriangular system on a set `S` of rows not containing `a`: there is a vector `y`, equal to
+`1` at `a` and supported on `S ∪ {a}`, whose product with the principal submatrix of `J` on `S` is
+`u`. -/
+theorem exists_sum_mul_eq_of_isUpperUnitriangular {ι T : Type*} [LinearOrder ι] [CommRing T]
+    {J : Matrix ι ι T} (hJ : J.IsUpperUnitriangular) (u : ι → T) (a : ι) (S : Finset ι)
+    (haS : a ∉ S) :
+    ∃ y : ι → T, y a = 1 ∧ (∀ l, l ∉ S → l ≠ a → y l = 0) ∧
+      ∀ i ∈ S, ∑ l ∈ S, J i l * y l = u i := by
+  -- On `S` the vector `y` solves a unitriangular system, a principal submatrix of `J`.
+  let M : Matrix S S T := J.submatrix (↑) (↑)
+  have hM : M.IsUpperUnitriangular := hJ.submatrix (Subtype.strictMono_coe _)
+  let z : S → T := M⁻¹ *ᵥ fun t : S ↦ u t
+  -- The two `DecidableEq` instances on `S`, from `ι` and from the order of `S`, agree.
+  have hdet : IsUnit M.det := by convert hM.isUnit_det
+  have hz : M *ᵥ z = fun t : S ↦ u t := by
+    simp only [z, mulVec_mulVec, mul_nonsing_inv _ hdet, one_mulVec]
+  let y : ι → T := fun l ↦ if h : l ∈ S then z ⟨l, h⟩ else if l = a then 1 else 0
+  refine ⟨y, by simp [y, haS], fun l hl hla ↦ by simp [y, hl, hla], fun i hi ↦ ?_⟩
+  have := congrFun hz ⟨i, hi⟩
+  simp only [M, mulVec, dotProduct, submatrix_apply] at this
+  rw [← this, ← Finset.sum_coe_sort S]
+  exact Finset.sum_congr rfl fun t _ ↦ by simp [y, t.2]
+
+/-- The column `a` of a product of matrices with replaced columns `a`, when the new column `y` of
+the right factor is `1` at `a` and supported on `S ∪ {a}`. -/
+theorem updateCol_mul_updateCol_apply_self {l p T : Type*} [NonAssocSemiring T] [Fintype p]
+    [DecidableEq p] {J : Matrix l p T} {H : Matrix p p T} (a : p) (x : l → T) (y : p → T)
+    (S : Finset p) (haS : a ∉ S) (hya : y a = 1) (hy : ∀ k, k ∉ S → k ≠ a → y k = 0) (i : l) :
+    (J.updateCol a x * H.updateCol a y) i a = x i + ∑ k ∈ S, J i k * y k := by
+  simp only [Matrix.mul_apply, updateCol_self, updateCol_apply]
+  have hterm (k : p) : (if k = a then x i else J i k) * y k =
+      (if k = a then x i else 0) + if k ∈ S then J i k * y k else 0 := by
+    by_cases hka : k = a
+    · subst hka
+      simp [hya, haS]
+    · by_cases hk : k ∈ S
+      · simp [hka, hk]
+      · simp [hka, hk, hy k hk hka]
+  rw [Finset.sum_congr rfl fun k _ ↦ hterm k, Finset.sum_add_distrib, Finset.sum_ite_eq',
+    ← Finset.sum_filter, Finset.filter_mem_eq_inter, Finset.univ_inter]
+  simp
 
 end Matrix
 
