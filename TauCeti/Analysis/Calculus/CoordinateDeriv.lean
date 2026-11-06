@@ -152,14 +152,15 @@ theorem coordinateDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCo
     coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_const_smul_apply hf.contDiffAt,
     smul_apply]
 
+@[simp]
 theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
     coordinateDeriv α (-f) = -coordinateDeriv α f := by
   induction α with
   | nil => rfl
   | cons j js ih =>
     funext x
-    rw [coordinateDeriv_cons, ih, fderiv_neg]
-    rfl
+    rw [coordinateDeriv_cons, ih, fderiv_neg, neg_apply, Pi.neg_apply,
+      coordinateDeriv_cons]
 
 @[simp]
 theorem coordinateDeriv_zero (α : List (Fin n)) :
@@ -376,6 +377,7 @@ theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommCla
   rw [h, coordinateDeriv_const_smul α
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.smul_apply]
 
+@[simp]
 theorem mixedDeriv_neg (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (-a) x ξ = -mixedDeriv α β a x ξ := by
   have h : (fun y => coordinateDeriv β (fun η => (-a) (y, η)) ξ) =
