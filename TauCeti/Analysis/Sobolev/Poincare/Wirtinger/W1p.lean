@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Sobolev.W1p.Basic
 import TauCeti.Analysis.Convex.Exhaustion
 import TauCeti.Analysis.Sobolev.Wkp.Local.Approximation
 import TauCeti.MeasureTheory.Function.LocallyAEConst
-import TauCeti.MeasureTheory.Function.Lp.Complete
 import TauCeti.MeasureTheory.Function.Lp.Const
 import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.Lp.Restriction
@@ -282,9 +281,9 @@ theorem W1p.eLpNorm_value_sub_setAverage_le_of_convex (hp : p ≠ ∞)
   -- Fatou along the exhaustion.
   set a : ℕ → ℝ := fun n ↦ ⨍ y in S ∩ V n, W1p.value u y ∂mu
   set b : ℝ := ⨍ y in S, W1p.value u y ∂mu
-  have hlim := eLpNorm_sub_const_restrict_le_liminf (ν := mu) (q := p)
-    (W1p.value u : E →ₘ[mu.restrict (Omega : Set E)] ℝ).stronglyMeasurable
-    Omega.isOpen.measurableSet (fun n ↦ (hVopen n).measurableSet) hVmono hVunion ha
+  have hlim := eLpNorm_sub_const_restrict_le_liminf (μ := mu) (p := p)
+    (W1p.value u : E →ₘ[mu.restrict (Omega : Set E)] ℝ).stronglyMeasurable.aestronglyMeasurable
+    (fun n ↦ (hVopen n).measurableSet) hVmono hVunion ha
   have hbound : ∀ᶠ n in atTop, eLpNorm (fun x ↦ W1p.value u x - a n) p (mu.restrict (V n)) ≤
       ENNReal.ofReal (K / mu.real (S ∩ V n)) * ‖W1p.gradient u‖ₑ := by
     filter_upwards [hmeasR.eventually (lt_mem_nhds hSRpos)] with n hn
