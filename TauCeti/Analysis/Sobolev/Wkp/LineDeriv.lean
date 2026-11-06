@@ -34,6 +34,8 @@ No boundedness or boundary regularity of `Ω` is assumed.
 
 * `TauCeti.Wkp.exists_hasWeakLineDerivOn_value`: every directional weak derivative of an element
   of `W^{k+1,p}(Ω)` lies in `W^{k,p}(Ω)`.
+* `TauCeti.Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq`: the first derivatives
+  of an element of `W^{2,p}(Ω)` lie in `W^{1,p}(Ω)`, with gradients given by the weak Hessian.
 * `TauCeti.Wkp.exists_value_eq_of_forall_hasWeakLineDerivOn`: if the weak derivatives of
   `u ∈ Lᵖ(Ω)` along an orthonormal basis lie in `W^{k,p}(Ω)`, then `u ∈ W^{k+1,p}(Ω)`.
 * `TauCeti.Wkp.exists_value_eq_iff_forall_exists_hasWeakLineDerivOn`: the two combined.
@@ -165,6 +167,20 @@ theorem Wkp.exists_hasWeakLineDerivOn_value :
       filter_upwards [(innerSL ℝ v).coeFn_compLp (Wkp.iteratedGradient 0 w)] with x hx
       rw [hx, innerSL_apply_apply, innerSL_apply_apply, real_inner_comm]
   | k + 1, w, v => (Wkp.exists_wkp_lineDeriv v k w).imp fun _ h => h.1
+
+/-- **First derivatives of a `W^{2,p}` function.** In every direction `v`, an element `u` of
+`W^{2,p}(Ω)` has a weak derivative `∂ᵥu` which is the value of an element of `W^{1,p}(Ω)`, whose
+weak derivative in a direction `w` is the entry `⟪D²u w, v⟫ = ∂_w ∂ᵥu` of the weak Hessian. -/
+theorem Wkp.exists_hasWeakLineDerivOn_value_and_inner_gradient_ae_eq (u : Wkp mu Omega p 2)
+    (v : E) :
+    ∃ d : W1p mu Omega p, HasWeakLineDerivOn mu Omega (Wkp.value 2 u) (W1p.value d) v ∧
+      ∀ w, (fun x => ⟪W1p.gradient d x, w⟫_ℝ) =ᵐ[mu.restrict Omega]
+        fun x => ⟪Wkp.iteratedGradient 1 u x w, v⟫_ℝ := by
+  obtain ⟨d, hd, hdg⟩ := Wkp.exists_wkp_lineDeriv_zero v u
+  refine ⟨d, by simpa only [Wkp.value_one] using hd, fun w => ?_⟩
+  rw [Wkp.iteratedGradient_zero] at hdg
+  filter_upwards [(contractL v 0).coeFn_compLp (Wkp.iteratedGradient 1 u)] with x hx
+  rw [hdg, hx, inner_contractL_zero, real_inner_comm]
 
 /-! ### From the directional derivatives to `W^{k+1,p}` -/
 

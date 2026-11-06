@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.Int.Sign
+import TauCeti.Data.ZMod.Count
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
 import Mathlib.Analysis.Complex.UpperHalfPlane.Exp
 import Mathlib.NumberTheory.ModularForms.EisensteinSeries.Summable
@@ -47,6 +48,8 @@ Away from the real axis, `π cot (π u)` tends to `-π i` as `Im u → ∞`, and
 * `TauCeti.hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot`: the cotangent rows
   `π cot (π (x - m z)) + π cot (π m z)` at a division point `x = (b₀ z + b) / M`, summed over
   `m ∈ ℤ`, as a `q`-expansion in `e(z / M)`.
+* `TauCeti.pi_mul_cot_pi_mul_val_div_eq_sum`: the finite Fourier expansion of `π cot (π j / M)`
+  at the nonzero residues `j` modulo `M`.
 * `TauCeti.norm_pi_mul_cot_pi_mul_add_pi_mul_I_le`,
   `TauCeti.norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le`: the exponential approach to `∓ π i`.
 -/
@@ -369,5 +372,53 @@ theorem hasSum_pi_mul_cot_pi_mul_div_sub_intCast_mul_add_pi_mul_cot {M b₀ : �
     ring
   · simp only [hb₀, δ]
     split_ifs <;> ring
+
+
+/-- **The finite Fourier expansion of the cotangent at the division points.** For a nonzero
+residue `j` modulo `M`, `π cot (π j / M) = π i + (2π i / M) ∑_{m mod M} m e(m j / M)`, with
+`0 ≤ m < M` the representative of `m` and `e(x) = e^(2π i x)`. With `ζ = e(j / M) ≠ 1`, the sum
+`∑_{m < M} m ζ^m` is `M / (ζ - 1)`. -/
+theorem pi_mul_cot_pi_mul_val_div_eq_sum (M : ℕ) [NeZero M] {j : ZMod M} (hj : j ≠ 0) :
+    π * cot (π * (j.val / M)) =
+      π * I + 2 * π * I / M * ∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j) := by
+  set ζ : ℂ := ZMod.stdAddChar j with hζdef
+  have hζ : ζ = cexp (2 * π * I * (j.val / M)) := by
+    have : ζ = ZMod.stdAddChar ((j.val : ℤ) : ZMod M) := by simp [hζdef]
+    rw [this, ZMod.stdAddChar_coe]
+    push_cast
+    ring_nf
+  have hζ1 : ζ - 1 ≠ 0 := by
+    refine sub_ne_zero.mpr fun h ↦ hj ?_
+    rw [← AddChar.map_zero_eq_one (ZMod.stdAddChar (N := M))] at h
+    exact ZMod.injective_stdAddChar (by exact_mod_cast h)
+  have hζM : ζ ^ M = 1 := by
+    rw [hζdef, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_self, zero_mul,
+      AddChar.map_zero_eq_one]
+  have hterm (m : ZMod M) : (ZMod.stdAddChar (m * j) : ℂ) = ζ ^ m.val := by
+    rw [hζdef, ← AddChar.map_nsmul_eq_pow, nsmul_eq_mul, ZMod.natCast_zmod_val]
+  have hgeom : ∑ i ∈ Finset.range M, ζ ^ i = 0 := by
+    have h := geom_sum_mul ζ M
+    rw [hζM, sub_self] at h
+    exact (mul_eq_zero.mp h).resolve_right hζ1
+  have hind (K : ℕ) : (ζ - 1) * ∑ i ∈ Finset.range K, (i : ℂ) * ζ ^ i =
+      K * ζ ^ K - ζ * ∑ i ∈ Finset.range K, ζ ^ i := by
+    induction K with
+    | zero => simp
+    | succ K ih =>
+      rw [Finset.sum_range_succ, Finset.sum_range_succ, mul_add, ih]
+      push_cast
+      ring
+  have hS : ∑ m : ZMod M, (m.val : ℂ) * ZMod.stdAddChar (m * j) = M / (ζ - 1) := by
+    simp_rw [hterm]
+    rw [ZMod.sum_val_eq_sum_range (fun i ↦ (i : ℂ) * ζ ^ i), eq_div_iff hζ1, mul_comm, hind,
+      hζM, hgeom]
+    ring
+  rw [hS, cot_pi_eq_exp_ratio, ← hζ]
+  have hM : (M : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne M)
+  have h1ζ : 1 - ζ ≠ 0 := by rwa [← neg_sub, neg_ne_zero]
+  field_simp
+  ring_nf
+  rw [I_sq]
+  ring
 
 end TauCeti
