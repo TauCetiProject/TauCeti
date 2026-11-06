@@ -9,15 +9,15 @@ public import Mathlib.Analysis.Distribution.TemperedDistribution
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 import Mathlib.Analysis.Normed.Operator.Extend
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
+import TauCeti.Analysis.Fourier.Continuous
 
 /-!
 # `Lᵖ` functions as tempered distributions
 
 An `Lᵖ` function `u` defines the tempered distribution `φ ↦ ∫ φ • u`
-(`MeasureTheory.Lp.toTemperedDistribution`). This file records two facts about that embedding
-which are needed to read off a pointwise representative from an identity of tempered
-distributions, and a criterion for an operator into tempered distributions to take values in
-`Lᵖ`.
+(`MeasureTheory.Lp.toTemperedDistribution`). This file records facts about that embedding which
+are needed to read off a pointwise representative from an identity of tempered distributions,
+and a criterion for an operator into tempered distributions to take values in `Lᵖ`.
 
 * An `Lᵖ` function is determined almost everywhere by its pairings with Schwartz functions,
   even when it is compared with a locally integrable function that need not lie in the same
@@ -29,9 +29,12 @@ distributions, and a criterion for an operator into tempered distributions to ta
   `VectorFourier.integral_bilin_fourierIntegral_eq_flip`, read through the definition
   `𝓕⁻ T (φ) = T (𝓕⁻ φ)` of the Fourier transform on `𝓢'`.
 
-Together they turn the statement "the Fourier transform of `u ∈ Lᵖ` is an `L¹` function" into a
-continuous representative of `u`; this is how the Sobolev embedding `H^s(ℝⁿ) ⊆ C₀(ℝⁿ)`,
-`s > n / 2`, is derived from `TemperedDistribution.MemSobolev.fourier_memL1`.
+Together they turn the statement "the Fourier transform of `u ∈ Lᵖ` is an `L¹` function `v`" into
+the continuous representative `𝓕⁻ v` of `u` (`MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`);
+this is how the Sobolev embedding `H^s(ℝⁿ) ⊆ C₀(ℝⁿ)`, `s > n / 2`, is derived from
+`TemperedDistribution.MemSobolev.fourier_memL1`. Multiplying the tempered distribution of an `Lᵖ`
+function by a function of temperate growth multiplies the function pointwise
+(`MeasureTheory.Lp.smulLeftCLM_toTemperedDistribution_apply`).
 
 * A continuous linear map `T : Lᵖ → 𝓢'`, `p < ∞`, that is given on Schwartz functions by an
   operator bounded in the `Lᵖ` norm takes values in `Lᵖ`, with the same bound. Schwartz functions
@@ -46,6 +49,11 @@ continuous representative of `u`; this is how the Sobolev embedding `H^s(ℝⁿ)
   equal to `g`.
 * `MeasureTheory.Lp.fourierInv_toTemperedDistribution_apply`: the inverse Fourier transform of
   the tempered distribution of an `L¹` function `v` pairs with `φ` as `∫ φ • 𝓕⁻ v`.
+* `MeasureTheory.Lp.ae_eq_fourierInv_of_fourier_eq`: an `Lᵖ` function whose Fourier transform is
+  an `L¹` function `v` agrees almost everywhere with `𝓕⁻ v`.
+* `MeasureTheory.Lp.smulLeftCLM_toTemperedDistribution_apply`: the product of the tempered
+  distribution of an `Lᵖ` function `u` with a function `g` of temperate growth pairs with `φ` as
+  `∫ φ • (g • u)`.
 * `ContinuousLinearMap.exists_apply_eq_toTemperedDistribution_and_norm_le`: an operator
   `Lᵖ → 𝓢'` bounded on Schwartz functions takes values in `Lᵖ`.
 
@@ -86,6 +94,16 @@ theorem ae_eq_of_toTemperedDistribution_apply_eq {μ : Measure E} [μ.HasTempera
   have := h (hψ₁.toSchwartzMap hψ₂)
   simpa [Lp.toTemperedDistribution_apply] using this
 
+omit [FiniteDimensional ℝ E] in
+/-- Multiplying the tempered distribution of an `Lᵖ` function `u` by a function `g` of temperate
+growth gives the distribution `φ ↦ ∫ φ • (g • u)`. -/
+theorem smulLeftCLM_toTemperedDistribution_apply {μ : Measure E} [μ.HasTemperateGrowth]
+    {p : ENNReal} [Fact (1 ≤ p)] {g : E → ℂ} (hg : g.HasTemperateGrowth) (u : Lp F p μ)
+    (φ : 𝓢(E, ℂ)) :
+    TemperedDistribution.smulLeftCLM F g (u : 𝓢'(E, F)) φ = ∫ x, φ x • g x • u x ∂μ := by
+  rw [TemperedDistribution.smulLeftCLM_apply_apply, Lp.toTemperedDistribution_apply]
+  simp only [SchwartzMap.smulLeftCLM_apply_apply hg, smul_eq_mul, mul_comm (g _), mul_smul]
+
 end NormedSpace
 
 section InnerProductSpace
@@ -112,6 +130,20 @@ theorem fourierInv_toTemperedDistribution_apply (v : Lp F 1 (volume : Measure E)
     (φ.integrable (μ := volume)) (L1.integrable_coeFn v)
   rw [hflip] at h
   exact h
+
+/-- **The representative of an `Lᵖ` function with integrable Fourier transform.** If the
+distributional Fourier transform of `u ∈ Lᵖ` is an `L¹` function `v`, then `u` agrees almost
+everywhere with the continuous function `𝓕⁻ v`. -/
+theorem ae_eq_fourierInv_of_fourier_eq {p : ENNReal} [Fact (1 ≤ p)]
+    {u : Lp F p (volume : Measure E)} {v : Lp F 1 (volume : Measure E)}
+    (h : 𝓕 (u : 𝓢'(E, F)) = v) :
+    u =ᵐ[volume] 𝓕⁻ (v : E → F) := by
+  have hcont : Continuous (𝓕⁻ (v : E → F)) := (L1.integrable_coeFn v).continuous_fourierInv
+  have hu : (u : 𝓢'(E, F)) = 𝓕⁻ (v : 𝓢'(E, F)) := by
+    rw [← h]
+    exact (FourierTransform.fourierInv_fourier_eq _).symm
+  refine ae_eq_of_toTemperedDistribution_apply_eq u hcont.locallyIntegrable fun φ => ?_
+  rw [hu, fourierInv_toTemperedDistribution_apply]
 
 end InnerProductSpace
 

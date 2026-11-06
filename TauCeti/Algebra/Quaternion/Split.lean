@@ -65,20 +65,12 @@ private def oneMatrixBasis (b : R) :
   i := !![1, 0; 0, -1]
   j := !![0, b; 1, 0]
   k := !![0, b; -1, 0]
-  i_mul_i := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-  j_mul_j := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-  i_mul_j := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
-  j_mul_i := by
-    ext i j
-    fin_cases i <;> fin_cases j <;> simp [Matrix.mul_apply, Fin.sum_univ_two]
+  i_mul_i := by simp [Matrix.one_fin_two]
+  j_mul_j := by simp [Matrix.one_fin_two]
+  i_mul_j := by simp
+  j_mul_i := by simp
 
-private theorem oneMatrixBasis_liftHom_apply b (q : ℍ[R,1,b]) :
+private theorem oneMatrixBasis_liftHom_apply (b : R) (q : ℍ[R,1,b]) :
     (oneMatrixBasis b).liftHom q =
       !![q.re + q.imI, b * (q.imJ + q.imK);
         q.imJ - q.imK, q.re - q.imI] := by
@@ -89,158 +81,119 @@ private theorem oneMatrixBasis_liftHom_apply b (q : ℍ[R,1,b]) :
 
 variable [Invertible (2 : R)]
 
-private def oneMatrixInverse (b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
-    ℍ[R,1,(b : R)] :=
-  ⟨⅟(2 : R) * (M 0 0 + M 1 1),
-    ⅟(2 : R) * (M 0 0 - M 1 1),
-    ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * M 0 1 + M 1 0),
-    ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * M 0 1 - M 1 0)⟩
+private def oneMatrixInverse (b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) : ℍ[R,1,(b : R)] :=
+  ⟨⅟2 * (M 0 0 + M 1 1), ⅟2 * (M 0 0 - M 1 1),
+    ⅟2 * (↑b⁻¹ * M 0 1 + M 1 0), ⅟2 * (↑b⁻¹ * M 0 1 - M 1 0)⟩
 
 private theorem oneMatrixInverse_leftInverse (b : Rˣ) :
     Function.LeftInverse (oneMatrixInverse b) (oneMatrixBasis (b : R)).liftHom := by
   intro q
   rw [oneMatrixBasis_liftHom_apply]
-  ext <;> simp [oneMatrixInverse] <;> ring_nf
-  all_goals simp [mul_left_comm, mul_comm]
+  ext <;> simp [oneMatrixInverse] <;> grind [invOf_mul_self, Units.inv_mul]
 
 private theorem oneMatrixInverse_rightInverse (b : Rˣ) :
     Function.RightInverse (oneMatrixInverse b) (oneMatrixBasis (b : R)).liftHom := by
   intro M
   rw [oneMatrixBasis_liftHom_apply]
   ext i j
-  fin_cases i <;> fin_cases j <;> simp [oneMatrixInverse] <;> ring_nf
-  all_goals simp [mul_left_comm, mul_comm]
-
-private theorem oneMatrixBasis_liftHom_bijective (b : Rˣ) :
-    Function.Bijective (oneMatrixBasis (b : R)).liftHom := by
-  exact ⟨(oneMatrixInverse_leftInverse b).injective, (oneMatrixInverse_rightInverse b).surjective⟩
+  fin_cases i <;> fin_cases j <;> simp [oneMatrixInverse] <;>
+    grind [invOf_mul_self, Units.inv_mul]
 
 /-- The explicit splitting `ℍ[R,1,b] ≃ₐ[R] M₂(R)` for a unit `b` over a commutative ring in
 which two is invertible. It sends the quaternion generators `i` and `j` to
 `!![1, 0; 0, -1]` and `!![0, b; 1, 0]`, respectively. -/
-noncomputable def oneEquivMatrix (b : Rˣ) :
-    ℍ[R,1,(b : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
-  AlgEquiv.ofBijective (oneMatrixBasis (b : R)).liftHom
-    (oneMatrixBasis_liftHom_bijective b)
+def oneEquivMatrix (b : Rˣ) : ℍ[R,1,(b : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
+  { (oneMatrixBasis (b : R)).liftHom with
+    invFun := oneMatrixInverse b
+    left_inv := oneMatrixInverse_leftInverse b
+    right_inv := oneMatrixInverse_rightInverse b }
 
 /-- The splitting equivalence on an arbitrary quaternion. -/
 @[simp]
 theorem oneEquivMatrix_apply (b : Rˣ) (q : ℍ[R,1,(b : R)]) :
     oneEquivMatrix b q =
       !![q.re + q.imI, (b : R) * (q.imJ + q.imK);
-        q.imJ - q.imK, q.re - q.imI] := by
-  rw [oneEquivMatrix, AlgEquiv.ofBijective_apply, oneMatrixBasis_liftHom_apply]
+        q.imJ - q.imK, q.re - q.imI] :=
+  oneMatrixBasis_liftHom_apply _ q
 
 /-- The inverse splitting equivalence recovers the four quaternion coordinates from the four
 matrix entries. -/
 @[simp]
 theorem oneEquivMatrix_symm_apply (b : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
     (oneEquivMatrix b).symm M =
-      ⟨⅟(2 : R) * (M 0 0 + M 1 1),
-        ⅟(2 : R) * (M 0 0 - M 1 1),
-        ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * M 0 1 + M 1 0),
-        ⅟(2 : R) * (((b⁻¹ : Rˣ) : R) * M 0 1 - M 1 0)⟩ := by
-  -- The displayed quaternion is definitionally the private inverse used in the bijectivity proof.
-  change (oneEquivMatrix b).symm M = oneMatrixInverse b M
-  apply (oneEquivMatrix b).injective
-  rw [AlgEquiv.apply_symm_apply]
-  exact (oneMatrixInverse_rightInverse b M).symm
+      ⟨⅟2 * (M 0 0 + M 1 1), ⅟2 * (M 0 0 - M 1 1),
+        ⅟2 * (↑b⁻¹ * M 0 1 + M 1 0), ⅟2 * (↑b⁻¹ * M 0 1 - M 1 0)⟩ :=
+  (rfl)
 
 end One
 
 section ANegA
 
-/-- The standard quaternion basis of `2 × 2` matrices with parameters `a` and `-a`. -/
-private def splitANegABasis (a : R) :
+private def aNegAMatrixBasis (a : R) :
     _root_.QuaternionAlgebra.Basis (Matrix (Fin 2) (Fin 2) R) a 0 (-a) where
   i := !![0, a; 1, 0]
   j := !![0, -a; 1, 0]
   k := !![a, 0; 0, -a]
-  i_mul_i := by
-    ext i j
-    fin_cases i <;> fin_cases j
-    all_goals simp
-  j_mul_j := by
-    ext i j
-    fin_cases i <;> fin_cases j
-    all_goals simp
-  i_mul_j := by
-    ext i j
-    fin_cases i <;> fin_cases j
-    all_goals simp
-  j_mul_i := by
-    ext i j
-    fin_cases i <;> fin_cases j
-    all_goals simp
+  i_mul_i := by simp [Matrix.one_fin_two]
+  j_mul_j := by simp [Matrix.one_fin_two]
+  i_mul_j := by simp
+  j_mul_i := by simp
 
-/-- The algebra homomorphism from `ℍ[R,a,-a]` to `2 × 2` matrices determined by the
-standard split matrices. -/
-private def splitANegAAlgHom (a : R) : ℍ[R,a,-a] →ₐ[R] Matrix (Fin 2) (Fin 2) R :=
-  (splitANegABasis a).liftHom
-
-/-- The entries of the standard matrix representation of `ℍ[R,a,-a]`. -/
-private theorem splitANegAAlgHom_apply (a : R) (x : ℍ[R,a,-a]) :
-    splitANegAAlgHom a x =
-      !![x.re + a * x.imK, a * (x.imI - x.imJ);
-         x.imI + x.imJ, x.re - a * x.imK] := by
+private theorem aNegAMatrixBasis_liftHom_apply (a : R) (q : ℍ[R,a,-a]) :
+    (aNegAMatrixBasis a).liftHom q =
+      !![q.re + a * q.imK, a * (q.imI - q.imJ);
+        q.imI + q.imJ, q.re - a * q.imK] := by
   ext i j
   fin_cases i <;> fin_cases j <;>
-    simp [splitANegAAlgHom, splitANegABasis, _root_.QuaternionAlgebra.Basis.liftHom,
-      _root_.QuaternionAlgebra.Basis.lift, Matrix.algebraMap_matrix_apply] <;> ring
+    simp [aNegAMatrixBasis, _root_.QuaternionAlgebra.Basis.liftHom,
+      _root_.QuaternionAlgebra.Basis.lift, Algebra.algebraMap_eq_smul_one] <;> ring
 
 variable [Invertible (2 : R)]
 
-/-- The coordinate inverse to the standard matrix representation. -/
-private def splitANegAPreimage (a : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
+private def aNegAMatrixInverse (a : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
     ℍ[R,(a : R),-(a : R)] :=
-  ⟨⅟ (2 : R) * (M 0 0 + M 1 1),
-    ⅟ (2 : R) * (M 1 0 + (↑(a⁻¹) : R) * M 0 1),
-    ⅟ (2 : R) * (M 1 0 - (↑(a⁻¹) : R) * M 0 1),
-    ⅟ (2 : R) * ((↑(a⁻¹) : R) * (M 0 0 - M 1 1))⟩
+  ⟨⅟2 * (M 0 0 + M 1 1), ⅟2 * (M 1 0 + ↑a⁻¹ * M 0 1),
+    ⅟2 * (M 1 0 - ↑a⁻¹ * M 0 1), ⅟2 * (↑a⁻¹ * (M 0 0 - M 1 1))⟩
 
-private theorem splitANegAPreimage_apply_splitANegAAlgHom (a : Rˣ)
-    (x : ℍ[R,(a : R),-(a : R)]) :
-    splitANegAPreimage a (splitANegAAlgHom (a : R) x) = x := by
-  ext <;> simp [splitANegAPreimage, splitANegAAlgHom_apply] <;>
-    ring_nf
-  all_goals simp [mul_left_comm, mul_comm]
+private theorem aNegAMatrixInverse_leftInverse (a : Rˣ) :
+    Function.LeftInverse (aNegAMatrixInverse a) (aNegAMatrixBasis (a : R)).liftHom := by
+  intro q
+  rw [aNegAMatrixBasis_liftHom_apply]
+  ext <;> simp [aNegAMatrixInverse] <;> grind [invOf_mul_self, Units.inv_mul]
 
-private theorem splitANegAAlgHom_apply_splitANegAPreimage (a : Rˣ)
-    (M : Matrix (Fin 2) (Fin 2) R) :
-    splitANegAAlgHom (a : R) (splitANegAPreimage a M) = M := by
-  rw [splitANegAAlgHom_apply]
+private theorem aNegAMatrixInverse_rightInverse (a : Rˣ) :
+    Function.RightInverse (aNegAMatrixInverse a) (aNegAMatrixBasis (a : R)).liftHom := by
+  intro M
+  rw [aNegAMatrixBasis_liftHom_apply]
   ext i j
-  fin_cases i <;> fin_cases j <;>
-    simp [splitANegAPreimage] <;> ring_nf
-  all_goals simp [mul_left_comm, mul_comm, ← add_mul, invOf_two_add_invOf_two]
+  fin_cases i <;> fin_cases j <;> simp [aNegAMatrixInverse] <;>
+    grind [invOf_mul_self, Units.inv_mul]
 
-/-- The explicit splitting `ℍ[R,a,-a] ≃ₐ[R] M₂(R)` for a unit `a`, over a commutative
-ring in which `2` is invertible. -/
-noncomputable def aNegAEquivMatrix (a : Rˣ) :
-    ℍ[R,(a : R),-(a : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
-  AlgEquiv.ofBijective (splitANegAAlgHom (a : R)) ⟨
-    Function.LeftInverse.injective (splitANegAPreimage_apply_splitANegAAlgHom a),
-    Function.RightInverse.surjective (splitANegAAlgHom_apply_splitANegAPreimage a)⟩
+/-- The explicit splitting `ℍ[R,a,-a] ≃ₐ[R] M₂(R)` for a unit `a` over a commutative ring in
+which two is invertible. It sends the quaternion generators `i` and `j` to
+`!![0, a; 1, 0]` and `!![0, -a; 1, 0]`, respectively. -/
+def aNegAEquivMatrix (a : Rˣ) : ℍ[R,(a : R),-(a : R)] ≃ₐ[R] Matrix (Fin 2) (Fin 2) R :=
+  { (aNegAMatrixBasis (a : R)).liftHom with
+    invFun := aNegAMatrixInverse a
+    left_inv := aNegAMatrixInverse_leftInverse a
+    right_inv := aNegAMatrixInverse_rightInverse a }
 
-/-- The splitting equivalence is the standard matrix representation. -/
+/-- The splitting equivalence on an arbitrary quaternion. -/
 @[simp]
-theorem aNegAEquivMatrix_apply (a : Rˣ) (x : ℍ[R,(a : R),-(a : R)]) :
-    aNegAEquivMatrix a x =
-      !![x.re + (a : R) * x.imK, (a : R) * (x.imI - x.imJ);
-         x.imI + x.imJ, x.re - (a : R) * x.imK] := by
-  exact (AlgEquiv.ofBijective_apply _ _ x).trans (splitANegAAlgHom_apply (a : R) x)
+theorem aNegAEquivMatrix_apply (a : Rˣ) (q : ℍ[R,(a : R),-(a : R)]) :
+    aNegAEquivMatrix a q =
+      !![q.re + (a : R) * q.imK, (a : R) * (q.imI - q.imJ);
+        q.imI + q.imJ, q.re - (a : R) * q.imK] :=
+  aNegAMatrixBasis_liftHom_apply _ q
 
-/-- The inverse of the splitting equivalence, in matrix coordinates. -/
+/-- The inverse splitting equivalence recovers the four quaternion coordinates from the four
+matrix entries. -/
 @[simp]
 theorem aNegAEquivMatrix_symm_apply (a : Rˣ) (M : Matrix (Fin 2) (Fin 2) R) :
     (aNegAEquivMatrix a).symm M =
-      ⟨⅟ (2 : R) * (M 0 0 + M 1 1),
-        ⅟ (2 : R) * (M 1 0 + (↑(a⁻¹) : R) * M 0 1),
-        ⅟ (2 : R) * (M 1 0 - (↑(a⁻¹) : R) * M 0 1),
-        ⅟ (2 : R) * ((↑(a⁻¹) : R) * (M 0 0 - M 1 1))⟩ := by
-  apply (aNegAEquivMatrix a).symm_apply_eq.mpr
-  exact ((AlgEquiv.ofBijective_apply _ _ _).trans
-    (splitANegAAlgHom_apply_splitANegAPreimage a M)).symm
+      ⟨⅟2 * (M 0 0 + M 1 1), ⅟2 * (M 1 0 + ↑a⁻¹ * M 0 1),
+        ⅟2 * (M 1 0 - ↑a⁻¹ * M 0 1), ⅟2 * (↑a⁻¹ * (M 0 0 - M 1 1))⟩ :=
+  (rfl)
 
 end ANegA
 
