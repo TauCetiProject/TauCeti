@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.FDeriv.Mul
 import TauCeti.Analysis.Calculus.FDeriv.Prod
+import TauCeti.Analysis.Calculus.FDeriv.Shift
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Analysis.Calculus.Bilinear
@@ -88,6 +89,13 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   (`SymplecticForm.floerEnergyDensity_congr_of_eventuallyEq`,
   `SymplecticForm.floerEnergyDensity_comp_add_right`); hence translations preserve the energy
   (`SymplecticForm.lintegral_floerEnergyDensity_comp_add_right`).
+* `SymplecticForm.hamiltonianCurvature_neg_comp_const_sub`,
+  `SymplecticForm.perturbedFDeriv_neg_comp_const_sub`,
+  `SymplecticForm.floerEnergyDensity_neg_comp_const_sub` and
+  `SymplecticForm.isComplexLinearMap_perturbedFDeriv_neg_comp_const_sub_iff`: under a point
+  reflection `z ↦ a - z` of the domain, which pulls `K` back to `z ↦ -K(a - z)`, the curvature
+  and the energy density are reflected, the perturbed derivative changes sign, and solutions of
+  the Floer equation correspond.
 
 ## References
 
@@ -191,6 +199,17 @@ theorem hamiltonianCurvature_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ
   simp only [hamiltonianCurvature_def]
   rw [fderiv_comp_add_right (f := fun w ↦ Kt w x), fderiv_comp_add_right (f := fun w ↦ Ks w x)]
 
+/-- Curvature under a point reflection `z ↦ a - z` of the domain. The pullback of `K` along the
+reflection is `z ↦ -K(a - z)`, since the reflection has derivative `-1`, and its curvature at `z`
+is the curvature of `K` at `a - z`: the reflection preserves orientation. -/
+theorem hamiltonianCurvature_neg_comp_const_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (a z : ℝ × ℝ) (x : V) :
+    ω.hamiltonianCurvature (fun w ↦ -Ks (a - w)) (fun w ↦ -Kt (a - w)) z x =
+      ω.hamiltonianCurvature Ks Kt (a - z) x := by
+  simp only [hamiltonianCurvature_def, Pi.neg_apply, fderiv_fun_neg,
+    fderiv_comp_const_sub (f := fun w ↦ Kt w x), fderiv_comp_const_sub (f := fun w ↦ Ks w x),
+    neg_neg, poissonBracket_neg_left, poissonBracket_neg_right]
+
 /-- A datum `K = K_s ds + K_t dt` with `K_s = 0` and `K_t` independent of `s` near the line
 `s = c` has zero curvature along that line. -/
 theorem hamiltonianCurvature_eq_zero_of_cylindrical (ω : SymplecticForm V)
@@ -291,6 +310,30 @@ theorem perturbedFDeriv_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ × �
   refine ContinuousLinearMap.ext fun a ↦ ?_
   simp only [perturbedFDeriv_apply, fderiv_comp_add_right]
 
+/-- The perturbed derivative under a point reflection `z ↦ a - z` of the domain: for the reflected
+map and the pulled-back datum `z ↦ -K(a - z)` it is minus the perturbed derivative at `a - z`. -/
+theorem perturbedFDeriv_neg_comp_const_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (a z : ℝ × ℝ) :
+    ω.perturbedFDeriv (fun w ↦ -Ks (a - w)) (fun w ↦ -Kt (a - w)) (fun w ↦ u (a - w)) z =
+      -ω.perturbedFDeriv Ks Kt u (a - z) := by
+  refine ContinuousLinearMap.ext fun v ↦ ?_
+  simp only [perturbedFDeriv_apply, fderiv_comp_const_sub, hamiltonianVectorField_neg,
+    neg_apply, smul_neg]
+  abel
+
+/-- **Point reflections preserve the Floer equation.** The reflected map `z ↦ u(a - z)` solves the
+Floer equation at `z` for the pulled-back datum `z ↦ -K(a - z)` exactly when `u` solves it at
+`a - z`. -/
+theorem isComplexLinearMap_perturbedFDeriv_neg_comp_const_sub_iff (ω : SymplecticForm V)
+    (J : AlmostComplexStructure V) (Ks Kt : ℝ × ℝ → V → ℝ) (u : ℝ × ℝ → V) (a z : ℝ × ℝ) :
+    IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+        (ω.perturbedFDeriv (fun w ↦ -Ks (a - w)) (fun w ↦ -Kt (a - w)) (fun w ↦ u (a - w)) z :
+          ℝ × ℝ →ₗ[ℝ] V) ↔
+      IsComplexLinearMap (AlmostComplexStructure.product ℝ) J
+        (ω.perturbedFDeriv Ks Kt u (a - z) : ℝ × ℝ →ₗ[ℝ] V) := by
+  rw [perturbedFDeriv_neg_comp_const_sub, ContinuousLinearMap.toLinearMap_neg,
+    isComplexLinearMap_neg_iff]
+
 /-- The perturbed derivative at `z` only depends on the germ of the map at `z`. -/
 theorem perturbedFDeriv_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
     {u u' : ℝ × ℝ → V} {z : ℝ × ℝ} (h : u =ᶠ[𝓝 z] u') :
@@ -331,6 +374,15 @@ theorem floerEnergyDensity_comp_add_right (ω : SymplecticForm V) (Ks Kt : ℝ �
     ω.floerEnergyDensity (fun w ↦ Ks (w + v)) (fun w ↦ Kt (w + v)) (fun w ↦ u (w + v)) z =
       ω.floerEnergyDensity Ks Kt u (z + v) := by
   rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_comp_add_right]
+
+/-- The Floer energy density under a point reflection `z ↦ a - z` of the domain: for the reflected
+map and the pulled-back datum `z ↦ -K(a - z)` it is the energy density at `a - z`. -/
+theorem floerEnergyDensity_neg_comp_const_sub (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (a z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun w ↦ -Ks (a - w)) (fun w ↦ -Kt (a - w)) (fun w ↦ u (a - w)) z =
+      ω.floerEnergyDensity Ks Kt u (a - z) := by
+  rw [floerEnergyDensity_def, floerEnergyDensity_def, perturbedFDeriv_neg_comp_const_sub]
+  simp only [neg_apply, map_neg, LinearMap.neg_apply, neg_neg]
 
 /-- The Floer energy density at `z` only depends on the germ of the map at `z`. -/
 theorem floerEnergyDensity_congr_of_eventuallyEq (ω : SymplecticForm V) (Ks Kt : ℝ × ℝ → V → ℝ)

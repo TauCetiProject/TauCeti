@@ -27,6 +27,8 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
+* `TauCeti.Floer.pairOfPantsPerturbation_add`: the perturbation is additive in the end
+  Hamiltonians.
 * `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
   Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
@@ -80,6 +82,12 @@ theorem pairOfPantsPerturbation_def (H : Puncture → ℝ → M → ℝ) (w : �
       ∑ q, (smoothTransition (q.endSign * (q.endCoord w).re - 1) * H q (q.endCoord w).im x) •
         q.endAngularForm w := by
   rw [pairOfPantsPerturbation]
+
+/-- The perturbation is additive in the end Hamiltonians. -/
+theorem pairOfPantsPerturbation_add (H H' : Puncture → ℝ → M → ℝ) :
+    pairOfPantsPerturbation (H + H') = pairOfPantsPerturbation H + pairOfPantsPerturbation H' := by
+  funext w x
+  simp only [pairOfPantsPerturbation_def, Pi.add_apply, mul_add, add_smul, Finset.sum_add_distrib]
 
 variable {H : Puncture → ℝ → M → ℝ}
 

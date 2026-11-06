@@ -155,6 +155,13 @@ theorem cylindricalEndLift_ofReal_add_ofReal_mul_I (q : Puncture) (x t : ℝ) :
   simp only [mul_assoc, ← Complex.exp_add]
   ring_nf
 
+/-- A point of an end lies at distance `‖b_q‖ exp (-2πs)` from the center of the end, where `s` is
+its longitudinal coordinate. -/
+theorem norm_cylindricalEndLift_sub_endCenter (q : Puncture) (z : ℂ) :
+    ‖q.cylindricalEndLift z - q.endCenter‖ = ‖q.endScale‖ * Real.exp (-(2 * π * z.re)) := by
+  rw [cylindricalEndLift_eq, add_sub_cancel_left, norm_mul, Complex.norm_exp]
+  simp
+
 /-- The derivative of an end lift at `z` is `-2π` times the displacement of its value from the
 center of the end. -/
 theorem deriv_cylindricalEndLift (q : Puncture) (z : ℂ) :
