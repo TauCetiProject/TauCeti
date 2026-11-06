@@ -92,6 +92,18 @@ theorem hamiltonianVectorField_const_mul (ω : SymplecticForm V) (c : ℝ) (H : 
   rw [hamiltonianVectorField, hamiltonianVectorField, h, fderiv_const_smul_field, Pi.smul_apply,
     map_smul]
 
+/-- The linear Hamiltonian `ω v` obtained by contraction has the constant Hamiltonian vector
+field `v`. -/
+@[simp]
+theorem hamiltonianVectorField_contraction (ω : SymplecticForm V) (v x : V) :
+    ω.hamiltonianVectorField (fun y ↦ ω v y) x = v := by
+  rw [eq_comm, eq_hamiltonianVectorField_iff]
+  intro w
+  have h : HasFDerivAt (fun y ↦ ω v y) (LinearMap.toContinuousLinearMap (ω.toBilinForm v)) x :=
+    (LinearMap.toContinuousLinearMap (ω.toBilinForm v)).hasFDerivAt
+  rw [h.fderiv]
+  rfl
+
 /-- The Hamiltonian has zero derivative in its own Hamiltonian direction. -/
 @[simp]
 theorem fderiv_apply_hamiltonianVectorField (ω : SymplecticForm V) (H : V → ℝ) (x : V) :
