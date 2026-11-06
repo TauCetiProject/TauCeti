@@ -104,9 +104,8 @@ private theorem invExpr_inv {z : ℂ} (hz : z ≠ 0) : invExpr v ι z⁻¹ = aff
   have hr : 0 < ‖z‖ := norm_pos_iff.2 hz
   -- `conj z⁻¹ = |z|⁻² z`, so both sides are combinations of `ι z` and `v`.
   have hconj : conj z⁻¹ = (‖z‖ ^ 2)⁻¹ • z := by
-    rw [map_inv₀, Complex.inv_def, Complex.conj_conj, Complex.normSq_conj,
-      Complex.normSq_eq_norm_sq, Complex.real_smul, mul_comm, Complex.ofReal_inv,
-      Complex.ofReal_pow]
+    rw [map_inv₀, Complex.inv_def]
+    simp [Complex.normSq_eq_norm_sq, Complex.real_smul, mul_comm]
   have hι : (ι (conj z⁻¹) : E) = (‖z‖ ^ 2)⁻¹ • (ι z : E) := by
     rw [hconj, map_smul, Submodule.coe_smul]
   simp only [invExpr, affineExpr, stereoInvFunAux_apply, hι, norm_smul, Submodule.norm_coe,
@@ -183,8 +182,7 @@ private theorem ofSphere_eq_invChart_symm {p : sphere (0 : E) 1} (hp : p ≠ -v)
   -- The Pythagorean relation `t² + ‖y‖² = 1` on the unit sphere.
   have split : (p : E) = t • (v : E) + (y : E) := by
     rw [← ((ℝ ∙ (v : E)).starProjection_add_starProjection_orthogonal p),
-      Submodule.starProjection_unit_singleton ℝ hv p]
-    rfl
+      Submodule.starProjection_unit_singleton ℝ hv p, Submodule.starProjection_apply]
   have hvy : ⟪(v : E), y⟫_ℝ = 0 := Submodule.mem_orthogonal_singleton_iff_inner_right.mp y.2
   have pythag : t ^ 2 + ‖y‖ ^ 2 = 1 := by
     have hvy' : ⟪t • (v : E), (y : E)⟫_ℝ = 0 := by simp only [inner_smul_left, hvy, mul_zero]
@@ -361,6 +359,29 @@ private theorem mfderiv_coe_toSphere (x : OnePoint ℂ) :
       rw [coe_toSphere_eq_invExpr v ι (by simpa using inv_ne_zero hw), invChart_coe, inv_inv]
 
 omit [Fact (finrank ℝ E = 2 + 1)] in
+/-- The conformal factor of inverse stereographic projection from a unit vector `u`, read through
+`w ↦ 2 J w` for a linear isometry `J` of `ℂ` into `uᗮ`:
+`⟪dσ a, dσ b⟫ = 4 (1 + |z|²)⁻² Re (conj a * b)` at `z`. -/
+private theorem inner_fderiv_stereoInvFunAux_two_smul {u : E} (hu : ‖u‖ = 1) (J : ℂ →ₗᵢ[ℝ] E)
+    (hJ : ∀ c, J c ∈ (ℝ ∙ u)ᗮ) (z a b : ℂ) :
+    ⟪fderiv ℝ (fun w ↦ stereoInvFunAux u ((2 : ℝ) • J w)) z a,
+      fderiv ℝ (fun w ↦ stereoInvFunAux u ((2 : ℝ) • J w)) z b⟫_ℝ =
+      4 * ((1 + ‖z‖ ^ 2) ^ 2)⁻¹ * (conj a * b).re := by
+  set L : ℂ →L[ℝ] E := (2 : ℝ) • J.toContinuousLinearMap
+  have hL (c : ℂ) : L c ∈ (ℝ ∙ u)ᗮ := Submodule.smul_mem _ _ (hJ c)
+  have hd : HasFDerivAt (fun w ↦ stereoInvFunAux u ((2 : ℝ) • J w))
+      ((fderiv ℝ (stereoInvFunAux u) (L z)).comp L) z :=
+    ((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp z
+      L.hasFDerivAt
+  rw [hd.fderiv, ContinuousLinearMap.comp_apply, ContinuousLinearMap.comp_apply,
+    inner_fderiv_stereoInvFunAux hu (hL z) (hL a) (hL b)]
+  simp only [L, _root_.smul_apply, LinearIsometry.coe_toContinuousLinearMap, norm_smul,
+    LinearIsometry.norm_map, Real.norm_eq_abs, abs_two, real_inner_smul_left,
+    real_inner_smul_right, LinearIsometry.inner_map_map, Complex.inner, mul_comm b]
+  field_simp
+  ring
+
+omit [Fact (finrank ℝ E = 2 + 1)] in
 /-- The conformal factor of `σ` in a chart: for the chart coordinate `c` of `x`,
 `⟪dσ a, dσ b⟫ = 4 (1 + |c|²)⁻² Re (conj a * b)`. -/
 private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
@@ -376,50 +397,19 @@ private theorem inner_mvfderiv_coe_toSphere (x : OnePoint ℂ) (a b : ℂ) :
   clear e
   induction x using OnePoint.rec with
   | coe z =>
-    -- `affineExpr = σ⁻¹ ∘ L` for the linear map `L z = 2 ι z` into `vᗮ`.
-    set L : ℂ →L[ℝ] E :=
-      (2 : ℝ) • ((ℝ ∙ (v : E))ᗮ.subtypeL.comp ι.toContinuousLinearEquiv.toContinuousLinearMap)
-    have hL (c : ℂ) : L c ∈ (ℝ ∙ (v : E))ᗮ := Submodule.smul_mem _ _ (ι c).2
-    have hd : HasFDerivAt (affineExpr v ι)
-        ((fderiv ℝ (stereoInvFunAux (v : E)) (L z)).comp L) z :=
-      ((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp z
-        L.hasFDerivAt
-    simp only [elim_some, chartAt_coe, affineChart_coe, hd.fderiv,
-      ContinuousLinearMap.comp_apply]
-    rw [inner_fderiv_stereoInvFunAux hv (hL z) (hL a) (hL b)]
-    simp only [L, _root_.smul_apply, ContinuousLinearMap.comp_apply,
-      Submodule.subtypeL_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, norm_smul, Submodule.norm_coe,
-      LinearIsometryEquiv.norm_map, Real.norm_eq_abs, abs_two, real_inner_smul_left,
-      real_inner_smul_right]
-    rw [← Submodule.coe_inner, LinearIsometryEquiv.inner_map_map, Complex.inner, mul_comm b]
-    field_simp
-    ring
+    -- `affineExpr` is inverse stereographic projection from `v` read through `2 ι`.
+    simp only [elim_some, chartAt_coe, affineChart_coe]
+    exact inner_fderiv_stereoInvFunAux_two_smul hv
+      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp ι.toLinearIsometry) (fun c ↦ (ι c).2) z a b
   | infty =>
-    -- `invExpr = σ⁻¹ ∘ L` for the antipode `-v` and `L w = 2 ι (conj w)`.
-    set L : ℂ →L[ℝ] E := (2 : ℝ) • ((ℝ ∙ (v : E))ᗮ.subtypeL.comp
-      (ι.toContinuousLinearEquiv.toContinuousLinearMap.comp Complex.conjCLE.toContinuousLinearMap))
-    have hL (c : ℂ) : L c ∈ (ℝ ∙ (-(v : E)))ᗮ := by
-      rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_neg_left, neg_eq_zero,
-        ← Submodule.mem_orthogonal_singleton_iff_inner_right]
-      exact Submodule.smul_mem _ _ (ι _).2
-    have hd : HasFDerivAt (invExpr v ι)
-        ((fderiv ℝ (stereoInvFunAux (-(v : E))) (L 0)).comp L) 0 :=
-      ((contDiff_stereoInvFunAux (m := 1)).differentiable one_ne_zero _).hasFDerivAt.comp 0
-        L.hasFDerivAt
-    simp only [elim_infty, chartAt_infty, invChart_infty, hd.fderiv,
-      ContinuousLinearMap.comp_apply]
-    rw [inner_fderiv_stereoInvFunAux (by rwa [norm_neg]) (hL 0) (hL a) (hL b)]
-    simp only [L, map_zero, norm_zero, _root_.smul_apply,
-      ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply, ContinuousLinearEquiv.coe_coe,
-      LinearIsometryEquiv.coe_toContinuousLinearEquiv, Complex.conjCLE_apply,
-      real_inner_smul_left, real_inner_smul_right]
-    have hre : (conj b * a).re = (conj a * b).re := by
-      rw [← Complex.conj_re (conj a * b), map_mul, Complex.conj_conj, mul_comm]
-    rw [← Submodule.coe_inner, LinearIsometryEquiv.inner_map_map, Complex.inner,
-      Complex.conj_conj, hre]
-    norm_num
-    ring
+    -- `invExpr` is inverse stereographic projection from `-v` read through `2 ι ∘ conj`.
+    simp only [elim_infty, chartAt_infty, invChart_infty]
+    refine inner_fderiv_stereoInvFunAux_two_smul (by rwa [norm_neg])
+      ((ℝ ∙ (v : E))ᗮ.subtypeₗᵢ.comp (ι.toLinearIsometry.comp Complex.conjLIE.toLinearIsometry))
+      (fun c ↦ ?_) 0 a b
+    rw [Submodule.mem_orthogonal_singleton_iff_inner_right, inner_neg_left, neg_eq_zero,
+      ← Submodule.mem_orthogonal_singleton_iff_inner_right]
+    exact (ι _).2
 
 /-- **The round metric is `4π` times the Fubini–Study metric.** Along the diffeomorphism
 `σ = diffeomorphSphere v ι`, the round metric of the unit sphere pulls back to `4π` times the
