@@ -180,13 +180,13 @@ def comap (hf : ∀ g : G, ∃ x : H, ∃ t ∈ T.subgroupB ⊓ T.subgroupN, f x
   intersection_normal := inferInstance
   simple := comapWeylGroupHom T ⁻¹' T.simple
   closure_simple := closure_preimage_comapWeylGroupHom T hf
-  exists_simpleRep_sq_mem s hs := by
+  exists_simpleRep_mul_self_mem s hs := by
     obtain ⟨r, rfl⟩ := QuotientGroup.mk_surjective s
     refine ⟨r, rfl, ?_⟩
     -- The square of the class of `r` maps to the square of a simple reflection, which is `1`.
     have hsq : comapWeylGroupHom T (QuotientGroup.mk (r * r)) = 1 := by
       rw [QuotientGroup.mk_mul, map_mul]
-      exact T.simple_sq_eq_one hs
+      exact T.simple_mul_simple_self hs
     exact (QuotientGroup.eq_one_iff _).mp
       ((injective_iff_map_eq_one _).mp (comapWeylGroupHom_injective T) _ hsq)
   mul_doubleCoset_subset s hs := by
