@@ -8,6 +8,7 @@ module
 public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.RingTheory.Derivation.Lie
 public import TauCeti.Geometry.Manifold.DerivationBundle
+public import TauCeti.Geometry.Manifold.VectorBundle.Section.Module
 public import TauCeti.Geometry.Manifold.VectorField.LieBracket
 import Mathlib.Geometry.Manifold.Algebra.Monoid
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
@@ -29,15 +30,16 @@ bump-localized coordinate functions.
   along a smooth vector field, as a linear map in the vector field.
 * `Derivation.vectorField`: the tangent vector field of a derivation, read pointwise
   through `pointDerivationEquivTangentSpace`.
-* `TauCeti.derivationEquivSmoothVectorField`: the real-linear equivalence between derivations of
-  `C^∞(M, ℝ)` and smooth vector fields.
+* `TauCeti.derivationEquivSmoothVectorField`: the `C^∞(M, ℝ)`-linear equivalence between
+  derivations of `C^∞(M, ℝ)` and smooth vector fields.
 
 ## Main results
 
 * `Derivation.mvfderiv_vectorField`: the inverse evaluation equation `δ f x = df_x (X x)`.
 * `Derivation.contMDiff_vectorField`: the vector field of a derivation is smooth.
-* `TauCeti.exists_derivationEquivSmoothVectorField`: derivations of `C^∞(M, ℝ)` are linearly
-  equivalent to smooth vector fields, compatibly with the evaluation equation.
+* `TauCeti.exists_derivationEquivSmoothVectorField`: derivations of `C^∞(M, ℝ)` are
+  `C^∞(M, ℝ)`-linearly equivalent to smooth vector fields, compatibly with the evaluation
+  equation.
 * `Derivation.vectorField_smul`: multiplying a derivation by a smooth function multiplies
   its vector field pointwise.
 * `Derivation.vectorField_lie`: the commutator of derivations corresponds to the manifold
@@ -158,6 +160,13 @@ theorem mvfderiv_vectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I
       BoundarylessManifold.isInteriorPoint (Derivation.evalAt x δ))
   simpa only [vectorField, tangentToPointDerivation_apply, Derivation.evalAt_apply] using h
 
+/-- The inverse evaluation equation in the `mfderiv` normal form. -/
+@[simp]
+theorem mfderiv_vectorField (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯)
+    (f : C^∞⟮I, M; ℝ⟯) (x : M) :
+    mfderiv I 𝓘(ℝ, ℝ) f x (δ.vectorField x) = δ f x := by
+  rw [← mvfderiv_apply_eq_mfderiv_apply, mvfderiv_vectorField]
+
 /-- The value of the vector field of a derivation at `x` is the unique tangent vector along which
 every smooth function is differentiated by the derivation at `x`. -/
 theorem eq_vectorField_iff {δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯} {x : M}
@@ -168,6 +177,12 @@ theorem eq_vectorField_iff {δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, 
   ext (f : C^∞⟮I, M; ℝ⟯)
   rw [tangentToPointDerivation_apply, tangentToPointDerivation_apply]
   exact (h f).trans (mvfderiv_vectorField δ f x).symm
+
+/-- The zero derivation has the zero vector field. -/
+@[simp]
+theorem vectorField_zero (x : M) :
+    (0 : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯).vectorField x = 0 := by
+  simp only [vectorField, map_zero]
 
 /-- The vector field of a sum of derivations is the sum of their vector fields. -/
 @[simp]
@@ -273,28 +288,29 @@ end ContMDiffSection
 namespace TauCeti
 
 /-- **Derivations are smooth vector fields.** On a finite-dimensional, Hausdorff, boundaryless
-real manifold, sending a derivation of `C^∞(M, ℝ)` to its vector field is a real-linear
+real manifold, sending a derivation of `C^∞(M, ℝ)` to its vector field is a `C^∞(M, ℝ)`-linear
 equivalence onto the smooth sections of the tangent bundle; its inverse differentiates along the
-field. -/
+field. No continuity of the derivations is assumed. -/
 def derivationEquivSmoothVectorField :
-    Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ ≃ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
-  LinearEquiv.ofLinearMap
-    { toFun δ := ⟨δ.vectorField, δ.contMDiff_vectorField⟩
-      map_add' δ₁ δ₂ := ContMDiffSection.ext (δ₁.vectorField_add δ₂)
-      map_smul' r δ := ContMDiffSection.ext (Derivation.vectorField_const_smul r δ) }
-    vectorFieldDerivation
-    (by
-      ext X x
-      exact X.vectorField_vectorFieldDerivation x)
-    (by
-      ext δ f x
-      exact δ.mvfderiv_vectorField f x)
+    Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯]
+      Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ where
+  toFun δ := ⟨δ.vectorField, δ.contMDiff_vectorField⟩
+  map_add' δ₁ δ₂ := ContMDiffSection.ext (δ₁.vectorField_add δ₂)
+  map_smul' g δ := by ext x; simp
+  invFun := vectorFieldDerivation
+  left_inv δ := by
+    ext f x
+    exact δ.mvfderiv_vectorField f x
+  right_inv X := by
+    ext x
+    exact X.vectorField_vectorFieldDerivation x
 
 /-- **Derivations and smooth vector fields.** On a finite-dimensional, Hausdorff, boundaryless real
-manifold there is a real-linear equivalence between derivations of `C^∞(M, ℝ)` and smooth vector
-fields under which `δ f x = df_x (X x)`. -/
+manifold there is a `C^∞(M, ℝ)`-linear equivalence between derivations of `C^∞(M, ℝ)` and smooth
+vector fields under which `δ f x = df_x (X x)`. -/
 theorem exists_derivationEquivSmoothVectorField :
-    ∃ e : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ ≃ₗ[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯,
+    ∃ e : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ ≃ₗ[C^∞⟮I, M; ℝ⟯]
+      Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯,
       ∀ δ (f : C^∞⟮I, M; ℝ⟯) (x : M), δ f x = mvfderiv I f x (e δ x) :=
   ⟨derivationEquivSmoothVectorField, fun δ f x ↦ (δ.mvfderiv_vectorField f x).symm⟩
 
