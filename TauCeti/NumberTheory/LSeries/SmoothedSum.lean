@@ -6,6 +6,7 @@ Authors: Claude
 module
 
 public import Mathlib.NumberTheory.LSeries.Basic
+public import TauCeti.Analysis.MellinInversion
 public import TauCeti.Analysis.SpecialFunctions.Gamma.Vertical
 
 /-!
@@ -86,26 +87,22 @@ theorem hasSum_mellinInv_Gamma_mul {ι : Type*} [Countable ι] {a : ι → ℂ} 
   have hterm (i : ι) : ∫ t, g i t = 2 * π * (a i * rexp (-p i * x)) := by
     rcases hp i with h | h
     · simp [g, h]
-    have hinv := mellinInv_Gamma hσ (mul_pos h hx)
-    rw [mellinInv, real_smul, ofReal_div, ofReal_one, div_mul_eq_mul_div, one_mul,
-      div_eq_iff (by simp [pi_ne_zero])] at hinv
-    simp only [smul_eq_mul] at hinv
-    simp only [g, integral_const_mul, hinv, neg_mul]
+    simp only [g, integral_const_mul, integral_cpow_neg_mul_Gamma hσ (mul_pos h hx), neg_mul]
     push_cast
     ring
-  -- the integral of the sum is `2π` times the Mellin inverse
-  have hfull : ∫ t, ∑' i, g i t =
-      2 * π * mellinInv σ (fun s ↦ Gamma s * ∑' i, a i / (p i : ℂ) ^ s) x := by
-    rw [mellinInv, real_smul, ← mul_assoc]
-    push_cast
-    rw [mul_one_div_cancel (by simp [pi_ne_zero]), one_mul]
+  -- the Mellin inverse is `1 / 2π` times the integral of the sum
+  have hfull : mellinInv σ (fun s ↦ Gamma s * ∑' i, a i / (p i : ℂ) ^ s) x =
+      (1 / (2 * π)) • ∫ t, ∑' i, g i t := by
+    rw [mellinInv]
+    congr 1
     refine integral_congr_ae (Eventually.of_forall fun t ↦ ?_)
     simp only [smul_eq_mul, ← hg, ← tsum_mul_left]
-  simp only [hterm, hfull] at key
-  convert key.mul_left (1 / (2 * π : ℂ)) using 1
-  · ext i
-    field_simp [pi_ne_zero]
-  · field_simp [pi_ne_zero]
+  rw [hfull]
+  convert key.const_smul (1 / (2 * π)) using 1
+  ext i
+  rw [hterm, real_smul]
+  push_cast
+  field_simp [pi_ne_zero]
 
 /-- **Smoothed sums of an `LSeries`.** If `f 0 = 0` and the L-series of `f` converges absolutely on
 the line `Re s = σ > 0`, then for `x > 0` the smoothed sum `∑ₙ f(n) e^{-n x}` is the Mellin

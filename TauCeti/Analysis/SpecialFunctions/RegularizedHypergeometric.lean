@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Analysis.Calculus.SmoothSeries
 public import Mathlib.Analysis.SpecialFunctions.RegularizedHypergeometric
-public import TauCeti.Analysis.SpecialFunctions.Gamma
+public import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # The regularized hypergeometric function `₀F₁`
