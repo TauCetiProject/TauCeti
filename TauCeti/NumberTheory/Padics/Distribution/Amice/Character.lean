@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.NumberTheory.Padics.AddChar
-public import TauCeti.NumberTheory.Padics.Distribution.Amice.Basis
-public import TauCeti.NumberTheory.Padics.Distribution.Amice.Norm
+public import TauCeti.NumberTheory.Padics.Distribution.Amice.Mahler
 
 /-!
 # Analyticity of the additive characters of `ℤ_p`
@@ -36,10 +35,11 @@ in such an algebra with multiplicative norm, is analytic at some level
 (`TauCeti.AnalyticStage.exists_eval_eq_addChar`). For a general Banach algebra, `‖t‖ < r_h` remains
 a sufficient condition, and the expansion has norm exactly one.
 
-The converse, that `χ_t` lies in the image of `LA_h(K)` only when `‖t‖ < r_h`, needs Amice's basis
-theorem identifying the image of the evaluation with the functions whose Amice coordinates tend to
-zero; it is not proved here. The coordinate statement `TauCeti.tendsto_amiceCharCoeff_iff` is the
-coefficient form of that criterion.
+Conversely, for a multiplicative norm `χ_t` lies in the image of `LA_h(K)` only when
+`‖t‖ < r_h` (`TauCeti.AnalyticStage.exists_eval_eq_addChar_iff`). By Amice's theorem a continuous
+function is analytic on the discs of level `h` exactly when its Mahler coefficients divided by
+`⌊n / pʰ⌋!` tend to zero (`TauCeti.AnalyticStage.mem_range_eval_iff`), and for `χ_t` these
+quotients are the Amice coordinates `tⁿ / ⌊n / pʰ⌋!`.
 
 ## Main definitions
 
@@ -58,6 +58,8 @@ coefficient form of that criterion.
 * `TauCeti.AnalyticStage.norm_addCharExpansion`: the expansion has norm exactly one.
 * `TauCeti.AnalyticStage.isGreatest_norm_addCharExpansion`: for a multiplicative norm, the
   expansion has Gauss norm exactly one on each disc.
+* `TauCeti.AnalyticStage.exists_eval_eq_addChar_iff`: for a multiplicative norm, `χ_t` is analytic
+  on the discs of level `h` exactly when `‖t‖ < r_h`.
 * `TauCeti.AnalyticStage.exists_eval_eq_addChar`: every continuous character of `ℤ_p` with values
   in a complete normed field over `ℚ_p` is analytic at some level.
 
@@ -271,6 +273,21 @@ theorem isGreatest_norm_addCharExpansion {h : ℕ} {t : K} (ht : ‖t‖ < amice
     exact ((addCharExpansion p h t ht).norm_coe_le_norm _).trans (norm_addCharExpansion_le ht)
 
 variable (S : Type*) [Semiring S] [Module S K] [ContinuousConstSMul S K] [SMulCommClass ℤ_[p] S K]
+
+/-- **The analyticity criterion for the character `χ_t`.** For a multiplicative norm, the
+character `x ↦ (1 + t) ^ x` is the evaluation of a coefficient vector in `LA_h(K)` exactly when
+`‖t‖ < r_h = p ^ (-1 / ((p - 1) pʰ))`. -/
+theorem exists_eval_eq_addChar_iff {h : ℕ} {t : K} (hr : Tendsto (t ^ ·) atTop (𝓝 0)) :
+    (∃ f : AnalyticStage p h K, ⇑(eval S f) = PadicInt.addChar_of_value_at_one t hr) ↔
+      ‖t‖ < amiceRadius p h := by
+  refine ⟨fun ⟨f, hf⟩ ↦ ?_, fun ht ↦ ⟨_, eval_addCharExpansion S ht hr⟩⟩
+  -- The Mahler coefficients of `χ_t` are the powers `tⁿ`.
+  have hmahler (n : ℕ) : PadicInt.mahlerEquiv K (eval S f) n = t ^ n := by
+    rw [PadicInt.mahlerEquiv_apply, hf, PadicInt.coe_addChar_of_value_at_one]
+    exact PadicInt.fwdDiff_mahlerSeries hr n
+  rw [← tendsto_amiceCharCoeff_iff]
+  refine ((mem_range_eval_iff S).mp ⟨f, rfl⟩).congr fun n ↦ ?_
+  rw [hmahler, amiceCharCoeff_def]
 
 /-- **Every continuous character of `ℤ_p` is analytic at some level**, when its values lie in a
 complete ultrametric normed `ℚ_p`-algebra with multiplicative norm, such as a complete normed field
