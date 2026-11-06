@@ -88,6 +88,16 @@ theorem Hom.comm_apply {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
     L.d i j (φ.f i x) = φ.f j (K.d i j x) := by
   rw [← ModuleCat.comp_apply, φ.comm, ModuleCat.comp_apply]
 
+/-- Homology maps commute with the class map from cycles, on elements of complexes of modules.
+
+Not `@[simp]`: it would make the existing simp lemmas
+`ChainComplex.homologyMap_linearYonedaObjMap_homologyπ_apply` and
+`TopCat.singularCohomologyMap_homologyπ_constSingularCocycle` fail `simpNF`. -/
+theorem moduleCat_homologyMap_homologyπ {R : Type*} [Ring R] {ι : Type*} {c : ComplexShape ι}
+    {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i : ι) (x : K.cycles i) :
+    homologyMap φ i (K.homologyπ i x) = L.homologyπ i (cyclesMap φ i x) := by
+  rw [← ConcreteCategory.comp_apply, homologyπ_naturality, ConcreteCategory.comp_apply]
+
 /-- A chain map of complexes of modules sends cycles to cycles, on elements. -/
 theorem Hom.d_apply_eq_zero_of_d_apply_eq_zero {R : Type*} [Ring R] {ι : Type*}
     {c : ComplexShape ι} {K L : HomologicalComplex (ModuleCat R) c} (φ : K ⟶ L) (i j : ι)
