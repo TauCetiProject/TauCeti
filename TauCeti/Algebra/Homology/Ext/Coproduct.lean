@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughInjectives
+public import TauCeti.Algebra.Homology.Ext.Basic
 
 /-!
 # Degree-one Ext from a coproduct
@@ -43,10 +43,8 @@ noncomputable def coproductAddEquiv₁ (hc : IsColimit c) (Y : C) :
       map_zero' := by ext i; simp
       map_add' := by intros; ext i; simp }
   -- A single injective copresentation computes every component and the coproduct at once.
-  let S := ShortComplex.mk (Injective.ι Y) (cokernel.π (Injective.ι Y))
-    (cokernel.condition (Injective.ι Y))
-  have hS : S.ShortExact :=
-    { exact := ShortComplex.exact_of_g_is_cokernel _ (cokernelIsCokernel S.f) }
+  let S := TauCeti.injectiveCokernelSequence Y
+  have hS := TauCeti.injectiveCokernelSequence_shortExact Y
   have hrep (Z : C) (e : Ext.{w} Z Y 1) :
       ∃ a : Z ⟶ S.X₃, (mk₀ a).comp hS.extClass (zero_add 1) = e := by
     obtain ⟨a, ha⟩ := covariant_sequence_exact₁ Z hS e (eq_zero_of_injective _) rfl

@@ -65,10 +65,9 @@ theorem mapExt_one_surjective_of_shortExact {S : ShortComplex C} (hS : S.ShortEx
   obtain ⟨a, ha⟩ := hMid ((Ext.mk₀ (F.map S.g)).comp e (zero_add 1))
   have hzero : (Ext.mk₀ S.f).comp a (zero_add 1) = 0 := by
     apply hKer
-    simp only [mapExtAddHom_apply, Ext.mapExactFunctor_comp,
-      Ext.mapExactFunctor_mk₀] at ha ⊢
-    rw [ha, Ext.mk₀_comp_mk₀_assoc, ← F.map_comp, S.zero, F.map_zero,
-      Ext.mk₀_zero, Ext.zero_comp, Ext.mapExactFunctor_zero]
+    simp only [mapExtAddHom_apply] at ha
+    simp [mapExtAddHom_apply, Ext.mapExactFunctor_comp, Ext.mapExactFunctor_mk₀,
+      ha, ← F.map_comp]
   obtain ⟨b, hb⟩ := Ext.contravariant_sequence_exact₂ hS Y a hzero
   have hdiff : (Ext.mk₀ (F.map S.g)).comp (e - F.mapExtAddHom S.X₃ Y 1 b) (zero_add 1) = 0 := by
     have hmap := congrArg (F.mapExtAddHom S.X₂ Y 1) hb
