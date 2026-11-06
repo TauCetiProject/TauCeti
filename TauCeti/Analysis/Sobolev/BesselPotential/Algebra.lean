@@ -55,6 +55,7 @@ convolution estimate is `TauCeti.memLp_one_add_norm_sq_rpow_mul_convolution`, in
   `H^s`.
 * `TemperedDistribution.exists_mem_realSobolevSubmodule_ae_eq_mul`: the real form of
   `TemperedDistribution.MemSobolev.mul`.
+* `TemperedDistribution.mul_mem_realSobolevFunctions`: the same for pointwise representatives.
 
 ## References
 
@@ -156,5 +157,17 @@ theorem exists_mem_realSobolevSubmodule_ae_eq_mul {s : ℝ} (hs : finrank ℝ E 
     rw [h₁, h₃, h₄, Complex.ofRealCLM_apply, h₂]
   rw [mem_realSobolevSubmodule, heq]
   exact hu.mul hs hv
+
+/-- **Products of real Sobolev functions, `s > n / 2`.** The pointwise representatives of real
+`H^s` functions, `s > dim E / 2`, are closed under pointwise multiplication. -/
+theorem mul_mem_realSobolevFunctions {s : ℝ} (hs : finrank ℝ E < 2 * s) {g₁ g₂ : E → ℝ}
+    (h₁ : g₁ ∈ realSobolevFunctions E s 2) (h₂ : g₂ ∈ realSobolevFunctions E s 2) :
+    g₁ * g₂ ∈ realSobolevFunctions E s 2 := by
+  obtain ⟨u₁, hu₁, he₁⟩ := mem_realSobolevFunctions.1 h₁
+  obtain ⟨u₂, hu₂, he₂⟩ := mem_realSobolevFunctions.1 h₂
+  obtain ⟨w, hw, hwe⟩ := exists_mem_realSobolevSubmodule_ae_eq_mul hs hu₁ hu₂
+  refine mem_realSobolevFunctions.2 ⟨w, hw, ?_⟩
+  filter_upwards [hwe, he₁, he₂] with x hx h₁ h₂
+  rw [hx, h₁, h₂, Pi.mul_apply]
 
 end TemperedDistribution

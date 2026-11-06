@@ -42,6 +42,8 @@ the Bessel potential to the Laplacian, with the factor `2π` from Mathlib's Four
   distributions.
 * `TemperedDistribution.realSobolevSubmodule`: the real `Lᵖ` functions whose complexification
   lies in `H^{s,p}`, as a real submodule of `Lᵖ`.
+* `TemperedDistribution.realSobolevFunctions`: their pointwise representatives, as a real
+  submodule of `E → ℝ`.
 * `TemperedDistribution.MemSobolev.fourierMultiplierCLM_of_norm_iteratedFDeriv_le`: for
   `1 < p < ∞`, Fourier multipliers whose symbols satisfy Mihlin's condition map `H^{s,p}` to
   `H^{s,p}`.
@@ -161,6 +163,49 @@ theorem mem_realSobolevSubmodule {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)]
     u ∈ realSobolevSubmodule E s p ↔
       MemSobolev s p (Lp.toTemperedDistribution (Complex.ofRealCLM.compLp u)) :=
   Iff.rfl
+
+variable (E) in
+/-- The real functions on `E` that agree almost everywhere with an element of
+`realSobolevSubmodule E s p`, as a real submodule of `E → ℝ`. These are the pointwise
+representatives of real `Lᵖ` functions in `H^{s,p}`; no regularity of the representative is
+imposed. -/
+def realSobolevFunctions (s : ℝ) (p : ENNReal) [Fact (1 ≤ p)] : Submodule ℝ (E → ℝ) where
+  carrier := {g | ∃ u ∈ realSobolevSubmodule E s p, u =ᵐ[volume] g}
+  add_mem' := by
+    rintro g₁ g₂ ⟨u₁, hu₁, h₁⟩ ⟨u₂, hu₂, h₂⟩
+    refine ⟨u₁ + u₂, add_mem hu₁ hu₂, ?_⟩
+    filter_upwards [Lp.coeFn_add u₁ u₂, h₁, h₂] with x h h₁ h₂
+    rw [h, Pi.add_apply, h₁, h₂, Pi.add_apply]
+  zero_mem' := ⟨0, zero_mem _, Lp.coeFn_zero ℝ p (volume : Measure E)⟩
+  smul_mem' := by
+    rintro c g ⟨u, hu, h⟩
+    refine ⟨c • u, Submodule.smul_mem _ c hu, ?_⟩
+    filter_upwards [Lp.coeFn_smul c u, h] with x h h'
+    rw [h, Pi.smul_apply, h', Pi.smul_apply]
+
+/-- A real function lies in `realSobolevFunctions` exactly when it agrees almost everywhere
+with a real `Lᵖ` function whose complexification lies in `H^{s,p}`. -/
+theorem mem_realSobolevFunctions {s : ℝ} {p : ENNReal} [Fact (1 ≤ p)] {g : E → ℝ} :
+    g ∈ realSobolevFunctions E s p ↔ ∃ u ∈ realSobolevSubmodule E s p, u =ᵐ[volume] g :=
+  Iff.rfl
+
+/-- A smooth compactly supported real function lies in every space `realSobolevFunctions`. -/
+theorem mem_realSobolevFunctions_of_hasCompactSupport {g : E → ℝ} (hg : ContDiff ℝ (⊤ : ℕ∞) g)
+    (hc : HasCompactSupport g) (s : ℝ) (p : ENNReal) [Fact (1 ≤ p)] :
+    g ∈ realSobolevFunctions E s p := by
+  have hm : MemLp g p volume := hg.continuous.memLp_of_hasCompactSupport hc
+  refine ⟨hm.toLp _, ?_, hm.coeFn_toLp⟩
+  refine memSobolev_of_ae_eq_of_hasCompactSupport (u := fun x ↦ (g x : ℂ))
+    (Complex.ofRealCLM.contDiff.comp hg) (hc.comp_left Complex.ofReal_zero) ?_
+  filter_upwards [Complex.ofRealCLM.coeFn_compLp (hm.toLp _), hm.coeFn_toLp] with x h₁ h₂
+  simp [h₁, h₂]
+
+/-- The real `L²` Sobolev functions decrease as the order increases. -/
+theorem realSobolevFunctions_mono {s s' : ℝ} (h : s' ≤ s) :
+    realSobolevFunctions E s 2 ≤ realSobolevFunctions E s' 2 :=
+  fun _ hg ↦
+    let ⟨u, hu, hug⟩ := mem_realSobolevFunctions.1 hg
+    mem_realSobolevFunctions.2 ⟨u, (mem_realSobolevSubmodule.1 hu).mono h, hug⟩
 
 end normed
 
