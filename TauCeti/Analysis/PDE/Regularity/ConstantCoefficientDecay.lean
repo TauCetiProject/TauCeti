@@ -366,8 +366,9 @@ theorem setIntegral_ball_norm_gradient_sub_setAverage_sq_le_add_of_forall_energy
   obtain ⟨w, ⟨hwu, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
       (Omega := B) (b := 0) (c := 0) hA aestronglyMeasurable_const aestronglyMeasurable_const
-      aestronglyMeasurable_const le_rfl (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp)
-      (fun _ _ => le_rfl) hr.le subset_rfl (by simpa using hlam) 0 (W1p.restrictL hB u)
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) subset_rfl (by simpa using hlam) 0
+      (W1p.restrictL hB u)
   have hw0 : ∀ v : W1p0 volume B 2,
       energyFormH1 (fun _ => A) 0 0 w (v : W1p volume B 2) = 0 := fun v => by
     rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]
