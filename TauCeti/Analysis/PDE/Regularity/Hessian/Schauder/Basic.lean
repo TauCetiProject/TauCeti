@@ -419,11 +419,11 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
   have hsqrt : (0 : ℝ≥0) < (√Lam).toNNReal := Real.toNNReal_pos.2 (Real.sqrt_pos.2 hLam)
   have hthick : thickening R' (e ⁻¹' S) ⊆ e ⁻¹' thickening R S := by
     simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
-      TauCeti.thickening_preimage_subset_preimage_thickening hlip hsqrt S (R := R)
+      TauCeti.thickening_preimage_subset_preimage_thickening hlip S (R := R)
   have hcthick : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' U := by
     refine (?_ : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' cthickening R S).trans (preimage_mono hSU)
     simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
-      TauCeti.cthickening_preimage_subset_preimage_cthickening hlip hsqrt hR S
+      TauCeti.cthickening_preimage_subset_preimage_cthickening hlip hsqrt S
   have hS' : Bornology.IsBounded (e ⁻¹' S) := by
     rw [← e.image_symm_eq_preimage]
     exact (e.symm : E →L[ℝ] E).lipschitzWith.isBounded_image hS
