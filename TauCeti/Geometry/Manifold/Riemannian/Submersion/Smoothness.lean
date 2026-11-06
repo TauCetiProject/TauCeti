@@ -65,6 +65,7 @@ theorem contMDiff_starProjection_orthogonal_ker (hn : n + 1 ≤ ∞) :
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         x (mfderiv I J f x).kerᗮ.starProjection) := by
+  -- At arbitrary n, this is a lemma, not a registered instance; it uses IsManifold I (n + 1) M.
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
   intro a
   let e := trivializationAt E (TangentSpace I) a
@@ -77,7 +78,12 @@ theorem contMDiff_starProjection_orthogonal_ker (hn : n + 1 ≤ ∞) :
         (Module.finBasis ℝ E) j).contMDiffAt
         (e.open_baseSet.mem_nhds hx)
       have hf := ((h.isSubmersion.contMDiff.of_le hn) x)
-      have hdf := (hf.contMDiffAt_tangentMap le_rfl).comp x hX
+      have hdf : ContMDiffAt I (J.prod 𝓘(ℝ, F)) n
+          (fun y ↦ TotalSpace.mk' F (f y)
+            (mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y))) x := by
+        -- Express the tangent-map composition as the bundled differential applied to the frame.
+        simpa only [Function.comp_def, tangentMap] using
+          (hf.contMDiffAt_tangentMap le_rfl).comp x hX
       have hlift := hf.mfderiv_adjoint_apply
         (W := fun y ↦ mfderiv I J f y (e.localFrame (Module.finBasis ℝ E) j y)) hdf
       simpa only [Function.id_def, ← h.horizontalLift_apply, h.horizontalLift_mfderiv]
@@ -92,6 +98,7 @@ theorem contMDiff_starProjection_ker (hn : n + 1 ≤ ∞) :
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
         (E := fun x : M ↦ TangentSpace I x →L[ℝ] TangentSpace I x)
         x (mfderiv I J f x).ker.starProjection) := by
+  -- Supply the arbitrary-order tangent-bundle instance from IsManifold I (n + 1) M, as above.
   let := TangentBundle.contMDiffVectorBundle (I := I) (M := M) (n := n)
   have hid : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E)) n
       (fun x ↦ TotalSpace.mk' (E →L[ℝ] E)
