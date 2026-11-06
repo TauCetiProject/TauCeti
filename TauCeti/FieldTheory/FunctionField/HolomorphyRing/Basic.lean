@@ -407,7 +407,7 @@ private theorem exists_mem_ideal_forall_ord_le (hS : S.Finite) {I : Ideal ↥(ho
     else ⟨z₀, hz₀I, hz₀F, fun h ↦ absurd h hP⟩
   choose z hzI hz hzmin using key
   rcases hS.toFinset.eq_empty_or_nonempty with hempty | ⟨Q₀, hQ₀⟩
-  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦ by simp_all⟩
+  · exact ⟨z₀, hz₀I, hz₀F, fun P hP ↦ by simp [Set.Finite.toFinset_eq_empty.mp hempty] at hP⟩
   -- a damping factor: a unit at one place of `S`, a zero at each of the others
   have hdamp : ∀ P : Place k F, ∃ u : F, u ≠ 0 ∧ P.ord u = 0 ∧
       ∀ Q ∈ hS.toFinset, Q ≠ P → Q.ord u = 1 := by
