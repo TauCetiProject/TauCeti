@@ -21,6 +21,7 @@ public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.GaussLemma
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.PowerBasis
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!
@@ -841,36 +842,6 @@ end Polynomial
 /-! ### The discriminant of a power basis -/
 
 namespace Algebra
-
-/-- The roots in an algebraically closed field `E` of the minimal polynomial of the generator of a
-power basis are the images of the generator under the `K`-algebra embeddings `L →ₐ[K] E`, each
-counted once, for any numbering `e` of the embeddings by `Fin pb.dim`. -/
-theorem _root_.PowerBasis.roots_map_minpoly_eq_map_algHom {K L E : Type*} [Field K] [Field L]
-    [Field E] [Algebra K L] [Algebra K E] [IsAlgClosed E] (pb : PowerBasis K L)
-    (e : Fin pb.dim ≃ (L →ₐ[K] E)) :
-    ((minpoly K pb.gen).map (algebraMap K E)).roots =
-      Finset.univ.val.map fun i ↦ e i pb.gen := by
-  have hs : ((minpoly K pb.gen).map (algebraMap K E)).Splits := IsAlgClosed.splits _
-  let r : Fin pb.dim → E := fun i ↦ e i pb.gen
-  have hrmem : ∀ i, r i ∈ (minpoly K pb.gen).aroots E := by
-    intro i
-    rw [mem_roots, IsRoot.def, eval_map_algebraMap, aeval_algHom_apply]
-    repeat' simp [minpoly.ne_zero pb.isIntegral_gen]
-  have hrnodup : (univ.val.map r).Nodup := by
-    rw [Multiset.nodup_map_iff_of_injective]
-    · exact univ.nodup
-    · intro i j hij
-      exact e.injective (pb.algHom_ext hij)
-  have hle : univ.val.map r ≤ ((minpoly K pb.gen).map (algebraMap K E)).roots :=
-    (Multiset.le_iff_subset hrnodup).2 (by
-      intro x hx
-      obtain ⟨i, _, rfl⟩ := Multiset.mem_map.mp hx
-      exact hrmem i)
-  have hcardroots : ((minpoly K pb.gen).map (algebraMap K E)).roots.card = pb.dim := by
-    rw [← hs.natDegree_eq_card_roots,
-      (minpoly.monic pb.isIntegral_gen).natDegree_map (algebraMap K E),
-      pb.natDegree_minpoly]
-  exact (Multiset.eq_of_le_of_card_le hle (by simp [hcardroots])).symm
 
 /-- For a finite field extension with a power basis, the algebra discriminant of the power basis
 is the polynomial discriminant of the minimal polynomial of its generator. Separability is not
