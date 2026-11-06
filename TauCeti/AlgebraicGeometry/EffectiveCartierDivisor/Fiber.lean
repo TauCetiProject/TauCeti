@@ -9,7 +9,6 @@ public import Mathlib.AlgebraicGeometry.Fiber
 public import Mathlib.AlgebraicGeometry.Noetherian
 public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Relative
-import TauCeti.Algebra.Regular.SMul
 import TauCeti.AlgebraicGeometry.EffectiveCartierDivisor.Stalk
 import TauCeti.AlgebraicGeometry.Noetherian
 import TauCeti.AlgebraicGeometry.ResidueField
