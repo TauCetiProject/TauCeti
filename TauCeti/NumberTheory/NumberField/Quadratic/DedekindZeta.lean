@@ -88,6 +88,69 @@ section Local
 
 variable {p : ℕ} [hp : Fact p.Prime]
 
+/-- The local Euler factor at a prime `p` that splits in a quadratic field: two primes above `p`,
+each of norm `p`. -/
+private theorem normCoeff_one_apply_prime_pow_of_split (hK : finrank ℚ K = 2) (k : ℕ)
+    (h : fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) p = 1) :
+    normCoeff K 1 (p ^ k) = ∑ i ∈ Finset.range (k + 1),
+      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) p : ℤ) : ℂ) ^ i := by
+  classical
+  obtain ⟨𝔭, 𝔮, hne, hT⟩ := Set.ncard_eq_two.mp
+    ((fundamentalDiscriminantChar_discr_eq_one_iff hK p).mp h)
+  have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ Set.mem_insert _ _
+  have h𝔮 : 𝔮 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ by simp
+  have := h𝔭.1; have := h𝔭.2; have := h𝔮.1; have := h𝔮.2
+  have hsplit : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K := by
+    rw [hT, Set.ncard_pair hne, hK]
+  have hN𝔭 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭 hsplit
+  have hN𝔮 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔮 hsplit
+  rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔭] at hN𝔭
+  rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔮] at hN𝔮
+  have hne' : heightOneSpectrumOfLiesOver p 𝔭 ≠ heightOneSpectrumOfLiesOver p 𝔮 :=
+    fun h ↦ hne (by simpa using congrArg HeightOneSpectrum.asIdeal h)
+  rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor isMultiplicative_one hp.out
+    {heightOneSpectrumOfLiesOver p 𝔭, heightOneSpectrumOfLiesOver p 𝔮}
+    (mem_of_natCast_mem_asIdeal fun P hP ↦ by
+      rw [hT] at hP
+      rcases hP with hP | hP
+      · exact Finset.mem_insert.mpr (Or.inl (HeightOneSpectrum.ext
+          (hP.trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔭).symm)))
+      · exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr (HeightOneSpectrum.ext
+          ((Set.mem_singleton_iff.mp hP).trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔮).symm)))),
+    Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow hp.out hN𝔭 hN𝔮, h]
+  simp
+
+/-- The local Euler factor at a prime `p` that is inert in a quadratic field: a single prime above
+`p`, of norm `p ^ 2`. -/
+private theorem normCoeff_one_apply_prime_pow_of_inert (hK : finrank ℚ K = 2) (k : ℕ)
+    (h : fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) p = -1) :
+    normCoeff K 1 (p ^ k) = ∑ i ∈ Finset.range (k + 1),
+      ((fundamentalDiscriminantChar (discr K) (isFundamentalDiscr_discr hK) p : ℤ) : ℂ) ^ i := by
+  classical
+  obtain ⟨hunram, hone⟩ := (fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h
+  obtain ⟨𝔭, hT⟩ := Set.ncard_eq_one.mp hone
+  have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ rfl
+  have := h𝔭.1; have := h𝔭.2
+  have he : 𝔭.ramificationIdx ℤ = 1 :=
+    (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp
+      (by simpa [hp.out] using hunram)) 𝔭 inferInstance
+  have hN : absNorm 𝔭 = p ^ 2 := by
+    rw [absNorm_eq_pow_finrank_of_primesOver_eq_singleton 𝔭 hT he, hK]
+  rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
+    (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT), h, Int.cast_neg,
+    Int.cast_one, neg_one_geom_sum]
+  -- The local factor is `1` at even powers of `p` and `0` at odd ones.
+  rcases Nat.even_or_odd k with ⟨m, rfl⟩ | hodd
+  · rw [← two_mul, pow_mul, localArithmeticFactor_one_apply_pow
+      (by rwa [heightOneSpectrumOfLiesOver_asIdeal])]
+    simp
+  · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ _ ?_]
+    · simp [Nat.even_add_one, Nat.not_even_iff_odd.mpr hodd]
+    rintro ⟨n, hn⟩
+    rw [heightOneSpectrumOfLiesOver_asIdeal, hN, ← pow_mul,
+      (Nat.pow_right_injective hp.out.two_le).eq_iff] at hn
+    exact Nat.not_even_iff_odd.mpr hodd ⟨n, by omega⟩
+
 /-- **The local Euler factor of `ζ_K` at `p`.** In a quadratic field of discriminant `D`, the
 number of integral ideals of norm `p ^ k` is `∑_{i ≤ k} χ_D(p) ^ i`. -/
 private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ) :
@@ -105,55 +168,8 @@ private theorem normCoeff_one_apply_prime_pow (hK : finrank ℚ K = 2) (k : ℕ)
       (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT),
       localArithmeticFactor_one_apply_pow hN, h]
     simp [Finset.sum_range_succ']
-  · -- `p` splits: two primes above `p`, each of norm `p`.
-    obtain ⟨𝔭, 𝔮, hne, hT⟩ := Set.ncard_eq_two.mp
-      ((fundamentalDiscriminantChar_discr_eq_one_iff hK p).mp h)
-    have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ Set.mem_insert _ _
-    have h𝔮 : 𝔮 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ by simp
-    have := h𝔭.1; have := h𝔭.2; have := h𝔮.1; have := h𝔮.2
-    have hsplit : ((span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K)).ncard = finrank ℚ K := by
-      rw [hT, Set.ncard_pair hne, hK]
-    have hN𝔭 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔭 hsplit
-    have hN𝔮 := absNorm_eq_of_ncard_primesOver_eq_finrank 𝔮 hsplit
-    rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔭] at hN𝔭
-    rw [← heightOneSpectrumOfLiesOver_asIdeal p 𝔮] at hN𝔮
-    have hne' : heightOneSpectrumOfLiesOver p 𝔭 ≠ heightOneSpectrumOfLiesOver p 𝔮 :=
-      fun h ↦ hne (by simpa using congrArg HeightOneSpectrum.asIdeal h)
-    rw [normCoeff_apply_prime_pow_eq_prod_localArithmeticFactor isMultiplicative_one hp.out
-      {heightOneSpectrumOfLiesOver p 𝔭, heightOneSpectrumOfLiesOver p 𝔮}
-      (mem_of_natCast_mem_asIdeal fun P hP ↦ by
-        rw [hT] at hP
-        rcases hP with hP | hP
-        · exact Finset.mem_insert.mpr (Or.inl (HeightOneSpectrum.ext
-            (hP.trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔭).symm)))
-        · exact Finset.mem_insert_of_mem (Finset.mem_singleton.mpr (HeightOneSpectrum.ext
-            ((Set.mem_singleton_iff.mp hP).trans (heightOneSpectrumOfLiesOver_asIdeal p 𝔮).symm)))),
-      Finset.prod_pair hne', localArithmeticFactor_one_mul_apply_pow hp.out hN𝔭 hN𝔮, h]
-    simp
-  · -- `p` is inert: a single prime above `p`, of norm `p ^ 2`.
-    obtain ⟨hunram, hone⟩ := (fundamentalDiscriminantChar_discr_eq_neg_one_iff hK p).mp h
-    obtain ⟨𝔭, hT⟩ := Set.ncard_eq_one.mp hone
-    have h𝔭 : 𝔭 ∈ (span {(p : ℤ)} : Ideal ℤ).primesOver (𝓞 K) := hT ▸ rfl
-    have := h𝔭.1; have := h𝔭.2
-    have he : 𝔭.ramificationIdx ℤ = 1 :=
-      (Algebra.isUnramifiedIn_iff_forall_ramificationIdx_eq_one.mp
-        (by simpa [hp.out] using hunram)) 𝔭 inferInstance
-    have hN : absNorm 𝔭 = p ^ 2 := by
-      rw [absNorm_eq_pow_finrank_of_primesOver_eq_singleton 𝔭 hT he, hK]
-    rw [normCoeff_apply_prime_pow_eq_localArithmeticFactor isMultiplicative_one hp.out _
-      (eq_heightOneSpectrumOfLiesOver_of_primesOver_eq_singleton 𝔭 hT), h, Int.cast_neg,
-      Int.cast_one, neg_one_geom_sum]
-    -- The local factor is `1` at even powers of `p` and `0` at odd ones.
-    rcases Nat.even_or_odd k with ⟨m, rfl⟩ | hodd
-    · rw [← two_mul, pow_mul, localArithmeticFactor_one_apply_pow
-        (by rwa [heightOneSpectrumOfLiesOver_asIdeal])]
-      simp
-    · rw [localArithmeticFactor_apply_eq_zero_of_not_exists_pow_eq _ _ ?_]
-      · simp [Nat.even_add_one, Nat.not_even_iff_odd.mpr hodd]
-      rintro ⟨n, hn⟩
-      rw [heightOneSpectrumOfLiesOver_asIdeal, hN, ← pow_mul,
-        (Nat.pow_right_injective hp.out.two_le).eq_iff] at hn
-      exact Nat.not_even_iff_odd.mpr hodd ⟨n, by omega⟩
+  · exact normCoeff_one_apply_prime_pow_of_split hK k h
+  · exact normCoeff_one_apply_prime_pow_of_inert hK k h
 
 end Local
 
