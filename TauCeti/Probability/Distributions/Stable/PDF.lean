@@ -189,6 +189,12 @@ theorem stableMeasure_eq_withDensity (α β : ℝ) (hs : 0 < s) (m : ℝ) :
   simp_rw [funext (stablePDF_eq_ofReal α β s m), stablePDFReal_def]
   exact Measure.eq_withDensity_charFunDensity (integrable_charFun_stableMeasure α β hs m)
 
+/-- A stable law of positive scale has no atoms, including at invalid shapes where it is zero. -/
+theorem nullSingletonClass_stableMeasure (α β : ℝ) (hs : 0 < s) (m : ℝ) :
+    NullSingletonClass (stableMeasure α β s m) := by
+  rw [stableMeasure_eq_withDensity α β hs m]
+  infer_instance
+
 /-- The chosen real stable density is integrable for every parameter value. At zero scale and
 at invalid parameters this uses the library's zero-density convention. -/
 theorem integrable_stablePDFReal (α β : ℝ) (s : ℝ≥0) (m : ℝ) :

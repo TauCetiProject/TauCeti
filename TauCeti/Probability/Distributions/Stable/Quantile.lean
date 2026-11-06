@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Stable.Support
-public import TauCeti.Probability.Distributions.Dirac
+public import TauCeti.Probability.Quantile
 
 /-!
 # Quantiles of two-sided stable laws
@@ -17,8 +17,8 @@ real cdf root, given by `Measure.quantile`. The quantile is continuous and stric
 on `(0, 1)`, tending to minus and plus infinity at the respective endpoints.
 
 Strict increase of the quantile itself only needs absence of atoms, so that result also covers
-full skewness. At zero scale every interior quantile is the location, for every valid shape.
-No root uniqueness or infinite-endpoint assertion is made for full-skewness non-Gaussian laws.
+full skewness. No root uniqueness or infinite-endpoint assertion is made for full-skewness
+non-Gaussian laws.
 
 The cdf strict-increase argument uses the full-support theorem
 `support_stableMeasure_of_abs_lt_one`; the remaining statements specialize the general
@@ -48,34 +48,23 @@ theorem strictMono_cdf_stableMeasure_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ :
     ordConnected_univ (by rw [support_stableMeasure_of_abs_lt_one hα hβ hs m])
   exact fun _ _ hxy ↦ hmono (mem_univ _) (mem_univ _) hxy
 
-/-- Every interior quantile of a valid zero-scale stable law is its location. -/
-theorem quantile_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
-    (hu : u ∈ Ioo 0 1) : (stableMeasure α β 0 m).quantile u = m := by
-  rw [stableMeasure_zero_scale hα hβ, Measure.quantile_dirac m hu.1 hu.2.le]
-
 /-- For positive scale and strict interior skewness, the stable quantile is characterized as
 the unique real root of its cdf equation at each interior probability level. -/
 theorem quantile_stableMeasure_eq_iff_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ : |β| < 1)
     (hs : 0 < s) (hu : u ∈ Ioo 0 1) :
     (stableMeasure α β s m).quantile u = x ↔ cdf (stableMeasure α β s m) x = u := by
   let := isProbabilityMeasure_stableMeasure hα hβ.le s m
-  let : NullSingletonClass (stableMeasure α β s m) := by
-    rw [stableMeasure_eq_withDensity α β hs m]
-    infer_instance
-  constructor
-  · rintro rfl
-    exact Measure.cdf_quantile _ (Measure.continuous_cdf_of_noAtoms _) hu.1 hu.2
-  · exact fun hx ↦ Measure.quantile_eq_of_cdf_eq _
-      ((strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m).strictMonoOn _) hx hu
+  let := nullSingletonClass_stableMeasure α β hs m
+  simpa using Measure.quantile_eq_iff_of_ae_mem_of_strictMonoOn _ ordConnected_univ
+    (ae_of_all _ mem_univ) (Measure.continuous_cdf_of_noAtoms _)
+    ((strictMono_cdf_stableMeasure_of_abs_lt_one hα hβ hs m).strictMonoOn _) hu
 
 /-- For every valid skewness, a positive-scale stable quantile is strictly increasing on
 interior levels, even when the distribution is supported on a half-line. -/
 theorem strictMonoOn_quantile_stableMeasure (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
     (hs : 0 < s) (m : ℝ) : StrictMonoOn (stableMeasure α β s m).quantile (Ioo 0 1) := by
   let := isProbabilityMeasure_stableMeasure hα hβ s m
-  let : NullSingletonClass (stableMeasure α β s m) := by
-    rw [stableMeasure_eq_withDensity α β hs m]
-    infer_instance
+  let := nullSingletonClass_stableMeasure α β hs m
   exact Measure.strictMonoOn_quantile _ (Measure.continuous_cdf_of_noAtoms _)
 
 /-- Two-sided positive-scale stable quantiles vary continuously with interior probability
