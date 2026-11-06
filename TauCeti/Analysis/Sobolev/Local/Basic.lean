@@ -95,15 +95,15 @@ theorem _root_.ContinuousOn.memLpLoc (hf : ContinuousOn f U) : MemLpLoc p U f :=
 theorem memLpLoc_const (c : F) : MemLpLoc p U (fun _ => c) :=
   continuousOn_const.memLpLoc
 
-/-- A locally `Lᵖ` function on an open set is locally integrable when `1 ≤ p`.
+/-- A locally `Lᵖ` function on a locally closed set is locally integrable when `1 ≤ p`.
 This supplies the local integrability hypothesis used by the weak-derivative API. -/
-theorem MemLpLoc.locallyIntegrableOn (hf : MemLpLoc p U f) (hp : 1 ≤ p) (hU : IsOpen U) :
+theorem MemLpLoc.locallyIntegrableOn (hf : MemLpLoc p U f) (hp : 1 ≤ p) (hU : IsLocallyClosed U) :
     LocallyIntegrableOn f U volume :=
-  (locallyIntegrableOn_iff hU.isLocallyClosed).2 fun K hK hc =>
+  (locallyIntegrableOn_iff hU).2 fun K hK hc =>
     memLp_one_iff_integrable.1 ((hf.mono_exponent hp) K hK hc)
 
-/-- On an open set, local `L¹` membership is exactly local integrability. -/
-theorem memLpLoc_one_iff_locallyIntegrableOn (hU : IsOpen U) :
+/-- On a locally closed set, local `L¹` membership is exactly local integrability. -/
+theorem memLpLoc_one_iff_locallyIntegrableOn (hU : IsLocallyClosed U) :
     MemLpLoc 1 U f ↔ LocallyIntegrableOn f U volume :=
   ⟨fun hf => hf.locallyIntegrableOn le_rfl hU,
     fun hf _K hK hc => memLp_one_iff_integrable.2 (hf.integrableOn_compact_subset hK hc)⟩
