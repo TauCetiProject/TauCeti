@@ -116,6 +116,123 @@ private theorem exists_isNoncrossing_formPerm_eq_of_isNoncrossingPerm {σ : Perm
       exacts [(hinc x w ((hpart hx).1 hw)).1 h hlt, (hinc x w ((hpart hx).1 hw)).2 h]
     · rw [P.formPerm_apply_of_notMem hx, hσ x hx]
 
+/-- Removing a point `m` from its cycle `σ p = m` by `σ' = σ * swap p m` only splits cycles: every
+cycle of `σ'` lies in a cycle of `σ`. -/
+private theorem sameCycle_of_sameCycle_mul_swap {σ σ' : Perm α} {p m u v : α}
+    (hσp : σ p = m) (hσ' : σ' = σ * swap p m) (hσ'm : σ' m = m) (h : σ'.SameCycle u v) :
+    σ.SameCycle u v := by
+  refine SameCycle.of_forall_sameCycle_apply (fun x => ?_) h
+  by_cases hxp : x = p
+  · rw [hxp, hσ', mul_apply, swap_apply_left]
+    exact (sameCycle_apply_right.2 (SameCycle.refl σ p)).trans (by
+      rw [hσp]; exact sameCycle_apply_right.2 (SameCycle.refl σ m))
+  by_cases hxm : x = m
+  · rw [hxm, hσ'm]
+  · rw [hσ', mul_apply, swap_apply_of_ne_of_ne hxp hxm]
+    exact sameCycle_apply_right.2 (SameCycle.refl σ x)
+
+/-- Conversely, collapsing `m` onto `p` (`f m = p`, and `f` the identity elsewhere) maps each
+cycle of `σ` into a cycle of `σ' = σ * swap p m`, when `m` is not fixed by `σ` and `σ p = m`. -/
+private theorem sameCycle_collapse_of_mul_swap {σ σ' : Perm α} {p m : α} {f : α → α}
+    (hσp : σ p = m) (hpm : p ≠ m) (hσm : σ m ≠ m) (hσ' : σ' = σ * swap p m)
+    (hfm : f m = p) (hf : ∀ {x}, x ≠ m → f x = x) {x y : α} (h : σ.SameCycle x y) :
+    σ'.SameCycle (f x) (f y) := by
+  have hσ'p : σ' p = σ m := by rw [hσ', mul_apply, swap_apply_left]
+  refine h.map_of_forall_sameCycle_apply fun x => ?_
+  by_cases hxm : x = m
+  · rw [hxm, hfm, hf hσm, ← hσ'p]
+    exact sameCycle_apply_right.2 (SameCycle.refl σ' p)
+  by_cases hxp : x = p
+  · rw [hxp, hσp, hfm, hf hpm]
+  · have hσx : σ x ≠ m := fun h => hxp (σ.injective (h.trans hσp.symm))
+    rw [hf hxm, hf hσx, ← show σ' x = σ x by
+      rw [hσ', mul_apply, swap_apply_of_ne_of_ne hxp hxm]]
+    exact sameCycle_apply_right.2 (SameCycle.refl σ' x)
+
+/-- The increasing-order half of the reinsertion of a largest point `m` after `p = σ⁻¹ m`; see
+`isNoncrossingPerm_of_isNoncrossingPerm_mul_swap`. -/
+private theorem increasing_of_mul_swap {σ σ' : Perm α} {p m : α} {f : α → α}
+    (hσp : σ p = m) (hpm' : p < m) (hσm : σ m ≠ m) (hσ'p : σ' p = σ m)
+    (hσ'x : ∀ {x}, x ≠ p → x ≠ m → σ' x = σ x) (hfm : f m = p) (hf : ∀ {x}, x ≠ m → f x = x)
+    (hσσ' : ∀ {x y}, σ.SameCycle x y → σ'.SameCycle (f x) (f y))
+    (hmoved : ∀ {x w}, σ.SameCycle x w → x ≠ w → w ≤ m) (hle : ∀ x, σ x ≠ x → x ≤ m)
+    (hinc' : ∀ x w, σ'.SameCycle x w →
+      (x < σ' x → x < w → σ' x ≤ w) ∧ (σ' x ≤ x → σ' x ≤ w ∧ w ≤ x))
+    (hK : ∀ u v, σ'.SameCycle u v → p < u → p < v) (hσm_le : σ m ≤ p) (x w : α)
+    (hxw : σ.SameCycle x w) :
+    (x < σ x → x < w → σ x ≤ w) ∧ (σ x ≤ x → σ x ≤ w ∧ w ≤ x) := by
+  have hpm : p ≠ m := hpm'.ne
+  by_cases hxm : x = m
+  · -- The point `m` moves down to the first point of the cycle of `p` in `σ'`.
+    rw [hxm] at hxw ⊢
+    have hlt : σ m < m := (hle _ fun h => hσm (σ.injective h)).lt_of_ne hσm
+    refine ⟨fun h => absurd h (not_lt.2 hlt.le), fun _ => ?_⟩
+    by_cases hwm : w = m
+    · rw [hwm]
+      exact ⟨hlt.le, le_rfl⟩
+    have hpw := hσσ' hxw
+    rw [hfm, hf hwm] at hpw
+    have h := (hinc' p w hpw).2 (by rw [hσ'p]; exact hσm_le)
+    rw [hσ'p] at h
+    exact ⟨h.1, hmoved hxw fun h => hwm h.symm⟩
+  by_cases hxp : x = p
+  · -- The point `p` moves up to `m`, and its cycle has no point between `p` and `m`.
+    rw [hxp] at hxw ⊢
+    rw [hσp]
+    refine ⟨fun _ hpw => ?_, fun h => absurd h (not_le.2 hpm')⟩
+    by_cases hwm : w = m
+    · rw [hwm]
+    have h := hσσ' hxw
+    rw [hf hpm, hf hwm] at h
+    exact absurd (hK w p h.symm hpw) (lt_irrefl p)
+  · -- Elsewhere `σ` agrees with `σ'`, and `m` lies above the cycle through `x`.
+    rw [← hσ'x hxp hxm]
+    have hxw' := hσσ' hxw
+    rw [hf hxm] at hxw'
+    by_cases hwm : w = m
+    · rw [hwm] at hxw hxw' ⊢
+      rw [hfm] at hxw'
+      refine ⟨fun _ _ => ?_, fun h => ?_⟩
+      · rw [hσ'x hxp hxm]
+        by_cases hσxm : σ x = m
+        · exact hσxm.le
+        · exact hmoved ((sameCycle_apply_left.2 hxw).symm) fun h => hσxm h.symm
+      · have hpx := ((hinc' x p hxw').2 h).2
+        exact absurd (hK x p hxw' (hpx.lt_of_ne fun h => hxp h.symm)) (lt_irrefl p)
+    · rw [hf hwm] at hxw'
+      exact hinc' x w hxw'
+
+/-- The noncrossing half of the reinsertion of a largest point `m` after `p = σ⁻¹ m`; see
+`isNoncrossingPerm_of_isNoncrossingPerm_mul_swap`. A crossing through `m` would be a crossing
+through `p`, or would leave the points above `p`. -/
+private theorem noncrossing_of_mul_swap {σ σ' : Perm α} {p m : α} {f : α → α}
+    (hfm : f m = p) (hf : ∀ {x}, x ≠ m → f x = x)
+    (hmoved : ∀ {x w}, σ.SameCycle x w → x ≠ w → w ≤ m)
+    (hσ'σ : ∀ {u v}, σ'.SameCycle u v → σ.SameCycle u v)
+    (hσσ' : ∀ {x y}, σ.SameCycle x y → σ'.SameCycle (f x) (f y))
+    (hnc' : ∀ a b c d, σ'.SameCycle a c → σ'.SameCycle b d → a < b → b < c → c < d →
+      σ'.SameCycle a b)
+    (hK : ∀ u v, σ'.SameCycle u v → p < u → p < v) (a b c d : α)
+    (hac : σ.SameCycle a c) (hbd : σ.SameCycle b d) (hab : a < b) (hbc : b < c) (hcd : c < d) :
+    σ.SameCycle a b := by
+  have hdm : d ≤ m := hmoved hbd (hbc.trans hcd).ne
+  have hcm : c ≠ m := (hcd.trans_le hdm).ne
+  have hbm : b ≠ m := ((hbc.trans hcd).trans_le hdm).ne
+  have ham : a ≠ m := ((hab.trans hbc).trans (hcd.trans_le hdm)).ne
+  have hac' := hσσ' hac
+  rw [hf ham, hf hcm] at hac'
+  refine hσ'σ ?_
+  by_cases hdm' : d = m
+  · have hbp := hσσ' hbd
+    rw [hf hbm, hdm', hfm] at hbp
+    rcases lt_trichotomy c p with hcp | rfl | hpc
+    · exact hnc' a b c p hac' hbp hab hbc hcp
+    · exact hac'.trans hbp.symm
+    · exact absurd (hK b p hbp ((hK c a hac'.symm hpc).trans hab)) (lt_irrefl p)
+  · have hbd' := hσσ' hbd
+    rw [hf hbm, hf hdm'] at hbd'
+    exact hnc' a b c d hac' hbd' hab hbc hcd
+
 /-- **Reinserting a largest point.** Let `σ` move only points `x ≤ m`, with `σ m ≠ m`, and let
 `p = σ⁻¹ m`. If removing `m` from its cycle gives a permutation `σ' = σ * swap p m` with increasing
 noncrossing cycles, and the points above `p` form a union of cycles of `σ'`, then `σ` has
@@ -131,98 +248,23 @@ private theorem isNoncrossingPerm_of_isNoncrossingPerm_mul_swap {σ σ' : Perm �
   have hσ'p : σ' p = σ m := by rw [hσ', mul_apply, swap_apply_left]
   have hσ'x {x : α} (hxp : x ≠ p) (hxm : x ≠ m) : σ' x = σ x := by
     rw [hσ', mul_apply, swap_apply_of_ne_of_ne hxp hxm]
-  have hσx {x : α} (hxp : x ≠ p) : σ x ≠ m := fun h => hxp (σ.injective (h.trans hσp.symm))
   have hmoved {x w : α} (h : σ.SameCycle x w) (hxw : x ≠ w) : w ≤ m :=
     hle w fun hw => hxw (h.eq_of_right hw)
   have hpm' : p < m := (hle p (by rw [hσp]; exact hpm.symm)).lt_of_ne hpm
-  -- Each cycle of `σ'` lies in a cycle of `σ`.
-  have hσ'σ {u v : α} (h : σ'.SameCycle u v) : σ.SameCycle u v := by
-    refine SameCycle.of_forall_sameCycle_apply (fun x => ?_) h
-    by_cases hxp : x = p
-    · rw [hxp, hσ'p]
-      exact (sameCycle_apply_right.2 (SameCycle.refl σ p)).trans (by
-        rw [hσp]; exact sameCycle_apply_right.2 (SameCycle.refl σ m))
-    by_cases hxm : x = m
-    · rw [hxm, hσ'm]
-    · rw [hσ'x hxp hxm]
-      exact sameCycle_apply_right.2 (SameCycle.refl σ x)
-  -- Conversely, collapsing `m` onto `p` maps each cycle of `σ` into a cycle of `σ'`.
   let f : α → α := fun x => if x = m then p else x
   have hfm : f m = p := by simp [f]
   have hf {x : α} (hxm : x ≠ m) : f x = x := by simp [f, hxm]
-  have hstep (x : α) : σ'.SameCycle (f x) (f (σ x)) := by
-    by_cases hxm : x = m
-    · rw [hxm, hfm, hf hσm, ← hσ'p]
-      exact sameCycle_apply_right.2 (SameCycle.refl σ' p)
-    by_cases hxp : x = p
-    · rw [hxp, hσp, hfm, hf hpm]
-    · rw [hf hxm, hf (hσx hxp), ← hσ'x hxp hxm]
-      exact sameCycle_apply_right.2 (SameCycle.refl σ' x)
   have hσσ' {x y : α} (h : σ.SameCycle x y) : σ'.SameCycle (f x) (f y) :=
-    h.map_of_forall_sameCycle_apply hstep
+    sameCycle_collapse_of_mul_swap hσp hpm hσm hσ' hfm hf h
   -- `p` is the last point of its cycle in `σ'`, so `σ' p = σ m` is the first.
   have hσm_le : σ m ≤ p := by
     have h : σ'.SameCycle p (σ m) := by
       rw [← hσ'p]; exact sameCycle_apply_right.2 (SameCycle.refl σ' p)
     exact not_lt.1 fun hlt => lt_irrefl p (hK _ _ h.symm hlt)
-  refine ⟨fun x w hxw => ?_, fun a b c d hac hbd hab hbc hcd => ?_⟩
-  · by_cases hxm : x = m
-    · -- The point `m` moves down to the first point of the cycle of `p` in `σ'`.
-      rw [hxm] at hxw ⊢
-      have hlt : σ m < m := (hle _ fun h => hσm (σ.injective h)).lt_of_ne hσm
-      refine ⟨fun h => absurd h (not_lt.2 hlt.le), fun _ => ?_⟩
-      by_cases hwm : w = m
-      · rw [hwm]
-        exact ⟨hlt.le, le_rfl⟩
-      have hpw := hσσ' hxw
-      rw [hfm, hf hwm] at hpw
-      have h := (hinc' p w hpw).2 (by rw [hσ'p]; exact hσm_le)
-      rw [hσ'p] at h
-      exact ⟨h.1, hmoved hxw fun h => hwm h.symm⟩
-    by_cases hxp : x = p
-    · -- The point `p` moves up to `m`, and its cycle has no point between `p` and `m`.
-      rw [hxp] at hxw ⊢
-      rw [hσp]
-      refine ⟨fun _ hpw => ?_, fun h => absurd h (not_le.2 hpm')⟩
-      by_cases hwm : w = m
-      · rw [hwm]
-      have h := hσσ' hxw
-      rw [hf hpm, hf hwm] at h
-      exact absurd (hK w p h.symm hpw) (lt_irrefl p)
-    · -- Elsewhere `σ` agrees with `σ'`, and `m` lies above the cycle through `x`.
-      rw [← hσ'x hxp hxm]
-      have hxw' := hσσ' hxw
-      rw [hf hxm] at hxw'
-      by_cases hwm : w = m
-      · rw [hwm] at hxw hxw' ⊢
-        rw [hfm] at hxw'
-        refine ⟨fun _ _ => ?_, fun h => ?_⟩
-        · rw [hσ'x hxp hxm]
-          by_cases hσxm : σ x = m
-          · exact hσxm.le
-          · exact hmoved ((sameCycle_apply_left.2 hxw).symm) fun h => hσxm h.symm
-        · have hpx := ((hinc' x p hxw').2 h).2
-          exact absurd (hK x p hxw' (hpx.lt_of_ne fun h => hxp h.symm)) (lt_irrefl p)
-      · rw [hf hwm] at hxw'
-        exact hinc' x w hxw'
-  · -- A crossing through `m` would be a crossing through `p`, or would leave the points above `p`.
-    have hdm : d ≤ m := hmoved hbd (hbc.trans hcd).ne
-    have hcm : c ≠ m := (hcd.trans_le hdm).ne
-    have hbm : b ≠ m := ((hbc.trans hcd).trans_le hdm).ne
-    have ham : a ≠ m := ((hab.trans hbc).trans (hcd.trans_le hdm)).ne
-    have hac' := hσσ' hac
-    rw [hf ham, hf hcm] at hac'
-    refine hσ'σ ?_
-    by_cases hdm' : d = m
-    · have hbp := hσσ' hbd
-      rw [hf hbm, hdm', hfm] at hbp
-      rcases lt_trichotomy c p with hcp | rfl | hpc
-      · exact hnc' a b c p hac' hbp hab hbc hcp
-      · exact hac'.trans hbp.symm
-      · exact absurd (hK b p hbp ((hK c a hac'.symm hpc).trans hab)) (lt_irrefl p)
-    · have hbd' := hσσ' hbd
-      rw [hf hbm, hf hdm'] at hbd'
-      exact hnc' a b c d hac' hbd' hab hbc hcd
+  exact ⟨fun x w hxw => increasing_of_mul_swap hσp hpm' hσm hσ'p hσ'x hfm hf hσσ' hmoved hle
+      hinc' hK hσm_le x w hxw,
+    fun a b c d hac hbd hab hbc hcd => noncrossing_of_mul_swap hfm hf hmoved
+      (sameCycle_of_sameCycle_mul_swap hσp hσ' hσ'm) hσσ' hnc' hK a b c d hac hbd hab hbc hcd⟩
 
 /-- If `p` and the largest point `m'` of `t` lie in one cycle of `p_P⁻¹ * γ`, that is, the bars
 after them lie in one part of the Kreweras complement of the noncrossing partition `P`, then the
@@ -294,6 +336,20 @@ private theorem orbitCount_add_orbitCount_mul_swap_eq [Finite α] {t : Finset α
   · exact h
   · exact absurd (h.eq_of_right hXm) hpm
 
+/-- A permutation that fixes every point except possibly `m` is the identity. -/
+private theorem eq_one_of_forall_ne_apply_eq {σ : Perm α} {m : α} (hσ : ∀ x, x ≠ m → σ x = x) :
+    σ = 1 := by
+  ext x
+  rw [Perm.one_apply]
+  by_contra hx
+  have h₁ : x = m := by
+    by_contra h
+    exact hx (hσ x h)
+  have h₂ : σ x = m := by
+    by_contra h
+    exact hx (σ.injective (hσ (σ x) h))
+  exact hx (h₂.trans h₁.symm)
+
 /-- **Geodesic permutations have increasing noncrossing cycles.** A permutation supported on `s`
 with `#σ + #(σ⁻¹ * γ) = #γ + Nat.card α`, for the cycle `γ` through `s`, has increasing
 noncrossing cycles. -/
@@ -310,22 +366,11 @@ private theorem isNoncrossingPerm_of_orbitCount_add_orbitCount_eq [Finite α] (s
   have hmt : m ∉ t := fun h => (hm m h).false
   have hle : ∀ x, σ x ≠ x → x ≤ m := fun x hx => by
     by_contra hxm
-    refine hx (hσ x ?_)
-    rw [mem_insert, not_or]
-    exact ⟨fun h => hxm h.le, fun hxt => hxm (hm x hxt).le⟩
+    exact hx (hσ x (by
+      simpa only [mem_insert, not_or] using ⟨fun h => hxm h.le, fun hxt => hxm (hm x hxt).le⟩))
   rcases t.eq_empty_or_nonempty with rfl | ht
   · -- A permutation moving at most the point `m` is the identity.
-    obtain rfl : σ = 1 := by
-      ext x
-      rw [Perm.one_apply]
-      by_contra hx
-      have h₁ : x = m := by
-        by_contra h
-        exact hx (hσ x (by simp [h]))
-      have h₂ : σ x = m := by
-        by_contra h
-        exact hx (σ.injective (hσ (σ x) (by simp [h])))
-      exact hx (h₂.trans h₁.symm)
+    obtain rfl := eq_one_of_forall_ne_apply_eq (m := m) fun x hx => hσ x (by simp [hx])
     exact isNoncrossingPerm_one
   -- The cycle through `insert m t` is the cycle through `t` with `m` inserted after `m'`.
   have hm' := t.max'_mem ht
@@ -350,10 +395,8 @@ private theorem isNoncrossingPerm_of_orbitCount_add_orbitCount_eq [Finite α] (s
   obtain ⟨p, hσp⟩ : ∃ p, σ p = m := ⟨σ⁻¹ m, by simp⟩
   have hpm : p ≠ m := fun h => hσm (by rw [← h] at hσp ⊢; rw [hσp, h])
   have hpt : p ∈ t := by
-    have hps : p ∈ insert m t := by
-      by_contra hps
-      exact hpm ((hσ p hps).symm.trans hσp)
-    exact (mem_insert.1 hps).resolve_left hpm
+    by_contra hpt
+    exact hpm ((hσ p (by simp [hpm, hpt])).symm.trans hσp)
   obtain ⟨σ', hσ'⟩ : ∃ σ', σ' = σ * swap p m := ⟨_, rfl⟩
   have hσ'm : σ' m = m := by rw [hσ', mul_apply, swap_apply_right, hσp]
   have hσ't : ∀ x ∉ t, σ' x = x := fun x hx => by
