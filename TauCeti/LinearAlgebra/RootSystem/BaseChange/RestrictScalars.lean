@@ -87,7 +87,7 @@ theorem mem_closure_coroot_restrictScalars' {s : Set ι} {y : span K (range P.co
 /-- A base of a root pairing valued in a subfield restricts to a base of the restricted root
 pairing, with the same simple roots. The body is exposed because the two bases are compared through
 the definitional equality of their supports, which index the same Cartan matrix. -/
-@[expose]
+@[expose, simps support]
 def Base.restrictScalars' (b : P.Base) : (P.restrictScalars' K).Base where
   support := b.support
   linearIndepOn_root := LinearIndependent.of_comp (span K (range P.root)).subtype

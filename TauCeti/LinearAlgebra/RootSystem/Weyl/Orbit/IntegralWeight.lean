@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.LinearAlgebra.RootSystem.Base
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.RestrictScalars
 public import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.MixedSign
+import TauCeti.Algebra.Group.Subsemigroup.Pointwise
 import TauCeti.LinearAlgebra.RootSystem.SimpleReflections
 
 /-!
@@ -28,7 +30,10 @@ weights named in the hypotheses.
 
 ## Main results
 
-* `RootPairing.Base.ext_coroot'`: a vector is determined by its pairings with the simple coroots.
+* `RootPairing.Base.mem_posRootCone_of_mem_closure_range_row`: a vector whose pairings with the
+  simple coroots are a sum of rows of the Cartan matrix lies in the positive root cone.
+* `RootPairing.Base.forall_coroot'_smul_iff`: a property of integral families stable under the
+  simple reflections is invariant under the Weyl group, read on the pairings with simple coroots.
 * `RootPairing.Base.induction_integralWeight_reflection`: the induction principle.
 
 ## References
@@ -48,22 +53,11 @@ section Coordinates
 variable {ι R M N : Type*} [CommRing R] [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
   {P : RootPairing ι R M N} (b : P.Base)
 
-/-- A vector of a root system is determined by its pairings with the simple coroots of a base. -/
-theorem ext_coroot' [P.IsRootSystem] {x y : M}
-    (h : ∀ k : b.support, P.coroot' k x = P.coroot' k y) : x = y := by
-  refine P.toPerfPair.injective (b.toCoweightBasis.ext fun k ↦ ?_)
-  simpa using h k
-
 variable [P.IsCrystallographic]
-
-private theorem coroot'_root_eq_cartanMatrix_row (i k : b.support) :
-    P.coroot' k (P.root i) = (b.cartanMatrix.row i k : R) := by
-  rw [root_coroot'_eq_pairing, ← P.algebraMap_pairingIn ℤ, eq_intCast, Matrix.row_apply,
-    cartanMatrix, cartanMatrixIn_def]
 
 /-- A vector whose pairings with the simple coroots are a sum of rows of the Cartan matrix lies in
 the positive root cone. -/
-private theorem mem_posRootCone_of_mem_closure_range_row [P.IsRootSystem] [CharZero R]
+theorem mem_posRootCone_of_mem_closure_range_row [P.IsRootSystem] [CharZero R]
     {χ : b.support → ℤ}
     (hχ : χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row)) {x : M}
     (hx : ∀ k : b.support, P.coroot' k x = (χ k : R)) : x ∈ posRootCone P b := by
@@ -83,19 +77,10 @@ private theorem mem_posRootCone_of_mem_closure_range_row [P.IsRootSystem] [CharZ
   obtain ⟨y, hy, hyx⟩ := key
   rwa [b.ext_coroot' fun k ↦ (hx k).trans (hyx k).symm]
 
-private theorem neg_mem_closure_range_row {χ : b.support → ℤ}
-    (hχ : χ ∈ AddSubsemigroup.closure (Set.range (-b.cartanMatrix.row))) :
-    -χ ∈ AddSubsemigroup.closure (Set.range b.cartanMatrix.row) := by
-  induction hχ using AddSubsemigroup.closure_induction with
-  | mem _ hψ =>
-    obtain ⟨i, rfl⟩ := hψ
-    exact AddSubsemigroup.subset_closure ⟨i, by simp⟩
-  | add _ _ _ _ h₁ h₂ => simpa only [neg_add] using add_mem h₁ h₂
-
 /-- A property of integral families that is stable under the simple reflections holds at the
 pairings of a vector with the simple coroots exactly when it holds at those of its Weyl translates:
 the simple reflections act on these pairings by `χ ↦ χ - χ i • b.cartanMatrix.row i`. -/
-private theorem forall_coroot'_smul_iff [Finite ι] [CharZero R] [IsDomain R] [P.IsReduced]
+theorem forall_coroot'_smul_iff [Finite ι] [CharZero R] [IsDomain R] [P.IsReduced]
     {Q : (b.support → ℤ) → Prop}
     (hrefl : ∀ (χ : b.support → ℤ) (i : b.support), Q χ → Q (χ - χ i • b.cartanMatrix.row i))
     (w : P.weylGroup) (y : M) :
@@ -173,7 +158,8 @@ private theorem induction_integralWeight_reflection_of_ordered {Q : (b.support �
       simpa using hψ k
     · exact fun hc ↦ h₁ (mem_posRootCone_of_mem_closure_range_row b hc hψ)
     · refine fun hc ↦ h₂ (mem_posRootCone_of_mem_closure_range_row b
-        (neg_mem_closure_range_row b hc) fun k ↦ ?_)
+        ((AddSubsemigroup.mem_closure_neg _ _).1 (Set.neg_range' (f := b.cartanMatrix.row) ▸ hc))
+        fun k ↦ ?_)
       rw [map_neg, hψ k, Pi.neg_apply, Int.cast_neg]
   · have hχ : χ = fun k : b.support ↦ m * P.pairingIn ℤ j k := by
       refine funext fun k ↦ Int.cast_injective (α := R) ?_
