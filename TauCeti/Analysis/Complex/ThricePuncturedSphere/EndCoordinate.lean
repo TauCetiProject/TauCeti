@@ -233,6 +233,14 @@ theorem exists_endCoord_cylindricalEndLift (q : Puncture) (z : ℂ) :
   push_cast
   ring
 
+/-- The longitudinal coordinate of the end `q` at the image of `z` under its end lift is
+`Re z`. -/
+@[simp]
+theorem re_endCoord_cylindricalEndLift (q : Puncture) (z : ℂ) :
+    (q.endCoord (q.cylindricalEndLift z)).re = z.re := by
+  obtain ⟨k, hk⟩ := q.exists_endCoord_cylindricalEndLift z
+  simp [hk]
+
 /-- The angular coordinate takes values in the period `[-1/2, 1/2)`. -/
 theorem im_endCoord_mem_Ico (q : Puncture) (w : ℂ) :
     (q.endCoord w).im ∈ Ico (-1 / 2 : ℝ) (1 / 2) := by
