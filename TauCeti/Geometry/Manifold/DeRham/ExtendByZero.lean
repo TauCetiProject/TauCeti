@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
 
 /-!
@@ -38,6 +40,10 @@ extension by zero is discontinuous at the other origin.
   supported de Rham complexes.
 * `TauCeti.compactlySupportedDeRhamCohomology.extendByZero`: the induced map on compactly supported
   de Rham cohomology, computed on classes by `extendByZero_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.extendByZeroTop`: extension by zero from an open
+  subset into the whole manifold on compactly supported cohomology. A class of a form supported in
+  `U` comes from `U` (`mk_mem_range_extendByZeroTop`), and in the top degree the classes from the
+  members of an open cover span (`eq_top_of_forall_range_extendByZeroTop_le`).
 * `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_exactForms` and
   `TauCeti.mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedForms`: let `η` be a
   smooth form on `W`, exact on an open subset `U ≤ W`, and let a smooth function on `W` vanish near
@@ -162,6 +168,8 @@ theorem mextDerivₗ_extendByZero [IsManifold I 2 M] {U W : Opens M} (h : U ≤ 
       RoughForm.eventually_extendByZero_eq_zero h ((mem_compactlySupportedForms I).mp φ.2) hx
 
 end compactlySupportedForms
+
+section ClosedForms
 
 variable [IsManifold I 2 M]
 
@@ -396,5 +404,119 @@ theorem mextDerivₗ_mem_exactCompactlySupportedForms_of_mpullback_mem_closedFor
   · rw [map_sub, (mem_closedForms_iff_mextDerivₗ_eq_zero I γ.1).mp γ.2, sub_zero]
 
 end ExactNearInfinity
+
+end ClosedForms
+
+/-! ### Extension by zero into the whole manifold
+
+Extension by zero is defined between open subsets of `M`. To extend from an open subset `U` into
+`M` itself, extend to the open subset `⊤` and identify `⊤` with `M` through its inclusion
+`Diffeomorph.ofTop`. -/
+
+section Top
+
+variable [IsManifold I ∞ M]
+
+namespace compactlySupportedDeRhamCohomology
+
+/-- Extension by zero from an open subset `U` of a Hausdorff manifold `M` into `M` itself, on
+compactly supported cohomology: extension by zero to the open subset `⊤`, identified with `M`
+through its inclusion. -/
+def extendByZeroTop (U : Opens M) (k : ℕ) :
+    compactlySupportedDeRhamCohomology I U k →ₗ[ℝ] compactlySupportedDeRhamCohomology I M k :=
+  (equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) k).symm.toLinearMap ∘ₗ extendByZero le_top k
+
+/-- Under the identification of the open subset `⊤` with `M`, extension by zero into `M` is
+extension by zero into `⊤`. -/
+theorem equivOfDiffeomorph_extendByZeroTop (U : Opens M) (k : ℕ)
+    (x : compactlySupportedDeRhamCohomology I U k) :
+    equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) k (extendByZeroTop U k x) =
+      extendByZero le_top k x := by
+  rw [extendByZeroTop, LinearMap.comp_apply, LinearEquiv.coe_coe, LinearEquiv.apply_symm_apply]
+
+/-- Extension by zero into `M` sends the class of a compactly supported closed form on `U` to the
+class of the pullback, along the identification of `M` with the open subset `⊤`, of its extension
+by zero to `⊤`. -/
+theorem extendByZeroTop_mk (U : Opens M) (k : ℕ) (φ : compactlySupportedClosedForms I U k) :
+    extendByZeroTop U k (mk I k φ) =
+      mk I k (compactlySupportedClosedForms.mpullback (Diffeomorph.ofTop (⊤ : Opens M) rfl).symm
+        (Diffeomorph.ofTop (⊤ : Opens M) rfl).symm.contMDiff
+        (Diffeomorph.ofTop (⊤ : Opens M) rfl).symm.toHomeomorph.isProperMap k
+        (compactlySupportedClosedForms.extendByZero le_top k φ)) := by
+  rw [extendByZeroTop, LinearMap.comp_apply, extendByZero_mk, LinearEquiv.coe_coe,
+    equivOfDiffeomorph_symm_apply]
+  exact map_mk _ _ _ k _
+
+/-- The class of a compactly supported closed form on `M` supported in an open subset `U` comes from
+`H^k_c(U)` by extension by zero. -/
+theorem mk_mem_range_extendByZeroTop (U : Opens M) {k : ℕ}
+    (φ : compactlySupportedClosedForms I M k)
+    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ.1.1 ⊆ U) :
+    mk I k φ ∈ LinearMap.range (extendByZeroTop U k) := by
+  let Φ : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M := Diffeomorph.ofTop ⊤ rfl
+  have hΦ : ⇑Φ = Subtype.val := funext Diffeomorph.ofTop_apply
+  let ψ := compactlySupportedClosedForms.mpullback Φ Φ.contMDiff Φ.toHomeomorph.isProperMap k φ
+  have hψ : (ψ : SmoothForm I (⊤ : Opens M) ℝ k).1 = mpullback I I Φ φ.1.1 :=
+    (congrArg Subtype.val (compactlySupportedClosedForms.coe_mpullback _ _ _ k φ)).trans
+      (SmoothForm.coe_mpullback _ _ _)
+  have hψc := compactlySupportedClosedForms_le_compactlySupportedForms I k ψ.2
+  -- The pullback of `φ` to `⊤` is supported in `U`, so it is an extension by zero from `U`.
+  obtain ⟨χ, hχ⟩ := (compactlySupportedForms.mem_range_extendByZero_iff (le_top : U ≤ ⊤)
+    (φ := ⟨ψ.1, hψc⟩)).mpr <| by
+    dsimp only
+    rw [hψ]
+    refine (RoughForm.tsupport_mpullback_subset_preimage Φ.continuous _).trans fun x hx ↦ ?_
+    simpa [hΦ] using hφ hx
+  -- The form `χ` is closed, since its extension by zero is.
+  have hdχ : compactlySupportedForms.mextDerivₗ I U k χ = 0 :=
+    compactlySupportedForms.extendByZero_injective (le_top : U ≤ ⊤) (k + 1) <| by
+      rw [map_zero, ← compactlySupportedForms.mextDerivₗ_extendByZero, hχ]
+      refine Subtype.ext ?_
+      rw [compactlySupportedForms.coe_mextDerivₗ, Submodule.coe_zero]
+      exact (mem_closedForms_iff_mextDerivₗ_eq_zero I ψ.1).mp
+        (compactlySupportedClosedForms_le_closedForms I k ψ.2)
+  refine ⟨mk I k ⟨χ.1, (mem_compactlySupportedClosedForms I).mpr
+    ⟨χ.2, (mem_closedForms_iff_mextDerivₗ_eq_zero I χ.1).mpr
+      (by simpa using congrArg Subtype.val hdχ)⟩⟩, ?_⟩
+  rw [← (equivOfDiffeomorph Φ k).injective.eq_iff, equivOfDiffeomorph_extendByZeroTop,
+    extendByZero_mk, equivOfDiffeomorph_mk]
+  refine congrArg (mk I k) (Subtype.ext (Subtype.ext ?_))
+  rw [compactlySupportedClosedForms.coe_extendByZero,
+    ← compactlySupportedForms.coe_extendByZero (le_top : U ≤ ⊤), hχ]
+
+/-- In the top degree, a submodule of `H^n_c(M)` containing the classes from every member of a
+family of open subsets covering `M` is everything: a partition of unity splits every compactly
+supported top form into finitely many forms supported in members of the family. -/
+theorem eq_top_of_forall_range_extendByZeroTop_le [FiniteDimensional ℝ E] [SigmaCompactSpace M]
+    {n : ℕ} (hn : Module.finrank ℝ E ≤ n)
+    {K : Submodule ℝ (compactlySupportedDeRhamCohomology I M n)} (V : M → Opens M)
+    (hxV : ∀ x, x ∈ V x) (hK : ∀ x, LinearMap.range (extendByZeroTop (V x) n) ≤ K) : K = ⊤ := by
+  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
+    (fun x ↦ (V x : Set M)) (fun x ↦ (V x).isOpen) fun x _ ↦ Set.mem_iUnion.mpr ⟨x, hxV x⟩
+  refine eq_top_iff.mpr fun y _ ↦ ?_
+  obtain ⟨φ, rfl⟩ := mk_surjective I n y
+  have hc := (mem_compactlySupportedForms I).mp ((mem_compactlySupportedClosedForms I).mp φ.2).1
+  obtain ⟨s, hs, -⟩ := RoughForm.exists_finset_partition_eq φ.1.1 hc ρ.toPartitionOfUnity
+  -- The pieces `ρ i • φ` of `φ`, each supported in `V i`.
+  let ψ (i : M) : compactlySupportedClosedForms I M n :=
+    ⟨⟨fun x ↦ ρ i x • φ.1.1 x, (φ.1.isSmoothForm.fun_smul (ρ i).contMDiff).mem_smoothBundleForms⟩,
+      (mem_compactlySupportedClosedForms I).mpr
+        ⟨(mem_compactlySupportedForms I).mpr (hc.of_isClosed_subset (isClosed_tsupport _)
+          (_root_.tsupport_smul_subset_right (ρ i) (show M → E [⋀^Fin n]→L[ℝ] ℝ from φ.1.1))),
+          mem_closedForms_of_finrank_le I hn _⟩⟩
+  have hφ : φ = ∑ i ∈ s, ψ i := Subtype.ext <| Subtype.ext <| by
+    rw [Submodule.coe_sum, Submodule.coe_sum]
+    refine hs.trans (funext fun x ↦ ?_)
+    simp only [ψ, Finset.sum_apply]
+    -- The partition of unity and its underlying continuous partition agree pointwise.
+    rfl
+  rw [hφ, map_sum]
+  exact K.sum_mem fun i _ ↦ hK i (mk_mem_range_extendByZeroTop (V i) (ψ i)
+    ((_root_.tsupport_smul_subset_left (ρ i) (show M → E [⋀^Fin n]→L[ℝ] ℝ from φ.1.1)).trans
+      (hρ i)))
+
+end compactlySupportedDeRhamCohomology
+
+end Top
 
 end TauCeti
