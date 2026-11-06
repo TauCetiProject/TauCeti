@@ -87,16 +87,19 @@ private lemma det_mapGL_rat (σ : SL(2, ℤ)) :
     ((mapGL ℚ σ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det = 1 := by
   rw [← Matrix.GeneralLinearGroup.val_det_apply, det_mapGL, Units.val_one]
 
+/-- The image of `σ ∈ SL(2, ℤ)` in `GL(2, ℚ)` has positive determinant. -/
+private lemma det_mapGL_rat_pos (σ : SL(2, ℤ)) :
+    0 < ((mapGL ℚ σ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
+  rw [det_mapGL_rat]
+  exact one_pos
+
 /-- Slashing the integrand `f(z) (z - σ • τ)ⁿ` in weight `2` by `σ ∈ SL(2, ℤ)` gives
 `(cτ + d)⁻ⁿ (f ∣[n + 2] σ)(z) (z - τ)ⁿ`. -/
 private lemma periodIntegrand_eichlerForm_slash (hk : k = n + 2) (f : ℍ → ℂ) (σ : SL(2, ℤ))
     (τ z : ℍ) :
     (periodIntegrand f (eichlerForm n (σ • τ : ℍ)) ∣[(2 : ℤ)] mapGL ℚ σ) z =
       denom σ τ ^ (-(n : ℤ)) * ((f ∣[k] σ) z * ((z : ℂ) - τ) ^ n) := by
-  have hdet : 0 < ((mapGL ℚ σ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
-    rw [det_mapGL_rat]
-    exact one_pos
-  rw [periodIntegrand_slash_apply hk f _ hdet, ModularForm.rat_slash_mapGL,
+  rw [periodIntegrand_slash_apply hk f _ (det_mapGL_rat_pos σ), ModularForm.rat_slash_mapGL,
     ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL, ← ModularForm.SL_slash,
     Matrix.SpecialLinearGroup.map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL]
   simp only [det_mapGL_rat, Rat.cast_one, one_zpow, one_mul, eichlerForm, map_pow, map_sub, aeval_X,
@@ -107,6 +110,52 @@ private lemma periodIntegrand_eichlerForm_slash (hk : k = n + 2) (f : ℍ → �
   rw [sl_moeb, num_sub_smul_mul_denom (hσ ▸ one_pos), hσ, Complex.ofReal_one, one_mul, div_pow,
     zpow_neg, zpow_natCast, div_eq_inv_mul]
   ring
+
+/-- Along the vertical ray from `τ₀ ∈ ℍ`, `z - τ₀ = t i`. -/
+theorem coe_ofComplex_add_mul_I_sub (τ₀ : ℍ) {t : ℝ} (ht : 0 < t) :
+    ((ofComplex ((τ₀ : ℂ) + t * I) : ℍ) : ℂ) - τ₀ = t * I := by
+  rw [ofComplex_apply_of_im_pos (by simpa using add_pos τ₀.im_pos ht), coe_mk, add_sub_cancel_left]
+
+/-- Slashing the integrand `f(z) (z - σ • τ)ⁿ` in weight `2` by `σ ∈ SL(2, ℤ)`, when
+`f' = f ∣[n + 2] σ`, gives `(cτ + d)⁻ⁿ f'(z) (z - τ)ⁿ`. -/
+private lemma periodIntegrand_eichlerForm_slash_eq (hk : k = n + 2) {f f' : ℍ → ℂ}
+    {σ : SL(2, ℤ)} (hf' : f' = f ∣[k] σ) (τ : ℍ) :
+    periodIntegrand f (eichlerForm n (σ • τ : ℍ)) ∣[(2 : ℤ)] mapGL ℚ σ =
+      denom σ τ ^ (-(n : ℤ)) • fun z : ℍ ↦ f' z * ((z : ℂ) - τ) ^ n := by
+  funext z
+  rw [periodIntegrand_eichlerForm_slash hk, hf', Pi.smul_apply, smul_eq_mul]
+
+/-- The cusp integral of `f(z) (z - σ • τ)ⁿ` from `i∞` to `σ • i∞` is `(cτ + d)⁻ⁿ` times the cusp
+integral of `f'(z) (z - τ)ⁿ` from `σ⁻¹ • i∞` to `i∞`, when `f' = f ∣[n + 2] σ`. -/
+private lemma cuspIntegral_eichlerForm_smul (hk : k = n + 2) {f f' : ℍ → ℂ} {σ : SL(2, ℤ)}
+    (hf' : f' = f ∣[k] σ) (τ : ℍ) :
+    cuspIntegral (fun z : ℍ ↦ f z * ((z : ℂ) - (σ • τ : ℍ)) ^ n) ∞ (mapGL ℚ σ • ∞) =
+      denom σ τ ^ (-(n : ℤ)) *
+        cuspIntegral (fun z ↦ f' z * ((z : ℂ) - τ) ^ n) (mapGL ℚ σ⁻¹ • ∞) ∞ := by
+  rw [← cuspIntegral_smul, ← periodIntegrand_eichlerForm_slash_eq hk hf',
+    cuspIntegral_slash _ (det_mapGL_rat_pos σ), smul_smul, ← map_mul, mul_inv_cancel, map_one,
+    one_smul, periodIntegrand_eichlerForm]
+
+/-- The integral of `c • f(z) (z - τ)ⁿ dz` along the vertical ray from `τ` is `c` times the integral
+of `f(τ + i t) (i t)ⁿ i dt`. -/
+private lemma integral_ray_smul_eichlerIntegrand (f : ℍ → ℂ) (n : ℕ) (τ : ℍ) (c : ℂ) :
+    ∫ t in Ioi (0 : ℝ), (c • fun z : ℍ ↦ f z * ((z : ℂ) - τ) ^ n) (ofComplex (τ + t * I)) * I =
+      c * ∫ t in Ioi (0 : ℝ), f (ofComplex (τ + t * I)) * (t * I) ^ n * I := by
+  rw [← integral_const_mul]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
+  simp only [Pi.smul_apply, smul_eq_mul, coe_ofComplex_add_mul_I_sub τ ht]
+  ring
+
+/-- The vertical ray integrand `c • f(z) (z - τ)ⁿ` of a cusp form `f` is integrable along the ray
+from `τ`. -/
+private lemma integrableOn_ray_smul_eichlerIntegrand [CuspFormClass F Γ k]
+    (f : F) (hh : 0 < h) (hΓ : h ∈ Γ.strictPeriods) (n : ℕ) (τ : ℍ) (c : ℂ) :
+    IntegrableOn (fun t : ℝ ↦ (c • fun z : ℍ ↦ f z * ((z : ℂ) - τ) ^ n) (ofComplex (τ + t * I)))
+      (Ioi 0) := by
+  refine IntegrableOn.congr_fun ((CuspFormClass.integrableOn_eichlerIntegrand f hh hΓ n
+    τ).const_mul (c * I⁻¹)) (fun t ht ↦ ?_) measurableSet_Ioi
+  simp only [Pi.smul_apply, smul_eq_mul, coe_ofComplex_add_mul_I_sub τ ht]
+  field_simp
 
 /-- **The transformation law of the Eichler integral.** Let `f` be a cusp form of weight
 `k = n + 2` on an arithmetic subgroup, `σ ∈ SL(2, ℤ)`, and `f'` a cusp form (for any subgroup
@@ -128,43 +177,20 @@ theorem CuspFormClass.eichlerIntegral_slash_apply [Γ.IsArithmetic] [CuspFormCla
         cuspIntegral (fun z ↦ f' z * ((z : ℂ) - τ) ^ n) (mapGL ℚ σ⁻¹ • ∞) ∞ := by
   set c : ℂ := (-2 * π * I) ^ (n + 1) / (n ! : ℂ)
   set j : ℂ := denom σ τ
-  have hdet : 0 < ((mapGL ℚ σ : GL (Fin 2) ℚ) : Matrix (Fin 2) (Fin 2) ℚ).det := by
-    rw [det_mapGL_rat]
-    exact one_pos
-  have hslash : periodIntegrand f (eichlerForm n (σ • τ : ℍ)) ∣[(2 : ℤ)] mapGL ℚ σ =
-      j ^ (-(n : ℤ)) • fun z : ℍ ↦ f' z * ((z : ℂ) - τ) ^ n := by
-    funext z
-    rw [periodIntegrand_eichlerForm_slash hk, hf', Pi.smul_apply, smul_eq_mul]
   have hsmul : (Matrix.GeneralLinearGroup.map (algebraMap ℚ ℝ) (mapGL ℚ σ) • τ : ℍ) =
       σ • τ := by
     rw [Matrix.SpecialLinearGroup.map_mapGL, ← Matrix.SpecialLinearGroup.coe_GL_eq_mapGL,
       ← sl_moeb]
-  -- along the vertical ray from `τ₀`, `z - τ₀ = t i`
-  have hcoe (τ₀ : ℍ) {t : ℝ} (ht : t ∈ Ioi 0) :
-      ((ofComplex ((τ₀ : ℂ) + t * I) : ℍ) : ℂ) - τ₀ = t * I := by
-    rw [ofComplex_apply_of_im_pos (by simpa using add_pos τ₀.im_pos (show (0 : ℝ) < t from ht)),
-      coe_mk, add_sub_cancel_left]
-  have hA : ∫ t in Ioi (0 : ℝ),
-      (j ^ (-(n : ℤ)) • fun z : ℍ ↦ f' z * ((z : ℂ) - τ) ^ n) (ofComplex (τ + t * I)) * I =
-        j ^ (-(n : ℤ)) * ∫ t in Ioi (0 : ℝ), f' (ofComplex (τ + t * I)) * (t * I) ^ n * I := by
-    rw [← integral_const_mul]
-    refine setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ ?_
-    simp only [Pi.smul_apply, smul_eq_mul, hcoe τ ht]
-    ring
-  have hB : ∫ t in Ioi (0 : ℝ), (fun z : ℍ ↦ f z * ((z : ℂ) - (σ • τ : ℍ)) ^ n)
-      (ofComplex ((σ • τ : ℍ) + t * I)) * I =
-        ∫ t in Ioi (0 : ℝ), f (ofComplex ((σ • τ : ℍ) + t * I)) * (t * I) ^ n * I :=
-    setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ by simp only [hcoe (σ • τ) ht]
-  have hC : cuspIntegral (fun z : ℍ ↦ f z * ((z : ℂ) - (σ • τ : ℍ)) ^ n) ∞ (mapGL ℚ σ • ∞) =
-      j ^ (-(n : ℤ)) * cuspIntegral (fun z ↦ f' z * ((z : ℂ) - τ) ^ n) (mapGL ℚ σ⁻¹ • ∞) ∞ := by
-    rw [← cuspIntegral_smul, ← hslash, cuspIntegral_slash _ hdet, smul_smul, ← map_mul,
-      mul_inv_cancel, map_one, one_smul, periodIntegrand_eichlerForm]
   -- the substitution `z ↦ σ • z`, by `TauCeti.integral_Ioi_slash_eq_add_cuspIntegral`
   have key := integral_Ioi_slash_eq_add_cuspIntegral
     (mdifferentiable_periodIntegrand (ModularFormClass.holo f) (eichlerForm n (σ • τ : ℍ)))
     (fun _ hg ↦ integrableOn_resToImagAxis_periodIntegrand_slash_Ici f hk _ hg)
-    (fun _ hg ↦ tendsto_periodIntegrand_slash f hk _ hg) hdet τ ?_ ?_
-  · rw [hslash, hsmul, periodIntegrand_eichlerForm, hA, hB, hC, zpow_neg, zpow_natCast] at key
+    (fun _ hg ↦ tendsto_periodIntegrand_slash f hk _ hg) (det_mapGL_rat_pos σ) τ ?_ ?_
+  · have hB := integral_ray_smul_eichlerIntegrand f n (σ • τ) 1
+    simp only [one_smul, one_mul] at hB
+    rw [periodIntegrand_eichlerForm_slash_eq hk hf', hsmul, periodIntegrand_eichlerForm,
+      integral_ray_smul_eichlerIntegrand, hB, cuspIntegral_eichlerForm_smul hk hf', zpow_neg,
+      zpow_natCast] at key
     rw [ModularForm.SL_slash_apply, neg_neg, zpow_natCast,
       CuspFormClass.eichlerIntegral_eq_integral f hh hΓ,
       CuspFormClass.eichlerIntegral_eq_integral f' hh' hΓ']
@@ -172,17 +198,10 @@ theorem CuspFormClass.eichlerIntegral_slash_apply [Γ.IsArithmetic] [CuspFormCla
     have key' := congrArg (j ^ n * ·) key
     rw [mul_add, ← mul_assoc, hj, one_mul, ← mul_assoc, hj, one_mul] at key'
     linear_combination (-c) * key'
-  -- the two vertical integrands are integrable, by `CuspFormClass.integrableOn_eichlerIntegrand`
-  · rw [hslash]
-    refine IntegrableOn.congr_fun ((CuspFormClass.integrableOn_eichlerIntegrand f' hh' hΓ' n
-      τ).const_mul (j ^ (-(n : ℤ)) * I⁻¹)) (fun t ht ↦ ?_) measurableSet_Ioi
-    simp only [Pi.smul_apply, smul_eq_mul, hcoe τ ht]
-    field_simp
+  · rw [periodIntegrand_eichlerForm_slash_eq hk hf']
+    exact integrableOn_ray_smul_eichlerIntegrand f' hh' hΓ' n τ _
   · rw [hsmul, periodIntegrand_eichlerForm]
-    refine IntegrableOn.congr_fun ((CuspFormClass.integrableOn_eichlerIntegrand f hh hΓ n
-      (σ • τ)).const_mul I⁻¹) (fun t ht ↦ ?_) measurableSet_Ioi
-    simp only [hcoe (σ • τ) ht]
-    field_simp
+    simpa using integrableOn_ray_smul_eichlerIntegrand f hh hΓ n (σ • τ) 1
 
 /-- **The transformation law of the Eichler integral in the level.** For a cusp form `f` of
 weight `k = n + 2` on an arithmetic subgroup `Γ` and `σ ∈ SL(2, ℤ)` with `σ ∈ Γ`, the Eichler
