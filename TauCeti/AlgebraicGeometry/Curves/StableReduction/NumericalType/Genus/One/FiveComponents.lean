@@ -274,6 +274,64 @@ private lemma fivePath_fiber_equations
   exact ⟨by linear_combination ra, by linear_combination rb, by linear_combination rc,
     by linear_combination rd, by linear_combination re⟩
 
+/-- The eight oriented factor patterns of the edges of a five-component path give one of the five
+genus-one path shapes, along the path or along its reversal. -/
+private lemma isGenusOneFivePathShape_or_of_factors {a b c d e : T.Component}
+    {p₀ q₀ p₁ q₁ p₂ q₂ p₃ q₃ : ℤ}
+    (hpq₀ : IsGenusOneEdgeFactor p₀ q₀) (hpq₁ : IsGenusOneEdgeFactor p₁ q₁)
+    (hpq₂ : IsGenusOneEdgeFactor p₂ q₂) (hpq₃ : IsGenusOneEdgeFactor p₃ q₃)
+    (hp₀ : T.intersection a b = T.weight a * p₀) (hq₀ : T.intersection a b = T.weight b * q₀)
+    (hp₁ : T.intersection b c = T.weight b * p₁) (hq₁ : T.intersection b c = T.weight c * q₁)
+    (hp₂ : T.intersection c d = T.weight c * p₂) (hq₂ : T.intersection c d = T.weight d * q₂)
+    (hp₃ : T.intersection d e = T.weight d * p₃) (hq₃ : T.intersection d e = T.weight e * q₃)
+    (hba : T.intersection a b = T.intersection b a) (hcb : T.intersection b c = T.intersection c b)
+    (hdc : T.intersection c d = T.intersection d c) (hed : T.intersection d e = T.intersection e d)
+    (e₀ : (T.multiplicity b : ℤ) * p₀ = 2 * T.multiplicity a)
+    (e₁ : (T.multiplicity a : ℤ) * q₀ + T.multiplicity c * p₁ = 2 * T.multiplicity b)
+    (e₂ : (T.multiplicity b : ℤ) * q₁ + T.multiplicity d * p₂ = 2 * T.multiplicity c)
+    (e₃ : (T.multiplicity c : ℤ) * q₂ + T.multiplicity e * p₃ = 2 * T.multiplicity d)
+    (e₄ : (T.multiplicity d : ℤ) * q₃ = 2 * T.multiplicity e) :
+    T.IsGenusOneFivePathShape a b c d e ∨ T.IsGenusOneFivePathShape e d c b a := by
+  -- Each of the eight oriented factor patterns is one of the five shapes, read along the path
+  -- (the first five) or along its reversal (the last three).
+  rcases fivePath_factor_cases (by simp) (by simp) (by simp) (by simp)
+    hpq₀ hpq₁ hpq₂ hpq₃ e₀ e₁ e₂ e₃ e₄ with
+    h | h | h | h | h | h | h | h <;>
+      rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ <;>
+      rw [isGenusOneFivePathShape_iff, isGenusOneFivePathShape_iff]
+  · left
+    refine ⟨T.weight a, T.multiplicity a, by simp, by simp, ?_⟩
+    left
+    repeat' apply And.intro <;> omega
+  · left
+    refine ⟨T.weight d, T.multiplicity a, by simp, by simp, ?_⟩
+    right; left
+    repeat' apply And.intro <;> omega
+  · left
+    refine ⟨T.weight a, T.multiplicity e, by simp, by simp, ?_⟩
+    right; right; left
+    repeat' apply And.intro <;> omega
+  · left
+    refine ⟨T.weight a, T.multiplicity a, by simp, by simp, ?_⟩
+    right; right; right; left
+    repeat' apply And.intro <;> omega
+  · left
+    refine ⟨T.weight b, T.multiplicity a, by simp, by simp, ?_⟩
+    right; right; right; right
+    repeat' apply And.intro <;> omega
+  · right
+    refine ⟨T.weight e, T.multiplicity e, by simp, by simp, ?_⟩
+    left
+    repeat' apply And.intro <;> omega
+  · right
+    refine ⟨T.weight b, T.multiplicity e, by simp, by simp, ?_⟩
+    right; left
+    repeat' apply And.intro <;> omega
+  · right
+    refine ⟨T.weight e, T.multiplicity a, by simp, by simp, ?_⟩
+    right; right; left
+    repeat' apply And.intro <;> omega
+
 /-- Five components forming a path and having self-intersection `-2w` have one of the five
 genus-one path shapes, after possibly reversing the path. -/
 theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
@@ -318,45 +376,8 @@ theorem isGenusOneFivePathShape_or_isGenusOneFivePathShape
   have hcb := T.intersection_comm b c
   have hdc := T.intersection_comm c d
   have hed := T.intersection_comm d e
-  -- Each of the eight oriented factor patterns is one of the five shapes, read along the path
-  -- (the first five) or along its reversal (the last three).
-  rcases fivePath_factor_cases (by simp) (by simp) (by simp) (by simp)
-    hpq₀ hpq₁ hpq₂ hpq₃ e₀ e₁ e₂ e₃ e₄ with
-    h | h | h | h | h | h | h | h <;>
-      rcases h with ⟨rfl, rfl, rfl, rfl, rfl, rfl, rfl, rfl⟩ <;>
-      rw [isGenusOneFivePathShape_iff, isGenusOneFivePathShape_iff]
-  · left
-    refine ⟨T.weight a, T.multiplicity a, by simp, by simp, ?_⟩
-    left
-    repeat' apply And.intro <;> omega
-  · left
-    refine ⟨T.weight d, T.multiplicity a, by simp, by simp, ?_⟩
-    right; left
-    repeat' apply And.intro <;> omega
-  · left
-    refine ⟨T.weight a, T.multiplicity e, by simp, by simp, ?_⟩
-    right; right; left
-    repeat' apply And.intro <;> omega
-  · left
-    refine ⟨T.weight a, T.multiplicity a, by simp, by simp, ?_⟩
-    right; right; right; left
-    repeat' apply And.intro <;> omega
-  · left
-    refine ⟨T.weight b, T.multiplicity a, by simp, by simp, ?_⟩
-    right; right; right; right
-    repeat' apply And.intro <;> omega
-  · right
-    refine ⟨T.weight e, T.multiplicity e, by simp, by simp, ?_⟩
-    left
-    repeat' apply And.intro <;> omega
-  · right
-    refine ⟨T.weight b, T.multiplicity e, by simp, by simp, ?_⟩
-    right; left
-    repeat' apply And.intro <;> omega
-  · right
-    refine ⟨T.weight e, T.multiplicity a, by simp, by simp, ?_⟩
-    right; right; left
-    repeat' apply And.intro <;> omega
+  exact isGenusOneFivePathShape_or_of_factors hpq₀ hpq₁ hpq₂ hpq₃ hp₀ hq₀ hp₁ hq₁ hp₂ hq₂ hp₃ hq₃
+    hba hcb hdc hed e₀ e₁ e₂ e₃ e₄
 
 /-- A minimal numerical type of genus one whose five components form the displayed path has one
 of the path shapes in cases (17)--(21) of Stacks, Tag 0C8T. -/
