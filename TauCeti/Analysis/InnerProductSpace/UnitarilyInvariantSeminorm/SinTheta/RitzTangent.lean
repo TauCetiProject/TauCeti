@@ -126,17 +126,6 @@ private theorem tanThetaResidualWitness_of_singularValues_ne_zero
               (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)) := by
   simp [tanThetaResidualWitness, h]
 
-/-- The right singular basis of the sine block is orthonormal. -/
-private theorem inner_rightSingularBasis_starProjection_orthogonal_comp
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
-    (i j : Fin (finrank 𝕜 F)) :
-    ⟪LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i,
-      LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) j⟫_𝕜 =
-      if i = j then 1 else 0 := by
-  simpa using orthonormal_iff_ite.mp
-    (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).orthonormal
-    i j
-
 /-- A Ritz vector pairs trivially with the normalized residual direction of any sine vector. -/
 private theorem inner_map_sub_leftSingularVector_eq_zero
     (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
@@ -179,7 +168,8 @@ private theorem inner_sub_leftSingularVector_eq_ite
     U X.toLinearMap (i := i)
   have hadjj := Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
     U X.toLinearMap (i := j)
-  have hvv := inner_rightSingularBasis_starProjection_orthogonal_comp U X i j
+  have hvv := (LinearMap.rightSingularBasis
+    (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j
   set S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) with hS
   have hyy : ⟪LinearMap.leftSingularVector S i, LinearMap.leftSingularVector S j⟫_𝕜 =
       if i = j then 1 else 0 := by
@@ -222,7 +212,8 @@ private theorem orthonormal_tanThetaResidualWitness
   · rw [tanThetaResidualWitness_of_singularValues_eq_zero U X hi,
       tanThetaResidualWitness_of_singularValues_eq_zero U X hj]
     exact (X.inner_map_map _ _).trans
-      (inner_rightSingularBasis_starProjection_orthogonal_comp U X i j)
+      ((LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j)
   · rw [ite_eq_right (by rintro rfl; exact hj hi),
       tanThetaResidualWitness_of_singularValues_eq_zero U X hi,
       tanThetaResidualWitness_of_singularValues_ne_zero U X hj, inner_smul_right,
