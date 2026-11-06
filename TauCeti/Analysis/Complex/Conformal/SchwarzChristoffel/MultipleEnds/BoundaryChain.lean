@@ -205,36 +205,6 @@ theorem schwarzChristoffelFiniteEdge_eq_image (a e : ι → ℝ) (z₀ : UpperHa
     rw [hdom, schwarzChristoffelFiniteEdge_of_integrable_integrable a e z₀ hp hq]
     exact (schwarzChristoffelBoundary_image_Icc a e z₀ hpq.le ha hp hq).symm
 
-/-- A point of the range of a monotone family `Fin (n + 1) → ℝ` is at least its first value. -/
-private lemma b_zero_le_of_mem_range {n : ℕ} {b : Fin (n + 1) → ℝ} (hb : Monotone b) {x : ℝ}
-    (hx : x ∈ range b) : b 0 ≤ x := by
-  obtain ⟨j, rfl⟩ := hx
-  exact hb j.zero_le
-
-/-- A point of the range of a monotone family `Fin (n + 1) → ℝ` is at most its last value. -/
-private lemma le_b_last_of_mem_range {n : ℕ} {b : Fin (n + 1) → ℝ} (hb : Monotone b) {x : ℝ}
-    (hx : x ∈ range b) : x ≤ b (Fin.last n) := by
-  obtain ⟨j, rfl⟩ := hx
-  exact hb j.le_last
-
-/-- The real line is covered by the two outer rays of a `Fin (n + 1)` family of reals and the
-consecutive closed intervals between its values. The family need not be monotone. -/
-theorem univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ {n : ℕ} (b : Fin (n + 1) → ℝ) :
-    (univ : Set ℝ) =
-      (Iic (b 0) ∪ Ici (b (Fin.last n))) ∪ ⋃ j : Fin n, Icc (b j.castSucc) (b j.succ) := by
-  ext x
-  simp only [mem_univ, mem_union, mem_iUnion, mem_Iic, mem_Ici, true_iff]
-  by_cases hl : x ≤ b 0
-  · exact Or.inl (Or.inl hl)
-  by_cases hr : b (Fin.last n) ≤ x
-  · exact Or.inl (Or.inr hr)
-  have hn : n ≠ 0 := by
-    rintro rfl
-    simp only [Fin.last_zero] at hr
-    exact hr (le_of_not_ge hl)
-  exact Or.inr (exists_mem_Icc_castSucc_succ b hn
-    ⟨(le_of_not_ge hl), (le_of_not_ge hr)⟩)
-
 /-- **The finite boundary as images of the outer parameter rays and the consecutive sides.**
 For strictly increasing cuts containing every nonzero prevertex, with integrable extreme cuts,
 the finite trace is the image of the two outer parameter rays together with the consecutive finite
@@ -253,9 +223,8 @@ theorem schwarzChristoffelFiniteBoundary_eq_image_union_edges {n : ℕ}
   classical
   let B := schwarzChristoffelBoundary a e z₀
   let D : Set ℝ := {x | -1 < ∑ i with a i = x, e i}
-  have hamin : ∀ i, e i ≠ 0 → b 0 ≤ a i := fun i hi => b_zero_le_of_mem_range hb.monotone (hab i hi)
-  have hamax : ∀ i, e i ≠ 0 → a i ≤ b (Fin.last n) :=
-    fun i hi => le_b_last_of_mem_range hb.monotone (hab i hi)
+  have hamin := apply_zero_le_of_forall_mem_range hb.monotone hab
+  have hamax := le_apply_last_of_forall_mem_range hb.monotone hab
   have hcover := univ_eq_Iic_union_Ici_union_iUnion_Icc_castSucc_succ b
   have hDl : Iic (b 0) ⊆ D := fun x hx =>
     Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ)
@@ -315,9 +284,8 @@ theorem schwarzChristoffelFiniteBoundary_eq_union_edges {n : ℕ}
       ⋃ j : Fin n, schwarzChristoffelFiniteEdge a e z₀ (b j.castSucc) (b j.succ) := by
   classical
   let B := schwarzChristoffelBoundary a e z₀
-  have hamin : ∀ i, e i ≠ 0 → b 0 ≤ a i := fun i hi => b_zero_le_of_mem_range hb.monotone (hab i hi)
-  have hamax : ∀ i, e i ≠ 0 → a i ≤ b (Fin.last n) :=
-    fun i hi => le_b_last_of_mem_range hb.monotone (hab i hi)
+  have hamin := apply_zero_le_of_forall_mem_range hb.monotone hab
+  have hamax := le_apply_last_of_forall_mem_range hb.monotone hab
   rw [schwarzChristoffelFiniteBoundary_eq_image_union_edges a e z₀ b hb hab hfinite hleft hright]
   -- Add the finite value at parameter infinity, or use the two divergent outer rays.
   by_cases hS : ∑ i, e i < -1
