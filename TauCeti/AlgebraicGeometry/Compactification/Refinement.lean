@@ -8,8 +8,7 @@ module
 public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import Mathlib.AlgebraicGeometry.Morphisms.Immersion
 public import Mathlib.CategoryTheory.Limits.Shapes.BinaryProducts.BinaryProducts
-public import TauCeti.AlgebraicGeometry.Compactification.Basic
-public import TauCeti.AlgebraicGeometry.SchemeTheoreticImage.Basic
+public import TauCeti.AlgebraicGeometry.Compactification.Closure
 
 /-!
 # Common refinements of scheme compactifications
@@ -96,9 +95,7 @@ in the fibre product of their ambient schemes over the base. -/
 -- maps usable for dependent morphism equations in importing modules.
 @[expose, implicit_reducible] def commonRefinement (C₁ C₂ : Compactification f) :
     DenseCompactification f :=
-  ⟨ofHom (C₁.toPullback C₂).toImage
-      ((C₁.toPullback C₂).imageι ≫ pullback.fst C₁.p C₂.p ≫ C₁.p) (by simp),
-    (denseCompactificationProperty_iff f _).mpr inferInstance⟩
+  DenseCompactification.ofImmersion (C₁.toPullback C₂) (pullback.fst C₁.p C₂.p ≫ C₁.p) (by simp)
 
 @[simp]
 theorem commonRefinement_Xbar (C₁ C₂ : Compactification f) :
@@ -157,20 +154,8 @@ its interior is scheme-theoretically dense, so its map to the fibre product land
 scheme-theoretic closure of the source. -/
 def commonRefinementLift {C₁ C₂ : Compactification f} (E : DenseCompactification f)
     (h₁ : E.obj ⟶ C₁) (h₂ : E.obj ⟶ C₂) : E.obj ⟶ (commonRefinement C₁ C₂).obj :=
-  have H : (C₁.toPullback C₂).imageι.ker ≤
-      (pullback.lift h₁.hom.h h₂.hom.h (by simp) : E.obj.Xbar ⟶ pullback C₁.p C₂.p).ker := by
-    have hj : C₁.toPullback C₂ = E.obj.j ≫ pullback.lift h₁.hom.h h₂.hom.h (by simp) := by
-      apply pullback.hom_ext <;> simp
-    rw [Scheme.IdealSheafData.ker_subschemeι, hj, Scheme.Hom.ker_comp, E.obj.j.ker_eq_bot,
-      Scheme.IdealSheafData.map_bot]
-  ObjectProperty.homMk
-    { h := IsClosedImmersion.lift (C₁.toPullback C₂).imageι
-        (pullback.lift h₁.hom.h h₂.hom.h (by simp)) H
-      ι_h := by
-        rw [← cancel_mono (C₁.toPullback C₂).imageι, Category.assoc,
-          IsClosedImmersion.lift_fac]
-        apply pullback.hom_ext <;> simp [commonRefinement]
-      h_π := by simp [commonRefinement] }
+  (DenseCompactification.ofImmersionLift E (pullback.lift h₁.hom.h h₂.hom.h (by simp))
+    (by apply pullback.hom_ext <;> simp) (by simp)).hom
 
 /-- On ambient schemes, the factorization through the common refinement followed by the closed
 immersion into the fibre product is the pair of the given maps. -/
@@ -179,7 +164,7 @@ theorem commonRefinementLift_hom_h_imageι {C₁ C₂ : Compactification f}
     (E : DenseCompactification f) (h₁ : E.obj ⟶ C₁) (h₂ : E.obj ⟶ C₂) :
     (commonRefinementLift E h₁ h₂).hom.h ≫ (C₁.toPullback C₂).imageι =
       pullback.lift h₁.hom.h h₂.hom.h (by simp) :=
-  IsClosedImmersion.lift_fac _ _ _
+  DenseCompactification.ofImmersionLift_hom_hom_h_imageι _ _ _ _
 
 @[reassoc (attr := simp)]
 theorem commonRefinementLift_fst {C₁ C₂ : Compactification f} (E : DenseCompactification f)

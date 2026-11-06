@@ -222,19 +222,22 @@ instance : IsScalarTower R UK (CompletedEnveloping Φ hΦ hΦs a) :=
 
 /-- **The canonical algebra map** `U → Û` from the enveloping algebra at a fixed level to its
 completion, sending an element to the family of its classes modulo the left ideals `I_n`. -/
-def toCompletedEnveloping : UK →ₐ[R] CompletedEnveloping Φ hΦ hΦs a where
-  toFun := ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a)
-  map_one' := rfl
-  map_mul' :=
-    ModuleTower.toLimQuotients_mul (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a)
-  map_zero' := map_zero _
-  map_add' := map_add _
-  commutes' _ := rfl
+def toCompletedEnveloping : UK →ₐ[R] CompletedEnveloping Φ hΦ hΦs a :=
+  { ModuleTower.toLimRingHom (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) with
+    commutes' r := congrFun (ModuleTower.coe_toLimRingHom _) (algebraMap R UK r) }
 
 @[simp]
 theorem coe_toCompletedEnveloping :
     ⇑(toCompletedEnveloping Φ hΦ hΦs a) =
       ModuleTower.toLimQuotients _ (orderLeftIdeal_natCast_antitone Φ hΦ hΦs a) :=
+  ModuleTower.coe_toLimRingHom _
+
+/-- The canonical algebra map `U → Û` is the canonical ring homomorphism
+`TauCeti.ModuleTower.toLimRingHom` into the completion. -/
+@[simp]
+theorem toRingHom_toCompletedEnveloping :
+    (toCompletedEnveloping Φ hΦ hΦs a : UK →+* CompletedEnveloping Φ hΦ hΦs a) =
+      ModuleTower.toLimRingHom (exists_forall_mul_mem_orderLeftIdeal_natCast Φ hΦ hΦs a) :=
   (rfl)
 
 /-- The canonical map from the enveloping algebra to its completion has dense range. -/
@@ -246,8 +249,9 @@ variable {Φ hΦ hΦs a}
 
 /-- The action of `U` on its completion is left multiplication by the canonical image. -/
 theorem smul_eq_toCompletedEnveloping_mul (b : UK) (x : CompletedEnveloping Φ hΦ hΦs a) :
-    b • x = toCompletedEnveloping Φ hΦ hΦs a b * x :=
-  ModuleTower.smul_eq_limMul _ b x
+    b • x = toCompletedEnveloping Φ hΦ hΦs a b * x := by
+  rw [coe_toCompletedEnveloping]
+  exact ModuleTower.smul_eq_limMul _ b x
 
 /-- The coordinate in `U / I_n` of the image of `b ∈ U` in the completion is the class of `b`. -/
 theorem limπ_toCompletedEnveloping (n : ℕ) (b : UK) :
@@ -258,8 +262,9 @@ theorem limπ_toCompletedEnveloping (n : ℕ) (b : UK) :
 /-- On a smooth module, the image in `Û` of an element of `U` acts as that element. -/
 theorem limSmul_toCompletedEnveloping {M : ModuleCat UK}
     (hM : smoothModules (fun n : ℕ ↦ orderLeftIdeal Φ hΦ hΦs a n) M) (b : UK) (m : M) :
-    ModuleTower.limSmul hM (toCompletedEnveloping Φ hΦ hΦs a b) m = b • m :=
-  ModuleTower.limSmul_toLimQuotients hM b m
+    ModuleTower.limSmul hM (toCompletedEnveloping Φ hΦ hΦs a b) m = b • m := by
+  rw [coe_toCompletedEnveloping]
+  exact ModuleTower.limSmul_toLimQuotients hM b m
 
 /-- The unit of the completed enveloping algebra acts trivially on a smooth module. -/
 @[simp]
@@ -424,7 +429,10 @@ theorem eq_completedEnvelopingMap
     {φ : CompletedEnveloping Ψ hΨ hΨs b →ₐ[R] CompletedEnveloping Φ hΦ hΦs a} (hφ : Continuous φ)
     (h : ∀ x, φ (toCompletedEnveloping Ψ hΨ hΨs b x) = toCompletedEnveloping Φ hΦ hΦs a (g x)) :
     φ = completedEnvelopingMap g hg :=
-  DFunLike.coe_injective (ModuleTower.eq_limQuotientsMap _ _ _ _ hφ h)
+  DFunLike.coe_injective (ModuleTower.eq_limQuotientsMap _ _ _ _ hφ fun x ↦ by
+    have hx := h x
+    rw [coe_toCompletedEnveloping, coe_toCompletedEnveloping] at hx
+    exact hx)
 
 /-- The identity extends to the identity. -/
 @[simp]

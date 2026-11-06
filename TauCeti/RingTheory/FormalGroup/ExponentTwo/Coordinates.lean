@@ -9,7 +9,7 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.ExponentTwo.Basic
 import TauCeti.RingTheory.FormalGroup.AdditiveSeries
 import TauCeti.RingTheory.FormalGroup.ExponentTwo.Iso
-import TauCeti.RingTheory.FormalGroup.Hom
+import TauCeti.RingTheory.FormalGroup.Hom.Basic
 import TauCeti.RingTheory.PowerSeries.Coordinate.Basic
 
 /-!

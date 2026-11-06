@@ -45,6 +45,8 @@ unfolded by hand.
   `SL(2, ℝ)`-action.
 * `TauCeti.bijOn_sub_div_sub_upperHalfPlaneSet`: an ordered pair of real prevertices gives
   a fractional-linear bijection of the upper half-plane.
+* `TauCeti.im_neg_one_div_pos`: the inversion `S : τ ↦ -1/τ` maps a complex number with positive
+  imaginary part to one with positive imaginary part.
 * `ModularGroup.re_S_smul`, `ModularGroup.S_smul_S_smul`: the inversion `S` negates the real
   part up to a `normSq` factor, and is an involution of `ℍ`.
 * `ModularGroup.coe_S_smul`, `ModularGroup.coe_T_smul`: `S` and `T` act on `ℍ ⊆ ℂ` by
@@ -257,5 +259,8 @@ theorem bijOn_sub_div_sub_upperHalfPlaneSet {p q : ℝ} (hpq : p < q) :
   simpa only [UpperHalfPlane.range_coe] using
     hsemi.bijOn_range (MulAction.toPerm g).bijective UpperHalfPlane.coe_injective
 
+/-- `S : τ ↦ -1/τ` preserves the upper half-plane: `0 < (-1/τ).im` whenever `0 < τ.im`. -/
+theorem im_neg_one_div_pos {τ : ℂ} (hτ : 0 < τ.im) : 0 < (-1 / τ).im := by
+  simpa [neg_div, inv_neg] using UpperHalfPlane.im_inv_neg_coe_pos ⟨τ, hτ⟩
 
 end TauCeti
