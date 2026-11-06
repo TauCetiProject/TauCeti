@@ -74,10 +74,12 @@ namespace IsConjInvariant
 variable {ℓ : GroupNorm G}
 
 /-- A conjugation-invariant norm takes the same value on `g` and on `h * g * h⁻¹`. -/
+@[simp]
 theorem map_conj (hℓ : ℓ.IsConjInvariant) (g h : G) : ℓ (h * g * h⁻¹) = ℓ g :=
   hℓ g h
 
 /-- A conjugation-invariant norm takes the same value on `g` and on `h⁻¹ * g * h`. -/
+@[simp]
 theorem map_inv_mul_mul (hℓ : ℓ.IsConjInvariant) (g h : G) : ℓ (h⁻¹ * g * h) = ℓ g := by
   simpa using hℓ g h⁻¹
 
@@ -96,12 +98,14 @@ theorem isConjInvariant_iff_map_mul_comm {ℓ : GroupNorm G} :
 
 /-- The norm of a product is invariant under reversing the factors and inverting each of them.
 This holds for every group norm, since the reversed product is the inverse of the original. -/
+@[simp]
 theorem map_prod_map_inv_reverse (ℓ : GroupNorm G) (l : List G) :
     ℓ (l.map (·⁻¹)).reverse.prod = ℓ l.prod := by
   rw [← List.prod_inv_reverse, map_inv_eq_map]
 
 /-- Under a conjugation-invariant norm, the norm of a product is invariant under cyclic rotation
 of the factors. -/
+@[simp]
 theorem IsConjInvariant.map_prod_rotate {ℓ : GroupNorm G} (hℓ : ℓ.IsConjInvariant) (l : List G)
     (n : ℕ) : ℓ (l.rotate n).prod = ℓ l.prod := by
   rw [List.rotate_eq_drop_append_take_mod, List.prod_append, hℓ.map_mul_comm,
@@ -199,12 +203,7 @@ theorem IsConjInvariant.comp {ℓ : GroupNorm G} (hℓ : ℓ.IsConjInvariant) {f
 
 /-- A group norm multiplied by a positive real number. -/
 def smulOfPos (ℓ : GroupNorm G) {r : ℝ} (hr : 0 < r) : GroupNorm G where
-  toFun g := r * ℓ g
-  map_one' := by simp
-  mul_le' g h := by
-    rw [← mul_add]
-    exact mul_le_mul_of_nonneg_left (map_mul_le_add ℓ g h) hr.le
-  inv' g := by simp
+  toGroupSeminorm := (show NNReal from ⟨r, hr.le⟩) • ℓ.toGroupSeminorm
   eq_one_of_map_eq_zero' _ h :=
     eq_one_of_map_eq_zero ℓ <| (mul_eq_zero.mp h).resolve_left hr.ne'
 
