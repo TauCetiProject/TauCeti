@@ -141,26 +141,6 @@ private theorem lid_rTensor_lcoeff_gamma_toFun_of_sum_eq (d : ℕ) {ι κ : Type
     Finset.subset_univ, and_self, ite_true]
   rw [decompose_prod_dp m a₀ ha₀, decompose_prod_dp n b₀ hb₀, hmix]
 
-/-- The monomials `∏_{(i, j)} (XᵢYⱼ) ^ lᵢⱼ` with `∑ l = d` have weight `d` in each group of
-variables, so they have no coefficient outside bidegree `(d, d)`. -/
-private theorem coeff_prod_X_mul_X_pow_eq_zero {d : ℕ}
-    {ι κ : Type*} [Fintype ι] [Fintype κ] {l : ι × κ →₀ ℕ} (hl : ∑ p, l p = d)
-    {e : ι ⊕ κ →₀ ℕ} (h : ¬((∑ i, e (Sum.inl i) = d) ∧ ∑ j, e (Sum.inr j) = d)) :
-    lcoeff R e
-      (∏ p, (X (Sum.inl p.1) * X (Sum.inr p.2) : MvPolynomial (ι ⊕ κ) R) ^ l p) = 0 := by
-  have hw (w : ι ⊕ κ → ℕ) : IsWeightedHomogeneous w
-      (∏ p, (X (Sum.inl p.1) * X (Sum.inr p.2) : MvPolynomial (ι ⊕ κ) R) ^ l p)
-      (∑ p, l p • (w (Sum.inl p.1) + w (Sum.inr p.2))) :=
-    IsWeightedHomogeneous.prod _ _ _ fun p _ ↦
-      ((isWeightedHomogeneous_X R w _).mul (isWeightedHomogeneous_X R w _)).pow (l p)
-  have hweight (w : ι ⊕ κ → ℕ) : Finsupp.weight w e =
-      ∑ i, e (Sum.inl i) * w (Sum.inl i) + ∑ j, e (Sum.inr j) * w (Sum.inr j) := by
-    simp [Finsupp.weight_apply, Finsupp.sum_fintype, Fintype.sum_sum_type]
-  rw [lcoeff_apply]
-  rcases not_and_or.mp h with h | h
-  · rw [(hw (Sum.elim 1 0)).coeff_eq_zero e (by simpa [hweight, hl] using h)]
-  · rw [(hw (Sum.elim 0 1)).coeff_eq_zero e (by simpa [hweight, hl] using h)]
-
 /-- The generic case of `homogeneousMul_baseChange_gamma`: two generic combinations in disjoint
 groups of variables. -/
 private theorem homogeneousMul_baseChange_gamma_generic (d : ℕ) {ι κ : Type*} [Fintype ι]
@@ -207,7 +187,7 @@ private theorem homogeneousMul_baseChange_gamma_generic (d : ℕ) {ι κ : Type*
       refine (Finset.sum_eq_zero fun l hl ↦ ?_).trans
         (Finset.sum_eq_zero fun a ha ↦ Finset.sum_eq_zero fun b hb ↦ ?_).symm
       · have hl := (Finset.mem_finsuppAntidiag.mp hl).1
-        rw [← lcoeff_apply R, coeff_prod_X_mul_X_pow_eq_zero hl h, zero_smul]
+        rw [coeff_prod_X_mul_X_pow_eq_zero hl h, zero_smul]
       · refine ite_eq_right_iff.mpr fun ⟨ha', hb'⟩ ↦ absurd ⟨?_, ?_⟩ h
         · simpa [ha'] using (Finset.mem_finsuppAntidiag.mp ha).1
         · simpa [hb'] using (Finset.mem_finsuppAntidiag.mp hb).1
