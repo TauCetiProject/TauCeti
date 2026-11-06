@@ -119,6 +119,99 @@ private theorem normalize_reflectRecords_reverse_map_neg_append {P l A B : List 
     _ = normalize 𝕜 (B ++ A) := by
       rw [normalize_normalize_append, normalize_append_normalize]
 
+/-- The cut case of `TauCeti.PLPath.normalize_reflectRecords_reverse_map_neg_reflectRecords`: the
+first segment `v` is cut at the positive height `r = min (f v + listMinHeight f l) c`, and its
+initial piece is reflected. Here `l'` is the reflected tail, and `htail` is the statement about the
+reversed tail obtained from the induction hypothesis. -/
+private theorem normalize_reflectRecords_reverse_map_neg_cons_of_pos
+    (hx : f x = 2) {c : 𝕜} {v : V} {l l' : List V}
+    (hl : listMinHeight f l ≤ 0) (hl' : l' = reflectRecords f x (c - f v) l)
+    (htail : ∀ k : 𝕜, (listMinHeight f l ≤ c - f v → k = listMinHeight f l - f l'.sum) →
+      (c - f v < listMinHeight f l → k ≤ listMinHeight f l - f l.sum) →
+      normalize 𝕜 (reflectRecords f x k (l'.map Neg.neg).reverse) =
+        normalize 𝕜 (l.map Neg.neg).reverse)
+    (hr : 0 < min (f v + listMinHeight f l) c) :
+    normalize 𝕜 (reflectRecords f x (listMinHeight f (v :: l) -
+        f (reflectRecords f x c (v :: l)).sum)
+        ((reflectRecords f x c (v :: l)).map Neg.neg).reverse) =
+      normalize 𝕜 ((v :: l).map Neg.neg).reverse := by
+  rw [List.map_cons, List.reverse_cons]
+  set r := min (f v + listMinHeight f l) c
+  have hrc : r ≤ c := min_le_right _ _
+  have hrl : r ≤ f v + listMinHeight f l := min_le_left _ _
+  have hrv : r ≤ f v := by linarith
+  obtain ⟨hs, hb⟩ := apply_reflect_cut hx (hr.trans_le hrv).ne' r
+  have hm : listMinHeight f (v :: l) = 0 := by
+    rw [listMinHeight_cons]
+    exact min_eq_left (by linarith)
+  have hPm : listMinHeight f
+      ([preReflection x f ((r / f v) • v), (1 - r / f v) • v].map Neg.neg).reverse =
+        r - f v := by
+    rw [listMinHeight_reverse_map_neg]
+    simp only [listMinHeight_cons, listMinHeight_nil, List.sum_cons, List.sum_nil, map_add,
+      hs, hb, add_zero]
+    rw [min_eq_left (by linarith : (0 : 𝕜) ≤ f v - r), add_zero,
+      min_eq_right (by linarith : -r ≤ 0)]
+    ring
+  have hsum : f (preReflection x f ((r / f v) • v) :: (1 - r / f v) • v :: l').sum =
+      f v - 2 * r + f l'.sum := by
+    simp only [List.sum_cons, map_add, hs, hb]
+    ring
+  rw [reflectRecords_cons_of_pos hr, ← hl', hm, hsum]
+  refine normalize_reflectRecords_reverse_map_neg_append
+    (P := [preReflection x f ((r / f v) • v), (1 - r / f v) • v]) ?_ ?_
+  · rw [hPm, min_eq_right (by linarith)]
+    refine htail _ (fun hc ↦ ?_) (fun hc ↦ ?_)
+    · have : r = f v + listMinHeight f l := min_eq_left (by linarith)
+      linarith
+    · rw [hl', reflectRecords_of_le_listMinHeight hc.le]
+      linarith
+  · rw [show 0 - (f v - 2 * r + f l'.sum) + f l'.sum = 2 * r - f v by ring]
+    exact normalize_reflectRecords_reverse_map_neg_cut hx hr hrv
+
+/-- The kept case of `TauCeti.PLPath.normalize_reflectRecords_reverse_map_neg_reflectRecords`: the
+first segment `v` is not cut, because the cap `min (f v + listMinHeight f l) c` is nonpositive.
+Here `l'` is the reflected tail, and `htail` is the statement about the reversed tail obtained from
+the induction hypothesis. -/
+private theorem normalize_reflectRecords_reverse_map_neg_cons_of_nonpos
+    {c : 𝕜} {v : V} {l l' : List V}
+    (hl : listMinHeight f l ≤ 0) (hl' : l' = reflectRecords f x (c - f v) l)
+    (htail : ∀ k : 𝕜, (listMinHeight f l ≤ c - f v → k = listMinHeight f l - f l'.sum) →
+      (c - f v < listMinHeight f l → k ≤ listMinHeight f l - f l.sum) →
+      normalize 𝕜 (reflectRecords f x k (l'.map Neg.neg).reverse) =
+        normalize 𝕜 (l.map Neg.neg).reverse)
+    (hr : min (f v + listMinHeight f l) c ≤ 0) :
+    normalize 𝕜 (reflectRecords f x (listMinHeight f (v :: l) -
+        f (reflectRecords f x c (v :: l)).sum)
+        ((reflectRecords f x c (v :: l)).map Neg.neg).reverse) =
+      normalize 𝕜 ((v :: l).map Neg.neg).reverse := by
+  rw [List.map_cons, List.reverse_cons]
+  have hPm : listMinHeight f ([v].map Neg.neg).reverse = min 0 (f v) - f v := by
+    rw [listMinHeight_reverse_map_neg]
+    simp
+  rw [reflectRecords_cons_of_nonpos hr, ← hl', List.sum_cons, map_add, listMinHeight_cons]
+  refine normalize_reflectRecords_reverse_map_neg_append (P := [v]) ?_ ?_
+  · rw [hPm]
+    refine htail _ (fun hc ↦ ?_) (fun hc ↦ ?_)
+    · -- Here the cap on the tail is at least its minimal height, so the first segment ends
+      -- at a nonpositive height.
+      have hneg : f v + listMinHeight f l ≤ 0 := by
+        by_contra hpos
+        rw [not_le] at hpos
+        rcases min_le_iff.1 hr with h | h <;> linarith
+      rw [min_eq_right hneg]
+      simp only [min_def]
+      split_ifs <;> linarith
+    · rw [hl', reflectRecords_of_le_listMinHeight hc.le]
+      exact (min_le_left _ _).trans
+        (by linarith [min_le_right (0 : 𝕜) (f v + listMinHeight f l)])
+  · simp only [List.map_cons, List.map_nil, List.reverse_cons, List.reverse_nil,
+      List.nil_append]
+    rw [reflectRecords_of_le_listMinHeight]
+    rw [listMinHeight_cons, listMinHeight_nil, add_zero, map_neg]
+    exact le_min (by linarith [min_le_right (0 : 𝕜) (f v + listMinHeight f l)])
+      (by linarith [min_le_left (0 : 𝕜) (f v + listMinHeight f l)])
+
 /-- Reflecting the records of a reversed path undoes the reflection of the records up to any cap
 `c`: if `l'` is obtained from `l` by reflecting its records up to `c`, then reflecting the records
 of the reversal of `l'` up to the minimal height of `l` minus the final height of `l'` gives back
@@ -152,68 +245,9 @@ theorem normalize_reflectRecords_reverse_map_neg_reflectRecords (hx : f x = 2) (
       · rw [not_le] at hc
         rw [hl', reflectRecords_of_le_listMinHeight hc.le, reflectRecords_of_le_listMinHeight
           (by rw [listMinHeight_reverse_map_neg]; exact hk₂ hc)]
-    rw [List.map_cons, List.reverse_cons]
     by_cases hr : 0 < min (f v + listMinHeight f l) c
-    · -- The first segment is cut at height `r` and its initial piece is reflected.
-      set r := min (f v + listMinHeight f l) c with hr_def
-      have hrc : r ≤ c := min_le_right _ _
-      have hrl : r ≤ f v + listMinHeight f l := min_le_left _ _
-      have hrv : r ≤ f v := by linarith
-      obtain ⟨hs, hb⟩ := apply_reflect_cut hx (hr.trans_le hrv).ne' r
-      have hm : listMinHeight f (v :: l) = 0 := by
-        rw [listMinHeight_cons]
-        exact min_eq_left (by linarith)
-      have hPm : listMinHeight f
-          ([preReflection x f ((r / f v) • v), (1 - r / f v) • v].map Neg.neg).reverse =
-            r - f v := by
-        rw [listMinHeight_reverse_map_neg]
-        simp only [listMinHeight_cons, listMinHeight_nil, List.sum_cons, List.sum_nil, map_add,
-          hs, hb, add_zero]
-        rw [min_eq_left (by linarith : (0 : 𝕜) ≤ f v - r), add_zero,
-          min_eq_right (by linarith : -r ≤ 0)]
-        ring
-      have hsum : f (preReflection x f ((r / f v) • v) :: (1 - r / f v) • v :: l').sum =
-          f v - 2 * r + f l'.sum := by
-        simp only [List.sum_cons, map_add, hs, hb]
-        ring
-      rw [reflectRecords_cons_of_pos hr, ← hl', hm, hsum]
-      refine normalize_reflectRecords_reverse_map_neg_append
-        (P := [preReflection x f ((r / f v) • v), (1 - r / f v) • v]) ?_ ?_
-      · rw [hPm, min_eq_right (by linarith)]
-        refine htail _ (fun hc ↦ ?_) (fun hc ↦ ?_)
-        · have : r = f v + listMinHeight f l := min_eq_left (by linarith)
-          linarith
-        · rw [hl', reflectRecords_of_le_listMinHeight hc.le]
-          linarith
-      · rw [show 0 - (f v - 2 * r + f l'.sum) + f l'.sum = 2 * r - f v by ring]
-        exact normalize_reflectRecords_reverse_map_neg_cut hx hr hrv
-    · -- The first segment is kept.
-      rw [not_lt] at hr
-      have hPm : listMinHeight f ([v].map Neg.neg).reverse = min 0 (f v) - f v := by
-        rw [listMinHeight_reverse_map_neg]
-        simp
-      rw [reflectRecords_cons_of_nonpos hr, ← hl', List.sum_cons, map_add, listMinHeight_cons]
-      refine normalize_reflectRecords_reverse_map_neg_append (P := [v]) ?_ ?_
-      · rw [hPm]
-        refine htail _ (fun hc ↦ ?_) (fun hc ↦ ?_)
-        · -- Here the cap on the tail is at least its minimal height, so the first segment ends
-          -- at a nonpositive height.
-          have hneg : f v + listMinHeight f l ≤ 0 := by
-            by_contra hpos
-            rw [not_le] at hpos
-            rcases min_le_iff.1 hr with h | h <;> linarith
-          rw [min_eq_right hneg]
-          simp only [min_def]
-          split_ifs <;> linarith
-        · rw [hl', reflectRecords_of_le_listMinHeight hc.le]
-          exact (min_le_left _ _).trans
-            (by linarith [min_le_right (0 : 𝕜) (f v + listMinHeight f l)])
-      · simp only [List.map_cons, List.map_nil, List.reverse_cons, List.reverse_nil,
-          List.nil_append]
-        rw [reflectRecords_of_le_listMinHeight]
-        rw [listMinHeight_cons, listMinHeight_nil, add_zero, map_neg]
-        exact le_min (by linarith [min_le_right (0 : 𝕜) (f v + listMinHeight f l)])
-          (by linarith [min_le_left (0 : 𝕜) (f v + listMinHeight f l)])
+    · exact normalize_reflectRecords_reverse_map_neg_cons_of_pos hx hl hl' htail hr
+    · exact normalize_reflectRecords_reverse_map_neg_cons_of_nonpos hl hl' htail (not_lt.1 hr)
 
 /-! ### The root operators are partial inverses -/
 
