@@ -3,7 +3,7 @@
   "use strict";
   var root = document.querySelector("[data-operations]");
   if (!root) return;
-  var pollInterval = 10000;
+  var pollInterval = 5000;
   var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, polling = false, delay = pollInterval;
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
   var selectedHistoryHost, hostHistories = new Map(), historyGeneration = 0, historyMetric = "busy_slots";
