@@ -26,10 +26,10 @@ namespace TauCeti
 
 open Metric Set
 
-variable {R : ℝ}
+variable {R : ℝ} {F : Type*} [Zero F]
 
 /-- A test function `ψ` supported in `(0, R)` is supported in some `(0, R')` with `R' < R`. -/
-lemma exists_lt_tsupport_subset_Ioo (hR : 0 < R) {ψ : ℝ → ℝ}
+lemma exists_lt_tsupport_subset_Ioo (hR : 0 < R) {ψ : ℝ → F}
     (hψs : tsupport ψ ⊆ Ioo 0 R) : ∃ R', 0 < R' ∧ R' < R ∧ tsupport ψ ⊆ Ioo 0 R' := by
   have hball : Ioo (0 : ℝ) R = ball (R / 2) (R / 2) := by
     rw [Real.ball_eq_Ioo]

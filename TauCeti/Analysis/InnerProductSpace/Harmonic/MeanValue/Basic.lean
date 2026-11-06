@@ -156,7 +156,7 @@ private lemma exists_integral_smul_laplacian_eq_two_smul_integral_deriv_smul
       rw [norm_smul, norm_eq_of_mem_sphere θ, mul_one, Real.norm_of_nonneg hs.le]
     simp_rw [hΔ, hnorm]
     rw [MeasureTheory.integral_smul, smul_smul, pow_mul_add_eq_two_mul_deriv
-      Module.finrank_pos.ne' (hσ.differentiable (by simp)) hψρ hs]
+      Module.finrank_pos.ne' (hσ.differentiable (by simp) (s ^ 2)) hψρ hs]
   rw [setIntegral_congr_fun measurableSet_Ioi hinner,
     setIntegral_eq_integral_of_forall_compl_eq_zero fun s hs ↦ ?_]
   · simp_rw [mul_smul]

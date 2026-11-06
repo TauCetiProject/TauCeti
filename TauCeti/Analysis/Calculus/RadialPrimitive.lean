@@ -41,8 +41,9 @@ variable {R : ℝ}
 
 /-- If `ψ r = r ^ n * σ (r ^ 2)` for `r > 0`, then at `s > 0` the radial Laplacian weight
 `s ^ (n - 1) (4 s² σ' (s²) + 2 n σ (s²))` is `2 ψ' s`. -/
-lemma pow_mul_add_eq_two_mul_deriv {n : ℕ} (hn : n ≠ 0) {σ ψ : ℝ → ℝ}
-    (hσ : Differentiable ℝ σ) (hψ : ∀ r, 0 < r → ψ r = r ^ n * σ (r ^ 2)) {s : ℝ} (hs : 0 < s) :
+lemma pow_mul_add_eq_two_mul_deriv {n : ℕ} (hn : n ≠ 0) {σ ψ : ℝ → ℝ} {s : ℝ}
+    (hσ : DifferentiableAt ℝ σ (s ^ 2)) (hψ : ∀ r, 0 < r → ψ r = r ^ n * σ (r ^ 2))
+    (hs : 0 < s) :
     s ^ (n - 1) * (4 * s ^ 2 * deriv σ (s ^ 2) + 2 * (n : ℝ) * σ (s ^ 2)) = 2 * deriv ψ s := by
   obtain ⟨m, rfl⟩ := Nat.exists_eq_add_one_of_ne_zero hn
   have hψeq : ψ =ᶠ[𝓝 s] fun r ↦ r ^ (m + 1) * σ (r ^ 2) :=
@@ -50,7 +51,9 @@ lemma pow_mul_add_eq_two_mul_deriv {n : ℕ} (hn : n ≠ 0) {σ ψ : ℝ → ℝ
   have hd : HasDerivAt (fun r ↦ r ^ (m + 1) * σ (r ^ 2))
       (((m + 1 : ℕ) : ℝ) * s ^ (m + 1 - 1) * σ (s ^ 2) +
         s ^ (m + 1) * (deriv σ (s ^ 2) * ((2 : ℕ) * s ^ (2 - 1)))) s :=
-    (hasDerivAt_pow _ s).mul ((hσ _).hasDerivAt.comp s (hasDerivAt_pow 2 s))
+    (hasDerivAt_pow _ s).mul
+      ((hσ.hasDerivAt : HasDerivAt σ (deriv σ (s ^ 2)) (s ^ 2)).comp
+        (h := fun x : ℝ ↦ x ^ 2) s (hasDerivAt_pow 2 s))
   rw [hψeq.deriv_eq, hd.deriv]
   simp only [Nat.add_sub_cancel, Nat.cast_add, Nat.cast_one]
   ring
