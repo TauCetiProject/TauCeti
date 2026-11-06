@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.Orientation.Basis
+public import TauCeti.Analysis.Convex.Orientation
 public import TauCeti.Topology.VectorBundle.Orientation.Basic
 public import TauCeti.Topology.VectorBundle.Section
 
