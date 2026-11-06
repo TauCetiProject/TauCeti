@@ -104,7 +104,7 @@ theorem forget_connectedIsoClassEquiv (c : Quotient (connectedIsoSetoid.{u} n)) 
 theorem connectedIsoClassEquiv_symm_mk (t : ConnectedTriple n) :
     (connectedIsoClassEquiv.{u} n).symm (ConnectedIsoClass.mk t) =
       Quotient.mk (connectedIsoSetoid n)
-        ⟨⟨t.1.ribbonGraph.ulift, t.1.ribbonGraph.card_E_ulift.trans t.1.card_E_ribbonGraph⟩,
+        ⟨⟨t.1.ribbonGraph.ulift, (Fintype.card_ulift _).trans t.1.card_E_ribbonGraph⟩,
           t.1.ribbonGraph.uliftIso.isConnected_iff.mpr
             (t.1.isConnected_ribbonGraph.mpr t.2)⟩ := by
   apply (connectedIsoClassEquiv n).injective

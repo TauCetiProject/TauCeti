@@ -730,11 +730,6 @@ theorem ulift_rotW_up (e : Γ.E) :
     (Γ.ulift : BipartiteRibbonGraph.{max u v}).rotW (ULift.up e) = ULift.up (Γ.rotW e) :=
   (rfl)
 
-/-- The number of edges is unchanged by universe lifting. -/
-theorem card_E_ulift :
-    Fintype.card (Γ.ulift : BipartiteRibbonGraph.{max u v}).E = Fintype.card Γ.E :=
-  Fintype.card_ulift _
-
 /-- A ribbon graph is isomorphic to its copy in a higher universe, by `ULift.down`. -/
 def uliftIso : (Γ.ulift : BipartiteRibbonGraph.{max u v}).Iso Γ where
   edge := Equiv.ulift

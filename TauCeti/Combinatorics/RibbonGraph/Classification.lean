@@ -145,7 +145,7 @@ noncomputable def isoClassEquiv (n : ℕ) :
       exact PermutationTriple.IsoClass.mk_eq_mk_iff.mpr
         (equivalent_toPermutationTriple_of_iso f _ _)
   invFun := PermutationTriple.IsoClass.lift
-    (fun t ↦ ⟦⟨t.ribbonGraph.ulift, t.ribbonGraph.card_E_ulift.trans t.card_E_ribbonGraph⟩⟧)
+    (fun t ↦ ⟦⟨t.ribbonGraph.ulift, (Fintype.card_ulift _).trans t.card_E_ribbonGraph⟩⟧)
     fun _ _ h ↦ Quotient.sound <| isoSetoid_r.mpr <|
       (PermutationTriple.nonempty_iso_ribbonGraph_iff.mpr h).map fun f ↦
         (uliftIso _).trans (f.trans (uliftIso _).symm)
@@ -177,7 +177,7 @@ theorem isoClassEquiv_mk_equivFinOfCardEq
 @[simp]
 theorem isoClassEquiv_symm_mk (t : PermutationTriple n) :
     (isoClassEquiv.{u} n).symm (PermutationTriple.IsoClass.mk t) =
-      ⟦⟨t.ribbonGraph.ulift, t.ribbonGraph.card_E_ulift.trans t.card_E_ribbonGraph⟩⟧ :=
+      ⟦⟨t.ribbonGraph.ulift, (Fintype.card_ulift _).trans t.card_E_ribbonGraph⟩⟧ :=
   PermutationTriple.IsoClass.lift_mk _ _ t
 
 /-! ### Automorphisms -/
