@@ -57,6 +57,8 @@ measure finite.
   set and zero off its closure has topological support equal to that closure.
 * `MeasureTheory.Measure.support_withDensity_eq_closure`: the special case where the function
   support is exactly the open set.
+* `MeasureTheory.Measure.support_withDensity_ofReal`: a continuous nonnegative real density
+  has the same topological support as the measure it defines.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure are equal pointwise.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
@@ -161,6 +163,17 @@ theorem support_withDensity_eq_closure {X : Type*} [TopologicalSpace X] [Measura
     (μ.withDensity f).support = closure U := by
   exact support_withDensity_eq_closure_of_subset hf hU (hsupp.ge)
     (hsupp.le.trans subset_closure)
+
+/-- The support of a measure with continuous nonnegative real density is the topological support
+of that density, provided the reference measure is positive on nonempty open sets. -/
+theorem support_withDensity_ofReal {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
+    [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure] {f : X → ℝ}
+    (hf : Continuous f) (hf0 : 0 ≤ f) :
+    (μ.withDensity (fun x ↦ ENNReal.ofReal (f x))).support = tsupport f := by
+  apply support_withDensity_eq_closure hf.measurable.ennreal_ofReal hf.isOpen_support
+  ext x
+  simp only [Function.mem_support, ne_eq, ENNReal.ofReal_eq_zero]
+  exact not_congr ⟨fun h ↦ le_antisymm h (hf0 x), fun h ↦ h.le⟩
 
 /-- **A Jacobian identity transports a weight.** Suppose `f` carries `μ` weighted by `jac` to `ν`,
 which is the Jacobian formula for `f` when `μ` and `ν` are the restrictions of a Haar measure to

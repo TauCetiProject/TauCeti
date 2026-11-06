@@ -5,24 +5,25 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.Sqrt
 public import TauCeti.Analysis.Complex.SlitPlane
 public import TauCeti.Analysis.SpecialFunctions.Pow.Complex
 
 /-!
-# The slit-plane domain of Carlson duplication
+# Slit-plane nodes in Carlson duplication
 
-Carlson's duplication parameter is `λ = √x √y + √y √z + √z √x`, using principal
-square roots. The factorization `x + λ = (√x + √y)(√x + √z)` shows that the
-new nodes `(x + λ)/4`, `(y + λ)/4`, `(z + λ)/4` lie strictly in the slit plane
-when the original nodes belong to `slitPlane ∪ {0}` with at most one zero.
-Thus duplication removes a possible zero node and does not cross the branch cut.
-This is the domain control needed to apply holomorphy and convergence of Carlson's
-integrals to the duplicated arguments.
+Carlson's duplication transformation replaces each node `x` by `(x + λ) / 4`, where
+`λ = √x √y + √y √z + √z √x` uses principal square roots. The new nodes lie strictly in the
+slit plane, even if one original node is zero. The factorization
+`x + λ = (√x + √y) (√x + √z)` also respects principal complex powers: the two factors have
+positive real parts, so their arguments add without crossing the branch cut.
 
-The membership criterion is stated using only the two conditions actually needed:
-at least one of `x, y`, and at least one of `x, z`, must lie in the slit plane.
-The other nodes need not be restricted, since every principal square root has
-nonnegative real part. Permuting the arguments gives the other two nodes.
+These results place the transformed nodes in the domain of the slit-plane convergence and
+holomorphy API and split their principal powers over the factorization without a branch
+correction. The theorem for one node applies to the other two by permutation. The hypotheses
+are weaker than requiring
+all three original nodes in `slitPlane ∪ {0}` with at most one zero: it suffices that each
+of the pairs `(x, y)` and `(x, z)` contains a slit-plane node.
 
 The parameter and factorization follow Bastiaan J Braams' Apache-2.0 `lean-codes`,
 `Carlson/Elliptic/Addition.lean` (commit `2b8cba1`), specifically `dupLambda` and
@@ -30,7 +31,8 @@ The parameter and factorization follow Bastiaan J Braams' Apache-2.0 `lean-codes
 
 ## References
 
-* NIST *Digital Library of Mathematical Functions*, §19.26, <https://dlmf.nist.gov/19.26>.
+* NIST DLMF §19.26, especially 19.26.18.
+* B. C. Carlson, *Computing elliptic integrals by duplication*, Numer. Math. 33 (1979), 1–16.
 * B. C. Carlson, *Special Functions of Applied Mathematics*, Chapter 9, §9.6.
 -/
 
@@ -40,13 +42,12 @@ namespace Complex
 
 /-- Carlson's duplication parameter, with principal complex square roots. -/
 noncomputable def carlsonDuplicationLambda (x y z : ℂ) : ℂ :=
-  x ^ (1 / 2 : ℂ) * y ^ (1 / 2 : ℂ) +
-    y ^ (1 / 2 : ℂ) * z ^ (1 / 2 : ℂ) + z ^ (1 / 2 : ℂ) * x ^ (1 / 2 : ℂ)
+  sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x
 
 /-- The defining formula for Carlson's duplication parameter. -/
 theorem carlsonDuplicationLambda_def (x y z : ℂ) :
-    carlsonDuplicationLambda x y z = x ^ (1 / 2 : ℂ) * y ^ (1 / 2 : ℂ) +
-      y ^ (1 / 2 : ℂ) * z ^ (1 / 2 : ℂ) + z ^ (1 / 2 : ℂ) * x ^ (1 / 2 : ℂ) := (rfl)
+    carlsonDuplicationLambda x y z =
+      sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x := (rfl)
 
 /-- The duplication parameter is unchanged by interchanging its first two nodes. -/
 theorem carlsonDuplicationLambda_comm_left (x y z : ℂ) :
@@ -63,9 +64,8 @@ theorem carlsonDuplicationLambda_comm_right (x y z : ℂ) :
 /-- Factorization of a shifted node into sums of principal square roots. -/
 theorem add_carlsonDuplicationLambda (x y z : ℂ) :
     x + carlsonDuplicationLambda x y z =
-      (x ^ (1 / 2 : ℂ) + y ^ (1 / 2 : ℂ)) *
-        (x ^ (1 / 2 : ℂ) + z ^ (1 / 2 : ℂ)) := by
-  have hs : (x ^ (1 / 2 : ℂ)) ^ 2 = x := by simp
+      (sqrt x + sqrt y) * (sqrt x + sqrt z) := by
+  have hs := sq_sqrt x
   rw [carlsonDuplicationLambda_def]
   linear_combination -hs
 
@@ -77,14 +77,35 @@ theorem add_carlsonDuplicationLambda_mem_slitPlane {x y z : ℂ}
     x + carlsonDuplicationLambda x y z ∈ slitPlane := by
   rw [add_carlsonDuplicationLambda]
   exact TauCeti.mul_mem_slitPlane_of_re_pos
-    (cpow_half_add_cpow_half_re_pos hxy) (cpow_half_add_cpow_half_re_pos hxz)
+    (by simpa only [add_re] using (sqrt_add_sqrt_re_pos_iff x y).mpr hxy)
+    (by simpa only [add_re] using (sqrt_add_sqrt_re_pos_iff x z).mpr hxz)
 
-/-- The scaled node used in Carlson duplication lies strictly in the slit plane.
-The same criterion applies to the other nodes after permuting the inputs. -/
-theorem add_carlsonDuplicationLambda_div_four_mem_slitPlane {x y z : ℂ}
+private theorem duplication_node_eq (x y z : ℂ) :
+    (x + (sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x)) / 4 =
+      ((sqrt x + sqrt y) / 2) * ((sqrt x + sqrt z) / 2) := by
+  rw [← carlsonDuplicationLambda_def, add_carlsonDuplicationLambda]
+  ring
+
+/-- A duplicated Carlson node lies in the slit plane if each square-root sum has an input
+in the slit plane. In particular this holds on the Carlson domain, including a zero node. -/
+theorem carlson_duplication_node_mem_slitPlane (x : ℂ) {y z : ℂ}
     (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) :
-    (x + carlsonDuplicationLambda x y z) / 4 ∈ slitPlane := by
-  simpa only [ofReal_ofNat] using TauCeti.div_ofReal_mem_slitPlane
-    (add_carlsonDuplicationLambda_mem_slitPlane hxy hxz) (by norm_num : (0 : ℝ) < 4)
+    (x + (sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x)) / 4 ∈ slitPlane := by
+  rw [duplication_node_eq]
+  apply TauCeti.mul_mem_slitPlane_of_re_pos
+  · simpa only [div_ofNat_re, add_re] using half_pos ((sqrt_add_sqrt_re_pos_iff x y).mpr hxy)
+  · simpa only [div_ofNat_re, add_re] using half_pos ((sqrt_add_sqrt_re_pos_iff x z).mpr hxz)
+
+/-- Principal powers split across the factorization of a duplicated Carlson node, with no
+branch correction. In particular, `w = -1/2` gives the inverse square root of the duplicated
+node. -/
+theorem carlson_duplication_node_cpow (x : ℂ) {y z : ℂ}
+    (hxy : x ∈ slitPlane ∨ y ∈ slitPlane) (hxz : x ∈ slitPlane ∨ z ∈ slitPlane) (w : ℂ) :
+    ((x + (sqrt x * sqrt y + sqrt y * sqrt z + sqrt z * sqrt x)) / 4) ^ w =
+      ((sqrt x + sqrt y) / 2) ^ w * ((sqrt x + sqrt z) / 2) ^ w := by
+  rw [duplication_node_eq]
+  apply TauCeti.mul_cpow_of_re_pos
+  · simpa only [div_ofNat_re, add_re] using half_pos ((sqrt_add_sqrt_re_pos_iff x y).mpr hxy)
+  · simpa only [div_ofNat_re, add_re] using half_pos ((sqrt_add_sqrt_re_pos_iff x z).mpr hxz)
 
 end Complex
