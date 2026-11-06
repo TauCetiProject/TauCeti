@@ -182,9 +182,8 @@ theorem exists_sub_mem_w1p0Submodule_harmonicOnNhd_ae_eq_of_subset_ball {n : ℕ
   obtain ⟨w, ⟨huw, hw⟩, -⟩ :=
     UniformlyEllipticOn.existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
       (b := 0) (c := 0) h1 aestronglyMeasurable_const aestronglyMeasurable_const
-      aestronglyMeasurable_const le_rfl
-      (fun _ _ => by simp) (gamma := 0) (fun _ _ => by simp) (fun _ _ => le_rfl)
-      (le_max_right R 0) (hball.trans (ball_subset_ball (le_max_left R 0))) (by simp) 0 u
+      aestronglyMeasurable_const (beta := 0) (fun _ _ => by simp) (gamma := 0)
+      (fun _ _ => by simp) (fun _ _ => le_rfl) hball (by simp) 0 u
   have hw0 : ∀ v : W1p0 volume Omega 2,
       energyFormH1 (fun _ => 1) 0 0 w (v : W1p volume Omega 2) = 0 := fun v => by
     rw [hw v, ← dirichletForcing_apply_eq_setIntegral, dirichletForcing_apply, inner_zero_left]

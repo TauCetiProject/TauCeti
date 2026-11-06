@@ -7,6 +7,11 @@ module
 
 public import TauCeti.AlgebraicGeometry.FiniteEtale.PuncturedSpectrum
 public import TauCeti.AlgebraicGeometry.PuncturedSpectrum.Sections
+import TauCeti.AlgebraicGeometry.Morphisms.Flat.NonZeroDivisors
+import TauCeti.RingTheory.Etale.PuncturedFiniteness
+
+import TauCeti.AlgebraicGeometry.AffineScheme
+import TauCeti.AlgebraicGeometry.Morphisms.RamificationLocus
 
 /-!
 # Extending finite étale covers from their sections
@@ -21,9 +26,43 @@ an existing extension. In the other direction Mathlib's
 `AlgebraicGeometry.Scheme.isPullback_toSpecΓ_toSpecΓ` identifies an affine morphism over a
 quasi-affine scheme with the restriction of the morphism on spectra of global sections.
 
+Whether or not `V` extends, its sections form a finite torsion-free algebra over a Noetherian
+local domain `A` of depth at least two, which is finite étale over `A_𝔭` at every prime `𝔭` other
+than the maximal ideal. Torsion freeness holds over any local ring, since `V` is flat over
+`Spec A` (`AlgebraicGeometry.Scheme.Hom.isTorsionFree_appTop`). Base change to `A_𝔭` is computed
+by restricting `V` along `Spec A_𝔭 ⟶ Spec A`, which factors through the punctured spectrum.
+Finiteness then follows from the trace-form argument of
+`TauCeti.IsLocalRing.finite_of_finiteEtale_localization`.
+
+If purity holds for `A`, every finite étale cover of the punctured spectrum extends, so its
+sections are finite étale over `A`. Applied to the restriction of `Spec B` for a finite
+`A`-algebra `B` étale away from the closed point, this shows that `B` is étale over `A` whenever
+`B` is recovered from its sections over the preimage of the punctured spectrum.
+
+## Main results
+
+* `TauCeti.IsLocalRing.extends_iff_sections_finiteEtale`: a finite étale cover of the punctured
+  spectrum extends exactly when its sections are finite étale over `A` (Stacks, Lemma 58.20.2
+  (0BLK)).
+* `TauCeti.IsLocalRing.isTorsionFree_sections`: the sections of a finite étale cover of the
+  punctured spectrum are torsion free.
+* `TauCeti.IsLocalRing.finiteEtale_tensorProduct_sections`: their base change to `A_𝔭` is finite
+  étale for every prime `𝔭` other than the maximal ideal.
+* `TauCeti.IsLocalRing.finite_sections`: over a Noetherian local domain of depth at least two,
+  they are a finite `A`-module.
+
+  spectrum extends across the closed point if and only if its sections are finite étale.
+* `TauCeti.Algebra.etale_of_purityHolds_of_bijective`: over a Noetherian local ring of depth at
+  least two for which purity holds, a finite algebra is étale, provided it is étale at every prime
+  not lying over the closed point and is recovered from its sections over the preimage of the
+  punctured spectrum.
+
 ## References
 
 * [The Stacks Project, Lemma 58.20.2](https://stacks.math.columbia.edu/tag/0BLK).
+* [The Stacks Project, Lemma 58.20.3](https://stacks.math.columbia.edu/tag/0BM9), whose
+  sections functor sends a finite étale cover of the punctured spectrum to its ring of sections,
+  a finite torsion-free `A`-algebra.
 -/
 
 public section
@@ -31,6 +70,8 @@ public section
 noncomputable section
 
 open CategoryTheory Limits AlgebraicGeometry IsLocalRing
+
+open scoped TensorProduct
 
 universe u
 
@@ -66,20 +107,12 @@ private theorem sectionsMap_finite_etale_of_spec_extension
   let eV := e₀.symm ≪≫ pullbackRestrictIsoRestrict g U
   let W := g ⁻¹ᵁ U
   -- Hartogs recovers the extension algebra from sections of this open.
-  have hΓ := TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat
-    (A := A) (B := B.unop.obj) hdepth (W.ι ''ᵁ ⊤) fun p hp ↦ by
-      rw [Scheme.Opens.ι_image_top]
-      apply (mem_puncturedSpectrum_iff A (g p)).mpr
-      intro he
-      apply hp
-      exact congrArg PrimeSpectrum.asIdeal he
-  have : IsIso W.ι.appTop := by
+  have hΓ : Function.Bijective W.ι.appTop := by
     rw [Scheme.Opens.ι_appTop]
-    exact (ConcreteCategory.isIso_iff_bijective _).mpr hΓ
-  let σ := (Scheme.ΓSpecIso (.of B.unop.obj)).inv ≫ W.ι.appTop ≫ eV.hom.appTop
-  have : IsIso eV.hom.appTop := by
-    exact Scheme.Γ.map_isIso eV.hom.op
-  have : IsIso σ := by dsimp only [σ]; infer_instance
+    refine TauCeti.AlgebraicGeometry.Spec.presheaf_map_leTop_bijective_of_flat
+      (A := A) (B := B.unop.obj) hdepth (W.ι ''ᵁ ⊤) fun p hp ↦ ?_
+    rw [Scheme.Opens.ι_image_top]
+    exact (mem_preimage_puncturedSpectrum_iff A p).mpr hp
   -- This identification respects the map from the local base ring.
   have heV : eV.hom ≫ W.ι ≫ g = V.obj.hom ≫ U.ι := by
     calc
@@ -90,10 +123,9 @@ private theorem sectionsMap_finite_etale_of_spec_extension
       _ = V.obj.hom ≫ U.ι := by
         rw [← Category.assoc]
         exact congrArg (fun k ↦ k ≫ U.ι) (Over.w j₀.inv)
-  have hcomp : φ = CommRingCat.ofHom (algebraMap A B.unop.obj) ≫ σ := by
-    dsimp only [φ, σ]
-    rw [← heV, Scheme.Hom.comp_appTop, Scheme.Hom.comp_appTop]
-    simp only [g, Category.assoc, ← Scheme.ΓSpecIso_inv_naturality_assoc]
+  obtain ⟨σ, _, hcomp⟩ : ∃ σ : _ ⟶ _, IsIso σ ∧ φ = _ ≫ σ :=
+    TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective
+      (CommRingCat.ofHom (algebraMap A B.unop.obj)) (V.obj.hom ≫ U.ι) W hΓ eV heV
   have hfinite : IsFinite (Spec.map φ) := by
     rw [hcomp, Spec.map_comp]
     infer_instance
@@ -137,4 +169,131 @@ theorem extends_iff_sections_finiteEtale (hdepth : 2 ≤ depth (ModuleCat.of A A
       FiniteEtaleScheme.ofHom_obj]
     exact Over.isoMk h.isoPullback.symm h.isoPullback_inv_snd
 
+omit [IsNoetherianRing A] in
+/-- The sections of a finite étale cover of the punctured spectrum of a local ring `A` are a
+torsion-free `A`-algebra, since the cover is flat over `Spec A`. The algebra structure is induced
+by the cover's structure morphism followed by the punctured-spectrum inclusion. -/
+theorem isTorsionFree_sections (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    letI := (((Scheme.ΓSpecIso (.of A)).inv ≫
+      (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop).hom).toAlgebra
+    Module.IsTorsionFree A Γ(V.obj.left, ⊤) :=
+  (V.obj.hom ≫ (puncturedSpectrum A).ι).isTorsionFree_appTop
+
+/-- Let `A` be a Noetherian local ring of depth at least two and `V` a finite étale cover of its
+punctured spectrum. For every prime `𝔭` other than the maximal ideal, the base change
+`A_𝔭 ⊗[A] Γ(V, ⊤)` of the sections of `V` is finite étale over `A_𝔭`. -/
+theorem finiteEtale_tensorProduct_sections (hdepth : 2 ≤ depth (ModuleCat.of A A))
+    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) (p : Ideal A) [p.IsPrime]
+    (hp : p ≠ maximalIdeal A) :
+    letI := (((Scheme.ΓSpecIso (.of A)).inv ≫
+      (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop).hom).toAlgebra
+    Module.Finite (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] Γ(V.obj.left, ⊤)) ∧
+      Algebra.Etale (Localization.AtPrime p) (Localization.AtPrime p ⊗[A] Γ(V.obj.left, ⊤)) := by
+  let U := puncturedSpectrum A
+  let φ := (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ U.ι).appTop
+  let C := Γ(V.obj.left, ⊤)
+  let := φ.hom.toAlgebra
+  let Ap := Localization.AtPrime p
+  let j := Spec.map (CommRingCat.ofHom (algebraMap A Ap))
+  -- `Spec A_𝔭 ⟶ Spec A` factors through the punctured spectrum, as primes of `A_𝔭` pull back
+  -- into `𝔭`.
+  have hj : Set.range j ⊆ Set.range U.ι := by
+    rintro _ ⟨x, rfl⟩
+    rw [Scheme.Opens.range_ι]
+    refine (mem_puncturedSpectrum_iff A _).2 fun hx ↦ hp ?_
+    have hle : x.asIdeal.comap (algebraMap A Ap) ≤ p :=
+      calc x.asIdeal.comap (algebraMap A Ap) ≤ (maximalIdeal Ap).comap (algebraMap A Ap) :=
+            Ideal.comap_mono (IsLocalRing.le_maximalIdeal x.2.ne_top)
+        _ = p := Localization.AtPrime.under_maximalIdeal
+    have hx' : x.asIdeal.comap (algebraMap A Ap) = maximalIdeal A :=
+      congrArg PrimeSpectrum.asIdeal hx
+    exact ((maximalIdeal.isMaximal A).eq_of_le ‹p.IsPrime›.ne_top (hx' ▸ hle)).symm
+  let j' := IsOpenImmersion.lift U.ι j hj
+  have hj' : j' ≫ U.ι = j := IsOpenImmersion.lift_fac _ _ _
+  -- Pasting with the reconstruction square, the base change of `V` along `j'` is the base change
+  -- of `Spec C ⟶ Spec A` along `j`, that is, `Spec (A_𝔭 ⊗[A] C)`.
+  have sq : IsPullback (pullback.snd V.obj.hom j')
+      (pullback.fst V.obj.hom j' ≫ V.obj.left.toSpecΓ) j (Spec.map φ) := by
+    have := (IsPullback.of_hasPullback V.obj.hom j').paste_horiz
+      (isPullback_puncturedSpectrum_toSpecΓ A hdepth V.obj.hom).flip
+    rw [← hj']
+    exact this.flip
+  let e := sq.isoPullback ≪≫ pullbackSpecIso A Ap C
+  have he : Spec.map (CommRingCat.ofHom (algebraMap Ap (Ap ⊗[A] C))) =
+      e.inv ≫ pullback.snd V.obj.hom j' := by
+    simp only [e, Iso.trans_inv, Category.assoc, IsPullback.isoPullback_inv_fst]
+    exact (pullbackSpecIso_inv_fst' A Ap C).symm
+  have hfin : IsFinite (Spec.map (CommRingCat.ofHom (algebraMap Ap (Ap ⊗[A] C)))) := by
+    rw [he]
+    infer_instance
+  have het : Etale (Spec.map (CommRingCat.ofHom (algebraMap Ap (Ap ⊗[A] C)))) := by
+    rw [he]
+    infer_instance
+  exact ⟨RingHom.finite_algebraMap.1 ((IsFinite.SpecMap_iff _).1 hfin),
+    RingHom.etale_algebraMap.1 ((HasRingHomProperty.Spec_iff (P := @Etale)).1 het)⟩
+
+/-- Let `A` be a Noetherian local domain of depth at least two. The sections of a finite étale
+cover of the punctured spectrum of `A` form a finite `A`-module. The algebra structure is induced
+by the cover's structure morphism followed by the punctured-spectrum inclusion. -/
+theorem finite_sections [IsDomain A] (hdepth : 2 ≤ depth (ModuleCat.of A A))
+    (V : FiniteEtaleScheme (puncturedSpectrum A).toScheme) :
+    letI := (((Scheme.ΓSpecIso (.of A)).inv ≫
+      (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop).hom).toAlgebra
+    Module.Finite A Γ(V.obj.left, ⊤) :=
+  letI := (((Scheme.ΓSpecIso (.of A)).inv ≫
+    (V.obj.hom ≫ (puncturedSpectrum A).ι).appTop).hom).toAlgebra
+  have := isTorsionFree_sections A V
+  finite_of_finiteEtale_localization hdepth _ fun p _ hp ↦
+    finiteEtale_tensorProduct_sections A hdepth V p hp
+
 end TauCeti.IsLocalRing
+
+namespace TauCeti.Algebra
+
+variable {A B : Type u} [CommRing A] [CommRing B] [Algebra A B] [IsLocalRing A]
+  [IsNoetherianRing A] [Module.Finite A B]
+
+/-- Let `A` be a Noetherian local ring of depth at least two for which purity holds, and let `B`
+be a finite `A`-algebra which is étale over `A` at every prime not lying over the maximal ideal.
+If restriction of sections from `Spec B` to the preimage of the punctured spectrum of `A` is
+bijective, then `B` is étale over `A`. -/
+theorem etale_of_purityHolds_of_bijective (hpurity : IsLocalRing.PurityHolds A)
+    (hdepth : 2 ≤ depth (ModuleCat.of A A))
+    (hsections : Function.Bijective (Spec.map (CommRingCat.ofHom (algebraMap A B)) ⁻¹ᵁ
+      IsLocalRing.puncturedSpectrum A).ι.appTop)
+    (hetale : ∀ (q : Ideal B) [q.IsPrime], q.under A ≠ maximalIdeal A →
+      Algebra.IsEtaleAt A q) :
+    Algebra.Etale A B := by
+  let U := IsLocalRing.puncturedSpectrum A
+  let g := Spec.map (CommRingCat.ofHom (algebraMap A B))
+  let W := g ⁻¹ᵁ U
+  have : IsFinite g := (IsFinite.SpecMap_iff _).mpr (RingHom.finite_algebraMap.mpr ‹_›)
+  have : Algebra.FinitePresentation A B :=
+    Algebra.FinitePresentation.of_finiteType.mp inferInstance
+  -- Every point of `Spec B` over the punctured spectrum has an open neighbourhood on which
+  -- `Spec B ⟶ Spec A` is étale, so the restriction `V` of `Spec B` to the punctured spectrum is
+  -- finite étale over it.
+  have : Etale (g ∣_ U) := (g.etale_morphismRestrict_iff U).mpr <|
+    Set.disjoint_left.mpr fun (q : PrimeSpectrum B) hq hne ↦
+      Scheme.Hom.mem_nonEtaleLocus_iff.mp hne <| (Scheme.Hom.etaleAt_spec_iff q).mpr <|
+        hetale q.asIdeal ((IsLocalRing.mem_preimage_puncturedSpectrum_iff A q).mp hq)
+  let V := FiniteEtaleScheme.ofHom (g ∣_ U)
+  -- By purity `V` extends across the closed point, so its sections are finite étale over `A`.
+  let φ := (Scheme.ΓSpecIso (.of A)).inv ≫ (V.obj.hom ≫ U.ι).appTop
+  have hφ : φ.hom.Finite ∧ φ.hom.Etale :=
+    (IsLocalRing.extends_iff_sections_finiteEtale A hdepth V).mp
+      ((IsLocalRing.purityHolds_iff A).mp hpurity V)
+  -- The sections of `V` are those of `Spec B` over `W`, which recover `B`.
+  let e := (Over.forget U.toScheme).mapIso (eqToIso (FiniteEtaleScheme.ofHom_obj (g ∣_ U)))
+  have he : e.hom ≫ g ∣_ U = V.obj.hom :=
+    Over.w (eqToHom (FiniteEtaleScheme.ofHom_obj (g ∣_ U)))
+  obtain ⟨σ, _, hcomp⟩ := TauCeti.AlgebraicGeometry.Spec.exists_isIso_appTop_eq_comp_of_bijective
+    (CommRingCat.ofHom (algebraMap A B)) (V.obj.hom ≫ U.ι) W hsections e
+    (by rw [← he, Category.assoc, morphismRestrict_ι])
+  rw [← RingHom.etale_algebraMap]
+  refine (RingHom.Etale.respectsIso.cancel_right_isIso
+    (CommRingCat.ofHom (algebraMap A B)) σ).mp ?_
+  rw [← CommRingCat.hom_comp, ← hcomp]
+  exact hφ.2
+
+end TauCeti.Algebra

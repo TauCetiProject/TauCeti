@@ -12,11 +12,11 @@ public import TauCeti.Probability.FreeProbability.Cumulant.Basic
 # Bounds for free cumulants
 
 For `φ : A → R` with values in a normed commutative ring, a free cumulant of a constant word
-`(x, …, x)` along `s` is bounded in terms of bounds for the moments `φ (x ^ k)` with `k ≤ #s`
-alone. Expanding the cumulant by Möbius inversion over the noncrossing partitions of `s` gives the
-explicit bound `∑_{π ∈ NC(s)} ‖μ(π, 1_s)‖ ∏_{B ∈ π} M #B`, which depends on `x` only through the
-moment bounds `M`. Families whose moments are bounded uniformly therefore have uniformly bounded
-cumulants, as used in the cumulant proof of the free central limit theorem.
+`(x, …, x)` along `s` is bounded in terms of bounds for the moments `φ (x ^ k)` with
+`0 < k ≤ #s` alone. Möbius inversion over the noncrossing partitions of `s` gives the explicit bound
+`∑_{π ∈ NC(s)} ‖μ(π, 1_s)‖ ∏_{B ∈ π} M #B`, which depends on `x` only through the moment bounds `M`.
+Families whose moments are bounded uniformly therefore have uniformly bounded cumulants, as used
+in the cumulant proof of the free central limit theorem.
 
 ## Main results
 
@@ -32,11 +32,11 @@ namespace TauCeti
 
 variable {R A α : Type*} [NormedCommRing R] [NormOneClass R] [Monoid A] [LinearOrder α]
 
-/-- *Uniform bound for free cumulants*: if the moments of `x` of order at most `#s` are bounded by
+/-- *Uniform bound for free cumulants*: if the positive-order moments of `x` up to `#s` satisfy
 `‖φ (x ^ k)‖ ≤ M k`, then the free cumulant of the constant word `(x, …, x)` along `s` is bounded
 by `∑_{π ∈ NC(s)} ‖μ(π, 1_s)‖ ∏_{B ∈ π} M #B`, which depends on `x` only through `M`. -/
 theorem norm_freeCumulant_const_le (φ : A → R) (x : A) {s : Finset α} {M : ℕ → ℝ}
-    (hM : ∀ k ≤ #s, ‖φ (x ^ k)‖ ≤ M k) :
+    (hM : ∀ k, 0 < k → k ≤ #s → ‖φ (x ^ k)‖ ≤ M k) :
     ‖freeCumulant φ (fun _ => x) s‖ ≤
       ∑ π : NoncrossingPartition s, ‖mu R π ⊤‖ * ∏ B ∈ π.1.parts, M #B := by
   rw [freeCumulant_eq_sum_mu_mul_partitionMoment]
@@ -44,6 +44,6 @@ theorem norm_freeCumulant_const_le (φ : A → R) (x : A) {s : Finset α} {M : �
   rw [partitionMoment_const]
   refine (norm_mul_le _ _).trans (mul_le_mul_of_nonneg_left ?_ (norm_nonneg _))
   exact (Finset.norm_prod_le _ _).trans (prod_le_prod₀ (fun _ _ => norm_nonneg _)
-    fun B hB => hM _ (card_le_card (π.1.le hB)))
+    fun B hB => hM _ (π.1.nonempty_of_mem_parts hB).card_pos (card_le_card (π.1.le hB)))
 
 end TauCeti

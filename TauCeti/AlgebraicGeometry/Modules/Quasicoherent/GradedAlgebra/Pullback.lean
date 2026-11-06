@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Pullback.Monoidal.Basic
-public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.Basic
+public import TauCeti.AlgebraicGeometry.Modules.Quasicoherent.GradedAlgebra.DirectSum
+public import TauCeti.AlgebraicGeometry.RelativeSpec.PullbackAlgebra
 public import TauCeti.CategoryTheory.Monoidal.EqToHom
 
 /-!
@@ -33,8 +34,17 @@ quasicoherent sheaves to modules on `Y`
 `CategoryTheory.GradedObject.one_mul_of_laxMonoidal`, `mul_one_of_laxMonoidal`,
 `mul_assoc_of_laxMonoidal` and `mul_comm_of_laxBraided`.
 
-Pulling back commutes with taking homogeneous components (`pullbackDegreeIso`); in particular
-the degree-one component of `f^* A` is the pullback of the degree-one component of `A`.
+Pullback along the identity and along a composite are identified with the identity and with the
+composite of pullbacks (`pullbackId`, `pullbackComp`), degree by degree through the corresponding
+comparisons for modules.
+
+Pullback commutes with the two ways of forgetting structure. Pulling back commutes with taking
+homogeneous components (`pullbackDegreeIso`); in particular the degree-one component of `f^* A` is
+the pullback of the degree-one component of `A`. The underlying direct-sum algebra of `f^* A` is
+the pullback of the direct-sum algebra, `f^* (⨁ₙ Aₙ) ≅ ⨁ₙ f^* Aₙ` as quasicoherent algebras
+(`pullbackToQuasicoherentAlgebraIso`), because pullback preserves direct sums. These are the
+comparisons through which base change of graded relative spectra, such as linear schemes, reduces
+to base change of relative spectra.
 
 ## Main declarations
 
@@ -43,18 +53,29 @@ the degree-one component of `f^* A` is the pullback of the degree-one component 
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.pullback_obj_obj_X`,
   `pullback_obj_one`, `pullback_obj_mul` and `pullback_map_hom_hom_hom`: its homogeneous
   components, unit, homogeneous multiplications and action on morphisms;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.pullbackId` and
+  `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.pullbackComp`: its identity and
+  composition isomorphisms, given in each degree by Mathlib's `Scheme.Modules.pullbackId` and
+  `Scheme.Modules.pullbackComp`;
 * `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.pullbackDegreeIso`: the degree-`n`
-  component of `f^* A` is the pullback of the degree-`n` component of `A`, naturally in `A`.
+  component of `f^* A` is the pullback of the degree-`n` component of `A`, naturally in `A`;
+* `TauCeti.AlgebraicGeometry.GradedQuasicoherentAlgebra.pullbackToQuasicoherentAlgebraIso`: the
+  isomorphism `f^* (⨁ₙ Aₙ) ≅ ⨁ₙ f^* Aₙ` of quasicoherent algebras, natural in `A`, whose inverse
+  is the pullback of the inclusion of `Aₙ` on the summand `f^* Aₙ`
+  (`ιTotal_pullbackToQuasicoherentAlgebraIso_inv_app`).
 
 ## References
 
+* A. Grothendieck and J. Dieudonné, *Éléments de géométrie algébrique II*, §1.5 and §8.
+* The Stacks Project, [Tag 01LQ](https://stacks.math.columbia.edu/tag/01LQ) (relative spectrum as
+  a functor).
 * The Stacks Project, [Tag 03EL](https://stacks.math.columbia.edu/tag/03EL) (pullback of tensor
   products).
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory Limits MonoidalCategory
 open Functor.LaxMonoidal Functor.OplaxMonoidal
 
 namespace TauCeti
@@ -329,6 +350,396 @@ theorem pullbackDegreeIso_inv_app_hom (n : ℕ) (A : GradedQuasicoherentAlgebra 
         (congrArg _ (degree_obj_obj A n))).trans
           ((degree_obj_obj _ n).trans (pullback_obj_obj_X f A n)).symm) :=
   (rfl)
+
+section IdComp
+
+variable {Z : Scheme.{u}}
+
+/-- The unit of a graded algebra, in the form required by `isoMkOfEq` for the trivial
+identification of its components. -/
+private lemma one_eq_comp_eqToHom (P : GradedQuasicoherentAlgebra X) :
+    P.obj.toMon.one = P.obj.toMon.one ≫ eqToHom (congrFun (rfl : P.obj.X = P.obj.X) 0).symm :=
+  (Category.comp_id _).symm
+
+/-- The homogeneous multiplication of a graded algebra, in the form required by `isoMkOfEq` for
+the trivial identification of its components. -/
+private lemma mul_eq_comp_eqToHom (P : GradedQuasicoherentAlgebra X) (i j : ℕ) :
+    P.obj.toMon.mul i j = (eqToHom (by rfl) : P.obj.X i ⊗ P.obj.X j ⟶ P.obj.X i ⊗ P.obj.X j) ≫
+      P.obj.toMon.mul i j ≫ eqToHom (congrFun (rfl : P.obj.X = P.obj.X) (i + j)).symm :=
+  ((Category.id_comp _).trans (Category.comp_id _)).symm
+
+/-- `pullback_obj_one`, bracketed as required by `isoMkOfEq`. -/
+private lemma pullback_obj_one_eq :
+    ((pullback f).obj A).obj.toMon.one =
+      ((Scheme.Modules.pullbackObjUnitIso f).inv ≫
+        (Scheme.Modules.pullback f).map A.obj.toMon.one) ≫
+          eqToHom (pullback_obj_obj_X f A 0).symm := by
+  rw [pullback_obj_one, Category.assoc]
+
+/-- The homogeneous components of the pullback `f^* A`, as one family, in the form required by
+`isoMkOfEq`. -/
+private lemma pullback_obj_X :
+    ((pullback f).obj A).obj.X = fun n ↦ (Scheme.Modules.pullback f).obj (A.obj.X n) :=
+  pullbackObj_X f A
+
+/-- `pullback_obj_mul`, with a single transport on the source, bracketed as required by
+`isoMkOfEq`. -/
+private lemma pullback_obj_mul_eq (i j : ℕ) :
+    ((pullback f).obj A).obj.toMon.mul i j =
+      (eqToHom (by rw [pullback_obj_X]) :
+        ((pullback f).obj A).obj.X i ⊗ ((pullback f).obj A).obj.X j ⟶ _) ≫
+        (inv (δ (Scheme.Modules.pullback f) (A.obj.X i) (A.obj.X j)) ≫
+          (Scheme.Modules.pullback f).map (A.obj.toMon.mul i j)) ≫
+            eqToHom (pullback_obj_obj_X f A (i + j)).symm :=
+  (mul_pullbackObj f A i j).trans (congrArg (_ ≫ · ≫ _) (pullbackMul_def f A i j))
+
+/-- The component at `P` of `pullbackId`, given degreewise by `Scheme.Modules.pullbackId`. -/
+private def pullbackIdApp (P : GradedQuasicoherentAlgebra X) : (pullback (𝟙 X)).obj P ≅ P :=
+  isoMkOfEq (pullback_obj_X (𝟙 X) P) rfl (pullback_obj_one_eq (𝟙 X) P)
+    (one_eq_comp_eqToHom P) (pullback_obj_mul_eq (𝟙 X) P) (mul_eq_comp_eqToHom P)
+    (fun n ↦ (Scheme.Modules.pullbackId X).app (P.obj.X n))
+    (by
+      -- Unfolding `CommMon.toMon` types the unit of `P` on the carrier `P.obj.X`.
+      dsimp only [CommMon.toMon]
+      rw [Iso.app_hom, Category.assoc, NatTrans.naturality, Functor.id_map,
+        ← Scheme.Modules.pullbackObjUnitIso_id, Iso.inv_hom_id_assoc])
+    (fun i j ↦ by
+      dsimp only [CommMon.toMon]
+      rw [Iso.app_hom, Iso.app_hom, Iso.app_hom, Category.assoc, NatTrans.naturality,
+        Functor.id_map, ← Scheme.Modules.pullback_id_δ_assoc, IsIso.inv_hom_id_assoc])
+
+private lemma pullbackIdApp_hom_hom_hom (P : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    (pullbackIdApp P).hom.hom.hom.hom n =
+      eqToHom (pullback_obj_obj_X (𝟙 X) P n) ≫
+        (Scheme.Modules.pullbackId X).hom.app (P.obj.X n) :=
+  -- The transport on the target is along `rfl`.
+  (isoMkOfEq_hom_hom_hom_hom ..).trans (congrArg _ (Category.comp_id _))
+
+private lemma pullbackIdApp_inv_hom_hom (P : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    (pullbackIdApp P).inv.hom.hom.hom n =
+      (Scheme.Modules.pullbackId X).inv.app (P.obj.X n) ≫
+        eqToHom (pullback_obj_obj_X (𝟙 X) P n).symm :=
+  -- The transport on the source is along `rfl`.
+  (isoMkOfEq_inv_hom_hom_hom ..).trans (Category.id_comp _)
+
+variable (X) in
+/-- Pullback of graded quasicoherent algebras along the identity is naturally the identity. -/
+def pullbackId : pullback (𝟙 X) ≅ 𝟭 (GradedQuasicoherentAlgebra X) :=
+  NatIso.ofComponents pullbackIdApp fun φ ↦ hom_ext _ _ fun n ↦ by
+    simp only [Functor.id_obj, Functor.id_map, ObjectProperty.FullSubcategory.comp_hom,
+      CommMon.comp_hom, GradedObject.categoryOfGradedObjects_comp]
+    rw [pullbackIdApp_hom_hom_hom, pullbackIdApp_hom_hom_hom, pullback_map_hom_hom_hom]
+    dsimp only [CommMon.toMon]
+    simp
+
+/-- The identity comparison of graded algebra pullback is Mathlib's identity comparison of module
+pullback in each degree. -/
+@[simp]
+theorem pullbackId_hom_app_hom_hom_hom (P : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    ((pullbackId X).hom.app P).hom.hom.hom n =
+      eqToHom (pullback_obj_obj_X (𝟙 X) P n) ≫
+        (Scheme.Modules.pullbackId X).hom.app (P.obj.X n) :=
+  pullbackIdApp_hom_hom_hom P n
+
+/-- The inverse identity comparison of graded algebra pullback is Mathlib's inverse identity
+comparison of module pullback in each degree. -/
+@[simp]
+theorem pullbackId_inv_app_hom_hom_hom (P : GradedQuasicoherentAlgebra X) (n : ℕ) :
+    ((pullbackId X).inv.app P).hom.hom.hom n =
+      (Scheme.Modules.pullbackId X).inv.app (P.obj.X n) ≫
+        eqToHom (pullback_obj_obj_X (𝟙 X) P n).symm :=
+  pullbackIdApp_inv_hom_hom P n
+
+/-- The component at `P` of `pullbackComp`, given degreewise by `Scheme.Modules.pullbackComp`. -/
+private def pullbackCompApp (g : X ⟶ Z) (P : GradedQuasicoherentAlgebra Z) :
+    (pullback f).obj ((pullback g).obj P) ≅ (pullback (f ≫ g)).obj P :=
+  isoMkOfEq
+    ((pullback_obj_X f ((pullback g).obj P)).trans
+      (funext fun n ↦ congrArg _ (pullback_obj_obj_X g P n)))
+    (pullback_obj_X (f ≫ g) P)
+    (oneM := (Scheme.Modules.pullbackObjUnitIso f).inv ≫
+      (Scheme.Modules.pullback f).map (Scheme.Modules.pullbackObjUnitIso g).inv ≫
+        (Scheme.Modules.pullback f).map ((Scheme.Modules.pullback g).map P.obj.toMon.one))
+    (by
+      simp only [pullback_obj_one]
+      -- Unfolding `CommMon.toMon` types the units on their carriers, so the transports
+      -- pulled back along `f` combine.
+      dsimp only [CommMon.toMon]
+      simp only [Functor.map_comp, Category.assoc]
+      rw [eqToHom_map, eqToHom_trans])
+    (pullback_obj_one_eq (f ≫ g) P)
+    (mulM := fun i j ↦ inv (δ (Scheme.Modules.pullback f) _ _) ≫
+      (Scheme.Modules.pullback f).map
+        (inv (δ (Scheme.Modules.pullback g) (P.obj.X i) (P.obj.X j))) ≫
+        (Scheme.Modules.pullback f).map ((Scheme.Modules.pullback g).map (P.obj.toMon.mul i j)))
+    (fun i j ↦ by
+      rw [pullback_obj_mul_eq, pullback_obj_mul_eq]
+      -- Unfolding `CommMon.toMon` types the multiplications on their carriers, so the
+      -- transports pulled back along `f` can be split off.
+      dsimp only [CommMon.toMon]
+      simp only [Functor.map_comp, Category.assoc]
+      rw [Functor.inv_δ_comp_map_eqToHom_assoc _ (pullback_obj_obj_X g P i)
+        (pullback_obj_obj_X g P j), eqToHom_trans_assoc, eqToHom_map, eqToHom_trans])
+    (pullback_obj_mul_eq (f ≫ g) P)
+    (fun n ↦ (Scheme.Modules.pullbackComp f g).app (P.obj.X n))
+    (by
+      dsimp only [CommMon.toMon]
+      rw [Iso.app_hom, Category.assoc, Category.assoc, ← Functor.comp_map, NatTrans.naturality,
+        Scheme.Modules.pullbackObjUnitIso_inv_comp_assoc])
+    (fun i j ↦ by
+      dsimp only [CommMon.toMon]
+      rw [Iso.app_hom, Iso.app_hom, Iso.app_hom, Category.assoc, Category.assoc,
+        ← Functor.comp_map, NatTrans.naturality,
+        Scheme.Modules.inv_δ_comp_pullbackComp_hom_app_assoc])
+
+private lemma pullbackCompApp_hom_hom_hom (g : X ⟶ Z) (P : GradedQuasicoherentAlgebra Z)
+    (n : ℕ) :
+    (pullbackCompApp f g P).hom.hom.hom.hom n =
+      eqToHom ((pullback_obj_obj_X f _ n).trans
+        (congrArg _ (pullback_obj_obj_X g P n))) ≫
+        (Scheme.Modules.pullbackComp f g).hom.app (P.obj.X n) ≫
+          eqToHom (pullback_obj_obj_X (f ≫ g) P n).symm :=
+  isoMkOfEq_hom_hom_hom_hom ..
+
+private lemma pullbackCompApp_inv_hom_hom (g : X ⟶ Z) (P : GradedQuasicoherentAlgebra Z)
+    (n : ℕ) :
+    (pullbackCompApp f g P).inv.hom.hom.hom n =
+      eqToHom (pullback_obj_obj_X (f ≫ g) P n) ≫
+        (Scheme.Modules.pullbackComp f g).inv.app (P.obj.X n) ≫
+          eqToHom ((pullback_obj_obj_X f _ n).trans
+            (congrArg _ (pullback_obj_obj_X g P n))).symm :=
+  isoMkOfEq_inv_hom_hom_hom ..
+
+/-- Pullback of graded quasicoherent algebras respects composition. -/
+def pullbackComp (g : X ⟶ Z) : pullback g ⋙ pullback f ≅ pullback (f ≫ g) :=
+  NatIso.ofComponents (pullbackCompApp f g) fun φ ↦ hom_ext _ _ fun n ↦ by
+    simp only [Functor.comp_obj, Functor.comp_map, ObjectProperty.FullSubcategory.comp_hom,
+      CommMon.comp_hom, GradedObject.categoryOfGradedObjects_comp]
+    rw [pullbackCompApp_hom_hom_hom, pullbackCompApp_hom_hom_hom, pullback_map_hom_hom_hom,
+      pullback_map_hom_hom_hom, pullback_map_hom_hom_hom]
+    -- As in `pullbackId`, unfold `CommMon.toMon` to cancel the transports.
+    dsimp only [CommMon.toMon]
+    simp only [Functor.map_comp, Category.assoc, eqToHom_trans_assoc]
+    rw [eqToHom_map, eqToHom_map]
+    simp [← Functor.comp_map]
+
+/-- The composition comparison of graded algebra pullback is Mathlib's composition comparison of
+module pullback in each degree. -/
+@[simp]
+theorem pullbackComp_hom_app_hom_hom_hom (g : X ⟶ Z) (P : GradedQuasicoherentAlgebra Z)
+    (n : ℕ) :
+    ((pullbackComp f g).hom.app P).hom.hom.hom n =
+      eqToHom ((pullback_obj_obj_X f _ n).trans
+        (congrArg _ (pullback_obj_obj_X g P n))) ≫
+        (Scheme.Modules.pullbackComp f g).hom.app (P.obj.X n) ≫
+          eqToHom (pullback_obj_obj_X (f ≫ g) P n).symm :=
+  pullbackCompApp_hom_hom_hom f g P n
+
+/-- The inverse composition comparison of graded algebra pullback is Mathlib's inverse
+composition comparison of module pullback in each degree. -/
+@[simp]
+theorem pullbackComp_inv_app_hom_hom_hom (g : X ⟶ Z) (P : GradedQuasicoherentAlgebra Z)
+    (n : ℕ) :
+    ((pullbackComp f g).inv.app P).hom.hom.hom n =
+      eqToHom (pullback_obj_obj_X (f ≫ g) P n) ≫
+        (Scheme.Modules.pullbackComp f g).inv.app (P.obj.X n) ≫
+          eqToHom ((pullback_obj_obj_X f _ n).trans
+            (congrArg _ (pullback_obj_obj_X g P n))).symm :=
+  pullbackCompApp_inv_hom_hom f g P n
+
+end IdComp
+
+section DirectSum
+
+open MonObj
+
+/-- The pullback along `f` of the inclusion of the summand `Aₙ` of `⨁ₙ Aₙ`. -/
+private abbrev pullbackιTotal (n : ℕ) :
+    ((pullback f).obj A).obj.X n ⟶
+      (Scheme.Modules.pullback f).obj (toQuasicoherentAlgebra.obj A).obj.X :=
+  eqToHom (pullback_obj_obj_X f A n) ≫ (Scheme.Modules.pullback f).map (ιTotal A n)
+
+/-- Pullback preserves the direct sum `⨁ₙ Aₙ`: the pullbacks of its summand inclusions exhibit
+`f^* (⨁ₙ Aₙ)` as a direct sum of the `f^* Aₙ`. -/
+private def isColimitPullbackιTotal : IsColimit (Cofan.mk _ (pullbackιTotal f A)) :=
+  (IsColimit.precomposeHomEquiv
+      (Discrete.natIso fun n ↦ eqToIso (pullback_obj_obj_X f A n.as)) _).symm
+    (isColimitCofanMkObjOfIsColimit (Scheme.Modules.pullback f) _ _ (isColimitιTotal A))
+
+/-- The comparison of modules `⨁ₙ f^* Aₙ ≅ f^* (⨁ₙ Aₙ)`, given on the summand `f^* Aₙ` by the
+pullback of the inclusion of `Aₙ`. -/
+private def directSumPullbackIso :
+    (toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X ≅
+      (Scheme.Modules.pullback f).obj (toQuasicoherentAlgebra.obj A).obj.X :=
+  (isColimitιTotal ((pullback f).obj A)).coconePointUniqueUpToIso (isColimitPullbackιTotal f A)
+
+private lemma ιTotal_directSumPullbackIso_hom (n : ℕ) :
+    ιTotal ((pullback f).obj A) n ≫ (directSumPullbackIso f A).hom = pullbackιTotal f A n :=
+  IsColimit.comp_coconePointUniqueUpToIso_hom (isColimitιTotal _) (isColimitPullbackιTotal f A)
+    (Discrete.mk n)
+
+private lemma pullbackιTotal_directSumPullbackIso_inv (n : ℕ) :
+    pullbackιTotal f A n ≫ (directSumPullbackIso f A).inv = ιTotal ((pullback f).obj A) n :=
+  IsColimit.comp_coconePointUniqueUpToIso_inv (isColimitιTotal _) (isColimitPullbackιTotal f A)
+    (Discrete.mk n)
+
+private lemma one_directSumPullbackIso_hom :
+    η[(toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X] ≫ (directSumPullbackIso f A).hom =
+      (Scheme.Modules.pullbackObjUnitIso f).inv ≫
+        (Scheme.Modules.pullback f).map η[(toQuasicoherentAlgebra.obj A).obj.X] := by
+  -- The carriers of quasicoherent algebras defeat `rw` and `simp` here, so the composites are
+  -- reassociated by explicit equations and the transports cancelled for abstract modules.
+  have key {P T Q Q' S : Y.Modules} (u : P ⟶ T) (m : T ⟶ Q') (h : Q' = Q) (h' : Q = Q')
+      (n : Q' ⟶ S) : (u ≫ m ≫ eqToHom h) ≫ (eqToHom h' ≫ n) = u ≫ m ≫ n := by
+    simp
+  rw [← one_ιTotal, ← one_ιTotal]
+  refine (Category.assoc _ _ _).trans ?_
+  refine (congrArg _ (ιTotal_directSumPullbackIso_hom f A 0)).trans ?_
+  refine (congrArg (· ≫ _) (pullback_obj_one f A)).trans ?_
+  refine (key _ _ _ _ _).trans ?_
+  exact congrArg _ ((Scheme.Modules.pullback f).map_comp _ _).symm
+
+private lemma mul_directSumPullbackIso_hom :
+    μ[(toQuasicoherentAlgebra.obj ((pullback f).obj A)).obj.X] ≫ (directSumPullbackIso f A).hom =
+      ((directSumPullbackIso f A).hom ⊗ₘ (directSumPullbackIso f A).hom) ≫
+        inv (δ (Scheme.Modules.pullback f)
+          (toQuasicoherentAlgebra.obj A).obj.X (toQuasicoherentAlgebra.obj A).obj.X) ≫
+          (Scheme.Modules.pullback f).map μ[(toQuasicoherentAlgebra.obj A).obj.X] := by
+  refine toQuasicoherentAlgebra_tensor_hom_ext fun i j ↦ ?_
+  -- `Mon.mul_eq`, restated on the carrier `B.obj.X`: it is stated on `B.obj.toMon.X`, which
+  -- `rw` does not identify with `B.obj.X` because `CommMon.toMon` is not reducible.
+  have hmul (B : GradedQuasicoherentAlgebra Y) :
+      GradedObject.Monoidal.ιTensorObj B.obj.X B.obj.X i j (i + j) rfl ≫ μ[B.obj.X] (i + j) =
+        B.obj.toMon.mul i j :=
+    (Mon.mul_eq B.obj.toMon i j).symm
+  -- The pullback of `(ιᵢ ⊗ ιⱼ) ≫ μ = mul ≫ ιᵢ₊ⱼ` through the inverse tensor comparisons, stated
+  -- for abstract modules: the carriers of quasicoherent algebras defeat `rw` and `simp`.
+  have key {Ai Aj Ak M : X.Modules} [Ai.IsQuasicoherent] [M.IsQuasicoherent]
+      {Pi Pj Pk : Y.Modules} (hi : Pi = (Scheme.Modules.pullback f).obj Ai)
+      (hj : Pj = (Scheme.Modules.pullback f).obj Aj)
+      (hk : (Scheme.Modules.pullback f).obj Ak = Pk)
+      (hk' : Pk = (Scheme.Modules.pullback f).obj Ak)
+      (hij : Pi ⊗ Pj = (Scheme.Modules.pullback f).obj Ai ⊗ (Scheme.Modules.pullback f).obj Aj)
+      (ιi : Ai ⟶ M) (ιj : Aj ⟶ M) (ιk : Ak ⟶ M) (m : Ai ⊗ Aj ⟶ Ak) (n : M ⊗ M ⟶ M)
+      (h : (ιi ⊗ₘ ιj) ≫ n = m ≫ ιk) :
+      (eqToHom hij ≫ (inv (δ (Scheme.Modules.pullback f) Ai Aj) ≫
+          (Scheme.Modules.pullback f).map m) ≫ eqToHom hk) ≫
+          eqToHom hk' ≫ (Scheme.Modules.pullback f).map ιk =
+        ((eqToHom hi ≫ (Scheme.Modules.pullback f).map ιi) ⊗ₘ
+          (eqToHom hj ≫ (Scheme.Modules.pullback f).map ιj)) ≫
+          inv (δ (Scheme.Modules.pullback f) M M) ≫
+            (Scheme.Modules.pullback f).map n := by
+    subst hi hj hk
+    simp only [eqToHom_refl, Category.id_comp, Category.assoc]
+    rw [← Functor.map_comp, ← h, Functor.map_comp, ← Category.assoc, ← Category.assoc]
+    congr 1
+    rw [IsIso.inv_comp_eq, Functor.OplaxMonoidal.δ_natural_assoc, IsIso.hom_inv_id,
+      Category.comp_id]
+  rw [ιTotal_tensorHom_ιTotal_mul_assoc, tensorHom_comp_tensorHom_assoc,
+    ιTotal_directSumPullbackIso_hom, ιTotal_directSumPullbackIso_hom f A i,
+    ιTotal_directSumPullbackIso_hom f A j, reassoc_of% hmul, pullback_obj_mul_eq]
+  exact key _ _ _ _ _ _ _ _ _ _ (mul_ιTotal A i j).symm
+
+/-- The direct-sum algebra `⨁ₙ f^* Aₙ` of the pullback is the pullback `f^* (⨁ₙ Aₙ)` of the
+direct-sum algebra. -/
+private def toQuasicoherentAlgebraPullbackIsoApp :
+    toQuasicoherentAlgebra.obj ((pullback f).obj A) ≅
+      (QuasicoherentAlgebra.pullback f).obj (toQuasicoherentAlgebra.obj A) :=
+  ObjectProperty.isoMk _ (CommMon.mkIso
+    (directSumPullbackIso f A ≪≫ eqToIso (QuasicoherentAlgebra.pullback_obj_X f _).symm)
+    (by
+      rw [QuasicoherentAlgebra.pullback_obj_one]
+      exact (Category.assoc _ _ _).symm.trans
+        ((congrArg (· ≫ _) (one_directSumPullbackIso_hom f A)).trans (Category.assoc _ _ _)))
+    (by
+      rw [QuasicoherentAlgebra.pullback_obj_mul]
+      -- As in `mul_directSumPullbackIso_hom`, cancel the carrier transports for abstract modules.
+      have key {S P T Q : Y.Modules} (g : S ⟶ P) (h : P = T) (h' : T = P) (r : P ⊗ P ⟶ Q) :
+          ((g ≫ eqToHom h) ⊗ₘ (g ≫ eqToHom h)) ≫ (eqToHom h' ⊗ₘ eqToHom h') ≫ r =
+            (g ⊗ₘ g) ≫ r := by
+        subst h
+        simp
+      exact (Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
+        (mul_directSumPullbackIso_hom f A)).trans ((Category.assoc _ _ _).trans
+          ((congrArg (_ ≫ ·) (Category.assoc _ _ _).symm).trans
+            (key _ (QuasicoherentAlgebra.pullback_obj_X f _).symm _ _).symm)))))
+
+private lemma ιTotal_toQuasicoherentAlgebraPullbackIsoApp_hom (n : ℕ) :
+    ιTotal ((pullback f).obj A) n ≫ (toQuasicoherentAlgebraPullbackIsoApp f A).hom.hom.hom.hom =
+      eqToHom (pullback_obj_obj_X f A n) ≫
+        (Scheme.Modules.pullback f).map (ιTotal A n) ≫
+          eqToHom (QuasicoherentAlgebra.pullback_obj_X f _).symm :=
+  (reassoc_of% ιTotal_directSumPullbackIso_hom f A n) _
+
+/-- The pullback of the direct-sum algebra of a graded quasicoherent algebra is the direct-sum
+algebra of its pullback: `f^* (⨁ₙ Aₙ) ≅ ⨁ₙ f^* Aₙ` as quasicoherent algebras, naturally in `A`.
+Its inverse is, on the summand `f^* Aₙ`, the pullback of the inclusion of `Aₙ`
+(`ιTotal_pullbackToQuasicoherentAlgebraIso_inv_app`). -/
+def pullbackToQuasicoherentAlgebraIso :
+    toQuasicoherentAlgebra ⋙ QuasicoherentAlgebra.pullback f ≅
+      pullback f ⋙ toQuasicoherentAlgebra :=
+  Iso.symm <| NatIso.ofComponents (toQuasicoherentAlgebraPullbackIsoApp f) fun {A B} φ ↦ by
+    apply ObjectProperty.hom_ext
+    apply CommMon.hom_ext
+    refine toQuasicoherentAlgebra_hom_ext fun n ↦ ?_
+    simp only [Functor.comp_map, ObjectProperty.FullSubcategory.comp_hom, CommMon.comp_hom]
+    refine ((Category.assoc _ _ _).symm.trans ((congrArg (· ≫ _)
+      (ιTotal_toQuasicoherentAlgebra_map ((pullback f).map φ) n)).trans
+        ((Category.assoc _ _ _).trans (congrArg (_ ≫ ·)
+          (ιTotal_toQuasicoherentAlgebraPullbackIsoApp_hom f B n))))).trans
+      (Eq.trans ?_ ((Category.assoc _ _ _).symm.trans
+        (congrArg (· ≫ _) (ιTotal_toQuasicoherentAlgebraPullbackIsoApp_hom f A n))).symm)
+    rw [pullback_map_hom_hom_hom, QuasicoherentAlgebra.pullback_map_hom_hom_hom]
+    -- Cancel the carrier transports for abstract modules, as in `mul_directSumPullbackIso_hom`.
+    have key {a b MA MB : X.Modules} {Sa Sb TA TB : Y.Modules} (φn : a ⟶ b) (ιA : a ⟶ MA)
+        (ιB : b ⟶ MB) (ψ : MA ⟶ MB) (hψ : ιA ≫ ψ = φn ≫ ιB)
+        (h₁ : Sa = (Scheme.Modules.pullback f).obj a)
+        (h₂ : (Scheme.Modules.pullback f).obj b = Sb)
+        (h₃ : Sb = (Scheme.Modules.pullback f).obj b)
+        (h₄ : (Scheme.Modules.pullback f).obj MB = TB)
+        (h₅ : Sa = (Scheme.Modules.pullback f).obj a)
+        (h₆ : (Scheme.Modules.pullback f).obj MA = TA)
+        (h₇ : TA = (Scheme.Modules.pullback f).obj MA)
+        (h₈ : (Scheme.Modules.pullback f).obj MB = TB) :
+        (eqToHom h₁ ≫ (Scheme.Modules.pullback f).map φn ≫ eqToHom h₂) ≫
+            eqToHom h₃ ≫ (Scheme.Modules.pullback f).map ιB ≫ eqToHom h₄ =
+          (eqToHom h₅ ≫ (Scheme.Modules.pullback f).map ιA ≫ eqToHom h₆) ≫
+            eqToHom h₇ ≫ (Scheme.Modules.pullback f).map ψ ≫ eqToHom h₈ := by
+      subst h₁ h₃ h₄ h₆
+      simp [← Functor.map_comp, hψ]
+    exact key _ _ _ _ (ιTotal_toQuasicoherentAlgebra_map φ n) _ _ _ _ _ _ _ _
+
+/-- On the summand `f^* Aₙ`, the comparison `⨁ₙ f^* Aₙ ≅ f^* (⨁ₙ Aₙ)` is the pullback of the
+inclusion of `Aₙ`. -/
+@[simp, reassoc]
+theorem ιTotal_pullbackToQuasicoherentAlgebraIso_inv_app (n : ℕ) :
+    ιTotal ((pullback f).obj A) n ≫
+        ((pullbackToQuasicoherentAlgebraIso f).inv.app A).hom.hom.hom =
+      eqToHom (pullback_obj_obj_X f A n) ≫
+        (Scheme.Modules.pullback f).map (ιTotal A n) ≫
+          eqToHom (QuasicoherentAlgebra.pullback_obj_X f _).symm :=
+  ιTotal_toQuasicoherentAlgebraPullbackIsoApp_hom f A n
+
+/-- The comparison `f^* (⨁ₙ Aₙ) ≅ ⨁ₙ f^* Aₙ` sends the pullback of the summand `Aₙ` to the
+summand `f^* Aₙ`. -/
+@[reassoc]
+theorem pullback_map_ιTotal_pullbackToQuasicoherentAlgebraIso_hom_app (n : ℕ) :
+    (Scheme.Modules.pullback f).map (ιTotal A n) ≫
+        eqToHom (QuasicoherentAlgebra.pullback_obj_X f _).symm ≫
+          ((pullbackToQuasicoherentAlgebraIso f).hom.app A).hom.hom.hom =
+      eqToHom (pullback_obj_obj_X f A n).symm ≫ ιTotal ((pullback f).obj A) n := by
+  have h : ((pullbackToQuasicoherentAlgebraIso f).hom.app A).hom.hom.hom =
+      eqToHom (QuasicoherentAlgebra.pullback_obj_X f _) ≫ (directSumPullbackIso f A).inv :=
+    -- The inverse of the component built from `directSumPullbackIso` and a transport.
+    (rfl)
+  rw [h]
+  -- The carrier of the pulled-back algebra defeats `rw` here; cancel the transports directly.
+  exact (congrArg (_ ≫ ·) ((eqToHom_trans_assoc _ _ _).trans
+    ((congrArg (· ≫ _) (eqToHom_refl _ _)).trans (Category.id_comp _)))).trans
+      ((eqToIso (pullback_obj_obj_X f A n)).eq_inv_comp.mpr
+        ((Category.assoc _ _ _).symm.trans (pullbackιTotal_directSumPullbackIso_inv f A n)))
+
+end DirectSum
 
 end GradedQuasicoherentAlgebra
 
