@@ -209,25 +209,16 @@ private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t :
   have hl' : (t l : k) = s i := mul_left_cancel₀ hl (by rw [hentry l, mul_comm])
   exact Units.ext (hj'.trans hl'.symm)
 
-/-- An invertible matrix is monomial, a diagonal matrix followed by a permutation matrix, as soon
-as conjugation by it keeps enough diagonal matrices diagonal to tell every two coordinates
-apart. -/
-theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
-    (hsep : ∀ i j, i ≠ j → ∃ t : Fin n → kˣ,
-      g * diagGL t * g⁻¹ ∈ diagonalTorus k n ∧ t i ≠ t j) :
+omit [IsCancelMulZero k] in
+/-- An invertible matrix over a nontrivial commutative semiring is monomial, a diagonal matrix
+followed by a permutation matrix, as soon as every row has at most one nonzero entry. -/
+private theorem exists_eq_diagGL_mul_permutationGL_of_row [Nontrivial k] {g : GL (Fin n) k}
+    (hrow : ∀ i j l, (g : Matrix (Fin n) (Fin n) k) i j ≠ 0 →
+      (g : Matrix (Fin n) (Fin n) k) i l ≠ 0 → j = l) :
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
       g = diagGL d * permutationGL (k := k) σ := by
-  classical
-  by_cases hk : Subsingleton k
-  · let _ := hk
-    exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
-  let _ : Nontrivial k := not_subsingleton_iff_nontrivial.mp hk
   let G : Matrix (Fin n) (Fin n) k := g
   let Ginv : Matrix (Fin n) (Fin n) k := (g⁻¹ : GL (Fin n) k)
-  have hrow (i j l : Fin n) (hj : G i j ≠ 0) (hl : G i l ≠ 0) : j = l := by
-    by_contra hjl
-    obtain ⟨t, ht, htjl⟩ := hsep j l hjl
-    exact htjl (apply_eq_apply_of_conj_mem_diagonalTorus ht hj hl)
   have hGGinv : G * Ginv = 1 := by
     simpa only [G, Ginv, ← Units.inv_eq_val_inv] using g.mul_inv
   have hGinvG : Ginv * G = 1 := by
@@ -278,6 +269,24 @@ theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
       by_contra h
       exact hj ((hf_iff i j).mp h)
     simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, Ne.symm hj, G] using hzero
+
+/-- An invertible matrix is monomial, a diagonal matrix followed by a permutation matrix, as soon
+as conjugation by it keeps enough diagonal matrices diagonal to tell every two coordinates
+apart. -/
+theorem exists_eq_diagGL_mul_permutationGL_of_forall_ne {g : GL (Fin n) k}
+    (hsep : ∀ i j, i ≠ j → ∃ t : Fin n → kˣ,
+      g * diagGL t * g⁻¹ ∈ diagonalTorus k n ∧ t i ≠ t j) :
+    ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
+      g = diagGL d * permutationGL (k := k) σ := by
+  classical
+  by_cases hk : Subsingleton k
+  · let _ := hk
+    exact ⟨fun _ ↦ 1, 1, Subsingleton.elim _ _⟩
+  let _ : Nontrivial k := not_subsingleton_iff_nontrivial.mp hk
+  refine exists_eq_diagGL_mul_permutationGL_of_row fun i j l hj hl ↦ ?_
+  by_contra hjl
+  obtain ⟨t, ht, htjl⟩ := hsep j l hjl
+  exact htjl (apply_eq_apply_of_conj_mem_diagonalTorus ht hj hl)
 
 variable [Nontrivial kˣ]
 
