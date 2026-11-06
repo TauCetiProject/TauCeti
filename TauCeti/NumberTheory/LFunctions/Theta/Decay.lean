@@ -39,25 +39,6 @@ namespace TauCeti.LFunctions
 
 variable {K : Type*} [Field K] [NumberField K]
 
-/-- Nonzero vectors of a discrete lattice have uniformly positive squared Euclidean length
-in the mixed embedding. The assertion also applies to the zero lattice. -/
-theorem exists_pos_le_mixedInner (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] :
-    ∃ δ > 0, ∀ x : L, x ≠ 0 → δ ≤ mixedInner K x x := by
-  classical
-  obtain ⟨ε, hε, hball⟩ := Metric.isOpen_iff.mp (isOpen_discrete ({0} : Set L)) 0 (by simp)
-  refine ⟨ε ^ 2, sq_pos_of_pos hε, fun x hx ↦ ?_⟩
-  have hεx : ε ≤ ‖x‖ := le_of_not_gt fun h ↦ hx <| by
-    have := hball (by simpa using h)
-    simpa using this
-  obtain ⟨w, _, hw⟩ := Finset.exists_mem_eq_sup' Finset.univ_nonempty
-    (fun w ↦ normAtPlace w (x : mixedSpace K))
-  have hnorm : ‖x‖ = normAtPlace w (x : mixedSpace K) := by
-    rw [← Submodule.norm_coe, norm_eq_sup'_normAtPlace, hw]
-  rw [mixedInner_self_eq_sum]
-  exact (pow_le_pow_left₀ hε.le (hεx.trans_eq hnorm) 2).trans
-    (Finset.single_le_sum (fun v _ ↦ sq_nonneg (normAtPlace v (x : mixedSpace K)))
-      (Finset.mem_univ w))
-
 /-- A Gaussian at parameters at least `t`, `t ≥ 1`, is bounded by a fixed summable Gaussian
 times an exponentially decreasing factor, provided the vector has squared length at least `δ`. -/
 private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
@@ -80,8 +61,9 @@ private theorem norm_archGaussian_le_exp_mul {x : mixedSpace K} {δ t : ℝ}
   rw [← Finset.mul_sum, ← mixedInner_self_eq_sum]
   nlinarith [Real.pi_pos]
 
-/-- Uniform exponential decay throughout the region where every archimedean parameter is at
-least `t`. The constants depend only on the discrete lattice. -/
+/-- The theta kernel minus its constant term `1` is bounded by `C * exp (-c * t)` whenever
+every archimedean parameter is at least `t ≥ 1`. The constants depend only on the discrete
+lattice. -/
 theorem exists_norm_latticeTheta_sub_one_le (L : Submodule ℤ (mixedSpace K))
     [DiscreteTopology L] :
     ∃ c > 0, ∃ C ≥ 0, ∀ t : ℝ, 1 ≤ t → ∀ y : realSpace K, (∀ w, t ≤ y w) →
@@ -104,9 +86,9 @@ theorem exists_norm_latticeTheta_sub_one_le (L : Submodule ℤ (mixedSpace K))
     _ = (∑' x, a x) * Real.exp (-(Real.pi * δ / 2) * t) := by
       rw [tsum_mul_left, mul_comm]
 
-/-- Uniform stretched-exponential decay of the theta kernel along the radial decomposition of
-any bounded subset of the norm-one surface. No fundamental-domain or unit-invariance hypothesis
-is needed. -/
+/-- Uniform stretched-exponential decay of the theta kernel minus its constant term `1` along
+the radial decomposition of any bounded subset of the norm-one surface. No fundamental-domain
+or unit-invariance hypothesis is needed. -/
 theorem exists_norm_latticeTheta_surfaceScale_sub_one_le
     (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) (hS : D ⊆ normOneSurface K) :
@@ -128,8 +110,9 @@ theorem exists_norm_latticeTheta_surfaceScale_sub_one_le
         (Real.rpow_nonneg hu0 (Module.finrank ℚ K : ℝ)⁻¹)
   simpa only [neg_mul, mul_assoc] using h
 
-/-- Every choice of surface parameters in a fixed bounded set gives decay faster than every
-power of the radial variable. This supplies rapid decay for the weak Mellin functional equation. -/
+/-- If `x u` eventually lies in a fixed bounded subset of the norm-one surface, then
+`latticeTheta L (surfaceScale (x u) u) - 1` is `O(u^r)` for every real `r` as `u → ∞`.
+This supplies rapid decay for the weak Mellin functional equation. -/
 theorem isBigO_latticeTheta_surfaceScale_sub_one_rpow
     (L : Submodule ℤ (mixedSpace K)) [DiscreteTopology L] {D : Set (realSpace K)}
     (hD : Bornology.IsBounded D) (hS : D ⊆ normOneSurface K)
