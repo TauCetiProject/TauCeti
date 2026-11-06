@@ -50,12 +50,14 @@ Jacobian criterion `TauCeti.etale_aeval_of_basis`. The node chart is its base ch
 
 * `Module.Basis.exists_etale_mul_eq_quadratic_of_point`: the factorization at a field-valued
   point, allowing the value field to extend the residue field.
-* `TauCeti.exists_etale_mul_eq_quadratic`: after an étale extension preserving the residue field
-  at `P`, the quadratic form is a product `s t` of étale coordinates vanishing at `P`.
+* `Module.Basis.exists_etale_mul_eq_quadratic`: after an étale extension preserving the residue
+  field at `P`, the quadratic form is a product `s t` of étale coordinates vanishing at `P`.
 * `TauCeti.NodeAlgebra.etale_lift_of_etale_aeval`: if `A[X, Y] → T` given by `X ↦ s` and
   `Y ↦ t` is étale, then so is the map `A[u, v] ⧸ (uv - h) → T ⧸ (st - h)` given by `u ↦ s` and
   `v ↦ t`.
-* `TauCeti.exists_etale_nodeAlgebra_hom`: étale locally around `P`, the zero locus of
+* `Module.Basis.exists_etale_nodeAlgebra_hom_of_point`: the node chart at a field-valued point,
+  retaining the equation of the original hypersurface.
+* `Module.Basis.exists_etale_nodeAlgebra_hom`: étale locally around `P`, the zero locus of
   `a p² + b p q + c q² - h` is étale over the node chart `A[u, v] ⧸ (uv - h)`, by a map sending
   `u, v` to elements `s, t` of the prime `P'` above `P`.
 
@@ -264,7 +266,7 @@ in `κ(P)`; that is, the quadratic form `a X² + b XY + c Y²` is nondegenerate 
 linear factors over `κ(P)`. Then there are an étale `W`-algebra `W'`, a prime `P'` of `W'` above
 `P` with the same residue field, and `s, t ∈ P'` with `s t = a p² + b p q + c q²`, such that
 `A[X, Y] → W'` given by `X ↦ s` and `Y ↦ t` is étale. -/
-theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
+theorem _root_.Module.Basis.exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
     (bW : Module.Basis (Fin 2) W Ω[W⁄A]) (hbW₀ : bW 0 = D A W p) (hbW₁ : bW 1 = D A W q)
     (a b c : W) (P : Ideal W) [P.IsPrime] (hp : p ∈ P) (hq : q ∈ P)
     (hdisc : algebraMap W P.ResidueField (discrim a b c) ≠ 0)
@@ -286,15 +288,50 @@ theorem exists_etale_mul_eq_quadratic [Algebra.Smooth A W] {p q : W}
 
 end
 
+/-- At a field-valued point where a nondegenerate binary quadratic form splits, its zero
+locus minus a base parameter is étale locally a node. Both node coordinates vanish at a lift
+of the point, and their product minus the parameter equals the original equation. -/
+theorem _root_.Module.Basis.exists_etale_nodeAlgebra_hom_of_point
+    {A W : Type u} [CommRing A] [CommRing W] [Algebra A W]
+    [Algebra.Smooth A W] {p q : W} (bW : Module.Basis (Fin 2) W Ω[W⁄A])
+    (hbW₀ : bW 0 = D A W p) (hbW₁ : bW 1 = D A W q) (a b c : W) (h : A)
+    (K : Type w) [Field K] [Algebra W K]
+    (hp : algebraMap W K p = 0) (hq : algebraMap W K q = 0)
+    (hdisc : algebraMap W K (discrim a b c) ≠ 0)
+    (hsplit : ∃ r : K, r ^ 2 + algebraMap W K b * r + algebraMap W K (a * c) = 0) :
+    ∃ (W' : Type u) (_ : CommRing W') (_ : Algebra W W') (_ : Algebra.Etale W W')
+      (_ : Algebra A W') (_ : IsScalarTower A W W') (ψ : W' →ₐ[W] K) (s t : W')
+      (φ : NodeAlgebra A h →ₐ[A]
+        W' ⧸ Ideal.span {algebraMap W W' (a * p ^ 2 + b * p * q + c * q ^ 2 - algebraMap A W h)}),
+      ψ s = 0 ∧ ψ t = 0 ∧
+      s * t - algebraMap A W' h =
+        algebraMap W W' (a * p ^ 2 + b * p * q + c * q ^ 2 - algebraMap A W h) ∧
+      φ (NodeAlgebra.coord h 0) = Ideal.Quotient.mk _ s ∧
+      φ (NodeAlgebra.coord h 1) = Ideal.Quotient.mk _ t ∧ φ.toRingHom.Etale := by
+  obtain ⟨W', _, _, _, _, _, ψ, s, t, hs, ht, hst, H⟩ :=
+    bW.exists_etale_mul_eq_quadratic_of_point hbW₀ hbW₁ a b c K hp hq hdisc hsplit
+  have heq : s * t - algebraMap A W' h =
+      algebraMap W W' (a * p ^ 2 + b * p * q + c * q ^ 2 - algebraMap A W h) := by
+    rw [map_sub, ← hst, ← IsScalarTower.algebraMap_apply]
+  let e := Ideal.quotientEquivAlgOfEq A (congrArg (fun g : W' ↦ Ideal.span {g}) heq)
+  refine ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, ψ,
+    s, t, e.toAlgHom.comp (NodeAlgebra.lift h _ _
+      (NodeAlgebra.quotient_mk_mul_mk h s t)), hs, ht, heq, ?_, ?_, ?_⟩
+  · simp [e]
+  · simp [e]
+  · exact RingHom.Etale.respectsIso.1 _ e.toRingEquiv
+      (NodeAlgebra.etale_lift_of_etale_aeval h s t H)
+
 /-- **Étale charts of a node from a split quadratic equation.** Let `W` be a smooth `A`-algebra
 and `p, q ∈ W` elements whose differentials form a basis of `Ω[W⁄A]`, both lying in a prime `P`.
 Let `a, b, c ∈ W` be such that the quadratic form `a X² + b XY + c Y²` is nondegenerate and split
-at `P`, as in `TauCeti.exists_etale_mul_eq_quadratic`, and let `h ∈ A`. Then, after an étale
+at `P`, as in `Module.Basis.exists_etale_mul_eq_quadratic`, and let `h ∈ A`. Then, after an étale
 extension `W → W'` and at a prime `P'` above `P` with the same residue field, the zero locus of
 `f = a p² + b p q + c q² - h` admits an étale map to the node chart `A[u, v] ⧸ (uv - h)`: there
 are `s, t ∈ P'` and an étale `A`-algebra map `A[u, v] ⧸ (uv - h) → W' ⧸ (f)` sending `u ↦ s` and
 `v ↦ t`. -/
-theorem exists_etale_nodeAlgebra_hom {A W : Type u} [CommRing A] [CommRing W] [Algebra A W]
+theorem _root_.Module.Basis.exists_etale_nodeAlgebra_hom
+    {A W : Type u} [CommRing A] [CommRing W] [Algebra A W]
     [Algebra.Smooth A W] {p q : W} (bW : Module.Basis (Fin 2) W Ω[W⁄A])
     (hbW₀ : bW 0 = D A W p) (hbW₁ : bW 1 = D A W q) (a b c : W) (h : A) (P : Ideal W)
     [P.IsPrime] (hp : p ∈ P) (hq : q ∈ P)
@@ -309,18 +346,12 @@ theorem exists_etale_nodeAlgebra_hom {A W : Type u} [CommRing A] [CommRing W] [A
       Function.Bijective (Ideal.ResidueField.map P P' (algebraMap W W') hP') ∧
       s ∈ P' ∧ t ∈ P' ∧ φ (NodeAlgebra.coord h 0) = Ideal.Quotient.mk _ s ∧
       φ (NodeAlgebra.coord h 1) = Ideal.Quotient.mk _ t ∧ φ.toRingHom.Etale := by
-  obtain ⟨W', _, _, _, _, _, P', _, hP', s, t, hκ, hs, ht, hst, H⟩ :=
-    exists_etale_mul_eq_quadratic bW hbW₀ hbW₁ a b c P hp hq hdisc hsplit
-  have hI : Ideal.span {s * t - algebraMap A W' h} =
-      Ideal.span {algebraMap W W' (a * p ^ 2 + b * p * q + c * q ^ 2 - algebraMap A W h)} := by
-    rw [map_sub, ← hst, ← IsScalarTower.algebraMap_apply]
-  let e := Ideal.quotientEquivAlgOfEq A hI
-  refine ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, P',
-    inferInstance, hP', s, t, e.toAlgHom.comp (NodeAlgebra.lift h _ _
-      (NodeAlgebra.quotient_mk_mul_mk h s t)), hκ, hs, ht, ?_, ?_, ?_⟩
-  · simp [e]
-  · simp [e]
-  · exact RingHom.Etale.respectsIso.1 _ e.toRingEquiv
-      (NodeAlgebra.etale_lift_of_etale_aeval h s t H)
+  obtain ⟨W', _, _, _, _, _, ψ, s, t, φ, hs, ht, -, hφ₀, hφ₁, hφ⟩ :=
+    bW.exists_etale_nodeAlgebra_hom_of_point hbW₀ hbW₁ a b c h P.ResidueField
+      (Ideal.algebraMap_residueField_eq_zero.mpr hp)
+      (Ideal.algebraMap_residueField_eq_zero.mpr hq) hdisc hsplit
+  exact ⟨W', inferInstance, inferInstance, inferInstance, inferInstance, inferInstance,
+    RingHom.ker ψ, RingHom.ker_isPrime _, ψ.comap_ker_eq_of_residueField.symm, s, t, φ,
+    ψ.residueFieldMap_bijective, RingHom.mem_ker.mpr hs, RingHom.mem_ker.mpr ht, hφ₀, hφ₁, hφ⟩
 
 end TauCeti

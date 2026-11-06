@@ -24,7 +24,8 @@ from the node algebra to the quotient by the original equation `f`.
 
 The construction combines `Module.Basis.exists_etale_eq_algebraMap_add_quadratic`, which
 centres the function along its critical section, with
-`Module.Basis.exists_etale_mul_eq_quadratic_of_point`, which splits the quadratic part.
+`Module.Basis.exists_etale_nodeAlgebra_hom_of_point`, which splits the quadratic part and
+constructs its node chart.
 An algebraic closure is used only as the value field of a point: all algebra extensions in
 the resulting chart are étale and of finite presentation.
 
@@ -81,9 +82,14 @@ theorem exists_etale_nodeAlgebra_hom_of_critical {A W : Type u} [CommRing A] [Co
     (by rw [Polynomial.degree_quadratic one_ne_zero]; norm_num)
   have hroot : ∃ r : K, r ^ 2 + algebraMap W' K b * r + algebraMap W' K (a * c) = 0 := by
     exact ⟨r, by simpa [Polynomial.IsRoot] using hr⟩
-  obtain ⟨T, _, _, _, _, _, ψ, s, t, hs, ht, hst, het⟩ :=
-    bW'.exists_etale_mul_eq_quadratic_of_point (hbW' 0) (hbW' 1) a b c K
-      (hyK 0) (hyK 1) hdiscK hroot
+  have hquad' : a * y 0 ^ 2 + b * y 0 * y 1 + c * y 1 ^ 2 - algebraMap A' W' (-h) =
+      algebraMap W W' f := by
+    rw [map_neg, sub_neg_eq_add, hquad]
+    exact add_comm _ _
+  have hchart := bW'.exists_etale_nodeAlgebra_hom_of_point (hbW' 0) (hbW' 1) a b c (-h) K
+    (hyK 0) (hyK 1) hdiscK hroot
+  rw [hquad'] at hchart
+  obtain ⟨T, _, _, _, _, _, ψ, s, t, φ, hs, ht, heq, hφ₀, hφ₁, hφ⟩ := hchart
   -- Compose the ambient étale extensions and record both compatible base structures.
   let : Algebra W T := ((algebraMap W' T).comp (algebraMap W W')).toAlgebra
   have : IsScalarTower W W' T := .of_algebraMap_eq fun _ ↦ rfl
@@ -104,25 +110,10 @@ theorem exists_etale_nodeAlgebra_hom_of_critical {A W : Type u} [CommRing A] [Co
       Ideal.algebraMap_residueField_eq_zero]
   have hPQ : P = Q.comap (algebraMap W T) := by
     rw [IsScalarTower.algebraMap_eq W W' T, ← Ideal.comap_comap, ← hQ, ← hP']
-  -- The change of coordinates identifies the original principal ideal with the node equation.
-  have heq : s * t - algebraMap A' T (-h) = algebraMap W T f := by
-    rw [map_neg, sub_neg_eq_add, hst, IsScalarTower.algebraMap_apply W W' T, hquad,
-      IsScalarTower.algebraMap_apply A' W' T]
-    simp only [map_add]
-    exact add_comm _ _
-  have hI : Ideal.span {s * t - algebraMap A' T (-h)} =
-      Ideal.span {algebraMap W T f} := by rw [heq]
-  let e := Ideal.quotientEquivAlgOfEq A' hI
-  let φ := e.toAlgHom.comp (TauCeti.NodeAlgebra.lift (-h) _ _
-    (TauCeti.NodeAlgebra.quotient_mk_mul_mk (-h) s t))
   refine ⟨A', inferInstance, inferInstance, inferInstance, T, inferInstance, inferInstance,
     inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, Q,
     RingHom.ker_isPrime _, -h, s, t, φ, hPQ, ?_,
-    RingHom.mem_ker.mpr hs, RingHom.mem_ker.mpr ht, heq, ?_, ?_, ?_⟩
-  · simpa only [hPQ, Ideal.mem_comap] using hf₀
-  · simp [φ, e]
-  · simp [φ, e]
-  · exact RingHom.Etale.respectsIso.1 _ e.toRingEquiv
-      (TauCeti.NodeAlgebra.etale_lift_of_etale_aeval (-h) s t het)
+    RingHom.mem_ker.mpr hs, RingHom.mem_ker.mpr ht, heq, hφ₀, hφ₁, hφ⟩
+  simpa only [hPQ, Ideal.mem_comap] using hf₀
 
 end Module.Basis
