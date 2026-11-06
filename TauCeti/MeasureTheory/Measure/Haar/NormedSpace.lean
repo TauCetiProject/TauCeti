@@ -54,6 +54,8 @@ to `ℝ` gives the same bound for `‖det f‖` over `ℂ`, or any `RCLike` fiel
   with the measure of a closed ball of the same radius, agrees with it up to a null set.
 * `MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff`: concentric balls are ordered by
   measure as by radius.
+* `MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq`: every finite nonnegative value is the
+  measure of a centered ball in a nontrivial space.
 * `MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt`: in a nontrivial space, the set where
   the centered ball has measure below `m` has measure `m`.
 * `MeasureTheory.Measure.addHaar_real_closedBall_div_le`: a closed ball of radius `R ≤ c r` has
@@ -210,6 +212,19 @@ theorem _root_.MeasureTheory.Measure.addHaar_ball_lt_addHaar_ball_iff
     ((ENNReal.ofReal_lt_ofReal_iff_of_nonneg (by positivity)).2
       (pow_lt_pow_left₀ hab ha finrank_pos.ne'))
 
+/-- Every finite nonnegative value is the measure of a centered ball in a nontrivial
+finite-dimensional real normed space. -/
+theorem _root_.MeasureTheory.Measure.exists_nonneg_addHaar_ball_eq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    [Nontrivial E] [MeasurableSpace E] [BorelSpace E] (mu : Measure E) [mu.IsAddHaarMeasure]
+    {m : ENNReal} (hm : m ≠ ⊤) : ∃ r : ℝ, 0 ≤ r ∧ mu (ball (0 : E) r) = m := by
+  have hω0 : mu (ball (0 : E) 1) ≠ 0 := (measure_ball_pos mu 0 one_pos).ne'
+  refine ⟨(m / mu (ball (0 : E) 1)).toReal ^ (finrank ℝ E : ℝ)⁻¹, by positivity, ?_⟩
+  rw [mu.addHaar_ball 0 (by positivity),
+    Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg finrank_pos.ne',
+    ENNReal.ofReal_toReal (ENNReal.div_ne_top hm hω0),
+    ENNReal.div_mul_cancel hω0 measure_ball_lt_top.ne]
+
 /-- In a nontrivial finite-dimensional space, `{x | μ (ball 0 ‖x‖) < m}` is the centered open ball
 of `μ`-measure `m` when `m` is finite, and the whole space when `m = ∞`; in both cases its
 measure is `m`. -/
@@ -223,13 +238,7 @@ theorem _root_.MeasureTheory.Measure.addHaar_setOf_addHaar_ball_norm_lt
       Set.eq_univ_of_forall fun _ ↦ measure_ball_lt_top
     rw [huniv, measure_univ_of_isAddLeftInvariant]
   -- For finite `m`, pick the radius `r` of the centered ball of measure `m`.
-  have hω0 : mu (ball (0 : E) 1) ≠ 0 := (measure_ball_pos mu 0 one_pos).ne'
-  obtain ⟨r, hr0, hr⟩ : ∃ r : ℝ, 0 ≤ r ∧ mu (ball (0 : E) r) = m := by
-    refine ⟨(m / mu (ball (0 : E) 1)).toReal ^ (finrank ℝ E : ℝ)⁻¹, by positivity, ?_⟩
-    rw [mu.addHaar_ball 0 (by positivity),
-      Real.rpow_inv_natCast_pow ENNReal.toReal_nonneg finrank_pos.ne',
-      ENNReal.ofReal_toReal (ENNReal.div_ne_top hm hω0),
-      ENNReal.div_mul_cancel hω0 measure_ball_lt_top.ne]
+  obtain ⟨r, hr0, hr⟩ := mu.exists_nonneg_addHaar_ball_eq hm
   have hset : {x : E | mu (ball (0 : E) ‖x‖) < m} = ball 0 r := by
     ext x
     rw [← hr, Set.mem_ofPred_eq, mu.addHaar_ball_lt_addHaar_ball_iff 0 (norm_nonneg x),
