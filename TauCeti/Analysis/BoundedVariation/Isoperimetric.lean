@@ -11,6 +11,7 @@ import TauCeti.Analysis.BoundedVariation.Calibration
 import TauCeti.Analysis.BoundedVariation.SmoothApproximation
 import TauCeti.Analysis.Calculus.ContDiff.LevelSet
 import TauCeti.Analysis.Calculus.MeanValue
+import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.Lebesgue.BrunnMinkowski.Basic
 import TauCeti.Topology.Order.Sublevel
@@ -166,21 +167,16 @@ private theorem div_mul_le_integral_mul_indicator {w : E → ℝ} (hw : ContDiff
       have hx : ε ≤ |‖fderiv ℝ w x‖ - 1| := hx
       rw [hnorm x h0, sub_self, abs_zero] at hx
       linarith
-  -- Along `η k = min η₀ η₁ / (k + 1)`, apply the one-step estimate and let `k → ∞`.
+  -- Along a sequence `η k` decreasing to `0` below `min η₀ η₁`, apply the one-step estimate
+  -- and let `k → ∞`.
   set m := min η₀ η₁
   have hm : 0 < m := lt_min hη₀ hη₁
-  let η : ℕ → ℝ := fun k => m / (k + 1)
-  have hηpos (k : ℕ) : 0 < η k := by positivity
-  have hηm (k : ℕ) : η k ≤ m := div_le_self hm.le (by linarith [k.cast_nonneg (α := ℝ)])
-  have hηanti : Antitone η := fun i j hij =>
-    div_le_div_of_nonneg_left hm.le (by positivity) (by gcongr)
-  have hηlim : Tendsto η atTop (𝓝 0) := by
-    have := (tendsto_one_div_add_atTop_nhds_zero_nat (𝕜 := ℝ)).const_mul m
-    rw [mul_zero] at this
-    exact this.congr fun k => by simp only [η]; ring
+  obtain ⟨η, hηs, hηmem, hηlim⟩ := exists_seq_strictAnti_tendsto' hm
+  have hηpos (k : ℕ) : 0 < η k := (hηmem k).1
+  have hηm (k : ℕ) : η k ≤ m := (hηmem k).2.le
+  have hηanti : Antitone η := hηs.antitone
   let G : ℕ → Set E := fun k => {x | η k ≤ w x}
-  let S : ℕ → Set E := fun k => w ⁻¹' Ioo 0 (η k)
-  -- The superlevel sets `G k` exhaust `F`, and the shells `S k` shrink to the empty set.
+  -- The superlevel sets `G k` exhaust `F`, and the shells `{0 < w < η k}` shrink to the empty set.
   have hGlim : Tendsto (fun k => volume (G k)) atTop (𝓝 (volume F)) := by
     have hU : (⋃ k, G k) = F := by
       ext x
@@ -190,20 +186,10 @@ private theorem div_mul_le_integral_mul_indicator {w : E → ℝ} (hw : ContDiff
     have hmono : Monotone G := fun i j hij x (hx : η i ≤ w x) => (hηanti hij).trans hx
     have := tendsto_measure_iUnion_atTop (μ := volume) hmono
     rwa [hU] at this
-  have hSlim : Tendsto (fun k => ∫ x in S k, |divergenceCLM ψ x|) atTop (𝓝 0) := by
-    have hI : (⋂ k, S k) = ∅ := by
-      refine eq_empty_of_forall_notMem fun x hx => ?_
-      simp only [mem_iInter] at hx
-      obtain ⟨k, hk⟩ := (hηlim.eventually (gt_mem_nhds (hx 0).1)).exists
-      exact (hx k).2.not_gt hk
-    have hanti : Antitone S := fun i j hij x (hx : w x ∈ Ioo 0 (η j)) =>
-      ⟨hx.1, hx.2.trans_le (hηanti hij)⟩
-    have hDint : Integrable fun x => |divergenceCLM ψ x| :=
-      ((divergenceCLM ψ).continuous.integrable_of_hasCompactSupport
-        (divergenceCLM ψ).hasCompactSupport).abs
-    have := tendsto_setIntegral_of_antitone (μ := volume)
-      (fun k => hw.continuous.measurable measurableSet_Ioo) hanti ⟨0, hDint.integrableOn⟩
-    rwa [hI, setIntegral_empty] at this
+  have hDint : Integrable fun x => |divergenceCLM ψ x| :=
+    ((divergenceCLM ψ).continuous.integrable_of_hasCompactSupport
+      (divergenceCLM ψ).hasCompactSupport).abs
+  have hSlim := tendsto_setIntegral_preimage_Ioo_zero hDint hw.continuous.measurable hηanti hηlim
   have hlhs : Tendsto (fun k => (1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *
       (volume.real (G k) ^ (n : ℝ)⁻¹) ^ (n - 1))) atTop
       (𝓝 ((1 - ε) / (1 + ε) * (n * volume.real (ball (0 : E) 1) ^ (n : ℝ)⁻¹ *

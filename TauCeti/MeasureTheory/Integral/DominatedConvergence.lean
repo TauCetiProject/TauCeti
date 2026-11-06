@@ -30,6 +30,8 @@ shrinking neighbourhood of zero from an integrable function vanishing at zero.
   to one on `ball 0 (R i)` with `R i → ∞` tend to the integral over the whole space.
 * `TauCeti.tendsto_integral_abs_gt`: removing a shrinking neighbourhood of zero recovers the
   integral of an integrable function vanishing at zero.
+* `TauCeti.tendsto_setIntegral_preimage_Ioo_zero`: integrals of an integrable function over the
+  shells `{0 < w < η k}` tend to `0` as `η k` decreases to `0`.
 -/
 
 public section
@@ -144,5 +146,24 @@ theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E
   · refine tendsto_const_nhds.congr' ?_
     filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
     rw [hχ1 i x hi, one_smul]
+
+/-- **Integrals over shrinking shells vanish.** If `w` is measurable and `η k` decreases to `0`,
+then the integral of an integrable `f` over the shells `{0 < w < η k}` tends to `0`, since these
+shells decrease to the empty set. -/
+theorem tendsto_setIntegral_preimage_Ioo_zero {α F : Type*} [MeasurableSpace α]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {μ : Measure α} {f : α → F} (hf : Integrable f μ)
+    {w : α → ℝ} (hw : Measurable w) {η : ℕ → ℝ} (hηanti : Antitone η)
+    (hηlim : Tendsto η atTop (𝓝 0)) :
+    Tendsto (fun k ↦ ∫ x in w ⁻¹' Ioo 0 (η k), f x ∂μ) atTop (𝓝 0) := by
+  have hI : (⋂ k, w ⁻¹' Ioo 0 (η k)) = ∅ := by
+    refine eq_empty_of_forall_notMem fun x hx => ?_
+    simp only [mem_iInter] at hx
+    obtain ⟨k, hk⟩ := (hηlim.eventually (gt_mem_nhds (hx 0).1)).exists
+    exact (hx k).2.not_gt hk
+  have hanti : Antitone fun k ↦ w ⁻¹' Ioo 0 (η k) := fun i j hij x (hx : w x ∈ Ioo 0 (η j)) =>
+    ⟨hx.1, hx.2.trans_le (hηanti hij)⟩
+  have := tendsto_setIntegral_of_antitone (μ := μ) (fun k => hw measurableSet_Ioo) hanti
+    ⟨0, hf.integrableOn⟩
+  rwa [hI, setIntegral_empty] at this
 
 end TauCeti
