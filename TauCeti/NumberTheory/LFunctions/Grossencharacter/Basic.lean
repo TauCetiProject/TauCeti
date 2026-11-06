@@ -189,17 +189,14 @@ theorem toHeckeCharacter_primeIdele (χ : Grossencharacter K 𝔪) (v : HeightOn
     (hu : Valued.v (u : v.adicCompletion K) = WithZero.exp (-1)) :
     ((χ.toHeckeCharacter.finiteComponent v u : ℂˣ) : ℂ) =
       χ.unitaryWeight.1 v.asIdeal * (v.asIdeal.absNorm : ℂ) ^ (χ.idealShift : ℂ) := by
-  have hnorm : ((ideleClassNorm (IdeleClassGroup.ofAdicCompletion (𝓞 K) K v u) : ℝ≥0) : ℝ) =
-      (v.asIdeal.absNorm : ℝ)⁻¹ := by
-    rw [IdeleClassGroup.ofAdicCompletion_apply, ideleClassNorm_mk, coe_ideleNorm_ofAdicCompletion,
-      FinitePlace.norm_adicCompletion_eq_absNorm_zpow v u.ne_zero, hu, WithZero.log_exp,
-      zpow_neg_one]
+  -- Split `χ = χ_u ‖·‖ ^ shift`; a uniformizer idele has norm `N(v)⁻¹`.
   conv_lhs => rw [← χ.toHeckeCharacter.unitaryPart_mul_normPow_shift]
-  rw [HeckeCharacter.finiteComponent_apply, ContinuousMonoidHom.mul_apply, Units.val_mul,
-    HeckeCharacter.normPow_apply, hnorm, χ.unitaryWeight_apply v hv u hu,
-    HeckeCharacter.finiteComponent_apply, idealShift_def, Complex.ofReal_neg, Complex.cpow_neg,
-    Complex.ofReal_inv, Complex.ofReal_natCast,
-    Complex.inv_cpow _ _ (by simpa using Real.pi_ne_zero.symm)]
+  rw [χ.unitaryWeight_apply v hv u hu, HeckeCharacter.finiteComponent_apply,
+    HeckeCharacter.finiteComponent_apply, ContinuousMonoidHom.mul_apply, Units.val_mul,
+    HeckeCharacter.normPow_apply, IdeleClassGroup.ofAdicCompletion_apply, ideleClassNorm_mk,
+    coe_ideleNorm_ofAdicCompletion_of_valued_eq_exp_neg_one v hu, idealShift_def]
+  push_cast
+  rw [Complex.cpow_neg, Complex.inv_cpow _ _ (by simpa using Real.pi_ne_zero.symm)]
 
 /-! ### The presentation of a ray class character -/
 
@@ -232,6 +229,9 @@ def ofRayClassCharacter (η : RayClassCharacter 𝔪) : Grossencharacter K 𝔪 
     have hv' : v ∉ 𝔪.support := (𝔪.mem_support_iff v).not.mpr hv
     have hprime : Ideal.IsPrimeTo v.asIdeal 𝔪.support := Ideal.isPrimeTo_asIdeal_iff.mpr hv'
     have : Finite (𝓞 K ⧸ v.asIdeal) := Ring.HasFiniteQuotients.finiteQuotient v.ne_bot
+    -- The ray-class weight at `v` is `η` on the ray class of `v`; the character of `η` is its own
+    -- unitary part, and its local component at `u` is `η` on the ray class of the idele `u`,
+    -- which is the ray class of `v` because `u` is a uniformizer.
     rw [RayClassCharacter.val_toUnitaryIdealWeight,
       RayClassCharacter.toMultiplicativeIdealWeight_apply_of_isPrimeTo η hprime,
       RayClassCharacter.onIdeals_apply, idealClass_apply,
