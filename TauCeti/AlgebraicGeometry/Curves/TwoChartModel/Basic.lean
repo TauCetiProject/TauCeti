@@ -222,23 +222,7 @@ theorem isPullback :
       (ιFinite hF hx) (ιInfinity hF hx) := by
   have := isOpenImmersion_specMap_finiteChartRestriction hF hx
   have := isOpenImmersion_specMap_infinityChartRestriction hF hx
-  refine IsOpenImmersion.isPullback _ _ _ _ (condition hF hx).symm (le_antisymm ?_ ?_)
-  · rintro q ⟨p, hp⟩
-    -- `ιFinite` and `ιInfinity` are the colimit inclusions of the two legs of the span, and a
-    -- point of both legs comes from the apex, the overlap.
-    let D := span
-      (Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom))
-      (Spec.map (CommRingCat.ofHom (infinityChartRestriction (k := k) x).toRingHom))
-    have hp' : colimit.ι D WalkingSpan.left p = colimit.ι D WalkingSpan.right q := hp
-    obtain ⟨j, fp, fq, z, rfl, rfl⟩ := (Scheme.IsLocallyDirected.ι_eq_ι_iff _).mp hp'
-    rcases j with _ | _ | _
-    · cases fq
-      exact ⟨z, rfl⟩
-    · cases fq
-    · cases fp
-  · rintro _ ⟨p, rfl⟩
-    exact ⟨Spec.map (CommRingCat.ofHom (finiteChartRestriction (k := k) x).toRingHom) p, by
-      rw [← Scheme.Hom.comp_apply, ← Scheme.Hom.comp_apply, condition]⟩
+  exact Scheme.isPullback_pushout_of_isOpenImmersion _ _
 
 instance : IsReduced (twoChartModel hF hx) := by
   -- Every stalk is a stalk of one of the two charts, which are spectra of domains.
