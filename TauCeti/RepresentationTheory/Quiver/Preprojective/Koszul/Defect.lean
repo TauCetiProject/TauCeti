@@ -32,7 +32,7 @@ positive length on the left. It vanishes at every vertex exactly when these Kosz
 projective resolutions, as for every orientation of a connected graph which is not a tree
 (`TauCeti.preprojectiveKoszulLeft_injective_of_not_isAcyclic`). This file computes it when `Π` is
 finite-dimensional, which by
-`TauCeti.finiteDimensional_preprojectiveAlgebra_of_isSimplyLaced` covers every orientation of a
+`TauCeti.finiteDimensional_preprojectiveAlgebra_of_iso` covers every orientation of a
 simply-laced Dynkin diagram: **`K_v` is one-dimensional at every vertex**, spanned by a single
 element `y_v` of some graded corner `e_v Π_n e_u`. So the Koszul complex fails to be a resolution
 by exactly a one-dimensional simple module at its left end, concentrated in one degree.
