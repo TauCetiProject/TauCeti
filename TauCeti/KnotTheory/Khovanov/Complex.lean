@@ -173,6 +173,29 @@ def khovanovComplexπ {i : ℤ}
     (D.toPDCode.resolutionCube hD R
       (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ S
 
+/-- The normalized state projection is the cube projection after the index translation. -/
+theorem khovanovComplexπ_def {i : ℤ}
+    (S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount}) :
+    D.khovanovComplexπ hD R j S =
+      eqToHom (D.khovanovComplex_X hD R j i) ≫
+        (D.toPDCode.resolutionCube hD R
+          (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplexπ S := (rfl)
+
+/-- The state projections followed by their inclusions sum to the identity of a normalized
+cochain term. -/
+@[simp]
+theorem khovanovComplex_total (i : ℤ) :
+    ∑ S : {S : Finset (Fin n) // (#S : ℤ) = i + D.negativeCrossingCount},
+      D.khovanovComplexπ hD R j S ≫ D.khovanovComplexι hD R j S = 𝟙 _ := by
+  have h := congrArg (fun f ↦ eqToHom (D.khovanovComplex_X hD R j i) ≫ f ≫
+    eqToHom (D.khovanovComplex_X hD R j i).symm)
+    ((D.toPDCode.resolutionCube hD R
+      (j - D.positiveCrossingCount + 2 * D.negativeCrossingCount)).cubeComplex_total
+        (i + D.negativeCrossingCount))
+  simpa only [khovanovComplexπ_def, khovanovComplexι_def, Preadditive.comp_sum,
+    Preadditive.sum_comp, Category.assoc, Category.id_comp, eqToHom_trans,
+    eqToHom_refl] using h
+
 /-- Inclusion followed by projection is the identity on a state summand. -/
 @[reassoc (attr := simp)]
 theorem khovanovComplexι_π_self {i : ℤ}
