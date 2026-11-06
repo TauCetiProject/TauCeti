@@ -232,9 +232,7 @@ theorem norm_image_sub_sub_sub_le_of_hasFDerivWithinAt {s : Set E} {g : E → F}
   have hmv := norm_image_sub_le_of_norm_deriv_le_segment' hderiv hbound 1
     (right_mem_Icc.2 zero_le_one)
   have hψ : ψ 1 - ψ 0 = g (x + w) - g x - g' x w - (2 : ℝ)⁻¹ • g'' x w w := by
-    simp only [ψ]
-    simp only [one_smul, zero_smul, add_zero, one_pow, ne_eq, OfNat.ofNat_ne_zero,
-      not_false_eq_true, zero_pow, zero_div, sub_zero, one_div]
+    simp [ψ]
     abel
   rw [← hψ]
   simpa using hmv
@@ -340,8 +338,10 @@ private theorem hasFDerivWithinAt_and_holderOnWith_fderiv_fderiv {U s : Set E} {
   · exact (((hu.contDiffAt (hU.mem_nhds (hsU hy))).fderiv_right (m := 1)
       (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt.hasFDerivWithinAt
   · -- `D²u` and the second Fréchet derivative differ by a linear isometry.
-    simpa only [TauCeti.iteratedFDeriv_two_eq_comp_fderiv_fderiv, Function.comp_apply,
-      LinearIsometryEquiv.edist_map] using hH y hy z hz
+    rw [← TauCeti.continuousMultilinearCurryFin2_iteratedFDeriv_two u y,
+      ← TauCeti.continuousMultilinearCurryFin2_iteratedFDeriv_two u z,
+      LinearIsometryEquiv.edist_map]
+    exact hH y hy z hz
 
 /-- **Interpolation of the gradient of a `C²` function on a ball.** Let `u` be `C²` on an open set
 `U ⊇ s`, with `D²u` `α`-Hölder with constant `H` on `s` and `‖u‖ ≤ M` on `s`. Then

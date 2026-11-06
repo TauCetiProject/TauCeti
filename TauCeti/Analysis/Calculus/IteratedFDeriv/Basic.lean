@@ -14,9 +14,8 @@ The `i`-th iterated derivative of the `m`-th iterated derivative of a function h
 as its `(i + m)`-th iterated derivative. This extends Mathlib's `norm_iteratedFDeriv_fderiv`, the
 case `m = 1`, and lets bounds on all iterated derivatives of a function transfer to its iterated
 derivative fields. The file also supplies the two-variable currying isometry used to identify
-continuous multilinear second derivatives with curried bilinear maps, expresses the second
-iterated derivative through it (`TauCeti.iteratedFDeriv_two_eq_comp_fderiv_fderiv`), and gives the
-corresponding exact comparison for differences of second derivatives.
+continuous multilinear second derivatives with curried bilinear maps, and the corresponding
+exact comparison for differences of second derivatives.
 -/
 
 public section
@@ -70,15 +69,6 @@ theorem norm_fderiv_fderiv_sub (f : E → F) (x y : E) :
   rw [← continuousMultilinearCurryFin2_iteratedFDeriv_two f x,
     ← continuousMultilinearCurryFin2_iteratedFDeriv_two f y, ← LinearIsometryEquiv.map_sub,
     LinearIsometryEquiv.norm_map]
-
-/-- The second iterated derivative of `f` is its second Fréchet derivative, uncurried by the
-currying isometry. No differentiability of `f` is needed. -/
-theorem iteratedFDeriv_two_eq_comp_fderiv_fderiv (f : E → F) :
-    iteratedFDeriv 𝕜 2 f =
-      (continuousMultilinearCurryFin2 𝕜 E F).symm ∘ fderiv 𝕜 (fderiv 𝕜 f) := by
-  funext x
-  ext m
-  rw [iteratedFDeriv_two_apply, Function.comp_apply, continuousMultilinearCurryFin2_symm_apply]
 
 /-- The `i`-th iterated derivative of the `m`-th iterated derivative of `f` has the same norm as
 the `(i + m)`-th iterated derivative of `f`. -/
