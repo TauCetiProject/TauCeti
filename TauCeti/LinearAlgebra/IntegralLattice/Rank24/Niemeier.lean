@@ -66,7 +66,7 @@ abbreviation of `r.lattice` for its row, so the uniform theorems apply to it dir
   `TauCeti.RootfulNiemeierType.mem_rootLattice_carrier_of_form_self_eq_two`,
   `TauCeti.RootfulNiemeierType.span_vectorsOfNorm_two_lattice`: unimodularity, the norm-`2`
   vectors and the root sublattice of every row.
-* `TauCeti.RootfulNiemeierType.representationNumber_two_lattice`,
+* `TauCeti.RootfulNiemeierType.representationNumber_lattice_two`,
   `TauCeti.RootfulNiemeierType.index_span_vectorsOfNorm_two_lattice`: the number of roots of `N_r`
   and the index of its root sublattice.
 * `TauCeti.RootfulNiemeierType.nonempty_isometry_lattice_iff`: the 23 lattices are pairwise
@@ -266,7 +266,7 @@ theorem mem_rootLattice_carrier_of_form_self_eq_two (r : RootfulNiemeierType)
 /-- **`R_r` has the displayed number of roots**: the number of its norm-`2` vectors is the sum of
 the root counts of the components, which is the displayed root count of the row. -/
 @[simp]
-theorem representationNumber_two_rootLattice (r : RootfulNiemeierType) :
+theorem representationNumber_rootLattice_two (r : RootfulNiemeierType) :
     r.rootLattice.representationNumber 2 = r.rootCount := by
   rw [representationNumber_pi_two (fun i ↦ (r.componentType i).isPosDef_rootLattice _)
     (fun i ↦ (r.componentType i).isEven_rootLattice _)]
@@ -276,13 +276,13 @@ theorem representationNumber_two_rootLattice (r : RootfulNiemeierType) :
 /-- **`N_r` has the displayed number of roots**: gluing adds no roots, so `N_r` has as many norm-`2`
 vectors as `R_r`. -/
 @[simp]
-theorem representationNumber_two_lattice (r : RootfulNiemeierType) :
+theorem representationNumber_lattice_two (r : RootfulNiemeierType) :
     r.lattice.representationNumber 2 = r.rootCount := by
   have himage := congrArg Set.ncard r.image_vectorsOfNorm_two_lattice
   rw [Set.ncard_image_of_injective _ Subtype.val_injective,
     Set.ncard_image_of_injective _ Subtype.val_injective] at himage
   rw [representationNumber_def, himage, ← representationNumber_def,
-    representationNumber_two_rootLattice]
+    representationNumber_rootLattice_two]
 
 /-- **The root sublattice of `N_r` has index `|H|`**: the sublattice of `N_r` spanned by its
 norm-`2` vectors is `R_r`, of index the displayed glue order of the row. -/
@@ -310,7 +310,7 @@ theorem nonempty_isometry_lattice_iff {r s : RootfulNiemeierType} :
     decide
   have hroots := e.representationNumber_eq 2
   have hindex := e.index_span_vectorsOfNorm_eq 2
-  rw [representationNumber_two_lattice, representationNumber_two_lattice] at hroots
+  rw [representationNumber_lattice_two, representationNumber_lattice_two] at hroots
   rw [index_span_vectorsOfNorm_two_lattice, index_span_vectorsOfNorm_two_lattice] at hindex
   exact hinj (Prod.ext hroots hindex)
 

@@ -38,7 +38,7 @@ Niemeier's classification theorem, which is not proved here.
 * `TauCeti.NiemeierType.isEven_lattice`, `isUnimodular_lattice`, `isPosDef_lattice`,
   `finrank_lattice`: every lattice of the family is even, unimodular, positive definite, of
   rank `24`.
-* `TauCeti.NiemeierType.representationNumber_two_lattice`: the number of roots of each row.
+* `TauCeti.NiemeierType.representationNumber_lattice_two`: the number of roots of each row.
 * `TauCeti.NiemeierType.vectorsOfNorm_two_lattice_eq_empty_iff`: the Leech row is the only row
   without roots.
 * `TauCeti.NiemeierType.nonempty_isometry_lattice_iff`: the 24 lattices are pairwise
@@ -155,9 +155,9 @@ theorem finrank_lattice : ∀ n : NiemeierType, Module.finrank ℤ n.lattice = 2
 /-- **The lattice of every row has the displayed number of roots**: the root count of a rootful
 row, and no roots for the Leech row. -/
 @[simp]
-theorem representationNumber_two_lattice :
+theorem representationNumber_lattice_two :
     ∀ n : NiemeierType, n.lattice.representationNumber 2 = n.rootCount
-  | rootful r => r.representationNumber_two_lattice
+  | rootful r => r.representationNumber_lattice_two
   | leech => by
     rw [lattice_leech, representationNumber_def, vectorsOfNorm_two_leechLattice, Set.ncard_empty,
       rootCount_leech]
@@ -165,7 +165,7 @@ theorem representationNumber_two_lattice :
 /-- **The Leech row is the only row without roots.** -/
 theorem vectorsOfNorm_two_lattice_eq_empty_iff {n : NiemeierType} :
     n.lattice.vectorsOfNorm 2 = ∅ ↔ n = leech := by
-  rw [← rootCount_eq_zero_iff, ← representationNumber_two_lattice,
+  rw [← rootCount_eq_zero_iff, ← representationNumber_lattice_two,
     n.isPosDef_lattice.representationNumber_eq_zero_iff]
 
 /-- **The 24 Niemeier lattices are pairwise non-isometric.**  An isometry preserves the number of
@@ -175,7 +175,7 @@ theorem nonempty_isometry_lattice_iff {m n : NiemeierType} :
     Nonempty (Isometry m.lattice n.lattice) ↔ m = n := by
   refine ⟨fun ⟨e⟩ ↦ ?_, fun h ↦ h ▸ ⟨Isometry.refl _⟩⟩
   have hroots := e.representationNumber_eq 2
-  rw [representationNumber_two_lattice, representationNumber_two_lattice] at hroots
+  rw [representationNumber_lattice_two, representationNumber_lattice_two] at hroots
   have hleech : m = leech ↔ n = leech := by
     rw [← rootCount_eq_zero_iff, ← rootCount_eq_zero_iff, hroots]
   cases m with
