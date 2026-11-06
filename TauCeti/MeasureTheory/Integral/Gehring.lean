@@ -334,11 +334,24 @@ private theorem setLIntegral_indicator_rpow_le {q : ℝ} (hq : 1 < q) {b ε : �
           ring
       _ ≤ ENNReal.ofReal (4 ^ finrank ℝ E) * (2 * _) := mul_le_mul_right hstopb _
       _ = _ := by ring
+  -- Combine the two integrals on the right into the integral of a single function.
+  have hF₁ : Measurable ({x | ε * t < g x}.indicator g) :=
+    hg.indicator (measurableSet_lt measurable_const hg)
+  have hlin : ∀ B : Set E, ∫⁻ x in B, 2 * ENNReal.ofReal (4 ^ finrank ℝ E) *
+      (b * t ^ (q - 1) * {x | ε * t < g x}.indicator g x +
+        {x | ε * t < h x}.indicator (fun x => h x ^ q) x) ∂μ =
+      2 * ENNReal.ofReal (4 ^ finrank ℝ E) *
+        (b * t ^ (q - 1) * ∫⁻ x in B, {x | ε * t < g x}.indicator g x ∂μ +
+          ∫⁻ x in B, {x | ε * t < h x}.indicator (fun x => h x ^ q) x ∂μ) := fun B => by
+    rw [lintegral_const_mul' _ _ (ENNReal.mul_ne_top ENNReal.ofNat_ne_top ENNReal.ofReal_ne_top),
+      lintegral_add_left (hF₁.const_mul _), lintegral_const_mul _ hF₁]
   obtain ⟨U, hUm, hXU, hU⟩ := exists_superset_setLIntegral_le (μ := μ) (X := X) (S := ball x₀ s)
-    (fun a ha => ⟨(hρS a ha.1 ha.2).1, (hρS a ha.1 ha.2).2.1⟩)
-    (fun a ha => hsub a ha.1 _ (by linarith [(hρS a ha.1 ha.2).2.1])) hball
+    (r := fun a => 2 * ρ a) (rm := 2 * ρm)
+    (fun a ha => ⟨by linarith [(hρS a ha.1 ha.2).1], by linarith [(hρS a ha.1 ha.2).2.1]⟩)
+    (fun a ha => hsub a ha.1 _ (by linarith [(hρS a ha.1 ha.2).2.1]))
+    (fun a ha => (hball a ha).trans_eq (hlin _).symm)
   -- Almost every point of the superlevel set lies in `X`, hence in `U`.
-  refine le_trans ?_ hU
+  refine le_trans ?_ (hU.trans_eq (hlin _))
   calc _ ≤ ∫⁻ x in ball x₀ r, U.indicator G x ∂μ := by
         refine lintegral_mono_ae ?_
         filter_upwards [ae_restrict_of_ae hleb, ae_restrict_mem measurableSet_ball] with x hx hxr
@@ -421,7 +434,7 @@ private theorem setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ�
     refine (Measure.ofReal_mul_setLIntegral_measure_lt_const_le ν ht₀ k hδ).trans_eq ?_
     rw [withDensity_apply _ MeasurableSet.univ, Measure.restrict_univ]
   have hIB := Measure.ofReal_mul_setLIntegral_withDensity_lt_le (μ.restrict (ball x₀ s)) hg hε0 hε1
-    b k hq hδ
+    k hq.le hδ
   have hIC := Measure.ofReal_mul_setLIntegral_withDensity_rpow_lt_le (μ.restrict (ball x₀ s)) hh
     hε0 k hq0.le hδ
   -- Assemble.
@@ -441,19 +454,21 @@ private theorem setLIntegral_mul_min_rpow_le {q : ℝ} (hq : 1 < q) {b ε : ℝ�
               exact hpt t ht.1
           _ = _ := by ring
     _ = ENNReal.ofReal δ * (∫⁻ t in Ioo 0 (k : ℝ), A t * w t) +
-          K * (ENNReal.ofReal δ *
-              (∫⁻ t in Ioo 0 (k : ℝ), b * ENNReal.ofReal t ^ (q - 1) * N₁ t * w t) +
+          K * (b * (ENNReal.ofReal δ *
+              ∫⁻ t in Ioo 0 (k : ℝ), ENNReal.ofReal t ^ (q - 1) * N₁ t * w t) +
             ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), N₂ t * w t) := by
         have h1 : Measurable fun t => A t * w t := hAm.mul hw
-        have h2 : Measurable fun t => b * ENNReal.ofReal t ^ (q - 1) * N₁ t * w t :=
-          ((measurable_const.mul hpowm).mul hN₁m).mul hw
+        have h2 : Measurable fun t => ENNReal.ofReal t ^ (q - 1) * N₁ t * w t :=
+          (hpowm.mul hN₁m).mul hw
         have h3 : Measurable fun t => N₂ t * w t := hN₂m.mul hw
-        have h4 : Measurable fun t => K * (b * ENNReal.ofReal t ^ (q - 1) * N₁ t * w t) :=
-          measurable_const.mul h2
-        rw [lintegral_add_left h1, lintegral_add_left h4,
+        have h4 : Measurable fun t => K * (b * (ENNReal.ofReal t ^ (q - 1) * N₁ t * w t)) :=
+          measurable_const.mul (measurable_const.mul h2)
+        simp_rw [mul_assoc b]
+        rw [lintegral_add_left h1, lintegral_add_left h4, lintegral_const_mul _ (h2.const_mul _),
           lintegral_const_mul _ h2, lintegral_const_mul _ h3]
         ring
-    _ ≤ _ := add_le_add hIA (mul_le_mul_right (add_le_add hIB hIC) _)
+    _ ≤ _ := add_le_add hIA (mul_le_mul_right (add_le_add
+        ((mul_le_mul_right hIB b).trans_eq (by ring)) hIC) _)
 
 /-- **Absorption for a fixed truncation.** Feeding `setLIntegral_mul_min_rpow_le` into the
 absorption lemma bounds the truncated integral `∫_{B(x₀, R / 2)} g ^ q min(g, k) ^ δ` independently

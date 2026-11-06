@@ -325,7 +325,7 @@ theorem tendsto_lintegral_mul_min_rpow (m : Measure α) {g : α → ℝ≥0∞} 
       exact ENNReal.rpow_ne_top_of_nonneg hq hgx
 
 /-- The layer cake formula for a constant height `t₀`, truncated at `k`: integrating
-`δ t ^ (δ - 1)` over `0 < t < min(t₀, k)` gives at most `t₀ ^ δ`. -/
+`δ t ^ (δ - 1)` over `0 < t < min(t₀, k)` gives at most `t₀ ^ δ` times the total mass `m univ`. -/
 theorem ofReal_mul_setLIntegral_measure_lt_const_le (m : Measure α) {t₀ : ℝ} (ht₀ : 0 ≤ t₀)
     (k : ℝ≥0) {δ : ℝ} (hδ : 0 < δ) :
     ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ),
@@ -340,22 +340,19 @@ theorem ofReal_mul_setLIntegral_measure_lt_const_le (m : Measure α) {t₀ : ℝ
 integrating `δ t ^ (q + δ - 2)` against the distribution function of `g / ε` gives at most
 `δ / (q + δ - 1) · ε ^ (1 - q - δ)` times `∫ g ^ q min(g, k) ^ δ`. -/
 theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : α → ℝ≥0∞}
-    (hg : Measurable g) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (b : ℝ≥0∞) (k : ℝ≥0) {q δ : ℝ}
-    (hq : 1 < q) (hδ : 0 < δ) :
-    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), b * ENNReal.ofReal t ^ (q - 1) *
+    (hg : Measurable g) {ε : ℝ≥0∞} (hε0 : ε ≠ 0) (hε1 : ε ≤ 1) (k : ℝ≥0) {q δ : ℝ}
+    (hq : 1 ≤ q) (hδ : 0 < δ) :
+    ENNReal.ofReal δ * ∫⁻ t in Ioo 0 (k : ℝ), ENNReal.ofReal t ^ (q - 1) *
         m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹} * ENNReal.ofReal (t ^ (δ - 1)) ≤
-      b * ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1) *
+      ENNReal.ofReal (δ / (q + δ - 1)) * ε⁻¹ ^ (q + δ - 1) *
         ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m := by
   have hp : 0 < q + δ - 1 := by linarith
   have hgε : Measurable fun x => g x * ε⁻¹ := hg.mul_const _
   set N : ℝ → ℝ≥0∞ := fun t => m.withDensity g {x | ENNReal.ofReal t < g x * ε⁻¹}
   -- Combine the powers of `t` into `t ^ (p - 1)` for `p = q + δ - 1`.
-  have hcongr : ∫⁻ t in Ioo 0 (k : ℝ), b * ENNReal.ofReal t ^ (q - 1) * N t *
+  have hcongr : ∫⁻ t in Ioo 0 (k : ℝ), ENNReal.ofReal t ^ (q - 1) * N t *
         ENNReal.ofReal (t ^ (δ - 1)) =
-      b * ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) := by
-    have hm : Measurable fun t : ℝ => N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) :=
-      (measurable_measure_ofReal_lt _ _).mul (measurable_id.pow_const _).ennreal_ofReal
-    rw [← lintegral_const_mul _ hm]
+      ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)) := by
     refine setLIntegral_congr_fun measurableSet_Ioo fun t ht => ?_
     rw [ENNReal.ofReal_rpow_of_nonneg ht.1.le (by linarith),
       show t ^ (q + δ - 1 - 1) = t ^ (q - 1) * t ^ (δ - 1) by
@@ -367,12 +364,12 @@ theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : α → �
     rw [← ENNReal.ofReal_mul (div_nonneg hδ.le hp.le), div_mul_cancel₀ _ hp.ne']
   rw [hcongr, hδsplit]
   calc ENNReal.ofReal (δ / (q + δ - 1)) * ENNReal.ofReal (q + δ - 1) *
-        (b * ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1)))
-      = b * ENNReal.ofReal (δ / (q + δ - 1)) *
+        ∫⁻ t in Ioo 0 (k : ℝ), N t * ENNReal.ofReal (t ^ (q + δ - 1 - 1))
+      = ENNReal.ofReal (δ / (q + δ - 1)) *
           ∫⁻ x, min (g x * ε⁻¹) k ^ (q + δ - 1) ∂m.withDensity g := by
         rw [lintegral_min_rpow_eq _ hgε.aemeasurable k hp]
         ring
-    _ ≤ b * ENNReal.ofReal (δ / (q + δ - 1)) *
+    _ ≤ ENNReal.ofReal (δ / (q + δ - 1)) *
           (ε⁻¹ ^ (q + δ - 1) * ∫⁻ x, g x ^ q * min (g x) k ^ δ ∂m) := by
         gcongr
         rw [lintegral_withDensity_eq_lintegral_mul _ hg ((hgε.min measurable_const).pow_const _),
@@ -385,7 +382,7 @@ theorem ofReal_mul_setLIntegral_withDensity_lt_le (m : Measure α) {g : α → �
               gcongr
               exact ENNReal.min_mul_inv_rpow_le _ _ hε1 hp.le
           _ = ε⁻¹ ^ (q + δ - 1) * (g x * min (g x) k ^ (q + δ - 1)) := by ring
-          _ ≤ _ := mul_le_mul_right (ENNReal.mul_min_rpow_le _ _ hq.le hδ.le) _
+          _ ≤ _ := mul_le_mul_right (ENNReal.mul_min_rpow_le _ _ hq hδ.le) _
     _ = _ := by ring
 
 /-- The layer cake formula for `h / ε` with respect to the weight `h ^ q`, truncated at `k`:
