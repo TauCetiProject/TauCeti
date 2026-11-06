@@ -109,6 +109,43 @@ theorem spliceAtMeeting_zero (ω : ℕ → α × α) : spliceAtMeeting ω 0 = (�
   · rw [spliceAtMeeting_of_exists ⟨0, le_rfl, h⟩, h]
   · exact spliceAtMeeting_of_forall_ne fun k hk => by rwa [Nat.le_zero.1 hk]
 
+/-- Having met by time `n`, the event that the splice at time `n + 1` lies in `C` is the event
+that the second coordinate at time `n + 1` does. -/
+theorem inter_preimage_spliceAtMeeting_succ_inter_exists (n : ℕ) (B : Set (ℕ → α × α))
+    (C : Set α) :
+    B ∩ (fun ω => spliceAtMeeting ω (n + 1)) ⁻¹' C ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} =
+      B ∩ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} ∩
+        (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) := by
+  ext ω
+  simp only [mem_inter_iff, mem_preimage]
+  constructor
+  · rintro ⟨⟨hb, hc⟩, hm⟩
+    refine ⟨⟨hb, hm⟩, ?_⟩
+    rwa [← spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)]
+  · rintro ⟨⟨hb, hm⟩, hc⟩
+    refine ⟨⟨hb, ?_⟩, hm⟩
+    rwa [← spliceAtMeeting_of_exists
+      (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)] at hc
+
+/-- Not having met by time `n`, the event that the splice at time `n + 1` lies in `C` is the event
+that the first coordinate at time `n + 1` does. -/
+theorem inter_preimage_spliceAtMeeting_succ_diff_exists (n : ℕ) (B : Set (ℕ → α × α))
+    (C : Set α) :
+    (B ∩ (fun ω => spliceAtMeeting ω (n + 1)) ⁻¹' C) \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2} =
+      (B \ {ω | ∃ k ≤ n, (ω k).1 = (ω k).2}) ∩
+        (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) := by
+  ext ω
+  simp only [mem_inter_iff, mem_sdiff, mem_preimage]
+  constructor
+  · rintro ⟨⟨hb, hc⟩, hm⟩
+    have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
+    refine ⟨⟨hb, hm⟩, ?_⟩
+    rwa [← spliceAtMeeting_succ_of_forall_ne hne]
+  · rintro ⟨⟨hb, hm⟩, hc⟩
+    have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
+    refine ⟨⟨hb, ?_⟩, hm⟩
+    rwa [← spliceAtMeeting_succ_of_forall_ne hne] at hc
+
 variable [MeasurableSpace α] [MeasurableEq α]
 
 /-- Having met by time `n` is an event of the history up to time `n`. -/
@@ -196,30 +233,11 @@ theorem markovChainLaw_map_spliceAtMeeting [MeasurableEq α] [IsMarkovKernel κ]
   have hfib : (fun ω => ((fun i : Fin (n + 1) => Z i ω), Z (n + 1) ω)) ⁻¹' (A ×ˢ C) =
       B ∩ Z (n + 1) ⁻¹' C := rfl
   have hin : B ∩ Z (n + 1) ⁻¹' C ∩ M =
-      B ∩ M ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) := by
-    ext ω
-    simp only [mem_inter_iff, mem_preimage]
-    constructor
-    · rintro ⟨⟨hb, hc⟩, hm⟩
-      refine ⟨⟨hb, hm⟩, ?_⟩
-      rwa [← spliceAtMeeting_of_exists (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)]
-    · rintro ⟨⟨hb, hm⟩, hc⟩
-      refine ⟨⟨hb, ?_⟩, hm⟩
-      rwa [← spliceAtMeeting_of_exists
-        (Exists.imp (fun k hk => ⟨hk.1.trans n.le_succ, hk.2⟩) hm)] at hc
+      B ∩ M ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.snd ⁻¹' C) :=
+    inter_preimage_spliceAtMeeting_succ_inter_exists n B C
   have hout : (B ∩ Z (n + 1) ⁻¹' C) \ M =
-      (B \ M) ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) := by
-    ext ω
-    simp only [mem_inter_iff, mem_sdiff, mem_preimage]
-    constructor
-    · rintro ⟨⟨hb, hc⟩, hm⟩
-      have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
-      refine ⟨⟨hb, hm⟩, ?_⟩
-      rwa [← spliceAtMeeting_succ_of_forall_ne hne]
-    · rintro ⟨⟨hb, hm⟩, hc⟩
-      have hne : ∀ k ≤ n, (ω k).1 ≠ (ω k).2 := fun k hk he => hm ⟨k, hk, he⟩
-      refine ⟨⟨hb, ?_⟩, hm⟩
-      rwa [← spliceAtMeeting_succ_of_forall_ne hne] at hc
+      (B \ M) ∩ (fun ω : ℕ → α × α => ω (n + 1)) ⁻¹' (Prod.fst ⁻¹' C) :=
+    inter_preimage_spliceAtMeeting_succ_diff_exists n B C
   rw [prefixLaw_compProd_apply_prod κ hZ n hA hC, Measure.map_apply
     ((measurable_pi_iff.2 fun i => hZ i.1).prodMk (hZ _)) (hA.prod hC), hfib,
     ← measure_inter_add_sdiff _ hM, hin, hout,
