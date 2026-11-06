@@ -63,6 +63,7 @@ henselian regular local ring and `f` a local equation of the divisor.
 ## Main results
 
 * `TauCeti.standardTameCover_free`: for `e ≥ 1` the cover is free of rank `e`.
+* For `e ≠ 0` the cover is a finite `A`-module (an instance).
 * `TauCeti.isFiniteProductOfStandardTameCovers_iff`: unfolding of the predicate.
 * `TauCeti.IsFiniteProductOfStandardTameCovers.of_algEquiv`: transport along `A`-algebra
   isomorphisms.
@@ -126,6 +127,10 @@ theorem standardTameCover_free [Nontrivial A] (f : A) (e : ℕ) (he : 1 ≤ e) :
   have hmonic : (X ^ e - C f).Monic := monic_X_pow_sub_C f (Nat.one_le_iff_ne_zero.mp he)
   refine ⟨hmonic.free_adjoinRoot, ?_⟩
   rw [(AdjoinRoot.powerBasis' hmonic).finrank, AdjoinRoot.powerBasis'_dim, natDegree_X_pow_sub_C]
+
+/-- For `e ≠ 0` the standard cover is a finite `A`-module, as `x ^ e - f` is monic. -/
+instance (f : A) (e : ℕ) [NeZero e] : Module.Finite A (standardTameCover A f e) :=
+  (monic_X_pow_sub_C f (NeZero.ne e)).finite_adjoinRoot
 
 variable {A}
 

@@ -28,6 +28,9 @@ polynomial ring `R[X]/(X ^ n)`.
 * `AdjoinRoot.map_surjective`: the map is surjective when `f` is.
 * `AdjoinRoot.algHom_mk`: an algebra map out of `AdjoinRoot g` sends the class of `p` to the
   evaluation of `p` at the image of the root.
+* `AdjoinRoot.algHomEquiv`: over any commutative ring, the algebra maps out of `AdjoinRoot f` are
+  the roots of `f`. Mathlib's `AdjoinRoot.equiv` is the version over a field with values in a
+  domain.
 * `AdjoinRoot.root_X_pow_sub_one_pow`: the class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of
   unity.
 * `AdjoinRoot.root_X_pow_sub_C_pow`: the class of `X` in `R[X]/(X ^ n - C a)` is an `n`th root
@@ -120,6 +123,30 @@ theorem algHom_mk {g : R[X]} {B F : Type*} [Semiring B] [Algebra R B] [FunLike F
     [AlgHomClass F R (AdjoinRoot g) B] (φ : F) (p : R[X]) :
     φ (mk g p) = aeval (φ (root g)) p := by
   rw [← aeval_eq, aeval_algHom_apply]
+
+variable (S) in
+/-- **Algebra maps out of `AdjoinRoot f` are the roots of `f`.** An `R`-algebra map
+`AdjoinRoot f →ₐ[R] S` is determined by the image of the root, which can be any root of `f` in
+`S`. Mathlib's `AdjoinRoot.equiv` is the version over a field with values in a domain, indexed by
+the multiset of roots. -/
+noncomputable def algHomEquiv [Algebra R S] (f : R[X]) :
+    (AdjoinRoot f →ₐ[R] S) ≃ {x : S // aeval x f = 0} where
+  toFun φ := ⟨φ (root f), aeval_algHom_eq_zero f φ⟩
+  invFun x := liftAlgHom f (Algebra.ofId R S) x x.2
+  left_inv φ := liftAlgHom_eq_algHom f φ
+  right_inv _ := Subtype.ext (liftAlgHom_root ..)
+
+/-- The root of `f` attached to an algebra map out of `AdjoinRoot f` is the image of the root. -/
+@[simp]
+theorem coe_algHomEquiv_apply [Algebra R S] {f : R[X]} (φ : AdjoinRoot f →ₐ[R] S) :
+    (algHomEquiv S f φ : S) = φ (root f) :=
+  (rfl)
+
+/-- The algebra map out of `AdjoinRoot f` attached to a root `x` of `f` sends the root to `x`. -/
+@[simp]
+theorem algHomEquiv_symm_apply_root [Algebra R S] {f : R[X]} (x : {x : S // aeval x f = 0}) :
+    (algHomEquiv S f).symm x (root f) = x :=
+  liftAlgHom_root ..
 
 /-- The class of `X` in `R[X]/(X ^ n - 1)` is an `n`th root of unity. -/
 @[simp]
