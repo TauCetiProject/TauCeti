@@ -107,6 +107,16 @@ noncomputable def harishChandraIndResAdjunction :
     harishChandraInd.{w} k P π ⊣ harishChandraRes k P π hπ :=
   (resKerInvariantsAdjunction k π hπ).comp (indResAdjunction k P.subtype)
 
+/-- The hom-set bijection of `Rep.harishChandraIndResAdjunction` is that of `Rep.indResAdjunction`
+followed by that of `Rep.resKerInvariantsAdjunction`. It is not a `simp` lemma, since `simp` would
+rewrite the left-hand sides of the elementwise lemmas below by it. -/
+theorem harishChandraIndResAdjunction_homEquiv (M : Rep.{max w u v} k L)
+    (N : Rep.{max w u v} k G) :
+    (harishChandraIndResAdjunction.{w} k P π hπ).homEquiv M N =
+      ((indResAdjunction.{w} k P.subtype).homEquiv (res π M) N).trans
+        ((resKerInvariantsAdjunction k π hπ).homEquiv M (res P.subtype N)) :=
+  congrFun (congrFun (Adjunction.comp_homEquiv _ _) M) N
+
 /-- A morphism `R^G_{L⊂P}(M) ⟶ N` corresponds under `Rep.harishChandraIndResAdjunction` to the map
 `M → N^{ker π}` sending `m` to the image of `1 ⊗ m`. -/
 @[simp]
@@ -114,10 +124,8 @@ theorem coe_harishChandraIndResAdjunction_homEquiv_apply_hom_apply {M : Rep.{max
     {N : Rep.{max w u v} k G} (f : (harishChandraInd k P π).obj M ⟶ N) (m : M) :
     Subtype.val (((harishChandraIndResAdjunction k P π hπ).homEquiv M N f).hom m) =
       f.hom (Representation.IndV.mk P.subtype (res π M).ρ 1 m) := by
-  have h := congrFun (congrFun (Adjunction.comp_homEquiv (resKerInvariantsAdjunction k π hπ)
-    (indResAdjunction k P.subtype)) M) N
-  exact (congrArg (fun e => Subtype.val ((e f).hom m)) h).trans
-    (coe_resKerInvariantsAdjunction_homEquiv_apply_hom_apply π hπ _ m)
+  rw [harishChandraIndResAdjunction_homEquiv]
+  exact coe_resKerInvariantsAdjunction_homEquiv_apply_hom_apply π hπ _ m
 
 /-- A morphism `M ⟶ N^{ker π}` corresponds under `Rep.harishChandraIndResAdjunction` to the
 morphism `R^G_{L⊂P}(M) ⟶ N` induced from the corresponding morphism out of the inflation of `M`. -/
@@ -127,12 +135,9 @@ theorem harishChandraIndResAdjunction_homEquiv_symm_apply {M : Rep.{max w u v} k
     ((harishChandraIndResAdjunction k P π hπ).homEquiv M N).symm f =
       (indResHomEquiv P.subtype (res π M) N).symm
         ((resKerInvariantsHomEquiv π hπ M (res P.subtype N)).symm f) := by
-  have h := congrFun (congrFun (Adjunction.comp_homEquiv (resKerInvariantsAdjunction k π hπ)
-    (indResAdjunction k P.subtype)) M) N
-  refine (congrArg (fun e => e.symm f) h).trans ?_
-  simp only [resKerInvariantsAdjunction_homEquiv, indResAdjunction,
-    Adjunction.mkOfHomEquiv_homEquiv]
-  rfl
+  rw [harishChandraIndResAdjunction_homEquiv, resKerInvariantsAdjunction_homEquiv]
+  simp only [indResAdjunction, Adjunction.mkOfHomEquiv_homEquiv]
+  exact Equiv.symm_trans_apply _ _ f
 
 /-- The unit of `Rep.harishChandraIndResAdjunction` sends `m : M` to `1 ⊗ m`, which is fixed by
 `ker π`. It is not a `simp` lemma, since `simp` rewrites the functor objects in the type of its
@@ -164,6 +169,16 @@ noncomputable def harishChandraResIndAdjunction :
     harishChandraRes.{w} k P π hπ ⊣ harishChandraInd k P π :=
   (resIndAdjunction k P).comp (kerInvariantsResAdjunction k π hπ)
 
+/-- The hom-set bijection of `Rep.harishChandraResIndAdjunction` is that of
+`Rep.kerInvariantsResAdjunction` followed by that of `Rep.resIndAdjunction`. It is not a `simp`
+lemma, since `simp` would rewrite the left-hand sides of the elementwise lemmas below by it. -/
+theorem harishChandraResIndAdjunction_homEquiv (N : Rep.{max w u v} k G)
+    (M : Rep.{max w u v} k L) :
+    (harishChandraResIndAdjunction.{w} k P π hπ).homEquiv N M =
+      ((kerInvariantsResAdjunction k π hπ).homEquiv (res P.subtype N) M).trans
+        ((resIndAdjunction.{w} k P).homEquiv N (res π M)) :=
+  congrFun (congrFun (Adjunction.comp_homEquiv _ _) N) M
+
 /-- A morphism `N^{ker π} ⟶ M` corresponds under `Rep.harishChandraResIndAdjunction` to the
 morphism `N ⟶ R^G_{L⊂P}(M)` corresponding under `Rep.resIndAdjunction` to its precomposition with
 the averaging projection `Rep.kerAverage`. -/
@@ -173,10 +188,7 @@ theorem harishChandraResIndAdjunction_homEquiv_apply {N : Rep.{max w u v} k G}
     (harishChandraResIndAdjunction k P π hπ).homEquiv N M f =
       (resIndAdjunction.{w} k P).homEquiv N (res π M)
         (kerAverage π hπ (res P.subtype N) ≫ (resFunctor π).map f) := by
-  have h := congrFun (congrFun (Adjunction.comp_homEquiv (resIndAdjunction k P)
-    (kerInvariantsResAdjunction k π hπ)) N) M
-  refine (congrArg (fun e => e f) h).trans ?_
-  rw [kerInvariantsResAdjunction_homEquiv]
+  rw [harishChandraResIndAdjunction_homEquiv, kerInvariantsResAdjunction_homEquiv]
   exact congrArg ((resIndAdjunction.{w} k P).homEquiv N (res π M))
     (kerInvariantsResHomEquiv_apply π hπ f)
 
@@ -188,11 +200,8 @@ theorem harishChandraResIndAdjunction_homEquiv_symm_apply {N : Rep.{max w u v} k
     ((harishChandraResIndAdjunction k P π hπ).homEquiv N M).symm f =
       (kerInvariantsResHomEquiv π hπ (res P.subtype N) M).symm
         (((resIndAdjunction.{w} k P).homEquiv N (res π M)).symm f) := by
-  have h := congrFun (congrFun (Adjunction.comp_homEquiv (resIndAdjunction k P)
-    (kerInvariantsResAdjunction k π hπ)) N) M
-  refine (congrArg (fun e => e.symm f) h).trans ?_
-  rw [kerInvariantsResAdjunction_homEquiv]
-  rfl
+  rw [harishChandraResIndAdjunction_homEquiv, kerInvariantsResAdjunction_homEquiv]
+  exact Equiv.symm_trans_apply _ _ f
 
 /-- The unit of `Rep.harishChandraResIndAdjunction` is the unit of `Rep.resIndAdjunction`, followed
 by the induction of the averaging projection `Rep.kerAverage`. -/
@@ -202,6 +211,8 @@ theorem harishChandraResIndAdjunction_unit_app (N : Rep.{max w u v} k G) :
       (resIndAdjunction.{w} k P).unit.app N ≫
         (indFunctor k P.subtype).map (kerAverage π hπ (res P.subtype N)) := by
   rw [harishChandraResIndAdjunction, Adjunction.comp_unit_app, kerInvariantsResAdjunction_unit_app]
+  -- The two sides differ only in `(resFunctor P.subtype).obj N`, which the abbreviation
+  -- `Rep.res P.subtype N` unfolds to.
   rfl
 
 /-- The counit of `Rep.harishChandraResIndAdjunction` is the counit of `Rep.resIndAdjunction`,

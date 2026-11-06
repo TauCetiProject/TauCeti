@@ -178,7 +178,7 @@ noncomputable def kerAverage (A : Rep.{w} k G) : A ⟶ res π (kerInvariants π 
       (Representation.averageMap_invariant (A.ρ.comp π.ker.subtype)), fun g => by
     ext a
     refine Eq.trans ?_ (coe_kerInvariants_ρ_apply π hπ A g _).symm
-    change Representation.averageMap _ (A.ρ g a) = A.ρ g (Representation.averageMap _ a)
+    simp only [LinearMap.coe_comp, Function.comp_apply, LinearMap.codRestrict_apply]
     rw [Representation.averageMap_apply, Representation.averageMap_apply, map_smul, map_sum]
     congr 1
     refine Fintype.sum_equiv (MulAut.conjNormal (H := π.ker) g⁻¹).toEquiv _ _ fun u => ?_
