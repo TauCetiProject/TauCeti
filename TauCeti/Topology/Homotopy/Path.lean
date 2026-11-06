@@ -53,9 +53,10 @@ compare paths inside a closed half-plane.
 
 `Path.trans_apply_of_le` and `Path.trans_apply_of_ge` express a value of a concatenation as a
 value of one of its two halves, and `Path.subpath_apply_mem` bounds the values of a subpath by the
-values of the path on an interval containing its endpoints. `Path.cast_subpath_eq_codRestrict`
-identifies a subpath of a path in a subset, cast to the endpoints of a corestricted subpath, with
-that corestriction. They are used by the gluing
+values of the path on an interval containing its endpoints. `Path.coe_subpath` and
+`Path.subpath_subpath_apply` evaluate a subpath and a subpath of a subpath, and
+`Path.cast_subpath_eq_codRestrict` identifies a subpath of a path in a subset, cast to the
+endpoints of a corestricted subpath, with that corestriction. The last two are used by the gluing
 construction in `AlgebraicTopology/FundamentalGroupoid/Glue.lean`.
 
 The path-homotopy quotient API also records that reversing twice is the identity and that the
@@ -126,27 +127,37 @@ theorem subpath_apply_mem {x y : X} {γ : Path x y} {V : Set X} {lo hi : I}
     range_subpath γ a b ▸ mem_range_self t
   exact hst ▸ hγ s (uIcc_subset_Icc ha hb hs)
 
+/-- The function underlying a subpath is composition with the affine parameter map. -/
+@[simp]
+theorem coe_subpath {x y : X} (γ : Path x y) (s t : I) :
+    ⇑(γ.subpath s t) = γ ∘ Icc.convexComb s t := (rfl)
+
+/-- A subpath of a subpath of `γ` between parameters `r`, `s` of the inner interval `[lo, hi]` is
+the subpath of `γ` between their images in `[lo, hi]`, evaluated at the combined parameter. -/
+theorem subpath_subpath_apply {x y : X} (γ : Path x y) (lo hi r s t : I) :
+    γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
+      γ (Icc.convexComb lo hi (Icc.convexComb r s t)) := by
+  refine congrArg γ (Subtype.ext ?_)
+  simp only [Icc.coe_convexComb]
+  ring
+
 /-- Casting the subpath `r → s` of a path `p` in `S` that parametrises `γ` on `[lo, hi]` agrees with
 the corestriction to `S` of the corresponding subpath of `γ`. -/
 theorem cast_subpath_eq_codRestrict {x y : X} {S : Set X} (γ : Path x y) {lo hi : I}
-    {u v : S} (p : Path u v) (hp : ∀ t, (p t : X) = γ (Icc.convexComb lo hi t)) (r s : I)
-    (hrU : γ (Icc.convexComb lo hi r) ∈ S) (hsU : γ (Icc.convexComb lo hi s) ∈ S)
-    (hrs : ∀ t, γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t ∈ S) :
-    (p.subpath r s).cast (Subtype.ext (hp r).symm : (⟨_, hrU⟩ : S) = p r)
-        (Subtype.ext (hp s).symm : (⟨_, hsU⟩ : S) = p s) =
-      (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict hrs := by
+    {u v : S} (p : Path u v) (hp : ∀ t, (p t : X) = γ (Icc.convexComb lo hi t)) (r s : I) :
+    (p.subpath r s).cast
+        (Subtype.ext (hp r).symm : (⟨_, hp r ▸ (p r).2⟩ : S) = p r)
+        (Subtype.ext (hp s).symm : (⟨_, hp s ▸ (p s).2⟩ : S) = p s) =
+      (γ.subpath (Icc.convexComb lo hi r) (Icc.convexComb lo hi s)).codRestrict
+        fun t ↦ by
+          rw [subpath_subpath_apply, ← hp]
+          exact (p _).2 := by
   apply Path.ext
   funext t
   apply Subtype.ext
-  simp only [Path.cast_coe, Path.codRestrict_coe, Path.subpath, Path.coe_mk_mk,
-    Function.comp_apply]
+  simp only [Path.cast_coe, Path.codRestrict_coe, coe_subpath, Function.comp_apply]
   rw [hp]
-  have hcomb : Icc.convexComb (Icc.convexComb lo hi r) (Icc.convexComb lo hi s) t =
-      Icc.convexComb lo hi (Icc.convexComb r s t) := by
-    ext
-    simp only [Icc.coe_convexComb]
-    ring
-  exact congrArg γ hcomb.symm
+  exact (subpath_subpath_apply γ lo hi r s t).symm
 
 /-- If the extended path stays inside `U` throughout `[t₀, t₁]`, then the truncated subpath has
 range in `U`. -/

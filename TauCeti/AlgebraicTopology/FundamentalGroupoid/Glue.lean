@@ -430,14 +430,11 @@ private lemma pathVal_subpath_trans {x y : X} (γ : Path x y) (i : ι) {lo hi : 
     (γ.subpath (Icc.convexComb lo hi a') (Icc.convexComb lo hi c')).codRestrict
       (Path.subpath_apply_mem hγ ha hc)
   have hab' : (p.subpath a' b').cast hpa hpb = qab :=
-    Path.cast_subpath_eq_codRestrict γ p hp a' b' haU hbU
-      (Path.subpath_apply_mem hγ ha hb)
+    Path.cast_subpath_eq_codRestrict γ p hp a' b'
   have hbc' : (p.subpath b' c').cast hpb hpc = qbc :=
-    Path.cast_subpath_eq_codRestrict γ p hp b' c' hbU hcU
-      (Path.subpath_apply_mem hγ hb hc)
+    Path.cast_subpath_eq_codRestrict γ p hp b' c'
   have hac' : (p.subpath a' c').cast hpa hpc = qac :=
-    Path.cast_subpath_eq_codRestrict γ p hp a' c' haU hcU
-      (Path.subpath_apply_mem hγ ha hc)
+    Path.cast_subpath_eq_codRestrict γ p hp a' c'
   have hquot : Path.Homotopic.Quotient.trans (Path.Homotopic.Quotient.mk qab)
       (Path.Homotopic.Quotient.mk qbc) = Path.Homotopic.Quotient.mk qac := by
     rw [← hab', ← hbc', ← hac']
