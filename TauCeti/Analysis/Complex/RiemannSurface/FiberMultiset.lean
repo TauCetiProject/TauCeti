@@ -9,7 +9,8 @@ public import Mathlib.RingTheory.MvPolynomial.Symmetric.Defs
 public import TauCeti.Analysis.Complex.RiemannSurface.Degree
 import TauCeti.Analysis.Complex.RiemannSurface.LocalNormalForm
 import TauCeti.Analysis.Polynomial.RootSum
-import TauCeti.Topology.OpenPartialHomeomorph.NthRoots
+import Mathlib.RingTheory.RootsOfUnity.Complex
+import TauCeti.Logic.Equiv.PartialEquivFinsum
 
 /-!
 # Fibres counted with multiplicity, and symmetric functions of fibre values
@@ -208,7 +209,10 @@ private theorem exists_chart_sum_replicate_inter_source_eq {x : X}
       refine (hsrc h2).2.resolve_left fun h' ↦ hs ?_
       rw [← h, h', hex, zero_pow hm.ne']
     rw [finsum_mem_congr rfl fun x' hx' ↦ by rw [hmult x' hx', Multiset.replicate_one]]
-    exact e.finsum_mem_singleton_eq_map_nthRoots hm hs hmem hroot
+    exact e.toPartialEquiv.finsum_mem_singleton_eq_map
+      ((Complex.isPrimitiveRoot_exp m hm.ne').nthRoots_nodup hs)
+      (fun x' ↦ (hmem x').trans (by simp [mem_nthRoots hm]))
+      fun w hw ↦ hroot w ((mem_nthRoots hm).1 hw)
 
 /-- **The fibre multiset near `y₀` from charts at the points of the fibre.** For a holomorphic map
 from a compact Riemann surface which is constant near no point, a chart `e'` at `y₀` and charts
