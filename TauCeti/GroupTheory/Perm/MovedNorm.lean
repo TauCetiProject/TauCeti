@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Group.Seminorm
+public import TauCeti.Analysis.Normed.Group.ConjInvariant
 public import Mathlib.GroupTheory.Perm.Sign
 public import Mathlib.InformationTheory.Hamming
 
@@ -51,6 +51,10 @@ theorem movedNorm_conj (σ τ : Perm α) :
     movedNorm α (σ * τ * σ⁻¹) = movedNorm α τ := by
   simp
 
+/-- The moved-point norm is a conjugation-invariant group norm. -/
+theorem isConjInvariant_movedNorm : (movedNorm α).IsConjInvariant :=
+  GroupNorm.isConjInvariant_iff.mpr fun τ σ ↦ movedNorm_conj σ τ
+
 /-- The Hamming distance of two permutations is the moved-point norm of their quotient. -/
 theorem hammingDist_eq_movedNorm (σ τ : Perm α) :
     (hammingDist (⇑σ) (⇑τ) : ℝ) = movedNorm α (σ⁻¹ * τ) := by
@@ -77,6 +81,6 @@ theorem two_le_movedNorm_of_sign_eq_neg_one {σ : Perm α} (hσ : sign σ = -1) 
     2 ≤ movedNorm α σ := by
   apply two_le_movedNorm_of_ne_one
   rintro rfl
-  exact (by decide : (1 : ℤˣ) ≠ -1) (by simpa using hσ)
+  simp at hσ
 
 end Equiv.Perm
