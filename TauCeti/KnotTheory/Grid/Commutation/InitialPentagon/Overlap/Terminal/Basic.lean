@@ -159,7 +159,8 @@ theorem isRecut_recutRightEqRight :
 
 include hcommon in
 /-- The first branch of the common-terminal-side exchange count: neither rectangle meets the two
-columns next to the replaced line, so the squares are counted by the repartition alone. -/
+columns next to the replaced line and the new pentagon has the original pentagon's rows, so the
+new decomposition covers the original's squares with the two columns exchanged. -/
 private theorem coveredSquares_val_add_val_eq_of_mem_cIoo_left
     (E : GridInitialPentagonRectangleDecomposition a s x z)
     (hrep : D.toGridRectangleDecomposition.IsRepartition E.toGridRectangleDecomposition)
