@@ -213,7 +213,7 @@ private theorem isOpen_isMaximalIntegralCurveFlowPoint (n : ℕ)
   refine ⟨Filter.mem_of_superset (hu.mem_nhds hqu) hup, hq⟩
 
 /-- Every initial state at time zero is a regular point of the finite-order maximal flow. -/
-private theorem isMaximalIntegralCurveFlowPoint_zero [CompleteSpace E] [FiniteDimensional ℝ E]
+private theorem isMaximalIntegralCurveFlowPoint_zero [FiniteDimensional ℝ E]
     (n : ℕ) (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) :
     IsMaximalIntegralCurveFlowPoint (I := I) n v (x, 0) := by
   have hvone : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) :=
@@ -283,7 +283,7 @@ private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
   simpa only [F, G, Function.comp_apply] using hadd
 
 /-- Every point in the natural domain is a regular point of the finite-order maximal flow. -/
-private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
+private theorem isMaximalIntegralCurveFlowPoint_of_mem
     [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {x : M} {t : ℝ} (ht : t ∈ maximalIntegralCurveInterval v x) :
@@ -370,7 +370,6 @@ point and time, not merely openness of each individual maximal interval. -/
 theorem isOpen_maximalIntegralCurveFlowDomain [FiniteDimensional ℝ E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     IsOpen (maximalIntegralCurveFlowDomain v) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   let _ : IsManifold I (0 + 1 : ℕ) M := IsManifold.of_le (n := 1) (by norm_num)
   rw [isOpen_iff_mem_nhds]
   intro p hp
@@ -384,7 +383,6 @@ theorem contMDiffOn_maximalIntegralCurve [FiniteDimensional ℝ E] {n : ℕ∞} 
     ContMDiffOn (I.prod 𝓘(ℝ, ℝ)) I n
       (fun p : M × ℝ ↦ maximalIntegralCurve v p.1 p.2)
       (maximalIntegralCurveFlowDomain v) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   intro p hp
   rw [contMDiffWithinAt_iff_nat]
   intro m hm
