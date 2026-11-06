@@ -56,17 +56,17 @@ theorem exists_ortho_and_not_ortho_of_notMem_span (hM : M.SeparatingLeft) {u x :
 
 end Matrix.SeparatingLeft
 
-namespace Matrix.Nondegenerate
+namespace Matrix.SeparatingRight
 
 variable {m n R : Type*} [Fintype m] [Fintype n] [CommSemiring R] {M : Matrix m n R}
 
-/-- If `M` is nondegenerate and `x`, `y` are nonzero, then some `z` pairs nontrivially with both:
-`z ⬝ᵥ M *ᵥ x ≠ 0` and `z ⬝ᵥ M *ᵥ y ≠ 0`. This holds over any commutative semiring, in particular
-over the field with two elements. -/
-theorem exists_not_ortho_of_ne_zero_pair (hM : M.Nondegenerate) {x y : n → R} (hx : x ≠ 0)
+/-- If `M` is right-separating (for example nondegenerate) and `x`, `y` are nonzero, then some `z`
+pairs nontrivially with both: `z ⬝ᵥ M *ᵥ x ≠ 0` and `z ⬝ᵥ M *ᵥ y ≠ 0`. This holds over any
+commutative semiring, in particular over the field with two elements. -/
+theorem exists_not_ortho_of_ne_zero_pair (hM : M.SeparatingRight) {x y : n → R} (hx : x ≠ 0)
     (hy : y ≠ 0) : ∃ z, z ⬝ᵥ M *ᵥ x ≠ 0 ∧ z ⬝ᵥ M *ᵥ y ≠ 0 := by
-  obtain ⟨v, hv⟩ := hM.exists_not_ortho_of_ne_zero' hx
-  obtain ⟨w, hw⟩ := hM.exists_not_ortho_of_ne_zero' hy
+  obtain ⟨v, hv⟩ := not_forall.mp (mt (separatingRight_def.mp hM x) hx)
+  obtain ⟨w, hw⟩ := not_forall.mp (mt (separatingRight_def.mp hM y) hy)
   by_cases hvy : v ⬝ᵥ M *ᵥ y = 0
   · by_cases hwx : w ⬝ᵥ M *ᵥ x = 0
     · exact ⟨v + w, by simpa [add_dotProduct, hwx] using hv,
@@ -74,4 +74,4 @@ theorem exists_not_ortho_of_ne_zero_pair (hM : M.Nondegenerate) {x y : n → R} 
     · exact ⟨w, hwx, hw⟩
   · exact ⟨v, hv, hvy⟩
 
-end Matrix.Nondegenerate
+end Matrix.SeparatingRight
