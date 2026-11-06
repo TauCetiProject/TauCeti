@@ -185,13 +185,12 @@ def monObjMap (f : M ⟶ N) [IsMonHom f] :
 @[simp]
 theorem monObjMap_apply (f : M ⟶ N) [IsMonHom f] (x : M) : monObjMap f x = f x := (rfl)
 
-/-- Realized morphisms commute with the base algebra maps. -/
--- Apply before `monObjMap_apply` replaces the realized map by its underlying morphism.
-@[simp↓]
+/-- Morphisms of DG bimodule monoids commute with the base algebra maps. -/
+@[simp]
 theorem monObjMap_base (f : M ⟶ N) [IsMonHom f] (a : A) :
-    monObjMap f (monObjBaseHom M a) = monObjBaseHom N a := by
+    f (monObjBaseHom M a) = monObjBaseHom N a := by
   have h := congrArg (fun g ↦ g (tensorUnitEquiv hA a)) (IsMonHom.one_hom f)
-  simpa only [comp_apply, monObjMap_apply, monObjBaseHom_apply] using h
+  simpa only [comp_apply, monObjBaseHom_apply] using h
 
 /-- Realization preserves identity morphisms. -/
 @[simp]
