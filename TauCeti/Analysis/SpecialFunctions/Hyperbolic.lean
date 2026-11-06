@@ -33,6 +33,11 @@ itself, nor its continuity or smoothness. This file supplies these, together wit
 * `Real.tanh_nonneg`, `Real.tanh_neg_iff`, `Real.continuous_tanh` and `Real.contDiff_tanh` —
   `Real.tanh` is nonnegative on `[0, ∞)`, negative exactly on `(-∞, 0)`, continuous and smooth.
 * `Real.sqrt_one_sub_tanh_sq` — `√(1 - tanh x ^ 2) = (cosh x)⁻¹`, the hyperbolic secant.
+* `Real.one_add_tanh`, `Real.one_sub_tanh`, `Real.hasDerivAt_tanh`, `Real.tendsto_tanh_atTop` and
+  `Real.tendsto_tanh_atBot` — `1 ± tanh x = exp (± x) / cosh x`, the derivative `(cosh x ^ 2)⁻¹`,
+  and the limits `± 1` at `± ∞`, approached exponentially fast (`Real.one_add_tanh_le`); the
+  hyperbolic secant tends to `0` at both ends (`Real.tendsto_inv_cosh_atTop`,
+  `Real.tendsto_inv_cosh_atBot`).
 * `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` —
   `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` over `ℂ`, when
   `cosh α * cosh θ ≠ 0`.
@@ -52,7 +57,9 @@ law of `Real.artanh`, which carries the Möbius addition of `(-1, 1)` to the add
 that law is in turn what makes the hyperbolic distance of the complex unit disc a metric.
 The complex identity `Complex.cosh_sub_div_eq_one_sub_tanh_mul_tanh_div_two` rewrites the
 projection parameter at which the two stabilization constants of the Ocneanu trace agree, in
-`TauCeti/Algebra/TypeAHeckeAlgebra/Hyperbolic.lean`.
+`TauCeti/Algebra/TypeAHeckeAlgebra/Hyperbolic.lean`. The derivative, limits and exponential
+approach to `± 1` of `Real.tanh` describe the scalar trajectory operators `d/ds ± tanh s` and their
+gluing in `TauCeti/Analysis/ODE/TrajectoryOperator/Neck.lean`.
 -/
 
 public section
@@ -134,6 +141,60 @@ theorem _root_.Real.continuous_tanh : Continuous Real.tanh := by
 theorem _root_.Real.contDiff_tanh {n : WithTop ℕ∞} : ContDiff ℝ n Real.tanh := by
   simp_rw [funext Real.tanh_eq_sinh_div_cosh]
   exact Real.contDiff_sinh.div Real.contDiff_cosh fun x ↦ (Real.cosh_pos x).ne'
+
+/-- `1 + tanh x = exp x / cosh x`, since `cosh x + sinh x = exp x`. -/
+theorem _root_.Real.one_add_tanh (x : ℝ) : 1 + Real.tanh x = Real.exp x / Real.cosh x := by
+  rw [Real.tanh_eq_sinh_div_cosh, ← Real.cosh_add_sinh]
+  field_simp [(Real.cosh_pos x).ne']
+
+/-- `1 - tanh x = exp (-x) / cosh x`, since `cosh x - sinh x = exp (-x)`. -/
+theorem _root_.Real.one_sub_tanh (x : ℝ) : 1 - Real.tanh x = Real.exp (-x) / Real.cosh x := by
+  rw [Real.tanh_eq_sinh_div_cosh, ← Real.cosh_sub_sinh]
+  field_simp [(Real.cosh_pos x).ne']
+
+/-- `1 + tanh x ≤ 2 * exp (2 * x)`: the hyperbolic tangent approaches `-1` exponentially fast at
+`-∞`. -/
+theorem _root_.Real.one_add_tanh_le (x : ℝ) : 1 + Real.tanh x ≤ 2 * Real.exp (2 * x) := by
+  rw [Real.one_add_tanh, div_le_iff₀ (Real.cosh_pos x), Real.cosh_eq]
+  have h : Real.exp (2 * x) * Real.exp (-x) = Real.exp x := by rw [← Real.exp_add]; ring_nf
+  nlinarith [Real.exp_pos (2 * x), Real.exp_pos x]
+
+/-- The derivative of the hyperbolic tangent is the square of the hyperbolic secant. -/
+theorem _root_.Real.hasDerivAt_tanh (x : ℝ) : HasDerivAt Real.tanh (Real.cosh x ^ 2)⁻¹ x := by
+  have h := (Real.hasDerivAt_sinh x).div (Real.hasDerivAt_cosh x) (Real.cosh_pos x).ne'
+  convert h using 1
+  · exact funext fun y ↦ Real.tanh_eq_sinh_div_cosh y
+  · rw [← sq, ← sq, Real.cosh_sq, add_sub_cancel_left, one_div]
+
+/-- The hyperbolic tangent tends to `1` at `+∞`: `1 - tanh x = exp (-x) / cosh x ≤ exp (-x)`. -/
+theorem _root_.Real.tendsto_tanh_atTop : Filter.Tendsto Real.tanh Filter.atTop (nhds 1) := by
+  have h : Filter.Tendsto (fun x ↦ 1 - Real.exp (-x) / Real.cosh x) Filter.atTop (nhds (1 - 0)) :=
+    tendsto_const_nhds.sub <| squeeze_zero (fun x ↦ by positivity)
+      (fun x ↦ div_le_self (Real.exp_pos _).le (Real.one_le_cosh x))
+      Real.tendsto_exp_neg_atTop_nhds_zero
+  rw [sub_zero] at h
+  exact h.congr fun x ↦ by rw [← Real.one_sub_tanh, sub_sub_cancel]
+
+/-- The hyperbolic tangent tends to `-1` at `-∞`: `1 + tanh x = exp x / cosh x ≤ exp x`. -/
+theorem _root_.Real.tendsto_tanh_atBot : Filter.Tendsto Real.tanh Filter.atBot (nhds (-1)) := by
+  have h : Filter.Tendsto (fun x ↦ Real.exp x / Real.cosh x - 1) Filter.atBot (nhds (0 - 1)) :=
+    (squeeze_zero (fun x ↦ by positivity)
+      (fun x ↦ div_le_self (Real.exp_pos _).le (Real.one_le_cosh x)) Real.tendsto_exp_atBot).sub
+      tendsto_const_nhds
+  rw [zero_sub] at h
+  exact h.congr fun x ↦ by rw [← Real.one_add_tanh, add_sub_cancel_left]
+
+/-- The hyperbolic secant tends to `0` at `+∞`. -/
+theorem _root_.Real.tendsto_inv_cosh_atTop :
+    Filter.Tendsto (fun x ↦ (Real.cosh x)⁻¹) Filter.atTop (nhds 0) := by
+  simpa [← Real.sqrt_one_sub_tanh_sq] using
+    ((Real.tendsto_tanh_atTop.pow 2).const_sub 1).sqrt
+
+/-- The hyperbolic secant tends to `0` at `-∞`. -/
+theorem _root_.Real.tendsto_inv_cosh_atBot :
+    Filter.Tendsto (fun x ↦ (Real.cosh x)⁻¹) Filter.atBot (nhds 0) := by
+  simpa [← Real.sqrt_one_sub_tanh_sq] using
+    ((Real.tendsto_tanh_atBot.pow 2).const_sub 1).sqrt
 
 /-- `cosh (α - θ) / (2 * cosh α * cosh θ) = (1 - tanh α * tanh θ) / 2` for complex `α`, `θ`
 with `cosh α ≠ 0` and `cosh θ ≠ 0`: both sides are

@@ -51,6 +51,8 @@ trajectory operator has closed range.
 * `TauCeti.WeakDerivStep.map_ker_le_orthogonal_range_trajectoryOperator` and
   `TauCeti.WeakDerivStep.orthogonal_range_trajectoryOperator_eq_map_ker`: the values of the kernel
   of `D_{-A}` are exactly the orthogonal complement of the range of `D_A`.
+* `TauCeti.WeakDerivStep.range_trajectoryOperator_eq_top_iff`: when its range is closed, `D_A`
+  is onto exactly when `D_{-A}` is injective.
 * `TauCeti.WeakDerivStep.finiteDimensional_coker_trajectoryOperator`: the cokernel of `D_A` is
   finite dimensional.
 * `TauCeti.WeakDerivStep.isFredholm_trajectoryOperator`: `D_A` is a Fredholm operator.
@@ -221,6 +223,25 @@ theorem orthogonal_range_trajectoryOperator_eq_map_ker [FiniteDimensional ℝ E]
           : _ →ₗ[ℝ] _) :=
   (orthogonal_range_trajectoryOperator_le_map_ker hsym).antisymm
     (map_ker_le_orthogonal_range_trajectoryOperator hsym)
+
+/-- **A trajectory operator with closed range is onto exactly when its formal adjoint is
+injective.** If the coefficient of `D_A u = u' + A u` is almost everywhere symmetric, `E` is finite
+dimensional and the range of `D_A` is closed, then `D_A` maps `W^{1,2}(ℝ, E)` onto `L²(ℝ, E)` if
+and only if `D_{-A}` has trivial kernel. -/
+theorem range_trajectoryOperator_eq_top_iff [FiniteDimensional ℝ E]
+    {AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))}
+    (hsym : ∀ᵐ s ∂volume.restrict ((⊤ : Opens ℝ) : Set ℝ), (AL s).toLinearMap.IsSymmetric)
+    (hclosed : IsClosed ((trajectoryOperator (p := 2) AL).range :
+      Set (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :
+    (trajectoryOperator (p := 2) AL).range = ⊤ ↔ (trajectoryOperator (p := 2) (-AL)).ker = ⊥ := by
+  have := hclosed.completeSpace_coe
+  -- The value map `W^{1,2}(ℝ, E) → L²(ℝ, E)` is injective.
+  have hinj : Function.Injective
+      (prevL (ContinuousLinearMap.id ℝ (Lp E 2 (volume.restrict ((⊤ : Opens ℝ) : Set ℝ))))) :=
+    fun u w h ↦ ext (by simpa using h)
+  rw [← Submodule.orthogonal_eq_bot_iff, orthogonal_range_trajectoryOperator_eq_map_ker hsym]
+  exact ⟨fun h ↦ Submodule.map_injective_of_injective hinj (h.trans (Submodule.map_bot _).symm),
+    fun h ↦ by rw [h, Submodule.map_bot]⟩
 
 /-- **The index of a trajectory operator with closed range.** If the coefficient of
 `D_A u = u' + A u` is almost everywhere symmetric, `E` is finite dimensional and the range of
