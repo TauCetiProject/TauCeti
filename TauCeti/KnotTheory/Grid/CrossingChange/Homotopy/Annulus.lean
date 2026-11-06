@@ -8,7 +8,7 @@ module
 public import TauCeti.KnotTheory.Grid.CrossingChange.Hexagon
 public import TauCeti.KnotTheory.Grid.Commutation.InitialPentagon.Basic
 import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Annulus
-import TauCeti.KnotTheory.Grid.Commutation.Homotopy.PentagonPair
+import TauCeti.KnotTheory.Grid.Commutation.Homotopy.Pentagon.Pair
 
 /-!
 # Returning domains of the crossing change homotopy equation
