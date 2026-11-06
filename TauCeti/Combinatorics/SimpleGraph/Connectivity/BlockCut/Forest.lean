@@ -266,11 +266,8 @@ theorem blockCutComponentEquiv_symm_connectedComponentMk_of_mem [Finite V] (B : 
 
 /-- A finite graph has a connected block--cut graph exactly when it is connected. -/
 theorem blockCutGraph_connected_iff [Finite V] : G.blockCutGraph.Connected ↔ G.Connected := by
-  rw [connected_iff, connected_iff, ← subsingleton_connectedComponent_iff (G := G.blockCutGraph),
-    ← subsingleton_connectedComponent_iff (G := G),
-    ← nonempty_connectedComponent_iff (G := G.blockCutGraph),
-    ← nonempty_connectedComponent_iff (G := G), G.blockCutComponentEquiv.subsingleton_congr,
-    G.blockCutComponentEquiv.nonempty_congr]
+  rw [← card_connectedComponent_eq_one_iff, ← card_connectedComponent_eq_one_iff,
+    Nat.card_congr G.blockCutComponentEquiv]
 
 /-- **The block--cut tree.** The block--cut graph of a finite graph is a tree exactly when the
 graph is connected. -/
