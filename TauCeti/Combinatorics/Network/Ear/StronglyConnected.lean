@@ -74,7 +74,7 @@ private theorem exists_mem_toSubnetwork_arrowSet_of_isPath {x y b : V} (e : N.Ho
     hq.fst_ne_of_mem_arrows hc
       (hqS c.1 (q.source_mem_vertices_of_mem_arrows hc) (S.source_mem c hcS))
   have hvert : (((ArrowWalk.nil x).cons e).comp q).vertices = x :: q.vertices :=
-    ArrowWalk.vertices_comp ((ArrowWalk.nil x).cons e) q
+    ArrowWalk.vertices_nil_cons_comp e q
   have harr : (((ArrowWalk.nil x).cons e).comp q).arrows = ⟨x, y, e⟩ :: q.arrows := by
     simp [ArrowWalk.arrows_comp]
   have hW : ∀ c ∈ (((ArrowWalk.nil x).cons e).comp q).arrows, c ∉ S.arrowSet := by

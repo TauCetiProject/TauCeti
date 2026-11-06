@@ -164,6 +164,13 @@ theorem vertices_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
     (p.comp p').vertices = p.vertices.dropLast ++ p'.vertices :=
   @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p p'
 
+/-- The vertices of the walk that traverses `e` from `x` and then follows `p` are `x` followed by
+the vertices of `p`. -/
+theorem vertices_nil_cons_comp {x y t : V} (e : Q x y) (p : ArrowWalk Q y t) :
+    (((nil x).cons e).comp p).vertices = x :: p.vertices := by
+  rw [vertices_comp, vertices_cons, vertices_nil, List.concat_eq_append, List.dropLast_concat,
+    List.singleton_append]
+
 @[simp]
 theorem arrows_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
     (p.comp p').arrows = p.arrows ++ p'.arrows := by
@@ -399,9 +406,7 @@ theorem IsPath.fst_ne_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPa
   rintro rfl
   -- The final segment would be a path starting and ending at `x`, visiting it twice.
   have h := hp.of_comp_right
-  have hcomp : (((nil x).cons e).comp p₂).vertices = [x] ++ p₂.vertices :=
-    vertices_comp ((nil x).cons e) p₂
-  rw [isPath_def, hcomp] at h
+  rw [isPath_def, vertices_nil_cons_comp] at h
   exact (List.nodup_cons.1 h).1 (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₂)
 
 /-- **Path extraction.** Every walk contains a path with the same endpoints that traverses only
