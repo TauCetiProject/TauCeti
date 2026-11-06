@@ -45,6 +45,8 @@ is the complex one; the conclusions do not depend on the choice of such a frame.
 In the namespace `TauCeti.AlmostComplexStructure`:
 
 * `inner_add_hodgeStar_ιMulti_apply`: `⟪F + ⋆F, v ∧ J v⟫ = ‖v‖² ⟪ω, F⟫`.
+* `inner_ιMulti_apply_eq_zero`: anti-`J`-invariant self-dual forms (`⋆η = η`, `⟪ω, η⟫ = 0`)
+  vanish on every `v ∧ J v`.
 * `inner_ιMulti_apply_eq_add`: `⟪F, v ∧ J v⟫ = c ‖v‖² + ⟪F⁻, v ∧ J v⟫`.
 * `exists_norm_eq_one_inner_ιMulti_apply_eq_neg`: an anti-self-dual `η` takes the value
   `-‖η‖ / √2` on `v ∧ J v` for some unit vector `v`.
@@ -95,6 +97,15 @@ theorem inner_add_hodgeStar_ιMulti_apply (F : ⋀[ℝ]^2 V) (v : V) :
   rw [inner_add_left, hs, ← inner_add_right, hsd, real_inner_smul_right, real_inner_comm]
 
 include he h₀ h₂ in
+/-- **Anti-`J`-invariant self-dual forms do not contribute to the `J`-Hermitian part**: for
+`⋆η = η` with `⟪ω, η⟫ = 0`, `⟪η, v ∧ J v⟫ = 0`. -/
+theorem inner_ιMulti_apply_eq_zero {η : ⋀[ℝ]^2 V} (hη : o.hodgeStar hkl η = η)
+    (hω : ⟪J.kahlerForm, η⟫ = 0) (v : V) : ⟪η, ιMulti ℝ 2 ![v, J v]⟫ = 0 := by
+  have h := inner_add_hodgeStar_ιMulti_apply h₀ h₂ hkl he η v
+  rw [hη, hω, mul_zero, inner_add_left] at h
+  linarith
+
+include he h₀ h₂ in
 /-- **The `J`-Hermitian part of a two-form**: with `c = ⟪ω, F⟫ / 2` and the anti-self-dual part
 `F⁻ = (F - ⋆F) / 2`, `⟪F, v ∧ J v⟫ = c ‖v‖² + ⟪F⁻, v ∧ J v⟫`. -/
 theorem inner_ιMulti_apply_eq_add (F : ⋀[ℝ]^2 V) (v : V) :
@@ -104,12 +115,6 @@ theorem inner_ιMulti_apply_eq_add (F : ⋀[ℝ]^2 V) (v : V) :
   rw [inner_add_left] at h
   rw [real_inner_smul_left, inner_sub_left]
   linarith
-
-/-- The anti-self-dual part `(F - ⋆F) / 2` of a two-form is anti-self-dual. -/
-private theorem hodgeStar_smul_sub_hodgeStar (F : ⋀[ℝ]^2 V) :
-    o.hodgeStar hkl ((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) =
-      -((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)) := by
-  rw [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even even_two hkl, ← smul_neg, neg_sub]
 
 include he h₀ h₂ in
 /-- **The extreme value of an anti-self-dual form on `J`-complex lines**: for `⋆η = -η` there is a
@@ -166,7 +171,8 @@ theorem le_inner_ιMulti_apply (F : ⋀[ℝ]^2 V) (v : V) :
   have hJ (v : V) : ‖J v‖ = ‖v‖ := by
     rw [norm_eq_sqrt_real_inner, inner_apply_apply_of_orthonormalBasis h₀ h₂,
       ← norm_eq_sqrt_real_inner]
-  have h := TauCeti.abs_inner_ιMulti_le o hkl (Or.inr (hodgeStar_smul_sub_hodgeStar hkl F)) v (J v)
+  have h := TauCeti.abs_inner_ιMulti_le o hkl
+    (Or.inr (o.hodgeStar_smul_sub_hodgeStar even_two hkl 2⁻¹ F)) v (J v)
   rw [hJ, mul_assoc, ← pow_two] at h
   rw [inner_ιMulti_apply_eq_add h₀ h₂ hkl he F v]
   linarith [neg_abs_le ⟪(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F), ιMulti ℝ 2 ![v, J v]⟫]
@@ -193,7 +199,7 @@ theorem isLeast_inner_ιMulti_apply (F : ⋀[ℝ]^2 V) :
       (⟪J.kahlerForm, F⟫ / 2 - ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2) := by
   refine ⟨?_, ?_⟩
   · obtain ⟨v, hv, h⟩ := exists_norm_eq_one_inner_ιMulti_apply_eq_neg h₀ h₂ hkl he
-      (hodgeStar_smul_sub_hodgeStar hkl F)
+      (o.hodgeStar_smul_sub_hodgeStar even_two hkl 2⁻¹ F)
     refine ⟨v, mem_sphere_zero_iff_norm.2 hv, ?_⟩
     dsimp only
     rw [inner_ιMulti_apply_eq_add h₀ h₂ hkl he F v, h, hv]
@@ -209,7 +215,7 @@ theorem isGreatest_inner_ιMulti_apply (F : ⋀[ℝ]^2 V) :
     IsGreatest ((fun v ↦ ⟪F, ιMulti ℝ 2 ![v, J v]⟫) '' Metric.sphere 0 1)
       (⟪J.kahlerForm, F⟫ / 2 + ‖(2⁻¹ : ℝ) • (F - o.hodgeStar hkl F)‖ / √2) := by
   refine ⟨?_, ?_⟩
-  · have hη := hodgeStar_smul_sub_hodgeStar (o := o) hkl F
+  · have hη := o.hodgeStar_smul_sub_hodgeStar even_two hkl 2⁻¹ F
     obtain ⟨v, hv, h⟩ := exists_norm_eq_one_inner_ιMulti_apply_eq_neg h₀ h₂ hkl he
       (η := -((2⁻¹ : ℝ) • (F - o.hodgeStar hkl F))) (by rw [map_neg, hη])
     rw [inner_neg_left, norm_neg, neg_inj] at h

@@ -284,8 +284,8 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
 
 /-- **Contraction turns the derivation action into a commutator**: for a skew-adjoint `A`, the
 contraction by `D_A F` is the commutator of `A` with the contraction by `F`,
-`(D_A F) ⌟ = A ∘ (F ⌟) - (F ⌟) ∘ A`. In particular `D_A F = 0` exactly when the contraction by
-`F` commutes with `A`. -/
+`(D_A F) ⌟ = A ∘ (F ⌟) - (F ⌟) ∘ A`. In particular, if `D_A F = 0` then the contraction by `F`
+commutes with `A`. -/
 theorem twoVectorContraction_lieMap {A : V →ₗ[ℝ] V} (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫)
     (F : ⋀[ℝ]^2 V) :
     twoVectorContraction (lieMap 2 A F) =
