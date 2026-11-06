@@ -51,9 +51,9 @@ polynomial in the Morse inequalities.
 
 ## Main declarations
 
-* `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`
-  and, on boundaryless manifolds,
-  `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`.
+* `TauCeti.criticalPoints`: the critical set, with `TauCeti.mem_criticalPoints_iff_mfderiv_eq_zero`,
+  on boundaryless manifolds `TauCeti.mem_criticalPoints_iff_fderiv_comp_extChartAt_symm_eq_zero`,
+  and on a normed space `TauCeti.mem_criticalPoints_iff_fderiv_eq_zero`.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
@@ -127,6 +127,14 @@ theorem mem_criticalPoints_iff_mfderiv_eq_zero :
   have hv := DFunLike.congr_fun h v
   rw [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe] at hv
   exact (NormedSpace.fromTangentSpace (f x)).map_eq_zero_iff.1 hv
+
+/-- On a normed space with its trivial model, a point is critical exactly when the Fréchet
+derivative vanishes there. -/
+theorem mem_criticalPoints_iff_fderiv_eq_zero {f : E → ℝ} {x : E} :
+    x ∈ criticalPoints 𝓘(ℝ, E) f ↔ fderiv ℝ f x = 0 := by
+  rw [mem_criticalPoints, mvfderiv_eq_fderiv]
+  -- `NormedSpace.fromTangentSpace x` is the identity of `E`, read on the tangent space.
+  exact Iff.rfl
 
 /-- The critical set is the zero locus of the manifold derivative `mfderiv I 𝓘(ℝ) f`. -/
 theorem criticalPoints_eq_setOf_mfderiv_eq_zero :
