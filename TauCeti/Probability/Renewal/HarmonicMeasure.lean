@@ -10,7 +10,7 @@ public import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 public import Mathlib.MeasureTheory.Measure.Haar.Unique
 public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import TauCeti.MeasureTheory.Group.ChoquetDeny
-public import TauCeti.Probability.Renewal.Lattice
+public import TauCeti.Probability.Renewal.Lattice.Basic
 
 /-!
 # Harmonic measures of a nonlattice law are multiples of Lebesgue measure
