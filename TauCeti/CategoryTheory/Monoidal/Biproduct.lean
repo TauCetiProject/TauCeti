@@ -17,7 +17,8 @@ the resulting extensionality principles for a finite index type in an arbitrary 
 Mathlib's `CategoryTheory.rightDistributor_ext_left` and `CategoryTheory.leftDistributor_ext_right`
 state the same principles for index types in `Type`, through the distributors, which are only
 defined there; biproducts indexed by the isomorphism classes of simple objects of a category, for
-example, need the general form.
+example, need the general form. It also records `biproduct.ι_map` and `biproduct.map_π` whiskered
+on the right and on the left.
 -/
 
 public section
@@ -48,5 +49,24 @@ theorem whiskerLeft_hom_ext {U Y : C} {g h : Y ⟶ U ⊗ ⨁ f}
       MonoidalCategory.whiskerLeft_id]
   rw [← Category.comp_id g, ← Category.comp_id h, ← e, Preadditive.comp_sum, Preadditive.comp_sum]
   simp only [← Category.assoc, w]
+
+section Map
+
+variable {C : Type*} [Category* C] [HasZeroMorphisms C] [MonoidalCategory C] {J : Type*}
+  {f g : J → C} [HasBiproduct f] [HasBiproduct g]
+
+/-- `biproduct.ι_map` whiskered on the right by `U`. -/
+@[reassoc (attr := simp)]
+theorem ι_whiskerRight_map_whiskerRight (p : ∀ j, f j ⟶ g j) (j : J) (U : C) :
+    biproduct.ι f j ▷ U ≫ biproduct.map p ▷ U = p j ▷ U ≫ biproduct.ι g j ▷ U := by
+  simp only [← comp_whiskerRight, biproduct.ι_map]
+
+/-- `biproduct.map_π` whiskered on the left by `U`. -/
+@[reassoc (attr := simp)]
+theorem whiskerLeft_map_whiskerLeft_π (p : ∀ j, f j ⟶ g j) (j : J) (U : C) :
+    U ◁ biproduct.map p ≫ U ◁ biproduct.π g j = U ◁ biproduct.π f j ≫ U ◁ p j := by
+  simp only [← MonoidalCategory.whiskerLeft_comp, biproduct.map_π]
+
+end Map
 
 end CategoryTheory.Limits.biproduct

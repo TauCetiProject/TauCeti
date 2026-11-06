@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Monoidal.Linear
 public import TauCeti.CategoryTheory.Monoidal.Biproduct
 public import TauCeti.CategoryTheory.Monoidal.Center.OfHom
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Preadditive
 public import TauCeti.CategoryTheory.Semisimple.DualBasis
 
 /-!
@@ -27,7 +27,7 @@ the summand of `T` is
 
 where `b` is any basis of `S ⟶ U ⊗ T`, `b.homDual` is the dual basis of `U ⊗ T ⟶ S` under the
 composition pairing, and `f^∨ : Sᘁ ⊗ U ⟶ Tᘁ` is the morphism corresponding to `f : U ⊗ T ⟶ S` by
-Frobenius reciprocity on both sides. Each summand of this sum is
+Frobenius reciprocity on both sides (`TauCeti.dualMate`). Each summand of this sum is
 `TauCeti.CenterInduction.term X (b.homDual i) (b i)`, and the sum does not depend on `b`, because
 the canonical element `∑ i, b.homDual i ⊗ b i` does not (`Module.Basis.sum_homDual_eq`).
 
@@ -56,7 +56,9 @@ category itself, for instance to show that it is semisimple; this file construct
 * `TauCeti.CenterInduction.halfBraidingHom` and `TauCeti.CenterInduction.halfBraiding`: the
   canonical half-braiding of `⨁ S, S ⊗ X ⊗ Sᘁ`, with components
   `TauCeti.CenterInduction.ι_whiskerRight_halfBraidingHom_whiskerLeft_π`;
-* `TauCeti.centerInduction`: the induction functor `C ⥤ Center C`.
+* `TauCeti.centerInduction`: the induction functor `C ⥤ Center C`, with
+  `TauCeti.centerInductionObjIso` identifying its underlying objects with `⨁ S, S ⊗ X ⊗ Sᘁ`
+  naturally in `X`.
 
 ## References
 
@@ -83,70 +85,6 @@ namespace CenterInduction
 section Term
 
 variable {C : Type u} [Category.{v} C] [MonoidalCategory C]
-
-/-- The morphism `Sᘁ ⊗ U ⟶ Tᘁ` corresponding to `f : U ⊗ T ⟶ S` by Frobenius reciprocity on the
-right (moving `T` across) and on the left (moving `S` across). -/
-private def dualMate {S T U : C} [HasRightDual S] [HasRightDual T] (f : U ⊗ T ⟶ S) :
-    Sᘁ ⊗ U ⟶ Tᘁ :=
-  (tensorLeftHomEquiv U S Sᘁ Tᘁ).symm (tensorRightHomEquiv U T Tᘁ S f)
-
-private theorem dualMate_eq {S T U : C} [HasRightDual S] [HasRightDual T] (f : U ⊗ T ⟶ S) :
-    dualMate f = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ η_ T Tᘁ ⊗≫ (Sᘁ : C) ◁ f ▷ Tᘁ ⊗≫ ε_ S Sᘁ ▷ Tᘁ ⊗≫ 𝟙 _ := by
-  simp only [dualMate, tensorLeftHomEquiv, tensorRightHomEquiv, Equiv.coe_fn_mk,
-    Equiv.coe_fn_symm_mk]
-  monoidal
-
-private theorem whiskerLeft_comp_dualMate {S T U U' : C} [HasRightDual S] [HasRightDual T]
-    (g : U ⟶ U') (f : U' ⊗ T ⟶ S) : (Sᘁ : C) ◁ g ≫ dualMate f = dualMate (g ▷ T ≫ f) := by
-  have h : tensorRightHomEquiv U T Tᘁ S (g ▷ T ≫ f) = g ≫ tensorRightHomEquiv U' T Tᘁ S f := by
-    apply (tensorRightHomEquiv U T Tᘁ S).symm.injective
-    rw [Equiv.symm_apply_apply, tensorRightHomEquiv_symm_naturality, Equiv.symm_apply_apply]
-  rw [dualMate, dualMate, h, tensorLeftHomEquiv_symm_naturality]
-
-/-- Evaluating `T` against the output `Tᘁ` of `dualMate f` is evaluating `S` against the output of
-`f`. -/
-private theorem dualMate_whiskerRight_evaluation {S T U : C} [HasRightDual S] [HasRightDual T]
-    (f : U ⊗ T ⟶ S) :
-    (α_ _ _ _).inv ≫ dualMate f ▷ T ≫ ε_ T Tᘁ = (Sᘁ : C) ◁ f ≫ ε_ S Sᘁ := by
-  calc
-    _ = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ η_ T Tᘁ ▷ T ⊗≫ ((Sᘁ : C) ◁ f) ▷ ((Tᘁ : C) ⊗ T) ⊗≫
-          (ε_ S Sᘁ ▷ ((Tᘁ : C) ⊗ T) ≫ 𝟙_ C ◁ ε_ T Tᘁ) ⊗≫ 𝟙 _ := by
-      rw [dualMate_eq]; monoidal
-    _ = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ η_ T Tᘁ ▷ T ⊗≫
-          (((Sᘁ : C) ◁ f) ▷ ((Tᘁ : C) ⊗ T) ≫ ((Sᘁ : C) ⊗ S) ◁ ε_ T Tᘁ) ⊗≫
-          ε_ S Sᘁ ⊗≫ 𝟙 _ := by
-      rw [← whisker_exchange]; monoidal
-    _ = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ (η_ T Tᘁ ▷ T ⊗≫ T ◁ ε_ T Tᘁ) ⊗≫ (Sᘁ : C) ◁ f ⊗≫ ε_ S Sᘁ ⊗≫ 𝟙 _ := by
-      rw [← whisker_exchange]; monoidal
-    _ = _ := by
-      rw [ExactPairing.evaluation_coevaluation'']; monoidal
-
-/-- The composition law of `dualMate`: the morphisms `Sᘁ ⊗ U ⟶ Tᘁ` and `Tᘁ ⊗ V ⟶ Rᘁ`
-corresponding to `f : U ⊗ T ⟶ S` and `f' : V ⊗ R ⟶ T` compose to the morphism corresponding to
-`U ⊗ V ⊗ R ⟶ U ⊗ T ⟶ S`. -/
-private theorem dualMate_tensor {S T R U V : C} [HasRightDual S] [HasRightDual T]
-    [HasRightDual R] (f : U ⊗ T ⟶ S) (f' : V ⊗ R ⟶ T) :
-    (α_ _ _ _).inv ≫ dualMate f ▷ V ≫ dualMate f' = dualMate ((α_ _ _ _).hom ≫ U ◁ f' ≫ f) := by
-  calc
-    _ = 𝟙 _ ⊗≫ ((dualMate f ▷ V) ▷ 𝟙_ C ≫ ((Tᘁ : C) ⊗ V) ◁ η_ R Rᘁ) ⊗≫ (Tᘁ : C) ◁ f' ▷ Rᘁ ⊗≫
-          ε_ T Tᘁ ▷ Rᘁ ⊗≫ 𝟙 _ := by
-      rw [dualMate_eq f']; monoidal
-    _ = 𝟙 _ ⊗≫ ((Sᘁ : C) ⊗ U ⊗ V) ◁ η_ R Rᘁ ⊗≫ (dualMate f ▷ (V ⊗ R) ≫ (Tᘁ : C) ◁ f') ▷ Rᘁ ⊗≫
-          ε_ T Tᘁ ▷ Rᘁ ⊗≫ 𝟙 _ := by
-      rw [← whisker_exchange]; monoidal
-    _ = 𝟙 _ ⊗≫ ((Sᘁ : C) ⊗ U ⊗ V) ◁ η_ R Rᘁ ⊗≫ ((Sᘁ : C) ⊗ U) ◁ f' ▷ Rᘁ ⊗≫
-          ((α_ _ _ _).inv ≫ dualMate f ▷ T ≫ ε_ T Tᘁ) ▷ Rᘁ ⊗≫ 𝟙 _ := by
-      rw [← whisker_exchange]; monoidal
-    _ = _ := by
-      rw [dualMate_whiskerRight_evaluation, dualMate_eq]; monoidal
-
-/-- `dualMate` sends the left unitor of `S` to the right unitor of `Sᘁ`. -/
-private theorem dualMate_leftUnitor (S : C) [HasRightDual S] :
-    dualMate (λ_ S).hom = (ρ_ Sᘁ).hom := by
-  rw [dualMate_eq]
-  calc
-    _ = 𝟙 _ ⊗≫ ((Sᘁ : C) ◁ η_ S Sᘁ ⊗≫ ε_ S Sᘁ ▷ Sᘁ) ⊗≫ 𝟙 _ := by monoidal
-    _ = _ := by rw [ExactPairing.coevaluation_evaluation'']; monoidal
 
 variable (X : C)
 
@@ -229,10 +167,8 @@ variable (X) in
 def termₗ {S T U V : C} [HasRightDual S] [HasRightDual T] :
     (U ⊗ T ⟶ S) →ₗ[k] (S ⟶ V ⊗ T) →ₗ[k] ((S ⊗ X ⊗ Sᘁ) ⊗ U ⟶ V ⊗ T ⊗ X ⊗ Tᘁ) :=
   LinearMap.mk₂ k (term X)
-    (fun _ _ _ ↦ by
-      simp [term, dualMate, tensorLeftHomEquiv, tensorRightHomEquiv, monoidalComp])
-    (fun _ _ _ ↦ by
-      simp [term, dualMate, tensorLeftHomEquiv, tensorRightHomEquiv, monoidalComp])
+    (fun _ _ _ ↦ by simp [term, dualMate_add, monoidalComp])
+    (fun _ _ _ ↦ by simp [term, dualMate_smul, monoidalComp])
     (fun _ _ _ ↦ by simp [term, monoidalComp])
     (fun _ _ _ ↦ by simp [term, monoidalComp])
 
@@ -339,10 +275,7 @@ theorem component_tensorUnit_self (X : C) (S : SimpleClasses C) :
     exact finrank_endomorphism_simple_eq_one k S.repr
   have hne : (λ_ S.repr).inv ≠ 0 := fun h ↦ Simple.not_isZero S.repr <|
     (IsZero.iff_id_eq_zero _).2 (by simpa [h] using ((λ_ S.repr).inv_hom_id).symm)
-  let b : Basis (Fin 1) k (S.repr ⟶ 𝟙_ C ⊗ S.repr) :=
-    basisOfLinearIndependentOfCardEqFinrank
-      (LinearIndependent.of_subsingleton (v := fun _ : Fin 1 ↦ (λ_ S.repr).inv) 0 hne)
-      (by simp [hrank])
+  let b := FiniteDimensional.basisSingleton (Fin 1) hrank (λ_ S.repr).inv hne
   have hb : b 0 = (λ_ S.repr).inv := by simp [b]
   have hb' : b.homDual 0 = (λ_ S.repr).hom := by
     symm
@@ -425,10 +358,8 @@ theorem biproductMap_whiskerRight_comp_halfBraidingHom {X Y : C} (h : X ⟶ Y) (
     (biproduct.map fun S : SimpleClasses C ↦ S.repr ◁ h ▷ S.reprᘁ) ▷ U ≫ halfBraidingHom k Y U =
       halfBraidingHom k X U ≫ U ◁ biproduct.map fun S : SimpleClasses C ↦ S.repr ◁ h ▷ S.reprᘁ := by
   refine biproduct.whiskerRight_hom_ext fun S ↦ biproduct.whiskerLeft_hom_ext fun T ↦ ?_
-  simp only [Category.assoc]
-  rw [← comp_whiskerRight_assoc, biproduct.ι_map, comp_whiskerRight_assoc,
-    ι_whiskerRight_halfBraidingHom_whiskerLeft_π, ← MonoidalCategory.whiskerLeft_comp,
-    biproduct.map_π, MonoidalCategory.whiskerLeft_comp,
+  simp only [Category.assoc, biproduct.ι_whiskerRight_map_whiskerRight_assoc,
+    biproduct.whiskerLeft_map_whiskerLeft_π, ι_whiskerRight_halfBraidingHom_whiskerLeft_π,
     ι_whiskerRight_halfBraidingHom_whiskerLeft_π_assoc, whiskerRight_comp_component]
 
 /-- The canonical half-braiding of `⨁ S, S ⊗ X ⊗ Sᘁ`, the sum over the simple classes `S` of
@@ -456,9 +387,7 @@ variable (C : Type u) [Category.{v} C] [MonoidalCategory C] [RigidCategory C] [A
 /-- The **induction functor** `C ⥤ Center C` of a fusion category: it sends `X` to
 `⨁ S, S ⊗ X ⊗ Sᘁ`, the sum over the simple classes `S` of their representatives, with its
 canonical half-braiding `CenterInduction.halfBraiding`, and acts on morphisms summandwise.
-Its definition is exposed so that the objects and morphisms it produces unfold to their
-underlying data. -/
-@[expose]
+Its underlying objects are described by `centerInductionObjIso`. -/
 def centerInduction : C ⥤ Center C where
   obj X := ⟨⨁ fun S : SimpleClasses C ↦ S.repr ⊗ X ⊗ S.reprᘁ, CenterInduction.halfBraiding k X⟩
   map h :=
@@ -479,23 +408,37 @@ def centerInduction : C ⥤ Center C where
 variable {C}
 
 /-- The object underlying the induction of `X` is `⨁ S, S ⊗ X ⊗ Sᘁ`. -/
-@[simp]
-theorem centerInduction_obj_fst (X : C) :
-    ((centerInduction k C).obj X).1 = ⨁ fun S : SimpleClasses C ↦ S.repr ⊗ X ⊗ S.reprᘁ :=
-  (rfl)
+def centerInductionObjIso (X : C) :
+    ((centerInduction k C).obj X).1 ≅ ⨁ fun S : SimpleClasses C ↦ S.repr ⊗ X ⊗ S.reprᘁ :=
+  Iso.refl _
 
-/-- The half-braiding of the induction of `X` is `CenterInduction.halfBraidingHom`. -/
+/-- `centerInductionObjIso` is natural: under it, the induction of a morphism `h` acts on the
+summand of `S` as `S ◁ h ▷ Sᘁ`. -/
+@[reassoc (attr := simp)]
+theorem centerInductionObjIso_hom_naturality {X Y : C} (h : X ⟶ Y) :
+    ((centerInduction k C).map h).f ≫ (centerInductionObjIso k Y).hom =
+      (centerInductionObjIso k X).hom ≫
+        biproduct.map fun S : SimpleClasses C ↦ S.repr ◁ h ▷ S.reprᘁ :=
+  (Category.comp_id _).trans (Category.id_comp _).symm
+
+/-- The inverse form of `centerInductionObjIso_hom_naturality`. -/
+@[reassoc (attr := simp)]
+theorem centerInductionObjIso_inv_naturality {X Y : C} (h : X ⟶ Y) :
+    (centerInductionObjIso k X).inv ≫ ((centerInduction k C).map h).f =
+      (biproduct.map fun S : SimpleClasses C ↦ S.repr ◁ h ▷ S.reprᘁ) ≫
+        (centerInductionObjIso k Y).inv :=
+  (Category.id_comp _).trans (Category.comp_id _).symm
+
+/-- The half-braiding of the induction of `X` is `CenterInduction.halfBraidingHom`, transported
+along `centerInductionObjIso`. -/
 @[simp]
 theorem centerInduction_obj_snd_β_hom (X U : C) :
-    (((centerInduction k C).obj X).2.β U).hom = CenterInduction.halfBraidingHom k X U :=
-  CenterInduction.halfBraiding_β_hom k X U
-
-/-- The induction of a morphism `h` acts on the summand of `S` as `S ◁ h ▷ Sᘁ`. -/
-@[simp]
-theorem centerInduction_map_f {X Y : C} (h : X ⟶ Y) :
-    ((centerInduction k C).map h).f =
-      biproduct.map fun S : SimpleClasses C ↦ S.repr ◁ h ▷ S.reprᘁ :=
-  (rfl)
+    (((centerInduction k C).obj X).2.β U).hom = (centerInductionObjIso k X).hom ▷ U ≫
+      CenterInduction.halfBraidingHom k X U ≫ U ◁ (centerInductionObjIso k X).inv := by
+  calc
+    _ = CenterInduction.halfBraidingHom k X U := CenterInduction.halfBraiding_β_hom k X U
+    _ = 𝟙 _ ▷ U ≫ CenterInduction.halfBraidingHom k X U ≫ U ◁ 𝟙 _ := by simp
+    _ = _ := (rfl)
 
 end Functor
 

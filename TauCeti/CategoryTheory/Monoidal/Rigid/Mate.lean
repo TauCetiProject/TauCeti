@@ -38,6 +38,10 @@ way. These are the identities that make the left dual functor `C ⥤ (Cᵒᵖ)�
 Taking a left adjoint mate and then a right adjoint mate, or conversely, recovers the original
 morphism.
 
+Applying Frobenius reciprocity on both sides at once, with the ambient right duals, turns a
+morphism `f : U ⊗ T ⟶ S` into a morphism `TauCeti.dualMate f : Sᘁ ⊗ U ⟶ Tᘁ`. It is natural in
+`U` and compatible with composition in the sense of `TauCeti.dualMate_tensor`.
+
 ## Main declarations
 
 * `CategoryTheory.ExactPairing.rightHom_ext`: morphisms into a right dual agree once they agree
@@ -77,6 +81,10 @@ morphism.
 * `TauCeti.leftAdjointMate_eq_leftMate`, `CategoryTheory.ExactPairing.leftDualIso_hom` and
   `CategoryTheory.ExactPairing.leftDualIso_inv`: Mathlib's `leftAdjointMate` and `leftDualIso`
   as left mates;
+* `TauCeti.dualMate`: the morphism `Sᘁ ⊗ U ⟶ Tᘁ` corresponding to `f : U ⊗ T ⟶ S` by Frobenius
+  reciprocity on both sides, with its formula `TauCeti.dualMate_eq`, its naturality
+  `TauCeti.whiskerLeft_comp_dualMate`, its composition law `TauCeti.dualMate_tensor`, and
+  `TauCeti.dualMate_whiskerRight_evaluation` and `TauCeti.dualMate_leftUnitor`;
 * `CategoryTheory.ExactPairing.leftMate_rightDualIso_hom` and
   `CategoryTheory.ExactPairing.rightMate_leftDualIso_hom`: the opposite-handed mate of the
   comparison between two duals is an identity;
@@ -559,5 +567,72 @@ theorem leftAdjointMate_eq_leftMate {X Y : C} [HasLeftDual X] [HasLeftDual Y] (f
     (ᘁf) = ExactPairing.leftMate HasLeftDual.exact HasLeftDual.exact f :=
   ExactPairing.leftDualHom_ext (Y := X) (by
     rw [leftAdjointMate_comp_evaluation, ExactPairing.leftMate_comp_evaluation])
+
+/-- The morphism `Sᘁ ⊗ U ⟶ Tᘁ` corresponding to `f : U ⊗ T ⟶ S` by Frobenius reciprocity on the
+right (moving `T` across) and on the left (moving `S` across). -/
+def dualMate {S T U : C} [HasRightDual S] [HasRightDual T] (f : U ⊗ T ⟶ S) :
+    Sᘁ ⊗ U ⟶ Tᘁ :=
+  (tensorLeftHomEquiv U S Sᘁ Tᘁ).symm (tensorRightHomEquiv U T Tᘁ S f)
+
+/-- `TauCeti.dualMate f` as a string diagram: coevaluate `T`, apply `f`, and evaluate `S`. -/
+theorem dualMate_eq {S T U : C} [HasRightDual S] [HasRightDual T] (f : U ⊗ T ⟶ S) :
+    dualMate f = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ η_ T Tᘁ ⊗≫ (Sᘁ : C) ◁ f ▷ Tᘁ ⊗≫ ε_ S Sᘁ ▷ Tᘁ ⊗≫ 𝟙 _ := by
+  simp only [dualMate, tensorLeftHomEquiv, tensorRightHomEquiv, Equiv.coe_fn_mk,
+    Equiv.coe_fn_symm_mk]
+  monoidal
+
+/-- `TauCeti.dualMate` is natural in `U`: precomposing `TauCeti.dualMate f` with `Sᘁ ◁ g`
+precomposes `f` with `g ▷ T`. -/
+theorem whiskerLeft_comp_dualMate {S T U U' : C} [HasRightDual S] [HasRightDual T]
+    (g : U ⟶ U') (f : U' ⊗ T ⟶ S) : (Sᘁ : C) ◁ g ≫ dualMate f = dualMate (g ▷ T ≫ f) := by
+  have h : tensorRightHomEquiv U T Tᘁ S (g ▷ T ≫ f) = g ≫ tensorRightHomEquiv U' T Tᘁ S f := by
+    apply (tensorRightHomEquiv U T Tᘁ S).symm.injective
+    rw [Equiv.symm_apply_apply, tensorRightHomEquiv_symm_naturality, Equiv.symm_apply_apply]
+  rw [dualMate, dualMate, h, tensorLeftHomEquiv_symm_naturality]
+
+/-- Evaluating `T` against the output `Tᘁ` of `dualMate f` is evaluating `S` against the output of
+`f`. -/
+theorem dualMate_whiskerRight_evaluation {S T U : C} [HasRightDual S] [HasRightDual T]
+    (f : U ⊗ T ⟶ S) :
+    (α_ _ _ _).inv ≫ dualMate f ▷ T ≫ ε_ T Tᘁ = (Sᘁ : C) ◁ f ≫ ε_ S Sᘁ := by
+  calc
+    _ = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ η_ T Tᘁ ▷ T ⊗≫ ((Sᘁ : C) ◁ f) ▷ ((Tᘁ : C) ⊗ T) ⊗≫
+          (ε_ S Sᘁ ▷ ((Tᘁ : C) ⊗ T) ≫ 𝟙_ C ◁ ε_ T Tᘁ) ⊗≫ 𝟙 _ := by
+      rw [dualMate_eq]; monoidal
+    _ = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ η_ T Tᘁ ▷ T ⊗≫
+          (((Sᘁ : C) ◁ f) ▷ ((Tᘁ : C) ⊗ T) ≫ ((Sᘁ : C) ⊗ S) ◁ ε_ T Tᘁ) ⊗≫
+          ε_ S Sᘁ ⊗≫ 𝟙 _ := by
+      rw [← whisker_exchange]; monoidal
+    _ = 𝟙 _ ⊗≫ (Sᘁ : C) ◁ U ◁ (η_ T Tᘁ ▷ T ⊗≫ T ◁ ε_ T Tᘁ) ⊗≫ (Sᘁ : C) ◁ f ⊗≫ ε_ S Sᘁ ⊗≫ 𝟙 _ := by
+      rw [← whisker_exchange]; monoidal
+    _ = _ := by
+      rw [ExactPairing.evaluation_coevaluation'']; monoidal
+
+/-- The composition law of `dualMate`: the morphisms `Sᘁ ⊗ U ⟶ Tᘁ` and `Tᘁ ⊗ V ⟶ Rᘁ`
+corresponding to `f : U ⊗ T ⟶ S` and `f' : V ⊗ R ⟶ T` compose to the morphism corresponding to
+`U ⊗ V ⊗ R ⟶ U ⊗ T ⟶ S`. -/
+theorem dualMate_tensor {S T R U V : C} [HasRightDual S] [HasRightDual T]
+    [HasRightDual R] (f : U ⊗ T ⟶ S) (f' : V ⊗ R ⟶ T) :
+    (α_ _ _ _).inv ≫ dualMate f ▷ V ≫ dualMate f' = dualMate ((α_ _ _ _).hom ≫ U ◁ f' ≫ f) := by
+  calc
+    _ = 𝟙 _ ⊗≫ ((dualMate f ▷ V) ▷ 𝟙_ C ≫ ((Tᘁ : C) ⊗ V) ◁ η_ R Rᘁ) ⊗≫ (Tᘁ : C) ◁ f' ▷ Rᘁ ⊗≫
+          ε_ T Tᘁ ▷ Rᘁ ⊗≫ 𝟙 _ := by
+      rw [dualMate_eq f']; monoidal
+    _ = 𝟙 _ ⊗≫ ((Sᘁ : C) ⊗ U ⊗ V) ◁ η_ R Rᘁ ⊗≫ (dualMate f ▷ (V ⊗ R) ≫ (Tᘁ : C) ◁ f') ▷ Rᘁ ⊗≫
+          ε_ T Tᘁ ▷ Rᘁ ⊗≫ 𝟙 _ := by
+      rw [← whisker_exchange]; monoidal
+    _ = 𝟙 _ ⊗≫ ((Sᘁ : C) ⊗ U ⊗ V) ◁ η_ R Rᘁ ⊗≫ ((Sᘁ : C) ⊗ U) ◁ f' ▷ Rᘁ ⊗≫
+          ((α_ _ _ _).inv ≫ dualMate f ▷ T ≫ ε_ T Tᘁ) ▷ Rᘁ ⊗≫ 𝟙 _ := by
+      rw [← whisker_exchange]; monoidal
+    _ = _ := by
+      rw [dualMate_whiskerRight_evaluation, dualMate_eq]; monoidal
+
+/-- `dualMate` sends the left unitor of `S` to the right unitor of `Sᘁ`. -/
+theorem dualMate_leftUnitor (S : C) [HasRightDual S] :
+    dualMate (λ_ S).hom = (ρ_ Sᘁ).hom := by
+  rw [dualMate_eq]
+  calc
+    _ = 𝟙 _ ⊗≫ ((Sᘁ : C) ◁ η_ S Sᘁ ⊗≫ ε_ S Sᘁ ▷ Sᘁ) ⊗≫ 𝟙 _ := by monoidal
+    _ = _ := by rw [ExactPairing.coevaluation_evaluation'']; monoidal
 
 end TauCeti

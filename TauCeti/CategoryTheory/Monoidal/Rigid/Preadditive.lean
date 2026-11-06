@@ -7,13 +7,15 @@ module
 
 public import Mathlib.CategoryTheory.Monoidal.Linear
 public import Mathlib.CategoryTheory.Monoidal.Rigid.Basic
+public import TauCeti.CategoryTheory.Monoidal.Rigid.Mate
 public import TauCeti.CategoryTheory.Monoidal.TensorPow
 
 /-!
 # Duals in a monoidal preadditive category
 
-In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` is additive, because it is
-built from whiskering and composition, and the coevaluation of an exact pairing out of a nonzero
+In a monoidal preadditive category the right adjoint mate `f ↦ fᘁ` and its two-sided variant
+`TauCeti.dualMate` are additive (and `k`-linear in a monoidal `k`-linear category), because they
+are built from whiskering and composition, and the coevaluation of an exact pairing out of a nonzero
 object is nonzero, by the zigzag identity.
 
 In a monoidal `k`-linear category the Frobenius reciprocity bijections `tensorLeftHomEquiv` and
@@ -25,6 +27,8 @@ of the multiplicity spaces of a fusion category. Specializing to `tensorPow V 2`
 
 * `TauCeti.rightAdjointMate_zero` and `TauCeti.rightAdjointMate_add`: the right adjoint mate is
   additive;
+* `TauCeti.dualMate_add` and `TauCeti.dualMate_smul`: the double Frobenius reciprocity
+  `TauCeti.dualMate` is linear;
 * `TauCeti.coevaluation_ne_zero`: the coevaluation `η_ X Y` is nonzero when `X` is;
 * `TauCeti.tensorLeftHomLinearEquiv` and `TauCeti.tensorRightHomLinearEquiv`: Frobenius
   reciprocity as `k`-linear equivalences, and `TauCeti.homTensorPowTwoLinearEquiv` (with
@@ -56,6 +60,17 @@ theorem rightAdjointMate_zero : (0 : X ⟶ Y)ᘁ = 0 := by
 @[simp]
 theorem rightAdjointMate_add (f g : X ⟶ Y) : (f + g)ᘁ = fᘁ + gᘁ := by
   simp [rightAdjointMate]
+
+/-- `TauCeti.dualMate` is additive. -/
+theorem dualMate_add {S T U : C} [HasRightDual S] [HasRightDual T] (f g : U ⊗ T ⟶ S) :
+    dualMate (f + g) = dualMate f + dualMate g := by
+  simp [dualMate_eq, monoidalComp]
+
+/-- `TauCeti.dualMate` commutes with scalar multiplication. -/
+theorem dualMate_smul {k : Type w} [Semiring k] [Linear k C] [MonoidalLinear k C] {S T U : C}
+    [HasRightDual S] [HasRightDual T] (r : k) (f : U ⊗ T ⟶ S) :
+    dualMate (r • f) = r • dualMate f := by
+  simp [dualMate_eq, monoidalComp]
 
 end Mate
 
