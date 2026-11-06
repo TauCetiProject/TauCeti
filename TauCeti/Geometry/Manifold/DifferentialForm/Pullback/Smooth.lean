@@ -213,6 +213,13 @@ theorem IsSmoothForm.continuous_mpullback_apply {φ : RoughForm I M F k} (hφ : 
     Continuous fun z ↦ TauCeti.mpullback 𝓘(ℝ, E') I u φ z v := by
   have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
   exact (ContinuousAlternatingMap.apply ℝ E' F v).continuous.comp h.continuous
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
+@[simp]
+theorem mpullback_symm_mpullback (hn : n ≠ 0) (φ : M ≃ₘ^n⟮I, I'⟯ M')
+    (ω : RoughForm I' M' F k) : mpullback I' I φ.symm (mpullback I I' φ ω) = ω := by
+  rw [← mpullback_comp (φ.symm.mdifferentiable hn) (φ.mdifferentiable hn),
+    show (φ : M → M') ∘ φ.symm = id from funext φ.apply_symm_apply, mpullback_id]
 
 namespace SmoothForm
 

@@ -66,6 +66,8 @@ off the invariant differential.
   `P([n]_F(T)) · [n]_F'(T) = n · P(T)`.
 * `FormalGroup.coeff_one_nsmulSeries`: `[n]_F(T) = n T + ⋯`.
 * `FormalGroup.natCast_eq_zero_of_nsmulSeries_eq_zero`: if `[n]_F = 0` then `n = 0` in `R`.
+* `FormalGroup.natCast_eq_zero_of_two_le_order_nsmulSeries`: if `[n]_F` has order at least two
+  then `n = 0` in `R`.
 * `FormalGroup.natCast_dvd_derivative_nsmulSeries`: `n` divides the derivative of `[n]_F`.
 * `FormalGroup.natCast_dvd_coeff_nsmulSeries`: `n` divides the coefficient of `Tᵏ` in `[n]_F`
   for `k` coprime to `n`.
@@ -301,6 +303,13 @@ theorem coeff_one_nsmulSeries (n : ℕ) :
 /-- If `[n]_F = 0` then `n = 0` in `R`, as `n` is the linear coefficient of `[n]_F`. -/
 theorem natCast_eq_zero_of_nsmulSeries_eq_zero {n : ℕ} (h : F.nsmulSeries n = 0) : (n : R) = 0 := by
   simpa [h] using (F.coeff_one_nsmulSeries n).symm
+
+/-- If `[n]_F` has order at least two then `n = 0` in `R`, as `n` is the linear coefficient of
+`[n]_F`. -/
+theorem natCast_eq_zero_of_two_le_order_nsmulSeries {n : ℕ}
+    (h : 2 ≤ (F.nsmulSeries n).order) : (n : R) = 0 := by
+  rw [← F.coeff_one_nsmulSeries n]
+  exact PowerSeries.coeff_of_lt_order 1 ((Nat.cast_lt.mpr one_lt_two).trans_le h)
 
 /-- **The derivative of `[n]_F` is divisible by `n`**, for a commutative formal group law `F`. -/
 theorem natCast_dvd_derivative_nsmulSeries [F.IsComm] (n : ℕ) :

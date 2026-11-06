@@ -4,17 +4,17 @@ open Verso.Output Verso.Output.Html
 
 /-- The two "lines of code by date" charts. The SVGs are regenerated at each site
 deploy (and daily) into `static_files/` by the `pages` workflow, so this page never
-needs touching as the project grows. They are embedded as a raw HTML blob: each
-`<img>` simply points at the static asset. -/
+needs touching as the project grows. Each image carries exact-value metadata for
+the progressively enhanced hover tooltips. -/
 def locGraphs : Html := {{
   <div class="loc-graphs">
     <figure class="loc-figure">
-      <img class="loc-graph" src="static/loc-tauceti.svg"
+      <img class="loc-graph chart-hover" src="static/loc-tauceti.svg"
            alt="Tau Ceti: lines of Lean by date"/>
       <figcaption>"The Lean library under " <code>"TauCeti/"</code> ", total lines by date."</figcaption>
     </figure>
     <figure class="loc-figure">
-      <img class="loc-graph" src="static/loc-roadmap.svg"
+      <img class="loc-graph chart-hover" src="static/loc-roadmap.svg"
            alt="Roadmap specification lines over time, with the archived Completed roadmaps highlighted"/>
       <figcaption>"All roadmap specifications, including " <code>"Completed/"</code> ". The highlighted portion is archived as complete; generated status and progress reports are excluded."</figcaption>
     </figure>
@@ -25,7 +25,7 @@ def locGraphs : Html := {{
 private def roadmapCompletionGraphs : Html := {{
   <div class="loc-graphs">
     <figure class="loc-figure">
-      <img class="loc-graph" src="static/roadmap-layers.svg"
+      <img class="loc-graph chart-hover" src="static/roadmap-layers.svg"
            alt="Total and completed roadmap layers and lanes over time, including unassessed layers"
            loading="lazy"/>
       <figcaption>"Each lane or layer counts once, including the constituent roadmaps of an umbrella. Partial and unassessed layers receive no completion credit; archived roadmaps count as complete."</figcaption>
@@ -52,7 +52,7 @@ merged PR advances (its `roadmap/<Area>` label). Regenerated at each deploy by t
 so it too needs no committed state. Embedded as a raw HTML blob pointing at the asset. -/
 def roadmapGraph : Html := {{
   <figure class="loc-figure loc-figure-wide">
-    <img class="loc-graph" src="static/loc-per-roadmap.svg"
+    <img class="loc-graph chart-hover" src="static/loc-per-roadmap.svg"
          alt="Tau Ceti: cumulative net lines of Lean per roadmap, over time"/>
     <figcaption>"Net lines added or refactored per roadmap, stacked, by the date each PR merged."</figcaption>
   </figure>
@@ -82,7 +82,7 @@ private def prPipelineGraphs : Html := {{
       <figcaption>"Age of every open PR, then elapsed time in its current author-action or review cycle."</figcaption>
     </figure>
     <figure class="loc-figure">
-      <img class="loc-graph" src="static/rolling-seven-day-history.svg"
+      <img class="loc-graph chart-hover" src="static/rolling-seven-day-history.svg"
            alt="Trailing-seven-day pull request throughput, participation, and merge latency"
            loading="lazy"/>
       <figcaption>"Merges, active PR authors, and creation-to-merge latency in trailing seven-day UTC windows."</figcaption>
@@ -100,13 +100,13 @@ private def prPipelineGraphs : Html := {{
 private def contributorGraphs : Html := {{
   <div class="loc-graphs">
     <figure class="loc-figure">
-      <img class="loc-graph" src="static/cumulative-merges-by-contributor.svg"
+      <img class="loc-graph chart-hover" src="static/cumulative-merges-by-contributor.svg"
            alt="Cumulative merged pull requests by contributor"
            loading="lazy"/>
       <figcaption>"Cumulative merged PRs by author since project inception."</figcaption>
     </figure>
     <figure class="loc-figure">
-      <img class="loc-graph" src="static/cumulative-reviews-by-contributor.svg"
+      <img class="loc-graph chart-hover" src="static/cumulative-reviews-by-contributor.svg"
            alt="Cumulative reviews by contributor"
            loading="lazy"/>
       <figcaption>"Cumulative reviews by contributor since project inception. Each review is one canonical v1 scoreboard; edits to an existing scoreboard do not add counts."</figcaption>
@@ -137,7 +137,8 @@ private def roadmapContributorGraphs : Html := {{
 
 How much mathematics has Tau Ceti formalized, and how fast is the roadmap that
 directs it growing? The volume charts count the lines present in git history through
-the last complete UTC day and are rebuilt at each deploy.
+the last complete UTC day and are rebuilt at each deploy. Hover over a line chart,
+tap it, or focus it and use the arrow keys to see exact values for a date.
 
 :::blob locGraphs
 :::

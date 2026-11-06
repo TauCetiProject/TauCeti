@@ -54,6 +54,8 @@ defined without the hypothesis `d ≤ n`, so that charts and analytic functions 
   `TauCeti.AnalyticOnSubmanifold.prod`, `TauCeti.AnalyticOnSubmanifold.comp`: ambient analytic
   functions, compositions and pairs.
 * `TauCeti.IsAnalyticSubmanifold.inter`, `TauCeti.AnalyticOnSubmanifold.inter`,
+  `TauCeti.isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold`,
+  `TauCeti.isAnalyticSubmanifold_iff_exists_isOpen`,
   `TauCeti.analyticOnSubmanifold_of_locally_analyticOnSubmanifold`: restriction to relatively
   open subsets (nonempty ones, for submanifolds), and locality.
 * `TauCeti.AnalyticOnSubmanifold.exists_analyticAt_eqOn`,
@@ -297,6 +299,26 @@ theorem IsAnalyticSubmanifold.of_isOpen_preimage_val (hS : IsAnalyticSubmanifold
     · intro hxT
       exact ⟨hTS hxT, (Set.ext_iff.mp hUT ⟨x, hTS hxT⟩).mpr hxT⟩
   simpa only [h] using hS.inter hU (h.symm ▸ hne)
+
+/-- **Locality.** A nonempty set that is locally a `d`-dimensional analytic submanifold around each
+of its points is a `d`-dimensional analytic submanifold. -/
+theorem isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold (hne : S.Nonempty)
+    (h : ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U)) :
+    IsAnalyticSubmanifold d S := by
+  rcases hne with ⟨x₀, hx₀⟩
+  obtain ⟨_, _, _, h₀⟩ := h x₀ hx₀
+  refine ⟨⟨x₀, hx₀⟩, h₀.le, fun x hx ↦ ?_⟩
+  obtain ⟨U, hU, hxU, hSU⟩ := h x hx
+  obtain ⟨e, hxe, he⟩ := hSU.exists_isAnalyticChart x ⟨hx, hxU⟩
+  exact ⟨e.restrOpen U hU, ⟨hxe, hxU⟩, (he.restrOpen hU).of_inter inter_subset_right⟩
+
+/-- A set is a `d`-dimensional analytic submanifold if and only if it is nonempty and locally a
+`d`-dimensional analytic submanifold around each of its points. -/
+theorem isAnalyticSubmanifold_iff_exists_isOpen :
+    IsAnalyticSubmanifold d S ↔
+      S.Nonempty ∧ ∀ x ∈ S, ∃ U, IsOpen U ∧ x ∈ U ∧ IsAnalyticSubmanifold d (S ∩ U) :=
+  ⟨fun hS ↦ ⟨hS.nonempty, fun x _ ↦ ⟨univ, isOpen_univ, mem_univ x, by simpa using hS⟩⟩,
+    fun ⟨hne, h⟩ ↦ isAnalyticSubmanifold_of_locally_isAnalyticSubmanifold hne h⟩
 
 /-! ### Analytic functions on analytic submanifolds -/
 

@@ -162,6 +162,10 @@ theorem isOpen_rootsOfUnityBall {r : ℝ} : IsOpen (rootsOfUnityBall m r : Set �
 instance rootsOfUnityBall.instLocallyCompactSpace {r : ℝ} :
     LocallyCompactSpace (rootsOfUnityBall m r) :=
   isOpen_rootsOfUnityBall.locallyCompactSpace
+/-- The rotations do not change the coordinate `u ↦ u ^ m` of a point of the disc. -/
+theorem coe_smul_rootsOfUnityBall_pow {r : ℝ} (ζ : rootsOfUnity m ℂ) (u : rootsOfUnityBall m r) :
+    ((ζ • u : rootsOfUnityBall m r) : ℂ) ^ m = (u : ℂ) ^ m := by
+  rw [SubMulAction.val_smul, rootsOfUnity.smul_pow]
 
 /-- For `0 ≤ r`, the map `u ↦ u ^ m` sends the disc of radius `r` about `0` onto the disc of
 radius `r ^ m`. -/

@@ -6,17 +6,20 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.Ideal.Quotient.Operations
+public import Mathlib.Topology.Algebra.Algebra
+public import Mathlib.Topology.Algebra.Module.Basic
 public import Mathlib.Topology.Algebra.Ring.Ideal
 public import Mathlib.Topology.Algebra.Group.Quotient
 
 /-!
 # The quotient of a topological ring by an ideal
 
-Three things about `R ⧸ I` that its algebraic theory does not record. It is `T1` exactly when
+Four things about `R ⧸ I` that its algebraic theory does not record. It is `T1` exactly when
 `I` is closed, and hence `T0`; the closure of zero in it is the image of the closure of `I`; and
 when `f : R →+* S` presents `S` as a topological quotient of `R`, the
 first isomorphism theorem `R ⧸ ker f ≃+* S` is a homeomorphism, so `S` carries the quotient
-topology and not merely a coarser one.
+topology and not merely a coarser one. Finally, the quotient map by a two-sided ideal and the maps
+induced out of the quotient are continuous algebra homomorphisms.
 
 Mathlib proves the corresponding statement for the quotient of a topological group by a
 subgroup, as `QuotientGroup.t1Space_iff` and `QuotientGroup.instT1Space`. Those are stated for
@@ -56,8 +59,15 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
   automatically once `I` is known to be closed.
 * `Ideal.Quotient.mk_mem_closure_zero_iff`: the image of `x` in `R ⧸ I` lies in the closure of
   zero exactly when `x` lies in the closure of `I`.
-* `Ideal.Quotient.continuous_lift`: a continuous ring homomorphism annihilating `I` induces a
-  *continuous* homomorphism on `R ⧸ I`, with no hypothesis on `I`.
+* `Ideal.Quotient.continuous_lift`: a continuous ring homomorphism annihilating a two-sided ideal
+  `I` induces a *continuous* homomorphism on `R ⧸ I`, with no hypothesis on `I` beyond
+  two-sidedness (in particular, `I` need not be closed).
+* `Ideal.Quotient.mkA` and `Ideal.Quotient.liftA`: the quotient map by a two-sided ideal as a
+  continuous algebra homomorphism, and the universal property of the quotient for continuous
+  algebra homomorphisms; `Ideal.Quotient.continuousAlgHom_ext` says that continuous algebra
+  homomorphisms out of `R ⧸ I` are determined by their composites with the quotient map.
+* `ContinuousAlgHom.continuous_quotientKerAlgEquivOfSurjective`: the algebraic first isomorphism
+  `A ⧸ ker f ≃ B` induced by a continuous surjective algebra homomorphism is continuous.
 * `RingHom.isHomeomorph_kerLift`: the map `R ⧸ ker f →+* S` induced by `f` is a homeomorphism when
   `f` is a quotient map. `IsHomeomorph.homeomorph` bundles that as
   `R ⧸ ker f ≃ₜ S`, and the map bundled is the ring homomorphism `RingHom.kerLift`, so the ring
@@ -71,9 +81,11 @@ a point; it is not a further hypothesis of the theorem but a consequence for its
 
 public section
 
-variable {R : Type*} [TopologicalSpace R] [CommRing R] [SeparatelyContinuousAdd R] (I : Ideal R)
-
 namespace Ideal.Quotient
+
+section Separation
+
+variable {R : Type*} [TopologicalSpace R] [CommRing R] [SeparatelyContinuousAdd R] (I : Ideal R)
 
 /-- The quotient of a topological ring by an ideal is `T1` exactly when the ideal is closed.
 This is `QuotientAddGroup.t1Space_iff` read through the identification of `R ⧸ I` with the
@@ -101,20 +113,105 @@ theorem mk_mem_closure_zero_iff {x : R} :
   rw [← hpre, ← hopen.preimage_closure_eq_closure_preimage continuous_quotient_mk',
     Set.mem_preimage]
 
-omit [SeparatelyContinuousAdd R] in
-/-- **A continuous ring homomorphism that kills `I` lifts to a continuous map on `R ⧸ I`.**
+end Separation
 
-No hypothesis on `I` is needed: closedness of `I` is what makes `R ⧸ I` separated
-(`Ideal.Quotient.instT1Space` above), which matters for maps *into* `R ⧸ I`, not for maps out
-of it. -/
-theorem continuous_lift {S : Type*} [Semiring S] [TopologicalSpace S] {f : R →+* S}
+/-- **A continuous ring homomorphism that kills a two-sided ideal `I` lifts to a continuous map on
+`R ⧸ I`.**
+
+No hypothesis on `I` beyond two-sidedness is needed: closedness of `I` is what makes `R ⧸ I`
+separated (`Ideal.Quotient.instT1Space` above), which matters for maps *into* `R ⧸ I`, not for
+maps out of it. -/
+theorem continuous_lift {R : Type*} [TopologicalSpace R] [Ring R] (I : Ideal R) [I.IsTwoSided]
+    {S : Type*} [Semiring S] [TopologicalSpace S] {f : R →+* S}
     (hf : Continuous f) (hI : ∀ a ∈ I, f a = 0) :
     Continuous (Ideal.Quotient.lift I f hI) :=
   -- `R ⧸ I` carries the coinduced topology, so continuity of a map out of it is continuity of its
   -- composite with the quotient map, which is `f`.
   continuous_coinduced_dom.mpr hf
 
+section ContinuousAlgHom
+
+variable (R : Type*) {A B : Type*} [CommSemiring R] [Ring A] [TopologicalSpace A] [Algebra R A]
+  (I : Ideal A) [I.IsTwoSided]
+
+/-- The quotient map onto the quotient by a two-sided ideal, as a continuous algebra
+homomorphism. -/
+noncomputable def mkA : A →A[R] A ⧸ I where
+  toAlgHom := Ideal.Quotient.mkₐ R I
+  cont := continuous_coinduced_rng
+
+@[simp]
+theorem mkA_apply (a : A) : mkA R I a = Ideal.Quotient.mk I a :=
+  (rfl)
+
+theorem coe_mkA : ⇑(mkA R I) = Ideal.Quotient.mk I :=
+  (rfl)
+
+@[simp]
+theorem toAlgHom_mkA : (mkA R I : A →ₐ[R] A ⧸ I) = Ideal.Quotient.mkₐ R I :=
+  (rfl)
+
+theorem mkA_surjective : Function.Surjective (mkA R I) :=
+  Ideal.Quotient.mk_surjective
+
+@[simp]
+theorem ker_mkA : RingHom.ker (mkA R I) = I :=
+  Ideal.Quotient.mkₐ_ker R I
+
+variable {R} [Semiring B] [TopologicalSpace B] [Algebra R B]
+
+/-- Two continuous algebra homomorphisms out of `A ⧸ I` agree when they agree after composition
+with the quotient map. -/
+@[ext 1100]
+theorem continuousAlgHom_ext {f g : A ⧸ I →A[R] B} (h : f.comp (mkA R I) = g.comp (mkA R I)) :
+    f = g :=
+  ContinuousAlgHom.coe_inj.mp (Ideal.Quotient.algHom_ext R (congr_arg ContinuousAlgHom.toAlgHom h))
+
+/-- A continuous algebra homomorphism vanishing on a two-sided ideal `I` descends to a continuous
+algebra homomorphism on `A ⧸ I`. -/
+noncomputable def liftA (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) : A ⧸ I →A[R] B where
+  toAlgHom := Ideal.Quotient.liftₐ I f hI
+  cont := Ideal.Quotient.continuous_lift I f.continuous hI
+
+@[simp]
+theorem toAlgHom_liftA (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) :
+    (liftA I f hI : A ⧸ I →ₐ[R] B) = Ideal.Quotient.liftₐ I f hI :=
+  (rfl)
+
+@[simp]
+theorem liftA_mk (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) (a : A) :
+    liftA I f hI (Ideal.Quotient.mk I a) = f a :=
+  Ideal.Quotient.lift_mk I (f : A →+* B) hI
+
+@[simp]
+theorem liftA_comp_mkA (f : A →A[R] B) (hI : ∀ a ∈ I, f a = 0) :
+    (liftA I f hI).comp (mkA R I) = f :=
+  ContinuousAlgHom.ext fun a ↦ liftA_mk I f hI a
+
+end ContinuousAlgHom
+
 end Ideal.Quotient
+
+namespace ContinuousAlgHom
+
+variable {R A B : Type*} [CommSemiring R] [Ring A] [TopologicalSpace A] [Algebra R A]
+  [Semiring B] [TopologicalSpace B] [Algebra R B]
+
+/-- The algebraic first isomorphism `A ⧸ ker f ≃ B` induced by a continuous surjective algebra
+homomorphism `f` is continuous, being the map `Ideal.Quotient.liftA` induced by `f`. -/
+theorem continuous_quotientKerAlgEquivOfSurjective (f : A →A[R] B)
+    (hf : Function.Surjective f) :
+    Continuous (Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[R] B)) hf) := by
+  have h : ⇑(Ideal.quotientKerAlgEquivOfSurjective (f := (f : A →ₐ[R] B)) hf) =
+      ⇑(Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id) := by
+    funext x
+    obtain ⟨a, rfl⟩ := Ideal.Quotient.mk_surjective x
+    rw [Ideal.quotientKerAlgEquivOfSurjective_mk]
+    exact (Ideal.Quotient.liftA_mk _ f _ a).symm
+  rw [h]
+  exact (Ideal.Quotient.liftA (RingHom.ker f) f fun _ ↦ id).continuous
+
+end ContinuousAlgHom
 
 section FirstIsomorphism
 
