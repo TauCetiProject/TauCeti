@@ -78,9 +78,10 @@ theorem exceptionalPolyadMass_le_of_injective {C D : TriadicComplex3 V}
 
 /-- **Top regularity after recoloring few pairs.** Let `C` and `D` be polyad decompositions on
 the same vertex cells, and suppose the pair colors of `D` are those of `C` mapped by an injective
-`g`, except on a set `E` of ordered pairs. If `H` is `(δ, r)`-top-regular over all but an
-`ε₀`-proportion of the polyads of `C`, then it is `(ε, r)`-top-regular over all but an
-`ε₀ + (1 + 2 / η) 3 |E| |V| / (|V| (|V| - 1) (|V| - 2))`-proportion of those of `D`, provided
+`g`, except on a set `E` of ordered pairs. If the polyads of `C` over which `H` is not
+`(δ, r)`-top-regular carry at most an `ε₀`-proportion of the injective triples, then the polyads
+of `D` over which `H` is not `(ε, r)`-top-regular carry at most an
+`ε₀ + (1 + 2 / η) 3 |E| |V| / (|V| (|V| - 1) (|V| - 2))`-proportion of them, provided
 `δ + 2η + η / ε ≤ ε`. -/
 theorem TopRegularOverMostPolyads.of_pairRecoloring {C D : TriadicComplex3 V} {ε₀ : ℝ}
     (h : H.TopRegularOverMostPolyads C δ ε₀ r) (hC : C.IsPolyadDecomposition)
