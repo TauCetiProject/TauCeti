@@ -9,6 +9,7 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Basic
 import Mathlib.MeasureTheory.Integral.DivergenceTheorem
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
+import TauCeti.Analysis.Real.Inequalities
 import TauCeti.Data.EReal.Operations
 
 /-!
@@ -304,26 +305,6 @@ theorem moreauYosida_eq_add_integral {y : ℝ → X} {τ σ : ℝ} (hτ : 0 < τ
   simp only [M, D] at hftc
   linarith
 
-/-- The arithmetic of the Moreau–Yosida limit at time zero: if `m ≤ b + d² / (2σ)` and the penalty
-`δ₀² / (2τ)` already beats `c' - m + δ₀² / (2σ)` with `τ < σ`, then every point at distance
-`d ≥ δ₀` satisfies `c' ≤ b + d² / (2τ)`. -/
-private theorem penalty_le_of_le_dist {δ₀ d τ σ m b c' : ℝ} (hδ₀ : 0 ≤ δ₀) (hdδ : δ₀ ≤ d)
-    (hτ₀ : 0 < τ) (hτσ : τ < σ)
-    (hτK : c' - m + δ₀ ^ 2 / (2 * σ) ≤ δ₀ ^ 2 / 2 * τ⁻¹) (h : m ≤ b + d ^ 2 / (2 * σ)) :
-    c' ≤ b + d ^ 2 / (2 * τ) := by
-  have hσ₀ : 0 < σ := hτ₀.trans hτσ
-  have hw : 0 ≤ 1 / (2 * τ) - 1 / (2 * σ) := by
-    rw [sub_nonneg]
-    gcongr
-  have hsq : δ₀ ^ 2 ≤ d ^ 2 := pow_le_pow_left₀ hδ₀ hdδ 2
-  have key : δ₀ ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) ≤ d ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) :=
-    mul_le_mul_of_nonneg_right hsq hw
-  have e₁ : δ₀ ^ 2 / 2 * τ⁻¹ = δ₀ ^ 2 / (2 * τ) := by field_simp
-  have e₂ : d ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) = d ^ 2 / (2 * τ) - d ^ 2 / (2 * σ) := by ring
-  have e₃ : δ₀ ^ 2 * (1 / (2 * τ) - 1 / (2 * σ)) = δ₀ ^ 2 / (2 * τ) - δ₀ ^ 2 / (2 * σ) := by
-    ring
-  linarith
-
 /-- **Continuity of the Moreau–Yosida approximation at time zero.** If `φ` is lower semicontinuous
 at `x` and `φ_σ(x) ≠ ⊥` for some `σ > 0`, then `φ_τ(x) → φ(x)` as `τ → 0⁺`. This holds also when
 `φ x = ⊤`, and needs no resolvent steps. -/
@@ -377,7 +358,7 @@ theorem tendsto_moreauYosida_nhdsGT_zero (hφ : LowerSemicontinuousAt φ x) {σ 
   have hdδ : (δ₀ : ℝ) ≤ d := by
     rw [← ENNReal.coe_toReal δ₀]
     exact ENNReal.toReal_mono hz hzδ
-  exact penalty_le_of_le_dist hδ₀'.le hdδ hτ₀ (by exact_mod_cast hτσ) hτK h
+  exact Real.le_add_sq_div_two_mul_of_sq_div_le hδ₀'.le hdδ hτ₀ (by exact_mod_cast hτσ) hτK h
 
 variable {y : ℝ → X} {σ : ℝ}
 
