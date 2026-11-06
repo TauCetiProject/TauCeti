@@ -182,11 +182,11 @@ private theorem joined_of_joined_map_of_fiber (hp : serreFibrations p)
   -- boundary, of an element which comes from `B` since `g` is surjective on `π_1`.
   obtain ⟨y', hy'⟩ : HomotopyGroup.map (sq.fiberMap b).hom rfl (⟦ℓ⟧ : HomotopyGroup _ _ _) ∈
       range (fibrationBoundary hp' (sq.fiberMap b e)) := by
-    rw [mem_range_fibrationBoundary_iff hp', HomotopyGroup.map_mk, HomotopyGroup.map_mk]
+    rw [mem_range_fibrationBoundary_iff hp', HomotopyGroup.map_mk]
     apply (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) _).injective
-    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-      GenLoop.map_apply, GenLoop.map_apply, GenLoop.const_apply, hℓ, TopCat.Hom.fiberι_apply,
-      sq.fiberMap_apply_coe, sq.fiberMap_apply_coe]
+    rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
+      homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, hℓ,
+      TopCat.Hom.fiberι_apply, sq.fiberMap_apply_coe, sq.fiberMap_apply_coe]
     exact ZerothHomotopy.sound h.symm.somePath
   obtain ⟨γ, rfl⟩ := (hg.map_bijective (Option (Fin 0)) b).2 y'
   rw [fibrationBoundary_map sq hp hp'] at hy'
@@ -194,9 +194,8 @@ private theorem joined_of_joined_map_of_fiber (hp : serreFibrations p)
   -- joined to the base point in `E`.
   have h0 := (mem_range_fibrationBoundary_iff hp).1 ⟨γ, (hfib.map_bijective (Fin 0) e).1 hy'⟩
   have h1 := congrArg (homotopyGroupEquivZerothHomotopyOfIsEmpty (Fin 0) e.1) h0
-  rw [HomotopyGroup.map_mk, homotopyGroupEquivZerothHomotopyOfIsEmpty_mk,
-    homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, GenLoop.map_apply, GenLoop.const_apply, hℓ,
-    TopCat.Hom.fiberι_apply] at h1
+  rw [homotopyGroupEquivZerothHomotopyOfIsEmpty_map_mk,
+    homotopyGroupEquivZerothHomotopyOfIsEmpty_mk, hℓ, TopCat.Hom.fiberι_apply] at h1
   exact (Quotient.exact h1).symm
 
 end Comparison
@@ -259,17 +258,9 @@ theorem isWeakHomotopyEquivalence_of_commSq (hp : serreFibrations p) (hp' : serr
     ⟨exists_joined_of_commSq hp' hg hfib, fun _ _ ↦ joined_of_joined_map hp hp' hg hfib,
       fun n a ↦ ?_⟩
   -- The exact sequences index `π_{n+1}` by `Option (Fin n)`; reindex along `Fin (n + 1)`.
-  have h : Bijective (HomotopyGroup.map (N := Option (Fin n)) f.hom (rfl : f a = f a)) :=
+  exact (HomotopyGroup.bijective_map_iff_of_equiv f.hom rfl (finSuccEquiv n).symm).1
     ⟨injective_map_option ⟨a, rfl⟩ hp hp' hg (hfib (p a)) rfl,
       surjective_map_option ⟨a, rfl⟩ hp hp' hg (hfib (p a)) rfl⟩
-  let σ : Option (Fin n) ≃ Fin (n + 1) := (finSuccEquiv n).symm
-  have hσ : HomotopyGroup.map (N := Fin (n + 1)) f.hom (rfl : f a = f a) =
-      HomotopyGroup.congrEquiv σ ∘ HomotopyGroup.map f.hom rfl ∘
-        (HomotopyGroup.congrEquiv σ).symm := by
-    funext x
-    rw [comp_apply, comp_apply, ← HomotopyGroup.map_congrEquiv, Equiv.apply_symm_apply]
-  rw [hσ]
-  exact (Equiv.bijective _).comp (h.comp (Equiv.bijective _))
 
 /-- **Base change of a Serre fibration along a weak homotopy equivalence.** If `p : E → B` is a
 Serre fibration and `g : B' → B` a weak homotopy equivalence, the projection
