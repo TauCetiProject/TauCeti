@@ -47,6 +47,7 @@ variable {X ι : Type*} [PseudoMetricSpace X] {l : Filter ι}
   [l.NeBot] [l.IsCountablyGenerated] {p q a b : ℝ}
   {u : ℝ → X} {us : ι → ℝ → X} {g : X → ℝ≥0∞} {gs : ι → X → ℝ≥0∞}
 
+omit [l.NeBot] in
 /-- **Lower semicontinuity of dissipation.** Pointwise convergence of curves, eventually
 absolutely continuous, and an almost-everywhere lower bound on the upper gradients give a
 lower bound on the limiting dissipation. No absolute continuity of the limit is assumed. -/
@@ -57,6 +58,9 @@ theorem dissipation_le_liminf (hp : 1 < p) (hq : 0 < q)
     (hg : ∀ᵐ t ∂volume.restrict (Ι a b), g (u t) ≤ liminf (fun i ↦ gs i (us i t)) l) :
     dissipation p q g u a b ≤ liminf (fun i ↦ dissipation p q (gs i) (us i) a b) l := by
   classical
+  rcases l.eq_or_neBot with rfl | hl
+  · rw [liminf_bot]
+    exact le_top
   have hA := curveAction_le_liminf_of_one_lt hp hus hu
   -- Replace the exceptional, possibly nonmeasurable integrands by zero for Fatou.
   let fs : ι → ℝ → ℝ≥0∞ := fun i ↦
