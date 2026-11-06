@@ -39,6 +39,7 @@ monotonicity of `Finpartition.part` under refinement and the characterization of
 the parts through each point, the constancy of the coarse part and of membership in a union of
 parts on each part of a partition, the fact that a refinement with no more parts than the coarser
 partition is equal to it, the parts through a point of the finest and the coarsest partitions,
+the characterization of the finest partition as the one whose parts all have one element,
 the count of the parts by points singled out in each part (in a linear order, the first or the last
 point of each part), the part of a point in a linear order as its part before the last point of that
 part with the last point adjoined, the criterion for that part to be a pair, the coarse parent
@@ -450,6 +451,16 @@ theorem le_iff_forall_part_subset : P ≤ Q ↔ ∀ a, P.part a ⊆ Q.part a := 
 @[simp]
 theorem part_bot {a : α} (ha : a ∈ s) : (⊥ : Finpartition s).part a = {a} :=
   part_eq_of_mem _ (mem_bot_iff.2 ⟨a, ha, rfl⟩) (mem_singleton_self a)
+
+/-- A finite partition of `s` is the partition into singletons exactly when each of its parts has
+one element. -/
+theorem eq_bot_iff_forall_card_eq_one : P = ⊥ ↔ ∀ B ∈ P.parts, #B = 1 := by
+  refine ⟨?_, fun h => le_bot_iff.1 fun B hB => ?_⟩
+  · rintro rfl B hB
+    obtain ⟨i, -, rfl⟩ := mem_bot_iff.1 hB
+    exact card_singleton i
+  · obtain ⟨i, rfl⟩ := card_eq_one.1 (h B hB)
+    exact ⟨{i}, mem_bot_iff.2 ⟨i, P.le hB (mem_singleton_self i), rfl⟩, le_rfl⟩
 
 /-- If each part of a finite partition of `s` contains exactly one point satisfying `p`, then
 there are as many parts as points of `s` satisfying `p`. -/
