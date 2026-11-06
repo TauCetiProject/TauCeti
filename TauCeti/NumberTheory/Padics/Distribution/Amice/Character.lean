@@ -36,10 +36,11 @@ in such an algebra with multiplicative norm, is analytic at some level
 (`TauCeti.AnalyticStage.exists_eval_eq_addChar`). For a general Banach algebra, `‖t‖ < r_h` remains
 a sufficient condition, and the expansion has norm exactly one.
 
-The converse, that `χ_t` lies in the image of `LA_h(K)` only when `‖t‖ < r_h`, needs Amice's basis
-theorem identifying the image of the evaluation with the functions whose Amice coordinates tend to
-zero; it is not proved here. The coordinate statement `TauCeti.tendsto_amiceCharCoeff_iff` is the
-coefficient form of that criterion.
+The coordinate statement `TauCeti.tendsto_amiceCharCoeff_iff` is the coefficient form of the
+converse, that `χ_t` lies in the image of `LA_h(K)` only when `‖t‖ < r_h`. That converse needs
+Amice's basis theorem, which identifies the image of the evaluation with the functions whose Amice
+coordinates tend to zero; it is `TauCeti.AnalyticStage.exists_eval_eq_addChar_iff` in
+`TauCeti.NumberTheory.Padics.Distribution.Amice.Mahler`.
 
 ## Main definitions
 
