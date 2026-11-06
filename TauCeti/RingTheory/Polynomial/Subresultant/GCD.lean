@@ -175,9 +175,9 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   have hzero : A * q + B * p = 0 :=
     eq_zero_of_dvd_of_degree_lt (dvd_add (dvd_mul_of_dvd_right hgq _) (dvd_mul_of_dvd_right hgp _))
       (by rw [degree_eq_natDegree hg0, ← hd]; exact hdeg)
-  -- Divide the relation by `g` and use Bézout to see that `A = 0`, then `B = 0`.
+  -- Bézout for the gcd forces `A = 0`, and then `B = 0`.
   have hA0 : A = 0 :=
-    eq_zero_of_mul_add_mul_eq_zero_of_degree_lt hp hzero (by rw [hm, ← hg, ← hd]; exact hAdeg)
+    eq_zero_of_mul_add_mul_eq_zero_of_degree_lt hzero (by rw [hm, ← hg, ← hd]; exact hAdeg)
   have hB0 : B = 0 := by
     rw [hA0, zero_mul, zero_add] at hzero
     exact (mul_eq_zero.mp hzero).resolve_right hp
