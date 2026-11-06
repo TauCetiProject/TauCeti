@@ -53,7 +53,12 @@ Legendrian immersion when `ι` is an immersion and a Legendrian embedding when `
 `TauCeti.SmoothTwoForm.IsNondegenerate.IsExactLagrangianMap.isLegendrianEmbedding_contactization`).
 Conversely, for maps of half the dimension with injective differentials, `ι` is exact Lagrangian
 with primitive `h` as soon as its lift is horizontal
-(`TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_isHorizontalMap_contactization`).
+(`TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_isHorizontalMap_contactization`),
+and the projection `ι` of any Legendrian immersion `(ι, h)` into the contactization is an exact
+Lagrangian immersion with primitive `h`
+(`TauCeti.IsLegendrianImmersion.isImmersion_fst_contactization`,
+`TauCeti.IsLegendrianImmersion.isExactLagrangianMap_contactization`): the Legendrian immersions
+into `W × ℝ` are exactly the lifts of the exact Lagrangian immersions of `W`.
 
 ## Main definitions
 
@@ -73,6 +78,8 @@ with primitive `h` as soon as its lift is horizontal
   the Legendrian lift of an exact Lagrangian immersion.
 * `TauCeti.SmoothTwoForm.IsNondegenerate.isExactLagrangianMap_iff_isHorizontalMap_contactization`:
   a half-dimensional map is exact Lagrangian exactly when its lift is horizontal.
+* `TauCeti.IsLegendrianImmersion.isExactLagrangianMap_contactization`: the projection of a
+  Legendrian immersion into the contactization is an exact Lagrangian immersion.
 * `TauCeti.CotangentBundle.isContactForm_contactization_liouvilleForm`: the one-jet space of a
   manifold is a contact manifold.
 
@@ -372,6 +379,48 @@ theorem IsExactLagrangianMap.isLegendrianEmbedding_contactization [Nonempty L]
   toIsLegendrianImmersion := hL.isLegendrianImmersion_contactization hθ hι.isImmersion
   isEmbedding := .of_comp (hι.isImmersion.contMDiff.continuous.prodMk
     hL.contMDiff_primitive.continuous) continuous_fst hι.isEmbedding
+
+/-- **Projections of Legendrian immersions are immersions.** If the lift `x ↦ (ι x, h x)` is a
+Legendrian immersion for the contact structure `ker (dz - θ)`, then `ι` is an immersion: a tangent
+vector killed by `dι` is killed by `dh = θ ∘ dι` as well. -/
+theorem _root_.TauCeti.IsLegendrianImmersion.isImmersion_fst_contactization
+    (hL : IsLegendrianImmersion J θ.contactization.kerDistribution (fun x ↦ (ι x, h x))) :
+    Manifold.IsImmersion J I ∞ ι := by
+  have hι : ContMDiff J I ∞ ι := contMDiff_fst.comp hL.isImmersion.contMDiff
+  have hh : ContMDiff J 𝓘(ℝ) ∞ h := contMDiff_snd.comp hL.isImmersion.contMDiff
+  have hpull := (SmoothForm.isHorizontalMap_contactization_iff θ hι hh).1 hL.isHorizontalMap
+  rw [SmoothForm.coe_mpullback] at hpull
+  have hdh (x : L) (u : TangentSpace J x) :
+      mfderiv J 𝓘(ℝ) h x u = θ.1 (ι x) ![mfderiv J I ι x u] := by
+    have := congr($hpull x ![u])
+    rw [mpullback_apply, mextDeriv_ofFunction_apply] at this
+    rw [← this]
+    congr 1
+    ext j
+    fin_cases j
+    rfl
+  refine isImmersion_iff_forall_isImmersionAt.2 fun x ↦
+    hι.contMDiffOn.isImmersionAt_iff_injective_mfderiv isOpen_univ (Set.mem_univ x) (by simp)
+      |>.2 fun v w hvw ↦ hL.isImmersion.mfderiv_injective (by simp) x ?_
+  rw [mfderiv_prodMk (hι.mdifferentiable (by simp) x) (hh.mdifferentiable (by simp) x)]
+  exact Prod.ext hvw ((hdh x v).trans (by rw [hvw]; exact (hdh x w).symm))
+
+/-- **Projections of Legendrian immersions are exact Lagrangian.** Let `σ = -dθ`. If the lift
+`x ↦ (ι x, h x)` is a Legendrian immersion for the contact structure `ker (dz - θ)`, then `ι` is
+an exact Lagrangian map with primitive `h`. Together with
+`IsExactLagrangianMap.isLegendrianImmersion_contactization`, the Legendrian immersions into the
+contactization are exactly the lifts of the exact Lagrangian immersions through their primitives. -/
+theorem _root_.TauCeti.IsLegendrianImmersion.isExactLagrangianMap_contactization
+    (hθ : σ = -mextDerivₗ I 1 θ)
+    (hL : IsLegendrianImmersion J θ.contactization.kerDistribution (fun x ↦ (ι x, h x))) :
+    hσ.IsExactLagrangianMap J θ ι h := by
+  have hι := hL.isImmersion_fst_contactization
+  refine (isExactLagrangianMap_iff_isHorizontalMap_contactization hθ hι.contMDiff
+    (contMDiff_snd.comp hL.isImmersion.contMDiff) (hι.mfderiv_injective (by simp)) ?_).2
+    hL.isHorizontalMap
+  have := hL.two_mul_finrank_add_one
+  rw [finrank_prod, finrank_self] at this
+  omega
 
 end SmoothTwoForm.IsNondegenerate
 
