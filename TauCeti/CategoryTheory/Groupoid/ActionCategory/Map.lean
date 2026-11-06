@@ -207,7 +207,7 @@ instance faithful_restrict : (restrict U).Faithful :=
 
 /-- The restriction inclusion is full: every arrow between points of `U` lies in `M ⋉ U`. -/
 instance full_restrict : (restrict U).Full :=
-  (full_map_iff _ _).2 fun _ _ m h => ⟨m, rfl, Subtype.ext h⟩
+  full_map_of_injective _ Subtype.val_injective
 
 /-- A functor into `M ⋉ X` all of whose objects lie in the invariant subset `U` factors through
 `M ⋉ U`: this lifts it along the restriction inclusion. -/

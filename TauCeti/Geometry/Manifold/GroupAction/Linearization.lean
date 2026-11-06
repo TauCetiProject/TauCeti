@@ -77,15 +77,6 @@ theorem contMDiffConstSMul_mulActionOpens (σ : ContRepresentation 𝕜 G E)
   simpa only [Function.comp_def, val_mulActionOpens_smul] using
     (σ g).contDiff.contMDiff.comp (contMDiff_subtype_val (I := 𝓘(𝕜, E)) (n := n))
 
-/-- Forgetting continuity does not change the underlying operators, so invariance of the
-orbit-sum sublevel set also holds for the continuous-linear-map coercion. -/
-theorem preimage_sumOfConjugatesInnerSublevel {G E : Type*} [Group G] [Fintype G]
-    [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    (σ : ContRepresentation ℝ G E) (g : G) (c : ℝ) :
-    σ g ⁻¹' σ.toRepresentation.sumOfConjugatesInnerSublevel c =
-      σ.toRepresentation.sumOfConjugatesInnerSublevel c :=
-  σ.toRepresentation.preimage_sumOfConjugatesInnerSublevel g c
-
 end ContRepresentation
 
 namespace OpenPartialHomeomorph

@@ -97,8 +97,7 @@ theorem exists_linear_ball_isotropy_chart [T2Space (Quiver.Total C)]
   -- Restrict the linear representation to its invariant ball, retaining every group label.
   have hpres (g : Aut x) (v : E) (hv : v ∈ e.target) : σ g v ∈ e.target := by
     rw [het] at hv ⊢
-    rw [← Set.mem_preimage, σ.preimage_sumOfConjugatesInnerSublevel]
-    exact hv
+    exact (σ.toRepresentation.preimage_sumOfConjugatesInnerSublevel g c).ge hv
   let actB : MulAction (Aut x) B := σ.mulActionOpens B hpres
   obtain ⟨f, hf, hfopen, hfdiff⟩ :=
     e.exists_equivariant_symm_restrict σ hpres he hei hequiv
