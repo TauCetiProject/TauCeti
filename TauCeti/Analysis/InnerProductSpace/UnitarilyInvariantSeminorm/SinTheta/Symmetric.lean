@@ -135,7 +135,109 @@ private theorem kyFanSum_cross_block_le
     LinearMap.kyFanSum_subtype_comp_comp_orthogonalProjectionOnto] at hky
   exact hky
 
+/-- The two-block lift of the cross-projections `P_{Vᗮ} |_U` and `-(P_{Uᗮ} |_V)ᴴ` through the
+orthogonal decompositions is the difference of the projections `P_U - P_V`. -/
+private theorem lift_crossBlocks_eq_starProjection_sub
+    (U V : Submodule K E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] :
+    ((V.orthogonalDecomposition.trans (LinearIsometryEquiv.withLpProdComm 2 K V Vᗮ)).symm :
+        WithLp 2 (Vᗮ × V) →ₗ[K] E) ∘ₗ
+      (((Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype).prodMap
+        (-(LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ V.subtype)))).withLpMap
+          2) ∘ₗ
+      (U.orthogonalDecomposition : E →ₗ[K] WithLp 2 (U × Uᗮ)) =
+      (U.starProjection : E →ₗ[K] E) - (V.starProjection : E →ₗ[K] E) := by
+  ext x
+  simp [WithLp.map, LinearMap.prodMap_apply, LinearMap.comp_apply,
+    Submodule.orthogonalDecomposition_apply]
+
+/-- The two-block lift of the residual blocks `P_{Vᗮ} (B - A) |_U` and
+`(P_{Uᗮ} (A - B) |_V)ᴴ` through the orthogonal decompositions is the checkerboard residual
+`(B - A) P_U - P_V (B - A)`. -/
+private theorem lift_residualBlocks_eq_comp_sub
+    {A B : E →L[K] E} (hA : (A : E →ₗ[K] E).IsSymmetric) (hB : (B : E →ₗ[K] E).IsSymmetric)
+    (U V : Submodule K E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] :
+    ((V.orthogonalDecomposition.trans (LinearIsometryEquiv.withLpProdComm 2 K V Vᗮ)).symm :
+        WithLp 2 (Vᗮ × V) →ₗ[K] E) ∘ₗ
+      (((Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+          (((B - A : E →L[K] E) : E →ₗ[K] E) ∘ₗ U.subtype)).prodMap
+        (LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+          (((A - B : E →L[K] E) : E →ₗ[K] E) ∘ₗ V.subtype)))).withLpMap 2) ∘ₗ
+      (U.orthogonalDecomposition : E →ₗ[K] WithLp 2 (U × Uᗮ)) =
+      (((B - A : E →L[K] E) : E →ₗ[K] E) ∘ₗ (U.starProjection : E →ₗ[K] E)) -
+        ((V.starProjection : E →ₗ[K] E) ∘ₗ ((B - A : E →L[K] E) : E →ₗ[K] E)) := by
+  have hAB : (((A - B : E →L[K] E) : E →ₗ[K] E)).IsSymmetric := by
+    simpa using hA.sub hB
+  rw [Submodule.adjoint_orthogonalProjectionOnto_comp_comp_subtype _ _ hAB]
+  ext x
+  simp [WithLp.map, LinearMap.prodMap_apply, LinearMap.comp_apply,
+    Submodule.orthogonalDecomposition_apply]
+  module
+
 namespace UnitarilyInvariantSeminorm
+
+/-- Block-sum majorization turns the two directed Ky Fan bounds into the checkerboard estimate:
+`delta * N (P_U - P_V) ≤ N ((B - A) P_U - P_V (B - A))`. -/
+private theorem mul_map_sub_starProjection_le_map_comp_sub_comp
+    (N : UnitarilyInvariantSeminorm K E E)
+    {A B : E →L[K] E}
+    (hA : (A : E →ₗ[K] E).IsSymmetric)
+    (hB : (B : E →ₗ[K] E).IsSymmetric)
+    {U V : Submodule K E} [U.HasOrthogonalProjection]
+    [V.HasOrthogonalProjection] {delta : ℝ} (hdelta : 0 < delta)
+    (hkyUV : ∀ k : Nat,
+      (((delta : ℝ) : K) • (Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype)).kyFanSum k ≤
+        (Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+          (((B - A : E →L[K] E) : E →ₗ[K] E) ∘ₗ U.subtype)).kyFanSum k)
+    (hkyVU : ∀ k : Nat,
+      (((delta : ℝ) : K) •
+          (-(LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ V.subtype)))).kyFanSum
+          k ≤
+        (LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+          (((A - B : E →L[K] E) : E →ₗ[K] E) ∘ₗ V.subtype))).kyFanSum k) :
+    delta * N (((U.starProjection - V.starProjection : E →L[K] E) : E →ₗ[K] E)) ≤
+      N ((((B - A : E →L[K] E) : E →ₗ[K] E) ∘ₗ
+          (U.starProjection : E →ₗ[K] E)) -
+        ((V.starProjection : E →ₗ[K] E) ∘ₗ
+          ((B - A : E →L[K] E) : E →ₗ[K] E))) := by
+  -- Orthogonal decompositions put both directed bounds on the diagonal of
+  -- a block operator; block-sum majorization preserves constant one.
+  let EU : E ≃ₗᵢ[K] WithLp 2 (U × Uᗮ) := U.orthogonalDecomposition
+  let EV : E ≃ₗᵢ[K] WithLp 2 (Vᗮ × V) :=
+    V.orthogonalDecomposition.trans
+      (LinearIsometryEquiv.withLpProdComm 2 K V Vᗮ)
+  let NB : UnitarilyInvariantSeminorm K
+      (WithLp 2 (U × Uᗮ)) (WithLp 2 (Vᗮ × V)) :=
+    (UnitarilyInvariantSeminorm.arrowCongr EU EV) N
+  let Xblock : WithLp 2 (U × Uᗮ) →ₗ[K] WithLp 2 (Vᗮ × V) :=
+    ((Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype).prodMap
+      (-(LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ V.subtype)))).withLpMap 2
+  let Cblock : WithLp 2 (U × Uᗮ) →ₗ[K] WithLp 2 (Vᗮ × V) :=
+    ((Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+        (((B - A : E →L[K] E) : E →ₗ[K] E) ∘ₗ U.subtype)).prodMap
+      (LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+        (((A - B : E →L[K] E) : E →ₗ[K] E) ∘ₗ V.subtype)))).withLpMap 2
+  have hsmul :
+      (((delta : ℝ) : K) • Xblock) =
+        ((((delta : ℝ) : K) • (Vᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ U.subtype)).prodMap
+          (((delta : ℝ) : K) •
+            (-(LinearMap.adjoint (Uᗮ.orthogonalProjectionOnto.toLinearMap ∘ₗ
+              V.subtype))))).withLpMap 2 := by
+    ext x
+    apply WithLp.ofLp_injective 2
+    simp [Xblock, WithLp.map, LinearMap.prodMap_apply]
+  have hblock : delta * NB Xblock ≤ NB Cblock := by
+    have h := NB.map_prodMap_withLpMap_le hkyUV hkyVU
+    rw [← hsmul, map_smul_eq_mul, RCLike.norm_ofReal,
+      abs_of_nonneg hdelta.le] at h
+    exact h
+  -- Lift the block estimate back to the ambient space through the isometries.
+  have hNB_apply (T : WithLp 2 (U × Uᗮ) →ₗ[K] WithLp 2 (Vᗮ × V)) :
+      NB T = N ((EV.symm : WithLp 2 (Vᗮ × V) →ₗ[K] E) ∘ₗ T ∘ₗ
+        (EU : E →ₗ[K] WithLp 2 (U × Uᗮ))) := by
+    simp only [NB, UnitarilyInvariantSeminorm.arrowCongr_apply]
+  rw [hNB_apply, hNB_apply, lift_crossBlocks_eq_starProjection_sub,
+    lift_residualBlocks_eq_comp_sub hA hB] at hblock
+  simpa only [ContinuousLinearMap.toLinearMap_sub] using hblock
 
 /-- **Symmetric, constant-one Davis--Kahan theorem.** If the selected
 subspaces of symmetric operators `A` and `B` are invariant, and both opposite
@@ -197,83 +299,7 @@ theorem mul_map_sub_starProjection_le_map_sub
       abs_of_nonneg hdelta.le, LinearMap.kyFanSum_neg,
       LinearMap.kyFanSum_adjoint, LinearMap.kyFanSum_adjoint]
     exact kyFanSum_cross_block_le hB hA hV hUperp hgapVU k
-  -- Orthogonal decompositions put both directed bounds on the diagonal of
-  -- a block operator; block-sum majorization preserves constant one.
-  let EU : E ≃ₗᵢ[K] WithLp 2 (U × Uᗮ) := U.orthogonalDecomposition
-  let EV : E ≃ₗᵢ[K] WithLp 2 (Vᗮ × V) :=
-    V.orthogonalDecomposition.trans
-      (LinearIsometryEquiv.withLpProdComm 2 K V Vᗮ)
-  let NB : UnitarilyInvariantSeminorm K
-      (WithLp 2 (U × Uᗮ)) (WithLp 2 (Vᗮ × V)) :=
-    (UnitarilyInvariantSeminorm.arrowCongr EU EV) N
-  let Xblock : WithLp 2 (U × Uᗮ) →ₗ[K] WithLp 2 (Vᗮ × V) :=
-    (XUV.prodMap (-XVU.adjoint)).withLpMap 2
-  let Cblock : WithLp 2 (U × Uᗮ) →ₗ[K] WithLp 2 (Vᗮ × V) :=
-    (CUV.prodMap CVU.adjoint).withLpMap 2
-  have hsmul :
-      (((delta : ℝ) : K) • Xblock) =
-        ((((delta : ℝ) : K) • XUV).prodMap
-          (((delta : ℝ) : K) • (-XVU.adjoint))).withLpMap 2 := by
-    ext x
-    apply WithLp.ofLp_injective 2
-    simp [Xblock, WithLp.map, LinearMap.prodMap_apply]
-  have hblock : delta * NB Xblock ≤ NB Cblock := by
-    have h := NB.map_prodMap_withLpMap_le hkyUV hkyVU
-    rw [← hsmul, map_smul_eq_mul, RCLike.norm_ofReal,
-      abs_of_nonneg hdelta.le] at h
-    exact h
-  -- Lift the block estimate back to the ambient space through the isometries.
-  let liftBlock :
-      (WithLp 2 (U × Uᗮ) →ₗ[K] WithLp 2 (Vᗮ × V)) ->
-        (E →ₗ[K] E) := fun T =>
-    (EV.symm : WithLp 2 (Vᗮ × V) →ₗ[K] E) ∘ₗ T ∘ₗ
-      (EU : E →ₗ[K] WithLp 2 (U × Uᗮ))
-  have hNB_apply (T : WithLp 2 (U × Uᗮ) →ₗ[K]
-      WithLp 2 (Vᗮ × V)) : NB T = N (liftBlock T) := by
-    simp only [NB, liftBlock, UnitarilyInvariantSeminorm.arrowCongr_apply]
-  -- Adjoint identities turn the reversed blocks into cross-projections.
-  have hXVUadj : XVU.adjoint =
-      V.orthogonalProjectionOnto.toLinearMap ∘ₗ Uᗮ.subtype := by
-    simp only [XVU, LinearMap.adjoint_comp, Submodule.adjoint_subtype,
-      Submodule.adjoint_orthogonalProjectionOnto_toLinearMap]
-  have hAB : LinearMap.adjoint (((A - B : E →L[K] E) : E →ₗ[K] E)) =
-      ((A - B : E →L[K] E) : E →ₗ[K] E) := by
-    simp only [ContinuousLinearMap.toLinearMap_sub, map_sub,
-      hA.adjoint_eq, hB.adjoint_eq]
-  have hCVUadj : CVU.adjoint =
-      (V.orthogonalProjectionOnto.toLinearMap ∘ₗ
-        (((A - B : E →L[K] E) : E →ₗ[K] E))) ∘ₗ Uᗮ.subtype := by
-    simp only [CVU, LinearMap.adjoint_comp, Submodule.adjoint_subtype,
-      Submodule.adjoint_orthogonalProjectionOnto_toLinearMap, hAB,
-      LinearMap.comp_assoc]
-  -- These two identities identify the lifted block operators with the full
-  -- projector difference and its checkerboard residual.
-  have hXlift : liftBlock Xblock =
-      (U.starProjection : E →ₗ[K] E) - (V.starProjection : E →ₗ[K] E) := by
-    ext x
-    simp [liftBlock, Xblock, EU, EV, hXVUadj, XUV,
-      WithLp.map, LinearMap.prodMap_apply, LinearMap.comp_apply,
-      Submodule.orthogonalDecomposition_apply]
-  have hClift : liftBlock Cblock =
-      (((B - A : E →L[K] E) : E →ₗ[K] E) ∘ₗ
-        (U.starProjection : E →ₗ[K] E)) -
-      ((V.starProjection : E →ₗ[K] E) ∘ₗ
-        ((B - A : E →L[K] E) : E →ₗ[K] E)) := by
-    ext x
-    simp [liftBlock, Cblock, EU, EV, hCVUadj, CUV,
-      WithLp.map, LinearMap.prodMap_apply, LinearMap.comp_apply,
-      Submodule.orthogonalDecomposition_apply]
-    module
-  -- The generic checkerboard contraction finishes the perturbation bound.
-  have hchecker :
-      delta * N (((U.starProjection - V.starProjection : E →L[K] E) : E →ₗ[K] E)) ≤
-        N ((((B - A : E →L[K] E) : E →ₗ[K] E) ∘ₗ
-            (U.starProjection : E →ₗ[K] E)) -
-          ((V.starProjection : E →ₗ[K] E) ∘ₗ
-            ((B - A : E →L[K] E) : E →ₗ[K] E))) := by
-    simpa only [hNB_apply, hXlift, hClift,
-      ContinuousLinearMap.toLinearMap_sub] using hblock
-  exact hchecker.trans
+  exact (N.mul_map_sub_starProjection_le_map_comp_sub_comp hA hB hdelta hkyUV hkyVU).trans
     (N.map_comp_starProjection_sub_starProjection_comp_le U V
       ((B - A : E →L[K] E) : E →ₗ[K] E))
 
