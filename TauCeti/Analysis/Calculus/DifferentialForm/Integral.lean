@@ -107,9 +107,7 @@ theorem _root_.Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv {
     (hφ : ContDiff ℝ 1 φ) (hψ : ContDiff ℝ 1 ψ) (hc : HasCompactSupport ψ) :
     ∫ x, wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar =
       -(-1 : ℝ) ^ k * ∫ x, wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar := by
-  have hcω : HasCompactSupport fun x ↦ wedge (φ x) (ψ x) :=
-    hc.mono fun x hx h ↦ hx (by simp [h, wedge_def, pairedWedge_zero_right])
-  obtain ⟨hint, hzero⟩ := b.integral_extDeriv_eq_zero (hφ.wedge hψ) hcω
+  obtain ⟨hint, hzero⟩ := b.integral_extDeriv_eq_zero (hφ.wedge hψ) hc.wedge_left
   -- The Leibniz rule splits `d (φ ∧ ψ)` into the two pairings being compared.
   have hL (x : E) : extDeriv (fun x ↦ wedge (φ x) (ψ x)) x b =
       wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) +
@@ -120,7 +118,8 @@ theorem _root_.Module.Basis.integral_extDeriv_wedge_eq_integral_wedge_extDeriv {
       b.addHaar := by
     refine Continuous.integrable_of_hasCompactSupport ?_ ?_
     · exact (((hφ.of_le zero_le_one).wedge (contDiff_extDeriv hψ le_rfl)).continuous).eval_const _
-    · exact hc.extDeriv.mono fun x hx h ↦ hx (by simp [h, wedge_def, pairedWedge_zero_right])
+    · exact (hc.extDeriv.wedge_left (φ := φ)).comp_left
+        (g := fun ω ↦ ω (b ∘ Fin.cast (by omega))) rfl
   calc ∫ x, wedge (extDeriv φ x) (ψ x) (b ∘ Fin.cast (by omega)) ∂b.addHaar
       = ∫ x, (extDeriv (fun x ↦ wedge (φ x) (ψ x)) x b -
           (-1 : ℝ) ^ k * wedge (φ x) (extDeriv ψ x) (b ∘ Fin.cast (by omega))) ∂b.addHaar :=

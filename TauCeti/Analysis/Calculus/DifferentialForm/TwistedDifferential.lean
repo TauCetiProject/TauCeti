@@ -12,6 +12,7 @@ public import TauCeti.Analysis.Normed.Module.Alternating.Wedge.Specializations
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
 public import TauCeti.MeasureTheory.Measure.Haar.OfBasis
 import TauCeti.Analysis.Calculus.DifferentialForm.Integral
+import TauCeti.LinearAlgebra.Basis.Fin
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -133,13 +134,11 @@ theorem integral_twistedDifferential_wedge_eq [MeasurableSpace E] [BorelSpace E]
   have hibp := b₀.integral_extDeriv_wedge_eq_integral_wedge_extDeriv hg' hη' hcη'
   have hb₀ : b₀.addHaar = b.addHaar := Module.Basis.addHaar_reindex _ _
   simp only [extDeriv_constOfIsEmpty, wedge_def, pairedWedge_apply_zero_left, hb₀] at hibp
-  have e₁ : ⇑b₀ ∘ Fin.cast (show 0 + 1 + m = 0 + m + 1 by omega) = ⇑b := by
-    funext i
-    simp [b₀]
+  have e₁ : ⇑b₀ ∘ Fin.cast (show 0 + 1 + m = 0 + m + 1 by omega) = ⇑b :=
+    b.reindex_finCongr_comp_cast _ _
   have e₂ : (⇑b₀ ∘ Fin.cast (show 0 + (m + 1) = 0 + m + 1 by omega)) ∘
-      Fin.cast (Nat.zero_add (m + 1)).symm = ⇑b ∘ Fin.cast (show m + 1 = 1 + m by omega) := by
-    funext i
-    simp [b₀]
+      Fin.cast (Nat.zero_add (m + 1)).symm = ⇑b ∘ Fin.cast (show m + 1 = 1 + m by omega) :=
+    b.reindex_finCongr_comp_cast _ _
   rw [e₁, e₂] at hibp
   simp only [ContinuousLinearMap.mul_apply', constOfIsEmpty_apply, pow_zero] at hibp
   simp only [hpt, integral_const_mul]
