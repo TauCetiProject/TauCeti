@@ -38,9 +38,9 @@ each such argument has to rebuild the existence proof inline.
 
 Two finite places are equal exactly when their absolute values are equivalent,
 `NumberField.FinitePlace.eq_iff_isEquiv`, as Mathlib has for infinite places. For a prime `w` of a
-finite extension over a prime `v`, `NumberField.FinitePlace.mk_apply_algebraMap` restates Mathlib's
-`equivHeightOneSpectrum_symm_apply_algebraMap` with `FinitePlace.mk`: on the base, the finite place
-of `w` is the `e * f`-th power of that of `v`.
+finite extension over a prime `v`, Mathlib's
+`equivHeightOneSpectrum_symm_apply_algebraMap` shows that on the base, the finite place of `w` is
+the `e * f`-th power of that of `v`.
 
 `NumberField.HeightOneSpectrum.log_adicAbv` reads the logarithm of the `v`-adic absolute value
 as minus the `v`-adic order times `log N(v)`, the form in which valuations enter height estimates.
@@ -134,18 +134,6 @@ theorem eq_iff_isEquiv {w v : FinitePlace K} : w = v ↔ w.1.IsEquiv v.1 := by
   rw [← norm_lt_one_iff_mem K, ← norm_lt_one_iff_mem K, ← mk_apply, ← mk_apply,
     mk_maximalIdeal, mk_maximalIdeal]
   exact h.lt_one_iff
-
-/-- For a prime `w` of `𝓞 L` over the prime `v` of `𝓞 K`, the finite place of `w` restricts on
-`K` to the `e * f`-th power of the finite place of `v`, where `e` and `f` are the ramification
-index and the inertia degree of `w` over `v`. This is Mathlib's
-`equivHeightOneSpectrum_symm_apply_algebraMap` stated with `FinitePlace.mk`. -/
-theorem mk_apply_algebraMap {L : Type*} [Field L] [NumberField L] [Algebra K L]
-    (v : HeightOneSpectrum (𝓞 K)) (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver v.asIdeal]
-    (x : K) :
-    mk w (algebraMap K L x) =
-      mk v x ^ (w.asIdeal.ramificationIdx (𝓞 K) * w.asIdeal.inertiaDeg (𝓞 K)) := by
-  simpa only [equivHeightOneSpectrum_symm_apply, ← mk_apply] using
-    equivHeightOneSpectrum_symm_apply_algebraMap v w x
 
 /-- A product over the finite places of a number field, reindexed by the height one primes of its
 ring of integers. -/
