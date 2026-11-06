@@ -240,7 +240,7 @@ theorem integral_laplacian_mul_log_normSq
   ring
 
 /-- The distributional identity for `Δ log |α|²`, tested against a smooth compactly supported
-cutoff `χ` that is `1` near every point of norm less than `R`, where `R` bounds the zeros of `α`:
+cutoff `χ` that equals `1` at every zero of `α`:
 `∫ Δχ log |α|² = ∫ χ (|α|² - 1) / 4 + 4π ∑ᶠ z, n z`. -/
 theorem integral_laplacian_mul_log_normSq_of_eq_one
     (hb₁ : ContDiff ℝ 2 (fun w ↦ x w 0)) (hb₂ : ContDiff ℝ 2 (fun w ↦ x w 1))
@@ -248,9 +248,8 @@ theorem integral_laplacian_mul_log_normSq_of_eq_one
     (hsol : ∀ z, equation x z = 0) (hfin : {z | sectionValue x z = 0}.Finite) {n : ℂ → ℕ}
     (hn : ∀ z, ∃ v : ℂ → ℂ, ContinuousAt v z ∧ v z ≠ 0 ∧
       ∀ᶠ w in 𝓝 z, sectionValue x w = (w - z) ^ n z * v w)
-    {χ : ℂ → ℝ} {R : ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
-    (hχ1 : ∀ z, ‖z‖ < R → χ =ᶠ[𝓝 z] fun _ ↦ 1)
-    (hR : ∀ z, sectionValue x z = 0 → ‖z‖ < R) :
+    {χ : ℂ → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
+    (hχ1 : ∀ z, sectionValue x z = 0 → χ z = 1) :
     ∫ z, Δ χ z * Real.log (4 * (x z 2 ^ 2 + x z 3 ^ 2)) =
       (∫ z, χ z * ((4 * (x z 2 ^ 2 + x z 3 ^ 2) - 1) / 4)) + 4 * π * ∑ᶠ z, (n z : ℝ) := by
   have h := integral_laplacian_mul_log_normSq hb₁ hb₂ hp hq hsol hfin hn
@@ -260,7 +259,7 @@ theorem integral_laplacian_mul_log_normSq_of_eq_one
   congr 2
   refine finsum_congr fun z ↦ ?_
   by_cases hz : sectionValue x z = 0
-  · rw [(hχ1 z (hR z hz)).self_of_nhds, mul_one]
+  · rw [hχ1 z hz, mul_one]
   · simp [eq_zero_of_sectionValue_ne_zero hn hz]
 
 /-- **The flux identity for a plane vortex.** Let `x` be a `C²` vortex on the whole plane whose
@@ -299,10 +298,10 @@ theorem integral_one_sub_normSq_eq_mul_finsum
   choose χ hχ hχc hχ1 hχ0 _ hχΔ hχI using fun m ↦ hC (R m) (hRpos m)
   have hid : ∀ m, ∫ z, Δ (χ m) z * Real.log (s z) = (∫ z, χ m z * F z) + 4 * π * N :=
     fun m ↦ integral_laplacian_mul_log_normSq_of_eq_one hb₁ hb₂ hp hq hsol hfin hn (hχ m) (hχc m)
-      (hχ1 m) fun z hz ↦ by
+      fun z hz ↦ (hχ1 m z (by
         have := mem_closedBall_zero_iff.mp (hR₀ hz)
         simp only [hR]
-        linarith [le_max_left R₀ 0, (Nat.cast_nonneg m : (0 : ℝ) ≤ m)]
+        linarith [le_max_left R₀ 0, (Nat.cast_nonneg m : (0 : ℝ) ≤ m)])).self_of_nhds
   have hRt : Tendsto R atTop atTop := tendsto_atTop_mono hRm tendsto_natCast_atTop_atTop
   -- The cutoff integrals of the right side converge to `∫ F`.
   have hB : Tendsto (fun m ↦ ∫ z, χ m z * F z) atTop (𝓝 (∫ z, F z)) :=
