@@ -19,7 +19,7 @@ In formal module gluing, `M` is the module of sections on the complementary open
 `N` is the prescribed module on the formal neighbourhood, and `P` is the module
 of sections on their overlap. The sections modules have no torsion supported on
 the omitted closed subset. The theorem recovers the entire torsion of `N` inside
-the compatible-pairs module, before constructing the scalar-extension comparison.
+the compatible-pairs module.
 
 We use Mathlib's existing kernel and `Ideal.primaryComponent.map`, rather than
 introducing a separate carrier or torsion map.
@@ -54,7 +54,7 @@ theorem primaryComponent_map_snd_ker_coprod_bijective (I : Ideal R)
     have hfst := I.primaryComponent_map_mem
       ((LinearMap.fst R M N).comp K.subtype) x
     rw [hM, Submodule.mem_bot] at hfst
-    have hsnd : π x = 0 := congrArg Subtype.val hx
+    have hsnd : π x = 0 := by simpa [π] using congrArg Subtype.val hx
     apply Subtype.ext
     apply Subtype.ext
     exact Prod.ext hfst hsnd
@@ -65,6 +65,6 @@ theorem primaryComponent_map_snd_ker_coprod_bijective (I : Ideal R)
     have hk : k ∈ I.primaryComponent K := by
       rw [← I.primaryComponent_comap_subtype K]
       exact I.primaryComponent_map_mem (LinearMap.inr R M N) n
-    exact ⟨⟨k, hk⟩, rfl⟩
+    exact ⟨⟨k, hk⟩, Subtype.ext (by simp [k])⟩
 
 end Ideal
