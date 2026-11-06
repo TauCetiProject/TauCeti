@@ -59,8 +59,8 @@ local freeness does not imply freeness.
   rank one is the existence of a normal basis of every completion.
 * `TauCeti.LocallyFree.isLocallyFreeOfRank_one_of_ne_bot`: a nonzero ideal of `A` is locally
   free of rank one over `A`.
-* `TauCeti.LocallyFree.isLocallyFreeOfRank_one_and_not_free_of_not_isPrincipal`: a nonprincipal
-  ideal is locally free of rank one but not free.
+* `TauCeti.LocallyFree.not_free_of_not_isPrincipal`: a nonprincipal ideal is not free, so local
+  freeness does not imply freeness.
 
 ## References
 
@@ -88,7 +88,7 @@ to `𝒪_v ⊗[A] Λⁿ` as a module over `𝒪_v ⊗[A] Λ`, where `𝒪_v = v.
 structure IsLocallyFreeOfRank (n : ℕ) : Prop where
   /-- A locally free lattice is finitely generated over `A`. -/
   finite : Module.Finite A M
-  /-- Every completion of a locally free lattice of rank `n` is free of rank `n`. -/
+  /-- Every completion `𝒪_v ⊗[A] M` is isomorphic to `𝒪_v ⊗[A] Λⁿ` as an `𝒪_v ⊗[A] Λ`-module. -/
   nonempty_linearEquiv (v : HeightOneSpectrum A) :
     Nonempty (v.adicCompletionIntegers K ⊗[A] M ≃ₗ[v.adicCompletionIntegers K ⊗[A] Λ]
       v.adicCompletionIntegers K ⊗[A] (Fin n → Λ))
@@ -129,24 +129,40 @@ theorem prod (hM : IsLocallyFreeOfRank A K Λ M n) (hN : IsLocallyFreeOfRank A K
       ((hM.nonempty_linearEquiv v).some.prodCongr (hN.nonempty_linearEquiv v).some).trans <|
         (CentralBaseChange.prodRight A _ Λ _ _).symm.trans (CentralBaseChange.congr _ φ)⟩
 
-/-- If `A` is not a field, the rank of a locally free lattice is determined by its dimension over
-the fraction field: `dim_K (K ⊗[A] M) = n * dim_K (K ⊗[A] Λ)`. -/
+/-- The `K`-dimension of `K ⊗[A] X` is the `K_v`-dimension of `K_v ⊗[𝒪_v] (𝒪_v ⊗[A] X)`, via
+`K_v ⊗[𝒪_v] (𝒪_v ⊗[A] X) ≃ K_v ⊗[A] X ≃ K_v ⊗[K] (K ⊗[A] X)`. -/
+private theorem finrank_eq_finrank_adicCompletion (v : HeightOneSpectrum A) (X : Type*)
+    [AddCommGroup X] [Module A X] :
+    finrank K (K ⊗[A] X) = finrank (v.adicCompletion K)
+      (v.adicCompletion K ⊗[v.adicCompletionIntegers K] (v.adicCompletionIntegers K ⊗[A] X)) := by
+  rw [← Module.finrank_baseChange (R := v.adicCompletion K) (M' := K ⊗[A] X),
+    (AlgebraTensorModule.cancelBaseChange A K (v.adicCompletion K) (v.adicCompletion K)
+      X).finrank_eq,
+    ← (AlgebraTensorModule.cancelBaseChange A (v.adicCompletionIntegers K) (v.adicCompletion K)
+      (v.adicCompletion K) X).finrank_eq]
+
+omit [IsDedekindDomain A] [IsFractionRing A K] in
+variable (K Λ) in
+/-- `dim_K (K ⊗[A] Λⁿ) = n * dim_K (K ⊗[A] Λ)`. The dimensions are compared as cardinals, since
+`K ⊗[A] Λ` need not be finite-dimensional. -/
+private theorem finrank_tensor_fun (n : ℕ) :
+    finrank K (K ⊗[A] (Fin n → Λ)) = n * finrank K (K ⊗[A] Λ) := by
+  rw [(TensorProduct.piRight A K K fun _ : Fin n ↦ Λ).finrank_eq, Module.finrank,
+    rank_fun_eq_lift_mul, Cardinal.toNat_mul, Cardinal.toNat_lift, Cardinal.toNat_natCast,
+    Fintype.card_fin, Module.finrank]
+
+/-- If `A` is not a field, the dimension over the fraction field of a locally free lattice of rank
+`n` is `dim_K (K ⊗[A] M) = n * dim_K (K ⊗[A] Λ)`, so `n` is determined by `M` when
+`K ⊗[A] Λ ≠ 0`. -/
 theorem finrank (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M n) :
     finrank K (K ⊗[A] M) = n * finrank K (K ⊗[A] Λ) := by
   obtain ⟨J, hJ⟩ := Ideal.exists_maximal A
   let v : HeightOneSpectrum A := ⟨J, hJ.isPrime, Ring.ne_bot_of_isMaximal_of_not_isField hJ hA⟩
   let S := v.adicCompletionIntegers K
-  let L := v.adicCompletion K
-  let e := ((h.nonempty_linearEquiv v).some.restrictScalars S).baseChange S L _ _
-  -- Compare both sides with `L ⊗[S] (S ⊗[A] -) ≃ L ⊗[A] - ≃ L ⊗[K] (K ⊗[A] -)` over `L = K_v`.
-  rw [← Module.finrank_baseChange (R := L) (M' := K ⊗[A] M),
-    (AlgebraTensorModule.cancelBaseChange A K L L M).finrank_eq,
-    ← (AlgebraTensorModule.cancelBaseChange A S L L M).finrank_eq, e.finrank_eq,
-    (AlgebraTensorModule.cancelBaseChange A S L L _).finrank_eq,
-    ← (AlgebraTensorModule.cancelBaseChange A K L L _).finrank_eq, Module.finrank_baseChange,
-    (TensorProduct.piRight A K K fun _ : Fin n ↦ Λ).finrank_eq, Module.finrank,
-    rank_fun_eq_lift_mul, Cardinal.toNat_mul, Cardinal.toNat_lift, Cardinal.toNat_natCast,
-    Fintype.card_fin, Module.finrank]
+  -- Compare both sides over `K_v` at one height-one prime `v`.
+  let e := ((h.nonempty_linearEquiv v).some.restrictScalars S).baseChange S (v.adicCompletion K) _ _
+  rw [finrank_eq_finrank_adicCompletion v, e.finrank_eq, ← finrank_eq_finrank_adicCompletion v,
+    finrank_tensor_fun]
 
 /-- If `A` is not a field, a locally free lattice of rank zero is zero. -/
 theorem subsingleton (hA : ¬IsField A) (h : IsLocallyFreeOfRank A K Λ M 0) : Subsingleton M :=
@@ -236,20 +252,27 @@ theorem isLocallyFreeOfRank_one_of_ne_bot {I : Ideal A} (hI : I ≠ ⊥) :
         Submodule.coe_subtype, LinearEquiv.coe_coe, AlgebraTensorModule.rid_tmul,
         Algebra.smul_def, mul_one] at this
       exact ha0 (FaithfulSMul.algebraMap_injective A _ (this.trans (map_zero _).symm))
-    -- `𝒪_v ⊗[A] I ≃ range f = (x) ≃ 𝒪_v ≃ 𝒪_v ⊗[A] A¹`.
-    exact ⟨CentralBaseChange.selfLinearEquiv <| (LinearEquiv.ofInjective f hf).trans <|
+    -- `𝒪_v ⊗[A] I ≃ range f = (x) ≃ 𝒪_v ≃ 𝒪_v ⊗[A] A¹`, and `𝒪_v`-linear maps are
+    -- `𝒪_v ⊗[A] A`-linear since `𝒪_v → 𝒪_v ⊗[A] A` is surjective.
+    have hsurj : Function.Surjective (algebraMap (v.adicCompletionIntegers K)
+        (v.adicCompletionIntegers K ⊗[A] A)) := fun t ↦
+      let r := Algebra.TensorProduct.rid A (v.adicCompletionIntegers K) (v.adicCompletionIntegers K)
+      ⟨r t, r.injective (by simp [r])⟩
+    exact ⟨LinearEquiv.extendScalarsOfSurjective hsurj <| (LinearEquiv.ofInjective f hf).trans <|
       (LinearEquiv.ofEq _ _ hx).trans <|
         (LinearEquiv.toSpanNonzeroSingleton _ _ x hx0).symm.trans <|
           (AlgebraTensorModule.rid A _ _).symm.trans
             ((LinearEquiv.funUnique (Fin 1) A A).symm.baseChange A _ _ _)⟩
 
-/-- **Local freeness does not imply freeness.** A nonprincipal ideal `I` of `A` is locally free of
-rank one over `A`, but it is not a free `A`-module. -/
-theorem isLocallyFreeOfRank_one_and_not_free_of_not_isPrincipal {I : Ideal A}
-    (hI : ¬I.IsPrincipal) : IsLocallyFreeOfRank A K A I 1 ∧ ¬Module.Free A I := by
-  refine ⟨isLocallyFreeOfRank_one_of_ne_bot fun h ↦ hI (h ▸ bot_isPrincipal), fun _ ↦ hI ?_⟩
+omit [IsDedekindDomain A] in
+/-- **Local freeness does not imply freeness.** A nonprincipal ideal `I` of `A` is not a free
+`A`-module. Over a Dedekind domain it is still locally free of rank one, by
+`isLocallyFreeOfRank_one_of_ne_bot`. -/
+theorem not_free_of_not_isPrincipal [Nontrivial A] {I : Ideal A} (hI : ¬I.IsPrincipal) :
+    ¬Module.Free A I :=
   -- A free ideal has rank at most one, hence is principal.
-  exact (Submodule.rank_le_one_iff_isPrincipal I).mp ((Submodule.rank_le I).trans_eq (rank_self A))
+  fun _ ↦ hI <|
+    (Submodule.rank_le_one_iff_isPrincipal I).mp ((Submodule.rank_le I).trans_eq (rank_self A))
 
 end Ideal
 

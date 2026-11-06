@@ -50,8 +50,6 @@ together here as an `S`-algebra map `TauCeti.CentralBaseChange.lsmul` into
   of `Hom` modules.
 * `TauCeti.CentralBaseChange.congr`: the `S ⊗[A] Λ`-linear equivalence induced by a `Λ`-linear
   equivalence, and `TauCeti.CentralBaseChange.prodRight`, the compatibility with binary products.
-* `TauCeti.CentralBaseChange.selfLinearEquiv`: for `Λ = A`, an `S`-linear equivalence
-  `S ⊗[A] X ≃ S ⊗[A] Y` is `S ⊗[A] A`-linear.
 * `TauCeti.CentralBaseChange.freeHomEquiv`: an `S ⊗[A] Λ`-linear map out of `S ⊗[A] (ι → Λ)` is
   the same as a family of values on the basis vectors `1 ⊗ Pi.single i 1`.
 * `TauCeti.CentralBaseChange.homEquiv`: for flat `S` and finitely presented `M`, the `S`-linear
@@ -228,38 +226,6 @@ theorem prodRight_tmul (s : S) (x : M × N) :
 theorem prodRight_symm_tmul (s : S) (m : M) (n : N) :
     (prodRight A S Λ M N).symm (s ⊗ₜ[A] m, s ⊗ₜ[A] n) = s ⊗ₜ (m, n) := by
   rw [LinearEquiv.symm_apply_eq, prodRight_tmul]
-
-section Self
-
-/-! ### Central base change of `A`-modules -/
-
-variable {X Y : Type*} [AddCommGroup X] [Module A X] [AddCommGroup Y] [Module A Y]
-
-/-- For `Λ = A`, an element `t` of `S ⊗[A] A` acts on `S ⊗[A] X` as the scalar
-`TensorProduct.AlgebraTensorModule.rid A S S t` of `S`. -/
-theorem smul_eq_rid_smul (t : S ⊗[A] A) (x : S ⊗[A] X) :
-    t • x = TensorProduct.AlgebraTensorModule.rid A S S t • x := by
-  induction t using TensorProduct.inductionOn with
-  | add t t' ht ht' => rw [add_smul, ht, ht', map_add, add_smul]
-  | tmul s a =>
-    induction x using TensorProduct.inductionOn with
-    | add x y hx hy => rw [smul_add, hx, hy, smul_add]
-    | tmul s' y =>
-      rw [tmul_smul_tmul, TensorProduct.AlgebraTensorModule.rid_tmul, TensorProduct.tmul_smul,
-        TensorProduct.smul_tmul', TensorProduct.smul_tmul', smul_eq_mul, smul_mul_assoc]
-
-/-- For `Λ = A`, every `S`-linear equivalence `S ⊗[A] X ≃ S ⊗[A] Y` is `S ⊗[A] A`-linear. -/
-noncomputable def selfLinearEquiv (e : S ⊗[A] X ≃ₗ[S] S ⊗[A] Y) :
-    S ⊗[A] X ≃ₗ[S ⊗[A] A] S ⊗[A] Y where
-  __ := e
-  map_smul' t x := by
-    rw [RingHom.id_apply, smul_eq_rid_smul, smul_eq_rid_smul]
-    exact e.map_smul _ x
-
-@[simp]
-theorem coe_selfLinearEquiv (e : S ⊗[A] X ≃ₗ[S] S ⊗[A] Y) : ⇑(selfLinearEquiv e) = e := (rfl)
-
-end Self
 
 variable (A S Λ M N) in
 /-- `TauCeti.CentralBaseChange.map` as an `A`-linear map
