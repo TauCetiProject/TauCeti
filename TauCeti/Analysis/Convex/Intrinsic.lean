@@ -252,6 +252,20 @@ theorem eq_or_finrank_lt_of_mem_intrinsicInterior (hPv : ∀ i, Convex ℝ (P i)
     · exact .inr hk
     · exact (Set.disjoint_left.1 (hri hik) hxi hxk).elim
 
+omit [FiniteDimensional ℝ E] in
+/-- The intrinsic frontier of a closed cell is covered by the other cells contained in it, when
+every point of a cell lies in the intrinsic interior of a cell contained in it. -/
+theorem intrinsicFrontier_subset_iUnion_of_exists_mem_intrinsicInterior
+    (hPc : ∀ i, IsClosed (P i))
+    (h : ∀ i, ∀ x ∈ P i, ∃ j, x ∈ intrinsicInterior ℝ (P j) ∧ P j ⊆ P i) (i : ι) :
+    intrinsicFrontier ℝ (P i) ⊆ ⋃ (j) (_ : j ≠ i ∧ P j ⊆ P i), P j := by
+  intro x hx
+  obtain ⟨j, hxj, hji⟩ := h i x (intrinsicFrontier_subset (hPc i) hx)
+  have hxi : x ∉ intrinsicInterior ℝ (P i) := by
+    rw [← intrinsicClosure_sdiff_intrinsicInterior] at hx
+    exact hx.2
+  exact mem_iUnion₂.2 ⟨j, ⟨fun hji' => hxi (hji' ▸ hxj), hji⟩, intrinsicInterior_subset hxj⟩
+
 end Cells
 
 end FiniteDimensional
