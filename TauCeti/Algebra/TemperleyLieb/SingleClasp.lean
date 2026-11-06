@@ -55,10 +55,16 @@ theorem descendingWord_last (n : ℕ) :
     descendingWord δ n (Fin.last n) = e δ (Fin.last n) := by
   cases n <;> simp [descendingWord]
 
+/-- A descending word starting before the last generator prepends that generator. -/
+@[simp]
+theorem descendingWord_castSucc (n : ℕ) (j : Fin (n + 1)) :
+    descendingWord δ (n + 1) j.castSucc =
+      e δ (Fin.last (n + 1)) * strandIncl (descendingWord δ n j) := by
+  simp [descendingWord]
+
 /-- A descending word either consists of its last generator, or prepends that generator
 to a descending word on one fewer strand. This equation applies to arbitrary indices,
 including indices written as numerals. -/
-@[simp]
 theorem descendingWord_succ (n : ℕ) (i : Fin (n + 2)) :
     descendingWord δ (n + 1) i =
       if h : i = Fin.last (n + 1) then e δ i
@@ -93,10 +99,12 @@ private theorem singleClaspSum_succ (n : ℕ) :
     rw [hi, pow_succ]
     ring
   simp_rw [hsign]
-  simp [singleClaspSum, map_sum, map_smul, Finset.mul_sum,
-    sub_eq_add_neg, add_comm, Nat.add_left_comm]
+  simp only [singleClaspSum, map_sum, map_smul, Finset.mul_sum, neg_smul,
+    Finset.sum_neg_distrib, mul_smul_comm, Nat.add_sub_cancel_left, pow_one,
+    neg_mul, one_mul]
+  abel
 
-private theorem jonesWenzl_singleClasp_aux :
+private theorem jonesWenzl_add_two_eq_add_smul_aux :
     ∀ n, (∀ k ∈ Finset.Icc 1 (n + 1), IsUnit (qInt R δ k)) →
       jonesWenzl δ (n + 2) = strandIncl (jonesWenzl δ (n + 1)) +
         Ring.inverse (qInt R δ (n + 2)) •
@@ -111,7 +119,8 @@ private theorem jonesWenzl_singleClasp_aux :
     let E : TemperleyLieb R δ (n + 3) := e δ (Fin.last (n + 1))
     let S := strandIncl (singleClaspSum δ n)
     have hF : F = H + Ring.inverse (qInt R δ (n + 2)) • (H * S) := by
-      simp only [F, H, S, jonesWenzl_singleClasp_aux n hprev, map_add, map_smul, map_mul]
+      simp only [F, H, S, jonesWenzl_add_two_eq_add_smul_aux n hprev,
+        map_add, map_smul, map_mul]
     have hFH : F * H = F := by
       simpa only [F, H, ← map_mul] using
         congrArg strandIncl (jonesWenzl_mul_strandIncl_jonesWenzl hprev)
@@ -143,13 +152,13 @@ private theorem jonesWenzl_singleClasp_aux :
 /-- **The single-clasp recursion:** the next Jones–Wenzl element is the included smaller
 element multiplied by the sum of `1` and weighted once-capped descending words. Only the quantum
 integers through `[n + 1]` need to be units; division by `[n + 2]` is `Ring.inverse`. -/
-theorem jonesWenzl_single_clasp (n : ℕ)
+theorem jonesWenzl_add_two_eq_strandIncl_mul (n : ℕ)
     (h : ∀ k ∈ Finset.Icc 1 (n + 1), IsUnit (qInt R δ k)) :
     jonesWenzl δ (n + 2) = strandIncl (jonesWenzl δ (n + 1)) *
       (1 + ∑ i : Fin (n + 1),
         ((-1 : R) ^ (n + 1 - i.val) * qInt R δ (i.val + 1) *
           Ring.inverse (qInt R δ (n + 2))) • descendingWord δ n i) := by
-  rw [jonesWenzl_singleClasp_aux n h]
+  rw [jonesWenzl_add_two_eq_add_smul_aux n h]
   simp only [singleClaspSum, mul_add, mul_one, Finset.mul_sum, Finset.smul_sum,
     mul_smul_comm, smul_smul]
   congr 1
