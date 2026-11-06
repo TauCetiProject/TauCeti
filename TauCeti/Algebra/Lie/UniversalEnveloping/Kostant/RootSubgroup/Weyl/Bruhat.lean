@@ -68,19 +68,23 @@ include hwt hT hα hαneg
 
 /-- A negative root element at a unit parameter lies in the Weyl-containing Bruhat form,
 with its explicit root and coroot coordinates. -/
-theorem kostantRootSubgroupParam_f_eq_bruhat (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
+theorem kostantRootSubgroupParam_f_eq_mul_kostantCoordinateCocharacter_mul_kostantWeylGL_mul
+    (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
     kostantRootSubgroupParam e h ρ M hM j hj A (ofAdd (u : A)) =
       kostantRootSubgroupParam e h ρ M hM i hi A (ofAdd ((u⁻¹ : Aˣ) : A)) *
         kostantCoordinateCocharacter M b wt A c (-u⁻¹) *
         kostantWeylGL e h ρ M hM hi hj A *
         kostantRootSubgroupParam e h ρ M hM i hi A (ofAdd ((u⁻¹ : Aˣ) : A)) := by
-  have hw := kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
-    e h ρ M hM b wt hwt hT hi hj hα hαneg A (-u⁻¹)
-  simp only [inv_neg, inv_inv, Units.val_neg, neg_neg, ofAdd_neg, map_inv] at hw
-  rw [mul_assoc _ (kostantCoordinateCocharacter M b wt A c (-u⁻¹)), ← hw]
-  group
+  rw [kostantRootSubgroupParam_f_eq_mul_kostantWeylParam e h ρ M hM hi hj A u,
+    kostantWeylParam_def,
+    kostantRootSubgroupParam_mul_mul_eq_kostantCoordinateCocharacter_mul_kostantWeylGL
+      e h ρ M hM b wt hwt hT hi hj hα hαneg]
+  simp only [mul_assoc]
 
-private theorem kostantWeylGL_exchange (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
+/-- The rank-one exchange identity at a unit parameter:
+`n xᵢ(u) n = xᵢ(-u⁻¹) h_c(-u⁻¹) n xᵢ(-u⁻¹)`, over every value ring. -/
+theorem kostantWeylGL_mul_kostantRootSubgroupParam_mul_kostantWeylGL
+    (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
     kostantWeylGL e h ρ M hM hi hj A *
         kostantRootSubgroupParam e h ρ M hM i hi A (ofAdd (u : A)) *
         kostantWeylGL e h ρ M hM hi hj A =
@@ -91,20 +95,16 @@ private theorem kostantWeylGL_exchange (A : CommAlgCat.{w} ℤ) (u : Aˣ) :
   let x := kostantRootSubgroupParam e h ρ M hM i hi A
   let d := kostantCoordinateCocharacter M b wt A c
   let n := kostantWeylGL e h ρ M hM hi hj A
-  have hconj := kostantWeylParam_conj_kostantRootSubgroupParam_e
-    e h ρ M hM hi hj b wt hwt hT hα hαneg A 1 (u : A)
-  simp only [kostantWeylParam_one, inv_one, Units.val_one, one_pow, one_mul] at hconj
-  have hsq : n * n = d (-1) := by
-    simpa only [kostantWeylParam_one, sq] using
-      kostantWeylParam_sq e h ρ M hM hi hj b wt hwt hT hα hαneg A 1
+  have hconj := kostantWeylGL_conj_kostantRootSubgroupParam_e
+    e h ρ M hM hi hj hT A (u : A)
+  have hsq : n * n = d (-1) :=
+    kostantWeylGL_mul_self e h ρ M hM hi hj b wt hwt hT hα hαneg A
   have hcentral : Commute (d (-1)) (x (ofAdd (-((u⁻¹ : Aˣ) : A)))) := by
-    have hz := kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hα hi A
-      (Pi.mulSingle c (-1)) (ofAdd (-((u⁻¹ : Aˣ) : A)))
-    rw [torusCharacter_mulSingle, rootWeight_apply_coroot_eq_two e h ρ hT (hα c)] at hz
-    simp only [zpow_ofNat, neg_sq, one_pow, Units.val_one, one_mul, toAdd_ofAdd] at hz
-    rw [← kostantCoordinateCocharacter_apply] at hz
+    have hz := kostantCoordinateCocharacter_conj_kostantRootSubgroupParam
+      e h ρ M hM b wt hwt hT hi hα A (-1) (-((u⁻¹ : Aˣ) : A))
+    simp only [Units.val_neg, Units.val_one, neg_sq, one_pow, one_mul] at hz
     exact mul_inv_eq_iff_eq_mul.mp hz
-  have hf := kostantRootSubgroupParam_f_eq_bruhat
+  have hf := kostantRootSubgroupParam_f_eq_mul_kostantCoordinateCocharacter_mul_kostantWeylGL_mul
     e h ρ M hM hi hj b wt hwt hT hα hαneg A (-u)
   simp only [inv_neg, Units.val_neg, neg_neg] at hf
   calc
@@ -141,10 +141,9 @@ theorem closure_kostantRootPair_eq (A : CommAlgCat.{w} ℤ) :
         Subgroup.subset_closure (Or.inl (Or.inl ⟨_, rfl⟩))
       have hnmem : n ∈ Subgroup.closure (Set.range x ∪ Set.range d ∪ {n}) :=
         Subgroup.subset_closure (Or.inr rfl)
-      have hz := kostantWeylParam_conj_kostantRootSubgroupParam_e
-        e h ρ M hM hi hj b wt hwt hT hα hαneg A 1 (-toAdd r)
-      simp only [kostantWeylParam_one, inv_one, Units.val_one, one_pow, one_mul,
-        neg_neg, ofAdd_toAdd] at hz
+      have hz := kostantWeylGL_conj_kostantRootSubgroupParam_e
+        e h ρ M hM hi hj hT A (-toAdd r)
+      simp only [neg_neg, ofAdd_toAdd] at hz
       rw [← hz]
       exact Subgroup.mul_mem _ (Subgroup.mul_mem _ hnmem hx) (Subgroup.inv_mem _ hnmem)
   · have hx (r : Multiplicative A) : x r ∈ Subgroup.closure (Set.range x ∪ Set.range y) :=
@@ -187,22 +186,18 @@ theorem mem_closure_kostantRootPair_iff (K : Type w) [Field K]
   let x := kostantRootSubgroupParam e h ρ M hM i hi A
   let d := kostantCoordinateCocharacter M b wt A c
   let n := kostantWeylGL e h ρ M hM hi hj A
-  have hconj (s : Kˣ) (r : K) : d s * x (ofAdd r) * (d s)⁻¹ = x (ofAdd ((s : K) ^ 2 * r)) := by
-    dsimp only [d, x]
-    rw [kostantCoordinateCocharacter_apply,
-      kostantTorusPoints_conj_kostantRootSubgroupParam e h ρ M hM b wt hwt hα hi A,
-      torusCharacter_mulSingle, rootWeight_apply_coroot_eq_two e h ρ hT (hα c)]
-    simp
+  have hconj := kostantCoordinateCocharacter_conj_kostantRootSubgroupParam
+    e h ρ M hM b wt hwt hT hi hα A
   have hn (s : Kˣ) : n * d s = d s⁻¹ * n := by
     have hz := kostantWeylParam_conj_kostantCoordinateCocharacter
       e h ρ M hM hi hj b wt hwt hT hα hαneg A 1 s
     rw [kostantWeylParam_one] at hz
     exact mul_inv_eq_iff_eq_mul.mp hz
-  have hsq : n * n = d (-1) := by
-    simpa only [kostantWeylParam_one, sq] using
-      kostantWeylParam_sq e h ρ M hM hi hj b wt hwt hT hα hαneg A 1
+  have hsq : n * n = d (-1) :=
+    kostantWeylGL_mul_self e h ρ M hM hi hj b wt hwt hT hα hαneg A
   rw [closure_kostantRootPair_eq e h ρ M hM hi hj b wt hwt hT hα hαneg]
   exact x.mem_closure_rankOne_iff d n hconj hn hsq
-    (kostantWeylGL_exchange e h ρ M hM hi hj b wt hwt hT hα hαneg A) g
+    (kostantWeylGL_mul_kostantRootSubgroupParam_mul_kostantWeylGL
+      e h ρ M hM hi hj b wt hwt hT hα hαneg A) g
 
 end TauCeti.UniversalEnvelopingAlgebra
