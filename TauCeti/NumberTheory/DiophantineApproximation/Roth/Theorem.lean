@@ -79,6 +79,54 @@ private theorem two_le_twelve_mul_max_house (α : ℝ) {b : ℕ} (hb : 0 < b) :
   have hb₁ : (1 : ℝ) ≤ b := by exact_mod_cast hb
   nlinarith [le_max_left 1 (house α)]
 
+/-- A sequence `h` with `L ≤ h 0` and `M h k ≤ h (k + 1)` for `M ≥ 2` and `L > 0` is positive and
+monotone. -/
+theorem forall_pos_and_monotone_of_mul_le {h : ℕ → ℝ} {M L : ℝ} (hM : 2 ≤ M) (hL : 0 < L)
+    (h₀ : L ≤ h 0) (hh : ∀ k, M * h k ≤ h (k + 1)) : (∀ k, 0 < h k) ∧ Monotone h := by
+  have hpos : ∀ k, 0 < h k := by
+    intro k
+    induction k with
+    | zero => exact hL.trans_le h₀
+    | succ k ih => exact (by nlinarith : 0 < M * h k).trans_le (hh k)
+  exact ⟨hpos, monotone_nat_of_le_succ fun k ↦ by nlinarith [hh k, hpos k]⟩
+
+/-- The degree bounds `⌊D / h i⌋₊` of Roth's auxiliary polynomial, for `D = h (n - 1) / ε` and a
+positive monotone sequence `h`: they are positive, `⌊D / h i⌋₊ * h i` lies between `(1 - ε) D`
+and `D`, and `5 h i ≤ D`. -/
+private theorem floor_div_bounds {n : ℕ} {ε : ℝ} (hε : ε ≤ 1 / 12) {h : ℕ → ℝ}
+    (hpos : ∀ k, 0 < h k) (hmono : Monotone h) {D : ℝ} (hD₀ : 0 < D) (hεD : ε * D = h (n - 1))
+    (i : Fin n) : 5 * h i ≤ D ∧ 0 < ⌊D / h i⌋₊ ∧ (⌊D / h i⌋₊ : ℝ) * h i ≤ D ∧
+      (1 - ε) * D ≤ ⌊D / h i⌋₊ * h i := by
+  have hhD : h i ≤ ε * D := hεD ▸ hmono (by omega)
+  have h5D : 5 * h i ≤ D := by nlinarith [hpos i]
+  refine ⟨h5D, Nat.floor_pos.2 ((one_le_div (hpos i)).2 (by linarith [hpos i])),
+    (le_div_iff₀ (hpos i)).1 (Nat.floor_le (div_pos hD₀ (hpos i)).le), ?_⟩
+  have hlt := Nat.lt_floor_add_one (D / h i)
+  have hmul : D / h i * h i = D := div_mul_cancel₀ D (hpos i).ne'
+  nlinarith [hpos i]
+
+/-- The exponent `2 n σ ^ (1 / 2 ^ (n - 1))` for `σ = (5 ε / 4) ^ 2 ^ (n - 1)` equals
+`5 n ε / 2`. -/
+private theorem two_mul_mul_rpow_inv_two_pow {ε : ℝ} (hε : 0 ≤ ε) (n : ℕ) :
+    2 * (n : ℝ) * ((5 * ε / 4) ^ 2 ^ (n - 1)) ^ ((1 : ℝ) / 2 ^ (n - 1)) =
+      5 * Fintype.card (Fin n) * ε / 2 := by
+  rw [one_div, (by norm_cast : (2 : ℝ) ^ (n - 1) = ((2 ^ (n - 1) : ℕ) : ℝ)),
+    pow_rpow_inv_natCast (by positivity) (pow_ne_zero _ two_ne_zero), Fintype.card_fin]
+  ring
+
+/-- If the coefficients of a nonzero integer polynomial `P` are bounded by `B ^ ∑ i, r i` for
+`B > 0`, then they are bounded by `exp (log B * ∑ i, r i)`, and the logarithmic height of `P` over
+`ℚ` is at most `log B * ∑ i, r i`. -/
+private theorem abs_coeff_le_exp_and_logHeight_map_le {ι : Type*} [Fintype ι]
+    {P : MvPolynomial ι ℤ} (hP0 : P ≠ 0) {B : ℝ} (hB : 0 < B) {r : ι → ℕ}
+    (hP : ∀ μ, |(P.coeff μ : ℝ)| ≤ B ^ ∑ i, r i) :
+    (∀ μ, |(P.coeff μ : ℝ)| ≤ exp (log B * ∑ i, (r i : ℝ))) ∧
+      (P.map (Int.castRingHom ℚ)).logHeight ≤ log B * ∑ i, (r i : ℝ) := by
+  have h : ∀ μ, |(P.coeff μ : ℝ)| ≤ exp (log B * ∑ i, (r i : ℝ)) := fun μ ↦ by
+    rw [mul_comm, ← Nat.cast_sum, exp_nat_mul, exp_log hB]
+    exact hP μ
+  exact ⟨h, (logHeight_map_intCast_le_log hP0 h).trans_eq (log_exp _)⟩
+
 /-- The main step of the proof of Roth's theorem. Let `β₀, β₁, …` be rational approximations
 of `α` with `|βₖ - α| ≤ H(βₖ) ^ (-κ)`, whose logarithmic heights satisfy `L ≤ h(β₀)` and
 `M h(βₖ) ≤ h(βₖ₊₁)`, where `σ M ≥ 2` and `σ⁻¹ (5 C₁ / 2 + 5 n) ≤ L` for
@@ -107,44 +155,30 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   have hC₁ : log 2 ≤ C₁ := log_le_log two_pos h12
   have hC₁₀ : 0 ≤ C₁ := log_nonneg (by linarith)
   have hL₀ : 0 < L := lt_of_lt_of_le (by positivity) hL
-  have hpos : ∀ k, 0 < h k := by
-    intro k
-    induction k with
-    | zero => exact hL₀.trans_le h₀
-    | succ k ih => exact (by nlinarith : 0 < M * h k).trans_le (hh k)
-  have hmono : Monotone h := monotone_nat_of_le_succ fun k ↦ by nlinarith [hh k, hpos k]
+  obtain ⟨hpos, hmono⟩ := forall_pos_and_monotone_of_mul_le hM₂ hL₀ h₀ hh
   -- The degree bounds `r i = ⌊D / h i⌋₊` for `D = h (n - 1) / ε`.
   set D := h (n - 1) / ε with hD_def
   have hεD : ε * D = h (n - 1) := by rw [hD_def]; field_simp
   have hD₀ : 0 < D := div_pos (hpos _) hε₀
-  have hhD (i : Fin n) : h i ≤ ε * D := hεD ▸ hmono (by omega)
-  have h5D (i : Fin n) : 5 * h i ≤ D := by nlinarith [hhD i, hpos i]
   set r : Fin n → ℕ := fun i ↦ ⌊D / h i⌋₊ with hr_def
-  have hr (i : Fin n) : 0 < r i :=
-    Nat.floor_pos.2 ((one_le_div (hpos i)).2 (by linarith [h5D i, hpos i]))
-  have hup (i : Fin n) : r i * h i ≤ D :=
-    (le_div_iff₀ (hpos i)).1 (Nat.floor_le (div_pos hD₀ (hpos i)).le)
-  have hlow (i : Fin n) : (1 - ε) * D ≤ r i * h i := by
-    have hlt := Nat.lt_floor_add_one (D / h i)
-    have hmul : D / h i * h i = D := div_mul_cancel₀ D (hpos i).ne'
-    nlinarith [hhD i, hpos i]
+  have hfl := floor_div_bounds hε hpos hmono hD₀ hεD
+  have h5D (i : Fin n) : 5 * h i ≤ D := (hfl i).1
+  have hr (i : Fin n) : 0 < r i := (hfl i).2.1
+  have hup (i : Fin n) : r i * h i ≤ D := (hfl i).2.2.1
+  have hlow (i : Fin n) : (1 - ε) * D ≤ r i * h i := (hfl i).2.2.2
   have hsum : ∑ i, (r i : ℝ) = ∑ k ∈ range n, (⌊D / h k⌋₊ : ℝ) :=
     Fin.sum_univ_eq_sum_range (fun k ↦ (⌊D / h k⌋₊ : ℝ)) n
   -- Roth's auxiliary polynomial with these partial degrees.
   obtain ⟨P, hP0, hPdeg, hPind, hPcoeff⟩ := exists_roth_auxiliary_polynomial (ι := Fin n) hb hbα
     hε₀.le (by simpa using hd) fun i ↦ (hr i).ne'
-  have hPcoeff' (μ : Fin n →₀ ℕ) : |(P.coeff μ : ℝ)| ≤ exp (C₁ * ∑ i, (r i : ℝ)) := by
-    rw [mul_comm, ← Nat.cast_sum, exp_nat_mul,
-      exp_log (by linarith)]
-    exact hPcoeff μ
+  obtain ⟨hPcoeff', hPlog⟩ := abs_coeff_le_exp_and_logHeight_map_le hP0
+    (by linarith : 0 < 12 * (b : ℝ) * max 1 (house α)) hPcoeff
   -- Roth's lemma bounds the index of `P` at `β`.
   have : NeZero n := ⟨hn.ne'⟩
   set P' := P.map (Int.castRingHom ℚ) with hP'_def
   have hP'0 : P' ≠ 0 := fun h0 ↦ hP0 (map_injective _ (RingHom.injective_int _) (by simpa))
   have hP'deg (i : Fin n) : P'.degreeOf i ≤ r i := (degreeOf_map_le _ P i).trans (hPdeg i)
-  have hP'height : P'.logHeight ≤ C₁ * ∑ k ∈ range n, (⌊D / h k⌋₊ : ℝ) := by
-    rw [← hsum]
-    exact (logHeight_map_intCast_le_log hP0 fun μ ↦ (hPcoeff' μ)).trans_eq (log_exp _)
+  have hP'height : P'.logHeight ≤ C₁ * ∑ k ∈ range n, (⌊D / h k⌋₊ : ℝ) := hsum ▸ hPlog
   have hindβ := weightedIndex_le_of_logHeight_le (K := ℚ) hP'0 hr hP'deg hσ₀
     (by linarith) (fun i j hij ↦ by
       simp only [hr_def, hij]
@@ -153,10 +187,8 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
       rw [Module.finrank_self, Nat.cast_one, mul_one]
       exact inv_mul_add_le_floor_div_mul hσ₀ hL₀ hM₂ h₀ (fun j _ ↦ hh j) hC₁₀ hL (hpos i)
         (h5D i) hP'height)
-  have hθ : 2 * (n : ℝ) * σ ^ ((1 : ℝ) / 2 ^ (n - 1)) = 5 * Fintype.card (Fin n) * ε / 2 := by
-    rw [hσ_def, one_div, (by norm_cast : (2 : ℝ) ^ (n - 1) = ((2 ^ (n - 1) : ℕ) : ℝ)),
-      pow_rpow_inv_natCast (by positivity) (pow_ne_zero _ two_ne_zero), Fintype.card_fin]
-    ring
+  have hθ := two_mul_mul_rpow_inv_two_pow hε₀.le n
+  rw [← hσ_def] at hθ
   rw [hθ] at hindβ
   -- The key inequality, divided by `D`.
   have key := roth_key_inequality hPdeg hε₀.le hC₁
@@ -164,10 +196,8 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
     hPcoeff' hPind hindβ hκ (by nlinarith) (fun i ↦ hβ i) hlow hup
   rw [Fintype.card_fin] at key
   refine le_of_mul_le_mul_right ?_ hD₀
-  have hexp : (n + (4 * C₁ + 2 * log (2 * max 1 |α|) + 4) / L) * D =
-      n * D + (4 * C₁ + 2 * log (2 * max 1 |α|) + 4) * D / L := by ring
-  rw [hexp]
-  linarith
+  linarith [show (n + (4 * C₁ + 2 * log (2 * max 1 |α|) + 4) / L) * D =
+    n * D + (4 * C₁ + 2 * log (2 * max 1 |α|) + 4) * D / L by ring]
 
 /-- **Roth's theorem** (Roth, 1955). If `α` is a real algebraic number and `κ > 2`, then only
 finitely many rational numbers `ξ` satisfy `|ξ - α| ≤ H(ξ) ^ (-κ)`, where `H` is the
