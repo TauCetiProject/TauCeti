@@ -58,7 +58,7 @@ integrability. -/
 theorem integrableTopForm_mpullback_subtypeVal_iff (U : Opens M) {φ : RoughForm I M ℝ k}
     (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ U) :
     IntegrableTopForm (mpullback I I ((↑) : U → M) φ) ↔ IntegrableTopForm φ :=
-  U.isOpenEmbedding'.integrableTopForm_mpullback_iff
+  U.isOpenEmbedding'.integrableTopForm_mpullback_iff rfl
     (fun x ↦ (isLocalDiffeomorph_subtype_val (n := 1) x).isInvertible_mfderiv one_ne_zero)
     (by rwa [Subtype.range_coe])
 
@@ -86,7 +86,7 @@ theorem integrableTopForm_extendByZero_iff {U W : Opens M} (h : U ≤ W) {ω : R
     IntegrableTopForm (RoughForm.extendByZero W ω) ↔ IntegrableTopForm ω := by
   conv_rhs => rw [← RoughForm.mpullback_inclusion_extendByZero h ω]
   have he : IsOpenEmbedding (Opens.inclusion h) := Opens.isOpenEmbedding_of_le h
-  exact (he.integrableTopForm_mpullback_iff
+  exact (he.integrableTopForm_mpullback_iff rfl
     -- The derivative of the inclusion is the identity of the model space.
     (fun x ↦ ⟨.refl ℝ _,
       ContinuousLinearMap.ext fun v ↦ (Manifold.mfderiv_inclusion_apply h x v).symm⟩)

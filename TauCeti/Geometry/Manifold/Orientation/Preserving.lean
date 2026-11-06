@@ -605,62 +605,81 @@ end TauCeti.Manifold.Orientation
 
 namespace TauCeti.Manifold.OrientationLift
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] {k : ℕ}
 
 open Set
 
-/-- If `f` preserves the orientations of two lifts with the same model orientation, then the
-chart signs of the lifts compensate the sign of the coordinate Jacobian of `f` between any two
-preferred charts. -/
+/-- Let `L : E ≃ F` carry the model orientation of a lift on `M` to that of a lift on `N`. If `f`
+preserves the orientations of the two lifts, then the chart signs of the lifts compensate the sign
+of the coordinate Jacobian of `f` between any two preferred charts, read through `L⁻¹` as an
+endomorphism of `E`. -/
 theorem signAt_mul_signAt_mul_det_pos
-    (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k))
-    (hl : l'.modelOrientation = l.modelOrientation) {f : M → N} {x : M}
-    (hf : MDifferentiableAt I J f x)
+    (l : OrientationLift I M (Fin k)) (l' : OrientationLift J N (Fin k)) (L : E ≃L[ℝ] F)
+    (hl : _root_.Orientation.map (Fin k) L.toLinearEquiv l.modelOrientation = l'.modelOrientation)
+    {f : M → N} {x : M} (hf : MDifferentiableAt I J f x)
     (ho : Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
     {β : M} {α : N} (hx : x ∈ (chartAt H β).source) (hfx : f x ∈ (chartAt H' α).source) :
     0 < (l.signAt β x : ℝ) * (l'.signAt α (f x) : ℝ) *
-      (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
-        (extChartAt I β x)).det := by
+      ((L.symm : F →L[ℝ] E) ∘L fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm)
+        (range I) (extChartAt I β x)).det := by
   obtain ⟨e, he, hp⟩ := (Manifold.Orientation.isOrientationPreservingAt_iff _ _ _ _).mp ho
   rw [Manifold.Orientation.orientationAt_mk, Manifold.Orientation.orientationAt_mk] at hp
-  -- The tangent spaces are the model space `E`; restate `hp` there, where the tangent
+  -- The tangent spaces are the model spaces `E` and `F`; restate `hp` there, where the tangent
   -- orientations can be rewritten to the signed model orientations they equal.
-  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℝ] E, A = e.toLinearEquiv := ⟨_, rfl⟩
+  obtain ⟨A, hA⟩ : ∃ A : E ≃ₗ[ℝ] F, A = e.toLinearEquiv := ⟨_, rfl⟩
   replace hp : _root_.Orientation.map (Fin k) A
       (l.orientationAt x : _root_.Orientation ℝ E (Fin k)) =
-        (l'.orientationAt (f x) : _root_.Orientation ℝ E (Fin k)) := by
+        (l'.orientationAt (f x) : _root_.Orientation ℝ F (Fin k)) := by
     subst hA
     exact hp
-  rw [orientationAt_eq, orientationAt_eq] at hp
-  rw [chartOrientation_eq_ite, chartOrientation_eq_ite, hl,
+  -- Transport the target orientation back to `E` along `L⁻¹`, so that `L⁻¹ ∘ A` is compared with
+  -- the single model orientation of `l`.
+  rw [orientationAt_eq, orientationAt_eq, chartOrientation_eq_ite, chartOrientation_eq_ite, ← hl,
+    ← _root_.Orientation.map_neg, ← apply_ite (_root_.Orientation.map (Fin k) L.toLinearEquiv),
+    ← Equiv.symm_apply_eq, _root_.Orientation.map_symm, ← _root_.Orientation.map_trans,
     ← _root_.Orientation.intCast_units_smul_eq_ite,
     ← _root_.Orientation.intCast_units_smul_eq_ite] at hp
   have h₁ := (_root_.Orientation.map_units_smul_eq_iff_det_mul_pos l.modelOrientation
-    A _ _ l.card_eq).mp hp
+    (A.trans L.toLinearEquiv.symm) _ _ l.card_eq).mp hp
   have h₂ := l.compatible β x x hx (mem_chart_source H x)
   have h₃ := l'.compatible (f x) α (f x) (mem_chart_source H' (f x)) hfx
   rw [← tangentCoordChange_def] at h₂ h₃
-  -- The tangent spaces at `x` and `f x` are the model space `E`, so the manifold derivative of
-  -- `f` is an endomorphism `D` of `E`, which composes with the tangent coordinate changes.
-  obtain ⟨D, hD₀⟩ : ∃ D : E →L[ℝ] E, D = mfderiv I J f x := ⟨_, rfl⟩
+  -- The tangent spaces at `x` and `f x` are the model spaces, so the manifold derivative of `f`
+  -- is a map `D : E → F`, which composes with the tangent coordinate changes.
+  obtain ⟨D, hD₀⟩ : ∃ D : E →L[ℝ] F, D = mfderiv I J f x := ⟨_, rfl⟩
   have hD : fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
       (extChartAt I β x) = tangentCoordChange J (f x) α (f x) ∘L D ∘L
         tangentCoordChange I β x x := by
     subst hD₀
     exact hf.fderivWithin_extChartAt_comp_extChartAt_symm
       (by simpa only [extChartAt_source] using hx) (by simpa only [extChartAt_source] using hfx)
-  have hdet : LinearMap.det (D : E →ₗ[ℝ] E) = LinearMap.det (A : E →ₗ[ℝ] E) := by
+  have hdet : ((L.symm : F →L[ℝ] E) ∘L D).det =
+      LinearMap.det ((A.trans L.toLinearEquiv.symm : E ≃ₗ[ℝ] E) : E →ₗ[ℝ] E) := by
     subst hD₀ hA
     rw [← he]
     rfl
-  rw [hD, signAt_of_mem _ hx, signAt_of_mem _ hfx, ContinuousLinearMap.det,
-    ContinuousLinearMap.toLinearMap_comp, ContinuousLinearMap.toLinearMap_comp,
-    LinearMap.det_comp, LinearMap.det_comp, hdet]
+  -- Conjugating the coordinate change of `N` by `L` does not change its determinant.
+  have hconj : ((L.symm : F →L[ℝ] E) ∘L (tangentCoordChange J (f x) α (f x) ∘L D ∘L
+      tangentCoordChange I β x x)).det = (tangentCoordChange J (f x) α (f x)).det *
+        ((L.symm : F →L[ℝ] E) ∘L D).det * (tangentCoordChange I β x x).det := by
+    have hsplit : ((L.symm : F →L[ℝ] E) ∘L (tangentCoordChange J (f x) α (f x) ∘L D ∘L
+        tangentCoordChange I β x x)).toLinearMap =
+          ((L.toLinearEquiv.symm : F →ₗ[ℝ] E) ∘ₗ
+              (tangentCoordChange J (f x) α (f x)).toLinearMap ∘ₗ
+                (L.toLinearEquiv.symm.symm : E →ₗ[ℝ] F)) ∘ₗ
+            ((L.symm : F →L[ℝ] E) ∘L D).toLinearMap ∘ₗ
+              (tangentCoordChange I β x x).toLinearMap := by
+      ext v
+      simp
+    rw [ContinuousLinearMap.det, hsplit, LinearMap.det_comp, LinearMap.det_comp,
+      LinearMap.det_conj, mul_assoc]
+  rw [hD, hconj, signAt_of_mem _ hx, signAt_of_mem _ hfx, hdet]
   simp only [Units.coe_map] at h₁
   -- Multiply the three positive quantities; the signs at `x` and at `f x` appear squared.
   have ha := Int.isUnit_mul_self (l.sign x ⟨x, mem_chart_source H x⟩).isUnit
@@ -673,7 +692,8 @@ theorem signAt_mul_signAt_mul_det_pos
   convert hprod using 1
   linear_combination
     (-((l.sign β ⟨x, hx⟩ : ℤ) : ℝ) * (l'.sign α ⟨f x, hfx⟩ : ℤ) *
-      (tangentCoordChange J (f x) α (f x)).det * LinearMap.det (A : E →ₗ[ℝ] E) *
+      (tangentCoordChange J (f x) α (f x)).det *
+      LinearMap.det ((A.trans L.toLinearEquiv.symm : E ≃ₗ[ℝ] E) : E →ₗ[ℝ] E) *
       (tangentCoordChange I β x x).det) * ((c : ℝ) * c * ha' + hc')
 
 end TauCeti.Manifold.OrientationLift

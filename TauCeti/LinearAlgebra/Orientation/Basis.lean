@@ -73,6 +73,15 @@ theorem signBasis_neg (o : Orientation R E ι) (b : Module.Basis ι R E) :
     rw [neg_neg b.orientation]
     simp [signBasis, (Module.Ray.ne_neg_self b.orientation).symm]
 
+/-- Transporting both the orientation and the basis along a linear equivalence preserves their
+relative sign. -/
+@[simp]
+theorem signBasis_map {N : Type*} [AddCommGroup N] [Module R N] (o : Orientation R E ι)
+    (b : Module.Basis ι R E) (f : E ≃ₗ[R] N) :
+    signBasis (Orientation.map ι f o) (b.map f) = signBasis o b := by
+  unfold signBasis
+  rw [Module.Basis.orientation_map, (Orientation.map ι f).injective.eq_iff]
+
 /-- Reversing the basis orientation reverses its relative sign. -/
 theorem signBasis_eq_neg_of_orientation_eq_neg (o : Orientation R E ι)
     (b b' : Module.Basis ι R E) (h : b'.orientation = -b.orientation) :

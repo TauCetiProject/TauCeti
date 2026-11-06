@@ -12,10 +12,12 @@ import TauCeti.Geometry.Manifold.DifferentialForm.Pullback.Chart
 /-!
 # Change of variables for top-form integrals
 
-Let `f : M → N` be an open embedding between manifolds modelled on the same finite-dimensional
-real vector space, with invertible manifold derivative at every point. Pulling back a top form
-supported in the range of `f` preserves integrability, and if `f` preserves the given
-orientations then it preserves the integral:
+Let `f : M → N` be an open embedding with invertible manifold derivative at every point, between
+manifolds modelled on finite-dimensional real vector spaces `E` and `F` of the same dimension. The
+model spaces need not be equal: a surface modelled on an arbitrary two-dimensional space may be
+compared with a torus modelled on `ℝ × ℝ`. Pulling back a top form supported in the range of `f`
+preserves integrability, and if `f` preserves the given orientations then it preserves the
+integral:
 $$\int_M f^*\varphi = \int_N \varphi.$$
 An orientation-reversing `f` changes the sign of the integral, and homeomorphisms are the case
 `range f = univ`. Manifolds with boundary and corners are allowed: derivatives in charts are taken
@@ -28,13 +30,16 @@ when `f` preserves orientation on the source, and `-∫_N φ` when it reverses i
 pullback along a map that is only locally a diffeomorphism, such as the sheets of a covering or of
 a map over a regular value, is integrated piece by piece.
 
-The proof is chartwise. On a Borel piece `s` of the overlap of a chart at `β` of `M` with the
-preimage of a chart at `α` of `N`, the coefficient of `f^*φ` in the chart at `β` is the
-determinant of the coordinate expression `T` of `f` times the coefficient of `φ` in the chart at
-`α` (`TauCeti.RoughForm.inChartAt_mpullback_apply_basis_eq_det_mul`), and the chart signs of
-orientation lifts with a common model orientation compensate the sign of that determinant
-(`TauCeti.Manifold.OrientationLift.signAt_mul_signAt_mul_det_pos`). The Jacobian change of
-variables for `T` then identifies the integrals over the two coordinate images of the piece. A
+The proof is chartwise. Fix a continuous linear equivalence `L : E ≃ F`, a basis `b` of `E` and
+its image `L ∘ b` in `F`. On a Borel piece `s` of the overlap of a chart at `β` of `M` with the
+preimage of a chart at `α` of `N`, the coefficient of `f^*φ` against `b` in the chart at `β` is the
+determinant of `L⁻¹ ∘ T`, for the coordinate expression `T` of `f`, times the coefficient of `φ`
+against `L ∘ b` in the chart at `α`
+(`TauCeti.RoughForm.inChartAt_mpullback_apply_basis_map_eq_det_mul`). The chart signs of
+orientation lifts whose model orientations correspond under `L` compensate the sign of that
+determinant (`TauCeti.Manifold.OrientationLift.signAt_mul_signAt_mul_det_pos`). Since `L` carries
+the Haar measure of `b` to that of `L ∘ b`, the Jacobian change of variables for the endomorphism
+`L⁻¹ ∘ T` of `E` then identifies the integrals over the two coordinate images of the piece. A
 finite cover of the support of `φ` by chart pieces in `N`, together with the corresponding pieces
 of `M`, assembles these pieces into the integrals over `N` and `M`.
 
@@ -58,7 +63,8 @@ of `M`, assembles these pieces into the integrals over `N` and `M`.
 * J. M. Lee, *Introduction to Smooth Manifolds*, second edition, Proposition 16.6.
 
 The Jacobian step uses `MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul` and
-`MeasureTheory.integrableOn_image_iff_integrableOn_abs_det_fderiv_smul`.
+`MeasureTheory.integrableOn_image_iff_integrableOn_abs_det_fderiv_smul`, and the comparison of
+Haar measures uses `Module.Basis.map_addHaar`.
 -/
 
 public section
@@ -68,88 +74,119 @@ noncomputable section
 open Set MeasureTheory
 open scoped Manifold
 
-variable {E H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+variable {E F H H' M N : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+  [NormedAddCommGroup F] [NormedSpace ℝ F] [FiniteDimensional ℝ F]
   [TopologicalSpace H] {I : ModelWithCorners ℝ E H} [TopologicalSpace M] [ChartedSpace H M]
   [IsManifold I 1 M]
-  [TopologicalSpace H'] {J : ModelWithCorners ℝ E H'} [TopologicalSpace N] [ChartedSpace H' N]
+  [TopologicalSpace H'] {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J 1 N] {k : ℕ}
 
 namespace TauCeti
 
 section ChartPiece
 
-variable [MeasurableSpace E] [BorelSpace E]
+variable [MeasurableSpace E] [BorelSpace E] [MeasurableSpace F] [BorelSpace F]
 
-omit [FiniteDimensional ℝ E] [BorelSpace E] in
-/-- The Jacobian data of the coordinate expression of `f` on the chart image of a Borel piece of
-a chart overlap: the image is measurable, the coordinate expression is injective on it and has
-its within-range derivative there, and it carries the piece onto the chart image of `f '' s`. -/
-private theorem coordinate_jacobian_data {f : M → N} {s : Set M} (hinj : InjOn f s)
-    (hf : ∀ x ∈ s, MDifferentiableAt I J f x) {β : M} {α : N} (hs : IsChartMeasurable I s)
+omit [FiniteDimensional ℝ E] [BorelSpace E] [FiniteDimensional ℝ F] [MeasurableSpace F]
+  [BorelSpace F] in
+/-- The Jacobian data of the coordinate expression `T` of `f`, read back in `E` through a
+continuous linear equivalence `L : E ≃ F`, on the chart image of a Borel piece of a chart overlap:
+the image is measurable, `L⁻¹ ∘ T` is injective on it and has the within-range derivative of `T`
+followed by `L⁻¹` there, and it carries the piece onto the preimage under `L` of the chart image
+of `f '' s`. -/
+private theorem coordinate_jacobian_data (L : E ≃L[ℝ] F) {f : M → N} {s : Set M}
+    (hinj : InjOn f s) (hf : ∀ x ∈ s, MDifferentiableAt I J f x) {β : M} {α : N}
+    (hs : IsChartMeasurable I s)
     (hsub : s ⊆ (extChartAt I β).source ∩ f ⁻¹' (extChartAt J α).source) :
     MeasurableSet ((extChartAt I β) '' s) ∧
-    (extChartAt J α ∘ f ∘ (extChartAt I β).symm) '' ((extChartAt I β) '' s) =
-      (extChartAt J α) '' (f '' s) ∧
-    InjOn (extChartAt J α ∘ f ∘ (extChartAt I β).symm) ((extChartAt I β) '' s) ∧
+    (L.symm ∘ extChartAt J α ∘ f ∘ (extChartAt I β).symm) '' ((extChartAt I β) '' s) =
+      L ⁻¹' ((extChartAt J α) '' (f '' s)) ∧
+    InjOn (L.symm ∘ extChartAt J α ∘ f ∘ (extChartAt I β).symm) ((extChartAt I β) '' s) ∧
     ∀ z ∈ (extChartAt I β) '' s, HasFDerivWithinAt
-      (extChartAt J α ∘ f ∘ (extChartAt I β).symm)
-      (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I) z)
+      (L.symm ∘ extChartAt J α ∘ f ∘ (extChartAt I β).symm)
+      ((L.symm : F →L[ℝ] E) ∘L
+        fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I) z)
       ((extChartAt I β) '' s) z := by
   refine ⟨hs.image_extChartAt β fun x hx ↦ (hsub hx).1, ?_, ?_, ?_⟩
-  · rw [image_image, image_image]
+  · rw [← L.image_symm_eq_preimage, image_comp]
+    congr 1
+    rw [image_image, image_image]
     exact image_congr fun x hx ↦ by
       simp only [Function.comp_apply, (extChartAt I β).left_inv (hsub hx).1]
   · rintro _ ⟨x, hx, rfl⟩ _ ⟨y, hy, rfl⟩ h
     simp only [Function.comp_apply, (extChartAt I β).left_inv (hsub hx).1,
-      (extChartAt I β).left_inv (hsub hy).1] at h
+      (extChartAt I β).left_inv (hsub hy).1, L.symm.injective.eq_iff] at h
     rw [hinj hx hy ((extChartAt J α).injOn (hsub hx).2 (hsub hy).2 h)]
   · rintro _ ⟨x, hx, rfl⟩
     have hx' : x ∈ (chartAt H β).source := by simpa only [extChartAt_source] using (hsub hx).1
     have hfx' : f x ∈ (chartAt H' α).source := by
       simpa only [extChartAt_source, mem_preimage] using (hsub hx).2
-    exact ((mdifferentiableAt_iff_of_mem_source hx' hfx').mp (hf x hx)).2.hasFDerivWithinAt.mono
-      (image_subset_iff.mpr fun y hy ↦
-        extChartAt_target_subset_range β ((extChartAt I β).map_source (hsub hy).1))
+    exact (L.symm : F →L[ℝ] E).hasFDerivAt.comp_hasFDerivWithinAt _
+      (((mdifferentiableAt_iff_of_mem_source hx' hfx').mp (hf x hx)).2.hasFDerivWithinAt.mono
+        (image_subset_iff.mpr fun y hy ↦
+          extChartAt_target_subset_range β ((extChartAt I β).map_source (hsub hy).1)))
 
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [FiniteDimensional ℝ F]
+  [MeasurableSpace F] [BorelSpace F] in
+/-- On the chart image of a Borel piece `s` of a chart overlap, the coefficient of `f^*φ` against
+a basis `b` of `E` is the Jacobian of `L⁻¹ ∘ T` times the coefficient of `φ` against `L ∘ b`,
+evaluated at `L (L⁻¹ (T z))`. -/
+private theorem RoughForm.signedInChartAt_one_mpullback_eq (φ : RoughForm J N ℝ k)
+    (b : Module.Basis (Fin k) ℝ E) (L : E ≃L[ℝ] F) {f : M → N} {s : Set M}
+    (hf : ∀ x ∈ s, MDifferentiableAt I J f x) {β : M} {α : N}
+    (hsub : s ⊆ (extChartAt I β).source ∩ f ⁻¹' (extChartAt J α).source) :
+    ∀ z ∈ (extChartAt I β) '' s,
+      (mpullback I J f φ).signedInChartAt b β (fun _ ↦ 1) z =
+        ((L.symm : F →L[ℝ] E) ∘L fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm)
+          (range I) z).det *
+          (φ.signedInChartAt (b.map L.toLinearEquiv) α (fun _ ↦ 1) ∘ L)
+            ((L.symm ∘ extChartAt J α ∘ f ∘ (extChartAt I β).symm) z) := by
+  rintro _ ⟨x, hx, rfl⟩
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1]
+  simp only [Function.comp_apply, L.apply_symm_apply, (extChartAt I β).left_inv (hsub hx).1]
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2,
+    φ.inChartAt_mpullback_apply_basis_map_eq_det_mul b L (hsub hx).1 (hsub hx).2 (hf x hx)]
+  simp only [Units.val_one, Int.cast_one, one_mul]
+
+omit [FiniteDimensional ℝ F] in
 /-- On a Borel piece `s` of a chart overlap on which `f` is injective and differentiable, the
-unsigned coefficient of `f^*φ` is integrable on the chart image of `s` exactly when the unsigned
-coefficient of `φ` is integrable on the chart image of `f '' s`. No orientation is involved. -/
+unsigned coefficient of `f^*φ` against a basis `b` of `E` is integrable on the chart image of `s`
+for a Haar measure `μ` on `E` exactly when the unsigned coefficient of `φ` against `L ∘ b` is
+integrable on the chart image of `f '' s` for the image measure `L_* μ`, where `L : E ≃ F` is any
+continuous linear equivalence of the models. No orientation is involved. -/
 theorem RoughForm.integrableOn_signedInChartAt_one_mpullback_iff (φ : RoughForm J N ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) {f : M → N} {s : Set M} (hinj : InjOn f s)
+    (b : Module.Basis (Fin k) ℝ E) (L : E ≃L[ℝ] F) {f : M → N} {s : Set M} (hinj : InjOn f s)
     (hf : ∀ x ∈ s, MDifferentiableAt I J f x) {β : M} {α : N} (hs : IsChartMeasurable I s)
     (hsub : s ⊆ (extChartAt I β).source ∩ f ⁻¹' (extChartAt J α).source)
     (μ : Measure E) [μ.IsAddHaarMeasure] :
     IntegrableOn ((mpullback I J f φ).signedInChartAt b β (fun _ ↦ 1))
         ((extChartAt I β) '' s) μ ↔
-      IntegrableOn (φ.signedInChartAt b α (fun _ ↦ 1)) ((extChartAt J α) '' (f '' s)) μ := by
-  obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data hinj hf hs hsub
-  rw [← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hm hD hinjT]
-  have hd : AEStronglyMeasurable (fun z ↦ (fderivWithin ℝ
-      (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I) z).toLinearMap.det)
-      (μ.restrict ((extChartAt I β) '' s)) :=
-    (ContinuousLinearMap.continuous_det.measurable.comp_aemeasurable
-      (aemeasurable_fderivWithin μ hm hD)).aestronglyMeasurable
-  have hc : ∀ z ∈ (extChartAt I β) '' s,
-      (mpullback I J f φ).signedInChartAt b β (fun _ ↦ 1) z =
-        (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I) z).toLinearMap.det *
-          φ.signedInChartAt b α (fun _ ↦ 1) ((extChartAt J α ∘ f ∘ (extChartAt I β).symm) z) := by
-    rintro _ ⟨x, hx, rfl⟩
-    rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1, Function.comp_apply,
-      Function.comp_apply, (extChartAt I β).left_inv (hsub hx).1,
-      signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2,
-      φ.inChartAt_mpullback_apply_basis_eq_det_mul b (hsub hx).1 (hsub hx).2 (hf x hx)]
-    simp only [Units.val_one, Int.cast_one, one_mul]
-  rw [integrableOn_congr_fun hc hm]
+      IntegrableOn (φ.signedInChartAt (b.map L.toLinearEquiv) α (fun _ ↦ 1))
+        ((extChartAt J α) '' (f '' s)) (μ.map L) := by
+  obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data L hinj hf hs hsub
+  have he := integrableOn_map_equiv (μ := μ) L.toHomeomorph.toMeasurableEquiv
+    (f := φ.signedInChartAt (b.map L.toLinearEquiv) α (fun _ ↦ 1))
+    (s := (extChartAt J α) '' (f '' s))
+  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at he
+  rw [he, ← himage, integrableOn_image_iff_integrableOn_abs_det_fderiv_smul μ hm hD hinjT]
+  have hd : AEStronglyMeasurable (fun z ↦ ((L.symm : F →L[ℝ] E) ∘L
+      fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I) z).toLinearMap.det)
+      (μ.restrict ((extChartAt I β) '' s)) := by
+    have hD' := aemeasurable_fderivWithin μ hm hD
+    exact (ContinuousLinearMap.continuous_det.measurable.comp_aemeasurable hD').aestronglyMeasurable
+  rw [integrableOn_congr_fun (φ.signedInChartAt_one_mpullback_eq b L hf hsub) hm]
   simpa only [IntegrableOn, smul_eq_mul] using
     MeasureTheory.integrable_smul_iff_abs_smul (F := ℝ) hd
 
 /-- On a Borel piece `s` of a chart overlap on which `f` is injective and orientation
-preserving, the signed chart integral of `f^*φ` over the chart image of `s` equals the signed
-chart integral of `φ` over the chart image of `f '' s`, for orientation lifts with a common model
-orientation. -/
+preserving, the signed chart integral of `f^*φ` against a basis `b` of `E` over the chart image of
+`s` equals the signed chart integral of `φ` against `L ∘ b` over the chart image of `f '' s`, for
+a Haar measure `μ` on `E` and its image `L_* μ`. Here `L : E ≃ F` carries the model orientation of
+the lift on `M` to that of the lift on `N`. -/
 theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ k)
-    (b : Module.Basis (Fin k) ℝ E) (l : Manifold.OrientationLift I M (Fin k))
-    (l' : Manifold.OrientationLift J N (Fin k)) (hl : l'.modelOrientation = l.modelOrientation)
+    (b : Module.Basis (Fin k) ℝ E) (L : E ≃L[ℝ] F) (l : Manifold.OrientationLift I M (Fin k))
+    (l' : Manifold.OrientationLift J N (Fin k))
+    (hl : _root_.Orientation.map (Fin k) L.toLinearEquiv l.modelOrientation = l'.modelOrientation)
     {f : M → N} {s : Set M} (hinj : InjOn f s) (hf : ∀ x ∈ s, MDifferentiableAt I J f x)
     (ho : ∀ x ∈ s, Manifold.Orientation.IsOrientationPreservingAt (Manifold.Orientation.mk l)
       (Manifold.Orientation.mk l') f x)
@@ -159,24 +196,28 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
     ∫ z in (extChartAt I β) '' s,
         (mpullback I J f φ).signedInChartAt b β (fun x ↦ l.signAt β x) z ∂μ =
       ∫ w in (extChartAt J α) '' (f '' s),
-        φ.signedInChartAt b α (fun y ↦ l'.signAt α y) w ∂μ := by
-  obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data hinj hf hs hsub
-  rw [← himage, integral_image_eq_integral_abs_det_fderiv_smul μ hm hD hinjT]
+        φ.signedInChartAt (b.map L.toLinearEquiv) α (fun y ↦ l'.signAt α y) w ∂(μ.map L) := by
+  obtain ⟨hm, himage, hinjT, hD⟩ := coordinate_jacobian_data L hinj hf hs hsub
+  have he := setIntegral_map_equiv (μ := μ) L.toHomeomorph.toMeasurableEquiv
+    (φ.signedInChartAt (b.map L.toLinearEquiv) α (fun y ↦ l'.signAt α y))
+    ((extChartAt J α) '' (f '' s))
+  simp only [Homeomorph.toMeasurableEquiv_coe, ContinuousLinearEquiv.coe_toHomeomorph] at he
+  rw [he, ← himage, integral_image_eq_integral_abs_det_fderiv_smul μ hm hD hinjT]
   refine setIntegral_congr_fun hm ?_
   rintro _ ⟨x, hx, rfl⟩
   have hx' : x ∈ (chartAt H β).source := by simpa only [extChartAt_source] using (hsub hx).1
   have hfx' : f x ∈ (chartAt H' α).source := by
     simpa only [extChartAt_source, mem_preimage] using (hsub hx).2
-  have hpos := l.signAt_mul_signAt_mul_det_pos l' hl (hf x hx) (ho x hx) hx' hfx'
+  have hpos := l.signAt_mul_signAt_mul_det_pos l' L hl (hf x hx) (ho x hx) hx' hfx'
   beta_reduce
-  rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1, Function.comp_apply,
-    Function.comp_apply, (extChartAt I β).left_inv (hsub hx).1,
-    signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2,
-    φ.inChartAt_mpullback_apply_basis_eq_det_mul b (hsub hx).1 (hsub hx).2 (hf x hx),
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).1]
+  simp only [Function.comp_apply, L.apply_symm_apply, (extChartAt I β).left_inv (hsub hx).1]
+  rw [signedInChartAt_apply_of_mem_source _ _ _ _ (hsub hx).2,
+    φ.inChartAt_mpullback_apply_basis_map_eq_det_mul b L (hsub hx).1 (hsub hx).2 (hf x hx),
     smul_eq_mul]
   -- The chart signs are `±1`, and `hpos` fixes the sign of the Jacobian against them.
-  generalize (fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm) (range I)
-    (extChartAt I β x)).det = d at hpos ⊢
+  generalize ((L.symm : F →L[ℝ] E) ∘L fderivWithin ℝ (extChartAt J α ∘ f ∘ (extChartAt I β).symm)
+    (range I) (extChartAt I β x)).det = d at hpos ⊢
   have hu (u : ℤˣ) : |((u : ℤ) : ℝ)| = 1 := by
     rcases Int.units_eq_one_or u with rfl | rfl <;> norm_num
   have hsq : ((l'.signAt α (f x) : ℤ) : ℝ) * (l'.signAt α (f x) : ℤ) = 1 := by
@@ -184,7 +225,8 @@ theorem RoughForm.integral_signedInChartAt_mpullback_eq (φ : RoughForm J N ℝ 
   have habs : |d| = (l.signAt β x : ℤ) * (l'.signAt α (f x) : ℤ) * d := by
     rw [← abs_of_pos hpos, abs_mul, abs_mul, hu, hu, one_mul, one_mul]
   rw [habs]
-  linear_combination (-((l.signAt β x : ℤ) : ℝ) * d * φ.inChartAt α (extChartAt J α (f x)) b) * hsq
+  linear_combination (-((l.signAt β x : ℤ) : ℝ) * d *
+    φ.inChartAt α (extChartAt J α (f x)) (b.map L.toLinearEquiv)) * hsq
 
 end ChartPiece
 
@@ -198,17 +240,23 @@ variable (e : OpenPartialHomeomorph M N) {f : M → N}
 
 /-- Let `e` be an open partial homeomorphism agreeing with a map `f` on its source, where `f` is
 differentiable, and let `φ` be an integrable top form supported in the target of `e`. A form `ψ`
-supported in the source of `e` that agrees there with `f^*φ` is integrable. -/
-theorem integrableTopForm_of_eq_mpullback (hfe : EqOn f e e.source)
-    (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x) {φ : RoughForm J N ℝ k}
-    {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
-    (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
+supported in the source of `e` that agrees there with `f^*φ` is integrable. The two model spaces
+must have the same dimension. -/
+theorem integrableTopForm_of_eq_mpullback (hk : Module.finrank ℝ E = Module.finrank ℝ F)
+    (hfe : EqOn f e e.source) (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x)
+    {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
+    (hφt : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
     (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source)
     (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) : IntegrableTopForm ψ := by
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
+  let : MeasurableSpace F := borel F
+  have : BorelSpace F := ⟨rfl⟩
   have hψc := e.isCompact_tsupport_of_eq_mpullback hfe hφ.isCompact hφt hψ hψφ
-  obtain ⟨-, ⟨b⟩, hi⟩ := (integrableTopForm_iff φ).mp hφ
+  obtain ⟨-, ⟨b'⟩, hi⟩ := (integrableTopForm_iff φ).mp hφ
+  -- Identify the models, and transport the basis of `F` to a basis of `E`.
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hk
+  let b := b'.map L.symm.toLinearEquiv
   -- Over each point `p`, the part of the source of `e` in the chart at `p` whose image lies in
   -- the chart at `e p` is a chart piece on which `ψ` is `f^*φ` and `f` is injective.
   let u : M → Set M := fun p ↦ e.source ∩ e ⁻¹' (chartAt H' (e p)).source ∩ (chartAt H p).source
@@ -224,18 +272,22 @@ theorem integrableTopForm_of_eq_mpullback (hfe : EqOn f e e.source)
   have hpu : u p ⊆ e.source := fun x hx ↦ hx.1.1
   refine IntegrableOn.congr_fun ?_ (RoughForm.eqOn_signedInChartAt_image
     (fun x hx ↦ (hψφ x (hpu hx)).symm) b p _ fun x hx ↦ (hsub p hx).1) hm
-  exact (φ.integrableOn_signedInChartAt_one_mpullback_iff b
+  refine (φ.integrableOn_signedInChartAt_one_mpullback_iff b L
     ((e.injOn.mono hpu).congr fun x hx ↦ (hfe (hpu hx)).symm)
-    (fun x hx ↦ hf x (hpu hx)) (hu p).isChartMeasurable (hsub p) b.addHaar).mpr
-    (hi b (e p)).integrableOn
+    (fun x hx ↦ hf x (hpu hx)) (hu p).isChartMeasurable (hsub p) b.addHaar).mpr ?_
+  rw [b.map_addHaar L]
+  exact (hi _ (e p)).integrableOn
 
 /-- One piece of the change of variables along `e`: for a subset `t` of the target of `e` inside
 a chart of `N`, whose preimage piece `e.source ∩ e ⁻¹' t` is chart measurable inside a chart of
-`M`, the signed chart integral of `ψ` over the preimage piece equals that of `φ` over `t`. -/
+`M`, the signed chart integral of `ψ` over the preimage piece equals that of `φ` over `t`, against
+a basis `b` of `E` and its image under `L : E ≃ F`. -/
 private theorem integral_signedInChartAt_source_inter_preimage_eq [MeasurableSpace E]
-    [BorelSpace E] (hfe : EqOn f e e.source) (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x)
-    (b : Module.Basis (Fin k) ℝ E) (l : Manifold.OrientationLift I M (Fin k))
-    (l' : Manifold.OrientationLift J N (Fin k)) (hl : l'.modelOrientation = l.modelOrientation)
+    [BorelSpace E] [MeasurableSpace F] [BorelSpace F] (hfe : EqOn f e e.source)
+    (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x)
+    (b : Module.Basis (Fin k) ℝ E) (L : E ≃L[ℝ] F) (l : Manifold.OrientationLift I M (Fin k))
+    (l' : Manifold.OrientationLift J N (Fin k))
+    (hl : _root_.Orientation.map (Fin k) L.toLinearEquiv l.modelOrientation = l'.modelOrientation)
     (ho : ∀ x ∈ e.source, Manifold.Orientation.IsOrientationPreservingAt
       (Manifold.Orientation.mk l) (Manifold.Orientation.mk l') f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k}
@@ -244,17 +296,18 @@ private theorem integral_signedInChartAt_source_inter_preimage_eq [MeasurableSpa
     (hβ : e.source ∩ e ⁻¹' t ⊆ (extChartAt I β).source) (hα : t ⊆ (extChartAt J α).source) :
     ∫ z in (extChartAt I β) '' (e.source ∩ e ⁻¹' t),
         ψ.signedInChartAt b β (fun x ↦ l.signAt β x) z ∂b.addHaar =
-      ∫ w in (extChartAt J α) '' t, φ.signedInChartAt b α (fun y ↦ l'.signAt α y) w ∂b.addHaar := by
+      ∫ w in (extChartAt J α) '' t, φ.signedInChartAt (b.map L.toLinearEquiv) α
+        (fun y ↦ l'.signAt α y) w ∂(b.map L.toLinearEquiv).addHaar := by
   have hse : e.source ∩ e ⁻¹' t ⊆ e.source := inter_subset_left
   have hsub : e.source ∩ e ⁻¹' t ⊆ (extChartAt I β).source ∩ f ⁻¹' (extChartAt J α).source :=
     fun x hx ↦ ⟨hβ hx, by simpa only [mem_preimage, hfe hx.1] using hα hx.2⟩
   have himage : f '' (e.source ∩ e ⁻¹' t) = t := by
     rw [(hfe.mono hse).image_eq, e.image_source_inter_eq', e.target_inter_inv_preimage_preimage,
       inter_eq_right.mpr ht]
-  have h := φ.integral_signedInChartAt_mpullback_eq b l l' hl
+  have h := φ.integral_signedInChartAt_mpullback_eq b L l l' hl
     ((e.injOn.mono hse).congr fun x hx ↦ (hfe (hse hx)).symm)
     (fun x hx ↦ hf x (hse hx)) (fun x hx ↦ ho x (hse hx)) hs hsub b.addHaar
-  rw [himage] at h
+  rw [himage, b.map_addHaar L] at h
   rw [← h]
   exact setIntegral_congr_fun (hs.image_extChartAt _ hβ)
     (RoughForm.eqOn_signedInChartAt_image (fun x hx ↦ hψφ x (hse hx)) b _ _ hβ)
@@ -262,23 +315,32 @@ private theorem integral_signedInChartAt_source_inter_preimage_eq [MeasurableSpa
 /-- **Change of variables for top forms along an open partial homeomorphism.** Let `e` agree on its
 source with a map `f` that is differentiable and orientation preserving there, and let `φ` be an
 integrable top form supported in the target of `e`. A form `ψ` supported in the source of `e` that
-agrees there with `f^*φ` has the same integral as `φ`: `∫_M ψ = ∫_N φ`. -/
+agrees there with `f^*φ` has the same integral as `φ`: `∫_M ψ = ∫_N φ`. The two manifolds may be
+modelled on different spaces. -/
 theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn f e e.source)
     (hf : ∀ x ∈ e.source, MDifferentiableAt I J f x) {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
     (ho : ∀ x ∈ e.source, Manifold.Orientation.IsOrientationPreservingAt o o' f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
-    (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
+    (hφt : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
     (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source)
     (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) :
     integralTopForm o ψ = integralTopForm o' φ := by
   classical
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
-  have hψi := e.integrableTopForm_of_eq_mpullback hfe hf hφ hφt hψ hψφ
-  -- Represent both orientations by lifts with the same model orientation.
+  let : MeasurableSpace F := borel F
+  have : BorelSpace F := ⟨rfl⟩
+  -- Represent both orientations by lifts whose model orientations correspond under an
+  -- identification `L` of the models, and use a basis of `E` and its image under `L`.
   obtain ⟨l, rfl⟩ := o.exists_lift
-  obtain ⟨l', rfl, hl⟩ := o'.exists_lift_modelOrientation_eq l.modelOrientation
+  obtain ⟨l₀', -⟩ := o'.exists_lift
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq (l.card_eq.symm.trans l₀'.card_eq)
+  obtain ⟨l', rfl, hl⟩ :=
+    o'.exists_lift_modelOrientation_eq (_root_.Orientation.map (Fin k) L.toLinearEquiv
+      l.modelOrientation)
+  have hψi := e.integrableTopForm_of_eq_mpullback (l.card_eq.symm.trans l'.card_eq) hfe hf hφ
+    hφt hψ hψφ
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
   -- A finite cover of the support of `φ` by open subsets of the target lying in a chart of `N`
   -- and carried by `e.symm` into a chart of `M`; their preimages under `e` cover the support
@@ -291,7 +353,7 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
     mem_iUnion.mpr ⟨y, ⟨hφt hy, mem_chart_source H (e.symm y)⟩, mem_chart_source H' y⟩
   let α : Fin t.card → N := fun i ↦ t.equivFin.symm i
   let w : Fin t.card → Set N := fun i ↦ v (α i)
-  have hcover : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, w i := by
+  have hcover : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, w i := by
     intro y hy
     obtain ⟨q, hq, hyq⟩ := mem_iUnion₂.mp (ht hy)
     exact mem_iUnion.mpr ⟨t.equivFin ⟨q, hq⟩, by simpa only [w, α, Equiv.symm_apply_apply]⟩
@@ -308,7 +370,8 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
     exact mem_iUnion.mpr ⟨i, hψ hx, hi⟩
   rw [integralTopForm_eq_sum_disjointed_chart_integrals l ψ hψi b (fun i ↦ e.symm (α i)) u hu
       hus hψcover,
-    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφ b α w (fun i ↦ hv _) hw hcover, hl]
+    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφ (b.map L.toLinearEquiv) α w
+      (fun i ↦ hv _) hw hcover, hl, _root_.Orientation.signBasis_map]
   refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
   have hdisj : disjointed u i = e.source ∩ e ⁻¹' disjointed w i := by
     ext x
@@ -322,7 +385,7 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationPreservingAt (hfe : EqOn
   have hβ : disjointed u i ⊆ (extChartAt I (e.symm (α i))).source :=
     (disjointed_subset u i).trans (hus i)
   rw [hdisj] at hs hβ ⊢
-  exact integral_signedInChartAt_source_inter_preimage_eq e hfe hf b l l' hl ho hψφ
+  exact integral_signedInChartAt_source_inter_preimage_eq e hfe hf b L l l' hl.symm ho hψφ
     ((disjointed_subset w i).trans fun y hy ↦ hy.1.1) hs hβ ((disjointed_subset w i).trans (hw i))
 
 /-- Change of variables for top forms along an open partial homeomorphism agreeing on its source
@@ -334,7 +397,7 @@ theorem integralTopForm_of_eq_mpullback_of_isOrientationReversingAt (hfe : EqOn 
     {o' : Manifold.Orientation J N (Fin k)}
     (ho : ∀ x ∈ e.source, Manifold.Orientation.IsOrientationReversingAt o o' f x)
     {φ : RoughForm J N ℝ k} {ψ : RoughForm I M ℝ k} (hφ : IntegrableTopForm φ)
-    (hφt : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
+    (hφt : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ e.target)
     (hψ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) ψ ⊆ e.source)
     (hψφ : ∀ x ∈ e.source, ψ x = mpullback I J f φ x) :
     integralTopForm o ψ = -integralTopForm o' φ := by
@@ -350,14 +413,19 @@ namespace Topology.IsOpenEmbedding
 open TauCeti
 
 /-- Pullback along an open embedding whose manifold derivative is invertible at every point
-preserves and reflects integrability of top forms supported in its range. -/
-theorem integrableTopForm_mpullback_iff {f : M → N} (hf : IsOpenEmbedding f)
+preserves and reflects integrability of top forms supported in its range. The two model spaces
+must have the same dimension. -/
+theorem integrableTopForm_mpullback_iff (hk : Module.finrank ℝ E = Module.finrank ℝ F)
+    {f : M → N} (hf : IsOpenEmbedding f)
     (hd : ∀ x, (mfderiv I J f x).IsInvertible) {φ : RoughForm J N ℝ k}
-    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
+    (hφ : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
     IntegrableTopForm (mpullback I J f φ) ↔ IntegrableTopForm φ := by
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
+  let : MeasurableSpace F := borel F
+  have : BorelSpace F := ⟨rfl⟩
   have hts := φ.tsupport_mpullback_eq_preimage hf.continuous hf.isOpenMap hd
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq hk
   -- Over each point `p` of `M`, the overlap of the chart at `p` with the preimage of the chart
   -- at `f p` is a chart piece on which the two coefficients have the same integrability.
   let u : M → Set M := fun p ↦ (chartAt H p).source ∩ f ⁻¹' (chartAt H' (f p)).source
@@ -365,52 +433,63 @@ theorem integrableTopForm_mpullback_iff {f : M → N} (hf : IsOpenEmbedding f)
     (chartAt H p).open_source.inter ((chartAt H' (f p)).open_source.preimage hf.continuous)
   have hsub (p : M) : u p ⊆ (extChartAt I p).source ∩ f ⁻¹' (extChartAt J (f p)).source := by
     simp only [u, extChartAt_source, Subset.rfl]
-  have hpiece (b : Module.Basis (Fin k) ℝ E) (p : M) :=
-    φ.integrableOn_signedInChartAt_one_mpullback_iff b hf.injective.injOn
+  have hpiece (b : Module.Basis (Fin k) ℝ E) (p : M) := by
+    have h := φ.integrableOn_signedInChartAt_one_mpullback_iff b L hf.injective.injOn
       (fun x _ ↦ mdifferentiableAt_of_isInvertible_mfderiv (hd x)) (hu p).isChartMeasurable
       (hsub p) b.addHaar
+    rwa [b.map_addHaar L] at h
   constructor
   · intro h
     obtain ⟨hc, ⟨b⟩, hi⟩ := (integrableTopForm_iff _).mp h
     rw [hts] at hc
-    refine φ.integrableTopForm_of_open_cover ?_ b (fun p ↦ f p) (fun p ↦ f '' u p)
-      (fun p ↦ hf.isOpenMap _ (hu p)) (fun p ↦ image_subset_iff.mpr inter_subset_right) ?_
+    refine φ.integrableTopForm_of_open_cover ?_ (b.map L.toLinearEquiv) (fun p ↦ f p)
+      (fun p ↦ f '' u p) (fun p ↦ hf.isOpenMap _ (hu p))
+      (fun p ↦ image_subset_iff.mpr inter_subset_right) ?_
       fun p ↦ (hpiece b p).mp (hi b p).integrableOn
     · simpa only [image_preimage_eq_of_subset hφ] using hc.image hf.continuous
     · intro y hy
       obtain ⟨x, rfl⟩ := hφ hy
       exact mem_iUnion.mpr ⟨x, mem_image_of_mem f ⟨mem_chart_source H x, mem_chart_source H' (f x)⟩⟩
   · intro h
-    obtain ⟨hc, ⟨b⟩, hi⟩ := (integrableTopForm_iff _).mp h
+    obtain ⟨hc, ⟨b'⟩, hi⟩ := (integrableTopForm_iff _).mp h
+    let b := b'.map L.symm.toLinearEquiv
     refine (mpullback I J f φ).integrableTopForm_of_open_cover ?_ b id u hu
       (fun p ↦ inter_subset_left) (fun x _ ↦ mem_iUnion.mpr
         ⟨x, mem_chart_source H x, mem_chart_source H' (f x)⟩)
-      fun p ↦ (hpiece b p).mpr (hi b (f p)).integrableOn
+      fun p ↦ (hpiece b p).mpr (hi _ (f p)).integrableOn
     rw [hts]
     exact hf.isInducing.isCompact_preimage' hc hφ
 
 /-- **Change of variables for top forms along an open embedding.** Pullback along an
 orientation-preserving open embedding preserves the integral of every top form supported in its
-range: `∫_M f^*φ = ∫_N φ`. Both sides vanish together when `φ` is not integrable. -/
+range: `∫_M f^*φ = ∫_N φ`. Both sides vanish together when `φ` is not integrable. The two
+manifolds may be modelled on different spaces. -/
 theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
     (hf : IsOpenEmbedding f) {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
     (ho : ∀ x, Manifold.Orientation.IsOrientationPreservingAt o o' f x) {φ : RoughForm J N ℝ k}
-    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
+    (hφ : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
     integralTopForm o (mpullback I J f φ) = integralTopForm o' φ := by
   classical
   let : MeasurableSpace E := borel E
   have : BorelSpace E := ⟨rfl⟩
+  let : MeasurableSpace F := borel F
+  have : BorelSpace F := ⟨rfl⟩
+  -- Represent both orientations by lifts whose model orientations correspond under an
+  -- identification `L` of the models, and use a basis of `E` and its image under `L`.
+  obtain ⟨l, rfl⟩ := o.exists_lift
+  obtain ⟨l₀', -⟩ := o'.exists_lift
+  let L : E ≃L[ℝ] F := ContinuousLinearEquiv.ofFinrankEq (l.card_eq.symm.trans l₀'.card_eq)
+  obtain ⟨l', rfl, hl⟩ :=
+    o'.exists_lift_modelOrientation_eq (_root_.Orientation.map (Fin k) L.toLinearEquiv
+      l.modelOrientation)
   have hd (x : M) := (ho x).isInvertible_mfderiv
   have hmd (x : M) := mdifferentiableAt_of_isInvertible_mfderiv (hd x)
-  have hint := hf.integrableTopForm_mpullback_iff hd hφ
+  have hint := hf.integrableTopForm_mpullback_iff (l.card_eq.symm.trans l'.card_eq) hd hφ
   by_cases hφi : IntegrableTopForm φ
   swap
   · rw [integralTopForm_eq_zero_of_not_integrable _ _ hφi,
       integralTopForm_eq_zero_of_not_integrable _ _ (mt hint.mp hφi)]
-  -- Represent both orientations by lifts with the same model orientation.
-  obtain ⟨l, rfl⟩ := o.exists_lift
-  obtain ⟨l', rfl, hl⟩ := o'.exists_lift_modelOrientation_eq l.modelOrientation
   let b := Module.finBasisOfFinrankEq ℝ E (by simpa using l.card_eq.symm)
   -- A finite cover of the support of `φ` by images of overlaps of charts of `M` with preimages
   -- of charts of `N`; its preimage under `f` covers the support of the pullback.
@@ -422,7 +501,7 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
     exact mem_iUnion.mpr ⟨x, mem_image_of_mem f ⟨mem_chart_source H x, mem_chart_source H' (f x)⟩⟩
   let α : Fin t.card → M := fun i ↦ t.equivFin.symm i
   let w : Fin t.card → Set N := fun i ↦ v (α i)
-  have hcover : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, w i := by
+  have hcover : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ ⋃ i, w i := by
     intro y hy
     obtain ⟨q, hq, hyq⟩ := mem_iUnion₂.mp (ht hy)
     exact mem_iUnion.mpr ⟨t.equivFin ⟨q, hq⟩, by simpa only [w, α, Equiv.symm_apply_apply]⟩
@@ -437,8 +516,8 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
       (fun i ↦ f ⁻¹' w i) (fun i ↦ (hv _).preimage hf.continuous) hu
       ((RoughForm.tsupport_mpullback_subset_preimage hf.continuous φ).trans
         (by simpa only [preimage_iUnion] using preimage_mono hcover)),
-    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφi b (fun i ↦ f (α i)) w
-      (fun i ↦ hv _) hw hcover, hl]
+    integralTopForm_eq_sum_disjointed_chart_integrals l' φ hφi (b.map L.toLinearEquiv)
+      (fun i ↦ f (α i)) w (fun i ↦ hv _) hw hcover, hl, _root_.Orientation.signBasis_map]
   refine congrArg _ (Finset.sum_congr rfl fun i _ ↦ ?_)
   have hdisj : disjointed (fun j ↦ f ⁻¹' w j) i = f ⁻¹' disjointed w i := by
     simp only [disjointed_eq_inter_compl, preimage_inter, preimage_iInter, preimage_compl]
@@ -446,12 +525,12 @@ theorem integralTopForm_mpullback_of_isOrientationPreservingAt {f : M → N}
     rw [disjointed_apply, preimage_sdiff, Finset.sup_set_eq_biUnion, preimage_iUnion₂]
     exact ((hv _).preimage hf.continuous).isChartMeasurable.diff
       (isOpen_biUnion fun j _ ↦ (hv _).preimage hf.continuous).isChartMeasurable
-  have h := φ.integral_signedInChartAt_mpullback_eq b l l' hl hf.injective.injOn
+  have h := φ.integral_signedInChartAt_mpullback_eq b L l l' hl.symm hf.injective.injOn
     (fun x _ ↦ hmd x) (fun x _ ↦ ho x) hs
     (fun x hx ↦ ⟨hu i (preimage_mono (disjointed_subset w i) hx),
       hw i (disjointed_subset w i hx)⟩) b.addHaar
   rwa [image_preimage_eq_of_subset ((disjointed_subset w i).trans
-    (image_subset_range _ _)), ← hdisj] at h
+    (image_subset_range _ _)), ← hdisj, b.map_addHaar L] at h
 
 /-- Pullback along an orientation-reversing open embedding negates the integral of every top form
 supported in its range: `∫_M f^*φ = -∫_N φ`. -/
@@ -459,7 +538,7 @@ theorem integralTopForm_mpullback_of_isOrientationReversingAt {f : M → N}
     (hf : IsOpenEmbedding f) {o : Manifold.Orientation I M (Fin k)}
     {o' : Manifold.Orientation J N (Fin k)}
     (ho : ∀ x, Manifold.Orientation.IsOrientationReversingAt o o' f x) {φ : RoughForm J N ℝ k}
-    (hφ : _root_.tsupport (α := E [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
+    (hφ : _root_.tsupport (α := F [⋀^Fin k]→L[ℝ] ℝ) φ ⊆ range f) :
     integralTopForm o (mpullback I J f φ) = -integralTopForm o' φ := by
   rw [← integralTopForm_neg]
   refine hf.integralTopForm_mpullback_of_isOrientationPreservingAt (fun x ↦ ?_) hφ

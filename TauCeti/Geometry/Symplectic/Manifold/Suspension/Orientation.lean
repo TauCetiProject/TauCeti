@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Manifold.Orientation.AddCircle
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Leaf
 
+import TauCeti.Geometry.Manifold.DifferentialForm.Integration.ChangeOfVariables
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 import TauCeti.Geometry.Symplectic.Manifold.Suspension.PeriodicTorus
 
@@ -38,7 +39,9 @@ taming hypotheses of the leaf theorem, the factor `v` through the orbit torus of
 closed orbit is a surjective local diffeomorphism. It is therefore orientation preserving
 everywhere. When `u` is moreover injective, `v` is a diffeomorphism of `C` onto the torus
 `(ℝ / ℤ) × (ℝ / dℤ)`, and an orientation-preserving one. This is the oriented parametrization of
-the embedded image `(ℝ / ℤ) × γ`.
+the embedded image `(ℝ / ℤ) × γ`. Changing variables along it, which works between surfaces
+modelled on different spaces, shows that the curve and the orbit torus have the same integral of
+every two-form on `X_φ`; in particular, the same `Ω`-area.
 
 ## Main results
 
@@ -51,6 +54,8 @@ the embedded image `(ℝ / ℤ) × γ`.
   orbit torus by a surjective orientation-preserving local diffeomorphism.
 * `exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero`:
   if the curve is also injective, the factor is an orientation-preserving diffeomorphism.
+* `integralTopForm_mpullback_eq_integralTopForm_mpullback_orbitTorus`: such an embedded curve
+  and the orbit torus have the same integral of every two-form on `X_φ`.
 
 ## References
 
@@ -238,6 +243,41 @@ theorem exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero
     (congrArg (orbitTorus φ h ∘ ·) hΦ).trans hτv, fun c' ↦ ?_⟩
   rw [hΦ]
   exact hor c'
+
+/-- **Areas of an embedded curve of zero vertical area.** Under the hypotheses of
+`exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero`, every smooth two-form `α` on
+`X_φ` has the same integral over `C` as over the orbit torus `τ` of the primitive closed orbit
+through `x`, oriented as the product of the positive orientations of its two circles:
+`∫_C u^* α = ∫_{(ℝ / ℤ) × (ℝ / dℤ)} τ^* α`. -/
+theorem integralTopForm_mpullback_eq_integralTopForm_mpullback_orbitTorus
+    (hu : ContMDiff I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) ∞ u) (hu₁ : Injective u)
+    (ho : ∀ c (b : Module.Basis (Fin 2) ℝ (TangentSpace I' c)), b 1 = j c (b 0) →
+      b.orientation = o.orientationAt c)
+    (hhol : ∀ c, IsPseudoholomorphicAt j J u c)
+    (hS : ∀ c, J (u c) ((Manifold.tangentSpaceProdEquiv (u c)).symm ((1 : ℝ), 0)) =
+      (Manifold.tangentSpaceProdEquiv (u c)).symm ((0 : ℝ), timeVectorField φ (u c).2))
+    (hV : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c),
+      J (u c) v ∈ suspensionVerticalSubspace φ (u c))
+    (htame : ∀ c, ∀ v ∈ suspensionVerticalSubspace φ (u c), v ≠ 0 →
+      0 < SmoothBundleForm.eval₂ (SmoothForm.mpullback Prod.snd contMDiff_snd
+        (fiberForm φ σ hσ)) (u c) v (J (u c) v))
+    (h0 : integralTopForm o (SmoothForm.mpullback u hu
+      (SmoothForm.mpullback Prod.snd contMDiff_snd (fiberForm φ σ hσ))).1 = 0)
+    (hinj : ∀ c, Injective (mfderiv I' (𝓘(ℝ).prod (𝓘(ℝ).prod I)) u c))
+    {c : C} {t : ℝ} (hc : (u c).2 = mk φ t x) (hd : minimalPeriod φ x = d)
+    (α : SmoothForm (𝓘(ℝ).prod (𝓘(ℝ).prod I)) (UnitAddCircle × SmoothMappingTorus φ) ℝ 2) :
+    integralTopForm o (SmoothForm.mpullback u hu α).1 =
+      integralTopForm ((AddCircle.orientation (1 : ℝ)).prod (AddCircle.orientation (d : ℝ)))
+        (SmoothForm.mpullback (orbitTorus φ h) (contMDiff_orbitTorus h) α).1 := by
+  obtain ⟨Φ, hΦ, hor⟩ := exists_diffeomorph_orbitTorus_comp_eq_of_integralTopForm_eq_zero h hu hu₁
+    ho hhol hS hV htame h0 hinj hc hd
+  subst hΦ
+  -- `u = τ ∘ Φ`, and `Φ` is an orientation-preserving diffeomorphism between surfaces modelled on
+  -- different spaces, so the change of variables along `Φ` applies.
+  rw [← SmoothForm.mpullback_mpullback Φ (orbitTorus φ h) Φ.contMDiff (contMDiff_orbitTorus h),
+    SmoothForm.coe_mpullback]
+  exact Φ.toHomeomorph.isOpenEmbedding.integralTopForm_mpullback_of_isOrientationPreservingAt hor
+    (by simp)
 
 end SmoothMappingTorus
 
