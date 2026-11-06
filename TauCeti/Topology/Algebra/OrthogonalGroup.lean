@@ -11,7 +11,7 @@ import Mathlib.LinearAlgebra.Matrix.DotProduct
 import Mathlib.Topology.Order.IntermediateValue
 import TauCeti.LinearAlgebra.Matrix.OrthogonalGroup.Basic
 import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Generation
-import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
+public import TauCeti.LinearAlgebra.Matrix.SpecialOrthogonalGroup.Reflection
 import TauCeti.LinearAlgebra.Matrix.ToQuadraticForm
 
 /-!
@@ -42,6 +42,8 @@ the identity form a submonoid, which therefore contains every special orthogonal
   group is path-connected.
 * `TauCeti.Matrix.joined_orthogonalGroup_iff_det_eq`: two real orthogonal matrices are joined by
   a path of orthogonal matrices exactly when they have the same determinant.
+* `TauCeti.Matrix.continuousOn_reflectionMatrix`: the reflection in a nonzero vector depends
+  continuously on the vector.
 
 The closedness statements identify the topological input supplied by these carriers for later
 constructions of Lie-group structures and continuity arguments on the corresponding subgroups.
@@ -110,9 +112,11 @@ private lemma refl_mul_refl_mem {u w : ι → ℝ} (hu : u ≠ 0) (hw : w ≠ 0)
     TauCeti.det_reflectionMatrix (refl_hc hw)]
   norm_num
 
-private lemma continuousOn_refl : ContinuousOn (refl (ι := ι)) {u | u ≠ 0} := by
-  rw [show refl (ι := ι) = fun u ↦ 1 - vecMulVec ((2 / (u ⬝ᵥ u)) • u) u from
-    funext fun u ↦ TauCeti.reflectionMatrix_eq_one_sub_vecMulVec u _]
+/-- The reflection matrix `u ↦ 1 - (2 / (u ⬝ᵥ u)) • vecMulVec u u` in the hyperplane orthogonal to
+`u` depends continuously on the nonzero vector `u`. -/
+theorem continuousOn_reflectionMatrix :
+    ContinuousOn (fun u : ι → ℝ ↦ TauCeti.reflectionMatrix u (2 / (u ⬝ᵥ u))) {u | u ≠ 0} := by
+  simp only [TauCeti.reflectionMatrix_eq_one_sub_vecMulVec]
   have hc : ContinuousOn (fun u : ι → ℝ ↦ (2 / (u ⬝ᵥ u)) • u) {u | u ≠ 0} :=
     (continuousOn_const.div (continuous_id.dotProduct continuous_id).continuousOn
       fun u hu ↦ mt dotProduct_self_eq_zero.1 hu).smul continuousOn_id
@@ -145,7 +149,7 @@ private lemma joined_one_refl_mul_refl {u w : ι → ℝ} (hu : u ≠ 0) (hw : w
     field_simp
     linear_combination hi
   have hcont : Continuous fun t : I ↦ refl ((1 - (t : ℝ)) • w + (t : ℝ) • u) :=
-    continuousOn_refl.comp_continuous (by fun_prop) hσ
+    continuousOn_reflectionMatrix.comp_continuous (by fun_prop) hσ
   refine ⟨{
     toFun := fun t ↦ ⟨refl u * refl ((1 - (σ t : ℝ)) • w + (σ t : ℝ) • u),
       refl_mul_refl_mem hu (hσ (σ t))⟩

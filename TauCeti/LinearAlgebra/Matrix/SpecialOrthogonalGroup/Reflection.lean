@@ -153,6 +153,14 @@ theorem toMatrix'_reflection (v : n → R)
 
 end QuadraticForm
 
+variable [Fintype n] in
+/-- A reflection matrix acts on a vector `x` by `x ↦ x - c (v ⬝ᵥ x) v`. -/
+theorem reflectionMatrix_mulVec (v : n → R) (c : R) (x : n → R) :
+    reflectionMatrix v c *ᵥ x = x - (c * (v ⬝ᵥ x)) • v := by
+  rw [reflectionMatrix_eq_one_sub_vecMulVec, sub_mulVec, one_mulVec, vecMulVec_mulVec]
+  ext i
+  simp [mul_comm, mul_left_comm]
+
 /-! ### Products of two reflections -/
 
 section Pair
