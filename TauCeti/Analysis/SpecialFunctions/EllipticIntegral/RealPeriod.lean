@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod
+public import TauCeti.AlgebraicGeometry.EllipticCurve.RealPeriod.Basic
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Cubic
 
 /-!
