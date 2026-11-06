@@ -379,8 +379,8 @@ theorem IsWeakSolutionDirichlet.value_ae_eq_of_contDiffOn {n : ℕ}
     filter_upwards [hΔ.neg.coeFn_toLp, hf] with x h1 h2
     rw [h1, h2]
   rw [hfv] at hv
-  have huv : u = v := (existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball
-    (le_max_right R 0) (hball.trans (ball_subset_ball (le_max_left R 0))) f).unique hu hv
+  have huv : u = v :=
+    (existsUnique_isWeakSolutionDirichlet_laplacian_of_subset_ball hball f).unique hu hv
   rw [huv]
   exact hvw
 

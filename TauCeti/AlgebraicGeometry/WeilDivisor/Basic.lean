@@ -10,6 +10,7 @@ public import Mathlib.Data.Finsupp.Order
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
 public import Mathlib.Algebra.Order.Ring.Int
 public import Mathlib.Topology.Separation.Basic
+import Mathlib.LinearAlgebra.Finsupp.Supported
 import Mathlib.Tactic.NormNum.Basic
 import Mathlib.Tactic.Ring
 
@@ -118,12 +119,8 @@ lemma support_ofPoint (x : X) : (ofPoint x).support = {x} :=
   Finsupp.support_single x one_ne_zero
 
 /-- Distinct points have distinct point divisors. -/
-lemma ofPoint_injective : Function.Injective (ofPoint : X → WeilDivisor X) := by
-  intro x y h
-  by_contra hne
-  have hcoeff : coeff (ofPoint x) x = coeff (ofPoint y) x := by rw [h]
-  rw [coeff_ofPoint_self, coeff_ofPoint_of_ne hne] at hcoeff
-  exact one_ne_zero hcoeff
+lemma ofPoint_injective : Function.Injective (ofPoint : X → WeilDivisor X) :=
+  Finsupp.single_left_injective one_ne_zero
 
 @[simp]
 lemma ofPoint_inj {x y : X} : ofPoint x = ofPoint y ↔ x = y :=
@@ -303,10 +300,9 @@ of that set.  This is the freeness of the divisor group in the form used to desc
 by the points its members are allowed to involve. -/
 lemma mem_closure_ofPoint_image_of_support_subset {S : Set X} {D : WeilDivisor X}
     (hD : ↑D.support ⊆ S) : D ∈ AddSubgroup.closure (ofPoint '' S) := by
-  rw [show D = ∑ x ∈ D.support, Finsupp.single x (D x) from (Finsupp.sum_single D).symm]
-  refine sum_mem fun x hx => ?_
-  rw [single_eq_zsmul_ofPoint]
-  exact zsmul_mem (AddSubgroup.subset_closure (Set.mem_image_of_mem ofPoint (hD hx))) _
+  rw [← Submodule.span_int_eq_addSubgroupClosure]
+  have : D ∈ Finsupp.supported ℤ ℤ S := hD
+  rwa [Finsupp.supported_eq_span_single] at this
 
 /-- The unweighted degree of a Weil divisor, summing its coefficients.  On a curve over a
 non-algebraically-closed field, use `weightedDegree` with residue-field degrees instead. -/
@@ -537,17 +533,7 @@ lemma coeff_pointDifference_right (x y : X) :
 lemma coeff_pointDifference [DecidableEq X] (x y z : X) :
     coeff (pointDifference x y) z =
       (if z = x then 1 else 0) - (if z = y then 1 else 0) := by
-  by_cases hx : z = x
-  · by_cases hy : z = y
-    · subst hx
-      subst hy
-      simp [pointDifference, ofPoint, coeff]
-    · subst hx
-      simp [pointDifference, ofPoint, coeff, hy]
-  · by_cases hy : z = y
-    · subst hy
-      simp [pointDifference, ofPoint, coeff, hx]
-    · simp [pointDifference, ofPoint, coeff, hx, hy]
+  simp [pointDifference, ofPoint, coeff, Finsupp.single_apply, eq_comm]
 
 lemma support_pointDifference_subset [DecidableEq X] (x y : X) :
     (pointDifference x y).support ⊆ {x, y} := by
@@ -636,21 +622,12 @@ noncomputable def weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}
     rw [mem_weightedDegreeZeroSubgroup, map_sub, map_zsmul, weightedDegree_ofPoint, hx₀]
     simp⟩
 
--- The degree-corrected representatives are intentionally not `@[expose]`, so downstream modules
--- cannot unfold them; each defining equality is unfolded once here in a `private` lemma and
--- re-exported through the public characterization lemma below.
-private lemma coe_weightedAbelJacobiDegreeZeroDivisor_def (w : X → ℤ) {x₀ : X}
-    (hx₀ : w x₀ = 1) (D : WeilDivisor X) :
-    (weightedAbelJacobiDegreeZeroDivisor w hx₀ D : WeilDivisor X) =
-      D - weightedDegree w D • ofPoint x₀ :=
-  rfl
-
 @[simp]
 lemma coe_weightedAbelJacobiDegreeZeroDivisor (w : X → ℤ) {x₀ : X}
     (hx₀ : w x₀ = 1) (D : WeilDivisor X) :
     (weightedAbelJacobiDegreeZeroDivisor w hx₀ D : WeilDivisor X) =
-      D - weightedDegree w D • ofPoint x₀ :=
-  coe_weightedAbelJacobiDegreeZeroDivisor_def w hx₀ D
+      D - weightedDegree w D • ofPoint x₀ := by
+  rfl
 
 /-- For strictly positive weights, an effective divisor lying in the weighted degree-zero
 subgroup is zero. -/
@@ -674,21 +651,11 @@ In the algebraically closed/unweighted specialization, this recovers `pointDiffe
 noncomputable def weightedPointBaseDifference (w : X → ℤ) (x₀ x : X) : WeilDivisor X :=
   ofPoint x - w x • ofPoint x₀
 
-private lemma weightedPointBaseDifference_def (w : X → ℤ) (x₀ x : X) :
-    weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ :=
-  rfl
-
 /-- The degree-corrected point divisor is `[x]` minus `w x` copies of the base point `[x₀]`.
 This exposes the definition as a public equation for use across modules. -/
 lemma weightedPointBaseDifference_eq_ofPoint_sub_zsmul (w : X → ℤ) (x₀ x : X) :
-    weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ :=
-  weightedPointBaseDifference_def w x₀ x
-
-/-- At the constant weight `1`, the degree-corrected point divisor is the usual point
-difference. This lets unweighted API reuse the weighted construction. -/
-lemma weightedPointBaseDifference_eq_pointDifference (x₀ x : X) :
-    weightedPointBaseDifference (fun _ : X => (1 : ℤ)) x₀ x = pointDifference x x₀ := by
-  simp [weightedPointBaseDifference, pointDifference]
+    weightedPointBaseDifference w x₀ x = ofPoint x - w x • ofPoint x₀ := by
+  rfl
 
 /-- If the point has weight `1`, the degree-corrected point divisor is the usual point
 difference. -/
@@ -703,14 +670,7 @@ lemma weightedPointBaseDifference_eq_pointDifference_of_weight_eq_one {w : X →
 lemma coeff_weightedPointBaseDifference [DecidableEq X] (w : X → ℤ) (x₀ x y : X) :
     coeff (weightedPointBaseDifference w x₀ x) y =
       (if y = x then 1 else 0) - if y = x₀ then w x else 0 := by
-  by_cases hyx : y = x
-  · subst y
-    by_cases hx₀ : x = x₀ <;> simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
-  · by_cases hy₀ : y = x₀
-    · subst y
-      have hx₀ : x₀ ≠ x := by simpa using hyx
-      simp [weightedPointBaseDifference, ofPoint, coeff, hx₀]
-    · simp [weightedPointBaseDifference, ofPoint, coeff, hyx, hy₀]
+  simp [weightedPointBaseDifference, ofPoint, coeff, Finsupp.single_apply, eq_comm]
 
 /-- The support of `[x] - w(x)[x₀]` is contained in `{x, x₀}`. -/
 lemma support_weightedPointBaseDifference_subset [DecidableEq X] (w : X → ℤ) (x₀ x : X) :
