@@ -135,6 +135,17 @@ private theorem measureReal_ball_eq (x : EuclideanSpace ℝ (Fin (n + 1))) {t : 
       t ^ (n + 1) * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) := by
   rw [Measure.addHaar_real_ball_of_pos _ _ ht, finrank_euclideanSpace_fin]
 
+/-- The data part of the energy error on `B_t = ball x t`:
+`2 (t^α)² λ^{-2} K² |B_t| = 2 ω (K / λ)² t^{n+1+2α}`, where `ω` is the measure of the unit
+ball. -/
+private theorem two_mul_rpow_sq_div_mul_measureReal_ball_eq (x : EuclideanSpace ℝ (Fin (n + 1)))
+    {t : ℝ} (ht : 0 < t) (a lam K : ℝ) :
+    2 * (t ^ a) ^ 2 / lam ^ 2 * (K ^ 2 * volume.real (ball x t)) =
+      2 * volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) * (K / lam) ^ 2 *
+        t ^ ((n : ℝ) + 1 + 2 * a) := by
+  rw [measureReal_ball_eq x ht, rpow_add_two_mul_eq ht, div_pow]
+  ring
+
 /-- Squaring an energy estimate `λ X ≤ t (K_a N + K_G √V)` gives
 `X² ≤ 2 t² λ^{-2} (K_a² N² + K_G² V)`. -/
 private theorem sq_le_of_mul_le_mul_add {lam X N V t Ka KG : ℝ} (hlam : 0 < lam) (hX : 0 ≤ X)
@@ -190,6 +201,8 @@ private theorem exists_replacement (h : FrozenData Omega u a G lam Lam κ α Ka 
     ∃ w : W1p volume (⟨ball x r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
       (∀ v : W1p0 volume (⟨ball x r, isOpen_ball⟩ : Opens (EuclideanSpace ℝ (Fin (n + 1)))) 2,
         energyFormH1 (fun _ => a x) 0 0 w (v : W1p volume _ 2) = 0) ∧
+      MemLp (W1p.gradient w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
+        (volume.restrict (ball x r)) ∧
       ∫ y in ball x r, ‖W1p.gradient u y - W1p.gradient w y‖ ^ 2 ≤
         2 * (r ^ (α : ℝ)) ^ 2 / lam ^ 2 *
           (Ka ^ 2 * (∫ y in ball x r, ‖W1p.gradient u y‖ ^ 2) +
@@ -198,7 +211,7 @@ private theorem exists_replacement (h : FrozenData Omega u a G lam Lam κ α Ka 
   obtain ⟨w, -, hw0, hest⟩ :=
     h.elliptic.exists_sub_mem_w1p0Submodule_mul_norm_gradient_sub_le (mem_singleton x) h.pos
       h.holder_coeff h.holder_data hB subset_rfl h.eq
-  refine ⟨w, hw0, ?_⟩
+  refine ⟨w, hw0, Lp.memLp (W1p.gradient w), ?_⟩
   have hN : ‖W1p.gradient (W1p.restrictL hB u)‖ ^ 2 = ∫ y in ball x r, ‖W1p.gradient u y‖ ^ 2 := by
     rw [← Lp.integral_norm_sq_eq_norm_sq]
     refine integral_congr_ae ?_
@@ -210,6 +223,12 @@ private theorem exists_replacement (h : FrozenData Omega u a G lam Lam κ α Ka 
     _ ≤ _ := by
         rw [← hN]
         exact sq_le_of_mul_le_mul_add h.elliptic.pos (norm_nonneg _) measureReal_nonneg hest
+
+/-- `∇u` is square integrable on `B_r`. -/
+private theorem memLp_gradient (h : FrozenData Omega u a G lam Lam κ α Ka KG x r) :
+    MemLp (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
+      (volume.restrict (ball x r)) :=
+  (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono h.subset le_rfl)
 
 /-- The frozen matrix `a(x)` is elliptic with constants `λ` and `Λ`. -/
 private theorem frozen_bounds (h : FrozenData Omega u a G lam Lam κ α Ka KG x r) :
@@ -234,19 +253,13 @@ private theorem setIntegral_norm_sq_le (h : FrozenData Omega u a G lam Lam κ α
           (Ka ^ 2 * (∫ y in ball x r, ‖W1p.gradient u y‖ ^ 2) +
             KG ^ 2 * volume.real (ball x r))) := by
   have hr : 0 < r := hρ.trans_le hρr
-  obtain ⟨w, hw0, hE⟩ := h.exists_replacement
+  obtain ⟨w, hw0, hwm, hE⟩ := h.exists_replacement
   obtain ⟨hlow, hAu⟩ := h.frozen_bounds
   have hdec := setIntegral_ball_norm_gradient_sq_le_of_forall_energyFormH1_eq_zero
     h.elliptic.pos hlow hAu hw0 (x₀ := x) (R := r) subset_rfl hρ.le hρr
   rw [Fintype.card_fin] at hdec
   have hq0 : 0 ≤ (ρ / r) ^ (n + 1) := by positivity
-  have hfm : MemLp
-      (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict (ball x r)) :=
-    (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono h.subset le_rfl)
-  have hwm : MemLp
-      (W1p.gradient w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict (ball x r)) := Lp.memLp (W1p.gradient w)
+  have hfm := h.memLp_gradient
   have hcomp := setIntegral_norm_sub_sq_le_add_of_le (b := 0) (k := 0) (c := 0)
     (f := fun y => W1p.gradient u y) (K := fun y => W1p.gradient w y)
     (ball_subset_ball hρr) (by positivity : (0 : ℝ) ≤ 2 ^ (n + 1) * √(Lam / lam) ^ (n + 1)) hq0
@@ -281,20 +294,14 @@ private theorem setIntegral_norm_sub_setAverage_sq_le
           (Ka ^ 2 * (∫ y in ball x r, ‖W1p.gradient u y‖ ^ 2) +
             KG ^ 2 * volume.real (ball x r))) := by
   have hr : 0 < r := hρ.trans_le hρr
-  obtain ⟨w, hw0, hE⟩ := h.exists_replacement
+  obtain ⟨w, hw0, hwm, hE⟩ := h.exists_replacement
   obtain ⟨hlow, hAu⟩ := h.frozen_bounds
   have hdec :=
     setIntegral_ball_norm_gradient_sub_setAverage_sq_le_of_forall_energyFormH1_eq_zero
       h.elliptic.pos hlow hAu hw0 (x₀ := x) (R := r) subset_rfl
       (⨍ y in ball x r, W1p.gradient u y) hρ.le hρr
   simp only [Fintype.card_fin] at hdec
-  have hfm : MemLp
-      (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict (ball x r)) :=
-    (Lp.memLp (W1p.gradient u)).mono_measure (Measure.restrict_mono h.subset le_rfl)
-  have hwm : MemLp
-      (W1p.gradient w : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) 2
-      (volume.restrict (ball x r)) := Lp.memLp (W1p.gradient w)
+  have hfm := h.memLp_gradient
   have hcomp := setIntegral_norm_sub_setAverage_sq_le_add_of_subset (ball_subset_ball hρr)
     measure_ball_lt_top.ne hfm hwm (by positivity) hdec
   refine hcomp.trans ?_
@@ -374,156 +381,11 @@ private theorem exists_setIntegral_norm_gradient_sub_setAverage_sq_le {A β : �
   exact add_le_add_left (mul_le_mul_of_nonneg_left hψR
     (Real.rpow_nonneg (div_nonneg hρ.le (hρ.trans_le hρR).le) β)) _
 
-/-- **The mean oscillation of the gradient.** If `ball x t ⊆ Ω` and
-`∫_{B_t} ‖∇u - (∇u)_{B_t}‖² ≤ M² t^{n+1+2θ}` with `M ≥ 0`, then the mean oscillation of `∇u` on
-`closedBall x t` is at most `ω^{-1/2} M t^θ`, where `ω` is the measure of the unit ball. -/
-private theorem setAverage_norm_gradient_sub_le {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))}
-    (u : W1p volume Omega 2) {x : EuclideanSpace ℝ (Fin (n + 1))} {t M θ : ℝ} (ht : 0 < t)
-    (hM : 0 ≤ M) (hball : ball x t ⊆ Omega)
-    (hψ : ∫ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖ ^ 2 ≤
-      M ^ 2 * t ^ ((n : ℝ) + 1 + 2 * θ)) :
-    ⨍ y in closedBall x t, ‖W1p.gradient u y - ⨍ z in closedBall x t, W1p.gradient u z‖ ≤
-      (√(volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))⁻¹ * M * t ^ θ := by
-  have hω : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-    measureReal_ball_pos _ _ one_pos
-  -- The averages over `closedBall x t` and `ball x t` agree.
-  rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball x t)]
-  -- Jensen's inequality bounds the mean oscillation by the square mean oscillation.
-  have hJ : (⨍ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖) ^ 2 ≤
-      (∫ y in ball x t, ‖W1p.gradient u y - ⨍ z in ball x t, W1p.gradient u z‖ ^ 2) /
-        volume.real (ball x t) := by
-    rw [div_eq_inv_mul, ← smul_eq_mul, ← setAverage_eq]
-    exact sq_setAverage_norm_le_setAverage_norm_sq (measure_ball_pos volume x ht).ne'
-      measure_ball_lt_top.ne (((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
-        measure_ball_lt_top.ne).sub (integrableOn_const measure_ball_lt_top.ne))
-      ((Lp.memLp (W1p.gradient u)).integrableOn_norm_sub_sq_of_subset hball
-        measure_ball_lt_top.ne (⨍ z in ball x t, W1p.gradient u z))
-  rw [← pow_le_pow_iff_left₀ (average_nonneg fun _ => norm_nonneg _) (by positivity) two_ne_zero]
-  refine hJ.trans ?_
-  rw [measureReal_ball_eq x ht, div_le_iff₀ (by positivity)]
-  refine hψ.trans_eq ?_
-  rw [rpow_add_two_mul_eq ht, mul_pow, mul_pow, inv_pow, Real.sq_sqrt hω.le]
+/-- Rescaling from `B_R` to `B_ρ`: `(ρ / R)^β R^γ = R^{γ-β} ρ^β`. -/
+private theorem div_rpow_mul_rpow_eq {ρ R : ℝ} (hρ : 0 ≤ ρ) (hR : 0 < R) (β γ : ℝ) :
+    (ρ / R) ^ β * R ^ γ = R ^ (γ - β) * ρ ^ β := by
+  rw [Real.div_rpow hρ hR.le, Real.rpow_sub hR]
   field_simp
-
-/-- The precise representative of `∇u` at `z` is controlled by the mean oscillation of `∇u` near
-`z` and by `‖∇u‖_{L²(Ω)}`. If `ball z R ⊆ Ω` and the mean oscillation of `∇u` on `closedBall z t`
-is at most `M t^θ` for `0 < t ≤ R`, then
-`‖∇u*(z)‖ ≤ (2^{n+1} / (1 - 2^{-θ}) M + ω^{-1/2} R^{-(n+1)/2-θ} ‖∇u‖_{L²(Ω)}) R^θ`, where `∇u*` is
-the precise representative and `ω` is the measure of the unit ball. -/
-private theorem norm_preciseRepresentative_gradient_le {θ : ℝ≥0} (hθ : 0 < θ)
-    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
-    {z : EuclideanSpace ℝ (Fin (n + 1))} {R M : ℝ} (hR : 0 < R) (hball : ball z R ⊆ Omega)
-    (hM : ∀ t, 0 < t → t ≤ R →
-      ⨍ y in closedBall z t, ‖W1p.gradient u y - ⨍ w in closedBall z t, W1p.gradient u w‖ ≤
-        M * t ^ (θ : ℝ)) :
-    ‖preciseRepresentative volume
-        (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) z‖ ≤
-      (2 ^ (n + 1) / (1 - 2 ^ (-(θ : ℝ))) * M +
-        (√(volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))⁻¹ *
-          (R ^ (-(((n : ℝ) + 1) / 2 + θ)) * ‖W1p.gradient u‖)) * R ^ (θ : ℝ) := by
-  have hint : IntegrableOn (W1p.gradient u) (closedBall z R) :=
-    ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two hball
-      measure_ball_lt_top.ne).congr_set_ae (volume.addHaar_closedBall_ae_eq_ball z R)
-  have hω : 0 < volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1) :=
-    measureReal_ball_pos _ _ one_pos
-  -- Compare the precise representative with the average over `closedBall z R`.
-  have h1 := norm_setAverage_closedBall_sub_preciseRepresentative_le (α := (θ : ℝ))
-    (NNReal.coe_pos.2 hθ) hint hM hR le_rfl
-  rw [finrank_euclideanSpace_fin] at h1
-  -- Hölder's bound `‖⨍_B f‖ ≤ |B|^{-1/2} ‖f‖_{L²(B)}` on the average, with
-  -- `‖f‖_{L²(B)} ≤ ‖f‖_{L²(Ω)}`.
-  have h2 : ‖⨍ y in closedBall z R, W1p.gradient u y‖ ≤
-      (√(volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))⁻¹ *
-        (R ^ (-((n : ℝ) + 1) / 2) * ‖W1p.gradient u‖) := by
-    rw [Measure.restrict_congr_set (volume.addHaar_closedBall_ae_eq_ball z R)]
-    have h := (enorm_setAverage_le (f := W1p.gradient u) (mu := volume) (p := 2)
-      one_le_two ENNReal.ofNat_ne_top).trans
-      (mul_le_mul' le_rfl (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)))
-    replace h := ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero
-      (measure_ball_pos volume z hR).ne' measure_ball_lt_top.ne) (Lp.eLpNorm_ne_top _)) h
-    rw [toReal_enorm, ENNReal.toReal_mul, ← Lp.norm_def, ← ENNReal.toReal_rpow,
-      ← measureReal_def, measureReal_ball_eq z hR] at h
-    refine h.trans_eq ?_
-    rw [ENNReal.toReal_ofNat, Real.mul_rpow (by positivity) hω.le, ← Real.rpow_natCast,
-      ← Real.rpow_mul hR.le, Real.sqrt_eq_rpow, ← Real.rpow_neg hω.le]
-    push_cast
-    ring_nf
-  have haR : R ^ (-((n : ℝ) + 1) / 2) * ‖W1p.gradient u‖ =
-      R ^ (-(((n : ℝ) + 1) / 2 + θ)) * ‖W1p.gradient u‖ * R ^ (θ : ℝ) := by
-    rw [mul_right_comm, ← Real.rpow_add hR]
-    congr 2
-    ring
-  rw [haR] at h2
-  have h3 := norm_sub_le (⨍ y in closedBall z R, W1p.gradient u y)
-    ((⨍ y in closedBall z R, W1p.gradient u y) - preciseRepresentative volume (W1p.gradient u) z)
-  rw [sub_sub_cancel] at h3
-  calc _ ≤ _ := h3
-    _ ≤ _ := add_le_add h2 h1
-    _ = _ := by ring
-
-/-- **Campanato's estimate on a set.** If `ball z R ⊆ Ω` and the mean oscillation of `∇u` on
-`closedBall z t` is at most `M t^θ` for every `z ∈ S` and `0 < t ≤ R`, then the precise
-representative of `∇u` satisfies
-`|∇u*(x) - ∇u*(y)| ≤ c (M + R^{-(n+1)/2-θ} ‖∇u‖_{L²(Ω)}) |x - y|^θ` on `S`, with `c` depending only
-on `n` and `θ`. -/
-private theorem dist_preciseRepresentative_gradient_le {θ : ℝ≥0} (hθ : 0 < θ)
-    {Omega : Opens (EuclideanSpace ℝ (Fin (n + 1)))} (u : W1p volume Omega 2)
-    {S : Set (EuclideanSpace ℝ (Fin (n + 1)))} {R M : ℝ} (hR : 0 < R) (hM0 : 0 ≤ M)
-    (hball : ∀ z ∈ S, ball z R ⊆ Omega)
-    (hM : ∀ z ∈ S, ∀ t, 0 < t → t ≤ R →
-      ⨍ y in closedBall z t, ‖W1p.gradient u y - ⨍ w in closedBall z t, W1p.gradient u w‖ ≤
-        M * t ^ (θ : ℝ))
-    {x y : EuclideanSpace ℝ (Fin (n + 1))} (hx : x ∈ S) (hy : y ∈ S) :
-    dist (preciseRepresentative volume
-        (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) x)
-      (preciseRepresentative volume
-        (W1p.gradient u : EuclideanSpace ℝ (Fin (n + 1)) → EuclideanSpace ℝ (Fin (n + 1))) y) ≤
-      2 * 2 ^ (θ : ℝ) * (2 ^ (n + 1) / (1 - 2 ^ (-(θ : ℝ))) +
-          (√(volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))⁻¹) *
-        (M + R ^ (-(((n : ℝ) + 1) / 2 + θ)) * ‖W1p.gradient u‖) * dist x y ^ (θ : ℝ) := by
-  have hθ' : (0 : ℝ) < θ := hθ
-  have hcθ : 0 < 1 - (2 : ℝ) ^ (-(θ : ℝ)) :=
-    sub_pos.2 (Real.rpow_lt_one_of_one_lt_of_neg one_lt_two (neg_lt_zero.2 hθ'))
-  obtain ⟨cθ, hcθdef⟩ : ∃ cθ : ℝ, cθ = 2 ^ (n + 1) / (1 - 2 ^ (-(θ : ℝ))) := ⟨_, rfl⟩
-  have hcθ0 : 0 ≤ cθ := hcθdef ▸ by positivity
-  obtain ⟨ω', hω'⟩ : ∃ ω', ω' = (√(volume.real (ball (0 : EuclideanSpace ℝ (Fin (n + 1))) 1)))⁻¹ :=
-    ⟨_, rfl⟩
-  have hω'0 : 0 ≤ ω' := hω' ▸ by positivity
-  obtain ⟨a, ha⟩ : ∃ a, a = R ^ (-(((n : ℝ) + 1) / 2 + θ)) * ‖W1p.gradient u‖ := ⟨_, rfl⟩
-  have ha0 : 0 ≤ a := ha ▸ by positivity
-  rw [← hcθdef, ← hω', ← ha]
-  have hd0 : 0 ≤ dist x y ^ (θ : ℝ) := by positivity
-  rcases le_or_gt (2 * dist x y) R with hd | hd
-  · -- Nearby points: Campanato's estimate.
-    have hint : IntegrableOn (W1p.gradient u) (closedBall x (2 * dist x y)) := by
-      rcases hd.lt_or_eq with hd | hd
-      · exact (Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two
-          ((closedBall_subset_ball hd).trans (hball x hx)) measure_closedBall_lt_top.ne
-      · rw [hd]
-        exact ((Lp.memLp (W1p.gradient u)).integrableOn_of_subset one_le_two (hball x hx)
-          measure_ball_lt_top.ne).congr_set_ae (volume.addHaar_closedBall_ae_eq_ball x R)
-    have h := dist_preciseRepresentative_le_of_setAverage_norm_sub_le hθ' hint
-      (fun r hr hr' => hM x hx r hr (hr'.trans hd))
-      (fun r hr hr' => hM y hy r hr (by linarith [dist_nonneg (x := x) (y := y)]))
-    rw [finrank_euclideanSpace_fin, ← hcθdef] at h
-    refine h.trans ?_
-    have : 0 ≤ 2 * 2 ^ (θ : ℝ) * (ω' * M + (cθ + ω') * a) * dist x y ^ (θ : ℝ) := by positivity
-    nlinarith
-  · -- Distant points: both values are controlled by averages over balls of radius `R`.
-    have hbound : ∀ z ∈ S, ‖preciseRepresentative volume (W1p.gradient u) z‖ ≤
-        (cθ + ω') * (M + a) * R ^ (θ : ℝ) := fun z hz => by
-      refine (norm_preciseRepresentative_gradient_le hθ u hR (hball z hz) (hM z hz)).trans ?_
-      rw [← hcθdef, ← hω', ← ha]
-      refine mul_le_mul_of_nonneg_right ?_ (by positivity)
-      nlinarith [mul_nonneg hω'0 hM0, mul_nonneg hcθ0 ha0]
-    have hRd : R ^ (θ : ℝ) ≤ 2 ^ (θ : ℝ) * dist x y ^ (θ : ℝ) := by
-      rw [← Real.mul_rpow zero_le_two dist_nonneg]
-      exact Real.rpow_le_rpow hR.le hd.le hθ'.le
-    have hsum := dist_le_norm_add_norm (preciseRepresentative volume (W1p.gradient u) x)
-      (preciseRepresentative volume (W1p.gradient u) y)
-    have hc : 0 ≤ (cθ + ω') * (M + a) := by positivity
-    have := mul_le_mul_of_nonneg_left hRd hc
-    nlinarith [hbound x hx, hbound y hy]
 
 /-- Squaring `N ≤ M R^{(n+1)/2+α}` gives `N² ≤ M² R^{n+1+2α}`. -/
 private theorem sq_le_mul_rpow_of_le {N M R α : ℝ} (hR : 0 < R) (hN : 0 ≤ N)
@@ -612,11 +474,7 @@ private theorem exists_setIntegral_norm_sq_le (hα : 0 < α) (κ : ℝ) :
         ring_nf
       have hle : t ^ (3 * (α : ℝ)) ≤ R ^ (3 * (α : ℝ)) :=
         Real.rpow_le_rpow ht.le htR (by positivity)
-      have heq : 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 * (KG ^ 2 * volume.real (ball x t)) =
-          2 * ω * ((KG : ℝ) / lam) ^ 2 * t ^ ((n : ℝ) + 1 + 2 * α) := by
-        rw [measureReal_ball_eq x ht, rpow_add_two_mul_eq ht, ← hω]
-        field_simp
-      rw [heq, hsplit]
+      rw [two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht, ← hω, hsplit]
       calc 2 * ω * ((KG : ℝ) / lam) ^ 2 * (t ^ (3 * (α : ℝ)) * t ^ ((n : ℝ) + 1 - α))
           = 2 * ω * (((KG : ℝ) / lam) ^ 2 * t ^ (3 * (α : ℝ))) * t ^ ((n : ℝ) + 1 - α) := by
             ring
@@ -646,9 +504,8 @@ private theorem exists_setIntegral_norm_sq_le (hα : 0 < α) (κ : ℝ) :
       (sq_le_mul_rpow_of_le hR (norm_nonneg _) hM1)
   have hρR' : (ρ / R) ^ ((n : ℝ) + 1 - α) * R ^ ((n : ℝ) + 1 + 2 * α) =
       R ^ (3 * (α : ℝ)) * ρ ^ ((n : ℝ) + 1 - α) := by
-    rw [Real.div_rpow hρ.le hR.le, show (n : ℝ) + 1 + 2 * α = 3 * α + ((n : ℝ) + 1 - α) by ring,
-      Real.rpow_add hR]
-    field_simp
+    rw [div_rpow_mul_rpow_eq hρ.le hR,
+      show (n : ℝ) + 1 + 2 * α - ((n : ℝ) + 1 - α) = 3 * α by ring]
   have h1 : (ρ / R) ^ ((n : ℝ) + 1 - α) * φ R ≤
       M ^ 2 * R ^ (3 * (α : ℝ)) * ρ ^ ((n : ℝ) + 1 - α) := by
     calc (ρ / R) ^ ((n : ℝ) + 1 - α) * φ R
@@ -743,8 +600,7 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_small (hα : 0 <
         2 * ω * M ^ 2 * R ^ (α : ℝ) * t ^ ((n : ℝ) + 1 + α) := by
       calc 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 * (KG ^ 2 * volume.real (ball x t))
           = 2 * ω * ((KG : ℝ) / lam) ^ 2 * t ^ ((n : ℝ) + 1 + 2 * α) := by
-            rw [measureReal_ball_eq x ht, rpow_add_two_mul_eq ht, ← hω]
-            field_simp
+            rw [two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht, ← hω]
         _ ≤ 2 * ω * M ^ 2 * (R ^ (α : ℝ) * t ^ ((n : ℝ) + 1 + α)) := by gcongr
         _ = _ := by ring
     refine hc.trans ?_
@@ -761,12 +617,8 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_small (hα : 0 <
   have hdec := hit (by positivity) h.subset hstep ρ hρ hρR
   have hρR' : (ρ / R) ^ ((n : ℝ) + 1 + α) * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α)) =
       M ^ 2 * R ^ (α : ℝ) * ρ ^ ((n : ℝ) + 1 + α) := by
-    have e : R ^ ((n : ℝ) + 1 + 2 * α) = R ^ (α : ℝ) * R ^ ((n : ℝ) + 1 + α) := by
-      rw [← Real.rpow_add hR]
-      ring_nf
-    have hb : R ^ ((n : ℝ) + 1 + α) ≠ 0 := by positivity
-    rw [e, Real.div_rpow hρ.le hR.le]
-    field_simp
+    rw [mul_left_comm, div_rpow_mul_rpow_eq hρ.le hR,
+      show (n : ℝ) + 1 + 2 * α - ((n : ℝ) + 1 + α) = α by ring, mul_assoc]
   refine hdec.trans ?_
   calc C₄ * ((ρ / R) ^ ((n : ℝ) + 1 + α) * ‖W1p.gradient u‖ ^ 2 +
         oscConst n κ * 2 * (δ ^ 2 * C₁ + ω) * M ^ 2 * R ^ (α : ℝ) * ρ ^ ((n : ℝ) + 1 + α))
@@ -814,13 +666,15 @@ private theorem exists_norm_preciseRepresentative_gradient_le (hα : 0 < α) (h�
       ⨍ y in closedBall z t, ‖W1p.gradient u y - ⨍ w in closedBall z t, W1p.gradient u w‖ ≤
         ω' * (√C₂ * M * R ^ (θ : ℝ)) * t ^ (θ : ℝ) := fun t ht htR => by
     rw [hω']
-    refine setAverage_norm_gradient_sub_le u ht (by positivity)
-      ((ball_subset_ball htR).trans h.subset) ?_
+    refine setAverage_norm_sub_le_of_setIntegral_norm_sub_sq_le (Lp.memLp (W1p.gradient u))
+      ((ball_subset_ball htR).trans h.subset) ht (by positivity) ?_
+    rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one]
     refine (hcamp h hsmall hM1 hM2 t ht htR).trans_eq ?_
     rw [mul_pow, mul_pow, Real.sq_sqrt hC₂, hRθ, hθα]
     ring_nf
-  have hb := norm_preciseRepresentative_gradient_le hθ u hR h.subset hosc
-  rw [← hω'] at hb
+  have hb := norm_preciseRepresentative_le_of_setAverage_norm_sub_le (W1p.gradient u)
+    (NNReal.coe_pos.2 hθ) hR h.subset hosc
+  rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one, ← hω'] at hb
   -- `R^{-(n+1)/2-θ} ‖∇u‖ ≤ M R^θ`.
   have hgrad : R ^ (-(((n : ℝ) + 1) / 2 + θ)) * ‖W1p.gradient u‖ ≤ M * R ^ (θ : ℝ) := by
     calc R ^ (-(((n : ℝ) + 1) / 2 + θ)) * ‖W1p.gradient u‖
@@ -891,19 +745,26 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_bounded (hα1 : 
     have hF : 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
         (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t)) ≤
         2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 * t ^ ((n : ℝ) + 1 + 2 * α) := by
-      have hV := measureReal_ball_eq x ht
+      have hKaM : ((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2 ≤ (δ * c * M) ^ 2 :=
+        calc ((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2
+            = ((Ka : ℝ) / lam) ^ 2 * (R ^ (α : ℝ)) ^ 2 * (c * M) ^ 2 := by ring
+          _ ≤ δ ^ 2 * (c * M) ^ 2 := by gcongr
+          _ = _ := by ring
       calc 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
             (Ka ^ 2 * (∫ y in ball x t, ‖W1p.gradient u y‖ ^ 2) + KG ^ 2 * volume.real (ball x t))
           ≤ 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
             (Ka ^ 2 * ((c * M * R ^ (α : ℝ)) ^ 2 * volume.real (ball x t)) +
               KG ^ 2 * volume.real (ball x t)) := by gcongr
-        _ = 2 * ω * ((((Ka : ℝ) / lam) ^ 2 * (R ^ (α : ℝ)) ^ 2) * (c * M) ^ 2 +
-              ((KG : ℝ) / lam) ^ 2) * (t ^ (n + 1) * (t ^ (α : ℝ)) ^ 2) := by
-            rw [hV, ← hω]
-            field_simp
-        _ ≤ 2 * ω * (δ ^ 2 * (c * M) ^ 2 + M ^ 2) * (t ^ (n + 1) * (t ^ (α : ℝ)) ^ 2) := by
-            gcongr
-        _ = _ := by rw [← rpow_add_two_mul_eq ht]; ring
+        _ = 2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 *
+              ((Ka * (c * M * R ^ (α : ℝ))) ^ 2 * volume.real (ball x t)) +
+            2 * (t ^ (α : ℝ)) ^ 2 / lam ^ 2 * (KG ^ 2 * volume.real (ball x t)) := by ring
+        _ = 2 * ω * (((Ka : ℝ) * (c * M * R ^ (α : ℝ)) / lam) ^ 2 + ((KG : ℝ) / lam) ^ 2) *
+              t ^ ((n : ℝ) + 1 + 2 * α) := by
+            rw [two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht,
+              two_mul_rpow_sq_div_mul_measureReal_ball_eq x ht, ← hω]
+            ring
+        _ ≤ 2 * ω * ((δ * c * M) ^ 2 + M ^ 2) * t ^ ((n : ℝ) + 1 + 2 * α) := by gcongr
+        _ = _ := by ring
     refine hc.trans ?_
     rw [mul_add, ← mul_assoc]
     refine add_le_add le_rfl ?_
@@ -915,8 +776,7 @@ private theorem exists_setIntegral_norm_sub_setAverage_sq_le_of_bounded (hα1 : 
   have hdec := hit (by positivity) h.subset hstep ρ hρ hρR
   have hρR' : (ρ / R) ^ ((n : ℝ) + 1 + 2 * α) * (M ^ 2 * R ^ ((n : ℝ) + 1 + 2 * α)) =
       M ^ 2 * ρ ^ ((n : ℝ) + 1 + 2 * α) := by
-    rw [Real.div_rpow hρ.le hR.le]
-    field_simp
+    rw [mul_left_comm, div_rpow_mul_rpow_eq hρ.le hR, sub_self, Real.rpow_zero, one_mul]
   refine hdec.trans ?_
   calc C₄ * ((ρ / R) ^ ((n : ℝ) + 1 + 2 * α) * ‖W1p.gradient u‖ ^ 2 +
         oscConst n κ * 2 * ω * (δ ^ 2 * c ^ 2 + 1) * M ^ 2 * ρ ^ ((n : ℝ) + 1 + 2 * α))
@@ -992,13 +852,14 @@ private theorem exists_dist_preciseRepresentative_gradient_le_of_small (hα : 0 
       ⨍ w in closedBall z t, ‖W1p.gradient u w - ⨍ v in closedBall z t, W1p.gradient u v‖ ≤
         ω' * (√C₅ * M) * t ^ (α : ℝ) := fun z hz t ht htR => by
     rw [hω']
-    refine setAverage_norm_gradient_sub_le u ht (by positivity)
-      ((ball_subset_ball htR).trans (hFD z (hS z hz)).subset) ?_
+    refine setAverage_norm_sub_le_of_setIntegral_norm_sub_sq_le (Lp.memLp (W1p.gradient u))
+      ((ball_subset_ball htR).trans (hFD z (hS z hz)).subset) ht (by positivity) ?_
+    rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one]
     refine (hsharp (hFD z (hS z hz)) hsmall hM1 hM2 (hbd z hz) t ht htR).trans_eq ?_
     rw [mul_pow, Real.sq_sqrt hC₅]
-  have h := dist_preciseRepresentative_gradient_le hα u hR (by positivity)
-    (fun z hz => (hFD z (hS z hz)).subset) hosc hx hy
-  rw [← hω'] at h
+  have h := dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le (W1p.gradient u)
+    (NNReal.coe_pos.2 hα) hR (by positivity) (fun z hz => (hFD z (hS z hz)).subset) hosc hx hy
+  rw [finrank_euclideanSpace_fin, Nat.cast_add, Nat.cast_one, ← hω'] at h
   have hgrad : R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖ ≤ M := by
     calc R ^ (-(((n : ℝ) + 1) / 2 + α)) * ‖W1p.gradient u‖
         ≤ R ^ (-(((n : ℝ) + 1) / 2 + α)) * (M * R ^ (((n : ℝ) + 1) / 2 + α)) := by gcongr
@@ -1011,6 +872,43 @@ private theorem exists_dist_preciseRepresentative_gradient_le_of_small (hα : 0 
     _ = _ := by ring
 
 end Passes
+
+/-- **The choice of radius.** Let `α, δ, λ, R > 0` and `p = q / α`. Some `r > 0` with `2 r ≤ R`
+satisfies the smallness condition `K_a r^α ≤ δ λ` and `r^{-q} ≤ 2^q R^{-q} + δ^{-p} (K_a / λ)^p`. -/
+private theorem exists_mul_rpow_le_and_rpow_neg_le {α Ka : ℝ≥0} (hα : 0 < α) {δ lam R q p : ℝ}
+    (hδ : 0 < δ) (hlam : 0 < lam) (hR : 0 < R) (hp : q / α = p) :
+    ∃ r, 0 < r ∧ 2 * r ≤ R ∧ Ka * r ^ (α : ℝ) ≤ δ * lam ∧
+      r ^ (-q) ≤ 2 ^ q * R ^ (-q) + δ ^ (-p) * (Ka / lam) ^ p := by
+  have hα' : (0 : ℝ) < α := hα
+  have hR2 : (R / 2) ^ (-q) = 2 ^ q * R ^ (-q) := by
+    rw [Real.div_rpow hR.le zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
+  rcases eq_or_ne Ka 0 with hKa0 | hKa0
+  · refine ⟨R / 2, by positivity, by linarith,
+      by rw [hKa0, NNReal.coe_zero, zero_mul]; positivity, ?_⟩
+    rw [hR2]
+    exact le_add_of_nonneg_right (by positivity)
+  · have hKa : (0 : ℝ) < Ka := by positivity
+    obtain ⟨X, hX⟩ : ∃ X : ℝ, X = (δ * lam / Ka) ^ (α : ℝ)⁻¹ := ⟨_, rfl⟩
+    have hX0 : 0 < X := hX ▸ by positivity
+    have hXα : X ^ (α : ℝ) = δ * lam / Ka := by
+      rw [hX, Real.rpow_inv_rpow (by positivity) hα'.ne']
+    have hXq : X ^ (-q) = δ ^ (-p) * (Ka / lam) ^ p := by
+      rw [hX, ← Real.rpow_mul (by positivity), show (α : ℝ)⁻¹ * -q = -p by
+        rw [← hp]; field_simp, Real.rpow_neg (by positivity), ← Real.inv_rpow (by positivity),
+        inv_div, show (Ka : ℝ) / (δ * lam) = δ⁻¹ * (Ka / lam) by field_simp,
+        Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow hδ.le,
+        ← Real.rpow_neg hδ.le]
+    refine ⟨min (R / 2) X, lt_min (by positivity) hX0, by linarith [min_le_left (R / 2) X], ?_,
+      ?_⟩
+    · calc (Ka : ℝ) * min (R / 2) X ^ (α : ℝ) ≤ Ka * X ^ (α : ℝ) := by
+            gcongr
+            exact min_le_right _ _
+        _ = δ * lam := by rw [hXα]; field_simp
+    · rcases min_choice (R / 2) X with h | h <;> rw [h]
+      · rw [hR2]
+        exact le_add_of_nonneg_right (by positivity)
+      · rw [hXq]
+        exact le_add_of_nonneg_left (by positivity)
 
 /-- **Interior Hölder continuity of the gradient for `-div(a ∇u) = -div G`.** Let `0 < α < 1` and
 `κ ∈ ℝ`. There is a constant `C`, depending only on `n`, `α` and `κ`, such that the following
@@ -1049,7 +947,6 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
           S := by
   obtain ⟨δ, C, hδ, hC, hsmall⟩ :=
     exists_dist_preciseRepresentative_gradient_le_of_small hα hα1 κ (n := n)
-  have hα' : (0 : ℝ) < α := hα
   refine ⟨C * (2 ^ (((n : ℝ) + 1) / 2 + α) + δ ^ (-((((n : ℝ) + 1) / 2 + α) / α)) + 1),
     by positivity, ?_⟩
   intro Omega u a G lam Lam Ka KG S R hell hκ haK hGK hu hR hsub
@@ -1073,38 +970,7 @@ theorem exists_holderOnWith_preciseRepresentative_gradient {α : ℝ≥0} (hα :
       _ ≤ (KG / lam + r ^ (-q) * ‖W1p.gradient u‖) * r ^ q := by
           gcongr
           exact le_add_of_nonneg_left (by positivity)
-  -- A radius `r ≤ R / 2` with `K_a r^α ≤ δ λ` and `r^{-q} ≤ 2^q R^{-q} + δ^{-p} (K_a / λ)^p`.
-  obtain ⟨r, hr, hrR, hKa, hrq⟩ : ∃ r, 0 < r ∧ 2 * r ≤ R ∧ Ka * r ^ (α : ℝ) ≤ δ * lam ∧
-      r ^ (-q) ≤ 2 ^ q * R ^ (-q) + δ ^ (-p) * (Ka / lam) ^ p := by
-    have hR2 : (R / 2) ^ (-q) = 2 ^ q * R ^ (-q) := by
-      rw [Real.div_rpow hR.le zero_le_two, Real.rpow_neg zero_le_two, div_inv_eq_mul, mul_comm]
-    rcases eq_or_ne Ka 0 with hKa0 | hKa0
-    · refine ⟨R / 2, by positivity, by linarith,
-        by rw [hKa0, NNReal.coe_zero, zero_mul]; positivity, ?_⟩
-      rw [hR2]
-      exact le_add_of_nonneg_right (by positivity)
-    · have hKa : (0 : ℝ) < Ka := by positivity
-      obtain ⟨X, hX⟩ : ∃ X : ℝ, X = (δ * lam / Ka) ^ (α : ℝ)⁻¹ := ⟨_, rfl⟩
-      have hX0 : 0 < X := hX ▸ by positivity
-      have hXα : X ^ (α : ℝ) = δ * lam / Ka := by
-        rw [hX, Real.rpow_inv_rpow (by positivity) hα'.ne']
-      have hXq : X ^ (-q) = δ ^ (-p) * (Ka / lam) ^ p := by
-        rw [hX, ← Real.rpow_mul (by positivity), show (α : ℝ)⁻¹ * -q = -p by
-          rw [← hp]; field_simp, Real.rpow_neg (by positivity), ← Real.inv_rpow (by positivity),
-          inv_div, show (Ka : ℝ) / (δ * lam) = δ⁻¹ * (Ka / lam) by field_simp,
-          Real.mul_rpow (by positivity) (by positivity), Real.inv_rpow hδ.le,
-          ← Real.rpow_neg hδ.le]
-      refine ⟨min (R / 2) X, lt_min (by positivity) hX0, by linarith [min_le_left (R / 2) X], ?_,
-        ?_⟩
-      · calc (Ka : ℝ) * min (R / 2) X ^ (α : ℝ) ≤ Ka * X ^ (α : ℝ) := by
-              gcongr
-              exact min_le_right _ _
-          _ = δ * lam := by rw [hXα]; field_simp
-      · rcases min_choice (R / 2) X with h | h <;> rw [h]
-        · rw [hR2]
-          exact le_add_of_nonneg_right (by positivity)
-        · rw [hXq]
-          exact le_add_of_nonneg_left (by positivity)
+  obtain ⟨r, hr, hrR, hKa, hrq⟩ := exists_mul_rpow_le_and_rpow_neg_le (Ka := Ka) hα hδ hlam hR hp
   refine HolderOnWith.of_dist_le fun x hx y hy => (key r hr hrR hKa x hx y hy).trans ?_
   refine (mul_le_mul_of_nonneg_right ?_ (by positivity)).trans
     (mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity))

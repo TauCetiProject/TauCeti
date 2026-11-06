@@ -6,10 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+public import Mathlib.MeasureTheory.Function.LpSpace.Basic
 public import TauCeti.MeasureTheory.Function.PreciseRepresentative
 import Mathlib.Analysis.Convex.Integral
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Integral.Average
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -49,6 +52,9 @@ All declarations are in the `TauCeti.MeasureTheory` namespace.
 * `norm_setAverage_closedBall_sub_preciseRepresentative_le`: the rate of that convergence.
 * `dist_preciseRepresentative_le_of_setAverage_norm_sub_le`: the local Hölder estimate between
   two points, from mean oscillation bounds on balls of radius comparable to their distance.
+* `dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le`: the Hölder estimate on a set
+  `S` for `f ∈ L²(s)`, from mean oscillation bounds on balls of radius at most `R` centred in `S`,
+  with an extra term `R^{-n/2-α} ‖f‖_{L²(s)}` for distant points.
 * `holderWith_preciseRepresentative_of_setAverage_norm_sub_le`: **Campanato's theorem** on the
   whole space.
 * `exists_holderWith_ae_eq_iff_forall_setAverage_norm_sub_le`: a locally integrable function
@@ -343,6 +349,141 @@ theorem exists_holderWith_ae_eq_iff_forall_setAverage_norm_sub_le {α : ℝ≥0}
   · rintro ⟨M, hM⟩
     exact ⟨_, _, holderWith_preciseRepresentative_of_setAverage_norm_sub_le hα hf hM,
       ae_eq_preciseRepresentative hf⟩
+
+omit [CompleteSpace F] in
+/-- **Mean oscillation from square mean oscillation.** Let `f ∈ L²(s)` with `ball x t ⊆ s` and
+`t > 0`. If `∫_{ball x t} ‖f - f_{ball x t}‖² ≤ M² t^{n+2α}`, where `n` is the dimension and
+`M ≥ 0`, then the mean oscillation of `f` on `closedBall x t` is at most `ω^{-1/2} M t^α`, where
+`ω` is the measure of the unit ball. -/
+theorem setAverage_norm_sub_le_of_setIntegral_norm_sub_sq_le {s : Set E} {t : ℝ}
+    (hf : MemLp f 2 (μ.restrict s)) (hball : ball x t ⊆ s) (ht : 0 < t) (hM : 0 ≤ M)
+    (hosc : ∫ y in ball x t, ‖f y - ⨍ z in ball x t, f z ∂μ‖ ^ 2 ∂μ ≤
+      M ^ 2 * t ^ ((finrank ℝ E : ℝ) + 2 * α)) :
+    ⨍ y in closedBall x t, ‖f y - ⨍ z in closedBall x t, f z ∂μ‖ ∂μ ≤
+      (√(μ.real (ball (0 : E) 1)))⁻¹ * M * t ^ α := by
+  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ _ one_pos
+  -- The averages over `closedBall x t` and `ball x t` agree.
+  rw [Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x t ht.ne')]
+  -- Jensen's inequality bounds the mean oscillation by the square mean oscillation.
+  have hJ : (⨍ y in ball x t, ‖f y - ⨍ z in ball x t, f z ∂μ‖ ∂μ) ^ 2 ≤
+      (∫ y in ball x t, ‖f y - ⨍ z in ball x t, f z ∂μ‖ ^ 2 ∂μ) / μ.real (ball x t) := by
+    rw [div_eq_inv_mul, ← smul_eq_mul, ← setAverage_eq]
+    exact sq_setAverage_norm_le_setAverage_norm_sq (measure_ball_pos μ x ht).ne'
+      measure_ball_lt_top.ne ((hf.integrableOn_of_subset one_le_two hball
+        measure_ball_lt_top.ne).sub (integrableOn_const measure_ball_lt_top.ne))
+      (hf.integrableOn_norm_sub_sq_of_subset hball measure_ball_lt_top.ne _)
+  rw [← pow_le_pow_iff_left₀ (average_nonneg fun _ ↦ norm_nonneg _) (by positivity) two_ne_zero]
+  refine hJ.trans ?_
+  rw [μ.addHaar_real_ball_of_pos x ht, div_le_iff₀ (by positivity)]
+  refine hosc.trans_eq ?_
+  rw [Real.rpow_add ht, Real.rpow_natCast, mul_comm 2 α, Real.rpow_mul ht.le, Real.rpow_two,
+    mul_pow, mul_pow, inv_pow, Real.sq_sqrt hω.le]
+  field_simp
+
+/-- **A bound on the precise representative.** Let `α > 0`, `R > 0` and `f ∈ L²(s)` with
+`ball x R ⊆ s`. If the mean oscillation of `f` on `closedBall x t` is at most `M t^α` for
+`0 < t ≤ R`, then
+`‖f*(x)‖ ≤ (2ⁿ / (1 - 2^(-α)) · M + ω^{-1/2} R^{-n/2-α} ‖f‖_{L²(s)}) R^α`, where `f*` is the
+precise representative, `n` is the dimension and `ω` is the measure of the unit ball. -/
+theorem norm_preciseRepresentative_le_of_setAverage_norm_sub_le {s : Set E}
+    (f : Lp F 2 (μ.restrict s)) (hα : 0 < α) {R : ℝ} (hR : 0 < R) (hball : ball x R ⊆ s)
+    (hosc : ∀ t, 0 < t → t ≤ R →
+      ⨍ y in closedBall x t, ‖f y - ⨍ z in closedBall x t, f z ∂μ‖ ∂μ ≤ M * t ^ α) :
+    ‖preciseRepresentative μ (f : E → F) x‖ ≤
+      (2 ^ finrank ℝ E / (1 - 2 ^ (-α)) * M +
+        (√(μ.real (ball (0 : E) 1)))⁻¹ * (R ^ (-((finrank ℝ E : ℝ) / 2 + α)) * ‖f‖)) *
+        R ^ α := by
+  have hint : IntegrableOn f (closedBall x R) μ :=
+    ((Lp.memLp f).integrableOn_of_subset one_le_two hball measure_ball_lt_top.ne).congr_set_ae
+      (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x R hR.ne')
+  have hω : 0 < μ.real (ball (0 : E) 1) := measureReal_ball_pos μ _ one_pos
+  -- Compare the precise representative with the average over `closedBall x R`.
+  have h1 := norm_setAverage_closedBall_sub_preciseRepresentative_le hα hint hosc hR le_rfl
+  -- Hölder's bound `‖⨍_B f‖ ≤ |B|^{-1/2} ‖f‖_{L²(B)}` on the average, with
+  -- `‖f‖_{L²(B)} ≤ ‖f‖_{L²(s)}`.
+  have h2 : ‖⨍ y in closedBall x R, f y ∂μ‖ ≤
+      (√(μ.real (ball (0 : E) 1)))⁻¹ * (R ^ (-(finrank ℝ E : ℝ) / 2) * ‖f‖) := by
+    rw [Measure.restrict_congr_set (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x R hR.ne')]
+    have h := (enorm_setAverage_le (f := f) (mu := μ) (p := 2) one_le_two
+      ENNReal.ofNat_ne_top).trans
+      (mul_le_mul' le_rfl (eLpNorm_mono_measure _ (Measure.restrict_mono hball le_rfl)))
+    replace h := ENNReal.toReal_mono (ENNReal.mul_ne_top (ENNReal.rpow_ne_top_of_ne_zero
+      (measure_ball_pos μ x hR).ne' measure_ball_lt_top.ne) (Lp.eLpNorm_ne_top _)) h
+    rw [toReal_enorm, ENNReal.toReal_mul, ← Lp.norm_def, ← ENNReal.toReal_rpow,
+      ← measureReal_def, μ.addHaar_real_ball_of_pos x hR] at h
+    refine h.trans_eq ?_
+    rw [ENNReal.toReal_ofNat, Real.mul_rpow (by positivity) hω.le, ← Real.rpow_natCast,
+      ← Real.rpow_mul hR.le, Real.sqrt_eq_rpow, ← Real.rpow_neg hω.le]
+    ring_nf
+  have haR : R ^ (-(finrank ℝ E : ℝ) / 2) * ‖f‖ =
+      R ^ (-((finrank ℝ E : ℝ) / 2 + α)) * ‖f‖ * R ^ α := by
+    rw [mul_right_comm, ← Real.rpow_add hR]
+    congr 2
+    ring
+  rw [haR] at h2
+  have h3 := norm_sub_le (⨍ y in closedBall x R, f y ∂μ)
+    ((⨍ y in closedBall x R, f y ∂μ) - preciseRepresentative μ f x)
+  rw [sub_sub_cancel] at h3
+  calc _ ≤ _ := h3
+    _ ≤ _ := add_le_add h2 h1
+    _ = _ := by ring
+
+/-- **Campanato's estimate on a set.** Let `α > 0`, `R > 0`, `M ≥ 0` and `f ∈ L²(s)`. If
+`ball z R ⊆ s` and the mean oscillation of `f` on `closedBall z t` is at most `M t^α` for every
+`z ∈ S` and `0 < t ≤ R`, then the precise representative of `f` satisfies
+`‖f*(x) - f*(y)‖ ≤ c (M + R^{-n/2-α} ‖f‖_{L²(s)}) dist x y ^ α` for `x, y ∈ S`, where `n` is the
+dimension and `c = 2 · 2^α (2ⁿ / (1 - 2^(-α)) + ω^{-1/2})`, with `ω` the measure of the unit
+ball. -/
+theorem dist_preciseRepresentative_le_of_forall_setAverage_norm_sub_le {s S : Set E}
+    (f : Lp F 2 (μ.restrict s)) (hα : 0 < α) {R : ℝ} (hR : 0 < R) (hM : 0 ≤ M)
+    (hball : ∀ z ∈ S, ball z R ⊆ s)
+    (hosc : ∀ z ∈ S, ∀ t, 0 < t → t ≤ R →
+      ⨍ y in closedBall z t, ‖f y - ⨍ w in closedBall z t, f w ∂μ‖ ∂μ ≤ M * t ^ α)
+    {y : E} (hx : x ∈ S) (hy : y ∈ S) :
+    dist (preciseRepresentative μ (f : E → F) x) (preciseRepresentative μ (f : E → F) y) ≤
+      2 * 2 ^ α * (2 ^ finrank ℝ E / (1 - 2 ^ (-α)) + (√(μ.real (ball (0 : E) 1)))⁻¹) *
+        (M + R ^ (-((finrank ℝ E : ℝ) / 2 + α)) * ‖f‖) * dist x y ^ α := by
+  obtain ⟨cα, hcαdef⟩ : ∃ cα : ℝ, cα = 2 ^ finrank ℝ E / (1 - 2 ^ (-α)) := ⟨_, rfl⟩
+  have hcα0 : 0 ≤ cα := hcαdef ▸ div_nonneg (by positivity) (one_sub_two_rpow_neg_pos hα).le
+  obtain ⟨ω', hω'⟩ : ∃ ω', ω' = (√(μ.real (ball (0 : E) 1)))⁻¹ := ⟨_, rfl⟩
+  have hω'0 : 0 ≤ ω' := hω' ▸ by positivity
+  obtain ⟨a, ha⟩ : ∃ a, a = R ^ (-((finrank ℝ E : ℝ) / 2 + α)) * ‖f‖ := ⟨_, rfl⟩
+  have ha0 : 0 ≤ a := ha ▸ by positivity
+  rw [← hcαdef, ← hω', ← ha]
+  have hd0 : 0 ≤ dist x y ^ α := by positivity
+  rcases le_or_gt (2 * dist x y) R with hd | hd
+  · -- Nearby points: the local Campanato estimate.
+    have hint : IntegrableOn f (closedBall x (2 * dist x y)) μ := by
+      rcases hd.lt_or_eq with hd | hd
+      · exact (Lp.memLp f).integrableOn_of_subset one_le_two
+          ((closedBall_subset_ball hd).trans (hball x hx)) measure_closedBall_lt_top.ne
+      · rw [hd]
+        exact ((Lp.memLp f).integrableOn_of_subset one_le_two (hball x hx)
+          measure_ball_lt_top.ne).congr_set_ae
+          (μ.addHaar_closedBall_ae_eq_ball_of_ne_zero x R hR.ne')
+    have h := dist_preciseRepresentative_le_of_setAverage_norm_sub_le hα hint
+      (fun r hr hr' ↦ hosc x hx r hr (hr'.trans hd))
+      (fun r hr hr' ↦ hosc y hy r hr (by linarith [dist_nonneg (x := x) (y := y)]))
+    rw [← hcαdef] at h
+    refine h.trans ?_
+    have : 0 ≤ 2 * 2 ^ α * (ω' * M + (cα + ω') * a) * dist x y ^ α := by positivity
+    nlinarith
+  · -- Distant points: both values are controlled by averages over balls of radius `R`.
+    have hbound : ∀ z ∈ S, ‖preciseRepresentative μ (f : E → F) z‖ ≤
+        (cα + ω') * (M + a) * R ^ α := fun z hz ↦ by
+      refine (norm_preciseRepresentative_le_of_setAverage_norm_sub_le f hα hR (hball z hz)
+        (hosc z hz)).trans ?_
+      rw [← hcαdef, ← hω', ← ha]
+      refine mul_le_mul_of_nonneg_right ?_ (by positivity)
+      nlinarith [mul_nonneg hω'0 hM, mul_nonneg hcα0 ha0]
+    have hRd : R ^ α ≤ 2 ^ α * dist x y ^ α := by
+      rw [← Real.mul_rpow zero_le_two dist_nonneg]
+      exact Real.rpow_le_rpow hR.le hd.le hα.le
+    have hsum := dist_le_norm_add_norm (preciseRepresentative μ (f : E → F) x)
+      (preciseRepresentative μ (f : E → F) y)
+    have hc : 0 ≤ (cα + ω') * (M + a) := by positivity
+    have := mul_le_mul_of_nonneg_left hRd hc
+    nlinarith [hbound x hx, hbound y hy]
 
 end MeasureTheory
 
