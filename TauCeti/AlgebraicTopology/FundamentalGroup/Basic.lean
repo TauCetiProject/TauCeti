@@ -54,6 +54,8 @@ drafts [#31449](https://github.com/leanprover-community/mathlib4/pull/31449),
   induced-map range contained in any target subgroup.
 * `TauCeti.FundamentalGroup.mapOfEq_range_eq_bot_of_subsingleton`: the same triviality for the
   basepoint-transported induced map `FundamentalGroup.mapOfEq`.
+* `TauCeti.simplyConnectedSpace_of_subsingleton_fundamentalGroup`: a path-connected space whose
+  fundamental group at one basepoint is trivial is simply connected.
 -/
 
 public section
@@ -268,5 +270,16 @@ theorem FundamentalGroup.map_range_le_of_simplyConnectedSpace [SimplyConnectedSp
     (f : C(A, X)) (a₀ : A) (H : Subgroup (_root_.FundamentalGroup X (f a₀))) :
     (_root_.FundamentalGroup.map f a₀).range ≤ H :=
   FundamentalGroup.map_range_le_of_subsingleton f H
+
+/-- **A path-connected space with a trivial fundamental group is simply connected.** It suffices
+that the fundamental group at a single basepoint is trivial. -/
+theorem simplyConnectedSpace_of_subsingleton_fundamentalGroup [PathConnectedSpace X] (x : X)
+    [Subsingleton (_root_.FundamentalGroup X x)] : SimplyConnectedSpace X := by
+  refine simply_connected_iff_loops_nullhomotopic.2 ⟨‹_›, fun y γ ↦ ?_⟩
+  have : Subsingleton (_root_.FundamentalGroup X y) :=
+    (_root_.FundamentalGroup.fundamentalGroupMulEquivOfPath
+      (PathConnectedSpace.somePath x y)).symm.injective.subsingleton
+  simpa using (FundamentalGroup.map_range_eq_bot_iff (ContinuousMap.id X) y).1
+    (FundamentalGroup.map_range_eq_bot_of_subsingleton _) γ
 
 end TauCeti

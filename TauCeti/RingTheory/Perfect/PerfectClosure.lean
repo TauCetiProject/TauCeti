@@ -9,7 +9,9 @@ public import Mathlib.FieldTheory.IsPerfectClosure
 public import Mathlib.RingTheory.Flat.EquationalCriterion
 public import Mathlib.RingTheory.MvPolynomial.Basic
 public import Mathlib.RingTheory.RingHom.Flat
+import TauCeti.Algebra.CharP.Frobenius.Flat
 import TauCeti.RingTheory.Perfect.Basic
+import TauCeti.RingTheory.RingHom.Flat
 
 /-!
 # Perfect closures of flat algebras over a perfect ring
@@ -25,12 +27,20 @@ surjection onto `B` whose kernel is radical. Together these reduce statements ab
 of perfect rings, such as the vanishing of `Tor_i^A(B, C)` for perfect `A`-algebras `B` and `C`
 and `i > 0`, to quotients of perfect rings by radical ideals.
 
+Over a base which is not perfect, flatness of Frobenius takes the place of perfectness: if the
+Frobenius endomorphism of `K` is flat, then every perfect closure `K → L` is flat. For instance
+the perfection of a regular ring of characteristic `p` is flat over it, by Kunz's theorem.
+
 ## Main results
 
 * `IsPRadical.pow_mem_of_finite`: finitely many elements of a `p`-radical extension have
   `p ^ n`-th powers in the base for a common exponent `n`.
 * `Module.Flat.of_isPerfectClosure`: a perfect closure of a flat algebra over a perfect ring is
   flat.
+* `IsPerfectClosure.injective_of_flat_frobenius`: a perfect closure of a ring with flat
+  Frobenius is injective.
+* `RingHom.Flat.of_isPerfectClosure`: a perfect closure of a ring with flat Frobenius is flat
+  over it.
 * `RingHom.Flat.perfectClosureOf_comp`: the colimit perfection of a flat algebra over a perfect
   ring is flat.
 * `TauCeti.flat_perfectClosureOf_comp_C`: the perfect polynomial algebra
@@ -116,6 +126,55 @@ theorem of_isPerfectClosure [Module.Flat A K] : Module.Flat A L := by
     exact ha i
 
 end Module.Flat
+
+section FlatFrobenius
+
+variable {K L : Type*} [CommRing K] [CommRing L] (i : K →+* L) (p : ℕ) [ExpChar K p]
+  [ExpChar L p] [PerfectRing L p] [IsPerfectClosure i p]
+
+/-- A perfect closure of a ring with flat Frobenius is injective: its kernel is the
+`p`-nilradical, which vanishes because flat Frobenius is injective. -/
+theorem IsPerfectClosure.injective_of_flat_frobenius (hF : (frobenius K p).Flat) :
+    Function.Injective i :=
+  (RingHom.injective_iff_ker_eq_bot _).2 <| by
+    rw [IsPerfectClosure.ker_eq i p,
+      pNilradical_eq_bot_of_frobenius_inj K p (TauCeti.injective_frobenius_of_flat p hF)]
+
+/-- A perfect closure of a ring with flat Frobenius is flat: if `K` has exponential characteristic
+`p` and its Frobenius endomorphism is flat, then every perfect closure `i : K →+* L` is flat. -/
+theorem RingHom.Flat.of_isPerfectClosure (hF : (frobenius K p).Flat) : i.Flat := by
+  -- We use the equational criterion for flatness. A relation `∑ fⱼ zⱼ = 0` in `L` becomes, after
+  -- raising it to a power `p ^ N`, a relation `∑ fⱼ ^ p ^ N yⱼ = 0` in `K`, that is, a relation
+  -- for the `N`-th iterate of Frobenius. That iterate is flat, so the relation is trivial, and
+  -- the `p ^ N`-th roots in `L` of the elements of that trivialization trivialize the original
+  -- relation; the coefficients stay in `K`.
+  algebraize [i]
+  refine Module.Flat.of_forall_isTrivialRelation fun {l f z} hfz ↦ ?_
+  simp only [Algebra.smul_def, RingHom.algebraMap_toAlgebra] at hfz
+  obtain ⟨n, y, hy⟩ := IsPRadical.pow_mem_of_finite i p z
+  -- The `p ^ n`-th power of the relation is the image of `∑ fⱼ ^ p ^ n yⱼ`, which is therefore
+  -- `p`-nilpotent.
+  have hker : ∑ j, f j ^ p ^ n * y j ∈ pNilradical K p := by
+    refine IsPRadical.ker_le i p ?_
+    rw [RingHom.mem_ker, map_sum]
+    simp only [map_mul, map_pow, hy, ← mul_pow, ← sum_pow_char_pow, hfz,
+      zero_pow (expChar_pow_pos L p n).ne']
+  obtain ⟨k, hk⟩ := mem_pNilradical.1 hker
+  have hrel : ∑ j, iterateFrobenius K p (n + k) (f j) * y j ^ p ^ k = 0 := by
+    rw [← hk, sum_pow_char_pow]
+    simp_rw [iterateFrobenius_def, mul_pow, ← pow_mul, ← pow_add]
+  obtain ⟨m, a, w, hyw, ha⟩ :=
+    (TauCeti.flat_iterateFrobenius p hF (n + k)).exists_eq_sum_mul_of_sum_mul_eq_zero hrel
+  have hL (x : L) : (iterateFrobeniusEquiv L p (n + k)).symm x ^ p ^ (n + k) = x := by
+    rw [← iterateFrobeniusEquiv_def, RingEquiv.apply_symm_apply]
+  refine ⟨m, a, fun i' ↦ (iterateFrobeniusEquiv L p (n + k)).symm (i (w i')), fun j ↦ ?_, ha⟩
+  simp only [Algebra.smul_def, RingHom.algebraMap_toAlgebra]
+  apply (iterateFrobeniusEquiv L p (n + k)).injective
+  simp_rw [iterateFrobeniusEquiv_def, sum_pow_char_pow, mul_pow, hL, ← map_pow, ← map_mul,
+    ← map_sum, pow_add, pow_mul, ← hy, ← map_pow, hyw, iterateFrobenius_def]
+  simp only [← pow_mul, ← pow_add]
+
+end FlatFrobenius
 
 section PerfectClosure
 

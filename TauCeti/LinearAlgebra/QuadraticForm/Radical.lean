@@ -91,6 +91,8 @@ regular case.
 * `QuadraticMap.radical_zero_prod`: the radical of the orthogonal sum of a zero form with `Q`.
 * `QuadraticMap.radical_lift_radical`, `QuadraticMap.nondegenerate_lift_radical`: the regular
   part has trivial radical, so it is nondegenerate when `2` is invertible.
+* `QuadraticMap.radical_lift`: on the quotient by a submodule of the radical, the radical is the
+  image of the radical.
 * `QuadraticMap.Equivalent.lift_radical`: isometric maps have isometric regular parts.
 * `QuadraticMap.equivalent_lift_radical_of_equivalent_zero_prod`,
   `QuadraticMap.nonempty_linearEquiv_radical_of_equivalent_zero_prod`: in any splitting
@@ -224,16 +226,29 @@ theorem nondegenerate_restrict_of_isCompl_radical [Invertible (2 : R)]
     (LinearMap.BilinForm.isSymm_iff.mp Q.isSymm_polarBilin)
   simpa only [← radical_eq_ker_polarBilin] using hC.symm
 
+/-- The radical of the quadratic map induced on the quotient by a submodule `N` of the radical is
+the image of the radical. -/
+theorem radical_lift (Q : QuadraticMap R M P) {N : Submodule R M} (hN : N ≤ Q.radical) :
+    (Q.lift N hN).radical = Q.radical.map N.mkQ := by
+  ext x
+  induction x using Submodule.Quotient.induction_on with
+  | H m =>
+    refine ⟨fun hx => ⟨m, ?_, rfl⟩, ?_⟩
+    · obtain ⟨h0, hadd⟩ := mem_radical_iff'.mp hx
+      exact mem_radical_iff'.mpr ⟨h0, fun n => by
+        simpa only [← Submodule.Quotient.mk_add, lift_mk] using hadd (Submodule.Quotient.mk n)⟩
+    · rintro ⟨m', hm', hmm'⟩
+      rw [← hmm']
+      obtain ⟨h0, hadd⟩ := mem_radical_iff'.mp hm'
+      refine mem_radical_iff'.mpr ⟨h0, fun n => ?_⟩
+      induction n using Submodule.Quotient.induction_on with
+      | H n => simpa only [Submodule.mkQ_apply, ← Submodule.Quotient.mk_add, lift_mk] using hadd n
+
 /-- The quadratic map that `Q` induces on the quotient by its radical has trivial radical. -/
 @[simp]
 theorem radical_lift_radical (Q : QuadraticMap R M P) :
     (Q.lift Q.radical le_rfl).radical = ⊥ := by
-  refine (Submodule.eq_bot_iff _).mpr fun x hx => ?_
-  induction x using Submodule.Quotient.induction_on with
-  | H m =>
-    obtain ⟨h0, hadd⟩ := mem_radical_iff'.mp hx
-    refine (Submodule.Quotient.mk_eq_zero _).mpr (mem_radical_iff'.mpr ⟨h0, fun n => ?_⟩)
-    simpa only [← Submodule.Quotient.mk_add, lift_mk] using hadd (Submodule.Quotient.mk n)
+  rw [radical_lift, Submodule.mkQ_map_self]
 
 /-- **The quotient by the radical is nondegenerate.** When two is invertible, the form induced
 on `M ⧸ Q.radical` has no radical: a class orthogonal to every class is represented by a vector

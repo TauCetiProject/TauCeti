@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.ThricePuncturedSphere.EndCoordinate
 public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 import Mathlib.Geometry.Manifold.Algebra.SMul
+import Mathlib.Geometry.Manifold.ContMDiff.Constructions
 
 /-!
 # Hamiltonian perturbation data on the pair of pants
@@ -26,6 +27,8 @@ ends. Its value at `w` is a real covector on `ℂ`, so the `ds` and `dt` compone
 along an end lift `φ` are its values on `φ'(z)` and `φ'(z) i`. The results are:
 
 * `TauCeti.Floer.contMDiffAt_pairOfPantsPerturbation`: the perturbation is smooth on `S × M`.
+* `TauCeti.Floer.contDiffAt_pairOfPantsPerturbation_prod`: for a vector space target and `Cⁿ`
+  Hamiltonians, the perturbation is `Cⁿ` jointly in the domain and target points.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift_of_pos`: on the part `±s > 0` of the
   end `q` its pullback is the continuation datum `β(±s - 1) H_q(t) dt`.
 * `TauCeti.Floer.pairOfPantsPerturbation_cylindricalEndLift`: on the part `±s ≥ 2` of the end `q`
@@ -110,6 +113,15 @@ theorem pairOfPantsPerturbation_eq_zero_of_forall_le {w : ℂ}
   rw [pairOfPantsPerturbation_def]
   refine Finset.sum_eq_zero fun q _ => ?_
   rw [smoothTransition.zero_of_nonpos (by linarith [h q]), zero_mul, zero_smul]
+
+/-- The perturbation vanishes at the center of every end. The centers are the punctures `0` and
+`1`, where every signed longitudinal coordinate is at most `0`. -/
+theorem pairOfPantsPerturbation_endCenter (q : Puncture) (x : M) :
+    pairOfPantsPerturbation H q.endCenter x = 0 := by
+  refine pairOfPantsPerturbation_eq_zero_of_forall_le (fun r => ?_) x
+  have h : 0 ≤ Real.log 2 / (2 * π) := by have := Real.log_nonneg one_le_two; positivity
+  have hπ := Real.pi_pos
+  cases q <;> cases r <;> simp [re_endCoord, neg_div] <;> linarith
 
 /-- On the part `±s > 0` of the end `q`, the cutoff of every other end `r` vanishes, since the
 parts `±s > 0` of distinct ends are disjoint. -/
@@ -255,5 +267,23 @@ theorem contMDiffAt_pairOfPantsPerturbation {n : ℕ∞} (hH : ∀ q, Function.P
       (q.contDiffAt_endAngularForm hw).contMDiffAt contMDiffAt_fst
   exact ((contMDiffAt_smoothTransition_endCoord q hw x).smul
     (q.contMDiffAt_comp_im_endCoord (hH q) (hHs q) hw x)).smul hf
+
+/-- The perturbation is `Cⁿ` jointly in the domain point of `S` and the target point, for
+`Cⁿ` Hamiltonians. -/
+theorem contDiffAt_pairOfPantsPerturbation_prod {V : Type*} [NormedAddCommGroup V]
+    [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ} {n : ℕ∞} (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContDiff ℝ n (Function.uncurry (H q))) {w : ℂ} (hw : w ≠ 0 ∧ w ≠ 1) (x : V) :
+    ContDiffAt ℝ n (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) n
+      (Function.uncurry (H q)) := fun q => by
+    have h := (hHs q).contMDiff
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
+    exact h
+  have h := contMDiffAt_pairOfPantsPerturbation (n := n) hH hHs' ⟨w, hw⟩ x
+  have h' : ContMDiffAt 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) n
+      (fun p : ℂ × V => pairOfPantsPerturbation H p.1 p.2) (w, x) := by
+    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
+    exact h
+  exact h'.contDiffAt
 
 end TauCeti.Floer

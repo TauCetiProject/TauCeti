@@ -57,6 +57,8 @@ of positive (negative) square has at most as many members as the positive (negat
   index of inertia.
 * `QuadraticForm.sigNeg_lift_radical`: quotienting by the radical preserves the negative
   index of inertia.
+* `QuadraticForm.sigPos_lift` and `QuadraticForm.sigNeg_lift`: more generally, quotienting by any
+  subspace of the radical preserves both indices of inertia.
 * `QuadraticForm.sigPos_prod` and `QuadraticForm.sigNeg_prod`: the indices of
   inertia are additive under orthogonal products.
 * `QuadraticForm.posDef_iff_sigNeg_eq_zero_and_radical_eq_bot`: positive-definiteness
@@ -329,30 +331,41 @@ theorem sigPos_lift_radical (Q : _root_.QuadraticForm K M) :
     (forall_nonpos_iff_sigPos_eq_zero (0 : _root_.QuadraticForm K Q.radical)).mp fun _ => le_rfl,
     zero_add]
 
-/-- Lifting by a subspace known to be the radical preserves the positive index of inertia. -/
-theorem sigPos_lift_of_eq_radical (Q : _root_.QuadraticForm K M) (N : Subspace K M)
-    (hN : N = Q.radical) : sigPos (Q.lift N hN.le) = sigPos Q := by
-  subst N
-  simpa using sigPos_lift_radical Q
+/-- Quotienting a quadratic form by a subspace of its radical preserves its positive index of
+inertia. -/
+theorem sigPos_lift (Q : _root_.QuadraticForm K M) (N : Subspace K M) (hN : N ≤ Q.radical) :
+    sigPos (Q.lift N hN) = sigPos Q := by
+  -- Quotienting `Q.lift N hN` by its radical `Q.radical.map N.mkQ` recovers `Q.lift Q.radical`.
+  have hR := QuadraticMap.radical_lift Q hN
+  have hlift : ∀ (R : Subspace K (M ⧸ N)) (hR : R = (Q.lift N hN).radical),
+      sigPos ((Q.lift N hN).lift R hR.le) = sigPos (Q.lift N hN) := by
+    rintro _ rfl
+    exact sigPos_lift_radical _
+  have hequiv : ((Q.lift N hN).lift (Q.radical.map N.mkQ) hR.ge).Equivalent
+      (Q.lift Q.radical le_rfl) :=
+    ⟨{ Submodule.quotientQuotientEquivQuotient N Q.radical hN with
+      map_app' := fun x => by
+        induction x using Submodule.Quotient.induction_on with
+        | H x =>
+          induction x using Submodule.Quotient.induction_on with
+          | H x => rfl }⟩
+  rw [← hlift _ hR.symm, hequiv.sigPos_eq, sigPos_lift_radical]
 
-/-- Quotienting a quadratic form by its radical preserves its negative index of inertia. -/
-theorem sigNeg_lift_radical (Q : _root_.QuadraticForm K M) :
-    sigNeg (Q.lift Q.radical le_rfl) = sigNeg Q := by
-  have hlift : (-Q).lift Q.radical (radical_neg Q).symm.le =
-      -(Q.lift Q.radical le_rfl) := by
+/-- Quotienting a quadratic form by a subspace of its radical preserves its negative index of
+inertia. -/
+theorem sigNeg_lift (Q : _root_.QuadraticForm K M) (N : Subspace K M) (hN : N ≤ Q.radical) :
+    sigNeg (Q.lift N hN) = sigNeg Q := by
+  have hlift : (-Q).lift N ((radical_neg Q).symm ▸ hN) = -(Q.lift N hN) := by
     ext x
     induction x using Submodule.Quotient.induction_on with
     | _ x =>
       simp only [QuadraticMap.lift_mk, neg_apply]
-  rw [← sigPos_neg, ← hlift,
-    sigPos_lift_of_eq_radical (-Q) Q.radical (radical_neg Q).symm,
-    sigPos_neg]
+  rw [← sigPos_neg, ← hlift, sigPos_lift, sigPos_neg]
 
-/-- Lifting by a subspace known to be the radical preserves the negative index of inertia. -/
-theorem sigNeg_lift_of_eq_radical (Q : _root_.QuadraticForm K M) (N : Subspace K M)
-    (hN : N = Q.radical) : sigNeg (Q.lift N hN.le) = sigNeg Q := by
-  subst N
-  simpa using sigNeg_lift_radical Q
+/-- Quotienting a quadratic form by its radical preserves its negative index of inertia. -/
+theorem sigNeg_lift_radical (Q : _root_.QuadraticForm K M) :
+    sigNeg (Q.lift Q.radical le_rfl) = sigNeg Q :=
+  sigNeg_lift Q Q.radical le_rfl
 
 /-- A quadratic form is positive-definite exactly when its negative index vanishes and its
 radical is trivial. -/

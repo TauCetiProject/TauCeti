@@ -43,6 +43,10 @@ for set and probability integrals.
   function's integral by the integral of its pointwise positive part.
 * `lintegral_ofReal_eq_one` gives a probability density (almost everywhere nonnegative, with
   integral one) total extended mass one.
+* `ofReal_integral_add_ofReal_integral_le` adds the positive parts of two integrals whose
+  integrands sum, almost everywhere, to at most a third integrable function.
+* `toReal_lintegral_coe_eq_integral` identifies `(∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal` with
+  `∫ ω, (f ω : ℝ) ∂μ` for any almost-everywhere measurable `f : Ω → ℝ≥0`.
 
 ## Exponentials
 
@@ -53,6 +57,8 @@ for set and probability integrals.
 
 * `setIntegral_norm_add_sq_le` integrates the pointwise bound
   `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
+* `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
+  pair of sets `s ⊆ S` to any `f` close to `K` in square mean on `S`.
 * `sq_setIntegral_le_measureReal_mul_setIntegral_sq` is Cauchy--Schwarz for a real-valued set
   integral, in squared form.
 * `setIntegral_le_setIntegral_sq_mul_of_eqOn` compares an integral over a set with a weighted
@@ -85,6 +91,8 @@ measure cannot be integrable there.
 
 * `not_integrableOn_Ioi_of_eventually_le_norm` is the half-line form, and
   `not_integrable_of_eventually_le_atTop` is its real-valued Lebesgue-integrability consequence.
+* `not_memLp_of_tendsto_norm_atTop` and `not_memLp_of_tendsto_norm_atBot`: a function whose norm
+  tends to infinity at one end of the line lies in no `Lᵖ` with `0 < p < ∞`.
 
 ## Reflection across the origin
 
@@ -122,7 +130,7 @@ noncomputable section
 
 open MeasureTheory Filter TopologicalSpace
 
-open scoped ENNReal Function Topology
+open scoped ENNReal NNReal Function Topology
 
 /-- Integration commutes with a continuous additive map between real Banach spaces. -/
 theorem AddMonoidHom.integral_comp_comm {X E F : Type*} [MeasurableSpace X]
@@ -211,6 +219,25 @@ theorem not_integrable_of_eventually_le_atTop {f : ℝ → ℝ} {ε : ℝ} (hε 
     (hf.mono fun x hx => by rw [Real.norm_eq_abs]; exact hx.trans (le_abs_self _))
     hint.integrableOn
 
+/-- A function on the real line whose norm tends to infinity at `+∞` lies in no `Lᵖ` with
+`0 < p < ∞`: the integrand `‖f‖ ^ p` is eventually at least `1`. -/
+theorem not_memLp_of_tendsto_norm_atTop {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : Tendsto (fun x => ‖f x‖) atTop atTop) :
+    ¬ MemLp f p volume := fun hmem =>
+  not_integrableOn_Ioi_of_eventually_le_norm one_pos 0
+    ((hf.eventually_ge_atTop 1).mono fun x hx => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+      exact Real.one_le_rpow hx ENNReal.toReal_nonneg)
+    (hmem.integrable_norm_rpow hp0 hp).integrableOn
+
+/-- A function on the real line whose norm tends to infinity at `-∞` lies in no `Lᵖ` with
+`0 < p < ∞`. -/
+theorem not_memLp_of_tendsto_norm_atBot {E : Type*} [NormedAddCommGroup E] {f : ℝ → E}
+    {p : ℝ≥0∞} (hp0 : p ≠ 0) (hp : p ≠ ∞) (hf : Tendsto (fun x => ‖f x‖) atBot atTop) :
+    ¬ MemLp f p volume := fun hmem =>
+  not_memLp_of_tendsto_norm_atTop hp0 hp (hf.comp tendsto_neg_atTop_atBot)
+    (hmem.comp_measurePreserving (Measure.measurePreserving_neg volume))
+
 /-- Integrating `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set: if `‖g‖²` and `‖h‖²` are integrable on
 `s`, then `∫_s ‖g + h‖² ≤ 2 ∫_s ‖g‖² + 2 ∫_s ‖h‖²`. -/
 theorem setIntegral_norm_add_sq_le {X F : Type*} [MeasurableSpace X] {μ : Measure X}
@@ -223,6 +250,42 @@ theorem setIntegral_norm_add_sq_le {X F : Type*} [MeasurableSpace X] {μ : Measu
     ((hg.const_mul 2).add (hh.const_mul 2)) (ae_of_all _ fun x => ?_)
   have := (pow_le_pow_left₀ (norm_nonneg _) (norm_add_le (g x) (h x)) 2).trans add_sq_le
   simpa only [Pi.add_apply, mul_add] using this
+
+/-- **Transferring a square-mean decay estimate.** Let `s ⊆ S`, and suppose that `K` satisfies the
+decay estimate `∫_s ‖K - k‖² ≤ D q ∫_S ‖K - c‖²` with `0 ≤ D` and `0 ≤ q ≤ 1`, and that the
+constant `b` approximates `f` on `s` at least as well as `k` does. Then `f` inherits the decay of
+`K` up to the distance between them:
+`∫_s ‖f - b‖² ≤ 4 D q ∫_S ‖f - c‖² + (4 D + 2) ∫_S ‖f - K‖²`.
+This is the comparison step of Campanato's method, with `K` a harmonic replacement of `f` and
+`b`, `k` the best constants of `f`, `K` on `s`. -/
+theorem setIntegral_norm_sub_sq_le_add_of_le {X F : Type*} [MeasurableSpace X] {μ : Measure X}
+    [SeminormedAddCommGroup F] {f K : X → F} {s S : Set X} {b k c : F} {D q : ℝ}
+    (hsS : s ⊆ S) (hD : 0 ≤ D) (hq0 : 0 ≤ q) (hq1 : q ≤ 1)
+    (hfc : IntegrableOn (fun x => ‖f x - c‖ ^ 2) S μ)
+    (hKk : IntegrableOn (fun x => ‖K x - k‖ ^ 2) s μ)
+    (hfK : IntegrableOn (fun x => ‖f x - K x‖ ^ 2) S μ)
+    (hbest : ∫ x in s, ‖f x - b‖ ^ 2 ∂μ ≤ ∫ x in s, ‖f x - k‖ ^ 2 ∂μ)
+    (hdecay : ∫ x in s, ‖K x - k‖ ^ 2 ∂μ ≤ D * q * ∫ x in S, ‖K x - c‖ ^ 2 ∂μ) :
+    ∫ x in s, ‖f x - b‖ ^ 2 ∂μ ≤
+      4 * D * q * (∫ x in S, ‖f x - c‖ ^ 2 ∂μ) + (4 * D + 2) * ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ := by
+  -- On `s`, split `f - k` into `K - k` and `f - K`.
+  have h1 : ∫ x in s, ‖f x - k‖ ^ 2 ∂μ ≤
+      2 * (∫ x in s, ‖K x - k‖ ^ 2 ∂μ) + 2 * ∫ x in s, ‖f x - K x‖ ^ 2 ∂μ := by
+    simpa only [sub_add_sub_cancel'] using setIntegral_norm_add_sq_le hKk (hfK.mono_set hsS)
+  -- On `S`, split `K - c` into `f - c` and `K - f`.
+  have h2 : ∫ x in S, ‖K x - c‖ ^ 2 ∂μ ≤
+      2 * (∫ x in S, ‖f x - c‖ ^ 2 ∂μ) + 2 * ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ := by
+    have hKf : IntegrableOn (fun x => ‖K x - f x‖ ^ 2) S μ := by
+      simpa only [norm_sub_rev (f _)] using hfK
+    simpa only [sub_add_sub_cancel', norm_sub_rev (K _) (f _)] using
+      setIntegral_norm_add_sq_le hfc hKf
+  have h3 : ∫ x in s, ‖f x - K x‖ ^ 2 ∂μ ≤ ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ :=
+    setIntegral_mono_set hfK (ae_of_all _ fun _ => by positivity) hsS.eventuallyLE
+  have hE0 : 0 ≤ ∫ x in S, ‖f x - K x‖ ^ 2 ∂μ :=
+    setIntegral_nonneg_of_ae_restrict (ae_of_all _ fun _ => by positivity)
+  have h4 := mul_le_mul_of_nonneg_left h2 (mul_nonneg hD hq0)
+  have h5 := mul_le_mul_of_nonneg_left (mul_le_of_le_one_left hE0 hq1) hD
+  linarith
 
 /-- Cauchy--Schwarz for a real-valued set integral over a set of finite measure, in squared form. -/
 theorem sq_setIntegral_le_measureReal_mul_setIntegral_sq {Ω : Type*} [MeasurableSpace Ω]
@@ -307,6 +370,29 @@ theorem lintegral_ofReal_eq_one {α : Type*} [MeasurableSpace α] {μ : Measure 
     ∫⁻ t, ENNReal.ofReal (ρ t) ∂μ = 1 := by
   rw [← ofReal_integral_eq_lintegral_ofReal (integrable_of_integral_eq_one hρ1) hρ0, hρ1,
     ENNReal.ofReal_one]
+
+/-- Positive parts of integrals add up under an almost-everywhere bound: for integrable `F`, `G`,
+`N` with `0 ≤ F ≤ N` and `F + G ≤ N` almost everywhere, the positive parts of `∫ F` and `∫ G` sum
+to at most the positive part of `∫ N`. The function `G` may take negative values, in which case
+`∫ G` may be negative and its positive part is `0`. -/
+theorem ofReal_integral_add_ofReal_integral_le {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {F G N : Ω → ℝ} (hF : Integrable F μ) (hG : Integrable G μ) (hN : Integrable N μ)
+    (hF0 : 0 ≤ᵐ[μ] F) (hFN : F ≤ᵐ[μ] N) (hFG : ∀ᵐ x ∂μ, F x + G x ≤ N x) :
+    ENNReal.ofReal (∫ x, F x ∂μ) + ENNReal.ofReal (∫ x, G x ∂μ) ≤
+      ENNReal.ofReal (∫ x, N x ∂μ) := by
+  rcases le_total 0 (∫ x, G x ∂μ) with hG0 | hG0
+  · rw [← ENNReal.ofReal_add (integral_nonneg_of_ae hF0) hG0, ← integral_add hF hG]
+    exact ENNReal.ofReal_le_ofReal (integral_mono_ae (hF.add hG) hN hFG)
+  · rw [ENNReal.ofReal_of_nonpos hG0, add_zero]
+    exact ENNReal.ofReal_le_ofReal (integral_mono_ae hF hN hFN)
+
+/-- The real value of the extended Lebesgue integral of an almost-everywhere measurable
+`ℝ≥0`-valued function equals its Bochner integral. Neither finiteness of the measure nor
+integrability is required: when the function is not integrable, both sides vanish. -/
+theorem toReal_lintegral_coe_eq_integral {Ω : Type*} [MeasurableSpace Ω] {μ : Measure Ω}
+    {f : Ω → ℝ≥0} (hf : AEMeasurable f μ) :
+    (∫⁻ ω, (f ω : ℝ≥0∞) ∂μ).toReal = ∫ ω, (f ω : ℝ) ∂μ := by
+  simpa using (integral_toReal hf.coe_nnreal_ennreal (.of_forall fun _ ↦ ENNReal.coe_lt_top)).symm
 
 /-- **`L¹` convergence in Bochner form is `eLpNorm _ 1` convergence.** If `∫ ‖f i - g‖ → 0` along
 `l` and the differences `f i - g` are eventually integrable, then `eLpNorm (f i - g) 1 μ → 0`. -/

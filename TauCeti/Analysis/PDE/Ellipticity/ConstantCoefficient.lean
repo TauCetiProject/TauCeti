@@ -161,7 +161,8 @@ theorem harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero
 continuous linear automorphism with `Δ (u ∘ e) = (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu) ∘ e` for every scalar `u` that is
 `C²` at the relevant point, as provided by `exists_continuousLinearEquiv_laplacian_comp_eq`, and
 `u` is a scalar `C²` solution of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu = 0` on an open set `s`, then `∇u ∘ e` is
-harmonic on `e ⁻¹' s`. Its coordinates are directional derivatives of the harmonic `u ∘ e`. -/
+harmonic on `e ⁻¹' s`: it is the image of the gradient of the harmonic `u ∘ e` under the
+adjoint of `e⁻¹`. -/
 theorem harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero
     {e : EuclideanSpace ℝ ι ≃L[ℝ] EuclideanSpace ℝ ι}
     (he : ∀ (u : EuclideanSpace ℝ ι → ℝ) (y : EuclideanSpace ℝ ι), ContDiffAt ℝ 2 u (e y) →
@@ -172,20 +173,18 @@ theorem harmonicOnNhd_gradient_comp_of_sum_smul_fderiv_fderiv_eq_zero
     (hLu : ∀ x ∈ s, ∑ i, ∑ j, A i j •
       fderiv ℝ (fderiv ℝ u) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) = 0) :
     HarmonicOnNhd (∇ u ∘ e) (e ⁻¹' s) := by
-  set b := EuclideanSpace.basisFun ι ℝ
-  have hh := harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he hs hu hLu
-  have hH : HarmonicOnNhd (fun y => ∑ i, fderiv ℝ (u ∘ e) y (e.symm (b i)) • b i) (e ⁻¹' s) :=
-    HarmonicOnNhd.sum _ fun i _ =>
-      (hh.fderiv_apply (e.symm (b i))).comp_CLM ((1 : ℝ →L[ℝ] ℝ).smulRight (b i))
+  have hh := (harmonicOnNhd_comp_of_sum_smul_fderiv_fderiv_eq_zero he hs hu hLu).gradient
   intro y hy
-  refine (harmonicAt_congr_nhds ?_).2 (hH y hy)
+  refine (harmonicAt_congr_nhds ?_).2 ((hh y hy).comp_CLM
+    (ContinuousLinearMap.adjoint (e.symm : EuclideanSpace ℝ ι →L[ℝ] EuclideanSpace ℝ ι)))
   filter_upwards [(hs.preimage e.continuous).mem_nhds hy] with z hz
   have hdz : DifferentiableAt ℝ u (e z) :=
     (hu.differentiableOn (by norm_num)).differentiableAt (hs.mem_nhds hz)
-  rw [Function.comp_apply, ← b.sum_repr' (∇ u (e z))]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [fderiv_comp z hdz e.differentiableAt, e.fderiv, ContinuousLinearMap.comp_apply,
-    ContinuousLinearEquiv.coe_coe, e.apply_symm_apply, real_inner_comm, inner_gradient_left]
+  refine ext_inner_right ℝ fun v => ?_
+  rw [Function.comp_apply, Function.comp_apply, ContinuousLinearMap.adjoint_inner_left,
+    inner_gradient_left, inner_gradient_left, fderiv_comp z hdz e.differentiableAt, e.fderiv,
+    ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe, ContinuousLinearEquiv.coe_coe,
+    e.apply_symm_apply]
 
 end PDE
 

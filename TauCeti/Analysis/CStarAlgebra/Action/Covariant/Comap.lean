@@ -19,10 +19,9 @@ form applied to the induced map of compact-support convolution algebras. This is
 representation-level compatibility needed to extend coefficient maps to full crossed products.
 The same compatibility holds on the twisted L¹ completions.
 
-The coefficient map also decreases the full seminorm, when both coefficient algebras use the
-same universe for the indexing family of covariant representations. This estimate supplies the
-continuity needed to extend the convolution map to the full crossed-product completion.
-It does not assert independence of that indexing universe.
+The coefficient map also decreases the full seminorm, for coefficient algebras in arbitrary
+universes. This estimate supplies the continuity needed to extend the convolution map to the full
+crossed-product completion.
 
 The conventions follow Dana Williams, *Crossed Products of C*-Algebras*, Chapter 2. The integrated
 form is Tau Ceti's `CovariantRepresentation.integratedOperator`, defined by vector integration.
@@ -115,16 +114,15 @@ end TauCeti.CStarAction.CovariantRepresentation
 
 namespace TauCeti.CStarAction.Hom
 
-universe u v
+universe u v w
 
-variable {G : Type u} {A B : Type v} [Group G] [TopologicalSpace G] [IsTopologicalGroup G]
-  [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
+variable {G : Type u} {A : Type v} {B : Type w} [Group G] [TopologicalSpace G]
+  [IsTopologicalGroup G] [LocallyCompactSpace G] [MeasurableSpace G] [BorelSpace G]
   [NonUnitalCStarAlgebra A] [NonUnitalCStarAlgebra B]
   {α : CStarAction G A} {β : CStarAction G B} (φ : Hom α β)
   (μ : Measure G) [μ.IsHaarMeasure]
 
-/-- Equivariant coefficient maps decrease the full seminorm, using the same indexing universe
-for the source and target covariant representations. -/
+/-- Equivariant coefficient maps decrease the full seminorm. -/
 theorem fullSeminorm_convolutionMap_le (f : ConvolutionAlgebra α μ) :
     ConvolutionAlgebra.fullSeminorm β μ (φ.convolutionMap μ f) ≤
       ConvolutionAlgebra.fullSeminorm α μ f := by

@@ -18,6 +18,7 @@ compatibility under linear equivalences.
 ## Main results
 
 * `Orientation.map_trans`: transport along a composite is the composite of the transports.
+* `Orientation.map_reindex`: transport along a linear equivalence commutes with reindexing.
 * `Orientation.map_eq_map_iff_det_mul_pos`: `f` and `g` transport `x` to the same orientation
   if and only if `0 < det f * det g`.
 * `Orientation.intCast_units_smul_eq_ite`: an integer unit acts by retention or reversal.
@@ -43,6 +44,16 @@ transporting it along each in turn. -/
 theorem Orientation.map_trans (e : M ≃ₗ[R] N) (f : N ≃ₗ[R] P) (x : Orientation R M ι) :
     Orientation.map ι (e.trans f) x = Orientation.map ι f (Orientation.map ι e x) := by
   induction x using Module.Ray.ind with | h v hv => rfl
+
+/-- Transporting an orientation along a linear equivalence commutes with reindexing its index
+type. -/
+theorem Orientation.map_reindex {ι' : Type*} (e : M ≃ₗ[R] N) (f : ι ≃ ι')
+    (x : Orientation R M ι) :
+    Orientation.map ι' e (Orientation.reindex R M f x) =
+      Orientation.reindex R N f (Orientation.map ι e x) := by
+  induction x using Module.Ray.ind with | h v hv =>
+    simp only [map_apply, reindex_apply]
+    congr 1
 
 end CommSemiring
 

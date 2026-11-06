@@ -451,6 +451,16 @@ theorem coe_algebraMap_nonnegSubring (s : S) :
       algebraMap S (NovikovSeries R H N) s :=
   (rfl)
 
+/-- Evaluating a polynomial in the nonnegative subring commutes with the inclusion into the
+Novikov series. -/
+@[simp, norm_cast]
+theorem coe_aeval_nonnegSubring (a : nonnegSubring R N) (p : Polynomial S) :
+    ((Polynomial.aeval a p : nonnegSubring R N) : NovikovSeries R H N) =
+      Polynomial.aeval (a : NovikovSeries R H N) p :=
+  (Polynomial.aeval_algHom_apply
+    ({ (nonnegSubring R N).subtype with commutes' := fun _ => rfl } :
+      nonnegSubring R N →ₐ[S] NovikovSeries R H N) a p).symm
+
 end Algebra
 
 end Ring

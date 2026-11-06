@@ -47,6 +47,9 @@ topological action groupoid to a saturated open set of objects.
   invariant subset.
 * `CategoryTheory.ActionCategory.restrictLift`: a functor whose objects lie in the invariant subset
   factors through that inclusion.
+
+* `CategoryTheory.ActionCategory.singleObjFunctor`: the functor `SingleObj K ⥤ M ⋉ X` at a point
+  fixed by the image of a monoid homomorphism `K →* M`.
 * `CategoryTheory.ActionCategory.inclusion`: the inclusion of the action category of a subgroup
   on an invariant subset.
 * `CategoryTheory.ActionCategory.full_inclusion_iff`: the inclusion is full exactly for a slice.
@@ -125,6 +128,34 @@ theorem full_map_iff : (map φ f).Full ↔
     refine ⟨fun {a b} g => ?_⟩
     obtain ⟨m, hm, hmx⟩ := h a.back b.back g.hom g.map_val
     exact ⟨Functor.Elements.homMk m hmx, Functor.Elements.hom_ext hm⟩
+
+section SingleObj
+
+variable {K : Type*} [Monoid K] (φ : K →* M) (x : X) (hx : ∀ k, φ k • x = x)
+
+/-- The functor `SingleObj K ⥤ M ⋉ X` at a point `x` fixed by the image of `φ : K →* M`. It sends
+the unique object to `x` and `k` to the arrow `x ⟶ x` labelled `φ k`: this is Mathlib's
+`SingleObj.functor` for `φ`, corestricted to the stabilizer of `x` and composed with
+`ActionCategory.stabilizerIsoEnd`. Restricting a family of categories over `M ⋉ X` along it gives
+a categorical action of `K` on the category over `x`. -/
+-- The body is exposed: a family of categories over `M ⋉ X` restricted along this functor must
+-- have, definitionally, the category over `x` as its value at the unique object.
+@[expose]
+def singleObjFunctor : SingleObj K ⥤ ActionCategory M X :=
+  SingleObj.functor ((stabilizerIsoEnd M x).toMonoidHom.comp
+    (φ.codRestrict _ fun k => mem_stabilizerSubmonoid_iff.mpr (hx k)))
+
+/-- The functor at a fixed point sends the unique object to that point. -/
+@[simp]
+theorem singleObjFunctor_obj (a : SingleObj K) :
+    (singleObjFunctor φ x hx).obj a = objEquiv M X x := (rfl)
+
+/-- The functor at a fixed point labels the arrow of `k` by `φ k`. -/
+@[simp]
+theorem singleObjFunctor_map_hom {a b : SingleObj K} (k : a ⟶ b) :
+    ((singleObjFunctor φ x hx).map k).hom = φ k := (rfl)
+
+end SingleObj
 
 end Map
 

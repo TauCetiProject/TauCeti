@@ -153,7 +153,7 @@ theorem exists_boltzmannEntropy_ne_top_and_ne_bot_and_wassersteinEDist_dirac_le
   have hdens : m[|s] = m.withDensity fun y ↦ ((s.indicator (fun _ ↦ c) y : ℝ≥0) : ℝ≥0∞) := by
     simp_rw [ENNReal.coe_indicator, withDensity_indicator hs, withDensity_const, hc]
     rw [ProbabilityTheory.cond]
-  obtain ⟨μ, hμ⟩ := WassersteinSpace.exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
+  obtain ⟨μ, hμ, -, -⟩ := WassersteinSpace.exists_coe_eq_cond (p := p) hs isBounded_ball hs0 hstop
   have hW : wassersteinEDist p (Measure.dirac x) ((μ : ProbabilityMeasure X) : Measure X) ≤
       ENNReal.ofReal r := by
     have hbound : ∀ᵐ y ∂((μ : ProbabilityMeasure X) : Measure X),
@@ -403,9 +403,9 @@ theorem CurvatureDimension.dist_le (h : M.CurvatureDimension K N) (hK : 0 < K) (
       ((hball z).mono fun _ hw ↦ ball_subset_closedBall hw))
   have hpos {z : X} (hz : z ∈ M.support) : M.reference (ball z r) ≠ 0 :=
     ((M.mem_support_iff z).1 hz _ (ball_mem_nhds z hr)).ne'
-  obtain ⟨μ₀, hμ₀⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+  obtain ⟨μ₀, hμ₀, -, -⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
     isBounded_ball (hpos hx) (M.finite_bounded _ isBounded_ball).ne
-  obtain ⟨μ₁, hμ₁⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
+  obtain ⟨μ₁, hμ₁, -, -⟩ := WassersteinSpace.exists_coe_eq_cond (p := 2) measurableSet_ball
     isBounded_ball (hpos hy) (M.finite_bounded _ isBounded_ball).ne
   have hac₀ : ((μ₀ : ProbabilityMeasure X) : Measure X) ≪ M.reference :=
     hμ₀ ▸ cond_absolutelyContinuous

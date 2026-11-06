@@ -51,6 +51,19 @@ on tangent fibers rather than restating the linear algebra.
   `a + b i` acts on `J v` by the same number.
 * `TauCeti.SymplecticForm.sq_add_sq_eq_one_of_apply_eq`: complex-linear symplectic maps rotate
   their complex eigenlines by complex numbers of modulus one.
+* `TauCeti.SymplecticForm.Invariant.apply_add_apply_eq_zero`: invariance of `ω` under `J` in the
+  form `ω (J v) w + ω v (J w) = 0`, which is linear in `J`.
+* `TauCeti.AlmostComplexStructure.tangentSpace J`: the tangent condition `Y J + J Y = 0` for
+  variations `Y` of `J`, and `TauCeti.SymplecticForm.compatibleTangentSpace ω J`: the variations
+  that are moreover skew-adjoint for `ω`. Among variations anticommuting with `J`, skew-adjointness
+  for `ω` is self-adjointness for `ω(·, J ·)`
+  (`TauCeti.SymplecticForm.mem_compatibleTangentSpace_iff_isSelfAdjoint`). The smooth
+  characterizations of these spaces as velocities of curves of tame, respectively compatible,
+  structures are in `TauCeti.Geometry.Symplectic.Cayley.Tangent`.
+* `TauCeti.SymplecticForm.Compatible.exists_mem_compatibleTangentSpace_apply_eq`: for a compatible
+  `J`, compatible variations reach every vector at every nonzero vector. This is the pointwise
+  range statement for variations of the almost complex structure in transversality arguments
+  (McDuff--Salamon, *J-holomorphic Curves and Symplectic Topology*, Section 3.2).
 
 The definitions follow the standard conventions in McDuff--Salamon,
 *J-holomorphic Curves and Symplectic Topology*, Section 2.2, specialized here to the
@@ -112,6 +125,28 @@ theorem toLinearMap_injective :
 
 instance : CoeFun (AlmostComplexStructure V) fun _ => V → V :=
   ⟨fun J => J.toLinearMap⟩
+
+/-- An almost complex structure preserves addition. -/
+@[simp]
+lemma apply_add (J : AlmostComplexStructure V) (v w : V) :
+    J (v + w) = J v + J w :=
+  J.toLinearMap.map_add v w
+
+/-- An almost complex structure preserves subtraction. -/
+@[simp]
+lemma apply_sub (J : AlmostComplexStructure V) (v w : V) :
+    J (v - w) = J v - J w :=
+  J.toLinearMap.map_sub v w
+
+/-- An almost complex structure preserves real scalar multiplication. -/
+lemma apply_smul (J : AlmostComplexStructure V) (c : ℝ) (v : V) :
+    J (c • v) = c • J v :=
+  J.toLinearMap.map_smul c v
+
+/-- An almost complex structure sends zero to zero. -/
+@[simp]
+lemma apply_zero (J : AlmostComplexStructure V) : J 0 = 0 :=
+  J.toLinearMap.map_zero
 
 /-- Applying `J` twice gives `-v`. -/
 @[simp]
@@ -274,6 +309,28 @@ def restrict (J : AlmostComplexStructure V) (L : Submodule ℝ V) (hL : ∀ x �
 lemma coe_restrict_apply (J : AlmostComplexStructure V) (L : Submodule ℝ V)
     (hL : ∀ x ∈ L, J x ∈ L) (x : L) : (J.restrict L hL x : V) = J x :=
   (rfl)
+
+/-- The tangent condition at a complex structure `J`: the endomorphisms `Y` with
+`Y J + J Y = 0`. Velocities of families of complex structures through `J` satisfy it
+(`AlmostComplexStructure.mem_tangentSpace_of_hasFDerivAt`), and for a tame `J` it is exactly the
+set of velocities of curves of tame structures
+(`SymplecticForm.Tames.mem_tangentSpace_iff_exists_hasDerivAt`). -/
+def tangentSpace (J : AlmostComplexStructure V) : Submodule ℝ (Module.End ℝ V) :=
+  LinearMap.ker (LinearMap.mulRight ℝ J.toLinearMap + LinearMap.mulLeft ℝ J.toLinearMap)
+
+/-- Membership in the tangent space at `J` is anticommutation with `J`. -/
+@[simp]
+theorem mem_tangentSpace {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
+    Y ∈ J.tangentSpace ↔ Y * J.toLinearMap + J.toLinearMap * Y = 0 := by
+  simp [tangentSpace]
+
+/-- Membership in the tangent space at `J`, pointwise: `Y (J v) = -J (Y v)`. -/
+theorem mem_tangentSpace_iff_apply {J : AlmostComplexStructure V} {Y : Module.End ℝ V} :
+    Y ∈ J.tangentSpace ↔ ∀ v, Y (J v) = -J (Y v) := by
+  rw [mem_tangentSpace, LinearMap.ext_iff]
+  refine forall_congr' fun v => ?_
+  simp only [LinearMap.add_apply, mul_apply_eq_comp, LinearMap.zero_apply]
+  exact add_eq_zero_iff_eq_neg
 
 end AlmostComplexStructure
 
@@ -628,6 +685,15 @@ lemma Compatible.invariant_apply {ω : SymplecticForm V} {J : AlmostComplexStruc
     (h : ω.Compatible J) (v w : V) : ω (J v) (J w) = ω v w :=
   (ω.invariant_iff J).mp h.invariant v w
 
+/-- For a complex structure `J` preserving `ω`, the endomorphism `J` itself is skew-adjoint
+for `ω`. This is the form of invariance that is linear in `J`. -/
+theorem Invariant.apply_add_apply_eq_zero {ω : SymplecticForm V} {J : AlmostComplexStructure V}
+    (hJ : ω.Invariant J) (v w : V) :
+    ω (J v) w + ω v (J w) = 0 := by
+  beta_reduce
+  rw [J.bilinForm_apply_left_eq_neg_apply_right ((ω.invariant_iff J).mp hJ) v w]
+  exact neg_add_cancel _
+
 /-- For a `J`-invariant form, the associated bilinear form is symmetric pointwise. Only invariance
 is needed. -/
 lemma Invariant.associatedBilinForm_apply_swap
@@ -675,6 +741,145 @@ lemma associatedBilinForm_apply_apply_self_eq (ω : SymplecticForm V)
 lemma Compatible.associated_pos {ω : SymplecticForm V} {J : AlmostComplexStructure V}
     (h : ω.Compatible J) {v : V} (hv : v ≠ 0) : 0 < ω v (J v) :=
   h.tames v hv
+
+section TangentSpace
+
+variable {ω : SymplecticForm V} {J : AlmostComplexStructure V} {Y : Module.End ℝ V}
+
+variable (ω J) in
+/-- The tangent condition at an `ω`-compatible complex structure `J`: the endomorphisms that
+anticommute with `J` and are skew-adjoint for `ω`. For a compatible `J` it is exactly the set of
+velocities of curves of compatible structures
+(`SymplecticForm.Compatible.mem_compatibleTangentSpace_iff_exists_hasDerivAt`). -/
+def compatibleTangentSpace : Submodule ℝ (Module.End ℝ V) :=
+  J.tangentSpace ⊓ ω.toBilinForm.skewAdjointSubmodule
+
+/-- Membership in the compatible tangent space: `Y (J v) = -J (Y v)` and
+`ω (Y v) w + ω v (Y w) = 0`. -/
+@[simp]
+theorem mem_compatibleTangentSpace :
+    Y ∈ ω.compatibleTangentSpace J ↔
+      (∀ v, Y (J v) = -J (Y v)) ∧ ∀ v w, ω (Y v) w + ω v (Y w) = 0 := by
+  rw [compatibleTangentSpace, Submodule.mem_inf, AlmostComplexStructure.mem_tangentSpace_iff_apply,
+    LinearMap.mem_skewAdjointSubmodule]
+  refine and_congr Iff.rfl (forall₂_congr fun v w => ?_)
+  -- `IsSkewAdjoint` unfolds to `IsAdjointPair`, which is stated pointwise by definition.
+  change ω (Y v) w = ω v (-Y w) ↔ _
+  beta_reduce
+  rw [map_neg, ← sub_eq_zero, sub_neg_eq_add]
+
+/-- The compatible tangent condition is stronger than the tangent condition. -/
+theorem compatibleTangentSpace_le_tangentSpace : ω.compatibleTangentSpace J ≤ J.tangentSpace :=
+  inf_le_left
+
+/-- Among endomorphisms anticommuting with `J`, skew-adjointness for `ω` is self-adjointness for
+the associated form `g = ω(·, J ·)`. No compatibility of `J` is needed. -/
+theorem mem_compatibleTangentSpace_iff_isSelfAdjoint (hY : Y ∈ J.tangentSpace) :
+    Y ∈ ω.compatibleTangentSpace J ↔ (ω.associatedBilinForm J).IsSelfAdjoint Y := by
+  rw [AlmostComplexStructure.mem_tangentSpace_iff_apply] at hY
+  rw [mem_compatibleTangentSpace, and_iff_right hY]
+  -- `IsSelfAdjoint` unfolds to `IsAdjointPair`, which is stated pointwise by definition.
+  change _ ↔ ∀ v w, ω (Y v) (J w) = ω v (J (Y w))
+  beta_reduce
+  constructor
+  · intro h v w
+    have := h v (J w)
+    beta_reduce at this
+    rw [hY, map_neg] at this
+    linarith
+  · intro h v w
+    have := h v (-J w)
+    beta_reduce at this
+    simp only [map_neg, AlmostComplexStructure.apply_apply, neg_neg, hY] at this
+    linarith
+
+/-- For a `J`-invariant form, the variations in the compatible tangent space are, after composing
+with `J`, the endomorphisms anticommuting with `J` and self-adjoint for `g = ω(·, J ·)`. For a
+compatible `J` these are the coordinates of the compatible Cayley ball. Only invariance is
+needed. -/
+theorem Invariant.mul_mem_tangentSpace_and_isSelfAdjoint (h : ω.Invariant J)
+    (hY : Y ∈ ω.compatibleTangentSpace J) :
+    J.toLinearMap * Y ∈ J.tangentSpace ∧
+      (ω.associatedBilinForm J).IsSelfAdjoint (J.toLinearMap * Y) := by
+  rw [mem_compatibleTangentSpace] at hY
+  refine ⟨AlmostComplexStructure.mem_tangentSpace_iff_apply.2 fun v => ?_, fun v w => ?_⟩
+  · simp [hY.1]
+  · have h₁ := (ω.invariant_iff J).mp h (Y v) w
+    have h₂ := hY.2 v w
+    simp only [associatedBilinForm_apply, mul_apply_eq_comp, AlmostComplexStructure.apply_apply]
+    beta_reduce at h₁ h₂ ⊢
+    rw [h₁, map_neg]
+    linarith
+
+/-- For a `J`-invariant form, composing a variation in the compatible tangent space with `J`
+gives an endomorphism that is skew-adjoint for `ω`. This is why the exponential paths with
+generator `J Y` stay `ω`-compatible. -/
+theorem Invariant.isSkewAdjoint_mul_of_mem_compatibleTangentSpace (h : ω.Invariant J)
+    (hY : Y ∈ ω.compatibleTangentSpace J) :
+    ω.toBilinForm.IsSkewAdjoint (J.toLinearMap * Y) := by
+  obtain ⟨hT, hS⟩ := h.mul_mem_tangentSpace_and_isSelfAdjoint hY
+  exact (LinearMap.mem_skewAdjointSubmodule _).1
+    (Submodule.mem_inf.1 ((mem_compatibleTangentSpace_iff_isSelfAdjoint hT).2 hS)).2
+
+/-- For `S` self-adjoint for `g = ω(·, J ·)`, the average `S + J S J` lies in the compatible
+tangent space of `J` whenever `ω` is `J`-invariant. -/
+private theorem Invariant.add_mul_mul_mem_compatibleTangentSpace (h : ω.Invariant J)
+    {S : Module.End ℝ V} (hS : (ω.associatedBilinForm J).IsSelfAdjoint S) :
+    S + J.toLinearMap * S * J.toLinearMap ∈ ω.compatibleTangentSpace J := by
+  have hT : S + J.toLinearMap * S * J.toLinearMap ∈ J.tangentSpace :=
+    AlmostComplexStructure.mem_tangentSpace_iff_apply.2 fun v => by
+      simp only [LinearMap.add_apply, mul_apply_eq_comp, AlmostComplexStructure.apply_apply,
+        map_neg, map_add]
+      abel
+  refine (mem_compatibleTangentSpace_iff_isSelfAdjoint hT).2 fun v w => ?_
+  have h₀ := hS v w
+  have h₁ := hS (J v) (-J w)
+  have h₂ := (ω.invariant_iff J).mp h (S (J v)) w
+  have h₃ := (ω.invariant_iff J).mp h v (S (J w))
+  simp only [associatedBilinForm_apply, LinearMap.add_apply, mul_apply_eq_comp,
+    AlmostComplexStructure.apply_apply, map_neg, map_add] at h₀ h₁ ⊢
+  beta_reduce at h₀ h₁ h₂ h₃ ⊢
+  linarith
+
+/-- **Variations of compatible structures reach every vector.** For an `ω`-compatible `J`, a
+nonzero vector `ξ` and any vector `η`, some variation `Y` in the compatible tangent space at `J`
+sends `ξ` to `η`. -/
+theorem Compatible.exists_mem_compatibleTangentSpace_apply_eq (h : ω.Compatible J) {ξ : V}
+    (hξ : ξ ≠ 0) (η : V) : ∃ Y ∈ ω.compatibleTangentSpace J, Y ξ = η := by
+  set g := ω.associatedBilinForm J
+  have ha : g ξ ξ ≠ 0 := (h.tames ξ hξ).ne'
+  -- The rank-two `g`-self-adjoint map `v ↦ g(ξ, v) ζ + g(ζ, v) ξ`, averaged with `J`, sends `ξ`
+  -- to `η` for this choice of `ζ`.
+  set ζ : V := (g ξ ξ)⁻¹ •
+    (η - (g η ξ / (2 * g ξ ξ)) • ξ - (g η (J ξ) / (2 * g ξ ξ)) • J ξ)
+  set S : Module.End ℝ V := (g ξ).smulRight ζ + (g ζ).smulRight ξ
+  have hS : g.IsSelfAdjoint S := fun v w => by
+    simp only [S, LinearMap.add_apply, LinearMap.smulRight_apply, map_add, map_smul,
+      LinearMap.add_apply, LinearMap.smul_apply, smul_eq_mul]
+    rw [h.associatedBilinForm_isSymm.eq ζ w, h.associatedBilinForm_isSymm.eq ξ w,
+      h.associatedBilinForm_isSymm.eq v ζ, h.associatedBilinForm_isSymm.eq v ξ]
+    ring
+  refine ⟨S + J.toLinearMap * S * J.toLinearMap,
+    h.invariant.add_mul_mul_mem_compatibleTangentSpace hS, ?_⟩
+  have hξJ : g ξ (J ξ) = 0 := by simp [g]
+  have hJξ : g (J ξ) ξ = 0 := by rw [h.associatedBilinForm_isSymm.eq, hξJ]
+  have hJJ : g (J ξ) (J ξ) = g ξ ξ := ω.associatedBilinForm_apply_apply_self_eq J ξ
+  have hζξ : g ζ ξ = g η ξ / (2 * g ξ ξ) := by
+    simp only [ζ, map_smul, map_sub, LinearMap.smul_apply, LinearMap.sub_apply, hJξ,
+      smul_eq_mul]
+    field_simp
+    ring
+  have hζJξ : g ζ (J ξ) = g η (J ξ) / (2 * g ξ ξ) := by
+    simp only [ζ, map_smul, map_sub, LinearMap.smul_apply, LinearMap.sub_apply, hξJ, hJJ,
+      smul_eq_mul]
+    field_simp
+    ring
+  simp only [S, LinearMap.add_apply, mul_apply_eq_comp, LinearMap.smulRight_apply,
+    map_smul, hξJ, hζξ, hζJξ, zero_smul, zero_add]
+  simp only [ζ]
+  match_scalars <;> field_simp <;> ring
+
+end TangentSpace
 
 end SymplecticForm
 
