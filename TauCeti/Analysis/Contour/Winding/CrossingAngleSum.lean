@@ -127,6 +127,98 @@ theorem exp_log_norm_add_arg_eq_mul_exp_crossingAngle {γ : ℝ → ℂ} {t₀ :
     _ = w_R / w_L * Complex.exp ((crossingAngle γ t₀ : ℂ) * Complex.I) := by
         rw [Complex.norm_mul_exp_arg_mul_I]
 
+/-- **A plain piece of the aggregation.** On a piece `[l, u]` of `[a, b]` that keeps a positive
+distance from `s`, the principal value is the winding integral, and its exponential carries the
+chord `γ l - s` to `γ u - s`; no point of `T` lies in the piece, so the sector product is the same
+at both ends. -/
+private theorem exists_hasCauchyPVAt_exp_mul_eq_of_forall_le {γ : ℝ → ℂ} {a b : ℝ} {s : ℂ}
+    {T : Finset ℝ} (h_imm : IsPwC1ImmersionOn γ a b) (hab : a ≤ b)
+    (hT : ∀ t, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s) {cf : ℝ → ℂ} {m l u : ℝ} (hm_pos : 0 < m)
+    (hal : a ≤ l) (hlu : l ≤ u) (hub : u ≤ b) (hfar : ∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) :
+    ∃ v : ℂ, HasCauchyPVAt γ l u (fun z => (z - s)⁻¹) s v ∧
+      Complex.exp v * ((γ l - s) * ∏ t ∈ T.filter (fun t => t < l), cf t) =
+        (γ u - s) * ∏ t ∈ T.filter (fun t => t < u), cf t := by
+  have havoid : ∀ t ∈ uIcc l u, γ t ≠ s := by
+    intro t ht he
+    rw [uIcc_of_le hlu] at ht
+    have hle := hfar t ht
+    rw [he, sub_self, norm_zero] at hle
+    linarith
+  have hpc : IsPiecewiseC1On γ l u := h_imm.isPiecewiseC1On.mono (by
+    rw [uIcc_of_le hlu, uIcc_of_le hab]
+    exact Icc_subset_Icc hal hub)
+  have hint : IntervalIntegrable (fun t => (γ t - s)⁻¹ * deriv γ t) volume l u :=
+    intervalIntegrable_inv_sub_mul_deriv hpc.continuousOn havoid hpc.intervalIntegrable_deriv
+  have hval : 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ l u s
+      = ∫ t in l..u, (γ t - s)⁻¹ * deriv γ t := by
+    rw [windingNumber_eq_integral_of_avoidance hpc.continuousOn havoid hint,
+      mul_inv_cancel_left₀ Complex.two_pi_I_ne_zero]
+  refine ⟨2 * (Real.pi : ℂ) * Complex.I * windingNumber γ l u s, ?_, ?_⟩
+  · have h0 : HasCauchyPVAt γ l u (fun z => (z - s)⁻¹) s
+        (∫ t in l..u, (γ t - s)⁻¹ * deriv γ t) :=
+      HasCauchyPVAt.of_avoidance hpc.continuousOn havoid hint
+    rwa [← hval] at h0
+  · have hfilter : T.filter (fun t => t < l) = T.filter (fun t => t < u) := by
+      refine Finset.filter_congr fun t ht => ⟨fun h => by linarith, fun h => ?_⟩
+      by_contra hlt
+      rw [not_lt] at hlt
+      have hle := hfar t ⟨hlt, h.le⟩
+      rw [((hT t).mp ht).2, sub_self, norm_zero] at hle
+      linarith
+    have hl : γ l - s ≠ 0 := sub_ne_zero.mpr (havoid l left_mem_uIcc)
+    simp only [hpc.exp_two_pi_I_mul_windingNumber havoid, hfilter]
+    field_simp
+
+/-- **A crossing window of the aggregation.** On a window `[t₀ - ρ, t₀ + ρ]` inside `[a, b]` whose
+only point on `s` is the crossing `t₀ ∈ T`, with the one-sided tangents `L_L`, `L_R` at `t₀` and
+the truncated integral converging to the per-window value `hspec` for windows of radius `ρ ≤ R`,
+the principal value exponentiates to the chord ratio times `exp (i · crossingAngle γ t₀)`, which
+is the factor the sector product `cf` gains at `t₀`. -/
+private theorem exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window {γ : ℝ → ℂ} {a b : ℝ} {s : ℂ}
+    {T : Finset ℝ} (h_imm : IsPwC1ImmersionOn γ a b) (hab : a ≤ b)
+    (hT : ∀ t, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s) {cf : ℝ → ℂ} {t₀ ρ R : ℝ} {L_R L_L : ℂ}
+    (ht₀ : t₀ ∈ T) (hρ : 0 < ρ) (hρR : ρ ≤ R) (hlo : a < t₀ - ρ) (hhi : t₀ + ρ ≤ b)
+    (h_unique : ∀ t ∈ Icc (t₀ - ρ) (t₀ + ρ), γ t = s → t = t₀)
+    (hL_R : L_R ≠ 0) (hL_L : L_L ≠ 0)
+    (h_tend_R : Tendsto (deriv γ) (𝓝[>] t₀) (𝓝 L_R))
+    (h_tend_L : Tendsto (deriv γ) (𝓝[<] t₀) (𝓝 L_L))
+    (hspec : ∀ l u : ℝ, t₀ - R ≤ l → l < t₀ → t₀ < u → u ≤ t₀ + R → a < l → u ≤ b →
+      (∀ t ∈ Icc l u, γ t = s → t = t₀) →
+      Tendsto (fun ε : ℝ => ∫ v in l..u,
+        if ‖γ v - s‖ > ε then (γ v - s)⁻¹ * deriv γ v else 0) (𝓝[>] (0 : ℝ))
+        (𝓝 (((Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ : ℝ) : ℂ) +
+          ((((-L_L) / (γ l - s)).arg + ((γ u - s) / L_R).arg : ℝ) : ℂ) * Complex.I)))
+    (hcf : cf t₀ = Complex.exp ((crossingAngle γ t₀ : ℂ) * Complex.I)) :
+    ∃ v : ℂ, HasCauchyPVAt γ (t₀ - ρ) (t₀ + ρ) (fun z => (z - s)⁻¹) s v ∧
+      Complex.exp v * ((γ (t₀ - ρ) - s) * ∏ t ∈ T.filter (fun t => t < t₀ - ρ), cf t) =
+        (γ (t₀ + ρ) - s) * ∏ t ∈ T.filter (fun t => t < t₀ + ρ), cf t := by
+  have hwin : uIcc (t₀ - ρ) (t₀ + ρ) ⊆ uIcc a b := by
+    rw [uIcc_of_le (by linarith : t₀ - ρ ≤ t₀ + ρ), uIcc_of_le hab]
+    exact Icc_subset_Icc hlo.le hhi
+  have hpc : IsPiecewiseC1On γ (t₀ - ρ) (t₀ + ρ) := h_imm.isPiecewiseC1On.mono hwin
+  have hne : ∀ t ∈ Icc (t₀ - ρ) (t₀ + ρ), t ≠ t₀ → γ t - s ≠ 0 := fun t ht hne0 h0 =>
+    hne0 (h_unique t ht (sub_eq_zero.mp h0))
+  have hw_L : γ (t₀ - ρ) - s ≠ 0 := hne _ ⟨le_rfl, by linarith⟩ (by intro h; linarith)
+  have hw_R : γ (t₀ + ρ) - s ≠ 0 := hne _ ⟨by linarith, le_rfl⟩ (by intro h; linarith)
+  refine ⟨_, hasCauchyPVAt_iff.mpr ⟨Filter.eventually_iff_exists_mem.mpr ⟨Ioi 0,
+    self_mem_nhdsWithin, fun ε hε => intervalIntegrable_inv_sub_truncated hpc.continuousOn
+      hpc.intervalIntegrable_deriv hε⟩, hspec _ _ (by linarith) (by linarith) (by linarith)
+      (by linarith) hlo hhi h_unique⟩, ?_⟩
+  have hnotmem : t₀ ∉ T.filter (fun t => t < t₀ - ρ) := by simp [hρ.le]
+  have hfil : T.filter (fun t => t < t₀ + ρ) = insert t₀ (T.filter (fun t => t < t₀ - ρ)) := by
+    ext t
+    simp only [Finset.mem_filter, Finset.mem_insert]
+    refine ⟨fun ⟨htT, hlt⟩ => ?_, ?_⟩
+    · by_cases h : t < t₀ - ρ
+      · exact Or.inr ⟨htT, h⟩
+      · exact Or.inl (h_unique t ⟨not_lt.mp h, hlt.le⟩ ((hT t).mp htT).2)
+    · rintro (rfl | ⟨htT, hlt⟩)
+      · exact ⟨ht₀, by linarith⟩
+      · exact ⟨htT, by linarith⟩
+  rw [hfil, Finset.prod_insert hnotmem, hcf,
+    exp_log_norm_add_arg_eq_mul_exp_crossingAngle hL_L hL_R hw_L hw_R h_tend_R h_tend_L]
+  field_simp
+
 /-- **The winding number of a closed immersion exponentiates to its crossing angles.** For a
 closed piecewise-`C¹` immersion `γ` on `[a, b]` whose basepoint avoids `s`, and a finset `T`
 listing exactly the parameters where `γ` meets `s`,
@@ -146,27 +238,16 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
     (hT : ∀ t, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s) :
     Complex.exp (2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b s)
       = Complex.exp (((∑ t ∈ T, crossingAngle γ t : ℝ) : ℂ) * Complex.I) := by
-  classical
-  rcases hab.eq_or_lt with rfl | hab'
-  · have hTe : T = ∅ := Finset.eq_empty_of_forall_notMem fun t ht => by
-      obtain ⟨ht_mem, ht_eq⟩ := (hT t).mp ht
-      rw [Icc_self, mem_singleton_iff] at ht_mem
-      exact hbase (ht_mem ▸ ht_eq)
-    rw [hTe, windingNumber_same]
-    simp
-  have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab).ge
+  have h_Ioo : ∀ t ∈ T, t ∈ Ioo a b := fun t ht =>
+    let ⟨⟨h1, h2⟩, he⟩ := (hT t).mp ht
+    ⟨h1.lt_of_ne fun h => hbase (h ▸ he), h2.lt_of_ne fun h => hbase (hclosed.trans (h ▸ he))⟩
   have h_complete : ∀ t ∈ Icc a b, γ t = s → t ∈ T := fun t ht he => (hT t).mpr ⟨ht, he⟩
-  have h_Ioo : ∀ t ∈ T, t ∈ Ioo a b := by
-    intro t ht
-    obtain ⟨⟨h1, h2⟩, he⟩ := (hT t).mp ht
-    refine ⟨lt_of_le_of_ne h1 ?_, lt_of_le_of_ne h2 ?_⟩
-    · rintro rfl; exact hbase he
-    · rintro rfl; exact hbase (hclosed.trans he)
   choose! R hR_pos L_R L_L hL_R hL_L h_tend_R h_tend_L h_spec using
     fun t₀ (ht₀ : t₀ ∈ T) => exists_radius_perWindow_tendsto_log_norm_add_arg h_imm
       (h_Ioo t₀ ht₀) ((hT t₀).mp ht₀).2
   obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R⟩ := exists_common_window_radius_le h_Ioo R hR_pos
-  obtain ⟨m, hm_pos, hm⟩ := exists_complement_windows_dist_lower_bound hγ_cont h_complete
+  obtain ⟨m, hm_pos, hm⟩ := exists_complement_windows_dist_lower_bound
+    (h_imm.continuousOn.mono (uIcc_of_le hab).ge) h_complete
     (fun _ => ρ) fun _ _ => hρ_pos
   have h_unique : ∀ t₀ ∈ T, ∀ t ∈ Icc (t₀ - ρ) (t₀ + ρ), γ t = s → t = t₀ :=
     fun t₀ ht₀ t ht he => eq_of_mem_window_of_eq_of_lt_of_two_mul_lt (h_endpts t₀ ht₀)
@@ -178,7 +259,9 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
     refine sorted_crossing_gluing_induction
       (Q := fun l u => ∃ v : ℂ, HasCauchyPVAt γ l u (fun z => (z - s)⁻¹) s v ∧
         Complex.exp v * Φ l = Φ u)
-      (γ := γ) (s := s) (A := a) (b := b) (r := ρ) (m := m) ?_ ?_
+      (γ := γ) (s := s) (A := a) (b := b) (r := ρ) (m := m)
+      (fun l u hal hlu hub hfar =>
+        exists_hasCauchyPVAt_exp_mul_eq_of_forall_le h_imm hab hT hm_pos hal hlu hub hfar) ?_
       (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) (fun _ => hρ_pos.le) a le_rfl hab
       (fun t ht => by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).1])
       (fun t ht => by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
@@ -186,87 +269,15 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
         ((Finset.mem_sort _).mp ht') hne).le)
       ?_
       (fun u hu h_avoid => hm u hu fun t ht => h_avoid t ((Finset.mem_sort _).mpr ht))
-    · -- A plain piece: the winding number is an ordinary integral and exponentiates to the
-      -- chord ratio, and no crossing lies in it, so the sector product does not move.
-      intro l u hal hlu hub hfar
-      have havoid : ∀ t ∈ uIcc l u, γ t ≠ s := by
-        intro t ht he
-        rw [uIcc_of_le hlu] at ht
-        have hle := hfar t ht
-        rw [he, sub_self, norm_zero] at hle
-        linarith
-      have hpc : IsPiecewiseC1On γ l u := h_imm.isPiecewiseC1On.mono (by
-        rw [uIcc_of_le hlu, uIcc_of_le hab]
-        exact Icc_subset_Icc hal hub)
-      have hint : IntervalIntegrable (fun t => (γ t - s)⁻¹ * deriv γ t) volume l u :=
-        intervalIntegrable_inv_sub_mul_deriv hpc.continuousOn havoid hpc.intervalIntegrable_deriv
-      have hval : 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ l u s
-          = ∫ t in l..u, (γ t - s)⁻¹ * deriv γ t := by
-        rw [windingNumber_eq_integral_of_avoidance hpc.continuousOn havoid hint,
-          mul_inv_cancel_left₀ Complex.two_pi_I_ne_zero]
-      refine ⟨2 * (Real.pi : ℂ) * Complex.I * windingNumber γ l u s, ?_, ?_⟩
-      · have h0 : HasCauchyPVAt γ l u (fun z => (z - s)⁻¹) s
-            (∫ t in l..u, (γ t - s)⁻¹ * deriv γ t) :=
-          HasCauchyPVAt.of_avoidance hpc.continuousOn havoid hint
-        rwa [← hval] at h0
-      · have hfilter : T.filter (fun t => t < l) = T.filter (fun t => t < u) := by
-          refine Finset.filter_congr fun t ht => ⟨fun h => by linarith, fun h => ?_⟩
-          by_contra hlt
-          rw [not_lt] at hlt
-          have hle := hfar t ⟨hlt, h.le⟩
-          rw [((hT t).mp ht).2, sub_self, norm_zero] at hle
-          linarith
-        have hl : γ l - s ≠ 0 := sub_ne_zero.mpr (havoid l left_mem_uIcc)
-        simp only [hΦ, hpc.exp_two_pi_I_mul_windingNumber havoid, hfilter]
-        field_simp
     · rintro l u₀ u - - ⟨v₁, h₁, e₁⟩ ⟨v₂, h₂, e₂⟩
       refine ⟨v₁ + v₂, h₁.concat h₂, ?_⟩
       rw [Complex.exp_add, mul_comm (Complex.exp v₁), mul_assoc, e₁, e₂]
-    · -- A crossing window: the per-window principal value exponentiates to the chord ratio
-      -- times the crossing angle, which is exactly the sector factor `Φ` gains there.
-      intro t₀ ht₀'
+    · intro t₀ ht₀'
       have ht₀ : t₀ ∈ T := (Finset.mem_sort _).mp ht₀'
-      have hlo : a < t₀ - ρ := by linarith [(h_endpts t₀ ht₀).1]
-      have hhi : t₀ + ρ ≤ b := by linarith [(h_endpts t₀ ht₀).2]
-      have hwin : uIcc (t₀ - ρ) (t₀ + ρ) ⊆ uIcc a b := by
-        rw [uIcc_of_le (by linarith : t₀ - ρ ≤ t₀ + ρ), uIcc_of_le hab]
-        exact Icc_subset_Icc hlo.le hhi
-      have hpc : IsPiecewiseC1On γ (t₀ - ρ) (t₀ + ρ) := h_imm.isPiecewiseC1On.mono hwin
-      have hne : ∀ t ∈ Icc (t₀ - ρ) (t₀ + ρ), t ≠ t₀ → γ t - s ≠ 0 := fun t ht hne0 h0 =>
-        hne0 (h_unique t₀ ht₀ t ht (sub_eq_zero.mp h0))
-      have hw_L : γ (t₀ - ρ) - s ≠ 0 :=
-        hne _ ⟨le_rfl, by linarith⟩ (by intro h; linarith)
-      have hw_R : γ (t₀ + ρ) - s ≠ 0 :=
-        hne _ ⟨by linarith, le_rfl⟩ (by intro h; linarith)
-      refine ⟨((Real.log ‖γ (t₀ + ρ) - s‖ - Real.log ‖γ (t₀ - ρ) - s‖ : ℝ) : ℂ) +
-        ((((-L_L t₀) / (γ (t₀ - ρ) - s)).arg + ((γ (t₀ + ρ) - s) / L_R t₀).arg : ℝ) : ℂ) *
-          Complex.I, ?_, ?_⟩
-      · refine hasCauchyPVAt_iff.mpr ⟨?_, h_spec t₀ ht₀ (t₀ - ρ) (t₀ + ρ)
-          (by linarith [hρ_le_R t₀ ht₀]) (by linarith [hρ_pos]) (by linarith [hρ_pos])
-          (by linarith [hρ_le_R t₀ ht₀]) hlo hhi (h_unique t₀ ht₀)⟩
-        exact Filter.eventually_iff_exists_mem.mpr ⟨Ioi 0, self_mem_nhdsWithin,
-          fun ε hε => intervalIntegrable_inv_sub_truncated hpc.continuousOn
-            hpc.intervalIntegrable_deriv hε⟩
-      · have hnotmem : t₀ ∉ T.filter (fun t => t < t₀ - ρ) := by
-          simp only [Finset.mem_filter, not_and]
-          intro _
-          linarith
-        have hfil : T.filter (fun t => t < t₀ + ρ)
-            = insert t₀ (T.filter (fun t => t < t₀ - ρ)) := by
-          ext t
-          simp only [Finset.mem_filter, Finset.mem_insert]
-          refine ⟨fun ⟨htT, hlt⟩ => ?_, ?_⟩
-          · by_cases h : t < t₀ - ρ
-            · exact Or.inr ⟨htT, h⟩
-            · exact Or.inl (h_unique t₀ ht₀ t ⟨not_lt.mp h, hlt.le⟩ ((hT t).mp htT).2)
-          · rintro (rfl | ⟨htT, hlt⟩)
-            · exact ⟨ht₀, by linarith⟩
-            · exact ⟨htT, by linarith⟩
-        simp only [hΦ, hfil, Finset.prod_insert hnotmem,
-          exp_log_norm_add_arg_eq_mul_exp_crossingAngle (hL_L t₀ ht₀) (hL_R t₀ ht₀) hw_L hw_R
-            (h_tend_R t₀ ht₀) (h_tend_L t₀ ht₀)]
-        field_simp
-        ring
+      exact exists_hasCauchyPVAt_exp_mul_eq_of_crossing_window h_imm hab hT ht₀ hρ_pos
+        (hρ_le_R t₀ ht₀) (by linarith [(h_endpts t₀ ht₀).1]) (by linarith [(h_endpts t₀ ht₀).2])
+        (h_unique t₀ ht₀) (hL_R t₀ ht₀) (hL_L t₀ ht₀) (h_tend_R t₀ ht₀) (h_tend_L t₀ ht₀)
+        (h_spec t₀ ht₀) rfl
   obtain ⟨v, hv, he⟩ := hQ
   have hΦa : Φ a = γ a - s := by
     simp only [hΦ, Finset.filter_false_of_mem fun t ht => not_lt.mpr (h_Ioo t ht).1.le,
@@ -275,9 +286,8 @@ theorem IsPwC1ImmersionOn.exp_two_pi_I_mul_windingNumber_eq_exp_sum_crossingAngl
     simp only [hΦ, ← hclosed, Finset.filter_true_of_mem fun t ht => (h_Ioo t ht).2]
   rw [windingNumber_eq_of_hasCauchyPVAt hv, mul_inv_cancel_left₀ Complex.two_pi_I_ne_zero]
   rw [hΦa, hΦb] at he
-  have hbase' : γ a - s ≠ 0 := sub_ne_zero.mpr hbase
   have hprod : Complex.exp v = ∏ t ∈ T, cf t :=
-    mul_right_cancel₀ hbase' (by rw [he]; ring)
+    mul_right_cancel₀ (sub_ne_zero.mpr hbase) (by rw [he]; ring)
   rw [hprod, hcf, ← Complex.exp_sum, ← Finset.sum_mul, Complex.ofReal_sum]
 
 /-- **Hungerbühler–Wasem Proposition 2.2, modulo the integer.** For a closed piecewise-`C¹`
