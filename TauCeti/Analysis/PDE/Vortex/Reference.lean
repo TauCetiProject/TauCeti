@@ -104,6 +104,14 @@ theorem referenceConnection_eq_angular (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z
     referenceConnection f m z v = -(m : ℂ) * I * ((v / z).im : ℂ) := by
   simp [referenceConnection, cutoff_eq_one f hz, div_eq_mul_inv, mul_comm]
 
+/-- The unit phase `w / ‖w‖` is smooth away from the origin. -/
+theorem contDiffAt_div_ofReal_norm {n : WithTop ℕ∞} {z : ℂ} (hz : z ≠ 0) :
+    ContDiffAt ℝ n (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
+  have hn : ContDiffAt ℝ n (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
+    ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
+  simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
+    contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
+
 /-- The section is smooth even at the origin. -/
 theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     ContDiff ℝ ∞ (referenceSection f m) := by
@@ -113,12 +121,8 @@ theorem contDiff_referenceSection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     apply (contDiffAt_const (c := (0 : ℂ))).congr_of_eventuallyEq
     filter_upwards [cutoff_eventuallyEq_zero f] with z hz
     simp [referenceSection, hz]
-  · have hn : ContDiffAt ℝ ∞ (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
-      ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
-    have hp : ContDiffAt ℝ ∞ (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
-      simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
-        contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
-    exact (ofRealCLM.contDiff.comp (contDiff_cutoff f)).contDiffAt.mul (hp.pow m)
+  · exact (ofRealCLM.contDiff.comp (contDiff_cutoff f)).contDiffAt.mul
+      ((contDiffAt_div_ofReal_norm hz).pow m)
 
 /-- The connection is a smooth map into the space of one-forms, including at the origin. -/
 theorem contDiff_referenceConnection (f : ContDiffBump (0 : ℝ)) (m : ℕ) :

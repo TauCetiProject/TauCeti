@@ -162,6 +162,18 @@ theorem hasCompactSupport_referenceField_zero_sub_vacuumField (f : ContDiffBump 
 
 /-! ### The reference field off a disc -/
 
+private theorem rOut_lt_norm_sq_of_sqrt_lt (f : ContDiffBump (0 : ℝ)) {z : ℂ}
+    (hz : √f.rOut < ‖z‖) : f.rOut < ‖z‖ ^ 2 :=
+  (Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hz)).1 hz
+
+private theorem norm_pos_of_rOut_lt (f : ContDiffBump (0 : ℝ)) {z : ℂ}
+    (hz : f.rOut < ‖z‖ ^ 2) : 0 < ‖z‖ := by
+  nlinarith [f.rOut_pos, norm_nonneg z]
+
+private theorem eventually_rOut_lt_norm_sq (f : ContDiffBump (0 : ℝ)) {z : ℂ}
+    (hz : f.rOut < ‖z‖ ^ 2) : ∀ᶠ w in 𝓝 z, f.rOut < ‖w‖ ^ 2 :=
+  (isOpen_lt continuous_const (by fun_prop : Continuous fun w : ℂ ↦ ‖w‖ ^ 2)).mem_nhds hz
+
 /-- Off the disc of squared radius `f.rOut`, the reference field is `(-i m dθ, (z / |z|) ^ m)`: its
 connection coefficients are `b₁ = m Im z / |z|²` and `b₂ = -m Re z / |z|²`. -/
 theorem referenceField_eq_of_rOut_le (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
@@ -174,7 +186,12 @@ theorem referenceField_eq_of_rOut_le (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z :
   simp only [div_eq_mul_inv, one_re, one_im, inv_im, inv_re, mul_im, mul_re, I_re, I_im, ofReal_re,
     ofReal_im, neg_re, neg_im, natCast_re, natCast_im, normSq_eq_norm_sq]
   ext i
-  fin_cases i <;> simp <;> ring
+  fin_cases i <;>
+    simp only [mul_zero, neg_zero, mul_one, sub_self, add_zero, neg_mul, mul_neg, one_mul,
+      zero_mul, neg_neg, zero_add, Nat.succ_eq_add_one, Nat.reduceAdd, Fin.zero_eta, Fin.mk_one,
+      Fin.reduceFinMk, Fin.isValue, Matrix.cons_val, Matrix.cons_val_zero, Matrix.cons_val_one,
+      neg_inj] <;>
+    ring
 
 /-- Off the disc of squared radius `f.rOut`, the reference field is the field
 `amplitudeField u (· ^ m)` reconstructed from the holomorphic factor `z ^ m` and the amplitude
@@ -183,9 +200,8 @@ theorem referenceField_eq_of_rOut_le (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z :
 theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
     (hz : f.rOut < ‖z‖ ^ 2) :
     referenceField f m =ᶠ[𝓝 z] amplitudeField (fun w ↦ -(m * Real.log ‖w‖)) (· ^ m) := by
-  filter_upwards [(isOpen_lt continuous_const (by fun_prop : Continuous fun w : ℂ ↦ ‖w‖ ^ 2)
-    ).mem_nhds hz] with w hw
-  have hn : 0 < ‖w‖ := by nlinarith [f.rOut_pos, norm_nonneg w]
+  filter_upwards [eventually_rOut_lt_norm_sq f hz] with w hw
+  have hn := norm_pos_of_rOut_lt f hw
   -- The derivative of `m log |w|` is `v ↦ m ⟪w, v⟫ / |w|² = m Re (v / w)`.
   have hd (v : ℂ) : fderiv ℝ (fun w : ℂ ↦ m * Real.log ‖w‖) w v = m * (v / w).re := by
     rw [((hasFDerivAt_log_norm_of_ne (norm_pos_iff.1 hn)).const_mul (m : ℝ)).fderiv]
@@ -200,12 +216,14 @@ theorem referenceField_eventuallyEq_amplitudeField (f : ContDiffBump (0 : ℝ)) 
   · simp only [Fin.reduceFinMk, amplitudeField_apply_two]
     rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hn m), div_pow, ← ofReal_pow,
       div_ofReal_re]
-    simp
+    simp only [ofReal_pow, Fin.isValue, Matrix.cons_val, ne_eq, OfNat.ofNat_ne_zero,
+      not_false_eq_true, div_left_inj']
     ring
   · simp only [Fin.reduceFinMk, amplitudeField_apply_three]
     rw [Real.exp_neg, ← Real.log_pow, Real.exp_log (pow_pos hn m), div_pow, ← ofReal_pow,
       div_ofReal_im]
-    simp
+    simp only [ofReal_pow, Fin.isValue, Matrix.cons_val, ne_eq, OfNat.ofNat_ne_zero,
+      not_false_eq_true, div_left_inj']
     ring
 
 /-- **The reference field is a vortex off a disc.** Off the disc of squared radius `f.rOut`, where
@@ -213,7 +231,7 @@ the reference field is `(-i m dθ, (z / |z|) ^ m)`, it solves the plane vortex e
 amplitude `-m log |z|` is harmonic there and the section has unit modulus. -/
 theorem equation_referenceField_eq_zero (f : ContDiffBump (0 : ℝ)) (m : ℕ) {z : ℂ}
     (hz : f.rOut < ‖z‖ ^ 2) : equation (referenceField f m) z = 0 := by
-  have hn : 0 < ‖z‖ := by nlinarith [f.rOut_pos, norm_nonneg z]
+  have hn := norm_pos_of_rOut_lt f hz
   have hu : InnerProductSpace.HarmonicAt (fun w : ℂ ↦ -(m * Real.log ‖w‖)) z :=
     (((analyticAt_id (𝕜 := ℂ) (z := z)).harmonicAt_log_norm
       (norm_pos_iff.1 hn)).const_smul (c := (m : ℝ))).neg
@@ -230,9 +248,7 @@ compactly supported field. -/
 theorem hasCompactSupport_equation_referenceField (f : ContDiffBump (0 : ℝ)) (m : ℕ) :
     HasCompactSupport (equation (referenceField f m)) := by
   refine HasCompactSupport.intro (isCompact_closedBall (0 : ℂ) (√f.rOut)) fun z hz ↦ ?_
-  have hz' : √f.rOut < ‖z‖ := by simpa using hz
-  exact equation_referenceField_eq_zero f m
-    ((Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hz')).1 hz')
+  exact equation_referenceField_eq_zero f m (rOut_lt_norm_sq_of_sqrt_lt f (by simpa using hz))
 
 /-- **The reference field has bounded derivatives.** For every finite order `N`, each coordinate
 of the reference field has iterated derivatives of orders at most `N` bounded on the whole plane.
@@ -248,9 +264,7 @@ theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 
   -- that agrees with it wherever the cutoff is inactive.
   have hev (g : ℂ → ℝ) (hg : ∀ w, f.rOut ≤ ‖w‖ ^ 2 → referenceField f m w i = g w) (z : ℂ)
       (hz : √f.rOut < ‖z‖) : (fun z ↦ referenceField f m z i) =ᶠ[𝓝 z] g := by
-    have hz' : f.rOut < ‖z‖ ^ 2 := (Real.sqrt_lt' ((Real.sqrt_nonneg _).trans_lt hz)).1 hz
-    filter_upwards [(isOpen_lt continuous_const (by fun_prop : Continuous fun w : ℂ ↦ ‖w‖ ^ 2)
-      ).mem_nhds hz'] with w hw
+    filter_upwards [eventually_rOut_lt_norm_sq f (rOut_lt_norm_sq_of_sqrt_lt f hz)] with w hw
     exact hg w (le_of_lt hw)
   -- Off the disc the connection coefficients are `ℓ z / |z|²`, homogeneous of degree `-1`.
   have hconn (ℓ : ℂ →L[ℝ] ℝ)
@@ -269,12 +283,7 @@ theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 
       ∃ M : ℝ≥0, ∀ k ≤ N, ∀ z, ‖iteratedFDeriv ℝ k (fun z ↦ referenceField f m z i) z‖ ≤ M := by
     refine exists_norm_iteratedFDeriv_le_of_eventuallyEq (d := 0) le_rfl hF (fun z hz ↦ ?_)
       (fun t ht z _ ↦ ?_) (hev _ hg)
-    · have hn : ContDiffAt ℝ N (fun w : ℂ ↦ (‖w‖ : ℂ)) z :=
-        ofRealCLM.contDiff.contDiffAt.comp z (contDiffAt_norm ℂ hz)
-      have hp : ContDiffAt ℝ N (fun w : ℂ ↦ w / (‖w‖ : ℂ)) z := by
-        simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
-          contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
-      exact (ℓ.contDiff.contDiffAt.comp z (hp.pow m)).contDiffWithinAt
+    · exact (ℓ.contDiff.contDiffAt.comp z ((contDiffAt_div_ofReal_norm hz).pow m)).contDiffWithinAt
     · rw [Real.rpow_zero, one_smul, norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
         mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
   fin_cases i
