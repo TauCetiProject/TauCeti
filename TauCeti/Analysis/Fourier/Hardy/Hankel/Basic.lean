@@ -62,6 +62,16 @@ theorem hankel_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) :
       Lp.multiplicationOperator a ∘L hardySubmodule.subtypeL :=
   (rfl)
 
+/-- The negative-mode matrix of the orthogonal-complement-valued Hankel operator. -/
+theorem inner_negativeHardyBasis_hankel_hardyBasis
+    (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (i j : ℕ) :
+    ⟪negativeHardyBasis i, hankel a (hardyBasis j)⟫_ℂ =
+      fourierCoeff a (-(i : ℤ) - 1 - j) := by
+  simp only [hankel_apply, ContinuousLinearMap.comp_apply, Submodule.subtypeL_apply,
+    coe_hardyBasis, Lp.multiplicationOperator_apply]
+  rw [Submodule.inner_orthogonalProjectionOnto_eq_of_mem_left, coe_negativeHardyBasis,
+    ← HilbertBasis.repr_apply_apply, fourierBasis_repr, fourierCoeff_smul_fourierBasis]
+
 /-- The ambient value of a Hankel operator is the complementary Hardy projection. -/
 theorem coe_hankel_apply (a : Lp ℂ ∞ (AddCircle.haarAddCircle (T := 1))) (f : HardySpace) :
     (hankel a f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) =
