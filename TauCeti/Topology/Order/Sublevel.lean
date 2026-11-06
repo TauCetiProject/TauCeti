@@ -24,6 +24,13 @@ needed only on the one compact sublevel, not on the entire space. Similarly, if 
 `{w ≥ -δ}` of a continuous `w` is compact, a closed set avoiding the zero level of `w` avoids a
 whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
 
+The local counterpart concerns a strict local minimum `x` of a function `f` continuous near `x`
+on a locally compact Hausdorff space: for every neighbourhood `U` of `x`, a preconnected set
+through a point `y` close to `x`, on which `f` stays at most `f y`, lies in `U`
+(`TauCeti.eventually_forall_isPreconnected_subset_of_strictLocalMin`). The trajectories of a
+dynamical system along which `f` does not increase are such sets, so this is the topological core
+of Lyapunov stability.
+
 Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
 sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
 compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
@@ -89,6 +96,39 @@ theorem exists_pos_sublevel_subset_of_unique_min {X : Type*} [TopologicalSpace X
   · refine ⟨(a - f x) / 2, by positivity, fun y hy ↦ ?_⟩
     by_contra hyU
     exact hne ⟨y, ⟨by dsimp at hy ⊢; linarith, hyU⟩⟩
+
+open Filter Topology in
+/-- **Stability of a strict local minimum.** Let `x` be a strict local minimum of a real function
+`f` on a locally compact Hausdorff space, with `f` continuous on a neighbourhood of `x`. For every
+neighbourhood `U` of `x`, every point `y` close enough to `x` has the following property: every
+preconnected set containing `y` on which `f` stays at most `f y` lies in `U`.
+
+Applied to the trajectories of a dynamical system along which `f` does not increase, such as the
+energy of a Hamiltonian system, this is the Lyapunov stability of `x`. -/
+theorem eventually_forall_isPreconnected_subset_of_strictLocalMin {X : Type*}
+    [TopologicalSpace X] [T2Space X] [LocallyCompactSpace X] {f : X → ℝ} {x : X} {s : Set X}
+    (hs : s ∈ 𝓝 x) (hf : ContinuousOn f s) (hmin : ∀ᶠ y in 𝓝[≠] x, f x < f y) {U : Set X}
+    (hU : U ∈ 𝓝 x) :
+    ∀ᶠ y in 𝓝 x, ∀ S : Set X, IsPreconnected S → y ∈ S → (∀ z ∈ S, f z ≤ f y) → S ⊆ U := by
+  rw [eventually_nhdsWithin_iff] at hmin
+  -- A compact neighbourhood `K` of `x` inside `s ∩ U` on which `x` is the strict minimum.
+  obtain ⟨K, hK, hxK, hKsub⟩ := exists_compact_subset isOpen_interior
+    (mem_interior_iff_mem_nhds.2 (inter_mem (inter_mem hs hU) hmin))
+  have hKsub' := hKsub.trans interior_subset
+  -- On the compact rim `K \ interior K`, `f` is bounded below by some `c > f x`.
+  obtain ⟨c, hxc, hc⟩ := (hK.diff isOpen_interior).exists_forall_le'
+    (hf.mono fun z hz ↦ (hKsub' hz.1).1.1) fun z hz ↦
+      (hKsub' hz.1).2 fun hzx ↦ hz.2 (hzx ▸ hxK)
+  filter_upwards [isOpen_interior.mem_nhds hxK,
+    (hf.continuousAt hs).eventually (eventually_lt_nhds hxc)] with y hyK hyc S hS hyS hSy
+  -- `S` misses the rim, so it lies in the open set `interior K` or in the open set `Kᶜ`.
+  have hrim : S ⊆ interior K ∪ Kᶜ := fun z hz ↦ by
+    by_contra h
+    simp only [mem_union, mem_compl_iff, not_or, not_not] at h
+    exact (hSy z hz).not_gt (hyc.trans_le (hc z ⟨h.2, h.1⟩))
+  exact (hS.subset_left_of_subset_union isOpen_interior hK.isClosed.isOpen_compl
+    (disjoint_compl_right.mono_left interior_subset) hrim ⟨y, hyS, hyK⟩).trans
+      (interior_subset.trans fun z hz ↦ (hKsub' hz).1.2)
 
 /-- If the superlevel `{w ≥ -δ}` of a continuous real function `w` is compact, then a closed set
 avoiding the zero level of `w` also avoids the band `{|w| ≤ η}` for some `0 < η ≤ δ`. -/

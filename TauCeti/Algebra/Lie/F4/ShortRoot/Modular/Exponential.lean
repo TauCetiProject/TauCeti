@@ -60,14 +60,15 @@ canceling the intermediate base change through `ZMod 2`. -/
 noncomputable def f4ShortRootBaseChangeInclusion {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] :
     A ⊗[ZMod 2] f4ShortRootLieIdeal →ₗ[A] A ⊗[ℤ] f4ChevalleyLieLattice :=
-  (TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice).toLinearMap.comp
+  (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
+      f4ChevalleyLieLattice).toLinearMap.comp
     ((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A)
 
 /-- Evaluate the scalar-extended ideal inclusion as inclusion followed by cancellation. -/
 theorem f4ShortRootBaseChangeInclusion_apply {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (z : A ⊗[ZMod 2] f4ShortRootLieIdeal) :
     f4ShortRootBaseChangeInclusion (A := A) z =
-      TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
+      TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
         (((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A) z) := by
   simp only [f4ShortRootBaseChangeInclusion, LinearMap.comp_apply,
     LieHom.coe_toLinearMap, LieEquiv.coe_toLieHom]
@@ -77,14 +78,15 @@ underlying modular vector. -/
 @[simp] theorem f4ShortRootBaseChangeInclusion_tmul {A : Type*} [CommRing A]
     [Algebra (ZMod 2) A] (a : A) (z : f4ShortRootLieIdeal) :
     f4ShortRootBaseChangeInclusion (A := A) (a ⊗ₜ[ZMod 2] z) =
-      TauCeti.cancelBaseChange ℤ (ZMod 2) A
+      TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
         f4ChevalleyLieLattice
           (a ⊗ₜ[ZMod 2] (z : f4ModularChevalleyLieAlgebra)) := by
   -- Expand the inclusion and its two subtype coercions on this pure tensor.
-  change (TauCeti.cancelBaseChange ℤ (ZMod 2) A
+  change (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
       f4ChevalleyLieLattice)
         (((f4ShortRootLieIdeal.incl.toLinearMap).baseChange A) (a ⊗ₜ[ZMod 2] z)) = _
-  exact congrArg (TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice)
+  exact congrArg (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
+      f4ChevalleyLieLattice)
     (LinearMap.baseChange_tmul f4ShortRootLieIdeal.incl.toLinearMap a z)
 
 /-- Scalar extension preserves the injection of the short-root ideal into the Chevalley lattice. -/
@@ -98,7 +100,7 @@ theorem f4ShortRootBaseChangeInclusion_injective {A : Type*} [CommRing A]
       f4ShortRootLieIdeal.incl_injective
   intro x y hxy
   apply hbase
-  apply (TauCeti.cancelBaseChange ℤ (ZMod 2) A
+  apply (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
     f4ChevalleyLieLattice).injective
   exact hxy
 
@@ -114,7 +116,7 @@ noncomputable def f4ShortRootBaseChangeAdjoint {A : Type*} [CommRing A]
   (LieModule.toEnd A
     (A ⊗[ZMod 2] f4ModularChevalleyLieAlgebra)
     (A ⊗[ZMod 2] f4ShortRootLieIdeal)).toLinearMap.comp
-      (TauCeti.cancelBaseChange ℤ (ZMod 2) A
+      (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
         f4ChevalleyLieLattice).symm.toLinearMap
 
 /-- The scalar-extended adjoint acts through cancellation of the two scalar extensions. -/
@@ -126,7 +128,7 @@ noncomputable def f4ShortRootBaseChangeAdjoint {A : Type*} [CommRing A]
       (LieModule.toEnd A
         (A ⊗[ZMod 2] f4ModularChevalleyLieAlgebra)
         (A ⊗[ZMod 2] f4ShortRootLieIdeal))
-        ((TauCeti.cancelBaseChange ℤ (ZMod 2) A
+        ((TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
           f4ChevalleyLieLattice).symm x) z := by
   rfl
 
@@ -146,7 +148,7 @@ theorem f4ShortRootBaseChangeInclusion_adjoint {A : Type*} [CommRing A]
     (z : A ⊗[ZMod 2] f4ShortRootLieIdeal) :
     f4ShortRootBaseChangeInclusion (A := A) (f4ShortRootBaseChangeAdjoint x z) =
       ⁅x, f4ShortRootBaseChangeInclusion (A := A) z⁆ := by
-  let e := TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
+  let e := TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
   let f := (f4ShortRootLieIdeal.incl.toLinearMap).baseChange A
   calc
     _ = e (f ((LieModule.toEnd A
@@ -177,10 +179,10 @@ theorem f4ShortRootBaseChangeAdjoint_cancel_tmul
     {A : Type*} [CommRing A] [Algebra (ZMod 2) A]
     (x : f4ModularChevalleyLieAlgebra) :
     f4ShortRootBaseChangeAdjoint
-        (TauCeti.cancelBaseChange ℤ (ZMod 2) A
+        (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
           f4ChevalleyLieLattice ((1 : A) ⊗ₜ[ZMod 2] x)) =
       (f4ShortRootAdjoint x).baseChange A := by
-  let e := TauCeti.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
+  let e := TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A f4ChevalleyLieLattice
   -- The imported restricted adjoint is opaque here, so compare its action pointwise.
   have hrho : (LieModule.toEnd (ZMod 2) f4ModularChevalleyLieAlgebra
       f4ShortRootLieIdeal) x = f4ShortRootAdjoint x := by
@@ -217,7 +219,7 @@ theorem f4ShortRootBaseChangeAdjoint_toMatrix_cancel_tmul
     LinearMap.toMatrix (f4ShortRootLieIdealBasis.baseChange A)
         (f4ShortRootLieIdealBasis.baseChange A)
         (f4ShortRootBaseChangeAdjoint
-          (TauCeti.cancelBaseChange ℤ (ZMod 2) A
+          (TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange ℤ (ZMod 2) A
             f4ChevalleyLieLattice ((1 : A) ⊗ₜ[ZMod 2] x))) =
       (f4ShortRootAdjointMatrix x).map (algebraMap (ZMod 2) A) := by
   calc
@@ -241,7 +243,8 @@ theorem f4ShortRootBaseChangeInclusion_tmul_of_coe_eq {A : Type*} [CommRing A]
     (y : f4ChevalleyLieLattice)
     (h : (z : f4ModularChevalleyLieAlgebra) = 1 ⊗ₜ[ℤ] y) :
     f4ShortRootBaseChangeInclusion (A := A) (a ⊗ₜ[ZMod 2] z) = a ⊗ₜ[ℤ] y := by
-  rw [f4ShortRootBaseChangeInclusion_tmul, h, TauCeti.cancelBaseChange_tmul]
+  rw [f4ShortRootBaseChangeInclusion_tmul, h,
+    TauCeti.LieAlgebra.ExtendScalars.cancelBaseChange_tmul]
   simp
 
 /-- On any ideal vector represented by a single integral tensor, the integral root exponential
