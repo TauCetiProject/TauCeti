@@ -234,7 +234,7 @@ omit [FiniteDimensional ℝ F] [MeasurableSpace F] [BorelSpace F] in
 and keep `φ ∘ Df` nonzero in the direction `v₀`, and `g` is inverted by `Θ` on an open set `W`
 around `a` that `g` maps into `V`. -/
 private theorem exists_isOpen_localInverse_nhds {k : ℕ} (hk : (k : ℕ∞ω) ≠ 0)
-    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [CompleteSpace G]
+    {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
     (hU : IsOpen U) {a : E} (haU : a ∈ U) (hfc : ContinuousAt (fderiv ℝ f) a)
     {φ : F →L[ℝ] ℝ} {v₀ : E} (hφ : φ (fderiv ℝ f a v₀) = 1) {g : E → G} {e : E ≃L[ℝ] G}
     (hgC : ContDiffAt ℝ (k : ℕ∞ω) g a) (hgd : HasFDerivAt g (e : E →L[ℝ] G) a) :
