@@ -65,7 +65,7 @@ open scoped CategoryTheory.MonObj TensorProduct
 attribute [local instance 100] LieRing.ofAssociativeRing
 attribute [local instance high] Algebra.toModule
 
-local notation "CM" => CartanMatrix.E 7
+local notation "CM" => weightTable.cartanMatrix
 local notation "rootGen" => TauCeti.serreRootGenerator CM
 local notation "cartanGen" => TauCeti.serreH ℚ CM
 local notation "rootWeight" => DynkinType.E7.rootGeneratorWeight DynkinType.valid_E7
@@ -88,6 +88,7 @@ theorem inr_not_mem_positiveSimpleRoots (i : Fin 7) : Sum.inr i ∉ positiveSimp
 /-- The character of a positive numbered root generator is the corresponding Cartan row. -/
 private theorem rootWeight7_inl (i : Fin 7) : rootWeight7 (.inl i) = CM i := by
   ext j
+  rw [weightTable_cartanMatrix]
   simpa only [DynkinType.rank_E7, DynkinType.cartanMatrix_E7] using
     (DynkinType.rootGeneratorWeight_inl (t := DynkinType.E7)
       (ht := DynkinType.valid_E7) i j)
@@ -103,7 +104,9 @@ theorem positiveRootWeight_strict (k : Fin 7 ⊕ Fin 7) (hk : k ∈ positiveSimp
   have hcoord := congrFun hrs i
   have hr := e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one r i
   have hs := e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one s i
-  have hdiag : CM i i = 2 := CartanMatrix.E_diag 7 i
+  have hdiag : CM i i = 2 := by
+    rw [weightTable_cartanMatrix]
+    exact CartanMatrix.E_diag 7 i
   simp only [Pi.add_apply, nsmul_eq_mul, Pi.mul_apply, Pi.natCast_apply, hdiag] at hcoord
   have hm_one : m = 1 := by
     rcases hr with hr | hr | hr <;> rcases hs with hs | hs | hs <;> omega
