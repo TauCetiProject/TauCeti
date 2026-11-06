@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Immersion.Basic
 public import TauCeti.Geometry.Manifold.Immersion.LocalDiffeomorph
 public import TauCeti.Geometry.Symplectic.Lagrangian.Opens
 
@@ -18,9 +17,8 @@ source or target. The source restriction criterion retains the explicit half-dim
 condition, including for an empty open set. Consequently the condition is local on any open
 cover once this dimension condition is imposed.
 
-The pullback criterion allows an immersion to be checked using differential forms rather
-than tangent images. None of these results requires the immersion to be injective, the
-ambient form to be closed, or the source to be nonempty.
+None of these results requires the immersion to be injective, the ambient form to be closed,
+or the source to be nonempty.
 
 ## References
 
@@ -42,19 +40,6 @@ variable {E H M F H' N : Type*}
   [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
   {J : ModelWithCorners ℝ F H'} [TopologicalSpace N] [ChartedSpace H' N]
   [IsManifold J ∞ N] {σ : SmoothTwoForm I M} {hσ : σ.IsNondegenerate} {f : N → M}
-
-variable (hσ) in
-/-- A smooth immersion is Lagrangian exactly when its pulled-back two-form vanishes and
-its source has half the ambient dimension. This includes empty sources. -/
-theorem isLagrangianImmersion_iff_mpullback_eq_zero (hf : IsImmersion J I ∞ f) :
-    hσ.IsLagrangianImmersion J f ↔
-      SmoothForm.mpullback f hf.contMDiff σ = 0 ∧ 2 * finrank ℝ F = finrank ℝ E := by
-  constructor
-  · intro h
-    exact ⟨(isIsotropicMap_iff_mpullback_eq_zero hf.contMDiff).mp h.isIsotropicMap,
-      h.two_mul_finrank⟩
-  · rintro ⟨h, hdim⟩
-    exact ⟨hf, (isIsotropicMap_iff_mpullback_eq_zero hf.contMDiff).mpr h, hdim⟩
 
 section Reparametrization
 
@@ -113,10 +98,7 @@ theorem isLagrangianImmersion_comp_subtype_val_iff (U : Opens N) :
         (∀ x ∈ U, (hσ.symplecticFormAt (f x)).IsIsotropic
           (LinearMap.range (mfderiv J I f x).toLinearMap)) ∧
         2 * finrank ℝ F = finrank ℝ E := by
-  have hi : IsImmersion J I ∞ (f ∘ (Subtype.val : U → N)) ↔
-      ∀ x ∈ U, IsImmersionAt J I ∞ f x := by
-    rw [TauCeti.isImmersion_iff_forall_isImmersionAt]
-    simp only [TauCeti.isImmersionAt_comp_subtypeVal_iff, Subtype.forall]
+  have hi := TauCeti.isImmersion_comp_subtypeVal_iff (n := ∞) (I := J) (J := I) (f := f) (U := U)
   constructor
   · intro h
     exact ⟨hi.mp h.isImmersion,
@@ -144,12 +126,7 @@ theorem isLagrangianImmersion_iff_of_isOpenCover {ι : Type*} {U : ι → Opens 
     hσ.IsLagrangianImmersion J f ↔
       ∀ i, hσ.IsLagrangianImmersion J (f ∘ (Subtype.val : U i → N)) := by
   refine ⟨fun h i ↦ h.comp_subtype_val (U i), fun h ↦ ?_⟩
-  have himm : IsImmersion J I ∞ f := by
-    apply TauCeti.isImmersion_iff_forall_isImmersionAt.mpr
-    intro x
-    obtain ⟨i, hi⟩ := hU.exists_mem x
-    exact TauCeti.isImmersionAt_comp_subtypeVal_iff.mp
-      ((h i).isImmersion.isImmersionAt ⟨x, hi⟩)
+  have himm := (TauCeti.isImmersion_iff_of_isOpenCover hU).mpr fun i ↦ (h i).isImmersion
   refine ⟨himm, ?_, hdim⟩
   exact (hσ.isIsotropicMap_iff_of_isOpenCover
     (himm.contMDiff.mdifferentiable (by simp)) hU).mpr fun i ↦ (h i).isIsotropicMap
@@ -167,21 +144,14 @@ exactly when its ambient inclusion is a Lagrangian immersion. -/
 theorem isLagrangianImmersion_subtype_val_comp_iff :
     hσ.IsLagrangianImmersion J ((Subtype.val : U → M) ∘ g) ↔
       (hσ.mpullback_subtype_val U).IsLagrangianImmersion J g := by
-  have hi : IsImmersion J I ∞ g ↔
-      IsImmersion J I ∞ ((Subtype.val : U → M) ∘ g) := by
-    rw [TauCeti.isImmersion_iff_forall_isImmersionAt,
-      TauCeti.isImmersion_iff_forall_isImmersionAt]
-    exact forall_congr' fun x ↦ by
-      simpa only [Function.comp_apply, Subtype.coe_eta] using
-        (TauCeti.isImmersionAt_codRestrict_opens_iff (I := J) (J := I)
-          (f := (Subtype.val : U → M) ∘ g) (fun y ↦ (g y).property) (x := x))
+  have hi := TauCeti.isImmersion_subtypeVal_comp_iff (n := ∞) (I := J) (J := I) (g := g)
   constructor
   · intro h
-    have hg := hi.mpr h.isImmersion
+    have hg := hi.mp h.isImmersion
     exact ⟨hg, (hσ.isIsotropicMap_subtype_val_comp_iff
       (hg.contMDiff.mdifferentiable (by simp))).mp h.isIsotropicMap, h.two_mul_finrank⟩
   · intro h
-    exact ⟨hi.mp h.isImmersion, (hσ.isIsotropicMap_subtype_val_comp_iff
+    exact ⟨hi.mpr h.isImmersion, (hσ.isIsotropicMap_subtype_val_comp_iff
       (h.isImmersion.contMDiff.mdifferentiable (by simp))).mpr h.isIsotropicMap,
       h.two_mul_finrank⟩
 
