@@ -108,6 +108,43 @@ private theorem exists_w1p_one_truncation [IsFiniteMeasure (mu.restrict (Omega :
     · have hl : ¬ l < W1p.value u x := fun h ↦ hk (hkl.trans h)
       simp [indicator, h2, hk, hl]
 
+omit [FiniteDimensional ℝ E] in
+/-- The double truncation `w = (u - k)⁺ - (u - l)⁺` at levels `k < l` has `L¹` norm at least
+`(l - k) |{u ≥ l}|`, since `w ≥ l - k` on that set. -/
+private theorem ofReal_mul_measure_le_eLpNorm_value_truncation (u : W1p mu Omega p)
+    {w : W1p mu Omega 1} {k l : ℝ} (hkl : k < l)
+    (hA : MeasurableSet {x | l ≤ W1p.value u x})
+    (hwval : ∀ᵐ x ∂mu.restrict (Omega : Set E),
+      W1p.value w x = max (W1p.value u x - k) 0 - max (W1p.value u x - l) 0) :
+    ENNReal.ofReal (l - k) * (mu.restrict (Omega : Set E)) {x | l ≤ W1p.value u x} ≤
+      eLpNorm (W1p.value w) 1 (mu.restrict (Omega : Set E)) := by
+  rw [eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
+    ← lintegral_indicator_const hA]
+  refine lintegral_mono_ae ?_
+  filter_upwards [hwval] with x hx
+  by_cases hxA : l ≤ W1p.value u x
+  · rw [indicator_of_mem (s := {x | l ≤ W1p.value u x}) hxA, hx, max_eq_left (by linarith),
+      max_eq_left (by linarith), Real.enorm_eq_ofReal (by linarith)]
+    exact ENNReal.ofReal_le_ofReal (by linarith)
+  · rw [indicator_of_notMem (s := {x | l ≤ W1p.value u x}) hxA]
+    exact zero_le
+
+omit [FiniteDimensional ℝ E] in
+/-- The `W^{1,1}` seminorm of the double truncation `w` of `u` is the `L¹` mass of `∇u` on the
+strip `{k < u < l}`. -/
+private theorem enorm_gradient_truncation_eq [IsFiniteMeasure (mu.restrict (Omega : Set E))]
+    (u : W1p mu Omega p) {w : W1p mu Omega 1} {k l : ℝ}
+    (hC : MeasurableSet {x | k < W1p.value u x ∧ W1p.value u x < l})
+    (hwgrad : ∀ᵐ x ∂mu.restrict (Omega : Set E), ‖W1p.gradient w x‖ₑ =
+      {x | k < W1p.value u x ∧ W1p.value u x < l}.indicator
+        (fun x ↦ ‖W1p.gradient u x‖ₑ) x) :
+    ‖W1p.gradient w‖ₑ = ENNReal.ofReal
+      (∫ x in {x | k < W1p.value u x ∧ W1p.value u x < l}, ‖W1p.gradient u x‖
+        ∂mu.restrict (Omega : Set E)) := by
+  rw [Lp.enorm_def, eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
+    lintegral_congr_ae hwgrad, lintegral_indicator hC, ofReal_integral_norm_eq_lintegral_enorm]
+  exact ((Lp.memLp (W1p.gradient u)).integrable Fact.out).integrableOn
+
 /-- **De Giorgi's isoperimetric inequality.**  Let `Ω` be a bounded convex open set in a
 finite-dimensional real inner product space of dimension `n`, let `u ∈ W^{1,p}(Ω)` with
 `1 ≤ p ≤ ∞`, and let `k < l`.  Then, all sets being taken inside `Ω`,
@@ -165,26 +202,8 @@ theorem W1p.sub_mul_measureReal_mul_measureReal_le_of_convex
       (hB.inter Omega.isOpen.measurableSet).nullMeasurableSet inter_subset_right hS0 w
     rw [havg] at h
     simpa only [sub_zero] using h
-  -- Its left side is at least `(l - k) |{u ≥ l}|`.
-  have hlower : ENNReal.ofReal (l - k) * nu {x | l ≤ W1p.value u x} ≤
-      eLpNorm (W1p.value w) 1 nu := by
-    rw [eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
-      ← lintegral_indicator_const hA]
-    refine lintegral_mono_ae ?_
-    filter_upwards [hwval] with x hx
-    by_cases hxA : l ≤ W1p.value u x
-    · rw [indicator_of_mem (s := {x | l ≤ W1p.value u x}) hxA, hx, max_eq_left (by linarith),
-        max_eq_left (by linarith), Real.enorm_eq_ofReal (by linarith)]
-      exact ENNReal.ofReal_le_ofReal (by linarith)
-    · rw [indicator_of_notMem (s := {x | l ≤ W1p.value u x}) hxA]
-      exact zero_le
-  -- Its right side is `∫_{k < u < l} |∇u|`.
-  have hupper : ‖W1p.gradient w‖ₑ = ENNReal.ofReal I := by
-    rw [Lp.enorm_def, eLpNorm_one_eq_lintegral_enorm (Lp.aestronglyMeasurable _),
-      lintegral_congr_ae hwgrad,
-      lintegral_indicator hC, hI, ofReal_integral_norm_eq_lintegral_enorm]
-    exact ((Lp.memLp (W1p.gradient u)).integrable Fact.out).integrableOn
-  have hkey := hlower.trans (hPW.trans_eq (by rw [hupper]))
+  have hkey := (ofReal_mul_measure_le_eLpNorm_value_truncation u hkl hA hwval).trans
+    (hPW.trans_eq (by rw [enorm_gradient_truncation_eq u hC hwgrad]))
   -- Clear the denominator `|{u ≤ k}|`.
   have hSpos : 0 < mu.real S := ENNReal.toReal_pos hS0 (measure_ne_top_of_subset
     inter_subset_right hb.measure_lt_top.ne)
