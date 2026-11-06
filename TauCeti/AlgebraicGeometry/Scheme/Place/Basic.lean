@@ -8,6 +8,8 @@ module
 public import Mathlib.RingTheory.Valuation.Discrete.IsDiscreteValuationRing
 public import TauCeti.AlgebraicGeometry.Scheme.BaseAlgebra
 public import TauCeti.FieldTheory.FunctionField.Place.Adic
+import TauCeti.AlgebraicGeometry.RationalPoint.Basic
+import TauCeti.FieldTheory.FunctionField.Place.ConstantField
 
 /-!
 # Places attached to points with discrete valuation ring stalks
@@ -29,6 +31,10 @@ computed with the valuation-theoretic API for places, and conversely.
   field of its place.
 * `Scheme.toPlace_degree_eq_residueDegree`: the degree of the place is the scheme-theoretic
   residue degree of `x`.
+* `Scheme.isIntegrallyClosedIn_functionField_of_residueDegree_eq_one`: a point of residue degree
+  one with discrete valuation ring stalk forces `k` to be integrally closed in `k(X)`.
+* `Scheme.isIntegrallyClosedIn_functionField_of_section`: in particular, so does a `k`-rational
+  point with discrete valuation ring stalk.
 
 ## References
 
@@ -40,7 +46,7 @@ computed with the valuation-theoretic API for places, and conversely.
 
 public section
 
-open _root_.AlgebraicGeometry
+open CategoryTheory _root_.AlgebraicGeometry
 
 namespace TauCeti
 
@@ -174,6 +180,30 @@ theorem _root_.AlgebraicGeometry.Scheme.toPlace_degree_eq_residueDegree (X : Sch
     (X.toPlace (k := k) x).degree = (X ↘ Spec (.of k)).residueDegree x := by
   rw [Scheme.toPlace_degree, Scheme.residueFieldBaseAlgebra_eq_compHom]
   exact ((X ↘ Spec (.of k)).residueDegree_eq_finrank x).symm
+
+/-- **A point of residue degree one forces exact constants.** If the stalk of `X` at `x` is a
+discrete valuation ring and `x` has residue degree one over `k`, then `k` is integrally closed in
+the function field `k(X)`. This is the scheme form of
+`TauCeti.Place.isIntegrallyClosedIn_of_degree_eq_one` for the place attached to `x`. -/
+theorem _root_.AlgebraicGeometry.Scheme.isIntegrallyClosedIn_functionField_of_residueDegree_eq_one
+    (X : Scheme.{u}) [IsIntegral X] [X.Over (Spec (.of k))] {x : X}
+    [IsDiscreteValuationRing (X.presheaf.stalk x)]
+    (hx : (X ↘ Spec (.of k)).residueDegree x = 1) :
+    IsIntegrallyClosedIn k X.functionField :=
+  (X.toPlace (k := k) x).isIntegrallyClosedIn_of_degree_eq_one
+    (by rw [Scheme.toPlace_degree_eq_residueDegree, hx])
+
+/-- **A rational point forces exact constants.** If `s` is a `k`-rational point of `X` and the
+stalk of `X` at its image `x = s y` is a discrete valuation ring, then `k` is integrally closed in
+the function field `k(X)`. The image is passed as a point `x` with `x = s y` so that the stalk
+instance can come from a codimension-one point whose underlying point is `s y`. -/
+theorem _root_.AlgebraicGeometry.Scheme.isIntegrallyClosedIn_functionField_of_section
+    (X : Scheme.{u}) [IsIntegral X] [X.Over (Spec (.of k))] {s : Spec (.of k) ⟶ X}
+    (hs : s ≫ (X ↘ Spec (.of k)) = 𝟙 _) {y : Spec (.of k)} {x : X} (hx : x = s y)
+    [IsDiscreteValuationRing (X.presheaf.stalk x)] :
+    IsIntegrallyClosedIn k X.functionField :=
+  X.isIntegrallyClosedIn_functionField_of_residueDegree_eq_one (x := x)
+    (by rw [hx]; exact residueDegree_eq_one_of_section hs y)
 
 end
 
