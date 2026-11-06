@@ -243,6 +243,9 @@ theorem tangentHom_isComplexAntilinear (ν : InhomogeneousTerm j J) (q : P × M)
       (ν.val.tangentHom q).toLinearMap := by
   apply isComplexAntilinear_of_apply
   intro v
+  -- The goal applies the three underlying linear maps; the public evaluation laws below
+  -- instead apply their bundled structures. Their function coercions are those projections,
+  -- so identify only these wrappers to let the evaluation laws rewrite the actual structures.
   change ν.val.tangentHom q (j.almostComplexStructureAt q.1 v) =
     -(J.freeze q.1).almostComplexStructureAt q.2 (ν.val.tangentHom q v)
   rw [ContMDiffAlmostComplexStructure.almostComplexStructureAt_apply,

@@ -116,6 +116,10 @@ theorem complexAntilinearPart_eq_floer_iff
   let R := complexAntilinearPart (AlmostComplexStructure.product ℝ).toLinearMap
     K.toLinearMap L.toLinearMap
   let T : (ℝ × ℝ) →L[ℝ] V := (floer J X hX).val.tangentHom q
+  -- R and T abbreviate the exact maps in the statement. K packages the same target
+  -- endomorphism with its square proof; its function coercion evaluates its toLinearMap.
+  -- There is no rewrite rule for these local abbreviations: fold only these wrappers
+  -- before applying the public projection and Floer evaluation formulas below.
   change R = T.toLinearMap ↔ L (1, 0) + K (L (0, 1)) = K (X q)
   have hR : R stdComplexLineReal = (2⁻¹ : ℝ) •
       (L (1, 0) + K (L (0, 1))) := by
@@ -133,11 +137,11 @@ theorem complexAntilinearPart_eq_floer_iff
   · intro he
     have hreal : R stdComplexLineReal = (2⁻¹ : ℝ) • K (X q) :=
       hR.trans (congrArg ((2⁻¹ : ℝ) • ·) he)
-    have hi := (complexAntilinearPart_isComplexAntilinear
-      (AlmostComplexStructure.product ℝ).square_neg K.square_neg L.toLinearMap).apply
-        stdComplexLineReal
-    change R (AlmostComplexStructure.product ℝ stdComplexLineReal) =
-      -K (R stdComplexLineReal) at hi
+    have hi : R (AlmostComplexStructure.product ℝ stdComplexLineReal) =
+        -K (R stdComplexLineReal) :=
+      (complexAntilinearPart_isComplexAntilinear
+        (AlmostComplexStructure.product ℝ).square_neg K.square_neg L.toLinearMap).apply
+          stdComplexLineReal
     rw [AlmostComplexStructure.product_apply_stdComplexLineReal, hreal] at hi
     have himag : R stdComplexLineImag = (2⁻¹ : ℝ) • X q := by
       simpa only [map_smul, K.apply_apply, smul_neg, neg_neg] using hi

@@ -580,11 +580,7 @@ variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {b : M → B} {s : Set M} {x : M} {n : ℕ∞ω}
   {A : ∀ x, V₁ (b x) →L[𝕜] V₂ (b x) →L[𝕜] V₃ (b x)}
 
-/-- Fibrewise composition preserves joint `Cⁿ` regularity along any common base map
-(`ContMDiff.clm_bundle_comp`). The corresponding native section operation is
-`ContMDiffSection.clmComp`; it requires no finite rank or completeness assumption.
-
-Interchanging the two inputs of a smooth family of bilinear bundle maps preserves
+/-- Interchanging the two inputs of a smooth family of bilinear bundle maps preserves
 smoothness, also within a parameter set. -/
 theorem _root_.ContMDiffWithinAt.clm_bundle_flip
     (hA : ContMDiffWithinAt IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂ →L[𝕜] F₃)) n
