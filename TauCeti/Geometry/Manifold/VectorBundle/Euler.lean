@@ -37,6 +37,9 @@ curves are defined for all time, so the Euler vector field is complete
 
 * `TauCeti.vectorBundleEulerField`: the Euler vector field.
 * `TauCeti.hasMFDerivAt_vectorBundleEulerField`: it is the velocity at `t = 1` of `t ↦ t • z`.
+* `TauCeti.mfderiv_vectorBundleEulerField`: its image under a differential is the velocity of the
+  image of the line `t ↦ t • z`.
+* `TauCeti.mfderiv_vectorBundleEulerField_of_linear`: fibrewise linear maps preserve it.
 * `TauCeti.vectorBundleEulerField_eq_trivializationAt`: its coordinates in the chart at `z`.
 * `TauCeti.mfderiv_proj_vectorBundleEulerField`: it is vertical.
 * `TauCeti.contMDiff_vectorBundleEulerField`: it is a smooth section of the tangent bundle of the
@@ -101,6 +104,37 @@ theorem hasMFDerivAt_vectorBundleEulerField (z : TotalSpace F V) :
       ((1 : 𝕜 →L[𝕜] 𝕜).smulRight (vectorBundleEulerField I z)) := by
   rw [vectorBundleEulerField_eq_trivializationAt]
   exact hasMFDerivAt_smul_aux z
+
+/-- **The Euler vector field along a map.** The differential at `z` of a map `f` sends the Euler
+vector field to the velocity at `t = 1` of the image under `f` of the line `t ↦ t • z`. -/
+theorem mfderiv_vectorBundleEulerField {E' H' M' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace M']
+    [ChartedSpace H' M'] {f : TotalSpace F V → M'} {z : TotalSpace F V}
+    (hf : MDifferentiableAt (I.prod 𝓘(𝕜, F)) I' f z) :
+    mfderiv (I.prod 𝓘(𝕜, F)) I' f z (vectorBundleEulerField I z) =
+      mfderiv 𝓘(𝕜) I' (f ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) 1 (1 : 𝕜) :=
+  (mfderiv_comp_apply_of_eq (1 : 𝕜) hf (hasMFDerivAt_vectorBundleEulerField z).mdifferentiableAt
+    (by simp) (1 : 𝕜)).symm
+
+/-- **Fibrewise linear maps preserve Euler vector fields.** A map between the total spaces of two
+vector bundles which covers a map `g` of the bases and is linear on each fibre sends the Euler
+vector field to the Euler vector field, at every point where it is differentiable. -/
+theorem mfderiv_vectorBundleEulerField_of_linear {E' H' B' F' : Type*} [NormedAddCommGroup E']
+    [NormedSpace 𝕜 E'] [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} [TopologicalSpace B']
+    [ChartedSpace H' B'] [NormedAddCommGroup F'] [NormedSpace 𝕜 F'] {V' : B' → Type*}
+    [∀ b, AddCommMonoid (V' b)] [∀ b, Module 𝕜 (V' b)] [∀ b, TopologicalSpace (V' b)]
+    [TopologicalSpace (TotalSpace F' V')] [FiberBundle F' V']
+    {f : TotalSpace F V → TotalSpace F' V'} {g : B → B'} (φ : ∀ b, V b →ₗ[𝕜] V' (g b))
+    (hfφ : ∀ w, f w = ⟨g w.proj, φ w.proj w.2⟩) {z : TotalSpace F V}
+    (hf : MDifferentiableAt (I.prod 𝓘(𝕜, F)) (I'.prod 𝓘(𝕜, F')) f z) :
+    mfderiv (I.prod 𝓘(𝕜, F)) (I'.prod 𝓘(𝕜, F')) f z (vectorBundleEulerField I z) =
+      vectorBundleEulerField I' (f z) := by
+  -- The image of the line `t ↦ t • z` is the line `t ↦ t • f z`.
+  have hline : (f ∘ fun t : 𝕜 ↦ (⟨z.proj, t • z.2⟩ : TotalSpace F V)) =
+      fun t ↦ (⟨(f z).proj, t • (f z).2⟩ : TotalSpace F' V') := by
+    funext t
+    rw [Function.comp_apply, hfφ, hfφ z, map_smul]
+  rw [mfderiv_vectorBundleEulerField hf, hline, vectorBundleEulerField]
 
 /-- The Euler vector field vanishes along the zero section. -/
 @[simp]
