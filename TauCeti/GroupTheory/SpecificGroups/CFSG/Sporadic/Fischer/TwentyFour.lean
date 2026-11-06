@@ -638,16 +638,22 @@ abbrev Fi24AutomorphismGroup : Type :=
 order of the two generators. -/
 theorem fi24AutomorphismGroup_of_mul_of_pow (i j : Fin 12) :
     (PresentedGroup.of i * PresentedGroup.of j : Fi24AutomorphismGroup) ^
-      fi24AutomorphismCoxeterMatrix i j = 1 :=
-  -- `Fi24AutomorphismGroup` unfolds to this presented group by `fi24AutomorphismRelators_def`.
-  of_mul_of_pow_coxeterRelators_append fi24AutomorphismCoxeterMatrix
+      fi24AutomorphismCoxeterMatrix i j = 1 := by
+  -- `Fi24AutomorphismGroup` is presented by `fi24AutomorphismRelators`, which is the Coxeter
+  -- relators followed by the extra ones by `fi24AutomorphismRelators_def`.
+  unfold Fi24AutomorphismGroup
+  rw [fi24AutomorphismRelators_def]
+  exact of_mul_of_pow_coxeterRelators_append fi24AutomorphismCoxeterMatrix
     fi24AutomorphismAdditionalRelators i j
 
 /-- Every source generator is an involution in the source presented group. -/
 theorem fi24AutomorphismGroup_of_mul_of_self (i : Fin 12) :
-    (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 :=
-  -- `Fi24AutomorphismGroup` unfolds to this presented group by `fi24AutomorphismRelators_def`.
-  of_mul_of_self_coxeterRelators_append fi24AutomorphismCoxeterMatrix
+    (PresentedGroup.of i * PresentedGroup.of i : Fi24AutomorphismGroup) = 1 := by
+  -- `Fi24AutomorphismGroup` is presented by `fi24AutomorphismRelators`, which is the Coxeter
+  -- relators followed by the extra ones by `fi24AutomorphismRelators_def`.
+  unfold Fi24AutomorphismGroup
+  rw [fi24AutomorphismRelators_def]
+  exact of_mul_of_self_coxeterRelators_append fi24AutomorphismCoxeterMatrix
     fi24AutomorphismAdditionalRelators i
 
 /-- **All source generators agree in the abelianization of the source presented group.** Two
