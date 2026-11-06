@@ -251,25 +251,6 @@ section Sufficiency
 variable {X : Type*} [PseudoMetricSpace X] [MeasurableSpace X] [OpensMeasurableSpace X]
   {p : ℝ≥0∞} {γ : Type*} {L : Filter γ} {μs : γ → ProbabilityMeasure X} {μ : ProbabilityMeasure X}
 
-/-- The transport cost of the cost `min (edist x y) (2 * R) ^ p` from `μᵢ` to `μ` tends to `0`
-along weak convergence of probability measures, for a finite nonzero exponent `p`. -/
-theorem tendsto_transportCost_min_edist_rpow_of_tendsto_probabilityMeasure
-    [TopologicalSpace.SeparableSpace X] (hp0 : p ≠ 0) (hp : p ≠ ∞) (R : ℝ≥0)
-    (h : Tendsto μs L (𝓝 μ)) :
-    Tendsto (fun i ↦ transportCost (fun z : X × X ↦ min (edist z.1 z.2) (2 * R) ^ p.toReal)
-      (μs i : Measure X) (μ : Measure X)) L (𝓝 0) := by
-  have hq : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
-  refine tendsto_transportCost_of_tendsto_probabilityMeasure (M := (2 * (R : ℝ≥0∞)) ^ p.toReal)
-    (ENNReal.rpow_ne_top_of_nonneg hq.le (by finiteness))
-    (fun z ↦ ENNReal.rpow_le_rpow (min_le_right _ _) hq.le) (fun η hη ↦ ?_) h
-  have hpow : Tendsto (fun t : ℝ≥0∞ ↦ t ^ p.toReal) (𝓝 0) (𝓝 0) := by
-    simpa [ENNReal.zero_rpow_of_pos hq] using
-      (ENNReal.continuous_rpow_const (y := p.toReal)).tendsto 0
-  obtain ⟨δ, hδ, hδη⟩ :=
-    ENNReal.nhds_zero_basis.eventually_iff.1 (hpow.eventually (ge_mem_nhds hη))
-  exact ⟨δ, hδ, fun a b hab ↦
-    (ENNReal.rpow_le_rpow (min_le_left _ _) hq.le).trans (hδη hab)⟩
-
 /-- The `2 ^ q`-multiple of the `q`-moment of `ν` beyond radius `R` is at most `2 ^ q * τ`, if the
 `q`-moment of `ν` beyond some smaller radius `R'` is at most `τ`. -/
 private theorem lintegral_const_mul_indicator_edist_rpow_le {q : ℝ} (hq : 0 ≤ q) (x : X)
@@ -321,7 +302,7 @@ theorem tendsto_wassersteinEDist_of_tendsto_probabilityMeasure_of_tendsto_linteg
     measurableSet_le measurable_const (continuous_const.nndist continuous_id).measurable
   have hf : Measurable fun w ↦ 2 ^ p.toReal * S.indicator (fun w ↦ edist x w ^ p.toReal) w :=
     (((continuous_const.edist continuous_id).measurable.pow_const _).indicator hS).const_mul _
-  have hcore := tendsto_transportCost_min_edist_rpow_of_tendsto_probabilityMeasure hp0 hp R h
+  have hcore := tendsto_transportCost_min_edist_rpow_of_tendsto_probabilityMeasure hp0 hp (2 * R) h
   filter_upwards [hcore.eventually (ge_mem_nhds hε2), hR₁] with i hi hRi
   calc transportCost (fun z : X × X ↦ edist z.1 z.2 ^ p.toReal) (μs i : Measure X) μ
       ≤ transportCost (fun z : X × X ↦ min (edist z.1 z.2) (2 * R) ^ p.toReal +
