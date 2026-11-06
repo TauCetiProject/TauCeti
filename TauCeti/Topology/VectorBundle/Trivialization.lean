@@ -27,7 +27,10 @@ More generally, any linear trivialization sends a vector over its base set to a 
 exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). For two linear
 trivializations whose base sets contain `b`, the fibre equivalence `E_b ≃ F` of the second is that
 of the first followed by the coordinate change from the first to the second
-(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`).
+(`Bundle.Trivialization.continuousLinearEquivAt_trans_coordChangeL`). Linear coordinate changes
+satisfy the identity and cocycle laws over the relevant base sets
+(`Bundle.Trivialization.coordChangeL_self_apply`,
+`Bundle.Trivialization.coordChangeL_coordChangeL_apply`).
 
 exactly when the vector is nonzero (`Bundle.Trivialization.snd_apply_ne_zero_iff`). We also record
 the product trivialization's fibrewise inverse (`Bundle.Trivialization.prod_symm_apply'`), the
@@ -112,6 +115,26 @@ theorem continuousLinearEquivAt_trans_coordChangeL (hb : b ∈ e.baseSet) (hb' :
   rw [← comp_continuousLinearEquivAt_eq_coord_change e e' ⟨hb, hb'⟩]
   ext x
   simp only [ContinuousLinearEquiv.trans_apply, ContinuousLinearEquiv.symm_apply_apply]
+
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- The coordinate change from a linear trivialization to itself is the identity over its base
+set. -/
+@[simp]
+theorem coordChangeL_self_apply (hb : b ∈ e.baseSet) (v : F) : e.coordChangeL 𝕜 e b v = v := by
+  rw [e.coordChangeL_apply' e ⟨hb, hb⟩]
+  exact e.coordChange_same_apply hb v
+
+omit [∀ b, TopologicalSpace (E b)] [FiberBundle F E] in
+/-- **Cocycle law for linear coordinate changes**: over the intersection of three base sets, the
+coordinate change from `e` to `e'` followed by the one from `e'` to `e''` is the coordinate change
+from `e` to `e''`. -/
+@[simp]
+theorem coordChangeL_coordChangeL_apply (e'' : Trivialization F (π F E)) [e''.IsLinear 𝕜]
+    (hb : b ∈ e.baseSet) (hb' : b ∈ e'.baseSet) (hb'' : b ∈ e''.baseSet) (v : F) :
+    e'.coordChangeL 𝕜 e'' b (e.coordChangeL 𝕜 e' b v) = e.coordChangeL 𝕜 e'' b v := by
+  rw [e'.coordChangeL_apply' e'' ⟨hb', hb''⟩, e.coordChangeL_apply' e' ⟨hb, hb'⟩,
+    e.coordChangeL_apply' e'' ⟨hb, hb''⟩]
+  exact e.coordChange_coordChange e' e'' hb hb' v
 
 end Bundle.Trivialization
 
