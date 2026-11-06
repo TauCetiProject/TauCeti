@@ -39,6 +39,8 @@ morphisms out of it.
 * `DerivedCategory.boundedAboveProjective_of_bounded`: in an abelian category with
   enough projectives, every object of the bounded derived category is represented by a bounded
   above complex of projective objects.
+* `DerivedCategory.exists_projective_isGE_isStrictlyLE_of_bounded`: such a complex can moreover
+  be chosen with cohomology bounded below.
 * `TauCeti.DerivedCategory.Bounded.leftOrthogonal_quotient_obj_of_projective`: a bounded complex
   of projectives is left orthogonal to the acyclic objects of the bounded homotopy category.
 * `TauCeti.DerivedCategory.Bounded.Qh_map_bijective_of_projective`: the localization
@@ -152,6 +154,21 @@ theorem boundedAboveProjective_of_bounded [EnoughProjectives C]
   exact (boundedAboveProjective C).prop_of_iso
     (DerivedCategory.Bounded.ι.mapIso
       ((TauCeti.DerivedCategory.Bounded.Qh C).mapIso eY ≪≫ e)) hK
+
+/-- In an abelian category with enough projectives, every object `X` of the bounded derived
+category is represented by a complex `K` of projective objects which is strictly `≤ b` and has no
+cohomology in degrees `< a`, for some `a` and `b`. -/
+theorem exists_projective_isGE_isStrictlyLE_of_bounded [EnoughProjectives C]
+    (X : DerivedCategory.Bounded C) :
+    ∃ (K : CochainComplex C ℤ) (a b : ℤ), K.IsGE a ∧ K.IsStrictlyLE b ∧
+      (∀ n, Projective (K.X n)) ∧
+        Nonempty (DerivedCategory.Q.obj K ≅ DerivedCategory.Bounded.ι.obj X) := by
+  obtain ⟨K, b, _, hK, ⟨e⟩⟩ :=
+    (boundedAboveProjective_iff _).1 (boundedAboveProjective_of_bounded X)
+  -- `X` lies in the bounded derived category, so it is `≥ a` for the canonical t-structure.
+  obtain ⟨a, ha⟩ := X.property.1
+  have : TStructure.t.IsGE (DerivedCategory.Bounded.ι.obj X) a := ha
+  exact ⟨K, a, b, (isGE_Q_obj_iff K a).1 (TStructure.t.isGE_of_iso e.symm a), ‹_›, hK, ⟨e⟩⟩
 
 end DerivedCategory
 

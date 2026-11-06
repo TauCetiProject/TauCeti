@@ -48,8 +48,8 @@ dimension `< d` and `K` is exact below `a`, then along the short exact sequences
   objects of `C` without higher extensions by projectives, placed in sufficiently positive
   degrees.
 * `DerivedCategory.exists_bounded_projective_of_projective_opcycles`: a bounded above complex of
-  projectives, exact below `m`, with projective `K.opcycles m` is quasi-isomorphic to the bounded
-  complex of projectives `K.truncGE m`.
+  projectives, exact below `m`, with projective `K.opcycles m` is quasi-isomorphic to a bounded
+  complex of projectives.
 * `DerivedCategory.exists_bounded_projective_of_perfect`: a perfect object is represented by a
   bounded complex of projective objects.
 * `DerivedCategory.exists_bounded_projective_of_hasProjectiveDimensionLT`,
@@ -153,8 +153,8 @@ end ExtOrthogonal
 
 /-- Let `K` be a complex of projective objects which is strictly `≤ b` and has no cohomology in
 degrees `< m`, for some `m ≤ b`. If the cokernel `K.opcycles m` of the differential into degree
-`m` is projective, then the canonical truncation `K.truncGE m` is a bounded complex of projective
-objects isomorphic to `K` in the derived category. -/
+`m` is projective, then `K` is isomorphic in the derived category to a bounded complex of
+projective objects (namely its canonical truncation `K.truncGE m`). -/
 theorem exists_bounded_projective_of_projective_opcycles {K : CochainComplex C ℤ} {m b : ℤ}
     (hmb : m ≤ b) [K.IsStrictlyLE b] [K.IsGE m] (hK : ∀ n, Projective (K.X n))
     [Projective (K.opcycles m)] :
@@ -180,11 +180,7 @@ theorem exists_bounded_projective_of_perfect [EnoughProjectives C] {X : DerivedC
     ∃ (K : CochainComplex C ℤ) (a b : ℤ), K.IsStrictlyGE a ∧ K.IsStrictlyLE b ∧
       (∀ n, Projective (K.X n)) ∧ Nonempty (Q.obj K ≅ DerivedCategory.Bounded.ι.obj X) := by
   obtain ⟨n₀, hn₀⟩ := exists_homSingle_eq_zero_of_perfect hX
-  obtain ⟨K, d, _, hK, ⟨e⟩⟩ :=
-    (boundedAboveProjective_iff _).1 (boundedAboveProjective_of_bounded X)
-  obtain ⟨a, ha⟩ := X.property.1
-  have : TStructure.t.IsGE (DerivedCategory.Bounded.ι.obj X) a := ha
-  have : K.IsGE a := (isGE_Q_obj_iff K a).1 (TStructure.t.isGE_of_iso e.symm a)
+  obtain ⟨K, a, d, _, _, hK, ⟨e⟩⟩ := exists_projective_isGE_isStrictlyLE_of_bounded X
   have := CochainComplex.isKProjective_of_projective K d
   -- Truncate `K` in a degree `m` below which `K` is exact and `X` has no maps to `C[1 - m]`.
   let m := min (min a (n₀ + 1)) d
@@ -213,11 +209,7 @@ theorem exists_bounded_projective_of_hasProjectiveDimensionLT [EnoughProjectives
     (hd : ∀ Y : C, HasProjectiveDimensionLT Y d) (X : DerivedCategory.Bounded C) :
     ∃ (K : CochainComplex C ℤ) (a b : ℤ), K.IsStrictlyGE a ∧ K.IsStrictlyLE b ∧
       (∀ n, Projective (K.X n)) ∧ Nonempty (Q.obj K ≅ DerivedCategory.Bounded.ι.obj X) := by
-  obtain ⟨K, b, _, hK, ⟨e⟩⟩ :=
-    (boundedAboveProjective_iff _).1 (boundedAboveProjective_of_bounded X)
-  obtain ⟨a, ha⟩ := X.property.1
-  have : TStructure.t.IsGE (DerivedCategory.Bounded.ι.obj X) a := ha
-  have : K.IsGE a := (isGE_Q_obj_iff K a).1 (TStructure.t.isGE_of_iso e.symm a)
+  obtain ⟨K, a, b, _, _, hK, ⟨e⟩⟩ := exists_projective_isGE_isStrictlyLE_of_bounded X
   -- Truncate `K` in a degree `m` such that `K` is exact in degrees `m, …, m + d + 1`.
   let m := min (a - d - 2) b
   have : K.IsGE m := K.isGE_of_ge m a (by lia)
