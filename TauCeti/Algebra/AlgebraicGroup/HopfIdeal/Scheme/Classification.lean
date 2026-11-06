@@ -37,6 +37,10 @@ ideals of `H`.
   criterion for factoring through a quotient closed subgroup.
 * `TauCeti.CommHopfAlgCat.quotientClosedSubgroup_commonKernel_le_iff`: the minimality of the
   quotient closed subgroup cut out by a common-kernel Hopf ideal.
+* `TauCeti.CommHopfAlgCat.mk_eq_quotientClosedSubgroup_kerOfSurjective`: a closed subgroup
+  scheme presented by a surjective map of Hopf algebras is cut out by its kernel.
+* `TauCeti.CommHopfAlgCat.mapIso_quotientClosedSubgroup`: transport of quotient closed subgroups
+  along isomorphisms of Hopf algebras.
 * `TauCeti.CommHopfAlgCat.mk_quotientSpecMapOfLe_eq_quotientClosedSubgroup`: the
   quotient-to-quotient presentation of a quotient closed subgroup.
 * `TauCeti.CommHopfAlgCat.hopfIdealOrderIsoClosedSubgroup`: the classification of closed
@@ -78,6 +82,12 @@ noncomputable def quotientClosedSubgroup (H : _root_.CommHopfAlgCat.{u} R)
     ClosedSubgroupScheme
       ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H)) :=
   ClosedSubgroupScheme.mk (quotientSpecι H I)
+
+/-- `quotientClosedSubgroup H I` is the closed subgroup scheme represented by the quotient closed
+immersion `Spec (H ⧸ I) ⟶ Spec H`. -/
+lemma quotientClosedSubgroup_def (H : _root_.CommHopfAlgCat.{u} R) (I : HopfIdeal R H) :
+    quotientClosedSubgroup H I = ClosedSubgroupScheme.mk (quotientSpecι H I) :=
+  (rfl)
 
 /-- The subobject underlying `quotientClosedSubgroup` is represented by the quotient closed
 immersion `Spec (H ⧸ I) ⟶ Spec H`. -/
@@ -366,6 +376,22 @@ theorem quotientClosedSubgroup_commonKernel_le_iff
   rw [← hP, quotientClosedSubgroup_le_iff, le_commonKernelHopfIdeal_iff]
   simp only [quotientClosedSubgroup_factors_hopfSpec_map_iff]
 
+/-- **Closed subgroup schemes from surjective presentations.** Let `i : X ⟶ Spec H` be a closed
+immersion of group schemes, and suppose that `X ≅ Spec K` identifies `i` with the morphism induced
+by a surjective map of Hopf algebras `f : H ⟶ K`. Then the closed subgroup scheme represented by
+`i` is the one cut out by the kernel of `f`. -/
+theorem mk_eq_quotientClosedSubgroup_kerOfSurjective (H K : _root_.CommHopfAlgCat.{u} R)
+    {X : Grp (Over (Spec (CommRingCat.of R)))}
+    (i : X ⟶ (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op H))
+    [IsClosedImmersion i.hom.hom.left]
+    (e : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).obj (Opposite.op K) ≅ X)
+    (f : H ⟶ K) (hf : Function.Surjective f.hom)
+    (hmap_f : (AlgebraicGeometry.hopfSpec (CommRingCat.of R)).map f.op = e.hom ≫ i) :
+    ClosedSubgroupScheme.mk i = quotientClosedSubgroup H (HopfIdeal.kerOfSurjective f.hom hf) :=
+  Subtype.ext <| by
+    rw [ClosedSubgroupScheme.coe_mk, quotientClosedSubgroup_coe]
+    exact (quotientSubobject_ker_eq_mk H K f hf e i hmap_f).symm
+
 /-- The closed subgroup represented by a quotient-to-quotient map is the quotient closed subgroup
 cut out by the kernel of that map. -/
 theorem mk_quotientSpecMapOfLe_eq_quotientClosedSubgroup
@@ -373,12 +399,35 @@ theorem mk_quotientSpecMapOfLe_eq_quotientClosedSubgroup
     ClosedSubgroupScheme.mk (quotientSpecMapOfLe H hIJ) =
       quotientClosedSubgroup (quotient H I)
         (HopfIdeal.kerOfSurjective (quotientMapOfLe H hIJ).hom
-          (quotientMapOfLe_surjective H hIJ)) := by
-  apply Subtype.ext
-  rw [ClosedSubgroupScheme.coe_mk, quotientClosedSubgroup_coe]
-  exact (quotientSubobject_ker_eq_mk (quotient H I) (quotient H J)
-    (quotientMapOfLe H hIJ) (quotientMapOfLe_surjective H hIJ) (Iso.refl _)
-    (quotientSpecMapOfLe H hIJ) (by simp [quotientSpecMapOfLe_def])).symm
+          (quotientMapOfLe_surjective H hIJ)) :=
+  mk_eq_quotientClosedSubgroup_kerOfSurjective (quotient H I) (quotient H J) _ (Iso.refl _)
+    (quotientMapOfLe H hIJ) (quotientMapOfLe_surjective H hIJ)
+    (by simp [quotientSpecMapOfLe_def])
+
+/-- **Transport of quotient closed subgroups along isomorphisms of Hopf algebras.** An isomorphism
+`φ : K ≅ K'` of Hopf algebras induces `Spec K ≅ Spec K'`, which carries the closed subgroup scheme
+cut out by a Hopf ideal `J` of `K` to the one cut out by its image `φ(J)`. -/
+theorem mapIso_quotientClosedSubgroup {K K' : _root_.CommHopfAlgCat.{u} R} (φ : K ≅ K')
+    (J : HopfIdeal R K) :
+    ClosedSubgroupScheme.mapIso
+        ((AlgebraicGeometry.hopfSpec (CommRingCat.of R)).mapIso φ.op).symm
+        (quotientClosedSubgroup K J) =
+      quotientClosedSubgroup K' (J.map φ.hom.hom) := by
+  have hf : Function.Surjective (φ.inv ≫ mkQuotient K J).hom := by
+    rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (mkQuotient_surjective K J).comp (ConcreteCategory.bijective_of_isIso φ.inv).2
+  rw [quotientClosedSubgroup_def, ClosedSubgroupScheme.mapIso_mk,
+    mk_eq_quotientClosedSubgroup_kerOfSurjective K' (quotient K J) _ (Iso.refl _) _ hf (by
+      rw [Iso.symm_hom, Functor.mapIso_inv, Iso.op_inv, Iso.refl_hom, Category.id_comp,
+        quotientSpecι_def, ← Functor.map_comp, ← op_comp])]
+  congr 1
+  ext x
+  rw [HopfIdeal.mem_kerOfSurjective, _root_.CommHopfAlgCat.hom_comp, BialgHom.comp_apply,
+    mkQuotient_eq_zero_iff, HopfIdeal.mem_map_iff_of_surjective
+      (ConcreteCategory.bijective_of_isIso φ.hom).2]
+  exact ⟨fun hx ↦ ⟨_, hx, _root_.CommHopfAlgCat.hom_inv_apply φ x⟩, by
+    rintro ⟨y, hy, rfl⟩
+    simpa using hy⟩
 
 /-- The closed subgroup scheme cut out by a Hopf ideal `I` of a commutative `R`-Hopf algebra `H`
 is finite locally free of constant rank `k` over `Spec R` exactly when `H ⧸ I` is finite projective
