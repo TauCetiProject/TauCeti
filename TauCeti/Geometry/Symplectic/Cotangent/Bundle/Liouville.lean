@@ -166,38 +166,6 @@ theorem inChartAt_liouvilleForm (z₀ : CotangentBundle I M) {w : E × (E →L[�
     RoughForm.inChartAt (liouvilleForm I M).1 z₀ w = cotangentLiouvilleForm w :=
   inChartAt_liouvilleRough z₀ hw
 
-/-- **The Liouville form is tautological.** Pulling it back along the section `x ↦ σ x` of the
-cotangent bundle defined by a family of covectors `σ` gives back `σ`, at every point where that
-section is differentiable. -/
-theorem mpullback_liouvilleForm_section {σ : (x : M) → TangentSpace I x →L[ℝ] ℝ} {x : M}
-    (hσ : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
-      (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y)) x) :
-    mpullback I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y))
-        (liouvilleForm I M).1 x =
-      ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ x) := by
-  have hcomp := mfderiv_comp x
-    ((Bundle.contMDiff_proj (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) _).mdifferentiableAt
-      one_ne_zero) hσ
-  -- The projection of the section is the identity of `M`.
-  rw [show (π (E →L[ℝ] ℝ) (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) ∘
-      fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y)) = id from rfl, mfderiv_id] at hcomp
-  ext v
-  rw [mpullback_apply, liouvilleForm_apply, ContinuousAlternatingMap.ofSubsingleton_apply_apply]
-  exact congrArg (σ x) (DFunLike.congr_fun hcomp (v 0)).symm
-
-/-- **The Liouville form is tautological.** Pulling it back along the smooth section of the
-cotangent bundle defined by a smooth one-form `α` gives back `α`. -/
-theorem mpullback_liouvilleForm (α : SmoothForm I M ℝ 1) :
-    SmoothForm.mpullback (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x))
-      (SmoothForm.degreeOneEquiv α).contMDiff (liouvilleForm I M) = α := by
-  apply Subtype.ext
-  funext x
-  rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_section
-    (((SmoothForm.degreeOneEquiv α).contMDiff x).mdifferentiableAt (by simp))]
-  ext v
-  rw [ContinuousAlternatingMap.ofSubsingleton_apply_apply, SmoothForm.degreeOneEquiv_apply_apply]
-  exact congrArg (α.1 x) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
-
 variable {G H'' : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G] [TopologicalSpace H'']
   {K : ModelWithCorners ℝ G H''} {X : Type*} [TopologicalSpace X] [ChartedSpace H'' X] in
 /-- The Liouville form pulled back along a map `ψ : X → T*M` lying over a map `g : X → M`
@@ -215,6 +183,33 @@ theorem mpullback_liouvilleForm_apply_of_proj_comp_eq {ψ : X → CotangentBundl
     ((Bundle.contMDiff_proj (fun y : M ↦ TangentSpace I y →L[ℝ] ℝ) _).mdifferentiableAt
       one_ne_zero) hψ (v 0)
   rw [← hπψ, hπ]
+
+/-- **The Liouville form is tautological.** Pulling it back along the section `x ↦ σ x` of the
+cotangent bundle defined by a family of covectors `σ` gives back `σ`, at every point where that
+section is differentiable. -/
+theorem mpullback_liouvilleForm_section {σ : (x : M) → TangentSpace I x →L[ℝ] ℝ} {x : M}
+    (hσ : MDifferentiableAt I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y)) x) :
+    mpullback I (I.prod 𝓘(ℝ, E →L[ℝ] ℝ)) (fun y ↦ TotalSpace.mk' (E →L[ℝ] ℝ) y (σ y))
+        (liouvilleForm I M).1 x =
+      ContinuousAlternatingMap.ofSubsingleton ℝ (TangentSpace I x) ℝ 0 (σ x) := by
+  -- The section lies over the identity of `M`.
+  ext v
+  rw [mpullback_liouvilleForm_apply_of_proj_comp_eq (g := id) (fun _ ↦ rfl) hσ, mfderiv_id,
+    ContinuousAlternatingMap.ofSubsingleton_apply_apply, ContinuousLinearMap.id_apply]
+
+/-- **The Liouville form is tautological.** Pulling it back along the smooth section of the
+cotangent bundle defined by a smooth one-form `α` gives back `α`. -/
+theorem mpullback_liouvilleForm (α : SmoothForm I M ℝ 1) :
+    SmoothForm.mpullback (fun x ↦ TotalSpace.mk' (E →L[ℝ] ℝ) x (SmoothForm.degreeOneEquiv α x))
+      (SmoothForm.degreeOneEquiv α).contMDiff (liouvilleForm I M) = α := by
+  apply Subtype.ext
+  funext x
+  rw [SmoothForm.coe_mpullback, mpullback_liouvilleForm_section
+    (((SmoothForm.degreeOneEquiv α).contMDiff x).mdifferentiableAt (by simp))]
+  ext v
+  rw [ContinuousAlternatingMap.ofSubsingleton_apply_apply, SmoothForm.degreeOneEquiv_apply_apply]
+  exact congrArg (α.1 x) (funext fun i ↦ by rw [Fin.fin_one_eq_zero i])
 
 variable {F H' : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [TopologicalSpace H']
   {J : ModelWithCorners ℝ F H'} {N : Type*} [TopologicalSpace N] [ChartedSpace H' N]
