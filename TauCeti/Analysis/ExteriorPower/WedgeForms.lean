@@ -5,7 +5,7 @@ Authors: Ralf Stephan, The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Basic.Real.Basic
+public import TauCeti.Algebra.Order.BigOperators.Min
 public import TauCeti.LinearAlgebra.ExteriorPower.LinearForms
 public import TauCeti.LinearAlgebra.Matrix.AbsoluteValue
 
@@ -43,34 +43,6 @@ namespace AbsoluteValue
 
 variable {R : Type*} [CommRing R] [Nontrivial R]
   {ι : Type*} [Fintype ι] [LinearOrder ι]
-
-/-- A permutation product of Evertse's minima gains the jump across the first `k` indices
-when every form index is above the cut and some vector index is below it. -/
-private theorem prod_min_le_jump_mul_prod {N k p : ℕ} {μ : ℕ → ℝ}
-    (hμm : MonotoneOn μ (Set.Iio N)) (hμp : ∀ j < N, 0 < μ j)
-    {i j : Fin p → ℕ} (hi : ∀ b, i b < N) (hj : ∀ b, j b < N)
-    (hk : ∃ b, j b < k) (P : Prop) [Decidable P] (hP : P → ∀ b, k ≤ i b) :
-    ∏ b, min (μ (i b)) (μ (j b)) ≤
-      (if P then μ (k - 1) / μ k else 1) * ∏ b, μ (i b) := by
-  have hm0 (b) : 0 ≤ min (μ (i b)) (μ (j b)) :=
-    le_min (hμp _ (hi b)).le (hμp _ (hj b)).le
-  split_ifs with hPt
-  · obtain ⟨b₀, hb₀⟩ := hk
-    have hkN : k < N := (hP hPt b₀).trans_lt (hi b₀)
-    have hk0 : 0 < μ k := hμp k hkN
-    have hr : 0 ≤ μ (k - 1) / μ k := div_nonneg (hμp _ (by omega)).le hk0.le
-    rw [← mul_prod_erase _ _ (mem_univ b₀),
-      ← mul_prod_erase _ (fun b ↦ μ (i b)) (mem_univ b₀), ← mul_assoc]
-    refine mul_le_mul ?_ (prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _)
-      (prod_nonneg fun b _ ↦ hm0 b) (mul_nonneg hr (hμp _ (hi b₀)).le)
-    calc
-      min (μ (i b₀)) (μ (j b₀)) ≤ μ (j b₀) := min_le_right _ _
-      _ ≤ μ (k - 1) := hμm (hj b₀) (by simp only [Set.mem_Iio]; omega) (by omega)
-      _ = μ (k - 1) / μ k * μ k := (div_mul_cancel₀ _ hk0.ne').symm
-      _ ≤ μ (k - 1) / μ k * μ (i b₀) :=
-        mul_le_mul_of_nonneg_left (hμm hkN (hi b₀) (hP hPt b₀)) hr
-  · rw [one_mul]
-    exact prod_le_prod₀ (fun b _ ↦ hm0 b) fun b _ ↦ min_le_left _ _
 
 omit [Nontrivial R] in
 /-- Evertse's entrywise estimate passes to each permutation product in the wedge determinant,
@@ -163,7 +135,8 @@ theorem apply_wedgeForms_plucker_le (v : AbsoluteValue R ℝ) (l : ι → Dual R
   exact hdet.trans (by simpa [mul_assoc] using mul_le_mul_of_nonneg_right hfac hB)
 
 /-- At a nonarchimedean absolute value, row bounds pass to the wedge forms with no factorial
-loss. In particular, wedges of vectors integral at a finite place remain integral there. -/
+loss. In particular, wedge-form evaluations are integral at a finite place whenever every
+entry `l i (y j)` is integral there. -/
 theorem apply_wedgeForms_plucker_le_prod (v : AbsoluteValue R ℝ) (hv : IsNonarchimedean v)
     (l : ι → Dual R (ι → R)) {p : ℕ} (y : Fin p → ι → R) {ν : ι → ℝ}
     (hy : ∀ i j, v (l i (y j)) ≤ ν i) (T : powersetCard ι p) :
