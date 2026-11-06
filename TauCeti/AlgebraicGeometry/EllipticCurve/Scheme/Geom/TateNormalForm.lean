@@ -383,15 +383,6 @@ private theorem isTate_chart {f : S ⟶ Spec (.of (ULift.{u} UniversalTate.Ring)
 
 end Chart
 
--- Morphisms out of `S` are determined on the bases of the charts of an atlas.
-private theorem hom_ext_baseMap (A : PointedWeierstrassAtlas E.structureMap E.zero)
-    {Z : Scheme.{u}} {x y : S ⟶ Z} (h : ∀ i, (A.chart i).baseMap ≫ x = (A.chart i).baseMap ≫ y) :
-    x = y :=
-  A.hom_ext (𝟙 S) x y fun i ↦ by
-    have hc : pullback.fst (𝟙 S) (A.chart i).baseMap = pullback.snd _ _ ≫ (A.chart i).baseMap := by
-      simpa using pullback.condition (f := 𝟙 S) (g := (A.chart i).baseMap)
-    rw [hc, Category.assoc, Category.assoc, h]
-
 /-! ### The universal Tate normal form as an elliptic curve -/
 
 -- Reading the universal Tate normal form on its projective model through `toEllipticCurveGeomIso`
@@ -430,7 +421,8 @@ private theorem IsTate.unique {f f' : S ⟶ Spec (.of (ULift.{u} UniversalTate.R
     {g g' : E.carrier ⟶ curveULift.projModel} (hg : IsTate E.structureMap E.zero P f g)
     (hg' : IsTate E.structureMap E.zero P f' g') : f = f' ∧ g = g' := by
   obtain ⟨A⟩ := E.localModel
-  obtain rfl : f = f' := hom_ext_baseMap A fun i ↦ by
+  obtain rfl : f = f' := A.openCover.hom_ext _ _ fun i ↦ by
+    dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
     have := IsTate.base_eq ((A.chart i).modelPoint_projModelOver hP)
       ((A.chart i).modelPoint_apply_ne hP h₁) (modelPoint_mulBy_ne hP _ h₂)
       (modelPoint_mulBy_ne hP _ h₃) (isTate_chart hP (A.chart i) hg)
@@ -548,13 +540,11 @@ private theorem toTotal_tateTotal :
 private theorem isTate_tate :
     IsTate E.structureMap E.zero P (tateBase hP h₁ h₂ h₃) (tateTotal hP h₁ h₂ h₃) := by
   obtain ⟨A⟩ := E.localModel
-  refine ⟨?_, hom_ext_baseMap A fun i ↦ ?_, hom_ext_baseMap A fun i ↦ ?_⟩
+  refine ⟨?_, A.openCover.hom_ext _ _ fun i ↦ ?_, A.openCover.hom_ext _ _ fun i ↦ ?_⟩
   · -- cartesian, checked over the cover of `S` by the chart bases of `A`
-    let 𝒰 : S.OpenCover := Scheme.Cover.mkOfCovers A.index (fun i ↦ (A.chart i).base)
-      (fun i ↦ (A.chart i).baseMap) A.covers
-    refine (Scheme.isPullback_of_openCover _ _ _ _ 𝒰 fun i ↦ ?_).flip
-    -- the maps of `𝒰` are the chart base maps, and those of its pullback along `E.structureMap`
-    -- are the projections; `simp` does not see through `Scheme.Cover.mkOfCovers` here
+    refine (Scheme.isPullback_of_openCover _ _ _ _ A.openCover fun i ↦ ?_).flip
+    -- the maps of `A.openCover` are the chart base maps, and those of its pullback along
+    -- `E.structureMap` are the projections; `simp` does not see through the pullback cover here
     change IsPullback (pullback.snd E.structureMap (A.chart i).baseMap)
       (pullback.fst E.structureMap (A.chart i).baseMap ≫ tateTotal hP h₁ h₂ h₃)
       ((A.chart i).baseMap ≫ tateBase hP h₁ h₂ h₃) curveULift.projModelOver
@@ -566,10 +556,12 @@ private theorem isTate_tate :
       (.refl _) (.refl _)
       (by simp [Iso.eq_inv_comp]) (by simp) (by simp)
       (by simp)
-  · rw [← (A.chart i).pulledZero_toTotal_assoc, toTotal_tateTotal,
+  · dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    rw [← (A.chart i).pulledZero_toTotal_assoc, toTotal_tateTotal,
       (A.chart i).modelIso_zero_assoc, (isTate_chartBase hP h₁ h₂ h₃ _).2.1,
       baseMap_tateBase_assoc]
-  · rw [← PointedWeierstrassChart.chartPoint_toTotal_assoc _ hP, toTotal_tateTotal,
+  · dsimp only [PointedWeierstrassAtlas.openCover_X, PointedWeierstrassAtlas.openCover_f]
+    rw [← PointedWeierstrassChart.chartPoint_toTotal_assoc _ hP, toTotal_tateTotal,
       reassoc_of% PointedWeierstrassChart.chartPoint_modelIso_hom _ hP,
       (isTate_chartBase hP h₁ h₂ h₃ _).2.2, baseMap_tateBase_assoc]
 

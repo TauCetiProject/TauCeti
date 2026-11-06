@@ -10,6 +10,7 @@ public import TauCeti.Geometry.Manifold.Morse.Stable.Breaking
 public import Mathlib.Data.Set.Card
 public import Mathlib.Data.ZMod.Basic
 public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.Geometry.Manifold.Morse.Stable.TrajectorySpace
 import TauCeti.Geometry.Manifold.Morse.Stable.LevelSlice
 
 /-!
@@ -45,7 +46,11 @@ In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 * `morseTrajectorySlice_eq_image_of_stableSet_subset`: the trajectories into `q` read off a
   decomposition of the stable set of `q` into orbits.
 * `IsMorseSmale.finite_morseTrajectorySlice`: for consecutive indices it is finite.
+* `natCard_orbitQuotient_eq_ncard_morseTrajectorySlice`: the slice has as many points as there are
+  unparametrized trajectories from `p` to `q`.
 * `IsMorseSmale.morseBoundaryCoeff`: the coefficient of `q` in the boundary of `p`.
+* `IsMorseSmale.morseBoundaryCoeff_eq_natCard`: it is the number of unparametrized trajectories
+  modulo two.
 * `IsMorseSmale.morseBoundary`: the mod-two Morse boundary, an endomorphism of the free
   `ZMod 2`-module on the critical points.
 * `IsMorseSmale.morseBoundary_single_apply`: the boundary of a critical point has the trajectory
@@ -151,6 +156,28 @@ theorem IsMorseSmale.finite_morseTrajectorySlice {hX : IsAdaptedPseudoGradient f
     (hX.morseTrajectorySlice p q).Finite :=
   h.finite_unstableSet_inter_stableSet_inter_level hf hp hq hind _
 
+/-- **Counting unparametrized trajectories.** For distinct points `p` and `q`, the unparametrized
+trajectories from `p` to `q` are as many as the points of the middle-level slice
+`TauCeti.IsAdaptedPseudoGradient.morseTrajectorySlice`. -/
+theorem natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
+    (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {p q : M} (hpq : p ≠ q) :
+    Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) =
+      (hX.morseTrajectorySlice p q).ncard := by
+  rw [morseTrajectorySlice]
+  by_cases hlt : f q < f p
+  · obtain ⟨e, -⟩ := hX.exists_orbitQuotient_homeomorph_levelSlice hf hpq
+      (c := (f p + f q) / 2) ⟨by linarith, by linarith⟩
+    exact (Nat.card_congr e.toEquiv).trans (Nat.card_coe_set_eq _)
+  · -- Without a drop in value there are no trajectories at all.
+    have hC : hX.flow.unstableSet p ∩ hX.flow.stableSet q = ∅ :=
+      eq_empty_of_forall_notMem fun y hy ↦
+        hlt ((hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).1.trans
+          (hX.mem_Ioo_of_mem_unstableSet_inter_stableSet hf hpq hy).2)
+    have : IsEmpty ↥(hX.flow.unstableSet p ∩ hX.flow.stableSet q) := by
+      rw [hC]
+      infer_instance
+    rw [Nat.card_of_isEmpty, hC, empty_inter, ncard_empty]
+
 namespace IsMorseSmale
 
 variable {hX : IsAdaptedPseudoGradient f X} (h : hX.IsMorseSmale) (hf : IsMorse 𝓘(ℝ, E) f)
@@ -173,6 +200,18 @@ theorem morseBoundaryCoeff_eq_ncard {p q : criticalPoints 𝓘(ℝ, E) f}
   rw [morseBoundaryCoeff, dite_eq_left hind, ncard_eq_toFinset_card _
     (h.finite_morseTrajectorySlice hf (mem_criticalPoints_iff_mfderiv_eq_zero.1 p.2)
       (mem_criticalPoints_iff_mfderiv_eq_zero.1 q.2) hind)]
+
+/-- **The Morse boundary counts unparametrized trajectories.** For critical points of consecutive
+index, the coefficient of `q` in the mod-two Morse boundary of `p` is the number of unparametrized
+trajectories from `p` to `q`, modulo two. -/
+theorem morseBoundaryCoeff_eq_natCard {p q : criticalPoints 𝓘(ℝ, E) f}
+    (hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1) :
+    h.morseBoundaryCoeff hf p q =
+      (Nat.card (Quotient (Flow.connectingOrbitSetoid hX.flow p q)) : ZMod 2) := by
+  have hpq : (p : M) ≠ q := fun hpq ↦ by simp [hpq] at hind
+  rw [h.morseBoundaryCoeff_eq_ncard hf hind,
+    hX.natCard_orbitQuotient_eq_ncard_morseTrajectorySlice
+      (hf.contMDiff.mdifferentiable (by simp)) hpq]
 
 /-- The boundary coefficient vanishes between critical points whose indices do not differ by
 one. -/
