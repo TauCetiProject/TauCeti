@@ -10,7 +10,8 @@ public import TauCeti.LinearAlgebra.Trace.Exchange
 public import Mathlib.RingTheory.GradedAlgebra.Homogeneous.Submodule
 public import Mathlib.RingTheory.Regular.RegularSequence
 import TauCeti.LinearAlgebra.Trace.Exact
-import TauCeti.RingTheory.GradedAlgebra.Homogeneous.Quotient
+import TauCeti.RingTheory.GradedAlgebra.HilbertSeries.RegularSequence
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Graded traces modulo a homogeneous regular element
@@ -160,14 +161,10 @@ theorem trace_quotientPiece_of_eq_bot {J : Ideal A} (hJ : J = ⊥) (Q : (A ⧸ J
     LinearMap.trace k (quotientPiece 𝒜 J n)
         (Q.restrict (apply_mem_quotientPiece 𝒜 J T Q hT hQ n)) =
       LinearMap.trace k (𝒜 n) (T.restrict (hT n)) := by
+  subst hJ
   -- The quotient map by the zero ideal is an isomorphism intertwining `T` and `Q`.
-  have hinj : Function.Injective (Ideal.Quotient.mkₐ k J) := by
-    intro x y h
-    rw [Ideal.Quotient.mkₐ_eq_mk, Ideal.Quotient.eq, hJ, Submodule.mem_bot, sub_eq_zero] at h
-    exact h
-  let e := LinearEquiv.ofBijective (Ideal.Quotient.mkₐ k J).toLinearMap
-    ⟨hinj, Ideal.Quotient.mkₐ_surjective k J⟩
-  exact LinearMap.trace_restrict_eq_of_linearEquiv e (quotientPiece_def 𝒜 J n).symm
+  exact LinearMap.trace_restrict_eq_of_linearEquiv
+    (AlgEquiv.quotientBot k A).symm.toLinearEquiv (quotientPiece_def 𝒜 ⊥ n).symm
     (fun x ↦ (hQ x).symm) _ _
 
 end Bot
@@ -179,11 +176,12 @@ variable [Field k] [Algebra k A]
   (T : A →ₗ[k] A) (hT : ∀ n x, x ∈ 𝒜 n → T x ∈ 𝒜 n)
 
 /-- Quotienting further by a homogeneous element `f` of degree `d`, regular modulo a homogeneous
-ideal `I`, multiplies the graded trace series by `1 - t^d`, provided the endomorphism `T` commutes
-with multiplication by `f`. Here `Q₀` and `Q` are the endomorphisms induced by `T` on `A ⧸ I` and
-on `A ⧸ J`, where `J = I ⊔ (f)`. -/
+ideal `I` (its class is left-regular in `A ⧸ I`), multiplies the graded trace series by `1 - t^d`,
+provided the endomorphism `T` commutes with multiplication by `f`. Here `Q₀` and `Q` are the
+endomorphisms induced by `T` on `A ⧸ I` and on `A ⧸ J`, where `J = I ⊔ (f)`. -/
 theorem mk_trace_quotientPiece_sup_span_singleton [∀ n, Module.Finite k (𝒜 n)] {I : Ideal A}
-    (hI : I.IsHomogeneous 𝒜) {f : A} {d : ℕ} (hf : f ∈ 𝒜 d) (hreg : IsSMulRegular (A ⧸ I) f)
+    (hI : I.IsHomogeneous 𝒜) {f : A} {d : ℕ} (hf : f ∈ 𝒜 d)
+    (hreg : IsLeftRegular (Ideal.Quotient.mk I f))
     (hmul : ∀ x, T (f * x) = f * T x) (Q₀ : (A ⧸ I) →ₗ[k] (A ⧸ I))
     (hQ₀ : ∀ x, Q₀ (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (T x))
     (J : Ideal A) (hJ : I ⊔ Ideal.span {f} = J) (Q : (A ⧸ J) →ₗ[k] (A ⧸ J))
@@ -192,23 +190,17 @@ theorem mk_trace_quotientPiece_sup_span_singleton [∀ n, Module.Finite k (𝒜 
         (Q.restrict (apply_mem_quotientPiece 𝒜 J T Q hT hQ n))) =
       PowerSeries.mk (fun n ↦ LinearMap.trace k (quotientPiece 𝒜 I n)
         (Q₀.restrict (apply_mem_quotientPiece 𝒜 I T Q₀ hT hQ₀ n))) * (1 - PowerSeries.X ^ d) := by
+  subst hJ
   let := gradedAlgebraQuotientPiece 𝒜 I hI
-  have hleft : IsLeftRegular (Ideal.Quotient.mk I f) := by
-    intro x y hxy
-    apply hreg
-    simpa only [Algebra.smul_def, Ideal.Quotient.algebraMap_eq] using hxy
   -- Identify the quotient of `A ⧸ I` by the class of `f` with `A ⧸ J`, and transport `Q` to it.
   have hspan : Ideal.span {Ideal.Quotient.mk I f} =
       (Ideal.span {f}).map (Ideal.Quotient.mkₐ k I) := by
     rw [Ideal.map_span, Set.image_singleton, Ideal.Quotient.mkₐ_eq_mk]
-  let e := ((Ideal.quotientEquivAlgOfEq k hspan).trans
-    (DoubleQuot.quotQuotEquivQuotSupₐ k I (Ideal.span {f}))).trans (Ideal.quotientEquivAlgOfEq k hJ)
-  have he (x : A) : e (Ideal.Quotient.mk _ (Ideal.Quotient.mk I x)) = Ideal.Quotient.mk J x := by
-    simp only [e, AlgEquiv.trans_apply, Ideal.quotientEquivAlgOfEq_mk,
-      DoubleQuot.coe_quotQuotEquivQuotSupₐ]
-    -- `DoubleQuot.quotQuotMk I J x` is by definition the class of the class of `x`.
-    exact (congrArg _ (DoubleQuot.quotQuotEquivQuotSup_quotQuotMk I _ x)).trans
-      (Ideal.quotientEquivAlgOfEq_mk _ _ _)
+  let e := (Ideal.quotientEquivAlgOfEq k hspan).trans
+    (DoubleQuot.quotQuotEquivQuotSupₐ k I (Ideal.span {f}))
+  -- Both equivalences send a class of a class to the class of the same element.
+  have he (x : A) : e (Ideal.Quotient.mk _ (Ideal.Quotient.mk I x)) = Ideal.Quotient.mk _ x :=
+    rfl
   let Q' := e.toLinearEquiv.symm.conj Q
   have hQ' (y : A ⧸ I) : Q' (Ideal.Quotient.mk _ y) = Ideal.Quotient.mk _ (Q₀ y) := by
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
@@ -218,12 +210,13 @@ theorem mk_trace_quotientPiece_sup_span_singleton [∀ n, Module.Finite k (𝒜 
     obtain ⟨x, rfl⟩ := Ideal.Quotient.mk_surjective y
     rw [← map_mul, hQ₀, hQ₀, hmul, map_mul]
   rw [← mk_trace_quotientPiece_span_singleton (quotientPiece 𝒜 I) Q₀ Q'
-    (apply_mem_quotientPiece 𝒜 I T Q₀ hT hQ₀) hQ' (mk_mem_quotientPiece 𝒜 I hf) hleft hmul']
+    (apply_mem_quotientPiece 𝒜 I T Q₀ hT hQ₀) hQ' (mk_mem_quotientPiece 𝒜 I hf) hreg hmul']
   ext n
   simp only [PowerSeries.coeff_mk]
   refine LinearMap.trace_restrict_eq_of_linearEquiv e.toLinearEquiv ?_ (fun y ↦ ?_) _ _
-  · simp only [quotientPiece_def, ← Submodule.map_comp]
-    exact congrArg (Submodule.map · (𝒜 n)) (LinearMap.ext he)
+  · rw [← map_quotientPiece_quotientPiece 𝒜 I (Ideal.span {f}) n]
+    simp only [quotientPiece_def, ← Submodule.map_comp]
+    rfl
   · simp [Q', LinearEquiv.conj_apply]
 
 /-- Quotienting by a homogeneous weakly regular sequence multiplies the graded trace series by
@@ -255,47 +248,21 @@ theorem mk_trace_quotientPiece_of_isWeaklyRegular [∀ n, Module.Finite k (𝒜 
   | append_singleton fs p ih =>
     have hfs : ∀ q ∈ fs, q ∈ fs ++ [p] := fun q hq ↦ List.mem_append_left _ hq
     have hpmem : p ∈ fs ++ [p] := List.mem_append_right _ (List.mem_singleton_self p)
-    rw [List.map_append, List.map_singleton,
-      RingTheory.Sequence.isWeaklyRegular_append_iff] at hreg
+    rw [List.map_append, List.map_singleton] at hreg
     let I := Ideal.ofList (fs.map Prod.fst)
-    -- `T` preserves `I`, which is spanned by elements commuting with `T`, so it induces an
-    -- endomorphism `Q₀` of `A ⧸ I`.
-    have hTI : I.restrictScalars k ≤ (I.restrictScalars k).comap T := by
-      intro x hx
-      suffices h : ∀ a, T (a * x) ∈ I by simpa using h 1
-      induction hx using Submodule.span_induction with
-      | mem f hf =>
-        obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hf
-        intro a
-        rw [mul_comm, hmul q (hfs q hq)]
-        exact Ideal.mul_mem_right _ _ (Ideal.subset_span hf)
-      | zero => simp
-      | add x y _ _ hx hy => intro a; rw [mul_add, map_add]; exact add_mem (hx a) (hy a)
-      | smul b x _ hx => intro a; rw [smul_eq_mul, ← mul_assoc]; exact hx (a * b)
-    let Q₀ : (A ⧸ I) →ₗ[k] (A ⧸ I) :=
-      (Submodule.Quotient.restrictScalarsEquiv k I).conj ((I.restrictScalars k).mapQ _ T hTI)
-    have hQ₀ (x : A) : Q₀ (Ideal.Quotient.mk I x) = Ideal.Quotient.mk I (T x) := by
-      rw [LinearEquiv.conj_apply_apply, ← Ideal.Quotient.mk_eq_mk,
-        Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.mapQ_apply,
-        Submodule.Quotient.restrictScalarsEquiv_mk, Ideal.Quotient.mk_eq_mk]
-    -- Native regular sequences use the module quotient by `I • ⊤`; transport to `A ⧸ I`.
-    have hIeq : (I • ⊤ : Submodule A A) = I := by
-      rw [Ideal.smul_eq_mul, Ideal.mul_top]
-    have hregp : IsSMulRegular (A ⧸ I) p.1 :=
-      ((Submodule.quotEquivOfEq _ _ hIeq).isSMulRegular_congr p.1).1
-        ((RingTheory.Sequence.isWeaklyRegular_singleton_iff _ _).1 hreg.2)
-    have hI : I.IsHomogeneous 𝒜 := by
-      apply Ideal.homogeneous_span
-      intro x hx
-      obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hx
-      exact ⟨q.2, hhom q (hfs q hq)⟩
+    -- `T` commutes with multiplication by the generators of `I`, so it induces `Q₀` on `A ⧸ I`.
+    obtain ⟨Q₀, hQ₀⟩ := exists_quotient_linearMap_of_map_mul (s := {r | r ∈ fs.map Prod.fst}) T
+      fun r hr ↦ by obtain ⟨q, hq, rfl⟩ := List.mem_map.1 hr; exact hmul q (hfs q hq)
     have hJ : I ⊔ Ideal.span {p.1} = Ideal.ofList ((fs ++ [p]).map Prod.fst) := by
       rw [List.map_append, List.map_singleton, Ideal.ofList_append, Ideal.ofList_singleton]
     rw [List.map_append (f := fun p : A × ℕ ↦ (1 - PowerSeries.X ^ p.2 : PowerSeries k)),
       List.map_singleton, List.prod_append, List.prod_singleton, ← mul_assoc,
-      ← ih (fun q hq ↦ hhom q (hfs q hq)) hreg.1 (fun q hq ↦ hmul q (hfs q hq)) Q₀ hQ₀]
-    exact mk_trace_quotientPiece_sup_span_singleton 𝒜 T hT hI (hhom p hpmem) hregp
-      (hmul p hpmem) Q₀ hQ₀ _ hJ Q hQ
+      ← ih (fun q hq ↦ hhom q (hfs q hq))
+        ((RingTheory.Sequence.isWeaklyRegular_append_iff _ _ _).1 hreg).1
+        (fun q hq ↦ hmul q (hfs q hq)) Q₀ hQ₀]
+    exact mk_trace_quotientPiece_sup_span_singleton 𝒜 T hT
+      (isHomogeneous_ofList 𝒜 fun q hq ↦ hhom q (hfs q hq)) (hhom p hpmem)
+      hreg.isLeftRegular_mk_ofList (hmul p hpmem) Q₀ hQ₀ _ hJ Q hQ
 
 end RegularSequence
 

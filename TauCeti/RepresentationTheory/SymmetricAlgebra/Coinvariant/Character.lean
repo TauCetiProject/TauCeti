@@ -11,6 +11,7 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.RegularSequence
 public import TauCeti.RingTheory.GradedAlgebra.HilbertSeries.Trace
 import TauCeti.LinearAlgebra.SymmetricAlgebra.Trace
 import TauCeti.RepresentationTheory.SymmetricAlgebra.Degrees
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # The graded character of the coinvariant algebra
@@ -130,12 +131,8 @@ theorem mk_character_coinvariantAlgebraHomogeneous [Monoid G]
     rw [List.map_ofFn]
     rfl
   have hI : Ideal.ofList (fs.map Prod.fst) = ρ.symmetricAlgebraHilbertIdeal := by
-    rw [ρ.symmetricAlgebraHilbertIdeal_eq_span_of_surjective f
-      (fun i ↦ HomogeneousIdeal.mem_irrelevant_of_mem _ (hd i) (hf i)) hsurj, hfs]
-    rw [Ideal.ofList]
-    congr 1
-    ext p
-    simp only [Set.mem_ofPred_eq, List.mem_ofFn, Set.mem_range]
+    rw [hfs, Ideal.ofList_ofFn, ρ.symmetricAlgebraHilbertIdeal_eq_span_of_surjective f
+      (fun i ↦ HomogeneousIdeal.mem_irrelevant_of_mem _ (hd i) (hf i)) hsurj]
   have h := mk_trace_quotientPiece_of_isWeaklyRegular (homogeneousSubmodule K M)
     (ρ.symmetricAlgebra g) (fun _ _ ↦ ρ.symmetricAlgebra_mem_homogeneousSubmodule g) fs
     (fun p hp ↦ by obtain ⟨i, rfl⟩ := List.mem_ofFn.1 hp; exact hf i) (hfs ▸ hreg)
