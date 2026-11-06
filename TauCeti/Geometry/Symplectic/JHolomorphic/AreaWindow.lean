@@ -39,9 +39,9 @@ count needs, for any finitely generated abelian group `H` with such data:
   (`TauCeti.IsComassBounded.exists_forall_sum_le`), and only finitely many such `m` represent a
   given class `A` (`TauCeti.IsComassBounded.finite_setOf_sum_smul_eq`);
 * a class of nonpositive area, in particular a torsion class, is represented only by the empty
-  cycle (`TauCeti.IsComassBounded.eq_zero_of_area_nonpos`,
-  `TauCeti.IsComassBounded.eq_zero_of_isOfFinAddOrder`). A nonzero torsion class therefore has
-  no positive representative, although all its real periods vanish.
+  cycle (`TauCeti.eq_zero_of_area_sum_smul_nonpos`, `TauCeti.eq_zero_of_isOfFinAddOrder_sum_smul`).
+  These need only positivity of area. A nonzero torsion class therefore has no positive
+  representative, although all its real periods vanish.
 
 The lattice input is `LinearMap.finite_preimage_of_injective_liftBaseChange`. The geometric
 inputs, positivity of area and the comass bound, are the fields of `TauCeti.IsComassBounded`.
@@ -59,6 +59,40 @@ public section
 namespace TauCeti
 
 variable {H E : Type*} [AddCommGroup H] [NormedAddCommGroup E]
+
+section Positive
+
+variable {ω : H →+ ℝ} {S : Set H}
+
+/-- Each class of a cycle supported in a set of classes of positive area has area at most that of
+the cycle. -/
+theorem area_le_area_sum_smul (hS : ∀ C ∈ S, 0 < ω C) {m : H →₀ ℕ}
+    (hm : ↑m.support ⊆ S) {C : H} (hC : C ∈ m.support) :
+    ω C ≤ ω (m.sum fun C k => k • C) := by
+  classical
+  have hpos : ∀ D ∈ m.support, 0 ≤ (m D : ℝ) * ω D := fun D hD =>
+    mul_nonneg (Nat.cast_nonneg _) (hS D (hm hD)).le
+  rw [map_finsuppSum, Finsupp.sum]
+  simp only [map_nsmul, nsmul_eq_mul]
+  calc ω C ≤ m C * ω C := le_mul_of_one_le_left (hS C (hm hC)).le
+        (Nat.one_le_cast.2 (Nat.one_le_iff_ne_zero.2 (Finsupp.mem_support_iff.1 hC)))
+    _ ≤ ∑ D ∈ m.support, (m D : ℝ) * ω D := Finset.single_le_sum hpos hC
+
+/-- A class of nonpositive area is represented by no nonempty cycle supported in a set of classes
+of positive area. -/
+theorem eq_zero_of_area_sum_smul_nonpos (hS : ∀ C ∈ S, 0 < ω C) {m : H →₀ ℕ}
+    (hm : ↑m.support ⊆ S) (hA : ω (m.sum fun C k => k • C) ≤ 0) : m = 0 := by
+  by_contra hm0
+  obtain ⟨C, hC⟩ := Finsupp.support_nonempty_iff.2 hm0
+  exact (hS C (hm hC)).not_ge ((area_le_area_sum_smul hS hm hC).trans hA)
+
+/-- A torsion class is represented by no nonempty cycle supported in a set of classes of positive
+area. In particular a nonzero torsion class has no such representative. -/
+theorem eq_zero_of_isOfFinAddOrder_sum_smul (hS : ∀ C ∈ S, 0 < ω C) {m : H →₀ ℕ}
+    (hm : ↑m.support ⊆ S) (hA : IsOfFinAddOrder (m.sum fun C k => k • C)) : m = 0 :=
+  eq_zero_of_area_sum_smul_nonpos hS hm (ω.isOfFinAddOrder hA).eq_zero'.le
+
+end Positive
 
 /-- A set `S` of classes in an abelian group `H`, with an area `ω : H → ℝ` and a period map
 `l : H → E`, is *comass bounded* with constant `K` if every class of `S` has positive area and
@@ -102,34 +136,6 @@ theorem exists_pos_forall_le_area [AddGroup.FG H] [NormedSpace ℝ E] (h : IsCom
     · exact hmin _ (Set.mem_insert_of_mem _ ⟨C, ⟨hC, hC1⟩, rfl⟩)
     · exact (hmin 1 (Set.mem_insert _ _)).trans hC1.le
 
-/-- Each class of a cycle supported in a set of classes of positive area has area at most that of
-the cycle. -/
-theorem area_le_area_sum_smul (h : IsComassBounded l ω K S) {m : H →₀ ℕ}
-    (hm : ↑m.support ⊆ S) {C : H} (hC : C ∈ m.support) :
-    ω C ≤ ω (m.sum fun C k => k • C) := by
-  classical
-  have hpos : ∀ D ∈ m.support, 0 ≤ (m D : ℝ) * ω D := fun D hD =>
-    mul_nonneg (Nat.cast_nonneg _) (h.area_pos D (hm hD)).le
-  rw [map_finsuppSum, Finsupp.sum]
-  simp only [map_nsmul, nsmul_eq_mul]
-  calc ω C ≤ m C * ω C := le_mul_of_one_le_left (h.area_pos C (hm hC)).le
-        (Nat.one_le_cast.2 (Nat.one_le_iff_ne_zero.2 (Finsupp.mem_support_iff.1 hC)))
-    _ ≤ ∑ D ∈ m.support, (m D : ℝ) * ω D := Finset.single_le_sum hpos hC
-
-/-- A class of nonpositive area is represented by no nonempty cycle supported in a set of classes
-of positive area. -/
-theorem eq_zero_of_area_nonpos (h : IsComassBounded l ω K S) {m : H →₀ ℕ} (hm : ↑m.support ⊆ S)
-    (hA : ω (m.sum fun C k => k • C) ≤ 0) : m = 0 := by
-  by_contra hm0
-  obtain ⟨C, hC⟩ := Finsupp.support_nonempty_iff.2 hm0
-  exact (h.area_pos C (hm hC)).not_ge ((h.area_le_area_sum_smul hm hC).trans hA)
-
-/-- A torsion class is represented by no nonempty cycle supported in a set of classes of positive
-area. In particular a nonzero torsion class has no such representative. -/
-theorem eq_zero_of_isOfFinAddOrder (h : IsComassBounded l ω K S) {m : H →₀ ℕ}
-    (hm : ↑m.support ⊆ S) (hA : IsOfFinAddOrder (m.sum fun C k => k • C)) : m = 0 :=
-  h.eq_zero_of_area_nonpos hm (ω.isOfFinAddOrder hA).eq_zero'.le
-
 /-- **Bounded component count.** If the real extension of the period map is injective, the total
 multiplicity of a cycle supported in a comass bounded set is bounded in terms of its class. -/
 theorem exists_forall_sum_le [AddGroup.FG H] [NormedSpace ℝ E] (h : IsComassBounded l ω K S)
@@ -159,7 +165,7 @@ theorem finite_setOf_sum_smul_eq [AddGroup.FG H] [NormedSpace ℝ E] (h : IsComa
   rw [Finset.mem_coe, Finset.mem_finsupp_iff]
   refine ⟨fun C hC => ?_, fun C _ => ?_⟩
   · rw [Set.Finite.mem_toFinset]
-    exact ⟨hm hC, hmA ▸ h.area_le_area_sum_smul hm hC⟩
+    exact ⟨hm hC, hmA ▸ area_le_area_sum_smul h.area_pos hm hC⟩
   · rw [Finset.mem_range, Nat.lt_succ_iff]
     by_cases hC : C ∈ m.support
     · exact (Finset.single_le_sum (fun _ _ => Nat.zero_le _) hC).trans (hN m hm hmA)
