@@ -11,7 +11,6 @@ public import Mathlib.Analysis.InnerProductSpace.GramMatrix
 public import Mathlib.Algebra.Order.Ring.IsNonarchimedean
 import TauCeti.Analysis.InnerProductSpace.Gram.Hadamard
 import TauCeti.Analysis.InnerProductSpace.Gram.Fischer
-import TauCeti.LinearAlgebra.LinearIndependent.Fin
 
 /-!
 # Local bounds for Plücker coordinates
@@ -74,9 +73,11 @@ theorem sum_norm_plucker_sq_overlap_le {𝕜 ι : Type*} [RCLike 𝕜]
   have happ {a b : ℕ} (u : Fin a → ι → 𝕜) (v : Fin b → ι → 𝕜) :
       Sum.elim (fun i ↦ WithLp.toLp 2 (u i)) (fun i ↦ WithLp.toLp 2 (v i)) =
         (fun i ↦ WithLp.toLp 2 (Fin.append u v i)) ∘ finSumFinEquiv := by
-    have h := congrArg (fun f ↦ WithLp.toLp 2 ∘ f) (Fin.append_comp_finSumFinEquiv u v).symm
+    have h := congrArg (fun f ↦ WithLp.toLp 2 ∘ f)
+      (Fin.append_comp_sumElim (xs := u) (ys := v)).symm
     rw [Sum.comp_elim] at h
-    simpa only [Function.comp_def] using h
+    -- Align the equivalence coercion with Mathlib's explicit sum eliminator.
+    simpa only [Function.comp_def, finSumFinEquiv, Equiv.coe_fn_mk] using h
   have h := Matrix.re_det_gram_mul_re_det_gram_sumElim_le (𝕜 := 𝕜)
     (fun i ↦ WithLp.toLp 2 (x i)) (fun i ↦ WithLp.toLp 2 (y i))
     (fun i ↦ WithLp.toLp 2 (z i))
