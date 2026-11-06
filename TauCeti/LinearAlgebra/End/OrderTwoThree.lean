@@ -8,12 +8,12 @@ module
 public import Mathlib.Algebra.Module.Submodule.Invariant
 public import Mathlib.Algebra.Module.Submodule.Range
 
+import Mathlib.Algebra.Ring.Subring.Basic
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.NoncommRing
 import TauCeti.Algebra.Module.Submodule.Invariant
 import TauCeti.Algebra.Module.Submodule.Ker
-import TauCeti.RingTheory.Idempotents.CubeRootOne
-import TauCeti.RingTheory.Idempotents.SquareRootOne
+import TauCeti.RingTheory.Idempotents.RootOfOne
 
 /-!
 # Operators of order two and three: Choie–Zagier criterion, Popa–Zagier's projection and exactness
@@ -277,10 +277,10 @@ theorem exists_mem_sup_one_add_apply_sub_mem [Invertible (2 : R)] [Invertible (3
   let _ : Invertible (3 : Subring.center R) :=
     ⟨⟨⅟3, Set.invOf_mem_center (Set.ofNat_mem_center _ _)⟩, Subtype.ext (invOf_mul_self _),
       Subtype.ext (mul_invOf_self _)⟩
-  have key := exists_mem_sup_apply_sub_mem_of_isIdempotentElem (ξ := ξ)
-    (halfOneAdd_def (Subring.center R) σ ▸
-      isIdempotentElem_halfOneAdd (Subring.center R) ((sq σ).symm.trans hσ))
-    (isIdempotentElem_invOf_three_smul_one_add_add_sq (Subring.center R) hυ)
+  have hσe := isIdempotentElem_invOf_smul_geom_sum (Subring.center R) hσ
+  have hυe := isIdempotentElem_invOf_smul_geom_sum (Subring.center R) hυ
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add, pow_zero, pow_one] at hσe hυe
+  have key := exists_mem_sup_apply_sub_mem_of_isIdempotentElem (ξ := ξ) hσe hυe
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hP)
     (Module.End.invtSubmodule_le_invtSubmodule_smul _ _ hQ)
   simp only [LinearMap.smul_apply] at key
