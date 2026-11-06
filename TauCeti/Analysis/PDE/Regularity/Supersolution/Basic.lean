@@ -328,9 +328,11 @@ private theorem tendsto_invApprox {c : ℕ → ℝ} (hc : Tendsto c atTop (𝓝 
     tendsto_const_nhds.div (tendsto_const_nhds.add (hc.pow 2)) (by positivity)
   rwa [show t / (t ^ 2 + 0 ^ 2) = t⁻¹ by rw [zero_pow two_ne_zero, add_zero]; field_simp] at hlim
 
-/-- A step of `UniformlyEllipticOn.ae_inv_value_le_mul_setIntegral_rpow`: the smooth approximation
-`u / (u² + c²)`, with `2c ≤ m`, is a subsolution, so the subsolution bound `hsub` applies to it, and
-it is dominated by `u⁻¹` pointwise. -/
+/-- A step of `UniformlyEllipticOn.ae_inv_value_le_mul_setIntegral_rpow`. If `u ≥ m > 0` is a weak
+supersolution and every subsolution `w` satisfies the bound `hsub`, then for `0 < c` with `2c ≤ m`,
+almost everywhere on `ball x₀ (R / 2)` we have
+`u / (u² + c²) ≤ K * (∫_{ball x₀ R} u⁻ᵖ)^{1/p}`. The method is that `u / (u² + c²)` is a
+subsolution, so `hsub` applies, and it is dominated by `u⁻¹` pointwise. -/
 private theorem UniformlyEllipticOn.ae_invApprox_value_le_mul_setIntegral_rpow
     (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (ha : AEStronglyMeasurable a (mu.restrict Omega)) {u : W1p mu Omega 2}
