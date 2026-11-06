@@ -259,7 +259,8 @@ theorem hasLineDerivAt_fourierChar_inner (z ζ v : E) :
     ((innerSL ℝ z).hasFDerivAt.congr_of_eventuallyEq
       (Filter.Eventually.of_forall fun ζ' ↦ real_inner_comm z ζ'))).hasLineDerivAt v
   convert h using 1
-  · rfl
+  · funext ζ'
+    simp
   · simp [real_inner_comm z v]
     ring
 
@@ -314,7 +315,8 @@ theorem inner_smul_quantizationKernel {a' : E × E → V →L[ℂ] W} {v : E}
   have h2π : (2 * π : ℝ) ≠ 0 := two_pi_pos.ne'
   have hK' : quantizationKernel a' x y = (2 * π)⁻¹ • -(c • quantizationKernel a x y) := by
     rw [← hparts, smul_smul, inv_mul_cancel₀ h2π, one_smul]
-  rw [hK', ← Complex.coe_smul, smul_neg, smul_smul, smul_neg, smul_smul, ← neg_smul]
+  rw [hK']
+  simp only [← Complex.coe_smul, smul_smul, ← neg_smul]
   congr 1
   simp only [c, z, real_inner_comm (x - y) v]
   push_cast
@@ -330,21 +332,19 @@ variable {n : ℕ} {m : ℝ}
 /-- The frequency slices of a symbol of order `m < -n` are integrable. -/
 theorem integrable_coefficient (a : Symbol n V W m) (hm : m < -n) (x : CoordinateSpace n) :
     Integrable (fun ξ ↦ a.coefficient (x, ξ)) := by
-  obtain ⟨C, -, hC⟩ := a.exists_bound {x} isCompact_singleton [] []
+  obtain ⟨C, -, hC⟩ := a.exists_bound_coefficient {x} isCompact_singleton
   have hweight := integrable_rpow_neg_one_add_norm_sq (μ := (volume : Measure (CoordinateSpace n)))
     (r := -m) (by simp only [finrank_euclideanSpace_fin]; linarith)
   refine (hweight.const_mul C).mono'
     (a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
       ).aestronglyMeasurable (ae_of_all _ fun ξ ↦ ?_)
-  simpa using hC x rfl ξ
+  simpa only [neg_neg] using hC x rfl ξ
 
 /-- The kernel of a symbol of order `m < -n` is continuous. -/
 theorem continuous_quantizationKernel (a : Symbol n V W m) (hm : m < -n) :
     Continuous (Function.uncurry (quantizationKernel a.coefficient)) :=
   TauCeti.continuous_quantizationKernel a.contDiff_coefficient.continuous (by simpa using hm)
-    fun K hK ↦ by
-      obtain ⟨C, -, hC⟩ := a.exists_bound K hK [] []
-      exact ⟨C, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+    fun K hK ↦ (a.exists_bound_coefficient K hK).imp fun _ h ↦ h.2
 
 /-- **Kernel of a frequency derivative.** For a symbol of order `m < -n`, the kernel of
 `∂_{ξ_j} a` is `-i (x - y)_j K_a(x, y)`; equivalently `(x - y)_j K_a = K_{-D_{ξ_j} a}`, where the
