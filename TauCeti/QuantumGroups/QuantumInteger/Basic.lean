@@ -270,6 +270,14 @@ theorem quantumInteger_ne_zero {q : K} (hq : IsGenericQuantumParameter q) {r : �
   refine hfin (isOfFinOrder_iff_zpow_eq_one.mpr ⟨r - -r, by omega, ?_⟩)
   rw [zpow_sub₀ hq.ne_zero, sub_eq_zero.mp h, div_self (zpow_ne_zero _ hq.ne_zero)]
 
+/-- When the defining denominator `q - q⁻¹` is nonzero, the quantum integer `[r]_q` vanishes
+exactly when `q^(2r) = 1`. -/
+theorem quantumInteger_eq_zero_iff {q : K} (hq : q - q⁻¹ ≠ 0) (r : ℤ) :
+    quantumInteger q r = 0 ↔ q ^ (2 * r) = 1 := by
+  have hq0 := ne_zero_of_sub_inv_ne_zero hq
+  rw [quantumInteger_def, div_eq_zero_iff, or_iff_left hq, sub_eq_zero, two_mul,
+    zpow_add₀ hq0, zpow_neg, mul_eq_one_iff_eq_inv₀ (zpow_ne_zero r hq0)]
+
 end TauCeti
 
 namespace RingHom
