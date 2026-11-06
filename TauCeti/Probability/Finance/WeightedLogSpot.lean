@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.Parabolic.Holder.Trace
+import TauCeti.Probability.Finance.LogSpot
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 
 /-!
@@ -115,25 +116,42 @@ theorem deriv_deriv_weightedLogSpotPrice_spot (u : ParabolicC2HolderSpace α ℝ
     deriv (deriv fun x => weightedLogSpotPrice u x t) s =
       ((s - 1) * spatialFDerivL u (slabMk (log s) t) 1 +
         (1 + s) * spatialSecondFDerivL u (slabMk (log s) t) 1 1) / s ^ 2 := by
-  have hv := (u.hasSpatialFDerivAt t (log s)).hasDerivAt.comp s (hasDerivAt_log hs.ne')
-  have hd : HasDerivAt (fun x => spatialFDerivL u (slabMk (log x) t) 1)
-      (spatialSecondFDerivL u (slabMk (log s) t) 1 1 / s) s := by
-    convert ((u.hasSpatialSecondFDerivAt t (log s)).hasDerivAt.clm_apply
-      (hasDerivAt_const (log s) (1 : ℝ))).comp s (hasDerivAt_log hs.ne') using 1
-    · rfl
-    · simp [div_eq_mul_inv]
+  let v : ℝ → ℝ := fun y => u (slabMk y t)
+  let f : ℝ → ℝ := fun x => v (log x)
+  have hv (y : ℝ) := (u.hasSpatialFDerivAt t y).hasDerivAt
+  have hv' : deriv v = fun y => spatialFDerivL u (slabMk y t) 1 :=
+    funext fun y => (hv y).deriv
+  have hv'' : HasDerivAt (fun y => spatialFDerivL u (slabMk y t) 1)
+      (spatialSecondFDerivL u (slabMk (log s) t) 1 1) (log s) := by
+    simpa using (u.hasSpatialSecondFDerivAt t (log s)).hasDerivAt.clm_apply
+      (hasDerivAt_const (log s) (1 : ℝ))
+  have h₁ := mul_deriv_comp_log (hv (log s)).differentiableAt hs.ne'
+  have h₂ := sq_mul_deriv_deriv_comp_log (Eventually.of_forall fun y =>
+    (hv y).differentiableAt) (by rw [hv']; exact hv''.differentiableAt) hs.ne'
+  rw [hv', hv''.deriv] at h₂
+  rw [hv'] at h₁
+  have hf : ContDiffOn ℝ 2 f (Ioi 0) :=
+    (u.contDiff_spatialSlice t).comp_contDiffOn
+      (contDiffOn_log.mono (fun _ hx => ne_of_gt hx))
+  have hd : DifferentiableAt ℝ (deriv f) s :=
+    ((hf.deriv_of_isOpen isOpen_Ioi (m := 1) (by norm_num)).differentiableOn
+      one_ne_zero s hs).differentiableAt (Ioi_mem_nhds hs)
   have heq : (deriv fun x => weightedLogSpotPrice u x t) =ᶠ[𝓝 s]
-      fun x => u (slabMk (log x) t) + (1 + x) / x *
-        spatialFDerivL u (slabMk (log x) t) 1 := by
+      fun x => f x + (1 + x) * deriv f x := by
     filter_upwards [Ioi_mem_nhds hs] with x hx
-    exact deriv_weightedLogSpotPrice_spot u hx t
-  rw [heq.deriv_eq]
-  convert (hv.add ((((hasDerivAt_id s).const_add 1).div
-    (hasDerivAt_id s) hs.ne').mul hd)).deriv using 1
-  · rfl
-  · simp only [Pi.div_apply, id_eq]
-    field_simp
-    ring
+    have hfd := (hf.differentiableOn two_ne_zero x hx).differentiableAt (Ioi_mem_nhds hx)
+    simpa only [weightedLogSpotPrice_of_mem, f, v, one_mul, id_eq] using
+      (((hasDerivAt_id x).const_add 1).fun_mul hfd.hasDerivAt).deriv
+  have hprod : HasDerivAt (fun x => f x + (1 + x) * deriv f x)
+      (deriv f s + (deriv f s + (1 + s) * deriv (deriv f) s)) s := by
+    simpa only [id_eq, one_mul] using
+      ((hf.differentiableOn two_ne_zero s hs).differentiableAt
+        (Ioi_mem_nhds hs)).hasDerivAt.fun_add
+          (((hasDerivAt_id s).const_add 1).fun_mul hd.hasDerivAt)
+  rw [heq.deriv_eq, hprod.deriv]
+  apply (eq_div_iff (pow_ne_zero 2 hs.ne')).2
+  dsimp only [f, v]
+  linear_combination (1 + s) * h₂ + 2 * s * h₁
 
 /-- The dollar delta has linear growth with an explicit bound from the value and gradient
 norms. This bound is suitable for moment-based integrability criteria. -/
@@ -198,9 +216,32 @@ theorem pde_weightedLogSpotPrice (u : ParabolicC2HolderSpace α ℝ ℝ hab)
         (r + σ ^ 2 / 2 * ((s - 1) / (s + 1))) *
           spatialFDerivL u (slabMk (log s) t) 1 -
         r / (1 + s) * u (slabMk (log s) t)) := by
-  rw [derivWithin_weightedLogSpotPrice_time, deriv_deriv_weightedLogSpotPrice_spot u hs,
-    deriv_weightedLogSpotPrice_spot u hs, weightedLogSpotPrice_of_mem]
-  field_simp
-  ring
+  have hC := contDiffOn_weightedLogSpotPrice u t
+  have hC' := hC.deriv_of_isOpen isOpen_Ioi (m := 1) (by norm_num)
+  -- Freeze time: the existing identity supplies the spatial operator without imposing
+  -- ordinary time differentiability on the clamped extension at the slab endpoints.
+  have h := pde_comp_exp_div_one_add_exp
+    (C := fun x _ => weightedLogSpotPrice u x t) (y := log s) (t := (t : ℝ)) σ r
+    (by
+      rw [exp_log hs]
+      filter_upwards [Ioi_mem_nhds hs] with x hx
+      exact (hC.differentiableOn two_ne_zero x hx).differentiableAt (Ioi_mem_nhds hx))
+    (by
+      rw [exp_log hs]
+      exact (hC'.differentiableOn one_ne_zero s hs).differentiableAt (Ioi_mem_nhds hs))
+  simp_rw [weightedLogSpotPrice_exp_div, timeExtension_of_mem] at h
+  have hv : deriv (fun y => u (slabMk y t)) =
+      fun y => spatialFDerivL u (slabMk y t) 1 :=
+    funext fun y => (u.hasSpatialFDerivAt t y).hasDerivAt.deriv
+  have hv' : deriv (fun y => spatialFDerivL u (slabMk y t) 1) (log s) =
+      spatialSecondFDerivL u (slabMk (log s) t) 1 1 := by
+    simpa using ((u.hasSpatialSecondFDerivAt t (log s)).hasDerivAt.clm_apply
+      (hasDerivAt_const (log s) (1 : ℝ))).deriv
+  rw [hv, hv'] at h
+  simp only [deriv_const, zero_add, exp_log hs] at h
+  rw [derivWithin_weightedLogSpotPrice_time]
+  have hw : (1 + s) ≠ 0 := by positivity
+  rw [eq_div_iff hw] at h
+  linear_combination -h
 
 end TauCeti.Finance
