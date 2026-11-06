@@ -99,20 +99,20 @@ theorem exists_eq_zero_of_two_mul_norm_le [CompleteSpace E] {f : E → F} {f' : 
   exact ⟨a, ha, hfa, fun z hz hfz ↦ hinj hz (hsub ha) (hfz.trans hfa.symm)⟩
 
 open Metric in
-/-- If `fderiv ℝ g` is `κ`-approximated by `L` on a set containing the closed ball of radius `ρ`
+/-- If `fderiv 𝕜 g` is `κ`-approximated by `L` on a set containing the closed ball of radius `ρ`
 about `x`, `g` is differentiable on that ball, and `g` has a critical point `y` in the ball, then
 `g` changes by at most `(‖L‖ + κ) * (2 * ρ) * ρ` between `x` and `y`. -/
-theorem norm_sub_le_of_fderiv_eq_zero {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F] {g : E → F} {L : E →L[ℝ] E →L[ℝ] F} {s : Set E}
-    {κ : ℝ≥0} (happrox : ApproximatesLinearOn (fderiv ℝ g) L s κ) {x y : E} {ρ : ℝ}
-    (hg : ∀ w ∈ closedBall x ρ, DifferentiableAt ℝ g w) (hsub : closedBall x ρ ⊆ s)
-    (hy : y ∈ closedBall x ρ) (hy0 : fderiv ℝ g y = 0) :
+theorem norm_sub_le_of_fderiv_eq_zero [IsRCLikeNormedField 𝕜] [NormedSpace ℝ E]
+    {g : E → F} {L : E →L[𝕜] E →L[𝕜] F} {s : Set E}
+    {κ : ℝ≥0} (happrox : ApproximatesLinearOn (fderiv 𝕜 g) L s κ) {x y : E} {ρ : ℝ}
+    (hg : ∀ w ∈ closedBall x ρ, DifferentiableAt 𝕜 g w) (hsub : closedBall x ρ ⊆ s)
+    (hy : y ∈ closedBall x ρ) (hy0 : fderiv 𝕜 g y = 0) :
     ‖g y - g x‖ ≤ (‖L‖ + κ) * (2 * ρ) * ρ := by
   have hρ : 0 ≤ ρ := dist_nonneg.trans (mem_closedBall.1 hy)
-  have hbound : ∀ w ∈ closedBall x ρ, ‖fderiv ℝ g w‖ ≤ (‖L‖ + κ) * (2 * ρ) := fun w hw ↦ by
+  have hbound : ∀ w ∈ closedBall x ρ, ‖fderiv 𝕜 g w‖ ≤ (‖L‖ + κ) * (2 * ρ) := fun w hw ↦ by
     have hlip := happrox.lipschitzWith.dist_le_mul ⟨w, hsub hw⟩ ⟨y, hsub hy⟩
     simp only [domRestrict_apply, hy0, dist_zero_right, Subtype.dist_eq] at hlip
-    calc ‖fderiv ℝ g w‖ ≤ (‖L‖ + κ) * dist w y := hlip
+    calc ‖fderiv 𝕜 g w‖ ≤ (‖L‖ + κ) * dist w y := hlip
       _ ≤ (‖L‖ + κ) * (2 * ρ) := by
         gcongr
         linarith [dist_triangle_right w y x, mem_closedBall.1 hw, mem_closedBall.1 hy]
