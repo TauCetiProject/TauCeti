@@ -5,9 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Diffeomorph.Tangent
+public import TauCeti.Geometry.Manifold.Diffeomorph.Basic
 public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.ContMDiff
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
+public import TauCeti.Data.ENat.Monoid
 import TauCeti.Geometry.Manifold.VectorBundle.Hom
 
 /-!
@@ -40,13 +41,17 @@ family of almost complex structures on a mapping torus has to reach after one tu
 
 ## Main results
 
-* `TauCeti.SmoothAlmostComplexStructure.mfderiv_pullback_apply`: `dh ∘ h^* J = J ∘ dh`.
-* `TauCeti.SmoothAlmostComplexStructure.eq_pullback_iff`: `h^* J` is the only structure on `M`
-  making the differentials of `h` complex linear.
-* `TauCeti.SmoothAlmostComplexStructure.pullback_refl`,
-  `TauCeti.SmoothAlmostComplexStructure.pullback_trans`: functoriality.
-* `TauCeti.SmoothAlmostComplexStructure.contMDiff_pullback_family`: pulling back a family of
-  structures depending smoothly on a parameter gives a family depending smoothly on it.
+* `TauCeti.ContMDiffAlmostComplexStructure.mfderiv_pullback_apply`: `dh ∘ h^* J = J ∘ dh`.
+* `TauCeti.ContMDiffAlmostComplexStructure.eq_pullback_iff`: uniqueness of the structure making
+  the differential complex linear.
+* `TauCeti.ContMDiffAlmostComplexStructure.pullback_refl`,
+  `TauCeti.ContMDiffAlmostComplexStructure.pullback_trans`: contravariant functoriality.
+* `TauCeti.ContMDiffAlmostComplexStructure.contMDiff_pullback_family`: fixed-coordinate
+  pullback preserves joint `Cⁿ` parameter and base-point regularity.
+* `TauCeti.ContMDiffAlmostComplexStructure.ofLE_pullback`,
+  `TauCeti.ContMDiffAlmostComplexStructure.pullback_neg`: regularity downgrade and negation.
+* The corresponding `TauCeti.SmoothAlmostComplexStructure` theorems are the infinite-order
+  specializations of these results.
 * `TauCeti.SmoothTwoForm.Tames.pullback`, `TauCeti.SmoothTwoForm.Invariant.pullback`,
   `TauCeti.SmoothTwoForm.Compatible.pullback`: tameness, invariance and compatibility pass to
   the pullbacks of the form and of the structure.
@@ -80,10 +85,6 @@ namespace ContMDiffAlmostComplexStructure
 
 variable {n m r : ℕ∞}
 
-private theorem diffeomorph_order_ne_zero (hnr : n + 1 ≤ r) : (r : ℕ∞ω) ≠ 0 := by
-  have hr : (0 : ℕ∞) < r := (add_pos_of_right zero_lt_one n).trans_le hnr
-  exact_mod_cast hr.ne'
-
 private def pullbackEndomorphism (h : M ≃ₘ^r⟮I, I'⟯ N)
     (J : ContMDiffAlmostComplexStructure I' n N) (x : M) :
     TangentSpace I x →L[ℝ] TangentSpace I x :=
@@ -109,10 +110,10 @@ private theorem contMDiff_pullbackEndomorphism_family
     (by exact_mod_cast hnr)
   refine (hti.comp (hJ'.comp (contMDiff_fst.prodMk
     (ht.comp contMDiff_snd)))).congr fun p ↦ ?_
-  exact (h.tangentMap_symm_mk (diffeomorph_order_ne_zero hnr) p.2.proj _).symm
+  exact (h.tangentMap_symm_mk (ENat.coe_ne_zero_of_add_one_le hnr) p.2.proj _).symm
 
-/-- Pull back a `Cⁿ` structure along a `Cʳ` diffeomorphism with `n + 1 ≤ r`. The extra
-coordinate derivative controls the differentials; no smoothness of the structure is assumed. -/
+/-- The pullback `h^* J`, with `(h^* J)_x = (dh_x)⁻¹ ∘ J_(h x) ∘ dh_x`, of a `Cⁿ`
+structure along a `Cʳ` diffeomorphism with `n + 1 ≤ r`. -/
 def pullback (h : M ≃ₘ^r⟮I, I'⟯ N) (J : ContMDiffAlmostComplexStructure I' n N)
     (hnr : n + 1 ≤ r) : ContMDiffAlmostComplexStructure I n M where
   toEndomorphism := ⟨pullbackEndomorphism h J,
@@ -121,13 +122,13 @@ def pullback (h : M ≃ₘ^r⟮I, I'⟯ N) (J : ContMDiffAlmostComplexStructure 
         (contMDiff_id.prodMk contMDiff_id)⟩
   square_neg x := by
     ext v
-    have hinv := h.isInvertible_mfderiv (x := x) (diffeomorph_order_ne_zero hnr)
+    have hinv := h.isInvertible_mfderiv (x := x) (ENat.coe_ne_zero_of_add_one_le hnr)
     simp [pullbackEndomorphism, hinv.self_apply_inverse, hinv.inverse_apply_self]
 
 variable (h : M ≃ₘ^r⟮I, I'⟯ N) (J : ContMDiffAlmostComplexStructure I' n N)
   (hnr : n + 1 ≤ r)
 
-/-- The finite-order pullback has the actual derivative-conjugation formula. -/
+/-- The pullback at `x` is `(dh_x)⁻¹ ∘ J_(h x) ∘ dh_x`. -/
 theorem pullback_apply (x : M) (v : TangentSpace I x) :
     pullback h J hnr x v =
       (mfderiv I I' h x).inverse (J (h x) (mfderiv I I' h x v)) := (rfl)
@@ -135,11 +136,10 @@ theorem pullback_apply (x : M) (v : TangentSpace I x) :
 /-- The finite-order pullback endomorphism is conjugation by the actual differential. -/
 theorem pullback_toEndomorphism (x : M) :
     (pullback h J hnr).toEndomorphism x =
-      (h.mfderivToContinuousLinearEquiv (by
-        have hr : (0 : ℕ∞) < r := (add_pos_of_right zero_lt_one n).trans_le hnr
-        exact_mod_cast hr.ne') x).symm.conjContinuousAlgEquiv
+      (h.mfderivToContinuousLinearEquiv
+        (ENat.coe_ne_zero_of_add_one_le hnr) x).symm.conjContinuousAlgEquiv
           (J.toEndomorphism (h x)) := by
-  have he : (h.mfderivToContinuousLinearEquiv (diffeomorph_order_ne_zero hnr) x :
+  have he : (h.mfderivToContinuousLinearEquiv (ENat.coe_ne_zero_of_add_one_le hnr) x :
       TangentSpace I x →L[ℝ] TangentSpace I' (h x)) = mfderiv I I' h x :=
     Diffeomorph.mfderivToContinuousLinearEquiv_coe h _
   ext v
@@ -153,7 +153,7 @@ theorem pullback_toEndomorphism (x : M) :
 @[simp]
 theorem mfderiv_pullback_apply (x : M) (v : TangentSpace I x) :
     mfderiv I I' h x (pullback h J hnr x v) = J (h x) (mfderiv I I' h x v) :=
-  (h.isInvertible_mfderiv (diffeomorph_order_ne_zero hnr)).self_apply_inverse _
+  (h.isInvertible_mfderiv (ENat.coe_ne_zero_of_add_one_le hnr)).self_apply_inverse _
 
 /-- The pullback is characterized by the intertwining identity at every tangent vector. -/
 theorem eq_pullback_iff {K : ContMDiffAlmostComplexStructure I n M} :
@@ -161,7 +161,7 @@ theorem eq_pullback_iff {K : ContMDiffAlmostComplexStructure I n M} :
       mfderiv I I' h x (K x v) = J (h x) (mfderiv I I' h x v) := by
   refine ⟨fun hK x v ↦ hK ▸ mfderiv_pullback_apply h J hnr x v, fun hK ↦ ?_⟩
   ext x v
-  have hinv := h.isInvertible_mfderiv (x := x) (diffeomorph_order_ne_zero hnr)
+  have hinv := h.isInvertible_mfderiv (x := x) (ENat.coe_ne_zero_of_add_one_le hnr)
   rw [pullback_apply, ← hK, hinv.inverse_apply_self]
 
 /-- Fixed-coordinate pullback preserves the joint `Cⁿ` regularity of a parameter family. -/
@@ -185,6 +185,7 @@ theorem pullback_refl (K : ContMDiffAlmostComplexStructure I n M) (hnr : n + 1 �
     pullback (Diffeomorph.refl I M r) K hnr = K := by
   refine ((eq_pullback_iff _ K hnr).2 fun x v ↦ ?_).symm
   simp only [Diffeomorph.coe_refl, mfderiv_id]
+  -- The tangent-space base is `id x`; reducing it also exposes the identity CLM applications.
   rfl
 
 /-- Pullback is contravariantly functorial at finite regularity. -/
@@ -194,9 +195,10 @@ theorem pullback_trans (g : N ≃ₘ^r⟮I', I''⟯ P)
   refine ((eq_pullback_iff _ L hnr).2 fun x v ↦ ?_).symm
   have hchain (w : TangentSpace I x) :
       mfderiv I I'' (h.trans g) x w = mfderiv I' I'' g (h x) (mfderiv I I' h x w) :=
-    mfderiv_comp_apply x (g.mdifferentiable (diffeomorph_order_ne_zero hnr) (h x))
-      (h.mdifferentiable (diffeomorph_order_ne_zero hnr) x) w
+    mfderiv_comp_apply x (g.mdifferentiable (ENat.coe_ne_zero_of_add_one_le hnr) (h x))
+      (h.mdifferentiable (ENat.coe_ne_zero_of_add_one_le hnr) x) w
   rw [hchain, hchain, mfderiv_pullback_apply, mfderiv_pullback_apply]
+  -- The remaining fibre base `(h.trans g) x` reduces to `g (h x)` through the bundled coercion.
   rfl
 
 /-- Forgetting structure regularity commutes with pullback. -/
@@ -247,8 +249,9 @@ theorem pullback_toEndomorphism (x : M) :
 @[simp]
 theorem mfderiv_pullback_apply (x : M) (v : TangentSpace I x) :
     mfderiv I I' h x (pullback h J x v) = J (h x) (mfderiv I I' h x v) := by
-  rw [pullback_apply]
-  exact (h.isInvertible_mfderiv (by simp)).self_apply_inverse _
+  simpa only [pullback, ContMDiffAlmostComplexStructure.toSmooth_apply, toContMDiff_apply]
+    using ContMDiffAlmostComplexStructure.mfderiv_pullback_apply h (J.toContMDiff ⊤)
+      (by simp) x v
 
 /-- Pulling back a family of smooth almost complex structures on `N`, depending smoothly on a
 parameter in a manifold `Q`, along a diffeomorphism `h : M → N` gives a family of almost complex
@@ -270,35 +273,6 @@ theorem contMDiff_pullback_family {EQ HQ Q : Type*} [NormedAddCommGroup EQ] [Nor
       (J := fun q => (J q).toContMDiff ⊤) (by
         simpa only [toContMDiff_toEndomorphism_apply] using hJ)
 
-/-- The pullback `h^* J` is the only almost complex structure on `M` for which every
-differential of `h` is complex linear into `J`. -/
-theorem eq_pullback_iff {K : SmoothAlmostComplexStructure I M} :
-    K = pullback h J ↔
-      ∀ (x : M) (v : TangentSpace I x),
-        mfderiv I I' h x (K x v) = J (h x) (mfderiv I I' h x v) := by
-  refine ⟨fun hK x v ↦ hK ▸ mfderiv_pullback_apply h J x v, fun hK ↦ ?_⟩
-  ext x v
-  have hinv := h.isInvertible_mfderiv (n := ∞) (x := x) (by simp)
-  rw [pullback_apply, ← hK, hinv.inverse_apply_self]
-
-/-- Pulling back along the identity does nothing. -/
-@[simp]
-theorem pullback_refl (K : SmoothAlmostComplexStructure I M) :
-    pullback (Diffeomorph.refl I M ∞) K = K := by
-  refine ((eq_pullback_iff _ K).2 fun x v ↦ ?_).symm
-  simp only [Diffeomorph.coe_refl, mfderiv_id]
-  rfl
-
-/-- Pulling back is contravariantly functorial: `(g ∘ h)^* J = h^* (g^* J)`. -/
-theorem pullback_trans (g : N ≃ₘ⟮I', I''⟯ P) (J : SmoothAlmostComplexStructure I'' P) :
-    pullback (h.trans g) J = pullback h (pullback g J) := by
-  refine ((eq_pullback_iff _ J).2 fun x v ↦ ?_).symm
-  have hchain (w : TangentSpace I x) :
-      mfderiv I I'' (h.trans g) x w = mfderiv I' I'' g (h x) (mfderiv I I' h x w) :=
-    mfderiv_comp_apply x (g.mdifferentiable (by simp) (h x)) (h.mdifferentiable (by simp) x) w
-  rw [hchain, hchain, mfderiv_pullback_apply, mfderiv_pullback_apply]
-  rfl
-
 /-- Smooth-to-finite regularity conversion commutes with pullback. -/
 @[simp]
 theorem toContMDiff_pullback (n : ℕ∞) :
@@ -308,13 +282,43 @@ theorem toContMDiff_pullback (n : ℕ∞) :
   rw [toContMDiff_apply, pullback_apply, ContMDiffAlmostComplexStructure.pullback_apply,
     toContMDiff_apply]
 
+/-- The pullback `h^* J` is the only almost complex structure on `M` for which every
+differential of `h` is complex linear into `J`. -/
+theorem eq_pullback_iff {K : SmoothAlmostComplexStructure I M} :
+    K = pullback h J ↔
+      ∀ (x : M) (v : TangentSpace I x),
+        mfderiv I I' h x (K x v) = J (h x) (mfderiv I I' h x v) := by
+  have hinj := (ContMDiffAlmostComplexStructure.smoothEquiv (I := I) (M := M)).symm.injective
+  rw [← hinj.eq_iff]
+  simpa only [ContMDiffAlmostComplexStructure.smoothEquiv_symm_apply,
+    toContMDiff_pullback, toContMDiff_apply] using
+      ContMDiffAlmostComplexStructure.eq_pullback_iff h (J.toContMDiff ⊤) (by simp)
+        (K := K.toContMDiff ⊤)
+
+/-- Pulling back along the identity does nothing. -/
+@[simp]
+theorem pullback_refl (K : SmoothAlmostComplexStructure I M) :
+    pullback (Diffeomorph.refl I M ∞) K = K := by
+  simpa only [pullback, toContMDiff_toSmooth] using
+    congrArg ContMDiffAlmostComplexStructure.toSmooth
+      (ContMDiffAlmostComplexStructure.pullback_refl (K.toContMDiff ⊤) (by simp))
+
+/-- Pulling back is contravariantly functorial: `(g ∘ h)^* J = h^* (g^* J)`. -/
+theorem pullback_trans (g : N ≃ₘ⟮I', I''⟯ P) (J : SmoothAlmostComplexStructure I'' P) :
+    pullback (h.trans g) J = pullback h (pullback g J) := by
+  apply (ContMDiffAlmostComplexStructure.smoothEquiv (I := I) (M := M)).symm.injective
+  simpa only [ContMDiffAlmostComplexStructure.smoothEquiv_symm_apply,
+    toContMDiff_pullback] using
+    ContMDiffAlmostComplexStructure.pullback_trans h (by simp) g
+      (J.toContMDiff ⊤)
+
 end SmoothAlmostComplexStructure
 
 namespace ContMDiffAlmostComplexStructure
 
 /-- Infinite-order pullback agrees with the native smooth pullback under smooth conversion. -/
 @[simp]
-theorem pullback_toSmooth (h : M ≃ₘ⟮I, I'⟯ N)
+theorem toSmooth_pullback (h : M ≃ₘ⟮I, I'⟯ N)
     (J : ContMDiffAlmostComplexStructure I' ⊤ N) :
     (pullback h J (by simp)).toSmooth = SmoothAlmostComplexStructure.pullback h J.toSmooth := by
   ext x v
