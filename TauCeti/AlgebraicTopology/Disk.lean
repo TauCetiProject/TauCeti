@@ -331,6 +331,17 @@ lemma diskBoundary_one_ext {p q : TopCat.diskBoundary.{u} 1}
   refine ULift.ext (Subtype.ext (PiLp.ext fun i ↦ ?_))
   rwa [Subsingleton.elim i 0]
 
+/-- The coordinate of a point of the boundary `S⁰` of the `1`-disk is `±1`. -/
+lemma sq_diskBoundary_one_apply_zero (s : TopCat.diskBoundary.{u} 1) :
+    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1)) 0 ^ 2 = 1 := by
+  have h := EuclideanSpace.norm_eq
+    ((s : ULift.{u} (Metric.sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
+      EuclideanSpace ℝ (Fin 1))
+  rw [mem_sphere_zero_iff_norm.1 s.down.2, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs,
+    eq_comm, Real.sqrt_eq_one] at h
+  exact h
+
 /-- The `n`-sphere is nonempty. -/
 instance nonempty_topCatSphere (n : ℕ) : Nonempty (TopCat.sphere.{u} n) :=
   ⟨ULift.up ⟨EuclideanSpace.single 0 1, by simp⟩⟩

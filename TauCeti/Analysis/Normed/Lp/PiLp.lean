@@ -199,6 +199,13 @@ theorem piLpExtendByZero_castLEEmb_apply (hk : k ≤ n) (w : PiLp p fun _ : Fin 
     exact piLpExtendByZero_apply_apply _ w _
   · exact piLpExtendByZero_apply_eq_zero (by simpa [Fin.range_castLE] using h) w
 
+/-- Extending a vector of `Lᵖ(Fin n, E)` by zero onto all `n` coordinates of `Lᵖ(Fin n, E)` does
+nothing. -/
+@[simp]
+theorem piLpExtendByZero_castLEEmb_refl (w : PiLp p fun _ : Fin n ↦ E) :
+    piLpExtendByZero p 𝕜 E (Fin.castLEEmb le_rfl) w = w :=
+  PiLp.ext fun j ↦ by simp
+
 /-- The vectors of `Lᵖ(Fin n, E)` obtained by extending a vector of `Lᵖ(Fin k, E)` by zero are
 those whose coordinates `j ≥ k` vanish. -/
 theorem range_piLpExtendByZero_castLEEmb (hk : k ≤ n) :

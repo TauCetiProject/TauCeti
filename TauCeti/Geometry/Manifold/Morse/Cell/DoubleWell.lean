@@ -61,7 +61,7 @@ public section
 noncomputable section
 
 open Set Metric Topology CategoryTheory
-open LinearIsometry (piLpExtendByZero piLpExtendByZero_castLEEmb_apply)
+open LinearIsometry (piLpExtendByZero piLpExtendByZero_castLEEmb_refl)
 
 namespace TauCeti
 
@@ -167,6 +167,22 @@ theorem negDoubleWellChart_symm_apply (y : EuclideanSpace ℝ (Fin 1)) :
     negDoubleWellChart.symm y = doubleWellChart.symm (-y) :=
   (rfl)
 
+/-- The target of `TauCeti.doubleWellChart` is the interval `(-1, 1)` of `ℝ¹`. -/
+@[simp]
+theorem mem_doubleWellChart_target {y : EuclideanSpace ℝ (Fin 1)} :
+    y ∈ doubleWellChart.target ↔ -1 < y 0 ∧ y 0 < 1 := by
+  simp [doubleWellChart, doubleWellCoord]
+
+/-- The target of `TauCeti.negDoubleWellChart` is the interval `(-1, 1)` of `ℝ¹`. -/
+@[simp]
+theorem mem_negDoubleWellChart_target {y : EuclideanSpace ℝ (Fin 1)} :
+    y ∈ negDoubleWellChart.target ↔ -1 < y 0 ∧ y 0 < 1 := by
+  simp only [negDoubleWellChart, OpenPartialHomeomorph.trans_target,
+    Homeomorph.toOpenPartialHomeomorph_target, Homeomorph.toOpenPartialHomeomorph_symm_apply,
+    univ_inter, mem_preimage, Homeomorph.symm_neg, Homeomorph.coe_neg, mem_doubleWellChart_target,
+    PiLp.neg_apply]
+  constructor <;> rintro ⟨h₁, h₂⟩ <;> constructor <;> linarith
+
 /-- The target of `TauCeti.doubleWellChart` contains the closed ball of radius `√(1/2)`. -/
 theorem closedBall_subset_doubleWellChart_target :
     closedBall 0 √(1 / 2) ⊆ doubleWellChart.target := by
@@ -176,19 +192,13 @@ theorem closedBall_subset_doubleWellChart_target :
   have hlt : √(1 / 2 : ℝ) < 1 := by
     rw [Real.sqrt_lt' zero_lt_one]
     norm_num
-  simp only [doubleWellChart, OpenPartialHomeomorph.trans_target,
-    Homeomorph.toOpenPartialHomeomorph_target, Homeomorph.toOpenPartialHomeomorph_symm_apply,
-    univ_inter, mem_preimage]
-  exact abs_lt.1 (hle.trans_lt hlt)
+  exact mem_doubleWellChart_target.2 (abs_lt.1 (hle.trans_lt hlt))
 
 /-- The target of `TauCeti.negDoubleWellChart` contains the closed ball of radius `√(1/2)`. -/
 theorem closedBall_subset_negDoubleWellChart_target :
-    closedBall 0 √(1 / 2) ⊆ negDoubleWellChart.target := by
-  intro y hy
-  simp only [negDoubleWellChart, OpenPartialHomeomorph.trans_target,
-    Homeomorph.toOpenPartialHomeomorph_target, Homeomorph.toOpenPartialHomeomorph_symm_apply,
-    univ_inter, mem_preimage, Homeomorph.symm_neg, Homeomorph.coe_neg]
-  exact closedBall_subset_doubleWellChart_target (by simpa using hy)
+    closedBall 0 √(1 / 2) ⊆ negDoubleWellChart.target := fun _ hy ↦
+  mem_negDoubleWellChart_target.2
+    (mem_doubleWellChart_target.1 (closedBall_subset_doubleWellChart_target hy))
 
 /-- In `TauCeti.doubleWellChart` the double well has the normal form `f = 1 - y²` of index `1`. -/
 theorem doubleWellChart_normalForm : ∀ x ∈ doubleWellChart.source,
@@ -210,24 +220,6 @@ theorem negDoubleWellChart_normalForm : ∀ x ∈ negDoubleWellChart.source,
 
 /-! ### The attaching maps -/
 
-/-- A point of the unit sphere of `ℝ¹` has coordinate `±1`. -/
-private theorem sq_apply_zero_of_mem_sphere {w : EuclideanSpace ℝ (Fin 1)}
-    (hw : w ∈ sphere (0 : EuclideanSpace ℝ (Fin 1)) 1) : w 0 ^ 2 = 1 := by
-  have h := EuclideanSpace.norm_eq w
-  rw [mem_sphere_zero_iff_norm.1 hw, Fin.sum_univ_one, Real.norm_eq_abs, sq_abs] at h
-  nlinarith [Real.sq_sqrt (sq_nonneg (w 0)), Real.sqrt_nonneg (w 0 ^ 2)]
-
-/-- The point `√ε • (w, 0)` of `ℝ¹` is `√ε • w`. -/
-private theorem smul_piLpExtendByZero_apply_zero (ε : ℝ) (w : EuclideanSpace ℝ (Fin 1)) :
-    (√ε • piLpExtendByZero 2 ℝ ℝ (Fin.castLEEmb (le_refl 1)) w) 0 = w 0 * √ε := by
-  simp [mul_comm]
-
-/-- The coordinate of a point of `S⁰ = ∂D¹` is `±1`. -/
-private theorem sq_diskBoundary_one_apply_zero (s : TopCat.diskBoundary.{0} 1) :
-    ((s : ULift.{0} (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down :
-      EuclideanSpace ℝ (Fin 1)) 0 ^ 2 = 1 :=
-  sq_apply_zero_of_mem_sphere (s : ULift.{0} (sphere (0 : EuclideanSpace ℝ (Fin 1)) 1)).down.2
-
 /-- The attaching map `α_+ : S⁰ → M_{1/2}` of the cell of `TauCeti.doubleWellChart` is
 `s ↦ s √(1 - 1/√2)`. -/
 theorem coe_doubleWellChart_morseAttachingMap (s : TopCat.diskBoundary.{0} 1) :
@@ -237,7 +229,7 @@ theorem coe_doubleWellChart_morseAttachingMap (s : TopCat.diskBoundary.{0} 1) :
         EuclideanSpace ℝ (Fin 1)) 0 * √(1 - 1 / √2) := by
   rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply,
     OpenPartialHomeomorph.morseCellMap_def, doubleWellChart_symm_apply,
-    smul_piLpExtendByZero_apply_zero,
+    piLpExtendByZero_castLEEmb_refl, PiLp.smul_apply, smul_eq_mul, mul_comm √(1 / 2),
     ← doubleWellCoord_symm_mul_sqrt (sq_diskBoundary_one_apply_zero s), doubleWellCoord_symm_apply]
 
 /-- The attaching map `α_- : S⁰ → M_{1/2}` of the cell of `TauCeti.negDoubleWellChart` is
@@ -252,8 +244,9 @@ theorem coe_negDoubleWellChart_morseAttachingMap (s : TopCat.diskBoundary.{0} 1)
     rw [neg_sq, sq_diskBoundary_one_apply_zero]
   rw [OpenPartialHomeomorph.coe_morseAttachingMap_apply,
     OpenPartialHomeomorph.morseCellMap_def, negDoubleWellChart_symm_apply,
-    doubleWellChart_symm_apply, PiLp.neg_apply, smul_piLpExtendByZero_apply_zero, ← neg_mul,
-    ← neg_mul, ← doubleWellCoord_symm_mul_sqrt hs, doubleWellCoord_symm_apply]
+    doubleWellChart_symm_apply, PiLp.neg_apply, piLpExtendByZero_castLEEmb_refl, PiLp.smul_apply,
+    smul_eq_mul, mul_comm √(1 / 2), ← neg_mul, ← neg_mul, ← doubleWellCoord_symm_mul_sqrt hs,
+    doubleWellCoord_symm_apply]
 
 /-- The attaching maps of the two charts differ strictly by the reflection `r = -id` of `D¹`:
 `α_- = α_+ ∘ r`. -/
