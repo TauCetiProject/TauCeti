@@ -59,14 +59,54 @@ private def negativeMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
     (if a = loweringTarget i b then loweringCoeff i b else 0) +
     (if a = loweringDividedSquareTarget i b then loweringDividedSquareCoeff i b else 0)
 
+-- Use the three nonzero column contributions before checking the finite certificates.
+-- Reducing dense matrix products directly repeats the inner sums at every multiplication.
+private theorem mul_positiveMatrix_apply (M : Matrix (Fin 26) (Fin 26) ℤ)
+    (i : Fin 4) (a b : Fin 26) :
+    (M * positiveMatrix i) a b = M a b +
+      M a (raisingTarget i b) * raisingCoeff i b +
+      M a (raisingDividedSquareTarget i b) * raisingDividedSquareCoeff i b := by
+  simp [Matrix.mul_apply, positiveMatrix, mul_add, mul_ite, Finset.sum_add_distrib]
+
+private theorem mul_negativeMatrix_apply (M : Matrix (Fin 26) (Fin 26) ℤ)
+    (i : Fin 4) (a b : Fin 26) :
+    (M * negativeMatrix i) a b = M a b -
+      M a (loweringTarget i b) * loweringCoeff i b +
+      M a (loweringDividedSquareTarget i b) * loweringDividedSquareCoeff i b := by
+  simp [Matrix.mul_apply, negativeMatrix, mul_add, mul_sub, mul_ite,
+    Finset.sum_add_distrib, Finset.sum_sub_distrib]
+
 private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
+  intro i
+  ext a b
+  simp only [mul_positiveMatrix_apply, mul_negativeMatrix_apply]
+  simp only [positiveMatrix, weylMatrix, Matrix.of_apply]
+  revert i a b
   decide +kernel
+
+private theorem mul_weylMatrix_apply (M : Matrix (Fin 26) (Fin 26) ℤ)
+    (i : Fin 4) (a b : Fin 26) :
+    (M * weylMatrix i) a b = M a (weylTarget i b) * weylCoeff i b +
+      (if i = 2 ∧ b = 13 then M a 13 else 0) +
+      (if i = 3 ∧ b = 12 then -(M a 13) else 0) := by
+  simp only [Matrix.mul_apply, weylMatrix, Matrix.of_apply, mul_add,
+    Finset.sum_add_distrib, mul_ite, mul_zero]
+  by_cases hi : i = 2 <;> by_cases hj : i = 3 <;>
+    by_cases hb : b = 13 <;> by_cases hc : b = 12 <;>
+    simp [hi, hj, hb, hc, Finset.sum_ite_eq']
 
 private theorem braid_certificate : ∀ i j : Fin 4,
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  decide +kernel
+  intro i j
+  fin_cases i <;> fin_cases j <;>
+    norm_num [CoxeterSystem.braidWord, CoxeterMatrix.F₄, CoxeterSystem.alternatingWord,
+      List.map_concat, List.prod_concat, ← mul_assoc] <;>
+    ext a b <;>
+    simp only [mul_weylMatrix_apply] <;>
+    simp only [weylMatrix, Matrix.of_apply] <;>
+    revert a b <;> decide +kernel
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :
