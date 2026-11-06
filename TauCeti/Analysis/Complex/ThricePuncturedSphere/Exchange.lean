@@ -76,8 +76,8 @@ theorem endAngularForm_zero_one_sub (w : ℂ) :
   have h : -(2 * (π : ℂ) * (1 - w - zero.endCenter)) = -(-(2 * π * (w - one.endCenter))) := by
     simp only [endCenter_zero, endCenter_one]
     ring
-  rw [endAngularForm_apply, h, inv_neg, neg_mul, Complex.neg_im, neg_apply,
-    endAngularForm_apply]
+  rw [endAngularForm_apply, h, neg_apply, endAngularForm_apply]
+  simp
 
 /-- The exchange `w ↦ 1 - w` reverses the angular forms of the two finite ends, since its
 derivative is `-1`: `σ^* dt_1 = dt_0`. -/
@@ -88,8 +88,7 @@ theorem endAngularForm_one_one_sub (w : ℂ) :
 /-- The half turn `w ↦ -w` reverses the angular form of the end at `∞`. -/
 theorem endAngularForm_inf_neg (w : ℂ) : inf.endAngularForm (-w) = -inf.endAngularForm w := by
   ext v
-  simp only [endAngularForm_apply, endCenter_inf, sub_zero, mul_neg, neg_neg, inv_neg, neg_mul,
-    Complex.neg_im, neg_apply]
+  simp [endAngularForm_apply]
 
 /-- The half turn `w ↦ -w` preserves the longitudinal coordinate of the end at `∞`. -/
 @[simp]

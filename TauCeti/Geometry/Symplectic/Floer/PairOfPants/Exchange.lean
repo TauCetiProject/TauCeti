@@ -134,6 +134,15 @@ theorem negativePlanePerturbation_neg {H : ℝ → M → ℝ} (hH : Periodic H 1
 
 /-! ### The family -/
 
+/-- **The pair-of-pants datum splits into its input part and a plane datum.** The pair-of-pants
+datum of `H` is the datum of its input Hamiltonians, with the output Hamiltonian replaced by zero,
+plus the negative plane datum of the output Hamiltonian `H_∞`. -/
+theorem pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation
+    (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
+    pairOfPantsPerturbation H w x =
+      pairOfPantsPerturbation (update H inf 0) w x + negativePlanePerturbation (H inf) w x := by
+  simp [pairOfPantsPerturbation_def, negativePlanePerturbation_def, Puncture.sum_univ]
+
 /-- **The input-exchange family of perturbation data.** For `c ∈ ℝ` this is the input part of the
 pair-of-pants datum of `H`, given by its Hamiltonians on the ends at `0` and `1`, plus the
 negative plane datum of the output Hamiltonian `H_∞` translated by `c`. Its output end is
@@ -154,21 +163,16 @@ theorem exchangePerturbation_def (H : Puncture → ℝ → M → ℝ) (c : ℝ) 
 theorem exchangePerturbation_zero (H : Puncture → ℝ → M → ℝ) :
     exchangePerturbation H 0 = pairOfPantsPerturbation H := by
   funext w x
-  simp only [exchangePerturbation_def, Complex.ofReal_zero, sub_zero, pairOfPantsPerturbation_def,
-    negativePlanePerturbation_def, Puncture.sum_univ, ne_eq, reduceCtorEq, not_false_eq_true,
-    update_of_ne, update_self, endSign_inf, Pi.zero_apply, mul_zero, zero_smul, add_zero]
-  ring_nf
+  simp [exchangePerturbation_def,
+    ← pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation]
 
 /-- The input part of the pair-of-pants datum is exchanged by `w ↦ 1 - w`: since `dσ = -1`, the
 pullback of the input part with exchanged Hamiltonians is the input part. -/
 private theorem pairOfPantsPerturbation_update_exchangeHamiltonians_one_sub (w : ℂ) (x : M) :
     pairOfPantsPerturbation (update (exchangeHamiltonians H) inf 0) (1 - w) x =
       -pairOfPantsPerturbation (update H inf 0) w x := by
-  simp only [pairOfPantsPerturbation_def, Puncture.sum_univ, ne_eq, reduceCtorEq,
-    not_false_eq_true, update_of_ne, update_self, Pi.zero_apply, mul_zero, zero_smul, add_zero,
-    exchangeHamiltonians_zero, exchangeHamiltonians_one, endCoord_zero_one_sub,
-    endCoord_one_one_sub, endAngularForm_zero_one_sub, endAngularForm_one_one_sub, endSign_zero,
-    endSign_one, smul_neg, neg_add_rev]
+  simp [pairOfPantsPerturbation_def, Puncture.sum_univ, endCoord_zero_one_sub,
+    endCoord_one_one_sub, endAngularForm_zero_one_sub, endAngularForm_one_one_sub, add_comm]
 
 /-- **The end of the family is the exchanged pair-of-pants datum.** At `c = 1` the family is the
 pullback of the pair-of-pants datum `K'` with exchanged Hamiltonians
@@ -177,14 +181,10 @@ pullback of the pair-of-pants datum `K'` with exchanged Hamiltonians
 theorem exchangePerturbation_one (hH : Periodic (H inf) 1) (w : ℂ) (x : M) :
     exchangePerturbation H 1 w x =
       -pairOfPantsPerturbation (exchangeHamiltonians H) (1 - w) x := by
-  have hK : ∀ H' : Puncture → ℝ → M → ℝ, pairOfPantsPerturbation H' (1 - w) x =
-      pairOfPantsPerturbation (update H' inf 0) (1 - w) x +
-        negativePlanePerturbation (H' inf) (1 - w) x := fun H' => by
-    conv_lhs => rw [← exchangePerturbation_zero H']
-    rw [exchangePerturbation_def, Complex.ofReal_zero, sub_zero]
   have hplane := negativePlanePerturbation_neg hH (w - 1) x
   rw [neg_sub] at hplane
-  rw [hK, pairOfPantsPerturbation_update_exchangeHamiltonians_one_sub, exchangeHamiltonians_inf,
+  rw [pairOfPantsPerturbation_eq_update_inf_add_negativePlanePerturbation,
+    pairOfPantsPerturbation_update_exchangeHamiltonians_one_sub, exchangeHamiltonians_inf,
     hplane, exchangePerturbation_def, Complex.ofReal_one]
   abel
 
@@ -270,10 +270,10 @@ private theorem pairOfPantsPerturbation_update_inf_eq_zero {w : ℂ} (h₀ : 1 /
     rw [re_endCoord, neg_div, neg_nonpos]
     exact div_nonneg (Real.log_nonneg hn) (by positivity)
   have hcut {q : Puncture} (hq : q ≠ inf) :
-      smoothTransition (q.endSign * (q.endCoord w).re - 1) = 0 :=
-    smoothTransition.zero_of_nonpos (by rw [endSign_eq_one hq]; linarith [hre hq])
-  simp only [pairOfPantsPerturbation_def, Puncture.sum_univ, update_self, Pi.zero_apply, mul_zero,
-    zero_smul, add_zero, hcut (q := zero) (by decide), hcut (q := one) (by decide), zero_mul]
+      smoothTransition ((q.endCoord w).re - 1) = 0 :=
+    smoothTransition.zero_of_nonpos (by linarith [hre hq])
+  simp [pairOfPantsPerturbation_def, Puncture.sum_univ, hcut (q := zero) (by decide),
+    hcut (q := one) (by decide)]
 
 /-- The input part of the pair-of-pants datum vanishes at distance at least `3/2` from a point
 `c ∈ [0, 1]`. -/
@@ -449,10 +449,8 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
   have hRout {z : ℝ × ℝ} (hz : z ∈ Aᶜ) :
       ω.hamiltonianCurvature (fun z x ↦ exchangePerturbation H c (e z) x 1)
         (fun z x ↦ exchangePerturbation H c (e z) x Complex.I) z =
-      ω.hamiltonianCurvature (Kp 1) (Kp Complex.I) (z + -a) := by
-    rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (hout 1 hz) (hout Complex.I hz)]
-    ext x
-    exact ω.hamiltonianCurvature_comp_add_right (Kp 1) (Kp Complex.I) (-a) z x
+      ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a)) (fun w ↦ Kp Complex.I (w + -a)) z :=
+    ω.hamiltonianCurvature_congr_of_eventuallyEq (hout 1 hz) (hout Complex.I hz)
   -- The two bounds: the input part with bounds `B₀`, `B₁`, `0` and the plane part with `B_∞`.
   have hBin := ω.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le
     (forall_update_inf (P := fun f => Periodic f 1) (fun _ => rfl) hH)
@@ -461,12 +459,11 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
       rcases eq_or_ne q inf with rfl | hq
       · simp
       · simpa [update_of_ne hq] using hB q t x) u
-  have hBpl : ∫⁻ z, ‖ω.hamiltonianCurvature (Kp 1) (Kp Complex.I) (z + -a) (u z)‖ₑ ≤
-      ENNReal.ofReal (B inf) := by
-    -- Lebesgue measure on `ℝ × ℝ` is invariant under the translation by `-a`.
-    have h := lintegral_add_right_eq_self (μ := (volume : Measure ℝ).prod volume)
-      (fun z ↦ ‖ω.hamiltonianCurvature (Kp 1) (Kp Complex.I) z (u (z - -a))‖ₑ) (-a)
-    simp only [add_sub_cancel_right, ← Measure.volume_eq_prod] at h
+  have hBpl : ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
+      (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ ≤ ENNReal.ofReal (B inf) := by
+    have h := ω.lintegral_enorm_hamiltonianCurvature_comp_add_right (Kp 1) (Kp Complex.I)
+      (fun z ↦ u (z - -a)) (-a)
+    simp only [add_sub_cancel_right] at h
     rw [h]
     exact ω.lintegral_enorm_hamiltonianCurvature_negativePlanePerturbation_le (hH inf) (hHs inf)
       (hB inf) (fun z ↦ u (z - -a))
@@ -476,16 +473,17 @@ theorem lintegral_enorm_hamiltonianCurvature_exchangePerturbation_le (ω : Sympl
             (fun z x ↦ exchangePerturbation H c (e z) x Complex.I) z (u z)‖ₑ :=
         (lintegral_add_compl _ hA.measurableSet).symm
     _ = (∫⁻ z in A, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature (Kp 1) (Kp Complex.I) (z + -a) (u z)‖ₑ := by
+          ∫⁻ z in Aᶜ, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
+            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ := by
         congr 1
         · exact setLIntegral_congr_fun hA.measurableSet fun z hz => by rw [hRin hz]
         · exact setLIntegral_congr_fun hA.measurableSet.compl fun z hz => by rw [hRout hz]
     _ ≤ (∫⁻ z, ‖ω.hamiltonianCurvature (Ki 1) (Ki Complex.I) z (u z)‖ₑ) +
-          ∫⁻ z, ‖ω.hamiltonianCurvature (Kp 1) (Kp Complex.I) (z + -a) (u z)‖ₑ :=
+          ∫⁻ z, ‖ω.hamiltonianCurvature (fun w ↦ Kp 1 (w + -a))
+            (fun w ↦ Kp Complex.I (w + -a)) z (u z)‖ₑ :=
         add_le_add (setLIntegral_le_lintegral _ _) (setLIntegral_le_lintegral _ _)
     _ ≤ (∑ q, ENNReal.ofReal (update B inf 0 q)) + ENNReal.ofReal (B inf) := add_le_add hBin hBpl
     _ = ∑ q, ENNReal.ofReal (B q) := by
-        simp only [Puncture.sum_univ, ne_eq, reduceCtorEq, not_false_eq_true, update_of_ne,
-          update_self, ENNReal.ofReal_zero, add_zero]
+        simp [Puncture.sum_univ]
 
 end TauCeti.SymplecticForm
