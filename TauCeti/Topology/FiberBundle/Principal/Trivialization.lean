@@ -139,7 +139,7 @@ theorem continuous_invFun :
   simpa only [← homeomorph_symm_apply] using τ.homeomorph.symm.continuous
 
 /-- Global coordinates intertwine the right action with right multiplication. -/
-theorem map_smul (b : B) (p : P b) (g : G) :
+theorem equivAt_op_smul (b : B) (p : P b) (g : G) :
     τ.equivAt b (op g • p) = τ.equivAt b p * g :=
   τ.toTrivialization.snd_apply_smul (τ.mem_baseSet b) p g
 
@@ -182,7 +182,7 @@ theorem continuous_sectionValue :
   τ.continuous_invFun.comp (continuous_id.prodMk continuous_const)
 
 /-- The inverse coordinates are obtained by the right action on the selected section. -/
-theorem symm_apply_eq_smul (b : B) (g : G) :
+theorem equivAt_symm_apply (b : B) (g : G) :
     (τ.equivAt b).symm g = op g • τ.sectionValue b := by
   have h : τ.homeomorph.symm (b, g) = op g • τ.homeomorph.symm (b, 1) := by
     rw [homeomorph_symm_apply_eq, homeomorph_symm_apply_eq]
@@ -223,7 +223,7 @@ theorem equivAt_eq_division (b : B) (p : P b) :
     τ.equivAt b p = division G (τ.sectionValue b) p := by
   symm
   apply division_eq_iff.2
-  exact (τ.symm_apply_eq_smul b (τ.equivAt b p)).symm.trans
+  exact (τ.equivAt_symm_apply b (τ.equivAt b p)).symm.trans
     ((τ.equivAt b).symm_apply_apply p)
 
 /-- A trivialization is reconstructed from its selected section. -/
@@ -265,7 +265,7 @@ def gauge (a : C(B, G)) : GlobalTrivialization G P :=
       ((a.continuous.comp τ.continuous_toFun.fst).mul τ.continuous_toFun.snd))
     (τ.continuous_invFun.comp
       (continuous_fst.prodMk ((a.continuous.comp continuous_fst).inv.mul continuous_snd)))
-    (fun b p g ↦ by simp [τ.map_smul, mul_assoc])
+    (fun b p g ↦ by simp [τ.equivAt_op_smul, mul_assoc])
 
 /-- A gauge multiplies the group coordinate on the left. -/
 @[simp]
@@ -284,7 +284,7 @@ theorem equivAt_gauge_symm_apply (a : C(B, G)) (b : B) (g : G) :
 @[simp]
 theorem sectionValue_gauge (a : C(B, G)) (b : B) :
     (τ.gauge a).sectionValue b = op ((a b)⁻¹) • τ.sectionValue b := by
-  rw [sectionValue, equivAt_gauge_symm_apply, mul_one, symm_apply_eq_smul]
+  rw [sectionValue, equivAt_gauge_symm_apply, mul_one, equivAt_symm_apply]
 
 /-- The identity gauge leaves the trivialization unchanged. -/
 @[simp]
@@ -319,8 +319,8 @@ theorem transition_apply (b : B) : τ.transition υ b = υ.equivAt b (τ.section
 @[simp]
 theorem gauge_transition : τ.gauge (τ.transition υ) = υ := by
   ext b p
-  rw [equivAt_gauge, transition_apply, ← υ.map_smul,
-    ← τ.symm_apply_eq_smul, Equiv.symm_apply_apply]
+  rw [equivAt_gauge, transition_apply, ← υ.equivAt_op_smul,
+    ← τ.equivAt_symm_apply, Equiv.symm_apply_apply]
 
 /-- The gauge changing a fixed reference to a trivialization is unique. -/
 @[simp]
