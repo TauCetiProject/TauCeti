@@ -51,6 +51,7 @@ theorem emptyHomeomorph_symm_inr (x : X) : (emptyHomeomorph X).symm (Sum.inr x) 
   simp [emptyHomeomorph]
 
 /-- In the disjoint-union model the involution is the usual sum swap. -/
+@[simp]
 theorem emptyHomeomorph_swap (z : DoubleAlong (∅ : Set X)) :
     emptyHomeomorph X (swap ∅ z) = (emptyHomeomorph X z).swap :=
   induction_on ∅ z (by simp) (by simp)

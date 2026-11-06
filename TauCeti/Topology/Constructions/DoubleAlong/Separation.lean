@@ -68,10 +68,12 @@ theorem image_compl_inl : inl A '' Aᶜ = (range (inr A))ᶜ := by
 /-- The complement of the glued subset is an open embedded part of the first sheet. -/
 theorem isOpenEmbedding_inl_compl (hA : IsClosed A) :
     IsOpenEmbedding (Aᶜ.domRestrict (inl A)) := by
+  have hclosed : IsClosed (range (Subtype.val : A → X)) := by
+    simpa only [Subtype.range_val] using hA
   have h := TauCeti.TopCat.isOpenEmbedding_domRestrict_compl_range_of_isPushout
     (IsPushout.of_hasPushout (TopCat.ofHom (ContinuousMap.subtypeVal A))
       (TopCat.ofHom (ContinuousMap.subtypeVal A))).flip
-    (show IsClosed (range (Subtype.val : A → X)) from Subtype.range_coe.symm ▸ hA)
+    hclosed
   -- Unfold the native cocone maps before rewriting the subtype-valued restriction domain.
   simp only [← inl_eq_pushout_inl] at h
   change IsOpenEmbedding ((range (Subtype.val : A → X))ᶜ.domRestrict (inl A)) at h
@@ -81,10 +83,12 @@ theorem isOpenEmbedding_inl_compl (hA : IsClosed A) :
 /-- The complement of the glued subset is an open embedded part of the second sheet. -/
 theorem isOpenEmbedding_inr_compl (hA : IsClosed A) :
     IsOpenEmbedding (Aᶜ.domRestrict (inr A)) := by
+  have hclosed : IsClosed (range (Subtype.val : A → X)) := by
+    simpa only [Subtype.range_val] using hA
   have h := TauCeti.TopCat.isOpenEmbedding_domRestrict_compl_range_of_isPushout
     (IsPushout.of_hasPushout (TopCat.ofHom (ContinuousMap.subtypeVal A))
       (TopCat.ofHom (ContinuousMap.subtypeVal A)))
-    (show IsClosed (range (Subtype.val : A → X)) from Subtype.range_coe.symm ▸ hA)
+    hclosed
   -- Unfold the native cocone maps before rewriting the subtype-valued restriction domain.
   simp only [← inr_eq_pushout_inr] at h
   change IsOpenEmbedding ((range (Subtype.val : A → X))ᶜ.domRestrict (inr A)) at h

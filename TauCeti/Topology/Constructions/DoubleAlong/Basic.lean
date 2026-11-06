@@ -138,12 +138,12 @@ theorem fold_inr (x : X) : fold A (inr A x) = x := descSame_inr _ _ _ _ _
 
 /-- Each sheet is embedded, even when the glued subset is not closed. -/
 theorem isEmbedding_inl : IsEmbedding (inl A) :=
-  (show Function.LeftInverse (fold A) (inl A) from fold_inl A).isEmbedding
+  Function.LeftInverse.isEmbedding (fold_inl A)
     (fold A).continuous (inl A).continuous
 
 /-- Each sheet is embedded, even when the glued subset is not closed. -/
 theorem isEmbedding_inr : IsEmbedding (inr A) :=
-  (show Function.LeftInverse (fold A) (inr A) from fold_inr A).isEmbedding
+  Function.LeftInverse.isEmbedding (fold_inr A)
     (fold A).continuous (inr A).continuous
 
 @[simp]
@@ -161,8 +161,7 @@ theorem inl_eq_inr_iff {x y : X} : inl A x = inr A y ↔ x = y ∧ x ∈ A := by
     ((forget TopCat).map_isPushout
       (IsPushout.of_hasPushout (TopCat.ofHom (ContinuousMap.subtypeVal A))
         (TopCat.ofHom (ContinuousMap.subtypeVal A)))).isColimit
-    (show Function.Injective (TopCat.ofHom (ContinuousMap.subtypeVal A)) from
-      Subtype.val_injective) x y
+    Subtype.val_injective x y
   -- Forgetting the native pushout identifies its cocone maps with the continuous sheet maps.
   change inl A x = inr A y ↔ (∃ a : A, a.val = x ∧ a.val = y) at h
   rw [h]
@@ -201,6 +200,7 @@ theorem fold_swap (z : DoubleAlong A) : fold A (swap A z) = fold A z :=
   induction_on A z (by simp) (by simp)
 
 /-- The swap fixes exactly the glued subset on the two copies. -/
+@[simp]
 theorem swap_eq_self_iff (z : DoubleAlong A) : swap A z = z ↔ fold A z ∈ A := by
   induction z using induction_on A with
   | hl x => simp
