@@ -230,9 +230,12 @@ theorem _root_.ContDiffOn.enorm_integral_lineDeriv_smul_le {u : E → F}
         eLpNorm (fun x => ‖v‖ * ‖fderiv ℝ u x‖) p (mu.restrict Omega) :=
           eLpNorm_mono_ae_real hmeas (ae_of_all _ fun x => by
             simpa only [mul_comm] using (fderiv ℝ u x).le_opNorm v)
+      _ = eLpNorm (‖v‖ • fun x => ‖fderiv ℝ u x‖) p (mu.restrict Omega) := by
+          exact congrArg (fun g : E → ℝ => eLpNorm g p (mu.restrict Omega))
+            (funext fun x => ((Pi.smul_apply ‖v‖ (fun y : E => ‖fderiv ℝ u y‖) x).trans
+              (smul_eq_mul ‖v‖ ‖fderiv ℝ u x‖)).symm)
       _ = ‖v‖ₑ * eLpNorm (fderiv ℝ u) p (mu.restrict Omega) := by
-          rw [show (fun x => ‖v‖ * ‖fderiv ℝ u x‖) =
-            ‖v‖ • (fun x => ‖fderiv ℝ u x‖) by rfl, eLpNorm_const_smul,
+          rw [eLpNorm_const_smul,
             eLpNorm_norm _ (hD.aestronglyMeasurable Omega.isOpen.measurableSet), enorm_norm]
   calc ‖∫ x in Omega, (phi : E → ℝ) x • fderiv ℝ u x v ∂mu‖ₑ ≤
       eLpNorm (phi : E → ℝ) q (mu.restrict Omega) *

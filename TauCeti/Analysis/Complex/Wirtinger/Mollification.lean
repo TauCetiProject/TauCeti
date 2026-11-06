@@ -69,8 +69,7 @@ theorem conjWirtingerDeriv_convolution_right_of_integral_eq
     simpa only [neg_add, neg_smul, convolution_def, flip_apply, lsmul_apply] using hweak
   rw [conjWirtingerDeriv_apply]
   simp only [smul_eq_mul, mul_one, hsum]
-  rw [show (2 : ℝ) • (f ⋆[(lsmul ℝ ℝ).flip] ρ) x =
-      (2 : ℂ) • (f ⋆[(lsmul ℝ ℝ).flip] ρ) x by simp [two_smul], smul_smul]
+  rw [two_smul ℝ, ← two_smul ℂ, smul_smul]
   norm_num
 
 end TauCeti

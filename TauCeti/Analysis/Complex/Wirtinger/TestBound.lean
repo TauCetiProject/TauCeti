@@ -188,25 +188,8 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
     have hψ := ψ.continuous.memLp_of_hasCompactSupport ψ.hasCompactSupport
       (p := q) (μ := (volume : Measure ℂ))
     simpa only [ψ, TestFunction.coe_lineDerivCLM] using hψ
-  let L : Lp F p (volume : Measure ℂ) →L[ℝ] F :=
-    (lsmul ℝ ℝ).lpPairing volume q p (hψ.toLp _)
-  have hpair (g : Lp F p (volume : Measure ℂ)) (G : ℂ → F) (hg : g =ᵐ[volume] G) :
-      L g = ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • G z := by
-    dsimp only [L]
-    rw [lpPairing_eq_integral]
-    apply integral_congr_ae
-    filter_upwards [hψ.coeFn_toLp, hg] with z hz hzg
-    simp only [lsmul_apply, hz, hzg]
-  have hlimLp := tendsto_normedBumpLp hp_top
-    (ContDiffBump.tendsto_rOut_shrinking hδ) (hu₀.toLp u₀)
-  have hlim : Tendsto (fun n => L (normedBumpLp hp_top (ρ n) volume (hu₀.toLp u₀)))
-      atTop (𝓝 (L (hu₀.toLp u₀))) :=
-    L.continuous.tendsto (hu₀.toLp u₀) |>.comp hlimLp
-  have hpairε (n : ℕ) : L (normedBumpLp hp_top (ρ n) volume (hu₀.toLp u₀)) =
-      ∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • uε n z :=
-    hpair _ _ (normedBumpLp_ae_eq_convolution hp_top (ρ n) hu₀)
-  have hpair₀ := hpair _ _ hu₀.coeFn_toLp
-  simp only [hpairε, hpair₀] at hlim
+  have hlim := tendsto_integral_smul_normed_convolution hp_top
+    (ContDiffBump.tendsto_rOut_shrinking hδ) hψ hu₀
   have hnormlim := (continuous_enorm.tendsto _).comp hlim
   have hfinal := le_of_tendsto hnormlim (Filter.Eventually.of_forall htest)
   have heq : (∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • u₀ z) =
