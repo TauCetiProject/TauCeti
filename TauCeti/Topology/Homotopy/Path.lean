@@ -452,10 +452,9 @@ theorem map_trans_cast {Y : Type*} [TopologicalSpace Y] {a b c : X} {f : C(X, Y)
     (h₀ : y₀ = f a) (h₁ : y₁ = f b) (h₂ : y₂ = f c) :
     ((A.trans B).map f).cast h₀ h₂ = ((A.map f).cast h₀ h₁).trans ((B.map f).cast h₁ h₂) := by
   subst h₀ h₁ h₂
+  simp only [cast_rfl_rfl]
   induction A, B using Quotient.ind₂ with
-  | mk A B =>
-    simp only [← mk_trans, ← mk_map, ← mk_cast, Path.map_trans]
-    rfl
+  | mk A B => simp only [← mk_trans, ← mk_map, Path.map_trans]
 
 /-- If `trans γ (symm γ') = refl`, then `γ = γ'`.
 This is the quotient analogue of `eq_of_div_eq_one : a / b = 1 → a = b`. -/
