@@ -86,7 +86,7 @@ private theorem measure_inter_ball_rpow_le_perimeter (hn : 2 ≤ finrank ℝ E) 
     rw [← Measure.restrict_restrict₀ ht, ← Measure.restrict_apply₀ ht, ← setLIntegral_const]
     exact lintegral_mono_ae ((ae_restrict_mem₀ ht).mono fun x hx => by rw [htb x hx]; exact hb')
   have hup := setLIntegral_enorm_sub_setAverage_le_mul_measure_rpow_mul_totalVariationOn_of_convex
-    (Ω := ⟨B, isOpen_ball⟩) (convex_ball c r) isBounded_ball hu subset_rfl
+    (Ω := ⟨B, isOpen_ball⟩) (convex_ball c r) isBounded_ball hu.locallyIntegrableOn subset_rfl
     (measure_ball_pos μ c hr).ne' (inter_subset_right : t ∩ B ⊆ B)
   refine ENNReal.rpow_one_sub_le_of_le_mul_rpow (inv_lt_one_of_one_lt₀ (by exact_mod_cast hn))
     (measure_ne_top_of_subset inter_subset_right measure_ball_lt_top.ne) ?_

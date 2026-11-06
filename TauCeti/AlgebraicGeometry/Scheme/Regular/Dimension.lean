@@ -25,7 +25,8 @@ non-emptiness is required separately.
 The point of this formulation is that it is invariant under étale surjective morphisms
 (`AlgebraicGeometry.Scheme.Hom.isRegularOfDim_iff_of_etale_of_surjective`). An étale morphism
 `f : X ⟶ Y` preserves and reflects regularity of local rings, and preserves the Krull dimension of
-Noetherian local rings (`AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_etale`,
+Noetherian local rings
+(`AlgebraicGeometry.Scheme.Hom.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified`,
 `AlgebraicGeometry.Scheme.Hom.ringKrullDim_stalk_eq_of_etale`). The Krull dimension of an open
 subscheme `U` is the supremum of the Krull dimensions of the local rings at the points of `U`
 (`TauCeti.AlgebraicGeometry.topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk`). Since `f` is
@@ -85,7 +86,8 @@ theorem IsRegularOfDim.of_etale (h : IsRegularOfDim Y d) (f : X ⟶ Y) [Etale f]
     IsRegularOfDim X d where
   nonempty := ‹_›
   isRegularLocalRing_stalk x :=
-    (f.isRegularLocalRing_stalk_iff_of_etale x).mp (h.isRegularLocalRing_stalk (f x))
+    (f.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified x).mp
+      (h.isRegularLocalRing_stalk (f x))
   topologicalKrullDim_eq U hU := by
     -- the image of `U` is a nonempty open of `Y` with the same local dimensions as `U`
     rw [topologicalKrullDim_opens_eq_iSup_ringKrullDim_stalk,
@@ -101,7 +103,8 @@ theorem IsRegularOfDim.of_etale_of_surjective (h : IsRegularOfDim X d) (f : X �
   nonempty := h.nonempty.map f
   isRegularLocalRing_stalk y := by
     obtain ⟨x, rfl⟩ := f.surjective y
-    exact (f.isRegularLocalRing_stalk_iff_of_etale x).mpr (h.isRegularLocalRing_stalk x)
+    exact (f.isRegularLocalRing_stalk_iff_of_flat_of_formallyUnramified x).mpr
+      (h.isRegularLocalRing_stalk x)
   topologicalKrullDim_eq V hV := by
     -- the preimage of `V` is a nonempty open of `X` with the same local dimensions as `V`
     have hV' : ((f ⁻¹ᵁ V : X.Opens) : Set X).Nonempty := by
