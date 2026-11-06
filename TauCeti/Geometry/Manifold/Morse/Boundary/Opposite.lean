@@ -17,7 +17,8 @@ Morse–Smale pseudo-gradient adapted to `f`. Then `-X` is a Morse–Smale pseud
 `-f` (`TauCeti.IsAdaptedPseudoGradient.neg`, `TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.neg`).
 The two functions have the same critical points, and at a critical point their Morse indices add
 up to `n`. The flow of `-X` is the flow of `X` run backwards, so the trajectories of `-X` from `q`
-to `p` are the trajectories of `X` from `p` to `q`.
+to `p` are the trajectories of `X` from `p` to `q`
+(`TauCeti.IsAdaptedPseudoGradient.neg_morseTrajectorySlice`).
 
 Consequently the mod-two Morse boundary of `-f` is the transpose of that of `f`: the coefficient
 of `p` in the boundary of `q` for `-f` is the coefficient of `q` in the boundary of `p` for `f`.
@@ -36,8 +37,6 @@ for `f`.
 
 In the namespace `TauCeti.IsAdaptedPseudoGradient`:
 
-* `morseTrajectorySlice_neg`: the trajectories of `-X` from `q` to `p`, read on the middle level,
-  are those of `X` from `p` to `q`.
 * `mem_morseBrokenTrajectorySet_neg`, `ncard_morseBrokenTrajectorySet_neg`: the broken
   trajectories of `-X` from `r` to `p` are those of `X` from `p` to `r`, with their two components
   exchanged.
@@ -74,16 +73,6 @@ namespace IsAdaptedPseudoGradient
 
 variable (hX : IsAdaptedPseudoGradient f X) (hf : IsMorse 𝓘(ℝ, E) f)
 
-/-- **Reversed trajectories.** The trajectories of `-X` from `q` to `p`, read on the middle level
-between `-f q` and `-f p`, are the trajectories of `X` from `p` to `q`, read on the middle level
-between `f p` and `f q`. -/
-theorem morseTrajectorySlice_neg (p q : M) :
-    (hX.neg hf).morseTrajectorySlice q p = hX.morseTrajectorySlice p q := by
-  ext z
-  simp only [mem_morseTrajectorySlice, ← hX.stableSet_eq_unstableSet_neg hf,
-    ← hX.unstableSet_eq_stableSet_neg hf, Pi.neg_apply]
-  exact ⟨fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩, fun ⟨h₁, h₂, h₃⟩ ↦ ⟨h₂, h₁, by linarith⟩⟩
-
 /-- **Reversed broken trajectories.** A triple `(q, z₁, z₂)` is a broken trajectory of `-X` from
 `r` to `p` exactly when `(q, z₂, z₁)` is a broken trajectory of `X` from `p` to `r`: reversing the
 flow reverses each component and the order in which they are traversed. -/
@@ -99,7 +88,7 @@ theorem mem_morseBrokenTrajectorySet_neg {p r : criticalPoints 𝓘(ℝ, E) f}
   have hq := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
     (by simpa using x.1.2)).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   simp only [mem_morseBrokenTrajectorySet, Set.equivOfEq_apply]
-  rw [hX.morseTrajectorySlice_neg hf, hX.morseTrajectorySlice_neg hf]
+  rw [hX.neg_morseTrajectorySlice hf, hX.neg_morseTrajectorySlice hf]
   constructor
   · rintro ⟨h₁, h₂, h₃, h₄⟩
     exact ⟨by omega, by omega, h₄, h₃⟩
@@ -137,7 +126,7 @@ theorem morseBoundaryCoeff_neg (q p : criticalPoints 𝓘(ℝ, E) (-f)) :
   simp only [Set.equivOfEq_apply]
   by_cases hind : manifoldMorseIndex 𝓘(ℝ, E) f p = manifoldMorseIndex 𝓘(ℝ, E) f q + 1
   · rw [(h.neg hf).morseBoundaryCoeff_eq_ncard hf.neg (by omega),
-      h.morseBoundaryCoeff_eq_ncard hf hind, hX.morseTrajectorySlice_neg hf]
+      h.morseBoundaryCoeff_eq_ncard hf hind, hX.neg_morseTrajectorySlice hf]
   · rw [(h.neg hf).morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf.neg (by omega),
       h.morseBoundaryCoeff_eq_zero_of_morseIndex_ne_add_one hf hind]
 
