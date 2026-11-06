@@ -13,6 +13,8 @@ public import Mathlib.NumberTheory.ModularForms.QExpansion
 import TauCeti.Analysis.Complex.UpperHalfPlane.Manifold
 import TauCeti.Analysis.SpecialFunctions.Exp.Summable
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
+import TauCeti.Basic.Complex.Basic
+import TauCeti.Data.Nat.Cast.Order.Field
 import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Basic
 import TauCeti.NumberTheory.ModularForms.Basic
 import TauCeti.NumberTheory.TsumDivisorsAntidiagonal
@@ -438,19 +440,6 @@ private lemma norm_cot_sub_le {M : ℕ} (hM : 0 < M) {u : ℂ} {r : ℝ} (hu : 1
     (mul_le_mul_of_nonneg_left (Real.exp_le_exp.mpr ?_) (cotConst_nonneg M))
   nlinarith [Real.pi_pos]
 
-/-- The imaginary part of `(b₀ z + b₁) / M - m z` is `(b₀ / M - m) Im z`. -/
-lemma im_div_natCast_sub_intCast_mul (b₀ b₁ M : ℕ) (m : ℤ) (z : ℍ) :
-    ((b₀ * (z : ℂ) + b₁) / M - m * z).im = ((b₀ : ℝ) / M - m) * z.im := by
-  simp only [Complex.sub_im, Complex.div_natCast_im, Complex.add_im, Complex.mul_im,
-    Complex.natCast_re, Complex.natCast_im, Complex.intCast_re, Complex.intCast_im,
-    UpperHalfPlane.coe_re, UpperHalfPlane.coe_im, zero_mul, add_zero]
-  ring
-
-/-- A natural number `b` below `M` satisfies `b / M ≤ 1 - 1 / M`. -/
-lemma natCast_div_le_one_sub_inv {b M : ℕ} (hb : b < M) : (b : ℝ) / M ≤ 1 - 1 / M := by
-  rw [le_sub_iff_add_le, ← add_div, div_le_one (by exact_mod_cast (Nat.zero_le _).trans_lt hb)]
-  exact_mod_cast hb
-
 /-- `π cot (π u)` is bounded by `cotConst M + π` when `1 / M ≤ Im u`. -/
 private lemma norm_pi_mul_cot_pi_mul_le {M : ℕ} (hM : 0 < M) {u : ℂ} (hu : 1 / (M : ℝ) ≤ u.im) :
     ‖π * cot (π * u)‖ ≤ cotConst M + π := by
@@ -498,8 +487,8 @@ private lemma norm_cotRow_zero_le {M b₀ b₁ : ℕ} (hb : b₀ < M) {z : ℍ} 
   · simp only [hb₀, CharP.cast_eq_zero, zero_mul, zero_add]
     exact le_add_of_nonneg_left (by positivity [cotConst_nonneg M])
   have hx : 1 / (M : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M).im := by
-    have h := im_div_natCast_sub_intCast_mul b₀ b₁ M 0 z
-    simp only [Int.cast_zero, zero_mul, sub_zero] at h
+    have h := im_div_natCast_sub_intCast_mul b₀ b₁ M 0 (z : ℂ)
+    simp only [Int.cast_zero, zero_mul, sub_zero, UpperHalfPlane.coe_im] at h
     rw [h]
     have : 1 / (M : ℝ) ≤ b₀ / M := by
       gcongr
@@ -517,8 +506,8 @@ private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m :
   have hM : 0 < M := by omega
   have hM' : (0 : ℝ) < M := by exact_mod_cast hM
   -- the imaginary part of `x - m z` is `(b₀ / M - m) Im z`, with `b₀ / M ≤ 1 - 1 / M`
-  have hc1 := natCast_div_le_one_sub_inv hb
-  have him := im_div_natCast_sub_intCast_mul b₀ b₁ M m z
+  have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
+  have him := im_div_natCast_sub_intCast_mul b₀ b₁ M m (z : ℂ)
   set c : ℝ := b₀ / M
   have hc0 : 0 ≤ c := by positivity
   have him' : ((m : ℂ) * z).im = m * z.im := by simp
@@ -532,7 +521,7 @@ private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m :
     have hm1 : (m : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hm
     have habs : |(m : ℝ)| = -m := abs_of_neg (by exact_mod_cast hm)
     have h₁ : -(m : ℝ) ≤ ((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       nlinarith
     have h₂ : -(m : ℝ) ≤ -((m : ℂ) * z).im := by
       rw [him']
@@ -547,10 +536,10 @@ private lemma norm_cotRow_le_of_ne_zero {M b₀ b₁ : ℕ} (hb : b₀ < M) {m :
     have hmc' : (m : ℝ) - c ≤ (m - c) * z.im :=
       le_mul_of_one_le_right ((div_pos one_pos hM').le.trans hmc) hz
     have h₁ : 1 / (M : ℝ) ≤ -((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       linarith
     have h₁' : (m : ℝ) - 1 ≤ -((b₀ * (z : ℂ) + b₁) / M - m * z).im := by
-      rw [him]
+      rw [him, UpperHalfPlane.coe_im]
       linarith [div_pos one_pos hM']
     have h₂ : (m : ℝ) ≤ ((m : ℂ) * z).im := by
       rw [him']
@@ -647,7 +636,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
       (𝓝 (if m = 0 then (if b₀ = 0 then π * cot (π * (b₁ / M)) else -(π * Complex.I))
         else 0)) := by
   have hM' : (0 : ℝ) < M := by exact_mod_cast (Nat.zero_le _).trans_lt hb
-  have hc1 := natCast_div_le_one_sub_inv hb
+  have hc1 := Nat.cast_div_le_one_sub_inv (α := ℝ) hb
   have him := im_div_natCast_sub_intCast_mul b₀ b₁ M
   have hc0 : (0 : ℝ) ≤ b₀ / M := by positivity
   have hM1 : 0 < 1 / (M : ℝ) := div_pos one_pos hM'
@@ -656,7 +645,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have hm1 : (m : ℝ) ≤ -1 := by exact_mod_cast Int.le_sub_one_of_lt hm
     have h₁ := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M - m * z) one_pos fun z ↦ by
-        rw [him]
+        rw [him, UpperHalfPlane.coe_im]
         nlinarith [z.im_pos]
     have h₂ := tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty (w := fun z : ℍ ↦ (m : ℂ) * z)
       one_pos fun z ↦ by
@@ -674,7 +663,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have h := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M) (c := 1 / M) hM1 fun z ↦ by
         have h := him 0 z
-        simp only [Int.cast_zero, zero_mul, sub_zero] at h
+        simp only [Int.cast_zero, zero_mul, sub_zero, UpperHalfPlane.coe_im] at h
         rw [h]
         have : 1 / (M : ℝ) ≤ b₀ / M := by
           gcongr
@@ -685,7 +674,7 @@ private lemma tendsto_cotRow_atImInfty {M b₀ b₁ : ℕ} (hb : b₀ < M) (m : 
     have hm1 : (1 : ℝ) ≤ m := by exact_mod_cast hm
     have h₁ := tendsto_pi_mul_cot_pi_mul_sub_pi_mul_I_atImInfty
       (w := fun z : ℍ ↦ (b₀ * (z : ℂ) + b₁) / M - m * z) hM1 fun z ↦ by
-        rw [him]
+        rw [him, UpperHalfPlane.coe_im]
         nlinarith [z.im_pos]
     have h₂ := tendsto_pi_mul_cot_pi_mul_add_pi_mul_I_atImInfty (w := fun z : ℍ ↦ (m : ℂ) * z)
       one_pos fun z ↦ by
