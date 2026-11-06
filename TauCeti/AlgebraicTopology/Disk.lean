@@ -207,6 +207,12 @@ lemma diskBoundaryNegIso_hom (n : ℕ) : (diskBoundaryNegIso.{u} n).hom = diskBo
 lemma diskBoundaryNegIso_inv (n : ℕ) : (diskBoundaryNegIso.{u} n).inv = diskBoundaryNeg n :=
   (rfl)
 
+/-- The antipodal map of the boundary sphere of a disk composed with itself is the identity. -/
+@[reassoc (attr := simp)]
+lemma diskBoundaryNeg_comp_diskBoundaryNeg (n : ℕ) :
+    diskBoundaryNeg.{u} n ≫ diskBoundaryNeg n = 𝟙 _ :=
+  (diskBoundaryNegIso n).hom_inv_id
+
 /-- The antipodal map `x ↦ -x` of the disk `TopCat.disk n`, as an automorphism. It restricts on
 the boundary sphere to `TauCeti.diskBoundaryNeg`
 (`TauCeti.diskBoundaryNeg_comp_diskBoundaryInclusion`), so it is an automorphism of the pair
@@ -223,6 +229,17 @@ lemma diskNeg_hom_apply_down {n : ℕ} (x : TopCat.disk.{u} n) :
 @[simp]
 lemma diskNeg_inv (n : ℕ) : (diskNeg.{u} n).inv = (diskNeg n).hom :=
   (rfl)
+
+/-- The antipodal map of the disk composed with itself is the identity. -/
+@[reassoc (attr := simp)]
+lemma diskNeg_hom_comp_diskNeg_hom (n : ℕ) : (diskNeg.{u} n).hom ≫ (diskNeg n).hom = 𝟙 _ :=
+  (diskNeg n).hom_inv_id
+
+/-- Applying the antipodal map of the disk twice returns the original point. -/
+@[simp]
+lemma diskNeg_hom_diskNeg_hom_apply {n : ℕ} (x : TopCat.disk.{u} n) :
+    (diskNeg n).hom ((diskNeg n).hom x) = x :=
+  (diskNeg n).hom_inv_id_apply x
 
 /-- The antipodal map of the disk restricts on the boundary sphere to the antipodal map of the
 sphere. -/
