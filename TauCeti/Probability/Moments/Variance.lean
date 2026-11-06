@@ -43,8 +43,8 @@ variable on a probability space.
 * `MeasureTheory.integral_le_sqrt_integral_sq`: on a probability space, the mean of a real
   square-integrable function is at most the square root of its second moment, which is the
   nonnegativity of its variance.
-* `TauCeti.Probability.evariance_comp_measurePreserving`: the variance is invariant under a
-  measure-preserving measurable embedding.
+* `MeasureTheory.MeasurePreserving.evariance_fun_comp`: the variance is invariant under
+  composition with a measure-preserving measurable embedding.
 * `TauCeti.Probability.evariance_integral_prod_le` and
   `TauCeti.Probability.evariance_prod_le`: product-variance bounds for averages and products.
 * `TauCeti.integral_coe_pos_of_variance_ne_zero`: on a finite measure space, an `ℝ≥0`-valued
@@ -159,21 +159,25 @@ end VarianceNeZero
 
 end TauCeti
 
-namespace TauCeti.Probability
+namespace MeasureTheory.MeasurePreserving
 
 open ProbabilityTheory
 open scoped ENNReal
 
 /-- The variance is invariant under composition with a measure-preserving measurable embedding. -/
-theorem evariance_comp_measurePreserving {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
+theorem evariance_fun_comp {Ω Ω' : Type*} [MeasurableSpace Ω] [MeasurableSpace Ω']
     {μ : Measure Ω} {ν : Measure Ω'} {e : Ω → Ω'} (he : MeasurePreserving e μ ν)
     (hem : MeasurableEmbedding e) (f : Ω' → ℝ) :
-    evariance (fun x => f (e x)) μ = evariance f ν := by
+    ProbabilityTheory.evariance (fun x => f (e x)) μ = ProbabilityTheory.evariance f ν := by
   rw [evariance, evariance, he.integral_comp hem f]
   exact he.lintegral_comp_emb hem fun y => ‖f y - ∫ y', f y' ∂ν‖ₑ ^ 2
 
+end MeasureTheory.MeasurePreserving
+
+namespace TauCeti.Probability
+
 variable {α β : Type*} [MeasurableSpace α] [MeasurableSpace β] {ν : Measure α} {π : Measure β}
-  [IsProbabilityMeasure ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
+  [SFinite ν] [IsProbabilityMeasure π] {F : α × β → ℝ}
 
 /-- Jensen's inequality for the variance of an average: the variance of the average over the
 second coordinate is at most the average over the second coordinate of the variances in the first
@@ -210,7 +214,8 @@ theorem evariance_integral_prod_le (hF : Measurable F) (hint : Integrable F (ν.
     _ = ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := rfl
 
 /-- The two-factor Efron--Stein inequality. -/
-theorem evariance_prod_le (hF : Measurable F) (hL : MemLp F 2 (ν.prod π)) :
+theorem evariance_prod_le [IsProbabilityMeasure ν] (hF : Measurable F)
+    (hL : MemLp F 2 (ν.prod π)) :
     evariance F (ν.prod π) ≤ ∫⁻ a, evariance (fun w => F (a, w)) π ∂ν +
       ∫⁻ w, evariance (fun a => F (a, w)) ν ∂π := by
   rw [evariance_prod_eq hL]

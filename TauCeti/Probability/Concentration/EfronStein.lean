@@ -82,7 +82,7 @@ private theorem efronStein_fin : ∀ {n : ℕ} {α : Fin n → Type u} [∀ i, M
       mps.lintegral_comp_emb e.symm.measurableEmbedding g
     have hEv : evariance f (Measure.pi μ) =
         evariance F ((μ 0).prod (Measure.pi fun j => μ (Fin.succAbove 0 j))) :=
-      (evariance_comp_measurePreserving mps e.symm.measurableEmbedding f).symm
+      (mps.evariance_fun_comp e.symm.measurableEmbedding f).symm
     have hG : ∀ (j : Fin n) (a : α 0) (w : ∀ j, α (Fin.succAbove 0 j)),
         evariance (fun y => F (a, Function.update w j y)) (μ (Fin.succAbove 0 j)) =
           G (Fin.succAbove 0 j) (e.symm (a, w)) := by
@@ -145,7 +145,7 @@ theorem efronStein {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type 
     simpa [Φ, MeasurableEquiv.piCongrLeft, Equiv.piCongrLeft] using
       Function.piCongrLeft'_symm_update α e.symm y k v
   have hEv : evariance (fun x => f (Φ x)) (Measure.pi fun k => μ (e k)) =
-      evariance f (Measure.pi μ) := evariance_comp_measurePreserving mp Φ.measurableEmbedding f
+      evariance f (Measure.pi μ) := mp.evariance_fun_comp Φ.measurableEmbedding f
   have hterm : ∀ k : Fin (Fintype.card ι),
       ∫⁻ y, evariance (fun v => f (Φ (Function.update y k v))) (μ (e k))
           ∂Measure.pi (fun k => μ (e k)) =
