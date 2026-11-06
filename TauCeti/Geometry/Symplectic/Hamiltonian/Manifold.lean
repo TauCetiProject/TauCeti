@@ -275,6 +275,13 @@ theorem flat_hamiltonianVectorField (f : M → ℝ) (x : M) :
     σ.flat x (σ.hamiltonianVectorField f x) = mvfderiv I f x :=
   (h.isInvertible_flat x).self_apply_inverse _
 
+/-- **The zeros of a Hamiltonian vector field are the critical points of the Hamiltonian**:
+`X_f(x) = 0` exactly when `df_x = 0`. -/
+theorem hamiltonianVectorField_eq_zero_iff {x : M} :
+    σ.hamiltonianVectorField f x = 0 ↔ mvfderiv I f x = 0 := by
+  rw [← h.flat_hamiltonianVectorField f x]
+  exact (map_eq_zero_iff _ (h.isInvertible_flat x).injective).symm
+
 /-- **Contraction with the Hamiltonian vector field** is the differential of the Hamiltonian,
 `σ(X_f, v) = df(v)`. -/
 theorem eval₂_hamiltonianVectorField (f : M → ℝ) (x : M) (v : TangentSpace I x) :
