@@ -7,13 +7,20 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.DerivHyp
 public import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Function.L2Space
 
 /-!
-# Interval integrals dominated by a hyperbolic cosine
+# Integrals of hyperbolic cosines and secants
 
 An integrand dominated by `C * cosh (k * t)` has a primitive bounded by
 `C * cosh (k * t) / |k|` for `k ≠ 0`, in either time direction. This estimate controls
 Picard iteration in a weighted space of bounded continuous functions on the whole real line.
+
+The hyperbolic secant `(cosh x)⁻¹` is square integrable on the line (`TauCeti.memLp_inv_cosh`),
+because `(cosh x)⁻² ≤ 4 (1 + x²)⁻¹`. It is the decaying solution of the scalar equation
+`v' = -tanh(s) v`, which describes both the kernel of `d/ds + tanh` and the cokernel (the kernel of
+the formal adjoint) of `d/ds - tanh`.
 -/
 
 public section
@@ -47,5 +54,19 @@ theorem norm_intervalIntegral_le_cosh {k C : ℝ} (hk : k ≠ 0) (hC : 0 ≤ C)
         gcongr
         rw [Real.abs_sinh, ← Real.cosh_abs (k * t)]
         exact (Real.sinh_lt_cosh _).le
+
+/-- The hyperbolic secant `(cosh x)⁻¹` is square integrable on the line: it is dominated by
+`2 (1 + x²)^(-1/2)`. -/
+theorem memLp_inv_cosh : MemLp (fun x : ℝ ↦ (Real.cosh x)⁻¹) 2 := by
+  refine (memLp_two_iff_integrable_sq (by fun_prop)).2 <|
+    (integrable_inv_one_add_sq.const_mul 4).mono' (by fun_prop) (ae_of_all _ fun x ↦ ?_)
+  have hx : 1 + |x| ≤ 2 * Real.cosh x := by
+    rw [← Real.cosh_abs, Real.cosh_eq]
+    linarith [Real.add_one_le_exp |x|, Real.exp_pos (-|x|)]
+  have hx2 : 1 + x ^ 2 ≤ 4 * Real.cosh x ^ 2 := by nlinarith [abs_nonneg x, sq_abs x]
+  have hc := Real.cosh_pos x
+  rw [Real.norm_eq_abs, abs_of_nonneg (by positivity)]
+  calc (Real.cosh x)⁻¹ ^ 2 = 4 * (4 * Real.cosh x ^ 2)⁻¹ := by field_simp
+    _ ≤ 4 * (1 + x ^ 2)⁻¹ := by gcongr
 
 end TauCeti
