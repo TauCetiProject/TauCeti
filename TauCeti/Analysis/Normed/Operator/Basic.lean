@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Normed.Module.RCLike.Basic
 public import Mathlib.Analysis.Normed.Operator.Basic
+public import Mathlib.Analysis.Normed.Ring.Units
 public import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.Invertible
 
 /-!
@@ -31,16 +32,17 @@ A left inverse `S` of `T` modulo an error term gives the estimate
 
 Finally, an operator bounded below is injective
 (`ContinuousLinearMap.injective_of_forall_norm_le`) and stays nonzero under a sufficiently small
-perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), an invertible
-
-(`ContinuousLinearMap.injective_of_forall_norm_le`), and invertible if it is also surjective
+perturbation (`ContinuousLinearMap.apply_add_ne_zero_of_forall_norm_le`), and is invertible if it
+is also surjective
 (`ContinuousLinearMap.isInvertible_of_surjective_of_forall_norm_le`), with inverse bounded by the
 same constant (`ContinuousLinearMap.norm_inverse_apply_le_of_forall_norm_le`); an invertible
 operator `A` on a normed space cancels against its inverse
 (`ContinuousLinearMap.ringInverse_apply_apply`, `ContinuousLinearMap.apply_ringInverse_apply`)
 and is bounded below by `‖A⁻¹‖⁻¹` (`ContinuousLinearMap.norm_le_norm_ringInverse_mul_norm_apply`),
 and conversely a lower bound `‖x‖ ≤ M ‖A x‖` bounds the norm of the inverse by `M`
-(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`).
+(`ContinuousLinearMap.norm_ringInverse_le_of_forall_norm_le`). An operator bounded below
+is invertible if a sufficiently nearby operator is invertible
+(`ContinuousLinearMap.isUnit_of_forall_mul_norm_le_of_norm_sub_lt`).
 
 The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm at
 most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s * ‖A‖`
@@ -49,6 +51,10 @@ most one, such as the trace of `A` along an orthonormal basis, is bounded by `#s
 Over `ℝ` or `ℂ`, two-sided norm bounds `1 - δ < ‖T v‖ < 1 + δ` on a `δ`-net of the unit sphere
 extend to bounds `(1 - 3 δ) ‖v‖ ≤ ‖T v‖ ≤ (1 + 3 δ) ‖v‖` on the whole space
 (`ContinuousLinearMap.norm_apply_bounds_of_net`).
+
+A continuous bilinear map satisfies a Young-type bound
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)` for every `c > 0`
+(`ContinuousLinearMap.norm_apply_apply_le_mul_add_sq`).
 
 A **metric quotient map**, an operator `q` with `‖q‖ ≤ 1` lifting every vector of norm less than
 `r` to a vector of norm less than `r`, maps each open ball about `0` onto the open ball of the same
@@ -210,6 +216,47 @@ theorem norm_ringInverse_le_of_forall_norm_le {A : E →L[𝕜] E} (hA : IsUnit 
   refine opNorm_le_bound _ hM fun y ↦ ?_
   simpa only [apply_ringInverse_apply hA] using h (Ring.inverse A y)
 
+/-- An operator bounded below by `c > 0` is invertible if its distance from an invertible
+operator is less than `c / 2`. -/
+theorem isUnit_of_forall_mul_norm_le_of_norm_sub_lt [CompleteSpace E]
+    {A B : E →L[𝕜] E} {c : ℝ} (hc : 0 < c)
+    (hbound : ∀ x : E, c * ‖x‖ ≤ ‖A x‖) (hB : IsUnit B) (hAB : ‖A - B‖ < c / 2) :
+    IsUnit A := by
+  rcases subsingleton_or_nontrivial E with hE | hE
+  · have hA : A = 1 := Subsingleton.elim _ _
+    rw [hA]
+    exact isUnit_one
+  obtain ⟨u, rfl⟩ := hB
+  -- The nearby invertible operator retains at least half the lower bound.
+  have hlow (x : E) : c / 2 * ‖x‖ ≤ ‖(u : E →L[𝕜] E) x‖ := by
+    have h := norm_add_le ((A - (u : E →L[𝕜] E)) x) ((u : E →L[𝕜] E) x)
+    simp only [sub_apply, sub_add_cancel] at h
+    have hdist := mul_le_mul_of_nonneg_right hAB.le (norm_nonneg x)
+    have hn := (A - (u : E →L[𝕜] E)).le_opNorm x
+    rw [sub_apply] at hn
+    have hb := hbound x
+    nlinarith
+  have hinv : ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤ 2 / c := by
+    rw [← Ring.inverse_unit]
+    apply norm_ringInverse_le_of_forall_norm_le u.isUnit (by positivity)
+    intro x
+    rw [div_mul_eq_mul_div]
+    apply (le_div_iff₀ hc).mpr
+    have h := hlow x
+    nlinarith
+  -- The inverse bound places `A` within Mathlib's nearby-unit radius.
+  have hnear : ‖A - (u : E →L[𝕜] E)‖ < ‖(↑u⁻¹ : E →L[𝕜] E)‖⁻¹ := by
+    rw [← one_div, lt_div_iff₀ (Units.norm_pos u⁻¹)]
+    calc ‖A - (u : E →L[𝕜] E)‖ * ‖(↑u⁻¹ : E →L[𝕜] E)‖ ≤
+          ‖A - (u : E →L[𝕜] E)‖ * (2 / c) :=
+            mul_le_mul_of_nonneg_left hinv (norm_nonneg _)
+      _ < 1 := by
+        have hpos : 0 < 2 / c := by positivity
+        have h := mul_lt_mul_of_pos_right hAB hpos
+        have heq : (c / 2) * (2 / c) = 1 := by field_simp
+        rwa [heq] at h
+  exact (u.ofNearby A hnear).isUnit
+
 end Inverse
 
 /-- The diagonal sum `∑ i ∈ s, A (v i) (v i)` of a continuous bilinear map along vectors of norm
@@ -223,6 +270,25 @@ theorem norm_sum_apply_apply_le {ι : Type*} (s : Finset ι) (A : X →L[𝕜] X
         mul_le_mul_of_nonneg_right (A.le_opNorm _) (norm_nonneg _)
     _ ≤ ‖A‖ * 1 * 1 := by gcongr <;> exact hv i hi
     _ = ‖A‖ := by ring
+
+section Young
+
+variable {𝕜 X Y Z : Type*} [NontriviallyNormedField 𝕜] [SeminormedAddCommGroup X]
+  [NormedSpace 𝕜 X] [SeminormedAddCommGroup Y] [NormedSpace 𝕜 Y] [SeminormedAddCommGroup Z]
+  [NormedSpace 𝕜 Z]
+
+/-- A Young-type bound for a continuous bilinear map: for every `c > 0`,
+`‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2)`. -/
+theorem norm_apply_apply_le_mul_add_sq (B : X →L[𝕜] Y →L[𝕜] Z) {c : ℝ} (hc : 0 < c) (u : X)
+    (v : Y) : ‖B u v‖ ≤ ‖B‖ * ((c⁻¹ * ‖u‖ ^ 2 + c * ‖v‖ ^ 2) / 2) := by
+  refine (B.le_opNorm₂ _ _).trans ?_
+  rw [mul_assoc]
+  gcongr
+  have h := two_mul_le_add_mul_sq (a := ‖u‖) (b := ‖v‖) (inv_pos.2 hc)
+  rw [inv_inv] at h
+  linarith
+
+end Young
 
 section Net
 

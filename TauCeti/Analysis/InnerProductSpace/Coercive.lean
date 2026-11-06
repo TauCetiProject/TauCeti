@@ -24,6 +24,14 @@ real part of every spectral value below by the coercivity constant.
 These facts supply the invertibility and spectral half-plane steps in
 Lyapunov arguments comparing positive spectral subspaces.
 
+For an operator on a real inner product space, the quadratic form `⟪T v, v⟫` is bounded by
+`‖T‖ ‖v‖²` (`ContinuousLinearMap.abs_inner_apply_le`), and the form `⟪S (A v), v⟫` of `S`
+against `A` by `‖S‖ ‖A‖ ‖v‖²` (`ContinuousLinearMap.abs_inner_apply_apply_le`). Two consequences
+bound the change of this form under a perturbation of `A`
+(`ContinuousLinearMap.inner_apply_apply_sub_le`) and bound below the form
+`⟪S (A v), v⟫ - ½ ⟪D v, v⟫` that appears when integrating against a family of quadratic forms
+(`ContinuousLinearMap.neg_mul_norm_sq_le_inner_sub`).
+
 ## Provenance
 
 Adapted from `ForTauCeti/Analysis/InnerProductSpace/CoerciveUnit.lean`
@@ -124,6 +132,41 @@ theorem coercive_conj_of_lyapunov [CompleteSpace E]
     _ = (δ / (1 + ‖R‖ ^ 2) * ‖R‖ ^ 2) * ‖y‖ ^ 2 := by ring
     _ ≤ δ * ‖y‖ ^ 2 := mul_le_mul_of_nonneg_right hcoef (sq_nonneg ‖y‖)
     _ ≤ RCLike.re ⟪B y, y⟫_𝕜 := (lowerFormBoundOn_iff B ⊤ δ).mp hBcoer y Submodule.mem_top
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- The quadratic form of a bounded operator `T` is bounded by `‖T‖ ‖v‖²`. -/
+theorem abs_inner_apply_le (T : F →L[ℝ] F) (v : F) : |⟪T v, v⟫_ℝ| ≤ ‖T‖ * ‖v‖ ^ 2 :=
+  calc |⟪T v, v⟫_ℝ| ≤ ‖T v‖ * ‖v‖ := abs_real_inner_le_norm _ _
+    _ ≤ ‖T‖ * ‖v‖ * ‖v‖ := by gcongr; exact T.le_opNorm v
+    _ = ‖T‖ * ‖v‖ ^ 2 := by ring
+
+/-- The quadratic form of `S` against `A` is bounded by `‖S‖ ‖A‖ ‖v‖²`. -/
+theorem abs_inner_apply_apply_le (S A : F →L[ℝ] F) (v : F) :
+    |⟪S (A v), v⟫_ℝ| ≤ ‖S‖ * ‖A‖ * ‖v‖ ^ 2 :=
+  ((S.comp A).abs_inner_apply_le v).trans
+    (mul_le_mul_of_nonneg_right (S.opNorm_comp_le A) (sq_nonneg _))
+
+/-- The quadratic form of `S` against `B` differs from that against `A` by at most
+`‖S‖ ‖B - A‖ ‖v‖²`. -/
+theorem inner_apply_apply_sub_le (S A B : F →L[ℝ] F) (v : F) :
+    ⟪S (A v), v⟫_ℝ - ⟪S (B v), v⟫_ℝ ≤ ‖S‖ * ‖B - A‖ * ‖v‖ ^ 2 := by
+  have h : ⟪S (A v), v⟫_ℝ - ⟪S (B v), v⟫_ℝ = -⟪S ((B - A) v), v⟫_ℝ := by
+    simp only [sub_apply, map_sub, inner_sub_left]
+    ring
+  rw [h, neg_le]
+  exact neg_le_of_abs_le (S.abs_inner_apply_apply_le (B - A) v)
+
+/-- The quadratic form `⟪S (A v), v⟫ - ½ ⟪D v, v⟫` is at least `-(‖S‖ ‖A‖ + ‖D‖ / 2) ‖v‖²`. -/
+theorem neg_mul_norm_sq_le_inner_sub (S A D : F →L[ℝ] F) (v : F) :
+    -((‖S‖ * ‖A‖ + ‖D‖ / 2) * ‖v‖ ^ 2) ≤ ⟪S (A v), v⟫_ℝ - ⟪D v, v⟫_ℝ / 2 := by
+  have h₁ := neg_le_of_abs_le (S.abs_inner_apply_apply_le A v)
+  have h₂ := le_of_abs_le (D.abs_inner_apply_le v)
+  linarith
+
+end Real
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E] [CompleteSpace E]
 

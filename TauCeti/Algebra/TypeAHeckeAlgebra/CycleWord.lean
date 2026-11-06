@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.TypeAHeckeAlgebra.CosetBasis
+public import TauCeti.Algebra.TypeAHeckeAlgebra.CosetSpanning
 public import TauCeti.Algebra.TypeAHeckeAlgebra.MarkovTrace
 
 /-!
@@ -23,9 +24,16 @@ A Markov trace with parameter `z` takes the value `(q * z) ^ (m - 1)` on `ζₘ`
 every tracial, block-multiplicative functional, and so in particular the Markov traces; this is
 proved with the cocenter of the stages, in `TauCeti.Algebra.TypeAHeckeAlgebra.Cocenter`.
 
+The same word in the Hecke algebra presented on `m` strands is
+`TauCeti.TypeAHeckeAlgebra.cycleWord`, built from the descending last-strand words
+`TauCeti.TypeAHeckeAlgebra.cosetWord`. It is the cycle word on which functionals defined only on
+the finite algebras, such as weighted traces of tensor representations, are evaluated, and its
+image in the infinite algebra is `ζₘ` (`TauCeti.TypeAHeckeAlgebra.toInfinite_cycleWord`).
+
 ## Main definitions
 
 * `TauCeti.InfiniteTypeAHeckeAlgebra.cycleWord`: the cycle word `ζₘ`.
+* `TauCeti.TypeAHeckeAlgebra.cycleWord`: the cycle word in the Hecke algebra on `m` strands.
 
 ## Main results
 
@@ -34,6 +42,9 @@ proved with the cocenter of the stages, in `TauCeti.Algebra.TypeAHeckeAlgebra.Co
 * `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cosetRep` and
   `TauCeti.InfiniteTypeAHeckeAlgebra.IsMarkovTrace.map_cycleWord`: the values of a Markov trace on
   descending products and on cycle words.
+* `TauCeti.TypeAHeckeAlgebra.cycleWord_add_two` and
+  `TauCeti.TypeAHeckeAlgebra.toInfinite_cycleWord`: the recursion of the finite cycle words and
+  their images in the infinite algebra.
 
 ## References
 
@@ -121,5 +132,53 @@ theorem map_cycleWord (hτ : IsMarkovTrace z τ) (m : ℕ) :
 end IsMarkovTrace
 
 end InfiniteTypeAHeckeAlgebra
+
+namespace TypeAHeckeAlgebra
+
+variable {R : Type*} [CommRing R]
+
+variable (q : Rˣ) in
+/-- The cycle word `ζₘ = q ^ (m - 1) • T (m - 2) * ⋯ * T 0` in the Hecke algebra on `m` strands,
+the product `g_(m-2) * ⋯ * g_0` of the rescaled generators `gᵢ = q • T i` in descending order. It
+is `1` on at most one strand. -/
+def cycleWord : (m : ℕ) → TypeAHeckeAlgebra R q m
+  | 0 => 1
+  | m + 1 => (q : R) ^ m • cosetWord q m 0
+
+variable {q : Rˣ}
+
+/-- The cycle word on no strands is `1`. -/
+@[simp]
+theorem cycleWord_zero : cycleWord q 0 = 1 := (rfl)
+
+/-- The cycle word on `m + 1` strands is the rescaled descending word `T (m - 1) * ⋯ * T 0`. -/
+theorem cycleWord_succ (m : ℕ) : cycleWord q (m + 1) = (q : R) ^ m • cosetWord q m 0 := (rfl)
+
+/-- The cycle word on one strand is `1`. -/
+@[simp]
+theorem cycleWord_one : cycleWord q 1 = 1 := by
+  simp [cycleWord_succ]
+
+/-- The cycle word on `m + 2` strands is `g_m` times the cycle word on the first `m + 1` strands,
+where `g_m = q • T m` crosses the last two strands. -/
+theorem cycleWord_add_two (m : ℕ) :
+    cycleWord q (m + 2) =
+      ((q : R) • T q (Fin.last m)) * strandIncl R q (m + 1) (cycleWord q (m + 1)) := by
+  rw [cycleWord_succ, cycleWord_succ, ← Fin.castSucc_zero, cosetWord_castSucc, map_smul,
+    smul_mul_smul, pow_succ']
+
+/-- The embedding in the infinite algebra sends the finite cycle word to the cycle word `ζₘ`. -/
+@[simp]
+theorem toInfinite_cycleWord (m : ℕ) :
+    toInfinite R q m (cycleWord q m) = InfiniteTypeAHeckeAlgebra.cycleWord q m := by
+  induction m with
+  | zero => simp
+  | succ m ih =>
+    rcases m with _ | m
+    · simp
+    · rw [cycleWord_add_two, InfiniteTypeAHeckeAlgebra.cycleWord_add_two, map_mul,
+        toInfinite_strandIncl, ih, map_smul, toInfinite_T, Fin.val_last]
+
+end TypeAHeckeAlgebra
 
 end TauCeti
