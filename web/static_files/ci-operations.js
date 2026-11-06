@@ -371,7 +371,7 @@
     polling = true;
     var started = Date.now();
     try {
-      var response = await fetch(origin + "/v1/operations/manifest.json", { credentials: "omit", headers: etag ? { "If-None-Match": etag } : {}, signal: AbortSignal.timeout(10000) });
+      var response = await fetch(origin + "/v1/operations/manifest.json", { credentials: "omit", cache: "no-store", headers: etag ? { "If-None-Match": etag } : {}, signal: AbortSignal.timeout(10000) });
       if (response.status !== 304) {
         if (!response.ok) throw new Error("Operations manifest unavailable");
         var next = await response.json(); if (next.schema !== "tauceti.operations.manifest/v1") throw new Error("Unsupported manifest");
