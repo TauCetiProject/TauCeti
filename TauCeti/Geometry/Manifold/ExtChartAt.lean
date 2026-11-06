@@ -520,11 +520,11 @@ noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :
   Homeomorph.setCongr (extChartAt_opens_target U x)
 
 /-- The chart-target homeomorphism retains the ambient coordinate value. -/
-@[simp]
 theorem coe_openChartTargetHomeomorph_apply (U : Opens E) (x : U)
     (z : (extChartAt 𝓘(𝕜, E) x).target) :
-    ((DFunLike.coe (F := (↥(Set.univ ∩ (chartAt E x).target) ≃ₜ U))
-      (U.openChartTargetHomeomorph (𝕜 := 𝕜) x) z : U) : E) = z := by
+    ((U.openChartTargetHomeomorph (𝕜 := 𝕜) x z : U) : E) = z := by
+  -- The set-congruence homeomorphism changes only the membership proof.
+  unfold openChartTargetHomeomorph
   rfl
 
 
