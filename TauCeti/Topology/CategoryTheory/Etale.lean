@@ -10,8 +10,9 @@ public import Mathlib.Combinatorics.Quiver.Subquiver
 public import Mathlib.Topology.DiscreteSubset
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.Maps.Proper.Basic
-public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Basic
+public import TauCeti.CategoryTheory.Groupoid.ActionCategory.Map
 public import TauCeti.Topology.CategoryTheory.QuiverTotal
+public import TauCeti.Topology.ContinuousOn.Invariant
 public import TauCeti.Topology.IsLocalHomeomorph
 public import TauCeti.Topology.OpenPartialHomeomorph.Constructions
 
@@ -204,34 +205,6 @@ private theorem eq_of_section_eq {x y : C} {W : (x ⟶ x) → Set (Quiver.Total 
   by_contra hne
   exact Set.disjoint_left.mp (hdisj fun h ↦ hne (Aut.ext (Iso.ext h))) hg (h ▸ hg')
 
-/-- The functor from the action category of the local isotropy action to `C`: it is the identity on
-objects and sends the arrow labelled `g` at `a` to the arrow `σ g a`. -/
-private theorem exists_functor_of_local_action {x : C} {U : Set C} [MulAction (Aut x) U]
-    {σ : Aut x → C → Quiver.Total C}
-    (hsmul : ∀ (g : Aut x) (y : U), ((g • y : U) : C) = (σ g y).right)
-    (hσl : ∀ g : Aut x, ∀ y ∈ U, (σ g y).left = y)
-    (hUσ : ∀ y ∈ U, ∀ h : Aut x, (σ h y).right ∈ U)
-    (hone : ∀ y ∈ U, σ 1 y = ⟨y, y, 𝟙 y⟩)
-    (hmul : ∀ y (hy : y ∈ U) (g h : Aut x), σ (g * h) y =
-      (σ h y).comp (σ g (σ h y).right) (hσl g _ (hUσ y hy h)).symm) :
-    ∃ F : ActionCategory (Aut x) U ⥤ C, (∀ a, F.obj a = (a.back : C)) ∧
-      ∀ {a b : ActionCategory (Aut x) U} (f : a ⟶ b),
-        (⟨_, _, F.map f⟩ : Quiver.Total C) = σ f.hom a.back := by
-  let F : ActionCategory (Aut x) U ⥤ C :=
-    { obj a := a.back
-      map {a b} f := Quiver.homOfEq (σ f.hom a.back).hom (hσl _ _ a.back.2)
-        ((hsmul _ _).symm.trans (congrArg Subtype.val f.map_val))
-      map_id a := eq_of_heq (Quiver.Total.mk.inj ((Quiver.Total.mk_homOfEq _ _ _).trans (by
-        rw [ActionCategory.id_hom]
-        exact hone _ a.back.2))).2.2
-      map_comp {a b c} f g := eq_of_heq (Quiver.Total.mk.inj
-        ((Quiver.Total.mk_homOfEq _ _ _).trans <| Eq.trans (by
-          rw [ActionCategory.comp_hom, hmul _ a.back.2]
-          exact Quiver.Total.comp_congr rfl
-            (congrArg (σ g.hom) ((hsmul _ _).symm.trans (congrArg Subtype.val f.map_val))) _ _)
-          (Quiver.Total.mk_homOfEq_comp_homOfEq _ _ _ _ _ _).symm)).2.2 }
-  exact ⟨F, fun _ ↦ rfl, fun _ ↦ Quiver.Total.mk_homOfEq _ _ _⟩
-
 variable [TopologicalSpace C] [TopologicalSpace (Quiver.Total C)]
 
 /-- Near `x`, sections `σ g` of the source through the bisections of the isotropy arrows compose
@@ -274,27 +247,6 @@ private theorem exists_nhds_section_one_mul {x : C} [Finite (Aut x)]
   exact ⟨hyT, hyTT, hinj _ (hσW 1 y (hyT 1)) hyunit (hσl 1 y (hyT 1)), fun g h ↦
     ⟨(hσl g _ (hyTT g h)).symm, hinj _ (hσW _ y (hyT _)) (hycomp g h _)
       ((hσl _ y (hyT _)).trans ((Quiver.Total.comp_left _ _ _).trans (hσl h y (hyT h))).symm)⟩⟩
-
-omit [TopologicalSpace (Quiver.Total C)] in
-/-- Shrinking a neighbourhood `V` of `x` on which the sections `σ g` compose like `Aut x`, to an
-open neighbourhood `U` of `x` that the sections preserve: `σ h` sends points of `U` to points
-of `U`. -/
-private theorem exists_isOpen_invariant_of_sections {x : C} [Finite (Aut x)]
-    {σ : Aut x → C → Quiver.Total C} {T : Aut x → Set C} {V : Set C} (hV : IsOpen V)
-    (hxV : x ∈ V) (hT : ∀ g, IsOpen (T g))
-    (hact : ∀ g, ContinuousOn (fun y ↦ (σ g y).right) (T g)) (hxT : ∀ g, x ∈ T g)
-    (hσx : ∀ g : Aut x, σ g x = ⟨x, x, g.asIso.hom⟩)
-    (hVTT : ∀ y ∈ V, ∀ g h : Aut x, (σ h y).right ∈ T g)
-    (hmul : ∀ y ∈ V, ∀ g h : Aut x, (σ (g * h) y).right = (σ g (σ h y).right).right) :
-    ∃ U : Set C, IsOpen U ∧ x ∈ U ∧ U ⊆ V ∧ (∀ y ∈ U, ∀ g, y ∈ T g) ∧
-      ∀ y ∈ U, ∀ h : Aut x, (σ h y).right ∈ U := by
-  refine ⟨V ∩ ⋂ g, T g ∩ (fun y ↦ (σ g y).right) ⁻¹' V,
-    hV.inter (isOpen_iInter_of_finite fun g ↦ (hact g).isOpen_inter_preimage (hT g) hV),
-    ⟨hxV, Set.mem_iInter.2 fun g ↦ ⟨hxT g, by simp only [Set.mem_preimage, hσx]; exact hxV⟩⟩,
-    Set.inter_subset_left, fun y hy g ↦ (Set.mem_iInter.1 hy.2 g).1, fun y hy h ↦ ?_⟩
-  refine ⟨(Set.mem_iInter.1 hy.2 h).2, Set.mem_iInter.2 fun g ↦ ⟨hVTT y hy.1 g h, ?_⟩⟩
-  have := (Set.mem_iInter.1 hy.2 (g * h)).2
-  rwa [Set.mem_preimage, hmul y hy.1] at this
 
 /-- A functor from the local isotropy action category that sends the arrow labelled `g` at `a` to
 the section `σ g a` through the bisection `W g` is full and faithful, parametrizes each label
@@ -404,15 +356,16 @@ theorem exists_isotropy_action_of_proper_source_target [T2Space (Quiver.Total C)
   have hmulr (y : C) (hy : y ∈ V) (g h : Aut x) :
       (σ (g * h) y).right = (σ g (σ h y).right).right :=
     (congrArg Quiver.Total.right (hmul y hy g h)).trans (Quiver.Total.comp_right _ _ _)
-  obtain ⟨U, hUo, hxU, hUV, hUT, hUσ⟩ := exists_isOpen_invariant_of_sections hV hxV
-    (fun g ↦ (e g).open_target) hact hxT hσx hVTT hmulr
+  obtain ⟨U, hUo, hxU, hUV, hUT, hUσ⟩ := exists_isOpen_forall_mem_of_continuousOn_mul
+    (f := fun g y ↦ (σ g y).right) hV hxV (fun g ↦ (e g).open_target) hact hxT
+    (fun g ↦ congrArg Quiver.Total.right (hσx g)) hVTT hmulr
   let inst : MulAction (Aut x) U :=
     { smul g y := ⟨(σ g y).right, hUσ y y.2 g⟩
       one_smul y := Subtype.ext ((congrArg Quiver.Total.right (hone y (hUV y.2))).trans rfl)
       mul_smul g h y := Subtype.ext (hmulr y (hUV y.2) g h) }
   have hsmul (g : Aut x) (y : U) : ((g • y : U) : C) = (σ g y).right := rfl
   have hUl (g : Aut x) (y : C) (hy : y ∈ U) : (σ g y).left = y := hσl g y (hUT y hy g)
-  obtain ⟨F, hFo, hF⟩ := exists_functor_of_local_action (σ := σ) hsmul hUl hUσ
+  obtain ⟨F, hFo, hF⟩ := ActionCategory.exists_functor_of_sections (σ := σ) hsmul hUl hUσ
     (fun y (hy : y ∈ U) ↦ hone y (hUV hy)) fun y (hy : y ∈ U) ↦ hmul y (hUV hy)
   -- The arrows of each label are parametrized by their sources, through the chart `e g`.
   have hopen (g : Aut x) : IsOpenEmbedding fun y : U ↦ σ g y :=
