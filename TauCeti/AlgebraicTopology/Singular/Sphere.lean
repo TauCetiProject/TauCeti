@@ -913,6 +913,21 @@ theorem finrank_singularHomology_sphere [StrongRankCondition k] [Module.Free k M
   rw [finrank_singularHomology_eq_finrank_reducedSingularHomology_add,
     finrank_reducedSingularHomology_sphere]
 
+/-- **The homology of the unit sphere of a normed space.**  If `E` is a real normed space of
+dimension `d + 1`, its unit sphere has the homology of `Sᵈ`: with coefficients in a free module `M`
+of finite rank, `H_q(S(E); M)` has rank `rank M` in degree `d`, plus `rank M` in degree zero. -/
+theorem finrank_singularHomology_sphere_of_finrank_eq [StrongRankCondition k] [Module.Free k M]
+    [Module.Finite k M] {E : Type w} [NormedAddCommGroup E] [NormedSpace ℝ E] {d : ℕ}
+    (hE : Module.finrank ℝ E = d + 1) (q : ℕ) :
+    Module.finrank k (((singularHomologyFunctor (ModuleCat.{w} k) q).obj M).obj
+      (TopCat.of (Metric.sphere (0 : E) 1))) =
+      (if q = d then Module.finrank k M else 0) + if q = 0 then Module.finrank k M else 0 := by
+  have : FiniteDimensional ℝ E := .of_finrank_eq_succ hE
+  rw [← finrank_singularHomology_sphere M d q]
+  exact (((singularHomologyFunctor _ q).obj M).mapIso (TopCat.isoOfHomeo
+    ((diskBoundaryHomeomorph (d + 1)).trans (sphereHomeomorphOfFinrankEq
+      (by rw [finrank_euclideanSpace_ulift_fin, hE]))))).toLinearEquiv.finrank_eq.symm
+
 end Free
 
 end ModuleCat
