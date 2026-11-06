@@ -217,6 +217,121 @@ private theorem intervalIntegrable_realWindingIntegrand_of_inv_sub_mul_deriv
   rw [hfun_eq]
   exact ⟨hcplx.1.im, hcplx.2.im⟩
 
+/-- **A bounded window at each interior crossing.** From one-sided `C^{1,1}` regularity at an
+interior crossing `t₀` of `s`, the real winding integrand is bounded on some window
+`[t₀ - ρ, t₀ + ρ]`, and interval-integrable on every smaller symmetric window. -/
+private theorem exists_window_isBounded_intervalIntegrable_realWindingIntegrand
+    {γ : ℝ → ℂ} {a b : ℝ} {s : ℂ} (h_imm : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioo a b) (hγt₀ : γ t₀ = s) (hlip : HasLipschitzDerivOnEachSideAt γ t₀) :
+    ∃ ρ > 0, Bornology.IsBounded
+        ((fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) '' Icc (t₀ - ρ) (t₀ + ρ)) ∧
+      ∀ r, 0 < r → r ≤ ρ → IntervalIntegrable
+        (fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) volume (t₀ - r) (t₀ + r) := by
+  have hab : a ≤ b := (ht₀.1.trans ht₀.2).le
+  have h_Ico : t₀ ∈ Ico (min a b) (max a b) := by
+    rw [min_eq_left hab, max_eq_right hab]; exact ⟨ht₀.1.le, ht₀.2⟩
+  have h_Ioc : t₀ ∈ Ioc (min a b) (max a b) := by
+    rw [min_eq_left hab, max_eq_right hab]; exact ⟨ht₀.1, ht₀.2.le⟩
+  obtain ⟨εR, hεR, KR, hlipR, εL, hεL, KL, hlipL⟩ := hasLipschitzDerivOnEachSideAt_iff.mp hlip
+  -- Each side's Lipschitz window need not avoid every breakpoint of the immersion, so shrink it
+  -- to a piece that does, picking up differentiability there for free.
+  obtain ⟨d, htd, -, hdiffR, hlipR'⟩ := h_imm.exists_lipschitzOnWith_derivWithin_shrink_right
+    h_Ico (by linarith : t₀ < t₀ + εR) hlipR
+  obtain ⟨c, -, hct, hdiffL, hlipL'⟩ := h_imm.exists_lipschitzOnWith_derivWithin_shrink_left
+    h_Ioc (by linarith : t₀ - εL < t₀) hlipL
+  obtain ⟨ρ, hρ_pos, hρ_lt, hbdd⟩ :=
+    exists_isBounded_image_realWindingIntegrand_of_lipschitzOnWith_derivWithin_corner hct htd
+      hdiffR hlipR' hdiffL hlipL' hγt₀ (h_imm.derivWithin_ne_zero_right h_Ico htd)
+      (h_imm.derivWithin_ne_zero_left h_Ioc hct)
+  have hρR : ρ ≤ d - t₀ := (hρ_lt.trans_le (min_le_left _ _)).le
+  have hρL : ρ ≤ t₀ - c := (hρ_lt.trans_le (min_le_right _ _)).le
+  refine ⟨ρ, hρ_pos, hbdd, fun r hr hrρ ↦ ?_⟩
+  -- the two halves of the window, each inside one of the one-sided pieces
+  exact (intervalIntegrable_realWindingIntegrand_window (by linarith)
+      (hdiffL.continuousOn.mono (Icc_subset_Icc (by linarith) le_rfl))
+      (hbdd.subset (Set.image_mono (Icc_subset_Icc (by linarith) (by linarith))))).trans
+    (intervalIntegrable_realWindingIntegrand_window (by linarith)
+      (hdiffR.continuousOn.mono (Icc_subset_Icc le_rfl (by linarith)))
+      (hbdd.subset (Set.image_mono (Icc_subset_Icc (by linarith) (by linarith)))))
+
+/-- **A window radius at an interior crossing.** From one-sided `C^{1,1}` regularity at an interior
+crossing `t₀` of `s`, there is a radius `R > 0` such that the real winding integrand is bounded on
+`[t₀ - R, t₀ + R]` and interval-integrable on every smaller symmetric window, and on every
+smaller window inside `(a, b]` meeting `s` only at `t₀` the truncated integrals of the index
+integrand converge, as the truncation tends to `0`, to a value whose real part is the log-norm
+difference at the window's endpoints. -/
+private theorem exists_crossing_window_isBounded_intervalIntegrable_tendsto
+    {γ : ℝ → ℂ} {a b : ℝ} {s : ℂ} (h_imm : IsPwC1ImmersionOn γ a b) {t₀ : ℝ}
+    (ht₀ : t₀ ∈ Ioo a b) (hγt₀ : γ t₀ = s) (hlip : HasLipschitzDerivOnEachSideAt γ t₀) :
+    ∃ R > 0, Bornology.IsBounded
+        ((fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) '' Icc (t₀ - R) (t₀ + R)) ∧
+      (∀ r, 0 < r → r ≤ R → IntervalIntegrable
+        (fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) volume (t₀ - r) (t₀ + r)) ∧
+      ∀ r, 0 < r → r ≤ R → a < t₀ - r → t₀ + r ≤ b →
+        (∀ t ∈ Icc (t₀ - r) (t₀ + r), γ t = s → t = t₀) →
+        ∃ v : ℂ, v.re = Real.log ‖γ (t₀ + r) - s‖ - Real.log ‖γ (t₀ - r) - s‖ ∧
+          Tendsto (fun ε : ℝ ↦ ∫ u in (t₀ - r)..(t₀ + r),
+            if ‖γ u - s‖ > ε then (γ u - s)⁻¹ * deriv γ u else 0) (𝓝[>] (0 : ℝ)) (𝓝 v) := by
+  obtain ⟨R₀, hR₀, L_R, L_L, -, -, -, -, h_spec⟩ :=
+    exists_radius_perWindow_tendsto_log_norm_add_arg h_imm ht₀ hγt₀
+  obtain ⟨ρ, hρ, hbdd, hint⟩ :=
+    exists_window_isBounded_intervalIntegrable_realWindingIntegrand h_imm ht₀ hγt₀ hlip
+  refine ⟨min R₀ ρ, lt_min hR₀ hρ, hbdd.subset (Set.image_mono (Icc_subset_Icc
+    (by linarith [min_le_right R₀ ρ]) (by linarith [min_le_right R₀ ρ]))),
+    fun r hr hrR ↦ hint r hr (hrR.trans (min_le_right _ _)), fun r hr hrR hl hu huniq ↦ ?_⟩
+  have hrR₀ := hrR.trans (min_le_left R₀ ρ)
+  exact ⟨((Real.log ‖γ (t₀ + r) - s‖ - Real.log ‖γ (t₀ - r) - s‖ : ℝ) : ℂ) +
+      ((((-L_L) / (γ (t₀ - r) - s)).arg + ((γ (t₀ + r) - s) / L_R).arg : ℝ) : ℂ) * Complex.I,
+    by simp, h_spec (t₀ - r) (t₀ + r) (by linarith) (by linarith) (by linarith) (by linarith)
+      hl hu huniq⟩
+
+/-- **The real part of a plain piece's index integral is the log-norm difference.** On a piece
+`[l, u] ⊆ [a, b]` of a piecewise `C¹` immersion where `γ` stays at distance at least `m > 0` from
+`s`, the real part of `∫ (γ t - s)⁻¹ γ'(t) dt` is `log ‖γ u - s‖ - log ‖γ l - s‖`. -/
+private theorem re_integral_inv_sub_mul_deriv_eq_log_norm_of_le_norm_sub {γ : ℝ → ℂ}
+    {a b : ℝ} {s : ℂ} (h_imm : IsPwC1ImmersionOn γ a b) (hab : a ≤ b) {m : ℝ} (hm_pos : 0 < m)
+    {l u : ℝ} (hA : a ≤ l) (hlu : l ≤ u) (hu : u ≤ b) (h_far : ∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) :
+    (∫ t in l..u, (γ t - s)⁻¹ * deriv γ t).re = Real.log ‖γ u - s‖ - Real.log ‖γ l - s‖ := by
+  have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab).ge
+  obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
+  rw [min_eq_left hab, max_eq_right hab] at hp
+  obtain ⟨h_ne, hcplx⟩ := ne_and_intervalIntegrable_inv_sub_mul_deriv_of_le_norm_sub hγ_cont
+    h_imm.isPiecewiseC1On.intervalIntegrable_deriv hm_pos hA hlu hu h_far
+  exact re_integral_inv_sub_mul_deriv_eq_log_norm hlu p.countable_toSet
+    (hγ_cont.mono (Icc_subset_Icc hA hu))
+    (fun t ht ↦ hp t ⟨Ioo_subset_Ioo hA hu ht.1, ht.2⟩) h_ne hcplx
+
+/-- **Interval-integrability of the real winding integrand from crossing windows.** If every
+crossing `t₀ ∈ T` of `s` has a symmetric window of radius `ρ ≤ ρ_lip t₀` on which the integrand is
+interval-integrable, the windows are separated and interior, and `γ` stays at distance `m > 0`
+from `s` off the windows, then the integrand is interval-integrable on `[a, b]`: away from the
+windows it is the imaginary part of the integrable index integrand, and the pieces are glued. -/
+private theorem intervalIntegrable_realWindingIntegrand_of_crossing_windows {γ : ℝ → ℂ}
+    {a b : ℝ} {s : ℂ} (h_imm : IsPwC1ImmersionOn γ a b) (hab : a ≤ b) (T : Finset ℝ) {ρ : ℝ}
+    (ρ_lip : ℝ → ℝ) (hρ_pos : 0 < ρ) (h_endpts : ∀ t ∈ T, a + ρ < t ∧ t < b - ρ)
+    (h_pair : ∀ t ∈ T, ∀ t' ∈ T, t' ≠ t → 2 * ρ < |t - t'|)
+    (hρ_le_ρlip : ∀ t ∈ T, ρ ≤ ρ_lip t)
+    (hρ_lip_int : ∀ t₀ ∈ T, ∀ r, 0 < r → r ≤ ρ_lip t₀ → IntervalIntegrable
+      (fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) volume (t₀ - r) (t₀ + r))
+    {m : ℝ} (hm_pos : 0 < m)
+    (hm : ∀ u ∈ Icc a b, (∀ t ∈ T, u ∉ Ioo (t - ρ) (t + ρ)) → m ≤ ‖γ u - s‖) :
+    IntervalIntegrable (fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) volume a b := by
+  have h_piece : ∀ l u : ℝ, a ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) →
+      IntervalIntegrable (fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) volume l u :=
+    fun l u hA hlu hu h_far' ↦ intervalIntegrable_realWindingIntegrand_of_inv_sub_mul_deriv
+      (ne_and_intervalIntegrable_inv_sub_mul_deriv_of_le_norm_sub
+        (h_imm.continuousOn.mono (uIcc_of_le hab).ge)
+        h_imm.isPiecewiseC1On.intervalIntegrable_deriv hm_pos hA hlu hu h_far').2
+  exact sorted_crossing_gluing_induction h_piece (fun _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂)
+    (T.sort (· ≤ ·)) (Finset.sortedLT_sort T) (fun _ ↦ hρ_pos.le) a le_rfl hab
+    (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).1])
+    (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
+    (fun t ht t' ht' hne ↦ (h_pair t ((Finset.mem_sort _).mp ht) t'
+      ((Finset.mem_sort _).mp ht') hne).le)
+    (fun t ht ↦ hρ_lip_int t ((Finset.mem_sort _).mp ht) ρ hρ_pos
+      (hρ_le_ρlip t ((Finset.mem_sort _).mp ht)))
+    (fun u hu h_avoid ↦ hm u hu fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
+
 /-- **The real bounded-integrand formula's boundedness, integrability, and Cauchy-PV facts, from
 interior crossings alone** (Hungerbühler–Wasem Prop 2.3's analytic content). Unlike
 `windingNumber_eq_real_integral_of_closed_interior_crossings` below, this needs no closedness
@@ -242,159 +357,45 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
       L.re = Real.log ‖γ b - s‖ - Real.log ‖γ a - s‖ ∧
       L.im = ∫ t in a..b, realWindingIntegrand (γ t - s) (deriv γ t) := by
   classical
-  rcases hab.eq_or_lt with rfl | hab
-  · refine ⟨?_, .refl, 0, HasCauchyPVAt.refl γ a _ s, by simp, by simp⟩
-    -- A degenerate `[a, a]` interval is a single point, trivially bounded.
-    have hsingle : Icc a a = {a} := Set.Icc_self a
-    rw [hsingle, Set.image_singleton]
-    exact (Set.finite_singleton _).isBounded
   set T : Finset ℝ := (h_imm.finite_crossings (z₀ := s)).toFinset with hT_def
   have hT_mem : ∀ {t : ℝ}, t ∈ T ↔ t ∈ Icc a b ∧ γ t = s := fun {_} ↦ by
-    rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab.le]
+    rw [hT_def, h_imm.mem_toFinset_finite_crossings_of_le hab]
   have h_complete : ∀ t ∈ Icc a b, γ t = s → t ∈ T := fun t ht h_eq ↦ hT_mem.mpr ⟨ht, h_eq⟩
   have h_Ioo : ∀ t ∈ T, t ∈ Ioo a b := fun t ht ↦
     h_interior t (hT_mem.mp ht).1 (hT_mem.mp ht).2
-  have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab.le).ge
+  have hγ_cont : ContinuousOn γ (Icc a b) := h_imm.continuousOn.mono (uIcc_of_le hab).ge
   have h_int_tr : ∀ ε : ℝ, 0 < ε → IntervalIntegrable
       (fun t ↦ if ‖γ t - s‖ > ε then (γ t - s)⁻¹ * deriv γ t else 0) volume a b :=
     fun _ hε ↦ intervalIntegrable_inv_sub_truncated h_imm.continuousOn
       h_imm.isPiecewiseC1On.intervalIntegrable_deriv hε
-  obtain ⟨p, hp⟩ := h_imm.isPiecewiseC1On.exists_finset_differentiableAt
-  have hP : (↑p : Set ℝ).Countable := p.countable_toSet
-  have hγ_diff : ∀ t ∈ Ioo a b \ (↑p : Set ℝ), DifferentiableAt ℝ γ t := fun t ht ↦ by
-    rw [min_eq_left hab.le, max_eq_right hab.le] at hp
-    exact hp t ht
-  -- The window value: the explicit log-norm-plus-argument limit at each crossing.
-  choose! R hR_pos L_R L_L _ _ _ _ h_spec using
-    fun t₀ (ht₀ : t₀ ∈ T) ↦
-      exists_radius_perWindow_tendsto_log_norm_add_arg h_imm (h_Ioo t₀ ht₀)
-        (hT_mem.mp ht₀).2
-  -- The crossing regularity: a one-sided Lipschitz-derivative window on each side of each
-  -- crossing (possibly a corner, so the two sides may disagree).
-  choose! εR_raw hεR_raw_pos KR hlipR_raw εL_raw hεL_raw_pos KL hlipL_raw
-    using fun t₀ (ht₀ : t₀ ∈ T) ↦
-      hasLipschitzDerivOnEachSideAt_iff.mp (hγ_lip t₀ (hT_mem.mp ht₀).1 (hT_mem.mp ht₀).2)
-  have h_Ico : ∀ t ∈ T, t ∈ Ico (min a b) (max a b) := fun t ht ↦ by
-    rw [min_eq_left hab.le, max_eq_right hab.le]
-    exact ⟨(h_Ioo t ht).1.le, (h_Ioo t ht).2⟩
-  have h_Ioc : ∀ t ∈ T, t ∈ Ioc (min a b) (max a b) := fun t ht ↦ by
-    rw [min_eq_left hab.le, max_eq_right hab.le]
-    exact ⟨(h_Ioo t ht).1, (h_Ioo t ht).2.le⟩
-  -- Each side's Lipschitz window need not itself avoid every breakpoint of the immersion, so
-  -- shrink it to a piece that does, picking up differentiability there for free -- the redundant
-  -- differentiability data `HasLipschitzDerivOnEachSideAt` used to ask callers to supply.
-  have h_shrink_right : ∀ t₀ ∈ T, ∃ εR' > 0, εR' < εR_raw t₀ ∧
-      DifferentiableOn ℝ γ (Icc t₀ (t₀ + εR')) ∧
-      LipschitzOnWith (KR t₀) (derivWithin γ (Icc t₀ (t₀ + εR'))) (Icc t₀ (t₀ + εR')) := by
-    intro t₀ ht₀
-    obtain ⟨d, htd, hdD, hdiffOn, hlip'⟩ := h_imm.exists_lipschitzOnWith_derivWithin_shrink_right
-      (h_Ico t₀ ht₀) (by linarith [hεR_raw_pos t₀ ht₀] : t₀ < t₀ + εR_raw t₀) (hlipR_raw t₀ ht₀)
-    exact ⟨d - t₀, by linarith, by linarith,
-      by simpa only [add_sub_cancel] using hdiffOn, by simpa only [add_sub_cancel] using hlip'⟩
-  have h_shrink_left : ∀ t₀ ∈ T, ∃ εL' > 0, εL' < εL_raw t₀ ∧
-      DifferentiableOn ℝ γ (Icc (t₀ - εL') t₀) ∧
-      LipschitzOnWith (KL t₀) (derivWithin γ (Icc (t₀ - εL') t₀)) (Icc (t₀ - εL') t₀) := by
-    intro t₀ ht₀
-    obtain ⟨d, hcd, hdt, hdiffOn, hlip'⟩ := h_imm.exists_lipschitzOnWith_derivWithin_shrink_left
-      (h_Ioc t₀ ht₀) (by linarith [hεL_raw_pos t₀ ht₀] : t₀ - εL_raw t₀ < t₀) (hlipL_raw t₀ ht₀)
-    exact ⟨t₀ - d, by linarith, by linarith,
-      by simpa only [sub_sub_cancel] using hdiffOn, by simpa only [sub_sub_cancel] using hlip'⟩
-  choose! εR hεR_pos _ hdiffR hlipR using h_shrink_right
-  choose! εL hεL_pos _ hdiffL hlipL using h_shrink_left
-  -- `_corner` gives one bounded symmetric window per crossing directly, so the one-sided
-  -- `_right`/`_left` windows never need computing and re-combining by hand.
-  choose! ρ_lip hρ_lip_pos hρ_lip_lt hρ_lip_bdd using fun t₀ (ht₀ : t₀ ∈ T) ↦
-    exists_isBounded_image_realWindingIntegrand_of_lipschitzOnWith_derivWithin_corner
-      (c := t₀ - εL t₀) (d := t₀ + εR t₀) (by linarith [hεL_pos t₀ ht₀])
-      (by linarith [hεR_pos t₀ ht₀])
-      (hdiffR t₀ ht₀) (hlipR t₀ ht₀) (hdiffL t₀ ht₀) (hlipL t₀ ht₀) (hT_mem.mp ht₀).2
-      (h_imm.derivWithin_ne_zero_right (h_Ico t₀ ht₀) (by linarith [hεR_pos t₀ ht₀]))
-      (h_imm.derivWithin_ne_zero_left (h_Ioc t₀ ht₀) (by linarith [hεL_pos t₀ ht₀]))
-  -- The one-sided windows the window-integrability lemma needs are just the two halves of the
-  -- symmetric window `_corner` already bounded.
-  have hbddR : ∀ t₀ ∈ T, Bornology.IsBounded
-      ((fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) '' Icc t₀ (t₀ + ρ_lip t₀)) :=
-    fun t₀ ht₀ ↦ (hρ_lip_bdd t₀ ht₀).subset (Set.image_mono
-      (Icc_subset_Icc (by linarith [hρ_lip_pos t₀ ht₀]) le_rfl))
-  have hbddL : ∀ t₀ ∈ T, Bornology.IsBounded
-      ((fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) '' Icc (t₀ - ρ_lip t₀) t₀) :=
-    fun t₀ ht₀ ↦ (hρ_lip_bdd t₀ ht₀).subset (Set.image_mono
-      (Icc_subset_Icc le_rfl (by linarith [hρ_lip_pos t₀ ht₀])))
-  -- Shrink the common window radius to also stay inside every crossing's bounded window.
-  set R' : ℝ → ℝ := fun t ↦ min (R t) (ρ_lip t)
-  have hR'_pos : ∀ t ∈ T, 0 < R' t := fun t ht ↦ lt_min (hR_pos t ht) (hρ_lip_pos t ht)
-  obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R'⟩ := exists_common_window_radius_le h_Ioo R' hR'_pos
-  have hρ_le_R : ∀ t ∈ T, ρ ≤ R t := fun t ht ↦ (hρ_le_R' t ht).trans (min_le_left _ _)
-  have hρ_le_ρlip : ∀ t ∈ T, ρ ≤ ρ_lip t := fun t ht ↦ (hρ_le_R' t ht).trans (min_le_right _ _)
+  -- Each crossing gets a window radius carrying its bounded, integrable and principal-value facts.
+  choose! R hR_pos hR_bdd hR_int hR_win using fun t₀ (ht₀ : t₀ ∈ T) ↦
+    exists_crossing_window_isBounded_intervalIntegrable_tendsto h_imm (h_Ioo t₀ ht₀)
+      (hT_mem.mp ht₀).2 (hγ_lip t₀ (hT_mem.mp ht₀).1 (hT_mem.mp ht₀).2)
+  obtain ⟨ρ, hρ_pos, h_endpts, h_pair, hρ_le_R⟩ := exists_common_window_radius_le h_Ioo R hR_pos
   have h_unique : ∀ t₀ ∈ T, ∀ t ∈ Icc (t₀ - ρ) (t₀ + ρ), γ t = s → t = t₀ := fun t₀ ht₀ t ht h_eq ↦
     eq_of_mem_window_of_eq_of_lt_of_two_mul_lt (h_endpts t₀ ht₀) (h_pair t₀ ht₀) h_complete ht h_eq
   obtain ⟨m, hm_pos, hm⟩ := exists_complement_windows_dist_lower_bound hγ_cont h_complete
     (fun _ ↦ ρ) fun t _ ↦ hρ_pos
-  -- On any piece away from every crossing, `γ` avoids `s` (from `m ≤ ‖γ t - s‖ > 0`), and the
-  -- complex index integrand is interval-integrable there. Both `h_int` and `hHCPV` below need
-  -- exactly this on their plain pieces.
-  have h_ne_int : ∀ l u : ℝ, a ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) →
-      (∀ t ∈ Icc l u, γ t ≠ s) ∧
-        IntervalIntegrable (fun t ↦ (γ t - s)⁻¹ * deriv γ t) volume l u :=
-    fun l u hA hlu hu h_far' ↦ ne_and_intervalIntegrable_inv_sub_mul_deriv_of_le_norm_sub
-      hγ_cont h_imm.isPiecewiseC1On.intervalIntegrable_deriv hm_pos hA hlu hu h_far'
-  -- The real winding integrand's interval-integrability: away from crossings it's the imaginary
-  -- part of the already-integrable index integrand; at each crossing, boundedness from the
-  -- crossing's `C^{1,1}` regularity.
-  have h_piece : ∀ l u : ℝ, a ≤ l → l ≤ u → u ≤ b → (∀ t ∈ Icc l u, m ≤ ‖γ t - s‖) →
-      IntervalIntegrable (fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) volume l u :=
-    fun l u hA hlu hu h_far' ↦ intervalIntegrable_realWindingIntegrand_of_inv_sub_mul_deriv
-      (h_ne_int l u hA hlu hu h_far').2
   have h_int : IntervalIntegrable (fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) volume
       a b :=
-    sorted_crossing_gluing_induction h_piece (fun _ _ _ _ _ h₁ h₂ ↦ h₁.trans h₂)
-      (T.sort (· ≤ ·)) (Finset.sortedLT_sort T)
-      (fun _ ↦ hρ_pos.le) a le_rfl hab.le
-      (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).1])
-      (fun t ht ↦ by linarith [(h_endpts t ((Finset.mem_sort _).mp ht)).2])
-      (fun t ht t' ht' hne ↦ (h_pair t ((Finset.mem_sort _).mp ht) t'
-        ((Finset.mem_sort _).mp ht') hne).le)
-      (fun t ht ↦ by
-        have ht' := (Finset.mem_sort _).mp ht
-        have hlt := hρ_lip_lt t ht'
-        have hL : ρ_lip t ≤ εL t := by
-          linarith [min_le_right (t + εR t - t) (t - (t - εL t))]
-        have hR : ρ_lip t ≤ εR t := by
-          linarith [min_le_left (t + εR t - t) (t - (t - εL t))]
-        have hρ_le_ρlip' : ρ ≤ ρ_lip t := hρ_le_ρlip t ht'
-        exact (intervalIntegrable_realWindingIntegrand_window (by linarith [hρ_pos])
-            ((hdiffL t ht').continuousOn.mono (Icc_subset_Icc (by linarith) le_rfl))
-            ((hbddL t ht').subset
-              (Set.image_mono (Icc_subset_Icc (by linarith) le_rfl)))).trans
-          (intervalIntegrable_realWindingIntegrand_window (by linarith [hρ_pos])
-            ((hdiffR t ht').continuousOn.mono (Icc_subset_Icc le_rfl (by linarith)))
-            ((hbddR t ht').subset
-              (Set.image_mono (Icc_subset_Icc le_rfl (by linarith))))))
-      (fun u hu h_avoid ↦ hm u hu
-        fun t ht ↦ h_avoid t ((Finset.mem_sort _).mpr ht))
+    intervalIntegrable_realWindingIntegrand_of_crossing_windows h_imm hab T R hρ_pos
+      h_endpts h_pair hρ_le_R hR_int hm_pos hm
   -- Both the principal-value witness and the real-part telescoping are read off in one call:
   -- the plain pieces telescope in real part to the log-norm difference
   -- (`re_integral_inv_sub_mul_deriv_eq_log_norm`), and each window's explicit limit value has
   -- exactly that real part built in already (`exists_radius_perWindow_tendsto_log_norm_add_arg`).
   obtain ⟨L, hHCPV, hRe0⟩ := exists_hasCauchyPVAt_re_eq_of_perWindow_tendsto_of_interiorDisjoint
-    (g := fun z ↦ (z - s)⁻¹) (Ψ := fun t ↦ Real.log ‖γ t - s‖) hab.le T
+    (g := fun z ↦ (z - s)⁻¹) (Ψ := fun t ↦ Real.log ‖γ t - s‖) hab T
     (fun _ ↦ hρ_pos.le)
     (fun t ht ↦ by linarith [(h_endpts t ht).1])
     (fun t ht ↦ by linarith [(h_endpts t ht).2])
     (fun t ht t' ht' hne ↦ (h_pair t ht t' ht' hne).le)
     h_int_tr
     (fun l u hA hlu hu h_far' ↦
-      have ⟨h_ne, hcplx⟩ := h_ne_int l u hA hlu hu h_far'
-      re_integral_inv_sub_mul_deriv_eq_log_norm hlu hP
-        (hγ_cont.mono (Icc_subset_Icc hA hu))
-        (fun t ht ↦ hγ_diff t ⟨Ioo_subset_Ioo hA hu ht.1, ht.2⟩) h_ne hcplx)
-    (fun t ht ↦ ⟨((Real.log ‖γ (t + ρ) - s‖ - Real.log ‖γ (t - ρ) - s‖ : ℝ) : ℂ) +
-        ((((-L_L t) / (γ (t - ρ) - s)).arg + ((γ (t + ρ) - s) / L_R t).arg : ℝ) : ℂ) * Complex.I,
-      by simp,
-      h_spec t ht (t - ρ) (t + ρ) (by linarith [hρ_le_R t ht])
-        (by linarith [hρ_pos]) (by linarith [hρ_pos]) (by linarith [hρ_le_R t ht])
-        (by linarith [(h_endpts t ht).1]) (by linarith [(h_endpts t ht).2])
-        (h_unique t ht)⟩)
+      re_integral_inv_sub_mul_deriv_eq_log_norm_of_le_norm_sub h_imm hab hm_pos hA hlu hu h_far')
+    (fun t ht ↦ hR_win t ht ρ hρ_pos (hρ_le_R t ht) (by linarith [(h_endpts t ht).1])
+      (by linarith [(h_endpts t ht).2]) (h_unique t ht))
     ⟨hm_pos, hm⟩
   -- The integral identity: the imaginary part is the ordinary integral of the real integrand.
   -- Reuses the upstream principal-value/real-integrand bridge directly, rather than re-deriving
@@ -403,8 +404,8 @@ private theorem isBounded_intervalIntegrable_cauchyPV_of_interior_crossings
     hHCPV.im_eq_integral_realWindingIntegrand h_int
   have h_bdd : Bornology.IsBounded
       ((fun t ↦ realWindingIntegrand (γ t - s) (deriv γ t)) '' Icc a b) :=
-    isBounded_realWindingIntegrand_of_crossing_windows h_imm hab.le T ρ_lip hρ_le_ρlip
-      hρ_lip_bdd hm_pos hm
+    isBounded_realWindingIntegrand_of_crossing_windows h_imm hab T R hρ_le_R
+      hR_bdd hm_pos hm
   exact ⟨h_bdd, h_int, L, hHCPV, hRe0, hIm⟩
 
 /-- **The `uIcc`-generic (orientation-generic) form of
