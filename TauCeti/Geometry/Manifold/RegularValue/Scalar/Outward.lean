@@ -110,8 +110,8 @@ theorem isOutwardPointing_scalarRegularBand_iff_mvfderiv_neg_of_eq_left {x : f �
   rw [scalarRegularBandChartedSpace_chartAt] at hw
   rw [extChartAt_coe, Function.comp_apply, scalarRegularBandChartedSpace_chartAt,
     modelWithCornersEuclideanHalfSpace_toFun,
-    scalarRegularBandChartAt_apply_zero_of_eq_left hf hn ha hb hx hw, sub_neg_eq_add,
-    neg_add_eq_sub]
+    scalarRegularBandChartAt_apply_zero_of_eq_left hf hn ha hb hx hw]
+  ring
 
 /-- **The outward co-orientation of a band at its upper level.** At a point `x` of the upper level
 `f⁻¹(b)` of the band `f⁻¹([a, b])` between regular values `a < b`, a tangent vector `v` of the

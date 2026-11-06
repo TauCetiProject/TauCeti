@@ -97,10 +97,8 @@ theorem isOutwardPointing_iff_mvfderiv_pos [IsManifold (𝓡∂ (n + 1)) 1 M] {x
         (mfderiv (𝓡∂ (n + 1)) 𝓘(ℝ, EuclideanSpace ℝ (Fin (n + 1)))
           (extChartAt (𝓡∂ (n + 1)) x) x v)) 0 := by
     rw [mvfderiv_comp_apply_of_differentiableAt p₀.differentiableAt he, p₀.fderiv,
-      mvfderiv_apply_eq_mfderiv_apply]
-    -- `PiLp.proj` evaluates a coordinate, and `fromTangentSpace` is the identity of the model
-    -- space (`NormedSpace.fromTangentSpace_apply`), so both sides are the same coordinate.
-    rfl
+      mvfderiv_apply_eq_mfderiv_apply, NormedSpace.fromTangentSpace_apply]
+    exact PiLp.proj_apply _ _ _ _
   -- Near `x`, `g = c - φ`, so the derivative of `g` is minus that of the inward coordinate.
   have hgφ : g =ᶠ[𝓝 x] fun w ↦ c - φ w := hg.mono fun w hw ↦ by
     simp only [φ, p₀, Function.comp_apply, PiLp.proj_apply, hw, sub_sub_cancel]
