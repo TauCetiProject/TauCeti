@@ -71,8 +71,9 @@ The rings `𝒪_P · k'` and `𝒪'_P` come from
 * `TauCeti.genus_eq_genus_iff_forall_constantSpanIntegers_eq`: the genus is unchanged exactly
   when `𝒪_P · k'` is integrally closed at every place.
 * `TauCeti.riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq` and
-  `TauCeti.Divisor.dim_conorm_of_forall_constantSpanIntegers_eq`: if `𝒪_P · k'` is integrally
-  closed at every place, then `L(Con D) = L(D) · k'` and `ℓ(Con D) = ℓ(D)`.
+  `TauCeti.Divisor.dim_conorm_of_forall_constantSpanIntegers_eq`: for a finite constant field
+  extension `F' = F · k'` with `[F' : F] = [k' : k]`, if `𝒪_P · k'` is integrally closed at every
+  place, then `L(Con D) = L(D) · k'` and `ℓ(Con D) = ℓ(D)`.
 * `TauCeti.riemannRochSpace_conorm_eq_span_of_genus_eq`, `TauCeti.Divisor.dim_conorm_of_genus_eq`,
   `TauCeti.conormClassGroup_canonicalClass_of_genus_eq` and
   `TauCeti.conormClassGroup_injective_of_genus_eq`: when the genus does not drop, the conorm
@@ -469,10 +470,11 @@ variable [FiniteDimensional k k'] [FiniteDimensional F F']
 
 include h hn
 
-/-- **`L(Con D)` when no place becomes singular**: if `𝒪_P ⊗_k k'` is integrally closed in `F'`
-at every place `P` of `F / k`, then for every divisor `D` of `F / k` the Riemann–Roch space
-`L(Con D)` is the `k'`-span of the image of `L(D)`. Neither separability of `k' / k` nor
-exactness of the constants is assumed. -/
+/-- **`L(Con D)` when no place becomes singular**: for a finite constant field extension
+`F' = F · k'` with `[F' : F] = [k' : k]`, if `𝒪_P ⊗_k k'` is integrally closed in `F'` at every
+place `P` of `F / k`, then for every divisor `D` of `F / k` the Riemann–Roch space `L(Con D)` is
+the `k'`-span of the image of `L(D)`. Neither separability of `k' / k` nor exactness of the
+constants is assumed. -/
 theorem riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq
     (hF' : IsFunctionField k' F')
     (hreg : ∀ P : Place k F, P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F')
@@ -489,9 +491,10 @@ theorem riemannRochSpace_conorm_eq_span_of_forall_constantSpanIntegers_eq
   · rintro _ ⟨f, hf, rfl⟩
     exact (mem_riemannRochSpace_conorm_iff hF' D f).2 hf
 
-/-- **`ℓ(Con D) = ℓ(D)` when no place becomes singular**: if `𝒪_P ⊗_k k'` is integrally closed in
-`F'` at every place `P` of `F / k`, then the conorm of every divisor `D` of `F / k` has the
-dimension of `D`. -/
+/-- **`ℓ(Con D) = ℓ(D)` when no place becomes singular**: for a finite constant field extension
+`F' = F · k'` with `[F' : F] = [k' : k]`, if `𝒪_P ⊗_k k'` is integrally closed in `F'` at every
+place `P` of `F / k`, then the conorm of every divisor `D` of `F / k` has the dimension of `D`.
+Neither separability of `k' / k` nor exactness of the constants is assumed. -/
 theorem Divisor.dim_conorm_of_forall_constantSpanIntegers_eq (hF : IsFunctionField k F)
     (hreg : ∀ P : Place k F, P.constantSpanIntegers k' F' = P.integralClosureSubmodule k' F')
     (D : Divisor k F) : (Divisor.conorm k' F' D).dim = D.dim := by
