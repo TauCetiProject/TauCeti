@@ -5,7 +5,7 @@
   if (!root) return;
   var origin = "https://ci-data.taucetiproject.org", manifest, etag, disconnected = false, polling = false, delay = 15000;
   var data = {}, cache = new Map(), selectedBatch, detail, memberPages = [], members = [], jobs = [], workflows = [];
-  var selectedHistoryHost, hostHistoryRecords = [], historyMetric = "busy_slots";
+  var selectedHistoryHost, hostHistories = new Map(), historyGeneration = 0, historyMetric = "busy_slots";
   var page = 0, jobPage = 0, memberFilter = "all", poolFilter = "all", statusFilter = "all", classFilter = "all", repoFilter = "all", workflowFilter = "all", platformFilter = "all", hostFilter = "all", ageFilter = "all", prResult, searchValue = "", errorText = "", generation = 0, timer;
   var waitingPage = 0, waitingOpen = false, lookupGeneration = 0, prObservedAt;
   var view = root.querySelector("[data-ops-view]"), health = root.querySelector("[data-ops-health]");
@@ -322,9 +322,20 @@
     if (!data.host_history) return;
     var source = data.host_history.hosts.find(function (h) { return h.machine_id === id; });
     if (!source) return;
+    var scope = manifest.scope, key = scope + "/" + id, token = ++historyGeneration, observed = data.host_history.observed_at;
     selectedHistoryHost = id;
-    try { var values = await records(source.pages); if (selectedHistoryHost === id) { hostHistoryRecords = values; render(); } }
-    catch (_) { errorText = "Host history unavailable; last successful samples retained."; render(); }
+    render();
+    try {
+      var values = await records(source.pages);
+      if (manifest.scope !== scope || selectedHistoryHost !== id || token !== historyGeneration) return;
+      hostHistories.set(key, { records: values, observed_at: observed, loaded: true, error: false });
+      if (hostHistories.size > 16) hostHistories.delete(hostHistories.keys().next().value);
+      render();
+    } catch (_) {
+      if (manifest.scope !== scope || selectedHistoryHost !== id || token !== historyGeneration) return;
+      hostHistories.set(key, Object.assign({ records: [], loaded: false }, hostHistories.get(key), { error: true }));
+      render();
+    }
   }
   function hostHistoryView() {
     view.append(heading("Dedicated host history"));
@@ -332,9 +343,12 @@
     var hosts = data.host_history.hosts;
     view.append(select("Host", hosts.map(function (h) { return { value: h.machine_id, label: h.alias }; }), selectedHistoryHost || hosts[0].machine_id, loadHostHistory));
     view.append(select("Metric", [{ value: "busy_slots", label: "Busy CI slots" }, { value: "workers_alive", label: "Live workers" }, { value: "compiler_waiting_guests", label: "Guests waiting for compiler admission" }, { value: "cpu_idle_fraction", label: "CPU idle fraction" }, { value: "memory_available", label: "Available RAM (GiB)" }], historyMetric, function (v) { historyMetric = v; render(); }));
+    var saved = hostHistories.get(manifest.scope + "/" + (selectedHistoryHost || hosts[0].machine_id));
+    if (saved && saved.error) view.append(note("Host history unavailable; only this host's last successful samples are retained.", "ops-warning"));
+    if (!saved || !saved.loaded) return view.append(empty("Host history is unavailable or loading for this host."));
     var days = route().params.get("window") === "7d" || route().params.get("window") === "pilot" ? 7 : 1;
-    var values = hostHistoryRecords.filter(function (r) { return Date.parse(r.at) >= Date.now() - days * 86400000; });
-    view.append(note("Five-minute sample means for the last " + days + " day(s) · history prepared " + age(data.host_history.observed_at) + ". Coverage starts at observer activation; gaps remain unknown."));
+    var values = saved.records.filter(function (r) { return Date.parse(r.at) >= Date.now() - days * 86400000; });
+    view.append(note("Five-minute sample means for the last " + days + " day(s) · history prepared " + age(saved.observed_at) + ". Coverage starts at observer activation; gaps remain unknown."));
     var usable = values.filter(function (r) { return r.metrics && r.metrics[historyMetric] && r.metrics[historyMetric].count; });
     if (!usable.length) return view.append(empty("No observed samples for this host and metric in the selected window."));
     var scale = historyMetric === "memory_available" ? 1073741824 : 1;
@@ -428,7 +442,7 @@
       if (response.status !== 304) {
         if (!response.ok) throw new Error("Operations manifest unavailable");
         var next = await response.json(); if (next.schema !== "tauceti.operations.manifest/v1") throw new Error("Unsupported manifest");
-        if (manifest && manifest.scope !== next.scope) { data = {}; cache.clear(); jobs = []; workflows = []; detail = null; members = []; prResult = null; }
+        if (manifest && manifest.scope !== next.scope) { data = {}; cache.clear(); jobs = []; workflows = []; detail = null; members = []; prResult = null; hostHistories.clear(); selectedHistoryHost = null; historyGeneration++; errorText = ""; }
         var previous = manifest;
         manifest = Object.assign({}, next, { domains: Object.assign({}, next.domains) });
         Object.keys(next.domains).forEach(function (kind) { if (previous && data[kind]) manifest.domains[kind] = previous.domains[kind]; });

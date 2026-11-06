@@ -1,3 +1,8 @@
+/* Exercise the native operations page against bounded prepared snapshots: queue
+ * and job pagination, identity joins, live refresh, failures, privacy and mobile
+ * layout. Render only the CI modules so mathematical front-page examples are
+ * not test dependencies; keep the landing page distinct to catch base-URL bugs.
+ */
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -77,6 +82,16 @@ assert.ok((await page.locator('[data-ops-view]').innerText()).includes('Agents m
 await page.getByRole('link',{name:'History',exact:true}).first().click();
 await page.getByRole('heading',{name:'Last 24 hours',exact:true}).waitFor();
 await page.getByRole('heading',{name:'Pilot exit criteria',exact:true}).waitFor();
+await page.locator('.ops-history-chart').waitFor();
+const initialManifest=JSON.parse(fixture.objects['public/v1/operations/manifest.json']);
+const historyRoot=JSON.parse(fixture.objects['public'+initialManifest.domains.host_history.url]);
+const firstHistoryHost=historyRoot.hosts[0], secondHistoryHost=historyRoot.hosts[1];
+await page.route('https://ci-data.taucetiproject.org'+secondHistoryHost.pages[0].url,route=>route.fulfill({status:503,body:'{}',headers:{'access-control-allow-origin':'*'}}));
+await page.getByLabel('Host',{exact:true}).selectOption(secondHistoryHost.machine_id);
+await page.getByText("Host history unavailable; only this host's last successful samples are retained.",{exact:true}).waitFor();
+assert.equal(await page.locator('.ops-history-chart').count(),0);
+await page.getByLabel('Host',{exact:true}).selectOption(firstHistoryHost.machine_id);
+await page.locator('.ops-history-chart').waitFor();
 await page.setViewportSize({width:390,height:844});
 await page.getByRole('link',{name:'Runners',exact:true}).click();
 await page.getByRole('heading',{name:'Observed runner pools',exact:true}).waitFor();
@@ -141,6 +156,20 @@ await page.route('https://ci-data.taucetiproject.org/v1/operations/manifest.json
 await page.clock.fastForward(30000);
 await page.getByText(/fetch failed; last successful observations retained/).waitFor();
 assert.equal(await page.locator('.ops-table tbody tr').count(),100);
+// A changed public scope cannot reuse an old host's cached samples, even when
+// the same permanent ID remains selected and its new detail pages fail.
+await page.unroute('https://ci-data.taucetiproject.org/v1/operations/manifest.json');
+await page.getByRole('link',{name:'History',exact:true}).first().click();
+await page.locator('.ops-history-chart').waitFor();
+const nextScope='b'.repeat(64), nextHistory=structuredClone(historyRoot);
+nextHistory.hosts=[structuredClone(firstHistoryHost)];
+nextHistory.hosts[0].pages.forEach(ref=>{ref.url=ref.url.replace(initialManifest.scope,nextScope);});
+const nextBody=JSON.stringify(nextHistory), nextURL='/v1/operations/objects/'+nextScope+'/'+createHash('sha256').update(nextBody).digest('hex')+'.json';
+fixture.objects['public'+nextURL]=nextBody;
+fixture.objects[manifestKey]=JSON.stringify({schema:initialManifest.schema,scope:nextScope,generated_at:new Date(await page.evaluate(()=>Date.now())).toISOString(),domains:{host_history:{url:nextURL,observed_at:nextHistory.observed_at,coverage:'recorded_samples_only'}}});
+await page.clock.fastForward(60000);
+await page.getByText('Host history is unavailable or loading for this host.',{exact:true}).waitFor();
+assert.equal(await page.locator('.ops-history-chart').count(),0);
 assert.deepEqual(errors,[]);
 console.log('browser: pagination, PR search, runner join, history, escaping, mobile and independent observer failures passed');
 await browser.close();
