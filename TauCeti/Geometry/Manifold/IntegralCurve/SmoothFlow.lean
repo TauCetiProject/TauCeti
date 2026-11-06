@@ -80,7 +80,7 @@ private theorem contDiffOn_trivializationAt_extChartAt_symm [IsManifold I ∞ M]
 /-- A jointly smooth family in the model space, fixing the base point of an extended chart at time
 zero, gives a family on the manifold, jointly smooth at the base point and time zero, by
 conjugating with the extended chart. -/
-theorem contMDiffAt_extChartAt_symm_comp_flow [I.Boundaryless] [IsManifold I ∞ M] (a : M)
+theorem contMDiffAt_extChartAt_symm_comp_flow [I.Boundaryless] (a : M)
     {φ : E → ℝ → E} (hφ : ContDiffAt ℝ ∞ (fun p : E × ℝ ↦ φ p.1 p.2) (extChartAt I a a, 0))
     (hφ0 : φ (extChartAt I a a) 0 = extChartAt I a a) :
     CMDiffAt ∞ (fun p : M × ℝ ↦ (extChartAt I a).symm (φ (extChartAt I a p.1) p.2)) (a, 0) := by
