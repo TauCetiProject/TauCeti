@@ -36,12 +36,12 @@ variable {S : Type*} [MeasurableSpace S] (κ : Kernel S S) [IsMarkovKernel κ]
 
 /-- The extended mean of the first return starting at time one. Nonreturn is infinity. -/
 def meanReturnTime (x : S) : ℝ≥0∞ :=
-  ∫⁻ ω, (hittingAfter (fun n ω => ω n) {x} 1 ω).map ((↑) : ℕ → ℝ≥0)
+  ∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω)
     ∂markovChainLaw (Measure.dirac x) κ
 
 /-- Evaluation of the extended mean positive return time. -/
 theorem meanReturnTime_def (x : S) : κ.meanReturnTime x =
-    ∫⁻ ω, (hittingAfter (fun n ω => ω n) {x} 1 ω).map ((↑) : ℕ → ℝ≥0)
+    ∫⁻ ω, ENat.toENNReal (hittingAfter (fun n ω => ω n) {x} 1 ω)
       ∂markovChainLaw (Measure.dirac x) κ := (rfl)
 
 /-- The positive first-return mean is at least one, including for a transient state. -/
@@ -49,15 +49,9 @@ theorem one_le_meanReturnTime (x : S) : 1 ≤ κ.meanReturnTime x := by
   calc
     1 = ∫⁻ _ω, (1 : ℝ≥0∞) ∂markovChainLaw (Measure.dirac x) κ := by simp
     _ ≤ κ.meanReturnTime x := lintegral_mono fun ω => by
-      have hτ := le_hittingAfter (u := fun n (ω : ℕ → S) => ω n) (s := {x}) (n := 1) ω
-      induction h : hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1 ω
-          using WithTop.recTopCoe with
-      | top => exact le_top
-      | coe n =>
-        have hn : 1 ≤ n := by simpa only [h, ← WithTop.coe_one, WithTop.coe_le_coe] using hτ
-        simpa only [WithTop.map_coe, ENNReal.some_eq_coe', ENNReal.coe_natCast,
-          Nat.cast_one] using
-          (Nat.cast_le (α := ℝ≥0∞)).mpr hn
+      have hτ : (1 : ℕ∞) ≤ hittingAfter (fun n (ω : ℕ → S) => ω n) {x} 1 ω :=
+        le_hittingAfter ω
+      simpa only [ENat.toENNReal_one] using ENat.toENNReal_mono hτ
 
 variable [MeasurableSingletonClass S] {κ} {x : S}
 
@@ -68,13 +62,13 @@ theorem isRecurrent_of_meanReturnTime_ne_top (h : κ.meanReturnTime x ≠ ∞) :
     (f := Filtration.piLE (X := fun _ : ℕ => S))
     (s := {x}) (n := 1) (measurableSet_singleton x)).measurable'
   have hfinite := ae_lt_top ((measurable_of_countable
-    (fun t : WithTop ℕ => (t.map ((↑) : ℕ → ℝ≥0) : ℝ≥0∞))).comp hm) h
+    (fun t : WithTop ℕ => ENat.toENNReal t)).comp hm) h
   have hE : MeasurableSet {ω : ℕ → S | hittingAfter (fun n ω => ω n) {x} 1 ω ≠ ⊤} :=
     ((measurableSet_singleton ⊤).preimage hm).compl
   apply isRecurrent_iff.mpr
   apply (mem_ae_iff_prob_eq_one hE).mp
   filter_upwards [hfinite] with ω hω
-  exact fun ht => hω.ne (by simp only [Function.comp_apply, ht]; rfl)
+  exact fun ht => hω.ne ((congrArg ENat.toENNReal ht).trans ENat.toENNReal_top)
 
 /-- At a transient state the positive return time has infinite extended mean. -/
 theorem IsTransient.meanReturnTime_eq_top (hx : κ.IsTransient x) :
@@ -93,12 +87,13 @@ theorem IsRecurrent.lintegral_returnGap (hx : κ.IsRecurrent x) (k : ℕ) :
       (markovChainLaw (Measure.dirac x) κ) (markovChainLaw (Measure.dirac x) κ) :=
     ⟨measurable_id.aemeasurable, Measure.map_id⟩
   have hgap := hid.natCast_returnGap_map_hittingAfter (isRecurrent_iff.mp hx) k
-  have hm : Measurable (fun t : WithTop ℕ => (t.map ((↑) : ℕ → ℝ≥0) : ℝ≥0∞)) :=
+  have hm : Measurable (fun t : WithTop ℕ => ENat.toENNReal t) :=
     measurable_of_countable _
   have hmean := hgap.lintegral_comp hm.aemeasurable
   rw [lintegral_map' hm.aemeasurable] at hmean
-  · simpa only [Function.comp_def, id_eq, Nat.cast_withTop, WithTop.map_coe,
-      ENNReal.some_eq_coe', ENNReal.coe_natCast, meanReturnTime_def] using hmean
+  · have hcast (n : ℕ) : ENat.toENNReal (n : WithTop ℕ) = (n : ℝ≥0∞) :=
+      ENat.toENNReal_coe n
+    simpa only [Function.comp_def, id_eq, hcast, meanReturnTime_def] using hmean
   · exact (Filtration.adapted_piLE.isStoppingTime_hittingAfter
       (f := Filtration.piLE (X := fun _ : ℕ => S))
       (s := {x}) (n := 1) (measurableSet_singleton x)).measurable'.aemeasurable
