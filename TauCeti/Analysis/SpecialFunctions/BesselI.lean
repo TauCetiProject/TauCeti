@@ -153,14 +153,8 @@ theorem hasSum_besselI (ν x : ℝ) :
 `∑ⱼ (x / 2) ^ (2 j + n) / (j! (j + n)!)` at every real `x`, including `x ≤ 0`. -/
 theorem hasSum_besselI_natCast (n : ℕ) (x : ℝ) :
     HasSum (fun j : ℕ => (x / 2) ^ (2 * j + n) / (j ! * (j + n)!)) (besselI n x) := by
-  have hadd (j : ℕ) : (n : ℝ) + 1 + j = ((j + n : ℕ) : ℝ) + 1 := by
-    push_cast
-    ring
-  rw [besselI_eq_rpow_mul, rpow_natCast]
-  convert (Complex.hasSum_regularizedHGFun_zero_singleton_ofReal_re (n + 1) ((x / 2) ^ 2)).mul_left
-    ((x / 2) ^ n) using 2 with j
-  rw [hadd, Gamma_nat_eq_factorial, pow_add, pow_mul]
-  ring
+  simpa only [← Nat.cast_ofNat (R := ℝ) (n := 2), ← Nat.cast_mul, ← Nat.cast_add, rpow_natCast,
+    Gamma_nat_eq_factorial] using hasSum_besselI (n : ℝ) x
 
 /-- `I_ν(x)` is positive for `ν > -1` and `x > 0`. -/
 theorem besselI_pos {ν x : ℝ} (hν : -1 < ν) (hx : 0 < x) : 0 < besselI ν x := by
