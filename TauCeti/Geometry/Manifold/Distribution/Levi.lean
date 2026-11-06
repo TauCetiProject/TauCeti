@@ -208,6 +208,10 @@ theorem distributionLeviForm_self (u : D x) : distributionLeviForm D x u u = 0 :
   · simp [IsDistributionFrameOn.leviForm]
   · simp
 
+/-- The Levi form of a distribution is an alternating bilinear map. -/
+theorem isAlt_distributionLeviForm : (distributionLeviForm D x).IsAlt :=
+  distributionLeviForm_self
+
 variable [IsRCLikeNormedField 𝕜]
 
 /-- **The Levi form is the Lie bracket modulo the distribution.** If `D` has a `C^n` local frame
