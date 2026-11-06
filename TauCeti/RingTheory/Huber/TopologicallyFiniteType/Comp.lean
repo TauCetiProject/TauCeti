@@ -97,18 +97,17 @@ theorem IsStrictlyTopologicallyFiniteType.comp [IsHuberRing A]
   -- on a constant series each of the three maps acts as the corresponding structure map
   simp [β, e, algebraMap_completion_weightedRestrictedSubring_apply]
 
-/-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
-type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
-theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
-    (hψ : IsTopologicallyFiniteType ψ) (hφ : IsTopologicallyFiniteType φ) :
-    IsTopologicallyFiniteType (ψ.comp φ) := by
+/-- If `φ : A → B` is topologically of finite type, then for any weighted presentation `U` of a
+`B`-algebra there are finite weight sets `V i ⊆ A` with `φ '' V i` a weight family and the
+variables power-bounded with these weights. -/
+private theorem exists_finite_weights_isWeightedVarPowerBounded [IsHuberRing A] [IsHuberRing B]
+    (hφ : IsTopologicallyFiniteType φ) {m : ℕ} {U : Fin m → Set B} (hU : IsWeightFamily U) :
+    ∃ V : Fin m → Set A, (∀ i, (V i).Finite) ∧ IsWeightFamily V ∧
+      IsWeightFamily (fun i ↦ φ '' V i) ∧
+      IsWeightedVarPowerBounded (algebraMap B (Completion (weightedRestrictedSubring U hU)))
+        (fun i ↦ φ '' V i) fun i ↦ ((weightedX U hU i : weightedRestrictedSubring U hU) :
+          Completion (weightedRestrictedSubring U hU)) := by
   classical
-  obtain ⟨k, T, hTfin, hT, π, hπ, hπφ⟩ := isTopologicallyFiniteType_iff.mp hφ
-  have : IsHuberRing B := IsHuberRing.of_isOpenQuotientMap hπ
-  obtain ⟨m, U, hUfin, hU, ρ, hρ, hρψ⟩ := isTopologicallyFiniteType_iff.mp hψ
-  have hρψ_apply (b : B) :
-      ρ (algebraMap B (Completion (weightedRestrictedSubring U hU)) b) = ψ b := by
-    simpa only [RingHom.comp_apply] using RingHom.congr_fun hρψ b
   let y : Fin m → Completion (weightedRestrictedSubring U hU) := fun i ↦
     (weightedX U hU i : weightedRestrictedSubring U hU)
   -- Power-bounded elements form an open subring, so every variable admits a neighbourhood of
@@ -141,6 +140,51 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
     (isWeightedVarPowerBounded_iff_of_finite fun i ↦ (hVfin i).image φ).mpr fun i b hb ↦ by
       obtain ⟨a, ha, rfl⟩ := hb
       exact hG i ha
+  exact ⟨V, hVfin, hV, hφV, hVy⟩
+
+omit [TopologicalSpace A] [IsTopologicalRing A] [TopologicalSpace B] [NonarchimedeanRing B] in
+/-- The image under a presentation map `π` of the weights `algebraMap A D '' V i`, followed by
+trivial weights, is the corresponding weight family of `φ '' V i`. -/
+private theorem image_append_algebraMap_weights {D : Type*} [CommRing D] [Algebra A D]
+    {m n : ℕ} (V : Fin m → Set A) (π : D →+* B) (hπφ : ∀ a, π (algebraMap A D a) = φ a)
+    (i : Fin (m + n)) :
+    π '' (Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D))) i =
+      Fin.append (fun i ↦ φ '' V i) (fun _ ↦ ({1} : Set B)) i :=
+  Fin.addCases
+    (fun j ↦ by
+      simp only [Fin.append_left, Set.image_image]
+      exact Set.image_congr fun a _ ↦ hπφ a)
+    (fun j ↦ by simp) i
+
+omit [TopologicalSpace A] [IsTopologicalRing A] in
+/-- Appending finite weight sets to the trivial weights keeps them finite. -/
+private theorem finite_append_append_weights {k m n : ℕ} {T : Fin k → Set A} {V : Fin m → Set A}
+    (hT : ∀ i, (T i).Finite) (hV : ∀ i, (V i).Finite) :
+    ∀ i, (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A)) i).Finite := fun i ↦
+  Fin.addCases (fun j ↦ by simpa using hT j)
+    (fun j ↦ Fin.addCases (fun l ↦ by simpa using hV l) (fun _ ↦ by simp) j) i
+
+omit [TopologicalSpace A] [IsTopologicalRing A] in
+/-- The image of the third block of weights in `Â⟨X⟩_T⟨Y⟩` under `A → Â⟨X⟩_T` is the second
+block of weights, followed by the trivial weights. -/
+private theorem image_algebraMap_append_append_weights {D : Type*} [CommRing D] [Algebra A D]
+    {k m n : ℕ} (T : Fin k → Set A) (V : Fin m → Set A) (j : Fin (m + n)) :
+    algebraMap A D '' (Fin.append T (Fin.append V fun _ : Fin n ↦ ({1} : Set A))) (Fin.natAdd k j) =
+      Fin.append (fun i ↦ algebraMap A D '' V i) (fun _ ↦ ({1} : Set D)) j :=
+  Fin.addCases (fun i ↦ by simp) (fun i ↦ by simp) j
+
+/-- **Wedhorn Proposition 6.33(1).** If `φ : A → B` and `ψ : B → C` are topologically of finite
+type and `A` is a Huber ring, then `ψ ∘ φ` is topologically of finite type. -/
+theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
+    (hψ : IsTopologicallyFiniteType ψ) (hφ : IsTopologicallyFiniteType φ) :
+    IsTopologicallyFiniteType (ψ.comp φ) := by
+  obtain ⟨k, T, hTfin, hT, π, hπ, hπφ⟩ := isTopologicallyFiniteType_iff.mp hφ
+  have : IsHuberRing B := IsHuberRing.of_isOpenQuotientMap hπ
+  obtain ⟨m, U, hUfin, hU, ρ, hρ, hρψ⟩ := isTopologicallyFiniteType_iff.mp hψ
+  have hρψ_apply (b : B) :
+      ρ (algebraMap B (Completion (weightedRestrictedSubring U hU)) b) = ψ b :=
+    RingHom.congr_fun hρψ b
+  obtain ⟨V, hVfin, hV, hφV, hVy⟩ := exists_finite_weights_isWeightedVarPowerBounded hφ hU
   obtain ⟨n, _, _, _, _, θ, hθ, hθB, _, _⟩ :=
     exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append
       hU hUfin hφV hVy
@@ -156,11 +200,10 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
       θ (algebraMap B (Completion (weightedRestrictedSubring W' hW')) b) =
         algebraMap B (Completion (weightedRestrictedSubring U hU)) b := by
     simpa only [W', RingHom.comp_apply] using RingHom.congr_fun hθB b
-  have hWW' : ∀ i, π '' W i = W' i := fun i ↦ Fin.addCases
-    (fun j ↦ by
-      simp only [W, W', Fin.append_left, Set.image_image]
-      exact Set.image_congr fun a _ ↦ RingHom.congr_fun hπφ a)
-    (fun j ↦ by simp [W, W']) i
+  have hπφ_apply (a : A) :
+      π (algebraMap A (Completion (weightedRestrictedSubring T hT)) a) = φ a :=
+    RingHom.congr_fun hπφ a
+  have hWW' := image_append_algebraMap_weights (n := n) V π hπφ_apply
   let β := weightedMapCompletion hπ.continuous hW hW' fun i ↦ (hWW' i).subset
   have hβ : IsOpenQuotientMap β := hπ.weightedMapCompletion hW hW' hWW'
   let Z : Fin (m + n) → Set A := Fin.append V fun _ ↦ ({1} : Set A)
@@ -168,21 +211,14 @@ theorem IsTopologicallyFiniteType.comp [IsHuberRing A]
   have hZ : IsWeightFamily Z := hV.append isWeightFamily_one_weight
   have hQ : IsWeightFamily Q := hT.append hZ
   have hTQ : ∀ i, Q (Fin.castAdd (m + n) i) = T i := fun i ↦ by simp [Q]
-  have hQW : ∀ j, algebraMap A D '' Q (Fin.natAdd k j) = W j := fun j ↦
-    Fin.addCases (fun i ↦ by simp [Q, Z, W, D]) (fun i ↦ by
-      simp only [Q, Z, W, Fin.append_right, Set.image_singleton]
-      rw [map_one]) j
-  have hπφ_apply (a : A) :
-      π (algebraMap A (Completion (weightedRestrictedSubring T hT)) a) = φ a := by
-    simpa only [RingHom.comp_apply] using RingHom.congr_fun hπφ a
+  have hQW : ∀ j, algebraMap A D '' Q (Fin.natAdd k j) = W j :=
+    image_algebraMap_append_append_weights T V
   let e := iterateRingEquiv hT hW hQ hTQ hQW
   have he : IsOpenQuotientMap e :=
     (Homeomorph.mk e.toEquiv (continuous_iterateRingEquiv ..)
       (continuous_iterateRingEquiv_symm ..)).isOpenQuotientMap
   refine isTopologicallyFiniteType_iff.mpr
-    ⟨k + (m + n), Q, fun i ↦ Fin.addCases (fun j ↦ by simpa [Q] using hTfin j)
-      (fun j ↦ Fin.addCases (fun l ↦ by simpa [Q, Z] using hVfin l)
-        (fun _ ↦ by simp [Q, Z]) j) i,
+    ⟨k + (m + n), Q, finite_append_append_weights hTfin hVfin,
       hQ, (ρ.comp θ).comp (β.comp (e : _ →+* _)),
       hρ.comp (hθ.comp (hβ.comp he)), RingHom.ext fun a ↦ ?_⟩
   dsimp only [β, e]
