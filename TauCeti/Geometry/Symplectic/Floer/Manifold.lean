@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Hamiltonian.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.Pullback
 import TauCeti.Analysis.Calculus.DifferentialForm.Stokes
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 
 /-!
 # The Floer energy identity for manifold targets
@@ -18,14 +19,15 @@ area density satisfies
 
 `ω(du - X_K) = ω(du) + d(K(u)) - R_K(u)`.
 
-Here `R_K = ∂s Kt - ∂t Ks - {Ks, Kt}` uses the intrinsic Hamiltonian vector fields,
-with convention `ι_(X_H) ω = dH`. For a nondegenerate two-form on a finite-dimensional
-model, the identity holds for differentiable maps and jointly differentiable Hamiltonians
-on the domain times the manifold. Neither closedness of the two-form nor the Floer equation
-is needed for this pointwise identity. For solutions of
-the equation the density is nonnegative under tameness, and is half the standard quadratic
-energy density. The almost complex structure may be chosen independently at each domain
-point, as is needed for domain-dependent perturbations.
+Here `R_K = ∂s Kt - ∂t Ks - {Ks, Kt}` uses the intrinsic Hamiltonian vector fields, with convention
+`ι_(X_H) ω = dH`. The curvature of a cylindrical perturbation `K = H_t dt`, with no `ds` component
+and independent of `s`, vanishes (`TauCeti.SmoothTwoForm.hamiltonianCurvature_cylindrical`). For a
+nondegenerate two-form on a finite-dimensional model, the identity holds for differentiable maps and
+jointly differentiable Hamiltonians on the domain times the manifold. Neither closedness of the
+two-form nor the Floer equation is needed for this pointwise identity. For solutions of the equation
+the density is nonnegative under tameness, and is half the standard quadratic energy density. The
+almost complex structure may be chosen independently at each domain point, as is needed for
+domain-dependent perturbations.
 
 Integrating the identity over a rectangle `[a₁, b₁] × [a₂, b₂]` of the domain gives
 
@@ -56,6 +58,10 @@ form they recover the vector-space definitions.
 
 ## Main results
 
+* `SmoothTwoForm.hamiltonianCurvature_cylindrical`: the curvature of `K = H_t dt` vanishes.
+* `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
+  `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
+  continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
@@ -98,6 +104,23 @@ theorem hamiltonianCurvature_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ �
       fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal -
         fderiv ℝ (fun w ↦ Ks w x) z stdComplexLineImag - ω.poissonBracket (Ks z) (Kt z) x :=
   (rfl)
+
+/-- Without a `ds` component, the curvature of `K = K_t dt` is `∂_s K_t`. -/
+theorem hamiltonianCurvature_zero_left (ω : SmoothTwoForm I M) (Kt : ℝ × ℝ → M → ℝ)
+    (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) Kt z x =
+      fderiv ℝ (fun w ↦ Kt w x) z stdComplexLineReal := by
+  simp only [hamiltonianCurvature_def, poissonBracket_def, hamiltonianVectorField_const,
+    Pi.zero_apply, SmoothBundleForm.eval₂_apply]
+  -- The bracket pairs the zero vector field of the zero Hamiltonian with `X_{K_t}`.
+  rw [ContinuousAlternatingMap.map_coord_zero _ 0 rfl]
+  simp
+
+/-- A cylindrical perturbation `K = H_t dt`, independent of `s`, has zero curvature. -/
+theorem hamiltonianCurvature_cylindrical (ω : SmoothTwoForm I M) (H : ℝ → M → ℝ) (z : ℝ × ℝ)
+    (x : M) : ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
+  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
+  exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
 
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
@@ -221,6 +244,40 @@ theorem floerEnergyDensity_nonneg {J : AlmostComplexStructure (TangentSpace I (u
   simpa only [floerEnergyDensity_def, IsNondegenerate.symplecticFormAt_apply,
     ContinuousLinearMap.coe_coe] using
       h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+
+/-! ### Local formulas for the curvature -/
+
+section Curvature
+
+open Filter Topology
+
+/-- The curvature only depends on the germs of the perturbation data at the domain point. -/
+theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[𝓝 z] Ks') (ht : Kt =ᶠ[𝓝 z] Kt') :
+    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
+  funext x
+  have hs' : (fun w ↦ Ks w x) =ᶠ[𝓝 z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
+  have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
+    hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- The zero perturbation has zero curvature. -/
+@[simp]
+theorem hamiltonianCurvature_zero (ω : SmoothTwoForm I M) (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun _ _ ↦ 0) z x = 0 := by
+  simp [hamiltonianCurvature_def]
+
+/-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
+theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ → ℝ} {H : ℝ → M → ℝ}
+    {z : ℝ × ℝ} {x : M} (hβ : DifferentiableAt ℝ β z.1)
+    (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
+      deriv β z.1 * H z.2 x := by
+  simp only [hamiltonianCurvature_def, poissonBracket_const_left, fderiv_const_apply,
+    zero_apply, sub_zero]
+  exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
+
+end Curvature
 
 /-! ### Changes of domain coordinates -/
 
