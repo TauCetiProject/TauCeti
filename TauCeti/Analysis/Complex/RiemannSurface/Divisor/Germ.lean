@@ -138,24 +138,19 @@ def toChartGerm (D : WeilDivisor X) (U : Opens X) (x : U) :
     rw [meromorphicGerms.coe_mk, Subring.coe_add, meromorphicGerms.coe_mk,
       meromorphicGerms.coe_mk, ← Germ.coe_add]
     apply Germ.coe_eq.2
-    filter_upwards [(tendsto_chartAt_symm_nhdsNE x.1).eventually
-      (eventually_nhdsWithin_of_eventually_nhds (U.isOpen.mem_nhds x.2))] with z hz
-    simp only [Pi.add_apply, Function.comp_apply]
-    exact (Subtype.val_injective.extend_apply (f.1 + g.1) (0 : X → ℂ) ⟨_, hz⟩).trans
-      (congrArg₂ (· + ·)
-        (Subtype.val_injective.extend_apply f.1 (0 : X → ℂ) ⟨_, hz⟩).symm
-        (Subtype.val_injective.extend_apply g.1 (0 : X → ℂ) ⟨_, hz⟩).symm)
+    have he := Function.extend_add Subtype.val f.1 g.1 (0 : X → ℂ) (0 : X → ℂ)
+    simp only [add_zero] at he
+    rw [Submodule.coe_add, he]
+    exact Filter.Eventually.of_forall fun _ ↦ rfl
   map_smul' c f := by
     apply Subtype.ext
     rw [meromorphicGerms.coe_mk, meromorphicGerms.coe_smul,
       meromorphicGerms.coe_mk, ← Germ.coe_smul]
     apply Germ.coe_eq.2
-    filter_upwards [(tendsto_chartAt_symm_nhdsNE x.1).eventually
-      (eventually_nhdsWithin_of_eventually_nhds (U.isOpen.mem_nhds x.2))] with z hz
-    simp only [Pi.smul_apply, Function.comp_apply, RingHom.id_apply]
-    exact (Subtype.val_injective.extend_apply (c • f.1) (0 : X → ℂ) ⟨_, hz⟩).trans
-      (congrArg (c • ·)
-        (Subtype.val_injective.extend_apply f.1 (0 : X → ℂ) ⟨_, hz⟩).symm)
+    have he := Function.extend_smul c Subtype.val f.1 (0 : X → ℂ)
+    simp only [smul_zero] at he
+    rw [Submodule.coe_smul, he, RingHom.id_apply]
+    exact Filter.Eventually.of_forall fun _ ↦ rfl
 
 /-- The coordinate germ is represented by the extension of the section in the preferred chart. -/
 @[simp]
