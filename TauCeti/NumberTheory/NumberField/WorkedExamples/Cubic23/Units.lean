@@ -164,12 +164,11 @@ theorem unit_value_pow_three_sub_self_sub_one
   exact hc
 
 /-- **The root equation squeezes `a*x + b` into `(-8/3, -2)`.** For a root `x` of
-`X³ + aX² + bX + 1` strictly between `1` and a real number `B < 4/3`, the linear form `a*x + b`
-lies strictly between `-8/3` and `-2`. -/
-private theorem mul_add_mem_Ioo_of_root_const_one (a b : ℤ) {B x : ℝ} (hB : B < 4 / 3)
-    (hx1 : 1 < x) (hxB : x < B) (hroot : x ^ 3 + a * x ^ 2 + b * x + 1 = 0) :
-    (a : ℝ) * x + b < -2 ∧ -8 / 3 < (a : ℝ) * x + b := by
-  have hx4 : x < 4 / 3 := hxB.trans hB
+`X³ + aX² + bX + 1` strictly between `1` and `4/3`, the linear form `a*x + b` lies strictly
+between `-8/3` and `-2`. -/
+private theorem mul_add_mem_Ioo_of_root_const_one (a b : ℤ) {x : ℝ}
+    (hx1 : 1 < x) (hx4 : x < 4 / 3) (hroot : x ^ 3 + a * x ^ 2 + b * x + 1 = 0) :
+    (a : ℝ) * x + b ∈ Set.Ioo (-8 / 3) (-2) := by
   have hx0 : 0 < x := zero_lt_one.trans hx1
   have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
   have hx_add_one_pos : 0 < x + 1 := by linarith
@@ -180,14 +179,14 @@ private theorem mul_add_mem_Ioo_of_root_const_one (a b : ℤ) {B x : ℝ} (hB : 
     nlinarith
   refine ⟨?_, ?_⟩
   · by_contra h
+    have hs : (a : ℝ) * x + b ≤ -8 / 3 := le_of_not_gt h
+    have hp := mul_le_mul_of_nonneg_left hs hx0.le
+    nlinarith
+  · by_contra h
     have hs : -2 ≤ (a : ℝ) * x + b := le_of_not_gt h
     have hp := mul_le_mul_of_nonneg_left hs hx0.le
     have hquadratic_pos : 0 < x ^ 2 + x - 1 := by nlinarith
     have _ := mul_pos (sub_pos.mpr hx1) hquadratic_pos
-    nlinarith
-  · by_contra h
-    have hs : (a : ℝ) * x + b ≤ -8 / 3 := le_of_not_gt h
-    have hp := mul_le_mul_of_nonneg_left hs hx0.le
     nlinarith
 
 private theorem no_cubic_candidate_const_one_root (a b : ℤ)
@@ -199,7 +198,7 @@ private theorem no_cubic_candidate_const_one_root (a b : ℤ)
   have hx0 : 0 < x := zero_lt_one.trans hx1
   have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
   -- For each of the seven possible integral values of `a`, this leaves at most one value of `b`.
-  obtain ⟨hshi, hslo⟩ := mul_add_mem_Ioo_of_root_const_one a b hB hx1 hxB hroot
+  obtain ⟨hslo, hshi⟩ := mul_add_mem_Ioo_of_root_const_one a b hx1 hx4 hroot
   interval_cases a <;> norm_num at hshi hslo
   · have hbl : (0 : ℝ) < b := by linarith only [hslo, hx1]
     have hbu : (b : ℝ) < 2 := by linarith only [hshi, hx4]
@@ -252,7 +251,7 @@ strictly between `-1` and `0`. -/
 private theorem mul_add_mem_Ioo_of_root_const_neg_one (a b : ℤ) {B x : ℝ}
     (hBcubic : B ^ 3 - B - 1 = 0) (hx1 : 1 < x) (hxB : x < B)
     (hroot : x ^ 3 + a * x ^ 2 + b * x - 1 = 0) :
-    (a : ℝ) * x + b < 0 ∧ -1 < (a : ℝ) * x + b := by
+    (a : ℝ) * x + b ∈ Set.Ioo (-1) 0 := by
   have hx0 : 0 < x := zero_lt_one.trans hx1
   have hmono : 0 < (B - x) * (B ^ 2 + B * x + x ^ 2 - 1) := by
     apply mul_pos (sub_pos.mpr hxB)
@@ -260,13 +259,13 @@ private theorem mul_add_mem_Ioo_of_root_const_neg_one (a b : ℤ) {B x : ℝ}
   have _ : x ^ 3 - x - 1 < 0 := by nlinarith
   refine ⟨?_, ?_⟩
   · by_contra h
-    have hr : 0 ≤ (a : ℝ) * x + b := le_of_not_gt h
-    have hp := mul_nonneg hx0.le hr
-    nlinarith [one_lt_pow₀ hx1 (by norm_num : (3 : ℕ) ≠ 0)]
-  · by_contra h
     have hr : (a : ℝ) * x + b ≤ -1 := le_of_not_gt h
     have hp := mul_le_mul_of_nonneg_left hr hx0.le
     nlinarith
+  · by_contra h
+    have hr : 0 ≤ (a : ℝ) * x + b := le_of_not_gt h
+    have hp := mul_nonneg hx0.le hr
+    nlinarith [one_lt_pow₀ hx1 (by norm_num : (3 : ℕ) ≠ 0)]
 
 private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
     (haL : -4 < a) (haU : a < 4) (hbL : -4 < b) (hbU : b < 4)
@@ -278,7 +277,7 @@ private theorem cubic_candidate_coefficients_const_neg_one_of_root (a b : ℤ)
   have hx0 : 0 < x := zero_lt_one.trans hx1
   have h1 := mul_pos (sub_pos.mpr hx1) (sub_pos.mpr hx1)
   -- Integral coefficients leave the two advertised survivors.
-  obtain ⟨hrhi, hrlo⟩ := mul_add_mem_Ioo_of_root_const_neg_one a b hBcubic hx1 hxB hroot
+  obtain ⟨hrlo, hrhi⟩ := mul_add_mem_Ioo_of_root_const_neg_one a b hBcubic hx1 hxB hroot
   interval_cases a <;> norm_num at hrhi hrlo ⊢
   · have hbl : (2 : ℝ) < b := by linarith only [hrlo, hx1]
     have hbu : (b : ℝ) < 4 := by linarith only [hrhi, hx4]
@@ -360,28 +359,8 @@ theorem discr_X_pow_three_add_two_mul_X_sq_sub_three_mul_X_sub_one :
   rw [Polynomial.discr_of_degree_eq_three (by compute_degree <;> norm_num)]
   norm_num [coeff_add, coeff_sub, coeff_X_pow, coeff_one, coeff_X, coeff_C_mul]
 
-/-- A monic polynomial of degree three over `ℤ` is `X³ + aX² + bX + c` for its own coefficients. -/
-private theorem eq_X_pow_three_add_of_monic {g : ℤ[X]} (hmonic : g.Monic)
-    (hdeg : g.natDegree = 3) :
-    g = X ^ 3 + C (g.coeff 2) * X ^ 2 + C (g.coeff 1) * X + C (g.coeff 0) := by
-  conv_lhs => rw [← Polynomial.monicOfCoeff_coeff hmonic hdeg]
-  apply Polynomial.funext
-  intro x
-  simp [Polynomial.eval_monicOfCoeff, Fin.sum_univ_three]
-  ring
-
-/-- The real evaluation of a monic polynomial of degree three over `ℤ` in terms of its
-coefficients. -/
-private theorem aeval_eq_of_monic {g : ℤ[X]} (hmonic : g.Monic) (hdeg : g.natDegree = 3)
-    (x : ℝ) : aeval x g = x ^ 3 + g.coeff 2 * x ^ 2 + g.coeff 1 * x + g.coeff 0 := by
-  conv_lhs => rw [← Polynomial.monicOfCoeff_coeff hmonic hdeg]
-  rw [← eval_map_algebraMap, Polynomial.map_monicOfCoeff, Polynomial.eval_monicOfCoeff]
-  simp only [Fin.sum_univ_three, Fin.val_zero, Fin.val_one, Fin.val_two, pow_zero, pow_one,
-    mul_one, eq_intCast]
-  ring
-
-/-- A polynomial of discriminant `49` or `257` is not excluded by the index--discriminant formula
-in a field of discriminant `-23`: its discriminant is never a square times `-23`. -/
+/-- A polynomial of discriminant `49` or `257` is excluded by the index--discriminant formula in a
+field of discriminant `-23`: its discriminant is never a positive square times `-23`. -/
 private theorem discr_ne_sq_mul_of_discr_eq {g : ℤ[X]} (hK : NumberField.discr K = -23)
     (hg : g.discr = 49 ∨ g.discr = 257) :
     ∀ n : ℕ, 0 < n → g.discr ≠ (n : ℤ) ^ 2 * NumberField.discr K := by
@@ -419,8 +398,8 @@ theorem cubicUnitEliminationCertificate (hmin : minpoly ℤ θ = X ^ 3 - X ^ 2 +
     constructor
     · exact_mod_cast hb_lower_real
     · exact_mod_cast hb_upper_real
-  have heval := aeval_eq_of_monic hmonic hdeg
-  have hpoly := eq_X_pow_three_add_of_monic hmonic hdeg
+  have heval := Polynomial.aeval_eq_of_monic (A := ℝ) hmonic hdeg
+  have hpoly := Polynomial.eq_X_pow_three_add_of_monic hmonic hdeg
   obtain ⟨haL, haU⟩ := ha4
   obtain ⟨hbL, hbU⟩ := hb4
   by_cases hroot : ∃ x ∈ Set.Ioo (1 : ℝ) (w u), aeval x g = 0
