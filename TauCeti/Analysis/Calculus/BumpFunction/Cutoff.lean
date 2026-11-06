@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Topology.Compactness.SigmaCompact
 import Mathlib.Topology.Sets.Opens
@@ -38,7 +40,9 @@ It also provides radial cutoffs between two concentric closed balls of radii `r 
 gradient is at most `c / (R - r)` and whose second derivative is at most `c / (R - r)²` for a
 universal constant `c`, the quantitative form needed by iteration arguments over families of balls
 with shrinking gaps. On the line, a smooth cutoff of the identity equals `s` on `[-r, r]` and
-vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`).
+vanishes outside `(-R, R)` (`TauCeti.exists_contDiff_cutoff_id`), and smooth plateaus supported
+in `[c - r - 1, c + r + 1]` have `L²` mass at least `2 r` and derivative energy bounded
+independently of `c` and `r` (`TauCeti.exists_forall_contDiff_plateau`).
 
 ## References
 
@@ -478,5 +482,69 @@ theorem exists_contDiff_cutoff_id {r R : ℝ} (hr : 0 < r) (hrR : r < R) :
   · refine (hasDerivAt_id s).congr_of_eventuallyEq ?_
     filter_upwards [(isOpen_lt continuous_abs continuous_const).mem_nhds hs] with x hx
     exact hsmall x hx.le
+
+
+open MeasureTheory Metric in
+/-- **Smooth plateaus on the line with uniformly bounded derivative.** There is a constant `C`
+such that around every centre `c` and for every radius `0 ≤ r`, some smooth `ψ : ℝ → ℝ` has
+topological support in `closedBall c (r + 1)` and satisfies `2 r ≤ ∫ ψ²` and `∫ ψ'² ≤ C`. The
+`L²` mass of the plateau grows with `r` while the energy of its derivative stays bounded, which is
+what escaping approximate kernels of first-order operators need. The plateau is the radial cutoff
+`TauCeti.exists_forall_contDiff_cutoff_closedBall` between radii `r` and `r + 1`. -/
+theorem exists_forall_contDiff_plateau : ∃ C : ℝ, ∀ (c : ℝ) {r : ℝ}, 0 ≤ r → ∃ ψ : ℝ → ℝ,
+    ContDiff ℝ ∞ ψ ∧ tsupport ψ ⊆ closedBall c (r + 1) ∧
+      2 * r ≤ ∫ s, ψ s ^ 2 ∧ ∫ s, deriv ψ s ^ 2 ≤ C := by
+  obtain ⟨K, -, hK⟩ := exists_forall_contDiff_cutoff_closedBall (E := ℝ)
+  refine ⟨2 * K ^ 2, fun c r hr ↦ ?_⟩
+  obtain ⟨ψ, hψ, -, hψ1, hψt, hψd, -⟩ := hK c hr (lt_add_one r)
+  have hψc : HasCompactSupport ψ := (isCompact_closedBall c _).of_isClosed_subset
+    (isClosed_tsupport ψ) hψt
+  have hψ'cont : Continuous (deriv ψ) := hψ.continuous_deriv (by simp)
+  have hint : Integrable (fun s ↦ ψ s ^ 2) :=
+    Continuous.integrable_of_hasCompactSupport (hψ.continuous.pow 2)
+      (hψc.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
+  have hdint : Integrable (fun s ↦ deriv ψ s ^ 2) :=
+    Continuous.integrable_of_hasCompactSupport (hψ'cont.pow 2)
+      (hψc.deriv.comp_left (g := fun x : ℝ ↦ x ^ 2) (by norm_num))
+  have hA : volume (closedBall c (r + 1) \ ball c r) ≠ ⊤ :=
+    ((measure_mono sdiff_subset).trans_lt measure_closedBall_lt_top).ne
+  refine ⟨ψ, hψ, hψt, ?_, ?_⟩
+  · -- `ψ = 1` on `closedBall c r`.
+    calc 2 * r = ∫ s, (closedBall c r).indicator (fun _ ↦ (1 : ℝ)) s := by
+          rw [integral_indicator_const _ measurableSet_closedBall,
+            Real.volume_real_closedBall hr, smul_eq_mul, mul_one]
+      _ ≤ ∫ s, ψ s ^ 2 := by
+          refine integral_mono ((integrable_indicator_iff measurableSet_closedBall).2
+            (integrableOn_const measure_closedBall_lt_top.ne)) hint fun s ↦ ?_
+          by_cases hs : s ∈ closedBall c r
+          · simp [indicator_of_mem hs, hψ1 hs]
+          · simp [indicator_of_notMem hs, sq_nonneg]
+  · -- `ψ'` is bounded by `K` and vanishes off the annulus `closedBall c (r + 1) \ ball c r`.
+    have hd (s : ℝ) : deriv ψ s ^ 2 ≤
+        (closedBall c (r + 1) \ ball c r).indicator (fun _ ↦ K ^ 2) s := by
+      by_cases hs : s ∈ closedBall c (r + 1) \ ball c r
+      · have h := hψd s
+        rw [gradient_eq_deriv', Real.norm_eq_abs, add_sub_cancel_left, div_one] at h
+        rw [indicator_of_mem hs, ← sq_abs]
+        exact pow_le_pow_left₀ (abs_nonneg _) h 2
+      · rw [indicator_of_notMem hs]
+        suffices deriv ψ s = 0 by simp [this]
+        rcases not_and_or.1 hs with hs | hs
+        · exact notMem_support.1 fun h ↦ hs (hψt (support_deriv_subset h))
+        · have h1 : ψ =ᶠ[𝓝 s] fun _ ↦ 1 :=
+            Filter.eventually_of_mem (isOpen_ball.mem_nhds (not_not.1 hs)) fun t ht ↦
+              hψ1 (ball_subset_closedBall ht)
+          rw [h1.deriv_eq, deriv_const]
+    calc ∫ s, deriv ψ s ^ 2
+        ≤ ∫ s, (closedBall c (r + 1) \ ball c r).indicator (fun _ ↦ K ^ 2) s :=
+          integral_mono hdint ((integrable_indicator_iff
+            (measurableSet_closedBall.diff measurableSet_ball)).2 (integrableOn_const hA)) hd
+      _ = 2 * K ^ 2 := by
+          rw [integral_indicator_const _ (measurableSet_closedBall.diff measurableSet_ball),
+            measureReal_sdiff (ball_subset_closedBall.trans (closedBall_subset_closedBall
+              (by linarith))) measurableSet_ball measure_closedBall_lt_top.ne,
+            Real.volume_real_closedBall (by linarith), measureReal_def, Real.volume_ball,
+            ENNReal.toReal_ofReal (by positivity), smul_eq_mul]
+          ring
 
 end TauCeti

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.CategoryTheory.Endomorphism
 public import TauCeti.AlgebraicTopology.Singular.Subdivision.Small.Basic
+public import TauCeti.AlgebraicTopology.Singular.Subspace
 
 /-!
 # Singular chains subordinate to an open cover
@@ -30,6 +31,8 @@ small-chain equivalence and prove excision.
   the small subcomplex of the preimage family.
 * `TopCat.toSmallSingularSubcomplex`: the singular simplicial set of a subset of a member of the
   family maps into the small subcomplex.
+* `TopCat.chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero`: a chain map vanishing on the
+  singular chains of each member of the family vanishes on the small chains.
 * `TauCeti.AffineChain.smallSingularChain`: push affine chains forward along a small simplex
   with values in the small-chain complex.
 * `TauCeti.AffineChain.exists_singularChain_small_factor`: a pushed-forward affine chain supported
@@ -162,6 +165,29 @@ lemma smallSingularSubcomplexMap_comp (f : X ⟶ Y) (g : Y ⟶ Z) (r : ι → κ
         Y.smallSingularSubcomplexMap V W g s hg := by
   ext n σ
   rfl
+
+/-- A chain map out of the singular chains of `X` vanishes on the chains of the singular simplices
+lying in some member of the family `U` as soon as it vanishes on the singular chains of each
+member. -/
+lemma chainComplexMap_smallSingularSubcomplex_ι_comp_eq_zero {C : Type u} [Category.{v} C]
+    [Preadditive C] [HasCoproducts.{w} C] {T : C} {K : ChainComplex C ℕ}
+    (F : (TopCat.toSSet.obj X).chainComplex T ⟶ K)
+    (hF : ∀ i, SSet.chainComplexMap
+      (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U i)))) T ≫ F = 0) :
+    SSet.chainComplexMap (X.smallSingularSubcomplex U).ι T ≫ F = 0 := by
+  ext n : 1
+  refine SSet.chainComplex_hom_ext fun σ ↦ ?_
+  obtain ⟨i, hi⟩ := (mem_smallSingularSubcomplex_iff X U σ.1).1 σ.2
+  -- `σ` is the image of a singular simplex of `U i`
+  obtain ⟨τ, hτ⟩ := (mem_range_toSSet_subtypeVal_iff (U i) _ σ.1).2 hi
+  have h : (TopCat.toSSet.obj (TopCat.of (U i))).ιChainComplex (R := T) τ ≫
+      (SSet.chainComplexMap (TopCat.toSSet.map (TopCat.ofHom (ContinuousMap.subtypeVal (U i))))
+        T).f n ≫ F.f n = 0 := by
+    rw [← HomologicalComplex.comp_f, hF, HomologicalComplex.zero_f, comp_zero]
+  rw [SSet.ι_chainComplexMap_f_assoc, hτ] at h
+  simp only [HomologicalComplex.comp_f, HomologicalComplex.zero_f, comp_zero,
+    SSet.ι_chainComplexMap_f_assoc]
+  exact h
 
 end TopCat
 

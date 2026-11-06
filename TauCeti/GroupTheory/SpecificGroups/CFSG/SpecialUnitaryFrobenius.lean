@@ -9,6 +9,7 @@ public import TauCeti.FieldTheory.Finite.Frobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.SpecialLinearFrobenius
 public import TauCeti.LinearAlgebra.Matrix.SesquilinearForm
 public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.GraphAutomorphism
+public import TauCeti.LinearAlgebra.Matrix.SpecialLinearGroup.Isometry.Basic
 
 /-!
 # The finite-field descent of the graph-twisted Frobenius of the special linear group
@@ -58,6 +59,8 @@ description of the special linear matrices with coordinates in it from
   field with `q²` elements is `x ↦ x ^ q`.
 * `TauCeti.ValidLieTypeIndex.mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff`: the finite fixed
   points are the isometries of determinant one of the form of Gram matrix `Q`.
+* `TauCeti.ValidLieTypeIndex.fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup`:
+  the same statement as an equality with the special isometry group `Matrix.specialIsometryGroup`.
 * `TauCeti.ValidLieTypeIndex.unitaryForm_apply`: the form is the dot product `σ(x) ⬝ᵥ (Q y)`.
 * `TauCeti.ValidLieTypeIndex.unitaryForm_smul_left`: semilinearity in the first argument,
   `B(c x, y) = c ^ q B(x, y)`.
@@ -140,6 +143,22 @@ theorem mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff (r : ℕ)
     typeAGraphAutomorphism_eq_iff_transpose_mul_conjugator_mul_eq,
     SpecialLinearGroup.coe_GL_coe_matrix, SpecialLinearGroup.coe_GL_coe_matrix,
     SpecialLinearGroup.map_apply_coe, RingHom.mapMatrix_apply, coe_iterateFrobenius_galoisField]
+
+/-- **The finite special unitary group is a special isometry group.** The fixed points of the
+graph-twisted Frobenius of `SL_{r+1}(𝔽_{q²})` are the special isometries of the sesquilinear form
+of Gram matrix `Q` relative to the involution `x ↦ x ^ q`, with `Q` the signed reversal matrix.
+Since `Qᵀ = (-1) ^ r • Q` (`TauCeti.transpose_typeAGraphConjugator`), this form is
+`(-1) ^ r`-Hermitian. -/
+theorem fixedSubgroup_galoisFieldTwistedFrobenius_eq_specialIsometryGroup (r : ℕ) :
+    fixedSubgroup (d.galoisFieldTwistedFrobenius r) =
+      (typeAGraphConjugator r (GaloisField d.characteristic (d.fieldExponent * 2)) :
+          Matrix (Fin (r + 1)) (Fin (r + 1))
+            (GaloisField d.characteristic (d.fieldExponent * 2))).specialIsometryGroup
+        (iterateFrobenius (GaloisField d.characteristic (d.fieldExponent * 2)) d.characteristic
+          d.fieldExponent) := by
+  ext g
+  rw [mem_fixedSubgroup_galoisFieldTwistedFrobenius_iff, Matrix.mem_specialIsometryGroup_iff,
+    coe_iterateFrobenius_galoisField]
 
 /-! ### The unitary form -/
 

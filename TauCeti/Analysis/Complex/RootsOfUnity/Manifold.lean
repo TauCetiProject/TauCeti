@@ -5,6 +5,11 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
+public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Power
+
 public import Mathlib.Geometry.Manifold.Algebra.SMul
 public import TauCeti.Analysis.Complex.RootsOfUnity.Quotient
 
@@ -33,6 +38,7 @@ on which the rotations lift.
 
 public section
 
+open Set
 open scoped Manifold ContDiff
 
 namespace TauCeti
@@ -72,5 +78,24 @@ theorem contMDiff_val : ContMDiff 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBal
   contMDiff_subtype_val (U := opens m r)
 
 end rootsOfUnityBall
+
+/-- The inclusion of the rotated disc into `ℂ` is a local biholomorphism. -/
+theorem isLocalDiffeomorph_coe_rootsOfUnityBall {n : ℕ∞ω} :
+    IsLocalDiffeomorph 𝓘(ℂ) 𝓘(ℂ) n ((↑) : rootsOfUnityBall m r → ℂ) :=
+  isLocalDiffeomorph_subtype_val (U := ⟨_, isOpen_rootsOfUnityBall⟩)
+
+/-- The coordinate `u ↦ u ^ m` of the quotient of the rotated disc is holomorphic. -/
+theorem contMDiff_coe_pow_rootsOfUnityBall {n : ℕ∞ω} :
+    ContMDiff 𝓘(ℂ) 𝓘(ℂ) n fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m :=
+  (contDiff_id.pow m).contMDiff.comp isLocalDiffeomorph_coe_rootsOfUnityBall.contMDiff
+
+/-- **The quotient coordinate is a local biholomorphism off the centre.** For `1 ≤ n`, the map
+`u ↦ u ^ m` from the rotated disc to `ℂ` is a `C^n` local diffeomorphism at every point other
+than the centre. -/
+theorem isLocalDiffeomorphAt_coe_pow_rootsOfUnityBall {n : ℕ∞ω} (hn : 1 ≤ n)
+    {u : rootsOfUnityBall m r} (hu : (u : ℂ) ≠ 0) :
+    IsLocalDiffeomorphAt 𝓘(ℂ) 𝓘(ℂ) n (fun u : rootsOfUnityBall m r ↦ (u : ℂ) ^ m) u :=
+  IsLocalDiffeomorphAt.comp (K := 𝓘(ℂ)) (P := ℂ) (isLocalDiffeomorph_coe_rootsOfUnityBall u)
+    (isLocalDiffeomorphAt_pow hn (NeZero.ne m) hu)
 
 end TauCeti

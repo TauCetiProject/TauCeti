@@ -8,6 +8,7 @@ module
 public import Mathlib.AlgebraicTopology.FundamentalGroupoid.SimplyConnected
 public import Mathlib.Analysis.Normed.Group.AddCircle
 public import TauCeti.Topology.Instances.AddCircle.UnitInterval
+import TauCeti.Topology.Homotopy.Path
 
 /-!
 # Maps from the circle into a simply connected space are null-homotopic
@@ -18,9 +19,13 @@ constant loop relative to its endpoints, and such a homotopy descends along the 
 `I × I → I × AddCircle p`, `(s, t) ↦ (s, t * p)` (built from `AddCircle.ofUnitInterval`),
 because it is constant on the two ends `t = 0` and `t = 1`, which are the only points
 identified. The descended map is a free null-homotopy of `f`
-(`ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`). The same descent turns any
-continuous family of closed paths into a free homotopy between the loops at its two ends
-(`ContinuousMap.homotopic_of_forall_apply_zero_eq_apply_one`).
+(`ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`).
+
+The same descent shows more generally that `f` is null-homotopic exactly when its based loop is
+homotopic to the constant loop (`ContinuousMap.nullhomotopic_iff_homotopic_refl`); for the
+converse, a free null-homotopy of `f` collapses every loop in the circle, in particular the loop
+`t ↦ t * p`. This translates statements about free loops into statements about based loops, to
+which the path-homotopy machinery applies.
 
 Mathlib's `SimplyConnectedSpace` is phrased with based paths; this file supplies its consequence
 for free loops parametrised by the circle, which is how circles are compared in conditions such as
@@ -32,8 +37,9 @@ Null-homotopy of a loop does not depend on its constant speed: a null-homotopic 
 
 ## Main declarations
 
-* `ContinuousMap.homotopic_of_forall_apply_zero_eq_apply_one`: a continuous family of closed paths
-  is a free homotopy between the loops at its two ends.
+* `ContinuousMap.nullhomotopic_iff_homotopic_refl`: a map from a circle `AddCircle p` with
+  `0 < p` is null-homotopic exactly when its based loop `t ↦ f (t * p)` is homotopic to the
+  constant loop.
 * `ContinuousMap.nullhomotopic_addCircle_of_simplyConnectedSpace`: every continuous map from a
   circle `AddCircle p` with `0 < p` into a simply connected space is null-homotopic.
 * `ContinuousMap.Nullhomotopic.exists_addCircle_comp_mul`: a null-homotopic loop run at constant
@@ -57,41 +63,48 @@ private def toLoop (f : C(AddCircle p, X)) : Path (f 0) (f 0) where
   source' := by simp
   target' := by simp [AddCircle.coe_period]
 
-/-- **A cylinder of closed paths is a free homotopy of loops.** Let `F : I × I → X` be a continuous
-family of paths `F (s, ·)`, each of them closed: `F (s, 0) = F (s, 1)`. Then the loops on the circle
-`AddCircle p` traced by `F (0, ·)` and by `F (1, ·)` are homotopic. The homotopy is `F` itself,
-descended along the quotient map `I × I → I × AddCircle p`, `(s, t) ↦ (s, t * p)`, which only
-glues the two ends `t = 0` and `t = 1` of each path. -/
-theorem homotopic_of_forall_apply_zero_eq_apply_one [Fact (0 < p)] (F : C(I × I, X))
-    (hF : ∀ s, F (s, 0) = F (s, 1)) {f₀ f₁ : C(AddCircle p, X)}
-    (h₀ : ∀ t, f₀ (AddCircle.ofUnitInterval p t) = F (0, t))
-    (h₁ : ∀ t, f₁ (AddCircle.ofUnitInterval p t) = F (1, t)) : f₀.Homotopic f₁ := by
+/-- **A circle map is null-homotopic exactly when its based loop is.** Let `γ` be the based loop
+`t ↦ f (t * p)` of `f : AddCircle p → X`, `0 < p`. A homotopy of `γ` to the constant loop relative
+to its endpoints descends to a free null-homotopy of `f`; conversely, a free null-homotopy of `f`
+collapses the loop `t ↦ t * p` of the circle, and with it `γ`. -/
+theorem nullhomotopic_iff_homotopic_refl [Fact (0 < p)] (f : C(AddCircle p, X)) {x : X}
+    (γ : Path x x) (hγ : ∀ t : I, γ t = f (AddCircle.ofUnitInterval p t)) :
+    f.Nullhomotopic ↔ γ.Homotopic (Path.refl x) := by
+  have hx : f 0 = x := by rw [← γ.source, hγ, AddCircle.ofUnitInterval_zero]
+  subst hx
+  refine ⟨fun hf ↦ ?_, fun ⟨F⟩ ↦ ?_⟩
+  · -- The loop `t ↦ t * p` of the circle, mapped by `f`, is `γ`.
+    let ℓ : Path (0 : AddCircle p) 0 :=
+      ⟨AddCircle.ofUnitInterval p, AddCircle.ofUnitInterval_zero, AddCircle.ofUnitInterval_one⟩
+    have hℓ : ℓ.map f.continuous = γ := by
+      ext t
+      exact (hγ t).symm
+    exact hℓ ▸ Path.Homotopic.map_nullhomotopic_of_nullhomotopic hf ℓ
+  -- Descend the path homotopy `F` along `(s, t) ↦ (s, t * p)`, which only glues the two ends of
+  -- the loop parameter, where `F` takes the value `f 0`.
   let q : C(I × I, I × AddCircle p) := (ContinuousMap.id I).prodMap (AddCircle.ofUnitInterval p)
   have hsurj : Function.Surjective q :=
     Function.surjective_id.prodMap AddCircle.surjective_ofUnitInterval
   have hq : IsQuotientMap q := q.continuous.isClosedMap.isQuotientMap q.continuous hsurj
-  have hFq : Function.FactorsThrough (F : I × I → X) q := by
+  have hF : Function.FactorsThrough (F.toContinuousMap : I × I → X) q := by
     rintro ⟨s, t⟩ ⟨s', t'⟩ h
     obtain ⟨rfl, h⟩ := Prod.ext_iff.1 h
     obtain rfl | ⟨rfl, rfl⟩ | ⟨rfl, rfl⟩ := AddCircle.ofUnitInterval_eq_ofUnitInterval_iff.1 h
     · rfl
-    · exact hF s
-    · exact (hF s).symm
-  have hG (s t : I) : hq.lift F hFq (s, AddCircle.ofUnitInterval p t) = F (s, t) :=
-    DFunLike.congr_fun (hq.lift_comp F hFq) (s, t)
-  refine ⟨⟨hq.lift F hFq, fun θ ↦ ?_, fun θ ↦ ?_⟩⟩ <;>
+    · exact (F.source s).trans (F.target s).symm
+    · exact (F.target s).trans (F.source s).symm
+  have hG (s t : I) : hq.lift F.toContinuousMap hF (s, AddCircle.ofUnitInterval p t) = F (s, t) :=
+    DFunLike.congr_fun (hq.lift_comp F.toContinuousMap hF) (s, t)
+  refine ⟨f 0, ⟨⟨hq.lift F.toContinuousMap hF, fun θ => ?_, fun θ => ?_⟩⟩⟩ <;>
     obtain ⟨t, rfl⟩ := AddCircle.surjective_ofUnitInterval (p := p) θ
-  · exact (hG 0 t).trans (h₀ t).symm
-  · exact (hG 1 t).trans (h₁ t).symm
+  · exact (hG 0 t).trans ((F.apply_zero t).trans (hγ t))
+  · exact (hG 1 t).trans (F.apply_one t)
 
 /-- **Every map from a circle into a simply connected space is null-homotopic.** -/
 theorem nullhomotopic_addCircle_of_simplyConnectedSpace [Fact (0 < p)] [SimplyConnectedSpace X]
-    (f : C(AddCircle p, X)) : f.Nullhomotopic := by
-  obtain ⟨F⟩ := SimplyConnectedSpace.paths_homotopic (toLoop f) (Path.refl (f 0))
-  refine ⟨f 0, homotopic_of_forall_apply_zero_eq_apply_one F.toContinuousMap
-    (fun s ↦ (F.source s).trans (F.target s).symm) (fun t ↦ ?_) (fun t ↦ ?_)⟩
-  · exact (F.apply_zero t).symm
-  · exact (F.apply_one t).symm
+    (f : C(AddCircle p, X)) : f.Nullhomotopic :=
+  (f.nullhomotopic_iff_homotopic_refl (toLoop f) fun _ ↦ rfl).2
+    (SimplyConnectedSpace.paths_homotopic _ _)
 
 /-- **Constant-speed reparametrization of a null-homotopic loop.** If the loop
 `g : AddCircle T → X` is null-homotopic and `a ≠ 0`, then `t ↦ g (t * a)`, a loop of period

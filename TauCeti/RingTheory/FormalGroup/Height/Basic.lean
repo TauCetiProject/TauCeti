@@ -9,7 +9,6 @@ public import TauCeti.RingTheory.FormalGroup.CoordinateChange.Basic
 public import TauCeti.RingTheory.FormalGroup.NSMul.Basic
 public import TauCeti.RingTheory.FormalGroup.SymmetricCocycle.Basic
 import Mathlib.Algebra.CharP.Algebra
-import Mathlib.Data.Nat.Factorization.PrimePow
 import Mathlib.Data.Nat.Log
 import TauCeti.RingTheory.FormalGroup.NSMul.BaseChange
 import TauCeti.RingTheory.MvPowerSeries.Order
@@ -173,27 +172,12 @@ theorem exists_order_eq_pow_of_natCast_eq_zero {p : ℕ} (hp : p.Prime) (hpR : (
   have hn : f.order = n := (ENat.natCast_toNat (PowerSeries.order_eq_top.not.mpr hf0)).symm
   have ha : PowerSeries.coeff n f ≠ 0 := PowerSeries.coeff_order hf0
   have hd := F.coeff_mul_lazardGcd_eq_zero_of_le_order G hf hn.ge
-  -- `d_n` is a unit in `R` whenever it is prime to `p`
-  have hcoeff (hcop : (TauCeti.lazardGcd n).Coprime p) : PowerSeries.coeff n f = 0 := by
-    have : IsCoprime ((TauCeti.lazardGcd n : ℕ) : R) (p : R) := by
-      simpa using (Nat.isCoprime_iff_coprime.mpr hcop).intCast (R := R)
-    rw [hpR, isCoprime_zero_right] at this
-    exact this.mul_left_eq_zero.mp hd
   have hn0 : n ≠ 0 := fun h ↦ ha (by rw [h, PowerSeries.coeff_zero_eq_constantCoeff_apply, hf₀])
-  by_cases hn1 : n = 1
-  · exact ⟨0, by rw [hn, hn1, pow_zero]⟩
-  by_cases hpow : IsPrimePow n
-  · have hq := Nat.minFac_prime hn1
-    by_cases hqp : n.minFac = p
-    · exact ⟨n.factorization p, by rw [hn, ← hqp, hpow.minFac_pow_factorization_eq]⟩
-    · have hcop : (TauCeti.lazardGcd n).Coprime p := by
-        rw [TauCeti.lazardGcd_eq_minFac_of_isPrimePow hpow]
-        exact (Nat.coprime_primes hq hp).mpr hqp
-      exact absurd (hcoeff hcop) ha
-  · have hcop : (TauCeti.lazardGcd n).Coprime p := by
-      rw [TauCeti.lazardGcd_eq_one_of_not_isPrimePow (by omega) hpow]
-      exact Nat.coprime_one_left p
-    exact absurd (hcoeff hcop) ha
+  by_cases hpow : ∃ h, n = p ^ h
+  · obtain ⟨h, hh⟩ := hpow
+    exact ⟨h, by rw [hn, hh]⟩
+  -- otherwise `d_n` is a unit in `R`, so the leading coefficient of `f` vanishes
+  exact absurd ((TauCeti.isUnit_lazardGcd hp hpR hn0 hpow).mul_left_eq_zero.mp hd) ha
 
 /-- **The `p`-series has order a power of `p`** in characteristic `p`: if `p` is a prime with
 `p = 0` in `R` and `F` is commutative, then either `[p]_F = 0` or the first nonzero term of

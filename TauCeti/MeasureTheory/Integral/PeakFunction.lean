@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.MeasureTheory.Function.LpOrder
 public import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
 public import Mathlib.MeasureTheory.Measure.OpenPos
@@ -49,8 +50,9 @@ its limit at `x₀` provides.
   of `y` on `U`.
 * `TauCeti.tendsto_integral_smul_of_tendsto`: a net of `L¹` peak functions concentrating at
   `x₀` integrates `φ` to its limit at `x₀`.
-* `TauCeti.exists_integral_eq_one_norm_eq_one`: peak functions of unit integral and unit
-  `L¹` norm exist inside every neighbourhood of a point.
+* `TauCeti.exists_nonneg_integral_eq_one_norm_eq_one`,
+  `TauCeti.exists_integral_eq_one_norm_eq_one`: nonnegative real and `RCLike`-valued peak functions
+  of unit integral and unit `L¹` norm exist inside every neighbourhood of a point.
 * `TauCeti.exists_nonneg_tsupport_subset_integral_eq_one`: on a locally compact space, they can
   be taken continuous, compactly supported and nonnegative.
 * `TauCeti.exists_nonneg_integral_eq_one`: hence nonnegative `L¹` peak functions of unit integral
@@ -125,14 +127,15 @@ theorem tendsto_integral_smul_of_tendsto {ι : Type*} {l : Filter ι} {f : ι �
     _ ≤ δ * |C| := mul_le_mul_of_nonneg_left (hiC.trans (le_abs_self C)) hδpos.le
     _ < ε := hδC
 
-variable (𝕜 μ) in
-/-- **`L¹` peak functions exist.** For a measure positive on nonempty open sets and finite on some
-neighbourhood of each point, every neighbourhood `U` of a point carries an `L¹` class of unit
-integral and unit `L¹` norm vanishing almost everywhere outside `U`: the indicator of a
-neighbourhood of finite measure inside `U`, normalized by that measure. -/
-theorem exists_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurableSpace α]
+variable (μ) in
+/-- **Nonnegative `L¹` peak functions exist.** For a measure positive on nonempty open sets and
+finite on some neighbourhood of each point, every neighbourhood `U` of a point carries a
+nonnegative real `L¹` class of unit integral and unit `L¹` norm vanishing almost everywhere
+outside `U`: the indicator of a neighbourhood of finite measure inside `U`, normalized by that
+measure. -/
+theorem exists_nonneg_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurableSpace α]
     [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
-    ∃ f : α →₁[μ] 𝕜, ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → f x = 0 := by
+    ∃ f : α →₁[μ] ℝ, 0 ≤ f ∧ ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → f x = 0 := by
   -- An open neighbourhood `V ⊆ U` of `x₀` of positive, finite measure.
   obtain ⟨W, hW, hWμ⟩ := μ.finiteAt_nhds x₀
   set V := interior (U ∩ W)
@@ -141,15 +144,38 @@ theorem exists_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurabl
   have hVpos : 0 < μ.real V :=
     ENNReal.toReal_pos (isOpen_interior.measure_ne_zero μ
       ⟨x₀, mem_interior_iff_mem_nhds.2 (inter_mem hU hW)⟩) hVμ
-  refine ⟨indicatorConstLp 1 isOpen_interior.measurableSet hVμ ((μ.real V)⁻¹ : 𝕜), ?_, ?_, ?_⟩
-  · rw [integral_indicatorConstLp, RCLike.real_smul_eq_coe_mul, ← RCLike.ofReal_inv,
-      ← RCLike.ofReal_mul, mul_inv_cancel₀ hVpos.ne', RCLike.ofReal_one]
+  refine ⟨indicatorConstLp 1 isOpen_interior.measurableSet hVμ (μ.real V)⁻¹, ?_, ?_, ?_, ?_⟩
+  · rw [← Lp.coeFn_nonneg]
+    filter_upwards [indicatorConstLp_coeFn (p := 1) (hs := isOpen_interior.measurableSet)
+      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx
+    exact hx.symm ▸ indicator_nonneg (fun _ _ ↦ inv_nonneg.2 hVpos.le) x
+  · rw [integral_indicatorConstLp, smul_eq_mul, mul_inv_cancel₀ hVpos.ne']
   · rw [norm_indicatorConstLp one_ne_zero ENNReal.one_ne_top, ENNReal.toReal_one, div_one,
-      Real.rpow_one, ← RCLike.ofReal_inv, RCLike.norm_ofReal, abs_of_pos (inv_pos.2 hVpos),
-      inv_mul_cancel₀ hVpos.ne']
+      Real.rpow_one, Real.norm_eq_abs, abs_of_pos (inv_pos.2 hVpos), inv_mul_cancel₀ hVpos.ne']
   · filter_upwards [indicatorConstLp_coeFn_notMem (p := 1) (hs := isOpen_interior.measurableSet)
-      (hμs := hVμ) (c := ((μ.real V)⁻¹ : 𝕜))] with x hx hxU
+      (hμs := hVμ) (c := (μ.real V)⁻¹)] with x hx hxU
     exact hx fun hxV ↦ hxU (interior_subset hxV).1
+
+variable (𝕜 μ) in
+/-- **`L¹` peak functions exist.** For a measure positive on nonempty open sets and finite on some
+neighbourhood of each point, every neighbourhood `U` of a point carries an `L¹` class of unit
+integral and unit `L¹` norm vanishing almost everywhere outside `U`: the indicator of a
+neighbourhood of finite measure inside `U`, normalized by that measure. -/
+theorem exists_integral_eq_one_norm_eq_one [TopologicalSpace α] [OpensMeasurableSpace α]
+    [μ.IsOpenPosMeasure] [IsLocallyFiniteMeasure μ] {x₀ : α} {U : Set α} (hU : U ∈ 𝓝 x₀) :
+    ∃ f : α →₁[μ] 𝕜, ∫ x, f x ∂μ = 1 ∧ ‖f‖ = 1 ∧ ∀ᵐ x ∂μ, x ∉ U → f x = 0 := by
+  obtain ⟨f, _, hf1, hfn, hfU⟩ := exists_nonneg_integral_eq_one_norm_eq_one μ hU
+  have hae := (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).coeFn_compLp f
+  refine ⟨(RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).compLp f, ?_, ?_, ?_⟩
+  · rw [integral_congr_ae hae,
+      (RCLike.ofRealCLM : ℝ →L[ℝ] 𝕜).integral_comp_comm (L1.integrable_coeFn f),
+      hf1, RCLike.ofRealCLM_apply, RCLike.ofReal_one]
+  · rw [L1.norm_eq_integral_norm] at hfn ⊢
+    refine (integral_congr_ae ?_).trans hfn
+    filter_upwards [hae] with x hx
+    simp [hx, RCLike.ofRealCLM_apply]
+  · filter_upwards [hae, hfU] with x hx hxU hnotU
+    simp [hx, hxU hnotU]
 
 variable (μ) in
 /-- **Continuous peak functions exist.** On a locally compact space with a measure positive on

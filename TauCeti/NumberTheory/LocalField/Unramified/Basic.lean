@@ -139,6 +139,19 @@ theorem isUnramified_iff_normalizedValuation_comp_unitsMap_surjective :
   rw [isUnramified_iff_ramificationIndex_eq_one, ramificationIndex_def, Subgroup.index_eq_one,
     MonoidHom.range_eq_top]
 
+/-- Every value in an unramified extension of local fields is attained on the base field. -/
+theorem exists_algebraMap_veq_of_isUnramified [IsUnramified K L] (y : L) :
+    ∃ r : K, algebraMap K L r =ᵥ y := by
+  by_cases hy : y = 0
+  · exact ⟨0, by simp [hy]⟩
+  obtain ⟨r, hr⟩ :=
+    (isUnramified_iff_normalizedValuation_comp_unitsMap_surjective K L).mp
+      inferInstance (normalizedValuation L (Units.mk0 y hy))
+  refine ⟨r, (valuation L).veq_iff_eq.mpr ?_⟩
+  simpa only [Units.coe_map, Units.val_mk0, MonoidHom.coe_ofClass] using
+    (toAdd_normalizedValuation_eq_iff_valuation_eq _ _).mp
+      (congrArg Multiplicative.toAdd hr)
+
 variable (K L) in
 /-- **An extension of nonarchimedean local fields is unramified exactly when the normalized
 valuation of `L` restricts along the algebra map to the normalized valuation of `K`.** -/

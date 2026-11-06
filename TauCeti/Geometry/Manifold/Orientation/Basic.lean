@@ -19,6 +19,9 @@ Orientability records existence; every model with corners is orientable.
 Reindexing along an equivalence of index types (`TauCeti.Manifold.Orientation.reindex`) reindexes
 every tangent orientation. It compares orientations indexed by `Fin (m + n)` and `Fin (n + m)`,
 such as the products of two oriented manifolds taken in either order.
+
+Orientability records existence; every model with corners is orientable, and
+`TauCeti.Manifold.Orientation.congrModel` casts manifold orientations along an equality of models.
 -/
 
 public section
@@ -78,6 +81,18 @@ def lift {α : Sort*} (f : OrientationLift I M ι → α)
 /-- Every manifold orientation has a source-indexed lift. -/
 theorem exists_lift (o : Orientation I M ι) : ∃ l : OrientationLift I M ι, mk l = o :=
   Quotient.inductionOn o fun l ↦ ⟨l, rfl⟩
+
+/-- Every manifold orientation has a lift with any prescribed model orientation, obtained by
+flipping an arbitrary lift if necessary. -/
+theorem exists_lift_modelOrientation_eq (o : Orientation I M ι)
+    (m : _root_.Orientation ℝ E ι) :
+    ∃ l : OrientationLift I M ι, mk l = o ∧ l.modelOrientation = m := by
+  obtain ⟨l, rfl⟩ := o.exists_lift
+  rcases _root_.Orientation.eq_or_eq_neg l.modelOrientation m l.card_eq with h | h
+  · exact ⟨l, rfl, h⟩
+  · exact ⟨l.flip, (mk_eq_mk_iff _ _).mpr (.inr rfl), by
+      rw [OrientationLift.flip_modelOrientation, h]
+      exact _root_.neg_neg m⟩
 
 /-- Prove a property of orientations by proving it for every source-indexed lift. -/
 @[elab_as_elim]
@@ -293,6 +308,51 @@ theorem real_eq_model :
 theorem orientationAt_real (x : ℝ) :
     orientationAt real x = (Module.Basis.singleton (Fin 1) ℝ).orientation := by
   rw [real_eq_model, orientationAt_model]
+
+/-- Cast a manifold orientation along an equality of models on the same model vector space and
+chart carrier. -/
+def congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
+    Orientation J M ι :=
+  o.lift (fun l ↦ mk (l.congrModel h)) fun l ↦
+    (mk_eq_mk_iff _ _).mpr (.inr (l.flip_congrModel h).symm)
+
+@[simp]
+theorem congrModel_mk {I J : ModelWithCorners ℝ E H} (h : I = J) (l : OrientationLift I M ι) :
+    (mk l).congrModel h = mk (l.congrModel h) := by
+  unfold congrModel
+  rw [lift_mk]
+
+@[simp]
+theorem congrModel_refl {I : ModelWithCorners ℝ E H} (o : Orientation I M ι) :
+    o.congrModel rfl = o :=
+  o.inductionOn fun l ↦ by simp
+
+@[simp]
+theorem congrModel_congrModel {I J K : ModelWithCorners ℝ E H} (h₁ : I = J) (h₂ : J = K)
+    (o : Orientation I M ι) :
+    (o.congrModel h₁).congrModel h₂ = o.congrModel (h₁.trans h₂) :=
+  o.inductionOn fun l ↦ by simp
+
+@[simp]
+theorem neg_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J) (o : Orientation I M ι) :
+    (-o).congrModel h = -(o.congrModel h) :=
+  o.inductionOn fun l ↦ by simp
+
+theorem congrModel_injective {I J : ModelWithCorners ℝ E H} (h : I = J) :
+    Function.Injective (congrModel (M := M) (ι := ι) h) := fun o₁ o₂ heq ↦ by
+  simpa using congrArg (congrModel h.symm) heq
+
+@[simp]
+theorem congrModel_inj {I J : ModelWithCorners ℝ E H} (h : I = J) {o₁ o₂ : Orientation I M ι} :
+    o₁.congrModel h = o₂.congrModel h ↔ o₁ = o₂ :=
+  (congrModel_injective h).eq_iff
+
+@[simp]
+theorem orientationAt_congrModel {I J : ModelWithCorners ℝ E H} (h : I = J)
+    [IsManifold I 1 M] [IsManifold J 1 M] (o : Orientation I M ι) (x : M) :
+    (o.congrModel h).orientationAt x = o.orientationAt x := by
+  subst h
+  rw [congrModel_refl]
 
 end Orientation
 end TauCeti.Manifold

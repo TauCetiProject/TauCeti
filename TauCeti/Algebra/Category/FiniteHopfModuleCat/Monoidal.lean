@@ -38,6 +38,9 @@ product with the native one. The monoidal structure is preadditive and `k`-linea
 * `TauCeti.FiniteHopfModuleCat.whiskerLeft_hom_hom`, `associator_hom_hom`,
   `leftUnitor_hom_hom`, and their companions: the underlying intertwiners of the monoidal
   structure, as module-level maps of `BialgebraModule`.
+* `TauCeti.FiniteHopfModuleCat.trivialEquiv_smul_id_hom_hom` and
+  `TauCeti.FiniteHopfModuleCat.eq_smul_id_iff`: the scalar multiple `c • 𝟙` of the identity of the
+  unit object multiplies by `c`, and is the only endomorphism of the unit doing so.
 
 ## References
 
@@ -245,5 +248,26 @@ theorem forgetToModule_μ (M N : FiniteHopfModuleCat k H) :
 theorem forgetToModule_ε :
     Functor.LaxMonoidal.ε (forgetToModule k H) =
       ModuleCat.ofHom (trivialEquiv k H).symm.toLinearMap := (rfl)
+
+/-- The scalar multiple `c • 𝟙` of the identity of the unit object multiplies by `c`. -/
+@[simp]
+theorem trivialEquiv_smul_id_hom_hom (c : k)
+    (r : (𝟙_ (FiniteHopfModuleCat k H) : FiniteHopfModuleCat k H)) :
+    trivialEquiv k H ((c • 𝟙 (𝟙_ (FiniteHopfModuleCat k H))).hom.hom r) =
+      c * trivialEquiv k H r := by
+  -- The scalar `c` acts on the unit object through `algebraMap k H c`, which acts by its counit
+  -- `c`; the scalar action of `k` on the carrier is by definition restriction of scalars.
+  change trivialEquiv k H (algebraMap k H c • r) = _
+  rw [trivialEquiv_smul, Bialgebra.counit_algebraMap]
+
+/-- An endomorphism of the unit object is the scalar multiple `c • 𝟙` of the identity exactly
+when it multiplies by `c`. -/
+theorem eq_smul_id_iff {a : 𝟙_ (FiniteHopfModuleCat k H) ⟶ 𝟙_ (FiniteHopfModuleCat k H)}
+    {c : k} :
+    a = c • 𝟙 _ ↔ ∀ r, trivialEquiv k H (a.hom.hom r) = c * trivialEquiv k H r := by
+  refine ⟨fun h r => h ▸ trivialEquiv_smul_id_hom_hom c r, fun h => ?_⟩
+  ext r
+  apply (trivialEquiv k H).injective
+  rw [h, trivialEquiv_smul_id_hom_hom]
 
 end TauCeti.FiniteHopfModuleCat
