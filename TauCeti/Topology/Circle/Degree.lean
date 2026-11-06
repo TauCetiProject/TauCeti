@@ -10,7 +10,7 @@ public import Mathlib.Topology.Homotopy.Lifting
 public import Mathlib.Topology.Homotopy.Path
 
 /-!
-# The degree of a loop in the circle
+# The degree of a loop and the angle swept by a path in the circle
 
 A loop `γ` in the unit circle `Circle`, based at `x`, lifts along the universal covering
 `Circle.exp : ℝ → Circle`, `t ↦ e^{it}`, to a continuous angle function `θ : [0, 1] → ℝ` with
@@ -35,6 +35,12 @@ and gives its invariance under free homotopies, changes of basepoint
 (`Circle.degree_symm_trans_trans`) and pointwise products. It is the invariant through
 which the Maslov index of a loop of totally real subspaces is defined.
 
+More generally, a path `γ` from `x` to `y`, not necessarily closed, has a well-defined **swept
+angle** `Circle.angleChange γ = θ 1 - θ 0`, for any continuous lift `θ`. Its exponential is
+`y / x`, it is `2π` times the degree on loops, and it is additive under concatenation and pointwise
+products, odd under reversal and invariant under homotopies fixing the endpoints. It is the
+continuous part of the Maslov index of a path of Lagrangian frames.
+
 ## Main declarations
 
 * `Circle.degree`: the degree of a loop in the circle.
@@ -48,6 +54,11 @@ which the Maslov index of a loop of totally real subspaces is defined.
 * `Circle.degree_map_pow`: the pointwise `n`-th power of a loop has `n` times its degree.
 * `Circle.degree_inv`: the pointwise inverse of a loop has the opposite degree.
 * `Circle.degree_congr`: loops agreeing pointwise have the same degree.
+* `Circle.angleChange`: the angle swept by a path in the circle.
+* `Circle.angleChange_eq_sub`: it is `θ 1 - θ 0` for every continuous lift `θ`.
+* `Circle.angleChange_eq_of_homotopic`, `Circle.angleChange_trans`, `Circle.angleChange_mul`:
+  it is invariant under homotopies fixing the endpoints and additive under concatenation and
+  pointwise products.
 * `Circle.exists_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of the
   same map through `Circle.exp` differ by a constant.
 * `Circle.exists_int_forall_eq_add_of_exp_eq`: on a preconnected space, two continuous lifts of
@@ -259,6 +270,122 @@ theorem degree_inv {x : Circle} (γ : Path x x) : degree γ.inv = -degree γ := 
   refine degree_eq_of_sub_eq _ (θ := fun t => -θ t) (by fun_prop)
     (fun t => by simp [exp_neg, hθ]) ?_
   rw [Int.cast_neg, neg_mul, ← sub_eq_degree_mul γ θ.continuous hθ]
+  ring
+
+/-! ### The angle swept by a path -/
+
+/-- The **angle swept** by a path `γ` in the circle: the difference `θ 1 - θ 0` along a continuous
+lift `θ` of `γ` through `Circle.exp`. It does not depend on the lift
+(`Circle.angleChange_eq_sub`); for a loop it is `2π` times the degree
+(`Circle.angleChange_eq_degree_mul`). -/
+noncomputable def angleChange {x y : Circle} (γ : Path x y) : ℝ :=
+  isCoveringMap_exp.liftPath γ.toContinuousMap (Complex.arg x) (by simp [exp_arg]) 1 -
+    isCoveringMap_exp.liftPath γ.toContinuousMap (Complex.arg x) (by simp [exp_arg]) 0
+
+/-- The angle swept by a path is `θ 1 - θ 0` for every continuous lift `θ` of the path. -/
+theorem angleChange_eq_sub {x y : Circle} (γ : Path x y) {θ : I → ℝ} (hθ : Continuous θ)
+    (hθγ : ∀ t, exp (θ t) = γ t) : angleChange γ = θ 1 - θ 0 := by
+  have hΘ (t : I) : exp (isCoveringMap_exp.liftPath γ.toContinuousMap (Complex.arg x)
+      (by simp [exp_arg]) t) = γ t :=
+    congr_fun (isCoveringMap_exp.liftPath_lifts γ.toContinuousMap _ (by simp [exp_arg])) t
+  obtain ⟨c, hc⟩ := exists_forall_eq_add_of_exp_eq
+    (isCoveringMap_exp.liftPath γ.toContinuousMap _ _).continuous hθ fun t => by rw [hΘ, hθγ]
+  rw [angleChange, hc 1, hc 0]
+  ring
+
+/-- Paths that agree pointwise sweep the same angle, however their endpoints are written. -/
+theorem angleChange_congr {x y x' y' : Circle} (γ : Path x y) (γ' : Path x' y')
+    (h : ∀ t, γ t = γ' t) : angleChange γ = angleChange γ' := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  rw [angleChange_eq_sub γ θ.continuous hθ,
+    angleChange_eq_sub γ' θ.continuous fun t => (hθ t).trans (h t)]
+
+/-- The exponential of the angle swept by a path from `x` to `y` is `y / x`. -/
+theorem exp_angleChange {x y : Circle} (γ : Path x y) : exp (angleChange γ) = y / x := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  rw [angleChange_eq_sub γ θ.continuous hθ, exp_sub, hθ, hθ, γ.source, γ.target]
+
+/-- The angle swept by a loop is `2π` times its degree. -/
+theorem angleChange_eq_degree_mul {x : Circle} (γ : Path x x) :
+    angleChange γ = degree γ * (2 * π) := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  rw [angleChange_eq_sub γ θ.continuous hθ, sub_eq_degree_mul γ θ.continuous hθ]
+
+/-- The constant path sweeps no angle. -/
+@[simp]
+theorem angleChange_refl (x : Circle) : angleChange (Path.refl x) = 0 := by
+  rw [angleChange_eq_degree_mul, degree_refl, Int.cast_zero, zero_mul]
+
+/-- **Homotopy invariance of the swept angle.** Paths that are homotopic relative to their
+endpoints sweep the same angle. -/
+theorem angleChange_eq_of_homotopic {x y : Circle} {γ₀ γ₁ : Path x y} (h : γ₀.Homotopic γ₁) :
+    angleChange γ₀ = angleChange γ₁ := by
+  obtain ⟨F⟩ := h
+  -- Lift `F`, read with the path parameter first, starting from a constant lift of `x`.
+  let G : C(I × I, Circle) := F.toContinuousMap.comp ⟨Prod.swap, continuous_swap⟩
+  let f : C(I, ℝ) := ContinuousMap.const I (Complex.arg x)
+  have hG0 (s : I) : G (0, s) = exp (f s) := by simp [G, f, exp_arg]
+  let Θ := isCoveringMap_exp.liftHomotopy G f hG0
+  have hΘ (t s : I) : exp (Θ (t, s)) = F (s, t) :=
+    congr_fun (isCoveringMap_exp.liftHomotopy_lifts G f hG0) (t, s)
+  -- The swept angle `Θ (1, s) - Θ (0, s)` is a continuous function of `s` with values in a
+  -- single fibre of `exp`, hence constant.
+  have hconst := isCoveringMap_exp.const_of_comp
+    (g := fun s : I => Θ (1, s) - Θ (0, s)) (by fun_prop)
+    (fun a b => by simp [exp_sub, hΘ]) 0 1
+  rwa [← angleChange_eq_sub γ₀ (θ := fun t => Θ (t, 0)) (by fun_prop)
+      (fun t => (hΘ t 0).trans (by simp)),
+    ← angleChange_eq_sub γ₁ (θ := fun t => Θ (t, 1)) (by fun_prop)
+      (fun t => (hΘ t 1).trans (by simp))] at hconst
+
+/-- The angle swept by the concatenation of two paths is the sum of the angles they sweep. -/
+@[simp]
+theorem angleChange_trans {x y z : Circle} (γ₁ : Path x y) (γ₂ : Path y z) :
+    angleChange (γ₁.trans γ₂) = angleChange γ₁ + angleChange γ₂ := by
+  obtain ⟨θ₁, hθ₁', -⟩ := isCoveringMap_exp.exists_path_lifts γ₁.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ₁ (t : I) : exp (θ₁ t) = γ₁ t := congr_fun hθ₁' t
+  obtain ⟨θ₂, hθ₂', hθ₂0⟩ := isCoveringMap_exp.exists_path_lifts γ₂.toContinuousMap (θ₁ 1)
+    (by simp [hθ₁])
+  have hθ₂ (t : I) : exp (θ₂ t) = γ₂ t := congr_fun hθ₂' t
+  -- The lift of `γ₂` starts where the lift of `γ₁` ends, so the two lifts concatenate.
+  let Θ₁ : Path (θ₁ 0) (θ₁ 1) := ⟨θ₁, rfl, rfl⟩
+  let Θ₂ : Path (θ₁ 1) (θ₂ 1) := ⟨θ₂, hθ₂0, rfl⟩
+  rw [angleChange_eq_sub _ (θ := Θ₁.trans Θ₂) (Θ₁.trans Θ₂).continuous (fun t => ?_),
+    angleChange_eq_sub γ₁ θ₁.continuous hθ₁, angleChange_eq_sub γ₂ θ₂.continuous hθ₂, hθ₂0]
+  · simp
+  · simp only [Path.trans_apply]
+    split_ifs <;> simp [Θ₁, Θ₂, hθ₁, hθ₂]
+
+/-- Reversing a path negates the angle it sweeps. -/
+@[simp]
+theorem angleChange_symm {x y : Circle} (γ : Path x y) : angleChange γ.symm = -angleChange γ := by
+  obtain ⟨θ, hθ', -⟩ := isCoveringMap_exp.exists_path_lifts γ.toContinuousMap (Complex.arg x)
+    (by simp [exp_arg])
+  have hθ (t : I) : exp (θ t) = γ t := congr_fun hθ' t
+  rw [angleChange_eq_sub _ (θ := fun t => θ (σ t)) (by fun_prop) (fun t => by simp [hθ]),
+    angleChange_eq_sub γ θ.continuous hθ]
+  simp
+
+/-- The angle swept by the pointwise product of two paths is the sum of the angles they sweep. -/
+@[simp]
+theorem angleChange_mul {x₁ y₁ x₂ y₂ : Circle} (γ₁ : Path x₁ y₁) (γ₂ : Path x₂ y₂) :
+    angleChange (γ₁.mul γ₂) = angleChange γ₁ + angleChange γ₂ := by
+  obtain ⟨θ₁, hθ₁', -⟩ := isCoveringMap_exp.exists_path_lifts γ₁.toContinuousMap
+    (Complex.arg x₁) (by simp [exp_arg])
+  obtain ⟨θ₂, hθ₂', -⟩ := isCoveringMap_exp.exists_path_lifts γ₂.toContinuousMap
+    (Complex.arg x₂) (by simp [exp_arg])
+  have hθ₁ (t : I) : exp (θ₁ t) = γ₁ t := congr_fun hθ₁' t
+  have hθ₂ (t : I) : exp (θ₂ t) = γ₂ t := congr_fun hθ₂' t
+  rw [angleChange_eq_sub _ (θ := fun t => θ₁ t + θ₂ t) (by fun_prop)
+      (fun t => by simp [exp_add, hθ₁, hθ₂]),
+    angleChange_eq_sub γ₁ θ₁.continuous hθ₁, angleChange_eq_sub γ₂ θ₂.continuous hθ₂]
   ring
 
 end Circle

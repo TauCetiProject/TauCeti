@@ -31,6 +31,7 @@ the manifolds of orthonormal frames.
 
 * `Matrix.UnitaryGroup.fromBlocksOne`: the embedding `B ↦ diag(1_r, B)` of `U(m)` in `U(r + m)`.
 * `Matrix.SpecialOrthogonalGroup.fromBlocksOne`: the embedding of `SO(m)` in `SO(r + m)`.
+* `Matrix.UnitaryGroup.sum`: the block-diagonal sum `diag(U, V)` of two unitary matrices.
 
 ## Main results
 
@@ -160,6 +161,25 @@ theorem mem_range_fromBlocksOne_iff {A : unitaryGroup (Fin (r + m)) α} :
       ← submatrix_equiv_mem_unitary (e₁ := finSumFinEquiv.symm) (e₂ := finSumFinEquiv.symm)]
     simpa only [hAB, reindex_apply] using A.2
   exact ⟨⟨B, hB⟩, Subtype.ext hAB.symm⟩
+
+end UnitaryGroup
+
+namespace UnitaryGroup
+
+variable {n m : Type*} [Fintype n] [DecidableEq n] [Fintype m] [DecidableEq m]
+
+/-- The **block-diagonal sum** `diag(U, V)` of two unitary matrices, as a unitary matrix. -/
+def sum (p : unitaryGroup n α × unitaryGroup m α) : unitaryGroup (n ⊕ m) α :=
+  ⟨fromBlocks (p.1 : Matrix n n α) 0 0 (p.2 : Matrix m m α), by
+    rw [mem_unitaryGroup_iff, star_eq_conjTranspose, fromBlocks_conjTranspose, fromBlocks_multiply,
+      ← star_eq_conjTranspose, ← star_eq_conjTranspose, mem_unitaryGroup_iff.1 p.1.2,
+      mem_unitaryGroup_iff.1 p.2.2]
+    simp⟩
+
+@[simp]
+theorem coe_sum (p : unitaryGroup n α × unitaryGroup m α) :
+    (sum p : Matrix (n ⊕ m) (n ⊕ m) α) = fromBlocks (p.1 : Matrix n n α) 0 0 p.2 :=
+  (rfl)
 
 end UnitaryGroup
 
