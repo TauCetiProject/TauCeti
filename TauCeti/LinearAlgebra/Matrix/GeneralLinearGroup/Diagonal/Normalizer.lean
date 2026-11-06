@@ -173,33 +173,13 @@ instance [Semiring k] [Subsingleton (Fin n)] :
   intro g _
   exact mem_diagonalTorus_iff.mpr (Matrix.isDiag_of_subsingleton _)
 
-section IsCancelMulZero
+section Monomial
 
-variable [CommSemiring k] [IsCancelMulZero k]
+variable [CommSemiring k] [Nontrivial k]
 
-/-- If conjugation by `g` sends the diagonal matrix `t` to a diagonal matrix, then `t` takes the
-same value at any two columns in which a row of `g` is nonzero. -/
-private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t : Fin n → kˣ}
-    (ht : g * diagGL t * g⁻¹ ∈ diagonalTorus k n) {i j l : Fin n}
-    (hj : (g : Matrix (Fin n) (Fin n) k) i j ≠ 0) (hl : (g : Matrix (Fin n) (Fin n) k) i l ≠ 0) :
-    t j = t l := by
-  -- Writing `g t g⁻¹ = s`, the entries of `g t = s g` read `g_{im} t_m = s_i g_{im}`.
-  obtain ⟨s, hs⟩ := mem_diagonalTorus_iff_exists_diagGL.mp ht
-  have heq : g * diagGL t = diagGL s * g := by
-    rw [hs]
-    group
-  have hentry (m : Fin n) :
-      (g : Matrix (Fin n) (Fin n) k) i m * t m = s i * (g : Matrix (Fin n) (Fin n) k) i m := by
-    simpa [Matrix.mul_diagonal, Matrix.diagonal_mul] using
-      congrArg (fun x : GL (Fin n) k ↦ (x : Matrix (Fin n) (Fin n) k) i m) heq
-  have hj' : (t j : k) = s i := mul_left_cancel₀ hj (by rw [hentry j, mul_comm])
-  have hl' : (t l : k) = s i := mul_left_cancel₀ hl (by rw [hentry l, mul_comm])
-  exact Units.ext (hj'.trans hl'.symm)
-
-omit [IsCancelMulZero k] in
 /-- An invertible matrix over a nontrivial commutative semiring is monomial, a diagonal matrix
 followed by a permutation matrix, as soon as every row has at most one nonzero entry. -/
-private theorem exists_eq_diagGL_mul_permutationGL_of_row [Nontrivial k] {g : GL (Fin n) k}
+theorem exists_eq_diagGL_mul_permutationGL_of_row {g : GL (Fin n) k}
     (hrow : ∀ i j l, (g : Matrix (Fin n) (Fin n) k) i j ≠ 0 →
       (g : Matrix (Fin n) (Fin n) k) i l ≠ 0 → j = l) :
     ∃ d : Fin n → kˣ, ∃ σ : Equiv.Perm (Fin n),
@@ -256,6 +236,31 @@ private theorem exists_eq_diagGL_mul_permutationGL_of_row [Nontrivial k] {g : GL
       by_contra h
       exact hj ((hf_iff i j).mp h)
     simpa [Equiv.Perm.permMatrix, PEquiv.toMatrix_apply, he, Ne.symm hj, G] using hzero
+
+end Monomial
+
+section IsCancelMulZero
+
+variable [CommSemiring k] [IsCancelMulZero k]
+
+/-- If conjugation by `g` sends the diagonal matrix `t` to a diagonal matrix, then `t` takes the
+same value at any two columns in which a row of `g` is nonzero. -/
+private theorem apply_eq_apply_of_conj_mem_diagonalTorus {g : GL (Fin n) k} {t : Fin n → kˣ}
+    (ht : g * diagGL t * g⁻¹ ∈ diagonalTorus k n) {i j l : Fin n}
+    (hj : (g : Matrix (Fin n) (Fin n) k) i j ≠ 0) (hl : (g : Matrix (Fin n) (Fin n) k) i l ≠ 0) :
+    t j = t l := by
+  -- Writing `g t g⁻¹ = s`, the entries of `g t = s g` read `g_{im} t_m = s_i g_{im}`.
+  obtain ⟨s, hs⟩ := mem_diagonalTorus_iff_exists_diagGL.mp ht
+  have heq : g * diagGL t = diagGL s * g := by
+    rw [hs]
+    group
+  have hentry (m : Fin n) :
+      (g : Matrix (Fin n) (Fin n) k) i m * t m = s i * (g : Matrix (Fin n) (Fin n) k) i m := by
+    simpa [Matrix.mul_diagonal, Matrix.diagonal_mul] using
+      congrArg (fun x : GL (Fin n) k ↦ (x : Matrix (Fin n) (Fin n) k) i m) heq
+  have hj' : (t j : k) = s i := mul_left_cancel₀ hj (by rw [hentry j, mul_comm])
+  have hl' : (t l : k) = s i := mul_left_cancel₀ hl (by rw [hentry l, mul_comm])
+  exact Units.ext (hj'.trans hl'.symm)
 
 /-- An invertible matrix is monomial, a diagonal matrix followed by a permutation matrix, as soon
 as conjugation by it keeps enough diagonal matrices diagonal to tell every two coordinates
