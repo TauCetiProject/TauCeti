@@ -336,7 +336,8 @@ theorem mem_tangentSpace_iff_apply {J : AlmostComplexStructure V} {Y : Module.En
   simp only [LinearMap.add_apply, mul_apply_eq_comp, LinearMap.zero_apply]
   exact add_eq_zero_iff_eq_neg
 
-/-- Conjugating a tangent vector at `J` by `J` fixes it: `J Y J = Y` whenever `Y J + J Y = 0`. -/
+/-- Sandwiching a tangent vector at `J` between two copies of `J` fixes it: `J Y J = Y` whenever
+`Y J + J Y = 0`. -/
 theorem mul_mul_eq_of_mem_tangentSpace {J : AlmostComplexStructure V} {Y : Module.End ℝ V}
     (hY : Y ∈ J.tangentSpace) : J.toLinearMap * Y * J.toLinearMap = Y := by
   ext v

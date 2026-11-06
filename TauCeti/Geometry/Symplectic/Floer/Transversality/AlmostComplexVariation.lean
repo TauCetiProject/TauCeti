@@ -56,8 +56,6 @@ Sobolev or Fredholm surjectivity of the universal operator.
 
 * `SymplecticForm.eq_zero_of_integral_apply_compatibleVariation_eq_zero`: compatible variations
   of a frozen structure detect a covector field at an injective point.
-* `SymplecticForm.hasDerivAt_floerOperator_add_smul`: the derivative of the coordinate Floer
-  operator along the line `J + q Y` of endomorphism fields is `Y(u)(∂t u - X_Kt)`.
 * `SymplecticForm.eq_zero_of_integral_apply_deriv_floerOperator_eq_zero`: the same detection
   statement for the `J`-direction derivatives of the coordinate Floer operator.
 
@@ -138,21 +136,6 @@ section FloerOperator
 
 variable {ω : SymplecticForm V} {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V}
 
-/-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
-endomorphism fields, the coordinate Floer operator has derivative `Y(u)(∂t u - X_Kt)` at every
-parameter `q`. The fields may depend on the domain point. -/
-theorem hasDerivAt_floerOperator_add_smul (J Y : ℝ × ℝ → V → V →L[ℝ] V) (z : ℝ × ℝ) (q : ℝ) :
-    HasDerivAt (fun q : ℝ ↦ ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z)
-      (Y z (u z) (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))) q := by
-  set ξ := fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)
-  have h (q : ℝ) : ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z =
-      ω.floerOperator J Ks Kt u z + q • Y z (u z) ξ := by
-    simp only [floerOperator_def, _root_.add_apply, _root_.smul_apply, ξ]
-    abel
-  simp only [h]
-  simpa using
-    ((hasDerivAt_id q).smul_const (Y z (u z) ξ)).const_add (ω.floerOperator J Ks Kt u z)
-
 /-- **`J`-variations of the Floer operator detect cokernel elements at injective points.** For a
 frozen `Cⁿ` family `J` of `ω`-compatible structures, suppose a continuous covector field `η` on an
 open set `Ω ⊆ ℝ × ℝ` annihilates the derivative of the coordinate Floer operator along `J + q Y`
@@ -174,7 +157,7 @@ theorem eq_zero_of_integral_apply_deriv_floerOperator_eq_zero {n : ℕ∞}
     η z₀ = 0 :=
   eq_zero_of_integral_apply_compatibleVariation_eq_zero ω hJc hJ hΩ hu hξ hη hz₀ hloc hξ₀
     fun Y hY hYc hYm ↦ by
-      simpa only [(hasDerivAt_floerOperator_add_smul _ (fun _ ↦ Y) _ 0).deriv] using
+      simpa only [(hasDerivAt_floerOperator_add_smul ω _ (fun _ ↦ Y) Ks Kt u _ 0).deriv] using
         h Y hY hYc hYm
 
 end FloerOperator

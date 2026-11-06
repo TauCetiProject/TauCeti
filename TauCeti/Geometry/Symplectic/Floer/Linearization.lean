@@ -15,7 +15,8 @@ The nonlinear operator is `∂s u - X_Ks + J(z,u)(∂t u - X_Kt)`. We differenti
 jointly `C²` families of maps and Hamiltonians and differentiable families of endomorphisms.
 The formula includes the target derivative of `J`, both Hamiltonian linearizations, and the
 independent parameter variations of `K` and `J`. Domain dependence of the coefficients is
-allowed; the derivative is at a fixed domain point.
+allowed; the derivative is at a fixed domain point. Along a line `J + q Y` of endomorphism fields
+the derivative is `Y(u)(∂t u - X_Kt)` (`hasDerivAt_floerOperator_add_smul`).
 
 `floerLinearization` is the map-direction operator with coefficients fixed. The universal
 variation theorem identifies its direction field with the actual parameter derivative of the
@@ -66,6 +67,23 @@ theorem floerOperator_eq_zero_iff (ω : SymplecticForm V)
   rw [floerOperator_def, ω.isComplexLinearMap_perturbedFDeriv_iff]
   -- The linear and continuous-linear coercions of `J` have the same underlying function.
   rfl
+
+/-- **The `J`-direction derivative of the Floer operator.** Along the line `J + q Y` of
+endomorphism fields, the coordinate Floer operator has derivative `Y(u)(∂t u - X_Kt)` at every
+parameter `q`. The fields may depend on the domain point. -/
+theorem hasDerivAt_floerOperator_add_smul (ω : SymplecticForm V)
+    (J Y : ℝ × ℝ → V → V →L[ℝ] V) (Ks Kt : ℝ × ℝ → V → ℝ)
+    (u : ℝ × ℝ → V) (z : ℝ × ℝ) (q : ℝ) :
+    HasDerivAt (fun q : ℝ ↦ ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z)
+      (Y z (u z) (fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z))) q := by
+  set ξ := fderiv ℝ u z stdComplexLineImag - ω.hamiltonianVectorField (Kt z) (u z)
+  have h (q : ℝ) : ω.floerOperator (fun w x ↦ J w x + q • Y w x) Ks Kt u z =
+      ω.floerOperator J Ks Kt u z + q • Y z (u z) ξ := by
+    simp only [floerOperator_def, _root_.add_apply, _root_.smul_apply, ξ]
+    abel
+  simp only [h]
+  simpa using
+    ((hasDerivAt_id q).smul_const (Y z (u z) ξ)).const_add (ω.floerOperator J Ks Kt u z)
 
 /-- The map-direction linearization with `J` and `K` fixed. Both Hamiltonian derivatives and
 the target derivative of `J` are retained, including along constant maps. -/

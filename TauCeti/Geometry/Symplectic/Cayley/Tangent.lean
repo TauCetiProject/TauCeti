@@ -412,7 +412,7 @@ complex structures preserving `ω`, compatible with `ω` at `p₀`. For a nonzer
 vector `η` there is a `Cⁿ` field `Y` of compatible variations, `Y p` in the compatible tangent
 space of `J p` for every `p`, with `Y p₀ ξ = η`. The field is `A + J A J` for a compatible
 variation `A` at `J p₀` with `A ξ = η / 2`. -/
-theorem exists_contDiff_mem_compatibleTangentSpace_apply_eq {n : ℕ∞}
+theorem exists_contDiff_mem_compatibleTangentSpace_apply_eq {n : WithTop ℕ∞}
     {J : P → AlmostComplexStructure V} (hJ : ∀ p, ω.Invariant (J p))
     (hJs : ContDiff ℝ n fun p => LinearMap.toContinuousLinearMap (J p).toLinearMap) {p₀ : P}
     (h₀ : ω.Compatible (J p₀)) {ξ : V} (hξ : ξ ≠ 0) (η : V) :
