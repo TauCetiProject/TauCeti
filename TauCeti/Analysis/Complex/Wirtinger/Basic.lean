@@ -61,6 +61,8 @@ Their comparison with the Levi form is in `TauCeti.Analysis.Complex.Wirtinger.Le
 * `TauCeti.conjWirtingerDeriv_apply_eq_conjWirtingerDeriv_line`: `\bar∂g(x) v` is the
   one-variable conjugate Wirtinger derivative of the restriction of `g` to the complex line
   `t ↦ x + t • v`.
+* `ContDiffAt.hasFDerivAt_conjWirtingerDeriv_apply`: the derivative of `y ↦ \bar∂g(y) u` for a
+  `C²` map `g`, in terms of the second derivative of `g`.
 * `TauCeti.conjWirtingerDeriv_conjWirtingerDeriv_comm`: second conjugate Wirtinger derivatives
   of a `C²` map commute.
 
@@ -371,6 +373,22 @@ theorem _root_.ContDiffOn.conjWirtingerDeriv_apply_of_isOpen {g : V → W} {s : 
     ((hD.clm_apply contDiffOn_const).const_smul I)).const_smul (2 : ℂ)⁻¹).congr
       fun y _ ↦ TauCeti.conjWirtingerDeriv_apply g y v
 
+/-- For a `C²` map, the conjugate Wirtinger derivative `y ↦ \bar∂g(y) u` in a fixed direction `u`
+is differentiable, with derivative built from the second derivative of `g`. -/
+theorem _root_.ContDiffAt.hasFDerivAt_conjWirtingerDeriv_apply {g : V → W} {x : V}
+    (hg : ContDiffAt ℝ 2 g x) (u : V) :
+    HasFDerivAt (fun y ↦ conjWirtingerDeriv g y u)
+      ((2 : ℂ)⁻¹ • ((fderiv ℝ (fderiv ℝ g) x).flip u +
+        I • (fderiv ℝ (fderiv ℝ g) x).flip (I • u))) x := by
+  have hD : DifferentiableAt ℝ (fderiv ℝ g) x :=
+    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  refine (((hD.hasFDerivAt.clm_apply (hasFDerivAt_const u x)).add
+    ((hD.hasFDerivAt.clm_apply (hasFDerivAt_const (I • u) x)).const_smul I)).const_smul
+      (2 : ℂ)⁻¹).congr_of_eventuallyEq
+        (.of_forall fun y ↦ conjWirtingerDeriv_apply _ y u) |>.congr_fderiv ?_
+  ext a
+  simp
+
 /-- **Symmetry of second conjugate Wirtinger derivatives.** For a `C²` map,
 `\bar∂_w \bar∂_v g = \bar∂_v \bar∂_w g`; on coordinate vectors this is
 `∂²g / ∂(conj z_j) ∂(conj z_k) = ∂²g / ∂(conj z_k) ∂(conj z_j)`. -/
@@ -379,19 +397,9 @@ theorem conjWirtingerDeriv_conjWirtingerDeriv_comm {g : V → W} {x : V}
     conjWirtingerDeriv (fun y ↦ conjWirtingerDeriv g y v) x w =
       conjWirtingerDeriv (fun y ↦ conjWirtingerDeriv g y w) x v := by
   have hsymm := hg.isSymmSndFDerivAt (by simp)
-  have hD : DifferentiableAt ℝ (fderiv ℝ g) x :=
-    (hg.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- The derivative of `y ↦ \bar∂g(y) u` is built from the second derivative of `g`.
-  have hd (u : V) : HasFDerivAt (fun y ↦ conjWirtingerDeriv g y u)
-      ((2 : ℂ)⁻¹ • ((fderiv ℝ (fderiv ℝ g) x).flip u +
-        I • (fderiv ℝ (fderiv ℝ g) x).flip (I • u))) x := by
-    refine (((hD.hasFDerivAt.clm_apply (hasFDerivAt_const u x)).add
-      ((hD.hasFDerivAt.clm_apply (hasFDerivAt_const (I • u) x)).const_smul I)).const_smul
-        (2 : ℂ)⁻¹).congr_of_eventuallyEq
-          (.of_forall fun y ↦ conjWirtingerDeriv_apply _ y u) |>.congr_fderiv ?_
-    ext a
-    simp
-  rw [conjWirtingerDeriv_apply, conjWirtingerDeriv_apply, (hd v).fderiv, (hd w).fderiv]
+  rw [conjWirtingerDeriv_apply, conjWirtingerDeriv_apply,
+    (hg.hasFDerivAt_conjWirtingerDeriv_apply v).fderiv,
+    (hg.hasFDerivAt_conjWirtingerDeriv_apply w).fderiv]
   simp only [smul_apply, add_apply, ContinuousLinearMap.flip_apply, hsymm w v, hsymm (I • w) v,
     hsymm w (I • v), hsymm (I • w) (I • v)]
   module

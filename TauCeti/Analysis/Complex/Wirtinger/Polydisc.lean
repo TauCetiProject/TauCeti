@@ -38,11 +38,12 @@ elimination for forms of higher degree, whose coefficient families are vector va
 * `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eventually_eq_of_pi`: the
   elimination step, solving `∂v/∂(conj z_k) = g` and keeping holomorphy in the coordinates where
   `g` is holomorphic.
-* `TauCeti.exists_conjWirtingerDeriv_eventually_eq_of_pi`: a smooth `bar∂`-closed `(0,1)`-form
-  on a product of open subsets of `ℂ` is `bar∂`-exact near every compact product inside it.
-* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_eq_of_polydisc`: the same on polydiscs. A smooth
-  `bar∂`-closed `(0,1)`-form on a polydisc of polyradius `r` is `bar∂`-exact on the concentric
-  polydisc of every smaller polyradius.
+* `TauCeti.exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi`: a smooth
+  `bar∂`-closed `(0,1)`-form on a product of open subsets of `ℂ` is `bar∂`-exact near every
+  compact product inside it.
+* `TauCeti.exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc`: the same on
+  polydiscs. A smooth `bar∂`-closed `(0,1)`-form on a polydisc of polyradius `r` is `bar∂`-exact
+  on the concentric polydisc of every smaller polyradius.
 
 ## References
 
@@ -299,18 +300,16 @@ private theorem conjWirtingerDeriv_sub_conjWirtingerDeriv_comm {f : ι → (ι �
         (Pi.single i 1) =
       conjWirtingerDeriv (f i - fun y ↦ conjWirtingerDeriv v y (Pi.single i 1)) z
         (Pi.single j 1) := by
-  have hD : DifferentiableAt ℝ (fderiv ℝ v) z :=
-    (hv.fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
   have hdv (a : ι → ℂ) : DifferentiableAt ℝ (fun y ↦ conjWirtingerDeriv v y a) z :=
-    (((hD.clm_apply (differentiableAt_const a)).add
-      ((hD.clm_apply (differentiableAt_const (I • a))).const_smul I)).const_smul
-        (2 : ℂ)⁻¹).congr_of_eventuallyEq (.of_forall fun y ↦ conjWirtingerDeriv_apply v y a)
+    (hv.hasFDerivAt_conjWirtingerDeriv_apply a).differentiableAt
   rw [conjWirtingerDeriv_sub (hf j) (hdv _), conjWirtingerDeriv_sub (hf i) (hdv _), sub_apply,
     sub_apply, hclosed i j, conjWirtingerDeriv_conjWirtingerDeriv_comm hv]
 
-/-- The induction behind `TauCeti.exists_conjWirtingerDeriv_eventually_eq_of_pi`, on the finite
-set `S` of coordinates whose coefficients may be nonzero. -/
-private theorem exists_conjWirtingerDeriv_eventually_eq_of_pi_of_eq_zero (S : Finset ι) :
+/-- The induction behind
+`TauCeti.exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi`, on the finite set
+`S` of coordinates whose coefficients may be nonzero. -/
+private theorem exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi_of_eq_zero
+    (S : Finset ι) :
     ∀ {U : ι → Set ℂ}, (∀ i, IsOpen (U i)) → ∀ {f : ι → (ι → ℂ) → F},
       (∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi U)) →
       (∀ z ∈ univ.pi U, ∀ i j,
@@ -382,22 +381,22 @@ with coefficients in a complex Banach space, which is `bar∂`-closed:
 `∂f_j/∂(conj z_i) = ∂f_i/∂(conj z_j)`. Then near every compact product `∏ K_i` with
 `K_i ⊆ U_i` it is `bar∂`-exact: some `u`, smooth there, satisfies `∂u/∂(conj z_j) = f_j` for
 every `j`. -/
-theorem exists_conjWirtingerDeriv_eventually_eq_of_pi {U : ι → Set ℂ} (hU : ∀ i, IsOpen (U i))
-    {f : ι → (ι → ℂ) → F} (hf : ∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi U))
+theorem exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi {U : ι → Set ℂ}
+    (hU : ∀ i, IsOpen (U i)) {f : ι → (ι → ℂ) → F} (hf : ∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi U))
     (hclosed : ∀ z ∈ univ.pi U, ∀ i j,
       conjWirtingerDeriv (f j) z (Pi.single i 1) = conjWirtingerDeriv (f i) z (Pi.single j 1))
     {K : ι → Set ℂ} (hK : ∀ i, IsCompact (K i)) (hKU : ∀ i, K i ⊆ U i) :
     ∃ u : (ι → ℂ) → F, ∀ᶠ z in 𝓝ˢ (univ.pi K),
       ContDiffAt ℝ ∞ u z ∧ ∀ j, conjWirtingerDeriv u z (Pi.single j 1) = f j z :=
-  exists_conjWirtingerDeriv_eventually_eq_of_pi_of_eq_zero Finset.univ hU hf hclosed
-    (fun j hj ↦ absurd (Finset.mem_univ j) hj) hK hKU
+  exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi_of_eq_zero Finset.univ hU
+    hf hclosed (fun j hj ↦ absurd (Finset.mem_univ j) hj) hK hKU
 
 /-- **The `bar∂`-Poincaré lemma for `(0,1)`-forms on polydiscs.** A smooth `bar∂`-closed
 `(0,1)`-form `∑ j, f_j d(conj z_j)` on the polydisc `∏ B(c_i, r_i)` is `bar∂`-exact on every
 concentric polydisc `∏ B(c_i, r'_i)` with `r'_i < r_i`: some `u`, smooth there, satisfies
 `∂u/∂(conj z_j) = f_j` for every `j`. -/
-theorem exists_contDiffOn_conjWirtingerDeriv_eq_of_polydisc {c : ι → ℂ} {r r' : ι → ℝ}
-    (hr : ∀ i, r' i < r i) {f : ι → (ι → ℂ) → F}
+theorem exists_contDiffOn_conjWirtingerDeriv_apply_single_eq_of_polydisc {c : ι → ℂ}
+    {r r' : ι → ℝ} (hr : ∀ i, r' i < r i) {f : ι → (ι → ℂ) → F}
     (hf : ∀ j, ContDiffOn ℝ ∞ (f j) (univ.pi fun i ↦ Metric.ball (c i) (r i)))
     (hclosed : ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r i), ∀ i j,
       conjWirtingerDeriv (f j) z (Pi.single i 1) = conjWirtingerDeriv (f i) z (Pi.single j 1)) :
@@ -405,8 +404,9 @@ theorem exists_contDiffOn_conjWirtingerDeriv_eq_of_polydisc {c : ι → ℂ} {r 
       ∀ z ∈ univ.pi fun i ↦ Metric.ball (c i) (r' i), ∀ j,
         conjWirtingerDeriv u z (Pi.single j 1) = f j z := by
   obtain ⟨u, hu⟩ :=
-    exists_conjWirtingerDeriv_eventually_eq_of_pi (fun i ↦ Metric.isOpen_ball) hf hclosed
-    (fun i ↦ isCompact_closedBall (c i) (r' i)) fun i ↦ Metric.closedBall_subset_ball (hr i)
+    exists_contDiffAt_conjWirtingerDeriv_apply_single_eventually_eq_of_pi
+      (fun i ↦ Metric.isOpen_ball) hf hclosed (fun i ↦ isCompact_closedBall (c i) (r' i))
+      fun i ↦ Metric.closedBall_subset_ball (hr i)
   have hsub : (univ.pi fun i ↦ Metric.ball (c i) (r' i)) ⊆
       univ.pi fun i ↦ Metric.closedBall (c i) (r' i) :=
     pi_mono fun i _ ↦ Metric.ball_subset_closedBall
