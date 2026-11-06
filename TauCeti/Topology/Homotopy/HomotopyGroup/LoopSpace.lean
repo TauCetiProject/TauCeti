@@ -457,26 +457,22 @@ theorem pathConnectedSpace_doubleLoopSpace_iff (x : X) :
   (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 (Path.refl x)).trans
     (pathLoopSpaceMulEquiv (X := X) (x := x) 0).toEquiv.subsingleton_congr
 
+/-- The homotopy group `π_ k (Ω X x) (Path.refl x)` (including `k = 0`) is trivial if and only if
+`π_ (k + 1) X x` is trivial. -/
+theorem subsingleton_homotopyGroup_loopSpace_iff (x : X) (k : ℕ) :
+    Subsingleton (π_ k (Ω X x) (Path.refl x)) ↔ Subsingleton (π_ (k + 1) X x) := by
+  cases k with
+  | zero =>
+    exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).symm.trans
+      (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x)
+  | succ m => exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr
+
 /-- All homotopy groups `π_ k (Ω X x) (Path.refl x)` (including `k = 0`) are trivial if and only if
 `π_ (n + 1) X x` is trivial for every `n : ℕ`. -/
 theorem forall_subsingleton_homotopyGroup_loopSpace_iff (x : X) :
     (∀ k : ℕ, Subsingleton (π_ k (Ω X x) (Path.refl x))) ↔
-      ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) := by
-  constructor
-  · intro h n
-    cases n with
-    | zero =>
-      exact (pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).mp
-        ((pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).mpr (h 0))
-    | succ m =>
-      exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr.mp (h (m + 1))
-  · intro h k
-    cases k with
-    | zero =>
-      exact (pathConnectedSpace_iff_subsingleton_homotopyGroup_zero (Path.refl x)).mp
-        ((pathConnectedSpace_loopSpace_iff_subsingleton_pi1 x).mpr (h 0))
-    | succ m =>
-      exact (pathLoopSpaceMulEquiv (X := X) (x := x) m).toEquiv.subsingleton_congr.mpr (h (m + 1))
+      ∀ n : ℕ, Subsingleton (π_ (n + 1) X x) :=
+  forall_congr' (subsingleton_homotopyGroup_loopSpace_iff x)
 
 /-- All homotopy groups of the fixed-interval double loop space `Ω (Ω X x) (Path.refl x)`
 (including `k = 0`) are trivial if and only if `π_ (n + 2) X x` is trivial for every `n : ℕ`. -/
