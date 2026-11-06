@@ -60,6 +60,8 @@ use.
   with left-separating bilinear form is invertible.
 * `ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`: in finite dimensions,
   the continuous bilinear forms with nondegenerate bilinear form are an open set.
+* `ContinuousAt.eventually_toBilinForm_nondegenerate`: in finite dimensions, nondegeneracy of a
+  continuous family of bilinear forms at a point holds on a neighbourhood of the point.
 * `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
   positive on nonzero diagonal vectors is invertible.
 * `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: a continuous bilinear form negative on
@@ -205,6 +207,15 @@ theorem _root_.ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm
     exact LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b
   rw [hset]
   exact isOpen_compl_singleton.preimage hc
+
+/-- In finite dimensions, nondegeneracy of the bilinear form of a continuous family of continuous
+bilinear forms at a point persists on a neighbourhood of the point. -/
+theorem _root_.ContinuousAt.eventually_toBilinForm_nondegenerate
+    {X 𝕜 E : Type*} [TopologicalSpace X] [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {g : X → E →L[𝕜] E →L[𝕜] 𝕜} {x : X}
+    (hg : ContinuousAt g x) (hnd : (g x).toBilinForm.Nondegenerate) :
+    ∀ᶠ y in nhds x, (g y).toBilinForm.Nondegenerate :=
+  hg.eventually (ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm.mem_nhds hnd)
 
 /-- In finite dimensions, a continuous linear map into the dual that is positive on nonzero
 diagonal vectors is invertible. This is the musical isomorphism of a Riemannian metric. -/
