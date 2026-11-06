@@ -81,9 +81,7 @@ private theorem ae_lintegral_enorm_mul_lt_top
     (hB : ∀ᵐ y ∂ν, ∫⁻ x, ‖K x y‖ₑ ∂μ ≤ B) :
     ∀ᵐ x ∂μ, ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν < ∞ := by
   have hfin : MemLp (fun x ↦ ∫⁻ y, ‖K x y‖ₑ * ‖u y‖ₑ ∂ν) p μ :=
-    (eLpNorm_lintegral_enorm_mul_le hK hu.aestronglyMeasurable hp hA hB).trans_lt
-      (ENNReal.mul_lt_top (rpow_one_sub_toReal_inv_mul_rpow_toReal_inv_lt_top hp A B)
-        hu.eLpNorm_lt_top)
+    memLp_lintegral_mul (k := fun x y ↦ ‖K x y‖ₑ) hK.enorm hu.enorm hp hA hB
   simpa only [enorm_eq_self] using hfin.ae_enorm_lt_top (zero_lt_one.trans_le hp).ne'
 
 /-- For `u ∈ Lᵖ(ν)`, `1 ≤ p ≤ ∞`, and a kernel whose operator-norm row and column integrals are
