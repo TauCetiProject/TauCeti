@@ -357,14 +357,6 @@ private theorem deconcatenation_coderiv_subword_zero (F : ReducedTensorWords R M
   rw [deconcatenation_splice R x _]
   simp only [Nat.zero_add]
 
-/-- The comultiplication of a full word, as a sum over the cut positions. -/
-private theorem deconcatenation_subword_zero_eq_sum_range {n : ℕ} (x : Fin n → M) :
-    deconcatenation R M (subword R x 0 n) =
-      ∑ c ∈ Finset.range n, subword R x 0 c ⊗ₜ[R] subword R x c (n - c) := by
-  rw [deconcatenation_subword R x (a := 0) (b := n)]
-  simp only [Nat.zero_add]
-  exact sum_Ioo_eq_sum_range n _ (by rw [subword_length_zero, TensorProduct.zero_tmul])
-
 /-- The right-hand side of the co-Leibniz rule for `coderiv F` on a full word, expanded as a sum
 over a cut position and a collapsed block. -/
 private theorem rTensor_add_lTensor_coderiv_deconcatenation_subword_zero
@@ -378,7 +370,10 @@ private theorem rTensor_add_lTensor_coderiv_deconcatenation_subword_zero
         ∑ c ∈ Finset.range n, ∑ p ∈ Finset.range n, ∑ d ∈ Finset.range (n + 1),
           subword R x 0 c ⊗ₜ[R]
             splice R x c (n - c) p d (F (subword R x (c + p) d)) := by
-  rw [deconcatenation_subword_zero_eq_sum_range R x, map_sum, map_sum]
+  have h : deconcatenation R M (subword R x 0 n) =
+      ∑ c ∈ Finset.range n, subword R x 0 c ⊗ₜ[R] subword R x c (n - c) := by
+    simpa using map_deconcatenation_subword R LinearMap.id LinearMap.id x 0 n
+  rw [h, map_sum, map_sum]
   congr 1 <;> refine Finset.sum_congr rfl fun c hc ↦ ?_ <;>
     simp only [Finset.mem_range] at hc
   · rw [LinearMap.rTensor_tmul,
