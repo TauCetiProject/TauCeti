@@ -198,6 +198,13 @@ private lemma unitsMap_toHomUnits_eq_one_of_label (hQN : Q ∣ N) {A : SL(2, ℤ
   simp only [Int.cast_add, Int.cast_mul, Int.cast_natCast, ZMod.natCast_self, zero_mul, add_zero,
     Int.cast_one]
 
+/-- The real matrix of the image of `g : SL(2, ℤ)` in `GL(2, ℝ)` is the entrywise integer cast. -/
+private lemma coe_mapGL_real_eq_map_intCast (g : SL(2, ℤ)) :
+    (↑(mapGL ℝ g) : Matrix (Fin 2) (Fin 2) ℝ) = (g : Matrix (Fin 2) (Fin 2) ℤ).map (↑) := by
+  rw [mapGL_coe_matrix]
+  ext
+  simp
+
 omit [NeZero N] in
 /-- The integral matrix identity `diag(1, n) · W = W · A · diag(1, n) · B` gives the same identity
 for the corresponding elements of `GL(2, ℝ)`. -/
@@ -214,14 +221,11 @@ private lemma natDiagGL_mul_atkinLehnerGL_eq_of_mul_eq (hQ : 0 < Q)
     fin_cases i <;> fin_cases j <;> simp
   have hφB : (↑(φ (natDiagGL 2 ![1, n] * mapGL ℚ B)) : Matrix (Fin 2) (Fin 2) ℝ) =
       (!![1, 0; 0, (n : ℤ)] * (B : Matrix (Fin 2) (Fin 2) ℤ)).map (↑) := by
-    rw [map_mul, Units.val_mul, hX, Matrix.map_mul_intCast, map_mapGL]
-    rfl
-  have hAm : (↑(mapGL ℝ A) : Matrix (Fin 2) (Fin 2) ℝ) =
-      (A : Matrix (Fin 2) (Fin 2) ℤ).map (↑) := by
-    rw [mapGL_coe_matrix]
-    rfl
+    rw [map_mul, Units.val_mul, hX, Matrix.map_mul_intCast, map_mapGL,
+      coe_mapGL_real_eq_map_intCast]
   refine Units.ext ?_
-  rw [Units.val_mul, Units.val_mul, Units.val_mul, hX, hφB, coe_atkinLehnerGL, hAm,
+  rw [Units.val_mul, Units.val_mul, Units.val_mul, hX, hφB, coe_atkinLehnerGL,
+    coe_mapGL_real_eq_map_intCast,
     ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast, ← Matrix.map_mul_intCast, key]
   simp only [Matrix.mul_assoc]
 
