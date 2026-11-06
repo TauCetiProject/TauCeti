@@ -56,6 +56,13 @@ public section
 
 namespace Nat
 
+/-- Mapping canonical digits into `Fin b` and then taking their values recovers the digits. -/
+theorem map_val_map_ofNat_digits {b : ℕ} [NeZero b] (hb : 2 ≤ b) (n : ℕ) :
+    ((digits b n).map (Fin.ofNat b)).map Fin.val = digits b n := by
+  rw [List.map_map]
+  conv_rhs => rw [← List.map_id (digits b n)]
+  exact List.map_congr_left fun d hd ↦ Nat.mod_eq_of_lt (digits_lt_base hb hd)
+
 /-- The digit sum of `j + b * y`, for a digit `j < b`, is `j` plus the digit sum of `y`. -/
 theorem sum_digits_add_mul {b j : ℕ} (hj : j < b) (y : ℕ) :
     (digits b (j + b * y)).sum = j + (digits b y).sum := by
