@@ -68,6 +68,70 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 
 /-! ### The smooth divergence theorem on a half-space -/
 
+/-- The directional derivative of a compactly supported `C¹` function is integrable on the
+product of `Ioi a` with `E`. -/
+private theorem integrable_fderiv_apply_prod {g : WithLp 2 (ℝ × E) → ℝ} (hg : ContDiff ℝ 1 g)
+    (hgc : HasCompactSupport g) (a : ℝ) (d : WithLp 2 (ℝ × E)) :
+    Integrable (fun z : ℝ × E ↦ fderiv ℝ g (WithLp.toLp 2 z) d)
+      ((volume.restrict (Ioi a)).prod volume) := by
+  have hdc : Continuous fun x ↦ fderiv ℝ g x d :=
+    (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
+  have h : Integrable (fun x ↦ fderiv ℝ g x d) volume :=
+    hdc.integrable_of_hasCompactSupport (hgc.fderiv_apply (𝕜 := ℝ) d)
+  have hprod :=
+    (WithLp.volume_preserving_toLp ℝ E).integrable_comp h.aestronglyMeasurable |>.mpr h
+  rw [Measure.restrict_prod_eq_prod_univ]
+  exact hprod.integrableOn
+
+/-- The normal part of the divergence theorem on a half-space: the fundamental theorem of calculus
+on each normal line. -/
+private theorem integral_prod_fderiv_normal {g : WithLp 2 (ℝ × E) → ℝ} (hg : ContDiff ℝ 1 g)
+    (hgc : HasCompactSupport g) (a : ℝ) :
+    ∫ z, fderiv ℝ g (WithLp.toLp 2 z) (WithLp.toLp 2 (1, (0 : E)))
+      ∂((volume.restrict (Ioi a)).prod volume) = -∫ y : E, g (WithLp.toLp 2 (a, y)) := by
+  have hgd : Differentiable ℝ g := hg.differentiable one_ne_zero
+  rw [integral_prod_symm _ (integrable_fderiv_apply_prod hg hgc a _), ← integral_neg]
+  refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
+  dsimp only
+  have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
+    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
+      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y)
+        (isClosedMap_prodMk_right y))
+  have hline : ContDiff ℝ 1 (fun t : ℝ ↦ g (WithLp.toLp 2 (t, y))) :=
+    hg.comp (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
+      (contDiff_id.prodMk contDiff_const))
+  rw [← (hgc.comp_isClosedEmbedding he).integral_Ioi_deriv_eq hline a]
+  exact integral_congr_ae (Eventually.of_forall fun t ↦
+    ((hasDerivAt_comp_toLp_fst (hgd _)).deriv).symm)
+
+/-- The tangential part of the divergence theorem on a half-space: on each slice `{t} × E` it
+integrates to zero. -/
+private theorem integral_prod_fderiv_tangent {g : WithLp 2 (ℝ × E) → ℝ} (hg : ContDiff ℝ 1 g)
+    (hgc : HasCompactSupport g) (a : ℝ) (w : E) :
+    ∫ z, fderiv ℝ g (WithLp.toLp 2 z) (WithLp.toLp 2 (0, w))
+      ∂((volume.restrict (Ioi a)).prod volume) = 0 := by
+  have hgd : Differentiable ℝ g := hg.differentiable one_ne_zero
+  rw [integral_prod _ (integrable_fderiv_apply_prod hg hgc a _)]
+  refine (integral_congr_ae (Eventually.of_forall fun t ↦ ?_)).trans (integral_zero _ _)
+  have he : IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (t, y)) :=
+    (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
+      (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight t)
+        (isClosedMap_prodMk_left t))
+  have hslice : ContDiff ℝ 1 (fun y : E ↦ g (WithLp.toLp 2 (t, y))) :=
+    hg.comp (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
+      (contDiff_const.prodMk contDiff_id))
+  have hsc := hgc.comp_isClosedEmbedding he
+  have hibp := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (μ := volume)
+    (f := fun _ : E ↦ (1 : ℝ)) (g := fun y : E ↦ g (WithLp.toLp 2 (t, y))) (v := w)
+    (by simp) (by simpa using ((hslice.continuous_fderiv one_ne_zero).clm_apply
+      continuous_const).integrable_of_hasCompactSupport (hsc.fderiv_apply (𝕜 := ℝ) w))
+    (by simpa using hslice.continuous.integrable_of_hasCompactSupport hsc)
+    (fun _ _ ↦ differentiableAt_const _)
+    (fun y _ ↦ hslice.differentiable one_ne_zero y)
+  simp only [one_mul] at hibp
+  simp only [← fderiv_comp_toLp_snd (hgd _)]
+  simpa using hibp
+
 /-- **The divergence theorem on a half-space.** For a compactly supported `C¹` function `g` on
 `ℝ × E` and a direction `v`, the integral of the directional derivative `∂_v g` over the half-space
 `{x | a < x.fst}` is the boundary integral of `g` over `{a} × E`, weighted by `⟪v, -e₁⟫ = -v.fst`,
@@ -76,18 +140,6 @@ theorem setIntegral_normalHalfSpace_fderiv_apply {g : WithLp 2 (ℝ × E) → �
     (hg : ContDiff ℝ 1 g) (hgc : HasCompactSupport g) (a : ℝ) (v : WithLp 2 (ℝ × E)) :
     ∫ x in normalHalfSpace (E := E) a, fderiv ℝ g x v =
       -(v.fst * ∫ y : E, g (WithLp.toLp 2 (a, y))) := by
-  have hgd : Differentiable ℝ g := hg.differentiable one_ne_zero
-  have hdc (d : WithLp 2 (ℝ × E)) : Continuous fun x ↦ fderiv ℝ g x d :=
-    (hg.continuous_fderiv one_ne_zero).clm_apply continuous_const
-  have hint (d : WithLp 2 (ℝ × E)) :
-      Integrable (fun z : ℝ × E ↦ fderiv ℝ g (WithLp.toLp 2 z) d)
-        ((volume.restrict (Ioi a)).prod volume) := by
-    have h : Integrable (fun x ↦ fderiv ℝ g x d) volume :=
-      (hdc d).integrable_of_hasCompactSupport (hgc.fderiv_apply (𝕜 := ℝ) d)
-    have hprod :=
-      (WithLp.volume_preserving_toLp ℝ E).integrable_comp h.aestronglyMeasurable |>.mpr h
-    rw [Measure.restrict_prod_eq_prod_univ]
-    exact hprod.integrableOn
   -- Pass to product coordinates.
   have hcoord : ∫ x in normalHalfSpace (E := E) a, fderiv ℝ g x v =
       ∫ z, fderiv ℝ g (WithLp.toLp 2 z) v ∂((volume.restrict (Ioi a)).prod volume) := by
@@ -106,47 +158,10 @@ theorem setIntegral_normalHalfSpace_fderiv_apply {g : WithLp 2 (ℝ × E) → �
       cases v; simp [← WithLp.toLp_smul, ← WithLp.toLp_add]
     conv_lhs => rw [hv]
     rw [map_add, map_smul, smul_eq_mul]
-  -- The normal part: the fundamental theorem of calculus on each normal line.
-  have hnormal : ∫ z, fderiv ℝ g (WithLp.toLp 2 z) (WithLp.toLp 2 (1, (0 : E)))
-      ∂((volume.restrict (Ioi a)).prod volume) = -∫ y : E, g (WithLp.toLp 2 (a, y)) := by
-    rw [integral_prod_symm _ (hint _), ← integral_neg]
-    refine integral_congr_ae (Eventually.of_forall fun y ↦ ?_)
-    dsimp only
-    have he : IsClosedEmbedding (fun t : ℝ ↦ WithLp.toLp 2 (t, y)) :=
-      (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-        (.of_isEmbedding_isClosedMap (isEmbedding_prodMkLeft y)
-          (isClosedMap_prodMk_right y))
-    have hline : ContDiff ℝ 1 (fun t : ℝ ↦ g (WithLp.toLp 2 (t, y))) :=
-      hg.comp (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
-        (contDiff_id.prodMk contDiff_const))
-    rw [← (hgc.comp_isClosedEmbedding he).integral_Ioi_deriv_eq hline a]
-    exact integral_congr_ae (Eventually.of_forall fun t ↦
-      ((hasDerivAt_comp_toLp_fst (hgd _)).deriv).symm)
-  -- The tangential part: on each slice `{t} × E` it integrates to zero.
-  have htangent : ∫ z, fderiv ℝ g (WithLp.toLp 2 z) (WithLp.toLp 2 (0, v.snd))
-      ∂((volume.restrict (Ioi a)).prod volume) = 0 := by
-    rw [integral_prod _ (hint _)]
-    refine (integral_congr_ae (Eventually.of_forall fun t ↦ ?_)).trans (integral_zero _ _)
-    have he : IsClosedEmbedding (fun y : E ↦ WithLp.toLp 2 (t, y)) :=
-      (WithLp.homeomorphProd 2 ℝ E).symm.isClosedEmbedding.comp
-        (.of_isEmbedding_isClosedMap (isEmbedding_prodMkRight t)
-          (isClosedMap_prodMk_left t))
-    have hslice : ContDiff ℝ 1 (fun y : E ↦ g (WithLp.toLp 2 (t, y))) :=
-      hg.comp (((WithLp.prodContinuousLinearEquiv 2 ℝ ℝ E).symm.contDiff).comp
-        (contDiff_const.prodMk contDiff_id))
-    have hsc := hgc.comp_isClosedEmbedding he
-    have hibp := integral_mul_fderiv_eq_neg_fderiv_mul_of_integrable (μ := volume)
-      (f := fun _ : E ↦ (1 : ℝ)) (g := fun y : E ↦ g (WithLp.toLp 2 (t, y))) (v := v.snd)
-      (by simp) (by simpa using ((hslice.continuous_fderiv one_ne_zero).clm_apply
-        continuous_const).integrable_of_hasCompactSupport (hsc.fderiv_apply (𝕜 := ℝ) v.snd))
-      (by simpa using hslice.continuous.integrable_of_hasCompactSupport hsc)
-      (fun _ _ ↦ differentiableAt_const _)
-      (fun y _ ↦ hslice.differentiable one_ne_zero y)
-    simp only [one_mul] at hibp
-    simp only [← fderiv_comp_toLp_snd (hgd _)]
-    simpa using hibp
   rw [hcoord, integral_congr_ae (Eventually.of_forall hsplit),
-    integral_add ((hint _).const_mul _) (hint _), integral_const_mul, hnormal, htangent]
+    integral_add ((integrable_fderiv_apply_prod hg hgc a _).const_mul _)
+      (integrable_fderiv_apply_prod hg hgc a _), integral_const_mul,
+    integral_prod_fderiv_normal hg hgc a, integral_prod_fderiv_tangent hg hgc a]
   ring
 
 /-! ### Integration by parts against the trace -/
