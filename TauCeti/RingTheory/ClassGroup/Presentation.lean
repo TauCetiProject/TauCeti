@@ -93,14 +93,10 @@ theorem presentation_single [DecidableEq ι] (i : ι) (k : ℤ) :
     presentation I (Pi.single i k) = Additive.ofMul (ClassGroup.mk0 (I i) ^ k) := by
   rw [presentation, Fintype.linearCombination_apply_single, ofMul_zpow]
 
-theorem mem_relationLattice_iff_presentation_eq_zero {e : ι → ℤ} :
-    e ∈ relationLattice I ↔ presentation I e = 0 :=
-  LinearMap.mem_ker
-
 /-- An exponent vector `e` is a relation exactly when `∏ i, [I i] ^ e i = 1`. -/
 theorem mem_relationLattice_iff {e : ι → ℤ} :
     e ∈ relationLattice I ↔ ∏ i, ClassGroup.mk0 (I i) ^ e i = 1 := by
-  rw [mem_relationLattice_iff_presentation_eq_zero, ← toMul_eq_one, toMul_presentation_apply]
+  rw [relationLattice, LinearMap.mem_ker, ← toMul_eq_one, toMul_presentation_apply]
 
 /-- A nonnegative exponent vector `e` is a relation exactly when the ideal `∏ i, I i ^ e i` is
 principal. -/
@@ -117,13 +113,13 @@ theorem natCast_mem_relationLattice_iff_isPrincipal {e : ι → ℕ} :
 divides `k`. -/
 theorem single_mem_relationLattice_iff [DecidableEq ι] {i : ι} {k : ℤ} :
     Pi.single i k ∈ relationLattice I ↔ (orderOf (ClassGroup.mk0 (I i)) : ℤ) ∣ k := by
-  rw [mem_relationLattice_iff_presentation_eq_zero, presentation_single, ofMul_eq_zero,
+  rw [relationLattice, LinearMap.mem_ker, presentation_single, ofMul_eq_zero,
     orderOf_dvd_iff_zpow_eq_one]
 
 /-- The `i`-th basis vector is a relation exactly when the ideal `I i` is principal. -/
 theorem single_one_mem_relationLattice_iff [DecidableEq ι] {i : ι} :
     Pi.single i 1 ∈ relationLattice I ↔ (I i : Ideal R).IsPrincipal := by
-  rw [mem_relationLattice_iff_presentation_eq_zero, presentation_single, zpow_one, ofMul_eq_zero,
+  rw [relationLattice, LinearMap.mem_ker, presentation_single, zpow_one, ofMul_eq_zero,
     ← ClassGroup.mk0_eq_one_iff (I i).2]
 
 /-- Every exponent vector is a relation exactly when every ideal `I i` is principal. -/
