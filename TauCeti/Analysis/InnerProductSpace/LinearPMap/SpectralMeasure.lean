@@ -52,6 +52,24 @@ theorem measurable_inverseCayleyCoord : Measurable inverseCayleyCoord := by
 @[simp] theorem inverseCayleyCoord_one : inverseCayleyCoord 1 = 0 := by
   simp [inverseCayleyCoord]
 
+/-- The inverse coordinate recovers a real number from its Cayley transform. -/
+@[simp] theorem inverseCayleyCoord_cayley (t : ℝ) :
+    inverseCayleyCoord (((t : ℂ) - I) / ((t : ℂ) + I)) = t := by
+  have h : (t : ℂ) + I ≠ 0 := by
+    intro heq
+    have := congrArg Complex.im heq
+    simp at this
+  have h' : 1 - ((t : ℂ) - I) / ((t : ℂ) + I) ≠ 0 := by
+    intro heq
+    have := congrArg (fun z : ℂ => z * ((t : ℂ) + I)) heq
+    field_simp at this
+    simp at this
+  have heq : I * (1 + ((t : ℂ) - I) / ((t : ℂ) + I)) /
+      (1 - ((t : ℂ) - I) / ((t : ℂ) + I)) = t := by
+    field_simp
+    ring
+  simp only [inverseCayleyCoord, heq, ofReal_re]
+
 end Complex
 
 namespace IsSelfAdjoint
@@ -61,31 +79,31 @@ variable {A : H →ₗ.[ℂ] H} (hA : IsSelfAdjoint A)
 
 /-- The spectral projection-valued measure of a self-adjoint partial operator, obtained by
 reindexing the spectral measure of its Cayley transform. -/
-def spectralPVM : ProjValMeasure ℝ H :=
+def cayleySpectralPVM : ProjValMeasure ℝ H :=
   (ProjValMeasure.ofRepresentation (cfcHom hA.isStarNormal_cayley)).map
     (Complex.inverseCayleyCoord ∘ Subtype.val)
     (Complex.measurable_inverseCayleyCoord.comp measurable_subtype_coe)
 
 /-- The spectral measure is the pushforward of the Cayley representation measure. -/
-theorem spectralPVM_def :
-    spectralPVM hA =
+theorem cayleySpectralPVM_def :
+    cayleySpectralPVM hA =
       (ProjValMeasure.ofRepresentation (cfcHom hA.isStarNormal_cayley)).map
         (Complex.inverseCayleyCoord ∘ Subtype.val)
         (Complex.measurable_inverseCayleyCoord.comp measurable_subtype_coe) := (rfl)
 
 /-- Its projection of a Borel set is the Cayley spectral projection of the inverse image. -/
-@[simp] theorem spectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
-    (spectralPVM hA).proj B hB =
+theorem cayleySpectralPVM_proj (B : Set ℝ) (hB : MeasurableSet B) :
+    (cayleySpectralPVM hA).proj B hB =
       (ProjValMeasure.ofRepresentation (cfcHom hA.isStarNormal_cayley)).proj
         ((Complex.inverseCayleyCoord ∘ Subtype.val) ⁻¹' B)
         ((Complex.measurable_inverseCayleyCoord.comp measurable_subtype_coe) hB) := by
-  rw [spectralPVM_def, ProjValMeasure.map_proj]
+  rw [cayleySpectralPVM_def, ProjValMeasure.map_proj]
 
 /-- The diagonal scalar measures are the pushforwards of the Cayley representation measures. -/
-@[simp] theorem spectralPVM_diag (ξ : H) :
-    (spectralPVM hA).diag ξ =
+theorem cayleySpectralPVM_diag (ξ : H) :
+    (cayleySpectralPVM hA).diag ξ =
       Measure.map (Complex.inverseCayleyCoord ∘ Subtype.val)
         ((cfcHom hA.isStarNormal_cayley).representationDiagMeasure ξ) := by
-  rw [spectralPVM_def, ProjValMeasure.map_diag, ProjValMeasure.ofRepresentation_diag]
+  rw [cayleySpectralPVM_def, ProjValMeasure.map_diag, ProjValMeasure.ofRepresentation_diag]
 
 end IsSelfAdjoint
