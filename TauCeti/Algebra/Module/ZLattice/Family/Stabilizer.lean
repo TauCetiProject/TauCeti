@@ -433,21 +433,15 @@ equivariant for this action and the affine action on the family
 of `Γ` on the family to that stabilizer. -/
 @[instance_reducible]
 noncomputable def torusFamilyFiberMulAction :
-    MulAction Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) where
-  smul g := AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP (hy g))
-    (torusFamilyFiberTranslationPart P b hb (hy g))
-  one_smul z := torusFamilyFiberMap_injective P y <| by
-    let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
-    have h1 := one_smul Γ (torusFamilyFiberMap P y z)
-    rwa [torusFamilyAffineMulAction_smul R hone hmul P ρ hP b hb hbone hbmul,
-      torusFamilyAffineMap_fiberMap R hone hmul P ρ hP b hb (hy 1)] at h1
-  mul_smul g h z := torusFamilyFiberMap_injective P y <| by
-    let _ := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
-    have hgh := mul_smul g h (torusFamilyFiberMap P y z)
-    simp only [torusFamilyAffineMulAction_smul R hone hmul P ρ hP b hb hbone hbmul] at hgh
-    rwa [torusFamilyAffineMap_fiberMap R hone hmul P ρ hP b hb (hy (g * h)),
-      torusFamilyAffineMap_fiberMap R hone hmul P ρ hP b hb (hy h),
-      torusFamilyAffineMap_fiberMap R hone hmul P ρ hP b hb (hy g)] at hgh
+    MulAction Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :=
+  letI : SMul Γ (AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) :=
+    ⟨fun g ↦ AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP (hy g))
+      (torusFamilyFiberTranslationPart P b hb (hy g))⟩
+  letI := torusFamilyAffineMulAction R hone hmul P ρ hP b hb hbone hbmul
+  (torusFamilyFiberMap_injective P y).mulAction _ fun g z ↦ by
+    rw [torusFamilyAffineMulAction_smul,
+      torusFamilyAffineMap_fiberMap R hone hmul P ρ hP b hb (hy g)]
+    rfl
 
 /-- An element `g` acts on the fibre over a fixed point by the affine automorphism with linear part
 `TauCeti.torusFamilyFiberLinearPart` and translation part
@@ -457,6 +451,15 @@ theorem torusFamilyFiberMulAction_smul (g : Γ)
     letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
     g • z = AddEquiv.affineEquiv (torusFamilyFiberLinearPart R hone hmul P ρ hP (hy g))
       (torusFamilyFiberTranslationPart P b hb (hy g)) z := (rfl)
+
+/-- An element `g` sends the class of `v` in the fibre over a fixed point to the class of
+`R g y v` translated by `TauCeti.torusFamilyFiberTranslationPart`. -/
+@[simp]
+theorem torusFamilyFiberMulAction_smul_mk (g : Γ) (v : E) :
+    letI := torusFamilyFiberMulAction R hone hmul P ρ hP b hb hbone hbmul hy
+    g • (Quotient.mk _ v : AddAction.orbitRel.Quotient (LinearMap.range (P y)) E) =
+      Quotient.mk _ (R g y v) + torusFamilyFiberTranslationPart P b hb (hy g) := by
+  rw [torusFamilyFiberMulAction_smul, AddEquiv.affineEquiv_apply, torusFamilyFiberLinearPart_mk]
 
 /-- **The inclusion of the fibre over a fixed point is equivariant.** -/
 @[simp]
