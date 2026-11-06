@@ -418,34 +418,6 @@ private theorem ae_map_jointCoding_eq [IsFiniteMeasure ρ]
 
 /-! ## The representation -/
 
-omit [StandardBorelSpace α] in
-/-- The vertex pairs of the increasing pairs indexing the visible pairs determine the pair. -/
-private theorem injective_visibleIndex {g : ℕ → ℕ} (hg : StrictMono g)
-    {t t' : {t : ℕ × ℕ // t.1 < t.2}} (h : (g t.1.1, g t.1.2) = (g t'.1.1, g t'.1.2)) : t = t' := by
-  simp only [Prod.mk.injEq] at h
-  exact Subtype.ext (Prod.ext (hg.injective h.1) (hg.injective h.2))
-
-omit [StandardBorelSpace α] in
-/-- The hidden entries of the array, together with the codings of the entries of the off-diagonal
-pairs in `V₂`, depend measurably on the array and the uniform variables. -/
-private theorem measurable_restrict_pairCoding (H V₂ : Set (ℕ × ℕ)) (e : ℕ → ℕ)
-    {G : ((((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α)) × (((ℕ × ℕ → α) × (ℕ → α)) × (ℕ → α))) ×
-      (α × α) → I → α × α} (hG : Measurable (Function.uncurry G)) :
-    Measurable fun q : (ℕ × ℕ → α) × (V₂ → I) =>
-      (H.domRestrict q.1,
-        fun p : V₂ => G (offDiagonalPairSquareContext e p.1.1 p.1.2 q.1) (q.2 p)) :=
-  ((Set.measurable_restrict H).comp measurable_fst).prodMk (Measurable.of_eval fun p =>
-    hG.comp (((measurable_offDiagonalPairSquareContext e p.1.1 p.1.2).comp
-      measurable_fst).prodMk ((measurable_pi_apply p).comp measurable_snd)))
-
-omit [StandardBorelSpace α] in
-/-- The hidden entries of the array, together with the entries of the pairs in `V₂`, depend
-measurably on the array. -/
-private theorem measurable_restrict_pairs (H V₂ : Set (ℕ × ℕ)) :
-    Measurable fun x : ℕ × ℕ → α => (H.domRestrict x, fun p : V₂ => (x p.1, x p.1.swap)) :=
-  (Set.measurable_restrict H).prodMk (Measurable.of_eval fun p =>
-    (measurable_pi_apply p.1).prodMk (measurable_pi_apply p.1.swap))
-
 /-- **The pair layer, read along visible vertices.** Hide the vertices in the range of `e` and read
 the array along the strictly increasing enumeration `g` of visible vertices. One common pair coding
 `G`, fed with the square contexts read off the hidden square and the vertex data, and with one
@@ -484,7 +456,8 @@ private theorem exists_map_pairCoding_visible_eq [Nonempty α] [IsFiniteMeasure 
       (Measurable.of_eval fun k => hdatum (d k))).prodMk (Measurable.of_eval fun i => hdatum (g i))
   -- The visible increasing pairs, as visible off-diagonal pairs of the array.
   set ι : {t : ℕ × ℕ // t.1 < t.2} → V₂ := fun t => ⟨(g t.1.1, g t.1.2), hge _, hge _, hg t.2⟩
-  have hι : Function.Injective ι := fun _ _ h => injective_visibleIndex hg (congrArg Subtype.val h)
+  have hι : Function.Injective ι := fun _ _ h =>
+    Subtype.ext ((hg.injective.prodMap hg.injective) (congrArg Subtype.val h))
   set M : (H → α) × (V₂ → α × α) → _ := fun r => (read r.1, fun t => r.2 (ι t))
   have hM : Measurable M :=
     (hread.comp measurable_fst).prodMk (Measurable.of_eval fun _ =>
