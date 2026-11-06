@@ -184,9 +184,18 @@ theorem qcohPseudofunctor_isPrestackFor_singleton_specMap (hφ : φ.hom.Faithful
   have : B.obj.IsQuasicoherent := B.property
   have hc := (Scheme.Modules.comp_pullback_map_unit_app_eq_iff (Spec.map φ) (A := A.obj)
     (B := B.obj) (ψ.hom PUnit.unit).hom).2 (qcohPseudofunctor_descentData_hom_comm (Spec.map φ) ψ)
+  -- The coalgebra structure of `K.obj M` is `f^*` of the unit (`Comonad.comparison_obj_a`), whose
+  -- underlying morphism is `f^*` of the unit for modules
+  -- (`qcohPseudofunctorMapSpecMapAdjunction_unit_app_hom`).
+  have hu (M : QuasicoherentSheaf (Spec R)) : (K.obj M).a.hom =
+      (Scheme.Modules.pullback (Spec.map φ)).map
+        ((Scheme.Modules.pullbackPushforwardAdjunction (Spec.map φ)).unit.app M.obj) :=
+    congrArg (Scheme.Modules.pullback (Spec.map φ)).map
+      (qcohPseudofunctorMapSpecMapAdjunction_unit_app_hom φ M)
   obtain ⟨h, hh⟩ := K.map_surjective
     { f := ψ.hom PUnit.unit
-      h := ObjectProperty.hom_ext _ hc.symm }
+      h := ObjectProperty.hom_ext _
+        ((congrArg (· ≫ _) (hu A)).trans (hc.symm.trans (congrArg (_ ≫ ·) (hu B).symm))) }
   exact ⟨h, Pseudofunctor.DescentData.hom_ext fun _ ↦ congrArg Comonad.Coalgebra.Hom.f hh⟩
 
 end TauCeti.AlgebraicGeometry.Descent

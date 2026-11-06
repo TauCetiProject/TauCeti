@@ -133,9 +133,7 @@ counit are those of `Scheme.Modules.pullbackPushforwardAdjunction` on underlying
 definition. The functor equals `QuasicoherentSheaf.pullback (Spec.map φ)` only propositionally
 (`qcohPseudofunctor_map_toFunctor`), so `pullbackPushforwardSpecMapAdjunction` does not apply to it
 directly. -/
--- Exposed so that, for consumers, the coalgebra structures of its comparison functor unfold to
--- the units of the adjunction for modules, in which coalgebra conditions are checked.
-@[expose] def qcohPseudofunctorMapSpecMapAdjunction :
+def qcohPseudofunctorMapSpecMapAdjunction :
     (qcohPseudofunctor.map (Spec.map φ).op.toLoc).toFunctor ⊣
       QuasicoherentSheaf.pushforwardSpecMap φ where
   unit :=
