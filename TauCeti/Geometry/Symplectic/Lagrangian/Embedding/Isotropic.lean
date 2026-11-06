@@ -264,9 +264,8 @@ theorem IsIsotropicEmbedding.comp_subtype_val [IsManifold J ∞ N]
     (h : hσ.IsIsotropicEmbedding J f) (U : Opens N) :
     hσ.IsIsotropicEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isIsotropicEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    (hσ.isIsotropicMap_comp_subtype_val_iff U fun x _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)).2 fun x _ ↦
-        isIsotropicMap_iff_forall.1 h.isIsotropicMap x
+    h.isIsotropicMap.comp_subtype_val U fun _ _ ↦
+      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
 
 /-- Restricting a coisotropic embedding to an open subset of its source gives a coisotropic
 embedding. -/
@@ -274,9 +273,8 @@ theorem IsCoisotropicEmbedding.comp_subtype_val [IsManifold J ∞ N]
     (h : hσ.IsCoisotropicEmbedding J f) (U : Opens N) :
     hσ.IsCoisotropicEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isCoisotropicEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    (hσ.isCoisotropicMap_comp_subtype_val_iff U fun x _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)).2 fun x _ ↦
-        isCoisotropicMap_iff.1 h.isCoisotropicMap x
+    h.isCoisotropicMap.comp_subtype_val U fun _ _ ↦
+      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
 
 variable {U : Opens M} {g : N → U}
 

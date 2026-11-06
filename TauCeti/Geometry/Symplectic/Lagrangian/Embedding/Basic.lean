@@ -165,9 +165,8 @@ theorem IsLagrangianEmbedding.comp_subtype_val [IsManifold J ∞ N]
     (h : hσ.IsLagrangianEmbedding J f) (U : Opens N) :
     hσ.IsLagrangianEmbedding J (f ∘ (Subtype.val : U → N)) :=
   (isLagrangianEmbedding_iff_of_isSmoothEmbedding (h.isSmoothEmbedding.comp_subtypeVal U)).2 <|
-    (hσ.isLagrangianMap_comp_subtype_val_iff U fun x _ ↦
-      h.isImmersion.contMDiff.mdifferentiableAt (by simp)).2 fun x _ ↦
-        isLagrangianMap_iff_forall.1 h.isLagrangianMap x
+    h.isLagrangianMap.comp_subtype_val U fun _ _ ↦
+      h.isImmersion.contMDiff.mdifferentiableAt (by simp)
 
 /-- A map into an open submanifold is a Lagrangian embedding for the restricted form exactly when
 its composition with the inclusion is a Lagrangian embedding. -/

@@ -142,6 +142,34 @@ theorem hasSymplecticTangentImages_iff_of_isOpenCover (hf : MDifferentiable J I 
     obtain ⟨i, hi⟩ := hU.exists_mem x
     exact h i x hi
 
+variable {hσ}
+
+/-- Restricting an isotropic map to an open subset of its source gives an isotropic map. -/
+theorem IsIsotropicMap.comp_subtype_val (h : hσ.IsIsotropicMap J f) (U : Opens N)
+    (hf : ∀ x ∈ U, MDifferentiableAt J I f x) :
+    hσ.IsIsotropicMap J (f ∘ (Subtype.val : U → N)) :=
+  (hσ.isIsotropicMap_comp_subtype_val_iff U hf).2 fun x _ ↦ isIsotropicMap_iff_forall.1 h x
+
+/-- Restricting a coisotropic map to an open subset of its source gives a coisotropic map. -/
+theorem IsCoisotropicMap.comp_subtype_val (h : hσ.IsCoisotropicMap J f) (U : Opens N)
+    (hf : ∀ x ∈ U, MDifferentiableAt J I f x) :
+    hσ.IsCoisotropicMap J (f ∘ (Subtype.val : U → N)) :=
+  (hσ.isCoisotropicMap_comp_subtype_val_iff U hf).2 fun x _ ↦ isCoisotropicMap_iff.1 h x
+
+/-- Restricting a Lagrangian map to an open subset of its source gives a Lagrangian map. -/
+theorem IsLagrangianMap.comp_subtype_val (h : hσ.IsLagrangianMap J f) (U : Opens N)
+    (hf : ∀ x ∈ U, MDifferentiableAt J I f x) :
+    hσ.IsLagrangianMap J (f ∘ (Subtype.val : U → N)) :=
+  (hσ.isLagrangianMap_comp_subtype_val_iff U hf).2 fun x _ ↦ isLagrangianMap_iff_forall.1 h x
+
+/-- Restricting a map with symplectic tangent images to an open subset of its source keeps its
+tangent images symplectic. -/
+theorem HasSymplecticTangentImages.comp_subtype_val (h : hσ.HasSymplecticTangentImages J f)
+    (U : Opens N) (hf : ∀ x ∈ U, MDifferentiableAt J I f x) :
+    hσ.HasSymplecticTangentImages J (f ∘ (Subtype.val : U → N)) :=
+  (hσ.hasSymplecticTangentImages_comp_subtype_val_iff U hf).2 fun x _ ↦
+    hasSymplecticTangentImages_iff_forall.1 h x
+
 end Source
 
 section Target
