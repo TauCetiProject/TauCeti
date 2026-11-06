@@ -144,12 +144,10 @@ theorem abs_inner_ιMulti_apply_le (hJ : ∀ v w, ⟪J v, J w⟫ = ⟪v, w⟫)
     rw [← pow_left_inj₀ (norm_nonneg _) (by positivity) two_ne_zero,
       norm_twoVectorContraction_apply_sq o hkl hη, mul_pow, div_pow,
       Real.sq_sqrt zero_le_two]
-  have hJv : ‖J v‖ = ‖v‖ := by
-    rw [norm_eq_sqrt_real_inner, hJ, ← norm_eq_sqrt_real_inner]
   rw [← inner_twoVectorContraction_apply]
   calc |⟪twoVectorContraction η v, J v⟫|
       ≤ ‖twoVectorContraction η v‖ * ‖J v‖ := abs_real_inner_le_norm _ _
-    _ = ‖η‖ / √2 * ‖v‖ ^ 2 := by rw [hA, hJv]; ring
+    _ = ‖η‖ / √2 * ‖v‖ ^ 2 := by rw [hA, norm_apply hJ]; ring
 
 variable {e : OrthonormalBasis (Fin 4) ℝ V} (h₀ : J (e 0) = e 1) (h₂ : J (e 2) = e 3)
   (he : e.toBasis.orientation = o)
