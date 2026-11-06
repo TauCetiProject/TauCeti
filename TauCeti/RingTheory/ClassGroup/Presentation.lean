@@ -7,7 +7,6 @@ module
 
 public import Mathlib.Algebra.Group.Subgroup.Finsupp
 public import Mathlib.GroupTheory.Index
-public import Mathlib.LinearAlgebra.Isomorphisms
 public import Mathlib.RingTheory.ClassGroup.Basic
 
 /-!
@@ -33,8 +32,11 @@ ideal classes.
   class group, written additively.
 * `ClassGroup.relationLattice I`: its kernel, the lattice of relations between the classes
   `[I i]`.
-* `ClassGroup.quotRelationLatticeEquiv`: if the presentation map is surjective, the
-  isomorphism `(ι → ℤ) ⧸ relationLattice I ≃ₗ[ℤ] Additive (ClassGroup R)`.
+
+If the presentation map is surjective, the isomorphism
+`(ι → ℤ) ⧸ relationLattice I ≃ₗ[ℤ] Additive (ClassGroup R)` is Mathlib's
+`(presentation I).quotKerEquivOfSurjective hI`, which evaluates on classes by
+`LinearMap.quotKerEquivOfSurjective_apply_mk`.
 
 ## Main results
 
@@ -151,17 +153,6 @@ theorem presentation_surjective_iff :
     exact ⟨e, by rw [← toMul_presentation_apply, he, toMul_ofMul]⟩
   · obtain ⟨e, he⟩ := h c.toMul
     exact ⟨e, by rw [presentation_apply, ← he, ofMul_toMul]⟩
-
-/-- If the classes `[I i]` generate the class group, the presentation map induces an isomorphism
-from `(ι → ℤ) ⧸ relationLattice I` onto the class group, written additively. -/
-noncomputable def quotRelationLatticeEquiv (hI : Function.Surjective (presentation I)) :
-    ((ι → ℤ) ⧸ relationLattice I) ≃ₗ[ℤ] Additive (ClassGroup R) :=
-  (presentation I).quotKerEquivOfSurjective hI
-
-@[simp]
-theorem quotRelationLatticeEquiv_mk (hI : Function.Surjective (presentation I)) (e : ι → ℤ) :
-    quotRelationLatticeEquiv hI (Submodule.Quotient.mk e) = presentation I e :=
-  (presentation I).quotKerEquivOfSurjective_apply_mk hI e
 
 /-- If the classes `[I i]` generate the class group, the relation lattice has index the order of
 the class group. -/
