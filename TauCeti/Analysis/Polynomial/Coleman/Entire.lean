@@ -22,6 +22,12 @@ The transform is entire, normalized, and uniquely characterized by coefficient c
 The cases `B = 0`, `B = X`, and `F = 1` are included. The zero constant term of `B` is essential:
 otherwise padding finite ranks introduces extra factors from zero eigenvalues.
 
+For a polynomial `B` the transform is the polynomial-input transform
+`Polynomial.colemanDSeries B F` (`PowerSeries.colemanDEntire_coe`), and for an entire `B` the
+polynomial-input transforms of the truncations of `B` converge coefficientwise to it
+(`PowerSeries.tendsto_coeff_colemanDSeries_trunc`). These two facts pass spectral mapping from
+polynomial to entire functions of an operator.
+
 The transform is multiplicative in the functional input, `D(B, F G) = D(B, F) D(B, G)`
 (`PowerSeries.colemanDEntire_mul`). At finite level, the product of the transforms of the
 truncations of `F` and `G` at order `N + 1` is the transform of the product of those truncations,
@@ -75,6 +81,22 @@ theorem tendsto_coeff_colemanDBounded_trunc (hB : B.IsEntire) (hF : F.IsEntire)
   rw [coeff_colemanDEntire]
   exact (cauchySeq_coeff_colemanDBounded_trunc (fun i ↦ (hρ₀ i).le) hρ hbound hF₀
     (fun i ↦ hB.isRestricted _) hB₀ k).tendsto_limUnder
+
+/-- The polynomial-input transforms `Polynomial.colemanDSeries` of the truncations of `B`
+converge coefficientwise to the entire Coleman transform. -/
+theorem tendsto_coeff_colemanDSeries_trunc (hB : B.IsEntire) (hF : F.IsEntire)
+    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) (k : ℕ) :
+    Tendsto (fun m ↦ coeff k ((trunc (m + 1) B).colemanDSeries F)) atTop
+      (𝓝 (coeff k (colemanDEntire B F))) := by
+  -- the `k`-th coefficient of the transform of `trunc (m + 1) B` is that of a finite transform
+  -- at any rank `N ≥ k m`; take `N = k m + m`, which also tends to infinity when `k = 0`
+  have hpair : Tendsto (fun m : ℕ ↦ (k * m + m, m)) atTop atTop := by
+    rw [← prod_atTop_atTop_eq]
+    exact (tendsto_atTop_mono (fun m ↦ Nat.le_add_left m _) tendsto_id).prodMk tendsto_id
+  refine ((tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k).comp hpair).congr fun m ↦ ?_
+  exact (Polynomial.coeff_colemanDSeries_of_natDegree_le (by simp [coeff_trunc, hB₀])
+    (by rwa [← coeff_zero_eq_constantCoeff_apply]) (Nat.lt_succ_iff.1 (natDegree_trunc_lt B m))
+    (Nat.le_add_right _ _)).symm
 
 /-- A nonnegative antitone product majorant of `F` bounds the coefficients of the transform by
 products of the Coleman majorants of `B`. -/
@@ -196,6 +218,20 @@ theorem colemanDEntire_X_left (hF₀ : coeff 0 F = 1) :
     Polynomial.natDegree_X,
     Polynomial.colemanDBounded_X_left (Nat.lt_succ_iff.mp (natDegree_trunc_lt _ _))]
   simp [coeff_trunc, Nat.lt_succ_of_le hp.1]
+
+/-- For a polynomial functional input `B` with `B(0) = 0`, the entire Coleman transform is the
+polynomial-input transform `Polynomial.colemanDSeries B F`. Neither series need be entire. -/
+@[simp]
+theorem colemanDEntire_coe {B : R[X]} (hB₀ : B.coeff 0 = 0) (hF₀ : coeff 0 F = 1) :
+    colemanDEntire (B : R⟦X⟧) F = B.colemanDSeries F := by
+  refine colemanDEntire_eq_of_tendsto_coeff fun k ↦ tendsto_const_nhds.congr' ?_
+  -- once the truncation of `B` is `B` itself and the rank is at least `k deg B`, the finite
+  -- transforms have the `k`-th coefficient of the polynomial-input transform
+  filter_upwards [eventually_ge_atTop (k * B.natDegree, B.natDegree)] with p hp
+  have hF₀' : (trunc (p.1 + 1) F).coeff 0 = 1 := by simp [coeff_trunc, hF₀]
+  rw [trunc_coe_eq_self (Nat.lt_succ_of_le hp.2),
+    Polynomial.colemanDBounded_of_natDegree_le hp.2 hF₀',
+    Polynomial.coeff_colemanDSeries hB₀ hp.1]
 
 section Mul
 
