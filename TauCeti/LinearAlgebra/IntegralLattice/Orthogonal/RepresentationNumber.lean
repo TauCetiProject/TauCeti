@@ -26,8 +26,8 @@ universe u v
 variable {ι : Type v} [Fintype ι] {V : ι → Type u} [∀ i, AddCommGroup (V i)]
   [∀ i, Module ℚ (V i)] (L : ∀ i, IntegralLattice (V i))
 
-/-- At a common positive lower bound for nonzero norms, every vector of an orthogonal sum
-is supported in one summand. -/
+/-- If every nonzero vector of every summand has norm at least `r > 0`, then every vector
+of norm `r` in the orthogonal sum lies in a single summand, where it has norm `r`. -/
 theorem exists_eq_single_of_norm_pi_eq [DecidableEq ι] {r : ℚ} (hr : 0 < r)
     (hmin : ∀ i (x : L i), x ≠ 0 → r ≤ (L i).norm x)
     (x : pi L) (hx : (pi L).norm x = r) :

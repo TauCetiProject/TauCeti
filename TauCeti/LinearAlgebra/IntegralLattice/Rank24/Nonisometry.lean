@@ -36,20 +36,18 @@ open IntegralLattice
 
 /-- The number of roots in the component root lattice is the displayed root count. -/
 @[simp]
-theorem representationNumber_two_rootLattice (r : RootfulNiemeierType) :
+theorem representationNumber_rootLattice_two (r : RootfulNiemeierType) :
     r.rootLattice.representationNumber 2 = r.rootCount := by
   have hmin (i : Fin r.components.length) (x : (r.componentType i).rootLattice
       (r.isSimplyLaced_componentType i)) (hx : x ≠ 0) :
       2 ≤ ((r.componentType i).rootLattice (r.isSimplyLaced_componentType i)).norm x := by
-    have hp := ((r.componentType i).isPosDef_rootLattice
-      (r.isSimplyLaced_componentType i)).posDef_integralNorm x hx
-    obtain ⟨k, hk⟩ := ((r.componentType i).rootLattice _).even_integralNorm_iff x |>.mpr
-      (((r.componentType i).isEven_rootLattice
-        (r.isSimplyLaced_componentType i)).exists_norm_eq_two_mul x)
-    have htwo : 2 ≤ ((r.componentType i).rootLattice
-        (r.isSimplyLaced_componentType i)).integralNorm x := by omega
+    have := nontrivial_of_ne x 0 hx
+    have hP := (r.componentType i).isPosDef_rootLattice (r.isSimplyLaced_componentType i)
+    have hE := (r.componentType i).isEven_rootLattice (r.isSimplyLaced_componentType i)
     rw [← IntegralLattice.integralNorm_cast _ x]
-    exact_mod_cast htwo
+    exact_mod_cast (show (2 : ℤ) ≤ _ from
+      (Nat.cast_le.mpr (hP.two_le_minimum hE)).trans
+        (hP.isPosSemidef.minimum_le_integralNorm hx))
   rw [representationNumber_pi_of_le_norm _ (by norm_num) hmin
     (fun i ↦ ((r.componentType i).isPosDef_rootLattice
       (r.isSimplyLaced_componentType i)).finite_vectorsOfNorm 2)]
@@ -58,13 +56,13 @@ theorem representationNumber_two_rootLattice (r : RootfulNiemeierType) :
 
 /-- The actual glued lattice has exactly the displayed number of roots. -/
 @[simp]
-theorem representationNumber_two_lattice (r : RootfulNiemeierType) :
+theorem representationNumber_lattice_two (r : RootfulNiemeierType) :
     r.lattice.representationNumber 2 = r.rootCount := by
   rw [representationNumber_def, ← Set.ncard_image_of_injective _ Subtype.val_injective,
     r.image_vectorsOfNorm_two_lattice,
     Set.ncard_image_of_injective _ Subtype.val_injective]
   rw [← representationNumber_def]
-  exact r.representationNumber_two_rootLattice
+  exact r.representationNumber_rootLattice_two
 
 /-- The index of the integral span of the roots is the displayed glue order. -/
 @[simp]
@@ -115,7 +113,7 @@ theorem not_nonempty_isometry_lattice_leechLattice (r : RootfulNiemeierType) :
     ¬ Nonempty (Isometry r.lattice leechLattice) := by
   rintro ⟨e⟩
   have h := e.representationNumber_eq 2
-  rw [representationNumber_two_lattice, representationNumber_def,
+  rw [representationNumber_lattice_two, representationNumber_def,
     vectorsOfNorm_two_leechLattice, Set.ncard_empty] at h
   have hpos : 0 < r.rootCount := by cases r <;> decide
   omega
