@@ -187,11 +187,17 @@ theorem exists_measurable_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWi
       simp [h0]
     · rw [ENNReal.mul_top hC]
       exact le_top
-/-- **Eilenberg's inequality**: for `f` `K`-Lipschitz on `A` with values in an `m`-dimensional
-real normed space with additive Haar measure `μ`, and `t ≥ 0`,
+
+/-- **Eilenberg's inequality**, integral form: for `f` `K`-Lipschitz on `A` with values in an
+`m`-dimensional real normed space with additive Haar measure `μ`, and `t ≥ 0`,
 `∫⁻ y, μH[t] (A ∩ f ⁻¹' {y}) ∂μ ≤ μ (ball 0 1) * K ^ m * μH[m + t] A`.
-See `LipschitzOnWith.exists_measurable_hausdorffMeasure_inter_preimage_le` for the stronger
-upper-integral form, which does not require measurability of the integrand. -/
+
+The fiber-measure function `y ↦ μH[t] (A ∩ f ⁻¹' {y})` need not be measurable, and for a
+non-measurable integrand `∫⁻` is the *lower* Lebesgue integral (the supremum of the integrals of
+the measurable functions below it). So this bounds the lower integral of the fiber measures. The
+upper-integral form is `LipschitzOnWith.exists_measurable_hausdorffMeasure_inter_preimage_le`: a
+measurable `G` dominating the fiber measures with
+`∫⁻ y, G y ∂μ ≤ μ (ball 0 1) * K ^ m * μH[m + t] A`. -/
 theorem lintegral_hausdorffMeasure_inter_preimage_le (hf : LipschitzOnWith K f A) (ht : 0 ≤ t) :
     ∫⁻ y, μH[t] (A ∩ f ⁻¹' {y}) ∂μ ≤
       μ (ball 0 1) * K ^ finrank ℝ Y * μH[finrank ℝ Y + t] A := by
