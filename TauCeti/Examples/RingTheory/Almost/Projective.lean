@@ -81,7 +81,7 @@ example : S.IsAlmostFiniteProjective (V ⧸ S.ideal) :=
 example : ¬ (classical ℤ).IsAlmostFiniteProjective (ZMod 2) := by
   rw [isAlmostFiniteProjective_classical_iff]
   rintro ⟨_, _⟩
-  have h₂ : IsSMulRegular ℤ (2 : ℤ) := fun a b (h : 2 • a = 2 • b) ↦ by simp at h; omega
+  have h₂ : IsSMulRegular ℤ (2 : ℤ) := .of_ne_zero two_ne_zero
   exact one_ne_zero (h₂.of_flat (S := ZMod 2) (a₁ := 1) (a₂ := 0) (by decide))
 
 /-! ### Infinite free modules -/

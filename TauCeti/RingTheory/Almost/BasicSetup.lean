@@ -12,6 +12,7 @@ public import Mathlib.LinearAlgebra.LinearDisjoint
 public import Mathlib.LinearAlgebra.TensorProduct.Submodule
 public import Mathlib.RingTheory.Flat.Basic
 public import Mathlib.RingTheory.Localization.Away.Basic
+public import TauCeti.LinearAlgebra.Isomorphisms
 public import TauCeti.RingTheory.Ideal.TensorProduct
 
 /-!
@@ -454,31 +455,16 @@ theorem IsAlmostIso.lTensor_bijective {f : M →ₗ[V] N} (hf : S.IsAlmostIso f)
 
 variable {S} in
 /-- An almost isomorphism is invertible up to every element of `m`: for `δ ∈ m` there is a
-linear map `g` in the opposite direction with `f ∘ g = δ • id` and `g ∘ f = δ • id`. For a
-product `δ = b * c`, `g` sends `y` to `c • x` for any `x` with `f x = b • y`. -/
+linear map `g` in the opposite direction with `f ∘ g = δ • id` and `g ∘ f = δ • id`. -/
 theorem IsAlmostIso.exists_comp_eq_smul_id {f : M →ₗ[V] N} (hf : S.IsAlmostIso f) {δ : V}
     (hδ : δ ∈ S.ideal) :
     ∃ g : N →ₗ[V] M, f ∘ₗ g = δ • LinearMap.id ∧ g ∘ₗ f = δ • LinearMap.id := by
   obtain ⟨hker, hcoker⟩ := isAlmostIso_iff.mp hf
   rw [← S.isIdempotentElem.eq] at hδ
   refine Submodule.mul_induction_on hδ (fun b hb c hc ↦ ?_) fun x y hx hy ↦ ?_
-  · have hb' (y : N) : (b • LinearMap.id : N →ₗ[V] N) y ∈ LinearMap.range f :=
-      (Module.isTorsionBySet_quotient_iff _ _).mp hcoker y b hb
-    have hc' : LinearMap.ker f ≤ LinearMap.ker (c • LinearMap.id : M →ₗ[V] M) := fun x hx ↦
-      congrArg Subtype.val (hker.smul_eq_zero hc ⟨x, hx⟩)
-    let g := (LinearMap.ker f).liftQ _ hc' ∘ₗ f.quotKerEquivRange.symm.toLinearMap ∘ₗ
-      LinearMap.codRestrict _ _ hb'
-    -- `g` sends `y` to `c • x` whenever `f x = b • y`.
-    have hg {x : M} {y : N} (h : f x = b • y) : g y = c • x := by
-      have : f.quotKerEquivRange.symm (LinearMap.codRestrict _ _ hb' y) =
-          (LinearMap.ker f).mkQ x :=
-        (LinearEquiv.symm_apply_eq _).mpr (Subtype.ext (by simp [h]))
-      simp [g, this]
-    refine ⟨g, LinearMap.ext fun y ↦ ?_, LinearMap.ext fun x ↦ ?_⟩
-    · obtain ⟨x, hx⟩ := hb' y
-      rw [LinearMap.smul_apply, LinearMap.id_apply] at hx
-      simp [hg hx, hx, smul_smul, mul_comm]
-    · simp [hg (map_smul f b x), smul_smul, mul_comm]
+  · obtain ⟨g, hfg, hgf⟩ := f.exists_comp_eq_lsmul_of_mem_annihilator
+      (isAlmostZero_iff_le_annihilator.mp hker hc) (isAlmostZero_iff_le_annihilator.mp hcoker hb)
+    exact ⟨g, by rw [hfg]; ext; simp, by rw [hgf]; ext; simp⟩
   · obtain ⟨g₁, hg₁, hg₁'⟩ := hx
     obtain ⟨g₂, hg₂, hg₂'⟩ := hy
     exact ⟨g₁ + g₂, by rw [LinearMap.comp_add, hg₁, hg₂, add_smul],
