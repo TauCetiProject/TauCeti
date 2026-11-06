@@ -56,6 +56,10 @@ An exponential upper bound on a nonnegative base passes to its nonnegative real 
 `0 ≤ A ≤ e^{-t}` and `0 ≤ c`, then `A ^ c ≤ e^{-c t}`. This is how a bound `|q| ≤ e^{-t}` on a
 nome is turned into bounds on the fractional powers `|q| ^ c` in a product estimate.
 
+For nonnegative `a`, `C`, `I` and `q > 0`, a bound `a ≤ C * I ^ (1 / q)` is equivalent to its
+`q`-th power `a ^ q ≤ C ^ q * I`. This is how a domination estimate by an `L^q` norm is compared
+with the corresponding integral of `q`-th powers.
+
 ## Main results
 
 * `Real.inv_sqrt_eq_rpow`: `(√x)⁻¹ = x ^ (-2⁻¹)` for every real `x`.
@@ -76,6 +80,8 @@ nome is turned into bounds on the fractional powers `|q| ^ c` in a product estim
 * `TauCeti.exp_neg_mul_abs_isLittleO_abs_rpow_cocompact`: a positive-rate exponential beats every
   real power at both ends of the real line.
 * `Real.rpow_le_exp_neg_mul`: `A ^ c ≤ e^{-c t}` when `0 ≤ A ≤ e^{-t}` and `0 ≤ c`.
+* `Real.le_mul_rpow_one_div_iff`: `a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I` for nonnegative
+  `a`, `C`, `I` and `0 < q`.
 * `Function.HasFiniteSupport.hasFiniteMulSupport_fun_rpow`: real powers with finitely supported
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
@@ -182,6 +188,12 @@ theorem rpow_le_exp_neg_mul {A t c : ℝ} (hA : 0 ≤ A) (hAt : A ≤ exp (-t)) 
   refine (rpow_le_rpow hA hAt hc).trans_eq ?_
   rw [← exp_mul]
   ring_nf
+
+/-- For `a, C, I ≥ 0` and `q > 0`, `a ≤ C * I ^ (1 / q)` if and only if `a ^ q ≤ C ^ q * I`. -/
+theorem le_mul_rpow_one_div_iff {a C I q : ℝ} (ha : 0 ≤ a) (hC : 0 ≤ C) (hI : 0 ≤ I)
+    (hq : 0 < q) : a ≤ C * I ^ (1 / q) ↔ a ^ q ≤ C ^ q * I := by
+  rw [← rpow_le_rpow_iff ha (by positivity) hq, mul_rpow hC (by positivity), one_div,
+    rpow_inv_rpow hI hq.ne']
 
 end Real
 
