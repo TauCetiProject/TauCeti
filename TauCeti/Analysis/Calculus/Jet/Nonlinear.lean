@@ -162,7 +162,7 @@ theorem firstJetCoordChange_snd_bijective (h : E' → E) (g : E' × F → G) (x 
 
 /-- For fibre-linear changes, the nonlinear formula agrees with the linear
 first-jet transformation. -/
-theorem firstJetCoordChange_clm {h : E' → E} {g : E' → F →L[𝕜] G} {x : E'}
+theorem firstJetCoordChange_eq_firstJetPullback {h : E' → E} {g : E' → F →L[𝕜] G} {x : E'}
     (j : F × (E →L[𝕜] F)) (hg : DifferentiableAt 𝕜 g x) :
     firstJetCoordChange h (fun p : E' × F ↦ g p.1 p.2) x j =
       (g x).firstJetPullback (fderiv 𝕜 g x) (fderiv 𝕜 h x) j := by
