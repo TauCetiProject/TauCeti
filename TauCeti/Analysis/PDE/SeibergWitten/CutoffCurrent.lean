@@ -47,9 +47,10 @@ where `χ` is a cutoff function vanishing near `0` and equal to `1` above a thre
 * `Θ` and `χ(s) τ` are invariant under gauge transformations
   `(b, α) ↦ (b - Im (u⁻¹ du), u α)` by unit-modulus functions `u`, which is how they are defined
   on a nontrivial line from local trivializations (`cutoffCurrent_sub_phaseForm_mul`);
-* `Θ` and `χ(s) τ` are natural under pullback: for a `C²` map `f`, the cutoff current of the
-  pair `(f^* b, α ∘ f)` is `f^* Θ` (`cutoffCurrent_comp`), so the integral of `Θ` over a smooth
-  disc is the flux of the cutoff current of the pulled-back pair through a disc in the plane;
+* `Θ` and `χ(s) τ` are natural under pullback: for a map `f` that is `C²` at a point, the cutoff
+  current of the pair `(f^* b, α ∘ f)` there is `f^* Θ` (`cutoffCurrent_comp`), so the integral
+  of `Θ` over a smooth disc is the flux of the cutoff current of the pulled-back pair through a
+  disc in the plane;
 * on a disc in the plane on whose boundary circle `χ(s) = 1`, the integral of `Θ` is the winding
   integral `∮ Im (α⁻¹ dα)` of `α`, with no contribution from `b`
   (`integral_cutoffCurrent_closedBall`). The flux of `i F_a` instead retains the boundary term
@@ -306,20 +307,25 @@ theorem cutoffPhaseForm_comp {y : F} (hα : DifferentiableAt ℝ α (f y))
   ext v
   simp [phaseForm_comp hα hf]
 
-/-- **Naturality of the cutoff current.** For a `C²` map `f`, the cutoff current of the
-pulled-back pair `(f^* b, α ∘ f)` is the pullback by `f` of the cutoff current of `(b, α)`. -/
-theorem cutoffCurrent_comp (hα : ContDiff ℝ 2 α) (hb : ContDiff ℝ 1 b) (hχ : ContDiff ℝ 1 χ)
-    (hχ₀ : χ =ᶠ[𝓝 0] 0) (hf : ContDiff ℝ 2 f) (y : F) :
+/-- **Naturality of the cutoff current.** For a map `f` that is `C²` at `y`, the cutoff current of
+the pulled-back pair `(f^* b, α ∘ f)` at `y` is the pullback by `f` of the cutoff current of
+`(b, α)` at `f y`. -/
+theorem cutoffCurrent_comp {y : F} (hα : ContDiffAt ℝ 2 α (f y)) (hb : ContDiffAt ℝ 1 b (f y))
+    (hχ : ContDiff ℝ 1 χ) (hχ₀ : χ =ᶠ[𝓝 0] 0) (hf : ContDiffAt ℝ 2 f y) :
     cutoffCurrent χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z)) (α ∘ f) y =
       (cutoffCurrent χ b α (f y)).compContinuousLinearMap (fderiv ℝ f y) := by
-  have hτ : ContDiff ℝ 1 (cutoffPhaseForm χ b α) := contDiff_cutoffPhaseForm hα hb hχ hχ₀
+  have hτ : ContDiffAt ℝ 1 (cutoffPhaseForm χ b α) (f y) :=
+    contDiffAt_cutoffPhaseForm hα hb hχ hχ₀
   have hpull : cutoffPhaseForm χ (fun z ↦ (b (f z)).compContinuousLinearMap (fderiv ℝ f z))
-      (α ∘ f) = fun z ↦ (cutoffPhaseForm χ b α (f z)).compContinuousLinearMap (fderiv ℝ f z) :=
-    funext fun z ↦ cutoffPhaseForm_comp (hα.differentiable two_ne_zero _)
-      (hf.differentiable two_ne_zero z)
-  rw [cutoffCurrent_apply, hpull,
-    extDeriv_pullback (hτ.differentiable one_ne_zero _) hf.contDiffAt (by simp),
-    extDeriv_pullback (hb.differentiable one_ne_zero _) hf.contDiffAt (by simp),
+      (α ∘ f) =ᶠ[𝓝 y]
+        fun z ↦ (cutoffPhaseForm χ b α (f z)).compContinuousLinearMap (fderiv ℝ f z) := by
+    filter_upwards [hf.continuousAt.eventually (hα.eventually (by simp)), hf.eventually (by simp)]
+      with z hαz hfz
+    exact cutoffPhaseForm_comp (hαz.differentiableAt two_ne_zero)
+      (hfz.differentiableAt two_ne_zero)
+  rw [cutoffCurrent_apply, hpull.extDeriv_eq,
+    extDeriv_pullback (hτ.differentiableAt one_ne_zero) hf (by simp),
+    extDeriv_pullback (hb.differentiableAt one_ne_zero) hf (by simp),
     cutoffCurrent_apply]
   ext v
   simp

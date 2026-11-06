@@ -136,7 +136,7 @@ theorem exists_int_integral_cutoffCurrent_comp_closedBall {E : Type*} [NormedAdd
           2 * π * n := by
   have hpull : ContDiff ℝ 1 fun z ↦ (b (σ z)).compContinuousLinearMap (fderiv ℝ σ z) :=
     contDiff_iff_contDiffAt.2 fun z ↦ hσ.contDiffAt.differentialForm_pullback hb.contDiffAt
-  simp_rw [← cutoffCurrent_comp hα hb hχ hχ₀ hσ]
+  simp_rw [← fun z ↦ cutoffCurrent_comp (y := z) hα.contDiffAt hb.contDiffAt hχ hχ₀ hσ.contDiffAt]
   exact exists_int_integral_cutoffCurrent_closedBall hr (hα.comp hσ) hpull hχ hχ₀ hbd
 
 /-- **The charge of a disc in the vacuum vanishes.** If `χ = 1` near `|α|²` at every point of `σ`
@@ -144,13 +144,14 @@ of a closed disc, then the integral over the disc of the pullback by `σ` of the
 is zero. -/
 theorem integral_cutoffCurrent_comp_closedBall_eq_zero {E : Type*} [NormedAddCommGroup E]
     [NormedSpace ℝ E] {α : E → ℂ} {b : E → E [⋀^Fin 1]→L[ℝ] ℝ} {σ : ℂ → E} {z₀ : ℂ} {r : ℝ}
-    (hα : ContDiff ℝ 2 α) (hb : Differentiable ℝ b) (hχ₀ : χ =ᶠ[𝓝 0] 0)
+    (hα : ∀ z ∈ Metric.closedBall z₀ r, ContDiffAt ℝ 2 α (σ z))
+    (hb : ∀ z ∈ Metric.closedBall z₀ r, DifferentiableAt ℝ b (σ z)) (hχ₀ : χ =ᶠ[𝓝 0] 0)
     (hvac : ∀ z ∈ Metric.closedBall z₀ r, χ =ᶠ[𝓝 (normSq (α (σ z)))] 1) :
     ∫ z in Metric.closedBall z₀ r,
       (cutoffCurrent χ b α (σ z)).compContinuousLinearMap (fderiv ℝ σ z) ![1, I] = 0 := by
   refine setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ ?_
-  rw [cutoffCurrent_eq_zero hα.contDiffAt
-    (ne_zero_of_cutoff_eq_one hχ₀ (hvac z hz).eq_of_nhds) (hb _) (hvac z hz)]
+  rw [cutoffCurrent_eq_zero (hα z hz)
+    (ne_zero_of_cutoff_eq_one hχ₀ (hvac z hz).eq_of_nhds) (hb z hz) (hvac z hz)]
   simp
 
 end TauCeti.SeibergWitten
