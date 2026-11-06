@@ -676,15 +676,12 @@ theorem fromStrictMonoCechComplex_app_f_π (P : Cᵒᵖ ⥤ A) (n : ℕ) {b : Fi
   (fromStrictMonoCechX_π U P n b).trans (by simp only [hb, ↓reduceDIte])
 
 /-- The factor of the alternating extension at a tuple with a repeated entry vanishes. -/
-@[reassoc]
+@[simp, reassoc]
 theorem fromStrictMonoCechComplex_app_f_π_of_not_injective (P : Cᵒᵖ ⥤ A) (n : ℕ)
     {b : Fin (n + 1) → ι} (hb : ¬Function.Injective b) :
-    ((fromStrictMonoCechComplex U).app P).f n ≫ Pi.π _ b = 0 :=
-  (fromStrictMonoCechX_π U P n b).trans <| by
-    simp only [hb, ↓reduceDIte]
-    -- both sides are the zero morphism, with target written through `cechX` and through the
-    -- Čech nerve
-    rfl
+    ((fromStrictMonoCechComplex U).app P).f n ≫
+      Pi.π (fun a : Fin (n + 1) → ι ↦ P.obj (op (∏ᶜ fun j ↦ U (a j)))) b = 0 :=
+  (fromStrictMonoCechX_π U P n b).trans <| by simp only [hb, ↓reduceDIte]
 
 /-- The alternating extension is a right inverse of the restriction to strictly increasing
 tuples. -/
