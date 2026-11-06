@@ -57,7 +57,7 @@ theorem exists_isInjectiveEnvelope_finiteDimensional [Module k M] [IsScalarTower
     moduleInjective_of_equiv_dual_regular k (LinearEquiv.refl k _) hsmul
   obtain ⟨n, f, hf⟩ := (LinearEquiv.refl k _).exists_injective_linearMap_pi_of_dual hsmul M
   let : Module.Injective A (Fin n → Module.Dual k A) := Module.Injective.pi A _
-  obtain ⟨P, hP, hp⟩ := exists_isInjectiveEnvelope_submodule A f hf
+  obtain ⟨P, hP, hp⟩ := f.exists_isInjectiveEnvelope_submodule hf
   let : FiniteDimensional k P :=
     Module.Finite.of_injective (P.subtype.restrictScalars k) P.injective_subtype
   exact ⟨P, inferInstance, inferInstance, inferInstance, inferInstance, inferInstance, _, hp⟩

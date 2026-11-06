@@ -88,6 +88,12 @@ jobs:
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+      actions: read
+      id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
     if: ${{ !cancelled() }}
     # Exact fleet labels bind placement to one machine and guest. A failed picker
@@ -1173,7 +1179,11 @@ jobs:
           # would let candidate code drop a `lake` or `bash` earlier on PATH than the real one and
           # have the later audits run it. The explicit PATH below is the other half of that: it
           # never contains a directory the sandbox can write.
-          python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
+          progress_observer=()
+          if [ -f gate/scripts/ci_live_progress.py ]; then
+            progress_observer=(python3 gate/scripts/ci_live_progress.py --telemetry "$PWD/pr/.lake/telemetry" --)
+          fi
+          "${progress_observer[@]}" python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
             env -i /usr/bin/bwrap --tmpfs / \
             --ro-bind /usr /usr --ro-bind /etc /etc \
             --symlink usr/bin /bin --symlink usr/sbin /sbin \
@@ -1254,8 +1264,28 @@ jobs:
             args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
-          python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+          # The build can change .lake/package artifacts. Any later Lake/Lean
+          # execution stays in a fresh PID/network namespace with no host grants.
+          probe_mounts=()
+          if [ -n "${BASE_SHIM_REGISTRY:-}" ]; then
+            probe_mounts=(--ro-bind "$BASE_SHIM_REGISTRY" "$BASE_SHIM_REGISTRY"
+                          --ro-bind "$BASE_SHIM_ROOT" "$BASE_SHIM_ROOT")
+          fi
+          env -i /usr/bin/bwrap --tmpfs / \
+            --ro-bind /usr /usr --ro-bind /etc /etc \
+            --symlink usr/bin /bin --symlink usr/sbin /sbin \
+            --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+            --dev /dev --proc /proc --tmpfs /tmp \
+            --ro-bind "$HOME/.elan" "$HOME/.elan" \
+            --ro-bind "$PWD/gate" "$PWD/gate" \
+            --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
+            "${probe_mounts[@]}" --remount-ro / \
+            --setenv PATH "$HOME/.elan/bin:/usr/bin:/bin" --setenv HOME "$HOME" \
+            --chdir "$PWD" \
+            --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
+            --unshare-cgroup --disable-userns --die-with-parent --new-session \
+            -- python3 "$PWD/gate/scripts/check-expired-mathlib-shims.py" \
+            --repo-root "$PWD/pr" --manifest "$PWD/pr/TauCeti/mathlib-shims.json" "${args[@]}"
           rc=$?
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"

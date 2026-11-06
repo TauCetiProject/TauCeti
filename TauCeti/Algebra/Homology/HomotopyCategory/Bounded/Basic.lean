@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Homology.CochainComplexMinus
 public import Mathlib.Algebra.Homology.HomotopyCategory.Plus
 public import Mathlib.CategoryTheory.Localization.OfQuotient
 public import TauCeti.Algebra.Homology.EssentiallySmall
@@ -72,9 +73,10 @@ variable (C : Type u) [Category.{v} C]
 
 namespace CochainComplex
 
-/-- A cochain complex is bounded when it is strictly bounded both below and above. -/
+/-- A cochain complex is bounded when it is strictly bounded both below and above: the meet of
+Mathlib's `CochainComplex.plus` and `CochainComplex.minus`. -/
 def bounded [HasZeroMorphisms C] : ObjectProperty (CochainComplex C ℤ) :=
-  fun K ↦ CochainComplex.plus C K ∧ ∃ b : ℤ, K.IsStrictlyLE b
+  CochainComplex.plus C ⊓ CochainComplex.minus C
 
 /-- A cochain complex is bounded iff it is strictly bounded below by some `a` and strictly bounded
 above by some `b`. -/
@@ -99,26 +101,11 @@ lemma bounded_iff_exists_finset_isZero_X [HasZeroMorphisms C] (K : CochainComple
     exact ⟨a, b, (K.isStrictlyGE_iff a).2 fun i hi ↦ hs i fun h ↦ absurd (ha h) (not_le.2 hi),
       (K.isStrictlyLE_iff b).2 fun i hi ↦ hs i fun h ↦ absurd (hb h) (not_le.2 hi)⟩
 
-instance [HasZeroMorphisms C] : (CochainComplex.bounded C).IsClosedUnderIsomorphisms where
-  of_iso := by
-    rintro K L e h
-    rw [CochainComplex.bounded_iff] at h ⊢
-    obtain ⟨a, b, ha, hb⟩ := h
-    let _ := ha
-    let _ := hb
-    exact ⟨a, b, K.isStrictlyGE_of_iso e a, K.isStrictlyLE_of_iso e b⟩
+instance [HasZeroMorphisms C] : (CochainComplex.bounded C).IsClosedUnderIsomorphisms :=
+  inferInstanceAs (CochainComplex.plus C ⊓ CochainComplex.minus C).IsClosedUnderIsomorphisms
 
-instance [Preadditive C] : (CochainComplex.bounded C).IsStableUnderShift ℤ where
-  isStableUnderShiftBy n :=
-    ⟨by
-      rintro K h
-      rw [CochainComplex.bounded_iff] at h
-      obtain ⟨a, b, ha, hb⟩ := h
-      rw [ObjectProperty.prop_shift_iff, CochainComplex.bounded_iff]
-      let _ := ha
-      let _ := hb
-      exact ⟨a - n, b - n, K.isStrictlyGE_shift a n (a - n) (by omega),
-        K.isStrictlyLE_shift b n (b - n) (by omega)⟩⟩
+instance [Preadditive C] : (CochainComplex.bounded C).IsStableUnderShift ℤ :=
+  inferInstanceAs ((CochainComplex.plus C ⊓ CochainComplex.minus C).IsStableUnderShift ℤ)
 
 /-- The full subcategory of bounded cochain complexes. -/
 abbrev Bounded [HasZeroMorphisms C] :=
@@ -142,10 +129,11 @@ lemma bounded_cylinder {K : CochainComplex C ℤ} (hK : CochainComplex.bounded C
   · simp only [ComplexShape.up_Rel] at hj
     exact K.isZero_of_isStrictlyLE b _ (by lia)
 
+omit [HasBinaryBiproducts C] in
 /-- The mapping cone of a morphism `K ⟶ L` is strictly bounded above by `n` when `K` is strictly
 bounded above by `n + 1` and `L` by `n`. This is the upper-bound counterpart of Mathlib's
 `CochainComplex.isStrictlyGE_mappingCone`. -/
-lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L)
+lemma isStrictlyLE_mappingCone {K L : CochainComplex C ℤ} (f : K ⟶ L) [HasHomotopyCofiber f]
     (n₁ n₂ n : ℤ) [K.IsStrictlyLE n₁] [L.IsStrictlyLE n₂] (hn₁ : n₁ ≤ n + 1 := by lia)
     (hn₂ : n₂ ≤ n := by lia) :
     (CochainComplex.mappingCone f).IsStrictlyLE n := by
