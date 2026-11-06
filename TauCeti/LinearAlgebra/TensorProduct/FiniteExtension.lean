@@ -33,8 +33,9 @@ theorem exists_finiteDimensional_intermediateField_subset_range_rTensor
     Submodule.span_le.mpr (IntermediateField.subset_adjoin k _)
   refine ⟨L, IntermediateField.finiteDimensional_adjoin
     (fun x _ ↦ (Algebra.IsAlgebraic.isAlgebraic x).isIntegral), hJ.trans ?_⟩
-  rw [show Submodule.subtype _ = L.val.toLinearMap ∘ₗ Submodule.inclusion hJL from rfl,
+  rw [← Submodule.subtype_comp_inclusion _ _ hJL, Subalgebra.toSubmodule_subtype,
     LinearMap.rTensor_comp]
+  -- `IntermediateField.val` is defined as `L.toSubalgebra.val`.
   exact LinearMap.range_comp_le_range _ _
 
 end Set
