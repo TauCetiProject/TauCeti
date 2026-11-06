@@ -82,7 +82,7 @@ theorem kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup
 
 /-- Every all-root exponential matrix is a point of the pinned Kostant toral closure over
 any commutative value ring. -/
-theorem chevalleyRootSubgroupMatrix_mem_toralPoints (A : Type*) [CommRing A]
+theorem kostantRootSubgroupMatrix_chevalleySystem_mem_toralPoints (A : Type*) [CommRing A]
     (γ : Fin t.numRoots)
     (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
       (CommAlgCat.of ℤ A)) :
@@ -109,7 +109,7 @@ theorem kostantToralDefiningIdeal_toIdeal_le_ker_kostantRootSubgroupCoordinateMa
       ρ M (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
       (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b).hom.toAlgHom.toRingHom := by
   let A : Type := AdditiveGroup.coordinateHopfAlgebra ℤ
-  have htoral := chevalleyRootSubgroupMatrix_mem_toralPoints ρ M hM hnil b χ A γ
+  have htoral := kostantRootSubgroupMatrix_chevalleySystem_mem_toralPoints ρ M hM hnil b χ A γ
     (toConv (AlgHom.id ℤ A))
   rw [kostantToralPointsSubgroup_def,
     ← pointsMulEquiv_kostantRootSubgroupCoordinateMap,
@@ -248,7 +248,7 @@ variable (D : ChevalleyDatum t ht)
 
 /-- Every all-root exponential matrix of a Chevalley datum is a point of it over any
 commutative value ring. -/
-theorem chevalleyRootSubgroupMatrix_mem_points (A : Type*) [CommRing A]
+theorem kostantRootSubgroupMatrix_chevalleySystem_mem_points (A : Type*) [CommRing A]
     (γ : Fin t.numRoots)
     (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
       (CommAlgCat.of ℤ A)) :
@@ -259,46 +259,13 @@ theorem chevalleyRootSubgroupMatrix_mem_points (A : Type*) [CommRing A]
         (isNilpotent_apply_ι_chevalleySystem D.representation
           D.isNilpotent_representation_rootGenerator γ) D.basis q ∈ D.points A := by
   rw [points_eq_kostantToralPointsSubgroup]
-  exact chevalleyRootSubgroupMatrix_mem_toralPoints _ _ _ _ _ _ A γ q
-
-/-- The coordinate morphism of a root subgroup, factored through the datum's coordinate Hopf
-algebra. -/
-def rootSubgroupCoordinateMap (γ : Fin t.numRoots) :
-    CommHopfAlgCat.quotient (GeneralLinear.coordinateHopfAlgebra ℤ D.dim)
-        (kostantToralDefiningIdeal (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-          D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight) ⟶
-      AdditiveGroup.coordinateHopfAlgebra ℤ :=
-  chevalleyRootSubgroupToralCoordinateMap D.representation D.lattice
-    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-    D.basis D.coordinateWeight γ
-
-/-- The factored root coordinate morphism recovers the ambient polynomial exponential. -/
-@[simp]
-theorem mkQuotient_comp_rootSubgroupCoordinateMap (γ : Fin t.numRoots) :
-    CommHopfAlgCat.mkQuotient (GeneralLinear.coordinateHopfAlgebra ℤ D.dim)
-        (kostantToralDefiningIdeal (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-          D.representation D.lattice D.representation_mem_lattice
-          D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight) ≫
-      D.rootSubgroupCoordinateMap γ =
-    kostantRootSubgroupCoordinateMap (t.chevalleySystem ht) (t.lieBasis ht).h D.representation
-      D.lattice (kostantForm_chevalleySystem_apply_mem_of_isNilpotent D.representation D.lattice
-        D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
-      (isNilpotent_apply_ι_chevalleySystem D.representation
-        D.isNilpotent_representation_rootGenerator γ) D.basis :=
-  mkQuotient_comp_chevalleyRootSubgroupToralCoordinateMap _ _ _ _ _ _ γ
+  exact kostantRootSubgroupMatrix_chevalleySystem_mem_toralPoints _ _ _ _ _ _ A γ q
 
 /-- The integral root-subgroup morphism `𝔾ₐ → G_D` for every numbered root. Its composite
 into the general linear group is the divided-power exponential of the named root vector. -/
 def rootSubgroup (γ : Fin t.numRoots) : AdditiveGroup.groupScheme ℤ ⟶ D.groupScheme :=
   chevalleyRootSubgroupToToral D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight γ
-
-/-- The root morphism is the relative spectrum of its factored coordinate morphism. -/
-theorem rootSubgroup_def (γ : Fin t.numRoots) :
-    D.rootSubgroup γ = eqToHom (AdditiveGroup.groupScheme_def ℤ) ≫
-      (AlgebraicGeometry.hopfSpec (CommRingCat.of ℤ)).map (D.rootSubgroupCoordinateMap γ).op :=
-  (rfl)
 
 /-- Including the root morphism into `GLₙ` recovers the original polynomial exponential. -/
 @[simp]
