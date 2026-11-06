@@ -5,8 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
-public import Mathlib.Geometry.Manifold.Instances.Sphere
 public import TauCeti.Geometry.Manifold.DeRham.HomologyPeriod
 public import TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv
 -- Private: the endpoint-ratio identity of winding numbers is used only inside proofs.
@@ -51,9 +49,8 @@ cycles.
 
 For the group `C^∞(M, U(1))` of smooth circle-valued maps, the gauge group of a Hermitian line
 bundle on `M`, this gives the period homomorphism `C^∞(M, U(1)) → Hom(H₁(M; ℤ), ℤ)`,
-`u ↦ (c ↦ (2πi)⁻¹ ∫_c dlog u)` (`TauCeti.circlePeriodHom`). On a preconnected manifold:
+`u ↦ (c ↦ (2πi)⁻¹ ∫_c dlog u)` (`TauCeti.circlePeriodHom`). With no connectedness assumption:
 
-* `dlog u = 0` exactly when `u` is constant (`TauCeti.mlogDeriv_coe_eq_zero_iff`);
 * the periods of `u` vanish exactly when `u = exp (i f)` for a smooth real function `f`
   (`TauCeti.circlePeriodHom_eq_one_iff`); so the quotient of `C^∞(M, U(1))` by the subgroup of
   maps with a smooth logarithm embeds into `Hom(H₁(M; ℤ), ℤ)`;
@@ -61,6 +58,10 @@ bundle on `M`, this gives the period homomorphism `C^∞(M, U(1)) → Hom(H₁(M
   smooth circle-valued map `u` (`TauCeti.exists_mlogDeriv_coe_eq`), so the image of the period
   homomorphism consists of the integral period homomorphisms of such forms
   (`TauCeti.mem_range_circlePeriodHom_iff`).
+
+Both constructions work on each path component separately, from a base point chosen in it. On a
+connected manifold the kernel of `dlog` itself is the constants
+(`TauCeti.mlogDeriv_coe_eq_zero_iff`, in `TauCeti.Geometry.Manifold.DifferentialForm.LogDeriv`).
 
 ## Main declarations
 
@@ -73,9 +74,8 @@ bundle on `M`, this gives the period homomorphism `C^∞(M, U(1)) → Hom(H₁(M
   lie in `2πiℤ`.
 * `TauCeti.circlePeriodHom`: the period homomorphism of smooth circle-valued maps, characterized
   by `TauCeti.homologyPeriodHom_mlogDeriv_eq_circlePeriodHom`.
-* `TauCeti.mlogDeriv_coe_eq_zero_iff`, `TauCeti.circlePeriodHom_eq_one_iff`,
-  `TauCeti.exists_mlogDeriv_coe_eq`, `TauCeti.mem_range_circlePeriodHom_iff`: the kernel of `dlog`,
-  the kernel and the image of the period homomorphism.
+* `TauCeti.circlePeriodHom_eq_one_iff`, `TauCeti.exists_mlogDeriv_coe_eq`,
+  `TauCeti.mem_range_circlePeriodHom_iff`: the kernel and the image of the period homomorphism.
 
 ## References
 
@@ -191,36 +191,6 @@ theorem exists_mlogDeriv_eq_of_forall_pathIntegral_eq_int_mul [FiniteDimensional
 
 /-! ### Integrals of `dlog u` along continuous paths -/
 
-/-- **Primitives of `dlog u` are branches of `log u`.** Near each point `x` of an open set `U`
-on which `g` is a primitive of `dlog u`, for a differentiable `u` vanishing nowhere on `U`,
-`u exp (-g)` is constant. -/
-theorem IsPrimitiveOn.eventually_mul_exp_neg_eq [IsManifold I 1 M] {u g : M → ℂ} {U : Set M}
-    (hg : IsPrimitiveOn (mlogDeriv I u) g U) (hu : MDifferentiableOn I 𝓘(ℝ, ℂ) u U)
-    (hu₀ : ∀ y ∈ U, u y ≠ 0) {x : M} (hx : x ∈ U) :
-    ∀ᶠ y in 𝓝 x, u y * exp (-g y) = u x * exp (-g x) := by
-  have hg' := hg.const_smul (-1)
-  set w : M → ℂ := u * fun y ↦ exp (((-1 : ℝ) • g) y) with hw_def
-  have hgy (y : M) (hy : y ∈ U) : MDifferentiableAt I 𝓘(ℝ, ℂ) ((-1 : ℝ) • g) y :=
-    (hg'.mdifferentiableOn y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
-  have huy (y : M) (hy : y ∈ U) : MDifferentiableAt I 𝓘(ℝ, ℂ) u y :=
-    (hu y hy).mdifferentiableAt (hg.isOpen.mem_nhds hy)
-  have hey (y : M) (hy : y ∈ U) :
-      MDifferentiableAt I 𝓘(ℝ, ℂ) (fun z ↦ exp (((-1 : ℝ) • g) z)) y :=
-    ((Complex.hasDerivAt_exp _).differentiableAt.restrictScalars ℝ).comp_mdifferentiableAt
-      (hgy y hy)
-  -- `dlog w = dlog u - dg` vanishes on `U`, so `w` has zero differential there.
-  have hzero (y : M) (hy : y ∈ U) : mfderiv I 𝓘(ℝ, ℂ) w y = 0 := by
-    have hd : mlogDeriv I w y = 0 := by
-      rw [hw_def, mlogDeriv_mul (huy y hy) (hey y hy) (hu₀ y hy) (exp_ne_zero _),
-        mlogDeriv_exp (hgy y hy), hg'.mextDeriv_eq y hy]
-      ext v
-      simp
-    exact (mlogDeriv_eq_zero_iff (u := w) (mul_ne_zero (hu₀ y hy) (exp_ne_zero _))).mp hd
-  have hwd : MDifferentiableOn I 𝓘(ℝ, ℂ) w U := fun y hy ↦
-    ((huy y hy).mul (hey y hy)).mdifferentiableWithinAt
-  filter_upwards [hwd.eventuallyEq_const_of_mfderiv_eq_zero hg.isOpen hzero hx] with y hy
-  simpa [w, neg_one_smul] using hy
-
 section PathClass
 
 variable [FiniteDimensional ℝ E] [T2Space M] [IsManifold I ∞ M]
@@ -257,45 +227,11 @@ theorem exp_pathClassIntegral_mlogDeriv {u : M → ℂ} (hu : ContMDiff I 𝓘(�
   simp only [w, γ.source, γ.target, Γ, hp.liftPath_zero, PrimitiveSpace.value_graph,
     Pi.zero_apply, neg_zero, exp_zero, mul_one] at h
   rw [pathClassIntegral_mk_eq_sub hφ hclosed Γ.continuous hΓ, hp.liftPath_zero,
-    PrimitiveSpace.value_graph, Pi.zero_apply, sub_zero, eq_div_iff (hu₀ x), ← h, mul_comm,
-    mul_assoc, ← exp_add, neg_add_cancel, exp_zero, mul_one]
+    PrimitiveSpace.value_graph, eq_div_iff (hu₀ x), ← h]
+  simp only [Γ, Pi.zero_apply, sub_zero, exp_neg]
+  field_simp
 
 end PathClass
-
-/-! ### Smooth circle-valued maps -/
-
-section Circle
-
-attribute [local instance] finrank_real_complex_fact'
-
-/-- The complex values of a smooth circle-valued map form a smooth function. -/
-private theorem contMDiff_coe_circle (u : C^∞⟮I, M; 𝓡 1, Circle⟯) :
-    ContMDiff I 𝓘(ℝ, ℂ) ∞ fun x ↦ (u x : ℂ) :=
-  (contMDiff_coe_sphere.of_le le_top).comp u.contMDiff
-
-/-- `dlog` turns products of circle-valued maps into sums. -/
-private theorem mlogDeriv_coe_mul (u v : C^∞⟮I, M; 𝓡 1, Circle⟯) :
-    mlogDeriv I (fun x ↦ ((u * v) x : ℂ)) =
-      mlogDeriv I (fun x ↦ (u x : ℂ)) + mlogDeriv I (fun x ↦ (v x : ℂ)) := by
-  funext x
-  have hu := ((contMDiff_coe_circle u) x).mdifferentiableAt (by simp)
-  have hv := ((contMDiff_coe_circle v) x).mdifferentiableAt (by simp)
-  exact mlogDeriv_mul hu hv (Circle.coe_ne_zero _) (Circle.coe_ne_zero _)
-
-/-- **The kernel of `dlog` on circle-valued maps is the constants.** On a preconnected manifold, a
-smooth circle-valued map has vanishing logarithmic derivative exactly when it is constant. -/
-theorem mlogDeriv_coe_eq_zero_iff [IsManifold I 1 M] [PreconnectedSpace M]
-    {u : C^∞⟮I, M; 𝓡 1, Circle⟯} :
-    mlogDeriv I (fun x ↦ (u x : ℂ)) = 0 ↔ ∃ z : Circle, ∀ x, u x = z := by
-  refine ⟨fun h ↦ ?_, fun ⟨z, hz⟩ ↦ by simp [hz]⟩
-  have hd (x : M) : mfderiv I 𝓘(ℝ, ℂ) (fun x ↦ (u x : ℂ)) x = 0 :=
-    (mlogDeriv_eq_zero_iff (u := fun x ↦ (u x : ℂ)) (Circle.coe_ne_zero (u x))).mp (congrFun h x)
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · exact ⟨1, isEmptyElim⟩
-  · exact ⟨u x₀, fun x ↦ Circle.ext <| MDifferentiable.apply_eq_of_mfderiv_eq_zero
-      ((contMDiff_coe_circle u).mdifferentiable (by simp)) hd x x₀⟩
-
-end Circle
 
 end TauCeti
 
@@ -339,9 +275,8 @@ theorem exists_homologyPeriodHom_mlogDeriv_eq_int_mul {u : M → ℂ}
       ring
   obtain ⟨z, rfl⟩ := (H₁AddEquivHomology (.of M)).surjective.comp H₁.mk_surjective c
   refine ⟨chainsDesc N (z : ((singularChains ℤ).obj (.of M)).X 1), ?_⟩
-  rw [Function.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, hL, LinearMap.add_apply,
-    LinearMap.comp_apply, LinearMap.comp_apply, mem_cycles₁_iff.1 z.2, map_zero, add_zero,
-    LinearMap.toSpanSingleton_apply, zsmul_eq_mul]
+  rw [Function.comp_apply, homologyPeriodHom_H₁AddEquivHomology_mk, hL]
+  simp [mem_cycles₁_iff.1 z.2, zsmul_eq_mul]
 
 /-! ### Periods of smooth circle-valued maps -/
 
@@ -420,65 +355,47 @@ private theorem homologyPeriodHom_mlogDeriv_eq_zero_of_eq_exp {u : C^∞⟮I, M;
     chainsDesc_pathClassIntegral_mextDeriv hψ, LinearMap.comp_apply, mem_cycles₁_iff.1 c.2,
     map_zero]
 
-/-- On a smooth closed loop, the line integral of a closed `C¹` form is one of its periods on
-singular homology. -/
-private theorem pathIntegral_eq_homologyPeriodHom {F : Type} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] [CompleteSpace F] {φ : RoughForm I M F 1} (hφ : IsSmoothForm I 1 φ)
-    (hclosed : mextDeriv φ = 0) {γ : ℝ → M} (hγ : ContMDiff 𝓘(ℝ, ℝ) I ∞ γ) {x₀ : M}
-    (hγ₀ : γ 0 = x₀) (hγ₁ : γ 1 = x₀) :
-    ∃ c, pathIntegral φ γ 0 1 = homologyPeriodHom φ c := by
-  let p : Path x₀ x₀ :=
-    ⟨⟨fun t ↦ γ t, hγ.continuous.comp continuous_subtype_val⟩, hγ₀, hγ₁⟩
-  refine ⟨H₁AddEquivHomology (.of M) (loopClass (X := .of M) p), ?_⟩
-  rw [homologyPeriodHom_loopClass,
-    pathClassIntegral_mk_eq_pathIntegral hφ hclosed (hγ.of_le (by simp)) fun _ ↦ rfl]
-
-/-- A smooth circle-valued map on a preconnected manifold whose `dlog` has vanishing periods is
-`exp (i f)` for a smooth real function `f`. -/
-private theorem exists_eq_circleExp_of_homologyPeriodHom_eq_zero [PreconnectedSpace M]
+/-- A smooth circle-valued map whose `dlog` has vanishing periods is `exp (i f)` for a smooth real
+function `f`. -/
+private theorem exists_eq_circleExp_of_homologyPeriodHom_eq_zero
     {u : C^∞⟮I, M; 𝓡 1, Circle⟯} (h : homologyPeriodHom (mlogDeriv I fun x ↦ (u x : ℂ)) = 0) :
     ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ, ℝ) ∞ f ∧ ∀ x, u x = Circle.exp (f x) := by
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · exact ⟨0, contMDiff_const, isEmptyElim⟩
   have hu := contMDiff_coe_circle u
   have hu₀ (x : M) : (u x : ℂ) ≠ 0 := Circle.coe_ne_zero (u x)
   have hφ := isSmoothForm_mlogDeriv (n := ∞) (hu.of_le (by simp)) hu₀
   have hclosed := mextDeriv_mlogDeriv (hu.of_le (by simp)) hu₀
   -- Vanishing periods make `dlog u` exact: `dlog u = dg`.
-  obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_forall_pathIntegral_eq_zero (r := ⊤) le_top
-    hφ hclosed x₀ fun γ hγ hγ₀ hγ₁ ↦ by
-      obtain ⟨c, hc⟩ := pathIntegral_eq_homologyPeriodHom (hφ.of_le (by simp)) hclosed hγ hγ₀ hγ₁
-      rw [hc, h, AddMonoidHom.zero_apply]
+  obtain ⟨ψ, hψ, hdψ⟩ := exists_mextDeriv_eq_of_homologyPeriodHom_eq_zero (r := ⊤) le_top hφ
+    hclosed h
   rw [RoughForm.eq_ofFunction ψ] at hψ hdψ
   set g : M → ℂ := fun x ↦ ψ x 0
   have hg : ContMDiff I 𝓘(ℝ, ℂ) ∞ g := isSmoothForm_ofFunction_iff.mp hψ
   have hgU : IsPrimitiveOn (mlogDeriv I fun x ↦ (u x : ℂ)) g univ :=
     ⟨isOpen_univ, (hg.mdifferentiable (by simp)).mdifferentiableOn, fun y _ ↦ congrFun hdψ y⟩
-  -- Hence `u exp (-g)` is locally constant, so constant: `u = exp (a + g)`.
+  -- Hence `u exp (-g)` is locally constant, and so is its logarithm `a`: `u = exp (a + g)`.
   have hconst : IsLocallyConstant fun x ↦ (u x : ℂ) * exp (-g x) :=
     (IsLocallyConstant.iff_eventually_eq _).mpr fun x ↦
       hgU.eventually_mul_exp_neg_eq (hu.mdifferentiable (by simp)).mdifferentiableOn
         (fun y _ ↦ hu₀ y) (mem_univ x)
-  set a := log ((u x₀ : ℂ) * exp (-g x₀))
-  have hexp (x : M) : (u x : ℂ) = exp (a + g x) := by
-    rw [exp_add, exp_log (mul_ne_zero (hu₀ x₀) (exp_ne_zero _)),
-      hconst.apply_eq_of_preconnectedSpace x₀ x, mul_assoc, ← exp_add, neg_add_cancel,
-      exp_zero, mul_one]
+  set a : M → ℂ := fun x ↦ log ((u x : ℂ) * exp (-g x))
+  have ha : ContMDiff I 𝓘(ℝ, ℂ) ∞ a := (hconst.comp log).contMDiff
+  have hexp (x : M) : (u x : ℂ) = exp (a x + g x) := by
+    simp [a, exp_add, exp_neg, exp_log, hu₀ x]
   -- The exponent is imaginary because `u` has modulus one.
-  have hre (x : M) : (a + g x).re = 0 := by
+  have hre (x : M) : (a x + g x).re = 0 := by
     have h1 := congrArg norm (hexp x)
     rw [Circle.norm_coe, norm_exp] at h1
     exact (Real.exp_eq_one_iff _).mp h1.symm
-  refine ⟨fun x ↦ (a + g x).im, imCLM.contDiff.contMDiff.comp (contMDiff_const.add hg),
+  refine ⟨fun x ↦ (a x + g x).im, imCLM.contDiff.contMDiff.comp (ha.add hg),
     fun x ↦ Circle.ext ?_⟩
   rw [Circle.coe_exp, hexp x]
   congr 1
   apply Complex.ext <;> simp [hre x]
 
-/-- **The kernel of the period map is the identity component.** On a preconnected manifold, a
-smooth circle-valued map has vanishing periods exactly when it is `exp (i f)` for a smooth real
-function `f`, that is, when it has a smooth logarithm. -/
-theorem circlePeriodHom_eq_one_iff [PreconnectedSpace M] {u : C^∞⟮I, M; 𝓡 1, Circle⟯} :
+/-- **The kernel of the period map consists of the maps admitting a smooth logarithm.** A smooth
+circle-valued map has vanishing periods exactly when it is `exp (i f)` for a smooth real function
+`f`. -/
+theorem circlePeriodHom_eq_one_iff {u : C^∞⟮I, M; 𝓡 1, Circle⟯} :
     circlePeriodHom I M u = 1 ↔
       ∃ f : M → ℝ, ContMDiff I 𝓘(ℝ, ℝ) ∞ f ∧ ∀ x, u x = Circle.exp (f x) := by
   have hper : circlePeriodHom I M u = 1 ↔
@@ -496,28 +413,67 @@ theorem circlePeriodHom_eq_one_iff [PreconnectedSpace M] {u : C^∞⟮I, M; 𝓡
   exact homologyPeriodHom_mlogDeriv_eq_zero_of_eq_exp hg fun x ↦ by rw [huf x, Circle.coe_exp]
 
 /-- **Closed imaginary forms with periods in `2πiℤ` are logarithmic derivatives of circle-valued
-maps.** On a preconnected manifold, a smooth closed imaginary `1`-form whose integrals over
-singular `1`-cycles lie in `2πiℤ` is `dlog u` for a smooth map `u : M → U(1)`. -/
-theorem exists_mlogDeriv_coe_eq [PreconnectedSpace M] {φ : RoughForm I M ℂ 1}
+maps.** A smooth closed imaginary `1`-form whose integrals over singular `1`-cycles lie in `2πiℤ`
+is `dlog u` for a smooth map `u : M → U(1)`. The map is `u y = exp (∫_γ φ)` along a path `γ` to
+`y` from a base point chosen in the path component of `y`. -/
+theorem exists_mlogDeriv_coe_eq {φ : RoughForm I M ℂ 1}
     (hφ : IsSmoothForm I ∞ φ) (hclosed : mextDeriv φ = 0) (hre : ∀ x v, (φ x v).re = 0)
     (hper : ∀ c, ∃ n : ℤ, homologyPeriodHom φ c = n * (2 * π * Complex.I)) :
     ∃ u : C^∞⟮I, M; 𝓡 1, Circle⟯, mlogDeriv I (fun x ↦ (u x : ℂ)) = φ := by
-  rcases isEmpty_or_nonempty M with hM | ⟨⟨x₀⟩⟩
-  · exact ⟨1, funext isEmptyElim⟩
-  obtain ⟨u, hu, -, hu₁, hdu⟩ := exists_mlogDeriv_eq_of_forall_pathIntegral_eq_int_mul
-    (r := ⊤) le_top hφ hclosed x₀ fun γ hγ hγ₀ hγ₁ ↦ by
-      obtain ⟨c, hc⟩ := pathIntegral_eq_homologyPeriodHom (hφ.of_le (by simp)) hclosed hγ hγ₀ hγ₁
-      rw [hc]
-      exact hper c
-  have hnorm (x : M) : u x ∈ Metric.sphere (0 : ℂ) 1 := by
-    rw [mem_sphere_zero_iff_norm, norm_eq_of_re_mlogDeriv_apply_eq_zero
-      (hu.mdifferentiable (by simp)) (hdu ▸ hre) x x₀, hu₁, norm_one]
-  exact ⟨⟨fun x ↦ ⟨u x, hnorm x⟩, hu.codRestrict_sphere hnorm⟩, hdu⟩
+  have hφ₁ : IsSmoothForm I 1 φ := hφ.of_le (by simp)
+  -- Paths with the same endpoints have the same exponentiated integral: they differ by a period.
+  have hpath {a a' y : M} (e : a = a') (p : Path a y) (q : Path a' y) :
+      exp (pathClassIntegral φ (.mk p)) = exp (pathClassIntegral φ (.mk q)) := by
+    subst e
+    obtain ⟨n, hn⟩ := hper (H₁AddEquivHomology (.of M) (loopClass (X := .of M) (p.trans q.symm)))
+    rw [homologyPeriodHom_loopClass, Path.Homotopic.Quotient.mk_trans,
+      Path.Homotopic.Quotient.mk_symm, pathClassIntegral_trans, pathClassIntegral_symm] at hn
+    exact exp_eq_exp_iff_exists_int.mpr ⟨n, by rw [← hn]; ring⟩
+  let b (y : M) : M := (Quotient.mk (pathSetoid M) y).out
+  have hb (y : M) : Joined (b y) y := Quotient.mk_out (s := pathSetoid M) y
+  set f : M → ℂ := fun y ↦ pathClassIntegral φ (.mk (hb y).somePath)
+  -- Near each point `x`, `exp ∘ f` is a constant multiple of `exp g` for a local primitive `g`.
+  have hloc (x : M) : ∃ g : M → ℂ, ContMDiff I 𝓘(ℝ, ℂ) ∞ g ∧
+      (∀ᶠ y in 𝓝 x, exp (f y) = exp (f x - g x) * exp (g y)) ∧
+      mextDeriv (RoughForm.ofFunction I g) x = φ x := by
+    obtain ⟨g, hg, U, hxU, hgU⟩ := exists_contMDiff_isPrimitiveOn (r := ⊤) le_top hφ hclosed x
+    refine ⟨g, hg, ?_, hgU.mextDeriv_eq x hxU⟩
+    filter_upwards [eventually_exists_contMDiff_curve (I := I) (n := 1)
+      (hgU.isOpen.mem_nhds hxU)] with y ⟨c, hc, hc₀, hc₁, hcU⟩
+    let γ : Path x y :=
+      ⟨⟨fun t ↦ c t, hc.continuous.comp continuous_subtype_val⟩, hc₀ 0 le_rfl, hc₁ 1 le_rfl⟩
+    have hbxy : b y = b x :=
+      (congrArg Quotient.out (Quotient.sound (s := pathSetoid M) ⟨γ⟩)).symm
+    rw [hpath hbxy (hb y).somePath ((hb x).somePath.trans γ), Path.Homotopic.Quotient.mk_trans,
+      pathClassIntegral_trans, pathClassIntegral_mk_eq_sub_of_isPrimitiveOn hφ₁ hclosed hgU γ
+        fun t ↦ hcU t, ← exp_add]
+    congr 1
+    ring
+  have hu : ContMDiff I 𝓘(ℝ, ℂ) ∞ fun y ↦ exp (f y) := fun x ↦ by
+    obtain ⟨g, hg, hfg, -⟩ := hloc x
+    exact ((contDiff_const.mul Complex.contDiff_exp).contDiffAt.comp_contMDiffAt (hg x))
+      |>.congr_of_eventuallyEq hfg
+  have hdu : mlogDeriv I (fun y ↦ exp (f y)) = φ := funext fun x ↦ by
+    obtain ⟨g, hg, hfg, hdg⟩ := hloc x
+    rw [mlogDeriv_eq_of_eventuallyEq_mul_exp (exp_ne_zero _)
+      ((hg x).mdifferentiableAt (by simp)) hfg, hdg]
+  -- The modulus is locally constant and equal to `1` at the base points, hence everywhere.
+  have hnorm (x : M) : exp (f x) ∈ Metric.sphere (0 : ℂ) 1 := by
+    have hc := isLocallyConstant_norm_of_re_mlogDeriv_apply_eq_zero
+      (hu.mdifferentiable (by simp)) (hdu ▸ hre)
+    have hbb : b (b x) = b x := congrArg Quotient.out (Quotient.out_eq _)
+    have h1 : exp (f (b x)) = 1 := by
+      rw [hpath hbb _ (Path.refl (b x)), Path.Homotopic.Quotient.mk_refl, pathClassIntegral_refl,
+        exp_zero]
+    obtain ⟨γ⟩ := hb x
+    rw [mem_sphere_zero_iff_norm, ← hc.apply_eq_of_isPreconnected
+      (isConnected_range γ.continuous).isPreconnected ⟨0, γ.source⟩ ⟨1, γ.target⟩, h1, norm_one]
+  exact ⟨⟨fun x ↦ ⟨exp (f x), hnorm x⟩, hu.codRestrict_sphere hnorm⟩, hdu⟩
 
-/-- **The image of the period map.** On a preconnected manifold, a homomorphism
-`n : H₁(M; ℤ) → ℤ` is the period of a smooth circle-valued map exactly when `2πi n` is the period
-homomorphism of a smooth closed imaginary `1`-form. -/
-theorem mem_range_circlePeriodHom_iff [PreconnectedSpace M]
+/-- **The image of the period map.** A homomorphism `n : H₁(M; ℤ) → ℤ` is the period of a
+smooth circle-valued map exactly when `2πi n` is the period homomorphism of a smooth closed
+imaginary `1`-form. -/
+theorem mem_range_circlePeriodHom_iff
     {n : Multiplicative (((singularChains ℤ).obj (.of M)).homology 1 →+ ℤ)} :
     n ∈ (circlePeriodHom I M).range ↔ ∃ φ : RoughForm I M ℂ 1, IsSmoothForm I ∞ φ ∧
       mextDeriv φ = 0 ∧ (∀ x v, (φ x v).re = 0) ∧
