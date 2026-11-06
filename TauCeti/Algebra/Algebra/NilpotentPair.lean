@@ -77,8 +77,8 @@ word as a sum of commutators: the factor `5` occurs for `x y x y y`, through the
   `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, if `x`, `y`, `y ^ 2`, `(x + y) ^ 2` and `(x + y) ^ 3` are sums
   of commutators, and if `2` and `3` are units, then every product of a positive number of factors
   from `{x, y}` is a sum of commutators.
-* `TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow`: the same conclusion if `(x + y) ^ 3 = 0`,
-  assuming only `x`, `y`, `y ^ 2` and `(x + y) ^ 2` are sums of commutators.
+* `TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three`: the same conclusion if
+  `(x + y) ^ 3 = 0`, assuming only `x`, `y`, `y ^ 2` and `(x + y) ^ 2` are sums of commutators.
 * `TauCeti.span_pair_pow_fifteen_eq_bot`: if `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, then
   the fifteenth power of the span of `{x, y}` is zero.
 * `TauCeti.mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_five`: if moreover `x`, `y`,
@@ -95,6 +95,22 @@ open Submodule
 open scoped Pointwise
 
 variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A] {x y : A}
+
+/-- If the sets `W t` of words start with `W 0 = {x, y}`, and each product of a word in `W t`
+with `x` or `y` is an integer combination of words in `W (t + 1)`, then every product of `t + 1`
+factors from `{x, y}` is an integer combination of words in `W t`. -/
+private theorem span_pair_pow_succ_le_span_of_forall_mul_mem {W : ℕ → Set A} (h₀ : W 0 = {x, y})
+    (hS : ∀ t, ∀ b ∈ W t, b * x ∈ span ℤ (W (t + 1)) ∧ b * y ∈ span ℤ (W (t + 1))) (t : ℕ) :
+    span ℤ {x, y} ^ (t + 1) ≤ span ℤ (W t) := by
+  induction t with
+  | zero => rw [pow_one, h₀]
+  | succ t ih =>
+    rw [pow_succ]
+    refine (mul_le_mul' ih le_rfl).trans ?_
+    rw [span_mul_span, span_le]
+    rintro _ ⟨b, hb, c, hc, rfl⟩
+    rcases hc with rfl | rfl
+    exacts [(hS t b hb).1, (hS t b hb).2]
 
 /-- The reduced words of length `t + 1` for the rewriting rules `x x ↦ 0`, `y y y ↦ 0`,
 `y y x ↦ -(y x y + x y y + x y x)` and `y x y x ↦ x y x y`: the words containing none of the four
@@ -146,16 +162,7 @@ private theorem span_pair_pow_succ_le_span_cubeZeroWords (hx : x ^ 2 = 0) (hy : 
             simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true])
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 5 := ⟨t - 5, by omega⟩
       simp [cubeZeroWords]
-  induction t with
-  | zero => exact (pow_one _).le
-  | succ t ih =>
-    rw [pow_succ]
-    refine (mul_le_mul' ih le_rfl).trans ?_
-    rw [span_mul_span, span_le]
-    rintro _ ⟨b, hb, c, hc, rfl⟩
-    have h := hS t b hb
-    rcases hc with rfl | rfl
-    exacts [h.1, h.2]
+  exact span_pair_pow_succ_le_span_of_forall_mul_mem rfl hS t
 
 /-- **A square-zero and a cube-zero element with a cube-zero sum.** If `x ^ 2 = 0`, `y ^ 3 = 0`
 and `(x + y) ^ 3 = 0`, then every product of six factors from `{x, y}` vanishes. -/
@@ -164,10 +171,7 @@ theorem span_pair_pow_six_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y
   -- There are no reduced words of length six.
   have h6 : span ℤ {x, y} ^ 6 = ⊥ :=
     le_bot_iff.1 <| (span_pair_pow_succ_le_span_cubeZeroWords hx hy hxy 5).trans_eq span_empty
-  rw [span_pow, span_eq_bot]
-  intro w hw
-  have hw' : w ∈ span ℤ {x, y} ^ 6 := span_pow (R := ℤ) {x, y} 6 ▸ subset_span hw
-  rwa [h6, mem_bot] at hw'
+  simpa only [span_pow, span_eq_bot] using h6
 
 /-- The reduced words of length `t + 1` for the rewriting rules `x x ↦ 0`, `y y y ↦ 0`,
 `x y x y ↦ -(x y y x + y x y x + y x y y + y y x y)` and
@@ -230,16 +234,7 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
               simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true])
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 8 := ⟨t - 8, by omega⟩
       simp [quarticWords]
-  induction t with
-  | zero => exact (pow_one _).le
-  | succ t ih =>
-    rw [pow_succ]
-    refine (mul_le_mul' ih le_rfl).trans ?_
-    rw [span_mul_span, span_le]
-    rintro _ ⟨b, hb, c, hc, rfl⟩
-    have h := hS t b hb
-    rcases hc with rfl | rfl
-    exacts [h.1, h.2]
+  exact span_pair_pow_succ_le_span_of_forall_mul_mem rfl hS t
 
 /-- **Words in a square-zero and a cube-zero element with a fourth-power-zero sum are sums of
 commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, and suppose that `x`, `y`,
@@ -406,9 +401,9 @@ commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 3 = 0`, and suppose t
 
 This is the case `(x + y) ^ 3 = 0` of
 `mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_four`. -/
-theorem mem_commutatorSubmodule_of_mem_span_pair_pow {B : Type*} [Ring B] {k : Type*} [Semiring k]
-    [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k)) (hx : x ^ 2 = 0)
-    (hy : y ^ 3 = 0) (hxy : (x + y) ^ 3 = 0) (hx₀ : x ∈ commutatorSubmodule k B)
+theorem mem_commutatorSubmodule_of_mem_span_pair_pow_of_add_pow_three {B : Type*} [Ring B]
+    {k : Type*} [Semiring k] [Module k B] {x y : B} (h2 : IsUnit (2 : k)) (h3 : IsUnit (3 : k))
+    (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x + y) ^ 3 = 0) (hx₀ : x ∈ commutatorSubmodule k B)
     (hy₀ : y ∈ commutatorSubmodule k B) (hy₁ : y ^ 2 ∈ commutatorSubmodule k B)
     (hs : (x + y) ^ 2 ∈ commutatorSubmodule k B) {t : ℕ} {w : B}
     (hw : w ∈ span ℤ {x, y} ^ (t + 1)) : w ∈ commutatorSubmodule k B :=
@@ -529,16 +524,7 @@ private theorem span_pair_pow_succ_le_span_quinticWords (hx : x ^ 2 = 0) (hy : y
               simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true])
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 14 := ⟨t - 14, by omega⟩
       simp [quinticWords]
-  induction t with
-  | zero => exact (pow_one _).le
-  | succ t ih =>
-    rw [pow_succ]
-    refine (mul_le_mul' ih le_rfl).trans ?_
-    rw [span_mul_span, span_le]
-    rintro _ ⟨b, hb, c, hc, rfl⟩
-    have h := hS t b hb
-    rcases hc with rfl | rfl
-    exacts [h.1, h.2]
+  exact span_pair_pow_succ_le_span_of_forall_mul_mem rfl hS t
 
 /-- **A square-zero and a cube-zero element with a fifth-power-zero sum.** If `x ^ 2 = 0`,
 `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, then every product of fifteen factors from `{x, y}`
@@ -548,10 +534,7 @@ theorem span_pair_pow_fifteen_eq_bot (hx : x ^ 2 = 0) (hy : y ^ 3 = 0) (hxy : (x
   -- There are no reduced words of length fifteen.
   have h15 : span ℤ {x, y} ^ 15 = ⊥ :=
     le_bot_iff.1 <| (span_pair_pow_succ_le_span_quinticWords hx hy hxy 14).trans_eq span_empty
-  rw [span_pow, span_eq_bot]
-  intro w hw
-  have hw' : w ∈ span ℤ {x, y} ^ 15 := span_pow (R := ℤ) {x, y} 15 ▸ subset_span hw
-  rwa [h15, mem_bot] at hw'
+  simpa only [span_pow, span_eq_bot] using h15
 
 /-- **Words in a square-zero and a cube-zero element with a fifth-power-zero sum are sums of
 commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, and suppose that `x`, `y`,
