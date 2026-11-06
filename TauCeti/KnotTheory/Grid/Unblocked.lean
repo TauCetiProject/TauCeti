@@ -76,6 +76,8 @@ assignment, which `SignAssignment/Differential.lean` does.
   `O`-markings among the covered squares.
 * `TauCeti.GridDiagram.prod_OColumnsOfSquares_union_inter`: the `O`-markings two sets of squares
   carry, counted with multiplicity, depend only on their union and their intersection.
+* `TauCeti.GridDiagram.squaresMonomial_union_mul_inter`: the monomials of a union and an
+  intersection of two sets of squares multiply to the product of the two monomials.
 * `TauCeti.GridDiagram.totalDegree_OMonomial`: the weight of a rectangle is a squarefree monomial
   whose degree is the number of `O`-markings the rectangle covers.
 * `TauCeti.GridDiagram.OMonomial_eq_prod_coveredSquares`: the weight of a rectangle as a product
@@ -565,6 +567,18 @@ theorem squaresMonomial_eq_one_of_disjoint {S : Finset (Fin n × Fin n)} (h : Di
 @[simp]
 theorem squaresMonomial_empty : G.squaresMonomial R ∅ = 1 :=
   G.squaresMonomial_eq_one_of_disjoint R (Finset.disjoint_empty_left _)
+
+/-- The monomials of the union and of the intersection of two sets of squares multiply to the
+product of their monomials. -/
+theorem squaresMonomial_union_mul_inter (A B : Finset (Fin n × Fin n)) :
+    G.squaresMonomial R (A ∪ B) * G.squaresMonomial R (A ∩ B) =
+      G.squaresMonomial R A * G.squaresMonomial R B :=
+  G.prod_OColumnsOfSquares_union_inter MvPolynomial.X A B
+
+/-- The monomial of a union of two disjoint sets of squares is the product of their monomials. -/
+theorem squaresMonomial_union_of_disjoint {A B : Finset (Fin n × Fin n)} (h : Disjoint A B) :
+    G.squaresMonomial R (A ∪ B) = G.squaresMonomial R A * G.squaresMonomial R B := by
+  simpa [Finset.disjoint_iff_inter_eq_empty.mp h] using G.squaresMonomial_union_mul_inter R A B
 
 /-- The weight of a toroidal rectangle in the unblocked differential: the squarefree monomial
 `∏ V_c` over the columns whose `O`-marking the rectangle covers, `GridDiagram.squaresMonomial` of
