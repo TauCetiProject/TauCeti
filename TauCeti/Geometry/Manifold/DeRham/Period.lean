@@ -156,6 +156,13 @@ theorem pathClassIntegral_refl (x : M) :
     simpa using e.symm
   · exact pathClassIntegral_undef h _
 
+/-- Casting the endpoints of a path class does not change the integral. -/
+@[simp]
+theorem pathClassIntegral_cast (γ : Path.Homotopic.Quotient x y) {x' y' : M} (hx : x' = x)
+    (hy : y' = y) : pathClassIntegral φ (γ.cast hx hy) = pathClassIntegral φ γ := by
+  subst hx hy
+  rw [Path.Homotopic.Quotient.cast_rfl_rfl]
+
 /-- The integral along a concatenation of paths is the sum of the integrals. -/
 @[simp]
 theorem pathClassIntegral_trans (γ : Path.Homotopic.Quotient x y)
