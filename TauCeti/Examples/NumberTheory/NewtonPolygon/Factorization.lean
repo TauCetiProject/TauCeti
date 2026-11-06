@@ -41,6 +41,34 @@ section DistinctSlopes
 
 variable {p : ℕ} [Fact p.Prime]
 
+/-- The constant coefficient of `1 + p X + p ^ 3 X ^ 2` is `1`. -/
+private theorem coeff_zero_one_add_p_X_add_p_cube_X_sq :
+    (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).coeff 0 = 1 := by
+  simp only [coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
+  norm_num
+
+/-- The linear coefficient of `1 + p X + p ^ 3 X ^ 2` is `p`. -/
+private theorem coeff_one_one_add_p_X_add_p_cube_X_sq :
+    (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).coeff 1 = (p : ℚ_[p]) := by
+  simp only [coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
+  norm_num
+
+/-- The quadratic coefficient of `1 + p X + p ^ 3 X ^ 2` is `p ^ 3`. -/
+private theorem coeff_two_one_add_p_X_add_p_cube_X_sq :
+    (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).coeff 2 =
+      (p : ℚ_[p]) ^ 3 := by
+  simp only [coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
+  norm_num
+
+/-- The coefficients of `1 + p X + p ^ 3 X ^ 2` vanish above degree `2`. -/
+private theorem coeff_eq_zero_one_add_p_X_add_p_cube_X_sq {n : ℕ} (hn : 2 < n) :
+    (1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2 : ℚ_[p][X]).coeff n = 0 := by
+  simp only [coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
+  have h0 : n ≠ 0 := by omega
+  have h1 : 1 ≠ n := by omega
+  have h2 : n ≠ 2 := by omega
+  simp [h0, h1, h2]
+
 /-- Over `ℚ_[p]`, the quadratic polynomial `1 + p X + p ^ 3 X ^ 2` has finite Newton slopes
 `{1, 2}`. -/
 theorem newtonSlopes_one_add_p_X_add_p_cube_X_sq :
@@ -50,21 +78,10 @@ theorem newtonSlopes_one_add_p_X_add_p_cube_X_sq :
   set f : ℚ_[p][X] := 1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2
   have hp_ne : (p : ℚ_[p]) ≠ 0 := Nat.cast_ne_zero.mpr (Fact.out : p.Prime).ne_zero
   have hp3_ne : ((p : ℚ_[p]) ^ 3) ≠ 0 := pow_ne_zero 3 hp_ne
-  have hc0 : f.coeff 0 = 1 := by
-    simp only [f, coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-    norm_num
-  have hc1 : f.coeff 1 = (p : ℚ_[p]) := by
-    simp only [f, coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-    norm_num
-  have hc2 : f.coeff 2 = (p : ℚ_[p]) ^ 3 := by
-    simp only [f, coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-    norm_num
-  have hc_gt {n : ℕ} (hn : 2 < n) : f.coeff n = 0 := by
-    simp only [f, coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-    have h0 : n ≠ 0 := by omega
-    have h1 : 1 ≠ n := by omega
-    have h2 : n ≠ 2 := by omega
-    simp [h0, h1, h2]
+  have hc0 : f.coeff 0 = 1 := coeff_zero_one_add_p_X_add_p_cube_X_sq
+  have hc1 : f.coeff 1 = (p : ℚ_[p]) := coeff_one_one_add_p_X_add_p_cube_X_sq
+  have hc2 : f.coeff 2 = (p : ℚ_[p]) ^ 3 := coeff_two_one_add_p_X_add_p_cube_X_sq
+  have hc_gt {n : ℕ} (hn : 2 < n) : f.coeff n = 0 := coeff_eq_zero_one_add_p_X_add_p_cube_X_sq hn
   have hdeg : f.natDegree = 2 := natDegree_eq_of_le_of_coeff_ne_zero
     (natDegree_le_iff_coeff_eq_zero.mpr fun n hn => hc_gt hn) (hc2 ▸ hp3_ne)
   have htr_deg : f.natTrailingDegree = 0 :=
@@ -128,9 +145,7 @@ theorem exists_coprime_linear_factors_one_add_p_X_add_p_cube_X_sq :
   set f : ℚ_[p][X] := 1 + C (p : ℚ_[p]) * X + C ((p : ℚ_[p]) ^ 3) * X ^ 2
   have hp1 : (1 : ℝ) < p := Nat.one_lt_cast.mpr (Fact.out : p.Prime).one_lt
   have hv0 : ∀ x : ℚ_[p], v x = ⊤ → x = 0 := fun _ => v.top_iff.mp
-  have hf0 : f.coeff 0 = 1 := by
-    simp only [f, coeff_add, coeff_one, coeff_C_mul, coeff_X, coeff_X_pow]
-    norm_num
+  have hf0 : f.coeff 0 = 1 := coeff_zero_one_add_p_X_add_p_cube_X_sq
   obtain ⟨g, hg⟩ := exists_isPureSlopeFactorization v hp1
     (fun _ hx => norm_eq_rpow_neg_padicRealValuation hx) hf0
   have hdeg1 : (g 1).natDegree = 1 := by
