@@ -131,9 +131,9 @@ private theorem UniformlyEllipticOn.energyFormH1_zero_zero_le_of_lowerOrder
   linarith [hu v hv]
 
 omit [DecidableEq ι] in
-/-- Young's inequality for the drift: against the test function `ψ² w`, the drift part of the
-forcing `F - ⟪b, ∇u⟫` costs a quarter of the weighted gradient term of `w = (u - k)⁺` and a
-zeroth-order term. On the active set `∇w = ∇u`; off it, `w` vanishes. -/
+/-- Young's inequality for the drift: for `w = (u - k)⁺` and `‖b‖ ≤ β` on `Ω`, the drift part of
+the forcing `F - ⟪b, ∇u⟫`, tested against `ψ² w`, is at most `λ/4 · ∫ ψ² ‖∇w‖² + β²/λ · ∫ ψ² w²`
+above the `F` part. -/
 private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam)
     (hb_bound : ∀ x ∈ (Omega : Set (EuclideanSpace ℝ ι)), ‖b x‖ ≤ beta)
     {F : EuclideanSpace ℝ ι → ℝ} (hF : MemLp F 2 (mu.restrict Omega)) {u : W1p mu Omega 2}
@@ -169,6 +169,7 @@ private theorem setIntegral_sq_mul_sub_inner_mul_posPartAbove_le (hlam : 0 < lam
     simp only [Pi.add_apply]
     rw [integral_add hFw hR, integral_add (hX.const_mul _) (hZ.const_mul _), integral_const_mul,
       integral_const_mul])
+  -- On the active set `∇w = ∇u`; off it, `w` vanishes.
   filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet, hg.coeFn_toLp,
     W1p.gradient_posPartAboveOfMemLp_ae (by norm_num) k u hwLp,
     W1p.value_posPartAboveOfMemLp_ae (by norm_num) k u hwLp] with x hx hgx hwg hwv
