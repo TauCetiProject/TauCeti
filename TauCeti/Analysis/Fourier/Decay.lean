@@ -64,6 +64,34 @@ theorem exists_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f) (hsupp : H
   have h := hC v
   rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe0] at h
 
+open MeasureTheory Real in
+/-- **Integration by parts.** If `f` is `C^N` and its derivatives of order at most `N` are
+integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`. -/
+theorem pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv {N : ℕ} (hf : ContDiff ℝ N f)
+    (hf' : ∀ n ≤ N, Integrable (iteratedFDeriv ℝ n f)) (w : V) :
+    (2 * π * ‖w‖) ^ N * ‖𝓕 f w‖ ≤ ∫ v, ‖iteratedFDeriv ℝ N f v‖ := by
+  have key := congrFun (Real.fourier_iteratedFDeriv (N := N) hf
+    (fun n hn ↦ hf' n (mod_cast hn)) le_rfl) w
+  have hle : ‖𝓕 (iteratedFDeriv ℝ N f) w (fun _ ↦ w)‖ ≤
+      (∫ v, ‖iteratedFDeriv ℝ N f v‖) * ‖w‖ ^ N := by
+    refine ((𝓕 (iteratedFDeriv ℝ N f) w).le_opNorm _).trans ?_
+    rw [Finset.prod_const, Finset.card_univ, Fintype.card_fin]
+    gcongr
+    exact Real.norm_fourier_le_integral_norm _ _
+  have heq : ‖𝓕 (iteratedFDeriv ℝ N f) w (fun _ ↦ w)‖ =
+      (2 * π * ‖w‖) ^ N * ‖𝓕 f w‖ * ‖w‖ ^ N := by
+    rw [key, VectorFourier.fourierPowSMulRight_apply]
+    simp only [neg_apply, Finset.prod_const, Finset.card_univ, Fintype.card_fin, norm_smul,
+      norm_pow, norm_neg, Complex.norm_mul, Complex.norm_ofNat, Complex.norm_real,
+      Real.norm_eq_abs, abs_of_pos pi_pos, Complex.norm_I, mul_one]
+    rw [innerSL_apply_apply, real_inner_self_eq_norm_sq, abs_of_nonneg (by positivity)]
+    ring
+  rcases eq_or_ne (‖w‖ ^ N) 0 with h | h
+  · obtain ⟨hw, hN⟩ := pow_eq_zero_iff'.mp h
+    rw [hw, mul_zero, zero_pow hN, zero_mul]
+    exact integral_nonneg fun _ ↦ norm_nonneg _
+  · exact le_of_mul_le_mul_right (heq ▸ hle) (lt_of_le_of_ne (by positivity) (Ne.symm h))
+
 section Circle
 
 open Complex
