@@ -7,9 +7,9 @@ module
 
 public import Mathlib.LinearAlgebra.FiniteDimensional.Defs
 public import TauCeti.Topology.Algebra.Module.Alternating.Wedge.Pow
+import TauCeti.Geometry.Symplectic.ContinuousAlternatingMap
 import TauCeti.Geometry.Symplectic.Darboux.Basis
 import TauCeti.LinearAlgebra.Alternating.TopDegree
-import TauCeti.LinearAlgebra.BilinearMap.Multilinear
 import TauCeti.Topology.Algebra.Module.Alternating.TopDegree
 
 /-!
@@ -67,12 +67,7 @@ theorem wedgePow_ne_zero_iff (hn : finrank ℝ E = 2 * n) (ω : E [⋀^Fin 2]→
         coe_zero, Pi.zero_apply, _root_.zero_apply]
   · intro h
     -- A Darboux basis for the symplectic form `ω`, on which `ω ^ n` takes the value `n!`.
-    set ωs : TauCeti.SymplecticForm E :=
-      { toBilinForm := ω.toAlternatingMap.toMultilinearMap.toBilinMap
-        isAlt := AlternatingMap.isAlt_toBilinMap _
-        nondegenerate :=
-          (AlternatingMap.isAlt_toBilinMap _).isRefl.nondegenerate_iff_separatingLeft.2
-            fun v hv ↦ h v fun w ↦ by simpa using hv w }
+    set ωs := TauCeti.SymplecticForm.ofContinuousAlternatingMap ω h
     obtain ⟨b, hb⟩ := ωs.exists_isDarbouxBasis_of_finrank_eq (hn.trans (Nat.mul_comm 2 n))
     have hval := wedgePow_apply_finProdFinEquiv ω b
       (fun i j ↦ by simpa [ωs] using hb.apply_fst_fst i j)
