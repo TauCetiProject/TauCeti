@@ -244,6 +244,39 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_zero
     (by linear_combination (norm := module) e3) (by linear_combination (norm := module) e4)
     (by linear_combination (norm := module) e5) (by linear_combination (norm := module) e6)
 
+/-- The alternation of `D ∘ N`, for `D` the derivative of `ω` and `N` the Nijenhuis-type tensor
+`N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)`, is twice the alternation of `D ∘ S`
+for `S v = A (J v) + A v ∘ J`; this involves only `D ∘ A ∘ J` and `D ∘ J ∘ A`. -/
+private theorem alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq
+    {J : E →L[ℝ] E} (ω : E [⋀^Fin k]→L[ℝ] F) {A N : E →L[ℝ] E →L[ℝ] E}
+    (hN : ∀ v w, N v w = A (J v) w + A v (J w) - A (J w) v - A w (J v)) :
+    alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L N) =
+      alternatizeUncurryFin ((ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L A) ∘L J) +
+        alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L
+          ((compL ℝ E E E).flip J ∘L A)) +
+      (alternatizeUncurryFin ((ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L A) ∘L J) +
+        alternatizeUncurryFin (ω.fderivCompContinuousLinearMap (.id ℝ E) ∘L
+          ((compL ℝ E E E).flip J ∘L A))) := by
+  set D := ω.fderivCompContinuousLinearMap (.id ℝ E)
+  set S := A ∘L J + (compL ℝ E E E).flip J ∘L A
+  -- The alternation of `D ∘ h` vanishes for the symmetric bilinear map `h v w = S v w + S w v`.
+  have hsymm : alternatizeUncurryFin (D ∘L (S + S.flip)) = 0 :=
+    alternatizeUncurryFin_fderivCompContinuousLinearMap_eq_zero ω _ fun v w ↦ by
+      simp only [_root_.add_apply, flip_apply, add_comm]
+  have hNS : N = S - S.flip := by
+    ext v w
+    simp [S, hN, sub_sub]
+  have hS : alternatizeUncurryFin (D ∘L S) =
+      alternatizeUncurryFin ((D ∘L A) ∘L J) +
+        alternatizeUncurryFin (D ∘L ((compL ℝ E E E).flip J ∘L A)) := by
+    rw [← alternatizeUncurryFin_add]
+    congr 1
+    ext v
+    simp [S]
+  rw [comp_add, alternatizeUncurryFin_add] at hsymm
+  rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
+    hS]
+
 /-- **The outer bidegrees.** Let `ω` be a form of type `(p,q)` for `J` with `J² = -1`, let
 `(η, A)` be a first-order variation of the pair `(ω, J)` preserving this, as in
 `IsOfType.typeProjection_alternatizeUncurryFin_eq_zero`, and let
@@ -273,8 +306,6 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_inv_eight_smul
   set D := ω.fderivCompContinuousLinearMap (.id ℝ E)
   have hD (X : E →L[ℝ] E) : X.alternatingDerivation ω = D X :=
     alternatingDerivation_eq_fderivCompContinuousLinearMap X ω
-  -- `S v = A (J v) + A v ∘ J`, so that `N v w = S v w - S w v`.
-  set S := A ∘L J + (compL ℝ E E E).flip J ∘L A
   let β := D ∘L A
   let γ := D ∘L ((compL ℝ E E E).flip J ∘L A)
   have hβ (v : E) : J.alternatingDerivation (β v) = c • β v + (2 : ℂ) • γ v := by
@@ -283,26 +314,7 @@ theorem IsOfType.typeProjection_alternatizeUncurryFin_eq_inv_eight_smul
     simp only [β, ContinuousLinearMap.comp_apply, ← hD]
     exact eq_sub_of_add_eq (hη v)
   have hJJ : (η ∘L J) ∘L J = -η := by ext v; simp [hJ]
-  -- The alternation of `D ∘ N` is twice that of `D ∘ S`, since the alternation of `D ∘ h`
-  -- vanishes for the symmetric bilinear map `h v w = S v w + S w v`.
-  have hsymm : alternatizeUncurryFin (D ∘L (S + S.flip)) = 0 :=
-    alternatizeUncurryFin_fderivCompContinuousLinearMap_eq_zero ω _ fun v w ↦ by
-      simp only [_root_.add_apply, flip_apply, add_comm]
-  have hNS : N = S - S.flip := by
-    ext v w
-    simp [S, hN, sub_sub]
-  have hDN : alternatizeUncurryFin (D ∘L N) =
-      alternatizeUncurryFin (β ∘L J) + alternatizeUncurryFin γ +
-        (alternatizeUncurryFin (β ∘L J) + alternatizeUncurryFin γ) := by
-    have hS : alternatizeUncurryFin (D ∘L S) =
-        alternatizeUncurryFin (β ∘L J) + alternatizeUncurryFin γ := by
-      rw [← alternatizeUncurryFin_add]
-      congr 1
-      ext v
-      simp [S, β, γ]
-    rw [comp_add, alternatizeUncurryFin_add] at hsymm
-    rw [hNS, comp_sub, alternatizeUncurryFin_sub, eq_neg_of_add_eq_zero_right hsymm, sub_neg_eq_add,
-      hS]
+  have hDN := alternatizeUncurryFin_fderivCompContinuousLinearMap_comp_eq ω hN
   -- The type-`(P,Q)` components of the alternations of `η`, `η ∘ J` and `β` satisfy three linear
   -- relations, from which `(t² + 1) x = -2 (y + z)` for the shift `t`, with `t² = -9` here.
   have e1 := smul_typeProjection_alternatizeUncurryFin (P := P) (Q := Q) hJ (θ := η)
