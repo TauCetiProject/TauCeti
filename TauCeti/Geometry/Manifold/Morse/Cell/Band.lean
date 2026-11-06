@@ -110,16 +110,11 @@ theorem IsMorse.isZero_singularHomology_sublevel_of_manifoldMorseIndex_le [HasCo
     IsZero (((singularHomologyFunctor C n).obj R).obj (TopCat.of {x | f x ≤ b})) := by
   have hcont : Continuous f := hf.contMDiff.continuous
   -- Below the minimum of `f` on the compact sublevel, the sublevel `{f ≤ a}` is empty.
-  obtain ⟨m, hm⟩ := hcompact.bddBelow_image hcont.continuousOn
-  have hab : min m b - 1 ≤ b := by linarith [min_le_right m b]
-  have hempty (x : M) : ¬f x ≤ min m b - 1 := fun hx ↦ by
-    have hxb : x ∈ {x | f x ≤ b} := hx.trans hab
-    have := hm (mem_image_of_mem f hxb)
-    linarith [min_le_left m b]
-  have : IsEmpty (sublevelPair f hab).snd := ⟨fun x ↦ hempty x.1 x.2⟩
+  obtain ⟨a, hab, ha⟩ := exists_le_forall_lt_of_isCompact_sublevel hcompact hcont.continuousOn
+  have : IsEmpty (sublevelPair f hab).snd := ⟨fun x ↦ (ha x.1).not_ge x.2⟩
   have hzero := hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab
     (hcompact.of_isClosed_subset (isClosed_Icc.preimage hcont) fun x hx ↦ hx.2)
-    (isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ hempty p hp.le)
+    (isRegularValue_iff_notMem_image_criticalPoints.2 fun ⟨p, _, hp⟩ ↦ (ha p).ne' hp)
     hb (fun p hp ↦ hd p hp.1 hp.2.2) R hn
   -- Relative homology modulo the empty sublevel is the homology of `{f ≤ b}`.
   have hπ : IsIso ((sublevelPair f hab).singularHomologyπ R n) := inferInstance

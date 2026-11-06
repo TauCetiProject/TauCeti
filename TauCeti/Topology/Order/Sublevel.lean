@@ -26,7 +26,9 @@ whole band `{|w| ≤ η}` around it (`TauCeti.exists_forall_abs_le_notMem`).
 
 Conversely, restricting a function to a set `S` which is not closed can destroy compactness of
 sublevels: if `S` accumulates at a point `p ∉ S` with `f p < r`, then `{x ∈ S | f x ≤ r}` is not
-compact (`TauCeti.not_isCompact_inter_preimage_Iic`).
+compact (`TauCeti.not_isCompact_inter_preimage_Iic`). A compact sublevel `{f ≤ b}`, on which `f`
+is continuous, lies strictly above some value `a ≤ b`, whose sublevel is then empty
+(`TauCeti.exists_le_forall_lt_of_isCompact_sublevel`).
 
 If a continuous motion of the space lowers `f` at unit speed through the band `a ≤ f ≤ b`, then
 following it until the level `a` is reached retracts the sublevel `{f ≤ b}` onto `{f ≤ a}`, by a
@@ -114,6 +116,20 @@ theorem not_isCompact_inter_preimage_Iic {X β : Type*} [TopologicalSpace X] [T2
     exact (hpS.and_eventually (hf.eventually (eventually_lt_nhds hr))).mono
       fun x hx ↦ ⟨hx.1, hx.2.le⟩
   exact hp (hK.isClosed.closure_eq ▸ hmem).1
+
+/-- If a sublevel `{f ≤ b}` is compact and `f` is continuous on it, then `f` is bounded below by
+a value `a ≤ b` which it never attains, so the sublevel `{f ≤ a}` is empty. -/
+theorem exists_le_forall_lt_of_isCompact_sublevel {X β : Type*} [TopologicalSpace X]
+    [TopologicalSpace β] [LinearOrder β] [ClosedIicTopology β] [NoMinOrder β] {f : X → β} {b : β}
+    (hcompact : IsCompact {x | f x ≤ b}) (hf : ContinuousOn f {x | f x ≤ b}) :
+    ∃ a ≤ b, ∀ x, a < f x := by
+  have : Nonempty β := ⟨b⟩
+  obtain ⟨m, hm⟩ := hcompact.bddBelow_image hf
+  obtain ⟨a, ha⟩ := exists_lt (min m b)
+  refine ⟨a, (ha.trans_le (min_le_right m b)).le, fun x ↦ ?_⟩
+  rcases le_or_gt (f x) b with hx | hx
+  · exact ha.trans_le ((min_le_left m b).trans (hm (mem_image_of_mem f hx)))
+  · exact (ha.trans_le (min_le_right m b)).trans hx
 
 /-- The sublevels `{f ≤ a}` of `f` increase with `a`. -/
 theorem sublevel_mono {X β : Type*} [Preorder β] (f : X → β) :
