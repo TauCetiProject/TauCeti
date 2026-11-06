@@ -48,7 +48,7 @@ front of the three rows of `linearizedEquation`, and `gaugeFixedAdjoint` is its 
   equation holds, `κ = |φ|² / 2 - 1 / 8` and `2 ∂_a φ = ∇₁ α`, so the section potential is
   `3 |φ|² / 2 - 1 / 8` and `K` is multiplication by `i conj (∇₁ α)`. Unlike `L_x L_x*`, this
   operator is not a sum of nonnegative Schrödinger operators, since the coupling `K` has no
-  sign; it is coercive only where `|∇₁ α|` is small and `|α|` is close to one.
+  sign; small `|∇₁ α|` and `|α|` close to one suffice for it to be coercive.
 * `integral_mul_gaugeAdjoint` and `integral_inner_gaugeFixedOperator`: the integration-by-parts
   identities `∫ f d₀* y = ∫ ⟪d₀ f, y⟫` and `∫ ⟪L_x y, η⟫ = ∫ ⟪y, L_x* η⟫`, for `C¹` data with one
   factor compactly supported and any additive Haar measure.
