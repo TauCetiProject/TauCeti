@@ -177,7 +177,7 @@ theorem exists_enorm_integral_lineDeriv_smul_le_of_integral_conjWirtingerDeriv_e
     calc ‖∫ z, lineDeriv ℝ (φ : ℂ → ℝ) z v • uε n z‖ₑ ≤
         eLpNorm (φ : ℂ → ℝ) q volume * ‖v‖ₑ *
           eLpNorm (fderiv ℝ (uε n)) p (volume.restrict V) :=
-            ((hsmooth n).of_le (by simp)).enorm_integral_lineDeriv_smul_le φ v
+            ((hsmooth n).of_le (by simp)).contDiffOn.enorm_integral_lineDeriv_smul_le φ v
       _ ≤ eLpNorm (φ : ℂ → ℝ) q volume * ‖v‖ₑ *
           (C * (eLpNorm f p (volume.restrict U) + eLpNorm u p (volume.restrict U))) := by
             gcongr

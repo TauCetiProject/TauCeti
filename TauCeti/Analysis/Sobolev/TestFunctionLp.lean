@@ -42,7 +42,7 @@ On that subspace of `L²(Ω)`, a distributional derivative bounded by the `L²` 
 extends by Hahn–Banach to a bounded functional on `L²(Ω)`, and the negative of its Riesz
 representative is a weak derivative:
 `TauCeti.exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le`.
-`ContDiff.enorm_integral_lineDeriv_smul_le` supplies the corresponding conjugate-exponent
+`ContDiffOn.enorm_integral_lineDeriv_smul_le` supplies the corresponding conjugate-exponent
 test bound for a smooth map, using its actual `Lᵖ` derivative seminorm.
 -/
 
@@ -206,20 +206,24 @@ variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F
   {p q : ℝ≥0∞} [p.HolderConjugate q]
 
 omit [IsFiniteMeasureOnCompacts mu] in
-/-- Integration by parts and Hölder's inequality bound the action of a smooth function's
-weak directional derivative on a test function by its `Lᵖ` derivative seminorm. -/
-theorem _root_.ContDiff.enorm_integral_lineDeriv_smul_le {u : E → F} (hu : ContDiff ℝ 1 u)
+/-- Integration by parts and Hölder's inequality bound the action of a function's weak directional
+derivative on a test function by its `Lᵖ` derivative seminorm. The function need only be `C¹` on
+the open test domain. -/
+theorem _root_.ContDiffOn.enorm_integral_lineDeriv_smul_le {u : E → F}
+    (hu : ContDiffOn ℝ 1 u Omega)
     (phi : 𝓓(Omega, ℝ)) (v : E) :
     ‖∫ x, lineDeriv ℝ (phi : E → ℝ) x v • u x ∂mu‖ₑ ≤
       eLpNorm (phi : E → ℝ) q mu * ‖v‖ₑ * eLpNorm (fderiv ℝ u) p (mu.restrict Omega) := by
-  have hD : Continuous (fderiv ℝ u) := hu.continuous_fderiv one_ne_zero
+  have hD : ContinuousOn (fderiv ℝ u) Omega :=
+    hu.continuousOn_fderiv_of_isOpen Omega.isOpen le_rfl
   have hw : HasWeakFDerivOn mu Omega u (fderiv ℝ u) := hasWeakFDerivOn_of_differentiableOn
-    (hu.continuous.locallyIntegrable.locallyIntegrableOn Omega)
-    (hD.locallyIntegrable.locallyIntegrableOn Omega) (fun x _ => hu.differentiable one_ne_zero x)
+    (hu.continuousOn.locallyIntegrableOn Omega.isOpen.measurableSet)
+    (hD.locallyIntegrableOn Omega.isOpen.measurableSet) (fun x hx =>
+      (hu.differentiableOn one_ne_zero x hx).differentiableAt (Omega.isOpen.mem_nhds hx))
   rw [(hw.hasWeakLineDerivOn v).integral_lineDeriv_smul_eq_neg_integral_smul phi, enorm_neg,
     ← setIntegral_smul_eq_integral_smul phi]
-  have hmeas : AEStronglyMeasurable (fun x => fderiv ℝ u x v) (mu.restrict Omega) := by
-    fun_prop
+  have hmeas : AEStronglyMeasurable (fun x => fderiv ℝ u x v) (mu.restrict Omega) :=
+    (hD.clm_apply continuousOn_const).aestronglyMeasurable Omega.isOpen.measurableSet
   have hnorm : eLpNorm (fun x => fderiv ℝ u x v) p (mu.restrict Omega) ≤
       ‖v‖ₑ * eLpNorm (fderiv ℝ u) p (mu.restrict Omega) := by
     calc eLpNorm (fun x => fderiv ℝ u x v) p (mu.restrict Omega) ≤
@@ -229,7 +233,7 @@ theorem _root_.ContDiff.enorm_integral_lineDeriv_smul_le {u : E → F} (hu : Con
       _ = ‖v‖ₑ * eLpNorm (fderiv ℝ u) p (mu.restrict Omega) := by
           rw [show (fun x => ‖v‖ * ‖fderiv ℝ u x‖) =
             ‖v‖ • (fun x => ‖fderiv ℝ u x‖) by rfl, eLpNorm_const_smul,
-            eLpNorm_norm _ hD.aestronglyMeasurable.restrict, enorm_norm]
+            eLpNorm_norm _ (hD.aestronglyMeasurable Omega.isOpen.measurableSet), enorm_norm]
   calc ‖∫ x in Omega, (phi : E → ℝ) x • fderiv ℝ u x v ∂mu‖ₑ ≤
       eLpNorm (phi : E → ℝ) q (mu.restrict Omega) *
         eLpNorm (fun x => fderiv ℝ u x v) p (mu.restrict Omega) := enorm_integral_smul_le
