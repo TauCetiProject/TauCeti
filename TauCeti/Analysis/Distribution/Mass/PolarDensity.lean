@@ -82,10 +82,13 @@ variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensi
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F]
   [FiniteDimensional ℝ F] {Ω : Opens E} {T : 𝓓(Ω, F) →L[ℝ] ℝ}
 
-/-- Existence of a density of dual norm at most one representing `T` against `‖T‖`. -/
-private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
-    ∃ τ : Ω → StrongDual ℝ F, Measurable τ ∧ (∀ᵐ x ∂massMeasure T, ‖τ x‖ ≤ 1) ∧
-      ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T := by
+/-- A distribution of locally finite mass is represented by integration against a measurable
+field `g` of linear functionals, locally integrable with respect to a measure `ρ` that is finite on
+compact sets and dominates `‖T‖`. -/
+private theorem exists_measurable_dual_density (hT : HasLocallyFiniteMass T) :
+    ∃ ρ : Measure Ω, IsFiniteMeasureOnCompacts ρ ∧ massMeasure T ≪ ρ ∧
+      ∃ g : Ω → StrongDual ℝ F, Measurable g ∧ LocallyIntegrable g ρ ∧
+        ∀ φ : 𝓓(Ω, F), T φ = ∫ x, g x (φ x) ∂ρ := by
   have := Ω.isOpen.locallyCompactSpace
   set lam := massMeasure T
   let b := Module.finBasis ℝ F
@@ -130,10 +133,19 @@ private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
           rw [← integral_finsetSum _ fun i _ => (hf' i (ψ i)).1]
           congr 1 with x
           simp [hg, ψ]
-  -- The dual norm of `g` is bounded by the density `k` of `‖T‖` with respect to `ρ`.
-  set k := lam.rnDeriv ρ
   have hgint : LocallyIntegrable g ρ := locallyIntegrable_iff.2 fun K hK =>
     integrable_finsetSum _ fun i _ => (hfK i K hK).smul_const (c i)
+  exact ⟨ρ, hρ, hlam, g, hgm, hgint, hrep⟩
+
+/-- Existence of a density of dual norm at most one representing `T` against `‖T‖`. -/
+private theorem exists_le_one (hT : HasLocallyFiniteMass T) :
+    ∃ τ : Ω → StrongDual ℝ F, Measurable τ ∧ (∀ᵐ x ∂massMeasure T, ‖τ x‖ ≤ 1) ∧
+      ∀ φ : 𝓓(Ω, F), T φ = ∫ x, τ x (φ x) ∂massMeasure T := by
+  have := Ω.isOpen.locallyCompactSpace
+  set lam := massMeasure T
+  obtain ⟨ρ, hρ, hlam, g, hgm, hgint, hrep⟩ := exists_measurable_dual_density hT
+  -- The dual norm of `g` is bounded by the density `k` of `‖T‖` with respect to `ρ`.
+  set k := lam.rnDeriv ρ
   have hbound : ∀ᵐ x ∂ρ, ‖g x‖ₑ ≤ k x := by
     refine TauCeti.ae_enorm_le_of_forall_enorm_integral_apply_le hgint
       (Measure.measurable_rnDeriv _ _)
