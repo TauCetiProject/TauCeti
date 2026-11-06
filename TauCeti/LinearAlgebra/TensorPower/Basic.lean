@@ -61,6 +61,14 @@ section map
 
 variable {R M} {N : Type*} [AddCommMonoid N] [Module R N]
 
+/-- The inverse length-one equivalence commutes with applying a linear map to its factor. -/
+theorem oneEquiv_symm_comp (f : M →ₗ[R] N) :
+    (oneEquiv R N).symm.toLinearMap ∘ₗ f =
+      PiTensorProduct.map (fun _ : Fin 1 ↦ f) ∘ₗ (oneEquiv R M).symm.toLinearMap := by
+  ext x
+  simp only [LinearMap.comp_apply, LinearEquiv.coe_coe, oneEquiv_symm_apply,
+    PiTensorProduct.map_tprod]
+
 /-- Concatenating tensor powers intertwines the tensor product of two tensor-power maps with the
 tensor-power map of the appended family of factors. -/
 theorem mulEquiv_comp_map {d e : ℕ} (f : Fin d → M →ₗ[R] N) (g : Fin e → M →ₗ[R] N) :
@@ -74,6 +82,16 @@ theorem mulEquiv_comp_map {d e : ℕ} (f : Fin d → M →ₗ[R] N) (g : Fin e �
     PiTensorProduct.map_tprod, ← TensorPower.gMul_def, TensorPower.tprod_mul_tprod]
   congr 1 with i
   refine Fin.addCases (fun _ ↦ ?_) (fun _ ↦ ?_) i <;> simp
+
+/-- Concatenation commutes with applying the same linear map to every tensor factor. -/
+theorem mulEquiv_comp_map_const (d e : ℕ) (f : M →ₗ[R] N) :
+    (TensorPower.mulEquiv (R := R) (M := N) (n := d) (m := e)).toLinearMap ∘ₗ
+        TensorProduct.map (PiTensorProduct.map (fun _ : Fin d ↦ f))
+          (PiTensorProduct.map (fun _ : Fin e ↦ f)) =
+      PiTensorProduct.map (fun _ : Fin (d + e) ↦ f) ∘ₗ
+        TensorPower.mulEquiv.toLinearMap := by
+  simpa only [Fin.append_castAdd_natAdd (f := fun _ : Fin (d + e) ↦ f)] using
+    mulEquiv_comp_map (fun _ : Fin d ↦ f) (fun _ : Fin e ↦ f)
 
 /-- Conjugating by `TensorPower.mulEquiv` turns the tensor product of two tensor-power
 endomorphisms into the tensor-power endomorphism of the appended family. -/

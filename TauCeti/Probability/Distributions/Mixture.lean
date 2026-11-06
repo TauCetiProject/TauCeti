@@ -13,7 +13,7 @@ public import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
 public import Mathlib.MeasureTheory.Measure.ProbabilityMeasure
 public import TauCeti.MeasureTheory.Integral.Bind
 public import TauCeti.MeasureTheory.Measure.Mixture.Basic
-public import TauCeti.Probability.Distributions.Categorical
+public import TauCeti.Probability.Distributions.Categorical.Basic
 public import TauCeti.Probability.Density
 
 /-!

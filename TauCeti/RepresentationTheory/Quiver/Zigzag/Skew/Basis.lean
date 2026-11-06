@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Finite.Sum
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Basis
 public import TauCeti.RepresentationTheory.Quiver.Zigzag.Skew.Basic
 
@@ -129,7 +130,7 @@ private theorem pathScale_eq_one (s : IncidentChoice G) (x : Quiver.TotalPath (D
     (hx : ∀ d : G.Dart, x ≠ dartBacktrack G d) : pathScale k G c s x = 1 := by
   rw [pathScale, dite_eq_right (not_exists.mpr hx)]
 
-variable [Finite V]
+variable [hV : Finite V]
 
 /-- The value on a path of the rescaling below: the path scaled by its path scale. -/
 private noncomputable def pathCoord (s : IncidentChoice G)
@@ -500,6 +501,24 @@ noncomputable def skewZigzagBasis :
     Module.Basis (ZigzagBasisIndex G) k (skewZigzagQuotient k G c) :=
   Module.Basis.mk (linearIndependent_skewZigzagBasisFun k G c t)
     (span_range_skewZigzagBasisFun_eq_top k G c t).ge
+
+include hV in
+/-- A skew-zigzag relation quotient with an incident edge at every vertex is finite over the
+base ring. -/
+theorem moduleFinite_skewZigzagQuotient (hns : ∀ i : V, ∃ j, G.Adj i j) :
+    Module.Finite k (skewZigzagQuotient k G c) := by
+  let : Finite G.Dart :=
+    Finite.of_injective _ (SimpleGraph.Dart.toProd_injective (G := G))
+  exact Module.Finite.of_basis
+    (skewZigzagBasis k G c fun i => ⟨(hns i).choose, (hns i).choose_spec⟩)
+
+include hV in
+/-- A skew-zigzag relation quotient with an incident edge at every vertex is free over the
+base ring. -/
+theorem moduleFree_skewZigzagQuotient (hns : ∀ i : V, ∃ j, G.Adj i j) :
+    Module.Free k (skewZigzagQuotient k G c) :=
+  Module.Free.of_basis
+    (skewZigzagBasis k G c fun i => ⟨(hns i).choose, (hns i).choose_spec⟩)
 
 @[simp]
 theorem skewZigzagBasis_apply (b : ZigzagBasisIndex G) :

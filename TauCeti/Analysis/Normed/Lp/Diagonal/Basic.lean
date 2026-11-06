@@ -7,9 +7,11 @@ module
 
 public import Mathlib.Analysis.Normed.Lp.lpHolder
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
+public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.LinearAlgebra.Dimension.Constructions
 public import Mathlib.LinearAlgebra.Dimension.LinearMap
 public import TauCeti.Analysis.Normed.Lp.Basic
+public import TauCeti.Analysis.Normed.Lp.MapCLM
 public import TauCeti.Analysis.Normed.Operator.Compact.FiniteRank
 
 /-!
@@ -20,7 +22,8 @@ A bounded scalar family defines coordinatewise multiplication on `lp` for every 
 truncations have rank at most the number of retained coordinates, and the discarded coefficients
 bound their error in operator norm. These estimates provide finite-rank approximations of
 diagonal operators. Over a locally compact scalar field, coefficients tending to
-zero along the cofinite filter give a compact diagonal operator.
+zero along the cofinite filter give a compact diagonal operator. Over `RCLike 𝕜`, every antitone
+`ℕ → ℝ≥0` sequence defines a nonnegative bounded sequence (`lp.ofAntitone`).
 
 The construction uses Mathlib's `lp.mapCLM` for uniformly bounded families of operators.
 -/
@@ -31,6 +34,8 @@ open scoped lp ENNReal NNReal Topology
 open Filter
 
 namespace lp
+
+section Multiplier
 
 variable {ι 𝕜 : Type*} [NontriviallyNormedField 𝕜] {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
@@ -60,19 +65,15 @@ theorem algebraMap_sub_diagonalCLM_apply (d : ℓ^∞(ι, 𝕜)) (c : 𝕜) (x :
 @[simp]
 theorem diagonalCLM_single [DecidableEq ι] (d : ℓ^∞(ι, 𝕜)) (i : ι) (a : 𝕜) :
     diagonalCLM d (lp.single p i a) = lp.single p i (d i * a) := by
-  ext j
-  by_cases h : j = i
-  · subst j; simp
-  · simp [lp.single_apply, h]
+  simp [diagonalCLM]
 
 /-- The operator norm of a diagonal multiplier equals the supremum norm of its coefficients. -/
 @[simp]
 theorem norm_diagonalCLM (d : ℓ^∞(ι, 𝕜)) : ‖diagonalCLM (p := p) d‖ = ‖d‖ := by
-  classical
   refine le_antisymm (norm_mapCLM_le _ _ _ _) ?_
   refine norm_le_of_forall_le (norm_nonneg _) fun i ↦ ?_
-  have h := (diagonalCLM (p := p) d).le_opNorm (lp.single p i 1)
-  simpa [lp.norm_single (zero_lt_one.trans_le (Fact.out : 1 ≤ p))] using h
+  have h : _ ≤ ‖diagonalCLM (p := p) d‖ := norm_le_norm_mapCLM (p := p) _ _ _ i
+  rwa [norm_smul, ContinuousLinearMap.norm_id, mul_one] at h
 
 /-- The diagonal multiplier with all coefficients zero is zero. -/
 @[simp]
@@ -148,6 +149,14 @@ theorem diagonalTruncation_single (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) (i : �
   · subst j; by_cases hi : i ∈ s <;> simp [hi]
   · by_cases hi : i ∈ s <;> simp [hi, lp.single_apply, h]
 
+/-- A finite coordinate truncation of a diagonal operator is the diagonal operator of the finitely
+supported coefficient family `∑ i ∈ s, lp.single ∞ i (d i)`. -/
+theorem diagonalTruncation_eq_diagonalCLM (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
+    diagonalTruncation (p := p) d s = diagonalCLM (p := p) (∑ i ∈ s, lp.single ∞ i (d i)) := by
+  ext x j
+  simp only [diagonalTruncation_apply, diagonalCLM_apply, lp.coeFn_sum, lp.coeFn_single,
+    Finset.sum_apply, Finset.sum_pi_single, ite_mul, zero_mul]
+
 /-- A finite diagonal truncation has rank at most the number of retained coordinates. -/
 theorem rank_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
     (diagonalTruncation (p := p) d s).rank ≤ s.card := by
@@ -170,6 +179,14 @@ theorem rank_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι) :
 theorem rank_diagonalTruncation_range_le (d : ℓ^∞(ℕ, 𝕜)) (n : ℕ) :
     (diagonalTruncation (p := p) d (Finset.range n)).rank ≤ n := by
   simpa using rank_diagonalTruncation_le (p := p) d (Finset.range n)
+
+/-- For finite exponent `1 ≤ p < ∞`, the finite coordinate truncations of any bounded diagonal
+operator converge to it pointwise along the filter of finite sets. -/
+theorem tendsto_diagonalTruncation_apply (hp : p ≠ ∞) (d : ℓ^∞(ι, 𝕜)) (x : ℓ^p(ι, 𝕜)) :
+    Tendsto (fun s ↦ diagonalTruncation (p := p) d s x) atTop (𝓝 (diagonalCLM (p := p) d x)) := by
+  refine Tendsto.congr (fun s ↦ ?_) (lp.hasSum_single hp (diagonalCLM (p := p) d x))
+  rw [diagonalTruncation_apply_eq_sum_single]
+  exact Finset.sum_congr rfl fun i _ ↦ by simp [← lp.single_smul]
 
 /-- A bound on the discarded coefficients bounds the operator-norm truncation error. -/
 theorem norm_diagonalCLM_sub_diagonalTruncation_le (d : ℓ^∞(ι, 𝕜)) (s : Finset ι)
@@ -194,6 +211,28 @@ theorem nnnorm_diagonalCLM_sub_diagonalTruncation_range_le (d : ℓ^∞(ℕ, �
   exact_mod_cast norm_diagonalCLM_sub_diagonalTruncation_le (p := p) d (Finset.range n)
     (norm_nonneg _) (fun i hi ↦ hd (by simpa using hi))
 
+/-- When the coefficient norms of a bounded diagonal multiplier tend to zero along the cofinite
+filter, its finite coordinate truncations converge to it in operator norm. -/
+theorem tendsto_diagonalTruncation (d : ℓ^∞(ι, 𝕜))
+    (hd : Tendsto (fun i ↦ ‖d i‖) cofinite (𝓝 0)) :
+    Tendsto (diagonalTruncation (p := p) d) atTop (𝓝 (diagonalCLM (p := p) d)) := by
+  refine Metric.tendsto_atTop.2 fun ε hε ↦ ?_
+  have hs : {i | ¬‖d i‖ < ε / 2}.Finite :=
+    eventually_cofinite.mp (hd.eventually (gt_mem_nhds (half_pos hε)))
+  refine ⟨hs.toFinset, fun s hsub ↦ ?_⟩
+  rw [dist_eq_norm']
+  refine (norm_diagonalCLM_sub_diagonalTruncation_le d s (half_pos hε).le fun i hi ↦ ?_).trans_lt
+    (half_lt_self hε)
+  exact le_of_lt (by by_contra h; exact hi (hsub (hs.mem_toFinset.2 h)))
+
+/-- When the coefficient norms of a sequence-space diagonal multiplier tend to zero, its finite
+coordinate truncations along `Finset.range n` converge to it in operator norm. -/
+theorem tendsto_diagonalTruncation_range (d : ℓ^∞(ℕ, 𝕜))
+    (hd : Tendsto (fun n ↦ ‖d n‖) atTop (𝓝 0)) :
+    Tendsto (fun n ↦ diagonalTruncation (p := p) d (Finset.range n)) atTop
+      (𝓝 (diagonalCLM (p := p) d)) :=
+  (tendsto_diagonalTruncation d (Nat.cofinite_eq_atTop ▸ hd)).comp tendsto_finset_range
+
 omit [DecidableEq ι] in
 /-- A diagonal multiplier is compact if its coefficient norms tend to zero along cofinite. -/
 theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
@@ -201,18 +240,33 @@ theorem isCompactOperator_diagonalCLM [LocallyCompactSpace 𝕜]
     IsCompactOperator (diagonalCLM (p := p) d) := by
   classical
   have : ProperSpace 𝕜 := .of_locallyCompactSpace 𝕜
-  apply isClosed_setOfPred_isCompactOperator.closure_subset
-  refine Metric.mem_closure_iff.mpr fun ε hε ↦ ?_
-  have hs : {i | ¬‖d i‖ < ε / 2}.Finite :=
-    eventually_cofinite.mp (hd.eventually (gt_mem_nhds (half_pos hε)))
-  let s := hs.toFinset
+  refine isCompactOperator_of_tendsto (tendsto_diagonalTruncation d hd)
+    (Eventually.of_forall fun s ↦ ?_)
   have : Module.Finite 𝕜 (LinearMap.range (diagonalTruncation (p := p) d s).toLinearMap) :=
     Module.rank_lt_aleph0_iff.mp
-      ((rank_diagonalTruncation_le (p := p) d s).trans_lt (Cardinal.natCast_lt_aleph0))
-  refine ⟨diagonalTruncation d s,
-    LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this), ?_⟩
-  rw [dist_eq_norm]
-  exact (norm_diagonalCLM_sub_diagonalTruncation_le d s (half_pos hε).le
-    (fun i hi ↦ (by simpa [s] using hi : ‖d i‖ < ε / 2).le)).trans_lt (half_lt_self hε)
+      ((rank_diagonalTruncation_le (p := p) d s).trans_lt Cardinal.natCast_lt_aleph0)
+  exact LinearMap.HasFiniteRange.isCompactOperator (Module.Finite.iff_fg.mp this)
+
+end Multiplier
+
+/-- An antitone `ℝ≥0`-valued sequence defines a bounded scalar sequence in `ℓ^∞(ℕ, 𝕜)`, bounded
+above by `c 0`. -/
+noncomputable def ofAntitone (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) : ℓ^∞(ℕ, 𝕜) :=
+  ⟨fun n ↦ ((c n : ℝ) : 𝕜), memℓp_infty ⟨c 0, by rintro _ ⟨n, rfl⟩; simpa using hc n.zero_le⟩⟩
+
+/-- Applying `lp.ofAntitone` casts the `n`-th nonnegative real entry into `𝕜`. -/
+@[simp]
+theorem ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    ofAntitone 𝕜 hc n = ((c n : ℝ) : 𝕜) := (rfl)
+
+/-- The norm of the `n`-th entry of `lp.ofAntitone 𝕜 hc` is `c n`. -/
+theorem norm_ofAntitone_apply (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    ‖ofAntitone 𝕜 hc n‖ = c n := by
+  rw [ofAntitone_apply, RCLike.norm_ofReal, abs_of_nonneg (NNReal.coe_nonneg _)]
+
+open scoped ComplexOrder in
+/-- Every entry of `lp.ofAntitone 𝕜 hc` is nonnegative in the `RCLike` order. -/
+theorem ofAntitone_apply_nonneg (𝕜 : Type*) [RCLike 𝕜] {c : ℕ → ℝ≥0} (hc : Antitone c) (n : ℕ) :
+    0 ≤ ofAntitone 𝕜 hc n := by simp
 
 end lp

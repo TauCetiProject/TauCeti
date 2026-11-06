@@ -31,7 +31,7 @@ continuity, growth and terminal conditions under which a solution of the Black�
 is compared with the closed-form price.
 
 Continuity at an interior point is continuity of the closed forms
-(`TauCeti.BlackScholes.continuousAt_callPrice`). At a maturity point
+(by `ContDiffAt.callPrice` and `ContDiffAt.continuousAt`). At a maturity point
 `(s₀, 0)` with `s₀ > 0` it combines the joint terminal limit
 `TauCeti.BlackScholes.tendsto_callPrice_terminal` from the side `τ > 0` with continuity of the
 intrinsic value from the side `τ ≤ 0`. At zero spot it is the squeeze `0 ≤ C ≤ s⁺`.
@@ -259,7 +259,8 @@ theorem continuous_callValue (hσ : 0 < σ) (hK : 0 < K) :
       filter_upwards [prod_mem_prod (Ioi_mem_nhds hs) self_mem_nhdsWithin] with p hp
       exact (callValue_of_pos hp.1 hp.2).symm
   · -- In the interior, the extended call is locally the closed form.
-    refine (continuousAt_callPrice (r := r) hs hσ.ne' hK hτ).congr ?_
+    refine (continuousAt_fst.callPrice continuousAt_snd
+      hs.ne' hK.ne' hσ.ne' hτ (r := r)).congr ?_
     filter_upwards [(isOpen_Ioi.prod isOpen_Ioi).mem_nhds (mk_mem_prod hs hτ)] with p hp
     exact (callValue_of_pos hp.1 hp.2).symm
 

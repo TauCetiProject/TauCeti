@@ -17,8 +17,10 @@ number-field degree, not the number of infinite places: complex places have mult
 `surfaceScale` and `surfacePart` give these coordinates on Mathlib's `realSpace K`.
 `archParamHomeomorphSurfaceProd` identifies the positive orthant with the product of the
 norm-one hypersurface and `(0, ∞)`. The coordinates commute with the unit action, which
-acts only on the norm-one factor. This is the change of variables for integrating a theta
-series over a unit fundamental domain and then taking its radial Mellin transform.
+acts only on the norm-one factor. Coordinatewise inversion and multiplication by a norm-one
+parameter commute with normalization (`surfacePart_inv` and `surfacePart_mul`).
+These are the changes of variables for integrating a theta series over a unit fundamental
+domain and then taking its radial Mellin transform.
 
 ## References
 
@@ -212,5 +214,18 @@ theorem surfaceScale_unitScale (u : (𝓞 K)ˣ) (x : realSpace K) (t : ℝ) :
 theorem surfacePart_unitScale (u : (𝓞 K)ˣ) (y : realSpace K) :
     surfacePart (unitScale u y) = unitScale u (surfacePart y) := by
   simp [surfacePart_def]
+
+/-- Inverting a parameter of nonnegative norm inverts its surface coordinate. -/
+theorem surfacePart_inv {y : realSpace K} (hy : 0 ≤ archNorm y) :
+    surfacePart y⁻¹ = (surfacePart y)⁻¹ := by
+  ext w
+  simp only [surfacePart_def, surfaceScale_apply, Pi.inv_apply, archNorm_inv, inv_inv,
+    mul_inv, Real.inv_rpow hy]
+
+/-- Multiplication by a norm-one parameter translates only the surface coordinate. -/
+theorem surfacePart_mul {c : realSpace K} (hc : archNorm c = 1) (y : realSpace K) :
+    surfacePart (c * y) = c * surfacePart y := by
+  ext w
+  simp [surfacePart_def, map_mul, hc, mul_assoc]
 
 end TauCeti.LFunctions

@@ -32,13 +32,12 @@ of complex projective space are built.
 
 * `Projectivization.affineOpen i`: the points whose `i`-th homogeneous coordinate is nonzero;
   `Projectivization.iUnion_affineOpen` says that these sets cover projective space.
-* `Projectivization.mk_single_mem_affineOpen_iff` and
-  `Projectivization.mk_single_left_injective`: the coordinate point `[eᵢ]` lies in `U_j`
-  exactly when `i = j`, so distinct coordinate points are distinct.
 * `Projectivization.affineChart i`: the affine chart `U_i ≃ Fin n → K` by homogeneous ratios.
 * `Projectivization.affineChart_mk` and `Projectivization.affineChart_symm_apply`: the chart and
-  its inverse in homogeneous coordinates; `Projectivization.affineChart_symm_zero` says that the
-  centre of the chart at `i` is the coordinate point `[eᵢ]`.
+  its inverse in homogeneous coordinates.
+* `Projectivization.affineChart_symm_zero`: the centre of the chart of `i` is the coordinate point
+  `[eᵢ]`, which lies in no other standard affine open
+  (`Projectivization.mk_single_mem_affineOpen_iff`).
 * `Projectivization.affineChart_symm_trans_source` and
   `Projectivization.affineChart_symm_trans_apply`: the domain and formula of the transition maps.
 * `Projectivization.affineChart_apply_affineChart_symm`: a map of projective spaces given in
@@ -95,18 +94,21 @@ theorem affineOpen_eq_univ [Subsingleton ι] (i : ι) : affineOpen (K := K) i = 
   obtain ⟨j, hj⟩ := exists_mem_affineOpen x
   rwa [Subsingleton.elim j i] at hj
 
-/-- The coordinate point `[eᵢ]`, the class of the `i`-th standard basis vector, lies in the standard
-affine open of `j` exactly when `i = j`. -/
-theorem mk_single_mem_affineOpen_iff [DecidableEq ι] (i j : ι) :
-    mk K (Pi.single i 1 : ι → K) (by simp) ∈ affineOpen j ↔ i = j := by
-  simp [Pi.single_apply, eq_comm]
+variable [DecidableEq ι]
 
-/-- Distinct indices give distinct coordinate points `[eᵢ]`. -/
-theorem mk_single_left_injective [DecidableEq ι] :
-    Function.Injective fun i : ι ↦ mk K (Pi.single i 1 : ι → K) (by simp) := fun i j h ↦ by
-  have hj := (mk_single_mem_affineOpen_iff (K := K) j j).2 rfl
-  beta_reduce at h
-  rwa [← h, mk_single_mem_affineOpen_iff] at hj
+/-- The coordinate point `[eₖ]`, the line spanned by the `k`-th standard basis vector, lies in the
+standard affine open of `i` exactly when `i = k`. -/
+theorem mk_single_mem_affineOpen_iff (k i : ι) :
+    mk K (Pi.single k 1) (by simp) ∈ affineOpen i ↔ i = k := by
+  rw [mk_mem_affineOpen_iff]
+  by_cases h : i = k <;> simp [h]
+
+/-- Distinct standard basis vectors span distinct coordinate points of projective space. -/
+theorem mk_single_injective :
+    Function.Injective fun k : ι ↦ mk K (Pi.single k 1 : ι → K) (by simp) := by
+  intro k k' h
+  have h' : mk K (Pi.single k 1 : ι → K) (by simp) = mk K (Pi.single k' 1 : ι → K) (by simp) := h
+  exact (mk_single_mem_affineOpen_iff k' k).mp (h' ▸ (mk_single_mem_affineOpen_iff k k).mpr rfl)
 
 end AffineOpen
 
@@ -159,11 +161,20 @@ theorem affineChart_symm_apply (i : Fin (n + 1)) (z : Fin n → K) :
       (Fin.insertNth_one_ne_zero i z) :=
   (rfl)
 
-/-- The inverse of the standard affine chart at `i` sends the origin to the coordinate point
-`[eᵢ]`. -/
+/-- The centre of the standard affine chart of `i` is the coordinate point `[eᵢ]`, the line spanned
+by the `i`-th standard basis vector. -/
 theorem affineChart_symm_zero (i : Fin (n + 1)) :
     (affineChart (K := K) i).symm 0 = mk K (Pi.single i 1) (by simp) := by
-  simp only [affineChart_symm_apply, Fin.insertNth_zero_right]
+  rw [affineChart_symm_apply]
+  congr 1
+  funext j
+  rcases Fin.eq_self_or_eq_succAbove i j with rfl | ⟨j, rfl⟩ <;> simp
+
+/-- The standard affine chart of `i` sends the coordinate point `[eᵢ]` to its centre `0`. -/
+theorem affineChart_mk_single (i : Fin (n + 1)) :
+    affineChart i (mk K (Pi.single i 1) (by simp)) = 0 := by
+  rw [← affineChart_symm_zero]
+  exact (affineChart i).right_inv (by simp)
 
 /-- The domain of the transition map from the standard affine chart of `i` to that of `j`
 consists of the points whose homogeneous coordinates `Fin.insertNth i 1 z` have nonzero `j`-th

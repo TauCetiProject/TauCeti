@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicGeometry.Modules.Algebra.Functoriality
+import TauCeti.AlgebraicGeometry.Modules.Sheaf
 
 /-!
 # Module maps from `M~` to a function algebra
@@ -119,6 +120,44 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_apply (q : T 
     q.tildeHomPushforwardEquiv M φ m =
       q.pushforwardStructureAlgebraΓRingEquiv.symm (φ.val.app (op ⊤) (tilde.toOpen M ⊤ m)) :=
   (rfl)
+
+/-- Multiplication by a function on the test scheme multiplies the associated linear
+functional by that function. -/
+-- Apply before simp normalizes the semilinear map's scalar homomorphism.
+@[simp↓]
+lemma _root_.AlgebraicGeometry.Scheme.Hom.tildeHomPushforwardEquiv_globalSectionsSmul
+    (q : T ⟶ Spec R) (M : ModuleCat.{u} R)
+    (φ : tilde M ⟶ (Scheme.Modules.pushforward q).obj (𝟙_ T.Modules))
+    (c : Γ(T, ⊤)) (m : M) :
+    q.tildeHomPushforwardEquiv M
+        (φ ≫ (Scheme.Modules.pushforward q).map (Scheme.Modules.globalSectionsSmul _ c)) m =
+      c * q.tildeHomPushforwardEquiv M φ m := by
+  rw [Scheme.Hom.tildeHomPushforwardEquiv_apply,
+    Scheme.Hom.tildeHomPushforwardEquiv_apply]
+  erw [Scheme.Modules.Hom.comp_val_app_apply,
+    Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.pushforwardStructureAlgebraΓRingEquiv_symm_apply,
+    Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply,
+    Scheme.Hom.pushforwardStructureAlgebraSectionsRingEquiv_apply]
+  -- A section of the pushforward is a function on the inverse-image open; the `show`
+  -- below gives multiplication that function-ring carrier instead of the module carrier.
+  have hc (x : Γ((Scheme.Modules.pushforward q).obj (𝟙_ T.Modules), ⊤)) :
+      ((Scheme.Modules.pushforward q).map (Scheme.Modules.globalSectionsSmul _ c)).val.app
+          (op ⊤) x = T.presheaf.map (q ⁻¹ᵁ ⊤).leTop.op c *
+            (show Γ(T, q ⁻¹ᵁ ⊤) from x) := by
+    exact ConcreteCategory.congr_hom
+      ((Scheme.Modules.pushforward_map_app q _ ⊤).trans
+        (Scheme.Modules.globalSectionsSmul_app _ c (q ⁻¹ᵁ ⊤))) x
+  erw [hc]
+  rw [map_mul]
+  have hr : T.presheaf.map (homOfLE (by simp : ⊤ ≤ q ⁻¹ᵁ ⊤)).op
+      (T.presheaf.map (q ⁻¹ᵁ ⊤).leTop.op c) = c := by
+    rw [← Functor.map_comp_apply]
+    have hi : (q ⁻¹ᵁ ⊤).leTop.op ≫ (homOfLE (by simp : ⊤ ≤ q ⁻¹ᵁ ⊤)).op =
+        𝟙 (op (⊤ : T.Opens)) := Subsingleton.elim _ _
+    rw [hi, T.presheaf.map_id]
+    rfl
+  exact congrArg (fun z ↦ z * _) hr
 
 /-- The bijection `Scheme.Hom.tildeHomPushforwardEquiv` is natural in the scheme over `Spec R`:
 composing a module map with pullback of regular functions along `g : V ⟶ T` composes its linear

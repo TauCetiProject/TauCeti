@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.Convex.Extreme
 public import Mathlib.Analysis.Convex.SimplicialComplex.Basic
+public import Mathlib.Topology.Compactness.LocallyFinite
 import TauCeti.Analysis.Convex.Extreme
 
 /-!
@@ -22,6 +23,9 @@ When moreover `B` is an extreme subset of `|K|` (for instance a face of a convex
 `B` can be shrunk to a face with all its vertices in `B`. So a triangulation of a convex polytope
 induces a triangulation of each of its faces. This is what lets triangulations of polytopes
 meeting along common faces be compared, and glued, face by face.
+
+The restriction of a locally finite complex to a compact set has finitely many faces
+(`Geometry.SimplicialComplex.finite_faces_restrict`).
 
 ## Main definitions
 
@@ -90,6 +94,22 @@ theorem space_restrict_subset (hB : Convex 𝕜 B) : (K.restrict B).space ⊆ K.
   exact ⟨space_restrict_subset_space hx, hB.convexHull_subset_iff.2 hs.2 hxs⟩
 
 end OrderedRing
+
+section Compact
+
+variable {𝕜 E : Type*} [Ring 𝕜] [PartialOrder 𝕜] [AddCommGroup E] [Module 𝕜 E]
+  [TopologicalSpace E] {K : SimplicialComplex 𝕜 E} {B : Set E}
+
+/-- Only finitely many simplices of a locally finite complex have all their vertices in a
+compact set. -/
+theorem finite_faces_restrict (hK : LocallyFinite fun s : K.faces => convexHull 𝕜 (s : Set E))
+    (hB : IsCompact B) : (K.restrict B).faces.Finite := by
+  refine ((hK.finite_nonempty_inter_compact hB).image Subtype.val).subset ?_
+  intro s hs
+  obtain ⟨v, hv⟩ := K.nonempty_of_mem_faces hs.1
+  exact ⟨⟨s, hs.1⟩, ⟨v, subset_convexHull 𝕜 _ hv, hs.2 hv⟩, rfl⟩
+
+end Compact
 
 section LinearOrderedField
 

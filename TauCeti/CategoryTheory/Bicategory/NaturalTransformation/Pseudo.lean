@@ -23,7 +23,8 @@ Whiskering preserves identities and composites up to the invertible modification
 `Pseudofunctor.whiskerLeftId` and `Pseudofunctor.whiskerLeftComp`, whose components are
 identities. The file also records `Pseudofunctor.StrongTrans.isoApp`, the component
 `η.app a ≅ θ.app a` of an invertible modification `η ≅ θ`, analogous to `Iso.app` for natural
-isomorphisms.
+isomorphisms. Conversely, `StrongTrans.isIso_of_isIso_app` proves that a modification is
+invertible whenever all its components are invertible.
 
 The last section restates the unit and composition conditions of a strong transformation for the
 comparisons `F.mapId'` and `F.mapComp'` at `1`-morphisms that are only propositionally identities
@@ -97,6 +98,14 @@ lemma StrongTrans.isoApp_inv {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (e : η ≅ θ
     (isoApp e a).inv = e.inv.as.app a :=
   (rfl)
 
+/-- A modification of strong transformations is invertible if all its components are. -/
+lemma StrongTrans.isIso_of_isIso_app {F G : B ⥤ᵖ C} {η θ : F ⟶ G} (Θ : η ⟶ θ)
+    [∀ a, IsIso (Θ.as.app a)] : IsIso Θ := by
+  let e : η ≅ θ := isoMk (fun a => asIso (Θ.as.app a)) (fun f => Θ.as.naturality f)
+  have he : e.hom = Θ := homCategory.ext (fun a => by simp [e])
+  rw [← he]
+  infer_instance
+
 variable (P : B ⥤ᵖ B')
 
 /-- Whiskering the identity strong transformation gives the identity, up to the invertible
@@ -165,6 +174,7 @@ lemma naturality_id'_inv (η : F ⟶ G) {a : B} (f : a ⟶ a) (hf : f = 𝟙 a) 
 /-- The composition condition of a strong transformation, for a `1`-morphism `fg` equal to a
 composite `f ≫ g`, stated with the comparisons `F.mapComp' f g fg` and `G.mapComp' f g fg`. This
 generalizes `StrongTrans.naturality_comp_hom`. -/
+@[to_app]
 lemma naturality_comp'_hom (η : F ⟶ G) {a b c : B} (f : a ⟶ b) (g : b ⟶ c) (fg : a ⟶ c)
     (h : f ≫ g = fg) :
     (η.naturality fg).hom =
@@ -216,15 +226,16 @@ lemma naturality_isoMapOfCommSq [Strict B] (η : F ⟶ G) {X₁ X₂ Y₁ Y₂ :
 end StrongTrans
 
 /-- Naturality with respect to `2`-cells is automatic for a family of naturality
-isomorphisms between pseudofunctors out of a locally discrete bicategory. -/
+isomorphisms between pseudofunctors out of a locally discrete bicategory, such as
+`LocallyDiscrete B₀` for a category `B₀`. -/
 lemma naturality_naturality_of_locallyDiscrete
-    {B₀ : Type*} [Category B₀] (F G : LocallyDiscrete B₀ ⥤ᵖ C)
+    [IsLocallyDiscrete B] (F G : B ⥤ᵖ C)
     (app : ∀ a, F.obj a ⟶ G.obj a)
     (naturality : ∀ {a b} (f : a ⟶ b), F.map f ≫ app b ≅ app a ≫ G.map f)
-    {a b : LocallyDiscrete B₀} {f g : a ⟶ b} (η : f ⟶ g) :
+    {a b : B} {f g : a ⟶ b} (η : f ⟶ g) :
     F.map₂ η ▷ app b ≫ (naturality g).hom =
       (naturality f).hom ≫ app a ◁ G.map₂ η := by
-  obtain rfl := LocallyDiscrete.eq_of_hom η
+  obtain rfl := obj_ext_of_isDiscrete η
   rw [Subsingleton.elim η (𝟙 _), PrelaxFunctor.map₂_id, PrelaxFunctor.map₂_id]
   simp
 

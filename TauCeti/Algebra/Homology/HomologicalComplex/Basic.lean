@@ -31,11 +31,17 @@ nonzero differential into it, the identification of the homology with the cycles
 (`HomologicalComplex.cyclesShortComplex_exact`). For adjacent degrees `i` and `j`, the cycles of a
 complex exact in degree `j` fit into a short exact sequence `0 ⟶ Zᵢ ⟶ Kᵢ ⟶ Zⱼ ⟶ 0`
 (`HomologicalComplex.cyclesShortComplex_shortExact`), which stays short exact when its outer terms
-are replaced by isomorphic objects (`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`);
-likewise a monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
+are replaced by isomorphic objects
+(`HomologicalComplex.cyclesShortComplex_shortExact_of_iso`), and whose second map `Kᵢ ⟶ Zⱼ` is an
+isomorphism when `Zᵢ` vanishes (`HomologicalComplex.isIso_toCycles_of_isZero_cycles`); in
+particular `K⁰ ⟶ Z¹` is an isomorphism for a cochain complex exact in degrees `0` and `1`
+(`CochainComplex.isIso_toCycles_zero_of_exactAt`). Likewise a
+monomorphism onto the kernel of the differential `Kᵢ ⟶ Kⱼ` gives a short exact sequence
 `0 ⟶ A ⟶ Kᵢ ⟶ Zⱼ ⟶ 0` (`HomologicalComplex.shortExact_toCycles`). A morphism of complexes
 vanishing in some degree induces zero on homology there
-(`HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero`). Constructing the bundled cycle
+(`HomologicalComplex.homologyMap_eq_zero_of_f_eq_zero`), and two morphisms of complexes agreeing on
+the cycles in some degree induce the same map on homology there
+(`HomologicalComplex.homologyMap_eq_of_iCycles_comp`). Constructing the bundled cycle
 sequence requires homology only in the two selected degrees.
 The exactness results additionally require homology of the cycle sequence itself.
 In an abelian category, the map from the opcycles in degree `i` to the cycles in degree `j` is an
@@ -238,6 +244,13 @@ lemma cyclesShortComplex_shortExact (i j : ι) [K.HasHomology i] [K.HasHomology 
   exact ShortComplex.ShortExact.mk' hE
     inferInstance (epi_toCycles_of_exactAt hK (c.prev_eq' hij))
 
+/-- The map `Kᵢ ⟶ Zⱼ(K)` onto the cycles is an isomorphism when `i` and `j` are adjacent, `K` is
+exact in degree `j` and the cycles of `K` in degree `i` vanish. -/
+lemma isIso_toCycles_of_isZero_cycles [Balanced C] {i j : ι} [K.HasHomology i] [K.HasHomology j]
+    [(K.cyclesShortComplex i j).HasHomology] (hij : c.Rel i j) (hK : K.ExactAt j)
+    (hZ : IsZero (K.cycles i)) : IsIso (K.toCycles i j) :=
+  (K.cyclesShortComplex_shortExact i j hij hK).isIso_g_iff.2 hZ
+
 /-- The cycle sequence `Zᵢ(K) ⟶ Kᵢ ⟶ Zⱼ(K)`, with its outer terms replaced along isomorphisms
 `X ≅ Zᵢ(K)` and `Zⱼ(K) ≅ Y`, is short exact when `i` and `j` are adjacent and `K` is exact in
 degree `j`. -/
@@ -260,6 +273,20 @@ lemma shortExact_toCycles {A : C} {i j : ι} [K.HasHomology j] (a : A ⟶ K.X i)
 
 end HomologicalComplex
 
+namespace CochainComplex
+
+variable {C : Type u} [Category.{v} C] [Preadditive C] [Balanced C] (K : CochainComplex C ℕ)
+  [K.HasHomology 0] [K.HasHomology 1] [(K.cyclesShortComplex 0 1).HasHomology]
+
+/-- The map `K⁰ ⟶ Z¹(K)` onto the cycles in degree `1` is an isomorphism when `K` is exact in
+degrees `0` and `1`, since the cycles `Z⁰(K) ≅ H⁰(K)` then vanish. -/
+lemma isIso_toCycles_zero_of_exactAt (h₀ : K.ExactAt 0) (h₁ : K.ExactAt 1) :
+    IsIso (K.toCycles 0 1) :=
+  K.isIso_toCycles_of_isZero_cycles (by simp) h₁
+    (((K.exactAt_iff_isZero_homology 0).1 h₀).of_iso K.isoHomologyπ₀)
+
+end CochainComplex
+
 namespace HomologicalComplex
 
 variable {C : Type u} [Category.{v} C] [HasZeroMorphisms C] {ι : Type*} {c : ComplexShape ι}
@@ -271,6 +298,14 @@ lemma homologyMap_eq_zero_of_f_eq_zero (φ : K ⟶ L) (i : ι) [K.HasHomology i]
   have hc : cyclesMap φ i = 0 := by
     rw [← cancel_mono (L.iCycles i), cyclesMap_i, h, comp_zero, zero_comp]
   rw [← cancel_epi (K.homologyπ i), homologyπ_naturality, hc, zero_comp, comp_zero]
+
+/-- Two morphisms of complexes that agree on the cycles in degree `i` induce the same map on
+homology in degree `i`. -/
+lemma homologyMap_eq_of_iCycles_comp {f g : K ⟶ L} {i : ι} [K.HasHomology i] [L.HasHomology i]
+    (h : K.iCycles i ≫ f.f i = K.iCycles i ≫ g.f i) : homologyMap f i = homologyMap g i := by
+  have hc : cyclesMap f i = cyclesMap g i := by
+    rw [← cancel_mono (L.iCycles i), cyclesMap_i, cyclesMap_i, h]
+  rw [← cancel_epi (K.homologyπ i), homologyπ_naturality, homologyπ_naturality, hc]
 
 end HomologicalComplex
 

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
+public import TauCeti.Analysis.Calculus.FDeriv.Comp
 
 /-!
 # Dilation scaling of the lower Lebesgue integral
@@ -62,3 +63,22 @@ theorem lintegral_comp_homothety (g : E → ℝ≥0∞) (x : E) {r : ℝ} (hr : 
     lintegral_comp_smul μ (fun z => g (z + x)) hr, lintegral_add_right_eq_self]
 
 end MeasureTheory.Measure
+
+namespace TauCeti
+
+open MeasureTheory
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
+  [BorelSpace E]
+
+/-- Dilation of the measure by a nonzero scalar rescales the squared derivative energy by the
+inverse square of that scalar. -/
+theorem integral_sq_norm_fderiv_comp_smul {μ : Measure E} {f : E → ℝ} {a : ℝ} (ha : a ≠ 0) :
+    ∫ x, ‖fderiv ℝ f x‖ ^ 2 ∂μ.map (fun x ↦ a • x) =
+      (a ^ 2)⁻¹ * ∫ x, ‖fderiv ℝ (fun y ↦ f (a • y)) x‖ ^ 2 ∂μ := by
+  rw [(measurableEmbedding_const_smul₀ (α := E) ha).integral_map, ← integral_const_mul]
+  refine integral_congr_ae (Filter.Eventually.of_forall fun x ↦ ?_)
+  simp only [norm_fderiv_comp_smul a, mul_pow, sq_abs]
+  field_simp
+
+end TauCeti

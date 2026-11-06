@@ -18,8 +18,7 @@ A quadratic map `Q` on a finite-dimensional normed space over a complete field i
 differentiable, and its derivative at `x` is the linear map `h ↦ polar Q x h`
 (`QuadraticMap.hasStrictFDerivAt`). This upgrades Mathlib's line derivative of a quadratic map
 (`QuadraticMap.hasLineDerivAt`), which requires no topology on the domain, to a Fréchet
-derivative. Consequently `Q` is smooth (`QuadraticMap.contDiff`), and its second derivative is the
-constant bilinear map `polar Q` (`QuadraticMap.fderiv_fderiv_apply`).
+derivative.
 
 The proof writes `Q` as `x ↦ B x x` for a bilinear map `B`, which is possible because the
 space is free (`LinearMap.BilinMap.toQuadraticMap_surjective`); no assumption on the
@@ -65,24 +64,6 @@ theorem differentiable (Q : QuadraticMap 𝕜 E F) : Differentiable 𝕜 Q :=
 theorem fderiv_apply (Q : QuadraticMap 𝕜 E F) (x h : E) : fderiv 𝕜 Q x h = polar Q x h := by
   rw [(Q.hasFDerivAt x).fderiv]
   simp
-
-/-- A quadratic map on a finite-dimensional space is `C^n` for every `n`. -/
-theorem contDiff (Q : QuadraticMap 𝕜 E F) {n : WithTop ℕ∞} : ContDiff 𝕜 n Q := by
-  obtain ⟨B, rfl⟩ := LinearMap.BilinMap.toQuadraticMap_surjective Q
-  convert B.toContinuousBilinearMap.contDiff_apply_self (n := n) using 1
-  ext x
-  simp
-
-/-- The second derivative of a quadratic map on a finite-dimensional space is the constant
-bilinear map `(v, w) ↦ polar Q v w`. -/
-theorem fderiv_fderiv_apply (Q : QuadraticMap 𝕜 E F) (x v w : E) :
-    fderiv 𝕜 (fderiv 𝕜 Q) x v w = polar Q v w := by
-  obtain ⟨B, rfl⟩ := LinearMap.BilinMap.toQuadraticMap_surjective Q
-  have hB : (B.toQuadraticMap : E → F) = fun z ↦ B.toContinuousBilinearMap z z := by
-    ext z
-    simp
-  rw [LinearMap.BilinMap.polar_toQuadraticMap, hB, ContinuousLinearMap.fderiv_fderiv_apply_self]
-  simp [add_comm]
 
 end QuadraticMap
 

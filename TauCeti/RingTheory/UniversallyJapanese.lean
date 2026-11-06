@@ -52,7 +52,7 @@ Nagata.
 
 ## References
 
-* [Stacks Project, Section 10.162 (032Q)](https://stacks.math.columbia.edu/tag/032Q)
+* [Stacks Project, Section 10.162 (032E)](https://stacks.math.columbia.edu/tag/032E)
 -/
 
 public section

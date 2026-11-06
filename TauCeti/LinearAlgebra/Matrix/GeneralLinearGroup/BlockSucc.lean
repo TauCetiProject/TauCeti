@@ -30,6 +30,7 @@ linear matrices.
 
 ## Main results
 
+* `TauCeti.glBlockSucc_star`: the block inclusion commutes with the conjugate transpose.
 * `TauCeti.glBlockSucc_injective`: the block inclusion is injective.
 * `TauCeti.glBlockSucc_diagGL`: it matches the chains of diagonal tori, appending a `1`.
 * `TauCeti.det_glBlockSucc`: it preserves determinants.
@@ -60,6 +61,11 @@ theorem coe_glBlockSucc (g : GL (Fin n) k) :
     (glBlockSucc k n g : Matrix (Fin (n + 1)) (Fin (n + 1)) k) =
       blockSucc (g : Matrix (Fin n) (Fin n) k) :=
   blockSuccMonoidHom_apply _
+
+/-- The block inclusion commutes with the conjugate transpose. -/
+theorem glBlockSucc_star [StarRing k] (g : GL (Fin n) k) :
+    glBlockSucc k n (star g) = star (glBlockSucc k n g) :=
+  Units.ext <| by simp [Units.coe_star, star_eq_conjTranspose]
 
 /-- The block inclusion is injective, so it really embeds `GL (Fin n) k` in `GL (Fin (n + 1)) k`
 and the chain `GL 1 ⊂ GL 2 ⊂ ⋯` is a chain of subgroups.  Use it to identify two invertible

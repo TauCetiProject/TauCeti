@@ -65,6 +65,14 @@ theorem resCoindAdjunction_counit_app_hom_apply
     ((Rep.resCoindAdjunction.{t} k φ).counit.app A).hom f = f.1 1 :=
   rfl
 
+/-- The inverse restriction–coinduction reciprocity evaluates the coinduced function at `1`. -/
+theorem resCoindHomEquiv_symm_hom_apply {k : Type u} {G : Type v} {H : Type w}
+    [CommRing k] [Monoid G] [Monoid H] (φ : G →* H)
+    (B : Rep.{max w t} k H) (A : Rep.{max w t} k G)
+    (f : B ⟶ coind φ A) (b : B) :
+    ((resCoindHomEquiv.{t, u, v, w} φ B A).symm f).hom b = (f.hom b).1 1 :=
+  rfl
+
 variable {G : Type v} [Group G]
 
 /-- Subgroup coinduction preserves homology of short complexes of representations. -/

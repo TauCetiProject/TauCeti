@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Complex.Basic
 public import TauCeti.Geometry.Manifold.ModelWithCorners.RestrictScalars.Basic
 
 /-!
@@ -33,6 +34,8 @@ the real Hessian at a critical point, are applied to complex manifolds.
 * `IsManifold.restrictScalars`: a `C^n` manifold over `𝕜'` is a `C^n` manifold over `𝕜`.
 * `IsManifold.maximalAtlas_subset_restrictScalars`: the maximal atlas over `𝕜'` is contained in
   the maximal atlas over `𝕜`.
+* `TauCeti.ComplexManifold.isManifold_restrictScalars_real`: scoped instance equipping a `C^n`
+  manifold over a boundaryless complex model `I` with `IsManifold (I.restrictScalars ℝ) n X`.
 -/
 
 public section
@@ -99,5 +102,19 @@ smaller field `𝕜`. For instance, a holomorphic chart of a complex manifold is
 theorem _root_.IsManifold.maximalAtlas_subset_restrictScalars :
     IsManifold.maximalAtlas 𝓘(𝕜', E) n M ⊆ IsManifold.maximalAtlas 𝓘(𝕜, E) n M := by
   simpa using (𝓘(𝕜', E).maximalAtlas_subset_restrictScalars 𝕜 (n := n) (M := M))
+
+namespace ComplexManifold
+
+/-- A `C^n` manifold modelled on a boundaryless complex model `I` is, with the same charts, a real
+`C^n` manifold modelled on `I.restrictScalars ℝ`. Available after
+`open scoped TauCeti.ComplexManifold`. -/
+scoped instance isManifold_restrictScalars_real {n : WithTop ℕ∞} {E H X : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E] [TopologicalSpace H]
+    {I : ModelWithCorners ℂ E H} [I.Boundaryless]
+    [TopologicalSpace X] [ChartedSpace H X] [h : IsManifold I n X] :
+    IsManifold (I.restrictScalars ℝ) n X :=
+  I.isManifold_restrictScalars ℝ h
+
+end ComplexManifold
 
 end TauCeti

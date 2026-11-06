@@ -14,6 +14,7 @@ public import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
 public import TauCeti.Topology.VectorBundle.ContinuousAlternatingMap
 public import Mathlib.Geometry.Manifold.ContMDiffMFDeriv
 public import Mathlib.Geometry.Manifold.VectorBundle.Tangent
+import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 
 /-!
 # Smooth pullback of differential forms
@@ -204,6 +205,22 @@ theorem IsSmoothForm.mpullback (hω : IsSmoothForm I' m ω)
   exact (isSmoothBundleForm_def _ _).mp
     (IsSmoothBundleForm.mpullback ((isSmoothBundleForm_def _ _).mpr hω.contMDiff) hf le_rfl)
 
+/-- The pullback of a continuous form along a `C¹` map `u` from a normed space, evaluated on fixed
+vectors, is continuous. For `u` a map of the plane this is the integrand of a rectangle
+integral. -/
+theorem IsSmoothForm.continuous_mpullback_apply {φ : RoughForm I M F k} (hφ : IsSmoothForm I 0 φ)
+    {u : E' → M} (hu : ContMDiff 𝓘(ℝ, E') I 1 u) (v : Fin k → E') :
+    Continuous fun z ↦ TauCeti.mpullback 𝓘(ℝ, E') I u φ z v := by
+  have h := isSmoothForm_modelSpace_iff.mp (hφ.mpullback (by simpa using hu))
+  exact (ContinuousAlternatingMap.apply ℝ E' F v).continuous.comp h.continuous
+omit [IsManifold I 1 M] [IsManifold I' 1 M'] in
+/-- Pulling a form back along a diffeomorphism and then along its inverse returns the form. -/
+@[simp]
+theorem mpullback_symm_mpullback (hn : n ≠ 0) (φ : M ≃ₘ^n⟮I, I'⟯ M')
+    (ω : RoughForm I' M' F k) : mpullback I' I φ.symm (mpullback I I' φ ω) = ω := by
+  rw [← mpullback_comp (φ.symm.mdifferentiable hn) (φ.mdifferentiable hn),
+    show (φ : M → M') ∘ φ.symm = id from funext φ.apply_symm_apply, mpullback_id]
+
 namespace SmoothForm
 
 open scoped ContDiff
@@ -373,6 +390,24 @@ theorem mpullback_mpullback_symm (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm 
 theorem mpullback_symm_mpullback (φ : M ≃ₘ⟮I, I'⟯ M') (β : SmoothForm I' M' F k) :
     mpullback φ.symm φ.symm.contMDiff (mpullback φ φ.contMDiff β) = β :=
   mpullback_symm_eq_of_mpullback_eq rfl
+
+/-- Pullback along a composite of diffeomorphisms is the composite of the pullbacks. -/
+theorem mpullback_trans (φ : M ≃ₘ⟮I, I'⟯ M') (ψ : M' ≃ₘ⟮I', I''⟯ M'')
+    (γ : SmoothForm I'' M'' F k) :
+    mpullback (φ.trans ψ) (φ.trans ψ).contMDiff γ =
+      mpullback φ φ.contMDiff (mpullback ψ ψ.contMDiff γ) := by
+  rw [← LinearMap.comp_apply, ← mpullback_comp]
+  rfl
+
+/-- Pullback along a diffeomorphism `φ` transports pointwise proportionality: at `x`, the
+pullback of `α` is `c` times the pullback of `β` exactly when `α` is `c` times `β` at `φ x`. -/
+theorem mpullback_apply_eq_smul_iff (φ : M ≃ₘ⟮I, I'⟯ M') (α β : SmoothForm I' M' F k) (c : ℝ)
+    (x : M) :
+    (mpullback φ φ.contMDiff α).1 x = c • (mpullback φ φ.contMDiff β).1 x ↔
+      α.1 (φ x) = c • β.1 (φ x) := by
+  rw [coe_mpullback, coe_mpullback, ← Pi.smul_apply, ← TauCeti.mpullback_smul]
+  exact TauCeti.mpullback_apply_eq_mpullback_apply_iff
+    (φ.isInvertible_mfderiv (n := ∞) (by simp) (x := x)).surjective
 
 /-- A smooth form preserved by a diffeomorphism `φ` is preserved by every integer power of `φ`. -/
 theorem mpullback_zpow_eq_self {φ : M ≃ₘ⟮I, I⟯ M} {σ : SmoothForm I M F k}

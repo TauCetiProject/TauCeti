@@ -6,12 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Isometry.Action
-public import TauCeti.Geometry.Manifold.Riemannian.Prod
+public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
 
 /-!
 # Isometries of products of Riemannian manifolds
 
-For the product metric on `M × N` (`TauCeti.Geometry.Manifold.Riemannian.Prod`), the product
+For the product metric on `M × N` (`TauCeti.Geometry.Manifold.Riemannian.Prod.Basic`), the product
 `Φ × Ψ` of Riemannian isometries is again a Riemannian isometry. Products of self-isometries give a
 group homomorphism `Isom(M) × Isom(N) → Isom(M × N)`, injective when both factors are nonempty.
 Consequently a product of homogeneous Riemannian manifolds is homogeneous: if `Isom(M)` acts

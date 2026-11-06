@@ -22,6 +22,8 @@ isoperimetric form `μ(A) ^ (1 - 1/n) ≤ K`.
 For an exponent `p ∈ [0, 1]` the powers `x ^ p` and `x ^ (1 - p)` multiply back to `x`, with no
 finiteness or positivity hypothesis on `x`. This is the case `s = t` of geometric interpolations
 `t ^ p s ^ (1 - p)`, such as the distortion coefficient `τ_{K,N}^{(t)}(θ)` with `p = 1 / N`.
+Rescaling the factors of a weighted geometric mean `a ^ p * b ^ q` by finite `F⁻¹` and `G⁻¹`
+rescales it by `(F ^ p * G ^ q)⁻¹`; this normalizes suprema to one in Prékopa–Leindler.
 For distinct `x` and `y` such a weighted geometric mean `x ^ (1 - p) * y ^ p` still dominates
 `min x y`, which compares the hypotheses of the Prékopa–Leindler inequality and of its version
 for the minimum.
@@ -41,6 +43,10 @@ For `d ≥ 0` this is monotonicity and continuity; for `d < 0` the power is anti
 set slightly thus changes its `d`-dimensional diameter sum by little, as in Hausdorff measure
 approximations by open covers.
 
+A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as `ofReal a ^ d * ofReal r ^ d`
+for every exponent `d`, since neither factor is `∞`. This rescales the gauge `(2 r) ^ d` of
+densities and Hausdorff measures.
+
 For a base in `ℝ≥0` greater than one, power comparisons also express rational bounds and
 closed intervals for a reciprocal radius parameter `α / r`.
 
@@ -51,7 +57,10 @@ closed intervals for a reciprocal radius parameter `α / r`.
 * `ENNReal.rpow_one_sub_le_of_le_mul_rpow`: `m ≤ K * m ^ p` gives `m ^ (1 - p) ≤ K` for a finite
   `m` and `p < 1`.
 * `ENNReal.rpow_mul_rpow_one_sub`: `x ^ p * x ^ (1 - p) = x` for `p ∈ [0, 1]`.
+* `ENNReal.inv_mul_rpow_mul_inv_mul_rpow`:
+  `(F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q)` for finite `F`, `G`.
 * `ENNReal.sq_rpow_one_half`: `(x ^ 2) ^ (1 / 2) = x`, with no hypothesis on `x`.
+* `ENNReal.ofReal_mul_rpow`: `ofReal (a * r) ^ d = ofReal a ^ d * ofReal r ^ d` for `0 ≤ a`.
 * `ENNReal.min_le_rpow_one_sub_mul_rpow`: `min x y ≤ x ^ (1 - p) * y ^ p` for `p ∈ [0, 1]`.
 * `ENNReal.rpow_le_rpow_of_nonpos`: `x ≤ y` gives `y ^ z ≤ x ^ z` for `z ≤ 0`.
 * `ENNReal.eventually_forall_mem_Icc_rpow_le_add`: `y ^ d ≤ x ^ d + ε` for `y ∈ [x, z]` and `z`
@@ -99,10 +108,25 @@ theorem rpow_mul_rpow_one_sub (x : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp�
     x ^ p * x ^ (1 - p) = x := by
   rw [← rpow_add_of_nonneg _ _ hp₀ (sub_nonneg.2 hp₁), add_sub_cancel, rpow_one]
 
+/-- Scaling the factors of `a ^ p * b ^ q` by `F⁻¹` and `G⁻¹` scales it by `(F ^ p * G ^ q)⁻¹`,
+for finite `F` and `G` and nonnegative exponents. -/
+theorem inv_mul_rpow_mul_inv_mul_rpow {p q : ℝ} (hp : 0 ≤ p) (hq : 0 ≤ q)
+    {F G : ℝ≥0∞} (hF : F ≠ ∞) (hG : G ≠ ∞) (a b : ℝ≥0∞) :
+    (F⁻¹ * a) ^ p * (G⁻¹ * b) ^ q = (F ^ p * G ^ q)⁻¹ * (a ^ p * b ^ q) := by
+  rw [mul_rpow_of_nonneg _ _ hp, mul_rpow_of_nonneg _ _ hq, inv_rpow, inv_rpow,
+    ENNReal.mul_inv (.inr (rpow_ne_top_of_nonneg hq hG)) (.inl (rpow_ne_top_of_nonneg hp hF))]
+  ring
+
 /-- The square root of a square in `ℝ≥0∞`, written as a real power: `(x ^ 2) ^ (1 / 2) = x`. -/
 theorem sq_rpow_one_half (x : ℝ≥0∞) : (x ^ 2) ^ (1 / 2 : ℝ) = x := by
   rw [← rpow_two, ← rpow_mul]
   norm_num
+
+/-- A real power of `ENNReal.ofReal (a * r)` with `0 ≤ a` splits as a product, for every
+exponent `d`. -/
+theorem ofReal_mul_rpow {a : ℝ} (ha : 0 ≤ a) (r d : ℝ) :
+    ENNReal.ofReal (a * r) ^ d = ENNReal.ofReal a ^ d * ENNReal.ofReal r ^ d := by
+  rw [ENNReal.ofReal_mul ha, mul_rpow_of_ne_top ofReal_ne_top ofReal_ne_top]
 
 /-- For `p ∈ [0, 1]`, the weighted geometric mean `x ^ (1 - p) * y ^ p` dominates `min x y`. -/
 theorem min_le_rpow_one_sub_mul_rpow (x y : ℝ≥0∞) {p : ℝ} (hp₀ : 0 ≤ p) (hp₁ : p ≤ 1) :

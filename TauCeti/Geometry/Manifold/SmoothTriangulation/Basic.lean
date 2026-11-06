@@ -49,8 +49,9 @@ conditions agree for homeomorphisms, and we use the simplexwise one, which is Wh
 
 ## Main results
 
-* `TauCeti.IsSimplexImmersion.comp`: post-composing with a `Cⁿ` map with injective
-  differentials preserves immersions of simplices.
+* `TauCeti.IsSimplexImmersion.comp_of_contMDiffOn`, `TauCeti.IsSimplexImmersion.comp`:
+  post-composing with a map that is `Cⁿ` within a set containing the image, with injective
+  differentials within that set, preserves immersions of simplices.
 * `TauCeti.IsSimplexImmersion.comp_linear`: precomposing with a map of simplices that is linear
   and injective in barycentric coordinates preserves immersions of simplices.
 * `TauCeti.IsSmoothTriangulation.trans_diffeomorph`: a smooth triangulation can be pushed forward
@@ -122,19 +123,39 @@ theorem of_le (h : IsSimplexImmersion I n g) (hmn : m ≤ n) : IsSimplexImmersio
   obtain ⟨F, hFg, hF, hF'⟩ := h
   exact ⟨F, hFg, hF.of_le hmn, hF'⟩
 
+/-- Post-composing an immersion of a simplex with a map that is `Cⁿ` within a set containing its
+image, and has an injective derivative within that set at every point of the image, gives an
+immersion of the simplex. -/
+theorem comp_of_contMDiffOn (h : IsSimplexImmersion I n g) {φ : M → N} {s : Set M}
+    (hgs : range g ⊆ s) (hφ : ContMDiffOn I J n φ s)
+    (hφ' : ∀ y ∈ range g, ∃ φ' : TangentSpace I y →L[ℝ] TangentSpace J (φ y),
+      HasMFDerivWithinAt I J φ s y φ' ∧ Injective φ') :
+    IsSimplexImmersion J n (φ ∘ g) := by
+  obtain ⟨F, hFg, hF, hF'⟩ := h
+  -- `F` maps the simplex onto the image of `g`.
+  have hFrange (t : Convexity.StdSimplex ℝ σ) : F t.weights ∈ range g := by
+    let x := (Finset.standardSimplexHomeomorph σ).symm t
+    have ht : (⇑t.weights : σ → ℝ) = fun a : σ => x.1 a := by
+      conv_lhs => rw [← (Finset.standardSimplexHomeomorph σ).apply_symm_apply t]
+      exact funext fun a => Finset.standardSimplexHomeomorph_weights σ x a
+    rw [ht, hFg]
+    exact mem_range_self x
+  have hmaps : MapsTo F (range fun t : Convexity.StdSimplex ℝ σ => ⇑t.weights) s := by
+    rintro _ ⟨t, rfl⟩
+    exact hgs (hFrange t)
+  refine ⟨φ ∘ F, fun x => by simp [hFg], hφ.comp hF hmaps, fun t => ?_⟩
+  obtain ⟨F', hFt, hinj⟩ := hF' t
+  obtain ⟨φ', hφt, hφinj⟩ := hφ' _ (hFrange t)
+  exact ⟨φ'.comp F', hφt.comp (⇑t.weights) hFt hmaps.subset_preimage,
+    fun v hv hv0 => hinj v hv (hφinj (hv0.trans (map_zero _).symm))⟩
+
 /-- Post-composing an immersion of a simplex with a `Cⁿ` map whose differential is injective at
 every point gives an immersion of the simplex. -/
 theorem comp (h : IsSimplexImmersion I n g) {φ : M → N} (hφ : ContMDiff I J n φ)
     (hφ' : ∀ x, Injective (mfderiv I J φ x)) :
-    IsSimplexImmersion J n (φ ∘ g) := by
-  obtain ⟨F, hFg, hF, hF'⟩ := h
-  refine ⟨φ ∘ F, fun x => by simp [hFg], hφ.comp_contMDiffOn hF, fun t => ?_⟩
-  obtain ⟨F', hFt, hinj⟩ := hF' t
-  have hφt : MDifferentiableAt I J φ (F t.weights) :=
-    mdifferentiableAt_of_mfderiv_injective (hφ' (F t.weights))
-  refine ⟨(mfderiv I J φ (F t.weights)).comp F', hφt.hasMFDerivAt.comp_hasMFDerivWithinAt _ hFt,
-    fun v hv hv0 => hinj v hv (hφ' (F t.weights) ?_)⟩
-  exact hv0.trans (map_zero _).symm
+    IsSimplexImmersion J n (φ ∘ g) :=
+  h.comp_of_contMDiffOn (subset_univ _) hφ.contMDiffOn fun y _ =>
+    ⟨_, (mdifferentiableAt_of_mfderiv_injective (hφ' y)).hasMFDerivAt.hasMFDerivWithinAt, hφ' y⟩
 
 /-- Precomposing an immersion of a simplex with a map of simplices that is linear in barycentric
 coordinates, and injective on the directions of its domain, gives an immersion of the simplex. -/
@@ -205,13 +226,13 @@ theorem of_le (h : IsSmoothTriangulation I n f) (hmn : m ≤ n) : IsSmoothTriang
   fun σ => (h σ).of_le hmn
 
 /-- A smooth triangulation of `M` followed by a diffeomorphism `M ≃ N` is a smooth triangulation
-of `N`. -/
-theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) :
-    IsSmoothTriangulation J n (f.trans Φ.toHomeomorph) := fun σ =>
+of `N`. The diffeomorphism may be of any class `Cᵐ` with `n ≤ m` and `m ≠ 0`. -/
+theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^m⟮I, J⟯ N) (hnm : n ≤ m)
+    (hm : m ≠ 0) : IsSmoothTriangulation J n (f.trans Φ.toHomeomorph) := fun σ =>
   -- `(f.trans Φ.toHomeomorph) ∘ faceInclusion K σ` is `Φ ∘ (f ∘ faceInclusion K σ)` by definition.
-  (h σ).comp (φ := Φ) Φ.contMDiff (fun x => by
-    rw [← Φ.mfderivToContinuousLinearEquiv_coe hn]
-    exact (Φ.mfderivToContinuousLinearEquiv hn x).injective)
+  (h σ).comp (φ := Φ) (Φ.contMDiff.of_le hnm) (fun x => by
+    rw [← Φ.mfderivToContinuousLinearEquiv_coe hm]
+    exact (Φ.mfderivToContinuousLinearEquiv hm x).injective)
 
 /-- Relabelling the complex of a smooth triangulation by a simplicial isomorphism gives a smooth
 triangulation: precomposing with the homeomorphism of realizations induced by mutually inverse

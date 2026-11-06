@@ -37,7 +37,8 @@ paired with a map on its second (`Equiv.Perm.apply_inv_eq_comp_of_apply_apply_eq
 cycle quotients along conjugating equivalences, and the factorization of an invariant function
 through a map on whose fibres the permutation is a single cycle, and a correction by a power of
 a cycle for a permutation commuting with it. Points over distinct classes of the cycle quotient are
-distinct (`Equiv.Perm.ne_of_sameCycle_out`), and precomposing with `σ` does not change a sum over a
+distinct (`Equiv.Perm.ne_of_sameCycle_out`), every such class is nonempty
+(`Equiv.Perm.card_sameCycle_out_pos`), and precomposing with `σ` does not change a sum over a
 `σ`-orbit (`Equiv.Perm.sum_filter_sameCycle_comp`). It also identifies functions invariant under a
 permutation with functions on its cycle quotient (`TauCeti.invariantColouringEquiv`); a function
 invariant under a set of permutations is invariant under the subgroup they generate
@@ -55,7 +56,9 @@ involution `σ` by left multiplication with `Equiv.swap a (σ a)` leaves an invo
 with `σ` off the pair (`Function.Involutive.swap_mul`,
 `Function.Involutive.swap_mul_apply_eq_self_or`), and multiplying back on the right recovers `σ`
 (`Function.Involutive.swap_mul_mul_swap`). A permutation of a finite type sends as many points
-into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`).
+into a set as out of it (`Equiv.Perm.card_filter_not_and_apply_eq`), and the total decrease of a
+natural-number valued function along it equals the total increase
+(`Equiv.Perm.sum_tsub_comp_eq_sum_comp_tsub`).
 -/
 
 public section
@@ -94,6 +97,20 @@ theorem apply_eq_of_apply_eq (hσ : σ.SameCycle x y) (hf : ∀ z, f (σ z) = f 
   have hmap := Function.Semiconj.perm_zpow_right (τ := 1) (g := fun z => PLift.up (f z))
     (fun z => congrArg PLift.up (hf z)) k x
   exact congrArg PLift.down (by simpa only [_root_.one_zpow, Equiv.Perm.one_apply] using hmap.symm)
+
+/-- Points in the same permutation cycle have the same minimal period. -/
+theorem minimalPeriod_eq (h : σ.SameCycle x y) :
+    Function.minimalPeriod σ x = Function.minimalPeriod σ y := by
+  apply Function.minimalPeriod_eq_minimalPeriod_iff.mpr
+  intro n
+  have hi : ∀ z, Function.IsPeriodicPt σ n (σ z) ↔ Function.IsPeriodicPt σ n z := by
+    intro z
+    constructor
+    · intro hz
+      simpa only [σ.symm_apply_apply] using
+        hz.map (g := σ.symm) (fun z ↦ by simp)
+    · exact fun hz ↦ hz.apply
+  exact Iff.of_eq (h.apply_eq_of_apply_eq fun z ↦ propext (hi z))
 
 /-- A map intertwining two permutations carries orbits of the first permutation into orbits of
 the second. -/
@@ -198,6 +215,12 @@ theorem ne_of_sameCycle_out {x y : α} {O P : Quotient (SameCycle.setoid σ)}
   rintro rfl
   exact hOP ((Quotient.mk_eq_iff_out.mpr hx).symm.trans (Quotient.mk_eq_iff_out.mpr hy))
 
+open _root_.Finset in
+/-- A cycle of `σ` has at least one element. -/
+theorem card_sameCycle_out_pos [Fintype α] [DecidableRel σ.SameCycle]
+    (O : Quotient (SameCycle.setoid σ)) : 0 < #{j | σ.SameCycle j O.out} :=
+  card_pos.2 ⟨O.out, by simp [SameCycle.refl]⟩
+
 /-- Precomposing with `σ` does not change a product over a `σ`-orbit. -/
 @[to_additive /-- Precomposing with `σ` does not change a sum over a `σ`-orbit. -/]
 theorem prod_filter_sameCycle_comp {M : Type*} [CommMonoid M] [Fintype α]
@@ -280,6 +303,17 @@ theorem card_filter_not_and_apply_eq [Fintype α] (p : α → Prop) [DecidablePr
   have h₃ : #{x | p (σ x) ∧ p x} = #{x | p x ∧ p (σ x)} := by simp only [and_comm]
   have h₄ : #{x | p x ∧ ¬p (σ x)} = #{x | ¬p (σ x) ∧ p x} := by simp only [and_comm]
   have h₅ : #{x | p (σ x) ∧ ¬p x} = #{x | ¬p x ∧ p (σ x)} := by simp only [and_comm]
+  omega
+
+/-- For a permutation `σ` of a finite type and `f : α → ℕ`, the total decrease of `f` along
+`x ↦ σ x` equals its total increase. -/
+theorem sum_tsub_comp_eq_sum_comp_tsub [Fintype α] (f : α → ℕ) :
+    ∑ x, (f x - f (σ x)) = ∑ x, (f (σ x) - f x) := by
+  have key (a b : ℕ) : ((a - b : ℕ) : ℤ) - ((b - a : ℕ) : ℤ) = a - b := by omega
+  have h : ((∑ x, (f x - f (σ x)) : ℕ) : ℤ) - ((∑ x, (f (σ x) - f x) : ℕ) : ℤ) = 0 := by
+    push_cast [← Finset.sum_sub_distrib]
+    simp_rw [key]
+    rw [Finset.sum_sub_distrib, Equiv.sum_comp σ (fun x ↦ (f x : ℤ)), sub_self]
   omega
 
 end Equiv.Perm

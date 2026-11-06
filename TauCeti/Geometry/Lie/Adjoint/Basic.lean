@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.GroupLieAlgebra
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
 public import TauCeti.Geometry.Lie.Basic
 public import TauCeti.Geometry.Lie.Adjoint.Conjugation
+public import TauCeti.Geometry.Lie.Tangent.Differential
 import TauCeti.Geometry.Lie.InvariantVectorField.Basic
 
 /-!
@@ -37,6 +38,8 @@ This advances Deliverable A, Layer 1 of
   left-invariant vector field of `X` to that of `Ad_{g⁻¹} X`.
 * `TauCeti.Lie.adjointContinuousLinearMap_lie`: the differential preserves the Lie bracket.
 * `TauCeti.Lie.tangentAd_mul`: the tangent adjoint automorphism respects group multiplication.
+* `MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap`: a homomorphism differentiable at the
+  identity intertwines the adjoint actions, `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`.
 
 ## References
 
@@ -129,6 +132,34 @@ theorem adjointContinuousLinearMap_mul (g h : G) :
     (x := conjDiffeomorph (I := I) (n := 1) h 1) (x' := 1)
     (by simp)]
   rfl
+
+/-- **Naturality of the adjoint action.** A group homomorphism `φ : K →* G` that is
+differentiable at the identity intertwines the adjoint actions: `dφ (Ad_k ξ) = Ad_{φ k} (dφ ξ)`,
+where `dφ` is the differential of `φ` at the identity. -/
+theorem _root_.MonoidHom.groupLieAlgebraMap_adjointContinuousLinearMap
+    {F HK : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace HK]
+    {J : ModelWithCorners 𝕜 F HK} {K : Type*} [TopologicalSpace K] [ChartedSpace HK K] [Group K]
+    [LieGroup J 1 K] (φ : K →* G) (hφ : MDifferentiableAt J I φ 1) (k : K)
+    (ξ : GroupLieAlgebra J K) :
+    φ.groupLieAlgebraMap J I (adjointContinuousLinearMap (I := J) k ξ) =
+      adjointContinuousLinearMap (I := I) (φ k) (φ.groupLieAlgebraMap J I ξ) := by
+  have hfun : (φ : K → G) ∘ conjDiffeomorph (I := J) (n := 1) k =
+      conjDiffeomorph (I := I) (n := 1) (φ k) ∘ φ := by
+    funext y
+    simp
+  have hcomp := mfderiv_comp_apply_of_eq (1 : K) hφ
+    ((conjDiffeomorph (I := J) (n := 1) k).mdifferentiable one_ne_zero 1) (by simp) ξ
+  have hcomp' := mfderiv_comp_apply_of_eq (1 : K)
+    ((conjDiffeomorph (I := I) (n := 1) (φ k)).mdifferentiable one_ne_zero 1) hφ (map_one φ) ξ
+  -- Each side is a composite of two differentials at the identity; the two composites are the
+  -- differentials of `φ ∘ conj_k = conj_{φ k} ∘ φ`.
+  rw [MonoidHom.groupLieAlgebraMap_apply, MonoidHom.groupLieAlgebraMap_apply,
+    adjointContinuousLinearMap_apply, ← hcomp]
+  -- Rewriting with `mfderiv_congr hfun` or the remaining `adjointContinuousLinearMap_apply` would
+  -- change the base point of a `TangentSpace` type and give an ill-typed motive, so the last two
+  -- steps are chained as terms.
+  exact (DFunLike.congr_fun (mfderiv_congr (I := J) (I' := I) hfun) ξ).trans <|
+    hcomp'.trans (adjointContinuousLinearMap_apply (I := I) (φ k) _).symm
 
 @[simp]
 private theorem conjDiffeomorph_inv (g : G) :

@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.InvariantDifferential
 public import TauCeti.RingTheory.FormalGroup.Height.Basic
-public import TauCeti.RingTheory.FormalGroup.Rescale
+public import TauCeti.RingTheory.FormalGroup.Rescale.Basic
 
 /-!
 # The formal group of the cubic `y² + a₁xy = x³`

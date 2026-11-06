@@ -63,6 +63,8 @@ it to `lᵢ φ(w)`.
 * `TauCeti.IsRationalRep.nonempty_lieModuleEquiv_glIrreducible`: an irreducible rational
   representation with a highest weight vector of dominant weight `λ` differentiates to the named
   irreducible `𝔤𝔩ₙ`-module `TauCeti.glIrreducible n λ`.
+* `TauCeti.nonempty_lieModuleEquiv_glIrreducible_rowLen_iff`: Young diagrams with at most `n` rows
+  are determined by the isomorphism classes of their named irreducibles.
 
 ## References
 
@@ -199,5 +201,21 @@ theorem nonempty_lieModuleEquiv_glIrreducible (hρ : IsRationalRep ρ) [ρ.IsIrr
     (hρ.isGlHighestWeightVector_differential hw0 hwl hw)
 
 end IsRationalRep
+
+/-- **The named irreducibles of Young diagrams with at most `n` rows are pairwise non-isomorphic**:
+for such diagrams `μ` and `ν`, the `𝔤𝔩ₙ`-modules `glIrreducible n μ` and `glIrreducible n ν` are
+isomorphic exactly when `μ = ν`. This is the Lie counterpart of
+`TauCeti.nonempty_equiv_rationalWeylRep_iff`. -/
+theorem nonempty_lieModuleEquiv_glIrreducible_rowLen_iff {n : ℕ} {K : Type*} [Field K] [CharZero K]
+    {μ ν : YoungDiagram} (hμ : μ.colLen 0 ≤ n) (hν : ν.colLen 0 ≤ n) :
+    Nonempty ((glIrreducible n fun i ↦ (μ.rowLen i : K)) ≃ₗ⁅K,Matrix (Fin n) (Fin n) K⁆
+      glIrreducible n fun i ↦ (ν.rowLen i : K)) ↔ μ = ν := by
+  rw [nonempty_lieModuleEquiv_glIrreducible_iff (isGlDominantIntegral_rowLen μ)
+    (isGlDominantIntegral_rowLen ν)]
+  refine ⟨fun hw ↦ ?_, fun h ↦ h ▸ rfl⟩
+  have hweight : weightOfShape n μ = weightOfShape n ν := Subtype.ext <| funext fun i ↦ by
+    rw [weightOfShape_apply, weightOfShape_apply]
+    exact_mod_cast congrFun hw i
+  rw [← shape_weightOfShape hμ, ← shape_weightOfShape hν, hweight]
 
 end TauCeti

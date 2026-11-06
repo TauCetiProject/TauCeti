@@ -9,6 +9,7 @@ public import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 public import Mathlib.LinearAlgebra.QuadraticForm.Real
 public import TauCeti.Analysis.Calculus.Morse.Basic
 public import TauCeti.LinearAlgebra.QuadraticForm.Signature
+import TauCeti.Analysis.Matrix.HermitianSignature.Continuity
 
 /-!
 # The Morse index
@@ -45,8 +46,17 @@ by the Morse complex in Lane M of the analytic Heegaard Floer roadmap.
 * `TauCeti.hessianQuadraticForm`: the quadratic form defined by the Hessian at a point.
 * `TauCeti.morseIndex`: the negative index of inertia of the Hessian quadratic form.
 * `TauCeti.morseIndex_comp`: invariance under a change of coordinates.
+* `TauCeti.eventually_morseIndex_le`: in finite dimensions the Morse index of a `C²` function is
+  lower semicontinuous, also at degenerate and noncritical points.
+* `TauCeti.span_range_hessianQuadraticForm_comp_left`, `TauCeti.span_range_hessianQuadraticForm_pi`,
+  `TauCeti.range_hessianQuadraticForm_comp`: the space spanned by the Hessians of the functions
+  `ℓ ∘ φ`, for `ℓ` a continuous linear functional, computed from a spanning family of functionals,
+  from the components of `φ`, and after composing `φ` at a critical point with a map whose
+  differential is injective.
 * `TauCeti.IsNondegenerateCriticalPoint.hessianQuadraticForm_nondegenerate`: the Hessian
   quadratic form at a nondegenerate critical point is nondegenerate.
+* `TauCeti.isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate`: in finite
+  dimensions, the converse.
 * `TauCeti.IsNondegenerateCriticalPoint.hessianQuadraticForm_posDef_iff_morseIndex_eq_zero`:
   index zero characterizes a positive-definite Hessian at a nondegenerate critical point.
 * `TauCeti.IsNondegenerateCriticalPoint.exists_hessianQuadraticForm_equivalent_weightedSumSquares`:
@@ -82,6 +92,11 @@ theorem hessianQuadraticForm_apply (f : E → ℝ) (x v : E) :
     hessianQuadraticForm f x v = fderiv ℝ (fderiv ℝ f) x v v := by
   simp only [hessianQuadraticForm, LinearMap.BilinMap.toQuadraticMap_apply,
     ContinuousLinearMap.toBilinForm_apply]
+
+/-- The Hessian quadratic form is the quadratic form of the second derivative. -/
+theorem hessianQuadraticForm_def (f : E → ℝ) (x : E) :
+    hessianQuadraticForm f x = (fderiv ℝ (fderiv ℝ f) x).toBilinForm.toQuadraticMap :=
+  (rfl)
 
 /-- For a twice continuously differentiable function, the bilinear form associated to its
 Hessian quadratic form is its second derivative. -/
@@ -123,14 +138,6 @@ theorem hessianQuadraticForm_smul (a : ℝ) (f : E → ℝ) (x : E) :
   ext v
   simp [fderiv_fderiv_const_smul]
 
-/-- Adding a constant to a function does not change its Hessian quadratic form. -/
-@[simp]
-theorem hessianQuadraticForm_add_const (f : E → ℝ) (c : ℝ) (x : E) :
-    hessianQuadraticForm (fun y ↦ f y + c) x = hessianQuadraticForm f x := by
-  have hfd : fderiv ℝ (fun y ↦ f y + c) = fderiv ℝ f := funext fun _ ↦ fderiv_add_const c
-  ext v
-  simp only [hessianQuadraticForm_apply, hfd]
-
 /-- At a critical point the Hessian quadratic form pulls back along the derivative of a `C²`
 change of variables. -/
 theorem hessianQuadraticForm_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
@@ -163,6 +170,93 @@ theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp (L : F →L[ℝ] E)
   rw [((hA.clm_comp hL).congr_of_eventuallyEq hev).fderiv]
   simp
 
+/-- The Hessian of `ℓ ∘ φ`, for a continuous linear functional `ℓ`, is `ℓ` applied to the second
+derivative of `φ`. -/
+theorem _root_.ContinuousLinearMap.hessianQuadraticForm_comp_left_apply (ℓ : F →L[ℝ] ℝ)
+    {φ : E → F} (hφ : ContDiffAt ℝ 2 φ x) (v : E) :
+    hessianQuadraticForm (ℓ ∘ φ) x v = ℓ (fderiv ℝ (fderiv ℝ φ) x v v) := by
+  have hℓ : fderiv ℝ ℓ = fun _ ↦ ℓ := funext fun _ ↦ ℓ.fderiv
+  rw [hessianQuadraticForm_apply, fderiv_fderiv_comp_apply ℓ.contDiff.contDiffAt hφ]
+  simp [hℓ]
+
+/-- At a critical point `x` of a `C²` map `φ`, the Hessian of `h ∘ φ` only involves the
+differential of `h` at `φ x`: it is the Hessian of `Dh(φ x) ∘ φ`. -/
+theorem hessianQuadraticForm_comp_eq_fderiv_comp {h : F → ℝ} {φ : E → F}
+    (hh : ContDiffAt ℝ 2 h (φ x)) (hφ : ContDiffAt ℝ 2 φ x) (hc : fderiv ℝ φ x = 0) :
+    hessianQuadraticForm (h ∘ φ) x = hessianQuadraticForm (fderiv ℝ h (φ x) ∘ φ) x := by
+  ext v
+  rw [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ, hessianQuadraticForm_apply,
+    fderiv_fderiv_comp_apply hh hφ, hc]
+  simp
+
+/-- At a `C²` point of `φ`, the Hessians of all the functions `ℓ ∘ φ`, for `ℓ` a continuous linear
+functional, span the same space as the Hessians of the `L i ∘ φ`, for any family `L` spanning the
+functionals. -/
+theorem span_range_hessianQuadraticForm_comp_left {ι : Type*} {φ : E → F}
+    (hφ : ContDiffAt ℝ 2 φ x) {L : ι → F →L[ℝ] ℝ} (hL : Submodule.span ℝ (range L) = ⊤) :
+    Submodule.span ℝ (range fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x) =
+      Submodule.span ℝ (range fun i ↦ hessianQuadraticForm (L i ∘ φ) x) := by
+  -- `ℓ ↦ Hess (ℓ ∘ φ)` is linear, so it maps the span of `L` onto its range.
+  let Λ : (F →L[ℝ] ℝ) →ₗ[ℝ] QuadraticForm ℝ E :=
+    { toFun ℓ := hessianQuadraticForm (ℓ ∘ φ) x
+      map_add' ℓ₁ ℓ₂ := by
+        ext v
+        rw [add_apply]
+        simp only [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ,
+          add_apply]
+      map_smul' c ℓ := by
+        ext v
+        rw [smul_apply]
+        simp only [ContinuousLinearMap.hessianQuadraticForm_comp_left_apply _ hφ,
+          smul_apply, RingHom.id_apply] }
+  have hΛ : ⇑Λ = fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x := by
+    simp only [Λ, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [← hΛ, ← LinearMap.coe_range, Submodule.span_eq, LinearMap.range_eq_map, ← hL,
+    Submodule.map_span, ← range_comp, hΛ, Function.comp_def]
+
+/-- For a `C²` map into `ι → ℝ`, the Hessians of the functions `ℓ ∘ φ` span the same space as the
+Hessians of the components of `φ`. -/
+theorem span_range_hessianQuadraticForm_pi {ι : Type*} [Fintype ι] {φ : E → ι → ℝ}
+    (hφ : ContDiffAt ℝ 2 φ x) :
+    Submodule.span ℝ (range fun ℓ : (ι → ℝ) →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x) =
+      Submodule.span ℝ (range fun i ↦ hessianQuadraticForm (fun y ↦ φ y i) x) := by
+  classical
+  refine span_range_hessianQuadraticForm_comp_left hφ
+    (L := fun i ↦ ContinuousLinearMap.proj i) (eq_top_iff.2 fun ℓ _ ↦ ?_)
+  -- Every functional on `ι → ℝ` is a combination of the coordinate projections.
+  have hℓ : ℓ = ∑ i, ℓ (fun j ↦ if i = j then 1 else 0) • ContinuousLinearMap.proj i := by
+    ext v
+    rw [← ℓ.coe_coe, LinearMap.pi_apply_eq_sum_univ]
+    simp [mul_comm]
+  rw [hℓ]
+  exact Submodule.sum_mem _ fun i _ ↦ Submodule.smul_mem _ _ (Submodule.subset_span ⟨i, rfl⟩)
+
+/-- At a critical point of `φ`, the Hessians of the functions `ℓ ∘ g ∘ φ` are the Hessians of the
+functions `ℓ ∘ φ`, provided the differential of `g` at `φ x` is injective. -/
+theorem range_hessianQuadraticForm_comp {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [FiniteDimensional ℝ G] {g : F → G} {φ : E → F} (hg : ContDiffAt ℝ 2 g (φ x))
+    (hinj : Function.Injective (fderiv ℝ g (φ x))) (hφ : ContDiffAt ℝ 2 φ x)
+    (hc : fderiv ℝ φ x = 0) :
+    range (fun ℓ : G →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ g ∘ φ) x) =
+      range fun ℓ : F →L[ℝ] ℝ ↦ hessianQuadraticForm (ℓ ∘ φ) x := by
+  -- The Hessian of `ℓ ∘ g ∘ φ` is that of `(ℓ ∘ Dg) ∘ φ`, and every functional on `F` is of the
+  -- form `ℓ ∘ Dg`.
+  have hℓ : ∀ ℓ : G →L[ℝ] ℝ, hessianQuadraticForm (ℓ ∘ g ∘ φ) x =
+      hessianQuadraticForm ((ℓ.comp (fderiv ℝ g (φ x))) ∘ φ) x := by
+    intro ℓ
+    rw [← Function.comp_assoc, hessianQuadraticForm_comp_eq_fderiv_comp
+      (ℓ.contDiff.contDiffAt.comp _ hg) hφ hc, fderiv_comp _ ℓ.differentiableAt
+      (hg.differentiableAt (by norm_num)), ℓ.fderiv]
+  simp only [hℓ]
+  refine le_antisymm (by rintro _ ⟨ℓ, rfl⟩; exact ⟨_, rfl⟩) ?_
+  rintro _ ⟨ℓ, rfl⟩
+  obtain ⟨h, hh⟩ := (fderiv ℝ g (φ x) : F →ₗ[ℝ] G).exists_leftInverse_of_injective
+    (LinearMap.ker_eq_bot.2 hinj)
+  have hℓ' : (ℓ.comp (LinearMap.toContinuousLinearMap h)).comp (fderiv ℝ g (φ x)) = ℓ := by
+    ext w
+    simpa using congr(ℓ ($hh w))
+  exact ⟨ℓ.comp (LinearMap.toContinuousLinearMap h), by beta_reduce; rw [hℓ']⟩
+
 /-- The **Morse index** of `f` at `x` is the negative index of inertia of its Hessian quadratic
 form.  In finite dimensions it is equivalently the maximal dimension of a subspace on which the
 Hessian is negative-definite.  Following Mathlib's `sigNeg`, its value is defined to be zero in
@@ -173,12 +267,6 @@ noncomputable def morseIndex (f : E → ℝ) (x : E) : ℕ :=
 /-- The Morse index is the negative index of inertia of the Hessian quadratic form. -/
 theorem morseIndex_def : morseIndex f x = sigNeg (hessianQuadraticForm f x) := by
   simp [morseIndex]
-
-/-- Adding a constant to a function does not change its Morse index. -/
-@[simp]
-theorem morseIndex_add_const (f : E → ℝ) (c : ℝ) (x : E) :
-    morseIndex (fun y ↦ f y + c) x = morseIndex f x := by
-  rw [morseIndex_def, morseIndex_def, hessianQuadraticForm_add_const]
 
 /-- The Morse index depends only on the germ of the function at the point. -/
 theorem morseIndex_congr_of_eventuallyEq (hfg : f =ᶠ[𝓝 x] g) :
@@ -197,12 +285,35 @@ theorem morseIndex_comp {φ : F → E} {b : F} (hf : ContDiffAt ℝ 2 f (φ b))
     ⟨QuadraticMap.isometryEquivOfCompLinearEquiv
       (hessianQuadraticForm f (φ b)) e.toLinearEquiv⟩).symm
 
+/-- **The Morse index is lower semicontinuous.** In finite dimensions, if `f` is `C²` at `x`, then
+at every point near `x` the Morse index of `f` is at least its Morse index at `x`. The point `x`
+need not be critical, nor nondegenerate: a degenerate Hessian can acquire new negative directions
+under perturbation, but negative directions are never lost. -/
+theorem eventually_morseIndex_le [FiniteDimensional ℝ E] (hf : ContDiffAt ℝ 2 f x) :
+    ∀ᶠ y in 𝓝 x, morseIndex f x ≤ morseIndex f y := by
+  have hc : ContinuousAt (fderiv ℝ (fderiv ℝ f)) x :=
+    (hf.fderiv_right (m := 1) (by norm_num)).continuousAt_fderiv (by norm_num)
+  simpa only [morseIndex_def, hessianQuadraticForm_def] using
+    ContinuousLinearMap.eventually_sigNeg_toBilinForm_le_of_continuousAt hc
+
 /-- At a nondegenerate critical point, the Hessian quadratic form is nondegenerate. -/
 theorem IsNondegenerateCriticalPoint.hessianQuadraticForm_nondegenerate
     (h : IsNondegenerateCriticalPoint f x) : (hessianQuadraticForm f x).Nondegenerate := by
   rw [QuadraticMap.nondegenerate_iff_radical_eq_bot,
     QuadraticMap.radical_eq_ker_associated, associated_hessianQuadraticForm h.contDiffAt]
   exact LinearMap.separatingLeft_iff_ker_eq_bot.mp h.separatingLeft
+
+/-- In finite dimensions, a nondegenerate critical point is exactly a `C²` critical point whose
+Hessian quadratic form is nondegenerate. -/
+theorem isNondegenerateCriticalPoint_iff_hessianQuadraticForm_nondegenerate
+    [FiniteDimensional ℝ E] :
+    IsNondegenerateCriticalPoint f x ↔
+      ContDiffAt ℝ 2 f x ∧ fderiv ℝ f x = 0 ∧ (hessianQuadraticForm f x).Nondegenerate := by
+  rw [isNondegenerateCriticalPoint_iff_separatingLeft]
+  refine and_congr_right fun hf ↦ and_congr_right fun _ ↦ ?_
+  rw [← QuadraticMap.nondegenerate_associated_iff, associated_hessianQuadraticForm hf,
+    LinearMap.IsRefl.nondegenerate_iff_separatingLeft]
+  exact LinearMap.BilinForm.IsSymm.isRefl ⟨hf.isSymmSndFDerivAt (by norm_num)⟩
 
 /-- The Morse index is at most the dimension of the ambient space. -/
 theorem morseIndex_le_finrank [FiniteDimensional ℝ E] :

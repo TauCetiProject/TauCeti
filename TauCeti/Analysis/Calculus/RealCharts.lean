@@ -22,7 +22,9 @@ special-function computations.
   `u ↦ u / (1 - u)` on intervals below `1`;
 * `TauCeti.image_sq_div_const_Ioi`, `TauCeti.injOn_sq_div_const_Ioi`, and
   `TauCeti.hasDerivAt_sq_div_const` describe the square chart `z ↦ z ^ 2 / ν` on positive
-  half-lines.
+  half-lines;
+* `TauCeti.image_add_mul_div_sq_add_Ioi` describes the chart `t ↦ c + p q / (t ^ 2 + p)` on the
+  positive half-line.
 -/
 
 public section
@@ -136,5 +138,20 @@ lemma injOn_sq_div_const_Ioi (hν : ν ≠ 0) :
 lemma hasDerivAt_sq_div_const (ν z : ℝ) :
     HasDerivAt (fun x : ℝ => x ^ 2 / ν) (2 * z / ν) z := by
   simpa using ((hasDerivAt_id z).pow 2).div_const ν
+
+/-! ### The chart `t ↦ c + p q / (t ^ 2 + p)` -/
+
+/-- For `0 < p` and `0 < q`, the chart `t ↦ c + p q / (t ^ 2 + p)` carries `(0, ∞)` onto
+`(c, c + q)`. -/
+lemma image_add_mul_div_sq_add_Ioi {c p q : ℝ} (hp : 0 < p) (hq : 0 < q) :
+    (fun t : ℝ ↦ c + p * q / (t ^ 2 + p)) '' Ioi 0 = Ioo c (c + q) := by
+  have hsq := image_sq_div_const_Ioi one_pos (y := 0) le_rfl
+  have hcomp : (fun t : ℝ ↦ c + p * q / (t ^ 2 + p)) =
+      (c + ·) ∘ (p * q * ·) ∘ (·⁻¹) ∘ (· + p) ∘ (fun t : ℝ ↦ t ^ 2 / 1) := by
+    ext t
+    simp [div_eq_mul_inv]
+  simp only [hcomp, image_comp, hsq, image_add_const_Ioi, image_inv_eq_inv]
+  rw [inv_Ioi₀ (by simpa using hp), image_mul_left_Ioo (by positivity), image_const_add_Ioo]
+  simp [mul_right_comm p q, hp.ne']
 
 end TauCeti

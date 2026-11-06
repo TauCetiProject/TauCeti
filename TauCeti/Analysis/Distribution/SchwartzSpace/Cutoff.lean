@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
 public import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Bounds
+import Mathlib.Analysis.Distribution.SchwartzSpace.CompactSupport
 import TauCeti.Analysis.Calculus.ContDiff.Scaling
 
 /-!
@@ -38,6 +40,8 @@ Altogether the `(k, n)` seminorm of the difference is `O(R⁻¹)`.
   `𝓢(E, F)`.
 * `SchwartzMap.hasCompactSupport_smulLeftCLM_comp_inv_smul`: the truncations are compactly
   supported.
+* `SchwartzMap.tendsto_smulLeftCLM_contDiffBump_two_pow`: the dyadic truncations
+  `φ (2^{-N} ·) • f` by a `ContDiffBump` converge to `f`, for complex-valued multipliers.
 * Mathlib's `SchwartzMap.dense_hasCompactSupport`: compactly supported functions are dense in
   `𝓢(E, F)` for finite-dimensional `E`.
 
@@ -206,5 +210,24 @@ theorem tendsto_smulLeftCLM_comp_inv_smul_atTop (hχ : ContDiff ℝ ∞ χ)
   refine (seminorm_sub_smulLeftCLM_comp_inv_smul_le hχ hB hr hχ1' f k n hR).trans_lt ?_
   rw [div_lt_iff₀ hR0]
   rwa [div_lt_iff₀ hε, mul_comm] at hKR
+
+section Truncation
+
+variable [FiniteDimensional ℝ E] {G : Type*} [NormedAddCommGroup G] [NormedSpace ℂ G]
+
+/-- The low-pass truncations `φ (2^{-N} ·) • f` of a Schwartz function converge to `f` in the
+Schwartz topology. -/
+theorem tendsto_smulLeftCLM_contDiffBump_two_pow (φ : ContDiffBump (0 : E)) (f : 𝓢(E, G)) :
+    Tendsto (fun N : ℕ ↦ smulLeftCLM G (fun ξ ↦ (φ (((2 : ℝ) ^ N)⁻¹ • ξ) : ℂ)) f) atTop
+      (𝓝 f) := by
+  have hφ : (⇑φ).HasTemperateGrowth := φ.hasCompactSupport.hasTemperateGrowth φ.contDiff
+  have h := (tendsto_smulLeftCLM_comp_smul φ.contDiff φ.hasCompactSupport φ.eventuallyEq_one
+    f).comp (tendsto_inv_atTop_zero.comp (tendsto_pow_atTop_atTop_of_one_lt (one_lt_two (α := ℝ))))
+  refine h.congr fun N ↦ ?_
+  have hc : (fun ξ ↦ φ (((2 : ℝ) ^ N)⁻¹ • ξ)).HasTemperateGrowth := by fun_prop
+  rw [Function.comp_apply, Function.comp_apply, ← smulLeftCLM_ofReal ℂ hc,
+    RCLike.ofReal_eq_complex_ofReal]
+
+end Truncation
 
 end SchwartzMap

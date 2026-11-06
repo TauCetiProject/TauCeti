@@ -15,7 +15,8 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Ring
 This file supplements Mathlib's results on infinite sums over `ℕ` and `ℤ` with a reindexing
 lemma for an integer-indexed family whose support is bounded below, with the splitting of a
 summable integer-indexed family into its residue classes modulo `M`, and with the grouping of an
-integer-indexed sum into blocks of `M` consecutive terms.
+integer-indexed sum, or of a product or sum indexed by the natural numbers, into blocks of `M`
+consecutive terms.
 
 ## Main results
 
@@ -28,6 +29,9 @@ integer-indexed sum into blocks of `M` consecutive terms.
   `qM + r`, `r < M`.
 * `HasSum.sum_zmod_val_sub`: the same, with the blocks `a - N y` indexed by the least
   nonnegative representatives `a` of the residues modulo `N`.
+* `HasProd.prod_fin_mul_add_nat`, `HasSum.sum_fin_mul_add_nat`: the grouping of
+  `HasSum.sum_fin_mul_add` into blocks `qM + r`, `r < M`, for a product or sum over the natural
+  numbers.
 -/
 
 public section
@@ -89,6 +93,16 @@ theorem HasSum.sum_fin_mul_add {E : Type*} [AddCommMonoid E] [TopologicalSpace E
     [NeZero M] : HasSum (fun q : ℤ ↦ ∑ r : Fin M, f (q * M + r)) s := by
   refine ((Int.divModEquiv M).symm.hasSum_iff.mpr hf).prod_fiberwise fun q ↦ ?_
   simpa [Function.comp_def] using hasSum_fintype fun r : Fin M ↦ f (q * M + r)
+
+/-- **A product over the natural numbers grouped into blocks of `M` consecutive factors**: if `f`
+has product `a`, then so does the family of block products `n ↦ ∏_{r < M} f (n * M + r)`. -/
+@[to_additive /-- **A sum over the natural numbers grouped into blocks of `M` consecutive terms**:
+if `f` has sum `s`, then so does the family of block sums `n ↦ ∑_{r < M} f (n * M + r)`. -/]
+theorem HasProd.prod_fin_mul_add_nat {E : Type*} [CommMonoid E] [TopologicalSpace E]
+    [ContinuousMul E] [RegularSpace E] {f : ℕ → E} {a : E} (hf : HasProd f a) (M : ℕ)
+    [NeZero M] : HasProd (fun n : ℕ ↦ ∏ r : Fin M, f (n * M + r)) a := by
+  refine ((Nat.divModEquiv M).symm.hasProd_iff.mpr hf).prod_fiberwise fun n ↦ ?_
+  simpa [Function.comp_def] using hasProd_fintype fun r : Fin M ↦ f (n * M + r)
 
 /-- **A sum over the integers grouped into blocks of `N` consecutive terms**: if `f` has sum `s`,
 then so does the family of block sums `y ↦ ∑_a f (a - N y)`, where `a` runs over the least

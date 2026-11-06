@@ -37,6 +37,8 @@ distances. The topology is the ordinary product topology on `E × ℝ`.
   slab `E × [T - b, T - a]` onto `E × [a, b]`.
 * `TauCeti.ParabolicSpaceTime.slabSpaceMap`: a spatial map `f` acting on a slab by
   `(x, t) ↦ (f x, t)`, Lipschitz for the parabolic distance when `f` is.
+* `TauCeti.ParabolicSpaceTime.lipschitzWith_slabSpace`: the spatial position of a point of a slab
+  is `1`-Lipschitz for the parabolic distance.
 
 ## References
 
@@ -199,6 +201,11 @@ theorem edist_time_rpow_le (p q : ParabolicSpaceTime E) :
   rw [edist_eq]
   exact le_add_self
 
+/-- The spatial position of a point of a slab is `1`-Lipschitz for the parabolic distance. -/
+theorem lipschitzWith_slabSpace {a b : ℝ} :
+    LipschitzWith 1 fun p : slab (E := E) a b ↦ (p : ParabolicSpaceTime E).space :=
+  LipschitzWith.of_edist_le fun p q ↦ edist_space_le (p : ParabolicSpaceTime E) q
+
 /-- A `K`-Lipschitz spatial map acts on a slab as a `max K 1`-Lipschitz map for the parabolic
 distance. -/
 theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : ℝ} {K : ℝ≥0}
@@ -210,6 +217,12 @@ theorem lipschitzWith_slabSpaceMap {E' : Type*} [PseudoEMetricSpace E'] {a b : �
   gcongr
   · exact (hf _ _).trans (mul_le_mul_left (by exact_mod_cast le_max_left K 1) _)
   · exact le_mul_of_one_le_left (by positivity) (by exact_mod_cast le_max_right K 1)
+
+/-- The spatial position of a point of a slab is `1`-Lipschitz for the parabolic distance, so a
+time-independent spatial field keeps its Hölder exponent on the slab. -/
+theorem lipschitzWith_slab_space {a b : ℝ} :
+    LipschitzWith 1 fun p : slab (E := E) a b ↦ (p : ParabolicSpaceTime E).space :=
+  LipschitzWith.of_edist_le fun p q ↦ edist_space_le (p : ParabolicSpaceTime E) q
 
 end PseudoEMetricSpace
 
@@ -235,6 +248,14 @@ theorem sqrt_abs_time_sub_le_dist (p q : ParabolicSpaceTime E) :
     √|p.time - q.time| ≤ dist p q := by
   rw [dist_eq]
   exact le_add_of_nonneg_left dist_nonneg
+
+/-- At parabolic distance at most one, the time-coordinate difference is bounded by the
+parabolic distance. -/
+theorem abs_time_sub_le_dist_of_dist_le_one (p q : ParabolicSpaceTime E)
+    (h : dist p q ≤ 1) : |p.time - q.time| ≤ dist p q := by
+  have hs := sqrt_abs_time_sub_le_dist p q
+  have hsq := Real.sq_sqrt (abs_nonneg (p.time - q.time))
+  nlinarith [Real.sqrt_nonneg |p.time - q.time|]
 
 /-- At a common time, the parabolic distance is the spatial distance. -/
 @[simp]
