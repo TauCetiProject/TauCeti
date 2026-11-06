@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.SAGBI.Basic
-public import Mathlib.Algebra.Group.Submonoid.Finsupp
+public import TauCeti.RingTheory.MvPolynomial.SAGBI.Remainder
 
 /-!
 # Polynomial certificates for SAGBI subduction
@@ -47,34 +46,8 @@ theorem IsSAGBIBasis.exists_aeval_eq_support_le
     (h : m.IsSAGBIBasis (Set.range b) A) (hb : ∀ i, b i ≠ 0) (hf : f ∈ A) :
     ∃ Q : MvPolynomial ι k, aeval b Q = f ∧
       ∀ u ∈ Q.support, Finsupp.linearCombination ℕ (m.degree ∘ b) u ≼[m] m.degree f := by
-  classical
-  have hspan := h.mem_span hf
-  -- Keep the target exponent fixed during span induction, so cancellation in a sum does not
-  -- change the bounds imposed on the expression being constructed.
-  refine Submodule.span_induction (p := fun g _ ↦
-    ∃ Q : MvPolynomial ι k, aeval b Q = g ∧
-      ∀ u ∈ Q.support, Finsupp.linearCombination ℕ (m.degree ∘ b) u ≼[m] m.degree f)
-    ?_ ?_ ?_ ?_ hspan
-  · intro g hg
-    obtain ⟨u, rfl⟩ := Submonoid.mem_closure_range_iff.1 hg.1
-    refine ⟨monomial u (1 : k), ?_, ?_⟩
-    · simp [aeval_monomial]
-    · intro v hv
-      have hvu : u = v := by simpa using hv
-      subst v
-      rw [← m.degree_aeval_monomial_one_of_ne_zero hb]
-      simpa [aeval_monomial] using hg.2
-  · exact ⟨0, by simp, by simp⟩
-  · intro g₁ g₂ _ _ ih₁ ih₂
-    obtain ⟨Q₁, hQ₁, hbound₁⟩ := ih₁
-    obtain ⟨Q₂, hQ₂, hbound₂⟩ := ih₂
-    refine ⟨Q₁ + Q₂, by simp [hQ₁, hQ₂], fun u hu ↦ ?_⟩
-    rcases Finset.mem_union.1 (support_add hu) with hu | hu
-    · exact hbound₁ u hu
-    · exact hbound₂ u hu
-  · intro c g _ ih
-    obtain ⟨Q, hQ, hbound⟩ := ih
-    exact ⟨c • Q, by simp [hQ], fun u hu ↦ hbound u (support_smul hu)⟩
+  obtain ⟨Q, r, hs⟩ := m.exists_isSubduction hb f
+  exact ⟨Q, by simpa [hs.remainder_eq_zero h hf] using hs.eq_aeval_add.symm, hs.support_le⟩
 
 /-- If an element of a SAGBI subalgebra is zero or has leading exponent below `a`, it has an
 expression all of whose substituted monomials have leading exponent strictly below `a`.
