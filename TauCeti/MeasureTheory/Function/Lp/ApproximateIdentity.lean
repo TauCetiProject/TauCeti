@@ -111,7 +111,8 @@ theorem normedBumpLp_apply (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) (f : Lp
 /-- `normedBumpLp` is the normalized-bump average of the `Lᵖ` translation action. -/
 theorem normedBumpLp_eq_normedBumpAverageL (hp : p ≠ ∞) (phi : ContDiffBump (0 : E)) :
     normedBumpLp (F := F) hp phi mu =
-      normedBumpAverageL phi mu (mu.translateLp p) (Measure.continuous_translateLp hp) :=
+      normedBumpAverageL (F := Lp F p mu) phi mu (mu.translateLp p)
+        (Measure.continuous_translateLp hp) :=
   (rfl)
 
 /-- Averaging against a normalized bump is convolution with the normalized bump, as an operator
