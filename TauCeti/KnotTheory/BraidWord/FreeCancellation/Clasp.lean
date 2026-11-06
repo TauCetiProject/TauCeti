@@ -151,7 +151,8 @@ private theorem readClosingClasp_halfEdge :
       simp [crossing_apply, readClasp, closingClasp, h0, h1]
 
 /-- An old outgoing half-edge which is neither closing endpoint on the two clasp strands does
-not lie on a strand position whose successor is the first crossing there. -/
+not lie on one of the two clasp positions at the crossing whose successor wraps around to the
+first crossing there. -/
 private theorem not_nextCrossing_eq_head_of_ne_closingHalfEdge
     {j : Fin v.length} {p : Fin n} (hjold : j ∈ v.crossingsAt p)
     (hxp : v.closure.crossing j (v.outgoingSlot j p) ≠ v.closingHalfEdge (strand i) hp)
@@ -247,16 +248,8 @@ private theorem readClosingClasp_edgePair :
     fun hjold ↦ readClosingClasp_edgePair_old v i ε hp hq hjold
   · exact (edgePair_closure_cons_cons_one v i ε (-ε)).trans hfirst₁.symm
   · exact (edgePair_closure_cons_cons_two v i ε (-ε)).trans hfirst₂.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil
-      v i ε (-ε) (Or.inr rfl) hq
-    simp only [crossing_closure, List.length_cons] at h
-    simpa only [Fin.succ_zero_eq_one, List.length_cons, hhi, D, closingClasp] using
-      h.trans hsecond₁.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil
-      v i ε (-ε) (Or.inl rfl) hp
-    simp only [crossing_closure, List.length_cons] at h
-    simpa only [Fin.succ_zero_eq_one, List.length_cons, hlo, D, closingClasp] using
-      h.trans hsecond₂.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_ne_nil v i ε (-ε) hq).trans hsecond₁.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_ne_nil v i ε (-ε) hp).trans hsecond₂.symm
 
 private theorem readClosingClasp_orientation :
     (readClasp (closingClasp v i ε hp hq)).orientation =
@@ -461,20 +454,8 @@ private theorem readTwoCircleDiagram_edgePair :
     fun hjold ↦ readTwoCircleDiagram_edgePair_old v i ε hp₀ hq₀ D hD hjold
   · exact (edgePair_closure_cons_cons_one v i ε (-ε)).trans hm₀₁.symm
   · exact (edgePair_closure_cons_cons_two v i ε (-ε)).trans hm₀₂.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil v i ε (-ε) (Or.inr rfl) hq₀
-    have hout : outgoingSlot ((i, ε) :: (i, -ε) :: v) 1 (strandSucc i) = 1 :=
-      outgoingSlot_strandSucc ((i, ε) :: (i, -ε) :: v) 1
-    have hin : incomingSlot ((i, ε) :: (i, -ε) :: v) 0 (strandSucc i) = 0 :=
-      incomingSlot_strandSucc ((i, ε) :: (i, -ε) :: v) 0
-    simp only [crossing_closure, hin, List.length_cons] at h
-    simpa only [hout, List.length_cons, Fin.succ_zero_eq_one] using h.trans hm₁₁.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil v i ε (-ε) (Or.inl rfl) hp₀
-    have hout : outgoingSlot ((i, ε) :: (i, -ε) :: v) 1 (strand i) = 2 :=
-      outgoingSlot_strand ((i, ε) :: (i, -ε) :: v) 1
-    have hin : incomingSlot ((i, ε) :: (i, -ε) :: v) 0 (strand i) = 3 :=
-      incomingSlot_strand ((i, ε) :: (i, -ε) :: v) 0
-    simp only [crossing_closure, hin, List.length_cons] at h
-    simpa only [hout, List.length_cons, Fin.succ_zero_eq_one] using h.trans hm₁₂.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_nil v i ε (-ε) hq₀).trans hm₁₁.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_nil v i ε (-ε) hp₀).trans hm₁₂.symm
 
 private theorem readTwoCircleDiagram_orientation :
     (readClasp (twoCircleDiagram v ε D)).orientation =
@@ -612,14 +593,9 @@ private theorem readCircleArcDiagram_edgePair_old {j : Fin baseWord.length} {p :
         (crossingSlotEquiv _ (j.succ.succ, baseWord.outgoingSlot j p)) := by
   let x := baseWord.closure.crossing j (baseWord.outgoingSlot j p)
   let a := baseWord.closingHalfEdge (strand idx) hArc
-  have hx : baseWord.closure.orientation x = true := by
-    rcases baseWord.outgoingSlot_eq_one_or_two j p with hs | hs <;> simp [x, hs]
   have hxe : x ≠ core.edgePair.val a := by
     rw [circleArcCore_edgePair baseWord core hCore]
-    intro he
-    have hh := baseWord.closure.orientation_edgePair a
-    rw [← he, hx, orientation_closingHalfEdge] at hh
-    contradiction
+    exact baseWord.crossing_outgoingSlot_ne_edgePair_closingHalfEdge p hArc
   have hm := readClasp_edgePair_apply (circleArcDiagram baseWord idx sgn hArc core)
     (halfEdgeSuccEquiv (baseWord.length + 1) (.inl (halfEdgeSuccEquiv baseWord.length (.inl x))))
   have hxm : claspHalf baseWord.length
@@ -688,22 +664,10 @@ private theorem readCircleArcDiagram_edgePair :
     fun hjold ↦ readCircleArcDiagram_edgePair_old baseWord idx sgn hArc hCircle core hCore hjold
   · exact (edgePair_closure_cons_cons_one baseWord idx sgn (-sgn)).trans h0one.symm
   · exact (edgePair_closure_cons_cons_two baseWord idx sgn (-sgn)).trans h0two.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil baseWord idx sgn (-sgn)
-      (Or.inr rfl) hCircle
-    have hout : outgoingSlot ((idx, sgn) :: (idx, -sgn) :: baseWord) 1 (strandSucc idx) = 1 :=
-      outgoingSlot_strandSucc _ 1
-    have hin : incomingSlot ((idx, sgn) :: (idx, -sgn) :: baseWord) 0 (strandSucc idx) = 0 :=
-      incomingSlot_strandSucc _ 0
-    simp only [crossing_closure, hin, List.length_cons] at h
-    simpa only [hout, List.length_cons, Fin.succ_zero_eq_one, circleArcDiagram] using
-      h.trans h1one.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil baseWord idx sgn (-sgn)
-      (Or.inl rfl) hArc
-    have hout : outgoingSlot ((idx, sgn) :: (idx, -sgn) :: baseWord) 1 (strand idx) = 2 :=
-      outgoingSlot_strand _ 1
-    simp only [crossing_closure, List.length_cons] at h
-    simpa only [hout, List.length_cons, Fin.succ_zero_eq_one, circleArcDiagram] using
-      h.trans h1two.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_nil baseWord idx sgn (-sgn)
+      hCircle).trans h1one.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_ne_nil baseWord idx sgn (-sgn)
+      hArc).trans h1two.symm
 
 private theorem readCircleArcDiagram_orientation :
     (readClasp (circleArcDiagram baseWord idx sgn hArc core)).orientation =
@@ -867,14 +831,9 @@ private theorem readLowerCircleDiagram_edgePair_old {j : Fin baseWord.length} {p
         (crossingSlotEquiv _ (j.succ.succ, baseWord.outgoingSlot j p)) := by
   let x := baseWord.closure.crossing j (baseWord.outgoingSlot j p)
   let a := baseWord.closingHalfEdge (strandSucc idx) hArc
-  have hx : baseWord.closure.orientation x = true := by
-    rcases baseWord.outgoingSlot_eq_one_or_two j p with hs | hs <;> simp [x, hs]
   have hxe : x ≠ core.edgePair.val a := by
     rw [circleArcCore_edgePair baseWord core hCore]
-    intro he
-    have hh := baseWord.closure.orientation_edgePair a
-    rw [← he, hx, orientation_closingHalfEdge] at hh
-    contradiction
+    exact baseWord.crossing_outgoingSlot_ne_edgePair_closingHalfEdge p hArc
   have hm := readLowerClasp_edgePair_apply (lowerCircleDiagram baseWord idx sgn hArc core)
     (halfEdgeSuccEquiv (baseWord.length + 1) (.inl (halfEdgeSuccEquiv baseWord.length (.inl x))))
   have hxm : lowerClaspHalf baseWord.length
@@ -945,22 +904,10 @@ private theorem readLowerCircleDiagram_edgePair :
       readLowerCircleDiagram_edgePair_old baseWord idx sgn hCircle hArc core hCore hjold
   · exact (edgePair_closure_cons_cons_one baseWord idx sgn (-sgn)).trans h0one.symm
   · exact (edgePair_closure_cons_cons_two baseWord idx sgn (-sgn)).trans h0two.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil baseWord idx sgn (-sgn)
-      (Or.inr rfl) hArc
-    have hout : outgoingSlot ((idx, sgn) :: (idx, -sgn) :: baseWord) 1 (strandSucc idx) = 1 :=
-      outgoingSlot_strandSucc _ 1
-    simp only [crossing_closure, List.length_cons] at h
-    simpa only [hout, List.length_cons, Fin.succ_zero_eq_one, lowerCircleDiagram] using
-      h.trans h1one.symm
-  · have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil baseWord idx sgn (-sgn)
-      (Or.inl rfl) hCircle
-    have hout : outgoingSlot ((idx, sgn) :: (idx, -sgn) :: baseWord) 1 (strand idx) = 2 :=
-      outgoingSlot_strand _ 1
-    have hin : incomingSlot ((idx, sgn) :: (idx, -sgn) :: baseWord) 0 (strand idx) = 3 :=
-      incomingSlot_strand _ 0
-    simp only [crossing_closure, hin, List.length_cons] at h
-    simpa only [hout, List.length_cons, Fin.succ_zero_eq_one, lowerCircleDiagram] using
-      h.trans h1two.symm
+  · exact (edgePair_closure_cons_cons_one_one_of_ne_nil baseWord idx sgn (-sgn)
+      hArc).trans h1one.symm
+  · exact (edgePair_closure_cons_cons_one_two_of_nil baseWord idx sgn (-sgn)
+      hCircle).trans h1two.symm
 
 private theorem readLowerCircleDiagram_orientation :
     (readLowerClasp (lowerCircleDiagram baseWord idx sgn hArc core)).orientation =

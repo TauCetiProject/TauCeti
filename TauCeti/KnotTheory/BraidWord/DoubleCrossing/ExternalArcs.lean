@@ -141,47 +141,58 @@ theorem edgePair_closure_cons_cons_incomingSlot_zero_of_ne_nil {p : Fin n}
       edgePair_closure_cons_cons_of_mem v i ε η (List.getLast_mem hv)
   exact w.closure.edgePair.apply_eq_of_apply_eq hout
 
-/-- The closure of a word beginning with two same-index letters has the same outgoing arcs as
-a matching `M` as soon as `M` agrees with it on the four outgoing slots of the two new crossings
-that lie on the affected positions, and on every outgoing slot of an old crossing. -/
-theorem edgePair_closure_cons_cons_eq_of_outgoingSlot
-    {M : PerfectMatching (Fin (4 * ((i, ε) :: (i, η) :: v).length))}
-    (h₀₁ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
-        (crossingSlotEquiv _ (0, 1)) = M.val (crossingSlotEquiv _ (0, 1)))
-    (h₀₂ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
-        (crossingSlotEquiv _ (0, 2)) = M.val (crossingSlotEquiv _ (0, 2)))
-    (h₁₁ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
-        (crossingSlotEquiv _ (1, 1)) = M.val (crossingSlotEquiv _ (1, 1)))
-    (h₁₂ : (closure ((i, ε) :: (i, η) :: v)).edgePair.val
-        (crossingSlotEquiv _ (1, 2)) = M.val (crossingSlotEquiv _ (1, 2)))
-    (hold : ∀ {j : Fin v.length} {p : Fin n}, j ∈ v.crossingsAt p →
-      (closure ((i, ε) :: (i, η) :: v)).edgePair.val
-          (crossingSlotEquiv _ (j.succ.succ, v.outgoingSlot j p)) =
-        M.val (crossingSlotEquiv _ (j.succ.succ, v.outgoingSlot j p))) :
-    (closure ((i, ε) :: (i, η) :: v)).edgePair = M := by
-  let w : BraidWord n := (i, ε) :: (i, η) :: v
-  apply edgePair_closure_eq_of_outgoingSlot
-  intro j p hj
-  rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-  · have hpos : p = strand i ∨ p = strandSucc i := by
-      simpa [w] using (mem_crossingsAt (w := w)).mp hj
-    rcases hpos with rfl | rfl
-    · have hout : w.outgoingSlot 0 (strand i) = 2 := outgoingSlot_strand w 0
-      simpa only [w, hout] using h₀₂
-    · have hout : w.outgoingSlot 0 (strandSucc i) = 1 := outgoingSlot_strandSucc w 0
-      simpa only [w, hout] using h₀₁
-  · rcases Fin.eq_zero_or_eq_succ j with rfl | ⟨j, rfl⟩
-    · have hpos : p = strand i ∨ p = strandSucc i := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      rcases hpos with rfl | rfl
-      · have hout : w.outgoingSlot 1 (strand i) = 2 := outgoingSlot_strand w 1
-        simpa only [w, hout, Fin.succ_zero_eq_one] using h₁₂
-      · have hout : w.outgoingSlot 1 (strandSucc i) = 1 := outgoingSlot_strandSucc w 1
-        simpa only [w, hout, Fin.succ_zero_eq_one] using h₁₁
-    · have hjold : j ∈ v.crossingsAt p := by
-        simpa [w] using (mem_crossingsAt (w := w)).mp hj
-      have hletter : w[j.succ.succ.val] = v[j.val] := by simp [w]
-      rw [outgoingSlot_congr hletter p]
-      exact hold hjold
+/-- If the strand position `strand i` had no crossing, the external arc leaving slot `2` of the
+second inserted crossing enters slot `3` of the first. -/
+theorem edgePair_closure_cons_cons_one_two_of_nil (hv : v.crossingsAt (strand i) = []) :
+    (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv ((i, ε) :: (i, η) :: v).length (1, 2)) =
+      crossingSlotEquiv ((i, ε) :: (i, η) :: v).length (0, 3) := by
+  have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil v i ε η (Or.inl rfl) hv
+  have hout : outgoingSlot ((i, ε) :: (i, η) :: v) 1 (strand i) = 2 :=
+    outgoingSlot_strand _ 1
+  have hin : incomingSlot ((i, ε) :: (i, η) :: v) 0 (strand i) = 3 :=
+    incomingSlot_strand _ 0
+  simpa only [crossing_closure, hout, hin] using h
+
+/-- If the strand position `strandSucc i` had no crossing, the external arc leaving slot `1` of
+the second inserted crossing enters slot `0` of the first. -/
+theorem edgePair_closure_cons_cons_one_one_of_nil (hv : v.crossingsAt (strandSucc i) = []) :
+    (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv ((i, ε) :: (i, η) :: v).length (1, 1)) =
+      crossingSlotEquiv ((i, ε) :: (i, η) :: v).length (0, 0) := by
+  have h := edgePair_closure_cons_cons_outgoingSlot_one_of_nil v i ε η (Or.inr rfl) hv
+  have hout : outgoingSlot ((i, ε) :: (i, η) :: v) 1 (strandSucc i) = 1 :=
+    outgoingSlot_strandSucc _ 1
+  have hin : incomingSlot ((i, ε) :: (i, η) :: v) 0 (strandSucc i) = 0 :=
+    incomingSlot_strandSucc _ 0
+  simpa only [crossing_closure, hout, hin] using h
+
+/-- If the strand position `strand i` already had crossings, the external arc leaving slot `2`
+of the second inserted crossing enters the old first crossing there, with its original
+incoming slot. -/
+theorem edgePair_closure_cons_cons_one_two_of_ne_nil (hv : v.crossingsAt (strand i) ≠ []) :
+    (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv ((i, ε) :: (i, η) :: v).length (1, 2)) =
+      crossingSlotEquiv ((i, ε) :: (i, η) :: v).length
+        (((v.crossingsAt (strand i)).head hv).succ.succ,
+          v.incomingSlot ((v.crossingsAt (strand i)).head hv) (strand i)) := by
+  have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil v i ε η (Or.inl rfl) hv
+  have hout : outgoingSlot ((i, ε) :: (i, η) :: v) 1 (strand i) = 2 :=
+    outgoingSlot_strand _ 1
+  simpa only [crossing_closure, hout] using h
+
+/-- If the strand position `strandSucc i` already had crossings, the external arc leaving slot
+`1` of the second inserted crossing enters the old first crossing there, with its original
+incoming slot. -/
+theorem edgePair_closure_cons_cons_one_one_of_ne_nil (hv : v.crossingsAt (strandSucc i) ≠ []) :
+    (closure ((i, ε) :: (i, η) :: v)).edgePair.val
+        (crossingSlotEquiv ((i, ε) :: (i, η) :: v).length (1, 1)) =
+      crossingSlotEquiv ((i, ε) :: (i, η) :: v).length
+        (((v.crossingsAt (strandSucc i)).head hv).succ.succ,
+          v.incomingSlot ((v.crossingsAt (strandSucc i)).head hv) (strandSucc i)) := by
+  have h := edgePair_closure_cons_cons_outgoingSlot_one_of_ne_nil v i ε η (Or.inr rfl) hv
+  have hout : outgoingSlot ((i, ε) :: (i, η) :: v) 1 (strandSucc i) = 1 :=
+    outgoingSlot_strandSucc _ 1
+  simpa only [crossing_closure, hout] using h
 
 end TauCeti.BraidWord

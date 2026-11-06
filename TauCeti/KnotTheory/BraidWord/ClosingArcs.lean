@@ -125,7 +125,7 @@ theorem closingHalfEdge_ne_edgePair_closingHalfEdge (v : BraidWord n) (p q : Fin
   rw [← heq, hqorient, hporient] at harc
   contradiction
 
-/-- The outgoing half-edge at an old crossing is not the partner of a closing endpoint. -/
+/-- The outgoing half-edge at any crossing is not the partner of a closing endpoint. -/
 theorem crossing_outgoingSlot_ne_edgePair_closingHalfEdge (v : BraidWord n) {j : Fin v.length}
     (p : Fin n) {q : Fin n} (hq : v.crossingsAt q ≠ []) :
     v.closure.crossing j (v.outgoingSlot j p) ≠
