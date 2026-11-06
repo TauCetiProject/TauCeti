@@ -54,6 +54,7 @@ theorem beurlingSymbol_mul (ξ : ℂ) : beurlingSymbol ξ * ξ = conj ξ := by
   · exact inv_mul_cancel_right₀ hξ _
 
 /-- The symbol has modulus one at every nonzero frequency. -/
+@[simp]
 theorem norm_beurlingSymbol {ξ : ℂ} (hξ : ξ ≠ 0) : ‖beurlingSymbol ξ‖ = 1 := by
   rw [beurlingSymbol, norm_mul, norm_conj, norm_inv, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hξ)]
 
@@ -64,10 +65,11 @@ theorem norm_beurlingSymbol_le (ξ : ℂ) : ‖beurlingSymbol ξ‖ ≤ 1 := by
   · exact (norm_beurlingSymbol hξ).le
 
 /-- Real dilation by a nonzero scalar leaves the symbol unchanged. -/
-theorem beurlingSymbol_smul {t : ℝ} (ht : t ≠ 0) (ξ : ℂ) :
-    beurlingSymbol (t • ξ) = beurlingSymbol ξ := by
+@[simp]
+theorem beurlingSymbol_real_mul {t : ℝ} (ht : t ≠ 0) (ξ : ℂ) :
+    beurlingSymbol ((t : ℂ) * ξ) = beurlingSymbol ξ := by
   have ht' : (t : ℂ) ≠ 0 := by exact_mod_cast ht
-  rw [beurlingSymbol, beurlingSymbol, Complex.real_smul, map_mul, conj_ofReal]
+  rw [beurlingSymbol, beurlingSymbol, map_mul, conj_ofReal]
   field_simp
 
 /-- The Beurling symbol is smooth away from its singular frequency. -/
@@ -102,6 +104,7 @@ def beurlingL2 : Lp F 2 (volume : Measure ℂ) →L[ℂ] Lp F 2 (volume : Measur
   Lp.fourierMultiplierCLM F beurlingSymbolLinf
 
 /-- On the Fourier side the L² operator multiplies by the Beurling symbol. -/
+@[simp]
 theorem fourier_beurlingL2 (u : Lp F 2 (volume : Measure ℂ)) :
     𝓕 (beurlingL2 F u) = (beurlingSymbolLinf • 𝓕 u : Lp F 2 (volume : Measure ℂ)) :=
   Lp.fourier_fourierMultiplierCLM beurlingSymbolLinf u
@@ -116,7 +119,8 @@ theorem exists_eLpNorm_beurlingL2_le {p : ℝ≥0∞} (hp : 1 < p) (hp_top : p �
     ∃ C : ℝ≥0, ∀ u : Lp F 2 (volume : Measure ℂ),
       eLpNorm (beurlingL2 F u) p volume ≤ C * eLpNorm u p volume := by
   obtain ⟨A, hA⟩ := exists_norm_iteratedFDeriv_le_div_pow_of_smul_eq (N := 2)
-    (contDiffOn_beurlingSymbol.of_le (by simp)) fun t ht ξ ↦ beurlingSymbol_smul ht.ne' ξ
+    (contDiffOn_beurlingSymbol.of_le (by simp)) fun t ht ξ ↦ by
+      simpa only [Complex.real_smul] using beurlingSymbol_real_mul ht.ne' ξ
   obtain ⟨C, hC⟩ := exists_eLpNorm_fourierMultiplierCLM_le_of_norm_iteratedFDeriv_le
     (V := ℂ) (F := F) (N := 2) (by simp [Complex.finrank_real_complex]) hp hp_top
   exact ⟨C * A, fun u ↦ by
@@ -234,6 +238,7 @@ theorem eq_beurlingLp_iff (hp : 1 < p) (hp_top : p ≠ (∞ : ℝ≥0∞))
 
 omit [Fact (1 ≤ p)] in
 /-- At exponent two the Lp extension is the original spectral operator. -/
+@[simp]
 theorem beurlingLp_two : beurlingLp (F := F) 2 (by norm_num) (by norm_num) = beurlingL2 F := by
   symm
   apply (eq_beurlingLp_iff (p := 2) (by norm_num) (by norm_num) (beurlingL2 F)).2
