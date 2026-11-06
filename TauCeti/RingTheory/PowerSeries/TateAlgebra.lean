@@ -101,6 +101,21 @@ theorem norm_le_iff {f : PowerSeries.IsRestricted.subring (R := R) c} {r : ℝ} 
   rw [norm_eq_gaussNorm, PowerSeries.gaussNorm_eq]
   exact Real.iSup_le h hr
 
+/-- A bounded scalar action on the coefficients induces a bounded action for the Gauss norm. -/
+noncomputable instance instIsBoundedSMulIsRestrictedSubring {S : Type*} [NormedCommRing S]
+    [Algebra S R] [IsBoundedSMul S R] :
+    IsBoundedSMul S (PowerSeries.IsRestricted.subring (R := R) c) :=
+  .of_norm_smul_le fun a f ↦
+    (norm_le_iff (mul_nonneg (norm_nonneg a) (norm_nonneg f))).mpr fun n ↦ by
+      rw [coe_smul_isRestrictedSubring, PowerSeries.coeff_smul]
+      calc
+        ‖a • PowerSeries.coeff n (f : PowerSeries R)‖ * c ^ n ≤
+            (‖a‖ * ‖PowerSeries.coeff n (f : PowerSeries R)‖) * c ^ n :=
+          mul_le_mul_of_nonneg_right (norm_smul_le _ _) (pow_pos hc.out n).le
+        _ ≤ ‖a‖ * ‖f‖ := by
+          rw [mul_assoc]
+          exact mul_le_mul_of_nonneg_left (norm_coeff_mul_pow_le f n) (norm_nonneg a)
+
 /-- A constant series has the norm of its coefficient. -/
 @[simp]
 theorem norm_C (a : R) :
