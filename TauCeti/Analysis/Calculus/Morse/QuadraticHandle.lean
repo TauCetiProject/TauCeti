@@ -112,6 +112,16 @@ theorem quadraticHandleMap_apply (z : Eᵤ × Eₛ) :
       (√(‖z.1‖ ^ 2 + μ (‖z.1‖ ^ 2 + 2 * ‖z.2‖ ^ 2) - ε))⁻¹ • z.2) :=
   (rfl)
 
+/-- The squared norm of a vector scaled by the square root of `a ≥ 0` is multiplied by `a`. -/
+private theorem norm_sqrt_smul_sq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] {a : ℝ}
+    (ha : 0 ≤ a) (x : F) : ‖√a • x‖ ^ 2 = a * ‖x‖ ^ 2 := by
+  simp [norm_smul, mul_pow, Real.sq_sqrt ha]
+
+/-- The squared norm of a vector scaled by the inverse square root of `a ≥ 0` is divided by `a`. -/
+private theorem norm_inv_sqrt_smul_sq {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+    {a : ℝ} (ha : 0 ≤ a) (x : F) : ‖(√a)⁻¹ • x‖ ^ 2 = ‖x‖ ^ 2 / a := by
+  simp [norm_smul, mul_pow, Real.sq_sqrt ha, div_eq_inv_mul]
+
 /-! ### The handle in the coordinates `s = ‖u‖²`, `t = ‖v‖²`
 
 The handle and the rescaling only depend on `s = ‖u‖²` and `t = ‖v‖²`. In these coordinates the
@@ -144,7 +154,9 @@ private theorem mul_lt_mul_of_lt (hε : 0 < ε) (hμ_pos : ∀ r < 2 * ε, 0 < �
   set σ := s / (t + ε) with hσdef
   have hs_eq : s = σ * (t + ε) := by rw [hσdef, div_mul_cancel₀ _ htε.ne']
   have hs'_eq : s' = σ * (t' + ε) := by
-    rw [hσdef, div_mul_eq_mul_div, hσ, mul_div_assoc, div_self htε.ne', mul_one]
+    rw [hσdef]
+    field_simp
+    linarith
   have hσ0 : 0 ≤ σ := div_nonneg hs htε.le
   have hσ1 : σ ≤ 1 := (div_le_one htε).2 (by linarith)
   have hss' : s ≤ s' := by rw [hs_eq, hs'_eq]; nlinarith
@@ -265,8 +277,7 @@ omit hμa hμε in
 /-- The squared norm of the first component of the rescaling is `‖u‖² / (‖v‖² + ε)`. -/
 theorem norm_fst_quadraticHandleMap_sq (z : Eᵤ × Eₛ) :
     ‖(quadraticHandleMap ε μ z).1‖ ^ 2 = ‖z.1‖ ^ 2 / (‖z.2‖ ^ 2 + ε) := by
-  rw [quadraticHandleMap_apply, norm_smul, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _),
-    mul_pow, inv_pow, Real.sq_sqrt (by positivity), div_eq_inv_mul]
+  rw [quadraticHandleMap_apply, norm_inv_sqrt_smul_sq (by positivity)]
 
 omit hε in
 /-- The squared norm of the second component of the rescaling is
@@ -274,8 +285,8 @@ omit hε in
 theorem norm_snd_quadraticHandleMap_sq (hz : z ∈ quadraticHandle ε μ) :
     ‖(quadraticHandleMap ε μ z).2‖ ^ 2 =
       ‖z.2‖ ^ 2 / (‖z.1‖ ^ 2 + μ (‖z.1‖ ^ 2 + 2 * ‖z.2‖ ^ 2) - ε) := by
-  rw [quadraticHandleMap_apply, norm_smul, norm_inv, Real.norm_of_nonneg (Real.sqrt_nonneg _),
-    mul_pow, inv_pow, Real.sq_sqrt (sub_pos_of_mem_quadraticHandle hμa hμε hz).le, div_eq_inv_mul]
+  rw [quadraticHandleMap_apply,
+    norm_inv_sqrt_smul_sq (sub_pos_of_mem_quadraticHandle hμa hμε hz).le]
 
 /-- The rescaling maps the handle into the product of the closed unit balls. -/
 theorem mapsTo_quadraticHandleMap :
@@ -319,11 +330,9 @@ theorem surjOn_quadraticHandleMap (hμ : Continuous μ) (hμ₀ : ∀ r, 2 * ε 
   have htε : 0 < t + ε := by linarith
   have hD : 0 < s + μ (s + 2 * t) - ε := sub_pos_of_le hμa hμε (by positivity) ht0 h₁ h₂
   have hu : ‖√(t + ε) • a‖ ^ 2 = s := by
-    rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt htε.le,
-      mul_comm]
+    rw [norm_sqrt_smul_sq htε.le, mul_comm]
   have hv : ‖√(s + μ (s + 2 * t) - ε) • b‖ ^ 2 = t := by
-    rw [norm_smul, Real.norm_of_nonneg (Real.sqrt_nonneg _), mul_pow, Real.sq_sqrt hD.le, ← hρ,
-      mul_div_cancel₀ _ hD.ne']
+    rw [norm_sqrt_smul_sq hD.le, ← hρ, mul_div_cancel₀ _ hD.ne']
   refine ⟨(√(t + ε) • a, √(s + μ (s + 2 * t) - ε) • b), ⟨?_, ?_, ?_⟩, ?_⟩
   · simpa only [hu, hv] using h₁
   · simpa only [hu, hv] using h₂

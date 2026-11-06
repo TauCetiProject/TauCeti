@@ -503,16 +503,10 @@ private theorem exists_milnorHandle_homeomorph
     nlinarith [(mem_quadraticHandle.1 hz).2.2, sq_nonneg ‖(L z).2‖]
   have himage : (ψ i).toOpenPartialHomeomorph '' milnorHandle ψ k ε μ i =
       L ⁻¹' quadraticHandle ε μ := by
-    ext z
-    refine ⟨?_, fun hz ↦ ⟨(ψ i).toOpenPartialHomeomorph.symm z, ?_, ?_⟩⟩
-    · rintro ⟨x, ⟨-, hx⟩, rfl⟩
-      exact hx
-    · have hz' := htarget hz
-      have hψz : ψ i ((ψ i).toOpenPartialHomeomorph.symm z) = z :=
-        (ψ i).toOpenPartialHomeomorph.right_inv hz'
-      refine ⟨(ψ i).toOpenPartialHomeomorph.map_target hz', ?_⟩
-      rwa [mem_preimage, hψz]
-    · exact (ψ i).toOpenPartialHomeomorph.right_inv (htarget hz)
+    rw [milnorHandle]
+    exact ((ψ i).toOpenPartialHomeomorph.image_source_inter_eq' _).trans <|
+      ((ψ i).toOpenPartialHomeomorph.target_inter_inv_preimage_preimage _).trans <|
+        inter_eq_right.2 htarget
   exact ⟨((ψ i).toOpenPartialHomeomorph.homeomorphOfImageSubsetSource inter_subset_left
       himage).trans ((L.toHomeomorph.subtype fun _ ↦ Iff.rfl).trans
         (quadraticHandleHomeomorph hε hμa hμε hμ hμ₀ hμ_pos)),
