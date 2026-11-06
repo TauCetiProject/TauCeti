@@ -107,13 +107,15 @@ private theorem cpow_one_div_two_eq_of_sq {w z : ℂ} (h : w ^ 2 = z) (hw : 0 < 
   rw [← h, one_div]
   exact sq_cpow_two_inv hw
 
-/-- If `N² (τ - 2/N) = -2NY / u`, `s² = u`, `u ≠ 0`, `s ≠ 0`, `0 < re s` and `0 ≤ im s`, then the
+/-- If `N² (τ - 2/N) = -2NY / u`, `s² = u`, `0 < re s` and `0 ≤ im s`, then the
 principal square root of `-i · N² (τ - 2/N)` is `(1 + i)√(NY) / s`. -/
 private theorem cpow_one_div_two_neg_I_mul_sq_mul_sub {N : ℕ} {Y : ℝ} {u s τ : ℂ}
-    (hNpos : (0 : ℝ) < N) (hY : 0 < Y) (hu0 : u ≠ 0) (hs0 : s ≠ 0) (hs2 : s ^ 2 = u)
+    (hNpos : (0 : ℝ) < N) (hY : 0 < Y) (hs2 : s ^ 2 = u)
     (hsre : 0 < s.re) (hsim : 0 ≤ s.im)
     (hT : (N : ℂ) ^ 2 * (τ - 2 / N) = -(2 * N * Y) / u) :
     (-I * ((N : ℂ) ^ 2 * (τ - 2 / N))) ^ (1 / 2 : ℂ) = (1 + I) * √(N * Y) * s⁻¹ := by
+  have hs0 : s ≠ 0 := fun h ↦ by simp [h] at hsre
+  have hu0 : u ≠ 0 := hs2 ▸ pow_ne_zero 2 hs0
   have hnormSq : 0 < normSq s := normSq_pos.2 hs0
   refine cpow_one_div_two_eq_of_sq ?_ ?_
   · rw [mul_pow, mul_pow, inv_pow, hs2, ← ofReal_pow, Real.sq_sqrt (by positivity), hT]
@@ -128,11 +130,13 @@ private theorem cpow_one_div_two_neg_I_mul_sq_mul_sub {N : ℕ} {Y : ℝ} {u s �
     rw [this]
     positivity
 
-/-- For `s² = u` with `u ≠ 0`, `s ≠ 0` and `s` in the right half-plane, the square root arising
+/-- For `s² = u` with `s` in the right half-plane, the square root arising
 from the second functional equation at `τ = i / u` is `s⁻¹`. -/
-private theorem cpow_one_div_two_neg_I_mul_eq_inv {u s τ : ℂ} (hu0 : u ≠ 0) (hs0 : s ≠ 0)
-    (hs2 : s ^ 2 = u) (hsre : 0 < s.re) (hτ : τ = I / u) :
+private theorem cpow_one_div_two_neg_I_mul_eq_inv {u s τ : ℂ} (hs2 : s ^ 2 = u)
+    (hsre : 0 < s.re) (hτ : τ = I / u) :
     (-I * τ) ^ (1 / 2 : ℂ) = s⁻¹ := by
+  have hs0 : s ≠ 0 := fun h ↦ by simp [h] at hsre
+  have hu0 : u ≠ 0 := hs2 ▸ pow_ne_zero 2 hs0
   refine cpow_one_div_two_eq_of_sq ?_ ?_
   · rw [inv_pow, hs2, hτ]
     field_simp
@@ -210,10 +214,10 @@ private theorem sum_mul_jacobiTheta₂_eq (N : ℕ) [NeZero N] {Y : ℝ} (hY : 0
   -- The first expansion.
   have hA := jacobiTheta_two_div_add N hδim
   rw [add_sub_cancel, hTinv,
-    cpow_one_div_two_neg_I_mul_sq_mul_sub hNpos hY hu0 hs0 hs2 hsre hsim hT] at hA
+    cpow_one_div_two_neg_I_mul_sq_mul_sub hNpos hY hs2 hsre hsim hT] at hA
   -- The second expansion.
   have hF := jacobiTheta_eq_mul_jacobiTheta_I_mul_sub hu hτ
-    (cpow_one_div_two_neg_I_mul_eq_inv hu0 hs0 hs2 hsre hτ)
+    (cpow_one_div_two_neg_I_mul_eq_inv hs2 hsre hτ)
   have hB := jacobiTheta_sub_natCast_div_two N (τ := I * Y) (by simpa using hY)
   rw [show (4 : ℂ) * (I * Y) = I * (4 * Y) by ring, jacobiTheta_I_mul_four_mul hY,
     jacobiTheta_I_mul hY] at hB
