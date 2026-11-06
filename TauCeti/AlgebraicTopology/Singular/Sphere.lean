@@ -824,31 +824,32 @@ theorem reducedSingularHomologyFunctor_map_diskBoundaryNeg (n : ℕ) :
 
 /-- **An orthogonal map acts on the homology of `TopCat.sphere n` by the sign of its
 determinant.** For a linear isometry `g` of `ℝⁿ⁺¹`, its restriction
-`TauCeti.TopCat.diskBoundaryMap g` to the boundary of the `(n + 1)`-disk induces multiplication by
-`sign (det g) = ±1` on `H_redₙ`. -/
+`LinearIsometryEquiv.diskBoundaryMap g` to the boundary of the `(n + 1)`-disk induces
+multiplication by `sign (det g) = ±1` on `H_redₙ`. -/
 theorem reducedSingularHomologyFunctor_map_diskBoundaryMap {n : ℕ}
     (g : EuclideanSpace ℝ (Fin (n + 1)) ≃ₗᵢ[ℝ] EuclideanSpace ℝ (Fin (n + 1))) :
-    (reducedSingularHomologyFunctor R n).map (TopCat.diskBoundaryMap.{w} g) =
+    (reducedSingularHomologyFunctor R n).map (LinearIsometryEquiv.diskBoundaryMap.{w} g) =
       (SignType.sign (LinearMap.det g.toLinearMap) : ℤ) • 𝟙 _ := by
   -- Transport `TauCeti.reducedSingularHomologyFunctor_map_unitSphereMap` along the homeomorphism
   -- `TauCeti.diskBoundaryHomeomorph`, the restriction of the linear isometry `L` reindexing the
   -- coordinates, which conjugates `g` to `f`.
   set L := LinearIsometryEquiv.piLpCongrLeft 2 ℝ ℝ
-    (Equiv.ulift.{w}.symm : Fin (n + 1) ≃ ULift.{w} (Fin (n + 1)))
-  set f := (L.symm.trans (g.trans L)).toLinearIsometry
+    (Equiv.ulift.{w}.symm : Fin (n + 1) ≃ ULift.{w} (Fin (n + 1))) with hL
+  set f := (L.symm.trans (g.trans L)).toLinearIsometry with hfL
   have hdet : LinearMap.det f.toLinearMap = LinearMap.det g.toLinearMap :=
     LinearMap.det_conj g.toLinearMap L.toLinearEquiv
   have hf (x : TopCat.diskBoundary.{w} (n + 1)) :
-      diskBoundaryHomeomorph (n + 1) (TopCat.diskBoundaryMap g x) =
+      diskBoundaryHomeomorph (n + 1) (g.diskBoundaryMap x) =
         f.unitSphereMap (diskBoundaryHomeomorph (n + 1) x) := by
     refine Subtype.ext ?_
     rw [LinearIsometry.coe_unitSphereMap_apply, coe_diskBoundaryHomeomorph_apply,
-      coe_diskBoundaryHomeomorph_apply, TopCat.coe_diskBoundaryMap_apply_down]
-    exact congrArg (fun v ↦ L (g v)) (L.symm_apply_apply _).symm
+      coe_diskBoundaryHomeomorph_apply, LinearIsometryEquiv.coe_diskBoundaryMap_apply_down, hfL,
+      LinearIsometryEquiv.coe_toLinearIsometry, LinearIsometryEquiv.trans_apply,
+      LinearIsometryEquiv.trans_apply, hL, LinearIsometryEquiv.symm_apply_apply]
   let e := TopCat.isoOfHomeo (X := TopCat.diskBoundary.{w} (n + 1))
     (Y := TopCat.of (sphere (0 : EuclideanSpace ℝ (ULift.{w} (Fin (n + 1)))) 1))
     (diskBoundaryHomeomorph (n + 1))
-  have hcomm : TopCat.diskBoundaryMap g ≫ e.hom =
+  have hcomm : g.diskBoundaryMap ≫ e.hom =
       e.hom ≫ TopCat.ofHom ⟨f.unitSphereMap, f.continuous_unitSphereMap⟩ :=
     TopCat.ext fun x ↦ hf x
   rw [← cancel_mono ((reducedSingularHomologyFunctor R n).map e.hom), ← Functor.map_comp, hcomm,

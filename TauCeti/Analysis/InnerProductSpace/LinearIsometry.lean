@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 import Mathlib.Analysis.InnerProductSpace.PiL2
+import TauCeti.LinearAlgebra.Determinant.Basic
 public import Mathlib.Analysis.Normed.Module.Span
 public import Mathlib.Analysis.InnerProductSpace.Projection.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -241,22 +242,16 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] (hE : Module.fin
   {e : E ≃ₗᵢ[ℝ] E}
 include hE
 
-/-- A real linear isometry of a one-dimensional space is multiplication by its determinant. -/
-private theorem apply_eq_det_smul (x : E) : e x = LinearMap.det e.toLinearMap • x := by
-  obtain ⟨c, hc, -⟩ := LinearMap.existsUnique_eq_smul_id_of_finrank_eq_one hE e.toLinearMap
-  have hdet : LinearMap.det e.toLinearMap = c := by
-    rw [hc, LinearMap.det_smul, LinearMap.det_id, mul_one, hE, pow_one]
-  rw [hdet]
-  exact LinearMap.congr_fun hc x
-
 /-- An orientation-preserving real linear isometry of a one-dimensional space is the
 identity. -/
 theorem eq_refl_of_det_eq_one (he : LinearMap.det e.toLinearMap = 1) : e = .refl ℝ E :=
-  ext fun x ↦ by rw [apply_eq_det_smul hE, he, one_smul, coe_refl, id_eq]
+  ext fun x ↦ (LinearMap.apply_eq_det_smul_of_finrank_eq_one hE e.toLinearMap x).trans <| by
+    rw [he, one_smul, coe_refl, id_eq]
 
 /-- An orientation-reversing real linear isometry of a one-dimensional space is negation. -/
 theorem eq_neg_of_det_eq_neg_one (he : LinearMap.det e.toLinearMap = -1) : e = .neg ℝ :=
-  ext fun x ↦ by rw [apply_eq_det_smul hE, he, neg_one_smul, coe_neg]
+  ext fun x ↦ (LinearMap.apply_eq_det_smul_of_finrank_eq_one hE e.toLinearMap x).trans <| by
+    rw [he, neg_one_smul, coe_neg]
 
 end FinrankOne
 

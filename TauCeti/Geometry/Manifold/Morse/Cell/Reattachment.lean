@@ -513,7 +513,7 @@ a homotopy of maps of pairs from `χ₁` to `χ₀` with the same property. Then
 `TauCeti.morseCellReattachment` applies with the identity of the disc. -/
 theorem exists_homotopy_morseCharacteristicMap_of_det_eq_one (hg : LinearMap.det g.toLinearMap = 1)
     (K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
-      (TauCeti.TopCat.diskMap g ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
+      (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
     (hK : ∀ t (s : TopCat.diskBoundary.{u} k),
       f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε) :
     ∃ K' : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
@@ -536,7 +536,7 @@ index and a linear isometry `g` with `det g = 1`, then the two attaching maps
 `∂D^k → M_{c-ε}` are homotopic. -/
 theorem homotopic_morseAttachingMap_of_det_eq_one (hg : LinearMap.det g.toLinearMap = 1)
     (K : (ψ₁.morseCharacteristicMap hk hε hball₁ hf₁).hom.Homotopy
-      (TauCeti.TopCat.diskMap g ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
+      (g.diskMap ≫ ψ₀.morseCharacteristicMap hk hε hball₀ hf₀).hom)
     (hK : ∀ t (s : TopCat.diskBoundary.{u} k),
       f (K (t, TopCat.diskBoundaryInclusion k s)) ≤ c - ε) :
     (ψ₁.morseAttachingMap hk hε hball₁ hf₁).hom.Homotopic
