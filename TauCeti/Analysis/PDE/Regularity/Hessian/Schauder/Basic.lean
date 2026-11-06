@@ -14,6 +14,7 @@ import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Topology.MetricSpace.Holder
+import TauCeti.Topology.MetricSpace.Thickening
 
 /-!
 # Interior Schauder estimates for classical solutions
@@ -126,16 +127,16 @@ private theorem eLpNorm_iteratedFDeriv_two_thickening_ne_top {U S : Set E} {u : 
       hS.thickening.isCompact_closure isOpen_thickening.measurableSet subset_closure
         2).eLpNorm_ne_top
 
-/-- The gradient of the weak derivative of a `C²` function along a unit vector has `L²` norm at
-most that of `D²u` on a set `T` with `T = V`, when `u` is `C²` on an open `U ⊇ V`. -/
-private theorem norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two {U T : Set E} {V : Opens E}
-    {u : E → ℝ} {e : E} {d : W1p volume V 2} (he : ‖e‖ = 1) (hVT : (V : Set E) = T)
+/-- If the weak gradient of `d` agrees a.e. on `V` with `∇ (∂ₑu)` for a unit vector `e`, and
+`fderiv u` is differentiable on a set `U ⊇ V`, then `‖∇d‖_{L²} ≤ ‖D²u‖_{L²(V)}`. -/
+private theorem norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two {U : Set E} {V : Opens E}
+    {u : E → ℝ} {e : E} {d : W1p volume V 2} (he : ‖e‖ = 1)
     (hVU : (V : Set E) ⊆ U) (hdiff : ∀ x ∈ U, DifferentiableAt ℝ (fderiv ℝ u) x)
     (hgrad : W1p.gradient d =ᵐ[volume.restrict V] ∇ (fun y => fderiv ℝ u y e))
-    (hfin : eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict T) ≠ ∞) :
-    ‖W1p.gradient d‖ ≤ (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict T)).toReal := by
-  rw [Lp.norm_def, eLpNorm_congr_ae hgrad, ← hVT]
-  refine ENNReal.toReal_mono (hVT ▸ hfin)
+    (hfin : eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (V : Set E)) ≠ ∞) :
+    ‖W1p.gradient d‖ ≤ (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (V : Set E))).toReal := by
+  rw [Lp.norm_def, eLpNorm_congr_ae hgrad]
+  refine ENNReal.toReal_mono hfin
     (eLpNorm_mono_ae (measurable_gradient _).aestronglyMeasurable ?_)
   filter_upwards [self_mem_ae_restrict V.isOpen.measurableSet] with z hz
   simpa [he] using norm_gradient_fderiv_apply_le (hdiff z (hVU hz)) e
@@ -220,8 +221,10 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_laplacian {α : ℝ≥0} (hα 
     obtain ⟨d, hd, hhol⟩ := h (V := V) hΔ.neg hweak (hVT ▸ hTc) (hVT ▸ hTW) hK' hR
       hVT.symm.subset (b i)
     obtain ⟨hgrad, heq⟩ := eqOn_preciseRepresentative_gradient hU hu hVU hvV hd
-    have hnorm := norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two (by simp) hVT hVU hdiff
-      hgrad hfin
+    have hnorm : ‖W1p.gradient d‖ ≤
+        (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal := by
+      simpa only [hVT] using norm_gradient_le_toReal_eLpNorm_iteratedFDeriv_two (by simp) hVU
+        hdiff hgrad (hVT ▸ hfin)
     have h1 := hhol.dist_le hx hy
     rw [heq (hSV hx), heq (hSV hy), Real.coe_toNNReal _ (by positivity)] at h1
     refine h1.trans (mul_le_mul_of_nonneg_right ?_ (by positivity))
@@ -298,41 +301,12 @@ private theorem schauder_constant_le {lam Lam R K M C : ℝ} {α : ℝ≥0} (hla
         gcongr
     _ = C * (Lam / lam) ^ γ * (K / lam + R ^ (-β) * M) := by ring
 
-/-- A linear automorphism with `‖e ξ‖ ≤ √Λ ‖ξ‖` is `√Λ`-Lipschitz. -/
-private theorem dist_le_sqrt_mul_dist {e : E ≃L[ℝ] E} {Lam : ℝ} (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖)
-    (y y' : E) : dist (e y) (e y') ≤ √Lam * dist y y' := by
-  rw [dist_eq_norm, dist_eq_norm, ← map_sub]
-  exact he' _
-
-/-- The `R / √Λ`-thickening of the preimage of `S` under `e` lies in the preimage of the
-`R`-thickening of `S`. -/
-private theorem thickening_preimage_subset {e : E ≃L[ℝ] E} {Lam R : ℝ} (hLam : 0 < Lam)
-    (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖) (S : Set E) :
-    thickening (R / √Lam) (e ⁻¹' S) ⊆ e ⁻¹' thickening R S := by
-  intro y hy
-  obtain ⟨z, hz, hyz⟩ := mem_thickening_iff.1 hy
-  rw [mem_preimage]
-  refine mem_thickening_iff.2
-    ⟨e z, mem_preimage.1 hz, (dist_le_sqrt_mul_dist he' y z).trans_lt ?_⟩
-  calc √Lam * dist y z < √Lam * (R / √Lam) := by gcongr
-    _ = R := by field_simp
-
-/-- The closed `R / √Λ`-thickening of the preimage of `S` under `e` lies in the preimage of an
-open set containing the closed `R`-thickening of `S`. -/
-private theorem cthickening_preimage_subset {e : E ≃L[ℝ] E} {Lam R : ℝ} {U S : Set E}
-    (hLam : 0 < Lam) (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖) (hR : 0 < R) (hSU : cthickening R S ⊆ U) :
-    cthickening (R / √Lam) (e ⁻¹' S) ⊆ e ⁻¹' U := by
-  rw [← closure_thickening (by positivity)]
-  exact (closure_mono (thickening_preimage_subset hLam he' S)).trans
-    ((e.continuous.closure_preimage_subset _).trans
-      (preimage_mono (closure_thickening hR S ▸ hSU)))
-
 /-- If `Δ (u ∘ e) = (∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu) ∘ e` and `‖e ξ‖ ≤ √Λ ‖ξ‖`, then `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼu` being
 `α`-Hölder with constant `K` on the `R`-thickening of `S` makes `Δ (u ∘ e)` `α`-Hölder with
 constant `K Λ^(α/2)` on the `R / √Λ`-thickening of `e ⁻¹' S`. -/
 private theorem holderOnWith_laplacian_comp {A : Matrix (Fin (n + 1)) (Fin (n + 1)) ℝ}
     {e : E ≃L[ℝ] E} {Lam R : ℝ} {α : ℝ≥0} {U S : Set E} {u : E → ℝ} {K : ℝ≥0} (hLam : 0 < Lam)
-    (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖)
+    (hlip : LipschitzWith (√Lam).toNNReal e)
     (hΔ : ∀ (u : E → ℝ) (y : E), ContDiffAt ℝ 2 u (e y) → Δ (u ∘ e) y = ∑ i, ∑ j, A i j •
       fderiv ℝ (fderiv ℝ u) (e y) (EuclideanSpace.single i 1) (EuclideanSpace.single j 1))
     (hU : IsOpen U) (hu : ContDiffOn ℝ 2 u U)
@@ -350,15 +324,14 @@ private theorem holderOnWith_laplacian_comp {A : Matrix (Fin (n + 1)) (Fin (n + 
   refine (hK.dist_le (hthick hy) (hthick hy')).trans ?_
   calc (K : ℝ) * dist (e y) (e y') ^ (α : ℝ) ≤ K * (√Lam * dist y y') ^ (α : ℝ) := by
         gcongr
-        exact dist_le_sqrt_mul_dist he' y y'
+        simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using hlip.dist_le_mul y y'
     _ = _ := by
       rw [Real.mul_rpow (Real.sqrt_nonneg _) dist_nonneg, Real.sqrt_eq_rpow,
         ← Real.rpow_mul hLam.le, NNReal.coe_mul, Real.coe_toNNReal _ (by positivity)]
       ring_nf
 
 /-- The `L²` norm of `D²(u ∘ e)` on the `R / √Λ`-thickening of `e ⁻¹' S` is at most
-`Λ λ^{-(n+1)/4}` times the `L²` norm of `D²u` on the `R`-thickening of `S`, since
-`D²(u ∘ e) = D²u ∘ e (e, e)` and `|det e⁻¹| ≤ ‖e⁻¹‖^{n+1} ≤ λ^{-(n+1)/2}`. -/
+`Λ λ^{-(n+1)/4}` times the `L²` norm of `D²u` on the `R`-thickening of `S`. -/
 private theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le {e : E ≃L[ℝ] E} {lam Lam R : ℝ}
     {U S : Set E} {u : E → ℝ} (hlam : 0 < lam) (hLam : 0 < Lam)
     (he' : ∀ ξ, ‖e ξ‖ ≤ √Lam * ‖ξ‖) (hesn : ‖(e.symm : E →L[ℝ] E)‖ ≤ (√lam)⁻¹)
@@ -368,6 +341,7 @@ private theorem toReal_eLpNorm_iteratedFDeriv_two_comp_le {e : E ≃L[ℝ] E} {l
         (volume.restrict (thickening (R / √Lam) (e ⁻¹' S)))).toReal ≤
       Lam * lam ^ (-(((n : ℝ) + 1) / 4)) *
         (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal := by
+  -- `D²(u ∘ e) = D²u ∘ e (e, e)` and `|det e⁻¹| ≤ ‖e⁻¹‖^{n+1} ≤ λ^{-(n+1)/2}`.
   have hU' : IsOpen (e ⁻¹' U) := hU.preimage e.continuous
   have hv : ContDiffOn ℝ 2 (u ∘ e) (e ⁻¹' U) :=
     hu.comp (e : E →L[ℝ] E).contDiff.contDiffOn (mapsTo_preimage _ _)
@@ -437,20 +411,33 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv {α : �
   have hLam : 0 < Lam := hlam.trans_le hlamLam
   -- The transformed problem for `v = u ∘ e`, on the thickening of `e⁻¹ S` of radius `R / √Λ`.
   set v := u ∘ e
-  set R' := R / √Lam with hR'_def
+  set R' := R / √Lam
   have hR' : 0 < R' := by positivity
-  have hthick := thickening_preimage_subset (R := R) hLam he' S
-  have hcthick := cthickening_preimage_subset hLam he' hR hSU
+  have hlip : LipschitzWith (√Lam).toNNReal e := LipschitzWith.of_dist_le_mul fun y y' => by
+    rw [Real.coe_toNNReal _ (Real.sqrt_nonneg _), dist_eq_norm, dist_eq_norm, ← map_sub]
+    exact he' _
+  have hsqrt : (0 : ℝ≥0) < (√Lam).toNNReal := Real.toNNReal_pos.2 (Real.sqrt_pos.2 hLam)
+  have hthick : thickening R' (e ⁻¹' S) ⊆ e ⁻¹' thickening R S := by
+    simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
+      TauCeti.thickening_preimage_subset_preimage_thickening hlip hsqrt S (R := R)
+  have hcthick : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' U := by
+    refine (?_ : cthickening R' (e ⁻¹' S) ⊆ e ⁻¹' cthickening R S).trans (preimage_mono hSU)
+    simpa only [Real.coe_toNNReal _ (Real.sqrt_nonneg _)] using
+      TauCeti.cthickening_preimage_subset_preimage_cthickening hlip hsqrt hR S
   have hS' : Bornology.IsBounded (e ⁻¹' S) := by
     rw [← e.image_symm_eq_preimage]
     exact (e.symm : E →L[ℝ] E).lipschitzWith.isBounded_image hS
   have hvhol := h (hU.preimage e.continuous)
     (hu.comp (e : E →L[ℝ] E).contDiff.contDiffOn (mapsTo_preimage _ _)) hS' hR' hcthick
-    (holderOnWith_laplacian_comp hLam he' hΔ hU hu hthick hcthick hK)
+    (holderOnWith_laplacian_comp hLam hlip hΔ hU hu hthick hcthick hK)
   -- The `L²` norm of `D²v` on the new thickening is controlled by that of `D²u`.
   have hesn : ‖(e.symm : E →L[ℝ] E)‖ ≤ (√lam)⁻¹ :=
     ContinuousLinearMap.opNorm_le_bound _ (by positivity) he
-  have hMv := toReal_eLpNorm_iteratedFDeriv_two_comp_le hlam hLam he' hesn hU hu hS hSU hthick
+  have hMv : (eLpNorm (iteratedFDeriv ℝ 2 v) 2
+        (volume.restrict (thickening R' (e ⁻¹' S)))).toReal ≤
+      Lam * lam ^ (-(((n : ℝ) + 1) / 4)) *
+        (eLpNorm (iteratedFDeriv ℝ 2 u) 2 (volume.restrict (thickening R S))).toReal :=
+    toReal_eLpNorm_iteratedFDeriv_two_comp_le hlam hLam he' hesn hU hu hS hSU hthick
   -- Transfer the Hölder bound for `D²v` on `e⁻¹ S` back to `D²u` on `S`, at the cost of
   -- `‖e⁻¹‖^{2 + α} ≤ λ^{-1-α/2}`.
   refine (e.holderOnWith_iteratedFDeriv_of_comp_right hvhol).mono_const ?_
