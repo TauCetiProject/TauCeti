@@ -168,8 +168,6 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le hn hp hp_top
   refine ⟨C, δ, hδ, fun {A lam} hlam hA {Omega zeta M₁ M₂} hζ hcpt hts hM₁ hM₂
     {a ε Λ} ha_meas hε ha hΛ haΛ u f hf => ?_⟩
-  have hM₁0 : 0 ≤ M₁ := (norm_nonneg _).trans (hM₁ 0)
-  have hM₂0 : 0 ≤ M₂ := (norm_nonneg _).trans (hM₂ 0)
   -- The Leibniz remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ`, which vanishes off the support of `ζ`.
   set T : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) :=
     fun x => (innerSL ℝ (∇ zeta x)).smulRight (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x)
@@ -189,13 +187,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     simp only [add_assoc, add_sub_cancel_left]
   have hTnorm : ‖TL‖ ≤ 2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖
       + M₂ * ‖Wkp.value 2 u‖ := by
-    refine TauCeti.Lp.norm_le_add_of_ae_norm_le (by positivity) hM₂0 ?_
-    filter_upwards [hTL] with x hx
-    rw [hx]
-    refine (norm_leibnizRemainder_le zeta _ _ x).trans ?_
-    gcongr
-    · exact hM₁ x
-    · exact hM₂ x
+    exact Wkp.norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hζ hM₁ hM₂ hζH hwv
   -- The forcing term `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` of the equation for `ζ u`.
   have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (T x))
       (volume.restrict Omega) := by
