@@ -385,42 +385,19 @@ private theorem smul_headGenerator [DecidableEq I] (he : OrthogonalIdempotents e
     congr 1
     exact Subtype.ext (he.ortho hji)
 
-omit [GradedAlgebra 𝒜] in
-/-- A nonzero finite graded module has a top degree `p` with a nonzero element in its piece. -/
-private theorem exists_top_piece [Module.Finite k A] (M : (gradedFiniteModules 𝒜).FullSubcategory)
-    (hM : Simple M.obj) :
-    ∃ p : ℤ, (∀ q, p < q → M.obj.grading.piece q = ⊥) ∧
-      ∃ m ∈ M.obj.grading.piece p, m ≠ 0 := by
-  classical
-  -- `M` has a nonzero element, hence a nonzero homogeneous piece.
-  obtain ⟨x, hx⟩ : ∃ x : M.obj, x ≠ 0 := by
-    by_contra! h
-    exact CategoryTheory.id_ne_zero M.obj (GradedModuleCat.hom_ext (LinearMap.ext h))
-  have hfin := M.obj.grading.finite_piece_ne_bot
-  have hne' : hfin.toFinset.Nonempty := by
-    by_contra h
-    apply hx
-    rw [← M.obj.grading.sum_decompose_toFinset hfin x, Finset.not_nonempty_iff_eq_empty.1 h,
-      Finset.sum_empty]
-  -- Let `p` be the top degree of `M`.
-  refine ⟨hfin.toFinset.max' hne', fun q hq => ?_, ?_⟩
-  · by_contra h
-    exact (hfin.toFinset.le_max' q (hfin.mem_toFinset.2 h)).not_gt hq
-  · exact Submodule.exists_mem_ne_zero_of_ne_bot
-      (hfin.mem_toFinset.1 (hfin.toFinset.max'_mem hne'))
-
-/-- Positive-degree elements kill an element of the top degree piece. -/
-private theorem gradedPositiveMulIdeal_smul_eq_zero (he₀ : ∀ i, e i ∈ 𝒜 0)
+/-- If `n` lies in the top-degree piece `Mₚ` of a graded module, then `A₊f` kills `n`, for any
+degree-zero element `f`. -/
+private theorem gradedPositiveMulIdeal_smul_eq_zero {f : A} (hf₀ : f ∈ 𝒜 0)
     {M : (gradedFiniteModules 𝒜).FullSubcategory} {p : ℤ}
-    (htop : ∀ q, p < q → M.obj.grading.piece q = ⊥) {m : M.obj}
-    (i : I) (hm' : e i • m ∈ M.obj.grading.piece p) :
-    ∀ y ∈ gradedPositiveMulIdeal 𝒜 (e i), y • (e i • m) = 0 := by
+    (htop : ∀ q, p < q → M.obj.grading.piece q = ⊥) {n : M.obj}
+    (hn : n ∈ M.obj.grading.piece p) :
+    ∀ y ∈ gradedPositiveMulIdeal 𝒜 f, y • n = 0 := by
   intro y hy
   induction hy using Submodule.span_induction with
   | mem y hy =>
     obtain ⟨q, hq, x, hx, rfl⟩ := hy
     have h := SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece)
-      (SetLike.GradedMul.mul_mem hx (he₀ i)) hm'
+      (SetLike.GradedMul.mul_mem hx hf₀) hn
     rw [vadd_eq_add, htop _ (by omega), Submodule.mem_bot] at h
     exact h
   | zero => exact zero_smul A _
@@ -442,7 +419,13 @@ theorem isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient [Fintype I] [Mo
   rw [isExhaustiveGradedSimpleFamily_iff]
   intro M hM
   classical
-  obtain ⟨p, htop, m, hm, hm₀⟩ := exists_top_piece M hM
+  -- `M` is nonzero, so it has a top degree `p` with a nonzero element `m` in its piece.
+  obtain ⟨x, hx⟩ : ∃ x : M.obj, x ≠ 0 := by
+    by_contra! h
+    exact CategoryTheory.id_ne_zero M.obj (GradedModuleCat.hom_ext (LinearMap.ext h))
+  have : Nontrivial M.obj := ⟨⟨x, 0, hx⟩⟩
+  obtain ⟨p, htop, hp⟩ := M.obj.grading.exists_top_piece
+  obtain ⟨m, hm, hm₀⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hp
   -- Some `eᵢ` does not kill `m`, since the `eᵢ` sum to one.
   obtain ⟨i, hi⟩ : ∃ i, e i • m ≠ 0 := by
     by_contra! h
@@ -451,7 +434,7 @@ theorem isExhaustiveGradedSimpleFamily_gradedPositiveMulQuotient [Fintype I] [Mo
     exact Finset.sum_eq_zero fun i _ => h i
   have hm' : e i • m ∈ M.obj.grading.piece p := by
     simpa using SetLike.GradedSMul.smul_mem (B := M.obj.grading.piece) (he₀ i) hm
-  have hkill := gradedPositiveMulIdeal_smul_eq_zero he₀ htop i hm'
+  have hkill := gradedPositiveMulIdeal_smul_eq_zero (he₀ i) htop hm'
   -- The induced map `(A eᵢ / A₊eᵢ){p} ⟶ M` is a nonzero monomorphism into a simple object.
   let φ : (gradedPositiveMulQuotient 𝒜 (he₀ i)).shiftObj p ⟶ M.obj :=
     GradedModuleCat.ofHom (gradedPositiveMulQuotientLift (he₀ i) (e i • m) hkill) <|
