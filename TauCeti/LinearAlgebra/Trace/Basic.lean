@@ -23,7 +23,7 @@ none. This file names that case of the definition, so that proofs need not unfol
   finite basis.
 * `TauCeti.LinearMap.trace_eq_zero_of_not_finite`: the trace vanishes on a module that is not
   finite.
-* `TauCeti.LinearMap.eq_trace_smul_one_of_finrank_eq_one`: on a line, an endomorphism is its trace
+* `LinearMap.eq_trace_smul_one_of_finrank_eq_one`: on a line, an endomorphism is its trace
   times the identity.
 -/
 
@@ -43,16 +43,20 @@ theorem trace_eq_zero_of_not_exists_basis (h : ¬∃ s : Finset M, Nonempty (Mod
 theorem trace_eq_zero_of_not_finite (h : ¬Module.Finite R M) : _root_.LinearMap.trace R M = 0 :=
   trace_eq_zero_of_not_exists_basis fun ⟨_, ⟨b⟩⟩ ↦ h (.of_basis b)
 
+end TauCeti.LinearMap
+
+namespace LinearMap
+
 /-- On a one-dimensional space, an endomorphism is its trace times the identity. -/
 theorem eq_trace_smul_one_of_finrank_eq_one {K V : Type*} [Field K] [AddCommGroup V] [Module K V]
     (h : Module.finrank K V = 1) (f : V →ₗ[K] V) :
-    f = _root_.LinearMap.trace K V f • (1 : V →ₗ[K] V) := by
+    f = LinearMap.trace K V f • (1 : V →ₗ[K] V) := by
   have : FiniteDimensional K V := .of_finrank_eq_succ h
   let b := Module.finBasisOfFinrankEq K V h
   apply (LinearMap.toMatrix b b).injective
   ext i j
   obtain rfl : i = 0 := Subsingleton.elim _ _
   obtain rfl : j = 0 := Subsingleton.elim _ _
-  simp [_root_.LinearMap.trace_eq_matrix_trace K b f, Matrix.trace]
+  simp [LinearMap.trace_eq_matrix_trace K b f, Matrix.trace]
 
-end TauCeti.LinearMap
+end LinearMap
