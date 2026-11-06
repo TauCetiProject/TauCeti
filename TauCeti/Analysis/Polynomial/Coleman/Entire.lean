@@ -19,6 +19,8 @@ majorant upgrades convergence to every positive-radius Gauss norm. Thus the cons
 does not depend on a diagonal choice of truncations.
 
 The transform is entire, normalized, and uniquely characterized by coefficient convergence.
+It agrees with `Polynomial.colemanDSeries` on polynomial functional input, and the transforms
+of polynomial truncations of an entire function converge coefficientwise to it.
 The cases `B = 0`, `B = X`, and `F = 1` are included. The zero constant term of `B` is essential:
 otherwise padding finite ranks introduces extra factors from zero eigenvalues.
 
@@ -133,6 +135,24 @@ theorem tendsto_gaussNorm_colemanDBounded_trunc_sub_colemanDEntire
 
 end Entire
 
+/-- For zero-constant entire `B`, the polynomial-input transforms of its truncations converge
+coefficientwise to the entire-input transform. The rank used to compute coefficient `k` grows
+at least as fast as `k` times the truncation degree. -/
+theorem tendsto_coeff_colemanDSeries_trunc [CompleteSpace R] [NormOneClass R]
+    [IsUltrametricDist R] (hB : B.IsEntire) (hF : F.IsEntire)
+    (hB₀ : coeff 0 B = 0) (hF₀ : coeff 0 F = 1) (k : ℕ) :
+    Tendsto (fun n ↦ coeff k ((trunc (n + 1) B).colemanDSeries F))
+      atTop (𝓝 (coeff k (colemanDEntire B F))) := by
+  have hp : Tendsto (fun n : ℕ ↦ ((k + 1) * n, n)) atTop atTop := by
+    refine tendsto_atTop_atTop.2 fun p ↦ ⟨max p.1 p.2, fun n hn ↦ ?_⟩
+    exact ⟨(le_max_left _ _).trans (hn.trans (Nat.le_mul_of_pos_left n (by omega))),
+      (le_max_right _ _).trans hn⟩
+  refine ((tendsto_coeff_colemanDBounded_trunc hB hF hB₀ hF₀ k).comp hp).congr fun n ↦ ?_
+  exact (Polynomial.coeff_colemanDSeries_of_natDegree_le (by simp [coeff_trunc, hB₀])
+    (by simpa only [← coeff_zero_eq_constantCoeff] using hF₀)
+    (Nat.lt_succ_iff.1 (natDegree_trunc_lt B n))
+    (Nat.mul_le_mul_right n (Nat.le_succ k))).symm
+
 /-- Uniqueness of the Coleman transform from its defining coefficient limits. -/
 theorem colemanDEntire_eq_of_tendsto_coeff
     (hG : ∀ k, Tendsto (fun p : ℕ × ℕ ↦
@@ -141,6 +161,21 @@ theorem colemanDEntire_eq_of_tendsto_coeff
   ext k
   rw [coeff_colemanDEntire]
   exact (hG k).limUnder_eq
+
+/-- On polynomial functional input with zero constant term, the entire Coleman transform
+agrees with the algebraic power-series transform. No analyticity hypothesis on `F` is needed. -/
+@[simp]
+theorem colemanDEntire_coe {B : R[X]} (hB₀ : B.coeff 0 = 0) (hF₀ : coeff 0 F = 1) :
+    colemanDEntire (B : R⟦X⟧) F = B.colemanDSeries F := by
+  apply colemanDEntire_eq_of_tendsto_coeff
+  intro k
+  apply tendsto_const_nhds.congr'
+  filter_upwards [eventually_ge_atTop (k * B.natDegree, B.natDegree)] with p hp
+  have htrunc : trunc (p.2 + 1) (B : R⟦X⟧) = B :=
+    trunc_coe_eq_self (Nat.lt_succ_of_le hp.2)
+  rw [htrunc, Polynomial.colemanDBounded_of_natDegree_le hp.2
+    (by simp [coeff_trunc, hF₀])]
+  exact Polynomial.coeff_colemanDSeries hB₀ hp.1
 
 /-- The entire Coleman transform is normalized to have constant coefficient one. -/
 @[simp]
