@@ -33,6 +33,7 @@ charted space in its preferred charts and to check that it is well behaved.
   representative of `k` composed with the representative of `φ`.
 * `ChartedSpace.perfectSpace`: a charted space over a space without isolated points has no
   isolated points.
+* `ChartedSpace.nontrivial`: a nonempty such charted space has two distinct points.
 -/
 
 public section
@@ -96,3 +97,12 @@ theorem ChartedSpace.perfectSpace {H X : Type*} [TopologicalSpace H] [PerfectSpa
     [TopologicalSpace X] [ChartedSpace H X] : PerfectSpace X :=
   perfectSpace_iff_forall_not_isolated.2 fun x ↦
     (TauCeti.tendsto_chartAt_symm_nhdsNE (H := H) x).neBot
+
+/-- A nonempty charted space over a space without isolated points is nontrivial: its points are
+not isolated, so the punctured neighbourhoods of any point contain a second point. -/
+theorem ChartedSpace.nontrivial {H X : Type*} [TopologicalSpace H] [PerfectSpace H]
+    [TopologicalSpace X] [ChartedSpace H X] [Nonempty X] : Nontrivial X := by
+  have := ChartedSpace.perfectSpace (H := H) (X := X)
+  obtain ⟨x⟩ := ‹Nonempty X›
+  obtain ⟨y, hy⟩ := Filter.nonempty_of_mem (self_mem_nhdsWithin : {x}ᶜ ∈ 𝓝[≠] x)
+  exact ⟨⟨y, x, hy⟩⟩

@@ -261,7 +261,7 @@ theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 
       (ℓ.contDiff.contDiffOn.div (contDiff_norm_sq ℝ).contDiffOn
         fun _ hz ↦ pow_ne_zero 2 (norm_ne_zero_iff.2 hz)) (fun t ht z hz ↦ ?_) (hev _ hg)
     have hn : ‖z‖ ≠ 0 := norm_ne_zero_iff.2 hz
-    rw [map_smul, norm_smul, Real.norm_of_nonneg ht.le, zpow_neg_one, smul_eq_mul, smul_eq_mul]
+    rw [map_smul, norm_smul, Real.norm_of_nonneg ht.le, Real.rpow_neg_one, smul_eq_mul, smul_eq_mul]
     field_simp
   -- Off the disc the section coefficients are `ℓ ((z / |z|) ^ m)`, homogeneous of degree `0`.
   have hsec (ℓ : ℂ →L[ℝ] ℝ)
@@ -275,7 +275,7 @@ theorem exists_norm_iteratedFDeriv_referenceField_apply_le (f : ContDiffBump (0 
         simpa only [div_eq_mul_inv, Pi.inv_apply, id_eq] using
           contDiffAt_id.mul (hn.inv (ofReal_ne_zero.2 (norm_ne_zero_iff.2 hz)))
       exact (ℓ.contDiff.contDiffAt.comp z (hp.pow m)).contDiffWithinAt
-    · rw [zpow_zero, one_smul, norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
+    · rw [Real.rpow_zero, one_smul, norm_smul, Real.norm_of_nonneg ht.le, real_smul, ofReal_mul,
         mul_div_mul_left _ _ (ofReal_ne_zero.2 ht.ne')]
   fin_cases i
   · exact hconn ((m : ℝ) • imCLM) fun w hw ↦ by simp [referenceField_eq_of_rOut_le f m hw]
