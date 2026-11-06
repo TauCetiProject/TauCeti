@@ -129,6 +129,24 @@ theorem holderWith_timeExtension (hab : a ≤ b) {C : ℝ≥0} {f : slab (E := E
     ENNReal.zero_rpow_of_pos (by norm_num : (0 : ℝ) < 1 / 2), add_zero] using
     hf (slabMk x (projIcc a b hab s)) (slabMk y (projIcc a b hab s))
 
+omit [NormedSpace ℝ E] in
+/-- Every spatial slice of a clamped bounded Hölder map has Hölder constant at most its
+bounded Hölder norm. -/
+theorem holderWith_timeExtension_holderSpace (hab : a ≤ b)
+    (f : HolderSpace α (slab (E := E) a b) F) (s : ℝ) :
+    HolderWith ‖f‖₊ α (fun x => timeExtension hab f x s) :=
+  holderWith_timeExtension hab f.holderWith_nnnorm s
+
+omit [NormedSpace ℝ E] in
+/-- The clamped extension of a bounded Hölder map is pointwise bounded by its bounded
+Hölder norm. -/
+theorem norm_timeExtension_holderSpace_le (hab : a ≤ b)
+    (f : HolderSpace α (slab (E := E) a b) F) (s : ℝ) (x : E) :
+    ‖timeExtension hab f x s‖ ≤ ‖f‖ := by
+  simpa only [HolderSpace.coe_toBoundedContinuousFunction] using
+    (norm_timeExtension_le hab f.toBoundedContinuousFunction s x).trans
+      f.norm_toBoundedContinuousFunction_le
+
 omit [NormedAddCommGroup E] [NormedSpace ℝ E] [NormedAddCommGroup F] [NormedSpace ℝ F] in
 @[simp]
 theorem timeExtension_of_mem (hab : a ≤ b) (f : slab (E := E) a b → F)

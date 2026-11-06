@@ -5,12 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Holder.One
-public import Mathlib.Analysis.Calculus.ContDiff.FTaylorSeries
+public import TauCeti.Analysis.Holder.Normed
+public import Mathlib.Analysis.Calculus.ContDiff.Defs
 public import Mathlib.Analysis.Normed.Lp.PiLp
 public import Mathlib.Analysis.Normed.Lp.ProdLp
 import Mathlib.Analysis.Calculus.ContDiff.Comp
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Basic
+import TauCeti.Analysis.Calculus.UniformLimitsDeriv
 
 /-!
 # Bounded `C^{k,α}` maps of every order
