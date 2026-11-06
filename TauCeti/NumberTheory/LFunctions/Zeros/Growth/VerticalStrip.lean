@@ -44,7 +44,7 @@ theorem hasVerticalStripGrowth_iff_of_completed_eq (h : d.completed = e.complete
     d.HasVerticalStripGrowth ↔ e.HasVerticalStripGrowth := by
   simp only [HasVerticalStripGrowth, h]
 
-/-- Taking the dual preserves strip growth and the constants on each strip. -/
+/-- Taking the dual preserves vertical-strip growth. -/
 theorem HasVerticalStripGrowth.dual (h : d.HasVerticalStripGrowth) :
     d.dual.HasVerticalStripGrowth :=
   (TauCeti.HasVerticalStripGrowth.conj h).congr

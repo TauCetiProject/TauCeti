@@ -58,7 +58,7 @@ theorem HasVerticalStripGrowth.congr (hf : HasVerticalStripGrowth f)
     (h : ∀ s, f s = g s) : HasVerticalStripGrowth g := by
   simpa only [← funext h] using hf
 
-/-- Constant functions have strip growth with exponent and threshold zero. -/
+/-- Constant functions have strip growth. -/
 @[simp]
 theorem hasVerticalStripGrowth_const (c : ℂ) : HasVerticalStripGrowth (fun _ ↦ c) := by
   intro a b hab
@@ -73,7 +73,7 @@ theorem HasVerticalStripGrowth.neg (hf : HasVerticalStripGrowth f) :
   obtain ⟨C, hC, A, hA, T, hT, h⟩ := hf a b hab
   exact ⟨C, hC, A, hA, T, hT, fun s hs ht ↦ by simpa using h s hs ht⟩
 
-/-- Sums have strip growth: take the larger exponent and height threshold. -/
+/-- Sums of functions with strip growth have strip growth. -/
 theorem HasVerticalStripGrowth.add (hf : HasVerticalStripGrowth f)
     (hg : HasVerticalStripGrowth g) : HasVerticalStripGrowth (fun s ↦ f s + g s) := by
   intro a b hab
@@ -96,7 +96,7 @@ theorem HasVerticalStripGrowth.sub (hf : HasVerticalStripGrowth f)
     (hg : HasVerticalStripGrowth g) : HasVerticalStripGrowth (fun s ↦ f s - g s) := by
   simpa only [sub_eq_add_neg] using hf.add hg.neg
 
-/-- Products have strip growth: add the exponents and take the larger threshold. -/
+/-- Products of functions with strip growth have strip growth. -/
 theorem HasVerticalStripGrowth.mul (hf : HasVerticalStripGrowth f)
     (hg : HasVerticalStripGrowth g) : HasVerticalStripGrowth (fun s ↦ f s * g s) := by
   intro a b hab
@@ -115,7 +115,7 @@ theorem HasVerticalStripGrowth.mul (hf : HasVerticalStripGrowth f)
       rw [Real.rpow_add hbase]
       ring
 
-/-- Conjugate reflection preserves strip growth, with the same strip constants. -/
+/-- Conjugate reflection preserves strip growth. -/
 theorem HasVerticalStripGrowth.conj (hf : HasVerticalStripGrowth f) :
     HasVerticalStripGrowth (fun s ↦ conj (f (conj s))) := by
   intro a b hab
@@ -124,8 +124,7 @@ theorem HasVerticalStripGrowth.conj (hf : HasVerticalStripGrowth f) :
   intro s hs ht
   simpa using h (conj s) (by simpa using hs) (by simpa using ht)
 
-/-- Exponentials with real slope are bounded on each vertical strip, so their
-strip growth has exponent zero. -/
+/-- Exponentials with real slope have strip growth. -/
 theorem hasVerticalStripGrowth_cexp_real_mul (c : ℝ) :
     HasVerticalStripGrowth (fun s ↦ exp (c * s)) := by
   intro a b hab
