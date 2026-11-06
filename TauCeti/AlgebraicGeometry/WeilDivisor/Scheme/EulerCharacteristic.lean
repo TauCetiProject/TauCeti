@@ -360,6 +360,18 @@ theorem eulerDegree_inv (a : LineBundleClass X) : eulerDegree k a⁻¹ = -eulerD
   rw [inv_mul_cancel, eulerDegree_one] at h
   linarith
 
+include hX in
+/-- The Euler-characteristic degree of an integer tensor power is the integer multiple of the
+original degree, on a proper integral curve over `k` whose codimension-one local rings are
+discrete valuation rings and whose `H¹(X, 𝒪_X)` is finite-dimensional. -/
+@[simp]
+theorem eulerDegree_zpow (a : LineBundleClass X) (n : ℤ) :
+    eulerDegree k (a ^ n) = n * eulerDegree k a := by
+  let deg : LineBundleClass X →* Multiplicative ℤ :=
+    MonoidHom.mk' (fun a ↦ Multiplicative.ofAdd (eulerDegree k a)) fun a b ↦
+      congrArg Multiplicative.ofAdd (eulerDegree_mul k hX a b)
+  simpa [deg, smul_eq_mul] using congrArg Multiplicative.toAdd (deg.map_zpow a n)
+
 end LineBundleClass
 
 end AlgebraicGeometry

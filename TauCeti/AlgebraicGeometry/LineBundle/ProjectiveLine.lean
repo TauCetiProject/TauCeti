@@ -80,13 +80,9 @@ theorem eulerDegree_twistingSheaf (n : ℤ) : InvertibleSheaf.eulerDegree k (ℒ
   have hclass := Proj.lineBundleClass_twistingSheaf_eq_zpow
     (fun i : ULift.{u} (Fin 2) ↦ coord k i.down) (fun i ↦ coord_mem k i.down)
     (by simpa only [iSup_ulift] using iSup_basicOpen_coord_eq_top k) n
-  have hp : LineBundleClass.eulerDegree k (LineBundleClass.mk (ℒ 1) ^ n) = n := by
-    simpa only [← ofMul_zpow, LineBundleClass.eulerDegreeHom_apply, toMul_ofMul,
-      LineBundleClass.eulerDegree_mk, eulerDegree_twistingSheaf_one, smul_eq_mul, mul_one] using
-      (LineBundleClass.eulerDegreeHom k (projectiveLine k)).map_zsmul n
-        (Additive.ofMul (LineBundleClass.mk (ℒ 1)))
-  exact (LineBundleClass.eulerDegree_mk k (ℒ n)).symm.trans
-    ((congrArg (LineBundleClass.eulerDegree k) hclass).trans hp)
+  rw [← LineBundleClass.eulerDegree_mk, hclass,
+    LineBundleClass.eulerDegree_zpow k (Scheme.IsCurveOver.coheight_le_one (k := k)),
+    LineBundleClass.eulerDegree_mk, eulerDegree_twistingSheaf_one, mul_one]
 
 /-- **`Pic(ℙ¹_k) ≃ ℤ`**, via degree; tensor product is written additively on the source.
 The inverse sends an integer `n` to the class of the twisting sheaf `𝒪(n)`. -/
@@ -131,13 +127,9 @@ theorem toLineBundleClass_ofPoint_eq_twistingSheaf_one
 
 /-- The abstract degree-zero Picard group of the projective line is trivial. -/
 @[simp]
-theorem picZero_eq_bot : LineBundleClass.picZero k (projectiveLine k) = ⊥ := by
-  apply eq_bot_iff.mpr
-  intro a ha
-  apply Additive.toMul.injective
-  apply eulerDegree_injective k
-  simpa only [LineBundleClass.mem_picZero_iff, toMul_zero,
-    LineBundleClass.eulerDegree_one] using ha
+theorem picZero_eq_bot : LineBundleClass.picZero k (projectiveLine k) = ⊥ :=
+  (LineBundleClass.picZero_eq_ker k _).trans
+    ((AddMonoidHom.ker_eq_bot_iff _).mpr (picardDegreeEquiv k).injective)
 
 end
 
