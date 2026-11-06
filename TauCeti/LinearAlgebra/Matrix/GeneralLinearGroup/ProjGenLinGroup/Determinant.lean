@@ -78,7 +78,7 @@ theorem ker_detClass :
   induction x using induction_on with
   | mk g =>
     rw [MonoidHom.mem_ker, detClass_mk, QuotientGroup.eq_one_iff, mk_mem_range_toPGL_iff]
-    rfl
+    simp only [MonoidHom.mem_range, powMonoidHom_apply]
 
 /-- The image of SL is a normal subgroup of the pointwise projective general linear group. -/
 instance normal_range_toPGL :
@@ -109,17 +109,17 @@ theorem quotientRangeToPGLEquiv_mk [Nonempty n] (g : PGL(n, R)) :
 
 /-- In size two, the normalized diagonal torus element diag(a,1) lifts to SL exactly when a
 is a square in the unit group. -/
-theorem mk_diag_mem_range_toPGL_iff {a : Rˣ} :
+theorem mk_diagGL_mem_range_toPGL_iff {a : Rˣ} :
     mk (TauCeti.diagGL ![a, 1]) ∈ (SpecialLinearGroup.toPGL (n := Fin 2) (R := R)).range ↔
       IsSquare a := by
   rw [mk_mem_range_toPGL_iff]
   simp [isSquare_iff_exists_sq, eq_comm]
 
 /-- The rational projective matrix diag(2,1) is not the image of any determinant-one matrix. -/
-theorem mk_diag_two_notMem_range_toPGL :
+theorem mk_diagGL_two_notMem_range_toPGL :
     mk (TauCeti.diagGL ![Units.mk0 (2 : ℚ) (by norm_num), 1]) ∉
       (SpecialLinearGroup.toPGL (n := Fin 2) (R := ℚ)).range := by
-  rw [mk_diag_mem_range_toPGL_iff]
+  rw [mk_diagGL_mem_range_toPGL_iff]
   rintro ⟨u, hu⟩
   have hs : IsSquare (2 : ℚ) := ⟨(u : ℚ), congrArg Units.val hu⟩
   norm_num at hs
