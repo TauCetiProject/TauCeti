@@ -7,8 +7,10 @@ module
 
 public import Mathlib.Topology.Algebra.Module.Complement
 import Mathlib.Topology.Algebra.Module.ContinuousLinearMap.RestrictScalars
+import Mathlib.Topology.Algebra.Module.Equiv.Basic
 import Mathlib.Topology.Algebra.Module.Equiv.Submodule
 import Mathlib.LinearAlgebra.Isomorphisms
+import Mathlib.Tactic.Abel
 
 /-!
 # Complemented submodules and continuous linear sections
@@ -18,6 +20,8 @@ continuous projections to be transported between different presentations of a mo
 preserved by restriction of scalars.
 A continuous linear quotient map with continuously complemented kernel admits a continuous
 linear section, obtained by descending the complementary projection through the quotient.
+A continuous linear functional taking a nonzero value on a vector `u` splits the space as the
+product of the scalars and the kernel (`TauCeti.exists_homeomorph_prod_ker`).
 -/
 
 public section
@@ -111,3 +115,38 @@ theorem exists_rightInverse_of_isQuotientMap_of_closedComplemented_ker
   simp [hs, hfP]
 
 end ContinuousLinearMap
+
+namespace TauCeti
+
+section KerProd
+
+variable {𝕜 E : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [AddCommGroup E] [TopologicalSpace E]
+  [IsTopologicalAddGroup E] [Module 𝕜 E] [ContinuousSMul 𝕜 E]
+
+/-- **Coordinates along a vector** `u` on which a continuous linear functional `φ` takes the value
+`L ≠ 0`, based at `p`: a homeomorphism `E ≃ₜ 𝕜 × ker φ` sending `x` to
+`(φ (x - p), (x - p) - (φ (x - p) / L) • u)`, with inverse `y ↦ p + (y.1 / L) • u + y.2`. -/
+theorem exists_homeomorph_prod_ker {φ : StrongDual 𝕜 E} {u : E} {L : 𝕜} (hu : φ u = L)
+    (hL : L ≠ 0) (p : E) :
+    ∃ e : E ≃ₜ 𝕜 × LinearMap.ker (φ : E →ₗ[𝕜] 𝕜), (∀ x, (e x).1 = φ (x - p)) ∧
+      (∀ x, ((e x).2 : E) = (x - p) - (φ (x - p) / L) • u) ∧
+      ∀ y, e.symm y = p + (y.1 / L) • u + y.2 := by
+  let ψ : 𝕜 →L[𝕜] E := ContinuousLinearMap.toSpanSingleton 𝕜 (L⁻¹ • u)
+  have hψ (r : 𝕜) : ψ r = (r / L) • u := by
+    rw [ContinuousLinearMap.toSpanSingleton_apply, smul_smul, div_eq_mul_inv]
+  have hψφ : Function.RightInverse ψ φ := fun r ↦ by
+    rw [hψ, map_smul, hu, smul_eq_mul, div_mul_cancel₀ _ hL]
+  refine ⟨(Homeomorph.subRight p).trans
+    (ContinuousLinearEquiv.equivOfRightInverse φ ψ hψφ).toHomeomorph, fun x ↦ ?_, fun x ↦ ?_,
+    fun y ↦ ?_⟩
+  · simp only [Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
+      ContinuousLinearEquiv.fst_equivOfRightInverse, Homeomorph.coe_subRight]
+  · simp only [Homeomorph.trans_apply, ContinuousLinearEquiv.coe_toHomeomorph,
+      ContinuousLinearEquiv.snd_equivOfRightInverse, Homeomorph.coe_subRight, hψ]
+  · simp only [Homeomorph.symm_trans_apply, ContinuousLinearEquiv.coe_symm_toHomeomorph,
+      ContinuousLinearEquiv.equivOfRightInverse_symm_apply, hψ, Homeomorph.subRight_symm_apply]
+    abel
+
+end KerProd
+
+end TauCeti
