@@ -288,6 +288,7 @@ theorem fourierLp_zero_smul {p : ℝ≥0∞} (f : Lp ℂ p (haarAddCircle (T := 
   rw [hx, fourier_zero, one_mul]
 
 /-- The complex conjugate of the `Lᵖ` Fourier monomial `e_n` is `e_(-n)`. -/
+@[simp]
 theorem star_fourierLp (p : ℝ≥0∞) [Fact (1 ≤ p)] (n : ℤ) :
     star (fourierLp (T := T) p n) = fourierLp (T := T) p (-n) := by
   apply Lp.ext

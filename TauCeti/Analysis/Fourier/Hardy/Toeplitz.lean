@@ -186,18 +186,21 @@ theorem coe_toeplitz_fourierLp_one_apply (f : HardySpace) :
       fourierLp (T := 1) ∞ 1 • (f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1))) := by
   exact_mod_cast coe_toeplitz_fourierLp_natCast_apply 1 f
 
-/-- For `m ≥ 0`, the Toeplitz operator of the Fourier monomial `e_m` preserves norms. -/
+/-- For `m ≥ 0`, the Toeplitz operator of the Fourier monomial `e_m` preserves norms. The norms
+are taken in `L²`, the simp normal form of norms of Hardy functions. -/
+@[simp]
 theorem norm_toeplitz_fourierLp_natCast_apply (m : ℕ) (f : HardySpace) :
-    ‖toeplitz (fourierLp (T := 1) ∞ (m : ℤ)) f‖ = ‖f‖ := by
-  rw [← Submodule.norm_coe, coe_toeplitz_fourierLp_natCast_apply, ← Submodule.norm_coe f,
-    ← Lp.multiplicationOperator_apply]
+    ‖(toeplitz (fourierLp (T := 1) ∞ (m : ℤ)) f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ =
+      ‖(f : Lp ℂ 2 (AddCircle.haarAddCircle (T := 1)))‖ := by
+  rw [coe_toeplitz_fourierLp_natCast_apply, ← Lp.multiplicationOperator_apply]
   exact Lp.norm_multiplicationOperator_apply_of_ae_norm_eq_one (ae_norm_fourierLp_eq_one ∞ _) _
 
 /-- For `m ≥ 0`, the Toeplitz operator of the Fourier monomial `e_m` is an isometry of Hardy
 space. -/
 theorem isometry_toeplitz_fourierLp_natCast (m : ℕ) :
     Isometry (toeplitz (fourierLp (T := 1) ∞ (m : ℤ))) :=
-  AddMonoidHomClass.isometry_of_norm _ (norm_toeplitz_fourierLp_natCast_apply m)
+  AddMonoidHomClass.isometry_of_norm _ fun f => by
+    rw [← Submodule.norm_coe, ← Submodule.norm_coe f, norm_toeplitz_fourierLp_natCast_apply]
 
 /-- The Toeplitz operator of the Fourier monomial `e_m`, `m ≥ 0`, is the `m`th power of the
 forward shift `S = T_{e_1}`. -/
