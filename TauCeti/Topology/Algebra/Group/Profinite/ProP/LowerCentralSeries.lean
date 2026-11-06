@@ -332,8 +332,8 @@ theorem IsProP.mem_of_forall_mk_mem_map_pLowerCentralSeries (hG : IsProP p G) (h
 /-- **Recovering elements of closed subgroups from compatible classes.** In a pro-`p` group, a
 family `q k i ∈ G ⧸ λ_k`, compatible along the quotient maps and lying at every level in the image
 of a closed subgroup `H i`, is the family of classes of elements `t i ∈ H i`. -/
-theorem IsProP.exists_forall_mk_eq_mem_of_mapOfLE (hG : IsProP p G) (hp : p.Prime) {ι : Type*}
-    {H : ι → Subgroup G} (hH : ∀ i, IsClosed (H i : Set G))
+theorem IsProP.exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries (hG : IsProP p G)
+    (hp : p.Prime) {ι : Type*} {H : ι → Subgroup G} (hH : ∀ i, IsClosed (H i : Set G))
     (q : ∀ k, ι → G ⧸ pLowerCentralSeries p G k)
     (hq : ∀ k i, QuotientGroup.mapOfLE (pLowerCentralSeries_succ_le k) (q (k + 1) i) = q k i)
     (hmem : ∀ k i, q k i ∈ (H i).map (QuotientGroup.mk' (pLowerCentralSeries p G k))) :

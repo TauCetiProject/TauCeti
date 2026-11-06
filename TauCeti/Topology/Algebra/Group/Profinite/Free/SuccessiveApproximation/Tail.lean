@@ -84,40 +84,24 @@ variable {p : ℕ} [Fact p.Prime] {X : Type u} [Finite X] [LinearOrder X]
 
 omit [Finite X] [LinearOrder X] in
 /-- **Tail coefficients.** A vector `y` of the span of the iterated `p`-powers `π^j ξ_i` over a set
-`S` of generators contained in a list `l` is minus the combination `Σ_i c_i π^j ξ_i` of the
-`π^j ξ_i` with coefficients `c_i` that vanish outside `l`. -/
-theorem exists_sum_smul_gradedPowIter_eq_neg [Fintype X] {S : Set X} {l : List X}
-    (hl : ∀ i ∈ S, i ∈ l) {j : ℕ} {y : gradedPiece p (freeProP p X) j}
-    (hy : y ∈ gradedPowIterSpan p X S j) :
-    ∃ c : X → ZMod p, (∀ i, c i ≠ 0 → i ∈ l) ∧
-      ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) = -y := by
-  classical
-  have := Fintype.ofFinite S
-  obtain ⟨c, hc⟩ := mem_gradedPowIterSpan_iff.mp hy
-  -- The tail coefficients, negated and extended by zero to all generators.
-  let P : X → Prop := fun i ↦ i ∈ S
-  let c' : X → ZMod p := fun i ↦ if h : P i then -c ⟨i, h⟩ else 0
-  let g : X → gradedPiece p (freeProP p X) j := fun i ↦
-    gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i))
-  have hc'_zero : ∀ i, ¬ P i → c' i = 0 := fun i hP ↦ dite_eq_right hP
-  have hc'_of : ∀ i (hi : P i), c' i = -c ⟨i, hi⟩ := fun i hi ↦ dite_eq_left hi
-  refine ⟨c', fun i hi ↦ hl i (by_contra fun hP ↦ hi (hc'_zero i hP)), ?_⟩
-  have h1 : ∑ i ∈ Finset.univ.filter P, c' i • g i = ∑ i, c' i • g i :=
-    Finset.sum_filter_of_ne fun i _ hi ↦
-      by_contra fun hP ↦ hi (by rw [hc'_zero i hP, zero_smul])
-  have h2 : ∑ i ∈ Finset.univ.filter P, c' i • g i = ∑ j : {i // P i}, c' j • g j :=
-    Finset.sum_subtype _
-      (fun i ↦ by simp only [Finset.mem_filter, Finset.mem_univ, true_and, P]) _
-  rw [← h1, h2, ← hc, ← Finset.sum_neg_distrib]
-  exact Finset.sum_equiv (Equiv.refl _) (fun j ↦ by simp) fun j _ ↦ by
-    rw [Equiv.refl_apply, hc'_of j j.2]
-    exact neg_smul _ _
+`S` of generators is the combination `Σ_i c_i π^j ξ_i` of the `π^j ξ_i` with coefficients `c_i`
+that vanish outside `S`. -/
+private theorem exists_sum_smul_gradedPowIter_eq [Fintype X] {S : Set X} {j : ℕ}
+    {y : gradedPiece p (freeProP p X) j} (hy : y ∈ gradedPowIterSpan p X S j) :
+    ∃ c : X → ZMod p, (∀ i, c i ≠ 0 → i ∈ S) ∧
+      ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) = y := by
+  rw [gradedPowIterSpan_def] at hy
+  obtain ⟨f, hfS, hf⟩ := (Finsupp.mem_span_image_iff_linearCombination _).mp hy
+  refine ⟨f, fun i hi ↦ by_contra fun hiS ↦ hi ((Finsupp.mem_supported' _ _).mp hfS i hiS), ?_⟩
+  rw [← hf, Finsupp.linearCombination_apply_of_mem_supported (s := Finset.univ) (ZMod p)
+    (Finset.subset_univ _)]
 
 omit [Finite X] [LinearOrder X] in
-/-- **Tail corrections.** For coefficients `c_i` vanishing outside a duplicate-free list `l`, the
-powers `u_i = x_i^{p^n c_i}` lie in the closed procyclic subgroups `⟨x_i⟩` and in `λ_n(F)`, and the
-class in `gr_n(F)` of the product `∏_{i ∈ l} u_i` is `Σ_i c_i π^n ξ_i`. -/
-theorem exists_pow_prod_gradedMk_eq_sum [Fintype X] (c : X → ZMod p) {l : List X}
+/-- **Tail corrections.** For coefficients `c_i` vanishing outside a duplicate-free list `l`, there
+are corrections `u_i` (one may take the powers `x_i^{p^n c_i}`) in the cyclic subgroups
+`Subgroup.closure {x_i}` and in `λ_n(F)`, such that the class in `gr_n(F)` of the product
+`∏_{i ∈ l} u_i` is `Σ_i c_i π^n ξ_i`. -/
+private theorem exists_prod_gradedMk_eq_sum [Fintype X] (c : X → ZMod p) {l : List X}
     (hnd : l.Nodup) (hc : ∀ i, c i ≠ 0 → i ∈ l) (n : ℕ) :
     ∃ u : X → freeProP p X, (∀ i, u i ∈ pLowerCentralSeries p (freeProP p X) n) ∧
       (∀ i, u i ∈ Subgroup.closure {of i}) ∧
@@ -141,22 +125,18 @@ theorem exists_pow_prod_gradedMk_eq_sum [Fintype X] (c : X → ZMod p) {l : List
       Subtype.ext (by simp [u, pow_mul])
     rw [heq, gradedMk_pow, ← Nat.cast_smul_eq_nsmul (ZMod p), ZMod.natCast_zmod_val]
     simp only [g, gradedPowIter_gradedMkZero]
-  have humem : ∀ l : List X, (l.map u).prod ∈ pLowerCentralSeries p (freeProP p X) n :=
-    fun l ↦ list_prod_mem fun x hx ↦ by
-      obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
-      exact hu i
-  have hU_class : ∀ l : List X,
-      gradedMk p (freeProP p X) n ⟨(l.map u).prod, humem l⟩ = (l.map fun i ↦ c i • g i).sum := by
-    intro l
-    induction l with
-    | nil => exact gradedMk_one _
-    | cons a l ihl =>
-      have hcons : (⟨((a :: l).map u).prod, humem (a :: l)⟩ :
-          pLowerCentralSeries p (freeProP p X) n) =
-            ⟨u a, hu a⟩ * ⟨(l.map u).prod, humem l⟩ :=
-        Subtype.ext (by simp [List.prod_cons])
-      rw [hcons, gradedMk_mul, ihl, hu_class, List.map_cons, List.sum_cons]
-  refine ⟨u, hu, fun i ↦ pow_mem (subset_closure (Set.mem_singleton _)) _, humem l, ?_⟩
+  -- The class of the product is the sum of the classes, by `gradedMk_list_prod`.
+  let L : List (pLowerCentralSeries p (freeProP p X) n) := l.map fun i ↦ ⟨u i, hu i⟩
+  have hUL : (l.map u).prod = (L.prod : freeProP p X) := by
+    rw [SubmonoidClass.coe_list_prod, List.map_map]
+    rfl
+  refine ⟨u, hu, fun i ↦ pow_mem (subset_closure (Set.mem_singleton _)) _, hUL ▸ L.prod.2, ?_⟩
+  have hU_class : gradedMk p (freeProP p X) n ⟨(l.map u).prod, hUL ▸ L.prod.2⟩ =
+      (l.map fun i ↦ c i • g i).sum := by
+    have : (⟨(l.map u).prod, hUL ▸ L.prod.2⟩ : pLowerCentralSeries p (freeProP p X) n) = L.prod :=
+      Subtype.ext hUL
+    rw [this, gradedMk_list_prod, List.map_map]
+    exact congrArg List.sum (List.map_congr_left fun i _ ↦ hu_class i)
   rw [hU_class, ← List.sum_toFinset _ hnd]
   exact Finset.sum_subset (Finset.subset_univ _) fun i _ hi ↦ by
     rw [of_not_not fun h ↦ hi (List.mem_toFinset.mpr (hc i h)), zero_smul]
@@ -165,7 +145,7 @@ theorem exists_pow_prod_gradedMk_eq_sum [Fintype X] (c : X → ZMod p) {l : List
 `v ∈ gr_{k+1}(F)^X` there are modifications `ω_i ∈ λ_{k+1}(F)` such that the basis modification
 `θ_ω` moves a relator `a ∈ λ_1(F)` by an element of `λ_{k+2}(F)` whose class is `δ_ρ(v)`, where
 `ρ ∈ gr_1(F)` is the class of `a`. -/
-theorem exists_basisModification_inv_mul_gradedMk_eq {k : ℕ}
+private theorem exists_gradedMk_inv_mul_basisModification_eq_basisModificationDelta {k : ℕ}
     (a : pLowerCentralSeries p (freeProP p X) 1)
     (v : X → gradedPiece p (freeProP p X) (k + 1)) :
     ∃ (ω : X → pLowerCentralSeries p (freeProP p X) (k + 1))
@@ -179,45 +159,6 @@ theorem exists_basisModification_inv_mul_gradedMk_eq {k : ℕ}
   rw [gradedMk_inv_mul_basisModification (le_add_self : 1 ≤ k + 1) ω a]
   congr 1
   exact funext hω
-
-/-- **Absorbing central corrections into a word.** Let `K` be a normal subgroup of `G` and let
-the classes of the `u_i` modulo `K` be central. If the class of `a⁻¹ * (∏_{l₁} t_i) * w *
-(∏_{l₂} t_i) * ∏_{l₁ ++ l₂} u_i` modulo `K` is the class of `a⁻¹ * b`, then
-`b⁻¹ * (∏_{l₁} t_i u_i) * w * (∏_{l₂} t_i u_i)` lies in `K`. -/
-theorem inv_mul_mul_list_prod_map_mul_mem {G ι : Type*} [Group G] (K : Subgroup G) [K.Normal]
-    {t u : ι → G} (hu : ∀ i, (u i : G ⧸ K) ∈ Submonoid.center (G ⧸ K)) {l₁ l₂ : List ι}
-    {a b w : G}
-    (h : ((a⁻¹ * ((l₁.map t).prod * w * (l₂.map t).prod) * ((l₁ ++ l₂).map u).prod : G) :
-        G ⧸ K) = ((a⁻¹ * b : G) : G ⧸ K)) :
-    b⁻¹ * ((l₁.map fun i ↦ t i * u i).prod * w * (l₂.map fun i ↦ t i * u i).prod) ∈ K := by
-  refine (QuotientGroup.eq_one_iff _).mp ?_
-  have hprod : ∀ l : List ι, (((l.map fun i ↦ t i * u i).prod : G) : G ⧸ K) =
-      ((l.map t).prod : G ⧸ K) * ((l.map u).prod : G ⧸ K) := by
-    intro l
-    rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_map, ← QuotientGroup.mk'_apply,
-      map_list_prod, List.map_map, ← QuotientGroup.mk'_apply, map_list_prod, List.map_map]
-    simpa [Function.comp_def] using
-      List.prod_map_mul_of_mem_center l (fun i ↦ ((t i : G) : G ⧸ K)) _ fun i _ ↦ hu i
-  have hUcen : ∀ l : List ι, (((l.map u).prod : G) : G ⧸ K) ∈ Submonoid.center _ := fun l ↦ by
-    rw [← QuotientGroup.mk'_apply, map_list_prod, List.map_map]
-    exact Submonoid.list_prod_mem _ fun x hx ↦ by
-      obtain ⟨i, -, rfl⟩ := List.mem_map.mp hx
-      exact hu i
-  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv, List.map_append, List.prod_append] at h
-  set W := (w : G ⧸ K)
-  set P₁ := (((l₁.map t).prod : G) : G ⧸ K)
-  set P₂ := (((l₂.map t).prod : G) : G ⧸ K)
-  set U₁ := (((l₁.map u).prod : G) : G ⧸ K)
-  set U₂ := (((l₂.map u).prod : G) : G ⧸ K)
-  have hB : (b : G ⧸ K) = P₁ * W * P₂ * U₁ * U₂ := by
-    refine mul_left_cancel (a := ((a : G ⧸ K))⁻¹) ?_
-    rw [← h]
-    simp only [mul_assoc]
-  have e₁ : ∀ q, q * U₁ = U₁ * q := Submonoid.mem_center_iff.mp (hUcen l₁)
-  simp only [QuotientGroup.mk_mul, QuotientGroup.mk_inv, hprod, hB, inv_mul_eq_one]
-  calc P₁ * W * P₂ * U₁ * U₂ = P₁ * (W * P₂ * U₁) * U₂ := by simp only [mul_assoc]
-    _ = P₁ * (U₁ * (W * P₂)) * U₂ := by rw [e₁]
-    _ = P₁ * U₁ * W * (P₂ * U₂) := by simp only [mul_assoc]
 
 /-- **One step of the finite successive approximation with tails.** From an approximation modulo
 `λ_{k+2}(F)` and the span statement at level `k+1`, one basis modification and one tail correction
@@ -253,17 +194,22 @@ private theorem exists_continuousMonoidHom_inv_mul_apply_mem_succ
   have hz := Submodule.mem_top (R := ZMod p) (x := gradedMk p (freeProP p X) (k + 1 + 1) ⟨_, hr⟩)
   rw [← hspan] at hz
   obtain ⟨_, ⟨v, rfl⟩, y', hy', hyy'⟩ := Submodule.mem_sup.mp hz
-  obtain ⟨c, hc, hsum⟩ := exists_sum_smul_gradedPowIter_eq_neg hl hy'
-  obtain ⟨u, hu, hucl, hU, hUc⟩ := exists_pow_prod_gradedMk_eq_sum c hnd hc (k + 1 + 1)
-  obtain ⟨ω, hd, hωd⟩ := exists_basisModification_inv_mul_gradedMk_eq (k := k) ⟨φ r, hφr⟩ v
+  obtain ⟨c, hcS, hsum⟩ := exists_sum_smul_gradedPowIter_eq hy'
+  -- The corrections carry the negated coefficients, so that their class is `-y'`.
+  obtain ⟨u, hu, hucl, hU, hUc⟩ := exists_prod_gradedMk_eq_sum (-c) hnd
+    (fun i hi ↦ hl i (hcS i (neg_ne_zero.mp hi))) (k + 1 + 1)
+  simp only [Pi.neg_apply, neg_smul, Finset.sum_neg_distrib, hsum] at hUc
+  obtain ⟨ω, hd, hωd⟩ :=
+    exists_gradedMk_inv_mul_basisModification_eq_basisModificationDelta (k := k) ⟨φ r, hφr⟩ v
   -- The key identity in `gr_{k+2}(F)`: the class of `z * U` is the class of the deviation `d`
   -- of the basis modification, both being `δ_ρ(v)`.
   have hkey : gradedMk p (freeProP p X) (k + 1 + 1)
       ⟨((φ r)⁻¹ * ((l₁.map t).prod * w * (l₂.map t).prod)) * ((l₁ ++ l₂).map u).prod,
         mul_mem hr hU⟩ =
         gradedMk p (freeProP p X) (k + 1 + 1) ⟨(φ r)⁻¹ * basisModification ω (φ r), hd⟩ := by
-    rw [show (⟨_, mul_mem hr hU⟩ : pLowerCentralSeries p (freeProP p X) (k + 1 + 1)) =
-      ⟨_, hr⟩ * ⟨_, hU⟩ from rfl, gradedMk_mul, hUc, hsum, ← hyy', hωd, hρ, add_neg_cancel_right]
+    have hmul : (⟨_, mul_mem hr hU⟩ : pLowerCentralSeries p (freeProP p X) (k + 1 + 1)) =
+        ⟨_, hr⟩ * ⟨_, hU⟩ := Subtype.ext (by rw [Subgroup.coe_mul])
+    rw [hmul, gradedMk_mul, hUc, ← hyy', hωd, hρ, add_neg_cancel_right]
   refine ⟨(basisModification ω).comp φ, fun i ↦ t i * u i, fun g ↦ ?_, fun i ↦ ?_,
     fun i ↦ ?_, ?_⟩
   · have h2 : (φ g)⁻¹ * basisModification ω (φ g) ∈ pLowerCentralSeries p (freeProP p X) 1 :=
@@ -274,11 +220,18 @@ private theorem exists_continuousMonoidHom_inv_mul_apply_mem_succ
   · exact mul_mem (ht i) (le_topologicalClosure _ (hucl i))
   · exact mul_mem (ht2 i) (pLowerCentralSeries_antitone (by omega) (hu i))
   · -- The computation modulo `λ_{k+3}`, where the classes of the tail corrections are central.
-    exact inv_mul_mul_list_prod_map_mul_mem (pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
+    refine QuotientGroup.inv_mul_mul_list_prod_map_mul_mem
+      (pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))
       (fun i ↦ Submonoid.mem_center_iff.mpr fun q ↦ by
         obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-        exact (commute_mk_of_mem_pLowerCentralSeries (hu i) g).eq)
-      (gradedMk_eq_gradedMk_iff.mp hkey)
+        exact (commute_mk_of_mem_pLowerCentralSeries (hu i) g).eq) ?_
+    -- Cancel `(φ r)⁻¹` from the key identity.
+    refine mul_left_cancel (a := (((φ r)⁻¹ : freeProP p X) :
+      freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) (k + 1 + 1 + 1))) ?_
+    have hk := gradedMk_eq_gradedMk_iff.mp hkey
+    rw [← QuotientGroup.mk_mul, ← QuotientGroup.mk_mul]
+    simp only [mul_assoc] at hk ⊢
+    exact hk
 
 /-- **Finite successive approximation with tails.** Let `r, w ∈ λ_1(F)` have the same class
 `ρ ∈ gr_1(F)`, let `S` be a set of generators and `l₁, l₂` disjoint duplicate-free lists of
@@ -314,17 +267,6 @@ theorem exists_continuousMonoidHom_inv_mul_apply_mem_of_range_sup_gradedPowIterS
     exact exists_continuousMonoidHom_inv_mul_apply_mem_succ r w S l₁ l₂ hnd hl k
       (hspan (k + 1) le_add_self le_rfl) φ t hφ ht ht2 hr
 
-/-- The class modulo a normal subgroup of the tail word `(∏_{l₁} t_i) * w * ∏_{l₂} t_i` is the
-tail word of the classes. -/
-private theorem mk_list_prod_mul_mul_list_prod {G ι : Type*} [Group G] (K : Subgroup G)
-    [K.Normal] (t : ι → G) (w : G) (l₁ l₂ : List ι) :
-    (((l₁.map t).prod * w * (l₂.map t).prod : G) : G ⧸ K) =
-      (l₁.map fun i ↦ ((t i : G) : G ⧸ K)).prod * (w : G ⧸ K) *
-        (l₂.map fun i ↦ ((t i : G) : G ⧸ K)).prod := by
-  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, ← QuotientGroup.mk'_apply, map_list_prod,
-    List.map_map, ← QuotientGroup.mk'_apply K (l₂.map t).prod, map_list_prod, List.map_map]
-  rfl
-
 /-- **Level data of the comparison with tails.** At every level `k` there is a surjective
 endomorphism `s` of `F ⧸ λ_k` together with classes of tail elements `t_i ∈ ⟨x_i⟩ ∩ λ_2(F)` such
 that `s` carries the class of `r` to the class of the tail word. This is the finite approximation
@@ -359,8 +301,8 @@ private theorem exists_surjective_apply_eq_tailWord
     fun i ↦ ((t i : freeProP p X) : freeProP p X ⧸ pLowerCentralSeries p (freeProP p X) k)),
     QuotientGroup.map_surjective_of_surjective _ _ _ (QuotientGroup.mk_surjective.comp hsurj) hle,
     fun i ↦ ⟨t i, ⟨ht i, ht2 i⟩, rfl⟩, ?_⟩
-  rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk,
-    ← mk_list_prod_mul_mul_list_prod]
+  rw [ContinuousMonoidHom.coe_mk, QuotientGroup.map_mk]
+  simp only [← QuotientGroup.mk_list_prod, ← QuotientGroup.mk_mul]
   exact QuotientGroup.eq.mpr (pLowerCentralSeries_antitone (by omega : k ≤ k + 2) hr)
 
 /-- **The successive-approximation theorem with tails.** Let `r, w ∈ λ_1(F)` be relators of the
@@ -426,11 +368,12 @@ theorem exists_continuousMulEquiv_apply_eq_of_range_sup_gradedPowIterSpan_eq_top
     (fun _ : Unit ↦ (1 : freeProP p X)) (fun _ ↦ 1) (1 : freeProP p X →ₜ* freeProP p X) 1
     (fun _ _ _ ↦ by simp) (fun _ ↦ ⟨0, fun _ _ _ _ ↦ by simp⟩)
   -- The tail elements, recovered from the compatible sequence of their classes.
-  obtain ⟨t, htH, hts⟩ := hP.exists_forall_mk_eq_mem_of_mapOfLE hp hH (fun k i ↦ (s k).1.2 i)
-    (fun k i ↦ congrArg (fun x ↦ x.1.2 i) (hs k)) fun k i ↦ (s k).2.2.1 i
+  obtain ⟨t, htH, hts⟩ := hP.exists_forall_mem_and_forall_mk_eq_pLowerCentralSeries hp hH
+    (fun k i ↦ (s k).1.2 i) (fun k i ↦ congrArg (fun x ↦ x.1.2 i) (hs k)) fun k i ↦ (s k).2.2.1 i
   refine ⟨e, t, fun i ↦ (Subgroup.mem_inf.mp (htH i)).1, fun i ↦ (Subgroup.mem_inf.mp (htH i)).2,
     eq_of_forall_mk_eq_of_iInf_eq_bot (hP.iInf_pLowerCentralSeries_eq_bot hp) fun k ↦ ?_⟩
-  rw [mk_list_prod_mul_mul_list_prod, funext fun i ↦ hts k i]
+  rw [QuotientGroup.mk_mul, QuotientGroup.mk_mul, QuotientGroup.mk_list_prod,
+    QuotientGroup.mk_list_prod, funext fun i ↦ hts k i]
   exact (he k r).trans (s k).2.2.2
 
 end TauCeti.freeProP
