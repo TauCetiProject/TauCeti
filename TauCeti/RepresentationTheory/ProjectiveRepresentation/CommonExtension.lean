@@ -63,7 +63,7 @@ noncomputable def projectiveLiftingCharacter
   { (rootsOfUnity (Nat.card G) k).subtype.comp
       (Pi.evalMonoidHom (fun _ : FactorSet G (rootsOfUnity (Nat.card G) k) ↦
         rootsOfUnity (Nat.card G) k) α) with
-    map_smul' _ _ := by simp only [Pi.smul_def, trivialMulDistribMulAction_smul] }
+    map_smul' _ _ := by simp only [trivialMulDistribMulAction_smul] }
 
 @[simp]
 theorem projectiveLiftingCharacter_apply (α : FactorSet G (rootsOfUnity (Nat.card G) k))
