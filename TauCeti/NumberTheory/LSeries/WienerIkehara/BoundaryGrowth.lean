@@ -46,7 +46,9 @@ asymptotic specializes the half-plane hypotheses it inherits from
 * `TauCeti.LSeries.LSeriesSummable_mul_fourier_of_nonneg`: the Fourier weight is small enough for
   that bound to force summability at `s = 1`, at every scale `x > 0`.
 * `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_nonneg`: **the smoothed Wiener--Ikehara
-  asymptotic for nonnegative coefficients**, with no summability hypothesis left.
+  asymptotic for nonnegative coefficients**, with the Fourier-weighted summability hypothesis
+  discharged; only the absolute convergence of the Dirichlet series for `sigma > 1` is still
+  assumed.
 
 ## References
 
@@ -230,8 +232,10 @@ continuous boundary remainder `G`.
 
 This is `TauCeti.LSeries.tendsto_tsum_term_mul_fourier_atTop_of_contDiff` with its summability
 hypothesis discharged: for nonnegative coefficients the boundary data itself forces the
-Fourier-weighted series to converge at every large scale. The hypotheses are now exactly the
-analytic input of Wiener--Ikehara. -/
+Fourier-weighted series to converge at every large scale. What remains is the analytic input of
+Wiener--Ikehara together with the convergence of the Dirichlet series of `a` for real `sigma > 1`,
+which the boundary data cannot supply: it only constrains `LSeries a`, which is `0` off the
+summability locus. -/
 theorem tendsto_tsum_term_mul_fourier_atTop_of_nonneg (ha : 0 ≤ a)
     (hG : ContinuousOn G {z : ℂ | 1 ≤ z.re})
     (hG' : ∀ z : ℂ, 1 < z.re → G z = LSeries a z - A / (z - 1))
