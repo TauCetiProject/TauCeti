@@ -16,7 +16,9 @@ concurrency:
 
 jobs:
   blog:
-    runs-on: ubuntu-latest
+    runs-on:
+      - nscloud-ubuntu-24.04-amd64-2x4-with-features
+      - namespace-features:github.run-id=${{ github.run_id }}
     timeout-minutes: 30
     defaults:
       run:
@@ -44,3 +46,12 @@ jobs:
           key: website-tests-${{ runner.os }}-${{ hashFiles('web/lake-manifest.json', 'web/lean-toolchain') }}
       - name: Test blog generation and navigation
         run: python3 tests/test_blog.py
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install browser test dependencies
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+      - name: Test live queue and runner views
+        run: npm run test:operations
