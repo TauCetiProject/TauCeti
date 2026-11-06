@@ -117,6 +117,31 @@ theorem raisedWeight_intCast (x : Fin 2 → ℤ) :
     fin_cases i <;> rfl
   · rfl
 
+/-- A residue pair modulo `t M` that is not of the form `(t e₀, e₁ + M j)`, with `e` a pair modulo
+`M` and `j` a residue modulo `t`, carries no weight in the raised weight. -/
+private theorem raisedWeight_eq_zero_of_notMem_range (a : Fin 2 → ZMod (t * M))
+    (ha : a ∉ Set.range fun p : (Fin 2 → ZMod M) × ZMod t ↦ (![((t * (p.1 0).val : ℕ) :
+      ZMod (t * M)), (((p.1 1).val + M * p.2.val : ℕ) : ZMod (t * M))] : Fin 2 → ZMod (t * M))) :
+    raisedWeight t W a = 0 := by
+  have ht : 0 < t := NeZero.pos t
+  refine ite_eq_right_iff.mpr fun ⟨k, hk⟩ ↦ absurd ?_ ha
+  have hkM : k < M := by
+    have := ZMod.val_lt (a 0)
+    rw [hk] at this
+    exact (Nat.mul_lt_mul_left ht).mp this
+  have hq : (a 1).val / M < t :=
+    Nat.div_lt_of_lt_mul (lt_of_lt_of_eq (ZMod.val_lt (a 1)) (mul_comm t M))
+  refine ⟨(![(k : ZMod M), ((a 1).val : ZMod M)], (((a 1).val / M : ℕ) : ZMod t)), ?_⟩
+  have h₀ : ((t * (k : ZMod M).val : ℕ) : ZMod (t * M)) = a 0 := by
+    rw [ZMod.val_natCast, Nat.mod_eq_of_lt hkM, ← hk, ZMod.natCast_zmod_val]
+  have h₁ : ((((a 1).val : ZMod M).val + M * (((a 1).val / M : ℕ) : ZMod t).val : ℕ) :
+      ZMod (t * M)) = a 1 := by
+    rw [ZMod.val_natCast, ZMod.val_natCast, Nat.mod_eq_of_lt hq, Nat.mod_add_div,
+      ZMod.natCast_zmod_val]
+  ext i
+  fin_cases i
+  exacts [h₀, h₁]
+
 /-- **The total mass of the raised weight** is `t` times that of `W`: the residue pairs `(c, d)`
 modulo `t M` with `t ∣ c` lying over a pair modulo `M` are the `t` lifts of `d`. -/
 theorem sum_raisedWeight : ∑ a, raisedWeight t W a = t * ∑ e, W e := by
@@ -148,24 +173,8 @@ theorem sum_raisedWeight : ∑ a, raisedWeight t W a = t * ∑ e, W e := by
     fin_cases i
     · exact ZMod.val_injective _ (Nat.eq_of_mul_eq_mul_left ht h₀)
     · exact ZMod.val_injective _ hmod
-  have hoff (a : Fin 2 → ZMod (t * M)) (ha : a ∉ Set.range ι) : raisedWeight t W a = 0 := by
-    refine ite_eq_right_iff.mpr fun ⟨k, hk⟩ ↦ absurd ?_ ha
-    have hkM : k < M := by
-      have := ZMod.val_lt (a 0)
-      rw [hk] at this
-      exact (Nat.mul_lt_mul_left ht).mp this
-    have hq : (a 1).val / M < t :=
-      Nat.div_lt_of_lt_mul (lt_of_lt_of_eq (ZMod.val_lt (a 1)) (mul_comm t M))
-    refine ⟨(![(k : ZMod M), ((a 1).val : ZMod M)], (((a 1).val / M : ℕ) : ZMod t)), ?_⟩
-    have h₀ : ((t * (k : ZMod M).val : ℕ) : ZMod (t * M)) = a 0 := by
-      rw [ZMod.val_natCast, Nat.mod_eq_of_lt hkM, ← hk, ZMod.natCast_zmod_val]
-    have h₁ : ((((a 1).val : ZMod M).val + M * (((a 1).val / M : ℕ) : ZMod t).val : ℕ) :
-        ZMod (t * M)) = a 1 := by
-      rw [ZMod.val_natCast, ZMod.val_natCast, Nat.mod_eq_of_lt hq, Nat.mod_add_div,
-        ZMod.natCast_zmod_val]
-    ext i
-    fin_cases i
-    exacts [h₀, h₁]
+  have hoff (a : Fin 2 → ZMod (t * M)) (ha : a ∉ Set.range ι) : raisedWeight t W a = 0 :=
+    raisedWeight_eq_zero_of_notMem_range t W a ha
   have hon (p : (Fin 2 → ZMod M) × ZMod t) : W p.1 = raisedWeight t W (ι p) := by
     rw [raisedWeight_def, ite_eq_left (by rw [hval₀]; exact dvd_mul_right _ _), hval₀, hval₁,
       Nat.mul_div_cancel_left _ ht]
