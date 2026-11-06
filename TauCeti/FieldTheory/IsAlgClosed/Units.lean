@@ -9,8 +9,9 @@ public import Mathlib.FieldTheory.IsAlgClosed.Basic
 public import Mathlib.GroupTheory.Divisible
 
 /-!
-# Divisibility of the units of an algebraically closed field
+# The units of an algebraically closed field
 
+The unit group of an algebraically closed field is nontrivial, since the field is infinite.
 Every unit of an algebraically closed field has an `n`-th root for each nonzero natural
 number `n`, in every characteristic. The resulting rootability instance allows the additive
 type tag of the unit group to be used as a divisible group, for example to extend characters
@@ -31,5 +32,13 @@ noncomputable instance unitsRootableByNat : RootableBy kˣ ℕ :=
       rintro rfl
       exact a.ne_zero (by simpa [zero_pow hn] using hz.symm)
     exact ⟨Units.mk0 z hz0, Units.ext hz⟩
+
+/-- The unit group of an algebraically closed field is nontrivial: the field is infinite, so it
+has an element other than `0` and `1`. -/
+instance unitsNontrivial : Nontrivial kˣ := by
+  classical
+  obtain ⟨x, hx⟩ := Infinite.exists_notMem_finset ({0, 1} : Finset k)
+  simp only [Finset.mem_insert, Finset.mem_singleton, not_or] at hx
+  exact nontrivial_of_ne (Units.mk0 x hx.1) 1 fun h ↦ hx.2 (congrArg Units.val h)
 
 end TauCeti.IsAlgClosed
