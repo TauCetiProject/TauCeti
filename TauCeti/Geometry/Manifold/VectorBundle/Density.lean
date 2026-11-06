@@ -17,9 +17,10 @@ import Mathlib.Analysis.InnerProductSpace.Calculus
 
 The density line of a finite-dimensional real smooth vector bundle is smooth: its
 transition functions are absolute determinants of invertible vector transitions.
-For tangent bundles this gives the real density bundle of a manifold, without a choice
-of orientation or metric. Smoothness of a density section is equivalent to smoothness
-of its scalar value on the local inverse tangent frames.
+Smoothness of a density section is equivalent to smoothness of its scalar value on the
+inverse local frames of the underlying vector-bundle charts. For tangent bundles this gives
+the real density bundle of a manifold, without a choice of orientation or metric, and the
+criterion uses the inverse local tangent frames.
 
 ## References
 

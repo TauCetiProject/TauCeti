@@ -118,16 +118,10 @@ theorem densityCoordChange_eq {x : B} (hx : x ∈ e.baseSet ∩ e'.baseSet) (c :
       (fun i ↦ e'.symm x (Module.finBasis ℝ F i)) =
       ((e'.coordChangeL ℝ e x : F →L[ℝ] F) : F →ₗ[ℝ] F) ∘ Module.finBasis ℝ F := by
     ext i
-    rw [Function.comp_apply, Function.comp_apply,
-      ContinuousLinearMap.coe_coe, ContinuousLinearEquiv.coe_coe,
-      Trivialization.coordChangeL_apply _ _ ⟨hx.2, hx.1⟩,
+    simp [Trivialization.coordChangeL_apply _ _ ⟨hx.2, hx.1⟩,
       Trivialization.linearEquivAt_apply]
   simp only [LinearEquiv.symm_symm]
-  rw [ht]
-  have hd := (Module.finBasis ℝ F).det_comp
-    ((e'.coordChangeL ℝ e x : F →L[ℝ] F) : F →ₗ[ℝ] F) (Module.finBasis ℝ F)
-  simpa only [Module.Basis.det_self, mul_one, ContinuousLinearMap.coe_coe] using
-    (congrArg (fun d : ℝ ↦ |d| * c) hd).symm
+  rw [ht, Module.Basis.det_comp, Module.Basis.det_self, mul_one]
 
 variable [∀ x, TopologicalSpace (V x)] [FiberBundle F V] [VectorBundle ℝ F V]
   [MemTrivializationAtlas e] [MemTrivializationAtlas e']
