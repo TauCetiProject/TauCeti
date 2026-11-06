@@ -26,6 +26,8 @@ over `ℝ` the standard smooth structure on real projective space `ℝℙⁿ`.
 ## Main declarations
 
 * `Projectivization.instChartedSpace`: the atlas of standard affine charts.
+* `Projectivization.chartAt_eq_affineOpenPartialHomeomorph`: the preferred chart at a point is
+  the standard affine chart at an index chosen by `exists_mem_affineOpen`.
 * `Projectivization.contDiffOn_affineChart_symm_trans`: the transition maps are `C^r` for
   every `r`.
 * `Projectivization.instIsManifold`: projective space is a `C^r` manifold for every `r`.
@@ -57,6 +59,12 @@ noncomputable instance instChartedSpace : ChartedSpace (Fin n → 𝕜) (ℙ �
   mem_chart_source x := by
     simpa using (exists_mem_affineOpen x).choose_spec
   chart_mem_atlas _ := mem_range_self _
+
+/-- The preferred chart at `x` is the standard affine chart at the index `i` with `x_i ≠ 0` chosen
+by `exists_mem_affineOpen`. -/
+theorem chartAt_eq_affineOpenPartialHomeomorph (x : ℙ 𝕜 (Fin (n + 1) → 𝕜)) :
+    chartAt (Fin n → 𝕜) x = affineOpenPartialHomeomorph (exists_mem_affineOpen x).choose :=
+  rfl
 
 /-- The charts of the atlas of projective space are exactly its standard affine charts. -/
 theorem mem_atlas_iff (e : OpenPartialHomeomorph (ℙ 𝕜 (Fin (n + 1) → 𝕜)) (Fin n → 𝕜)) :

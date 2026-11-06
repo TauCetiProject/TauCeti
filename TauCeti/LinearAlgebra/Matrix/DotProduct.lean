@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 
 /-!
@@ -27,6 +28,8 @@ integers transform (R. Steinberg, *Endomorphisms of Linear Algebraic Groups*, §
 * `LinearIndependent.exists_dotProduct_ne_zero`: `n` linearly independent forms on `K ^ n` do not
   all vanish at a nonzero point.
 * `Matrix.comp_equiv_symm_dotProduct_reindex_mulVec`: relabelling the indices is an isometry.
+* `Matrix.dotProduct_self_nonneg` and `Matrix.dotProduct_self_pos_iff`: over an ordered ring
+  `v ⬝ᵥ v` is nonnegative, and positive exactly when `v ≠ 0`.
 * `TauCeti.mul_dotProduct_eq_of_mulVec_eq_smul`: if `A *ᵥ x = a • x'` and `Aᵀ *ᵥ y' = b • y`,
   then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`.
 -/
@@ -52,6 +55,18 @@ theorem Matrix.comp_equiv_symm_dotProduct_reindex_mulVec {I J α : Type*} [Finty
     [NonUnitalNonAssocSemiring α] (e : I ≃ J) (M : Matrix I I α) (u v : I → α) :
     u ∘ e.symm ⬝ᵥ M.reindex e e *ᵥ (v ∘ e.symm) = u ⬝ᵥ M *ᵥ v := by
   simp [submatrix_mulVec_equiv, Function.comp_assoc]
+
+/-- Over an ordered ring the dot product `v ⬝ᵥ v`, a sum of squares, is nonnegative. -/
+@[simp]
+theorem Matrix.dotProduct_self_nonneg {n R : Type*} [Fintype n] [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] (v : n → R) : 0 ≤ v ⬝ᵥ v :=
+  Fintype.sum_nonneg fun i ↦ mul_self_nonneg (v i)
+
+/-- Over an ordered ring the dot product `v ⬝ᵥ v` is positive exactly when `v ≠ 0`. -/
+@[simp]
+theorem Matrix.dotProduct_self_pos_iff {n R : Type*} [Fintype n] [Ring R] [LinearOrder R]
+    [IsStrictOrderedRing R] {v : n → R} : 0 < v ⬝ᵥ v ↔ v ≠ 0 := by
+  rw [(dotProduct_self_nonneg v).lt_iff_ne', Ne, dotProduct_self_eq_zero]
 
 /-- **Scaling by a matrix and by its transpose transforms the dot product.** If `A` sends `x` to
 `a • x'` and `Aᵀ` sends `y'` to `b • y`, then `a * (x' ⬝ᵥ y') = b * (x ⬝ᵥ y)`. For the

@@ -142,6 +142,13 @@ open Projectivization
 
 variable {n : ℕ}
 
+/-- The homogeneous coordinates `Fin.insertNth i 1 z` of a point of the affine chart at `i` have
+nonzero dot product with themselves. -/
+private theorem insertNth_one_dotProduct_self_ne_zero {K : Type*} [Field K] [LinearOrder K]
+    [IsStrictOrderedRing K] (i : Fin (n + 1)) (z : Fin n → K) :
+    Fin.insertNth (α := fun _ ↦ K) i 1 z ⬝ᵥ Fin.insertNth (α := fun _ ↦ K) i 1 z ≠ 0 :=
+  dotProduct_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero i z)
+
 /-- The entries of the projector, read in the standard affine chart at `i`, are Nash functions of
 the affine coordinates `z`. With `w = Fin.insertNth i 1 z`, the `(a, b)` entry is the rational
 function `w a * w b / (wᵀ w)`, whose denominator never vanishes. -/
@@ -154,7 +161,7 @@ theorem isNashAt_projector_affineChart_symm (i a b : Fin (n + 1)) (z : Fin n →
     | p k => simpa using isNashAt_apply k
   simp only [affineChart_symm_apply, projector_mk, rankOneProjector_apply]
   exact ((hw a).fun_mul (hw b)).fun_div (Finset.fun_isNashAt_sum _ fun k _ ↦ (hw k).fun_mul (hw k))
-    (dotProduct_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero i z))
+    (insertNth_one_dotProduct_self_ne_zero i z)
 
 /-- The projector map read in the standard affine chart at `i`, with values in the matrix
 coordinates `Fin (n + 1) × Fin (n + 1) → ℝ`, is `C^r` for every `r`; for `r = ω` it is
@@ -168,7 +175,7 @@ theorem contDiff_projector_affineChart_symm (i : Fin (n + 1)) {r : ℕ∞ω} :
   refine contDiff_pi.2 fun q ↦ ?_
   simp only [affineChart_symm_apply, projector_mk, rankOneProjector_apply]
   exact ((hw q.1).mul (hw q.2)).div (ContDiff.sum fun k _ ↦ (hw k).mul (hw k))
-    fun z ↦ dotProduct_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero i z)
+    (insertNth_one_dotProduct_self_ne_zero i)
 
 /-- **The projector map is an immersion in the affine charts.** The derivative of the projector
 map read in the standard affine chart at `i` is injective at every point. Indeed the map
@@ -212,7 +219,7 @@ theorem isSemialgebraicMap_projector_affineChart_symm (i : Fin (n + 1)) :
   refine isSemialgebraicOn_of_forall_eq_iff isSemialgebraic_univ
     (fun q ↦ (∑ r, V r * V r) * X (.inr q) - V q.1 * V q.2) fun z _ A ↦ ?_
   set v : Fin (n + 1) → K := Fin.insertNth i 1 z
-  have hs : v ⬝ᵥ v ≠ 0 := dotProduct_self_eq_zero.not.mpr (Fin.insertNth_one_ne_zero i z)
+  have hs : v ⬝ᵥ v ≠ 0 := insertNth_one_dotProduct_self_ne_zero i z
   have hV (r) : eval (Sum.elim z A) (V r) = v r := by
     obtain rfl | ⟨k, rfl⟩ := Fin.eq_self_or_eq_succAbove i r <;> simp [V, v]
   simp only [map_sub, map_mul, map_sum, hV, eval_X, Sum.elim_inr, funext_iff]
@@ -282,9 +289,8 @@ theorem injective_mfderiv_projector (p : ℙ ℝ (Fin (n + 1) → ℝ)) :
     (ContinuousLinearEquiv.injective _))
   -- The preferred chart at `p` is a standard affine chart, and the target model is the identity,
   -- so the map written in charts is the projector map read in that affine chart.
-  have hc : chartAt (Fin n → ℝ) p = affineOpenPartialHomeomorph (exists_mem_affineOpen p).choose :=
-    rfl
-  simp only [writtenInExtChartAt, extChartAt, OpenPartialHomeomorph.extend, hc,
+  simp only [writtenInExtChartAt, extChartAt, OpenPartialHomeomorph.extend,
+    chartAt_eq_affineOpenPartialHomeomorph,
     coe_affineOpenPartialHomeomorph_symm, fderivWithin_univ, mfld_simps]
   exact injective_fderiv_projector_affineChart_symm _ _
 

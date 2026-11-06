@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Order.Field.Basic
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Projectivization.Basic
+public import TauCeti.LinearAlgebra.Matrix.DotProduct
 public import TauCeti.LinearAlgebra.Matrix.Symmetric
 public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Trace.Idempotent
@@ -47,9 +48,11 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
   trace zero vanishes).
 * `Projectivization.projector_injective` and `Projectivization.range_projector`: the projector
   map is a bijection from `ℙ K (ι → K)` onto the projector locus.
-* `Projectivization.projector_apply_self_pos_iff` and `Projectivization.image_projector_affineOpen`:
-  the projector map carries the standard affine open `{x_i ≠ 0}` onto the matrices of the locus
-  with positive `i`-th diagonal entry.
+* `Projectivization.projector_apply_self_pos_iff`,
+  `Projectivization.projector_apply_self_eq_zero_iff` and
+  `Projectivization.image_projector_affineOpen`: the projector map carries the standard affine
+  open `{x_i ≠ 0}` onto the matrices of the locus with nonzero, hence positive, `i`-th diagonal
+  entry.
 * `Projectivization.affineChart_eq_projector_div`: the standard affine charts in terms of the
   entries of the projector.
 
@@ -230,7 +233,7 @@ theorem projector_apply_self_nonneg (p : ℙ K (ι → K)) (i : ι) : 0 ≤ proj
   induction p using ind with
   | h x hx =>
     rw [projector_mk, rankOneProjector_apply]
-    exact div_nonneg (mul_self_nonneg _) (Finset.sum_nonneg fun k _ ↦ mul_self_nonneg (x k))
+    exact div_nonneg (mul_self_nonneg _) (dotProduct_self_nonneg x)
 
 /-- Over an ordered field the `i`-th diagonal entry `x i ^ 2 / (xᵀ x)` of the projector of a line
 is positive exactly when the line lies in the standard affine open `{x_i ≠ 0}`. -/
@@ -239,9 +242,15 @@ theorem projector_apply_self_pos_iff {p : ℙ K (ι → K)} {i : ι} :
     0 < projector p i i ↔ p ∈ affineOpen i := by
   induction p using ind with
   | h x hx =>
-    have hs : 0 < x ⬝ᵥ x := lt_of_le_of_ne (Finset.sum_nonneg fun k _ ↦ mul_self_nonneg (x k))
-      (Ne.symm (dotProduct_self_eq_zero.not.mpr hx))
-    simp [rankOneProjector_apply, div_pos_iff_of_pos_right hs, mul_self_pos]
+    simp [rankOneProjector_apply, div_pos_iff_of_pos_right (dotProduct_self_pos_iff.mpr hx),
+      mul_self_pos]
+
+/-- Over an ordered field the `i`-th diagonal entry `x i ^ 2 / (xᵀ x)` of the projector of a line
+vanishes exactly when the line lies outside the standard affine open `{x_i ≠ 0}`. -/
+@[simp]
+theorem projector_apply_self_eq_zero_iff {p : ℙ K (ι → K)} {i : ι} :
+    projector p i i = 0 ↔ p ∉ affineOpen i := by
+  rw [← projector_apply_self_pos_iff, not_lt, (projector_apply_self_nonneg p i).ge_iff_eq']
 
 /-- Over an ordered field the projector map sends the standard affine open `{x_i ≠ 0}` onto the
 matrices of the projector locus with nonzero, hence positive, `i`-th diagonal entry. -/
@@ -250,11 +259,10 @@ theorem image_projector_affineOpen (i : ι) :
   ext A
   constructor
   · rintro ⟨p, hp, rfl⟩
-    exact ⟨projector_mem_projectorLocus p, (projector_apply_self_pos_iff.mpr hp).ne'⟩
+    exact ⟨projector_mem_projectorLocus p, fun h ↦ projector_apply_self_eq_zero_iff.mp h hp⟩
   · rintro ⟨hA, hAi⟩
     obtain ⟨p, rfl⟩ := range_projector.symm.subset hA
-    exact ⟨p, projector_apply_self_pos_iff.mp
-      ((projector_apply_self_nonneg p i).lt_of_ne hAi.symm), rfl⟩
+    exact ⟨p, not_not.mp (mt projector_apply_self_eq_zero_iff.mpr hAi), rfl⟩
 
 /-- **The standard affine charts in the projector model.** Over an ordered field the standard
 affine chart at `i` reads the coordinates of a line off its projector `A`: the `k`-th coordinate is
