@@ -45,6 +45,9 @@ pair-of-pants perturbation pulls back to its components in the end coordinates.
 * `TauCeti.Floer.pairwise_disjoint_image_endChart`: the images of the three strips are disjoint.
 * `TauCeti.Floer.mem_image_endChart`: they contain every point of `S` with signed longitudinal
   coordinate greater than `1/2` on some end.
+* `TauCeti.Floer.perturbationPullback_endChart_eq_cylindricalEndLift`: the pullback of a
+  perturbation along the end chart is the perturbation evaluated on the image of a tangent vector
+  under the end lift.
 * `TauCeti.Floer.perturbationPullback_endChart`: the pullback of the pair-of-pants perturbation
   along the end chart is its component in the end coordinates.
 
@@ -172,14 +175,18 @@ theorem contDiff_endChart (q : Puncture) (n : WithTop ℕ∞) : ContDiff ℝ n (
     (((q.contDiff_cylindricalEndLift n).restrict_scalars ℝ).comp
       Complex.equivRealProdCLM.symm.contDiff)
 
-omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
-/-- The pullback of the perturbation along the end chart of `q`, evaluated on a tangent vector
-`v`, is its component `TauCeti.Floer.pairOfPantsEndComponent` along `v` in the end coordinates. -/
-theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
+/-- **Perturbation data in end coordinates.** Let `K` be a perturbation one-form on `ℂ`, with
+`ds` and `dt` components `K(z)(1)` and `K(z)(i)` in the global coordinate `z = s + i t`. Its
+pullback along the end chart of `q`, evaluated on a tangent vector `v` of the cylinder, is `K` at
+the image point evaluated on the image `φ'(z) v` of `v` under the end lift `φ`. -/
+theorem perturbationPullback_endChart_eq_cylindricalEndLift {X : Type*}
+    (K : ℂ → X → ℂ →L[ℝ] ℝ) (q : Puncture) (v : ℝ × ℝ) :
     perturbationPullback (endChart q)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
-        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
-      pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm v) := by
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ K (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      fun z x ↦ K (q.cylindricalEndLift (Complex.equivRealProdCLM.symm z)) x
+        (deriv q.cylindricalEndLift (Complex.equivRealProdCLM.symm z) *
+          Complex.equivRealProdCLM.symm v) := by
   -- A real-linear functional `L` on `ℂ` satisfies `L w = Re w · L 1 + Im w · L i`.
   have hL (L : ℂ →L[ℝ] ℝ) (w : ℂ) :
       (Complex.equivRealProdCLM w).1 * L 1 + (Complex.equivRealProdCLM w).2 * L Complex.I =
@@ -189,10 +196,19 @@ theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
     rw [map_add, map_smul, map_smul, smul_eq_mul, smul_eq_mul]
     simp
   funext z x
-  rw [perturbationPullback_apply, fderiv_endChart_apply, equivRealProdCLM_symm_endChart, hL,
-    pairOfPantsEndComponent_def]
-  -- `Complex.equivRealProdCLM.symm z` is the complex number `⟨z.1, z.2⟩` by definition.
-  rfl
+  rw [perturbationPullback_apply, fderiv_endChart_apply, equivRealProdCLM_symm_endChart, hL]
+
+omit [NormedAddCommGroup V] [NormedSpace ℝ V] in
+/-- The pullback of the perturbation along the end chart of `q`, evaluated on a tangent vector
+`v`, is its component `TauCeti.Floer.pairOfPantsEndComponent` along `v` in the end coordinates. -/
+theorem perturbationPullback_endChart (q : Puncture) (v : ℝ × ℝ) :
+    perturbationPullback (endChart q)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
+        (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I) v =
+      pairOfPantsEndComponent H q (Complex.equivRealProdCLM.symm v) := by
+  rw [perturbationPullback_endChart_eq_cylindricalEndLift (pairOfPantsPerturbation H)]
+  funext z x
+  rw [pairOfPantsEndComponent_def, Complex.equivRealProdCLM_symm_apply, ← Complex.mk_eq_add_mul_I]
 
 /-- The end lift is injective on the strip `endStrip q`, whose angular coordinate ranges over one
 period. -/
