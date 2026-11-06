@@ -170,7 +170,7 @@ theorem _root_.Polynomial.signedPsc_C_mul_right (p q : R[X]) (r : R) {m n j : �
 
 /-- A zero left input makes a signed minor vanish when its column block is
 nonempty (`j < n`). This excludes the empty-determinant terminal case. -/
-theorem _root_.Polynomial.signedPsc_zero_left (q : R[X]) {m n j : ℕ}
+@[simp] theorem _root_.Polynomial.signedPsc_zero_left (q : R[X]) {m n j : ℕ}
     (hjn : j < n) : signedPsc 0 q m n j = 0 := by
   by_cases hj : j ≤ min m n
   · have h := signedPsc_C_mul_left (0 : R[X]) q 0 hj
@@ -179,7 +179,7 @@ theorem _root_.Polynomial.signedPsc_zero_left (q : R[X]) {m n j : ℕ}
 
 /-- A zero right input makes a signed minor vanish when its column block is
 nonempty (`j < m`). This excludes the empty-determinant terminal case. -/
-theorem _root_.Polynomial.signedPsc_zero_right (p : R[X]) {m n j : ℕ}
+@[simp] theorem _root_.Polynomial.signedPsc_zero_right (p : R[X]) {m n j : ℕ}
     (hjm : j < m) : signedPsc p 0 m n j = 0 := by
   by_cases hj : j ≤ min m n
   · have h := signedPsc_C_mul_right p (0 : R[X]) 0 hj
