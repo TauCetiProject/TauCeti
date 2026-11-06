@@ -338,7 +338,7 @@ instance instIsNondegenerateOrthogonalSum (L : IntegralLattice V) (M : IntegralL
 theorem radical_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
     (L.orthogonalSum M).radical = L.radical.prod M.radical := by
   rw [← (L.orthogonalSum M).radical_toQuadraticMap, orthogonalSum_form,
-    LinearMap.BilinForm.prod_toQuadraticMap,
+    LinearMap.BilinForm.toQuadraticMap_prod,
     QuadraticMap.radical_prod, L.radical_toQuadraticMap, M.radical_toQuadraticMap]
 
 /-- The positive index of an orthogonal sum is the sum of the positive indices. -/
@@ -348,7 +348,7 @@ theorem sigPos_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
   rw [sigPos, orthogonalSum_form,
-    LinearMap.BilinForm.prod_toQuadraticMap,
+    LinearMap.BilinForm.toQuadraticMap_prod,
     QuadraticForm.sigPos_prod]
 
 /-- The negative index of an orthogonal sum is the sum of the negative indices. -/
@@ -358,7 +358,7 @@ theorem sigNeg_orthogonalSum (L : IntegralLattice V) (M : IntegralLattice W) :
   let _ := L.finiteDimensional
   let _ := M.finiteDimensional
   rw [sigNeg, orthogonalSum_form,
-    LinearMap.BilinForm.prod_toQuadraticMap,
+    LinearMap.BilinForm.toQuadraticMap_prod,
     QuadraticForm.sigNeg_prod]
 
 /-- The null index of an orthogonal sum is the sum of the null indices. -/

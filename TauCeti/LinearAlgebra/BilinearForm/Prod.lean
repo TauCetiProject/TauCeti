@@ -24,7 +24,7 @@ product of perfect pairings is a perfect pairing.
 ## Main declarations
 
 * `LinearMap.BilinForm.prod`: the block-diagonal form on a product module.
-* `LinearMap.BilinForm.prod_toQuadraticMap`: the quadratic map of the product form is the
+* `LinearMap.BilinForm.toQuadraticMap_prod`: the quadratic map of the product form is the
   product of the quadratic maps.
 * `LinearMap.BilinForm.isSymm_prod_iff`: the product form is symmetric exactly when both factors
   are.
@@ -56,7 +56,8 @@ theorem prod_apply (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) (
   (rfl)
 
 /-- The quadratic map of a product of bilinear forms is the product of the quadratic maps. -/
-theorem prod_toQuadraticMap (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
+@[simp]
+theorem toQuadraticMap_prod (B : LinearMap.BilinForm R M) (C : LinearMap.BilinForm R N) :
     (B.prod C).toQuadraticMap = B.toQuadraticMap.prod C.toQuadraticMap := by
   ext p
   simp
