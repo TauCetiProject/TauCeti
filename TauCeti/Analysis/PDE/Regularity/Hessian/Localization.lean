@@ -64,25 +64,6 @@ namespace PDE
 open MeasureTheory TopologicalSpace
 open scoped ENNReal NNReal InnerProductSpace Gradient ContDiff
 
-section LeibnizRemainder
-
-variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-
-/-- The Leibniz remainder `∇ζ ⊗ v + v ⊗ ∇ζ + s D²ζ` vanishes off the support of `ζ`. -/
-private theorem leibnizRemainder_eq_zero {zeta : E → ℝ} {x : E} (hx : x ∉ tsupport zeta)
-    (v : E) (s : ℝ) :
-    (innerSL ℝ (∇ zeta x)).smulRight v + (innerSL ℝ v).smulRight (∇ zeta x)
-      + s • fderiv ℝ (∇ zeta) x = 0 := by
-  have hs0 := tsupport_iteratedGradientChain_subset zeta 0
-  have hs1 := tsupport_iteratedGradientChain_subset zeta 1
-  rw [iteratedGradientChain_zero] at hs0
-  rw [iteratedGradientChain_succ, iteratedGradientChain_zero] at hs1
-  have h1 : ∇ zeta x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs0 h)
-  have h2 : fderiv ℝ (∇ zeta) x = 0 := image_eq_zero_of_notMem_tsupport fun h => hx (hs1 h)
-  simp [h1, h2]
-
-end LeibnizRemainder
-
 variable {n : ℕ} {p : ℝ≥0∞} [Fact (1 ≤ p)]
 
 /-- Extending `w ∈ W^{2,p}_0(Ω)` by zero to all of `ℝⁿ` preserves the vanishing of `w` off a set
@@ -168,53 +149,31 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     exists_norm_iteratedGradient_le_mul_norm_of_sum_mul_inner_eq_of_abs_sub_le hn hp hp_top
   refine ⟨C, δ, hδ, fun {A lam} hlam hA {Omega zeta M₁ M₂} hζ hcpt hts hM₁ hM₂
     {a ε Λ} ha_meas hε ha hΛ haΛ u f hf => ?_⟩
-  have hM₁0 : 0 ≤ M₁ := (norm_nonneg _).trans (hM₁ 0)
-  have hM₂0 : 0 ≤ M₂ := (norm_nonneg _).trans (hM₂ 0)
-  -- The Leibniz remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ`, which vanishes off the support of `ζ`.
-  set T : EuclideanSpace ℝ (Fin n) → EuclideanSpace ℝ (Fin n) →L[ℝ] EuclideanSpace ℝ (Fin n) :=
-    fun x => (innerSL ℝ (∇ zeta x)).smulRight (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x)
-      + (innerSL ℝ (Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u) x)).smulRight (∇ zeta x)
-      + Wkp.value 2 u x • fderiv ℝ (∇ zeta) x with hT
-  -- The cutoff `w = ζ u ∈ W^{2,p}_0(Ω)` and its weak Hessian `ζ D²u + T`.
+  -- The cutoff `w = ζ u ∈ W^{2,p}_0(Ω)` and its weak Hessian `ζ D²u + T`, where the Leibniz
+  -- remainder `T = ∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` vanishes off the support of `ζ`.
   obtain ⟨w, hw0, hwv⟩ := Wkp.exists_mem_wkp0Submodule_value_ae_eq_mul hp_top hζ hcpt hts 2 u
-  have hD := Wkp.iteratedGradient_one_ae_eq_of_value_ae_eq_mul hζ hwv
+  obtain ⟨TL, hD, hTK, hTnorm⟩ :=
+    Wkp.exists_iteratedGradient_one_ae_eq_smul_add_of_value_ae_eq_mul hζ hcpt hM₁ hM₂ hwv
   have hζ_top := hζ.continuous.memLp_top_of_hasCompactSupport hcpt (volume.restrict Omega)
   have hζH : MemLp (fun x => zeta x • Wkp.iteratedGradient 1 u x) p (volume.restrict Omega) :=
     hζ_top.smul (Lp.memLp _)
-  set TL := Wkp.iteratedGradient 1 w - hζH.toLp _ with hTL_def
-  have hTL : ∀ᵐ x ∂volume.restrict Omega, TL x = T x := by
-    filter_upwards [Lp.coeFn_sub (Wkp.iteratedGradient 1 w) (hζH.toLp _), hD,
-      hζH.coeFn_toLp] with x h1 h2 h3
-    rw [h1, Pi.sub_apply, h2, h3, hT]
-    simp only [add_assoc, add_sub_cancel_left]
-  have hTnorm : ‖TL‖ ≤ 2 * M₁ * ‖Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 u)‖
-      + M₂ * ‖Wkp.value 2 u‖ := by
-    refine TauCeti.Lp.norm_le_add_of_ae_norm_le (by positivity) hM₂0 ?_
-    filter_upwards [hTL] with x hx
-    rw [hx]
-    refine (norm_leibnizRemainder_le zeta _ _ x).trans ?_
-    gcongr
-    · exact hM₁ x
-    · exact hM₂ x
   -- The forcing term `ζ f + ∑ᵢⱼ aᵢⱼ Tᵢⱼ` of the equation for `ζ u`.
-  have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (T x))
+  have hEmeas : AEStronglyMeasurable (fun x => Matrix.contraction (a x) (TL x))
       (volume.restrict Omega) := by
-    have hTm : AEStronglyMeasurable T (volume.restrict Omega) :=
-      (Lp.aestronglyMeasurable TL).congr hTL
     simp only [Matrix.contraction_apply]
     refine Finset.aestronglyMeasurable_fun_sum _ fun i _ =>
       Finset.aestronglyMeasurable_fun_sum _ fun j _ => ?_
     exact ((continuous_id.matrix_elem i j).comp_aestronglyMeasurable ha_meas).mul
       (((ContinuousLinearMap.apply ℝ _ (EuclideanSpace.single i 1)).continuous
-        |>.comp_aestronglyMeasurable hTm).inner aestronglyMeasurable_const)
+        |>.comp_aestronglyMeasurable (Lp.aestronglyMeasurable TL)).inner aestronglyMeasurable_const)
   have hEle : ∀ᵐ x ∂volume.restrict Omega,
-      ‖Matrix.contraction (a x) (T x)‖ ≤ n ^ 2 * Λ * ‖TL x‖ := by
-    filter_upwards [hTL, ae_restrict_of_ae haΛ] with x h1 h2
-    rw [h1, Real.norm_eq_abs]
+      ‖Matrix.contraction (a x) (TL x)‖ ≤ n ^ 2 * Λ * ‖TL x‖ := by
+    filter_upwards [hTK, ae_restrict_of_ae haΛ] with x h1 h2
+    rw [Real.norm_eq_abs]
     by_cases hx : x ∈ tsupport zeta
     · exact Matrix.abs_contraction_le (h2 hx) _
-    · simp [hT, leibnizRemainder_eq_zero hx]
-  have hE : MemLp (fun x => Matrix.contraction (a x) (T x)) p (volume.restrict Omega) :=
+    · rw [h1 hx, map_zero, abs_zero, norm_zero, mul_zero]
+  have hE : MemLp (fun x => Matrix.contraction (a x) (TL x)) p (volume.restrict Omega) :=
     (Lp.memLp TL).of_le_mul hEmeas hEle
   have hζf : MemLp (fun x => zeta x * f x) p (volume.restrict Omega) := hζ_top.smul (Lp.memLp f)
   set FL := hζf.toLp _ + hE.toLp _ with hFL_def
@@ -234,8 +193,7 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
     replace hxf : Matrix.contraction (a x) (Wkp.iteratedGradient 1 u x) = f x := by
       rw [Matrix.contraction_apply]
       exact hxf
-    rw [h, Pi.add_apply, h', h'', hxD, ← hxf]
-    simp only [hT, add_assoc, map_add, map_smul, smul_eq_mul]
+    rw [h, Pi.add_apply, h', h'', hxD, map_add, map_smul, smul_eq_mul, ← hxf]
   have hwK : ∀ᵐ x ∂volume.restrict Omega, x ∉ tsupport zeta → Wkp.value 2 w x = 0 := by
     filter_upwards [hwv] with x hx hxs
     rw [hx, image_eq_zero_of_notMem_tsupport hxs, zero_mul]
@@ -250,7 +208,10 @@ theorem exists_lpNorm_smul_iteratedGradient_le_of_sum_mul_inner_eq_of_abs_sub_le
   rw [Wkp0.iteratedGradient_extendByZeroₗᵢ, LinearIsometry.norm_map, LinearIsometry.norm_map]
     at hkey
   have hHL : hζH.toLp _ = Wkp.iteratedGradient 1 w - TL := by
-    rw [hTL_def, sub_sub_cancel]
+    refine Lp.ext ?_
+    filter_upwards [hζH.coeFn_toLp, Lp.coeFn_sub (Wkp.iteratedGradient 1 w) TL, hD]
+      with x h1 h2 h3
+    rw [h1, h2, Pi.sub_apply, h3, add_sub_cancel_right]
   have hCl : 0 ≤ (C : ℝ) / lam := by positivity
   rw [← toReal_eLpNorm, ← Lp.norm_toLp _ hζH, hHL]
   calc ‖Wkp.iteratedGradient 1 w - TL‖

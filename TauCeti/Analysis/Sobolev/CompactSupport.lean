@@ -162,4 +162,23 @@ theorem HasWeakFDerivOn.indicator_of_isCompact {U : E → E →L[ℝ] F}
     HasWeakFDerivOn mu ⊤ ((Omega : Set E).indicator u) ((Omega : Set E).indicator U) := by
   exact h.indicator_of_isClosed hK.isClosed (fun _ hx => hKO hx.2) hu hU
 
+/-- **A weak derivative vanishes where the function does.** If `u` has weak derivative `u'` in the
+direction `v` on `Ω` and `u` vanishes almost everywhere on `Ω ∩ t` for an open set `t`, then so does
+`u'`. The set `t` need not lie in `Ω`. With `t = Kᶜ` for a closed set `K`, this supplies the
+vanishing of the derivative required by `TauCeti.HasWeakLineDerivOn.indicator_of_isClosed`. -/
+theorem HasWeakLineDerivOn.ae_eq_zero_of_isOpen [BorelSpace E]
+    (h : HasWeakLineDerivOn mu Omega u u' v) {t : Set E} (ht : IsOpen t)
+    (hu : ∀ᵐ x ∂mu.restrict Omega, x ∈ t → u x = 0) :
+    ∀ᵐ x ∂mu.restrict Omega, x ∈ t → u' x = 0 := by
+  have := h.completeSpace
+  let W : Opens E := Omega ⊓ ⟨t, ht⟩
+  have hWm : MeasurableSet (W : Set E) := W.isOpen.measurableSet
+  have huW : u =ᵐ[mu.restrict W] 0 := by
+    filter_upwards [ae_restrict_of_ae_restrict_of_subset inf_le_left hu, ae_restrict_mem hWm]
+      with x hx hxW using hx hxW.2
+  have hW := (ae_restrict_iff' hWm).1
+    (((h.mono inf_le_left).congr_ae huW).ae_eq hasWeakLineDerivOn_zero)
+  filter_upwards [ae_restrict_mem Omega.isOpen.measurableSet, ae_restrict_of_ae hW]
+    with x hxΩ hx hxt using hx ⟨hxΩ, hxt⟩
+
 end TauCeti
