@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.BoundedVariation.Perimeter
-import TauCeti.Algebra.Order.Ring.Abs
 import TauCeti.Analysis.BoundedVariation.Convolution
+import TauCeti.Analysis.Calculus.BumpFunction.Convolution
 import TauCeti.Analysis.Convolution.Basic
 import TauCeti.Analysis.Normed.Module.RCLike.Real
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 import TauCeti.MeasureTheory.Function.Lp.ApproximateIdentity
+import TauCeti.MeasureTheory.Integral.Lebesgue.DominatedConvergence
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
@@ -89,6 +90,53 @@ private theorem totalVariationOn_mul_add_le_of_contDiff (hu : ContDiff ℝ 1 u)
     ← ENNReal.ofReal_add (norm_nonneg _) (norm_nonneg _)]
   exact ENNReal.ofReal_le_ofReal (norm_smul_add_add_norm_smul_add_le (hu01 x) (hv01 x) _ _)
 
+/-- Lower semicontinuity step: if normalized bumps `φ n` have outer radii tending to zero, then the
+variations on `Ω'` of `u v` and `u + v - u v` are at most the `liminf` of the corresponding
+variations of the mollifications of `u` and `v`, for locally integrable `u` and `v` with values
+everywhere in `[0, 1]`. -/
+private theorem totalVariationOn_mul_add_le_liminf_normed_convolution {Ω' : Opens E}
+    {φ : ℕ → ContDiffBump (0 : E)} (hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0))
+    (hu : LocallyIntegrable u μ) (hv : LocallyIntegrable v μ) (hu01 : ∀ x, u x ∈ Icc (0 : ℝ) 1)
+    (hv01 : ∀ x, v x ∈ Icc (0 : ℝ) 1) :
+    totalVariationOn μ Ω' (u * v) + totalVariationOn μ Ω' (u + v - u * v) ≤
+      liminf (fun n =>
+        totalVariationOn μ Ω'
+          (((φ n).normed μ ⋆[lsmul ℝ ℝ, μ] u) * ((φ n).normed μ ⋆[lsmul ℝ ℝ, μ] v)) +
+        totalVariationOn μ Ω'
+          (((φ n).normed μ ⋆[lsmul ℝ ℝ, μ] u) + ((φ n).normed μ ⋆[lsmul ℝ ℝ, μ] v) -
+            ((φ n).normed μ ⋆[lsmul ℝ ℝ, μ] u) * ((φ n).normed μ ⋆[lsmul ℝ ℝ, μ] v))) atTop := by
+  let mol : (E → ℝ) → ℕ → E → ℝ := fun w n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] w
+  -- Mollifications are smooth, keep their values in `[0, 1]`, and converge in `L¹_loc`.
+  have hsmooth {w : E → ℝ} (hw : LocallyIntegrable w μ) (n : ℕ) : ContDiff ℝ 1 (mol w n) :=
+    (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed hw
+  have hlim {w : E → ℝ} (hw : LocallyIntegrable w μ) {K : Set E} (hK : IsCompact K) :
+      Tendsto (fun n => ∫⁻ x in K, ‖mol w n x - w x‖ₑ ∂μ) atTop (𝓝 0) :=
+    tendsto_setLIntegral_enorm_normed_convolution_sub hφ hw hK
+  -- Products and `x + y - x y` of the mollifications converge in `L¹_loc` as well.
+  have hlim₂ {F : ℕ → E → ℝ} {f : E → ℝ}
+      (hF : ∀ n x, ‖F n x - f x‖ₑ ≤ ‖mol u n x - u x‖ₑ + ‖mol v n x - v x‖ₑ)
+      {K : Set E} (hK : IsCompact K) :
+      Tendsto (fun n => ∫⁻ x in K, ‖F n x - f x‖ₑ ∂μ) atTop (𝓝 0) :=
+    tendsto_lintegral_zero_of_le_add (μ := μ.restrict K) (fun n x => hF n x)
+      (fun n => ((hsmooth hu n).continuous.aestronglyMeasurable.sub
+        hu.aestronglyMeasurable).restrict.enorm) (hlim hu hK) (hlim hv hK)
+  have hmem := ContDiffBump.normed_convolution_mem_Icc (μ := μ) (G := E)
+  have hli {w : E → ℝ} (hw : ContDiff ℝ 1 w) : LocallyIntegrableOn w Ω' μ :=
+    hw.continuous.locallyIntegrable.locallyIntegrableOn _
+  have huv : LocallyIntegrable (u * v) μ :=
+    hu.mul_bdd hv.aestronglyMeasurable (C := 1) (ae_of_all _ fun x => by
+      rw [Real.norm_eq_abs, abs_of_nonneg (hv01 x).1]; exact (hv01 x).2)
+  have hlsc₁ := totalVariationOn_le_liminf (Ω := Ω') (l := atTop)
+    (.of_forall fun n => hli ((hsmooth hu n).mul (hsmooth hv n))) (huv.locallyIntegrableOn _)
+    fun K hK _ => hlim₂ (fun n x => enorm_mul_sub_mul_le_of_mem_Icc (hu01 x)
+      (hmem (φ n) hv hv01 x)) hK
+  have hlsc₂ := totalVariationOn_le_liminf (Ω := Ω') (l := atTop)
+    (.of_forall fun n => hli (((hsmooth hu n).add (hsmooth hv n)).sub
+      ((hsmooth hu n).mul (hsmooth hv n))))
+    (((hu.add hv).sub huv).locallyIntegrableOn _) fun K hK _ =>
+      hlim₂ (fun n x => enorm_add_sub_mul_sub_le_of_mem_Icc (hmem (φ n) hu hu01 x) (hv01 x)) hK
+  exact (add_le_add hlsc₁ hlsc₂).trans (ENNReal.le_liminf_add _ _)
+
 /-- The inequality with the variations of `u v` and `u + v - u v` taken on an open set `Ω'` whose
 points have closed `r`-balls inside `Ω`, for locally integrable `u` and `v` with values everywhere
 in `[0, 1]`. -/
@@ -102,78 +150,18 @@ private theorem totalVariationOn_mul_add_le_of_closedBall_subset {Ω' : Opens E}
   let φ : ℕ → ContDiffBump (0 : E) := fun n =>
     ⟨1 / (n + 2), 1 / (n + 1), by positivity, by gcongr; norm_num⟩
   have hφ : Tendsto (fun n => (φ n).rOut) atTop (𝓝 0) := tendsto_one_div_add_atTop_nhds_zero_nat
-  let mol : (E → ℝ) → ℕ → E → ℝ := fun w n => (φ n).normed μ ⋆[lsmul ℝ ℝ, μ] w
-  -- Mollifications are smooth, keep their values in `[0, 1]`, and converge in `L¹_loc`.
-  have hsmooth {w : E → ℝ} (hw : LocallyIntegrable w μ) (n : ℕ) : ContDiff ℝ 1 (mol w n) :=
+  have hmem := ContDiffBump.normed_convolution_mem_Icc (μ := μ) (G := E)
+  have hsmooth {w : E → ℝ} (hw : LocallyIntegrable w μ) (n : ℕ) :
+      ContDiff ℝ 1 ((φ n).normed μ ⋆[lsmul ℝ ℝ, μ] w) :=
     (φ n).hasCompactSupport_normed.contDiff_convolution_left _ (φ n).contDiff_normed hw
-  have hmem {w : E → ℝ} (hw : LocallyIntegrable w μ) (hw01 : ∀ x, w x ∈ Icc (0 : ℝ) 1)
-      (n : ℕ) (x : E) : mol w n x ∈ Icc (0 : ℝ) 1 := by
-    have hexists := ((φ n).hasCompactSupport_normed (μ := μ)).convolutionExists_left
-      (lsmul ℝ ℝ) (φ n).continuous_normed hw x
-    exact ⟨le_convolution_lsmul_of_forall_le (μ := μ) (φ n).support_normed_eq.subset
-      (φ n).nonneg_normed (φ n).integral_normed hexists fun y _ => (hw01 y).1,
-      convolution_lsmul_le_of_forall_le (μ := μ) (φ n).support_normed_eq.subset
-      (φ n).nonneg_normed (φ n).integral_normed hexists fun y _ => (hw01 y).2⟩
-  have hlim {w : E → ℝ} (hw : LocallyIntegrable w μ) {K : Set E} (hK : IsCompact K) :
-      Tendsto (fun n => ∫⁻ x in K, ‖mol w n x - w x‖ₑ ∂μ) atTop (𝓝 0) :=
-    tendsto_setLIntegral_enorm_normed_convolution_sub hφ hw hK
-  -- Products and `x + y - x y` of the mollifications converge in `L¹_loc` as well.
-  have hlim₂ {F : ℕ → E → ℝ} {f : E → ℝ}
-      (hF : ∀ n x, ‖F n x - f x‖ₑ ≤ ‖mol u n x - u x‖ₑ + ‖mol v n x - v x‖ₑ)
-      {K : Set E} (hK : IsCompact K) :
-      Tendsto (fun n => ∫⁻ x in K, ‖F n x - f x‖ₑ ∂μ) atTop (𝓝 0) := by
-    have hsum := (hlim hu hK).add (hlim hv hK)
-    rw [add_zero] at hsum
-    refine tendsto_of_tendsto_of_tendsto_of_le_of_le tendsto_const_nhds hsum
-      (fun _ => zero_le) fun n => ?_
-    rw [← lintegral_add_left' (f := fun x => ‖mol u n x - u x‖ₑ)
-      (((hsmooth hu n).continuous.aestronglyMeasurable.sub hu.aestronglyMeasurable).restrict.enorm)]
-    exact lintegral_mono (hF n)
-  have hmul (n : ℕ) (x : E) : ‖(mol u n * mol v n) x - (u * v) x‖ₑ ≤
-      ‖mol u n x - u x‖ₑ + ‖mol v n x - v x‖ₑ := by
-    simp only [Pi.mul_apply, ← ofReal_norm, Real.norm_eq_abs,
-      ← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]
-    exact ENNReal.ofReal_le_ofReal (abs_mul_sub_mul_le (abs_le.2 ⟨by linarith [(hu01 x).1],
-      (hu01 x).2⟩) (abs_le.2 ⟨by linarith [(hmem hv hv01 n x).1], (hmem hv hv01 n x).2⟩))
-  have hunion (n : ℕ) (x : E) :
-      ‖(mol u n + mol v n - mol u n * mol v n) x - (u + v - u * v) x‖ₑ ≤
-        ‖mol u n x - u x‖ₑ + ‖mol v n x - v x‖ₑ := by
-    simp only [Pi.add_apply, Pi.sub_apply, Pi.mul_apply, ← ofReal_norm, Real.norm_eq_abs,
-      ← ENNReal.ofReal_add (abs_nonneg _) (abs_nonneg _)]
-    refine ENNReal.ofReal_le_ofReal ?_
-    have hU := hmem hu hu01 n x
-    calc _ = |(1 - u x) * (1 - v x) - (1 - mol u n x) * (1 - mol v n x)| := by
-          congr 1
-          ring
-      _ ≤ |(1 - u x) - (1 - mol u n x)| + |(1 - v x) - (1 - mol v n x)| :=
-          abs_mul_sub_mul_le (abs_le.2 ⟨by linarith [hU.2], by linarith [hU.1]⟩)
-            (abs_le.2 ⟨by linarith [(hv01 x).2], by linarith [(hv01 x).1]⟩)
-      _ = |mol u n x - u x| + |mol v n x - v x| := by ring_nf
-  -- Lower semicontinuity on `Ω'`.
-  have hli {w : E → ℝ} (hw : ContDiff ℝ 1 w) : LocallyIntegrableOn w Ω' μ :=
-    hw.continuous.locallyIntegrable.locallyIntegrableOn _
-  have huv : LocallyIntegrable (u * v) μ :=
-    (locallyIntegrable_const (1 : ℝ)).mono (hu.aestronglyMeasurable.mul hv.aestronglyMeasurable)
-      (ae_of_all _ fun x => by
-        rw [Pi.mul_apply, norm_mul, norm_one]
-        exact (mul_le_mul (abs_le.2 ⟨by linarith [(hu01 x).1], (hu01 x).2⟩)
-          (abs_le.2 ⟨by linarith [(hv01 x).1], (hv01 x).2⟩) (abs_nonneg _) zero_le_one).trans_eq
-          (one_mul 1))
-  have hlsc₁ := totalVariationOn_le_liminf (Ω := Ω') (l := atTop)
-    (.of_forall fun n => hli ((hsmooth hu n).mul (hsmooth hv n))) (huv.locallyIntegrableOn _)
-    fun K hK _ => hlim₂ hmul hK
-  have hlsc₂ := totalVariationOn_le_liminf (Ω := Ω') (l := atTop)
-    (.of_forall fun n => hli (((hsmooth hu n).add (hsmooth hv n)).sub
-      ((hsmooth hu n).mul (hsmooth hv n))))
-    (((hu.add hv).sub huv).locallyIntegrableOn _) fun K hK _ => hlim₂ hunion hK
   -- Once the radii are at most `r`, mollification does not increase variation from `Ω` to `Ω'`.
   have hsmall : ∀ᶠ n in atTop, (φ n).rOut ≤ r := hφ.eventually (ge_mem_nhds hr)
-  refine (add_le_add hlsc₁ hlsc₂).trans <| (ENNReal.le_liminf_add _ _).trans <|
+  refine (totalVariationOn_mul_add_le_liminf_normed_convolution hφ hu hv hu01 hv01).trans <|
     (liminf_le_liminf (hsmall.mono fun n hn => ?_)).trans_eq (liminf_const _)
   have hball (x : E) (hx : x ∈ Ω') : closedBall x (φ n).rOut ⊆ Ω :=
     (closedBall_subset_closedBall hn).trans (hΩ x hx)
-  exact (totalVariationOn_mul_add_le_of_contDiff (hsmooth hu n) (hsmooth hv n) (hmem hu hu01 n)
-    (hmem hv hv01 n)).trans (add_le_add
+  exact (totalVariationOn_mul_add_le_of_contDiff (hsmooth hu n) (hsmooth hv n)
+    (hmem (φ n) hu hu01) (hmem (φ n) hv hv01)).trans (add_le_add
       ((φ n).totalVariationOn_normed_convolution_le (hu.locallyIntegrableOn _) hball)
       ((φ n).totalVariationOn_normed_convolution_le (hv.locallyIntegrableOn _) hball))
 
