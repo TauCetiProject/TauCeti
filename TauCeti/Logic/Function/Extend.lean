@@ -16,6 +16,9 @@ public import Mathlib.Tactic.Coe
 A function `a` on `ℕ` extends to `ℤ` along the cast `ℕ → ℤ` by `Function.extend`, with a
 fallback function `e` supplying the values off the range of the cast. This file records that the
 negative integers lie off that range, so the extension agrees with the fallback there.
+Translated extensions can be checked before the anchor and at natural-number offsets.
+For a function constant before a natural anchor, extending its tail and translating gives
+the same integer function as extending the original function.
 
 A function `g` on a subset `t` extends to the whole type along `Subtype.val`, for instance by
 zero. Restricting `g` to a smaller subset `s` before extending does not change the extension at
@@ -38,6 +41,39 @@ negative integers. -/
 theorem extend_natCast_of_neg {α : Sort*} (a : ℕ → α) (e : ℤ → α) {n : ℤ} (hn : n < 0) :
     extend ((↑) : ℕ → ℤ) a e n = e n :=
   extend_apply' _ _ _ fun ⟨m, hm⟩ => by omega
+
+/-- To prove a property of a translated natural-number extension, it suffices to check
+integers below the anchor and natural-number offsets from it. -/
+@[elab_as_elim]
+theorem extend_natCast_sub_induction {α : Sort*} (a : ℕ → α) (e : α) (s n : ℤ)
+    {P : ℤ → α → Prop} (hlt : ∀ n, n < s → P n e)
+    (hadd : ∀ k : ℕ, P (s + k) (a k)) :
+    P n (extend ((↑) : ℕ → ℤ) a (fun _ => e) (n - s)) := by
+  rcases lt_or_ge n s with hn | hn
+  · rw [extend_natCast_of_neg _ _ (by omega)]
+    exact hlt n hn
+  · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = s + k := ⟨(n - s).toNat, by omega⟩
+    have hoff : s + (k : ℤ) - s = (k : ℤ) := by omega
+    rw [hoff, Injective.extend_apply (fun _ _ h => Int.natCast_inj.mp h)]
+    exact hadd k
+
+/-- If a natural-indexed function is constant before `s`, its integer extension is
+obtained by extending its tail and translating the index by `s`. -/
+theorem extend_natCast_sub_natCast {α : Sort*} (a : ℕ → α) (e : α) (s : ℕ)
+    (ha : ∀ k < s, a k = e) (n : ℤ) :
+    extend ((↑) : ℕ → ℤ) (fun k => a (s + k)) (fun _ => e) (n - (s : ℤ)) =
+      extend ((↑) : ℕ → ℤ) a (fun _ => e) n := by
+  refine extend_natCast_sub_induction _ e (s : ℤ) n
+    (P := fun n y => y = extend ((↑) : ℕ → ℤ) a (fun _ => e) n) ?_ ?_
+  · intro n hn
+    by_cases hn0 : n < 0
+    · rw [extend_natCast_of_neg _ _ hn0]
+    · obtain ⟨k, rfl⟩ : ∃ k : ℕ, n = (k : ℤ) := ⟨n.toNat, by omega⟩
+      rw [Injective.extend_apply (fun _ _ h => Int.natCast_inj.mp h)]
+      exact (ha k (by omega)).symm
+  · intro k
+    have hcast : (s : ℤ) + (k : ℤ) = ((s + k : ℕ) : ℤ) := by omega
+    rw [hcast, Injective.extend_apply (fun _ _ h => Int.natCast_inj.mp h)]
 
 /-- Extending a function on `t` along `Subtype.val`, or first restricting it to a subset `s ⊆ t`,
 gives the same value at a point `a` that lies in `s` whenever it lies in `t`: both are `g a` if
