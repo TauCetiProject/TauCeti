@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Normed.Module.Connected
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Comparison
 public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.FirstHomology
+public import TauCeti.AlgebraicTopology.Homotopy.LoopSpace.Hurewicz
 public import TauCeti.AlgebraicTopology.Homotopy.Relative.Skeleton
 public import TauCeti.AlgebraicTopology.Singular.Sphere
 public import TauCeti.Analysis.Normed.Module.Ball.Homeomorph
@@ -22,8 +23,10 @@ The unit sphere `Sⁿ` of an `(n + 1)`-dimensional real normed space is `(n - 1)
 `πₖ(Sⁿ, x)` is trivial for every `k < n`, in every degree including `π₀`
 (`TauCeti.subsingleton_homotopyGroup_sphere_of_lt`). Consequently, by the Hurewicz theorem and
 the homology of spheres, `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2` (`TauCeti.homotopyGroupSphereAddEquiv`),
-and the double Moore loop space of `S³` has first integral homology `ℤ`
-(`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`).
+the double Moore loop space of `S³` has first integral homology `ℤ`
+(`TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`), and for `m ≥ 4` the double Moore loop
+space of `Sᵐ` has integral homology `ℤ` in degree `m - 2`
+(`TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`).
 
 The vanishing follows from cellular compression, as in Hatcher's Corollary 4.12. The sphere
 `Sⁿ` has a CW structure with one `0`-cell and one `n`-cell (`TauCeti.sphereCWComplex`), so its
@@ -42,13 +45,14 @@ basis, so its sign depends on the orientation of that basis.
 * `TauCeti.subsingleton_homotopyGroup_sphere_of_lt`: `πₖ(Sⁿ, x)` is trivial for `k < n`.
 * `TauCeti.homotopyGroupSphereAddEquiv`: `πₙ(Sⁿ, x) ≅ ℤ` for `n ≥ 2`, given an orthonormal basis.
 * `TauCeti.MooreLoopSpace.doubleFirstHomologySphereAddEquiv`: `H₁(ΩᴹΩᴹS³; ℤ) ≅ ℤ`.
+* `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv`: `Hₘ₋₂(ΩᴹΩᴹSᵐ; ℤ) ≅ ℤ` for `m ≥ 4`.
 
 ## References
 
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
   Section 4.1, Corollaries 4.9 and 4.12, and Section 4.2, Corollary 4.25.
 * J.-F. Barraud, M. Damian, V. Humilière, A. Oancea, *Floer homology with DG coefficients.
-  Applications to cotangent bundles*, arXiv:2404.07953, Proposition 5.11.
+  Applications to cotangent bundles*, arXiv:2404.07953, Propositions 5.11 and 6.21.
 -/
 
 public section
@@ -149,6 +153,32 @@ theorem MooreLoopSpace.doubleFirstHomologySphereAddEquiv_apply
       (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1))).homology 1) :
     doubleFirstHomologySphereAddEquiv b x a =
       homotopyGroupSphereAddEquiv (n := 1) b x ((doubleFirstHomologyAddEquiv x).symm a) :=
+  (rfl)
+
+/-- **The double loop space of `Sⁿ⁺⁴` has homology `ℤ` in degree `n + 2`.** For the unit sphere
+`Sⁿ⁺⁴` of a real inner product space with an orthonormal basis `b` indexed by `Fin (n + 5)`, the
+integral homology of the double Moore loop space `ΩᴹΩᴹSⁿ⁺⁴` in degree `n + 2` is
+`πₙ₊₄(Sⁿ⁺⁴) ≅ ℤ`, through the Hurewicz identification
+`TauCeti.MooreLoopSpace.doubleHomologyAddEquiv` and `TauCeti.homotopyGroupSphereAddEquiv`. -/
+def MooreLoopSpace.doubleHomologySphereAddEquiv (b : OrthonormalBasis (Fin (n + 5)) ℝ E)
+    (x : sphere (0 : E) 1) :
+    ((singularChains ℤ).obj
+      (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1))).homology (n + 2) ≃+
+        ℤ :=
+  (doubleHomologyAddEquiv x n fun _ hk ↦
+      subsingleton_homotopyGroup_sphere_of_basis b (by simpa using hk) x).symm.trans
+    (homotopyGroupSphereAddEquiv (n := n + 2) b x)
+
+/-- `TauCeti.MooreLoopSpace.doubleHomologySphereAddEquiv` is the inverse of the Hurewicz
+identification for the double Moore loop space followed by
+`TauCeti.homotopyGroupSphereAddEquiv`. -/
+theorem MooreLoopSpace.doubleHomologySphereAddEquiv_apply
+    (b : OrthonormalBasis (Fin (n + 5)) ℝ E) (x : sphere (0 : E) 1)
+    (hX : ∀ k < n + 2, Subsingleton (π_ (k + 2) (sphere (0 : E) 1) x))
+    (a : ((singularChains ℤ).obj
+      (TopCat.of (MooreLoopSpace (MooreLoopSpace (sphere (0 : E) 1) x) 1))).homology (n + 2)) :
+    doubleHomologySphereAddEquiv b x a =
+      homotopyGroupSphereAddEquiv (n := n + 2) b x ((doubleHomologyAddEquiv x n hX).symm a) :=
   (rfl)
 
 end Hurewicz
