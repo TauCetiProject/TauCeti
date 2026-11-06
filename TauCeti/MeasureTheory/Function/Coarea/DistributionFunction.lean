@@ -11,7 +11,9 @@ import Mathlib.Analysis.Calculus.Deriv.Slope
 import Mathlib.Analysis.Calculus.FDeriv.Measurable
 import Mathlib.Analysis.Calculus.Monotone
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
-import TauCeti.Analysis.InnerProductSpace.NormDet
+import Mathlib.Topology.Perfect
+import TauCeti.Analysis.Calculus.FDeriv.Basic
+import TauCeti.Analysis.Calculus.FDeriv.Measurable
 
 /-!
 # The distribution function and regular level integrals
@@ -28,8 +30,9 @@ level integrals recover the volume of the regular part of every preimage:
 
 `|h⁻¹(I) ∩ R| = ∫_I m(t) dt`
 
-for every measurable `I ⊆ ℝ` (`MeasureTheory.volume_preimage_inter_setOf_fderiv_ne_zero`). No
-measurability, continuity or Lipschitz hypothesis on `h` is needed.
+for every measurable `I ⊆ ℝ` (`MeasureTheory.volume_preimage_inter_setOf_fderiv_ne_zero`, in
+`TauCeti.MeasureTheory.Function.Coarea.Integral`). No measurability, continuity or Lipschitz
+hypothesis on `h` is needed.
 
 The critical set `{Dh = 0}` can only add volume to the superlevel sets. So if the distribution
 function `μ(t) = |{h > t}|` is finite for `t > 0`, it is differentiable at almost every `t > 0`,
@@ -46,10 +49,6 @@ of `{h > t}`.
 
 ## Main results
 
-* `MeasureTheory.measurableSet_preimage_inter_setOf_fderiv_ne_zero`: the regular part of the
-  preimage of a measurable set is measurable.
-* `MeasureTheory.volume_preimage_inter_setOf_fderiv_ne_zero`: the volume of the regular part of
-  `h⁻¹(I)` is the integral of the level integrals over `I`.
 * `MeasureTheory.ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv`: `m(t) ≤ -μ'(t)` for almost
   every `t > 0`.
 
@@ -71,82 +70,6 @@ namespace MeasureTheory
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] {h : E → ℝ}
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
-/-- A function is differentiable wherever its totalized derivative does not vanish. -/
-private theorem differentiableAt_of_fderiv_ne_zero {x : E} (hx : fderiv ℝ h x ≠ 0) :
-    DifferentiableAt ℝ h x := by
-  by_contra hnd
-  exact hx (fderiv_zero_of_not_differentiableAt hnd)
-
-/-- The regular part `h⁻¹(I) ∩ {Dh ≠ 0}` of the preimage of a measurable set is measurable, for
-every function `h`: the function is continuous on its regular set, which is measurable. -/
-theorem measurableSet_preimage_inter_setOf_fderiv_ne_zero {I : Set ℝ} (hI : MeasurableSet I) :
-    MeasurableSet (h ⁻¹' I ∩ {x | fderiv ℝ h x ≠ 0}) := by
-  classical
-  have hR : MeasurableSet {x | fderiv ℝ h x ≠ 0} :=
-    (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
-  have hk : Measurable ({x | fderiv ℝ h x ≠ 0}.piecewise h 0) :=
-    ContinuousOn.measurable_piecewise
-      (fun x hx ↦ (differentiableAt_of_fderiv_ne_zero hx).continuousAt.continuousWithinAt)
-      continuousOn_const hR
-  convert (hk hI).inter hR using 1
-  ext x
-  simp only [mem_inter_iff, mem_preimage, and_congr_left_iff]
-  intro hx
-  rw [piecewise_eq_of_mem _ _ _ hx]
-
-/-- **The coarea formula for the regular part of a preimage.** For every function `h` and
-measurable set `I`, the volume of the regular part `h⁻¹(I) ∩ {Dh ≠ 0}` is the integral over `I`
-of the level integrals `∫_{{h = t} ∩ {Dh ≠ 0}} ‖Dh‖⁻¹ dHⁿ⁻¹`. Both sides may be infinite. -/
-theorem volume_preimage_inter_setOf_fderiv_ne_zero {I : Set ℝ} (hI : MeasurableSet I) :
-    volume (h ⁻¹' I ∩ {x | fderiv ℝ h x ≠ 0}) =
-      ∫⁻ t in I, ∫⁻ x in {x | fderiv ℝ h x ≠ 0} ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹
-        ∂μHE[finrank ℝ E - 1] := by
-  set R := {x | fderiv ℝ h x ≠ 0}
-  have hR : MeasurableSet R := (measurableSet_singleton 0).compl.preimage (measurable_fderiv ℝ h)
-  have hsurj (x : E) (hx : x ∈ R) : Surjective (fderiv ℝ h x) := fun y ↦ by
-    obtain ⟨v, hv⟩ := DFunLike.ne_iff.1 hx
-    exact ⟨(y / fderiv ℝ h x v) • v, by simp [div_mul_cancel₀ y hv]⟩
-  -- The weight `1_I(h) ‖Dh‖⁻¹`, written through a measurable function agreeing with `h` on `R`.
-  let w : E → ℝ≥0∞ := (h ⁻¹' I ∩ R).indicator fun x ↦ ‖fderiv ℝ h x‖ₑ⁻¹
-  have hw : Measurable w := (measurable_fderiv ℝ h).enorm.inv.indicator
-    (measurableSet_preimage_inter_setOf_fderiv_ne_zero hI)
-  have hcoarea := lintegral_normDet_adjoint_fderiv_mul_eq_lintegral_setLIntegral_fiber
-    hR.nullMeasurableSet (fun x hx ↦ differentiableAt_of_fderiv_ne_zero hx) hsurj hw
-  rw [finrank_self] at hcoarea
-  -- On `R` the coarea Jacobian `‖Dh‖` cancels the weight.
-  have hlhs : ∫⁻ x in R, ENNReal.ofReal (fderiv ℝ h x).adjoint.normDet * w x =
-      ∫⁻ x in R, (h ⁻¹' I ∩ R).indicator 1 x := by
-    refine setLIntegral_congr_fun hR fun x hx ↦ ?_
-    dsimp only [w]
-    by_cases hxI : x ∈ h ⁻¹' I ∩ R
-    · rw [indicator_of_mem hxI, indicator_of_mem hxI,
-        ContinuousLinearMap.normDet_adjoint_eq_norm, Pi.one_apply, ofReal_norm]
-      exact ENNReal.mul_inv_cancel (ENNReal.coe_ne_zero.2 (nnnorm_ne_zero_iff.2 hx)) (by simp)
-    · rw [indicator_of_notMem hxI, indicator_of_notMem hxI, mul_zero]
-  -- On the fiber over `t` the weight is `‖Dh‖⁻¹` if `t ∈ I` and zero otherwise.
-  have hrhs (t : ℝ) : ∫⁻ x in R ∩ h ⁻¹' {t}, w x ∂μHE[finrank ℝ E - 1] =
-      I.indicator (fun t ↦ ∫⁻ x in R ∩ h ⁻¹' {t}, ‖fderiv ℝ h x‖ₑ⁻¹ ∂μHE[finrank ℝ E - 1]) t := by
-    have hfib : MeasurableSet (R ∩ h ⁻¹' {t}) := by
-      rw [inter_comm]
-      exact measurableSet_preimage_inter_setOf_fderiv_ne_zero (measurableSet_singleton t)
-    dsimp only [w]
-    by_cases htI : t ∈ I
-    · rw [indicator_of_mem htI]
-      refine setLIntegral_congr_fun hfib fun x hx ↦ ?_
-      have hxt : h x = t := hx.2
-      exact indicator_of_mem (show x ∈ h ⁻¹' I ∩ R from ⟨by rwa [mem_preimage, hxt], hx.1⟩) _
-    · rw [indicator_of_notMem htI]
-      refine (setLIntegral_congr_fun hfib fun x hx ↦ ?_).trans (lintegral_zero)
-      have hxt : h x = t := hx.2
-      refine indicator_of_notMem (show x ∉ h ⁻¹' I ∩ R from fun h' ↦ htI ?_) _
-      rw [← hxt]
-      exact h'.1
-  have hm := measurableSet_preimage_inter_setOf_fderiv_ne_zero (h := h) hI
-  rw [hlhs, lintegral_indicator_one hm, restrict_apply hm, inter_assoc, inter_self] at hcoarea
-  rw [hcoarea, lintegral_congr hrhs]
-  exact lintegral_indicator hI _
-
 /-- The critical set only adds volume between two levels: for `u ≤ v`, the superlevel set
 `{h > u}` contains `{h > v}` and the regular part of the slab `{u < h ≤ v}`, whose volume is the
 integral of the level integrals over `(u, v]`. -/
@@ -161,7 +84,7 @@ private theorem measureReal_setOf_lt_add_toReal_setLIntegral_le {u v : ℝ} (huv
       volume {x | u < h x} := by
     rw [← volume_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioc, ← measure_union
       (disjoint_left.2 fun x (hx : v < h x) (hx' : x ∈ h ⁻¹' Ioc u v ∩ _) ↦ not_lt.2 hx'.1.2 hx)
-      (measurableSet_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioc)]
+      (TauCeti.measurableSet_preimage_inter_setOf_fderiv_ne_zero measurableSet_Ioc)]
     exact measure_mono (union_subset (fun x hx ↦ huv.trans_lt hx) fun x hx ↦ hx.1.1)
   rw [measureReal_def, measureReal_def, ← ENNReal.toReal_add
     (ne_top_of_le_ne_top hu (le_self_add.trans hle))
@@ -181,7 +104,7 @@ private theorem ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv_of_lt {c : 
   have hm : AEMeasurable m := by
     have := aemeasurable_setLIntegral_fiber_of_hasFDerivWithinAt (F := ℝ) volume
       hR.nullMeasurableSet
-      (fun x hx ↦ (differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
+      (fun x hx ↦ (TauCeti.differentiableAt_of_fderiv_ne_zero hx).hasFDerivAt.hasFDerivWithinAt)
       (measurable_fderiv ℝ h).enorm.inv
     simpa only [finrank_self, Pi.inv_apply] using this
   -- The level integrals have finite integral over `(c, ∞)`.
@@ -215,17 +138,14 @@ private theorem ae_setLIntegral_inv_enorm_fderiv_le_ofReal_neg_deriv_of_lt {c : 
     (ae_restrict_iff' measurableSet_Ioi).1 hfinite] with t hdiff hderiv hfin_t hct
   have hdμ : DifferentiableAt ℝ μr t := by
     simpa using ((hdiff (hc.trans hct)).differentiableAt (Ioi_mem_nhds (hc.trans hct))).neg
-  have hacc : AccPt t (𝓟 (Ioi c)) := accPt_iff_nhds.2 fun U hU ↦ by
-    have hmem : U ∩ Ioi c ∩ Ioi t ∈ 𝓝[>] t :=
-      inter_mem (mem_nhdsWithin_of_mem_nhds (inter_mem hU (Ioi_mem_nhds hct))) self_mem_nhdsWithin
-    obtain ⟨y, hy, hty⟩ := Filter.nonempty_of_mem hmem
-    exact ⟨y, hy, hty.ne'⟩
+  have hacc : AccPt t (𝓟 (Ioi c)) := isOpen_Ioi.preperfect t hct
   have hnonpos :=
     ((hdμ.hasDerivAt.add (hderiv c)).hasDerivWithinAt).nonpos_of_antitoneOn hacc hanti
-  rw [show g t = (m t).toReal from indicator_of_mem hct _] at hnonpos
-  change m t ≤ _
-  rw [← ENNReal.ofReal_toReal (hfin_t hct).ne]
-  exact ENNReal.ofReal_le_ofReal (by linarith)
+  have hgt : g t = (m t).toReal := indicator_of_mem hct _
+  rw [hgt] at hnonpos
+  have hle : (m t).toReal ≤ -deriv μr t := by linarith
+  calc m t = ENNReal.ofReal (m t).toReal := (ENNReal.ofReal_toReal (hfin_t hct).ne).symm
+    _ ≤ ENNReal.ofReal (-deriv μr t) := ENNReal.ofReal_le_ofReal hle
 
 /-- **The level integrals are bounded by the derivative of the distribution function.** If the
 superlevel sets `{h > t}` have finite volume for `t > 0`, then at almost every `t > 0`
