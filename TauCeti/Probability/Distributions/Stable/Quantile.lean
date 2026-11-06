@@ -112,7 +112,6 @@ theorem tendsto_quantile_stableMeasure_nhdsLT_one_of_abs_lt_one (hα : α ∈ Io
       (by linarith : x < x + 1)).trans_le (cdf_le_one _ (x + 1))
 
 /-- Every interior quantile of a valid zero-scale stable law equals its location. -/
-@[simp]
 theorem quantile_stableMeasure_zero_scale (hα : α ∈ Ioc 0 2) (hβ : |β| ≤ 1)
     (hu : u ∈ Ioo 0 1) (m : ℝ) : (stableMeasure α β 0 m).quantile u = m := by
   rw [stableMeasure_zero_scale hα hβ, Measure.quantile_dirac m hu.1 hu.2.le]
