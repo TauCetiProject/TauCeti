@@ -42,8 +42,12 @@ orthogonal projection onto `(ker u)ᗮ`, or merely some star projection.
   the adjoint of a partial isometry is a partial isometry.
 * `ContinuousLinearMap.isPartialIsometry_iff_starMul`, `LinearMap.isPartialIsometry_iff_starMul`:
   on endomorphisms the rectangular predicate agrees with the star-monoid predicate.
+* `ContinuousLinearMap.IsPartialIsometry.adjoint_comp_comp_comp_of_mapsTo`: compression
+  `u† T u` along a bounded partial isometry is multiplicative when the right factor preserves the
+  range of `u`.
 * `LinearIsometry.isPartialIsometry_toContinuousLinearMap`,
-  `LinearIsometry.isPartialIsometry_toLinearMap`: linear isometries are partial isometries.
+  `LinearIsometry.isPartialIsometry_toLinearMap`: linear isometries are partial isometries, and
+  `LinearIsometry.apply_adjoint_apply_of_mem_range`: `f f†` fixes the range of `f`.
 * `LinearMap.adjoint_comp_eq_zero_of_comp_adjoint_add_eq_id`: complementary final operators
   have orthogonal cross blocks if one block is a partial isometry.
 
@@ -91,6 +95,20 @@ theorem IsPartialIsometry.comp_adjoint_comp (hu : u.IsPartialIsometry) : u ∘L 
 theorem IsPartialIsometry.apply_adjoint_apply (hu : u.IsPartialIsometry) (x : E) :
     u ((u†) (u x)) = u x :=
   congr($hu x)
+
+/-- A bounded partial isometry `u` satisfies `u u† y = y` on its range. -/
+theorem IsPartialIsometry.apply_adjoint_apply_of_mem_range (hu : u.IsPartialIsometry) {y : F}
+    (hy : y ∈ Set.range u) : u ((u†) y) = y := by
+  obtain ⟨x, rfl⟩ := hy
+  exact hu.apply_adjoint_apply x
+
+/-- Compression `u† T u` along a bounded partial isometry `u` is multiplicative when the right
+factor preserves the range of `u`. -/
+theorem IsPartialIsometry.adjoint_comp_comp_comp_of_mapsTo (hu : u.IsPartialIsometry)
+    (S : F →L[𝕜] F) {T : F →L[𝕜] F} (hT : Set.MapsTo T (Set.range u) (Set.range u)) :
+    u† ∘L (S ∘L T) ∘L u = (u† ∘L S ∘L u) ∘L (u† ∘L T ∘L u) := by
+  ext x
+  simp only [comp_apply, hu.apply_adjoint_apply_of_mem_range (hT ⟨x, rfl⟩)]
 
 /-- A bounded partial isometry is a partial isometry in the star monoid of endomorphisms. -/
 theorem isPartialIsometry_iff_starMul {u : E →L[𝕜] E} :
@@ -217,6 +235,13 @@ theorem LinearIsometry.isPartialIsometry_toContinuousLinearMap [CompleteSpace E]
     (f : E →ₗᵢ[𝕜] F) : f.toContinuousLinearMap.IsPartialIsometry := by
   rw [ContinuousLinearMap.isPartialIsometry_iff, f.adjoint_comp_self,
     ContinuousLinearMap.one_def, ContinuousLinearMap.comp_id]
+
+/-- A linear isometry `f` between complete inner product spaces satisfies `f f† y = y` on its
+range. -/
+theorem LinearIsometry.apply_adjoint_apply_of_mem_range [CompleteSpace E] [CompleteSpace F]
+    (f : E →ₗᵢ[𝕜] F) {y : F} (hy : y ∈ Set.range f) :
+    f (ContinuousLinearMap.adjoint f.toContinuousLinearMap y) = y :=
+  f.isPartialIsometry_toContinuousLinearMap.apply_adjoint_apply_of_mem_range hy
 
 namespace LinearMap
 

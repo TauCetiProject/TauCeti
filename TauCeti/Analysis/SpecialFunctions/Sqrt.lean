@@ -13,8 +13,9 @@ public import Mathlib.Analysis.SpecialFunctions.Sqrt
 Two estimates comparing the real square-root and inverse-square-root functions
 with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
-`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, and that `c √u` tends to `0` as `u → 0`, and through
-positive values as `u → 0⁺` when `c > 0`.
+`1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `c √u` tends to `0` as `u → 0`, and through
+positive values as `u → 0⁺` when `c > 0`, and the cancellation `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`
+used in changes of variables.
 
 ## Main results
 
@@ -23,6 +24,8 @@ positive values as `u → 0⁺` when `c > 0`.
 * `Real.abs_one_sub_inv_sqrt_le`: if `|μ - 1| ≤ δ ≤ 1/2`,
   `|1 - (√μ)⁻¹| ≤ δ`.
 * `Real.abs_sqrt_sub_sqrt_le`: for all reals `t` and `s`, `|√t - √s| ≤ √|t - s|`.
+* `Real.abs_mul_inv_sqrt_sq_mul_mul`: for `d ≠ 0` and `0 ≤ c`,
+  `|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`.
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
@@ -109,6 +112,14 @@ theorem abs_sqrt_sub_sqrt_le (t s : ℝ) : |√t - √s| ≤ √|t - s| := by
   have h₂ := sqrt_le_sqrt_add_sqrt_abs_sub s t
   rw [abs_sub_comm s t] at h₂
   exact abs_sub_le_iff.2 ⟨by linarith, by linarith⟩
+
+/-- **A square factor cancels against its absolute value.** For `d ≠ 0` and `0 ≤ c`,
+`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹`. This is the cancellation of the Jacobian `|d|` of a change
+of variables against the square root of an integrand that has acquired the factor `d²`. -/
+theorem abs_mul_inv_sqrt_sq_mul_mul {d c : ℝ} (hd : d ≠ 0) (hc : 0 ≤ c) (p : ℝ) :
+    |d| * (√(d ^ 2 * c * p))⁻¹ = (√c)⁻¹ * (√p)⁻¹ := by
+  rw [sqrt_mul (mul_nonneg (sq_nonneg d) hc), sqrt_mul (sq_nonneg d), sqrt_sq_eq_abs, mul_inv,
+    mul_inv, mul_assoc, mul_inv_cancel_left₀ (abs_ne_zero.2 hd)]
 
 /-- For every `c`, `c √u` tends to `0` as `u → 0`. -/
 theorem tendsto_mul_sqrt_nhds_zero (c : ℝ) : Tendsto (fun u => c * √u) (𝓝 0) (𝓝 0) := by
