@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Restrict
+import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 /-!
@@ -269,10 +271,12 @@ private theorem exceptional_displacement_ker_eq_range
   -- `associated Q` is definitionally the polar form scaled by `⅟ 2`.
   have hB_apply (x y : V) : B x y = ⅟(2 : K) • QuadraticMap.polar Q x y := rfl
   have hQf' (x : V) : Q (f x) = 0 := hQf x
-  have hff (x y : V) : QuadraticMap.polar Q (f x) (f y) = 0 := by
-    have hsum := hQf' (x + y)
-    rw [map_add, QuadraticMap.map_add Q, hQf' x, hQf' y, zero_add] at hsum
-    simpa using hsum
+  have hrange_isotropic : Q.IsTotallyIsotropic (LinearMap.range f) := by
+    refine QuadraticMap.isTotallyIsotropic_iff.mpr ?_
+    rintro _ ⟨z, rfl⟩
+    exact hQf' z
+  have hff (x y : V) : QuadraticMap.polar Q (f x) (f y) = 0 :=
+    hrange_isotropic.polar_eq_zero ⟨x, rfl⟩ ⟨y, rfl⟩
   have hf_polar (x y : V) :
       QuadraticMap.polar Q (f x) y = -QuadraticMap.polar Q x (f y) := by
     have hpreserve := QuadraticMap.polar_apply_of_mem_orthogonalGroup g.2 x y
@@ -295,11 +299,11 @@ private theorem exceptional_displacement_ker_eq_range
     rw [hker_range]
     rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
     rw [hB_apply, hff, smul_zero]
-  have hker_isotropic : ∀ x ∈ LinearMap.ker f, Q x = 0 := fun x hx ↦
+  have hker_isotropic : Q.IsTotallyIsotropic (LinearMap.ker f) :=
+    QuadraticMap.isTotallyIsotropic_iff.mpr fun x hx ↦
     by_contra fun hxQ ↦ (hexceptional x hxQ).1 (sub_eq_zero.mp (LinearMap.mem_ker.mp hx))
   have hker_le_orthogonal : LinearMap.ker f ≤ B.orthogonal (LinearMap.ker f) := fun x hx y hy ↦ by
-    simp [hB_apply, QuadraticMap.polar, hker_isotropic _ (add_mem hy hx), hker_isotropic y hy,
-      hker_isotropic x hx]
+    rw [hB_apply, hker_isotropic.polar_eq_zero hy hx, smul_zero]
   have horthogonal_ker : B.orthogonal (LinearMap.ker f) = LinearMap.range f := by
     rw [hker_range, B.orthogonal_orthogonal hB hBsymm.isRefl]
   refine ⟨LinearMap.ext fun x ↦ by
@@ -365,26 +369,6 @@ private theorem reflectionWord_restrict_apply_of_isOrtho (Q : QuadraticForm K V)
             QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) v) = v
       rw [ih]
       exact anisotropicReflection_apply_of_isOrtho Q _ v (hv _ x.1.2)
-
-/-- An orthogonal map fixing `a` restricts to an orthogonal map of the orthogonal complement of
-`a`. This is the restriction step of the dimension induction below; the induction needs only the
-existence of the restriction, so it is stated existentially instead of as a definition. -/
-private theorem exists_orthogonalGroup_restrict_apply [FiniteDimensional K V]
-    [Invertible (2 : K)] (Q : QuadraticForm K V) (g : QuadraticMap.orthogonalGroup Q) {a : V}
-    (ha : (g : V ≃ₗ[K] V) a = a) :
-    ∃ gU : QuadraticMap.orthogonalGroup
-        (Q.restrict (LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) (K ∙ a))),
-      ∀ u, (gU.1 u : V) = (g : V ≃ₗ[K] V) u := by
-  set U := LinearMap.BilinForm.orthogonal (QuadraticMap.associated Q) (K ∙ a)
-  have hgU : U.map (g : V ≃ₗ[K] V).toLinearMap = U := by
-    refine Submodule.eq_of_le_of_finrank_le ?_ (LinearEquiv.finrank_map_eq _ _).ge
-    rintro _ ⟨u, hu, rfl⟩ w hw
-    obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hw
-    rw [← ha, ← map_smul]
-    simpa only [QuadraticMap.associated_apply, ← map_add, LinearEquiv.coe_coe,
-      QuadraticMap.map_app_of_mem_orthogonalGroup g.2] using hu _ hw
-  exact ⟨⟨(g : V ≃ₗ[K] V).ofSubmodules U U hgU, QuadraticMap.mem_orthogonalGroup_iff.mpr
-    fun u ↦ QuadraticMap.map_app_of_mem_orthogonalGroup g.2 u⟩, fun _ ↦ rfl⟩
 
 /-- The fixed case of the induction step: an orthogonal map fixing an anisotropic vector `a` is
 a word of fewer than `dim V` reflections, given the result in smaller dimensions (`ih`), because

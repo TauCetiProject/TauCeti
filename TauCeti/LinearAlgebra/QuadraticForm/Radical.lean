@@ -628,12 +628,13 @@ theorem exists_orthogonal_anisotropic_of_three_le_finrank [NeZero (2 : K)]
   have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ
   by_contra! h
   -- Otherwise the complement `y^⊥` is totally isotropic, so it lies in `y^⊥⊥ = K ∙ y`.
-  have hW (w : V) (hw : w ∈ B.orthogonal (K ∙ y)) : Q w = 0 :=
-    h w (QuadraticMap.isOrtho_polarBilin.mp (hw y (Submodule.mem_span_singleton_self y))).symm
+  have hW : Q.IsTotallyIsotropic (B.orthogonal (K ∙ y)) :=
+    QuadraticMap.isTotallyIsotropic_iff.mpr fun w hw ↦ h w
+      (QuadraticMap.isOrtho_polarBilin.mp (hw y (Submodule.mem_span_singleton_self y))).symm
   have hle : B.orthogonal (K ∙ y) ≤ K ∙ y := by
     refine le_trans (fun w hw z hz ↦ ?_)
       (B.orthogonal_orthogonal hB Q.isSymm_polarBilin.isRefl (K ∙ y)).le
-    simp [B, QuadraticMap.polar, hW _ (add_mem hz hw), hW z hz, hW w hw]
+    exact hW.polar_eq_zero hz hw
   have hy := finrank_span_le_card (R := K) ({y} : Set V)
   have hmono := Submodule.finrank_mono hle
   rw [B.finrank_orthogonal hB] at hmono
