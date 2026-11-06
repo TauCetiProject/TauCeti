@@ -110,4 +110,38 @@ theorem tendsto_mul_tsum_add_one_integral (hf : AntitoneOn f (Ici 0))
   simp only [Nat.cast_zero, mul_zero, Nat.cast_add, Nat.cast_one] at hsum
   rw [hsum, mul_add, add_sub_cancel_left]
 
+/-- Finite uniform-mesh Darboux sums bracket the integral of a decreasing function.
+The endpoints of the interval are zero and the mesh times the number of cells. -/
+theorem mul_sum_le_integral_le_mul_sum {f : ℝ → ℝ} {δ : ℝ} (hδ : 0 < δ)
+    (N : ℕ) (hf : AntitoneOn f (Icc 0 (δ * N))) :
+    δ * (∑ k ∈ Finset.range N, f (δ * (k + 1))) ≤ ∫ x in 0..δ * N, f x ∧
+      (∫ x in 0..δ * N, f x) ≤ δ * (∑ k ∈ Finset.range N, f (δ * k)) := by
+  have hg : AntitoneOn (fun x => f (δ * x)) (Icc 0 (N : ℝ)) := by
+    intro x hx y hy hxy
+    exact hf ⟨mul_nonneg hδ.le hx.1, mul_le_mul_of_nonneg_left hx.2 hδ.le⟩
+      ⟨mul_nonneg hδ.le hy.1, mul_le_mul_of_nonneg_left hy.2 hδ.le⟩
+      (mul_le_mul_of_nonneg_left hxy hδ.le)
+  have heq : δ * (∫ x in (0 : ℝ)..N, f (δ * x)) = ∫ x in 0..δ * N, f x := by
+    simpa using intervalIntegral.smul_integral_comp_mul_left (a := 0) (b := N) f δ
+  have hg' : AntitoneOn (fun x => f (δ * x)) (Icc 0 (0 + (N : ℝ))) := by
+    simpa only [zero_add] using hg
+  constructor
+  · have hl := mul_le_mul_of_nonneg_left (hg'.sum_le_integral (x₀ := 0) (a := N)) hδ.le
+    simpa only [zero_add, Nat.cast_add, Nat.cast_one, heq] using hl
+  · have hu := mul_le_mul_of_nonneg_left (hg'.integral_le_sum (x₀ := 0) (a := N)) hδ.le
+    simpa only [zero_add, heq] using hu
+
+/-- A nonnegative decreasing integrable function on the positive half-line vanishes at
+infinity, without any continuity assumption. -/
+theorem tendsto_zero_of_integrableOn_Ioi (hf : AntitoneOn f (Ici 0))
+    (hi : IntegrableOn f (Ioi 0)) (hn : ∀ x ∈ Ioi (0 : ℝ), 0 ≤ f x) :
+    Tendsto f atTop (𝓝 0) := by
+  have hs := (hf.summable_of_integrableOn_Ioi_zero hi hn).tendsto_atTop_zero
+  refine tendsto_order.2 ⟨fun a ha => ?_, fun b hb => ?_⟩
+  · filter_upwards [eventually_gt_atTop (0 : ℝ)] with x hx
+    exact ha.trans_le (hn x hx)
+  · obtain ⟨n, hn'⟩ := (hs.eventually_lt_const hb).exists
+    filter_upwards [eventually_ge_atTop (n : ℝ)] with x hx
+    exact (hf (Nat.cast_nonneg n) ((Nat.cast_nonneg n).trans hx) hx).trans_lt hn'
+
 end AntitoneOn
