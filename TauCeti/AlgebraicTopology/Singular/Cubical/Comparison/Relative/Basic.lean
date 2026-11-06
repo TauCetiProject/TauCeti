@@ -165,7 +165,7 @@ theorem cubicalChainComplexXDesc_π {P : TopPair.{u}} {n : ℕ} {M : Type*} [Add
         ((cokernel.π ((normalizedCubicalChainComplex k).map P.map)).f n x) = g x := by
   rw [cubicalChainComplexXDesc, LinearMap.comp_apply, LinearEquiv.coe_coe,
     LinearMap.quotKerEquivOfSurjective_symm_apply]
-  rfl
+  exact Submodule.liftQ_apply _ g x
 
 /-- The map of relative normalized cubical chains induced by a map of pairs. -/
 def cubicalChainComplexMap {P P' : TopPair.{u}} (f : P ⟶ P') :

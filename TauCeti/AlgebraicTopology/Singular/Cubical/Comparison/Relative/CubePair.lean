@@ -227,9 +227,8 @@ private lemma exists_intCocycle (n : ℕ) :
     ((TopPair.singularCubicalHomologyIso ℤ (cubeBoundaryPair.{0} (n + 2)) (n + 2)).inv ≫
       (singularHomologyCubeBoundaryPairIso (ModuleCat.of ℤ ℤ) (n + 2)).hom).hom
   have hτ : τ (K.homologyπ (n + 2) (cubeBoundaryPairCycle ℤ (n + 1))) = 1 := by
-    rw [LinearMap.smul_apply, ModuleCat.hom_comp, LinearMap.comp_apply, hε, map_zsmul,
-      Iso.inv_hom_id_apply, smul_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one,
-      one_smul]
+    rw [LinearMap.smul_apply, ModuleCat.hom_comp, LinearMap.comp_apply, hε]
+    simp [← Units.val_mul]
   -- The relative cycles split off the relative chains; the cocycle is the one of
   -- `TauCeti.ChainComplex.kroneckerSection` for `τ`.
   refine ⟨retraction (K.iCycles (n + 2)) ≫ K.homologyπ (n + 2) ≫ ModuleCat.ofHom τ, ?_, ?_⟩
