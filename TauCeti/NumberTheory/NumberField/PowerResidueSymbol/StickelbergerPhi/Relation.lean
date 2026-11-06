@@ -14,7 +14,8 @@ import Mathlib.NumberTheory.RamificationInertia.Galois
 import Mathlib.RingTheory.DedekindDomain.AdicValuation.Ramification
 import Mathlib.RingTheory.Ideal.Int
 import TauCeti.NumberTheory.GaussSum.Stickelberger
-import TauCeti.RingTheory.RootsOfUnity.CyclotomicUnits
+import TauCeti.NumberTheory.NumberField.Cyclotomic.Ramification
+import TauCeti.NumberTheory.NumberField.Ideal.IntegersRat
 
 /-!
 # Stickelberger's relation
@@ -48,8 +49,6 @@ Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 
 ## Main results
 
-* `IsCyclotomicExtension.Rat.intValuation_sub_one_eq_exp_neg_one`: in `ℚ(ζ_{p k})` with `p ∤ k`,
-  a primitive `p`-th root of unity `ζ` has `v(ζ - 1) = 1` at every prime above `p`.
 * `Ideal.intValuation_smul_stickelbergerPhi`: `v_P(σ(Φ(P))) = ∑_{i < f} (p ^ i c(σ) mod m)`.
 * `Ideal.span_stickelbergerPhi_of_isMaximal`: `(Φ(P)) = ∏_σ (σ⁻¹ P) ^ c(σ)`.
 * `Ideal.span_stickelbergerPhi`: `(Φ(A)) = ∏_σ (σ⁻¹ A) ^ c(σ)` for `A` prime to `m`.
@@ -68,48 +67,6 @@ Away from `p`, `Φ(P)` is a unit because `Φ(P) σ_{-1}(Φ(P)) = N(P)^m`.
 public section
 
 open NumberField
-
-namespace IsDedekindDomain.HeightOneSpectrum
-
-/-- **The valuation of a rational prime.** At a prime `w` of a number field above the rational
-prime `p`, the valuation of `p` is `exp(-e)`, where `e` is the ramification index of `w`. -/
-theorem intValuation_natCast_eq_exp_neg_ramificationIdx {L : Type*} [Field L] [NumberField L]
-    (w : HeightOneSpectrum (𝓞 L)) {p : ℕ} [Fact p.Prime]
-    [w.asIdeal.LiesOver (Ideal.span {(p : ℤ)})] :
-    w.intValuation (p : 𝓞 L) = WithZero.exp (-(w.asIdeal.ramificationIdx ℤ : ℤ)) := by
-  have hp := (Fact.out : p.Prime)
-  let v : HeightOneSpectrum ℤ := ⟨Ideal.span {(p : ℤ)},
-    (Ideal.span_singleton_prime (by exact_mod_cast hp.ne_zero)).2
-      (Nat.prime_iff_prime_int.mp hp), by simp [hp.ne_zero]⟩
-  have h := intValuation_liesOver v w (p : ℤ)
-  rw [v.intValuation_singleton (by exact_mod_cast hp.ne_zero) rfl, map_natCast] at h
-  rw [← h, ← WithZero.exp_nsmul, smul_neg, nsmul_one]
-
-end IsDedekindDomain.HeightOneSpectrum
-
-namespace IsCyclotomicExtension.Rat
-
-open IsDedekindDomain Ideal
-
-/-- **`ζ - 1` is a uniformizer above `p`.** Let `L` be the `p k`-th cyclotomic field with `p`
-prime and `p ∤ k`. At every prime `w` of `L` above `p`, a primitive `p`-th root of unity `ζ`
-satisfies `v_w(ζ - 1) = 1`, because `p` has ramification index `p - 1` in `L`. -/
-theorem intValuation_sub_one_eq_exp_neg_one {L : Type*} [Field L] [NumberField L] {p k : ℕ}
-    [Fact p.Prime] [IsCyclotomicExtension {p * k} ℚ L] (hpk : ¬ p ∣ k)
-    (w : HeightOneSpectrum (𝓞 L)) [w.asIdeal.LiesOver (span {(p : ℤ)})] {ζ : 𝓞 L}
-    (hζ : IsPrimitiveRoot ζ p) : w.intValuation (ζ - 1) = WithZero.exp (-1) := by
-  have hp := (Fact.out : p.Prime)
-  have he : w.asIdeal.ramificationIdx ℤ = p - 1 := by
-    have := ramificationIdx_eq (p * k) L w.asIdeal (k := 0) (by rw [zero_add, pow_one]) hpk
-    rwa [pow_zero, one_mul] at this
-  -- `v(p) = exp(-(p - 1))` and `v(p) = v(ζ - 1) ^ (p - 1)`.
-  have h := w.intValuation_natCast_eq_exp_neg_ramificationIdx (p := p)
-  rw [he, hζ.valuation_natCast_eq_valuation_sub_one_pow w.intValuation
-    w.intValuation_le_one] at h
-  refine (pow_left_inj₀ zero_le zero_le (Nat.sub_ne_zero_of_lt hp.one_lt)).1 (h.trans ?_)
-  rw [← WithZero.exp_nsmul, smul_neg, nsmul_one]
-
-end IsCyclotomicExtension.Rat
 
 namespace Ideal
 
@@ -153,15 +110,9 @@ private theorem intValuation_smul_stickelbergerPhi_of_liesOver (hm : 2 ≤ m) {p
     exact (Nat.pow_right_injective hp.two_le h).symm
   -- The Teichmüller character `ω` at `w`, and `χ_P` through `ω`.
   have : w.asIdeal.LiesOver (span {(p : ℤ)}) := LiesOver.trans w.asIdeal P (span {(p : ℤ)})
-  have hpq : p.Coprime (absNorm P - 1) :=
-    ((Nat.coprime_self_sub_right (hq ▸ Nat.one_le_pow _ _ hp.pos)).2
-      (Nat.coprime_one_right _)).coprime_dvd_left (hq ▸ dvd_pow_self p (inertiaDeg_pos P ℤ).ne')
   have : HasEnoughRootsOfUnity (𝓞 L) (Fintype.card (𝓞 K ⧸ P) - 1) := hcard ▸ ‹_›
   obtain ⟨ω, hω⟩ := exists_mulChar_mk_eq w.asIdeal (algebraMap (𝓞 K ⧸ P) (𝓞 L ⧸ w.asIdeal))
-    (by rw [hcard, ← pow_inertiaDeg p w.asIdeal]; exact hpq.pow_left _)
-  have hχ := powerResidueSymbol_ringHomComp_eq_pow P w.asIdeal hPm
-    (by rw [← pow_inertiaDeg p w.asIdeal]
-        exact ((Nat.Prime.coprime_iff_not_dvd hp).2 hpm).pow_left _) hω
+  have hχ := powerResidueSymbol_ringHomComp_eq_pow P w.asIdeal hPm hω
   -- The additive character `ψ(x) = ζ ^ Tr(x)`.
   let ψ := (AddChar.zmodChar p hζ.pow_eq_one).compAddMonoidHom
     (Algebra.trace (ZMod p) (𝓞 K ⧸ P)).toAddMonoidHom
@@ -356,7 +307,7 @@ theorem span_stickelbergerPhi_of_isMaximal (hm : 2 ≤ m) (P : Ideal (𝓞 K)) [
   · -- Away from `p`: no `σ⁻¹ • P` is `Q`, and `Φ(P) ∉ Q` as `N P = p ^ f ∉ Q`.
     have hne (σ : Gal(K/ℚ)) : σ⁻¹ • P ≠ Q :=
       fun h ↦ hpQ (h ▸ mem_inv_pointwise_smul_iff.2 (by
-        rwa [show σ • (p : 𝓞 K) = p from map_natCast (MulSemiringAction.toRingHom _ (𝓞 K) σ) p]))
+        rwa [← MulSemiringAction.toRingEquiv_apply_apply, map_natCast]))
     simp only [hne, Finset.filter_false, Finset.sum_empty]
     refine Multiset.count_eq_zero.2 fun h ↦ hpQ ?_
     have hN := absNorm_mem_of_stickelbergerPhi_mem hm P hP

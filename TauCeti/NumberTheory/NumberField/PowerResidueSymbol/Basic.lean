@@ -243,19 +243,20 @@ section Extension
 variable {L : Type*} [Field L] [NumberField L] [Algebra K L]
 
 /-- **The power residue symbol through a multiplicative lift at a prime above.** Let `𝔓` be a
-maximal ideal of `𝓞 L` over `P` with `N 𝔓` prime to `n`, and let `ω` be a multiplicative
+maximal ideal of `𝓞 L` over `P`, and let `ω` be a multiplicative
 character of `𝓞 K ⧸ P` with values in `𝓞 L` lifting the residue map `𝓞 K ⧸ P → 𝓞 L ⧸ 𝔓`, such
 as the Teichmüller character (`Ideal.exists_mulChar_mk_eq`). If `N P` is prime to `n`, then the
 `n`-th power residue symbol at `P`, read in `𝓞 L`, is `ω ^ ((N P - 1) / n)`. -/
 theorem powerResidueSymbol_ringHomComp_eq_pow (P : Ideal (𝓞 K)) [P.IsMaximal]
     (𝔓 : Ideal (𝓞 L)) [𝔓.IsMaximal] [𝔓.LiesOver P] (hP : (absNorm P).Coprime n)
-    (h𝔓 : (absNorm 𝔓).Coprime n) {ω : MulChar (𝓞 K ⧸ P) (𝓞 L)}
+    {ω : MulChar (𝓞 K ⧸ P) (𝓞 L)}
     (hω : ∀ x, Ideal.Quotient.mk 𝔓 (ω x) = algebraMap (𝓞 K ⧸ P) (𝓞 L ⧸ 𝔓) x) :
     (powerResidueSymbol P n).ringHomComp (algebraMap (𝓞 K) (𝓞 L)) = ω ^ ((absNorm P - 1) / n) := by
   let _ := Ideal.Quotient.field P
   refine MulChar.ext fun u ↦ ?_
   have hk : (absNorm P - 1) / n * n = absNorm P - 1 := Nat.div_mul_cancel (dvd_absNorm_sub_one hP)
   -- Both sides are `n`-th roots of unity of `𝓞 L` congruent to `u ^ ((N P - 1) / n)` modulo `𝔓`.
+  have h𝔓 : (absNorm 𝔓).Coprime n := absNorm_pow_inertiaDeg P 𝔓 ▸ hP.pow_left _
   refine eq_of_pow_eq_one_of_mk_eq IsPrime.ne_top' h𝔓 ?_ ?_ ?_
   · rw [MulChar.ringHomComp_apply, ← map_pow, powerResidueSymbol_pow_eq_one hP u.ne_zero, map_one]
   · rw [MulChar.pow_apply_coe, ← pow_mul, hk, ← map_pow, ← Units.val_pow_eq_pow_val,
