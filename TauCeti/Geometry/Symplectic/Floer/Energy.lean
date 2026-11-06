@@ -48,8 +48,9 @@ where `d(K(u)) = ∂_s (K_t(u)) - ∂_t (K_s(u))` is the exterior derivative of 
 one-form `K(u) = K_s(u) ds + K_t(u) dt`. Integrated over a rectangle using Stokes' formula,
 the energy is the symplectic area plus the boundary integral of `K(u)` minus the integral of the
 curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical perturbation
-`K = H_t dt`, the curvature vanishes; for a continuation perturbation `K = β(s) H_t dt`, it is
-`β'(s) H_t`.
+`K = H_t dt`, the curvature vanishes; for the perturbation `K = H_s(t) dt` of a homotopy of
+Hamiltonians, it is `∂_s H_s(t)`, and in particular for a continuation perturbation
+`K = β(s) H_t dt` it is `β'(s) H_t`.
 
 ## Main definitions
 
@@ -77,6 +78,7 @@ curvature. Curvature bounds therefore turn into energy bounds. For a cylindrical
   equation.
 * `SymplecticForm.hamiltonianCurvature_zero_left`,
   `SymplecticForm.hamiltonianCurvature_cylindrical`,
+  `SymplecticForm.hamiltonianCurvature_homotopy`,
   `SymplecticForm.hamiltonianCurvature_continuation`: the curvature of perturbations without `ds`
   component, and `SymplecticForm.hamiltonianCurvature_eq_zero_of_cylindrical`, its local form
   along a line near which the perturbation is cylindrical.
@@ -146,26 +148,26 @@ theorem hamiltonianCurvature_cylindrical (ω : SymplecticForm V) (H : ℝ → V 
       exact hH (h'.comp z.2 hz)
     simp [fderiv_zero_of_not_differentiableAt hH']
 
+/-- **The curvature of a homotopy of Hamiltonians.** A perturbation `K = H_s(t) dt` without `ds`
+component, given by a family `H_s` of time-dependent Hamiltonians, has curvature `∂_s H_s(t)`. -/
+theorem hamiltonianCurvature_homotopy (ω : SymplecticForm V) {H : ℝ → ℝ → V → ℝ} {z : ℝ × ℝ}
+    {x : V} (hH : DifferentiableAt ℝ (fun w : ℝ × ℝ ↦ H w.1 w.2 x) z) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.1 w.2) z x =
+      deriv (fun s ↦ H s z.2 x) z.1 := by
+  rw [hamiltonianCurvature_zero_left]
+  have h : HasDerivAt (fun s : ℝ ↦ ((s, z.2) : ℝ × ℝ)) stdComplexLineReal z.1 :=
+    (hasDerivAt_id z.1).prodMk (hasDerivAt_const z.1 z.2)
+  exact ((hH.hasFDerivAt.comp_hasDerivAt z.1 h).deriv).symm
+
 /-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
 theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → ℝ} {H : ℝ → V → ℝ}
     {z : ℝ × ℝ} {x : V} (hβ : DifferentiableAt ℝ β z.1)
     (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
-      deriv β z.1 * H z.2 x := by
-  rw [hamiltonianCurvature_zero_left]
-  have hβ' : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1)
-      ((fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    hβ.hasFDerivAt.comp z hasFDerivAt_fst
-  have hH' : HasFDerivAt (fun w : ℝ × ℝ ↦ H w.2 x)
-      ((fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ)) z :=
-    hH.hasFDerivAt.comp z hasFDerivAt_snd
-  have h : HasFDerivAt (fun w : ℝ × ℝ ↦ β w.1 * H w.2 x)
-      (β z.1 • (fderiv ℝ (fun t ↦ H t x) z.2).comp (ContinuousLinearMap.snd ℝ ℝ ℝ) +
-        H z.2 x • (fderiv ℝ β z.1).comp (ContinuousLinearMap.fst ℝ ℝ ℝ)) z :=
-    HasFDerivAt.mul hβ' hH'
-  rw [h.fderiv]
-  simp [stdComplexLineReal]
-  ring
+      deriv β z.1 * H z.2 x :=
+  (ω.hamiltonianCurvature_homotopy (H := fun s t y ↦ β s * H t y)
+    ((hβ.comp z differentiableAt_fst).mul (hH.comp z differentiableAt_snd))).trans
+    (deriv_mul_const hβ _)
 
 omit [FiniteDimensional ℝ V] in
 /-- The cylindrical perturbation `K = H_t dt` of a `Cⁿ` time-dependent Hamiltonian is `Cⁿ`. -/
