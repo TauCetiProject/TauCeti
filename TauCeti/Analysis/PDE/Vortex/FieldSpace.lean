@@ -11,7 +11,6 @@ public import TauCeti.Analysis.PDE.Vortex.Reference
 public import TauCeti.Analysis.PDE.Vortex.ScalarEquation
 public import TauCeti.Analysis.Distribution.Sobolev
 import Mathlib.Analysis.InnerProductSpace.Calculus
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
 /-!
@@ -187,10 +186,7 @@ continuous function vanishing at infinity, hence everywhere. -/
 theorem tendsto_cocompact_of_mem_sobolevFields {s : ℝ} (hs : 1 < s)
     {y : ℂ → EuclideanSpace ℝ (Fin 4)} (hy : y ∈ sobolevFields s) (hcont : Continuous y) :
     Tendsto y (cocompact ℂ) (𝓝 0) := by
-  have hs' : (finrank ℝ ℂ : ℝ) < 2 * s := by
-    rw [Complex.finrank_real_complex]
-    push_cast
-    linarith
+  have hs' := finrank_real_complex_lt_two_mul hs
   have h : Tendsto (fun z ↦ WithLp.ofLp (y z)) (cocompact ℂ) (𝓝 0) :=
     tendsto_pi_nhds.2 fun i ↦ tendsto_cocompact_of_mem_realSobolevFunctions hs'
       (mem_sobolevFields.1 hy i) ((PiLp.continuous_apply 2 _ i).comp hcont)

@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.PDE.Vortex.FramedGauge.Basic
-import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Sobolev.BesselPotential.Algebra
 import TauCeti.Analysis.Sobolev.BesselPotential.Embedding
 
@@ -32,7 +31,8 @@ with a `1 / |z|` tail is not square integrable on the plane.
 
 For a `C¹` gauge `u ∈ G_(s+1)`, the real one-form `Im (u⁻¹ du)` (`TauCeti.Vortex.gaugeForm`)
 has coefficients in `H^s`. Its product with `i` is the connection increment `u⁻¹ du` of the
-action `(a, α) ↦ (a - u⁻¹ du, u α)`, so `G_(s+1)` preserves the connection part of `A_m^s`.
+action `(a, α) ↦ (a - u⁻¹ du, u α)`, so the `C¹` elements of `G_(s+1)` preserve the connection
+part of `A_m^s`.
 
 No topology or Banach Lie group charts on `G_s` are constructed here, and the action on the
 section part of `A_m^s`, which needs multiplication of `H^s` by the bounded reference section,
@@ -70,13 +70,6 @@ namespace TauCeti.Vortex
 open Complex ComplexConjugate Filter Module TemperedDistribution
 open scoped ContDiff Topology
 
-/-- For `s > 1`, the order `s` is above half the real dimension of the plane, so `H^s(ℂ)` is an
-algebra and embeds into the continuous functions vanishing at infinity. -/
-private theorem finrank_lt_two_mul {s : ℝ} (hs : 1 < s) : (finrank ℝ ℂ : ℝ) < 2 * s := by
-  rw [Complex.finrank_real_complex]
-  push_cast
-  linarith
-
 /-- **The Sobolev framed gauge group `G_s`**, `s > 1`: the continuous circle-valued maps `u` on
 the plane with `u - 1 ∈ H^s(ℂ; ℂ)`, that is, with `Re u - 1` and `Im u` in `H^s`. -/
 def sobolevGaugeGroup {s : ℝ} (hs : 1 < s) : Subgroup (ℂ → Circle) where
@@ -91,7 +84,7 @@ def sobolevGaugeGroup {s : ℝ} (hs : 1 < s) : Subgroup (ℂ → Circle) where
     rintro u v ⟨hu, hu₁, hu₂⟩ ⟨hv, hv₁, hv₂⟩
     have hmul {f g : ℂ → ℝ} (hf : f ∈ realSobolevFunctions ℂ s 2)
         (hg : g ∈ realSobolevFunctions ℂ s 2) : f * g ∈ realSobolevFunctions ℂ s 2 :=
-      mul_mem_realSobolevFunctions (finrank_lt_two_mul hs) hf hg
+      mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) hf hg
     -- With `u = (1 + a) + i b` and `v = (1 + c) + i d`, the product is
     -- `(1 + (a c + a + c - b d)) + i (a d + d + b c + b)`.
     refine ⟨hu.mul hv, ?_, ?_⟩
@@ -133,9 +126,10 @@ the continuous functions vanishing at infinity. -/
 theorem tendsto_cocompact_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
     (hu : u ∈ sobolevGaugeGroup hs) : Tendsto u (cocompact ℂ) (𝓝 1) := by
   obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
-  have hre := tendsto_cocompact_of_mem_realSobolevFunctions (finrank_lt_two_mul hs) hu₁
+  have hs' := finrank_real_complex_lt_two_mul hs
+  have hre := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₁
     ((continuous_re.comp (continuous_subtype_val.comp hu)).sub continuous_const)
-  have him := tendsto_cocompact_of_mem_realSobolevFunctions (finrank_lt_two_mul hs) hu₂
+  have him := tendsto_cocompact_of_mem_realSobolevFunctions hs' hu₂
     (continuous_im.comp (continuous_subtype_val.comp hu))
   have h := (((continuous_ofReal.tendsto 0).comp hre).add
     (((continuous_ofReal.tendsto 0).comp him).mul_const I)).const_add (1 : ℂ)
@@ -184,8 +178,7 @@ theorem mem_sobolevGaugeGroup_of_hasCompactSupport {s : ℝ} (hs : 1 < s) {u : �
 theorem exp_mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) {f : ℂ → ℝ} (hf : ContDiff ℝ ∞ f)
     (hc : HasCompactSupport f) : (fun w ↦ Circle.exp (f w)) ∈ sobolevGaugeGroup hs := by
   refine mem_sobolevGaugeGroup_of_hasCompactSupport hs ?_ ?_
-  · simpa only [Circle.coe_exp, Function.comp_def, Complex.ofRealCLM_apply] using
-      ((ofRealCLM.contDiff.comp hf).mul (contDiff_const (c := I))).cexp
+  · exact ((mem_framedGaugeGroup _).1 (exp_mem_framedGaugeGroup hf hc.is_zero_at_infty)).1
   · simpa only [Function.comp_def, Circle.coe_exp] using
       hc.comp_left (g := fun t : ℝ ↦ Complex.exp (t * I) - 1) (by simp)
 
@@ -203,7 +196,7 @@ theorem gaugeForm_apply_mem_realSobolevFunctions {s : ℝ} (hs : 1 < s) {u : ℂ
     (lt_add_one s).le
   have hmul {f g : ℂ → ℝ} (hf : f ∈ realSobolevFunctions ℂ s 2)
       (hg : g ∈ realSobolevFunctions ℂ s 2) : f * g ∈ realSobolevFunctions ℂ s 2 :=
-    mul_mem_realSobolevFunctions (finrank_lt_two_mul hs) hf hg
+    mul_mem_realSobolevFunctions (finrank_real_complex_lt_two_mul hs) hf hg
   -- The directional derivatives of `Re u - 1` and `Im u` are those of `Re u` and `Im u`.
   have hre : ContDiff ℝ 1 (fun z ↦ (u z : ℂ).re - 1) :=
     (reCLM.contDiff.comp hC1).sub contDiff_const
