@@ -34,9 +34,6 @@ every point of `Proj_X(A)` lies in some `D₊(φ b)` with `b` of degree one, as 
 
 ## Main results
 
-* `CategoryTheory.CommMon.ι_relativeProjMap`: on the chart over `U`, the morphism of relative
-  `Proj`s is the morphism of projective spectra, with the charts written as the coprojections of
-  the gluing diagrams, as the glued modules of the twisting sheaves use them.
 * `CategoryTheory.CommMon.relativeProjTwistingSheafMapChart_transition`: the chart components are
   compatible with the transition morphisms of the twisting sheaves of the charts, so that they
   glue.
@@ -77,16 +74,6 @@ variable {X : Scheme.{u}} {A B : CommMon (GradedObject ℕ X.Modules)}
     HomogeneousIdeal.irrelevant (A.gradedSectionsGrading U) ≤
       (HomogeneousIdeal.irrelevant (B.gradedSectionsGrading U)).map
         (CommMon.gradedSectionsGradedHom φ U)) (n : ℤ)
-
-/-- On the chart over an affine open `U`, the morphism of relative `Proj`s induced by `φ` is the
-morphism of projective spectra induced by `φ`, with the charts written as the coprojections of the
-gluing diagrams. -/
-theorem _root_.CategoryTheory.CommMon.ι_relativeProjMap (U : X.AffineZariskiSite) :
-    colimit.ι A.relativeProjGluingData.functor U ≫ CommMon.relativeProjMap φ hφ =
-      Proj.map (CommMon.gradedSectionsGradedHom φ U.toOpens) (hφ U.toOpens U.2) ≫
-        colimit.ι B.relativeProjGluingData.functor U :=
-  (CommMon.relativeProjCover_f_relativeProjMap φ hφ U).trans
-    (congrArg (· ≫ _) (CommMon.relativeProjFunctorMap_app φ hφ U))
 
 /-- Over the chart of `Proj_X(B)` above an affine open `U` of `X`, the morphism
 `(ι_U)_* 𝒪(n) ⟶ (Proj_X(A) ⟶ Proj_X(B))_* (ι_U)_* 𝒪(n)` given by the morphism of twisting
@@ -206,6 +193,7 @@ def _root_.CategoryTheory.CommMon.relativeProjTwistingSheafMap :
 
 /-- The glued morphism of twisting sheaves, followed by the projection of `𝒪(n)` on `Proj_X(A)` to a
 chart, is the adjoint chart component. -/
+@[simp]
 theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafMap_comp_π
     (U : X.AffineZariskiSite) :
     CommMon.relativeProjTwistingSheafMap φ hφ n ≫ (A.relativeProjTwistingSheafGlueData n).π U =
@@ -215,6 +203,7 @@ theorem _root_.CategoryTheory.CommMon.relativeProjTwistingSheafMap_comp_π
 
 /-- The morphism `𝒪(n) ⟶ f_* 𝒪(n)` adjoint to the glued morphism of twisting sheaves, followed by
 the projection of `𝒪(n)` on `Proj_X(A)` to a chart, is the chart component. -/
+@[simp]
 theorem _root_.CategoryTheory.CommMon.homEquiv_relativeProjTwistingSheafMap_comp_π
     (U : X.AffineZariskiSite) :
     ((Scheme.Modules.pullbackPushforwardAdjunction (X := colimit A.relativeProjGluingData.functor)
