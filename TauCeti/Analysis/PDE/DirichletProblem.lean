@@ -570,8 +570,10 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_slab
     ∃! u : W1p0 volume Omega 2, IsWeakSolutionDirichlet a b c f u := by
   -- Run the argument with the drift bound `max β 0` and the slab `Icc s (max s t)`.
   have hsmall' : max beta 0 * (max s t - s) < lam := by
-    rcases max_choice beta 0 with hb0 | hb0 <;> rcases max_choice s t with hst | hst <;>
-      rw [hb0, hst] <;> linarith [h.pos]
+    have := max_mul_max_lt_of_mul_lt h.pos hsmall
+    have e : max (t - s) 0 = max s t - s := by
+      rcases le_total s t with hst | hst <;> simp [hst]
+    rwa [e] at this
   exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
@@ -602,8 +604,7 @@ theorem existsUnique_isWeakSolutionDirichlet_of_subset_ball
     ∃! u : W1p0 volume Omega 2, IsWeakSolutionDirichlet a b c f u := by
   -- Run the argument with the drift bound `max β 0` and the radius `max R 0`.
   have hsmall' : max beta 0 * (2 * max R 0) < lam := by
-    rcases max_choice beta 0 with hb0 | hb0 <;> rcases max_choice R 0 with hR | hR <;>
-      rw [hb0, hR] <;> linarith [h.pos]
+    exact max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall
   exact existsUnique_isWeakSolutionDirichlet_of_mul_norm_sq_le
     (memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
       (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound)
@@ -636,8 +637,7 @@ theorem existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq_of_subset_ball
         ∫ x in Omega, f x * W1p.value (v : W1p volume Omega 2) x := by
   -- Run the argument with the drift bound `max β 0` and the radius `max R 0`.
   have hsmall' : max beta 0 * (2 * max R 0) < lam := by
-    rcases max_choice beta 0 with hb0 | hb0 <;> rcases max_choice R 0 with hR | hR <;>
-      rw [hb0, hR] <;> linarith [h.pos]
+    exact max_mul_two_mul_max_lt_of_mul_two_mul_lt h.pos hsmall
   have hcoeff := memLp_energyIntegrand_of_bounds h.upper_nonneg ha hb hc
     (fun _x hx eta xi => h.upper_bound hx eta xi) hb_bound hc_bound
   exact existsUnique_sub_mem_w1p0Submodule_forall_energyFormH1_eq hcoeff
