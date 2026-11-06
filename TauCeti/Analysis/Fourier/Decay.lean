@@ -34,6 +34,8 @@ strip around the real axis has exponentially decaying Fourier coefficients, by C
 * `TauCeti.exists_norm_pow_mul_norm_fourier_le`: for every exponent `k`, the Fourier transform of a
   smooth compactly supported function on a finite-dimensional real inner product space satisfies
   `‖v‖ ^ k * ‖𝓕 f v‖ ≤ C` for some `C > 0`.
+* `TauCeti.exists_one_add_norm_pow_mul_norm_fourier_le`: the same decay with the weight
+  `(1 + ‖v‖) ^ k`.
 * `TauCeti.pow_mul_norm_fourier_le_integral_norm_iteratedFDeriv`: if `f` is `C^N` and its
   derivatives up to order `N` are integrable, then `(2π ‖w‖) ^ N ‖𝓕 f w‖ ≤ ∫ ‖D^N f‖`.
 * `TauCeti.integral_exp_smul_eq_fourier`: the integral `∫ exp(-i ⟪v, ξ⟫) f v dv` in angular
@@ -70,6 +72,17 @@ theorem exists_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f) (hsupp : H
     simp
   have h := hC v
   rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe0] at h
+
+/-- The Fourier transform of a smooth compactly supported function decays faster than every power
+of `(1 + ‖v‖)⁻¹`, because it is a Schwartz function. -/
+theorem exists_one_add_norm_pow_mul_norm_fourier_le (hf : ContDiff ℝ ∞ f)
+    (hsupp : HasCompactSupport f) (k : ℕ) : ∃ C : ℝ, ∀ v : V, (1 + ‖v‖) ^ k * ‖𝓕 f v‖ ≤ C := by
+  have hcoe : ⇑(hsupp.toSchwartzMap hf) = f := funext (hsupp.toSchwartzMap_toFun hf)
+  let g : SchwartzMap V E := 𝓕 (hsupp.toSchwartzMap hf)
+  refine ⟨2 ^ k * (Finset.Iic (k, 0)).sup (fun m ↦ SchwartzMap.seminorm ℂ m.1 m.2) g,
+    fun v ↦ ?_⟩
+  have h := SchwartzMap.one_add_le_sup_seminorm_apply (𝕜 := ℂ) (m := (k, 0)) le_rfl le_rfl g v
+  rwa [norm_iteratedFDeriv_zero, SchwartzMap.fourier_coe, hcoe] at h
 
 open MeasureTheory Real in
 /-- **Integration by parts.** If `f` is `C^N` and its derivatives of order at most `N` are

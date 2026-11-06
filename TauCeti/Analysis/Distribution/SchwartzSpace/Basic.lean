@@ -26,6 +26,8 @@ Schwartz functions is integrable, which justifies splitting `L²` pairings of Sc
 * `SchwartzMap.integrable_inner`: `⟪f x, g x⟫` is integrable.
 * `SchwartzMap.integrable_one_add_norm_sq_rpow_mul_norm`: `(1 + ‖x‖ ^ 2) ^ r ‖f x‖` is integrable
   for every real `r`.
+* `SchwartzMap.integrable_one_add_norm_smul_sq_rpow_mul_norm`: `⟨c x⟩ ^ m ‖f x‖` is integrable
+  against any measure of temperate growth.
 * `SchwartzMap.integrable_norm_iteratedFDeriv`: `‖D^k f x‖` is integrable.
 * `SchwartzMap.integrable_iteratedFDeriv_clm_comp`,
   `SchwartzMap.integral_norm_iteratedFDeriv_clm_comp_le`: for a continuous linear map `L`, the
@@ -135,6 +137,19 @@ theorem integrable_one_add_norm_sq_rpow_mul_norm {V : Type*} [NormedAddCommGroup
     (.of_forall fun x ↦ ?_)
   dsimp only
   rw [smulLeftCLM_apply_apply hg, norm_smul, Real.norm_of_nonneg (by positivity)]
+
+omit [SecondCountableTopology E] in
+/-- For a Schwartz function `f` and real `c`, `m`, the function
+`⟨c x⟩ ^ m ‖f x‖ = (1 + ‖c x‖ ^ 2) ^ (m / 2) ‖f x‖` is integrable. -/
+theorem integrable_one_add_norm_smul_sq_rpow_mul_norm (c m : ℝ) (f : 𝓢(E, F)) :
+    Integrable (fun x ↦ (1 + ‖c • x‖ ^ 2) ^ (m / 2) * ‖f x‖) μ :=
+  ((Measure.integrable_pow_neg_integrablePower μ).const_mul _).mono'
+    ((((continuous_const.add ((continuous_const_smul _).norm.pow 2)).rpow_const
+      fun x ↦ Or.inl (by positivity : (1 : ℝ) + ‖c • x‖ ^ 2 ≠ 0)).mul
+        f.continuous.norm).aestronglyMeasurable)
+    (.of_forall fun x ↦ by
+      rw [Real.norm_of_nonneg (by positivity)]
+      exact f.one_add_norm_smul_sq_rpow_mul_norm_le (𝕜 := ℝ) c m μ.integrablePower x)
 
 /-- The norms of the derivatives of a Schwartz function are integrable. -/
 theorem integrable_norm_iteratedFDeriv (f : 𝓢(E, F)) (k : ℕ) :
