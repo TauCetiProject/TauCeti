@@ -138,8 +138,7 @@ theorem norm_lowerOrder_le_of_mem_w1p0Submodule (hab : a < b)
   -- The `Lᵖ` bounds follow by Hölder's inequality `N ≤ (b - a)^{1 - 1/p} ‖u''‖`.
   have hN : N ≤ (b - a) ^ (1 - p.toReal⁻¹) * ‖D‖ := by
     have h := Lp.integral_norm_le_mul_norm D
-    rw [Measure.restrict_apply_univ] at h
-    change ∫ x in Ioo a b, ‖D x‖ ≤ (volume (Ioo a b) ^ (1 - 1 / p.toReal)).toReal * ‖D‖ at h
+    simp only [Measure.restrict_apply_univ, Opens.coe_mk] at h
     rwa [Real.volume_Ioo, ← ENNReal.toReal_rpow,
       ENNReal.toReal_ofReal hL.le, one_div, ← integral_Ioc_eq_integral_Ioo,
       ← integral_of_le hab.le] at h
