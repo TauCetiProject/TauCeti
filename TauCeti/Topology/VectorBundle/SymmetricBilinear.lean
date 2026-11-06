@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Topology.VectorBundle.Basic
-public import TauCeti.Topology.Algebra.Module.SymmetricBilinear
+public import TauCeti.Topology.Algebra.Module.SymmetricBilinear.Basic
 
 /-!
 # The vector bundle of symmetric bilinear maps
