@@ -70,6 +70,28 @@ namespace TauCeti.IsNondegenerateCriticalPoint
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {f : E → ℝ} {x : E}
 
+/-- If the second derivative of `f` is within `κ / 2` of `L` and that of `g` within `κ / 2` of
+that of `f` on a closed ball, then on the ball the second derivative of `g` is within `κ` of `L`
+and `fderiv ℝ g` is `κ`-approximated by `L`. -/
+private theorem approximatesLinearOn_fderiv_closedBall {g : E → ℝ} {L : E →L[ℝ] E →L[ℝ] ℝ}
+    {r κ : ℝ} (hκ : 0 ≤ κ) (hg : ∀ y ∈ closedBall x r, ContDiffAt ℝ 2 g y)
+    (hfy : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ f) y - L‖ < κ / 2)
+    (hgf : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ ≤ κ / 2) :
+    (∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - L‖ ≤ κ) ∧
+      ApproximatesLinearOn (fderiv ℝ g) L (closedBall x r) ⟨κ, hκ⟩ := by
+  have hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ (fderiv ℝ g) y := fun y hy ↦
+    ((hg y hy).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
+  have hclose : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ g) y - L‖ ≤ κ := fun y hy ↦
+    calc ‖fderiv ℝ (fderiv ℝ g) y - L‖
+        ≤ ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ +
+            ‖fderiv ℝ (fderiv ℝ f) y - L‖ :=
+          norm_sub_le_norm_sub_add_norm_sub (fderiv ℝ (fderiv ℝ g) y)
+            (fderiv ℝ (fderiv ℝ f) y) L
+      _ ≤ κ / 2 + κ / 2 := add_le_add (hgf y hy) (hfy y hy).le
+      _ = κ := add_halves _
+  exact ⟨hclose, fun y hy z hz ↦
+    (convex_closedBall x r).norm_image_sub_le_of_norm_fderiv_le' hdiff hclose hz hy⟩
+
 /-- **Persistence of a nondegenerate critical point under small `C²` perturbations.**
 
 Let `x` be a nondegenerate critical point of `f` on a Banach space. For every sufficiently small
@@ -113,25 +135,13 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   refine ⟨K, ?_⟩
   filter_upwards [Ioo_mem_nhdsGT hρ] with r hr
   refine ⟨min (κ / 2) (r / (2 * C)), by have := hr.1; positivity, fun g hg hgx hgf ↦ ?_⟩
-  have hdiff : ∀ y ∈ closedBall x r, DifferentiableAt ℝ (fderiv ℝ g) y := fun y hy ↦
-    ((hg y hy).fderiv_right (m := 1) (by norm_num)).differentiableAt (by norm_num)
-  -- On the ball the second derivative of `g` stays within `κ` of `L`.
-  have hclose : ∀ y ∈ closedBall x r,
-      ‖fderiv ℝ (fderiv ℝ g) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ ≤ κ := fun y hy ↦ by
-    have hfy : ‖fderiv ℝ (fderiv ℝ f) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ < κ / 2 := by
+  have hfy : ∀ y ∈ closedBall x r, ‖fderiv ℝ (fderiv ℝ f) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ < κ / 2 :=
+    fun y hy ↦ by
       rw [hL]
       exact (mem_ball_iff_norm (E := E →L[ℝ] E →L[ℝ] ℝ)).1 <|
         hρf (lt_of_le_of_lt (mem_closedBall.1 hy) hr.2)
-    calc ‖fderiv ℝ (fderiv ℝ g) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖
-        ≤ ‖fderiv ℝ (fderiv ℝ g) y - fderiv ℝ (fderiv ℝ f) y‖ +
-            ‖fderiv ℝ (fderiv ℝ f) y - (L : E →L[ℝ] E →L[ℝ] ℝ)‖ :=
-          norm_sub_le_norm_sub_add_norm_sub (fderiv ℝ (fderiv ℝ g) y)
-            (fderiv ℝ (fderiv ℝ f) y) (L : E →L[ℝ] E →L[ℝ] ℝ)
-      _ ≤ κ / 2 + κ / 2 := add_le_add ((hgf y hy).trans (min_le_left _ _)) hfy.le
-      _ = κ := add_halves _
-  have happrox : ApproximatesLinearOn (fderiv ℝ g) (L : E →L[ℝ] E →L[ℝ] ℝ)
-      (closedBall x r) ⟨κ, hκ.le⟩ := fun y hy z hz ↦
-    (convex_closedBall x r).norm_image_sub_le_of_norm_fderiv_le' hdiff hclose hz hy
+  obtain ⟨hclose, happrox⟩ := approximatesLinearOn_fderiv_closedBall hκ.le hg hfy
+    fun y hy ↦ (hgf y hy).trans (min_le_left _ _)
   set n := ‖fderiv ℝ g x‖
   have hεr : 2 * C * n ≤ r := by
     have : n ≤ r / (2 * C) := hgx.trans (min_le_right _ _)
@@ -149,22 +159,10 @@ theorem exists_criticalPoint_perturbation [CompleteSpace E]
   · calc dist y x ≤ 2 * C * n := mem_closedBall.1 hyε
       _ ≤ K * n := by gcongr
   · -- Value: near `y` the differential of `g` is bounded by `(‖L‖ + κ)` times the distance to `y`.
-    let M : ℝ := ‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ
-    have hbound : ∀ w ∈ closedBall x (2 * C * n), ‖fderiv ℝ g w‖ ≤ M * (2 * (2 * C * n)) :=
-      fun w hw ↦ by
-        have hlip := happrox.lipschitzWith.dist_le_mul ⟨w, hsub hw⟩ ⟨y, hsub hyε⟩
-        simp only [domRestrict_apply, hy0, dist_zero_right, Subtype.dist_eq] at hlip
-        calc ‖fderiv ℝ g w‖ ≤ M * dist w y := hlip
-          _ ≤ M * (2 * (2 * C * n)) := by
-            gcongr
-            linarith [dist_triangle_right w y x, mem_closedBall.1 hw, mem_closedBall.1 hyε]
-    have hval := (convex_closedBall x (2 * C * n)).norm_image_sub_le_of_norm_fderiv_le
-      (fun w hw ↦ ((hg w (hsub hw)).differentiableAt (by norm_num))) hbound
-      (mem_closedBall_self (by positivity)) hyε
-    rw [Real.norm_eq_abs, ← dist_eq_norm] at hval
-    calc |g y - g x| ≤ M * (2 * (2 * C * n)) * dist y x := hval
-      _ ≤ M * (2 * (2 * C * n)) * (2 * C * n) := by gcongr; exact mem_closedBall.1 hyε
-      _ = (8 * M * C ^ 2) * n ^ 2 := by ring
+    calc |g y - g x| ≤ (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * (2 * (2 * C * n)) * (2 * C * n) :=
+        Real.norm_eq_abs _ ▸ happrox.norm_sub_le_of_fderiv_eq_zero
+          (fun w hw ↦ (hg w (hsub hw)).differentiableAt (by norm_num)) hsub hyε hy0
+      _ = (8 * (‖(L : E →L[ℝ] E →L[ℝ] ℝ)‖ + κ) * C ^ 2) * n ^ 2 := by ring
       _ ≤ K * n ^ 2 := by gcongr; linarith
 
 /-- **The Morse index is stable under small changes of the Hessian.**
