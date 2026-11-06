@@ -416,7 +416,9 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
   have hx : (singularHomology₀Section (ModuleCat.of k k) x).hom 1 =
       ((singularChains k).obj X).homologyπ 0 (z 1) := by
     rw [singularHomology₀Section_def, SSet.ιHomology₀_eq]
-    rfl
+    -- `(singularChains k).obj X` is by definition the chain complex
+    -- `(TopCat.toSSet.obj X).chainComplex k` of the singular simplicial set.
+    exact ModuleCat.comp_apply _ _ _
   have hi : ((singularChains k).obj X).iCycles 0 (z 1) =
       simplexChain (TopCat.toSSetObj₀Equiv.symm x) 1 :=
     (ModuleCat.comp_apply _ _ _).symm.trans
@@ -427,7 +429,8 @@ theorem singularCubicalHomologyIso_hom_singularHomology₀Section {X : TopCat.{u
   apply HomologicalComplex.moduleCat_iCycles_injective
   rw [HomologicalComplex.iCycles_moduleCatCyclesMk, ← ModuleCat.comp_apply,
     HomologicalComplex.cyclesMap_i, ModuleCat.comp_apply, hi]
-  exact (singularToCubical_app_f_zero_simplexChain _).trans (by rw [Equiv.apply_symm_apply]; rfl)
+  rw [singularToCubical_app_f_zero_simplexChain, Equiv.apply_symm_apply,
+    normalizedCubicalChainComplexXEquiv_symm_apply]
 
 /-- The comparison isomorphism on homology is natural. -/
 @[reassoc]

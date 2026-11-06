@@ -44,8 +44,10 @@ morphism `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ Hₘ(∂Iᵐ⁺¹)` sends the 
 (`TauCeti.cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle`), over every ring. This is the
 statement that the connecting morphism of a manifold with boundary carries the fundamental class
 relative to the boundary to the fundamental class of the boundary, for the cube with its
-oriented faces. Since the cube is contractible, the connecting morphism is an isomorphism in
-positive degrees, so the fundamental cycle of `∂Iᵐ⁺²` generates `Hₘ₊₁(∂Iᵐ⁺²; ℤ) ≅ ℤ`
+oriented faces. Since the cube is contractible, the connecting morphism is injective
+(`TauCeti.injective_cubicalHomologyδ_cubeBoundaryPair`) and, in dimension `m + 2 ≥ 2`, an
+isomorphism (`TauCeti.isIso_cubicalHomologyδ_cubeBoundaryPair`), over every ring. So the
+fundamental cycle of `∂Iᵐ⁺²` generates `Hₘ₊₁(∂Iᵐ⁺²; ℤ) ≅ ℤ`
 (`TauCeti.bijective_zsmul_homologyπ_cubeBoundaryCycle`).
 
 In dimension one this identifies the fundamental cycle with the singular generator over every
@@ -70,6 +72,8 @@ read through the comparison of point classes in degree zero
 * `TauCeti.cubeBoundaryChain`, `TauCeti.cubeBoundaryCycle`: the fundamental cycle of `∂Iᵐ⁺¹`,
   whose image in `Iᵐ⁺¹` is the boundary of the identity cube (`TauCeti.map_cubeBoundaryChain`).
 * `TauCeti.cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle`: `δ[Iᵐ⁺¹, ∂Iᵐ⁺¹] = [∂Iᵐ⁺¹]`.
+* `TauCeti.isIso_cubicalHomologyδ_cubeBoundaryPair`: the connecting morphism
+  `Hₘ₊₂(Iᵐ⁺², ∂Iᵐ⁺²) ⟶ Hₘ₊₁(∂Iᵐ⁺²)` is an isomorphism.
 * `TauCeti.bijective_zsmul_homologyπ_cubeBoundaryCycle`: `[∂Iᵐ⁺²]` generates `Hₘ₊₁(∂Iᵐ⁺²; ℤ)`.
 * `TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero`,
   `TauCeti.bijective_smul_homologyπ_cubeBoundaryPairCycle_zero`: in dimension one, `[I¹]` is the
@@ -344,17 +348,38 @@ theorem cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle (m : ℕ) :
     exact (normalizedCubicalChainComplex_map_f_apply _ m _).trans
       ((map_cubeBoundaryChain k m).trans (normalizedCubicalChainComplex_obj_d_apply _ m _).symm)
 
+/-- The normalized cubical homology of the cube `Iᵐ⁺¹` vanishes in positive degrees, since the
+cube is contractible. -/
+private lemma isZero_homology_cubeBoundaryPair_fst (m : ℕ) {n : ℕ} (hn : n ≠ 0) :
+    IsZero (((normalizedCubicalChainComplex k).obj (cubeBoundaryPair.{u} (m + 1)).fst).homology
+      n) :=
+  (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) _ hn).of_iso
+    (singularCubicalHomologyIso k _ n).symm
+
 /-- The connecting morphism `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ Hₘ(∂Iᵐ⁺¹)` of relative cubical homology is
 injective, since the cube is contractible. -/
-private lemma injective_cubicalHomologyδ_cubeBoundaryPair (m : ℕ) :
-    Function.Injective ((cubeBoundaryPair.{u} (m + 1)).cubicalHomologyδ k (m + 1) m).hom := by
-  have hX : IsZero (((normalizedCubicalChainComplex k).obj
-      (cubeBoundaryPair.{u} (m + 1)).fst).homology (m + 1)) :=
-    (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) _
-      (Nat.succ_ne_zero m)).of_iso (singularCubicalHomologyIso k _ (m + 1)).symm
-  exact (ModuleCat.mono_iff_injective _).1
+theorem injective_cubicalHomologyδ_cubeBoundaryPair (m : ℕ) :
+    Function.Injective ((cubeBoundaryPair.{u} (m + 1)).cubicalHomologyδ k (m + 1) m).hom :=
+  (ModuleCat.mono_iff_injective _).1
     (((cubeBoundaryPair.{u} (m + 1)).cubicalHomology_exact_relative k (m + 1) m).mono_g
-      (hX.eq_of_src _ _))
+      ((isZero_homology_cubeBoundaryPair_fst k m (Nat.succ_ne_zero m)).eq_of_src _ _))
+
+/-- The connecting morphism `Hₘ₊₂(Iᵐ⁺², ∂Iᵐ⁺²) ⟶ Hₘ₊₁(∂Iᵐ⁺²)` of relative cubical homology is
+surjective, since the cube is contractible. -/
+theorem surjective_cubicalHomologyδ_cubeBoundaryPair (m : ℕ) :
+    Function.Surjective
+      ((cubeBoundaryPair.{u} (m + 2)).cubicalHomologyδ k (m + 2) (m + 1)).hom :=
+  (ModuleCat.epi_iff_surjective _).1
+    (((cubeBoundaryPair.{u} (m + 2)).cubicalHomology_exact_subspace k (m + 2) (m + 1)).epi_f
+      ((isZero_homology_cubeBoundaryPair_fst k (m + 1) (Nat.succ_ne_zero m)).eq_of_tgt _ _))
+
+/-- The connecting morphism `Hₘ₊₂(Iᵐ⁺², ∂Iᵐ⁺²) ⟶ Hₘ₊₁(∂Iᵐ⁺²)` of relative cubical homology is an
+isomorphism, since the cube is contractible. -/
+theorem isIso_cubicalHomologyδ_cubeBoundaryPair (m : ℕ) :
+    IsIso ((cubeBoundaryPair.{u} (m + 2)).cubicalHomologyδ k (m + 2) (m + 1)) :=
+  (ConcreteCategory.isIso_iff_bijective _).2
+    ⟨injective_cubicalHomologyδ_cubeBoundaryPair k (m + 1),
+      surjective_cubicalHomologyδ_cubeBoundaryPair k m⟩
 
 /-! ### Dimension one -/
 
@@ -363,14 +388,12 @@ point cube at the endpoint `TauCeti.cubeEnd t ht`. -/
 private lemma cubeBoundaryFace_zero {t : I} (ht : t = 0 ∨ t = 1) :
     cubeBoundaryFace.{u} (m := 0) 0 ht = SingularCube.point (cubeEnd.{u} t ht) := by
   refine ContinuousMap.ext fun x ↦ (TopPair.liftSnd_apply_eq_iff _ _ x _).2 ?_
-  simp only [SingularCube.point_apply]
-  refine Eq.trans ?_ (map_cubeEnd.{u} t ht).symm
-  refine ULift.ext (funext fun i ↦ ?_)
+  rw [SingularCube.point_apply, map_cubeEnd]
+  -- The face is spelled on `(cubeBoundaryPair 1).fst` rather than `cubeModel 1`, so
+  -- `SingularCube.face_apply` is applied by unification rather than by rewriting.
+  refine (SingularCube.face_apply 0 t (upCube 1) x).trans (ULift.ext (funext fun i ↦ ?_))
   obtain rfl : i = 0 := Fin.fin_one_eq_zero i
-  rw [cubePoint_down]
-  refine (congrArg (fun y : ULift.{u} (Fin 1 → I) ↦ y.down 0)
-    (SingularCube.face_apply _ _ _ x)).trans ?_
-  exact Fin.insertNth_apply_same (α := fun _ : Fin 1 ↦ I) 0 t x
+  simp [cubePoint_down, upCube]
 
 /-- **In dimension one the fundamental cycle of the cube pair is the singular generator**, over
 every ring `k`: the class of `TauCeti.cubeBoundaryPairCycle k 0` in `H₁(I¹, ∂I¹; k)`, read in
@@ -465,19 +488,6 @@ theorem cubicalHomologyCubeBoundaryPairEquiv_apply (m : ℕ) (a : ℤ) :
     LinearMap.toSpanSingleton_apply, ← Int.cast_smul_eq_zsmul ℤ, Int.cast_id]
 
 /-! ### The fundamental cycle of the boundary generates -/
-
-/-- The connecting morphism `Hₘ₊₂(Iᵐ⁺², ∂Iᵐ⁺²) ⟶ Hₘ₊₁(∂Iᵐ⁺²)` of relative cubical homology is
-surjective, since the cube is contractible. -/
-private lemma surjective_cubicalHomologyδ_cubeBoundaryPair (m : ℕ) :
-    Function.Surjective
-      ((cubeBoundaryPair.{u} (m + 2)).cubicalHomologyδ k (m + 2) (m + 1)).hom := by
-  have hX : IsZero (((normalizedCubicalChainComplex k).obj
-      (cubeBoundaryPair.{u} (m + 2)).fst).homology (m + 1)) :=
-    (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) _
-      (Nat.succ_ne_zero m)).of_iso (singularCubicalHomologyIso k _ (m + 1)).symm
-  exact (ModuleCat.epi_iff_surjective _).1
-    (((cubeBoundaryPair.{u} (m + 2)).cubicalHomology_exact_subspace k (m + 2) (m + 1)).epi_f
-      (hX.eq_of_tgt _ _))
 
 /-- **The fundamental cycle of the boundary of the cube generates its homology.** Over `ℤ` and
 in dimension `m + 2 ≥ 2`, `a ↦ a • [∂Iᵐ⁺²]` is bijective onto `Hₘ₊₁(∂Iᵐ⁺²; ℤ)`, where `[∂Iᵐ⁺²]`
