@@ -7,7 +7,9 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
-import Mathlib.Topology.MetricSpace.HausdorffDistance
+import TauCeti.Analysis.Calculus.DerivativeTest
+import TauCeti.Analysis.InnerProductSpace.TouchingBall
+import TauCeti.Topology.Connected.Basic
 
 /-!
 # Hopf's lemma and the strong maximum principle in non-divergence form
@@ -38,6 +40,7 @@ The proof is the classical barrier argument. First `u` is compared on the ball `
 of radius `ρ = R / 2` internally tangent to `B` at `x₀`, whose closure meets `∂B` only at `x₀`,
 so that `u` is continuous on it. On the annulus `ρ / 2 ≤ ‖x - y'‖ ≤ ρ`, the Gaussian barrier
 `w = exp (-α ‖· - y'‖²) - exp (-α ρ²)` satisfies
+(`TauCeti.PDE.sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq`)
 
 `L w = exp (-α ‖x - y'‖²) (4 α² (x - y')ᵀ a (x - y') - 2 α tr a - 2 α ⟪x - y', b⟫)`,
 
@@ -49,8 +52,10 @@ inner sphere, and `w` grows linearly along the inward ray.
 The strong maximum principle follows as in
 `TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple`: near a local maximum where
 `u` is not locally constant, the largest ball about a point with a smaller value touches the level
-set at a point `x₀` which is again a local maximum, so `fderiv ℝ u x₀ = 0`, contradicting Hopf's
-lemma. The Laplacian case `a = 1` of both results is in
+set at a point `x₀` which is again a local maximum
+(`TauCeti.eventually_eq_of_isLocalMax_of_forall_not_lt_ball`), so `fderiv ℝ u x₀ = 0`,
+contradicting Hopf's lemma; preconnectedness then spreads local constancy
+(`IsPreconnected.eqOn_const_of_eventually_eq`). The Laplacian case `a = 1` of both results is in
 `TauCeti.Analysis.InnerProductSpace.Laplacian.HopfLemma` and
 `TauCeti.Analysis.InnerProductSpace.Laplacian.StrongMaximumPrinciple`; the strong maximum
 principle for weak solutions of equations in divergence form is
@@ -96,65 +101,12 @@ variable {ι : Type*} [Fintype ι]
 
 /-! ### The Gaussian barrier -/
 
-/-- The derivative of the Gaussian `x ↦ exp (-α ‖x - y‖²)`. -/
-private theorem hasFDerivAt_exp_neg_mul_norm_sub_sq (α : ℝ) (y x : EuclideanSpace ℝ ι) :
-    HasFDerivAt (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-α * ‖z - y‖ ^ 2))
-      ((Real.exp (-α * ‖x - y‖ ^ 2) * (-2 * α)) • innerSL ℝ (x - y)) x := by
-  have h := ((((hasFDerivAt_id x).sub_const y).norm_sq).const_mul (-α)).exp
-  refine h.congr_fderiv ?_
-  ext v
-  simp only [smul_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply, innerSL_apply_apply, smul_eq_mul, nsmul_eq_mul, id]
-  push_cast
-  ring
-
-/-- The second derivative of the Gaussian `x ↦ exp (-α ‖x - y‖²)`. -/
-private theorem fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply (α : ℝ)
-    (y x v w : EuclideanSpace ℝ ι) :
-    fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x v w =
-      Real.exp (-α * ‖x - y‖ ^ 2) *
-        (4 * α ^ 2 * ⟪x - y, v⟫ * ⟪x - y, w⟫ - 2 * α * ⟪v, w⟫) := by
-  rw [funext fun z ↦ (hasFDerivAt_exp_neg_mul_norm_sub_sq α y z).fderiv]
-  have hs := (hasFDerivAt_exp_neg_mul_norm_sub_sq α y x).mul_const (-2 * α)
-  have hL : HasFDerivAt (fun z : EuclideanSpace ℝ ι ↦ innerSL ℝ (z - y))
-      ((innerSL ℝ).comp (ContinuousLinearMap.id ℝ _)) x :=
-    (innerSL ℝ).hasFDerivAt.comp x ((hasFDerivAt_id x).sub_const y)
-  have h2 : HasFDerivAt (fun z : EuclideanSpace ℝ ι ↦
-      (Real.exp (-α * ‖z - y‖ ^ 2) * (-2 * α)) • innerSL ℝ (z - y)) _ x := hs.smul hL
-  rw [h2.fderiv]
-  simp only [add_apply, smul_apply,
-    ContinuousLinearMap.smulRight_apply, ContinuousLinearMap.comp_apply,
-    ContinuousLinearMap.id_apply, innerSL_apply_apply, smul_eq_mul]
-  ring
-
-/-- The non-divergence operator `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v` applied to the Gaussian
-`x ↦ exp (-α ‖x - y‖²)`. -/
-private theorem sum_mul_fderiv_fderiv_add_fderiv_exp_neg_mul_norm_sub_sq [DecidableEq ι]
-    (A : Matrix ι ι ℝ) (α : ℝ) (y x v : EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z : EuclideanSpace ℝ ι ↦
-        Real.exp (-α * ‖z - y‖ ^ 2)) x (EuclideanSpace.single i 1) (EuclideanSpace.single j 1) +
-      fderiv ℝ (fun z : EuclideanSpace ℝ ι ↦ Real.exp (-α * ‖z - y‖ ^ 2)) x v =
-    Real.exp (-α * ‖x - y‖ ^ 2) *
-      (4 * α ^ 2 * A.toQuadraticForm' (x - y) - 2 * α * A.trace - 2 * α * ⟪x - y, v⟫) := by
-  have hQ : ∑ i, ∑ j, A i j * (⟪x - y, EuclideanSpace.single i 1⟫ *
-      ⟪x - y, EuclideanSpace.single j 1⟫) = A.toQuadraticForm' (x - y) := by
-    simp only [EuclideanSpace.inner_single_right, conj_trivial, one_mul, toQuadraticForm'_apply,
-      dotProduct, mulVec, Finset.mul_sum, WithLp.ofLp_sub]
-    exact Finset.sum_congr rfl fun _ _ ↦ Finset.sum_congr rfl fun _ _ ↦ by ring
-  have hT : ∑ i, ∑ j, A i j * ⟪(EuclideanSpace.single i 1 : EuclideanSpace ℝ ι),
-      EuclideanSpace.single j 1⟫ = A.trace := by
-    simp [EuclideanSpace.inner_single_right, PiLp.single_apply, Matrix.trace]
-  have hsplit : ∀ (E : ℝ) i j, A i j * (E * (4 * α ^ 2 * ⟪x - y, EuclideanSpace.single i 1⟫ *
-      ⟪x - y, EuclideanSpace.single j 1⟫ - 2 * α *
-        ⟪(EuclideanSpace.single i 1 : EuclideanSpace ℝ ι), EuclideanSpace.single j 1⟫)) =
-      E * (4 * α ^ 2) * (A i j * (⟪x - y, EuclideanSpace.single i 1⟫ *
-        ⟪x - y, EuclideanSpace.single j 1⟫)) - E * (2 * α) *
-        (A i j * ⟪(EuclideanSpace.single i 1 : EuclideanSpace ℝ ι), EuclideanSpace.single j 1⟫) :=
-    fun _ _ _ ↦ by ring
-  simp only [fderiv_fderiv_exp_neg_mul_norm_sub_sq_apply,
-    (hasFDerivAt_exp_neg_mul_norm_sub_sq α y x).fderiv, smul_apply, innerSL_apply_apply,
-    smul_eq_mul, hsplit, Finset.sum_sub_distrib, ← Finset.mul_sum, hQ, hT]
-  ring
+/-- The point at distance `t ≤ R` from `y + R • e` along the inward ray lies at distance `R - t`
+from `y`. -/
+private theorem norm_add_smul_sub_smul_sub {y e : EuclideanSpace ℝ ι} {R t : ℝ} (he : ‖e‖ = 1)
+    (htR : t ≤ R) : ‖y + R • e - t • e - y‖ = R - t := by
+  rw [show y + R • e - t • e - y = (R - t) • e by module, norm_smul, he, mul_one,
+    Real.norm_of_nonneg (by linarith)]
 
 /-- The Hopf barrier `w = exp (-α ‖· - y‖²) - exp (-α R²)` along the inward ray from
 `y + R • e`: at distance `t ∈ (0, R]` from the sphere it is at least `exp (-α R²) α R t`. -/
@@ -162,72 +114,14 @@ private theorem mul_le_hopfBarrier_sub_smul {y e : EuclideanSpace ℝ ι} {R α 
     (he : ‖e‖ = 1) (hα : 0 ≤ α) (ht : 0 ≤ t) (htR : t ≤ R) :
     Real.exp (-α * R ^ 2) * α * R * t ≤
       Real.exp (-α * ‖y + R • e - t • e - y‖ ^ 2) - Real.exp (-α * R ^ 2) := by
-  have hnorm : ‖y + R • e - t • e - y‖ = R - t := by
-    rw [show y + R • e - t • e - y = (R - t) • e by module, norm_smul, he, mul_one,
-      Real.norm_of_nonneg (by linarith)]
   have hsplit : -α * (R - t) ^ 2 = -α * R ^ 2 + α * t * (2 * R - t) := by ring
-  rw [hnorm, hsplit, Real.exp_add]
+  rw [norm_add_smul_sub_smul_sub he htR, hsplit, Real.exp_add]
   have h1 := Real.add_one_le_exp (α * t * (2 * R - t))
   have h2 : α * R * t ≤ α * t * (2 * R - t) := by nlinarith [mul_nonneg hα ht]
   have hK := (Real.exp_pos (-α * R ^ 2)).le
   nlinarith [mul_le_mul_of_nonneg_left h2 hK]
 
-/-- The closed ball of radius `R / 2` that is internally tangent to `ball y R` at `y + R • e`
-meets the sphere `sphere y R` only at the point of tangency. -/
-private theorem mem_ball_of_mem_closedBall_half_of_ne {y e z : EuclideanSpace ℝ ι} {R : ℝ}
-    (he : ‖e‖ = 1) (hz : z ∈ closedBall (y + (R / 2) • e) (R / 2)) (hne : z ≠ y + R • e) :
-    z ∈ ball y R := by
-  rw [mem_closedBall, dist_eq_norm] at hz
-  rw [mem_ball, dist_eq_norm]
-  set w := z - (y + (R / 2) • e) with hwdef
-  have hR : 0 ≤ R := by linarith [norm_nonneg w]
-  have hne' : w - (R / 2) • e ≠ 0 := by
-    intro h
-    apply hne
-    rw [sub_eq_zero, hwdef, sub_eq_iff_eq_add] at h
-    rw [h]
-    module
-  have hee : ‖(R / 2) • e‖ ^ 2 = (R / 2) ^ 2 := by
-    rw [norm_smul, he, mul_one, Real.norm_eq_abs, sq_abs]
-  have h1 : ‖z - y‖ ^ 2 = ‖w‖ ^ 2 + 2 * ⟪w, (R / 2) • e⟫ + (R / 2) ^ 2 := by
-    rw [show z - y = w + (R / 2) • e by rw [hwdef]; abel, norm_add_sq_real, hee]
-  have h2 : ‖w - (R / 2) • e‖ ^ 2 = ‖w‖ ^ 2 - 2 * ⟪w, (R / 2) • e⟫ + (R / 2) ^ 2 := by
-    rw [norm_sub_sq_real, hee]
-  have h3 : 0 < ‖w - (R / 2) • e‖ ^ 2 := by positivity
-  have h4 : ‖w‖ ^ 2 ≤ (R / 2) ^ 2 := pow_le_pow_left₀ (norm_nonneg _) hz 2
-  have h5 : ‖z - y‖ ^ 2 < R ^ 2 := by nlinarith
-  exact (pow_lt_pow_iff_left₀ (norm_nonneg _) hR two_ne_zero).mp h5
-
-/-- A difference-quotient lower bound along the inward ray bounds the outward derivative below. -/
-private theorem le_fderiv_of_mul_le_sub {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    {u : E → ℝ} {x₀ e : E} {κ δ : ℝ} (hδ : 0 < δ) (hderiv : DifferentiableAt ℝ u x₀)
-    (hκ : ∀ t ∈ Ioc 0 δ, κ * t ≤ u x₀ - u (x₀ - t • e)) :
-    κ ≤ fderiv ℝ u x₀ e := by
-  have hline : HasDerivAt (fun t : ℝ ↦ x₀ - t • e) (-e) 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_sub x₀
-  have h1 : HasDerivAt (fun t : ℝ ↦ u (x₀ - t • e)) (-fderiv ℝ u x₀ e) 0 := by
-    have h := hderiv.hasFDerivAt.comp_hasDerivAt_of_eq (x := 0) hline (by simp)
-    rwa [map_neg] at h
-  have hF : HasDerivAt (fun t : ℝ ↦ u x₀ - u (x₀ - t • e)) (fderiv ℝ u x₀ e) 0 := by
-    simpa using h1.const_sub (u x₀)
-  have hslope := hF.tendsto_slope_zero_right
-  simp only [zero_add, zero_smul, sub_zero, sub_self, smul_eq_mul] at hslope
-  refine ge_of_tendsto hslope ?_
-  filter_upwards [Ioc_mem_nhdsGT hδ] with t ht
-  rw [le_inv_mul_iff₀ ht.1]
-  linarith [hκ t ht]
-
 variable [DecidableEq ι]
-
-/-- Subtracting a constant does not change the value of `∑ᵢⱼ Aᵢⱼ ∂ᵢ∂ⱼ + ∂_v`. -/
-private theorem sum_mul_fderiv_fderiv_add_fderiv_sub_const (A : Matrix ι ι ℝ)
-    (f : EuclideanSpace ℝ ι → ℝ) (k : ℝ) (x v : EuclideanSpace ℝ ι) :
-    ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ fun z ↦ f z - k) x (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1) + fderiv ℝ (fun z ↦ f z - k) x v =
-      ∑ i, ∑ j, A i j * fderiv ℝ (fderiv ℝ f) x (EuclideanSpace.single i 1)
-        (EuclideanSpace.single j 1) + fderiv ℝ f x v := by
-  have h : fderiv ℝ (fun z ↦ f z - k) = fderiv ℝ f := funext fun _ ↦ fderiv_sub_const k
-  rw [h]
 
 /-- **The Hopf barrier is a subsolution on an annulus.** Let `λ ‖ξ‖² ≤ ξᵀ A ξ` with `0 ≤ λ`,
 `tr A ≤ τ`, `‖v‖ ≤ β` and `0 ≤ c ≤ γ`. If `1 ≤ α` and `2 (τ + R β) + γ ≤ α λ R²`, then the barrier
@@ -373,10 +267,8 @@ private theorem exists_pos_mul_le_sub_of_lt_ball_of_le_sphere
   -- Along the inward ray the barrier grows linearly.
   refine ⟨δ * (Real.exp (-α * R ^ 2) * α * R), by positivity, fun t ht ↦ ?_⟩
   have htK : x₀ - t • e ∈ K := by
-    have hnorm : ‖x₀ - t • e - y‖ = R - t := by
-      rw [hx₀, show y + R • e - t • e - y = (R - t) • e by module, norm_smul, he, mul_one,
-        Real.norm_of_nonneg (by linarith [ht.2])]
-    simp only [hKdef, Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, hnorm, not_lt]
+    simp only [hKdef, Set.mem_sdiff, mem_closedBall, mem_ball, dist_eq_norm, hx₀,
+      norm_add_smul_sub_smul_sub he (by linarith [ht.2] : t ≤ R), not_lt]
     constructor <;> linarith [ht.1, ht.2]
   have hv := hKmax htK
   have hbarrier := mul_le_hopfBarrier_sub_smul (y := y) (e := e) (R := R) (α := α) (t := t) he
@@ -533,67 +425,21 @@ theorem eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax
         (EuclideanSpace.single j 1) + fderiv ℝ u y (b y))
     (hnonneg : 0 ≤ u x) (hmax : IsLocalMax u x) :
     ∀ᶠ y in 𝓝 x, u y = u x := by
-  -- Work on a ball `ball x (3 * r)` on which all the hypotheses hold.
-  obtain ⟨r₀, hr₀, hr₀sub⟩ := Metric.eventually_nhds_iff_ball.mp
-    ((hcd.eventually (by simp)).and (hmax.and (ha.and (htr.and (hb.and (hc.and
-      (hcγ.and hsub)))))))
-  set r := r₀ / 3 with hr_def
-  have hr : 0 < r := by positivity
-  have hball : ∀ ⦃y⦄, dist y x < 3 * r → _ := fun y hy ↦ hr₀sub y (by rw [mem_ball]; linarith)
-  by_contra hne
-  -- Some point `x₂` close to `x` has a different, hence smaller, value.
-  obtain ⟨x₂, hx₂x, hx₂ne⟩ : ∃ x₂, dist x₂ x < r ∧ u x₂ ≠ u x := by
-    by_contra! h
-    exact hne (Metric.eventually_nhds_iff.mpr ⟨r, hr, fun y hy ↦ h y hy⟩)
-  -- The part `Z` of the level set `{u = u x}` in `closedBall x (2 * r)` is compact.
-  set Z := closedBall x (2 * r) ∩ u ⁻¹' {u x}
-  have hcont : ContinuousOn u (closedBall x (2 * r)) := fun y hy ↦
-    (hball (by rw [mem_closedBall] at hy; linarith)).1.continuousAt.continuousWithinAt
-  have hZclosed : IsClosed Z :=
-    hcont.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton
-  have hZcompact : IsCompact Z :=
-    (isCompact_closedBall x (2 * r)).of_isClosed_subset hZclosed inter_subset_left
-  have hxZ : x ∈ Z := ⟨mem_closedBall_self (by positivity), rfl⟩
-  have hx₂Z : x₂ ∉ Z := fun h ↦ hx₂ne h.2
-  -- `ρ` is the distance from `x₂` to `Z`, attained at `x₀ ∈ Z`.
-  set ρ := infDist x₂ Z
-  have hρ : 0 < ρ := (hZclosed.notMem_iff_infDist_pos ⟨x, hxZ⟩).mp hx₂Z
-  have hρr : ρ < r := (infDist_le_dist_of_mem hxZ).trans_lt hx₂x
-  obtain ⟨x₀, hx₀Z, hx₀dist⟩ := hZcompact.exists_infDist_eq_dist ⟨x, hxZ⟩ x₂
-  have hnear : ∀ ⦃y⦄, dist y x₂ ≤ ρ → dist y x < 2 * r := fun y hy ↦ by
-    linarith [dist_triangle y x₂ x]
-  have hin : ∀ y ∈ ball x₂ ρ, dist y x < 3 * r := fun y hy ↦ by
-    rw [mem_ball] at hy
-    linarith [hnear hy.le]
-  have hlt : ∀ y ∈ ball x₂ ρ, u y < u x₀ := fun y hy ↦ by
-    rw [mem_ball] at hy
-    have hyx := hnear hy.le
-    refine hx₀Z.2 ▸ lt_of_le_of_ne (hball (by linarith)).2.1 fun hyu ↦ ?_
-    have hyZ : y ∈ Z := ⟨mem_closedBall.mpr hyx.le, hyu⟩
-    have := infDist_le_dist_of_mem (x := x₂) hyZ
-    rw [dist_comm] at this
-    linarith
-  -- Write `x₀ = x₂ + ρ • e` for the unit outward normal `e`.
-  have hx₀x₂ : dist x₀ x₂ = ρ := by rw [dist_comm, ← hx₀dist]
-  set e := ρ⁻¹ • (x₀ - x₂) with he_def
-  have hx₀e : x₂ + ρ • e = x₀ := by
-    rw [he_def, smul_smul, mul_inv_cancel₀ hρ.ne', one_smul, add_sub_cancel]
-  have he : ‖e‖ = 1 := by
-    rw [he_def, norm_smul, norm_inv, Real.norm_of_nonneg hρ.le, ← dist_eq_norm, hx₀x₂,
-      inv_mul_cancel₀ hρ.ne']
-  -- `x₀` is again a local maximum, so Hopf's lemma contradicts `fderiv ℝ u x₀ = 0`.
-  have hx₀x : dist x₀ x < 3 * r := by linarith [hnear hx₀x₂.le]
-  have hx₀max : IsLocalMax u x₀ := by
-    refine Metric.eventually_nhds_iff_ball.mpr ⟨3 * r - dist x₀ x, by linarith, fun y hy ↦ ?_⟩
-    rw [mem_ball] at hy
-    exact hx₀Z.2 ▸ (hball (by linarith [dist_triangle y x₀ x])).2.1
-  have hpos := fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball hρ he hlam
-    (fun y hy ↦ (hball (hin y hy)).2.2.1) (fun y hy ↦ (hball (hin y hy)).2.2.2.1)
-    (fun y hy ↦ (hball (hin y hy)).2.2.2.2.1) (fun y hy ↦ (hball (hin y hy)).2.2.2.2.2.1)
-    (fun y hy ↦ (hball (hin y hy)).2.2.2.2.2.2.1)
-    (hx₀e ▸ (hball hx₀x).1.differentiableAt (by simp)) (fun y hy ↦ (hball (hin y hy)).1)
-    (fun y hy ↦ (hball (hin y hy)).2.2.2.2.2.2.2) (hx₀e ▸ hx₀Z.2 ▸ hnonneg) (hx₀e ▸ hlt)
-  rw [hx₀e, hx₀max.fderiv_eq_zero] at hpos
+  -- A ball inside the neighbourhood where the hypotheses hold, touching the level set `{u = u x}`
+  -- from inside at a local maximum `x₀`, would make the outward derivative at `x₀` positive.
+  refine eventually_eq_of_isLocalMax_of_forall_not_lt_ball
+    ((hcd.eventually (by simp)).and (ha.and (htr.and (hb.and (hc.and (hcγ.and hsub))))))
+    ((hcd.eventually (by simp)).mono fun y hy ↦ hy.continuousAt) hmax
+    fun y e R hR he hball hx₀max hx₀ hlt ↦ ?_
+  choose hcdB haB htrB hbB hcB hcγB hsubB using
+    fun z (hz : z ∈ ball y R) ↦ hball (ball_subset_closedBall hz)
+  have hx₀mem : y + R • e ∈ closedBall y R := by
+    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, he, mul_one,
+      Real.norm_of_nonneg hR.le]
+  have hpos := fderiv_pos_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_lt_ball hR he hlam haB
+    htrB hbB hcB hcγB ((hball hx₀mem).1.differentiableAt (by simp)) hcdB hsubB
+    (hx₀ ▸ hnonneg) hlt
+  rw [hx₀max.fderiv_eq_zero] at hpos
   exact lt_irrefl _ hpos
 
 /-- **The strong maximum principle for elliptic operators in non-divergence form.** Let `U` be a
@@ -618,39 +464,31 @@ theorem eqOn_const_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isMaxOn
         (EuclideanSpace.single j 1) + fderiv ℝ u x (b x))
     (hnonneg : 0 ≤ u z) (hmax : IsMaxOn u U z) :
     EqOn u (Function.const _ (u z)) U := by
-  -- The points near which `u` is identically `u z` form an open set, which is relatively closed
-  -- in `U` by continuity and the local principle, and contains `z`.
-  have hlocal : ∀ x ∈ U, u x = u z → ∀ᶠ y in 𝓝 x, u y = u z := fun x hx hxz ↦ by
-    have hxmax : IsMaxOn u U x := isMaxOn_iff.mpr fun y hy ↦ by
-      rw [hxz]
-      exact isMaxOn_iff.mp hmax y hy
-    have hxnonneg : 0 ≤ u x := by
-      rw [hxz]
-      exact hnonneg
-    obtain ⟨lam, hlam, hax⟩ := ha x hx
-    obtain ⟨τ, hτ⟩ := htr x hx
-    obtain ⟨β, hβ⟩ := hb x hx
-    obtain ⟨γ, hγ⟩ := hcγ x hx
-    have h1 : ∀ᶠ y in 𝓝 x, (a y).trace ≤ τ := eventually_map.mp hτ
-    have h2 : ∀ᶠ y in 𝓝 x, ‖b y‖ ≤ β := eventually_map.mp hβ
-    have h3 : ∀ᶠ y in 𝓝 x, c y ≤ γ := eventually_map.mp hγ
-    have h4 : ∀ᶠ y in 𝓝 x, 0 ≤ c y := eventually_of_mem (hU.mem_nhds hx) hc
-    have h5 : ∀ᶠ y in 𝓝 x, c y * u y ≤
-        ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1)
-          (EuclideanSpace.single j 1) + fderiv ℝ u y (b y) :=
-      eventually_of_mem (hU.mem_nhds hx) hsub
-    have h := eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax hlam hax h1
-      h2 h4 h3 (hcd x hx) h5 hxnonneg (hxmax.isLocalMax (hU.mem_nhds hx))
-    exact h.mono fun y hy ↦ hy.trans hxz
-  have hsubset : U ⊆ {x | ∀ᶠ y in 𝓝 x, u y = u z} := by
-    refine hUconn.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds
-      ⟨z, hz, hlocal z hz rfl⟩ ?_
-    rintro x ⟨hxcl, hxU⟩
-    refine hlocal x hxU (by_contra fun hxz ↦ ?_)
-    obtain ⟨y, hy, hyO⟩ := mem_closure_iff_nhds.mp hxcl _
-      ((hcd x hxU).continuousAt.eventually_ne hxz)
-    exact hy hyO.self_of_nhds
-  exact fun x hx ↦ (hsubset hx).self_of_nhds
+  -- By preconnectedness it suffices that `u` is identically `u z` near every point of `U` at which
+  -- it takes the value `u z`: this is the local principle.
+  refine hUconn.eqOn_const_of_eventually_eq hz (fun x hx ↦ (hcd x hx).continuousAt)
+    fun x hx hxz ↦ ?_
+  have hxmax : IsMaxOn u U x := isMaxOn_iff.mpr fun y hy ↦ by
+    rw [hxz]
+    exact isMaxOn_iff.mp hmax y hy
+  have hxnonneg : 0 ≤ u x := by
+    rw [hxz]
+    exact hnonneg
+  obtain ⟨lam, hlam, hax⟩ := ha x hx
+  obtain ⟨τ, hτ⟩ := htr x hx
+  obtain ⟨β, hβ⟩ := hb x hx
+  obtain ⟨γ, hγ⟩ := hcγ x hx
+  have h1 : ∀ᶠ y in 𝓝 x, (a y).trace ≤ τ := eventually_map.mp hτ
+  have h2 : ∀ᶠ y in 𝓝 x, ‖b y‖ ≤ β := eventually_map.mp hβ
+  have h3 : ∀ᶠ y in 𝓝 x, c y ≤ γ := eventually_map.mp hγ
+  have h4 : ∀ᶠ y in 𝓝 x, 0 ≤ c y := eventually_of_mem (hU.mem_nhds hx) hc
+  have h5 : ∀ᶠ y in 𝓝 x, c y * u y ≤
+      ∑ i, ∑ j, a y i j * fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single i 1)
+        (EuclideanSpace.single j 1) + fderiv ℝ u y (b y) :=
+    eventually_of_mem (hU.mem_nhds hx) hsub
+  have h := eventually_eq_of_mul_le_sum_mul_fderiv_fderiv_add_fderiv_of_isLocalMax hlam hax h1
+    h2 h4 h3 (hcd x hx) h5 hxnonneg (hxmax.isLocalMax (hU.mem_nhds hx))
+  exact h.mono fun y hy ↦ hy.trans hxz
 
 /-- **The strong maximum principle without zeroth-order term.** Let `U` be a preconnected open
 set, on which `a` is locally uniformly elliptic with locally bounded trace and `b` is locally

@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
+import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.InnerProductSpace.Laplacian.LowerOrderMaximumPrinciple
 import TauCeti.Analysis.InnerProductSpace.NormPow
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
@@ -194,20 +195,10 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
       rw [hx₀def, sub_smul]
       abel
     rw [hsub, norm_smul, Real.norm_eq_abs, he, mul_one, abs_of_nonneg (by linarith)]
-  set F : ℝ → ℝ := fun h ↦ u x₀ - u (x₀ - h • e) - ε * hopfBarrier y R p (x₀ - h • e)
-    with hFdef
-  have hF0 : F 0 = 0 := by
-    have hz : hopfBarrier y R p x₀ = 0 := by
-      have h := hnorm_sub (h := 0) hR
-      rw [zero_smul, sub_zero, sub_zero] at h
-      exact hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr h)
-    simp only [hFdef, zero_smul, sub_zero, hz, mul_zero, sub_self]
-  -- The derivative of `u` along the inward ray at `x₀`.
-  have hline : HasDerivAt (fun h : ℝ ↦ x₀ - h • e) (-e) 0 := by
-    simpa using ((hasDerivAt_id (0 : ℝ)).smul_const e).const_sub x₀
-  have h1 : HasDerivAt (fun h : ℝ ↦ u (x₀ - h • e)) (-(fderiv ℝ u x₀ e)) 0 := by
-    have h := hderiv.hasFDerivAt.comp_hasDerivAt_of_eq (x := 0) hline (by simp)
-    rwa [map_neg] at h
+  have hz : hopfBarrier y R p x₀ = 0 := by
+    have h := hnorm_sub (h := 0) hR
+    rw [zero_smul, sub_zero, sub_zero] at h
+    exact hopfBarrier_eq_zero_of_mem_sphere (mem_sphere_iff_norm.mpr h)
   -- The derivative of the barrier along the inward ray at `x₀`.
   have h2 : HasDerivAt (fun h : ℝ ↦ hopfBarrier y R p (x₀ - h • e)) (-p * R ^ (p - 1)) 0 := by
     have hs : HasDerivAt (fun h : ℝ ↦ R - h) (-1) 0 := by
@@ -221,22 +212,12 @@ private theorem fderiv_pos_of_add_mul_hopfBarrier_le {u : E → ℝ} {y e : E} {
       filter_upwards [eventually_lt_nhds hR] with h hh
       rw [hopfBarrier, hnorm_sub hh]
     simpa only [mul_neg, mul_one, neg_mul] using hbase.congr_of_eventuallyEq hev
-  have hFderiv : HasDerivAt F (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1))) 0 := by
-    have h := ((hasDerivAt_const (0 : ℝ) (u x₀)).sub h1).sub (h2.const_mul ε)
-    rw [sub_neg_eq_add, zero_add] at h
-    exact h.congr_of_eventuallyEq (.of_forall fun _ ↦ rfl)
-  -- `F ≥ 0` to the right of `0`, so its right derivative at `0` is nonnegative.
-  have hslope : Tendsto (fun h : ℝ ↦ h⁻¹ * F h) (𝓝[>] (0 : ℝ))
-      (𝓝 (fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)))) := by
-    simpa only [zero_add, hF0, sub_zero, smul_eq_mul] using hFderiv.tendsto_slope_zero_right
-  have hslope_nonneg : ∀ᶠ h in 𝓝[>] (0 : ℝ), 0 ≤ h⁻¹ * F h := by
-    filter_upwards [Ioc_mem_nhdsGT hδ] with h hh
-    have := hray h hh
-    exact mul_nonneg (inv_nonneg.mpr hh.1.le) (by simp only [hFdef]; linarith)
-  have hkey : 0 ≤ fderiv ℝ u x₀ e - ε * (-p * R ^ (p - 1)) := ge_of_tendsto hslope hslope_nonneg
-  have hεpos' : 0 < ε * (-p * R ^ (p - 1)) :=
-    mul_pos hε (mul_pos (by linarith) (Real.rpow_pos_of_pos hR _))
-  linarith
+  -- The barrier term bounds the difference quotients of `u` below, so its slope
+  -- `ε (-p) R ^ (p - 1) > 0` bounds the outward derivative.
+  refine (mul_pos hε (mul_pos (neg_pos.mpr hp) (Real.rpow_pos_of_pos hR _))).trans_le
+    (le_fderiv_of_le_sub (g := fun h ↦ ε * hopfBarrier y R p (x₀ - h • e)) hδ hderiv
+      (h2.const_mul ε).hasDerivWithinAt (by simp only [zero_smul, sub_zero, hz, mul_zero])
+      fun h hh ↦ by linarith [hray h hh])
 
 /-- **Hopf's boundary-point lemma for `-Δ - b·∇ + c`.** Let `B = ball y R` be a ball in a
 finite-dimensional real inner product space, let `e` be a unit vector, and let `x₀ = y + R • e` be

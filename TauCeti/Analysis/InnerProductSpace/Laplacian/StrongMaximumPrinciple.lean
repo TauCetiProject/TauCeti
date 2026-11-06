@@ -7,8 +7,9 @@ module
 
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Laplacian.HopfLemma
+import TauCeti.Analysis.InnerProductSpace.TouchingBall
+import TauCeti.Topology.Connected.Basic
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
-import Mathlib.Topology.MetricSpace.HausdorffDistance
 
 /-!
 # The strong maximum principle
@@ -33,8 +34,10 @@ coefficients. The local step is
 touches the level set `{u = u x}` at a point `x₀` of its sphere. There `u` is strictly below
 `u x₀` inside the ball and weakly below it on the sphere, so Hopf's lemma makes the outward
 derivative at `x₀` strictly positive; but `x₀` is again a local maximum, where the derivative
-vanishes. Hence `u` is locally constant near every point where it attains its maximum, and
-preconnectedness spreads this over the whole set.
+vanishes. This touching-ball argument is
+`TauCeti.eventually_eq_of_isLocalMax_of_forall_not_lt_ball`. Hence `u` is locally constant near
+every point where it attains its maximum, and preconnectedness spreads this over the whole set
+(`IsPreconnected.eqOn_const_of_eventually_eq`).
 
 Unlike the planar statements of `TauCeti.Analysis.PDE.Harnack.StrongPrinciple`, which use the
 analyticity of planar harmonic functions, the results here need the set to be open: a subharmonic
@@ -90,31 +93,6 @@ section LowerOrder
 
 variable {U : Set E} {u v c : E → ℝ} {b : E → E} {a : E}
 
-/-- A `C²` subsolution of `-Δ - b·∇ + c` in a ball, with bounded coefficients `‖b‖ ≤ β` and
-`0 ≤ c ≤ γ`, that is nonnegative at a point `x₀` of the bounding sphere, strictly below `u x₀`
-inside the ball and weakly below it on the sphere, has no local maximum at `x₀`: by Hopf's lemma
-its outward derivative there is positive. -/
-private theorem not_isLocalMax_of_lt_ball_of_le_sphere {y x₀ : E} {R β γ : ℝ} (hR : 0 < R)
-    (hx₀ : x₀ ∈ sphere y R) (hucont : ContinuousOn u (closedBall y R))
-    (huinterior : ∀ x ∈ ball y R, ContDiffAt ℝ 2 u x) (hderiv : DifferentiableAt ℝ u x₀)
-    (hc : ∀ x ∈ ball y R, 0 ≤ c x) (hcγ : ∀ x ∈ ball y R, c x ≤ γ)
-    (hb : ∀ x ∈ ball y R, ‖b x‖ ≤ β)
-    (hsub : ∀ x ∈ ball y R, c x * u x ≤ Δ u x + fderiv ℝ u x (b x)) (hnonneg : 0 ≤ u x₀)
-    (hlt : ∀ x ∈ ball y R, u x < u x₀) (hle : ∀ x ∈ sphere y R, u x ≤ u x₀) :
-    ¬IsLocalMax u x₀ := by
-  intro hmax
-  -- Write `x₀ = y + R • e` for the unit outward normal `e`.
-  set e := R⁻¹ • (x₀ - y) with he_def
-  have hx₀e : y + R • e = x₀ := by
-    rw [he_def, smul_smul, mul_inv_cancel₀ hR.ne', one_smul, add_sub_cancel]
-  have he : ‖e‖ = 1 := by
-    rw [he_def, norm_smul, norm_inv, Real.norm_of_nonneg hR.le, ← dist_eq_norm, mem_sphere.mp hx₀,
-      inv_mul_cancel₀ hR.ne']
-  have hpos := fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere hR he hucont
-    huinterior (hx₀e ▸ hderiv) hc hcγ hb hsub (hx₀e ▸ hnonneg) (hx₀e ▸ hlt) (hx₀e ▸ hle)
-  rw [hx₀e, hmax.fderiv_eq_zero] at hpos
-  exact lt_irrefl _ hpos
-
 /-- **Local strong maximum principle for `-Δ - b·∇ + c`.** Let `u` be `C²` at a local maximum
 point `x` with `0 ≤ u x`, and near `x` let `u` be a subsolution `c u ≤ Δ u + ⟪b, ∇u⟫` with
 coefficients bounded as `‖b‖ ≤ β` and `0 ≤ c ≤ γ`. Then `u` is constant on a neighbourhood of
@@ -125,65 +103,27 @@ theorem eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax {x : E} {β �
     (hsub : ∀ᶠ y in 𝓝 x, c y * u y ≤ Δ u y + fderiv ℝ u y (b y)) (hnonneg : 0 ≤ u x)
     (hmax : IsLocalMax u x) :
     ∀ᶠ y in 𝓝 x, u y = u x := by
-  -- Work on a ball `ball x (3 * r)` on which `u` is `C²`, bounded by `u x`, and a subsolution
-  -- with bounded coefficients.
-  obtain ⟨r₀, hr₀, hr₀sub⟩ := Metric.eventually_nhds_iff_ball.mp
+  -- A ball inside the neighbourhood where `u` is `C²` and a subsolution with bounded
+  -- coefficients, touching the level set `{u = u x}` from inside at a local maximum `x₀`, would
+  -- make the outward derivative at `x₀` positive by Hopf's lemma.
+  refine eventually_eq_of_isLocalMax_of_forall_not_lt_ball
     ((hcd.eventually (by simp)).and (hmax.and (hc.and (hcγ.and (hb.and hsub)))))
-  set r := r₀ / 3 with hr_def
-  have hr : 0 < r := by positivity
-  have hball : ∀ ⦃y⦄, dist y x < 3 * r →
-      ContDiffAt ℝ 2 u y ∧ u y ≤ u x ∧ 0 ≤ c y ∧ c y ≤ γ ∧ ‖b y‖ ≤ β ∧
-        c y * u y ≤ Δ u y + fderiv ℝ u y (b y) := fun y hy =>
-    hr₀sub y (by rw [mem_ball]; linarith)
-  by_contra hne
-  -- Some point `x₂` close to `x` has a strictly smaller value.
-  obtain ⟨x₂, hx₂x, hx₂ne⟩ : ∃ x₂, dist x₂ x < r ∧ u x₂ ≠ u x := by
-    by_contra! h
-    exact hne (Metric.eventually_nhds_iff.mpr ⟨r, hr, fun y hy => h y hy⟩)
-  -- The part `Z` of the level set `{u = u x}` in `closedBall x (2 * r)` is compact.
-  set Z := closedBall x (2 * r) ∩ u ⁻¹' {u x}
-  have hcont : ContinuousOn u (closedBall x (2 * r)) := fun y hy =>
-    (hball (by rw [mem_closedBall] at hy; linarith)).1.continuousAt.continuousWithinAt
-  have hZclosed : IsClosed Z :=
-    hcont.preimage_isClosed_of_isClosed isClosed_closedBall isClosed_singleton
-  have hZcompact : IsCompact Z :=
-    (isCompact_closedBall x (2 * r)).of_isClosed_subset hZclosed inter_subset_left
-  have hxZ : x ∈ Z := ⟨mem_closedBall_self (by positivity), rfl⟩
-  have hx₂Z : x₂ ∉ Z := fun h => hx₂ne h.2
-  -- `ρ` is the distance from `x₂` to `Z`, attained at `x₀ ∈ Z`.
-  set ρ := infDist x₂ Z
-  have hρ : 0 < ρ := (hZclosed.notMem_iff_infDist_pos ⟨x, hxZ⟩).mp hx₂Z
-  have hρr : ρ < r := (infDist_le_dist_of_mem hxZ).trans_lt hx₂x
-  obtain ⟨x₀, hx₀Z, hx₀dist⟩ := hZcompact.exists_infDist_eq_dist ⟨x, hxZ⟩ x₂
-  have hnear : ∀ ⦃y⦄, dist y x₂ ≤ ρ → dist y x < 2 * r := fun y hy => by
-    linarith [dist_triangle y x₂ x]
-  have hin : ∀ y ∈ ball x₂ ρ, dist y x < 3 * r := fun y hy => by
-    rw [mem_ball] at hy
-    linarith [hnear hy.le]
-  have hlt : ∀ y ∈ ball x₂ ρ, u y < u x₀ := fun y hy => by
-    rw [mem_ball] at hy
-    have hyx := hnear hy.le
-    refine hx₀Z.2 ▸ lt_of_le_of_ne (hball (by linarith)).2.1 fun hyu => ?_
-    have hyZ : y ∈ Z := ⟨mem_closedBall.mpr hyx.le, hyu⟩
-    have := infDist_le_dist_of_mem (x := x₂) hyZ
-    rw [dist_comm] at this
-    linarith
-  have hle : ∀ y ∈ sphere x₂ ρ, u y ≤ u x₀ := fun y hy => by
-    rw [mem_sphere] at hy
-    exact hx₀Z.2 ▸ (hball (by linarith [hnear hy.le])).2.1
-  -- `x₀` is again a local maximum, on the sphere touching `Z`: this contradicts Hopf's lemma.
-  have hx₀x : dist x₀ x < 3 * r := by
-    linarith [hnear (y := x₀) (by rw [dist_comm, ← hx₀dist])]
-  refine not_isLocalMax_of_lt_ball_of_le_sphere hρ (by rw [mem_sphere, dist_comm, ← hx₀dist])
-    (fun y hy => (hball (by rw [mem_closedBall] at hy; linarith [hnear hy])).1.continuousAt
-      |>.continuousWithinAt)
-    (fun y hy => (hball (hin y hy)).1) ((hball hx₀x).1.differentiableAt (by simp))
-    (fun y hy => (hball (hin y hy)).2.2.1) (fun y hy => (hball (hin y hy)).2.2.2.1)
-    (fun y hy => (hball (hin y hy)).2.2.2.2.1) (fun y hy => (hball (hin y hy)).2.2.2.2.2)
-    (hx₀Z.2 ▸ hnonneg) hlt hle ?_
-  refine Metric.eventually_nhds_iff_ball.mpr ⟨3 * r - dist x₀ x, by linarith, fun y hy => ?_⟩
-  rw [mem_ball] at hy
-  exact hx₀Z.2 ▸ (hball (by linarith [dist_triangle y x₀ x])).2.1
+    ((hcd.eventually (by simp)).mono fun y hy => hy.continuousAt) hmax
+    fun y e R hR he hball hx₀max hx₀ hlt => ?_
+  choose hcdB hleB hcB hcγB hbB hsubB using fun z (hz : z ∈ closedBall y R) => hball hz
+  have hx₀mem : y + R • e ∈ closedBall y R := by
+    rw [mem_closedBall, dist_eq_norm, add_sub_cancel_left, norm_smul, he, mul_one,
+      Real.norm_of_nonneg hR.le]
+  have hpos := fderiv_pos_of_mul_le_laplacian_add_fderiv_of_lt_ball_of_le_sphere hR he
+    (fun z hz => (hcdB z hz).continuousAt.continuousWithinAt)
+    (fun z hz => hcdB z (ball_subset_closedBall hz))
+    ((hcdB _ hx₀mem).differentiableAt (by simp))
+    (fun z hz => hcB z (ball_subset_closedBall hz)) (fun z hz => hcγB z (ball_subset_closedBall hz))
+    (fun z hz => hbB z (ball_subset_closedBall hz))
+    (fun z hz => hsubB z (ball_subset_closedBall hz)) (hx₀ ▸ hnonneg) hlt
+    (fun z hz => hx₀ ▸ hleB z (sphere_subset_closedBall hz))
+  rw [hx₀max.fderiv_eq_zero] at hpos
+  exact lt_irrefl _ hpos
 
 /-- **Local strong minimum principle for `-Δ - b·∇ + c`.** A `C²` supersolution
 `Δ u + ⟪b, ∇u⟫ ≤ c u` near a local minimum point `x` with `u x ≤ 0`, whose coefficients are bounded
@@ -216,25 +156,17 @@ theorem eqOn_const_of_mul_le_laplacian_add_fderiv_of_isMaxOn (hU : IsOpen U) (ha
     (hsub : ∀ x ∈ U, c x * u x ≤ Δ u x + fderiv ℝ u x (b x)) (hnonneg : 0 ≤ u a)
     (hmax : IsMaxOn u U a) :
     EqOn u (const E (u a)) U := by
-  -- The points near which `u` is identically `u a` form an open set, which is relatively closed
-  -- in `U` by continuity and the local principle, and contains `a`.
-  have hlocal : ∀ x ∈ U, u x = u a → ∀ᶠ y in 𝓝 x, u y = u a := fun x hx hxa => by
-    have hxmax : IsMaxOn u U x := fun y hy => hxa ▸ hmax hy
-    obtain ⟨γ, hγ⟩ := hcbdd x hx
-    obtain ⟨β, hβ⟩ := hbbdd x hx
-    simpa only [hxa] using eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax
-      (b := b) (hcd x hx) (eventually_of_mem (hU.mem_nhds hx) hc) (eventually_map.mp hγ)
-      (eventually_map.mp hβ) (eventually_of_mem (hU.mem_nhds hx) hsub) (hxa ▸ hnonneg)
-      (hxmax.isLocalMax (hU.mem_nhds hx))
-  have hsubset : U ⊆ {x | ∀ᶠ y in 𝓝 x, u y = u a} := by
-    refine hUconn.subset_of_closure_inter_subset isOpen_setOfPred_eventually_nhds
-      ⟨a, ha, hlocal a ha rfl⟩ ?_
-    rintro x ⟨hxcl, hxU⟩
-    refine hlocal x hxU (by_contra fun hxa => ?_)
-    obtain ⟨y, hy, hyO⟩ := mem_closure_iff_nhds.mp hxcl _
-      ((hcd x hxU).continuousAt.eventually_ne hxa)
-    exact hy hyO.self_of_nhds
-  exact fun x hx => (hsubset hx).self_of_nhds
+  -- By preconnectedness it suffices that `u` is identically `u a` near every point of `U` at which
+  -- it takes the value `u a`: this is the local principle.
+  refine hUconn.eqOn_const_of_eventually_eq ha (fun x hx => (hcd x hx).continuousAt)
+    fun x hx hxa => ?_
+  have hxmax : IsMaxOn u U x := fun y hy => hxa ▸ hmax hy
+  obtain ⟨γ, hγ⟩ := hcbdd x hx
+  obtain ⟨β, hβ⟩ := hbbdd x hx
+  simpa only [hxa] using eventually_eq_of_mul_le_laplacian_add_fderiv_of_isLocalMax
+    (b := b) (hcd x hx) (eventually_of_mem (hU.mem_nhds hx) hc) (eventually_map.mp hγ)
+    (eventually_map.mp hβ) (eventually_of_mem (hU.mem_nhds hx) hsub) (hxa ▸ hnonneg)
+    (hxmax.isLocalMax (hU.mem_nhds hx))
 
 /-- **Strong minimum principle for `-Δ - b·∇ + c`.** Let `U` be a preconnected open set, and let
 `b` and `c ≥ 0` be locally bounded on `U`. A function that is `C²` on `U`, is a supersolution
