@@ -177,7 +177,6 @@ the index `i` stands for the preferred chart of `M` at `i` and the preferred tri
 `E →L[𝕜] F`. The transition functions are the first-jet transformations
 `ContinuousLinearMap.firstJetPullback` built from the transition functions of `V`, their
 derivatives `FirstJet.coordChangeDeriv`, and the derivatives of the chart transitions. -/
-@[expose, simps -isSimp baseSet, simps indexAt coordChange]
 def firstJetCore : VectorBundleCore 𝕜 M (F × (E →L[𝕜] F)) M where
   baseSet i := (trivializationAt F V i).baseSet ∩ (chartAt H i).source
   isOpen_baseSet i := (trivializationAt F V i).open_baseSet.inter (chartAt H i).open_source
@@ -203,6 +202,27 @@ def firstJetCore : VectorBundleCore 𝕜 M (F × (E →L[𝕜] F)) M where
       Manifold.tangentCoordChange_comp_tangentCoordChange hx,
       coordChangeDeriv_comp hi.1 hj.1 hk.1 hj.2 hk.2]
 
+/-- The base set of the index `i` of `firstJetCore` is the base set of the preferred
+trivialization of `V` at `i` inside the source of the preferred chart at `i`. This is not
+`@[simp]`: Mathlib's `VectorBundleCore.baseSet_at` rewrites its left-hand side first. -/
+theorem firstJetCore_baseSet (i : M) :
+    (firstJetCore I F V).baseSet i = (trivializationAt F V i).baseSet ∩ (chartAt H i).source :=
+  (rfl)
+
+/-- The index of `firstJetCore` at a point is the point itself. -/
+@[simp]
+theorem firstJetCore_indexAt (x : M) : (firstJetCore I F V).indexAt x = x :=
+  (rfl)
+
+/-- The transition functions of `firstJetCore` are the first-jet transformations built from the
+transition functions of `V`, their chart derivatives and the chart-transition derivatives. -/
+@[simp]
+theorem firstJetCore_coordChange (i j x : M) :
+    (firstJetCore I F V).coordChange i j x =
+      ((trivializationAt F V i).coordChangeL 𝕜 (trivializationAt F V j) x :
+        F →L[𝕜] F).firstJetPullback (coordChangeDeriv I F V i j x) (tangentCoordChange I j i x) :=
+  (rfl)
+
 /-- If `V` is a `C^(n+1)` vector bundle over a `C^(n+1)` manifold, the transition functions of
 its first-jet bundle are `C^n`. -/
 theorem firstJetCore.isContMDiff {n : WithTop ℕ∞} [IsManifold I (n + 1) M]
@@ -214,7 +234,7 @@ variable (I F V) in
 /-- The first-jet bundle `J¹V` of a smooth vector bundle `V`. Its fibre at `x` consists of the
 first jets at `x` of local sections, written as a value and a derivative in the preferred chart
 of `M` and the preferred trivialization of `V` at `x`. -/
-@[expose] def FirstJet (x : M) : Type _ :=
+def FirstJet (x : M) : Type _ :=
   (firstJetCore I F V).Fiber x
 
 instance (x : M) : AddCommGroup (FirstJet I F V x) :=
@@ -263,7 +283,7 @@ the preferred trivialization of `V` at `x₀` inside the source of the preferred
 theorem trivializationAt_baseSet (x₀ : M) :
     (trivializationAt (F × (E →L[𝕜] F)) (FirstJet I F V) x₀).baseSet =
       (trivializationAt F V x₀).baseSet ∩ (chartAt H x₀).source :=
-  rfl
+  (rfl)
 
 variable (I F V) in
 /-- The coordinates of a first jet at `x`: its value in `F` and its derivative in `E →L[𝕜] F`,
