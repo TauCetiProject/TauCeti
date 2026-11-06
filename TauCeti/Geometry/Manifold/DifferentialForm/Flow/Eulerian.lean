@@ -61,16 +61,6 @@ variable (hφ : ContMDiff (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ φ p
   (hφ' : ContMDiff (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ (φ p.1).symm p.2))
 include hφ hφ'
 
-omit [I.Boundaryless] [IsManifold I 2 M] hφ' in
-/-- Each map `φ_t` of a jointly `C²` family is `C²`. -/
-private theorem contMDiff_apply (t : ℝ) : ContMDiff I I 2 (φ t) :=
-  hφ.comp ((contMDiff_const (c := t)).prodMk contMDiff_id)
-
-omit [I.Boundaryless] [IsManifold I 2 M] hφ in
-/-- Each inverse `φ_t⁻¹` of a family with jointly `C²` inverses is `C²`. -/
-private theorem contMDiff_symm_apply (t : ℝ) : ContMDiff I I 2 (φ t).symm :=
-  hφ'.comp ((contMDiff_const (c := t)).prodMk contMDiff_id)
-
 /-- **The Lie derivative is the velocity of pulled-back forms at the base time.** For a form `α`
 differentiable at `y`, the pullbacks by the maps `φ_u ∘ φ_t⁻¹` satisfy
 `d/du|_{u = t} ((φ_u ∘ φ_t⁻¹)^* α)_y = (L_{X_t} α)_y`. -/
@@ -81,12 +71,13 @@ theorem hasDerivAt_mpullback_eulerianField_self {α : RoughForm I M F k} (t : �
       (fun u ↦ mpullback I I (fun x ↦ φ u ((φ t).symm x)) α y)
       (mlieDerivForm (eulerianField I φ t) α y) t := by
   have hsmooth : ContMDiff (𝓘(ℝ, ℝ).prod I) I 2 (fun p : ℝ × M ↦ φ p.1 ((φ t).symm p.2)) :=
-    hφ.comp (contMDiff_fst.prodMk ((contMDiff_symm_apply hφ' t).comp contMDiff_snd))
+    hφ.comp (contMDiff_fst.prodMk
+      ((hφ'.curry_right (f := fun u y ↦ (φ u).symm y) (x := t)).comp contMDiff_snd))
   refine hasDerivAt_mpullback_of_eq_id (ψ := fun u x ↦ φ u ((φ t).symm x))
     (V := eulerianField I φ t) y (Eventually.of_forall fun x ↦ (φ t).apply_symm_apply x)
     hsmooth.contMDiffAt (Eventually.of_forall fun x ↦ ?_) hα
   exact hasMFDerivAt_eulerianField
-    ((hφ.comp (contMDiff_id.prodMk contMDiff_const)).mdifferentiable two_ne_zero t)
+    ((hφ.curry_left (f := fun u x ↦ φ u x)).mdifferentiable two_ne_zero t)
 
 /-- **Lie derivatives along isotopies.** For a form `α` differentiable at `φ_t x`, the pullbacks
 `(φ_u^* α)ₓ` have velocity `(φ_t^* L_{X_t} α)ₓ` at time `t`, where `X` is the Eulerian velocity
@@ -97,30 +88,15 @@ theorem hasDerivAt_mpullback_eulerianField {α : RoughForm I M F k} (t : ℝ) (x
     HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F)
       (fun u ↦ mpullback I I (φ u) α x)
       (mpullback I I (φ t) (mlieDerivForm (eulerianField I φ t) α) x) t := by
-  set L : E →L[ℝ] E := mfderiv I I (φ t) x
+  have hφu (u : ℝ) : MDifferentiable I I (φ u) :=
+    (hφ.curry_right (f := fun u x ↦ φ u x) (x := u)).mdifferentiable two_ne_zero
+  have hφt : MDifferentiable I I (φ t).symm :=
+    (hφ'.curry_right (f := fun u y ↦ (φ u).symm y) (x := t)).mdifferentiable two_ne_zero
   -- Since `φ_u = (φ_u ∘ φ_t⁻¹) ∘ φ_t`, the derivative at `t` is read at the base time.
-  have hshift (u : ℝ) : mpullback I I (φ u) α x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L
-        (mpullback I I (fun z ↦ φ u ((φ t).symm z)) α (φ t x)) := by
-    have hcomp : (φ u : M → M) = (fun z ↦ φ u ((φ t).symm z)) ∘ φ t :=
-      funext fun z ↦ by simp
-    have hψ : MDifferentiable I I fun z ↦ φ u ((φ t).symm z) :=
-      ((contMDiff_apply hφ u).comp (contMDiff_symm_apply hφ' t)).mdifferentiable two_ne_zero
-    conv_lhs => rw [hcomp]
-    rw [mpullback_comp_at ((contMDiff_apply hφ t).mdifferentiable two_ne_zero x) (hψ _)]
-    ext v
-    -- As in `TauCeti.hasDerivAt_mpullback_timeDependentFlowOf`, the operator
-    -- `compContinuousLinearMapCLM L` acts on forms on `E`, while the pulled-back form takes values
-    -- on tangent spaces, which are `E` only up to unfolding; so the right side is unfolded by
-    -- `rfl`.
-    rw [mpullback_apply]
-    rfl
-  have h := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t
+  exact hasDerivAt_mpullback_of_eq_comp (χ := fun u z ↦ φ u ((φ t).symm z))
+    (Eventually.of_forall fun u ↦ funext fun z ↦ by simp) (hφu t x)
+    (Eventually.of_forall fun u ↦ ((hφu u).comp hφt) _)
     (hasDerivAt_mpullback_eulerianField_self hφ hφ' t _ hα)
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun u ↦ hshift u)).congr_deriv ?_
-  ext v
-  -- As in `hshift`, the left side is `compContinuousLinearMapCLM L` applied up to unfolding.
-  exact (mpullback_apply (φ t) (mlieDerivForm (eulerianField I φ t) α) x v).symm
 
 /-- **Invariance of forms under isotopies.** For a differentiable form `α`, the pullback `φ_t^* α`
 is independent of `t` exactly when its Lie derivative along the Eulerian velocity field of the
@@ -140,22 +116,16 @@ theorem forall_mpullback_eq_iff_forall_mlieDerivForm_eulerianField_eq_zero
         fun _ ↦ mpullback I I (fun x ↦ φ t ((φ t).symm x)) α y := by
       funext u
       have hcomp (s : ℝ) : (fun x ↦ φ s ((φ t).symm x)) = φ s ∘ (φ t).symm := rfl
-      rw [hcomp, hcomp, mpullback_comp_at ((contMDiff_symm_apply hφ' t).mdifferentiable
-          two_ne_zero y) ((contMDiff_apply hφ u).mdifferentiable two_ne_zero _),
-        mpullback_comp_at ((contMDiff_symm_apply hφ' t).mdifferentiable two_ne_zero y)
-          ((contMDiff_apply hφ t).mdifferentiable two_ne_zero _), h u t]
+      have hφt : MDifferentiableAt I I (φ t).symm y :=
+        (hφ'.curry_right (f := fun u y ↦ (φ u).symm y) (x := t)).mdifferentiableAt two_ne_zero
+      have hφu (s : ℝ) : MDifferentiable I I (φ s) :=
+        (hφ.curry_right (f := fun u x ↦ φ u x) (x := s)).mdifferentiable two_ne_zero
+      rw [hcomp, hcomp, mpullback_comp_at hφt (hφu u _), mpullback_comp_at hφt (hφu t _), h u t]
     rw [hconst] at hd
     exact hd.unique (hasDerivAt_const (F := E [⋀^Fin k]→L[ℝ] F) t _)
-  · -- With vanishing Lie derivatives, the pullbacks at each point have zero velocity.
-    intro h s t
-    funext x
-    set P : ℝ → E [⋀^Fin k]→L[ℝ] F := fun u ↦ mpullback I I (φ u) α x
-    have hderiv (u : ℝ) : HasDerivAt P 0 u := by
-      have hd := hasDerivAt_mpullback_eulerianField hφ hφ' u x (hα _)
-      rw [h u, mpullback_zero] at hd
-      exact hd
-    exact is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
-      (fun u ↦ (hderiv u).deriv) s t
+  · -- With vanishing Lie derivatives, the pullbacks are constant.
+    exact mpullback_eq_of_forall_mlieDerivForm_eq_zero (ψ := fun u ↦ φ u)
+      (fun u x ↦ hasDerivAt_mpullback_eulerianField hφ hφ' u x (hα _))
 
 /-- If every map of the family preserves a differentiable form `α`, then `L_{X_t} α = 0` for the
 Eulerian velocity field `X` of the family. -/

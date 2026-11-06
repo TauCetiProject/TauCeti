@@ -51,6 +51,10 @@ flows are the other instance (`TauCeti.Geometry.Manifold.DifferentialForm.Flow.T
 
 * `TauCeti.hasDerivAt_mpullback_of_eq_id`: along a `C²` family of maps which is the identity
   near `y` at time `t`, the velocity of the pullbacks at `y` at time `t` is the Lie derivative.
+* `TauCeti.hasDerivAt_mpullback_of_eq_comp`: for a family factoring as `ψᵤ = χᵤ ∘ g`, the
+  velocity of the pullbacks by `ψᵤ` is the pullback by `g` of the velocity of those by `χᵤ`.
+* `TauCeti.mpullback_eq_of_forall_mlieDerivForm_eq_zero`: pullbacks whose velocities are the
+  pullbacks of vanishing Lie derivatives are independent of time.
 * `TauCeti.hasDerivAt_mpullback_globalFlow_zero`: the velocity of `ψₜ^* α` at `t = 0` is `L_Z α`.
 * `TauCeti.hasDerivAt_mpullback_globalFlow`: the time derivative of `ψₜ^* α` is `ψₜ^* L_Z α`.
 * `TauCeti.mpullback_globalFlow_apply_eq_exp_integral_smul`: if `L_Z α = g • α`, then
@@ -192,6 +196,46 @@ theorem hasDerivAt_mpullback_of_eq_id {ψ : ℝ → M → M} {V : (x : M) → Ta
   ext v
   simp
 
+omit [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I 2 M] in
+/-- **Moving the base point of pulled-back forms.** Let the maps `ψᵤ` factor near time `t` as
+`χᵤ ∘ g` through a map `g` differentiable at `x`, with each `χᵤ` differentiable at `g x`. If the
+pullbacks `(χᵤ^* α)_{g x}` have velocity `β (g x)` at time `t`, then the pullbacks `(ψᵤ^* α)ₓ` have
+velocity `(g^* β)ₓ` there. -/
+theorem hasDerivAt_mpullback_of_eq_comp {ψ χ : ℝ → M → M} {g : M → M} {β : RoughForm I M F k}
+    {x : M} {t : ℝ} (hψ : ∀ᶠ u in 𝓝 t, ψ u = χ u ∘ g) (hg : MDifferentiableAt I I g x)
+    (hχ : ∀ᶠ u in 𝓝 t, MDifferentiableAt I I (χ u) (g x))
+    (h : HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (χ u) α (g x)) (β (g x)) t) :
+    HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (ψ u) α x)
+      (mpullback I I g β x) t := by
+  -- Pulling back along `g` composes with its derivative, a continuous linear operator.
+  set L : E →L[ℝ] E := mfderiv I I g x
+  have hL := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt t h
+  refine (hL.congr_of_eventuallyEq ?_).congr_deriv ?_
+  · filter_upwards [hψ, hχ] with u hu hχu
+    rw [hu, mpullback_comp_at hg hχu, mpullback_eq_compContinuousLinearMap_mfderiv]
+    -- `compContinuousLinearMapCLM L` sends an alternating map to its composition with `L`.
+    rfl
+  · rw [mpullback_eq_compContinuousLinearMap_mfderiv]
+    rfl
+
+omit [FiniteDimensional ℝ E] [T2Space M] [I.Boundaryless] [IsManifold I 2 M] in
+/-- **Pullbacks with vanishing Lie derivatives are constant.** If at every time `u` and point `x`
+the pullbacks `(ψᵤ^* α)ₓ` have velocity `(ψᵤ^* L_{Vᵤ} α)ₓ`, and every Lie derivative `L_{Vᵤ} α`
+vanishes, then `ψₛ^* α = ψₜ^* α` for all times `s` and `t`. -/
+theorem mpullback_eq_of_forall_mlieDerivForm_eq_zero {ψ : ℝ → M → M}
+    {V : ℝ → (x : M) → TangentSpace I x}
+    (hd : ∀ u x, HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (ψ u) α x)
+      (mpullback I I (ψ u) (mlieDerivForm (V u) α) x) u)
+    (hV : ∀ u, mlieDerivForm (V u) α = 0) (s t : ℝ) :
+    mpullback I I (ψ s) α = mpullback I I (ψ t) α := by
+  funext x
+  have hderiv (u : ℝ) :
+      HasDerivAt (F := E [⋀^Fin k]→L[ℝ] F) (fun u ↦ mpullback I I (ψ u) α x) 0 u := by
+    have h := hd u x
+    rwa [hV u, mpullback_zero] at h
+  exact is_const_of_deriv_eq_zero (fun u ↦ (hderiv u).differentiableAt)
+    (fun u ↦ (hderiv u).deriv) s t
+
 /-! ### Complete vector fields -/
 
 variable (hc : IsCompleteVectorField Z)
@@ -225,25 +269,13 @@ theorem hasDerivAt_mpullback_globalFlow (x : M) (t : ℝ)
   set ψ := globalFlow Z (hZ.of_le one_le_two) hc
   have hsmooth (s : ℝ) : MDifferentiable I I (ψ s) :=
     (contMDiff_globalFlow_apply hc (n := 2) (by norm_num) hZ s).mdifferentiable (by norm_num)
-  set L : E →L[ℝ] E := mfderiv I I (ψ t) x
-  -- By the group law, `ψ_{u + t}^* α = ψₜ^* (ψᵤ^* α)`, so the derivative at `t` is read at `0`.
-  have hshift (u : ℝ) : mpullback I I (ψ (u + t)) α x =
-      compContinuousLinearMapCLM (ι := Fin k) (F := F) L (mpullback I I (ψ u) α (ψ t x)) := by
-    have hcomp : ψ (u + t) = ψ u ∘ ψ t := funext fun z ↦ ψ.map_add u t z
-    rw [hcomp, mpullback_comp_at (hsmooth t x) (hsmooth u _)]
-    ext v
-    -- Both sides evaluate `ψᵤ^* α` at `ψₜ x` on the vectors `L (v i)`.
-    rw [mpullback_apply]
-    rfl
-  have h0 := (compContinuousLinearMapCLM (ι := Fin k) (F := F) L).hasFDerivAt.comp_hasDerivAt
-    (0 : ℝ) (hasDerivAt_mpullback_globalFlow_zero hc hZ (ψ t x) hα)
-  have h := HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self])
-  refine (h.congr_of_eventuallyEq (Eventually.of_forall fun s ↦ ?_)).congr_deriv ?_
-  · have hs := hshift (s - t)
-    rw [sub_add_cancel] at hs
-    exact hs
-  · ext v
-    exact (mpullback_apply (ψ t) (mlieDerivForm Z α) x v).symm
+  -- By the group law, `ψₛ = ψ_{s - t} ∘ ψₜ`, so the derivative at `t` is read at `0`.
+  have h0 := hasDerivAt_mpullback_globalFlow_zero hc hZ (ψ t x) hα
+  exact hasDerivAt_mpullback_of_eq_comp (χ := fun s ↦ ψ (s - t))
+    (Eventually.of_forall fun s ↦ funext fun z ↦ by
+      simp only [Function.comp_apply, ← ψ.map_add, sub_add_cancel])
+    (hsmooth t x) (Eventually.of_forall fun s ↦ hsmooth (s - t) _)
+    (HasDerivAt.comp_sub_const (x := t) (a := t) (by rwa [sub_self]))
 
 /-- **Rescaling along a flow.** If the Lie derivative of a differentiable form `α` along a
 complete `C²` vector field `Z` is `g • α` for a continuous function `g`, then the time-`t` map of

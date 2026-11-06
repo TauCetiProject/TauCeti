@@ -100,31 +100,6 @@ theorem eulerianField_const (e : M ≃ M) : eulerianField I (fun _ ↦ e) = 0 :=
 
 /-! ### Products and inverses of families -/
 
-/-- The velocity of the curve `u ↦ φ_u (γ u)` at time `t` is the sum of the velocity of the
-family at `γ t` and of the image of the velocity of `γ` under `dφ_t`. -/
-private theorem curveVelocity_apply_curve {γ : ℝ → M}
-    (hφ : MDifferentiableAt (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) (t, γ t))
-    (hγ : MDifferentiableAt 𝓘(ℝ, ℝ) I γ t) :
-    curveVelocity I (fun u ↦ φ u (γ u)) t =
-      curveVelocity I (fun u ↦ φ u (γ t)) t +
-        mfderiv I I (φ t) (γ t) (curveVelocity I γ t) := by
-  have h : HasMFDerivAt 𝓘(ℝ, ℝ) I (fun u ↦ φ u (γ u)) t
-      ((mfderiv (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) (t, γ t)).comp
-        ((ContinuousLinearMap.id ℝ ℝ).prod
-          ((1 : ℝ →L[ℝ] ℝ).smulRight (curveVelocity I γ t)))) :=
-    hφ.hasMFDerivAt.comp t ((hasMFDerivAt_id t).prodMk (hasMFDerivAt_curveVelocity hγ))
-  have hv : ((ContinuousLinearMap.id ℝ ℝ).prod
-      ((1 : ℝ →L[ℝ] ℝ).smulRight (curveVelocity I γ t)) : ℝ →L[ℝ] ℝ × E) (1 : ℝ) =
-        ((1 : ℝ), (curveVelocity I γ t : E)) :=
-    Prod.ext rfl (one_smul ℝ (curveVelocity I γ t : E))
-  calc curveVelocity I (fun u ↦ φ u (γ u)) t
-      = mfderiv (𝓘(ℝ, ℝ).prod I) I (fun p : ℝ × M ↦ φ p.1 p.2) (t, γ t)
-          ((1 : ℝ), curveVelocity I γ t) := by
-        rw [curveVelocity_apply, h.mfderiv]
-        exact congrArg _ hv
-    _ = _ := mfderiv_prod_eq_add_apply hφ
-    _ = _ := by rw [curveVelocity_apply (γ := fun u ↦ φ u (γ t))]
-
 /-- **The product velocity identity.** The Eulerian field of the pointwise composition
 `(φ ψ)_t = φ_t ∘ ψ_t` of two families is `X_(φ ψ) = X_φ + (φ_t)_* X_ψ`: at the point `φ_t w`, it
 is the sum of `X_φ(φ_t w)` and of the image under `dφ_t` of `X_ψ(w)`. -/
@@ -135,14 +110,13 @@ theorem eulerianField_trans {w : M}
       eulerianField I φ t (φ t w) + mfderiv I I (φ t) w (eulerianField I ψ t w) := by
   set γ : ℝ → M := fun u ↦ ψ u ((ψ t).symm w)
   have hγt : γ t = w := (ψ t).apply_symm_apply w
-  have h := curveVelocity_apply_curve (φ := φ) (γ := γ) (hγt ▸ hφ) hψ
+  have h := curveVelocity_apply_curve (f := fun u ↦ φ u) (γ := γ) (hγt ▸ hφ) hψ
   rw [hγt] at h
   have hfun : (fun u ↦ ((ψ u).trans (φ u)) (((ψ t).trans (φ t)).symm (φ t w))) =
       fun u ↦ φ u (γ u) := by
     funext u
     simp [γ]
-  rw [eulerianField_def, hfun, h, eulerianField_apply_apply]
-  rfl
+  rw [eulerianField_def, hfun, h, eulerianField_apply_apply, eulerianField_def (φ := ψ) w]
 
 /-- **The inverse velocity identity.** The Eulerian field of the pointwise inverse
 `t ↦ φ_t⁻¹` of a family is `X_(φ⁻¹) = -(φ_t⁻¹)_* X_φ`: at the point `φ_t⁻¹ z`, it is minus the
