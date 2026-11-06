@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.OptimalTransport.Entropic.Basic
 import Mathlib.Probability.Moments.Basic
+import TauCeti.Analysis.SpecialFunctions.Log.BirkhoffCrossRatio
 import TauCeti.MeasureTheory.Measure.WithDensity
 
 /-!
@@ -101,9 +102,9 @@ private theorem measurable_logIntegralExp [SFinite ν] (hh : Measurable h) (hψ 
 measurable. -/
 private theorem integrable_exp_add_of_abs_le [IsFiniteMeasure ν] (hh : Measurable h)
     (hM : ∀ z, |h z| ≤ M) (hψ : Measurable ψ) {C : ℝ} (hC : ∀ b, |ψ b| ≤ C) (a : A) :
-    Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν := by
-  simpa using ProbabilityTheory.integrable_exp_mul_of_le 1 (M + C) zero_le_one (by fun_prop)
-    (ae_of_all _ fun b ↦ by linarith [(abs_le.1 (hM (a, b))).2, (abs_le.1 (hC b)).2])
+    Integrable (fun b ↦ Real.exp (h (a, b) + ψ b)) ν :=
+  integrable_exp_of_abs_le (K := M + C) (by fun_prop) (ae_of_all _ fun b ↦
+    (abs_add_le _ _).trans (add_le_add (hM _) (hC b)))
 
 /-- Integrating `exp (h (a, b) + ψ b + t)` against `ν` gives `exp (t + logIntegralExp h ν ψ a)`. -/
 private theorem lintegral_ofReal_exp_add [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh : Measurable h)
@@ -142,59 +143,6 @@ private theorem abs_logIntegralExp_le [IsFiniteMeasure ν] (hν : ν ≠ 0) (hh 
   rw [abs_le]
   constructor <;>
     linarith [neg_abs_le (Real.log (ν.real univ)), le_abs_self (Real.log (ν.real univ))]
-
-/-- The real-number core of the half-step contraction. For positive `A₁, A₂, B₁, B₂` with
-`exp m * A₂ ≤ A₁ ≤ exp (m + ω) * A₂`, `exp (-2M) * B₂ ≤ A₂` and
-`exp (-2M) * (A₁ - exp m * A₂) ≤ B₁ - exp m * B₂`, the oscillation of
-`log (A₁ / A₂)` against `log (B₁ / B₂)` is at most `(1 - exp (-4M)) * ω`. -/
-private theorem log_sub_sub_le_of_bounds {A₁ A₂ B₁ B₂ M m ω : ℝ} (hM0 : 0 ≤ M) (hA₁ : 0 < A₁)
-    (hA₂ : 0 < A₂) (hB₁ : 0 < B₁) (hB₂ : 0 < B₂) (hA₁lo : Real.exp m * A₂ ≤ A₁)
-    (hA₁hi : A₁ ≤ Real.exp (m + ω) * A₂) (hB₂A₂ : Real.exp (-(2 * M)) * B₂ ≤ A₂)
-    (hBA : Real.exp (-(2 * M)) * (A₁ - Real.exp m * A₂) ≤ B₁ - Real.exp m * B₂) :
-    (Real.log A₁ - Real.log A₂) - (Real.log B₁ - Real.log B₂) ≤ (1 - Real.exp (-(4 * M))) * ω := by
-  -- With `s = exp (-4M)`: `s * A₁ * B₂ + (1 - s) * exp m * A₂ * B₂ ≤ B₁ * A₂`.
-  have hss : Real.exp (-(2 * M)) * Real.exp (-(2 * M)) = Real.exp (-(4 * M)) := by
-    rw [← Real.exp_add]
-    ring_nf
-  set s := Real.exp (-(4 * M))
-  have hkey : s * A₁ * B₂ + (1 - s) * Real.exp m * A₂ * B₂ ≤ B₁ * A₂ := by
-    have h₁ : 0 ≤ A₁ - Real.exp m * A₂ := sub_nonneg.2 hA₁lo
-    have h₂ := mul_le_mul hBA hB₂A₂ (by positivity)
-      ((mul_nonneg (Real.exp_pos _).le h₁).trans hBA)
-    have h₃ : Real.exp (-(2 * M)) * (A₁ - Real.exp m * A₂) * (Real.exp (-(2 * M)) * B₂) =
-        s * (A₁ - Real.exp m * A₂) * B₂ := by
-      rw [← hss]
-      ring
-    rw [h₃] at h₂
-    linarith
-  -- With `E = exp ((1 - s) * ω)`, convexity of `exp` and `A₁ ≤ exp (m + ω) * A₂` give
-  -- `A₁ ≤ E * (s * A₁ + (1 - s) * exp m * A₂)`, which with `hkey` yields `A₁ * B₂ ≤ E * (A₂ * B₁)`.
-  have hs0 : 0 < s := Real.exp_pos _
-  have hs1 : s ≤ 1 := Real.exp_le_one_iff.2 (by linarith)
-  have hconv : Real.exp (s * ω) ≤ s * Real.exp ω + (1 - s) := by
-    simpa using convexOn_exp.2 (mem_univ ω) (mem_univ 0) hs0.le (sub_nonneg.2 hs1) (by ring)
-  set E := Real.exp ((1 - s) * ω)
-  have hE : E * Real.exp (s * ω) = Real.exp ω := by
-    rw [← Real.exp_add]
-    ring_nf
-  have hEpos : 0 < E := Real.exp_pos _
-  have h₁ : A₁ * Real.exp ω ≤
-      E * (s * A₁ * Real.exp ω + (1 - s) * Real.exp m * Real.exp ω * A₂) := by
-    have h₁a : A₁ * Real.exp ω = E * A₁ * Real.exp (s * ω) := by
-      rw [← hE]
-      ring
-    have h₁b := mul_le_mul_of_nonneg_left hconv (mul_nonneg hEpos.le hA₁.le)
-    have h₁c := mul_le_mul_of_nonneg_left ((Real.exp_add m ω) ▸ hA₁hi)
-      (mul_nonneg hEpos.le (sub_nonneg.2 hs1))
-    linarith
-  have h₂ : A₁ ≤ E * (s * A₁ + (1 - s) * Real.exp m * A₂) := by
-    have hω0 := Real.exp_pos ω
-    nlinarith [h₁]
-  have hmain : A₁ * B₂ ≤ E * (A₂ * B₁) := by nlinarith [hkey, h₂, hB₂, hEpos]
-  have := Real.log_le_log (by positivity) hmain
-  rw [Real.log_mul hA₁.ne' hB₂.ne', Real.log_mul (Real.exp_pos _).ne' (by positivity),
-    Real.log_exp, Real.log_mul hA₂.ne' hB₁.ne'] at this
-  linarith
 
 /-- **The half-step contracts oscillations**, in bracket form: if `m ≤ ψ₁ - ψ₂ ≤ m + ω`, then the
 difference of the log-partition functions of `ψ₁` and `ψ₂` has oscillation at most
@@ -487,34 +435,6 @@ section Existence
 variable {X Y : Type*} [MeasurableSpace X] [MeasurableSpace Y] {μ : Measure X} {ν : Measure Y}
   {g : X × Y → ℝ} {M : ℝ}
 
-/-- A density `f` against `μ.prod ν` whose rows integrate to `1` against `ν` and whose columns
-integrate to a constant against `μ` defines a coupling of `μ` and `ν`, when `μ` and `ν` are finite
-measures of equal mass and `ν ≠ 0`: comparing total masses forces the constant to be `1`. -/
-theorem isCoupling_withDensity_of_lintegral_eq [IsFiniteMeasure μ] [IsFiniteMeasure ν]
-    (hμν : μ univ = ν univ) (hν : ν ≠ 0) {f : X × Y → ℝ≥0∞} (hf : Measurable f)
-    (hrow : ∀ x, ∫⁻ y, f (x, y) ∂ν = 1) {κ : ℝ≥0∞} (hcol : ∀ y, ∫⁻ x, f (x, y) ∂μ = κ) :
-    IsCoupling ((μ.prod ν).withDensity f) μ ν := by
-  have hfst : ((μ.prod ν).withDensity f).fst = μ := by
-    ext s hs
-    rw [Measure.fst_apply hs, ← prod_univ, withDensity_apply _ (hs.prod MeasurableSet.univ),
-      setLIntegral_prod _ hf.aemeasurable]
-    simp_rw [Measure.restrict_univ, hrow]
-    rw [setLIntegral_const, one_mul]
-  have hsnd (t : Set Y) (ht : MeasurableSet t) : ((μ.prod ν).withDensity f).snd t = κ * ν t := by
-    rw [Measure.snd_apply ht, ← univ_prod, withDensity_apply _ (MeasurableSet.univ.prod ht),
-      setLIntegral_prod_symm _ hf.aemeasurable]
-    simp_rw [Measure.restrict_univ, hcol]
-    rw [setLIntegral_const]
-  -- Comparing total masses forces `κ = 1`.
-  have hκ : κ = 1 := by
-    have h₁ := hsnd univ MeasurableSet.univ
-    rw [Measure.snd_univ, ← Measure.fst_univ, hfst, hμν] at h₁
-    exact (ENNReal.mul_eq_right (Measure.measure_univ_ne_zero.2 hν) (measure_ne_top _ _)).1
-      h₁.symm
-  refine ⟨hfst, ?_⟩
-  ext t ht
-  rw [hsnd t ht, hκ, one_mul]
-
 /-- **The Schrödinger system for a bounded kernel.** Let `μ` and `ν` be finite measures of equal
 mass and `g` a bounded measurable function on `X × Y`. Then there are bounded measurable
 potentials `φ` and `ψ` such that `exp (φ(x) + ψ(y) + g(x, y))` is the density, against
@@ -560,7 +480,8 @@ theorem exists_isCoupling_withDensity_exp_add [IsFiniteMeasure μ] [IsFiniteMeas
     rw [hf_def]
     simp only [Function.comp_apply, Prod.swap_prod_mk]
     ring_nf
-  have hcoupling := isCoupling_withDensity_of_lintegral_eq hμν hν hf hrow hcol
+  have hcoupling := isCoupling_withDensity_of_lintegral_eq hμν hf (ae_of_all _ hrow)
+    (ae_of_all _ hcol)
   refine ⟨φ, ψ, max (M + C + |Real.log (ν.real univ)|) C, hφ, hψ,
     fun x ↦ (hφC x).trans (le_max_left _ _), fun y ↦ (hC y).trans (le_max_right _ _), ?_⟩
   exact hcoupling

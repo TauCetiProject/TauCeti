@@ -61,6 +61,8 @@ measure finite.
   has the same topological support as the measure it defines.
 * `MeasureTheory.continuous_eq_of_withDensity_ofReal_eq`: continuous nonnegative real densities
   presenting the same weighted measure are equal pointwise.
+* `MeasureTheory.integrable_exp_of_abs_le`: `exp ∘ f` is integrable against a finite measure when
+  `f` is measurable and bounded in absolute value.
 * `MeasureTheory.isFiniteMeasure_withDensity_ofReal_exp`: a finite measure weighted by `exp ∘ g`,
   with `g` bounded above almost everywhere, is finite.
 * `TauCeti.MeasureTheory.map_withDensity_abs_deriv_mul`: the change of variables on the real line
@@ -313,6 +315,16 @@ theorem continuous_eq_of_withDensity_ofReal_eq {X : Type*} [TopologicalSpace X]
     filter_upwards [haeENN] with x hx
     exact (ENNReal.ofReal_eq_ofReal_iff (hp0 x) (hq0 x)).mp hx
   exact (hp.ae_eq_iff_eq ν hq).1 hae
+
+/-- If `f` is almost everywhere measurable and almost everywhere bounded in absolute value, then
+`exp ∘ f` is integrable against a finite measure. -/
+theorem integrable_exp_of_abs_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
+    [IsFiniteMeasure μ] {f : α → ℝ} {K : ℝ} (hf : AEMeasurable f μ) (hfK : ∀ᵐ x ∂μ, |f x| ≤ K) :
+    Integrable (fun x ↦ Real.exp (f x)) μ :=
+  Integrable.of_bound (Real.measurable_exp.comp_aemeasurable hf).aestronglyMeasurable
+    (Real.exp K) (hfK.mono fun x hx ↦ by
+      rw [Real.norm_eq_abs, abs_of_pos (Real.exp_pos _)]
+      exact Real.exp_le_exp.2 ((le_abs_self _).trans hx))
 
 /-- A measure with log-density bounded above almost everywhere against a finite measure is
 finite. -/
