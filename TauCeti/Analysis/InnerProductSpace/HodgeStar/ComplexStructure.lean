@@ -47,7 +47,6 @@ a four-manifold.
 * `TauCeti.norm_twoVectorContraction_apply_sq`: for `⋆F = ±F` in dimension four,
   `‖u ⌟ F‖² = (‖F‖² / 2) ‖u‖²`.
 * `TauCeti.twoVectorContraction_comp_self`: for `⋆F = ±F`, `A² = -(‖F‖² / 2)`.
-* `TauCeti.abs_inner_ιMulti_le`: for `⋆F = ±F`, `|⟪F, u ∧ w⟫| ≤ (‖F‖ / √2) ‖u‖ ‖w‖`.
 * `TauCeti.exists_almostComplexStructure_inner_eq_iff`: in dimension four, a `J` with
   `⟪u, v⟫ = ⟪F, u ∧ J v⟫` exists if and only if `⋆F = ±F` and `‖F‖² = 2`.
 * `TauCeti.exists_almostComplexStructure_inner_eq_iff_of_pos`: for the symplectic orientation,
@@ -140,18 +139,6 @@ theorem norm_twoVectorContraction_apply_sq
   rw [map_smul, norm_smul, mul_pow, Real.norm_eq_abs, abs_inv, abs_norm, inv_pow] at h
   field_simp at h ⊢
   linarith
-
-/-- **The values of a self-dual or anti-self-dual two-form**: in dimension four, if `⋆F = ±F`
-then `|⟪F, u ∧ w⟫| ≤ (‖F‖ / √2) ‖u‖ ‖w‖`, because the contraction by `F` is `‖F‖ / √2` times an
-isometry. -/
-theorem abs_inner_ιMulti_le
-    (hF : o.hodgeStar hkl F = F ∨ o.hodgeStar hkl F = -F) (u w : V) :
-    |⟪F, ιMulti ℝ 2 ![u, w]⟫| ≤ ‖F‖ / √2 * ‖u‖ * ‖w‖ := by
-  have h : ‖twoVectorContraction F u‖ = ‖F‖ / √2 * ‖u‖ := by
-    rw [← sq_eq_sq₀ (norm_nonneg _) (by positivity), norm_twoVectorContraction_apply_sq o hkl hF,
-      mul_pow, div_pow, Real.sq_sqrt zero_le_two]
-  rw [← inner_twoVectorContraction_apply, ← h]
-  exact abs_real_inner_le_norm _ _
 
 /-- In dimension four, for `⋆F = ±F`, the contraction by `F` scales inner products by
 `‖F‖² / 2`: `⟪u ⌟ F, v ⌟ F⟫ = (‖F‖² / 2) ⟪u, v⟫`. -/

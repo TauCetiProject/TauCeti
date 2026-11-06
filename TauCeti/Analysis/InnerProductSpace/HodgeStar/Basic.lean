@@ -75,8 +75,6 @@ of a curvature form, its self-dual part and its Chern–Weil density.
   `Λ⁻` have dimension three.
 * `Orientation.hodgeStar_coe_of_mem_eigenspace_one`: forms in the `1`-eigenspace of `⋆` are
   self-dual, `⋆x = x`.
-* `Orientation.hodgeStar_smul_add_hodgeStar`, `Orientation.hodgeStar_smul_sub_hodgeStar`: in an
-  even middle degree, `(x + ⋆x) / 2` is self-dual and `(x - ⋆x) / 2` is anti-self-dual.
 * `Orientation.inner_ιMulti_twoVectorContraction_add_hodgeStar`: for a unit vector `s` in dimension
   four, `⟪s ∧ (s ⌟ F), F + ⋆F⟫ = ‖s ⌟ F‖² + vol (F ∧ F) / 2`.
 
@@ -312,20 +310,6 @@ theorem hodgeStar_coe_of_mem_eigenspace_one {k : ℕ} (hkk : k + k = finrank ℝ
     (x : Module.End.eigenspace (o.hodgeStar hkk : Module.End ℝ (⋀[ℝ]^k V)) 1) :
     o.hodgeStar hkk x = x := by
   simpa using Module.End.mem_eigenspace_iff.1 x.2
-
-/-- In an even middle degree, the self-dual part `(x + ⋆x) / 2` of a form, and every multiple
-`c • (x + ⋆x)`, is self-dual. -/
-theorem hodgeStar_smul_add_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) (c : ℝ)
-    (x : ⋀[ℝ]^k V) :
-    o.hodgeStar hkk (c • (x + o.hodgeStar hkk x)) = c • (x + o.hodgeStar hkk x) := by
-  rw [map_smul, map_add, hodgeStar_hodgeStar_of_even o hk, add_comm (o.hodgeStar hkk x)]
-
-/-- In an even middle degree, the anti-self-dual part `(x - ⋆x) / 2` of a form, and every multiple
-`c • (x - ⋆x)`, is anti-self-dual. -/
-theorem hodgeStar_smul_sub_hodgeStar {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V) (c : ℝ)
-    (x : ⋀[ℝ]^k V) :
-    o.hodgeStar hkk (c • (x - o.hodgeStar hkk x)) = -(c • (x - o.hodgeStar hkk x)) := by
-  rw [map_smul, map_sub, hodgeStar_hodgeStar_of_even o hk, ← smul_neg, neg_sub]
 
 /-! ### Two-forms split along a unit vector -/
 

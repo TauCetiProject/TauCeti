@@ -51,8 +51,6 @@ operator that represents the two-form `ω(u, w) = ⟪F, u ∧ w⟫` through the 
   `F ∈ ⋀² V` by `⟪u, ·⟫` (`TauCeti.twoVectorContraction`) represents the two-form of `F`,
   `⟪u ⌟ F, w⟫ = ⟪F, u ∧ w⟫`: on two-forms, wedging with `u` is adjoint to contracting with
   `⟪u, ·⟫`. So `u ↦ u ⌟ F` is skew-adjoint (`TauCeti.inner_twoVectorContraction_apply_left`).
-* `TauCeti.twoVectorContraction_lieMap`: for a skew-adjoint `A`, the contraction by `D_A F` is the
-  commutator of `A` with the contraction by `F`.
 -/
 
 public section
@@ -356,19 +354,6 @@ theorem inner_twoVectorContraction_apply_left (F : ⋀[ℝ]^2 V) (u w : V) :
     inner_twoVectorContraction_apply_self, inner_twoVectorContraction_apply_self] at h
   rw [real_inner_comm _ u]
   linarith
-
-/-- **Contraction turns the derivation action into a commutator**: for a skew-adjoint `A`, the
-contraction by `D_A F` is the commutator of `A` with the contraction by `F`,
-`(D_A F) ⌟ = A ∘ (F ⌟) - (F ⌟) ∘ A`. In particular, if `D_A F = 0` then the contraction by `F`
-commutes with `A`. -/
-theorem twoVectorContraction_lieMap {A : V →ₗ[ℝ] V} (hA : ∀ u w, ⟪A u, w⟫ = -⟪u, A w⟫)
-    (F : ⋀[ℝ]^2 V) :
-    twoVectorContraction (lieMap 2 A F) =
-      A ∘ₗ twoVectorContraction F - twoVectorContraction F ∘ₗ A := by
-  refine LinearMap.ext fun u ↦ ext_inner_right ℝ fun w ↦ ?_
-  simp only [inner_twoVectorContraction_apply, inner_lieMap_left hA, lieMap_two_apply_ιMulti,
-    LinearMap.sub_apply, LinearMap.comp_apply, inner_sub_left, hA, inner_add_right]
-  ring
 
 end TwoVectorContraction
 
