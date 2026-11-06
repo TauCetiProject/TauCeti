@@ -10,6 +10,7 @@ public import TauCeti.Analysis.PDE.MaximumPrinciple.GlobalBoundedness
 public import TauCeti.Analysis.PDE.Regularity.HolderContinuity
 import TauCeti.Analysis.SpecificLimits.DecayIteration
 import TauCeti.MeasureTheory.Function.EssSup
+import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.MeasureTheory.Measure.OpenPos
 
@@ -179,19 +180,18 @@ theorem integral_sq_le_two_mul_integral_sq_add {α : Type*} [MeasurableSpace α]
 /-- `√(2 A + 2 W² m) ≤ √2 √A + √2 W √m` for nonnegative `A`, `m`, `W`. -/
 theorem sqrt_two_mul_add_two_mul_sq_mul_le {A W m : ℝ} (hA : 0 ≤ A) (hm : 0 ≤ m) (hW : 0 ≤ W) :
     √(2 * A + 2 * W ^ 2 * m) ≤ √2 * √A + √2 * W * √m := by
-  refine Real.sqrt_le_iff.2 ⟨by positivity, ?_⟩
-  have h : (√2 * √A + √2 * W * √m) ^ 2 =
-      2 * A + 2 * W ^ 2 * m + 4 * (√A * W * √m) := by
-    have e : (√2 * √A + √2 * W * √m) ^ 2 =
-        √2 ^ 2 * (√A ^ 2 + W ^ 2 * √m ^ 2 + 2 * (√A * W * √m)) := by ring
-    rw [e, Real.sq_sqrt (zero_le_two : (0 : ℝ) ≤ 2), Real.sq_sqrt hA, Real.sq_sqrt hm]
-    ring
-  nlinarith [mul_nonneg (mul_nonneg (Real.sqrt_nonneg A) hW) (Real.sqrt_nonneg m)]
+  have h := Real.rpow_add_le_add_rpow (p := 1 / 2) (a := 2 * A) (b := 2 * W ^ 2 * m)
+    (by positivity) (by positivity) (by norm_num) (by norm_num)
+  simp only [← Real.sqrt_eq_rpow] at h
+  refine h.trans_eq ?_
+  rw [Real.sqrt_mul zero_le_two, Real.sqrt_mul (by positivity), Real.sqrt_mul zero_le_two,
+    Real.sqrt_sq hW]
 
 omit [DecidableEq ι] in
 /-- The square root of the measure of a ball of radius `R` is `R ^ (n / 2)` times that of the unit
 ball. -/
-theorem sqrt_measureReal_ball_eq (x : EuclideanSpace ℝ ι) {R : ℝ} (hR : 0 < R) :
+theorem _root_.EuclideanSpace.sqrt_measureReal_ball_eq (x : EuclideanSpace ℝ ι) {R : ℝ}
+    (hR : 0 < R) :
     √(mu.real (ball x R)) =
       R ^ ((Fintype.card ι : ℝ) / 2) * √(mu.real (ball (0 : EuclideanSpace ℝ ι) 1)) := by
   rw [Measure.addHaar_real_ball_of_pos _ _ hR, finrank_euclideanSpace, ← Real.rpow_natCast,
@@ -201,8 +201,8 @@ theorem sqrt_measureReal_ball_eq (x : EuclideanSpace ℝ ι) {R : ℝ} (hR : 0 <
 omit [DecidableEq ι] in
 /-- If `|u - g| ≤ W` almost everywhere on a ball `B` of radius `R`, then
 `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`, where `|B|^(1/2) = R^(n/2) |B(0, 1)|^(1/2)`. -/
-theorem sqrt_setIntegral_sq_le_of_ae_abs_sub_le (x₀ : EuclideanSpace ℝ ι) {R W : ℝ}
-    {u g : EuclideanSpace ℝ ι → ℝ} (hR : 0 < R) (hW : 0 ≤ W)
+theorem _root_.EuclideanSpace.sqrt_setIntegral_sq_le_of_ae_abs_sub_le
+    (x₀ : EuclideanSpace ℝ ι) {R W : ℝ} {u g : EuclideanSpace ℝ ι → ℝ} (hR : 0 < R) (hW : 0 ≤ W)
     (hu : Integrable (fun x => u x ^ 2) (mu.restrict (ball x₀ R)))
     (h : ∀ᵐ x ∂mu.restrict (ball x₀ R), |u x - g x| ≤ W) :
     √(∫ x in ball x₀ R, g x ^ 2 ∂mu) ≤ √2 * √(∫ x in ball x₀ R, u x ^ 2 ∂mu) +
@@ -217,7 +217,7 @@ theorem sqrt_setIntegral_sq_le_of_ae_abs_sub_le (x₀ : EuclideanSpace ℝ ι) {
     _ ≤ √2 * √(∫ x in ball x₀ R, u x ^ 2 ∂mu) + √2 * W * √(mu.real (ball x₀ R)) :=
         sqrt_two_mul_add_two_mul_sq_mul_le (integral_nonneg fun _ => sq_nonneg _)
           measureReal_nonneg hW
-    _ = _ := by rw [sqrt_measureReal_ball_eq x₀ hR]; ring
+    _ = _ := by rw [EuclideanSpace.sqrt_measureReal_ball_eq (mu := mu) x₀ hR]; ring
 
 /-- **Local boundedness of weak solutions with a right-hand side.** Let `n ≥ 1` be the dimension
 and let `r > 1` with `r > n/2`. There is `D > 0`, depending only on `λ`, `Λ`, `n`, `r` and the
@@ -261,7 +261,7 @@ theorem exists_ae_abs_value_le_mul_add_of_memLp [Nonempty ι] {lam Lam : ℝ} {r
   have hgbound := hbound (Omega := B) (h.mono_set hball)
     (ha.mono_measure (Measure.restrict_mono hball le_rfl)) hg hR (subset_refl _)
   -- `‖g‖_{L²(B)} ≤ √2 ‖u‖_{L²(B)} + √2 W |B|^(1/2)`.
-  have hsqrt := sqrt_setIntegral_sq_le_of_ae_abs_sub_le (mu := mu) x₀ hR hW
+  have hsqrt := EuclideanSpace.sqrt_setIntegral_sq_le_of_ae_abs_sub_le (mu := mu) x₀ hR hW
     (((Lp.memLp (W1p.value u)).integrable_sq).mono_measure (Measure.restrict_mono hball le_rfl))
     (hug.mono fun x hx => hx)
   -- Combine: `|u| ≤ |g| + W`.
@@ -365,25 +365,18 @@ theorem exists_essSup_sub_essInf_le_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
     _ ≤ C₀ * (s / ρ) ^ α₀ * (m₁ - m) + (2 * C₀ + 2) * W := by gcongr
     _ = _ := by rw [hWdef]; ring
 
-omit [DecidableEq ι] [mu.IsAddHaarMeasure] in
-/-- If `|v| ≤ M` almost everywhere on a ball, `v` is essentially bounded on it. -/
-theorem isBoundedUnder_ae_restrict_ball_of_ae_abs_le (x₀ : EuclideanSpace ℝ ι) {ρ M : ℝ}
-    {v : EuclideanSpace ℝ ι → ℝ} (h : ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |v x| ≤ M) :
-    IsBoundedUnder (· ≤ ·) (ae (mu.restrict (ball x₀ ρ))) v ∧
-      IsBoundedUnder (· ≥ ·) (ae (mu.restrict (ball x₀ ρ))) v :=
-  ⟨isBoundedUnder_of_eventually_le (a := M) (h.mono fun _ hx => (abs_le.1 hx).2),
-    isBoundedUnder_of_eventually_ge (a := -M) (h.mono fun _ hx => (abs_le.1 hx).1)⟩
-
 omit [DecidableEq ι] in
 /-- The essential oscillation `φ ρ` of a function `v` on `B(x₀, ρ)` is nonnegative and monotone in
 `ρ ∈ (0, R₁]`, and at most `2 M` at `R₁`, if `|v| ≤ M` almost everywhere on `B(x₀, R₁)`. -/
-theorem essSup_sub_essInf_nonneg_monotoneOn (x₀ : EuclideanSpace ℝ ι) {R₁ M : ℝ}
+theorem _root_.EuclideanSpace.essSup_sub_essInf_nonneg_monotoneOn
+    (x₀ : EuclideanSpace ℝ ι) {R₁ M : ℝ}
     {v : EuclideanSpace ℝ ι → ℝ} {φ : ℝ → ℝ}
     (hφ : ∀ ρ, φ ρ = essSup v (mu.restrict (ball x₀ ρ)) - essInf v (mu.restrict (ball x₀ ρ)))
     (hR₁ : 0 < R₁) (hM : ∀ᵐ x ∂mu.restrict (ball x₀ R₁), |v x| ≤ M) :
     (∀ ρ ∈ Ioc 0 R₁, 0 ≤ φ ρ) ∧ MonotoneOn φ (Ioc 0 R₁) ∧ φ R₁ ≤ 2 * M := by
-  have hbdd : ∀ ρ ≤ R₁, _ ∧ _ := fun ρ hρ => isBoundedUnder_ae_restrict_ball_of_ae_abs_le (mu := mu)
-    x₀ (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρ) hM)
+  have hbdd : ∀ ρ ≤ R₁, _ ∧ _ := fun ρ hρ =>
+    isBoundedUnder_le_abs.mp (isBoundedUnder_of_eventually_le
+      (ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρ) hM))
   have hne : ∀ ρ, 0 < ρ → (ae (mu.restrict (ball x₀ ρ))).NeBot := fun ρ hρ =>
     ae_restrict_neBot.2 (measure_ball_pos mu x₀ hρ).ne'
   refine ⟨fun ρ hρ => ?_, fun ρ hρ ρ' hρ' hρρ' => ?_, ?_⟩
@@ -400,80 +393,6 @@ theorem essSup_sub_essInf_nonneg_monotoneOn (x₀ : EuclideanSpace ℝ ι) {R₁
     filter_upwards [hM] with x hx
     rw [abs_le] at hx
     exact ⟨hx.1, by linarith only [hx.2]⟩
-
-/-- The `Lᵖ` norm on a smaller set is at most the `Lᵖ` norm on a larger one, divided by `λ ≥ 0`. -/
-theorem toReal_eLpNorm_restrict_div_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    {f : α → ℝ} {p : ℝ≥0∞} {s t : Set α} (hst : s ⊆ t) (hf : MemLp f p (μ.restrict t)) {lam : ℝ}
-    (hlam : 0 ≤ lam) :
-    (eLpNorm f p (μ.restrict s)).toReal / lam ≤ (eLpNorm f p (μ.restrict t)).toReal / lam :=
-  div_le_div_of_nonneg_right (ENNReal.toReal_mono hf.eLpNorm_ne_top
-    (eLpNorm_mono_measure _ (Measure.restrict_mono hst le_rfl))) hlam
-
-/-- `ρ ^ γ ≤ R₁ ^ (γ - β) ρ ^ β` for `0 < ρ ≤ R₁` and `β ≤ γ`. -/
-theorem rpow_le_rpow_sub_mul_rpow {ρ R₁ β γ : ℝ} (hρ : 0 < ρ) (hρR : ρ ≤ R₁) (hβγ : β ≤ γ) :
-    ρ ^ γ ≤ R₁ ^ (γ - β) * ρ ^ β :=
-  calc ρ ^ γ = ρ ^ (γ - β) * ρ ^ β := by rw [← Real.rpow_add hρ, sub_add_cancel]
-    _ ≤ R₁ ^ (γ - β) * ρ ^ β := by gcongr
-
-/-- The real-number bookkeeping at the end of the proof of the interior oscillation estimate: from
-the iterated bound `φ s ≤ C₁ ((s / R₁)^β φ R₁ + B s^β)` and `φ R₁ ≤ 2 M₀`, with `R₁ = R / 2`,
-`M₀ = D (Q + R^γ F)` and `B = K F R₁^(γ - β)`, one gets
-`φ s ≤ C₁ 2^β (2 D + K) (s / R)^β (Q + R^γ F)`. -/
-theorem oscillation_decay_bound_aux {C₁ K D β γ s R R₁ F Q M₀ B φs φR₁ : ℝ} (hs : 0 < s)
-    (hR : 0 < R) (hR₁def : R₁ = R / 2) (hγ : 0 < γ) (hK : 0 ≤ K) (hD : 0 ≤ D) (hF : 0 ≤ F)
-    (hQ : 0 ≤ Q) (hC₁ : 0 ≤ C₁) (hfin : φs ≤ C₁ * ((s / R₁) ^ β * φR₁ + B * s ^ β))
-    (hφR₁ : φR₁ ≤ 2 * M₀) (hM₀def : M₀ = D * (Q + R ^ γ * F)) (hBdef : B = K * F * R₁ ^ (γ - β)) :
-    φs ≤ C₁ * 2 ^ β * (2 * D + K) * (s / R) ^ β * (Q + R ^ γ * F) := by
-  have hR₁ : 0 < R₁ := hR₁def ▸ half_pos hR
-  have hsβ : B * s ^ β = K * F * R₁ ^ γ * (s / R₁) ^ β := by
-    rw [hBdef, Real.div_rpow hs.le hR₁.le, Real.rpow_sub hR₁]
-    field_simp
-  have hR₁γ : R₁ ^ γ ≤ R ^ γ := Real.rpow_le_rpow hR₁.le (hR₁def ▸ half_le_self hR.le) hγ.le
-  have hsR₁ : (s / R₁) ^ β = 2 ^ β * (s / R) ^ β := by
-    rw [← Real.mul_rpow (by norm_num) (by positivity), hR₁def]
-    congr 1
-    field_simp
-  have hM₀ : 0 ≤ M₀ := by rw [hM₀def]; positivity
-  calc φs ≤ C₁ * ((s / R₁) ^ β * φR₁ + B * s ^ β) := hfin
-    _ ≤ C₁ * ((s / R₁) ^ β * (2 * M₀) + K * F * R ^ γ * (s / R₁) ^ β) := by
-        rw [hsβ]
-        gcongr
-    _ = C₁ * 2 ^ β * (s / R) ^ β * (2 * D * (Q + R ^ γ * F) + K * (R ^ γ * F)) := by
-        rw [hsR₁, hM₀def]
-        ring
-    _ ≤ C₁ * 2 ^ β * (s / R) ^ β * ((2 * D + K) * (Q + R ^ γ * F)) := by
-        gcongr
-        nlinarith only [mul_nonneg hK hQ]
-    _ = _ := by ring
-
-/-- The iteration step of the interior oscillation estimate, as a statement about the essential
-oscillation `φ` alone. If `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + K ρ^γ F` for `s ≤ ρ ≤ R / 2`, with `φ`
-nonnegative and monotone on `(0, R/2]` and `φ (R / 2) ≤ 2 D (Q + R^γ F)`, then
-`φ s ≤ C (s / R)^β (Q + R^γ F)` for `s ≤ R / 2`, where `β < α₀` and `C` depend only on
-`α₀`, `C₀`, `K`, `D` and `γ`. -/
-theorem exists_le_mul_rpow_of_essOsc_step {α₀ C₀ K D γ : ℝ} (hα₀ : 0 < α₀) (hC₀ : 0 < C₀)
-    (hK : 0 < K) (hD : 0 < D) (hγ : 0 < γ) :
-    ∃ β C : ℝ, 0 < β ∧ β < α₀ ∧ 0 < C ∧ ∀ {φ : ℝ → ℝ} {R s Q F M₀ : ℝ}, 0 < s → s ≤ R / 2 →
-      0 ≤ Q → 0 ≤ F → MonotoneOn φ (Ioc 0 (R / 2)) → (∀ ρ ∈ Ioc 0 (R / 2), 0 ≤ φ ρ) →
-      φ (R / 2) ≤ 2 * M₀ → M₀ = D * (Q + R ^ γ * F) →
-      (∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R / 2 → φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + K * ρ ^ γ * F) →
-      φ s ≤ C * (s / R) ^ β * (Q + R ^ γ * F) := by
-  obtain ⟨β, hβdef⟩ : ∃ β : ℝ, β = min γ (α₀ / 2) := ⟨_, rfl⟩
-  have hβ : 0 < β := hβdef ▸ lt_min hγ (half_pos hα₀)
-  have hβγ : β ≤ γ := hβdef ▸ min_le_left _ _
-  have hβα : β < α₀ := hβdef ▸ (min_le_right _ _).trans_lt (half_lt_self hα₀)
-  obtain ⟨ε₀, C₁, hε₀, hC₁, hiter⟩ :=
-    exists_le_mul_div_rpow_mul_add_mul_rpow_of_le_mul_add hC₀.le hβα hβα
-  refine ⟨β, C₁ * 2 ^ β * (2 * D + K), hβ, hβα, by positivity, ?_⟩
-  intro φ R s Q F M₀ hs hsR hQ hF hmono hφ0 hφR₁ hM₀def hstep
-  have hR : 0 < R := by linarith only [hs, hsR]
-  have hB : 0 ≤ K * F * (R / 2) ^ (γ - β) := by positivity
-  have hfin := hiter hB hε₀.le hmono hφ0 (fun s ρ hs hsρ hρ => (hstep s ρ hs hsρ hρ).trans <| by
-      have := rpow_le_rpow_sub_mul_rpow (hs.trans_le hsρ) hρ hβγ
-      have := hs.trans_le hsρ
-      calc _ ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ + K * ((R / 2) ^ (γ - β) * ρ ^ β) * F := by gcongr
-        _ = _ := by ring) s (R / 2) hs hsR le_rfl
-  exact oscillation_decay_bound_aux hs hR rfl hγ hK.le hD.le hF hQ hC₁.le hfin hφR₁ hM₀def rfl
 
 /-- **De Giorgi's interior oscillation estimate with a right-hand side.** Let `n ≥ 1` be the
 dimension and let `r > 1` with `r > n/2`. There are `α ∈ (0, 1]` and `C > 0`, depending only on
@@ -532,7 +451,8 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
         (mu.restrict (ball x₀ ρ)) := ⟨_, rfl⟩
   have hMρ : ∀ ρ, ρ ≤ R / 2 → ∀ᵐ x ∂mu.restrict (ball x₀ ρ), |W1p.value u x| ≤ M₀ :=
     fun ρ hρ => ae_restrict_of_ae_restrict_of_subset (ball_subset_ball hρ) hM
-  obtain ⟨hφ0, hmono, hφR₁⟩ := essSup_sub_essInf_nonneg_monotoneOn (mu := mu) x₀ (φ := φ)
+  obtain ⟨hφ0, hmono, hφR₁⟩ := EuclideanSpace.essSup_sub_essInf_nonneg_monotoneOn (mu := mu) x₀
+    (φ := φ)
     (fun ρ => by rw [hφdef]) (half_pos hR) hM
   -- One comparison step: `φ s ≤ C₀ (s/ρ)^α₀ φ ρ + K ρ^γ F` for `s ≤ ρ ≤ R / 2`.
   have hstep : ∀ s ρ, 0 < s → s ≤ ρ → ρ ≤ R / 2 →
@@ -540,7 +460,9 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
     intro s ρ hs hsρ hρR₁
     have hρ : 0 < ρ := hs.trans_le hsρ
     have hρR : ball x₀ ρ ⊆ ball x₀ R := ball_subset_ball (hρR₁.trans (half_le_self hR.le))
-    have hfρ := hFdef ▸ toReal_eLpNorm_restrict_div_le hρR hf hlam.le
+    have hfρ : (eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam ≤ F := hFdef ▸
+      div_le_div_of_nonneg_right
+        (lpNorm_mono_measure hf (Measure.restrict_mono hρR le_rfl)) hlam.le
     calc φ s ≤ C₀ * ((s / ρ) ^ α₀ + 0) * φ ρ +
           K * ρ ^ γ * ((eLpNorm f r (mu.restrict (ball x₀ ρ))).toReal / lam) := by
           simpa only [hφdef, hγdef, add_zero, mul_div_assoc] using
@@ -549,7 +471,8 @@ theorem exists_ae_value_mem_Icc_add_mul_rpow_mul_add_of_memLp [Nonempty ι] {lam
       _ ≤ _ := by gcongr
   have hφs := hiter hs hsR (by rw [hQdef]; positivity) (by rw [hFdef]; positivity) hmono hφ0 hφR₁
     hM₀def hstep
-  obtain ⟨hb₁, hb₂⟩ := isBoundedUnder_ae_restrict_ball_of_ae_abs_le (mu := mu) x₀ (hMρ s hsR)
+  obtain ⟨hb₁, hb₂⟩ :=
+    isBoundedUnder_le_abs.mp (isBoundedUnder_of_eventually_le (hMρ s hsR))
   rw [← hQdef, mul_div_assoc, ← hFdef]
   rw [hφdef] at hφs
   refine ⟨essInf (W1p.value u : EuclideanSpace ℝ ι → ℝ) (mu.restrict (ball x₀ s)), ?_⟩
@@ -567,15 +490,15 @@ theorem mem_closedBall_of_mem_Icc_of_le {y m L c : ℝ} (hy : y ∈ Icc m (m + L
 
 /-- Scaling the oscillation bound: if `X ≤ N` and `C = C₀ N / R^α / 2`, then
 `C₀ (s / R)^α X ≤ 2 (C s^α)`. -/
-theorem mul_div_rpow_mul_le_two_mul_aux {C₀ C N X R s α : ℝ} (hs : 0 < s) (hR : 0 < R)
+private theorem mul_div_rpow_mul_le_two_mul_aux {C₀ C N X R s α : ℝ} (hs : 0 < s) (hR : 0 < R)
     (hC₀ : 0 < C₀) (hX : X ≤ N) (hC : C = C₀ * N / R ^ α / 2) :
     C₀ * (s / R) ^ α * X ≤ 2 * (C * s ^ α) :=
   calc _ ≤ C₀ * (s / R) ^ α * N := by gcongr
     _ = 2 * (C * s ^ α) := by rw [hC, Real.div_rpow hs.le hR.le]; field_simp
 
-/-- The constants in Hölder continuity: `2 C = C₀ N R^(-α)` and
-`2 M / ρ^α = 2^(1+α) D N R^(-α) ≤ 4 D N R^(-α)` for `α ≤ 1`. -/
-theorem max_two_mul_div_rpow_le {C₀ D N R α : ℝ} (hα : α ≤ 1) (hR : 0 < R) (hD : 0 ≤ D)
+/-- For `α ≤ 1`, the maximum of `2 (C₀ N / R^α / 2) = C₀ N R^(-α)` and
+`2 (D N) / (R^α / 2^α) = 2^(1+α) D N R^(-α)` is at most `max C₀ (4 D) R^(-α) N`. -/
+private theorem max_two_mul_div_rpow_le {C₀ D N R α : ℝ} (hα : α ≤ 1) (hR : 0 < R) (hD : 0 ≤ D)
     (hN : 0 ≤ N) :
     max (2 * (C₀ * N / R ^ α / 2)) (2 * (D * N) / (R ^ α / 2 ^ α)) ≤
       max C₀ (4 * D) * (R ^ α)⁻¹ * N := by
@@ -586,17 +509,9 @@ theorem max_two_mul_div_rpow_le {C₀ D N R α : ℝ} (hα : α ≤ 1) (hR : 0 <
   · calc 2 * (D * N) / (R ^ α / 2 ^ α) = 2 * 2 ^ α * D * (R ^ α)⁻¹ * N := by field_simp
       _ ≤ 2 * 2 * D * (R ^ α)⁻¹ * N := by gcongr
       _ ≤ _ := by
-        rw [show (2 : ℝ) * 2 * D = 4 * D by ring]
+        norm_num
         gcongr
         exact le_max_right _ _
-
-omit [DecidableEq ι] in
-/-- A function in `H¹(Ω)` is integrable near every point of `Ω`. -/
-theorem integrableAtFilter_value_of_mem {Omega : Opens (EuclideanSpace ℝ ι)} (u : W1p mu Omega 2)
-    {x : EuclideanSpace ℝ ι} (hx : x ∈ (Omega : Set (EuclideanSpace ℝ ι))) :
-    IntegrableAtFilter (W1p.value u) (𝓝 x) mu := by
-  simpa [nhdsWithin_eq_nhds.2 (Omega.isOpen.mem_nhds hx)] using
-    (W1p.hasWeakFDerivOn u).locallyIntegrableOn x hx
 
 omit [DecidableEq ι] in
 /-- The scaled norms `R^(-n/2) ‖u‖_{L²} + R^(2 - n/r) ‖f‖_{Lʳ} / λ` of `u` and `f` on a ball
@@ -668,7 +583,7 @@ theorem exists_holderOnWith_preciseRepresentative_of_memLp [Nonempty ι] {lam La
   have hfx : ∀ x ∈ K, MemLp f r (mu.restrict (ball x R)) := fun x hx =>
     hf.mono_measure (Measure.restrict_mono (hball x hx) le_rfl)
   have hint : ∀ x ∈ K, IntegrableAtFilter (W1p.value u) (𝓝 x) mu := fun x hx =>
-    integrableAtFilter_value_of_mem u (hKΩ hx)
+    W1p.integrableAtFilter_value_of_mem u (hKΩ hx)
   obtain ⟨C, hC⟩ : ∃ C : ℝ≥0, (C : ℝ) = C₀ * N / R ^ (α : ℝ) / 2 := ⟨⟨_, by positivity⟩, rfl⟩
   obtain ⟨M, hM⟩ : ∃ M : ℝ≥0, (M : ℝ) = D * N := ⟨⟨_, by positivity⟩, rfl⟩
   obtain ⟨ρ, hρ⟩ : ∃ ρ : ℝ≥0, (ρ : ℝ) = R / 2 := ⟨⟨_, by positivity⟩, rfl⟩
