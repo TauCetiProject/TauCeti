@@ -208,15 +208,15 @@ variable (K) in
 `p` of an `R`-module `M` is contained in a submodule `q` if and only if
 `𝒪_v ⊗[R] p ⊆ 𝒪_v ⊗[R] q` inside `𝒪_v ⊗[R] M` for the ring of integers `𝒪_v` of every completion.
 No finiteness is needed. This is the analogue, for the family of completions, of Mathlib's
-`Submodule.baseChange_le_iff` for a single faithfully flat algebra, and the proof follows the proof
-of that lemma. -/
+`Submodule.baseChange_le_iff` for a single faithfully flat algebra. -/
 theorem le_iff_forall_baseChange_adicCompletionIntegers_le (hR : ¬IsField R)
     {p q : Submodule R M} :
     p ≤ q ↔ ∀ v : HeightOneSpectrum R,
       p.baseChange (v.adicCompletionIntegers K) ≤ q.baseChange (v.adicCompletionIntegers K) := by
   refine ⟨fun h v ↦ Submodule.baseChange_mono _ h, fun h ↦ ?_⟩
   -- `p ≤ q` says that `p → M → M ⧸ q` vanishes, and right exactness of `𝒪_v ⊗[R] -` identifies
-  -- the kernel of `𝒪_v ⊗[R] M → 𝒪_v ⊗[R] (M ⧸ q)` with `q.baseChange 𝒪_v`.
+  -- the kernel of `𝒪_v ⊗[R] M → 𝒪_v ⊗[R] (M ⧸ q)` with `q.baseChange 𝒪_v`. This follows the proof
+  -- of Mathlib's `Submodule.baseChange_le_iff`.
   rw [← q.ker_mkQ, LinearMap.le_ker_iff_comp_subtype_eq_zero,
     eq_zero_iff_forall_lTensor_adicCompletionIntegers_eq_zero K hR]
   intro v
@@ -228,8 +228,7 @@ variable (K) in
 /-- **Lattices are determined by their completions.** If `R` is not a field, two submodules `p`
 and `q` of an `R`-module `M` are equal if and only if `𝒪_v ⊗[R] p = 𝒪_v ⊗[R] q` inside
 `𝒪_v ⊗[R] M` for the ring of integers `𝒪_v` of every completion. No finiteness is needed. This is
-the analogue, for the family of completions, of Mathlib's `Submodule.baseChange_inj`, and the proof
-follows the proof of that lemma. -/
+the analogue, for the family of completions, of Mathlib's `Submodule.baseChange_inj`. -/
 theorem eq_iff_forall_baseChange_adicCompletionIntegers_eq (hR : ¬IsField R)
     {p q : Submodule R M} :
     p = q ↔ ∀ v : HeightOneSpectrum R,
