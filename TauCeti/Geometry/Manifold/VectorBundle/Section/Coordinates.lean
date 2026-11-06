@@ -9,7 +9,8 @@ public import Mathlib.Geometry.Manifold.VectorBundle.ContMDiffSection
 public import Mathlib.Geometry.Manifold.VectorBundle.Hom
 public import TauCeti.Topology.VectorBundle.Hom
 
-/-!+# Reconstructing sections in a vector-bundle frame
+/-!
+# Reconstructing sections in a vector-bundle frame
 
 A field of model vectors determines a section through the inverse of an atlas trivialization.
 The section has the regularity of that field on the frame domain. For Hom bundles, this is
