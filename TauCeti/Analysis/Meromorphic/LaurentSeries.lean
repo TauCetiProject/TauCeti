@@ -192,6 +192,7 @@ theorem laurentSeries_eq {φ : meromorphicGerms 𝕜 a} {N : ℕ} {h : 𝕜 → 
   laurentSeriesFun_eq hh hφ
 
 /-- The Laurent expansion of the germ of a function analytic at `a` is its Taylor series. -/
+@[simp]
 theorem laurentSeries_mk_of_analyticAt {f : 𝕜 → 𝕜} (hf : AnalyticAt 𝕜 f a) :
     laurentSeries a (mk f hf.meromorphicAt) = ofPowerSeries ℤ 𝕜 (taylorSeries f a) := by
   rw [laurentSeries_eq hf (N := 0) (by simp), Nat.cast_zero, neg_zero, single_zero_one, one_mul]
@@ -250,6 +251,7 @@ theorem coeff_laurentSeries_evalInvSub (P : 𝕜[X]) (k : ℕ) :
     omega
 
 /-- The Laurent expansion of a polynomial in `(z - a)⁻¹` has no positive coefficients. -/
+@[simp]
 theorem coeff_laurentSeries_evalInvSub_of_pos (P : 𝕜[X]) {n : ℤ} (hn : 0 < n) :
     (laurentSeries a (evalInvSub a P)).coeff n = 0 := by
   rw [coeff_laurentSeries_evalInvSub_eq_sum]

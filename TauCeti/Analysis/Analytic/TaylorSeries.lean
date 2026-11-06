@@ -7,9 +7,9 @@ module
 
 public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.Calculus.DSlope
-import Mathlib.Analysis.Calculus.Deriv.Mul
 public import Mathlib.RingTheory.PowerSeries.Basic
 import TauCeti.Analysis.Analytic.ExtractZeros
+public import TauCeti.Analysis.Calculus.DSlope.Basic
 
 /-!
 # Taylor series of functions of one variable
@@ -32,7 +32,6 @@ germs of analytic and meromorphic functions are compared with the functions them
 
 ## Main declarations
 
-* `TauCeti.dslope_mul`: the product rule for divided differences.
 * `HasFPowerSeriesAt.coeff_mul`: the coefficients of the power series of `f * g` are the Cauchy
   products of those of `f` and `g`.
 * `TauCeti.taylorSeries`: the Taylor series at a point, as a formal power series.
@@ -51,21 +50,6 @@ open Filter Finset Function Topology
 
 variable {𝕜 A : Type*} [NontriviallyNormedField 𝕜] [NormedRing A] [NormedAlgebra 𝕜 A]
   {f g : 𝕜 → A} {a : 𝕜}
-
-namespace TauCeti
-
-/-- **Product rule for divided differences.** If `f` and `g` are differentiable at `a`, then
-`dslope (f * g) a b = f a * dslope g a b + dslope f a b * g b` for every `b`. -/
-theorem dslope_mul (hf : DifferentiableAt 𝕜 f a) (hg : DifferentiableAt 𝕜 g a) (b : 𝕜) :
-    dslope (f * g) a b = f a * dslope g a b + dslope f a b * g b := by
-  rcases eq_or_ne b a with rfl | hb
-  · rw [dslope_same, dslope_same, dslope_same, deriv_mul hf hg, add_comm]
-  · simp only [dslope_of_ne _ hb, slope_def_module, Pi.mul_apply, mul_smul_comm, smul_mul_assoc,
-      ← smul_add]
-    congr 1
-    noncomm_ring
-
-end TauCeti
 
 namespace FormalMultilinearSeries
 
@@ -141,14 +125,6 @@ theorem _root_.HasFPowerSeriesAt.coeff_taylorSeries {p : FormalMultilinearSeries
     PowerSeries.coeff n (taylorSeries f a) = p.coeff n := by
   rw [TauCeti.coeff_taylorSeries, hp.iterate_dslope_apply_eq_coeff]
 
-/-- Divided differences at `a` of functions with the same germ at `a` have the same germ at `a`. -/
-theorem _root_.Filter.EventuallyEq.dslope (h : f =ᶠ[𝓝 a] g) : dslope f a =ᶠ[𝓝 a] dslope g a := by
-  filter_upwards [h] with b hb
-  rcases eq_or_ne b a with rfl | hba
-  · rw [dslope_same, dslope_same, h.deriv_eq]
-  · rw [dslope_of_ne _ hba, dslope_of_ne _ hba, slope_def_module, slope_def_module, hb,
-      h.eq_of_nhds]
-
 /-- The Taylor series of `f` at `a` depends only on the germ of `f` at `a`. -/
 theorem taylorSeries_congr (h : f =ᶠ[𝓝 a] g) : taylorSeries f a = taylorSeries g a := by
   have key : ∀ n, (swap dslope a)^[n] f =ᶠ[𝓝 a] (swap dslope a)^[n] g := fun n ↦ by
@@ -172,6 +148,7 @@ theorem taylorSeries_const (c : A) : taylorSeries (fun _ : 𝕜 ↦ c) a = Power
       constFormalMultilinearSeries_apply_succ, zero_apply]
 
 /-- The Taylor series of a sum of functions analytic at `a` is the sum of their Taylor series. -/
+@[simp]
 theorem taylorSeries_add (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
     taylorSeries (f + g) a = taylorSeries f a + taylorSeries g a := by
   obtain ⟨p, hp⟩ := hf
@@ -182,6 +159,7 @@ theorem taylorSeries_add (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
 
 /-- **Taylor series of a product.** The Taylor series of a product of functions analytic at `a`
 is the product of their Taylor series. -/
+@[simp]
 theorem taylorSeries_mul (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
     taylorSeries (f * g) a = taylorSeries f a * taylorSeries g a := by
   obtain ⟨p, hp⟩ := hf
@@ -193,6 +171,7 @@ theorem taylorSeries_mul (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
 
 /-- The Taylor series of a power of a function analytic at `a` is the power of its Taylor
 series. -/
+@[simp]
 theorem taylorSeries_pow (hf : AnalyticAt 𝕜 f a) (n : ℕ) :
     taylorSeries (f ^ n) a = taylorSeries f a ^ n := by
   induction n with

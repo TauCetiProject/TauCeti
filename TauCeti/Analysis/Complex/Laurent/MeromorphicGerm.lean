@@ -18,12 +18,10 @@ circle Laurent coefficients `TauCeti.circleLaurentCoeff f a ρ n`,
 and every `n : ℤ`. So the algebraic expansion, computed from Taylor coefficients, agrees with the
 analytic one, computed by contour integration.
 
-The proof writes `f` as `(z - a)⁻ᴺ h z` with `h` analytic on a disc around `a`. On a circle inside
-that disc, the circle coefficient of order `n` of `f` is the circle coefficient of order `n + N`
-of `h` (`TauCeti.circleLaurentCoeff_sub_zpow_smul_apply`). For `n + N ≥ 0` it is a coefficient of
-the Cauchy power series of `h`, which is the power series of `h` at `a`; for `n + N < 0` the
-integrand is holomorphic on the closed disc and the integral vanishes by the Cauchy–Goursat
-theorem.
+The representative `f` is any function whose germ on the punctured neighbourhood of `a` is `φ`;
+its value at `a` plays no role. The radius bound is uniform in `n`: a single eventual statement in
+`ρ → 0⁺` gives the equality for all integer orders at once, so one small circle computes every
+Laurent coefficient of `φ`.
 
 ## References
 
@@ -44,6 +42,11 @@ coefficient `(2πi)⁻¹ ∮_{|z - a| = ρ} (z - a) ^ (-n - 1) f(z) dz` of any r
 theorem eventually_coeff_laurentSeries_eq_circleLaurentCoeff {φ : meromorphicGerms ℂ a}
     {f : ℂ → ℂ} (hφ : (φ : Germ (𝓝[≠] a) ℂ) = f) :
     ∀ᶠ ρ in 𝓝[>] (0 : ℝ), ∀ n : ℤ, (laurentSeries a φ).coeff n = circleLaurentCoeff f a ρ n := by
+  -- Write `f` as `(z - a)⁻ᴺ h z` with `h` analytic on a disc around `a`. On a circle inside that
+  -- disc, the circle coefficient of order `n` of `f` is the circle coefficient of order `n + N` of
+  -- `h`. For `n + N ≥ 0` it is a coefficient of the Cauchy power series of `h`, which is the power
+  -- series of `h` at `a`; for `n + N < 0` the integrand is holomorphic on the closed disc and the
+  -- integral vanishes by the Cauchy–Goursat theorem.
   obtain ⟨N, hN⟩ := coe_mem_meromorphicGerms.1 (hφ ▸ φ.2)
   set h : ℂ → ℂ := fun z ↦ (z - a) ^ N • f z
   have hfh : ∀ z ≠ a, f z = ((z - a) ^ N)⁻¹ * h z := fun z hz ↦ by
