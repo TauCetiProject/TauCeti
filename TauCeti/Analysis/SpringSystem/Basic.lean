@@ -5,7 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Basic
+public import Mathlib.Analysis.Calculus.Gradient.Basic
+public import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
 # The exact force and potential of a linear spring
@@ -42,6 +43,8 @@ positive rest length.
 * `TauCeti.springForce_neg`, `TauCeti.springPotential_neg`: the second end feels the opposite
   force, and the energy does not depend on the orientation of the spring.
 * `TauCeti.norm_springForce`: Hooke's law, `‖F‖ = |κ| |‖w‖ - ℓ₀|` away from zero length.
+* `TauCeti.hasFDerivAt_springPotential`, `TauCeti.hasGradientAt_springPotential`: in an inner
+  product space, away from `w = 0`, the force is the gradient of the potential in `w`.
 -/
 
 public section
@@ -107,5 +110,38 @@ times the deviation `|‖w‖ - ℓ₀|` of its length from the rest length. -/
 theorem norm_springForce (κ ℓ₀ : ℝ) {w : E} (hw : ‖w‖ ≠ 0) :
     ‖springForce κ ℓ₀ w‖ = |κ| * |‖w‖ - ℓ₀| := by
   simp [springForce_def, norm_smul, hw]
+
+section InnerProductSpace
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **The force is the derivative of the potential.** Away from `w = 0`, the derivative of the
+potential in the relative vector `w` is `v ↦ ⟪springForce κ ℓ₀ w, v⟫`. -/
+theorem hasFDerivAt_springPotential (κ ℓ₀ : ℝ) {w : F} (hw : w ≠ 0) :
+    HasFDerivAt (springPotential κ ℓ₀) (innerSL ℝ (springForce κ ℓ₀ w)) w := by
+  have hn : HasFDerivAt (fun x : F ↦ ‖x‖) (‖w‖⁻¹ • innerSL ℝ w) w := by
+    have h := (hasStrictFDerivAt_norm_sq w).hasFDerivAt.sqrt (by positivity)
+    simp only [Real.sqrt_sq (norm_nonneg _)] at h
+    convert h using 1
+    ext v
+    simp
+    field_simp
+  rw [show springPotential κ ℓ₀ = fun x : F ↦ κ / 2 * (‖x‖ - ℓ₀) ^ 2 from
+    funext (springPotential_def κ ℓ₀)]
+  refine (((hn.sub_const ℓ₀).pow 2).const_mul (κ / 2)).congr_fderiv ?_
+  ext v
+  simp [springForce_def]
+  field_simp
+
+/-- **The force is the gradient of the potential**: away from `w = 0`, `springForce κ ℓ₀ w` is the
+gradient of `springPotential κ ℓ₀` at the relative vector `w`. -/
+theorem hasGradientAt_springPotential [CompleteSpace F] (κ ℓ₀ : ℝ) {w : F} (hw : w ≠ 0) :
+    HasGradientAt (springPotential κ ℓ₀) (springForce κ ℓ₀ w) w := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  convert hasFDerivAt_springPotential κ ℓ₀ hw using 1
+  ext v
+  simp
+
+end InnerProductSpace
 
 end TauCeti

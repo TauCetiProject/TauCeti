@@ -16,59 +16,64 @@ public import TauCeti.Analysis.SpringSystem.Basic
 Two particles rest at `p₁ = (0, 0)` and `p₂ = (1, 0)` in the plane, joined by a spring of
 stiffness `κ` and rest length `1`. Displacing them by `u₁` and `u₂` changes the relative vector to
 `(1, 0) + u₂ - u₁`, and the exact force on the first particle is
-`TauCeti.springForce κ 1 ((1, 0) + u₂ - u₁)`, the second particle feeling its opposite.
+`TauCeti.springForce κ 1 ((1, 0) + u₂ - u₁)`, the second particle feeling its opposite. The
+declarations specific to this example live in the namespace `TauCeti.TwoParticleSpring`.
 
 **The linearization.** In the coordinate order `(x₁, y₁, x₂, y₂)` the linearized force is
-`κ H u`, with `H = TauCeti.twoParticleForceMatrix`: only the stretching of the spring along the
-rest direction is felt to first order. Its eigenvectors are the stretching mode `(1, 0, -1, 0)`,
-of eigenvalue `-2`, the two translations `(1, 0, 1, 0)` and `(0, 1, 0, 1)` and the transverse mode
-`(0, 1, 0, -1)`, all three of eigenvalue `0`.
+`κ H u`, with `H = TauCeti.TwoParticleSpring.forceMatrix`: only the stretching of the spring along
+the rest direction is felt to first order. Its eigenvectors are the stretching mode
+`(1, 0, -1, 0)`, of eigenvalue `-2`, the two translations `(1, 0, 1, 0)` and `(0, 1, 0, 1)` and
+the transverse mode `(0, 1, 0, -1)`, all three of eigenvalue `0`.
 
 **The transverse zero mode, made exact.** Along the transverse displacement `u₁ = (0, ε)`,
 `u₂ = (0, -ε)` the relative vector is `(1, -2ε)`, of length
-`ℓ(ε) = √(1 + 4ε²)` (`TauCeti.transverseLength`), and the exact potential is
+`ℓ(ε) = √(1 + 4ε²)` (`TauCeti.TwoParticleSpring.transverseLength`), and the exact potential is
 
 `E(ε) = (κ / 2) (ℓ(ε) - 1)² = 8 κ ε⁴ / (ℓ(ε) + 1)²`
 
-(`TauCeti.transverseEnergy`, `TauCeti.transverseEnergy_eq_div`). It vanishes at `ε = 0` to fourth
-order: `E(0) = E'(0) = E''(0) = 0`, yet `E(ε) > 0` for `ε ≠ 0`, and `E(ε) / ε⁴ → 2κ`
-(`TauCeti.transverseEnergy_quartic`). The exact force on the first particle is
-`κ (1 - 1/ℓ(ε)) (1, -2ε)`. It vanishes to first order at `ε = 0`, as the linearization predicts,
-but its first coordinate is positive for `ε ≠ 0`. Hence the affine paths
+(`TauCeti.TwoParticleSpring.transverseEnergy`, `TauCeti.TwoParticleSpring.transverseEnergy_eq_div`).
+It vanishes at `ε = 0` to fourth order: `E(0) = E'(0) = E''(0) = 0`, yet `E(ε) > 0` for `ε ≠ 0`,
+and `E(ε) / ε⁴ → 2κ` (`TauCeti.TwoParticleSpring.transverseEnergy_quartic`). The exact force on
+the first particle is `κ (1 - 1/ℓ(ε)) (1, -2ε)`. It vanishes to first order at `ε = 0`, as the
+linearization predicts, but its first coordinate is positive for `ε ≠ 0`. Hence the affine paths
 `u₁(t) = (0, a t)`, `u₂(t) = (0, -a t)` with `a ≠ 0`, which solve the linearized equation because
 `H` annihilates them, fail the exact Newton equation at every `t ≠ 0` and for every mass
-(`TauCeti.mass_smul_deriv_deriv_ne_springForce_transverse`): their acceleration is zero and the
-exact force is not.
+(`TauCeti.TwoParticleSpring.mass_smul_deriv_deriv_ne_springForce_transverse`): their acceleration
+is zero and the exact force is not.
 
 The zero eigenvalue on the transverse mode is instead the tangent of a curve of rest
 configurations: the clockwise rotations by `2ε`, `p₁(ε) = (½ - ½ cos 2ε, ½ sin 2ε)` and
 `p₂(ε) = (½ + ½ cos 2ε, -½ sin 2ε)`, of the rest configuration about its midpoint keep the
 particles at distance `1`, so they store no energy, and their velocity at `ε = 0` is
-`(0, 1, 0, -1)` (`TauCeti.hasDerivAt_rotatedRestFirst_zero`,
-`TauCeti.hasDerivAt_rotatedRestSecond_zero`). These are configuration curves, not solutions of the
-spring equation.
+`(0, 1, 0, -1)` (`TauCeti.TwoParticleSpring.hasDerivAt_rotatedRestFirst_zero`,
+`TauCeti.TwoParticleSpring.hasDerivAt_rotatedRestSecond_zero`). These are configuration curves,
+not solutions of the spring equation.
 
 ## Main definitions
 
-* `TauCeti.twoParticleForceMatrix`: the linearized force matrix `H`.
-* `TauCeti.transverseLength`, `TauCeti.transverseEnergy`: the exact length and potential along
-  the transverse displacement.
-* `TauCeti.rotatedRestFirst`, `TauCeti.rotatedRestSecond`: the rotated rest configurations.
+* `TauCeti.TwoParticleSpring.forceMatrix`: the linearized force matrix `H`.
+* `TauCeti.TwoParticleSpring.transverseLength`, `TauCeti.TwoParticleSpring.transverseEnergy`: the
+  exact length and potential along the transverse displacement.
+* `TauCeti.TwoParticleSpring.rotatedRestFirst`, `TauCeti.TwoParticleSpring.rotatedRestSecond`: the
+  rotated rest configurations.
 
 ## Main results
 
-* `TauCeti.springPotential_transverse`, `TauCeti.springForce_transverse`: the exact potential and
-  force along the transverse displacement.
-* `TauCeti.hasDerivAt_springForce_transverse_zero`: that force vanishes to first order at `0`,
-  as `H` predicts.
-* `TauCeti.transverseEnergy_eq_div`: the closed form `E(ε) = 8 κ ε⁴ / (ℓ(ε) + 1)²`.
-* `TauCeti.deriv_transverseEnergy_zero`, `TauCeti.deriv_deriv_transverseEnergy_zero`,
-  `TauCeti.transverseEnergy_pos`: the potential vanishes to second order at `0` but is positive
-  elsewhere.
-* `TauCeti.transverseEnergy_quartic`: `E(ε) / ε⁴ → 2κ` as `ε → 0`, `ε ≠ 0`, and
-  `TauCeti.transverseEnergy_div_pow_four_lt`: the quotient stays below `2κ`.
-* `TauCeti.mass_smul_deriv_deriv_ne_springForce_transverse`: the affine transverse paths are not
-  solutions of the exact equation of motion.
+* `TauCeti.TwoParticleSpring.springPotential_transverse`,
+  `TauCeti.TwoParticleSpring.springForce_transverse`: the exact potential and force along the
+  transverse displacement.
+* `TauCeti.TwoParticleSpring.hasDerivAt_springForce_transverse_zero`: that force vanishes to first
+  order at `0`, as `H` predicts.
+* `TauCeti.TwoParticleSpring.transverseEnergy_eq_div`: the closed form
+  `E(ε) = 8 κ ε⁴ / (ℓ(ε) + 1)²`.
+* `TauCeti.TwoParticleSpring.deriv_transverseEnergy_zero`,
+  `TauCeti.TwoParticleSpring.deriv_deriv_transverseEnergy_zero`,
+  `TauCeti.TwoParticleSpring.transverseEnergy_pos`: the potential vanishes to second order at `0`
+  but is positive elsewhere.
+* `TauCeti.TwoParticleSpring.transverseEnergy_quartic`: `E(ε) / ε⁴ → 2κ` as `ε → 0`, `ε ≠ 0`, and
+  `TauCeti.TwoParticleSpring.transverseEnergy_div_pow_four_lt`: the quotient stays below `2κ`.
+* `TauCeti.TwoParticleSpring.mass_smul_deriv_deriv_ne_springForce_transverse`: the affine
+  transverse paths are not solutions of the exact equation of motion.
 
 ## References
 
@@ -78,7 +83,7 @@ spring equation.
 
 public section
 
-namespace TauCeti
+namespace TauCeti.TwoParticleSpring
 
 open Real Filter Topology Matrix
 
@@ -88,38 +93,38 @@ open Real Filter Topology Matrix
 joined by a spring of stiffness `κ` and rest length `1`, in the coordinate order
 `(x₁, y₁, x₂, y₂)`: the linearized force is `κ H u`, in which only the stretching `x₂ - x₁` along
 the rest direction is felt. Along the transverse mode `(0, 1, 0, -1)` this first-order vanishing
-of the exact force is `TauCeti.hasDerivAt_springForce_transverse_zero`. -/
-def twoParticleForceMatrix : Matrix (Fin 4) (Fin 4) ℝ :=
+of the exact force is `TauCeti.TwoParticleSpring.hasDerivAt_springForce_transverse_zero`. -/
+def forceMatrix : Matrix (Fin 4) (Fin 4) ℝ :=
   !![-1, 0, 1, 0; 0, 0, 0, 0; 1, 0, -1, 0; 0, 0, 0, 0]
 
-theorem twoParticleForceMatrix_def :
-    twoParticleForceMatrix = !![-1, 0, 1, 0; 0, 0, 0, 0; 1, 0, -1, 0; 0, 0, 0, 0] :=
+theorem forceMatrix_def :
+    forceMatrix = !![-1, 0, 1, 0; 0, 0, 0, 0; 1, 0, -1, 0; 0, 0, 0, 0] :=
   (rfl)
 
 /-- The stretching mode `(1, 0, -1, 0)` is an eigenvector of `H` of eigenvalue `-2`. -/
-theorem twoParticleForceMatrix_mulVec_stretch :
-    twoParticleForceMatrix *ᵥ ![1, 0, -1, 0] = ![-2, 0, 2, 0] := by
+theorem forceMatrix_mulVec_stretch :
+    forceMatrix *ᵥ ![1, 0, -1, 0] = ![-2, 0, 2, 0] := by
   ext i
-  fin_cases i <;> simp [twoParticleForceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four] <;>
+  fin_cases i <;> simp [forceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four] <;>
     norm_num
 
 /-- The horizontal translation `(1, 0, 1, 0)` is a zero mode of `H`. -/
-theorem twoParticleForceMatrix_mulVec_translation_x :
-    twoParticleForceMatrix *ᵥ ![1, 0, 1, 0] = 0 := by
+theorem forceMatrix_mulVec_translation_x :
+    forceMatrix *ᵥ ![1, 0, 1, 0] = 0 := by
   ext i
-  fin_cases i <;> simp [twoParticleForceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
+  fin_cases i <;> simp [forceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
 
 /-- The vertical translation `(0, 1, 0, 1)` is a zero mode of `H`. -/
-theorem twoParticleForceMatrix_mulVec_translation_y :
-    twoParticleForceMatrix *ᵥ ![0, 1, 0, 1] = 0 := by
+theorem forceMatrix_mulVec_translation_y :
+    forceMatrix *ᵥ ![0, 1, 0, 1] = 0 := by
   ext i
-  fin_cases i <;> simp [twoParticleForceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
+  fin_cases i <;> simp [forceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
 
 /-- The transverse displacement `(0, ε, 0, -ε)` is a zero mode of `H`. -/
-theorem twoParticleForceMatrix_mulVec_transverse (ε : ℝ) :
-    twoParticleForceMatrix *ᵥ ![0, ε, 0, -ε] = 0 := by
+theorem forceMatrix_mulVec_transverse (ε : ℝ) :
+    forceMatrix *ᵥ ![0, ε, 0, -ε] = 0 := by
   ext i
-  fin_cases i <;> simp [twoParticleForceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
+  fin_cases i <;> simp [forceMatrix, Matrix.mulVec, dotProduct, Fin.sum_univ_four]
 
 /-! ### The exact length and potential along the transverse displacement -/
 
@@ -190,7 +195,7 @@ private theorem norm_transverse_relative (ε : ℝ) :
   ring
 
 /-- The exact potential of the transverse displacement `u₁ = (0, ε)`, `u₂ = (0, -ε)` is
-`TauCeti.transverseEnergy κ ε`. -/
+`TauCeti.TwoParticleSpring.transverseEnergy κ ε`. -/
 theorem springPotential_transverse (κ ε : ℝ) :
     springPotential κ 1 (!₂[1, 0] + !₂[0, -ε] - !₂[0, ε] : EuclideanSpace ℝ (Fin 2)) =
       transverseEnergy κ ε := by
@@ -215,7 +220,7 @@ theorem springForce_transverse_apply_zero_pos {κ ε : ℝ} (hκ : 0 < κ) (hε 
 
 /-- **To first order the transverse displacement feels no force**: the exact force on the first
 particle along `u₁ = (0, ε)`, `u₂ = (0, -ε)` has derivative `0` at `ε = 0`, in accordance with
-`H (0, 1, 0, -1) = 0` (`TauCeti.twoParticleForceMatrix_mulVec_transverse`). -/
+`H (0, 1, 0, -1) = 0` (`TauCeti.TwoParticleSpring.forceMatrix_mulVec_transverse`). -/
 theorem hasDerivAt_springForce_transverse_zero (κ : ℝ) :
     HasDerivAt (fun ε : ℝ ↦
       springForce κ 1 (!₂[1, 0] + !₂[0, -ε] - !₂[0, ε] : EuclideanSpace ℝ (Fin 2))) 0 0 := by
@@ -313,9 +318,9 @@ theorem transverseEnergy_quartic (κ : ℝ) :
 
 /-- **The linearization fails on the transverse zero mode.** For `κ ≠ 0` and `a ≠ 0`, the affine
 paths `u₁(t) = (0, a t)`, `u₂(t) = (0, -a t)` solve the linearized equation of motion, as `H`
-annihilates them (`TauCeti.twoParticleForceMatrix_mulVec_transverse`), but at every `t ≠ 0` and for
-every mass `m` they violate the exact Newton equation `m u₁'' = F₁` of the first particle: their
-acceleration is zero, while the exact force is not. -/
+annihilates them (`TauCeti.TwoParticleSpring.forceMatrix_mulVec_transverse`), but at every
+`t ≠ 0` and for every mass `m` they violate the exact Newton equation `m u₁'' = F₁` of the first
+particle: their acceleration is zero, while the exact force is not. -/
 theorem mass_smul_deriv_deriv_ne_springForce_transverse {κ a t : ℝ} (hκ : κ ≠ 0) (ha : a ≠ 0)
     (ht : t ≠ 0) (m : ℝ) :
     m • deriv (deriv fun s : ℝ ↦ (!₂[0, a * s] : EuclideanSpace ℝ (Fin 2))) t ≠
@@ -415,4 +420,4 @@ second particle along the transverse mode `(0, 1, 0, -1)`. -/
 theorem hasDerivAt_rotatedRestSecond_zero : HasDerivAt rotatedRestSecond !₂[0, -1] 0 := by
   simpa using hasDerivAt_rotatedRestSecond 0
 
-end TauCeti
+end TauCeti.TwoParticleSpring
