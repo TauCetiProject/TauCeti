@@ -68,6 +68,8 @@ of a curvature form, its self-dual part and its Chern–Weil density.
 * `Orientation.hodgeStar_basis`: the formula `⋆ e_I = ε(I) e_{Iᶜ}` on an orthonormal basis.
 * `Orientation.hodgeStar_hodgeStar`: `⋆⋆x = (-1) ^ (k * l) x`, and
   `Orientation.hodgeStar_hodgeStar_of_even`: `⋆⋆x = x` in an even middle degree.
+* `Orientation.exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq`: in an even middle degree every
+  `k`-vector is the sum of a self-dual and an anti-self-dual one.
 * `Orientation.trace_hodgeStar`: in a positive middle degree the Hodge star is trace free, so
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_one` and
   `Orientation.two_mul_finrank_eigenspace_hodgeStar_neg_one`: in an even positive middle degree
@@ -243,6 +245,15 @@ anti-self-dual two-forms are the `±1` eigenspaces of `⋆`. -/
 theorem hodgeStar_hodgeStar_of_even {k : ℕ} (hk : Even k) (hkk : k + k = finrank ℝ V)
     (x : ⋀[ℝ]^k V) : o.hodgeStar hkk (o.hodgeStar hkk x) = x := by
   rw [hodgeStar_hodgeStar, (hk.mul_right k).neg_one_pow, one_smul]
+
+/-- In an even middle degree every `k`-vector `x` splits into a self-dual and an anti-self-dual
+part: `μ = (x - ⋆x) / 2` satisfies `⋆μ = -μ`, and `x - μ = (x + ⋆x) / 2` satisfies
+`⋆(x - μ) = x - μ`. -/
+theorem exists_hodgeStar_eq_neg_and_hodgeStar_sub_eq {k : ℕ} (hk : Even k)
+    (hkk : k + k = finrank ℝ V) (x : ⋀[ℝ]^k V) :
+    ∃ μ : ⋀[ℝ]^k V, o.hodgeStar hkk μ = -μ ∧ o.hodgeStar hkk (x - μ) = x - μ := by
+  refine ⟨(2⁻¹ : ℝ) • (x - o.hodgeStar hkk x), ?_, ?_⟩ <;>
+    simp only [map_smul, map_sub, o.hodgeStar_hodgeStar_of_even hk hkk] <;> module
 
 /-- In a positive middle degree, `k + k = finrank ℝ V` with `0 < k`, the Hodge star is trace free:
 it sends each vector `e_I` of the basis of `⋀ᵏ V` induced by an orthonormal basis to a multiple of
