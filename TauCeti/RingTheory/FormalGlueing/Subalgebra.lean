@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RingTheory.FormalGlueing.Lifting
-import Mathlib.Algebra.Algebra.Subalgebra.Basic
 
 /-!
 # Algebraizing a module model in formal gluing
