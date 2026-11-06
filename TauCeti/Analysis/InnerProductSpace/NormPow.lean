@@ -9,6 +9,7 @@ public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 public import Mathlib.Analysis.InnerProductSpace.NormPow
 public import TauCeti.Analysis.InnerProductSpace.Laplacian.Basic
 public import TauCeti.Analysis.Calculus.ContDiff.Homogeneous
+import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
 import Mathlib.Analysis.SpecialFunctions.Pow.Deriv
 import Mathlib.Analysis.SpecialFunctions.Log.Deriv
 import Mathlib.Analysis.SpecialFunctions.SmoothTransition
@@ -37,7 +38,7 @@ chain-rule argument while replacing the global exponent hypothesis with the loca
 `x ≠ 0`.
 
 For positive exponents, `contDiff_norm_rpow_of_lt` additionally gives global `Cᵏ` regularity
-whenever `k < p` in finite dimension, including the behavior at the origin.
+whenever `k < p`, including the behavior at the origin, on arbitrary real inner-product spaces.
 
 ## Main declarations
 
@@ -74,19 +75,77 @@ open scoped RealInnerProductSpace ContDiff Gradient
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
+-- Scaling the actual punctured jets gives an operator-norm identity.
+private theorem norm_iteratedFDeriv_smul_of_homogeneous {f : E → ℝ} {p : ℝ} {j : ℕ}
+    (hf : ContDiffOn ℝ j f {0}ᶜ)
+    (hhom : ∀ t : ℝ, 0 < t → ∀ x, f (t • x) = t ^ p • f x)
+    {t : ℝ} (ht : 0 < t) {x : E} (hx : x ≠ 0) :
+    ‖iteratedFDeriv ℝ j f (t • x)‖ = t ^ (p - j) * ‖iteratedFDeriv ℝ j f x‖ := by
+  let S : E →L[ℝ] E := t • ContinuousLinearMap.id ℝ E
+  have hS : S ⁻¹' ({0}ᶜ : Set E) = {0}ᶜ := by
+    ext y
+    simp [S, ht.ne']
+  have htx : S x ∈ ({0}ᶜ : Set E) := smul_ne_zero ht.ne' hx
+  have hcomp : f ∘ S = t ^ p • f := funext (hhom t ht)
+  have hkey := S.iteratedFDerivWithin_comp_right hf isOpen_compl_singleton.uniqueDiffOn
+    (by rw [hS]; exact isOpen_compl_singleton.uniqueDiffOn) htx le_rfl
+  rw [hS, iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton hx,
+    iteratedFDerivWithin_of_isOpen j isOpen_compl_singleton htx, hcomp,
+    iteratedFDeriv_const_smul_apply (hf.contDiffAt (isOpen_compl_singleton.mem_nhds hx))] at hkey
+  have heq : (t ^ j) • iteratedFDeriv ℝ j f (t • x) = t ^ p • iteratedFDeriv ℝ j f x := by
+    ext v
+    have h := congrArg (fun A ↦ A v) hkey
+    simpa [ContinuousMultilinearMap.compContinuousLinearMap_apply, S,
+      ContinuousMultilinearMap.map_smul_univ] using h.symm
+  have hn := congrArg norm heq
+  simp only [norm_smul, Real.norm_of_nonneg (pow_nonneg ht.le _),
+    Real.norm_of_nonneg (Real.rpow_nonneg ht.le _)] at hn
+  rw [Real.rpow_sub ht, Real.rpow_natCast]
+  field_simp
+  nlinarith [hn]
+
+-- Hyperplane reflection identifies equal-radius jets without compactness of the sphere.
+private theorem norm_iteratedFDeriv_eq_of_norm_eq
+    (p : ℝ) (j : ℕ) {x y : E} (hxy : ‖x‖ = ‖y‖) :
+    ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) x‖ =
+      ‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) y‖ := by
+  let R := (ℝ ∙ (x - y))ᗮ.reflection
+  have hcomp : (fun x : E ↦ ‖x‖ ^ p) ∘ R = (fun x : E ↦ ‖x‖ ^ p) := by
+    funext z
+    simp
+  have h := R.norm_iteratedFDeriv_comp_right (fun x : E ↦ ‖x‖ ^ p) x j
+  rw [hcomp, Submodule.reflection_sub hxy] at h
+  exact h
+
 /-- Every real power of the norm whose exponent exceeds `k` is `Cᵏ`, including at zero,
-in a finite-dimensional real inner-product space. -/
-theorem contDiff_norm_rpow_of_lt [FiniteDimensional ℝ E] {k : ℕ} {p : ℝ}
+on an arbitrary real inner-product space. -/
+theorem contDiff_norm_rpow_of_lt {k : ℕ} {p : ℝ}
     (hp : (k : ℝ) < p) : ContDiff ℝ k (fun x : E ↦ ‖x‖ ^ p) := by
-  apply contDiff_of_homogeneous (p := p)
-  · intro x hx
+  have hf : ContDiffOn ℝ k (fun x : E ↦ ‖x‖ ^ p) {0}ᶜ := by
+    intro x hx
     exact ((contDiffAt_norm ℝ hx).rpow_const_of_ne
       (norm_ne_zero_iff.mpr hx)).contDiffWithinAt
-  · simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']
-  · intro t ht x
-    simp only [norm_smul, Real.norm_of_nonneg ht.le,
-      Real.mul_rpow ht.le (norm_nonneg x), smul_eq_mul]
-  · exact hp
+  apply contDiff_of_iteratedFDeriv_norm_rpow_bound hf
+    (by simp [Real.zero_rpow (lt_of_le_of_lt (Nat.cast_nonneg k) hp).ne']) hp
+  intro j hj
+  by_cases hE : Subsingleton E
+  · let := hE
+    exact ⟨0, fun x hx ↦ (hx (Subsingleton.elim _ _)).elim⟩
+  · have : Nontrivial E := not_subsingleton_iff_nontrivial.mp hE
+    obtain ⟨v, hv⟩ := exists_ne (0 : E)
+    let e : E := ‖v‖⁻¹ • v
+    have he : ‖e‖ = 1 := by simp [e, norm_smul, hv]
+    refine ⟨‖iteratedFDeriv ℝ j (fun x : E ↦ ‖x‖ ^ p) e‖, fun x hx ↦ ?_⟩
+    let θ : E := ‖x‖⁻¹ • x
+    have hθ : ‖θ‖ = 1 := by simp [θ, norm_smul, hx]
+    have hθ0 : θ ≠ 0 := norm_ne_zero_iff.mp (by rw [hθ]; norm_num)
+    have hscale := norm_iteratedFDeriv_smul_of_homogeneous (hf.of_le (by exact_mod_cast hj))
+      (p := p) (fun t ht y ↦ by simp only [norm_smul, Real.norm_of_nonneg ht.le,
+        Real.mul_rpow ht.le (norm_nonneg y), smul_eq_mul])
+      (norm_pos_iff.mpr hx) hθ0
+    have hnorm := norm_iteratedFDeriv_eq_of_norm_eq p j (hθ.trans he.symm)
+    simpa only [θ, smul_smul, mul_inv_cancel₀ (norm_ne_zero_iff.mpr hx), one_smul,
+      hnorm, mul_comm] using hscale.le
 
 /-- Away from the origin, the derivative of `x ↦ ‖x‖ ^ p` is
 `p ‖x‖ ^ (p - 2) ⟨x, ·⟩`.  Unlike Mathlib's `hasFDerivAt_norm_rpow`, this local form

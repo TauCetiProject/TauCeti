@@ -147,9 +147,8 @@ theorem planeRotated_imaginary_single_zero (θ : ℝ) :
     planeRotated θ (I • (EuclideanSpace.single 0 1 : V)) =
       -Real.cos θ • (EuclideanSpace.single 0 1 : V) -
         Real.sin θ • (EuclideanSpace.single 1 1 : V) := by
-  rw [planeRotated_apply, ← realPlaneRotation_neg, realPlaneRotation_imaginary_single,
-    smul_smul, I_mul_I, neg_one_smul, map_neg, realPlaneRotation_single_zero]
-  simp [sub_eq_add_neg, add_comm]
+  rw [planeRotated_apply, ← realPlaneRotation_neg, realPlaneRotation_imaginary_single]
+  simp [smul_smul, realPlaneRotation_single_zero, sub_eq_add_neg, add_comm]
 
 /-- The continuous endomorphism underlying the rotated structure. -/
 def planeRotatedEndomorphism (θ : ℝ) : V →L[ℝ] V :=
@@ -257,15 +256,15 @@ theorem not_contDiffAt_radialAngle (ℓ : ℕ) :
   have hline : ContDiff ℝ (ℓ + 1) (fun t : ℝ ↦ t • v) := contDiff_id.smul_const v
   have hh := (show ContDiffAt ℝ (ℓ + 1) (radialAngle ℓ)
     ((fun t : ℝ ↦ t • v) 0) by simpa only [zero_smul] using h).comp 0 hline.contDiffAt
-  apply Real.not_contDiffAt_abs_rpow (k := ℓ) (p := (ℓ : ℝ) + 1 / 2)
+  apply TauCeti.not_contDiffAt_abs_rpow (k := ℓ) (p := (ℓ : ℝ) + 1 / 2)
     (by linarith) (by linarith)
   simpa only [Function.comp_def, v, radialAngle_real_line] using hh
 
-/-- The endomorphism field of the exact radial rotation fails to have order `ℓ+1` at zero.
-The angle is recovered from its actual sine coefficient using arcsine on a neighborhood of zero. -/
+/-- The endomorphism field of the exact radial rotation fails to have order `ℓ+1` at zero. -/
 theorem not_contDiffAt_radialRotation_field (ℓ : ℕ) :
     ¬ ContDiffAt ℝ (ℓ + 1)
       (fun z : V ↦ planeRotatedEndomorphism (radialAngle ℓ z)) 0 := by
+  -- Recover the angle from its actual sine coefficient using arcsine near zero.
   intro h
   have heval := h.clm_apply (contDiffAt_const
     (c := I • (EuclideanSpace.single 0 1 : V)))

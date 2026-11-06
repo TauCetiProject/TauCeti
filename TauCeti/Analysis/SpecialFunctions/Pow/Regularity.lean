@@ -11,23 +11,24 @@ public import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
 /-!
 # The sharp finite regularity of absolute powers
 
-For `k < p < k + 1`, the function `x ↦ |x| ^ p` is not `C^(k+1)` at zero. On the positive
-half-line its derivative of order `k+1` is a positive constant times `x^(p-k-1)`, which diverges.
-The derivative formula and positivity of its Pochhammer coefficient are native Mathlib results.
+For `k < p < k + 1`, the function `x ↦ |x| ^ p` is not `C^(k+1)` at zero. This supplies
+sharp obstructions to finite regularity for radial powers and their restrictions to real lines.
 -/
 
 public section
 
-open Set Filter Topology
+open Set Filter Topology Real
 open scoped ContDiff
 
-namespace Real
+namespace TauCeti
 
 /-- A nonintegral absolute power fails to have the next order of continuous differentiability
 at the origin. -/
 theorem not_contDiffAt_abs_rpow {k : ℕ} {p : ℝ} (hkp : (k : ℝ) < p)
     (hpk : p < k + 1) :
     ¬ ContDiffAt ℝ (k + 1) (fun x : ℝ ↦ |x| ^ p) 0 := by
+  -- On the positive half-line the native derivative formula has a nonzero Pochhammer
+  -- coefficient and a negative power, contradicting continuity of the highest derivative.
   intro h
   obtain ⟨s, hs, hfs⟩ := h.contDiffOn le_rfl (by simp)
   obtain ⟨u, hus, hu, h0u⟩ := mem_nhds_iff.mp hs
@@ -53,4 +54,4 @@ theorem not_contDiffAt_abs_rpow {k : ℕ} {p : ℝ} (hkp : (k : ℝ) < p)
   apply not_tendsto_nhds_of_tendsto_atTop htop _
   exact hlim.congr' (eventually_mem_nhdsWithin.mono fun x hx ↦ heq x hx)
 
-end Real
+end TauCeti
