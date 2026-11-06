@@ -49,4 +49,23 @@ theorem exists_contDiff_det_pos (L : E →L[ℝ] E) (hL : 0 < L.det) :
     rw [hdet]
     exact hδdet t
 
+omit [FiniteDimensional ℝ E] in
+/-- `det (A + t • id) → det A` as `t → 0`. -/
+theorem tendsto_det_add_smul_id (A : E →L[ℝ] E) :
+    Filter.Tendsto (fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det) (nhds 0)
+      (nhds A.det) := by
+  have : Continuous fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det :=
+    ContinuousLinearMap.continuous_det.comp
+      (continuous_const.add (continuous_id.smul continuous_const))
+  simpa using this.tendsto 0
+
+omit [FiniteDimensional ℝ E] in
+/-- If `a < det A`, there is `-(κ / 2) < t < 0` with `a < det (A + t)`. -/
+theorem exists_det_add_smul_id_gt {A : E →L[ℝ] E} {a κ : ℝ} (hlt : a < A.det)
+    (hκ : 0 < κ) :
+    ∃ t : ℝ, (a < (A + t • ContinuousLinearMap.id ℝ E).det ∧ -(κ / 2) < t) ∧ t < 0 :=
+  (((((tendsto_det_add_smul_id A).eventually (lt_mem_nhds hlt)).and
+    (lt_mem_nhds (by linarith))).filter_mono nhdsWithin_le_nhds).and
+    (self_mem_nhdsWithin (s := Set.Iio (0 : ℝ)))).exists
+
 end ContinuousLinearMap
