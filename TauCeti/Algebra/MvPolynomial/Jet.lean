@@ -54,6 +54,17 @@ def coordinateOrder : ι ⊕ (α × Multiset ι) → ℕ
   | .inl _ => 0
   | .inr (_, I) => I.card
 
+/-- Base coordinates have order zero. -/
+@[simp]
+theorem coordinateOrder_inl (ν : ι) : coordinateOrder (.inl ν : ι ⊕ (α × Multiset ι)) = 0 := by
+  rfl
+
+/-- The order of a field-jet coordinate is the length of its symmetric multi-index. -/
+@[simp]
+theorem coordinateOrder_inr (a : α) (I : Multiset ι) :
+    coordinateOrder (.inr (a, I) : ι ⊕ (α × Multiset ι)) = I.card := by
+  rfl
+
 /-- The polynomial algebra of jets of order at most `r`, with all base coordinates. -/
 def stage (R ι α : Type*) [CommSemiring R] (r : ℕ) : Subalgebra R (PolynomialJet R ι α) :=
   MvPolynomial.supported R {v | coordinateOrder v ≤ r}
@@ -67,14 +78,15 @@ theorem mem_stage_iff (p : PolynomialJet R ι α) (r : ℕ) :
 @[simp]
 theorem field_mem_stage_iff [Nontrivial R] (a : α) (I : Multiset ι) (r : ℕ) :
     (MvPolynomial.X (.inr (a, I)) : PolynomialJet R ι α) ∈ stage R ι α r ↔ I.card ≤ r := by
-  simp [stage, coordinateOrder]
+  simp [stage]
 
 /-- Base coordinates belong to every stage. -/
 @[simp]
 theorem base_mem_stage (ν : ι) (r : ℕ) :
     (MvPolynomial.X (.inl ν) : PolynomialJet R ι α) ∈ stage R ι α r := by
+  rw [stage, MvPolynomial.supported_eq_adjoin_X]
   apply Algebra.subset_adjoin
-  exact ⟨.inl ν, Nat.zero_le r, rfl⟩
+  exact ⟨.inl ν, by simp, rfl⟩
 
 /-- Increasing the jet budget gives an inclusion of polynomial algebras. -/
 theorem stage_mono {r s : ℕ} (h : r ≤ s) : stage R ι α r ≤ stage R ι α s :=
@@ -93,6 +105,20 @@ def coordinateDerivative (μ : ι) : ι ⊕ (α × Multiset ι) → PolynomialJe
   | .inl ν => if μ = ν then 1 else 0
   | .inr (a, I) => MvPolynomial.X (.inr (a, μ ::ₘ I))
 
+/-- The derivative prescribed for a base coordinate is the Kronecker delta. -/
+@[simp]
+theorem coordinateDerivative_inl [DecidableEq ι] (μ ν : ι) :
+    coordinateDerivative (R := R) (α := α) μ (.inl ν) = if μ = ν then 1 else 0 := by
+  classical
+  simp [coordinateDerivative]
+
+/-- The derivative prescribed for a field jet appends an unordered base index. -/
+@[simp]
+theorem coordinateDerivative_inr (μ : ι) (a : α) (I : Multiset ι) :
+    coordinateDerivative (R := R) μ (.inr (a, I)) =
+      MvPolynomial.X (.inr (a, μ ::ₘ I)) := by
+  rfl
+
 /-- Total differentiation, including explicit polynomial base dependence. -/
 def totalDeriv (μ : ι) : Derivation R (PolynomialJet R ι α) (PolynomialJet R ι α) :=
   MvPolynomial.mkDerivation R (coordinateDerivative μ)
@@ -107,15 +133,14 @@ theorem totalDeriv_X (μ : ι) (v : ι ⊕ (α × Multiset ι)) :
 theorem totalDeriv_base [DecidableEq ι] (μ ν : ι) :
     totalDeriv (R := R) (α := α) μ (MvPolynomial.X (.inl ν)) =
       if μ = ν then 1 else 0 := by
-  classical
-  simp [totalDeriv_X, coordinateDerivative]
+  simp [totalDeriv_X]
 
 /-- Differentiating a field jet appends an unordered base index. -/
 @[simp]
 theorem totalDeriv_field (μ : ι) (a : α) (I : Multiset ι) :
     totalDeriv (R := R) μ (MvPolynomial.X (.inr (a, I))) =
       MvPolynomial.X (.inr (a, μ ::ₘ I)) := by
-  simp [totalDeriv_X, coordinateDerivative]
+  simp [totalDeriv_X]
 
 /-- Total derivatives commute, including on mixed symmetric jet coordinates. -/
 theorem totalDeriv_commute (μ ν : ι) :
@@ -142,16 +167,18 @@ theorem coordinateDerivative_mem_stage (μ : ι) {r : ℕ}
   classical
   cases v with
   | inl ν =>
-    simp only [coordinateDerivative]
+    simp only [coordinateDerivative_inl]
     split_ifs <;> simp
   | inr v =>
     rcases v with ⟨a, I⟩
+    rw [coordinateDerivative_inr, stage, MvPolynomial.supported_eq_adjoin_X]
     apply Algebra.subset_adjoin
-    exact ⟨.inr (a, μ ::ₘ I), by simpa [coordinateOrder] using hv, rfl⟩
+    exact ⟨.inr (a, μ ::ₘ I), by simpa using hv, rfl⟩
 
 /-- Total differentiation raises the finite jet budget by at most one. -/
 theorem totalDeriv_mem_stage (μ : ι) {r : ℕ} {p : PolynomialJet R ι α}
     (hp : p ∈ stage R ι α r) : totalDeriv μ p ∈ stage R ι α (r + 1) := by
+  rw [stage, MvPolynomial.supported_eq_adjoin_X] at hp
   induction hp using Algebra.adjoin_induction with
   | mem v hv =>
     obtain ⟨w, hw, rfl⟩ := hv
