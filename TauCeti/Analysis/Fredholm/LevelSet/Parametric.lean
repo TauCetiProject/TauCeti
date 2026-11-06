@@ -150,6 +150,28 @@ theorem exists_apply_levelSetParameterMap_eq
   rw [levelSetParameterMap_apply]
   exact ((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).symm k).2
 
+/-- A neighbourhood `N` of the chart origin pulls back along the level-set chart to a
+neighbourhood `Q` of `(x, l)` in the ambient space: every solution of the equation in `Q` lies in
+the source of the chart, and its chart image lies in `N`. This confines a statement about the
+chart, near its origin, to a neighbourhood of the solution itself. -/
+theorem exists_mem_nhds_forall_mem_source_and_levelSetChart_mem
+    (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
+    (hD : Surjective (D₁.coprod D₂))
+    (hker : (D₁.coprod D₂).ker.ClosedComplemented)
+    (hxl : f (x, l) = c) {N : Set (D₁.coprod D₂).ker} (hN : N ∈ 𝓝 (0 : (D₁.coprod D₂).ker)) :
+    ∃ Q ∈ 𝓝 ((x, l) : E × Λ), ∀ w : ↥{z | f z = c}, (w : E × Λ) ∈ Q →
+      w ∈ (levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).source ∧
+        levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl w ∈ N := by
+  set Φ := levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl
+  have hz0 : (⟨(x, l), hxl⟩ : ↥{z | f z = c}) ∈ Φ.source :=
+    mem_levelSetChart_source hf (LinearMap.range_eq_top.mpr hD) hker hxl
+  have hΦ0 : Φ ⟨(x, l), hxl⟩ = 0 :=
+    levelSetChart_apply_self hf (LinearMap.range_eq_top.mpr hD) hker hxl
+  have hQ' : Φ.source ∩ Φ ⁻¹' N ∈ 𝓝 (⟨(x, l), hxl⟩ : ↥{z | f z = c}) :=
+    Filter.inter_mem (Φ.open_source.mem_nhds hz0) (Φ.continuousAt hz0 (hΦ0 ▸ hN))
+  obtain ⟨Q, hQnhds, hQsub⟩ := (mem_nhds_subtype _ _ _).1 hQ'
+  exact ⟨Q, hQnhds, fun w hw ↦ hQsub hw⟩
+
 /-- The local parameter map is as smooth at the chart origin as the parametrized equation. -/
 theorem contDiffAt_levelSetParameterMap {n : ℕ∞ω}
     (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
@@ -312,6 +334,49 @@ variable [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
 variable {f : E × Λ → F} {D₁ : E →L[ℝ] F} {D₂ : Λ →L[ℝ] F}
 variable {x : E} {l : Λ} {c : F}
 
+/-- **Criticality near the chart origin.** Eventually in `𝓝 0`, a point `k` lies in the target of
+the level-set chart and the derivative of the local parameter map at `k` is surjective exactly when
+the fixed-parameter part of the derivative of `f` at the solution `k` names is. This is
+`TauCeti.surjective_fderiv_levelSetParameterMap_iff_of_mem` with its membership hypotheses
+discharged on a neighbourhood of the origin; it needs only that `f` is differentiable near
+`(x, l)`. -/
+theorem eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff
+    (hf : HasStrictFDerivAt f (D₁.coprod D₂) (x, l))
+    (hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w) (hD : Surjective (D₁.coprod D₂))
+    (hker : (D₁.coprod D₂).ker.ClosedComplemented) (hxl : f (x, l) = c) :
+    ∀ᶠ k in 𝓝 (0 : (D₁.coprod D₂).ker),
+      k ∈ (levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl).target ∧
+      (Surjective (fderiv ℝ (levelSetParameterMap hf hD hker hxl) k) ↔
+        Surjective ((fderiv ℝ f (((levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker
+          hxl).symm k : ↥{z | f z = c}) : E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ))) := by
+  set Φ := levelSetChart hf (LinearMap.range_eq_top.mpr hD) hker hxl with hΦ
+  have hsource : hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD) hker ∈
+      𝓝 ((x, l) : E × Λ) :=
+    (hf.isOpen_implicitCoordSource _ _).mem_nhds (hf.mem_implicitCoordSource _ _)
+  have hval0 : ((Φ.symm 0 : ↥{z | f z = c}) : E × Λ) = (x, l) := by
+    rw [hΦ, levelSetChart_symm_zero]
+  have hcontAt : ContinuousAt (fun k ↦ ((Φ.symm k : ↥{z | f z = c}) : E × Λ)) 0 :=
+    (hasStrictFDerivAt_coe_levelSetChart_symm hf (LinearMap.range_eq_top.mpr hD) hker
+      hxl).continuousAt
+  have hV : (fun k ↦ ((Φ.symm k : ↥{z | f z = c}) : E × Λ)) ⁻¹'
+      (hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD) hker ∩
+        {w | DifferentiableAt ℝ f w}) ∈ 𝓝 (0 : (D₁.coprod D₂).ker) := by
+    refine hcontAt.preimage_mem_nhds ?_
+    rw [hval0]
+    exact Filter.inter_mem hsource hdiff
+  filter_upwards [Φ.open_target.mem_nhds
+    (mem_levelSetChart_target hf (LinearMap.range_eq_top.mpr hD) hker hxl), hV] with k hk hkV
+  refine ⟨hk, ?_⟩
+  have hA : HasFDerivAt f
+      (((fderiv ℝ f ((Φ.symm k : ↥{z | f z = c}) : E × Λ)).comp
+          (ContinuousLinearMap.inl ℝ E Λ)).coprod
+        ((fderiv ℝ f ((Φ.symm k : ↥{z | f z = c}) : E × Λ)).comp
+          (ContinuousLinearMap.inr ℝ E Λ)))
+      ((Φ.symm k : ↥{z | f z = c}) : E × Λ) := by
+    rw [ContinuousLinearMap.coprod_comp_inl_inr]
+    exact hkV.2.hasFDerivAt
+  exact surjective_fderiv_levelSetParameterMap_iff_of_mem hf hD hker hxl hk hkV.1 hA
+
 /-- **Local parametric Sard--Smale.** In a regular chart of a universal level set whose
 fixed-parameter linearization is Fredholm, the critical values of the local parameter map coming
 from a sufficiently small neighbourhood of the chart origin form a closed nowhere dense set.
@@ -414,27 +479,12 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
   have hdiff : ∀ᶠ w in 𝓝 ((x, l) : E × Λ), DifferentiableAt ℝ f w := by
     filter_upwards [(hcont.of_le hn).eventually hne] with w hw
     exact hw.differentiableAt hne0
-  have hsource : hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) ∈ 𝓝 ((x, l) : E × Λ) :=
-    (hf.isOpen_implicitCoordSource _ _).mem_nhds (hf.mem_implicitCoordSource _ _)
-  have hval0 : (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) hxl).symm 0 : ↥{z | f z = c}) : E × Λ) = (x, l) := by
-    rw [levelSetChart_symm_zero]
-  have hcontAt : ContinuousAt (fun k ↦ (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) : E × Λ)) 0 :=
-    (hasStrictFDerivAt_coe_levelSetChart_symm hf (LinearMap.range_eq_top.mpr hD)
-      (hD₁.closedComplemented_ker_coprod hD) hxl).continuousAt
-  have hV : (fun k ↦ (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-        (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) : E × Λ)) ⁻¹'
-      (hf.implicitCoordSource (LinearMap.range_eq_top.mpr hD)
-        (hD₁.closedComplemented_ker_coprod hD) ∩ {w | DifferentiableAt ℝ f w}) ∈
-      𝓝 (0 : (D₁.coprod D₂).ker) := by
-    refine hcontAt.preimage_mem_nhds ?_
-    rw [hval0]
-    exact Filter.inter_mem hsource hdiff
+  obtain ⟨W, hW, hWopen, hW0⟩ := eventually_nhds_iff.1
+    (eventually_mem_target_and_surjective_fderiv_levelSetParameterMap_iff hf hdiff hD
+      (hD₁.closedComplemented_ker_coprod hD) hxl)
   obtain ⟨N, hN, hNsub, hNclosed, hNdense⟩ :=
     exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_levelSetParameterMap
-      hf hcont hD₁ hD hxl hn (Filter.inter_mem hU hV)
+      hf hcont hD₁ hD hxl hn (Filter.inter_mem hU (hWopen.mem_nhds hW0))
   have hset : N ∩ {k | ¬ Surjective (fderiv ℝ
         (levelSetParameterMap hf hD (hD₁.closedComplemented_ker_coprod hD) hxl) k)} =
       N ∩ {k | ¬ Surjective ((fderiv ℝ f
@@ -444,20 +494,7 @@ theorem exists_mem_nhds_isClosed_isNowhereDense_image_not_surjective_levelSetPar
     ext k
     simp only [Set.mem_inter_iff, Set.mem_ofPred_eq, and_congr_right_iff]
     intro hkN
-    obtain ⟨⟨-, hksrc, hkdiff⟩, hktarget⟩ := hNsub hkN
-    have hA : HasFDerivAt f
-        (((fderiv ℝ f (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-                (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
-              E × Λ)).comp (ContinuousLinearMap.inl ℝ E Λ)).coprod
-          ((fderiv ℝ f (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-                (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) :
-              E × Λ)).comp (ContinuousLinearMap.inr ℝ E Λ)))
-        (((levelSetChart hf (LinearMap.range_eq_top.mpr hD)
-            (hD₁.closedComplemented_ker_coprod hD) hxl).symm k : ↥{z | f z = c}) : E × Λ) := by
-      rw [ContinuousLinearMap.coprod_comp_inl_inr]
-      exact hkdiff.hasFDerivAt
-    exact not_congr (surjective_fderiv_levelSetParameterMap_iff_of_mem hf hD
-      (hD₁.closedComplemented_ker_coprod hD) hxl hktarget hksrc hA)
+    exact not_congr (hW k (hNsub hkN).1.2).2
   refine ⟨N, hN, hNsub.trans (Set.inter_subset_inter_left _ Set.inter_subset_left), ?_, ?_⟩
   · rw [← hset]; exact hNclosed
   · rw [← hset]; exact hNdense
