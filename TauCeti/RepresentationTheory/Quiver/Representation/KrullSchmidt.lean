@@ -7,7 +7,7 @@ module
 
 public import TauCeti.RepresentationTheory.Quiver.Representation.FiniteDimensional
 public import TauCeti.Algebra.Category.ModuleCat.KrullSchmidt
-public import TauCeti.CategoryTheory.Preadditive.Equivalence
+public import TauCeti.CategoryTheory.Adjunction.Additive
 
 /-!
 # The Krull-Schmidt theorem for quiver representations
