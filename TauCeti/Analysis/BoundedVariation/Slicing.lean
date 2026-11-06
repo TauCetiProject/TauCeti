@@ -8,12 +8,11 @@ module
 public import TauCeti.Analysis.BoundedVariation.Perimeter
 public import TauCeti.MeasureTheory.Measure.Lebesgue.OrthogonalSlices
 import Mathlib.Analysis.Calculus.ContDiff.RCLike
-import Mathlib.Topology.Algebra.Order.LiminfLimsup
 import TauCeti.Analysis.BoundedVariation.Approximation
 import TauCeti.Analysis.InnerProductSpace.OrthogonalLine
 import TauCeti.Analysis.Sobolev.WeakDeriv.Slicing
 import TauCeti.MeasureTheory.Integral.Bochner.Basic
-import TauCeti.Order.Filter.ENNReal
+import TauCeti.Topology.Instances.ENNReal
 
 /-!
 # Slicing functions of bounded variation along parallel lines
@@ -193,8 +192,8 @@ private theorem lintegral_mul_totalVariationOn_line_add_le_of_contDiff {w : E �
       ← hL.lintegral_comp_emb hLe]
     simp [N, ofReal_norm]
   rw [h₁, h₂, h₃]
-  exact MeasureTheory.ofReal_integral_add_ofReal_integral_le hF hG hN (fun p => by positivity)
-    hFle hFG
+  exact MeasureTheory.ofReal_integral_add_ofReal_integral_le hF hG hN
+    (.of_forall fun p => by positivity) (.of_forall hFle) (.of_forall hFG)
 
 /-- The line variations of an integrable function are bounded almost everywhere by an a.e.
 measurable function `G` whose weighted integral, together with the pairing of the line integrals
@@ -253,8 +252,9 @@ private theorem exists_aemeasurable_totalVariationOn_line_le {u : E → ℝ} (hu
         ENNReal.le_liminf_mul (u := fun _ : ℕ => c y) (v := fun j => V j y) (f := atTop)
     calc (∫⁻ y, c y * liminf (fun j => V j y) atTop) + B ≤ liminf A atTop + B := by gcongr
       _ ≤ liminf (fun j => A j + b j) atTop :=
-          ENNReal.le_liminf_add_of_tendsto A b ENNReal.ofReal_ne_top
-            (ENNReal.continuous_ofReal.continuousAt.tendsto.comp hB)
+          (add_le_add_right
+            (ENNReal.continuous_ofReal.continuousAt.tendsto.comp hB).liminf_eq.ge _).trans
+            (ENNReal.le_liminf_add A b)
       _ ≤ liminf (fun j => totalVariationOn volume ⊤ (w (σ j))) atTop :=
           liminf_le_liminf (.of_forall fun j =>
             lintegral_mul_totalVariationOn_line_add_le_of_contDiff (hw1 _) (hw _).2 e he φ hφ)
