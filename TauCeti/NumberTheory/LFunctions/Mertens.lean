@@ -254,7 +254,6 @@ private theorem abs_primePowerSummatory_mul_card_sub_le {C D : ℝ} (hC0 : 0 ≤
       C * D * Module.finrank ℚ K * x := by
   set ρ := dedekindZeta_residue K
   set d : ℝ := (Module.finrank ℚ K : ℝ)
-  obtain ⟨hθ0, hθ1⟩ := one_sub_inv_finrank_mem_Ico K
   set θ := 1 - d⁻¹ with hθ
   have hx0 : 0 < x := zero_lt_one.trans_le hx
   have hψ := primePowerSummatory_mul_rpow_neg_le K hθ hD0 hD hx
