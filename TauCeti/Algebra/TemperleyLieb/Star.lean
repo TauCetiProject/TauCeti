@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Algebra.TemperleyLieb.Basic
 public import Mathlib.Algebra.Star.Module
-public import Mathlib.Algebra.Star.SelfAdjoint
 
 /-!
 # The analytic adjoint on Temperley–Lieb algebras
