@@ -17,13 +17,13 @@ The floor map makes this conversion total without changing any almost-sure value
 We compute its singleton masses and prove that multiplication by `a` recovers the
 original measure.
 
-When `μ {0} < 1`, conditioning away from zero first gives the positive integer gap
-law used by a renewal countdown chain. Its atoms are precisely the positive lattice
-atoms of the original law, with normalization factor `1 / (1 - μ {0})`.
+When `μ {0} < 1`, conditioning away from zero first gives the natural-valued law of
+positive gaps in units of `a`. Its atoms are precisely the positive lattice atoms
+of the original law, with normalization factor `1 / (1 - μ {0})`.
 The formulas also cover the degenerate law at zero, whose conditioning is the zero measure.
 Consequently the gcd of its support is one exactly when `a` is the greatest span.
-This identifies the arithmetic condition needed for aperiodicity without excluding
-zero increments or requiring a finite mean.
+This supplies the gcd-one condition needed in lattice renewal aperiodicity arguments,
+without excluding zero increments or requiring a finite mean.
 
 ## References
 
@@ -70,9 +70,7 @@ theorem IsLatticeSpan.map_floor_div_cond_compl_zero_apply_singleton [IsProbabili
     (ha : μ.IsLatticeSpan a) (n : ℕ) :
     (μ[|{0}ᶜ].map (fun x ↦ ⌊x / a⌋₊)) {n} =
       if n = 0 then 0 else (1 - μ {0})⁻¹ * μ {(n : ℝ≥0) * a} := by
-  have hcond : μ[|{0}ᶜ].IsLatticeSpan a :=
-    ⟨ha.pos, cond_absolutelyContinuous.ae_le ha.ae_mem_range⟩
-  rw [hcond.map_floor_div_apply_singleton]
+  rw [(ha.cond _).map_floor_div_apply_singleton]
   split_ifs with hn
   · simp [hn]
   · exact cond_compl_singleton_apply_singleton
@@ -92,8 +90,8 @@ theorem IsLatticeSpan.map_floor_div_cond_compl_zero_singleton_pos_iff [IsProbabi
     simp [hn, pos_iff_ne_zero, hq]
 
 /-- A lattice span is greatest exactly when the support of the conditioned positive gap law,
-expressed in integer units, has gcd one. This is the arithmetic aperiodicity criterion for
-renewal countdown chains, and permits both zero increments and infinite mean. -/
+expressed in integer units, has gcd one. This is the gcd-one condition needed in lattice
+renewal aperiodicity arguments, and permits both zero increments and infinite mean. -/
 theorem IsLatticeSpan.isGreatest_iff_setGcd_map_floor_div_cond_eq_one [IsProbabilityMeasure μ]
     (ha : μ.IsLatticeSpan a) :
     IsGreatest {b | μ.IsLatticeSpan b} a ↔
