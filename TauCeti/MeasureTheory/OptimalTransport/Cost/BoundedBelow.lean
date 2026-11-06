@@ -316,24 +316,18 @@ private theorem residual_add_lowerBoundParts
   rw [max_eq_left (sub_nonneg.2 hh), max_eq_left (sub_nonneg.2 hk)]
   grind [max_zero_sub_max_neg_zero_eq_self]
 
-/-- On a coupling, the signed plan cost is independent of the chosen split lower bound. -/
-theorem planCostBddBelow_congr_lowerBound
+/-- The residuals of two split lower bounds on a coupling differ by the marginal integrals of the
+positive and negative parts of the change of normalization. -/
+private theorem lintegral_residual_add_lintegral_eq
     (h k : IntegrableSplitLowerBound c μ ν) (hπ : IsCoupling π μ ν) :
-    planCostBddBelow π hπ h = planCostBddBelow π hπ k := by
-  simp only [planCostBddBelow]
-  -- Split the change of normalization into its positive and negative marginal parts.
+    (∫⁻ z, h.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (h.fst x - k.fst x) ∂μ) +
+        (∫⁻ y, ENNReal.ofReal (h.snd y - k.snd y) ∂ν) =
+      (∫⁻ z, k.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (-(h.fst x - k.fst x)) ∂μ) +
+        (∫⁻ y, ENNReal.ofReal (-(h.snd y - k.snd y)) ∂ν) := by
   let fx : X → ℝ := fun x ↦ h.fst x - k.fst x
   let fy : Y → ℝ := fun y ↦ h.snd y - k.snd y
-  let px : ℝ≥0∞ := ∫⁻ x, ENNReal.ofReal (fx x) ∂μ
-  let nx : ℝ≥0∞ := ∫⁻ x, ENNReal.ofReal (-fx x) ∂μ
-  let py : ℝ≥0∞ := ∫⁻ y, ENNReal.ofReal (fy y) ∂ν
-  let ny : ℝ≥0∞ := ∫⁻ y, ENNReal.ofReal (-fy y) ∂ν
   have hfx : Integrable fx μ := h.integrable_fst.sub k.integrable_fst
   have hfy : Integrable fy ν := h.integrable_snd.sub k.integrable_snd
-  have hpx : px ≠ ⊤ := hfx.lintegral_lt_top.ne
-  have hnx : nx ≠ ⊤ := hfx.neg.lintegral_lt_top.ne
-  have hpy : py ≠ ⊤ := hfy.lintegral_lt_top.ne
-  have hny : ny ≠ ⊤ := hfy.neg.lintegral_lt_top.ne
   have hfxm : AEMeasurable (fun x ↦ ENNReal.ofReal (fx x)) μ :=
     hfx.aestronglyMeasurable.aemeasurable.ennreal_ofReal
   have hfym : AEMeasurable (fun y ↦ ENNReal.ofReal (fy y)) ν :=
@@ -343,10 +337,10 @@ theorem planCostBddBelow_congr_lowerBound
   have hnfym : AEMeasurable (fun y ↦ ENNReal.ofReal (-fy y)) ν :=
     hfy.neg.aestronglyMeasurable.aemeasurable.ennreal_ofReal
   -- Pull all four parts back to the coupling through its two fixed marginals.
-  have hpxmap : ∫⁻ z, ENNReal.ofReal (fx z.1) ∂π = px := hπ.lintegral_comp_fst hfxm
-  have hpymap : ∫⁻ z, ENNReal.ofReal (fy z.2) ∂π = py := hπ.lintegral_comp_snd hfym
-  have hnxmap : ∫⁻ z, ENNReal.ofReal (-fx z.1) ∂π = nx := hπ.lintegral_comp_fst hnfxm
-  have hnymap : ∫⁻ z, ENNReal.ofReal (-fy z.2) ∂π = ny := hπ.lintegral_comp_snd hnfym
+  have hpxmap := hπ.lintegral_comp_fst hfxm
+  have hpymap := hπ.lintegral_comp_snd hfym
+  have hnxmap := hπ.lintegral_comp_fst hnfxm
+  have hnymap := hπ.lintegral_comp_snd hnfym
   let mpfst : MeasurePreserving Prod.fst π μ := ⟨measurable_fst, hπ.fst_eq⟩
   let mpsnd : MeasurePreserving Prod.snd π ν := ⟨measurable_snd, hπ.snd_eq⟩
   have hfxmp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (fx z.1)) π :=
@@ -358,51 +352,62 @@ theorem planCostBddBelow_congr_lowerBound
   have hnfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-fy z.2)) π :=
     hnfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
   -- Integrate the pointwise residual balance after adjoining those four parts.
-  have hres : (∫⁻ z, h.residual z ∂π) + px + py =
-      (∫⁻ z, k.residual z ∂π) + nx + ny := by
-    rw [← hpxmap, ← hpymap, ← hnxmap, ← hnymap,
-      ← lintegral_add_right' _ hfxmp, ← lintegral_add_right' _ hfymp,
-      ← lintegral_add_right' _ hnfxmp, ← lintegral_add_right' _ hnfymp]
-    apply lintegral_congr
-    intro z
-    simpa [fx, fy, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
-      residual_add_lowerBoundParts h k z
-  have hdiff : px.toReal - nx.toReal + (py.toReal - ny.toReal) =
-      (∫ x, h.fst x ∂μ) + (∫ y, h.snd y ∂ν) -
-        ((∫ x, k.fst x ∂μ) + (∫ y, k.snd y ∂ν)) := by
-    rw [← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfx,
-      ← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfy]
-    simp only [fx, fy, integral_sub h.integrable_fst k.integrable_fst,
-      integral_sub h.integrable_snd k.integrable_snd]
-    ring
-  have hres' :
-      ((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((px.toReal + py.toReal : ℝ) : EReal) =
-        ((∫⁻ z, k.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((nx.toReal + ny.toReal : ℝ) : EReal) := by
+  change (∫⁻ z, h.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (fx x) ∂μ) +
+      (∫⁻ y, ENNReal.ofReal (fy y) ∂ν) = (∫⁻ z, k.residual z ∂π) +
+      (∫⁻ x, ENNReal.ofReal (-fx x) ∂μ) + (∫⁻ y, ENNReal.ofReal (-fy y) ∂ν)
+  rw [← hpxmap, ← hpymap, ← hnxmap, ← hnymap,
+    ← lintegral_add_right' _ hfxmp, ← lintegral_add_right' _ hfymp,
+    ← lintegral_add_right' _ hnfxmp, ← lintegral_add_right' _ hnfymp]
+  apply lintegral_congr
+  intro z
+  simpa [fx, fy, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+    residual_add_lowerBoundParts h k z
+
+/-- Recombining the positive and negative parts of the change of normalization with the finite
+marginal integrals, in `EReal`. -/
+private theorem coe_add_add_eq_of_add_add_eq {A B px nx py ny : ℝ≥0∞}
+    (hpx : px ≠ ⊤) (hnx : nx ≠ ⊤) (hpy : py ≠ ⊤) (hny : ny ≠ ⊤)
+    (hres : A + px + py = B + nx + ny) {a b a' b' : ℝ}
+    (hdiff : px.toReal - nx.toReal + (py.toReal - ny.toReal) = a + b - (a' + b')) :
+    (A : EReal) + (a : EReal) + (b : EReal) = (B : EReal) + (a' : EReal) + (b' : EReal) := by
+  have hres' : (A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal) =
+      (B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal) := by
     simpa [EReal.coe_ennreal_add, EReal.coe_add, EReal.coe_ennreal_toReal, hpx, hnx, hpy, hny,
       add_assoc] using congrArg (fun t : ℝ≥0∞ ↦ (t : EReal)) hres
-  -- Recombine the positive/negative parts with the finite marginal integrals.
   calc
-    ((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((∫ x, h.fst x ∂μ : ℝ) : EReal) + ((∫ y, h.snd y ∂ν : ℝ) : EReal) =
-        (((∫⁻ z, h.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((px.toReal + py.toReal : ℝ) : EReal)) +
-          (((∫ x, h.fst x ∂μ) + (∫ y, h.snd y ∂ν) -
-            (px.toReal + py.toReal) : ℝ) : EReal) := by
-            simp only [← EReal.coe_add, add_assoc]
-            ring_nf
-    _ = (((∫⁻ z, k.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((nx.toReal + ny.toReal : ℝ) : EReal)) +
-          (((∫ x, h.fst x ∂μ) + (∫ y, h.snd y ∂ν) -
-            (px.toReal + py.toReal) : ℝ) : EReal) := by
-            rw [hres']
-    _ = ((∫⁻ z, k.residual z ∂π : ℝ≥0∞) : EReal) +
-          ((∫ x, k.fst x ∂μ : ℝ) : EReal) + ((∫ y, k.snd y ∂ν : ℝ) : EReal) := by
-            simp only [← EReal.coe_add, add_assoc]
-            congr 1
-            norm_cast
-            linarith
+    (A : EReal) + (a : EReal) + (b : EReal) =
+        ((A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal)) +
+          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
+      simp only [← EReal.coe_add, add_assoc]
+      ring_nf
+    _ = ((B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal)) +
+          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
+      rw [hres']
+    _ = (B : EReal) + (a' : EReal) + (b' : EReal) := by
+      simp only [← EReal.coe_add, add_assoc]
+      congr 1
+      norm_cast
+      linarith
+
+/-- On a coupling, the signed plan cost is independent of the chosen split lower bound. -/
+theorem planCostBddBelow_congr_lowerBound
+    (h k : IntegrableSplitLowerBound c μ ν) (hπ : IsCoupling π μ ν) :
+    planCostBddBelow π hπ h = planCostBddBelow π hπ k := by
+  simp only [planCostBddBelow]
+  -- Split the change of normalization into its positive and negative marginal parts.
+  let fx : X → ℝ := fun x ↦ h.fst x - k.fst x
+  let fy : Y → ℝ := fun y ↦ h.snd y - k.snd y
+  have hfx : Integrable fx μ := h.integrable_fst.sub k.integrable_fst
+  have hfy : Integrable fy ν := h.integrable_snd.sub k.integrable_snd
+  refine coe_add_add_eq_of_add_add_eq hfx.lintegral_lt_top.ne hfx.neg.lintegral_lt_top.ne
+    hfy.lintegral_lt_top.ne hfy.neg.lintegral_lt_top.ne (lintegral_residual_add_lintegral_eq h k hπ)
+    ?_
+  simp only [Pi.neg_apply]
+  rw [← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfx,
+    ← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfy]
+  simp only [fx, fy, integral_sub h.integrable_fst k.integrable_fst,
+    integral_sub h.integrable_snd k.integrable_snd]
+  ring
 
 /-- The signed transport cost is independent of the chosen integrable split lower bound. -/
 theorem transportCostBddBelow_congr_lowerBound
