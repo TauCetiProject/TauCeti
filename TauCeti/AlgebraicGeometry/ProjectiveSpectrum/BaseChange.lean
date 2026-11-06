@@ -29,6 +29,8 @@ compared over a localization of the base.
 
 ## Main results
 
+* `AlgebraicGeometry.Proj.val_toSpecCoeff_appTop_apply`: the functions pulled back from the
+  coefficient ring `R` along `Proj A ⟶ Spec R` are the constants `r / 1`.
 * `AlgebraicGeometry.Proj.isPullback_baseChange`: `Proj` of `S ⊗[R] A` is the base change of
   `Proj A` along `Spec S ⟶ Spec R`.
 * `AlgebraicGeometry.Proj.isPullback_map_of_isBaseChange`: the same for a graded ring homomorphism
@@ -61,6 +63,16 @@ noncomputable def toSpecCoeff : Proj 𝒜 ⟶ Spec (.of R) :=
 theorem toSpecCoeff_def :
     toSpecCoeff 𝒜 = toSpecZero 𝒜 ≫
       Spec.map (CommRingCat.ofHom (algebraMap R (𝒜 0))) := (rfl)
+
+/-- **Coefficients are the fractions `r / 1`.** The global function on `Proj A` pulled back from
+`r ∈ R` along `Proj A ⟶ Spec R` takes the value `r / 1` in the localization at every point. -/
+theorem val_toSpecCoeff_appTop_apply (r : R) (x : (⊤ : (Proj 𝒜).Opens)) :
+    (((toSpecCoeff 𝒜).appTop ((Scheme.ΓSpecIso (.of R)).inv r)).1 x).val =
+      Localization.mk (algebraMap R A r) 1 := by
+  rw [toSpecCoeff_def, Scheme.Hom.comp_appTop, ← ConcreteCategory.comp_apply, ← Category.assoc,
+    ← Scheme.ΓSpecIso_inv_naturality]
+  exact (val_toSpecZero_appTop_apply (algebraMap R (𝒜 0) r) x).trans
+    (congrArg (Localization.mk · 1) (SetLike.GradeZero.coe_algebraMap 𝒜 r))
 
 /-- The coefficient morphism on a standard affine chart is the chart's coefficient map. -/
 @[reassoc (attr := simp)]
