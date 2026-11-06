@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Isometry
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
 public import Mathlib.MeasureTheory.Measure.Lebesgue.VolumeOfBalls
+public import TauCeti.Analysis.Complex.Circle
 public import TauCeti.MeasureTheory.Integral.NormRpow
 public import TauCeti.Probability.Distributions.Uniform.Ball.Basic
 
@@ -101,14 +102,6 @@ theorem integral_norm_pow_circularLaw (n : ℕ) :
   field_simp
   ring
 
-private theorem circle_exp_pow_eq_neg_one (d : ℕ) (hd : d ≠ 0) :
-    (Circle.exp (Real.pi / d) : ℂ) ^ d = -1 := by
-  rw [Circle.coe_exp, ← Complex.exp_nat_mul]
-  have hmul : (d : ℂ) * (↑(Real.pi / d) * Complex.I) = Real.pi * Complex.I := by
-    push_cast
-    field_simp
-  rw [hmul, Complex.exp_pi_mul_I]
-
 private theorem integral_eq_zero_of_circularLaw_rotation_neg (u : Circle) (f : ℂ → ℂ)
     (hf : ∀ z, f ((u : ℂ) * z) = -f z) (hfm : AEStronglyMeasurable f circularLaw) :
     ∫ z, f z ∂circularLaw = 0 := by
@@ -121,39 +114,6 @@ private theorem integral_eq_zero_of_circularLaw_rotation_neg (u : Circle) (f : �
   have hchange' := integral_congr_ae (μ := circularLaw) (Filter.Eventually.of_forall hf)
   rw [hchange', integral_neg] at h
   linear_combination (1 / 2 : ℂ) * h
-
-private theorem circle_mixed_power_rotation_factor {p q : ℕ} (hpq : p ≠ q) :
-    (Circle.exp (Real.pi / (if p < q then q - p else p - q)) : ℂ) ^ p *
-      conj (Circle.exp (Real.pi / (if p < q then q - p else p - q)) : ℂ) ^ q = -1 := by
-  let d := if p < q then q - p else p - q
-  have hd : d ≠ 0 := by
-    dsimp [d]
-    split_ifs with h
-    · exact Nat.sub_ne_zero_of_lt h
-    · exact Nat.sub_ne_zero_of_lt (lt_of_le_of_ne (le_of_not_gt h) (Ne.symm hpq))
-  have hcases : p < q ∨ q < p := lt_or_gt_of_ne hpq
-  let u : Circle := Circle.exp (Real.pi / d)
-  have huk : (u : ℂ) ^ d = -1 := by
-    simpa [u] using circle_exp_pow_eq_neg_one d hd
-  have hconj : conj (u : ℂ) = (u : ℂ)⁻¹ := (Circle.coe_inv_eq_conj u).symm
-  have hfactor : (u : ℂ) ^ p * conj (u : ℂ) ^ q = -1 := by
-    rcases hcases with hpq' | hqp'
-    · have hq : q = p + d := by
-        simpa [d, hpq', Nat.add_comm] using (Nat.sub_add_cancel (Nat.le_of_lt hpq')).symm
-      rw [hconj, hq, pow_add, inv_pow, inv_pow]
-      calc
-        (u : ℂ) ^ p * (((u : ℂ) ^ p)⁻¹ * ((u : ℂ) ^ d)⁻¹) =
-            ((u : ℂ) ^ p * ((u : ℂ) ^ p)⁻¹) * ((u : ℂ) ^ d)⁻¹ := by rw [← mul_assoc]
-        _ = ((u : ℂ) ^ d)⁻¹ := by field_simp
-        _ = -1 := by rw [huk]; norm_num
-    · have hp : p = q + d := by
-        simpa [d, not_lt_of_ge (le_of_lt hqp'), Nat.add_comm] using
-          (Nat.sub_add_cancel (Nat.le_of_lt hqp')).symm
-      rw [hconj, hp, pow_add, inv_pow]
-      calc
-        ((u : ℂ) ^ q * (u : ℂ) ^ d) * ((u : ℂ) ^ q)⁻¹ = (u : ℂ) ^ d := by field_simp
-        _ = -1 := huk
-  simpa only [u, d] using hfactor
 
 /-- The mixed moments of the circular law: unequal powers integrate to zero, while the
 diagonal moment of order `p` is `1 / (p + 1)`. -/
@@ -186,7 +146,7 @@ theorem integral_pow_mul_conj_pow_circularLaw (p q : ℕ) :
   · let d := if p < q then q - p else p - q
     let u : Circle := Circle.exp (Real.pi / d)
     have hfactor : (u : ℂ) ^ p * conj (u : ℂ) ^ q = -1 := by
-      simpa [u, d] using circle_mixed_power_rotation_factor hpq
+      simpa [u, d] using Circle.mixed_power_rotation_factor hpq
     let f : ℂ → ℂ := fun z ↦ z ^ p * conj z ^ q
     have hchange : ∀ z : ℂ, f ((u : ℂ) * z) = -f z := by
       intro z
