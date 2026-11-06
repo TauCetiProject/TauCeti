@@ -29,13 +29,15 @@ The spanning hypothesis cannot be weakened to joint injectivity modulo torsion: 
 `H = ℤ²` the single homomorphism `(a, b) ↦ a + b √2` vanishes only at zero, yet takes infinitely
 many values in `[-1, 1]`.
 
-In the theory of pseudoholomorphic curves `H` is the integral homology `H₂(X; ℤ)` of a closed
-manifold and the `θ i` are the pairings with a basis of closed two-forms, which span
-`H²(X; ℝ) = Hom(H₂(X; ℤ), ℝ)` by de Rham's theorem. On a curve the pairing with a closed two-form
-is bounded by its comass times the symplectic area `σ A`. So the classes `A` with
-`σ A ≤ a` and `|θ i A| ≤ K i σ A` form a finite set
-(`TauCeti.finite_setOf_apply_le_and_forall_abs_apply_le_mul`): below an area cutoff only finitely
-many homology classes can carry pseudoholomorphic curves.
+The intended application is to pseudoholomorphic curves. There `H` is the integral homology
+`H₂(X; ℤ)` of a closed manifold and the `θ i` are the pairings with a basis of closed two-forms,
+which span `H²(X; ℝ) = Hom(H₂(X; ℤ), ℝ)` by de Rham's theorem. The classes `A` with `σ A ≤ a`
+and `|θ i A| ≤ K i σ A` form a finite set
+(`TauCeti.finite_setOf_apply_le_and_forall_abs_apply_le_mul`). The integral `∫_C u^* θ` over a
+curve is bounded by the comass of `θ` times the symplectic area of the curve
+(`TauCeti.abs_integralTopForm_mpullback_le`). Concluding that below an area cutoff only finitely
+many homology classes carry pseudoholomorphic curves also requires identifying `∫_C u^* θ` with
+the pairing of `[θ]` with the class of the curve. That de Rham comparison is not provided here.
 
 ## Implementation notes
 
@@ -107,8 +109,9 @@ theorem finite_setOf_forall_abs_apply_le (θ : ι → H →+ ℝ)
 /-- **Finitely many classes below an area cutoff.** In a finitely generated abelian group `H`,
 let the real-valued homomorphisms `θ i` span `H →+ ℝ`, and let `σ : H →+ ℝ` and `K i ≥ 0`. Then
 only finitely many `A` satisfy `σ A ≤ a` and `|θ i A| ≤ K i * σ A` for all `i`. These are the
-bounds that the area `σ A` of a pseudoholomorphic curve in the class `A` imposes on its pairings
-with closed two-forms of comass at most `K i`. -/
+bounds expected from the area `σ A` of a pseudoholomorphic curve in the class `A` on its pairings
+with closed two-forms of comass at most `K i`, once integrals over curves are identified with
+pairings of homology classes. -/
 theorem finite_setOf_apply_le_and_forall_abs_apply_le_mul (θ : ι → H →+ ℝ)
     (hθ : Submodule.span ℝ (range θ) = ⊤) (σ : H →+ ℝ) {K : ι → ℝ} (hK : ∀ i, 0 ≤ K i)
     (a : ℝ) : {A : H | σ A ≤ a ∧ ∀ i, |θ i A| ≤ K i * σ A}.Finite :=

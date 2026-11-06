@@ -7,8 +7,8 @@ module
 
 public import Mathlib.LinearAlgebra.Projection
 public import TauCeti.Geometry.Manifold.Orientation.Basic
-public import TauCeti.Geometry.Symplectic.Manifold.CurvePairing
 public import TauCeti.Geometry.Symplectic.Manifold.JHolomorphic
+public import TauCeti.Geometry.Symplectic.Manifold.Orientation
 public import TauCeti.Geometry.Symplectic.Manifold.Suspension.Basic
 
 /-!
