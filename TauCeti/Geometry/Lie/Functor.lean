@@ -104,6 +104,57 @@ private theorem tangent_comp_monoidHom
     (φ.contMDiff_toFun.mdifferentiable (by simp)).mdifferentiableAt
     (mulInvariantVectorField X g)).symm
 
+/-- The chain rule for the bracket of left-invariant vector fields along a smooth homomorphism:
+the derivative of `F ∘ φ` at the identity along the bracket of the invariant fields of `X` and `Y`
+is the derivative of `F` along the bracket of their images. -/
+private theorem mvfderiv_comp_mlieBracket_mulInvariantVectorField
+    [FiniteDimensional ℝ E] [FiniteDimensional ℝ E'] [T2Space G']
+    (φ : ContMDiffMonoidMorphism I I' ∞ G G') (X Y : GroupLieAlgebra I G)
+    (F : C^∞⟮I', G'; ℝ⟯) :
+    mvfderiv I ((F : G' → ℝ) ∘ φ) 1
+        (mlieBracket I (mulInvariantVectorField X) (mulInvariantVectorField Y) 1) =
+      mvfderiv I' (F : G' → ℝ) 1
+        (mlieBracket I' (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
+          (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) 1) := by
+  rw [mvfderiv_mlieBracket
+    (f := (F : G' → ℝ) ∘ φ)
+    (V := mulInvariantVectorField X) (W := mulInvariantVectorField Y) (x := (1 : G))
+    (F.contMDiff.comp φ.contMDiff_toFun).contMDiffAt
+    (by simp)
+    ((contMDiff_mulInvariantVectorField_infty X).mdifferentiable (by simp)).mdifferentiableAt
+    ((contMDiff_mulInvariantVectorField_infty Y).mdifferentiable (by simp)).mdifferentiableAt]
+  rw [mvfderiv_mlieBracket
+    (f := (F : G' → ℝ))
+    (V := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
+    (W := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) (x := (1 : G'))
+    F.contMDiff.contMDiffAt
+    (by simp)
+    ((contMDiff_mulInvariantVectorField_infty
+      (φ.toMonoidHom.groupLieAlgebraMap I I' X)).mdifferentiable (by simp)).mdifferentiableAt
+    ((contMDiff_mulInvariantVectorField_infty
+      (φ.toMonoidHom.groupLieAlgebraMap I I' Y)).mdifferentiable (by simp)).mdifferentiableAt]
+  let FY : G' → ℝ := fun y ↦
+    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) y)
+  let FX : G' → ℝ := fun y ↦
+    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) y)
+  have hFY : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FY :=
+    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) F
+  have hFX : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FX :=
+    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) F
+  have hYfun : FY ∘ φ = fun y ↦
+      mvfderiv I (F ∘ φ) y (mulInvariantVectorField Y y) := by
+    funext g
+    exact tangent_comp_monoidHom φ g Y F F.contMDiff
+  have hXfun : FX ∘ φ = fun y ↦
+      mvfderiv I (F ∘ φ) y (mulInvariantVectorField X y) := by
+    funext g
+    exact tangent_comp_monoidHom φ g X F F.contMDiff
+  have houterY := tangent_comp_monoidHom φ 1 X FY hFY
+  have houterX := tangent_comp_monoidHom φ 1 Y FX hFX
+  rw [map_one, hYfun] at houterY
+  rw [map_one, hXfun] at houterX
+  exact congrArg₂ (· - ·) houterY.symm houterX.symm
+
 /-- The differential at the identity of a smooth homomorphism preserves the Lie bracket of the
 tangent Lie algebras. -/
 theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
@@ -143,44 +194,7 @@ theorem ContMDiffMonoidMorphism.groupLieAlgebraMap_lie
   -- canonical tangent representative before rewriting by the chain-rule equality.
   change mvfderiv I' F 1 (φ.toMonoidHom.groupLieAlgebraMap I I' ⁅X, Y⁆) = _ at hsource
   rw [hsource, ← hsourceBracket, mulInvariantVectorField_one]
-  rw [mvfderiv_mlieBracket
-    (f := (F : G' → ℝ) ∘ φ)
-    (V := mulInvariantVectorField X) (W := mulInvariantVectorField Y) (x := (1 : G))
-    (F.contMDiff.comp φ.contMDiff_toFun).contMDiffAt
-    (by simp)
-    ((contMDiff_mulInvariantVectorField_infty X).mdifferentiable (by simp)).mdifferentiableAt
-    ((contMDiff_mulInvariantVectorField_infty Y).mdifferentiable (by simp)).mdifferentiableAt]
-  rw [mvfderiv_mlieBracket
-    (f := (F : G' → ℝ))
-    (V := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X))
-    (W := mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y)) (x := (1 : G'))
-    F.contMDiff.contMDiffAt
-    (by simp)
-    ((contMDiff_mulInvariantVectorField_infty
-      (φ.toMonoidHom.groupLieAlgebraMap I I' X)).mdifferentiable (by simp)).mdifferentiableAt
-    ((contMDiff_mulInvariantVectorField_infty
-      (φ.toMonoidHom.groupLieAlgebraMap I I' Y)).mdifferentiable (by simp)).mdifferentiableAt]
-  let FY : G' → ℝ := fun y ↦
-    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) y)
-  let FX : G' → ℝ := fun y ↦
-    mvfderiv I' F y (mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) y)
-  have hFY : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FY :=
-    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' Y) F
-  have hFX : ContMDiff I' 𝓘(ℝ, ℝ) ∞ FX :=
-    contMDiff_mvfderiv_mulInvariantVectorField (φ.toMonoidHom.groupLieAlgebraMap I I' X) F
-  have hYfun : FY ∘ φ = fun y ↦
-      mvfderiv I (F ∘ φ) y (mulInvariantVectorField Y y) := by
-    funext g
-    exact tangent_comp_monoidHom φ g Y F F.contMDiff
-  have hXfun : FX ∘ φ = fun y ↦
-      mvfderiv I (F ∘ φ) y (mulInvariantVectorField X y) := by
-    funext g
-    exact tangent_comp_monoidHom φ g X F F.contMDiff
-  have houterY := tangent_comp_monoidHom φ 1 X FY hFY
-  have houterX := tangent_comp_monoidHom φ 1 Y FX hFX
-  rw [map_one, hYfun] at houterY
-  rw [map_one, hXfun] at houterX
-  exact congrArg₂ (· - ·) houterY.symm houterX.symm
+  exact mvfderiv_comp_mlieBracket_mulInvariantVectorField φ X Y F
 
 /-- The Lie functor on morphisms: the differential at the identity of a smooth homomorphism. -/
 noncomputable def lieMap [FiniteDimensional ℝ E] [FiniteDimensional ℝ E']
