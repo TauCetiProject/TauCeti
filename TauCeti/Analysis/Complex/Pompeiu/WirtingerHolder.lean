@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.Complex.Pompeiu.HolderGain
+public import TauCeti.Analysis.Complex.Pompeiu.Holder.Gain
 public import TauCeti.Analysis.Complex.Wirtinger.Holder
 
 /-!

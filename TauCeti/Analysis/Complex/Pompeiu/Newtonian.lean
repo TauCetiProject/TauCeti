@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Potential
 public import TauCeti.Analysis.Complex.Pompeiu.Basic
-public import TauCeti.Analysis.Complex.Pompeiu.Holder
+public import TauCeti.Analysis.Complex.Pompeiu.Holder.Basic
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.DistributionalLaplacian
 import TauCeti.Analysis.PDE.FundamentalSolution.Planar.Gradient
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
