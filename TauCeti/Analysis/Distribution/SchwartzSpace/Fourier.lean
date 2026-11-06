@@ -122,7 +122,7 @@ theorem fourier_iteratedLineDerivOp_apply (u : 𝓢(E, F)) {k : ℕ} (v : Fin k 
   | succ k ih =>
     rw [LineDeriv.iteratedLineDerivOp_succ_left, fourier_lineDerivOp_apply, ih,
       smul_smul, Fin.prod_univ_succ]
-    rfl
+    simp only [Fin.tail_def]
 
 /-- The Fourier transform of the second directional derivative `∂_v ∂_w u` of a Schwartz function
 is `𝓕 u` multiplied by `-(2π)² ⟪ξ, v⟫ ⟪ξ, w⟫`. -/

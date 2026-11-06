@@ -71,6 +71,23 @@ theorem differentialSymbol_empty (v : ∀ i, Fin (k i) → E)
   simp [differentialSymbol]
 
 @[simp]
+theorem differentialSymbol_singleton (i : ι) (v : ∀ i, Fin (k i) → E)
+    (b : ι → E → V →L[ℂ] W) :
+    differentialSymbol {i} v b =
+      fun p ↦ (∏ j, (Complex.I * (⟪p.2, v i j⟫ : ℂ))) • b i p.1 := by
+  funext p
+  simp [differentialSymbol]
+
+@[simp]
+theorem differentialSymbol_insert [DecidableEq ι] (s : Finset ι) (i : ι) (hi : i ∉ s)
+    (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W) :
+    differentialSymbol (insert i s) v b =
+      (fun p ↦ (∏ j, (Complex.I * (⟪p.2, v i j⟫ : ℂ))) • b i p.1) +
+        differentialSymbol s v b := by
+  funext p
+  simp [differentialSymbol, Finset.sum_insert hi]
+
+@[simp]
 theorem differentialSymbol_zero (s : Finset ι) (v : ∀ i, Fin (k i) → E) :
     differentialSymbol s v (0 : ι → E → V →L[ℂ] W) = 0 := by
   funext p
@@ -94,7 +111,7 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 /-- After frequency rescaling, a differential monomial times `𝓕 u` is exactly the Fourier
 transform of the corresponding derivative, with the coefficient map applied afterwards. -/
-theorem differential_monomial_fourier {r : ℕ} (v : Fin r → E)
+private theorem smul_apply_fourier_eq_apply_fourier_iteratedLineDerivOp {r : ℕ} (v : Fin r → E)
     (B : V →L[ℂ] W) (u : 𝓢(E, V)) (ζ : E) :
     ((∏ j, (Complex.I * (⟪(2 * π) • ζ, v j⟫ : ℂ))) • B) (𝓕 u ζ) =
       B (𝓕 (∂^{v} u) ζ) := by
@@ -109,11 +126,11 @@ theorem differential_monomial_fourier {r : ℕ} (v : Fin r → E)
 
 /-- Absolute convergence for a differential monomial follows from the Schwartz decay of
 the Fourier transform of the derivative, regardless of the coefficient map. -/
-theorem integrable_quantizeSchwartzValue_integrand_differential_monomial {r : ℕ}
+private theorem integrable_quantizeSchwartzValue_integrand_prod_inner {r : ℕ}
     (v : Fin r → E) (B : V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
     Integrable (fun ζ ↦ 𝐞 ⟪ζ, x⟫ •
       ((∏ j, (Complex.I * (⟪(2 * π) • ζ, v j⟫ : ℂ))) • B) (𝓕 u ζ)) := by
-  simp only [differential_monomial_fourier]
+  simp only [smul_apply_fourier_eq_apply_fourier_iteratedLineDerivOp]
   have h : Integrable (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • 𝓕 (∂^{v} u) ζ) := by
     simpa [inner_neg_right] using
       (Real.fourierIntegral_convergent_iff (μ := volume) (-x)).2 (𝓕 (∂^{v} u)).integrable
@@ -127,21 +144,21 @@ theorem integrable_quantizeSchwartzValue_integrand_differentialSymbol
     Integrable (fun ζ ↦ 𝐞 ⟪ζ, x⟫ • differentialSymbol s v b (x, (2 * π) • ζ) (𝓕 u ζ)) := by
   simp only [differentialSymbol_def, sum_apply, Finset.smul_sum]
   exact integrable_finsetSum _ fun i _ ↦
-    integrable_quantizeSchwartzValue_integrand_differential_monomial (v i) (b i x) u x
+    integrable_quantizeSchwartzValue_integrand_prod_inner (v i) (b i x) u x
 
 variable [CompleteSpace V] [CompleteSpace W]
 
 /-- Quantization of a differential monomial is exactly the indicated iterated derivative
 followed by the coefficient map; the coefficient is evaluated at the output position. -/
-theorem quantizeSchwartzValue_differential_monomial {r : ℕ} (v : Fin r → E)
-    (b : E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
-    quantizeSchwartzValue
-      (fun p ↦ (∏ j, (Complex.I * (⟪p.2, v j⟫ : ℂ))) • b p.1) u x =
-      b x (∂^{v} u x) := by
+theorem quantizeSchwartzValue_differentialSymbol_singleton (i : ι)
+    (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W) (u : 𝓢(E, V)) (x : E) :
+    quantizeSchwartzValue (differentialSymbol {i} v b) u x = b i x (∂^{v i} u x) := by
+  rw [differentialSymbol_singleton]
   calc
-    _ = quantizeSchwartzValue (fun p ↦ b p.1) (∂^{v} u) x := by
-      simp only [quantizeSchwartzValue_def, differential_monomial_fourier]
-    _ = _ := quantizeSchwartzValue_comp_fst b (∂^{v} u) x
+    _ = quantizeSchwartzValue (fun p ↦ b i p.1) (∂^{v i} u) x := by
+      simp only [quantizeSchwartzValue_def,
+        smul_apply_fourier_eq_apply_fourier_iteratedLineDerivOp]
+    _ = _ := quantizeSchwartzValue_comp_fst (b i) (∂^{v i} u) x
 
 /-- **Exact differential-operator comparison.** The left quantization of the polynomial
 Fourier symbol of a finite differential expression equals that expression on Schwartz input.
@@ -153,11 +170,11 @@ theorem quantizeSchwartzValue_differentialSymbol (s : Finset ι)
   simp only [quantizeSchwartzValue_def, differentialSymbol_def,
     sum_apply, Finset.smul_sum]
   rw [integral_finsetSum _ fun i _ ↦
-    integrable_quantizeSchwartzValue_integrand_differential_monomial (v i) (b i x) u x]
+    integrable_quantizeSchwartzValue_integrand_prod_inner (v i) (b i x) u x]
   apply Finset.sum_congr rfl
   intro i _
-  simpa only [quantizeSchwartzValue_def] using
-    quantizeSchwartzValue_differential_monomial (v i) (b i) u x
+  simpa only [differentialSymbol_singleton, quantizeSchwartzValue_def] using
+    quantizeSchwartzValue_differentialSymbol_singleton i v b u x
 
 /-- The same comparison written with native iterated Fréchet derivatives. -/
 theorem quantizeSchwartzValue_differentialSymbol_eq_sum_iteratedFDeriv (s : Finset ι)
@@ -181,8 +198,8 @@ theorem contDiff_quantizeSchwartzValue_differentialSymbol (s : Finset ι)
   simpa only [Function.comp_apply, ContinuousLinearMap.coe_restrict_scalarsL',
     ContinuousLinearMap.coe_restrictScalars'] using hbi.clm_apply ((∂^{v i} u).smooth ⊤)
 
-/-- Quantization of a polynomial differential symbol does not enlarge support. This holds
-even for nonsmooth coefficients, so long as the input is Schwartz. -/
+/-- The quantized differential expression is supported in the topological support
+(closure of the support) of the Schwartz input, even for nonsmooth coefficients. -/
 theorem support_quantizeSchwartzValue_differentialSymbol_subset (s : Finset ι)
     (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W) (u : 𝓢(E, V)) :
     Function.support (quantizeSchwartzValue (differentialSymbol s v b) u) ⊆ tsupport u := by
