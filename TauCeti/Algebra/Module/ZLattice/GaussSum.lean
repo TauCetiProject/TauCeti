@@ -340,9 +340,28 @@ twisted Gauss sum `G_L(a, c; m)` vanishes unless `m ∈ L`. Indeed `c • L^∨ 
 the summation variable by `c w`, `w ∈ L^∨`, multiplies the sum by `e(⟪w, m⟫)`; as `L = (L^∨)^∨`,
 some `w ∈ L^∨` has `⟪w, m⟫ ∉ ℤ` when `m ∉ L`. -/
 theorem gaussSumTwisted_eq_zero [FiniteDimensional ℝ E] [DiscreteTopology L] [IsZLattice ℝ L]
-    (a : ℤ) {c : ℕ} [NeZero c] [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
+    (a : ℤ) {c : ℕ} [Fintype (L ⧸ ((c : ℝ) • L).submoduleOf L)]
     (hc : level L ∣ c) {m : dual L} (hm : (m : E) ∉ L) :
     gaussSumTwisted L hL a c m = 0 := by
+  have : NeZero c := ⟨by
+    rintro rfl
+    have h0 : (((0 : ℕ) : ℝ) • L).submoduleOf L = ⊥ := by
+      ext x; simp [Submodule.submoduleOf]
+    have hfin : Finite L := Finite.of_equiv _ (Submodule.quotEquivOfEqBot _ h0).toEquiv
+    have hL0 : L = ⊥ := by
+      refine bot_unique fun x hx ↦ ?_
+      obtain ⟨n, hn, hx0⟩ := (isOfFinAddOrder_of_finite (⟨x, hx⟩ : L)).exists_nsmul_eq_zero
+      have := congrArg Subtype.val hx0
+      rw [AddSubmonoidClass.coe_nsmul, ZeroMemClass.coe_zero] at this
+      rw [← Nat.cast_smul_eq_nsmul ℝ, smul_eq_zero] at this
+      exact this.resolve_left (by exact_mod_cast hn.ne')
+    have hspan : (Submodule.span ℝ (L : Set E)) = ⊤ := IsZLattice.span_top
+    rw [hL0] at hspan
+    have hm0 : (m : E) = 0 := by
+      have : (m : E) ∈ (⊤ : Submodule ℝ E) := trivial
+      rw [← hspan] at this
+      simpa using this
+    exact hm (hm0 ▸ L.zero_mem)⟩
   obtain ⟨w, hw, hwm⟩ : ∃ w ∈ dual L, ∀ k : ℤ, ⟪(m : E), w⟫ ≠ k := by
     by_contra! h
     exact hm ((dual_dual L).le (mem_dual.mpr h))
