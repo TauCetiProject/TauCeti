@@ -39,6 +39,8 @@ Darboux basis this is the classical normalization of the symplectic volume form 
   pullback along continuous linear maps.
 * `ContinuousAlternatingMap.wedgePow_succ_apply_vecCons`: the power rule for inserting a vector
   into a wedge power of a two-form.
+* `ContinuousAlternatingMap.wedgePow_succ_apply_vecCons_eq_zero`: a kernel vector of a two-form
+  is a kernel vector of each of its positive wedge powers.
 * `ContinuousAlternatingMap.wedgePow_apply_finProdFinEquiv`: the `m`-th power of a two-form takes
   the value `m!` on a family of `m` standard pairs.
 
@@ -129,6 +131,20 @@ theorem wedgePow_succ_apply_vecCons (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) 
       push_cast
       ring
     exact key _ _ rfl
+
+/-- **Kernel vectors of a two-form are kernel vectors of its powers.** If `ω (v, w) = 0` for every
+`w`, then the `(m + 1)`-th wedge power of `ω` vanishes whenever its first argument is `v`. -/
+theorem wedgePow_succ_apply_vecCons_eq_zero (ω : E [⋀^Fin 2]→L[ℝ] ℝ) (m : ℕ) {v : E}
+    (hv : ∀ w, ω ![v, w] = 0) (w : Fin (2 * m + 1) → E) :
+    wedgePow ω (m + 1) (Matrix.vecCons v w) = 0 := by
+  have h : curryLeftTopological (n := 1) ω v = 0 := by
+    ext u
+    have hu : Matrix.vecCons v u = ![v, u 0] := by
+      ext i
+      fin_cases i <;> rfl
+    rw [curryLeftTopological_apply_apply, hu, hv, coe_zero, Pi.zero_apply]
+  rw [wedgePow_succ_apply_vecCons, h, pairedWedge_zero_left, coe_zero, Pi.zero_apply,
+    mul_zero]
 
 /-! ### The value on standard pairs -/
 
