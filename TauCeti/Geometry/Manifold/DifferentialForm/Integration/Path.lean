@@ -377,6 +377,21 @@ theorem pathIntegral_mextDeriv [IsManifold I 1 M] {ψ : RoughForm I M F 0}
   have h := pathIntegral_mextDeriv_ofFunction hψ hγ a b
   rwa [← RoughForm.eq_ofFunction] at h
 
+/-- **The fundamental theorem of calculus along a map with an exact pullback.** If a
+differentiable map `i : N → M` pulls the one-form `φ` back to the differential of a `C¹` function
+`f` on `N`, then the line integral of `φ` along `i ∘ c`, for a `C¹` curve `c` in `N`, is the
+difference of the values of `f` at the endpoints of `c`. For instance, `i` may be an exact
+Lagrangian map and `f` its primitive. -/
+theorem pathIntegral_comp_eq_sub_of_mpullback_eq {E' H' N : Type*} [NormedAddCommGroup E']
+    [NormedSpace ℝ E'] [TopologicalSpace H'] {J : ModelWithCorners ℝ E' H'} [TopologicalSpace N]
+    [ChartedSpace H' N] {φ : RoughForm I M F 1} {i : N → M} {f : N → F}
+    (hi : MDifferentiable J I i) (hf : ContMDiff J 𝓘(ℝ, F) 1 f)
+    (hφ : mpullback J I i φ = mextDeriv (RoughForm.ofFunction J f)) {c : ℝ → N}
+    (hc : ContMDiff 𝓘(ℝ, ℝ) J 1 c) (a b : ℝ) :
+    pathIntegral φ (i ∘ c) a b = f (c b) - f (c a) := by
+  rw [← pathIntegral_mpullback φ (fun t _ ↦ hi (c t))
+    (fun t _ ↦ (hc t).mdifferentiableAt one_ne_zero), hφ, pathIntegral_mextDeriv_ofFunction hf hc]
+
 end FTC
 
 /-- Exact smooth `1`-forms integrate to zero around closed `C¹` curves. -/
