@@ -25,8 +25,14 @@ describes them in the terms that subdivision needs.
   graph points over its vertices.
 * `TauCeti.closedRegionBetween_convexHull`: if `a ≤ b` on `s`, the closed band between `a` and `b`
   over the convex hull of `s` is the convex hull of the lower vertices `(x, a x)` and the upper
-  vertices `(x, b x)`, `x ∈ s`. Over a finite set `s` it is therefore a polytope; where `a = b` it
-  collapses to the graph (`TauCeti.closedRegionBetween_self`).
+  vertices `(x, b x)`, `x ∈ s`. Over a finite set `s` it is therefore a polytope, hence compact
+  (`TauCeti.isCompact_closedRegionBetween_convexHull`); where `a = b` it collapses to the graph
+  (`TauCeti.closedRegionBetween_self`).
+* `TauCeti.graphOn_inter_prod_nonempty`, `TauCeti.graphOn_inter_prod_nonempty_of_le`: by the
+  intermediate value theorem, the graph of a continuous function crosses a box `B ×ˢ Icc l r` over
+  a convex set `B` whenever the function takes values on both sides of it over `B`. In particular,
+  of two bands meeting the box one above the other, if the lower graph of the upper band misses the
+  box, then the upper graph of the lower band meets it.
 * `ContinuousAffineMap.intrinsicInterior_graphOn`, `ContinuousAffineMap.intrinsicFrontier_graphOn`:
   the intrinsic interior of the graph of a continuous affine map lies over the intrinsic interior
   of its domain, and, for a closed domain, its intrinsic frontier lies over the intrinsic frontier
@@ -107,7 +113,57 @@ theorem closedRegionBetween_convexHull {a b : E →ᵃ[ℝ] ℝ} {s : Set E}
     · rw [b.decomp]
       exact (b.linear.concaveOn hs).add (concaveOn_const _ hs)
 
+/-- Over the convex hull of a finite set `s`, the closed band between two affine functions with
+`a ≤ b` on `s` is compact: it is the convex hull of finitely many vertices. -/
+theorem isCompact_closedRegionBetween_convexHull [TopologicalSpace E] [IsTopologicalAddGroup E]
+    [ContinuousSMul ℝ E] {a b : E →ᵃ[ℝ] ℝ} {s : Set E} (hs : s.Finite)
+    (hab : ∀ x ∈ s, a x ≤ b x) : IsCompact (closedRegionBetween a b (convexHull ℝ s)) := by
+  rw [closedRegionBetween_convexHull hab]
+  exact ((hs.image _).union (hs.image _)).isCompact_convexHull (𝕜 := ℝ)
+
 end Convex
+
+section Box
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E] [ContinuousAdd E]
+  [ContinuousSMul ℝ E]
+
+/-- A function continuous on a convex set `s`, taking values on both sides of `y ∈ Icc l r` at two
+points of the intersection of `s` with a convex set `B`, has its graph over `s` meeting the box
+`B ×ˢ Icc l r`. -/
+theorem graphOn_inter_prod_nonempty {s B : Set E} (hs : Convex ℝ s) (hB : Convex ℝ B)
+    {f : E → ℝ} (hf : ContinuousOn f s) {x₁ x₂ : E} {y l r : ℝ} (hx₁ : x₁ ∈ s) (hx₂ : x₂ ∈ s)
+    (hB₁ : x₁ ∈ B) (hB₂ : x₂ ∈ B) (hf₁ : f x₁ ≤ y) (hf₂ : y ≤ f x₂) (hy : y ∈ Icc l r) :
+    (s.graphOn f ∩ B ×ˢ Icc l r).Nonempty := by
+  obtain ⟨x, hx, hfx⟩ := (convex_segment x₁ x₂).isPreconnected.intermediate_value
+    (left_mem_segment ℝ x₁ x₂) (right_mem_segment ℝ x₁ x₂)
+    (hf.mono (hs.segment_subset hx₁ hx₂)) ⟨hf₁, hf₂⟩
+  exact ⟨(x, y), mem_graphOn.2 ⟨hs.segment_subset hx₁ hx₂ hx, hfx⟩,
+    hB.segment_subset hB₁ hB₂ hx, hy⟩
+
+/-- If two bands over a convex set `s` meet a box `B ×ˢ Icc l r` over a convex set `B`, the first
+lying below the second, and the lower graph of the second band misses the box, then the graph of
+the upper function of the first band crosses the box, provided that function is continuous on
+`s`. -/
+theorem graphOn_inter_prod_nonempty_of_le {s B : Set E} (hs : Convex ℝ s)
+    (hB : Convex ℝ B) {a₁ b₁ a₂ b₂ : E → ℝ} (hb₁ : ContinuousOn b₁ s) {l r : ℝ}
+    (h : ∀ x ∈ s, b₁ x ≤ a₂ x)
+    (hU₁ : (closedRegionBetween a₁ b₁ s ∩ B ×ˢ Icc l r).Nonempty)
+    (hU₂ : (closedRegionBetween a₂ b₂ s ∩ B ×ˢ Icc l r).Nonempty)
+    (hna₂ : ¬(s.graphOn a₂ ∩ B ×ˢ Icc l r).Nonempty) :
+    (s.graphOn b₁ ∩ B ×ˢ Icc l r).Nonempty := by
+  obtain ⟨p₁, hp₁, hpB₁, hpy₁⟩ := hU₁
+  obtain ⟨p₂, hp₂, hpB₂, hpy₂⟩ := hU₂
+  obtain ⟨hps₁, -, hpb₁⟩ := mem_closedRegionBetween.1 hp₁
+  obtain ⟨hps₂, hap₂, -⟩ := mem_closedRegionBetween.1 hp₂
+  -- above `p₂`, the lower function of the second band passes below the box
+  have h₂ : a₂ p₂.1 < l := by
+    by_contra! h'
+    exact hna₂ ⟨(p₂.1, a₂ p₂.1), mem_graphOn.2 ⟨hps₂, rfl⟩, hpB₂, h', hap₂.trans hpy₂.2⟩
+  exact graphOn_inter_prod_nonempty hs hB hb₁ hps₂ hps₁ hpB₂ hpB₁ (y := l)
+    ((h _ hps₂).trans h₂.le) (hpy₁.1.trans hpb₁) ⟨le_rfl, hpy₁.1.trans hpy₁.2⟩
+
+end Box
 
 end TauCeti
 
