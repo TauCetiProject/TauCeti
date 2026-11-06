@@ -459,7 +459,7 @@ variable {𝕜 E F G : Type*} [RCLike 𝕜]
 near `a` with derivative vanishing on the kernels of the derivative of `f`.  On a ball around
 `(f a, 0)` on which the chart has a `C¹` inverse, `g ∘ Φ.symm` has zero derivative along each slice
 `{y} × ker f'`, so it is constant on it. -/
-private theorem apply_symm_eq_of_forall_mem_ball {f' : E →L[𝕜] F} [CompleteSpace f'.ker]
+private theorem apply_symm_eq_of_forall_mem_ball {f' : E →L[𝕜] F}
     (hfs : HasStrictFDerivAt f f' a) (hf' : f'.range = ⊤) (hker : f'.ker.ClosedComplemented)
     {Φ : OpenPartialHomeomorph E (F × f'.ker)}
     (hΦ : Φ = hfs.implicitToOpenPartialHomeomorphOfComplemented f f' hf' hker) {ε : ℝ}
