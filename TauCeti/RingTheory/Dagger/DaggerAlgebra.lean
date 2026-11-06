@@ -155,7 +155,7 @@ theorem presentationDim_eq_zero_iff :
       h ▸ ⟨presentation K A, presentation_surjective K A⟩
     refine fun a ↦ ?_
     obtain ⟨f, rfl⟩ := hφ a
-    obtain ⟨r, rfl⟩ := algebraMap_washnitzerAlgebra_surjective f
+    obtain ⟨r, rfl⟩ := washnitzerAlgebra.algebraMap_surjective f
     exact ⟨r, (φ.commutes r).symm⟩
   · intro h
     let e := washnitzerAlgebra.isEmptyAlgEquiv (Fin 0) K

@@ -249,6 +249,14 @@ theorem sqrt_abs_time_sub_le_dist (p q : ParabolicSpaceTime E) :
   rw [dist_eq]
   exact le_add_of_nonneg_left dist_nonneg
 
+/-- At parabolic distance at most one, the time-coordinate difference is bounded by the
+parabolic distance. -/
+theorem abs_time_sub_le_dist_of_dist_le_one (p q : ParabolicSpaceTime E)
+    (h : dist p q ≤ 1) : |p.time - q.time| ≤ dist p q := by
+  have hs := sqrt_abs_time_sub_le_dist p q
+  have hsq := Real.sq_sqrt (abs_nonneg (p.time - q.time))
+  nlinarith [Real.sqrt_nonneg |p.time - q.time|]
+
 /-- At a common time, the parabolic distance is the spatial distance. -/
 @[simp]
 theorem dist_ofCoords_ofCoords_same_time (x y : E) (t : ℝ) :
