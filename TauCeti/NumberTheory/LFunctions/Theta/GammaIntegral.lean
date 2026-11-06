@@ -78,16 +78,30 @@ private theorem integral_cpow_mul_exp_neg_multHaar {a : ℝ} (ha : 0 < a) {m : �
     ∫ t, (t : ℂ) ^ (m * s / 2) * (Real.exp (-(π * a ^ 2 * t)) : ℂ) ∂multHaar =
       Gammaℝ (m * s) * (a : ℂ) ^ (m * -s) := by
   have hc : 0 < π * a ^ 2 := by positivity
+  have hpow : ((π * a ^ 2 : ℝ) : ℂ) ^ (-(m * s / 2)) =
+      (π : ℂ) ^ (-(m * s) / 2) * (a : ℂ) ^ (m * -s) := by
+    rw [ofReal_mul, ofReal_mul_cpow Real.pi_pos.le, ofReal_pow, ofReal_pow_cpow ha.le]
+    congr 2 <;> ring
   have h := integral_multHaar_cpow_smul (fun t : ℝ ↦ (Real.exp (-(π * a ^ 2 * t)) : ℂ))
     (m * s / 2)
   simp only [smul_eq_mul, mellin, ofReal_exp, ofReal_neg, ofReal_mul (π * a ^ 2)] at h ⊢
   rw [h, integral_cpow_mul_exp_neg_mul_Ioi (re_natCast_mul_div_two_pos hm hs) hc, one_div,
-    inv_cpow _ _ (by rw [arg_ofReal_of_nonneg hc.le]; exact Real.pi_ne_zero.symm), ← cpow_neg,
-    Gammaℝ_def, ofReal_mul, mul_cpow_ofReal_nonneg Real.pi_pos.le (sq_nonneg a), ofReal_pow,
-    ofReal_pow_cpow ha.le]
-  ring_nf
+    inv_cpow_ofReal_nonneg hc.le, ← cpow_neg, hpow, Gammaℝ_def]
+  ring
 
 /-! ### The product over the places -/
+
+/-- The coordinates of a point of nonzero norm are positive at every place. -/
+private theorem normAtPlace_pos_of_norm_ne_zero {x : mixedSpace K}
+    (hx : mixedEmbedding.norm x ≠ 0) (w : InfinitePlace K) : 0 < normAtPlace w x :=
+  (normAtPlace_nonneg w x).lt_of_ne' (mixedEmbedding.norm_ne_zero_iff.mp hx w)
+
+/-- A principal power of `∏_w b_w ^ mult w`, for nonnegative `b`, is `∏_w b_w ^ (mult w · z)`. -/
+private theorem ofReal_prod_pow_mult_cpow {b : InfinitePlace K → ℝ} (hb : ∀ w, 0 ≤ b w)
+    (z : ℂ) : ((∏ w, b w ^ mult w : ℝ) : ℂ) ^ z = ∏ w, (b w : ℂ) ^ (mult w * z) := by
+  rw [ofReal_prod_cpow _ fun w _ ↦ pow_nonneg (hb w) _]
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  rw [ofReal_pow, ofReal_pow_cpow (hb w)]
 
 /-- On the positive orthant the integrand splits into one factor per infinite place. -/
 private theorem archGaussian_mul_archNorm_cpow_eq_prod {y : realSpace K} (hy : ∀ w, 0 < y w)
@@ -96,12 +110,11 @@ private theorem archGaussian_mul_archNorm_cpow_eq_prod {y : realSpace K} (hy : �
       ∏ w, (y w : ℂ) ^ (mult w * s / 2) *
         (Real.exp (-(π * normAtPlace w x ^ 2 * y w)) : ℂ) := by
   rw [Finset.prod_mul_distrib, mul_comm, archGaussian_apply, archNorm_apply,
-    ofReal_prod_cpow _ fun w _ ↦ pow_nonneg (hy w).le _, Finset.mul_sum, Real.exp_sum, ofReal_prod]
+    ofReal_prod_pow_mult_cpow fun w ↦ (hy w).le, Finset.mul_sum, Real.exp_sum, ofReal_prod]
+  simp_rw [mul_div_assoc]
   congr 1
-  · refine Finset.prod_congr rfl fun w _ ↦ ?_
-    rw [ofReal_pow, ofReal_pow_cpow (hy w).le, mul_div_assoc]
-  · refine Finset.prod_congr rfl fun w _ ↦ ?_
-    ring_nf
+  refine Finset.prod_congr rfl fun w _ ↦ ?_
+  ring_nf
 
 /-- The product over the places of `Γ_ℝ(mult w · s)` is `Γ_ℝ(s)^r₁ Γ_ℝ(2s)^r₂`. -/
 private theorem prod_Gammaℝ_mult_mul (s : ℂ) :
@@ -120,8 +133,7 @@ integrable for the multiplicative Haar measure `dy / y` of the parameters. -/
 theorem integrable_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 0)
     (hs : 0 < s.re) :
     Integrable (fun y ↦ archGaussian y x * (archNorm y : ℂ) ^ (s / 2)) (archHaar K) := by
-  have ha w : 0 < normAtPlace w x :=
-    (normAtPlace_nonneg w x).lt_of_ne' (mixedEmbedding.norm_ne_zero_iff.mp hx w)
+  have ha := normAtPlace_pos_of_norm_ne_zero hx
   have hint := Integrable.fintype_prod (μ := fun _ : InfinitePlace K ↦ multHaar)
     fun w ↦ integrable_cpow_mul_exp_neg_multHaar (ha w) (mult_ne_zero (w := w)) hs
   rw [← archHaar_def] at hint
@@ -137,8 +149,7 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
     ∫ y, archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K =
       Gammaℝ s ^ nrRealPlaces K * Gammaℝ (2 * s) ^ nrComplexPlaces K *
         (mixedEmbedding.norm x : ℂ) ^ (-s) := by
-  have ha w : 0 < normAtPlace w x :=
-    (normAtPlace_nonneg w x).lt_of_ne' (mixedEmbedding.norm_ne_zero_iff.mp hx w)
+  have ha := normAtPlace_pos_of_norm_ne_zero hx
   calc ∫ y, archGaussian y x * (archNorm y : ℂ) ^ (s / 2) ∂archHaar K
       = ∫ y, ∏ w, (y w : ℂ) ^ (mult w * s / 2) *
           (Real.exp (-(π * normAtPlace w x ^ 2 * y w)) : ℂ) ∂archHaar K := by
@@ -155,9 +166,6 @@ theorem integral_archGaussian_mul_archNorm_cpow (hx : mixedEmbedding.norm x ≠ 
           integral_cpow_mul_exp_neg_multHaar (ha w) (mult_ne_zero (w := w)) hs
     _ = _ := by
         rw [Finset.prod_mul_distrib, prod_Gammaℝ_mult_mul, mixedEmbedding.norm_apply,
-          ofReal_prod_cpow _ fun w _ ↦ pow_nonneg (ha w).le _]
-        congr 1
-        refine Finset.prod_congr rfl fun w _ ↦ ?_
-        rw [ofReal_pow, ofReal_pow_cpow (ha w).le]
+          ofReal_prod_pow_mult_cpow fun w ↦ (ha w).le]
 
 end TauCeti.LFunctions
