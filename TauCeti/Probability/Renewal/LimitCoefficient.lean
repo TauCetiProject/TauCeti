@@ -7,14 +7,13 @@ module
 
 public import TauCeti.Probability.Renewal.Equation
 public import TauCeti.Probability.Renewal.LocalBound
-public import Mathlib.Algebra.Order.Floor.Semifield
 
 /-!
 # Constant local renewal limits
 
 The renewal tail identity can be written as an integral, against the interarrival law,
-of the renewal mass in a backward window. Any constant local limit equals the inverse
-extended mean: dominated convergence identifies the coefficient for finite mean, while
+of the renewal mass in a backward window. The coefficient of any constant local limit
+equals the inverse extended mean: dominated convergence identifies it for finite mean, while
 Fatou's lemma forces it to vanish for infinite mean. The local renewal bound supplies
 the domination, with no moment assumptions beyond the finite mean in that case.
 
@@ -38,38 +37,6 @@ open scoped ENNReal NNReal Topology
 namespace MeasureTheory.Measure
 
 variable (F : Measure ℝ≥0) [IsProbabilityMeasure F]
-
-/-- A finite-mean gap law integrates the renewal mass of its initial intervals.
-This is an integrable envelope for all backward windows of the same lengths. -/
-theorem lintegral_renewalMeasure_Iic_lt_top (hF : F {0} < 1)
-    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂F) ≠ ∞) :
-    ∫⁻ u, F.renewalMeasure (Iic u) ∂F < ∞ := by
-  have hbound (u : ℝ≥0) : F.renewalMeasure (Iic u) ≤
-      ((u : ℝ≥0∞) + 1) * F.renewalMeasure (Iic 1) := by
-    have hcover : Iic u ⊆ ⋃ k ∈ Finset.range (⌊u⌋₊ + 1),
-        Icc (k : ℝ≥0) (k + 1) := by
-      intro s hs
-      simp only [mem_iUnion, Finset.mem_range, mem_Icc]
-      exact ⟨⌊s⌋₊, Nat.lt_succ_of_le (Nat.floor_mono hs),
-        Nat.floor_le (by positivity), (Nat.lt_floor_add_one s).le⟩
-    calc
-      _ ≤ ∑ k ∈ Finset.range (⌊u⌋₊ + 1),
-          F.renewalMeasure (Icc (k : ℝ≥0) (k + 1)) :=
-        (measure_mono hcover).trans (measure_biUnion_finset_le _ _)
-      _ ≤ ∑ _k ∈ Finset.range (⌊u⌋₊ + 1), F.renewalMeasure (Iic 1) :=
-        Finset.sum_le_sum fun k _ ↦ F.renewalMeasure_Icc_add_le k 1
-      _ = ((⌊u⌋₊ : ℝ≥0∞) + 1) * F.renewalMeasure (Iic 1) := by simp
-      _ ≤ _ := by
-        gcongr
-        exact_mod_cast Nat.floor_le (show 0 ≤ u by positivity)
-  calc
-    _ ≤ ∫⁻ u, ((u : ℝ≥0∞) + 1) * F.renewalMeasure (Iic 1) ∂F :=
-      lintegral_mono hbound
-    _ < ∞ := by
-      rw [lintegral_mul_const _ (by fun_prop), lintegral_add_left (by fun_prop)]
-      simp only [lintegral_const, measure_univ, mul_one]
-      exact ENNReal.mul_lt_top (ENNReal.add_lt_top.mpr ⟨hmean.lt_top, by simp⟩)
-        (F.renewalMeasure_Iic_lt_top hF 1)
 
 private theorem eq_inv_mean_of_tendsto_backwardWindow
     (hF : F {0} < 1) {t : ℕ → ℝ≥0} {c : ℝ≥0∞}
@@ -111,9 +78,10 @@ private theorem eq_inv_mean_of_tendsto_backwardWindow
       exact tendsto_nhds_unique hdom tendsto_const_nhds
     exact ENNReal.eq_inv_of_mul_eq_one_left hone
 
-/-- Any constant local renewal limit is the inverse extended mean. The statement
-applies along subsequences and needs neither a nonlattice nor a finite-mean assumption.
-In particular the coefficient is zero for infinite mean. -/
+/-- If `F {0} < 1`, `t n → ∞`, and `U((t n - u, t n]) → c * u` for every `u`, then
+`c` is the inverse extended mean `(∫⁻ u, u ∂F)⁻¹`. The statement applies along subsequences
+and needs neither a nonlattice nor a finite-mean assumption. In particular `c = 0` for
+infinite mean. -/
 theorem eq_inv_mean_of_tendsto_renewalMeasure_Ioc
     (hF : F {0} < 1) {t : ℕ → ℝ≥0} (ht : Tendsto t atTop atTop) {c : ℝ≥0∞}
     (hlim : ∀ u : ℝ≥0, Tendsto

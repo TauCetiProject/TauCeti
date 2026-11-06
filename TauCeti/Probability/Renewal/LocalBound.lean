@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Probability.Independence.DisjointBlocks
 public import TauCeti.Probability.Renewal.Measure
+public import Mathlib.Algebra.Order.Floor.Semifield
 import TauCeti.Probability.Independence.InfinitePi
 
 /-!
@@ -33,6 +34,10 @@ renewal theorem and the key renewal theorem.
   `U [t, t + h] ≤ U [0, h]`.
 * `MeasureTheory.Measure.renewalFunction_add_le` — the uniform increment bound
   `m (t + h) ≤ m t + U [0, h]`.
+* `MeasureTheory.Measure.renewalMeasure_Iic_le_add_one_mul` — the linear-growth bound
+  `U [0, u] ≤ (u + 1) * U [0, 1]`.
+* `MeasureTheory.Measure.lintegral_renewalMeasure_Iic_lt_top` — a finite-mean integrable
+  envelope for backward-window masses.
 
 ## Implementation notes
 
@@ -199,5 +204,41 @@ theorem renewalFunction_add_le (t h : ℝ≥0) :
         add_le_add le_rfl (renewalMeasure_Icc_add_le μ t h)
     _ = 1 + (μ.renewalFunction t + μ.renewalMeasure (Iic h)) := by
         rw [renewalMeasure_Iic, add_assoc]
+
+/-- The renewal mass of `[0, u]` grows at most linearly, with bound
+`U [0, u] ≤ (u + 1) * U [0, 1]`. No assumption on the atom at zero or the mean is needed;
+both sides may be infinite. -/
+theorem renewalMeasure_Iic_le_add_one_mul (u : ℝ≥0) :
+    μ.renewalMeasure (Iic u) ≤ ((u : ℝ≥0∞) + 1) * μ.renewalMeasure (Iic 1) := by
+  have hcover : Iic u ⊆ ⋃ k ∈ Finset.range (⌊u⌋₊ + 1),
+      Icc (k : ℝ≥0) (k + 1) := by
+    intro s hs
+    simp only [mem_iUnion, Finset.mem_range, mem_Icc]
+    exact ⟨⌊s⌋₊, Nat.lt_succ_of_le (Nat.floor_mono hs),
+      Nat.floor_le (by positivity), (Nat.lt_floor_add_one s).le⟩
+  calc
+    _ ≤ ∑ k ∈ Finset.range (⌊u⌋₊ + 1),
+        μ.renewalMeasure (Icc (k : ℝ≥0) (k + 1)) :=
+      (measure_mono hcover).trans (measure_biUnion_finset_le _ _)
+    _ ≤ ∑ _k ∈ Finset.range (⌊u⌋₊ + 1), μ.renewalMeasure (Iic 1) :=
+      Finset.sum_le_sum fun k _ ↦ μ.renewalMeasure_Icc_add_le k 1
+    _ = ((⌊u⌋₊ : ℝ≥0∞) + 1) * μ.renewalMeasure (Iic 1) := by simp
+    _ ≤ _ := by
+      gcongr
+      exact_mod_cast Nat.floor_le (a := u) (by positivity)
+
+/-- A finite-mean gap law integrates the renewal mass of its initial intervals.
+This is an integrable envelope for all backward windows of the same lengths. -/
+theorem lintegral_renewalMeasure_Iic_lt_top (hμ : μ {0} < 1)
+    (hmean : (∫⁻ u, (u : ℝ≥0∞) ∂μ) ≠ ∞) :
+    ∫⁻ u, μ.renewalMeasure (Iic u) ∂μ < ∞ := by
+  calc
+    _ ≤ ∫⁻ u, ((u : ℝ≥0∞) + 1) * μ.renewalMeasure (Iic 1) ∂μ :=
+      lintegral_mono μ.renewalMeasure_Iic_le_add_one_mul
+    _ < ∞ := by
+      rw [lintegral_mul_const _ (by fun_prop), lintegral_add_left (by fun_prop)]
+      simp only [lintegral_const, measure_univ, mul_one]
+      exact ENNReal.mul_lt_top (ENNReal.add_lt_top.mpr ⟨hmean.lt_top, by simp⟩)
+        (μ.renewalMeasure_Iic_lt_top hμ 1)
 
 end MeasureTheory.Measure

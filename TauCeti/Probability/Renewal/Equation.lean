@@ -35,9 +35,12 @@ which holds for a probability measure `F` with `F {0} < 1`
 `[0, t]`. Uniqueness iterates the equation: the difference `d` of two solutions satisfies
 `d = d ∗ F^{∗n}` for every `n`, and `F^{∗n} [0, t] → 0` because these masses sum to `U [0, t]`.
 
-The file ends with the tail identity `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`, which follows from
+The final part gives the tail identity `∫_{[0, t]} F((t - s, ∞)) U(ds) = 1`, which follows from
 `U = δ₀ + F ∗ U` by associativity. It normalizes the law of the excess of a renewal process, and
 it is the identity from which the constant in Blackwell's renewal theorem is computed.
+The identity is also given in `ℝ≥0∞` form and rewritten, by Tonelli, as
+`∫ U({s | s ≤ t ∧ t < s + u}) F(du) = 1`, the backward-window form used to identify
+renewal-limit coefficients. For `u ≤ t`, the window is `(t - u, t]`; for `t < u`, it is `[0, t]`.
 
 ## Main definitions
 
