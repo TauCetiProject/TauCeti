@@ -156,6 +156,47 @@ theorem exists_add_smul_sub_mem_of_mongeAmpereMeasure_le :
   rw [hl, hr] at hlt'
   exact (not_le.2 hlt') hle
 
+omit [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [Nontrivial E] in
+/-- If a measure `ν` is squeezed between `λ μ` and `Λ μ` on a set `Ω`, with `λ > 0`, and `Ω`
+contains a nonempty open set `G`, then `Λ > 0`. -/
+private lemma pos_of_smul_restrict_le {Ω G : Set E} {lam Lam : ℝ≥0}
+    {ν : Measure E} (hlam : 0 < lam) (hMA : (lam : ℝ≥0∞) • μ.restrict Ω ≤ ν)
+    (hMA' : ν ≤ (Lam : ℝ≥0∞) • μ.restrict Ω) (hGo : IsOpen G) (hGΩ : G ⊆ Ω) (hne : G.Nonempty) :
+    0 < Lam := by
+  refine pos_of_ne_zero fun h0 => ?_
+  have hle := Measure.le_iff'.1 (hMA.trans hMA') G
+  simp only [h0, ENNReal.coe_zero, zero_smul, FunLike.coe_zero, Pi.zero_apply,
+    _root_.smul_apply, smul_eq_mul, Measure.restrict_apply hGo.measurableSet,
+    inter_eq_left.2 hGΩ, nonpos_iff_eq_zero, mul_eq_zero, ENNReal.coe_eq_zero] at hle
+  exact hle.elim hlam.ne' (hGo.measure_pos μ hne).ne'
+
+/-- If `u` lies above its supporting plane at `y`, then a section of height `h` that contains `y`
+has positive height. -/
+private lemma pos_of_mem_convexSection {E : Type*} [AddCommGroup E] [Module ℝ E] {Ω : Set E}
+    {u : E → ℝ} {x y : E} {ℓ : E →ₗ[ℝ] ℝ} {h : ℝ} (hℓy : u x + (ℓ y - ℓ x) ≤ u y)
+    (hy : y ∈ convexSection Ω u x ℓ h) : 0 < h := by
+  have h₂ := (mem_convexSection_iff.1 hy).2
+  simp only [map_sub] at h₂
+  linarith
+
+/-- The arithmetic of the chord step in the engulfing property: with `C = 2 ^ (n + 2) * C₁ + 1`,
+the step `2 λ / (C Λ)` makes `C₁ Λ (2 h) ^ n` times the step smaller than `λ h ^ n`. -/
+private lemma step_mul_pow_lt (n : ℕ) {C₁ lam Lam h : ℝ} (hC₁ : 0 ≤ C₁) (hlam : 0 < lam)
+    (hLam : 0 < Lam) (hh : 0 < h) :
+    C₁ * Lam * (2 * h) ^ n * (2 * lam / ((2 ^ (n + 2) * C₁ + 1) * Lam)) < lam * h ^ n := by
+  have hCr : 0 < 2 ^ (n + 2) * C₁ + 1 := by positivity
+  have heq : C₁ * Lam * (2 * h) ^ n * (2 * lam / ((2 ^ (n + 2) * C₁ + 1) * Lam)) =
+      2 ^ (n + 1) * C₁ / (2 ^ (n + 2) * C₁ + 1) * (lam * h ^ n) := by
+    simp only [mul_pow, pow_succ]
+    field_simp
+  have hlt1 : 2 ^ (n + 1) * C₁ / (2 ^ (n + 2) * C₁ + 1) < 1 := by
+    rw [div_lt_one hCr]
+    have : (0 : ℝ) ≤ 2 ^ (n + 1) * C₁ := by positivity
+    simp only [pow_succ] at this ⊢
+    linarith
+  rw [heq]
+  exact mul_lt_of_lt_one_left (by positivity) hlt1
+
 /-- **The engulfing property of sections.** There is a constant `C`, depending only on `E` and
 `μ`, with the following property. Let `u` be convex on an open set `Ω`, with
 `λ μ ≤ MA_u ≤ Λ μ` on `Ω` for the Monge–Ampère measure of `u` extended by `⊤` off `Ω` and
@@ -179,11 +220,7 @@ theorem exists_convexSection_subset_convexSection :
   set n := finrank ℝ E
   refine ⟨2 ^ (n + 2) * C₁ + 1, fun Ω _ u x ℓ h lam Lam hΩ hu hℓx hSb hSΩ hlam hMA hMA' y hy m
     hm z hz => ?_⟩
-  have hh : 0 < h := by
-    have h₁ := hℓx y (convexSection_subset hy)
-    have h₂ := (mem_convexSection_iff.1 hy).2
-    simp only [map_sub] at h₂
-    linarith
+  have hh : 0 < h := pos_of_mem_convexSection (hℓx y (convexSection_subset hy)) hy
   set G := convexSection Ω u x ℓ (2 * h)
   have hℓ : Continuous ℓ := ℓ.continuous_of_finiteDimensional
   have huc : ContinuousOn u Ω := hu.continuousOn hΩ
@@ -192,13 +229,7 @@ theorem exists_convexSection_subset_convexSection :
   have hyG : y ∈ G := convexSection_mono_height (by linarith) hy
   have hzG : z ∈ G := convexSection_mono_height (by linarith) hz
   -- The upper bound `Λ` is positive, since `G` is a nonempty open set.
-  have hLam : 0 < Lam := by
-    refine pos_of_ne_zero fun h0 => ?_
-    have hle := Measure.le_iff'.1 (hMA.trans hMA') G
-    simp only [h0, ENNReal.coe_zero, zero_smul, FunLike.coe_zero, Pi.zero_apply,
-      _root_.smul_apply, smul_eq_mul, Measure.restrict_apply hGo.measurableSet,
-      inter_eq_left.2 hGΩ, nonpos_iff_eq_zero, mul_eq_zero, ENNReal.coe_eq_zero] at hle
-    exact hle.elim hlam.ne' (hGo.measure_pos μ ⟨y, hyG⟩).ne'
+  have hLam : 0 < Lam := pos_of_smul_restrict_le μ hlam hMA hMA' hGo hGΩ ⟨y, hyG⟩
   -- Subtract the plane: `v p = u p - u x - ℓ (p - x) - 2h` vanishes on the frontier of `G`.
   set c := ℓ x - u x - 2 * h
   have hfr : ∀ p ∈ frontier G, u p + (-ℓ) p + c = 0 := fun p hp => by
@@ -223,17 +254,8 @@ theorem exists_convexSection_subset_convexSection :
   have hCr : 0 < Cr := by positivity
   set t : ℝ := 2 * lam / (Cr * Lam)
   have ht : 0 < t := by positivity
-  have hstep : (C₁ : ℝ) * Lam * (2 * h) ^ n * t < lam * h ^ n := by
-    have heq : (C₁ : ℝ) * Lam * (2 * h) ^ n * t = 2 ^ (n + 1) * C₁ / Cr * (lam * h ^ n) := by
-      simp only [t, mul_pow, pow_succ]
-      field_simp
-    have hlt1 : 2 ^ (n + 1) * (C₁ : ℝ) / Cr < 1 := by
-      rw [div_lt_one hCr]
-      have : (0 : ℝ) ≤ 2 ^ (n + 1) * C₁ := by positivity
-      simp only [Cr, pow_succ] at this ⊢
-      linarith
-    rw [heq]
-    exact mul_lt_of_lt_one_left (by positivity) hlt1
+  have hstep : (C₁ : ℝ) * Lam * (2 * h) ^ n * t < lam * h ^ n :=
+    step_mul_pow_lt n C₁.2 (NNReal.coe_pos.2 hlam) (NNReal.coe_pos.2 hLam) hh
   have hw := hC₁ G (fun p => u p + (-ℓ) p + c) lam Lam h (2 * h) hGo hSb
     (convexOn_convexSection_add_linearMap hu (-ℓ) c)
     (continuousOn_closure_convexSection_add_linearMap huc hℓ.neg hSΩ c) hfr hlow
