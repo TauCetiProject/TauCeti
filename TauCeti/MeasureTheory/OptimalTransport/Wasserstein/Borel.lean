@@ -46,8 +46,8 @@ supplied explicitly: `P_∞ (X)` need not be separable.
 
 * `TauCeti.WassersteinSpace.borelSpace` — `P_p (X)` is a Borel space for `1 ≤ p < ∞`, with
   `TauCeti.WassersteinSpace.instBorelSpace` its instance form;
-* `TauCeti.WassersteinComponent.borelSpace` — a separable anchored component is a Borel space, with
-  `TauCeti.WassersteinComponent.instBorelSpace` its instance form.
+* `TauCeti.WassersteinComponent.borelSpace` — the Borel space instance for a separable anchored
+  component.
 
 ## References
 
@@ -151,7 +151,7 @@ space, if the finite-distance component anchored at `μ₀` is separable, then i
 measurable structure, inherited from the Giry σ-algebra on `ProbabilityMeasure X`, is the Borel
 σ-algebra of the Wasserstein metric. At finite exponents, separability holds for every anchor of
 finite `p`-moment by `TauCeti.WassersteinComponent.separableSpace_of_hasFiniteMoment`. -/
-theorem borelSpace [SeparableSpace (WassersteinComponent p μ₀)] :
+instance borelSpace [SeparableSpace (WassersteinComponent p μ₀)] :
     BorelSpace (WassersteinComponent p μ₀) := by
   refine borelSpace_of_edist_eq toProbabilityMeasure continuous_toProbabilityMeasure
     (le_antisymm (fun s hs ↦ ?_) measurable_toProbabilityMeasure.comap_le) edist_def
@@ -159,11 +159,6 @@ theorem borelSpace [SeparableSpace (WassersteinComponent p μ₀)] :
   have h := @measurable_mk X p _ _ μ₀ _ (.comap toProbabilityMeasure inferInstance) _
     (comap_measurable _) wassersteinEDist_anchor_ne_top
   simpa using h hs
-
-/-- A separable anchored component is a Borel space, including at exponent infinity. -/
-instance instBorelSpace [SeparableSpace (WassersteinComponent p μ₀)] :
-    BorelSpace (WassersteinComponent p μ₀) :=
-  borelSpace
 
 end WassersteinComponent
 

@@ -27,7 +27,7 @@ Borel sigma algebra. We do not claim the reverse inclusion without separability:
 individual balls does not imply
 measurability of their arbitrary unions. At infinity no `OpensMeasurableSpace` instance is
 installed without a separability hypothesis; for separable anchored components, see
-`TauCeti.WassersteinComponent.instBorelSpace`. A random law measurable for the metric Borel
+`TauCeti.WassersteinComponent.borelSpace`. A random law measurable for the metric Borel
 structure is measurable for the inherited structure, but without separability the converse is
 not asserted.
 
