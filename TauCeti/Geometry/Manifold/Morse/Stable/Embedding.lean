@@ -50,9 +50,7 @@ are `TauCeti.IsAdaptedPseudoGradient.exists_isSmoothEmbedding_stableSet` and
   `W^s(x)`.
 * `TauCeti.IsAdaptedPseudoGradient.exists_stableParam`: a Morse chart and a scale for which the
   parametrization is a smooth embedding onto `W^s(x)`, whose derivative at `0` the chart inverts,
-  intertwining the scaling of the stable subspace with the flow.
-* `TauCeti.IsAdaptedPseudoGradient.exists_mem_stableSet_ne`: below the top index, the stable
-  manifold of a critical point is not reduced to that point.
+  and which intertwines the scaling with the flow.
 
 ## References
 
@@ -392,8 +390,8 @@ end
 /-- **The parametrization of the stable manifold, with its chart.** For a critical point `x`, there
 are a Morse chart `φ` at `x` and a scale `δ` for which `stableParam φ δ` is a smooth embedding of
 the stable subspace of `φ` with image `W^s(x)`, sending `0` to `x`, whose derivative at `0`, read in
-the chart, is the inclusion of the stable subspace, and which intertwines the scaling
-`v ↦ e^{-s} v` with the time-`s` map of the flow. -/
+the chart, is the inclusion of the stable subspace, and which carries the scaling `v ↦ e^{-s} v` to
+the time-`s` map of the flow. -/
 theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     (hx : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f x = 0) :
     ∃ (φ : MorseChart E f x) (δ : ℝ),
@@ -426,19 +424,6 @@ theorem exists_stableParam (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f)
     hX.range_stableParam φ hφ hrT hδr hδ hε0 hεs, hX.stableParam_zero φ hφ hrT hδr hδ,
     hX.mfderiv_toChart_mfderiv_stableParam_zero φ hφ hrT hδr hδ,
     hX.stableParam_smul φ hφ hrT hδr hδ⟩
-
-/-- **Below the top index, the stable manifold is not a point.** If the Morse index of a critical
-point `q` is less than the dimension, some point other than `q` flows into `q`. -/
-theorem exists_mem_stableSet_ne (hf : MDifferentiable 𝓘(ℝ, E) 𝓘(ℝ) f) {q : M}
-    (hq : mfderiv 𝓘(ℝ, E) 𝓘(ℝ) f q = 0)
-    (hind : manifoldMorseIndex 𝓘(ℝ, E) f q < Module.finrank ℝ E) :
-    ∃ y ∈ hX.flow.stableSet q, y ≠ q := by
-  obtain ⟨φ, δ, hemb, hrange, h0, -, -⟩ := hX.exists_stableParam hf hq
-  have hL := φ.finrank_stableSubspace_add_manifoldMorseIndex
-  obtain ⟨u, hu⟩ : ∃ u : φ.stableSubspace, u ≠ 0 :=
-    (Module.finrank_pos_iff_exists_ne_zero (R := ℝ) (M := φ.stableSubspace)).1 (by omega)
-  exact ⟨hX.stableParam φ δ u, hrange ▸ mem_range_self u,
-    fun h ↦ hu (hemb.isEmbedding.injective (h.trans h0.symm))⟩
 
 end IsAdaptedPseudoGradient
 

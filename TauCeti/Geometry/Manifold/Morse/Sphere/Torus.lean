@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Morse.Boundary.UniqueExtremum
+public import TauCeti.Geometry.Manifold.Morse.Boundary.Augmentation
 public import TauCeti.Geometry.Manifold.Morse.Sphere.Prod
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -21,10 +21,10 @@ points are the four pairs of poles: the maximum `(v, w)` of index `2`, the saddl
 This file computes its mod-two Morse complex: for every adapted pseudo-gradient satisfying the
 Morse–Smale condition, the mod-two Morse boundary vanishes. Each saddle receives two trajectories,
 both from the maximum, and emits two, both to the minimum, so every coefficient is even
-(`TauCeti.IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_eq_zero_of_finrank_eq_two`). The
-complex is therefore the free `ZMod 2`-module on the four critical points with zero differential,
-whose homology, of ranks `1`, `2` and `1` in degrees `0`, `1` and `2`, is the mod-two homology of
-the torus. Unlike the height function on the sphere
+(`IsAdaptedPseudoGradient.IsMorseSmale.morseBoundary_eq_zero_of_finrank_eq_two_of_subsingleton`).
+The complex is therefore the free `ZMod 2`-module on the four critical points with zero
+differential, whose homology, of ranks `1`, `2` and `1` in degrees `0`, `1` and `2`, is the mod-two
+homology of the torus. Unlike the height function on the sphere
 (`TauCeti.IsAdaptedPseudoGradient.isMorseSmale_sphereHeight`), this function has critical points of
 intermediate index, so the Morse–Smale condition is a hypothesis.
 
@@ -112,9 +112,14 @@ theorem morseBoundary_sphereHeight_comp_fst_add_comp_snd (h : hX.IsMorseSmale)
       simp only [manifoldMorseIndex_sphereHeight_self,
         manifoldMorseIndex_sphereHeight_neg] at hk <;>
       subst hk <;> simp
-  refine h.morseBoundary_eq_zero_of_finrank_eq_two hf (by simp) ?_ ?_
-  · exact subsingleton_singleton.anti fun z hz ↦ (hcrit hz.1 hz.2).1 rfl
-  · exact subsingleton_singleton.anti fun z hz ↦ (hcrit hz.1 hz.2).2 rfl
+  have hc (z : criticalPoints 𝓘(ℝ, EuclideanSpace ℝ (Fin 1) × EuclideanSpace ℝ (Fin 1))
+      (sphereHeight v ∘ Prod.fst + sphereHeight w ∘ Prod.snd)) :=
+    mem_criticalPoints_iff_mfderiv_eq_zero.1 z.2
+  refine h.morseBoundary_eq_zero_of_finrank_eq_two_of_subsingleton hf (by simp) ?_ ?_
+  · exact fun a ha b hb ↦ Subtype.ext <|
+      ((hcrit (hc a) ha).2 rfl).trans ((hcrit (hc b) hb).2 rfl).symm
+  · exact fun a ha b hb ↦ Subtype.ext <|
+      ((hcrit (hc a) ha).1 rfl).trans ((hcrit (hc b) hb).1 rfl).symm
 
 end IsAdaptedPseudoGradient.IsMorseSmale
 

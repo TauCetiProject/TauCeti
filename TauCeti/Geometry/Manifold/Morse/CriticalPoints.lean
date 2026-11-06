@@ -10,12 +10,14 @@ public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.Topology.Maps.Proper.Basic
 public import TauCeti.Geometry.Manifold.Morse.Index
 public import TauCeti.Geometry.Manifold.RegularValue
+public import TauCeti.Topology.ConnectedComponents
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Analysis.Calculus.LocalExtr.Basic
 import Mathlib.Data.Set.Card.Arithmetic
 import Mathlib.Geometry.Manifold.ContMDiff.Atlas
 import TauCeti.Geometry.Manifold.MFDeriv.Chart
 import TauCeti.Geometry.Manifold.VectorBundle.Tangent.Basic
+import TauCeti.Geometry.Manifold.MFDeriv.Opens
 
 /-!
 # The critical set of a real function on a manifold
@@ -36,6 +38,10 @@ function bounded below, this applies to every sublevel set. A compact band betwe
 values therefore holds finitely many critical levels, along which properties of the band can be
 proved one level at a time.
 
+Restricting `f` to an open subset `U` keeps exactly the critical points lying in `U`, so the total
+critical count is additive over a finite partition of `M` into open sets, such as its connected
+components. In dimension zero every point is critical.
+
 Critical points are counted, in total and by Morse index, with values in `ℕ∞`: an infinite
 critical set has count `⊤`, never a junk natural number. The counts of a Morse function on a
 compact manifold are finite, the counts by index add up to the total count, and replacing `f` by
@@ -50,6 +56,7 @@ polynomial in the Morse inequalities.
 * `TauCeti.isMorseOn_iff_criticalPoints`: Morse functions in terms of the critical set.
 * `TauCeti.criticalPoints_comp_subtypeVal` and `TauCeti.totalCriticalCount_comp_subtypeVal`: the
   critical points of the restriction of `f` to an open submanifold `U` are those of `f` in `U`.
+* `TauCeti.criticalPoints_comp_subtypeVal`: the critical set of a restriction to an open subset.
 * `IsLocalExtr.mem_criticalPoints`, `TauCeti.criticalPoints_nonempty` and
   `TauCeti.exists_mem_criticalPoints_of_isCompact_sublevel`: Fermat's theorem on a manifold and the
   existence of critical points on compact manifolds and in compact sublevels.
@@ -72,6 +79,12 @@ polynomial in the Morse inequalities.
   `TauCeti.IsMorse.criticalCount_neg`.
 * `TauCeti.totalCriticalCount_eq_finsum_connectedComponents`: the total count is the sum of the
   counts in the connected components, when there are finitely many.
+* `TauCeti.totalCriticalCount_eq_sum` and `TauCeti.totalCriticalCount_eq_sum_connectedComponents`:
+  additivity of the total count over finite open partitions and over connected components.
+* `TauCeti.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum` and
+  `TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg`: the signed count
+  `∑ᵢ (-1)ⁱ cᵢ` is the sum of `(-1)^λ` over the critical points, and the signed counts of `f` and
+  `-f` differ by the factor `(-1)ᵐ`.
 
 ## References
 
@@ -130,6 +143,12 @@ theorem isRegularValue_iff_notMem_image_criticalPoints {c : ℝ} :
   simp only [isRegularValue_iff, isRegularPoint_iff_notMem_criticalPoints, mem_image,
     not_exists, not_and]
   tauto
+
+/-- On a manifold modelled on a zero-dimensional space every point is critical. -/
+@[simp]
+theorem criticalPoints_eq_univ_of_subsingleton [Subsingleton E] : criticalPoints I f = univ :=
+  -- The derivative at `x` is a linear form on the tangent space, which is the zero space `E`.
+  eq_univ_of_forall fun _ ↦ Subsingleton.elim (α := E →L[ℝ] ℝ) _ _
 
 /-- A function and its negation have the same critical points. -/
 @[simp]
@@ -502,6 +521,30 @@ theorem totalCriticalCount_eq_finsum_connectedComponents [Finite (ConnectedCompo
   rw [totalCriticalCount_def, ← encard_iUnion_of_finite hd, ← inter_iUnion, ← preimage_iUnion,
     iUnion_of_singleton, preimage_univ, inter_univ]
 
+/-- **Additivity of the critical count.** If finitely many pairwise disjoint open subsets `U i`
+cover `M`, for instance the connected components of a compact manifold, then the number of
+critical points of `f` is the sum of the numbers of critical points of its restrictions to the
+`U i`. -/
+theorem totalCriticalCount_eq_sum {ι : Type*} [Fintype ι] (U : ι → Opens M)
+    (hd : Pairwise (Disjoint on U)) (hU : ⨆ i, U i = ⊤) :
+    totalCriticalCount I f = ∑ i, totalCriticalCount I (f ∘ (Subtype.val : U i → M)) := by
+  have hd' : Pairwise (Disjoint on fun i ↦ criticalPoints I f ∩ U i) := fun i j hij ↦
+    (Opens.coe_disjoint.mpr (hd hij)).inter_left' _ |>.inter_right' _
+  simp_rw [totalCriticalCount_comp_subtypeVal, ← finsum_eq_sum_of_fintype,
+    ← encard_iUnion_of_finite hd', ← inter_iUnion, ← Opens.coe_iSup, hU, Opens.coe_top,
+    inter_univ, totalCriticalCount_def]
+
+/-- **The component sum formula for critical points.** If `M` is locally connected with finitely
+many connected components, for instance compact and boundaryless, then the number of critical
+points of `f` is the sum over the components `C` of the numbers of critical points of the
+restrictions of `f` to `C`, each component carrying its structure as an open submanifold. -/
+theorem totalCriticalCount_eq_sum_connectedComponents [LocallyConnectedSpace M]
+    [Fintype (ConnectedComponents M)] :
+    totalCriticalCount I f =
+      ∑ C : ConnectedComponents M, totalCriticalCount I (f ∘ (Subtype.val : C.opens → M)) :=
+  totalCriticalCount_eq_sum _ ConnectedComponents.pairwise_disjoint_opens
+    ConnectedComponents.iSup_opens
+
 /-- A continuous function on a compact boundaryless manifold with at least two points has at least
 two critical points: a point of maximum and a point of minimum, which can coincide only for a
 constant function, all of whose points are critical. -/
@@ -553,6 +596,34 @@ theorem sum_criticalCount_eq_totalCriticalCount :
     ← Fin.sum_univ_eq_sum_range]
   rfl
 
+/-- The signed count `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `f`, by index, is the sum of `(-1)^λ`
+over the critical points, `λ` being the Morse index, when the critical set is a finite set `s`.
+Here `n` is any bound for the dimension of `M`. -/
+theorem sum_range_neg_one_pow_mul_toNat_criticalCount_eq_sum (s : Finset M)
+    (hs : (s : Set M) = criticalPoints I f) {n : ℕ} (hn : Module.finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
+      ∑ x ∈ s, (-1 : ℤ) ^ manifoldMorseIndex I f x := by
+  rw [← Finset.sum_fiberwise_of_maps_to (g := manifoldMorseIndex I f)
+    (t := Finset.range (n + 1)) fun x _ ↦
+      Finset.mem_range.2 (Nat.lt_succ_of_le (manifoldMorseIndex_le_finrank.trans hn))]
+  refine Finset.sum_congr rfl fun i _ ↦ ?_
+  have hi : {x ∈ criticalPoints I f | manifoldMorseIndex I f x = i} =
+      ↑({x ∈ s | manifoldMorseIndex I f x = i} : Finset M) := by
+    ext x
+    simp [← hs]
+  rw [Finset.sum_congr rfl fun x hx ↦ by rw [(Finset.mem_filter.1 hx).2], criticalCount_def, hi,
+    encard_coe_eq_coe_finsetCard]
+  simp [mul_comm]
+
+/-- Terms of index above the dimension of `M` do not contribute to a signed count
+`∑ᵢ (-1)ⁱ cᵢ` of critical points, so it may be truncated at `dim M`. -/
+theorem sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le {n : ℕ}
+    (hn : Module.finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat =
+      ∑ i ∈ Finset.range (Module.finrank ℝ E + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
+  refine (Finset.sum_subset (Finset.range_subset_range.2 (by omega)) fun i hi hi' ↦ ?_).symm
+  rw [criticalCount_eq_zero_of_finrank_lt (by simp_all), ENat.toNat_zero, Nat.cast_zero, mul_zero]
+
 variable [I.Boundaryless]
 
 /-- **Duality of critical counts.** Replacing a Morse function by its negation exchanges the
@@ -565,6 +636,24 @@ theorem IsMorse.criticalCount_neg (hf : IsMorse I f) {j : ℕ} (hj : j ≤ Modul
   have := (hf.isManifoldNondegenerateCriticalPoint_of_mem_criticalPoints
     hx).manifoldMorseIndex_neg_add_manifoldMorseIndex_eq_finrank
   omega
+
+/-- **Signed counts of `f` and `-f`.** For a Morse function `f` on a boundaryless manifold of
+dimension `m`, the signed counts `∑ᵢ (-1)ⁱ cᵢ` of the critical points of `-f` and of `f` differ by
+the factor `(-1)ᵐ`, since the critical points of index `i` of `-f` are those of index `m - i`
+of `f`. -/
+theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_neg (hf : IsMorse I f) {n : ℕ}
+    (hn : Module.finrank ℝ E ≤ n) :
+    ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I (-f) i).toNat =
+      (-1) ^ Module.finrank ℝ E *
+        ∑ i ∈ Finset.range (n + 1), (-1 : ℤ) ^ i * (criticalCount I f i).toNat := by
+  rw [sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le hn,
+    sum_range_neg_one_pow_mul_toNat_criticalCount_of_finrank_le hn, Finset.mul_sum,
+    ← Finset.sum_range_reflect]
+  refine Finset.sum_congr rfl fun i hi ↦ ?_
+  have hi : i ≤ Module.finrank ℝ E := Nat.le_of_lt_succ (Finset.mem_range.1 hi)
+  rw [add_tsub_cancel_right, hf.criticalCount_neg (Nat.sub_le _ _), Nat.sub_sub_self hi]
+  obtain ⟨d, hd⟩ := Nat.exists_eq_add_of_le' hi
+  simp [hd, pow_add, mul_assoc, ← mul_assoc ((-1 : ℤ) ^ i), ← mul_pow]
 
 end FiniteDimensional
 
