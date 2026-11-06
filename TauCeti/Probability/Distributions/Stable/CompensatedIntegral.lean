@@ -5,7 +5,7 @@ Authors: Codex
 -/
 module
 
-public import TauCeti.Probability.Distributions.Stable.SmallJumps
+public import TauCeti.Probability.Distributions.Stable.SmallJump.Basic
 import TauCeti.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
