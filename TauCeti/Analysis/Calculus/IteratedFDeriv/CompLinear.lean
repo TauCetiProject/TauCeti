@@ -24,6 +24,9 @@ For a function of one variable, postcomposition with a continuous linear map com
 iterated derivative `iteratedDeriv`. This is the one-variable form of Mathlib's
 `ContinuousLinearMap.iteratedFDeriv_comp_left`, used for instance to test identities between
 iterated derivatives of vector-valued functions against continuous linear functionals.
+
+A continuous linear map itself has vanishing iterated derivatives of every order at least two
+(`ContinuousLinearMap.iteratedFDeriv_add_two`).
 -/
 
 public section
@@ -50,6 +53,15 @@ of a function of one variable that is `C^i` at the point. -/
 theorem iteratedDeriv_comp_left (g : F →L[𝕜] G) {f : 𝕜 → F} {x : 𝕜} (hf : ContDiffAt 𝕜 n f x)
     {i : ℕ} (hi : i ≤ n) : iteratedDeriv i (g ∘ f) x = g (iteratedDeriv i f x) := by
   simp [iteratedDeriv_eq_iteratedFDeriv, g.iteratedFDeriv_comp_left hf hi]
+
+/-- A continuous linear map has vanishing iterated derivatives of every order at least two. -/
+@[simp]
+theorem iteratedFDeriv_add_two (g : E →L[𝕜] F) (j : ℕ) (x : E) :
+    iteratedFDeriv 𝕜 (j + 2) g x = 0 := by
+  rw [← norm_eq_zero, ← norm_iteratedFDeriv_fderiv]
+  have h : fderiv 𝕜 g = fun _ ↦ g := funext fun _ ↦ g.fderiv
+  rw [h, iteratedFDeriv_succ_const]
+  simp
 
 end ContinuousLinearMap
 
