@@ -221,6 +221,23 @@ theorem rootMultiplicity_reflect [CommRing R] (p : R[X]) {N : ℕ}
   rw [hfactor, rootMultiplicity_mul_X_sub_C_pow hres,
     rootMultiplicity_eq_zero (by simpa only [IsRoot.def] using heval), zero_add]
 
+/-- Over a field, reflection exchanges the multiplicity at a nonzero point with the multiplicity of
+the original polynomial at its inverse. -/
+theorem rootMultiplicity_reflect_eq_inv [Field R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N)
+    {t : R} (ht : t ≠ 0) :
+    (p.reflect N).rootMultiplicity t = p.rootMultiplicity t⁻¹ := by
+  simpa only [Units.val_inv_eq_inv_val, Units.val_mk0, inv_inv] using
+    p.rootMultiplicity_reflect hN (Units.mk0 t⁻¹ (inv_ne_zero ht))
+
+/-- Over a field, a nonzero point is a root of a polynomial exactly when its inverse is a root of
+the reflection. -/
+theorem isRoot_reflect_inv_iff [Field R] (p : R[X]) {N : ℕ} (hN : p.natDegree ≤ N)
+    {t : R} (ht : t ≠ 0) :
+    (p.reflect N).IsRoot t⁻¹ ↔ p.IsRoot t := by
+  let : Invertible t := invertibleOfNonzero ht
+  simpa only [IsRoot.def, ← eval₂_id, invOf_eq_inv] using
+    eval₂_reflect_eq_zero_iff (RingHom.id R) t N p hN
+
 /-- The excess of a reflection bound over the degree of a nonzero polynomial is exactly
 the multiplicity of zero in its reflection. -/
 @[simp]
