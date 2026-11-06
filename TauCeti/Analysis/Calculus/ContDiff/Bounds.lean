@@ -8,7 +8,7 @@ module
 public import Mathlib.Analysis.Calculus.ContDiff.Bounds
 
 /-!
-# Uniform derivative bounds for a linear change of variables
+# Derivative bounds: linear changes of variables and products
 
 Fix maps `τ : E → F` and `L : E → (G →L H)` that are `C^n` on `s`. The operator
 `φ ↦ (z ↦ L z (φ (τ z)))` is linear in `φ`, and by the Leibniz and Faà di Bruno bounds its
@@ -21,6 +21,10 @@ This is the estimate behind continuity of such operators for topologies of unifo
 derivatives on compact sets: a bilinear form read in one chart is of this shape in any other
 chart, with `τ` the transition map and `L z` the pullback along its derivative.
 
+The Leibniz bound also shows that orders of vanishing add under products: if the derivatives of
+`f` of order less than `a` and those of `g` of order less than `b` vanish at `x`, then so do the
+derivatives of `f * g` of order less than `a + b`.
+
 ## Main results
 
 * `ContDiffOn.exists_bound_iteratedFDerivWithin`: on a compact subset, the derivatives of order at
@@ -29,6 +33,7 @@ chart, with `τ` the transition map and `L z` the pullback along its derivative.
   derivatives of `z ↦ L z (φ (τ z))`.
 * `ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp`: its consequence for uniform
   convergence to zero.
+* `TauCeti.iteratedFDeriv_mul_eq_zero_of_lt`: orders of vanishing at a point add under products.
 -/
 
 public section
@@ -115,3 +120,22 @@ theorem ContDiffOn.tendstoUniformlyOn_iteratedFDerivWithin_clm_apply_comp {ι : 
     _ < ε := by
       rw [mul_div_assoc', div_lt_iff₀ (by positivity)]
       nlinarith [abs_nonneg C]
+
+namespace TauCeti
+
+/-- **Orders of vanishing add under products.** If the derivatives of `f` of order less than `a`
+and those of `g` of order less than `b` vanish at `x`, then the derivative of `f * g` of any order
+`k < a + b` vanishes at `x`. -/
+theorem iteratedFDeriv_mul_eq_zero_of_lt {A : Type*} [NormedRing A] [NormedAlgebra 𝕜 A]
+    {f g : E → A} {x : E} {a b k : ℕ} (hf : ContDiff 𝕜 k f) (hg : ContDiff 𝕜 k g)
+    (hfx : ∀ i < a, iteratedFDeriv 𝕜 i f x = 0) (hgx : ∀ j < b, iteratedFDeriv 𝕜 j g x = 0)
+    (hk : k < a + b) : iteratedFDeriv 𝕜 k (fun y ↦ f y * g y) x = 0 := by
+  -- In the Leibniz bound every term has a factor of order `i < a` or `k - i < b`.
+  refine norm_le_zero_iff.mp ((norm_iteratedFDeriv_mul_le hf hg x le_rfl).trans_eq ?_)
+  refine Finset.sum_eq_zero fun i hi ↦ ?_
+  rw [Finset.mem_range] at hi
+  rcases lt_or_ge i a with hia | hia
+  · simp [hfx i hia]
+  · simp [hgx (k - i) (by omega)]
+
+end TauCeti

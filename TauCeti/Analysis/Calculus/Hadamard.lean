@@ -33,6 +33,11 @@ variable {E : Type u} {F : Type v} [NormedAddCommGroup E] [NormedSpace ℝ E]
 noncomputable def segmentAverage (w : ℝ → ℝ) (g : E → F) (x v : E) : F :=
   ∫ t in (0 : ℝ)..1, w t • g (x + t • v)
 
+/-- Unfolding a weighted segment average as an interval integral. -/
+theorem segmentAverage_def (w : ℝ → ℝ) (g : E → F) (x v : E) :
+    segmentAverage w g x v = ∫ t in (0 : ℝ)..1, w t • g (x + t • v) := by
+  rw [segmentAverage]
+
 /-- A weighted segment average written as an integral over the compact unit interval. -/
 theorem segmentAverage_eq_integral_Icc (w : ℝ → ℝ) (g : E → F) (x : E) :
     segmentAverage w g x = fun v ↦ ∫ t in Set.Icc (0 : ℝ) 1, w t • g (x + t • v) := by

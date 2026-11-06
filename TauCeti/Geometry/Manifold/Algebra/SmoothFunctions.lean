@@ -11,12 +11,13 @@ public import Mathlib.Geometry.Manifold.Algebra.SmoothFunctions
 # Algebraic operations on smooth maps
 
 This file complements Mathlib's algebraic structures on spaces of smooth maps with the pointwise
-evaluation of finite sums, and with the transport of pointwise identities between scalar-valued
-smooth functions to identities in the algebra of smooth functions.
+evaluation of finite sums and products, and with the transport of pointwise identities between
+scalar-valued smooth functions to identities in the algebra of smooth functions.
 
 ## Main results
 
-* `ContMDiffMap.coe_sum`: the coercion of a finite sum of smooth maps is the sum of the coercions.
+* `ContMDiffMap.coe_sum`, `ContMDiffMap.coe_prod`: the coercion of a finite sum or product of
+  smooth maps is the sum or product of the coercions.
 * `TauCeti.sub_algebraMap_eq_sum_mul_sub_algebraMap`: the bundled form of a pointwise
   factorization of `g - g x` in the algebra of smooth functions.
 -/
@@ -27,19 +28,20 @@ open scoped ContDiff Manifold
 
 namespace ContMDiffMap
 
-/-- The coercion of a finite sum of smooth maps into a commutative additive Lie group is the
-pointwise sum. -/
-@[simp]
-theorem coe_sum {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+/-- The coercion of a finite product of smooth maps into a commutative Lie group is the
+pointwise product. -/
+@[to_additive (attr := simp) /-- The coercion of a finite sum of smooth maps into a commutative
+additive Lie group is the pointwise sum. -/]
+theorem coe_prod {𝕜 : Type*} [NontriviallyNormedField 𝕜]
     {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
     {N : Type*} [TopologicalSpace N] [ChartedSpace H N]
     {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
     {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'} {n : ℕ∞ω}
-    {G : Type*} [AddCommMonoid G] [TopologicalSpace G] [ChartedSpace H' G] [ContMDiffAdd I' n G]
+    {G : Type*} [CommMonoid G] [TopologicalSpace G] [ChartedSpace H' G] [ContMDiffMul I' n G]
     {ι : Type*} (s : Finset ι) (f : ι → C^n⟮I, N; I', G⟯) :
-    ⇑(∑ i ∈ s, f i) = ∑ i ∈ s, ⇑(f i) :=
-  map_sum coeFnAddMonoidHom f s
+    ⇑(∏ i ∈ s, f i) = ∏ i ∈ s, ⇑(f i) :=
+  map_prod coeFnMonoidHom f s
 
 end ContMDiffMap
 
