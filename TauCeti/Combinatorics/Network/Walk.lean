@@ -157,6 +157,13 @@ theorem vertices_mapPath_of_obj_eq_id {R : V → V → Type*} (φ : @Prefunctor 
     ArrowWalk.vertices (Q := R) (@Prefunctor.mapPath V ⟨Q⟩ V ⟨R⟩ φ s t p) = p.vertices := by
   rw [vertices, @Prefunctor.vertices_mapPath V V ⟨Q⟩ ⟨R⟩ φ s t p, hφ, List.map_id]
 
+/-- The vertices of `p.comp p'` are those of `p` without its last vertex, followed by those of
+`p'`. This is not a simp lemma, since simp already rewrites its left-hand side by
+`Quiver.Path.vertices_comp`. -/
+theorem vertices_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
+    (p.comp p').vertices = p.vertices.dropLast ++ p'.vertices :=
+  @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p p'
+
 @[simp]
 theorem arrows_comp {s t x : V} (p : ArrowWalk Q s t) (p' : ArrowWalk Q t x) :
     (p.comp p').arrows = p.arrows ++ p'.arrows := by
@@ -315,7 +322,7 @@ theorem IsPath.isCycle_cons {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPath) (e :
 theorem IsPath.of_comp_left {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q t x}
     (hp : (p.comp p').IsPath) : p.IsPath := by
   have hcomp : (p.comp p').vertices = p.vertices.dropLast ++ p'.vertices :=
-    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p p'
+    vertices_comp p p'
   have hend : p.vertices.dropLast ++ [t] = p.vertices :=
     @Quiver.Path.dropLast_append_end_eq V ⟨Q⟩ _ _ p
   rw [isPath_def, hcomp] at hp
@@ -327,7 +334,7 @@ theorem IsPath.of_comp_left {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q 
 theorem IsPath.of_comp_right {s t x : V} {p : ArrowWalk Q s t} {p' : ArrowWalk Q t x}
     (hp : (p.comp p').IsPath) : p'.IsPath := by
   have hcomp : (p.comp p').vertices = p.vertices.dropLast ++ p'.vertices :=
-    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p p'
+    vertices_comp p p'
   rw [isPath_def, hcomp] at hp
   exact hp.of_append_right
 
@@ -393,7 +400,7 @@ theorem IsPath.fst_ne_of_mem_arrows {s t : V} {p : ArrowWalk Q s t} (hp : p.IsPa
   -- The final segment would be a path starting and ending at `x`, visiting it twice.
   have h := hp.of_comp_right
   have hcomp : (((nil x).cons e).comp p₂).vertices = [x] ++ p₂.vertices :=
-    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ ((nil x).cons e) p₂
+    vertices_comp ((nil x).cons e) p₂
   rw [isPath_def, hcomp] at h
   exact (List.nodup_cons.1 h).1 (@Quiver.Path.end_mem_vertices V ⟨Q⟩ _ _ p₂)
 
@@ -460,7 +467,7 @@ private theorem IsPath.exists_isPath_interior_notMem {A B : Set V} :
     rw [← hn]
     exact (@Quiver.Path.length_comp V ⟨Q⟩ _ _ p₁ _ p₂).symm
   have hcomp : (p₁.comp p₂).vertices = p₁.vertices.dropLast ++ p₂.vertices :=
-    @Quiver.Path.vertices_comp V ⟨Q⟩ _ _ _ p₁ p₂
+    vertices_comp p₁ p₂
   by_cases hvA : v ∈ A
   · have h₁ : p₁.length ≠ 0 := fun h ↦ hvs (@Quiver.Path.eq_of_length_zero V ⟨Q⟩ _ _ p₁ h).symm
     obtain ⟨a, ha, b, hb, q, hq, hsub, hasub, hint⟩ :=
@@ -919,7 +926,7 @@ theorem ReachableAvoiding.trans (h : ReachableAvoiding Q X s t) (h' : ReachableA
   obtain ⟨p, hp⟩ := h
   obtain ⟨p', hp'⟩ := h'
   refine ⟨p.comp p', fun v hv ↦ ?_⟩
-  rw [ArrowWalk.vertices, @Quiver.Path.vertices_comp V ⟨Q⟩, List.mem_append] at hv
+  rw [ArrowWalk.vertices_comp, List.mem_append] at hv
   exact hv.elim (fun hv ↦ hp v (List.mem_of_mem_dropLast hv)) (hp' v)
 
 /-- A reachable vertex stays reachable along a further arrow to a vertex outside `X`. -/
