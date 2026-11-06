@@ -672,18 +672,6 @@ theorem reflection_mem_unitary [CompleteSpace E]
   simpa only [Unitary.coe_symm_linearIsometryEquiv_apply] using
     (Unitary.linearIsometryEquiv.symm U.reflection).property
 
-/-- A subspace reflection, as a bounded operator, fixes vectors in the subspace. -/
-theorem coe_reflection_apply_of_mem (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
-    {x : E} (hx : x ∈ U) : (U.reflection : E →L[𝕜] E) x = x := by
-  simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hx
-
-/-- A subspace reflection, as a bounded operator, negates vectors in its orthogonal complement. -/
-theorem coe_reflection_apply_of_mem_orthogonal
-    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] {x : E} (hx : x ∈ Uᗮ) :
-    (U.reflection : E →L[𝕜] E) x = -x := by
-  simpa only [LinearIsometryEquiv.coe_coe''] using
-    U.reflection_mem_subspace_orthogonalComplement_eq_neg hx
-
 /-- Full off-diagonality is anticommutation with the source reflection.
 
 Adapted from `reflection_anticommutes_of_maps_orthogonal` in
@@ -705,10 +693,16 @@ theorem reflection_mul_eq_neg_mul_of_maps_orthogonal
       (U.starProjection_add_starProjection_orthogonal x).symm
   have hHp : H p ∈ Uᗮ := hHU p hp
   have hHm : H m ∈ U := hHUperp m hm
-  have hJp := U.coe_reflection_apply_of_mem hp
-  have hJm := U.coe_reflection_apply_of_mem_orthogonal hm
-  have hJHp := U.coe_reflection_apply_of_mem_orthogonal hHp
-  have hJHm := U.coe_reflection_apply_of_mem hHm
+  have hJp : (U.reflection : E →L[𝕜] E) p = p := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hp
+  have hJm : (U.reflection : E →L[𝕜] E) m = -m := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hm
+  have hJHp : (U.reflection : E →L[𝕜] E) (H p) = -H p := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hHp
+  have hJHm : (U.reflection : E →L[𝕜] E) (H m) = H m := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hHm
   simp only [mul_apply_eq_comp, neg_apply]
   calc
     (U.reflection : E →L[𝕜] E) (H x) = (U.reflection : E →L[𝕜] E) (H p + H m) := by

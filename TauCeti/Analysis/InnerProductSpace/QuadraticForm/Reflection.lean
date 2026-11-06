@@ -61,8 +61,13 @@ theorem reflection_centered_form_lower
         (A m - (((a + b) / 2 : ℝ) : 𝕜) • m) := by
     rw [hxpm, map_add, smul_add]
     module
-  have hJAp := U.coe_reflection_apply_of_mem hAp
-  have hJAm := U.coe_reflection_apply_of_mem_orthogonal hAm
+  have hJAp : (U.reflection : E →L[𝕜] E) (A p - (((a + b) / 2 : ℝ) : 𝕜) • p) =
+      A p - (((a + b) / 2 : ℝ) : 𝕜) • p := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hAp
+  have hJAm : (U.reflection : E →L[𝕜] E) (A m - (((a + b) / 2 : ℝ) : 𝕜) • m) =
+      -(A m - (((a + b) / 2 : ℝ) : 𝕜) • m) := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hAm
   have hreflect :
       (U.reflection : E →L[𝕜] E)
           (A x - (((a + b) / 2 : ℝ) : 𝕜) • x) =
