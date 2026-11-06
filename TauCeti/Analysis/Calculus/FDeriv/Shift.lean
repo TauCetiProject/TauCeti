@@ -21,6 +21,8 @@ hypothesis, since `x ↦ a - x` is an affine isomorphism.
 
 public section
 
+namespace TauCeti
+
 variable {𝕜 E F : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] {f : E → F} {x : E}
 
@@ -34,3 +36,5 @@ theorem fderiv_comp_const_sub (a : E) :
   rw [h]
   ext v
   simp
+
+end TauCeti

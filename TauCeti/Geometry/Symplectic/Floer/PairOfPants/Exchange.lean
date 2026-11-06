@@ -129,9 +129,10 @@ theorem forall_exchangeHamiltonians {P : (ℝ → M → ℝ) → Prop}
 
 /-- **The pair-of-pants perturbation with output end centred at `c`.** It is the pair-of-pants
 perturbation of the two input Hamiltonians `H 0` and `H 1`, plus the negative plane perturbation
-of the output Hamiltonian `H ∞` translated by `c`. In the end coordinates `w = c + 2 exp (-2πz)` of
-the translated end at `∞` it is `β(-s - 1) H_∞(t) dt`. For `c = 0` it is the pair-of-pants
-perturbation (`centeredPairOfPantsPerturbation_zero`). -/
+of the output Hamiltonian `H ∞` translated by `c`. For `‖c‖ ≤ 1/2` and a period-one `H ∞`, in the
+end coordinates `w = c + 2 exp (-2πz)` of the translated end at `∞` it is `β(-s - 1) H_∞(t) dt`
+on the part `s < 0` (`centeredPairOfPantsPerturbation_add_cylindricalEndLift_of_neg`). For
+`c = 0` it is the pair-of-pants perturbation (`centeredPairOfPantsPerturbation_zero`). -/
 def centeredPairOfPantsPerturbation (c : ℂ) (H : Puncture → ℝ → M → ℝ) (w : ℂ) (x : M) :
     ℂ →L[ℝ] ℝ :=
   pairOfPantsPerturbation (update H inf 0) w x + negativePlanePerturbation (H inf) (w - c) x
