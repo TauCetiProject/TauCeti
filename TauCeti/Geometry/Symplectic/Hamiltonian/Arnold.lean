@@ -86,9 +86,9 @@ variable {E H' M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topologica
 all times, `φ` has at least `c(M) = minCriticalCount I M` fixed points, counted in `ℕ∞`.
 
 The completeness hypothesis on the suspension of `X_H` makes `φ` a genuine time-one map, rather
-than a junk value of the maximal flow; it holds for every smooth `H` on a closed manifold. On a
-closed symplectic manifold this is Arnold's conjecture for possibly degenerate Hamiltonian
-diffeomorphisms. The autonomous case is
+than a junk value of the maximal flow; it holds for every smooth `H` when `σ` is nondegenerate
+and `M` is closed. On a closed symplectic manifold this is Arnold's conjecture for possibly
+degenerate Hamiltonian diffeomorphisms. The autonomous case is
 `TauCeti.SmoothTwoForm.IsNondegenerate.degenerateArnoldCriticalNumberStatement_timeDependentFlowOf`.
 -/
 def DegenerateArnoldCriticalNumberStatement (σ : SmoothTwoForm I M) (φ : M → M) : Prop :=
