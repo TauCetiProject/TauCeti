@@ -7,15 +7,15 @@ module
 
 public import TauCeti.FieldTheory.FunctionField.ConstantExtension.FractionField
 public import Mathlib.LinearAlgebra.TensorProduct.Basis
-import TauCeti.FieldTheory.IntermediateField.Adjoin.Basic
 
 /-!
 # Tensor presentations over an extended parameter field
 
 Let `F' = F · K` be a linearly disjoint extension of constants of `F/k`, and let `C` be
 an intermediate field with `F/C` algebraic. Multiplication identifies
-`(C · K) ⊗[C] F` with `F'`, as algebras over `C · K`. In particular, for `C = k(t)`
-this is the finite algebra over `K(t)` presenting the extended function field.
+`(C · K) ⊗[C] F` with `F'`, as algebras over `C · K`. In particular, when `F/k` is
+a function field and `C = k(t)`, this is the finite algebra over `K(t)` presenting
+the extended function field.
 The extension `K/k` can be transcendental. The original extension `F/C` need only
 be algebraic, and need not be separable or finite.
 
@@ -42,15 +42,6 @@ namespace TauCeti
 variable {k K F F' : Type*} [Field k] [Field K] [Field F] [Field F']
   [Algebra k K] [Algebra k F] [Algebra k F'] [Algebra K F'] [Algebra F F']
   [IsScalarTower k K F'] [IsScalarTower k F F']
-
-omit [Algebra k K] [Algebra k F'] [IsScalarTower k K F'] [IsScalarTower k F F'] in
-/-- The compositum `C · K` is the same subfield of the ambient field whether it is formed
-by adjoining `K` to `C` or by adjoining the image of `C` to `K`. -/
-theorem _root_.IntermediateField.constantCompositum_toSubfield (C : IntermediateField k F) :
-    (constantCompositum C K F').toSubfield =
-      (IntermediateField.adjoin K (Set.range (algebraMap C F'))).toSubfield := by
-  rw [constantCompositum_def, IntermediateField.adjoin_toSubfield,
-    IntermediateField.adjoin_toSubfield, Set.union_comm]
 
 /-- A basis transported to the compositum, with scalars viewed as an extension of `C`. -/
 private noncomputable def parameterBasis
@@ -123,13 +114,6 @@ theorem constantExtensionTensorEquiv_symm_mul
     (constantExtensionTensorEquiv H h C).symm ((a : F') * algebraMap F F' f) = a ⊗ₜ[C] f := by
   apply (constantExtensionTensorEquiv H h C).injective
   simp
-
-/-- For a simple parameter field `k(t)`, extending constants gives exactly `K(t)`
-as a subfield of the ambient field. -/
-theorem constantCompositum_adjoin_simple_toSubfield (x : F) :
-    (constantCompositum k⟮x⟯ K F').toSubfield = K⟮algebraMap F F' x⟯.toSubfield := by
-  rw [_root_.IntermediateField.constantCompositum_toSubfield,
-    IntermediateField.range_algebraMap_adjoin_simple, IntermediateField.adjoin_adjoin_right]
 
 section FractionField
 
