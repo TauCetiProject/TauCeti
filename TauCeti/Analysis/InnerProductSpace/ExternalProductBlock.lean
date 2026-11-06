@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.ContDiff.Basic
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
-public import Mathlib.Analysis.InnerProductSpace.TensorProduct
+public import TauCeti.Analysis.InnerProductSpace.OperatorIdentities
+public import TauCeti.Analysis.InnerProductSpace.TensorProduct
 
 /-!
 # The external product block of two operators
@@ -39,18 +41,16 @@ likewise for `σ_Q`, the external product therefore satisfies `A* A = A A* = ‖
 * `ContinuousLinearMap.externalProductBlock`: the block operator above.
 * `ContinuousLinearMap.adjoint_externalProductBlock`: its adjoint is
   `externalProductBlock A† (-B)`.
-* `ContinuousLinearMap.externalProductBlock_adjoint_neg_apply`: the block diagonal form of
-  `externalProductBlock A† (-B) ∘ externalProductBlock A B`.
+* `ContinuousLinearMap.externalProductBlock_adjoint_neg_apply_externalProductBlock`: the block
+  diagonal form of `externalProductBlock A† (-B) ∘ externalProductBlock A B`.
 * `ContinuousLinearMap.adjoint_externalProductBlock_comp_self_of_eq_smul`,
   `ContinuousLinearMap.externalProductBlock_comp_adjoint_of_eq_smul` and
   `ContinuousLinearMap.norm_externalProductBlock_apply_sq_of_eq_smul`: the scalar case.
 * `ContinuousLinearMap.norm_externalProductBlock_le`: `‖externalProductBlock A B‖ ≤ 2 (‖A‖ + ‖B‖)`.
   Together with `ContinuousLinearMap.externalProductBlock_add` and
   `ContinuousLinearMap.externalProductBlock_ofReal_smul`, this makes the block a bounded real-linear
-  function of the pair `(A, B)`.
-* `TensorProduct.instCompleteSpaceOfFiniteDimensional`: the tensor product of two
-  finite-dimensional inner product spaces is complete, which discharges the completeness
-  hypotheses on tensor products in the adjoint statements for finite-dimensional factors.
+  function of the pair `(A, B)`, hence smooth over `ℂ`
+  (`ContinuousLinearMap.contDiff_externalProductBlock`).
 
 ## References
 
@@ -64,18 +64,6 @@ public section
 noncomputable section
 
 open scoped TensorProduct InnerProductSpace
-
-namespace TensorProduct
-
-variable {𝕜 E F : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
-  [FiniteDimensional 𝕜 E] [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
-
-/-- The Hilbert tensor product of two finite-dimensional inner product spaces is complete, so
-operators between such tensor products have adjoints. -/
-instance instCompleteSpaceOfFiniteDimensional : CompleteSpace (E ⊗[𝕜] F) :=
-  FiniteDimensional.complete 𝕜 _
-
-end TensorProduct
 
 namespace ContinuousLinearMap
 
@@ -117,42 +105,33 @@ theorem snd_externalProductBlock (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜]
     (externalProductBlock A B w).snd = B.lTensor V₀ w.fst + A.adjoint.rTensor W₁ w.snd :=
   (rfl)
 
-/-- Two elements of an `L²` product agree when their components do. -/
-private theorem withLp_prod_ext {α β : Type*} {x y : WithLp 2 (α × β)} (h₁ : x.fst = y.fst)
-    (h₂ : x.snd = y.snd) : x = y :=
-  WithLp.ofLp_injective 2 (Prod.ext h₁ h₂)
-
 @[simp]
 theorem externalProductBlock_zero_zero :
     externalProductBlock (0 : V₀ →L[𝕜] V₁) (0 : W₀ →L[𝕜] W₁) = 0 := by
   ext w : 1
-  exact withLp_prod_ext (by simp) (by simp)
+  exact WithLp.ofLp_injective 2 <| Prod.ext (by simp) (by simp)
 
 /-- The external product block is additive in the pair `(A, B)`. -/
 theorem externalProductBlock_add (A A' : V₀ →L[𝕜] V₁) (B B' : W₀ →L[𝕜] W₁) :
     externalProductBlock (A + A') (B + B') =
       externalProductBlock A B + externalProductBlock A' B' := by
   ext w : 1
-  refine withLp_prod_ext ?_ ?_
-  · simp only [fst_externalProductBlock, map_add, rTensor_add, lTensor_add, add_apply,
-      WithLp.add_fst]
+  refine WithLp.ofLp_injective 2 <| Prod.ext ?_ ?_
+  · simp only [WithLp.ofLp_fst, fst_externalProductBlock, map_add, rTensor_add, lTensor_add,
+      add_apply, WithLp.add_fst]
     abel
-  · simp only [snd_externalProductBlock, map_add, rTensor_add, lTensor_add, add_apply,
-      WithLp.add_snd]
+  · simp only [WithLp.ofLp_snd, snd_externalProductBlock, map_add, rTensor_add, lTensor_add,
+      add_apply, WithLp.add_snd]
     abel
 
 /-- The external product block is homogeneous in the pair `(A, B)` for real scalars, written in
 `𝕜`. It is not `𝕜`-homogeneous, since the adjoint is conjugate linear. -/
 theorem externalProductBlock_ofReal_smul (r : ℝ) (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁) :
     externalProductBlock ((r : 𝕜) • A) ((r : 𝕜) • B) = (r : 𝕜) • externalProductBlock A B := by
-  have hA : ((r : 𝕜) • A).adjoint = (r : 𝕜) • A.adjoint := by
-    rw [map_smulₛₗ, RCLike.conj_ofReal]
-  have hB : ((r : 𝕜) • B).adjoint = (r : 𝕜) • B.adjoint := by
-    rw [map_smulₛₗ, RCLike.conj_ofReal]
   ext w : 1
-  refine withLp_prod_ext ?_ ?_
-  · simp [hB, smul_sub]
-  · simp [hA, smul_add]
+  refine WithLp.ofLp_injective 2 <| Prod.ext ?_ ?_
+  · simp [adjoint_ofReal_smul, smul_sub]
+  · simp [adjoint_ofReal_smul, smul_add]
 
 /-- The external product block is bounded by `2 (‖A‖ + ‖B‖)`; in particular it depends
 continuously on `(A, B)`. -/
@@ -182,29 +161,21 @@ theorem norm_externalProductBlock_le (A : V₀ →L[𝕜] V₁) (B : W₀ →L[�
   nlinarith [norm_nonneg (externalProductBlock A B w),
     norm_nonneg (externalProductBlock A B w).fst, norm_nonneg (externalProductBlock A B w).snd]
 
-/-- `A ⊗ 1` and `1 ⊗ B` commute. -/
-private theorem rTensor_lTensor_apply_comm {X₀ X₁ Y₀ Y₁ : Type*} [NormedAddCommGroup X₀]
-    [InnerProductSpace 𝕜 X₀] [NormedAddCommGroup X₁] [InnerProductSpace 𝕜 X₁]
-    [NormedAddCommGroup Y₀] [InnerProductSpace 𝕜 Y₀] [NormedAddCommGroup Y₁]
-    [InnerProductSpace 𝕜 Y₁] (f : X₀ →L[𝕜] X₁) (g : Y₀ →L[𝕜] Y₁) (x : X₀ ⊗[𝕜] Y₀) :
-    f.rTensor Y₁ (g.lTensor X₀ x) = g.lTensor X₁ (f.rTensor Y₀ x) := by
-  rw [← comp_apply, rTensor_comp_lTensor, ← comp_apply, lTensor_comp_rTensor]
-
 /-- The cross terms cancel: `externalProductBlock A† (-B) ∘ externalProductBlock A B` is the
 block diagonal operator `(A†A ⊗ 1 + 1 ⊗ B†B) ⊕ (AA† ⊗ 1 + 1 ⊗ BB†)`. -/
-theorem externalProductBlock_adjoint_neg_apply (A : V₀ →L[𝕜] V₁) (B : W₀ →L[𝕜] W₁)
-    (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) :
+theorem externalProductBlock_adjoint_neg_apply_externalProductBlock (A : V₀ →L[𝕜] V₁)
+    (B : W₀ →L[𝕜] W₁) (w : WithLp 2 ((V₀ ⊗[𝕜] W₀) × (V₁ ⊗[𝕜] W₁))) :
     externalProductBlock A.adjoint (-B) (externalProductBlock A B w) = WithLp.toLp 2
       ((A.adjoint ∘L A).rTensor W₀ w.fst + (B.adjoint ∘L B).lTensor V₀ w.fst,
         (A ∘L A.adjoint).rTensor W₁ w.snd + (B ∘L B.adjoint).lTensor V₁ w.snd) := by
-  refine withLp_prod_ext ?_ ?_
-  · simp only [fst_externalProductBlock, snd_externalProductBlock, map_neg, map_sub,
-      map_add, lTensor_neg, neg_apply, rTensor_comp, lTensor_comp, comp_apply, WithLp.toLp_fst,
+  refine WithLp.ofLp_injective 2 <| Prod.ext ?_ ?_
+  · simp only [WithLp.ofLp_fst, fst_externalProductBlock, snd_externalProductBlock, map_neg,
+      map_sub, map_add, lTensor_neg, neg_apply, rTensor_comp, lTensor_comp, comp_apply,
       rTensor_lTensor_apply_comm A.adjoint B.adjoint]
     abel
-  · simp only [fst_externalProductBlock, snd_externalProductBlock, map_sub,
+  · simp only [WithLp.ofLp_snd, fst_externalProductBlock, snd_externalProductBlock, map_sub,
       map_add, lTensor_neg, neg_apply, adjoint_adjoint, rTensor_comp, lTensor_comp, comp_apply,
-      WithLp.toLp_snd, rTensor_lTensor_apply_comm A B]
+      rTensor_lTensor_apply_comm A B]
     abel
 
 section Adjoint
@@ -232,7 +203,7 @@ theorem adjoint_externalProductBlock_apply_externalProductBlock (A : V₀ →L[�
     (externalProductBlock A B).adjoint (externalProductBlock A B w) = WithLp.toLp 2
       ((A.adjoint ∘L A).rTensor W₀ w.fst + (B.adjoint ∘L B).lTensor V₀ w.fst,
         (A ∘L A.adjoint).rTensor W₁ w.snd + (B ∘L B.adjoint).lTensor V₁ w.snd) := by
-  rw [adjoint_externalProductBlock, externalProductBlock_adjoint_neg_apply]
+  rw [adjoint_externalProductBlock, externalProductBlock_adjoint_neg_apply_externalProductBlock]
 
 /-- `externalProductBlock A B ∘ (externalProductBlock A B)†` is block diagonal, with blocks
 `AA† ⊗ 1 + 1 ⊗ B†B` and `A†A ⊗ 1 + 1 ⊗ BB†`. -/
@@ -241,7 +212,7 @@ theorem externalProductBlock_apply_adjoint_externalProductBlock (A : V₀ →L[�
     externalProductBlock A B ((externalProductBlock A B).adjoint w) = WithLp.toLp 2
       ((A ∘L A.adjoint).rTensor W₀ w.fst + (B.adjoint ∘L B).lTensor V₁ w.fst,
         (A.adjoint ∘L A).rTensor W₁ w.snd + (B ∘L B.adjoint).lTensor V₀ w.snd) := by
-  have h := externalProductBlock_adjoint_neg_apply A.adjoint (-B) w
+  have h := externalProductBlock_adjoint_neg_apply_externalProductBlock A.adjoint (-B) w
   simp only [adjoint_adjoint, neg_neg, map_neg, comp_neg, neg_comp, neg_neg] at h
   rw [adjoint_externalProductBlock, h]
 
@@ -255,7 +226,7 @@ theorem adjoint_externalProductBlock_comp_self_of_eq_smul {s t : 𝕜}
     (externalProductBlock A B).adjoint ∘L externalProductBlock A B = (s + t) • 1 := by
   ext w : 1
   rw [comp_apply, adjoint_externalProductBlock_apply_externalProductBlock, hA, hA', hB, hB']
-  exact withLp_prod_ext (by simp [add_smul]) (by simp [add_smul])
+  exact WithLp.ofLp_injective 2 <| Prod.ext (by simp [add_smul]) (by simp [add_smul])
 
 /-- If `A†A = AA† = s` and `B†B = BB† = t` are scalars, then
 `externalProductBlock A B ∘ (externalProductBlock A B)† = s + t`. -/
@@ -265,16 +236,7 @@ theorem externalProductBlock_comp_adjoint_of_eq_smul {s t : 𝕜}
     externalProductBlock A B ∘L (externalProductBlock A B).adjoint = (s + t) • 1 := by
   ext w : 1
   rw [comp_apply, externalProductBlock_apply_adjoint_externalProductBlock, hA, hA', hB, hB']
-  exact withLp_prod_ext (by simp [add_smul]) (by simp [add_smul])
-
-/-- An operator `T` with `T† T = c` for a real scalar `c` multiplies norms squared by `c`. -/
-private theorem norm_apply_sq_of_adjoint_comp_eq_smul {X Y : Type*} [NormedAddCommGroup X]
-    [InnerProductSpace 𝕜 X] [CompleteSpace X] [NormedAddCommGroup Y] [InnerProductSpace 𝕜 Y]
-    [CompleteSpace Y] {T : X →L[𝕜] Y} {c : ℝ} (hT : T.adjoint ∘L T = (c : 𝕜) • 1) (x : X) :
-    ‖T x‖ ^ 2 = c * ‖x‖ ^ 2 := by
-  rw [apply_norm_sq_eq_inner_adjoint_left, hT, smul_apply, one_apply_eq_self, inner_smul_left,
-    RCLike.conj_ofReal, inner_self_eq_norm_sq_to_K, ← RCLike.ofReal_pow, ← RCLike.ofReal_mul,
-    RCLike.ofReal_re]
+  exact WithLp.ofLp_injective 2 <| Prod.ext (by simp [add_smul]) (by simp [add_smul])
 
 /-- If `A†A = AA† = s` and `B†B = BB† = t` for real scalars `s` and `t`, the external product
 block multiplies norms squared by `s + t`. -/
@@ -298,5 +260,31 @@ theorem norm_adjoint_externalProductBlock_apply_sq_of_eq_smul {s t : ℝ}
       RCLike.ofReal_add]) w
 
 end Adjoint
+
+section Complex
+
+variable {V₀ V₁ W₀ W₁ : Type*} [NormedAddCommGroup V₀] [InnerProductSpace ℂ V₀] [CompleteSpace V₀]
+  [NormedAddCommGroup V₁] [InnerProductSpace ℂ V₁] [CompleteSpace V₁] [NormedAddCommGroup W₀]
+  [InnerProductSpace ℂ W₀] [CompleteSpace W₀] [NormedAddCommGroup W₁] [InnerProductSpace ℂ W₁]
+  [CompleteSpace W₁]
+
+/-- The external product block is a bounded real-linear, hence smooth, function of the pair of
+operators. -/
+theorem contDiff_externalProductBlock {n : WithTop ℕ∞} :
+    ContDiff ℝ n fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦ externalProductBlock AB.1 AB.2 :=
+  -- The real module structure on the space of block operators is passed explicitly: instance
+  -- search for it also explores the real module structures of the tensor factors, and times out.
+  IsBoundedLinearMap.contDiff
+    (@IsBoundedLinearMap.mk ℝ _ _ _ _ _ _ _ _
+      (@IsLinearMap.mk ℝ _ _ _ _ _ _ NormedSpace.complexToReal.toModule _
+        (fun _ _ ↦ externalProductBlock_add _ _ _ _)
+        (fun r AB ↦ by
+          rw [Prod.smul_fst, Prod.smul_snd, ← Complex.coe_smul, ← Complex.coe_smul,
+            ← Complex.coe_smul, ← RCLike.ofReal_eq_complex_ofReal]
+          exact externalProductBlock_ofReal_smul r AB.1 AB.2))
+      ⟨4, by norm_num, fun AB ↦ (norm_externalProductBlock_le _ _).trans (by
+        linarith [norm_fst_le AB, norm_snd_le AB])⟩)
+
+end Complex
 
 end ContinuousLinearMap

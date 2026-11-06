@@ -297,20 +297,6 @@ variable {V₀ V₁ W₀ W₁ : Type*} [NormedAddCommGroup V₀] [InnerProductSp
 
 open ContinuousLinearMap
 
-/-- The external product block is a bounded real-linear, hence smooth, function of the pair of
-operators. -/
-private theorem contDiff_externalProductBlock :
-    ContDiff ℝ ∞ fun AB : (V₀ →L[ℂ] V₁) × (W₀ →L[ℂ] W₁) ↦ externalProductBlock AB.1 AB.2 :=
-  -- The real module structure on the space of block operators is passed explicitly: instance
-  -- search for it also explores the real module structures of the tensor factors, and times out.
-  IsBoundedLinearMap.contDiff
-    (@IsBoundedLinearMap.mk ℝ _ _ _ _ _ _ _ _
-      (@IsLinearMap.mk ℝ _ _ _ _ _ _ NormedSpace.complexToReal.toModule _
-        (fun _ _ ↦ externalProductBlock_add _ _ _ _)
-        (fun r AB ↦ externalProductBlock_ofReal_smul r AB.1 AB.2))
-      ⟨4, by norm_num, fun AB ↦ (norm_externalProductBlock_le _ _).trans (by
-        linarith [norm_fst_le AB, norm_snd_le AB])⟩)
-
 /-- The cut-off external product of homogeneous symbols `a` on `X` and `b` on `Y` of the same
 degree: the homogeneous symbol on `X × Y` whose coefficient at `((x, y), (ξ, η))` is the
 external product block
@@ -329,7 +315,11 @@ def externalProduct (χ : ConicCutoff) (a : HomogeneousSymbol X E V₀ V₁ m)
   contDiffOn_coefficient := contDiff_externalProductBlock.comp_contDiffOn
     ((a.conicCutoffFst χ).contDiffOn_coefficient.prodMk (b.conicCutoffSnd χ).contDiffOn_coefficient)
   homogeneous x ξ t ht := by
-    simp only [homogeneous _ _ _ _ ht]
+    rw [homogeneous _ _ _ _ ht, homogeneous _ _ _ _ ht, ← Complex.coe_smul, ← Complex.coe_smul,
+      ← RCLike.ofReal_eq_complex_ofReal]
+    -- The real action on block operators is the restriction of the complex one, so the right side
+    -- `t ^ m • _` is `((t ^ m : ℝ) : ℂ) • _` by definition. `Complex.coe_smul` cannot rewrite it,
+    -- because that action is reached through a different, definitionally equal instance path.
     exact externalProductBlock_ofReal_smul (t ^ m) _ _
 
 @[simp]
@@ -340,20 +330,6 @@ theorem coefficient_externalProduct (χ : ConicCutoff) (a : HomogeneousSymbol X 
         (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) • b.coefficient (y, η)) :=
   (rfl)
 
-/-- If `T* T = s` and `T T* = s` are real scalars, then `(c T)* (c T) = (c T) (c T)* = c² s` for
-real `c`. -/
-private theorem adjoint_comp_smul_eq {Z Z' : Type*} [NormedAddCommGroup Z] [InnerProductSpace ℂ Z]
-    [CompleteSpace Z] [NormedAddCommGroup Z'] [InnerProductSpace ℂ Z'] [CompleteSpace Z']
-    {T : Z →L[ℂ] Z'} {s : ℝ} (hT : T.adjoint ∘L T = (s : ℂ) • 1)
-    (hT' : T ∘L T.adjoint = (s : ℂ) • 1) (c : ℝ) :
-    (c • T).adjoint ∘L (c • T) = ((c ^ 2 * s : ℝ) : ℂ) • 1 ∧
-      (c • T) ∘L (c • T).adjoint = ((c ^ 2 * s : ℝ) : ℂ) • 1 := by
-  have hc : ((c : ℂ) • T).adjoint = (c : ℂ) • T.adjoint := by
-    rw [map_smulₛₗ, Complex.conj_ofReal]
-  simp only [← Complex.coe_smul, hc, ContinuousLinearMap.comp_smul,
-    ContinuousLinearMap.smul_comp, hT, hT', smul_smul]
-  constructor <;> congr 1 <;> push_cast <;> ring
-
 variable [CompleteSpace (V₀ ⊗[ℂ] W₀)] [CompleteSpace (V₁ ⊗[ℂ] W₁)] [CompleteSpace (V₁ ⊗[ℂ] W₀)]
   [CompleteSpace (V₀ ⊗[ℂ] W₁)] {a : HomogeneousSymbol X E V₀ V₁ 1}
   {b : HomogeneousSymbol Y F W₀ W₁ 1}
@@ -362,69 +338,70 @@ variable [CompleteSpace (V₀ ⊗[ℂ] W₀)] [CompleteSpace (V₁ ⊗[ℂ] W₁
 product satisfies `A_χ* A_χ = χ(‖ξ‖² / ρ²)² ‖ξ‖² + χ(‖η‖² / ρ²)² ‖η‖²`, with
 `ρ² = ‖ξ‖² + ‖η‖²`. -/
 theorem adjoint_comp_coefficient_externalProduct (χ : ConicCutoff)
-    (ha : ∀ x ξ, (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (ha' : ∀ x ξ, a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb : ∀ y η, (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb' : ∀ y η, b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (x : X) (y : Y) (ξ : E) (η : F) :
+    (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1) :
     ((a.externalProduct χ b).coefficient ((x, y), (ξ, η))).adjoint ∘L
         (a.externalProduct χ b).coefficient ((x, y), (ξ, η)) =
       ((χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖ξ‖ ^ 2 +
         χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖η‖ ^ 2 : ℝ) : ℂ) • 1 := by
-  have hA := adjoint_comp_smul_eq (ha x ξ) (ha' x ξ) (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  have hB := adjoint_comp_smul_eq (hb y η) (hb' y η) (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  rw [coefficient_externalProduct, adjoint_externalProductBlock_comp_self_of_eq_smul hA.1 hA.2
-    hB.1 hB.2, Complex.ofReal_add]
+  rw [← RCLike.ofReal_eq_complex_ofReal] at ha ha' hb hb'
+  simp only [coefficient_externalProduct, ← Complex.coe_smul, ← RCLike.ofReal_eq_complex_ofReal]
+  rw [adjoint_externalProductBlock_comp_self_of_eq_smul (adjoint_ofReal_smul_comp_ofReal_smul ha _)
+    (ofReal_smul_comp_adjoint_ofReal_smul ha' _) (adjoint_ofReal_smul_comp_ofReal_smul hb _)
+    (ofReal_smul_comp_adjoint_ofReal_smul hb' _), RCLike.ofReal_add]
 
 /-- For factors normalized by `a* a = a a* = ‖ξ‖²` and `b* b = b b* = ‖η‖²`, the cut-off external
 product satisfies `A_χ A_χ* = χ(‖ξ‖² / ρ²)² ‖ξ‖² + χ(‖η‖² / ρ²)² ‖η‖²`, with
 `ρ² = ‖ξ‖² + ‖η‖²`. -/
 theorem coefficient_externalProduct_comp_adjoint (χ : ConicCutoff)
-    (ha : ∀ x ξ, (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (ha' : ∀ x ξ, a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb : ∀ y η, (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb' : ∀ y η, b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (x : X) (y : Y) (ξ : E) (η : F) :
+    (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1) :
     (a.externalProduct χ b).coefficient ((x, y), (ξ, η)) ∘L
         ((a.externalProduct χ b).coefficient ((x, y), (ξ, η))).adjoint =
       ((χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖ξ‖ ^ 2 +
         χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)) ^ 2 * ‖η‖ ^ 2 : ℝ) : ℂ) • 1 := by
-  have hA := adjoint_comp_smul_eq (ha x ξ) (ha' x ξ) (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  have hB := adjoint_comp_smul_eq (hb y η) (hb' y η) (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  rw [coefficient_externalProduct, externalProductBlock_comp_adjoint_of_eq_smul hA.1 hA.2
-    hB.1 hB.2, Complex.ofReal_add]
+  rw [← RCLike.ofReal_eq_complex_ofReal] at ha ha' hb hb'
+  simp only [coefficient_externalProduct, ← Complex.coe_smul, ← RCLike.ofReal_eq_complex_ofReal]
+  rw [externalProductBlock_comp_adjoint_of_eq_smul (adjoint_ofReal_smul_comp_ofReal_smul ha _)
+    (ofReal_smul_comp_adjoint_ofReal_smul ha' _) (adjoint_ofReal_smul_comp_ofReal_smul hb _)
+    (ofReal_smul_comp_adjoint_ofReal_smul hb' _), RCLike.ofReal_add]
 
 /-- Ellipticity of the cut-off external product of normalized factors:
 `(‖ξ‖² + ‖η‖²) ‖w‖² ≤ 2 ‖A_χ w‖²`. -/
 theorem le_two_mul_norm_coefficient_externalProduct_apply_sq (χ : ConicCutoff)
-    (ha : ∀ x ξ, (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (ha' : ∀ x ξ, a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb : ∀ y η, (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb' : ∀ y η, b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (x : X) (y : Y) (ξ : E) (η : F) (w : WithLp 2 ((V₀ ⊗[ℂ] W₀) × (V₁ ⊗[ℂ] W₁))) :
+    (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (w : WithLp 2 ((V₀ ⊗[ℂ] W₀) × (V₁ ⊗[ℂ] W₁))) :
     (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
       2 * ‖(a.externalProduct χ b).coefficient ((x, y), (ξ, η)) w‖ ^ 2 := by
-  have hA := adjoint_comp_smul_eq (ha x ξ) (ha' x ξ) (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  have hB := adjoint_comp_smul_eq (hb y η) (hb' y η) (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  rw [coefficient_externalProduct, norm_externalProductBlock_apply_sq_of_eq_smul hA.1 hA.2 hB.1
-    hB.2, ← mul_assoc]
+  rw [norm_apply_sq_of_adjoint_comp_eq_smul
+    (adjoint_comp_coefficient_externalProduct χ x y ξ η ha ha' hb hb') w, ← mul_assoc]
   gcongr
   exact χ.add_le_two_mul (by positivity) (by positivity)
 
 /-- Ellipticity of the adjoint of the cut-off external product of normalized factors:
 `(‖ξ‖² + ‖η‖²) ‖w‖² ≤ 2 ‖A_χ* w‖²`. -/
 theorem le_two_mul_norm_adjoint_coefficient_externalProduct_apply_sq (χ : ConicCutoff)
-    (ha : ∀ x ξ, (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (ha' : ∀ x ξ, a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb : ∀ y η, (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (hb' : ∀ y η, b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
-    (x : X) (y : Y) (ξ : E) (η : F) (w : WithLp 2 ((V₁ ⊗[ℂ] W₀) × (V₀ ⊗[ℂ] W₁))) :
+    (x : X) (y : Y) (ξ : E) (η : F)
+    (ha : (a.coefficient (x, ξ)).adjoint ∘L a.coefficient (x, ξ) = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (ha' : a.coefficient (x, ξ) ∘L (a.coefficient (x, ξ)).adjoint = ((‖ξ‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb : (b.coefficient (y, η)).adjoint ∘L b.coefficient (y, η) = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (hb' : b.coefficient (y, η) ∘L (b.coefficient (y, η)).adjoint = ((‖η‖ ^ 2 : ℝ) : ℂ) • 1)
+    (w : WithLp 2 ((V₁ ⊗[ℂ] W₀) × (V₀ ⊗[ℂ] W₁))) :
     (‖ξ‖ ^ 2 + ‖η‖ ^ 2) * ‖w‖ ^ 2 ≤
       2 * ‖((a.externalProduct χ b).coefficient ((x, y), (ξ, η))).adjoint w‖ ^ 2 := by
-  have hA := adjoint_comp_smul_eq (ha x ξ) (ha' x ξ) (χ (‖ξ‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  have hB := adjoint_comp_smul_eq (hb y η) (hb' y η) (χ (‖η‖ ^ 2 / (‖ξ‖ ^ 2 + ‖η‖ ^ 2)))
-  rw [coefficient_externalProduct, norm_adjoint_externalProductBlock_apply_sq_of_eq_smul hA.1 hA.2
-    hB.1 hB.2, ← mul_assoc]
+  rw [norm_apply_sq_of_adjoint_comp_eq_smul (by
+    rw [adjoint_adjoint]; exact coefficient_externalProduct_comp_adjoint χ x y ξ η ha ha' hb hb') w,
+    ← mul_assoc]
   gcongr
   exact χ.add_le_two_mul (by positivity) (by positivity)
 
