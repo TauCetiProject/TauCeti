@@ -842,23 +842,6 @@ section PCSeparation
 
 variable {L : Language.{u, v}} {L₁ : Language.{u₁, v₁}} {L₂ : Language.{u₂, v₂}}
 
-/-- A symbol of `L.sum (L₁.sum L₂)` that is the image of a symbol of `L.sum L₁` along `id ⊕ inl`
-and of a symbol of `L.sum L₂` along `id ⊕ inr` is the image of a symbol of `L`. Applied to function
-symbols and to relation symbols, it places the shared symbols of the two expanded languages in `L`.
--/
-private theorem mem_range_inl_of_mem_range_sumMap {A : ℕ → Type*} {B : ℕ → Type*}
-    {C : ℕ → Type*} {s : Σ k, A k ⊕ (B k ⊕ C k)}
-    (h₁ : s ∈ Set.range fun t : Σ k, A k ⊕ B k =>
-      (⟨t.1, Sum.map id Sum.inl t.2⟩ : Σ k, A k ⊕ (B k ⊕ C k)))
-    (h₂ : s ∈ Set.range fun t : Σ k, A k ⊕ C k =>
-      (⟨t.1, Sum.map id Sum.inr t.2⟩ : Σ k, A k ⊕ (B k ⊕ C k))) :
-    s ∈ Set.range fun t : Σ k, A k => (⟨t.1, Sum.inl t.2⟩ : Σ k, A k ⊕ (B k ⊕ C k)) := by
-  obtain ⟨⟨k, a | b⟩, rfl⟩ := h₁
-  · exact ⟨⟨k, a⟩, rfl⟩
-  · obtain ⟨⟨k', a' | c⟩, h⟩ := h₂ <;> obtain ⟨rfl, heq⟩ := Sigma.mk.inj_iff.1 h
-    · exact (Sum.inl_ne_inr (eq_of_heq heq)).elim
-    · exact (Sum.inr_ne_inl (Sum.inr.inj (eq_of_heq heq))).elim
-
 /-- **Entailment form of `PC_{ω₁ω}` separation.** For arbitrary languages `L`, `L₁`, `L₂`, if no
 countable nonempty `L`-structure in `Type w₀` lies in both `LHom.sumInl.PCMem Θ₁` and
 `LHom.sumInl.PCMem Θ₂`, there is a single sentence `θ : L.Sentenceω` whose image in `L.sum L₁` is
@@ -894,10 +877,10 @@ theorem pcSeparation_entails (Θ₁ : (L.sum L₁).Sentenceω) (Θ₂ : (L.sum L
     LHom.relationsIn_onBoundedFormulaInf] at hrel
   obtain ⟨θ, hθ⟩ := LHom.exists_eq_onBoundedFormulaInf_of_subset_range
     (LHom.sumInl : L →ᴸ L.sum (L₁.sum L₂)) θ'
-    (fun _ hs => mem_range_inl_of_mem_range_sumMap (Set.mem_range_of_mem_image _ _ (hfun hs).1)
-      (Set.mem_range_of_mem_image _ _ (hfun hs).2))
-    (fun _ hs => mem_range_inl_of_mem_range_sumMap (Set.mem_range_of_mem_image _ _ (hrel hs).1)
-      (Set.mem_range_of_mem_image _ _ (hrel hs).2))
+    (fun _ hs => LHom.mem_range_sumInl_onFunction_of_mem_range_sumMap
+      (Set.mem_range_of_mem_image _ _ (hfun hs).1) (Set.mem_range_of_mem_image _ _ (hfun hs).2))
+    (fun _ hs => LHom.mem_range_sumInl_onRelation_of_mem_range_sumMap
+      (Set.mem_range_of_mem_image _ _ (hrel hs).1) (Set.mem_range_of_mem_image _ _ (hrel hs).2))
   have hcomp₁ : g₁.onBoundedFormulaInf (LHom.sumInl.onBoundedFormulaInf θ) = θ' := by
     rw [← LHom.comp_onBoundedFormulaInf, LHom.sumMap_comp_inl, LHom.comp_id, hθ]
   have hcomp₂ : g₂.onBoundedFormulaInf (LHom.sumInl.onBoundedFormulaInf θ) = θ' := by
