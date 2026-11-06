@@ -691,18 +691,6 @@ private theorem exists_multilinear_boundary_terms (𝒜 : AInfinityAlgebra R A) 
   exact ⟨D + T₀ + T₁ + T₂, fun a b c ↦ by
     simp only [add_apply, D_apply, T₀_apply, T₁_apply, T₂_apply, differential_apply]⟩
 
-/-- A trilinear map is homogeneous-linear in its first argument. -/
-private theorem map_smul_first {f : MultilinearMap R (fun _ : Fin 3 ↦ A) A} (r : R) (a b c : A) :
-    f ![r • a, b, c] = r • f ![a, b, c] := by
-  convert f.map_update_smul ![a, b, c] 0 r a using 2 <;>
-    congr 1 <;> funext i <;> fin_cases i <;> rfl
-
-/-- A trilinear map is homogeneous-linear in its second argument. -/
-private theorem map_smul_second {f : MultilinearMap R (fun _ : Fin 3 ↦ A) A} (r : R) (a b c : A) :
-    f ![a, r • b, c] = r • f ![a, b, c] := by
-  convert f.map_update_smul ![a, b, c] 1 r b using 2 <;>
-    congr 1 <;> funext i <;> fin_cases i <;> rfl
-
 /-- The arity-three Stasheff identity for arbitrary inputs, with the Koszul signs of the first two
 inputs carried by the degree-one twist.  It expresses the associator of the binary operation as a
 unary boundary, modulo the three terms in which the ternary operation meets a unary boundary. -/
@@ -714,6 +702,10 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
         - 𝒜.m 3 ![𝒜.grading.koszulTwist 1 x, 𝒜.grading.koszulTwist 1 y, 𝒜.m 1 ![z]] := by
   obtain ⟨F, hF⟩ := 𝒜.exists_multilinear_assoc_sub
   obtain ⟨G, hG⟩ := 𝒜.exists_multilinear_boundary_terms
+  have smul_first (f : MultilinearMap R (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
+      f ![r • a, b, c] = r • f ![a, b, c] := f.cons_smul ![b, c] r a
+  have smul_second (f : MultilinearMap R (fun _ : Fin 3 ↦ A) A) (r : R) (a b c : A) :
+      f ![a, r • b, c] = r • f ![a, b, c] := (f.curryLeft a).cons_smul ![c] r b
   -- On homogeneous inputs the two Koszul twists produce exactly the signs of the graded identity.
   have hE : G + F = 0 := by
     apply InternalGrading.multilinearMap_ext (fun _ ↦ 𝒜.grading)
@@ -725,10 +717,9 @@ theorem m_one_m_three (𝒜 : AInfinityAlgebra R A) (x y z : A) :
     simp only [add_apply, hF, hG, zero_apply,
       𝒜.grading.koszulTwist_apply_of_mem (ha 0),
       𝒜.grading.koszulTwist_apply_of_mem (ha 1),
-      map_smul_first, map_smul_second, smul_smul, one_mul]
+      smul_first, smul_second, smul_smul, one_mul]
     rw [← negOnePowCast_eq_intCast (R := R) (d 0),
       ← negOnePowCast_eq_intCast (R := R) (d 1), ← negOnePowCast_add]
-    rw [add_comm (d 1) (d 0)]
     refine Eq.trans ?_ (𝒜.stasheff_arity_three (a 0) (a 1) (a 2) (d 0) (d 1) (ha 0) (ha 1))
     abel
   have h := MultilinearMap.congr_fun hE ![x, y, z]
