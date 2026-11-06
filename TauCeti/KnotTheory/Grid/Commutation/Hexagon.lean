@@ -581,12 +581,12 @@ variable (R : Type*) [CommSemiring R]
 /-- The weight of a hexagon: the product of the variables of the `O`-markings it carries. -/
 noncomputable def hexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  G.squaresMonomial R P.coveredSquares
+  G.OMonomialOfSquares R P.coveredSquares
 
 /-- The weight of a hexagon is the monomial of the squares it covers. -/
-theorem hexagonWeight_eq_squaresMonomial {a s s' : Fin n} {x y : GridState n}
+theorem hexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) :
-    G.hexagonWeight R P = G.squaresMonomial R P.coveredSquares :=
+    G.hexagonWeight R P = G.OMonomialOfSquares R P.coveredSquares :=
   (rfl)
 
 /-- The weight of a hexagon is the squarefree monomial of the `O`-markings it carries. -/
@@ -594,7 +594,7 @@ theorem hexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridHexagonBetween a s s' x y) :
     G.hexagonWeight R P =
       monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 :=
-  G.squaresMonomial_eq_monomial R _
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a hexagon is the product, over the squares it covers, of the variable of the
 square's column at the `O`-marked squares and of `1` elsewhere. -/
@@ -602,7 +602,7 @@ theorem hexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : GridState n
     (P : GridHexagonBetween a s s' x y) :
     G.hexagonWeight R P =
       ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
-  G.squaresMonomial_eq_prod_ite R _
+  G.OMonomialOfSquares_eq_prod_ite R _
 
 /-- The weight of a hexagon of a validated column commutation times the variable of `C.column` is
 the weight of its underlying rectangle. -/
@@ -618,13 +618,13 @@ theorem X_mul_hexagonWeight {C : ColumnCommutationData G} {x y : GridState n}
 `O`-markings it carries. -/
 noncomputable def initialHexagonWeight {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) : MvPolynomial (Fin n) R :=
-  G.squaresMonomial R P.coveredSquares
+  G.OMonomialOfSquares R P.coveredSquares
 
 /-- The weight of a hexagon turning on its initial side is the monomial of the squares it
 covers. -/
-theorem initialHexagonWeight_eq_squaresMonomial {a s s' : Fin n} {x y : GridState n}
+theorem initialHexagonWeight_eq_OMonomialOfSquares {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) :
-    G.initialHexagonWeight R P = G.squaresMonomial R P.coveredSquares :=
+    G.initialHexagonWeight R P = G.OMonomialOfSquares R P.coveredSquares :=
   (rfl)
 
 /-- The weight of a hexagon turning on its initial side is the squarefree monomial of the
@@ -633,7 +633,7 @@ theorem initialHexagonWeight_eq_monomial {a s s' : Fin n} {x y : GridState n}
     (P : GridInitialHexagonBetween a s s' x y) :
     G.initialHexagonWeight R P =
       monomial (∑ c ∈ G.OColumnsOfSquares P.coveredSquares, Finsupp.single c 1) 1 :=
-  G.squaresMonomial_eq_monomial R _
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- The weight of a hexagon turning on its initial side is the product, over the squares it
 covers, of the variable of the square's column at the `O`-marked squares and of `1` elsewhere. -/
@@ -641,7 +641,7 @@ theorem initialHexagonWeight_eq_prod_coveredSquares {a s s' : Fin n} {x y : Grid
     (P : GridInitialHexagonBetween a s s' x y) :
     G.initialHexagonWeight R P =
       ∏ p ∈ P.coveredSquares, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
-  G.squaresMonomial_eq_prod_ite R _
+  G.OMonomialOfSquares_eq_prod_ite R _
 
 /-- The weight of a hexagon turning on its initial side times the variable of the column after
 `C.column` is the weight of its underlying rectangle. -/

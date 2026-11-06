@@ -56,7 +56,7 @@ assignment, which `SignAssignment/Differential.lean` does.
 ## Main definitions
 
 * `TauCeti.GridDiagram.OColumns`: the columns whose `O`-marking a rectangle covers.
-* `TauCeti.GridDiagram.squaresMonomial`: the squarefree monomial `∏ V_c` of the `O`-markings in a
+* `TauCeti.GridDiagram.OMonomialOfSquares`: the squarefree monomial `∏ V_c` of the `O`-markings in a
   set of squares; the rectangle, hexagon and annulus weights are its values.
 * `TauCeti.GridDiagram.OMonomial`: the monomial `V^{O(r)}` weighting a rectangle.
 * `TauCeti.GridDiagram.unblockedRectangles`: the empty rectangles carrying no `X`-marking.
@@ -76,11 +76,11 @@ assignment, which `SignAssignment/Differential.lean` does.
   `O`-markings among the covered squares.
 * `TauCeti.GridDiagram.prod_OColumnsOfSquares_union_inter`: the `O`-markings two sets of squares
   carry, counted with multiplicity, depend only on their union and their intersection.
-* `TauCeti.GridDiagram.squaresMonomial_union_mul_inter`: the monomials of a union and an
+* `TauCeti.GridDiagram.OMonomialOfSquares_union_mul_inter`: the monomials of a union and an
   intersection of two sets of squares multiply to the product of the two monomials.
-* `TauCeti.GridDiagram.squaresMonomial_ne_zero`, `TauCeti.GridDiagram.totalDegree_squaresMonomial`:
-  the monomial of a set of squares is nonzero, of degree the number of `O`-marked columns the
-  squares meet.
+* `TauCeti.GridDiagram.OMonomialOfSquares_ne_zero`,
+  `TauCeti.GridDiagram.totalDegree_OMonomialOfSquares`: the monomial of a set of squares is
+  nonzero, of degree the number of `O`-markings lying in the squares.
 * `TauCeti.GridDiagram.totalDegree_OMonomial`: the weight of a rectangle is a squarefree monomial
   whose degree is the number of `O`-markings the rectangle covers.
 * `TauCeti.GridDiagram.OMonomial_eq_prod_coveredSquares`: the weight of a rectangle as a product
@@ -540,48 +540,48 @@ squares.
 An embedded domain (a rectangle, a hexagon, an annulus) covers each marked square at most once, so
 every exponent of its Heegaard Floer weight `V₀^{O₀(D)} ⋯ V_{n-1}^{O_{n-1}(D)}` is `0` or `1`, and
 the weight is this monomial of the squares the domain covers. -/
-noncomputable def squaresMonomial (S : Finset (Fin n × Fin n)) : MvPolynomial (Fin n) R :=
+noncomputable def OMonomialOfSquares (S : Finset (Fin n × Fin n)) : MvPolynomial (Fin n) R :=
   ∏ c ∈ G.OColumnsOfSquares S, MvPolynomial.X c
 
 /-- The monomial of a set of squares is the product of the variables of its `O`-columns. -/
-theorem squaresMonomial_def (S : Finset (Fin n × Fin n)) :
-    G.squaresMonomial R S = ∏ c ∈ G.OColumnsOfSquares S, MvPolynomial.X c :=
+theorem OMonomialOfSquares_def (S : Finset (Fin n × Fin n)) :
+    G.OMonomialOfSquares R S = ∏ c ∈ G.OColumnsOfSquares S, MvPolynomial.X c :=
   (rfl)
 
 /-- The monomial of a set of squares, written with an explicit exponent vector. -/
-theorem squaresMonomial_eq_monomial (S : Finset (Fin n × Fin n)) :
-    G.squaresMonomial R S = monomial (∑ c ∈ G.OColumnsOfSquares S, Finsupp.single c 1) 1 := by
-  rw [squaresMonomial, monomial_sum_one]
+theorem OMonomialOfSquares_eq_monomial (S : Finset (Fin n × Fin n)) :
+    G.OMonomialOfSquares R S = monomial (∑ c ∈ G.OColumnsOfSquares S, Finsupp.single c 1) 1 := by
+  rw [OMonomialOfSquares, monomial_sum_one]
   simp only [← X_pow_eq_monomial, pow_one]
 
 /-- The monomial of a set of squares is the product, over the squares, of the variable of the
 square's column at the `O`-marked squares and of `1` elsewhere. -/
-theorem squaresMonomial_eq_prod_ite (S : Finset (Fin n × Fin n)) :
-    G.squaresMonomial R S = ∏ p ∈ S, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
+theorem OMonomialOfSquares_eq_prod_ite (S : Finset (Fin n × Fin n)) :
+    G.OMonomialOfSquares R S = ∏ p ∈ S, if p ∈ G.OSet then MvPolynomial.X p.1 else 1 :=
   (G.prod_ite_OSet_eq_prod_OColumnsOfSquares MvPolynomial.X S).symm
 
 /-- The monomial of a set of squares carrying no `O`-marking is `1`. -/
-theorem squaresMonomial_eq_one_of_disjoint {S : Finset (Fin n × Fin n)} (h : Disjoint S G.OSet) :
-    G.squaresMonomial R S = 1 := by
-  rw [squaresMonomial_eq_prod_ite]
+theorem OMonomialOfSquares_eq_one_of_disjoint {S : Finset (Fin n × Fin n)} (h : Disjoint S G.OSet) :
+    G.OMonomialOfSquares R S = 1 := by
+  rw [OMonomialOfSquares_eq_prod_ite]
   exact Finset.prod_eq_one fun p hp => ite_eq_right (Finset.disjoint_left.mp h hp)
 
 /-- The monomial of the empty set of squares is `1`. -/
 @[simp]
-theorem squaresMonomial_empty : G.squaresMonomial R ∅ = 1 :=
-  G.squaresMonomial_eq_one_of_disjoint R (Finset.disjoint_empty_left _)
+theorem OMonomialOfSquares_empty : G.OMonomialOfSquares R ∅ = 1 :=
+  G.OMonomialOfSquares_eq_one_of_disjoint R (Finset.disjoint_empty_left _)
 
 /-- The monomial of a set of squares is never zero. -/
-theorem squaresMonomial_ne_zero [Nontrivial R] (S : Finset (Fin n × Fin n)) :
-    G.squaresMonomial R S ≠ 0 := by
-  rw [squaresMonomial_eq_monomial]
+theorem OMonomialOfSquares_ne_zero [Nontrivial R] (S : Finset (Fin n × Fin n)) :
+    G.OMonomialOfSquares R S ≠ 0 := by
+  rw [OMonomialOfSquares_eq_monomial]
   simp
 
-/-- The monomial of a set of squares has total degree the number of `O`-marked columns the
-squares meet. -/
-theorem totalDegree_squaresMonomial [Nontrivial R] (S : Finset (Fin n × Fin n)) :
-    (G.squaresMonomial R S).totalDegree = (G.OColumnsOfSquares S).card := by
-  rw [squaresMonomial_eq_monomial, totalDegree_monomial _ (one_ne_zero (α := R)),
+/-- The monomial of a set of squares has total degree the number of `O`-markings lying in
+the squares (the columns whose `O`-square belongs to the set). -/
+theorem totalDegree_OMonomialOfSquares [Nontrivial R] (S : Finset (Fin n × Fin n)) :
+    (G.OMonomialOfSquares R S).totalDegree = (G.OColumnsOfSquares S).card := by
+  rw [OMonomialOfSquares_eq_monomial, totalDegree_monomial _ (one_ne_zero (α := R)),
     Finsupp.sum_fintype _ _ fun _ => rfl]
   simp only [Finsupp.finsetSum_apply]
   rw [Finset.sum_comm]
@@ -589,25 +589,25 @@ theorem totalDegree_squaresMonomial [Nontrivial R] (S : Finset (Fin n × Fin n))
 
 /-- The monomials of the union and of the intersection of two sets of squares multiply to the
 product of their monomials. -/
-theorem squaresMonomial_union_mul_inter (A B : Finset (Fin n × Fin n)) :
-    G.squaresMonomial R (A ∪ B) * G.squaresMonomial R (A ∩ B) =
-      G.squaresMonomial R A * G.squaresMonomial R B :=
+theorem OMonomialOfSquares_union_mul_inter (A B : Finset (Fin n × Fin n)) :
+    G.OMonomialOfSquares R (A ∪ B) * G.OMonomialOfSquares R (A ∩ B) =
+      G.OMonomialOfSquares R A * G.OMonomialOfSquares R B :=
   G.prod_OColumnsOfSquares_union_inter MvPolynomial.X A B
 
 /-- The monomial of a union of two disjoint sets of squares is the product of their monomials. -/
-theorem squaresMonomial_union_of_disjoint {A B : Finset (Fin n × Fin n)} (h : Disjoint A B) :
-    G.squaresMonomial R (A ∪ B) = G.squaresMonomial R A * G.squaresMonomial R B := by
-  simpa [Finset.disjoint_iff_inter_eq_empty.mp h] using G.squaresMonomial_union_mul_inter R A B
+theorem OMonomialOfSquares_union_of_disjoint {A B : Finset (Fin n × Fin n)} (h : Disjoint A B) :
+    G.OMonomialOfSquares R (A ∪ B) = G.OMonomialOfSquares R A * G.OMonomialOfSquares R B := by
+  simpa [Finset.disjoint_iff_inter_eq_empty.mp h] using G.OMonomialOfSquares_union_mul_inter R A B
 
 /-- The weight of a toroidal rectangle in the unblocked differential: the squarefree monomial
-`∏ V_c` over the columns whose `O`-marking the rectangle covers, `GridDiagram.squaresMonomial` of
+`∏ V_c` over the columns whose `O`-marking the rectangle covers, `GridDiagram.OMonomialOfSquares` of
 the squares it covers. -/
 noncomputable def OMonomial (r : GridRectangle n) : MvPolynomial (Fin n) R :=
-  G.squaresMonomial R r.coveredSquares
+  G.OMonomialOfSquares R r.coveredSquares
 
 /-- The weight of a rectangle is the monomial of the squares it covers. -/
-theorem OMonomial_eq_squaresMonomial (r : GridRectangle n) :
-    G.OMonomial R r = G.squaresMonomial R r.coveredSquares :=
+theorem OMonomial_eq_OMonomialOfSquares (r : GridRectangle n) :
+    G.OMonomial R r = G.OMonomialOfSquares R r.coveredSquares :=
   (rfl)
 
 /-- The rectangle monomial of a column-swapped diagram renames the variables of the original
@@ -617,7 +617,7 @@ theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) 
     (h : a ∈ r.coveredColumns ↔ b ∈ r.coveredColumns) :
     (G.swapColumns a b).OMonomial R r =
       MvPolynomial.rename (Equiv.swap a b) (G.OMonomial R r) := by
-  rw [OMonomial, OMonomial, squaresMonomial_def, squaresMonomial_def, ← OColumns, ← OColumns,
+  rw [OMonomial, OMonomial, OMonomialOfSquares_def, OMonomialOfSquares_def, ← OColumns, ← OColumns,
     G.OColumns_swapColumns_eq_image_of_coveredColumns r h, map_prod]
   simp only [MvPolynomial.rename_X, Finset.prod_image (Equiv.swap a b).injective.injOn]
 
@@ -625,12 +625,12 @@ theorem OMonomial_swapColumns_eq_rename_of_coveredColumns (r : GridRectangle n) 
 theorem OMonomial_eq_one_of_disjoint {r : GridRectangle n}
     (h : Disjoint r.coveredSquares G.OSet) :
     G.OMonomial R r = 1 :=
-  G.squaresMonomial_eq_one_of_disjoint R h
+  G.OMonomialOfSquares_eq_one_of_disjoint R h
 
 /-- The weight of a rectangle, written as a monomial with an explicit exponent vector. -/
 theorem OMonomial_eq_monomial (r : GridRectangle n) :
     G.OMonomial R r = monomial (∑ c ∈ G.OColumns r, Finsupp.single c 1) (1 : R) :=
-  G.squaresMonomial_eq_monomial R _
+  G.OMonomialOfSquares_eq_monomial R _
 
 /-- Every monomial of a sum of rectangle weights is the weight of one of the summed rectangles. -/
 theorem exists_mem_of_mem_support_sum_OMonomial {x y : GridState n}
@@ -645,7 +645,7 @@ theorem exists_mem_of_mem_support_sum_OMonomial {x y : GridState n}
 
 /-- The weight of a rectangle is never zero. -/
 theorem OMonomial_ne_zero [Nontrivial R] (r : GridRectangle n) : G.OMonomial R r ≠ 0 :=
-  G.squaresMonomial_ne_zero R _
+  G.OMonomialOfSquares_ne_zero R _
 
 /-- The weight of a rectangle is the product, over the squares it covers, of the variable of the
 square's column at the `O`-marked squares and of `1` elsewhere.
@@ -657,7 +657,7 @@ theorem OMonomial_eq_prod_coveredSquares (r : GridRectangle n) :
     G.OMonomial R r =
       ∏ p ∈ r.coveredSquares,
         if p ∈ G.OSet then MvPolynomial.X p.1 else (1 : MvPolynomial (Fin n) R) :=
-  G.squaresMonomial_eq_prod_ite R _
+  G.OMonomialOfSquares_eq_prod_ite R _
 
 /-- The weight of a rectangle has total degree the number of `O`-markings the rectangle covers.
 
@@ -666,7 +666,7 @@ weight shifts the two gradings of the target generator by `-2` and `-1` times th
 covered `O`-markings. -/
 theorem totalDegree_OMonomial [Nontrivial R] (r : GridRectangle n) :
     (G.OMonomial R r).totalDegree = (G.OColumns r).card :=
-  G.totalDegree_squaresMonomial R _
+  G.totalDegree_OMonomialOfSquares R _
 
 /-! ### The rectangles the unblocked differential counts -/
 
