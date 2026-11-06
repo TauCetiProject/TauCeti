@@ -12,9 +12,9 @@ public import Mathlib.Algebra.Module.ULift
 public import Mathlib.Topology.Sheaves.Abelian
 import Mathlib.Topology.Sheaves.LocallySurjective
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
-public import Mathlib.Algebra.Category.ModuleCat.FilteredColimits
+public import TauCeti.Algebra.Category.ModuleCat.FilteredColimits
 import TauCeti.Geometry.Manifold.ChartedSpace
-import TauCeti.AlgebraicGeometry.WeilDivisor.Order
+public import TauCeti.AlgebraicGeometry.WeilDivisor.Order
 
 /-!
 # Point twists of divisor sheaves
@@ -86,6 +86,7 @@ theorem pointTwistCoefficient_eq_zero_iff (f : divisorSections (D + WeilDivisor.
       toChartGerm (D + WeilDivisor.ofPoint x) U ⟨x, hx⟩ f ∈
         meromorphicGerms.orderGE (chartAt ℂ x x) (-D x) := by
   classical
+  -- Applying the composite linear map exposes the coefficient of the coordinate germ.
   change meromorphicGerms.coeff _ (-D x - 1) _ = 0 ↔ _
   rw [meromorphicGerms.coeff_eq_zero_iff]
   simp only [LinearMap.codRestrict_apply, sub_add_cancel]
@@ -135,6 +136,7 @@ private theorem sectionPointTwistCoefficient_restrict (D : WeilDivisor X) (x : X
   apply ModuleCat.hom_ext
   apply LinearMap.ext
   intro f
+  -- The module morphism is the lifted scalar coefficient after the section equivalence.
   change ULift.up (divisorSections.pointTwistCoefficient D V ⟨x, hx⟩
     (divisorSheafSectionsEquiv _ V ((divisorSheaf _).obj.map h.op f))) =
       ULift.up (divisorSections.pointTwistCoefficient D U ⟨x, h.le hx⟩
@@ -170,6 +172,17 @@ private theorem germ_pointTwistCoefficientStalk (D : WeilDivisor X) (x : X) {U :
   colimit.ι_desc _ _
 
 
+/-- The stalk coefficient on a section germ is the lifted divisor coefficient. -/
+@[simp]
+theorem pointTwistCoefficientStalk_germ (D : WeilDivisor X) (x : X) {U : Opens X}
+    (hx : x ∈ U) (f : (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.obj (op U)) :
+    pointTwistCoefficientStalk D x
+        (TopCat.Presheaf.germ (divisorSheaf (D + WeilDivisor.ofPoint x)).obj U x hx f) =
+      ULift.up (divisorSections.pointTwistCoefficient D U ⟨x, hx⟩
+        (divisorSheafSectionsEquiv _ U f)) := by
+  exact ConcreteCategory.congr_hom (germ_pointTwistCoefficientStalk D x hx) f
+
+
 /-- The coefficient morphism from the actual point-twisted divisor sheaf to the skyscraper
 sheaf at the twist point. -/
 def pointTwistMap (D : WeilDivisor X) (x : X) [∀ U : Opens X, Decidable (x ∈ U)] :
@@ -183,6 +196,7 @@ private theorem pointTwistMap_app_of_mem (D : WeilDivisor X) (x : X)
     (pointTwistMap D x).hom.app (op U) ≫ eqToHom (ite_eq_left hx) =
       sectionPointTwistCoefficient D x U hx := by
   erw [pointTwistMap, Adjunction.homEquiv_unit]
+  -- The hom-equivalence unit is the presheaf unit followed by the skyscraper map.
   change (((stalkSkyscraperSheafAdjunction
     (X := TopCat.of X) (C := ModuleCat.{u} ℂ) x).unit.app
       (divisorSheaf (D + WeilDivisor.ofPoint x))).hom.app (op U) ≫
@@ -200,10 +214,24 @@ private theorem pointTwistMap_app_of_mem (D : WeilDivisor X) (x : X)
       TopCat.Presheaf.stalk (divisorSheaf (D + WeilDivisor.ofPoint x)).obj x := ite_eq_left hx
   let q : (skyscraperPresheaf (X := TopCat.of X) x
       (ModuleCat.of ℂ (ULift.{u} ℂ))).obj (op U) = ModuleCat.of ℂ (ULift.{u} ℂ) := ite_eq_left hx
+  -- The local abbreviations isolate the transports between the two conditional fibres.
   change ((G ≫ eqToHom p.symm) ≫ (eqToHom p ≫ C ≫ eqToHom q.symm)) ≫ eqToHom q = G ≫ C
   simp only [Category.assoc, eqToHom_trans_assoc, eqToHom_trans, eqToHom_refl,
     Category.id_comp, Category.comp_id]
 
+
+
+/-- Coefficient extraction on a section containing the twist point is the lifted scalar
+coefficient, after identifying the nonzero skyscraper fibre. -/
+theorem pointTwistMap_app_apply_of_mem (D : WeilDivisor X) (x : X)
+    [∀ U : Opens X, Decidable (x ∈ U)] {U : Opens X} (hx : x ∈ U)
+    (f : (divisorSheaf (D + WeilDivisor.ofPoint x)).obj.obj (op U)) :
+    (eqToHom (ite_eq_left hx) :
+      (skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift.{u} ℂ))).obj.obj (op U) ⟶
+        ModuleCat.of ℂ (ULift.{u} ℂ)) ((pointTwistMap D x).hom.app (op U) f) =
+      ULift.up (divisorSections.pointTwistCoefficient D U ⟨x, hx⟩
+        (divisorSheafSectionsEquiv _ U f)) := by
+  exact ConcreteCategory.congr_hom (pointTwistMap_app_of_mem D x hx) f
 
 
 /-- The divisor inclusion followed by the new-coefficient morphism is zero. -/
@@ -223,13 +251,14 @@ private theorem divisorSheafMapOfLE_comp_pointTwistMap (D : WeilDivisor X) (x : 
       apply ModuleCat.hom_ext
       apply LinearMap.ext
       intro f
+      -- Unfolding the local section coefficient exposes its lifted scalar formula.
       change ULift.up (divisorSections.pointTwistCoefficient D (unop U) ⟨x, hx⟩
         (divisorSheafSectionsEquiv _ (unop U)
           ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U f))) = 0
       rw [divisorSections.pointTwistCoefficient_mapOfLE]
       rfl
     have hz : (0 : divisorSheaf D ⟶ skyscraperSheaf (X := TopCat.of X) x
-        (ModuleCat.of ℂ (ULift.{u} ℂ))).hom.app U = 0 := rfl
+        (ModuleCat.of ℂ (ULift.{u} ℂ))).hom.app U = 0 := by rfl
     calc
       (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x) ≫ pointTwistMap D x).hom.app U ≫ e =
           ((divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom.app U ≫
@@ -285,6 +314,7 @@ private theorem exists_local_divisorLift (D : WeilDivisor X) (x : X) (U : Opens 
   funext z
   rw [divisorSheafMapOfLE_app, divisorSheafSectionsEquiv_map]
   simp only [LinearEquiv.apply_symm_apply]
+  -- Divisor inclusion is defined by normalization with this indicator on the open carrier.
   change {z : V | A z ≤ 0}.indicator (g ∘ Subtype.val) z =
     (divisorSheafSectionsEquiv A U f).1 ⟨z.1, hVU z.2⟩
   calc
@@ -297,11 +327,33 @@ private theorem exists_local_divisorLift (D : WeilDivisor X) (x : X) (U : Opens 
 
 
 /-- The old and point-twisted divisor sheaves, followed by coefficient extraction. -/
-@[expose] def pointTwistSequence (D : WeilDivisor X) (x : X) [∀ U : Opens X, Decidable (x ∈ U)] :
+def pointTwistSequence (D : WeilDivisor X) (x : X) [∀ U : Opens X, Decidable (x ∈ U)] :
     ShortComplex (TopCat.Sheaf (ModuleCat.{u} ℂ) (TopCat.of X)) :=
   ShortComplex.mk (divisorSheafMapOfLE (D := D) (E := D + WeilDivisor.ofPoint x)
     (by exact WeilDivisor.le_add_ofPoint D x)) (pointTwistMap D x)
     (by exact divisorSheafMapOfLE_comp_pointTwistMap D x)
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The first object of the point-twist sequence is the original divisor sheaf. -/
+@[simp]
+theorem pointTwistSequence_X₁ (D : WeilDivisor X) (x : X)
+    [∀ U : Opens X, Decidable (x ∈ U)] :
+    (pointTwistSequence D x).X₁ = divisorSheaf D := by rfl
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The middle object is the point-twisted divisor sheaf. -/
+@[simp]
+theorem pointTwistSequence_X₂ (D : WeilDivisor X) (x : X)
+    [∀ U : Opens X, Decidable (x ∈ U)] :
+    (pointTwistSequence D x).X₂ = divisorSheaf (D + WeilDivisor.ofPoint x) := by rfl
+
+omit [IsManifold 𝓘(ℂ) 1 X] in
+/-- The final object is the coefficient skyscraper sheaf. -/
+@[simp]
+theorem pointTwistSequence_X₃ (D : WeilDivisor X) (x : X)
+    [∀ U : Opens X, Decidable (x ∈ U)] :
+    (pointTwistSequence D x).X₃ =
+      skyscraperSheaf (X := TopCat.of X) x (ModuleCat.of ℂ (ULift.{u} ℂ)) := by rfl
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- A section annihilated by the new-coefficient morphism satisfies the old order bound at
@@ -329,22 +381,6 @@ private theorem old_order_bound_of_pointTwistMap_eq_zero (D : WeilDivisor X) (x 
     simpa only [Finsupp.add_apply, hp, add_zero] using ho
 
 
--- The native colimit cocone is universe-polymorphic, whereas its exported preservation
--- instance specializes the module universe to the ring universe. Use that same cocone for
--- complex vector spaces in the universe of the underlying surface.
-private instance : PreservesFilteredColimits (CategoryTheory.forget (ModuleCat.{u} ℂ)) where
-  preserves_filtered_colimits J _ _ := by
-    let : PreservesColimitsOfShape J
-        (CategoryTheory.forget₂ (ModuleCat.{u} ℂ) AddCommGrpCat.{u}) :=
-      { preservesColimit := fun {F} ↦
-          preservesColimit_of_preserves_colimit_cocone
-            (ModuleCat.FilteredColimits.colimitCoconeIsColimit F)
-            (AddCommGrpCat.FilteredColimits.colimitCoconeIsColimit
-              (F ⋙ CategoryTheory.forget₂ (ModuleCat.{u} ℂ) AddCommGrpCat.{u})) }
-    exact Limits.comp_preservesColimitsOfShape
-      (CategoryTheory.forget₂ (ModuleCat.{u} ℂ) AddCommGrpCat.{u})
-      (CategoryTheory.forget AddCommGrpCat.{u})
-
 /-- **Exactness at the middle of the point-twist sequence.** A zero new coefficient is exactly
 the local lifting condition through the old divisor sheaf. -/
 theorem pointTwistSequence_exact (D : WeilDivisor X) (x : X)
@@ -352,6 +388,7 @@ theorem pointTwistSequence_exact (D : WeilDivisor X) (x : X)
   apply (TopCat.Sheaf.exact_iff_stalkFunctor_map_exact _).2
   intro y
   rw [ShortComplex.moduleCat_exact_iff]
+  -- The short-complex objects and arrows are exactly the displayed divisor stalks and maps.
   change ∀ s, (TopCat.Presheaf.stalkFunctor _ y).map (pointTwistMap D x).hom s = 0 →
     ∃ t, (TopCat.Presheaf.stalkFunctor _ y).map
       (divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x)).hom t = s
@@ -375,41 +412,6 @@ theorem pointTwistSequence_exact (D : WeilDivisor X) (x : X)
   refine ⟨TopCat.Presheaf.germ (divisorSheaf D).obj W y hyW t, ?_⟩
   rw [TopCat.Presheaf.stalkFunctor_map_germ_apply, ht,
     TopCat.Presheaf.germ_res_apply, TopCat.Presheaf.germ_res_apply]
-
-
-/-- Every coordinate meromorphic germ with the prescribed order is represented by an actual
-local section of the divisor sheaf. -/
-theorem exists_section_toChartGerm_eq (D : WeilDivisor X) (x : X)
-    (φ : meromorphicGerms ℂ (chartAt ℂ x x))
-    (hφ : φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-D x)) :
-    ∃ (U : Opens X) (hx : x ∈ U) (f : divisorSections D U),
-      divisorSections.toChartGerm D U ⟨x, hx⟩ f = φ := by
-  obtain ⟨f, hf, rfl⟩ := meromorphicGerms.exists_mk φ
-  let F : X → ℂ := f ∘ chartAt ℂ x
-  have hchart : F ∘ (chartAt ℂ x).symm =ᶠ[𝓝[≠] (chartAt ℂ x x)] f := by
-    filter_upwards [nhdsWithin_le_nhds ((chartAt ℂ x).open_target.mem_nhds
-      ((chartAt ℂ x).map_source (mem_chart_source ℂ x)))] with z hz
-    simp only [F, Function.comp_apply, (chartAt ℂ x).right_inv hz]
-  have hF : MeromorphicAt F x := (meromorphicAt_def _ _).2 (hf.congr hchart.symm)
-  have hord : ((-D x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt F x := by
-    rw [meromorphicOrderAt_def, _root_.meromorphicOrderAt_congr hchart]
-    simpa only [meromorphicGerms.mem_orderGE, meromorphicGerms.order_mk] using hφ
-  obtain ⟨g, hg, hFg⟩ := exists_isDivisorSectionAt hF hord
-  obtain ⟨v, hv, hvo, hxv⟩ := eventually_nhds_iff.1 hg.eventually
-  let U : Opens X := ⟨v, hvo⟩
-  let s : divisorSections D U :=
-    ⟨g ∘ Subtype.val, comp_val_mem_divisorSections fun z hz ↦ hv z hz⟩
-  refine ⟨U, hxv, s, ?_⟩
-  apply Subtype.ext
-  refine (divisorSections.coe_toChartGerm s ⟨x, hxv⟩).trans ?_
-  rw [meromorphicGerms.coe_mk]
-  apply Germ.coe_eq.2
-  have he : Subtype.val.extend s.1 (0 : X → ℂ) =ᶠ[𝓝 x] g := by
-    filter_upwards [U.isOpen.mem_nhds hxv] with y hy
-    exact Subtype.val_injective.extend_apply (g ∘ Subtype.val) (0 : X → ℂ) (⟨y, hy⟩ : U)
-  exact ((he.filter_mono nhdsWithin_le_nhds).comp_tendsto
-    (tendsto_chartAt_symm_nhdsNE x)).trans
-      ((hFg.symm.comp_tendsto (tendsto_chartAt_symm_nhdsNE x)).trans hchart)
 
 
 /-- Every scalar coefficient lifts to a germ of the point-twisted divisor sheaf. The lift is
@@ -438,7 +440,9 @@ theorem pointTwistCoefficientStalk_surjective (D : WeilDivisor X) (x : X) :
   refine ⟨TopCat.Presheaf.germ (divisorSheaf (D + WeilDivisor.ofPoint x)).obj U x hx sf, ?_⟩
   have he := ConcreteCategory.congr_hom (germ_pointTwistCoefficientStalk D x hx) sf
   rw [ConcreteCategory.comp_apply] at he
+  -- The representing section is obtained by the inverse section equivalence.
   exact he.trans (show sectionPointTwistCoefficient D x U hx sf = c from by
+    -- The section coefficient reduces to the lifted linear-map composite.
     change ULift.up (divisorSections.pointTwistCoefficient D U ⟨x, hx⟩
       (divisorSheafSectionsEquiv _ U sf)) = c
     rw [LinearEquiv.apply_symm_apply, hc])
@@ -493,17 +497,21 @@ theorem pointTwistSequence_shortExact (D : WeilDivisor X) (x : X)
 
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
-/-- The first map of the point-twist sequence is the native divisor inclusion, for any proof
-of the evident divisor inequality. -/
+/-- After identifying its source and target, the first map is the native divisor inclusion. -/
+@[simp]
 theorem pointTwistSequence_f (D : WeilDivisor X) (x : X)
-    [∀ U : Opens X, Decidable (x ∈ U)] (h : D ≤ D + WeilDivisor.ofPoint x) :
-    (pointTwistSequence D x).f = divisorSheafMapOfLE h := (rfl)
+    [∀ U : Opens X, Decidable (x ∈ U)] :
+    eqToHom (pointTwistSequence_X₁ D x).symm ≫ (pointTwistSequence D x).f ≫
+      eqToHom (pointTwistSequence_X₂ D x) =
+        divisorSheafMapOfLE (WeilDivisor.le_add_ofPoint D x) := by rfl
 
 omit [IsManifold 𝓘(ℂ) 1 X] in
 /-- The second map of the point-twist sequence extracts the new coefficient. -/
+@[simp]
 theorem pointTwistSequence_g (D : WeilDivisor X) (x : X)
     [∀ U : Opens X, Decidable (x ∈ U)] :
-    (pointTwistSequence D x).g = pointTwistMap D x := (rfl)
+    eqToHom (pointTwistSequence_X₂ D x).symm ≫ (pointTwistSequence D x).g ≫
+      eqToHom (pointTwistSequence_X₃ D x) = pointTwistMap D x := by rfl
 
 end LocalLifting
 

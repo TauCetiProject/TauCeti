@@ -96,6 +96,7 @@ theorem exists_isDivisorSectionAt (hf : MeromorphicAt f x)
       apply hg.congr
       filter_upwards [(chartAt ℂ x).open_target.mem_nhds
         ((chartAt ℂ x).map_source (mem_chart_source ℂ x))] with z hz
+      -- Composition with the chart inverse exposes the two scalar function values.
       change g z = g (chartAt ℂ x ((chartAt ℂ x).symm z))
       rw [(chartAt ℂ x).right_inv hz]
     refine ⟨g ∘ chartAt ℂ x, ?_, heq'⟩
@@ -228,5 +229,46 @@ theorem toChartGerm_mapOfLE {A : WeilDivisor X} (h : D ≤ A)
 
 
 end divisorSections
+
+section Representation
+
+variable [IsManifold 𝓘(ℂ) 1 X]
+
+/-- Every coordinate meromorphic germ with the prescribed order is represented by an actual
+local section of the divisor sheaf. -/
+theorem exists_section_toChartGerm_eq (D : WeilDivisor X) (x : X)
+    (φ : meromorphicGerms ℂ (chartAt ℂ x x))
+    (hφ : φ ∈ meromorphicGerms.orderGE (chartAt ℂ x x) (-D x)) :
+    ∃ (U : Opens X) (hx : x ∈ U) (f : divisorSections D U),
+      divisorSections.toChartGerm D U ⟨x, hx⟩ f = φ := by
+  obtain ⟨f, hf, rfl⟩ := meromorphicGerms.exists_mk φ
+  let F : X → ℂ := f ∘ chartAt ℂ x
+  have hchart : F ∘ (chartAt ℂ x).symm =ᶠ[𝓝[≠] (chartAt ℂ x x)] f := by
+    filter_upwards [nhdsWithin_le_nhds ((chartAt ℂ x).open_target.mem_nhds
+      ((chartAt ℂ x).map_source (mem_chart_source ℂ x)))] with z hz
+    simp only [F, Function.comp_apply, (chartAt ℂ x).right_inv hz]
+  have hF : MeromorphicAt F x := (meromorphicAt_def _ _).2 (hf.congr hchart.symm)
+  have hord : ((-D x : ℤ) : WithTop ℤ) ≤ meromorphicOrderAt F x := by
+    rw [meromorphicOrderAt_def, _root_.meromorphicOrderAt_congr hchart]
+    simpa only [meromorphicGerms.mem_orderGE, meromorphicGerms.order_mk] using hφ
+  obtain ⟨g, hg, hFg⟩ := exists_isDivisorSectionAt hF hord
+  obtain ⟨v, hv, hvo, hxv⟩ := eventually_nhds_iff.1 hg.eventually
+  let U : Opens X := ⟨v, hvo⟩
+  let s : divisorSections D U :=
+    ⟨g ∘ Subtype.val, comp_val_mem_divisorSections fun z hz ↦ hv z hz⟩
+  refine ⟨U, hxv, s, ?_⟩
+  apply Subtype.ext
+  refine (divisorSections.coe_toChartGerm s ⟨x, hxv⟩).trans ?_
+  rw [meromorphicGerms.coe_mk]
+  apply Germ.coe_eq.2
+  have he : Subtype.val.extend s.1 (0 : X → ℂ) =ᶠ[𝓝 x] g := by
+    filter_upwards [U.isOpen.mem_nhds hxv] with y hy
+    exact Subtype.val_injective.extend_apply (g ∘ Subtype.val) (0 : X → ℂ) (⟨y, hy⟩ : U)
+  exact ((he.filter_mono nhdsWithin_le_nhds).comp_tendsto
+    (tendsto_chartAt_symm_nhdsNE x)).trans
+      ((hFg.symm.comp_tendsto (tendsto_chartAt_symm_nhdsNE x)).trans hchart)
+
+
+end Representation
 
 end TauCeti.RiemannSurface
