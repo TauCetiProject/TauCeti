@@ -149,11 +149,7 @@ theorem pentagonRectangleWeight_recutLeftEqLeft
       GridPentagonRectangleDecomposition.toRectangleDecomposition_first_left,
       GridPentagonRectangleDecomposition.toRectangleDecomposition_second_left,
       D.pentagon.right_eq] at hcol hPleft hrleft
-    have ha : C.column ∉ Grid.cIco D.rectangle.left D.rectangle.right := fun ha =>
-      Finset.disjoint_left.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hcol) ha
-        (Grid.self_mem_cIco_finRotate (Grid.ne_right_of_mem_cIoo hcol))
-    have hb : finRotate n C.column ∉ Grid.cIco D.rectangle.left D.rectangle.right := fun hb =>
-      Grid.right_notMem_cIco _ _ (Grid.mem_cIco_of_mem_cIco_of_mem_cIoo hb hcol)
+    obtain ⟨ha, hb⟩ := Grid.notMem_cIco_of_mem_cIoo_finRotate hcol
     rw [hrleft, GridRectangleBetween.bottom_def, hPleft, hPbottom]
     simp only [ha, hb, false_and, ↓reduceIte]
   -- The remaining rectangle starts at the commuted grid line and keeps the original rectangle's
