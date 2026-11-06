@@ -13,6 +13,7 @@ public import TauCeti.RingTheory.Huber.StronglyNoetherian
 
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.OpenEmbedding
 import TauCeti.AlgebraicGeometry.AdicSpace.Spa.Localization.Units
+import TauCeti.CategoryTheory.Sites.IsSheafFor
 
 /-!
 # The sheaf condition for standard rational covers
@@ -118,7 +119,8 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_isUnit_of_isSheafFor [IsHuberRin
   have hWt (t : T) : W ⊓ spaBasicOpen Aplus T t ∈ spaRationalOpens Aplus :=
     inf_mem_spaRationalOpens hW (spaBasicOpen_mem_spaRationalOpens hTopen)
   -- on each piece of the standard cover, the Laurent sieve restricts to a Laurent sieve
-  refine isSheafFor_ofArrows_of_factorsThru_of_laurentSieve (fun _ ↦ inf_le_left)
+  refine Presieve.isSheafFor_ofArrows_of_factorsThru _
+    (fun t ↦ (laurentSieve Aplus R (W ⊓ spaBasicOpen Aplus T t)).arrows)
     (fun t ↦ (hlaurent R (hWt t)).isSeparatedFor) (hlaurent R hW)
     (fun _ g hg ↦ laurentSieve_mul_inverse_le_ofArrows_inf_spaBasicOpen hT hu W g hg)
     fun t Z g hg ↦ ?_
@@ -316,7 +318,8 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_isSheafFor
       (fun J J' ↦ (hSV J (inf_mem_spaRationalOpens (hY J) (hY J')) inf_le_left).isSeparatedFor)
       fun _ _ hg ↦ hg.1
     -- the pieces `Y J` satisfy the sheaf condition, since the Laurent sieve does
-    refine isSheafFor_ofArrows_of_factorsThru_of_laurentSieve (fun _ ↦ inf_le_left)
+    refine Presieve.isSheafFor_ofArrows_of_factorsThru _
+      (fun J ↦ (laurentSieve Aplus R (Y J)).arrows)
       (fun J ↦ (hlaurent R (hY J)).isSeparatedFor) (hlaurent R hW) (fun U g hg ↦ ?_)
       fun J U g hg ↦ (laurentSieve_apply _).mpr ((laurentSieve_apply g).mp hg)
     obtain ⟨J, hJ⟩ := hRY g le_rfl hg
@@ -326,7 +329,8 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_span_eq_top_of_isSheafFor
   have hTopen : IsOpen (Ideal.span (T : Set A) : Set A) := by
     rw [hspan]
     exact isOpen_univ
-  refine isSheafFor_ofArrows_of_factorsThru_of_laurentSieve (fun _ ↦ inf_le_left)
+  refine Presieve.isSheafFor_ofArrows_of_factorsThru _
+    (fun t ↦ (laurentSieve Aplus R (W ⊓ spaBasicOpen Aplus T t)).arrows)
     (fun _ ↦ (hlaurent R
       (inf_mem_spaRationalOpens hW (spaBasicOpen_mem_spaRationalOpens hTopen))).isSeparatedFor)
     hS (fun U g hg ↦ ?_)
