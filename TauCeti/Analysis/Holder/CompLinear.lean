@@ -145,6 +145,7 @@ theorem coe_compLinearL (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F) :
   funext (compLinearL_apply e f)
 
 /-- The exact pullback formula for every recorded derivative field. -/
+@[simp]
 theorem iteratedFDeriv_compLinearL (e : E →L[ℝ] E') (f : CkHolderSpace k α E' F)
     (i : Fin (k + 1)) (x : E) :
     (compLinearL e f).iteratedFDeriv i x =
@@ -177,12 +178,13 @@ def compLinearCLE (e : E ≃L[ℝ] E') : CkHolderSpace k α E' F ≃L[ℝ] CkHol
     continuous_invFun := (compLinearL (e.symm : E' →L[ℝ] E)).continuous }
 
 @[simp]
-theorem compLinearCLE_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E' F) (x : E) :
-    compLinearCLE e f x = f (e x) := compLinearL_apply _ f x
+theorem compLinearCLE_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E' F) :
+    compLinearCLE e f = compLinearL (e : E →L[ℝ] E') f :=
+  (rfl)
 
 @[simp]
-theorem compLinearCLE_symm_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E F) (x : E') :
-    (compLinearCLE e).symm f x = f (e.symm x) := by
-  exact compLinearL_apply (e.symm : E' →L[ℝ] E) f x
+theorem compLinearCLE_symm_apply (e : E ≃L[ℝ] E') (f : CkHolderSpace k α E F) :
+    (compLinearCLE e).symm f = compLinearL (e.symm : E' →L[ℝ] E) f :=
+  (rfl)
 
 end TauCeti.CkHolderSpace
