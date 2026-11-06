@@ -360,7 +360,7 @@ private theorem exponentSumKer_eq_ker_pow_two (hn3 : 3 < n) {g : ℕ} (hg : 2 �
 (`demushkinWordNeTwo 2 n`, which has no `x₃²` factor):
 `x₁^{2+α} (x₁, x₂) x₃^{2^g} (x₃, x₄) ⋯` and `x₁² (x₁, x₂)(x₃, x₄) ⋯ (x_{n-1}, x_n)` have the same
 class modulo `λ₂(F)`, when `4 ∣ α` and `g ≥ 2`. -/
-theorem gradedMk_padicPow_mul_labuteComm_mul_eq_gradedMk_demushkinWordNeTwo (hn3 : 3 < n)
+private theorem gradedMk_padicPow_mul_labuteComm_mul_eq_gradedMk_demushkinWordNeTwo (hn3 : 3 < n)
     {α : ℤ_[2]} (hα : 4 ∣ α) {g : ℕ} (hg : 2 ≤ g) {r : freeProP 2 (Fin n)}
     (hr : r = (isProP_freeProP 2 (Fin n)).padicPow (freeProPGen 2 n 0) (2 + α) *
       labuteComm (freeProPGen 2 n 0) (freeProPGen 2 n 1) *
