@@ -134,14 +134,25 @@ theorem _root_.Polynomial.signedPsc_right_bound (p q : R[X]) (m n : ℕ) :
     simp [signedPsc, hnm, hne]
 
 /-- Swapping inputs changes both the normalization and the column-block order. -/
-theorem _root_.Polynomial.signedPsc_comm (p q : R[X]) {m n j : ℕ}
-    (hj : j ≤ min m n) :
+theorem _root_.Polynomial.signedPsc_comm (p q : R[X]) {m n j : ℕ} :
     signedPsc p q m n j =
       (-1) ^ ((m - j).choose 2 + (n - j).choose 2 + (m - j) * (n - j)) *
         signedPsc q p n m j := by
-  rw [signedPsc_of_le p q hj, signedPsc_of_le q p (by omega), psc_comm]
-  simp only [pow_add]
-  rcases neg_one_pow_eq_or R ((n - j).choose 2) with h | h <;> rw [h] <;> ring
+  by_cases hj : j ≤ min m n
+  · rw [signedPsc_of_le p q hj, signedPsc_of_le q p (by omega), psc_comm]
+    simp only [pow_add]
+    rcases neg_one_pow_eq_or R ((n - j).choose 2) with h | h <;> rw [h] <;> ring
+  · have hj' : min m n < j := not_le.mp hj
+    rw [signedPsc_of_lt p q hj', signedPsc_of_lt q p (by omega)]
+    by_cases hm : j = m
+    · subst hm
+      have hn : n < j := by omega
+      simp [hn.ne', Nat.sub_eq_zero_of_le hn.le]
+    · by_cases hn : j = n
+      · subst hn
+        have hm' : m < j := by omega
+        simp [hm, Nat.sub_eq_zero_of_le hm'.le]
+      · simp [hm, hn]
 
 /-- Scaling the left input scales its signed minor by the number of its columns. -/
 theorem _root_.Polynomial.signedPsc_C_mul_left (p q : R[X]) (r : R) {m n j : ℕ}
@@ -157,21 +168,23 @@ theorem _root_.Polynomial.signedPsc_C_mul_right (p q : R[X]) (r : R) {m n j : �
   simp only [signedPsc_of_le _ _ hj, psc_C_mul_right]
   ring
 
-/-- A zero left input makes an in-range signed minor vanish when its column
-block is nonempty. This excludes the empty-determinant terminal case.
-Not a simp lemma: `signedPsc_of_le` already rewrites its left-hand side. -/
+/-- A zero left input makes a signed minor vanish when its column block is
+nonempty (`j < n`). This excludes the empty-determinant terminal case. -/
 theorem _root_.Polynomial.signedPsc_zero_left (q : R[X]) {m n j : ℕ}
-    (hj : j ≤ min m n) (hjn : j < n) : signedPsc 0 q m n j = 0 := by
-  have h := signedPsc_C_mul_left (0 : R[X]) q 0 hj
-  simpa [zero_pow (Nat.ne_of_gt (Nat.sub_pos_of_lt hjn))] using h
+    (hjn : j < n) : signedPsc 0 q m n j = 0 := by
+  by_cases hj : j ≤ min m n
+  · have h := signedPsc_C_mul_left (0 : R[X]) q 0 hj
+    simpa [zero_pow (Nat.ne_of_gt (Nat.sub_pos_of_lt hjn))] using h
+  · simp [signedPsc_of_lt 0 q (not_le.mp hj), hjn.ne]
 
-/-- A zero right input makes an in-range signed minor vanish when its column
-block is nonempty. This excludes the empty-determinant terminal case.
-Not a simp lemma: `signedPsc_of_le` already rewrites its left-hand side. -/
+/-- A zero right input makes a signed minor vanish when its column block is
+nonempty (`j < m`). This excludes the empty-determinant terminal case. -/
 theorem _root_.Polynomial.signedPsc_zero_right (p : R[X]) {m n j : ℕ}
-    (hj : j ≤ min m n) (hjm : j < m) : signedPsc p 0 m n j = 0 := by
-  have h := signedPsc_C_mul_right p (0 : R[X]) 0 hj
-  simpa [zero_pow (Nat.ne_of_gt (Nat.sub_pos_of_lt hjm))] using h
+    (hjm : j < m) : signedPsc p 0 m n j = 0 := by
+  by_cases hj : j ≤ min m n
+  · have h := signedPsc_C_mul_right p (0 : R[X]) 0 hj
+    simpa [zero_pow (Nat.ne_of_gt (Nat.sub_pos_of_lt hjm))] using h
+  · simp [signedPsc_of_lt p 0 (not_le.mp hj), hjm.ne]
 
 /-- Lowering the right bound contributes a leading-coefficient power, with no
 additional sign. The smaller terminal index is included. -/
