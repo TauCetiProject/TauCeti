@@ -44,11 +44,6 @@ theorem det_metricChangeTransport_pos (hH : IsStrictlyPositive h♯) :
     0 < h.metricChangeTransport.det :=
   (isStrictlyPositive_metricChangeTransport hH).det_pos
 
-/-- The square-root inverse transport has positive determinant. -/
-theorem det_sqrt_continuousLinearMapOfBilin_pos (hH : IsStrictlyPositive h♯) :
-    0 < (CFC.sqrt h♯).det :=
-  hH.sqrt.det_pos
-
 /-- Canonical transport between two positive metrics preserves orientation, even when their
 Riesz operators do not commute. -/
 theorem det_metricChangeBetween_pos (h k : E →L[ℝ] E →L[ℝ] ℝ)
@@ -58,7 +53,7 @@ theorem det_metricChangeBetween_pos (h k : E →L[ℝ] E →L[ℝ] ℝ)
   exact mul_pos (mul_pos (det_metricChangeTransport_pos hH)
     (det_metricChangeTransport_pos
       (isStrictlyPositive_bilinearComp_metricChangeTransport h k hH hK)))
-    (det_sqrt_continuousLinearMapOfBilin_pos hH)
+    hH.sqrt.det_pos
 
 /-- The discrepancy between successive metric changes and direct transport is special
 orthogonal. In particular it cannot reverse the orientation of a frame. -/
