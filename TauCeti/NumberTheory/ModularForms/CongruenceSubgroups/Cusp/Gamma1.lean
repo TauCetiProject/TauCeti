@@ -71,19 +71,19 @@ private theorem cuspOrbitOfSL2Z_Gamma1_eq_of_intCast_eq {δ γ' : SL(2, ℤ)} (j
     (hc : ((γ' 1 0 : ℤ) : ZMod N) = δ 1 0)
     (hd : ((γ' 1 1 : ℤ) : ZMod N) = δ 1 1 + j * δ 1 0) :
     (Gamma1 N).cuspOrbitOfSL2Z δ = (Gamma1 N).cuspOrbitOfSL2Z γ' := by
-  have hdet := intCast_fin_two_mul_sub_mul_eq_one (R := ZMod N) γ'
+  have h10 : (δ * T ^ j) 1 0 = δ 1 0 := by
+    simp [coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+  have h11 : (δ * T ^ j) 1 1 = δ 1 1 + j * δ 1 0 := by
+    simp [coe_T_zpow, Matrix.mul_apply, Fin.sum_univ_two]
+    ring
   refine (Subgroup.cuspOrbitOfSL2Z_eq_iff _ _ _).mpr
-    ⟨δ * T ^ j * γ'⁻¹, mem_Gamma1_iff.mpr ⟨Gamma0_mem.mpr ?_, ?_⟩, ?_⟩
-  · simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
-      of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
-      coe_T_zpow]
+    ⟨δ * T ^ j * γ'⁻¹, mul_inv_mem_Gamma1_iff_dvd_sub.mpr ⟨?_, ?_⟩, ?_⟩
+  · rw [h10, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
     push_cast
-    linear_combination (δ 1 0 : ZMod N) * hd - (δ 1 0 * j + δ 1 1 : ZMod N) * hc
-  · simp only [coe_mul, coe_inv, adjugate_fin_two, Matrix.mul_apply, Fin.sum_univ_two,
-      of_apply, cons_val', cons_val_zero, cons_val_one, empty_val', cons_val_fin_one,
-      coe_T_zpow]
+    exact sub_eq_zero.mpr hc.symm
+  · rw [h11, ← ZMod.intCast_zmod_eq_zero_iff_dvd]
     push_cast
-    linear_combination (γ' 0 1 : ZMod N) * hc - (γ' 0 0 : ZMod N) * hd + hdet
+    exact sub_eq_zero.mpr hd.symm
   · have hT : δ⁻¹ * (δ * T ^ j * γ'⁻¹) * γ' = T ^ j := by group
     rw [hT, coe_T_zpow]
     rfl
