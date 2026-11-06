@@ -48,11 +48,15 @@ of an iterated weighted derivative as a factorial-scaled coefficient after subst
 * `PowerSeries.derivative_map`: the derivative commutes with change of coefficients.
 * `PowerSeries.iterate_derivative_coe`: iterated derivatives of a polynomial are computed as
   polynomials.
+* `PowerSeries.coeff_X_pow_mul_iterate_derivative`: `Xⁱ f⁽ⁱ⁾` has `M`-th coefficient
+  `M (M - 1) ⋯ (M - i + 1)` times that of `f`.
 * `PowerSeries.derivative_algebraMap_polynomial`, `PowerSeries.derivative_polynomial_smul`: the
   derivative of the image of a polynomial, and the Leibniz rule for the action of `R[X]` on
   `A⟦X⟧`.
 * `PowerSeries.polynomial_map_algebraMap_smul`: the actions of `R[X]` and `S[X]` on `A⟦X⟧` agree
   along a scalar tower `R → S → A`.
+* `PowerSeries.polynomial_C_smul`, `PowerSeries.polynomial_X_pow_smul`: under the action of
+  `R[X]` on `A⟦X⟧`, constants act as scalars and `Xʲ` as multiplication by `Xʲ`.
 * `PowerSeries.smul_derivative_mem`: a submodule over `R[X]` stable under `p • d⁄dX` contains
   `(p * r ^ 2) • x'` whenever it contains `r • x`.
 * `PowerSeries.coeff_eq_zero_of_derivative_eq_zero`: in prime characteristic `p`, a series
@@ -90,6 +94,16 @@ theorem iterate_derivative_coe (p : Polynomial R) (m : ℕ) :
   | zero => rfl
   | succ m ih => rw [Function.iterate_succ_apply', ih, derivative_coe,
       Function.iterate_succ_apply']
+
+/-- Multiplying the `i`-th derivative by `Xⁱ` multiplies the `M`-th coefficient by the falling
+factorial `M (M - 1) ⋯ (M - i + 1)`. -/
+theorem coeff_X_pow_mul_iterate_derivative (f : R⟦X⟧) (i M : ℕ) :
+    coeff M (X ^ i * (d⁄dX)^[i] f) = M.descFactorial i * coeff M f := by
+  rw [coeff_X_pow_mul']
+  split_ifs with h
+  · rw [coeff_iterate_derivative, Nat.sub_add_cancel h, ← Nat.add_descFactorial_eq_ascFactorial,
+      Nat.sub_add_cancel h]
+  · rw [Nat.descFactorial_eq_zero_iff_lt.mpr (not_le.mp h), Nat.cast_zero, zero_mul]
 
 /-- The shifted coefficient identity when `n + 1` can be cancelled. -/
 private theorem nsmul_coeff_mul_succ_pow_succ_eq_coeff_X_mul_pow_mul_derivative_of_hasUniqueDiv
@@ -238,6 +252,20 @@ theorem derivative_polynomial_smul (p : Polynomial R) (f : A⟦X⟧) :
     d⁄dX (p • f) = Polynomial.derivative p • f + p • d⁄dX f := by
   rw [Algebra.smul_def, Algebra.smul_def, Algebra.smul_def, Derivation.leibniz,
     derivative_algebraMap_polynomial, smul_eq_mul, smul_eq_mul, mul_comm f, add_comm]
+
+/-- A constant polynomial acts on `A⟦X⟧` through `PowerSeries.algebraPolynomial` as the
+corresponding scalar. -/
+@[simp]
+theorem polynomial_C_smul (a : R) (f : A⟦X⟧) : (Polynomial.C a : Polynomial R) • f = a • f := by
+  rw [Algebra.smul_def, Algebra.smul_def, algebraMap_apply', Polynomial.coe_C, map_C,
+    algebraMap_apply]
+
+/-- The polynomial `Xʲ` acts on `A⟦X⟧` through `PowerSeries.algebraPolynomial` as multiplication
+by the power series `Xʲ`. -/
+@[simp]
+theorem polynomial_X_pow_smul (j : ℕ) (f : A⟦X⟧) :
+    (Polynomial.X ^ j : Polynomial R) • f = X ^ j * f := by
+  rw [Algebra.smul_def, algebraMap_apply', Polynomial.coe_pow, Polynomial.coe_X, map_pow, map_X]
 
 /-- Along a scalar tower `R → S → A`, a polynomial over `R` acts on `A⟦X⟧` as its image in
 `S[X]` does. -/
