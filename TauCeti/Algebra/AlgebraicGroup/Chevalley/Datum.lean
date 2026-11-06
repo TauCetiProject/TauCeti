@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Schem
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Weight.Basis
 public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
+import TauCeti.Algebra.Lie.Sl2.Basic
 
 /-!
 # Chevalley data and their group schemes
@@ -124,6 +125,26 @@ variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 attribute [instance] instAddCommGroup instModule
 
 instance : CoeSort (ChevalleyDatum t ht) Type := ⟨carrier⟩
+
+attribute [local instance 100] LieRing.ofAssociativeRing
+
+/-- A faithful datum representation carries each numbered simple-root triple to an `sl₂`
+triple of endomorphisms. -/
+theorem isSl2Triple_representation (i : Fin t.rank) :
+    IsSl2Triple
+      (D.representation (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).h i)))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inl i))))
+      (D.representation
+        (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator (.inr i)))) := by
+  have hT := ((t.lieBasis ht).sl2 i).map
+    (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (by
+      intro hz
+      apply ((t.lieBasis ht).sl2 i).h_ne_zero
+      apply D.injective_representation_ι
+      simpa using hz)
+  simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
+    LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using hT
 
 /-! ## The weight lattice and the coordinate weights -/
 

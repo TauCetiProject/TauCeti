@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.AlgebraicGroup.Chevalley.Datum
-import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.RankOne
-import TauCeti.Algebra.Lie.Sl2.Basic
+import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Coordinate
 
 /-!
 # Simple coroots in the torus of a Chevalley datum
@@ -17,10 +17,12 @@ its coordinates in the actual torus are therefore `s ^ (D.weightLatticeBasis j :
 not in general `Pi.mulSingle i s`. This distinction matters for non-simply-connected data:
 the simple coroot of adjoint type A₁ is the square map on its torus.
 
-`simpleCorootParameter` gives these torus coordinates, and `simpleCoroot` is the resulting
-homomorphism into the points of the datum. The theorem `simpleCoroot_eq_weylWord` identifies
-it with Steinberg's word `nᵢ(s) nᵢ(1)⁻¹` over every commutative ring. In particular, this
-identifies a specified cocharacter, not merely an element in the image of a torus.
+`torusParameter` restricts full-weight torus points to the actual torus.
+`simpleCorootParameter` specializes it to a single coordinate, and `simpleCoroot` is the resulting
+homomorphism into the points of the datum. The theorem
+`coe_simpleCoroot_eq_kostantWeylParam_mul_inv` identifies it with Steinberg's product
+`nᵢ(s) nᵢ(1)⁻¹` over every commutative ring. In particular, this identifies a specified
+cocharacter, not merely an element in the image of a torus.
 
 The rank-one identity is supplied by
 `UniversalEnvelopingAlgebra.kostantWeylParam_mul_inv_kostantWeylParam`.
@@ -46,43 +48,56 @@ attribute [local instance high] Algebra.toModule
 variable {t : DynkinType} {ht : t.Valid} (D : ChevalleyDatum t ht)
 variable (i : Fin t.rank) (A : Type*) [CommRing A]
 
+/-- Restriction from the full-weight torus to the datum's actual torus, dual to the inclusion
+of its character lattice. This map need not be surjective on ring-valued points. -/
+noncomputable def torusParameter : (Fin t.rank → Aˣ) →* (Fin t.rank → Aˣ) :=
+  torusPointMap ((Submodule.subtype _) ∘ₗ D.weightLatticeBasis.equivFun.symm.toLinearMap)
+
+/-- Each actual-torus coordinate evaluates the corresponding character-lattice basis vector. -/
+@[simp]
+theorem torusParameter_apply (s : Fin t.rank → Aˣ) (j : Fin t.rank) :
+    D.torusParameter A s j = torusCharacter s (D.weightLatticeBasis j : Fin t.rank → ℤ) := by
+  simp [torusParameter, torusPointMap_apply, Module.Basis.equivFun_symm_apply]
+
+/-- Characters pull back from the actual torus by reconstruction in the character-lattice basis. -/
+@[simp]
+theorem torusCharacter_torusParameter (s : Fin t.rank → Aˣ) (μ : Fin t.rank → ℤ) :
+    torusCharacter (D.torusParameter A s) μ =
+      torusCharacter s (∑ j, μ j • (D.weightLatticeBasis j : Fin t.rank → ℤ)) := by
+  simp [torusParameter, torusCharacter_torusPointMap, Module.Basis.equivFun_symm_apply]
+
+/-- The full-weight torus acts by restriction to the datum's actual torus. -/
+theorem kostantTorusMatrix_torusParameter (s : Fin t.rank → Aˣ) :
+    kostantTorusMatrix D.lattice D.basis D.coordinateWeight (D.torusParameter A s) =
+      kostantTorusMatrix D.lattice D.basis D.weight s := by
+  simp only [kostantTorusMatrix_apply, torusCharacter_torusParameter,
+    D.sum_coordinateWeight_smul]
+
 /-- The simple coroot at node `i`, in the coordinates of the datum's actual torus.
 Its `j`-th coordinate pairs the `j`-th character-lattice basis vector with the simple coroot. -/
-noncomputable def simpleCorootParameter : Aˣ →* (Fin t.rank → Aˣ) where
-  toFun s j := s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i
-  map_one' := by ext; simp
-  map_mul' s u := by ext; simp [mul_zpow]
+noncomputable def simpleCorootParameter : Aˣ →* (Fin t.rank → Aˣ) :=
+  (D.torusParameter A).comp (MonoidHom.mulSingle (fun _ : Fin t.rank => Aˣ) i)
 
 /-- Coordinate evaluation of a simple coroot. -/
 @[simp]
 theorem simpleCorootParameter_apply (s : Aˣ) (j : Fin t.rank) :
-    D.simpleCorootParameter i A s j = s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i :=
-  (rfl)
+    D.simpleCorootParameter i A s j = s ^ (D.weightLatticeBasis j : Fin t.rank → ℤ) i := by
+  simp [simpleCorootParameter]
 
 /-- Pairing a character, given in the weight-lattice basis, with a simple coroot. -/
 @[simp]
 theorem torusCharacter_simpleCorootParameter (s : Aˣ) (μ : Fin t.rank → ℤ) :
     torusCharacter (D.simpleCorootParameter i A s) μ =
       s ^ (∑ j, μ j * (D.weightLatticeBasis j : Fin t.rank → ℤ) i) := by
-  simp only [torusCharacter_def, simpleCorootParameter_apply, ← zpow_mul]
-  rw [Finset.prod_zpow_eq_zpow_sum]
-  congr 1
-  apply Finset.sum_congr rfl
-  intro j _
-  exact mul_comm _ _
+  simp [simpleCorootParameter, Finset.sum_apply]
 
 /-- In a weight basis, the simple coroot acts on a weight-`μ` vector by `s ^ μ i`.
 This compares actual-torus coordinates with the full-weight parametrization. -/
 theorem kostantTorusMatrix_simpleCorootParameter (s : Aˣ) :
     kostantTorusMatrix D.lattice D.basis D.coordinateWeight (D.simpleCorootParameter i A s) =
       kostantTorusMatrix D.lattice D.basis D.weight (Pi.mulSingle i s) := by
-  rw [kostantTorusMatrix_apply, kostantTorusMatrix_apply]
-  congr 1
-  funext j
-  rw [torusCharacter_mulSingle, torusCharacter_simpleCorootParameter]
-  congr 1
-  have h := congrFun (D.sum_coordinateWeight_smul j) i
-  simpa only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul] using h
+  simpa only [simpleCorootParameter, MonoidHom.comp_apply, MonoidHom.mulSingle_apply] using
+    D.kostantTorusMatrix_torusParameter A (Pi.mulSingle i s)
 
 /-- The simple-coroot homomorphism into the points of a Chevalley datum, obtained by evaluating
 its actual torus on `simpleCorootParameter`. It need not be injective. -/
@@ -101,7 +116,7 @@ theorem coe_simpleCoroot (s : Aˣ) :
 
 /-- A simple coroot is Steinberg's word `nᵢ(s) nᵢ(1)⁻¹`. The root maps in this formula are the
 numbered positive and negative Kostant root maps, in the same matrix basis as the datum. -/
-theorem simpleCoroot_eq_weylWord (s : Aˣ) :
+theorem coe_simpleCoroot_eq_kostantWeylParam_mul_inv (s : Aˣ) :
     let x := fun k => kostantToralRootSubgroupPoints (t.lieBasis ht).rootGenerator
       (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
       D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight k A
@@ -113,41 +128,14 @@ theorem simpleCoroot_eq_weylWord (s : Aˣ) :
           x (.inr i) (Multiplicative.ofAdd (-1 : A)) *
           x (.inl i) (Multiplicative.ofAdd (1 : A)))⁻¹ :
         Matrix.GeneralLinearGroup (Fin D.dim) A) := by
-  dsimp only
-  -- Faithfulness prevents the represented Cartan element from vanishing.
-  have hT := ((t.lieBasis ht).sl2 i).map
-    (D.representation.toLieHom.comp (_root_.UniversalEnvelopingAlgebra.ι ℚ)) (by
-      intro hz
-      apply ((t.lieBasis ht).sl2 i).h_ne_zero
-      apply D.injective_representation_ι
-      simpa using hz)
-  have hneg : ∀ j, ⁅(t.lieBasis ht).h j, (t.lieBasis ht).rootGenerator (.inr i)⁆ =
-      -((t.rootGeneratorWeight ht (.inl i) j : ℚ) • (t.lieBasis ht).rootGenerator (.inr i)) := by
-    intro j
-    rw [t.lie_lieBasis_h_rootGenerator ht]
-    simp only [rootGeneratorWeight_inr, rootGeneratorWeight_inl, Int.cast_neg, neg_smul]
-  have h := kostantWeylParam_mul_inv_kostantWeylParam
+  have h := kostantRootSubgroupMatrix_mul_mul_mul_inv
     (t.lieBasis ht).rootGenerator (t.lieBasis ht).h D.representation D.lattice
-    D.representation_mem_lattice
-    (D.isNilpotent_representation_rootGenerator (.inl i))
-    (D.isNilpotent_representation_rootGenerator (.inr i)) D.basis D.weight
-    D.isCartanWeightVector_basis
-    (by simpa only [LieHom.comp_apply, AlgHom.toLieHom_apply,
-      LieAlgebra.Basis.rootGenerator_inl, LieAlgebra.Basis.rootGenerator_inr] using hT)
-    (t.lie_lieBasis_h_rootGenerator ht (.inl i)) hneg
-    (CommAlgCat.of ℤ A) s 1
-  rw [kostantCoordinateCocharacter_apply, inv_one, mul_one] at h
-  -- Write the rank-one identity in the lattice basis, then use actual-torus coordinates.
-  have hm := congrArg
-    (Units.map (LinearMap.toMatrixAlgEquiv (D.basis.baseChange A)).toMonoidHom) h
-  rw [MulEquiv.toMonoidHom_eq_coe, basisMatrix_kostantTorusPoints] at hm
+    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator D.basis D.weight
+    D.isCartanWeightVector_basis (D.isSl2Triple_representation i)
+    (t.lie_lieBasis_h_rootGenerator ht (.inl i))
+    (t.lie_lieBasis_h_rootGenerator_inr_neg ht i) A s 1
   rw [coe_simpleCoroot, kostantTorusMatrix_simpleCorootParameter]
-  symm
-  simpa only [kostantWeylParam_def, map_mul, map_inv, Subgroup.coe_mul,
-    Subgroup.coe_inv, coe_kostantToralRootSubgroupPoints,
-    basisMatrix_kostantRootSubgroupParam (t.lieBasis ht).rootGenerator
-      (t.lieBasis ht).h D.representation D.lattice D.representation_mem_lattice
-      D.isNilpotent_representation_rootGenerator D.basis A,
-    Units.val_one, inv_one] using hm
+  simpa only [Subgroup.coe_mul, Subgroup.coe_inv, coe_kostantToralRootSubgroupPoints,
+    inv_one, mul_one, Units.val_one] using h.symm
 
 end TauCeti.DynkinType.ChevalleyDatum
