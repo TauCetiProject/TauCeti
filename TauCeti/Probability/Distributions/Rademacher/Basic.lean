@@ -245,8 +245,8 @@ theorem ae_eq_one_or_eq_neg_one_of_map_eq_rademacherMeasure {Ω : Type*} [Measur
     (measurableSet_singleton _).union (measurableSet_singleton _)
   have hae : ∀ᵐ x ∂rademacherMeasure, x = 1 ∨ x = -1 := by
     have hc : MeasurableSet {a : ℝ | ¬(a = 1 ∨ a = -1)} := hset.compl
-    rw [ae_iff, rademacherMeasure_eq, Measure.add_apply, Measure.smul_apply,
-      Measure.smul_apply, Measure.dirac_apply' _ hc, Measure.dirac_apply' _ hc]
+    rw [ae_iff, rademacherMeasure_eq, add_apply, smul_apply, smul_apply,
+      Measure.dirac_apply' _ hc, Measure.dirac_apply' _ hc]
     norm_num
   rw [← h] at hae
   exact (ae_map_iff hε.aemeasurable hset).1 hae
