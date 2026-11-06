@@ -50,8 +50,6 @@ theorem about `‖Dφ‖`.
   continuous at `x`, and its gradient is differentiable near `x`.
 * `TauCeti.hasGradientAt_mul_norm_sq_add` and `TauCeti.gradient_mul_norm_sq_add`: over `ℝ`, the
   quadratic `y ↦ (a / 2) ‖y‖² + c` has gradient `a • y` at `y`.
-* `TauCeti.inner_fderiv_gradient_apply`: over `ℝ`, `⟪D(∇ f)(x) v, w⟫ = D²f(x) v w`, so the
-  derivative of the gradient is the second derivative read through the inner product.
 * `TauCeti.isSymmetric_of_hasFDerivAt_gradient`: over `ℝ`, the derivative of the gradient (the
   Hessian as an endomorphism of `E`) is a symmetric operator wherever it exists, provided the
   function is differentiable nearby.
@@ -172,17 +170,6 @@ theorem hasGradientAt_mul_norm_sq_add {E : Type*} [NormedAddCommGroup E] [InnerP
 theorem gradient_mul_norm_sq_add {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
     [CompleteSpace E] (a c : ℝ) (y : E) : ∇ (fun y : E => a / 2 * ‖y‖ ^ 2 + c) y = a • y :=
   (hasGradientAt_mul_norm_sq_add a c y).gradient
-
-/-- The derivative of the gradient is the second derivative read through the inner product:
-`⟪D(∇ f)(x) v, w⟫ = D²f(x) v w`. -/
-theorem inner_fderiv_gradient_apply {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [CompleteSpace E] (f : E → ℝ) (x v w : E) :
-    inner ℝ (fderiv ℝ (∇ f) x v) w = fderiv ℝ (fderiv ℝ f) x v w := by
-  have hg : ∇ f = (toDual ℝ E).symm.toContinuousLinearEquiv ∘ fderiv ℝ f := by
-    ext1 y
-    simp [LinearIsometryEquiv.eq_symm_apply]
-  rw [hg, ContinuousLinearEquiv.comp_fderiv]
-  exact toDual_symm_apply
 
 /-- **The Hessian is symmetric.** If a real function `f` is differentiable near `x` and its
 gradient has derivative `H` at `x`, then `H` is a symmetric operator:

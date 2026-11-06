@@ -15,6 +15,7 @@ import Mathlib.Analysis.InnerProductSpace.Positive
 import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Calculus.DerivativeTest
 import TauCeti.Analysis.Calculus.Gradient
+import TauCeti.Analysis.Calculus.Morse.Linearization
 import TauCeti.Analysis.Convex.SubgradientImage
 import TauCeti.Analysis.Matrix.PosSemidef.Determinant
 
@@ -300,19 +301,16 @@ private theorem abs_det_fderiv_gradient_le (hΩ : IsOpen Ω) (hu : ContDiffAt �
   -- The matrix of `T` is the Hessian matrix, transposed.
   have hH (i j : ι) : H i j =
       fderiv ℝ (fderiv ℝ u) y (EuclideanSpace.single j 1) (EuclideanSpace.single i 1) := by
-    rw [← inner_fderiv_gradient_apply, real_inner_comm, EuclideanSpace.inner_single_left]
-    simp [H, b, T, LinearMap.toMatrix_apply]
+    simpa [H, b, T, fderiv_gradient] using b.toMatrix_hessianOperator_apply u y i j
   -- The negated Hessian `B = -H` is positive semidefinite.
-  have hT : HasFDerivAt (∇ u) T y :=
-    ((hu.gradient_right (m := 1) (by norm_num)).differentiableAt one_ne_zero).hasFDerivAt
-  have hsymm := isSymmetric_of_hasFDerivAt_gradient
-    ((hu.eventually (by simp)).mono fun _ hx => hx.differentiableAt (by simp)) hT
+  have hsymm : (T : EuclideanSpace ℝ ι →ₗ[ℝ] _).IsSymmetric := by
+    simpa [T, fderiv_gradient] using hu.isSelfAdjoint_hessianOperator.isSymmetric
   have hB : (-H).PosSemidef := by
     have hpos : (-(T : EuclideanSpace ℝ ι →ₗ[ℝ] _)).IsPositive := by
       refine ⟨fun v w => ?_, fun v => ?_⟩
       · simp only [LinearMap.neg_apply, inner_neg_left, inner_neg_right, neg_inj]
         exact hsymm v w
-      · simpa [inner_fderiv_gradient_apply, T] using
+      · simpa [fderiv_gradient, T] using
           fderiv_fderiv_self_nonpos_of_mem_upperContactSet hΩ hu hy v
     simpa [H, map_neg] using (LinearMap.posSemidef_toMatrix_iff b).2 hpos
   -- `tr (a B) = -L u ≤ f⁻`.
