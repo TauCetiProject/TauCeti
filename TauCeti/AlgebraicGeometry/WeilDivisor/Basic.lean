@@ -150,7 +150,7 @@ lemma nonneg_iff (D : WeilDivisor X) : 0 ≤ D ↔ ∀ x, 0 ≤ coeff D x :=
 
 /-- An effective divisor has nonnegative coefficients. -/
 lemma coeff_nonneg {D : WeilDivisor X} (hD : 0 ≤ D) (x : X) : 0 ≤ coeff D x :=
-  hD x
+  (nonneg_iff D).1 hD x
 
 /-- A nonzero effective divisor has some point with positive coefficient. -/
 lemma exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : 0 ≤ D) (hD0 : D ≠ 0) :
@@ -165,7 +165,13 @@ lemma exists_pos_coeff_of_ne_zero {D : WeilDivisor X} (hD : 0 ≤ D) (hD0 : D �
 /-- The divisor of a single point is effective. -/
 @[simp]
 lemma ofPoint_nonneg (x : X) : 0 ≤ ofPoint x :=
-  Finsupp.single_nonneg.2 zero_le_one
+  (nonneg_iff _).2 fun y => by
+    classical
+    by_cases h : y = x
+    · subst h
+      rw [coeff_ofPoint_self]
+      exact zero_le_one
+    · rw [coeff_ofPoint_of_ne h]
 
 /-- Push forward a formal divisor along a map of point sets by summing coefficients over
 fibres.  Geometric pushforward of Weil divisors will specialize this once the relevant point
