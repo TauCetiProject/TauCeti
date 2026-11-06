@@ -324,6 +324,29 @@ private theorem exists_hasDerivAt_norm_rpow_hessian_line (p : ℝ) (b d v w : E)
       rw [h6, h4]
       ring
 
+/-- Every point of the segment from `b` to `b + d` has norm at least `‖b‖ / 2` when
+`2 ‖d‖ ≤ ‖b‖`. -/
+theorem half_norm_le_norm_add_smul {b d : E} (hd : 2 * ‖d‖ ≤ ‖b‖) {t : ℝ}
+    (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖b‖ / 2 ≤ ‖b + t • d‖ := by
+  have htd : ‖t • d‖ ≤ ‖d‖ := by
+    rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
+    exact mul_le_of_le_one_left (norm_nonneg _) ht.2
+  have := norm_sub_norm_le b (-(t • d))
+  rw [sub_neg_eq_add, norm_neg] at this
+  linarith
+
+/-- For `p ≤ 3`, `‖z‖ ^ (p - 3)` is at most `2 ^ (3 - p) ‖b‖ ^ (p - 3)` along the segment from `b`
+to `b + d` when `2 ‖d‖ ≤ ‖b‖`. -/
+private theorem norm_add_smul_rpow_le {p : ℝ} (hp : p ≤ 3) {b d : E} (hbN : 0 < ‖b‖)
+    (hd : 2 * ‖d‖ ≤ ‖b‖) {t : ℝ} (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    ‖b + t • d‖ ^ (p - 3) ≤ 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
+  calc ‖b + t • d‖ ^ (p - 3) ≤ (‖b‖ / 2) ^ (p - 3) :=
+        Real.rpow_le_rpow_of_nonpos (by positivity) (half_norm_le_norm_add_smul hd ht)
+          (by linarith)
+    _ = 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
+        rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two]
+        ring_nf
+
 /-- **Smoothness of the Hessian of `x ↦ ‖x‖ ^ p`** for `p ≤ 3`: if `2 ‖a - b‖ ≤ ‖b‖`, then
 
 `‖D²(‖·‖ ^ p)(a) - D²(‖·‖ ^ p)(b)‖ ≤ |p (p - 2)| (7 - p) 2 ^ (3 - p) ‖a - b‖ ‖b‖ ^ (p - 3)`.
@@ -345,21 +368,8 @@ theorem norm_iteratedFDeriv_two_norm_rpow_sub_le {p : ℝ} (hp : p ≤ 3) {a b :
     simp
   set d := a - b with hd
   have hbN : 0 < ‖b‖ := norm_pos_iff.mpr hb
-  -- Every point of the segment from `b` to `a` has norm at least `‖b‖ / 2`.
-  have hseg (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) : ‖b‖ / 2 ≤ ‖b + t • d‖ := by
-    have htd : ‖t • d‖ ≤ ‖d‖ := by
-      rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg ht.1]
-      exact mul_le_of_le_one_left (norm_nonneg _) ht.2
-    have := norm_sub_norm_le b (-(t • d))
-    rw [sub_neg_eq_add, norm_neg] at this
-    linarith
-  have hpow (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
-      ‖b + t • d‖ ^ (p - 3) ≤ 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
-    calc ‖b + t • d‖ ^ (p - 3) ≤ (‖b‖ / 2) ^ (p - 3) :=
-          Real.rpow_le_rpow_of_nonpos (by positivity) (hseg t ht) (by linarith)
-      _ = 2 ^ (3 - p) * ‖b‖ ^ (p - 3) := by
-          rw [Real.div_rpow hbN.le zero_le_two, div_eq_mul_inv, ← Real.rpow_neg zero_le_two]
-          ring_nf
+  have hseg (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) := half_norm_le_norm_add_smul hab ht
+  have hpow (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) := norm_add_smul_rpow_le hp hbN hab ht
   have ha : a ≠ 0 := by
     have := hseg 1 ⟨zero_le_one, le_rfl⟩
     rw [one_smul, hd, add_sub_cancel] at this
