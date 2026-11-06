@@ -37,7 +37,9 @@ pairing between trivial bundles is a smooth hom-bundle section
 constant on the common frame domains is smooth
 (`TauCeti.contMDiff_hom_bundle_of_inCoordinates_eq_const`).
 
-Interchanging the two inputs of a smooth bilinear bundle map preserves smoothness
+Negation of a hom-bundle section along any base map preserves its regularity
+(`ContMDiff.clm_bundle_neg`). Interchanging the inputs of a smooth bilinear bundle map preserves
+smoothness
 (`ContMDiffWithinAt.clm_bundle_flip`), without a choice of fibre norms. This permits
 contraction of a smooth tensor in any input slot.
 
@@ -218,6 +220,39 @@ theorem contMDiff_hom_bundle_of_inCoordinates_eq_const
 end ConstantCoordinates
 
 end TauCeti
+
+section Neg
+
+variable {𝕜 B M F₁ F₂ : Type*} [NontriviallyNormedField 𝕜]
+  {EB HB EM HM : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  [TopologicalSpace HB] {IB : ModelWithCorners 𝕜 EB HB} [TopologicalSpace B]
+  [ChartedSpace HB B] [NormedAddCommGroup EM] [NormedSpace 𝕜 EM]
+  [TopologicalSpace HM] {IM : ModelWithCorners 𝕜 EM HM} [TopologicalSpace M]
+  [ChartedSpace HM M] [NormedAddCommGroup F₁] [NormedSpace 𝕜 F₁]
+  [NormedAddCommGroup F₂] [NormedSpace 𝕜 F₂] {V : B → Type*} {W : B → Type*}
+  [∀ b, AddCommGroup (V b)] [∀ b, Module 𝕜 (V b)] [∀ b, TopologicalSpace (V b)]
+  [∀ b, AddCommGroup (W b)] [∀ b, Module 𝕜 (W b)] [∀ b, TopologicalSpace (W b)]
+  [∀ b, IsTopologicalAddGroup (W b)] [∀ b, ContinuousSMul 𝕜 (W b)]
+  [TopologicalSpace (TotalSpace F₁ V)] [FiberBundle F₁ V] [VectorBundle 𝕜 F₁ V]
+  [TopologicalSpace (TotalSpace F₂ W)] [FiberBundle F₂ W] [VectorBundle 𝕜 F₂ W]
+  {n : WithTop ℕ∞} {b : M → B} {A : ∀ y, V (b y) →L[𝕜] W (b y)}
+
+/-- Negating a hom-bundle section along any base map preserves its regularity. -/
+theorem ContMDiff.clm_bundle_neg
+    (hA : ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (A y))) :
+    ContMDiff IM (IB.prod 𝓘(𝕜, F₁ →L[𝕜] F₂)) n
+      (fun y ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂)
+        (E := fun x ↦ V x →L[𝕜] W x) (b y) (-A y)) := by
+  intro x
+  have h := hA x
+  rw [contMDiffAt_hom_bundle] at h ⊢
+  refine ⟨h.1, ?_⟩
+  simpa only [ContinuousLinearMap.inCoordinates, ContinuousLinearMap.comp_neg,
+    ContinuousLinearMap.neg_comp] using h.2.neg
+
+end Neg
 
 section Inverse
 
