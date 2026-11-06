@@ -66,8 +66,12 @@ times this one. -/
 def archHaar : Measure (realSpace K) :=
   Measure.pi fun _ ↦ multHaar
 
+variable (K) in
+/-- The defining formula of `dy / y`, as the product over the infinite places of `dt / t`. -/
+theorem archHaar_def : archHaar K = Measure.pi fun _ ↦ multHaar := (rfl)
+
 instance : SigmaFinite (archHaar K) := by
-  unfold archHaar
+  rw [archHaar_def]
   infer_instance
 
 /-- `dy / y` is Lebesgue measure on the positive orthant with density `∏_w y_w⁻¹`. -/

@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.MellinTransform
 public import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 public import Mathlib.Analysis.SpecialFunctions.Log.Basic
 public import Mathlib.MeasureTheory.Function.JacobianOneDim
@@ -26,6 +27,12 @@ positive dilations and is finite on `[1, e]` is its mass on `[1, e]` times `dt /
 on `ℝ`, Mathlib's `MeasureTheory.Measure.isAddLeftInvariant_eq_smul`. It is the form in which a
 radial coordinate is split off a multiplicative Haar measure, as in the decomposition
 `dy / y = d*x × dt / t` of the archimedean parameters of a number field.
+
+Integrating against `dt / t` is integrating `t⁻¹ f(t)` over `(0, ∞)`
+(`TauCeti.integral_multHaar_eq_setIntegral`, `TauCeti.integrable_multHaar_iff`). In particular the
+Mellin transform `mellin f s = ∫_0^∞ t^(s-1) f(t) dt` is the integral of `t^s f(t)` against
+`dt / t` (`TauCeti.integral_multHaar_cpow_smul`), and Mathlib's `MellinConvergent` is the
+integrability of `t^s f(t)` against `dt / t` (`TauCeti.integrable_multHaar_cpow_smul_iff`).
 -/
 
 public section
@@ -146,5 +153,57 @@ theorem eq_smul_multHaar {ρ : Measure ℝ} (h0 : ρ (Iic 0) = 0)
   conv_lhs => rw [hρτ, hτ_eq]
   rw [Measure.map_smul, map_volume_exp, hτ_Icc]
   exact Real.measurable_exp.aemeasurable
+
+/-! ### Integrals against `dt / t` -/
+
+section Integral
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+
+/-- A function is integrable against `dt / t` exactly when `t⁻¹ • f t` is integrable on
+`(0, ∞)`. -/
+theorem integrable_multHaar_iff {f : ℝ → E} :
+    Integrable f multHaar ↔ IntegrableOn (fun t ↦ t⁻¹ • f t) (Ioi 0) := by
+  rw [multHaar_def, integrable_withDensity_iff_integrable_smul'
+    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top), IntegrableOn]
+  refine integrable_congr ?_
+  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t (ht : 0 < t)
+  rw [ENNReal.toReal_ofReal (inv_nonneg.mpr ht.le)]
+
+/-- The integral against `dt / t` is the integral of `t⁻¹ • f t` over `(0, ∞)`. -/
+theorem integral_multHaar_eq_setIntegral (f : ℝ → E) :
+    ∫ t, f t ∂multHaar = ∫ t in Ioi 0, t⁻¹ • f t := by
+  rw [multHaar_def, integral_withDensity_eq_integral_toReal_smul
+    measurable_inv.ennreal_ofReal (ae_of_all _ fun _ ↦ ENNReal.ofReal_lt_top)]
+  refine setIntegral_congr_fun measurableSet_Ioi fun t (ht : 0 < t) ↦ ?_
+  rw [ENNReal.toReal_ofReal (inv_nonneg.mpr ht.le)]
+
+end Integral
+
+section Mellin
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+
+/-- On `(0, ∞)`, `t⁻¹ • (t ^ s • v) = t ^ (s - 1) • v`. -/
+private theorem inv_smul_cpow_smul {t : ℝ} (ht : 0 < t) (s : ℂ) (v : E) :
+    t⁻¹ • ((t : ℂ) ^ s • v) = (t : ℂ) ^ (s - 1) • v := by
+  rw [← Complex.coe_smul, smul_smul, Complex.cpow_sub _ _ (Complex.ofReal_ne_zero.mpr ht.ne'),
+    Complex.cpow_one, Complex.ofReal_inv, inv_mul_eq_div]
+
+/-- **The Mellin transform is an integral against `dt / t`:**
+`mellin f s = ∫ t ^ s f(t) dt / t`. -/
+theorem integral_multHaar_cpow_smul (f : ℝ → E) (s : ℂ) :
+    ∫ t, (t : ℂ) ^ s • f t ∂multHaar = mellin f s := by
+  rw [integral_multHaar_eq_setIntegral, mellin]
+  exact setIntegral_congr_fun measurableSet_Ioi fun t ht ↦ inv_smul_cpow_smul ht s (f t)
+
+/-- The Mellin transform of `f` converges at `s` exactly when `t ^ s f(t)` is integrable against
+`dt / t`. -/
+theorem integrable_multHaar_cpow_smul_iff {f : ℝ → E} {s : ℂ} :
+    Integrable (fun t : ℝ ↦ (t : ℂ) ^ s • f t) multHaar ↔ MellinConvergent f s := by
+  rw [integrable_multHaar_iff, MellinConvergent]
+  exact integrableOn_congr_fun (fun t ht ↦ inv_smul_cpow_smul ht s (f t)) measurableSet_Ioi
+
+end Mellin
 
 end TauCeti
