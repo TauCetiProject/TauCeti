@@ -7,7 +7,7 @@ module
 
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Principal.Basic
 public import TauCeti.AlgebraicGeometry.WeilDivisor.Scheme.Order
-import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
+import Mathlib.Topology.KrullDimension
 
 /-!
 # Principal divisors on Noetherian integral schemes
@@ -15,8 +15,8 @@ import TauCeti.AlgebraicGeometry.Scheme.GenericPoint
 For a Noetherian integral scheme `X`, this file combines Mathlib's local orders of vanishing into
 the global order system on the codimension-one points of `X`. The only global issue is finite
 support. A nonzero rational function is a unit on some nonempty affine open `U`; its order
-therefore vanishes on `U`. The codimension-one points outside `U` are finite: each is the generic
-point of one of the finitely many irreducible pieces of the closed complement.
+therefore vanishes on `U`. The codimension-one points outside `U` are finite, by Mathlib's
+`NoetherianSpace.finite_coheight_one_of_closure_ne_univ` applied to the closed complement.
 
 The main results are:
 
@@ -31,8 +31,8 @@ The main results are:
 
 This file completes the global step left open by
 `TauCeti/AlgebraicGeometry/WeilDivisor/Scheme/Order.lean`. The proof reuses Mathlib's
-`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and the decomposition of a closed subset of a
-Noetherian space into finitely many irreducible closed subsets. No formalization is vendored.
+`exists_isUnit_germ_eq`, `Scheme.ord_of_isUnit`, and
+`NoetherianSpace.finite_coheight_one_of_closure_ne_univ`. No formalization is vendored.
 -/
 
 public section
@@ -51,37 +51,17 @@ variable {X : Scheme.{u}}
 
 noncomputable section
 
-/-- A codimension-one point lying in a set that avoids a nonempty open `U` equals that set's
-generic point. -/
-private lemma eq_of_subset_compl_of_isGenericPoint [IrreducibleSpace X] {U : X.Opens} [Nonempty U]
-    {T : Set X} (hTU : T ⊆ (U : Set X)ᶜ) {y : X} (hyGeneric : IsGenericPoint y T)
-    {x : CodimensionOnePoint X} (hxT : (x : X) ∈ T) : (x : X) = y :=
-  (Scheme.eq_of_specializes_of_notMem (Set.nonempty_coe_sort.mp ‹Nonempty U›) x.property
-    (hyGeneric.specializes hxT) (hTU hyGeneric.mem)).symm
-
 /-- A nonempty open subset of an irreducible scheme with Noetherian underlying space contains all
 but finitely many codimension-one points. -/
 lemma finite_setOfPred_not_mem [IrreducibleSpace X] [NoetherianSpace X]
     (U : X.Opens) [Nonempty U] :
     {x : CodimensionOnePoint X | (x : X) ∉ U}.Finite := by
-  obtain ⟨S, hSfinite, hSclosed, hSirreducible, hSunion⟩ :=
-    NoetherianSpace.exists_finite_set_isClosed_irreducible U.isOpen.isClosed_compl
-  let g : S → X := fun T ↦ (hSirreducible T T.property).genericPoint
-  have hfiniteRange : (Set.range g).Finite := by
-    let : Finite S := hSfinite.to_subtype
-    exact Set.finite_range g
-  apply Set.Finite.of_finite_image
-  · refine hfiniteRange.subset ?_
-    rintro _ ⟨x, hxU, rfl⟩
-    have hxUnion : (x : X) ∈ ⋃₀ S := by
-      rw [← hSunion]
-      exact hxU
-    obtain ⟨T, hTS, hxT⟩ := Set.mem_sUnion.mp hxUnion
-    have hyGeneric : IsGenericPoint (g ⟨T, hTS⟩) T :=
-      (hSirreducible T hTS).isGenericPoint_genericPoint (hSclosed T hTS)
-    have hTcompl : T ⊆ (U : Set X)ᶜ := hSunion ▸ Set.subset_sUnion_of_mem hTS
-    exact ⟨⟨T, hTS⟩, (eq_of_subset_compl_of_isGenericPoint hTcompl hyGeneric hxT).symm⟩
-  · exact Set.injOn_of_injective Subtype.val_injective
+  have hU := U.isOpen.isClosed_compl
+  have : QuasiSober ((U : Set X)ᶜ : Set X) := hU.isClosedEmbedding_subtypeVal.quasiSober
+  refine ((NoetherianSpace.finite_coheight_one_of_closure_ne_univ (p := (U : Set X)ᶜ) ?_).preimage
+    Subtype.val_injective.injOn).subset fun x hx ↦ ⟨hx, x.2⟩
+  rw [hU.closure_eq]
+  exact fun h ↦ (Set.nonempty_coe_sort.mp ‹Nonempty U›).ne_empty (compl_eq_top.mp h)
 
 variable [IsIntegral X] [IsNoetherian X]
 
