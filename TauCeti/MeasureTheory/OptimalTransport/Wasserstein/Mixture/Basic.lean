@@ -85,17 +85,46 @@ theorem wassersteinEDist_sum_smul_rpow_le (hd : Measurable fun z : X × X ↦ ed
   exact transportCost_sum_le _ _ _
 
 /-- The powered Wasserstein bound is subadditive under adding measures to both arguments.
-For `p = 0` or `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. -/
-theorem wassersteinEDist_add_rpow_le (hd : Measurable fun z : X × X ↦ edist z.1 z.2)
-    (μ μ' ν ν' : Measure X) :
+For `p = 0` or `p = ∞`, `p.toReal = 0` and the bound reduces to `1 ≤ 1 + 1`. No measurability of
+the ground distance is needed: a coupling for which it is not almost everywhere measurable has
+objective `∞`. -/
+theorem wassersteinEDist_add_rpow_le (μ μ' ν ν' : Measure X) :
     wassersteinEDist p (μ + μ') (ν + ν') ^ p.toReal
       ≤ wassersteinEDist p μ ν ^ p.toReal + wassersteinEDist p μ' ν' ^ p.toReal := by
   by_cases hp0 : p = 0
   · simp [hp0]
   by_cases hp : p = ∞
   · simp [hp]
-  simpa only [wassersteinEDist_rpow_eq_transportCost hd hp0 hp]
-    using transportCost_add_le _ μ μ' ν ν'
+  have hr : 0 < p.toReal := ENNReal.toReal_pos hp0 hp
+  -- a coupling realising the powered distance up to any slack
+  have key (μ ν : Measure X) {c : ℝ≥0∞} (hc : wassersteinEDist p μ ν ^ p.toReal < c) :
+      ∃ π, IsCoupling π μ ν ∧
+        eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π ^ p.toReal < c := by
+    obtain ⟨π, hπ, h⟩ := wassersteinEDist_lt_iff.1
+      ((ENNReal.lt_rpow_inv_iff hr).2 hc : wassersteinEDist p μ ν < c ^ p.toReal⁻¹)
+    exact ⟨π, hπ, (ENNReal.lt_rpow_inv_iff hr).1 h⟩
+  -- the powered objective is subadditive in the coupling
+  have sub (π π' : Measure (X × X)) :
+      eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (π + π') ^ p.toReal
+        ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π ^ p.toReal
+          + eLpNorm (fun z : X × X ↦ edist z.1 z.2) p π' ^ p.toReal := by
+    by_cases hm : AEMeasurable (fun z : X × X ↦ edist z.1 z.2) π ∧
+        AEMeasurable (fun z : X × X ↦ edist z.1 z.2) π'
+    · rw [eLpNorm_rpow_eq_lintegral hp0 hp (hm.1.add_measure hm.2), lintegral_add_measure,
+        eLpNorm_rpow_eq_lintegral hp0 hp hm.1, eLpNorm_rpow_eq_lintegral hp0 hp hm.2]
+    · rcases not_and_or.1 hm with h | h <;>
+        simp [eLpNorm_of_not_aestronglyMeasurable fun h' ↦ h h'.aemeasurable, hr]
+  refine ENNReal.le_of_forall_pos_le_add fun ε hε hb ↦ ?_
+  have hδ : (ε / 2 : ℝ≥0∞) ≠ 0 := by simp [hε.ne']
+  obtain ⟨π, hπ, h₁⟩ := key μ ν (ENNReal.lt_add_right (ne_top_of_lt (lt_of_le_of_lt le_self_add hb))
+    hδ)
+  obtain ⟨π', hπ', h₂⟩ := key μ' ν' (ENNReal.lt_add_right
+    (ne_top_of_lt (lt_of_le_of_lt le_add_self hb)) hδ)
+  calc _ ≤ eLpNorm (fun z : X × X ↦ edist z.1 z.2) p (π + π') ^ p.toReal :=
+        ENNReal.rpow_le_rpow (wassersteinEDist_le (hπ.add hπ') p) hr.le
+    _ ≤ _ := sub π π'
+    _ ≤ _ := add_le_add h₁.le h₂.le
+    _ = _ := by rw [add_add_add_comm, ENNReal.add_halves]
 
 /-- **Convexity of `W_p ^ p` in one argument.** For a finite nonzero exponent and weights with
 `a + b = 1`, the `p`-th power of the Wasserstein distance from `μ` to the mixture `a • ν₀ + b • ν₁`
