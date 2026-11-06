@@ -104,13 +104,13 @@ theorem isClosed_setOf_nontrivial_stalk : IsClosed {x : X | Nontrivial (M.preshe
 
 end Support
 
-/-- Functions in the ideal sheaf of a quasi-compact morphism `f : Z ⟶ X` act by zero on the
-sections of every pushforward `f_* G` over an affine open. -/
+/-- Functions in the ideal sheaf of a morphism `f : Z ⟶ X` act by zero on the sections of every
+pushforward `f_* G` over an affine open. -/
 theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_ideal_le_annihilator_pushforward (f : Z ⟶ X)
-    [QuasiCompact f] (G : Z.Modules) (U : X.affineOpens) :
+    (G : Z.Modules) (U : X.affineOpens) :
     f.ker.ideal U ≤ Module.annihilator Γ(X, U) Γ((pushforward f).obj G, U) := by
   intro r hr
-  rw [Scheme.Hom.ker_apply, RingHom.mem_ker] at hr
+  have hr := RingHom.mem_ker.mp (f.ideal_ker_le U hr)
   -- `r` acts on `Γ(f_* G, U) = Γ(G, f⁻¹ U)` through `f.app U r = 0`.
   exact Module.mem_annihilator.mpr fun s ↦ by
     rw [TauCeti.AlgebraicGeometry.pushforward_obj_smul, hr, zero_smul]
@@ -118,9 +118,9 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.ker_ideal_le_annihilator_pushforward
     rfl
 
 /-- If a quasi-coherent module `M` of finite type is the pushforward of a module along a
-quasi-compact morphism `f`, then the ideal sheaf of `f` is contained in `Ann(M)`. -/
+morphism `f`, then the ideal sheaf of `f` is contained in `Ann(M)`. -/
 theorem ker_le_annihilator_of_iso_pushforward {M : X.Modules} [M.IsQuasicoherent]
-    (hM : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(M, U)) (f : Z ⟶ X) [QuasiCompact f]
+    (hM : ∀ U : X.affineOpens, Module.Finite Γ(X, U) Γ(M, U)) (f : Z ⟶ X)
     {G : Z.Modules} (e : M ≅ (pushforward f).obj G) : f.ker ≤ M.annihilator hM :=
   IdealSheafData.le_def.mpr fun U ↦ by
     rw [annihilator_ideal, (sectionsLinearEquiv e U).annihilator_eq]
