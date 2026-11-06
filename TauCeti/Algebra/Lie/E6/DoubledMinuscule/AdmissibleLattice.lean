@@ -26,8 +26,8 @@ symmetry at the level of its weight basis. It is therefore the lattice input for
 type-`E₆` Chevalley--Demazure carrier required by Layer 9 of the ReductiveGroups roadmap and by
 the `²E₆` branch of the CFSGStatement roadmap.
 
-The rationalization and coordinate-lattice argument specialize the formal pattern of
-`TauCeti/Algebra/Lie/E6/Minuscule/AdmissibleLattice.lean`; the mathematical change is the
+The rationalization and coordinate-lattice argument follow the formal pattern of
+`TauCeti/Algebra/Lie/E7/Minuscule/AdmissibleLattice.lean`; the mathematical change is the
 contragredient second block and its doubled weight basis.
 
 ## Main declarations
