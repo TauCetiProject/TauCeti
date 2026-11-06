@@ -8,7 +8,7 @@ module
 public import TauCeti.Analysis.PDE.Caccioppoli.LowerOrder
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.DeGiorgi
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
-import TauCeti.MeasureTheory.Measure.IntegerSlabs
+import Mathlib.Order.SuccPred.IntervalSucc
 
 /-!
 # Decay of upper level sets of weak subsolutions (De Giorgi)
@@ -191,8 +191,11 @@ theorem sqrt_mul_measureReal_le_mul_measureReal_ball_of_forall_setIntegral_le
       (hθk.trans (measureReal_mono fun x (hx : W1p.value u x ≤ k) => hx.trans (hk_le j)))
   -- Sum the steps over the pairwise disjoint strips.
   have hDsum : ∑ j ∈ Finset.range J, D j ≤ V :=
-    (TauCeti.sum_measureReal_lt_lt_le_measureReal_univ nu (Lp.stronglyMeasurable _).measurable
-      hlev_mono J).trans_eq (measureReal_restrict_apply_univ _)
+    (sum_measureReal_le_measureReal_univ
+      (fun j _ => ((Lp.stronglyMeasurable _).measurable measurableSet_Ioo :
+        MeasurableSet (W1p.value u ⁻¹' Ioo (lev j) (lev (j + 1)))))
+      fun i _ j _ hij => (hlev_mono.pairwise_disjoint_on_Ioo_succ hij).preimage _).trans_eq
+      (measureReal_restrict_apply_univ _)
   have hA_anti : ∀ {i j : ℕ}, i ≤ j → A j ≤ A i := fun hij =>
     measureReal_mono fun x (hx : lev _ ≤ W1p.value u x) => (hlev_mono hij).trans hx
   have hsq : (J : ℝ) * A J ^ 2 ≤ K * V ^ 2 :=
