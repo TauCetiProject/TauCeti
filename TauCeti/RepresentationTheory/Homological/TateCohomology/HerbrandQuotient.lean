@@ -151,7 +151,7 @@ theorem finite_tateCohomology_of_herbrandQuotient_ne_zero {M : Rep R G}
 /-- For a finite representation of a finite group, the invariants have as many elements as the
 image of the norm times degree zero Tate cohomology. -/
 theorem natCard_invariants_eq_natCard_range_norm_mul_natCard_tateCohomology_zero
-    (M : Rep R G) [Finite M] :
+    (M : Rep R G) :
     Nat.card M.ρ.invariants =
       Nat.card (range M.ρ.norm) * Nat.card (tateCohomology M 0) := by
   have hnorm_le : range M.ρ.norm ≤ M.ρ.invariants := by
@@ -171,7 +171,7 @@ theorem natCard_invariants_eq_natCard_range_norm_mul_natCard_tateCohomology_zero
 /-- For a finite representation of a finite group, the kernel of the norm has as many elements as
 the kernel of the coinvariants projection times degree `-1` Tate cohomology. -/
 theorem natCard_ker_norm_eq_natCard_coinvariantsKer_mul_natCard_tateCohomology_negOne
-    (M : Rep R G) [Finite M] :
+    (M : Rep R G) :
     Nat.card (ker M.ρ.norm) =
       Nat.card (Representation.Coinvariants.ker M.ρ) *
         Nat.card (tateCohomology M (-1)) := by
