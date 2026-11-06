@@ -18,7 +18,7 @@ power is nontrivial. Homomorphisms preserve proper powers; in particular conjuga
 and reflects them.
 
 Conjugation, inversion, and positive powers transport maximal-root decompositions,
-specified by a nonzero exponent and a root that is not a proper power. A nonidentity element
+specified by a nonzero exponent and a root that is not a proper power. An element
 whose root exponents are bounded has such a decomposition, with a root of greatest exponent
 (`Group.exists_maximalRoot_of_bddAbove`).
 -/
@@ -146,11 +146,12 @@ theorem maximalRoot_pow {G : Type*} [Group G] {x r : G} {k m : ℕ}
   refine ⟨Nat.mul_ne_zero hm hk, ?_, hr⟩
   rw [Nat.mul_comm m k, pow_mul, hx]
 
-/-- A nonidentity element `x` whose root exponents `{n | ∃ y, y ^ n = x}` are bounded above has a
+/-- An element `x` whose root exponents `{n | ∃ y, y ^ n = x}` are bounded above has a
 maximal-root decomposition `r ^ k = x` in which `k` is the greatest root exponent of `x`. The root
 `r` is not a proper power, since a root of `r` with exponent `m ≥ 2` would be a root of `x` with
-exponent `m * k > k`. -/
-theorem exists_maximalRoot_of_bddAbove {G : Type*} [Group G] {x : G} (hx : x ≠ 1)
+exponent `m * k > k`. The hypothesis forces `x ≠ 1`, as every natural number is a root exponent
+of the identity. -/
+theorem exists_maximalRoot_of_bddAbove {G : Type*} [Group G] {x : G}
     (hbdd : BddAbove {n : ℕ | ∃ y : G, y ^ n = x}) :
     ∃ (r : G) (k : ℕ), k ≠ 0 ∧ r ^ k = x ∧ ¬IsProperPower r ∧
       ∀ (y : G) (n : ℕ), y ^ n = x → n ≤ k := by
@@ -160,7 +161,9 @@ theorem exists_maximalRoot_of_bddAbove {G : Type*} [Group G] {x : G} (hx : x ≠
   have hk : sSup {n : ℕ | ∃ y : G, y ^ n = x} ≠ 0 := by
     intro h0
     rw [h0, pow_zero] at hr
-    exact hx hr.symm
+    obtain ⟨b, hb⟩ := hbdd
+    have := hb (show b + 1 ∈ {n : ℕ | ∃ y : G, y ^ n = x} from ⟨1, by rw [one_pow, hr]⟩)
+    omega
   refine ⟨r, _, hk, hr, ?_, hmax⟩
   rintro ⟨y, m, hm, rfl⟩
   have hle := hmax y _ ((pow_mul y m _).trans hr)
