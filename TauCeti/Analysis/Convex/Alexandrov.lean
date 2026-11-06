@@ -8,7 +8,10 @@ module
 public import TauCeti.Analysis.Convex.SubgradientImage
 public import TauCeti.Analysis.Convex.Differentiability
 public import Mathlib.Analysis.InnerProductSpace.Positive
+import TauCeti.Algebra.Order.Archimedean.Basic
+import TauCeti.Algebra.Order.BigOperators.Sum.QuadraticIncrements
 import TauCeti.Analysis.Calculus.SecondOrderExpansion
+import TauCeti.Analysis.InnerProductSpace.LinearApproximation
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
 import TauCeti.MeasureTheory.Measure.Haar.Lipschitz
 
@@ -163,50 +166,6 @@ private theorem abs_toReal_sub_toReal_sub_le_of_mem_subdifferential {p₀ p₁ y
   rw [abs_le]
   constructor <;> nlinarith
 
-/-- If the increments `G (k + 1) - G k` of a real sequence are within `D` of
-`a * u + (k * a + a / 2) * a * X` for `k < n`, and `n * a = 1`, then `G n - G 0` is within
-`n * D` of `u + X / 2`. -/
-theorem abs_sub_sub_add_div_two_le_of_forall_lt {G : ℕ → ℝ} {a u X D : ℝ} {n : ℕ}
-    (hna : (n : ℝ) * a = 1)
-    (hstep : ∀ k < n, |G (k + 1) - G k - (a * u + (k * a + a / 2) * a * X)| ≤ D) :
-    |G n - G 0 - (u + X / 2)| ≤ n * D := by
-  have hsum : ∀ m : ℕ, ∑ k ∈ Finset.range m, (a * u + (k * a + a / 2) * a * X) =
-      m * a * u + (m * a) ^ 2 * X / 2 := fun m => by
-    induction m with
-    | zero => simp
-    | succ m ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
-  have hbound := (Finset.abs_sum_le_sum_abs _ _).trans (Finset.sum_le_sum fun k hk =>
-    hstep k (Finset.mem_range.1 hk))
-  rw [Finset.sum_sub_distrib, Finset.sum_range_sub G, hsum, Finset.sum_const, Finset.card_range,
-    nsmul_eq_mul, hna] at hbound
-  convert hbound using 2
-  ring
-
-/-- Along the segment `x + t • h`, a vector `y'` which follows the expansion
-`y + A (z - x)` up to `ε * ‖z - x‖` satisfies `⟪h, y'⟫ = ⟪h, y⟫ + t * ⟪h, A h⟫` up to
-`ε * ‖h‖ ^ 2`. -/
-private theorem abs_inner_sub_inner_sub_mul_le {z x y y' h : E} {A : E →L[ℝ] E} {t ε : ℝ}
-    (hε : 0 ≤ ε) (hz : z - x = t • h) (hzh : ‖z - x‖ ≤ ‖h‖)
-    (hb : ‖y' - y - A (z - x)‖ ≤ ε * ‖z - x‖) :
-    |⟪h, y'⟫_ℝ - ⟪h, y⟫_ℝ - t * ⟪h, A h⟫_ℝ| ≤ ε * ‖h‖ ^ 2 := by
-  have : ⟪h, y'⟫_ℝ - ⟪h, y⟫_ℝ - t * ⟪h, A h⟫_ℝ = ⟪h, y' - y - A (z - x)⟫_ℝ := by
-    rw [hz, map_smul, inner_sub_right, inner_sub_right, real_inner_smul_right]
-  rw [this]
-  refine (abs_real_inner_le_norm _ _).trans ?_
-  calc ‖h‖ * ‖y' - y - A (z - x)‖ ≤ ‖h‖ * (ε * ‖h‖) :=
-        mul_le_mul_of_nonneg_left (hb.trans (mul_le_mul_of_nonneg_left hzh hε)) (norm_nonneg h)
-    _ = ε * ‖h‖ ^ 2 := by ring
-
-/-- For any `L` and `c > 0` there is a positive integer `n` with `L * n⁻¹ ≤ c`. -/
-private theorem exists_pos_nat_mul_inv_le (L : ℝ) {c : ℝ} (hc : 0 < c) :
-    ∃ n : ℕ, 0 < n ∧ L * (n : ℝ)⁻¹ ≤ c := by
-  refine ⟨⌈L / c⌉₊ + 1, Nat.succ_pos _, ?_⟩
-  have := Nat.le_ceil (L / c)
-  rw [div_le_iff₀ hc] at this
-  rw [← div_eq_mul_inv, div_le_iff₀ (by positivity)]
-  push_cast
-  nlinarith
-
 /-- **A first-order expansion of the subdifferential gives a second-order expansion of the
 function.** Suppose `f : E → EReal` has subgradients at every point near `x`, and that these
 follow the expansion `y' = y + A (x' - x) + o(‖x' - x‖)` uniformly over the subdifferential at
@@ -257,7 +216,7 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
   have hstep : ∀ k < n, |F (p (k + 1)) - F (p k) - (a * ⟪h, y⟫_ℝ + (k * a + a / 2) * a * X)| ≤
       ‖A‖ * ‖h‖ ^ 2 * a ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 * a := fun k hk => by
     have e₁ := hY' (k + 1) hk
-    rw [show ((k + 1 : ℕ) : ℝ) * a = k * a + a by push_cast; ring] at e₁
+    rw [Nat.cast_succ, add_mul, one_mul] at e₁
     refine abs_toReal_sub_toReal_sub_le_of_mem_subdifferential ha.le ?_ (hY _ (hp k hk.le))
       (hY _ (hp (k + 1) hk)) (hY' k hk.le) e₁ hX
     simp only [p, add_sub_add_left_eq_sub, ← sub_smul]
