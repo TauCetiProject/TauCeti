@@ -461,6 +461,10 @@
             if (entry[0] === "queue" && data.queue) { value.loaded_waiting = data.queue.loaded_waiting; value.waiting_observed_at = data.queue.waiting_observed_at; }
             data[entry[0]] = value; manifest.domains[entry[0]] = entry[1]; render();
             if (entry[0] === "queue" && route().tab === "queue" && route().params.get("pr")) await lookup(route().params.get("pr"));
+            if (entry[0] === "queue" && route().tab === "queue") {
+              var batchID = route().params.get("batch") || selectedBatch || (value.batches.find(function (b) { return b.state === "head"; }) || value.batches[0] || {}).id;
+              if (batchID && /^\d+$/.test(batchID)) await loadBatch(batchID);
+            }
             if (entry[0] === "queue" && value.waiting_pages) {
               try { value.loaded_waiting = await records(value.waiting_pages); value.waiting_observed_at = value.observed_at; value.waiting_error = false; }
               catch (_) { value.waiting_error = true; }
@@ -472,7 +476,6 @@
         // Slow or failed domains retain their own facts without delaying healthy ones.
         etag = changes.filter(Boolean).length === Object.values(next.domains).filter(function (d) { return d.url; }).length ? response.headers.get("etag") : null;
         if (route().tab === "history" && data.host_history && data.host_history.hosts.length) await loadHostHistory(selectedHistoryHost || data.host_history.hosts[0].machine_id);
-        if (detail && selectedBatch && data.queue && route().tab === "queue") await loadBatch(selectedBatch);
       }
       disconnected = false; delay = 15000; render();
       if (data.queue && route().tab === "queue" && !detail) await navigate();
