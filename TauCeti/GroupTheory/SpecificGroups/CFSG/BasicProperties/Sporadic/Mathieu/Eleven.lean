@@ -6,10 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.GroupTheory.Coset.Enumeration
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.Sporadic.Presentation
+public import TauCeti.GroupTheory.SpecificGroups.Sporadic.Mathieu.Eleven
 
 /-!
-# The presented group of `M₁₁` is finite
+# The presented group of `M₁₁`: finiteness, order and simplicity
 
 The classification list carries the Mathieu group `M₁₁` as the group `SporadicName.M11.Group`
 defined by the transcribed presentation
@@ -25,9 +25,15 @@ most `7920 = |M₁₁|`, by coset enumeration over the cyclic subgroup `⟨b⟩`
 The certificate is replayed by `TauCeti.CosetEnumeration.run` inside the kernel. It defines
 `1454` points, `2204` steps in all, and the enumeration closes with `720` surviving points; scanning
 the relators also shows `b ^ 11 = 1`. Hence `[G : ⟨b⟩] ≤ 720` and `|⟨b⟩| ≤ 11`, so `|G| ≤ 7920`.
-Nothing here uses a permutation model of `M₁₁`: the bound is derived from the two relators alone.
-Together with a surjection onto a group of order `7920`, such as the surjection onto the
-permutation model in `TauCeti.Sporadic.exists_surjective_M11`, it identifies the presented group.
+Nothing in this bound uses a permutation model of `M₁₁`: it is derived from the two relators
+alone.
+
+The bound then identifies the presented group with the permutation model `TauCeti.Sporadic.M11`.
+The homomorphism `TauCeti.Sporadic.M11.presentationHom` maps the presented group onto the model,
+which has exactly `7920` elements (`TauCeti.Sporadic.card_M11`). A surjection from a finite group
+onto a group with at least as many elements is a bijection, so this homomorphism is an isomorphism.
+The presented group therefore has exactly `7920` elements, and it is simple because the model is
+(`TauCeti.Sporadic.isSimpleGroup_M11`).
 
 The certificate was produced outside Lean by a Felsch-style enumeration with preferred
 definitions, which tracks the power of `b` attached to every edge, and was then pruned to the
@@ -37,6 +43,9 @@ steps that change the table; only its replay is trusted.
 
 * `TauCeti.SporadicName.finite_group_M11`: the presented group of `M₁₁` is finite.
 * `TauCeti.SporadicName.natCard_group_M11_le`: it has at most `7920` elements.
+* `TauCeti.SporadicName.groupMulEquivM11`: it is isomorphic to the permutation model.
+* `TauCeti.SporadicName.natCard_group_M11`: it has exactly `7920` elements.
+* `TauCeti.SporadicName.isSimpleGroup_group_M11`: it is simple.
 
 ## References
 
@@ -261,5 +270,32 @@ instance finite_group_M11 : Finite M11.Group :=
 /-- **The presented group of `M₁₁` has at most `7920` elements.** -/
 theorem natCard_group_M11_le : Nat.card M11.Group ≤ 7920 :=
   GroupPresentation.natCard_le_of_run _ run_M11 (by decide)
+
+/-- **Recognition of `M₁₁`.** The presented group of `M₁₁` is isomorphic to the permutation model
+`TauCeti.Sporadic.M11`, by the homomorphism `TauCeti.Sporadic.M11.presentationHom` sending the
+presentation generators to `TauCeti.Sporadic.M11.presentationImage`. -/
+noncomputable def groupMulEquivM11 : M11.Group ≃* Sporadic.M11 :=
+  MulEquiv.ofBijective (Sporadic.M11.presentationHom.codRestrict Sporadic.M11 fun x ↦
+      Sporadic.M11.range_presentationHom ▸ ⟨x, rfl⟩) <|
+    Function.Surjective.bijective_of_nat_card_le
+      (fun y ↦ by
+        obtain ⟨x, hx⟩ : (y : Equiv.Perm (Fin 11)) ∈ Sporadic.M11.presentationHom.range := by
+          rw [Sporadic.M11.range_presentationHom]
+          exact y.2
+        exact ⟨x, Subtype.ext hx⟩)
+      (Sporadic.card_M11 ▸ natCard_group_M11_le)
+
+@[simp]
+theorem coe_groupMulEquivM11_apply (x : M11.Group) :
+    (groupMulEquivM11 x : Equiv.Perm (Fin 11)) = Sporadic.M11.presentationHom x := by
+  simp [groupMulEquivM11]
+
+/-- **The order of `M₁₁`.** The presented group of `M₁₁` has exactly `7920` elements. -/
+theorem natCard_group_M11 : Nat.card M11.Group = 7920 :=
+  (Nat.card_congr groupMulEquivM11.toEquiv).trans Sporadic.card_M11
+
+/-- **The presented group of `M₁₁` is simple.** -/
+instance isSimpleGroup_group_M11 : IsSimpleGroup M11.Group :=
+  groupMulEquivM11.isSimpleGroup
 
 end TauCeti.SporadicName
