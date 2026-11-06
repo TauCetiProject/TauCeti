@@ -590,11 +590,7 @@ sum of the row `c = 0` and the folded rows `c` and `-c` for `c ≥ 1`, each of w
 `tsum_row_add_tsum_row_neg`. -/
 private lemma tsum_weightedEisensteinSummand_fold (hk : 2 ≤ k) (z : ℍ)
     (hF : Summable fun p : ℤ × ℤ ↦
-      W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z)
-    (hT : Summable fun p : ℕ+ × ℕ+ ↦
-      𝓕 (fun d ↦ W ![((p.1 : ℕ) : ZMod N), d] +
-          (-1) ^ k * W ![-((p.1 : ℕ) : ZMod N), -d]) (-((p.2 : ℕ) : ZMod N)) *
-        ((p.2 : ℕ) : ℂ) ^ (k - 1) * cexp (2 * π * I * z / N) ^ ((p.1 : ℕ) * p.2)) :
+      W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z) :
     ∑' p : ℤ × ℤ, W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z =
       ∑' d : ℤ, W ![0, (d : ZMod N)] * eisSummand k ![0, d] z +
         (-2 * π * I) ^ k / ((k - 1).factorial * N ^ k) * ∑' p : ℕ+ × ℕ+,
@@ -603,6 +599,7 @@ private lemma tsum_weightedEisensteinSummand_fold (hk : 2 ≤ k) (z : ℍ)
             ((p.2 : ℕ) : ℂ) ^ (k - 1) * cexp (2 * π * I * z / N) ^ ((p.1 : ℕ) * p.2) := by
   set F : ℤ × ℤ → ℂ := fun p ↦
     W ![(p.1 : ZMod N), (p.2 : ZMod N)] * eisSummand k ![p.1, p.2] z with hFdef
+  have hT := (summable_norm_weightedTerm (k := k) W z).of_norm
   have hrows : Summable fun c : ℤ ↦ ∑' d, F (c, d) := hF.prod
   have hpos : Summable fun c : ℕ+ ↦ ∑' d, F (((c : ℕ) : ℤ), d) :=
     hrows.comp_injective (Nat.cast_injective.comp PNat.coe_injective)
@@ -662,7 +659,9 @@ theorem qExpansion_coeff_of_coe_eq_weightedEisensteinSeries {𝒢 : Subgroup (GL
   have hfτ : f τ = ∑' p, F p := by
     rw [hf, weightedEisensteinSeries_def, ← (finTwoArrowEquiv ℤ).symm.tsum_eq]
     simp [hF, hcomp]
-  have hfold := tsum_weightedEisensteinSummand_fold W (by omega) τ hFs hTs
+  have hfold : ∑' p, F p = ∑' d : ℤ, F (0, d) + K * ∑' p : ℕ+ × ℕ+, T p.1 p.2 :=
+    by simpa only [hF, hT, K, Int.cast_zero] using
+      tsum_weightedEisensteinSummand_fold W (by omega) τ hFs
   -- regroup by `n = c m`; each group carries `q ^ n`
   have hgroup (n : ℕ+) : ∑ x ∈ (n : ℕ).divisorsAntidiagonal, T x.1 x.2 = a n * q ^ (n : ℕ) := by
     rw [ha, Finset.sum_mul]
@@ -680,7 +679,7 @@ theorem qExpansion_coeff_of_coe_eq_weightedEisensteinSeries {𝒢 : Subgroup (GL
     rw [add_comm]
     congr 1
     refine tsum_congr fun d ↦ ?_
-    simp [eisSummand]
+    simp [hF, eisSummand]
 
 end Weighted
 
