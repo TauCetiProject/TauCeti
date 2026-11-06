@@ -12,7 +12,7 @@ public import TauCeti.AlgebraicTopology.Singular.Triple.Free
 public import TauCeti.Geometry.Manifold.Morse.Cell.Band
 
 /-!
-# Homology and cohomology in and above the degree of the largest Morse index
+# Homology in the degree of the largest Morse index, and cohomology above it
 
 Let `f` be a Morse function on a boundaryless finite-dimensional manifold `M`, and let `a ≤ b` be
 regular values with compact band `f⁻¹[a, b]`. If every critical point of `f` in the band has index
@@ -33,13 +33,16 @@ Then `H_d(M; V)` is the colimit of the homology of a regular sublevel exhaustion
 `H_d(M_{a_j}) → H_d(M_{a_{j+1}})` injective, with cokernels embedded in the free modules
 `H_d(M_{a_{j+1}}, M_{a_j})`, and such a colimit is free (`ModuleCat.free_of_isColimit`).
 
-Over a principal ideal ring `k` without zero divisors the universal coefficient theorem turns
-these statements into the vanishing of the cohomology `Hⁿ(M; V, N)` for `n > d` and every
-`k`-module `N` (`TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le` and
-`TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le`): the term
-`Hom(Hₙ(M; V), N)` vanishes with `Hₙ(M; V)`, and the term `Ext¹(Hₙ₋₁(M; V), N)` vanishes because
-`Hₙ₋₁(M; V)` is either zero or, for `n = d + 1`, free. None of these statements says that the
-degree-`d` integral cohomology is torsion-free.
+Together with the vanishing of homology above `d`, the universal coefficient theorem over the
+hereditary ring `k` then shows that cohomology vanishes above degree `d`: for every `k`-module
+`N`, `Hⁿ(M_b, M_a; V, N) = 0` and, for a proper Morse function bounded below or on a compact
+manifold, `Hⁿ(M; V, N) = 0` for `n > d`
+(`TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le`,
+`TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le` and
+`TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le`). In degree
+`d + 1` this uses the freeness of `H_d`, which kills the term `Ext¹(H_d, N)`. None of these
+statements says that the degree-`d` integral cohomology is torsion-free: it contains
+`Ext¹(H_{d-1}, ℤ)`, which can be nonzero.
 
 Freeness is proved along Milnor's induction over the critical levels,
 `TauCeti.IsMorse.band_induction`, together with the vanishing of `H_{d+1}`. Across one critical
@@ -58,7 +61,8 @@ freeness (`TauCeti.TopTriple.free_singularHomology_totalPair`).
   `TauCeti.IsMorse.free_singularHomology_of_compactSpace_of_manifoldMorseIndex_le` and
   `TauCeti.IsMorse.free_singularHomology_of_manifoldMorseIndex_le`: freeness of homology in the
   degree of the largest index.
-* `TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le` and
+* `TauCeti.IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le`,
+  `TauCeti.IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le` and
   `TauCeti.IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le`: vanishing of cohomology
   above the largest index.
 
@@ -67,7 +71,7 @@ freeness (`TauCeti.TopTriple.free_singularHomology_totalPair`).
 * J. Milnor, *Morse Theory*, Annals of Mathematics Studies 51, Princeton University Press, 1963,
   Theorem 3.5 and Section 7.
 * A. Hatcher, [*Algebraic Topology*](https://pi.math.cornell.edu/~hatcher/AT/AT.pdf),
-  Section 2.2, Lemma 2.34, and Section 3.1, Theorem 3.2 (the universal coefficient theorem).
+  Section 2.2, Lemma 2.34, and Section 3.1, Theorem 3.2.
 -/
 
 public section
@@ -205,6 +209,29 @@ theorem IsMorse.free_singularHomology_of_manifoldMorseIndex_le (hf : IsMorse I f
       Submodule.free_of_isPrincipalIdealRing _
     exact .of_equiv e.symm
 
+/-- **Cohomology of a compact band vanishes above the largest index.** Let `f` be a Morse function,
+`a ≤ b` regular values with compact band `f⁻¹[a, b]`, and suppose that every critical point in the
+band has index at most `d`. Then `Hⁿ({f ≤ b}, {f ≤ a}; V, N) = 0` for every `n > d`, every free
+module `V` over a principal ideal ring `k` without zero divisors and every `k`-module `N`. For
+instance the integral cohomology of the pair vanishes above degree `d`. -/
+theorem IsMorse.isZero_singularCohomology_sublevelPair_of_manifoldMorseIndex_le (hf : IsMorse I f)
+    {a b : ℝ} (hab : a ≤ b) (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (ha : IsRegularValue I 𝓘(ℝ) f a) (hb : IsRegularValue I 𝓘(ℝ) f b) {d : ℕ}
+    (hd : ∀ p ∈ criticalPoints I f ∩ f ⁻¹' Icc a b, manifoldMorseIndex I f p ≤ d)
+    {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V N : ModuleCat.{u} k)
+    [Module.Free k V] {n : ℕ} (hn : d < n) :
+    IsZero ((sublevelPair f hab).singularCohomology V k N n) := by
+  obtain ⟨m, rfl⟩ : ∃ m, n = m + 1 := ⟨n - 1, by lia⟩
+  -- `Hₘ` is free if `m = d` and zero if `m > d`, so projective either way.
+  have : Projective ((sublevelPair f hab).singularHomology V m) := by
+    rcases (Nat.lt_succ_iff.1 hn).eq_or_lt with rfl | hdm
+    · have := hf.free_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb hd V
+      infer_instance
+    · exact (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb hd
+        V hdm).projective
+  exact TopPair.isZero_singularCohomology_succ_of_projective_homology _ V N m
+    (hf.isZero_singularHomology_sublevelPair_of_manifoldMorseIndex_le hab hcompact ha hb hd V hn)
+
 /-- **Cohomology of a manifold with a proper Morse function vanishes above the largest index.** Let
 `f` be a proper Morse function, bounded below, all of whose critical points have index at most `d`.
 Then the singular cohomology `Hⁿ(M; V, N)` vanishes for every `n > d`, every free module `V` over a
@@ -225,12 +252,13 @@ theorem IsMorse.isZero_singularCohomology_of_manifoldMorseIndex_le (hf : IsMorse
     · have := hf.free_singularHomology_of_manifoldMorseIndex_le hp hbdd hd V
       infer_instance
     · exact (hzero hlt).projective
-  exact TopCat.isZero_singularCohomology_succ_of_projective_of_isZero _ V N m (hzero hn)
+  exact TopCat.isZero_singularCohomology_succ_of_projective_homology _ V N m (hzero hn)
 
 /-- **Cohomology of a compact manifold vanishes above the largest index.** If every critical point
-of a Morse function on a compact boundaryless manifold `M` has index at most `d`, then `Hⁿ(M; V, N)`
-vanishes for every `n > d`, every free module `V` over a principal ideal ring `k` without zero
-divisors and every `k`-module `N`. -/
+of a Morse function on a compact boundaryless manifold `M` has index at most `d`, then
+`Hⁿ(M; V, N) = 0` for every `n > d`, every free module `V` over a principal ideal ring `k` without
+zero divisors and every `k`-module `N`. For instance the integral cohomology of `M` vanishes above
+degree `d`. -/
 theorem IsMorse.isZero_singularCohomology_of_compactSpace_of_manifoldMorseIndex_le [CompactSpace M]
     (hf : IsMorse I f) {d : ℕ} (hd : ∀ x ∈ criticalPoints I f, manifoldMorseIndex I f x ≤ d)
     {k : Type u} [CommRing k] [NoZeroDivisors k] [IsPrincipalIdealRing k] (V N : ModuleCat.{u} k)
