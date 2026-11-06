@@ -53,6 +53,7 @@ theorem higherReflection_of_nonneg (k : ℕ) (f : ℝ → F) {t : ℝ} (ht : 0 �
     higherReflection k f t = f t := ite_eq_left ht
 
 /-- On the negative half-line the extension uses the reflected dilations. -/
+@[simp]
 theorem higherReflection_of_neg (k : ℕ) (f : ℝ → F) {t : ℝ} (ht : t < 0) :
     higherReflection k f t = higherReflectionLower k f t := ite_eq_right ht.not_ge
 
@@ -83,6 +84,7 @@ theorem higherReflection_smul (k : ℕ) (c : ℝ) (f : ℝ → F) :
   split_ifs <;> rfl
 
 /-- At first order higher-order reflection is the usual even extension. -/
+@[simp]
 theorem higherReflection_one (f : ℝ → F) (t : ℝ) :
     higherReflection 1 f t = f |t| := by
   by_cases ht : 0 ≤ t
@@ -255,10 +257,32 @@ theorem _root_.MeasureTheory.AEStronglyMeasurable.higherReflection {k : ℕ} {f 
     (higherReflectionNode_neg j).ne)).const_smul _
 
 /-- Higher-order reflection sends `Lᵖ` functions on the original half-line to `Lᵖ` functions on
-the full normal line. -/
-theorem _root_.MeasureTheory.MemLp.higherReflection {k : ℕ} {p : ℝ≥0∞} (hp : 1 ≤ p) {f : ℝ → F}
+the full normal line, for every exponent, including those below one. -/
+theorem _root_.MeasureTheory.MemLp.higherReflection {k : ℕ} {p : ℝ≥0∞} {f : ℝ → F}
     (hf : MemLp f p (volume.restrict (Ici 0))) : MemLp (higherReflection k f) p volume := by
-  exact (eLpNorm_higherReflection_le k hp f).trans_lt (ENNReal.mul_lt_top
-    (higherReflectionBound_ne_top k p).lt_top hf.eLpNorm_lt_top)
+  let g := (Ici (0 : ℝ)).indicator f
+  have hg : MemLp g p volume :=
+    (memLp_indicator_iff_restrict measurableSet_Ici.nullMeasurableSet).2 hf
+  have heq : EqOn f g (Ici 0) := fun _ ht ↦ (indicator_of_mem ht f).symm
+  rw [higherReflection_congr (k := k) heq, higherReflection_indicator_eq_add]
+  apply hg.add
+  apply MemLp.indicator measurableSet_Iio.nullMeasurableSet
+  have hlower : MemLp (fun t ↦ ∑ j : Fin k,
+      higherReflectionCoeff k j • g (higherReflectionNode j * t)) p volume := by
+    apply memLp_finsetSum
+    intro j _
+    have hj : MemLp (fun t ↦ g (higherReflectionNode j * t)) p volume := by
+      rw [MemLp, eLpNorm_comp_higherReflectionNode]
+      exact ENNReal.mul_lt_top
+        (ENNReal.rpow_ne_top_of_nonneg (by positivity) ENNReal.ofReal_ne_top).lt_top
+        hg.eLpNorm_lt_top
+    exact hj.const_smul _
+  have hsum : (fun t ↦ ∑ j : Fin k,
+      higherReflectionCoeff k j • g (higherReflectionNode j * t)) =
+      higherReflectionLower k g := by
+    funext t
+    exact (higherReflectionLower_apply k g t).symm
+  rw [hsum] at hlower
+  exact hlower
 
 end TauCeti
