@@ -221,28 +221,6 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
       simp [quarticWords]
   exact span_pow_succ_le_span_of_forall_mul_mem subset_span hS t
 
-/-- The negative of an additive commutator lies in the commutator submodule. -/
-private theorem neg_mul_sub_mul_mem_commutatorSubmodule {k : Type*} [Semiring k] [Module k A]
-    (a b : A) : -(a * b - b * a) ∈ commutatorSubmodule k A :=
-  neg_mem_commutatorSubmodule (mul_sub_mul_mem_commutatorSubmodule k A a b)
-
-/-- If `b * a = c` and `c` lies in the commutator submodule, then so does `a * b`. -/
-private theorem mul_mem_commutatorSubmodule_of_mul_eq {k : Type*} [Semiring k] [Module k A]
-    {a b c : A} (e : b * a = c) (h : c ∈ commutatorSubmodule k A) :
-    a * b ∈ commutatorSubmodule k A :=
-  mul_mem_commutatorSubmodule_comm.2 (e ▸ h)
-
-/-- If `a * b = c` and `b * a` lies in the commutator submodule, then so does `c`. -/
-private theorem mem_commutatorSubmodule_of_mul_eq_of_mul_comm_mem {k : Type*} [Semiring k]
-    [Module k A] {a b c : A} (e : a * b = c) (h : b * a ∈ commutatorSubmodule k A) :
-    c ∈ commutatorSubmodule k A :=
-  e ▸ mul_mem_commutatorSubmodule_comm.2 h
-
-/-- An element that is zero lies in the commutator submodule. -/
-private theorem mem_commutatorSubmodule_of_eq_zero {k : Type*} [Semiring k] [Module k A] {a : A}
-    (h : a = 0) : a ∈ commutatorSubmodule k A :=
-  h ▸ zero_mem _
-
 /-- The reduced words `quarticWords x y` of lengths one to three lie in the commutator submodule,
 given the rewriting rules for `x x` and `y y y` and the expansion of `(x + y) ^ 4`. -/
 private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three {k : Type*}
@@ -270,16 +248,16 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_one_to_three
   -- minus `x y x` up to two commutators.
   have hxyx : x * y * x ∈ C :=
     mul_mem_commutatorSubmodule_comm.2
-      (mem_commutatorSubmodule_of_eq_zero (by rw [← mul_assoc, hxx, zero_mul]))
+      (by simp only [← mul_assoc, hxx, zero_mul, zero_mem])
   have hxyy : x * y * y ∈ C := by
-    have h : (3 : k) • (x * y * y) = (x + y) ^ 3 + -(x * y * x) + -(y * (x * y) - x * y * y) +
-        -(y * y * x - x * (y * y)) := by
+    have h : (3 : k) • (x * y * y) = (x + y) ^ 3 + -(x * y * x) + (x * y * y - y * (x * y)) +
+        (x * (y * y) - y * y * x) := by
       rw [hcube, ← two_add_one_eq_three, add_smul, two_smul, one_smul]
       noncomm_ring
     have hmem : (3 : k) • (x * y * y) ∈ C := by
       rw [h]
       exact add_mem (add_mem (add_mem hc (neg_mem_commutatorSubmodule hxyx))
-        (neg_mul_sub_mul_mem_commutatorSubmodule _ _)) (neg_mul_sub_mul_mem_commutatorSubmodule _ _)
+        (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)) (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
     exact (Submodule.smul_mem_iff_of_isUnit _ h3).1 hmem
   refine ⟨?_, ?_, ?_⟩ <;> simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
   · exact ⟨hx₀, hy₀⟩
@@ -300,22 +278,21 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_length_four {k : Typ
   -- Length four: `x y y x`, `y x y y` and `y y x y` rotate into words containing `x x` or
   -- `y y y`, and then twice `y x y x` is a sum of commutators.
   have hxyyx : x * y * y * x ∈ C :=
-    mul_mem_commutatorSubmodule_comm.2
-      (mem_commutatorSubmodule_of_eq_zero (by simp only [← mul_assoc, hxx, zero_mul]))
+    mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem])
   have hyxyy : y * x * y * y ∈ C :=
-    mem_commutatorSubmodule_of_mul_eq_of_mul_comm_mem (by simp only [mul_assoc])
-      (mem_commutatorSubmodule_of_eq_zero (r₁ x))
+    by simpa only [mul_assoc] using
+      mul_mem_commutatorSubmodule_comm.2 (r₁ x ▸ zero_mem C : x * y * y * y ∈ C)
   have hyyxy : y * y * x * y ∈ C :=
-    mem_commutatorSubmodule_of_mul_eq_of_mul_comm_mem (by simp only [mul_assoc]) hyxyy
+    by simpa only [mul_assoc] using mul_mem_commutatorSubmodule_comm.2 hyxyy
   have hyxyx : y * x * y * x ∈ C := by
-    have h : (2 : k) • (y * x * y * x) = -(x * (y * x * y) - y * x * y * x) + -(x * y * y * x) +
+    have h : (2 : k) • (y * x * y * x) = (y * x * y * x - x * (y * x * y)) + -(x * y * y * x) +
         -(y * x * y * y) + -(y * y * x * y) := by
       rw [two_smul]
       linear_combination (norm := skip) hT
       noncomm_ring
     have hmem : (2 : k) • (y * x * y * x) ∈ C := by
       rw [h]
-      exact add_mem (add_mem (add_mem (neg_mul_sub_mul_mem_commutatorSubmodule _ _)
+      exact add_mem (add_mem (add_mem (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
         (neg_mem_commutatorSubmodule hxyyx)) (neg_mem_commutatorSubmodule hyxyy))
         (neg_mem_commutatorSubmodule hyyxy)
     exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
@@ -334,22 +311,22 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_five_six {k 
   -- Length five: the difference of the expansion multiplied by `y` and by `x` leaves `x y y x y`
   -- up to commutators and words rotating into `x x` or `y y y`.
   have hyyxyy : y * y * x * y * y ∈ C :=
-    mem_commutatorSubmodule_of_mul_eq_of_mul_comm_mem (by simp only [mul_assoc])
-      (mem_commutatorSubmodule_of_eq_zero (r₁ (y * x)))
+    by simpa only [mul_assoc] using
+      mul_mem_commutatorSubmodule_comm.2 (r₁ (y * x) ▸ zero_mem C : y * x * y * y * y ∈ C)
   have hxyxyx : x * y * x * y * x ∈ C :=
-    mem_commutatorSubmodule_of_mul_eq_of_mul_comm_mem (by simp only [mul_assoc])
-      (mem_commutatorSubmodule_of_eq_zero (r₀ (y * x * y)))
+    by simpa only [mul_assoc] using
+      mul_mem_commutatorSubmodule_comm.2 (r₀ (y * x * y) ▸ zero_mem C : y * x * y * x * x ∈ C)
   have hxyyxy : x * y * y * x * y ∈ C := by
-    have h : x * y * y * x * y = -(y * (x * y * x * y) - x * y * x * y * y) +
-        -(y * (x * y * y * x) - x * y * y * x * y) + -(y * y * x * y * x - x * (y * y * x * y)) +
+    have h : x * y * y * x * y = (x * y * x * y * y - y * (x * y * x * y)) +
+        (x * y * y * x * y - y * (x * y * y * x)) + (x * (y * y * x * y) - y * y * x * y * x) +
         -(y * y * x * y * y) + x * y * x * y * x := by
       linear_combination (norm := skip) y * hT - x * hT
       simp only [mul_add, ← mul_assoc, hxx, hyyy, zero_mul, zero_add, add_zero]
       noncomm_ring
     rw [h]
-    exact add_mem (add_mem (add_mem (add_mem (neg_mul_sub_mul_mem_commutatorSubmodule _ _)
-      (neg_mul_sub_mul_mem_commutatorSubmodule _ _))
-      (neg_mul_sub_mul_mem_commutatorSubmodule _ _)) (neg_mem_commutatorSubmodule hyyxyy)) hxyxyx
+    exact add_mem (add_mem (add_mem (add_mem (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
+      (mul_sub_mul_mem_commutatorSubmodule _ _ _ _))
+      (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)) (neg_mem_commutatorSubmodule hyyxyy)) hxyxyx
   -- Length six: the expansion multiplied by `y y` leaves `y y x y y x` up to a word rotating into
   -- `y y y`.
   have hyyxyyx : y * y * x * y * y * x ∈ C := by
@@ -359,15 +336,13 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_five_six {k 
       noncomm_ring
     rw [h]
     exact neg_mem_commutatorSubmodule
-      (mul_mem_commutatorSubmodule_comm.2
-        (mem_commutatorSubmodule_of_eq_zero (by simp only [← mul_assoc, r₁])))
+      (mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, r₁, zero_mem]))
   refine ⟨?_, ?_⟩ <;> simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
   · exact ⟨hxyyxy,
-      mem_commutatorSubmodule_of_mul_eq_of_mul_comm_mem (by simp only [mul_assoc]) hxyyxy,
-      mul_mem_commutatorSubmodule_of_mul_eq (by noncomm_ring) hxyyxy, hyyxyy⟩
-  · exact ⟨mul_mem_commutatorSubmodule_comm.2
-      (mem_commutatorSubmodule_of_eq_zero (by simp only [← mul_assoc, hxx, zero_mul])),
-      mul_mem_commutatorSubmodule_of_mul_eq (by simp only [mul_assoc]) hyyxyyx, hyyxyyx⟩
+      (by simpa only [mul_assoc] using mul_mem_commutatorSubmodule_comm.2 hxyyxy),
+      mul_mem_commutatorSubmodule_comm.2 (by convert hxyyxy using 1; noncomm_ring), hyyxyy⟩
+  · exact ⟨mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem]),
+      mul_mem_commutatorSubmodule_comm.2 (by simpa only [mul_assoc] using hyyxyyx), hyyxyyx⟩
 
 /-- The reduced words `quarticWords x y` of lengths seven and eight lie in the commutator submodule,
 given the rewriting rules for `x x` and `y y y` and the expansion of `(x + y) ^ 4`. -/
@@ -388,17 +363,15 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight 
       noncomm_ring
     rw [h]
     exact neg_mem_commutatorSubmodule
-      (mul_mem_commutatorSubmodule_comm.2
-        (mem_commutatorSubmodule_of_eq_zero (by simp only [← mul_assoc, hxx, zero_mul])))
+      (mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem]))
   -- Length eight: the expansion multiplied by `x y y x` shows that twice `y y x y y x y x` is a
   -- sum of commutators and a word rotating into `x x`.
   have hxyyxyxyx : x * y * y * x * y * x * y * x ∈ C := by
-    exact mul_mem_commutatorSubmodule_comm.2
-      (mem_commutatorSubmodule_of_eq_zero (by simp only [← mul_assoc, hxx, zero_mul]))
+    exact mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hxx, zero_mul, zero_mem])
   have hyyxyyxyx : y * y * x * y * y * x * y * x ∈ C := by
     have h : (2 : k) • (y * y * x * y * y * x * y * x) =
-        -(x * y * y * x * y * x * (y * y) - y * y * (x * y * y * x * y * x)) +
-        -(x * (y * y * x * y * y * x * y) - y * y * x * y * y * x * y * x) +
+        (y * y * (x * y * y * x * y * x) - x * y * y * x * y * x * (y * y)) +
+        (y * y * x * y * y * x * y * x - x * (y * y * x * y * y * x * y)) +
         -(x * y * y * x * y * x * y * x) := by
       rw [two_smul]
       linear_combination (norm := skip) x * y * y * x * hT
@@ -406,13 +379,12 @@ private theorem forall_mem_commutatorSubmodule_quarticWords_lengths_seven_eight 
       noncomm_ring
     have hmem : (2 : k) • (y * y * x * y * y * x * y * x) ∈ C := by
       rw [h]
-      exact add_mem (add_mem (neg_mul_sub_mul_mem_commutatorSubmodule _ _)
-        (neg_mul_sub_mul_mem_commutatorSubmodule _ _)) (neg_mem_commutatorSubmodule hxyyxyxyx)
+      exact add_mem (add_mem (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)
+        (mul_sub_mul_mem_commutatorSubmodule _ _ _ _)) (neg_mem_commutatorSubmodule hxyyxyxyx)
     exact (Submodule.smul_mem_iff_of_isUnit _ h2).1 hmem
   refine ⟨?_, ?_⟩ <;> simp only [quarticWords, Set.forall_mem_insert, Set.forall_mem_singleton]
-  · exact ⟨mem_commutatorSubmodule_of_mul_eq_of_mul_comm_mem (by simp only [mul_assoc]) hxyyxyxy,
-      mul_mem_commutatorSubmodule_comm.2
-        (mem_commutatorSubmodule_of_eq_zero (by simp only [← mul_assoc, hyyy, zero_mul]))⟩
+  · exact ⟨(by simpa only [mul_assoc] using mul_mem_commutatorSubmodule_comm.2 hxyyxyxy),
+      mul_mem_commutatorSubmodule_comm.2 (by simp only [← mul_assoc, hyyy, zero_mul, zero_mem])⟩
   · exact hyyxyyxyx
 
 /-- **Words in a square-zero and a cube-zero element with a fourth-power-zero sum are sums of
