@@ -302,6 +302,8 @@ theorem exists_schneider_auxiliary_algebraic (α β γ : K) :
     q.2 (D₁ + 2 * L * D₂) L hL₁ p.1.is_lt p.2.is_lt
     (schneider_exponent_le q.1 q.2 p.1.is_lt p.2.is_lt)
   let a' : Matrix (Fin L × Fin L) (Fin D₁ × Fin D₂) (𝓞 K) := fun p q ↦ ⟨_, (hent p q).1⟩
+  -- The coercion of `⟨_, (hent p q).1⟩ : 𝓞 K` to `K` is by definition the term inside `hterm`,
+  -- so this is `rfl`.
   have ha'e (p q) : (a' p q : K) = (m : K) ^ (D₁ + 2 * L * D₂) *
       ((((p.1 : ℕ) + 1 : ℕ) + (((p.2 : ℕ) + 1 : ℕ) : K) * β) ^ (q.1 : ℕ) *
         (α ^ (((p.1 : ℕ) + 1) * q.2) * γ ^ (((p.2 : ℕ) + 1) * q.2))) := rfl
