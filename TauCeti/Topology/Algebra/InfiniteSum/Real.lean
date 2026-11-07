@@ -9,7 +9,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Real
 import Mathlib.Analysis.SpecificLimits.Basic
 
 /-!
-# Unbounded weights preserving summability
+# Real summability, finite repetitions, and unbounded weights
 
 A summable real sequence `a` remains summable after multiplication by suitable weights
 `c n ≥ 1` tending to infinity: no summable sequence decays at a slowest possible rate. This is
@@ -18,6 +18,10 @@ one factor tends to zero while the other stays absolutely summable.
 
 The weights count the blocks into which the tails of `|a|` are cut: `c n` is one more than the
 number of indices `k` with `N k ≤ n`, where the tail of `|a|` beyond `N k` is at most `2⁻ᵏ`.
+
+Natural multiplicities can also be expressed by repeating each nonnegative real term
+through a finite fiber. Summability of the repeated family is equivalent to summability of
+the original family weighted by those multiplicities.
 
 ## Main results
 
@@ -93,3 +97,20 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     gcongr with k
     simp only [hd_def, hb_def]
     split_ifs <;> simp
+
+namespace TauCeti
+
+/-- Repeating each nonnegative real term a finite natural number of times preserves
+summability exactly when the multiplicity-weighted family is summable. -/
+theorem summable_sigma_fin_iff {ι : Type*} {a : ι → ℝ} (ha : ∀ i, 0 ≤ a i) (m : ι → ℕ) :
+    Summable (fun p : Σ i, Fin (m i) ↦ a p.1) ↔
+      Summable (fun i ↦ (m i : ℝ) * a i) := by
+  rw [summable_sigma_of_nonneg (fun p ↦ ha p.1)]
+  constructor
+  · rintro ⟨_, h⟩
+    simpa using h
+  · intro h
+    refine ⟨fun _ ↦ Summable.of_finite, ?_⟩
+    simpa using h
+
+end TauCeti
