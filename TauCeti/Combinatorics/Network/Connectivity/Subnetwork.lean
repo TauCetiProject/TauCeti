@@ -41,9 +41,8 @@ theorem isStronglyConnected_iff_exists_toSubnetwork_le (S : N.Subnetwork) :
     exact ⟨S.mapPath p, toSubnetwork_mapPath_le S p⟩
   · intro h x y
     obtain ⟨p, hp⟩ := h x.1 x.2 y.1 y.2
-    refine ⟨S.restrictPath p fun _ ha ↦ hp.2 ?_⟩
-    rw [ArrowWalk.toSubnetwork_arrowSet]
-    exact ha
+    obtain ⟨q, -⟩ := (S.exists_mapPath_eq_iff p).2 hp
+    exact ⟨q⟩
 
 end TauCeti.Network.Subnetwork
 
