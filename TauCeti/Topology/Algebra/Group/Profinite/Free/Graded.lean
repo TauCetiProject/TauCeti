@@ -562,6 +562,20 @@ theorem mem_gradedPowIterSpan_iff {S : Set X} [Fintype S] {j : ℕ}
   rw [gradedPowIterSpan, Set.image_eq_range]
   exact mem_span_range_iff_exists_fun _
 
+/-- **Membership in the span of the `p`-power classes, with coefficients on all generators.** A
+vector `y` of the span of the iterated `p`-powers `π^j ξ_i` over a set `S` of generators is the
+combination `Σ_i c_i π^j ξ_i` of the `π^j ξ_i` over all generators, with coefficients `c_i`
+that vanish outside `S`. -/
+theorem exists_fun_of_mem_gradedPowIterSpan [Fintype X] {S : Set X} {j : ℕ}
+    {y : gradedPiece p (freeProP p X) j} (hy : y ∈ gradedPowIterSpan p X S j) :
+    ∃ c : X → ZMod p, (∀ i, c i ≠ 0 → i ∈ S) ∧
+      ∑ i, c i • gradedPowIter p (freeProP p X) j (gradedMkZero p (freeProP p X) (of i)) = y := by
+  rw [gradedPowIterSpan_def] at hy
+  obtain ⟨f, hfS, hf⟩ := (Finsupp.mem_span_image_iff_linearCombination _).mp hy
+  refine ⟨f, fun i hi ↦ by_contra fun hiS ↦ hi ((Finsupp.mem_supported' _ _).mp hfS i hiS), ?_⟩
+  rw [← hf, Finsupp.linearCombination_apply_of_mem_supported (s := Finset.univ) (ZMod p)
+    (Finset.subset_univ _)]
+
 end PowIterSpan
 
 end freeProP
