@@ -8,7 +8,6 @@ module
 public import TauCeti.MeasureTheory.Measure.Interval
 public import TauCeti.MeasureTheory.Measure.Typeclasses.Finite
 public import Mathlib.MeasureTheory.Measure.GiryMonad
-import Mathlib.Topology.Algebra.Order.Archimedean
 
 /-!
 # Occurrence times on the half-line
