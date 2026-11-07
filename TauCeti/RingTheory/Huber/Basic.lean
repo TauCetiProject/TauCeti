@@ -12,7 +12,7 @@ public import Mathlib.Topology.Algebra.Ring.Ideal
 public import TauCeti.RingTheory.Huber.PowerBounded
 import Mathlib.Topology.Algebra.IsUniformGroup.Basic
 import TauCeti.Algebra.Group.Pow
-import TauCeti.RingTheory.Subring.SpanSingleton
+import TauCeti.RingTheory.Subsemiring.SpanSingleton
 public import TauCeti.Topology.Algebra.Group.FirstCountable
 public import TauCeti.Topology.Algebra.TopologicallyNilpotent.Basic
 
@@ -890,13 +890,13 @@ theorem _root_.Subring.isAdic_span_singleton_of_isOpen_of_isBounded :
     IsAdic (Ideal.span {(⟨ϖ, hϖA₀⟩ : A₀)}) := by
   rw [isAdic_iff]
   refine ⟨fun n ↦ ?_, fun s hs ↦ ?_⟩
-  · rw [A₀.coe_span_singleton_pow hϖA₀]
+  · rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
     exact (hA₀.smul (hϖ.isUnit.pow n).unit).preimage continuous_subtype_val
   · rw [IsInducing.subtypeVal.nhds_eq_comap, ZeroMemClass.coe_zero, Filter.mem_comap] at hs
     obtain ⟨t, ht, hts⟩ := hs
     obtain ⟨n, hn⟩ := hb.exists_pow_mul_subset hϖ.isTopologicallyNilpotent ht
     refine ⟨n, ?_⟩
-    rw [A₀.coe_span_singleton_pow hϖA₀]
+    rw [SubsemiringClass.coe_span_singleton_pow A₀ hϖA₀]
     refine fun x hx ↦ hts (hn ?_)
     rw [Set.singleton_mul]
     exact hx
@@ -926,7 +926,7 @@ theorem mem_ofIsPseudoUniformizer_idealOfDefinition
     x ∈ (ofIsPseudoUniformizer A₀ hA₀ hb hϖ hϖA₀).idealOfDefinition ↔
       ∃ y ∈ A₀, ϖ * y = x := by
   -- the ideal of definition is `Ideal.span {ϖ}` by construction, and `x` is an element of `A₀`
-  exact A₀.mem_span_singleton_iff hϖA₀
+  exact SubsemiringClass.mem_span_singleton_iff A₀ hϖA₀
 
 end PairOfDefinition
 
@@ -960,7 +960,7 @@ theorem PairOfDefinition.isAdicComplete_span_singleton {A : Type*} [CommRing A]
     ext x
     rw [← Ideal.comap_symm, Ideal.mem_comap,
       PairOfDefinition.mem_ofIsPseudoUniformizer_idealOfDefinition,
-      P.ringOfDefinition.mem_span_singleton_iff ϖ.property]
+      SubsemiringClass.mem_span_singleton_iff _ ϖ.property]
     simp only [e, RingEquiv.subringCongr_symm, RingEquiv.coe_subringCongr_apply]
   rw [← hI]
   exact (IsAdicComplete.congr_ringEquiv Q.idealOfDefinition e).mpr
