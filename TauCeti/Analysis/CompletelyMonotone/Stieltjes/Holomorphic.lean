@@ -8,8 +8,7 @@ module
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import TauCeti.Analysis.CompletelyMonotone.Stieltjes.CompleteBernstein
 import Mathlib.Analysis.Calculus.ParametricIntegral
-import Mathlib.Analysis.Complex.Convex
-import Mathlib.Analysis.Convex.PathConnected
+import TauCeti.Analysis.Complex.RealIdentity
 import TauCeti.Analysis.Complex.SlitPlane
 
 /-!
@@ -277,23 +276,9 @@ theorem stieltjesExtension_ofReal (h : RepresentsStieltjes μ a b f) {t : ℝ} (
 agrees on `(0, ∞)` with a represented Stieltjes function is its complex Stieltjes transform. -/
 theorem eqOn_stieltjesExtension (h : RepresentsStieltjes μ a b f) {F : ℂ → ℂ}
     (hF : AnalyticOnNhd ℂ F slitPlane) (hFf : ∀ t : ℝ, 0 < t → F t = f t) :
-    EqOn F (stieltjesExtension μ a b) slitPlane := by
-  have hpre : IsPreconnected slitPlane :=
-    (starConvex_one_slitPlane.isPathConnected one_mem_slitPlane).isConnected.isPreconnected
-  refine hF.eqOn_of_preconnected_of_frequently_eq
-    (analyticOnNhd_stieltjesExtension h.integrable_weight) hpre one_mem_slitPlane ?_
-  -- The two functions agree at the real points `1 + 1 / (n + 1)`, which tend to `1`.
-  have htend : Tendsto (fun n : ℕ => (((1 : ℝ) + 1 / ((n : ℝ) + 1) : ℝ) : ℂ)) atTop
-      (𝓝[≠] (1 : ℂ)) := by
-    refine tendsto_nhdsWithin_iff.mpr ⟨?_, Eventually.of_forall fun n => ?_⟩
-    · have h1 : Tendsto (fun n : ℕ => (1 : ℝ) + 1 / ((n : ℝ) + 1)) atTop (𝓝 1) := by
-        simpa using tendsto_one_div_add_atTop_nhds_zero_nat.const_add (1 : ℝ)
-      simpa [Function.comp_def] using (continuous_ofReal.tendsto 1).comp h1
-    · simp only [mem_compl_iff, mem_singleton_iff, ← ofReal_one, ofReal_inj]
-      have : (0 : ℝ) < 1 / ((n : ℝ) + 1) := by positivity
-      linarith
-  exact htend.frequently (Frequently.of_forall fun n => by
-    rw [hFf _ (by positivity), h.stieltjesExtension_ofReal (by positivity)])
+    EqOn F (stieltjesExtension μ a b) slitPlane :=
+  hF.eqOn_slitPlane_of_ofReal_pos_eq (analyticOnNhd_stieltjesExtension h.integrable_weight)
+    fun t ht => (hFf t ht).trans (h.stieltjesExtension_ofReal ht).symm
 
 end RepresentsStieltjes
 
