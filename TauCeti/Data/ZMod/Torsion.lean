@@ -8,155 +8,108 @@ module
 public import Mathlib.Algebra.Module.Torsion.Basic
 
 /-!
-# Torsion in residue rings with power modulus
+# Torsion in residue rings
 
-For every nonzero `p`, the subgroup of `ZMod (p ^ (k + 1))` killed by `p` is additively
-equivalent to `ZMod p`. This counts the elements killed by `p` in prime-power cyclic factors,
-as required by the rank-two finite-abelian criterion.
+For nonzero `m` and `n`, the subgroup of `ZMod (m * n)` killed by `m` is additively equivalent to
+`ZMod m`, by multiplication by `n` (`TauCeti.zmodTorsionByEquiv`). With `m = p` and `n = p ^ k`
+this counts the elements killed by `p` in the prime-power cyclic factor `ZMod (p * p ^ k)`, as
+required by the rank-two finite-abelian criterion.
 
-In the first nontrivial case `k = 1`, an element of `ZMod (p ^ 2)` killed by `p` is a multiple of
-`p`, so it reduces to `0` modulo `p` (`ZMod.cast_eq_zero_of_natCast_mul_eq_zero`); this is what
-prevents a character of order `p` from lifting modulo `p ^ 2`. More generally, an element of
-`ZMod (p ^ (n + 1))` killed by `p` is the reduction of a multiple of `p ^ n`
-(`ZMod.exists_eq_pow_mul_of_zsmul_eq_zero`).
+For every nonzero `p`, an element of `ZMod (p ^ (n + 1))` is killed by `p` exactly when it is the
+reduction of a multiple of `p ^ n` (`ZMod.zsmul_eq_zero_iff_exists_eq_pow_mul`). In the first
+nontrivial case, an element of `ZMod (p ^ 2)` is killed by `p` exactly when it reduces to `0`
+modulo `p` (`ZMod.cast_eq_zero_iff_natCast_mul_eq_zero`); this is what prevents a character of
+order `p` from lifting modulo `p ^ 2`.
 -/
 
 public section
 
-/-- An element of `ZMod (p ^ 2)` killed by `p` reduces to `0` modulo `p`: its representative is
-divisible by `p`. -/
-theorem ZMod.cast_eq_zero_of_natCast_mul_eq_zero {p : ℕ} [NeZero p] {u : ZMod (p ^ 2)}
-    (hu : (p : ZMod (p ^ 2)) * u = 0) : (ZMod.cast u : ZMod p) = 0 := by
-  rw [← ZMod.natCast_zmod_val u, ← Nat.cast_mul, ZMod.natCast_eq_zero_iff] at hu
-  rw [ZMod.cast_eq_val, ZMod.natCast_eq_zero_iff]
-  exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne p))).mp (by rwa [← sq])
+/-- An element of `ZMod (p ^ 2)` reduces to `0` modulo `p` exactly when it is killed by `p`. -/
+theorem ZMod.cast_eq_zero_iff_natCast_mul_eq_zero {p : ℕ} [NeZero p] {u : ZMod (p ^ 2)} :
+    (ZMod.cast u : ZMod p) = 0 ↔ (p : ZMod (p ^ 2)) * u = 0 := by
+  rw [← ZMod.natCast_zmod_val u, ZMod.cast_natCast (dvd_pow_self p two_ne_zero), ← Nat.cast_mul,
+    ZMod.natCast_eq_zero_iff, ZMod.natCast_eq_zero_iff,
+    ← Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne p)), ← sq]
 
-/-- An element of `ZMod (p ^ (n + 1))` killed by `p` is the reduction of a multiple of `p ^ n`. -/
-theorem ZMod.exists_eq_pow_mul_of_zsmul_eq_zero {p n : ℕ} [NeZero p] {x : ZMod (p ^ (n + 1))}
-    (hx : (p : ℤ) • x = 0) : ∃ t : ℤ, x = (((p : ℤ) ^ n * t : ℤ) : ZMod (p ^ (n + 1))) := by
+/-- An element of `ZMod (p ^ (n + 1))` is killed by `p` exactly when it is the reduction of a
+multiple of `p ^ n`. -/
+theorem ZMod.zsmul_eq_zero_iff_exists_eq_pow_mul {p n : ℕ} [NeZero p] {x : ZMod (p ^ (n + 1))} :
+    (p : ℤ) • x = 0 ↔ ∃ t : ℤ, x = (((p : ℤ) ^ n * t : ℤ) : ZMod (p ^ (n + 1))) := by
   obtain ⟨j, rfl⟩ := ZMod.intCast_surjective x
   rw [zsmul_eq_mul, ← Int.cast_mul, ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_pow, pow_succ,
-    mul_comm ((p : ℤ) ^ n)] at hx
-  obtain ⟨t, rfl⟩ := Int.dvd_of_mul_dvd_mul_left (by exact_mod_cast NeZero.ne p) hx
-  exact ⟨t, rfl⟩
+    mul_comm ((p : ℤ) ^ n), Int.mul_dvd_mul_iff_left (by exact_mod_cast NeZero.ne p)]
+  refine ⟨fun ⟨t, ht⟩ ↦ ⟨t, by rw [ht]⟩, fun ⟨t, ht⟩ ↦ ?_⟩
+  rw [ZMod.intCast_eq_intCast_iff_dvd_sub, Nat.cast_pow, pow_succ] at ht
+  exact (dvd_sub_right (dvd_mul_right _ _)).mp ((dvd_mul_right _ _).trans ht)
 
 namespace TauCeti
 
-/-- The homomorphism underlying `zmodTorsionByEquiv`. -/
-private def zmodTorsionByEquivHom (p k : ℕ) :
-    ZMod p →+ AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ) := by
-  let P : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ) :=
-    ⟨(p ^ k : ZMod (p ^ (k + 1))), AddSubgroup.torsionBy.nsmul_iff.2 (by
-      simp only [nsmul_eq_mul]
-      rw [mul_comm, ← pow_succ, ← Nat.cast_pow, ZMod.natCast_self])⟩
-  exact ZMod.lift p ⟨zmultiplesHom _ P, by
-    exact (zmultiplesHom_apply _ P (p : ℤ)).trans <|
-      (natCast_zsmul P p).trans (AddSubgroup.torsionBy.nsmul P)⟩
+/-- The homomorphism underlying `zmodTorsionByEquiv`: multiplication by `n`. -/
+private def zmodTorsionByEquivHom (m n : ℕ) :
+    ZMod m →+ AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ) :=
+  ZMod.lift m ⟨zmultiplesHom _ ⟨(n : ZMod (m * n)), AddSubgroup.torsionBy.nsmul_iff.2 <| by
+      rw [nsmul_eq_mul, ← Nat.cast_mul, ZMod.natCast_self]⟩,
+    (natCast_zsmul _ m).trans (AddSubgroup.torsionBy.nsmul _)⟩
 
-/-- The underlying homomorphism multiplies a residue by `p ^ k`. -/
-private theorem zmodTorsionByEquivHom_apply_coe (p k : ℕ) [NeZero p] (x : ZMod p) :
-    ((zmodTorsionByEquivHom p k x :
-      AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) : ZMod (p ^ (k + 1))) =
-      (x.val * p ^ k : ℕ) := by
+/-- The underlying homomorphism sends the residue of an integer `t` to the residue of `t * n`. -/
+private theorem zmodTorsionByEquivHom_intCast_coe (m n : ℕ) (t : ℤ) :
+    (zmodTorsionByEquivHom m n t : ZMod (m * n)) = ((t * n : ℤ) : ZMod (m * n)) := by
+  simp [zmodTorsionByEquivHom, ZMod.lift_coe, zmultiplesHom_apply]
+
+/-- The representative of an element of `ZMod (m * n)` killed by `m` is divisible by `n`. -/
+private theorem dvd_val_of_mem_torsionBy {m n : ℕ} [NeZero m] [NeZero n] {y : ZMod (m * n)}
+    (hy : y ∈ AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ)) : n ∣ y.val := by
+  rw [AddSubgroup.torsionBy.nsmul_iff, nsmul_eq_mul, ← ZMod.natCast_zmod_val y, ← Nat.cast_mul,
+    ZMod.natCast_eq_zero_iff] at hy
+  exact (Nat.mul_dvd_mul_iff_left (Nat.pos_of_ne_zero (NeZero.ne m))).mp hy
+
+/-- Multiplication by `n` is a bijection from `ZMod m` onto the `m`-torsion of `ZMod (m * n)`. -/
+private theorem zmodTorsionByEquivHom_bijective (m n : ℕ) [NeZero m] [NeZero n] :
+    Function.Bijective (zmodTorsionByEquivHom m n) := by
+  refine ⟨(ZMod.lift_injective m).2 fun t ht ↦ ?_, fun y ↦ ?_⟩
+  · have ht' : ((t * n : ℤ) : ZMod (m * n)) = 0 := by
+      simpa [zmultiplesHom_apply] using congrArg Subtype.val ht
+    rw [ZMod.intCast_zmod_eq_zero_iff_dvd, Nat.cast_mul,
+      mul_dvd_mul_iff_right (by exact_mod_cast NeZero.ne n)] at ht'
+    exact (ZMod.intCast_zmod_eq_zero_iff_dvd t m).2 ht'
+  · refine ⟨((y.1.val / n : ℕ) : ℤ), Subtype.ext ?_⟩
+    rw [zmodTorsionByEquivHom_intCast_coe, ← Nat.cast_mul, Int.cast_natCast,
+      Nat.div_mul_cancel (dvd_val_of_mem_torsionBy y.2), ZMod.natCast_zmod_val]
+
+/-- For nonzero `m` and `n`, the subgroup of `ZMod (m * n)` killed by `m` is additively
+equivalent to `ZMod m`, by multiplication by `n`. -/
+noncomputable def zmodTorsionByEquiv (m n : ℕ) [NeZero m] [NeZero n] :
+    ZMod m ≃+ AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ) :=
+  AddEquiv.ofBijective (zmodTorsionByEquivHom m n) (zmodTorsionByEquivHom_bijective m n)
+
+/-- `zmodTorsionByEquiv` sends a residue to its multiple by `n` in the ambient residue ring. -/
+@[simp]
+theorem zmodTorsionByEquiv_apply_coe (m n : ℕ) [NeZero m] [NeZero n] (x : ZMod m) :
+    (zmodTorsionByEquiv m n x : ZMod (m * n)) = (x.val * n : ℕ) := by
   conv_lhs => rw [← ZMod.natCast_zmod_val x]
-  unfold zmodTorsionByEquivHom
-  dsimp only
-  conv_lhs => rw [← Int.cast_natCast x.val]
-  rw [ZMod.lift_coe]
-  simp [zmultiplesHom_apply]
+  simpa [zmodTorsionByEquiv] using zmodTorsionByEquivHom_intCast_coe m n x.val
 
-/-- A point killed by `p` in `ZMod (p ^ (k + 1))` is `p ^ k` times the residue of its
-representative divided by `p ^ k`: the representative is divisible by `p ^ k`, with quotient
-smaller than `p`. -/
-private theorem natCast_val_div_pow_mul_pow (p k : ℕ) [NeZero p]
-    (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) :
-    (((((y.1.val / p ^ k : ℕ) : ZMod p).val * p ^ k : ℕ)) : ZMod (p ^ (k + 1))) = y.1 := by
-  have hp : 0 < p := Nat.pos_of_ne_zero (NeZero.ne p)
-  have hy : ((p : ℤ) : ZMod (p ^ (k + 1))) * y.1 = 0 := by
-    simpa only [Int.cast_smul_eq_zsmul, zsmul_eq_mul] using
-      (Submodule.mem_torsionBy_iff _ _).mp y.2
-  rw [← ZMod.natCast_zmod_val y.1] at hy
-  simp only [Int.cast_natCast] at hy
-  rw [← Nat.cast_mul, ZMod.natCast_eq_zero_iff] at hy
-  have hy' : p * p ^ k ∣ p * y.1.val := by
-    simpa only [pow_succ, mul_comm (p ^ k)] using hy
-  have hdiv : p ^ k ∣ y.1.val := (Nat.mul_dvd_mul_iff_left hp).mp hy'
-  have hlt : y.1.val / p ^ k < p := by
-    apply (Nat.div_lt_iff_lt_mul (pow_pos hp k)).2
-    simpa only [pow_succ, mul_comm] using y.1.val_lt
-  rw [ZMod.val_natCast_of_lt hlt, Nat.div_mul_cancel hdiv, ZMod.natCast_zmod_val]
-
-/-- The subgroup of `ZMod (p ^ (k + 1))` killed by `p` is additively equivalent to `ZMod p`. -/
-noncomputable def zmodTorsionByEquiv (p k : ℕ) [NeZero p] :
-    ZMod p ≃+ AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ) := by
-  let f := zmodTorsionByEquivHom p k
-  have hf_inj : Function.Injective f := by
-    dsimp only [f, zmodTorsionByEquivHom]
-    rw [ZMod.lift_injective]
-    intro m hm
-    have hm' : ((m * (p : ℤ) ^ k : ℤ) : ZMod (p ^ (k + 1))) = 0 := by
-      simpa [zmodTorsionByEquivHom, ZMod.lift_coe, zmultiplesHom_apply, mul_comm] using
-        congrArg Subtype.val hm
-    rw [ZMod.intCast_zmod_eq_zero_iff_dvd] at hm'
-    have hp0 : (p : ℤ) ^ k ≠ 0 := pow_ne_zero _ (by exact_mod_cast NeZero.ne p)
-    have hm'' : (p : ℤ) ^ k * p ∣ (p : ℤ) ^ k * m := by
-      simpa [pow_succ, mul_comm] using hm'
-    have hpm : (p : ℤ) ∣ m := by
-      exact (mul_dvd_mul_iff_left hp0).mp hm''
-    exact (ZMod.intCast_zmod_eq_zero_iff_dvd m p).2 hpm
-  have hf_surj : Function.Surjective f := by
-    intro x
-    refine ⟨(((x.1.val / p ^ k : ℕ) : ℤ) : ZMod p), Subtype.ext ?_⟩
-    dsimp only [f]
-    simp only [Int.cast_natCast]
-    rw [zmodTorsionByEquivHom_apply_coe, natCast_val_div_pow_mul_pow]
-  exact AddEquiv.ofBijective f ⟨hf_inj, hf_surj⟩
-
-/-- `zmodTorsionByEquiv` sends a residue to its multiple by `p ^ k` in the ambient residue ring. -/
+/-- The inverse of `zmodTorsionByEquiv` divides the representative by `n`. -/
 @[simp]
-theorem zmodTorsionByEquiv_apply_coe (p k : ℕ) [NeZero p] (x : ZMod p) :
-    ((zmodTorsionByEquiv p k x : ZMod (p ^ (k + 1))) : ZMod (p ^ (k + 1))) =
-      (x.val * p ^ k : ℕ) :=
-  zmodTorsionByEquivHom_apply_coe p k x
-
-/-- The inverse of `zmodTorsionByEquiv` divides the representative by `p ^ k`. -/
-@[simp]
-theorem zmodTorsionByEquiv_symm_apply (p k : ℕ) [NeZero p]
-    (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) :
-    (zmodTorsionByEquiv p k).symm y = ((y.1.val / p ^ k : ℕ) : ZMod p) := by
-  apply (zmodTorsionByEquiv p k).injective
-  rw [(zmodTorsionByEquiv p k).apply_symm_apply]
-  apply Subtype.ext
-  symm
-  rw [zmodTorsionByEquiv_apply_coe, natCast_val_div_pow_mul_pow]
+theorem zmodTorsionByEquiv_symm_apply (m n : ℕ) [NeZero m] [NeZero n]
+    (y : AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ)) :
+    (zmodTorsionByEquiv m n).symm y = ((y.1.val / n : ℕ) : ZMod m) := by
+  refine (AddEquiv.symm_apply_eq _).2 (Subtype.ext ?_)
+  rw [zmodTorsionByEquiv_apply_coe, ZMod.val_natCast, ← Nat.mul_mod_mul_right, ZMod.natCast_mod,
+    Nat.div_mul_cancel (dvd_val_of_mem_torsionBy y.2), ZMod.natCast_zmod_val]
 
 /-- Equality with the image of a chosen residue under `zmodTorsionByEquiv` is characterized in
 the ambient residue ring. -/
-theorem zmodTorsionByEquiv_apply_eq_iff (p k : ℕ) [NeZero p] (x : ZMod p)
-    (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) :
-    zmodTorsionByEquiv p k x = y ↔
-      (x.val * p ^ k : ℕ) = (y.1 : ZMod (p ^ (k + 1))) := by
-  rw [← zmodTorsionByEquiv_apply_coe]
-  constructor
-  · intro h
-    rw [h]
-  · intro h
-    exact Subtype.ext h
+theorem zmodTorsionByEquiv_apply_eq_iff (m n : ℕ) [NeZero m] [NeZero n] (x : ZMod m)
+    (y : AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ)) :
+    zmodTorsionByEquiv m n x = y ↔ (x.val * n : ℕ) = (y : ZMod (m * n)) := by
+  rw [Subtype.ext_iff, zmodTorsionByEquiv_apply_coe]
 
-/-- The inverse picks the unique residue whose multiple by `p ^ k` is the given torsion point. -/
-theorem zmodTorsionByEquiv_symm_apply_eq_iff (p k : ℕ) [NeZero p]
-    (y : AddSubgroup.torsionBy (ZMod (p ^ (k + 1))) (p : ℤ)) (x : ZMod p) :
-    (zmodTorsionByEquiv p k).symm y = x ↔
-      (x.val * p ^ k : ℕ) = (y.1 : ZMod (p ^ (k + 1))) := by
-  constructor
-  · intro h
-    apply (zmodTorsionByEquiv_apply_eq_iff p k x y).mp
-    rw [← h]
-    exact (zmodTorsionByEquiv p k).apply_symm_apply y
-  · intro h
-    rw [← (zmodTorsionByEquiv_apply_eq_iff p k x y)] at h
-    rw [← h]
-    exact (zmodTorsionByEquiv p k).symm_apply_apply x
+/-- The inverse picks the unique residue whose multiple by `n` is the given torsion point. -/
+theorem zmodTorsionByEquiv_symm_apply_eq_iff (m n : ℕ) [NeZero m] [NeZero n]
+    (y : AddSubgroup.torsionBy (ZMod (m * n)) (m : ℤ)) (x : ZMod m) :
+    (zmodTorsionByEquiv m n).symm y = x ↔ (x.val * n : ℕ) = (y : ZMod (m * n)) := by
+  rw [AddEquiv.symm_apply_eq, eq_comm, zmodTorsionByEquiv_apply_eq_iff]
 
 end TauCeti
 
