@@ -23,13 +23,13 @@ divergence-form equation
 is carried by `v = u ∘ Φ` to the weak formulation of an equation of the same form in `U`, with the
 coefficients
 
-* `ã(y) = J(y) DΦ(y)⁻¹ a(Φ y) DΦ(y)⁻ᵀ` (`TauCeti.PDE.pullbackPrincipalCoeff`);
-* `b̃(y) = J(y) DΦ(y)⁻¹ b(Φ y)` (`TauCeti.PDE.pullbackDriftCoeff`);
-* `c̃(y) = J(y) c(Φ y)` and `f̃(y) = J(y) f(Φ y)` (`TauCeti.PDE.pullbackDensity`).
+* `a_Φ(y) = J(y) DΦ(y)⁻¹ a(Φ y) DΦ(y)⁻ᵀ` (`TauCeti.PDE.pullbackPrincipalCoeff`);
+* `b_Φ(y) = J(y) DΦ(y)⁻¹ b(Φ y)` (`TauCeti.PDE.pullbackDriftCoeff`);
+* `c_Φ(y) = J(y) c(Φ y)` and `f_Φ(y) = J(y) f(Φ y)` (`TauCeti.PDE.pullbackDensity`).
 
 Precisely, for `u ∈ H¹(V)` and `z ∈ H¹(U)` the energy forms agree,
-`ã(u ∘ Φ, z) = a(u, z ∘ Ψ)` (`TauCeti.PDE.energyFormH1_pullback_compL`), and so do the forcing
-terms, `∫_U f̃ z = ∫_V f (z ∘ Ψ)`. Since `z ↦ z ∘ Ψ` maps `H¹₀(U)` into `H¹₀(V)`, a weak solution
+`a_Φ(u ∘ Φ, z) = a(u, z ∘ Ψ)` (`TauCeti.PDE.energyFormH1_pullback_compL`), and so do the forcing
+terms, `∫_U f_Φ z = ∫_V f (z ∘ Ψ)`. Since `z ↦ z ∘ Ψ` maps `H¹₀(U)` into `H¹₀(V)`, a weak solution
 on `V` becomes a weak solution of the transported equation on `U`
 (`TauCeti.PDE.energyFormH1_pullback_compL_eq_setIntegral`). Uniform ellipticity is preserved, with
 constants controlled by the bounds on `DΦ`, `DΨ` and the Jacobians
@@ -37,7 +37,7 @@ constants controlled by the bounds on `DΦ`, `DΨ` and the Jacobians
 coefficients and forcing stay bounded, respectively square integrable.
 
 Only the first derivatives of `Φ` and `Ψ` enter. Regularity of the transported coefficients beyond
-measurability and boundedness, such as Lipschitz continuity of `ã`, needs more derivatives of `Φ`
+measurability and boundedness, such as Lipschitz continuity of `a_Φ`, needs more derivatives of `Φ`
 and is not treated here. Changes of variables of this kind are how boundary regularity is proved
 for divergence-form equations on curved domains: flattening the boundary turns the equation near a
 boundary point into one of the same type near a flat boundary portion, where the half-space theory
@@ -47,7 +47,7 @@ applies.
 
 By the chain rule `∇(u ∘ Φ)(y) = DΦ(y)ᵀ ∇u(Φ y)` and `∇(z ∘ Ψ)(Φ y) = DΦ(y)⁻ᵀ ∇z(y)`, since
 `DΨ(Φ y) = DΦ(y)⁻¹`. Substituting `x = Φ y` in `∫_V ⟨a ∇u, ∇(z ∘ Ψ)⟩` gives
-`∫_U J ⟨a(Φ y) DΦ⁻ᵀ ∇v, DΦ⁻ᵀ ∇z⟩ = ∫_U ⟨ã ∇v, ∇z⟩`, and likewise for the lower-order terms
+`∫_U J ⟨a(Φ y) DΦ⁻ᵀ ∇v, DΦ⁻ᵀ ∇z⟩ = ∫_U ⟨a_Φ ∇v, ∇z⟩`, and likewise for the lower-order terms
 (`TauCeti.PDE.energyIntegrand_pullback` is the pointwise identity). The substitution is Mathlib's
 change of variables formula `MeasureTheory.integral_image_eq_integral_abs_det_fderiv_smul`.
 
@@ -131,15 +131,15 @@ section Matrix
 variable [DecidableEq ι]
 
 /-- The **principal coefficient transported along `Φ`**,
-`ã(y) = |det DΦ(y)| DΦ(y)⁻¹ a(Φ y) DΦ(y)⁻ᵀ`, where `DΦ(y)` is the Jacobian matrix of `Φ` at `y`.
-If `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` weakly, then `u ∘ Φ` solves `-∂ᵢ(ãⁱʲ ∂ⱼ(u ∘ Φ)) = 0` weakly
+`a_Φ(y) = |det DΦ(y)| DΦ(y)⁻¹ a(Φ y) DΦ(y)⁻ᵀ`, where `DΦ(y)` is the Jacobian matrix of `Φ` at `y`.
+If `u` solves `-∂ᵢ(aⁱʲ ∂ⱼu) = 0` weakly, then `u ∘ Φ` solves `-∂ᵢ((a_Φ)ⁱʲ ∂ⱼ(u ∘ Φ)) = 0` weakly
 (`TauCeti.PDE.energyFormH1_pullback_compL_eq_setIntegral`). -/
 def pullbackPrincipalCoeff (a : EuclideanSpace ℝ ι → Matrix ι ι ℝ) (y : EuclideanSpace ℝ ι) :
     Matrix ι ι ℝ :=
   |(fderiv ℝ Φ y).det| • (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹ * a (Φ y) *
     (((toEuclideanCLM (𝕜 := ℝ)).symm (fderiv ℝ Φ y))⁻¹)ᵀ)
 
-/-- The **drift coefficient transported along `Φ`**, `b̃(y) = |det DΦ(y)| DΦ(y)⁻¹ b(Φ y)`. -/
+/-- The **drift coefficient transported along `Φ`**, `b_Φ(y) = |det DΦ(y)| DΦ(y)⁻¹ b(Φ y)`. -/
 def pullbackDriftCoeff (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) (y : EuclideanSpace ℝ ι) :
     EuclideanSpace ℝ ι :=
   |(fderiv ℝ Φ y).det| •
@@ -160,8 +160,8 @@ theorem pullbackDriftCoeff_def (b : EuclideanSpace ℝ ι → EuclideanSpace ℝ
 
 end Matrix
 
-/-- A **scalar density transported along `Φ`**, `f̃(y) = |det DΦ(y)| f(Φ y)`. It is the transported
-mass coefficient and the transported forcing term, and `∫_U f̃ = ∫_{Φ(U)} f` when `Φ` is an
+/-- A **scalar density transported along `Φ`**, `f_Φ(y) = |det DΦ(y)| f(Φ y)`. It is the transported
+mass coefficient and the transported forcing term, and `∫_U f_Φ = ∫_{Φ(U)} f` when `Φ` is an
 injective change of variables on `U`. -/
 def pullbackDensity (f : EuclideanSpace ℝ ι → ℝ) (y : EuclideanSpace ℝ ι) : ℝ :=
   |(fderiv ℝ Φ y).det| * f (Φ y)
@@ -184,7 +184,7 @@ variable {mu : Measure (EuclideanSpace ℝ ι)} [mu.IsAddHaarMeasure]
 
 /-- **The forcing term under a change of variables.** With `Φ`, `Ψ` as in
 `TauCeti.PDE.energyFormH1_pullback_compL`, for every `f` and `z ∈ H¹(U)`,
-`∫_U f̃ z = ∫_V f (z ∘ Ψ)`, where `f̃ = |det DΦ| (f ∘ Φ)`. -/
+`∫_U f_Φ z = ∫_V f (z ∘ Ψ)`, where `f_Φ = |det DΦ| (f ∘ Φ)`. -/
 theorem setIntegral_pullbackDensity_mul_value (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) (f : EuclideanSpace ℝ ι → ℝ) (z : W1p mu U 2) :
@@ -218,7 +218,7 @@ from `U` onto `V` with inverse `Ψ`, itself a change of variables of order one. 
 `z ∈ H¹(U)`, the energy form on `U` with the transported coefficients, evaluated at `u ∘ Φ` and `z`,
 equals the energy form on `V` evaluated at `u` and `z ∘ Ψ`:
 
-`ã(u ∘ Φ, z) = a(u, z ∘ Ψ)`.
+`a_Φ(u ∘ Φ, z) = a(u, z ∘ Ψ)`.
 
 No integrability of the coefficients is needed: the two integrands correspond under the
 substitution `x = Φ y`, integrable or not. -/
@@ -262,7 +262,7 @@ theorem energyFormH1_pullback_compL (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ
 from `U` onto `V` with inverse `Ψ`, itself a change of variables of order one. If `u ∈ H¹(V)` is a
 weak solution of `-∂ᵢ(aⁱʲ ∂ⱼu) + bⁱ ∂ᵢu + c u = f` in `V`, tested against `H¹₀(V)`, then
 `u ∘ Φ ∈ H¹(U)` is a weak solution in `U` of the equation with the transported coefficients
-`ã`, `b̃`, `c̃` and forcing `f̃ = |det DΦ| (f ∘ Φ)`, tested against `H¹₀(U)`. -/
+`a_Φ`, `b_Φ`, `c_Φ` and forcing `f_Φ = |det DΦ| (f ∘ Φ)`, tested against `H¹₀(U)`. -/
 theorem energyFormH1_pullback_compL_eq_setIntegral (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
@@ -307,7 +307,7 @@ theorem pullbackDriftCoeff_eq (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
   rw [pullbackDriftCoeff_def, toEuclideanCLM_inv_fderiv hΦ hΨ hΦΨ hΨΦ hy]
 
 /-- The lower ellipticity bound of the transported principal coefficient at `y ∈ U`:
-`κ λ / L² ‖ξ‖² ≤ ξᵀ ã(y) ξ`, since `‖ξ‖ ≤ L ‖DΨ(Φ y)ᵀ ξ‖` and `κ ≤ |det DΦ(y)|`. -/
+`κ λ / L² ‖ξ‖² ≤ ξᵀ a_Φ(y) ξ`, since `‖ξ‖ ≤ L ‖DΨ(Φ y)ᵀ ξ‖` and `κ ≤ |det DΦ(y)|`. -/
 private theorem pullbackPrincipalCoeff_lower_bound {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {lam Lam : ℝ} (ha : UniformlyEllipticOn (V : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ) (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ')
@@ -342,7 +342,7 @@ private theorem pullbackPrincipalCoeff_lower_bound {a : EuclideanSpace ℝ ι �
       mul_le_mul_of_nonneg_left (ha.lower_bound (hΦ.mapsTo hy) (S ξ)) (abs_nonneg _)
 
 /-- The upper bound of the transported principal coefficient at `y ∈ U`:
-`|ηᵀ ã(y) ξ| ≤ Λ L'² / κ' ‖η‖ ‖ξ‖`, since `‖DΨ(Φ y)‖ ≤ L'` and `|det DΦ(y)| ≤ 1 / κ'`. -/
+`|ηᵀ a_Φ(y) ξ| ≤ Λ L'² / κ' ‖η‖ ‖ξ‖`, since `‖DΨ(Φ y)‖ ≤ L'` and `|det DΦ(y)| ≤ 1 / κ'`. -/
 private theorem pullbackPrincipalCoeff_upper_bound {a : EuclideanSpace ℝ ι → Matrix ι ι ℝ}
     {lam Lam : ℝ} (ha : UniformlyEllipticOn (V : Set (EuclideanSpace ℝ ι)) a lam Lam)
     (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ) (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ')
@@ -408,7 +408,7 @@ theorem UniformlyEllipticOn.pullbackPrincipalCoeff [Nonempty ι]
     _ ≤ (L * L') ^ 2 * Lam := mul_le_mul (one_le_pow₀ hLL') ha.le ha.pos.le (by positivity)
     _ = Lam * L' ^ 2 * L ^ 2 := by ring
 
-/-- The transported drift is bounded: if `‖b‖ ≤ β` at `Φ y`, then `‖b̃(y)‖ ≤ L' β / κ'`. -/
+/-- The transported drift is bounded: if `‖b‖ ≤ β` at `Φ y`, then `‖b_Φ(y)‖ ≤ L' β / κ'`. -/
 theorem norm_pullbackDriftCoeff_le (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι} {β : ℝ}
@@ -427,7 +427,7 @@ theorem norm_pullbackDriftCoeff_le (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
 
 omit [DecidableEq ι] in
 /-- **Transported densities stay in `Lᵖ`.** If `f ∈ Lᵖ(V)`, then
-`f̃ = |det DΦ| (f ∘ Φ) ∈ Lᵖ(U)`. With `p = 2` this is the transported forcing term, and with
+`f_Φ = |det DΦ| (f ∘ Φ) ∈ Lᵖ(U)`. With `p = 2` this is the transported forcing term, and with
 `p = ∞` the transported mass coefficient. -/
 theorem memLp_pullbackDensity (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
@@ -443,7 +443,7 @@ theorem memLp_pullbackDensity (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
   exact mul_le_mul_of_nonneg_right (hΦ.abs_det_le_inv hΨ hΦΨ hΨΦ hy) (norm_nonneg _)
 
 /-- **The transported drift stays essentially bounded.** If `b ∈ L^∞(V)`, then the transported
-drift `b̃ ∈ L^∞(U)`. -/
+drift `b_Φ ∈ L^∞(U)`. -/
 theorem memLp_top_pullbackDriftCoeff (hΦ : Wkp.IsChangeOfVariables 1 U V Φ L κ)
     (hΨ : Wkp.IsChangeOfVariables 1 V U Ψ L' κ') (hΦΨ : RightInvOn Ψ Φ V)
     (hΨΦ : LeftInvOn Ψ Φ U) {b : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι}
