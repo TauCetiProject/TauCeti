@@ -63,7 +63,8 @@ This file supplies general constructions for Lie modules that are missing from M
 * `LieHom.lieIdealComap_injective`: the restriction of an injective Lie homomorphism to the
   preimage of a Lie ideal is injective.
 * `LieSubmodule.lie_iSup`: bracketing with a Lie ideal distributes over suprema of Lie submodules.
-* `TauCeti.ad_pow_succ_apply`: an additional adjoint action can be applied to the argument.
+* `TauCeti.ad_pow_succ_apply` and `TauCeti.ad_pow_succ'_apply`: an additional adjoint action can
+  be applied to the argument, or to the result of the preceding powers.
 * `TauCeti.ad_neg_pow_apply_eq_zero`: negating the acting element preserves adjoint vanishing.
 * `LieSubalgebra.engel_neg`: negating the acting element preserves the Engel subalgebra.
 * `TauCeti.ad_pow_apply_eq_ad_pow_apply`: iterating the adjoint action gives the same element
@@ -402,6 +403,11 @@ variable {R L L' : Type*} [CommRing R] [LieRing L] [LieAlgebra R L]
 theorem ad_pow_succ_apply (x y : L) (n : ℕ) :
     (LieAlgebra.ad R L x ^ (n + 1)) y = (LieAlgebra.ad R L x ^ n) ⁅x, y⁆ := by
   rw [pow_succ, _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
+
+/-- An additional adjoint action can be applied to the result of the preceding powers. -/
+theorem ad_pow_succ'_apply (x y : L) (n : ℕ) :
+    (LieAlgebra.ad R L x ^ (n + 1)) y = ⁅x, (LieAlgebra.ad R L x ^ n) y⁆ := by
+  rw [pow_succ', _root_.mul_apply_eq_comp, LieAlgebra.ad_apply]
 
 /-- If the `n`-fold adjoint action of `x` annihilates `y`, then so does that of `-x`. -/
 theorem ad_neg_pow_apply_eq_zero {x y : L} {n : ℕ} (h : (LieAlgebra.ad R L x ^ n) y = 0) :

@@ -651,8 +651,7 @@ theorem f4_ad_pow_three_rootVector_eq_zero (α β : Fin 48) :
       rw [f4KillingRoot_f4OppositeRootIndex]
       have h := congrArg (fun x : F4.lieAlgebra valid_F4 => (2 : ℚ) • x) hdiv
       simpa [smul_smul] using h
-    rw [hthree, pow_succ', mul_apply_eq_comp, hpow, map_smul, ad_apply,
-      lie_self, smul_zero]
+    rw [hthree, ad_pow_succ'_apply, hpow, lie_smul, lie_self, smul_zero]
   · rcases f4Length_eq_one_or_eq_two β with hβ | hβ
     · have hdiv := f4_dividedPower_two_ad_rootVector_eq_zero_of_short α β hβ hopp
       simpa only [Nat.reduceAdd] using

@@ -119,11 +119,7 @@ theorem killingForm_ad_pow_apply (x y z : L) (n : ℕ) :
   induction n generalizing y with
   | zero => simp
   | succ n ih =>
-    have h₁ : (ad R L x ^ (n + 1)) y = (ad R L x ^ n) ⁅x, y⁆ := by
-      rw [pow_succ, mul_apply_eq_comp, ad_apply]
-    have h₂ : (ad R L x ^ (n + 1)) z = ⁅x, (ad R L x ^ n) z⁆ := by
-      rw [pow_succ', mul_apply_eq_comp, ad_apply]
-    rw [h₁, h₂, ih, traceForm_apply_lie_apply', pow_succ]
+    rw [ad_pow_succ_apply, ad_pow_succ'_apply, ih, traceForm_apply_lie_apply', pow_succ]
     ring
 
 /-- **The kernel of `(ad x) ^ n` is Killing-orthogonal to its range.** This half of

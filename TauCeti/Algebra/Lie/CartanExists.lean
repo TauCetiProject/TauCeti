@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Lie.CartanExists
 public import Mathlib.LinearAlgebra.Eigenspace.Semisimple
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # A semisimple element lies in a Cartan subalgebra
@@ -80,7 +81,7 @@ theorem exists_isCartanSubalgebra_mem_of_isSemisimple_ad [Infinite K] [FiniteDim
       obtain ⟨w, -, hw⟩ := (C.mem_map E.incl _).mp hxz
       obtain ⟨n, hn⟩ := (mem_engel_iff K x w).mp w.2
       refine (mem_engel_iff K x z).mpr ⟨n + 1, ?_⟩
-      rw [pow_succ, mul_apply_eq_comp, ad_apply, ← hw]
+      rw [ad_pow_succ_apply, ← hw]
       simpa using hn
     -- and it normalizes `C` inside `E`
     refine (hmemC (w := ⟨z, hzE⟩)).mpr ?_

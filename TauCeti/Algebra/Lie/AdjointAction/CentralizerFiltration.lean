@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.Trace.Nilpotent
 import Mathlib.Algebra.Lie.AdjointAction.Derivation
+import TauCeti.Algebra.Lie.Basic
 
 /-!
 # The filtration of a centralizer by powers of `ad e`
@@ -69,7 +70,7 @@ theorem lie_mem_ker_inf_range_pow_add {e x y : L} {i j : ℕ}
   have hpow {c : L} {n : ℕ} (hc : ⁅e, (ad K L e ^ n) c⁆ = 0) {m : ℕ} (hm : n < m) :
       (ad K L e ^ m) c = 0 :=
     Module.End.pow_map_zero_of_le (Nat.succ_le_of_lt hm)
-      (by simpa only [pow_succ', mul_apply_eq_comp, ad_apply] using hc)
+      (by simpa only [ad_pow_succ'_apply] using hc)
   have hleib : (ad K L e ^ (i + j)) ⁅a, b⁆ =
       ((i + j).choose i : K) • ⁅(ad K L e ^ i) a, (ad K L e ^ j) b⁆ := by
     have hD : ⇑(LieDerivation.ad K L e) = ⇑(ad K L e) := funext fun c => by simp

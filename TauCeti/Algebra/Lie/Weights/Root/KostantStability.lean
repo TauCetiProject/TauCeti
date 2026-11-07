@@ -109,7 +109,7 @@ theorem ad_pow_rootVector_eq_zero_or_exists {α β : Weight K H L} (hα : α.IsN
       push_cast
       module
     have hstep : ((ad K L (x α)) ^ (n + 1)) (x β) = (z : K) • ⁅x α, x γ⁆ := by
-      rw [pow_succ', mul_apply_eq_comp, hz, map_smul, ad_apply]
+      rw [ad_pow_succ'_apply, hz, lie_smul]
     by_cases hbot : rootSpace H ((α : H → K) + (γ : H → K)) = ⊥
     · refine Or.inl ?_
       rw [hstep, hx.toIsSl2System.lie_eq_zero_of_rootSpace_add_eq_bot α γ hbot, smul_zero]

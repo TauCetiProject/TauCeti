@@ -127,11 +127,11 @@ theorem expAd_apply_sub_sub_mem {e y v : L} {k : ℕ} (hy : IsNilpotent (ad K L 
       rw [zero_add, pow_one, ad_apply]
       exact hyv
     | succ m ih =>
-      rw [pow_succ', mul_apply_eq_comp, ad_apply]
+      rw [ad_pow_succ'_apply]
       exact antitone_ker_inf_range_pow e (Nat.le_add_right k k)
         (lie_mem_ker_inf_range_pow_add hyk ih)
   have hpow₂ (m : ℕ) : (ad K L y ^ (m + 2)) v ∈ F (k + k) := by
-    rw [pow_succ', mul_apply_eq_comp, ad_apply]
+    rw [ad_pow_succ'_apply]
     exact lie_mem_ker_inf_range_pow_add hyk (hpow m)
   obtain ⟨N, hN⟩ := id hy
   rw [expAd_apply_eq_sum hy.exists_pow_apply_eq_zero (k := N + 2)
