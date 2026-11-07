@@ -267,18 +267,11 @@ theorem toContinuousLinearMap_polarComplexStructure (ω : SymplecticForm V) {A :
       LinearMap.neg_apply, ContinuousLinearMap.coe_coe, neg_apply, mul_apply_eq_comp]
   have hpos := ω.isStrictlyPositive_neg_mul_self hA
   have hu : IsUnit (CFC.sqrt (-(A * A))) := (CFC.isUnit_sqrt_iff _ hpos.nonneg).2 hpos.isUnit
-  -- The polar decomposition `J |A| = A`.
-  have hmul : LinearMap.toContinuousLinearMap ω.polarComplexStructure.toLinearMap *
-      CFC.sqrt (-(A * A)) = A := by
-    rw [← hP, polarComplexStructure_toLinearMap]
-    ext v
-    rw [mul_apply_eq_comp, LinearMap.coe_toContinuousLinearMap',
-      LinearMap.coe_toContinuousLinearMap', LinearMap.polarFactor_operatorAbs_apply]
-    exact (LinearMap.congr_fun hA' v).symm
-  calc _ = LinearMap.toContinuousLinearMap ω.polarComplexStructure.toLinearMap *
-        (CFC.sqrt (-(A * A)) * Ring.inverse (CFC.sqrt (-(A * A)))) := by
-          rw [Ring.mul_inverse_cancel _ hu, mul_one]
-    _ = _ := by rw [← mul_assoc, hmul]
+  -- The polar factor is the canonical factor of `A` through the invertible modulus `√(-A²)`;
+  -- the remaining goal holds since composition is multiplication by definition.
+  rw [polarComplexStructure_toLinearMap, LinearMap.toContinuousLinearMap_polarFactor, hP,
+    ContinuousLinearMap.factorThru_eq_comp_inverse hu, ← hA']
+  rfl
 
 /-! ### Naturality -/
 

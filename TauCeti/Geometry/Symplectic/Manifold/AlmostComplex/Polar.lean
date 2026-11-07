@@ -9,6 +9,7 @@ public import Mathlib.Geometry.Manifold.VectorBundle.Riemannian
 public import TauCeti.Geometry.Symplectic.Manifold.TwoForm
 public import TauCeti.Geometry.Symplectic.PolarCompatible
 import TauCeti.Analysis.InnerProductSpace.Positive.MetricChange.Smooth
+import TauCeti.Geometry.Manifold.VectorBundle.Hom
 import TauCeti.Geometry.Manifold.VectorBundle.Riemannian.Existence
 import TauCeti.Geometry.Symplectic.Manifold.Flat
 
@@ -84,25 +85,6 @@ namespace SmoothTwoForm.IsNondegenerate
 
 local postfix:1024 "♯" => continuousLinearMapOfBilin (𝕜 := ℝ)
 
-omit [FiniteDimensional ℝ E] in
-/-- A smooth field of bilinear forms on the tangent spaces, read in the tangent trivialization at
-`x₀`, is a family of bilinear forms on the model space which is smooth at `x₀`. -/
-private theorem exists_contMDiffAt_apply_eq_apply_symm
-    {β : (y : M) → TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ}
-    (hβ : ContMDiff I (I.prod 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ)) ∞ (fun y ↦ TotalSpace.mk'
-      (E →L[ℝ] E →L[ℝ] ℝ) (E := fun y : M ↦ TangentSpace I y →L[ℝ] TangentSpace I y →L[ℝ] ℝ)
-      y (β y))) (x₀ : M) :
-    ∃ b : M → E →L[ℝ] E →L[ℝ] ℝ, ContMDiffAt I 𝓘(ℝ, E →L[ℝ] E →L[ℝ] ℝ) ∞ b x₀ ∧
-      ∀ y ∈ (trivializationAt E (TangentSpace I) x₀).baseSet, ∀ u v,
-        b y u v = β y ((trivializationAt E (TangentSpace I) x₀).symm y u)
-          ((trivializationAt E (TangentSpace I) x₀).symm y v) := by
-  refine ⟨fun y ↦ ContinuousLinearMap.inCoordinates E (TangentSpace I) (E →L[ℝ] ℝ)
-    (fun y ↦ TangentSpace I y →L[ℝ] Trivial M ℝ y) x₀ y x₀ y (β y),
-    ((contMDiffAt_hom_bundle _).1 (hβ x₀)).2, fun y hy u v ↦ ?_⟩
-  rw [inCoordinates_apply_eq₂ (𝕜 := ℝ) (F₃ := ℝ) (E₃ := Trivial M ℝ) hy hy (Set.mem_univ _)]
-  simp only [Trivial.fiberBundle_trivializationAt', Trivial.linearMapAt_trivialization,
-    LinearMap.id_coe, id_eq]
-
 omit [FiniteDimensional ℝ E] [IsManifold I ∞ M] in
 /-- Smooth dependence of polar normalization in coordinates: if `g` and `s` are families of
 bilinear forms on `F` which are smooth at `x₀`, with `g♯` and `-A²` strictly positive near `x₀`,
@@ -174,8 +156,9 @@ private theorem contMDiff_polarEnd (h : σ.IsNondegenerate) :
   -- through an isomorphism `T : E ≃ F`, where the functional calculus is available.
   obtain ⟨g, hg, hgi⟩ := (inferInstance :
     IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)).exists_contMDiff
-  obtain ⟨gc, hgc, hgc_apply⟩ := exists_contMDiffAt_apply_eq_apply_symm hg x₀
-  obtain ⟨sc, hsc, hsc_apply⟩ := exists_contMDiffAt_apply_eq_apply_symm σ.contMDiff_flat x₀
+  obtain ⟨gc, hgc, hgc_apply⟩ := Manifold.exists_contMDiffAt_apply_eq_apply_symm (hg x₀)
+  obtain ⟨sc, hsc, hsc_apply⟩ :=
+    Manifold.exists_contMDiffAt_apply_eq_apply_symm (σ.contMDiff_flat x₀)
   obtain ⟨F, _, _, _, ⟨T⟩⟩ : ∃ (F : Type) (_ : NormedAddCommGroup F) (_ : InnerProductSpace ℝ F)
       (_ : FiniteDimensional ℝ F), Nonempty (E ≃L[ℝ] F) :=
     ⟨EuclideanSpace ℝ (Fin (finrank ℝ E)), inferInstance, inferInstance, inferInstance,
