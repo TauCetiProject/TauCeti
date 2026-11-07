@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.DifferentialForm.Closed
 public import TauCeti.Geometry.Manifold.Foliation.Basic
+import Mathlib.Topology.Algebra.Module.FiniteDimensionBilinear
 import TauCeti.Geometry.Manifold.ContMDiff.FiniteDimension
 import TauCeti.Geometry.Manifold.ContMDiff.Kernel
 import TauCeti.Geometry.Manifold.DifferentialForm.VectorField
@@ -82,12 +83,8 @@ variable [FiniteDimensional ℝ E]
 /-- The two-form `σ` at `y`, read in the tangent trivialization at `x₀` as the operator
 `u ↦ σ_y (u, ·)` from the model space to its dual. -/
 private def trivBilin (σ : SmoothForm I M ℝ 2) (x₀ y : M) : E →L[ℝ] E →L[ℝ] ℝ :=
-  let e := trivializationAt E (TangentSpace I) x₀
-  LinearMap.toContinuousLinearMap
-    { toFun u := LinearMap.toContinuousLinearMap
-        ((σ.bilinFormAt y (e.symmL ℝ y u)).comp (e.symmL ℝ y : E →ₗ[ℝ] TangentSpace I y))
-      map_add' u u' := by ext; simp
-      map_smul' c u := by ext; simp }
+  let s : E →ₗ[ℝ] TangentSpace I y := (trivializationAt E (TangentSpace I) x₀).symmL ℝ y
+  ((σ.bilinFormAt y).compl₁₂ s s).toContinuousBilinearMap
 
 private theorem trivBilin_apply (σ : SmoothForm I M ℝ 2) (x₀ y : M) (u w : E) :
     trivBilin σ x₀ y u w = σ.bilinFormAt y ((trivializationAt E (TangentSpace I) x₀).symmL ℝ y u)
@@ -178,10 +175,10 @@ theorem isContMDiffDistribution_ker_bilinFormAt [FiniteDimensional ℝ E] {n : �
       (by simp only [e.apply_mk_symm (hWe hy)])
   · rw [hsymm hy]
     exact (hvker y hy).1.map' _ (L y (hWe hy)).symm.ker
-  · rw [hsymm hy, ← Function.comp_def, range_comp, ← ContinuousLinearEquiv.coe_toLinearEquiv,
-      ← LinearEquiv.coe_coe, Submodule.span_image, (hvker y hy).2,
-      ker_bilinFormAt_eq_comap σ (hWe hy), Submodule.comap_equiv_eq_map_symm,
-      ContinuousLinearEquiv.toLinearEquiv_symm]
+  · -- Transport the span of the coordinate basis along `(L y).symm`.
+    rw [ker_bilinFormAt_eq_comap σ (hWe hy), Submodule.comap_equiv_eq_map_symm,
+      ← (hvker y hy).2, Submodule.map_span, ← range_comp]
+    simp [e, Function.comp_def]
 
 /-- **The kernels of a closed two-form form an involutive distribution.** If `σ` is closed and
 `V`, `W` are vector fields differentiable and tangent to the kernels of `σ` on an open set, then
