@@ -135,6 +135,62 @@ theorem taylor_comp_barMap (f : AInfinityBimoduleHom MM NN) :
   simp only [AInfinityBimodule.taylor_def, taylor_def, LinearMap.comp_assoc,
     f.barDifferential_comp_barMap]
 
+/-- If `F` respects the left cofree coactions and `K + F ∘ₗ MM.barDifferential =
+NN.barDifferential ∘ₗ F`, then `K` intertwines the left coactions up to the Koszul twist on the
+left cofree factor. -/
+private theorem leftCoact_comp_commutator
+    {F : Comodule.Hom R (TensorWords R B)
+      ((TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B)
+      ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B)}
+    (hleft : Comodule.leftCoactRTensor (TensorWords R B)
+        (Comodule.leftCofreeCoact R (TensorWords R A) N) ∘ₗ F.toLinearMap =
+      F.toLinearMap.lTensor (TensorWords R A) ∘ₗ
+        Comodule.leftCoactRTensor (TensorWords R B)
+          (Comodule.leftCofreeCoact R (TensorWords R A) M))
+    (K : (TensorWords R A ⊗[R] M) ⊗[R] TensorWords R B →ₗ[R]
+      (TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B)
+    (hK : K + F.toLinearMap ∘ₗ MM.barDifferential = NN.barDifferential ∘ₗ F.toLinearMap) :
+    Comodule.leftCoactRTensor (TensorWords R B)
+        (Comodule.leftCofreeCoact R (TensorWords R A) N) ∘ₗ K =
+      TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1) K ∘ₗ
+        Comodule.leftCoactRTensor (TensorWords R B)
+          (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
+  let _ : AddCommGroup ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B) :=
+    Module.addCommMonoidToAddCommGroup R
+  let _ : AddCommGroup
+      (TensorWords R A ⊗[R] ((TensorWords R A ⊗[R] N) ⊗[R] TensorWords R B)) :=
+    Module.addCommMonoidToAddCommGroup R
+  let δM := Comodule.leftCoactRTensor (TensorWords R B)
+    (Comodule.leftCofreeCoact R (TensorWords R A) M)
+  let δN := Comodule.leftCoactRTensor (TensorWords R B)
+    (Comodule.leftCofreeCoact R (TensorWords R A) N)
+  let τ := (TensorWords.grading (AA.grading.shift 1)).koszulTwist 1
+  have hDN : δN ∘ₗ NN.barDifferential =
+      AA.coaugmentedBarDifferential.rTensor _ ∘ₗ δN +
+        TensorProduct.map τ NN.barDifferential ∘ₗ δN := by
+    apply LinearMap.ext
+    intro x
+    exact NN.isLeftGradedCoderivation_barDifferential.coact_apply x
+  have hDM : δM ∘ₗ MM.barDifferential =
+      AA.coaugmentedBarDifferential.rTensor _ ∘ₗ δM +
+        TensorProduct.map τ MM.barDifferential ∘ₗ δM := by
+    apply LinearMap.ext
+    intro x
+    exact MM.isLeftGradedCoderivation_barDifferential.coact_apply x
+  dsimp only [δM, δN, τ] at hDN hDM
+  obtain rfl : K = NN.barDifferential ∘ₗ F.toLinearMap - F.toLinearMap ∘ₗ MM.barDifferential :=
+    eq_sub_of_add_eq hK
+  rw [← TensorProduct.mapBilinear_apply, map_sub]
+  simp only [TensorProduct.mapBilinear_apply, LinearMap.comp_sub, LinearMap.sub_comp]
+  simp only [← LinearMap.comp_assoc, hDN, LinearMap.add_comp]
+  simp only [LinearMap.comp_assoc, hleft]
+  simp only [← LinearMap.comp_assoc]
+  simp only [LinearMap.comp_assoc, hDM, LinearMap.comp_add]
+  simp only [← LinearMap.comp_assoc, LinearMap.rTensor_comp_lTensor,
+    LinearMap.map_comp_lTensor, LinearMap.lTensor_comp_rTensor,
+    LinearMap.lTensor_comp_map]
+  abel
+
 /-- For a degree-zero bicomodule map, commutation with the differentials can be checked on
 its two-counit component. -/
 theorem barDifferential_comp_iff
@@ -177,39 +233,7 @@ theorem barDifferential_comp_iff
         Int.negOnePow_zero, Units.val_one, Int.cast_one, one_smul]
     -- The right coderivation commutator is already a right-comodule map. On the
     -- left, its two coalgebra-differential terms cancel, leaving a twisted map.
-    have hKl : Comodule.leftCoactRTensor (TensorWords R B)
-        (Comodule.leftCofreeCoact R (TensorWords R A) N) ∘ₗ K.toLinearMap =
-      TensorProduct.map ((TensorWords.grading (AA.grading.shift 1)).koszulTwist 1)
-        K.toLinearMap ∘ₗ Comodule.leftCoactRTensor (TensorWords R B)
-          (Comodule.leftCofreeCoact R (TensorWords R A) M) := by
-      let δM := Comodule.leftCoactRTensor (TensorWords R B)
-        (Comodule.leftCofreeCoact R (TensorWords R A) M)
-      let δN := Comodule.leftCoactRTensor (TensorWords R B)
-        (Comodule.leftCofreeCoact R (TensorWords R A) N)
-      let τ := (TensorWords.grading (AA.grading.shift 1)).koszulTwist 1
-      have hDN : δN ∘ₗ NN.barDifferential =
-          AA.coaugmentedBarDifferential.rTensor _ ∘ₗ δN +
-            TensorProduct.map τ NN.barDifferential ∘ₗ δN := by
-        apply LinearMap.ext
-        intro x
-        exact NN.isLeftGradedCoderivation_barDifferential.coact_apply x
-      have hDM : δM ∘ₗ MM.barDifferential =
-          AA.coaugmentedBarDifferential.rTensor _ ∘ₗ δM +
-            TensorProduct.map τ MM.barDifferential ∘ₗ δM := by
-        apply LinearMap.ext
-        intro x
-        exact MM.isLeftGradedCoderivation_barDifferential.coact_apply x
-      dsimp only [δM, δN, τ] at hDN hDM
-      rw [hK, ← TensorProduct.mapBilinear_apply, map_sub]
-      simp only [TensorProduct.mapBilinear_apply, LinearMap.comp_sub, LinearMap.sub_comp]
-      simp only [← LinearMap.comp_assoc, hDN, LinearMap.add_comp]
-      simp only [LinearMap.comp_assoc, hleft]
-      simp only [← LinearMap.comp_assoc]
-      simp only [LinearMap.comp_assoc, hDM, LinearMap.comp_add]
-      simp only [← LinearMap.comp_assoc, LinearMap.rTensor_comp_lTensor,
-        LinearMap.map_comp_lTensor, LinearMap.lTensor_comp_rTensor,
-        LinearMap.lTensor_comp_map]
-      abel
+    have hKl := leftCoact_comp_commutator hleft K.toLinearMap (by rw [hK]; abel)
     -- Cofreeness on both sides detects this commutator at the two counits.
     have hz : K = 0 := K.eq_zero_of_bicofree_counit_eq_zero _ hKl (by
       have hc : taylorProj R A B N ∘ₗ (NN.barDifferential ∘ₗ F.toLinearMap) =

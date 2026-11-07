@@ -194,13 +194,10 @@ theorem condExp_stoppedValue_shift_iterate_markovChainLaw
     exact Measure.map_mono (Measure.restrict_mono Set.inter_subset_right le_rfl) hθ
   -- Integrating against a path law averages the integrals against the laws started at fixed
   -- states, since the path law is a mixture of the latter.
-  have hbind : ∀ {μ : Measure α}, Integrable f (markovChainLaw μ κ) →
-      Integrable g μ ∧ ∫ y, f y ∂markovChainLaw μ κ = ∫ z, g z ∂μ := fun {μ} hμ => by
-    rw [markovChainLaw_eq_comp] at hμ ⊢
-    simp only [g, ← Kernel.markovChainKernel_apply]
-    exact ⟨integrable_integral_bind κ.markovChainKernel.measurable hμ,
-      integral_bind κ.markovChainKernel.measurable.aemeasurable hμ⟩
-  have hgS : Integrable g ((P.restrict S).map Y) := (hbind hf).1
+  have hgS : Integrable g ((P.restrict S).map Y) := by
+    rw [markovChainLaw_eq_comp] at hf
+    simpa only [g, ← Kernel.markovChainKernel_apply] using
+      integrable_integral_bind κ.markovChainKernel.measurable hf
   have hfθ : Integrable (S.indicator fun x => f (θ x)) P := by
     rw [integrable_indicator_iff hS]
     rw [← hfS] at hf
@@ -210,17 +207,25 @@ theorem condExp_stoppedValue_shift_iterate_markovChainLaw
     exact (integrable_map_measure hgS.1 hY.aemeasurable).1 hgS
   refine (ae_eq_condExp_of_forall_setIntegral_eq hτ.measurableSpace_le hfθ
     (fun s _ _ => hgY.integrableOn) (fun s hs _ => ?_) ?_).symm
-  · rw [setIntegral_indicator hS, setIntegral_indicator hS,
-      ← integral_map hY.aemeasurable (hbind (hfs s hs)).1.1, ← (hbind (hfs s hs)).2, ← hlaw s hs,
+  · have hb := hfs s hs
+    rw [markovChainLaw_eq_comp] at hb
+    have hg : Integrable g ((P.restrict (s ∩ S)).map Y) := by
+      simpa only [g, ← Kernel.markovChainKernel_apply] using
+        integrable_integral_bind κ.markovChainKernel.measurable hb
+    have hI : ∫ y, f y ∂markovChainLaw ((P.restrict (s ∩ S)).map Y) κ =
+        ∫ z, g z ∂(P.restrict (s ∩ S)).map Y := by
+      rw [markovChainLaw_eq_comp]
+      simpa only [g, ← Kernel.markovChainKernel_apply] using
+        integral_bind κ.markovChainKernel.measurable.aemeasurable hb
+    rw [setIntegral_indicator hS, setIntegral_indicator hS,
+      ← integral_map hY.aemeasurable hg.1, ← hI, ← hlaw s hs,
       integral_map hθ.aemeasurable (by rw [hlaw s hs]; exact (hfs s hs).1)]
   · -- `g ∘ X τ` is `𝓕_τ`-measurable up to null sets on `{τ < ∞}`, and vanishes off it.
     have hgm : AEStronglyMeasurable[hτ.measurableSpace] (fun x => g (Y x)) (P.restrict S) :=
       (hgS.1.comp_ae_measurable' hY.aemeasurable).mono (measurable_iff_comap_le.1 hYτ)
     refine ⟨S.indicator (hgm.mk _), hgm.stronglyMeasurable_mk.indicator hSτ, ?_⟩
     filter_upwards [(ae_restrict_iff' hS).1 hgm.ae_eq_mk] with x hx
-    by_cases hxS : x ∈ S
-    · simp [Set.indicator_of_mem hxS, hx hxS]
-    · simp [Set.indicator_of_notMem hxS]
+    by_cases hxS : x ∈ S <;> simp [hxS, hx]
 
 /-- **The strong Markov property, for events.** For a stopping time `τ` of the natural filtration
 and a measurable set `B` of paths, the conditional probability given `𝓕_τ` that `τ < ∞` and the

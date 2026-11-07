@@ -46,6 +46,19 @@ section DivisionRing
 
 variable [DivisionRing 𝕜] {E : Type*} [AddCommGroup E] [Module 𝕜 E]
 
+/-- Intersecting with a fixed subspace gives a supermodular dimension function. -/
+theorem finrank_inf_add_finrank_inf_le (U V H : Submodule 𝕜 E) [FiniteDimensional 𝕜 H] :
+    finrank 𝕜 ↥(U ⊓ H) + finrank 𝕜 ↥(V ⊓ H) ≤
+      finrank 𝕜 ↥((U ⊓ V) ⊓ H) + finrank 𝕜 ↥((U ⊔ V) ⊓ H) := by
+  have hdim := finrank_sup_add_finrank_inf_eq (U ⊓ H) (V ⊓ H)
+  have hsub : (U ⊓ H) ⊔ (V ⊓ H) ≤ (U ⊔ V) ⊓ H :=
+    sup_le (inf_le_inf_right H le_sup_left) (inf_le_inf_right H le_sup_right)
+  have hle := finrank_mono hsub
+  have hinf : (U ⊓ H) ⊓ (V ⊓ H) = (U ⊓ V) ⊓ H := by
+    simp only [inf_assoc, inf_left_comm, inf_idem]
+  rw [hinf] at hdim
+  omega
+
 /-- Two subspaces whose dimensions sum to more than the dimension of the ambient
 space have nontrivial intersection. -/
 theorem inf_ne_bot_of_finrank_lt [FiniteDimensional 𝕜 E] {V W : Submodule 𝕜 E}
