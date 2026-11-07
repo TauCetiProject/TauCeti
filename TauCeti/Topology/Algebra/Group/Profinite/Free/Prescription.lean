@@ -128,6 +128,16 @@ theorem crossedHom_single_freeProPGen {n : ℕ} (χ : freeProP p (Fin n) →ₜ*
   · rw [freeProPGen_eq_one_of_le p (not_lt.1 hm), (isCrossedHom_crossedHom χ _).map_one,
       ite_eq_right fun h ↦ hm (by rw [h]; exact k.isLt)]
 
+/-- The Kronecker crossed homomorphism `D_k` vanishes at the generators `x_m`, `m ≠ k`. -/
+theorem crossedHom_single_freeProPGen_of_ne {n : ℕ} (χ : freeProP p (Fin n) →ₜ* ℤ_[p]ˣ)
+    (k : Fin n) {m : ℕ} (hm : m ≠ k) : crossedHom χ (Pi.single k 1) (freeProPGen p n m) = 0 := by
+  rw [crossedHom_single_freeProPGen, ite_eq_right hm]
+
+/-- The Kronecker crossed homomorphism `D_k` takes the value `1` at the generator `x_k`. -/
+theorem crossedHom_single_freeProPGen_self {n : ℕ} (χ : freeProP p (Fin n) →ₜ* ℤ_[p]ˣ)
+    (k : Fin n) : crossedHom χ (Pi.single k 1) (freeProPGen p n k) = 1 := by
+  rw [crossedHom_single_freeProPGen, ite_eq_left rfl]
+
 /-- **Crossed homomorphisms with the same values on the generators, for characters congruent
 modulo `p ^ k`, are congruent modulo `p ^ k`**: their truncations modulo `p ^ k` are continuous
 crossed homomorphisms for the same character of `F` agreeing on the generators. -/

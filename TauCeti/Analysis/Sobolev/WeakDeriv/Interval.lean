@@ -61,6 +61,8 @@ theorem, turns `∫ φ' t • ∫ s in α..t, u' s` into `-∫ φ s • u' s`. T
   `TauCeti.hasWeakLineDerivOn_Ioo_iff_exists_ae_eq_add_intervalIntegral`: a function is weakly
   differentiable on an interval exactly when it is almost everywhere a constant plus the primitive
   of its weak derivative.
+* `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_left`: the same with the primitive
+  taken from the left endpoint, when the weak derivative is integrable.
 * `TauCeti.HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_top`: the same on the whole line.
 * `TauCeti.HasWeakLineDerivOn.exists_continuousOn_ae_eq`: if the weak derivative is integrable,
   the function has a representative continuous on the closed interval.
@@ -207,6 +209,19 @@ theorem HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral
   have hd := (h.sub (hasWeakLineDerivOn_intervalIntegral h.locallyIntegrableOn_deriv
     ht₀)).congr_ae_deriv (EventuallyEq.of_eq (sub_self u'))
   obtain ⟨c, hc⟩ := hd.exists_ae_eq_const
+  refine ⟨c, ?_⟩
+  filter_upwards [hc] with t ht
+  rw [← ht, Pi.sub_apply, sub_add_cancel]
+
+/-- **The fundamental theorem of calculus for weak derivatives, from the left endpoint.** If `u'`
+is the weak derivative of `u` on `Ioo a b` and `u'` is integrable on `Ioo a b`, then `u` is almost
+everywhere on `Ioo a b` equal to a constant plus the primitive `t ↦ ∫ s in a..t, u' s`. -/
+theorem HasWeakLineDerivOn.exists_ae_eq_add_intervalIntegral_left
+    (h : HasWeakLineDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ u u' 1) (hu' : IntegrableOn u' (Ioo a b)) :
+    ∃ c, u =ᵐ[volume.restrict (Ioo a b)] fun t ↦ c + ∫ s in a..t, u' s := by
+  have := h.completeSpace
+  obtain ⟨c, hc⟩ := ((h.sub (hasWeakLineDerivOn_intervalIntegral_left hu')).congr_ae_deriv
+    (EventuallyEq.of_eq (sub_self u'))).exists_ae_eq_const
   refine ⟨c, ?_⟩
   filter_upwards [hc] with t ht
   rw [← ht, Pi.sub_apply, sub_add_cancel]

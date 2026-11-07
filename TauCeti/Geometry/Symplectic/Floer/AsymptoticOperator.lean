@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.ODE.DysonSeries
 public import TauCeti.Geometry.Manifold.MFDeriv.FixedPoint
+public import TauCeti.Geometry.Symplectic.AlmostComplex.Topology
 public import TauCeti.Geometry.Symplectic.Floer.Linearization
 public import TauCeti.Geometry.Symplectic.Hamiltonian.TimeDependent
 import Mathlib.Geometry.Manifold.MFDeriv.FDeriv
@@ -55,6 +56,15 @@ exactly when the orbit is nondegenerate, that is, when `x(0)` is a nondegenerate
 the time-one map
 (`SymplecticForm.isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero`).
 This holds for every family `J_t`, compatible or not.
+
+Operators on cylindrical ends act on maps decaying like `e^{-δ s}`. Conjugation by the weight
+turns `D` into the operator `∂s + A - δ` (`Floer.stationaryCylinderOperator_exp_smul`), and
+`A - δ` is the asymptotic operator of `S_t - δ J_t` (`Floer.asymptoticOperator_sub_smul`). For
+continuous one-periodic `S` and `J` the weights `δ` at which `A - δ` has a nonzero one-periodic
+kernel element form a closed set (`Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul`),
+because the return map of `S_t - δ J_t` depends continuously on `δ`. In particular, if `A` is
+injective on one-periodic loops, then so is `A - δ` for all small `δ`; at a nondegenerate
+orbit this is `SymplecticForm.eventually_eq_zero_of_asymptoticOperator_eq_smul`.
 
 On the cylinder, the same cancellation gives the integrated form of `D* D = -∂s² + A²` over
 `[a, b] × [0, 1]`, in which the cross term only contributes the slice pairings
@@ -250,6 +260,57 @@ theorem exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero [FiniteDimensi
     sub_eq_zero]
   exact ⟨fun ⟨v, h0, hv⟩ ↦ ⟨v, hv.symm, h0⟩, fun ⟨v, hv, h0⟩ ↦ ⟨v, h0, hv.symm⟩⟩
 
+section Weight
+
+/-! ### Weighted operators
+
+Floer operators on cylindrical ends act on maps decaying like `e^{-δ s}`. Conjugating by the
+weight shifts the asymptotic operator `A` to `A - δ`, and `A - δ` is again an asymptotic
+operator, for the linearized field `S_t - δ J_t`. -/
+
+variable [FiniteDimensional ℝ V]
+
+/-- **Shifting the asymptotic operator by a weight.** Replacing `S_t` by `S_t - δ J_t` shifts the
+asymptotic operator by `-δ`. -/
+theorem asymptoticOperator_sub_smul (δ : ℝ) (ζ : ℝ → V) (t : ℝ) :
+    asymptoticOperator J
+        (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) ζ t =
+      asymptoticOperator J S ζ t - δ • ζ t := by
+  have h : J t (J t (ζ t)) = -ζ t := AlmostComplexStructure.apply_apply _ _
+  simp only [asymptoticOperator_def, sub_apply, smul_apply, LinearMap.coe_toContinuousLinearMap',
+    sub_sub_eq_add_sub, map_add, map_sub, map_smul] at h ⊢
+  rw [h]
+  module
+
+/-- **The periodic spectrum of the asymptotic operator is closed.** For continuous one-periodic
+families `S` and `J`, the real weights `δ` for which `A ζ = δ ζ` has a nonzero differentiable
+one-periodic solution form a closed set: the zero set of `δ ↦ det (1 - Ψ_δ(1))`, where `Ψ_δ`
+is the propagator of `ζ' = (S_t - δ J_t) ζ`. -/
+theorem isClosed_setOf_exists_asymptoticOperator_eq_smul (hSc : Continuous S)
+    (hSp : Periodic S 1) (hJc : Continuous J) (hJp : Periodic J 1) :
+    IsClosed {δ : ℝ | ∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
+      ∀ t, asymptoticOperator J S ζ t = δ • ζ t} := by
+  set Jc : ℝ → V →L[ℝ] V := fun t ↦ LinearMap.toContinuousLinearMap (J t).toLinearMap
+  have hJc' : Continuous Jc := AlmostComplexStructure.continuous_iff.1 hJc
+  have hp : Continuous (Function.uncurry fun (δ : ℝ) t ↦ S t - δ • Jc t) :=
+    (hSc.comp continuous_snd).sub (continuous_fst.smul (hJc'.comp continuous_snd))
+  have hset : {δ : ℝ | ∃ ζ : ℝ → V, Differentiable ℝ ζ ∧ Periodic ζ 1 ∧ ζ ≠ 0 ∧
+      ∀ t, asymptoticOperator J S ζ t = δ • ζ t} =
+      (fun δ ↦ LinearMap.det
+        ((1 - dysonSeriesLeft (fun t ↦ S t - δ • Jc t) 1 : V →L[ℝ] V) : V →ₗ[ℝ] V)) ⁻¹' {0} := by
+    ext δ
+    refine Iff.trans ?_ (exists_ne_zero_asymptoticOperator_eq_zero_iff_det_eq_zero (J := J)
+      (S := fun t ↦ S t - δ • Jc t) (hSc.sub (hJc'.const_smul δ))
+      fun t ↦ by simp only [Jc, hSp t, hJp t])
+    simp only [Jc, asymptoticOperator_sub_smul, sub_eq_zero]
+    exact Iff.rfl
+  rw [hset]
+  exact isClosed_singleton.preimage <| ContinuousLinearMap.continuous_det.comp <|
+    continuous_const.sub <| (continuous_parametric_dysonSeriesLeft hp).comp <|
+      continuous_id.prodMk continuous_const
+
+end Weight
+
 section Cylinder
 
 variable {ξ : ℝ × ℝ → V} {z : ℝ × ℝ}
@@ -310,6 +371,28 @@ private theorem fderiv_add_one_snd (hper : ∀ s t, ξ (s, t + 1) = ξ (s, t)) (
   simpa using hp.fderiv (s, t)
 
 variable [FiniteDimensional ℝ V] {ω : SymplecticForm V}
+
+/-- **The weighted end operator.** Conjugating the stationary cylinder operator by the weight
+`e^{δ s}` shifts it by `-δ`: `D(e^{-δ s} ξ) = e^{-δ s} (D - δ) ξ`, where `D - δ` is the stationary
+cylinder operator of `S_t - δ J_t`. Hence `D` on maps of the form `e^{-δ s} ξ` is the operator
+`∂s + A - δ` on `ξ`. -/
+theorem stationaryCylinderOperator_exp_smul (δ : ℝ) (hξ : DifferentiableAt ℝ ξ z) :
+    stationaryCylinderOperator J S (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) z =
+      Real.exp (-(δ * z.1)) • stationaryCylinderOperator J
+        (fun t ↦ S t - δ • LinearMap.toContinuousLinearMap (J t).toLinearMap) ξ z := by
+  have hc : HasFDerivAt (fun w : ℝ × ℝ ↦ Real.exp (-(δ * w.1)))
+      (Real.exp (-(δ * z.1)) • -(δ • ContinuousLinearMap.fst ℝ ℝ ℝ)) z := by
+    simpa using ((hasFDerivAt_fst (p := z)).const_smul δ).neg.exp
+  have h : J z.2 (J z.2 (ξ z)) = -ξ z := AlmostComplexStructure.apply_apply _ _
+  have hd : HasFDerivAt (fun w ↦ Real.exp (-(δ * w.1)) • ξ w) _ z := hc.smul hξ.hasFDerivAt
+  rw [stationaryCylinderOperator_def, hd.fderiv, stationaryCylinderOperator_def]
+  simp only [add_apply, smul_apply, ContinuousLinearMap.smulRight_apply, neg_apply,
+    ContinuousLinearMap.coe_fst', stdComplexLineReal_fst, stdComplexLineImag_fst,
+    sub_apply, LinearMap.coe_toContinuousLinearMap', map_add, map_sub,
+    map_smul, sub_sub_eq_add_sub, smul_eq_mul, mul_zero, mul_one, neg_zero, zero_smul,
+    add_zero] at h ⊢
+  rw [h]
+  module
 
 /-- For continuously varying `J_t`, the norm `g_t(f, f)` of a continuous map `f` of the cylinder
 for `g_t = ω(·, J_t ·)` is continuous. -/
@@ -645,6 +728,35 @@ theorem isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero
     by_contra hv0
     obtain ⟨ζ, hζ, hζp, hne, hA⟩ := hker.2 ⟨v, hv0, hv⟩
     exact hne (h ζ hζ hζp hA)
+
+/-- **Small weights preserve nondegeneracy.** At a nondegenerate one-periodic orbit `x` of a
+one-periodic, jointly `C²` time-dependent Hamiltonian `H` whose suspended vector field is globally
+Lipschitz, and for continuous one-periodic almost complex structures `J_t`, the weighted
+asymptotic operator `A - δ` along `x` has no nonzero differentiable one-periodic kernel element
+for every weight `δ` close enough to `0`. -/
+theorem eventually_eq_zero_of_asymptoticOperator_eq_smul
+    (ω : SymplecticForm V) {H : ℝ → V → ℝ} {K : ℝ≥0}
+    (hX : LipschitzWith K (ω.timeDependentHamiltonianSuspension H))
+    (hH : ContDiff ℝ 2 (uncurry H)) (hHp : Periodic H 1) {x : ℝ → V}
+    (hx : ∀ t, HasDerivAt x (ω.hamiltonianVectorField (H t) (x t)) t) (hxp : Periodic x 1)
+    (hnd : IsNondegenerateFixedPt 𝓘(ℝ, V) (ω.timeDependentHamiltonianFlow H hX 0 1) (x 0))
+    {J : ℝ → AlmostComplexStructure V} (hJc : Continuous J) (hJp : Periodic J 1) :
+    ∀ᶠ δ in 𝓝 (0 : ℝ), ∀ ζ : ℝ → V, Differentiable ℝ ζ → Periodic ζ 1 →
+      (∀ t, Floer.asymptoticOperator J
+        (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) ζ t = δ • ζ t) → ζ = 0 := by
+  have hSc : Continuous fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t) :=
+    ω.continuous_fderiv_hamiltonianVectorField_comp hH
+      (continuous_iff_continuousAt.2 fun t ↦ (hx t).continuousAt)
+  have hSp : Periodic (fun t ↦ fderiv ℝ (ω.hamiltonianVectorField (H t)) (x t)) 1 :=
+    fun t ↦ by simp only [hHp t, hxp t]
+  have hclosed := Floer.isClosed_setOf_exists_asymptoticOperator_eq_smul hSc hSp hJc hJp
+  have h₀ :=
+    (isNondegenerateFixedPt_iff_forall_eq_zero_of_asymptoticOperator_eq_zero ω hX hH hHp hx hxp
+      J).1 hnd
+  refine Eventually.mono (hclosed.isOpen_compl.mem_nhds fun ⟨ζ, hζ, hζp, hne, hA⟩ ↦
+    hne (h₀ ζ hζ hζp fun t ↦ by simpa using hA t)) fun δ hδ ζ hζ hζp hA ↦ ?_
+  by_contra hne
+  exact hδ ⟨ζ, hζ, hζp, hne, hA⟩
 
 end SymplecticForm
 
