@@ -146,6 +146,26 @@ theorem algSpec_map_algSpecHomEquivAlgHom (g : (algSpec R).obj (op B) ⟶ (algSp
     (algSpec R).map (CommAlgCat.ofHom (algSpecHomEquivAlgHom A B g)).op = g := by
   rw [← algSpecHomEquivAlgHom_symm_apply, Equiv.symm_apply_apply]
 
+/-- The algebra homomorphism of an affine morphism is its pullback on global functions,
+transported along the canonical global-section isomorphisms. -/
+theorem algSpecHomEquivAlgHom_eq_appTop
+    (p : (algSpec R).obj (op B) ⟶ (algSpec R).obj (op A)) (a : A) :
+    algSpecHomEquivAlgHom A B p a =
+      (Scheme.ΓSpecIso (CommRingCat.of B)).hom
+        (p.left.appTop ((Scheme.ΓSpecIso (CommRingCat.of A)).inv a)) := by
+  obtain ⟨φ, rfl⟩ := (algSpecHomEquivAlgHom A B).symm.surjective p
+  rw [Equiv.apply_symm_apply, algSpecHomEquivAlgHom_symm_apply, algSpec_map_left]
+  -- `algSpec_map_left` leaves the ring map as `Under.Hom.right` through
+  -- `commAlgCatEquivUnder`. No public computation lemma reduces that projection, so
+  -- unfold the equivalence here to expose the underlying ring map of `φ` for naturality.
+  simp only [commAlgCatEquivUnder, Quiver.Hom.unop_op, CommAlgCat.hom_ofHom,
+    AlgHom.toUnder, Under.homMk_right]
+  have h := ConcreteCategory.congr_hom
+    (Scheme.ΓSpecIso_inv_naturality (CommRingCat.ofHom φ.toRingHom)) a
+  have h' := congrArg (Scheme.ΓSpecIso (CommRingCat.of B)).hom h
+  simp only [CategoryTheory.comp_apply, CommRingCat.hom_ofHom, Iso.inv_hom_id_apply] at h'
+  exact h'
+
 /-- Composing with `algSpec` of an algebra homomorphism `h` precomposes the algebra homomorphism
 with `h`. -/
 @[simp]
@@ -155,6 +175,15 @@ theorem algSpecHomEquivAlgHom_comp {A' : CommAlgCat.{u} R} (h : A' ⟶ A)
       (algSpecHomEquivAlgHom A B g).comp h.hom := by
   rw [← Equiv.eq_symm_apply, algSpecHomEquivAlgHom_symm_apply, CommAlgCat.ofHom_comp,
     CommAlgCat.ofHom_hom, op_comp, Functor.map_comp, algSpec_map_algSpecHomEquivAlgHom]
+
+/-- Changing the source test algebra postcomposes the corresponding algebra homomorphism. -/
+@[simp]
+theorem algSpecHomEquivAlgHom_map_comp {B' : CommAlgCat.{u} R} (h : B ⟶ B')
+    (g : (algSpec R).obj (op B) ⟶ (algSpec R).obj (op A)) :
+    algSpecHomEquivAlgHom A B' ((algSpec R).map h.op ≫ g) =
+      h.hom.comp (algSpecHomEquivAlgHom A B g) := by
+  rw [← Equiv.eq_symm_apply, algSpecHomEquivAlgHom_symm_apply, CommAlgCat.ofHom_comp,
+    op_comp, Functor.map_comp, algSpec_map_algSpecHomEquivAlgHom, CommAlgCat.ofHom_hom]
 
 end algSpec
 
