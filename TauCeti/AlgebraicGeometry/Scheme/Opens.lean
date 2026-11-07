@@ -38,6 +38,9 @@ This file records general-purpose facts about open subsets of schemes.
   open.
 * `AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens`: sections over the affine opens,
   compatible with restriction, glue to a unique global section.
+* `AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq`: global sections are determined by
+  their restrictions to the affine opens, and
+  `AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp` composes restriction homomorphisms.
 * `AlgebraicGeometry.Scheme.exists_finite_affineOpens_cover`: a quasi-compact open is covered by
   finitely many affine opens contained in it, in the form used by sheaf gluing.
 * `AlgebraicGeometry.IsAffineOpen.fromSpec_appLE_self` and
@@ -184,6 +187,26 @@ theorem _root_.AlgebraicGeometry.Scheme.existsUnique_gluing_affineOpens (X : Sch
     rw [← ConcreteCategory.comp_apply, ← Functor.map_comp]
     exact hs U' W.1 (W.2.trans inf_le_right)
   exact h₁.trans h₂.symm
+
+/-- Restriction of sections from `W` to `U` followed by restriction to `V ≤ U` is restriction from
+`W` to `V`, as a composite of ring homomorphisms. -/
+theorem _root_.AlgebraicGeometry.Scheme.presheaf_map_homOfLE_comp {V U W : X.Opens} (hVU : V ≤ U)
+    (hUW : U ≤ W) :
+    (X.presheaf.map (homOfLE hVU).op).hom.comp (X.presheaf.map (homOfLE hUW).op).hom =
+      (X.presheaf.map (homOfLE (hVU.trans hUW)).op).hom := by
+  rw [← CommRingCat.hom_comp, ← Functor.map_comp]
+  rfl
+
+/-- **Global sections are determined by their restrictions to the affine opens.** -/
+theorem _root_.AlgebraicGeometry.Scheme.eq_of_forall_affineOpens_map_eq (X : Scheme.{u})
+    {x y : Γ(X, ⊤)}
+    (h : ∀ U : X.affineOpens, X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op x =
+      X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y) :
+    x = y :=
+  (X.existsUnique_gluing_affineOpens (fun U ↦ X.presheaf.map (homOfLE (le_top : U.1 ≤ ⊤)).op y)
+    fun _ _ hVU ↦ congrArg (· y)
+      (congrArg DFunLike.coe (Scheme.presheaf_map_homOfLE_comp (X := X) hVU le_top))).unique h
+    fun _ ↦ rfl
 
 /-- A quasi-compact open `U` is covered by finitely many affine opens contained in it. This is
 `AlgebraicGeometry.isCompact_iff_finite_and_eq_biUnion_affineOpens` stated as a family of opens

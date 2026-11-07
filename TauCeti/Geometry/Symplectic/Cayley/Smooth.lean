@@ -11,6 +11,7 @@ public import Mathlib.Analysis.SpecialFunctions.SmoothTransition
 public import Mathlib.Analysis.Normed.Module.FiniteDimension
 public import Mathlib.Geometry.Manifold.ContMDiff.NormedSpace
 import Mathlib.Analysis.Normed.Operator.Banach
+import TauCeti.Analysis.Calculus.ContinuousLinearMapInverse
 
 /-!
 # Smooth compatible Cayley interpolation
@@ -76,12 +77,6 @@ theorem contDiffAt_cayleyPathFormula {R : Type*} [NormedRing R] [NormedAlgebra �
     [CompleteSpace R] {n : WithTop ℕ∞} {b : ℝ} {A B : R} (h₁ : IsUnit (1 - A * B))
     (h₂ : IsUnit (1 - b • cayleyFormula A B)) :
     ContDiffAt ℝ n (fun q : ℝ × R × R ↦ cayleyPathFormula q.1 q.2.1 q.2.2) (b, A, B) := by
-  have hinv {g : ℝ × R × R → R} (hg : ContDiffAt ℝ n g (b, A, B)) (hu : IsUnit (g (b, A, B))) :
-      ContDiffAt ℝ n (fun q ↦ Ring.inverse (g q)) (b, A, B) := by
-    obtain ⟨u, hu⟩ := hu
-    have hi := contDiffAt_ringInverse (n := n) ℝ u
-    rw [hu] at hi
-    exact hi.comp _ hg
   have hA : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ q.2.1) (b, A, B) :=
     contDiffAt_fst.comp _ contDiffAt_snd
   have hB : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ q.2.2) (b, A, B) :=
@@ -89,9 +84,9 @@ theorem contDiffAt_cayleyPathFormula {R : Type*} [NormedRing R] [NormedAlgebra �
   have hAB := hA.mul hB
   have hC : ContDiffAt ℝ n (fun q : ℝ × R × R ↦ cayleyFormula q.2.1 q.2.2) (b, A, B) := by
     simp only [cayleyFormula_def]
-    exact ((contDiffAt_const.add hAB).mul (hinv (contDiffAt_const.sub hAB) h₁)).neg
+    exact ((contDiffAt_const.add hAB).mul ((contDiffAt_const.sub hAB).inverse h₁)).neg
   have hbC := contDiffAt_fst.smul hC
-  exact (hA.mul (contDiffAt_const.add hbC)).mul (hinv (contDiffAt_const.sub hbC) h₂)
+  exact (hA.mul (contDiffAt_const.add hbC)).mul ((contDiffAt_const.sub hbC).inverse h₂)
 
 end Formula
 
@@ -147,12 +142,9 @@ theorem Compatible.contDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
     ContDiffAt ℝ n (fun q => LinearMap.toContinuousLinearMap
       (h₀.cayleyEquiv.symm ⟨(C q).toLinearMap, hC q⟩).val.toLinearMap) p := by
   simp_rw [h₀.cayleyEquiv_symm_apply_toContinuousLinearMap]
-  obtain ⟨u, hu⟩ := isUnit_one_sub_of_toLinearMap_mem_cayleyBall (hC p)
-  have hi : ContDiffAt ℝ n (fun q => Ring.inverse (1 - C q)) p := by
-    have hi := contDiffAt_ringInverse (n := n) ℝ u
-    rw [hu] at hi
-    exact hi.comp p (contDiffAt_const.sub hCs)
-  exact (contDiffAt_const.mul (contDiffAt_const.add hCs)).mul hi
+  have hu := isUnit_one_sub_of_toLinearMap_mem_cayleyBall (hC p)
+  exact (contDiffAt_const.mul (contDiffAt_const.add hCs)).mul
+    ((contDiffAt_const.sub hCs).inverse hu)
 
 /-- The inverse tame Cayley chart preserves globally smooth parameter families. -/
 theorem Compatible.contDiff_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
@@ -211,8 +203,7 @@ theorem Tames.contMDiffAt_cayley (h₀ : ω.Tames J₀) {J : N → AlmostComplex
     rwa [map_sub, map_one, map_mul] at this
   rw [hC]
   exact ((contDiffAt_const.add (contDiffAt_const.mul contDiffAt_id)).neg.mul
-    ((contDiffAt_ringInverse ℝ hu.unit).comp (j p)
-      (contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)))).comp_contMDiffAt
+    ((contDiffAt_const.sub (contDiffAt_const.mul contDiffAt_id)).inverse hu)).comp_contMDiffAt
     (f := j) hJs
 
 /-- The inverse Cayley chart relative to an `ω`-compatible `J₀` sends a family in the tame Cayley
@@ -226,8 +217,7 @@ theorem Compatible.contMDiffAt_cayleyEquiv_symm (h₀ : ω.Compatible J₀)
   simp_rw [h₀.cayleyEquiv_symm_apply_toContinuousLinearMap]
   have hu := isUnit_one_sub_of_toLinearMap_mem_cayleyBall (hC p)
   exact ((contDiffAt_const.mul (contDiffAt_const.add contDiffAt_id)).mul
-    ((contDiffAt_ringInverse ℝ hu.unit).comp (C p)
-      (contDiffAt_const.sub contDiffAt_id))).comp_contMDiffAt hCs
+    ((contDiffAt_const.sub contDiffAt_id).inverse hu)).comp_contMDiffAt hCs
 
 /-- The forward Cayley chart relative to an `ω`-tame `J₀` sends a `C^n` family of `ω`-tame
 structures on a manifold to a `C^n` family of Cayley coordinates. -/

@@ -13,7 +13,7 @@ import Mathlib.Data.Fintype.Lattice
 import TauCeti.Algebra.Homology.Ext.Basic
 import TauCeti.CategoryTheory.Limits.Lattice
 import TauCeti.CategoryTheory.Sites.SheafCohomology.Cech.Exact
-import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
+public import TauCeti.CategoryTheory.Sites.SheafCohomology.LongExactSequence
 
 /-!
 # Leray's theorem: Čech cohomology of a Leray cover computes sheaf cohomology
@@ -50,6 +50,8 @@ any module structure on both sides that is induced by an action of a ring on `F`
   in `F`;
 * `TauCeti.Topology.homologyCechComplexIsoH_zero`: in degree `0` it is the identification of both
   groups with the global sections.
+* `TauCeti.Topology.δ_comp_homologyCechComplexIsoH_one_hom`: in degree `1` the comparison
+  intertwines the connecting maps of the Čech and sheaf injective cokernel sequences.
 
 ## References
 
@@ -85,7 +87,7 @@ private lemma isLerayProd_of_finset {F : Sheaf (Opens.grothendieckTopology X) Ad
 
 variable (U) in
 /-- The sequence of Čech complexes of `0 ⟶ F ⟶ I ⟶ Q ⟶ 0` for the cover `U`. -/
-private abbrev cechSeq (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
+abbrev cechSeq (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}) :
     ShortComplex (CochainComplex AddCommGrpCat.{u} ℕ) :=
   -- this is `((injectiveCokernelSequence F).map (sheafToPresheaf _ _)).map (cechComplexFunctor U)`,
   -- restated so that its objects are syntactically the Čech complexes of `F`, `I` and `Q`
@@ -112,7 +114,7 @@ private lemma isLerayProd_cokernel {F : Sheaf (Opens.grothendieckTopology X) Add
 variable (U) in
 /-- A morphism `F ⟶ G` induces a morphism of the sequences of Čech complexes of the chosen
 injective cokernel sequences, through `TauCeti.injectiveCokernelSequenceMap`. -/
-private def cechSeqMap {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+def cechSeqMap {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
     (f : F ⟶ G) : cechSeq U F ⟶ cechSeq U G where
   τ₁ := (cechComplexFunctor U).map f.hom
   τ₂ := (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₂.hom
@@ -123,6 +125,26 @@ private def cechSeqMap {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat
   comm₂₃ := by
     simp only [injectiveCokernelSequenceMap_τ₂, injectiveCokernelSequenceMap_τ₃,
       ← Functor.map_comp, ← InducedCategory.comp_hom, cokernel.π_desc]
+
+/-- On the first term, the chosen Čech sequence map is the original coefficient morphism. -/
+@[simp]
+theorem cechSeqMap_τ₁ {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (f : F ⟶ G) : (cechSeqMap U f).τ₁ = (cechComplexFunctor U).map f.hom := by
+  rfl
+
+/-- On the injective term, the Čech sequence map is induced by the chosen injective lift. -/
+@[simp]
+theorem cechSeqMap_τ₂ {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (f : F ⟶ G) : (cechSeqMap U f).τ₂ =
+      (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₂.hom := by
+  rfl
+
+/-- On the quotient term, the Čech sequence map is induced by the chosen quotient map. -/
+@[simp]
+theorem cechSeqMap_τ₃ {F G : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u}}
+    (f : F ⟶ G) : (cechSeqMap U f).τ₃ =
+      (cechComplexFunctor U).map (injectiveCokernelSequenceMap f).τ₃.hom := by
+  rfl
 
 variable (U)
 
@@ -305,6 +327,20 @@ lemma homologyCechComplexIsoH_zero [Finite ι]
     (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U))) :
     homologyCechComplexIsoH U hU F hF 0 = homologyZeroCechIso U hU F := by
   rw [homologyCechComplexIsoH, cechIsoAux]
+
+/-- In degree one, the all-degree Leray comparison intertwines the connecting maps of
+the Čech and sheaf injective cokernel sequences. The short exactness witness may be any one. -/
+@[reassoc]
+lemma δ_comp_homologyCechComplexIsoH_one_hom [Finite ι]
+    (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
+    (hF : ∀ s : Finset ι, s.Nonempty → ∀ k, Subsingleton (F.H' (k + 1) (s.inf U)))
+    (hS : (((injectiveCokernelSequence F).map (sheafToPresheaf _ AddCommGrpCat.{u})).map
+      (cechComplexFunctor U)).ShortExact) :
+    hS.δ 0 1 rfl ≫ (homologyCechComplexIsoH U hU F hF 1).hom =
+      (homologyZeroCechIso U hU (cokernel (Injective.ι F))).hom ≫
+        AddCommGrpCat.ofHom (_root_.CategoryTheory.Sheaf.H.δ
+          (injectiveCokernelSequence_shortExact F) 0 1 rfl) :=
+  δ_comp_cechIsoOne_hom U hU F (isLerayProd_of_finset hF)
 
 /-- **Naturality of Leray's theorem.** The comparison `Hⁿ(U, F) ≅ Hⁿ(X, F)` commutes with the maps
 induced by a morphism `F ⟶ G` of sheaves which both satisfy the hypotheses of Leray's theorem. -/
