@@ -70,6 +70,16 @@ largest summand, so Mathlib's dominant-antidiagonal theorem applies.
   reindexes the polyradii, and `MvPowerSeries.IsRestricted.renameAlgEquiv` is the resulting
   algebra isomorphism of restricted-series subrings; `MvPowerSeries.IsRestricted.renameAlgEquivOfEq`
   takes source polyradii only propositionally equal to the reindexed ones.
+* `MvPowerSeries.IsRestricted.coeff_renameAlgEquiv`: renaming moves each coefficient along `e`;
+  `MvPowerSeries.IsRestricted.renameAlgEquiv_X`: it sends `X i` to `X (e i)`; and
+  `TauCeti.MvPowerSeries.renameAlgEquiv_polynomialToRestricted`: it extends the renaming of
+  polynomials.
+* `MvPowerSeries.IsRestricted.renameAlgEquivOfEq_refl`,
+  `MvPowerSeries.IsRestricted.renameAlgEquivOfEq_trans` and
+  `MvPowerSeries.IsRestricted.renameAlgEquivOfEq_symm`: the identity, composition and inverse laws
+  of renaming.
+* `MvPowerSeries.IsRestricted.isEmptyEquiv`: without variables, the constant coefficient is an
+  isometric `R`-algebra isomorphism from restricted series to `R`.
 * `MvPowerSeries.mk_monomial_eq_algebraMap_mul_prod`: a restricted monomial `r Xᵗ` is the constant
   `r` times the product of the variables.
 * The restricted-series subring is an algebra over every algebra `S` of coefficients, through the
@@ -612,6 +622,32 @@ theorem algebraMap_isRestrictedSubring_surjective [IsEmpty σ] :
   let ⟨r, hr⟩ := C_surjective (g : MvPowerSeries σ R)
   ⟨r, Subtype.ext hr⟩
 
+variable (c) in
+/-- **Restricted series in no variables.** Without variables every series is restricted and
+constant, so Mathlib's `MvPowerSeries.isEmptyEquiv`, the constant coefficient, restricts to an
+`R`-algebra isomorphism from restricted series to the coefficient ring. -/
+noncomputable def IsRestricted.isEmptyEquiv [IsEmpty σ] :
+    IsRestricted.subring (R := R) c ≃ₐ[R] R where
+  toFun f := constantCoeff (f : MvPowerSeries σ R)
+  invFun := algebraMap R _
+  left_inv f := Subtype.ext <| by
+    simpa using (MvPowerSeries.isEmptyEquiv σ R).symm_apply_apply f
+  right_inv := constantCoeff_C
+  map_mul' f g := map_mul constantCoeff (f : MvPowerSeries σ R) g
+  map_add' f g := map_add constantCoeff (f : MvPowerSeries σ R) g
+  commutes' := constantCoeff_C
+
+/-- Without variables, the comparison with the coefficient ring is the constant coefficient. -/
+@[simp]
+theorem IsRestricted.isEmptyEquiv_apply [IsEmpty σ] (f : IsRestricted.subring (R := R) c) :
+    isEmptyEquiv c f = constantCoeff (f : MvPowerSeries σ R) := (rfl)
+
+/-- Without variables, the inverse comparison is the constant-series embedding. -/
+@[simp]
+theorem IsRestricted.isEmptyEquiv_symm_apply [IsEmpty σ] (r : R) :
+    (isEmptyEquiv c).symm r = algebraMap R (IsRestricted.subring (R := R) c) r := by
+  simp [AlgEquiv.symm_apply_eq]
+
 /-- A restricted monomial `r Xᵗ` is the constant `r` times the monomial `Xᵗ` in the variables. -/
 theorem mk_monomial_eq_algebraMap_mul_prod (t : σ →₀ ℕ) (r : R) :
     (⟨monomial t r, isRestricted_monomial c t r⟩ : IsRestricted.subring (R := R) c) =
@@ -645,6 +681,12 @@ theorem isometry_algebraMap_isRestrictedSubring :
     Isometry (algebraMap R (IsRestricted.subring (R := R) c)) :=
   AddMonoidHomClass.isometry_of_norm _ norm_algebraMap_isRestrictedSubring
 
+/-- Without variables, the comparison with the coefficient ring preserves the Gauss norm. -/
+theorem IsRestricted.norm_isEmptyEquiv [IsEmpty σ] (f : IsRestricted.subring (R := R) c) :
+    ‖isEmptyEquiv c f‖ = ‖f‖ := by
+  conv_rhs => rw [← (isEmptyEquiv c).symm_apply_apply f]
+  rw [isEmptyEquiv_symm_apply, norm_algebraMap_isRestrictedSubring]
+
 end NormedCommRing
 
 section Rename
@@ -676,6 +718,29 @@ underlying series. -/
 theorem IsRestricted.coe_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
     (f : IsRestricted.subring (R := R) (c ∘ e)) :
     (renameAlgEquiv e c f : MvPowerSeries τ R) = renameEquiv R e f := (rfl)
+
+/-- The inverse renaming isomorphism is renaming along `e.symm` on the underlying series. -/
+@[simp]
+theorem IsRestricted.coe_renameAlgEquiv_symm (e : σ ≃ τ) (c : τ → ℝ)
+    (f : IsRestricted.subring (R := R) c) :
+    ((renameAlgEquiv e c).symm f : MvPowerSeries σ R) = renameEquiv R e.symm f := by
+  rw [← renameEquiv_symm, AlgEquiv.eq_symm_apply, ← coe_renameAlgEquiv,
+    AlgEquiv.apply_symm_apply]
+
+/-- **Coefficients of a renamed restricted series.** The coefficient at an exponent `u` on `τ` is
+the original coefficient at `u` transported back along `e`. -/
+theorem IsRestricted.coeff_renameAlgEquiv (e : σ ≃ τ) (c : τ → ℝ)
+    (f : IsRestricted.subring (R := R) (c ∘ e)) (u : τ →₀ ℕ) :
+    coeff u (renameAlgEquiv e c f : MvPowerSeries τ R) =
+      coeff (u.equivMapDomain e.symm) (f : MvPowerSeries σ R) := by
+  simp [← coeff_equivMapDomain_rename e (f : MvPowerSeries σ R), ← Finsupp.equivMapDomain_trans]
+
+/-- Renaming sends the variable `X i` to the variable `X (e i)`. -/
+@[simp]
+theorem IsRestricted.renameAlgEquiv_X (e : σ ≃ τ) (c : τ → ℝ) (i : σ) :
+    renameAlgEquiv e c ⟨X i, isRestricted_X (c ∘ e) i⟩ =
+      (⟨X (e i), isRestricted_X c (e i)⟩ : IsRestricted.subring (R := R) c) :=
+  Subtype.ext (rename_X e i)
 
 /-- Reindexing positive polyradii keeps them positive. -/
 instance IsRestricted.fact_pos_comp {c : τ → ℝ} [∀ i, Fact (0 < c i)] (e : σ → τ) (i : σ) :
@@ -709,6 +774,50 @@ theorem IsRestricted.norm_renameAlgEquivOfEq (e : σ ≃ τ) (c : τ → ℝ) [�
     {a : σ → ℝ} [∀ i, Fact (0 < a i)] (h : c ∘ e = a) (f : IsRestricted.subring (R := R) a) :
     ‖renameAlgEquivOfEq e c h f‖ = ‖f‖ := by
   subst h; exact norm_renameAlgEquiv e c f
+
+/-- `IsRestricted.renameAlgEquivOfEq` along the defining equation is
+`IsRestricted.renameAlgEquiv`. -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_rfl (e : σ ≃ τ) (c : τ → ℝ) :
+    renameAlgEquivOfEq (R := R) e c rfl = renameAlgEquiv e c := (rfl)
+
+/-- **Renaming along the identity is the identity.** -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_refl (c : σ → ℝ) (h : c ∘ Equiv.refl σ = c) :
+    renameAlgEquivOfEq (R := R) (Equiv.refl σ) c h = AlgEquiv.refl :=
+  AlgEquiv.ext fun f ↦ Subtype.ext <| by simp
+
+/-- **Renaming along `e₁` and then along `e₂` is renaming along the composite `e₁.trans e₂`.** -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_trans {υ : Type*} (e₁ : σ ≃ τ) (e₂ : τ ≃ υ)
+    {a : σ → ℝ} {b : τ → ℝ} (c : υ → ℝ) (h₁ : b ∘ e₁ = a) (h₂ : c ∘ e₂ = b) :
+    (renameAlgEquivOfEq (R := R) e₁ b h₁).trans (renameAlgEquivOfEq e₂ c h₂) =
+      renameAlgEquivOfEq (e₁.trans e₂) c
+        (by rw [← h₁, ← h₂, Equiv.coe_trans, Function.comp_assoc]) :=
+  AlgEquiv.ext fun f ↦ Subtype.ext <| by
+    rw [AlgEquiv.trans_apply, coe_renameAlgEquivOfEq, coe_renameAlgEquivOfEq,
+      coe_renameAlgEquivOfEq, ← renameEquiv_trans, AlgEquiv.trans_apply]
+
+/-- **The inverse of renaming along `e` is renaming along `e.symm`.** -/
+@[simp]
+theorem IsRestricted.renameAlgEquivOfEq_symm (e : σ ≃ τ) (c : τ → ℝ) {a : σ → ℝ}
+    (h : c ∘ e = a) :
+    (renameAlgEquivOfEq (R := R) e c h).symm =
+      renameAlgEquivOfEq e.symm a (by rw [← h, Function.comp_assoc, Equiv.self_comp_symm,
+        Function.comp_id]) :=
+  AlgEquiv.ext fun f ↦ by
+    rw [AlgEquiv.symm_apply_eq]
+    refine Subtype.ext ?_
+    rw [coe_renameAlgEquivOfEq, coe_renameAlgEquivOfEq, ← renameEquiv_symm,
+      AlgEquiv.apply_symm_apply]
+
+/-- The inverse of renaming along `e` is renaming along `e.symm`, whose source polyradii `c` are
+only propositionally equal to the reindexed polyradii `(c ∘ e) ∘ e.symm`. -/
+theorem IsRestricted.renameAlgEquiv_symm (e : σ ≃ τ) (c : τ → ℝ) :
+    (renameAlgEquiv (R := R) e c).symm =
+      renameAlgEquivOfEq e.symm (c ∘ e) (by rw [Function.comp_assoc, Equiv.self_comp_symm,
+        Function.comp_id]) := by
+  rw [← renameAlgEquivOfEq_rfl, renameAlgEquivOfEq_symm]
 
 end Rename
 
@@ -767,6 +876,14 @@ theorem polynomialToRestricted_X (i : σ) :
     polynomialToRestricted c (MvPolynomial.X i) =
       ⟨X i, isRestricted_monomial c (Finsupp.single i 1) (1 : R)⟩ :=
   Subtype.ext (MvPolynomial.coe_X i)
+
+/-- Renaming the variables of restricted series extends renaming the variables of polynomials. -/
+@[simp]
+theorem renameAlgEquiv_polynomialToRestricted {τ : Type*} (e : σ ≃ τ) (c : τ → ℝ)
+    (p : MvPolynomial σ R) :
+    IsRestricted.renameAlgEquiv e c (polynomialToRestricted (c ∘ e) p) =
+      polynomialToRestricted c (MvPolynomial.rename e p) :=
+  Subtype.ext <| by simp [rename_coe]
 
 variable (c) in
 /-- Over a nontrivial ring, restricted series in at least one variable do not form a finitely

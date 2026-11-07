@@ -40,6 +40,8 @@ presentations of `B^I` as strict quotients of `A^r{Y}` (Kedlaya, Lemma 4.9).
 * `TauCeti.MvPowerSeries.restrictedMap_algebraMap`: `restrictedMap` sends constants to constants.
 * `MvPowerSeries.restrictedMap_polynomialToRestricted`: `restrictedMap` sends polynomials to their
   coefficientwise images.
+* `TauCeti.MvPowerSeries.restrictedMap_renameAlgEquiv`: `restrictedMap` commutes with renaming
+  the variables.
 * `TauCeti.MvPowerSeries.coe_restrictedSumEquiv_restrictedMap`: `restrictedMap` commutes with the
   iteration `R{X/c, Y/d} ≅ R{Y/d}{X/c}`.
 * `TauCeti.MvPowerSeries.norm_restrictedMap_le`: `restrictedMap` is bounded by the same constant.
@@ -227,6 +229,14 @@ theorem restrictedMap_polynomialToRestricted (p : MvPolynomial σ R) :
     restrictedMap φ hφ (TauCeti.MvPowerSeries.polynomialToRestricted c p) =
       TauCeti.MvPowerSeries.polynomialToRestricted c (MvPolynomial.map φ p) :=
   Subtype.ext (by ext t; simp [coe_restrictedMap, MvPolynomial.coeff_map])
+
+/-- Bounded coefficient maps commute with renaming the variables along an equivalence. -/
+theorem restrictedMap_renameAlgEquiv {τ : Type*} (e : τ ≃ σ)
+    (f : IsRestricted.subring (R := R) (c ∘ e)) :
+    restrictedMap φ hφ (IsRestricted.renameAlgEquiv e c f) =
+      IsRestricted.renameAlgEquiv e c (restrictedMap φ hφ f) :=
+  Subtype.ext <| MvPowerSeries.ext fun t ↦ by
+    simp only [coeff_restrictedMap, IsRestricted.coeff_renameAlgEquiv]
 
 /-- Iteration commutes with bounded coefficient maps: the iterated series of the coefficientwise
 image of `f` under `φ : R →+* S` is the image of the iterated series of `f` under the
