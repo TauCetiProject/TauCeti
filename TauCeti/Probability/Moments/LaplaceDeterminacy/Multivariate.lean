@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Analysis.SpecialFunctions.Log.ERealExp
 public import TauCeti.Probability.Moments.CompactDeterminacy
 public import Mathlib.Analysis.SpecialFunctions.Log.ENNRealLogExp
 public import Mathlib.Probability.IdentDistrib
@@ -39,7 +40,7 @@ noncomputable section
 open MeasureTheory Set
 open scoped ENNReal
 
-namespace MeasureTheory.Measure
+namespace TauCeti.Measure
 
 variable {ι : Type*} [Fintype ι]
 
@@ -108,14 +109,11 @@ theorem ext_of_forall_lintegral_exp_sum_eq
   have hexp (n : ι → ℕ) (x : ι → ℝ≥0∞) :
       EReal.exp (∑ i, (n i : EReal) * -(x i : EReal)) =
         ∏ i, EReal.exp (-(x i : EReal)) ^ n i := by
-    induction (Finset.univ : Finset ι) using Finset.induction_on with
-    | empty => simp
-    | @insert i s hi ih =>
-      rw [Finset.sum_insert hi, Finset.prod_insert hi, EReal.exp_add, EReal.exp_nmul, ih]
+    simp only [EReal.exp_sum, EReal.exp_nmul]
   apply ext_of_forall_lintegral_prod_exp_neg_pow_eq
   simpa only [hexp] using h
 
-end MeasureTheory.Measure
+end TauCeti.Measure
 
 namespace TauCeti.Probability
 
