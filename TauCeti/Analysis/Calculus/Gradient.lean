@@ -16,6 +16,7 @@ import Mathlib.Analysis.Calculus.FDeriv.Add
 import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import TauCeti.Analysis.Calculus.FDeriv.ContinuousLinearMap
+import TauCeti.Analysis.Calculus.FDeriv.RadialField
 
 /-!
 # The gradient is an isometric conjugate-linear image of the Fréchet derivative
@@ -227,5 +228,24 @@ theorem norm_iteratedFDeriv_two_sub_le_sum {E ι : Type*} [NormedAddCommGroup E]
         · exact (PiLp.norm_apply_le (b.repr (m 1)) i).trans_eq (b.repr.norm_map (m 1))
         · exact norm_inner_le_norm _ _
     _ = _ := by ring
+
+/-- The gradient of `y ↦ ‖y - x₀‖ ^ 2` at `x` is `2 • (x - x₀)`. -/
+theorem hasGradientAt_norm_sq_sub {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [CompleteSpace E] (x₀ x : E) :
+    HasGradientAt (fun y : E => ‖y - x₀‖ ^ 2) ((2 : ℝ) • (x - x₀)) x := by
+  rw [hasGradientAt_iff_hasFDerivAt]
+  refine (hasFDerivAt_norm_sq_sub x₀ x).congr_fderiv ?_
+  ext v
+  simp
+
+/-- The chain rule for the gradient of a real function composed with a real profile. -/
+theorem _root_.HasDerivAt.comp_hasGradientAt {E : Type*} [NormedAddCommGroup E]
+    [InnerProductSpace ℝ E] [CompleteSpace E] {f : ℝ → ℝ} {f' : ℝ} {g : E → ℝ} {g' x : E}
+    (hf : HasDerivAt f f' (g x)) (hg : HasGradientAt g g' x) :
+    HasGradientAt (f ∘ g) (f' • g') x := by
+  rw [hasGradientAt_iff_hasFDerivAt] at hg ⊢
+  refine (hf.comp_hasFDerivAt x hg).congr_fderiv ?_
+  ext v
+  simp
 
 end TauCeti

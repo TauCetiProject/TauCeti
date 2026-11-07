@@ -15,6 +15,10 @@ import Mathlib.Topology.Sets.Opens
 import Mathlib.Analysis.Calculus.Deriv.Support
 import Mathlib.Analysis.InnerProductSpace.Calculus
 import Mathlib.Geometry.Manifold.PartitionOfUnity
+import TauCeti.Algebra.Order.Field.SquareGap
+import TauCeti.Analysis.Calculus.Deriv.AffineProfile
+import TauCeti.Analysis.Calculus.FDeriv.RadialField
+import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
 
 /-!
@@ -262,6 +266,75 @@ theorem _root_.CompactExhaustion.exists_contDiff_cutoff [NormedSpace ℝ E]
     hK.exists_contDiff_cutoff hU hKU
   exact ⟨ψ, hψ_smooth, hψ_range, hψ_eq_one_nhds, hψ_compact, hψ_tsupp⟩
 
+/-- Prepending the zero function to a sequence of cutoffs `eta n`, where `eta n` is one near `L n`
+and supported in `V (n + 1)`, gives cutoffs `eta' n` that are one near `L m` for every `m < n` and
+supported in `V n`. -/
+private theorem exists_cutoffs_shift [NormedSpace ℝ E] {L V : ℕ → Set E} {eta : ℕ → E → ℝ}
+    (heta : ∀ n, ContDiff ℝ ∞ (eta n)) (heta_range : ∀ n, range (eta n) ⊆ Icc 0 1)
+    (heta_one : ∀ n, L n ⊆ interior (eta n ⁻¹' {1})) (heta_cpt : ∀ n, HasCompactSupport (eta n))
+    (heta_ts : ∀ n, tsupport (eta n) ⊆ V (n + 1)) (hLmono : Monotone L) :
+    ∃ eta' : ℕ → E → ℝ, eta' 0 = 0 ∧ (∀ n, ContDiff ℝ ∞ (eta' n)) ∧
+      (∀ n, HasCompactSupport (eta' n)) ∧ (∀ n x, eta' n x ∈ Icc (0 : ℝ) 1) ∧
+      (∀ n, tsupport (eta' n) ⊆ V n) ∧ ∀ m n, m < n → L m ⊆ interior (eta' n ⁻¹' {1}) := by
+  refine ⟨fun n => Nat.casesOn n 0 eta, rfl, fun n => ?_, fun n => ?_, fun n x => ?_,
+    fun n => ?_, fun m n hmn => ?_⟩
+  · cases n
+    exacts [contDiff_const, heta _]
+  · cases n
+    exacts [HasCompactSupport.zero, heta_cpt _]
+  · cases n
+    exacts [by simp, heta_range _ (mem_range_self x)]
+  · cases n
+    · simp
+    · exact heta_ts _
+  · obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hmn
+    exact (hLmono (by omega)).trans (heta_one (m + k))
+
+/-- Differences `zeta j = eta' (j + 1) - eta' j` of cutoffs `eta' n`, where `eta' 0 = 0` and
+`eta' n` is one near `L m` for `m < n` and supported in `V n`, are smooth, compactly supported and
+nonnegative, telescope to `eta' N`, and have support in `V (j + 1)` away from `L (j - 1)`. -/
+private theorem exists_telescoping_cutoff_differences [NormedSpace ℝ E] {L V : ℕ → Set E}
+    {eta' : ℕ → E → ℝ}
+    (hL0 : L 0 = ∅) (hVL : ∀ n, V n ⊆ L n) (hVmono : Monotone V)
+    (heta'0 : eta' 0 = 0) (heta'_smooth : ∀ n, ContDiff ℝ ∞ (eta' n))
+    (heta'_cpt : ∀ n, HasCompactSupport (eta' n)) (heta'_range : ∀ n x, eta' n x ∈ Icc (0 : ℝ) 1)
+    (heta'_ts : ∀ n, tsupport (eta' n) ⊆ V n)
+    (heta'_one : ∀ m n, m < n → L m ⊆ interior (eta' n ⁻¹' {1})) :
+    ∃ zeta : ℕ → E → ℝ, (∀ j, ContDiff ℝ ∞ (zeta j)) ∧ (∀ j, HasCompactSupport (zeta j)) ∧
+      (∀ j, tsupport (zeta j) ⊆ V (j + 1) \ L (j - 1)) ∧ (∀ j x, 0 ≤ zeta j x) ∧
+      ∀ N y, ∑ j ∈ Finset.range N, zeta j y = eta' N y := by
+  have one_of_mem : ∀ {f : E → ℝ} {y : E}, y ∈ interior (f ⁻¹' {1}) → f y = 1 := fun h => by
+    simpa only [mem_preimage, mem_singleton_iff] using interior_subset h
+  let zeta : ℕ → E → ℝ := fun j x => eta' (j + 1) x - eta' j x
+  have hzeta_ts : ∀ j, tsupport (zeta j) ⊆ V (j + 1) := fun j =>
+    (tsupport_sub _ _).trans
+      (union_subset (heta'_ts (j + 1)) ((heta'_ts j).trans (hVmono j.le_succ)))
+  -- `zeta j` vanishes near `L (j - 1)`, where both cutoffs equal one
+  have hzeta_L : ∀ j, ∀ x ∈ L (j - 1), x ∉ tsupport (zeta j) := fun j x hx => by
+    cases j with
+    | zero => simp [hL0] at hx
+    | succ k =>
+      rw [notMem_tsupport_iff_eventuallyEq]
+      filter_upwards [interior_mem_nhds.2 (mem_interior_iff_mem_nhds.1
+          (heta'_one k (k + 1) k.lt_succ_self hx)),
+        interior_mem_nhds.2 (mem_interior_iff_mem_nhds.1
+          (heta'_one k (k + 2) (by omega) hx))] with y hy₁ hy₂
+      have h₁ : eta' (k + 1) y = 1 := one_of_mem hy₁
+      have h₂ : eta' (k + 1 + 1) y = 1 := one_of_mem hy₂
+      simp only [zeta, Pi.zero_apply, h₁, h₂, sub_self]
+  refine ⟨zeta, fun j => (heta'_smooth (j + 1)).sub (heta'_smooth j),
+    fun j => (heta'_cpt (j + 1)).sub (heta'_cpt j),
+    fun j x hx => ⟨hzeta_ts j hx, fun hxL => hzeta_L j x hxL hx⟩, fun j x => ?_,
+    fun N y => by simpa [zeta, heta'0] using Finset.sum_range_sub (fun n => eta' n y) N⟩
+  -- `eta' (j + 1) = 1` on the support of `eta' j`, so the differences are nonnegative
+  by_cases hx : x ∈ tsupport (eta' j)
+  · have h₁ : eta' (j + 1) x = 1 :=
+      one_of_mem (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))
+    simp only [zeta, h₁, sub_nonneg]
+    exact (heta'_range j x).2
+  · simp only [zeta, image_eq_zero_of_notMem_tsupport hx, sub_zero]
+    exact (heta'_range (j + 1) x).1
+
 /-- **A smooth decomposition of unity of an open set, with cutoffs.** Every open set `U` of a
 finite-dimensional real normed space carries smooth compactly supported functions `ζ j` and
 `χ j`, `j : ℕ`, with topological supports in `U`, such that `χ j = 1` on the topological support
@@ -305,61 +378,16 @@ theorem _root_.IsOpen.exists_contDiff_decomposition_cutoff [NormedSpace ℝ E]
   choose eta heta heta_range heta_one heta_cpt heta_ts using K.exists_contDiff_cutoff
   -- `eta' (n + 1) = eta n` is a cutoff for `L n`; prepending `eta' 0 = 0` makes the
   -- differences `zeta j = eta' (j + 1) - eta' j` telescope to `eta' N`.
-  let eta' : ℕ → E → ℝ := fun n => Nat.casesOn n 0 eta
-  have heta'_smooth : ∀ n, ContDiff ℝ ∞ (eta' n) := fun n => by
-    cases n
-    exacts [contDiff_const, heta _]
-  have heta'_cpt : ∀ n, HasCompactSupport (eta' n) := fun n => by
-    cases n
-    exacts [HasCompactSupport.zero, heta_cpt _]
-  have heta'_range : ∀ n x, eta' n x ∈ Icc (0 : ℝ) 1 := fun n x => by
-    cases n
-    exacts [by simp [eta'], heta_range _ (mem_range_self x)]
-  have heta'_ts : ∀ n, tsupport (eta' n) ⊆ V n := fun n => by
-    cases n
-    · simp [eta']
-    · exact heta_ts _
-  have heta'_one : ∀ m n, m < n → L m ⊆ interior (eta' n ⁻¹' {1}) := fun m n hmn => by
-    obtain ⟨k, rfl⟩ := Nat.exists_eq_add_of_lt hmn
-    exact (hLmono (by omega)).trans (heta_one (m + k))
-  let zeta : ℕ → E → ℝ := fun j x => eta' (j + 1) x - eta' j x
-  have hzeta_smooth : ∀ j, ContDiff ℝ ∞ (zeta j) := fun j =>
-    (heta'_smooth (j + 1)).sub (heta'_smooth j)
-  have hzeta_cpt : ∀ j, HasCompactSupport (zeta j) := fun j =>
-    (heta'_cpt (j + 1)).sub (heta'_cpt j)
-  have hzeta_ts : ∀ j, tsupport (zeta j) ⊆ V (j + 1) := fun j =>
-    (tsupport_sub _ _).trans
-      (union_subset (heta'_ts (j + 1)) ((heta'_ts j).trans (hVmono j.le_succ)))
-  -- `zeta j` vanishes near `L (j - 1)`, where both cutoffs equal one
-  have hzeta_L : ∀ j, ∀ x ∈ L (j - 1), x ∉ tsupport (zeta j) := fun j x hx => by
-    cases j with
-    | zero => simp [hL0] at hx
-    | succ k =>
-      rw [notMem_tsupport_iff_eventuallyEq]
-      filter_upwards [interior_mem_nhds.2 (mem_interior_iff_mem_nhds.1
-          (heta'_one k (k + 1) k.lt_succ_self hx)),
-        interior_mem_nhds.2 (mem_interior_iff_mem_nhds.1
-          (heta'_one k (k + 2) (by omega) hx))] with y hy₁ hy₂
-      have h₁ : eta' (k + 1) y = 1 := one_of_mem hy₁
-      have h₂ : eta' (k + 1 + 1) y = 1 := one_of_mem hy₂
-      simp only [zeta, Pi.zero_apply, h₁, h₂, sub_self]
-  have hsum : ∀ N y, ∑ j ∈ Finset.range N, zeta j y = eta' N y := fun N y => by
-    simpa [zeta, eta'] using Finset.sum_range_sub (fun n => eta' n y) N
-  -- `eta' (j + 1) = 1` on the support of `eta' j`, so the differences are nonnegative
-  have hzeta_nonneg : ∀ j x, 0 ≤ zeta j x := fun j x => by
-    by_cases hx : x ∈ tsupport (eta' j)
-    · have h₁ : eta' (j + 1) x = 1 :=
-        one_of_mem (heta'_one j (j + 1) j.lt_succ_self (hVL j (heta'_ts j hx)))
-      simp only [zeta, h₁, sub_nonneg]
-      exact (heta'_range j x).2
-    · simp only [zeta, image_eq_zero_of_notMem_tsupport hx, sub_zero]
-      exact (heta'_range (j + 1) x).1
+  obtain ⟨eta', heta'0, heta'_smooth, heta'_cpt, heta'_range, heta'_ts, heta'_one⟩ :=
+    exists_cutoffs_shift (L := L) (V := V) heta heta_range heta_one heta_cpt heta_ts hLmono
+  obtain ⟨zeta, hzeta_smooth, hzeta_cpt, hU, hzeta_nonneg, hsum⟩ :=
+    exists_telescoping_cutoff_differences hL0 hVL hVmono heta'0 heta'_smooth heta'_cpt
+      heta'_range heta'_ts heta'_one
   -- cutoffs equal to one on `tsupport (zeta j)` and supported away from `L (j - 1)`
-  have hU : ∀ j, tsupport (zeta j) ⊆ V (j + 1) \ L (j - 1) := fun j x hx =>
-    ⟨hzeta_ts j hx, fun hxL => hzeta_L j x hxL hx⟩
   choose chi hchi_smooth _ hchi_one hchi_cpt hchi_ts using fun j =>
     (hzeta_cpt j).exists_contDiff_cutoff ((hVopen (j + 1)).sdiff (hLcpt (j - 1)).isClosed) (hU j)
-  refine ⟨zeta, chi, fun j => ⟨hzeta_smooth j, hzeta_cpt j, (hzeta_ts j).trans (hVsub _)⟩,
+  refine ⟨zeta, chi,
+    fun j => ⟨hzeta_smooth j, hzeta_cpt j, ((hU j).trans sdiff_subset).trans (hVsub _)⟩,
     hzeta_nonneg, fun N x => (hsum N x).trans_le (heta'_range N x).2,
     fun j => ⟨hchi_smooth j, hchi_cpt j, (hchi_ts j).trans (sdiff_subset.trans (hVsub _))⟩,
     fun j x hx => one_of_mem (hchi_one j hx), fun x hx => ?_⟩
@@ -382,6 +410,33 @@ theorem contDiffAt_tsum_of_eventually_eq_zero {𝕜 ι F : Type*} [NontriviallyN
     ContDiffAt 𝕜 n (fun y => ∑' j, g j y) x :=
   (ContDiffAt.sum hg).congr_of_eventuallyEq (hs.mono fun _ hy => tsum_eq_sum hy)
 
+/-- The radial profile `Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))` is a
+smooth function with values in `[0, 1]`, equal to one on `closedBall x₀ r` and with topological
+support in `closedBall x₀ R`. -/
+private theorem smoothTransition_radial_cutoff [InnerProductSpace ℝ E] {r R : ℝ} (hr : 0 ≤ r)
+    (hrR : r < R) (x₀ : E) :
+    ContDiff ℝ ∞ (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ∧
+      range (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ⊆
+        Icc 0 1 ∧
+      EqOn (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) 1
+        (Metric.closedBall x₀ r) ∧
+      tsupport (fun x : E => Real.smoothTransition ((R ^ 2 - ‖x - x₀‖ ^ 2) / (R ^ 2 - r ^ 2))) ⊆
+        Metric.closedBall x₀ R := by
+  have hD0 : 0 < R ^ 2 - r ^ 2 := by nlinarith
+  refine ⟨Real.smoothTransition.contDiff.comp ((contDiff_const.sub
+    ((contDiff_id.sub contDiff_const).norm_sq ℝ)).div_const _), ?_, fun x hx => ?_, ?_⟩
+  · rintro _ ⟨x, rfl⟩
+    exact ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
+  · rw [Metric.mem_closedBall, dist_eq_norm] at hx
+    refine Real.smoothTransition.one_of_one_le ?_
+    rw [le_div_iff₀ hD0]
+    nlinarith [norm_nonneg (x - x₀)]
+  · refine closure_minimal (fun x hx => ?_) Metric.isClosed_closedBall
+    rw [Metric.mem_closedBall, dist_eq_norm]
+    by_contra h
+    exact hx (Real.smoothTransition.zero_of_nonpos
+      (div_nonpos_of_nonpos_of_nonneg (by nlinarith [norm_nonneg (x - x₀)]) hD0.le))
+
 /-- **Radial cutoffs with quantitative derivative bounds.** There is a universal constant `c`
 such that for every centre `x₀` and radii `0 ≤ r < R`, some smooth `ψ` with values in `[0, 1]`
 equals one on `closedBall x₀ r`, has topological support in `closedBall x₀ R`, and satisfies
@@ -397,129 +452,75 @@ theorem exists_forall_contDiff_cutoff_closedBall [InnerProductSpace ℝ E] [Comp
       ∃ ψ : E → ℝ, ContDiff ℝ ∞ ψ ∧ range ψ ⊆ Icc 0 1 ∧ EqOn ψ 1 (Metric.closedBall x₀ r) ∧
         tsupport ψ ⊆ Metric.closedBall x₀ R ∧ (∀ x, ‖∇ ψ x‖ ≤ c / (R - r)) ∧
         ∀ x, ‖fderiv ℝ (∇ ψ) x‖ ≤ c / (R - r) ^ 2 := by
-  -- The first two derivatives of `Real.smoothTransition` are continuous with compact support.
+  -- The first two derivatives of `Real.smoothTransition` are bounded and vanish for `τ < 0`.
   set S := Real.smoothTransition
   have hS : ContDiff ℝ ∞ S := Real.smoothTransition.contDiff
   have hS1 : ContDiff ℝ ∞ (deriv S) := hS.iterate_deriv 1
-  have hS2 : ContDiff ℝ ∞ (deriv (deriv S)) := hS.iterate_deriv 2
-  obtain ⟨L₁, hL₁⟩ := hS1.continuous.bounded_above_of_compact_support
-    Real.smoothTransition.hasCompactSupport_deriv
-  obtain ⟨L₂, hL₂⟩ := hS2.continuous.bounded_above_of_compact_support
-    Real.smoothTransition.hasCompactSupport_deriv.deriv
+  obtain ⟨L₁, hL₁⟩ := Real.smoothTransition.exists_forall_norm_deriv_le
+  obtain ⟨L₂, hL₂⟩ := Real.smoothTransition.exists_forall_norm_deriv_deriv_le
   have hL₁0 : 0 ≤ L₁ := (norm_nonneg _).trans (hL₁ 0)
   have hL₂0 : 0 ≤ L₂ := (norm_nonneg _).trans (hL₂ 0)
   have hS1neg : ∀ τ < 0, deriv S τ = 0 := fun τ hτ => Real.smoothTransition.deriv_of_neg hτ
-  have hS2neg : ∀ τ < 0, deriv (deriv S) τ = 0 := fun τ hτ => by
-    have h : deriv S =ᶠ[𝓝 τ] fun _ => 0 :=
-      Filter.eventually_of_mem (Iio_mem_nhds hτ) fun _ ht => hS1neg _ ht
-    rw [h.deriv_eq, deriv_const]
+  have hS2neg : ∀ τ < 0, deriv (deriv S) τ = 0 := fun τ hτ =>
+    Real.smoothTransition.deriv_deriv_of_neg hτ
   refine ⟨2 * L₁ + 4 * L₂, by positivity, fun x₀ r R hr hrR => ?_⟩
+  have hD0 := sq_sub_sq_pos_of_lt hr hrR
+  have hD' := sub_sq_le_sq_sub_sq hr hrR
+  have hRD := div_sq_sub_sq_le_one_div_sub hr hrR
+  have hRD2 := sq_div_sq_sub_sq_sq_le_one_div_sub_sq hr hrR
   have hRr : 0 < R - r := sub_pos.2 hrR
   have hR : 0 < R := hr.trans_lt hrR
+  obtain ⟨hψ1, hψ2, hψ3, hψ4⟩ := smoothTransition_radial_cutoff hr hrR x₀
   set D := R ^ 2 - r ^ 2 with hD_def
-  have hD : (R - r) * R ≤ D := by nlinarith
-  have hD' : (R - r) ^ 2 ≤ D := by nlinarith
-  have hD0 : 0 < D := lt_of_lt_of_le (by positivity) hD'
-  -- The cutoff is `S ((R² - ‖x - x₀‖²) / D)`.
-  set g : E → ℝ := fun x => (R ^ 2 - ‖x - x₀‖ ^ 2) / D with hg
-  set ψ : E → ℝ := fun x => S (g x) with hψ
+  -- The gradient of the cutoff is `c (‖x - x₀‖ ^ 2) • (x - x₀)`; `c'` is the derivative of `c`.
   set c : ℝ → ℝ := fun τ => -(2 / D) * deriv S ((R ^ 2 - τ) / D) with hc
-  have hgrad : ∀ x, ∇ ψ x = c (‖x - x₀‖ ^ 2) • (x - x₀) := by
-    intro x
-    have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • (innerSL ℝ (x - x₀)).comp
-        (ContinuousLinearMap.id ℝ E)) x := ((hasFDerivAt_id x).sub_const x₀).norm_sq
-    have h2 : HasFDerivAt g ((-(1 / D)) • 2 • innerSL ℝ (x - x₀)) x := by
-      have := HasFDerivAt.mul_const (HasFDerivAt.const_sub h1 (R ^ 2)) D⁻¹
-      convert this using 1
-      · funext y
-        simp [g, div_eq_mul_inv]
-      · ext v
-        simp
-    have h3 := ((hS.differentiable (by simp)) (g x)).hasDerivAt.comp_hasFDerivAt x h2
-    refine (hasFDerivAt_iff_hasGradientAt.1 h3).gradient.trans ?_
-    rw [LinearIsometryEquiv.symm_apply_eq]
-    ext v
-    simp [c, g]
-    ring
-  -- The derivative of the radial profile `c`.
   set c' : ℝ → ℝ := fun τ => 2 / D ^ 2 * deriv (deriv S) ((R ^ 2 - τ) / D) with hc'
-  have hcd : ∀ τ, HasDerivAt c (c' τ) τ := by
-    intro τ
-    have h1 : HasDerivAt (fun τ : ℝ => (R ^ 2 - τ) / D) (-1 / D) τ := by
-      simpa using ((hasDerivAt_id τ).const_sub (R ^ 2)).div_const D
-    have h2 := (((hS1.differentiable (by simp)) _).hasDerivAt.comp τ h1).const_mul (-(2 / D))
-    exact h2.congr_deriv (by simp only [c']; field_simp)
-  have hhess : ∀ x, HasFDerivAt (∇ ψ) (c (‖x - x₀‖ ^ 2) • ContinuousLinearMap.id ℝ E +
-      (c' (‖x - x₀‖ ^ 2) • 2 • innerSL ℝ (x - x₀)).smulRight (x - x₀)) x := by
-    intro x
-    rw [show ∇ ψ = fun y => c (‖y - x₀‖ ^ 2) • (y - x₀) from funext hgrad]
-    have h1 : HasFDerivAt (fun y => ‖y - x₀‖ ^ 2) (2 • innerSL ℝ (x - x₀)) x := by
-      simpa using ((hasFDerivAt_id x).sub_const x₀).norm_sq
-    exact ((hcd _).comp_hasFDerivAt x h1).smul ((hasFDerivAt_id x).sub_const x₀)
-  -- Outside `closedBall x₀ R` both `c` and `c'` vanish.
-  have hout : ∀ x, R < ‖x - x₀‖ → c (‖x - x₀‖ ^ 2) = 0 ∧ c' (‖x - x₀‖ ^ 2) = 0 := by
-    intro x hx
-    have hneg : (R ^ 2 - ‖x - x₀‖ ^ 2) / D < 0 :=
-      div_neg_of_neg_of_pos (by nlinarith) hD0
-    exact ⟨by simp [c, hS1neg _ hneg], by simp [c', hS2neg _ hneg]⟩
-  have hcb : ∀ τ, |c τ| ≤ 2 / D * L₁ := fun τ => by
-    rw [hc, abs_mul, abs_neg, abs_of_pos (by positivity)]
+  have hcd : ∀ τ, HasDerivAt c (c' τ) τ := fun τ =>
+    ((((hS1.differentiable (by simp)) _).hasDerivAt_comp_sub_div (R ^ 2) D τ).const_mul
+      (-(2 / D))).congr_deriv (by simp only [c']; field_simp)
+  have hgrad : ∇ (fun y : E => Real.smoothTransition ((R ^ 2 - ‖y - x₀‖ ^ 2) / D)) =
+      fun y => c (‖y - x₀‖ ^ 2) • (y - x₀) := by
+    funext x
+    have hd := ((hS.differentiable (by simp)) ((R ^ 2 - ‖x - x₀‖ ^ 2) / D)).hasDerivAt_comp_sub_div
+      (R ^ 2) D (‖x - x₀‖ ^ 2)
+    refine (HasDerivAt.comp_hasGradientAt (g := fun y : E => ‖y - x₀‖ ^ 2) hd
+      (hasGradientAt_norm_sq_sub x₀ x)).gradient.trans ?_
+    rw [smul_smul]
+    congr 1
+    simp only [c]
+    ring
+  have hbound : ∀ (k : ℝ) {φ : ℝ → ℝ} {L : ℝ}, (∀ τ, ‖φ τ‖ ≤ L) →
+      ∀ τ, |k * φ ((R ^ 2 - τ) / D)| ≤ |k| * L := fun k φ L h τ => by
+    rw [abs_mul]
     gcongr
-    exact (Real.norm_eq_abs _).symm.le.trans (hL₁ _)
-  have hc'b : ∀ τ, |c' τ| ≤ 2 / D ^ 2 * L₂ := fun τ => by
-    rw [hc', abs_mul, abs_of_pos (by positivity)]
-    gcongr
-    exact (Real.norm_eq_abs _).symm.le.trans (hL₂ _)
-  have hRD : R / D ≤ 1 / (R - r) := by
-    rw [div_le_div_iff₀ hD0 hRr]
-    linarith
-  have hRD2 : R ^ 2 / D ^ 2 ≤ 1 / (R - r) ^ 2 := by
-    rw [← div_pow, one_div, ← inv_pow, ← one_div]
-    exact pow_le_pow_left₀ (by positivity) hRD 2
-  refine ⟨ψ, hS.comp ((contDiff_const.sub ((contDiff_id.sub contDiff_const).norm_sq ℝ)).div_const
-    D), ?_, fun x hx => ?_, ?_, fun x => ?_, fun x => ?_⟩
-  · rintro _ ⟨x, rfl⟩
-    exact ⟨Real.smoothTransition.nonneg _, Real.smoothTransition.le_one _⟩
-  · rw [Metric.mem_closedBall, dist_eq_norm] at hx
-    refine Real.smoothTransition.one_of_one_le ?_
-    rw [le_div_iff₀ hD0]
-    nlinarith [norm_nonneg (x - x₀)]
-  · refine closure_minimal (fun x hx => ?_) Metric.isClosed_closedBall
-    rw [Metric.mem_closedBall, dist_eq_norm]
-    by_contra h
-    exact hx (Real.smoothTransition.zero_of_nonpos
-      (div_nonpos_of_nonpos_of_nonneg (by nlinarith [norm_nonneg (x - x₀)]) hD0.le))
-  · rw [hgrad, norm_smul, Real.norm_eq_abs]
-    rcases le_or_gt ‖x - x₀‖ R with hx | hx
-    · calc |c (‖x - x₀‖ ^ 2)| * ‖x - x₀‖ ≤ 2 / D * L₁ * R :=
-            mul_le_mul (hcb _) hx (norm_nonneg _) (by positivity)
-        _ = 2 * L₁ * (R / D) := by ring
-        _ ≤ 2 * L₁ * (1 / (R - r)) := by gcongr
-        _ ≤ (2 * L₁ + 4 * L₂) / (R - r) := by
-            rw [mul_one_div]
-            gcongr
-            linarith
-    · rw [(hout x hx).1, abs_zero, zero_mul]
-      positivity
-  · rw [(hhess x).fderiv, ← Nat.cast_smul_eq_nsmul ℝ]
-    refine (norm_add_le _ _).trans ?_
-    rw [norm_smul, ContinuousLinearMap.norm_smulRight_apply, norm_smul, norm_smul,
-      innerSL_apply_norm, Real.norm_eq_abs, Real.norm_eq_abs]
-    have hid : ‖ContinuousLinearMap.id ℝ E‖ ≤ 1 := ContinuousLinearMap.norm_id_le
-    rcases le_or_gt ‖x - x₀‖ R with hx | hx
-    · calc |c (‖x - x₀‖ ^ 2)| * ‖ContinuousLinearMap.id ℝ E‖ +
-            |c' (‖x - x₀‖ ^ 2)| * (‖((2 : ℕ) : ℝ)‖ * ‖x - x₀‖) * ‖x - x₀‖
-          ≤ 2 / D * L₁ * 1 + 2 / D ^ 2 * L₂ * (2 * R) * R := by
-            gcongr
-            · exact hcb _
-            · exact hc'b _
-            · norm_num
-        _ = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
-        _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by
-            gcongr
-        _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
-    · rw [(hout x hx).1, (hout x hx).2, abs_zero, zero_mul, zero_mul, zero_mul, zero_add]
-      positivity
+    simpa using h _
+  have hD1 : 0 < 2 / D := div_pos two_pos hD0
+  have hD2 : 0 < 2 / D ^ 2 := div_pos two_pos (pow_pos hD0 2)
+  have hcb : ∀ τ, |c τ| ≤ 2 / D * L₁ := fun τ =>
+    calc |c τ| ≤ |-(2 / D)| * L₁ := hbound (-(2 / D)) hL₁ τ
+      _ = 2 / D * L₁ := by rw [abs_neg, abs_of_pos hD1]
+  have hc'b : ∀ τ, |c' τ| ≤ 2 / D ^ 2 * L₂ := fun τ =>
+    calc |c' τ| ≤ |2 / D ^ 2| * L₂ := hbound (2 / D ^ 2) hL₂ τ
+      _ = 2 / D ^ 2 * L₂ := by rw [abs_of_pos hD2]
+  have hc0 : ∀ τ, R ^ 2 < τ → c τ = 0 := fun τ hτ => by
+    simp only [c, comp_sub_div_eq_zero_of_lt hS1neg hD0 hτ, mul_zero]
+  have hc'0 : ∀ τ, R ^ 2 < τ → c' τ = 0 := fun τ hτ => by
+    simp only [c', comp_sub_div_eq_zero_of_lt hS2neg hD0 hτ, mul_zero]
+  refine ⟨_, hψ1, hψ2, hψ3, hψ4, fun x => ?_, fun x => ?_⟩
+  · rw [hgrad]
+    refine (norm_smul_sub_le_of_eq_zero_of_sq_lt hcb hc0 hR.le x₀ x).trans ?_
+    calc 2 / D * L₁ * R = 2 * L₁ * (R / D) := by ring
+      _ ≤ 2 * L₁ * (1 / (R - r)) := by gcongr
+      _ ≤ (2 * L₁ + 4 * L₂) / (R - r) := by
+          rw [mul_one_div]
+          gcongr
+          linarith
+  · rw [hgrad, ((hcd _).hasFDerivAt_smul_sub_norm_sq x₀ x).fderiv]
+    refine (norm_smul_id_add_smulRight_le_of_eq_zero_of_sq_lt hcb hc'b hc0 hc'0 hR.le x₀ x).trans ?_
+    calc 2 / D * L₁ + 2 * (2 / D ^ 2 * L₂) * R ^ 2
+        = 2 * L₁ * (1 / D) + 4 * L₂ * (R ^ 2 / D ^ 2) := by ring
+      _ ≤ 2 * L₁ * (1 / (R - r) ^ 2) + 4 * L₂ * (1 / (R - r) ^ 2) := by gcongr
+      _ = (2 * L₁ + 4 * L₂) / (R - r) ^ 2 := by ring
 
 /-- **A smooth cutoff of the identity on the line.** For `0 < r < R`, some smooth `k : ℝ → ℝ`
 equals the identity on `[-r, r]`, vanishes for `|s| ≥ R`, and has derivative `1` on `(-r, r)`.

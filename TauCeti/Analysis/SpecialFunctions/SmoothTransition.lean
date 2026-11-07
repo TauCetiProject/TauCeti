@@ -52,6 +52,10 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `Real.smoothTransition.deriv_of_neg`: `deriv Real.smoothTransition x = 0` for `x < 0`.
 * `Real.smoothTransition.deriv_of_one_lt`: `deriv Real.smoothTransition x = 0` for `1 < x`.
 * `Real.smoothTransition.hasCompactSupport_deriv`: the derivative is compactly supported.
+* `Real.smoothTransition.deriv_deriv_of_neg`: the second derivative vanishes on the negative
+  half-line.
+* `Real.smoothTransition.exists_forall_norm_deriv_le` and
+  `Real.smoothTransition.exists_forall_norm_deriv_deriv_le`: the first two derivatives are bounded.
 * `Real.smoothTransition.abs_deriv_mul_mul_le`: `|ψ'(a t) (a y)| ≤ M C` when `M` bounds `ψ'`,
   `a ≥ 0` and `|y| ≤ C |t|`.
 * `Real.smoothTransition.integral_deriv`: the derivative has integral one.
@@ -128,6 +132,23 @@ theorem hasCompactSupport_deriv : HasCompactSupport (deriv smoothTransition) :=
     rcases not_and_or.1 hx with h | h
     · exact deriv_of_neg (not_le.1 h)
     · exact deriv_of_one_lt (not_le.1 h)
+
+/-- The second derivative of the smooth transition function is zero to the left of `0`. -/
+theorem deriv_deriv_of_neg {x : ℝ} (hx : x < 0) : deriv (deriv smoothTransition) x = 0 := by
+  have h : deriv smoothTransition =ᶠ[𝓝 x] fun _ => 0 :=
+    eventually_of_mem (Iio_mem_nhds hx) fun _ ht => deriv_of_neg ht
+  rw [h.deriv_eq, deriv_const]
+
+/-- The derivative of the smooth transition function is bounded. -/
+theorem exists_forall_norm_deriv_le : ∃ L : ℝ, ∀ τ, ‖deriv smoothTransition τ‖ ≤ L :=
+  (Real.smoothTransition.contDiff.iterate_deriv 1).continuous.bounded_above_of_compact_support
+    hasCompactSupport_deriv
+
+/-- The second derivative of the smooth transition function is bounded. -/
+theorem exists_forall_norm_deriv_deriv_le :
+    ∃ L : ℝ, ∀ τ, ‖deriv (deriv smoothTransition) τ‖ ≤ L :=
+  (Real.smoothTransition.contDiff.iterate_deriv 2).continuous.bounded_above_of_compact_support
+    hasCompactSupport_deriv.deriv
 
 /-- A bound for the error term of a smooth transition rescaled by `a ≥ 0`: if `M` bounds the
 derivative of the smooth transition function `ψ` and `|y| ≤ C |t|`, then
