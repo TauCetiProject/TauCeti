@@ -63,22 +63,20 @@ theorem eLpNormLESNormFDerivOneConst_pos {p : ℝ≥0}
   rw [← χ.support_eq]
   exact ae_iff.1 hle
 
-/-- **The Gagliardo–Nirenberg–Sobolev inequality for integrable functions.** Let `E` have
-dimension `n ≥ 2` and let `p = n / (n - 1)`. Every integrable `C¹` function `u` satisfies
-`‖u‖_p ≤ C ‖Du‖₁`, with `‖Du‖₁` finite or infinite, where `C` is the constant
-`MeasureTheory.eLpNormLESNormFDerivOneConst μ p` of the compactly supported case
-`MeasureTheory.eLpNorm_le_eLpNorm_fderiv_one`. -/
-theorem eLpNorm_le_eLpNorm_fderiv_one_of_integrable {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℝ F] {u : E → F} (hu : ContDiff ℝ 1 u) (hi : Integrable u μ) {p : ℝ≥0}
-    (hp : NNReal.HolderConjugate (finrank ℝ E) p) :
-    eLpNorm u p μ ≤ eLpNormLESNormFDerivOneConst μ p * eLpNorm (fderiv ℝ u) 1 μ := by
-  set C := eLpNormLESNormFDerivOneConst μ p
+omit [μ.IsAddHaarMeasure] in
+/-- A `C¹` integrable function with integrable derivative is approximated in `W^{1,1}` by compactly
+supported `C¹` functions: the cutoffs `g n x = χ((n + 1)⁻¹ x) u x` converge to `u` in `L¹`, and the
+`L¹` norms of their derivatives are at most `‖Du‖₁ + ε n` with `ε n → 0`. -/
+theorem exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u : E → F} (hu : ContDiff ℝ 1 u) (hi : Integrable u μ)
+    (htop : eLpNorm (fderiv ℝ u) 1 μ ≠ ∞) :
+    ∃ (g : ℕ → E → F) (ε : ℕ → ℝ≥0∞), (∀ n, ContDiff ℝ 1 (g n)) ∧
+      (∀ n, HasCompactSupport (g n)) ∧ Tendsto (fun n => eLpNorm (g n - u) 1 μ) atTop (𝓝 0) ∧
+      Tendsto ε atTop (𝓝 0) ∧
+      ∀ n, eLpNorm (fderiv ℝ (g n)) 1 μ ≤ eLpNorm (fderiv ℝ u) 1 μ + ε n := by
   have hdu : AEStronglyMeasurable (fderiv ℝ u) μ :=
     (hu.continuous_fderiv one_ne_zero).aestronglyMeasurable
-  rcases eq_or_ne (eLpNorm (fderiv ℝ u) 1 μ) ∞ with htop | htop
-  · rw [htop, ENNReal.mul_top (by exact_mod_cast (eLpNormLESNormFDerivOneConst_pos μ hp).ne')]
-    exact le_top
-  -- The cutoffs `g n = χ((n + 1)⁻¹ x) u(x)` of a bump `χ` equal to one near zero.
+  -- The cutoffs of a bump `χ` equal to one near zero.
   let χ : ContDiffBump (0 : E) := ⟨1, 2, one_pos, one_lt_two⟩
   have hbdd (i : ℕ) : ∃ B, ∀ x, ‖iteratedFDeriv ℝ i χ x‖ ≤ B :=
     (χ.contDiff.continuous_iteratedFDeriv (mod_cast le_top)).bounded_above_of_compact_support
@@ -121,9 +119,26 @@ theorem eLpNorm_le_eLpNorm_fderiv_one_of_integrable {F : Type*} [NormedAddCommGr
         (.of_forall fun x => (norm_iteratedFDeriv_one _).symm), add_comm]
     simpa using eLpNorm_add_le (μ := μ)
       (f := iteratedFDeriv ℝ 1 (g n) - iteratedFDeriv ℝ 1 u) (g := iteratedFDeriv ℝ 1 u) le_rfl
+  exact ⟨g, ε, hg, hgc, hval, hlim 1 le_rfl, hderiv⟩
+
+/-- **The Gagliardo–Nirenberg–Sobolev inequality for integrable functions.** Let `E` have
+dimension `n ≥ 2` and let `p = n / (n - 1)`. Every integrable `C¹` function `u` satisfies
+`‖u‖_p ≤ C ‖Du‖₁`, with `‖Du‖₁` finite or infinite, where `C` is the constant
+`MeasureTheory.eLpNormLESNormFDerivOneConst μ p` of the compactly supported case
+`MeasureTheory.eLpNorm_le_eLpNorm_fderiv_one`. -/
+theorem eLpNorm_le_eLpNorm_fderiv_one_of_integrable {F : Type*} [NormedAddCommGroup F]
+    [NormedSpace ℝ F] {u : E → F} (hu : ContDiff ℝ 1 u) (hi : Integrable u μ) {p : ℝ≥0}
+    (hp : NNReal.HolderConjugate (finrank ℝ E) p) :
+    eLpNorm u p μ ≤ eLpNormLESNormFDerivOneConst μ p * eLpNorm (fderiv ℝ u) 1 μ := by
+  set C := eLpNormLESNormFDerivOneConst μ p
+  rcases eq_or_ne (eLpNorm (fderiv ℝ u) 1 μ) ∞ with htop | htop
+  · rw [htop, ENNReal.mul_top (by exact_mod_cast (eLpNormLESNormFDerivOneConst_pos μ hp).ne')]
+    exact le_top
+  obtain ⟨g, ε, hg, hgc, hval, hε, hderiv⟩ :=
+    exists_contDiff_hasCompactSupport_tendsto_eLpNorm_fderiv μ hu hi htop
   have hbound : Tendsto (fun n => (C : ℝ≥0∞) * (eLpNorm (fderiv ℝ u) 1 μ + ε n)) atTop
       (𝓝 (C * eLpNorm (fderiv ℝ u) 1 μ)) := by
-    simpa using ENNReal.Tendsto.const_mul (tendsto_const_nhds.add (hlim 1 le_rfl))
+    simpa using ENNReal.Tendsto.const_mul (tendsto_const_nhds.add hε)
       (Or.inr ENNReal.coe_ne_top)
   -- Fatou's lemma along an almost everywhere convergent subsequence.
   obtain ⟨ns, hns, hae⟩ :=
