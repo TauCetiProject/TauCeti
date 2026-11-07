@@ -51,6 +51,10 @@ The corollaries for a circle `Metric.sphere c r` of `ℂ` are the case the confo
 * `TauCeti.IsJordanCurve.isPathConnected_sdiff_singleton` — a Jordan curve minus a point is path
   connected; for a point of the curve it is an *open* arc — homeomorphic to a punctured circle, not
   to a closed interval — and in particular one point never separates the curve.
+* `Circle.isOpen_path_image_Ioo`, `Circle.isPathConnected_path_image_Ioo`,
+  `Circle.disjoint_path_image_Ioo` and `Circle.path_image_Ioo_union` — the open arcs
+  `Circle.path z w '' Set.Ioo 0 1` and `Circle.path w z '' Set.Ioo 0 1` between two distinct points
+  are open, path connected and disjoint, and they cover the complement of `{z, w}`.
 * `TauCeti.exists_isOpen_isPathConnected_union_eq_compl_pair_circle` — two distinct points cut the
   circle into two disjoint nonempty open path-connected arcs.
 * `TauCeti.IsJordanCurve.exists_isPathConnected_union_eq_sdiff_pair` — the same for an arbitrary
@@ -85,7 +89,7 @@ variable {X : Type*} [TopologicalSpace X] {C : Set X} {p q : X} {r : ℝ}
 /-- An open arc of the circle is path connected: it is the image of the real interval `Ioo 0 1`
 under `Path.extend`, which reparametrizes `Circle.path u v` by all of `ℝ` and so lets the
 path-connectedness be read off the convexity of `Ioo 0 1`. -/
-private lemma isPathConnected_path_image_Ioo (u v : Circle) :
+theorem _root_.Circle.isPathConnected_path_image_Ioo (u v : Circle) :
     IsPathConnected (Circle.path u v '' Ioo 0 1) := by
   have hproj : Set.projIcc (0 : ℝ) 1 zero_le_one '' Ioo 0 1 = Ioo 0 1 := by
     ext t
@@ -104,6 +108,27 @@ private lemma isPathConnected_path_image_Ioo (u v : Circle) :
   exact himg ▸ ((convex_Ioo (0 : ℝ) 1).isPathConnected (by simp)).image'
     (Path.continuous_extend _).continuousOn
 
+/-- The open arc from `z` to a different point `w` of the circle is open: it is the complement of
+the opposite closed arc by `Circle.compl_range_path`, and the range of a path is compact. -/
+theorem _root_.Circle.isOpen_path_image_Ioo {z w : Circle} (hzw : z ≠ w) :
+    IsOpen (Circle.path z w '' Ioo 0 1) := by
+  rw [← Circle.compl_range_path hzw.symm]
+  exact (isCompact_range (Circle.path w z).continuous).isClosed.isOpen_compl
+
+/-- The two open arcs between two distinct points of the circle are disjoint. -/
+theorem _root_.Circle.disjoint_path_image_Ioo {z w : Circle} (hzw : z ≠ w) :
+    Disjoint (Circle.path z w '' Ioo 0 1) (Circle.path w z '' Ioo 0 1) := by
+  rw [← Circle.compl_range_path hzw.symm]
+  exact disjoint_compl_left_iff_subset.mpr (image_subset_range _ _)
+
+/-- The two open arcs between two distinct points `z` and `w` of the circle cover the complement
+of `{z, w}`, since the two closed arcs meet exactly in `{z, w}`
+(`Circle.range_path_inter_range_path`). -/
+theorem _root_.Circle.path_image_Ioo_union {z w : Circle} (hzw : z ≠ w) :
+    Circle.path z w '' Ioo 0 1 ∪ Circle.path w z '' Ioo 0 1 = ({z, w} : Set Circle)ᶜ := by
+  rw [← Circle.compl_range_path hzw.symm, ← Circle.compl_range_path hzw, ← compl_inter,
+    Circle.range_path_inter_range_path hzw.symm, pair_comm w z]
+
 /-- **Two distinct points cut the circle into two arcs.** The complement of `{z, w}` is the union
 of two disjoint nonempty open path-connected sets, namely the two open arcs
 `Circle.path z w '' Ioo 0 1` and `Circle.path w z '' Ioo 0 1` that Mathlib cuts the circle into.
@@ -115,17 +140,10 @@ of a path is compact; and the two closed arcs meet in `{z, w}` by
 `Circle.range_path_inter_range_path`, which is the union statement. -/
 theorem exists_isOpen_isPathConnected_union_eq_compl_pair_circle {z w : Circle} (hzw : z ≠ w) :
     ∃ A B : Set Circle, IsOpen A ∧ IsOpen B ∧ IsPathConnected A ∧ IsPathConnected B ∧
-      Disjoint A B ∧ A ∪ B = ({z, w} : Set Circle)ᶜ := by
-  have hA : Circle.path z w '' Ioo 0 1 = (range (Circle.path w z))ᶜ :=
-    (Circle.compl_range_path hzw.symm).symm
-  have hB : Circle.path w z '' Ioo 0 1 = (range (Circle.path z w))ᶜ :=
-    (Circle.compl_range_path hzw).symm
-  refine ⟨_, _, ?_, ?_, isPathConnected_path_image_Ioo z w, isPathConnected_path_image_Ioo w z,
-    ?_, ?_⟩
-  · rw [hA]; exact (isCompact_range (Circle.path w z).continuous).isClosed.isOpen_compl
-  · rw [hB]; exact (isCompact_range (Circle.path z w).continuous).isClosed.isOpen_compl
-  · rw [hA]; exact disjoint_compl_left_iff_subset.mpr (image_subset_range _ _)
-  · rw [hA, hB, ← compl_inter, Circle.range_path_inter_range_path hzw.symm, pair_comm w z]
+      Disjoint A B ∧ A ∪ B = ({z, w} : Set Circle)ᶜ :=
+  ⟨_, _, Circle.isOpen_path_image_Ioo hzw, Circle.isOpen_path_image_Ioo hzw.symm,
+    Circle.isPathConnected_path_image_Ioo z w, Circle.isPathConnected_path_image_Ioo w z,
+    Circle.disjoint_path_image_Ioo hzw, Circle.path_image_Ioo_union hzw⟩
 
 /-! ## Cutting a Jordan curve
 
