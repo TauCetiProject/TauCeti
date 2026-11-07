@@ -311,7 +311,7 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
       hf0 ((PowerSeries.gaussNorm_eq_zero_iff norm c f norm_zero norm_nonneg
         (fun _ ↦ norm_eq_zero.mp) hc (hasGaussNorm_of_isRestricted hf)).mp h.symm)
   -- Truncate `f` past the degree where its weighted coefficients have dropped below `θ‖f‖`.
-  obtain ⟨N, hFn, hsmall⟩ := exists_gaussNorm_trunc_sub_le hf hθ hfpos
+  obtain ⟨N, hFn, hsmall⟩ := exists_gaussNorm_trunc_sub_le hf hθ
   have hsmallr : (f - ((f.trunc N : Polynomial R) : PowerSeries R)).IsRestricted c := by
     rw [sub_eq_add_neg]
     exact hf.add (isRestricted_polynomial _).neg
@@ -345,7 +345,8 @@ private theorem exists_gaussNorm_sub_mul_add_le (hg : IsMulDistinguished c s g) 
   rw [hdefect]
   refine gaussNorm_sub_le_of_le hc.le (hasGaussNorm_of_isRestricted hsmallr)
     (hasGaussNorm_of_isRestricted (htailr.mul hQr)) hsmall ?_
-  refine (gaussNorm_mul_le_of_le hc.le htailr hQr hθg).trans ?_
+  refine (gaussNorm_mul_le_of_le hc.le (hasGaussNorm_of_isRestricted htailr)
+    (hasGaussNorm_of_isRestricted hQr) hθg).trans ?_
   rw [mul_assoc]
   exact mul_le_mul_of_nonneg_left ((le_max_left _ _).trans hmax) hθ.le
 
