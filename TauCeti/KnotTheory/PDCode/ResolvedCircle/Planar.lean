@@ -150,9 +150,11 @@ private theorem mem_orbit_of_mk_eq_mk {s : Fin n → Bool} {H : Subgroup (Perm (
 
 /-! ### Joining two directed orbits of a circle is not planar -/
 
-/-- The transpositions in lists with products `τ * swap x y`, the edge pairing `α` and the smoothing
-turn `σ`, together with `swap x y`, generate a subgroup containing the monodromy group of the
-underlying graph, where `τ = σ * crossingRotation` and `σ` is an involution. -/
+/-- Let `σ` be an involution and `τ = σ * crossingRotation`. Take lists `LT`, `Lα`, `Lσ` of
+permutations with products `τ * swap x y`, the edge pairing `α` and `σ`. Then the entries of the
+three lists, together with `swap x y`, generate a subgroup containing the monodromy group of the
+underlying graph. The intended application takes `σ` to be the smoothing turn and the lists to be
+factorizations into transpositions. -/
 private theorem monodromyGroup_toPermutationTriple_le_closure {x y : Fin (4 * n)}
     {σ τ : Perm (Fin (4 * n))} {LT Lα Lσ : List (Perm (Fin (4 * n)))}
     (hLTprod : LT.prod = τ * swap x y) (hLαprod : Lα.prod = D.edgePair.val)
