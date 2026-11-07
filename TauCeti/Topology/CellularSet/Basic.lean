@@ -11,6 +11,7 @@ public import Mathlib.Topology.MetricSpace.Bounded
 import Mathlib.Analysis.Normed.Module.Ball.Homeomorph
 import Mathlib.Analysis.Normed.Module.Ball.Pointwise
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
+import TauCeti.Data.Set.Lattice
 import TauCeti.Topology.Homeomorph.Shrink
 
 /-!
@@ -126,23 +127,16 @@ private theorem exists_homeomorph_seq {θ : ℕ → E → M} (hθ : ∀ i, IsOpe
       rw [himg]
       exact hψdiam (G k) (k + 1)
 
-omit [MetricSpace M] in
-/-- A point outside the intersection of a decreasing sequence of sets lies outside some
-`K (k + 1)`. -/
-private theorem exists_notMem_succ_of_notMem_iInter {K : ℕ → Set M}
-    (hKsucc : ∀ i, K (i + 1) ⊆ K i) {x : M} (hx : x ∉ ⋂ i, K i) : ∃ k, x ∉ K (k + 1) := by
-  obtain ⟨i, hi⟩ : ∃ i, x ∉ K i := by simpa using hx
-  exact ⟨i, fun h ↦ hi (hKsucc i h)⟩
-
 /-- The nested images `G k '' K (k + 1)` of compact sets with diameters tending to `0` shrink to a
 point `q`, and every `G m x` with `m ≥ k` and `x ∈ K (k + 1)` lies within `1 / (k + 1)` of `q`. -/
 private theorem exists_mem_image_and_dist_lt {K : ℕ → Set M} (hK : ∀ i, IsCompact (K i))
-    (hKsucc : ∀ i, K (i + 1) ⊆ K i) (hKne : ∀ i, (K i).Nonempty) {G : ℕ → M ≃ₜ M}
+    (hKsucc : ∀ i, K (i + 1) ⊆ K i) (hKne : ∀ i, (K i).Nonempty) {G : ℕ → M → M}
+    (hG : ∀ k, Continuous (G k))
     (hGimg : ∀ k m, k ≤ m → G m '' K (k + 1) = G k '' K (k + 1))
     (hGdiam : ∀ k, diam (G k '' K (k + 1)) < 1 / ((k : ℝ) + 1)) :
     ∃ q : M, (∀ k, q ∈ G k '' K (k + 1)) ∧
       ∀ k m, k ≤ m → ∀ x ∈ K (k + 1), dist (G m x) q < 1 / ((k : ℝ) + 1) := by
-  have hScpt (k : ℕ) : IsCompact (G k '' K (k + 1)) := (hK _).image (G k).continuous
+  have hScpt (k : ℕ) : IsCompact (G k '' K (k + 1)) := (hK _).image (hG k)
   have hSanti (k : ℕ) : G (k + 1) '' K (k + 1 + 1) ⊆ G k '' K (k + 1) := by
     rw [← hGimg k (k + 1) (by omega)]
     exact image_mono (hKsucc _)
@@ -153,50 +147,33 @@ private theorem exists_mem_image_and_dist_lt {K : ℕ → Set M} (hK : ∀ i, Is
   have hmem : G m x ∈ G k '' K (k + 1) := hGimg k m hkm ▸ mem_image_of_mem _ hx
   exact (dist_le_diam_of_mem (hScpt k).isBounded hmem (mem_iInter.1 hq k)).trans_lt (hGdiam k)
 
-omit [MetricSpace M] in
-/-- The pointwise limit of a sequence of maps `G k` which stabilize outside `K (k + 1)` from `k` on
-sends `⋂ i, K i` to the chosen point `q` and agrees with `G k` outside `K (k + 1)`. -/
-private theorem exists_map_eq_of_notMem {K : ℕ → Set M} (hKsucc : ∀ i, K (i + 1) ⊆ K i)
-    {G : ℕ → M → M} (hGstab : ∀ k m, k ≤ m → ∀ x ∉ K (k + 1), G m x = G k x) (q : M) :
-    ∃ g : M → M, (∀ x ∈ ⋂ i, K i, g x = q) ∧ ∀ k x, x ∉ K (k + 1) → g x = G k x := by
-  classical
-  have hex (x : M) (hx : x ∉ ⋂ i, K i) := exists_notMem_succ_of_notMem_iInter hKsucc hx
-  refine ⟨fun x ↦ if hx : x ∈ ⋂ i, K i then q else G (hex x hx).choose x,
-    fun x hx ↦ dite_eq_left hx, fun k x hx ↦ ?_⟩
-  have hxX : x ∉ ⋂ i, K i := fun h ↦ hx (mem_iInter.1 h _)
-  have hj := (hex x hxX).choose_spec
-  beta_reduce
-  rw [dite_eq_right hxX]
-  rcases le_total (hex x hxX).choose k with hjk | hkj
-  · exact (hGstab _ k hjk x hj).symm
-  · exact hGstab k _ hkj x hx
-
-omit [NormedSpace ℝ E] [FiniteDimensional ℝ E] in
-/-- Continuity of the collapse: near a point of `⋂ i, K i` all values of `g` lie in a small set
-around `q`, and away from it `g` agrees with some `G k` on a neighbourhood. -/
-private theorem continuous_of_eq_of_notMem {θ : ℕ → E → M} (hθ : ∀ i, IsOpenEmbedding (θ i))
-    {K : ℕ → Set M} (hK : ∀ i, IsCompact (K i)) (hKθ : ∀ i, K (i + 1) ⊆ range (θ i))
-    (hθK : ∀ i, range (θ i) ⊆ K i) {G : ℕ → M ≃ₜ M} {q : M} {g : M → M}
+/-- **Continuity of a collapse.** Let `K₀ ⊇ K₁ ⊇ ⋯` be closed sets with open sets `U i` satisfying
+`K (i + 1) ⊆ U i ⊆ K i`, and let `G k` be continuous maps such that all `G m` with `m ≥ k` lie
+within `1 / (k + 1)` of `q` on `K (k + 1)`. A map `g` which is constant `q` on `⋂ i, K i` and
+agrees with `G k` outside `K (k + 1)`, for every `k`, is continuous. -/
+private theorem continuous_of_eq_of_notMem {U K : ℕ → Set M} (hU : ∀ i, IsOpen (U i))
+    (hK : ∀ i, IsClosed (K i)) (hKU : ∀ i, K (i + 1) ⊆ U i) (hUK : ∀ i, U i ⊆ K i)
+    {G : ℕ → M → M} (hG : ∀ k, Continuous (G k)) {q : M} {g : M → M}
     (hdist : ∀ k m, k ≤ m → ∀ x ∈ K (k + 1), dist (G m x) q < 1 / ((k : ℝ) + 1))
     (hgX : ∀ x ∈ ⋂ i, K i, g x = q) (hgG : ∀ k x, x ∉ K (k + 1) → g x = G k x) :
     Continuous g := by
-  have hKsucc (i : ℕ) : K (i + 1) ⊆ K i := (hKθ i).trans (hθK i)
+  have hKsucc (i : ℕ) : K (i + 1) ⊆ K i := (hKU i).trans (hUK i)
   have hKanti : Antitone K := antitone_nat_of_succ_le hKsucc
   refine continuous_iff_continuousAt.2 fun x ↦ ?_
   by_cases hx : x ∈ ⋂ i, K i
   · rw [ContinuousAt, hgX x hx, Metric.tendsto_nhds]
     intro ε hε
     obtain ⟨k, hk⟩ := exists_nat_one_div_lt hε
-    have hxθ : x ∈ range (θ (k + 1)) := hKθ (k + 1) (mem_iInter.1 hx (k + 2))
-    filter_upwards [(hθ (k + 1)).isOpen_range.mem_nhds hxθ] with y hy
+    have hxU : x ∈ U (k + 1) := hKU (k + 1) (mem_iInter.1 hx (k + 2))
+    filter_upwards [(hU (k + 1)).mem_nhds hxU] with y hy
     by_cases hyX : y ∈ ⋂ i, K i
     · rwa [hgX y hyX, dist_self]
     obtain ⟨j, hj⟩ := exists_notMem_succ_of_notMem_iInter hKsucc hyX
     rw [hgG (max j k) y fun h ↦ hj (hKanti (by omega) h)]
-    exact (hdist k (max j k) (le_max_right j k) y (hθK (k + 1) hy)).trans hk
+    exact (hdist k (max j k) (le_max_right j k) y (hUK (k + 1) hy)).trans hk
   · obtain ⟨k, hk⟩ := exists_notMem_succ_of_notMem_iInter hKsucc hx
-    exact (G k).continuous.continuousAt.congr (eventually_of_mem
-      ((hK (k + 1)).isClosed.isOpen_compl.mem_nhds hk) fun y hy ↦ (hgG k y hy).symm)
+    exact (hG k).continuousAt.congr (eventually_of_mem
+      ((hK (k + 1)).isOpen_compl.mem_nhds hk) fun y hy ↦ (hgG k y hy).symm)
 
 /-- **Collapsing a nested intersection.** Let `K₀ ⊇ K₁ ⊇ ⋯` be compact subsets of a metric space
 `M`, and `θᵢ : E → M` open embeddings of a finite-dimensional real normed space with
@@ -214,7 +191,8 @@ theorem exists_collapse_iInter {θ : ℕ → E → M} (hθ : ∀ i, IsOpenEmbedd
   have hKanti : Antitone K := antitone_nat_of_succ_le hKsucc
   have hKne (i : ℕ) : (K i).Nonempty := (range_nonempty (θ i)).mono (hθK i)
   obtain ⟨G, hG0, hGstab, hGimg, hGdiam⟩ := exists_homeomorph_seq hθ hK hKθ hθK
-  obtain ⟨q, hqS, hdist⟩ := exists_mem_image_and_dist_lt hK hKsucc hKne hGimg hGdiam
+  obtain ⟨q, hqS, hdist⟩ := exists_mem_image_and_dist_lt hK hKsucc hKne
+    (fun k ↦ (G k).continuous) hGimg hGdiam
   obtain ⟨g, hgX, hgG⟩ := exists_map_eq_of_notMem (G := fun k ↦ ⇑(G k)) hKsucc hGstab q
   have hgq (x : M) (hx : x ∉ ⋂ i, K i) : g x ≠ q := by
     obtain ⟨k, hk⟩ := exists_notMem_succ_of_notMem_iInter hKsucc hx
@@ -222,7 +200,8 @@ theorem exists_collapse_iInter {θ : ℕ → E → M} (hθ : ∀ i, IsOpenEmbedd
     rw [hgG k x hk]
     intro h
     exact hk ((G k).injective (hyq.trans h.symm) ▸ hy)
-  refine ⟨g, continuous_of_eq_of_notMem hθ hK hKθ hθK hdist hgX hgG, fun z ↦ ?_, fun x y ↦ ?_,
+  refine ⟨g, continuous_of_eq_of_notMem (fun i ↦ (hθ i).isOpen_range) (fun i ↦ (hK i).isClosed)
+    hKθ hθK (fun k ↦ (G k).continuous) hdist hgX hgG, fun z ↦ ?_, fun x y ↦ ?_,
     fun x hx ↦ ?_⟩
   · rcases eq_or_ne z q with rfl | hzq
     · obtain ⟨x, hx⟩ := IsCompact.nonempty_iInter_of_sequence_nonempty_isCompact_isClosed K
