@@ -307,8 +307,7 @@ theorem chartRiemannianVolume_finiteAtFilter_nhds
 omit [MeasurableSpace M] [BorelSpace M] in
 /-- On the overlap of two chart sources, the `α` coordinate density is the `β` coordinate density
 times the absolute Jacobian determinant of the change of chart, read at the `α` coordinates. -/
-private theorem ofReal_chartVolumeDensity_eq_mul_abs_det
-    [IsContinuousRiemannianBundle E (fun x : M ↦ TangentSpace I x)] (α β : M) {x : M}
+private theorem ofReal_chartVolumeDensity_eq_mul_abs_det (α β : M) {x : M}
     (hxα : x ∈ (extChartAt I α).source) (hxβ : x ∈ (extChartAt I β).source) :
     ENNReal.ofReal (chartVolumeDensity (I := I) α x) =
       ENNReal.ofReal
