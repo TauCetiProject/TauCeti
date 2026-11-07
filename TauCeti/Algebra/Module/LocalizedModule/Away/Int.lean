@@ -49,8 +49,8 @@ theorem invSelf_smul_zsmul (x : T) : (invSelf m : Localization.Away m) • m •
     one_smul]
 
 /-- Every element of `ℤ[1/m]` is an integer times a power of `m⁻¹`. -/
-theorem exists_eq_intCast_mul_invSelf_pow (r : Localization.Away m) :
-    ∃ (j : ℕ) (a : ℤ), r = (a : Localization.Away m) * invSelf m ^ j := by
+theorem _root_.Localization.Away.exists_eq_intCast_mul_invSelf_pow (r : Localization.Away m) :
+    ∃ (j : ℕ) (a : ℤ), r = (a : Localization.Away m) * IsLocalization.Away.invSelf m ^ j := by
   obtain ⟨j, a, hr⟩ := surj m r
   refine ⟨j, a, ?_⟩
   rw [← eq_intCast (algebraMap ℤ (Localization.Away m)), ← hr, mul_assoc, ← mul_pow, mul_invSelf,
@@ -93,7 +93,7 @@ theorem finite_of_moduleFinite_localizationAway_of_isAddTorsion
   let P : Submodule (Localization.Away m) T :=
     { (AddSubgroup.closure (s : Set T)).toAddSubmonoid with
       smul_mem' := fun r z hz ↦ by
-        obtain ⟨j, a, rfl⟩ := exists_eq_intCast_mul_invSelf_pow r
+        obtain ⟨j, a, rfl⟩ := r.exists_eq_intCast_mul_invSelf_pow
         rw [mul_smul, Int.cast_smul_eq_zsmul]
         exact AddSubgroup.zsmul_mem _ (hinv j hz) a }
   have hP : P = ⊤ := eq_top_iff.2 (hs ▸ Submodule.span_le.2 AddSubgroup.subset_closure)
@@ -120,7 +120,7 @@ theorem isUnit_natCard_of_localizationAway [Finite T] {R : Type*} [CommRing R]
 order: clearing the denominator gives a nonzero integer that kills it. -/
 theorem isOfFinAddOrder_of_smul_eq_zero {r : Localization.Away m} (hr : r ≠ 0) {x : T}
     (hx : r • x = 0) : IsOfFinAddOrder x := by
-  obtain ⟨j, a, rfl⟩ := exists_eq_intCast_mul_invSelf_pow r
+  obtain ⟨j, a, rfl⟩ := r.exists_eq_intCast_mul_invSelf_pow
   refine isOfFinAddOrder_iff_zsmul_eq_zero.2
     ⟨a, fun h ↦ hr (by rw [h, Int.cast_zero, zero_mul]), ?_⟩
   -- `a = mʲ (a m⁻ʲ)` in `ℤ[1/m]`

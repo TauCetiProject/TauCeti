@@ -210,6 +210,6 @@ theorem subsingleton_groupHomology_of_forall_span {R : Type*} [Ring R] {M : Type
   have := h s
   rw [ModuleCat.isZero_iff_subsingleton]
   -- restricting trivial coefficients to a subgroup gives the trivial representation of it
-  exact subsingleton_groupHomology_of_mulEquiv e
+  exact e.subsingleton_groupHomology
 
 end TauCeti.groupHomology

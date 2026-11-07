@@ -94,9 +94,9 @@ private theorem subsingleton_groupHomology_of_addEquiv_pi_prod (hm : m ≠ 0) (h
       (fun N _ _ ↦ ∀ n, Subsingleton (groupHomology (Rep.trivial k (Multiplicative N) k) (n + 1)))
       (fun N _ _ ↦ ∀ n, Subsingleton (groupHomology (Rep.trivial k (Multiplicative N) k) (n + 1)))
       (fun e h n ↦ have := h n
-        subsingleton_groupHomology_of_mulEquiv e.symm.toAddEquiv.toMultiplicative)
+        e.symm.toAddEquiv.toMultiplicative.subsingleton_groupHomology)
       (fun e h n ↦ have := h n
-        subsingleton_groupHomology_of_mulEquiv e.symm.toAddEquiv.toMultiplicative)
+        e.symm.toAddEquiv.toMultiplicative.subsingleton_groupHomology)
       (fun n ↦ ModuleCat.subsingleton_of_isZero (isZero_groupHomology_succ_of_subsingleton _ n))
       (fun hN hN' n ↦ subsingleton_groupHomology_multiplicative_prod k hN hN' n)
       (fun _ ↦ Localization.Away m) (fun _ ↦ hR)
@@ -109,7 +109,7 @@ private theorem subsingleton_groupHomology_of_addEquiv_pi_prod (hm : m ≠ 0) (h
     rw [Nat.card_congr Multiplicative.toAdd]
     exact isUnit_natCard_of_localizationAway hmk
   have := subsingleton_groupHomology_multiplicative_prod k hfree htors n
-  exact subsingleton_groupHomology_of_mulEquiv φ.toMultiplicative
+  exact φ.toMultiplicative.subsingleton_groupHomology
 
 /-- The homology of a finitely generated `ℤ[1/m]`-module vanishes in positive degrees: by the
 structure theorem over the principal ideal domain `ℤ[1/m]` it is a free module `ℤ[1/m]ʳ` times a

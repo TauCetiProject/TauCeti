@@ -227,7 +227,7 @@ theorem subsingleton_groupHomology_multiplicative_prod {M N : Type u} [AddCommGr
     (hN : ∀ n, Subsingleton (groupHomology (Rep.trivial k (Multiplicative N) k) (n + 1)))
     (n : ℕ) : Subsingleton (groupHomology (Rep.trivial k (Multiplicative (M × N)) k) (n + 1)) :=
   have := subsingleton_groupHomology_prod (Multiplicative M) (Multiplicative N) k hM hN n
-  groupHomology.subsingleton_groupHomology_of_mulEquiv (MulEquiv.prodMultiplicative M N)
+  (MulEquiv.prodMultiplicative M N).subsingleton_groupHomology
 
 end Semisimple
 

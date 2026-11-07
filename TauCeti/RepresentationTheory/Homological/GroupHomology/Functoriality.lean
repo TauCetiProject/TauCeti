@@ -28,7 +28,7 @@ of group homology is also transported along isomorphisms of groups.
   by `f : H →* G` and `φ : A ⟶ Res(f)(B)` sends the class of `x ⊗ a` to that of `f x ⊗ φ a`.
 * `TauCeti.groupHomology.H1AddEquivOfIsTrivial_map`: with trivial coefficients, change of group
   and a coefficient map act as `Abelianization.map f ⊗ φ`.
-* `TauCeti.groupHomology.subsingleton_groupHomology_of_mulEquiv`: vanishing of group homology
+* `MulEquiv.subsingleton_groupHomology`: vanishing of group homology
   with trivial coefficients is invariant under group isomorphisms.
 * `Rep.chainsMap_inclusion_comp_chainsMap_subtype`: the maps of inhomogeneous
   chains induced by inclusions of subgroups `S ≤ T ≤ G` compose.
@@ -108,7 +108,7 @@ theorem H1AddEquivOfIsTrivial_map {A : Rep R H} {B : Rep R G} [A.IsTrivial] [B.I
 
 /-- Group homology with trivial coefficients is invariant under isomorphisms of groups: if it
 vanishes in degree `n` for `H`, then it vanishes in degree `n` for every group `G ≃* H`. -/
-theorem subsingleton_groupHomology_of_mulEquiv (e : G ≃* H) {n : ℕ}
+theorem _root_.MulEquiv.subsingleton_groupHomology (e : G ≃* H) {n : ℕ}
     [Subsingleton (groupHomology (Rep.trivial R H R) n)] :
     Subsingleton (groupHomology (Rep.trivial R G R) n) :=
   (mapIso (A := Rep.trivial R G R) (B := Rep.trivial R H R) e (LinearEquiv.refl R R)
