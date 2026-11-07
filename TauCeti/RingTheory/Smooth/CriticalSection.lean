@@ -265,6 +265,8 @@ private theorem discrim_ne_zero_of_eq_algebraMap_add_quadratic {A A' W W' : Type
   set dW' : Fin 2 → Derivation A' W' W' := fun i ↦ (bW'.coord i).compDer (D A' W') with hdW'
   have hQ : hessian dW' (algebraMap W W' f) =
       hessian dW' (a * y 0 ^ 2 + b * y 0 * y 1 + c * y 1 ^ 2) := by
+    -- `hfQ` is stated with the unfolded coordinates; `rw [hfQ]` alone leaves the right-hand side
+    -- unfolded and no longer syntactically matching `y`, so restate it in terms of `y` (defeq).
     rw [show algebraMap W W' f = algebraMap A' W' h +
       (a * y 0 ^ 2 + b * y 0 * y 1 + c * y 1 ^ 2) from hfQ]
     ext i j
