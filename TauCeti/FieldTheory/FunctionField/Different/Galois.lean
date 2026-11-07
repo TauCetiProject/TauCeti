@@ -107,19 +107,17 @@ theorem differentExponent_eq_of_restrict_eq [IsGalois F F'] {P Q : Place k F'}
   obtain ⟨σ, rfl⟩ := exists_smul_eq_of_restrict_eq h
   rw [differentExponent_smul]
 
-/-- The places of an intermediate function field `E` of `F` that ramify in `F` are finitely many. -/
-theorem finite_setOf_one_lt_ramificationIdxIn {K : Type v} [Field K] [Algebra k K]
-    {E : IntermediateField k K} [FiniteDimensional E K] [IsGalois E K]
-    (hK : IsFunctionField k K)
-    (hE : IsFunctionField k ↥E) : {P : Place k ↥E | 1 < P.ramificationIdxIn K}.Finite := by
-  refine (finite_setOf_exists_differentExponent_ne_zero (k' := k) (F' := K)
-    k ↥E hE).subset ?_
+/-- The places of a function field `F` that ramify in a finite Galois extension `F'` are finitely
+many. -/
+theorem finite_setOf_one_lt_ramificationIdxIn [IsGalois F F'] (hF' : IsFunctionField k F')
+    (hF : IsFunctionField k F) : {P : Place k F | 1 < P.ramificationIdxIn F'}.Finite := by
+  refine (finite_setOf_exists_differentExponent_ne_zero (k' := k) (F' := F') k F hF).subset ?_
   intro P hP
-  obtain ⟨P', hP'⟩ := restrict_surjective_of_finiteDimensional (k' := k) hE hK P
+  obtain ⟨P', hP'⟩ := restrict_surjective_of_finiteDimensional (k' := k) hF hF' P
   refine ⟨P', hP', ?_⟩
-  have he : 1 < ramificationIdx ↥E P' := by
+  have he : 1 < ramificationIdx F P' := by
     rwa [← ramificationIdxIn_eq_ramificationIdx hP']
-  have hdl := ramificationIdx_le_differentExponent_add_one k ↥E P'
+  have hdl := ramificationIdx_le_differentExponent_add_one k F P'
   omega
 
 end Place
