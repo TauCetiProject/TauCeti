@@ -91,6 +91,8 @@ with the corresponding integral of `q`-th powers.
   exponents have finite multiplicative support.
 * `Real.rpow_finsum_of_pos`: `a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i` for `0 < a` and finitely supported
   `f`.
+* `Finsupp.prod_pow_rpow`: `(μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k` for `c`
+  nonnegative on `μ.support`.
 -/
 
 public section
@@ -240,6 +242,17 @@ theorem Real.rpow_finsum_of_pos {α : Type*} {a : ℝ} (ha : 0 < a) {f : α → 
     (hf : f.HasFiniteSupport) : a ^ (∑ᶠ i, f i) = ∏ᶠ i, a ^ f i := by
   rw [finsum_eq_sum f hf, finprod_eq_prod_of_mulSupport_subset _ (s := hf.toFinset)
     fun i hi ↦ hf.mem_toFinset.mpr fun h ↦ hi (by simp [h]), Real.rpow_sum_of_pos ha]
+
+/-- Raising a finitely supported product of natural powers `∏ᵢ cᵢ ^ μᵢ` of nonnegative reals to a
+real exponent `a` raises each base `cᵢ` to `a`. -/
+theorem Finsupp.prod_pow_rpow {σ : Type*} (μ : σ →₀ ℕ) {c : σ → ℝ}
+    (hc : ∀ i ∈ μ.support, 0 ≤ c i) (a : ℝ) :
+    (μ.prod (c · ^ ·)) ^ a = μ.prod fun i k ↦ (c i ^ a) ^ k := by
+  rw [Finsupp.prod, Finsupp.prod,
+    ← Real.finsetProd_rpow _ _ fun i hi ↦ pow_nonneg (hc i hi) _]
+  refine Finset.prod_congr rfl fun i hi ↦ ?_
+  rw [← Real.rpow_natCast, ← Real.rpow_natCast, ← Real.rpow_mul (hc i hi),
+    ← Real.rpow_mul (hc i hi), mul_comm]
 
 /-! ### Two-sided exponential decay -/
 

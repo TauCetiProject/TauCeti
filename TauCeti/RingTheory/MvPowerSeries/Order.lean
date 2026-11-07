@@ -13,6 +13,8 @@ import TauCeti.RingTheory.MvPowerSeries.Substitution
 
 import Mathlib.Tactic.LinearCombination
 
+import Mathlib.RingTheory.MvPowerSeries.NoZeroDivisors
+
 /-!
 # Lowest-degree homogeneous components of powers, products and substitutions
 
@@ -52,7 +54,10 @@ A common lower bound on the orders of two series bounds the orders of their sum 
 `g` have zero constant coefficient, then `f ^ n - g ^ n` has order larger than that of `f - g` for
 `n ≥ 2` (`MvPowerSeries.order_sub_add_one_le_order_pow_sub_pow`).
 The degree-zero component of a series is its constant term
-(`MvPowerSeries.homogeneousComponent_zero`).
+(`MvPowerSeries.homogeneousComponent_zero`), over a nontrivial semiring every coordinate variable
+has order one (`MvPowerSeries.order_X`), and over a nontrivial semiring without zero divisors
+`weightedOrder` and `order` multiply by `n` on `n`-th powers (`MvPowerSeries.weightedOrder_pow`,
+`MvPowerSeries.order_pow`).
 
 For two-variable series with linear coefficients one, the degree-one component is `X + Y`.
 Over a ring, vanishing of the constant coefficient then puts the remainder after subtracting
@@ -99,6 +104,24 @@ end AddSub
 section Powers
 
 variable {σ R : Type*} [Semiring R] {f : MvPowerSeries σ R}
+
+/-- Over a nontrivial semiring, every coordinate indeterminate `X i` has order `1`. -/
+@[simp]
+theorem order_X [Nontrivial R] (i : σ) : (X i : MvPowerSeries σ R).order = 1 := by
+  rw [X_def, order_monomial_of_ne_zero one_ne_zero, Finsupp.degree_single, Nat.cast_one]
+
+/-- Over a nontrivial semiring without zero divisors, `weightedOrder` multiplies by `n` on `n`-th
+powers. -/
+theorem weightedOrder_pow [NoZeroDivisors R] [Nontrivial R] (w : σ → ℕ) (f : MvPowerSeries σ R)
+    (n : ℕ) : (f ^ n).weightedOrder w = n • f.weightedOrder w := by
+  induction n with
+  | zero => simp
+  | succ n ih => rw [pow_succ, weightedOrder_mul, ih, add_nsmul, one_nsmul]
+
+/-- Over a nontrivial semiring without zero divisors, `order` multiplies by `n` on `n`-th powers. -/
+theorem order_pow [NoZeroDivisors R] [Nontrivial R] (f : MvPowerSeries σ R) (n : ℕ) :
+    (f ^ n).order = n • f.order :=
+  weightedOrder_pow _ f n
 
 /-- A variable is its own degree-one homogeneous component. -/
 @[simp]

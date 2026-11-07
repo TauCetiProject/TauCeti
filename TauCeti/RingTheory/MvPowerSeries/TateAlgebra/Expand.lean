@@ -55,6 +55,8 @@ positive power in `|K×|`.
   and uniqueness of the decomposition `f = ∑ X^ν f_ν(X^p)` in finitely many variables.
 * `TauCeti.MvPowerSeries.exists_norm_restrictedExpandComponent_mul_prod_eq`: the Gauss norm of `f`
   is the largest of the weighted norms `‖f_ν‖ r^ν`.
+* `TauCeti.MvPowerSeries.restrictedExpandComponent_restrictedExpand_mul`: multiplying by an
+  expanded series `g(X^p)` commutes with extracting the `ν`-th component when `ν i < p`.
 * `TauCeti.MvPowerSeries.restrictedExpand_finite` and
   `TauCeti.MvPowerSeries.restrictedRescaleExpand_finite`: in finitely many variables, both maps
   are finite.
@@ -153,6 +155,30 @@ theorem coeff_restrictedExpandComponent (ν μ : σ →₀ ℕ) (f : IsRestricte
       coeff (p • μ + ν) (f : MvPowerSeries σ R) :=
   coeff_apply _ μ
 
+/-- Extracting a component sends `0` to `0`. -/
+@[simp]
+theorem restrictedExpandComponent_zero (ν : σ →₀ ℕ) :
+    restrictedExpandComponent hp ht ν (0 : IsRestricted.subring (R := R) r) = 0 := by
+  ext μ : 2
+  simp
+
+/-- Extracting a component commutes with addition. -/
+@[simp]
+theorem restrictedExpandComponent_add (ν : σ →₀ ℕ)
+    (f g : IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (f + g) =
+      restrictedExpandComponent hp ht ν f + restrictedExpandComponent hp ht ν g := by
+  ext μ : 2
+  simp
+
+/-- Extracting a component commutes with finite sums. -/
+theorem restrictedExpandComponent_sum {ι : Type*} (ν : σ →₀ ℕ) (s : Finset ι)
+    (f : ι → IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (∑ i ∈ s, f i) =
+      ∑ i ∈ s, restrictedExpandComponent hp ht ν (f i) := by
+  ext μ : 2
+  simp
+
 variable [∀ i, Fact (0 < t i)]
 
 /-- **Norm estimate for the components.** The weighted norm `‖f_ν‖ r^ν` of each component is at
@@ -189,6 +215,72 @@ theorem exists_norm_restrictedExpandComponent_mul_prod_eq
       mul_le_mul_of_nonneg_right (norm_coeff_mul_prod_le _ μ) (prod_pow_pos ν).le
 
 end Component
+
+/-- If `p • μ₁ = pq.1` and `pq.1 + pq.2 = p • μ + ν` with `ν i < p` for all `i`, then `μ₁ ≤ μ`
+and `p • (μ - μ₁) + ν = pq.2`. -/
+private theorem le_and_nsmul_tsub_add_eq_snd {p : ℕ} {μ ν μ₁ : σ →₀ ℕ}
+    {pq : (σ →₀ ℕ) × (σ →₀ ℕ)} (hν : ∀ i, ν i < p) (hμ₁ : p • μ₁ = pq.1)
+    (hpq : pq.1 + pq.2 = p • μ + ν) :
+    μ₁ ≤ μ ∧ p • (μ - μ₁) + ν = pq.2 := by
+  have hcoord (i : σ) : p * μ₁ i + pq.2 i = p * μ i + ν i := by
+    have hi := congrArg (· i) hpq
+    have hμ₁_i := congrArg (· i) hμ₁
+    simp only [Finsupp.coe_add, Finsupp.coe_smul, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul] at hi hμ₁_i
+    omega
+  have hle : μ₁ ≤ μ := fun i ↦ by
+    have := hcoord i
+    have := hν i
+    have hlt : p * μ₁ i < p * (μ i + 1) := by rw [mul_add, mul_one]; omega
+    exact Nat.lt_succ_iff.mp (Nat.lt_of_mul_lt_mul_left hlt)
+  refine ⟨hle, Finsupp.ext fun i ↦ ?_⟩
+  have := hcoord i
+  have := Nat.mul_le_mul_left p (hle i)
+  simp only [Finsupp.coe_add, Finsupp.coe_smul, Finsupp.coe_tsub, Pi.add_apply, Pi.smul_apply,
+    Pi.sub_apply, smul_eq_mul, Nat.mul_sub_left_distrib]
+  omega
+
+/-- Multiplying on the left by an expanded series `g(X^p)` commutes with extracting the `ν`-th
+component whenever `ν i < p` for all `i`. -/
+theorem restrictedExpandComponent_restrictedExpand_mul [NormedCommRing R] [IsUltrametricDist R]
+    {p : ℕ} (hp : p ≠ 0) (ht : ∀ i, r i ^ p = t i) [∀ i, Fact (0 < r i)]
+    {ν : σ →₀ ℕ} (hν : ∀ i, ν i < p)
+    (g : IsRestricted.subring (R := R) t) (f : IsRestricted.subring (R := R) r) :
+    restrictedExpandComponent hp ht ν (restrictedExpand p hp ht g * f) =
+      g * restrictedExpandComponent hp ht ν f := by
+  classical
+  apply Subtype.ext
+  ext μ
+  rw [coeff_restrictedExpandComponent, Subring.coe_mul, coe_restrictedExpand, coeff_mul,
+    Subring.coe_mul, coeff_mul]
+  -- Reindex `Finset.antidiagonal μ` into `Finset.antidiagonal (p • μ + ν)` along `emb`.
+  let emb : (σ →₀ ℕ) × (σ →₀ ℕ) → (σ →₀ ℕ) × (σ →₀ ℕ) := fun ab ↦ (p • ab.1, p • ab.2 + ν)
+  have hemb_inj : Function.Injective emb := by
+    rintro ⟨a₁, b₁⟩ ⟨a₂, b₂⟩ h
+    simp only [emb, Prod.mk.injEq, add_left_inj] at h
+    exact Prod.ext (nsmul_right_injective hp h.1) (nsmul_right_injective hp h.2)
+  have hsub : (Finset.antidiagonal μ).image emb ⊆ Finset.antidiagonal (p • μ + ν) := by
+    rintro _ hpq
+    obtain ⟨⟨a, b⟩, hab, rfl⟩ := Finset.mem_image.mp hpq
+    rw [Finset.mem_antidiagonal] at hab ⊢
+    dsimp only [emb]
+    rw [← add_assoc, ← smul_add, hab]
+  rw [← Finset.sum_subset hsub]
+  · rw [Finset.sum_image hemb_inj.injOn]
+    refine Finset.sum_congr rfl fun ab _ ↦ ?_
+    dsimp only [emb]
+    rw [coeff_expand_smul, coeff_restrictedExpandComponent]
+  -- Extra antidiagonal terms vanish since `expand p` is supported on multiples of `p`.
+  · intro pq hpq hnot
+    by_cases h0 : coeff pq.1 (expand p hp (g : MvPowerSeries σ R)) = 0
+    · rw [h0, zero_mul]
+    · exfalso
+      obtain ⟨μ₁, -, hμ₁⟩ := support_expand_subset p hp _ (a := pq.1) h0
+      obtain ⟨hle, hpq2⟩ :=
+        le_and_nsmul_tsub_add_eq_snd hν hμ₁ (Finset.mem_antidiagonal.mp hpq)
+      exact hnot (Finset.mem_image.mpr
+        ⟨(μ₁, μ - μ₁), Finset.mem_antidiagonal.mpr (add_tsub_cancel_of_le hle),
+          Prod.ext hμ₁ hpq2⟩)
 
 section Decomposition
 
