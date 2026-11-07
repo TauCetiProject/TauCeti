@@ -77,45 +77,6 @@ universe u v
 
 variable {k : Type u} {F : Type v} [Field k] [Field F] [Algebra k F]
 
-/-- The places of an intermediate function field `E` of `F` that ramify in `F` are finitely many. -/
-private lemma finite_setOf_one_lt_ramificationIdxIn {k : Type u} {F : Type v} [Field k] [Field F]
-    [Algebra k F] {E : IntermediateField k F} [FiniteDimensional E F] [IsGalois E F]
-    (hF : IsFunctionField k F)
-    (hE : IsFunctionField k ↥E) : {P : Place k ↥E | 1 < P.ramificationIdxIn F}.Finite := by
-  refine (Place.finite_setOf_exists_differentExponent_ne_zero (k' := k) (F' := F)
-    k ↥E hE).subset ?_
-  intro P hP
-  obtain ⟨P', hP'⟩ := Place.restrict_surjective_of_finiteDimensional (k' := k) hE hF P
-  refine ⟨P', hP', ?_⟩
-  have he : 1 < Place.ramificationIdx ↥E P' := by
-    rwa [← Place.ramificationIdxIn_eq_ramificationIdx hP']
-  have hdl := Place.ramificationIdx_le_differentExponent_add_one k ↥E P'
-  omega
-
-/-- The numerical half of the Hurwitz bound: if `n * (2 γ - 2 + ∑ᵢ (1 - 1/eᵢ)) = 2 g - 2` with all
-`eᵢ ≥ 2`, `n > 0` and `g ≥ 2`, then `n ≤ 84 (g - 1)`. -/
-private lemma card_le_eighty_four_mul_sub_one {n g γ : ℕ} {e : Multiset ℕ} (hg : 2 ≤ g)
-    (hn : 0 < n) (he : ∀ m ∈ e, 2 ≤ m)
-    (hkey : (n : ℚ) * (2 * (γ : ℚ) - 2 + (e.map fun m : ℕ ↦ 1 - 1 / (m : ℚ)).sum) =
-      2 * (g : ℚ) - 2) :
-    n ≤ 84 * (g - 1) := by
-  have hnQ : (0 : ℚ) < n := by exact_mod_cast hn
-  have hgQ : (2 : ℚ) ≤ g := by exact_mod_cast hg
-  have hDpos : 0 < 2 * (γ : ℚ) - 2 + (e.map fun m : ℕ ↦ 1 - 1 / (m : ℚ)).sum := by
-    by_contra hcon
-    have hle := mul_nonpos_of_nonneg_of_nonpos hnQ.le (not_lt.mp hcon)
-    rw [hkey] at hle
-    linarith
-  have hdef := one_div_forty_two_le_hyperbolic_deficit he hDpos
-  -- `n · (1/42) ≤ n · D = 2g - 2`.
-  have hfinal : (n : ℚ) ≤ 42 * (2 * (g : ℚ) - 2) := by
-    rw [← hkey]
-    nlinarith [hdef, hnQ]
-  have hnat : (n : ℚ) ≤ ((84 * (g - 1) : ℕ) : ℚ) := by
-    push_cast [Nat.cast_sub (by omega : 1 ≤ g)]
-    linarith
-  exact_mod_cast hnat
-
 /-- **The Hurwitz bound** (Stichtenoth, Exercise 3.18): a finite group `G` of automorphisms of a
 function field of genus `g ≥ 2`, every place of which is tame over the fixed field, has order at
 most `84 (g - 1)`. -/
@@ -133,7 +94,7 @@ theorem natCard_le_eighty_four_mul_genus_sub_one (hF : IsFunctionField k F)
   have hFE : IsFunctionField k ↥E := hF.fixedField G
   have hexE : IsIntegrallyClosedIn k ↥E := E.val.isIntegrallyClosedIn E.val.injective hex
   -- The ramified places of the fixed field form a finite set.
-  have hfinite := finite_setOf_one_lt_ramificationIdxIn hF hFE
+  have hfinite := Place.finite_setOf_one_lt_ramificationIdxIn hF hFE
   let s : Finset (Place k ↥E) := hfinite.toFinset
   -- Hurwitz, in its tame form, through the branch data of the extension.
   have hhur : 2 * (genus k F : ℤ) - 2 =
