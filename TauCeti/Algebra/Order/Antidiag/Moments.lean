@@ -34,68 +34,73 @@ namespace Finset
 
 variable {ι : Type*} [DecidableEq ι]
 
+/-- The compositions of `N` supported on a singleton `{i}` are the single vector with value `N`
+at `i`. -/
+theorem piAntidiag_singleton_eq (i : ι) (N : ℕ) :
+    piAntidiag {i} N = {Function.update (0 : ι → ℕ) i N} := by
+  ext f
+  simp only [mem_piAntidiag, sum_singleton, mem_singleton]
+  constructor
+  · rintro ⟨hf, hs⟩
+    ext j
+    by_cases hji : j = i
+    · subst j; simpa using hf
+    · simp only [Function.update_of_ne hji]
+      exact not_ne_iff.mp (fun h ↦ hji (hs j h))
+  · rintro rfl
+    refine ⟨by simp, fun j hj ↦ ?_⟩
+    by_contra hji
+    simp [Function.update_of_ne hji] at hj
+
+/-- Adjoining a variable to the support sums the previous binomial moment over all possible
+residual degrees. -/
+private theorem sum_antidiagonal_choose_add_card (N k m : ℕ) :
+    ∑ r ∈ antidiagonal N, (r.2 + m).choose (k + m) = (N + (m + 1)).choose (k + (m + 1)) := by
+  rw [← Nat.sum_antidiagonal_swap]
+  simp only [Prod.snd_swap]
+  rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk]
+  calc
+    ∑ r ∈ range (N + 1), (r + m).choose (k + m) =
+        ∑ r ∈ Icc m (N + m), r.choose (k + m) := by
+      convert! (sum_map (range (N + 1)) (addRightEmbedding m)
+        (fun r ↦ r.choose (k + m))).symm using 2
+      rw [range_eq_Ico, map_add_right_Ico, zero_add, Nat.add_right_comm,
+        Ico_add_one_right_eq_Icc]
+    _ = ∑ r ∈ Icc (k + m) (N + m), r.choose (k + m) := by
+      symm
+      apply sum_subset (by intro r hr; simp only [mem_Icc] at *; omega)
+      intro r hr hnot
+      apply Nat.choose_eq_zero_of_lt
+      simp only [mem_Icc] at *
+      omega
+    _ = (N + (m + 1)).choose (k + (m + 1)) := by
+      simpa only [Nat.add_assoc] using Nat.sum_Icc_choose (N + m) (k + m)
+
+/-- The binomial moment of the distinguished coordinate over the compositions supported on
+`insert i t`, for `i ∉ t`. -/
+private theorem sum_piAntidiag_insert_choose {t : Finset ι} {i : ι} (hi : i ∉ t) (N k : ℕ) :
+    ∑ f ∈ piAntidiag (insert i t) N, (f i).choose k = (N + t.card).choose (k + t.card) := by
+  induction t using Finset.cons_induction generalizing i N k with
+  | empty => simp [piAntidiag_singleton_eq]
+  | cons j t hj ih =>
+    have hit : i ∉ t := fun h ↦ hi (mem_cons_of_mem h)
+    have hij : i ≠ j := fun h ↦ hi (by simp [h])
+    have hji : j ∉ insert i t := by simp [hj, hij.symm]
+    have heq : insert i (cons j t hj) = cons j (insert i t) hji := by
+      ext x
+      simp [or_left_comm]
+    rw [heq, piAntidiag_cons hji, sum_disjiUnion]
+    simp only [sum_map, addRightEmbedding_apply, Pi.add_apply, ite_eq_right hij, add_zero]
+    simp_rw [ih hit]
+    simp only [card_cons]
+    exact sum_antidiagonal_choose_add_card N k t.card
+
 /-- The binomial moment of one coordinate of a uniformly counted composition of `N`.
 The support set contains the chosen coordinate, so it is nonempty. -/
 theorem sum_piAntidiag_choose {s : Finset ι} {i : ι} (hi : i ∈ s) (N k : ℕ) :
     ∑ f ∈ piAntidiag s N, (f i).choose k =
       (N + s.card - 1).choose (k + s.card - 1) := by
-  -- Keep the distinguished variable fixed and adjoin the other variables one at a time.
-  have aux : ∀ (t : Finset ι) (i : ι), i ∉ t → ∀ N k : ℕ,
-      ∑ f ∈ piAntidiag (insert i t) N, (f i).choose k =
-        (N + t.card).choose (k + t.card) := by
-    intro t
-    induction t using Finset.cons_induction with
-    | empty =>
-      intro i _ N k
-      have heq : piAntidiag {i} N = {Function.update (0 : ι → ℕ) i N} := by
-        ext f
-        simp only [mem_piAntidiag, sum_singleton, mem_singleton]
-        constructor
-        · rintro ⟨hf, hs⟩
-          ext j
-          by_cases hji : j = i
-          · subst j; simpa using hf
-          · simp only [Function.update_of_ne hji]
-            exact not_ne_iff.mp (fun h ↦ hji (hs j h))
-        · rintro rfl
-          refine ⟨by simp, fun j hj ↦ ?_⟩
-          by_contra hji
-          simp [Function.update_of_ne hji] at hj
-      simp [heq]
-    | cons j t hj ih =>
-      intro i hi N k
-      have hit : i ∉ t := fun h ↦ hi (mem_cons_of_mem h)
-      have hij : i ≠ j := fun h ↦ hi (by simp [h])
-      have hji : j ∉ insert i t := by simp [hj, hij.symm]
-      have heq : insert i (cons j t hj) = cons j (insert i t) hji := by
-        ext x
-        simp [or_left_comm]
-      rw [heq, piAntidiag_cons hji, sum_disjiUnion]
-      simp only [sum_map, addRightEmbedding_apply, Pi.add_apply,
-        ite_eq_right hij, add_zero]
-      simp_rw [ih i hit]
-      simp only [card_cons]
-      -- Adjoining a variable sums the previous moment over all possible residual degrees.
-      rw [← Nat.sum_antidiagonal_swap]
-      simp only [Prod.snd_swap]
-      rw [Nat.sum_antidiagonal_eq_sum_range_succ_mk]
-      calc
-        ∑ r ∈ range (N + 1), (r + t.card).choose (k + t.card) =
-            ∑ r ∈ Icc t.card (N + t.card), r.choose (k + t.card) := by
-          convert! (sum_map (range (N + 1)) (addRightEmbedding t.card)
-            (fun r ↦ r.choose (k + t.card))).symm using 2
-          rw [range_eq_Ico, map_add_right_Ico, zero_add, Nat.add_right_comm,
-            Ico_add_one_right_eq_Icc]
-        _ = ∑ r ∈ Icc (k + t.card) (N + t.card), r.choose (k + t.card) := by
-          symm
-          apply sum_subset (by intro r hr; simp only [mem_Icc] at *; omega)
-          intro r hr hnot
-          apply Nat.choose_eq_zero_of_lt
-          simp only [mem_Icc] at *
-          omega
-        _ = (N + (t.card + 1)).choose (k + (t.card + 1)) := by
-          simpa only [Nat.add_assoc] using Nat.sum_Icc_choose (N + t.card) (k + t.card)
-  have h := aux (s.erase i) i (notMem_erase i s) N k
+  have h := sum_piAntidiag_insert_choose (notMem_erase i s) N k
   rw [insert_erase hi, card_erase_of_mem hi] at h
   simpa [Nat.add_sub_assoc (card_pos.mpr ⟨i, hi⟩)] using h
 
