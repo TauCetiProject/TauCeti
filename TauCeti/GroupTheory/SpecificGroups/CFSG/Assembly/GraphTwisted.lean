@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TrialityD4
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TrialityD4.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TwistedE6
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Basic

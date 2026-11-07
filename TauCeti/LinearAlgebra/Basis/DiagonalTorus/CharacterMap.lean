@@ -142,6 +142,19 @@ theorem torusPointMap_comp [Fintype ν] [DecidableEq κ] (ψ : (κ → ℤ) →�
   refine MonoidHom.ext fun s => funext fun i => ?_
   simp
 
+/-- Precomposition of characters by a permutation acts on torus parameters by its inverse. -/
+@[simp]
+theorem torusPointMap_funCongrLeft [DecidableEq κ] (σ : Equiv.Perm κ) (s : κ → Rˣ) :
+    torusPointMap (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap s =
+      fun i => s (σ.symm i) := by
+  funext i
+  have hprecomp : (LinearEquiv.funCongrLeft ℤ ℤ σ).toLinearMap (Pi.single i 1) =
+      Pi.single i 1 ∘ σ := by
+    funext j
+    simp
+  rw [torusPointMap_apply, hprecomp, ← torusCharacter_mulEquivArrowCongr]
+  simp
+
 /-- `torusPointMap` turns sums of lattice maps into products of point maps. -/
 theorem torusPointMap_add (φ ψ : (ι → ℤ) →ₗ[ℤ] (κ → ℤ)) :
     torusPointMap (R := R) (φ + ψ) = torusPointMap φ * torusPointMap ψ := by
