@@ -42,15 +42,11 @@ theorem exists_pos_closedBall_subset_and_lt_dist {T : Finset X} {U : X → Set X
     ∃ r > 0, (∀ w ∈ T, closedBall w r ⊆ U w) ∧ ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
   have h1 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, closedBall w r ⊆ U w :=
     (eventually_all_finset T).2 fun w hw => eventually_closedBall_subset (hU w hw)
-  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' := by
-    refine (eventually_all_finset T).2 fun w _ => (eventually_all_finset T).2 fun w' _ => ?_
-    by_cases hww : w = w'
-    · exact Eventually.of_forall fun _ h => absurd hww h
-    · exact (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun r hr _ => by linarith
-  obtain ⟨r, ⟨h1r, h2r⟩, hr⟩ :=
-    (((h1.and h2).filter_mono nhdsWithin_le_nhds).and self_mem_nhdsWithin).exists
-      (f := 𝓝[>] (0 : ℝ))
-  exact ⟨r, hr, h1r, h2r⟩
+  have h2 : ∀ᶠ r in 𝓝 (0 : ℝ), ∀ w ∈ T, ∀ w' ∈ T, w ≠ w' → 2 * r < dist w w' :=
+    (eventually_all_finset T).2 fun w _ => (eventually_all_finset T).2 fun w' _ =>
+      eventually_imp_distrib_left.2 fun hww =>
+        (eventually_lt_nhds (half_pos (dist_pos.2 hww))).mono fun _ _ => by linarith
+  exact (eventually_mem_nhdsWithin.and (nhdsWithin_le_nhds (h1.and h2))).exists (f := 𝓝[>] 0)
 
 /-- Two points that are either equal or more than `2 * r` apart are equal if both lie within `r`
 of a common point. -/
