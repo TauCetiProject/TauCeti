@@ -34,6 +34,8 @@ along paths from `a` to `b` and from `b` to `c`, to the change along paths from 
 
 ## Main results
 
+* `TauCeti.pathChainConcat_tmul`: on pure tensors, the composition is the pairing of cubical
+  chains induced by concatenation of Moore paths.
 * `TauCeti.pathChainConcat_tmul_ofCube`: the composition concatenates cubes pointwise.
 * `TauCeti.pathChainConcat_assoc`: the composition is associative.
 
@@ -75,6 +77,17 @@ def pathChainConcat :
 
 variable {B a b c d R}
 
+/-- **The composition is the concatenation pairing**: on a pure tensor `m ⊗ n`, it is the
+pairing of cubical chains induced by concatenation of Moore paths. -/
+@[simp]
+theorem pathChainConcat_tmul
+    (m : cubicalChainModule (MoorePathBetween B a b) (MooreLoopSpace B b) R)
+    (n : cubicalChainModule (MoorePathBetween B b c) (MooreLoopSpace B c) R) :
+    pathChainConcat B a b c R (tmul R (loopChainAlgebra B b R) m n) =
+      cubicalChainPairing (MooreLoopSpace B b) (MooreLoopSpace B c) R
+        ⟨fun p ↦ p.1.trans p.2, MoorePathBetween.continuous_trans⟩ m n :=
+  cubicalChainTensorHom_tmul _ _ _ _ m n
+
 /-- **The composition concatenates cubes**: on cubes `σ` of paths from `a` to `b` and `τ` of
 paths from `b` to `c`, it is the cube of the concatenations `σ(s).trans τ(t)`. -/
 theorem pathChainConcat_tmul_ofCube {p q : ℕ} (σ : SingularCube (MoorePathBetween B a b) p)
@@ -87,12 +100,10 @@ theorem pathChainConcat_tmul_ofCube {p q : ℕ} (σ : SingularCube (MoorePathBet
       cubicalChainModuleLof (MoorePathBetween B a c) (MooreLoopSpace B c) R (p + q)
         (ofCube _ R ⟨fun x ↦ (σ fun i ↦ x (Fin.castAdd q i)).trans (τ fun j ↦ x (Fin.natAdd p j)),
           by fun_prop⟩) := by
-  rw [pathChainConcat, cubicalChainTensorHom_tmul, cubicalChainPairing_lof_lof, crossProduct_ofCube,
-    map_ofCube]
+  rw [pathChainConcat_tmul, cubicalChainPairing_lof_lof, crossProduct_ofCube, map_ofCube]
   congr 2
   refine ContinuousMap.ext fun x ↦ ?_
-  simp only [ContinuousMap.comp_apply, SingularCube.crossProduct_apply, concatMap,
-    ContinuousMap.coe_mk]
+  simp only [ContinuousMap.comp_apply, SingularCube.crossProduct_apply, ContinuousMap.coe_mk]
 
 /-- **The composition of path bimodules is associative**: composing paths from `a` to `b`, from
 `b` to `c` and from `c` to `d` in either order gives the same chains, through the associator of
