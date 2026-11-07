@@ -10,6 +10,7 @@ public import Mathlib.AlgebraicGeometry.Morphisms.ClosedImmersion
 public import TauCeti.Topology.LocallyFinsupp.LocallyFiniteSum
 import TauCeti.Algebra.BigOperators.Finprod
 import TauCeti.AlgebraicGeometry.Morphisms.ClosedImmersion.Basic
+import TauCeti.AlgebraicGeometry.Morphisms.QuasiCompact
 import TauCeti.AlgebraicGeometry.ResidueDegree
 
 /-!
@@ -62,19 +63,11 @@ lemma map_apply_eq_zero_of_notMem_range (c : AlgebraicCycle X R) {y : Y}
     (hy : y ∉ Set.range f) : map f wx wy c y = 0 :=
   Function.notMem_support.mp fun h ↦ hy (support_map_subset_range f wx wy c h)
 
-/-- Every point of the target of a quasi-compact morphism has an open neighbourhood, for instance
-an affine one, whose preimage is quasi-compact. -/
-private lemma exists_isOpen_mem_isCompact_preimage (y : Y) :
-    ∃ U : Set Y, IsOpen U ∧ y ∈ U ∧ IsCompact (f ⁻¹' U) := by
-  obtain ⟨_, ⟨U, hU, rfl⟩, hyU, -⟩ :=
-    Y.isBasis_affineOpens.exists_subset_of_mem_open (Set.mem_univ y) isOpen_univ
-  exact ⟨U, U.isOpen, hyU, QuasiCompact.isCompact_preimage (f := f) _ U.isOpen hU.isCompact⟩
-
 /-- A cycle has only finitely many points with nonzero coefficient in each fibre of a
 quasi-compact morphism: a fibre lies in the preimage of an affine open, which is quasi-compact. -/
 lemma finite_preimage_singleton_inter_support (c : AlgebraicCycle X R) (y : Y) :
     (f ⁻¹' {y} ∩ c.support).Finite := by
-  obtain ⟨U, -, hyU, hK⟩ := exists_isOpen_mem_isCompact_preimage f y
+  obtain ⟨U, -, hyU, hK⟩ := f.exists_isOpen_mem_isCompact_preimage y
   exact (c.locallyFiniteSupport.finite_inter_support_of_isCompact hK).subset
     (Set.inter_subset_inter_left _ (Set.preimage_mono (Set.singleton_subset_iff.mpr hyU)))
 
@@ -92,7 +85,7 @@ lemma locallyFinite_support_map {ι : Type*} (c : ι → AlgebraicCycle X R)
     (hc : LocallyFinite fun i ↦ (c i).support) :
     LocallyFinite fun i ↦ (map f wx wy (c i)).support := by
   intro y
-  obtain ⟨U, hU, hyU, hK⟩ := exists_isOpen_mem_isCompact_preimage f y
+  obtain ⟨U, hU, hyU, hK⟩ := f.exists_isOpen_mem_isCompact_preimage y
   refine ⟨U, hU.mem_nhds hyU, (hc.finite_nonempty_inter_compact hK).subset ?_⟩
   rintro i ⟨z, hz, hzU⟩
   obtain ⟨x, rfl, hx⟩ := exists_ne_zero_of_finsum_mem_ne_zero hz
@@ -120,7 +113,7 @@ lemma map_locallyFiniteSum {ι : Type*} (c : ι → AlgebraicCycle X R)
     Function.locallyFinsupp.locallyFiniteSum_apply]
   -- Only finitely many members `c i` meet the quasi-compact preimage `K` of an affine open
   -- neighbourhood of `y`, and each meets the fibre over `y` in finitely many points.
-  obtain ⟨U, -, hyU, hK⟩ := exists_isOpen_mem_isCompact_preimage f y
+  obtain ⟨U, -, hyU, hK⟩ := f.exists_isOpen_mem_isCompact_preimage y
   have hI := hc.finite_nonempty_inter_compact hK
   have hS : (⋃ i ∈ {i | ((c i).support ∩ f ⁻¹' U).Nonempty},
       f ⁻¹' {y} ∩ (c i).support).Finite :=
