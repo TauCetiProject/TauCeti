@@ -5,6 +5,7 @@ Authors: Claude, Chris Birkbeck
 -/
 module
 
+public import TauCeti.Analysis.Contour.Curve.Circle.Basic
 public import TauCeti.Analysis.Contour.Curve.Reparam
 public import TauCeti.Analysis.Contour.Winding.Number.Basic
 public import Mathlib.Analysis.Complex.CauchyIntegral
@@ -161,9 +162,8 @@ theorem windingNumber_circleMap_eq_circleIntegral {c w : ℂ} {R : ℝ}
       = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∮ z in C(c, R), (z - w)⁻¹ := by
   have hcont : ContinuousOn (circleMap c R) (Set.uIcc 0 (2 * Real.pi)) :=
     (continuous_circleMap c R).continuousOn
-  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) := by
-    simp only [deriv_circleMap]
-    exact (continuous_circleMap 0 R).mul continuous_const
+  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) :=
+    Complex.continuous_deriv_circleMap c R
   have hint : IntervalIntegrable
       (fun t => (circleMap c R t - w)⁻¹ * deriv (circleMap c R) t) MeasureTheory.volume
       0 (2 * Real.pi) :=
@@ -209,11 +209,8 @@ theorem cauchyPVExistsAt_circleMap_comp_affine {c : ℂ} {R : ℝ} (m s a b : �
   have hcont : ContinuousOn (circleMap c R ∘ fun t : ℝ => m * t + s) (Set.uIcc a b) :=
     ((continuous_circleMap c R).comp (by fun_prop)).continuousOn
   have hderiv_circle : ContinuousOn (deriv (circleMap c R))
-      ((fun t : ℝ => m * t + s) '' Set.uIcc a b) := by
-    have h : deriv (circleMap c R) = fun θ => circleMap 0 R θ * Complex.I :=
-      funext (deriv_circleMap c R)
-    rw [h]
-    exact ((continuous_circleMap 0 R).mul continuous_const).continuousOn
+      ((fun t : ℝ => m * t + s) '' Set.uIcc a b) :=
+    (Complex.continuous_deriv_circleMap c R).continuousOn
   have hderiv : ContinuousOn (deriv (circleMap c R ∘ fun t : ℝ => m * t + s)) (Set.uIcc a b) :=
     continuousOn_deriv_comp_reparam (φ' := fun _ => m)
       (fun t _ => by
@@ -233,9 +230,8 @@ theorem windingNumber_circleMap_center {c : ℂ} {R : ℝ} (hR : R ≠ 0) (a b :
     windingNumber (circleMap c R) a b c = ((b - a : ℝ) : ℂ) / (2 * (Real.pi : ℂ)) := by
   have hcont : ContinuousOn (circleMap c R) (Set.uIcc a b) :=
     (continuous_circleMap c R).continuousOn
-  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) := by
-    simp only [deriv_circleMap]
-    exact (continuous_circleMap 0 R).mul continuous_const
+  have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) :=
+    Complex.continuous_deriv_circleMap c R
   have havoid : ∀ θ, circleMap c R θ ≠ c := fun _ => circleMap_ne_center hR
   have hint : IntervalIntegrable
       (fun t => (circleMap c R t - c)⁻¹ * deriv (circleMap c R) t) MeasureTheory.volume a b :=

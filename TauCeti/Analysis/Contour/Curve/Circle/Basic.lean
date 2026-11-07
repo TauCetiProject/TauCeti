@@ -8,7 +8,9 @@ module
 public import Mathlib.MeasureTheory.Integral.CircleIntegral
 
 /-!
-# Traces of full circular traversals
+# Basic facts about circular parametrizations
+
+The derivative of `circleMap c R` is continuous (`Complex.continuous_deriv_circleMap`).
 
 The trace of a circular parametrization over `[0,2π]` is the sphere, for arbitrary signed radii.
 Consequently the exponential `t ↦ exp (2π i t / L)` and its conjugate cover the unit circle over
@@ -21,6 +23,11 @@ open Set Metric
 open scoped Real
 
 namespace Complex
+
+/-- The derivative of the circle parametrisation `circleMap c R` is continuous. -/
+theorem continuous_deriv_circleMap (c : ℂ) (R : ℝ) : Continuous (deriv (circleMap c R)) := by
+  rw [funext (deriv_circleMap c R)]
+  fun_prop
 
 /-- The full circular trace over `[0,2π]` is exactly the circle. -/
 theorem image_circleMap_uIcc (c : ℂ) (R : ℝ) :
