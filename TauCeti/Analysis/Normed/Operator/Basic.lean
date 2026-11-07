@@ -355,3 +355,18 @@ end MetricQuotient
 end ContinuousLinearMap
 
 end
+
+namespace ContinuousLinearMap
+
+/-- A pointwise squared-norm bound gives the square-root bound on the operator norm. -/
+public theorem opNorm_le_sqrt_of_forall_sq_norm_le
+    {𝕜 E F : Type*} [NontriviallyNormedField 𝕜]
+    [SeminormedAddCommGroup E] [NormedSpace 𝕜 E]
+    [SeminormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (T : E →L[𝕜] F) {c : ℝ} (hc : 0 ≤ c)
+    (h : ∀ x, ‖T x‖ ^ 2 ≤ c * ‖x‖ ^ 2) : ‖T‖ ≤ Real.sqrt c := by
+  refine T.opNorm_le_bound (Real.sqrt_nonneg _) fun x => ?_
+  apply (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (Real.sqrt_nonneg _) (norm_nonneg _))).mp
+  simpa only [mul_pow, Real.sq_sqrt hc] using h x
+
+end ContinuousLinearMap
