@@ -90,8 +90,9 @@ private theorem cylindricalEndLift_eq_circleMap (p : PSSPlane) (R t : ℝ) :
   congr 1
   cases p <;> push_cast [endSign_positive, endSign_negative] <;> ring
 
-/-- **Stokes' formula on a closed disc, in real coordinates.** For a `C²` map `u` the symplectic
-area over the disc `‖w‖ ≤ r` is half the boundary action of `u` along the circle of radius `r`. -/
+/-- Stokes' formula on a closed disc (`SymplecticForm.integral_fderiv_apply_closedBall`), in the
+real coordinates `ℝ × ℝ ≃ ℂ` of the plane: for a `C²` map `u` the symplectic area over the disc
+`‖w‖ ≤ r` is half the boundary action of `u` along the circle of radius `r`. -/
 private theorem integral_symplecticForm_fderiv_closedBall_eq (ω : SymplecticForm V)
     {u : ℝ × ℝ → V} (hu : ContDiff ℝ 2 u) {r : ℝ} (hr : 0 < r) :
     ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 r,
@@ -117,18 +118,7 @@ private theorem integral_symplecticForm_fderiv_closedBall_eq (ω : SymplecticFor
     rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
       Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre]
     rfl
-  -- The closed disc and the punctured disc differ by the null set `{0}`.
-  have hpunct : {w : ℂ | 0 < ‖w - 0‖ ∧ ‖w - 0‖ ≤ r} =ᵐ[volume] Metric.closedBall (0 : ℂ) r := by
-    have h : {w : ℂ | 0 < ‖w - 0‖ ∧ ‖w - 0‖ ≤ r} = Metric.closedBall 0 r \ {0} := by
-      ext w
-      simp [norm_pos_iff, and_comm]
-    rw [h]
-    exact sdiff_null_ae_eq_self (measure_singleton 0)
-  have henergy : IntegrableOn (fun w ↦ ‖fderiv ℝ v w‖ ^ 2) {w : ℂ | 0 < ‖w - 0‖ ∧ ‖w - 0‖ ≤ r} :=
-    (((hv.continuous_fderiv (by norm_num)).norm.pow 2).continuousOn.integrableOn_compact
-      (isCompact_closedBall 0 r)).mono_set fun w hw ↦ by simpa using hw.2
-  rw [← hcoord, ← setIntegral_congr_set hpunct,
-    ω.integral_fderiv_apply_punctured_disc 0 hr (fun _ _ ↦ hv.contDiffAt) henergy]
+  rw [← hcoord, ω.integral_fderiv_apply_closedBall 0 hr fun _ _ ↦ hv.contDiffAt]
   rfl
 
 /-- **The symplectic area of a disc of a PSS plane.** For a `C²` map `u`, the symplectic area over

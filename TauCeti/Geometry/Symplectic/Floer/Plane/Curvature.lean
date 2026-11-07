@@ -87,23 +87,6 @@ open scoped Topology
 
 namespace TauCeti
 
-namespace Floer.PSSPlane
-
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {p : PSSPlane} {H : ℝ → V → ℝ}
-
-/-- In the real coordinates `ℝ × ℝ ≃ ℂ` of the plane, the component of the perturbation of a PSS
-plane along a tangent vector `v` is `C¹` jointly in the domain point and the target point, for a
-period-one `C¹` Hamiltonian. -/
-theorem contDiff_uncurry_perturbation (hH : Periodic H 1) (hHs : ContDiff ℝ 1 (uncurry H))
-    (v : ℂ) :
-    ContDiff ℝ 1 (uncurry fun z x ↦ p.perturbation H (Complex.equivRealProdCLM.symm z) x v) :=
-  ((contMDiff_prod_modelWithCornersSelf_iff.1 (contMDiff_perturbation hH
-      (contMDiff_prod_modelWithCornersSelf_iff.2 hHs.contMDiff))).contDiff.comp
-    ((Complex.equivRealProdCLM.symm.contDiff.comp contDiff_fst).prodMk contDiff_snd)).clm_apply
-    contDiff_const
-
-end Floer.PSSPlane
-
 namespace SymplecticForm
 
 open Floer Floer.PSSPlane

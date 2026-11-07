@@ -22,7 +22,9 @@ singularity has been proved. Both results hold in any finite-dimensional real no
 The vanishing-action result requires `C¹` regularity near the punctured closed disc and a
 square-integrable differential. The Stokes identity requires `C²` regularity there, including
 the outer boundary. For a `J`-holomorphic map, this area identity is the input to the radial
-energy-decay argument in removal of singularities.
+energy-decay argument in removal of singularities. For a map that is `C²` on the whole closed
+disc, the centre is a null set, so the same identity holds on the closed disc
+(`TauCeti.SymplecticForm.integral_fderiv_apply_closedBall`).
 
 ## References
 
@@ -164,5 +166,28 @@ theorem integral_fderiv_apply_punctured_disc (ω : SymplecticForm V) {u : ℂ �
       (𝓝 ((1 / 2 : ℝ) * action b)) := by
     simpa using (tendsto_const_nhds.sub hactionlim).const_mul (1 / 2 : ℝ)
   exact tendsto_nhds_unique hlim (hstokes.congr (fun n ↦ (heq n).symm))
+
+/-- **Stokes' formula on a closed disc.** For a map that is `C²` on the closed disc, the integral
+of the pullback of a constant symplectic form equals the boundary action. -/
+theorem integral_fderiv_apply_closedBall (ω : SymplecticForm V) {u : ℂ → V} (z₀ : ℂ) {b : ℝ}
+    (hb : 0 < b) (hu : ∀ z ∈ Metric.closedBall z₀ b, ContDiffAt ℝ 2 u z) :
+    (∫ z in Metric.closedBall z₀ b, ω (fderiv ℝ u z 1) (fderiv ℝ u z I)) =
+      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (circleMap z₀ b θ))
+        (deriv (fun θ ↦ u (circleMap z₀ b θ)) θ) := by
+  -- The closed disc and the punctured disc differ by the null set `{z₀}`.
+  have hpunct : {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} =ᵐ[volume] Metric.closedBall z₀ b := by
+    have h : {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} = Metric.closedBall z₀ b \ {z₀} := by
+      ext z
+      simp [dist_eq_norm, norm_pos_iff, sub_eq_zero, and_comm]
+    rw [h]
+    exact sdiff_null_ae_eq_self (measure_singleton z₀)
+  have hsub : {z : ℂ | 0 < ‖z - z₀‖ ∧ ‖z - z₀‖ ≤ b} ⊆ Metric.closedBall z₀ b := fun z hz ↦ by
+    simpa [dist_eq_norm] using hz.2
+  have hcont : ContinuousOn (fun z ↦ ‖fderiv ℝ u z‖ ^ 2) (Metric.closedBall z₀ b) :=
+    fun z hz ↦ (((hu z hz).fderiv_right (m := 1) (by norm_num)).continuousAt.norm.pow 2)
+      |>.continuousWithinAt
+  rw [← setIntegral_congr_set hpunct]
+  exact ω.integral_fderiv_apply_punctured_disc z₀ hb (fun z hz ↦ hu z (hsub hz))
+    ((hcont.integrableOn_compact (isCompact_closedBall z₀ b)).mono_set hsub)
 
 end TauCeti.SymplecticForm
