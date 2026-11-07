@@ -31,9 +31,10 @@ are counted by the arguments that `φ` maps into that fibre (`Set.ncard_preimage
 A property read off the same function on both copies of `ι` in `ι ⊕ ι` holds on twice as many
 indices as on `ι` (`Set.ncard_setOf_sumElim`).
 
-Distinct values `w i` in a linear order, on a finite index type, are ranked by the number of
-values below them: each `m < Nat.card ι` is the rank of exactly one index
-(`Set.existsUnique_ncard_setOf_lt_eq`).
+For an injective map `f` from a finite type into a linear order, the number of indices whose value
+lies below `f a` determines `a` (`Set.injective_ncard_setOf_lt`): it is the rank of `f a` among
+the values of `f`. Each `j < Nat.card ι` is the rank of exactly one index
+(`Set.encard_setOf_ncard_setOf_lt_eq`).
 
 A set covered by finitely many finite sets `C i` is finite, with at most `∑ i, |C i|` elements
 (`Set.finite_and_ncard_le_sum_of_subset_biUnion`).
@@ -138,6 +139,41 @@ theorem ncard_preimage_div (S : Set ℕ) (n : ℕ) : ((· / n) ⁻¹' S).ncard =
       congrArg (· / n) hpq
   exact Prod.ext h₁ (Fin.ext (by simpa [h₁] using hpq))
 
+/-- For an injective map `f` from a finite type into a linear order, the number of indices whose
+value lies below `f a` determines `a`. -/
+theorem injective_ncard_setOf_lt {ι α : Type*} [Finite ι] [LinearOrder α] {f : ι → α}
+    (hf : Function.Injective f) : Function.Injective fun a ↦ {i | f i < f a}.ncard := by
+  -- The set of values below the larger of `f a`, `f b` strictly contains the other set.
+  have key (a b : ι) (hab : f a < f b) : {i | f i < f a}.ncard < {i | f i < f b}.ncard :=
+    ncard_lt_ncard ⟨fun i hi ↦ lt_trans hi hab, fun hsub ↦ lt_irrefl (f a) (hsub hab)⟩
+      (toFinite _)
+  intro a b h
+  by_contra hne
+  rcases lt_or_gt_of_ne (hf.ne hne) with hlt | hlt
+  · exact (key a b hlt).ne h
+  · exact (key b a hlt).ne h.symm
+
+/-- For an injective map `f` from a finite type into a linear order, every `j < Nat.card ι` is the
+number of indices whose value lies below `f k` for exactly one index `k`, and no larger `j` is. -/
+theorem encard_setOf_ncard_setOf_lt_eq {ι α : Type*} [Finite ι] [LinearOrder α] {f : ι → α}
+    (hf : Function.Injective f) (j : ℕ) :
+    {k | {i | f i < f k}.ncard = j}.encard = if j < Nat.card ι then 1 else 0 := by
+  have hlt (k : ι) : {i | f i < f k}.ncard < Nat.card ι :=
+    ncard_lt_card fun h ↦ lt_irrefl (f k) (h ▸ mem_univ k : k ∈ {i | f i < f k})
+  -- The rank map is a bijection onto `Fin (Nat.card ι)`.
+  have hR : Function.Bijective fun k ↦ (⟨{i | f i < f k}.ncard, hlt k⟩ : Fin (Nat.card ι)) :=
+    Function.Injective.bijective_of_nat_card_le
+      (fun k k' h ↦ injective_ncard_setOf_lt hf (congrArg Fin.val h)) (by simp)
+  split_ifs with hj
+  · obtain ⟨k, hk⟩ := hR.2 ⟨j, hj⟩
+    rw [encard_eq_one]
+    refine ⟨k, Set.ext fun k' ↦ ⟨fun h ↦ hR.1 (Fin.ext (h.trans (congrArg Fin.val hk).symm)), ?_⟩⟩
+    rintro rfl
+    exact congrArg Fin.val hk
+  · rw [encard_eq_zero, eq_empty_iff_forall_notMem]
+    rintro k rfl
+    exact hj (hlt k)
+
 /-- A property of the doubled index set `ι ⊕ ι`, read off the same function on both copies of `ι`,
 holds on twice as many indices as on `ι`. Both sides are `0` when the set on `ι` is infinite. -/
 theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
@@ -145,32 +181,5 @@ theorem ncard_setOf_sumElim {ι β : Type*} (f : ι → β) (P : β → Prop) :
   rw [two_mul, ← ncard_sumEquiv_symm_apply]
   congr 1
   ext (i | i) <;> simp
-
-/-- For distinct values `w` in a linear order on a finite index type, the number of values below
-`w j` determines `j`. -/
-theorem injective_ncard_setOf_lt {ι α : Type*} [Finite ι] [LinearOrder α] {w : ι → α}
-    (hw : Function.Injective w) : Function.Injective fun j ↦ {k | w k < w j}.ncard := by
-  intro i j hij
-  by_contra hne
-  -- The smaller of two distinct values has strictly fewer values below it.
-  have hlt {a b : ι} (hab : w a < w b) : {k | w k < w a}.ncard < {k | w k < w b}.ncard :=
-    ncard_lt_ncard ⟨fun k hk ↦ lt_trans hk hab, fun h ↦ lt_irrefl (w a) (h hab)⟩ (toFinite _)
-  rcases lt_or_gt_of_ne (hw.ne hne) with h | h
-  · exact (hlt h).ne hij
-  · exact (hlt h).ne' hij
-
-/-- **Ranking distinct values.** For distinct values `w` in a linear order on a finite index type,
-every `m < Nat.card ι` is the number of values below exactly one value `w i`. -/
-theorem existsUnique_ncard_setOf_lt_eq {ι α : Type*} [Finite ι] [LinearOrder α] {w : ι → α}
-    (hw : Function.Injective w) {m : ℕ} (hm : m < Nat.card ι) :
-    ∃! i, {k | w k < w i}.ncard = m := by
-  have hlt (i : ι) : {k | w k < w i}.ncard < Nat.card ι :=
-    ncard_lt_card fun h ↦ lt_irrefl (w i) (h.symm ▸ mem_univ i :)
-  have hbij : Function.Bijective fun i ↦ (⟨{k | w k < w i}.ncard, hlt i⟩ : Fin (Nat.card ι)) :=
-    Function.Injective.bijective_of_nat_card_le
-      (fun a b hab ↦ injective_ncard_setOf_lt hw (congrArg Fin.val hab)) (by simp)
-  obtain ⟨i, hi⟩ := hbij.2 ⟨m, hm⟩
-  exact ⟨i, congrArg Fin.val hi, fun a ha ↦ injective_ncard_setOf_lt hw (ha.trans
-    (congrArg Fin.val hi).symm)⟩
 
 end Set

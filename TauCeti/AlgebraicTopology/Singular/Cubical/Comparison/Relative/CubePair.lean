@@ -8,9 +8,10 @@ module
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Absolute
 public import TauCeti.AlgebraicTopology.Homotopy.Hurewicz.Cubical.Relative
 public import TauCeti.AlgebraicTopology.Singular.Cubical.Comparison.Excision
+public import TauCeti.AlgebraicTopology.Singular.IntervalGenerator
 
 /-!
-# The fundamental cycle of the cube pair
+# The fundamental cycles of the cube pair and of the boundary of the cube
 
 The identity cube `upCube (m + 1)` of `Iᵐ⁺¹` sends the boundary of the cube into `∂Iᵐ⁺¹`, so it is
 a relative cycle of the normalized cubical chains of the cube pair `(Iᵐ⁺¹, ∂Iᵐ⁺¹)`
@@ -19,13 +20,15 @@ cube into the subspace is a map of pairs `c : (Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ P` (
 and it sends the class of this fundamental cycle to the class of `c` in relative cubical homology
 (`TauCeti.homologyMap_cubeBoundaryPairHom_cubeBoundaryPairCycle`).
 
-With integer coefficients and in dimension `n + 2 ≥ 2`, the class of the fundamental cycle is a
-generator: read in relative singular homology it is `±` the generator
-`TauCeti.singularHomologyCubeBoundaryPairIso` of `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ) ≅ ℤ`
-(`TauCeti.exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_eq_units_smul`),
-so `a ↦ a • [Iⁿ⁺²]` is an isomorphism from `ℤ` onto the relative cubical homology of the cube pair
-(`TauCeti.cubicalHomologyCubeBoundaryPairEquiv`). This is what makes the identity cube a
-fundamental chain of the cube relative to its boundary.
+With integer coefficients the class of the fundamental cycle is a generator in every dimension
+`m + 1 ≥ 1`: `a ↦ a • [Iᵐ⁺¹]` is an isomorphism from `ℤ` onto the relative cubical homology of the
+cube pair (`TauCeti.cubicalHomologyCubeBoundaryPairEquiv`). In dimension `n + 2 ≥ 2`, read in
+relative singular homology, it is `±` the generator `TauCeti.singularHomologyCubeBoundaryPairIso`
+of `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ) ≅ ℤ`
+(`TauCeti.exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_eq_units_smul`).
+In dimension one, over every ring `k`, it is exactly the singular generator of `H₁(I¹, ∂I¹; k)`
+(`TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero`). This is what
+makes the identity cube a fundamental chain of the cube relative to its boundary.
 
 The boundary of the identity cube, the signed sum of the faces of `Iᵐ⁺¹`, is a cycle of `∂Iᵐ⁺¹`
 (`TauCeti.cubeBoundaryCycle`), and the connecting morphism of the pair sends `[Iᵐ⁺¹]` to its class
@@ -54,10 +57,15 @@ of absolute and relative homology are compatible
   cubical homology.
 * `TauCeti.exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_eq_units_smul`:
   the fundamental cycle is `±` the singular generator of `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ)`.
-* `TauCeti.cubicalHomologyCubeBoundaryPairEquiv`: the isomorphism `ℤ ≃ₗ[ℤ] Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ)`,
-  `a ↦ a • [Iⁿ⁺²]`, of relative cubical homology.
+* `TauCeti.cubicalHomologyCubeBoundaryPairEquiv`: the isomorphism `ℤ ≃ₗ[ℤ] Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹; ℤ)`,
+  `a ↦ a • [Iᵐ⁺¹]`, of relative cubical homology.
 * `TauCeti.cubeBoundaryCycle`: the fundamental cycle of `∂Iᵐ⁺¹`, the boundary of the identity cube.
 * `TauCeti.cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle`: `δ[Iᵐ⁺¹] = [∂Iᵐ⁺¹]`.
+* `TauCeti.injective_cubicalHomologyδ_cubeBoundaryPair`: the connecting morphism
+  `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ Hₘ(∂Iᵐ⁺¹)` is injective.
+* `TauCeti.singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero`,
+  `TauCeti.bijective_smul_homologyπ_cubeBoundaryPairCycle_zero`: in dimension one, `[I¹]` is the
+  singular generator of `H₁(I¹, ∂I¹; k)` over every ring `k`.
 * `TauCeti.cubicalHomologyCubeBoundaryEquiv`: the isomorphism `ℤ ≃ₗ[ℤ] Hₙ₊₁(∂Iⁿ⁺²; ℤ)`,
   `a ↦ a • [∂Iⁿ⁺²]`, of cubical homology.
 
@@ -193,10 +201,10 @@ theorem exists_singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_e
   rw [singularHomologyMap_sphereGenLoop_cubeBoundaryPairCycle, map_zsmul, hg, h, smul_smul,
     ← Units.val_mul, inv_mul_cancel, Units.val_one, one_smul]
 
-/-- **The fundamental cycle generates the relative cubical homology of the cube pair.** Over `ℤ`,
-`a ↦ a • [Iⁿ⁺²]` is bijective onto `Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ)`, where `[Iⁿ⁺²]` is the class of the
-fundamental cycle `TauCeti.cubeBoundaryPairCycle`. -/
-theorem bijective_zsmul_homologyπ_cubeBoundaryPairCycle (n : ℕ) :
+/-- Over `ℤ` and in dimension `n + 2 ≥ 2`, `a ↦ a • [Iⁿ⁺²]` is bijective onto
+`Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ)`; `TauCeti.bijective_zsmul_homologyπ_cubeBoundaryPairCycle` adds dimension
+one. -/
+private lemma bijective_zsmul_homologyπ_cubeBoundaryPairCycle_add_two (n : ℕ) :
     Function.Bijective fun a : ℤ ↦ a • ((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex
       ℤ).homologyπ (n + 2) (cubeBoundaryPairCycle ℤ (n + 1)) := by
   obtain ⟨ε, hε⟩ :=
@@ -212,28 +220,6 @@ theorem bijective_zsmul_homologyπ_cubeBoundaryPairCycle (n : ℕ) :
   rw [funext key]
   exact (ConcreteCategory.bijective_of_isIso e.hom).comp
     ((ConcreteCategory.bijective_of_isIso g.inv).comp (Units.mulLeft ε).bijective)
-
-/-- **The relative cubical homology of the cube pair is free on the fundamental cycle**: the
-isomorphism `ℤ ≃ₗ[ℤ] Hₙ₊₂(Iⁿ⁺², ∂Iⁿ⁺²; ℤ)` of relative normalized cubical homology sending `a` to
-`a • [Iⁿ⁺²]` (`TauCeti.cubicalHomologyCubeBoundaryPairEquiv_apply`). -/
-def cubicalHomologyCubeBoundaryPairEquiv (n : ℕ) :
-    ℤ ≃ₗ[ℤ] ((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).homology (n + 2) :=
-  LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ
-    (((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).homology (n + 2))
-    (((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).homologyπ (n + 2)
-      (cubeBoundaryPairCycle ℤ (n + 1))))
-    (by
-      convert bijective_zsmul_homologyπ_cubeBoundaryPairCycle n using 1
-      funext a
-      rw [LinearMap.toSpanSingleton_apply, ← Int.cast_smul_eq_zsmul ℤ, Int.cast_id])
-
-@[simp]
-theorem cubicalHomologyCubeBoundaryPairEquiv_apply (n : ℕ) (a : ℤ) :
-    cubicalHomologyCubeBoundaryPairEquiv n a =
-      a • ((cubeBoundaryPair.{0} (n + 2)).cubicalChainComplex ℤ).homologyπ (n + 2)
-        (cubeBoundaryPairCycle ℤ (n + 1)) := by
-  rw [cubicalHomologyCubeBoundaryPairEquiv, LinearEquiv.ofBijective_apply,
-    LinearMap.toSpanSingleton_apply, ← Int.cast_smul_eq_zsmul ℤ, Int.cast_id]
 
 /-! ### The boundary of the fundamental cycle -/
 
@@ -263,6 +249,137 @@ theorem cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle (m : ℕ) :
         (cubeBoundaryCycle k m) :=
   TopPair.cubicalHomologyδ_homologyπ_cubicalCycleOfCube k _ _
 
+/-- The normalized cubical homology of the cube `Iᵐ⁺¹` vanishes in positive degrees, since the
+cube is contractible. -/
+private lemma isZero_homology_cubeBoundaryPair_fst (m : ℕ) {n : ℕ} (hn : n ≠ 0) :
+    IsZero (((normalizedCubicalChainComplex k).obj (cubeBoundaryPair.{u} (m + 1)).fst).homology
+      n) :=
+  (isZero_singularHomologyFunctor_of_contractibleSpace (ModuleCat.of k k) _ hn).of_iso
+    (singularCubicalHomologyIso k _ n).symm
+
+/-- The connecting morphism `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹) ⟶ Hₘ(∂Iᵐ⁺¹)` of relative cubical homology is
+injective, since the cube is contractible. -/
+theorem injective_cubicalHomologyδ_cubeBoundaryPair (m : ℕ) :
+    Function.Injective ((cubeBoundaryPair.{u} (m + 1)).cubicalHomologyδ k (m + 1) m).hom :=
+  (ModuleCat.mono_iff_injective _).1
+    (((cubeBoundaryPair.{u} (m + 1)).cubicalHomology_exact_relative k (m + 1) m).mono_g
+      ((isZero_homology_cubeBoundaryPair_fst k m (Nat.succ_ne_zero m)).eq_of_src _ _))
+
+/-! ### Dimension one -/
+
+/-- In dimension one, the face `SingularCube.face 0 t` of the identity cube of `I¹`, for
+`t ∈ {0, 1}` and read in `∂I¹`, is the point cube at the endpoint `TauCeti.cubeEnd t ht`. -/
+private lemma liftSnd_face_upCube_zero {t : I} (ht : t = 0 ∨ t = 1)
+    (h : ∀ x, SingularCube.face 0 t
+      (upCube.{u} 1 : SingularCube (cubeBoundaryPair.{u} 1).fst 1) x ∈
+        range (cubeBoundaryPair.{u} 1).map) :
+    (cubeBoundaryPair.{u} 1).liftSnd _ h = SingularCube.point (cubeEnd.{u} t ht) := by
+  refine ContinuousMap.ext fun x ↦ (TopPair.liftSnd_apply_eq_iff _ _ x _).2 ?_
+  rw [SingularCube.point_apply, map_cubeEnd]
+  -- The face is spelled on `(cubeBoundaryPair 1).fst` rather than `cubeModel 1`, so
+  -- `SingularCube.face_apply` is applied by unification rather than by rewriting.
+  refine (SingularCube.face_apply 0 t (upCube 1) x).trans (ULift.ext (funext fun i ↦ ?_))
+  obtain rfl : i = 0 := Fin.fin_one_eq_zero i
+  simp [cubePoint_down, upCube]
+
+/-- **In dimension one the fundamental cycle of the cube pair is the singular generator**, over
+every ring `k`: the class of `TauCeti.cubeBoundaryPairCycle k 0` in `H₁(I¹, ∂I¹; k)`, read in
+relative singular homology, is the generator `TauCeti.singularHomologyCubeBoundaryPairIso` of
+`H₁(I¹, ∂I¹; k) ≅ k`, with no sign. Both classes have boundary `[0] - [1]` in `H₀(∂I¹; k)`. -/
+theorem singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero :
+    (TopPair.singularCubicalHomologyIso k (cubeBoundaryPair.{u} 1) 1).inv
+        (((cubeBoundaryPair.{u} 1).cubicalChainComplex k).homologyπ 1 (cubeBoundaryPairCycle k 0)) =
+      (singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) 1).inv (1 : k) := by
+  let P := cubeBoundaryPair.{u} 1
+  apply (ConcreteCategory.bijective_of_isIso (TopPair.singularCubicalHomologyIso k P 1).hom).1
+  rw [Iso.inv_hom_id_apply]
+  apply injective_cubicalHomologyδ_cubeBoundaryPair k 0
+  have key : (TopPair.singularCubicalHomologyIso k P 1).hom ≫ P.cubicalHomologyδ k 1 0 =
+      P.singularHomologyδ (ModuleCat.of k k) 1 0 ≫ (singularCubicalHomologyIso k P.snd 0).hom :=
+    TopPair.singularCubicalHomologyIso_hom_cubicalHomologyδ k P 1 0
+  -- The singular connecting morphism sends the generator to `[0] - [1]`.
+  have hδ : (singularCubicalHomologyIso k P.snd 0).hom
+      ((P.singularHomologyδ (ModuleCat.of k k) 1 0).hom
+        ((singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) 1).inv (1 : k))) =
+        (singularCubicalHomologyIso k P.snd 0).hom
+            ((singularHomology₀Section (ModuleCat.of k k) (cubeEnd.{u} 0 (Or.inl rfl))).hom 1) -
+          (singularCubicalHomologyIso k P.snd 0).hom
+            ((singularHomology₀Section (ModuleCat.of k k) (cubeEnd.{u} 1 (Or.inr rfl))).hom 1) :=
+    (congrArg (singularCubicalHomologyIso k P.snd 0).hom.hom (ConcreteCategory.congr_hom
+      (singularHomologyCubeBoundaryPairIso_one_inv_singularHomologyδ.{u} (ModuleCat.of k k))
+        (1 : k))).trans (map_sub _ _ _)
+  rw [cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle, ← ModuleCat.comp_apply, key]
+  refine Eq.trans ?_ hδ.symm
+  rw [singularCubicalHomologyIso_hom_singularHomology₀Section,
+    singularCubicalHomologyIso_hom_singularHomology₀Section, ← map_sub]
+  congr 1
+  apply HomologicalComplex.moduleCat_iCycles_injective
+  rw [iCycles_cubeBoundaryCycle, map_sub, iCycles_cubicalCycleOfPoint, iCycles_cubicalCycleOfPoint]
+  refine (TopPair.cubicalBoundaryChainOfCube_def (m := 0) k _
+    (mapsTo_upCube_boundary.{u} (0 + 1))).trans ?_
+  simp only [Fin.sum_univ_succ, Finset.univ_eq_empty, Finset.sum_empty, add_zero, Fin.val_zero,
+    pow_zero, one_smul]
+  -- The faces are spelled on `cubeBoundaryPair (0 + 1)`, so the endpoint lemma is applied by
+  -- unification rather than by rewriting.
+  exact congrArg₂ (· - ·)
+    (congrArg (NormalizedCubicalChain.ofCube _ k) (liftSnd_face_upCube_zero (Or.inl rfl) _))
+    (congrArg (NormalizedCubicalChain.ofCube _ k) (liftSnd_face_upCube_zero (Or.inr rfl) _))
+
+/-- **The fundamental cycle of `I¹` generates `H₁(I¹, ∂I¹; k)`**, over every ring `k`:
+`a ↦ a • [I¹]` is bijective, where `[I¹]` is the class of `TauCeti.cubeBoundaryPairCycle k 0`. -/
+theorem bijective_smul_homologyπ_cubeBoundaryPairCycle_zero :
+    Function.Bijective fun a : k ↦
+      a • ((cubeBoundaryPair.{u} 1).cubicalChainComplex k).homologyπ 1
+        (cubeBoundaryPairCycle k 0) := by
+  let e := TopPair.singularCubicalHomologyIso k (cubeBoundaryPair.{u} 1) 1
+  let g := singularHomologyCubeBoundaryPairIso (ModuleCat.of k k) 1
+  -- The map is `a ↦ e.hom (g.inv a)`, a composite of bijections.
+  have key (a : k) : a • ((cubeBoundaryPair.{u} 1).cubicalChainComplex k).homologyπ 1
+      (cubeBoundaryPairCycle k 0) = e.hom (g.inv a) := by
+    apply (ConcreteCategory.bijective_of_isIso e.inv).1
+    rw [Iso.hom_inv_id_apply, map_smul,
+      singularCubicalHomologyIso_inv_homologyπ_cubeBoundaryPairCycle_zero, ← map_smul, smul_eq_mul,
+      mul_one]
+  rw [funext key]
+  exact (ConcreteCategory.bijective_of_isIso e.hom).comp
+    (ConcreteCategory.bijective_of_isIso g.inv)
+
+/-- **The fundamental cycle generates the relative cubical homology of the cube pair.** Over `ℤ`
+and in every dimension `m + 1 ≥ 1`, `a ↦ a • [Iᵐ⁺¹]` is bijective onto `Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹; ℤ)`,
+where `[Iᵐ⁺¹]` is the class of the fundamental cycle `TauCeti.cubeBoundaryPairCycle`. -/
+theorem bijective_zsmul_homologyπ_cubeBoundaryPairCycle (m : ℕ) :
+    Function.Bijective fun a : ℤ ↦ a • ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex
+      ℤ).homologyπ (m + 1) (cubeBoundaryPairCycle ℤ m) := by
+  cases m with
+  | zero =>
+    convert bijective_smul_homologyπ_cubeBoundaryPairCycle_zero ℤ using 2 with a
+    rw [← Int.cast_smul_eq_zsmul ℤ, Int.cast_id]
+  | succ n => exact bijective_zsmul_homologyπ_cubeBoundaryPairCycle_add_two n
+
+/-- **The relative cubical homology of the cube pair is free on the fundamental cycle**: the
+isomorphism `ℤ ≃ₗ[ℤ] Hₘ₊₁(Iᵐ⁺¹, ∂Iᵐ⁺¹; ℤ)` of relative normalized cubical homology sending `a` to
+`a • [Iᵐ⁺¹]` (`TauCeti.cubicalHomologyCubeBoundaryPairEquiv_apply`). -/
+def cubicalHomologyCubeBoundaryPairEquiv (m : ℕ) :
+    ℤ ≃ₗ[ℤ] ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex ℤ).homology (m + 1) :=
+  LinearEquiv.ofBijective (LinearMap.toSpanSingleton ℤ
+    (((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex ℤ).homology (m + 1))
+    (((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex ℤ).homologyπ (m + 1)
+      (cubeBoundaryPairCycle ℤ m)))
+    (by
+      convert bijective_zsmul_homologyπ_cubeBoundaryPairCycle m using 1
+      funext a
+      rw [LinearMap.toSpanSingleton_apply, ← Int.cast_smul_eq_zsmul ℤ, Int.cast_id])
+
+@[simp]
+theorem cubicalHomologyCubeBoundaryPairEquiv_apply (m : ℕ) (a : ℤ) :
+    cubicalHomologyCubeBoundaryPairEquiv m a =
+      a • ((cubeBoundaryPair.{0} (m + 1)).cubicalChainComplex ℤ).homologyπ (m + 1)
+        (cubeBoundaryPairCycle ℤ m) := by
+  rw [cubicalHomologyCubeBoundaryPairEquiv, LinearEquiv.ofBijective_apply,
+    LinearMap.toSpanSingleton_apply, ← Int.cast_smul_eq_zsmul ℤ, Int.cast_id]
+
+/-! ### The fundamental cycle of the boundary generates -/
+
 /-- **The fundamental cycle of the boundary of the cube generates its homology.** Over `ℤ`,
 `a ↦ a • [∂Iⁿ⁺²]` is bijective onto `Hₙ₊₁(∂Iⁿ⁺²; ℤ)`, where `[∂Iⁿ⁺²]` is the class of
 `TauCeti.cubeBoundaryCycle`. -/
@@ -279,7 +396,7 @@ theorem bijective_zsmul_homologyπ_cubeBoundaryCycle (n : ℕ) :
     rw [map_zsmul, cubicalHomologyδ_homologyπ_cubeBoundaryPairCycle]
   rw [funext key]
   exact (ConcreteCategory.bijective_of_isIso δ).comp
-    (bijective_zsmul_homologyπ_cubeBoundaryPairCycle n)
+    (bijective_zsmul_homologyπ_cubeBoundaryPairCycle (n + 1))
 
 /-- **The homology of the boundary of the cube is free on its fundamental cycle**: the isomorphism
 `ℤ ≃ₗ[ℤ] Hₙ₊₁(∂Iⁿ⁺²; ℤ)` of normalized cubical homology sending `a` to `a • [∂Iⁿ⁺²]`

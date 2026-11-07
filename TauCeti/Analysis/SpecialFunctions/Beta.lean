@@ -674,6 +674,44 @@ theorem integral_rpow_mul_div_sq_add_sq_sub_inv (hs : 0 < s) (hs2 : s < 2) (t : 
         Real.rpow_sub ht', Real.rpow_two]
       field_simp
 
+/-- The case `1 < s` of `integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq`: both terms are Mellin
+transforms at exponent `s - 1`. -/
+private theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq_of_one_lt (hs3 : s < 3)
+    (hs1 : 1 < s) {t : ℝ} (ht : t ≠ 0) :
+    ∫ y in Ioi (0 : ℝ), y ^ s * (t / (y ^ 2 + t ^ 2) - t / (1 + y ^ 2)) =
+      (t * |t| ^ (s - 1) - t) * (Real.pi / (2 * Real.cos (Real.pi * s / 2))) := by
+  have h0 : 0 < s - 1 := by linarith
+  have h2 : s - 1 < 2 := by linarith
+  have ht' := abs_pos.mpr ht
+  have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
+    rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
+      Real.sin_sub_pi_div_two]
+  have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
+    (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
+      (by nlinarith [Real.pi_pos])).ne
+  calc
+    _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
+          t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by
+      refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
+      have hpow : y ^ s = y ^ (s - 1 - 1) * y ^ 2 := by
+        rw [← Real.rpow_natCast, ← Real.rpow_add hy]
+        congr 1
+        push_cast
+        ring
+      rw [hpow, one_pow, add_comm (y ^ 2) 1]
+      field_simp
+      ring
+    _ = _ := by
+      rw [integral_sub ((integrableOn_rpow_div_sq_add_sq h0 h2 one_ne_zero).const_mul t)
+        ((integrableOn_rpow_div_sq_add_sq h0 h2 ht).const_mul _),
+        integral_const_mul, integral_const_mul, integral_rpow_div_sq_add_sq h0 h2 ht,
+        integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, Real.one_rpow, hsin]
+      have key : t ^ 3 * |t| ^ (s - 1 - 2) = t * |t| ^ (s - 1) := by
+        rw [show t ^ 3 = t * |t| ^ 2 by rw [sq_abs]; ring, Real.rpow_sub ht' (s - 1),
+          Real.rpow_two]
+        field_simp
+      linear_combination (Real.pi / (2 * Real.cos (Real.pi * s / 2))) * key
+
 /-- For `-1 < s < 3` with `s ≠ 1`,
 `∫ y in Ioi 0, y ^ s * (t / (y ^ 2 + t ^ 2) - t / (1 + y ^ 2)) =
   (t * |t| ^ (s - 1) - t) * π / (2 * cos (π * s / 2))`. -/
@@ -703,38 +741,7 @@ theorem integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq (hs : -1 < s) (hs3 : 
           integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, Real.one_rpow, hsin,
           show s + 1 - 2 = s - 1 by ring]
         ring
-  · -- Above one, both terms are Mellin transforms at exponent `s - 1`.
-    have h0 : 0 < s - 1 := by linarith
-    have h2 : s - 1 < 2 := by linarith
-    have ht' := abs_pos.mpr ht
-    have hsin : Real.sin (Real.pi * (s - 1) / 2) = -Real.cos (Real.pi * s / 2) := by
-      rw [show Real.pi * (s - 1) / 2 = Real.pi * s / 2 - Real.pi / 2 by ring,
-        Real.sin_sub_pi_div_two]
-    have hcos : Real.cos (Real.pi * s / 2) ≠ 0 :=
-      (Real.cos_neg_of_pi_div_two_lt_of_lt (by nlinarith [Real.pi_pos])
-        (by nlinarith [Real.pi_pos])).ne
-    calc
-      _ = ∫ y in Ioi (0 : ℝ), (t * (y ^ (s - 1 - 1) / (y ^ 2 + 1 ^ 2)) -
-            t ^ 3 * (y ^ (s - 1 - 1) / (y ^ 2 + t ^ 2))) := by
-        refine setIntegral_congr_fun measurableSet_Ioi fun y (hy : 0 < y) ↦ ?_
-        have hpow : y ^ s = y ^ (s - 1 - 1) * y ^ 2 := by
-          rw [← Real.rpow_natCast, ← Real.rpow_add hy]
-          congr 1
-          push_cast
-          ring
-        rw [hpow, one_pow, add_comm (y ^ 2) 1]
-        field_simp
-        ring
-      _ = _ := by
-        rw [integral_sub ((integrableOn_rpow_div_sq_add_sq h0 h2 one_ne_zero).const_mul t)
-          ((integrableOn_rpow_div_sq_add_sq h0 h2 ht).const_mul _),
-          integral_const_mul, integral_const_mul, integral_rpow_div_sq_add_sq h0 h2 ht,
-          integral_rpow_div_sq_add_sq h0 h2 one_ne_zero, abs_one, Real.one_rpow, hsin]
-        have key : t ^ 3 * |t| ^ (s - 1 - 2) = t * |t| ^ (s - 1) := by
-          rw [show t ^ 3 = t * |t| ^ 2 by rw [sq_abs]; ring, Real.rpow_sub ht' (s - 1),
-            Real.rpow_two]
-          field_simp
-        linear_combination (Real.pi / (2 * Real.cos (Real.pi * s / 2))) * key
+  · exact integral_rpow_mul_div_sq_add_sq_sub_div_one_add_sq_of_one_lt hs3 hs1 ht
 
 open Topology in
 /-- The exponent-one case, which has an elementary logarithmic primitive:
