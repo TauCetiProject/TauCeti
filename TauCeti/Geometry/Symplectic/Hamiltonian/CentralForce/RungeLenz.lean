@@ -75,6 +75,31 @@ theorem isRegularPoint_centralForceEnergyMomentum_kepler_of_rungeLenz_ne_zero
   obtain ⟨q, p⟩ := x
   rw [rungeLenz_apply, hqp, zero_smul, sub_zero, hp, sub_self]
 
+/-- The rotation field of the angular momentum acts on the Runge–Lenz component along
+`⟪A, b 0⟫ • b 1 - ⟪A, b 1⟫ • b 0` by `‖A‖²`, where `A` is the Runge–Lenz vector at the point. -/
+private theorem fderiv_inner_rungeLenz_hamiltonianVectorField_angularMomentum
+    [FiniteDimensional ℝ V] {m κ : ℝ} {x : V × V} (hq : x.1 ≠ 0) :
+    fderiv ℝ (fun y ↦ ⟪rungeLenz m κ y, ⟪rungeLenz m κ x, b 0⟫_ℝ • b 1 -
+        ⟪rungeLenz m κ x, b 1⟫_ℝ • b 0⟫_ℝ) x
+      ((stdSymplecticForm (V := V)).hamiltonianVectorField (angularMomentum (b 0) (b 1)) x) =
+    ‖rungeLenz m κ x‖ ^ 2 := by
+  set A := rungeLenz m κ x
+  set e := ⟪A, b 0⟫_ℝ • b 1 - ⟪A, b 1⟫_ℝ • b 0
+  rw [← SymplecticForm.poissonBracket_eq_fderiv,
+    stdSymplecticForm_poissonBracket_inner_rungeLenz_angularMomentum m κ (b 0) (b 1) e hq]
+  have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 :=
+    orthonormal_iff_ite.1 b.orthonormal
+  have hnorm : ‖A‖ ^ 2 = ⟪A, b 0⟫_ℝ ^ 2 + ⟪A, b 1⟫_ℝ ^ 2 := by
+    rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner A A, Fin.sum_univ_two]
+    simp only [real_inner_comm (b 0) A, real_inner_comm (b 1) A, pow_two]
+  have he0 : ⟪b 0, e⟫_ℝ = -⟪A, b 1⟫_ℝ := by
+    simp [e, inner_sub_right, real_inner_smul_right, hb]
+  have he1 : ⟪b 1, e⟫_ℝ = ⟪A, b 0⟫_ℝ := by
+    simp [e, inner_sub_right, real_inner_smul_right, hb]
+  rw [he0, he1]
+  have halg (a c : ℝ) : a * a - c * (-c) = a ^ 2 + c ^ 2 := by ring
+  exact (halg _ _).trans hnorm.symm
+
 /-- At every noncollision point with nonzero Runge–Lenz vector, one component of that
 vector is independent of the Kepler energy and planar angular momentum. Each of these
 three functions is a first integral of the Kepler Hamiltonian. -/
@@ -102,21 +127,8 @@ theorem exists_linearIndependent_fderiv_kepler_of_rungeLenz_ne_zero
   have hLrot : fderiv ℝ L x R = 0 := by
     rw [← SymplecticForm.poissonBracket_eq_fderiv]
     exact SymplecticForm.poissonBracket_self _ _ _
-  have hGrot : fderiv ℝ G x R = ‖A‖ ^ 2 := by
-    rw [← SymplecticForm.poissonBracket_eq_fderiv,
-      stdSymplecticForm_poissonBracket_inner_rungeLenz_angularMomentum m κ (b 0) (b 1) e hq]
-    have hb : ∀ i j, ⟪b i, b j⟫_ℝ = if i = j then 1 else 0 :=
-      orthonormal_iff_ite.1 b.orthonormal
-    have hnorm : ‖A‖ ^ 2 = ⟪A, b 0⟫_ℝ ^ 2 + ⟪A, b 1⟫_ℝ ^ 2 := by
-      rw [← real_inner_self_eq_norm_sq, ← b.sum_inner_mul_inner A A, Fin.sum_univ_two]
-      simp only [real_inner_comm (b 0) A, real_inner_comm (b 1) A, pow_two]
-    have he0 : ⟪b 0, e⟫_ℝ = -⟪A, b 1⟫_ℝ := by
-      simp [e, inner_sub_right, real_inner_smul_right, hb]
-    have he1 : ⟪b 1, e⟫_ℝ = ⟪A, b 0⟫_ℝ := by
-      simp [e, inner_sub_right, real_inner_smul_right, hb]
-    rw [he0, he1]
-    have halg (a c : ℝ) : a * a - c * (-c) = a ^ 2 + c ^ 2 := by ring
-    exact (halg _ _).trans hnorm.symm
+  have hGrot : fderiv ℝ G x R = ‖A‖ ^ 2 :=
+    fderiv_inner_rungeLenz_hamiltonianVectorField_angularMomentum b hq
   -- The existing central-force regularity criterion supplies independence of `dH` and `dL`.
   have hsurj : Surjective (ContinuousLinearMap.pi ![fderiv ℝ H x, fderiv ℝ L x]) := by
     have hreg :=

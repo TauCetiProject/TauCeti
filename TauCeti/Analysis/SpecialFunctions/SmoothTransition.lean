@@ -60,6 +60,8 @@ plateau, built from two smooth transitions, is equal to `1` on `[a + δ, b - δ]
 * `Real.smoothTransition.lintegral_ofReal_mul_deriv`: `∫_ℝ c ψ'(c (a - t)) dt = 1` for `c > 0`.
 * `Real.smoothTransition.integral_mul_deriv_mul_sub`: `∫_ℝ c ψ'(c (y - a)) dy = 1` for `c > 0`.
 * `Real.smoothTransition.integral_deriv_mul_sub`: `∫_ℝ ψ'(c y - a) dy = |c|⁻¹`.
+* `Real.smoothTransition.lintegral_ofReal_deriv_mul_sub` and
+  `Real.smoothTransition.lintegral_ofReal_deriv_sub_mul`: `∫⁻_ℝ ψ'(± (c y - a)) dy = |c|⁻¹`.
 * `Real.smoothTransition.tendsto_integral_deriv_mul_sub_mul`: `∫_ℝ ψ'(c y - T) a y dy` tends to
   `|c|⁻¹ a₀` as `T → ∞` when `a (c⁻¹ σ) → a₀` as `σ → ∞`.
 * `Real.smoothTransition.integrable_mul_deriv_mul_sub_smul`: its product with a function
@@ -220,6 +222,12 @@ theorem lintegral_ofReal_deriv_mul_sub (a : ℝ) {c : ℝ} (hc : c ≠ 0) :
       (.of_forall fun _ => smoothTransition.monotone.deriv_nonneg),
     integral_deriv_mul_sub c a]
 
+/-- The derivative of the smooth transition function `ψ`, evaluated at the affine argument
+`a - c y` with `c ≠ 0`, has lower Lebesgue integral `|c|⁻¹`: `∫⁻_ℝ ψ'(a - c y) dy = |c|⁻¹`. -/
+theorem lintegral_ofReal_deriv_sub_mul (a : ℝ) {c : ℝ} (hc : c ≠ 0) :
+    ∫⁻ y, ENNReal.ofReal (deriv smoothTransition (a - c * y)) = ENNReal.ofReal |c|⁻¹ := by
+  simpa [sub_eq_neg_add, add_comm] using lintegral_ofReal_deriv_mul_sub (-a) (neg_ne_zero.2 hc)
+
 /-- Averaging a function `a` against the derivative `ψ'(c y - T)` of the smooth transition
 function `ψ`, for `c ≠ 0`, recovers `|c|⁻¹` times its limit `a₀` along the direction of `c` as
 `T → ∞`: the weight has integral `|c|⁻¹` and is supported where `c y ≥ T`. -/
@@ -314,6 +322,28 @@ theorem tendsto_integral_mul_deriv_mul_sub_smul {E : Type*} [NormedAddCommGroup 
     rw [Real.volume_real_closedBall (inv_pos.2 hc).le, abs_mul, abs_of_pos hc]
     calc c * |deriv smoothTransition (c * (y - a))| ≤ c * C := by gcongr; exact hC _
       _ = 2 * C / (2 * c⁻¹) := by field_simp
+
+/-- The pointwise limit of `d + ψ ((n + 1) t) e + ψ' ((n + 1) t) ((n + 1) k)` for the smooth
+transition `ψ`: the sequence tends to `d` for `t ≤ 0` and to `d + e` for `0 < t`. At `t = 0` the
+last term vanishes because `ψ' 0 = 0`, whatever `k` is. -/
+theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
+    Tendsto (fun n : ℕ => d + smoothTransition ((n + 1) * t) * e +
+      deriv smoothTransition ((n + 1) * t) * ((n + 1) * k)) atTop
+      (𝓝 (if t ≤ 0 then d else d + e)) := by
+  rcases lt_trichotomy t 0 with ht | ht | ht
+  · have ht' (n : ℕ) : ((n : ℝ) + 1) * t < 0 := mul_neg_of_pos_of_neg (by positivity) ht
+    simp [zero_of_nonpos (ht' _).le, deriv_of_neg (ht' _), ht.le]
+  · -- `smoothTransition` is nonnegative and vanishes at `0`, so `0` is a local minimum.
+    have hmin : IsLocalMin smoothTransition 0 :=
+      Eventually.of_forall fun x => by simpa using nonneg x
+    have hd : deriv smoothTransition 0 = 0 := hmin.deriv_eq_zero
+    simp [ht, hd]
+  · have hev : ∀ᶠ n : ℕ in atTop, 1 < ((n : ℝ) + 1) * t :=
+      (Tendsto.atTop_mul_const ht (tendsto_natCast_atTop_atTop.atTop_add
+        tendsto_const_nhds)).eventually_gt_atTop 1
+    refine tendsto_const_nhds.congr' ?_
+    filter_upwards [hev] with n hn
+    simp [one_of_one_le hn.le, deriv_of_one_lt hn, not_le.2 ht]
 
 end Real.smoothTransition
 

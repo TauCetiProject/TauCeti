@@ -62,6 +62,8 @@ installing a coercion; it is additive.
   weighted sum with a real subtrahend.
 * `EReal.ne_top_of_coe_mul_ne_top` — a positive real multiple can be `≠ ⊤` only if its operand is.
 * `EReal.coe_mul_le_coe_mul_iff` — multiplication by a positive real preserves and reflects `≤`.
+* `EReal.coe_add_add_eq_of_add_add_eq` — an equation between two sums of an extended nonnegative
+  real and two real numbers follows from an equation of `ℝ≥0∞` sums and of real differences.
 * `WithTop.toEReal_add` and `WithTop.toEReal_add_sub_coe_add` — the inclusion of `WithTop ℝ` into
   `EReal` is additive, and subtracting a real sum from the image of a sum splits termwise.
 -/
@@ -309,6 +311,33 @@ theorem _root_.EReal.coe_mul_le_coe_mul_iff {c : ℝ} (hc : 0 < c) (a b : EReal)
   have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
   rw [← EReal.div_le_iff_le_mul hc' (EReal.coe_ne_top c), ← EReal.mul_div,
     EReal.mul_div_cancel (EReal.coe_ne_bot c) (EReal.coe_ne_top c) hc'.ne']
+
+/-- If two sums `A + px + py` and `B + nx + ny` of extended nonnegative reals agree, with all
+summands but `A` and `B` finite, and the real differences `px - nx + (py - ny)` and
+`a + b - (a' + b')` agree, then `A + a + b = B + a' + b'` in `EReal`. -/
+theorem _root_.EReal.coe_add_add_eq_of_add_add_eq {A B px nx py ny : ℝ≥0∞}
+    (hpx : px ≠ ⊤) (hnx : nx ≠ ⊤) (hpy : py ≠ ⊤) (hny : ny ≠ ⊤)
+    (hres : A + px + py = B + nx + ny) {a b a' b' : ℝ}
+    (hdiff : px.toReal - nx.toReal + (py.toReal - ny.toReal) = a + b - (a' + b')) :
+    (A : EReal) + (a : EReal) + (b : EReal) = (B : EReal) + (a' : EReal) + (b' : EReal) := by
+  have hres' : (A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal) =
+      (B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal) := by
+    simpa [EReal.coe_ennreal_add, EReal.coe_add, EReal.coe_ennreal_toReal, hpx, hnx, hpy, hny,
+      add_assoc] using congrArg (fun t : ℝ≥0∞ ↦ (t : EReal)) hres
+  calc
+    (A : EReal) + (a : EReal) + (b : EReal) =
+        ((A : EReal) + ((px.toReal + py.toReal : ℝ) : EReal)) +
+          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
+      simp only [← EReal.coe_add, add_assoc]
+      ring_nf
+    _ = ((B : EReal) + ((nx.toReal + ny.toReal : ℝ) : EReal)) +
+          ((a + b - (px.toReal + py.toReal) : ℝ) : EReal) := by
+      rw [hres']
+    _ = (B : EReal) + (a' : EReal) + (b' : EReal) := by
+      simp only [← EReal.coe_add, add_assoc]
+      congr 1
+      norm_cast
+      linarith
 
 end TauCeti
 

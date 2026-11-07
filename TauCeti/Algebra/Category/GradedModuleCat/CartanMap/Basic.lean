@@ -97,7 +97,7 @@ namespace TauCeti
 
 open CategoryTheory CategoryTheory.Limits CategoryTheory.ObjectProperty ZeroObject
 
-universe uk uA
+universe v uk uA
 
 variable {k : Type uk} [CommRing k] {A : Type uA} [Ring A] [Algebra k A]
   (𝒜 : ℤ → Submodule k A)
@@ -340,9 +340,11 @@ instance : (gradedFiniteModules 𝒜).IsClosedUnderBinaryProducts :=
 instance : (gradedFiniteProjectiveModules 𝒜).IsClosedUnderBinaryProducts :=
   (isExtensionClosed_gradedFiniteProjectiveModules (𝒜 := 𝒜)).isClosedUnderBinaryProducts
 
-/-- The canonical exact structure on graded modules, graded by the internal shift. -/
+/-- The canonical exact structure on graded modules, graded by the internal shift. It exists in
+every module universe, like the abelian structure and the shift it is built from; the finite
+subcategories below live in the universe `uA` of the ring. -/
 noncomputable abbrev gradedModuleCanonicalExactStructure (𝒜 : ℤ → Submodule k A) :
-    GradedExactStructure (GradedModuleCat.{uA} 𝒜) :=
+    GradedExactStructure (GradedModuleCat.{v} 𝒜) :=
   GradedExactStructure.abelian _ (GradedModuleCat.shift 𝒜)
 
 /-- Finite graded modules are extension closed for the graded abelian exact structure of the
