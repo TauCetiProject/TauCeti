@@ -19,7 +19,8 @@ measure which is finite on compact sets. It also records that the indicator func
 bounded interval `[a, b)` is integrable against a locally finite measure, that the integral of
 `|f|` over a set splits along the sign of `f`, and that a continuous
 square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
-on nonempty open sets.
+on nonempty open sets. It also bounds the integral over a measurable set `S` by integrals over
+unions with disjoint sets.
 
 ## Main statements
 
@@ -30,6 +31,8 @@ on nonempty open sets.
   part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
+* `MeasureTheory.norm_setIntegral_le_add_of_disjoint`: the integral over `S` is bounded by the
+  integrals over `H ∪ (S ∪ T)`, `H` and `T`, for disjoint `H`, `S`, `T`.
 -/
 
 public section
@@ -136,3 +139,29 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
+
+namespace MeasureTheory
+
+variable {α : Type*} {m : MeasurableSpace α} {μ : Measure α} {E : Type*} [NormedAddCommGroup E]
+  [NormedSpace ℝ E]
+
+/-- If `H`, `S` and `T` are disjoint, with `S` and `T` measurable, then the integral of `f` over `S`
+is bounded by its integrals over `H ∪ (S ∪ T)`, `H` and `T`. -/
+theorem norm_setIntegral_le_add_of_disjoint {f : α → E} {H S T : Set α}
+    (hf : IntegrableOn f (H ∪ (S ∪ T)) μ)
+    (hS : MeasurableSet S) (hT : MeasurableSet T) (hHST : Disjoint H (S ∪ T))
+    (hST : Disjoint S T) :
+    ‖∫ x in S, f x ∂μ‖ ≤
+      ‖∫ x in H ∪ (S ∪ T), f x ∂μ‖ + ‖∫ x in H, f x ∂μ‖ + ‖∫ x in T, f x ∂μ‖ := by
+  have hfH : IntegrableOn f H μ := hf.mono_set subset_union_left
+  have hfS : IntegrableOn f S μ := hf.mono_set (subset_union_left.trans subset_union_right)
+  have hfT : IntegrableOn f T μ := hf.mono_set (subset_union_right.trans subset_union_right)
+  rw [setIntegral_union hHST (hS.union hT) hfH (hfS.union hfT), setIntegral_union hST hT hfS hfT]
+  set a := ∫ x in H, f x ∂μ
+  set b := ∫ x in S, f x ∂μ
+  set c := ∫ x in T, f x ∂μ
+  calc ‖b‖ = ‖a + (b + c) - a - c‖ := by congr 1; abel
+    _ ≤ ‖a + (b + c) - a‖ + ‖c‖ := norm_sub_le _ _
+    _ ≤ ‖a + (b + c)‖ + ‖a‖ + ‖c‖ := by gcongr; exact norm_sub_le _ _
+
+end MeasureTheory
