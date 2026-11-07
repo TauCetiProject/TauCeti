@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.Parabolic.NonDivergence
 
+import TauCeti.Algebra.Order.Field.PolynomialBarrier
+
 /-!
 # The comparison principle for parabolic equations on the whole space
 
@@ -191,20 +193,10 @@ private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
   have hsub' : Icc 0 t₁ ⊆ Icc 0 T := Icc_subset_Icc_right ht₁.2.le
   -- Outside the ball of radius `R`, the perturbation dominates the bound on `u`, so `w < 0`.
   set R := |Mu| / ε + 1
-  have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := by
-    intro s hs y hy
-    have h1 : 1 ≤ Real.exp (K * s) := Real.one_le_exp (mul_nonneg hK.le hs.1)
-    have h2 : |Mu| < ε * ‖y‖ := by
-      rw [← div_lt_iff₀' hε]
-      linarith
-    have h3 : ‖y‖ ≤ ‖y‖ ^ 2 := by
-      have : 0 ≤ |Mu| / ε := by positivity
-      nlinarith
-    have h4 : ε * (1 + ‖y‖ ^ 2) ≤ ε * (Real.exp (K * s) * (1 + ‖y‖ ^ 2)) :=
-      mul_le_mul_of_nonneg_left (le_mul_of_one_le_left (by positivity) h1) hε.le
-    have h5 : u s y ≤ Mu := hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩
-    simp only [w]
-    nlinarith [le_abs_self Mu]
+  have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := fun s hs y hy ↦
+    sub_mul_mul_one_add_sq_neg_of_lt (Real.one_le_exp (mul_nonneg hK.le hs.1)) hε
+      (hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩)
+      ((div_le_div_of_nonneg_right (le_abs_self _) hε.le).trans_lt ((lt_add_one _).trans hy))
   by_contra hlt
   have hw₁ : 0 < w (t₁, x₁) := by simp only [w]; linarith
   have hx₁ : x₁ ∈ Metric.closedBall 0 R := by
