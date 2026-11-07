@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.Complex.Conformal
 public import TauCeti.Geometry.Manifold.Complex.AlmostComplexStructure
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Basic
+import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 
 /-!
 # Holomorphic one-forms on the plane
@@ -70,19 +71,18 @@ private theorem IsOfType.mextDerivₗ_apply_vecCons (hη : η.IsOfType (ofComple
   have hc : DifferentiableAt ℝ (fun y ↦ Θ y ![(1 : ℂ)]) z :=
     (ContinuousAlternatingMap.apply ℝ ℂ F ![(1 : ℂ)]).differentiableAt.comp z
       (hd.differentiable (by simp) z)
-  have hcoeff (u : ℂ) : (fun y ↦ Θ y ![u]) = fun y ↦ u • Θ y ![(1 : ℂ)] :=
-    funext fun y ↦ hη.apply_eq_smul y u
-  have h₀ : Fin.removeNth 0 ![v, w] = ![w] := by ext i; fin_cases i; rfl
-  have h₁ : Fin.removeNth 1 ![v, w] = ![v] := by ext i; fin_cases i; rfl
+  have hcoeff (u : ℂ) : (fun y ↦ Θ y fun _ ↦ u) = fun y ↦ u • Θ y ![(1 : ℂ)] := by
+    rw [show (fun _ : Fin 1 ↦ u) = ![u] by ext i; fin_cases i; rfl]
+    exact funext fun y ↦ hη.apply_eq_smul y u
   -- The coefficient is stated through the tangent spaces of `ℂ`, which are `ℂ` itself; `change`
   -- restates it through `Θ` so that rewriting sees well-typed terms.
   change _ = w • fderiv ℝ (fun y ↦ Θ y ![(1 : ℂ)]) z v - v • fderiv ℝ (fun y ↦ Θ y ![(1 : ℂ)]) z w
   rw [TauCeti.mextDerivₗ_apply]
   refine (congrArg (fun A ↦ A ![v, w]) (mextDeriv_eq_extDeriv η.1 z)).trans
-    ((extDeriv_apply (hd.differentiable (by simp) z : DifferentiableAt ℝ Θ z) ![v, w]).trans ?_)
-  rw [Fin.sum_univ_two, h₀, h₁, hcoeff, hcoeff, fderiv_fun_const_smul hc,
-    fderiv_fun_const_smul hc]
-  simp [sub_eq_add_neg]
+    ((extDeriv_apply_pair_of_differentiableAt
+      (hd.differentiable (by simp) z : DifferentiableAt ℝ Θ z) v w).trans ?_)
+  rw [hcoeff, hcoeff, fderiv_fun_const_smul hc, fderiv_fun_const_smul hc]
+  rfl
 
 /-- **Holomorphic one-forms on the plane, pointwise.** A `(1,0)`-form `c dz` on `ℂ` is
 `∂bar`-closed at `z` exactly when its coefficient `c` is complex differentiable at `z`. -/

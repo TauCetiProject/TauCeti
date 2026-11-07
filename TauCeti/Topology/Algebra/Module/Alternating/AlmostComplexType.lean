@@ -329,6 +329,18 @@ theorem IsOfType.map_smul_complex {U : Type*} [AddCommGroup U] [Module ℂ U] [M
   rw [← ContinuousAlternatingMap.vecCons_smul, ← ContinuousAlternatingMap.vecCons_smul,
     ← ContinuousAlternatingMap.vecCons_add]
 
+/-- On a one-dimensional complex vector space, a one-form of type `(1,0)` for multiplication by
+`i` which vanishes on a nonzero vector is zero. -/
+theorem IsOfType.eq_zero_of_apply_eq_zero {U : Type*} [AddCommGroup U] [Module ℂ U] [Module ℝ U]
+    [IsScalarTower ℝ ℂ U] [TopologicalSpace U] [ContinuousConstSMul ℂ U] {α : U [⋀^Fin 1]→L[ℝ] F}
+    (h : α.IsOfType (I • ContinuousLinearMap.id ℝ U) 1 0) (hU : Module.finrank ℂ U = 1) {w : U}
+    (hw : w ≠ 0) (hα : α ![w] = 0) : α = 0 := by
+  ext v
+  obtain ⟨c, hc⟩ := (finrank_eq_one_iff_of_ne_zero' w hw).1 hU (v 0)
+  have hv : v = ![c • w] := by ext i; fin_cases i; exact hc.symm
+  rw [hv, h.map_smul_complex, hα, smul_zero]
+  rfl
+
 /-- Pullback along a map intertwining the endomorphisms preserves type. -/
 theorem IsOfType.compContinuousLinearMap {K : W →L[ℝ] W} {f : W →L[ℝ] V}
     (hf : ∀ w, J (f w) = f (K w)) (h : ω.IsOfType J p q) :

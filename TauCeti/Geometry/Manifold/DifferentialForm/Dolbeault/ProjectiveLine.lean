@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Complex.Liouville
+public import TauCeti.Analysis.Complex.Liouville
 public import TauCeti.Geometry.Manifold.ContMDiff.RestrictScalars
 public import TauCeti.Geometry.Manifold.DifferentialForm.Dolbeault.Plane
 public import TauCeti.Geometry.Manifold.Instances.Projectivization
@@ -101,37 +101,6 @@ private theorem injective_mfderiv_affineParam (i : Fin 2) (t : ℂ) :
   exact (NormedSpace.fromTangentSpace _).symm.injective.comp
     (he.comp (NormedSpace.fromTangentSpace t).injective)
 
-/-- **Liouville's theorem for the transformation law of a one-form under `t ↦ 1 / t`.** If an entire
-function `f` satisfies `f(s) = -g(1 / s) / s²` for `s ≠ 0`, with `g` continuous at `0`, then `f`
-tends to `0` at infinity, so it vanishes. -/
-private theorem eq_zero_of_eq_neg_inv_sq_smul {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] {f g : ℂ → F} (hf : Differentiable ℂ f) (hg : ContinuousAt g 0)
-    (h : ∀ s ≠ 0, f s = -(s ^ 2)⁻¹ • g s⁻¹) (t : ℂ) : f t = 0 := by
-  have hinv : Tendsto (fun s : ℂ ↦ s⁻¹) (cocompact ℂ) (𝓝 0) := by
-    rw [← Metric.cobounded_eq_cocompact]
-    exact tendsto_inv₀_cobounded
-  have hlim : Tendsto (fun s : ℂ ↦ -(s⁻¹ ^ 2) • g s⁻¹) (cocompact ℂ) (𝓝 0) := by
-    simpa using (hinv.pow 2).neg.smul (hg.tendsto.comp hinv)
-  refine hf.apply_eq_of_tendsto_cocompact t (hlim.congr' ?_)
-  filter_upwards [(isCompact_singleton (x := (0 : ℂ))).compl_mem_cocompact] with s hs
-  rw [h s (mem_compl_singleton_iff.1 hs), inv_pow]
-
-/-- A one-form of type `(1,0)` on the one-dimensional complex vector space `Fin 1 → ℂ` which
-vanishes on a nonzero vector is zero. -/
-private theorem eq_zero_of_isOfType_one_zero_of_apply_eq_zero {F : Type*} [NormedAddCommGroup F]
-    [NormedSpace ℂ F] {β : (Fin 1 → ℂ) [⋀^Fin 1]→L[ℝ] F}
-    (hβ : β.IsOfType (Complex.I • ContinuousLinearMap.id ℝ (Fin 1 → ℂ)) 1 0) {w : Fin 1 → ℂ}
-    (hw : w ≠ 0) (h : β ![w] = 0) : β = 0 := by
-  have hw₀ : w 0 ≠ 0 := fun h₀ ↦ hw (funext fun k ↦ by fin_cases k; exact h₀)
-  refine ContinuousAlternatingMap.ext fun v ↦ ?_
-  have hv : v = ![(v 0 0 / w 0) • w] := by
-    ext k l
-    fin_cases k
-    fin_cases l
-    simp [hw₀]
-  rw [hv, hβ.map_smul_complex, h, smul_zero]
-  rfl
-
 namespace SmoothForm
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F]
@@ -183,7 +152,7 @@ theorem IsOfType.eq_zero_of_delBar_eq_zero_projectivization
       (isPseudoholomorphic_affineParam i), hd, map_zero]
   -- By Liouville's theorem and the transformation law, the coefficients vanish.
   have hc₀ {i j : Fin 2} (hij : i ≠ j) (t : ℂ) : (η i).1 t ![(1 : ℂ)] = 0 :=
-    eq_zero_of_eq_neg_inv_sq_smul (hc i) (hc j).continuous.continuousAt
+    (hc i).eq_zero_of_eq_neg_inv_sq_smul (hc j).continuous.continuousAt
       (fun _ hs ↦ hα.mpullback_affineParam_apply_inv hij hs) t
   -- Every point `x` is `[t : 1]` or `[1 : s]`, and `α` vanishes on the nonzero derivative there.
   refine Subtype.ext (funext fun x ↦ ?_)
@@ -198,7 +167,8 @@ theorem IsOfType.eq_zero_of_delBar_eq_zero_projectivization
     exact (affineChart i).left_inv (by rwa [affineChart_source])
   have hβ := hα.apply (affineParam i t)
   rw [toEndomorphism_ofComplexManifold] at hβ
-  refine eq_zero_of_isOfType_one_zero_of_apply_eq_zero hβ
+  refine ContinuousAlternatingMap.IsOfType.eq_zero_of_apply_eq_zero (U := Fin 1 → ℂ) hβ
+    (Module.finrank_fin_fun ℂ)
     (w := mfderiv 𝓘(ℝ, ℂ) 𝓘(ℝ, Fin 1 → ℂ) (affineParam i) t (1 : ℂ)) ?_ ?_
   · exact fun h ↦ (one_ne_zero : (1 : ℂ) ≠ 0)
       (injective_mfderiv_affineParam i t (h.trans (map_zero _).symm))
