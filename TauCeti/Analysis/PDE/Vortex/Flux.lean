@@ -151,9 +151,8 @@ private theorem exists_contDiff_laplacian_eq_log_normSq_add
   set L : ℂ → ℝ := fun w ↦ Real.log (4 * (x w 2 ^ 2 + x w 3 ^ 2))
   set K : ℂ → ℝ := fun w ↦ ∑ z ∈ hfin.toFinset, (n z : ℝ) * planarNewtonianKernel (w - z)
   have hs : ContDiff ℝ 2 (fun w ↦ 4 * (x w 2 ^ 2 + x w 3 ^ 2)) := contDiff_normSq hp hq
-  have hsne : ∀ {w}, sectionValue x w ≠ 0 → 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≠ 0 := fun hw ↦ by
-    rw [← sq_norm_sectionValue]
-    exact pow_ne_zero 2 (norm_ne_zero_iff.mpr hw)
+  have hsne : ∀ {w}, sectionValue x w ≠ 0 → 4 * (x w 2 ^ 2 + x w 3 ^ 2) ≠ 0 := fun hw ↦
+    mul_ne_zero four_ne_zero (mt (sectionValue_eq_zero_iff x _).mpr hw)
   -- Off the zeros every kernel term is harmonic.
   have hKh : ∀ w, sectionValue x w ≠ 0 → HarmonicAt (fun y ↦ 4 * π * K y) w := fun w hw ↦
     (HarmonicAt.sum _ (f := fun z y ↦ (n z : ℝ) * planarNewtonianKernel (y - z))
