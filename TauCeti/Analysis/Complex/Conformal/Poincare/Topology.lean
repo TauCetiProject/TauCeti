@@ -72,7 +72,7 @@ pseudo-hyperbolic expression: the Moebius denominator `1 - conj w * z` has norm 
 lemma norm_sub_le_two_mul_pseudoHyperbolicExpr {z w : ℂ} (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     ‖z - w‖ ≤ 2 * pseudoHyperbolicExpr z w := by
   have hden : (1 : ℂ) - (starRingEnd ℂ) w * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one hz.le hw
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz.le hw
   have hle : ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ≤ 2 := by
     calc ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ≤ ‖(1 : ℂ)‖ + ‖(starRingEnd ℂ) w * z‖ :=
           norm_sub_le _ _

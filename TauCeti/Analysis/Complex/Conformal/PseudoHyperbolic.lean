@@ -14,7 +14,7 @@ public import TauCeti.Analysis.Complex.Basic
 This file records the scalar pseudo-hyperbolic expression `‖(z - w) / (1 - conj w * z)‖`, on
 which the Schwarz--Pick lemma and the hyperbolic distance on the disc are built.  The main API
 proves that the denominator is nonzero on the open unit disc — hence of positive norm
-(`TauCeti.norm_one_sub_conj_mul_pos_of_norm_lt_one`), a positivity side condition
+(`TauCeti.norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one`), a positivity side condition
 used when manipulating inequalities involving that denominator — that the hyperbolic defect
 `1 - ‖z‖ ^ 2` is positive there (`TauCeti.one_sub_sq_norm_pos_of_norm_lt_one`), that the
 expression is symmetric, that it is strictly less than one for two points of the unit disc —
@@ -118,7 +118,7 @@ lemma pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero {z w : ℂ}
 
 /-- The denominator in the pseudo-hyperbolic expression is nonzero when `z` lies in the closed
 unit disc and `w` in the open unit disc. -/
-lemma one_sub_conj_mul_ne_zero_of_norm_lt_one {z w : ℂ}
+lemma one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ ≤ 1) (hw : ‖w‖ < 1) :
     1 - (starRingEnd ℂ) w * z ≠ 0 :=
   (isUnit_one_sub_of_norm_lt_one (x := (starRingEnd ℂ) w * z)
@@ -131,20 +131,22 @@ pseudo-hyperbolic numerator and denominator are nonzero. -/
 lemma sub_ne_zero_and_one_sub_conj_mul_ne_zero_of_norm_lt_one_of_norm_eq_one {w z : ℂ}
     (hw : ‖w‖ < 1) (hz : ‖z‖ = 1) :
     z - w ≠ 0 ∧ 1 - (starRingEnd ℂ) w * z ≠ 0 :=
-  ⟨sub_ne_zero.2 (by rintro rfl; linarith), one_sub_conj_mul_ne_zero_of_norm_lt_one hz.le hw⟩
+  ⟨sub_ne_zero.2 (by rintro rfl; linarith),
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz.le hw⟩
 
 /-- For points in the open unit ball, the denominator in the pseudo-hyperbolic expression is
 nonzero. -/
 lemma one_sub_conj_mul_ne_zero_of_mem_ball {z w : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     1 - (starRingEnd ℂ) w * z ≠ 0 :=
-  one_sub_conj_mul_ne_zero_of_norm_lt_one (mem_ball_zero_iff.mp hz).le (mem_ball_zero_iff.mp hw)
+  one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one (mem_ball_zero_iff.mp hz).le
+    (mem_ball_zero_iff.mp hw)
 
 /-- For bundled unit-disc points, the denominator in the pseudo-hyperbolic expression is
 nonzero. -/
 lemma one_sub_conj_mul_ne_zero_unitDisc (z w : Complex.UnitDisc) :
     1 - (starRingEnd ℂ) (w : ℂ) * (z : ℂ) ≠ 0 :=
-  one_sub_conj_mul_ne_zero_of_norm_lt_one z.norm_lt_one.le w.norm_lt_one
+  one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one z.norm_lt_one.le w.norm_lt_one
 
 /-- On the open unit disc, the hyperbolic defect `1 - ‖z‖ ^ 2` is positive. -/
 lemma one_sub_sq_norm_pos_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 0 < 1 - ‖z‖ ^ 2 :=
@@ -153,9 +155,10 @@ lemma one_sub_sq_norm_pos_of_norm_lt_one {z : ℂ} (hz : ‖z‖ < 1) : 0 < 1 - 
 /-- When `z` lies in the closed unit disc and `w` in the open unit disc, the denominator in the
 pseudo-hyperbolic expression has positive norm. This is a positivity side condition used when
 manipulating inequalities involving this denominator. -/
-lemma norm_one_sub_conj_mul_pos_of_norm_lt_one {z w : ℂ} (hz : ‖z‖ ≤ 1) (hw : ‖w‖ < 1) :
+lemma norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one {z w : ℂ}
+    (hz : ‖z‖ ≤ 1) (hw : ‖w‖ < 1) :
     0 < ‖1 - (starRingEnd ℂ) w * z‖ :=
-  norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
+  norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz hw)
 
 /-- For a point of norm at most one, the denominator of the Moebius factor evaluated at the
 factor's own center has norm `1 - ‖w‖ ^ 2`. -/
@@ -166,33 +169,34 @@ lemma norm_one_sub_conj_mul_self_of_norm_le_one {w : ℂ} (hw : ‖w‖ ≤ 1) :
 
 /-- For `z` in the closed unit disc and `w` in the open unit disc, zero pseudo-hyperbolic
 expression characterizes equality. -/
-lemma pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one {z w : ℂ}
+lemma pseudoHyperbolicExpr_eq_zero_iff_of_norm_le_one_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ ≤ 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w = 0 ↔ z = w :=
   pseudoHyperbolicExpr_eq_zero_iff_of_den_ne_zero
-    (one_sub_conj_mul_ne_zero_of_norm_lt_one hz hw)
+    (one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz hw)
 
 /-- For points in the open unit ball, zero pseudo-hyperbolic expression characterizes equality. -/
 lemma pseudoHyperbolicExpr_eq_zero_iff_of_mem_ball {z w : ℂ}
     (hz : z ∈ ball (0 : ℂ) 1) (hw : w ∈ ball (0 : ℂ) 1) :
     pseudoHyperbolicExpr z w = 0 ↔ z = w :=
-  pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one (mem_ball_zero_iff.mp hz).le
+  pseudoHyperbolicExpr_eq_zero_iff_of_norm_le_one_of_norm_lt_one (mem_ball_zero_iff.mp hz).le
     (mem_ball_zero_iff.mp hw)
 
 /-- For bundled unit-disc points, zero pseudo-hyperbolic expression characterizes equality. -/
 @[simp]
 lemma pseudoHyperbolicExpr_eq_zero_iff_unitDisc (z w : Complex.UnitDisc) :
     pseudoHyperbolicExpr (z : ℂ) (w : ℂ) = 0 ↔ z = w := by
-  rw [pseudoHyperbolicExpr_eq_zero_iff_of_norm_lt_one z.norm_lt_one.le w.norm_lt_one,
-    Complex.UnitDisc.coe_inj]
+  rw [pseudoHyperbolicExpr_eq_zero_iff_of_norm_le_one_of_norm_lt_one z.norm_lt_one.le
+    w.norm_lt_one, Complex.UnitDisc.coe_inj]
 
 /-- **Poincaré defect identity (norm form).** The difference of the squared norms of the Moebius
 denominator and numerator factors is the product of the two hyperbolic defects:
 `‖1 - conj w * z‖ ^ 2 - ‖z - w‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2)`. -/
 lemma norm_sq_one_sub_conj_mul_sub_norm_sq_sub (z w : ℂ) :
     ‖(1 : ℂ) - (starRingEnd ℂ) w * z‖ ^ 2 - ‖z - w‖ ^ 2 = (1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2) := by
-  simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply]
-  simp
+  simp only [← Complex.normSq_eq_norm_sq, Complex.normSq_apply, Complex.sub_re, Complex.sub_im,
+    Complex.mul_re, Complex.mul_im, Complex.conj_re, Complex.conj_im, Complex.one_re,
+    Complex.one_im]
   ring
 
 /-- **Equal norms plus equal pseudo-hyperbolic expression force equal distance.** For four points
@@ -208,8 +212,10 @@ lemma norm_sub_eq_of_pseudoHyperbolicExpr_eq {z w z' w' : ℂ}
   have hB' := norm_sq_one_sub_conj_mul_sub_norm_sq_sub z' w'
   rw [hnz, hnw] at hB'
   rw [pseudoHyperbolicExpr_eq_norm_div_norm, pseudoHyperbolicExpr_eq_norm_div_norm,
-    div_eq_div_iff (norm_one_sub_conj_mul_pos_of_norm_lt_one (hnz.trans_lt hz).le
-      (hnw.trans_lt hw)).ne' (norm_one_sub_conj_mul_pos_of_norm_lt_one hz.le hw).ne'] at h
+    div_eq_div_iff
+      (norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one (hnz.trans_lt hz).le
+        (hnw.trans_lt hw)).ne'
+      (norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw).ne'] at h
   -- Squaring `h` and substituting the Poincaré defect identity for both pairs, which share the
   -- same defect product, leaves the difference of the squared numerators times that product.
   have key : (‖z' - w'‖ ^ 2 - ‖z - w‖ ^ 2) * ((1 - ‖z‖ ^ 2) * (1 - ‖w‖ ^ 2)) = 0 := by
@@ -234,7 +240,7 @@ lemma pseudoHyperbolicExpr_lt_one_of_norm_lt_one {z w : ℂ}
     (hz : ‖z‖ < 1) (hw : ‖w‖ < 1) :
     pseudoHyperbolicExpr z w < 1 := by
   rw [pseudoHyperbolicExpr_eq_norm_div_norm,
-    div_lt_one (norm_one_sub_conj_mul_pos_of_norm_lt_one hz.le hw)]
+    div_lt_one (norm_one_sub_conj_mul_pos_of_norm_le_one_of_norm_lt_one hz.le hw)]
   exact norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one hz hw
 
 /-- The pseudo-hyperbolic expression of two points in the open unit ball is strictly less

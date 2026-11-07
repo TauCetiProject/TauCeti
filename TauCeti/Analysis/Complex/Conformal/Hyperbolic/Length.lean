@@ -400,7 +400,7 @@ theorem hyperbolicLength_unitDiscMoebiusFormula_comp (hc : ‖c‖ < 1)
   simp only [hyperbolicLength]
   refine densityLength_congr_of_eqOn fun t ht ↦ ?_
   have hden : (1 : ℂ) - (starRingEnd ℂ) c * γ t ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one (hmem t ht).le hc
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one (hmem t ht).le hc
   have hcomp : HasDerivAt (fun s ↦ (γ s - c) / (1 - (starRingEnd ℂ) c * γ s))
       (γ' t * ((1 - (starRingEnd ℂ) c * c) / (1 - (starRingEnd ℂ) c * γ t) ^ 2)) t := by
     simpa [Function.comp_def, smul_eq_mul] using
@@ -588,7 +588,7 @@ private theorem hyperbolicDist_le_hyperbolicLength_of_le (hab : a ≤ b)
     hyperbolicDist (γ a) (γ b) ≤ hyperbolicLength γ a b := by
   have hc : ‖γ a‖ < 1 := hmem a ⟨le_rfl, hab⟩
   have hden : ∀ t ∈ Icc a b, (1 : ℂ) - (starRingEnd ℂ) (γ a) * γ t ≠ 0 := fun t ht ↦
-    one_sub_conj_mul_ne_zero_of_norm_lt_one (hmem t ht).le hc
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one (hmem t ht).le hc
   have hσderiv : ∀ t ∈ Ioo a b,
       HasDerivAt (fun s ↦ (γ s - γ a) / (1 - (starRingEnd ℂ) (γ a) * γ s))
         (γ' t * ((1 - (starRingEnd ℂ) (γ a) * γ a) /
@@ -668,7 +668,7 @@ theorem exists_hyperbolicLength_eq_hyperbolicDist (hz : ‖z‖ < 1) (hw : ‖w�
     exact lt_of_le_of_lt ht.2 hp1
   have hnz : ‖(-z)‖ < 1 := by rwa [norm_neg]
   have hden : ∀ t ∈ Icc (0 : ℝ) p, (1 : ℂ) - (starRingEnd ℂ) (-z) * (u * (t : ℂ)) ≠ 0 :=
-    fun t ht ↦ one_sub_conj_mul_ne_zero_of_norm_lt_one (hρmem t ht).le hnz
+    fun t ht ↦ one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one (hρmem t ht).le hnz
   have hσderiv : ∀ t ∈ Icc (0 : ℝ) p,
       HasDerivAt (fun s : ℝ ↦ (u * (s : ℂ) - -z) / (1 - (starRingEnd ℂ) (-z) * (u * (s : ℂ))))
         (u * ((1 - (starRingEnd ℂ) (-z) * -z) /

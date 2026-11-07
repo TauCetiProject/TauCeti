@@ -81,7 +81,7 @@ private theorem harmonicAt_planarNewtonianKernel_one_sub_conj_mul {a z : ℂ}
     (ha : ‖a‖ < 1) (hz : ‖z‖ < 1) :
     HarmonicAt (fun w : ℂ ↦ planarNewtonianKernel (1 - starRingEnd ℂ a * w)) z := by
   have hne : 1 - starRingEnd ℂ a * z ≠ 0 :=
-    one_sub_conj_mul_ne_zero_of_norm_lt_one hz.le ha
+    one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz.le ha
   have hana : AnalyticAt ℂ (fun w : ℂ ↦ 1 - starRingEnd ℂ a * w) z := by
     fun_prop
   have hlog : HarmonicAt (fun w : ℂ ↦ Real.log ‖1 - starRingEnd ℂ a * w‖) z :=
@@ -120,7 +120,7 @@ theorem planarGreenKernel_pos {a z : ℂ} (ha : ‖a‖ < 1) (hz : ‖z‖ < 1)
     (hza : z ≠ a) : 0 < planarGreenKernel a z := by
   have hnormpos : 0 < ‖z - a‖ := norm_pos_iff.mpr (sub_ne_zero.mpr hza)
   have hdenpos : 0 < ‖1 - starRingEnd ℂ a * z‖ :=
-    norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_lt_one hz.le ha)
+    norm_pos_iff.mpr (one_sub_conj_mul_ne_zero_of_norm_le_one_of_norm_lt_one hz.le ha)
   have hlog : Real.log ‖z - a‖ < Real.log ‖1 - starRingEnd ℂ a * z‖ :=
     Real.strictMonoOn_log hnormpos hdenpos
       (norm_sub_lt_norm_one_sub_conj_mul_of_norm_lt_one hz ha)
