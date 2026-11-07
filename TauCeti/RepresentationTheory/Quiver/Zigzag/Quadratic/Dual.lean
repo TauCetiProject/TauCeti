@@ -275,7 +275,7 @@ private theorem repr_eq_zero_of_mem_quadraticOrthogonal {f : pathAlgebra k (Doub
   simpa only [pathPairing_apply_ofPath] using
     hf.2 _ (IsQuadraticZigzagRelator.nonreturn p hp hab)
 
-omit [∀ v : V, Fintype (G.neighborSet v)] in
+omit [Finite V] [∀ v : V, Fintype (G.neighborSet v)] in
 /-- The coordinates of an element orthogonal to the quadratic relators on the backtracks based
 at one vertex agree. -/
 private theorem repr_backtrackPath_eq_of_mem_quadraticOrthogonal
