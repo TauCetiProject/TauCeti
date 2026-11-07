@@ -48,6 +48,66 @@ namespace DirichletCharacter
 
 variable {N k : ℕ} [NeZero N] (χ : DirichletCharacter ℂ N)
 
+/-- The Fourier character at the residue representative `a.val / N` is the standard additive
+character. -/
+private theorem fourier_val_div_eq_stdAddChar (a : ZMod N) (n : ℤ) :
+    fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle) =
+      ZMod.stdAddChar ((n : ZMod N) * a) := by
+  rw [fourier_coe_apply, ZMod.stdAddChar_apply]
+  have h := ZMod.toCircle_intCast (N := N) (n * a.val)
+  rw [Int.cast_mul, Int.cast_natCast, ZMod.natCast_zmod_val] at h
+  rw [h]
+  push_cast
+  congr 1
+  ring
+
+/-- The residue representative `a.val / N` lies in the unit interval. -/
+private theorem val_div_mem_Icc (a : ZMod N) : (a.val / (N : ℝ) : ℝ) ∈ Set.Icc 0 1 :=
+  ⟨div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _),
+    (div_le_one (Nat.cast_pos.mpr (NeZero.pos N))).mpr
+      (by exact_mod_cast (ZMod.val_lt a).le)⟩
+
+/-- Mathlib's `gaussSum_mulShift_of_isPrimitive` evaluates the finite Fourier coefficient of a
+primitive character, also at nonunit frequencies. -/
+private theorem sum_mul_fourier_val_div_eq_gaussSum_mul (hχ : χ.IsPrimitive) (n : ℤ) :
+    (∑ a : ZMod N, χ a *
+      (1 / (n : ℂ) ^ k * fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle))) =
+    gaussSum χ ZMod.stdAddChar * (χ⁻¹ (n : ZMod N) * (n : ℂ) ^ (-(k : ℤ))) := by
+  simp_rw [fourier_val_div_eq_stdAddChar]
+  have hgauss := gaussSum_mulShift_of_isPrimitive ZMod.stdAddChar hχ (n : ZMod N)
+  simp only [gaussSum, AddChar.mulShift_apply] at hgauss
+  simp_rw [← mul_assoc, mul_right_comm (χ _) (1 / (n : ℂ) ^ k)]
+  rw [← Finset.sum_mul, hgauss]
+  simp only [zpow_neg, zpow_natCast, one_div, gaussSum]
+  ring
+
+/-- The positive representative for the zero residue has the same Bernoulli value in `k ≥ 2`. -/
+private theorem generalizedBernoulli_eq_pow_mul_sum_bernoulliFun (hk : 2 ≤ k) :
+    χ.generalizedBernoulli k =
+      (N : ℂ) ^ (k - 1) *
+        ∑ a : ZMod N, χ a * bernoulliFun k (a.val / (N : ℝ)) := by
+  classical
+  rw [generalizedBernoulli_def]
+  have hexp : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
+  rw [hexp, zpow_natCast, map_pow, map_natCast]
+  congr 1
+  apply Finset.sum_congr rfl
+  intro a _
+  congr 1
+  have hcast (x : ℚ) :
+      algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) =
+        bernoulliFun k (x : ℝ) := by
+    simp only [bernoulliFun, Polynomial.eval_map, ← map_ratCast (algebraMap ℚ ℝ),
+      Polynomial.eval₂_at_apply]
+    norm_cast
+  by_cases ha : a = 0
+  · subst a
+    simp only [ite_true, div_self (Nat.cast_ne_zero.mpr (NeZero.ne N) : (N : ℚ) ≠ 0),
+      hcast, Rat.cast_one, ZMod.val_zero, Nat.cast_zero, zero_div]
+    exact congrArg ((↑) : ℝ → ℂ)
+      (bernoulliFun_endpoints_eq_of_ne_one (by omega : k ≠ 1))
+  · simp only [ha, ite_false, hcast, Rat.cast_div, Rat.cast_natCast]
+
 /-- The integer-indexed critical-value sum of a primitive character, multiplied by its Gauss
 sum, is an explicit multiple of its generalized Bernoulli number. No parity hypothesis is
 needed: both sides vanish for opposite parities. -/
@@ -62,63 +122,13 @@ theorem gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli (hχ : χ.IsPrimitive)
     pow_ne_zero _ (Nat.cast_ne_zero.mpr (NeZero.ne N))
   -- Apply Mathlib's hasSum_one_div_pow_mul_fourier_mul_bernoulliFun at each residue,
   -- using its value in [0, 1).
-  have hfourier (a : ZMod N) (n : ℤ) :
-      fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle) =
-        ZMod.stdAddChar ((n : ZMod N) * a) := by
-    rw [fourier_coe_apply, ZMod.stdAddChar_apply]
-    have h := ZMod.toCircle_intCast (N := N) (n * a.val)
-    rw [Int.cast_mul, Int.cast_natCast, ZMod.natCast_zmod_val] at h
-    rw [h]
-    push_cast
-    congr 1
-    ring
-  have hx (a : ZMod N) : (a.val / (N : ℝ) : ℝ) ∈ Set.Icc 0 1 :=
-    ⟨div_nonneg (Nat.cast_nonneg _) (Nat.cast_nonneg _),
-      (div_le_one (Nat.cast_pos.mpr (NeZero.pos N))).mpr
-        (by exact_mod_cast (ZMod.val_lt a).le)⟩
   have hs (a : ZMod N) :=
-    (hasSum_one_div_pow_mul_fourier_mul_bernoulliFun hk (hx a)).mul_left (χ a)
+    (hasSum_one_div_pow_mul_fourier_mul_bernoulliFun hk (val_div_mem_Icc a)).mul_left (χ a)
   have hsum := hasSum_sum (s := Finset.univ) fun a _ ↦ hs a
-  -- Mathlib's gaussSum_mulShift_of_isPrimitive evaluates the finite Fourier coefficient,
-  -- also at nonunit frequencies.
-  have hterm (n : ℤ) :
-      (∑ a : ZMod N, χ a *
-        (1 / (n : ℂ) ^ k * fourier n ((a.val / (N : ℝ) : ℝ) : UnitAddCircle))) =
-      gaussSum χ ZMod.stdAddChar * (χ⁻¹ (n : ZMod N) * (n : ℂ) ^ (-(k : ℤ))) := by
-    simp_rw [hfourier]
-    have hgauss := gaussSum_mulShift_of_isPrimitive ZMod.stdAddChar hχ (n : ZMod N)
-    simp only [gaussSum, AddChar.mulShift_apply] at hgauss
-    simp_rw [← mul_assoc, mul_right_comm (χ _) (1 / (n : ℂ) ^ k)]
-    rw [← Finset.sum_mul, hgauss]
-    simp only [zpow_neg, zpow_natCast, one_div, gaussSum]
-    ring
-  -- The positive representative for the zero residue has the same Bernoulli value in k ≥ 2.
-  have hB : χ.generalizedBernoulli k =
-      (N : ℂ) ^ (k - 1) *
-        ∑ a : ZMod N, χ a * bernoulliFun k (a.val / (N : ℝ)) := by
-    rw [generalizedBernoulli_def]
-    have hexp : (k : ℤ) - 1 = ((k - 1 : ℕ) : ℤ) := by omega
-    rw [hexp, zpow_natCast, map_pow, map_natCast]
-    congr 1
-    apply Finset.sum_congr rfl
-    intro a _
-    congr 1
-    have hcast (x : ℚ) :
-        algebraMap ℚ ℂ ((Polynomial.bernoulli k).eval x) =
-          bernoulliFun k (x : ℝ) := by
-      simp only [bernoulliFun, Polynomial.eval_map, ← map_ratCast (algebraMap ℚ ℝ),
-        Polynomial.eval₂_at_apply]
-      norm_cast
-    by_cases ha : a = 0
-    · subst a
-      simp only [ite_true, div_self (Nat.cast_ne_zero.mpr (NeZero.ne N) : (N : ℚ) ≠ 0),
-        hcast, Rat.cast_one, ZMod.val_zero, Nat.cast_zero, zero_div]
-      exact congrArg ((↑) : ℝ → ℂ)
-        (bernoulliFun_endpoints_eq_of_ne_one (by omega : k ≠ 1))
-    · simp only [ha, ite_false, hcast, Rat.cast_div, Rat.cast_natCast]
-  have hresult := hsum.congr_fun (fun n ↦ (hterm n).symm)
+  have hresult := hsum.congr_fun
+    (fun n ↦ (sum_mul_fourier_val_div_eq_gaussSum_mul χ hχ n).symm)
   -- Sum the Fourier identity and restore the power of the modulus in B_{k,χ}.
-  rw [← tsum_mul_left, hresult.tsum_eq, hB]
+  rw [← tsum_mul_left, hresult.tsum_eq, generalizedBernoulli_eq_pow_mul_sum_bernoulliFun χ hk]
   simp_rw [← mul_assoc, mul_comm (χ _ : ℂ) (-(2 * π * I) ^ k / (k.factorial : ℂ)),
     mul_assoc]
   rw [← Finset.mul_sum]
