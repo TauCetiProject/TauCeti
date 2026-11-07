@@ -9,8 +9,11 @@ public import Mathlib.Analysis.Analytic.Constructions
 public import Mathlib.Analysis.RCLike.Basic
 public import Mathlib.Order.Filter.Germ.Basic
 public import Mathlib.Algebra.Ring.Subring.Basic
+public import TauCeti.Order.Filter.Germ.MvPolynomial
+import Mathlib.Analysis.Analytic.Polynomial
 import Mathlib.Analysis.Analytic.Uniqueness
 import Mathlib.Analysis.Normed.Module.Connected
+import Mathlib.Topology.Algebra.Module.PerfectSpace
 
 /-!
 # Rings of analytic function germs
@@ -27,8 +30,13 @@ construction is analogous to `OpenPartialHomeomorph.meromorphicGermsEquiv`.
 
 Over `ℝ` or `ℂ` the ring of analytic germs is an integral domain
 (`TauCeti.analyticGerms.instIsDomain`): if a product of analytic functions vanishes near a point,
-then one of the factors does (`AnalyticAt.mul_eventuallyEq_zero_iff`), by the identity theorem on
-a ball around that point.
+then one of the factors does (`AnalyticAt.mul_eventuallyEq_zero_iff`).
+
+On the coordinate space `σ → 𝕜`, the analytic germs at `x` also form a subalgebra
+(`TauCeti.analyticGermSubalgebra`) over the coordinate polynomials, acting as polynomial functions
+(`Filter.Germ.mvPolynomialAlgebra`). The polynomials embed into it
+(`TauCeti.analyticGermSubalgebra.algebraMap_injective`), so polynomial relations among analytic
+germs can be studied with the algebraic elements of this subalgebra.
 -/
 
 public section
@@ -246,12 +254,11 @@ open Filter Topology
 variable {𝕜 : Type*} [RCLike 𝕜] {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
   {f g : E → 𝕜} {a : E}
 
-/-- A product of analytic functions vanishes near a point exactly when one of the factors does.
-If the first factor is nonzero at some point of a ball on which both are analytic and the product
-vanishes, the second factor vanishes near that point, hence on the whole ball by the identity
-theorem. -/
+/-- A product of analytic functions vanishes near a point exactly when one of the factors does. -/
 theorem AnalyticAt.mul_eventuallyEq_zero_iff (hf : AnalyticAt 𝕜 f a) (hg : AnalyticAt 𝕜 g a) :
     f * g =ᶠ[𝓝 a] 0 ↔ f =ᶠ[𝓝 a] 0 ∨ g =ᶠ[𝓝 a] 0 := by
+  -- If `f` is nonzero at some point `z` of a ball on which `f`, `g` are analytic and `f * g`
+  -- vanishes, then `g` vanishes near `z`, hence on the whole ball by the identity theorem.
   refine ⟨fun h ↦ or_iff_not_imp_left.2 fun hf0 ↦ ?_, ?_⟩
   · let : NormedSpace ℝ E := NormedSpace.restrictScalars ℝ 𝕜 E
     obtain ⟨r, hr, hball⟩ := Metric.eventually_nhds_iff_ball.1
@@ -286,3 +293,54 @@ instance instIsDomain : IsDomain (analyticGerms 𝕜 a) :=
 end TauCeti.analyticGerms
 
 end Domain
+
+/-! ### Analytic germs as an algebra over the coordinate polynomials -/
+
+section MvPolynomial
+
+open Filter Topology
+
+namespace TauCeti
+
+attribute [local instance] Germ.mvPolynomialAlgebra
+
+section Field
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜] {σ : Type*} [Fintype σ]
+
+/-- The analytic germs at `x`, as a subalgebra over the coordinate polynomials of the ring of all
+function germs at `x`, on which polynomials act as polynomial functions
+(`Filter.Germ.mvPolynomialAlgebra`). Its elements are those of `TauCeti.analyticGerms 𝕜 x`. -/
+noncomputable def analyticGermSubalgebra (x : σ → 𝕜) :
+    Subalgebra (MvPolynomial σ 𝕜) (Germ (𝓝 x) 𝕜) :=
+  { (analyticGerms 𝕜 x).toSubsemiring with
+    algebraMap_mem' p := by
+      rw [Germ.mvPolynomialAlgebra_algebraMap_apply]
+      exact coe_mem_analyticGerms.2 (AnalyticOnNhd.eval_mvPolynomial p x (Set.mem_univ x)) }
+
+/-- The analytic germ subalgebra at `x` has the same elements as the analytic germ ring at `x`. -/
+@[simp]
+theorem mem_analyticGermSubalgebra {x : σ → 𝕜} {φ : Germ (𝓝 x) 𝕜} :
+    φ ∈ analyticGermSubalgebra x ↔ φ ∈ analyticGerms 𝕜 x :=
+  Iff.rfl
+
+/-- The coordinate polynomials embed into the analytic germs at `x`. -/
+theorem analyticGermSubalgebra.algebraMap_injective (x : σ → 𝕜) :
+    Function.Injective (algebraMap (MvPolynomial σ 𝕜) (analyticGermSubalgebra x)) :=
+  .of_comp (f := Subtype.val) (Germ.mvPolynomialAlgebra_algebraMap_injective x)
+
+end Field
+
+variable {𝕜 : Type*} [RCLike 𝕜] {σ : Type*} [Fintype σ] {x : σ → 𝕜}
+
+/-- Over `ℝ` or `ℂ`, the analytic germ subalgebra has no zero divisors, since the analytic germ ring
+is an integral domain. -/
+instance : NoZeroDivisors (analyticGermSubalgebra x) :=
+  Function.Injective.noZeroDivisors
+    (fun φ : analyticGermSubalgebra x ↦
+      (⟨φ, mem_analyticGermSubalgebra.1 φ.2⟩ : analyticGerms 𝕜 x))
+    (fun _ _ h ↦ Subtype.ext (congrArg Subtype.val h)) rfl fun _ _ ↦ rfl
+
+end TauCeti
+
+end MvPolynomial
