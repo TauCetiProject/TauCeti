@@ -50,6 +50,7 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
   have : Module.FinitePresentation A B := .of_finite_of_finitePresentation A B
   have : Module.Projective A B := Module.Flat.projective_of_finitePresentation
   let : TopologicalSpace (C ⊗[A] B) := moduleTopology C (C ⊗[A] B)
+  have : IsModuleTopology C (C ⊗[A] B) := ⟨rfl⟩
   let : IsTopologicalRing (C ⊗[A] B) := IsModuleTopology.isTopologicalRing C _
   let : IsHuberRing (C ⊗[A] B) := IsHuberRing.of_isModuleTopology (A := C)
   let : Algebra C (CompletedTensor A C B) := (CompletedTensor.inl A C B).toAlgebra
@@ -72,24 +73,20 @@ private theorem isFiniteEtale_inl_finiteAlgebra [Module.Finite A B] [Algebra.Eta
     exact RingHom.etale_algebraMap.mpr inferInstance
   · rw [completedTensor.toRingHom_inl]
     exact htop
-  · rw [completedTensor.toRingHom_inl, ← finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
+  · rw [completedTensor.toRingHom_inl,
+      ← RingHom.algebraMap_toAlgebra (CompletedTensor.inl A C B), ← finiteAlgebra_plus,
+      ← finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
     apply le_antisymm
     · rintro _ ⟨x, hx, rfl⟩
-      rw [finiteAlgebra_plus] at hx
-      let R := T.plus.map (algebraMap C (C ⊗[A] B))
-      let V := T.plus.map (CompletedTensor.inl A C B)
-      have hRV : R ≤ V.comap e.toRingHom := by
-        rintro _ ⟨c, hc, rfl⟩
-        exact ⟨c, hc, by simp [e, Algebra.TensorProduct.algebraMap_apply]⟩
-      exact (mem_integralClosure_iff _ _).mpr <|
-        ((mem_integralClosure_iff _ _).mp hx).map_of_comp_eq
-          (e.toRingHom.restrict R V hRV) e.toRingHom rfl
-    · have :=
-        (T.completedTensor A (S.finiteAlgebra B)).isRingOfIntegralElements.isIntegrallyClosedIn
-      rw [finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
-      apply Subring.integralClosure_subring_le_iff.mpr
-      rintro _ ⟨c, hc, rfl⟩
-      exact T.inl_mem_completedTensor_plus (S.finiteAlgebra B) hc
+      simpa [e] using (finiteAlgebra.lift
+        (finiteAlgebra.algebraHom T (CompletedTensor A C B)) (by simp)
+        e.toAlgHom).map_mem_plus x hx
+    · rw [finiteAlgebra.map_plus_baseChangeEquiv S T f hf]
+      intro x hx
+      have hmem := (finiteAlgebra.lift (completedTensor.inl A T (S.finiteAlgebra B))
+        (by simp [RingHom.algebraMap_toAlgebra]) (AlgHom.id C _)).map_mem_plus x hx
+      rw [finiteAlgebra.lift_toRingHom] at hmem
+      exact hmem
 
 /-- **Finite étale morphisms of Huber pairs are stable under completed base change.**
 The new base `C` is complete Hausdorff, and both structure maps are adic. The algebras
