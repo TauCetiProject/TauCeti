@@ -23,6 +23,7 @@ comparable to `x ^ q` near the origin, which is not integrable there.
 
 These integrals normalize the generalized normal (exponential power) densities
 `exp (-|x| ^ p)` and compute all of their absolute moments.
+The scaled Gaussian case `exp (-b * x ^ 2)` is also evaluated for `b > 0`.
 -/
 
 public section
@@ -58,5 +59,25 @@ theorem integral_abs_rpow_mul_exp_neg_abs_rpow {p q : ℝ} (hp : 0 < p) (hq : -1
   rw [integral_comp_abs (f := fun x : ℝ => x ^ q * Real.exp (-x ^ p)),
     integral_rpow_mul_exp_neg_rpow hp hq]
   ring
+
+/-- The two-sided Gamma integral with a scaled Gaussian exponential. -/
+theorem integral_abs_rpow_mul_exp_neg_sq {q b : ℝ} (hq : -1 < q) (hb : 0 < b) :
+    ∫ x : ℝ, |x| ^ q * Real.exp (-b * x ^ 2) =
+      b ^ (-(q + 1) / 2) * Real.Gamma ((q + 1) / 2) := by
+  calc
+    _ = ∫ x : ℝ, (fun y : ℝ => y ^ q * Real.exp (-b * y ^ 2)) |x| := by
+      congr with x
+      simp only [sq_abs]
+    _ = 2 * ∫ x : ℝ in Ioi 0, x ^ q * Real.exp (-b * x ^ 2) :=
+      integral_comp_abs (f := fun y : ℝ => y ^ q * Real.exp (-b * y ^ 2))
+    _ = _ := by
+      have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := q) (b := b) two_pos hq hb
+      have h' : ∫ x : ℝ in Ioi 0, x ^ q * Real.exp (-b * x ^ 2) =
+          b ^ (-(q + 1) / 2) * (1 / 2) * Real.Gamma ((q + 1) / 2) := by
+        rw [← h]
+        refine setIntegral_congr_fun measurableSet_Ioi fun x hx => ?_
+        rw [Real.rpow_two]
+      rw [h']
+      ring
 
 end TauCeti

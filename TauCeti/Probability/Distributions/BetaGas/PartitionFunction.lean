@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.MeasureTheory.Integral.Gamma
+public import TauCeti.MeasureTheory.Integral.Gamma
 
 import Mathlib.Analysis.SpecialFunctions.Gaussian.GaussianIntegral
 import Mathlib.MeasureTheory.Group.Prod
@@ -50,9 +50,11 @@ private def betaGasUncenterEquiv : (ℝ × ℝ) ≃ᵐ (ℝ × ℝ) where
   right_inv p := by
     ext <;> dsimp [betaGasUncenter, betaGasCenter] <;> ring
   measurable_toFun := by
+    -- Unfold `betaGasUncenter` in the measurability goal.
     change Measurable (fun p : ℝ × ℝ => (p.2 + p.1 / 2, p.2 - p.1 / 2))
     fun_prop
   measurable_invFun := by
+    -- Unfold `betaGasCenter` in the measurability goal.
     change Measurable (fun p : ℝ × ℝ => (p.1 - p.2, p.2 + (p.1 - p.2) / 2))
     fun_prop
 
@@ -75,33 +77,6 @@ private lemma measurePreserving_betaGasUncenter :
     measurePreserving_add_prod volume volume
   convert hadd.comp hshift using 1
   ext p <;> dsimp [betaGasUncenter, shift] <;> ring
-
-private lemma integral_abs_rpow_mul_exp_neg_sq {q b : ℝ} (hq : -1 < q) (hb : 0 < b) :
-    ∫ x : ℝ, |x| ^ q * exp (-b * x ^ 2) =
-      b ^ (-(q + 1) / 2) * Gamma ((q + 1) / 2) := by
-  calc
-    _ = ∫ x : ℝ, (fun y : ℝ => y ^ q * exp (-b * y ^ 2)) |x| := by
-      congr with x
-      simp only [sq_abs]
-    _ = 2 * ∫ x : ℝ in Ioi 0, x ^ q * exp (-b * x ^ 2) :=
-      integral_comp_abs (f := fun y : ℝ => y ^ q * exp (-b * y ^ 2))
-    _ = _ := by
-      have h := integral_rpow_mul_exp_neg_mul_rpow (p := 2) (q := q) (b := b) two_pos hq hb
-      have h' : ∫ x : ℝ in Ioi 0, x ^ q * exp (-b * x ^ 2) =
-          b ^ (-(q + 1) / 2) * (1 / 2) * Gamma ((q + 1) / 2) := by
-        rw [← h]
-        refine setIntegral_congr_fun measurableSet_Ioi fun x hx => ?_
-        rw [Real.rpow_two]
-      rw [h']
-      ring
-
-private lemma integral_exp_neg_mul_sq {b : ℝ} (hb : 0 < b) :
-    ∫ x : ℝ, exp (-b * x ^ 2) = b ^ (-(1 : ℝ) / 2) * sqrt π := by
-  have h := integral_abs_rpow_mul_exp_neg_sq (q := (0 : ℝ)) neg_one_lt_zero hb
-  rw [show (-((0 : ℝ) + 1) / 2) = -(1 : ℝ) / 2 by norm_num,
-    show ((0 : ℝ) + 1) / 2 = (1 : ℝ) / 2 by norm_num,
-    Real.Gamma_one_half_eq] at h
-  simpa only [Real.rpow_zero, one_mul] using h
 
 /-- The two-particle Gaussian beta-gas partition function is finite and has this closed form. -/
 theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0 < β) :
@@ -133,7 +108,12 @@ theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0
     rw [show -(β + 1) / 2 = -((β + 1) / 2) by ring] at h
     simpa [g] using h
   have hh : ∫ z : ℝ, h z = β ^ (-(1 : ℝ) / 2) * sqrt π := by
-    simpa [h] using integral_exp_neg_mul_sq (b := β) hβ
+    have hGaussian : (∫ z : ℝ, exp (-(β * z ^ 2))) = sqrt (π / β) := by
+      simpa only [neg_mul] using integral_gaussian β
+    change (∫ z : ℝ, exp (-(β * z ^ 2))) = _
+    rw [hGaussian, Real.sqrt_div Real.pi_pos.le, Real.sqrt_eq_rpow β,
+      show -(1 : ℝ) / 2 = -(1 / 2 : ℝ) by ring, Real.rpow_neg hβ.le]
+    ring
   rw [twoParticleGaussianBetaGasPartitionFunction, hchange, integral_prod_mul, hg, hh]
   have h4 : (4 : ℝ) ^ ((β + 1) / 2) = 2 ^ (β + 1) := by
     calc
