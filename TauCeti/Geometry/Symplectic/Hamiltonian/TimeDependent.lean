@@ -44,10 +44,8 @@ the autonomous Hamiltonian vector field.
   `TauCeti.SymplecticForm.fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft`: the evolution
   maps are differentiable, and along an orbit `x` the derivative of the evolution is the
   propagator `TauCeti.dysonSeriesLeft` of the linearized equation `ζ' = dX_{H_t}(x(t)) ζ`.
-* `TauCeti.SymplecticForm.apply_dysonSeriesLeft`: the propagator of a continuous infinitesimally
-  symplectic path is symplectic; in particular
-  (`TauCeti.SymplecticForm.apply_dysonSeriesLeft_fderiv_hamiltonianVectorField`) so is the
-  propagator of the linearized Hamiltonian equation along any continuous path.
+* `TauCeti.SymplecticForm.apply_dysonSeriesLeft_fderiv_hamiltonianVectorField`: the propagator
+  of the linearized Hamiltonian equation along any continuous path is symplectic.
 * `TauCeti.SymplecticForm.timeDependentHamiltonianFlow_const`: recovery of the autonomous flow.
 * `TauCeti.SymplecticForm.hasDerivAt_apply_of_hasDerivAt_hamiltonianVectorField`: a
   time-dependent function `F` changes along a solution at the rate `∂_t F + {F_t, H_t}`; in
@@ -253,16 +251,6 @@ theorem fderiv_timeDependentHamiltonianFlow_eq_dysonSeriesLeft (omega : Symplect
     (omega.contDiff_hamiltonianVectorField_uncurry (n := 1) hH)]
   simp only [horbit]
 
-/-- **The propagator of an infinitesimally symplectic path is symplectic.** If `S` is a
-continuous path of operators with `ω(S_r u, w) + ω(u, S_r w) = 0`, then the propagator of
-`ζ' = S_r ζ` preserves `ω`. -/
-theorem apply_dysonSeriesLeft (omega : SymplecticForm V) {S : ℝ → V →L[ℝ] V}
-    (hS : Continuous S) (hskew : ∀ r u w, omega (S r u) w + omega u (S r w) = 0) (t : ℝ)
-    (u w : V) :
-    omega (dysonSeriesLeft S t u) (dysonSeriesLeft S t w) = omega u w :=
-  apply_dysonSeriesLeft_apply_dysonSeriesLeft hS omega.toBilinForm.toContinuousBilinearMap hskew t
-    u w
-
 /-- **The propagator of the linearized Hamiltonian equation is symplectic.** Along a continuous
 path `x` and for a jointly `C²` time-dependent Hamiltonian, the propagator of `ζ' = S_r ζ`, with
 `S_r = dX_{H_{s + r}}(x(s + r))`, preserves `ω`. By
@@ -276,9 +264,9 @@ theorem apply_dysonSeriesLeft_fderiv_hamiltonianVectorField (omega : SymplecticF
       (dysonSeriesLeft
         (fun r ↦ fderiv ℝ (omega.hamiltonianVectorField (H (s + r))) (x (s + r))) t v) =
       omega u v :=
-  omega.apply_dysonSeriesLeft
+  apply_dysonSeriesLeft_apply_dysonSeriesLeft
     ((omega.continuous_fderiv_hamiltonianVectorField_comp hH hx).comp
-      (continuous_const.add continuous_id))
+      (continuous_const.add continuous_id)) omega.toBilinForm.toContinuousBilinearMap
     (fun r ↦ omega.apply_fderiv_hamiltonianVectorField_add
       (hH.comp (contDiff_prodMk_right (s + r))).contDiffAt) t u v
 
