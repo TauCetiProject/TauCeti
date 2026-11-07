@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
-public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction
+public import TauCeti.Geometry.Symplectic.Hamiltonian.ContractibleAction.Basic
 
 /-!
 # The energy of Floer cylinders in a manifold and the action of their loops

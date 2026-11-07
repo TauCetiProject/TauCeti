@@ -302,7 +302,7 @@ theorem IsNondegenerate.continuous_floerEnergyDensity_zero_left [FiniteDimension
   have harea : Continuous fun z ↦ SmoothBundleForm.eval₂ ω (u z)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
       (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) :=
-    (hω₀.continuous_apply_mfderiv hu).congr fun z ↦ by
+    (hω₀.continuous_apply_mfderiv hu (1, 0) (0, 1)).congr fun z ↦ by
       simp [SmoothBundleForm.eval₂_apply, stdComplexLineReal_eq, stdComplexLineImag_eq]
   have hK : ContDiff ℝ 1 fun w ↦ Kt w (u w) :=
     contMDiff_iff_contDiff.mp (hKt.comp (contMDiff_id.prodMk hu))
