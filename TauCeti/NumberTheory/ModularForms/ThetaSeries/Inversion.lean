@@ -7,6 +7,7 @@ module
 
 public import Mathlib.NumberTheory.ModularForms.SlashActions
 public import TauCeti.NumberTheory.ModularForms.ThetaSeries.FiniteFourier
+import TauCeti.Analysis.Distribution.SchwartzSpace.Gaussian
 import TauCeti.Analysis.Fourier.PoissonSummation
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Schwartz
 
@@ -71,14 +72,14 @@ theorem thetaCoset_S_smul (hk : finrank ℝ E = 2 * k) (v : E) (τ : ℍ) :
     simp [inv_neg]
   have hb : 0 < (-(π * I * (σ : ℂ))).re := by simpa using mul_pos Real.pi_pos σ.im_pos
   -- The theta series at `σ` is the periodization of the Schwartz Gaussian `exp (π i σ ‖x‖²)`.
-  have hg : (TauCeti.gaussianSchwartzMap hb : E → ℂ) =
+  have hg : (SchwartzMap.gaussian hb : E → ℂ) =
       fun x : E ↦ cexp (π * I * (‖x‖ ^ 2 : ℝ) * σ) := by
     ext x
-    rw [TauCeti.gaussianSchwartzMap_apply]
+    rw [SchwartzMap.gaussian_apply]
     push_cast
     ring_nf
   -- Its Fourier transform is `(-i)^k τ^k exp (π i τ ‖y‖²)`, since `-1/σ = τ`.
-  have hF (m : E) : 𝓕 (TauCeti.gaussianSchwartzMap hb : E → ℂ) m =
+  have hF (m : E) : 𝓕 (SchwartzMap.gaussian hb : E → ℂ) m =
       ((-I) ^ k * (τ : ℂ) ^ k) * cexp (π * I * (‖m‖ ^ 2 : ℝ) * τ) := by
     have hτ : (τ : ℂ) ≠ 0 := τ.ne_zero
     rw [hg, TauCeti.fourier_cexp_pi_mul_I_mul_norm_sq_mul_of_finrank_eq hk σ.im_pos, hστ]
@@ -90,7 +91,7 @@ theorem thetaCoset_S_smul (hk : finrank ℝ E = 2 * k) (v : E) (τ : ℍ) :
       simp [I_sq]
     · congr 1
       field_simp
-  calc thetaCoset L v σ = ∑' ℓ : L, (TauCeti.gaussianSchwartzMap hb : E → ℂ) (v + ℓ) := by
+  calc thetaCoset L v σ = ∑' ℓ : L, (SchwartzMap.gaussian hb : E → ℂ) (v + ℓ) := by
         rw [thetaCoset_apply, hg]
     _ = (covolume L : ℂ)⁻¹ * ∑' m : dual L, ((-I) ^ k * (τ : ℂ) ^ k) *
           (cexp (2 * π * I * ⟪v, (m : E)⟫) * cexp (π * I * (‖(m : E)‖ ^ 2 : ℝ) * τ)) := by
