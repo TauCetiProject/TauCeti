@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Topology.EMetricSpace.BoundedVariation
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
@@ -98,43 +99,17 @@ private lemma edist_ceil_div_rpow_le (hp : 1 ≤ p) {s t : ℝ} (hst : s ≤ t) 
         exact ENNReal.ofReal_le_ofReal
           (natCast_ceil_div_sub_ceil_div_lt (NNReal.coe_nonneg τ) hst).le
 
-/-- The index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` of the steps taken during pairwise disjoint intervals
-`(sᵢ, tᵢ]` are pairwise disjoint. -/
-private lemma pairwiseDisjoint_Ico_ceil_div (hτ : (0 : ℝ) < τ) {s t : ℕ → ℝ} {S : Set ℕ}
-    (h : S.PairwiseDisjoint fun i ↦ Ioc (s i) (t i)) :
-    S.PairwiseDisjoint fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊ := by
-  intro i hi j hj hij
-  refine Finset.disjoint_left.2 fun n hni hnj ↦ ?_
-  rw [mem_Ico_ceil_div_iff hτ] at hni hnj
-  exact Set.disjoint_left.1 (h hi hj hij)
-    ⟨lt_of_le_of_lt hni.1 (lt_min hni.2 hnj.2), min_le_left _ _⟩
-    ⟨lt_of_le_of_lt hnj.1 (lt_min hni.2 hnj.2), min_le_right _ _⟩
-
-/-- The steps taken during `k` pairwise disjoint intervals `(sᵢ, tᵢ]` number at most
-`(∑ᵢ (tᵢ - sᵢ)) / τ + k`. -/
-private lemma card_biUnion_Ico_ceil_div_le (hτ : (0 : ℝ) < τ) {s t : ℕ → ℝ} (k : ℕ)
-    (hst : ∀ i ∈ Finset.range k, s i ≤ t i)
-    (hdisj : (Finset.range k : Set ℕ).PairwiseDisjoint fun i ↦
-      Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊) :
-    (((Finset.range k).biUnion fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : ℝ≥0∞) ≤
-      ENNReal.ofReal ((∑ i ∈ Finset.range k, (t i - s i)) / τ + k) := by
-  rw [← ENNReal.ofReal_natCast]
-  refine ENNReal.ofReal_le_ofReal ?_
-  rw [Finset.card_biUnion hdisj, Nat.cast_sum, Finset.sum_div]
-  have := Finset.sum_le_sum fun i hi ↦ (natCast_ceil_div_sub_ceil_div_lt hτ.le (hst i hi)).le
-  simpa [Finset.sum_add_distrib] using this
-
 /-- The distance between the piecewise constant interpolant at times `a` and `b` is at most the
 sum of the steps taken between them. -/
-private lemma edist_ceil_div_le_sum_Ico_edist (U : ℕ → X) (a b : ℝ) (hτ : (0 : ℝ) < τ) :
+private lemma edist_ceil_div_le_sum_Ico_edist (U : ℕ → X) (a b : ℝ) :
     edist (U ⌈a / τ⌉₊) (U ⌈b / τ⌉₊) ≤
       ∑ n ∈ Finset.Ico ⌈min a b / τ⌉₊ ⌈max a b / τ⌉₊, edist (U n) (U (n + 1)) := by
-  have h := edist_le_Ico_sum_edist U
-    (Nat.ceil_mono (div_le_div_of_nonneg_right (min_le_max (a := a) (b := b)) hτ.le))
-  rcases le_total a b with hle | hle
-  · simpa [min_eq_left hle, max_eq_right hle] using h
-  · rw [edist_comm]
-    simpa [min_eq_right hle, max_eq_left hle] using h
+  have hmono : Monotone fun x : ℝ ↦ ⌈x / τ⌉₊ := fun x y hxy ↦
+    Nat.ceil_mono (div_le_div_of_nonneg_right hxy (NNReal.coe_nonneg τ))
+  have hmin : ⌈min a b / τ⌉₊ = min ⌈a / τ⌉₊ ⌈b / τ⌉₊ := hmono.map_min
+  have hmax : ⌈max a b / τ⌉₊ = max ⌈a / τ⌉₊ ⌈b / τ⌉₊ := hmono.map_max
+  rw [hmin, hmax]
+  exact edist_le_sum_Ico_min_max_edist U _ _
 
 /-- **Discrete Hölder estimate** for a disjoint family of intervals `(sᵢ, tᵢ]` in `[0, T]`: the
 `p`-th power of the sum of the distances between the piecewise constant interpolant at times `sᵢ`
@@ -156,7 +131,8 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
     obtain ⟨h₁, h₂⟩ := hE.1 i hi
     rw [uIcc_of_le hT] at h₁ h₂
     exact ⟨min_le_max, max_le h₁.2 h₂.2⟩
-  have hedist i (_ : i ∈ Finset.range k) := edist_ceil_div_le_sum_Ico_edist U (I i).1 (I i).2 hτr
+  have hedist i (_ : i ∈ Finset.range k) :=
+    edist_ceil_div_le_sum_Ico_edist (τ := τ) U (I i).1 (I i).2
   -- The index sets of disjoint intervals are disjoint.
   have hdisj : (Finset.range k : Set ℕ).PairwiseDisjoint J :=
     pairwiseDisjoint_Ico_ceil_div hτr hE.2
@@ -168,7 +144,13 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
     refine Finset.sum_congr rfl fun i _ ↦ ?_
     rw [Real.volume_uIoc, ← max_sub_min_eq_abs']
     simp only [t, s, max_comm (I i).1, min_comm (I i).1]
-  have hcard := card_biUnion_Ico_ceil_div_le hτr k (fun i hi ↦ (hst i hi).1) hdisj
+  have hcard : (((Finset.range k).biUnion J).card : ℝ≥0∞) ≤
+      ENNReal.ofReal ((∑ i ∈ Finset.range k, (t i - s i)) / τ + k) := by
+    rw [← ENNReal.ofReal_natCast]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have := card_biUnion_Ico_ceil_div_le (NNReal.coe_nonneg τ) (Finset.range k)
+      fun i hi ↦ (hst i hi).1
+    rwa [Finset.card_range] at this
   have hsub : (Finset.range k).biUnion J ⊆ Finset.range ⌈T / τ⌉₊ := by
     intro n hn
     obtain ⟨i, hi, hn⟩ := Finset.mem_biUnion.1 hn

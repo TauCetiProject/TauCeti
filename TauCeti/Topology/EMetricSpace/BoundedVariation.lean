@@ -12,12 +12,15 @@ public import Mathlib.Topology.EMetricSpace.BoundedVariation
 
 This file transfers eventual upper bounds on the total variations of a family of maps to a
 `liminf` bound on the total variation of a pointwise limit. It also computes the variation of a
-composition with an antitone map on an interval.
+composition with an antitone map on an interval, and records the polygon inequality for the
+distance between two terms of a sequence.
 
 ## Main results
 
 * `TauCeti.eVariationOn_le_liminf_of_eventually_le`: an eventual bound on the total variations of
   a family of maps bounds the total variation of a pointwise limit by the `liminf` of the bounds.
+* `TauCeti.edist_le_sum_Ico_min_max_edist`: the distance between two terms of a sequence is at most
+  the sum of the steps taken between them, whichever index is larger.
 * `eVariationOn.comp_inter_Icc_eq_of_antitoneOn`: the antitone counterpart of Mathlib's
   `eVariationOn.comp_inter_Icc_eq_of_monotoneOn`.
 -/
@@ -39,6 +42,15 @@ variable [TopologicalSpace X] [WeakPseudoEMetricSpace X]
 @[simp] theorem eVariationOn_subtypeVal_comp {s : Set X} {f : α → s} {t : Set α} :
     eVariationOn f t = eVariationOn ((Subtype.val : s → X) ∘ f) t := by
   rfl
+
+/-- **The polygon inequality for two indices in either order.** The distance between two terms of
+a sequence is at most the sum of the steps taken between them. -/
+theorem edist_le_sum_Ico_min_max_edist (f : ℕ → X) (m n : ℕ) :
+    edist (f m) (f n) ≤ ∑ i ∈ Finset.Ico (min m n) (max m n), edist (f i) (f (i + 1)) := by
+  rcases le_total m n with h | h
+  · simpa [min_eq_left h, max_eq_right h] using edist_le_Ico_sum_edist f h
+  · rw [edist_comm]
+    simpa [min_eq_right h, max_eq_left h] using edist_le_Ico_sum_edist f h
 
 end WeakPseudoEMetricSpace
 
