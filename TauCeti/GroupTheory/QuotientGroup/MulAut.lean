@@ -49,8 +49,8 @@ def _root_.MulAut.mapQuotient : MulAut G →* MulAut (G ⧸ N) where
 /-- The automorphism induced on `G ⧸ N` sends the class of `x` to the class of `φ x`. -/
 @[simp]
 theorem _root_.MulAut.mapQuotient_mk (φ : MulAut G) (x : G) :
-    MulAut.mapQuotient N φ (x : G ⧸ N) = (φ x : G ⧸ N) :=
-  (rfl)
+    MulAut.mapQuotient N φ (x : G ⧸ N) = (φ x : G ⧸ N) := by
+  simp [MulAut.mapQuotient]
 
 /-- An automorphism of `G` induces the identity on `G ⧸ N` exactly when it fixes every class
 modulo `N`. -/
