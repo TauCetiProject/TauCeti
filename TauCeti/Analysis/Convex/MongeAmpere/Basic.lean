@@ -12,8 +12,6 @@ public import Mathlib.MeasureTheory.Function.Jacobian
 import TauCeti.Analysis.Convex.Alexandrov
 import TauCeti.Analysis.Convex.Extrema
 import TauCeti.Analysis.Convex.SlopeSets
-import Mathlib.Analysis.InnerProductSpace.Dual
-import Mathlib.Analysis.LocallyConvex.Separation
 
 /-!
 # The Aleksandrov Monge–Ampère measure of a convex function
