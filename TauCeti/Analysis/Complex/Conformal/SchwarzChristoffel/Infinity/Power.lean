@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Log
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.Analysis.SpecialFunctions.Integrals.Basic
 
 /-!
 # Power growth of Schwarz--Christoffel primitives at infinity
@@ -80,6 +81,44 @@ private theorem hasDerivAt_schwarzChristoffelPowerRemainder (a e : ι → ℝ)
     have hcast : (((∑ i, e i) + 1 : ℝ) : ℂ) = (S : ℂ) + 1 := by simp [S]
     rw [hcast]
 
+/-- On the part of the circle of radius `R` in the closed upper half-plane, the primitive extends
+continuously, provided every finite prevertex lies strictly inside the circle (`|a i| < R`). -/
+private theorem continuousOn_extendFrom_schwarzChristoffelPrimitive_sphere
+    (a e : ι → ℝ) (z₀ : UpperHalfPlane)
+    {R : ℝ} (haR : ∀ i, |a i| < R) :
+    ContinuousOn (extendFrom upperHalfPlaneSet (schwarzChristoffelPrimitive a e z₀))
+      (sphere 0 R ∩ closure upperHalfPlaneSet) := by
+  classical
+  apply continuousOn_extendFrom
+  · intro z hz
+    exact hz.2
+  · intro z hz
+    by_cases hzH : z ∈ upperHalfPlaneSet
+    · exact ⟨schwarzChristoffelPrimitive a e z₀ z,
+        ((differentiableOn_schwarzChristoffelPrimitive a e z₀ z hzH).differentiableAt
+          (isOpen_upperHalfPlaneSet.mem_nhds hzH)).continuousAt.tendsto.mono_left
+            nhdsWithin_le_nhds⟩
+    · have hzcl : 0 ≤ z.im := by
+        simpa [Complex.closure_setOfPred_lt_im] using hz.2
+      have hzim : z.im = 0 := le_antisymm (not_lt.mp hzH) hzcl
+      have hzreal : (z.re : ℂ) = z := Complex.ext (by simp) (by simp [hzim])
+      have hzabs : |z.re| = R := by
+        have hznorm : ‖z‖ = R := by simpa using hz.1
+        rw [← hzreal, norm_real, Real.norm_eq_abs] at hznorm
+        exact hznorm
+      have hne (i : ι) : a i ≠ z.re := by
+        intro hi
+        have := haR i
+        rw [hi, hzabs] at this
+        exact this.false
+      have hlocal : ∑ i with a i = z.re, e i = 0 := by
+        apply Finset.sum_eq_zero
+        intro i hi
+        exact (hne i (Finset.mem_filter.mp hi).2).elim
+      rw [← hzreal]
+      exact ⟨schwarzChristoffelBoundary a e z₀ z.re,
+        tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re (by rw [hlocal]; norm_num)⟩
+
 private theorem exists_bound_schwarzChristoffelPowerRemainder_on_semicircle
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (hsum : -1 < ∑ i, e i)
     {R : ℝ} (haR : ∀ i, |a i| < R) :
@@ -88,35 +127,8 @@ private theorem exists_bound_schwarzChristoffelPowerRemainder_on_semicircle
   classical
   let K : Set ℂ := sphere 0 R ∩ closure upperHalfPlaneSet
   let F : ℂ → ℂ := schwarzChristoffelPrimitive a e z₀
-  have hcont : ContinuousOn (extendFrom upperHalfPlaneSet F) K := by
-    apply continuousOn_extendFrom
-    · intro z hz
-      exact hz.2
-    · intro z hz
-      by_cases hzH : z ∈ upperHalfPlaneSet
-      · exact ⟨F z, ((differentiableOn_schwarzChristoffelPrimitive a e z₀ z hzH).differentiableAt
-          (isOpen_upperHalfPlaneSet.mem_nhds hzH)).continuousAt.tendsto.mono_left
-            nhdsWithin_le_nhds⟩
-      · have hzcl : 0 ≤ z.im := by
-          simpa [Complex.closure_setOfPred_lt_im] using hz.2
-        have hzim : z.im = 0 := le_antisymm (not_lt.mp hzH) hzcl
-        have hzreal : (z.re : ℂ) = z := Complex.ext (by simp) (by simp [hzim])
-        have hzabs : |z.re| = R := by
-          have hznorm : ‖z‖ = R := by simpa [K] using hz.1
-          rw [← hzreal, norm_real, Real.norm_eq_abs] at hznorm
-          exact hznorm
-        have hne (i : ι) : a i ≠ z.re := by
-          intro hi
-          have := haR i
-          rw [hi, hzabs] at this
-          exact this.false
-        have hlocal : ∑ i with a i = z.re, e i = 0 := by
-          apply Finset.sum_eq_zero
-          intro i hi
-          exact (hne i (Finset.mem_filter.mp hi).2).elim
-        rw [← hzreal]
-        exact ⟨schwarzChristoffelBoundary a e z₀ z.re,
-          tendsto_schwarzChristoffelPrimitive_boundary a e z₀ z.re (by rw [hlocal]; norm_num)⟩
+  have hcont : ContinuousOn (extendFrom upperHalfPlaneSet F) K :=
+    continuousOn_extendFrom_schwarzChristoffelPrimitive_sphere a e z₀ haR
   have hK : IsCompact K :=
     (isCompact_sphere (0 : ℂ) R).inter_right isClosed_closure
   have hbdd := (hK.image_of_continuousOn hcont).isBounded
@@ -141,6 +153,23 @@ private theorem exists_bound_schwarzChristoffelPowerRemainder_on_semicircle
               abs_of_pos (by linarith : 0 < (∑ i, e i) + 1)]
           rw [norm_div, Complex.norm_cpow_real, hzR, hden]
     _ ≤ M := le_max_right _ _
+
+/-- The pointwise bound on the radial derivative of the power remainder. -/
+private theorem norm_mul_schwarzChristoffelIntegrand_sub_cpow_le (a e : ι → ℝ) {R η t : ℝ}
+    {z : ℂ}
+    (herror : ∀ y ∈ upperHalfPlaneSet, R ≤ ‖y‖ →
+      ‖schwarzChristoffelIntegrand a e y - y ^ ((∑ i, e i : ℝ) : ℂ)‖ ≤
+        η * ‖y‖ ^ (∑ i, e i))
+    (hz0 : 0 < ‖z‖) (ht0 : 0 < t) (hy : (t : ℂ) * z ∈ upperHalfPlaneSet)
+    (hyR : R ≤ ‖(t : ℂ) * z‖) :
+    ‖z * (schwarzChristoffelIntegrand a e ((t : ℂ) * z) -
+        ((t : ℂ) * z) ^ ((∑ i, e i : ℝ) : ℂ))‖ ≤
+      η * ‖z‖ ^ ((∑ i, e i) + 1) * t ^ (∑ i, e i) := by
+  rw [norm_mul]
+  refine (mul_le_mul_of_nonneg_left (herror _ hy hyR) (norm_nonneg z)).trans_eq ?_
+  rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos ht0,
+    Real.mul_rpow ht0.le (norm_nonneg z), Real.rpow_add hz0, Real.rpow_one]
+  ring
 
 private theorem norm_schwarzChristoffelPowerRemainder_sub_le (a e : ι → ℝ)
     (z₀ : UpperHalfPlane) (hsum : -1 < ∑ i, e i) {R η : ℝ} (hR : 0 < R)
@@ -179,14 +208,7 @@ private theorem norm_schwarzChristoffelPowerRemainder_sub_le (a e : ι → ℝ)
       rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos ht0]
       calc R = δ * ‖z‖ := by simp [δ, hz0.ne']
         _ ≤ t * ‖z‖ := mul_le_mul_of_nonneg_right ht.1 (norm_nonneg z)
-    rw [norm_mul]
-    refine (mul_le_mul_of_nonneg_left (herror _ (htmem t ht) hyR) (norm_nonneg z)).trans_eq ?_
-    rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos ht0,
-      Real.mul_rpow ht0.le (norm_nonneg z)]
-    simp only [B]
-    rw [Real.rpow_add hz0]
-    simp only [Real.rpow_one]
-    ring
+    exact norm_mul_schwarzChristoffelIntegrand_sub_cpow_le a e herror hz0 ht0 (htmem t ht) hyR
   have hcont : ContinuousOn (fun t : ℝ ↦ Q ((t : ℂ) * z)) (Icc δ 1) :=
     fun t ht ↦ (hderiv t ht).continuousAt.continuousWithinAt
   have hdiff : DifferentiableOn ℝ (fun t : ℝ ↦ Q ((t : ℂ) * z)) (Ioo δ 1) :=
@@ -203,19 +225,91 @@ private theorem norm_schwarzChristoffelPowerRemainder_sub_le (a e : ι → ℝ)
       exact hbound t (Ioo_subset_Icc_self ht)
   have hmain :=
     norm_sub_le_integral_of_norm_deriv_le_of_le hδ1 hcont hdiff hfB hBi
-  have hint : (∫ t in δ..1, B t) ≤ η / (S + 1) * ‖z‖ ^ (S + 1) := by
-    simp only [B]
-    rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl (by simpa [S] using hsum)),
-      Real.one_rpow]
-    have hS1 : 0 < S + 1 := by dsimp [S]; linarith
-    have hδpow : 0 ≤ δ ^ (S + 1) := Real.rpow_nonneg hδ0.le _
-    calc
-      η * ‖z‖ ^ (S + 1) * ((1 - δ ^ (S + 1)) / (S + 1))
-          ≤ η * ‖z‖ ^ (S + 1) * (1 / (S + 1)) := by
-            gcongr
-            linarith
-      _ = η / (S + 1) * ‖z‖ ^ (S + 1) := by ring
+  have hint : (∫ t in δ..1, B t) ≤ η / (S + 1) * ‖z‖ ^ (S + 1) :=
+    integral_const_mul_rpow_le hsum hδ0 hη (Real.rpow_nonneg (norm_nonneg z) _)
   simpa [Q, δ, S] using hmain.trans hint
+
+/-- Outside a large semicircle enclosing every finite prevertex, the integrand is uniformly
+close to `y ^ S` relative to `‖y‖ ^ S`, where `S` is the total turning exponent. -/
+private theorem exists_radius_norm_schwarzChristoffelIntegrand_sub_le (a e : ι → ℝ) {η : ℝ}
+    (hη : 0 < η) :
+    ∃ R : ℝ, 0 < R ∧ (∀ i, |a i| < R) ∧ ∀ y ∈ upperHalfPlaneSet, R ≤ ‖y‖ →
+      ‖schwarzChristoffelIntegrand a e y - y ^ ((∑ i, e i : ℝ) : ℂ)‖ ≤
+        η * ‖y‖ ^ (∑ i, e i) := by
+  classical
+  have hnormalized := tendsto_schwarzChristoffelIntegrand_div_cpow_atInfinity a e
+  have hev : ∀ᶠ y : ℂ in cobounded ℂ ⊓ Filter.principal upperHalfPlaneSet,
+      ‖schwarzChristoffelIntegrand a e y / y ^ ((∑ i, e i : ℝ) : ℂ) - 1‖ < η := by
+    have := Metric.tendsto_nhds.mp hnormalized η hη
+    simpa [dist_eq_norm] using this
+  rw [eventually_inf_principal, Filter.hasBasis_cobounded_norm.eventually_iff] at hev
+  obtain ⟨R₀, -, hR₀⟩ := hev
+  let A : ℝ := 2 + ∑ i, |a i|
+  have hA : 0 < A := by dsimp [A]; positivity
+  refine ⟨max R₀ A, hA.trans_le (le_max_right _ _), fun i ↦ ?_, fun y hy hyR ↦ ?_⟩
+  · have hi : |a i| ≤ ∑ j, |a j| :=
+      Finset.single_le_sum (fun j _ ↦ abs_nonneg (a j)) (Finset.mem_univ i)
+    dsimp [A] at hA ⊢
+    exact lt_of_lt_of_le (by linarith) (le_max_right R₀ A)
+  · have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
+    have hp0 : y ^ ((∑ i, e i : ℝ) : ℂ) ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl hy0)
+    have heq : schwarzChristoffelIntegrand a e y - y ^ ((∑ i, e i : ℝ) : ℂ) =
+        (schwarzChristoffelIntegrand a e y / y ^ ((∑ i, e i : ℝ) : ℂ) - 1) *
+          y ^ ((∑ i, e i : ℝ) : ℂ) := by
+      field_simp
+    rw [heq, norm_mul, Complex.norm_cpow_real]
+    exact mul_le_mul_of_nonneg_right
+      (hR₀ (le_max_left R₀ A |>.trans hyR) hy).le (Real.rpow_nonneg (norm_nonneg y) _)
+
+/-- For `z` in the upper half-plane with `R ≤ ‖z‖`, the power remainder `Q` satisfies
+`‖Q z‖ / ‖z‖ ^ (S + 1) ≤ M / ‖z‖ ^ (S + 1) + η / (S + 1)`, where `S = ∑ i, e i`, `M` bounds `Q`
+on the semicircle of radius `R`, and `η` is the constant of the radial error estimate. -/
+private theorem norm_schwarzChristoffelPowerRemainder_div_le (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (hsum : -1 < ∑ i, e i) {R η M : ℝ} (hR : 0 < R) (hη : 0 ≤ η)
+    (herror : ∀ y ∈ upperHalfPlaneSet, R ≤ ‖y‖ →
+      ‖schwarzChristoffelIntegrand a e y - y ^ ((∑ i, e i : ℝ) : ℂ)‖ ≤
+        η * ‖y‖ ^ (∑ i, e i))
+    (hM : ∀ z ∈ upperHalfPlaneSet, ‖z‖ = R →
+      ‖schwarzChristoffelPowerRemainder a e z₀ z‖ ≤ M)
+    {z : ℂ} (hz : z ∈ upperHalfPlaneSet) (hzR : R ≤ ‖z‖) :
+    ‖schwarzChristoffelPowerRemainder a e z₀ z‖ / ‖z‖ ^ ((∑ i, e i) + 1) ≤
+      M / ‖z‖ ^ ((∑ i, e i) + 1) + η / ((∑ i, e i) + 1) := by
+  have hz0 : 0 < ‖z‖ := norm_pos_iff.mpr fun h ↦ by simp [h] at hz
+  have hzpow : 0 < ‖z‖ ^ ((∑ i, e i) + 1) := Real.rpow_pos_of_pos hz0 _
+  have hα : 0 < (∑ i, e i) + 1 := by linarith
+  have hyH : ((R / ‖z‖ : ℝ) : ℂ) * z ∈ upperHalfPlaneSet := by
+    simpa using mul_pos (div_pos hR hz0) hz
+  have hynorm : ‖((R / ‖z‖ : ℝ) : ℂ) * z‖ = R := by
+    rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos (div_pos hR hz0)]
+    exact div_mul_cancel₀ R hz0.ne'
+  have hradial := norm_schwarzChristoffelPowerRemainder_sub_le a e z₀ hsum hR hη herror hz hzR
+  have hQz : ‖schwarzChristoffelPowerRemainder a e z₀ z‖ ≤
+      M + η / ((∑ i, e i) + 1) * ‖z‖ ^ ((∑ i, e i) + 1) := by
+    calc
+      _ ≤ _ := norm_le_norm_sub_add _ _
+      _ ≤ η / ((∑ i, e i) + 1) * ‖z‖ ^ ((∑ i, e i) + 1) + M :=
+        add_le_add hradial (hM _ hyH hynorm)
+      _ = _ := add_comm _ _
+  calc
+    _ ≤ (M + η / ((∑ i, e i) + 1) * ‖z‖ ^ ((∑ i, e i) + 1)) / ‖z‖ ^ ((∑ i, e i) + 1) :=
+      div_le_div_of_nonneg_right hQz hzpow.le
+    _ = _ := by field_simp
+
+/-- The primitive divided by `z ^ (S + 1)` is the remainder divided by `z ^ (S + 1)` plus
+`(S + 1)⁻¹`. -/
+private theorem schwarzChristoffelPowerRemainder_div_cpow_add_inv (a e : ι → ℝ)
+    (z₀ : UpperHalfPlane) (hsum : -1 < ∑ i, e i) {z : ℂ} (hz : z ∈ upperHalfPlaneSet) :
+    schwarzChristoffelPowerRemainder a e z₀ z / z ^ (((∑ i, e i) + 1 : ℝ) : ℂ) +
+        (((∑ i, e i) + 1 : ℝ) : ℂ)⁻¹ =
+      schwarzChristoffelPrimitive a e z₀ z / z ^ (((∑ i, e i) + 1 : ℝ) : ℂ) := by
+  have hz0 : z ≠ 0 := fun h ↦ by simp [h] at hz
+  have hpow0 : z ^ (((∑ i, e i) + 1 : ℝ) : ℂ) ≠ 0 :=
+    Complex.cpow_ne_zero_iff.mpr (Or.inl hz0)
+  have hden : (((∑ i, e i) + 1 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (by linarith)
+  dsimp only [schwarzChristoffelPowerRemainder]
+  rw [← ofReal_one, ← ofReal_add]
+  field_simp [hpow0, hden]
+  ring
 
 /-- **Power asymptotic at infinity.** If the total turning exponent is greater than `-1`,
 the Schwarz--Christoffel primitive is asymptotic to
@@ -238,35 +332,7 @@ theorem tendsto_schwarzChristoffelPrimitive_div_cpow_atInfinity_of_neg_one_lt_su
     intro ε hε
     let η : ℝ := ε * α / 4
     have hη : 0 < η := by dsimp [η]; positivity
-    -- Convert the normalized integrand limit into a uniform derivative-error estimate outside
-    -- a sufficiently large semicircle that also encloses every finite prevertex.
-    have hnormalized := tendsto_schwarzChristoffelIntegrand_div_cpow_atInfinity a e
-    have hev : ∀ᶠ y : ℂ in cobounded ℂ ⊓ Filter.principal upperHalfPlaneSet,
-        ‖schwarzChristoffelIntegrand a e y / y ^ (S : ℂ) - 1‖ < η := by
-      have := Metric.tendsto_nhds.mp hnormalized η hη
-      simpa [S, dist_eq_norm] using this
-    rw [eventually_inf_principal, Filter.hasBasis_cobounded_norm.eventually_iff] at hev
-    obtain ⟨R₀, -, hR₀⟩ := hev
-    let A : ℝ := 2 + ∑ i, |a i|
-    let R : ℝ := max R₀ A
-    have hA : 0 < A := by dsimp [A]; positivity
-    have hR : 0 < R := hA.trans_le (le_max_right _ _)
-    have haR (i : ι) : |a i| < R := by
-      have hi : |a i| ≤ ∑ j, |a j| :=
-        Finset.single_le_sum (fun j _ ↦ abs_nonneg (a j)) (Finset.mem_univ i)
-      dsimp [A] at hA ⊢
-      exact lt_of_lt_of_le (by linarith) (le_max_right R₀ A)
-    have herror : ∀ y ∈ upperHalfPlaneSet, R ≤ ‖y‖ →
-        ‖schwarzChristoffelIntegrand a e y - y ^ (S : ℂ)‖ ≤ η * ‖y‖ ^ S := by
-      intro y hy hyR
-      have hy0 : y ≠ 0 := fun h ↦ by simp [h] at hy
-      have hp0 : y ^ (S : ℂ) ≠ 0 := Complex.cpow_ne_zero_iff.mpr (Or.inl hy0)
-      have heq : schwarzChristoffelIntegrand a e y - y ^ (S : ℂ) =
-          (schwarzChristoffelIntegrand a e y / y ^ (S : ℂ) - 1) * y ^ (S : ℂ) := by
-        field_simp
-      rw [heq, norm_mul, Complex.norm_cpow_real]
-      exact mul_le_mul_of_nonneg_right
-        (hR₀ (le_max_left R₀ A |>.trans hyR) hy).le (Real.rpow_nonneg (norm_nonneg y) _)
+    obtain ⟨R, hR, haR, herror⟩ := exists_radius_norm_schwarzChristoffelIntegrand_sub_le a e hη
     obtain ⟨M, _, hM⟩ :=
       exists_bound_schwarzChristoffelPowerRemainder_on_semicircle a e z₀ hsum haR
     have hsmall : Tendsto (fun r : ℝ => M / r ^ α) atTop (nhds 0) :=
@@ -279,33 +345,11 @@ theorem tendsto_schwarzChristoffelPrimitive_div_cpow_atInfinity_of_neg_one_lt_su
       mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hzRT hzH
     have hzR : R ≤ ‖z‖ := (le_max_left R T).trans hzRT
     have hzT : T ≤ ‖z‖ := (le_max_right R T).trans hzRT
-    let y : ℂ := ((R / ‖z‖ : ℝ) : ℂ) * z
-    have hyH : y ∈ upperHalfPlaneSet := by
-      have hz0 : 0 < ‖z‖ := norm_pos_iff.mpr fun h ↦ by simp [h] at hzH
-      simpa [y] using mul_pos (div_pos hR hz0) hzH
-    have hynorm : ‖y‖ = R := by
-      have hz0 : 0 < ‖z‖ := norm_pos_iff.mpr fun h ↦ by simp [h] at hzH
-      calc
-        ‖y‖ = (R / ‖z‖) * ‖z‖ := by
-          rw [norm_mul, norm_real, Real.norm_eq_abs, abs_of_pos (div_pos hR hz0)]
-        _ = R := div_mul_cancel₀ R hz0.ne'
-    have hradial := norm_schwarzChristoffelPowerRemainder_sub_le a e z₀ hsum hR hη.le
-      (by simpa [S] using herror) hzH hzR
-    -- The radial estimate controls the varying endpoint; compactness of the fixed inner
-    -- semicircle controls the other endpoint independently of the approach direction.
-    have hQz : ‖Q z‖ ≤ M + η / α * ‖z‖ ^ α := by
-      calc
-        ‖Q z‖ ≤ ‖Q z - Q y‖ + ‖Q y‖ := norm_le_norm_sub_add _ _
-        _ ≤ η / α * ‖z‖ ^ α + M :=
-          add_le_add (by simpa [Q, y, S, α] using hradial) (hM y hyH hynorm)
-        _ = M + η / α * ‖z‖ ^ α := add_comm _ _
-    have hz0 : 0 < ‖z‖ := norm_pos_iff.mpr fun h ↦ by simp [h] at hzH
-    have hzpow : 0 < ‖z‖ ^ α := Real.rpow_pos_of_pos hz0 α
+    have hbound := norm_schwarzChristoffelPowerRemainder_div_le a e z₀ hsum hR hη.le herror hM
+      hzH hzR
     rw [dist_zero_right, norm_div, Complex.norm_cpow_real]
     calc
-      ‖Q z‖ / ‖z‖ ^ α ≤ (M + η / α * ‖z‖ ^ α) / ‖z‖ ^ α :=
-        div_le_div_of_nonneg_right hQz hzpow.le
-      _ = M / ‖z‖ ^ α + η / α := by field_simp
+      ‖Q z‖ / ‖z‖ ^ α ≤ M / ‖z‖ ^ α + η / α := hbound
       _ = M / ‖z‖ ^ α + ε / 4 := by
         congr 1
         dsimp [η]
@@ -319,18 +363,12 @@ theorem tendsto_schwarzChristoffelPrimitive_div_cpow_atInfinity_of_neg_one_lt_su
       cobounded ℂ ⊓ Filter.principal upperHalfPlaneSet]
       (fun z => schwarzChristoffelPrimitive a e z₀ z / z ^ (α : ℂ)) := by
     filter_upwards [mem_inf_of_right (mem_principal_self upperHalfPlaneSet)] with z hz
-    have hz0 : z ≠ 0 := fun h ↦ by simp [h] at hz
-    dsimp [Q, schwarzChristoffelPowerRemainder]
     have hcast : (α : ℂ) = (((∑ i, e i) + 1 : ℝ) : ℂ) := by simp [α, S]
     rw [hcast]
-    have hpow0 : z ^ (((∑ i, e i) + 1 : ℝ) : ℂ) ≠ 0 :=
-      Complex.cpow_ne_zero_iff.mpr (Or.inl hz0)
-    have hden : (((∑ i, e i) + 1 : ℝ) : ℂ) ≠ 0 := ofReal_ne_zero.mpr (by linarith)
-    rw [← ofReal_one, ← ofReal_add]
-    field_simp [hpow0, hden]
-    ring
+    exact schwarzChristoffelPowerRemainder_div_cpow_add_inv a e z₀ hsum hz
   have := hlim.congr' heq
   simpa [α, S] using this
+
 
 /-- **Uniform escape in the power-growth case.** If the total turning exponent is greater
 than `-1`, the Schwarz--Christoffel primitive tends to infinity through the entire upper
