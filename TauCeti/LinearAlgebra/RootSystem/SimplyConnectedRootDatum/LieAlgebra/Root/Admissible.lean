@@ -18,11 +18,11 @@ simple-generator Kostant form implies stability under divided powers of every na
 root vector. In particular the full-weight lattice is admissible for the all-root Kostant form,
 not merely for the simple-generator form used to construct it.
 
-The argument combines `DynkinType.chevalleySystem_induction` with
-`UniversalEnvelopingAlgebra.dividedPower_weylAut_smul_mem`: simple Weyl elements and their
-inverses preserve a Kostant-stable subgroup. Nilpotence follows from the represented sl₂
-triples, without requiring a weight decomposition of the module. No equality of the two
-integral subrings of the universal enveloping algebra is asserted.
+All-root stability follows from `DynkinType.kostantForm_chevalleySystem_smul_mem`.
+The required simple-generator nilpotence follows from
+`DynkinType.isNilpotent_representation_rootGenerator`, using the represented sl₂ triples
+without requiring a weight decomposition of the module. No equality of the two integral
+subrings of the universal enveloping algebra is asserted.
 
 ## References
 

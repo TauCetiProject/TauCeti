@@ -139,7 +139,8 @@ theorem dividedPower_chevalleySystem_smul_mem (γ : Fin t.numRoots) (n : ℕ) :
 
 include hM hnil in
 /-- The all-root Kostant form preserves any subgroup stable under the simple-generator form
-on which the simple root generators act nilpotently. The Cartan generators are unchanged. -/
+in a representation in which the simple root generators act nilpotently.
+The Cartan generators are unchanged. -/
 theorem kostantForm_chevalleySystem_smul_mem :
     ∀ u ∈ kostantForm (t.chevalleySystem ht) (t.lieBasis ht).h,
       ∀ v ∈ M, ρ u • v ∈ M := by
