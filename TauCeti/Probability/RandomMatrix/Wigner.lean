@@ -32,8 +32,8 @@ and resolvent methods:
 * measurability in the sample point;
 * when the entries are independent, the minor `Hₙ` is independent of the off-diagonal entries of
   the row and column removed from `Hₙ₊₁` (`indepFun_wignerMatrix_column`); the same holds for
-  the actual principal submatrix of `Hₙ₊₁` (`indepFun_wignerMatrix_minor`), and the law of `Hₙ`
-  depends only on the laws of the entries (`identDistrib_wignerMatrix`);
+  the actual principal submatrix of `Hₙ₊₁` (`indepFun_submatrix_castSucc_wignerMatrix`), and the
+  law of `Hₙ` depends only on the laws of the entries (`identDistrib_wignerMatrix`);
 * centred entries give centred matrix entries (`integral_wignerMatrix_apply_eq_zero`), `Lᵖ` entries
   give `Lᵖ` matrix entries (`memLp_wignerMatrix_apply`), and a product of `k` matrix entries is
   integrable when the entries of the array lie in `Lᵏ` (`integrable_prod_wignerMatrix_apply`);
@@ -258,7 +258,7 @@ theorem indepFun_wignerMatrix_column (hξ : ∀ ij, AEMeasurable (ξ ij) P)
 
 /-- The principal minor of a Wigner matrix obtained by deleting the last row and column is
 independent of the off-diagonal entries removed from that row and column. -/
-theorem indepFun_wignerMatrix_minor (hξ : ∀ ij, AEMeasurable (ξ ij) P)
+theorem indepFun_submatrix_castSucc_wignerMatrix (hξ : ∀ ij, AEMeasurable (ξ ij) P)
     (hη : ∀ i, AEMeasurable (η i) P)
     (hindep : iIndepFun (fun k : StrictUpper ⊕ ℕ ↦ Sum.elim ξ (fun i ω ↦ (η i ω : ℂ)) k) P)
     (n : ℕ) :
