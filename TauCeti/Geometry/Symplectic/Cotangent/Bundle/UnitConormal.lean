@@ -247,20 +247,19 @@ variable [RiemannianBundle (fun x : M ↦ TangentSpace I x)]
   [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)]
   [FiniteDimensional ℝ F] [I.Boundaryless] [J.Boundaryless]
 
-/-- The inclusion of the unit conormal bundle into `S*M` is smooth. -/
-theorem contMDiff_unitConormalInclusion (hi : IsSmoothEmbedding J I ∞ i)
-    (hk : finrank ℝ F + k = finrank ℝ E) :
-    letI := conormalFiberBundle (n := ∞) hi.contMDiff (by simp)
-      (hi.isImmersion.mfderiv_injective (by simp)) hk
-    letI := unitConormalChartedSpace k hi.contMDiff (hi.isImmersion.mfderiv_injective (by simp)) hk
+/-- For a smooth map `i : Q → M` with injective differentials, the inclusion of its unit conormal
+bundle into `S*M` is smooth. -/
+theorem contMDiff_unitConormalInclusion (hi : ContMDiff J I ∞ i)
+    (hinj : ∀ q, Injective (mfderiv J I i q)) (hk : finrank ℝ F + k = finrank ℝ E) :
+    letI := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+    letI := unitConormalChartedSpace k hi hinj hk
     ContMDiff 𝓘(ℝ, Fin (finrank ℝ E - 1) → ℝ)
       𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) ∞ (unitConormalInclusion J I k i) := by
-  have hinj := hi.isImmersion.mfderiv_injective (by simp)
-  let := conormalFiberBundle (n := ∞) hi.contMDiff (by simp) hinj hk
-  let := unitConormalChartedSpace k hi.contMDiff hinj hk
+  let := conormalFiberBundle (n := ∞) hi (by simp) hinj hk
+  let := unitConormalChartedSpace k hi hinj hk
   exact isSmoothEmbedding_coe_cosphereBundle.contMDiff_iff_comp.2
-    ((contMDiff_conormalInclusion (n := ∞) hi.contMDiff (by simp) hinj hk).comp
-      (isSmoothEmbedding_coe_unitConormal hi.contMDiff hinj hk).contMDiff)
+    ((contMDiff_conormalInclusion (n := ∞) hi (by simp) hinj hk).comp
+      (isSmoothEmbedding_coe_unitConormal hi hinj hk).contMDiff)
 
 /-- **The unit conormal bundle is smoothly embedded in the unit cosphere bundle.** For a smooth
 embedding `i : Q → M`, the inclusion of its unit conormal bundle into `S*M` is a smooth
@@ -281,7 +280,7 @@ theorem isSmoothEmbedding_unitConormalInclusion (hi : IsSmoothEmbedding J I ∞ 
   have hι := isSmoothEmbedding_conormalInclusion (n := ∞) hi (by simp) hk
   have hv := isSmoothEmbedding_coe_unitConormal hi.contMDiff hinj hk
   have hS := isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)
-  have hf := contMDiff_unitConormalInclusion hi hk
+  have hf := contMDiff_unitConormalInclusion hi.contMDiff hinj hk
   -- Followed by the inclusion of `S*M` into `T*M`, the map is the inclusion of the unit conormal
   -- bundle into the conormal bundle, followed by the inclusion of the conormal bundle into `T*M`.
   have hcomp : (Subtype.val : cosphereBundle I M → CotangentBundle I M) ∘
@@ -323,7 +322,7 @@ theorem isLegendrianEmbedding_unitConormalInclusion [Nontrivial E]
   have := isManifold_unitConormal hi.contMDiff hinj hk
   have hv := isSmoothEmbedding_coe_unitConormal hi.contMDiff hinj hk
   have hS := isSmoothEmbedding_coe_cosphereBundle (I := I) (M := M)
-  have hf := contMDiff_unitConormalInclusion hi hk
+  have hf := contMDiff_unitConormalInclusion hi.contMDiff hinj hk
   -- The kernel of `λ|S*M` is a `C¹` contact structure, which needs a `C²` manifold structure.
   have : IsManifold 𝓘(ℝ, Fin (finrank ℝ (E × (E →L[ℝ] ℝ)) - 1) → ℝ) (1 + 1)
       (cosphereBundle I M) := .of_le (n := ∞) (by norm_num)
