@@ -22,7 +22,7 @@ import Mathlib.RingTheory.TwoSidedIdeal.Operations
 
 Let `K` be a field, let `A` be a central simple `K`-algebra and let `B` be a simple `K`-algebra.
 This file proves that `A ⊗[K] B` is again simple, in both orientations. Together with
-`TauCeti.Algebra.IsCentral.tensorProduct` of `TauCeti/Algebra/Central/TensorProduct.lean`, which
+`Algebra.IsCentral.tensorProduct_of_field` of `TauCeti/Algebra/Central/TensorProduct.lean`, which
 says that `A ⊗[K] B` is again central as soon as `B` is, this is the statement that central simple
 `K`-algebras are closed under `⊗[K]`. That closure is what lets the tensor product descend to a
 multiplication on Brauer classes.
@@ -35,7 +35,7 @@ Simplicity is a statement about `A ⊗[K] B` as a ring, so it applies unchanged 
 the orientation supplied by `IsSimpleRing.tensorProduct_of_isCentral_right`. It is only the
 simplicity half of "`L ⊗[K] A` is central simple over `L`". The centrality there is a statement
 about `L ⊗[K] A` as an `L`-algebra, over `L` and not over `K`, and is not proved here:
-`TauCeti.Algebra.IsCentral.tensorProduct` gives centrality over `K` and asks both factors to be
+`Algebra.IsCentral.tensorProduct_of_field` gives centrality over `K` and asks both factors to be
 central over `K`, which for a nontrivial extension `L / K` the factor `L` is not. The other half is
 `TauCeti.Algebra.IsCentral.baseChange` in `TauCeti/Algebra/Central/BaseChange.lean`, which asks only
 that `A` be central and `L` be free as a `K`-module, and so combines with the simplicity instance
@@ -49,7 +49,7 @@ below rather than resting on it.
   central simple and `A` merely simple, obtained by transporting the previous one along
   `Algebra.TensorProduct.comm`. This is the orientation of a scalar extension `L ⊗[K] A`.
 
-Both are instances, and `TauCeti.Algebra.IsCentral.tensorProduct` is re-exported by this module, so
+Both are instances, and `Algebra.IsCentral.tensorProduct_of_field` is re-exported by this module, so
 importing this file alone lets typeclass inference recognize `A ⊗[K] B` as a central simple
 `K`-algebra whenever `A` and `B` are. With Mathlib's matrix instances that reads
 `Mₘ(K) ⊗[K] Mₙ(K)` off with no glue; that is the worked example checked at the end of the file.
@@ -75,7 +75,7 @@ Simplicity is then the classical minimal-length argument: given a nonzero two-si
 `I`, pick a nonzero `y ∈ I` with as few nonzero coordinates as possible; after rescaling one
 coordinate to `1` (which is where simplicity of `A` is used), minimality forces every additive
 commutator `(a ⊗ₜ 1) * y - y * (a ⊗ₜ 1)` to vanish, so `y = 1 ⊗ₜ b` by
-`TauCeti.Algebra.TensorProduct.forall_commute_tmul_one_iff`; simplicity of `B` then pushes `1`
+`Algebra.TensorProduct.forall_commute_tmul_one_iff`; simplicity of `B` then pushes `1`
 into `I`.
 
 Both appeals to simplicity in `IsSimpleRing.tensorProduct` are made by exhibiting a
@@ -176,7 +176,7 @@ variable {K A B : Type*} [Field K] [Ring A] [Ring B] [Algebra K A] [Algebra K B]
 
 variable (K A B) in
 /-- **The tensor product of a central simple `K`-algebra with a simple `K`-algebra is simple.**
-Together with `TauCeti.Algebra.IsCentral.tensorProduct` this says that central simple `K`-algebras
+Together with `Algebra.IsCentral.tensorProduct_of_field` this says that central simple `K`-algebras
 are closed under `⊗[K]`.
 
 No finite-dimensionality is needed on either side. -/
@@ -206,7 +206,7 @@ instance tensorProduct [Algebra.IsCentral K A] [IsSimpleRing A] [IsSimpleRing B]
   -- Every coordinate of `y` commutes with `A`, so `y = 1 ⊗ₜ b`.
   have hcomm := commute_tmul_one_of_repr_eq_one 𝓑 hi₀ hyI hyS hy1
     (fun z hz hlt => by_contra fun hz0 => hmin.not_lt ⟨hz, hz0⟩ hlt)
-  obtain ⟨b, rfl⟩ := TauCeti.Algebra.TensorProduct.forall_commute_tmul_one_iff.mp hcomm
+  obtain ⟨b, rfl⟩ := Algebra.TensorProduct.forall_commute_tmul_one_iff.mp hcomm
   have hb : b ≠ 0 := by rintro rfl; exact hy0 (by simp)
   -- The `c : B` with `1 ⊗ₜ c ∈ I` form the preimage of `I` along `includeRight`, a two-sided
   -- ideal of the simple ring `B`; it contains `b ≠ 0`, hence it is everything.

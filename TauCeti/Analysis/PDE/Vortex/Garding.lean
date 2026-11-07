@@ -37,7 +37,9 @@ with `κ = ∂₁ A₂ - ∂₂ A₁` the curvature coefficient `TauCeti.Vortex.
 and of `(q, p)`, and by the divergence of a current bilinear in `x` and `y`; both integrate to
 zero. The curvature and `∂_a α` enter when derivatives of `y` are moved onto the field. At the
 vacuum the identity reduces to `‖L₀ y‖² = ‖∇y‖² + ‖y‖² / 4`
-(`TauCeti.Vortex.integral_norm_sq_vacuumOperator`).
+(`TauCeti.Vortex.integral_norm_sq_vacuumOperator`). Unlike the energy identity
+`TauCeti.Vortex.integral_norm_sq_gaugeFixedOperator_of_equation_eq_zero`, it does not assume the
+vortex equation on the support of the variation.
 
 At a vortex `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the potential is
 `|φ|² |b|² + ((12 |φ|² - 1) / 8) |ψ|²` up to a cross term bounded by `|∇₁ α| |y|²`. When
@@ -45,16 +47,15 @@ At a vortex `κ = -(1 - |α|²) / 8` and `∂bar_a α = 0`, so the potential is
 For every `a < 1 / 4` this gives a Gårding inequality with a compact remainder
 (`TauCeti.Vortex.exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le`):
 
-`∫ (|∇b|² + |∇_a ψ|²) + a ∫ |y|² ≤ ∫ |L_x y|² + K ∫_{|z| ≤ R} |y|²`,
+`∫ (|∇b|² + |∇_a ψ|²) + a ∫ |y|² ≤ ∫ |L_x y|² + K ∫_{|z| ≤ R} |y|²`.
 
-and in particular the exterior bound `a ∫ |y|² ≤ ∫ |L_x y|²` for variations vanishing on the disc
-of radius `R` (`TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`). This is
-the counterpart for `L_x` of the exterior coercivity of `L_x*`
-(`TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedAdjoint_ge`). Combined with the
-compactness of `H¹ → L²` on the disc, an estimate of this form gives finite-dimensionality of the
-kernel and closedness of the range of `L_x` on the completed spaces. The radius and the constant
-depend on the vortex and on `a`. These are classical test-field estimates; no completed Fredholm
-realization is constructed here.
+For variations vanishing on the disc of radius `R` it recovers the exterior bound
+`TauCeti.Vortex.exists_exterior_integral_norm_sq_gaugeFixedOperator_ge`, and in addition it
+controls the covariant gradient of the variation. Combined with the compactness of `H¹ → L²` on
+the disc, an estimate of this form gives finite-dimensionality of the kernel and closedness of
+the range of `L_x` on the completed spaces. The radius and the constant depend on the vortex and
+on `a`. These are classical test-field estimates; no completed Fredholm realization is
+constructed here.
 
 ## References
 
@@ -145,10 +146,14 @@ private theorem gaugeFixedPotential_eq {z : ℂ} (hx : DifferentiableAt ℝ x z)
               fderiv ℝ (fun w ↦ x w 3) z I + x z 1 * x z 2) +
             v 3 * (fderiv ℝ (fun w ↦ x w 3) z 1 + x z 0 * x z 2 -
               fderiv ℝ (fun w ↦ x w 2) z I + x z 1 * x z 3))) := by
-  have h1r := re_covariantDerivative hx 1
-  have h1i := im_covariantDerivative hx 1
-  have hIr := re_covariantDerivative hx I
-  have hIi := im_covariantDerivative hx I
+  have hp : DifferentiableAt ℝ (fun w ↦ x w 2) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) 2).differentiableAt.comp z hx :)
+  have hq : DifferentiableAt ℝ (fun w ↦ x w 3) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) 3).differentiableAt.comp z hx :)
+  have h1r := re_covariantDerivative hp hq 1
+  have h1i := im_covariantDerivative hp hq 1
+  have hIr := re_covariantDerivative hp hq I
+  have hIi := im_covariantDerivative hp hq I
   simp only [one_re, one_im, I_re, I_im] at h1r h1i hIr hIi
   rw [gaugeFixedPotential_def, curvature_apply, EuclideanSpace.real_norm_sq_eq, Fin.sum_univ_four]
   simp only [mul_im, mul_re, sub_re, sub_im, add_re, add_im, ofReal_re, ofReal_im, I_re, I_im,
@@ -379,8 +384,12 @@ private theorem vortexMass_mul_norm_sq_le_gaugeFixedPotential {z : ℂ}
   have he1 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 1) hsol
   have he2 := congrArg (fun e : EuclideanSpace ℝ (Fin 3) ↦ e 2) hsol
   simp only [equation_apply_one, equation_apply_two, PiLp.zero_apply] at he1 he2
-  have hcr := re_covariantDerivative hx 1
-  have hci := im_covariantDerivative hx 1
+  have hp : DifferentiableAt ℝ (fun w ↦ x w 2) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) 2).differentiableAt.comp z hx :)
+  have hq : DifferentiableAt ℝ (fun w ↦ x w 3) z :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) 3).differentiableAt.comp z hx :)
+  have hcr := re_covariantDerivative hp hq 1
+  have hci := im_covariantDerivative hp hq 1
   simp only [one_re, one_im, mul_one, mul_zero, add_zero] at hcr hci
   have hn : ‖covariantDerivative x z 1‖ ^ 2 =
       (covariantDerivative x z 1).re ^ 2 + (covariantDerivative x z 1).im ^ 2 := by
@@ -404,7 +413,8 @@ private theorem continuous_covariantDerivative_one (hx : ContDiff ℝ 1 x) :
   have hdx (i : Fin 4) (v : ℂ) : Continuous fun z ↦ fderiv ℝ (fun w ↦ x w i) z v :=
     ((hxi i).continuous_fderiv one_ne_zero).clm_apply continuous_const
   simp only [covariantDerivative_apply, sectionValue_apply,
-    fderiv_sectionValue_apply (hx.differentiable one_ne_zero _)]
+    fderiv_sectionValue_apply ((hxi 2).differentiable one_ne_zero _)
+      ((hxi 3).differentiable one_ne_zero _)]
   fun_prop
 
 /-- When `|α| → 1` and `∇₁ α → 0`, the coefficient `vortexMass` exceeds any `a < 1 / 4` off a
@@ -475,32 +485,6 @@ theorem exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le
   rw [integral_sub (hn.const_mul a) hnB, integral_const_mul, integral_const_mul,
     integral_indicator measurableSet_closedBall] at hlow
   rw [integral_norm_sq_gaugeFixedOperator hx hy hyc]
-  linarith
-
-/-- **Exterior coercivity of the gauge-fixed operator at a vortex.** Let `x` be a `C¹` solution of
-the vortex equation on the whole plane with `|α| → 1` and `∇₁ α → 0` at infinity. For every
-`a < 1 / 4`, for instance `a = c²` with `0 < c < 1 / 2`, there is a radius `R > 0`, depending only
-on the vortex and on `a`, such that `a ∫ |y|² ≤ ∫ |L_x y|²` for every compactly supported `C²`
-variation `y` vanishing on the closed disc of radius `R` about the origin. -/
-theorem exists_exterior_integral_norm_sq_gaugeFixedOperator_ge
-    (hx : ContDiff ℝ 1 x) (hsol : ∀ z, equation x z = 0)
-    (hlim : Tendsto (fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2)) (cocompact ℂ) (𝓝 1))
-    (hcov : Tendsto (fun z ↦ covariantDerivative x z 1) (cocompact ℂ) (𝓝 0))
-    {a : ℝ} (ha : a < 1 / 4) :
-    ∃ R > 0, ∀ y : ℂ → EuclideanSpace ℝ (Fin 4), ContDiff ℝ 2 y → HasCompactSupport y →
-      (∀ z, ‖z‖ ≤ R → y z = 0) →
-      a * ∫ z, ‖y z‖ ^ 2 ∂μ ≤ ∫ z, ‖gaugeFixedOperator x y z‖ ^ 2 ∂μ := by
-  obtain ⟨R, hR, K, hK⟩ :=
-    exists_integral_gaugeFixedGradientDensity_add_mul_integral_norm_sq_le (μ := μ) hx hsol hlim
-      hcov ha
-  refine ⟨R, hR, fun y hy hyc hzero ↦ ?_⟩
-  have hball : ∫ z in closedBall 0 R, ‖y z‖ ^ 2 ∂μ = 0 :=
-    setIntegral_eq_zero_of_forall_eq_zero fun z hz ↦ by
-      simp [hzero z (by simpa using hz)]
-  have hG : 0 ≤ ∫ z, gaugeFixedGradientDensity x y z ∂μ :=
-    integral_nonneg (gaugeFixedGradientDensity_nonneg x y)
-  have := hK y hy hyc
-  rw [hball, mul_zero, add_zero] at this
   linarith
 
 end TauCeti.Vortex
