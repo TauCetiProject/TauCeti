@@ -194,8 +194,6 @@ theorem firstOrderShortComplex_g_tmul (s : DualNumber R) (m : P) :
 
 /-- The coordinate comparison identifies the entire restriction sequence with the
 self-extension, using identity comparisons on both endpoints. -/
--- Exposed for the generated equations identifying all six actual component maps.
-@[expose, simps! hom_τ₁ hom_τ₂ hom_τ₃ inv_τ₁ inv_τ₂ inv_τ₃]
 noncomputable def firstOrderShortComplexIso :
     firstOrderShortComplex δ P ≅ shortComplex δ (ModuleCat.of A P) :=
   ShortComplex.isoMk (Iso.refl _) (firstOrderEquiv δ P).toModuleIso
@@ -211,6 +209,38 @@ noncomputable def firstOrderShortComplexIso :
       ext x
       -- Both paths are the same linear composition, through distinct bundled endpoints.
       rfl)
+
+/-- The forward sequence comparison is the identity on the submodule. -/
+@[simp]
+theorem firstOrderShortComplexIso_hom_τ₁ :
+    (firstOrderShortComplexIso δ P).hom.τ₁ = 𝟙 (firstOrderShortComplex δ P).X₁ := (rfl)
+
+/-- The forward middle component is the coordinate comparison. -/
+@[simp]
+theorem firstOrderShortComplexIso_hom_τ₂ :
+    (firstOrderShortComplexIso δ P).hom.τ₂ =
+      ModuleCat.ofHom (firstOrderEquiv δ P).toLinearMap := (rfl)
+
+/-- The forward sequence comparison is the identity on the quotient. -/
+@[simp]
+theorem firstOrderShortComplexIso_hom_τ₃ :
+    (firstOrderShortComplexIso δ P).hom.τ₃ = 𝟙 (firstOrderShortComplex δ P).X₃ := (rfl)
+
+/-- The inverse sequence comparison is the identity on the submodule. -/
+@[simp]
+theorem firstOrderShortComplexIso_inv_τ₁ :
+    (firstOrderShortComplexIso δ P).inv.τ₁ = 𝟙 (firstOrderShortComplex δ P).X₁ := (rfl)
+
+/-- The inverse middle component is the inverse coordinate comparison. -/
+@[simp]
+theorem firstOrderShortComplexIso_inv_τ₂ :
+    (firstOrderShortComplexIso δ P).inv.τ₂ =
+      ModuleCat.ofHom (firstOrderEquiv δ P).symm.toLinearMap := (rfl)
+
+/-- The inverse sequence comparison is the identity on the quotient. -/
+@[simp]
+theorem firstOrderShortComplexIso_inv_τ₃ :
+    (firstOrderShortComplexIso δ P).inv.τ₃ = 𝟙 (firstOrderShortComplex δ P).X₃ := (rfl)
 
 /-- The native coefficient-restriction sequence is short exact. -/
 theorem shortExact_firstOrderShortComplex : (firstOrderShortComplex δ P).ShortExact :=
@@ -228,6 +258,8 @@ theorem firstOrderEquiv_naturality (f : M →ₗ[A] N) (x : firstOrderModule δ 
       map f (firstOrderEquiv δ M x) := by
   suffices h : firstOrderCoordinates δ N (CentralBaseChange.map (DualNumber R) f x) =
       map f (firstOrderCoordinates δ M x) from h
+  -- Restriction changes only the scalar action, not the tensor carrier. Specify that
+  -- carrier explicitly so tensor induction sees its constructors through ModuleCat.
   induction (show DualNumber R ⊗[R] M from x) using TensorProduct.inductionOn with
   | add x y hx hy => simp only [map_add, hx, hy]
   | tmul s m =>
