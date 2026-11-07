@@ -73,6 +73,13 @@ theorem unitAtRealPlace_apply (w : {w : InfinitePlace K // w.IsReal}) (a : Kˣ) 
     (unitAtRealPlace w a : ℝ) = embedding_of_isReal w.2 (a : K) := by
   rfl
 
+/-- The image of a global square class in the real square classes at a real place is the square
+class of the localized unit. -/
+theorem squareClassMap_embedding_of_isReal_squareClass (w : {w : InfinitePlace K // w.IsReal})
+    (a : Kˣ) :
+    (embedding_of_isReal w.2).squareClassMap (squareClass a) = squareClass (unitAtRealPlace w a) :=
+  (RingHom.squareClassMap_apply _ a).trans (congrArg squareClass (Units.ext (by simp)))
+
 end TauCeti
 
 namespace QuadraticForm

@@ -9,6 +9,7 @@ public import Mathlib.Algebra.BigOperators.Finprod
 public import Mathlib.NumberTheory.NumberField.InfinitePlace.Basic
 public import Mathlib.RingTheory.DedekindDomain.AdicValuation.Completion
 public import TauCeti.FieldTheory.SquareClassGroup.Multiplicative
+import TauCeti.FieldTheory.SquareClassGroup.Real
 
 /-!
 # Systems of local invariants of global quadratic forms
@@ -225,6 +226,19 @@ theorem prod_finiteHasse_mul_prod_realHasse_eq_one (hI : I.IsAdmissible)
     (∏ v ∈ S, I.finiteHasse v) * ∏ w, I.realHasse w = 1 := by
   rw [← hasseProduct_eq_prod_of_mulSupport_subset I hS]
   exact hI.hasseProduct_eq_one
+
+/-- At a real place of an admissible system, a representative `d` of the discriminant is
+negative exactly when the negative index is odd. -/
+theorem embedding_of_isReal_neg_iff_odd (hI : I.IsAdmissible) {d : Kˣ}
+    (hd : squareClass d = I.discr) (w : {w : InfinitePlace K // w.IsReal}) :
+    embedding_of_isReal w.2 (d : K) < 0 ↔ Odd (I.realNegativeIndex w) := by
+  set u : ℝˣ := Units.map (embedding_of_isReal w.2).toMonoidHom d
+  have hu : (u : ℝ) = embedding_of_isReal w.2 (d : K) := by simp [u]
+  have h : squareClass u = I.realNegativeIndex w • squareClass (-1 : ℝˣ) := by
+    rw [← RingHom.squareClassMap_apply, hd, ← discrAtRealPlace_def, hI.discrAtRealPlace_eq]
+  have hpos : 0 < (u : ℝ) ↔ Even (I.realNegativeIndex w) := by
+    rw [← Units.squareClass_eq_zero_iff_pos, h, nsmul_squareClass_neg_one_eq_zero_iff_even]
+  rw [← hu, ← Nat.not_even_iff_odd, ← hpos, not_lt, u.ne_zero.le_iff_lt]
 
 end IsAdmissible
 

@@ -59,21 +59,6 @@ namespace TauCeti.NumberField.QuadraticForm.GlobalFormInvariants
 
 variable {K : Type} [Field K] [NumberField K]
 
-/-- A system realized by a regular form on some finite-dimensional space is realized by a
-regular form on the coordinate space `Fin I.rank → K`. -/
-private theorem exists_globalForm_of_globalInvariants_eq {V : Type} [AddCommGroup V] [Module K V]
-    [FiniteDimensional K V] {Q : _root_.QuadraticForm K V} (hQ : Q.Nondegenerate)
-    {I : GlobalFormInvariants K} (hQI : Q.globalInvariants hQ = I) :
-    ∃ (Q' : _root_.QuadraticForm K (Fin I.rank → K)) (hQ' : Q'.Nondegenerate),
-      Q'.globalInvariants hQ' = I := by
-  subst hQI
-  have hrank : Module.finrank K (Fin (Q.globalInvariants hQ).rank → K) = Module.finrank K V := by
-    simp
-  obtain ⟨e⟩ := FiniteDimensional.nonempty_linearEquiv_of_finrank_eq hrank
-  have h : Q.Equivalent _ := ⟨isometryEquivOfCompLinearEquiv Q e⟩
-  have hQ' := h.some.nondegenerate_iff.mp hQ
-  exact ⟨_, hQ', (h.globalInvariants_eq hQ hQ').symm⟩
-
 /-- The system complementary to the line `⟨c⟩` in a system `I` whose discriminant is the class
 of `d`: rank `n - 1`, discriminant the class of `c d`, finite Hasse signs `s_v · (c, c d)_v`, and
 positive indices lowered by one at the real places where `c` is positive. -/
@@ -89,24 +74,6 @@ private noncomputable def complementLine (I : GlobalFormInvariants K) (c d : Kˣ
       else I.realPositiveIndex w
 
 variable {I : GlobalFormInvariants K} {c d : Kˣ}
-
-omit [NumberField K] in
-/-- The image of a global unit in the real square classes is that of its real embedding. -/
-private theorem squareClassMap_embedding_of_isReal (w : {w : InfinitePlace K // w.IsReal})
-    (x : Kˣ) :
-    (embedding_of_isReal w.2).squareClassMap (squareClass x) = squareClass (unitAtRealPlace w x) :=
-  (RingHom.squareClassMap_apply _ x).trans (congrArg squareClass (Units.ext (by simp)))
-
-/-- At a real place of an admissible system, a representative `d` of the discriminant is
-negative exactly when the negative index is odd. -/
-private theorem embedding_of_isReal_neg_iff_odd (hI : I.IsAdmissible)
-    (hd : squareClass d = I.discr) (w : {w : InfinitePlace K // w.IsReal}) :
-    embedding_of_isReal w.2 (d : K) < 0 ↔ Odd (I.realNegativeIndex w) := by
-  have h := hI.discrAtRealPlace_eq w
-  rw [discrAtRealPlace_def, ← hd, squareClassMap_embedding_of_isReal] at h
-  rw [← unitAtRealPlace_apply, ← Nat.not_even_iff_odd,
-    ← nsmul_squareClass_neg_one_eq_zero_iff_even, ← h, Units.squareClass_eq_zero_iff_pos, not_lt,
-    le_iff_lt_or_eq, or_iff_left (unitAtRealPlace w d).ne_zero]
 
 section complementLine
 
@@ -163,7 +130,7 @@ private theorem realHasse_complementLine (hI : I.IsAdmissible) (hd : squareClass
     have hcn : embedding_of_isReal w.2 (c : K) < 0 := (hc w).mpr hp
     obtain ⟨m, hm⟩ := exists_realNegativeIndex_eq_add_one_of_not_pos hc hI hw
     have hdn : embedding_of_isReal w.2 (d : K) < 0 ↔ Even m := by
-      rw [embedding_of_isReal_neg_iff_odd hI hd w, hm, Nat.odd_add_one, Nat.not_odd_iff_even]
+      rw [hI.embedding_of_isReal_neg_iff_odd hd w, hm, Nat.odd_add_one, Nat.not_odd_iff_even]
     have hd0 : embedding_of_isReal w.2 (d : K) ≠ 0 := by
       rw [← unitAtRealPlace_apply]
       exact (unitAtRealPlace w d).ne_zero
@@ -177,8 +144,8 @@ private theorem realHasse_complementLine (hI : I.IsAdmissible) (hd : squareClass
         simpa using ⟨hcn, mul_neg_of_neg_of_pos hcn hdp⟩
     have hch : (m + 1).choose 2 = m.choose 2 + m := by
       rw [Nat.choose_succ_succ', Nat.choose_one_right, add_comm]
-    rw [hm, Nat.add_sub_cancel, hsymb, hch, pow_add, mul_assoc, ← pow_add, ← two_mul, pow_mul,
-      Int.units_sq, one_pow, mul_one]
+    have hsq : (-1 : ℤˣ) ^ m * (-1) ^ m = 1 := by rw [← mul_pow, Int.units_mul_self, one_pow]
+    rw [hm, Nat.add_sub_cancel, hsymb, hch, pow_add, mul_assoc, hsq, mul_one]
 
 /-- The real discriminant condition holds for the complementary system. -/
 private theorem discrAtRealPlace_complementLine (hI : I.IsAdmissible)
@@ -186,20 +153,23 @@ private theorem discrAtRealPlace_complementLine (hI : I.IsAdmissible)
     (complementLine I c d).discrAtRealPlace w =
       (complementLine I c d).realNegativeIndex w • squareClass (-1 : ℝˣ) := by
   have h := hI.discrAtRealPlace_eq w
-  rw [discrAtRealPlace_def, ← hd, squareClassMap_embedding_of_isReal] at h
+  rw [discrAtRealPlace_def, ← hd, squareClassMap_embedding_of_isReal_squareClass] at h
   rw [realNegativeIndex_complementLine hc hI, discrAtRealPlace_def]
   simp only [complementLine]
-  rw [squareClassMap_embedding_of_isReal, map_mul, squareClass_mul, h]
+  rw [squareClassMap_embedding_of_isReal_squareClass, map_mul, squareClass_mul, h]
   split_ifs with hw
   · rw [(Units.squareClass_eq_zero_iff_pos _).mpr (by simpa using hw)]
     exact zero_add (I.realNegativeIndex w • squareClass (-1 : ℝˣ))
   · have hcn : embedding_of_isReal w.2 (c : K) < 0 :=
       (hc w).mpr (realPositiveIndex_eq_zero_of_not_pos hc hw)
     obtain ⟨m, hm⟩ := exists_realNegativeIndex_eq_add_one_of_not_pos hc hI hw
-    rw [(Units.squareClass_eq_squareClass_neg_one_iff_neg _).mpr (by simpa using hcn), hm,
-      Nat.add_sub_cancel, ← squareClass_pow, ← squareClass_pow, ← squareClass_mul,
-      squareClass_eq_iff_isSquare_mul]
-    exact ⟨(-1) ^ (m + 1), Units.ext (by push_cast; ring)⟩
+    have hc1 : squareClass (unitAtRealPlace w c) = squareClass (-1 : ℝˣ) :=
+      (Units.squareClass_eq_squareClass_neg_one_iff_neg _).mpr (by simpa using hcn)
+    have h2 : squareClass (-1 : ℝˣ) + (m + 1) • squareClass (-1 : ℝˣ) =
+        m • squareClass (-1 : ℝˣ) := by
+      rw [← squareClass_pow, ← squareClass_pow, ← squareClass_mul, squareClass_eq_iff_isSquare_mul]
+      exact ⟨(-1) ^ (m + 1), Units.ext (by push_cast; ring)⟩
+    rw [hc1, hm, Nat.add_sub_cancel, h2]
 
 /-- **The complementary system is admissible.** -/
 private theorem isAdmissible_complementLine (hI : I.IsAdmissible) (hd : squareClass d = I.discr)
@@ -252,6 +222,9 @@ private theorem globalInvariants_prod_complementLine (hd : squareClass d = I.dis
   have hQd : RegularFormClass.discr (formClass Q' hQ') = squareClass (c * d) := by
     rw [← _root_.QuadraticForm.globalInvariants_discr, hQI]
     simp only [complementLine]
+  have hcd : squareClass c + squareClass (c * d) = I.discr := by
+    rw [← hd, ← squareClass_mul, squareClass_eq_iff_isSquare_mul]
+    exact ⟨c * d, Units.ext (by push_cast; ring)⟩
   refine GlobalFormInvariants.ext ?_ ?_ (funext fun v => ?_) (funext fun w => ?_)
   · rw [_root_.QuadraticForm.globalInvariants_rank, Module.finrank_prod, Module.finrank_fin_fun,
       Module.finrank_fin_fun]
@@ -259,19 +232,18 @@ private theorem globalInvariants_prod_complementLine (hd : squareClass d = I.dis
     omega
   · rw [_root_.QuadraticForm.globalInvariants_discr,
       formClass_prod _ (nondegenerate_presentedForm _) Q' hQ', RegularFormClass.discr_add,
-      hLd, hQd, ← hd, ← squareClass_mul, squareClass_eq_iff_isSquare_mul]
-    exact ⟨c * d, Units.ext (by push_cast; ring)⟩
+      hLd, hQd, hcd]
   · have hv := congrFun (congrArg GlobalFormInvariants.finiteHasse hQI) v
     rw [_root_.QuadraticForm.globalInvariants_finiteHasse] at hv ⊢
+    -- The local image of a global square class is the class of the localized unit.
+    have hloc (x : Kˣ) : (algebraMap K (v.adicCompletion K)).squareClassMap (squareClass x) =
+        squareClass (v.unitAtFinitePlace x) :=
+      (RingHom.squareClassMap_apply _ x).trans (congrArg squareClass (Units.ext (by simp)))
     rw [_root_.QuadraticForm.finiteHasse_prod _ (nondegenerate_presentedForm _) Q' hQ', hv, hLd,
-      hQd, _root_.QuadraticForm.finiteHasse_eq_one_of_finrank_le_one _ _ hL1, one_mul,
-      RingHom.squareClassMap_apply, RingHom.squareClassMap_apply,
-      hilbertSymbolOnSquareClasses_squareClass]
-    have hm (x : Kˣ) :
-        Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x = v.unitAtFinitePlace x :=
-      Units.ext (by simp)
-    simp only [complementLine]
-    rw [hm, hm, mul_assoc, Int.units_mul_self, mul_one]
+      hQd, _root_.QuadraticForm.finiteHasse_eq_one_of_finrank_le_one _ _ hL1, one_mul, hloc,
+      hloc, hilbertSymbolOnSquareClasses_squareClass]
+    -- The symbol `(c, c d)_v` is a sign, so it cancels against itself.
+    simp only [complementLine, mul_assoc, Int.units_mul_self, mul_one]
   · have hw := congrFun (congrArg GlobalFormInvariants.realPositiveIndex hQI) w
     rw [_root_.QuadraticForm.globalInvariants_realPositiveIndex] at hw ⊢
     rw [_root_.QuadraticForm.realPositiveIndex_prod, hw, presentedForm_eq_weightedSumSquares_coe,
