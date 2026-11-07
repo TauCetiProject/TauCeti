@@ -76,18 +76,6 @@ theorem fderiv_det_apply_adjugate (A H : Matrix n n 𝕜) :
     fderiv 𝕜 det A H = trace (A.adjugate * H) := by
   rw [fderiv_det_eq_sum_updateRow, sum_det_updateRow_eq_trace_adjugate_mul]
 
-/-- The determinant along the line through the identity in the direction `B` has derivative
-`trace B` at the identity. -/
-theorem hasDerivAt_det_one_add_smul (B : Matrix n n 𝕜) :
-    HasDerivAt (fun t : 𝕜 => det (1 + t • B)) (trace B) 0 := by
-  have h := (differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt.comp_hasDerivAt_of_eq
-    (0 : 𝕜) (((hasDerivAt_id (0 : 𝕜)).smul_const B).const_add 1) (by simp)
-  simp only [id_eq, one_smul] at h
-  -- Restate the composite with matrix operations so the differential formula matches.
-  have h' : HasDerivAt (fun t : 𝕜 => det (1 + t • B))
-      (fderiv 𝕜 det (1 : Matrix n n 𝕜) B) 0 := h
-  simpa only [fderiv_det_apply_adjugate, adjugate_one, one_mul] using h'
-
 /-- **Jacobi's inverse formula**, evaluated on a direction at an invertible matrix. -/
 theorem fderiv_det_apply {A : Matrix n n 𝕜} (hA : IsUnit A.det) (H : Matrix n n 𝕜) :
     fderiv 𝕜 det A H = A.det * trace (A⁻¹ * H) := by
@@ -98,12 +86,22 @@ theorem fderiv_det_apply {A : Matrix n n 𝕜} (hA : IsUnit A.det) (H : Matrix n
 /-- The Fréchet derivative of the determinant at the identity is the trace. -/
 theorem hasFDerivAt_det_one :
     HasFDerivAt (det : Matrix n n 𝕜 → 𝕜)
-      ⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ 1 := by
-  refine ((differentiable_det (𝕜 := 𝕜) (n := n) 1).hasFDerivAt).congr_fderiv ?_
-  ext H
-  rw [fderiv_det_apply_adjugate, adjugate_one, one_mul]
-  exact ((congrFun (ContinuousLinearMap.coe_mk' (traceLinearMap n 𝕜 𝕜)
-    continuous_id.matrix_trace) H).trans (traceLinearMap_apply n 𝕜 𝕜 H)).symm
+      ⟨traceLinearMap n 𝕜 𝕜, continuous_id.matrix_trace⟩ 1 :=
+  (differentiable_det 1).hasFDerivAt.congr_fderiv <| by
+    ext H
+    rw [fderiv_det_apply_adjugate, adjugate_one, one_mul]
+    exact ((congrFun (ContinuousLinearMap.coe_mk' (traceLinearMap n 𝕜 𝕜)
+      continuous_id.matrix_trace) H).trans (traceLinearMap_apply n 𝕜 𝕜 H)).symm
+
+/-- The determinant along the line through the identity in the direction `B` has derivative
+`trace B` at the identity. -/
+theorem hasDerivAt_det_one_add_smul (B : Matrix n n 𝕜) :
+    HasDerivAt (fun t : 𝕜 => det (1 + t • B)) (trace B) 0 := by
+  have h := hasFDerivAt_det_one.comp_hasDerivAt_of_eq (0 : 𝕜)
+    (((hasDerivAt_id (0 : 𝕜)).smul_const B).const_add 1) (by simp)
+  rw [one_smul] at h
+  -- The continuous trace map is built from `traceLinearMap`, so it applies to `B` as `trace B`.
+  exact h
 
 /-- **Jacobi's inverse formula.** At a matrix with invertible determinant, the differential is
 `H ↦ det A * trace (A⁻¹ * H)`. -/

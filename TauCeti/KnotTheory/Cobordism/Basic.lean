@@ -619,6 +619,80 @@ private theorem isEmbedding_glueFun (hc : 0 < c)
       rw [hPK]
       exact hΦ.isEmbedding.comp IsEmbedding.subtypeVal
 
+/-- The part of the glued surface over the slab `Sⁿ × [0, 1]` is compact. -/
+private theorem isCompact_preimage_Icc_glueFun (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
+    IsCompact {x | (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1} := by
+  -- Gluing in `C` only moves the points of `S` above height `1 - c`, and keeps those above
+  -- height `1` fixed, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
+  refine S.isCompact_preimage_Icc.of_isClosed_subset (isClosed_Icc.preimage
+    (continuous_snd.comp (isEmbedding_glueFun C hc hS).continuous)) fun x hx ↦ ?_
+  by_cases hle : (S.toFun x).2 ≤ 1 - c
+  · have hx' : (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1 := hx
+    rw [glueFun_of_le C hc hle] at hx'
+    exact hx'
+  · refine ⟨by linarith, le_of_not_gt fun h₁ ↦ ?_⟩
+    have hx' : (glueFun C S hc x).2 ≤ 1 := hx.2
+    rw [glueFun_of_le_snd C hc hS (by linarith), collarParam,
+      rescale_apply_of_one_le C hc _ h₁.le] at hx'
+    exact not_le.2 h₁ hx'
+
+/-- Near height `0` the glued surface is the cylinder over `K₀`. -/
+private theorem exists_pos_range_glueFun_inter_snd_le (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
+    ∃ ε > 0, range (glueFun C S hc) ∩ {p | p.2 ≤ ε} = range K₀ ×ˢ Iic ε := by
+  -- Below height `1 / 2 ≤ 1 - c` the new surface is that of `S`.
+  obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
+  refine ⟨min ε (1 / 2), lt_min hε (by norm_num), Set.ext fun p ↦ ?_⟩
+  have hp := Set.ext_iff.1 h p
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Iic] at hp ⊢
+  constructor
+  · rintro ⟨⟨x, rfl⟩, hle⟩
+    have hx : (S.toFun x).2 ≤ 1 - c := not_lt.1 fun h' ↦ by
+      linarith [(lt_snd_glueFun_iff C hc hS x).2 h', min_le_right ε (1 / 2)]
+    rw [glueFun_of_le C hc hx] at hle hp ⊢
+    exact ⟨(hp.1 ⟨mem_range_self x, hle.trans (min_le_left _ _)⟩).1, hle⟩
+  · rintro ⟨hK, hle⟩
+    obtain ⟨x, hx⟩ := (hp.2 ⟨hK, hle.trans (min_le_left _ _)⟩).1
+    refine ⟨⟨x, ?_⟩, hle⟩
+    rw [glueFun_of_le C hc (by rw [hx]; linarith [min_le_right ε (1 / 2)]), hx]
+
+/-- Near height `1` the glued surface is the cylinder over `K₂`. -/
+private theorem exists_pos_range_glueFun_inter_le_snd (hc : 0 < c)
+    (hS : IsCylinderFrom S (1 - 2 * c)) :
+    ∃ ε > 0, range (glueFun C S hc) ∩ {p | 1 - ε ≤ p.2} = range K₂ ×ˢ Ici (1 - ε) := by
+  -- Above height `1 - c δ` the new surface is the rescaled final collar of `C`.
+  obtain ⟨δ, hδ, h⟩ :=
+    C.isCollaredTrack.exists_pos_range_inter_le_snd C.toSmoothEmbedding.isEmbedding.continuous
+  have hδ₀ : 0 < min δ (1 / 2) := lt_min hδ (by norm_num)
+  have hδ₁ : min δ (1 / 2) ≤ 1 / 2 := min_le_right _ _
+  have hδ₂ : min δ (1 / 2) ≤ δ := min_le_left _ _
+  refine ⟨c * min δ (1 / 2), mul_pos hc hδ₀, Set.ext fun p ↦ ?_⟩
+  simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Ici]
+  constructor
+  · rintro ⟨⟨x, rfl⟩, hle⟩
+    have hx : 1 - c < (S.toFun x).2 :=
+      (lt_snd_glueFun_iff C hc hS x).1 (by nlinarith)
+    rw [glueFun_of_le_snd C hc hS (by linarith), collarParam, rescale_apply] at hle ⊢
+    refine ⟨((Set.ext_iff.1 h _).1 ⟨mem_range_self _, ?_⟩).1, hle⟩
+    simp only [mem_ofPred_eq]
+    nlinarith
+  · rintro ⟨hK, hle⟩
+    have hH' : 1 - min δ (1 / 2) ≤ (p.2 - (1 - c)) / c := by
+      rw [le_div_iff₀ hc]
+      linarith
+    have hH : 1 - δ ≤ (p.2 - (1 - c)) / c := by linarith
+    obtain ⟨⟨z, s⟩, hzs⟩ := ((Set.ext_iff.1 h (p.1, (p.2 - (1 - c)) / c)).2 ⟨hK, hH⟩).1
+    have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h ↦ lt_irrefl _ h.1
+    have hs : 0 < s :=
+      (C.isCollaredTrack.lt_snd_apply_iff z h0).1 (by rw [hzs]; dsimp only; linarith)
+    obtain ⟨x, hx⟩ := mem_range_glueFun_of_pos C hc hS z hs
+    refine ⟨⟨x, ?_⟩, hle⟩
+    rw [hx, hzs]
+    refine Prod.ext rfl ?_
+    field_simp
+    ring
+
 /-- The composite of `S` and `C` for a width `c ∈ (0, 1/2]` such that the top of `S` is the
 cylinder over `K₁` from height `1 - 2 c` on. -/
 private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
@@ -628,68 +702,9 @@ private def transConcordanceOfWidth (hc : 0 < c) (hc₂ : c ≤ 1 / 2)
   toFun := glueFun C S hc
   isSmoothEmbedding := ⟨isImmersion_iff_forall_isImmersionAt.2 (isImmersionAt_glueFun C hc hS),
     isEmbedding_glueFun C hc hS⟩
-  isCompact_preimage_Icc := by
-    -- Gluing in `C` only moves the points of `S` above height `1 - c`, and keeps those above
-    -- height `1` fixed, so a point of the new surface over `[0, 1]` lies over `[0, 1]` in `S`.
-    refine S.isCompact_preimage_Icc.of_isClosed_subset (isClosed_Icc.preimage
-      (continuous_snd.comp (isEmbedding_glueFun C hc hS).continuous)) fun x hx ↦ ?_
-    by_cases hle : (S.toFun x).2 ≤ 1 - c
-    · have hx' : (glueFun C S hc x).2 ∈ Icc (0 : ℝ) 1 := hx
-      rw [glueFun_of_le C hc hle] at hx'
-      exact hx'
-    · refine ⟨by linarith, le_of_not_gt fun h₁ ↦ ?_⟩
-      have hx' : (glueFun C S hc x).2 ≤ 1 := hx.2
-      rw [glueFun_of_le_snd C hc hS (by linarith), collarParam,
-        rescale_apply_of_one_le C hc _ h₁.le] at hx'
-      exact not_le.2 h₁ hx'
-  exists_pos_range_inter_snd_le := by
-    -- Below height `1 / 2 ≤ 1 - c` the new surface is that of `S`.
-    obtain ⟨ε, hε, h⟩ := S.exists_pos_range_inter_snd_le
-    refine ⟨min ε (1 / 2), lt_min hε (by norm_num), Set.ext fun p ↦ ?_⟩
-    have hp := Set.ext_iff.1 h p
-    simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Iic] at hp ⊢
-    constructor
-    · rintro ⟨⟨x, rfl⟩, hle⟩
-      have hx : (S.toFun x).2 ≤ 1 - c := not_lt.1 fun h' ↦ by
-        linarith [(lt_snd_glueFun_iff C hc hS x).2 h', min_le_right ε (1 / 2)]
-      rw [glueFun_of_le C hc hx] at hle hp ⊢
-      exact ⟨(hp.1 ⟨mem_range_self x, hle.trans (min_le_left _ _)⟩).1, hle⟩
-    · rintro ⟨hK, hle⟩
-      obtain ⟨x, hx⟩ := (hp.2 ⟨hK, hle.trans (min_le_left _ _)⟩).1
-      refine ⟨⟨x, ?_⟩, hle⟩
-      rw [glueFun_of_le C hc (by rw [hx]; linarith [min_le_right ε (1 / 2)]), hx]
-  exists_pos_range_inter_le_snd := by
-    -- Above height `1 - c δ` the new surface is the rescaled final collar of `C`.
-    obtain ⟨δ, hδ, h⟩ :=
-      C.isCollaredTrack.exists_pos_range_inter_le_snd C.toSmoothEmbedding.isEmbedding.continuous
-    have hδ₀ : 0 < min δ (1 / 2) := lt_min hδ (by norm_num)
-    have hδ₁ : min δ (1 / 2) ≤ 1 / 2 := min_le_right _ _
-    have hδ₂ : min δ (1 / 2) ≤ δ := min_le_left _ _
-    refine ⟨c * min δ (1 / 2), mul_pos hc hδ₀, Set.ext fun p ↦ ?_⟩
-    simp only [mem_inter_iff, mem_ofPred_eq, mem_prod, mem_Ici]
-    constructor
-    · rintro ⟨⟨x, rfl⟩, hle⟩
-      have hx : 1 - c < (S.toFun x).2 :=
-        (lt_snd_glueFun_iff C hc hS x).1 (by nlinarith)
-      rw [glueFun_of_le_snd C hc hS (by linarith), collarParam, rescale_apply] at hle ⊢
-      refine ⟨((Set.ext_iff.1 h _).1 ⟨mem_range_self _, ?_⟩).1, hle⟩
-      simp only [mem_ofPred_eq]
-      nlinarith
-    · rintro ⟨hK, hle⟩
-      have hH' : 1 - min δ (1 / 2) ≤ (p.2 - (1 - c)) / c := by
-        rw [le_div_iff₀ hc]
-        linarith
-      have hH : 1 - δ ≤ (p.2 - (1 - c)) / c := by linarith
-      obtain ⟨⟨z, s⟩, hzs⟩ := ((Set.ext_iff.1 h (p.1, (p.2 - (1 - c)) / c)).2 ⟨hK, hH⟩).1
-      have h0 : (0 : ℝ) ∉ Ioo 0 1 := fun h ↦ lt_irrefl _ h.1
-      have hs : 0 < s :=
-        (C.isCollaredTrack.lt_snd_apply_iff z h0).1 (by rw [hzs]; dsimp only; linarith)
-      obtain ⟨x, hx⟩ := mem_range_glueFun_of_pos C hc hS z hs
-      refine ⟨⟨x, ?_⟩, hle⟩
-      rw [hx, hzs]
-      refine Prod.ext rfl ?_
-      field_simp
-      ring
+  isCompact_preimage_Icc := isCompact_preimage_Icc_glueFun C hc hc₂ hS
+  exists_pos_range_inter_snd_le := exists_pos_range_glueFun_inter_snd_le C hc hc₂ hS
+  exists_pos_range_inter_le_snd := exists_pos_range_glueFun_inter_le_snd C hc hS
 
 variable (S) in
 /-- The width of the collar of `S` used to compose it with a concordance. -/
