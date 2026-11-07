@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.RiemannSurface.Meromorphic
 public import TauCeti.Geometry.Manifold.Instances.OnePoint.Basic
 import Mathlib.Analysis.Meromorphic.NormalForm
 import TauCeti.Geometry.Manifold.ChartedSpace
+import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 
 /-!
@@ -145,7 +146,7 @@ private theorem exists_mdifferentiableAt_eventuallyEq {g : ℂ → ℂ} {z₀ : 
     have hinv : 0 < _root_.meromorphicOrderAt g⁻¹ z₀ := by
       obtain ⟨n, hn⟩ := WithTop.ne_top_iff_exists.1 hord.ne_top
       rw [← hn] at hord
-      rw [meromorphicOrderAt_inv, ← hn]
+      rw [_root_.meromorphicOrderAt_inv, ← hn]
       exact_mod_cast neg_pos.2 (WithTop.coe_lt_coe.1 hord)
     have han := hg.inv.meromorphicOrderAt_nonneg_iff_analyticAt_toMeromorphicNFAt.1 hinv.le
     have hsymm : ∀ w, MDifferentiableAt 𝓘(ℂ) 𝓘(ℂ) (invChart.symm : ℂ → OnePoint ℂ) w := by
@@ -212,6 +213,28 @@ theorem sphereMap_eq_infty_iff (hf : MeromorphicAt f x) :
     sphereMap f x = ∞ ↔ meromorphicOrderAt f x < 0 := by
   obtain ⟨Φ, -, -, heq, hinf⟩ := exists_eventuallyEq_comp_chartAt hf
   rw [heq.self_of_nhds, comp_apply, hinf]
+
+/-- Filling removable singularities and reading in the affine chart preserves a meromorphic
+function on a punctured neighbourhood. -/
+theorem affineChart_sphereMap_eventuallyEq (hf : MeromorphicAt f x) :
+    (fun y ↦ OnePoint.affineChart (sphereMap f y)) =ᶠ[𝓝[≠] x] f :=
+  (eventually_sphereMap_eq hf).mono fun _ hy ↦ by simp [hy]
+
+open scoped ContDiff in
+/-- The filled affine representative of a meromorphic function is holomorphic at a point
+where its order is nonnegative. -/
+theorem contMDiffAt_affineChart_sphereMap (hf : MeromorphicAt f x)
+    (h : 0 ≤ meromorphicOrderAt f x) :
+    ContMDiffAt 𝓘(ℂ) 𝓘(ℂ) ω (fun y ↦ OnePoint.affineChart (sphereMap f y)) x := by
+  have hx : sphereMap f x ≠ (∞ : OnePoint ℂ) :=
+    (sphereMap_eq_infty_iff hf).not.mpr (not_lt.mpr h)
+  have hmd := mdifferentiableAt_sphereMap hf
+  obtain ⟨Φ, hΦ, -, heq, -⟩ := exists_eventuallyEq_comp_chartAt hf
+  apply (contMDiffAt_iff_eventually_mdifferentiableAt (by simp)).2
+  filter_upwards [hmd.continuousAt.eventually (isOpen_ne.mem_nhds hx),
+    hΦ, heq.eventually_nhds] with y hy hfy hey
+  exact (mdifferentiableAt_atlas (Or.inl rfl) (by simpa using hy)).comp y
+    (hfy.congr_of_eventuallyEq hey)
 
 /-- At a point where `f` is meromorphic, `sphereMap f` takes a finite value `c` exactly when `f`
 tends to `c` on punctured neighbourhoods of the point. -/

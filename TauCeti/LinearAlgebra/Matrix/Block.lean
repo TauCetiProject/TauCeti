@@ -116,16 +116,12 @@ initial segment `{j | b j < b i}`: that segment is either empty or a leading seg
 public theorem isUnit_det_toSquareBlockProp_lt [DecidableEq m] [CommRing R] (M : Matrix m m R)
     (hM : ∀ i, IsUnit (M.toSquareBlockProp fun j => b j ≤ b i).det) (i : m) :
     IsUnit (M.toSquareBlockProp fun j => b j < b i).det := by
-  by_cases hne : (Finset.univ.filter fun j => b j < b i).Nonempty
-  · obtain ⟨k, hk, hmax⟩ := Finset.exists_max_image _ b hne
-    rw [Finset.mem_filter] at hk
-    rw [equiv_block_det M fun j => ⟨fun hj => lt_of_le_of_lt hj hk.2,
-      fun hj => hmax j (Finset.mem_filter.mpr ⟨Finset.mem_univ j, hj⟩)⟩]
-    exact hM k
-  · have : IsEmpty {j // b j < b i} :=
-      ⟨fun j => hne ⟨j, Finset.mem_filter.mpr ⟨Finset.mem_univ _, j.2⟩⟩⟩
-    rw [det_isEmpty]
-    exact isUnit_one
+  rcases isEmpty_or_nonempty {j // b j < b i} with _ | _
+  · simp
+  obtain ⟨k, hk⟩ := Finite.exists_max fun j : {j // b j < b i} => b j
+  rw [equiv_block_det M (q := fun j => b j ≤ b k) fun j =>
+    ⟨fun hj => hj.trans_lt k.2, fun hj => hk ⟨j, hj⟩⟩]
+  exact hM k
 
 end LeadingBlocks
 
