@@ -101,33 +101,16 @@ section Splitting
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
 
-/-- A nonzero vector of a real normed space is sent to `1` by some continuous linear functional. -/
-theorem exists_dual_apply_eq_one {w : F} (hw : w ≠ 0) : ∃ φ : F →L[ℝ] ℝ, φ w = 1 := by
-  obtain ⟨g, -, hg⟩ := exists_dual_vector ℝ w (norm_ne_zero_iff.2 hw)
-  have hgr : g w = ‖w‖ := by exact_mod_cast hg
-  exact ⟨(‖w‖ : ℝ)⁻¹ • g, by simp [hgr, inv_mul_cancel₀ (norm_ne_zero_iff.2 hw)]⟩
-
 /-- Splitting off a direction: if a continuous linear functional `ψ` takes the value `1` at `v₀`,
 then `E` is isomorphic to `ℝ × ker ψ` through `x ↦ (ψ x, π x)`, where `π` is the projection onto
 the kernel along `v₀`. -/
 theorem exists_continuousLinearEquiv_prod_ker (ψ : E →L[ℝ] ℝ) {v₀ : E} (hv : ψ v₀ = 1) :
     ∃ (π : E →L[ℝ] ↥(LinearMap.ker (ψ : E →ₗ[ℝ] ℝ)))
       (e : E ≃L[ℝ] ℝ × ↥(LinearMap.ker (ψ : E →ₗ[ℝ] ℝ))), ∀ x, e x = (ψ x, π x) := by
-  have hπmem : ∀ x : E, (ContinuousLinearMap.id ℝ E - ψ.smulRight v₀) x ∈
-      LinearMap.ker (ψ : E →ₗ[ℝ] ℝ) := by
-    intro x
-    simp [LinearMap.mem_ker, hv]
-  set π : E →L[ℝ] ↥(LinearMap.ker (ψ : E →ₗ[ℝ] ℝ)) :=
-    (ContinuousLinearMap.id ℝ E - ψ.smulRight v₀).codRestrict _ hπmem
-  have hπval : ∀ x : E, (π x : E) = x - ψ x • v₀ := fun x ↦ rfl
-  exact ⟨π, ContinuousLinearEquiv.equivOfInverse (ψ.prod π)
-    ((ContinuousLinearMap.fst ℝ ℝ _).smulRight v₀ +
-      (LinearMap.ker (ψ : E →ₗ[ℝ] ℝ)).subtypeL.comp (ContinuousLinearMap.snd ℝ ℝ _))
-    (fun x ↦ by simp [hπval]) (fun p ↦ by
-      have hp : ψ (p.2 : E) = 0 := p.2.2
-      refine Prod.ext ?_ (Subtype.ext ?_)
-      · simp [hv, hp]
-      · simp [hπval, hv, hp]), fun x ↦ rfl⟩
+  set s : ℝ →L[ℝ] E := (ContinuousLinearMap.id ℝ ℝ).smulRight v₀
+  have h : Function.RightInverse s ψ := fun t ↦ by simp [s, hv]
+  exact ⟨ψ.projKerOfRightInverse s h, ContinuousLinearEquiv.equivOfRightInverse ψ s h,
+    fun x ↦ rfl⟩
 
 end Splitting
 
@@ -421,7 +404,7 @@ private theorem addHaar_image_criticalPoints_eq_zero_aux (P : ℕ → ℕ → Pr
       by_contra hc
       exact hane (ContinuousLinearMap.ext fun v ↦ by
         simpa using not_not.1 (not_exists.1 hc v))
-    obtain ⟨φ, hφ⟩ := exists_dual_apply_eq_one hv₀
+    obtain ⟨φ, hφ⟩ := SeparatingDual.exists_eq_one (R := ℝ) hv₀
     -- The two hyperplanes, and the splittings of the source and target along them.
     obtain ⟨π, eE, heE⟩ := exists_continuousLinearEquiv_prod_ker (φ.comp (fderiv ℝ f a))
       (v₀ := v₀) hφ
