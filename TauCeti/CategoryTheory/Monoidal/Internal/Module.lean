@@ -29,11 +29,11 @@ variable {R : Type u} [CommRing R]
 
 open ModuleCat.MonModuleEquivalenceAlgebra in
 /-- The commutative ring structure on a commutative monoid object in `ModuleCat R`: the ring
-structure `ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toRing`, whose multiplication is
-commutative by commutativity of the monoid object.
+structure `ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toRing`, with multiplication
+`x * y = μ (x ⊗ₜ y)`.
 
-Like `MonObj.toRing`, this is not an instance, since it does not round trip from a commutative
-ring to a monoid object and back. -/
+Mathlib makes `MonObj.toRing` only a scoped instance, since it does not round trip from a ring to
+a monoid object and back; for the same reason, this is not an instance. -/
 @[expose, instance_reducible]
 noncomputable def _root_.ModuleCat.MonModuleEquivalenceAlgebra.MonObj.toCommRing
     (A : ModuleCat.{u} R) [MonObj A] [IsCommMonObj A] : CommRing A :=
