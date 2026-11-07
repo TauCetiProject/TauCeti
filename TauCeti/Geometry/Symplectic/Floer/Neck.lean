@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Floer.Energy
 import Mathlib.Analysis.Calculus.ContDiff.Operations
+import TauCeti.MeasureTheory.Integral.Rectangle
 
 /-!
 # Inserting a cylindrical neck into Hamiltonian perturbation data
@@ -208,35 +209,6 @@ theorem contDiff_uncurry_neckStretch {E F : Type*} [NormedAddCommGroup E] [Norme
     ((contDiff_const (c := (0 : ℝ))).prodMk contDiff_id)
 
 end NeckStretch
-
-section Translation
-
-/-- **Comparison of integrals over a translated strip.** If `f` at the translate `z + (L, 0)` is
-pointwise bounded by `M z` on the strip `[c, d] × I`, with `M` integrable on that strip and `f`
-integrable on the translated strip `[c + L, d + L] × I`, then the integral of `f` over the
-translated strip is at most the integral of `M` over the original one. -/
-theorem setIntegral_Icc_prod_le_of_comp_add_le {f M : ℝ × ℝ → ℝ} {c d L : ℝ} {I : Set ℝ}
-    (hI : MeasurableSet I) (hfi : IntegrableOn f (Icc (c + L) (d + L) ×ˢ I))
-    (hMi : IntegrableOn M (Icc c d ×ˢ I))
-    (hfM : ∀ z ∈ Icc c d ×ˢ I, f (z + (L, 0)) ≤ M z) :
-    ∫ z in Icc (c + L) (d + L) ×ˢ I, f z ≤ ∫ z in Icc c d ×ˢ I, M z := by
-  have he : MeasurePreserving (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) := by
-    -- Translation invariance of `volume` on `ℝ × ℝ` is found on the product measure.
-    have : (volume : Measure (ℝ × ℝ)).IsAddRightInvariant := by
-      rw [Measure.volume_eq_prod]
-      infer_instance
-    exact measurePreserving_add_right volume (L, 0)
-  have hemb : MeasurableEmbedding (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) :=
-    measurableEmbedding_addRight (L, 0)
-  have hpre : (· + (L, 0) : ℝ × ℝ → ℝ × ℝ) ⁻¹' (Icc (c + L) (d + L) ×ˢ I) = Icc c d ×ˢ I := by
-    ext z
-    simp only [mem_preimage, mem_prod, mem_Icc, Prod.fst_add, Prod.snd_add, add_zero]
-    constructor <;> rintro ⟨⟨h, h'⟩, h''⟩ <;> exact ⟨⟨by linarith, by linarith⟩, h''⟩
-  rw [← he.setIntegral_preimage_emb hemb f, hpre]
-  rw [← he.integrableOn_comp_preimage hemb, hpre] at hfi
-  exact setIntegral_mono_on hfi hMi (measurableSet_Icc.prod hI) hfM
-
-end Translation
 
 end Floer
 
