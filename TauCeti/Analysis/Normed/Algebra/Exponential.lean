@@ -16,9 +16,9 @@ For an algebra `A` over a field, with `A` a topological ring, the third partial 
 `NormedSpace.expSeries` is `1 + x + 2⁻¹ • x ^ 2`. This identity needs no norm or completeness
 assumption.
 In a complete normed algebra, the exponential agrees with this quadratic truncation to third
-order at the origin, and it is multiplicative on scalar multiples of a fixed element
-(`NormedSpace.exp_add_smul`). This file records that estimate in `Asymptotics.IsBigO` form.
-It also bounds the norm of the exponential by a scalar exponential, comparing the exponential
+order at the origin; this file records that estimate in `Asymptotics.IsBigO` form. The exponential
+is also multiplicative on scalar multiples of a fixed element (`NormedSpace.exp_add_smul`).
+The file also bounds the norm of the exponential by a scalar exponential, comparing the exponential
 series termwise with the series of `Real.exp`.
 
 The exponential is analytic at `0` with power series `NormedSpace.expSeries`, so the statement is
@@ -39,7 +39,8 @@ Baker--Campbell--Hausdorff expansion.
   (`TauCeti.norm_exp_le_exp_norm`, with the scalar-multiple form `TauCeti.norm_exp_smul_le`), and
   power-bounded elements satisfy `‖exp (s • b)‖ ≤ M * Real.exp ‖s‖`
   (`TauCeti.norm_exp_smul_le_mul_exp_of_norm_pow_le`).
-* `TauCeti.exp_smul_one`: the exponential of a scalar multiple of the unit.
+* `TauCeti.exp_smul_one`: the exponential of a scalar multiple of the unit, with the norm bound
+  `TauCeti.norm_exp_smul_one_le`.
 -/
 
 public section
@@ -71,7 +72,7 @@ variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A
 
 /-- The exponential on a complete normed algebra is smooth of every order, including analytic. -/
 theorem contDiff_exp {k : ℕ∞ω} : ContDiff 𝕂 k (exp : A → A) :=
-  contDiff_iff_contDiffAt.mpr fun x ↦ (exp_analytic (𝕂 := 𝕂) x).contDiffAt.of_le le_top
+  AnalyticOnNhd.contDiff fun x _ ↦ exp_analytic x
 
 /-- **The quadratic Taylor estimate for the exponential.**  In a complete normed algebra,
 `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` as `x → 0`. -/
@@ -109,15 +110,12 @@ variable {𝔸 : Type*} [NormedRing 𝔸]
 `‖exp x‖ ≤ M * Real.exp r`. -/
 theorem norm_exp_le_mul_exp_of_norm_pow_le [NormedAlgebra ℚ 𝔸] {x : 𝔸} {M r : ℝ}
     (h : ∀ n : ℕ, ‖x ^ n‖ ≤ M * r ^ n) : ‖exp x‖ ≤ M * Real.exp r := by
-  have hr := (exp_series_hasSum_exp' (𝕂 := ℝ) (𝔸 := ℝ) r).mul_left M
   rw [exp_eq_tsum ℚ, Real.exp_eq_exp_ℝ]
-  refine tsum_of_norm_bounded hr fun n => ?_
-  have hfact : ‖((n ! : ℚ))⁻¹‖ = ((n ! : ℝ))⁻¹ := by
-    rw [← Rat.norm_cast_real]
-    simp
-  rw [norm_smul, hfact, smul_eq_mul, mul_left_comm]
+  refine tsum_of_norm_bounded ((exp_series_hasSum_exp' (𝕂 := ℝ) r).mul_left M) fun n ↦ ?_
+  rw [norm_smul, smul_eq_mul, mul_left_comm, ← Rat.norm_cast_real]
   gcongr
-  exact h n
+  · simp
+  · exact h n
 
 /-- In a normed `ℚ`-algebra whose unit has norm at most one, the exponential is norm-bounded by
 the scalar exponential of the norm: `‖exp x‖ ≤ Real.exp ‖x‖`. -/
@@ -151,13 +149,14 @@ theorem norm_exp_smul_le_mul_exp_of_norm_pow_le {b : 𝔸} {M : ℝ} (s : 𝕜)
   gcongr
   exact hpow n
 
+end RCLike
+
 /-- The exponential of a scalar multiple of the unit is the corresponding scalar exponential
 times the unit. -/
 @[simp]
-theorem exp_smul_one (c : 𝕜) : exp (c • (1 : 𝔸)) = exp c • 1 := by
+theorem exp_smul_one {𝕜 : Type*} [NontriviallyNormedField 𝕜] [CharZero 𝕜] [ContinuousSMul ℚ 𝕜]
+    [CompleteSpace 𝕜] [NormedAlgebra 𝕜 𝔸] (c : 𝕜) : exp (c • (1 : 𝔸)) = exp c • 1 := by
   rw [← Algebra.algebraMap_eq_smul_one, ← Algebra.algebraMap_eq_smul_one, ← algebraMap_exp_comm]
-
-end RCLike
 
 /-- If the unit has norm at most one, then the norm of the exponential of a real scalar multiple
 of the unit is at most the corresponding scalar exponential. -/
