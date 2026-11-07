@@ -9,6 +9,7 @@ public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Eleme
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Torus.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Elementary.Coordinate
 import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ClosedImmersion
+import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Triangular
 import TauCeti.LinearAlgebra.Matrix.RaisesDegree
 import TauCeti.LinearAlgebra.TensorProduct.Basis
 
@@ -77,9 +78,7 @@ private theorem eq_add_nsmul_of_toMatrix_integralDividedPower_ne_zero [Fintype �
   by_contra hne
   apply hrs
   rw [LinearMap.toMatrix_apply]
-  apply repr_eq_zero_of_isCartanWeightVector h ρ M b wt hwt _ hne
-  rw [coe_integralDividedPower_apply]
-  exact IsCartanWeightVector.integralDividedPower e hα (hwt s) n
+  exact repr_integralDividedPower_eq_zero_of_weight_ne e h ρ M hM b wt hwt hα hne
 
 /-- A positive root-subgroup matrix is `1 + t X` up to a matrix raising the degree by more than the
 degree of its root. -/
