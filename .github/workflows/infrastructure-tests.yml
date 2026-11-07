@@ -27,10 +27,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d288926c619a7247c92a1000d44ff9157220ff54
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+          tools-ref: d288926c619a7247c92a1000d44ff9157220ff54
           project-directory: .
       - name: Restore project-owned workflow tests after shared setup
         # The deployed shared overlay contains older copies of these workflow tests.
@@ -72,20 +72,31 @@ jobs:
   lean-fixtures:
     runs-on:
       - nscloud-ubuntu-24.04-amd64-4x8-with-features
-      - namespace-features:github.run-id=${{ github.run_id }}
+      - namespace-features:container.privileged=true;github.run-id=${{ github.run_id }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d288926c619a7247c92a1000d44ff9157220ff54
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+          tools-ref: d288926c619a7247c92a1000d44ff9157220ff54
           project-directory: .
       - name: Restore the project-owned Lake workflow test
         run: git restore --source=HEAD -- scripts/test_lake_cache_reuse.py
+      - name: Install the native checkout fixture sandbox
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq
+          sudo apt-get install -y bubblewrap
+          if [ "$(sysctl -n kernel.apparmor_restrict_unprivileged_userns 2>/dev/null || echo 0)" = 1 ]; then
+            printf '%s\n' 'abi <abi/4.0>,' 'include <tunables/global>' \
+              'profile bwrap /usr/bin/bwrap flags=(unconfined) {' '  userns,' '}' \
+              | sudo tee /etc/apparmor.d/bwrap >/dev/null
+            sudo apparmor_parser -r /etc/apparmor.d/bwrap
+          fi
       - name: Install elan (pinned + checksum) and the toolchain
         env:
           ELAN_SHA256: df0b2b3a439961ffcbb3985214365ffe40f49bc871df04dff268c7d8e21ca8b2
@@ -108,8 +119,12 @@ jobs:
           LEAN="$(elan which lean)"
           LEAN_SYSROOT="$("$LEAN" --print-prefix)"
           export LEAN LEAN_SYSROOT
+          # An explicit native test must not silently skip for absent tools.
+          command -v bwrap
+          test -x "$LEAN_SYSROOT/bin/lake"
           python3 scripts/test_duplicate_declarations.py
           python3 scripts/test_check_imports.py
+          python3 scripts/test_ci_checkout.py --integration
           python3 scripts/test_bulk_unpack_cache.py --integration
           python3 scripts/test_lake_cache_reuse.py --integration
           python3 scripts/test_lake_cache_publish.py --integration
@@ -124,10 +139,10 @@ jobs:
         with:
           persist-credentials: false
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d288926c619a7247c92a1000d44ff9157220ff54
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: dfc117ecae8e22bc38f67961d9063da7a8f2a75a
+          tools-ref: d288926c619a7247c92a1000d44ff9157220ff54
           project-directory: .
       - name: Install elan (pinned + checksum) and the toolchain
         env:
