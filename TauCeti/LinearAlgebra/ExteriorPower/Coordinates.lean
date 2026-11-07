@@ -22,8 +22,9 @@ Reading `exteriorPower.map j f` through these identifications gives
 (`LinearMap.exteriorPowerCoords_id`, `LinearMap.exteriorPowerCoords_comp`), and its matrix
 entries are the `j × j` minors of the matrix of `f` (`LinearMap.exteriorPowerCoords_single_apply`).
 In degree zero it is the identity after identifying the coordinate space with the coordinate line
-(`exteriorPower.piZeroEquiv_exteriorPowerCoords`), and in degree one it is `f` itself
-(`exteriorPower.piOneEquiv_exteriorPowerCoords`).
+(`exteriorPower.piZeroEquiv_exteriorPowerCoords`), in degree one it is `f` itself
+(`exteriorPower.piOneEquiv_exteriorPowerCoords`), and for an endomorphism of `Fin m → R` in the top
+degree `m` it is multiplication by the determinant (`LinearMap.exteriorPowerCoords_self`).
 
 These coordinates express exterior powers of vector bundles given by transition matrices,
 where the transitions of `⋀^j E` are the compound matrices of those of `E`.
@@ -122,6 +123,13 @@ theorem exteriorPowerCoords_single_apply (j : ℕ) {m n : ℕ} (f : (Fin m → R
   simp only [LinearMap.toMatrix_apply, Pi.basisFun_repr, Pi.basisFun_apply] at h
   rw [← h]
   simp [exteriorPowerCoords, piEquiv_symm_apply_single, piEquiv_apply, piBasis]
+
+/-- In the top degree, the compound matrix of an endomorphism of `Fin m → R` is multiplication
+by its determinant on the coordinate line `Fin (m.choose m) → R`. -/
+@[simp] theorem exteriorPowerCoords_self {m : ℕ} (f : (Fin m → R) →ₗ[R] (Fin m → R)) :
+    f.exteriorPowerCoords m = LinearMap.det f • LinearMap.id := by
+  refine LinearMap.ext fun v ↦ ?_
+  simp [exteriorPowerCoords, (Pi.basisFun R (Fin m)).map_exteriorPower_top_eq_det_smul f]
 
 end LinearMap
 
