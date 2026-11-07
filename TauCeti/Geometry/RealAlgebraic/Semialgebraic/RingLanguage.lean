@@ -87,7 +87,7 @@ theorem IsSemialgebraic.definable_ring {s : Set (σ → R)} (hs : IsSemialgebrai
       (univ : Set R).Definable Language.ring {v | eval v q = 0} := by
     simpa [zeroLocus_span] using
       (Ring.mvPolynomial_zeroLocus_definable {q}).mono (subset_univ _)
-  refine IsSemialgebraic.induction hzero (fun p ↦ ?_) definable_empty
+  refine IsSemialgebraic.induction hzero (fun p ↦ ?_)
     (fun _ _ h ↦ h.compl) (fun _ _ _ _ h₁ h₂ ↦ h₁.union h₂) hs
   -- `0 < a` exactly when `a * z ^ 2 = 1` for some `z`.
   convert (hzero (rename Sum.inl p * X (Sum.inr ()) ^ 2 - 1 :

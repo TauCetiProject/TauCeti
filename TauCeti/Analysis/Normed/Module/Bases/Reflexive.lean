@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Normed.Module.Bases
+public import TauCeti.Analysis.Normed.Module.Bases.Basic
 public import TauCeti.Analysis.Normed.Module.Dual.Reflexive.WeakCompact
 import Mathlib.Analysis.Normed.Group.Quotient
 
@@ -61,32 +61,6 @@ def IsBoundedlyComplete : Prop :=
   ∀ a : ℕ → 𝕜,
     BddAbove (range (fun n ↦ ‖∑ i ∈ Finset.range n, a i • b i‖)) →
     ∃ x, HasSum (fun i ↦ a i • b i) x (SummationFilter.conditional ℕ)
-
-/-- A coordinate of a finite initial sum is its prescribed coefficient once that
-coordinate has been included. -/
--- Normalize before the generic map-of-sum simp lemma expands the coordinate application.
-@[simp 1100]
-theorem coord_sum_range (a : ℕ → 𝕜) {i n : ℕ} (hi : i < n) :
-    b.coord i (∑ j ∈ Finset.range n, a j • b j) = a i := by
-  classical
-  simp [map_sum, b.ortho, Pi.single_apply, hi]
-
-/-- Precomposition with an initial projection is a finite linear combination of coordinates. -/
-theorem comp_proj_eq_sum (f : StrongDual 𝕜 E) (n : ℕ) :
-    f.comp (b.proj n) = ∑ i ∈ Finset.range n, f (b i) • b.coord i := by
-  ext x
-  simp [proj_apply, mul_comm]
-
-/-- Coordinates of a convergent basis series are its coefficients. -/
-theorem coord_eq_of_hasSum {a : ℕ → 𝕜} {x : E}
-    (h : HasSum (fun i ↦ a i • b i) x (SummationFilter.conditional ℕ)) (i : ℕ) :
-    b.coord i x = a i := by
-  have ht : Tendsto (fun n ↦ ∑ j ∈ Finset.range n, a j • b j) atTop (𝓝 x) := by
-    simpa only [HasSum, SummationFilter.conditional_filter_eq_map_range,
-      tendsto_map'_iff, Function.comp_def] using h
-  exact tendsto_nhds_unique ((b.coord i).continuous.tendsto x |>.comp ht)
-    (tendsto_const_nhds.congr' (eventually_atTop.2 ⟨i + 1,
-      fun n hn ↦ (b.coord_sum_range a (by omega)).symm⟩))
 
 /-- Bounded completeness says precisely that every coefficient sequence with bounded
 initial partial sums is the coordinate sequence of a vector. -/
@@ -162,7 +136,7 @@ theorem isBoundedlyComplete_of_surjective_inclusionInDoubleDual
   have hc := hw.continuousAt_comp heval.continuousAt
   have ht : Tendsto (fun n ↦ b.coord i (s n)) atTop (𝓝 (a i)) :=
     tendsto_const_nhds.congr' (eventually_atTop.2 ⟨i + 1,
-      fun n hn ↦ (b.coord_sum_range a (by omega)).symm⟩)
+      fun n hn ↦ (b.coord_sum a (Finset.mem_range.2 (by omega))).symm⟩)
   exact eq_of_nhds_neBot (hc.clusterPt.mono ht)
 
 variable [CompleteSpace E]

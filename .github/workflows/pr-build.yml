@@ -88,6 +88,12 @@ jobs:
   # Name kept distinct from `build` on purpose — see the header note. The required merge check is the
   # `build` commit STATUS posted in the final step, not this job's auto-created check-run.
   sandboxed-build:
+    permissions:
+      contents: read
+      pull-requests: read
+      statuses: write
+      actions: read
+      id-token: write  # telemetry-only grant stays outside candidate namespaces
     needs: pick-runner
     if: ${{ !cancelled() }}
     # Exact fleet labels bind placement to one machine and guest. A failed picker
@@ -149,16 +155,22 @@ jobs:
           path: gate
           persist-credentials: false
           fetch-depth: 1
+          # Trusted setup consumes project configuration, scripts, and local actions.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /.github/
+            /scripts/
+            /tauceti.toml
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+          tools-ref: 6376197e008e488d673e482a44f4a2cf921c50e0
           project-directory: gate
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -499,6 +511,13 @@ jobs:
           path: mergebase
           persist-credentials: false
           fetch-depth: 1
+          # Preserve both lakefile spellings for config attestation and bump checks.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /lakefile.toml
+            /lakefile.lean
+            /lake-manifest.json
+            /lean-toolchain
 
       # `.lake` sits inside a checkout whose contents the candidate controls, and a symlink
       # committed there gets followed by everything that later writes to that path, each of
@@ -988,20 +1007,33 @@ jobs:
         run: |
           set -euo pipefail
           if [ -n "${LINT_ONLY_MODULES:-}" ] && [ "${{ env.IS_BATCH }}" != "true" ] \
-             && [ "${BUMP:-0}" != "1" ] && [ ! -s "$LINT_SCOPE_DIR/unmatched.txt" ]; then
+             && [ "${BUMP:-0}" != "1" ] && [ -f "$LINT_ONLY_MODULES" ] \
+             && [ -f "$LINT_SCOPE_DIR/unmatched.txt" ] && [ ! -s "$LINT_SCOPE_DIR/unmatched.txt" ]; then
+            echo "LINT_CHANGED_ONLY=1" >> "$GITHUB_ENV"
             echo "AXIOMS_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
             echo "DOT_ONLY_MODULES=$LINT_ONLY_MODULES" >> "$GITHUB_ENV"
             echo "audit scope: the $(grep -c . "$LINT_ONLY_MODULES" || true) changed module(s)"
           else
+            echo "LINT_CHANGED_ONLY=0" >> "$GITHUB_ENV"
             echo "AXIOMS_ONLY_MODULES=" >> "$GITHUB_ENV"
             echo "DOT_ONLY_MODULES=" >> "$GITHUB_ENV"
             echo "audit scope: the whole library"
           fi
 
+      - name: Restore dot-notation parsing context
+        if: ${{ env.INFRA != '1' }}
+        continue-on-error: true
+        uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
+        with:
+          path: .ci-dot-notation-context
+          key: dot-notation-context-v1-${{ hashFiles('gate/scripts/lean_source.py') }}-${{ steps.pr.outputs.base_sha }}
+          restore-keys: dot-notation-context-v1-${{ hashFiles('gate/scripts/lean_source.py') }}-
+
       - name: Dot-notation namespace lint (Mathlib type namespaces stay at root)
         if: ${{ env.INFRA != '1' }}
         run: |
           python3 gate/scripts/lint-dot-notation.py \
+            --context-cache ".ci-dot-notation-context/context.json" \
             --baseline gate/scripts/lint-dot-notation-baseline.txt \
             --mathlib-root pr/.lake/packages/mathlib/Mathlib \
             --source-root pr/TauCeti \
@@ -1173,7 +1205,11 @@ jobs:
           # would let candidate code drop a `lake` or `bash` earlier on PATH than the real one and
           # have the later audits run it. The explicit PATH below is the other half of that: it
           # never contains a directory the sandbox can write.
-          python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
+          progress_observer=()
+          if [ -f gate/scripts/ci_live_progress.py ]; then
+            progress_observer=(python3 gate/scripts/ci_live_progress.py --telemetry "$PWD/pr/.lake/telemetry" --)
+          fi
+          "${progress_observer[@]}" python3 gate/scripts/ci_host_resources.py --out "$RUNNER_TEMP/ci-host-resources.json" -- \
             env -i /usr/bin/bwrap --tmpfs / \
             --ro-bind /usr /usr --ro-bind /etc /etc \
             --symlink usr/bin /bin --symlink usr/sbin /sbin \
@@ -1195,6 +1231,7 @@ jobs:
             --setenv LAKE_CACHE_DIR "${LAKE_CACHE_DIR:-}" \
             --setenv WATCHDOG_TOOLCHAIN "${WATCHDOG_TOOLCHAIN:-}" \
             --setenv LINT_DRIVER_EXE "$LINT_DRIVER_DIR/lint-env-driver" \
+            --setenv LINT_CHANGED_ONLY "${LINT_CHANGED_ONLY:-0}" \
             --setenv LINT_ONLY_MODULES "${LINT_ONLY_MODULES:-}" \
             --setenv AXIOMS_ONLY_MODULES "${AXIOMS_ONLY_MODULES:-}" \
             --setenv STAGE_LAKE_CACHE "${STAGE_LAKE_CACHE:-}" \
@@ -1254,8 +1291,28 @@ jobs:
             args+=(--base-manifest "$BASE_SHIM_REGISTRY" --base-root "$BASE_SHIM_ROOT")
             [ "${BUMP:-0}" = "1" ] || args+=(--only-new)
           fi
-          python3 gate/scripts/check-expired-mathlib-shims.py \
-            --repo-root pr --manifest pr/TauCeti/mathlib-shims.json "${args[@]}"
+          # The build can change .lake/package artifacts. Any later Lake/Lean
+          # execution stays in a fresh PID/network namespace with no host grants.
+          probe_mounts=()
+          if [ -n "${BASE_SHIM_REGISTRY:-}" ]; then
+            probe_mounts=(--ro-bind "$BASE_SHIM_REGISTRY" "$BASE_SHIM_REGISTRY"
+                          --ro-bind "$BASE_SHIM_ROOT" "$BASE_SHIM_ROOT")
+          fi
+          env -i /usr/bin/bwrap --tmpfs / \
+            --ro-bind /usr /usr --ro-bind /etc /etc \
+            --symlink usr/bin /bin --symlink usr/sbin /sbin \
+            --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+            --dev /dev --proc /proc --tmpfs /tmp \
+            --ro-bind "$HOME/.elan" "$HOME/.elan" \
+            --ro-bind "$PWD/gate" "$PWD/gate" \
+            --ro-bind "$PWD/pr" "$PWD/pr" --bind "$PWD/pr/.lake" "$PWD/pr/.lake" \
+            "${probe_mounts[@]}" --remount-ro / \
+            --setenv PATH "$HOME/.elan/bin:/usr/bin:/bin" --setenv HOME "$HOME" \
+            --chdir "$PWD" \
+            --unshare-user --unshare-ipc --unshare-pid --unshare-net --unshare-uts \
+            --unshare-cgroup --disable-userns --die-with-parent --new-session \
+            -- python3 "$PWD/gate/scripts/check-expired-mathlib-shims.py" \
+            --repo-root "$PWD/pr" --manifest "$PWD/pr/TauCeti/mathlib-shims.json" "${args[@]}"
           rc=$?
           echo "SHIM_EXPIRY_RC=$rc" >> "$GITHUB_ENV"
           exit "$rc"
@@ -1265,7 +1322,7 @@ jobs:
       - name: Refresh CI reporting credentials after the build
         id: report-ci-api
         if: always()
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
@@ -1627,14 +1684,14 @@ jobs:
           persist-credentials: false
 
       - name: Prepare pinned shared tools
-        uses: TauCetiProject/TauCetiTools/.github/actions/setup@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/setup@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           tools-repository: TauCetiProject/TauCetiTools
-          tools-ref: d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+          tools-ref: 6376197e008e488d673e482a44f4a2cf921c50e0
           project-directory: .
       - name: Select CI API credentials
         id: ci-api
-        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@d0bc7f9619c0efbaca6bb88b28cb4e00ab626435
+        uses: TauCetiProject/TauCetiTools/.github/actions/ci-credentials@6376197e008e488d673e482a44f4a2cf921c50e0
         with:
           owner: ${{ github.repository_owner }}
           repository: ${{ github.event.repository.name }}
