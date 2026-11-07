@@ -32,7 +32,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E
 primitive `f` of `g` on the intersection of the disc with a convex set `U`. -/
 theorem DifferentiableOn.exists_hasDerivAt_eqOn_ball_inter {f g : ℂ → E} {c : ℂ} {r : ℝ}
     {U : Set ℂ} (hg : DifferentiableOn ℂ g (ball c r)) (hU : Convex ℝ U)
-    (hf : ∀ z ∈ ball c r ∩ U, HasDerivAt f (g z) z) :
+    (hf : ∀ z ∈ ball c r ∩ U, HasDerivWithinAt f (g z) (ball c r ∩ U) z) :
     ∃ G : ℂ → E, (∀ z ∈ ball c r, HasDerivAt G (g z) z) ∧ EqOn G f (ball c r ∩ U) := by
   obtain ⟨P, hP⟩ := hg.isExactOn_ball
   rcases (ball c r ∩ U).eq_empty_or_nonempty with hV | ⟨z₀, hz₀⟩
@@ -40,7 +40,7 @@ theorem DifferentiableOn.exists_hasDerivAt_eqOn_ball_inter {f g : ℂ → E} {c 
   refine ⟨fun z ↦ P z + (f z₀ - P z₀), fun z hz ↦ (hP z hz).add_const _, fun z hz ↦ ?_⟩
   have hderiv (w) (hw : w ∈ ball c r ∩ U) :
       HasDerivWithinAt (f - P) 0 (ball c r ∩ U) w := by
-    simpa using ((hf w hw).sub (hP w hw.1)).hasDerivWithinAt
+    simpa using (hf w hw).sub (hP w hw.1).hasDerivWithinAt
   have := ((convex_ball c r).inter hU).norm_image_sub_le_of_norm_hasDerivWithin_le hderiv
     (fun _ _ ↦ norm_zero.le) hz₀ hz
   rw [zero_mul, norm_le_zero_iff, sub_eq_zero, Pi.sub_apply, Pi.sub_apply] at this

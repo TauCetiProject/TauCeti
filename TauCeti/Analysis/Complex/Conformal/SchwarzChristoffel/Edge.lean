@@ -380,7 +380,8 @@ theorem exists_hasDerivAt_schwarzChristoffelPrimitive_continuation
   apply hgdiff.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0)
   intro z hz
   have h := hasDerivAt_schwarzChristoffelPrimitive a e z₀ hz.2
-  rwa [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
+  rw [schwarzChristoffelIntegrand_eq_exp_mul_continued a e p hz.2] at h
+  exact h.hasDerivWithinAt
 
 /-- **The Schwarz--Christoffel map has straight image edges.**  Let every prevertex `a i` with
 nonzero exponent avoid the real interval `Ioo p q`; a prevertex with zero exponent contributes the

@@ -139,7 +139,8 @@ private theorem exists_differentiableOn_eq_schwarzChristoffelPrimitive_sub_comp_
     exact hasDerivAt_schwarzChristoffelPrimitive_sub_comp_neg_inv a e z₀ q M C hw.2
       (hint w hw.2)
   obtain ⟨H, hH, heq⟩ :=
-    hD₃.neg.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0) hderiv
+    hD₃.neg.exists_hasDerivAt_eqOn_ball_inter (convex_halfSpace_im_gt 0)
+      fun z hz ↦ (hderiv z hz).hasDerivWithinAt
   refine ⟨H, r, hr, fun w hw => (hH w hw).differentiableAt.differentiableWithinAt, ?_⟩
   intro z hz hzr
   simpa using (heq ⟨by simpa [mem_ball_zero_iff] using hzr, im_neg_inv_pos.mpr hz⟩).symm
