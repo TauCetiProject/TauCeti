@@ -10,7 +10,6 @@ public import Mathlib.MeasureTheory.Integral.IntervalIntegral.Basic
 import TauCeti.Analysis.Contour.Cauchy.PrincipalValue.Basic
 import TauCeti.Analysis.Contour.Crossing.Monotonicity
 import TauCeti.Analysis.Contour.Crossing.Windows
-import TauCeti.Analysis.Contour.Curve.Distance
 import TauCeti.Analysis.Contour.ExitTime
 
 /-!
