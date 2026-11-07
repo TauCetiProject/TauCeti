@@ -46,6 +46,11 @@ hypotheses hold in every degree over any ring
 (`ChainComplex.isSplitMono_iCycles_of_projective_homology`), and the `Ext¹` term vanishes, so the
 Kronecker map is bijective. In degree `n` this only needs the homology below `n` to be projective,
 for instance zero (`TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_lt`).
+When every object has projective dimension at most one, the Kronecker map in degree `n + 1` is
+bijective as soon as the single homology object `Hₙ(X)` is projective
+(`TauCeti.ChainComplex.kronecker_bijective_succ_of_projective_homology`), whatever the homology
+below `n`. So `Hⁿ⁺¹(Hom(X, Y))` vanishes when moreover `Hₙ₊₁(X)` does: a free top homology group
+and vanishing homology above it make cohomology vanish above that degree.
 
 ## Main declarations
 
@@ -57,6 +62,12 @@ for instance zero (`TauCeti.ChainComplex.kronecker_bijective_of_projective_homol
   bijective in degree `n` for a complex indexed by `ℕ` with projective terms whose homology is
   projective below `n`, and `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology` in
   every degree when all of its homology is projective.
+* `TauCeti.ChainComplex.kronecker_bijective_of_projective_homology_of_add_one_eq`: the Kronecker
+  map is bijective in degree `j + 1` when `Hⱼ(X)` is projective and the cycles in degrees `j` and
+  `j + 1` are projective and split off.
+* `TauCeti.ChainComplex.kronecker_bijective_succ_of_projective_homology`: over a category whose
+  objects have projective dimension at most one, a projective `Hₙ(X)` makes the Kronecker map
+  bijective in degree `n + 1`.
 
 ## References
 
@@ -200,6 +211,27 @@ theorem exact_extToHomology_kronecker {i j : α} (hij : j + 1 = i) [Projective (
 
 end Ext
 
+section ProjectiveHomologyAt
+
+variable {k : Type*} [CommRing k] [Linear k C] {X : ChainComplex C α} {Y : C}
+
+/-- **The universal coefficient theorem in one degree with projective homology below it**: in
+degree `i = j + 1`, if the cycles `Zⱼ` are projective, the inclusions `Zⱼ ⟶ Xⱼ` and `Zᵢ ⟶ Xᵢ`
+are split, and `Hⱼ(X)` is projective, then the Kronecker map `Hⁱ(Hom(X, Y)) →ₗ[k] (Hᵢ(X) ⟶ Y)` is
+bijective, for every object `Y`: the `Ext¹(Hⱼ(X), Y)` term of the universal coefficient sequence
+vanishes. -/
+theorem kronecker_bijective_of_projective_homology_of_add_one_eq {i j : α} (hij : j + 1 = i)
+    [Projective (X.cycles j)] [IsSplitMono (X.iCycles j)] [IsSplitMono (X.iCycles i)]
+    [Projective (X.homology j)] : Function.Bijective (kronecker k X Y i) := by
+  refine ⟨?_, kronecker_surjective_of_isSplitMono _⟩
+  let := HasExt.standard C
+  rw [← LinearMap.ker_eq_bot,
+    (exact_extToHomology_kronecker (k := k) (X := X) (Y := Y) hij).linearMap_ker_eq,
+    LinearMap.range_eq_bot]
+  exact LinearMap.ext fun e ↦ by rw [Ext.eq_zero_of_projective e, map_zero, LinearMap.zero_apply]
+
+end ProjectiveHomologyAt
+
 section ProjectiveHomology
 
 variable {k : Type*} [CommRing k] [Linear k C] {X : ChainComplex C ℕ} {Y : C}
@@ -221,12 +253,7 @@ theorem kronecker_bijective_of_projective_homology_lt (n : ℕ)
       fun j hj ↦ h j (Nat.lt_succ_of_lt hj)
     have := X.projective_cycles_of_projective_homology_lt n fun j hj ↦ h j (Nat.lt_succ_of_lt hj)
     have := h n (Nat.lt_succ_self n)
-    refine ⟨?_, kronecker_surjective_of_isSplitMono _⟩
-    let := HasExt.standard C
-    rw [← LinearMap.ker_eq_bot,
-      (exact_extToHomology_kronecker (k := k) (X := X) (Y := Y) rfl).linearMap_ker_eq,
-      LinearMap.range_eq_bot]
-    exact LinearMap.ext fun e ↦ by rw [Ext.eq_zero_of_projective e, map_zero, LinearMap.zero_apply]
+    exact kronecker_bijective_of_projective_homology_of_add_one_eq rfl
 
 /-- **The universal coefficient theorem with projective homology**: for a chain complex `X`
 indexed by `ℕ` whose terms and homology objects are all projective, the Kronecker map
@@ -236,5 +263,21 @@ theorem kronecker_bijective_of_projective_homology [∀ n, Projective (X.homolog
   kronecker_bijective_of_projective_homology_lt n fun _ _ ↦ inferInstance
 
 end ProjectiveHomology
+
+section Hereditary
+
+variable {k : Type*} [CommRing k] [Linear k C] [∀ V : C, HasProjectiveDimensionLE V 1]
+  {X : ChainComplex C ℕ} {Y : C} [∀ n, Projective (X.X n)]
+
+/-- **The universal coefficient theorem above a projective homology object**, when every object
+has projective dimension at most one, as for modules over a principal ideal domain: for a chain
+complex `X` indexed by `ℕ` with projective terms whose homology `Hₙ(X)` is projective, the
+Kronecker map `Hⁿ⁺¹(Hom(X, Y)) →ₗ[k] (Hₙ₊₁(X) ⟶ Y)` is bijective, for every object `Y`. Nothing
+is assumed about the homology in the other degrees. -/
+theorem kronecker_bijective_succ_of_projective_homology (n : ℕ) [Projective (X.homology n)] :
+    Function.Bijective (kronecker k X Y (n + 1)) :=
+  kronecker_bijective_of_projective_homology_of_add_one_eq rfl
+
+end Hereditary
 
 end TauCeti.ChainComplex

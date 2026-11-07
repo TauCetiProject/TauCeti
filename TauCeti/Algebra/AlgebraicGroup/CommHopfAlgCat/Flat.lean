@@ -80,16 +80,10 @@ theorem flat_localization_kernel_iff (f : H ⟶ K) (g : WithConv (K →ₐ[k] k)
     exact congrArg (fun h : H →ₐ[k] K ↦ h.toRingHom) (by
       simpa only [← HopfAlgebra.rightTranslationAlgEquiv_toAlgHom]
         using (f.hom.comp_rightTranslationAlgHom g).symm)
-  have ht := RingHom.flat_localization_comap_iff
-    f.hom.toAlgHom.toRingHom f.hom.toAlgHom.toRingHom
-    eH.toRingEquiv eK.toRingEquiv hcomm p
-  -- Index by prime-spectrum points so the ideal and its primality proof travel together.
-  have hpoint : (⟨p.comap eK.toRingEquiv, inferInstance⟩ : PrimeSpectrum K) =
-      ⟨RingHom.ker g.ofConv.toRingHom, inferInstance⟩ := PrimeSpectrum.ext hp
-  have heq := congrArg (fun q : PrimeSpectrum K ↦
-    ((algebraMap K (Localization.AtPrime q.asIdeal)).comp f.hom.toAlgHom.toRingHom).Flat)
-    hpoint
-  exact heq ▸ ht
+  have hM : (RingHom.ker g.ofConv.toRingHom).primeCompl.map eK.toRingEquiv = p.primeCompl := by
+    simpa only [hp] using eK.toRingEquiv.map_primeCompl_comap_eq p
+  exact RingHom.flat_localization_comp_iff_of_ringEquiv f.hom.toAlgHom.toRingHom
+    f.hom.toAlgHom.toRingHom eH.toRingEquiv eK.toRingEquiv hcomm hM
 
 /-- An affine group morphism over an algebraically closed field with finite-type source
 is flat exactly when its coordinate map becomes flat after localizing at the augmentation
