@@ -42,6 +42,73 @@ namespace Representation
 variable {F G V : Type*} [Field F] [Group G] [Fintype G] [AddCommGroup V] [Module F V]
   (p : ℕ) [Fact p.Prime] [CharP F p]
 
+/-- Stage of `id_mem_range_norm_linHom_of_ker_norm_le`: the map `f : (G → W) → V`,
+`w ↦ ∑ g, ρ g (w g)`, from the coinduced module on a complement `W` of the augmentation
+submodule is injective. A fixed vector of its kernel is constant with value of norm zero in `W`. -/
+private theorem injective_of_forall_mem_ker_norm (hG : IsPGroup p G) (ρ : Representation F G V)
+    (h : LinearMap.ker ρ.norm ≤ Coinvariants.ker ρ) {W : Submodule F V}
+    (hW : IsCompl (Coinvariants.ker ρ) W) (σ : Representation F G (G → W))
+    (hσ : ∀ (h : G) (w : G → W) (g : G), σ h w g = w (h⁻¹ * g)) (f : (G → W) →ₗ[F] V)
+    (hf : ∀ w : G → W, f w = ∑ g : G, ρ g (w g))
+    (hfσ : ∀ (h : G) (w : G → W), f (σ h w) = ρ h (f w)) :
+    Function.Injective f := by
+  classical
+  rw [← LinearMap.ker_eq_bot]
+  by_contra hK
+  have hKs (g : G) : LinearMap.ker f ≤ (LinearMap.ker f).comap (σ g) := fun w hw ↦ by
+    simp only [Submodule.mem_comap, LinearMap.mem_ker] at hw ⊢
+    rw [hfσ, hw, map_zero]
+  have : Nontrivial (LinearMap.ker f) := Submodule.nontrivial_iff_ne_bot.2 hK
+  obtain ⟨y, hy0, hy⟩ :=
+    (σ.subrepresentation _ hKs).exists_ne_zero_apply_eq_self_of_forall_pow_eq_one p
+      fun g ↦ (hG g).imp fun _ hn ↦ by rw [← map_pow, hn, map_one]
+  have hconst (g : G) : (y : G → W) g = (y : G → W) 1 := by
+    have := congrFun (congrArg Subtype.val (hy g⁻¹)) 1
+    simpa [hσ] using this
+  have hnorm : ρ.norm ((y : G → W) 1 : V) = 0 := by
+    have := y.2
+    rw [LinearMap.mem_ker, hf] at this
+    simpa [Representation.norm, hconst] using this
+  have hmem : ((y : G → W) 1 : V) ∈ Coinvariants.ker ρ ⊓ W := ⟨h hnorm, ((y : G → W) 1).2⟩
+  rw [hW.inf_eq_bot, Submodule.mem_bot] at hmem
+  exact hy0 (Subtype.ext (funext fun g ↦ Subtype.ext (by simpa [hconst g] using hmem)))
+
+/-- Stage of `id_mem_range_norm_linHom_of_ker_norm_le`: the map `f : (G → W) → V`,
+`w ↦ ∑ g, ρ g (w g)`, from the coinduced module on a complement `W` of the augmentation
+submodule is surjective. A fixed functional on its cokernel kills `W` and the augmentation
+submodule. -/
+private theorem surjective_of_isCompl_coinvariantsKer (hG : IsPGroup p G)
+    (ρ : Representation F G V) {W : Submodule F V} (hW : IsCompl (Coinvariants.ker ρ) W)
+    (σ : Representation F G (G → W)) (f : (G → W) →ₗ[F] V)
+    (hf : ∀ w : G → W, f w = ∑ g : G, ρ g (w g))
+    (hfσ : ∀ (h : G) (w : G → W), f (σ h w) = ρ h (f w)) :
+    Function.Surjective f := by
+  classical
+  rw [← LinearMap.range_eq_top]
+  by_contra hX
+  have hXs (g : G) : LinearMap.range f ≤ (LinearMap.range f).comap (ρ g) := by
+    rintro _ ⟨w, rfl⟩
+    exact ⟨σ g w, hfσ g w⟩
+  let τ := ρ.quotient _ hXs
+  have : Nontrivial (V ⧸ LinearMap.range f) :=
+    Submodule.Quotient.nontrivial_iff.2 hX
+  obtain ⟨l, hl0, hl⟩ := τ.dual.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one p
+      fun g ↦ (hG g).imp fun _ hn ↦ by rw [← map_pow, hn, map_one]
+  have hl' (g : G) (v : V) :
+      l (Submodule.Quotient.mk (ρ g v)) = l (Submodule.Quotient.mk v) := by
+    have := LinearMap.congr_fun (hl g⁻¹) (Submodule.Quotient.mk v)
+    simpa [dual_apply, τ, Module.Dual.transpose_apply] using this
+  have hker : Coinvariants.ker ρ ≤ LinearMap.ker (l ∘ₗ (LinearMap.range f).mkQ) :=
+    Submodule.span_le.2 fun _ ⟨⟨g, v⟩, hv⟩ ↦ by simp [← hv, hl']
+  have hW' : W ≤ LinearMap.ker (l ∘ₗ (LinearMap.range f).mkQ) := fun w hw ↦ by
+    have hw' : w ∈ LinearMap.range f :=
+      ⟨Pi.single 1 ⟨w, hw⟩, by simp [hf, Pi.single_apply, apply_ite]⟩
+    simp [(Submodule.Quotient.mk_eq_zero _).2 hw']
+  refine hl0 (LinearMap.ext fun c ↦ ?_)
+  obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective _ c
+  have hv : v ∈ Coinvariants.ker ρ ⊔ W := hW.sup_eq_top ▸ Submodule.mem_top
+  exact sup_le hker hW' hv
+
 /-- **A representation of a `p`-group in characteristic `p` with vanishing degree `-1` Tate
 cohomology has the identity as a norm.** If `G` is a finite `p`-group, `F` has characteristic `p`,
 and every vector of `V` of norm zero lies in the augmentation submodule, then the identity is the
@@ -64,54 +131,8 @@ theorem id_mem_range_norm_linHom_of_ker_norm_le (hG : IsPGroup p G) (ρ : Repres
     rw [hf, hf, map_sum]
     refine Fintype.sum_equiv (Equiv.mulLeft h⁻¹) _ _ fun g ↦ ?_
     simp [hσ, ← mul_apply_eq_comp, ← map_mul]
-  -- `f` is injective: a fixed vector of its kernel is constant with value of norm zero in `W`.
-  have hinj : Function.Injective f := by
-    rw [← LinearMap.ker_eq_bot]
-    by_contra hK
-    have hKs (g : G) : LinearMap.ker f ≤ (LinearMap.ker f).comap (σ g) := fun w hw ↦ by
-      simp only [Submodule.mem_comap, LinearMap.mem_ker] at hw ⊢
-      rw [hfσ, hw, map_zero]
-    have : Nontrivial (LinearMap.ker f) := Submodule.nontrivial_iff_ne_bot.2 hK
-    obtain ⟨y, hy0, hy⟩ :=
-      (σ.subrepresentation _ hKs).exists_ne_zero_apply_eq_self_of_forall_pow_eq_one p
-        fun g ↦ (hG g).imp fun _ hn ↦ by rw [← map_pow, hn, map_one]
-    have hconst (g : G) : (y : G → W) g = (y : G → W) 1 := by
-      have := congrFun (congrArg Subtype.val (hy g⁻¹)) 1
-      simpa [hσ] using this
-    have hnorm : ρ.norm ((y : G → W) 1 : V) = 0 := by
-      have := y.2
-      rw [LinearMap.mem_ker, hf] at this
-      simpa [Representation.norm, hconst] using this
-    have hmem : ((y : G → W) 1 : V) ∈ Coinvariants.ker ρ ⊓ W := ⟨h hnorm, ((y : G → W) 1).2⟩
-    rw [hW.inf_eq_bot, Submodule.mem_bot] at hmem
-    exact hy0 (Subtype.ext (funext fun g ↦ Subtype.ext (by simpa [hconst g] using hmem)))
-  -- `f` is surjective: a fixed functional on its cokernel kills `W` and the augmentation
-  -- submodule.
-  have hsurj : Function.Surjective f := by
-    rw [← LinearMap.range_eq_top]
-    by_contra hX
-    have hXs (g : G) : LinearMap.range f ≤ (LinearMap.range f).comap (ρ g) := by
-      rintro _ ⟨w, rfl⟩
-      exact ⟨σ g w, hfσ g w⟩
-    let τ := ρ.quotient _ hXs
-    have : Nontrivial (V ⧸ LinearMap.range f) :=
-      Submodule.Quotient.nontrivial_iff.2 hX
-    obtain ⟨l, hl0, hl⟩ := τ.dual.exists_ne_zero_apply_eq_self_of_forall_pow_eq_one p
-        fun g ↦ (hG g).imp fun _ hn ↦ by rw [← map_pow, hn, map_one]
-    have hl' (g : G) (v : V) :
-        l (Submodule.Quotient.mk (ρ g v)) = l (Submodule.Quotient.mk v) := by
-      have := LinearMap.congr_fun (hl g⁻¹) (Submodule.Quotient.mk v)
-      simpa [dual_apply, τ, Module.Dual.transpose_apply] using this
-    have hker : Coinvariants.ker ρ ≤ LinearMap.ker (l ∘ₗ (LinearMap.range f).mkQ) :=
-      Submodule.span_le.2 fun _ ⟨⟨g, v⟩, hv⟩ ↦ by simp [← hv, hl']
-    have hW' : W ≤ LinearMap.ker (l ∘ₗ (LinearMap.range f).mkQ) := fun w hw ↦ by
-      have hw' : w ∈ LinearMap.range f :=
-        ⟨Pi.single 1 ⟨w, hw⟩, by simp [hf, Pi.single_apply, apply_ite]⟩
-      simp [(Submodule.Quotient.mk_eq_zero _).2 hw']
-    refine hl0 (LinearMap.ext fun c ↦ ?_)
-    obtain ⟨v, rfl⟩ := Submodule.Quotient.mk_surjective _ c
-    have hv : v ∈ Coinvariants.ker ρ ⊔ W := hW.sup_eq_top ▸ Submodule.mem_top
-    exact sup_le hker hW' hv
+  have hinj := injective_of_forall_mem_ker_norm p hG ρ h hW σ hσ f hf hfσ
+  have hsurj := surjective_of_isCompl_coinvariantsKer p hG ρ hW σ f hf hfσ
   -- The identity is the norm of the projection onto the summand at `1`.
   let e := LinearEquiv.ofBijective f ⟨hinj, hsurj⟩
   refine ⟨W.subtype ∘ₗ LinearMap.proj 1 ∘ₗ e.symm.toLinearMap, LinearMap.ext fun x ↦ ?_⟩
