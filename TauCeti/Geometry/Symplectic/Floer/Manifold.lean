@@ -59,9 +59,11 @@ form they recover the vector-space definitions.
 ## Main results
 
 * `SmoothTwoForm.hamiltonianCurvature_cylindrical`: the curvature of `K = H_t dt` vanishes.
-* `SmoothTwoForm.floerEnergyDensity_zero`,
-  `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`: the energy density of the zero
-  datum and the locality of the curvature.
+* `SmoothTwoForm.hamiltonianCurvature_congr_of_eventuallyEq`,
+  `SmoothTwoForm.hamiltonianCurvature_continuation`: the curvature is local in the domain, and a
+  continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`.
+* `SmoothTwoForm.floerEnergyDensity_zero`: the energy density of the zero datum is the symplectic
+  area density.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
@@ -121,17 +123,6 @@ theorem hamiltonianCurvature_cylindrical (ω : SmoothTwoForm I M) (H : ℝ → M
     (x : M) : ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
   rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
   exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
-
-/-- The curvature at a point depends only on the germs of the components of the datum there. -/
-theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
-    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[nhds z] Ks')
-    (ht : Kt =ᶠ[nhds z] Kt') :
-    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
-  ext x
-  have hs' : (fun w ↦ Ks w x) =ᶠ[nhds z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
-  have ht' : (fun w ↦ Kt w x) =ᶠ[nhds z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
-  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
-    hs.eq_of_nhds, ht.eq_of_nhds]
 
 /-- The intrinsic perturbed derivative `du - X_K`, valued in `T_(u z) M`.
 As with `mfderiv`, using this as an actual differential requires differentiability of `u`. -/
@@ -264,6 +255,40 @@ theorem floerEnergyDensity_nonneg {J : AlmostComplexStructure (TangentSpace I (u
   simpa only [floerEnergyDensity_def, IsNondegenerate.symplecticFormAt_apply,
     ContinuousLinearMap.coe_coe] using
       h.symplecticForm_apply_stdComplexLineReal_stdComplexLineImag_nonneg hJ
+
+/-! ### Local formulas for the curvature -/
+
+section Curvature
+
+open Filter Topology
+
+/-- The curvature only depends on the germs of the perturbation data at the domain point. -/
+theorem hamiltonianCurvature_congr_of_eventuallyEq (ω : SmoothTwoForm I M)
+    {Ks Kt Ks' Kt' : ℝ × ℝ → M → ℝ} {z : ℝ × ℝ} (hs : Ks =ᶠ[𝓝 z] Ks') (ht : Kt =ᶠ[𝓝 z] Kt') :
+    ω.hamiltonianCurvature Ks Kt z = ω.hamiltonianCurvature Ks' Kt' z := by
+  funext x
+  have hs' : (fun w ↦ Ks w x) =ᶠ[𝓝 z] fun w ↦ Ks' w x := hs.mono fun _ hw ↦ congrFun hw x
+  have ht' : (fun w ↦ Kt w x) =ᶠ[𝓝 z] fun w ↦ Kt' w x := ht.mono fun _ hw ↦ congrFun hw x
+  rw [hamiltonianCurvature_def, hamiltonianCurvature_def, hs'.fderiv_eq, ht'.fderiv_eq,
+    hs.eq_of_nhds, ht.eq_of_nhds]
+
+/-- The zero perturbation has zero curvature. -/
+@[simp]
+theorem hamiltonianCurvature_zero (ω : SmoothTwoForm I M) (z : ℝ × ℝ) (x : M) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun _ _ ↦ 0) z x = 0 := by
+  simp [hamiltonianCurvature_def]
+
+/-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
+theorem hamiltonianCurvature_continuation (ω : SmoothTwoForm I M) {β : ℝ → ℝ} {H : ℝ → M → ℝ}
+    {z : ℝ × ℝ} {x : M} (hβ : DifferentiableAt ℝ β z.1)
+    (hH : DifferentiableAt ℝ (fun t ↦ H t x) z.2) :
+    ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w y ↦ β w.1 * H w.2 y) z x =
+      deriv β z.1 * H z.2 x := by
+  simp only [hamiltonianCurvature_def, poissonBracket_const_left, fderiv_const_apply,
+    zero_apply, sub_zero]
+  exact fderiv_mul_apply_stdComplexLineReal (h := fun t ↦ H t x) hβ hH
+
+end Curvature
 
 /-! ### Changes of domain coordinates -/
 

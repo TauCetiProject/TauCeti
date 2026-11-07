@@ -8,6 +8,7 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Manifold
 public import TauCeti.Geometry.Symplectic.Floer.PairOfPants.End.Curvature
 import TauCeti.Analysis.SpecialFunctions.SmoothTransition
+import TauCeti.Geometry.Manifold.ContMDiff.Prod
 import TauCeti.Geometry.Symplectic.Floer.PairOfPants.Energy.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.Periodic
 
@@ -243,25 +244,33 @@ variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M]
   {H : Puncture → ℝ → M → ℝ}
 
-/-- The components of the perturbation are differentiable in the domain point, at points
-of `S`. -/
+/-- The components of the perturbation in real coordinates are differentiable in the domain
+point, at points of `S`, for `C¹` Hamiltonians on a manifold. -/
 private theorem differentiableAt_pairOfPantsPerturbation_domain (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
     DifferentiableAt ℝ
-      (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z :=
-  (((contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).comp z
-    (contMDiffAt_id.prodMk contMDiffAt_const)).mdifferentiableAt one_ne_zero).differentiableAt
+      (fun z' => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z') x v) z := by
+  have hK : ContMDiffAt 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 (fun w ↦ pairOfPantsPerturbation H w x)
+      (Complex.equivRealProdCLM.symm z) :=
+    (contMDiffAt_pairOfPantsPerturbation hH hHs
+      ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp (f := fun w : ℂ ↦ (w, x)) _
+      (contMDiffAt_id.prodMk contMDiffAt_const)
+  exact ((hK.contDiffAt.differentiableAt one_ne_zero).comp z
+    Complex.equivRealProdCLM.symm.differentiableAt).clm_apply (differentiableAt_const v)
 
 /-- The components of the perturbation are differentiable in the target point, at points
-of `S`. -/
+of `S`, for `C¹` Hamiltonians on a manifold. -/
 private theorem mdifferentiableAt_pairOfPantsPerturbation_target (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
     (hz : z ∈ thricePuncturedSphereReal) (x : M) (v : ℂ) :
     MDifferentiableAt I 𝓘(ℝ)
       (fun y => pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) y v) x :=
-  ((contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).comp x
-    (contMDiffAt_const.prodMk contMDiffAt_id)).mdifferentiableAt one_ne_zero
+  (((contMDiffAt_pairOfPantsPerturbation hH hHs
+    ⟨_, mem_thricePuncturedSphereReal_iff.1 hz⟩ x).comp
+      (f := fun y : M ↦ (Complex.equivRealProdCLM.symm z, y)) x
+      (contMDiffAt_const.prodMk contMDiffAt_id)).clm_apply contMDiffAt_const).mdifferentiableAt
+    one_ne_zero
 
 /-- The components of the perturbation are `C¹` on `S × M`. -/
 private theorem contMDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 1)
@@ -272,20 +281,13 @@ private theorem contMDiffOn_pairOfPantsPerturbation (hH : ∀ q, Periodic (H q) 
   rintro ⟨z, x⟩ ⟨hz, -⟩
   exact (contMDiffAt_uncurry_pairOfPantsPerturbation hH hHs hz x v).contMDiffWithinAt
 
-/-- The end Hamiltonians are differentiable in time. -/
-private theorem differentiableAt_hamiltonian
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) (q : Puncture) (t : ℝ)
-    (x : M) : DifferentiableAt ℝ (fun t ↦ H q t x) t :=
-  ((((hHs q).contMDiffAt).comp t (contMDiffAt_id.prodMk contMDiffAt_const)).mdifferentiableAt
-    one_ne_zero).differentiableAt
-
-variable [IsManifold I (⊤ : ℕ∞) M]
+variable [IsManifold I ⊤ M]
 
 /-- **The curvature in the coordinates of an end.** On the end `q`, where `±s > 0`, the curvature
 of the pulled-back perturbation `β(±s) H_q(t) dt` is `±β'(±s - 1) H_q(t)`. -/
 private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : SmoothTwoForm I M)
     (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) {q : Puncture}
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {q : Puncture}
     {z : ℝ × ℝ} (hz : 0 < q.endSign * z.1) (x : M) :
     ω.hamiltonianCurvature
         (perturbationPullback (endChart q)
@@ -297,10 +299,12 @@ private theorem hamiltonianCurvature_perturbationPullback_endChart (ω : SmoothT
           (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
           stdComplexLineImag) z x =
       q.endSign * deriv smoothTransition (q.endSign * z.1 - 1) * H q z.2 x := by
+  have hHt : DifferentiableAt ℝ (fun t ↦ H q t x) z.2 :=
+    (((hHs q).contMDiffAt.comp (f := fun t : ℝ ↦ (t, x)) z.2
+      (contMDiffAt_id.prodMk contMDiffAt_const)).contDiffAt).differentiableAt one_ne_zero
   rw [perturbationPullback_endChart, perturbationPullback_endChart,
     equivRealProdCLM_symm_stdComplexLineReal, equivRealProdCLM_symm_stdComplexLineImag,
-    ω.hamiltonianCurvature_pairOfPantsEndComponent (hH q) hz
-      (differentiableAt_hamiltonian hHs q z.2 x)]
+    ω.hamiltonianCurvature_pairOfPantsEndComponent (hH q) hz hHt]
 
 /-- **The curvature is supported on the ends.** At a point of `S` where the signed longitudinal
 coordinate of every end is less than `1`, the perturbation vanishes nearby, and so does its
@@ -327,14 +331,13 @@ private theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero (ω : Smoot
     hev.mono fun z' hz' y ↦ pairOfPantsPerturbation_eq_zero_of_forall_le (fun q ↦ (hz' q).le) y
   rw [ω.hamiltonianCurvature_congr_of_eventuallyEq (Ks' := fun _ _ ↦ 0) (Kt' := fun _ _ ↦ 0)
     (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y])
-    (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero_left]
-  simp
+    (hK.mono fun z' hz' ↦ funext fun y ↦ by simp [hz' y]), hamiltonianCurvature_zero]
 
 /-- The curvature of the perturbation over the image of the strip of the end `q` is at most a
-bound `B_q` for the Hamiltonian of that end. -/
+bound `B_q` for the Hamiltonian of that end: the cutoff `β(±s - 1)` has total increase one. -/
 private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
     (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → M) (q : Puncture) :
     ∫⁻ z in endChart q '' endStrip q, ‖ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -366,25 +369,33 @@ private theorem setLIntegral_image_endChart_le (ω : SmoothTwoForm I M)
           abs_mul, abs_endSign, abs_of_nonneg (hψ _), one_mul, ← ENNReal.ofReal_mul (hψ _)]
         exact ENNReal.ofReal_le_ofReal (mul_le_mul_of_nonneg_left (hB q _ _) (hψ _))
     _ = ∫⁻ s in {s | 1 / 2 < q.endSign * s},
-        ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) :=
-        setLIntegral_endStrip_fst q ((ENNReal.continuous_ofReal.comp
-          (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
-            (continuous_const.mul continuous_id |>.sub continuous_const))).measurable.mul_const _)
+        ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) := by
+        have hm : Measurable fun z : ℝ × ℝ ↦
+            ENNReal.ofReal (deriv smoothTransition (q.endSign * z.1 - 1)) * ENNReal.ofReal (B q) :=
+          (ENNReal.continuous_ofReal.comp
+            (((smoothTransition.contDiff (n := 1)).continuous_deriv le_rfl).comp
+              (by fun_prop))).measurable.mul_const _
+        have hvol : volume (Ico (-1 / 2 : ℝ) (1 / 2)) = 1 := by
+          rw [Real.volume_Ico]
+          norm_num
+        rw [Measure.volume_eq_prod, endStrip_def, setLIntegral_prod _ hm.aemeasurable]
+        simp only [setLIntegral_const, hvol, mul_one]
     _ ≤ ∫⁻ s, ENNReal.ofReal (deriv smoothTransition (q.endSign * s - 1)) * ENNReal.ofReal (B q) :=
         setLIntegral_le_lintegral _ _
     _ = ENNReal.ofReal (B q) := by
         rw [lintegral_mul_const' _ _ ENNReal.ofReal_ne_top,
-          smoothTransition.lintegral_ofReal_deriv_mul_sub 1 (abs_ne_zero.1 (by simp)), abs_endSign,
-          inv_one, ENNReal.ofReal_one, one_mul]
+          smoothTransition.lintegral_ofReal_deriv_mul_sub _ q.endSign_ne_zero, abs_endSign, inv_one,
+          ENNReal.ofReal_one, one_mul]
 
-/-- **The integrated curvature of the pair-of-pants perturbation.** Let `K` be the pair-of-pants
-perturbation of period-one `C¹` Hamiltonians `H_q` on the three ends of `S = ℂ ∖ {0, 1}`, with
-values in a manifold `M` and `|H_q| ≤ B_q`, and write its components in the global coordinate
-`z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u` into
-`M`, the integral of `|R_K(z, u(z))|` over the plane is at most `B₀ + B₁ + B_∞`. -/
+/-- **The integrated curvature of the pair-of-pants perturbation, for a manifold target.** Let `K`
+be the pair-of-pants perturbation of period-one `C¹` Hamiltonians `H_q` on a manifold `M` with a
+two-form `ω`, attached to the three ends of `S = ℂ ∖ {0, 1}`, with `|H_q| ≤ B_q`, and write its
+components in the global coordinate `z = s + i t` of `ℂ` as `K_s(z) = K(z)(1)` and
+`K_t(z) = K(z)(i)`. Then for every map `u` into `M`, the integral of `|R_K(z, u(z))|` over the
+plane is at most `B₀ + B₁ + B_∞`. -/
 theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : SmoothTwoForm I M)
     (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -425,11 +436,11 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sm
     _ = _ := tsum_fintype _
     _ ≤ _ := Finset.sum_le_sum fun q _ ↦ setLIntegral_image_endChart_le ω hH hHs hB u q
 
-/-- The integral of the curvature of the pair-of-pants perturbation along any map, over any set,
-has absolute value at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`. -/
+/-- The integral of the curvature of the pair-of-pants perturbation along any map into a manifold,
+over any set, has absolute value at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`. -/
 theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : SmoothTwoForm I M)
     (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q)))
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
     {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q) (u : ℝ × ℝ → M) (s : Set (ℝ × ℝ)) :
     |∫ z in s, ω.hamiltonianCurvature
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x 1)
@@ -441,14 +452,14 @@ theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sm
   exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le ω hH hHs hB u))
 
-/-- **The curvature vanishes on the cylindrical parts of the ends.** At a point of `S` where the
-signed longitudinal coordinate of some end is greater than `2`, the perturbation is `H_q(t) dt` in
-the coordinates of that end, and its curvature vanishes. Together with the vanishing on the core,
-this confines the curvature to the collars `1 ≤ ±s ≤ 2` of the three ends, a compact part
-of `S`. -/
+/-- **The curvature vanishes on the cylindrical parts of the ends, for a manifold target.** At a
+point of `S` where the signed longitudinal coordinate of some end is greater than `2`, the
+perturbation is `H_q(t) dt` in the coordinates of that end, and its curvature vanishes. Together
+with the vanishing of the perturbation on the core, this confines the curvature to the collars
+`1 ≤ ±s ≤ 2` of the three ends, a compact part of `S`. -/
 theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : SmoothTwoForm I M)
     (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q))) {z : ℝ × ℝ}
     (hz : Complex.equivRealProdCLM.symm z ≠ 0 ∧ Complex.equivRealProdCLM.symm z ≠ 1)
     {q : Puncture} (hq : 2 < q.endSign * (q.endCoord (Complex.equivRealProdCLM.symm z)).re)
     (x : M) :
@@ -472,6 +483,7 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Smo
   rw [hamiltonianCurvature_perturbationPullback_endChart ω hH hHs (by linarith) x, hβ, mul_zero,
     zero_mul] at key
   exact (mul_eq_zero.1 key.symm).resolve_left (det_fderiv_endChart_pos q w).ne'
+
 
 variable [FiniteDimensional ℝ E] {ω : SmoothTwoForm I M}
 
@@ -864,12 +876,11 @@ open Floer
 
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
 
-/-- A `C¹` Hamiltonian on a vector space is `C¹` on the model manifold. -/
-private theorem contMDiff_uncurry_hamiltonian (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q)))
-    (q : Puncture) : ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ) 1 (uncurry (H q)) := by
-  have h := (hHs q).contMDiff
-  rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-  exact h
+/-- `C¹` Hamiltonians on a vector space are `C¹` maps of manifolds. -/
+private theorem contMDiff_uncurry_of_contDiff
+    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (q : Puncture) :
+    ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry (H q)) :=
+  contMDiff_prod_modelWithCornersSelf_iff.2 (hHs q).contMDiff
 
 /-- The points of `S`, in real coordinates, form an open set. -/
 private theorem isOpen_puncturedSphere :
@@ -902,7 +913,7 @@ theorem lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sy
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)‖ₑ ≤ ∑ q, ENNReal.ofReal (B q) := by
   simpa using ω.constSmooth.lintegral_enorm_hamiltonianCurvature_pairOfPantsPerturbation_le hH
-    (contMDiff_uncurry_hamiltonian hHs) hB u
+    (contMDiff_uncurry_of_contDiff hHs) hB u
 
 /-- The integral of the curvature of the pair-of-pants perturbation along any map, over any set,
 has absolute value at most `B₀ + B₁ + B_∞` when `|H_q| ≤ B_q`. -/
@@ -914,7 +925,7 @@ theorem abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le (ω : Sy
         (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
         z (u z)| ≤ ∑ q, B q := by
   simpa using ω.constSmooth.abs_setIntegral_hamiltonianCurvature_pairOfPantsPerturbation_le hH
-    (contMDiff_uncurry_hamiltonian hHs) hB u s
+    (contMDiff_uncurry_of_contDiff hHs) hB u s
 
 /-- **The curvature vanishes on the cylindrical parts of the ends.** At a point of `S` where the
 signed longitudinal coordinate of some end is greater than `2`, the perturbation is `H_q(t) dt` in
@@ -930,7 +941,7 @@ theorem hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt (ω : Sym
       (fun z x ↦ pairOfPantsPerturbation H (Complex.equivRealProdCLM.symm z) x Complex.I)
       z x = 0 := by
   simpa using ω.constSmooth.hamiltonianCurvature_pairOfPantsPerturbation_eq_zero_of_two_lt hH
-    (contMDiff_uncurry_hamiltonian hHs) hz hq x
+    (contMDiff_uncurry_of_contDiff hHs) hz hq x
 /-- The Floer energy density, the symplectic area density and the curvature of the pair-of-pants
 perturbation, along a map that is `C¹` on `S`, are integrable over every truncation. -/
 theorem integrableOn_truncation_pairOfPantsPerturbation (ω : SymplecticForm V)
@@ -991,7 +1002,7 @@ theorem integral_floerEnergyDensity_pairOfPantsPerturbation_truncation (ω : Sym
           z (u z) := by
   obtain ⟨hE, -, hcurv⟩ := integrableOn_truncation_pairOfPantsPerturbation ω hH hHs hu R
   have h := ω.constSmooth.integral_floerEnergyDensity_pairOfPantsPerturbation_truncation
-    (isNondegenerate_constSmooth ω) hH (contMDiff_uncurry_hamiltonian hHs)
+    (isNondegenerate_constSmooth ω) hH (contMDiff_uncurry_of_contDiff hHs)
     (contMDiffOn_iff_contDiffOn.2 hu) hR
     (by simpa only [funext (floerEnergyDensity_constSmooth ω _ _ u)] using hE)
     (by simpa only [hamiltonianCurvature_constSmooth] using hcurv)
