@@ -191,6 +191,20 @@ theorem standardResolutionSequence_g :
         vertexTensorComplexAugmentation k Q wt d hd hdε ≫
           eqToHom (standardResolutionSequence_X₃ k Q wt d hd hdε).symm := (rfl)
 
+omit [DecidableEq Q] [∀ i j : Q, DecidableEq (i ⟶ j)] hdε in
+/-- Every element of a degree of the augmented complex lifts to the corresponding homogeneous
+piece of the vertex term, by taking the degree component of an ungraded lift. -/
+theorem exists_vertexTensorMul_eq_of_piece (n : ℤ) (x : (K).X n) :
+    ∃ z : (vertexTensorGrading k Q wt).piece n,
+      vertexTensorMul k Q z = Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x) := by
+  obtain ⟨y, hy⟩ := vertexTensorMul_surjective (k := k) (Q := Q)
+    (Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x))
+  refine ⟨DirectSum.decompose (vertexTensorGrading k Q wt).piece y n, ?_⟩
+  rw [(isHomogeneous_vertexTensorMul k Q wt).map_decompose, hy, add_zero,
+    DirectSum.decompose_of_mem_same]
+  exact ((InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt)).apply_mem_map_piece_iff
+    (Bimodule.of (AlgHom.id k A)) _ _).mpr (gradedCochainComplexXEquiv n x).2
+
 /-- The standard resolution sequence is short exact as a sequence of cochain complexes.
 In particular, its exactness holds in every cohomological degree, with the twisted arrow
 differential rather than an unrelated grading on the ungraded sequence. -/
@@ -233,15 +247,7 @@ theorem shortExact_standardResolutionSequence :
       (fun z ↦ (gradedCochainComplexXEquiv n z : vertexTensorBimodule k Q)) h
   · -- Multiplication is onto in each degree by taking the degree component of an ungraded lift.
     intro x
-    obtain ⟨y, hy⟩ := vertexTensorMul_surjective (k := k) (Q := Q)
-      (Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x))
-    let z := DirectSum.decompose (vertexTensorGrading k Q wt).piece y n
-    have hz : vertexTensorMul k Q z =
-        Bimodule.of (AlgHom.id k A) (gradedCochainComplexXEquiv n x) := by
-      rw [(isHomogeneous_vertexTensorMul k Q wt).map_decompose, hy, add_zero,
-        DirectSum.decompose_of_mem_same]
-      exact ((InternalGrading.mk (gradeBy k wt) (isInternal_gradeBy k wt)).apply_mem_map_piece_iff
-        (Bimodule.of (AlgHom.id k A)) _ _).mpr (gradedCochainComplexXEquiv n x).2
+    obtain ⟨z, hz⟩ := exists_vertexTensorMul_eq_of_piece k Q wt d hd n x
     refine ⟨(gradedCochainComplexXEquiv n).symm z, ?_⟩
     apply (gradedCochainComplexXEquiv n).injective
     apply Subtype.ext
