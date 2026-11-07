@@ -105,7 +105,7 @@ theorem contMDiffAt_section_iff {s : ∀ x, Density (V x) (Module.finrank ℝ F)
       ContMDiffAt I 𝓘(ℝ) n
         (fun x ↦ s x (fun i ↦
           (trivializationAt F V x₀).symm x (Module.finBasis ℝ F i))) x₀ := by
-  rw [Bundle.contMDiffAt_section x₀, trivializationAt_eq]
+  rw [Bundle.contMDiffAt_section_iff x₀, trivializationAt_eq]
   simp only [Trivialization.density_apply]
 
 omit [ContMDiffVectorBundle n F V I] in

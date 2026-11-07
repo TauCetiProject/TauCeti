@@ -186,7 +186,7 @@ theorem finite_sectionZero_of_contMDiff [CompactSpace M]
     intro x hx
     let e := trivializationAt F E (b x)
     have he : b x ∈ e.baseSet := mem_baseSet_trivializationAt F E (b x)
-    have hc := contMDiffAt_totalSpace.mp (hs x)
+    have hc := contMDiffAt_totalSpace_iff.mp (hs x)
     have hne : (e ⟨b x, s x⟩).2 ≠ 0 := by
       intro hzero
       apply hx
