@@ -58,52 +58,6 @@ universe u
 variable {k : Type*} {M : Type u} [Field k] [AddCommGroup M] [Module k M] [Module k[X] M]
   [IsScalarTower k k[X] M] {G : InternalGrading k M} {d : ℕ}
 
-/-- A `k`-linear functional on a `k[X]`-module evaluates on `a • z` as the sum of the values on
-`X ^ n • z`, weighted by the coefficients of `a`. -/
-theorem map_smul_eq_sum_support_coeff_mul (φ : M →ₗ[k] k) (a : k[X]) (z : M) :
-    φ (a • z) = ∑ n ∈ a.support, a.coeff n * φ ((X ^ n : k[X]) • z) := by
-  conv_lhs => rw [a.as_sum_support_C_mul_X_pow, Finset.sum_smul]
-  rw [map_sum]
-  refine Finset.sum_congr rfl fun n _ ↦ ?_
-  rw [mul_smul, ← algebraMap_eq, algebraMap_smul, map_smul, smul_eq_mul]
-
-omit [Module k M] [IsScalarTower k k[X] M] in
-/-- If `X ^ m` kills `t` but `X ^ (m - 1)` does not, the annihilator of `t` is `(X ^ m)`. -/
-theorem torsionOf_eq_span_X_pow {m : ℕ} {t : M} (hm : (X ^ m : k[X]) • t = 0)
-    (ht : (X ^ (m - 1) : k[X]) • t ≠ 0) : Ideal.torsionOf k[X] M t = Ideal.span {X ^ m} := by
-  obtain ⟨g, hg⟩ := (IsPrincipalIdealRing.principal (Ideal.torsionOf k[X] M t)).principal
-  have hmem (n : ℕ) : X ^ n ∈ Ideal.torsionOf k[X] M t ↔ g ∣ X ^ n := by
-    rw [hg, Ideal.submodule_span_eq, Ideal.mem_span_singleton]
-  obtain ⟨i, him, hgi⟩ := (dvd_prime_pow prime_X m).mp
-    ((hmem m).mp ((Ideal.mem_torsionOf_iff _ _).mpr hm))
-  have him' : i = m := by
-    by_contra hne
-    refine ht ((Ideal.mem_torsionOf_iff _ _).mp ((hmem (m - 1)).mpr ?_))
-    exact hgi.dvd.trans (pow_dvd_pow X (by omega))
-  rw [hg, Ideal.submodule_span_eq, Ideal.span_singleton_eq_span_singleton.mpr hgi, him']
-
-/-- If `φ` is `1` on `X ^ (m - 1) • t` and `0` on the other `X ^ l • t`, then on `X ^ j • a • t` it
-reads off the coefficient `a.coeff (m - 1 - j)`. -/
-private theorem map_X_pow_smul_smul_eq (φ : M →ₗ[k] k) {m : ℕ} {t : M}
-    (hφt : ∀ l : ℕ, φ ((X ^ l : k[X]) • t) = if l = m - 1 then 1 else 0) (a : k[X]) (j : ℕ) :
-    φ ((X ^ j : k[X]) • a • t) = if j ≤ m - 1 then a.coeff (m - 1 - j) else 0 := by
-  rw [smul_comm, map_smul_eq_sum_support_coeff_mul]
-  simp_rw [← mul_smul, ← pow_add, hφt, mul_ite, mul_one, mul_zero]
-  rw [Finset.sum_ite, Finset.sum_const_zero, add_zero]
-  split_ifs with hj
-  · by_cases hc : a.coeff (m - 1 - j) = 0
-    · refine (Finset.sum_eq_zero fun n hn ↦ ?_).trans hc.symm
-      rw [Finset.mem_filter] at hn
-      rwa [show n = m - 1 - j by omega]
-    · rw [Finset.sum_eq_single_of_mem (m - 1 - j)
-        (Finset.mem_filter.mpr ⟨mem_support_iff.mpr hc, by omega⟩)]
-      intro n hn hne
-      rw [Finset.mem_filter] at hn
-      omega
-  · exact Finset.sum_eq_zero fun n hn ↦ by
-      rw [Finset.mem_filter] at hn
-      omega
-
 omit [IsScalarTower k k[X] M] in
 /-- For a homogeneous `t` with `X ^ (m - 1) • t ≠ 0` there is a `k`-linear functional `φ` that is
 `1` on `X ^ (m - 1) • t`, vanishes on the other `X ^ l • t`, and whose vanishing on all `X ^ j • y`
@@ -160,8 +114,8 @@ theorem exists_disjoint_span_singleton_sup_eq (hd : d ≠ 0)
     rintro rfl
     exact ht (by simpa using hLm t htL)
   obtain ⟨φ, hφt, hhom⟩ := exists_functional_eval_X_pow_smul hd hX htp ht
-  have hφXt := map_X_pow_smul_smul_eq φ hφt (m := m) (t := t)
-  have hφ_poly := map_smul_eq_sum_support_coeff_mul φ
+  have hφXt := LinearMap.map_X_pow_smul_smul_eq φ hφt (m := m) (t := t)
+  have hφ_poly := LinearMap.map_smul_eq_sum_support_coeff_mul φ
   -- The complement: elements of `L` all of whose polynomial multiples are killed by `φ`.
   let K : Submodule k[X] M :=
     { carrier := {y | y ∈ L ∧ ∀ a : k[X], φ (a • y) = 0}
