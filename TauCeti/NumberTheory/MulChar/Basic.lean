@@ -16,11 +16,11 @@ the character values on units, since a multiplicative character vanishes on nonu
 
 The trivial character takes only the values `0` and `1`, on nonunits and units respectively, so
 it is unchanged by transport along a homomorphism of the domain that reflects units (such as an
-isomorphism) and a homomorphism of the coefficients (`MulChar.map_one_apply`). More generally,
-if a homomorphism `f` of the coefficients carries `χ` to `χ'` along such a homomorphism `e`, that
-is `f (χ a) = χ' (e a)`, then it also carries `χ⁻¹` to `χ'⁻¹` and every power `χ ^ n` to
-`χ' ^ n`. This is how Galois automorphisms of a number field act on characters such as power
-residue symbols.
+isomorphism) and a homomorphism of the coefficients (`MulChar.map_one_apply`). Moreover, if a
+homomorphism `f` of the coefficients carries `χ` to `χ'` along any map `e` of the domains, that is
+`f (χ a) = χ' (e a)`, then it also carries `χ⁻¹` to `χ'⁻¹` and every power `χ ^ n` to `χ' ^ n`.
+This is how Galois automorphisms of a number field act on characters such as power residue
+symbols.
 
 Since `(-1) * (-1) = 1`, every multiplicative character satisfies `χ (-1) * χ (-1) = 1`
 (`MulChar.apply_neg_one_mul_self`), so `χ (-1) = ±1` when the coefficients form a domain.
@@ -71,24 +71,26 @@ theorem orderOf_ringHomComp {R R' R'' : Type*} [CommMonoid R] [CommRing R'] [Com
 
 section Transport
 
-variable {R S R' R'' F G : Type*} [CommMonoid R] [CommMonoid S] [CommMonoidWithZero R']
-  [CommMonoidWithZero R''] [FunLike F R' R''] [MonoidWithZeroHomClass F R' R''] [FunLike G R S]
-  [MonoidHomClass G R S] {f : F} {e : G} [IsLocalHom e] {χ : MulChar R R'} {χ' : MulChar S R''}
+variable {R S R' R'' F : Type*} [CommMonoid R] [CommMonoid S] [CommMonoidWithZero R']
+  [CommMonoidWithZero R''] [FunLike F R' R''] [MonoidWithZeroHomClass F R' R''] {f : F}
+  {e : R → S} {χ : MulChar R R'} {χ' : MulChar S R''}
 
-/-- If a homomorphism `f` of the coefficients carries `χ` to `χ'` along a unit-reflecting
-homomorphism `e` of the domain (such as an isomorphism), then it carries `χ⁻¹` to `χ'⁻¹`. -/
+/-- If a homomorphism `f` of the coefficients carries `χ` to `χ'` along a map `e` of the domains,
+then it carries `χ⁻¹` to `χ'⁻¹`. -/
 theorem map_inv_apply_of_map_apply (h : ∀ a, f (χ a) = χ' (e a)) (a : R) :
     f (χ⁻¹ a) = χ'⁻¹ (e a) := by
+  rw [inv_apply_eq_inv, inv_apply_eq_inv, ← h]
   by_cases ha : IsUnit a
-  · rw [inv_apply_eq_inv, inv_apply_eq_inv, ← h, (ha.map χ).map_ringInverse]
-  · rw [map_nonunit _ ha, map_nonunit _ (by rwa [isUnit_map_iff]), map_zero]
+  · exact (ha.map χ).map_ringInverse f
+  · rw [map_nonunit _ ha, map_zero, Ring.inverse_zero, map_zero, Ring.inverse_zero]
 
-/-- If a homomorphism `f` of the coefficients carries `χ` to `χ'` along a unit-reflecting
-homomorphism `e` of the domain (such as an isomorphism), then it carries `χ ^ n` to `χ' ^ n`. -/
+/-- If a homomorphism `f` of the coefficients carries `χ` to `χ'` along a map `e` of the domains,
+then it carries `χ ^ n` to `χ' ^ n`. -/
 theorem map_pow_apply_of_map_apply (h : ∀ a, f (χ a) = χ' (e a)) (n : ℕ) (a : R) :
     f ((χ ^ n) a) = (χ' ^ n) (e a) := by
   rcases eq_or_ne n 0 with rfl | hn
-  · rw [pow_zero, pow_zero, map_one_apply f e]
+  · rw [pow_zero, pow_zero, ← inv_mul χ, ← inv_mul χ', mul_apply, mul_apply, map_mul,
+      map_inv_apply_of_map_apply h, h]
   · rw [pow_apply' _ hn, pow_apply' _ hn, map_pow, h]
 
 end Transport
