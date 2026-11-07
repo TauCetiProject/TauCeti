@@ -120,16 +120,20 @@ work and are reported separately from build silence.
 
 How many pull requests are waiting to land, and how large are the batches bors tests?
 These timelines show up to the last thirty days, including the current partial UTC day.
-The backlog counts distinct PRs in the recorded ready-to-merge snapshots, including PRs
-being tested. The label is a readiness hint; admission still checks the current head's CI,
-reviews and scope. Missing observations leave gaps, and the line stops at the last sample.
-Initial candidate scans after a bot restart are omitted when their incompleteness is recorded.
-Older snapshots without that marker can briefly undercount.
+The backlog counts distinct PRs accepted by ai-merge-queue: those waiting for insertion
+and those in the current version of an active batch, including PRs being tested or repaired.
+Landed batches, removed members and withdrawn members are excluded. Historical bors points
+count ready-labelled candidates; that label was a readiness hint, before admission checked
+the current head's CI, reviews and scope. The change of source can change the count's scope.
+Missing or incomplete observations leave gaps, and the line stops at the last sample.
+Initial bors candidate scans after a bot restart are omitted when their incompleteness is
+recorded. Older snapshots without that marker can briefly undercount.
 The latest complete count and its snapshot time appear below the chart. "Chart published"
 is when the chart was generated; its newest complete snapshot can be older, especially
-while a new scan is incomplete. During later scans, bors may reuse the previous complete
-snapshot. The ready-labelled backlog can differ from the active-batch total reported by
-`tauceti-fleet status`, which counts PRs already assigned to bors batches.
+while a new scan is incomplete. Queue samples retain the producer's observation time;
+publication does not make a stopped producer look current. During historical scans, bors
+could reuse the previous complete snapshot. The backlog includes waiting inputs as well
+as active batches, so it can differ from an active-batch total.
 
 :::blob queueSizeGraph
 :::
