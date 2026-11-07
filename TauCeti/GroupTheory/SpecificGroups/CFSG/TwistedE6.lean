@@ -21,8 +21,8 @@ that Frobenius composed with the order-two symmetry `γ₂` of the diagram. The 
 needs a carrier on which that symmetry acts: the `E₆` diagram symmetry exchanges the minuscule
 representation `V(ϖ₁)` with its contragredient `V(ϖ₆)` rather than preserving either, so it does
 not act on the `27`-dimensional carrier `TauCeti.E6Minuscule.groupScheme` that
-`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6.lean` runs the untwisted recipe on, and this file
-cannot reuse that carrier. The graph-stable carrier
+`TauCeti/GroupTheory/SpecificGroups/CFSG/TypeE6/Basic.lean` runs the untwisted recipe on;
+this file cannot reuse that carrier. The graph-stable carrier
 is `TauCeti.E6DoubledMinuscule.groupScheme`, built on `V(ϖ₁) ⊕ V(ϖ₆)` inside `GL₅₄` over `ℤ`.
 
 This file attaches that carrier to a validated `²E₆` index and forms the family's Steinberg
