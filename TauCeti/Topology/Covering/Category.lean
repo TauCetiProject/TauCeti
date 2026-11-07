@@ -40,14 +40,15 @@ fundamental-group actions.
 
 * `TauCeti.Over.isCoveringMap` and `TauCeti.Over.isCoveringMap_iff`: the property of an object
   of `TopCat / X` that its structure morphism is a covering map, and its membership lemma.
+* `TauCeti.Over.isIso_iff_isHomeomorph_hom_left`: a morphism in a full subcategory of `TopCat / X`,
+  such as a map of covers, is an isomorphism exactly when its map of total spaces is a
+  homeomorphism.
 * `TauCeti.CoveringSpace X`: covering spaces over `X` and maps over `X`.
 * `TauCeti.CoveringSpace.mk`, `proj`, `homMk`, `isoMk`: constructors for covering spaces and
   their morphisms and isomorphisms.
 * `TauCeti.CoveringSpace.forget`, `fullyFaithfulForget`: the inclusion into `TopCat / X` and its
   full faithfulness.
 * `TauCeti.CoveringSpace.totalSpace`: the functor taking a cover to its total space.
-* `TauCeti.CoveringSpace.isIso_iff_isHomeomorph_hom_left`: a map of covers is an isomorphism
-  exactly when its map of total spaces is a homeomorphism.
 * `TauCeti.CoveringSpace.isInitial_iff_isEmpty`: a cover is an initial object exactly when its
   total space is empty.
 * `TauCeti.CoveringSpace.FullSubcategory X P`: the full subcategory of covers whose underlying
@@ -58,8 +59,6 @@ fundamental-group actions.
 * `TauCeti.CoveringSpace.FullSubcategory.totalSpace`, `totalSpace_obj`, `totalSpace_map`: the
   functor taking an object to its total space, and its characteristic equations.
 * `TauCeti.CoveringSpace.FullSubcategory.forget`: the inclusion into all covers.
-* `TauCeti.CoveringSpace.FullSubcategory.isIso_iff_isHomeomorph_hom_left`: the corresponding
-  isomorphism criterion.
 * `TauCeti.ConnectedCoveringSpace X`: connected covering spaces over `X`, with
   `TauCeti.ConnectedCoveringSpace.mk`, `mk_coe`, `mk_proj`, `forget_obj_mk` and `forget`.
 * `TauCeti.ConnectedCoveringSpace.connectedSpace`: the total space of a connected covering space
@@ -69,10 +68,11 @@ fundamental-group actions.
 
 The construction follows Mathlib's `CategoryTheory.MonoOver`: both are full subcategories of an
 over category selected by a property of the structure morphism. The `forget`, `mk`, `proj`,
-`homMk`, `isoMk`, and isomorphism-characterization APIs are adapted from
+`homMk`, and `isoMk` APIs are adapted from
 `Mathlib/CategoryTheory/Subobject/MonoOver.lean`, using the generic `Over` and
 `ObjectProperty.FullSubcategory` constructors directly, and are stated once for
-`TauCeti.CoveringSpace.FullSubcategory`.
+`TauCeti.CoveringSpace.FullSubcategory`. The isomorphism characterization is stated once for
+every full subcategory of `TopCat / X`.
 -/
 
 public section
@@ -104,6 +104,14 @@ theorem isIso_iff_isHomeomorph_left {X : TopCat.{u}} {p q : CategoryTheory.Over 
     (f : p ⟶ q) : IsIso f ↔ IsHomeomorph f.left := by
   rw [← TopCat.isIso_iff_isHomeomorph]
   exact (isIso_iff_of_reflects_iso _ (CategoryTheory.Over.forget X)).symm
+
+/-- A morphism in a full subcategory of `TopCat / X` is an isomorphism exactly when its map of
+total spaces is a homeomorphism. This applies to maps in `TauCeti.CoveringSpace X` and in every
+`TauCeti.CoveringSpace.FullSubcategory X P`. -/
+theorem isIso_iff_isHomeomorph_hom_left {X : TopCat.{u}}
+    {Q : ObjectProperty (CategoryTheory.Over X)} {p q : Q.FullSubcategory} (f : p ⟶ q) :
+    IsIso f ↔ IsHomeomorph f.hom.left := by
+  rw [← ObjectProperty.isIso_hom_iff, isIso_iff_isHomeomorph_left]
 
 end Over
 
@@ -225,12 +233,6 @@ theorem mkProjIso_hom_hom_left (p : CoveringSpace X) :
 theorem mkProjIso_inv_hom_left (p : CoveringSpace X) :
     (mkProjIso p).inv.hom.left = eqToHom (mk_coe p.proj p.isCoveringMap_proj).symm :=
   (rfl)
-
-/-- A map of covering spaces is an isomorphism exactly when its map of total spaces is a
-homeomorphism. -/
-theorem isIso_iff_isHomeomorph_hom_left {p q : CoveringSpace X} (f : p ⟶ q) :
-    IsIso f ↔ IsHomeomorph f.hom.left := by
-  rw [← ObjectProperty.isIso_hom_iff, Over.isIso_iff_isHomeomorph_left]
 
 /-- **A covering space of `X` is an initial object of `TauCeti.CoveringSpace X` exactly when its
 total space is empty.** The empty space covers `X` — vacuously, by
@@ -400,11 +402,6 @@ theorem mkProjIso_inv_hom_left (p : CoveringSpace.FullSubcategory X P) :
     (mkProjIso p).inv.hom.left =
       eqToHom (mk_coe (P := P) p.proj p.isCoveringMap_proj p.prop_obj).symm :=
   (rfl)
-
-/-- A morphism is an isomorphism exactly when its map of total spaces is a homeomorphism. -/
-theorem isIso_iff_isHomeomorph_hom_left {p q : CoveringSpace.FullSubcategory X P} (f : p ⟶ q) :
-    IsIso f ↔ IsHomeomorph f.hom.left := by
-  rw [← ObjectProperty.isIso_hom_iff, Over.isIso_iff_isHomeomorph_left]
 
 end CoveringSpace.FullSubcategory
 
