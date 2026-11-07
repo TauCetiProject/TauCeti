@@ -78,7 +78,7 @@ theorem schwarzChristoffelBoundary_image_Ioi_of_prevertex_sum_eq_neg_one
     exact (schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le
       a e z₀ (hfinite hx) (fun i hi => (ha i hi).trans (le_of_lt hx)) hS).symm
   have hdimage : d '' Ioi p = Ioi 0 :=
-    image_Ioi_eq_Ioi_zero_of_tendsto hcont (fun _ hx => hdpos hx) hdtop hdp
+    image_Ioi_eq_Ioi_of_tendsto hcont (fun _ hx => hdpos hx) hdtop hdp
   have hangle {x : ℝ} (hx : p < x) : schwarzChristoffelEdgeAngle a e x = 0 := by
     rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_eq_zero, mul_zero]
     intro i hi
@@ -139,7 +139,7 @@ theorem schwarzChristoffelBoundary_image_Iio_of_prevertex_sum_eq_neg_one
     exact schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge
       a e z₀ (hfinite hx) (fun i hi => (le_of_lt hx).trans (ha i hi)) hS
   have hdimage : d '' Iio p = Ioi 0 :=
-    image_Iio_eq_Ioi_zero_of_tendsto hcont (fun _ hx => hdpos hx) hdbot hdp
+    image_Iio_eq_Ioi_of_tendsto hcont (fun _ hx => hdpos hx) hdbot hdp
   have hdir {x : ℝ} (hx : x ∈ Iio p) : B x - V = (d x : ℂ) * u := by
     simpa only [B, V, d, u] using
       schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul

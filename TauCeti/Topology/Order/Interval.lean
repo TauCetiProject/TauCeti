@@ -264,20 +264,22 @@ theorem _root_.ContinuousOn.apply_ne_apply_of_injOn_Ico {α δ : Type*}
   have hsm : s = m := le_antisymm hs.2 (hst ▸ ht.1)
   exact hvm (hsv.symm.trans (congrArg f hsm))
 
-/-- A continuous positive function on `Ioi p` that tends to `0` at `+∞` and to `+∞` at `p⁺`
-has image `Ioi 0`. -/
-theorem image_Ioi_eq_Ioi_zero_of_tendsto {d : ℝ → ℝ} {p : ℝ} (hcont : ContinuousOn d (Ioi p))
-    (hpos : ∀ x ∈ Ioi p, 0 < d x) (htop : Tendsto d atTop (𝓝 0))
-    (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi 0 :=
+/-- A continuous function on `Ioi p` that is above `v`, tends to `v` at `+∞` and to `+∞` at `p⁺`
+has image `Ioi v`. -/
+theorem image_Ioi_eq_Ioi_of_tendsto {β : Type*} [LinearOrder β] [TopologicalSpace β]
+    [OrderClosedTopology β] {d : ℝ → β} {p : ℝ} {v : β} (hcont : ContinuousOn d (Ioi p))
+    (hpos : ∀ x ∈ Ioi p, v < d x) (htop : Tendsto d atTop (𝓝 v))
+    (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi v :=
   Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
     (isPreconnected_Ioi.intermediate_value_Ioi (le_principal_iff.mpr (Ioi_mem_atTop p))
       (le_principal_iff.mpr self_mem_nhdsWithin) hcont htop hp)
 
-/-- A continuous positive function on `Iio p` that tends to `0` at `-∞` and to `+∞` at `p⁻`
-has image `Ioi 0`. -/
-theorem image_Iio_eq_Ioi_zero_of_tendsto {d : ℝ → ℝ} {p : ℝ} (hcont : ContinuousOn d (Iio p))
-    (hpos : ∀ x ∈ Iio p, 0 < d x) (hbot : Tendsto d atBot (𝓝 0))
-    (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi 0 :=
+/-- A continuous function on `Iio p` that is above `v`, tends to `v` at `-∞` and to `+∞` at `p⁻`
+has image `Ioi v`. -/
+theorem image_Iio_eq_Ioi_of_tendsto {β : Type*} [LinearOrder β] [TopologicalSpace β]
+    [OrderClosedTopology β] {d : ℝ → β} {p : ℝ} {v : β} (hcont : ContinuousOn d (Iio p))
+    (hpos : ∀ x ∈ Iio p, v < d x) (hbot : Tendsto d atBot (𝓝 v))
+    (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi v :=
   Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
     (isPreconnected_Iio.intermediate_value_Ioi (le_principal_iff.mpr (Iio_mem_atBot p))
       (le_principal_iff.mpr self_mem_nhdsWithin) hcont hbot hp)
