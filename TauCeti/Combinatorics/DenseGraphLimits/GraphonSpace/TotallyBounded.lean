@@ -70,16 +70,16 @@ private def netPoint {n N : ℕ} (hN : 0 < N)
         (fun i j => gridValue N (p.2.1 i j))
         (fun i j => congrArg (gridValue N) (p.2.2 i j))))
 
-/-- **Graphon space over the unit interval is totally bounded.** -/
-theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpaceI) := by
-  rw [Metric.totallyBounded_iff]
-  intro ε hε
-  set δ : ℝ := ε / 4 with hδdef
-  have hδ : 0 < δ := by positivity
-  set n : ℕ := 4 ^ (Nat.ceil (1 / δ ^ 2)) with hndef
-  have hn0 : 0 < n := pow_pos (by norm_num) _
+/-- **The net parameters.** For `ε > 0` there are a number of blocks `n` large enough for the weak
+regularity lemma at precision `ε / 4` and a grid size `N` fine enough that both the block values
+(multiples of `1 / (N + 1)`) and the vertex weights (multiples of `1 / N`) are rounded to within
+`ε / 4`. -/
+private theorem exists_net_parameters {ε : ℝ} (hε : 0 < ε) :
+    ∃ n N : ℕ, 0 < n ∧ 4 ^ (Nat.ceil (1 / (ε / 4) ^ 2)) ≤ n ∧ 0 < N ∧
+      1 / ((N : ℝ) + 1) ≤ ε / 4 ∧ 2 * (n : ℝ) / (N : ℝ) ≤ ε / 4 := by
+  have hn0 : 0 < 4 ^ (Nat.ceil (1 / (ε / 4) ^ 2)) := pow_pos (by norm_num) _
+  set n : ℕ := 4 ^ (Nat.ceil (1 / (ε / 4) ^ 2)) with hndef
   have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn0
-  have : NeZero n := ⟨hn0.ne'⟩
   set N : ℕ := Nat.ceil (8 * (n : ℝ) / ε) + 1 with hNdef
   have hN : 0 < N := Nat.succ_pos _
   have hNR : 8 * (n : ℝ) / ε ≤ (N : ℝ) := by
@@ -90,17 +90,23 @@ theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpa
   have hεN : 8 * (n : ℝ) ≤ ε * N := by
     rw [div_le_iff₀ hε] at hNR
     linarith
-  -- the two rounding errors are each at most `ε / 4`
-  have hgrid : 1 / ((N : ℝ) + 1) ≤ ε / 4 := by
-    rw [div_le_div_iff₀ (by positivity) (by norm_num)]
+  refine ⟨n, N, hn0, le_rfl, hN, ?_, ?_⟩
+  · rw [div_le_div_iff₀ (by positivity) (by norm_num)]
     nlinarith
-  have hweight : 2 * (n : ℝ) / (N : ℝ) ≤ ε / 4 := by
-    rw [div_le_div_iff₀ hNpos (by norm_num)]
+  · rw [div_le_div_iff₀ hNpos (by norm_num)]
     nlinarith
+
+/-- **Graphon space over the unit interval is totally bounded.** -/
+theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpaceI) := by
+  rw [Metric.totallyBounded_iff]
+  intro ε hε
+  obtain ⟨n, N, hn0, hnge, hN, hgrid, hweight⟩ := exists_net_parameters hε
+  have : NeZero n := ⟨hn0.ne'⟩
   refine ⟨Set.range (netPoint (n := n) hN), Set.finite_range _, ?_⟩
   rintro x -
   obtain ⟨W, rfl⟩ := SeparationQuotient.surjective_mk x
-  obtain ⟨g, _hg, b₀, hb₀, h1⟩ := exists_ofMatrix_cutDist_le W hδ hndef.ge
+  obtain ⟨g, _hg, b₀, hb₀, h1⟩ :=
+    exists_ofMatrix_cutDist_le W (by positivity : (0 : ℝ) < ε / 4) hnge
   obtain ⟨c, hc, h2⟩ := exists_gridValue_cutDist_le (volume.map g) N b₀ hb₀
   obtain ⟨w, hw, h3⟩ := exists_gridWeightMeasure_cutDist_le hN (volume.map g)
     (fun i j => gridValue N (c i j)) (fun i j => congrArg (gridValue N) (hc i j))
