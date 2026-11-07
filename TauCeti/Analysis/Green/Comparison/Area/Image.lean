@@ -56,6 +56,57 @@ theorem _root_.Module.Basis.integrableTopForm_mpullback_areaForm (b : Module.Bas
     (_root_.isClosed_tsupport (α := E [⋀^Fin 2]→L[ℝ] ℝ)
       (mpullback I 𝓘(ℝ, ℂ) f (fun z ↦ g z • manifoldAreaForm z))).isCompact b
 
+/-- The coefficient of pulled-back weighted planar area on the basis transported from the
+complex basis `1, i` along `e` is the weight at the image point. -/
+private lemma mpullback_areaForm_coeff {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (e : E ≃L[ℝ] ℂ) (g : ℂ → ℝ) (y : E) :
+    mpullback 𝓘(ℝ, E) 𝓘(ℝ, ℂ) e (fun z ↦ g z • manifoldAreaForm z) y
+      (fun i ↦ (NormedSpace.fromTangentSpace y).symm
+        ((Complex.basisOneI.map e.symm.toLinearEquiv) i)) = g (e y) := by
+  rw [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
+    manifoldAreaForm_apply, mfderiv_eq_fderiv, e.fderiv]
+  have hv : (fun i ↦ NormedSpace.fromTangentSpace (e y)
+      (((NormedSpace.fromTangentSpace (e y)).symm.toContinuousLinearMap.comp
+        (e.toContinuousLinearMap.comp
+          (NormedSpace.fromTangentSpace y).toContinuousLinearMap))
+          ((NormedSpace.fromTangentSpace y).symm
+            ((Complex.basisOneI.map e.symm.toLinearEquiv) i)))) = Complex.basisOneI := by
+    funext i
+    simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+      ContinuousLinearEquiv.apply_symm_apply]
+    exact e.apply_symm_apply _
+  rw [hv, Complex.coe_basisOneI, Complex.orientation_volumeFormL_one_I, mul_one]
+
+/-- Transport of integrals over the image of a continuous map `f : M → ℂ` from `E` to `ℂ` along
+a continuous linear equivalence `e`, where `E` carries the Haar measure of the basis transported
+from `1, i`. -/
+private lemma integral_range_transport {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [TopologicalSpace M]
+    [CompactSpace M] (e : E ≃L[ℝ] ℂ) {f : M → ℂ} (hf : Continuous f) (g : ℂ → ℝ)
+    (hgi : IntegrableOn (fun y ↦ g (e y)) (range (e.symm ∘ f))
+      (Complex.basisOneI.map e.symm.toLinearEquiv).addHaar) :
+    IntegrableOn g (range f) ∧
+      ∫ y in range (e.symm ∘ f), g (e y)
+        ∂(Complex.basisOneI.map e.symm.toLinearEquiv).addHaar = ∫ z in range f, g z := by
+  set b := Complex.basisOneI.map e.symm.toLinearEquiv with hbdef
+  have hb : b.map e.toLinearEquiv = Complex.basisOneI := by
+    ext i
+    exact e.apply_symm_apply _
+  have hmp : MeasurePreserving e b.addHaar volume := ⟨e.continuous.measurable, by
+    rw [b.map_addHaar e, hb, basisOneI_addHaar]⟩
+  have hme : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
+  have hm : MeasurableSet (range f) := (isCompact_range hf).measurableSet
+  have hr : range (e.symm ∘ f) = e ⁻¹' range f := by
+    ext y
+    constructor
+    · rintro ⟨x, rfl⟩
+      exact ⟨x, (e.apply_symm_apply (f x)).symm⟩
+    · rintro ⟨x, hx⟩
+      exact ⟨x, e.injective ((e.apply_symm_apply (f x)).trans hx)⟩
+  rw [hr] at hgi ⊢
+  exact ⟨((hmp.restrict_preimage hm).integrable_comp_emb hme).mp hgi,
+    (hmp.restrict_preimage hm).integral_comp hme g⟩
+
 /-- Integration of actual pulled-back planar area along an injective orientation-preserving
 manifold map is integration over its image. Intrinsic integrability implies image integrability;
 weights may be rough, and boundary and corner points are retained. -/
@@ -114,43 +165,14 @@ theorem integralTopForm_mpullback_area_eq_integral_image
     rw [← mpullback_comp hf' he]
     have hcomp : (e ∘ f') = f := by funext x; exact e.apply_symm_apply (f x)
     rw [hcomp]
-  have hcoef : ∀ y, ω y (fun i ↦ (NormedSpace.fromTangentSpace y).symm (b i)) = g (e y) := by
-    intro y
-    dsimp only [ω]
-    rw [mpullback_apply, ContinuousAlternatingMap.smul_apply, smul_eq_mul,
-      manifoldAreaForm_apply, mfderiv_eq_fderiv, e.fderiv]
-    have hv : (fun i ↦ NormedSpace.fromTangentSpace (e y)
-        (((NormedSpace.fromTangentSpace (e y)).symm.toContinuousLinearMap.comp
-          (e.toContinuousLinearMap.comp
-            (NormedSpace.fromTangentSpace y).toContinuousLinearMap))
-            ((NormedSpace.fromTangentSpace y).symm (b i)))) = Complex.basisOneI := by
-      funext i
-      simp only [ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-        ContinuousLinearEquiv.apply_symm_apply]
-      exact e.apply_symm_apply _
-    rw [hv, Complex.coe_basisOneI,
-      Complex.orientation_volumeFormL_one_I, mul_one]
+  have hcoef : ∀ y, ω y (fun i ↦ (NormedSpace.fromTangentSpace y).symm (b i)) = g (e y) :=
+    mpullback_areaForm_coeff e g
   have hi' : IntegrableTopForm (mpullback I 𝓘(ℝ, E) f' ω) := hpull.symm ▸ hi
   obtain ⟨hgi, hge⟩ := integralTopForm_mpullback_eq_integral_image l b hf'
     (e.symm.injective.comp hinj) F' hF' ho' ω hi'
   simp_rw [hcoef] at hgi hge
   rw [hpull] at hge
-  have hb : b.map e.toLinearEquiv = Complex.basisOneI := by
-    ext i
-    exact e.apply_symm_apply _
-  have hmp : MeasurePreserving e b.addHaar volume := ⟨e.continuous.measurable, by
-    rw [b.map_addHaar e, hb, basisOneI_addHaar]⟩
-  have hme : MeasurableEmbedding e := e.toHomeomorph.measurableEmbedding
-  have hm : MeasurableSet (range f) := (isCompact_range hf.continuous).measurableSet
-  have hr : range f' = e ⁻¹' range f := by
-    ext y
-    constructor
-    · rintro ⟨x, rfl⟩
-      exact ⟨x, (e.apply_symm_apply (f x)).symm⟩
-    · rintro ⟨x, hx⟩
-      exact ⟨x, e.injective ((e.apply_symm_apply (f x)).trans hx)⟩
-  rw [hr] at hgi hge
-  exact ⟨((hmp.restrict_preimage hm).integrable_comp_emb hme).mp hgi,
-    hge.trans ((hmp.restrict_preimage hm).integral_comp hme g)⟩
+  obtain ⟨hgi', hint⟩ := integral_range_transport e hf.continuous g hgi
+  exact ⟨hgi', hge.trans hint⟩
 
 end TauCeti.Green
