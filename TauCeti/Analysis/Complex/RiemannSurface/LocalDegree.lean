@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 import Mathlib.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.Analytic.IsolatedZeros
 import TauCeti.Topology.OpenPartialHomeomorph.ClosedBall
 import TauCeti.Topology.OpenPartialHomeomorph.Continuity
 public import TauCeti.Analysis.Complex.RiemannSurface.LocalMultiplicity

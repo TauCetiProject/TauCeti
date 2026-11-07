@@ -76,8 +76,9 @@ theorem continuous_ite_source_of_eq_off_compact [T2Space X] (e : OpenPartialHome
 /-- If `f` is not eventually constant near `x`, then its chart representative `e' ∘ f ∘ e.symm`
 is not eventually constant near `e x`, provided `f ∘ e.symm` maps a neighbourhood of `e x` into
 the source of `e'`. -/
-theorem not_eventuallyConst_comp_symm {Z : Type*} [TopologicalSpace Z] {f : X → Y} {x : X}
-    (e : OpenPartialHomeomorph X Z) {e' : OpenPartialHomeomorph Y Z} (hx : x ∈ e.source)
+theorem not_eventuallyConst_comp_symm {Z W : Type*} [TopologicalSpace Z] [TopologicalSpace W]
+    {f : X → Y} {x : X} (e : OpenPartialHomeomorph X Z) {e' : OpenPartialHomeomorph Y W}
+    (hx : x ∈ e.source)
     (hZ2 : ∀ᶠ z in 𝓝 (e x), f (e.symm z) ∈ e'.source)
     (hne : ¬ EventuallyConst f (𝓝 x)) :
     ¬ EventuallyConst (fun z ↦ e' (f (e.symm z))) (𝓝 (e x)) := fun h ↦ by
