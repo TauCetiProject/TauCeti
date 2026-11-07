@@ -48,6 +48,14 @@ theorem splitCoords_symm_apply (x : (Fin n → M) × (Fin m → M)) :
     (splitCoords (𝕜 := 𝕜) n m).symm x = Fin.append x.1 x.2 := by
   simp [ContinuousLinearEquiv.symm_apply_eq]
 
+/-- Splitting an appended vector recovers its two blocks. The high priority lets `simp` use
+this before `splitCoords_apply`: with equal block sizes, `simp` would otherwise rewrite
+`Fin.natAdd` to `Fin.addNat`, where `Fin.append_right` no longer applies. -/
+@[simp high]
+theorem splitCoords_append (a : Fin n → M) (b : Fin m → M) :
+    splitCoords (𝕜 := 𝕜) n m (Fin.append a b) = (a, b) :=
+  Prod.ext (funext <| Fin.append_left a b) (funext <| Fin.append_right a b)
+
 /-- Split a vector into its first `d` coordinates and its remaining coordinates. -/
 def splitAt (h : d ≤ n) :
     (Fin n → M) ≃L[𝕜] (Fin d → M) × (Fin (n - d) → M) :=
