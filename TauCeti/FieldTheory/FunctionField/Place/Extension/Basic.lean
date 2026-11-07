@@ -492,6 +492,36 @@ theorem ramificationIdx_eq_of_forall_ord_eq {e : ℕ}
   rw [ord_algebraMap_restrict k F P' f, hf] at h1
   exact_mod_cast by omega
 
+/-- **The local model `𝒪'_P` of `F' / k'` at `P'` consists of functions regular at `P'`**: its
+elements are integral over `𝒪_P`, whose functions are regular at `P'`. -/
+theorem algebraMap_mem_integers_of_mem_integralClosure
+    (b : integralClosure ((P'.restrict k F).integers) F') :
+    algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
+  rw [Subalgebra.algebraMap_eq]
+  exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
+    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
+
+variable {k F} in
+/-- An element of the local model `𝒪'_P` times one vanishing to order `a` at a place `Q'` over `P`
+vanishes to order `a` at `Q'`. -/
+theorem mul_mem_filtration_of_mem_integralClosure
+    {P : Place k F} {Q' : Place k' F'} (hQ' : Q'.restrict k F = P) {a : ℤ} {y : F'}
+    (hy : y ∈ Q'.filtration a) (s : integralClosure P.integers F') :
+    y * s ∈ Q'.filtration a := by
+  subst hQ'
+  simpa using Q'.mul_mem_filtration hy
+    (Q'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F Q' s))
+
+/-- A function of `F` that vanishes to order `m` at the place below `P'` does so at `P'`, when
+`e(P' ∣ P) = 1`. -/
+theorem algebraMap_mem_filtration (he : ramificationIdx F P' = 1) {r : F} {m : ℕ}
+    (hr : r ∈ (P'.restrict k F).filtration m) : algebraMap F F' r ∈ P'.filtration m := by
+  rcases eq_or_ne r 0 with rfl | h0
+  · simp
+  rw [mem_filtration_iff_le_ord _ h0] at hr
+  rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P', he]
+  simpa using hr
+
 end Restrict
 
 section RestrictMap

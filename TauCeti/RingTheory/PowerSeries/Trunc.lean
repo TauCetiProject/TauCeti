@@ -39,6 +39,10 @@ This file collects facts used to compare power series to a finite order `m`:
   `PowerSeries.trunc_val_zpow_mul_derivative_eq_of_trunc_eq`: the finite jets of `u ^ k` and
   `(u ^ k) * d⁄dX u` for a unit `u : R⟦X⟧ˣ` depend only on `trunc m u` and `trunc (m + 1) u`.
 * `PowerSeries.coeff_sum_C_mul_X_pow`: the coefficients of `∑ i : Fin m, C (a i) * X ^ i`.
+* `PowerSeries.trunc_eq_trunc_sum_C_mul_X_pow`: a series has the `m`-truncation of its finite
+  expansion along its own coefficients.
+* `PowerSeries.trunc_map_sum_mul_eq`: the truncation of a combination of finite expansions, under
+  a ring homomorphism to power series.
 * `PowerSeries.coeff_coe_mul_eq_sum`: `coeff n (p * g) = ∑_{i < N} pᵢ coeff n (Xⁱ g)` for a
   polynomial `p` of degree less than `N`.
 * `PowerSeries.aeval_trunc_eq_aeval_of_pow_eq_zero`: at an element with a vanishing `n`th power,
@@ -123,6 +127,14 @@ theorem coeff_sum_C_mul_X_pow {m : ℕ} (a : Fin m → R) (n : ℕ) :
   · refine Finset.sum_eq_zero fun i _ ↦ ?_
     have hni : n ≠ (i : ℕ) := (i.2.trans_le (not_lt.mp h)).ne'
     simp [hni]
+
+/-- A power series has the same `m`-truncation as its finite expansion `∑_{i < m} aᵢ Xⁱ` along its
+own coefficients `aᵢ`. -/
+theorem trunc_eq_trunc_sum_C_mul_X_pow (m : ℕ) (φ : R⟦X⟧) :
+    trunc m φ = trunc m (∑ i : Fin m, C (coeff i φ) * X ^ (i : ℕ)) := by
+  ext n
+  rw [coeff_trunc, coeff_trunc, coeff_sum_C_mul_X_pow]
+  split_ifs <;> rfl
 
 /-- The coefficients of the product of a polynomial `p` and a power series `g`, expanded along the
 monomials of `p` below any bound `N` on its degree. -/
@@ -231,5 +243,35 @@ theorem trunc_inv_eq_of_trunc_eq {m : ℕ} {φ ψ : k⟦X⟧} (h : trunc m φ = 
     exact trunc_inv_aux_eq_of_trunc_eq _ h
 
 end Field
+
+section Expansion
+
+variable {k A S K : Type*} [CommRing k] [CommRing A] [CommRing S] [CommRing K]
+  [Algebra k A] [Algebra A S] [Algebra k K]
+
+/-- **Truncation of a combination of finite expansions.** Let `Φ : S →+* K⟦X⟧` send the constants
+`c : k` to `C c` and an element `x` to `X`. If `b j` has the `m`-truncation of the constant `β j`,
+then the combination `∑ j, (∑ i, cⱼᵢ xⁱ) b j` with `cⱼᵢ : k` has the `m`-truncation of the finite
+expansion `∑ i, (∑ j, cⱼᵢ βⱼ) Xⁱ`. -/
+theorem trunc_map_sum_mul_eq (Φ : S →+* K⟦X⟧) {x : A}
+    (hΦk : ∀ c : k, Φ (algebraMap A S (algebraMap k A c)) = C (algebraMap k K c))
+    (hΦx : Φ (algebraMap A S x) = X) {m n : ℕ} {b : Fin n → S} {β : Fin n → K}
+    (hb : ∀ j, trunc m (Φ (b j)) = trunc m (C (β j))) (c : Fin n → Fin m → k) :
+    trunc m (Φ (∑ j, algebraMap A S (∑ i : Fin m, algebraMap k A (c j i) * x ^ (i : ℕ)) * b j)) =
+      trunc m (∑ i : Fin m, C (∑ j, c j i • β j) * X ^ (i : ℕ)) := by
+  have hj (j) : trunc m (Φ (algebraMap A S (∑ i : Fin m, algebraMap k A (c j i) * x ^ (i : ℕ)) *
+      b j)) = trunc m ((∑ i : Fin m, C (algebraMap k K (c j i)) * X ^ (i : ℕ)) * C (β j)) := by
+    rw [map_mul, ← trunc_mul_trunc, hb j, trunc_mul_trunc]
+    simp only [map_sum, map_mul, map_pow, hΦk, hΦx]
+  rw [map_sum, map_sum, Finset.sum_congr rfl fun j _ ↦ hj j, ← map_sum]
+  congr 1
+  ext n
+  rw [coeff_sum_C_mul_X_pow, map_sum]
+  simp_rw [coeff_mul_C, coeff_sum_C_mul_X_pow]
+  split_ifs with hn
+  · simp [Algebra.smul_def]
+  · simp
+
+end Expansion
 
 end PowerSeries

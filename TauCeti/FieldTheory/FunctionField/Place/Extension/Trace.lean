@@ -213,7 +213,140 @@ private theorem mem_filtration_of_mem_map_span_pow (hF' : IsFunctionField k' F')
     (zpow_mem_filtration k F hx hQ' m)
   simpa [IsScalarTower.algebraMap_apply P.integers F F'] using this
 
+/-- A function regular at `P'` and vanishing to order `e(Q' ∣ P) · m` at every other place `Q'` over
+`P` lies in the local model `𝒪'_P`. -/
+private theorem mem_integralClosure_of_forall_mem_filtration (hF' : IsFunctionField k' F')
+    {m : ℕ} {y : F'} (hy : y ∈ P'.integers)
+    (hs : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+      y ∈ Q'.filtration (ramificationIdx F Q' * m)) :
+    y ∈ integralClosure (P'.restrict k F).integers F' :=
+  (isIntegral_iff_forall_restrict_eq_mem_integers hF' (P'.restrict k F)).mpr fun Q' hQ' ↦ by
+    by_cases h : Q' = P'
+    · exact h ▸ hy
+    · exact Q'.mem_filtration_zero_iff.mp (Q'.filtration_antitone (by positivity) (hs Q' hQ' h))
+
+/-- An element of the local model `𝒪'_P` that vanishes to order `m` at `P'` and to order
+`e(Q' ∣ P) · m` at every other place `Q'` over `P` lies in `x ^ m 𝒪'_P`, for a uniformizer `x`
+of `P` and `e(P' ∣ P) = 1`. -/
+private theorem mem_map_span_pow_of_mem_filtration (hF' : IsFunctionField k' F')
+    (he : ramificationIdx F P' = 1) {x : (P'.restrict k F).integers}
+    (hx : (P'.restrict k F).ord (x : F) = 1) (m : ℕ)
+    {s : integralClosure (P'.restrict k F).integers F'} (h1 : (s : F') ∈ P'.filtration m)
+    (h2 : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+      (s : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
+    s ∈ (Ideal.span {x ^ m}).map
+      (algebraMap (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F')) := by
+  refine mem_map_span_pow_of_forall_mem_filtration k F hF' hx m s fun Q' hQ' ↦ ?_
+  by_cases h : Q' = P'
+  · subst h
+    simpa [he] using h1
+  · exact h2 Q' hQ' h
+
+/-- A product of an element of the local model `𝒪'_P` small at `P'` and one small at the other
+places over `P` lies in `x ^ m 𝒪'_P`. -/
+private theorem mul_mem_map_span_pow (hF' : IsFunctionField k' F')
+    (he : ramificationIdx F P' = 1) {x : (P'.restrict k F).integers}
+    (hx : (P'.restrict k F).ord (x : F) = 1) (m : ℕ)
+    {u v : integralClosure (P'.restrict k F).integers F'} (hu : (u : F') ∈ P'.filtration m)
+    (hv : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+      (v : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
+    u * v ∈ (Ideal.span {x ^ m}).map
+      (algebraMap (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F')) := by
+  refine mem_map_span_pow_of_mem_filtration k F P' hF' he hx m ?_ fun Q' hQ' h ↦ ?_
+  · simpa [he] using P'.mul_mem_filtration hu
+      (P'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F P' v))
+  · simpa [mul_comm] using mul_mem_filtration_of_mem_integralClosure hQ' (hv Q' hQ' h) u
+
+/-- An element of the local model `𝒪'_P` congruent at `P'` to `c ∈ 𝒪_P` to order `m` acts, modulo
+`x ^ m 𝒪'_P`, on an element `w` small at the other places over `P` as `c`. -/
+private theorem mul_sub_mem_map_span_pow (hF' : IsFunctionField k' F')
+    (he : ramificationIdx F P' = 1) {x : (P'.restrict k F).integers}
+    (hx : (P'.restrict k F).ord (x : F) = 1) (m : ℕ)
+    {b w : integralClosure (P'.restrict k F).integers F'} {c : (P'.restrict k F).integers}
+    (hbc : (b : F') - algebraMap F F' c ∈ P'.filtration m)
+    (hw : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+      (w : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
+    b * w - algebraMap (P'.restrict k F).integers _ c * w ∈ (Ideal.span {x ^ m}).map
+      (algebraMap (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F')) := by
+  rw [← sub_mul]
+  exact mul_mem_map_span_pow k F P' hF' he hx m
+    (by simpa [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F'] using hbc) hw
+
+/-- If `w` is congruent to `1` at `P'`, then `w u - u` lies in `x ^ m 𝒪'_P` for every `u` in the
+local model `𝒪'_P` small at the other places over `P`, as soon as `w` is small there too. -/
+private theorem mul_sub_self_mem_map_span_pow (hF' : IsFunctionField k' F')
+    (he : ramificationIdx F P' = 1) {x : (P'.restrict k F).integers}
+    (hx : (P'.restrict k F).ord (x : F) = 1) (m : ℕ)
+    {w u : integralClosure (P'.restrict k F).integers F'} (hw1 : (w : F') - 1 ∈ P'.filtration m)
+    (hw : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+      (w : F') ∈ Q'.filtration (ramificationIdx F Q' * m))
+    (hu : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+      (u : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
+    w * u - u ∈ (Ideal.span {x ^ m}).map
+      (algebraMap (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F')) := by
+  refine mem_map_span_pow_of_mem_filtration k F P' hF' he hx m ?_ fun Q' hQ' h ↦ ?_
+  · push_cast
+    simpa [sub_mul] using P'.mul_mem_filtration hw1
+      (P'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F P' u))
+  · push_cast
+    exact sub_mem (mul_mem_filtration_of_mem_integralClosure hQ' (hw Q' hQ' h) u)
+      (hu Q' hQ' h)
+
 variable [Algebra.IsSeparable F F']
+
+/-- The trace of an element of the local model `𝒪'_P` that is congruent to `1` at `P'` and small at
+the other places over `P` is congruent to `1` modulo `x ^ m`, for a uniformizer `x` of `P`, when
+`e(P' ∣ P) = f(P' ∣ P) = 1`: its class is an idempotent of rank one. -/
+private theorem trace_sub_one_mem_span_pow (hF' : IsFunctionField k' F')
+    (he : ramificationIdx F P' = 1) (hf : relativeDegree k F P' = 1)
+    {x : (P'.restrict k F).integers} (hx : (P'.restrict k F).ord (x : F) = 1) (m : ℕ)
+    {w : integralClosure (P'.restrict k F).integers F'} (hw1 : (w : F') - 1 ∈ P'.filtration m)
+    (hw0 : ∀ Q' : Place k' F', Q'.restrict k F = P'.restrict k F → Q' ≠ P' →
+      (w : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
+    Algebra.trace (P'.restrict k F).integers (integralClosure (P'.restrict k F).integers F') w - 1 ∈
+      Ideal.span {x ^ m} := by
+  classical
+  have : Module.Free (P'.restrict k F).integers
+      (integralClosure (P'.restrict k F).integers F') :=
+    .of_basis (integralClosureFinBasis F' (P'.restrict k F))
+  refine Algebra.trace_sub_one_mem_of_mul_self_sub_mem ?_ (fun b ↦ ?_) (fun c hc ↦ ?_)
+  · simpa using mul_sub_mem_map_span_pow k F P' hF' he hx m (b := w) (c := 1)
+      (by simpa using hw1) hw0
+  · obtain ⟨c, hc, hbc⟩ := exists_sub_algebraMap_mem_filtration k F P' he hf m
+      (algebraMap_mem_integers_of_mem_integralClosure k F P' b)
+    exact ⟨⟨c, hc⟩, by simpa [mul_comm w] using
+      mul_sub_mem_map_span_pow k F P' hF' he hx m (c := ⟨c, hc⟩) hbc hw0⟩
+  · -- `c = c w - c (w - 1)` vanishes to order `m` at `P'`, hence at `P`, so `c ∈ I`.
+    have h2 : algebraMap F F' c * ((w : F') - 1) ∈ P'.filtration m := by
+      simpa using P'.mul_mem_filtration (P'.mem_filtration_zero_iff.mpr
+        ((mem_integers_restrict_iff k F P' _).mp c.2)) hw1
+    have hcw := mem_filtration_of_mem_map_span_pow k F hF' hx hc (Q' := P') rfl
+    rw [he, Nat.cast_one, one_mul] at hcw
+    have hc' : algebraMap F F' c ∈ P'.filtration m := by
+      convert sub_mem hcw h2 using 1
+      simp only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap,
+        IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
+        ValuationSubring.algebraMap_apply]
+      ring
+    refine mem_span_pow_of_mem_filtration hx ?_
+    rcases eq_or_ne (c : F) 0 with h | h
+    · simp [h]
+    rw [mem_filtration_iff_le_ord _ h]
+    have := (P'.mem_filtration_iff_le_ord ((map_ne_zero _).mpr h)).mp hc'
+    rwa [ord_algebraMap_restrict k F P', he, Nat.cast_one, one_mul] at this
+
+omit [Algebra k F'] [IsScalarTower k F F'] in
+variable {k F} in
+/-- The trace from `F'` to `F` of an element of the local model `𝒪'_P` is the trace of the local
+model over `𝒪_P`. -/
+private theorem trace_eq_algebraMap_trace_integralClosure
+    {P : Place k F} (s : integralClosure P.integers F') :
+    Algebra.trace F F' (s : F') =
+      algebraMap P.integers F (Algebra.trace P.integers (integralClosure P.integers F') s) := by
+  have : Module.Free P.integers (integralClosure P.integers F') :=
+    .of_basis (integralClosureFinBasis F' P)
+  have := isLocalization_integralClosure F' P
+  exact Algebra.trace_localization P.integers P.integers⁰ (Sₘ := F') s
 
 /-- **The trace is the identity near a place of local degree one.** Let `P'` be a place of `F'`
 over `P` with `e(P' ∣ P) = f(P' ∣ P) = 1`. If `z` is regular at `P'` and vanishes to order at
@@ -227,31 +360,19 @@ theorem algebraMap_trace_sub_mem_filtration (hF' : IsFunctionField k' F')
     algebraMap F F' (Algebra.trace F F' z) - z ∈ P'.filtration m := by
   classical
   set P := P'.restrict k F with hPdef
-  -- The local model `𝒪'_P`, finite and free over `𝒪_P`.
-  let S := integralClosure P.integers F'
-  have : Module.Free P.integers S := .of_basis (integralClosureFinBasis F' P)
-  have := isLocalization_integralClosure F' P
-  have hreg (s : S) (Q' : Place k' F') (hQ' : Q'.restrict k F = P) : (s : F') ∈ Q'.integers :=
-    (isIntegral_iff_forall_restrict_eq_mem_integers hF' P).mp s.2 Q' hQ'
-  have hint {s : F'} (hP' : s ∈ P'.integers) (hs : ∀ Q' : Place k' F', Q'.restrict k F = P →
-      Q' ≠ P' → s ∈ Q'.filtration (ramificationIdx F Q' * m)) : s ∈ S :=
-    (isIntegral_iff_forall_restrict_eq_mem_integers hF' P).mpr fun Q' hQ' ↦ by
-      by_cases h : Q' = P'
-      · exact h ▸ hP'
-      · exact Q'.mem_filtration_zero_iff.mp (Q'.filtration_antitone (by positivity) (hs Q' hQ' h))
-  let zS : S := ⟨z, hint hz hzQ⟩
   -- A uniformizer `x` of `P`; it is also one at `P'`.
   obtain ⟨x, hx⟩ := P.exists_isUniformizer
   have hxo : P.ord x = 1 := P.isUniformizer_iff_ord_eq_one.mp hx
   let xR : P.integers := ⟨x, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩
+  -- The local model `𝒪'_P`, finite and free over `𝒪_P`.
+  let zS : integralClosure P.integers F' :=
+    ⟨z, mem_integralClosure_of_forall_mem_filtration k F P' hF' hz hzQ⟩
   -- `z` is congruent at `P'` to some `a ∈ 𝒪_P`; it remains to see that so is its trace.
   obtain ⟨a, ha, hza⟩ := exists_sub_algebraMap_mem_filtration k F P' he hf m hz
-  suffices hkey : Algebra.trace P.integers S zS - ⟨a, ha⟩ ∈ Ideal.span {xR ^ m} by
+  suffices hkey : Algebra.trace P.integers _ zS - ⟨a, ha⟩ ∈ Ideal.span {xR ^ m} by
     obtain ⟨r, hr⟩ := Ideal.mem_span_singleton'.mp hkey
-    have htr : Algebra.trace F F' z = algebraMap P.integers F (Algebra.trace P.integers S zS) :=
-      Algebra.trace_localization P.integers P.integers⁰ (Sₘ := F') zS
     have hr' : Algebra.trace F F' z - a = (r : F) * x ^ m := by
-      rw [htr]
+      rw [trace_eq_algebraMap_trace_integralClosure zS]
       exact (congrArg Subtype.val hr).symm
     have hrm : algebraMap F F' ((r : F) * x ^ m) ∈ P'.filtration m := by
       have := P'.mul_mem_filtration ((P'.mem_filtration_zero_iff).mpr
@@ -259,68 +380,32 @@ theorem algebraMap_trace_sub_mem_filtration (hF' : IsFunctionField k' F')
       simpa [he] using this
     rw [← sub_add_sub_cancel _ (algebraMap F F' a), ← map_sub, hr']
     exact add_mem hrm (by simpa using neg_mem hza)
-  -- Work modulo `I = (x ^ m)`.
-  set I : Ideal P.integers := Ideal.span {xR ^ m} with hI
   -- `w ≡ 1` at `P'` and `w ≡ 0` at the other places over `P`, to order `m`.
   obtain ⟨w, hw1, hw0⟩ := exists_sub_mem_filtration_and_forall_mem_filtration k F P' 1 m
   rw [he, Nat.cast_one, one_mul] at hw1
-  have hwP : w ∈ P'.integers := by
-    have := add_mem (P'.filtration_antitone (Nat.cast_nonneg m) hw1)
-      (P'.mem_filtration_zero_iff.mpr P'.integers.one_mem)
-    rwa [sub_add_cancel, mem_filtration_zero_iff] at this
-  let wS : S := ⟨w, hint hwP hw0⟩
-  -- A product of an element small at `P'` and one small at the other places lies in `I 𝒪'_P`.
-  have hprod (u v : S) (hu : (u : F') ∈ P'.filtration m)
-      (hv : ∀ Q' : Place k' F', Q'.restrict k F = P → Q' ≠ P' →
-        (v : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
-      u * v ∈ I.map (algebraMap P.integers S) := by
-    refine mem_map_span_pow_of_forall_mem_filtration k F hF' hxo m _ fun Q' hQ' ↦ ?_
-    by_cases h : Q' = P'
-    · subst h
-      simpa [he] using Q'.mul_mem_filtration hu (Q'.mem_filtration_zero_iff.mpr (hreg v Q' hQ'))
-    · simpa using Q'.mul_mem_filtration (Q'.mem_filtration_zero_iff.mpr (hreg u Q' hQ'))
-        (hv Q' hQ' h)
-  -- Modulo `I 𝒪'_P`, an element `b` congruent at `P'` to `c ∈ 𝒪_P` acts on `w` as `c`.
-  have hact (b : S) (c : P.integers) (hbc : (b : F') - algebraMap F F' c ∈ P'.filtration m) :
-      b * wS - algebraMap P.integers S c * wS ∈ I.map (algebraMap P.integers S) := by
-    rw [← sub_mul]
-    exact hprod _ wS (by simpa [IsScalarTower.algebraMap_apply P.integers F F'] using hbc) hw0
-  -- So the class of `w` is an idempotent of rank one, and its trace is `1` modulo `I`.
-  have htrw : Algebra.trace P.integers S wS - 1 ∈ I := by
-    refine Algebra.trace_sub_one_mem_of_mul_self_sub_mem ?_ (fun b ↦ ?_) (fun c hc ↦ ?_)
-    · simpa using hact wS 1 (by simpa using hw1)
-    · obtain ⟨c, hc, hbc⟩ := exists_sub_algebraMap_mem_filtration k F P' he hf m (hreg b P' rfl)
-      exact ⟨⟨c, hc⟩, by simpa [mul_comm wS] using hact b ⟨c, hc⟩ hbc⟩
-    · -- `c = c w - c (w - 1)` vanishes to order `m` at `P'`, hence at `P`, so `c ∈ I`.
-      have h2 : algebraMap F F' c * (w - 1) ∈ P'.filtration m := by
-        simpa using P'.mul_mem_filtration (P'.mem_filtration_zero_iff.mpr
-          ((mem_integers_restrict_iff k F P' _).mp c.2)) hw1
-      have hcw := mem_filtration_of_mem_map_span_pow k F hF' hxo hc (Q' := P') rfl
-      rw [he, Nat.cast_one, one_mul] at hcw
-      have hc' : algebraMap F F' c ∈ P'.filtration m := by
-        convert sub_mem hcw h2 using 1
-        simp only [Subalgebra.coe_mul, Subalgebra.coe_algebraMap, wS,
-          IsScalarTower.algebraMap_apply P.integers F F', ValuationSubring.algebraMap_apply]
-        ring
-      refine mem_span_pow_of_mem_filtration hxo ?_
-      rcases eq_or_ne (c : F) 0 with h | h
-      · simp [h]
-      rw [mem_filtration_iff_le_ord _ h]
-      have := (P'.mem_filtration_iff_le_ord ((map_ne_zero _).mpr h)).mp hc'
-      rwa [ord_algebraMap_restrict k F P', he, Nat.cast_one, one_mul] at this
-  -- The class of `z` is `a` times the class of `w`, so its trace is `a` modulo `I`.
-  have hzw : zS - algebraMap P.integers S ⟨a, ha⟩ * wS ∈ I.map (algebraMap P.integers S) := by
-    have h1 : zS - zS * wS ∈ I.map (algebraMap P.integers S) := by
+  let wS : integralClosure P.integers F' :=
+    ⟨w, mem_integralClosure_of_forall_mem_filtration k F P' hF'
+      (mem_integers_of_sub_mem_filtration P' P'.integers.one_mem hw1) hw0⟩
+  -- The class of `w` is an idempotent of rank one, and its trace is `1` modulo `x ^ m`.
+  have htrw := trace_sub_one_mem_span_pow k F P' hF' he hf (x := xR) hxo m
+    (w := wS) hw1 hw0
+  -- The class of `z` is `a` times the class of `w`, so its trace is `a` modulo `x ^ m`.
+  have hzw : zS - algebraMap P.integers _ ⟨a, ha⟩ * wS ∈
+      (Ideal.span {xR ^ m}).map (algebraMap P.integers (integralClosure P.integers F')) := by
+    have h1 : zS - zS * wS ∈
+        (Ideal.span {xR ^ m}).map (algebraMap P.integers (integralClosure P.integers F')) := by
       rw [show zS - zS * wS = (1 - wS) * zS by ring]
-      exact hprod _ _ (by simpa using neg_mem hw1) hzQ
-    simpa using add_mem h1 (hact zS ⟨a, ha⟩ hza)
-  have hlin : Algebra.trace P.integers S (zS - algebraMap P.integers S ⟨a, ha⟩ * wS) +
-      ⟨a, ha⟩ * (Algebra.trace P.integers S wS - 1) =
-        Algebra.trace P.integers S zS - ⟨a, ha⟩ := by
+      exact mul_mem_map_span_pow k F P' hF' he (x := xR) hxo m (by simpa using neg_mem hw1) hzQ
+    have h2 := mul_sub_mem_map_span_pow k F P' hF' he (x := xR) hxo m (b := zS) (w := wS)
+      (c := ⟨a, ha⟩) hza hw0
+    simpa using add_mem h1 h2
+  have hlin : Algebra.trace P.integers _ (zS - algebraMap P.integers _ ⟨a, ha⟩ * wS) +
+      ⟨a, ha⟩ * (Algebra.trace P.integers _ wS - 1) =
+        Algebra.trace P.integers _ zS - ⟨a, ha⟩ := by
     rw [map_sub, ← Algebra.smul_def, LinearMap.map_smul, smul_eq_mul]
     ring
   rw [← hlin]
-  exact add_mem (Algebra.trace_mem_of_mem_map hzw) (I.mul_mem_left _ htrw)
+  exact add_mem (Algebra.trace_mem_of_mem_map hzw) (Ideal.mul_mem_left _ _ htrw)
 
 
 /-! ### The trace at an unramified place over a rational place -/
@@ -334,6 +419,238 @@ variable {P : Place k F} (hPP' : P'.restrict k F = P) {t : F} (ht : P.ord t = 1)
   (ht' : P'.ord (algebraMap F F' t) = 1)
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
+
+omit [FiniteDimensional F F'] in
+include hPP' ht' in
+/-- **The expansion at `P'` on the local model.** On the local model `𝒪'_P`, the expansion at `P'`
+is a ring homomorphism `Φ`, which extends the expansion of regular functions, detects the vanishing
+order at `P'` through its `m`-truncation, expands the constants of `k` as constants, and expands a
+uniformizer of `P` as the variable. -/
+private theorem exists_ringHom_powerSeries (m : ℕ)
+    {x : P.integers} (hx : (x : F) = t) :
+    ∃ Φ : integralClosure P.integers F' →+* PowerSeries P'.ResidueField,
+      (∀ (s : integralClosure P.integers F') (hs : (s : F') ∈ P'.integers),
+        Φ s = P'.powerSeriesExpansionResidueField ht' ⟨s, hs⟩) ∧
+      (∀ s : integralClosure P.integers F',
+        (s : F') ∈ P'.filtration m ↔ PowerSeries.trunc m (Φ s) = 0) ∧
+      (∀ c : k, Φ (algebraMap P.integers _ (algebraMap k P.integers c)) =
+        PowerSeries.C (algebraMap k P'.ResidueField c)) ∧
+      Φ (algebraMap P.integers _ x) = PowerSeries.X := by
+  subst hPP'
+  let ιS : integralClosure (P'.restrict k F).integers F' →+* P'.integers :=
+    (algebraMap _ F').codRestrict P'.integers
+      (algebraMap_mem_integers_of_mem_integralClosure k F P')
+  refine ⟨(P'.powerSeriesExpansionResidueField ht').toRingHom.comp ιS, fun s hs ↦ rfl,
+    fun s ↦ (P'.trunc_powerSeriesExpansionResidueField_eq_zero_iff ht' m ⟨s, _⟩).symm,
+    fun c ↦ ?_, ?_⟩
+  · have h : ιS (algebraMap _ (integralClosure (P'.restrict k F).integers F')
+        (algebraMap k (P'.restrict k F).integers c)) =
+        algebraMap k P'.integers c := Subtype.ext (by
+      rw [coe_algebraMap_constants]
+      simp [ιS, IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F',
+        coe_algebraMap_constants, ← IsScalarTower.algebraMap_apply k F F'])
+    exact (congrArg _ h).trans ((AlgHom.commutes _ c).trans PowerSeries.algebraMap_apply)
+  · rw [← powerSeriesExpansionResidueField_uniformizer P' ht']
+    refine congrArg (P'.powerSeriesExpansionResidueField ht') (Subtype.ext ?_)
+    simp only [ιS, RingHom.codRestrict_apply]
+    rw [← hx]
+    exact (IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F' x).symm
+
+include hPP' ht' in
+/-- Every power series is, to order `m`, the expansion at `P'` of an element of the local model
+`𝒪'_P` vanishing to order `e(Q' ∣ P) · m` at the other places `Q'` over `P`, when
+`e(P' ∣ P) = 1`. -/
+private theorem exists_small_trunc_eq (hF' : IsFunctionField k F') (he : ramificationIdx F P' = 1)
+    (m : ℕ) {Φ : integralClosure P.integers F' →+* PowerSeries P'.ResidueField}
+    (hΦ : ∀ (s : integralClosure P.integers F') (hs : (s : F') ∈ P'.integers),
+      Φ s = P'.powerSeriesExpansionResidueField ht' ⟨s, hs⟩) (g : PowerSeries P'.ResidueField) :
+    ∃ s : integralClosure P.integers F', (∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' →
+      (s : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) ∧
+        PowerSeries.trunc m (Φ s) = PowerSeries.trunc m g := by
+  subst hPP'
+  obtain ⟨y, hy⟩ := P'.exists_trunc_powerSeriesExpansionResidueField_eq ht' g m
+  obtain ⟨w, hw, hwQ⟩ := exists_sub_mem_filtration_and_forall_mem_filtration k F P' (y : F') m
+  rw [he, Nat.cast_one, one_mul] at hw
+  have hwint := mem_integers_of_sub_mem_filtration P' y.2 hw
+  refine ⟨⟨w, mem_integralClosure_of_forall_mem_filtration k F P' hF' hwint hwQ⟩, hwQ, ?_⟩
+  have hdiff := (P'.trunc_powerSeriesExpansionResidueField_eq_zero_iff ht' m (⟨w, hwint⟩ - y)).mpr
+    (by simpa using hw)
+  rw [map_sub, map_sub, sub_eq_zero] at hdiff
+  rw [hΦ _ hwint, hdiff, hy]
+
+omit [Algebra.IsSeparable k P'.ResidueField] in
+include hPP' in
+/-- **Multiplication by `w` projects onto the span of the `b j`.** Let `w` be congruent to `1` at
+`P'` and small at the other places over `P`, and let the `b j` be small at the other places with
+expansions at `P'` the constants of a `k`-basis `β j` of the residue field. Modulo `x ^ m 𝒪'_P`,
+`w s` is an `𝒪_P`-combination of the `b j`, for every element `s` of the local model `𝒪'_P`. -/
+private theorem exists_sub_sum_mem_map_span_pow (hF' : IsFunctionField k F')
+    (he : ramificationIdx F P' = 1) (m : ℕ) {x : P.integers} (hx : P.ord (x : F) = 1)
+    {Φ : integralClosure P.integers F' →+* PowerSeries P'.ResidueField}
+    (hfilt : ∀ s : integralClosure P.integers F',
+      (s : F') ∈ P'.filtration m ↔ PowerSeries.trunc m (Φ s) = 0) {n : ℕ}
+    (β : Module.Basis (Fin n) k P'.ResidueField) {b : Fin n → integralClosure P.integers F'}
+    (hΦb : ∀ c : Fin n → Fin m → k, PowerSeries.trunc m (Φ (∑ j, algebraMap P.integers _
+      (∑ i : Fin m, algebraMap k P.integers (c j i) * x ^ (i : ℕ)) * b j)) =
+        PowerSeries.trunc m (∑ i : Fin m, PowerSeries.C (∑ j, c j i • β j) *
+          PowerSeries.X ^ (i : ℕ)))
+    (hbS : ∀ j, ∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' →
+      (b j : F') ∈ Q'.filtration (ramificationIdx F Q' * m))
+    {W : integralClosure P.integers F'} (hW1 : (W : F') - 1 ∈ P'.filtration m)
+    (hWS : ∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' →
+      (W : F') ∈ Q'.filtration (ramificationIdx F Q' * m))
+    (s : integralClosure P.integers F') :
+    ∃ cs : Fin n → P.integers, W * s - ∑ j, algebraMap P.integers _ (cs j) * b j ∈
+      (Ideal.span {x ^ m}).map (algebraMap P.integers (integralClosure P.integers F')) := by
+  subst hPP'
+  let cs : Fin n → (P'.restrict k F).integers := fun j ↦
+    ∑ i : Fin m, algebraMap k _ (β.repr (PowerSeries.coeff i (Φ s)) j) * x ^ (i : ℕ)
+  refine ⟨cs, mem_map_span_pow_of_mem_filtration k F P' hF' he hx m ?_ ?_⟩
+  · have h2 := (hfilt (s - ∑ j, algebraMap _ _ (cs j) * b j)).mpr (by
+      rw [map_sub, map_sub, hΦb fun j i ↦ β.repr (PowerSeries.coeff i (Φ s)) j,
+        PowerSeries.trunc_eq_trunc_sum_C_mul_X_pow m (Φ s), sub_eq_zero]
+      simp only [β.sum_repr])
+    have h1 : (W : F') * s - s ∈ P'.filtration m := by
+      simpa [sub_mul] using P'.mul_mem_filtration hW1
+        (P'.mem_filtration_zero_iff.mpr (algebraMap_mem_integers_of_mem_integralClosure k F P' s))
+    convert add_mem h1 h2 using 1
+    push_cast
+    ring
+  · intro Q' hQ' h
+    push_cast
+    refine sub_mem (mul_mem_filtration_of_mem_integralClosure hQ' (hWS Q' hQ' h) s)
+      (sum_mem fun j _ ↦ ?_)
+    simpa [mul_comm] using mul_mem_filtration_of_mem_integralClosure hQ' (hbS j Q' hQ' h)
+      (algebraMap _ (integralClosure (P'.restrict k F).integers F') (cs j))
+
+omit [Algebra.IsSeparable k P'.ResidueField] in
+include hPP' ht in
+/-- **The `b j` are independent modulo `x ^ m 𝒪'_P`.** With the notation of
+`TauCeti.Place.exists_sub_sum_mem_map_span_pow`, a combination `∑ j, cⱼ b j` with `cⱼ ∈ 𝒪_P` lying
+in `x ^ m 𝒪'_P` has every coefficient `cⱼ` in `x ^ m 𝒪_P`, when `P` is a rational place. -/
+private theorem mem_span_pow_of_sum_mem_map_span_pow (hF' : IsFunctionField k F')
+    (hP : P.degree = 1) (he : ramificationIdx F P' = 1) (m : ℕ) {x : P.integers}
+    (hx : (x : F) = t) {Φ : integralClosure P.integers F' →+* PowerSeries P'.ResidueField}
+    (hfilt : ∀ s : integralClosure P.integers F',
+      (s : F') ∈ P'.filtration m ↔ PowerSeries.trunc m (Φ s) = 0) {n : ℕ}
+    (β : Module.Basis (Fin n) k P'.ResidueField) {b : Fin n → integralClosure P.integers F'}
+    (hΦb : ∀ c : Fin n → Fin m → k, PowerSeries.trunc m (Φ (∑ j, algebraMap P.integers _
+      (∑ i : Fin m, algebraMap k P.integers (c j i) * x ^ (i : ℕ)) * b j)) =
+        PowerSeries.trunc m (∑ i : Fin m, PowerSeries.C (∑ j, c j i • β j) *
+          PowerSeries.X ^ (i : ℕ)))
+    (cs : Fin n → P.integers) (hcs : ∑ j, algebraMap P.integers _ (cs j) * b j ∈
+      (Ideal.span {x ^ m}).map (algebraMap P.integers (integralClosure P.integers F')))
+    (j : Fin n) : cs j ∈ Ideal.span {x ^ m} := by
+  subst hPP' hx
+  have h := mem_filtration_of_mem_map_span_pow k F hF' ht hcs (Q' := P') rfl
+  rw [he, Nat.cast_one, one_mul] at h
+  -- Replace each `cs j` by its truncated expansion at `P`.
+  let τ := fun j ↦ (P'.restrict k F).truncatedExpansion hP ht m (cs j)
+  let r := fun j ↦ ∑ i : Fin m, algebraMap k (P'.restrict k F).integers (τ j i) * x ^ (i : ℕ)
+  have hτ (j) : ((cs j - r j : (P'.restrict k F).integers) : F) ∈
+      (P'.restrict k F).filtration m := by
+    simpa [r, coe_algebraMap_constants] using
+      (P'.restrict k F).sub_sum_truncatedExpansion_mem_filtration hP ht m (cs j)
+  have hr : ((∑ j, algebraMap _ _ (r j) * b j : integralClosure _ F') : F') ∈
+      P'.filtration m := by
+    have hd : ((∑ j, algebraMap _ _ (cs j - r j) * b j : integralClosure _ F') : F') ∈
+        P'.filtration m := by
+      push_cast
+      refine sum_mem fun j _ ↦ ?_
+      simpa [IsScalarTower.algebraMap_apply (P'.restrict k F).integers F F'] using
+        P'.mul_mem_filtration (algebraMap_mem_filtration k F P' he (hτ j))
+          (P'.mem_filtration_zero_iff.mpr
+            (algebraMap_mem_integers_of_mem_integralClosure k F P' (b j)))
+    convert sub_mem h hd using 1
+    simp only [map_sub, sub_mul, Finset.sum_sub_distrib]
+    push_cast
+    ring
+  have hzero := (hfilt _).mp hr
+  rw [hΦb] at hzero
+  have hτ0 (i : Fin m) (j) : τ j i = 0 := by
+    have hi := congrArg (Polynomial.coeff · (i : ℕ)) hzero
+    simp only [PowerSeries.coeff_trunc, PowerSeries.coeff_sum_C_mul_X_pow, i.2, ↓reduceIte,
+      ↓reduceDIte, Polynomial.coeff_zero] at hi
+    exact Fintype.linearIndependent_iff.mp β.linearIndependent (fun j ↦ τ j i) hi j
+  exact mem_span_pow_of_mem_filtration ht (by simpa [r, hτ0] using hτ j)
+
+omit [Algebra.IsSeparable k P'.ResidueField] in
+include hPP' in
+/-- **The matrix of multiplication by `z`.** With the notation of
+`TauCeti.Place.exists_sub_sum_mem_map_span_pow`, if `z` is small at the other places over `P`, then
+modulo `x ^ m 𝒪'_P` multiplication by `z` preserves the span of the `b j`, through a matrix whose
+trace is `∑ i, Tr_{F'_{P'}/k} (cᵢ) xⁱ`, where `cᵢ` are the expansion coefficients of `z`. -/
+private theorem exists_mul_sub_sum_mem_map_span_pow (hF' : IsFunctionField k F')
+    (he : ramificationIdx F P' = 1) (m : ℕ) {x : P.integers} (hx : P.ord (x : F) = 1)
+    {Φ : integralClosure P.integers F' →+* PowerSeries P'.ResidueField}
+    (hfilt : ∀ s : integralClosure P.integers F',
+      (s : F') ∈ P'.filtration m ↔ PowerSeries.trunc m (Φ s) = 0) {n : ℕ}
+    (β : Module.Basis (Fin n) k P'.ResidueField) {b : Fin n → integralClosure P.integers F'}
+    (hbt : ∀ j, PowerSeries.trunc m (Φ (b j)) = PowerSeries.trunc m (PowerSeries.C (β j)))
+    (hΦb : ∀ c : Fin n → Fin m → k, PowerSeries.trunc m (Φ (∑ j, algebraMap P.integers _
+      (∑ i : Fin m, algebraMap k P.integers (c j i) * x ^ (i : ℕ)) * b j)) =
+        PowerSeries.trunc m (∑ i : Fin m, PowerSeries.C (∑ j, c j i • β j) *
+          PowerSeries.X ^ (i : ℕ)))
+    (hbS : ∀ j, ∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' →
+      (b j : F') ∈ Q'.filtration (ramificationIdx F Q' * m))
+    {z : integralClosure P.integers F'}
+    (hzS : ∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' →
+      (z : F') ∈ Q'.filtration (ramificationIdx F Q' * m)) :
+    ∃ a : Fin n → Fin n → P.integers, (∀ j, z * b j - ∑ l, algebraMap P.integers _ (a j l) * b l ∈
+      (Ideal.span {x ^ m}).map (algebraMap P.integers (integralClosure P.integers F'))) ∧
+        ∑ j, a j j = ∑ i : Fin m, algebraMap k P.integers
+          (Algebra.trace k P'.ResidueField (PowerSeries.coeff i (Φ z))) * x ^ (i : ℕ) := by
+  subst hPP'
+  let M : Fin m → Fin n → Fin n → k := fun i j l ↦ β.repr (PowerSeries.coeff i (Φ z) * β j) l
+  refine ⟨fun j l ↦ ∑ i : Fin m, algebraMap k _ (M i j l) * x ^ (i : ℕ), fun j ↦ ?_, ?_⟩
+  · refine mem_map_span_pow_of_mem_filtration k F P' hF' he hx m ((hfilt _).mpr ?_) ?_
+    · rw [map_sub, map_sub, hΦb (fun l i ↦ M i j l), map_mul, ← PowerSeries.trunc_mul_trunc,
+        hbt j, PowerSeries.trunc_mul_trunc, sub_eq_zero]
+      ext d
+      rw [PowerSeries.coeff_trunc, PowerSeries.coeff_trunc, PowerSeries.coeff_sum_C_mul_X_pow,
+        PowerSeries.coeff_mul_C]
+      split_ifs with hd
+      · simp only [M, β.sum_repr]
+      · rfl
+    · intro Q' hQ' h
+      rw [Subalgebra.coe_sub, ← Subalgebra.coe_val, map_sum]
+      refine sub_mem (mul_mem_filtration_of_mem_integralClosure hQ' (hzS Q' hQ' h) _)
+        (sum_mem fun l _ ↦ ?_)
+      rw [Subalgebra.coe_val]
+      simpa only [mul_comm, Subalgebra.coe_mul] using
+        mul_mem_filtration_of_mem_integralClosure hQ' (hbS l Q' hQ' h)
+          (algebraMap _ (integralClosure (P'.restrict k F).integers F')
+            (∑ i : Fin m, algebraMap k _ (M i j l) * x ^ (i : ℕ)))
+  · simp only [M]
+    rw [Finset.sum_comm]
+    refine Finset.sum_congr rfl fun i _ ↦ ?_
+    rw [← Finset.sum_mul, ← map_sum, Algebra.trace_eq_matrix_trace β, Matrix.trace]
+    simp [Algebra.leftMulMatrix_eq_repr_mul]
+
+omit [Algebra k F'] [IsScalarTower k F F'] [Algebra.IsSeparable k P'.ResidueField] in
+/-- The trace from `F'` to `F` of an element `z` of the local model `𝒪'_P` is congruent to a
+combination `∑ i, cᵢ tⁱ` with `cᵢ : k` to order `m` at a place `P` with uniformizer `t`, as soon as
+the trace over `𝒪_P` of `z` is so modulo `t ^ m`. -/
+private theorem trace_sub_sum_mem_filtration_of_mem_span {P : Place k F} {t : F}
+    (ht : P.ord t = 1) (m : ℕ) {x : P.integers} (hx : (x : F) = t)
+    (z : integralClosure P.integers F') (c : Fin m → k)
+    (hkey : Algebra.trace P.integers (integralClosure P.integers F') z -
+      ∑ i : Fin m, algebraMap k P.integers (c i) * x ^ (i : ℕ) ∈ Ideal.span {x ^ m}) :
+    Algebra.trace F F' (z : F') - ∑ i : Fin m, algebraMap k F (c i) * t ^ (i : ℕ) ∈
+      P.filtration m := by
+  subst hx
+  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.mp hkey
+  have hq' := congrArg (fun u : P.integers ↦ (u : F)) hq
+  push_cast at hq'
+  have htm : (x : F) ^ m ∈ P.filtration m := by
+    have := P.mem_filtration_ord ((x : F) ^ m)
+    rwa [P.ord_pow, ht, mul_one] at this
+  rw [trace_eq_algebraMap_trace_integralClosure z, ValuationSubring.algebraMap_apply]
+  have heq : ((Algebra.trace P.integers (integralClosure P.integers F') z : P.integers) : F) -
+      ∑ i : Fin m, algebraMap k F (c i) * (x : F) ^ (i : ℕ) = (q : F) * (x : F) ^ m := by
+    rw [hq']
+  rw [heq]
+  simpa using P.mul_mem_filtration (P.mem_filtration_zero_iff.mpr q.2) htm
 
 include hPP' ht ht' in
 /-- **The trace commutes with expansions at an unramified place over a rational place.** Let `P`
@@ -360,231 +677,35 @@ theorem trace_sub_sum_mem_filtration (hF' : IsFunctionField k F') (hP : P.degree
   -- `b j` of lifts of a `k`-basis `β j` of `F'_{P'}` with constant expansions, and the matrix
   -- `a j l = ∑ᵢ [cᵢ]ⱼₗ tⁱ` of multiplication by the expansion coefficients `cᵢ` of `z`. Each of
   -- its five hypotheses is a membership in `I S`, checked at `P'` on truncated expansions
-  -- (`hfilt`) and at the other places over `P` by smallness (`Small`).
+  -- and at the other places over `P` by smallness.
   classical
   subst hPP'
-  set P := P'.restrict k F with hPdef
   have he : ramificationIdx F P' = 1 := by
     have h := ord_algebraMap_restrict k F P' t
-    rw [ht', ← hPdef, ht, mul_one] at h
+    rw [ht', ht, mul_one] at h
     exact_mod_cast h.symm
   have : FiniteDimensional k P'.ResidueField := P'.finiteDimensional_residueField hF'
-  -- The local model `𝒪'_P`, finite and free over `𝒪_P`.
-  let S := integralClosure P.integers F'
-  have : Module.Free P.integers S := .of_basis (integralClosureFinBasis F' P)
-  have := isLocalization_integralClosure F' P
-  have hreg (s : S) (Q' : Place k F') (hQ' : Q'.restrict k F = P) : (s : F') ∈ Q'.integers :=
-    (isIntegral_iff_forall_restrict_eq_mem_integers hF' P).mp s.2 Q' hQ'
-  -- Functions vanishing to order `e(Q' ∣ P) · m` at the places `Q' ≠ P'` over `P`.
-  let Small (y : F') : Prop := ∀ Q' : Place k F', Q'.restrict k F = P → Q' ≠ P' →
-    y ∈ Q'.filtration (ramificationIdx F Q' * m)
-  have hint {y : F'} (hy : y ∈ P'.integers) (hs : Small y) : y ∈ S :=
-    (isIntegral_iff_forall_restrict_eq_mem_integers hF' P).mpr fun Q' hQ' ↦ by
-      by_cases h : Q' = P'
-      · exact h ▸ hy
-      · exact Q'.mem_filtration_zero_iff.mp (Q'.filtration_antitone (by positivity) (hs Q' hQ' h))
-  have hsmall_mul {y : F'} (hy : Small y) (s : S) : Small (y * s) := fun Q' hQ' h ↦ by
-    simpa using Q'.mul_mem_filtration (hy Q' hQ' h)
-      (Q'.mem_filtration_zero_iff.mpr (hreg s Q' hQ'))
-  have hsmall_mul' (s : S) {y : F'} (hy : Small y) : Small (s * y) := by
-    simpa only [mul_comm] using hsmall_mul hy s
-  have hsmall_sub {y y' : F'} (hy : Small y) (hy' : Small y') : Small (y - y') :=
-    fun Q' hQ' h ↦ sub_mem (hy Q' hQ' h) (hy' Q' hQ' h)
-  have hsmall_sum {n : ℕ} {y : Fin n → F'} (hy : ∀ i, Small (y i)) : Small (∑ i, y i) :=
-    fun Q' hQ' h ↦ sum_mem fun i _ ↦ hy i Q' hQ' h
-  -- Work modulo `I = (t ^ m)`; membership in `I 𝒪'_P` is read off at the places over `P`.
-  let xR : P.integers := ⟨t, P.mem_integers_iff_ord_nonneg.mpr (by omega)⟩
-  set I : Ideal P.integers := Ideal.span {xR ^ m} with hI
-  have hIS (s : S) (h1 : (s : F') ∈ P'.filtration m) (h2 : Small s) :
-      s ∈ I.map (algebraMap P.integers S) := by
-    refine mem_map_span_pow_of_forall_mem_filtration k F hF' (x := xR) ht m s fun Q' hQ' ↦ ?_
-    by_cases h : Q' = P'
-    · subst h
-      simpa [he] using h1
-    · exact h2 Q' hQ' h
-  -- Expansions at `P'`, as a ring homomorphism on `𝒪'_P`.
-  set E := P'.powerSeriesExpansionResidueField ht'
-  let ιS : S →+* P'.integers :=
-    { toFun := fun s ↦ ⟨s, hreg s P' rfl⟩
-      map_one' := Subtype.ext (by simp)
-      map_mul' := fun _ _ ↦ Subtype.ext (by simp)
-      map_zero' := Subtype.ext (by simp)
-      map_add' := fun _ _ ↦ Subtype.ext (by simp) }
-  let Φ : S →+* PowerSeries P'.ResidueField := E.toRingHom.comp ιS
-  have hΦ (s : S) : Φ s = E ⟨s, hreg s P' rfl⟩ := rfl
-  have hfiltE (y : P'.integers) : (y : F') ∈ P'.filtration m ↔ PowerSeries.trunc m (E y) = 0 := by
-    rw [PowerSeries.trunc_eq_zero_iff_le_order,
-      mem_filtration_iff_le_order_powerSeriesExpansionResidueField]
-  have hfilt (s : S) : (s : F') ∈ P'.filtration m ↔ PowerSeries.trunc m (Φ s) = 0 :=
-    hfiltE ⟨s, hreg s P' rfl⟩
-  have hΦk (c : k) : Φ (algebraMap P.integers S (algebraMap k P.integers c)) =
-      PowerSeries.C (algebraMap k P'.ResidueField c) := by
-    have h : (⟨_, hreg (algebraMap P.integers S (algebraMap k P.integers c)) P' rfl⟩ :
-        P'.integers) = algebraMap k P'.integers c := Subtype.ext (by
-      rw [coe_algebraMap_constants]
-      simp [IsScalarTower.algebraMap_apply P.integers F F', coe_algebraMap_constants,
-        ← IsScalarTower.algebraMap_apply k F F'])
-    rw [hΦ, h, AlgHom.commutes, PowerSeries.algebraMap_apply]
-  have hΦt : Φ (algebraMap P.integers S xR) = PowerSeries.X := by
-    rw [hΦ, ← powerSeriesExpansionResidueField_uniformizer P' ht']
-    congr 1
-  -- Lifts with prescribed expansion to order `m`, small at the other places over `P`.
-  have hlift (g : PowerSeries P'.ResidueField) :
-      ∃ s : S, Small s ∧ PowerSeries.trunc m (Φ s) = PowerSeries.trunc m g := by
-    obtain ⟨y, hy⟩ := P'.exists_trunc_powerSeriesExpansionResidueField_eq ht' g m
-    obtain ⟨w, hw, hwQ⟩ := exists_sub_mem_filtration_and_forall_mem_filtration k F P' (y : F') m
-    rw [he, Nat.cast_one, one_mul] at hw
-    have hwint : w ∈ P'.integers := by
-      have := add_mem (P'.filtration_antitone (Nat.cast_nonneg m) hw)
-        (P'.mem_filtration_zero_iff.mpr y.2)
-      rwa [sub_add_cancel, mem_filtration_zero_iff] at this
-    refine ⟨⟨w, hint hwint hwQ⟩, hwQ, ?_⟩
-    have hdiff := (hfiltE (⟨w, hwint⟩ - y)).mp (by simpa using hw)
-    rw [map_sub, map_sub, sub_eq_zero] at hdiff
-    rw [hΦ, ← hy]
-    exact hdiff
-  -- A basis of `F'_{P'}` over `k`, lifted to functions with constant expansions to order `m`.
+  let xR : (P'.restrict k F).integers :=
+    ⟨t, (P'.restrict k F).mem_integers_iff_ord_nonneg.mpr (by omega)⟩
+  obtain ⟨Φ, hΦ, hfilt, hΦk, hΦx⟩ := exists_ringHom_powerSeries P' rfl ht' m (x := xR) rfl
   let β := Module.finBasis k P'.ResidueField
-  choose b hbS hbt using fun j ↦ hlift (PowerSeries.C (β j))
-  obtain ⟨W, hWS, hWt⟩ := hlift 1
+  choose b hbS hbt using fun j ↦
+    exists_small_trunc_eq P' rfl ht' hF' he m hΦ (PowerSeries.C (β j))
+  obtain ⟨W, hWS, hWt⟩ := exists_small_trunc_eq P' rfl ht' hF' he m hΦ 1
   have hW1 : (W : F') - 1 ∈ P'.filtration m := by
-    have := (hfilt (W - 1)).mpr (by rw [map_sub Φ, map_one, map_sub, hWt, sub_self])
-    simpa using this
-  have hWmul (y : F') (hy : y ∈ P'.integers) : (W : F') * y - y ∈ P'.filtration m := by
-    simpa [sub_mul] using P'.mul_mem_filtration hW1 (P'.mem_filtration_zero_iff.mpr hy)
-  -- The truncated expansion of `∑ⱼ (∑ᵢ cᵢⱼ tⁱ) bⱼ` is `∑ᵢ (∑ⱼ cᵢⱼ βⱼ) Xⁱ`.
-  have htrunc_sum (c : Fin (Module.finrank k P'.ResidueField) → Fin m → k) :
-      PowerSeries.trunc m (Φ (∑ j, algebraMap P.integers S
-        (∑ i : Fin m, algebraMap k P.integers (c j i) * xR ^ (i : ℕ)) * b j)) =
-      PowerSeries.trunc m (∑ i : Fin m, PowerSeries.C (∑ j, c j i • β j) *
-        PowerSeries.X ^ (i : ℕ)) := by
-    have hj (j) : PowerSeries.trunc m (Φ (algebraMap P.integers S
-        (∑ i : Fin m, algebraMap k P.integers (c j i) * xR ^ (i : ℕ)) * b j)) =
-        PowerSeries.trunc m ((∑ i : Fin m, PowerSeries.C (algebraMap k P'.ResidueField (c j i)) *
-          PowerSeries.X ^ (i : ℕ)) * PowerSeries.C (β j)) := by
-      rw [map_mul, ← PowerSeries.trunc_mul_trunc, hbt j, PowerSeries.trunc_mul_trunc]
-      simp only [map_sum, map_mul, map_pow, hΦk, hΦt]
-    rw [map_sum, map_sum, Finset.sum_congr rfl fun j _ ↦ hj j, ← map_sum]
-    congr 1
-    ext n
-    rw [PowerSeries.coeff_sum_C_mul_X_pow, map_sum]
-    simp_rw [PowerSeries.coeff_mul_C, PowerSeries.coeff_sum_C_mul_X_pow]
-    split_ifs with hn
-    · simp [Algebra.smul_def]
-    · simp
-  have htrunc_self (φ : PowerSeries P'.ResidueField) : PowerSeries.trunc m φ =
-      PowerSeries.trunc m (∑ i : Fin m, PowerSeries.C (PowerSeries.coeff i φ) *
-        PowerSeries.X ^ (i : ℕ)) := by
-    ext n
-    rw [PowerSeries.coeff_trunc, PowerSeries.coeff_trunc, PowerSeries.coeff_sum_C_mul_X_pow]
-    split_ifs <;> rfl
-  have hcoe (r : P.integers) : algebraMap P.integers F' r = algebraMap F F' r := by
-    rw [IsScalarTower.algebraMap_apply P.integers F F', ValuationSubring.algebraMap_apply]
-  have hsmallR (r : P.integers) {y : F'} (hy : Small y) : Small (algebraMap P.integers F' r * y) :=
-    by simpa using hsmall_mul' (algebraMap P.integers S r) hy
-  have hmapfilt {r : F} (hr : r ∈ P.filtration m) : algebraMap F F' r ∈ P'.filtration m := by
-    rcases eq_or_ne r 0 with rfl | h0
-    · simp
-    rw [mem_filtration_iff_le_ord _ h0] at hr
-    rw [mem_filtration_iff_le_ord _ ((map_ne_zero _).mpr h0), ord_algebraMap_restrict k F P', he]
-    simpa using hr
-  -- The data of `TauCeti.Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem`.
-  let zS : S := ⟨z, hint z.2 hzQ⟩
-  have hΦz : Φ zS = E z := rfl
-  set c : Fin m → P'.ResidueField := fun i ↦ PowerSeries.coeff i (E z) with hc
-  let M : Fin m → Fin (Module.finrank k P'.ResidueField) →
-    Fin (Module.finrank k P'.ResidueField) → k := fun i j l ↦ β.repr (c i * β j) l
-  let a : Fin (Module.finrank k P'.ResidueField) → Fin (Module.finrank k P'.ResidueField) →
-    P.integers := fun j l ↦ ∑ i : Fin m, algebraMap k P.integers (M i j l) * xR ^ (i : ℕ)
-  have hwb (j) : W * b j - b j ∈ I.map (algebraMap P.integers S) :=
-    hIS _ (by push_cast; exact hWmul _ (hreg (b j) P' rfl))
-      (by push_cast; exact hsmall_sub (hsmall_mul' W (hbS j)) (hbS j))
-  have hspan (s : S) : ∃ cs : Fin (Module.finrank k P'.ResidueField) → P.integers,
-      W * s - ∑ j, algebraMap P.integers S (cs j) * b j ∈ I.map (algebraMap P.integers S) := by
-    let cs : Fin (Module.finrank k P'.ResidueField) → P.integers := fun j ↦
-      ∑ i : Fin m, algebraMap k P.integers (β.repr (PowerSeries.coeff i (Φ s)) j) * xR ^ (i : ℕ)
-    refine ⟨cs, hIS _ ?_ ?_⟩
-    · have h2 := (hfilt (s - ∑ j, algebraMap P.integers S (cs j) * b j)).mpr (by
-        rw [map_sub, map_sub, htrunc_sum, htrunc_self (Φ s), sub_eq_zero]
-        simp only [β.sum_repr])
-      have h1 := hWmul _ (hreg s P' rfl)
-      convert add_mem h1 h2 using 1
-      push_cast
-      ring
-    · push_cast
-      exact hsmall_sub (hsmall_mul hWS s) (hsmall_sum fun j ↦ hsmallR _ (hbS j))
-  have hindep (cs : Fin (Module.finrank k P'.ResidueField) → P.integers)
-      (hcs : ∑ j, algebraMap P.integers S (cs j) * b j ∈ I.map (algebraMap P.integers S))
-      (j) : cs j ∈ I := by
-    have h := mem_filtration_of_mem_map_span_pow k F hF' (x := xR) ht hcs (Q' := P') rfl
-    rw [he, Nat.cast_one, one_mul] at h
-    -- Replace each `cs j` by its truncated expansion at `P`.
-    let τ := fun j ↦ P.truncatedExpansion hP ht m (cs j)
-    let r := fun j ↦ ∑ i : Fin m, algebraMap k P.integers (τ j i) * xR ^ (i : ℕ)
-    have hτ (j) : ((cs j - r j : P.integers) : F) ∈ P.filtration m := by
-      simpa [r, xR, coe_algebraMap_constants] using
-        P.sub_sum_truncatedExpansion_mem_filtration hP ht m (cs j)
-    have hr : ((∑ j, algebraMap P.integers S (r j) * b j : S) : F') ∈ P'.filtration m := by
-      have hd : ((∑ j, algebraMap P.integers S (cs j - r j) * b j : S) : F') ∈
-          P'.filtration m := by
-        push_cast
-        refine sum_mem fun j _ ↦ ?_
-        simpa [hcoe] using P'.mul_mem_filtration (hmapfilt (hτ j))
-          (P'.mem_filtration_zero_iff.mpr (hreg (b j) P' rfl))
-      convert sub_mem h hd using 1
-      simp only [map_sub, sub_mul, Finset.sum_sub_distrib]
-      push_cast
-      ring
-    have hzero := (hfilt _).mp hr
-    rw [htrunc_sum] at hzero
-    have hτ0 (i : Fin m) (j) : τ j i = 0 := by
-      have hi := congrArg (Polynomial.coeff · (i : ℕ)) hzero
-      simp only [PowerSeries.coeff_trunc, PowerSeries.coeff_sum_C_mul_X_pow, i.2, ↓reduceIte,
-        ↓reduceDIte, Polynomial.coeff_zero] at hi
-      exact Fintype.linearIndependent_iff.mp β.linearIndependent (fun j ↦ τ j i) hi j
-    have hcs : ((cs j : P.integers) : F) ∈ P.filtration m := by
-      simpa [r, hτ0] using hτ j
-    exact mem_span_pow_of_mem_filtration ht hcs
-  have hz : zS * W - zS ∈ I.map (algebraMap P.integers S) :=
-    hIS _ (by push_cast; rw [mul_comm]; exact hWmul _ z.2)
-      (by push_cast; exact hsmall_sub (hsmall_mul hzQ W) hzQ)
-  have hzb (j) : zS * b j - ∑ l, algebraMap P.integers S (a j l) * b l ∈
-      I.map (algebraMap P.integers S) := by
-    refine hIS _ ((hfilt _).mpr ?_) ?_
-    · rw [map_sub, map_sub, htrunc_sum (fun l i ↦ M i j l), map_mul, ← PowerSeries.trunc_mul_trunc,
-        hbt j, PowerSeries.trunc_mul_trunc, hΦz, sub_eq_zero]
-      ext n
-      rw [PowerSeries.coeff_trunc, PowerSeries.coeff_trunc, PowerSeries.coeff_sum_C_mul_X_pow,
-        PowerSeries.coeff_mul_C]
-      split_ifs with hn
-      · simp only [M, β.sum_repr, hc]
-      · rfl
-    · push_cast
-      exact hsmall_sub (hsmall_mul hzQ (b j)) (hsmall_sum fun l ↦ hsmallR _ (hbS l))
-  have key := Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem hwb hspan hindep hz hzb
-  -- The diagonal of `a` is the trace of the coefficients.
-  have hdiag : ∑ j, a j j = ∑ i : Fin m,
-      algebraMap k P.integers (Algebra.trace k P'.ResidueField (c i)) * xR ^ (i : ℕ) := by
-    simp only [a, M]
-    rw [Finset.sum_comm]
-    refine Finset.sum_congr rfl fun i _ ↦ ?_
-    rw [← Finset.sum_mul, ← map_sum, Algebra.trace_eq_matrix_trace β, Matrix.trace]
-    simp [Algebra.leftMulMatrix_eq_repr_mul]
-  rw [hdiag] at key
-  obtain ⟨q, hq⟩ := Ideal.mem_span_singleton'.mp key
-  have htr : Algebra.trace F F' z = algebraMap P.integers F (Algebra.trace P.integers S zS) :=
-    Algebra.trace_localization P.integers P.integers⁰ (Sₘ := F') zS
-  have hq' := congrArg (fun u : P.integers ↦ (u : F)) hq
-  push_cast at hq'
-  have htm : t ^ m ∈ P.filtration m := by
-    have := P.mem_filtration_ord (t ^ m)
-    rwa [P.ord_pow, ht, mul_one] at this
-  have heq : ((Algebra.trace P.integers S zS : P.integers) : F) - ∑ i : Fin m, algebraMap k F
-      (Algebra.trace k P'.ResidueField (PowerSeries.coeff i (E z))) * t ^ (i : ℕ) =
-      (q : F) * t ^ m := by
-    rw [hq']
-  rw [htr, ValuationSubring.algebraMap_apply, heq]
-  simpa using P.mul_mem_filtration (P.mem_filtration_zero_iff.mpr q.2) htm
+    simpa using (hfilt (W - 1)).mpr (by rw [map_sub Φ, map_one, map_sub, hWt, sub_self])
+  have hΦb := PowerSeries.trunc_map_sum_mul_eq Φ hΦk hΦx hbt
+  let zS : integralClosure (P'.restrict k F).integers F' :=
+    ⟨z, mem_integralClosure_of_forall_mem_filtration k F P' hF' z.2 hzQ⟩
+  obtain ⟨a, hzb, hdiag⟩ := exists_mul_sub_sum_mem_map_span_pow P' rfl hF' he m (x := xR) ht hfilt β
+    hbt hΦb hbS (z := zS) hzQ
+  have key := Algebra.trace_sub_sum_mem_of_forall_mul_sub_sum_mem
+    (fun j ↦ mul_sub_self_mem_map_span_pow k F P' hF' he ht m hW1 hWS (hbS j))
+    (exists_sub_sum_mem_map_span_pow P' rfl hF' he m ht hfilt β hΦb hbS hW1 hWS)
+    (mem_span_pow_of_sum_mem_map_span_pow P' rfl ht hF' hP he m rfl hfilt β hΦb)
+    (by rw [mul_comm]; exact mul_sub_self_mem_map_span_pow k F P' hF' he ht m hW1 hWS hzQ) hzb
+  rw [hdiag, hΦ zS z.2] at key
+  exact trace_sub_sum_mem_filtration_of_mem_span ht m (x := xR) rfl zS _ key
 
 include hPP' ht ht' in
 /-- **Residues commute with the trace at an unramified place over a rational place.** Let `P` be

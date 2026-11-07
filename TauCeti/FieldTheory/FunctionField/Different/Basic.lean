@@ -10,6 +10,7 @@ public import TauCeti.FieldTheory.FunctionField.AffineModel.Extension
 
 -- Proof-only: the scalar tower `k → 𝒪_P → 𝒪_{P'}` of valuation rings.
 import TauCeti.FieldTheory.FunctionField.Place.Extension.Degree
+public import TauCeti.FieldTheory.FunctionField.Place.Extension.Existence
 
 /-!
 # The different exponent of a place
@@ -166,15 +167,6 @@ variable [IsScalarTower k k' F'] [IsScalarTower k F F'] [FiniteDimensional F F']
 variable (k F) (P' : Place k' F')
 
 attribute [local instance 10] algebraIntegersExtension isScalarTowerIntegersExtension
-
-/-- **The local model `𝒪'_P` of `F' / k'` at `P'` consists of functions regular at `P'`**: its
-elements are integral over `𝒪_P`, whose functions are regular at `P'`. -/
-theorem algebraMap_mem_integers_of_mem_integralClosure
-    (b : integralClosure ((P'.restrict k F).integers) F') :
-    algebraMap (integralClosure ((P'.restrict k F).integers) F') F' b ∈ P'.integers := by
-  rw [Subalgebra.algebraMap_eq]
-  exact P'.mem_integers_of_isIntegral (R := ((P'.restrict k F).integers))
-    (fun a ↦ (mem_integers_restrict_iff k F P' (a : F)).mp a.2) b.2
 
 /-- **The prime of `𝒪_P` below the centre of `P'` on the local model is the maximal ideal of
 `𝒪_P`**: the residue extension read on the local model is the residue-field extension of the two
