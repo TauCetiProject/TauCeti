@@ -7,7 +7,6 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.ChartCutoff
 import TauCeti.Analysis.Sobolev.Poincare.Wirtinger.Basic
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
 import TauCeti.MeasureTheory.Function.Lp.LIntegralRpow
 import TauCeti.MeasureTheory.Function.LpSeminorm.Oscillation
@@ -212,12 +211,7 @@ theorem exists_integral_sq_sub_average_le_mul_integral_norm_sq_mgradient [Compac
       ENNReal.toReal_ofReal (by positivity), ← Real.rpow_natCast,
       ← Real.rpow_mul (integral_nonneg fun x ↦ by positivity)]
     simp
-  have hg : Continuous fun x ↦ ‖mgradient I u x‖ := by
-    have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-    have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-      IsContinuousRiemannianBundle.toIsContMDiffZero
-    simpa only [real_inner_self_eq_norm_sq, Real.sqrt_sq (norm_nonneg _)] using
-      (continuous_inner_mgradient hu hu).sqrt
+  have hg : Continuous fun x ↦ ‖mgradient I u x‖ := continuous_norm_mgradient hu
   have h := ENNReal.toReal_mono (ENNReal.mul_ne_top ENNReal.coe_ne_top
     (hg.memLp_of_hasCompactSupport (HasCompactSupport.of_compactSpace _)).eLpNorm_ne_top)
     (hC u hu)

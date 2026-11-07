@@ -12,7 +12,6 @@ import Mathlib.Analysis.Convex.Integral
 import Mathlib.Analysis.Convex.SpecificFunctions.Basic
 import Mathlib.Analysis.Distribution.AEEqOfIntegralContDiff
 import Mathlib.MeasureTheory.Function.L2Space
-import TauCeti.Geometry.Manifold.Riemannian.Basic
 import TauCeti.Geometry.Manifold.Riemannian.DivergenceTheorem
 import TauCeti.Geometry.Manifold.Riemannian.Poincare
 import TauCeti.Geometry.Manifold.Riemannian.VolumeDensity.Support
@@ -127,15 +126,6 @@ private theorem integrable_mul_of_continuous {K f : M → ℝ}
     Integrable (fun x ↦ K x * f x) (riemannianVolume I M) :=
   hK.mul_of_top_left (hf.memLp_top_of_hasCompactSupport (HasCompactSupport.of_compactSpace f) _)
 
-omit [MeasurableSpace M] [BorelSpace M] [CompactSpace M] in
-/-- The squared length of the gradient of a `C¹` function is continuous, for a continuous metric. -/
-private theorem continuous_norm_sq_mgradient {u : M → ℝ} (hu : ContMDiff I 𝓘(ℝ) 1 u) :
-    Continuous fun x ↦ ‖mgradient I u x‖ ^ 2 := by
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
-  simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hu hu
-
 /-- On a compact manifold, the Liouville energy of a `C¹` function `u` is
 `(∫ |∇u|² dV) / 2 + ∫ K u dV + (∫ e^(2u) dV) / 2`, for an integrable `K`. -/
 theorem liouvilleEnergy_eq_add {K u : M → ℝ} (hK : Integrable K (riemannianVolume I M))
@@ -197,23 +187,12 @@ private theorem liouvilleEnergy_add_smul_eq {K u v : M → ℝ}
           t ^ 2 * ∫ x, ‖mgradient I v x‖ ^ 2 ∂riemannianVolume I M) / 2 +
         ((∫ x, K x * u x ∂riemannianVolume I M) + t * ∫ x, K x * v x ∂riemannianVolume I M) +
         (∫ x, Real.exp (2 * (u x + t * v x)) ∂riemannianVolume I M) / 2 := by
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
   have hB : Integrable (fun x ↦ inner ℝ (mgradient I v x) (mgradient I u x))
       (riemannianVolume I M) := integrable_of_continuous (continuous_inner_mgradient hv hu)
   have hGu := integrable_of_continuous (I := I) (continuous_norm_sq_mgradient hu)
   have hGv := integrable_of_continuous (I := I) (continuous_norm_sq_mgradient hv)
-  have hgrad : mgradient I (u + t • v) = mgradient I u + t • mgradient I v := by
-    rw [mgradient_add (hu.mdifferentiable one_ne_zero)
-      ((hv.mdifferentiable one_ne_zero).const_smul t), mgradient_smul t
-      (hv.mdifferentiable one_ne_zero)]
-  have hpt (x : M) : ‖mgradient I (u + t • v) x‖ ^ 2 =
-      ‖mgradient I u x‖ ^ 2 + 2 * t * inner ℝ (mgradient I v x) (mgradient I u x) +
-        t ^ 2 * ‖mgradient I v x‖ ^ 2 := by
-    simp only [hgrad, Pi.add_apply, Pi.smul_apply, norm_add_sq_real, norm_smul,
-      inner_smul_right, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_comm]
-    ring
+  have hpt := norm_sq_mgradient_add_smul (hu.mdifferentiable one_ne_zero)
+    (hv.mdifferentiable one_ne_zero) t
   have hK' (x : M) : K x * (u x + t * v x) = K x * u x + t * (K x * v x) := by ring
   rw [liouvilleEnergy_eq_add (u := u + t • v) hK
     (hu.add ((contDiff_const_smul t).contMDiff.comp hv))]
@@ -234,9 +213,6 @@ theorem hasDerivAt_liouvilleEnergy_add_smul {K u v : M → ℝ}
     HasDerivAt (fun t : ℝ ↦ liouvilleEnergy I K (u + t • v))
       (∫ x, (inner ℝ (mgradient I v x) (mgradient I u x) + K x * v x +
         Real.exp (2 * u x) * v x) ∂riemannianVolume I M) 0 := by
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
   simp only [liouvilleEnergy_add_smul_eq hK hu hv]
   set μ := riemannianVolume I M
   set B := ∫ x, inner ℝ (mgradient I v x) (mgradient I u x) ∂μ
@@ -388,9 +364,7 @@ private theorem integral_mul_neg_laplaceBeltrami_add_add_exp {K u v : M → ℝ}
     ∫ x, v x * (-laplaceBeltrami I u x + K x + Real.exp (2 * u x)) ∂riemannianVolume I M =
       ∫ x, (inner ℝ (mgradient I v x) (mgradient I u x) + K x * v x +
         Real.exp (2 * u x) * v x) ∂riemannianVolume I M := by
-  have hΔ : Continuous (laplaceBeltrami I u) :=
-    (contMDiff_laplaceBeltrami (n := 0) (m := ∞) (k := 1) (by simp) (by simp)
-      (by simpa using hu)).continuous
+  have hΔ : Continuous (laplaceBeltrami I u) := continuous_laplaceBeltrami hu
   have hexp : Continuous fun x ↦ Real.exp (2 * u x) * v x := by
     have := hu.continuous; have := hv.continuous; fun_prop
   have hKv := integrable_mul_of_continuous hK hv.continuous
@@ -433,8 +407,7 @@ theorem forall_hasDerivAt_liouvilleEnergy_add_smul_iff {K u : M → ℝ} (hK : C
   constructor
   · intro hcrit
     have hcont : Continuous fun x ↦ -laplaceBeltrami I u x + K x + Real.exp (2 * u x) :=
-      ((contMDiff_laplaceBeltrami (n := 0) (m := ∞) (k := 1) (by simp) (by simp)
-        (by simpa using hu)).continuous.neg.add hK).add
+      ((continuous_laplaceBeltrami hu).neg.add hK).add
         (Real.continuous_exp.comp (continuous_const.mul hu.continuous))
     -- The defect of the equation integrates to zero against every smooth function.
     have hae : ∀ᵐ x ∂riemannianVolume I M,
@@ -458,9 +431,6 @@ theorem liouvilleEnergy_add_integral_mul_le {K u v : M → ℝ}
         ∫ x, v x * (-laplaceBeltrami I u x + K x + Real.exp (2 * u x)) ∂riemannianVolume I M ≤
       liouvilleEnergy I K (u + v) := by
   have hu1 : ContMDiff I 𝓘(ℝ) 1 u := hu.of_le one_le_two
-  have : IsManifold I (0 + 1) M := by simpa using (inferInstance : IsManifold I 1 M)
-  have : IsContMDiffRiemannianBundle I 0 E (fun x : M ↦ TangentSpace I x) :=
-    IsContinuousRiemannianBundle.toIsContMDiffZero
   have hint {w : M → ℝ} (hw : ContMDiff I 𝓘(ℝ) 1 w) : Integrable (fun x ↦
       ‖mgradient I w x‖ ^ 2 / 2 + K x * w x + Real.exp (2 * w x) / 2) (riemannianVolume I M) :=
     ((integrable_of_continuous (continuous_norm_sq_mgradient hw)).div_const 2 |>.add
@@ -496,12 +466,11 @@ theorem liouvilleEnergy_le_of_neg_laplaceBeltrami_add_add_exp_eq_zero {K u w : M
     liouvilleEnergy I K u ≤ liouvilleEnergy I K w := by
   -- The equation expresses `K = Δu - e^(2u)`, a continuous function.
   have hK : Continuous K := by
-    have hΔ := (contMDiff_laplaceBeltrami (n := 0) (m := ∞) (k := 1) (by simp) (by simp)
-      (by simpa using hu)).continuous
     have hKeq : K = fun x ↦ laplaceBeltrami I u x - Real.exp (2 * u x) := by
       funext x; linarith [h x]
     rw [hKeq]
-    exact hΔ.sub (Real.continuous_exp.comp (continuous_const.mul hu.continuous))
+    exact (continuous_laplaceBeltrami hu).sub
+      (Real.continuous_exp.comp (continuous_const.mul hu.continuous))
   have hle := liouvilleEnergy_add_integral_mul_le (v := w - u)
     (integrable_of_continuous hK) hu (hw.sub (hu.of_le one_le_two))
   simpa [h] using hle

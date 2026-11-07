@@ -171,25 +171,19 @@ private theorem hasDerivAt_integral_energy_add_smul {u v : M → ℝ} (hu : Cont
   set eu : M → ℝ := fun x ↦ a * ‖mgradient I u x‖ ^ 2 + S x * u x ^ 2
   set b : M → ℝ := fun x ↦ a * inner ℝ (mgradient I v x) (mgradient I u x) + S x * (v x * u x)
   set ev : M → ℝ := fun x ↦ a * ‖mgradient I v x‖ ^ 2 + S x * v x ^ 2
-  have hgrad (t : ℝ) : mgradient I (u + t • v) = mgradient I u + t • mgradient I v := by
-    rw [mgradient_add (hu.mdifferentiable one_ne_zero)
-      ((hv.mdifferentiable one_ne_zero).const_smul t), mgradient_smul t
-      (hv.mdifferentiable one_ne_zero)]
   have hpt (t : ℝ) (x : M) : a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2 =
       eu x + 2 * t * b x + t ^ 2 * ev x := by
-    simp only [hgrad, Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev, norm_add_sq_real,
-      norm_smul, inner_smul_right, Real.norm_eq_abs, mul_pow, sq_abs, real_inner_comm]
+    rw [norm_sq_mgradient_add_smul (hu.mdifferentiable one_ne_zero)
+      (hv.mdifferentiable one_ne_zero)]
+    simp only [Pi.add_apply, Pi.smul_apply, smul_eq_mul, eu, b, ev]
     ring
-  have hnorm (w : M → ℝ) (hw : ContMDiff I 𝓘(ℝ) 1 w) :
-      Continuous fun x ↦ ‖mgradient I w x‖ ^ 2 := by
-    simpa only [real_inner_self_eq_norm_sq] using continuous_inner_mgradient hw hw
   have heu : Integrable eu μ := integrable_of_continuous
-    ((continuous_const.mul (hnorm u hu)).add (hS.mul (hu.continuous.pow 2)))
+    ((continuous_const.mul (continuous_norm_sq_mgradient hu)).add (hS.mul (hu.continuous.pow 2)))
   have hb : Integrable b μ := integrable_of_continuous
     ((continuous_const.mul (continuous_inner_mgradient hv hu)).add
       (hS.mul (hv.continuous.mul hu.continuous)))
   have hev : Integrable ev μ := integrable_of_continuous
-    ((continuous_const.mul (hnorm v hv)).add (hS.mul (hv.continuous.pow 2)))
+    ((continuous_const.mul (continuous_norm_sq_mgradient hv)).add (hS.mul (hv.continuous.pow 2)))
   have hEt (t : ℝ) : ∫ x, (a * ‖mgradient I (u + t • v) x‖ ^ 2 + S x * (u + t • v) x ^ 2) ∂μ =
       (∫ x, eu x ∂μ) + 2 * t * (∫ x, b x ∂μ) + t ^ 2 * ∫ x, ev x ∂μ := by
     simp only [hpt]
