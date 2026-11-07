@@ -6,7 +6,9 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Polar.Bounded
+public import TauCeti.Analysis.InnerProductSpace.Indefinite
 public import TauCeti.Analysis.SpecialFunctions.ContinuousFunctionalCalculus.ExpLog
+public import Mathlib.Topology.Homotopy.Basic
 
 /-!
 # Norm-controlled polar deformation
@@ -16,6 +18,11 @@ isometry by `U P^(1-t)`. If `T` expands every vector, the deformation continues 
 vectors and never increases their norms beyond their original images under `T`.
 Consequently negative discs can be deformed to orthogonal discs without leaving a prescribed
 coordinate ball or raising the negative quadratic value above its boundary value.
+
+For a negative column `L : E →L[ℝ] E × F`, pulling `-‖u‖² + ‖v‖²` back to `-‖u‖²`,
+`ContinuousLinearMap.nonempty_homotopyWith_inl_comp_polarFactor` combines this deformation
+with the contraction of the positive component: `L` is homotopic to `u ↦ (h u, 0)`, `h` the
+polar factor of its negative block, under exactly these norm and quadratic-value controls.
 
 The construction uses `ContinuousLinearMap.polarFactor` and the positive modulus, together
 with real powers from the continuous functional calculus. It does not require a choice of
@@ -28,7 +35,7 @@ eigenbasis or finite dimensionality.
 
 public section
 
-open Set
+open Set unitInterval
 
 namespace ContinuousLinearMap
 
@@ -137,5 +144,58 @@ theorem norm_le_norm_polarDeformation_apply_le (T : E →L[ℝ] E)
       simpa only [mul_apply_eq_comp] using congrArg (fun A : E →L[ℝ] E ↦ A x) hop
     rw [hfactor, ← T.norm_modulus_apply x]
     exact T.modulus.norm_rpow_apply_le_of_one_le_of_nonpos hP (neg_nonpos.mpr ht.1) _
+
+section Column
+
+variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
+
+/-- **Straightening a negative column.** Let `L : E →L[ℝ] E × F` pull `-‖u‖² + ‖v‖²` back to
+`-‖u‖²`, and let `h` be the polar factor of its negative block `u ↦ (L u).1`. Then `L` is
+homotopic to `u ↦ (h u, 0)` through maps `g` with `‖g u‖ ≤ ‖L u‖` and
+`-‖(g u).1‖² + ‖(g u).2‖² ≤ -‖u‖²`: first the positive component of `L u` is contracted to zero,
+then the negative block follows its polar deformation. -/
+theorem nonempty_homotopyWith_inl_comp_polarFactor (L : E →L[ℝ] E × F)
+    (hL : ∀ u, ‖(L u).1‖ ^ 2 - ‖(L u).2‖ ^ 2 = ‖u‖ ^ 2) :
+    Nonempty ((L : C(E, E × F)).HomotopyWith
+      ((inl ℝ E F).comp ((fst ℝ E F).comp L).polarFactor : C(E, E × F))
+      fun g ↦ ∀ u, ‖g u‖ ≤ ‖L u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2) := by
+  set N := (fst ℝ E F).comp L
+  have hexpand (u : E) : ‖u‖ ≤ ‖N u‖ := L.norm_le_norm_fst_of_norm_sq_sub hL u
+  have hσ (t : I) : |((σ t : I) : ℝ)| ≤ 1 := by
+    rw [abs_of_nonneg (σ t).property.1]
+    exact (σ t).property.2
+  -- Contract the positive component of `L u` to zero.
+  let H₁ : (L : C(E, E × F)).HomotopyWith ((inl ℝ E F).comp N : C(E, E × F))
+      fun g ↦ ∀ u, ‖g u‖ ≤ ‖L u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2 :=
+    { toFun := fun p ↦ ((L p.2).1, (σ p.1 : ℝ) • (L p.2).2)
+      continuous_toFun := by fun_prop
+      map_zero_left := fun u ↦ by simp
+      map_one_left := fun u ↦ by simp [N]
+      prop' := fun t u ↦ by
+        dsimp only [ContinuousMap.coe_mk]
+        refine ⟨?_, L.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hL (hσ t) u⟩
+        refine max_le_max le_rfl ?_
+        rw [norm_smul, Real.norm_eq_abs]
+        exact mul_le_of_le_one_left (norm_nonneg _) (hσ t) }
+  -- Deform the negative block to its polar factor.
+  let H₂ : ((inl ℝ E F).comp N : C(E, E × F)).HomotopyWith
+      ((inl ℝ E F).comp N.polarFactor : C(E, E × F))
+      fun g ↦ ∀ u, ‖g u‖ ≤ ‖L u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2 :=
+    { toFun := fun p ↦ (N.polarDeformation p.1 p.2, 0)
+      continuous_toFun :=
+        (((N.continuous_polarDeformation (N.isStrictlyPositive_modulus_of_forall_norm_le
+          hexpand)).comp (continuous_subtype_val.comp continuous_fst)).clm_apply
+          continuous_snd).prodMk continuous_const
+      map_zero_left := fun u ↦ by simp
+      map_one_left := fun u ↦ by simp
+      prop' := fun t u ↦ by
+        dsimp only [ContinuousMap.coe_mk]
+        obtain ⟨hlow, hhigh⟩ := N.norm_le_norm_polarDeformation_apply_le hexpand t.property u
+        refine ⟨?_, ?_⟩
+        · simpa using hhigh.trans (norm_fst_le (L u))
+        · simpa using pow_le_pow_left₀ (norm_nonneg _) hlow 2 }
+  exact ⟨H₁.trans H₂⟩
+
+end Column
 
 end ContinuousLinearMap

@@ -27,6 +27,8 @@ negative disk to the orthogonal disk `u ↦ (h u, 0)`, in three stages:
 * the negative component `N u` follows the polar deformation `N.polarDeformation t u` to `h u`,
   which keeps `‖u‖` at most the norm of the image.
 
+The two linear stages are `ContinuousLinearMap.nonempty_homotopyWith_inl_comp_polarFactor`.
+
 Throughout, `Q` stays at most `-‖u‖²` and the image stays in a prescribed neighbourhood of the
 origin (`HasFDerivAt.exists_small_disk_homotopy_polarFactor`). For a transition between two Morse
 charts in which `f = f(p) + Q`, this is the small-disk part of the comparison of their
@@ -42,60 +44,6 @@ characteristic maps: the boundary sphere of the disk of radius `δ` stays in the
 public section
 
 open Filter Set Topology Metric unitInterval
-
-namespace ContinuousLinearMap
-
-variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [CompleteSpace E]
-  [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- **Straightening a negative column.** Let `L : E →L[ℝ] E × F` pull `-‖u‖² + ‖v‖²` back to
-`-‖u‖²`, and let `h` be the polar factor of its negative block `u ↦ (L u).1`. Then `L` is
-homotopic to `u ↦ (h u, 0)` through maps `g` with `‖g u‖ ≤ ‖L u‖` and
-`-‖(g u).1‖² + ‖(g u).2‖² ≤ -‖u‖²`: first the positive component of `L u` is contracted to zero,
-then the negative block follows its polar deformation. -/
-theorem nonempty_homotopyWith_inl_comp_polarFactor (L : E →L[ℝ] E × F)
-    (hL : ∀ u, ‖(L u).1‖ ^ 2 - ‖(L u).2‖ ^ 2 = ‖u‖ ^ 2) :
-    Nonempty ((L : C(E, E × F)).HomotopyWith
-      ((inl ℝ E F).comp ((fst ℝ E F).comp L).polarFactor : C(E, E × F))
-      fun g ↦ ∀ u, ‖g u‖ ≤ ‖L u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2) := by
-  set N := (fst ℝ E F).comp L
-  have hexpand (u : E) : ‖u‖ ≤ ‖N u‖ := L.norm_le_norm_fst_of_norm_sq_sub hL u
-  have hσ (t : I) : |((σ t : I) : ℝ)| ≤ 1 := by
-    rw [abs_of_nonneg (σ t).property.1]
-    exact (σ t).property.2
-  -- Contract the positive component of `L u` to zero.
-  let H₁ : (L : C(E, E × F)).HomotopyWith ((inl ℝ E F).comp N : C(E, E × F))
-      fun g ↦ ∀ u, ‖g u‖ ≤ ‖L u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2 :=
-    { toFun := fun p ↦ ((L p.2).1, (σ p.1 : ℝ) • (L p.2).2)
-      continuous_toFun := by fun_prop
-      map_zero_left := fun u ↦ by simp
-      map_one_left := fun u ↦ by simp [N]
-      prop' := fun t u ↦ by
-        dsimp only [ContinuousMap.coe_mk]
-        refine ⟨?_, L.neg_norm_fst_sq_add_norm_smul_snd_sq_le_of_norm_sq_sub hL (hσ t) u⟩
-        refine max_le_max le_rfl ?_
-        rw [norm_smul, Real.norm_eq_abs]
-        exact mul_le_of_le_one_left (norm_nonneg _) (hσ t) }
-  -- Deform the negative block to its polar factor.
-  let H₂ : ((inl ℝ E F).comp N : C(E, E × F)).HomotopyWith
-      ((inl ℝ E F).comp N.polarFactor : C(E, E × F))
-      fun g ↦ ∀ u, ‖g u‖ ≤ ‖L u‖ ∧ -‖(g u).1‖ ^ 2 + ‖(g u).2‖ ^ 2 ≤ -‖u‖ ^ 2 :=
-    { toFun := fun p ↦ (N.polarDeformation p.1 p.2, 0)
-      continuous_toFun :=
-        (((N.continuous_polarDeformation (N.isStrictlyPositive_modulus_of_forall_norm_le
-          hexpand)).comp (continuous_subtype_val.comp continuous_fst)).clm_apply
-          continuous_snd).prodMk continuous_const
-      map_zero_left := fun u ↦ by simp
-      map_one_left := fun u ↦ by simp
-      prop' := fun t u ↦ by
-        dsimp only [ContinuousMap.coe_mk]
-        obtain ⟨hlow, hhigh⟩ := N.norm_le_norm_polarDeformation_apply_le hexpand t.property u
-        refine ⟨?_, ?_⟩
-        · simpa using hhigh.trans (norm_fst_le (L u))
-        · simpa using pow_le_pow_left₀ (norm_nonneg _) hlow 2 }
-  exact ⟨H₁.trans H₂⟩
-
-end ContinuousLinearMap
 
 namespace TauCeti
 
