@@ -314,6 +314,16 @@ noncomputable def piRight : S ⊗[A] (ι → Λ) ≃ₗ[S ⊗[A] Λ] (ι → S �
 theorem piRight_tmul (s : S) (v : ι → Λ) : piRight A S Λ ι (s ⊗ₜ[A] v) = fun i ↦ s ⊗ₜ v i :=
   (rfl)
 
+@[simp]
+theorem piRight_symm_tmul (s : S) (v : ι → Λ) :
+    (piRight A S Λ ι).symm (fun i ↦ s ⊗ₜ[A] v i) = s ⊗ₜ v :=
+  TensorProduct.piRight_symm_apply A S S (fun _ : ι ↦ Λ) s v
+
+@[simp]
+theorem piRight_symm_single (s : S) (i : ι) (l : Λ) :
+    (piRight A S Λ ι).symm (Pi.single i (s ⊗ₜ[A] l)) = s ⊗ₜ Pi.single i l :=
+  TensorProduct.piRight_symm_single A S S (fun _ : ι ↦ Λ) s i l
+
 omit [Fintype ι] [DecidableEq ι] in
 /-- The comparison map is a base change for a finite free module: under evaluation at the
 standard basis it is the base change `Nⁱ → (S ⊗[A] N)ⁱ`. -/
