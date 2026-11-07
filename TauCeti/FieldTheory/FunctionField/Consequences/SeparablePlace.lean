@@ -128,29 +128,30 @@ theorem exists_place_degree_le_finrank_and_isSeparable (hF : IsFunctionField k F
 
 /-! ### Genus zero -/
 
-/-- **A genus-zero function field with exact constant field and a separating element is separable
-over a rational subfield of index at most two.** -/
-theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFunctionField k F)
-    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0) (t : F) [Algebra.IsSeparable k⟮t⟯ F] :
-    ∃ x : F, Module.finrank k⟮x⟯ F ≤ 2 ∧ Algebra.IsSeparable k⟮x⟯ F := by
-  -- Take an effective `B` of degree two with `ℓ(B) ≥ 3`: any nonconstant `x ∈ L(B)` has
-  -- `[F : k(x)] = deg (x)_∞ ≤ 2`.  Away from characteristic two `F / k(x)` is then separable; in
-  -- characteristic two one of `x` and `z` works, for `x, z ∈ L(B)` with `1, x, z` independent.
-  obtain ⟨B, hB, hBdeg, hdimB⟩ := exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero hF hex hg
-  -- A nonconstant `u ∈ L(B)` is transcendental, with `(u)_∞ ≤ B`, so `[F : k(u)] ≤ 2`.
-  have hindex (u : F) (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
-      ∃ hu0 : u ≠ 0, Transcendental k u ∧ Divisor.poles hF (Units.mk0 u hu0) ≤ B ∧
-        Module.finrank k⟮u⟯ F ≤ 2 := by
-    have hut : Transcendental k u := fun halg ↦ by
-      obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex u halg
-      exact hu (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
-    have hu0 : u ≠ 0 := fun h ↦ hut (h ▸ isAlgebraic_zero)
-    have hle := (poles_le_iff_mem_riemannRochSpace hF hB (Units.mk0 u hu0)).mpr huB
-    refine ⟨hu0, hut, hle, ?_⟩
-    have := Divisor.degree_le_of_le hle
-    rw [Divisor.degree_poles hF (Units.mk0 u hu0) hut, hBdeg] at this
-    exact_mod_cast this
-  -- Two functions `x, z ∈ L(B)` with `1, x, z` linearly independent.
+/-- A nonconstant function `u` in the Riemann-Roch space of an effective divisor `B` of degree two
+is transcendental, has nonzero poles bounded by `B`, and generates a subfield of index at most
+two. -/
+theorem exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_two
+    (hF : IsFunctionField k F) (hex : IsIntegrallyClosedIn k F) {B : Divisor k F} (hB : 0 ≤ B)
+    (hBdeg : Divisor.degree B = 2) {u : F} (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :
+    ∃ hu0 : u ≠ 0, Transcendental k u ∧ Divisor.poles hF (Units.mk0 u hu0) ≤ B ∧
+      Module.finrank k⟮u⟯ F ≤ 2 := by
+  have hut : Transcendental k u := fun halg ↦ by
+    obtain ⟨c, hc⟩ := isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex u halg
+    exact hu (hc ▸ Submodule.mem_span_singleton.mpr ⟨c, by simp [Algebra.smul_def]⟩)
+  have hu0 : u ≠ 0 := fun h ↦ hut (h ▸ isAlgebraic_zero)
+  have hle := (poles_le_iff_mem_riemannRochSpace hF hB (Units.mk0 u hu0)).mpr huB
+  refine ⟨hu0, hut, hle, ?_⟩
+  have := Divisor.degree_le_of_le hle
+  rw [Divisor.degree_poles hF (Units.mk0 u hu0) hut, hBdeg] at this
+  exact_mod_cast this
+
+/-- If the Riemann-Roch space of a divisor `B` has dimension at least three, it contains `x`
+outside `k ∙ 1` and `z` outside `k ∙ 1 + k ∙ x`. -/
+theorem exists_mem_riemannRochSpace_notMem_span_pair (hF : IsFunctionField k F)
+    {B : Divisor k F} (hdimB : 3 ≤ Divisor.dim B) :
+    ∃ x ∈ riemannRochSpace B, x ∉ k ∙ (1 : F) ∧
+      ∃ z ∈ riemannRochSpace B, z ∉ Submodule.span k {(1 : F), x} := by
   have := finiteDimensional_riemannRochSpace hF B
   rw [Divisor.dim_def] at hdimB
   obtain ⟨x, hxB, hx1⟩ : ∃ x ∈ riemannRochSpace B, x ∉ k ∙ (1 : F) := by
@@ -168,6 +169,21 @@ theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFu
     have hpair := finrank_range_le_card (R := k) ![(1 : F), x]
     rw [Matrix.range_cons_cons_empty, Fintype.card_fin, Set.finrank] at hpair
     omega
+  exact ⟨x, hxB, hx1, z, hzB, hzx⟩
+
+/-- **A genus-zero function field with exact constant field and a separating element is separable
+over a rational subfield of index at most two.** -/
+theorem exists_finrank_adjoin_le_two_and_isSeparable_of_genus_eq_zero (hF : IsFunctionField k F)
+    (hex : IsIntegrallyClosedIn k F) (hg : genus k F = 0) (t : F) [Algebra.IsSeparable k⟮t⟯ F] :
+    ∃ x : F, Module.finrank k⟮x⟯ F ≤ 2 ∧ Algebra.IsSeparable k⟮x⟯ F := by
+  -- Take an effective `B` of degree two with `ℓ(B) ≥ 3`: any nonconstant `x ∈ L(B)` has
+  -- `[F : k(x)] = deg (x)_∞ ≤ 2`.  Away from characteristic two `F / k(x)` is then separable; in
+  -- characteristic two one of `x` and `z` works, for `x, z ∈ L(B)` with `1, x, z` independent.
+  obtain ⟨B, hB, hBdeg, hdimB⟩ := exists_degree_eq_two_and_three_le_dim_of_genus_eq_zero hF hex hg
+  -- A nonconstant `u ∈ L(B)` is transcendental, with `(u)_∞ ≤ B`, so `[F : k(u)] ≤ 2`.
+  have hindex (u : F) (huB : u ∈ riemannRochSpace B) (hu : u ∉ k ∙ (1 : F)) :=
+    exists_ne_zero_transcendental_poles_le_and_finrank_adjoin_le_two hF hex hB hBdeg huB hu
+  obtain ⟨x, hxB, hx1, z, hzB, hzx⟩ := exists_mem_riemannRochSpace_notMem_span_pair hF hdimB
   obtain ⟨hx0, hxt, hxle, hx2⟩ := hindex x hxB hx1
   obtain ⟨-, hzt, -, hz2⟩ := hindex z hzB fun h ↦ hzx (Submodule.span_mono
     (Set.singleton_subset_iff.mpr (Set.mem_insert _ _)) h)
