@@ -10,6 +10,7 @@ public import TauCeti.Algebra.Coalgebra.Comodule.MatrixCoefficient.Matrix
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Coordinate
 public import TauCeti.Algebra.Coalgebra.Subcomodule.Quotient
 public import TauCeti.LinearAlgebra.Matrix.Triangular
+import TauCeti.LinearAlgebra.Basis.Basic
 
 /-!
 # Flags of upper-triangular comodules
@@ -50,23 +51,6 @@ public section
 open scoped TensorProduct
 
 namespace Module.Basis
-
-/-- A vector of a submodule spanned by basis vectors has zero coordinate at every basis vector
-outside the submodule. -/
-theorem repr_eq_zero_of_mem_of_notMem {R M ι : Type*} [CommRing R] [AddCommGroup M]
-    [Module R M] (cb : Basis ι R M) {S : Submodule R M}
-    (hS : S = Submodule.span R (cb '' {j | cb j ∈ S})) {j : ι} (hj : cb j ∉ S) {z : M}
-    (hz : z ∈ S) : cb.repr z j = 0 := by
-  have hker : S ≤ LinearMap.ker (cb.coord j) := by
-    rw [hS]
-    refine Submodule.span_le.mpr ?_
-    rintro _ ⟨l, hl, rfl⟩
-    apply LinearMap.mem_ker.mpr
-    have hjl : j ≠ l := by
-      rintro rfl
-      exact hj hl
-    simp [Basis.coord_apply, hjl]
-  simpa only [Basis.coord_apply] using LinearMap.mem_ker.mp (hker hz)
 
 /-- A complete flag spanned by subsets of a basis separates any two distinct basis vectors. -/
 theorem exists_flag_separating {R M ι : Type*} [CommRing R] [Nontrivial R]
