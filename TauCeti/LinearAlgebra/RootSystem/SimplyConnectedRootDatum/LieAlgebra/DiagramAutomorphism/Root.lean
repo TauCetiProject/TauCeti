@@ -64,15 +64,11 @@ private theorem exists_diagramLieEquiv_chevalleySystem (hσ : σ ∈ t.diagramSy
     (α : Fin t.numRoots) :
     ∃ ε : ℤˣ, t.diagramLieEquiv ht hσ (t.chevalleySystem ht α) =
       (ε : ℤ) • t.chevalleySystem ht (t.diagramRootPerm ht hσ α) := by
-  have step (i : Fin t.rank) (β : Fin t.numRoots)
-      (hβ : ∃ ε : ℤˣ, t.diagramLieEquiv ht hσ (t.chevalleySystem ht β) =
-        (ε : ℤ) • t.chevalleySystem ht (t.diagramRootPerm ht hσ β)) :
-      ∃ ε : ℤˣ, t.diagramLieEquiv ht hσ
-          (t.chevalleySystem ht
-            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) β)) =
-        (ε : ℤ) • t.chevalleySystem ht
-          (t.diagramRootPerm ht hσ
-            ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) β)) := by
+  let p (β : Fin t.numRoots) := ∃ ε : ℤˣ,
+    t.diagramLieEquiv ht hσ (t.chevalleySystem ht β) =
+      (ε : ℤ) • t.chevalleySystem ht (t.diagramRootPerm ht hσ β)
+  have step (i : Fin t.rank) (β : Fin t.numRoots) (hβ : p β) :
+      p ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) β) := by
     obtain ⟨ε, hε⟩ := hβ
     have hp := (t.diagramAut ht hσ).toHom.indexEquiv_reflectionPerm (t.simpleIndex ht i) β
     simp only [diagramAut_indexEquiv, diagramRootPerm_simpleIndex] at hp
@@ -82,10 +78,8 @@ private theorem exists_diagramLieEquiv_chevalleySystem (hσ : σ ∈ t.diagramSy
       t.chevalleyWeylSign ht (t.simpleIndex ht (σ i)) (t.diagramRootPerm ht hσ β), ?_⟩
     simp only [hp, Units.val_mul, mul_smul]
     rw [← hw]
-    simp [smul_smul, ← Units.val_mul]
-  refine (t.rationalBase ht).induction_simple_reflect α
-    (p := fun β => ∃ ε : ℤˣ, t.diagramLieEquiv ht hσ (t.chevalleySystem ht β) =
-      (ε : ℤ) • t.chevalleySystem ht (t.diagramRootPerm ht hσ β))
+    simp only [smul_smul, ← Units.val_mul, Int.units_mul_self, Units.val_one, one_smul]
+  refine (t.rationalBase ht).induction_simple_reflect α (p := p)
     (fun β hβ => ?_) (fun β j hβ hj => ?_)
   · obtain ⟨i, rfl⟩ := exists_simpleIndex_eq_of_mem_support hβ
     exact ⟨1, by simp⟩

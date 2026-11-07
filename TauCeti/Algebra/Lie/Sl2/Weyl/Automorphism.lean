@@ -349,12 +349,16 @@ theorem _root_.LieHom.map_weylAut (ω : L →ₗ⁅K⁆ L) (t : IsSl2Triple h e 
     ω (weylAut t he hf y) = weylAut t he hf (ω y) := by
   have hf' : ∀ z, ∃ k, ((ad K L (-f)) ^ k) z = 0 := fun z ↦
     (hf z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
-  have hωf' : ω (-f) = e := by rw [map_neg, hωf, neg_neg]
-  have hE (z : L) : ω (expAd e he z) = expAd (-f) hf' (ω z) := by
-    simpa [hωe] using ω.map_expAd he (by rwa [hωe]) z
-  have hF (z : L) : ω (expAd (-f) hf' z) = expAd e he (ω z) := by
-    simpa [hωf'] using ω.map_expAd hf' (by rwa [hωf']) z
-  rw [weylAut_apply he hf t, hE, hF, hE, weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t]
+  have he' : ∀ z, ∃ k, ((ad K L (-e)) ^ k) z = 0 := fun z ↦
+    (he z).imp fun _ ↦ ad_neg_pow_apply_eq_zero
+  have t' : IsSl2Triple (-h) (-f) (-e) :=
+    { h_ne_zero := neg_ne_zero.mpr t.h_ne_zero
+      lie_e_f := by simp only [neg_lie, lie_neg, t.symm.lie_e_f, neg_neg]
+      lie_h_e_nsmul := by simp only [lie_neg, t.symm.lie_h_e_nsmul, smul_neg]
+      lie_h_f_nsmul := by simp only [lie_neg, t.symm.lie_h_f_nsmul, smul_neg, neg_neg] }
+  simpa only [weylAut_apply, neg_neg,
+    ← weylAut_apply_eq_expAd_neg_expAd_expAd_neg he hf hf' t] using
+    ω.map_weylAut_of_eq t t' he hf hf' he' hωe hωf y
 
 end CommRing
 
