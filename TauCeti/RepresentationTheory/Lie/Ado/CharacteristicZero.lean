@@ -69,6 +69,36 @@ the representation beyond its nilpotence on `N` and uses a Levi complement only 
 
 public section
 
+section AdjointAction
+
+variable {K : Type*} {L : Type*} [Field K] [LieRing L] [LieAlgebra K L]
+
+/-- The adjoint action of `H'` on an ideal `I` of `T'`, read in `L`, is the Lie bracket. -/
+theorem LieIdeal.coe_ad_comp_incl_apply {T' : LieSubalgebra K L} (I : LieIdeal K T')
+    (H' : LieSubalgebra K T') (h : H') (s : I) :
+    ((((LieIdeal.ad I).comp H'.incl h s : I) : T') : L) = ⁅((h : T') : L), ((s : T') : L)⁆ := by
+  simp only [LieHom.coe_comp, Function.comp_apply, LieIdeal.ad_apply_apply]
+  rfl
+
+/-- If `r` lies in a Lie subalgebra `H'` of `T'` and is `ad`-nilpotent in `L`, then it acts
+locally nilpotently on any ideal `I` of `T'` through the adjoint action `ψ`. -/
+theorem LieIdeal.exists_pow_ad_comp_incl_apply_eq_zero {T' : LieSubalgebra K L}
+    (I : LieIdeal K T') (H' : LieSubalgebra K T') (r : H')
+    (hr : IsNilpotent (LieAlgebra.ad K L ((r : T') : L))) (s : I) :
+    ∃ n : ℕ, ((((LieIdeal.ad I).comp H'.incl) r).toLinearMap ^ n) s = 0 := by
+  obtain ⟨n, hn⟩ := hr
+  -- `ψ r` is intertwined with `ad r` by the inclusion `I → L`, hence so are their powers
+  let f : I →ₗ[K] L := T'.incl.toLinearMap ∘ₗ I.incl.toLinearMap
+  have hf : (LieAlgebra.ad K L ((r : T') : L)).comp f =
+      f.comp (((LieIdeal.ad I).comp H'.incl) r).toLinearMap :=
+    LinearMap.ext fun s ↦ (LieIdeal.coe_ad_comp_incl_apply I H' r s).symm
+  refine ⟨n, Subtype.ext (Subtype.ext ?_)⟩
+  have hpow := LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf n) s
+  rw [hn, LinearMap.zero_comp] at hpow
+  exact hpow.symm
+
+end AdjointAction
+
 namespace TauCeti
 
 universe u v
@@ -128,32 +158,6 @@ theorem LieSubalgebra.exists_lieIdeal_isCompl_of_sup_eq {T T' H : LieSubalgebra 
   · exact (Submodule.disjoint_def.mp hdisj) _ hxI hxH
   · obtain ⟨t, ht, h, hh, hx⟩ := Submodule.mem_sup.mp (hmemsup x.2)
     refine Submodule.mem_sup.mpr ⟨⟨t, hTT' t ht⟩, ht, ⟨h, hHT' h hh⟩, hh, Subtype.ext hx⟩
-
-omit [FiniteDimensional K L] in
-/-- The adjoint action of `H'` on an ideal `I` of `T'`, read in `L`, is the Lie bracket. -/
-theorem LieIdeal.coe_ad_comp_incl_apply {T' : LieSubalgebra K L} (I : LieIdeal K T')
-    (H' : LieSubalgebra K T') (h : H') (s : I) :
-    ((((LieIdeal.ad I).comp H'.incl h s : I) : T') : L) = ⁅((h : T') : L), ((s : T') : L)⁆ := by
-  simp only [LieHom.coe_comp, Function.comp_apply, LieIdeal.ad_apply_apply]
-  rfl
-
-omit [FiniteDimensional K L] in
-/-- If `r` lies in a Lie subalgebra `H'` of `T'` and is `ad`-nilpotent in `L`, then it acts
-locally nilpotently on any ideal `I` of `T'` through the adjoint action `ψ`. -/
-theorem LieIdeal.exists_pow_ad_comp_incl_apply_eq_zero {T' : LieSubalgebra K L}
-    (I : LieIdeal K T') (H' : LieSubalgebra K T') (r : H')
-    (hr : IsNilpotent (LieAlgebra.ad K L ((r : T') : L))) (s : I) :
-    ∃ n : ℕ, ((((LieIdeal.ad I).comp H'.incl) r).toLinearMap ^ n) s = 0 := by
-  obtain ⟨n, hn⟩ := hr
-  -- `ψ r` is intertwined with `ad r` by the inclusion `I → L`, hence so are their powers
-  let f : I →ₗ[K] L := T'.incl.toLinearMap ∘ₗ I.incl.toLinearMap
-  have hf : (LieAlgebra.ad K L ((r : T') : L)).comp f =
-      f.comp (((LieIdeal.ad I).comp H'.incl) r).toLinearMap :=
-    LinearMap.ext fun s ↦ (LieIdeal.coe_ad_comp_incl_apply I H' r s).symm
-  refine ⟨n, Subtype.ext (Subtype.ext ?_)⟩
-  have hpow := LinearMap.congr_fun (Module.End.commute_pow_left_of_commute hf n) s
-  rw [hn, LinearMap.zero_comp] at hpow
-  exact hpow.symm
 
 /-- **One step of the Ado flag.** Let `T'` be the sum of a Lie subalgebra `T` and a complementary
 Lie subalgebra `H` that normalizes `T` with brackets in the nilradical `N`. If `T` contains the
