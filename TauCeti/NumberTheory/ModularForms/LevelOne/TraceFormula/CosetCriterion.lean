@@ -333,11 +333,11 @@ private theorem exists_period_defect_data (hn : 0 < n) {ξ : k[ℳ n]}
   refine ⟨a, b, ha ▸ one_add_op_S_apply_periodDefect hy, hb ▸
     one_add_op_U_add_op_U_sq_apply_periodDefect hn hz, ?_, fun x => ?_, fun x => ?_⟩
   · have hυ' : ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 3 = (1 : Module.End k k[ℳ n]) := by simp
-    rw [hb, ← mul_apply_eq_comp,
-      show ρR (.op ((T : PSL(2, ℤ)) * S)) * (1 + ρR (.op ((T : PSL(2, ℤ)) * S)) +
-          ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2) = 1 + ρR (.op ((T : PSL(2, ℤ)) * S)) +
-          ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 from by
-        linear_combination (norm := noncomm_ring) hυ']
+    have hυ'mul : ρR (.op ((T : PSL(2, ℤ)) * S)) * (1 + ρR (.op ((T : PSL(2, ℤ)) * S)) +
+        ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2) = 1 + ρR (.op ((T : PSL(2, ℤ)) * S)) +
+        ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 := by
+      linear_combination (norm := noncomm_ring) hυ'
+    rw [hb, ← mul_apply_eq_comp, hυ'mul]
   · have h := congr($(mapDomain_coeff_one_add_op_S (k := k) ξ) ⟦x⟧)
     rw [← hy] at h
     rw [ha, ← coeff_mapDomainLinearMap (R := k), map_neg, coeff_neg, Finsupp.neg_apply,
@@ -347,15 +347,9 @@ private theorem exists_period_defect_data (hn : 0 < n) {ξ : k[ℳ n]}
       mapDomain_orbitRel_mk_coeff_ofMulAction, mapDomain_coeff_flipSum_apply hn.ne', nsmul_eq_mul,
       Nat.cast_ofNat, mul_one]
 
-/-- `1 - T` is injective on `k[ℳₙ]` for `n > 0`. -/
-private theorem eq_zero_of_one_sub_T_apply_eq_zero (hn : 0 < n) {v : k[ℳ n]}
-    (hv : (1 - ρL T) v = 0) : v = 0 :=
-  (one_sub_ofMulAction_T_injective hn.ne').eq_iff' (map_zero _) |>.1 hv
-
-/-- The forward direction of Theorem 2(b): if the period defect `X` lies in `(1 - T) k[ℳₙ]`, with
-`X (1 + S) = (1 - T) a` and `X (1 + U + U²) = (1 - T) b`, then `⟨ξ, K⟩ = -1` for all `K`. If
-`X = (1 - T) m`, then `m (1 + S) = a` and `m (1 + U + U²) = b`, so `⟨m, K⟩` is both `-⟨ξ, S⁻¹ K⟩`
-and `1`. -/
+/-- The forward direction of Theorem 2(b): let `X` satisfy `X (1 + S) = (1 - T) a` and
+`X (1 + U + U²) = (1 - T) b`, where the right coset sums of `a` and `b` are `⟨a, S K⟩ = -2 ⟨ξ, K⟩`
+and `⟨b, K⟩ = 3` for all `K`. If `X` lies in `(1 - T) k[ℳₙ]`, then `⟨ξ, K⟩ = -1` for all `K`. -/
 private theorem mapDomain_orbitRel_mk_coeff_eq_neg_one_of_period_defect
     [Invertible (2 : k)] [Invertible (3 : k)] (hn : 0 < n) {ξ a b X m : k[ℳ n]}
     (hXa : (1 + ρR (.op ↑S)) X = (1 - ρL T) a)
@@ -364,17 +358,19 @@ private theorem mapDomain_orbitRel_mk_coeff_eq_neg_one_of_period_defect
     (hca : ∀ x : ℳ n, a.coeff.mapDomain qR ⟦S • x⟧ = -(2 * ξ.coeff.mapDomain qR ⟦x⟧))
     (hcb : ∀ x : ℳ n, b.coeff.mapDomain qR ⟦x⟧ = 3) (hm : (1 - ρL T) m = X) (x : ℳ n) :
     ξ.coeff.mapDomain qR ⟦x⟧ = -1 := by
+  -- If `X = (1 - T) m`, then `m (1 + S) = a` and `m (1 + U + U²) = b`, so `⟨m, K⟩` is both
+  -- `-⟨ξ, S⁻¹ K⟩` and `1`.
   have hcσ' : Commute (1 - ρL T) (1 + ρR (.op ↑S) : Module.End k k[ℳ n]) :=
     (Commute.one_left _).sub_left (commute_ofMulAction_one_add T S)
   have hcυ' : Commute (1 - ρL T) (1 + ρR (.op ((T : PSL(2, ℤ)) * S)) +
       ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 : Module.End k k[ℳ n]) :=
     (Commute.one_left _).sub_left (commute_ofMulAction_one_add_add_sq T _)
   have hma : (1 + ρR (.op ↑S)) m = a := sub_eq_zero.1 <|
-    eq_zero_of_one_sub_T_apply_eq_zero hn <| by
+    (LinearMap.map_eq_zero_iff _ (one_sub_ofMulAction_T_injective hn.ne')).1 <| by
       rw [map_sub, ← mul_apply_eq_comp, hcσ'.eq, mul_apply_eq_comp, hm, hXa, sub_self]
   have hmb : (1 + ρR (.op ((T : PSL(2, ℤ)) * S)) + ρR (.op ((T : PSL(2, ℤ)) * S)) ^ 2 :
       Module.End k k[ℳ n]) m = b := sub_eq_zero.1 <|
-    eq_zero_of_one_sub_T_apply_eq_zero hn <| by
+    (LinearMap.map_eq_zero_iff _ (one_sub_ofMulAction_T_injective hn.ne')).1 <| by
       rw [map_sub, ← mul_apply_eq_comp, hcυ'.eq, mul_apply_eq_comp, hm, hXb, sub_self]
   have e₁ := congr($(mapDomain_coeff_one_add_op_S (k := k) m) ⟦S • x⟧)
   have e₂ := congr($(mapDomain_coeff_one_add_op_U_add_op_U_sq (k := k) m) ⟦S • x⟧)
@@ -387,10 +383,10 @@ private theorem mapDomain_orbitRel_mk_coeff_eq_neg_one_of_period_defect
   rw [hm1] at e₁
   linear_combination -(⅟2 : k) * e₁ - (ξ.coeff.mapDomain qR ⟦x⟧ + 1) * invOf_mul_self (2 : k)
 
-/-- The converse direction of Theorem 2(b): if all right coset sums of `ξ` are `-1`, the period
-defect `X` with `X (1 + S) = (1 - T) a` and `X (1 + U + U²) = (1 - T) b` lies in `(1 - T) k[ℳₙ]`.
-The coset sums give `m` with `m (1 + S) = -a` and `m (1 + U + U²) = -b`, so `X + (1 - T) m` is
-killed by `1 + S` and by `1 + U + U²` on the right, and vanishes by acyclicity. -/
+/-- The converse direction of Theorem 2(b): let `X` satisfy `X (1 + S) = (1 - T) a` and
+`X (1 + U + U²) = (1 - T) b`, where the right coset sums of `a` and `b` are `⟨a, S K⟩ = -2 ⟨ξ, K⟩`
+and `⟨b, K⟩ = 3` for all `K`, and `b` is invariant under `U`. If all right coset sums of `ξ` are
+`-1`, then `X` lies in `(1 - T) k[ℳₙ]`. -/
 private theorem exists_one_sub_T_apply_eq_of_mapDomain_orbitRel_mk_coeff_eq_neg_one
     [Invertible (2 : k)] [Invertible (3 : k)] (hn : 0 < n) {ξ a b X : k[ℳ n]}
     (hXa : (1 + ρR (.op ↑S)) X = (1 - ρL T) a)
@@ -401,6 +397,8 @@ private theorem exists_one_sub_T_apply_eq_of_mapDomain_orbitRel_mk_coeff_eq_neg_
     (hcb : ∀ x : ℳ n, b.coeff.mapDomain qR ⟦x⟧ = 3)
     (hc : ∀ x : ℳ n, ξ.coeff.mapDomain qR ⟦x⟧ = -1) :
     ∃ m, (1 - ρL T) m = X := by
+  -- The coset sums give `m` with `m (1 + S) = -a` and `m (1 + U + U²) = -b`, so `X + (1 - T) m` is
+  -- killed by `1 + S` and by `1 + U + U²` on the right, and vanishes by acyclicity.
   set σ' : Module.End k k[ℳ n] := ρR (.op ↑S)
   set υ' : Module.End k k[ℳ n] := ρR (.op ((T : PSL(2, ℤ)) * S))
   set τ : Module.End k k[ℳ n] := ρL T
@@ -410,11 +408,11 @@ private theorem exists_one_sub_T_apply_eq_of_mapDomain_orbitRel_mk_coeff_eq_neg_
     (Commute.one_left f).sub_left hf
   have hcσ' : Commute (1 - τ) (1 + σ') := hτ _ (commute_ofMulAction_one_add T S)
   have hcυ' : Commute (1 - τ) (1 + υ' + υ' ^ 2) := hτ _ (commute_ofMulAction_one_add_add_sq T _)
-  have hσ'a : σ' a = a := sub_eq_zero.1 <| eq_zero_of_one_sub_T_apply_eq_zero hn <| by
+  have hσ'mul : σ' * (1 + σ') = 1 + σ' := by linear_combination (norm := noncomm_ring) hσ'
+  have hσ'a : σ' a = a := sub_eq_zero.1 <|
+    (LinearMap.map_eq_zero_iff _ (one_sub_ofMulAction_T_injective hn.ne')).1 <| by
     rw [map_sub, ← mul_apply_eq_comp, (hτ σ' (commute_ofMulAction _ _)).eq,
-      mul_apply_eq_comp, ← hXa, ← mul_apply_eq_comp,
-      show σ' * (1 + σ') = 1 + σ' from by linear_combination (norm := noncomm_ring) hσ',
-      sub_self]
+      mul_apply_eq_comp, ← hXa, ← mul_apply_eq_comp, hσ'mul, sub_self]
   -- `-a / 2 + b / 3` has vanishing coset sums, so it lies in `ℛₙ (S - 1) + ℛₙ (U - 1)`
   have hw : (⅟2 : k) • (-a) - (⅟3 : k) • (-b) ∈ Coinvariants.ker ρR := by
     rw [coinvariantsKer_ofMulAction_eq_ker, LinearMap.mem_ker, map_sub, map_smul, map_smul,
