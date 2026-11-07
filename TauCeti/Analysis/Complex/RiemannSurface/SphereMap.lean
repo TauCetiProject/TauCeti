@@ -62,21 +62,6 @@ open scoped Manifold
 
 namespace OnePoint
 
-/-- The affine coordinate of the Riemann sphere is meromorphic, including at infinity,
-where its expression in the inverted chart is `w⁻¹`. -/
-theorem meromorphicAt_affineChart (x : OnePoint ℂ) :
-    TauCeti.RiemannSurface.MeromorphicAt (affineChart : OnePoint ℂ → ℂ) x := by
-  induction x using OnePoint.rec with
-  | coe z =>
-    rw [TauCeti.RiemannSurface.meromorphicAt_def]
-    simpa only [chartAt_coe, affineChart_coe, affineChart_symm_apply, comp_def,
-      Function.id_def] using
-      (analyticAt_id (𝕜 := ℂ) (z := z)).meromorphicAt
-  | infty =>
-    rw [TauCeti.RiemannSurface.meromorphicAt_def, chartAt_infty, invChart_infty,
-      affineChart_comp_invChart_symm]
-    exact (_root_.MeromorphicAt.id 0).inv
-
 /-- The affine coordinate has a simple pole at infinity. -/
 @[simp]
 theorem meromorphicOrderAt_affineChart_infty :

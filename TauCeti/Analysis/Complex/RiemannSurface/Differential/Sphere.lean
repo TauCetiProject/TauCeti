@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.RiemannSurface.Differential.Canonical
+import TauCeti.Analysis.Complex.RiemannSurface.RationalFunction
 
 /-!
 # A canonical divisor on the Riemann sphere
@@ -75,8 +76,12 @@ theorem order_sphereCoordinateDifferential_infty :
 
 /-- The differential `dz` is meromorphic everywhere on the sphere. -/
 theorem meromorphicAt_sphereCoordinateDifferential (x : OnePoint ℂ) :
-    sphereCoordinateDifferential.MeromorphicAt x :=
-  OneForm.meromorphicAt_mvfderiv (meromorphicAt_affineChart x)
+    sphereCoordinateDifferential.MeromorphicAt x := by
+  apply OneForm.meromorphicAt_mvfderiv
+  have hcoord : MeromorphicFunction.coordinate.finitePart = (affineChart : OnePoint ℂ → ℂ) := by
+    funext y
+    rw [MeromorphicFunction.finitePart_def, MeromorphicFunction.coordinate_apply]
+  simpa only [hcoord] using MeromorphicFunction.coordinate.meromorphicAt_finitePart x
 
 /-- The differential `dz` has finite order at every point. -/
 theorem order_sphereCoordinateDifferential_ne_top (x : OnePoint ℂ) :
