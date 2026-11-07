@@ -125,6 +125,23 @@ instance (priority := 900) _root_.AlgebraicGeometry.Scheme.residueFieldBaseAlgeb
     Algebra k (X.residueField x) :=
   ((X.residue x).hom.comp (Scheme.baseRingToStalk k X x)).toAlgebra
 
+/-- The base-ring action on a local ring factors through the sections on any
+neighbourhood of the point. -/
+lemma _root_.AlgebraicGeometry.Scheme.isScalarTower_base_section_stalk {U : X.Opens}
+    (x : U) :
+    letI : Algebra k Γ(X, U) :=
+      ((X.baseRingToStructurePresheaf k).app (.op U)).hom.toAlgebra
+    IsScalarTower k Γ(X, U) (X.presheaf.stalk x) := by
+  let : Algebra k Γ(X, U) :=
+    ((X.baseRingToStructurePresheaf k).app (.op U)).hom.toAlgebra
+  apply IsScalarTower.of_algebraMap_eq
+  intro r
+  -- Expose the chosen section algebra: its map is the base map restricted to `U`.
+  change X.baseRingToStalk k x r =
+    X.presheaf.germ U x x.2 ((X.baseRingToStructurePresheaf k).app (.op U) r)
+  rw [Scheme.baseRingToStalk_apply, Scheme.baseRingToStructurePresheaf_app]
+  exact (X.presheaf.germ_res_apply U.leTop x x.2 _).symm
+
 /-- The residue field at a point is canonically an algebra over its stalk. -/
 instance _root_.AlgebraicGeometry.Scheme.residueFieldStalkAlgebra (x : X) :
     Algebra (X.presheaf.stalk x) (X.residueField x) :=
