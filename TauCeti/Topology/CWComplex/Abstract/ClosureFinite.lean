@@ -34,6 +34,15 @@ open HomotopicalAlgebra.RelativeCellComplex
 
 universe u
 
+/-- A compact set contains no infinite subset all of whose subsets are closed: such a subset would
+be closed, hence compact, and discrete. -/
+theorem IsCompact.finite_of_forall_isClosed {X : Type*} [TopologicalSpace X] {K S : Set X}
+    (hK : IsCompact K) (hSK : S ⊆ K) (hS : ∀ T ⊆ S, IsClosed T) : S.Finite := by
+  have hd : IsDiscrete S :=
+    isDiscrete_iff_forall_mem_exists_isClosed.2 fun T hT ↦
+      ⟨T, hS T hT, Set.inter_eq_left.2 hT⟩
+  exact (hK.of_isClosed_subset (hS S subset_rfl) hSK).finite hd
+
 namespace TopCat.RelativeCWComplex
 
 variable {X Y : TopCat.{u}} {f : X ⟶ Y} (c : RelativeCWComplex f)
@@ -50,6 +59,53 @@ private lemma cell_boundary_mem_range (n : ℕ) (i : (c.attachCells n (not_isMax
   simpa only [ConcreteCategory.comp_apply, HomotopicalAlgebra.AttachCells.cell_def] using
     hw.trans (congrArg a.g₂ h)
 
+/-- At a single attachment, every subset of a family of points, chosen one in each of some open
+cells, is closed: it misses the old stage, and its preimage in each attached disk has at most one
+point. -/
+private theorem isClosed_of_subset_range_of_mem_image_cell (n : ℕ)
+    {A : Set (c.attachCells n (not_isMax n)).ι} (x : A → c.F.obj (Order.succ n))
+    (hxO : ∀ i : A, x i ∈
+      (c.attachCells n (not_isMax n)).cell i.1 '' (Set.range (diskBoundaryInclusion n))ᶜ)
+    (S : Set (c.F.obj (Order.succ n))) (hS : S ⊆ Set.range x) : IsClosed S := by
+  classical
+  let a := c.attachCells n (not_isMax n)
+  have hxout (i : A) : x i ∉ Set.range (c.F.map (homOfLE (Order.le_succ n))) :=
+    a.compl_range_eq_iUnion_image_cell.symm.subset (Set.mem_iUnion_of_mem i.1 (hxO i))
+  have hpre (i : a.ι) : (a.cell i ⁻¹' S).Subsingleton := by
+    intro z hz z' hz'
+    obtain ⟨j, hj⟩ := hS hz
+    obtain ⟨j', hj'⟩ := hS hz'
+    have hzi : z ∈ (Set.range (diskBoundaryInclusion n))ᶜ := by
+      intro h
+      exact hxout j (hj ▸ c.cell_boundary_mem_range n i z h)
+    have hz'i : z' ∈ (Set.range (diskBoundaryInclusion n))ᶜ := by
+      intro h
+      exact hxout j' (hj' ▸ c.cell_boundary_mem_range n i z' h)
+    have hij : i = j.1 := by
+      by_contra h
+      exact Set.disjoint_left.1 (a.disjoint_image_cell h) ⟨z, hzi, rfl⟩ (hj ▸ hxO j)
+    have hij' : i = j'.1 := by
+      by_contra h
+      exact Set.disjoint_left.1 (a.disjoint_image_cell h) ⟨z', hz'i, rfl⟩ (hj' ▸ hxO j')
+    have hjj' : j = j' := Subtype.ext (hij.symm.trans hij')
+    have heq : a.cell i z = a.cell i z' := hj.symm.trans (hjj' ▸ hj')
+    have hzz' : (⟨z, hzi⟩ : ↥((Set.range (diskBoundaryInclusion n))ᶜ)) = ⟨z', hz'i⟩ :=
+      (a.isOpenEmbedding_domRestrict_cell
+        (fun _ ↦ (TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion n).isClosed_range)
+        i).injective heq
+    exact congrArg Subtype.val hzz'
+  refine (TauCeti.TopCat.isClosed_iff_of_isPushout a.isPushout S).2 ⟨?_, ?_⟩
+  · have hempty : c.F.map (homOfLE (Order.le_succ n)) ⁻¹' S = ∅ := by
+      apply Set.eq_empty_iff_forall_notMem.2
+      intro z hz
+      obtain ⟨i, hi⟩ := hS hz
+      exact hxout i ⟨z, hi.symm⟩
+    rw [hempty]
+    exact isClosed_empty
+  · refine (TopCat.isClosed_iff_of_isColimit _ a.isColimit₂ _).2 ?_
+    rintro ⟨i⟩
+    exact (hpre i).finite.isClosed
+
 private theorem finite_setOf_nonempty_inter_image_cell (n : ℕ)
     {K : Set (c.F.obj (Order.succ n))} (hK : IsCompact K) :
     {i : (c.attachCells n (not_isMax n)).ι |
@@ -62,58 +118,14 @@ private theorem finite_setOf_nonempty_inter_image_cell (n : ℕ)
   have hxK (i : A) : x i ∈ K := (hx i).1
   have hxO (i : A) : x i ∈ a.cell i.1 '' (Set.range (diskBoundaryInclusion n))ᶜ :=
     (hx i).2
-  have hxout (i : A) : x i ∉ Set.range (c.F.map (homOfLE (Order.le_succ n))) := by
-    exact a.compl_range_eq_iUnion_image_cell.symm.subset
-      (Set.mem_iUnion_of_mem i.1 (hxO i))
   have hxinj : Function.Injective x := by
     intro i j hij
     by_contra h
     exact (a.disjoint_image_cell (Subtype.val_injective.ne h)).ne_of_mem (hxO i) (hxO j) hij
-  -- Every subset of the selected points is closed: its old-stage preimage is empty,
-  -- and its preimage in each attached disk has at most one point.
-  have hclosed (S : Set (c.F.obj (Order.succ n))) (hS : S ⊆ Set.range x) : IsClosed S := by
-    have hpre (i : a.ι) : (a.cell i ⁻¹' S).Subsingleton := by
-      intro z hz z' hz'
-      obtain ⟨j, hj⟩ := hS hz
-      obtain ⟨j', hj'⟩ := hS hz'
-      have hzi : z ∈ (Set.range (diskBoundaryInclusion n))ᶜ := by
-        intro h
-        exact hxout j (hj ▸ c.cell_boundary_mem_range n i z h)
-      have hz'i : z' ∈ (Set.range (diskBoundaryInclusion n))ᶜ := by
-        intro h
-        exact hxout j' (hj' ▸ c.cell_boundary_mem_range n i z' h)
-      have hij : i = j.1 := by
-        by_contra h
-        exact Set.disjoint_left.1 (a.disjoint_image_cell h) ⟨z, hzi, rfl⟩ (hj ▸ hxO j)
-      have hij' : i = j'.1 := by
-        by_contra h
-        exact Set.disjoint_left.1 (a.disjoint_image_cell h) ⟨z', hz'i, rfl⟩ (hj' ▸ hxO j')
-      have hjj' : j = j' := Subtype.ext (hij.symm.trans hij')
-      have heq : a.cell i z = a.cell i z' := hj.symm.trans (hjj' ▸ hj')
-      have hzz' : (⟨z, hzi⟩ : ↥((Set.range (diskBoundaryInclusion n))ᶜ)) = ⟨z', hz'i⟩ :=
-        (a.isOpenEmbedding_domRestrict_cell
-          (fun _ ↦ (TauCeti.TopCat.isClosedEmbedding_diskBoundaryInclusion n).isClosed_range)
-          i).injective heq
-      exact congrArg Subtype.val hzz'
-    refine (TauCeti.TopCat.isClosed_iff_of_isPushout a.isPushout S).2 ⟨?_, ?_⟩
-    · have hempty : c.F.map (homOfLE (Order.le_succ n)) ⁻¹' S = ∅ := by
-        apply Set.eq_empty_iff_forall_notMem.2
-        intro z hz
-        obtain ⟨i, hi⟩ := hS hz
-        exact hxout i ⟨z, hi.symm⟩
-      rw [hempty]
-      exact isClosed_empty
-    · refine (TopCat.isClosed_iff_of_isColimit _ a.isColimit₂ _).2 ?_
-      rintro ⟨i⟩
-      exact (hpre i).finite.isClosed
   -- The selected points form a compact discrete subspace, hence a finite set.
-  have hc : IsClosed (Set.range x) := hclosed _ subset_rfl
-  have hd : IsDiscrete (Set.range x) :=
-    isDiscrete_iff_forall_mem_exists_isClosed.2 fun S hS ↦
-      ⟨S, hclosed S hS, Set.inter_eq_left.2 hS⟩
-  have hk : IsCompact (Set.range x) :=
-    hK.of_isClosed_subset hc (by rintro _ ⟨i, rfl⟩; exact hxK i)
-  have : Finite A := (Set.finite_range_iff hxinj).1 (hk.finite hd)
+  have : Finite A := (Set.finite_range_iff hxinj).1
+    (hK.finite_of_forall_isClosed (by rintro _ ⟨i, rfl⟩; exact hxK i)
+      fun S hS ↦ c.isClosed_of_subset_range_of_mem_image_cell n x hxO S hS)
   exact Set.toFinite A
 
 /-- A compact subset of a finite stage is covered by the base and finitely many closed cells
