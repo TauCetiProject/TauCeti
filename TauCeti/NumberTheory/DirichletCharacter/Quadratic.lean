@@ -24,28 +24,21 @@ public section
 
 namespace MulChar
 
+/-- The product of two quadratic characters is quadratic. -/
+theorem IsQuadratic.mul {M R : Type*} [CommMonoid M] [CommRing R] {χ ψ : MulChar M R}
+    (hχ : χ.IsQuadratic) (hψ : ψ.IsQuadratic) : (χ * ψ).IsQuadratic := by
+  intro a
+  rw [mul_apply]
+  rcases hχ a with h | h | h <;> rcases hψ a with h' | h' | h' <;> simp [h, h']
+
 /-- A finite product of quadratic characters is quadratic. -/
 theorem isQuadratic_prod {M R ι : Type*} [CommMonoid M] [CommRing R]
     {s : Finset ι} {χ : ι → MulChar M R} (hχ : ∀ i ∈ s, (χ i).IsQuadratic) :
     (∏ i ∈ s, χ i).IsQuadratic := by
-  classical
-  induction s using Finset.induction_on with
-  | empty =>
-    intro a
-    by_cases ha : IsUnit a
-    · exact Or.inr (Or.inl (MulChar.one_apply ha))
-    · exact Or.inl (MulChar.map_nonunit 1 ha)
-  | @insert i s hi ih =>
-    intro a
-    rw [Finset.prod_insert hi, MulChar.mul_apply]
-    have hs := ih (fun j hj ↦ hχ j (Finset.mem_insert_of_mem hj)) a
-    rcases hχ i (Finset.mem_insert_self i s) a with hi0 | hi1 | hi2
-    · exact Or.inl (by simp [hi0])
-    · simpa [hi1] using hs
-    · rcases hs with hs0 | hs1 | hs2
-      · exact Or.inl (by simp [hi2, hs0])
-      · exact Or.inr (Or.inr (by simp [hi2, hs1]))
-      · exact Or.inr (Or.inl (by simp [hi2, hs2]))
+  refine Finset.prod_induction χ IsQuadratic (fun _ _ ↦ IsQuadratic.mul) (fun a ↦ ?_) hχ
+  by_cases ha : IsUnit a
+  · exact Or.inr (Or.inl (one_apply ha))
+  · exact Or.inl (map_nonunit 1 ha)
 
 end MulChar
 
