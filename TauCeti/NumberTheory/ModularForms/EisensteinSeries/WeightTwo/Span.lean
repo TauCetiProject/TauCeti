@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.ModularForms.EisensteinSeries.WeightTwo.Primitive
+import TauCeti.Data.ZMod.MulCastHom
 import TauCeti.NumberTheory.ModularForms.EisensteinSeries.GammaSet
 
 /-!
@@ -120,6 +121,33 @@ private lemma weightedG2_mem_g2Span_iff (W : (Fin 2 → ZMod N) → ℂ) :
   obtain ⟨W', hW', h'⟩ := mem_primitiveG2Subspace_iff.mp h
   exact ⟨W', hW', by rw [weightedG2ₗ_apply, ← coe_weightedG2MF, h', coe_weightedG2MF]⟩
 
+/-- A residue pair modulo `N = M p` that is not of the form `p e`, and whose reduction modulo `M`
+is that of a coprime pair, is the residue of a coprime pair. -/
+private lemma nonempty_gammaSet_of_forall_ne_mul_prime {p : ℕ} (hp : p.Prime) (hNM : N = M * p)
+    {c : Fin 2 → ZMod N}
+    (hc : Nonempty (gammaSet M 1 (ZMod.castHom (⟨p, hNM⟩ : M ∣ N) (ZMod M) ∘ c)))
+    (hι : ∀ e : Fin 2 → ZMod M, (fun i ↦ ((p * (e i).val : ℕ) : ZMod N)) ≠ c) :
+    Nonempty (gammaSet N 1 c) := by
+  have hM : Nat.Coprime ((c 0).val.gcd (c 1).val) M := by
+    have hπc : ((↑) : ℤ → ZMod M) ∘ (fun i ↦ ((c i).val : ℤ)) =
+        ZMod.castHom (⟨p, hNM⟩ : M ∣ N) (ZMod M) ∘ c := by
+      ext i
+      simp only [Function.comp_apply, Int.cast_natCast, ZMod.castHom_apply, ZMod.cast_eq_val]
+    rw [← hπc, nonempty_gammaSet_intCast_iff, Int.gcd_natCast_natCast] at hc
+    exact hc
+  have hpc : Nat.Coprime ((c 0).val.gcd (c 1).val) p := by
+    refine Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr fun hpd ↦ ?_)
+    have hdvd (i : Fin 2) : p ∣ (c i).val := by
+      fin_cases i
+      exacts [hpd.trans (Nat.gcd_dvd_left _ _), hpd.trans (Nat.gcd_dvd_right _ _)]
+    refine hι (fun i ↦ (((c i).val / p : ℕ) : ZMod M)) (funext fun i ↦ ZMod.val_injective N ?_)
+    refine (ZMod.val_natCast_mul_val hp.pos hNM _).trans ?_
+    rw [ZMod.val_natCast_of_lt, Nat.mul_div_cancel' (hdvd i)]
+    exact (Nat.div_lt_iff_lt_mul hp.pos).mpr (hNM ▸ (c i).val_lt)
+  have hcop := Nat.Coprime.mul_right hM hpc
+  rw [← hNM] at hcop
+  exact (nonempty_gammaSet_iff_coprime_val c).mpr hcop
+
 /-- **Removing the residues divisible by a prime.** For a prime `p`, `N = M p` and a weight `W`
 modulo `M` supported on the residues of coprime pairs, the series of `W` is that of
 `c ↦ W(c mod M)` of level `N`. The residues `c = p e` contribute `p⁻²` times the series of
@@ -134,9 +162,7 @@ private lemma weightedG2_sub_mem_g2Span {p : ℕ} (hp : p.Prime) (hNM : N = M * 
   -- the residues `p e` modulo `N`
   let ι : (Fin 2 → ZMod M) → (Fin 2 → ZMod N) := fun e i ↦ ((p * (e i).val : ℕ) : ZMod N)
   have hval (e : Fin 2 → ZMod M) (i : Fin 2) : (ι e i).val = p * (e i).val :=
-    ZMod.val_natCast_of_lt (by
-      rw [hNM, mul_comm M]
-      exact Nat.mul_lt_mul_of_pos_left (e i).val_lt hp.pos)
+    ZMod.val_natCast_mul_val hp.pos hNM (e i)
   have hπι (e : Fin 2 → ZMod M) : π (ι e) = (p : ZMod M) • e := by
     ext i
     simp only [π, ι, Function.comp_apply, Nat.cast_mul, map_mul, map_natCast,
@@ -166,26 +192,7 @@ private lemma weightedG2_sub_mem_g2Span {p : ℕ} (hp : p.Prime) (hNM : N = M * 
       exact (hc (by rw [hWp_apply, hπι, sub_self])).elim
     push Not at hι
     rw [hWp_apply' hι, sub_zero] at hc
-    have hM : Nat.Coprime ((c 0).val.gcd (c 1).val) M := by
-      have hπc : ((↑) : ℤ → ZMod M) ∘ (fun i ↦ ((c i).val : ℤ)) = π c := by
-        ext i
-        simp only [Function.comp_apply, π, Int.cast_natCast, ZMod.castHom_apply,
-          ZMod.cast_eq_val]
-      have h1 := hW _ hc
-      rw [← hπc, nonempty_gammaSet_intCast_iff, Int.gcd_natCast_natCast] at h1
-      exact h1
-    have hpc : Nat.Coprime ((c 0).val.gcd (c 1).val) p := by
-      refine Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd hp).mpr fun hpd ↦ ?_)
-      have hdvd (i : Fin 2) : p ∣ (c i).val := by
-        fin_cases i
-        exacts [hpd.trans (Nat.gcd_dvd_left _ _), hpd.trans (Nat.gcd_dvd_right _ _)]
-      refine hι (fun i ↦ (((c i).val / p : ℕ) : ZMod M)) (funext fun i ↦ ZMod.val_injective N ?_)
-      refine (hval (fun i ↦ (((c i).val / p : ℕ) : ZMod M)) i).trans ?_
-      rw [ZMod.val_natCast_of_lt, Nat.mul_div_cancel' (hdvd i)]
-      exact (Nat.div_lt_iff_lt_mul hp.pos).mpr (hNM ▸ (c i).val_lt)
-    have hcop := Nat.Coprime.mul_right hM hpc
-    rw [← hNM] at hcop
-    exact (nonempty_gammaSet_iff_coprime_val c).mpr hcop
+    exact nonempty_gammaSet_of_forall_ne_mul_prime hp hNM (hW _ hc) hι
   have hmem := (weightedG2_mem_g2Span_iff _).mpr
     (weightedG2MF_mem_primitiveG2Subspace_of_support hsupp)
   have hlift : weightedG2 Wπ = weightedG2 W := weightedG2_comp_castHom h W
