@@ -71,6 +71,12 @@ variable {T : NumericalType.{u}} {t : ℕ} {c : ℕ → T.Component} {branch : T
 
 namespace IsSelfIntersectionMinusTwoFork
 
+/-- The extra component of a fork is not in the image of the chain. -/
+lemma branch_notMem_image (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
+    branch ∉ (range t).image c := by
+  simp only [mem_image, mem_range, not_exists, not_and]
+  exact fun i hi h ↦ hf.branch_ne i hi h.symm
+
 private lemma chain_branch_last (hf : T.IsSelfIntersectionMinusTwoFork t c branch) :
     T.IsSelfIntersectionMinusTwoChain t fun j ↦ if j = t - 1 then branch else c j where
   injOn p hp q hq hpq := by
@@ -506,13 +512,8 @@ lemma insert_image_range_eq_univ (hf : T.IsSelfIntersectionMinusTwoFork t c bran
     (hcard : Fintype.card T.Component = t + 1) :
     insert branch ((range t).image c) = (univ : Finset T.Component) := by
   apply eq_univ_of_card
-  rw [card_insert_of_notMem (by
-    intro h
-    obtain ⟨i, hi, hci⟩ := mem_image.mp h
-    exact hf.branch_ne i (mem_range.mp hi) hci.symm),
-    card_image_of_injOn (by
-      intro i hi j hj hij
-      exact hf.injOn i (mem_range.mp hi) j (mem_range.mp hj) hij), card_range]
+  rw [card_insert_of_notMem hf.branch_notMem_image,
+    hf.toIsSelfIntersectionMinusTwoChain.card_image_range]
   exact hcard.symm
 
 /-- For a fork exhausting a numerical type, the fibre relation at any component splits into the
@@ -527,9 +528,7 @@ lemma fiber_relation (hf : T.IsSelfIntersectionMinusTwoFork t c branch)
   · exact h
   · intro j hj k hk hjk
     exact hf.injOn j (mem_range.mp hj) k (mem_range.mp hk) hjk
-  · intro hbranch
-    obtain ⟨j, hj, hbj⟩ := mem_image.mp hbranch
-    exact hf.branch_ne j (mem_range.mp hj) hbj.symm
+  · exact hf.branch_notMem_image
 
 /-- The chain part of the fibre relation of an exhaustive fork, with the intersection numbers on
 the left of each term as in the chain row lemmas. -/
