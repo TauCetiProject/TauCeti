@@ -100,7 +100,7 @@ theorem generatorCoordinateMap_baseChange (j : Sum (Fin 7 ⊕ Fin 7) Unit) :
         CommHopfAlgCat.baseChangeMap_apply_tmul,
         DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply,
         DiagonalizableGroup.baseChangeCoordinateHopfAlgebraIso_hom_apply]
-      exact MonoidAlgebra.scalarTensorBialgEquiv_one_tmul_scalarTensorBialgEquiv_one_tmul _ _
+      exact MonoidAlgebra.scalarTensorBialgEquiv_tmul_scalarTensorBialgEquiv_one_tmul _ _ 1 _
 
 /-- The scalar extension of the generated subgroup's defining ideal is carried by the canonical
 general-linear coordinate isomorphism to the defining ideal generated over the extension ring. -/
