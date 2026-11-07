@@ -82,6 +82,30 @@ theorem exists_continuousMap_prod_X_sub_C_powerSubstitution
   exact ⟨hrinj, (Sym.toMonic_ofFn_eq_of_forall_isRoot (hmonic _) (hdeg _)
     hrinj (hroot b)).symm.trans (Sym.toMonic_ofFn _)⟩
 
+/-- A continuous function on an open set that is a root of an analytic family of simple roots,
+after the substitution `(w, t) ↦ (w, t ^ n)`, is analytic. -/
+theorem analyticOnNhd_of_continuousOn_isRoot_powerSubstitution
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [CompleteSpace E]
+    {Ω S : Set (E × ℂ)} (hΩ : IsOpen Ω)
+    {F : E × ℂ → ℂ[X]} {d : ℕ} {r : E × ℂ → ℂ}
+    (hF : ∀ i ≤ d, AnalyticOnNhd ℂ (fun b => (F b).coeff i) S)
+    (hdeg : ∀ b ∈ S, (F b).natDegree = d) (hsep : ∀ b ∈ S, (F b).Separable) (n : ℕ)
+    (hqmem : ∀ b ∈ Ω, (b.1, b.2 ^ n) ∈ S) (hrc : ContinuousOn r Ω)
+    (hroot : ∀ b ∈ Ω, (F (b.1, b.2 ^ n)).IsRoot (r b)) :
+    AnalyticOnNhd ℂ r Ω := by
+  intro b hb
+  have hqa : AnalyticAt ℂ (fun b : E × ℂ => (b.1, b.2 ^ n)) b :=
+    analyticAt_fst.prod (analyticAt_snd.pow n)
+  apply analyticAt_of_eventually_isRoot (d := d)
+  · intro k hk
+    exact (hF k hk _ (hqmem b hb)).comp_of_eq hqa rfl
+  · filter_upwards [hΩ.mem_nhds hb] with x hx
+    exact (hdeg _ (hqmem x hx)).le
+  · exact hrc.continuousAt (hΩ.mem_nhds hb)
+  · filter_upwards [hΩ.mem_nhds hb] with x hx
+    exact hroot x hx
+  · exact (hsep _ (hqmem b hb)).eval₂_derivative_ne_zero (RingHom.id ℂ) (hroot b hb)
+
 /-- A monic family with analytic coefficients and simple roots on an open simply connected
 parameter domain times a punctured disc splits into pointwise distinct analytic linear factors
 there after `t ↦ t ^ n`, for any nonzero `n` divisible by `d !`. The functions in the conclusion
@@ -143,16 +167,7 @@ theorem exists_analyticOnNhd_prod_X_sub_C_powerSubstitution
     rw [(hprod b hb).2, isRoot_prod]
     exact ⟨i, Finset.mem_univ i, by simp⟩
   -- Every continuous branch agrees locally with the analytic implicit root at its simple root.
-  refine ⟨r, fun i b hb => ?_, hprod⟩
-  have hqa : AnalyticAt ℂ q b := analyticAt_fst.prod (analyticAt_snd.pow n)
-  apply analyticAt_of_eventually_isRoot (d := d)
-  · intro k hk
-    exact (hF k hk _ (hqmem b hb)).comp hqa
-  · filter_upwards [hΩ.mem_nhds hb] with x hx
-    exact (hdeg _ (hqmem x hx)).le
-  · exact (hrc i).continuousAt (hΩ.mem_nhds hb)
-  · filter_upwards [hΩ.mem_nhds hb] with x hx
-    exact hroot i x hx
-  · exact (hsep _ (hqmem b hb)).eval₂_derivative_ne_zero (RingHom.id ℂ) (hroot i b hb)
+  exact ⟨r, fun i => analyticOnNhd_of_continuousOn_isRoot_powerSubstitution hΩ hF hdeg hsep n
+    hqmem (hrc i) (hroot i), hprod⟩
 
 end TauCeti.Polynomial
