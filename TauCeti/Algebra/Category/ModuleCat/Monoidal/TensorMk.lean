@@ -30,13 +30,13 @@ variable {k : Type u} [CommRing k]
 
 /-- Tensoring on the left with a fixed element `z ∈ M`, as a morphism `N ⟶ M ⊗ N`: Mathlib's
 `TensorProduct.mk k M N z` in `ModuleCat k`. -/
-@[expose] noncomputable def tensorMk {M N : ModuleCat.{u} k} (z : M) : N ⟶ M ⊗ N :=
+noncomputable def tensorMk {M N : ModuleCat.{u} k} (z : M) : N ⟶ M ⊗ N :=
   ModuleCat.ofHom (TensorProduct.mk k M N z)
 
 /-- `TauCeti.ModuleCat.tensorMk z` sends `v` to the pure tensor `z ⊗ₜ v`. -/
 @[simp]
 lemma tensorMk_apply {M N : ModuleCat.{u} k} (z : M) (v : N) : tensorMk z v = z ⊗ₜ[k] v :=
-  rfl
+  (rfl)
 
 /-- Precomposing `TauCeti.ModuleCat.tensorMk z` with `g` is whiskering `g` on the left. -/
 @[reassoc]

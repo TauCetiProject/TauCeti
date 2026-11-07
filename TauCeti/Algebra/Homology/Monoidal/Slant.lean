@@ -91,7 +91,7 @@ private lemma slantCochain_eq (p q n : ℕ) (h : p + q = n) (z : K.X p) (φ : T.
 @[simp]
 lemma slantCochain_apply (p q n : ℕ) (h : p + q = n) (z : K.X p) (φ : T.X n ⟶ P) (v : L.X q) :
     slantCochain k D p q n h z φ v = φ (D.f n (ιTensorObj K L p q n h (z ⊗ₜ v))) := by
-  rw [slantCochain_eq]
+  rw [slantCochain_eq, ConcreteCategory.comp_apply, ModuleCat.tensorMk_apply]
   rfl
 
 private lemma tensorObj_d_eq (n : ℕ) :
