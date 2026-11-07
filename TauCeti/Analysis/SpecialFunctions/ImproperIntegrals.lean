@@ -208,7 +208,7 @@ private lemma integrableOn_Ioi_rpow_neg_sub_one {ε : ℝ} (hε : 0 < ε) :
 /-- If `‖g t - L‖ ≤ c` beyond `T`, then `t ^ (-ε - 1) • (g t - L)` is integrable on `(1, ∞)`
 and its integral has norm at most `∫ t in Ioc 1 T, ‖g t - L‖ + c * ∫ t in Ioi 1, t ^ (-ε - 1)`. -/
 private lemma integrableOn_and_norm_integral_rpow_smul_sub_le {E : Type*}
-    [NormedAddCommGroup E] [NormedSpace ℝ E] [CompleteSpace E] {g : ℝ → E} {L : E}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {g : ℝ → E} {L : E}
     {ε c T : ℝ} (hε : 0 < ε) (hc0 : 0 ≤ c)
     (hg : LocallyIntegrableOn g (Ici 1))
     (hc : ∀ t, T < t → ‖g t - L‖ ≤ c) :
