@@ -11,6 +11,7 @@ public import TauCeti.Analysis.Polynomial.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 
 import TauCeti.Analysis.Normed.Module.Connected
+import TauCeti.Analysis.Analytic.Laurent.Conjugation
 
 /-!
 # Conjugation-compatible nonmonic Puiseux branches
@@ -40,35 +41,6 @@ construction*, Journal of Symbolic Computation 92 (2019), Section 4, Corollary 4
 public section
 
 open Function Metric Polynomial Set ComplexConjugate
-
-namespace TauCeti
-
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {U : Set E} {d n a : ℕ}
-  {R' : ℝ} {τ : E → E}
-
-/-- Conjugation compatibility of the pole-removed analytic extensions: if the punctured
-branches satisfy it, then so do the extensions on the full product, by continuity through the
-exceptional hyperplane. The removed pole is a real monomial, so scaling commutes with
-conjugation. -/
-lemma eqOn_conj_extension {g r : Fin d → E × ℂ → ℂ} {σ : Equiv.Perm (Fin d)}
-    (hga : ∀ i, AnalyticOnNhd ℂ (g i) (U ×ˢ ball 0 R') ∧
-      EqOn (g i) (fun b ↦ b.2 ^ (n * a) * r i b) (U ×ˢ (ball 0 R' \ {0})))
-    (hσ : ∀ i b, b ∈ U ×ˢ (ball 0 R' \ {0}) →
-      r (σ i) b = conj (r i (τ b.1, conj b.2)))
-    (hκ : ContinuousOn (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R'))
-    (hκT : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ ball 0 R') (U ×ˢ ball 0 R'))
-    (hκS : MapsTo (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (U ×ˢ (ball 0 R' \ {0}))
-      (U ×ˢ (ball 0 R' \ {0}))) (i : Fin d) :
-    EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2))) (U ×ˢ ball 0 R') := by
-  have hgconj : EqOn (g (σ i)) (fun b ↦ conj (g i (τ b.1, conj b.2)))
-      (U ×ˢ (ball 0 R' \ {0})) := by
-    intro b hb
-    simp only [(hga (σ i)).2 hb, (hga i).2 (hκS hb), hσ i b hb, map_mul, map_pow,
-      Complex.conj_conj]
-  exact TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton isOpen_ball (hga (σ i)).1.continuousOn
-    (Complex.continuous_conj.comp_continuousOn ((hga i).1.continuousOn.comp hκ hκT)) hgconj
-
-end TauCeti
 
 namespace TauCeti.Polynomial
 
@@ -148,7 +120,8 @@ theorem exists_analyticOnNhd_nonmonic_powerSubstitution_conj
   obtain ⟨σ, ⟨hσσ, hσ⟩, huniq⟩ := TauCeti.existsUnique_root_conj_perm_of_subset_closure
     hSc subset_rfl subset_closure (fun i ↦ (hra i).continuousOn)
     (fun b hb ↦ (hfac b hb).1) hroot (hκ.mono hST) hκS hκS hκκ hsymm b₀
-  have hgfull := fun i ↦ eqOn_conj_extension hga hσ hκ hκT hκS i
+  have hgfull := fun i ↦ TauCeti.eqOn_conj_extension (fun i ↦ (hga i).1.continuousOn)
+    (fun i ↦ (hga i).2) hσ hκ hκT hκS i
   refine ⟨r, g, hra, hga, hfac, σ, ⟨hσσ, hσ, hgfull⟩, ?_⟩
   intro σ' hσ'
   exact huniq σ' ⟨hσ'.1, hσ'.2.1⟩

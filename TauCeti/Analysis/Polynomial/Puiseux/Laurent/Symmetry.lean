@@ -10,7 +10,6 @@ public import TauCeti.Analysis.Analytic.Laurent.Conjugation
 import TauCeti.Analysis.Polynomial.Conjugation
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
 import TauCeti.Analysis.Normed.Module.Connected
-import TauCeti.Analysis.Polynomial.Puiseux.Nonmonic.Conjugation
 
 /-!
 # Conjugation symmetry of constructed Laurent factorizations
@@ -133,7 +132,8 @@ theorem exists_analyticOnNhd_nonmonic_laurent_conj
     (fun b hb ↦ by simpa only [q, κ, map_pow] using hconj _ (hq hb))
     ⟨(x₀, t₀), x₀.2, t₀.2⟩
   have hgfull (i : Fin d) : EqOn (g (σ i)) (fun b ↦ conj (g i (κ b))) T :=
-    eqOn_conj_extension (τ := τ) hg hσ hκ hκT hκS i
+    TauCeti.eqOn_conj_extension (τ := τ) (fun i ↦ (hg i).1.continuousOn) (fun i ↦ (hg i).2) hσ
+      hκ hκT hκS i
   -- Compare units at `x` and `τ x`; a fixed point of `τ` is unnecessary.
   have hcompat (x : U) (i : Fin d) : e (σ i) = e i ∧
       ∀ᶠ b in 𝓝 (x.1, (0 : ℂ)),
