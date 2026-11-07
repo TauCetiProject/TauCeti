@@ -8,7 +8,6 @@ module
 public import TauCeti.Geometry.Symplectic.Floer.Action
 public import TauCeti.Geometry.Symplectic.Floer.Plane.Curvature
 import TauCeti.Geometry.Symplectic.Area.PuncturedDisc
-import Mathlib.MeasureTheory.Measure.Lebesgue.Complex
 
 /-!
 # The energy of a PSS plane in terms of the action of its end
@@ -90,37 +89,6 @@ private theorem cylindricalEndLift_eq_circleMap (p : PSSPlane) (R t : ℝ) :
   congr 1
   cases p <;> push_cast [endSign_positive, endSign_negative] <;> ring
 
-/-- Stokes' formula on a closed disc (`SymplecticForm.integral_fderiv_apply_closedBall`), in the
-real coordinates `ℝ × ℝ ≃ ℂ` of the plane: for a `C²` map `u` the symplectic area over the disc
-`‖w‖ ≤ r` is half the boundary action of `u` along the circle of radius `r`. -/
-private theorem integral_symplecticForm_fderiv_closedBall_eq (ω : SymplecticForm V)
-    {u : ℝ × ℝ → V} (hu : ContDiff ℝ 2 u) {r : ℝ} (hr : 0 < r) :
-    ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 r,
-        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) =
-      (1 / 2 : ℝ) * ∫ θ in -π..π, ω (u (Complex.equivRealProdCLM (circleMap 0 r θ)))
-        (deriv (fun θ ↦ u (Complex.equivRealProdCLM (circleMap 0 r θ))) θ) := by
-  set v : ℂ → V := u ∘ Complex.equivRealProdCLM
-  have hv : ContDiff ℝ 2 v := hu.comp Complex.equivRealProdCLM.contDiff
-  -- Pass to the complex coordinate.
-  have h₁ : Complex.equivRealProdCLM 1 = stdComplexLineReal := by
-    rw [← equivRealProdCLM_symm_stdComplexLineReal, ContinuousLinearEquiv.apply_symm_apply]
-  have hI : Complex.equivRealProdCLM Complex.I = stdComplexLineImag := by
-    rw [← equivRealProdCLM_symm_stdComplexLineImag, ContinuousLinearEquiv.apply_symm_apply]
-  have hcoord : ∫ w in Metric.closedBall (0 : ℂ) r, ω (fderiv ℝ v w 1) (fderiv ℝ v w Complex.I) =
-      ∫ z in Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 r,
-        ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) := by
-    simp only [v, ContinuousLinearEquiv.comp_right_fderiv, ContinuousLinearMap.comp_apply,
-      ContinuousLinearEquiv.coe_coe, h₁, hI]
-    have hpre : Complex.measurableEquivRealProd ⁻¹'
-        (Complex.equivRealProdCLM.symm ⁻¹' Metric.closedBall 0 r) = Metric.closedBall 0 r := by
-      ext w
-      simp [Complex.measurableEquivRealProd]
-    rw [← Complex.volume_preserving_equiv_real_prod.setIntegral_preimage_emb
-      Complex.measurableEquivRealProd.measurableEmbedding _ _, hpre]
-    rfl
-  rw [← hcoord, ω.integral_fderiv_apply_closedBall 0 hr fun _ _ ↦ hv.contDiffAt]
-  rfl
-
 /-- **The symplectic area of a disc of a PSS plane.** For a `C²` map `u`, the symplectic area over
 the disc `‖w‖ ≤ exp (2πR)` is `ε` times the loop area of the loop `ℓ_R(t) = u(φ(ε R + i t))`
 along its boundary circle. -/
@@ -130,7 +98,7 @@ private theorem integral_symplecticForm_fderiv_closedBall (ω : SymplecticForm V
         ω (fderiv ℝ u z stdComplexLineReal) (fderiv ℝ u z stdComplexLineImag) =
       p.endSign * ω.loopArea (fun t ↦ u (Complex.equivRealProdCLM
         (p.cylindricalEndLift (↑(p.endSign * R) + ↑t * Complex.I)))) := by
-  rw [integral_symplecticForm_fderiv_closedBall_eq ω hu (Real.exp_pos _)]
+  rw [ω.integral_fderiv_apply_preimage_closedBall 0 (Real.exp_pos _) fun z _ ↦ hu.contDiffAt]
   -- The boundary loop runs once around the circle of radius `exp (2πR)`, in the direction `ε`.
   have hg : Periodic (fun θ ↦ u (Complex.equivRealProdCLM
       (circleMap 0 (Real.exp (2 * π * R)) θ))) (2 * π) := fun θ ↦ by
