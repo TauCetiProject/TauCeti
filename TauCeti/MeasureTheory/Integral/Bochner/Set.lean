@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
 /-!
@@ -68,6 +69,56 @@ theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure �
     Measure.restrict_restrict₀ (aestronglyMeasurable_const.nullMeasurableSet_le hf.1),
     Measure.restrict_restrict₀ (hf.1.nullMeasurableSet_lt aestronglyMeasurable_const),
     inter_comm _ s, hneg]
+
+/-- Perturbing `g` by a constant `c` changes the `L¹` distance over `S` to `f` by at most
+the `L¹` norm of `c`. -/
+theorem integral_norm_add_const_sub_le {α E : Type*} [MeasurableSpace α] {μ : Measure α}
+    [NormedAddCommGroup E] {S : Set α} {g f : α → E} (c : E) (hS : μ S ≠ ⊤)
+    (hg : IntegrableOn g S μ) (hf : IntegrableOn f S μ) :
+    (∫ t in S, ‖g t + c - f t‖ ∂μ) ≤ (∫ t in S, ‖g t - f t‖ ∂μ) + ∫ _ in S, ‖c‖ ∂μ := by
+  have h1 : Integrable (fun t ↦ ‖g t - f t‖) (μ.restrict S) := (hg.sub hf).norm
+  rw [← integral_add h1 (integrableOn_const hS)]
+  refine integral_mono ((hg.add (integrableOn_const hS)).sub hf).norm
+    ((hg.sub hf).norm.add (integrableOn_const hS)) ?_
+  intro t
+  dsimp only
+  have he : g t + c - f t = (g t - f t) + c := by abel
+  rw [he]
+  exact norm_add_le _ _
+
+/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a finite set `Z`, and
+`g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the images
+`(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the transport
+identity `hpiece` for each piece. The integrand need only be integrable on `g '' s`, and the
+measure needs null singletons only to discard the seams. -/
+theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [Fintype ι]
+    {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D))) {g : M → E} {s : Set M}
+    (hg : InjOn g s) (μ : Measure E) [NullSingletonClass μ] {C : E → ℝ}
+    (hC : IntegrableOn C (g '' s) μ)
+    (c : ℝ) (V : ι → E → ℝ)
+    (hT : ∀ i, MeasurableSet ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s)))
+    (hpiece : ∀ i, c * ∫ y in (g ∘ Q i) '' (D ∩ Q i ⁻¹' s), C y ∂μ =
+      ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ) :
+    c * ∫ y in g '' s, C y ∂μ = ∑ i, ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ := by
+  have hpair : Pairwise (fun i k ↦ Disjoint ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s))
+      ((g ∘ Q k) '' (D ∩ Q k ⁻¹' s))) := fun i k hik ↦ by
+    simp only [image_comp, image_inter_preimage]
+    exact ((hdisj hik).mono inter_subset_left inter_subset_left).image hg inter_subset_right
+      inter_subset_right
+  have hcover : (⋃ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s)) = g '' (s \ Z) := by
+    simp only [image_comp, image_inter_preimage]
+    rw [← image_iUnion, ← iUnion_inter, himage]
+    congr 1
+    ext x
+    simp only [mem_inter_iff, mem_compl_iff, mem_sdiff]
+    tauto
+  have hsub : ∀ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s) ⊆ g '' s := fun i ↦ by
+    rw [image_comp, image_inter_preimage]
+    exact image_mono inter_subset_right
+  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ), ← hcover,
+    integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ hpiece i
 
 end TauCeti
 
