@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Matrix.Resolvent.Basic
+public import TauCeti.Analysis.Matrix.L2OpNorm
 
 /-!
 # Stability of Hermitian matrix resolvents
@@ -40,26 +41,6 @@ public section
 noncomputable section
 
 open scoped Matrix.Norms.L2Operator
-
-namespace Matrix
-
-/-- Every entry is bounded by the Euclidean operator norm. -/
-theorem norm_apply_le_l2_opNorm {𝕜 : Type*} [RCLike 𝕜] {n : Type*} [Fintype n] [DecidableEq n]
-    (A : Matrix n n 𝕜) (i j : n) : ‖A i j‖ ≤ ‖A‖ := by
-  let e : EuclideanSpace 𝕜 n := PiLp.single 2 j 1
-  have he : ‖e‖ = 1 := by simp [e, PiLp.norm_single]
-  let T := Matrix.toEuclideanCLM (n := n) (𝕜 := 𝕜) A
-  have h := PiLp.norm_apply_le (T e) i
-  have hi : (T e).ofLp i = A i j := by
-    dsimp [T]
-    change (Matrix.toEuclideanCLM (n := n) (𝕜 := 𝕜) A
-      (WithLp.toLp 2 (Pi.single j 1))).ofLp i = A i j
-    rw [Matrix.toEuclideanCLM_toLp, Matrix.mulVec_single]
-    simp
-  rw [hi] at h
-  exact h.trans (by simpa [he, T, Matrix.l2_opNorm_toEuclideanCLM] using T.le_opNorm e)
-
-end Matrix
 
 namespace Matrix.IsHermitian
 
@@ -144,19 +125,7 @@ theorem norm_inv_sub_smul_one_sub_inv_sub_smul_one_le_parameter
     (hA : A.IsHermitian) (hz : RCLike.im z ≠ 0) (hw : RCLike.im w ≠ 0) :
     ‖(A - z • 1)⁻¹ - (A - w • 1)⁻¹‖ ≤
       |RCLike.im z|⁻¹ * ‖z - w‖ * |RCLike.im w|⁻¹ := by
-  rw [hA.inv_sub_smul_one_sub_inv_sub_smul_one_eq hz hw, norm_smul]
-  calc
-    ‖z - w‖ * ‖(A - z • 1)⁻¹ * (A - w • 1)⁻¹‖ ≤
-        ‖z - w‖ * (‖(A - z • 1)⁻¹‖ * ‖(A - w • 1)⁻¹‖) :=
-      mul_le_mul_of_nonneg_left (norm_mul_le _ _) (norm_nonneg _)
-    _ ≤ |RCLike.im z|⁻¹ * ‖z - w‖ * |RCLike.im w|⁻¹ := by
-      calc
-        ‖z - w‖ * (‖(A - z • 1)⁻¹‖ * ‖(A - w • 1)⁻¹‖) ≤
-            ‖z - w‖ * (|RCLike.im z|⁻¹ * |RCLike.im w|⁻¹) := by
-          gcongr
-          · exact hA.l2_opNorm_inv_sub_smul_one_le hz
-          · exact hA.l2_opNorm_inv_sub_smul_one_le hw
-        _ = |RCLike.im z|⁻¹ * ‖z - w‖ * |RCLike.im w|⁻¹ := by ring
+  simpa using hA.norm_inv_sub_smul_one_sub_inv_sub_smul_one_le_add hA hz hw
 
 /-- At the zero matrix, `R(i) - R(-i) = 2i I`, checking the sign convention. -/
 example :
