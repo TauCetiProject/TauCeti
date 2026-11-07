@@ -70,6 +70,9 @@ operators `∂t - J₀ S(t)` on loops twisted by the sign characters of the orbi
   `E f` lies in the range of `ε - Ψ(d)`.
 * `TauCeti.kerTwistedLinearOperatorEquiv`: `ker L ≃ ker (ε - Ψ(d))`.
 * `TauCeti.quotientRangeTwistedLinearOperatorEquiv`: `coker L ≃ coker (ε - Ψ(d))`.
+* `TauCeti.finiteDimensional_ker_twistedLinearOperator`,
+  `TauCeti.finiteDimensional_quotient_range_twistedLinearOperator`: in finite dimension, the kernel
+  and cokernel of `L` are finite-dimensional.
 * `TauCeti.range_twistedLinearOperator_eq_top_iff_det_ne_zero`,
   `TauCeti.ker_twistedLinearOperator_eq_bot_iff_det_ne_zero`: the Fredholm alternative.
 
@@ -471,6 +474,21 @@ end KernelCokernel
 section FiniteDimensional
 
 variable [FiniteDimensional ℝ X]
+
+/-- In finite dimension, the kernel of `L = d/dt - M` on maps twisted by `ε` is
+finite-dimensional. -/
+instance finiteDimensional_ker_twistedLinearOperator (hM : Continuous M)
+    (hper : Function.Periodic M d) :
+    FiniteDimensional ℝ (LinearMap.ker (twistedLinearOperator hM hper ε)) :=
+  (kerTwistedLinearOperatorEquiv hM hper ε).symm.finiteDimensional
+
+/-- In finite dimension, for `d > 0` and `ε = ±1`, the cokernel of `L = d/dt - M` on maps twisted
+by `ε` is finite-dimensional. -/
+theorem finiteDimensional_quotient_range_twistedLinearOperator (hM : Continuous M)
+    (hper : Function.Periodic M d) (hd : 0 < d) (hε : ε ^ 2 = 1) :
+    FiniteDimensional ℝ
+      (twistedContinuous X d ε ⧸ LinearMap.range (twistedLinearOperator hM hper ε)) :=
+  (quotientRangeTwistedLinearOperatorEquiv hM hper hd hε).symm.finiteDimensional
 
 /-- **Index zero.** In finite dimension, for `d > 0` and `ε = ±1`, the kernel and the cokernel of
 `L = d/dt - M` on maps twisted by `ε` have the same dimension. -/
