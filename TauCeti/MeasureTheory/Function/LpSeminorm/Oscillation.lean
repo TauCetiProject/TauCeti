@@ -7,6 +7,8 @@ module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 public import Mathlib.MeasureTheory.Measure.OpenPos
+public import TauCeti.Analysis.Normed.Group.Basic
+public import TauCeti.Topology.Connected.Basic
 import Mathlib.MeasureTheory.Function.LpSeminorm.TriangleInequality
 import TauCeti.MeasureTheory.Function.LpSeminorm.AddMeasure
 
@@ -114,9 +116,9 @@ theorem eLpNorm_restrict_sub_le_of_enorm_sub_le (hp : 1 ≤ p) {U : Set X}
 overlap, then `‖a j - a i‖ ≤ D * G` for a constant `D` depending only on `C i`, `C j` and the
 overlap, whenever `f` is `Lᵖ`-close to `a i` on `V i` and to `a j` on `V j` at scales `C i * G`
 and `C j * G`. -/
-theorem exists_enorm_sub_le_mul_of_isOpen_inter_nonempty [IsFiniteMeasure μ]
-    [μ.IsOpenPosMeasure] (hp : 1 ≤ p) {ι : Type*} {V : ι → Set X} {i j : ι}
-    (hi : IsOpen (V i)) (hj : IsOpen (V j)) (hij : (V i ∩ V j).Nonempty) (C : ι → ℝ≥0) :
+theorem exists_enorm_sub_le_mul_of_isOpen_inter_nonempty [μ.IsOpenPosMeasure]
+    (hp : 1 ≤ p) {ι : Type*} {V : ι → Set X} {i j : ι} (hi : IsOpen (V i)) (hj : IsOpen (V j))
+    (hij : (V i ∩ V j).Nonempty) (hfin : μ (V i ∩ V j) ≠ ∞) (C : ι → ℝ≥0) :
     ∃ D : ℝ≥0, ∀ (f : X → F) (a : ι → F) (G : ℝ≥0∞),
       eLpNorm (fun x ↦ f x - a i) p (μ.restrict (V i)) ≤ C i * G →
       eLpNorm (fun x ↦ f x - a j) p (μ.restrict (V j)) ≤ C j * G → ‖a j - a i‖ₑ ≤ D * G := by
@@ -124,45 +126,10 @@ theorem exists_enorm_sub_le_mul_of_isOpen_inter_nonempty [IsFiniteMeasure μ]
   refine ⟨((C i + C j : ℝ≥0∞) / μ (V i ∩ V j) ^ (1 / p.toReal)).toNNReal,
     fun f a G hPi hPj ↦ ?_⟩
   have hm0 : μ (V i ∩ V j) ^ (1 / p.toReal) ≠ 0 :=
-    (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) (measure_ne_top _ _)).ne'
+    (ENNReal.rpow_pos (pos_iff_ne_zero.2 h0) hfin).ne'
   rw [ENNReal.coe_toNNReal (ENNReal.div_ne_top (by simp) hm0)]
-  refine (enorm_sub_le_div_of_eLpNorm_restrict_sub_le hp h0 (measure_ne_top _ _) hPi
-    hPj).trans_eq ?_
+  refine (enorm_sub_le_div_of_eLpNorm_restrict_sub_le hp h0 hfin hPi hPj).trans_eq ?_
   rw [← add_mul, ENNReal.mul_div_right_comm]
-
-omit [TopologicalSpace X] [MeasurableSpace X] in
-/-- Constants joined by a chain of related indices are uniformly close, if constants at related
-indices are. -/
-theorem exists_enorm_sub_le_mul_of_reflTransGen {ι : Type*} {R : ι → ι → Prop} {i₀ : ι}
-    (P : (X → F) → (ι → F) → ℝ≥0∞ → Prop)
-    (hadj : ∀ i j, R i j → ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i‖ₑ ≤ D * G) {j : ι}
-    (hj : Relation.ReflTransGen R i₀ j) :
-    ∃ D : ℝ≥0, ∀ f a G, P f a G → ‖a j - a i₀‖ₑ ≤ D * G := by
-  induction hj with
-  | refl => exact ⟨0, fun _ _ _ _ ↦ by simp⟩
-  | @tail j k _ hjk ih =>
-    obtain ⟨D₁, hD₁⟩ := ih
-    obtain ⟨D₂, hD₂⟩ := hadj j k hjk
-    refine ⟨D₂ + D₁, fun f a G hP ↦ ?_⟩
-    calc ‖a k - a i₀‖ₑ = ‖(a k - a j) + (a j - a i₀)‖ₑ := by rw [sub_add_sub_cancel]
-      _ ≤ ‖a k - a j‖ₑ + ‖a j - a i₀‖ₑ := enorm_add_le _ _
-      _ ≤ D₂ * G + D₁ * G := add_le_add (hD₂ f a G hP) (hD₁ f a G hP)
-      _ = ↑(D₂ + D₁) * G := by push_cast; ring
-
-omit [MeasurableSpace X] in
-/-- **Chains of overlaps in a connected open cover.** In a preconnected space covered by the
-open sets `V i`, `i ∈ t`, every nonempty `V j` is joined to a piece `V i₀` containing a given
-point by a chain of pairwise overlapping pieces. -/
-theorem reflTransGen_inter_nonempty_of_isOpen_cover [PreconnectedSpace X] {ι : Type*}
-    {t : Finset ι} {V : ι → Set X} (hV : ∀ i ∈ t, IsOpen (V i)) (hcover : ∀ x, ∃ i ∈ t, x ∈ V i)
-    {i₀ : ι} (hi₀ : i₀ ∈ t) {x₀ : X} (hx₀ : x₀ ∈ V i₀) {j : ι} (hj : j ∈ t)
-    (hVj : (V j).Nonempty) :
-    Relation.ReflTransGen (fun i j ↦ i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty) i₀ j := by
-  have hU : IsPreconnected (⋃ k : t, V k) := by
-    rw [eq_univ_of_forall fun x ↦ mem_iUnion.2 <| (hcover x).elim fun k hk ↦ ⟨⟨k, hk.1⟩, hk.2⟩]
-    exact isPreconnected_univ
-  exact (hU.transGen_of_iUnion (fun k ↦ hV k k.2) ⟨i₀, hi₀⟩ ⟨j, hj⟩
-    ⟨x₀, hx₀⟩ hVj).to_reflTransGen.lift Subtype.val (fun k l hkl ↦ ⟨k.2, l.2, hkl⟩)
 
 /-- **Local `Lᵖ` closeness to constants on a connected cover gives global closeness.** Let `μ` be
 a finite measure on a preconnected space, positive on nonempty open sets, and let `V i`, `i ∈ t`,
@@ -191,9 +158,10 @@ theorem exists_eLpNorm_sub_const_le_of_isOpen_cover [PreconnectedSpace X] [IsFin
     obtain ⟨D, hD⟩ := exists_enorm_sub_le_mul_of_reflTransGen P (R := fun i j ↦
       i ∈ t ∧ j ∈ t ∧ (V i ∩ V j).Nonempty)
       (fun i j ⟨hi, hj, hij⟩ ↦
-        (exists_enorm_sub_le_mul_of_isOpen_inter_nonempty hp (hV i hi) (hV j hj) hij C).imp
+        (exists_enorm_sub_le_mul_of_isOpen_inter_nonempty hp (hV i hi) (hV j hj) hij
+          (measure_ne_top _ _) C).imp
           fun _ hD f a G hP ↦ hD f a G (hP i hi) (hP j hj))
-      (reflTransGen_inter_nonempty_of_isOpen_cover hV hcover hi₀ hx₀ hj hVj)
+      (reflTransGen_inter_nonempty_of_isOpen_cover (t := (t : Set ι)) hV hcover hi₀ hx₀ hj hVj)
     exact ⟨_, fun f a G hP ↦ eLpNorm_restrict_sub_le_of_enorm_sub_le hp
       ((hV j hj).measure_ne_zero μ hVj) (measure_ne_top _ _) (hP j hj) (hD f a G hP)⟩
   choose! D hD using hpiece
