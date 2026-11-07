@@ -154,6 +154,34 @@ theorem hasSplitMultiplicativeReduction_quadraticTwistOf [hE : E.HasMultiplicati
   rw [reduction, map_nodePolynomial, hint, nodePolynomial_quadraticTwistOf_neg_a₁ I n₀ hn₀]
   exact (((Splits.X_sub_C _).C_mul _).mul (Splits.X_sub_C _)).map _
 
+variable (R) in
+/-- The node quadratic `T² + a₁ T + n` of a curve with multiplicative but nonsplit reduction has no
+root `x` in `K`: such a root is integral over `R`, hence in `R`, and would split the reduced node
+polynomial. Here `n₀ : R` is the integral model of the constant term `n`. -/
+private lemma false_of_isRoot_nodeQuadratic [E.HasMultiplicativeReduction R]
+    (h : ¬ E.HasSplitMultiplicativeReduction R) {n₀ : R}
+    (hn₀ : (E.integralModel R).c₄ * n₀ = (E.integralModel R).nodePolynomial.coeff 0)
+    (hn₀K : algebraMap R K n₀ = E.nodePolynomial.coeff 0 / E.c₄) {x : K}
+    (hx' : x ^ 2 + E.a₁ * x + E.nodePolynomial.coeff 0 / E.c₄ = 0) : False := by
+  set I := E.integralModel R
+  set n := E.nodePolynomial.coeff 0 / E.c₄
+  have hxint : _root_.IsIntegral R x := by
+    refine ⟨X ^ 2 + C I.a₁ * X + C n₀, by monicity!, ?_⟩
+    simp [eval₂_add, ← hx', hn₀K, I, integralModel_a₁_eq]
+  obtain ⟨x₀, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hxint
+  have hx₀ : x₀ ^ 2 + I.a₁ * x₀ + n₀ = 0 := IsFractionRing.injective R K (by
+    rw [map_zero, ← hx']; simp [I, integralModel_a₁_eq, hn₀K])
+  -- So the node quadratic factors over `R` with the roots `x₀` and `-a₁ - x₀`.
+  have hfac : X ^ 2 + C I.a₁ * X + C n₀ = (X - C x₀) * (X - C (-I.a₁ - x₀)) := by
+    have hC := congrArg C hx₀
+    simp only [map_add, map_mul, map_pow, map_zero] at hC
+    simp only [map_sub, map_neg]
+    linear_combination hC
+  refine h ((HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff R
+    inferInstance).mp ?_)
+  rw [reduction, map_nodePolynomial, nodePolynomial_eq_C_mul I hn₀, hfac]
+  exact (((Splits.X_sub_C _).mul (Splits.X_sub_C _)).C_mul _).map _
+
 /-- **Quadratic twist to split multiplicative reduction.** Over the fraction field `K` of a
 discrete valuation ring `R`, a curve with multiplicative but nonsplit reduction acquires split
 multiplicative reduction after a separable quadratic twist. As `HasMultiplicativeReduction`
@@ -173,25 +201,8 @@ theorem exists_quadraticTwist_hasSplitMultiplicativeReduction [E.IsElliptic]
   have hqdeg : q.natDegree = 2 := by unfold q; compute_degree!
   -- A root of `q` in `K` is integral over `R`, hence in `R`, and would split the reduced node
   -- polynomial.
-  have hroot : ∀ x : K, ¬ q.IsRoot x := by
-    intro x hx
-    have hx' : x ^ 2 + E.a₁ * x + n = 0 := by simpa [q] using hx
-    have hxint : _root_.IsIntegral R x := by
-      refine ⟨X ^ 2 + C I.a₁ * X + C n₀, by monicity!, ?_⟩
-      simp [eval₂_add, ← hx', hn₀K, I, integralModel_a₁_eq]
-    obtain ⟨x₀, rfl⟩ := IsIntegrallyClosed.isIntegral_iff.mp hxint
-    have hx₀ : x₀ ^ 2 + I.a₁ * x₀ + n₀ = 0 := IsFractionRing.injective R K (by
-      rw [map_zero, ← hx']; simp [I, integralModel_a₁_eq, hn₀K])
-    -- So the node quadratic factors over `R` with the roots `x₀` and `-a₁ - x₀`.
-    have hfac : X ^ 2 + C I.a₁ * X + C n₀ = (X - C x₀) * (X - C (-I.a₁ - x₀)) := by
-      have hC := congrArg C hx₀
-      simp only [map_add, map_mul, map_pow, map_zero] at hC
-      simp only [map_sub, map_neg]
-      linear_combination hC
-    refine h ((HasMultiplicativeReduction.splits_nodePolynomial_reduction_iff R
-      inferInstance).mp ?_)
-    rw [reduction, map_nodePolynomial, nodePolynomial_eq_C_mul I hn₀, hfac]
-    exact (((Splits.X_sub_C _).mul (Splits.X_sub_C _)).C_mul _).map _
+  have hroot : ∀ x : K, ¬ q.IsRoot x := fun x hx ↦
+    false_of_isRoot_nodeQuadratic R h hn₀ hn₀K (by simpa [q] using hx)
   have hirr : Irreducible q :=
     irreducible_of_degree_le_three_of_not_isRoot (by rw [hqdeg]; decide) hroot
   have : Fact (Irreducible q) := ⟨hirr⟩
