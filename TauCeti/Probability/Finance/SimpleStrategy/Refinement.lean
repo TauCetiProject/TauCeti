@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Finance.SimpleStrategy.Basic
-public import Mathlib.Data.Finset.Sort
-import Mathlib.Order.SuccPred.IntervalSucc
+public import TauCeti.Data.Finset.Sort
 
 /-!
 # Common trading grids
@@ -51,16 +50,7 @@ theorem simpleHolding_eq_sum_Ioc (s : Finset κ) {τ : ℕ → ι} {n : ℕ}
       ∑ i ∈ s, (Set.Ioc (τ (l i)) (τ (u i))).indicator (fun _ ↦ a i ω) t := by
   classical
   by_cases ht : t ∈ Set.Ioc (τ 0) (τ n)
-  · obtain ⟨j, hj, htj⟩ : ∃ j < n, t ∈ Set.Ioc (τ j) (τ (j + 1)) := by
-      have hcover :=
-        (Set.monotoneOn_iff_monotone.1 hτ).IicExtend.biUnion_Ico_Ioc_map_succ 0 n
-      simp only [Set.IicExtend_apply, Nat.min_zero, min_self, Order.succ_eq_add_one,
-        Set.mem_Ico, Nat.zero_le, true_and] at hcover
-      rw [← hcover] at ht
-      simp only [Set.mem_iUnion, exists_prop] at ht
-      obtain ⟨j, hj, htj⟩ := ht
-      rw [min_eq_right hj.le, min_eq_right (Nat.add_one_le_of_lt hj)] at htj
-      exact ⟨j, hj, htj⟩
+  · obtain ⟨j, hj, htj⟩ := exists_lt_mem_Ioc_of_mem_Ioc ht
     rw [simpleHolding_of_mem_Ioc hτ hj htj]
     refine sum_congr rfl fun i hi ↦ ?_
     have hmem : t ∈ Set.Ioc (τ (l i)) (τ (u i)) ↔ l i ≤ j ∧ j < u i := by
@@ -94,25 +84,10 @@ theorem exists_simpleHolding_sum_Ioc [OrderBot ι] {mΩ : MeasurableSpace Ω}
       ∀ t ω, simpleHolding τ n b t ω =
         ∑ i ∈ s, (Set.Ioc (l i) (u i)).indicator (fun _ ↦ a i ω) t := by
   classical
-  -- Sort the distinct endpoints, including the initial time, and freeze the grid after its end.
+  -- Sort the distinct endpoints, including the initial time.
   let d := insert ⊥ (s.image l ∪ s.image u)
-  have hd : 0 < d.card := card_pos.mpr ⟨⊥, mem_insert_self _ _⟩
-  let n := d.card - 1
-  have hn : n + 1 = d.card := by omega
-  let e := d.orderIsoOfFin hn.symm
-  let τ : ℕ → ι := fun j ↦ (e ⟨min j n, by omega⟩ : ι)
-  have hτj (j : ℕ) (hj : j ≤ n) : τ j = (e ⟨j, by omega⟩ : ι) := by
-    simp [τ, min_eq_left hj]
-  have hτ : StrictMonoOn τ (Set.Iic n) := by
-    intro i hi j hj hij
-    rw [hτj i hi, hτj j hj]
-    exact e.strictMono hij
-  have hsurj : ∀ x ∈ d, ∃ j ≤ n, τ j = x := by
-    intro x hx
-    let j := e.symm ⟨x, hx⟩
-    refine ⟨j, by omega, ?_⟩
-    rw [hτj j (by omega)]
-    exact congrArg Subtype.val (e.apply_symm_apply ⟨x, hx⟩)
+  obtain ⟨n, τ, hτ, -, hsurj⟩ :=
+    d.exists_strictMonoOn_Iic_surj ⟨⊥, mem_insert_self _ _⟩
   have hzero : τ 0 = ⊥ := by
     obtain ⟨j, hj, heq⟩ := hsurj ⊥ (mem_insert_self _ _)
     exact le_bot_iff.mp (heq ▸ hτ.monotoneOn (Nat.zero_le n) hj (Nat.zero_le j))
