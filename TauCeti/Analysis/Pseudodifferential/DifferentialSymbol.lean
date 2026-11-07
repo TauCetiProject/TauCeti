@@ -183,19 +183,19 @@ theorem quantizeSchwartzValue_differentialSymbol_eq_sum_iteratedFDeriv (s : Fins
   simp only [quantizeSchwartzValue_differentialSymbol,
     SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv]
 
-/-- Smooth coefficients give smooth quantized differential expressions. No global
-boundedness of any coefficient or its derivatives is required. -/
-theorem contDiff_quantizeSchwartzValue_differentialSymbol (s : Finset ι)
+/-- Coefficients of class `C^n` give quantized differential expressions of class `C^n`.
+No global boundedness of any coefficient or its derivatives is required. -/
+theorem contDiff_quantizeSchwartzValue_differentialSymbol {n : ℕ∞} (s : Finset ι)
     (v : ∀ i, Fin (k i) → E) (b : ι → E → V →L[ℂ] W)
-    (hb : ∀ i ∈ s, ContDiff ℝ ∞ (b i)) (u : 𝓢(E, V)) :
-    ContDiff ℝ ∞ (quantizeSchwartzValue (differentialSymbol s v b) u) := by
+    (hb : ∀ i ∈ s, ContDiff ℝ n (b i)) (u : 𝓢(E, V)) :
+    ContDiff ℝ n (quantizeSchwartzValue (differentialSymbol s v b) u) := by
   simp only [funext (quantizeSchwartzValue_differentialSymbol s v b u)]
   apply ContDiff.sum
   intro i hi
   -- Restrict coefficient maps to real scalars, since smoothness is over the real base.
   have hbi := (ContinuousLinearMap.restrictScalarsL ℂ V W ℝ ℝ).contDiff.comp (hb i hi)
   simpa only [Function.comp_apply, ContinuousLinearMap.coe_restrict_scalarsL',
-    ContinuousLinearMap.coe_restrictScalars'] using hbi.clm_apply ((∂^{v i} u).smooth ⊤)
+    ContinuousLinearMap.coe_restrictScalars'] using hbi.clm_apply ((∂^{v i} u).smooth n)
 
 /-- The quantized differential expression is supported in the topological support
 (closure of the support) of the Schwartz input, even for nonsmooth coefficients. -/
