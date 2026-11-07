@@ -433,9 +433,9 @@ end CovariantRepresentation
 
 namespace FullCrossedProduct
 
-/-- The norm of the full crossed product is the least nonnegative bound for the extended
+/-- The norm of the full crossed product is the least bound for the extended
 integrated forms of covariant representations on Hilbert spaces in the universe `max u v`. -/
-theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
+theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} :
     ‖x‖ ≤ c ↔
       ∀ (H : Type (max u v)) [NormedAddCommGroup H] [InnerProductSpace ℂ H] [CompleteSpace H]
         (P : CovariantRepresentation α H), ‖P.integratedFull μ x‖ ≤ c := by
@@ -446,7 +446,7 @@ theorem norm_le_iff {x : FullCrossedProduct α μ} {c : ℝ} (hc : 0 ≤ c) :
   obtain ⟨f, hf⟩ := (denseRange_of (α := α) (μ := μ)).exists_dist_lt x (half_pos hε)
   have hf' : ‖x - of α μ f‖ < ε / 2 := by rwa [← dist_eq_norm]
   have hfc : ‖of α μ f‖ ≤ c + ε / 2 := by
-    rw [norm_of, ConvolutionAlgebra.fullSeminorm_le_iff (by positivity)]
+    rw [norm_of, ConvolutionAlgebra.fullSeminorm_le_iff]
     intro H _ _ _ P
     rw [← P.integratedFull_of]
     calc ‖P.integratedFull μ (of α μ f)‖
@@ -468,7 +468,7 @@ theorem of_eq_of_iff {f g : ConvolutionAlgebra α μ} :
           P.integratedStarAlgHom μ f = P.integratedStarAlgHom μ g := by
   refine ⟨fun h H _ _ _ P => by simpa using congr(P.integratedFull μ $h), fun h => ?_⟩
   rw [← sub_eq_zero, ← map_sub, ← norm_eq_zero, norm_of]
-  refine le_antisymm ((ConvolutionAlgebra.fullSeminorm_le_iff le_rfl).2 fun H _ _ _ P => ?_)
+  refine le_antisymm (ConvolutionAlgebra.fullSeminorm_le_iff.2 fun H _ _ _ P => ?_)
     (apply_nonneg _ _)
   rw [map_sub, h H P, sub_self, norm_zero]
 

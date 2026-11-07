@@ -308,8 +308,7 @@ theorem ContRepresentation.exists_pontryaginMeasureTransform_eq_inner
   refine ⟨νf.map (dual π hcont hπ), ?_, fun g ↦ ?_⟩
   · rw [FiniteMeasure.toMeasure_map]
     simp only [νf, FiniteMeasure.toMeasure_mk]
-    exact TauCeti.innerRegular_map_of_continuousOn hθ
-      (π.isOpen_integratedCharacterSet hcont _ _ _).measurableSet (continuousOn_dual π hcont hπ)
+    exact Measure.InnerRegular.map_of_continuousOn hθ.aemeasurable (continuousOn_dual π hcont hπ)
       (ae_mem_support π hcont hπ hrep)
   · rw [FiniteMeasure.pontryaginMeasureTransform_apply, FiniteMeasure.toMeasure_map,
       integral_map hθ.aemeasurable

@@ -84,4 +84,3 @@ theorem Differentiable.isBigO_of_cexp_isBigO {H : ℂ → ℂ} (hH : Differentia
   rw [Real.norm_eq_abs, abs_of_nonneg (Real.rpow_nonneg (norm_nonneg z) p)]
   dsimp [K]
   nlinarith
-
