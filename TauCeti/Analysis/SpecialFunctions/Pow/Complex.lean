@@ -78,8 +78,8 @@ integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 * `Complex.continuousWithinAt_neg_two_cpow_half_mul_inv`,
   `Complex.hasDerivAt_neg_two_cpow_half_mul_inv`,
   `Complex.tendsto_neg_two_cpow_half_mul_inv_atTop` -- continuity at `0`, derivative on `(0, ∞)` and
-  limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`, for `x ∈ slitPlane ∪ {0}` and
-  `y ∈ slitPlane`.
+  limit at `∞` of `t ↦ -2 (t + x) ^ (1/2) (t + y)⁻¹`, for `x ∈ slitPlane ∪ {0}` and `y ≠ 0`
+  (continuity), `y ∈ slitPlane ∪ {0}` (derivative) or arbitrary `y` (limit).
 -/
 
 public section
@@ -487,12 +487,12 @@ theorem tendsto_ofReal_add_cpow_neg (x : ℂ) {s : ℝ} (hs : 0 < s) :
 /-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` is continuous at `0` from the right, even when
 `x = 0` (as `re (1/2) > 0`). -/
 theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ}
-    (hx : x ∈ slitPlane ∪ {0}) (hy : y ∈ slitPlane) :
+    (hx : x ∈ slitPlane ∪ {0}) (hy : y ≠ 0) :
     ContinuousWithinAt
       (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) (Set.Ici 0) 0 := by
   have hc2 : ContinuousAt (fun t : ℝ => ((t : ℂ) + y)⁻¹) 0 :=
     (by fun_prop : Continuous fun t : ℝ => (t : ℂ) + y).continuousAt.inv₀
-      (by rw [ofReal_zero, zero_add]; exact slitPlane_ne_zero hy)
+      (by rwa [ofReal_zero, zero_add])
   exact (continuousWithinAt_const.mul
     (TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos hx (by norm_num) 0 Set.self_mem_Ici)).mul
     hc2.continuousWithinAt
@@ -502,7 +502,7 @@ theorem continuousWithinAt_neg_two_cpow_half_mul_inv {x y : ℂ}
 For the Carlson integrals this is the `R_C(x, y)` integrand minus `2 (y - x)` times the
 `R_D(x, y, y)` integrand. -/
 theorem hasDerivAt_neg_two_cpow_half_mul_inv {x y : ℂ}
-    (hx : x ∈ slitPlane ∪ {0}) (hy : y ∈ slitPlane) :
+    (hx : x ∈ slitPlane ∪ {0}) (hy : y ∈ slitPlane ∪ {0}) :
     ∀ t ∈ Set.Ioi (0 : ℝ),
       HasDerivAt (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹)
       (((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹ -
@@ -510,7 +510,7 @@ theorem hasDerivAt_neg_two_cpow_half_mul_inv {x y : ℂ}
           ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹)) t := by
   intro t ht
   have htx : (t : ℂ) + x ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hx ht
-  have hty : (t : ℂ) + y ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane hy (le_of_lt ht)
+  have hty : (t : ℂ) + y ∈ slitPlane := TauCeti.ofReal_add_mem_slitPlane_of_mem_union hy ht
   have htx_ne : (t : ℂ) + x ≠ 0 := slitPlane_ne_zero htx
   have hty_ne : (t : ℂ) + y ≠ 0 := slitPlane_ne_zero hty
   have hd1 : HasDerivAt (fun s : ℝ => ((s : ℂ) + x) ^ (1 / 2 : ℂ))
@@ -534,18 +534,29 @@ theorem hasDerivAt_neg_two_cpow_half_mul_inv {x y : ℂ}
   linear_combination (2 * u * v⁻¹) * hv_inv
 
 /-- The function `t ↦ -2 (t + x)^(1/2) (t + y)⁻¹` tends to `0` as `t → ∞`. -/
-theorem tendsto_neg_two_cpow_half_mul_inv_atTop {x y : ℂ} (hy : y ∈ slitPlane) :
+theorem tendsto_neg_two_cpow_half_mul_inv_atTop {x y : ℂ} :
     Tendsto (fun t : ℝ => -2 * ((t : ℂ) + x) ^ (1 / 2 : ℂ) * ((t : ℂ) + y)⁻¹) atTop (𝓝 0) := by
-  obtain ⟨Cy, hCy0, hCy⟩ := TauCeti.exists_norm_inv_ofReal_add_le hy
   have h0 : Tendsto
-      (fun t : ℝ => 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * (1 + t) ^ (-(1 / 2) : ℝ))
+      (fun t : ℝ => 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4 * (1 + t) ^ (-(1 / 2) : ℝ))
       atTop (𝓝 0) := by
     simpa using ((tendsto_rpow_neg_atTop (by norm_num : (0 : ℝ) < 1 / 2)).comp
       (tendsto_atTop_add_const_left atTop 1 tendsto_id)).const_mul
-      (2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy)
+      (2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4)
   refine squeeze_zero_norm' ?_ h0
-  filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+  filter_upwards [eventually_ge_atTop (max 1 (2 * ‖y‖))] with t ht'
+  have ht1 : 1 ≤ t := (le_max_left _ _).trans ht'
+  have hty : 2 * ‖y‖ ≤ t := (le_max_right _ _).trans ht'
+  have ht : 0 ≤ t := by linarith
   have h1t : 0 < 1 + t := by linarith
+  -- Far out, `‖t + y‖ ≥ t - ‖y‖ ≥ t / 2 ≥ (1 + t) / 4`.
+  have hCy : ‖((t : ℂ) + y)⁻¹‖ ≤ 4 * (1 + t)⁻¹ := by
+    have hlow : (1 + t) / 4 ≤ ‖(t : ℂ) + y‖ := by
+      have h := norm_add_le ((t : ℂ) + y) (-y)
+      rw [add_neg_cancel_right, norm_neg, Complex.norm_real, Real.norm_of_nonneg ht] at h
+      linarith
+    rw [norm_inv]
+    calc ‖(t : ℂ) + y‖⁻¹ ≤ ((1 + t) / 4)⁻¹ := inv_anti₀ (by positivity) hlow
+      _ = 4 * (1 + t)⁻¹ := by rw [inv_div, div_eq_mul_inv]
   have htx_le : ‖(t : ℂ) + x‖ ≤ (1 + ‖x‖) * (1 + t) := by
     calc ‖(t : ℂ) + x‖ ≤ ‖(t : ℂ)‖ + ‖x‖ := norm_add_le _ _
       _ = t + ‖x‖ := by rw [norm_real, Real.norm_of_nonneg ht]
@@ -559,11 +570,11 @@ theorem tendsto_neg_two_cpow_half_mul_inv_atTop {x y : ℂ} (hy : y ∈ slitPlan
     rw [← Real.rpow_neg_one, ← Real.rpow_add h1t]; norm_num
   simp only [norm_mul, norm_neg, norm_ofNat]
   calc 2 * ‖((t : ℂ) + x) ^ (1 / 2 : ℂ)‖ * ‖((t : ℂ) + y)⁻¹‖
-      ≤ 2 * ((1 + ‖x‖) ^ (1 / 2 : ℝ) * (1 + t) ^ (1 / 2 : ℝ)) * (Cy * (1 + t)⁻¹) :=
-        mul_le_mul (mul_le_mul_of_nonneg_left hcpow_le zero_le_two) (hCy t ht)
+      ≤ 2 * ((1 + ‖x‖) ^ (1 / 2 : ℝ) * (1 + t) ^ (1 / 2 : ℝ)) * (4 * (1 + t)⁻¹) :=
+        mul_le_mul (mul_le_mul_of_nonneg_left hcpow_le zero_le_two) hCy
           (norm_nonneg _) (by positivity)
-    _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * ((1 + t) ^ (1 / 2 : ℝ) * (1 + t)⁻¹) := by ring
-    _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * Cy * (1 + t) ^ (-(1 / 2) : ℝ) := by rw [hrpow]
+    _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4 * ((1 + t) ^ (1 / 2 : ℝ) * (1 + t)⁻¹) := by ring
+    _ = 2 * (1 + ‖x‖) ^ (1 / 2 : ℝ) * 4 * (1 + t) ^ (-(1 / 2) : ℝ) := by rw [hrpow]
 
 end Complex
 

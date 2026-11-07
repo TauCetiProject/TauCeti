@@ -329,12 +329,12 @@ theorem two_mul_sub_mul_carlsonRD_self_right {x y : ℂ} (hx : x ∈ slitPlane �
     2 * (y - x) * (((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) *
       ((t : ℂ) + y) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + y)⁻¹)
   have hG0 : ContinuousWithinAt G (Ici 0) 0 :=
-    continuousWithinAt_neg_two_cpow_half_mul_inv hx hy
+    continuousWithinAt_neg_two_cpow_half_mul_inv hx (slitPlane_ne_zero hy)
   have hG_deriv : ∀ t ∈ Ioi (0 : ℝ), HasDerivAt G (G' t) t :=
-    hasDerivAt_neg_two_cpow_half_mul_inv hx hy
+    hasDerivAt_neg_two_cpow_half_mul_inv hx (Set.mem_union_left _ hy)
   have hint : IntegrableOn G' (Ioi 0) := (integrableOn_carlsonRC_integrand hx hy).sub
     ((integrableOn_carlsonRJ_integrand hx hy hy hy).const_mul (2 * (y - x)))
-  have hG_lim : Tendsto G atTop (𝓝 0) := tendsto_neg_two_cpow_half_mul_inv_atTop hy
+  have hG_lim : Tendsto G atTop (𝓝 0) := tendsto_neg_two_cpow_half_mul_inv_atTop
   have hftc := integral_Ioi_of_hasDerivAt_of_tendsto hG0 hG_deriv hint hG_lim
   simp only [G', G, ofReal_zero, zero_add] at hftc
   rw [integral_sub (integrableOn_carlsonRC_integrand hx hy)
