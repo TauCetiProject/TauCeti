@@ -22,6 +22,8 @@ the identity on them and turns direct sums into direct sums.
 ## Main definitions
 
 * `TauCeti.GLSymplectic.polarUnitary`: the orthogonal polar factor of a symplectic matrix.
+* `TauCeti.GLSymplectic.polarHomotopy`: the polar deformation, as a homotopy through symplectic
+  matrices from the identity to the orthogonal polar factor.
 
 ## Main results
 
@@ -99,6 +101,30 @@ theorem continuous_inclusion_polarUnitary :
     Continuous fun A : GLSymplectic n ℝ ↦ Subgroup.inclusion inf_le_left (polarUnitary A) :=
   continuous_induced_rng.2 ((continuous_subtype_val.comp continuous_polarUnitary).congr fun _ ↦
     (Subgroup.coe_inclusion _ _).symm)
+
+/-- The **symplectic polar homotopy** `(t, A) ↦ P ^ (1 - t) U` of a symplectic matrix `A = P U`:
+it contracts the positive factor through symplectic matrices, from the identity to the orthogonal
+polar factor. -/
+noncomputable def polarHomotopy :
+    ContinuousMap.Homotopy (ContinuousMap.id (GLSymplectic n ℝ))
+      ⟨fun A ↦ Subgroup.inclusion inf_le_left (polarUnitary A),
+        continuous_inclusion_polarUnitary⟩ where
+  toFun p := ⟨polarDeformation (p.2 : GL (n ⊕ n) ℝ) p.1, polarDeformation_mem p.2.2 _⟩
+  continuous_toFun := by
+    refine Continuous.subtype_mk ?_ _
+    have h := (Matrix.GeneralLinearGroup.polarHomotopy (n ⊕ n) ℝ).continuous.comp
+      (continuous_fst.prodMk (continuous_subtype_val.comp continuous_snd) :
+        Continuous fun p : I × GLSymplectic n ℝ ↦ (p.1, (p.2 : GL (n ⊕ n) ℝ)))
+    simpa only [Function.comp_def, polarHomotopy_apply] using h
+  map_zero_left A := Subtype.ext (by simp)
+  map_one_left A := Subtype.ext (Units.ext (by simp))
+
+/-- The symplectic polar homotopy evaluates to the polar deformation. -/
+@[simp]
+theorem coe_polarHomotopy_apply (p : I × GLSymplectic n ℝ) :
+    ((polarHomotopy p : GLSymplectic n ℝ) : GL (n ⊕ n) ℝ) =
+      polarDeformation (p.2 : GL (n ⊕ n) ℝ) p.1 := by
+  rfl
 
 /-- The orthogonal polar factor of a direct sum is the direct sum of the orthogonal polar
 factors. -/

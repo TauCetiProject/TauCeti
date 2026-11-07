@@ -15,13 +15,15 @@ public import TauCeti.LinearAlgebra.TotallyReal.Basic
 /-!
 # Totally real subspaces of complex modules
 
-This file gives an elementary example of a totally real real subspace of a complex module and
+This file gives elementary examples of totally real subspaces of complex modules and
 develops the complex-linear algebra of maximal totally real subspaces. A real basis of such a
 subspace is a complex basis of the ambient space. Complex-linear automorphisms act transitively on
 these subspaces, and an endomorphism preserving one has real determinant.
 
 ## Main declarations
 
+* `TauCeti.isMaximalTotallyReal_range_compLeft_ofReal`: the real points of `ι → ℂ` form a maximal
+  totally real subspace.
 * `TauCeti.IsTotallyReal.linearIndependent_complex`: real-linearly independent vectors of a
   totally real subspace are complex-linearly independent.
 * `TauCeti.IsMaximalTotallyReal.complexBasis`: a real basis of a maximal totally real subspace,
@@ -61,6 +63,27 @@ theorem isTotallyReal_range_pi_smulRight {v : ι → ℂ} :
   · have h' : (σ i : ℂ) * Complex.I = τ i := mul_right_cancel₀ hi (by rw [← h]; ring)
     have hτ : τ i = 0 := by simpa using (congrArg Complex.re h').symm
     simp [hτ]
+
+/-- **The real points of `ι → ℂ` form a maximal totally real subspace.** The image of `ι → ℝ`
+under the coordinatewise inclusion `ℝ → ℂ` is complementary to its image under multiplication by
+`i`, since every vector is the sum of its real part and `i` times its imaginary part. -/
+theorem isMaximalTotallyReal_range_compLeft_ofReal :
+    IsMaximalTotallyReal ((LinearMap.lsmul ℂ (ι → ℂ) Complex.I).restrictScalars ℝ)
+      (LinearMap.range (Complex.ofRealAm.toLinearMap.compLeft ι)) := by
+  rw [isMaximalTotallyReal_iff]
+  constructor
+  · rw [Submodule.disjoint_def]
+    rintro _ ⟨a, rfl⟩ ⟨_, ⟨b, rfl⟩, hb⟩
+    funext i
+    have h := congrArg Complex.re (congrFun hb i)
+    simp [Complex.ofRealAm_coe] at h
+    simp [Complex.ofRealAm_coe, ← h]
+  · rw [codisjoint_iff, eq_top_iff]
+    rintro w -
+    refine Submodule.mem_sup.2 ⟨_, ⟨fun i => (w i).re, rfl⟩, _,
+      ⟨_, ⟨fun i => (w i).im, rfl⟩, rfl⟩, ?_⟩
+    funext i
+    simpa [mul_comm] using Complex.re_add_im (w i)
 
 variable {E : Type*} [AddCommGroup E] [Module ℝ E] [Module ℂ E] [IsScalarTower ℝ ℂ E]
   {L : Submodule ℝ E}
