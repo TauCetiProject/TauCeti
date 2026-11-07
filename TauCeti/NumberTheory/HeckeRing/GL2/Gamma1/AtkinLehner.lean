@@ -132,30 +132,6 @@ lemma atkinLehnerAntiInvolutionGamma1_bar_eq {x : GL (Fin 2) ℚ} (hx : x ∈ De
         (natDiagGL 2 ![1, N])⁻¹ := by
   rw [atkinLehnerAntiInvolutionGamma1_bar_eq, atkinLehnerAntiInvolution_bar]
 
-omit [NeZero N] in
-/-- Left multiplication by an element `σ` of `Γ₀(N)` whose upper-left entry inverts the
-upper-left entry `a` of a matrix `B` modulo `N` carries the `Γ₀(N)` double coset of `diag(1, m)`
-into its `Γ₁(N)` double coset, for `B` with `N ∣ B₁₀` and `B₀₀ = a`. -/
-private lemma mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 {m : ℕ} (hm_pos : 0 < m)
-    {σ : SL(2, ℤ)} (hσ₀ : mapGL ℚ σ ∈ (Gamma0 N).map (mapGL ℚ)) {a : ℤ}
-    (hσ00 : ((σ 0 0 : ℤ) : ZMod N) * (a : ZMod N) = 1)
-    {y : GL (Fin 2) ℚ} {B : Matrix (Fin 2) (Fin 2) ℤ}
-    (hB : (y : Matrix (Fin 2) (Fin 2) ℚ) = B.map (Int.cast : ℤ → ℚ))
-    (hB00 : B 0 0 = a) (hB10 : (N : ℤ) ∣ B 1 0)
-    (hy : y ∈ doubleCoset (natDiagGL 2 ![1, m]) ((Gamma0 N).map (mapGL ℚ))
-      ((Gamma0 N).map (mapGL ℚ))) :
-    mapGL ℚ σ * y ∈ doubleCoset (natDiagGL 2 ![1, m])
-      ((Gamma1 N).map (mapGL ℚ)) ((Gamma1 N).map (mapGL ℚ)) := by
-  have hX := mapGL_mul_coe_eq_intMatrix 2 σ 1 y B hB
-  rw [map_one, mul_one, SpecialLinearGroup.coe_one, mul_one] at hX
-  refine mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hX ?_ ?_
-  · obtain ⟨e, he⟩ := hB10
-    simp only [Matrix.mul_apply, Fin.sum_univ_two, he]
-    push_cast
-    rw [hB00, hσ00, ZMod.natCast_self]
-    ring
-  · exact (DoubleCoset.mul_mem_doubleCoset_iff hσ₀).mpr hy
-
 /-- **The anti-involution fixes the `Γ₁(N)` double coset of a primitive element of `Δ₀(N)`.**
 A matrix `σ ∈ Γ₀(N)` correcting the upper-left entry to `1` modulo `N` carries `x` and its image
 into the same `Γ₁(N)` double coset of `diag(1, m)`, and it normalizes `Γ₁(N)`. -/
@@ -195,9 +171,9 @@ private lemma atkinLehnerAntiInvolutionGamma1_bar_mem_doubleCoset_of_primitive
   have hσ₀ : mapGL ℚ (σ : SL(2, ℤ)) ∈ (Gamma0 N).map (mapGL ℚ) :=
     Subgroup.mem_map_of_mem _ σ.2
   -- left multiplication by `σ` lands both in the `Γ₁(N)` double coset of `diag(1, m)`
-  have hσx := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 N hm_pos hσ₀ hσ00 hA rfl
+  have hσx := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hσ₀ hσ00 hA rfl
     ⟨c, hc⟩ hx₀
-  have hσbar := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 N hm_pos hσ₀ hσ00
+  have hσbar := mapGL_mul_mem_doubleCoset_Gamma1_of_mem_doubleCoset_Gamma0 hm_pos hσ₀ hσ00
     (atkinLehnerAntiInvolution_bar_val N hx A hA c hc) (by simp) ⟨A 0 1, by simp⟩ hbar₀
   rw [← doubleCoset_eq_of_mem hσx] at hσbar
   -- cancel `σ`, which normalizes `Γ₁(N)`
