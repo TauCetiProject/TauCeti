@@ -42,8 +42,9 @@ ring through Noether normalization.
 * `Ideal.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient`: a maximal ideal containing a
   non-zero-divisor `g` has height at least one more than some maximal ideal of `R`, when the
   quotient by `g` is an integral `R`-algebra with going down.
-* `Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed`: along an integral extension of
-  domains, a prime `Q` over `p` has the height of `p` as soon as `R_p` is integrally closed.
+* `Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed`: along a torsion-free integral
+  extension of a domain `R`, a prime `Q` over `p` has the height of `p` as soon as `R_p` is
+  integrally closed.
 
 ## References
 
@@ -70,10 +71,12 @@ theorem primeSpectrumComap_strictMono_of_isIntegral [Algebra.IsIntegral R S] :
   exact Ideal.IsIntegral.under_lt_under ((PrimeSpectrum.asIdeal_lt_asIdeal P Q).2 h)
 
 /-- Along an integral algebra with going down, the height of a prime is the height of the prime
-below it: chains of primes descend by going down and contract injectively by incomparability. -/
+below it. -/
 theorem _root_.Ideal.height_eq_height_under_of_isIntegral_of_hasGoingDown
     [Algebra.IsIntegral R S] [Algebra.HasGoingDown R S]
     (P : Ideal S) [P.IsPrime] : P.height = (P.under R).height := by
+  -- Contraction is strictly monotone by incomparability, and chains below its values lift by
+  -- going down.
   have h := Order.height_eq_of_strictMono (comap (algebraMap R S))
     primeSpectrumComap_strictMono_of_isIntegral (fun a b hb ↦ by
       have : a.asIdeal.LiesOver (comap (algebraMap R S) a).asIdeal := ⟨rfl⟩
@@ -102,23 +105,21 @@ theorem _root_.Ideal.exists_isMaximal_height_add_one_le_of_ringEquiv_quotient
   rw [← Nb.height_eq_height_under_of_isIntegral_of_hasGoingDown, RingEquiv.height_comap]
   exact Ideal.height_map_quotientMk_span_singleton_add_one_le hg N hgN
 
-/-- Let `S` be an integral `R`-algebra which is a domain containing `R`, and let `Q` be a prime of
-`S` over a prime `p` of `R` such that `R_p` is integrally closed. Then `Q` and `p` have the same
-height: after localizing at `p`, the extension has going down (Stacks 00H8, through
-`Algebra.HasGoingDown.of_isIntegral_of_isTorsionFree`). Integral closedness of `R` itself is not
-required. -/
+/-- Let `S` be a torsion-free integral algebra over a domain `R`, and let `Q` be a prime of `S` over
+a prime `p` of `R` such that `R_p` is integrally closed. Then `Q` and `p` have the same height.
+Integral closedness of `R` itself is not required, and `S` need not be a domain. -/
 theorem _root_.Ideal.height_eq_height_of_isIntegral_of_isIntegrallyClosed [Algebra.IsIntegral R S]
-    [IsDomain S] [FaithfulSMul R S] (p : Ideal R) [p.IsPrime] (Q : Ideal S) [Q.IsPrime]
+    [IsDomain R] [Module.IsTorsionFree R S] (p : Ideal R) [p.IsPrime] (Q : Ideal S) [Q.IsPrime]
     [Q.LiesOver p] [IsIntegrallyClosed (Localization.AtPrime p)] :
     Q.height = p.height := by
-  have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain
+  -- After localizing at `p`, the extension `R_p → S_p` has going down (Stacks 00H8, through
+  -- `Algebra.HasGoingDown.of_isIntegral_of_isTorsionFree`).
   let B := Localization (Algebra.algebraMapSubmonoid S p.primeCompl)
   have hdisj := Ideal.disjoint_primeCompl_of_liesOver Q p
   have : Algebra.IsIntegral (Localization.AtPrime p) B :=
     ⟨isIntegral_localization (M := p.primeCompl) (S := S)⟩
-  have : FaithfulSMul (Localization.AtPrime p) B :=
-    (faithfulSMul_iff_algebraMap_injective _ _).mpr <|
-      localizationAlgebra_injective (M := p.primeCompl) _ _ (FaithfulSMul.algebraMap_injective R S)
+  have : Module.IsTorsionFree (Localization.AtPrime p) B :=
+    IsLocalizedModule.isTorsionFree (IsScalarTower.toAlgHom R S B).toLinearMap p.primeCompl
   let P := Q.map (algebraMap S B)
   have : P.IsPrime := IsLocalization.isPrime_of_isPrime_disjoint _ B Q ‹_› hdisj
   have hPQ : P.under S = Q := IsLocalization.under_map_of_isPrime_disjoint _ B ‹_› hdisj
