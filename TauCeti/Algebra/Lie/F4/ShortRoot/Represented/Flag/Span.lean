@@ -156,7 +156,8 @@ theorem f4ShortRootRepresentedRangeMatrixBaseChange_eq_span :
     show ⇑(f4ShortRootAdjointMatrixBaseChangeLinearMap (A := A)) =
       f4ShortRootAdjointMatrixBaseChange from
         funext f4ShortRootAdjointMatrixBaseChangeLinearMap_apply] using
-    (Module.Basis.span_range_eq_span_range_basis (S := A) f4ModularChevalleyBasis
+    (Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := A)
+      f4ModularChevalleyBasis.span_eq
       (f4ShortRootAdjointMatrixBaseChangeLinearMap (A := A))).symm
 
 /-- The distinguished-basis definition of the base-changed represented ideal agrees with the
@@ -174,7 +175,8 @@ theorem f4ShortRootRepresentedIdealMatrixBaseChange_eq_span :
       (fun y : f4ShortRootLieIdeal =>
         f4ShortRootAdjointMatrixBaseChange (A := A) (y : f4ModularChevalleyLieAlgebra)) from
         funext f4ShortRootIdealAdjointMatrixBaseChangeLinearMap_apply] using
-    (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootLieIdealBasis
+    (Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := A)
+      f4ShortRootLieIdealBasis.span_eq
       (f4ShortRootIdealAdjointMatrixBaseChangeLinearMap (A := A))).symm
 
 /-- The base-changed represented ideal is contained in the base-changed represented range. -/
@@ -226,7 +228,8 @@ private theorem f4ShortRootRepresentedRangeBasisMatrixBaseChange_eq :
           ((g.comp f4ShortRootRepresentedRange.subtype) ∘
             f4ShortRootRepresentedRangeBasis)) := rfl
     _ = Submodule.span A (Set.range (g.comp f4ShortRootRepresentedRange.subtype)) :=
-      (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedRangeBasis
+      (Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := A)
+        f4ShortRootRepresentedRangeBasis.span_eq
         (g.comp f4ShortRootRepresentedRange.subtype)).symm
     _ = Submodule.span A (Set.range (g.comp ρ)) := by
       simp only [← LinearMap.coe_range, LinearMap.range_comp, Submodule.range_subtype]
@@ -266,7 +269,8 @@ private theorem f4ShortRootRepresentedIdealBasisMatrixBaseChange_eq :
     _ = Submodule.span A (Set.range
           ((g.comp f4ShortRootRepresentedRange.subtype).comp
             f4ShortRootRepresentedIdeal.subtype)) :=
-      (Module.Basis.span_range_eq_span_range_basis (S := A) f4ShortRootRepresentedIdealBasis
+      (Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := A)
+        f4ShortRootRepresentedIdealBasis.span_eq
         ((g.comp f4ShortRootRepresentedRange.subtype).comp
           f4ShortRootRepresentedIdeal.subtype)).symm
     _ = Submodule.span A (Set.range

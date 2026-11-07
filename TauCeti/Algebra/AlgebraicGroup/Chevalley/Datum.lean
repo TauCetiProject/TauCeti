@@ -220,7 +220,8 @@ theorem sum_coordinateRoot_smul (γ : Fin t.numRoots) :
 /-- **The lattice spans the representation space through its weight basis.** -/
 theorem span_range_basis_eq_top :
     Submodule.span ℚ (Set.range fun j => (D.basis j : D.carrier)) = ⊤ := by
-  have h := D.basis.span_range_eq_span_range_basis (S := ℚ) D.lattice.subtype.toIntLinearMap
+  have h := Submodule.span_range_eq_span_range_comp_of_span_eq_top (S := ℚ) D.basis.span_eq
+    D.lattice.subtype.toIntLinearMap
   rw [AddMonoidHom.coe_toIntLinearMap, AddSubgroup.coe_subtype, Subtype.range_coe,
     D.span_lattice_eq_top] at h
   exact h.symm
