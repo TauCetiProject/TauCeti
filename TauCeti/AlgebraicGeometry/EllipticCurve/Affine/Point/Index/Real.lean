@@ -8,19 +8,19 @@ module
 public import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.Hom.Cokernel
 -- Proof-only: `|c| Ω(W₁) · [W₂(ℝ) : φ(W₁(ℝ))] = #ker φ(ℝ) · Ω(W₂)`.
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.RealPeriod
--- Proof-only: `[n]` is `n • id`, it pulls `ω` back to `n ω`, and `deg (n • f) = n² deg f`.
-import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Hom
+-- Proof-only: `[n]` is `n • id`, it pulls `ω` back to `n ω`, and `deg (n • f) = n² deg f`
+-- (`MulByInt.Separability` re-exports `MulByInt.Hom`).
 import TauCeti.AlgebraicGeometry.EllipticCurve.Isogeny.MulByInt.Separability
 
 /-!
 # The cokernel of an isogeny on real points
 
-Let `E` be an elliptic curve over `ℝ`. For an integer `n ≠ 0`,
+Let `E` be an elliptic curve over `ℝ`. For a natural number `n ≠ 0`,
 
 `n · #(E(ℝ) ⧸ n E(ℝ)) = #E(ℝ)[n]`.
 
 So the local factor `#(E(ℝ) ⧸ n E(ℝ)) / #E(ℝ)[n]` of multiplication by `n` at a real place is
-`1 / n`, the inverse of the absolute value of `n`. This is the archimedean counterpart of
+`1 / n`, the inverse of the absolute value `|n| = n`. This is the archimedean counterpart of
 `WeierstrassCurve.index_range_nsmul_eq_natCard_torsionBy_mul`, where the local factor at a finite
 place `u` is `#(O_u ⧸ n O_u)`, the inverse of the normalised absolute value of `n` at `u`. It
 reflects `E(ℝ) ≅ ℝ/ℤ × (ℤ/2ℤ)^ε`, but the proof does not use that structure. It reads the equality
@@ -64,7 +64,7 @@ namespace WeierstrassCurve
 
 variable (W : WeierstrassCurve ℝ) [W.IsElliptic] {n : ℕ}
 
-/-- **The index of `n E(ℝ)`**: for an elliptic curve over `ℝ` and an integer `n ≠ 0`,
+/-- **The index of `n E(ℝ)`**: for an elliptic curve over `ℝ` and a natural number `n ≠ 0`,
 
 `n · #(E(ℝ) ⧸ n E(ℝ)) = #E(ℝ)[n]`.
 
