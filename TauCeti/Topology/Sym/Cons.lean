@@ -11,8 +11,8 @@ public import TauCeti.Topology.Sym.Basic
 # The unordered tuples through a fixed point
 
 For a point `a` of a topological space `α`, adjoining `a` is a map `Sym α n → Sym α (n + 1)` whose
-range is the set `TauCeti.Sym.basepointDivisor a` of unordered tuples containing `a`
-(`TauCeti.Sym.range_cons`). This
+range is the set `Sym.basepointDivisor a` of unordered tuples containing `a`
+(`Sym.range_cons`). This
 file shows that the map is continuous and, as soon as the points of `α` are closed, a closed
 embedding. The unordered `(n + 1)`-tuples through `a` therefore form a closed subset of the
 symmetric power, homeomorphic to `Sym α n`.
@@ -21,7 +21,7 @@ For a surface `Σ` with a basepoint `z` this subset of `Sym^g(Σ)` is the diviso
 `V_z = {z} × Sym^{g-1}(Σ)` of Ozsváth--Szabó, through which the basepoint enters Heegaard Floer
 homology: the multiplicity `n_z(φ)` of a Whitney disk `φ` is its intersection number with `V_z`.
 That `V_z` misses the tori of a Heegaard diagram when `z` lies off the attaching curves is
-`TauCeti.Sym.disjoint_basepointDivisor_pi`. It is cut out by a single affine equation in every
+`Sym.disjoint_basepointDivisor_pi`. It is cut out by a single affine equation in every
 elementary symmetric chart it meets, as shown by
 `TauCeti.exists_continuousLinearMap_ne_zero_mem_iff_symChartAt`.
 
@@ -53,8 +53,8 @@ variable {α : Type*} [TopologicalSpace α] {n : ℕ}
 /-- Adjoining a point to an unordered tuple is continuous. -/
 @[continuity, fun_prop]
 theorem continuous_cons (a : α) : Continuous (Sym.cons a : Sym α n → Sym α (n + 1)) := by
-  have h : (Sym.cons a : Sym α n → Sym α (n + 1)) ∘ ofFn = ofFn ∘ Fin.cons a :=
-    funext fun f => (ofFn_cons a f).symm
+  have h : (Sym.cons a : Sym α n → Sym α (n + 1)) ∘ Sym.ofFn = Sym.ofFn ∘ Fin.cons a :=
+    funext fun f => (Sym.ofFn_cons a f).symm
   rw [continuous_iff_comp_ofFn, h]
   exact continuous_ofFn.comp (continuous_const.finCons continuous_id)
 
@@ -63,23 +63,23 @@ theorem isClosedMap_cons [T1Space α] (a : α) :
     IsClosedMap (Sym.cons a : Sym α n → Sym α (n + 1)) := by
   intro C hC
   -- on ordered tuples, the image is the set of tuples starting with `a` whose tail presents a
-  -- point of `C`, which is closed; its image under the closed map `ofFn` is the image of `C`
+  -- point of `C`, which is closed; its image under the closed map `Sym.ofFn` is the image of `C`
   have himage : Sym.cons a '' C =
-      ofFn '' ({f : Fin (n + 1) → α | f 0 = a} ∩ Fin.tail ⁻¹' (ofFn ⁻¹' C)) := by
+      Sym.ofFn '' ({f : Fin (n + 1) → α | f 0 = a} ∩ Fin.tail ⁻¹' (Sym.ofFn ⁻¹' C)) := by
     ext s
     constructor
     · rintro ⟨t, ht, rfl⟩
-      obtain ⟨g, rfl⟩ := ofFn_surjective t
-      exact ⟨Fin.cons a g, ⟨by simp, by simpa using ht⟩, ofFn_cons a g⟩
+      obtain ⟨g, rfl⟩ := Sym.ofFn_surjective t
+      exact ⟨Fin.cons a g, ⟨by simp, by simpa using ht⟩, Sym.ofFn_cons a g⟩
     · rintro ⟨f, ⟨hf0, hft⟩, rfl⟩
-      refine ⟨ofFn (Fin.tail f), hft, ?_⟩
-      rw [← ofFn_cons, ← hf0, Fin.cons_self_tail]
+      refine ⟨Sym.ofFn (Fin.tail f), hft, ?_⟩
+      rw [← Sym.ofFn_cons, ← hf0, Fin.cons_self_tail]
   rw [himage]
   refine isClosedMap_ofFn _ ((isClosed_singleton.preimage (continuous_apply 0)).inter ?_)
   exact (hC.preimage continuous_ofFn).preimage (continuous_pi fun i => continuous_apply i.succ)
 
 /-- In a space whose points are closed, adjoining a point is a closed embedding of `Sym α n` into
-`Sym α (n + 1)`, with range the unordered tuples through that point (`TauCeti.Sym.range_cons`). -/
+`Sym α (n + 1)`, with range the unordered tuples through that point (`Sym.range_cons`). -/
 theorem isClosedEmbedding_cons [T1Space α] (a : α) :
     IsClosedEmbedding (Sym.cons a : Sym α n → Sym α (n + 1)) :=
   .of_continuous_injective_isClosedMap (continuous_cons a)
@@ -88,13 +88,13 @@ theorem isClosedEmbedding_cons [T1Space α] (a : α) :
 /-- In a space whose points are closed, the unordered tuples through a given point form a closed
 subset of the symmetric power. -/
 theorem isClosed_basepointDivisor [T1Space α] (a : α) :
-    IsClosed (basepointDivisor a : Set (Sym α n)) := by
+    IsClosed (Sym.basepointDivisor a : Set (Sym α n)) := by
   cases n with
   | zero =>
-    rw [basepointDivisor_zero]
+    rw [Sym.basepointDivisor_zero]
     exact isClosed_empty
   | succ n =>
-    rw [← range_cons a]
+    rw [← Sym.range_cons a]
     exact (isClosedEmbedding_cons a).isClosed_range
 
 end Sym

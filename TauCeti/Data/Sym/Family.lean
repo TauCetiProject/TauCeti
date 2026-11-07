@@ -30,35 +30,37 @@ cast.
 
 ## Main declarations
 
-* `TauCeti.Sym.sumSubtype`: the concatenation of a family of unordered tuples of points of the
-  members of the family, as an unordered `n`-tuple of points of `α`.
-* `TauCeti.Sym.mem_sumSubtype_iff`: if a point of `U j` belongs to no other member, it lies in the
+* `Sym.sumSubtype`: the concatenation of a family of unordered tuples of points of the members of
+  the family, as an unordered `n`-tuple of points of `α`.
+* `Sym.mem_sumSubtype_iff`: if a point of `U j` belongs to no other member, it lies in the
   concatenation exactly when it lies in the `j`-th part.
-* `TauCeti.Sym.filter_mem_sumSubtype` and `TauCeti.Sym.sumSubtype_injective`: for a pairwise
-  disjoint family the concatenation determines all of its parts.
-* `TauCeti.Sym.mem_range_sumSubtype`: its range consists of the tuples supported in the union of
-  the family with exactly `m i` of their points in `U i`.
-* `TauCeti.Sym.sumSubtype_ofFn`: the concatenation read on ordered tuples, along a bijection
-  `(Σ i, Fin (m i)) ≃ Fin n`.
+* `Sym.filter_mem_sumSubtype` and `Sym.sumSubtype_injective`: for a pairwise disjoint family the
+  concatenation determines all of its parts.
+* `Sym.mem_range_sumSubtype`: its range consists of the tuples supported in the union of the
+  family with exactly `m i` of their points in `U i`.
+* `Sym.sumSubtype_ofFn`: the concatenation read on ordered tuples, along a bijection
+  `(Σ i, Fin (m i)) ≃ Fin n`, which exists by `TauCeti.nonempty_sigmaFinEquiv`.
 -/
 
 public section
 
-namespace TauCeti
-
-namespace Sym
-
 variable {α ι : Type*} [Fintype ι] {U : ι → Set α} {m : ι → ℕ} {n : ℕ}
 
-/-! ### Ordered tuples and multiplicities -/
+namespace TauCeti
 
 /-- A sigma type of finite sets whose cardinalities add up to `n` is equivalent to `Fin n`. -/
 theorem nonempty_sigmaFinEquiv (hn : ∑ i, m i = n) :
     Nonempty ((Σ i, Fin (m i)) ≃ Fin n) :=
   ⟨Fintype.equivFinOfCardEq (by simpa using hn)⟩
 
+end TauCeti
+
+namespace Sym
+
+/-! ### Ordered tuples and multiplicities -/
+
 /-- The multiset underlying an ordered tuple, as a sum of singletons. This is the shape in which
-`TauCeti.Sym.ofFn` meets the sum of multisets defining `TauCeti.Sym.sumSubtype`. -/
+`Sym.ofFn` meets the sum of multisets defining `Sym.sumSubtype`. -/
 private theorem coe_ofFn_eq_sum {β : Type*} {k : ℕ} (g : Fin k → β) :
     (ofFn g : Multiset β) = ∑ j, ({g j} : Multiset β) := by
   have hmap : (ofFn g : Multiset β) = Multiset.map g (Finset.univ : Finset (Fin k)).val := by
@@ -90,7 +92,7 @@ theorem coe_sumSubtype (hn : ∑ i, m i = n) (p : ∀ i, Sym (U i) (m i)) :
 /-- Every point of a concatenated tuple lies in one of the sets of the family. -/
 theorem exists_mem_of_mem_sumSubtype {a : α} {hn : ∑ i, m i = n} {p : ∀ i, Sym (U i) (m i)}
     (ha : a ∈ sumSubtype U m hn p) : ∃ i, a ∈ U i := by
-  rw [← _root_.Sym.mem_coe, coe_sumSubtype, Multiset.mem_sum] at ha
+  rw [← Sym.mem_coe, coe_sumSubtype, Multiset.mem_sum] at ha
   obtain ⟨i, -, hi⟩ := ha
   obtain ⟨x, -, rfl⟩ := Multiset.mem_map.1 hi
   exact ⟨i, x.2⟩
@@ -100,7 +102,7 @@ exactly when it lies in the `j`-th part. -/
 theorem mem_sumSubtype_iff {j : ι} {a : α} (h : ∀ i, i ≠ j → a ∉ U i)
     {hn : ∑ i, m i = n} {p : ∀ i, Sym (U i) (m i)} (ha : a ∈ U j) :
     a ∈ sumSubtype U m hn p ↔ (⟨a, ha⟩ : U j) ∈ p j := by
-  rw [← _root_.Sym.mem_coe, coe_sumSubtype, Multiset.mem_sum]
+  rw [← Sym.mem_coe, coe_sumSubtype, Multiset.mem_sum]
   refine ⟨?_, fun hp => ⟨j, Finset.mem_univ j, Multiset.mem_map.2 ⟨_, hp, rfl⟩⟩⟩
   rintro ⟨i, -, hi⟩
   obtain ⟨x, hx, rfl⟩ := Multiset.mem_map.1 hi
@@ -162,7 +164,7 @@ theorem exists_sumSubtype_eq [∀ i, DecidablePred (· ∈ U i)]
     · rw [Multiset.le_iff_count]
       intro a
       by_cases haw : a ∈ (w : Multiset α)
-      · obtain ⟨i, hi⟩ := hw a (_root_.Sym.mem_coe.1 haw)
+      · obtain ⟨i, hi⟩ := hw a (Sym.mem_coe.1 haw)
         rw [Multiset.count_sum']
         calc
           Multiset.count a (w : Multiset α) = Multiset.count a (A i) := by simp [hA, hi]
@@ -176,7 +178,7 @@ theorem exists_sumSubtype_eq [∀ i, DecidablePred (· ∈ U i)]
   have hrange : ∀ i, (⟨A i, hcardA i⟩ : Sym α (m i)) ∈
       Set.range (Sym.map (Subtype.val : U i → α)) := fun i =>
     (mem_range_map _).2 fun a ha =>
-      ⟨⟨a, (Multiset.mem_filter.1 (_root_.Sym.mem_coe.1 ha)).2⟩, rfl⟩
+      ⟨⟨a, (Multiset.mem_filter.1 (Sym.mem_coe.1 ha)).2⟩, rfl⟩
   choose p hp using hrange
   refine ⟨p, Sym.coe_injective ?_⟩
   rw [coe_sumSubtype, ← hsum]
@@ -214,5 +216,3 @@ theorem mem_range_sumSubtype [∀ i, DecidablePred (· ∈ U i)]
   exact ⟨fun a ha => exists_mem_of_mem_sumSubtype ha, card_filter_mem_sumSubtype h hn p⟩
 
 end Sym
-
-end TauCeti

@@ -28,7 +28,7 @@ complex structure, after Ozsváth--Szabó
 ([arXiv:math/0101206](https://arxiv.org/abs/math/0101206), §2.1); the charted structure itself is
 in `TauCeti/Geometry/Manifold/SymmetricPower.lean`.
 
-The open-embedding proof reduces to ordered tuples: `TauCeti.Sym.ofFn` is an open quotient map on
+The open-embedding proof reduces to ordered tuples: `Sym.ofFn` is an open quotient map on
 each member of the family, hence so is the product of those maps, and read on ordered tuples the
 concatenation is the regrouping of `n` entries along a bijection `(Σ i, Fin (m i)) ≃ Fin n`, which
 is a homeomorphism followed by the (open) inclusions of the members of the family.
@@ -81,18 +81,18 @@ private theorem isOpenMap_regroup (hU : ∀ i, IsOpen (U i)) (e : (Σ i, Fin (m 
 
 omit [Fintype ι] in
 private theorem isOpenQuotientMap_piMap_ofFn :
-    IsOpenQuotientMap (Pi.map fun i => (ofFn : (Fin (m i) → U i) → Sym (U i) (m i))) :=
+    IsOpenQuotientMap (Pi.map fun i => (Sym.ofFn : (Fin (m i) → U i) → Sym (U i) (m i))) :=
   IsOpenQuotientMap.piMap fun _ => isOpenQuotientMap_ofFn
 
 omit [TopologicalSpace α] in
 private theorem sumSubtype_comp_piMap_ofFn (hn : ∑ i, m i = n) (e : (Σ i, Fin (m i)) ≃ Fin n) :
-    sumSubtype U m hn ∘ (Pi.map fun i => (ofFn : (Fin (m i) → U i) → Sym (U i) (m i)))
-      = ofFn ∘ regroup U m e :=
-  funext fun f => sumSubtype_ofFn hn e f
+    Sym.sumSubtype U m hn ∘ (Pi.map fun i => (Sym.ofFn : (Fin (m i) → U i) → Sym (U i) (m i)))
+      = Sym.ofFn ∘ regroup U m e :=
+  funext fun f => Sym.sumSubtype_ofFn hn e f
 
 /-- Concatenating unordered tuples of points of the members of a family is continuous. -/
 @[continuity, fun_prop]
-theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (sumSubtype U m hn) := by
+theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (Sym.sumSubtype U m hn) := by
   obtain ⟨e⟩ := nonempty_sigmaFinEquiv hn
   rw [isOpenQuotientMap_piMap_ofFn.isQuotientMap.continuous_iff,
     sumSubtype_comp_piMap_ofFn hn e]
@@ -101,7 +101,7 @@ theorem continuous_sumSubtype (hn : ∑ i, m i = n) : Continuous (sumSubtype U m
 /-- For a family of open sets, concatenating unordered tuples of points of its members is an open
 map. -/
 theorem isOpenMap_sumSubtype (hU : ∀ i, IsOpen (U i)) (hn : ∑ i, m i = n) :
-    IsOpenMap (sumSubtype U m hn) := by
+    IsOpenMap (Sym.sumSubtype U m hn) := by
   obtain ⟨e⟩ := nonempty_sigmaFinEquiv hn
   rw [isOpenQuotientMap_piMap_ofFn.isOpenMap_iff, sumSubtype_comp_piMap_ofFn hn e]
   exact isOpenMap_ofFn.comp (isOpenMap_regroup hU e)
@@ -109,11 +109,11 @@ theorem isOpenMap_sumSubtype (hU : ∀ i, IsOpen (U i)) (hn : ∑ i, m i = n) :
 /-- **The symmetric power is locally a product.** For a pairwise disjoint family of open sets,
 concatenation identifies the product of the symmetric powers of its members with an open subspace
 of `Sym α n`, namely the unordered tuples supported in the union of the family with exactly `m i`
-of their points in `U i` (`TauCeti.Sym.mem_range_sumSubtype`). -/
+of their points in `U i` (`Sym.mem_range_sumSubtype`). -/
 theorem isOpenEmbedding_sumSubtype (hU : ∀ i, IsOpen (U i))
     (h : Pairwise (Function.onFun Disjoint U)) (hn : ∑ i, m i = n) :
-    IsOpenEmbedding (sumSubtype U m hn) :=
-  .of_continuous_injective_isOpenMap (continuous_sumSubtype hn) (sumSubtype_injective h hn)
+    IsOpenEmbedding (Sym.sumSubtype U m hn) :=
+  .of_continuous_injective_isOpenMap (continuous_sumSubtype hn) (Sym.sumSubtype_injective h hn)
     (isOpenMap_sumSubtype hU hn)
 
 end Sym
@@ -136,7 +136,7 @@ theorem exists_mem_range_sumSubtype_of_t2 {α : Type*} [TopologicalSpace α] [T2
       ∀ {n : ℕ} (w : Sym α n), (∀ a ∈ w, a ∈ S) →
         ∃ hm : ∑ i : S, Multiset.count (i : α) (w : Multiset α) = n,
           w ∈ Set.range
-            (TauCeti.Sym.sumSubtype V (fun i => Multiset.count (i : α) (w : Multiset α)) hm) := by
+            (Sym.sumSubtype V (fun i => Multiset.count (i : α) (w : Multiset α)) hm) := by
   classical
   obtain ⟨V₀, hV₀, hdisj⟩ := (S : Set α).toFinite.t2_separation (X := α)
   let V : S → Set α := fun i => V₀ (i : α) ∩ W (i : α)
@@ -151,7 +151,7 @@ theorem exists_mem_range_sumSubtype_of_t2 {α : Type*} [TopologicalSpace α] [T2
     rw [Finset.sum_coe_sort S fun a => Multiset.count a (w : Multiset α)]
     exact (Multiset.sum_count_eq_card (fun a ha => hw a (_root_.Sym.mem_coe.1 ha))).trans w.2
   refine ⟨hm, ?_⟩
-  rw [TauCeti.Sym.mem_range_sumSubtype hVdisj]
+  rw [Sym.mem_range_sumSubtype hVdisj]
   refine ⟨fun a ha => ⟨⟨a, hw a ha⟩, (hV₀ a).1, hWm a (hw a ha)⟩, fun i => ?_⟩
   have hfilter : Multiset.filter (fun a => a ∈ V i) (w : Multiset α)
       = Multiset.filter (fun a => (i : α) = a) (w : Multiset α) := by
