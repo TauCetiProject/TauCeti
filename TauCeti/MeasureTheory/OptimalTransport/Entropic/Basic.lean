@@ -7,6 +7,7 @@ module
 
 public import TauCeti.InformationTheory.KullbackLeibler.ChangeOfReference
 public import TauCeti.InformationTheory.KullbackLeibler.Convex
+public import TauCeti.InformationTheory.KullbackLeibler.LowerSemicontinuous
 public import TauCeti.InformationTheory.KullbackLeibler.Tilted
 public import TauCeti.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
@@ -287,25 +288,8 @@ theorem exists_isCoupling_klDiv_eq_schroedingerValue [IsFiniteMeasure μ] [IsFin
         (by norm_num : (2⁻¹ : ℝ≥0) < 1)).pow 2
       rwa [zero_pow two_ne_zero] at h0
     simpa using tendsto_const_nhds.add (ENNReal.tendsto_coe.2 h0)
-  calc klDiv (R.withDensity fun z ↦ ENNReal.ofReal (g z)) R
-      = ∫⁻ z, ENNReal.ofReal (klFun (g z)) ∂R := by
-        rw [klDiv_eq_lintegral_klFun_of_ac (withDensity_absolutelyContinuous _ _)]
-        refine lintegral_congr_ae ?_
-        filter_upwards [Measure.rnDeriv_withDensity R hgm.measurable.ennreal_ofReal, hg0]
-          with z hz hz0
-        rw [hz, ENNReal.toReal_ofReal hz0]
-    _ = ∫⁻ z, liminf (fun n ↦ ENNReal.ofReal (klFun (f n z))) atTop ∂R := by
-        refine lintegral_congr_ae ?_
-        filter_upwards [hlim] with z hz
-        exact (((ENNReal.continuous_ofReal.comp continuous_klFun).tendsto _).comp
-          hz).liminf_eq.symm
-    _ ≤ liminf (fun n ↦ ∫⁻ z, ENNReal.ofReal (klFun (f n z)) ∂R) atTop :=
-        lintegral_liminf_le' fun n ↦ by fun_prop
-    _ = liminf (fun n ↦ klDiv (π n) R) atTop := by
-        simp_rw [hf_def, ← klDiv_eq_lintegral_klFun_of_ac (hac _)]
-    _ ≤ liminf (fun n ↦ S + (t n ^ 2 : ℝ≥0)) atTop :=
-        liminf_le_liminf (Eventually.of_forall fun n ↦ (hπS n).le)
-    _ = S := hεlim.liminf_eq
+  exact (klDiv_withDensity_le_liminf hac hlim).trans
+    ((liminf_le_liminf (Eventually.of_forall fun n ↦ (hπS n).le)).trans_eq hεlim.liminf_eq)
 
 /-- **Existence and uniqueness of the Schrödinger minimizer.** For a finite reference measure and
 a finite source measure, a finite Schrödinger value is attained by exactly one coupling. -/
