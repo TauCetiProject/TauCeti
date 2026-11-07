@@ -22,6 +22,8 @@ We prove the sharp dimension bound, construct a realization attaining it, and de
 Cartan center, including its intersection with the coroot span. The ambient space is arbitrary,
 so these results apply to rational realizations and to realizations over other fields alike.
 Minimal realizations are constructed by adjoining a complement to the transpose matrix's image.
+Restriction to a subspace containing the coroots preserves the realization whenever that subspace
+and the Cartan center together span the ambient space.
 
 The mathematical source is V. G. Kac, *Infinite-dimensional Lie algebras*, third edition,
 §1.1 (realizations and Proposition 1.1) and Proposition 1.6 (the Cartan center).
@@ -168,6 +170,63 @@ private theorem rootEvaluation_eq_mulVec_coordinates {J : Type*} [Fintype J]
       rw [b.sum_equivFun, rootEvaluation_apply]
     _ = _ := by
       simp only [map_sum, map_smul, smul_eq_mul, Matrix.mulVec, dotProduct, mul_comm]
+
+section Restriction
+
+omit [Fintype I] in
+/-- Restrict a realization to a subspace containing its coroots and supplying every root
+evaluation. The latter condition is expressed by spanning together with the Cartan center. -/
+def restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) : CartanRealization A M where
+  coroot i := ⟨R.coroot i, hc (R.coroot_mem_corootSpan i)⟩
+  root i := (R.root i).comp M.subtype
+  coroot_linearIndependent := R.coroot_linearIndependent.of_comp M.subtype
+  root_linearIndependent := by
+    classical
+    refine linearIndependent_iff'.mpr fun s c h i hi => ?_
+    apply linearIndependent_iff'.mp R.root_linearIndependent s c ?_ i hi
+    ext x
+    have hx : x ∈ M ⊔ R.cartanCenter := hs ▸ Submodule.mem_top
+    obtain ⟨m, hm, z, hz, rfl⟩ := Submodule.mem_sup.mp hx
+    have hm' := congrArg (fun f : Module.Dual K M => f ⟨m, hm⟩) h
+    have hz' := (R.mem_cartanCenter_iff z).mp hz
+    simpa [map_add, hz', LinearMap.sum_apply, LinearMap.smul_apply] using hm'
+  root_coroot i j := R.root_coroot i j
+
+omit [Fintype I] in
+/-- Restriction preserves each simple coroot under the subspace inclusion. -/
+@[simp]
+theorem coe_restrict_coroot (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) (i : I) :
+    ((R.restrict M hc hs).coroot i : H) = R.coroot i := (rfl)
+
+omit [Fintype I] in
+/-- Restricted roots are the original functionals on vectors in the subspace. -/
+@[simp]
+theorem restrict_root_apply (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) (i : I) (m : M) :
+    (R.restrict M hc hs).root i m = R.root i m := (rfl)
+
+omit [Fintype I] in
+/-- The coroot span of a restriction maps onto the original coroot span. -/
+@[simp]
+theorem map_corootSpan_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) :
+    (R.restrict M hc hs).corootSpan.map M.subtype = R.corootSpan := by
+  have heq : M.subtype ∘ (R.restrict M hc hs).coroot = R.coroot :=
+    funext (R.coe_restrict_coroot M hc hs)
+  simp only [corootSpan, Submodule.map_span, ← Set.range_comp, heq]
+
+omit [Fintype I] in
+/-- The center of a restricted realization is the trace of the original center. -/
+@[simp]
+theorem cartanCenter_restrict (M : Submodule K H) (hc : R.corootSpan ≤ M)
+    (hs : M ⊔ R.cartanCenter = ⊤) :
+    (R.restrict M hc hs).cartanCenter = R.cartanCenter.comap M.subtype := by
+  ext m
+  simp
+
+end Restriction
 
 section FiniteDimensional
 
