@@ -51,8 +51,12 @@ theorem isCharacterMap_frobenius :
     IsCharacterMap d.weightTorus d.frobenius d.1.datumFrobenius.weightMap := by
   rw [ValidLieTypeIndex.datumFrobenius_weightMap, isCharacterMap_iff]
   intro s
-  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
-    MonoidHom.id_apply] using d.frobenius_weightTorus s
+  simpa only [frobenius_def, weightTorus_apply, torusPointMap_nsmul, torusPointMap_id,
+    torusPointMap_one, MonoidHom.pow_apply, MonoidHom.id_apply, Pi.pow_def,
+    ValidLieTypeIndex.fieldOrder_eq_characteristic_pow] using
+    (isCharacterMap_iff.mp (SpStd.isCharacterMap_frobenius d.carrierRank
+      d.1.characteristic d.1.fieldExponent d.1.Closure))
+      (fun i => s (Fin.cast d.carrierRank_add_one i))
 
 /-- The uniform native datum Steinberg map is the character pullback of the represented
 Steinberg map on the type-C fundamental-weight torus. The diagram factor is trivial on this
@@ -62,9 +66,7 @@ theorem isCharacterMap_steinberg :
   have hdatum : d.1.datumSteinberg = d.1.datumFrobenius :=
     (d.1.datumSteinberg_eq_datumFrobenius_iff_of_not_usesHalfFrobenius
       d.toGraphTwistedIndex.2).mpr d.diagramPerm_eq_one
-  rw [hdatum, ValidLieTypeIndex.datumFrobenius_weightMap, isCharacterMap_iff]
-  intro s
-  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
-    MonoidHom.id_apply] using d.steinberg_weightTorus s
+  rw [hdatum, steinberg_def]
+  exact d.isCharacterMap_frobenius
 
 end TauCeti.TypeCLieIndex
