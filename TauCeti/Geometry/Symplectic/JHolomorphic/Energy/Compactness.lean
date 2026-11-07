@@ -47,6 +47,23 @@ open scoped NNReal BoundedContinuousFunction
 variable {V : Type*} [NormedAddCommGroup V] [InnerProductSpace ℝ V]
 variable {J : V → V →L[ℝ] V} {W K : Set V}
 
+/-- Cauchy--Riemann bound: if `fderiv ℝ u z I = L (fderiv ℝ u z 1)` with `‖L‖ ≤ M`, and the
+real-direction derivative has norm at most `B`, then `‖fderiv ℝ u z‖ ≤ (1 + M) * B`. -/
+private lemma norm_fderiv_le_of_apply_I_eq {u : ℂ → V} {z : ℂ} {L : V →L[ℝ] V} {M B : ℝ}
+    (hCR : fderiv ℝ u z I = L (fderiv ℝ u z 1)) (hL : ‖L‖ ≤ M)
+    (hreal : ‖fderiv ℝ u z 1‖ ≤ B) (hB : 0 ≤ B) :
+    ‖fderiv ℝ u z‖ ≤ (1 + M) * B := by
+  have hM : 0 ≤ M := (norm_nonneg _).trans hL
+  have himag : ‖fderiv ℝ u z I‖ ≤ M * B := by
+    rw [hCR]
+    exact (L.le_opNorm _).trans (by gcongr)
+  refine ContinuousLinearMap.opNorm_le_bound _ (by positivity) fun w ↦ ?_
+  calc
+    ‖fderiv ℝ u z w‖ ≤ (‖fderiv ℝ u z 1‖ + ‖fderiv ℝ u z I‖) * ‖w‖ :=
+      (fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w
+    _ ≤ (B + M * B) * ‖w‖ := by gcongr
+    _ = (1 + M) * B * ‖w‖ := by ring
+
 /-- Small-energy pseudoholomorphic curves with image in a fixed compact set share a Lipschitz
 bound on the concentric half disk. The energy threshold is uniform in the centre and radius;
 the Lipschitz constant is uniform in the centre and may depend on the radius. -/
@@ -97,19 +114,9 @@ theorem exists_pos_forall_lipschitzOnWith_of_small_energy
   -- The Cauchy--Riemann equation converts the real-direction estimate into an operator bound.
   have hop : ∀ z ∈ closedBall z₀ (r / 2), ‖fderiv ℝ u z‖ ≤ (C : ℝ) := by
     intro z hz
-    have hreal := hbound z hz
-    have himag : ‖fderiv ℝ u z I‖ ≤ max a 0 * B := by
-      rw [hCR z (hinner hz)]
-      exact ((J (u z)).le_opNorm _).trans (by
-        gcongr
-        exact (ha _ (huK (hinner hz))).trans (le_max_left _ _))
-    refine ContinuousLinearMap.opNorm_le_bound _ C.coe_nonneg fun w ↦ ?_
-    calc
-      ‖fderiv ℝ u z w‖ ≤ (‖fderiv ℝ u z 1‖ + ‖fderiv ℝ u z I‖) * ‖w‖ :=
-        (fderiv ℝ u z).norm_apply_le_norm_one_add_norm_I w
-      _ ≤ (B + max a 0 * B) * ‖w‖ := by
-        gcongr
-      _ = (C : ℝ) * ‖w‖ := by rw [hCcoe]; ring
+    rw [hCcoe]
+    exact norm_fderiv_le_of_apply_I_eq (hCR z (hinner hz))
+      ((ha _ (huK (hinner hz))).trans (le_max_left _ _)) (hbound z hz) (by positivity)
   exact (convex_closedBall z₀ (r / 2)).lipschitzOnWith_of_nnnorm_fderiv_le
     (fun z hz ↦ (hu.contDiffAt (isOpen_ball.mem_nhds (hinner hz))).differentiableAt
       (by norm_num))
