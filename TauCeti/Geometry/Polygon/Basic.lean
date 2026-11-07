@@ -41,6 +41,10 @@ the paths of its edges, and the fact that the vertices lie on the boundary.
 * `Polygon.boundary_reverse`: the reversal has the same boundary.
 * `Polygon.boundary_insertVertex`: inserting a vertex `c` after vertex `i` replaces edge `i` by the
   segments from vertex `i` to `c` and from `c` to the next vertex.
+* `Polygon.edgeSet_subset_boundary_insertVertex`,
+  `Polygon.affineSegment_union_subset_boundary_insertVertex` and
+  `Polygon.exists_mem_edgeSet_of_mem_boundary_insertVertex`: the old edges other than `i` and the
+  two new edges lie on the new boundary, and every other point of it lies on an old edge `k ≠ i`.
 * `Polygon.boundary_insertVertex_edgePath`: subdividing an edge at one of its points does not
   change the boundary.
 * `Polygon.boundary_map`: the boundary of the image under an affine map is the image of the
@@ -304,6 +308,29 @@ theorem boundary_insertVertex :
     · exact ⟨i.succ.succAbove k, by rwa [edgeSet_insertVertex_succAbove _ _ _ hk]⟩
     · exact ⟨i.castSucc, by rwa [edgeSet_insertVertex_castSucc_self]⟩
     · exact ⟨i.succ, by rwa [edgeSet_insertVertex_succ_self]⟩
+
+/-- The two new edges of `poly.insertVertex i c` lie on its boundary. -/
+theorem affineSegment_union_subset_boundary_insertVertex :
+    affineSegment R (poly i) c ∪ affineSegment R c (poly (finRotate n i)) ⊆
+      (poly.insertVertex i c).boundary R := by
+  rw [boundary_insertVertex]
+  exact subset_union_right
+
+/-- An edge `k ≠ i` of `poly` is an edge of `poly.insertVertex i c`, so lies on its boundary. -/
+theorem edgeSet_subset_boundary_insertVertex {k : Fin n} (hk : k ≠ i) :
+    poly.edgeSet R k ⊆ (poly.insertVertex i c).boundary R := by
+  rw [boundary_insertVertex]
+  exact subset_union_of_subset_left
+    (subset_iUnion₂ (s := fun k (_ : k ≠ i) => poly.edgeSet R k) k hk) _
+
+/-- A point of the boundary of `poly.insertVertex i c` off the two new edges lies on an edge
+`k ≠ i` of `poly`. -/
+theorem exists_mem_edgeSet_of_mem_boundary_insertVertex {x : P}
+    (hx : x ∈ (poly.insertVertex i c).boundary R)
+    (hxc : x ∉ affineSegment R (poly i) c ∪ affineSegment R c (poly (finRotate n i))) :
+    ∃ k, k ≠ i ∧ x ∈ poly.edgeSet R k := by
+  rw [boundary_insertVertex] at hx
+  simpa only [mem_iUnion, exists_prop] using hx.resolve_right hxc
 
 end Edges
 
