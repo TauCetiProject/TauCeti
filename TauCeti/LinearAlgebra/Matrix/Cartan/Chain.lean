@@ -30,8 +30,10 @@ counterparts.
 
 ## Main results
 
-* `TauCeti.chainEntry_eq_cartanMatrix_A`: a chain of `n` positions is Mathlib's Cartan matrix of
-  type `Aₙ`, which is what makes the name of the entry function the right one.
+* `TauCeti.chainEntry_eq_cartanMatrix_A`: on `n` positions a chain is Mathlib's
+  `CartanMatrix.A n`, the Cartan matrix of type `Aₙ`.
+* `TauCeti.chainBEntry_eq_cartanMatrix_B`: on `n` positions, with the short end at the last one, a
+  chain of type `B` is Mathlib's `CartanMatrix.B n`.
 * `TauCeti.sum_range_chainEntry_mul`: the row of a chain at a position, evaluated at a weight `g`.
   Away from the two ends it is the second difference `2 g (m + 1) - g m - g (m + 2)`, so a weight
   that is linear in the position is annihilated there.
@@ -166,10 +168,11 @@ lemma chainEntry_eq_cartanMatrix_A {n : ℕ} (i j : Fin n) :
   simp only [CartanMatrix.A, Matrix.of_apply, Fin.ext_iff]
   split_ifs <;> omega
 
-/-- **The row of a chain, evaluated at a weight.** Along `n` positions `1, …, n`, carrying the
-weights `g 1, …, g n`, the entries at the position `m` collect `2 g (m + 1) - g m - g (m + 2)`, the
-term `g m` being absent at `m = 0` and the term `g (m + 2)` at the far end. A weight that is linear
-in the position is therefore annihilated away from the two ends.
+/-- **The row of a chain, evaluated at a weight.** On a chain of `n` positions `0, …, n - 1`, the
+position `s` carrying the weight `g (s + 1)`, the row `m` collects `2 g (m + 1) - g m - g (m + 2)`,
+the term `g m` being absent at the head `m = 0` and the term `g (m + 2)` at the far end
+`m + 1 = n`. A weight that is linear in the position is therefore annihilated away from the two
+ends.
 
 The offset by one in the argument of `g` leaves room for a further vertex at the position `0`, to
 which the chain is attached in the diagrams assembled from it. -/
@@ -188,9 +191,7 @@ theorem sum_range_chainEntry_mul_affine {R : Type*} [NonAssocRing R] {n m : ℕ}
     ∑ s ∈ Finset.range n, (chainEntry m s : R) * (a * (s : R) + b) =
       if m = 0 then (if m + 1 = n then 2 * b else b - a)
       else if m + 1 = n then a * (n : R) + b else 0 := by
-  have hrow := sum_range_chainEntry_mul hm fun u : ℕ ↦ a * ((u - 1 : ℕ) : R) + b
-  simp only [Nat.add_sub_cancel] at hrow
-  rw [hrow]
+  simp only [chainEntry, sum_range_chainBEntry_mul hm]
   rcases m with _ | m <;> split_ifs <;> subst_vars <;>
     first | contradiction | omega | (push_cast; noncomm_ring)
 
