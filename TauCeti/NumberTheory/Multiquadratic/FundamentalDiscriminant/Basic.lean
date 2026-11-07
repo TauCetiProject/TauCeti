@@ -55,6 +55,8 @@ identifications remain future work.
 * `TauCeti.Multiquadratic.isFundamentalDiscr_prod_oddPrimeDiscriminant` and its even-factor
   companion `..._of_isEvenPrimeDiscriminant`: the two shape-specific component theorems that
   `isFundamentalDiscr_prod` assembles.
+* `TauCeti.Multiquadratic.eq_of_isEvenPrimeDiscriminant_of_prod_eq`: a set of prime
+  discriminants whose product is a fundamental discriminant has at most one even member.
 
 The generic `Int.IsFundamentalDiscr` fact `Int.IsFundamentalDiscr.not_isSquare_rat` lives in
 `TauCeti.NumberTheory.FundamentalDiscriminant`.
@@ -233,5 +235,17 @@ theorem isFundamentalDiscr_prod_of_pairwise_isCoprime {D : ι → ℤ}
       simp [Int.isUnit_iff] at h2
 
 end Products
+
+/-- **A set of prime discriminants whose product is a fundamental discriminant contains at most
+one even prime discriminant.** Two distinct even prime discriminants (among `-4`, `8`, `-8`) have
+a product divisible by `16`. -/
+theorem eq_of_isEvenPrimeDiscriminant_of_prod_eq {s : Finset ℤ} {D : ℤ}
+    (hD : Int.IsFundamentalDiscr D) (hprod : ∏ P ∈ s, P = D) {P Q : ℤ} (hP : P ∈ s)
+    (hQ : Q ∈ s) (hPe : IsEvenPrimeDiscriminant P) (hQe : IsEvenPrimeDiscriminant Q) : P = Q := by
+  by_contra hne
+  refine hD.not_sixteen_dvd (dvd_trans ?_ (hprod ▸ ?_ : P * Q ∣ _))
+  · rcases hPe with rfl | rfl | rfl <;> rcases hQe with rfl | rfl | rfl <;> simp at hne <;> norm_num
+  · simpa [Finset.prod_pair hne] using
+      Finset.prod_dvd_prod_of_subset {P, Q} s id (by simp [Finset.insert_subset_iff, hP, hQ])
 
 end TauCeti.Multiquadratic
