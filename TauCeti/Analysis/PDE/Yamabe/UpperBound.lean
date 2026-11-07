@@ -346,7 +346,7 @@ private lemma norm_mgradient_transplant_le (p : M) {R t η : ℝ} (ht0 : 0 < t) 
   rw [heq.fderiv_eq, hcomp, ContinuousLinearMap.opNorm_comp_linearIsometryEquiv, norm_smul,
     Real.norm_of_nonneg (inv_nonneg.2 ht0.le)]
 
-omit [T2Space M] in
+omit [T2Space M] [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- The Dirichlet energy of the transplant `u` is at most `(1 + η) ³ t ^ (n - 2)` times the
 Euclidean energy of `v`, where `Ψ` rescales coordinates by `t⁻¹`. -/
 private lemma integral_norm_mgradient_sq_le (p : M) {R t η : ℝ} (hn : 2 < finrank ℝ E)
@@ -569,6 +569,7 @@ private lemma div_rpow_le_distortion_bound {n : ℕ} {P η t S A B D N J : ℝ} 
         field_simp
     _ ≤ _ := by gcongr
 
+omit [IsContMDiffRiemannianBundle I ∞ E (fun x : M ↦ TangentSpace I x)] in
 /-- **The transplanted test function.** Given orthonormal coordinates `L` at `p` (see
 `exists_equiv_map_addHaar_eq_smul_volume`), a Euclidean test function `v` supported in the unit
 ball and a scale `t` with `t ‖L⁻¹‖ < R`, the function `v (t⁻¹ • L (· - φ p))` transplants to a
