@@ -73,8 +73,9 @@ open Set
 
 Coordinates are pairings with the seven Bourbaki-numbered simple coroots. The ordering begins at
 `ϖ₇ = (0, 0, 0, 0, 0, 0, 1)` and then lists weights reached successively by simple
-reflections; no mathematical structure depends on the ordering. -/
-def e7MinusculeWeight : Fin 56 → Fin 7 → ℤ := ![
+reflections; no mathematical structure depends on the ordering. The table is exposed so that
+finite checks of dual-lattice norms can compute with its entries. -/
+@[expose] def e7MinusculeWeight : Fin 56 → Fin 7 → ℤ := ![
   ![0, 0, 0, 0, 0, 0, 1], ![0, 0, 0, 0, 0, 1, -1],
   ![0, 0, 0, 0, 1, -1, 0], ![0, 0, 0, 1, -1, 0, 0],
   ![0, 1, 1, -1, 0, 0, 0], ![0, -1, 1, 0, 0, 0, 0],
