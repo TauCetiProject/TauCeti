@@ -38,12 +38,6 @@ open scoped ENNReal
 
 namespace TauCeti
 
-/-- The constantly extended Cantor function has bounded classical variation on the whole
-line, despite not being integrable there. -/
-theorem boundedVariationOn_cantorFunction : BoundedVariationOn cantorFunction univ := by
-  rw [BoundedVariationOn, eVariationOn_cantorFunction]
-  exact ENNReal.one_ne_top
-
 /-- The derivative vector measure of the Cantor function is the Cantor probability measure
 viewed as a signed measure. -/
 theorem vectorMeasure_cantorFunction :
@@ -61,7 +55,9 @@ theorem integral_deriv_mul_cantorFunction {φ : ℝ → ℝ} (hφ : ContDiff ℝ
     ∫ x, deriv φ x * cantorFunction x = -∫ x, φ x ∂cantorStieltjesFunction.measure := by
   have h := boundedVariationOn_cantorFunction.integral_deriv_smul_eq_neg_integral_vectorMeasure
     hφ hcφ
-  have hB : ContinuousLinearMap.lsmul ℝ ℝ (E := ℝ) = ContinuousLinearMap.mul ℝ ℝ := rfl
+  have hB : ContinuousLinearMap.lsmul ℝ ℝ (E := ℝ) = ContinuousLinearMap.mul ℝ ℝ := by
+    ext
+    simp
   rw [vectorMeasure_cantorFunction, hB, VectorMeasure.integral_mul_toSignedMeasure] at h
   simpa only [smul_eq_mul] using h
 
