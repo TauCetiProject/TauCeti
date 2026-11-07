@@ -60,6 +60,9 @@ simplex need not contain every vertex even when `K` does.
   lies in no face changes nothing.
 * `PreAbstractSimplicialComplex.ncard_incident_deletion_lt`: deleting a face containing `v`
   strictly shrinks the finite set of faces containing `v`.
+* `PreAbstractSimplicialComplex.insert_mem_deletion_of_notMem` and
+  `PreAbstractSimplicialComplex.deletion_deletion_singleton_of_mem`: deleting a face `σ` preserves
+  domination of `v` by a vertex `w ∉ σ`, and does not affect a later deletion of `v ∈ σ`.
 * monotonicity of all three constructions in `K`.
 -/
 
@@ -275,6 +278,27 @@ theorem ncard_incident_deletion_lt {v : ι} (hσ : σ ∈ K) (hvσ : v ∈ σ)
     rw [heq]
     exact ⟨hσ, hvσ⟩
   exact (mem_deletion.mp hσT.1).2 Finset.Subset.rfl
+
+/-- Domination of `v` by `w ∉ σ` survives deleting the face `σ`. -/
+theorem insert_mem_deletion_of_notMem {v w : ι} (hwσ : w ∉ σ)
+    (hdom : ∀ τ ∈ K, v ∈ τ → insert w τ ∈ K) :
+    ∀ τ ∈ deletion K σ, v ∈ τ → insert w τ ∈ deletion K σ := by
+  intro τ hτ hvτ
+  obtain ⟨hτK, hστ⟩ := mem_deletion.mp hτ
+  refine mem_deletion.mpr ⟨hdom τ hτK hvτ, fun hsub => hστ fun a ha => ?_⟩
+  exact (Finset.mem_insert.mp (hsub ha)).resolve_left (fun haw => hwσ (haw ▸ ha))
+
+omit [DecidableEq ι] in
+/-- Deleting a face `σ` containing `v` does not affect a subsequent deletion of `v`. -/
+theorem deletion_deletion_singleton_of_mem {v : ι} (hvσ : v ∈ σ) :
+    deletion (deletion K σ) {v} = deletion K {v} := by
+  apply SetLike.ext
+  intro τ
+  simp only [mem_deletion, Finset.singleton_subset_iff]
+  constructor
+  · exact fun h => ⟨h.1.1, h.2⟩
+  · rintro ⟨hτ, hvτ⟩
+    exact ⟨⟨hτ, fun hστ => hvτ (hστ hvσ)⟩, hvτ⟩
 
 variable {ρ : Finset ι}
 
