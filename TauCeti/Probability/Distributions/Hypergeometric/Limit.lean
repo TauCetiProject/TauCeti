@@ -41,6 +41,43 @@ namespace TauCeti
 
 namespace Probability
 
+/-- If the marked proportion `K N / N` tends to `p`, the product of the normalized marked and
+unmarked binomial coefficients, divided by the normalized total one, tends to the corresponding
+ratio of limits. -/
+private theorem tendsto_choose_mul_div_choose_of_tendsto_div (p : ℝ) (K : ℕ → ℕ)
+    (hK : ∀ᶠ N in atTop, K N ≤ N)
+    (hKp : Tendsto (fun N ↦ (K N : ℝ) / N) atTop (nhds p)) (n k : ℕ) :
+    Tendsto (fun N : ℕ ↦
+        ((K N).choose k / (N : ℝ) ^ k * ((N - K N).choose (n - k) / (N : ℝ) ^ (n - k))) /
+          ((id N).choose n / (N : ℝ) ^ n)) atTop
+      (nhds (p ^ k / (k.factorial : ℝ) * ((1 - p) ^ (n - k) / ((n - k).factorial : ℝ)) /
+        (1 ^ n / (n.factorial : ℝ)))) := by
+  have hinv : Tendsto (fun N : ℕ ↦ ((N : ℝ))⁻¹) atTop (nhds 0) :=
+    tendsto_inv_atTop_nhds_zero_nat
+  have hcomplement :
+      Tendsto (fun N ↦ ((N - K N : ℕ) : ℝ) / N) atTop
+        (nhds (1 - (p : ℝ))) := by
+    refine Tendsto.congr' ?_ (tendsto_const_nhds.sub hKp)
+    filter_upwards [eventually_ge_atTop 1, hK] with N hN hKN
+    have hN0 : N ≠ 0 := by omega
+    have hN0' : (N : ℝ) ≠ 0 := by exact_mod_cast hN0
+    rw [Nat.cast_sub hKN, sub_div, div_self hN0']
+  have htotal : Tendsto (fun N : ℕ ↦ (N : ℝ) / N) atTop (nhds 1) := by
+    refine Tendsto.congr' ?_ tendsto_const_nhds
+    filter_upwards [eventually_ge_atTop 1] with N hN
+    have hN0 : N ≠ 0 := by omega
+    have hN0' : (N : ℝ) ≠ 0 := by exact_mod_cast hN0
+    rw [div_self hN0']
+  have hmarked := tendsto_choose_div_pow_of_tendsto_div
+    (a := K) (b := fun N : ℕ ↦ (N : ℝ)) hKp hinv k
+  have hunmarked :=
+    tendsto_choose_div_pow_of_tendsto_div (a := fun N ↦ N - K N)
+      (b := fun N : ℕ ↦ (N : ℝ)) hcomplement hinv (n - k)
+  have hpopulation := tendsto_choose_div_pow_of_tendsto_div
+    (a := id) (b := fun N : ℕ ↦ (N : ℝ)) htotal hinv n
+  -- Combine the three limits before identifying the normalized ratio with the mass.
+  exact (hmarked.mul hunmarked).div hpopulation (by positivity)
+
 /-- If the marked proportion in a growing finite population tends to `p`, then each fixed
 hypergeometric mass tends to the corresponding binomial mass. -/
 theorem tendsto_hypergeometricMeasure_real_singleton (p : unitInterval) (K : ℕ → ℕ)
@@ -50,31 +87,7 @@ theorem tendsto_hypergeometricMeasure_real_singleton (p : unitInterval) (K : ℕ
       (nhds ((binomial n p).real {k})) := by
   by_cases hkn : k ≤ n
   · -- Normalize the marked, unmarked, and total population coefficients separately.
-    have hinv : Tendsto (fun N : ℕ ↦ ((N : ℝ))⁻¹) atTop (nhds 0) :=
-      tendsto_inv_atTop_nhds_zero_nat
-    have hcomplement :
-        Tendsto (fun N ↦ ((N - K N : ℕ) : ℝ) / N) atTop
-          (nhds (1 - (p : ℝ))) := by
-      refine Tendsto.congr' ?_ (tendsto_const_nhds.sub hKp)
-      filter_upwards [eventually_ge_atTop 1, hK] with N hN hKN
-      have hN0 : N ≠ 0 := by omega
-      have hN0' : (N : ℝ) ≠ 0 := by exact_mod_cast hN0
-      rw [Nat.cast_sub hKN, sub_div, div_self hN0']
-    have htotal : Tendsto (fun N : ℕ ↦ (N : ℝ) / N) atTop (nhds 1) := by
-      refine Tendsto.congr' ?_ tendsto_const_nhds
-      filter_upwards [eventually_ge_atTop 1] with N hN
-      have hN0 : N ≠ 0 := by omega
-      have hN0' : (N : ℝ) ≠ 0 := by exact_mod_cast hN0
-      rw [div_self hN0']
-    have hmarked := tendsto_choose_div_pow_of_tendsto_div
-      (a := K) (b := fun N : ℕ ↦ (N : ℝ)) hKp hinv k
-    have hunmarked :=
-      tendsto_choose_div_pow_of_tendsto_div (a := fun N ↦ N - K N)
-        (b := fun N : ℕ ↦ (N : ℝ)) hcomplement hinv (n - k)
-    have hpopulation := tendsto_choose_div_pow_of_tendsto_div
-      (a := id) (b := fun N : ℕ ↦ (N : ℝ)) htotal hinv n
-    -- Combine the three limits before identifying the normalized ratio with the mass.
-    have hnormalized := (hmarked.mul hunmarked).div hpopulation (by positivity)
+    have hnormalized := tendsto_choose_mul_div_choose_of_tendsto_div (p : ℝ) K hK hKp n k
     rw [binomial_real_singleton]
     have hfactorial :
         (n.choose k : ℝ) * (k.factorial : ℝ) * ((n - k).factorial : ℝ) =
@@ -96,7 +109,7 @@ theorem tendsto_hypergeometricMeasure_real_singleton (p : unitInterval) (K : ℕ
     rw [hypergeometricMeasure_real_singleton hKN hnN k, ite_eq_left hkn]
     have hchooseN : (N.choose n : ℝ) ≠ 0 := by
       exact_mod_cast Nat.choose_ne_zero hnN
-    simp only [Pi.div_apply, id_eq]
+    simp only [id_eq]
     field_simp
     have hpow : (N : ℝ) ^ k * (N : ℝ) ^ (n - k) = (N : ℝ) ^ n := by
       rw [← pow_add, Nat.add_sub_of_le hkn]
