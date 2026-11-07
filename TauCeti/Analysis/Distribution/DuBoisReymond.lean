@@ -12,6 +12,7 @@ public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Deriv
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Distribution.TestFunction
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 
 /-!
 # The du Bois-Reymond lemma on an interval
@@ -57,23 +58,10 @@ public section
 
 namespace TauCeti
 
-open MeasureTheory Set Filter Topology intervalIntegral
+open MeasureTheory Set Filter Topology _root_.intervalIntegral
 open scoped ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F]
-
-/-- A function vanishing outside `Ioo a b` and on a ball around `a` has zero integral on `a..t`
-for every `t` in that ball's right half, `t < a + ε`. -/
-private lemma integral_eq_zero_of_lt_add {a b ε t : ℝ} {φ : ℝ → ℝ}
-    (hε : 0 < ε) (hφ0 : ∀ x, x ∉ Ioo a b → φ x = 0) (hφa : ∀ ⦃y⦄, dist y a < ε → φ y = 0)
-    (ht : t < a + ε) : ∫ s in a..t, φ s = 0 := by
-  refine (integral_congr (g := fun _ ↦ (0 : ℝ)) fun s hs ↦ ?_).trans integral_zero
-  rcases le_or_gt s a with hsa | hsa
-  · exact hφ0 s fun h ↦ h.1.not_ge hsa
-  · have h1 : s < a + ε := lt_of_le_of_lt hs.2 (max_lt (by linarith) ht)
-    refine hφa ?_
-    rw [Real.dist_eq, abs_of_pos (sub_pos.mpr hsa)]
-    linarith
 
 /-- **The primitive of a mean-zero test function is a test function.** If `φ : ℝ → ℝ` is smooth
 with `tsupport φ ⊆ Ioo a b` and `∫ φ = 0`, then `φ` is the derivative of a smooth compactly
@@ -201,7 +189,7 @@ end MeasureTheory.LocallyIntegrableOn
 
 namespace TauCeti
 
-open MeasureTheory Set Filter Topology intervalIntegral
+open MeasureTheory Set Filter Topology _root_.intervalIntegral
 open scoped ContDiff
 
 variable {F : Type*} [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
