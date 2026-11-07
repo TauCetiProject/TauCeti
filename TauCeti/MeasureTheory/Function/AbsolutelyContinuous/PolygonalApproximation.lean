@@ -10,6 +10,8 @@ public import Mathlib.Topology.UniformSpace.UniformConvergence
 public import TauCeti.MeasureTheory.Function.AbsolutelyContinuous.Gluing
 import TauCeti.MeasureTheory.Function.IntervalStep
 import TauCeti.Order.Interval.Set.Subdivision
+import TauCeti.MeasureTheory.Integral.Bochner.Set
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.Basic
 import Mathlib.Analysis.SpecificLimits.Basic
 import Mathlib.MeasureTheory.Integral.IntervalIntegral.LebesgueDifferentiationThm
 
@@ -120,56 +122,27 @@ private theorem exists_polygonal_error_le [FiniteDimensional ℝ E] {γ : ℝ �
   let c := (b - a)⁻¹ • D
   let v := fun t ↦ s t + c
   let p := fun t ↦ γ a + ∫ t in a..t, v t
-  have hvi' : IntegrableOn v (Ioc a b) := hsi'.add (integrable_const c)
-  have hvi : IntervalIntegrable v volume a b := by
-    rwa [intervalIntegrable_iff, uIoc_of_le hab.le]
   have hpa : p a = γ a := by simp [p]
-  have hpb : p b = γ b := by
-    dsimp [p, v]
-    rw [intervalIntegral.integral_add hsi (intervalIntegrable_const),
-      intervalIntegral.integral_const]
-    dsimp [c]
-    rw [smul_smul, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_smul]
-    dsimp [D]
-    abel
+  have hpb : p b = γ b := TauCeti.add_integral_add_inv_smul_eq hab.ne hsi (γ a) (γ b)
   have hpPoly : TauCeti.IsPolygonalOnInterval p a b := polygonal_primitive hab N hN g (γ a) c
-  have hpAC := hpPoly.absolutelyContinuousOnInterval
+  have hvi : IntervalIntegrable v volume a b := by
+    rw [intervalIntegrable_iff, uIoc_of_le hab.le]
+    exact hsi'.add (integrable_const c)
   have hpderiv : deriv p =ᵐ[volume.restrict (Ioc a b)] v :=
     ae_deriv_const_add_integral hvi hab.le (γ a)
   -- The mean correction costs at most the original velocity approximation error.
-  have hD : ‖D‖ ≤ ε := by
-    have hEq : D = ∫ t in a..b, deriv γ t - s t := by
-      rw [intervalIntegral.integral_sub hγi hsi,
-        hγ.integral_deriv_eq_sub_of_finiteDimensional]
-    rw [hEq]
-    apply (intervalIntegral.norm_integral_le_integral_norm hab.le).trans
-    simpa only [intervalIntegral.integral_of_le hab.le, norm_sub_rev] using hg
-  have hc : (∫ _ in Ioc a b, ‖c‖) ≤ ε := by
-    have hEq : (∫ _ in Ioc a b, ‖c‖) = ‖D‖ := by
-      rw [setIntegral_const, measureReal_def, Real.volume_Ioc,
-        ENNReal.toReal_ofReal (sub_nonneg.mpr hab.le)]
-      simp only [c, norm_smul, Real.norm_eq_abs, abs_inv,
-        abs_of_pos (sub_pos.mpr hab), smul_eq_mul]
-      rw [← mul_assoc, mul_inv_cancel₀ (sub_pos.mpr hab).ne', one_mul]
-    exact hEq ▸ hD
+  have hD : ‖D‖ ≤ ε := norm_sub_integral_le hγ hab.le hsi hg
   have herror : (∫ t in Ioc a b, ‖v t - deriv γ t‖) ≤ 2 * ε := by
-    calc
-      _ ≤ ∫ t in Ioc a b, ‖s t - deriv γ t‖ + ‖c‖ := by
-        apply integral_mono (hvi'.sub hγi').norm ((hsi'.sub hγi').norm.add (integrable_const _))
-        intro t
-        simp only [v, Pi.sub_apply, Pi.add_apply]
-        have he : s t + c - deriv γ t = (s t - deriv γ t) + c := by abel
-        rw [he]
-        exact norm_add_le _ _
-      _ = (∫ t in Ioc a b, ‖s t - deriv γ t‖) + ∫ _ in Ioc a b, ‖c‖ :=
-        integral_add (hsi'.sub hγi').norm (integrable_const _)
-      _ ≤ 2 * ε := by linarith
+    refine (TauCeti.integral_norm_add_const_sub_le c measure_Ioc_lt_top.ne hsi' hγi').trans ?_
+    rw [TauCeti.setIntegral_norm_inv_smul hab D]
+    linarith
   -- Velocity convergence implies uniform convergence through the AC fundamental theorem.
   have hderiv : (∫ t in a..b, ‖deriv p t - deriv γ t‖) ≤ 2 * ε := by
     rw [intervalIntegral.integral_of_le hab.le]
     apply le_trans (integral_congr_ae (hpderiv.mono fun t ht ↦ by rw [ht])).le herror
   have hunif : ∀ t ∈ Icc a b, ‖p t - γ t‖ ≤ 2 * ε := fun t ht ↦
-    (hpAC.norm_sub_le_integral_norm_deriv_sub hγ hpa ht).trans hderiv
+    (hpPoly.absolutelyContinuousOnInterval.norm_sub_le_integral_norm_deriv_sub hγ hpa ht).trans
+      hderiv
   exact ⟨p, hpPoly, hpa, hpb, hunif, hderiv⟩
 
 omit [CompleteSpace E] in
