@@ -15,6 +15,8 @@ The canonical functor `SimplexCategoryGenRel.toSimplexCategory` is an equivalenc
 Thus faces and degeneracies satisfying the simplicial identities determine functors
 on the usual simplex category. This permits the construction of simplicial objects
 from algebraic operations, such as the counit and comultiplication of a comonad.
+The inverse `fromSimplexCategory` has a computing object map and sends each face
+and degeneracy to its corresponding generator.
 
 The proof completes Robin Carlier's presentation and degeneracy normal forms in
 Mathlib. Pure face maps are determined by their images, and pure degeneracies by
@@ -232,5 +234,40 @@ instance : toSimplexCategory.EssSurj where
 /-- The presentation by faces, degeneracies and simplicial identities is equivalent
 to the usual simplex category. -/
 instance : toSimplexCategory.IsEquivalence where
+
+/-- The inverse presentation functor, choosing the generator with the same length.
+The body is exposed so dependent morphism types compute on finite ordinals. -/
+@[expose] noncomputable def fromSimplexCategory : SimplexCategory ⥤ SimplexCategoryGenRel where
+  obj x := mk x.len
+  map f := toSimplexCategory.preimage f
+  map_id x := toSimplexCategory.map_injective
+    ((toSimplexCategory.map_preimage (X := mk x.len) (Y := mk x.len) (𝟙 x)).trans
+      (toSimplexCategory.map_id (mk x.len)).symm)
+  map_comp {x y z} f g := toSimplexCategory.map_injective (by
+    rw [toSimplexCategory.map_comp]
+    exact (toSimplexCategory.map_preimage (X := mk x.len) (Y := mk z.len) (f ≫ g)).trans
+      (congrArg₂ (· ≫ ·)
+        (toSimplexCategory.map_preimage (X := mk x.len) (Y := mk y.len) f).symm
+        (toSimplexCategory.map_preimage (X := mk y.len) (Y := mk z.len) g).symm))
+
+@[simp]
+lemma fromSimplexCategory_obj (n : ℕ) :
+    fromSimplexCategory.obj (SimplexCategory.mk n) = mk n := (rfl)
+
+/-- The inverse presentation functor sends a face to the corresponding generator. -/
+@[simp]
+lemma fromSimplexCategory_map_δ {n : ℕ} (i : Fin (n + 2)) :
+    fromSimplexCategory.map (SimplexCategory.δ i) = δ i := by
+  apply toSimplexCategory.map_injective
+  exact (toSimplexCategory.map_preimage (X := mk n) (Y := mk (n + 1)) _).trans
+    (toSimplexCategory_map_δ i).symm
+
+/-- The inverse presentation functor sends a degeneracy to the corresponding generator. -/
+@[simp]
+lemma fromSimplexCategory_map_σ {n : ℕ} (i : Fin (n + 1)) :
+    fromSimplexCategory.map (SimplexCategory.σ i) = σ i := by
+  apply toSimplexCategory.map_injective
+  exact (toSimplexCategory.map_preimage (X := mk (n + 1)) (Y := mk n) _).trans
+    (toSimplexCategory_map_σ i).symm
 
 end SimplexCategoryGenRel
