@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Order.Group.MinMax
 public import TauCeti.MeasureTheory.OptimalTransport.CTransform.Basic
 public import TauCeti.MeasureTheory.OptimalTransport.Cost.CyclicalMonotonicity
 public import TauCeti.MeasureTheory.OptimalTransport.Duality.Basic
@@ -409,11 +410,6 @@ theorem eventually_max_neg_min_eq (a : ℝ) :
   have hle : |a| ≤ n := hN.trans (Nat.cast_le.2 hn)
   simp only [min_eq_left (abs_le.1 hle).2, max_eq_right (abs_le.1 hle).1]
 
-/-- Truncation to `[-r, r]` is bounded by `r` in norm. -/
-theorem norm_max_neg_min_le {r : ℝ} (hr : 0 ≤ r) (t : ℝ) : ‖max (-r) (min t r)‖ ≤ r := by
-  rw [Real.norm_eq_abs, abs_le]
-  exact ⟨le_max_left _ _, max_le (by linarith) (min_le_right _ _)⟩
-
 end Truncation
 
 section ContactPotential
@@ -444,10 +440,16 @@ theorem IsCoupling.isOptimalCoupling_of_ae_mem_dualContactSet [IsFiniteMeasure �
   set T : ℕ → ℝ → ℝ := fun n t ↦ max (-(n : ℝ)) (min t n) with hT
   have hfint n : Integrable (fun x ↦ T n (φ x)) μ :=
     .of_bound (aemeasurable_const.max (hφ.min aemeasurable_const)).aestronglyMeasurable n
-      (ae_of_all _ fun x ↦ norm_max_neg_min_le n.cast_nonneg (φ x))
+      (ae_of_all _ fun x ↦ by
+        simpa only [hT, Real.norm_eq_abs, min_comm (φ x),
+          abs_of_nonneg (Nat.cast_nonneg (α := ℝ) n)] using
+          TauCeti.abs_max_min_le (n : ℝ) (φ x))
   have hgint n : Integrable (fun y ↦ T n (ψ y)) ν :=
     .of_bound (aemeasurable_const.max (hψ.min aemeasurable_const)).aestronglyMeasurable n
-      (ae_of_all _ fun y ↦ norm_max_neg_min_le n.cast_nonneg (ψ y))
+      (ae_of_all _ fun y ↦ by
+        simpa only [hT, Real.norm_eq_abs, min_comm (ψ y),
+          abs_of_nonneg (Nat.cast_nonneg (α := ℝ) n)] using
+          TauCeti.abs_max_min_le (n : ℝ) (ψ y))
   -- Against `σ`, the value of each truncated pair is at most the cost.
   have hAσ : ∀ᵐ z ∂σ, z.1 ∈ A := hσ.measurePreserving_fst.quasiMeasurePreserving.ae <|
     measure_eq_zero_iff_ae_notMem.1 hA |>.mono fun _ h ↦ by simpa using h
