@@ -6,12 +6,13 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import TauCeti.Analysis.Calculus.Morse.ChartRescaling
 public import TauCeti.Analysis.InnerProductSpace.Indefinite
 public import TauCeti.Analysis.InnerProductSpace.Polar.Det
 public import TauCeti.Analysis.Normed.Module.NegativeSubspace
 
 /-!
-# The derivative of a transition between split Morse charts
+# Transitions between split Morse charts
 
 Two partial diffeomorphisms centred at the same point and expressing the same function as
 `f(x) - ‖u‖² + ‖v‖²` have a transition whose derivative at zero preserves that quadratic form.
@@ -19,6 +20,14 @@ Its negative-to-negative block is therefore invertible in finite dimension. This
 linear map to which one applies polar decomposition when comparing the negative disks of
 different Morse charts. No assertion about overlap of the whole negative disks is needed:
 the coordinate equations are used only on an open neighbourhood of their common centre.
+
+With `h` the polar factor of that block, the small negative disk `u ↦ ψ₁⁻¹(u, 0)` of the second
+chart is homotopic to the disk `u ↦ ψ₀⁻¹(h u, 0)` of the first chart, by a homotopy along which
+`f` stays at or below `f(x) - ‖u‖²` over each point `u`
+(`PartialDiffeomorph.exists_negative_disk_homotopy_polarFactor`). In particular the boundary
+sphere of radius `δ` stays in the sublevel `{f ≤ f(x) - δ²}` throughout. This is the comparison
+of characteristic maps of Morse cells near the critical point, before the outer annuli of the
+cells are taken into account.
 
 The product target can be obtained from normalized Euclidean Morse coordinates by splitting
 negative and positive coordinates with `EuclideanSpace.sumComplEquivProd`.
@@ -109,6 +118,56 @@ theorem isInvertible_fst_fderiv_transition_inl [FiniteDimensional ℝ E] :
         (ContinuousLinearMap.inl ℝ E F))).IsInvertible := by
   obtain ⟨hreg, hzero, hQ⟩ := ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
   exact hreg.isInvertible_fst_fderiv_inl hzero hQ
+
+/-- **The small negative disks of two split Morse charts are homotopic** (Milnor, *Morse
+Theory*, §3). Let `h` be the polar factor of the negative-to-negative block of the derivative at
+`0` of the transition `ψ₀ ∘ ψ₁⁻¹`. For every neighbourhood `W` of the common centre `x` there are
+`δ > 0` and a homotopy `G` from the negative disk `u ↦ ψ₁⁻¹(u, 0)`, `‖u‖ ≤ δ`, of `ψ₁` to the
+disk `u ↦ ψ₀⁻¹(h u, 0)` of `ψ₀`, staying in `W`, with `f (G (t, u)) ≤ f x - ‖u‖²` throughout.
+In particular the boundary sphere `‖u‖ = δ` stays in the sublevel `{f ≤ f x - δ²}`. -/
+theorem exists_negative_disk_homotopy_polarFactor [CompleteSpace E] {W : Set M} (hW : W ∈ 𝓝 x) :
+    ∃ δ > 0, ∃ G : C(unitInterval × Metric.closedBall (0 : E) δ, M),
+      (∀ u, G (0, u) = ψ₁.symm ((u : E), 0)) ∧
+      (∀ u, G (1, u) = ψ₀.symm (((ContinuousLinearMap.fst ℝ E F).comp
+        ((fderiv ℝ (fun w ↦ ψ₀ (ψ₁.symm w)) 0).comp
+          (ContinuousLinearMap.inl ℝ E F))).polarFactor u, 0)) ∧
+      ∀ p, G p ∈ W ∧ f (G p) ≤ f x - ‖(p.2 : E)‖ ^ 2 := by
+  obtain ⟨hreg, hzero, hQ⟩ := ψ₀.split_transition_data ψ₁ hn hx₀ hx₁ hψ₀ hψ₁ hf₀ hf₁
+  have htarget₀ : (0 : E × F) ∈ ψ₀.target := hψ₀ ▸ ψ₀.map_source hx₀
+  have htarget₁ : (0 : E × F) ∈ ψ₁.target := hψ₁ ▸ ψ₁.map_source hx₁
+  have hinv₀ : ψ₀.toPartialEquiv.symm 0 = x := hψ₀ ▸ ψ₀.left_inv hx₀
+  have hinv₁ : ψ₁.toPartialEquiv.symm 0 = x := hψ₁ ▸ ψ₁.left_inv hx₁
+  have hcont₀ := ψ₀.contMDiffOn.continuousOn
+  have hcont₀' := ψ₀.symm.contMDiffOn.continuousOn
+  have hcont₁' := ψ₁.symm.contMDiffOn.continuousOn
+  -- Near `0` the transition is defined and continuous.
+  set U := ψ₁.target ∩ ψ₁.symm ⁻¹' ψ₀.source
+  have hU : U ∈ 𝓝 0 := (hcont₁'.isOpen_inter_preimage ψ₁.open_target ψ₀.open_source).mem_nhds
+    ⟨htarget₁, by simpa [hinv₁] using hx₀⟩
+  have hc : ∀ᶠ z in 𝓝 0, ContinuousAt (fun w ↦ ψ₀ (ψ₁.symm w)) z := by
+    filter_upwards [ψ₁.open_target.mem_nhds htarget₁, hU] with z hz hzU
+    exact (hcont₀.continuousAt (ψ₀.open_source.mem_nhds hzU.2)).comp
+      (hcont₁'.continuousAt (ψ₁.open_target.mem_nhds hz))
+  -- Chart coordinates of points of `W` near `0`.
+  set V := ψ₀.target ∩ ψ₀.symm ⁻¹' W
+  have hV : V ∈ 𝓝 0 := inter_mem (ψ₀.open_target.mem_nhds htarget₀)
+    ((hcont₀'.continuousAt (ψ₀.open_target.mem_nhds htarget₀)).preimage_mem_nhds
+      (by rwa [PartialDiffeomorph.symm_toPartialEquiv, hinv₀]))
+  obtain ⟨δ, hδ, hδU, H, hH₀, hH₁, hH⟩ :=
+    hreg.hasFDerivAt.exists_negative_disk_homotopy_polarFactor hzero hc hQ hU hV
+  refine ⟨δ, hδ, ⟨fun p ↦ ψ₀.symm (H p), hcont₀'.comp_continuous H.continuous
+    fun p ↦ (hH p).1.1⟩, fun u ↦ ?_, fun u ↦ ?_, fun p ↦ ⟨(hH p).1.2, ?_⟩⟩
+  · have hu : ((u : E), (0 : F)) ∈ U := hδU (by
+      have h := mem_closedBall_zero_iff.1 u.2
+      rw [mem_closedBall_zero_iff]
+      simpa using h)
+    simp only [ContinuousMap.coe_mk, hH₀]
+    exact ψ₀.left_inv hu.2
+  · simp only [ContinuousMap.coe_mk, hH₁]
+  · have h := hf₀ _ (ψ₀.map_target (hH p).1.1)
+    rw [ψ₀.right_inv (hH p).1.1] at h
+    simp only [ContinuousMap.coe_mk, PartialDiffeomorph.symm_toPartialEquiv] at h ⊢
+    linarith [(hH p).2]
 
 /-- The derivative of a transition between split Morse charts carries the negative space
 `E × 0` of the second chart strictly inside the negative cone `‖v‖ < ‖u‖` of the first. -/
