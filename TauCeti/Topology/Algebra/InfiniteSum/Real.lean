@@ -94,7 +94,7 @@ theorem Summable.exists_tendsto_atTop_summable_mul {a : ℕ → ℝ} (ha : Summa
     simp only [hc_def]
     linarith
   refine ⟨c, hc1, tendsto_one_add_sum_ite hN, ?_⟩
-  · -- `|c n * a n| = b n + ∑ k ≤ n, d k n`, which is summable.
+  · -- `|c n * a n| ≤ b n + ∑ k ≤ n, if N k ≤ n then b n else 0`, which is summable.
     refine summable_abs_iff.1 ((hb.add hcol).of_nonneg_of_le (fun n ↦ abs_nonneg _) fun n ↦ ?_)
     rw [abs_mul, abs_of_nonneg (zero_le_one.trans (hc1 n)), hcol_eq]
     simp only [hc_def, add_mul, one_mul, Finset.sum_mul]
