@@ -26,15 +26,10 @@ instance instIsQuadraticExtensionRealComplex : Algebra.IsQuadraticExtension ℝ 
   ⟨Complex.finrank_real_complex⟩
 
 /-- Complex conjugation generates the full group of real algebra automorphisms of `ℂ`. -/
-@[simp] theorem zpowers_conjAe_eq_top : Subgroup.zpowers Complex.conjAe = ⊤ := by
-  apply (Subgroup.eq_top_iff' _).2
-  intro σ
-  rcases Complex.real_algHom_eq_id_or_conj σ.toAlgHom with h | h
-  · have hσ : σ = 1 := AlgEquiv.coe_toAlgHom_injective h
-    rw [hσ]
-    exact Subgroup.one_mem _
-  · have hσ : σ = Complex.conjAe := AlgEquiv.coe_toAlgHom_injective h
-    rw [hσ]
-    exact Subgroup.mem_zpowers _
+@[simp] theorem zpowers_conjAe_eq_top : Subgroup.zpowers Complex.conjAe = ⊤ :=
+  (Subgroup.eq_top_iff' _).2 fun σ ↦
+    (Complex.real_algHom_eq_id_or_conj σ).elim
+      (fun h ↦ AlgEquiv.coe_toAlgHom_injective (h.trans AlgEquiv.refl_toAlgHom.symm) ▸ one_mem _)
+      fun h ↦ AlgEquiv.coe_toAlgHom_injective h ▸ Subgroup.mem_zpowers _
 
 end TauCeti
