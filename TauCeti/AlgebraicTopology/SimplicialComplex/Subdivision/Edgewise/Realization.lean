@@ -227,41 +227,18 @@ private theorem mul_sum_le_edgewiseSubdivisionRealizationMap
   field_simp
 
 open scoped Classical in
-/-- For two vertices `w ≤ u` of a simplex of the edgewise subdivision, the number of entries `≤ i`
-satisfies `c u ≤ c w ≤ c u + 1`; for `u ≤ w` it satisfies `c w ≤ c u ≤ c w + 1`. -/
-private theorem card_bounds_of_mem_edgewiseSubdivision {s : Finset (K.EdgewiseVertex k)}
-    (hρ : s ∈ K.edgewiseSubdivision k) {u : K.EdgewiseVertex k} (hu : u ∈ s) (i : ι) :
-    (∀ w ∈ s, w ≤ u → #{l | u.1 l ≤ i} ≤ #{l | w.1 l ≤ i} ∧
-      #{l | w.1 l ≤ i} ≤ #{l | u.1 l ≤ i} + 1) ∧
-    (∀ w ∈ s, u ≤ w → #{l | w.1 l ≤ i} ≤ #{l | u.1 l ≤ i} ∧
-      #{l | u.1 l ≤ i} ≤ #{l | w.1 l ≤ i} + 1) :=
-  ⟨fun _ hw hwu =>
-    ⟨card_filter_le_card_filter_of_le hwu (p := (· ≤ i)) antitone_le,
-      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hw hu
-        (p := (· ≤ i)) antitone_le⟩,
-    fun _ hw huw =>
-    ⟨card_filter_le_card_filter_of_le huw (p := (· ≤ i)) antitone_le,
-      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
-        (p := (· ≤ i)) antitone_le⟩⟩
-
-open scoped Classical in
-/-- If the counts of entries `≤ i` do not drop above a vertex `u` of the carrier of `x`, the
-weighted deviation of the counts from that of `u` lies in `[0, ∑ w < u, x w]`. -/
+/-- Let `c` be a count function on the vertices of the carrier of `x`, `u` a vertex of the carrier,
+with `c u ≤ c w ≤ c u + 1` below `u` and `c` constant above `u`. Then the weighted deviation of
+`c` from `c u` lies in `[0, ∑ w < u, x w]`. -/
 private theorem deviation_bounds_of_forall_card_eq (x : Realization (K.edgewiseSubdivision k))
-    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) (i : ι)
-    (hA : ∀ w ∈ x.1.support, u < w → #{l | w.1 l ≤ i} = #{l | u.1 l ≤ i}) :
-    0 ≤ ∑ w ∈ x.1.support, x.1 w * ((#{l | w.1 l ≤ i} : ℝ) - #{l | u.1 l ≤ i}) ∧
-      ∑ w ∈ x.1.support, x.1 w * ((#{l | w.1 l ≤ i} : ℝ) - #{l | u.1 l ≤ i}) ≤
-        ∑ w ∈ x.1.support with w < u, x.1 w := by
-  set s := x.1.support
-  have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
-  set c : K.EdgewiseVertex k → ℕ := fun w => #{l | w.1 l ≤ i}
+    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) (c : K.EdgewiseVertex k → ℕ)
+    (hbelow : ∀ w ∈ x.1.support, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1)
+    (hA : ∀ w ∈ x.1.support, u < w → c w = c u) :
+    0 ≤ ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ∧
+      ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ≤ ∑ w ∈ x.1.support with w < u, x.1 w := by
+  have hρ : x.1.support ∈ K.edgewiseSubdivision k := support_mem _ x
   have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
-  have hbelow := (card_bounds_of_mem_edgewiseSubdivision hρ hu i).1
-  have hA' : ∀ w ∈ s, u < w → c w = c u := hA
-  change 0 ≤ ∑ w ∈ s, x.1 w * ((c w : ℝ) - c u) ∧
-    ∑ w ∈ s, x.1 w * ((c w : ℝ) - c u) ≤ ∑ w ∈ s with w < u, x.1 w
-  have hD : ∀ w ∈ s, 0 ≤ x.1 w * ((c w : ℝ) - c u) ∧
+  have hD : ∀ w ∈ x.1.support, 0 ≤ x.1 w * ((c w : ℝ) - c u) ∧
       x.1 w * ((c w : ℝ) - c u) ≤ if w < u then x.1 w else 0 := by
     intro w hw
     rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
@@ -271,41 +248,36 @@ private theorem deviation_bounds_of_forall_card_eq (x : Realization (K.edgewiseS
       rw [ite_eq_left h]
       exact ⟨mul_nonneg (hx0 w) (by linarith), mul_le_of_le_one_right (hx0 w) (by linarith)⟩
     · simp
-    · simp [hA' w hw h, h.not_gt]
+    · simp [hA w hw h, h.not_gt]
   have h₂ := sum_le_sum fun w hw => (hD w hw).2
   rw [← sum_filter] at h₂
   exact ⟨sum_nonneg fun w hw => (hD w hw).1, h₂⟩
 
 open scoped Classical in
-/-- If the count of entries `≤ i` drops at some vertex above a vertex `u` of the carrier of `x`,
-the weighted deviation of the counts from that of `u` lies in `[-∑ w > u, x w, 0]`. -/
+/-- Let `c` be a count function on the vertices of the carrier of `x`, `u < w'` vertices of the
+carrier with `c w' ≠ c u` and `c w ≤ c w' + 1` on the carrier, `c u ≤ c w ≤ c u + 1` below `u`, and
+`c w ≤ c u ≤ c w + 1` above `u`. Then the weighted deviation of `c` from `c u` lies in
+`[-∑ w > u, x w, 0]`. -/
 private theorem deviation_bounds_of_exists_card_ne (x : Realization (K.edgewiseSubdivision k))
-    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) (i : ι) {w' : K.EdgewiseVertex k}
-    (hw' : w' ∈ x.1.support) (huw' : u < w') (hne : #{l | w'.1 l ≤ i} ≠ #{l | u.1 l ≤ i}) :
+    {u : K.EdgewiseVertex k} (hu : u ∈ x.1.support) (c : K.EdgewiseVertex k → ℕ)
+    (hbelow : ∀ w ∈ x.1.support, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1)
+    (habove : ∀ w ∈ x.1.support, u ≤ w → c w ≤ c u ∧ c u ≤ c w + 1)
+    {w' : K.EdgewiseVertex k} (hw' : w' ∈ x.1.support) (huw' : u < w')
+    (hrise : ∀ w ∈ x.1.support, c w ≤ c w' + 1) (hne : c w' ≠ c u) :
     -∑ w ∈ x.1.support with u < w, x.1 w ≤
-        ∑ w ∈ x.1.support, x.1 w * ((#{l | w.1 l ≤ i} : ℝ) - #{l | u.1 l ≤ i}) ∧
-      ∑ w ∈ x.1.support, x.1 w * ((#{l | w.1 l ≤ i} : ℝ) - #{l | u.1 l ≤ i}) ≤ 0 := by
-  set s := x.1.support
-  have hρ : s ∈ K.edgewiseSubdivision k := support_mem _ x
-  set c : K.EdgewiseVertex k → ℕ := fun w => #{l | w.1 l ≤ i}
+        ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ∧
+      ∑ w ∈ x.1.support, x.1 w * ((c w : ℝ) - c u) ≤ 0 := by
+  have hρ : x.1.support ∈ K.edgewiseSubdivision k := support_mem _ x
   have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
-  obtain ⟨hbelow, habove⟩ : (∀ w ∈ s, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1) ∧
-      (∀ w ∈ s, u ≤ w → c w ≤ c u ∧ c u ≤ c w + 1) :=
-    card_bounds_of_mem_edgewiseSubdivision hρ hu i
-  have hne' : c w' ≠ c u := hne
-  change -∑ w ∈ s with u < w, x.1 w ≤ ∑ w ∈ s, x.1 w * ((c w : ℝ) - c u) ∧
-    ∑ w ∈ s, x.1 w * ((c w : ℝ) - c u) ≤ 0
   have hw'u : c w' + 1 = c u := by
     have := habove w' hw' huw'.le
     omega
-  have hD : ∀ w ∈ s, -(if u < w then x.1 w else 0) ≤ x.1 w * ((c w : ℝ) - c u) ∧
+  have hD : ∀ w ∈ x.1.support, -(if u < w then x.1 w else 0) ≤ x.1 w * ((c w : ℝ) - c u) ∧
       x.1 w * ((c w : ℝ) - c u) ≤ 0 := by
     intro w hw
     rcases lt_or_eq_or_lt_of_mem_edgewiseSubdivision hρ hw hu with h | rfl | h
     · have h₁ := (hbelow w hw h.le).1
-      have h₂ : c w ≤ c w' + 1 :=
-        card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hw hw'
-          (p := (· ≤ i)) antitone_le
+      have h₂ := hrise w hw
       have hcw : c w = c u := by omega
       simp [hcw, h.not_gt]
     · simp
@@ -336,6 +308,14 @@ private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k
   set c : K.EdgewiseVertex k → ℕ := fun w => #{l | w.1 l ≤ i}
   have hx0 (w : K.EdgewiseVertex k) : 0 ≤ x.1 w := Realization.nonneg _ x w
   have hsum : ∑ w ∈ s, x.1 w = 1 := Realization.sum_eq_one _ x
+  have hbelow : ∀ w ∈ s, w ≤ u → c u ≤ c w ∧ c w ≤ c u + 1 := fun _ hw hwu =>
+    ⟨card_filter_le_card_filter_of_le hwu (p := (· ≤ i)) antitone_le,
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hw hu
+        (p := (· ≤ i)) antitone_le⟩
+  have habove : ∀ w ∈ s, u ≤ w → c w ≤ c u ∧ c u ≤ c w + 1 := fun _ hw huw =>
+    ⟨card_filter_le_card_filter_of_le huw (p := (· ≤ i)) antitone_le,
+      card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hu hw
+        (p := (· ≤ i)) antitone_le⟩
   -- The mass of `x` splits into the parts below `u`, at `u`, and above `u`.
   have hsplit : ∑ w ∈ s with w < u, x.1 w + x.1 u + ∑ w ∈ s with u < w, x.1 w = 1 := by
     rw [← hsum, sum_filter, sum_filter, ← sum_ite_eq_of_mem' s u (fun w => x.1 w) hu,
@@ -354,13 +334,15 @@ private theorem card_sub_one_lt_and_le (x : Realization (K.edgewiseSubdivision k
   rw [hdev]
   by_cases hA : ∀ w ∈ s, u < w → c w = c u
   · -- No count drops above `u`, so the deviation lies in `[0, ∑ w < u, x w]`.
-    have := deviation_bounds_of_forall_card_eq x hu i hA
+    have := deviation_bounds_of_forall_card_eq x hu c hbelow hA
     constructor <;> linarith
   · -- Some count drops above `u`, so none rises below `u`, and the deviation lies in
     -- `[-∑ w > u, x w, 0]`.
     push Not at hA
     obtain ⟨w', hw', huw', hne⟩ := hA
-    have := deviation_bounds_of_exists_card_ne x hu i hw' huw' hne
+    have := deviation_bounds_of_exists_card_ne x hu c hbelow habove hw' huw'
+      (fun w hw => card_filter_le_card_filter_add_one_of_mem_edgewiseSubdivision hρ hw hw'
+        (p := (· ≤ i)) antitone_le) hne
     constructor <;> linarith
 
 open scoped Classical in
