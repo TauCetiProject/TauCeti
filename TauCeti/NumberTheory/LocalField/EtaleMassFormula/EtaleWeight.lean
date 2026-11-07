@@ -60,6 +60,8 @@ theorem etaleDiscriminantExponent_eq_of_algEquiv {A B : Type*}
     (e.arrowCongr (AlgEquiv.refl : SeparableClosure K ≃ₐ[K] SeparableClosure K))
   intro σ φ
   ext a
+  -- Unfolding arrowCongr, AlgHom.comp and the postcomposition action, both sides are
+  -- σ (φ (e.symm a)).
   rfl
 
 /-- On a subextension, the embedding action recovers its discriminant exponent. This also
