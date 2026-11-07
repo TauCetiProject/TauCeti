@@ -49,17 +49,6 @@ variable (ρ₁ : CliffordAlgebra Q₁ →ₐ[R] Module.End R E) (γ : Module.En
   (hγ : γ * γ = 1) (hγρ : ∀ v, γ * ρ₁ (ι Q₁ v) = -(ρ₁ (ι Q₁ v) * γ))
   (ρ₂ : CliffordAlgebra Q₂ →ₐ[R] Module.End R F)
 
-include hγρ in
-/-- The transpose of a Clifford grading anticommutes with the reverse-dual vector action. -/
-theorem dualMap_mul_cliffordReverseDual_ι (v : V) :
-    γ.dualMap * ρ₁.cliffordReverseDual (ι Q₁ v) =
-      -(ρ₁.cliffordReverseDual (ι Q₁ v) * γ.dualMap) := by
-  ext φ e
-  simp only [cliffordReverseDual_ι, mul_apply_eq_comp, LinearMap.dualMap_apply,
-    LinearMap.neg_apply]
-  exact neg_eq_iff_eq_neg.mp (by
-    simpa using (congrArg φ (LinearMap.congr_fun (hγρ v) e)).symm)
-
 /-- Tensor duality intertwines the graded product of reverse-dual actions with the reverse
 dual of the graded product. This identity needs no finiteness or nondegeneracy assumption. -/
 theorem dualDistrib_cliffordProdTensor (a : CliffordAlgebra (Q₁.prod Q₂)) :
