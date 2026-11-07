@@ -44,8 +44,8 @@ theorem schwarzChristoffelBoundary_injOn_prevertex_interval
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     InjOn (schwarzChristoffelBoundary a e z₀) (Icc (a 0) (a (Fin.last n))) := by
-  have hfinite : ∀ k, -1 < ∑ l with a l = a k, e l := fun k ↦
-    Finset.lt_sum_filter_eq_of_injective ha.injective k (he k).1
+  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
   apply schwarzChristoffelBoundary_injOn_prevertex_interval_of_edge_intersections
     a e z₀ ha.monotone hfinite
   intro i j hij z hzi hzj
@@ -69,8 +69,8 @@ theorem schwarzChristoffelCompactifiedBoundary_injective
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     Function.Injective (schwarzChristoffelCompactifiedBoundary a e z₀) := by
-  have hfinite : ∀ k, -1 < ∑ l with a l = a k, e l := fun k ↦
-    Finset.lt_sum_filter_eq_of_injective ha.injective k (he k).1
+  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
   have hfirst : ∀ k, e k ≠ 0 → a 0 ≤ a k := fun k _ ↦ ha.monotone k.zero_le
   have hlast : ∀ k, e k ≠ 0 → a k ≤ a (Fin.last n) := fun k _ ↦ ha.monotone k.le_last
   have hleft {x : ℝ} (hx : x ≤ a 0) :=
@@ -118,8 +118,8 @@ theorem isJordanCurve_schwarzChristoffelPolygon_boundary
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, e k ∈ Ioo (-1 : ℝ) 0) (hsum : ∑ k, e k = -2) :
     IsJordanCurve ((schwarzChristoffelPolygon a e z₀).boundary ℝ) := by
-  have hfinite : ∀ k, -1 < ∑ l with a l = a k, e l := fun k ↦
-    Finset.lt_sum_filter_eq_of_injective ha.injective k (he k).1
+  have hfinite (k : Fin (n + 1)) : -1 < ∑ l with a l = a k, e l := by
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using (he k).1
   have hS : ∑ k, e k < -1 := by rw [hsum]; norm_num
   rw [← range_schwarzChristoffelCompactifiedBoundary a e z₀ ha.monotone hfinite hS]
   exact isJordanCurve_range_schwarzChristoffelCompactifiedBoundary a e z₀ hfinite hS

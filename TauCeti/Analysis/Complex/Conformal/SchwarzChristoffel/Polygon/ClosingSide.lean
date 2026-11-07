@@ -318,10 +318,12 @@ at infinity, on the closing line. -/
 theorem schwarzChristoffelVertexAtInfinity_lt_boundary_of_le_first
     (a e : Fin (n + 1) → ℝ) (z₀ : UpperHalfPlane) (ha : StrictMono a)
     (he : ∀ k, -1 < e k) (hsum : ∑ k, e k = -2) {x : ℝ} (hx : x ≤ a 0) :
-    schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelBoundary a e z₀ x :=
-  schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
+    schwarzChristoffelVertexAtInfinity a e z₀ < schwarzChristoffelBoundary a e z₀ x := by
+  have hfin : -1 < ∑ l with a l = a 0, e l := by
+    simpa [ha.injective.eq_iff, Finset.filter_eq'] using he 0
+  exact schwarzChristoffelVertexAtInfinity_lt_boundary a e z₀
     (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le (α := OrderDual ℝ) Finset.univ
-      (by norm_num) (Finset.lt_sum_filter_eq_of_injective ha.injective 0 (he 0))
+      (by norm_num) hfin
       (fun i _ _ ↦ ha.monotone i.zero_le) hx)
     (fun i _ ↦ hx.trans (ha.monotone i.zero_le)) hsum
 
@@ -333,7 +335,7 @@ theorem schwarzChristoffelBoundary_lt_vertexAtInfinity_of_last_le
     schwarzChristoffelBoundary a e z₀ x < schwarzChristoffelVertexAtInfinity a e z₀ :=
   schwarzChristoffelBoundary_lt_vertexAtInfinity a e z₀
     (Finset.lt_sum_filter_of_lt_zero_of_forall_ne_zero_le Finset.univ (by norm_num)
-      (Finset.lt_sum_filter_eq_of_injective ha.injective (Fin.last n) (he _))
+      (by simpa [ha.injective.eq_iff, Finset.filter_eq'] using he (Fin.last n))
       (fun i _ _ ↦ ha.monotone i.le_last) hx)
     (fun i _ ↦ (ha.monotone i.le_last).trans hx) (by rw [hsum]; norm_num)
 
