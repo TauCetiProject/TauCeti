@@ -10,6 +10,7 @@ public import Mathlib.Analysis.Calculus.BumpFunction.Convolution
 import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Analysis.Normed.Operator.Prod
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
+import TauCeti.Analysis.Calculus.ContDiff.Convolution
 import TauCeti.Analysis.Calculus.FDeriv.Measurable
 
 /-!
@@ -65,18 +66,6 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [MeasurableSpace E]
   [FiniteDimensional ℝ E] [BorelSpace E] {μ : ℝ → Measure E} {v : ℝ → E → E} {a b : ℝ}
 
-/-- The derivative of the convolution of a normalized bump with a compactly supported `C¹` function
-is the convolution of the bump with the derivative. -/
-theorem fderiv_normed_convolution_apply_of_contDiff {G : Type*} [NormedAddCommGroup G]
-    [NormedSpace ℝ G] [MeasurableSpace G] [BorelSpace G] [FiniteDimensional ℝ G] {ν : Measure G}
-    [ν.IsAddHaarMeasure] (β : ContDiffBump (0 : G)) {φ : G → ℝ} (hφ : ContDiff ℝ 1 φ)
-    (hφc : HasCompactSupport φ) (q w : G) :
-    fderiv ℝ (β.normed ν ⋆[lsmul ℝ ℝ, ν] φ) q w =
-      (β.normed ν ⋆[lsmul ℝ ℝ, ν] fun p ↦ fderiv ℝ φ p w) q := by
-  have hρ : LocallyIntegrable (β.normed ν) ν := β.continuous_normed.locallyIntegrable
-  rw [(hφc.hasFDerivAt_convolution_right _ hρ hφ q).fderiv]
-  exact convolution_precompR_apply _ hρ (hφc.fderiv ℝ) (hφ.continuous_fderiv one_ne_zero) q w
-
 /-- Mollifying a compactly supported `C¹` function with a normalized bump multiplies the bound on
 its derivative by at most `3`. -/
 theorem norm_fderiv_normed_convolution_le {G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
@@ -92,7 +81,7 @@ theorem norm_fderiv_normed_convolution_le {G : Type*} [NormedAddCommGroup G] [No
     (hDφ.clm_apply continuous_const).aestronglyMeasurable fun p _ ↦
       (dist_le_norm_add_norm _ _).trans (by linarith [hg p, hg q])
   rw [dist_eq_norm] at hdist
-  rw [fderiv_normed_convolution_apply_of_contDiff β hφ hφc]
+  rw [hφc.fderiv_convolution_right_apply _ β.continuous_normed.locallyIntegrable hφ q w]
   linarith [norm_le_norm_add_norm_sub' ((β.normed ν ⋆[lsmul ℝ ℝ, ν]
     fun p ↦ fderiv ℝ φ p w) q) (fderiv ℝ φ q w), hg q]
 
@@ -275,7 +264,7 @@ theorem integral_integral_fderiv_eq_zero_of_hasCompactSupport (h : IsContinuityE
   have hDφ : Continuous (fderiv ℝ φ) := hφ.continuous_fderiv one_ne_zero
   have hderiv (n : ℕ) (q w : ℝ × E) :
       fderiv ℝ (ψ n) q w = ((β n).normed m ⋆[lsmul ℝ ℝ, m] fun p ↦ fderiv ℝ φ p w) q :=
-    fderiv_normed_convolution_apply_of_contDiff (β n) hφ hφc q w
+    hφc.fderiv_convolution_right_apply _ (β n).continuous_normed.locallyIntegrable hφ q w
   have hrOut : Tendsto (fun n ↦ (β n).rOut) atTop (𝓝 0) := by
     have := tendsto_one_div_add_atTop_nhds_zero_nat.const_mul δ
     rw [mul_zero] at this
