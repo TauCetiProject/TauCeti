@@ -226,7 +226,6 @@ def precompEquivOfLift : CircleSobolev 0 ℂ ≃L[ℂ] CircleSobolev 0 ℂ :=
       (map_haarAddCircle_le_of_lift hF hper hφ hc hcF)
       (symmOfLift hF hper hφ hc hcF).continuous.measurable ENNReal.ofReal_ne_top
       (map_haarAddCircle_le_of_lift_of_leftInverse hF hper hφ (fun x ↦ hc.trans_le (hcF x)) hMF
-        (symmOfLift hF hper hφ hc hcF).continuous.measurable
         (symmOfLift_apply_apply hF hper hφ hc hcF))
       (symmOfLift_apply_apply hF hper hφ hc hcF) (apply_symmOfLift_apply hF hper hφ hc hcF))).trans
     (toLpₗᵢ T).symm.toContinuousLinearEquiv
@@ -251,8 +250,7 @@ private theorem precompEquivOfLift_symm_apply (a : CircleSobolev 0 ℂ) :
     (precompEquivOfLift hF hper hφ hc hcF hMF).symm a =
       precomp T (symmOfLift hF hper hφ hc hcF).continuous.measurable ENNReal.ofReal_ne_top
         (map_haarAddCircle_le_of_lift_of_leftInverse hF hper hφ (fun x ↦ hc.trans_le (hcF x))
-          hMF (symmOfLift hF hper hφ hc hcF).continuous.measurable
-          (symmOfLift_apply_apply hF hper hφ hc hcF)) a := by
+          hMF (symmOfLift_apply_apply hF hper hφ hc hcF)) a := by
   simp only [precompEquivOfLift, ContinuousLinearEquiv.symm_trans_apply,
     LinearIsometryEquiv.coe_symm_toContinuousLinearEquiv, LinearIsometryEquiv.symm_symm,
     Lp.compEquivOfMapLeSmul_symm_apply, precomp_apply]
