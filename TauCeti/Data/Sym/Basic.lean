@@ -15,6 +15,7 @@ import Mathlib.Data.Finset.NatAntidiagonal
 import Mathlib.Data.Fintype.EquivFin
 import Mathlib.Data.List.FinRange
 import Mathlib.Logic.Equiv.Fin.Basic
+import TauCeti.Data.Finsupp.Multiset
 
 /-!
 # Basic lemmas for symmetric powers
@@ -67,7 +68,7 @@ namespace TauCeti
 
 namespace Sym
 
-variable {α β ι : Type*} {m n : ℕ}
+variable {α β : Type*} {m n : ℕ}
 
 /-! ### Ordered tuples as unordered ones -/
 
@@ -159,25 +160,6 @@ theorem ofFn_eq_ofFn_iff {f g : Fin n → α} :
 
 /-! ### Letter counts -/
 
-/-- The letter counts of a family: the coefficient of `a` in `∑ₜ single (f t) 1` is the
-number of indices `t` with `f t = a`. -/
-theorem sum_single_apply [Fintype ι] [DecidableEq α] (f : ι → α) (a : α) :
-    (∑ t, Finsupp.single (f t) 1 : α →₀ ℕ) a = (Finset.univ.filter fun t => f t = a).card := by
-  simp [Finsupp.finsetSum_apply, Finsupp.single_apply]
-
-/-- The letter counts of a family with values in `F` sum, over `F`, to the number of indices. -/
-theorem sum_sum_single_apply [Fintype ι] {f : ι → α} {F : Finset α} (hf : ∀ t, f t ∈ F) :
-    ∑ a ∈ F, (∑ t, Finsupp.single (f t) 1 : α →₀ ℕ) a = Fintype.card ι := by
-  classical
-  simp only [sum_single_apply]
-  exact (Finset.card_eq_sum_card_fiberwise fun t _ => hf t).symm
-
-/-- A value is taken by a family exactly when its letter count is nonzero. -/
-theorem sum_single_apply_ne_zero_iff [Fintype ι] {f : ι → α} {a : α} :
-    (∑ t, Finsupp.single (f t) 1 : α →₀ ℕ) a ≠ 0 ↔ ∃ t, f t = a := by
-  classical
-  simp [sum_single_apply]
-
 /-- Two ordered tuples have the same letter counts exactly when they have the same underlying
 unordered tuple. -/
 theorem sum_single_eq_sum_single_iff {f g : Fin n → α} :
@@ -185,8 +167,8 @@ theorem sum_single_eq_sum_single_iff {f g : Fin n → α} :
   classical
   refine ⟨fun h => Sym.coe_injective (Multiset.ext.mpr fun a => ?_),
     fun h => Finsupp.ext fun a => ?_⟩
-  · simpa only [count_coe_ofFn, sum_single_apply] using DFunLike.congr_fun h a
-  · simpa only [count_coe_ofFn, sum_single_apply] using
+  · simpa only [count_coe_ofFn, Finsupp.sum_single_one_apply] using DFunLike.congr_fun h a
+  · simpa only [count_coe_ofFn, Finsupp.sum_single_one_apply] using
       congrArg (fun s : Sym α n => Multiset.count a (s : Multiset α)) h
 
 /-- The letter counts of ordered `n`-tuples are exactly the exponent vectors of total degree
@@ -201,7 +183,8 @@ theorem exists_sum_single_eq_iff (l : α →₀ ℕ) :
   · obtain ⟨f, hf⟩ := ofFn_surjective (α := α) (n := n)
       ⟨Finsupp.toMultiset l, by rw [Finsupp.card_toMultiset]; exact hl⟩
     refine ⟨f, Finsupp.ext fun a => ?_⟩
-    simpa only [count_coe_ofFn, sum_single_apply, _root_.Sym.coe_mk, Finsupp.count_toMultiset]
+    simpa only [count_coe_ofFn, Finsupp.sum_single_one_apply, _root_.Sym.coe_mk,
+      Finsupp.count_toMultiset]
       using congrArg (fun s : Sym α n => Multiset.count a (s : Multiset α)) hf
 
 /-! ### Adjoining a fixed point -/
