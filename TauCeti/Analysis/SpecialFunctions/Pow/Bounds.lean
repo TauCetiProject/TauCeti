@@ -448,6 +448,18 @@ theorem norm_rpow_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E] {ξ
       _ ≤ 2 ^ (|r| / 2) * (1 + ‖ξ‖ ^ 2) ^ (r / 2) :=
           mul_le_mul_of_nonneg_left h2 (by positivity)
 
+/-- Away from the origin, the Japanese bracket power is bounded by a multiple of the power of the
+norm: for `1 ≤ ‖ξ‖`, `(1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) ‖ξ‖ ^ r`. -/
+theorem one_add_norm_sq_rpow_le_norm_rpow {E : Type*} [SeminormedAddGroup E] {ξ : E}
+    (hξ : 1 ≤ ‖ξ‖) (r : ℝ) :
+    (1 + ‖ξ‖ ^ 2) ^ (r / 2) ≤ 2 ^ (|r| / 2) * ‖ξ‖ ^ r := by
+  have hs : 0 < ‖ξ‖ := one_pos.trans_le hξ
+  have h := norm_rpow_le_one_add_norm_sq_rpow hξ (-r)
+  rw [abs_neg, Real.rpow_neg hs.le, neg_div, Real.rpow_neg (by positivity), ← div_eq_mul_inv,
+    inv_le_comm₀ (Real.rpow_pos_of_pos hs r) (by positivity), inv_div,
+    div_le_iff₀' (by positivity)] at h
+  exact h
+
 /-- On a ball, the Japanese bracket power is bounded below: for `‖ξ‖ ≤ R`,
 `(1 + R ^ 2) ^ (-|r| / 2) ≤ (1 + ‖ξ‖ ^ 2) ^ (r / 2)`. -/
 theorem one_add_sq_rpow_neg_abs_le_one_add_norm_sq_rpow {E : Type*} [SeminormedAddGroup E]
