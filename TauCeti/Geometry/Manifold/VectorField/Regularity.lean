@@ -57,6 +57,9 @@ manifold differential of a function to tangent vectors whose base point varies.
   directional derivatives with manifold directional derivatives.
 * `TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin`: this identification holds near
   the chart centre within the model range.
+* `TauCeti.fderivWithin_fderivWithin_chart_apply_mpullbackWithin`: the chart derivative of a
+  coordinate directional derivative, applied to a pulled-back field, is the manifold
+  directional derivative of the directional derivative.
 * `TauCeti.mdifferentiableWithinAt_vectorSpace_iff_differentiableWithinAt` and its `At` and `On`
   forms: a vector field on a normed space is differentiable in the manifold sense exactly when it
   is differentiable as a map of the space.
@@ -494,6 +497,38 @@ theorem mdifferentiableAt_mvfderiv_apply
   filter_upwards with y
   rw [Function.comp_apply, tangentMap_snd, mvfderiv_apply_eq_mfderiv_apply]
   rfl
+
+open VectorField in
+/-- The chart derivative of the directional derivative `y ↦ mvfderiv I f y (U y)`, applied to the
+pulled-back field `V`, is the manifold counterpart `mvfderiv I (fun y ↦ mvfderiv I f y (U y)) x`
+applied to `V x`. -/
+theorem fderivWithin_fderivWithin_chart_apply_mpullbackWithin {f : M → F}
+    {U V : ∀ x : M, TangentSpace I x} {x : M} (hf : CMDiffAt n f x)
+    (hn : minSmoothness 𝕜 2 ≤ n)
+    (hU : MDiffAt (fun y ↦ (U y : TangentBundle I M)) x) :
+    fderivWithin 𝕜 (fun z ↦ fderivWithin 𝕜 (f ∘ (extChartAt I x).symm) (Set.range I) z
+        (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm U (Set.range I) z))
+      (Set.range I) (extChartAt I x x)
+        (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I) (extChartAt I x x)) =
+      mvfderiv I (fun y ↦ mvfderiv I f y (U y)) x (V x) := by
+  have h2n : (2 : ℕ∞ω) ≤ n :=
+    (le_minSmoothness (𝕜 := 𝕜) (n := (2 : ℕ∞ω))).trans hn
+  have h1n : (1 : ℕ∞ω) ≤ n := (by norm_num : (1 : ℕ∞ω) ≤ 2).trans h2n
+  have hf_chart : MDiffAt f ((extChartAt I x).symm (extChartAt I x x)) := by
+    simpa only [extChartAt_to_inv] using (hf.of_le h2n).mdifferentiableAt (by norm_num)
+  have hUf := TauCeti.mdifferentiableAt_mvfderiv_apply hf hn hU
+  have hcoord := (TauCeti.eventuallyEq_fderivWithin_chart_apply_mpullbackWithin
+    (I := I) (U := U) hf h1n).fderivWithin_eq
+    (𝕜 := 𝕜) (by
+      simpa only [Function.comp_apply, extChartAt_to_inv] using
+        TauCeti.fderivWithin_chart_apply_mpullbackWithin
+          (I := I) (U := U) (mem_extChartAt_target x) hf_chart)
+  have houter := TauCeti.fderivWithin_chart_apply_mpullbackWithin
+    (I := I) (p := fun y ↦ mvfderiv I f y (U y)) (U := V)
+    (mem_extChartAt_target x) (by simpa only [extChartAt_to_inv] using hUf)
+  rw [extChartAt_to_inv] at houter
+  rw [hcoord]
+  exact houter
 
 end DirectionalDerivative
 
