@@ -63,24 +63,6 @@ theorem _root_.IsCompact.image_connectedComponentIn {Y : Type*} [TopologicalSpac
   · have hfx : f x ∉ f '' A := fun ⟨w, hwA, hw⟩ => hxA (hinj (hA hwA) hx hw ▸ hwA)
     rw [connectedComponentIn_eq_empty hxA, connectedComponentIn_eq_empty hfx, image_empty]
 
-/-- **Localization at a point with a single preimage.** Let `f` be continuous on a compact set
-`K` with values in a Hausdorff space, and let `x₀` be the only point of `K` that `f` sends to
-`f x₀`. Then points of `K` whose images are close to `f x₀` are close to `x₀`: every neighbourhood
-of `x₀` contains all points of `K` sent into some neighbourhood of `f x₀`. -/
-theorem _root_.IsCompact.comap_nhds_inf_principal_le_nhds {Y : Type*} [TopologicalSpace Y]
-    [T2Space Y] {K : Set X} {f : X → Y} {x₀ : X} (hK : IsCompact K) (hf : ContinuousOn f K)
-    (hinj : ∀ x ∈ K, f x = f x₀ → x = x₀) : comap f (𝓝 (f x₀)) ⊓ 𝓟 K ≤ 𝓝 x₀ := by
-  intro U hU
-  -- The image of the compact set `K \ interior U` is closed and misses `f x₀`.
-  have hC : IsClosed (f '' (K \ interior U)) :=
-    ((hK.diff isOpen_interior).image_of_continuousOn (hf.mono sdiff_subset)).isClosed
-  have hx₀ : f x₀ ∉ f '' (K \ interior U) := by
-    rintro ⟨x, ⟨hxK, hxU⟩, hx⟩
-    exact hxU (hinj x hxK hx ▸ mem_interior_iff_mem_nhds.2 hU)
-  refine mem_inf_principal.2 (mem_comap.2 ⟨_, hC.isOpen_compl.mem_nhds hx₀, fun x hx hxK => ?_⟩)
-  by_contra hxU
-  exact hx ⟨x, ⟨hxK, fun h => hxU (interior_subset h)⟩, rfl⟩
-
 /-- A family that eventually lies in a compact set `s` along an ultrafilter converges along it to
 a point of `s`. -/
 theorem _root_.IsCompact.exists_tendsto_of_eventually_mem {ι : Type*} {s : Set X}

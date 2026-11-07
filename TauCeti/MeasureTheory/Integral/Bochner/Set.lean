@@ -6,8 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Integral.Bochner.Set
+public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
-import Mathlib.MeasureTheory.Function.LocallyIntegrable
 
 /-!
 # Continuity of parametric integrals with compactly supported integrand
@@ -17,10 +17,9 @@ a set. This file records its global form: a jointly continuous integrand which v
 integration variable lies in a fixed compact set has a continuous parametric integral, against any
 measure which is finite on compact sets. It also records that the indicator function of a
 bounded interval `[a, b)` is integrable against a locally finite measure, that the integral of
-`|f|` over a set splits along the sign of `f`, and, against a measure positive on nonempty open
-sets, that a continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes and
-that a nonnegative function continuous on an open set and vanishing there off a compact subset has
-positive integral over it unless it vanishes there.
+`|f|` over a set splits along the sign of `f`, and that a continuous
+square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a measure positive
+on nonempty open sets.
 
 ## Main statements
 
@@ -31,8 +30,6 @@ positive integral over it unless it vanishes there.
   part of `s` where `f ≥ 0` minus its integral over the rest of `s`.
 * `Continuous.eq_zero_of_integral_conj_mul_self_eq_zero`: a continuous square-integrable function
   `h` with `∫ conj (h x) * h x = 0` vanishes.
-* `ContinuousOn.setIntegral_pos_of_nonneg_ne_zero`: a function continuous and nonnegative on an open
-  set, vanishing there off a compact subset and somewhere nonzero, has positive integral over it.
 -/
 
 public section
@@ -73,6 +70,40 @@ theorem setIntegral_abs_eq_sub {α : Type*} [MeasurableSpace α] {μ : Measure �
     Measure.restrict_restrict₀ (hf.1.nullMeasurableSet_lt aestronglyMeasurable_const),
     inter_comm _ s, hneg]
 
+/-- If disjoint parametrizations `Q i` of a domain `D` cover the complement of a finite set `Z`, and
+`g` is injective on `s`, the integral over `g '' s` is the sum of the integrals over the images
+`(g ∘ Q i) '' (D ∩ Q i ⁻¹' s)` of the pieces cut out by each parametrization, up to the transport
+identity `hpiece` for each piece. The integrand need only be integrable on `g '' s`, and the
+measure needs null singletons only to discard the seams. -/
+theorem mul_integral_image_eq_sum_pieces {E M ι : Type*} [MeasurableSpace E] [Fintype ι]
+    {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Finite) (himage : (⋃ i, Q i '' D) = Zᶜ)
+    (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D))) {g : M → E} {s : Set M}
+    (hg : InjOn g s) (μ : Measure E) [NullSingletonClass μ] {C : E → ℝ}
+    (hC : IntegrableOn C (g '' s) μ)
+    (c : ℝ) (V : ι → E → ℝ)
+    (hT : ∀ i, MeasurableSet ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s)))
+    (hpiece : ∀ i, c * ∫ y in (g ∘ Q i) '' (D ∩ Q i ⁻¹' s), C y ∂μ =
+      ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ) :
+    c * ∫ y in g '' s, C y ∂μ = ∑ i, ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ := by
+  have hpair : Pairwise (fun i k ↦ Disjoint ((g ∘ Q i) '' (D ∩ Q i ⁻¹' s))
+      ((g ∘ Q k) '' (D ∩ Q k ⁻¹' s))) := fun i k hik ↦ by
+    simp only [image_comp, image_inter_preimage]
+    exact ((hdisj hik).mono inter_subset_left inter_subset_left).image hg inter_subset_right
+      inter_subset_right
+  have hcover : (⋃ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s)) = g '' (s \ Z) := by
+    simp only [image_comp, image_inter_preimage]
+    rw [← image_iUnion, ← iUnion_inter, himage]
+    congr 1
+    ext x
+    simp only [mem_inter_iff, mem_compl_iff, mem_sdiff]
+    tauto
+  have hsub : ∀ i, (g ∘ Q i) '' (D ∩ Q i ⁻¹' s) ⊆ g '' s := fun i ↦ by
+    rw [image_comp, image_inter_preimage]
+    exact image_mono inter_subset_right
+  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq g s μ), ← hcover,
+    integral_iUnion_fintype hT hpair (fun i ↦ hC.mono_set (hsub i)), Finset.mul_sum]
+  exact Finset.sum_congr rfl fun i _ ↦ hpiece i
+
 end TauCeti
 
 /-- A continuous square-integrable function `h` with `∫ conj (h x) * h x = 0` vanishes, against a
@@ -89,18 +120,3 @@ theorem Continuous.eq_zero_of_integral_conj_mul_self_eq_zero {X 𝕜 : Type*} [T
     (by simpa using hx)
   simp_rw [RCLike.conj_mul, ← RCLike.ofReal_pow, integral_ofReal, RCLike.ofReal_eq_zero] at h0
   exact hpos.ne' h0
-
-/-- A real function continuous and nonnegative on an open set `s`, vanishing on `s` outside a
-compact subset `K ⊆ s` and nonzero at some point of `s`, has positive integral over `s`, against a
-measure finite on compact sets and positive on nonempty open sets. Unlike
-`Continuous.integral_pos_of_hasCompactSupport_nonneg_ne_zero`, nothing is assumed outside `s`. -/
-theorem ContinuousOn.setIntegral_pos_of_nonneg_ne_zero {X : Type*} [TopologicalSpace X]
-    [T2Space X] [MeasurableSpace X] [OpensMeasurableSpace X] {μ : Measure X} [μ.IsOpenPosMeasure]
-    [IsFiniteMeasureOnCompacts μ] {f : X → ℝ} {s K : Set X} {x : X} (hs : IsOpen s)
-    (hf : ContinuousOn f s) (hK : IsCompact K) (hKs : K ⊆ s) (hfK : ∀ y ∈ s \ K, f y = 0)
-    (hf0 : ∀ y ∈ s, 0 ≤ f y) (hx : x ∈ s) (hfx : f x ≠ 0) : 0 < ∫ y in s, f y ∂μ := by
-  rw [setIntegral_pos_iff_support_of_nonneg_ae (ae_restrict_of_forall_mem hs.measurableSet hf0)
-    (((hf.mono hKs).integrableOn_compact hK).of_forall_sdiff_eq_zero hs.measurableSet hfK)]
-  -- The points of `s` where `f` is nonzero form a nonempty open set.
-  exact ((hf.isOpen_inter_preimage hs isOpen_compl_singleton).measure_pos μ ⟨x, hx, hfx⟩).trans_le
-    (measure_mono fun y hy => ⟨hy.2, hy.1⟩)

@@ -100,7 +100,7 @@ private theorem forkBranch_mem_span_normalForms (hn : 3 ≤ n)
   | succ t =>
     have hx := forkTurn_mul_self k (G := DG) hG (l := dc + 1) (by omega) (by omega)
     have hy := forkTurn_mul_self k (G := DG) hG (l := dc + 2) (by omega) (by omega)
-    have hw' := span_pair_pow_succ_le (R := ℤ) hx hy t hw
+    have hw' := (span_pair_pow_succ (R := ℤ) hx hy t).le hw
     obtain ⟨α, β, rfl⟩ := Submodule.mem_span_pair.mp hw'
     have hleft := hword true (t + 1) (by omega)
     have hright := hword false (t + 1) (by omega)
