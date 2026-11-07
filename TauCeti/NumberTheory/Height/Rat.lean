@@ -54,6 +54,9 @@ height estimates such as Roth's lemma.
 * `Polynomial.logHeight_map_intCast_le`, `Polynomial.logHeight_map_intCast_eq`,
   `Polynomial.logHeight_map_intCast_le_log`: the same for univariate polynomials, where coprime
   coefficients means that `P` is primitive.
+* `MvPolynomial.abs_coeff_le_exp_and_logHeight_map_le`: if the coefficients of a nonzero integer
+  polynomial are bounded by `B ^ ∑ i, r i`, they are bounded by `exp (log B * ∑ i, r i)` and the
+  height of `P` is at most `log B * ∑ i, r i`.
 
 ## References
 
@@ -305,6 +308,18 @@ theorem logHeight_map_intCast_le_log (hP : P ≠ 0) {B : ℝ}
   refine Real.log_le_log (mulHeight_pos _) ?_
   rw [mulHeight_map_intCast_eq_finsupp]
   exact Finsupp.mulHeight_mapRange_intCast_le_of_abs_le (by simpa using hP) hB
+
+/-- If the coefficients of a nonzero integer polynomial `P` are bounded by `B ^ ∑ i, r i` for
+`B > 0`, then they are bounded by `exp (log B * ∑ i, r i)`, and the logarithmic height of `P` over
+`ℚ` is at most `log B * ∑ i, r i`. -/
+theorem abs_coeff_le_exp_and_logHeight_map_le [Fintype σ] (hP0 : P ≠ 0) {B : ℝ} (hB : 0 < B)
+    {r : σ → ℕ} (hP : ∀ μ, |(P.coeff μ : ℝ)| ≤ B ^ ∑ i, r i) :
+    (∀ μ, |(P.coeff μ : ℝ)| ≤ Real.exp (Real.log B * ∑ i, (r i : ℝ))) ∧
+      (P.map (Int.castRingHom ℚ)).logHeight ≤ Real.log B * ∑ i, (r i : ℝ) := by
+  have h : ∀ μ, |(P.coeff μ : ℝ)| ≤ Real.exp (Real.log B * ∑ i, (r i : ℝ)) := fun μ ↦ by
+    rw [mul_comm, ← Nat.cast_sum, Real.exp_nat_mul, Real.exp_log hB]
+    exact hP μ
+  exact ⟨h, (logHeight_map_intCast_le_log hP0 h).trans_eq (Real.log_exp _)⟩
 
 end MvPolynomial
 
