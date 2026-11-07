@@ -84,8 +84,8 @@ the set acted on, the coset of `g` corresponding to `g • b`.  This is
 `MulAction.ofQuotientStabilizer`, which transitivity makes surjective. -/
 noncomputable def quotientStabilizerEquiv (b : X) : G ⧸ stabilizer G b ≃ X :=
   Equiv.ofBijective (ofQuotientStabilizer G b)
-    ⟨injective_ofQuotientStabilizer G b, fun x =>
-      QuotientGroup.mk_surjective.exists.mpr (exists_smul_eq G b x)⟩
+    ⟨injective_ofQuotientStabilizer G b, fun x => (exists_smul_eq G b x).imp' QuotientGroup.mk
+      fun g hg => (ofQuotientStabilizer_mk G b g).trans hg⟩
 
 /-- The computation rule for `TauCeti.quotientStabilizerEquiv`: on the coset represented by `g` it
 takes the value `g • b`. -/
