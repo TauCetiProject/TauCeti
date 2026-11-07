@@ -158,11 +158,6 @@ private theorem le_of_mem_flatten_snd {ws : List (α × β)} {w : α × β}
     (((sortedLE_concat (l := ws.map toLex) (a := toLex w)).mp (by simpa using h)).1 _
       (mem_map_of_mem hv))
 
-/-- The earlier pairs of a two-line array form a two-line array. -/
-private theorem sortedLE_of_append_singleton {ws : List (α × β)} {w : α × β}
-    (h : ((ws ++ [w]).map toLex).SortedLE) : (ws.map toLex).SortedLE :=
-  SortedLE.of_append_left (l₂ := [toLex w]) (by simpa only [map_append, map_singleton] using h)
-
 /-- The entries of the recording tableau of a two-line array are at most the last top letter. -/
 private theorem le_of_mem_flatten_snd_append {ws : List (α × β)} {w : α × β}
     (h : ((ws ++ [w]).map toLex).SortedLE) {x : α}
@@ -317,14 +312,21 @@ theorem robinsonSchenstedKnuth_injOn :
       (Subtype.ext (by simp [hins, hk]))
     simp only [Prod.mk.injEq, Subtype.mk.injEq] at this
     obtain ⟨hP, rfl⟩ := this
+    -- The earlier pairs of a two-line array form a two-line array.
+    have hws' : (ws.map toLex).SortedLE := (List.sortedLE_append (l₁ := ws.map toLex)
+      (l₂ := [toLex (a, b)])).mp
+      (by simpa only [Set.mem_ofPred_eq, map_append, map_singleton] using hws) |>.1
+    have hvs' : (vs.map toLex).SortedLE := (List.sortedLE_append (l₁ := vs.map toLex)
+      (l₂ := [toLex (a, b)])).mp
+      (by simpa only [Set.mem_ofPred_eq, map_append, map_singleton] using hvs) |>.1
     have hQ : (robinsonSchenstedKnuth ws).2 = (robinsonSchenstedKnuth vs).2 := by
       rw [← dropLastOfRow_appendToRow a
-          (isTableauRows_robinsonSchenstedKnuth_snd (sortedLE_of_append_singleton hws)).nil_notMem
+          (isTableauRows_robinsonSchenstedKnuth_snd hws').nil_notMem
           (rowInsertIndex_le_length_snd ws b), hrec, ← hk,
         dropLastOfRow_appendToRow a
-          (isTableauRows_robinsonSchenstedKnuth_snd (sortedLE_of_append_singleton hvs)).nil_notMem
+          (isTableauRows_robinsonSchenstedKnuth_snd hvs').nil_notMem
           (hk ▸ rowInsertIndex_le_length_snd vs b)]
-    rw [ih (sortedLE_of_append_singleton hws) (sortedLE_of_append_singleton hvs) (Prod.ext hP hQ)]
+    rw [ih hws' hvs' (Prod.ext hP hQ)]
 
 /-- **Recovering the order of a two-line array**: appending `(a, b)` to a two-line array gives a
 two-line array if `a` is at least every top letter so far, and no row of the recording tableau

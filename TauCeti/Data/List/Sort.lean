@@ -12,8 +12,7 @@ import Mathlib.Data.List.Chain
 # Weakly increasing lists under appending an entry
 
 A weakly increasing list stays weakly increasing after appending an entry exactly when its last
-entry, if any, is at most the new one.  Every prefix of a weakly increasing list is weakly
-increasing.
+entry, if any, is at most the new one.
 -/
 
 public section
@@ -28,9 +27,5 @@ theorem sortedLE_append_singleton {l : List α} {a : α} :
     (l ++ [a]).SortedLE ↔ l.SortedLE ∧ ∀ b ∈ l.getLast?, b ≤ a := by
   rw [sortedLE_iff_isChain, sortedLE_iff_isChain, isChain_append]
   cases l.getLast? <;> simp
-
-/-- Every prefix of a weakly increasing list is weakly increasing. -/
-theorem SortedLE.of_append_left {l₁ l₂ : List α} (h : (l₁ ++ l₂).SortedLE) : l₁.SortedLE :=
-  (sortedLE_iff_pairwise.mp h |> pairwise_append.mp |>.1).sortedLE
 
 end List
