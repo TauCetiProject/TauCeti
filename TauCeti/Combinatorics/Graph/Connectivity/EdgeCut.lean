@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Combinatorics.Graph.Connected.EdgeCut
+public import Mathlib.Combinatorics.Graph.Simple
 public import TauCeti.Combinatorics.Graph.Connectivity.Walk.Basic
 public import TauCeti.Combinatorics.Graph.EdgeEnds
 public import TauCeti.Data.Sym.Crosses
@@ -30,6 +31,9 @@ edge cut along `T`; conversely when `T ⊆ S`.
 
 These facts are the interface between cut-based and walk-based descriptions of connectivity,
 used for instance to characterize bridges by deletion.
+
+For a simple graph, an edge of `Graph.ofSimpleGraph G` crosses a vertex set exactly when the
+corresponding unordered pair crosses it.
 
 ## Implementation notes
 
@@ -180,3 +184,19 @@ theorem edgeCut_subset_edgeCut_of_edgeCut_induce_eq_empty {T : Set α} (hTS : T 
   exact notMem_empty e (h ▸ he)
 
 end Graph
+
+namespace SimpleGraph
+
+variable {V : Type u} {G : SimpleGraph V} {e : Sym2 V} {S : Set V}
+
+/-- An edge of `Graph.ofSimpleGraph G` belongs to the edge cut of `S` exactly when its unordered
+pair of endpoints crosses `S`. -/
+theorem mem_edgeCut_ofSimpleGraph_iff_crosses (he : e ∈ G.edgeSet) :
+    e ∈ (Graph.ofSimpleGraph G).edgeCut S ↔ e.Crosses S := by
+  induction e using Sym2.inductionOn with
+  | _ x y =>
+    have hlink : (Graph.ofSimpleGraph G).IsLink s(x, y) x y := by
+      simpa using he
+    simpa only [Sym2.crosses_mk_iff] using hlink.mem_edgeCut_iff
+
+end SimpleGraph
