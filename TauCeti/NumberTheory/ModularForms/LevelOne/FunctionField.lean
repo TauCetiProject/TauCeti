@@ -322,12 +322,11 @@ theorem exists_compactifiedQuotientComap_eq_iff (H : _root_.Subgroup SL(2, ℤ))
     have he := hx.trans hx'.symm
     simp only [β, FiniteHolomorphicMap.coe_comp, Function.comp_apply,
       Fuchsian.coe_compactifiedQuotientFiniteHolomorphicMap, coe_jFiniteHolomorphicMap,
-      ← coe_jBiholomorph, _root_.Subgroup.compactifiedQuotientMap_ofQuotient] at he
-    obtain ⟨⟨_, γ, rfl⟩, hγ⟩ := orbitRel_apply.1 (Quotient.exact
-      (ofQuotient_injective (jBiholomorph.injective he)))
-    obtain ⟨γ, rfl⟩ := QuotientGroup.mk_surjective γ
-    have hγ' : γ • τ' = τ := by simpa [← UpperHalfPlane.sl2zToPSL2R_smul] using hγ
-    rw [← hγ', hF]
+      _root_.Subgroup.compactifiedQuotientMap_ofQuotient, jSphere_ofQuotient,
+      OnePoint.coe_eq_coe] at he
+    obtain ⟨γ, hγ⟩ := (j_eq_j_iff (z := τ') (w := τ)).1
+      (by rw [← jQuotient_mk, ← jQuotient_mk]; exact he.symm)
+    rw [← hγ, hF]
   obtain ⟨g, hg⟩ := MeromorphicFunction.exists_comap_eq_of_eventually_subsingleton_image β F hfib
   refine ⟨comap _ jFiniteHolomorphicMap.holomorphic jFiniteHolomorphicMap.nonconstant g,
     ext fun x ↦ ?_⟩
