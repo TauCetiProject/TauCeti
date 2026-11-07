@@ -246,6 +246,19 @@ private theorem exists_dvd_of_add_notMem_nonsingularReduction {ϖ : v.valuationS
   · apply mul_left_cancel₀ (pow_ne_zero 3 hp.ne_zero)
     linear_combination -hE + ϖ ^ 2 * X₁ ^ 2 * hb - ϖ * X₁ * hc
 
+omit [DecidableEq F] in
+/-- If `x₁ = ϖ X₁` and `x₂ = ϖ X₂` for a prime `ϖ` of the valuation subring and `ϖ` does not
+divide `X₁ - X₂`, then `x₁ ≠ x₂`. -/
+private theorem ne_of_xCoord_eq_mul_of_not_dvd_sub {ϖ : v.valuationSubring} (hp : Prime ϖ)
+    {x₁ x₂ : F} {X₁ X₂ : v.valuationSubring} (hX₁ : x₁ = ((ϖ * X₁ : v.valuationSubring) : F))
+    (hX₂ : x₂ = ((ϖ * X₂ : v.valuationSubring) : F)) (hX : ¬ ϖ ∣ X₁ - X₂) : x₁ ≠ x₂ := by
+  intro hx
+  rw [hX₁, hX₂] at hx
+  have : X₁ - X₂ = 0 := by
+    rw [sub_eq_zero]
+    exact mul_left_cancel₀ hp.ne_zero (Subtype.val_injective hx)
+  exact hX (this ▸ dvd_zero ϖ)
+
 /-- **At `I₀*`, two points with singular reduction whose `x / ϖ` have different residues add up
 to a point with singular reduction.** The line through `P = (ϖ X₁, ϖ² Y₁)` and
 `Q = (ϖ X₂, ϖ² Y₂)` has slope `ϖ (Y₁ − Y₂) / (X₁ − X₂)` with `X₁ − X₂` a unit, so the coordinates
@@ -274,13 +287,7 @@ private theorem add_notMem_nonsingularReduction_of_not_dvd_sub {ϖ : v.valuation
   -- `X₁ − X₂` is a unit, so `x₁ ≠ x₂`
   have hu : IsUnit (X₁ - X₂) :=
     notMem_maximalIdeal.1 fun hm ↦ hX ((mem_maximalIdeal_iff_dvd hϖ).1 hm)
-  have hx : x₁ ≠ x₂ := by
-    intro hx
-    rw [hX₁, hX₂] at hx
-    have : X₁ - X₂ = 0 := by
-      rw [sub_eq_zero]
-      exact mul_left_cancel₀ hp.ne_zero (Subtype.val_injective hx)
-    exact hX (this ▸ dvd_zero ϖ)
+  have hx : x₁ ≠ x₂ := ne_of_xCoord_eq_mul_of_not_dvd_sub v hp hX₁ hX₂ hX
   have hxy : ¬(x₁ = x₂ ∧ y₁ = W.negY x₂ y₂) := fun hxy ↦ hx hxy.1
   have ha₁ : W.a₁ = ϖ * A₁ := by
     rw [← integralModel_a₁_eq v.valuationSubring W, hA₁]; simp
