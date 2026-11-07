@@ -12,6 +12,7 @@ import TauCeti.Analysis.Calculus.BumpFunction.InnerProduct
 import TauCeti.Analysis.Calculus.Gradient
 import TauCeti.Analysis.Distribution.BumpComp
 import TauCeti.Analysis.Normed.Operator.Surjective
+import TauCeti.Analysis.Calculus.FDeriv.Prod
 import TauCeti.Dynamics.Flow.Variational
 import TauCeti.Analysis.Calculus.TangentCone.Basic
 
@@ -54,6 +55,8 @@ these sets for a generic perturbation needs.
   transversality of the parametrized flow to it.
 * `TauCeti.isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top`: for a fixed family, spanning
   is an open condition on the time, the start point and the parameter.
+* `TauCeti.isOpen_setOf_range_fderiv_perturbedFlow_zero_sup_span_eq_top`: at the parameter `0`
+  and a fixed time, spanning with the flow direction is an open condition on the start point.
 * `TauCeti.exists_admissible_forall_mem_range_fderiv_perturbedFlow_sup_span_eq_top`: one finite
   family, supported in a prescribed open set, that spans at every point of a compact set of start
   points whose orbits meet that open set.
@@ -317,11 +320,8 @@ theorem isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top {ι : Type*} [Fi
   have hΨ : ContDiff ℝ 1 Ψ := contDiff_perturbedFlow hfs hf hh hc
   -- The derivative of a time-`t` map is a partial derivative of the flow in all its variables.
   have hD : ∀ q : ℝ × E × EuclideanSpace ℝ ι, fderiv ℝ (perturbedFlow f h hf hh hc q.1) q.2 =
-      (fderiv ℝ Ψ q).comp (ContinuousLinearMap.inr ℝ ℝ (E × EuclideanSpace ℝ ι)) := fun q ↦ by
-    have h0 : HasFDerivAt Ψ (fderiv ℝ Ψ q) (q.1, q.2) :=
-      ((hΨ.differentiable one_ne_zero) q).hasFDerivAt
-    exact (HasFDerivAt.comp (g := Ψ) (f := fun p ↦ (q.1, p)) q.2 h0
-      (hasFDerivAt_prodMk_right (𝕜 := ℝ) q.1 q.2)).fderiv
+      (fderiv ℝ Ψ q).comp (ContinuousLinearMap.inr ℝ ℝ (E × EuclideanSpace ℝ ι)) := fun q ↦
+    fderiv_slice_right (f := Ψ) ((hΨ.differentiable one_ne_zero) _)
   -- The spanning vectors, as one operator depending continuously on the point.
   set v : ℝ × E × EuclideanSpace ℝ ι → E := fun q ↦
     ∇ (perturb f h q.2.2) (perturbedFlow f h hf hh hc q.1 q.2).1
@@ -366,6 +366,25 @@ theorem isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top {ι : Type*} [Fi
   rw [hset]
   exact isOpen_setOf_surjective.preimage hA
 
+/-- **Spanning at the parameter `0` is an open condition on the start point.** For a family `h` of
+`C²` compactly supported functions and a time `T`, the start points `y` at which the range of the
+parameter derivative at `0` of `s ↦ φ^{f + ∑ sᵢ hᵢ}_T y` and the flow direction `∇f(φ_T y)`
+together span `E` form an open set. -/
+theorem isOpen_setOf_range_fderiv_perturbedFlow_zero_sup_span_eq_top {ι : Type*} [Fintype ι]
+    {h : ι → E → ℝ} (hfs : ContDiff ℝ 2 f) (hf : LipschitzWith K (∇ f))
+    (hh : ∀ i, ContDiff ℝ 2 (h i)) (hc : ∀ i, HasCompactSupport (h i)) (T : ℝ) :
+    IsOpen {y : E |
+      LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ ι)).comp
+          ((fderiv ℝ (perturbedFlow f h hf hh hc T) (y, 0)).comp
+            (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ ι)))) :
+            EuclideanSpace ℝ ι →ₗ[ℝ] E) ⊔
+        (ℝ ∙ ∇ f (negativeGradientFlow f hf T y)) = ⊤} := by
+  have := (isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top hfs hf hh hc).preimage
+    ((Continuous.prodMk_right T).comp (Continuous.prodMk_left (0 : EuclideanSpace ℝ ι)))
+  convert this using 1
+  ext y
+  simp [perturbedFlow_apply_zero]
+
 /-- **One family for a compact set of orbits.** Let `C` be a compact set of points that are not
 critical, `T` a time and `W` an open set met, at some time in `(0, T)`, by the orbit of every point
 of `C`. Then there is a single finite family `h` of admissible perturbations of `f`, each of class
@@ -406,24 +425,9 @@ theorem exists_admissible_forall_mem_range_fderiv_perturbedFlow_sup_span_eq_top 
           (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin (n x)))))) :
           EuclideanSpace ℝ (Fin (n x)) →ₗ[ℝ] E) ⊔
       (ℝ ∙ ∇ f (negativeGradientFlow f hf T y)) = ⊤}
-  have hU : ∀ x, IsOpen (U x) := fun x ↦ by
-    -- `U x` is the slice at time `T` and parameter `0` of the open set of spanning triples.
-    have hslice : U x = (fun y ↦ (T, y, (0 : EuclideanSpace ℝ (Fin (n x))))) ⁻¹'
-        {q | LinearMap.range (((ContinuousLinearMap.fst ℝ E (EuclideanSpace ℝ (Fin (n x)))).comp
-          ((fderiv ℝ (perturbedFlow f (h x) hf (fun i ↦ (hh x i).contDiff)
-            (fun i ↦ (hh x i).hasCompactSupport) q.1) q.2).comp
-            (ContinuousLinearMap.inr ℝ E (EuclideanSpace ℝ (Fin (n x)))))) :
-            EuclideanSpace ℝ (Fin (n x)) →ₗ[ℝ] E) ⊔
-          (ℝ ∙ ∇ (perturb f (h x) q.2.2)
-            (perturbedFlow f (h x) hf (fun i ↦ (hh x i).contDiff)
-              (fun i ↦ (hh x i).hasCompactSupport) q.1 q.2).1) = ⊤} := by
-      ext y
-      simp [U, perturbedFlow_apply_zero]
-    rw [hslice]
-    exact (isOpen_setOf_range_fderiv_perturbedFlow_sup_span_eq_top hfs hf
-      (fun i ↦ (hh x i).contDiff) (fun i ↦ (hh x i).hasCompactSupport)).preimage
-      ((Continuous.prodMk_right T).comp
-        (Continuous.prodMk_left (0 : EuclideanSpace ℝ (Fin (n x)))))
+  have hU : ∀ x, IsOpen (U x) := fun x ↦
+    isOpen_setOf_range_fderiv_perturbedFlow_zero_sup_span_eq_top hfs hf
+      (fun i ↦ (hh x i).contDiff) (fun i ↦ (hh x i).hasCompactSupport) T
   obtain ⟨t, ht⟩ := hC.elim_finite_subcover U hU fun x hx ↦ mem_iUnion.2 ⟨⟨x, hx⟩, hspan ⟨x, hx⟩⟩
   -- The union of the finitely many families that cover `C`.
   set eqv := Fintype.equivFin (Σ x : t, Fin (n x))
