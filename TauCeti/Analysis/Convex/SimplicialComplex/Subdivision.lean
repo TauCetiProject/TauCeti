@@ -114,61 +114,6 @@ end IsSubdivision
 variable {E ι J : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
 omit [FiniteDimensional ℝ E] in
-/-- A point of `C` lying in `|L|` lies in the intrinsic frontier of `C`, if the intrinsic interior
-of `C` avoids `|L|`. -/
-theorem inter_space_subset_intrinsicFrontier {L : SimplicialComplex ℝ E} {C : Set E}
-    (hint : Disjoint (intrinsicInterior ℝ C) L.space) : C ∩ L.space ⊆ intrinsicFrontier ℝ C :=
-  fun x ⟨hxC, hxL⟩ => by
-    rw [← intrinsicClosure_sdiff_intrinsicInterior]
-    exact ⟨subset_intrinsicClosure hxC, fun hxi => Set.disjoint_left.1 hint hxi hxL⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- If a convex set `C` meets the simplicial complex `L` exactly in the subcomplex covering its
-intrinsic frontier, and its intrinsic interior avoids `|L|`, then the restriction of `L` to `C`
-has the intrinsic frontier of `C` as its space. -/
-theorem space_restrict_eq_intrinsicFrontier {L : SimplicialComplex ℝ E} {C : Set E}
-    (hCv : Convex ℝ C) (hfr : intrinsicFrontier ℝ C ⊆ (L.restrict C).space)
-    (hint : Disjoint (intrinsicInterior ℝ C) L.space) :
-    (L.restrict C).space = intrinsicFrontier ℝ C := by
-  exact ((space_restrict_subset hCv).trans fun _ ⟨hxL, hxC⟩ =>
-    inter_space_subset_intrinsicFrontier hint ⟨hxC, hxL⟩).antisymm hfr
-
-omit [FiniteDimensional ℝ E] in
-/-- The faces of the pieces `L` and `T j` of a glued family meet compatibly, provided distinct
-pieces `T j`, `T k` meet inside `|L|` and a point of `|L|` carried by a face of a piece is carried
-by a subface which is a face of `L`. -/
-private theorem inter_convexHull_subset_convexHull_option (L : SimplicialComplex ℝ E)
-    (T : J → SimplicialComplex ℝ E) (C : J → Set E) (hT : ∀ j, (T j).space = C j)
-    (hCC : Pairwise fun j k => C j ∩ C k ⊆ L.space)
-    (hdesc : ∀ j ⦃s : Finset E⦄ ⦃x : E⦄, s ∈ (T j).faces → x ∈ convexHull ℝ (s : Set E) →
-      x ∈ L.space → ∃ t ⊆ s, t ∈ L.faces ∧ x ∈ convexHull ℝ (t : Set E))
-    (a b : Option J) ⦃s t : Finset E⦄ (hs : s ∈ ((a.elim L T : SimplicialComplex ℝ E)).faces)
-    (ht : t ∈ ((b.elim L T : SimplicialComplex ℝ E)).faces) :
-    convexHull ℝ ↑s ∩ convexHull ℝ ↑t ⊆ convexHull ℝ (s ∩ t : Set E) := by
-  have hdesc' : ∀ a : Option J, ∀ ⦃s : Finset E⦄ ⦃x : E⦄,
-      s ∈ (a.elim L T : SimplicialComplex ℝ E).faces →
-      x ∈ convexHull ℝ (s : Set E) → x ∈ L.space →
-      ∃ t ⊆ s, t ∈ L.faces ∧ x ∈ convexHull ℝ (t : Set E) := by
-    rintro (_ | j) s x hs hx hxL
-    · exact ⟨s, Finset.Subset.rfl, hs, hx⟩
-    · exact hdesc j hs hx hxL
-  rintro x ⟨hxs, hxt⟩
-  rcases eq_or_ne a b with rfl | hab
-  · exact (a.elim L T : SimplicialComplex ℝ E).inter_subset_convexHull hs ht ⟨hxs, hxt⟩
-  -- two distinct pieces meet inside `|L|`
-  have hxL : x ∈ L.space := by
-    rcases a with _ | j
-    · exact convexHull_subset_space hs hxs
-    rcases b with _ | k
-    · exact convexHull_subset_space ht hxt
-    exact hCC (fun hjk => hab (congrArg some hjk))
-      ⟨hT j ▸ convexHull_subset_space hs hxs, hT k ▸ convexHull_subset_space ht hxt⟩
-  obtain ⟨s', hss', hs', hxs'⟩ := hdesc' a hs hxs hxL
-  obtain ⟨t', htt', ht', hxt'⟩ := hdesc' b ht hxt hxL
-  exact convexHull_mono (Set.inter_subset_inter (coe_subset.2 hss') (coe_subset.2 htt'))
-    (L.inter_subset_convexHull hs' ht' ⟨hxs', hxt'⟩)
-
-omit [FiniteDimensional ℝ E] in
 /-- **Attaching compact convex cells to a simplicial complex.** Let `C j` be compact convex sets
 with prescribed points `p j` of their intrinsic interiors, whose intrinsic interiors avoid `|L|`,
 each meeting `L` in a subcomplex covering its intrinsic frontier, and any two of which meet only
@@ -205,7 +150,7 @@ theorem exists_extension_of_intrinsicFrontier_subset_space (L : SimplicialComple
   have hcompat := inter_convexHull_subset_convexHull_option L T C hT hCC fun j s x hs hx hxL => by
     have hxC : x ∈ C j := hT j ▸ convexHull_subset_space hs hx
     obtain ⟨hs', hx'⟩ := erase_mem_faces_of_mem_convexHull (hapex j) hs hx
-      (hfr j (inter_space_subset_intrinsicFrontier (hint j) ⟨hxC, hxL⟩))
+      (hfr j (TauCeti.inter_subset_intrinsicFrontier_of_disjoint (hint j) ⟨hxC, hxL⟩))
     exact ⟨_, erase_subset _ _, restrict_le hs', hx'⟩
   -- a face of the cone on `C j` avoiding its apex is a face of `L`
   have hTL : ∀ j ⦃s : Finset E⦄, s ∈ (T j).faces → p j ∉ s → s ∈ L.faces := fun j _ hs hps =>
@@ -243,45 +188,6 @@ theorem exists_extension_of_intrinsicFrontier_subset_space (L : SimplicialComple
 section Cells
 
 variable {P : ι → Set E}
-
-omit [FiniteDimensional ℝ E] in
-/-- The cells of dimension `< n + 1` are the cells of dimension `< n` together with those of
-dimension `n`. -/
-private theorem iUnion_finrank_vectorSpan_lt_union_eq (P : ι → Set E) (n : ℕ) :
-    ((⋃ (k) (_ : Module.finrank ℝ (vectorSpan ℝ (P k)) < n), P k) ∪
-      ⋃ j : {i // Module.finrank ℝ (vectorSpan ℝ (P i)) = n}, P j) =
-      ⋃ (k) (_ : Module.finrank ℝ (vectorSpan ℝ (P k)) < n + 1), P k := by
-  ext x
-  simp only [Set.mem_union, Set.mem_iUnion, exists_prop, Subtype.exists]
-  constructor
-  · rintro (⟨k, hk, hx⟩ | ⟨k, hk, hx⟩) <;> exact ⟨k, by omega, hx⟩
-  · rintro ⟨k, hk, hx⟩
-    rcases Nat.lt_succ_iff_lt_or_eq.1 hk with hk | hk
-    · exact .inl ⟨k, hk, hx⟩
-    · exact .inr ⟨k, hk, hx⟩
-
-omit [FiniteDimensional ℝ E] in
-/-- A cell `P k` is triangulated by finitely many faces of `K`, if `L` has finitely many faces in
-`P k`, the cells of dimension `< n` are triangulated by finitely many faces of `K`, and every face
-of `K` is a face of `L` or lies in such a cell. -/
-private theorem finite_faces_restrict_of_forall_lt {L K : SimplicialComplex ℝ E} {n : ℕ}
-    (hPc : ∀ i, IsCompact (P i)) (hPlf : LocallyFinite P)
-    (hLfin : ∀ i, (L.restrict (P i)).faces.Finite)
-    (hKP : ∀ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n → (K.restrict (P k)).faces.Finite)
-    (hKf : ∀ s ∈ K.faces, s ∈ L.faces ∨
-      ∃ k, Module.finrank ℝ (vectorSpan ℝ (P k)) < n ∧ (s : Set E) ⊆ P k) (k : ι) :
-    (K.restrict (P k)).faces.Finite := by
-  refine ((hLfin k).union (((hPlf.finite_nonempty_inter_compact
-    (hPc k)).inter_of_left {m | Module.finrank ℝ (vectorSpan ℝ (P m)) < n}).biUnion
-      fun m hm => hKP m hm.2)).subset ?_
-  -- a face of `K` in `P k` is a face of `L` or lies in a smaller cell meeting `P k`
-  intro s hs
-  obtain ⟨hs, hsP⟩ := mem_restrict_faces.1 hs
-  rcases hKf s hs with hsL | ⟨m, hm, hsm⟩
-  · exact .inl (mem_restrict_faces.2 ⟨hsL, hsP⟩)
-  · obtain ⟨y, hy⟩ := K.nonempty_of_mem_faces hs
-    exact .inr (Set.mem_biUnion (x := m) ⟨⟨y, hsm hy, hsP hy⟩, hm⟩
-      (mem_restrict_faces.2 ⟨hs, hsm⟩))
 
 /-- The inductive step of `exists_subdivision_extending`: a subdivision of the cells of
 dimension `< n` extends to one of the cells of dimension `≤ n`. -/
@@ -346,12 +252,15 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
   refine ⟨K', ?_, ?_, fun k hk => ?_, fun s hs => ?_⟩
   · rw [hK'B _ fun ⟨i, _⟩ => hLi i, hKL]
   · rw [hK's, hKs, Set.union_assoc]
-    exact congrArg _ (iUnion_finrank_vectorSpan_lt_union_eq P n)
+    refine congrArg _ ?_
+    simp_rw [Set.iUnion_subtype, Nat.lt_succ_iff_lt_or_eq, Set.iUnion_or,
+      Set.iUnion_union_distrib]
   · rcases Nat.lt_succ_iff_lt_or_eq.1 hk with hk | hk
     · rw [hK'B _ fun ⟨i, hi⟩ => hB i k hi.ge hk]
       exact hKP k hk
     obtain ⟨hsp, hfin⟩ := hK'C ⟨k, hk⟩
-    exact ⟨hsp, hfin (finite_faces_restrict_of_forall_lt hPc hPlf hLfin
+    exact ⟨hsp, hfin (finite_faces_restrict_of_forall_lt
+      (fun k => Module.finrank ℝ (vectorSpan ℝ (P k))) hPc hPlf hLfin
       (fun m hm => (hKP m hm).2) (fun s hs => (hKf s hs).imp_right fun ⟨m, hm, _, hsm⟩ =>
         ⟨m, hm, hsm⟩) k)⟩
   · rcases hK'f s hs with hsK | ⟨⟨i, hi⟩, hpi, hsi⟩
