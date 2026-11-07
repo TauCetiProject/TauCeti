@@ -8,14 +8,17 @@ module
 public import Mathlib.MeasureTheory.Measure.Support
 
 /-!
-# Topological support under scalar multiplication and continuous maps
+# Topological support on discrete spaces and under transport
 
-This file identifies the support of a nonzero scalar multiple of a measure and the support of a
-pushforward by a continuous map. It also shows that pushing a measure forward along a
+This file characterizes support by singleton masses on discrete spaces and identifies the
+support of a nonzero scalar multiple of a measure and of a continuous pushforward.
+It also shows that pushing a measure forward along a
 homeomorphism transports its topological support onto the image of the original support.
 
 ## Main result
 
+* `MeasureTheory.Measure.mem_support_iff_measure_singleton_pos` — on a discrete space, support
+  membership is equivalent to positive singleton mass.
 * `MeasureTheory.Measure.support_smul_measure` — multiplying a measure by a nonzero scalar
   preserves its support.
 * `MeasureTheory.Measure.support_map_eq_closure_image` — a continuous pushforward has support
@@ -32,6 +35,16 @@ open Set
 open scoped ENNReal
 
 namespace MeasureTheory.Measure
+
+/-- On a discrete space, a point belongs to the support exactly when its singleton has
+positive mass. No compatibility between the measurable structure and topology is needed. -/
+@[simp]
+theorem mem_support_iff_measure_singleton_pos {X : Type*} [TopologicalSpace X]
+    [DiscreteTopology X] [MeasurableSpace X] {μ : Measure X} {x : X} :
+    x ∈ μ.support ↔ 0 < μ {x} := by
+  rw [mem_support_iff_forall]
+  exact ⟨fun h ↦ h _ (isOpen_discrete _ |>.mem_nhds (Set.mem_singleton x)),
+    fun h _ hU ↦ h.trans_le (measure_mono (Set.singleton_subset_iff.mpr (mem_of_mem_nhds hU)))⟩
 
 /-- Multiplying a measure by a nonzero `ℝ≥0∞` scalar preserves its topological support. -/
 theorem support_smul_measure {X : Type*} [TopologicalSpace X] [MeasurableSpace X]
