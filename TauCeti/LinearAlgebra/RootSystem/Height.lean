@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.Base
+import Mathlib.LinearAlgebra.Basis.VectorSpace
 
 /-!
 # Height and integral relations among roots
@@ -16,7 +17,8 @@ among the roots: a vanishing integral combination of roots has a vanishing combi
 so two integral combinations with the same value have the same combination of heights. When the
 roots span the weight space, it also extends height to the linear functional which sums the
 coordinates in the simple-root basis, and then an automorphism permuting the simple roots preserves
-heights. Ahead of all this, it records the extensionality of bases:
+heights. Over a field, a form taking value one on the simple roots exists even when they do not
+span the weight space. Ahead of all this, it records the extensionality of bases:
 a base is determined by the indices of its simple roots.
 
 ## Main definitions
@@ -86,6 +88,19 @@ theorem height_eq_one_iff [CharZero R] (b : P.Base) {i : ι} :
     omega
 
 end RootPairing.Base
+
+/-- Over a field, there is a linear form taking value one on every simple root, even when
+those roots do not span the weight space. -/
+theorem RootPairing.Base.exists_dual_eq_one_on_root {ι 𝕜 V N : Type*} [Field 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] [AddCommGroup N] [Module 𝕜 N]
+    {P : RootPairing ι 𝕜 V N} (b : P.Base) :
+    ∃ g : Module.Dual 𝕜 V, ∀ i : b.support, g (P.root i) = 1 := by
+  let hli := b.linearIndepOn_root.linearIndependent.linearIndepOn_id
+  let B := Module.Basis.extend hli
+  refine ⟨B.sumCoords, fun i ↦ ?_⟩
+  have hi := Module.Basis.subset_extend hli ⟨i, rfl⟩
+  simpa only [B, Module.Basis.coe_extend] using
+    B.sumCoords_self_apply (i := ⟨P.root i, hi⟩)
 
 namespace RootPairing
 
