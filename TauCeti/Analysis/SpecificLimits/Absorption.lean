@@ -187,12 +187,18 @@ private theorem le_two_mul_add_mul_sq_mul_of_le_of_le {Φ₁ Φ₂ P z K cA cB N
     (by positivity : (0 : ℝ) ≤ (8 * cA + 16 * cA * N * (4 * cB + 1)) * z)
   nlinarith
 
+/-- The gap from `σ` to the midpoint `(σ + R) / 2` is half of `R - σ`. -/
+private theorem midpoint_sub_eq (σ R : ℝ) : (σ + R) / 2 - σ = (R - σ) / 2 := by ring
+
+/-- The gap from the midpoint `(σ + R) / 2` to `R` is half of `R - σ`. -/
+private theorem sub_midpoint_eq (σ R : ℝ) : R - (σ + R) / 2 = (R - σ) / 2 := by ring
+
 /-- The pointwise bound on the weighted quantity `(R - σ)² k(σ)` in the proof of
 `TauCeti.sq_mul_le_of_forall_le`: the step estimate for `k` from `σ` to the midpoint
 `(σ + R) / 2`, together with the bound `(R - σ') h(σ') ≤ Φ₁` at the midpoint, gives
 `(R - σ)² k(σ) ≤ R² a₀ + 4 K c_A (Φ₁ + z)`. -/
 private theorem sq_mul_le_add_of_step_midpoint {R z a₀ K cA Φ₁ : ℝ} {k h : ℝ → ℝ}
-    (ha₀ : 0 ≤ a₀) (hK1 : 1 ≤ K) (hcA : 0 ≤ cA)
+    (ha₀ : 0 ≤ a₀) (hK0 : 0 ≤ K) (hcA : 0 ≤ cA)
     (hA : ∀ {s t : ℝ}, 0 < s → s < t → t ≤ R →
       k s ≤ a₀ + K * (cA / (t - s) * h t + cA / (t - s) ^ 2 * z))
     (hΦ₁ : ∀ σ ∈ Set.Ioo 0 R, (R - σ) * h σ ≤ Φ₁) {σ : ℝ} (hσ : σ ∈ Set.Ioo 0 R) :
@@ -203,8 +209,8 @@ private theorem sq_mul_le_add_of_step_midpoint {R z a₀ K cA Φ₁ : ℝ} {k h 
   have hd0 : 0 < d := by linarith [hσ.2]
   have hstep := hA hσ.1 hσσ' hσ'.2.le
   have h1 := hΦ₁ _ hσ'
-  rw [show (σ + R) / 2 - σ = d by rw [hd]; ring] at hstep
-  rw [show R - (σ + R) / 2 = d by rw [hd]; ring] at h1
+  rw [(midpoint_sub_eq σ R : (σ + R) / 2 - σ = d)] at hstep
+  rw [(sub_midpoint_eq σ R : R - (σ + R) / 2 = d)] at h1
   have hRσ : R - σ = 2 * d := by rw [hd]; ring
   calc (R - σ) ^ 2 * k σ
       ≤ (R - σ) ^ 2 * (a₀ + K * (cA / d * h ((σ + R) / 2) + cA / d ^ 2 * z)) :=
@@ -262,7 +268,8 @@ theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} 
   have hΦ₂ : Φ₂ ≤ R ^ 2 * a₀ + 4 * K * cA * (Φ₁ + z) := by
     refine csSup_le ⟨_, Set.mem_image_of_mem _ hI⟩ ?_
     rintro _ ⟨σ, hσ, rfl⟩
-    exact sq_mul_le_add_of_step_midpoint ha₀ hK1 hcA hA (fun σ hσ => hle₁ σ hσ) hσ
+    exact sq_mul_le_add_of_step_midpoint ha₀ (zero_le_one.trans hK1) hcA hA
+      (fun σ hσ => hle₁ σ hσ) hσ
   -- Step (B) with `η = θ (R - σ) / 2` bounds `Φ₁` by a small multiple of `Φ₂` and of itself.
   set θ := 1 / (16 * K * cA + 4 * cB + 1) with hθ
   have hθ0 : 0 < θ := by positivity
@@ -275,8 +282,8 @@ theorem sq_mul_le_of_forall_le {R z a₀ K cA cB N : ℝ} {k h y : ℝ → ℝ} 
     have hstep := hB hσ.1 hσσ' hσ'.2.le (η := θ * d) (by positivity)
     have h1 := hle₁ _ hσ'
     have h2 := hle₂ _ hσ'
-    rw [show (σ + R) / 2 - σ = d by rw [hd]; ring] at hstep
-    rw [show R - (σ + R) / 2 = d by rw [hd]; ring] at h1 h2
+    rw [(midpoint_sub_eq σ R : (σ + R) / 2 - σ = d)] at hstep
+    rw [(sub_midpoint_eq σ R : R - (σ + R) / 2 = d)] at h1 h2
     have hyz' : y ((σ + R) / 2) ≤ z := hyz _ hσ'
     have hRσ : R - σ = 2 * d := by rw [hd]; ring
     calc (R - σ) * h σ
