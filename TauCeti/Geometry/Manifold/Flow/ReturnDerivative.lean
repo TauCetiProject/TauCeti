@@ -41,15 +41,15 @@ section through `q` therefore intertwines the derivatives of the return branches
 The reverse transition `h'` repairs this: `Dh' ∘ Dh` and `Dh ∘ Dh'` are the derivatives of the
 time-`0` transitions onto the two sections, which `DP_p` and `DP_q` absorb. Hence
 `DP_p = Dh' ∘ (DP_q ∘ Dh)` and `DP_q = (DP_q ∘ Dh) ∘ Dh'`, so the two derivatives have the same
-characteristic polynomial (`TauCeti.charpoly_mfderiv_flowTransition_eq`), by
+characteristic polynomial (`TauCeti.charpoly_returnDerivative_eq`), by
 `LinearMap.charpoly_comp_comm`. This is the linear content of the conjugacy
 `P_q = h ∘ P_p ∘ h⁻¹` of `TauCeti.eventually_flowTransition_eq_conj`: the spectrum of the return
 derivative `DP_p`, and in particular whether `1` is an eigenvalue of `DP_p`
-(`TauCeti.hasEigenvalue_mfderiv_flowTransition_iff`), depend neither on the section nor on the
+(`TauCeti.hasEigenvalue_returnDerivative_iff`), depend neither on the section nor on the
 base point on the orbit. Since the `k`-fold iterate of a return branch is the return branch at time
-`k * T₀`, the same holds for every iterate (`TauCeti.charpoly_mfderiv_iterate_flowTransition_eq`),
-and the linearized return map at time `k * T₀` is the `k`-th power of the one at time `T₀`
-(`TauCeti.returnDerivative_natCast_mul`).
+`k * T₀`, the linearized return map at time `k * T₀` is the `k`-th power of the one at time `T₀`
+(`TauCeti.returnDerivative_natCast_mul`), so the same holds for every power
+(`TauCeti.charpoly_returnDerivative_pow_eq`).
 
 On the tangent space of the source section the derivative of the reverse transition is a left
 inverse of `Dh` (`TauCeti.mfderiv_flowTransition_neg_apply_mfderiv_flowTransition`). So `Dh`
@@ -57,8 +57,9 @@ restricts to an isomorphism between the generalized eigenspaces of `DP_p` and `D
 nonzero eigenvalue and every exponent
 (`TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`): the geometric and algebraic
 multiplicities of the nonzero eigenvalues do not depend on the section or the base point
-(`TauCeti.finrank_genEigenspace_returnDerivative_eq`), and neither does the eigenvalue-one test
-for the normal return derivative (`TauCeti.hasEigenvalue_one_normalReturnDerivative_iff`).
+(`TauCeti.finrank_genEigenspace_returnDerivative_eq`), and neither do the nonzero eigenvalues of
+the normal return derivative, in particular its eigenvalue-one test
+(`TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_flowOf`).
 
 As in `TauCeti.Geometry.Manifold.Flow.Transition`, `T₀` need not be the least period, and the
 return branch need not be the first return to the section.
@@ -86,17 +87,18 @@ return branch need not be the first return to the section.
 * `TauCeti.mfderiv_flowTransition_semiconj`: transitions intertwine the derivatives of
   return germs; `TauCeti.returnDerivative_comp_mfderiv_flowTransition` is the same for the
   linearized return maps, as an identity of linear maps.
-* `TauCeti.charpoly_mfderiv_flowTransition_eq`: the characteristic polynomial of the derivative of
-  a return germ is independent of the section and the base point.
-* `TauCeti.hasEigenvalue_mfderiv_flowTransition_iff`: so are its eigenvalues.
-* `TauCeti.charpoly_mfderiv_iterate_flowTransition_eq`: the same for every iterate.
+* `TauCeti.charpoly_returnDerivative_eq`: the characteristic polynomial of the linearized return
+  map is independent of the section and the base point.
+* `TauCeti.hasEigenvalue_returnDerivative_iff`: so are its eigenvalues.
+* `TauCeti.charpoly_returnDerivative_pow_eq`: the same for every power.
 * `TauCeti.exists_linearEquiv_genEigenspace_returnDerivative`,
   `TauCeti.finrank_genEigenspace_returnDerivative_eq`: the nonzero generalized eigenspaces of
   linearized return maps at two points of a periodic orbit are isomorphic;
   `TauCeti.exists_linearEquiv_eigenspace_returnDerivative` and
   `TauCeti.finrank_eigenspace_returnDerivative_eq` are the same for eigenspaces.
-* `TauCeti.hasEigenvalue_one_normalReturnDerivative_iff`: the eigenvalue-one test for the normal
-  return derivative does not depend on the section or the base point.
+* `TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_flowOf`: the nonzero eigenvalues of the
+  normal return derivative, and so its eigenvalue-one test, do not depend on the section or the
+  base point.
 * `TauCeti.returnDerivative_natCast_mul`: the linearized return map of an iterate.
 
 ## References
@@ -382,13 +384,11 @@ theorem mfderiv_flowTransition_semiconj :
 
 /-- **The characteristic polynomial of a return derivative is independent of the section and of
 the base point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time
-`T₀`, then the derivatives at `p` and at `q` of the return branches at time `T₀` of sections
-through `p` and through `q` have the same characteristic polynomial. Taking `q = p` and `T = 0`,
-two sections through the same point give return derivatives with the same characteristic
-polynomial. -/
-theorem charpoly_mfderiv_flowTransition_eq :
-    (mfderiv I I (flowTransition v g T₀ p) p).toLinearMap.charpoly =
-      (mfderiv I I (flowTransition v g' T₀ q) q).toLinearMap.charpoly := by
+`T₀`, then the linearized return maps at time `T₀` of sections through `p` and through `q` have
+the same characteristic polynomial. Taking `q = p` and `T = 0`, two sections through the same
+point give linearized return maps with the same characteristic polynomial. -/
+theorem charpoly_returnDerivative_eq :
+    (returnDerivative v g T₀ p).charpoly = (returnDerivative v g' T₀ q).charpoly := by
   obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
   have hback : flowOf v (-T) q = p := hq ▸ flowOf_neg_flowOf hv hT
   have hTback : (-T, q) ∈ flowDomain v := hq ▸ neg_mem_flowDomain_flowOf hv hT
@@ -424,7 +424,7 @@ theorem charpoly_mfderiv_flowTransition_eq :
     exact (ContinuousLinearMap.comp_assoc _ _ _).symm
   -- Both tangent spaces are the model space `E`, so they have the same rank.
   have hrank : Module.finrank ℝ (TangentSpace I p) = Module.finrank ℝ (TangentSpace I q) := rfl
-  rw [hAeq]
+  rw [returnDerivative, returnDerivative, hAeq]
   conv_rhs => rw [hBeq]
   -- `(f ∘L g).toLinearMap` is `f.toLinearMap ∘ₗ g.toLinearMap` by definition
   -- (`ContinuousLinearMap.toLinearMap_comp`). Rewriting with that lemma fails here, as the module
@@ -434,33 +434,32 @@ theorem charpoly_mfderiv_flowTransition_eq :
 
 /-- **The eigenvalues of a return derivative are independent of the section and of the base
 point.** If the flow carries `p` to `q` at time `T` and `p` returns to itself at time `T₀`, then
-`μ` is an eigenvalue of the derivative at `p` of the return branch of a section through `p` exactly
-when it is one at `q` for a section through `q`. For `μ = 1`, whether `1` is an eigenvalue of the
-full derivative `DP_p` on `T_p M` is independent of these choices; for the normal return
-derivative on the section, see `TauCeti.hasEigenvalue_one_normalReturnDerivative_iff`. -/
-theorem hasEigenvalue_mfderiv_flowTransition_iff (μ : ℝ) :
-    Module.End.HasEigenvalue (mfderiv I I (flowTransition v g T₀ p) p).toLinearMap μ ↔
-      Module.End.HasEigenvalue (mfderiv I I (flowTransition v g' T₀ q) q).toLinearMap μ := by
+`μ` is an eigenvalue of the linearized return map of a section through `p` exactly when it is one
+at `q` for a section through `q`. For `μ = 1`, whether `1` is an eigenvalue of the full derivative
+`DP_p` on `T_p M` is independent of these choices; for the normal return derivative on the
+section, see `TauCeti.hasEigenvalue_normalReturnDerivative_iff_of_flowOf`. -/
+theorem hasEigenvalue_returnDerivative_iff (μ : ℝ) :
+    (returnDerivative v g T₀ p).HasEigenvalue μ ↔ (returnDerivative v g' T₀ q).HasEigenvalue μ := by
   refine (Module.End.hasEigenvalue_iff_isRoot_charpoly _ μ).trans
     (Iff.trans ?_ (Module.End.hasEigenvalue_iff_isRoot_charpoly _ μ).symm)
-  rw [charpoly_mfderiv_flowTransition_eq hv hT hq hP hp hg hgv hg' hg'v]
+  rw [charpoly_returnDerivative_eq hv hT hq hP hp hg hgv hg' hg'v]
 
 /-- **The same holds for every iterate.** If the flow carries `p` to `q` at time `T` and `p`
-returns to itself at time `T₀`, then for every `k` the derivatives at `p` and at `q` of the
-`k`-fold iterates of the return branches at time `T₀` of sections through `p` and through `q`
-have the same characteristic polynomial. -/
-theorem charpoly_mfderiv_iterate_flowTransition_eq (k : ℕ) :
-    (mfderiv I I (flowTransition v g T₀ p)^[k] p).toLinearMap.charpoly =
-      (mfderiv I I (flowTransition v g' T₀ q)^[k] q).toLinearMap.charpoly := by
+returns to itself at time `T₀`, then for every `k` the `k`-th powers of the linearized return maps
+at time `T₀` of sections through `p` and through `q` have the same characteristic polynomial. By
+`TauCeti.returnDerivative_natCast_mul`, for `k ≠ 0` these are the linearized return maps of the
+`k`-fold iterates of the return branches. -/
+theorem charpoly_returnDerivative_pow_eq (k : ℕ) :
+    (returnDerivative v g T₀ p ^ k).charpoly = (returnDerivative v g' T₀ q ^ k).charpoly := by
   rcases eq_or_ne k 0 with rfl | hk
-  · simp only [iterate_zero, mfderiv_id]
+  · simp only [pow_zero]
     -- Both sides are the characteristic polynomial of the identity of the model space `E`.
     rfl
   obtain ⟨hQ, hq'⟩ := hq ▸ flowOf_flowOf_of_flowOf_eq hv hT hP hp
   obtain ⟨hkP, hkp⟩ := flowOf_natCast_mul_of_flowOf_eq hv hP hp k
-  rw [(flowTransition_iterate_eventuallyEq hv hP hp hg hgv hk).mfderiv_eq,
-    (flowTransition_iterate_eventuallyEq hv hQ hq' hg' hg'v hk).mfderiv_eq]
-  exact charpoly_mfderiv_flowTransition_eq hv hT hq hkP hkp hg hgv hg' hg'v
+  rw [← returnDerivative_natCast_mul hv hP hp hg hgv hk,
+    ← returnDerivative_natCast_mul hv hQ hq' hg' hg'v hk]
+  exact charpoly_returnDerivative_eq hv hT hq hkP hkp hg hgv hg' hg'v
 
 /-- **The linearized return maps along an orbit are conjugate.** If the flow carries `p` to `q`
 at time `T` and `p` returns to itself at time `T₀`, the derivative `dh` of the transition between
@@ -539,20 +538,19 @@ theorem finrank_eigenspace_returnDerivative_eq {μ : ℝ} (hμ : μ ≠ 0) :
       Module.finrank ℝ ((returnDerivative v g' T₀ q).eigenspace μ) :=
   finrank_genEigenspace_returnDerivative_eq hv hT hq hP hp hg hgv hg' hg'v hμ 1
 
-/-- **The eigenvalue-one test for the normal return derivative does not depend on the section or
-the base point.** The normal return derivative at time `T₀` of a transverse section through `p`
-has eigenvalue `1` exactly when that of a transverse section through any point `q` of the orbit
-does. -/
-theorem hasEigenvalue_one_normalReturnDerivative_iff
+/-- **The spectrum of the normal return derivative does not depend on the section or the base
+point.** For `μ ≠ 0`, the normal return derivative at time `T₀` of a transverse section through
+`p` has eigenvalue `μ` exactly when that of a transverse section through any point `q` of the orbit
+does. For `μ = 1` this is the eigenvalue-one test. -/
+theorem hasEigenvalue_normalReturnDerivative_iff_of_flowOf
     {h : LinearMap.range (returnDerivative v g T₀ p) ≤
       LinearMap.ker (mvfderiv I g p : TangentSpace I p →ₗ[ℝ] ℝ)}
     {h' : LinearMap.range (returnDerivative v g' T₀ q) ≤
-      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} :
-    (normalReturnDerivative v g T₀ p h).HasEigenvalue 1 ↔
-      (normalReturnDerivative v g' T₀ q h').HasEigenvalue 1 := by
-  rw [hasEigenvalue_normalReturnDerivative_iff one_ne_zero,
-    hasEigenvalue_normalReturnDerivative_iff one_ne_zero]
-  exact hasEigenvalue_mfderiv_flowTransition_iff hv hT hq hP hp hg hgv hg' hg'v 1
+      LinearMap.ker (mvfderiv I g' q : TangentSpace I q →ₗ[ℝ] ℝ)} {μ : ℝ} (hμ : μ ≠ 0) :
+    (normalReturnDerivative v g T₀ p h).HasEigenvalue μ ↔
+      (normalReturnDerivative v g' T₀ q h').HasEigenvalue μ := by
+  rw [hasEigenvalue_normalReturnDerivative_iff hμ, hasEigenvalue_normalReturnDerivative_iff hμ]
+  exact hasEigenvalue_returnDerivative_iff hv hT hq hP hp hg hgv hg' hg'v μ
 
 end Return
 
