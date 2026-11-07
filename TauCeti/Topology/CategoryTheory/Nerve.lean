@@ -5,10 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.AlgebraicTopology.SimplicialSet.Nerve
-public import Mathlib.Combinatorics.Quiver.Subquiver
+public import TauCeti.AlgebraicTopology.SimplicialSet.Nerve.Basic
 public import TauCeti.AlgebraicTopology.FatRealization
-public import TauCeti.Combinatorics.Quiver.Prefunctor
 
 /-!
 # The topological nerve of a category and its fat classifying space
@@ -59,84 +57,6 @@ namespace CategoryTheory.ComposableArrows
 
 variable {C : Type u} [Category.{v} C] {n : ℕ}
 
-/-- The arrow of a string of composable arrows from its `i`-th to its `j`-th object, as a total
-arrow of `C`. For `i = j` this is the identity arrow of the `i`-th object. -/
-def totalArrow (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) : Quiver.Total C :=
-  ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩
-
-@[simp]
-theorem totalArrow_left (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.totalArrow i j hij).left = F.obj i := (rfl)
-
-@[simp]
-theorem totalArrow_right (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.totalArrow i j hij).right = F.obj j := (rfl)
-
-theorem totalArrow_def (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    F.totalArrow i j hij = ⟨F.obj i, F.obj j, F.map (homOfLE hij)⟩ := (rfl)
-
-/-- The first arrow of a string obtained by prepending an arrow is that arrow, including
-when its target is identified with the first vertex by an equality. -/
-@[simp]
-theorem totalArrow_precomp_zero_one {n : ℕ} (a : Quiver.Total C)
-    (F : ComposableArrows C n) (h : a.right = F.left) :
-    (F.precomp (a.hom ≫ eqToHom h)).totalArrow 0 1 (Fin.zero_le _) = a := by
-  rcases a with ⟨x, z, f⟩
-  dsimp only at h
-  subst z
-  rw [totalArrow_def]
-  simp only [precomp, Precomp.obj_zero, Precomp.obj_one, Precomp.map_zero_one,
-    eqToHom_refl, Category.comp_id]
-
-/-- An arrow from the new first vertex to a later vertex is the prepended arrow followed by
-an arrow of the original string. -/
-@[simp]
-theorem totalArrow_precomp_zero_succ_succ (F : ComposableArrows C n) {X : C}
-    (f : X ⟶ F.left) (j : ℕ) (hj : j + 2 < n + 1 + 1) :
-    (F.precomp f).totalArrow 0 ⟨j + 2, hj⟩ (Nat.zero_le _) =
-      ⟨X, F.obj' (j + 1) (by omega), f ≫ F.map' 0 (j + 1) (by omega) (by omega)⟩ := by
-  -- At these indices precomp inserts f before the original arrow from vertex 0 to j + 1.
-  rfl
-
-/-- Arrows between shifted vertices of a prepended string are the arrows of the original
-string. -/
-@[simp]
-theorem totalArrow_precomp_succ_succ (F : ComposableArrows C n) {X : C}
-    (f : X ⟶ F.left) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.precomp f).totalArrow i.succ j.succ (Fin.succ_le_succ_iff.mpr hij) =
-      F.totalArrow i j hij := by
-  -- Both endpoints lie in the shifted tail, where precomp retains the original map.
-  rfl
-
-/-- Reindexing a string of composable arrows along a functor `Φ` of the indexing posets reindexes
-its arrows. -/
-@[simp]
-theorem totalArrow_whiskerLeft {m : ℕ} (F : ComposableArrows C m)
-    (Φ : Fin (n + 1) ⥤ Fin (m + 1)) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    (F.whiskerLeft Φ).totalArrow i j hij = F.totalArrow (Φ.obj i) (Φ.obj j) (Φ.monotone hij) := by
-  -- Morphisms in the poset `Fin (m + 1)` are unique, so `Φ` sends `homOfLE hij` to `homOfLE _`.
-  have h : Φ.map (homOfLE hij) = homOfLE (Φ.monotone hij) := Subsingleton.elim _ _
-  simp only [totalArrow, whiskerLeft, Functor.comp_obj, Functor.comp_map, h]
-
-/-- An arrow of the image of a string under a functor is the image of the arrow of the string. -/
-@[simp]
-theorem totalArrow_mapComposableArrows_obj {D : Type*} [Category D] (Φ : C ⥤ D)
-    (F : ComposableArrows C n) (i j : Fin (n + 1)) (hij : i ≤ j) :
-    ((Φ.mapComposableArrows n).obj F).totalArrow i j hij =
-      Φ.toPrefunctor.mapTotal (F.totalArrow i j hij) :=
-  (rfl)
-
-/-- A string of composable arrows is determined by its arrows. -/
-theorem ext_of_totalArrow {F G : ComposableArrows C n}
-    (h : ∀ i j (hij : i ≤ j), F.totalArrow i j hij = G.totalArrow i j hij) : F = G := by
-  refine Functor.hext (fun i ↦ congrArg Quiver.Total.left (h i i le_rfl)) fun i j g ↦ ?_
-  -- Morphisms in the poset `Fin (n + 1)` are unique, so `g` is the morphism `homOfLE g.le` that
-  -- `totalArrow` uses, and the hypothesis `h i j g.le` applies to it.
-  rw [show g = homOfLE g.le from Subsingleton.elim _ _]
-  have := h i j g.le
-  simp only [totalArrow, Quiver.Total.mk.injEq] at this
-  exact this.2.2
-
 variable [TopologicalSpace (Quiver.Total C)]
 
 /-- The topology on strings of `n` composable arrows: the coarsest topology making each arrow of
@@ -170,7 +90,9 @@ variable {D : Type*} [Category D] [TopologicalSpace (Quiver.Total D)]
 continuous. -/
 theorem continuous_mapComposableArrows_obj {Φ : C ⥤ D}
     (hΦ : Continuous Φ.toPrefunctor.mapTotal) : Continuous (Φ.mapComposableArrows n).obj :=
-  continuous_iff.2 fun i j hij ↦ hΦ.comp (continuous_totalArrow i j hij)
+  continuous_iff.2 fun i j hij ↦ by
+    simpa only [totalArrow_mapComposableArrows_obj, Function.comp_def] using
+      hΦ.comp (continuous_totalArrow i j hij)
 
 /-- Applying a family of functors to strings of composable arrows is jointly continuous in the
 parameter and the string when it is so on total arrows. -/
@@ -178,8 +100,9 @@ theorem continuous_uncurry_mapComposableArrows_obj {T : Type*} [TopologicalSpace
     {Φ : T → C ⥤ D}
     (hΦ : Continuous fun p : T × Quiver.Total C ↦ (Φ p.1).toPrefunctor.mapTotal p.2) :
     Continuous fun p : T × ComposableArrows C n ↦ ((Φ p.1).mapComposableArrows n).obj p.2 :=
-  continuous_iff.2 fun i j hij ↦
-    hΦ.comp (continuous_fst.prodMk ((continuous_totalArrow i j hij).comp continuous_snd))
+  continuous_iff.2 fun i j hij ↦ by
+    simpa only [totalArrow_mapComposableArrows_obj, Function.comp_def] using
+      hΦ.comp (continuous_fst.prodMk ((continuous_totalArrow i j hij).comp continuous_snd))
 
 /-- A functor that is an embedding on total arrows is an embedding on strings of composable
 arrows. -/

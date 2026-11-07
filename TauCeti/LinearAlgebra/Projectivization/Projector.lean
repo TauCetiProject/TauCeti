@@ -8,6 +8,7 @@ module
 public import Mathlib.LinearAlgebra.Matrix.DotProduct
 public import Mathlib.LinearAlgebra.Projectivization.Basic
 public import TauCeti.LinearAlgebra.Matrix.Symmetric
+public import TauCeti.LinearAlgebra.Projectivization.AffineChart
 public import TauCeti.LinearAlgebra.Trace.Idempotent
 
 /-!
@@ -45,6 +46,10 @@ properties are in `TauCeti.Geometry.RealAlgebraic.ProjectorEmbedding`.
   trace zero vanishes).
 * `Projectivization.projector_injective` and `Projectivization.range_projector`: the projector
   map is a bijection from `ℙ K (ι → K)` onto the projector locus.
+* `Projectivization.image_projector_affineOpen` and `Projectivization.affineChart_eq_projector_div`:
+  the projector map sends the standard affine open `{x_i ≠ 0}` onto the matrices of the locus with
+  nonzero `i`-th diagonal entry, and the standard affine chart at `i` reads the coordinates of a
+  line off its projector `A` as the ratios `A (i.succAbove k) i / A i i`.
 
 ## References
 
@@ -52,6 +57,11 @@ S. Łojasiewicz, *Triangulation of semi-analytic sets*, Annali della Scuola Norm
 (3) 18 (1964), 449–474, §3, p. 464, for the use of this embedding to reduce triangulation of
 real projective spaces to the affine case. The formula here uses all homogeneous coordinates; the
 printed formula omits one of them.
+
+The affine-chart lemmas `Projectivization.projector_apply_self_eq_zero_iff`,
+`Projectivization.image_projector_affineOpen` and `Projectivization.affineChart_eq_projector_div`
+are adapted from the corresponding Hermitian projector lemmas in
+`TauCeti.LinearAlgebra.Projectivization.HermitianProjector`.
 -/
 
 public section
@@ -216,5 +226,40 @@ theorem range_projector :
   refine Set.Subset.antisymm (Set.range_subset_iff.mpr projector_mem_projectorLocus) fun A hA ↦ ?_
   obtain ⟨x, hx, rfl⟩ := exists_rankOneProjector_eq_of_mem_projectorLocus hA
   exact ⟨mk K x hx, projector_mk x hx⟩
+
+/-- Over an ordered field the `i`-th diagonal entry of the projector of a line, `x_i² / ‖x‖²`,
+vanishes exactly when the line lies outside the standard affine open `{x_i ≠ 0}`. -/
+@[simp]
+theorem projector_apply_self_eq_zero_iff {p : ℙ K (ι → K)} {i : ι} :
+    projector p i i = 0 ↔ p ∉ affineOpen i := by
+  induction p using ind with
+  | h x hx => simp [rankOneProjector_apply, dotProduct_self_eq_zero.not.mpr hx]
+
+/-- Over an ordered field the projector map sends the standard affine open `{x_i ≠ 0}` onto the
+matrices of the projector locus with nonzero `i`-th diagonal entry. -/
+theorem image_projector_affineOpen (i : ι) :
+    projector '' affineOpen i = projectorLocus ι K ∩ {A | A i i ≠ 0} := by
+  ext A
+  constructor
+  · rintro ⟨p, hp, rfl⟩
+    exact ⟨projector_mem_projectorLocus p, fun h ↦ projector_apply_self_eq_zero_iff.mp h hp⟩
+  · rintro ⟨hA, hAi⟩
+    obtain ⟨p, rfl⟩ := range_projector.symm.subset hA
+    exact ⟨p, not_not.mp (mt projector_apply_self_eq_zero_iff.mpr hAi), rfl⟩
+
+/-- **The standard affine charts in the projector model.** Over an ordered field the standard
+affine chart at `i` reads the coordinates of a line off its projector `A`: the `k`-th coordinate is
+the ratio `A (i.succAbove k) i / A i i` of two entries of the `i`-th column. Outside the chart
+domain both sides are `0`. -/
+theorem affineChart_eq_projector_div {n : ℕ} (i : Fin (n + 1)) (p : ℙ K (Fin (n + 1) → K)) :
+    affineChart i p = fun k ↦ projector p (i.succAbove k) i / projector p i i := by
+  induction p using ind with
+  | h x hx =>
+    have hs : x ⬝ᵥ x ≠ 0 := dotProduct_self_eq_zero.not.mpr hx
+    funext k
+    simp only [affineChart_mk, projector_mk, rankOneProjector_apply]
+    rcases eq_or_ne (x i) 0 with hi | hi
+    · simp [hi]
+    · field_simp
 
 end Projectivization

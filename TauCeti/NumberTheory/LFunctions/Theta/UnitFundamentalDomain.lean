@@ -128,6 +128,19 @@ theorem archNorm_normAtAllPlaces (x : mixedSpace K) :
 theorem archNorm_pos {y : realSpace K} (hy : ∀ w, 0 < y w) : 0 < archNorm y :=
   prod_pos fun w _ ↦ pow_pos (hy w) _
 
+/-- The coordinatewise square root of a nonnegative parameter, read in the mixed space, has
+mixed norm `√(archNorm y)`. -/
+theorem norm_mixedSpaceOfRealSpace_sqrt {y : realSpace K} (hy : ∀ w, 0 ≤ y w) :
+    mixedEmbedding.norm (mixedSpaceOfRealSpace fun w ↦ √(y w)) = √(archNorm y) := by
+  have hsq : archNorm (fun w ↦ √(y w)) ^ 2 = archNorm y := by
+    rw [← map_pow]
+    congr 1
+    ext w
+    exact Real.sq_sqrt (hy w)
+  rw [← archNorm_normAtAllPlaces, normAtAllPlaces_mixedSpaceOfRealSpace fun _ ↦ Real.sqrt_nonneg _,
+    ← hsq, Real.sqrt_sq]
+  exact prod_nonneg fun w _ ↦ pow_nonneg (Real.sqrt_nonneg _) _
+
 theorem archNorm_inv (y : realSpace K) : archNorm y⁻¹ = (archNorm y)⁻¹ := by
   simp [archNorm_apply, inv_pow, prod_inv_distrib]
 
@@ -268,6 +281,22 @@ theorem inv_le_pow_finrank_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ n
   · exact h.trans h1
   · exact (le_self_pow₀ h.le mult_ne_zero).trans hpow
 
+/-- A bounded subset of the norm-one surface stays uniformly away from every coordinate
+hyperplane. This makes Gaussian estimates uniform on unit fundamental domains. -/
+theorem exists_pos_le_of_isBounded_normOneSurface {D : Set (realSpace K)}
+    (hD : IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ b > 0, ∀ x ∈ D, ∀ w, b ≤ x w := by
+  obtain ⟨M, _, hbound⟩ := hD.exists_pos_norm_le
+  let C := max 1 M
+  have hC : 1 ≤ C := le_max_left _ _
+  have hCp : 0 < C ^ Module.finrank ℚ K := pow_pos (lt_of_lt_of_le zero_lt_one hC) _
+  refine ⟨(C ^ Module.finrank ℚ K)⁻¹, inv_pos.mpr hCp, fun x hx w ↦ ?_⟩
+  have hxpos := (hS hx).1 w
+  have hi := inv_le_pow_finrank_of_mem_normOneSurface (hS hx) hC
+    (fun v ↦ (le_abs_self (x v)).trans <|
+      (norm_le_pi_norm x v).trans ((hbound x hx).trans (le_max_right _ _))) w
+  exact (inv_le_comm₀ hCp hxpos).mpr hi
+
 /-! ### Unit fundamental domains -/
 
 variable (K) in
@@ -315,14 +344,7 @@ private theorem unitScale_mem_fundamentalCone_iff (u : (𝓞 K)ˣ) (y : realSpac
 /-- The square root of a point of `S`, read in the mixed space, has norm `1`. -/
 private theorem norm_sqrt_of_mem_normOneSurface {y : realSpace K} (hy : y ∈ normOneSurface K) :
     mixedEmbedding.norm (mixedSpaceOfRealSpace (fun v ↦ √(y v))) = 1 := by
-  have hsq : archNorm (fun v ↦ √(y v)) ^ 2 = 1 := by
-    rw [← map_pow, ← hy.2]
-    congr 1
-    ext v
-    exact Real.sq_sqrt (hy.1 v).le
-  rw [← archNorm_normAtAllPlaces, normAtAllPlaces_mixedSpaceOfRealSpace fun _ ↦ Real.sqrt_nonneg _]
-  exact (pow_eq_one_iff_of_nonneg (archNorm_pos fun v ↦ Real.sqrt_pos.mpr (hy.1 v)).le
-    two_ne_zero).mp hsq
+  rw [norm_mixedSpaceOfRealSpace_sqrt fun v ↦ (hy.1 v).le, hy.2, Real.sqrt_one]
 
 private theorem measurableSet_unitFundamentalDomain :
     MeasurableSet (unitFundamentalDomain K) :=

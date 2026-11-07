@@ -244,6 +244,67 @@ private theorem sumLocalInv_ideleLocalization_characterCarryCocycle_placeIdele {
   conv_lhs => rw [ideleLocalization_characterCarryCocycle_placeIdele hE w π χ hχ]
   exact sumLocalInv_single K v _
 
+/-- **The cyclotomic character at an unramified extension of `K_v`.** Let `ζ ∈ Kˢ` be a primitive
+`(q ^ n - 1)`-th root of unity, `q` the residue cardinality of `K_v`, and `E / K_v` a finite
+unramified Galois extension containing the unramified extension of degree `n`. Then the character
+`ψ ∘ autToPow ζ` of `G_K`, restricted along `τ : Kˢ → K_vˢ`, factors through `Gal(E/K_v)` by a
+character taking arithmetic Frobenius to `ψ (q)`. -/
+private theorem exists_comp_absoluteGaloisGroupMap_eq_comp_restrictNormalHom
+    {v : HeightOneSpectrum (𝓞 K)} {n : ℕ} (hn : n ≠ 0)
+    (τ : SeparableClosure K →ₐ[K] SeparableClosure (v.adicCompletion K))
+    (E : IntermediateField (v.adicCompletion K) (SeparableClosure (v.adicCompletion K)))
+    [FiniteDimensional (v.adicCompletion K) E] [IsGalois (v.adicCompletion K) E]
+    [ValuativeRel E] [TopologicalSpace E] [IsNonarchimedeanLocalField E]
+    [ValuativeExtension (v.adicCompletion K) E] [IsUnramified (v.adicCompletion K) E]
+    (hE : unramifiedExtension (v.adicCompletion K) (SeparableClosure (v.adicCompletion K)) n ≤ E)
+    [NeZero (Nat.card 𝓀[v.adicCompletion K] ^ n - 1)] {ζ : SeparableClosure K}
+    (hζ : IsPrimitiveRoot ζ (Nat.card 𝓀[v.adicCompletion K] ^ n - 1))
+    (ψ : CharacterModule (Additive (ZMod (Nat.card 𝓀[v.adicCompletion K] ^ n - 1))ˣ))
+    {hcop : (Nat.card 𝓀[v.adicCompletion K]).Coprime (Nat.card 𝓀[v.adicCompletion K] ^ n - 1)}
+    (hψ : ψ (.ofMul (ZMod.unitOfCoprime _ hcop)) = ((1 / n : ℚ) : AddCircle (1 : ℚ))) :
+    ∃ χv : Additive Gal(E/v.adicCompletion K) →+ AddCircle (1 : ℚ),
+      (ψ.comp (hζ.autToPow K).toAdditive).comp (absoluteGaloisGroupMap τ :
+          AbsoluteGaloisGroup (v.adicCompletion K) →* AbsoluteGaloisGroup K).toAdditive =
+        χv.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure (v.adicCompletion K))
+          E).toAdditive ∧
+      χv (.ofMul (frobeniusAlgEquiv (K := v.adicCompletion K) (L := E))) =
+        ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
+  have hτζ : τ ζ ^ Nat.card 𝓀[v.adicCompletion K] ^ n = τ ζ := by
+    rw [← map_pow, ← Nat.sub_add_cancel (Nat.one_le_pow _ _ Nat.card_pos), pow_succ,
+      hζ.pow_eq_one, one_mul]
+  have hmem : τ ζ ∈ E := hE <| rootSet_subset_unramifiedExtension _ _ n <| by
+    rw [Polynomial.mem_rootSet]
+    refine ⟨Polynomial.X_pow_sub_X_ne_zero (Nat.one_lt_pow hn Finite.one_lt_card), ?_⟩
+    simp [hτζ]
+  let ζv : E := ⟨τ ζ, hmem⟩
+  have hζv : IsPrimitiveRoot ζv (Nat.card 𝓀[v.adicCompletion K] ^ n - 1) :=
+    IsPrimitiveRoot.of_map_of_injective (f := E.val) (hζ.map_of_injective τ.injective)
+      Subtype.val_injective
+  -- The local character: `ψ` of the action of `Gal(E/K_v)` on `τ ζ`.
+  refine ⟨ψ.comp (hζv.autToPow (v.adicCompletion K)).toAdditive, AddMonoidHom.ext fun g ↦ ?_, ?_⟩
+  · -- Evaluate both composites with `ψ` definitionally.
+    change ψ (.ofMul (hζ.autToPow K (absoluteGaloisGroupMap τ g.toMul))) =
+      ψ (.ofMul (hζv.autToPow _ (AlgEquiv.restrictNormalHom E g.toMul)))
+    -- Both automorphisms raise the root of unity to the same power.
+    have hg := (hζ.autToPow_spec K (absoluteGaloisGroupMap τ g.toMul)).symm
+    have hgv : AlgEquiv.restrictNormalHom E g.toMul ζv =
+        ζv ^ ((hζ.autToPow K (absoluteGaloisGroupMap τ g.toMul) :
+          ZMod (Nat.card 𝓀[v.adicCompletion K] ^ n - 1))).val := by
+      refine Subtype.ext ?_
+      rw [AlgEquiv.restrictNormalHom_apply, SubmonoidClass.coe_pow]
+      -- `ζv` is `τ ζ` as an element of `E`.
+      change g.toMul (τ ζ) = τ ζ ^ _
+      rw [← absoluteGaloisGroupMap_commutes, hg, map_pow]
+    congr 2
+    exact Units.ext ((hζv.coe_autToPow_eq_natCast hgv).trans (ZMod.natCast_zmod_val _)).symm
+  · -- Arithmetic Frobenius raises `τ ζ` to the `q`-th power, so `χ_v (Frob) = 1 / n`.
+    have hf := frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self hn
+      (show ζv ^ Nat.card 𝓀[v.adicCompletion K] ^ n = ζv from Subtype.ext hτζ)
+    change ψ (.ofMul (hζv.autToPow _ _)) = _
+    rw [← hψ]
+    congr 2
+    exact Units.ext ((hζv.coe_autToPow_eq_natCast hf).trans (ZMod.coe_unitOfCoprime _ _).symm)
+
 /-- **A class of `H²(G_K, I_{Kˢ})` localizing to the invariant `1 / n` at `v` and to `0` at every
 other place**: the carry class of a cyclotomic character and of an idele of `K` concentrated at
 `v`, read in the ideles of a finite Galois subextension `E` equal to `K`. -/
@@ -272,57 +333,15 @@ private theorem exists_ideleLocalization_eq_sumLocalInvSection_one_div_aux {E : 
   have h0 := exists_ideleCoeffComponent_placeIdele (E := E) w π
   cases h0 with
   | intro τ hτ =>
-  -- The unramified extension `E_v` of `K_v` of degree `n` contains `τ ζ`.
+  -- The unramified extension `E_v` of `K_v` of degree `n`, and the local character of `χ` on it.
   let Ev := unramifiedExtension (v.adicCompletion K) (SeparableClosure (v.adicCompletion K)) n
   let := algebraicExtensionValuativeRel (v.adicCompletion K) Ev
   let := algebraicExtensionNormedFieldTopology (v.adicCompletion K) Ev
   have := finiteExtension_isNonarchimedeanLocalField (v.adicCompletion K) Ev
   have := algebraicExtension_valuativeExtension (v.adicCompletion K) Ev
   have : IsUnramified (v.adicCompletion K) Ev := isUnramified_unramifiedExtension hn
-  have hτζ : τ ζ ^ Nat.card 𝓀[v.adicCompletion K] ^ n = τ ζ := by
-    rw [← map_pow, ← Nat.sub_add_cancel (Nat.one_le_pow _ _ (by omega) : 1 ≤ _), pow_succ,
-      hζ.pow_eq_one, one_mul]
-  have hmem : τ ζ ∈ Ev := rootSet_subset_unramifiedExtension _ _ n <| by
-    rw [Polynomial.mem_rootSet]
-    refine ⟨Polynomial.X_pow_sub_X_ne_zero (Nat.one_lt_pow hn hq), ?_⟩
-    simp [hτζ]
-  let ζv : Ev := ⟨τ ζ, hmem⟩
-  have hζv : IsPrimitiveRoot ζv (Nat.card 𝓀[v.adicCompletion K] ^ n - 1) :=
-    IsPrimitiveRoot.of_map_of_injective (f := Ev.val) (hζ.map_of_injective τ.injective)
-      Subtype.val_injective
-  -- The local character: `ψ` of the action of `Gal(E_v/K_v)` on `τ ζ`.
-  let χv : Additive Gal(Ev/v.adicCompletion K) →+ AddCircle (1 : ℚ) :=
-    ψ.comp (hζv.autToPow (v.adicCompletion K)).toAdditive
-  have hχv : χ.comp (absoluteGaloisGroupMap τ :
-      AbsoluteGaloisGroup (v.adicCompletion K) →* AbsoluteGaloisGroup K).toAdditive =
-      χv.comp (AlgEquiv.restrictNormalHom (K₁ := SeparableClosure (v.adicCompletion K))
-        Ev).toAdditive := by
-    refine AddMonoidHom.ext fun g ↦ ?_
-    -- Evaluate both composites with `ψ` definitionally, as for `hχ`.
-    change ψ (.ofMul (hζ.autToPow K (absoluteGaloisGroupMap τ g.toMul))) =
-      ψ (.ofMul (hζv.autToPow _ (AlgEquiv.restrictNormalHom Ev g.toMul)))
-    -- Both automorphisms raise the root of unity to the same power.
-    have hg := (hζ.autToPow_spec K (absoluteGaloisGroupMap τ g.toMul)).symm
-    have hgv : AlgEquiv.restrictNormalHom Ev g.toMul ζv =
-        ζv ^ ((hζ.autToPow K (absoluteGaloisGroupMap τ g.toMul) :
-          ZMod (Nat.card 𝓀[v.adicCompletion K] ^ n - 1))).val := by
-      refine Subtype.ext ?_
-      rw [AlgEquiv.restrictNormalHom_apply, SubmonoidClass.coe_pow]
-      -- `ζv` is `τ ζ` as an element of `E_v`.
-      change g.toMul (τ ζ) = τ ζ ^ _
-      rw [← absoluteGaloisGroupMap_commutes, hg, map_pow]
-    congr 2
-    exact Units.ext ((hζv.coe_autToPow_eq_natCast hgv).trans (ZMod.natCast_zmod_val _)).symm
-  -- Arithmetic Frobenius raises `τ ζ` to the `q`-th power, so `χ_v (Frob) = 1 / n`.
-  have hfrob : χv (.ofMul (frobeniusAlgEquiv (K := v.adicCompletion K) (L := Ev))) =
-      ((1 / n : ℚ) : AddCircle (1 : ℚ)) := by
-    have hy : ζv ^ Nat.card 𝓀[v.adicCompletion K] ^ n = ζv := Subtype.ext hτζ
-    have hf := frobeniusAlgEquiv_apply_of_pow_natCard_pow_eq_self hn hy
-    -- Evaluate the composite `χ_v` definitionally, as for `hχ`.
-    change ψ (.ofMul (hζv.autToPow _ _)) = _
-    rw [← hψ]
-    congr 2
-    exact Units.ext ((hζv.coe_autToPow_eq_natCast hf).trans (ZMod.coe_unitOfCoprime _ _).symm)
+  obtain ⟨χv, hχv, hfrob⟩ :=
+    exists_comp_absoluteGaloisGroupMap_eq_comp_restrictNormalHom hn τ Ev le_rfl hζ ψ hψ
   -- The carry class of `χ` and the idele concentrated at `v` with component `π`.
   let a := baseIdele hE (placeIdele w π)
   let x : H2 (AbsoluteGaloisGroup K) (IdeleCoeff K) := characterCarryCocycle χ hχ a

@@ -13,7 +13,9 @@ import TauCeti.Geometry.Manifold.ContMDiff.NormedSpace
 # Local bundles of stabilized Fredholm kernels
 
 For a continuous family Fredholm at a base point, one finite-dimensional
-subspace `S` of the target makes `T x + inclusion_S` surjective nearby.
+subspace `S` of the target makes `T x + inclusion_S` surjective nearby. It can be
+chosen inside any dense subspace of the target, such as smooth compactly supported
+sections.
 The kernels of these stabilized operators form a native vector bundle on
 that neighbourhood, modelled on the finite-dimensional stabilized kernel
 at the base point. Its total space has the subspace topology from the
@@ -46,15 +48,15 @@ variable {𝕜 E F X : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜
   [NormedAddCommGroup F] [NormedSpace 𝕜 F] [CompleteSpace F]
   [TopologicalSpace X] {T : X → E →L[𝕜] F} {x₀ : X}
 
-/-- A continuous family Fredholm at `x₀` has a finite target stabilizer whose
-kernels form a vector bundle on an open neighbourhood of `x₀`. Both the
-stabilizer and the model kernel are finite dimensional. The chosen global
-chart on that neighbourhood is `TauCeti.kernelTrivialization`, with fibre
-coordinate `q` and inverse `kerSection`; the total-space topology is induced
-from `U × (E × S)`. -/
+/-- A continuous family Fredholm at `x₀` has a finite target stabilizer, inside any
+prescribed dense subspace `D`, whose kernels form a vector bundle on an open
+neighbourhood of `x₀`. Both the stabilizer and the model kernel are finite
+dimensional. The chosen global chart on that neighbourhood is
+`TauCeti.kernelTrivialization`, with fibre coordinate `q` and inverse `kerSection`;
+the total-space topology is induced from `U × (E × S)`. -/
 theorem IsFredholm.exists_stabilization_kernel_vectorBundle (hT₀ : IsFredholm (T x₀))
-    (hT : Continuous T) :
-    ∃ S : Submodule 𝕜 F, ∃ hS : FiniteDimensional 𝕜 S,
+    (hT : Continuous T) {D : Submodule 𝕜 F} (hD : Dense (D : Set F)) :
+    ∃ S : Submodule 𝕜 F, S ≤ D ∧ ∃ hS : FiniteDimensional 𝕜 S,
       letI := hS
       letI := FiniteDimensional.complete 𝕜 S
       ∃ _ : FiniteDimensional 𝕜 ((T x₀).coprod S.subtypeL).ker,
@@ -65,11 +67,11 @@ theorem IsFredholm.exists_stabilization_kernel_vectorBundle (hT₀ : IsFredholm 
                 ((hT.comp continuous_subtype_val).continuousLinearMapCoprod continuous_const) h
               VectorBundle 𝕜 ((T x₀).coprod S.subtypeL).ker
                 (fun x : U ↦ ((T x).coprod S.subtypeL).ker) := by
-  obtain ⟨S, hS, q, U, hU, hx₀, hinv⟩ :=
-    hT₀.exists_stabilization_kernel_coordinates hT.continuousAt
+  obtain ⟨S, hSD, -, hS, q, U, hU, hx₀, hinv⟩ :=
+    hT₀.exists_stabilization_kernel_coordinates hT.continuousAt hD
   let := hS
   let := FiniteDimensional.complete 𝕜 S
-  exact ⟨S, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
+  exact ⟨S, hSD, hS, (hT₀.coprod_of_finiteDimensional S.subtypeL).finite_ker,
     q, U, hU, hx₀, fun x ↦ hinv x x.property,
     TauCeti.kernelVectorBundle (X := U)
       ((hT.comp continuous_subtype_val).continuousLinearMapCoprod continuous_const)

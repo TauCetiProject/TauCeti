@@ -11,21 +11,22 @@ public import Mathlib.Algebra.Ring.Action.Invariant
 /-!
 # Invariant subrings under restricted actions
 
-An invariant subring for a group action remains invariant after restricting the action to a
-subgroup. This instance lets constructions such as ramification groups be applied directly to a
-subgroup of the acting group.
+An invariant subring for a monoid action remains invariant after restricting the action to a
+submonoid, or to any other submonoid-like subobject such as a subgroup. This instance lets
+constructions such as ramification groups be applied directly to a subgroup of the acting group.
 -/
 
 public section
 
-namespace Subgroup
+namespace Submonoid
 
-variable {G R : Type*} [Group G] [Ring R] [MulSemiringAction G R]
-variable (H : Subgroup G) (S : Subring R) [IsInvariantSubring G S]
+variable {M R : Type*} [Monoid M] [Ring R] [MulSemiringAction M R]
+variable {S : Type*} [SetLike S M] [SubmonoidClass S M] (s : S)
+variable (U : Subring R) [IsInvariantSubring M U]
 
-/-- A subring invariant under a group action is invariant under the restricted action of every
-subgroup. -/
-instance isInvariantSubring : IsInvariantSubring H S where
-  smul_mem h _ hx := IsInvariantSubring.smul_mem (h : G) hx
+/-- A subring invariant under a monoid action is invariant under the restricted action of every
+submonoid-like subobject, such as a submonoid or a subgroup. -/
+instance isInvariantSubring : IsInvariantSubring s U where
+  smul_mem m _ hx := IsInvariantSubring.smul_mem (m : M) hx
 
-end Subgroup
+end Submonoid

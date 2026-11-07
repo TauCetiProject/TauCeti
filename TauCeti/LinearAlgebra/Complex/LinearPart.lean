@@ -134,6 +134,13 @@ theorem isComplexAntilinear_of_apply {F : V →ₗ[ℝ] W} (h : ∀ v, F (J v) =
     IsComplexAntilinear J J' F :=
   LinearMap.ext fun v => by simpa using h v
 
+/-- Pointwise anticommutation `F (J v) + J' (F v) = 0` is equivalent to `(J, J')`-complex
+antilinearity of `F`. -/
+theorem isComplexAntilinear_iff_apply_add_apply_eq_zero {F : V →ₗ[ℝ] W} :
+    IsComplexAntilinear J J' F ↔ ∀ v, F (J v) + J' (F v) = 0 :=
+  ⟨fun h v ↦ by rw [h.apply v, neg_add_cancel],
+    fun h ↦ isComplexAntilinear_of_apply fun v ↦ eq_neg_of_add_eq_zero_left (h v)⟩
+
 /-- The identity map is complex linear. -/
 theorem isComplexLinear_id : IsComplexLinear J J (LinearMap.id) := by
   simp [IsComplexLinear]
