@@ -352,10 +352,7 @@ private theorem hasDerivAt_neg_two_cpow_half_mul_inv {x y : ℂ}
   refine ((hd1.const_mul (-2 : ℂ)).fun_mul hd2).congr_deriv ?_
   simp only [mul_one]
   have hpow1 : ((t : ℂ) + x) ^ ((1 / 2 : ℂ) - 1) = ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) := by norm_num
-  have hpow2 : ((t : ℂ) + x) ^ (1 / 2 : ℂ) =
-      ((t : ℂ) + x) ^ (-(1 / 2) : ℂ) * ((t : ℂ) + x) := by
-    conv_rhs => enter [2]; rw [← cpow_one ((t : ℂ) + x)]
-    rw [← cpow_add _ _ htx_ne]; norm_num
+  have hpow2 := (cpow_neg_half_mul_eq_cpow_half ((t : ℂ) + x)).symm
   rw [hpow1, hpow2]
   set u : ℂ := ((t : ℂ) + x) ^ (-(1 / 2) : ℂ)
   set v : ℂ := (t : ℂ) + y
