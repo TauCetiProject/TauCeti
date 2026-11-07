@@ -158,12 +158,8 @@ theorem exists_maximalRoot_of_bddAbove {G : Type*} [Group G] {x : G}
   obtain ⟨r, hr⟩ := Nat.sSup_mem (s := {n : ℕ | ∃ y : G, y ^ n = x}) ⟨1, x, pow_one x⟩ hbdd
   have hmax (y : G) (n : ℕ) (hy : y ^ n = x) : n ≤ sSup {n : ℕ | ∃ y : G, y ^ n = x} :=
     le_csSup hbdd ⟨y, hy⟩
-  have hk : sSup {n : ℕ | ∃ y : G, y ^ n = x} ≠ 0 := by
-    intro h0
-    rw [h0, pow_zero] at hr
-    obtain ⟨b, hb⟩ := hbdd
-    have := hb (show b + 1 ∈ {n : ℕ | ∃ y : G, y ^ n = x} from ⟨1, by rw [one_pow, hr]⟩)
-    omega
+  have hk : sSup {n : ℕ | ∃ y : G, y ^ n = x} ≠ 0 :=
+    Nat.one_le_iff_ne_zero.1 (hmax x 1 (pow_one x))
   refine ⟨r, _, hk, hr, ?_, hmax⟩
   rintro ⟨y, m, hm, rfl⟩
   have hle := hmax y _ ((pow_mul y m _).trans hr)
