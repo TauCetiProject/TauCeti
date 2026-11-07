@@ -34,7 +34,6 @@ variable {K : Type*} [NontriviallyNormedField K] [IsUltrametricDist K] [Complete
 /-- The completion map of a dagger algebra is faithfully flat. -/
 theorem faithfullyFlat_toCompletion : (toCompletion K A).toRingHom.FaithfullyFlat := by
   have h := RingHom.FaithfullyFlat.isStableUnderBaseChange.quotientMap
-    RingHom.FaithfullyFlat.respectsIso
     (washnitzerAlgebra.toTate (Fin (presentationDim K A)) K).toRingHom
     (RingHom.ker (presentation K A)) washnitzerAlgebra.faithfullyFlat_toTate
   let e := (Ideal.quotientKerAlgEquivOfSurjective (presentation_surjective K A)).symm
