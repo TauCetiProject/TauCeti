@@ -29,7 +29,9 @@ functions, with partial sums at most one, together with cutoffs equal to one on 
 are locally finite in the open set (`IsOpen.exists_contDiff_decomposition_cutoff`); this is the
 gluing device for global approximation on a domain. Multiplying by a cutoff turns a function which
 is `C^k` on an open set containing its support into a `C^k` function on the whole space
-(`ContDiffOn.contDiff_smul_of_tsupport_subset`), and on a set where the cutoff is one nearby the
+(`ContDiffOn.contDiff_smul_of_tsupport_subset`). In particular a function `C^k` on `U × G` agrees,
+at positions near a compact subset of `U`, with a function `C^k` on the whole product
+(`ContDiffOn.exists_contDiff_eventually_eq_prod_univ`). On a set where the cutoff is one nearby the
 `Lᵖ` norm of the derivative of a function is at most that of its cut-off version
 (`TauCeti.eLpNorm_fderiv_restrict_le_of_subset_interior`). Locally finite sums of smooth
 functions are smooth (`contDiffAt_tsum_of_eventually_eq_zero`). A compactly supported `C¹`
@@ -183,6 +185,25 @@ theorem _root_.ContDiffOn.contDiff_smul_of_tsupport_subset {𝕜 F : Type*}
     (hψs : tsupport ψ ⊆ s) : ContDiff 𝕜 k (fun x => ψ x • g x) := by
   let L := (ContinuousLinearMap.lsmul 𝕜 𝕜 : 𝕜 →L[𝕜] F →L[𝕜] F).flip
   exact L.contDiff_of_tsupport_subset_right hg hψ hs hψs
+
+/-- A function `C^k` on `U ×ˢ univ`, for an open set `U`, agrees with a function `C^k` on the
+whole product at every point `(y, η)` with `y` near a compact set `K ⊆ U`, for all `η`. -/
+theorem _root_.ContDiffOn.exists_contDiff_eventually_eq_prod_univ [NormedSpace ℝ E]
+    [FiniteDimensional ℝ E] {G F : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    [NormedAddCommGroup F] [NormedSpace ℝ F] {k : ℕ∞} {f : E × G → F} {K U : Set E}
+    (hf : ContDiffOn ℝ k f (U ×ˢ univ)) (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+    ∃ g : E × G → F, ContDiff ℝ k g ∧ ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = f (y, η) := by
+  obtain ⟨ψ, hψ, -, hψone, -, hψU⟩ := hK.exists_contDiff_cutoff hU hKU
+  have hψU' : tsupport (fun p : E × G => ψ p.1) ⊆ U ×ˢ univ :=
+    (closure_minimal (t := tsupport ψ ×ˢ (univ : Set G))
+      (fun p hp => ⟨subset_tsupport ψ hp, mem_univ p.2⟩)
+      ((isClosed_tsupport ψ).prod isClosed_univ)).trans (prod_mono hψU subset_rfl)
+  refine ⟨fun p => ψ p.1 • f p, hf.contDiff_smul_of_tsupport_subset (hU.prod isOpen_univ)
+    ((hψ.of_le (by simp)).comp contDiff_fst).contDiffOn hψU', fun x hx => ?_⟩
+  filter_upwards [isOpen_interior.mem_nhds (hψone hx)] with y hy η
+  have hone : ψ y = 1 := by
+    simpa only [mem_preimage, mem_singleton_iff] using interior_subset hy
+  rw [hone, one_smul]
 
 /-- On a measurable set `K` where the cutoff `χ` is one nearby, `D u = D (χ u)`, so the `Lᵖ` norm
 of `D u` on `K` is at most that of `D (χ u)` on the whole space. -/

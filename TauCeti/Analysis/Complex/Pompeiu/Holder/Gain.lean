@@ -11,6 +11,7 @@ import Mathlib.Topology.ContinuousMap.Bounded.ArzelaAscoli
 import Mathlib.Topology.ContinuousMap.Bounded.Normed
 import Mathlib.Topology.MetricSpace.Equicontinuity
 import Mathlib.Topology.Sequences
+import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import Mathlib.Analysis.Calculus.UniformLimitsDeriv
 import TauCeti.Topology.MetricSpace.Holder
 
@@ -18,7 +19,8 @@ import TauCeti.Topology.MetricSpace.Holder
 # The Cauchy transform gains one Hölder derivative
 
 The gain is first proved for real Hölder sources on one fixed support disc and then extended
-to complex sources through their real and imaginary parts. The actual normalized Cauchy integral is
+to finite-dimensional complex normed targets through continuous complex coordinates.
+The actual normalized Cauchy integral is
 `C¹` on an output neighborhood, and its derivative has a uniform Hölder and supremum bound on
 the output disc. Smooth normalized bump approximations preserve the source bounds. Their
 Cauchy derivatives have a uniformly convergent subsequence by Arzelà–Ascoli; the derivative
@@ -179,7 +181,7 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_
 
 /-- The actual Cauchy transform of complex Hölder data is `C¹` near the output disc, and its
 derivative has supremum and `α`-Hölder constant at most `C (H + M)` on that disc. -/
-theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+private theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_complex
     {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (c : ℂ) {r R : ℝ}
     (hr : 0 ≤ r) (hR : 0 ≤ R) :
     ∃ C : ℝ≥0, ∀ {f : ℂ → ℂ} {H M : ℝ≥0},
@@ -262,5 +264,157 @@ theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
           I * ((2 : ℂ)⁻¹ * (fderiv ℝ Ti x 1 + I * fderiv ℝ Ti x I)) := by ring
       _ = (f x).re + I * (f x).im := by rw [hrx, hix]
       _ = f x := by rw [mul_comm I, (f x).re_add_im]
+
+private theorem exists_cauchyCoordinate_gain
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] {ι : Type*} [Fintype ι]
+    (e : F ≃L[ℂ] (ι → ℂ)) {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1)
+    (c : ℂ) {r R : ℝ} (hr : 0 ≤ r) (hR : 0 ≤ R) :
+    ∃ C : ℝ≥0, ∀ {f : ℂ → F} {H M : ℝ≥0},
+      Function.support f ⊆ closedBall c r → HolderWith H α f → (∀ x, ‖f x‖ ≤ M) →
+      ∀ i, let S : ℂ → ℂ := fun w ↦
+        (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • e (f z) i
+      ContDiffOn ℝ 1 S (ball c (R + 1)) ∧
+      HolderOnWith (C * (‖e.toContinuousLinearMap‖₊ * H +
+        ‖e.toContinuousLinearMap‖₊ * M)) α (fderiv ℝ S) (closedBall c R) ∧
+      (∀ x ∈ closedBall c R, ‖fderiv ℝ S x‖ ≤
+        C * (‖e.toContinuousLinearMap‖₊ * H + ‖e.toContinuousLinearMap‖₊ * M)) ∧
+      ∀ x ∈ ball c (R + 1), conjWirtingerDeriv S x 1 = e (f x) i := by
+  obtain ⟨C, hC⟩ :=
+    exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul_complex
+      hα hα1 c hr hR
+  refine ⟨C, fun {f H M} hs hf hM i ↦ ?_⟩
+  let K := ‖e.toContinuousLinearMap‖₊
+  let g (i : ι) (z : ℂ) := e (f z) i
+  have hg (i) : HolderWith (K * H) α (g i) := by
+    apply holderOnWith_univ.mp
+    apply HolderOnWith.of_dist_le
+    intro x _ y _
+    calc
+      dist (g i x) (g i y) ≤ dist (e (f x)) (e (f y)) := dist_le_pi_dist (e (f x)) (e (f y)) i
+      _ ≤ K * dist (f x) (f y) := e.toContinuousLinearMap.lipschitzWith.dist_le_mul _ _
+      _ ≤ K * (H * dist x y ^ (α : ℝ)) := mul_le_mul_of_nonneg_left
+        (hf.dist_le x y) K.coe_nonneg
+      _ = _ := by push_cast; ring
+  have hgM (i) (z : ℂ) : ‖g i z‖ ≤ (K * M : ℝ≥0) :=
+    (norm_le_pi_norm _ i).trans ((e.toContinuousLinearMap.le_opNorm (f z)).trans
+      (mul_le_mul_of_nonneg_left (hM z) (norm_nonneg _)))
+  have hgs (i) : Function.support (g i) ⊆ closedBall c r :=
+    (Function.support_comp_subset (g := fun v : F ↦ e v i) (by simp) f).trans hs
+  exact hC (f := g i) (H := K * H) (M := K * M) (hgs i) (hg i) (hgM i)
+
+private theorem normalizedCauchy_coordinates
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+    {ι : Type*} (e : F ≃L[ℂ] (ι → ℂ)) {f : ℂ → F}
+    (hf : Continuous f) {c : ℂ} {r : ℝ} (hs : Function.support f ⊆ closedBall c r)
+    (w : ℂ) : e ((Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z) =
+      fun i ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • e (f z) i := by
+  have hi := (Complex.locallyIntegrable_sub_inv w).integrable_smul_right_of_hasCompactSupport
+    hf (HasCompactSupport.of_support_subset_isCompact (isCompact_closedBall c r) hs)
+  funext i
+  let q := (ContinuousLinearMap.proj i).comp e.toContinuousLinearMap
+  have hq := q.integral_comp_comm hi
+  simpa only [q, ContinuousLinearMap.comp_apply, ContinuousLinearMap.proj_apply,
+    map_smul, Pi.smul_apply, ContinuousLinearEquiv.coe_coe] using
+    congrArg (fun v ↦ (Real.pi : ℂ)⁻¹ • v) hq.symm
+
+private theorem cauchyCoordinate_reconstruct
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [CompleteSpace F]
+    {ι : Type*} [Finite ι] (e : F ≃L[ℂ] (ι → ℂ)) {f : ℂ → F}
+    (hf : Continuous f) {c : ℂ} {r R : ℝ} (hs : Function.support f ⊆ closedBall c r) :
+    let S (i : ι) (w : ℂ) := (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • e (f z) i
+    (∀ i, ContDiffOn ℝ 1 (S i) (ball c (R + 1))) →
+    (∀ i x, x ∈ ball c (R + 1) → conjWirtingerDeriv (S i) x 1 = e (f x) i) →
+    let T : ℂ → F := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z
+    let L := e.symm.toContinuousLinearMap.restrictScalars ℝ
+    ContDiffOn ℝ 1 T (ball c (R + 1)) ∧
+    (∀ x ∈ ball c (R + 1), fderiv ℝ T x =
+      L.comp (ContinuousLinearMap.pi fun i ↦ fderiv ℝ (S i) x)) ∧
+    ∀ x ∈ ball c (R + 1), conjWirtingerDeriv T x 1 = f x := by
+  classical
+  let := Fintype.ofFinite ι
+  intro S hS hI T L
+  have hT : T = fun w ↦ L (fun i ↦ S i w) := by
+    funext w
+    exact (e.symm_apply_apply (T w)).symm.trans
+      (congrArg e.symm (normalizedCauchy_coordinates e hf hs w))
+  have hSi (i) (x : ℂ) (hx : x ∈ ball c (R + 1)) : DifferentiableAt ℝ (S i) x :=
+    ((hS i).contDiffAt (isOpen_ball.mem_nhds hx)).differentiableAt one_ne_zero
+  have hDT (x : ℂ) (hx : x ∈ ball c (R + 1)) : fderiv ℝ T x =
+      L.comp (ContinuousLinearMap.pi fun i ↦ fderiv ℝ (S i) x) := by
+    rw [hT]
+    exact (L.hasFDerivAt.comp x (hasFDerivAt_pi.mpr fun i ↦ (hSi i x hx).hasFDerivAt)).fderiv
+  refine ⟨?_, hDT, fun x hx ↦ ?_⟩
+  · rw [hT]
+    exact L.contDiff.comp_contDiffOn (contDiffOn_pi.mpr hS)
+  · apply e.injective
+    rw [conjWirtingerDeriv_apply, hDT x hx]
+    simp only [ContinuousLinearMap.comp_apply, L,
+      ContinuousLinearMap.coe_restrictScalars', ContinuousLinearEquiv.coe_coe,
+      ← map_smul, ← map_add, e.apply_symm_apply]
+    funext i
+    simpa only [conjWirtingerDeriv_apply, ContinuousLinearMap.pi_apply,
+      Pi.smul_apply, Pi.add_apply] using hI i x hx
+
+/-- For finite-dimensional complex normed targets, the actual Cauchy integral is `C¹` near
+an output disc, its real derivative has a uniform supremum and Hölder bound, and it solves
+`conjWirtingerDeriv T x 1 = f x`. The constant depends only on the target norm, exponent and
+the two fixed discs.
+The compatible real scalar action remains a parameter because it determines the derivative's
+continuous-linear-map carrier. -/
+theorem exists_contDiffOn_holderOnWith_fderiv_pi_inv_smul_integral_sub_inv_smul
+    {F : Type*} [NormedAddCommGroup F] [NormedSpace ℂ F] [NormedSpace ℝ F]
+    [IsScalarTower ℝ ℂ F] [FiniteDimensional ℂ F]
+    {α : ℝ≥0} (hα : 0 < α) (hα1 : α < 1) (c : ℂ) {r R : ℝ}
+    (hr : 0 ≤ r) (hR : 0 ≤ R) :
+    ∃ C : ℝ≥0, ∀ {f : ℂ → F} {H M : ℝ≥0},
+      Function.support f ⊆ closedBall c r → HolderWith H α f → (∀ x, ‖f x‖ ≤ M) →
+      let T : ℂ → F := fun w ↦ (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • f z
+      ContDiffOn ℝ 1 T (ball c (R + 1)) ∧
+      HolderOnWith (C * (H + M)) α (fderiv ℝ T) (closedBall c R) ∧
+        (∀ x ∈ closedBall c R, ‖fderiv ℝ T x‖ ≤ C * (H + M)) ∧
+        ∀ x ∈ ball c (R + 1), conjWirtingerDeriv T x 1 = f x := by
+  -- The real action is uniquely determined by the caller's compatible complex action.
+  cases NormedSpace.restrictScalars_eq (𝕜 := ℝ) (𝕜' := ℂ) (E := F)
+  classical
+  let := FiniteDimensional.complete ℂ F
+  let e := (Module.finBasis ℂ F).equivFunL
+  let L := e.symm.toContinuousLinearMap.restrictScalars ℝ
+  obtain ⟨C, hC⟩ := exists_cauchyCoordinate_gain e hα hα1 c hr hR
+  refine ⟨‖L‖₊ * C * ‖e.toContinuousLinearMap‖₊, fun {f H M} hs hf hM ↦ ?_⟩
+  intro T
+  let K := ‖e.toContinuousLinearMap‖₊
+  let g (i : Fin (Module.finrank ℂ F)) (z : ℂ) := e (f z) i
+  let S (i : Fin (Module.finrank ℂ F)) (w : ℂ) :=
+    (Real.pi : ℂ)⁻¹ • ∫ z, (w - z)⁻¹ • g i z
+  have hS := hC hs hf hM
+  -- Reconstruct the actual integral and both derivative identities from its coordinates.
+  obtain ⟨hcd, hDT, hI⟩ := cauchyCoordinate_reconstruct e (hf.continuous hα) hs
+    (fun i ↦ (hS i).1) (fun i ↦ (hS i).2.2.2)
+  let A (x : ℂ) := ContinuousLinearMap.pi (fun i ↦ fderiv ℝ (S i) x)
+  have hsub : closedBall c R ⊆ ball c (R + 1) := closedBall_subset_ball (by linarith)
+  have hconst : (‖L‖₊ * C * ‖e.toContinuousLinearMap‖₊) * (H + M) =
+      ‖L‖₊ * (C * (K * H + K * M)) := by dsimp only [K]; ring
+  refine ⟨hcd, ?_, (fun x hx ↦ ?_), hI⟩
+  · apply HolderOnWith.of_dist_le
+    intro x hx y hy
+    rw [dist_eq_norm, hDT x (hsub hx), hDT y (hsub hy), ← L.comp_sub, hconst]
+    have hA : A x - A y = ContinuousLinearMap.pi
+        (fun i ↦ fderiv ℝ (S i) x - fderiv ℝ (S i) y) := by
+      ext v i
+      rfl
+    calc
+      _ ≤ ‖L‖ * ‖A x - A y‖ := L.opNorm_comp_le _
+      _ ≤ ‖L‖ * ((C * (K * H + K * M) : ℝ≥0) * dist x y ^ (α : ℝ)) := by
+        gcongr
+        rw [hA]
+        exact ContinuousLinearMap.norm_pi_le_of_le (fun i ↦ by
+          simpa only [dist_eq_norm] using (hS i).2.1.dist_le hx hy) (by positivity)
+      _ = _ := by push_cast; ring
+  · rw [hDT x (hsub hx)]
+    rw [← NNReal.coe_add, ← NNReal.coe_mul, hconst]
+    simp only [NNReal.coe_mul, coe_nnnorm]
+    exact (L.opNorm_comp_le _).trans (mul_le_mul_of_nonneg_left
+      (ContinuousLinearMap.norm_pi_le_of_le (fun i ↦ (hS i).2.2.1 x hx) (by positivity))
+      (norm_nonneg _))
 
 end TauCeti

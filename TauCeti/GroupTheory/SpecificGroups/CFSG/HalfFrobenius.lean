@@ -225,9 +225,10 @@ scaling separating the two fixes every index. -/
 that node, so this is `p ^ m` at a short simple root and `p ^ (m + 1)` at a long one.
 
 The `exponent` field is indexed by the source of the character map, which is the image node of the
-group-scheme isogeny, so this indexing is the one exchanged against the simple-root relation below:
-the factor there is `TauCeti.SuzukiReeIndex.exponent i`, the squared length of the node paired with
-`i`, and is therefore `p ^ m` at a long node and `p ^ (m + 1)` at a short one. -/
+group-scheme isogeny, so the sentence above is about that image node. The simple-root relation
+below instead uses `TauCeti.SuzukiReeIndex.exponent i` at the node `i` it starts from, which is `1`
+at a long node and the characteristic at a short one. Hence the factor there is `p ^ m` at a long
+`i` and `p ^ (m + 1)` at a short `i`: the two nodes are exchanged by the length permutation. -/
 @[simp] theorem datumSteinberg_exponent (e : SuzukiReeIndex)
     (i : Fin e.1.dynkinType.numRoots) :
     e.datumSteinberg.exponent i =
