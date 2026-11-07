@@ -17,9 +17,8 @@ commutation rule. In particular every odd homogeneous element has square zero wh
 invertible in the coefficient ring. These identities allow the signed symmetric algebra to
 serve as a receiving supercommutative algebra in universal properties and tensor comparisons.
 
-We also provide induction within the homogeneous pieces: expressions are built from homogeneous
-generators and the unit by multiplication, addition and scalar multiplication, retaining their
-total input degree. The construction follows the supercommutative algebra of J. Pardon,
+The proof uses `TauCeti.SignedSym.homogeneous_induction` from the grading API.
+The construction follows the supercommutative algebra of J. Pardon,
 *Contact homology and virtual fundamental cycles*, equation (1.1).
 -/
 
@@ -32,31 +31,6 @@ universe u v
 variable {R : Type u} [CommRing R]
 variable {V : Type v} [AddCommGroup V] [Module R V]
 variable (G : InternalGrading R V)
-
-/-- Induction on homogeneous expressions in the signed symmetric algebra, keeping track of
-input degree. The zero and addition steps take place in each fixed degree. -/
-@[elab_as_elim]
-theorem homogeneous_induction {P : ℤ → SignedSym G → Prop}
-    (one : P 0 1)
-    (generator : ∀ (p : ℤ) (x : V), x ∈ G.piece p → P p (SignedSym.generator G x))
-    (mul : ∀ (p q : ℤ) (a b : SignedSym G), P p a → P q b → P (p + q) (a * b))
-    (zero : ∀ p, P p 0)
-    (add : ∀ (p : ℤ) (a b : SignedSym G), P p a → P p b → P p (a + b))
-    (smul : ∀ (p : ℤ) (r : R) (a : SignedSym G), P p a → P p (r • a))
-    {p : ℤ} {a : SignedSym G} (ha : a ∈ signedSymPiece G p) : P p a := by
-  rw [signedSymPiece_eq_span] at ha
-  induction ha using Submodule.span_induction with
-  | mem a ha =>
-    obtain ⟨n, d, x, hx, rfl, rfl⟩ := ha
-    induction n with
-    | zero => simpa using one
-    | succ n ih =>
-      simpa only [Fin.sum_univ_succ, List.ofFn_succ, List.prod_cons] using
-        mul (d 0) (∑ i : Fin n, d i.succ) _ _ (generator _ _ (hx 0))
-          (ih (fun i => d i.succ) (fun i => x i.succ) (fun i => hx i.succ))
-  | zero => exact zero p
-  | add a b _ _ ha hb => exact add p a b ha hb
-  | smul r a _ ha => exact smul p r a ha
 
 /-- Homogeneous elements supercommute with the sign determined by their total input degrees.
 No assumption on the characteristic of the coefficient ring is needed. -/
