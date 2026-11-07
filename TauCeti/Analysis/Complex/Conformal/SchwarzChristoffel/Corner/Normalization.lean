@@ -122,8 +122,7 @@ private theorem mapsTo_cpow_inv_sub_of_sector
   have hangpi : Complex.arg (f z - w) * β⁻¹ < Real.pi := calc
     _ < (β * Real.pi) * β⁻¹ := mul_lt_mul_of_pos_right (hinterior z hz).2 (inv_pos.mpr hβ)
     _ = Real.pi := by field_simp
-  exact Complex.im_cpow_ofReal_pos (inv_pos.mpr hβ) (sub_ne_zero_of_arg_mem_Ioo hinterior hz)
-    (hinterior z hz).1 hangpi
+  exact Complex.im_cpow_ofReal_pos (mul_pos (hinterior z hz).1 (inv_pos.mpr hβ)) hangpi
 
 /-- The principal power `(f - w) ^ (1 / β)` is real on the real axis. -/
 private theorem im_cpow_inv_sub_eq_zero_of_edges
