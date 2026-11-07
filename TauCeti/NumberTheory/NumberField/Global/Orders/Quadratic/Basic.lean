@@ -71,24 +71,6 @@ private theorem exists_eq_lattice_of_finrank_eq_two (hK : Module.finrank ℚ K =
     · rintro ⟨m, n, rfl⟩
       exact ⟨![m, n], by simp [Fin.sum_univ_two]⟩
 
-/-- Integer multiples of an element of a fractional ideal stay in it. -/
-private theorem intCast_mul_mem_fractionalIdeal (n : ℤ)
-    {J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} {z : K} (hz : z ∈ J) :
-    (n : K) * z ∈ J := by
-  simpa [Algebra.smul_def] using
-    (J : Submodule O.toSubalgebra K).smul_mem (n : O.toSubalgebra) hz
-
-/-- Sums of elements of a fractional ideal stay in it. -/
-private theorem add_mem_fractionalIdeal
-    {J : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K} {y z : K} (hy : y ∈ J)
-    (hz : z ∈ J) : y + z ∈ J :=
-  (J : Submodule O.toSubalgebra K).add_mem hy hz
-
-/-- Elements of the order lie in the unit fractional ideal. -/
-private theorem mem_one_fractionalIdeal {z : K} (hz : z ∈ O.toSubalgebra) :
-    z ∈ (1 : FractionalIdeal (nonZeroDivisors O.toSubalgebra) K) :=
-  (FractionalIdeal.mem_one_iff _).mpr ⟨⟨z, hz⟩, rfl⟩
-
 /-- In Cox's proof, `a τ = a β / α` preserves a proper lattice `I = ℤα + ℤβ`, so it lies in the
 order. Here `β² = c α² + d α β` and `a c = e`, `a d = b` are the relations of the primitive
 quadratic. -/
@@ -116,8 +98,11 @@ private theorem div_mem_one_div_of_smul_div_mem
     (hθ : (a : K) * β / α ∈ O.toSubalgebra) :
     (a : K) / α ∈ 1 / I ∧ ((b : K) - a * β / α) / α ∈ 1 / I := by
   have intCast_mem (n : ℤ) : (n : K) ∈ O.toSubalgebra := intCast_mem _ n
-  refine ⟨(FractionalIdeal.mem_div_iff_of_ne_zero hI₀).mpr fun y hy ↦ mem_one_fractionalIdeal ?_,
-    (FractionalIdeal.mem_div_iff_of_ne_zero hI₀).mpr fun y hy ↦ mem_one_fractionalIdeal ?_⟩
+  refine ⟨(FractionalIdeal.mem_div_iff_of_ne_zero hI₀).mpr fun y hy ↦
+      FractionalIdeal.coe_mem_one _ (⟨(a : K) / α * y, ?_⟩ : O.toSubalgebra),
+    (FractionalIdeal.mem_div_iff_of_ne_zero hI₀).mpr fun y hy ↦
+      FractionalIdeal.coe_mem_one _
+        (⟨((b : K) - a * β / α) / α * y, ?_⟩ : O.toSubalgebra)⟩
   · obtain ⟨m, n, rfl⟩ := (hmem y).mp hy
     convert add_mem (intCast_mem (a * m)) (mul_mem (intCast_mem n) hθ) using 1
     push_cast [zsmul_eq_mul]
@@ -151,11 +136,17 @@ theorem IsProperFractionalIdeal.isUnit_of_finrank_eq_two (hK : Module.finrank �
     (smul_div_mem_of_isProperFractionalIdeal hI hα hmem hrel hb' he')
   -- Hence `1 = u a + v b + w e` lies in `I * (O / I)`.
   have h₁ : (1 : K) ∈ I * (1 / I) := by
-    have key := add_mem_fractionalIdeal (add_mem_fractionalIdeal
-      (intCast_mul_mem_fractionalIdeal u (FractionalIdeal.mul_mem_mul hαI hy₁))
-      (intCast_mul_mem_fractionalIdeal v (add_mem_fractionalIdeal
-        (FractionalIdeal.mul_mem_mul hβI hy₁) (FractionalIdeal.mul_mem_mul hαI hy₂))))
-      (intCast_mul_mem_fractionalIdeal (-w) (FractionalIdeal.mul_mem_mul hβI hy₂))
+    -- Integer multiples and sums stay in the fractional ideal `I * (1 / I)`.
+    let J : Submodule O.toSubalgebra K := ↑(I * (1 / I))
+    have hint (n : ℤ) {z : K} (hz : z ∈ J) : (n : K) * z ∈ J := by
+      simpa [Algebra.smul_def] using J.smul_mem (n : O.toSubalgebra) hz
+    have key : (u : K) * (α * ((a : K) / α)) + (v * (β * ((a : K) / α) + α * (((b : K) -
+        a * β / α) / α))) + (-w : ℤ) * (β * (((b : K) - a * β / α) / α)) ∈ I * (1 / I) :=
+      J.add_mem (J.add_mem
+        (hint u (FractionalIdeal.mul_mem_mul hαI hy₁))
+        (hint v (J.add_mem (FractionalIdeal.mul_mem_mul hβI hy₁)
+          (FractionalIdeal.mul_mem_mul hαI hy₂))))
+        (hint (-w) (FractionalIdeal.mul_mem_mul hβI hy₂))
     have huvw' : (u : K) * a + v * b + w * e = 1 := by exact_mod_cast huvw
     convert key using 1
     push_cast
