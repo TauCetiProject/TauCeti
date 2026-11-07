@@ -25,15 +25,25 @@ product complex.  Then `(i ⊗ 1, p ⊗ 1, h ⊗ 1)` is a special contraction of
 check is that `h`, having odd degree, anticommutes with `τ`, so the two cross terms
 `(τ h + h τ) ⊗ b` cancel.  No condition on `b` is needed.
 
+On the other side, let `C` be graded with Koszul twist `τ` and let `b` have degree one.  Then
+`C ⊗ M` carries the endomorphism `b ⊗ 1 + τ ⊗ d_M`, and `(1 ⊗ i, 1 ⊗ p, τ ⊗ h)` is a special
+contraction of `C ⊗ M` onto `C ⊗ N` (`TauCeti.LinearSpecialContraction.lTensor`).  Here the sign
+sits on the homotopy, and the cross terms `(b τ + τ b) ⊗ h` cancel because `b` is odd; no
+grading on `M` is needed.
+
 This is the input of homological transfer for right `A∞` modules, where `C` is the coaugmented
 bar construction of the algebra and `b` its bar differential: the higher module operations are
-then a perturbation of the tensored contraction.
+then a perturbation of the tensored contraction.  For `A∞` bimodules the contraction is tensored
+with the bar constructions on both sides.
 
 ## Main definitions
 
 * `TauCeti.LinearContraction.rTensor`: the contraction `(i ⊗ 1, p ⊗ 1, h ⊗ 1)` without side
   conditions, with homogeneity lemmas for its three maps.
 * `TauCeti.LinearSpecialContraction.rTensor`: the special contraction `(i ⊗ 1, p ⊗ 1, h ⊗ 1)`.
+* `TauCeti.LinearContraction.lTensor`: the contraction `(1 ⊗ i, 1 ⊗ p, τ ⊗ h)` without side
+  conditions.
+* `TauCeti.LinearSpecialContraction.lTensor`: the special contraction `(1 ⊗ i, 1 ⊗ p, τ ⊗ h)`.
 
 ## References
 
@@ -180,6 +190,112 @@ theorem rTensor_proj : (c.rTensor hh hincl hproj b).proj = c.proj.rTensor C := (
 /-- The homotopy of the tensored contraction is `h ⊗ 1`. -/
 @[simp↓]
 theorem rTensor_homotopy : (c.rTensor hh hincl hproj b).homotopy = c.homotopy.rTensor C := (rfl)
+
+end LinearSpecialContraction
+
+namespace LinearContraction
+
+variable {R : Type uR} [CommRing R]
+  {M : Type uM} {N : Type uN} {C : Type uC}
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N]
+  [AddCommGroup C] [Module R C]
+  {dM : Module.End R M} {dN : Module.End R N}
+  {K : InternalGrading R C} {b : Module.End R C}
+  (hb : LinearMap.IsHomogeneous b K.piece K.piece 1) (c : LinearContraction dM dN)
+
+include hb in
+/-- Tensor a contraction on the left with a graded module carrying an operator `b` of degree one.
+The tensor endomorphisms are `b ⊗ 1 + τ ⊗ d`, with `τ` the Koszul twist of the left factor, and
+the homotopy `τ ⊗ h` carries the same sign. -/
+noncomputable def lTensor :
+    LinearContraction (b.rTensor M + TensorProduct.map (K.koszulTwist 1) dM)
+      (b.rTensor N + TensorProduct.map (K.koszulTwist 1) dN) where
+  incl := c.incl.lTensor C
+  proj := c.proj.lTensor C
+  homotopy := TensorProduct.map (K.koszulTwist 1) c.homotopy
+  dM_comp_incl := by
+    refine TensorProduct.ext' fun y x ↦ ?_
+    have h := LinearMap.congr_fun c.dM_comp_incl x
+    simp only [LinearMap.comp_apply] at h
+    simp [h]
+  proj_comp_dM := by
+    refine TensorProduct.ext' fun y x ↦ ?_
+    have h := LinearMap.congr_fun c.proj_comp_dM x
+    simp only [LinearMap.comp_apply] at h
+    simp [h]
+  proj_comp_incl := by
+    rw [← LinearMap.lTensor_comp, c.proj_comp_incl, LinearMap.lTensor_id]
+  dM_comp_homotopy_add_homotopy_comp_dM := by
+    refine TensorProduct.ext' fun y x ↦ ?_
+    have hτb : K.koszulTwist 1 (b y) = -b (K.koszulTwist 1 y) := by
+      simpa using hb.koszulTwist_apply 1 y
+    have hc := LinearMap.congr_fun c.dM_comp_homotopy_add_homotopy_comp_dM x
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.sub_apply,
+      LinearMap.id_apply] at hc
+    simp only [LinearMap.add_apply, LinearMap.comp_apply, LinearMap.rTensor_tmul,
+      TensorProduct.map_tmul, LinearMap.lTensor_tmul, LinearMap.id_apply, LinearMap.sub_apply,
+      map_add, hτb, InternalGrading.koszulTwist_koszulTwist, TensorProduct.neg_tmul]
+    rw [← TensorProduct.tmul_sub, ← hc, TensorProduct.tmul_add]
+    abel
+
+/-- The inclusion of the left tensored contraction is `1 ⊗ i`. -/
+@[simp]
+theorem lTensor_incl : (c.lTensor hb).incl = c.incl.lTensor C := (rfl)
+
+/-- The projection of the left tensored contraction is `1 ⊗ p`. -/
+@[simp]
+theorem lTensor_proj : (c.lTensor hb).proj = c.proj.lTensor C := (rfl)
+
+/-- The homotopy of the left tensored contraction is `τ ⊗ h`. -/
+@[simp]
+theorem lTensor_homotopy :
+    (c.lTensor hb).homotopy = TensorProduct.map (K.koszulTwist 1) c.homotopy := (rfl)
+
+end LinearContraction
+
+namespace LinearSpecialContraction
+
+variable {R : Type uR} {M : Type uM} {N : Type uN} {C : Type uC} [CommRing R]
+  [AddCommGroup M] [Module R M] [AddCommGroup N] [Module R N] [AddCommGroup C] [Module R C]
+  {dM : Module.End R M} {dN : Module.End R N} (c : LinearSpecialContraction dM dN)
+  {K : InternalGrading R C} {b : Module.End R C}
+  (hb : LinearMap.IsHomogeneous b K.piece K.piece 1)
+
+/-- **Tensoring a special contraction on the left with a complex.**  A special contraction
+`(i, p, h)` of `(M, d_M)` onto `(N, d_N)` induces the special contraction `(1 ⊗ i, 1 ⊗ p, τ ⊗ h)`
+of `C ⊗ M` onto `C ⊗ N` for the endomorphisms `b ⊗ 1 + τ ⊗ d`, where `b` has degree one and `τ`
+is the Koszul twist of `C`. -/
+noncomputable def lTensor :
+    LinearSpecialContraction (b.rTensor M + TensorProduct.map (K.koszulTwist 1) dM)
+      (b.rTensor N + TensorProduct.map (K.koszulTwist 1) dN) where
+  toLinearContraction := c.toLinearContraction.lTensor hb
+  homotopy_comp_incl := by
+    rw [LinearContraction.lTensor_homotopy, LinearContraction.lTensor_incl,
+      LinearMap.map_comp_lTensor, c.homotopy_comp_incl, TensorProduct.map_zero_right]
+  proj_comp_homotopy := by
+    rw [LinearContraction.lTensor_proj, LinearContraction.lTensor_homotopy,
+      LinearMap.lTensor_comp_map, c.proj_comp_homotopy, TensorProduct.map_zero_right]
+  homotopy_comp_homotopy := by
+    rw [LinearContraction.lTensor_homotopy, ← TensorProduct.map_comp, c.homotopy_comp_homotopy,
+      TensorProduct.map_zero_right]
+
+/-- Forgetting the side conditions commutes with tensoring a special contraction on the left. -/
+@[simp]
+theorem toLinearContraction_lTensor :
+    (c.lTensor hb).toLinearContraction = c.toLinearContraction.lTensor hb := (rfl)
+
+/-- The inclusion of the left tensored contraction is `1 ⊗ i`. -/
+@[simp↓]
+theorem lTensor_incl : (c.lTensor hb).incl = c.incl.lTensor C := (rfl)
+
+/-- The projection of the left tensored contraction is `1 ⊗ p`. -/
+@[simp↓]
+theorem lTensor_proj : (c.lTensor hb).proj = c.proj.lTensor C := (rfl)
+
+/-- The homotopy of the left tensored contraction is `τ ⊗ h`. -/
+@[simp↓]
+theorem lTensor_homotopy :
+    (c.lTensor hb).homotopy = TensorProduct.map (K.koszulTwist 1) c.homotopy := (rfl)
 
 end LinearSpecialContraction
 
