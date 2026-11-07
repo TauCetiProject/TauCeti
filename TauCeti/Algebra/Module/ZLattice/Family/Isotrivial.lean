@@ -6,8 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Module.ZLattice.Family.Manifold
-public import TauCeti.Geometry.Manifold.Algebra.Quotient
-import Mathlib.Analysis.Calculus.ContDiff.Operations
 
 /-!
 # Trivializing a torus family by linear identifications of its lattices
