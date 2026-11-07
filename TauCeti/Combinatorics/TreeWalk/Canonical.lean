@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Data.List.Basic
+public import TauCeti.Data.List.FindIdx
 
 /-!
 # First-visit canonical labeling of walks
@@ -31,7 +31,7 @@ walks by their vertex-relabeled shapes.
 
 public section
 
-namespace TauCeti.TreeWalk
+namespace List
 
 variable {α β : Type*} [DecidableEq α] [DecidableEq β]
 
@@ -48,24 +48,6 @@ theorem firstVisitCanonical_getElem (w : List α) {i : ℕ} (hi : i < w.length) 
     (firstVisitCanonical w)[i]'(by simpa [firstVisitCanonical] using hi) =
       w.idxOf w[i] := by
   simp [firstVisitCanonical]
-
-private theorem idxOf_map_eq_of_injectiveOn (w : List α) (f : α → β)
-    (hf : ∀ ⦃x y⦄, x ∈ w → y ∈ w → f x = f y → x = y) {x : α} (hx : x ∈ w) :
-    (w.map f).idxOf (f x) = w.idxOf x := by
-  induction w with
-  | nil => simp at hx
-  | cons a w ih =>
-    by_cases hxa : x = a
-    · subst x
-      simp
-    · have hfa : f x ≠ f a := fun h => hxa (hf hx (by simp) h)
-      have hx' : x ∈ w := (List.mem_cons.mp hx).resolve_left hxa
-      have hf' : ∀ ⦃x y⦄, x ∈ w → y ∈ w → f x = f y → x = y := by
-        intro x y hx' hy' hxy
-        exact hf (by simp [hx']) (by simp [hy']) hxy
-      rw [List.map_cons, List.idxOf_cons_ne _ (Ne.symm hxa),
-        List.idxOf_cons_ne _ (Ne.symm hfa)]
-      exact congrArg Nat.succ (ih hf' hx')
 
 /-- Injectively relabeling the vertices of a walk leaves its first-visit labels unchanged. -/
 theorem firstVisitCanonical_map (w : List α) (f : α → β)
@@ -122,6 +104,7 @@ theorem firstVisitCanonical_eq_self_iff_isFirstVisitLabeled (w : List ℕ) :
     exact (h i hi₂).symm
 
 /-- Canonicalizing a walk that is already canonically labeled has no further effect. -/
+@[simp]
 theorem firstVisitCanonical_idempotent (w : List α) :
     firstVisitCanonical (firstVisitCanonical w) = firstVisitCanonical w := by
   exact firstVisitCanonical_map w (fun x => w.idxOf x) (by
@@ -129,6 +112,7 @@ theorem firstVisitCanonical_idempotent (w : List α) :
     exact (List.idxOf_inj hx).1 hxy)
 
 /-- Every first-visit canonical labeling is first-visit labeled. -/
+@[simp]
 theorem firstVisitCanonical_isFirstVisitLabeled (w : List α) :
     IsFirstVisitLabeled (firstVisitCanonical w) :=
   (firstVisitCanonical_eq_self_iff_isFirstVisitLabeled _).1
@@ -146,4 +130,4 @@ theorem eq_firstVisitCanonical_of_isFirstVisitLabeled (w : List α) (f : α → 
     _ = firstVisitCanonical (w.map f) := congrArg firstVisitCanonical hv
     _ = firstVisitCanonical w := firstVisitCanonical_map w f hf
 
-end TauCeti.TreeWalk
+end List
