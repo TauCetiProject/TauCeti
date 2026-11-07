@@ -11,6 +11,7 @@ public import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 public import TauCeti.MeasureTheory.Measure.Typeclasses.NullSingletonClass
 import Mathlib.Geometry.Manifold.MFDeriv.Tangent
 import Mathlib.MeasureTheory.Function.Jacobian
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Integration along oriented parametrizations
@@ -39,43 +40,6 @@ namespace TauCeti
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [FiniteDimensional ℝ E] [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
   [TopologicalSpace M] [ChartedSpace H M] [IsManifold I 1 M] {k : ℕ}
-
-omit [IsManifold I 1 M] in
-/-- The chart sign and the absolute determinant of a linear equivalence carrying a basis `b` to
-a basis of the chart orientation combine to the determinant itself. -/
-private theorem signBasis_mul_signAt_mul_abs_det_eq
-    (l : Manifold.OrientationLift I M (Fin k)) (b : Module.Basis (Fin k) ℝ E)
-    (α : M) {x : M} (hx : x ∈ (chartAt H α).source) (L : E ≃ₗ[ℝ] E)
-    (hB : (b.map L).orientation = l.chartOrientation α ⟨x, hx⟩) :
-    (Orientation.signBasis l.modelOrientation b : ℝ) * (l.signAt α x : ℝ) *
-      |L.toLinearMap.det| = L.toLinearMap.det := by
-  have hsign : (Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) b : ℝ) =
-      (Orientation.signBasis l.modelOrientation b : ℝ) * (l.signAt α x : ℝ) := by
-    rw [Manifold.OrientationLift.chartOrientation_eq_ite,
-      Manifold.OrientationLift.signAt_of_mem _ hx]
-    rcases Int.units_eq_one_or (l.sign α ⟨x, hx⟩) with hs | hs <;>
-      simp [hs, Orientation.signBasis_neg]
-  have hpos : 0 < (Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) b : ℝ) *
-      L.toLinearMap.det := by
-    have h := Orientation.signBasis_mul_det_mul_pos (l.chartOrientation α ⟨x, hx⟩)
-      b (b.map L)
-    have hsB : Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩)
-        (b.map L) = 1 := by
-      rw [← hB]
-      exact Orientation.signBasis_orientation _
-    rw [hsB, Units.val_one, Int.cast_one, mul_one] at h
-    -- Normalize basis-map evaluation to a determinant composed with the original basis.
-    change 0 < (Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) b : ℝ) *
-      b.det (L.toLinearMap ∘ b) at h
-    simpa only [Module.Basis.det_comp, Module.Basis.det_self, mul_one] using h
-  rw [← hsign]
-  rcases Int.units_eq_one_or (Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) b)
-    with hs | hs
-  · simp only [hs, Units.val_one, Int.cast_one, one_mul] at hpos ⊢
-    exact abs_of_pos hpos
-  · simp only [hs, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
-      neg_one_mul] at hpos ⊢
-    rw [abs_of_neg (neg_pos.mp hpos), neg_neg]
 
 /-- An orientation-preserving tangent parametrization cancels the chart sign against its
 absolute coordinate Jacobian. The coordinate expression is the actual chart derivative. -/
@@ -125,7 +89,7 @@ theorem Manifold.OrientationLift.sign_mul_abs_det_mul_inChartAt_eq
   rw [hd.fderiv]
   -- The coordinate derivative L is the same linear map under its continuous and linear wrappers.
   change _ * _ * |L.toLinearEquiv.toLinearMap.det| * _ = _
-  rw [signBasis_mul_signAt_mul_abs_det_eq l b α hx L.toLinearEquiv hB]
+  rw [l.signBasis_mul_signAt_mul_abs_det_eq b α hx L.toLinearEquiv hB]
   have h := congrArg (fun ω : E [⋀^Fin k]→L[ℝ] ℝ ↦ ω b) heval
   rw [ContinuousAlternatingMap.compContinuousLinearMap_apply_basis] at h
   exact h
@@ -148,12 +112,7 @@ theorem Manifold.OrientationLift.integrableOn_and_integral_chart_parameter_piece
         (∫ y in (extChartAt I α ∘ Q) '' S,
           φ.signedInChartAt B α (fun x ↦ l.signAt α x) y ∂B.addHaar) =
         ∫ z in S, V z ∂B.addHaar := by
-  have hC : Integrable (φ.signedInChartAt B α (fun x ↦ l.signAt α x)) B.addHaar := by
-    apply (RoughForm.integrable_signedInChartAt_iff_unsigned φ B α
-      (fun x ↦ l.signAt α x) ?_ B.addHaar).mpr
-      (((integrableTopForm_iff φ).mp hi).2.2 B α)
-    apply continuousOn_iff_continuous_domRestrict.mp
-    simpa only [extChartAt_source] using l.continuousOn_signAt α
+  have hC := signed_coefficient_integrable l hi B α
   constructor
   · have hh := (integrableOn_image_iff_integrableOn_abs_det_fderiv_smul B.addHaar
       hS hd hinj (fun y ↦ (Orientation.signBasis l.modelOrientation B : ℝ) *
@@ -167,44 +126,6 @@ theorem Manifold.OrientationLift.integrableOn_and_integral_chart_parameter_piece
     apply setIntegral_congr_fun hS
     intro z hz
     simpa only [Function.comp_apply, smul_eq_mul, mul_assoc] using htransport z hz
-
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
-private theorem chart_parameter_piece_image {Q : E → M} {D : Set E} (α : M) (s : Set M) :
-    (extChartAt I α ∘ Q) '' (D ∩ Q ⁻¹' s) = (extChartAt I α) '' (Q '' D ∩ s) := by
-  rw [image_comp, image_inter_preimage]
-
-omit [FiniteDimensional ℝ E] [IsManifold I 1 M] in
-/-- If disjoint parametrizations cover the complement of a finite set of seams, the integral over
-the coordinate image of a chart piece is the sum of the integrals over the images of the pieces
-cut out by each parametrization. -/
-private theorem mul_integral_chart_image_eq_sum_pieces [MeasurableSpace E] {ι : Type*}
-    [Fintype ι] {Q : ι → E → M} {D : Set E} {Z : Set M} (hZ : Z.Finite)
-    (himage : (⋃ i, Q i '' D) = Zᶜ) (hdisj : Pairwise (fun i j ↦ Disjoint (Q i '' D) (Q j '' D)))
-    (α : M) {s : Set M} (hsrc : s ⊆ (extChartAt I α).source) (μ : Measure E)
-    [NullSingletonClass μ] {C : E → ℝ} (hC : Integrable C μ) (c : ℝ) (V : ι → E → ℝ)
-    (hT : ∀ i, MeasurableSet ((extChartAt I α ∘ Q i) '' (D ∩ Q i ⁻¹' s)))
-    (hpiece : ∀ i, c * ∫ y in (extChartAt I α ∘ Q i) '' (D ∩ Q i ⁻¹' s), C y ∂μ =
-      ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ) :
-    c * ∫ y in (extChartAt I α) '' s, C y ∂μ = ∑ i, ∫ z in D ∩ Q i ⁻¹' s, V i z ∂μ := by
-  have hpair : Pairwise (fun i k ↦ Disjoint ((extChartAt I α ∘ Q i) '' (D ∩ Q i ⁻¹' s))
-      ((extChartAt I α ∘ Q k) '' (D ∩ Q k ⁻¹' s))) := by
-    intro i k hik
-    apply disjoint_left.mpr
-    rintro y ⟨z, hz, hy⟩ ⟨w, hw, hy'⟩
-    have he : Q i z = Q k w :=
-      (extChartAt I α).injOn (hsrc hz.2) (hsrc hw.2) (hy.trans hy'.symm)
-    exact disjoint_left.mp (hdisj hik) ⟨z, hz.1, he⟩ ⟨w, hw.1, rfl⟩
-  have hcover : (⋃ i, (extChartAt I α ∘ Q i) '' (D ∩ Q i ⁻¹' s)) =
-      (extChartAt I α) '' (s \ Z) := by
-    simp_rw [chart_parameter_piece_image]
-    rw [← image_iUnion, ← iUnion_inter, himage]
-    congr 1
-    ext x
-    simp only [mem_inter_iff, mem_compl_iff, mem_sdiff]
-    tauto
-  rw [setIntegral_congr_set (hZ.image_sdiff_ae_eq (extChartAt I α) s μ), ← hcover,
-    integral_iUnion_fintype hT hpair (fun i ↦ hC.integrableOn), Finset.mul_sum]
-  exact Finset.sum_congr rfl fun i _ ↦ hpiece i
 
 omit [IsManifold I 1 M] in
 /-- Integrability and the signed chart integral of one chart piece of a manifold, computed on
@@ -238,12 +159,7 @@ private theorem integrableOn_and_sign_mul_integral_chart_piece [MeasurableSpace 
   have hΨinj (i : ι) : InjOn (extChartAt I α ∘ Q i) (D ∩ Q i ⁻¹' s) := by
     intro x hx y hy he
     exact hinj i hx.1 hy.1 ((extChartAt I α).injOn (hsrc hx.2) (hsrc hy.2) he)
-  have hC : Integrable (φ.signedInChartAt B α (fun x ↦ l.signAt α x)) B.addHaar := by
-    apply (RoughForm.integrable_signedInChartAt_iff_unsigned φ B α
-      (fun x ↦ l.signAt α x) ?_ B.addHaar).mpr
-      (((integrableTopForm_iff φ).mp hi).2.2 B α)
-    apply continuousOn_iff_continuous_domRestrict.mp
-    simpa only [extChartAt_source] using l.continuousOn_signAt α
+  have hC := signed_coefficient_integrable l hi B α
   have hpiece (i : ι) : IntegrableOn (V i) (D ∩ Q i ⁻¹' s) B.addHaar ∧
       (Orientation.signBasis l.modelOrientation B : ℝ) *
         (∫ y in (extChartAt I α ∘ Q i) '' (D ∩ Q i ⁻¹' s),
@@ -251,8 +167,9 @@ private theorem integrableOn_and_sign_mul_integral_chart_piece [MeasurableSpace 
         ∫ z in D ∩ Q i ⁻¹' s, V i z ∂B.addHaar :=
     l.integrableOn_and_integral_chart_parameter_piece B φ hi α (hS i) (d i) (hderiv i)
       (hΨinj i) (V i) fun z hz ↦ htransport i z hz.1 (hsrc hz.2)
-  exact ⟨fun i ↦ (hpiece i).1, mul_integral_chart_image_eq_sum_pieces hZ himage hdisj α hsrc
-    B.addHaar hC _ V (fun i ↦ measurable_image_of_fderivWithin (hS i) (hderiv i) (hΨinj i))
+  exact ⟨fun i ↦ (hpiece i).1, mul_integral_image_eq_sum_pieces hZ himage hdisj
+    ((extChartAt I α).injOn.mono hsrc) B.addHaar hC _ V
+    (fun i ↦ measurable_image_of_fderivWithin (hS i) (hderiv i) (hΨinj i))
     fun i ↦ (hpiece i).2⟩
 
 end TauCeti
