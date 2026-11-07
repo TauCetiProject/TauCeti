@@ -9,6 +9,7 @@ public import TauCeti.RepresentationTheory.SymmetricAlgebra.HilbertIdeal
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.RegularSequence
 public import TauCeti.RingTheory.GradedAlgebra.HilbertSeries.RegularSequence
 public import TauCeti.LinearAlgebra.SymmetricAlgebra.BasisComparison
+import TauCeti.RingTheory.Regular.RegularSequence
 
 /-!
 # Coinvariant Hilbert series from homogeneous basic invariants
@@ -60,12 +61,9 @@ theorem mk_finrank_quotientPiece_symmetricAlgebraHilbertIdeal
         ∏ i, (1 - PowerSeries.X ^ d i) := by
   have hI : Ideal.ofList ((List.ofFn fun i ↦ ((f i : SymmetricAlgebra K M), d i)).map
       Prod.fst) = ρ.symmetricAlgebraHilbertIdeal := by
-    rw [ρ.symmetricAlgebraHilbertIdeal_eq_span_of_surjective f
-      (fun i ↦ HomogeneousIdeal.mem_irrelevant_of_mem _ (hd i) (hf i)) hsurj]
-    simp only [List.map_ofFn, Function.comp_def, Ideal.ofList]
-    congr 1
-    ext p
-    simp only [List.mem_ofFn, Set.mem_ofPred_eq, Set.mem_range]
+    rw [List.map_ofFn, Function.comp_def, Ideal.ofList_ofFn,
+      ρ.symmetricAlgebraHilbertIdeal_eq_span_of_surjective f
+        (fun i ↦ HomogeneousIdeal.mem_irrelevant_of_mem _ (hd i) (hf i)) hsurj]
   have h := mk_finrank_quotientPiece_of_isWeaklyRegular (S := S)
     (homogeneousSubmodule K M) (List.ofFn fun i ↦ ((f i : SymmetricAlgebra K M), d i))
     (by

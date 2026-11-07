@@ -34,6 +34,8 @@ The quotient-piece construction follows Antoine Chambert-Loir's
   quotient exactly when the classes of a spanning set of the original piece do.
 * `TauCeti.GradedAlgebra.quotientPiece_eq_bot_iff`: a piece vanishes exactly when it lies in `I`.
 * `TauCeti.GradedAlgebra.iSup_quotientPiece_eq_top`: a spanning family spans the quotient.
+* `TauCeti.GradedAlgebra.exists_quotient_linearMap_of_map_mul`: a linear endomorphism commuting
+  with multiplication by the generators of an ideal induces an endomorphism of the quotient.
 -/
 
 public section
@@ -158,5 +160,36 @@ theorem map_quotientPiece_quotientPiece (𝒜 : ι → Submodule k A) (I J : Ide
   simp only [LinearMap.comp_apply, AlgEquiv.toLinearMap_apply,
     DoubleQuot.coe_quotQuotEquivQuotSupₐ]
   exact DoubleQuot.quotQuotEquivQuotSup_quotQuotMk I J x
+
+end TauCeti.GradedAlgebra
+
+namespace TauCeti.GradedAlgebra
+
+variable {k A : Type*} [CommRing k] [CommRing A] [Algebra k A]
+
+/-- A linear endomorphism commuting with multiplication by each element of a set `s` preserves the
+ideal spanned by `s`, so it induces a compatible endomorphism of the quotient by that ideal, as
+required by `apply_mem_quotientPiece`. -/
+theorem exists_quotient_linearMap_of_map_mul {s : Set A} (T : A →ₗ[k] A)
+    (hmul : ∀ f ∈ s, ∀ x, T (f * x) = f * T x) :
+    ∃ Q : (A ⧸ Ideal.span s) →ₗ[k] (A ⧸ Ideal.span s),
+      ∀ x, Q (Ideal.Quotient.mk _ x) = Ideal.Quotient.mk _ (T x) := by
+  have hT : (Ideal.span s).restrictScalars k ≤ ((Ideal.span s).restrictScalars k).comap T := by
+    intro x hx
+    -- Generalize over the multiplier, since `T` commutes only with multiplication by `s`.
+    suffices h : ∀ a, T (a * x) ∈ Ideal.span s by simpa using h 1
+    induction hx using Submodule.span_induction with
+    | mem f hf =>
+      intro a
+      rw [mul_comm, hmul f hf]
+      exact Ideal.mul_mem_right _ _ (Ideal.subset_span hf)
+    | zero => simp
+    | add x y _ _ hx hy => intro a; rw [mul_add, map_add]; exact add_mem (hx a) (hy a)
+    | smul b x _ hx => intro a; rw [smul_eq_mul, ← mul_assoc]; exact hx (a * b)
+  refine ⟨(Submodule.Quotient.restrictScalarsEquiv k _).conj (Submodule.mapQ _ _ T hT),
+    fun x ↦ ?_⟩
+  rw [LinearEquiv.conj_apply_apply, ← Ideal.Quotient.mk_eq_mk,
+    Submodule.Quotient.restrictScalarsEquiv_symm_mk, Submodule.mapQ_apply,
+    Submodule.Quotient.restrictScalarsEquiv_mk, Ideal.Quotient.mk_eq_mk]
 
 end TauCeti.GradedAlgebra
