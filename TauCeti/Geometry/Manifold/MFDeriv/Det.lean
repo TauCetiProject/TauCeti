@@ -7,6 +7,8 @@ module
 
 public import Mathlib.Geometry.Manifold.MFDeriv.NormedSpace
 public import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
+public import TauCeti.Analysis.Matrix.Normed
+public import TauCeti.Geometry.Manifold.RegularValue
 import TauCeti.Analysis.Calculus.FDeriv.Det
 import TauCeti.Geometry.Manifold.MFDeriv.NormedSpace
 
@@ -23,6 +25,20 @@ where `dA (v)` is the matrix of the derivatives of the entries of `A` along `v`.
 only involves derivatives of scalar functions, so no normed structure on matrices appears in it;
 the proof reads `A` as a map into the product space of its entries and applies the flat formula
 `Matrix.fderiv_det_apply`.
+
+The determinant has every nonzero scalar as a regular value for a nonempty matrix index.
+At the identity its model-valued derivative is the trace, with no completeness assumption.
+
+## Main declarations
+
+* `TauCeti.mvfderiv_det_apply`: Jacobi's formula along a manifold-valued map.
+* `Matrix.mvfderiv_det_one`: the trace formula at the identity.
+* `Matrix.isRegularValue_det`: nonzero values of the determinant are regular.
+
+## References
+
+* John M. Lee, *Introduction to Smooth Manifolds*, 2nd ed., Springer GTM 218 (2013),
+  Chapter 7, Example 7.18(c),(e).
 -/
 
 public section
@@ -74,3 +90,37 @@ theorem mvfderiv_det_apply {A : M → Matrix n n 𝕜} {x : M}
   simp [L]
 
 end TauCeti
+
+namespace Matrix
+
+open scoped Matrix.Norms.Operator
+attribute [local instance] Matrix.linftyOpTopologicalSpace
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜] {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- The determinant's model-valued differential at the identity is the matrix trace. -/
+theorem mvfderiv_det_one (v : TangentSpace 𝓘(𝕜, Matrix n n 𝕜) (1 : Matrix n n 𝕜)) :
+    mvfderiv 𝓘(𝕜, Matrix n n 𝕜) (det : Matrix n n 𝕜 → 𝕜) 1 v =
+      trace (NormedSpace.fromTangentSpace (1 : Matrix n n 𝕜) v) := by
+  rw [mvfderiv_eq_fderiv]
+  exact congrArg (fun L : Matrix n n 𝕜 →L[𝕜] 𝕜 ↦
+    L (NormedSpace.fromTangentSpace (1 : Matrix n n 𝕜) v))
+    (hasFDerivAt_det_one (n := n) (𝕜 := 𝕜)).fderiv
+
+/-- Every nonzero scalar is a regular value of the determinant for a nonempty matrix index. -/
+theorem isRegularValue_det [Nonempty n] {c : 𝕜} (hc : c ≠ 0) :
+    TauCeti.IsRegularValue 𝓘(𝕜, Matrix n n 𝕜) 𝓘(𝕜, 𝕜) (det : Matrix n n 𝕜 → 𝕜) c := by
+  rw [TauCeti.isRegularValue_iff]
+  intro A hA
+  apply TauCeti.isRegularPoint_iff_surjective_fderiv.mpr
+  intro z
+  obtain ⟨B, hB⟩ := trace_surjective (n := n) (R := 𝕜) (c⁻¹ * z)
+  refine ⟨A * B, ?_⟩
+  have hu : IsUnit A.det := isUnit_iff_ne_zero.mpr (hA ▸ hc)
+  calc
+    fderiv 𝕜 det A (A * B) = A.det * trace (A⁻¹ * (A * B)) :=
+      fderiv_det_apply hu (A * B)
+    _ = z := by
+      rw [hA, nonsing_inv_mul_cancel_left A B hu, hB, ← mul_assoc, mul_inv_cancel₀ hc, one_mul]
+
+end Matrix

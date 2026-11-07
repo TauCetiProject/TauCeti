@@ -40,6 +40,7 @@ to manifolds, including manifolds with boundary or corners.
   values when the map is differentiable along the fibre.
 * `TauCeti.exists_isRegularValue_forall_mem_Ioc`: a continuous real function on a compact
   manifold takes all its values strictly above one regular value and at most another.
+* `TauCeti.range_mvfderiv`: the tangent-space identification transports derivative ranges.
 * `TauCeti.isRegularPoint_iff_surjective_fderivWithin`: regularity read in arbitrary charts.
 * `TauCeti.isRegularPoint_iff_surjective_fderiv_extChartAt`: the same on a boundaryless source,
   with the Fréchet derivative of the coordinate expression.
@@ -156,6 +157,14 @@ theorem isRegularPoint_iff_surjective_mvfderiv {g : M → E'} :
   symm
   simpa only [mvfderiv, ContinuousLinearMap.coe_comp, ContinuousLinearEquiv.coe_coe] using
     EquivLike.comp_surjective (mfderiv I 𝓘(𝕜, E') g x) (NormedSpace.fromTangentSpace (g x))
+
+/-- The range of the vector-valued derivative is the image of the manifold derivative's range
+under the canonical identification of the target tangent space with its model. -/
+theorem range_mvfderiv {g : M → E'} :
+    (mvfderiv I g x).range =
+      (mfderiv I 𝓘(𝕜, E') g x).range.map
+        (NormedSpace.fromTangentSpace (g x)).toLinearMap :=
+  LinearMap.range_comp _ _
 
 /-- The vector-valued manifold derivative has the same kernel as the manifold derivative:
 the canonical target tangent-space identification does not change the kernel. -/
