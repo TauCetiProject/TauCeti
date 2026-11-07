@@ -137,22 +137,6 @@ private theorem apply_eq_pow_of_mk_eq_artinMap_padic_uniformizer {u : ℤ_[p]ˣ}
     rw [← Nat.sub_add_cancel (Nat.one_le_pow f p hp.pos), pow_succ, ht, one_mul]
   simpa using isArithFrobeniusLift_iff.1 hgF t f hf (by simpa using hpow)
 
-/-- The reduction modulo `d ∣ m` of the exponent by which an automorphism `κ` of `ℚ_p` acts on the
-`m`-th roots of unity of a cyclotomic subfield `E`, when `κ` raises the `d`-th roots of unity to
-the `c`-th power. -/
-private theorem cast_autToPow_restrictNormalHom_eq
-    {m : ℕ} [NeZero m] (E : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p])) [Normal ℚ_[p] E]
-    {ζ' : E} (hζ' : IsPrimitiveRoot ζ' m) {d c : ℕ} (hd : d ∣ m)
-    (κ : Field.absoluteGaloisGroup ℚ_[p])
-    (hκ : ∀ t : AlgebraicClosure ℚ_[p], t ^ d = 1 →
-      DFunLike.coe (F := Gal(AlgebraicClosure ℚ_[p]/ℚ_[p])) κ t = t ^ c) :
-    ((hζ'.autToPow ℚ_[p] (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod d) = c :=
-  hζ'.cast_autToPow_eq_natCast hd <| Subtype.ext <|
-    (AlgEquiv.restrictNormalHom_apply E κ _).trans <| by
-      rw [IntermediateField.coe_pow, IntermediateField.coe_pow]
-      exact hκ _ (by rw [← pow_mul, Nat.div_mul_cancel hd,
-        (IsPrimitiveRoot.coe_submonoidClass_iff.2 hζ').pow_eq_one])
-
 /-- The reduction modulo `pⁿ` of the exponent by which an automorphism `κ` of `ℚ_p` acts on the
 `m`-th roots of unity of a cyclotomic subfield `E` is its `p`-adic cyclotomic character. -/
 private theorem cast_autToPow_restrictNormalHom_eq_toZModPow
@@ -160,7 +144,7 @@ private theorem cast_autToPow_restrictNormalHom_eq_toZModPow
     {ζ' : E} (hζ' : IsPrimitiveRoot ζ' m) (hd : p ^ n ∣ m) (κ : Field.absoluteGaloisGroup ℚ_[p]) :
     ((hζ'.autToPow ℚ_[p] (AlgEquiv.restrictNormalHom E κ) : ZMod m).cast : ZMod (p ^ n)) =
       PadicInt.toZModPow n (localCyclotomicCharacter p ℚ_[p] κ : ℤ_[p]) := by
-  rw [cast_autToPow_restrictNormalHom_eq p E hζ' hd κ
+  rw [hζ'.cast_autToPow_restrictNormalHom_eq hd κ
       fun t ht ↦ cyclotomicCharacter.spec p (AlgEquiv.toRingEquiv κ) t ht,
     ZMod.natCast_zmod_val, localCyclotomicCharacter_apply]
 
@@ -200,47 +184,6 @@ private theorem restrictNormalHom_mem_zpowers_of_mk_eq_artinMap {x : ℚ_[p]ˣ}
   exact Subtype.ext ((AlgEquiv.restrictNormalHom_apply E ρ z).trans
     (apply_eq_self_of_mk_eq_artinMap_of_fixes p g hg m ρ hρ (M.map E.val) hME hgM
       ⟨z, z, hz, rfl⟩))
-
-/-- Two units of `ℤ/mℤ` that agree modulo `N`, where `N = p ^ f - 1` and `f = φ(pⁿ)`, with `r` a
-power of `a`, agree modulo `pⁿ`: modulo `N` the class of `p` has order exactly `f`, and `a ^ f = 1`
-modulo `pⁿ`. -/
-private theorem unitsMap_eq_of_zpow_of_unitsMap_eq {m n : ℕ}
-    (hf : (p ^ n).totient ≠ 0) (hpN : p.Coprime (p ^ (p ^ n).totient - 1))
-    (hdN : p ^ (p ^ n).totient - 1 ∣ m) (hdP : p ^ n ∣ m) {r a : (ZMod m)ˣ} {k : ℤ}
-    (hra : r = a ^ k) (hqN : (a : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1)))
-    (hqN' : (r : ZMod m).cast = (p : ZMod (p ^ (p ^ n).totient - 1))) :
-    ZMod.unitsMap hdP r = ZMod.unitsMap hdP a := by
-  have hqN₁ : ZMod.unitsMap hdN a = ZMod.unitOfCoprime p hpN :=
-    Units.ext (by rw [ZMod.unitsMap_val, hqN, ZMod.coe_unitOfCoprime])
-  have hqN₂ : ZMod.unitsMap hdN r = ZMod.unitOfCoprime p hpN :=
-    Units.ext (by rw [ZMod.unitsMap_val, hqN', ZMod.coe_unitOfCoprime])
-  obtain ⟨j, hj⟩ : ((p ^ n).totient : ℤ) ∣ k - 1 := by
-    rw [← TauCeti.ZMod.orderOf_unitOfCoprime_pow_sub_one p _ (Fact.out : p.Prime).one_lt hf,
-      orderOf_dvd_iff_zpow_eq_one, zpow_sub_one, mul_inv_eq_one]
-    convert (hqN₂.symm.trans (by rw [hra, map_zpow, hqN₁])).symm
-  have hkj : k = (p ^ n).totient * j + 1 := by omega
-  rw [hra, map_zpow, hkj, zpow_add_one, zpow_mul, zpow_natCast, ZMod.pow_totient, one_zpow,
-    one_mul]
-
-/-- If a unit of `ℤ/(pⁿ N)ℤ` reduces modulo `pⁿ` to the inverse of `u` and modulo `N` to `p`, where
-`N` is coprime to `p`, then it is the explicit symbol of any `x = p u`. -/
-private theorem eq_cyclotomicSymbol_of_cast_eq {u : ℤ_[p]ˣ} {x : ℚ_[p]ˣ}
-    (hx : (x : ℚ_[p]) = p * (u : ℤ_[p])) {n N : ℕ} (hpN : p.Coprime N) [NeZero (p ^ n * N)]
-    {r : (ZMod (p ^ n * N))ˣ}
-    (hrP : (r : ZMod (p ^ n * N)).cast = PadicInt.toZModPow n ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]))
-    (hrN : (r : ZMod (p ^ n * N)).cast = (p : ZMod N)) :
-    (r : ZMod (p ^ n * N)) = cyclotomicSymbol (p ^ n * N) p x := by
-  have hdN : N ∣ p ^ n * N := dvd_mul_left N _
-  have hdP : p ^ n ∣ p ^ n * N := dvd_mul_right _ N
-  have hsP : ZMod.unitsMap hdP (cyclotomicSymbol (p ^ n * N) p x) =
-      (Units.map (PadicInt.toZModPow n : ℤ_[p] →+* ZMod (p ^ n)).toMonoidHom u)⁻¹ :=
-    unitsMap_cyclotomicSymbol_primePow _ p hdP x 1 u (by simp [hx])
-  have hsN : ZMod.unitsMap hdN (cyclotomicSymbol (p ^ n * N) p x) = ZMod.unitOfCoprime p hpN := by
-    simpa using unitsMap_cyclotomicSymbol_of_coprime _ p hdN hpN x 1 u (by simp [hx])
-  refine ZMod.eq_of_cast_eq_of_coprime (hpN.pow_left n) ?_ ?_
-  · rw [hrP, ← ZMod.unitsMap_val hdP, hsP]
-    simp
-  · rw [hrN, ← ZMod.unitsMap_val hdN, hsN, ZMod.coe_unitOfCoprime]
 
 /- Proof sketch. Fix `u ∈ ℤ_pˣ` and `n`, put `f = φ(pⁿ)`, `N = p ^ f - 1` and `E = ℚ_p(μ_{pⁿN})`,
 and let `g` represent the Artin symbol of the uniformizer `p u`. Then `g` acts on `μ_N` as
@@ -290,7 +233,7 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
       PadicInt.toZModPow n ((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) := by
     rw [cast_autToPow_restrictNormalHom_eq_toZModPow p E hζ' hdP ρ, hρχ]
   have hρN' : ((hζ'.autToPow ℚ_[p] ρE : ZMod m).cast : ZMod N) = p :=
-    cast_autToPow_restrictNormalHom_eq p E hζ' hdN ρ hρN
+    hζ'.cast_autToPow_restrictNormalHom_eq hdN ρ hρN
   -- `ρ` acts on the `m`-th roots of unity through the explicit symbol of `p u`.
   set r := hζ'.autToPow ℚ_[p] ρE
   have hrs : (r : ZMod m) = cyclotomicSymbol m p x :=
@@ -307,9 +250,9 @@ private theorem toZModPow_localCyclotomicCharacter_of_mk_eq_artinMap {u : ℤ_[p
     (restrictNormalHom_mem_zpowers_of_mk_eq_artinMap p g hg m ρ hρm E
       (IntermediateField.adjoin.mono ℚ_[p] {ζ} {z | z ^ m = 1}
         (Set.singleton_subset_iff.2 hζ.pow_eq_one)))
-  have hP := unitsMap_eq_of_zpow_of_unitsMap_eq p hf hpN hdN hdP
+  have hP := ZMod.unitsMap_eq_of_zpow_of_unitsMap_eq (Fact.out : p.Prime).one_lt hf hpN hdN hdP
     (a := hζ'.autToPow ℚ_[p] gE) (k := k) (by simp only [r, ← hk, map_zpow])
-    (cast_autToPow_restrictNormalHom_eq p E hζ' hdN g hgN) hρN'
+    (hζ'.cast_autToPow_restrictNormalHom_eq hdN g hgN) hρN'
   rw [← hgP, ← hρP, ← ZMod.unitsMap_val hdP, ← ZMod.unitsMap_val hdP, hP]
 
 /-- **The cyclotomic character of the Artin symbols of `ℚ_p`.** If `x = pᵏ u` with `u ∈ ℤ_pˣ`, the
