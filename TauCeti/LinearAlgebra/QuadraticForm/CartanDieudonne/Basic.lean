@@ -8,6 +8,8 @@ module
 public import TauCeti.LinearAlgebra.QuadraticForm.Radical
 import TauCeti.LinearAlgebra.BilinearForm.Orthogonal
 public import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Basic
+import TauCeti.LinearAlgebra.QuadraticForm.OrthogonalGroup.Restrict
+import TauCeti.LinearAlgebra.QuadraticForm.TotallyIsotropic
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 
 /-!
@@ -143,15 +145,7 @@ private theorem finrank_ne_one_of_exceptional
     Module.finrank K V ≠ 1 := by
   intro hn
   let _ := (Module.finrank_pos_iff (R := K) (M := V)).mp (hn ▸ Nat.zero_lt_one)
-  let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
-  have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-  have hBsymm : B.IsSymm := by
-    dsimp only [B]
-    exact LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
-  obtain ⟨x, hxx⟩ := LinearMap.BilinForm.exists_bilinForm_self_ne_zero hB.ne_zero
-    (LinearMap.BilinForm.isSymm_iff.mp hBsymm)
-  have hxQ : Q x ≠ 0 := by
-    rwa [QuadraticMap.associated_eq_self_apply] at hxx
+  obtain ⟨x, hxQ⟩ : ∃ x, Q x ≠ 0 := hQ.exists_isUnit.imp fun _ ↦ IsUnit.ne_zero
   have hxspan : K ∙ x = ⊤ := by
     apply Submodule.eq_top_of_finrank_eq
     rw [finrank_span_singleton (fun h ↦ hxQ (by rw [h, Q.map_zero])), hn]
@@ -189,13 +183,7 @@ private theorem finrank_ne_two_of_exceptional
   let _ := (Module.finrank_pos_iff (R := K) (M := V)).mp (by omega)
   let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
   have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-  have hBsymm : B.IsSymm := by
-    dsimp only [B]
-    exact LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
-  obtain ⟨x, hxx⟩ := LinearMap.BilinForm.exists_bilinForm_self_ne_zero hB.ne_zero
-    (LinearMap.BilinForm.isSymm_iff.mp hBsymm)
-  have hxQ : Q x ≠ 0 := by
-    rwa [QuadraticMap.associated_eq_self_apply] at hxx
+  obtain ⟨x, hxQ⟩ : ∃ x, Q x ≠ 0 := hQ.exists_isUnit.imp fun _ ↦ IsUnit.ne_zero
   let y := (g : V ≃ₗ[K] V) x - x
   have hyne : y ≠ 0 := sub_ne_zero.mpr (hexceptional x hxQ).1
   have hyQ : Q y = 0 := (hexceptional x hxQ).2
@@ -225,22 +213,13 @@ private theorem finrank_ne_two_of_exceptional
     exact hyne (by simpa [hazero] using ha.symm)
   have hspan : Submodule.span K (Set.range ![x, y]) = ⊤ :=
     hlin.span_eq_top_of_card_eq_finrank (by simpa using hn.symm)
-  have hyzero : y = 0 := hB.1 y fun z ↦ by
-    have hle : Submodule.span K (Set.range ![x, y]) ≤ LinearMap.ker (B y) := by
-      rw [Submodule.span_le]
-      rintro z ⟨i, rfl⟩
-      -- `B y` is a linear map, while the spanning family is displayed as vectors.
-      change (B y) (![x, y] i) = 0
-      fin_cases i
-      · exact hyx
-      -- Evaluation of the curried bilinear map is definitionally its two-argument notation.
-      · change B y y = 0
-        dsimp only [B]
-        rw [QuadraticMap.associated_eq_self_apply]
-        exact hyQ
-    rw [hspan] at hle
-    exact LinearMap.mem_ker.mp (hle Submodule.mem_top)
-  exact hyne hyzero
+  have hyy : B y y = 0 := by simpa only [B, QuadraticMap.associated_eq_self_apply] using hyQ
+  refine hyne (hB.1 y fun z ↦ ?_)
+  have hz : z ∈ Submodule.span K {x, y} := by
+    rw [← Matrix.range_cons_cons_empty x y ![], hspan]
+    exact Submodule.mem_top
+  obtain ⟨a, b, rfl⟩ := Submodule.mem_span_pair.mp hz
+  simp [hyx, hyy]
 
 private theorem exceptional_displacement_isotropic
     [FiniteDimensional K V] [Invertible (2 : K)]
@@ -255,53 +234,18 @@ private theorem exceptional_displacement_isotropic
   have hQf_aniso (y : V) (hy : Q y ≠ 0) : Q (f y) = 0 := by
     simpa only [hf_apply] using (hexceptional y hy).2
   by_cases hxQ : Q x = 0
-  · by_cases hxzero : x = 0
-    · simp [hxzero]
-    let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
-    have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-    have hBsymm : B.IsSymm := by
-      dsimp only [B]
-      exact LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
-    let W : Submodule K V := B.orthogonal (K ∙ x)
-    have hBWne : B.restrict W ≠ 0 := by
-      intro hzero
-      have hle : W ≤ B.orthogonal W := by
-        intro w hw
-        rw [LinearMap.BilinForm.mem_orthogonal_iff]
-        intro z hz
-        have happ : B.restrict W ⟨z, hz⟩ ⟨w, hw⟩ = 0 := by
-          rw [hzero]
-          rfl
-        -- Restriction evaluation is definitionally the original bilinear form on subtype values.
-        change B z w = 0 at happ
-        exact happ
-      have horth : B.orthogonal W = K ∙ x := by
-        dsimp only [W]
-        exact B.orthogonal_orthogonal hB hBsymm.isRefl (K ∙ x)
-      have hdim := B.finrank_orthogonal hB (K ∙ x)
-      have hmono := Submodule.finrank_mono (horth ▸ hle)
-      rw [finrank_span_singleton hxzero, hdim, finrank_span_singleton hxzero] at hmono
-      omega
-    obtain ⟨z, hzz⟩ := LinearMap.BilinForm.exists_bilinForm_self_ne_zero hBWne
-      (LinearMap.BilinForm.isSymm_iff.mp (hBsymm.restrict W))
-    have hzQ : Q (z : V) ≠ 0 := by
-      -- Coercing a restricted vector back to `V` exposes the associated-form evaluation.
-      change B (z : V) (z : V) ≠ 0 at hzz
-      dsimp only [B] at hzz
-      rwa [QuadraticMap.associated_eq_self_apply] at hzz
-    have hxz : Q.IsOrtho x (z : V) := by
-      rw [← QuadraticMap.associated_isOrtho]
-      exact z.2 x (Submodule.mem_span_singleton_self x)
-    have hplusQ : Q (x + (z : V)) = Q z := by
-      rw [QuadraticMap.map_add Q, hxQ, hxz.polar_eq_zero]
+  · obtain ⟨z, hzx, hzQ⟩ :=
+      QuadraticMap.exists_orthogonal_anisotropic_of_three_le_finrank Q hQ hfinrank_three x
+    have hplusQ : Q (x + z) = Q z := by
+      rw [QuadraticMap.map_add Q, hxQ, hzx.symm.polar_eq_zero]
       simp
-    have hminusQ : Q (x - (z : V)) = Q z := by
+    have hminusQ : Q (x - z) = Q z := by
       rw [sub_eq_add_neg, QuadraticMap.map_add Q, hxQ, QuadraticMap.map_neg,
-        QuadraticMap.polar_neg_right, hxz.polar_eq_zero]
+        QuadraticMap.polar_neg_right, hzx.symm.polar_eq_zero]
       simp
-    have hplus := hQf_aniso (x + (z : V)) (hplusQ ▸ hzQ)
-    have hminus := hQf_aniso (x - (z : V)) (hminusQ ▸ hzQ)
-    have hzf := hQf_aniso (z : V) hzQ
+    have hplus := hQf_aniso (x + z) (hplusQ ▸ hzQ)
+    have hminus := hQf_aniso (x - z) (hminusQ ▸ hzQ)
+    have hzf := hQf_aniso z hzQ
     simp only [map_add, sub_eq_add_neg, map_neg, QuadraticMap.map_add Q,
       QuadraticMap.map_neg, QuadraticMap.polar_neg_right] at hplus hminus
     have htwo : (2 : K) * Q (f x) = 0 := by
@@ -322,84 +266,49 @@ private theorem exceptional_displacement_ker_eq_range
   let f : V →ₗ[K] V := (g : V ≃ₗ[K] V).toLinearMap - LinearMap.id
   let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
   have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-  have hBsymm : B.IsSymm := by
-    dsimp only [B]
-    exact LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
-  have hf_apply (x : V) : f x = (g : V ≃ₗ[K] V) x - x := rfl
+  have hBsymm : B.IsSymm :=
+    LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
+  -- `associated Q` is definitionally the polar form scaled by `⅟ 2`.
+  have hB_apply (x y : V) : B x y = ⅟(2 : K) • QuadraticMap.polar Q x y := rfl
   have hQf' (x : V) : Q (f x) = 0 := hQf x
+  have hrange_isotropic : Q.IsTotallyIsotropic (LinearMap.range f) := by
+    refine QuadraticMap.isTotallyIsotropic_iff.mpr ?_
+    rintro _ ⟨z, rfl⟩
+    exact hQf' z
+  have hff (x y : V) : QuadraticMap.polar Q (f x) (f y) = 0 :=
+    hrange_isotropic.polar_eq_zero ⟨x, rfl⟩ ⟨y, rfl⟩
   have hf_polar (x y : V) :
       QuadraticMap.polar Q (f x) y = -QuadraticMap.polar Q x (f y) := by
-    have hff : QuadraticMap.polar Q (f x) (f y) = 0 := by
-      have hsum := hQf' (x + y)
-      rw [map_add, QuadraticMap.map_add Q, hQf' x, hQf' y, zero_add] at hsum
-      simpa using hsum
     have hpreserve := QuadraticMap.polar_apply_of_mem_orthogonalGroup g.2 x y
     have hgx : (g : V ≃ₗ[K] V) x = f x + x := by simp [f]
     have hgy : (g : V ≃ₗ[K] V) y = f y + y := by simp [f]
     rw [hgx, hgy, QuadraticMap.polar_add_left, QuadraticMap.polar_add_right,
-      QuadraticMap.polar_add_right, hff] at hpreserve
+      QuadraticMap.polar_add_right, hff x y] at hpreserve
     linear_combination hpreserve
-  have hf_sq : f ^ 2 = 0 := by
-    ext x
-    apply hB.1
-    intro y
-    -- Multiplication in `Module.End` evaluates as composition, while `associated Q` is a
-    -- curried bilinear map scaled by `⅟ 2`; expose both definitional equalities explicitly.
-    rw [show (f ^ 2) x = f (f x) by simp [pow_two]]
-    rw [show B (f (f x)) y = ⅟(2 : K) • QuadraticMap.polar Q (f (f x)) y by
-      rfl, hf_polar, show QuadraticMap.polar Q (f x) (f y) = 0 by
-        have hsum := hQf' (x + y)
-        rw [map_add, QuadraticMap.map_add Q, hQf' x, hQf' y, zero_add] at hsum
-        simpa using hsum, neg_zero, smul_zero]
   have hker_range : LinearMap.ker f = B.orthogonal (LinearMap.range f) := by
     apply le_antisymm
-    · intro x hx
-      rw [LinearMap.BilinForm.mem_orthogonal_iff]
-      rintro _ ⟨y, rfl⟩
-      -- `associated Q` unfolds only definitionally to the inverse-two-scaled polar form.
-      change ⅟(2 : K) • QuadraticMap.polar Q (f y) x = 0
-      rw [hf_polar, LinearMap.mem_ker.mp hx, QuadraticMap.polar_zero_right,
+    · rintro x hx _ ⟨y, rfl⟩
+      rw [hB_apply, hf_polar, LinearMap.mem_ker.mp hx, QuadraticMap.polar_zero_right,
         neg_zero, smul_zero]
     · intro x hx
-      rw [LinearMap.mem_ker]
-      apply hB.1
-      intro y
-      -- Use the same definitional associated-form coercion in the reverse inclusion.
-      change ⅟(2 : K) • QuadraticMap.polar Q (f x) y = 0
-      rw [hf_polar]
+      refine LinearMap.mem_ker.mpr (hB.1 _ fun y ↦ ?_)
       have hxy : B (f y) x = 0 := hx (f y) ⟨y, rfl⟩
-      -- Restate the orthogonal-complement hypothesis in polar-form coordinates.
-      change ⅟(2 : K) • QuadraticMap.polar Q (f y) x = 0 at hxy
-      rw [QuadraticMap.polar_comm Q x (f y)]
-      simp only [smul_neg, hxy, neg_zero]
-  have hker_isotropic : ∀ x ∈ LinearMap.ker f, Q x = 0 := by
-    intro x hx
-    by_contra hxQ
-    have hfx : f x = 0 := LinearMap.mem_ker.mp hx
-    have hsub : (g : V ≃ₗ[K] V) x - x = 0 := by rwa [← hf_apply]
-    exact (hexceptional x hxQ).1 (sub_eq_zero.mp hsub)
-  have hker_le_orthogonal : LinearMap.ker f ≤ B.orthogonal (LinearMap.ker f) := by
-    intro x hx
-    rw [LinearMap.BilinForm.mem_orthogonal_iff]
-    intro y hy
-    rw [QuadraticMap.associated_isOrtho]
-    apply QuadraticMap.isOrtho_polarBilin.mp
-    rw [QuadraticMap.polarBilin_apply_apply]
-    have hsum := hker_isotropic (y + x) (add_mem hy hx)
-    rw [QuadraticMap.map_add Q, hker_isotropic y hy, hker_isotropic x hx,
-      zero_add] at hsum
-    simpa using hsum
+      rw [hB_apply] at hxy ⊢
+      rw [hf_polar, QuadraticMap.polar_comm Q x (f y), smul_neg, hxy, neg_zero]
+  have hrange_le_ker : LinearMap.range f ≤ LinearMap.ker f := by
+    rw [hker_range]
+    rintro _ ⟨x, rfl⟩ _ ⟨y, rfl⟩
+    rw [hB_apply, hff, smul_zero]
+  have hker_isotropic : Q.IsTotallyIsotropic (LinearMap.ker f) :=
+    QuadraticMap.isTotallyIsotropic_iff.mpr fun x hx ↦
+    by_contra fun hxQ ↦ (hexceptional x hxQ).1 (sub_eq_zero.mp (LinearMap.mem_ker.mp hx))
+  have hker_le_orthogonal : LinearMap.ker f ≤ B.orthogonal (LinearMap.ker f) := fun x hx y hy ↦ by
+    rw [hB_apply, hker_isotropic.polar_eq_zero hy hx, smul_zero]
   have horthogonal_ker : B.orthogonal (LinearMap.ker f) = LinearMap.range f := by
     rw [hker_range, B.orthogonal_orthogonal hB hBsymm.isRefl]
-  have hker_eq_range : LinearMap.ker f = LinearMap.range f := by
-    apply le_antisymm
-    · simpa only [horthogonal_ker] using hker_le_orthogonal
-    · intro y
-      rintro ⟨x, rfl⟩
-      rw [LinearMap.mem_ker]
-      have hsquare := LinearMap.congr_fun hf_sq x
-      simpa [pow_two] using hsquare
-  exact ⟨hf_sq, hker_eq_range⟩
+  refine ⟨LinearMap.ext fun x ↦ by
+      rw [pow_two, mul_apply_eq_comp, LinearMap.zero_apply]; exact hrange_le_ker ⟨x, rfl⟩,
+    le_antisymm (by simpa only [horthogonal_ker] using hker_le_orthogonal) hrange_le_ker⟩
 
 private theorem exceptional_det_eq_one
     [FiniteDimensional K V] [Invertible (2 : K)]
@@ -441,6 +350,146 @@ private theorem exceptional_det_eq_one
   rw [hneg, LinearMap.det_smul, heven.neg_one_pow, one_mul] at heval
   exact heval.symm
 
+/-- A reflection word lifted from a subspace `U` fixes every vector orthogonal to `U`. -/
+private theorem reflectionWord_restrict_apply_of_isOrtho (Q : QuadraticForm K V)
+    (U : Submodule K V) (l : List (AnisotropicVector (Q.restrict U))) (v : V)
+    (hv : ∀ u ∈ U, Q.IsOrtho u v) :
+    ((reflectionWord Q (l.map (anisotropicVectorOfRestrict Q U)) :
+      QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) v = v := by
+  induction l with
+  | nil => simp [reflectionWord]
+  | cons x l ih =>
+      simp only [List.map_cons, reflectionWord, List.prod_cons, Subgroup.coe_mul,
+        mul_apply_eq_comp]
+      -- Expose subgroup multiplication as composition of the underlying equivalences, as in
+      -- `reflectionWord_restrict_apply`.
+      change ((anisotropicReflection Q (anisotropicVectorOfRestrict Q U x) :
+        QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)
+          (((reflectionWord Q (l.map (anisotropicVectorOfRestrict Q U)) :
+            QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) v) = v
+      rw [ih]
+      exact anisotropicReflection_apply_of_isOrtho Q _ v (hv _ x.1.2)
+
+/-- The fixed case of the induction step: an orthogonal map fixing an anisotropic vector `a` is
+a word of fewer than `dim V` reflections, given the result in smaller dimensions (`ih`), because
+it restricts to the nondegenerate orthogonal complement of `a`. -/
+private theorem exists_reflectionWord_of_apply_eq_self
+    [FiniteDimensional K V] [Invertible (2 : K)]
+    {n : ℕ} (hn : Module.finrank K V = n) (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (ih : ∀ m < n, ∀ {W : Type v} [AddCommGroup W] [Module K W] [FiniteDimensional K W],
+      Module.finrank K W = m → ∀ (Q : QuadraticForm K W), Q.Nondegenerate →
+        ∀ g : QuadraticMap.orthogonalGroup Q, ∃ l : List (AnisotropicVector Q),
+          l.length ≤ m ∧ reflectionWord Q l = g)
+    (g : QuadraticMap.orthogonalGroup Q) (a : AnisotropicVector Q)
+    (ha : (g : V ≃ₗ[K] V) a = a) :
+    ∃ l : List (AnisotropicVector Q), l.length < n ∧ reflectionWord Q l = g := by
+  let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
+  have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
+  have hBsymm : B.IsSymm :=
+    LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
+  let U : Submodule K V := B.orthogonal (K ∙ (a : V))
+  have haa : B (a : V) a ≠ 0 := by
+    simpa only [B, QuadraticMap.associated_eq_self_apply] using a.2
+  have hQU : (Q.restrict U).Nondegenerate := by
+    apply QuadraticMap.nondegenerate_associated_iff.mp
+    -- `restrict` is implemented as composition with the subtype map; the associated-form
+    -- rewrite is stated for that implementation-level expression.
+    change (QuadraticMap.associated (Q.comp U.subtype)).Nondegenerate
+    rw [QuadraticMap.associated_comp]
+    exact B.restrict_nondegenerate_orthogonal_spanSingleton hB hBsymm.isRefl haa
+  have hane : (a : V) ≠ 0 := fun h ↦ a.2 (by rw [h, Q.map_zero])
+  have hpos : 0 < n := hn ▸ Module.finrank_pos_iff_exists_ne_zero.mpr ⟨a, hane⟩
+  obtain ⟨l, hllen, hlprod⟩ := ih (n - 1) (by omega)
+    (by rw [B.finrank_orthogonal hB, finrank_span_singleton hane, hn]) (Q.restrict U) hQU
+    (orthogonalGroup.restrictOrthogonal g ha)
+  refine ⟨l.map (anisotropicVectorOfRestrict Q U), by simp only [List.length_map]; omega,
+    Subtype.ext (LinearEquiv.toLinearMap_injective ?_)⟩
+  refine LinearMap.ext_on_codisjoint (B.isCompl_span_singleton_orthogonal haa).codisjoint
+    (fun x hx ↦ ?_) (fun y hy ↦ ?_)
+  · obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hx
+    simp only [LinearEquiv.coe_coe, map_smul, ha]
+    rw [reflectionWord_restrict_apply_of_isOrtho Q U l a fun u hu ↦
+      (QuadraticMap.associated_isOrtho.mp (hu a (Submodule.mem_span_singleton_self _))).symm]
+  · have happ := reflectionWord_restrict_apply Q U l ⟨y, hy⟩
+    rw [hlprod, orthogonalGroup.coe_restrictOrthogonal_apply] at happ
+    exact happ
+
+/-- The good case of the induction step: an orthogonal map that fixes an anisotropic vector, or
+moves one by an anisotropic displacement, is a word of at most `n` reflections, given the fixed
+case `fixed` (`exists_reflectionWord_of_apply_eq_self`). -/
+private theorem exists_reflectionWord_of_good {n : ℕ} (Q : QuadraticForm K V)
+    (fixed : ∀ (g : QuadraticMap.orthogonalGroup Q) (a : AnisotropicVector Q),
+      (g : V ≃ₗ[K] V) a = a →
+        ∃ l : List (AnisotropicVector Q), l.length < n ∧ reflectionWord Q l = g)
+    (g : QuadraticMap.orthogonalGroup Q)
+    (hgood : ∃ a : AnisotropicVector Q,
+      (g : V ≃ₗ[K] V) a = a ∨ Q ((g : V ≃ₗ[K] V) a - a) ≠ 0) :
+    ∃ l : List (AnisotropicVector Q), l.length ≤ n ∧ reflectionWord Q l = g := by
+  obtain ⟨a, ha | ha⟩ := hgood
+  · obtain ⟨l, hllen, hlprod⟩ := fixed g a ha
+    exact ⟨l, Nat.le_of_lt hllen, hlprod⟩
+  · let d : AnisotropicVector Q := ⟨(g : V ≃ₗ[K] V) a - a, ha⟩
+    let r : QuadraticMap.orthogonalGroup Q := anisotropicReflection Q d
+    have hrfix : (((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) a) = a := by
+      -- The reflection identity is pointwise on linear equivalences, whereas the goal is
+      -- evaluation of a product in the orthogonal subgroup.
+      change ((anisotropicReflection Q d : QuadraticMap.orthogonalGroup Q) :
+        V ≃ₗ[K] V) ((g : V ≃ₗ[K] V) a) = a
+      let _ := invertibleOfNonzero d.2
+      unfold anisotropicReflection
+      rw [QuadraticMap.coe_reflectionOrthogonal]
+      exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ a
+        (QuadraticMap.map_app_of_mem_orthogonalGroup g.2 a)
+    obtain ⟨l, hllen, hlprod⟩ := fixed (r * g) a hrfix
+    refine ⟨d :: l, by simp only [List.length_cons]; omega, ?_⟩
+    -- Unfolding the cons word exposes the same ordered subgroup product as `hlprod`.
+    change r * reflectionWord Q l = g
+    rw [hlprod, ← mul_assoc, show r * r = 1 from anisotropicReflection_mul_self Q d,
+      one_mul]
+
+/-- The exceptional case of the induction step: when every anisotropic vector is moved by an
+isotropic displacement, `dim V` is even and `det g = 1`. Precomposing with any reflection `r`
+gives `r * g` of determinant `-1`, which is therefore in the good case (`good`) and is a word of
+odd length at most `dim V`, hence less than `dim V`. -/
+private theorem exists_reflectionWord_of_exceptional
+    [FiniteDimensional K V] [Invertible (2 : K)]
+    {n : ℕ} (hn : Module.finrank K V = n) (hpos : 0 < n)
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate)
+    (good : ∀ g : QuadraticMap.orthogonalGroup Q, (∃ a : AnisotropicVector Q,
+      (g : V ≃ₗ[K] V) a = a ∨ Q ((g : V ≃ₗ[K] V) a - a) ≠ 0) →
+        ∃ l : List (AnisotropicVector Q), l.length ≤ n ∧ reflectionWord Q l = g)
+    (g : QuadraticMap.orthogonalGroup Q)
+    (hexceptional : ∀ x : V, Q x ≠ 0 →
+      ((g : V ≃ₗ[K] V) x) ≠ x ∧ Q ((g : V ≃ₗ[K] V) x - x) = 0) :
+    ∃ l : List (AnisotropicVector Q), l.length ≤ n ∧ reflectionWord Q l = g := by
+  obtain ⟨heven, hdetg⟩ := exceptional_det_eq_one Q hQ g hexceptional
+  let _ := (Module.finrank_pos_iff (R := K) (M := V)).mp (by omega)
+  obtain ⟨x, hxQ⟩ : ∃ x, Q x ≠ 0 := hQ.exists_isUnit.imp fun _ ↦ IsUnit.ne_zero
+  let a : AnisotropicVector Q := ⟨x, hxQ⟩
+  let r : QuadraticMap.orthogonalGroup Q := anisotropicReflection Q a
+  have hdetg' : LinearEquiv.det ((r * g : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) = -1 := by
+    have hdetr : LinearEquiv.det (r : V ≃ₗ[K] V) = -1 := by
+      simpa [reflectionWord] using det_reflectionWord Q [a]
+    rw [Subgroup.coe_mul, map_mul, hdetr, hdetg, mul_one]
+  have hnegone : (-1 : Kˣ) ≠ 1 := fun h ↦ by
+    have h' : (-1 : K) = 1 := congrArg Units.val h
+    exact NeZero.ne (2 : K) (by linear_combination -h')
+  obtain ⟨l, hllen, hlprod⟩ := good (r * g) (by
+    by_contra! hbad
+    exact hnegone (hdetg'.symm.trans
+      (exceptional_det_eq_one Q hQ (r * g) fun y hy ↦ hbad ⟨y, hy⟩).2))
+  have hodd : Odd l.length := by
+    apply (neg_one_pow_eq_neg_one_iff_odd hnegone).mp
+    rw [← det_reflectionWord Q l, hlprod, hdetg']
+  refine ⟨a :: l, ?_, ?_⟩
+  · obtain ⟨k, hk⟩ := heven
+    obtain ⟨j, hj⟩ := hodd
+    simp only [List.length_cons]
+    omega
+  · -- The cons reflection word is the subgroup product `r * reflectionWord Q l`.
+    change r * reflectionWord Q l = g
+    rw [hlprod, ← mul_assoc, show r * r = 1 from anisotropicReflection_mul_self Q a, one_mul]
+
 private theorem exists_reflectionWord_of_finrank_eq
     [FiniteDimensional K V] [Invertible (2 : K)]
     (n : ℕ) (hn : Module.finrank K V = n)
@@ -449,202 +498,16 @@ private theorem exists_reflectionWord_of_finrank_eq
     ∃ l : List (AnisotropicVector Q), l.length ≤ n ∧ reflectionWord Q l = g := by
   induction n using Nat.strong_induction_on generalizing V with
   | ind n ih =>
-      let B : LinearMap.BilinForm K V := QuadraticMap.associated Q
-      have hB : B.Nondegenerate := QuadraticMap.nondegenerate_associated_iff.mpr hQ
-      have hBsymm : B.IsSymm := by
-        dsimp only [B]
-        exact LinearMap.BilinForm.isSymm_iff.mpr (QuadraticForm.associated_isSymm K Q)
-      have factor_fixed (g₀ : QuadraticMap.orthogonalGroup Q) (a : AnisotropicVector Q)
-          (ha : (g₀ : V ≃ₗ[K] V) a = a) :
-          ∃ l : List (AnisotropicVector Q), l.length < n ∧ reflectionWord Q l = g₀ := by
-        let U : Submodule K V := B.orthogonal (K ∙ (a : V))
-        have haa : B (a : V) a ≠ 0 := by
-          simpa only [B, QuadraticMap.associated_eq_self_apply] using a.2
-        have hBU : (B.restrict U).Nondegenerate :=
-          B.restrict_nondegenerate_orthogonal_spanSingleton hB hBsymm.isRefl haa
-        have hQU : (Q.restrict U).Nondegenerate := by
-          apply QuadraticMap.nondegenerate_associated_iff.mp
-          -- `restrict` is implemented as composition with the subtype map; the associated-form
-          -- rewrite is stated for that implementation-level expression.
-          change (QuadraticMap.associated (Q.comp U.subtype)).Nondegenerate
-          rw [QuadraticMap.associated_comp]
-          exact hBU
-        have hgU_le : Submodule.map (g₀ : V ≃ₗ[K] V).toLinearMap U ≤ U := by
-          rw [Submodule.map_le_iff_le_comap]
-          intro u hu
-          rw [Submodule.mem_comap]
-          have hau : Q.IsOrtho (a : V) u := by
-            rw [← QuadraticMap.associated_isOrtho]
-            exact hu (a : V) (Submodule.mem_span_singleton_self (R := K) (a : V))
-          have hgu : Q.IsOrtho ((g₀ : V ≃ₗ[K] V) a) ((g₀ : V ≃ₗ[K] V) u) :=
-            (QuadraticMap.isOrtho_iff_of_mem_orthogonalGroup g₀.2 a u).mpr hau
-          rw [ha] at hgu
-          rw [LinearMap.BilinForm.mem_orthogonal_iff]
-          intro x hx
-          obtain ⟨c, rfl⟩ := Submodule.mem_span_singleton.mp hx
-          rw [map_smul, LinearMap.smul_apply]
-          exact smul_eq_zero.mpr (Or.inr (QuadraticMap.associated_isOrtho.mpr hgu))
-        have hgU : Submodule.map (g₀ : V ≃ₗ[K] V).toLinearMap U = U := by
-          apply Submodule.eq_of_le_of_finrank_le hgU_le
-          rw [LinearEquiv.finrank_map_eq]
-        let gUe : U ≃ₗ[K] U := ((g₀ : V ≃ₗ[K] V).submoduleMap U).trans
-          (LinearEquiv.ofEq _ _ hgU)
-        have gUe_apply (u : U) : ((gUe u : U) : V) = (g₀ : V ≃ₗ[K] V) u := rfl
-        let gU : QuadraticMap.orthogonalGroup (Q.restrict U) :=
-          ⟨gUe, QuadraticMap.mem_orthogonalGroup_iff.mpr fun u ↦ by
-            rw [QuadraticMap.restrict_apply, QuadraticMap.restrict_apply, gUe_apply]
-            exact QuadraticMap.map_app_of_mem_orthogonalGroup g₀.2 u⟩
-        have hUrank : Module.finrank K U = n - 1 := by
-          have hane : (a : V) ≠ 0 := fun h ↦ a.2 (by rw [h, Q.map_zero])
-          dsimp only [U]
-          rw [B.finrank_orthogonal hB, finrank_span_singleton hane, hn]
-        have hUn : n - 1 < n := by
-          have hane : (a : V) ≠ 0 := fun h ↦ a.2 (by rw [h, Q.map_zero])
-          have ha_rank : 1 ≤ Module.finrank K V := by
-            calc
-              1 = Module.finrank K (K ∙ (a : V)) := (finrank_span_singleton hane).symm
-              _ ≤ Module.finrank K V := Submodule.finrank_le _
-          omega
-        obtain ⟨l, hllen, hlprod⟩ := ih (n - 1) hUn hUrank (Q.restrict U) hQU gU
-        let lift : AnisotropicVector (Q.restrict U) → AnisotropicVector Q :=
-          anisotropicVectorOfRestrict Q U
-        let L := l.map lift
-        have hLlen : L.length < n := by simpa [L] using lt_of_le_of_lt hllen hUn
-        have hword_apply (u : U) :
-            ((reflectionWord Q L : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) u =
-              (((reflectionWord (Q.restrict U) l :
-                QuadraticMap.orthogonalGroup (Q.restrict U)) : U ≃ₗ[K] U) u : U) := by
-          dsimp only [L, lift]
-          exact reflectionWord_restrict_apply Q U l u
-        have hfix_word_aux (l : List (AnisotropicVector (Q.restrict U))) :
-            ((reflectionWord Q (l.map lift) : QuadraticMap.orthogonalGroup Q) :
-              V ≃ₗ[K] V) a = a := by
-          induction l with
-          | nil => simp [reflectionWord]
-          | cons z l ihl =>
-              simp only [List.map_cons, reflectionWord, List.prod_cons,
-                Subgroup.coe_mul, mul_apply_eq_comp]
-              -- Expose subgroup multiplication as composition of the underlying equivalences;
-              -- simplification does not cross both the subgroup and subtype coercions here.
-              change ((anisotropicReflection Q (lift z) :
-                QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V)
-                  (((reflectionWord Q (l.map lift) :
-                    QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) a) = a
-              rw [ihl]
-              apply anisotropicReflection_apply_of_isOrtho
-              rw [← QuadraticMap.associated_isOrtho]
-              -- Coerce the restricted vector to `V` before applying its orthogonality proof.
-              change B (z : U) a = 0
-              rw [hBsymm.eq]
-              exact z.1.2 (a : V) (Submodule.mem_span_singleton_self (R := K) (a : V))
-        refine ⟨L, hLlen, ?_⟩
-        apply Subtype.ext
-        apply LinearEquiv.ext
-        intro x
-        have hcomp : IsCompl (K ∙ (a : V)) U :=
-          B.isCompl_span_singleton_orthogonal haa
-        obtain ⟨c, y, hc, hy, rfl⟩ :=
-          Submodule.codisjoint_iff_exists_add_eq.mp hcomp.codisjoint x
-        rw [map_add, map_add]
-        congr 1
-        · obtain ⟨d, rfl⟩ := Submodule.mem_span_singleton.mp hc
-          rw [map_smul, map_smul, ha]
-          exact congrArg (d • ·) (hfix_word_aux l)
-        · have happ := hword_apply ⟨y, hy⟩
-          rw [hlprod] at happ
-          exact happ
-      have factor_good (g₀ : QuadraticMap.orthogonalGroup Q)
-          (hgood : ∃ a : AnisotropicVector Q,
-            (g₀ : V ≃ₗ[K] V) a = a ∨ Q ((g₀ : V ≃ₗ[K] V) a - a) ≠ 0) :
-          ∃ l : List (AnisotropicVector Q), l.length ≤ n ∧ reflectionWord Q l = g₀ := by
-        obtain ⟨a, ha | ha⟩ := hgood
-        · obtain ⟨l, hllen, hlprod⟩ := factor_fixed g₀ a ha
-          exact ⟨l, Nat.le_of_lt hllen, hlprod⟩
-        · let d : AnisotropicVector Q := ⟨(g₀ : V ≃ₗ[K] V) a - a, ha⟩
-          let r : QuadraticMap.orthogonalGroup Q := anisotropicReflection Q d
-          have hrfix : (((r * g₀ : QuadraticMap.orthogonalGroup Q) : V ≃ₗ[K] V) a) = a := by
-            -- The reflection identity is pointwise on linear equivalences, whereas the goal is
-            -- evaluation of a product in the orthogonal subgroup.
-            change ((anisotropicReflection Q d : QuadraticMap.orthogonalGroup Q) :
-              V ≃ₗ[K] V) ((g₀ : V ≃ₗ[K] V) a) = a
-            let _ := invertibleOfNonzero d.2
-            unfold anisotropicReflection
-            rw [QuadraticMap.coe_reflectionOrthogonal]
-            exact QuadraticMap.reflection_sub_apply_eq_of_map_eq Q _ a
-              (QuadraticMap.map_app_of_mem_orthogonalGroup g₀.2 a)
-          obtain ⟨l, hllen, hlprod⟩ := factor_fixed (r * g₀) a hrfix
-          refine ⟨d :: l, by simp only [List.length_cons]; omega, ?_⟩
-          -- Unfolding the cons word exposes the same ordered subgroup product as `hlprod`.
-          change r * reflectionWord Q l = g₀
-          rw [hlprod, ← mul_assoc, show r * r = 1 from anisotropicReflection_mul_self Q d,
-            one_mul]
-      by_cases hnzero : n = 0
-      · have hVzero : Module.finrank K V = 0 := hn.trans hnzero
-        let _ := Module.finrank_zero_iff.mp hVzero
-        refine ⟨[], by simp, ?_⟩
-        apply Subtype.ext
-        exact Subsingleton.elim _ _
+      have good := exists_reflectionWord_of_good Q
+        (exists_reflectionWord_of_apply_eq_self hn Q hQ ih)
+      rcases Nat.eq_zero_or_pos n with rfl | hpos
+      · let _ := Module.finrank_zero_iff.mp hn
+        exact ⟨[], by simp, Subtype.ext (Subsingleton.elim _ _)⟩
       by_cases hgood : ∃ a : AnisotropicVector Q,
           (g : V ≃ₗ[K] V) a = a ∨ Q ((g : V ≃ₗ[K] V) a - a) ≠ 0
-      · exact factor_good g hgood
-      · have hexceptional : ∀ x : V, Q x ≠ 0 →
-            ((g : V ≃ₗ[K] V) x) ≠ x ∧ Q ((g : V ≃ₗ[K] V) x - x) = 0 := by
-          intro x hx
-          have h := hgood
-          simp only [not_exists, not_or, not_ne_iff] at h
-          exact h ⟨x, hx⟩
-        obtain ⟨heven, hdetg⟩ := exceptional_det_eq_one Q hQ g hexceptional
-        let _ := (Module.finrank_pos_iff (R := K) (M := V)).mp (by omega)
-        obtain ⟨x, hxx⟩ := LinearMap.BilinForm.exists_bilinForm_self_ne_zero hB.ne_zero
-          (LinearMap.BilinForm.isSymm_iff.mp hBsymm)
-        have hxQ : Q x ≠ 0 := by
-          -- `B` abbreviates the associated bilinear form, whose diagonal is definitionally `Q`.
-          rwa [show B x x = Q x by
-            dsimp only [B]
-            rw [QuadraticMap.associated_eq_self_apply]] at hxx
-        let a : AnisotropicVector Q := ⟨x, hxQ⟩
-        let r : QuadraticMap.orthogonalGroup Q := anisotropicReflection Q a
-        let g' : QuadraticMap.orthogonalGroup Q := r * g
-        have hdetr : LinearEquiv.det (r : V ≃ₗ[K] V) = -1 := by
-          dsimp only [r]
-          have hdet := det_reflectionWord Q [a]
-          simpa [reflectionWord] using hdet
-        have hdetg' : LinearEquiv.det (g' : V ≃ₗ[K] V) = -1 := by
-          dsimp only [g']
-          rw [Subgroup.coe_mul, map_mul, hdetr, hdetg]
-          simp
-        have hnegone : (-1 : Kˣ) ≠ 1 := by
-          intro h
-          have h' : (-1 : K) = 1 := congrArg Units.val h
-          have htwo : (2 : K) = 0 := by
-            calc
-              (2 : K) = 1 - (-1) := by ring
-              _ = 0 := by rw [h']; ring
-          exact (isUnit_of_invertible (2 : K)).ne_zero htwo
-        have hgood' : ∃ b : AnisotropicVector Q,
-            (g' : V ≃ₗ[K] V) b = b ∨ Q ((g' : V ≃ₗ[K] V) b - b) ≠ 0 := by
-          by_contra hbad
-          have hbad' : ∀ y : V, Q y ≠ 0 →
-              ((g' : V ≃ₗ[K] V) y) ≠ y ∧ Q ((g' : V ≃ₗ[K] V) y - y) = 0 := by
-            intro y hy
-            simp only [not_exists, not_or, not_ne_iff] at hbad
-            exact hbad ⟨y, hy⟩
-          have hdetone := (exceptional_det_eq_one Q hQ g' hbad').2
-          exact hnegone (hdetg'.symm.trans hdetone)
-        obtain ⟨l, hllen, hlprod⟩ := factor_good g' hgood'
-        have hodd : Odd l.length := by
-          apply (neg_one_pow_eq_neg_one_iff_odd hnegone).mp
-          rw [← det_reflectionWord Q l, hlprod, hdetg']
-        have hlt : l.length < n := by
-          obtain ⟨k, hk⟩ := heven
-          obtain ⟨j, hj⟩ := hodd
-          omega
-        refine ⟨a :: l, by simp only [List.length_cons]; omega, ?_⟩
-        -- The cons reflection word is the subgroup product `r * reflectionWord Q l`.
-        change r * reflectionWord Q l = g
-        rw [hlprod]
-        dsimp only [g']
-        rw [← mul_assoc, show r * r = 1 from anisotropicReflection_mul_self Q a, one_mul]
+      · exact good g hgood
+      · push Not at hgood
+        exact exists_reflectionWord_of_exceptional hn hpos Q hQ good g fun x hx ↦ hgood ⟨x, hx⟩
 
 /-- Every orthogonal transformation of a nondegenerate quadratic space is a product of at most
 the dimension many reflections. -/

@@ -618,6 +618,29 @@ theorem exists_orthogonal_anisotropic [NeZero (2 : K)]
     simpa only [B, QuadraticMap.polarBilin_apply_apply, QuadraticMap.polar_self, nsmul_eq_mul,
       Nat.cast_ofNat, mul_ne_zero_iff_left (NeZero.ne (2 : K))] using hz'
 
+/-- A nondegenerate quadratic space of dimension at least three has an anisotropic vector
+orthogonal to any given vector, isotropic or not. -/
+theorem exists_orthogonal_anisotropic_of_three_le_finrank [NeZero (2 : K)]
+    (Q : QuadraticForm K V) (hQ : Q.Nondegenerate) (hrank : 3 ≤ Module.finrank K V) (y : V) :
+    ∃ z : V, Q.IsOrtho z y ∧ Q z ≠ 0 := by
+  let _ : Invertible (2 : K) := invertibleOfNonzero (NeZero.ne (2 : K))
+  let B : LinearMap.BilinForm K V := Q.polarBilin
+  have hB : B.Nondegenerate := (QuadraticMap.nondegenerate_polar_iff (Q := Q)).mpr hQ
+  by_contra! h
+  -- Otherwise the complement `y^⊥` is totally isotropic, so it lies in `y^⊥⊥ = K ∙ y`.
+  have hW : Q.IsTotallyIsotropic (B.orthogonal (K ∙ y)) :=
+    QuadraticMap.isTotallyIsotropic_iff.mpr fun w hw ↦ h w
+      (QuadraticMap.isOrtho_polarBilin.mp (hw y (Submodule.mem_span_singleton_self y))).symm
+  have hle : B.orthogonal (K ∙ y) ≤ K ∙ y := by
+    refine le_trans (fun w hw z hz ↦ ?_)
+      (B.orthogonal_orthogonal hB Q.isSymm_polarBilin.isRefl (K ∙ y)).le
+    exact hW.polar_eq_zero hz hw
+  have hy := finrank_span_le_card (R := K) ({y} : Set V)
+  have hmono := Submodule.finrank_mono hle
+  rw [B.finrank_orthogonal hB] at hmono
+  simp only [Set.toFinset_singleton, Finset.card_singleton] at hy
+  omega
+
 end QuadraticMap
 
 namespace QuadraticMap.Anisotropic
