@@ -161,6 +161,27 @@ theorem reflectionMatrix_mulVec (v : n → R) (c : R) (x : n → R) :
   ext i
   simp [mul_comm, mul_left_comm]
 
+variable [Fintype n] in
+/-- The reflection in `u` followed by the reflection in `u + w` takes a unit vector `u` to a unit
+vector `w`, provided `(u + w) ⬝ᵥ (u + w) ≠ 0`. -/
+theorem reflectionMatrix_add_mulVec_reflectionMatrix_mulVec {K : Type*} [Field K] {u w : n → K}
+    (hu : u ⬝ᵥ u = 1) (hw : w ⬝ᵥ w = 1) (hv : (u + w) ⬝ᵥ (u + w) ≠ 0) :
+    reflectionMatrix (u + w) (2 / ((u + w) ⬝ᵥ (u + w))) *ᵥ (reflectionMatrix u 2 *ᵥ u) = w := by
+  have hvv : (u + w) ⬝ᵥ (u + w) = 2 * (1 + w ⬝ᵥ u) := by
+    simp only [add_dotProduct, dotProduct_add, hu, hw, dotProduct_comm u w]
+    ring
+  -- The first reflection sends `u` to `-u`; the second sends `-u` to `w`.
+  have hdot : (u + w) ⬝ᵥ (u - ((2 : K) * 1) • u) = -(1 + w ⬝ᵥ u) := by
+    simp only [add_dotProduct, dotProduct_sub, dotProduct_smul, hu, smul_eq_mul]
+    ring
+  have hscal : 2 / ((u + w) ⬝ᵥ (u + w)) * -(1 + w ⬝ᵥ u) = -1 := by
+    rw [hvv] at hv ⊢
+    have h1 : 1 + w ⬝ᵥ u ≠ 0 := fun h0 ↦ hv (by rw [h0, mul_zero])
+    have h2 : (2 : K) ≠ 0 := fun h0 ↦ hv (by rw [h0, zero_mul])
+    field_simp
+  rw [reflectionMatrix_mulVec, reflectionMatrix_mulVec, hu, hdot, hscal]
+  module
+
 /-! ### Products of two reflections -/
 
 section Pair

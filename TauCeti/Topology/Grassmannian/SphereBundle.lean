@@ -16,10 +16,11 @@ public import TauCeti.Topology.Homotopy.SerreFibration.FiberBundle
 # The sphere bundle `SO(n) → SO(1 + n) → Sⁿ`
 
 Evaluating a special orthogonal matrix on the first coordinate vector `e₀` gives the map
-`SO(1 + n) → Sⁿ`, `A ↦ A e₀` (`TauCeti.specialOrthogonalSphereMap`), onto the unit sphere of
+`SO(1 + n) → Sⁿ`, `A ↦ A e₀` (`TauCeti.specialOrthogonalSphereMap`), to the unit sphere of
 `ℝ^(1 + n)`. Its fibre over `e₀` is the block subgroup `diag(1, SO(n))`, the image of
-`Matrix.SpecialOrthogonalGroup.fromBlocksOne`. For `n ≥ 1` this map is a locally trivial bundle
-with fibre `SO(n)`, and hence a Serre fibration.
+`Matrix.SpecialOrthogonalGroup.fromBlocksOne`. For `n ≥ 1` this map is surjective and a locally
+trivial bundle with fibre `SO(n)`, and hence a Serre fibration. For `n = 0` it is not surjective:
+`SO(1)` is trivial while `S⁰` has two points.
 
 The charts come from explicit local sections. For unit vectors `b` and `y` with `y ≠ -b`, the
 reflection in `b` followed by the reflection in `b + y` is a rotation taking `b` to `y`
@@ -35,9 +36,7 @@ image of `fromBlocksOne ℝ 1 n` without reindexing.
 
 ## Main definitions
 
-* `TauCeti.finiteOrthonormalFrame.sphereHomeomorph`: orthonormal one-frames are unit vectors.
 * `TauCeti.specialOrthogonalSphereMap`: the evaluation map `SO(1 + n) → Sⁿ`, `A ↦ A e₀`.
-* `TauCeti.sphereRotation`: the product of two reflections taking `b` to `y`.
 
 ## Main results
 
@@ -64,143 +63,6 @@ noncomputable section
 
 namespace TauCeti
 
-/-! ### Unit vectors as orthonormal one-frames -/
-
-namespace finiteOrthonormalFrame
-
-/-- An orthonormal one-frame of `ℝ^N` is the same as a unit vector of `EuclideanSpace ℝ (Fin N)`. -/
-def sphereHomeomorph (N : ℕ) :
-    finiteOrthonormalFrame ℝ 1 N ≃ₜ sphere (0 : EuclideanSpace ℝ (Fin N)) 1 where
-  toFun f := ⟨WithLp.toLp 2 (f.1 0), by simpa using f.2.1 0⟩
-  invFun y := ⟨fun _ ↦ WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)), by
-    rw [orthonormal_iff_ite]
-    intro i j
-    rw [Subsingleton.elim i j]
-    simp [norm_eq_of_mem_sphere]⟩
-  left_inv f := Subtype.ext <| funext fun i ↦ by rw [Subsingleton.elim i 0]
-  right_inv y := rfl
-  continuous_toFun := Continuous.subtype_mk ((PiLp.continuous_toLp 2 _).comp
-    ((continuous_apply 0).comp continuous_subtype_val)) _
-  continuous_invFun := Continuous.subtype_mk (continuous_pi fun _ ↦
-    (PiLp.continuous_ofLp 2 _).comp continuous_subtype_val) _
-
-@[simp]
-theorem coe_sphereHomeomorph_apply {N : ℕ} (f : finiteOrthonormalFrame ℝ 1 N) :
-    (sphereHomeomorph N f : EuclideanSpace ℝ (Fin N)) = WithLp.toLp 2 (f.1 0) :=
-  (rfl)
-
-@[simp]
-theorem coe_sphereHomeomorph_symm_apply {N : ℕ} (y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1)
-    (i : Fin 1) :
-    ((sphereHomeomorph N).symm y).1 i = WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)) :=
-  (rfl)
-
-end finiteOrthonormalFrame
-
-/-! ### Rotations taking one unit vector to another -/
-
-section Rotation
-
-variable {N : ℕ}
-
-/-- The dot product of the coordinates of a Euclidean vector with themselves is its squared
-norm. -/
-private theorem dotProduct_ofLp_self (x : EuclideanSpace ℝ (Fin N)) :
-    WithLp.ofLp x ⬝ᵥ WithLp.ofLp x = ‖x‖ ^ 2 := by
-  rw [← real_inner_self_eq_norm_sq, EuclideanSpace.inner_eq_star_dotProduct]
-  simp
-
-/-- Two unit vectors that are not antipodal have nonzero sum. -/
-private theorem coe_add_coe_ne_zero {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
-    (b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N)) ≠ 0 := fun h0 ↦
-  h (Subtype.ext (by rw [coe_neg_sphere]; exact eq_neg_of_add_eq_zero_right h0))
-
-/-- The rotation taking a unit vector `b` to a unit vector `y ≠ -b`: the reflection in `b`
-followed by the reflection in `b + y`. It is the identity when `y = -b`. -/
-def sphereRotation (b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    specialOrthogonalGroup (Fin N) ℝ :=
-  if h : y = -b then 1 else
-    reflectionPair (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))
-      (WithLp.ofLp (b : EuclideanSpace ℝ (Fin N)))
-      (2 / (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
-        WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))) 2
-      (div_mul_cancel₀ _ <| by
-        rw [dotProduct_ofLp_self]
-        exact pow_ne_zero 2 (norm_ne_zero_iff.2 (coe_add_coe_ne_zero h)))
-      (by rw [dotProduct_ofLp_self, norm_eq_of_mem_sphere]; norm_num)
-
-/-- The rotation taking `b` to the antipode `-b` is, by convention, the identity. -/
-@[simp]
-theorem sphereRotation_neg_self (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    sphereRotation b (-b) = 1 := by
-  simp [sphereRotation]
-
-/-- Away from the antipode of `b`, `sphereRotation b y` is the product of the reflections in
-`b + y` and in `b`. -/
-theorem coe_sphereRotation_of_ne {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
-    (sphereRotation b y : Matrix (Fin N) (Fin N) ℝ) =
-      reflectionMatrix
-          (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))
-          (2 / (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
-            WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))) *
-        reflectionMatrix (WithLp.ofLp (b : EuclideanSpace ℝ (Fin N))) 2 := by
-  simp only [sphereRotation, h, ↓reduceDIte, coe_reflectionPair]
-
-/-- The reflection in `u` followed by the reflection in `u + w` takes a unit vector `u` to a unit
-vector `w`, provided `u + w ≠ 0`. -/
-private theorem reflectionMatrix_add_mulVec_reflectionMatrix_mulVec {u w : Fin N → ℝ}
-    (hu : u ⬝ᵥ u = 1) (hw : w ⬝ᵥ w = 1) (hv : (u + w) ⬝ᵥ (u + w) ≠ 0) :
-    reflectionMatrix (u + w) (2 / ((u + w) ⬝ᵥ (u + w))) *ᵥ (reflectionMatrix u 2 *ᵥ u) = w := by
-  have hvv : (u + w) ⬝ᵥ (u + w) = 2 * (1 + w ⬝ᵥ u) := by
-    simp only [add_dotProduct, dotProduct_add, hu, hw, dotProduct_comm u w]
-    ring
-  -- The first reflection sends `u` to `-u`; the second sends `-u` to `w`.
-  have hdot : (u + w) ⬝ᵥ (u - ((2 : ℝ) * 1) • u) = -(1 + w ⬝ᵥ u) := by
-    simp only [add_dotProduct, dotProduct_sub, dotProduct_smul, hu, smul_eq_mul]
-    ring
-  have hscal : 2 / ((u + w) ⬝ᵥ (u + w)) * -(1 + w ⬝ᵥ u) = -1 := by
-    rw [hvv] at hv ⊢
-    have h1 : 1 + w ⬝ᵥ u ≠ 0 := fun h0 ↦ hv (by rw [h0, mul_zero])
-    field_simp
-  rw [reflectionMatrix_mulVec, reflectionMatrix_mulVec, hu, hdot, hscal]
-  module
-
-/-- The rotation `sphereRotation b y` takes `b` to `y` when `y ≠ -b`. -/
-theorem sphereRotation_mulVec {b y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1} (h : y ≠ -b) :
-    (sphereRotation b y : Matrix (Fin N) (Fin N) ℝ) *ᵥ WithLp.ofLp (b : EuclideanSpace ℝ (Fin N)) =
-      WithLp.ofLp (y : EuclideanSpace ℝ (Fin N)) := by
-  have hunit (x : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-      WithLp.ofLp (x : EuclideanSpace ℝ (Fin N)) ⬝ᵥ WithLp.ofLp (x : EuclideanSpace ℝ (Fin N)) =
-        1 := by
-    rw [dotProduct_ofLp_self, norm_eq_of_mem_sphere, one_pow]
-  have hv : WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
-      WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ≠ 0 := by
-    rw [dotProduct_ofLp_self]
-    exact pow_ne_zero 2 (norm_ne_zero_iff.2 (coe_add_coe_ne_zero h))
-  rw [coe_sphereRotation_of_ne h, ← mulVec_mulVec]
-  rw [WithLp.ofLp_add] at hv ⊢
-  exact reflectionMatrix_add_mulVec_reflectionMatrix_mulVec (hunit b) (hunit y) hv
-
-/-- The rotation `sphereRotation b y` depends continuously on `y` away from `-b`. -/
-theorem continuousOn_sphereRotation (b : sphere (0 : EuclideanSpace ℝ (Fin N)) 1) :
-    ContinuousOn (sphereRotation b) {-b}ᶜ := by
-  rw [Topology.IsInducing.subtypeVal.continuousOn_iff]
-  have hv : Continuous fun y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1 ↦
-      WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) := by fun_prop
-  have hR : ContinuousOn (fun y : sphere (0 : EuclideanSpace ℝ (Fin N)) 1 ↦
-      reflectionMatrix
-        (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))
-        (2 / (WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))) ⬝ᵥ
-          WithLp.ofLp ((b : EuclideanSpace ℝ (Fin N)) + (y : EuclideanSpace ℝ (Fin N))))))
-      {-b}ᶜ :=
-    TauCeti.Matrix.continuousOn_reflectionMatrix.comp hv.continuousOn fun y hy h0 ↦
-      coe_add_coe_ne_zero hy (by simpa using congrArg (WithLp.toLp 2) h0)
-  have hM := (continuous_id.matrix_mul (continuous_const
-    (y := reflectionMatrix (WithLp.ofLp (b : EuclideanSpace ℝ (Fin N))) 2))).comp_continuousOn hR
-  exact hM.congr fun y hy ↦ coe_sphereRotation_of_ne hy
-
-end Rotation
-
 /-! ### The evaluation map `SO(1 + n) → Sⁿ` -/
 
 variable (n : ℕ)
@@ -219,6 +81,8 @@ variable {n}
 theorem coe_specialOrthogonalSphereMap (A : specialOrthogonalGroup (Fin (1 + n)) ℝ) :
     (specialOrthogonalSphereMap n A : EuclideanSpace ℝ (Fin (1 + n))) =
       WithLp.toLp 2 ((A : Matrix (Fin (1 + n)) (Fin (1 + n)) ℝ).col 0) := by
+  -- `Fin.castLE_zero` needs the target written as `Fin (m + 1)`, and `Fin (1 + n)` is not of that
+  -- form, so the cast of `0` is normalized by hand.
   simp [specialOrthogonalSphereMap,
     show Fin.castLE (Nat.le_add_right 1 n) (0 : Fin 1) = 0 from Fin.ext (by simp)]
 
@@ -243,6 +107,9 @@ theorem specialOrthogonalSphereMap_eq_specialOrthogonalSphereMap_one_iff
     {A : specialOrthogonalGroup (Fin (1 + n)) ℝ} :
     specialOrthogonalSphereMap n A = specialOrthogonalSphereMap n 1 ↔
       A ∈ (SpecialOrthogonalGroup.fromBlocksOne ℝ 1 n).range := by
+  -- The final `show` normalizes `Fin.castAdd n 0` to `0 : Fin (1 + n)`: there is no library
+  -- lemma for `Fin.castAdd` of `0`, and the analogous `Fin.castLE_zero` needs the target written
+  -- as `Fin (m + 1)`, which `Fin (1 + n)` is not.
   rw [SpecialOrthogonalGroup.mem_range_fromBlocksOne_iff, Fin.forall_fin_one, Subtype.ext_iff,
     coe_specialOrthogonalSphereMap, coe_specialOrthogonalSphereMap,
     (WithLp.toLp_injective 2).eq_iff, OneMemClass.coe_one, ← mulVec_single_one,
