@@ -101,65 +101,6 @@ variable {R' : Type u} [CommRing R'] [Algebra R R'] {Y : Scheme.{u}} [Y.Over (Sp
   (H : IsPullback g (Y ↘ Spec (.of R')) (X ↘ Spec (.of R))
     (Spec.map (CommRingCat.ofHom (algebraMap R R'))))
 
-section Aux
-
-variable (M : X.Modules) (U V : X.Opens) [Algebra R Γ(X, ⊤)] [Algebra R' Γ(Y, ⊤)]
-  [∀ W : X.Opens, Module R Γ(M, W)] [∀ W : X.Opens, IsScalarTower R Γ(X, ⊤) Γ(M, W)]
-  [∀ W' : Y.Opens, Module R' Γ((Scheme.Modules.pullback g).obj M, W')]
-  [∀ W' : Y.Opens, IsScalarTower R' Γ(Y, ⊤) Γ((Scheme.Modules.pullback g).obj M, W')]
-  [∀ W' : Y.Opens, Module R Γ((Scheme.Modules.pullback g).obj M, W')]
-  [∀ W' : Y.Opens, IsScalarTower R R' Γ((Scheme.Modules.pullback g).obj M, W')]
-
-/-- Pulling back sections commutes with the restriction of `H⁰` to the two members of a cover. -/
-private lemma comm_restriction_cohomologyZero
-    [IsScalarTower R Γ(X, ⊤) (Cohomology M 0)]
-    [IsScalarTower R' Γ(Y, ⊤) (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
-    [Module R (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
-    [IsScalarTower R R' (Cohomology ((Scheme.Modules.pullback g).obj M) 0)]
-    (σU : Γ(M, U) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ U))
-    (σV : Γ(M, V) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ V))
-    (h₁ : Cohomology M 0 →ₗ[R] Cohomology ((Scheme.Modules.pullback g).obj M) 0)
-    (hσU : ∀ s, σU s = g.pullbackSections M U s) (hσV : ∀ s, σV s = g.pullbackSections M V s)
-    (h₁_apply : ∀ x, h₁ x = g.cohomologyPullback M 0 x) :
-    (σU.prodMap σV).comp (((mayerVietorisSectionsRestrictionLinear M U V).comp
-        (cohomologyZeroLinearEquiv M).toLinearMap).restrictScalars R) =
-      ((((mayerVietorisSectionsRestrictionLinear ((Scheme.Modules.pullback g).obj M) (g ⁻¹ᵁ U)
-        (g ⁻¹ᵁ V)).comp (cohomologyZeroLinearEquiv _).toLinearMap).restrictScalars
-          R').restrictScalars R).comp h₁ := by
-  refine LinearMap.ext fun x ↦ ?_
-  -- Pullback lands in sections over `g ⁻¹ᵁ ⊤`, which is `⊤` by definition.
-  have hx := mayerVietorisSectionsRestrictionLinear_apply ((Scheme.Modules.pullback g).obj M)
-    (g ⁻¹ᵁ U) (g ⁻¹ᵁ V) (g.pullbackSections M ⊤ (cohomologyZeroEquiv M x))
-  simp only [LinearMap.comp_apply, LinearMap.restrictScalars_apply, LinearEquiv.coe_coe,
-    LinearMap.prodMap_apply, cohomologyZeroLinearEquiv_apply,
-    mayerVietorisSectionsRestrictionLinear_apply, h₁_apply,
-    g.cohomologyZeroEquiv_cohomologyPullback, hσU, hσV]
-  refine Eq.trans ?_ hx.symm
-  -- Pullback of sections commutes with the restrictions from `⊤` to `U` and to `V`.
-  exact Prod.ext (g.pullbackSections_restrict M ⊤ U.leTop _).symm
-    (g.pullbackSections_restrict M ⊤ V.leTop _).symm
-
-omit [X.Over (Spec (.of R))] [Y.Over (Spec (.of R'))] in
-/-- Pulling back sections commutes with the Mayer–Vietoris difference of restrictions. -/
-private lemma comm_difference
-    (σU : Γ(M, U) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ U))
-    (σV : Γ(M, V) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ V))
-    (σUV : Γ(M, U ⊓ V) →ₗ[R] Γ((Scheme.Modules.pullback g).obj M, g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V))
-    (hσU : ∀ s, σU s = g.pullbackSections M U s) (hσV : ∀ s, σV s = g.pullbackSections M V s)
-    (hσUV : ∀ s, σUV s = g.pullbackSections M (U ⊓ V) s) :
-    σUV.comp ((mayerVietorisSectionsDifferenceLinear M U V).restrictScalars R) =
-      (((mayerVietorisSectionsDifferenceLinear ((Scheme.Modules.pullback g).obj M) (g ⁻¹ᵁ U)
-        (g ⁻¹ᵁ V)).restrictScalars R').restrictScalars R).comp (σU.prodMap σV) :=
-  LinearMap.ext fun ⟨s, t⟩ ↦
-    (congrArg σUV (mayerVietorisSectionsDifferenceLinear_apply M U V s t)).trans <|
-    (hσUV _).trans <|
-    (g.pullbackSections_mayerVietorisSectionsDifference M U V s t).trans <|
-    (congrArg (mayerVietorisSectionsDifference _ _ _)
-      (Prod.ext (hσU s).symm (hσV t).symm)).trans
-    (mayerVietorisSectionsDifferenceLinear_apply _ _ _ _ _).symm
-
-end Aux
-
 include H in
 /-- **Cohomology and base change in degree zero.** Let `X` be a scheme over `R` covered by affine
 opens `U` and `V` with affine intersection, let `M` be a quasi-coherent sheaf on `X` whose
@@ -213,10 +154,11 @@ theorem bijective_cohomologyBaseChange_zero_of_subsingleton_cohomology_one (M : 
   let σV := g.pullbackSectionsBaseLinear M V H.toCommSq
   have hσU := g.pullbackSectionsBaseLinear_apply M U H.toCommSq
   have hσV := g.pullbackSectionsBaseLinear_apply M V H.toCommSq
-  have comm₁ := comm_restriction_cohomologyZero (R' := R') M U V σU σV h₁ hσU hσV h₁_apply
+  have comm₁ := mayerVietorisSectionsRestrictionLinear_comm_cohomologyPullback (R' := R') M U V
+    σU σV h₁ hσU hσV h₁_apply
   -- The preimage `g ⁻¹ᵁ (U ⊓ V)` is definitionally `g ⁻¹ᵁ U ⊓ g ⁻¹ᵁ V`, the overlap on which the
   -- Mayer–Vietoris difference over `Y` lands.
-  have comm₂ := comm_difference (R' := R') M U V σU σV
+  have comm₂ := mayerVietorisSectionsDifferenceLinear_comm_pullbackSections (R' := R') M U V σU σV
     (g.pullbackSectionsBaseLinear M (U ⊓ V) H.toCommSq) hσU hσV
     (g.pullbackSectionsBaseLinear_apply M (U ⊓ V) H.toCommSq)
   rw [← hlift]
