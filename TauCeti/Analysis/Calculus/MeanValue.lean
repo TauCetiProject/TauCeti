@@ -6,13 +6,17 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Calculus.FDeriv.Basic
+public import Mathlib.Analysis.RCLike.Basic
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
+import Mathlib.Analysis.Calculus.MeanValue
 import Mathlib.Topology.Order.Compact
 
 /-!
-# Escaping a superlevel set at bounded speed
+# Consequences of the mean value theorem
+
+## Escaping a superlevel set at bounded speed
 
 Let `w` be a differentiable real function on a real normed space whose derivative has norm at
 most `L` on the band `{a ≤ w ≤ b}`. Starting from a point where `w ≥ b`, the function cannot reach
@@ -22,6 +26,14 @@ Mathlib's `Convex.norm_image_sub_le_of_norm_fderiv_le` needs the derivative boun
 whole segment; here it is only assumed on the band, which is what is available near a level set
 of a function whose gradient is controlled only there. The proof applies the one-variable mean
 value theorem on the part of the segment where the function crosses the band.
+
+## Invariance along a direction
+
+Over `ℝ` or `ℂ`, a map whose derivative kills a vector `v` at every point `z + t • v` with
+`‖t‖ ≤ 1` takes the same value at `z` and `z + v`
+(`TauCeti.apply_add_eq_of_fderiv_apply_eq_zero`). Unlike Mathlib's
+`Convex.is_const_of_fderivWithin_eq_zero`, only the derivative in the direction `v` is assumed to
+vanish, so the map need not be constant near the segment.
 -/
 
 public section
@@ -79,5 +91,32 @@ theorem lt_apply_add_of_norm_fderiv_le {w : E → ℝ} (hw : Differentiable ℝ 
     rw [hslope]
     nlinarith [mul_nonneg hL (norm_nonneg z), hs₀I.1, hs₁I.2]
   linarith
+
+section Direction
+
+variable {𝕂 : Type*} [RCLike 𝕂] {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕂 F]
+  {G : Type*} [NormedAddCommGroup G] [NormedSpace 𝕂 G]
+
+/-- If `g` is differentiable at every point `z + t • v` with `‖t‖ ≤ 1` and its derivative kills `v`
+there, then `g` takes the same value at `z` and at `z + v`. -/
+theorem apply_add_eq_of_fderiv_apply_eq_zero {g : F → G} {z v : F}
+    (hg : ∀ t : 𝕂, ‖t‖ ≤ 1 → DifferentiableAt 𝕂 g (z + t • v))
+    (hv : ∀ t : 𝕂, ‖t‖ ≤ 1 → fderiv 𝕂 g (z + t • v) v = 0) : g (z + v) = g z := by
+  -- The restriction of `g` to the line through `z` in direction `v` has zero derivative on the
+  -- closed unit disc, which is convex and contains `0` and `1`.
+  have hq : ∀ t ∈ Metric.closedBall (0 : 𝕂) 1, HasFDerivWithinAt (fun t : 𝕂 ↦ g (z + t • v))
+      ((fderiv 𝕂 g (z + t • v)).comp ((ContinuousLinearMap.id 𝕂 𝕂).smulRight v))
+      (Metric.closedBall 0 1) t := fun t ht ↦
+    ((hg t (by simpa using ht)).hasFDerivAt.comp t
+      ((hasFDerivAt_id t).smul_const v |>.const_add z)).hasFDerivWithinAt
+  have h := (convex_closedBall (0 : 𝕂) 1).norm_image_sub_le_of_norm_hasFDerivWithin_le hq
+    (C := 0) (fun t ht ↦ by
+      rw [norm_le_zero_iff]
+      ext
+      simp [hv t (by simpa using ht)])
+    (Metric.mem_closedBall_self zero_le_one) (show (1 : 𝕂) ∈ Metric.closedBall 0 1 by simp)
+  simpa [sub_eq_zero] using h
+
+end Direction
 
 end TauCeti
