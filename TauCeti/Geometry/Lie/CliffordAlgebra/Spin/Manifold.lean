@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Differential
+public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
 public import TauCeti.Geometry.Manifold.Instances.Comap
 
 /-!
@@ -57,41 +57,42 @@ instance instIsManifoldRealSpin (n : ℕ) :
 def realSpinDiffeomorphUnitsRange (n : ℕ) :
     Diffeomorph 𝓘(ℝ, realSpinLieModel n) 𝓘(ℝ, realSpinLieModel n)
       (spinGroup (realCliffordForm n 0))
-      (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) ∞ where
-  toEquiv := (realCliffordSpinContinuousMulEquivUnitsRange n).toEquiv
-  contMDiff_toFun := IsLocalHomeomorph.contMDiff_chartedSpaceComap
-    (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph
-  contMDiff_invFun := by
-    apply (IsLocalHomeomorph.contMDiff_chartedSpaceComap_iff
-      (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph).mpr
-    refine ⟨(realCliffordSpinContinuousMulEquivUnitsRange n).symm.continuous, ?_⟩
-    convert contMDiff_id using 1
-    funext s
-    exact (realCliffordSpinContinuousMulEquivUnitsRange n).apply_symm_apply s
+      (MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) ∞ :=
+  ((realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph
+    |>.isLocalDiffeomorph_chartedSpaceComap (n := ∞)).diffeomorphOfBijective
+      (realCliffordSpinContinuousMulEquivUnitsRange n).bijective
 
 /-- The smooth comparison is the existing continuous group equivalence. -/
 @[simp]
 theorem realSpinDiffeomorphUnitsRange_apply (n : ℕ) (s : spinGroup (realCliffordForm n 0)) :
     realSpinDiffeomorphUnitsRange n s = realCliffordSpinContinuousMulEquivUnitsRange n s :=
-  (rfl)
+  congrFun TauCeti.coe_diffeomorphOfBijective s
+
+/-- The inverse smooth comparison is the inverse continuous group equivalence. -/
+@[simp]
+theorem realSpinDiffeomorphUnitsRange_symm_apply (n : ℕ)
+    (g : MonoidHom.range (spinGroup.toUnits (Q := realCliffordForm n 0))) :
+    (realSpinDiffeomorphUnitsRange n).symm g =
+      (realCliffordSpinContinuousMulEquivUnitsRange n).symm g := by
+  apply (realCliffordSpinContinuousMulEquivUnitsRange n).injective
+  rw [← realSpinDiffeomorphUnitsRange_apply, Diffeomorph.apply_symm_apply,
+    ContinuousMulEquiv.apply_symm_apply]
 
 /-- The original multiplication and inversion make native compact Spin a Lie group. -/
 instance instLieGroupRealSpin (n : ℕ) :
     LieGroup 𝓘(ℝ, realSpinLieModel n) ∞ (spinGroup (realCliffordForm n 0)) where
   contMDiff_mul := by
-    apply (IsLocalHomeomorph.contMDiff_chartedSpaceComap_iff
-      (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph).mpr
-    refine ⟨continuous_mul, ?_⟩
-    convert ((realSpinDiffeomorphUnitsRange n).contMDiff.comp contMDiff_fst).mul
-      ((realSpinDiffeomorphUnitsRange n).contMDiff.comp contMDiff_snd) using 1
-    funext p
-    exact map_mul (realCliffordSpinContinuousMulEquivUnitsRange n) p.1 p.2
+    simpa only [Function.comp_def, Pi.mul_apply, realSpinDiffeomorphUnitsRange_apply,
+      realSpinDiffeomorphUnitsRange_symm_apply, ← map_mul,
+      ContinuousMulEquiv.symm_apply_apply] using
+      (realSpinDiffeomorphUnitsRange n).symm.contMDiff.comp
+      (((realSpinDiffeomorphUnitsRange n).contMDiff.comp contMDiff_fst).mul
+        ((realSpinDiffeomorphUnitsRange n).contMDiff.comp contMDiff_snd))
   contMDiff_inv := by
-    apply (IsLocalHomeomorph.contMDiff_chartedSpaceComap_iff
-      (realCliffordSpinContinuousMulEquivUnitsRange n).toHomeomorph.isLocalHomeomorph).mpr
-    refine ⟨continuous_inv, ?_⟩
-    convert (realSpinDiffeomorphUnitsRange n).contMDiff.inv using 1
-    funext s
-    exact map_inv (realCliffordSpinContinuousMulEquivUnitsRange n) s
+    simpa only [Function.comp_def, Pi.inv_apply, realSpinDiffeomorphUnitsRange_apply,
+      realSpinDiffeomorphUnitsRange_symm_apply, ← map_inv,
+      ContinuousMulEquiv.symm_apply_apply] using
+      (realSpinDiffeomorphUnitsRange n).symm.contMDiff.comp
+        (realSpinDiffeomorphUnitsRange n).contMDiff.inv
 
 end TauCeti.CliffordAlgebra

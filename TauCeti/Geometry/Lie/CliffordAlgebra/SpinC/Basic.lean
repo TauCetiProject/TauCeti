@@ -39,21 +39,15 @@ namespace CliffordAlgebra.spinCGroup
 
 variable (n : ℕ) (hQ : realCliffordForm n 0 ≠ 0)
 
-/-- The finite diagonal kernel has the discrete topology inherited from `Spin(n) × U(1)`. -/
-instance instDiscreteTopologyRealSpinCKernel :
-    DiscreteTopology (spinCKernel (realCliffordForm n 0) hQ) :=
-  isDiscrete_iff_discreteTopology.mp
-    (finite_spinCKernel (realCliffordForm n 0) hQ).isDiscrete
-
 /-- The defining central quotient map is a smooth local diffeomorphism. -/
 theorem isLocalDiffeomorph_realMk :
     IsLocalDiffeomorph (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1))
       (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) ∞ (mk (realCliffordForm n 0) hQ) := by
-  rw [show ⇑(mk (realCliffordForm n 0) hQ) = QuotientGroup.mk from funext (mk_apply _ _)]
+  rw [coe_mk]
   exact Subgroup.isLocalDiffeomorph_quotientMk (spinCKernel (realCliffordForm n 0) hQ)
 
 /-- Smoothness on compact Spinᶜ is tested on its defining double cover. -/
-theorem contMDiff_real_iff
+theorem contMDiff_iff_contMDiff_comp_mk
     {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
     {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
     {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
@@ -61,14 +55,14 @@ theorem contMDiff_real_iff
     ContMDiff (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) I ∞ f ↔
       ContMDiff (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) I ∞
         (f ∘ mk (realCliffordForm n 0) hQ) := by
-  rw [show ⇑(mk (realCliffordForm n 0) hQ) = QuotientGroup.mk from funext (mk_apply _ _)]
+  rw [coe_mk]
   exact Subgroup.contMDiff_quotient_iff (spinCKernel (realCliffordForm n 0) hQ) le_rfl f
 
 /-- The weight-two determinant character is smooth on the actual Spinᶜ quotient. -/
 theorem contMDiff_realDet :
     ContMDiff (𝓘(ℝ, realSpinLieModel n).prod (𝓡 1)) (𝓡 1) ∞
       (det (realCliffordForm n 0) hQ) := by
-  apply (contMDiff_real_iff n hQ _).mpr
+  apply (contMDiff_iff_contMDiff_comp_mk n hQ _).mpr
   simpa only [Function.comp_def, det_mk] using contMDiff_snd.pow 2
 
 end CliffordAlgebra.spinCGroup

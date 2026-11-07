@@ -9,6 +9,7 @@ public import TauCeti.LinearAlgebra.CliffordAlgebra.RealForm.OrthonormalBasis
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Map
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Neg
 public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.Real.Basic
+public import TauCeti.LinearAlgebra.CliffordAlgebra.Spin.SpinC
 
 /-!
 # Real Spin groups in the Clifford algebra of the negated signature
@@ -164,5 +165,65 @@ theorem spinGroupToEven_realSpinGroupEquiv (s : spinGroup (realCliffordForm n 0)
   rw [coe_spinGroupToEven_apply, realSpinGroupEquiv, MulEquiv.trans_apply,
     QuadraticMap.IsometryEquiv.spinGroupEquiv_apply, QuadraticMap.Isometry.coe_spinGroupMap_apply,
     coe_spinGroupEquivNeg_apply, coe_realEvenCliffordEquiv_apply]
+
+/-- The frame comparison preserves the central scalar `-1`. -/
+@[simp]
+theorem realSpinGroupEquiv_negOne (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0) :
+    b.realSpinGroupEquiv hQ (spinGroup.negOne _ hpos) = spinGroup.negOne Q hQ₀ := by
+  simp [realSpinGroupEquiv, QuadraticMap.IsometryEquiv.spinGroupEquiv_apply,
+    QuadraticMap.Isometry.spinGroupMap_negOne]
+
+/-- The frame comparison descended to Spinᶜ, leaving the circle factor unchanged. -/
+noncomputable def realSpinCGroupHom (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0) :
+    spinCGroup (realCliffordForm n 0) hpos →* spinCGroup Q hQ₀ :=
+  spinCGroup.lift _ hpos
+    ((spinCGroup.mk Q hQ₀).comp
+      ((b.realSpinGroupEquiv hQ).toMonoidHom.prodMap (MonoidHom.id Circle)))
+    (by simp [b.realSpinGroupEquiv_negOne hQ hpos hQ₀])
+
+/-- On representatives the Spinᶜ frame comparison applies the Spin comparison. -/
+@[simp]
+theorem realSpinCGroupHom_mk (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+    (p : spinGroup (realCliffordForm n 0) × Circle) :
+    b.realSpinCGroupHom hQ hpos hQ₀ (spinCGroup.mk _ hpos p) =
+      spinCGroup.mk Q hQ₀ (b.realSpinGroupEquiv hQ p.1, p.2) :=
+  spinCGroup.lift_mk ..
+
+/-- The Spinᶜ comparison restricts to the frame comparison on Spin. -/
+@[simp]
+theorem realSpinCGroupHom_ofSpin (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+    (s : spinGroup (realCliffordForm n 0)) :
+    b.realSpinCGroupHom hQ hpos hQ₀ (spinCGroup.ofSpin _ hpos s) =
+      spinCGroup.ofSpin Q hQ₀ (b.realSpinGroupEquiv hQ s) := by
+  simp [spinCGroup.ofSpin_apply]
+
+/-- The Spinᶜ frame comparison is the identity on the central circle. -/
+@[simp]
+theorem realSpinCGroupHom_ofCircle (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+    (z : Circle) :
+    b.realSpinCGroupHom hQ hpos hQ₀ (spinCGroup.ofCircle _ hpos z) =
+      spinCGroup.ofCircle Q hQ₀ z := by
+  simp [spinCGroup.ofCircle_apply]
+
+/-- The Spinᶜ frame comparison preserves the determinant character. -/
+@[simp]
+theorem det_realSpinCGroupHom (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+    (x : spinCGroup (realCliffordForm n 0) hpos) :
+    spinCGroup.det Q hQ₀ (b.realSpinCGroupHom hQ hpos hQ₀ x) = spinCGroup.det _ hpos x := by
+  obtain ⟨p, rfl⟩ := spinCGroup.mk_surjective _ hpos x
+  simp
+
+/-- The Spinᶜ frame comparison intertwines the rotation projections. -/
+theorem toSpecialOrthogonal_realSpinCGroupHom_apply
+    (hpos : realCliffordForm n 0 ≠ 0) (hQ₀ : Q ≠ 0)
+    (x : spinCGroup (realCliffordForm n 0) hpos) (v : Fin (n + 0) → ℝ) :
+    (spinCGroup.toSpecialOrthogonal Q hQ₀ (b.realSpinCGroupHom hQ hpos hQ₀ x) : V ≃ₗ[ℝ] V)
+        (b.negRealCliffordFormIsometryEquiv hQ v) =
+      b.negRealCliffordFormIsometryEquiv hQ
+        ((spinCGroup.toSpecialOrthogonal _ hpos x :
+          (Fin (n + 0) → ℝ) ≃ₗ[ℝ] (Fin (n + 0) → ℝ)) v) := by
+  obtain ⟨⟨s, z⟩, rfl⟩ := spinCGroup.mk_surjective _ hpos x
+  simpa only [realSpinCGroupHom_mk, spinCGroup.toSpecialOrthogonal_mk,
+    coe_spinToSpecialOrthogonal_apply] using b.spinVectorAction_realSpinGroupEquiv hQ s v
 
 end OrthonormalBasis
