@@ -160,8 +160,8 @@ theorem isPerfectMorse_projectiveMomentFunction_real (hw : Function.Injective w)
   have e := ((AlgebraicTopology.singularHomologyFunctor (ModuleCat.{0} k) j).obj
     (ModuleCat.of k k)).mapIso (TopCat.isoOfHomeo (X := TopCat.of (RealProjectiveSpace n))
       (Y := TopCat.of (ℙ ℝ (Fin (n + 1) → ℝ))) (RealProjectiveSpace.homeomorphProjectivization n))
-  rw [criticalCount_projectiveMomentFunction_eq_ite hw, ← e.toLinearEquiv.finrank_eq,
-    RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero h2 j, Module.finrank_self]
+  rw [criticalCount_projectiveMomentFunction_real hw, ← e.toLinearEquiv.finrank_eq,
+    RealProjectiveSpace.finrank_singularHomology_of_two_eq_zero h2 j]
   simp
 
 /-- **No perfect Morse function on `ℝPᴺ` outside characteristic two.** For even `N ≥ 2`, no Morse

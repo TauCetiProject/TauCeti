@@ -23,7 +23,10 @@ coordinates near `x₀` (`ContinuousLinearMap.exists_isOpen_isInvertible_prod_co
 inverse depending continuously on `x` for a continuous family
 (`ContinuousLinearMap.exists_isOpen_continuousOn_inverse_prod_comp`).
 For stabilized Fredholm operators the model `G` is finite dimensional, so these
-charts are the local input for the determinant bundle construction.
+charts are the local input for the determinant bundle construction. For a stabilizer `V` of the
+target, the `V`-component of the normalized right inverse of `A x + inclusion_V` likewise has the
+regularity of the family (`ContinuousLinearMap.contDiffAt_snd_comp_kerSection_coprod`); where `V`
+is complementary to the range, it is the projection onto `V` along the range.
 
 The construction uses Mathlib's smooth inversion of bounded operators and the
 fixed-operator kernel section from `Splitting.Basic`.
@@ -52,6 +55,36 @@ theorem contDiffAt_kerSection {A : E →L[𝕜] F} {q : E →L[𝕜] G} {n : ℕ
   simp_rw [kerSection_def]
   exact (h.contDiffAt_map_inverse.comp (A, q) hp.contDiffAt).clm_comp
     (contDiffAt_const (c := inr 𝕜 F G))
+
+section Stabilizer
+
+variable {V : Submodule 𝕜 F} [CompleteSpace V] {q : (E × V) →L[𝕜] G}
+
+/-- The stabilizer component of the normalized right inverse of `T x + inclusion_V` is continuous
+at every parameter where the family is continuous and the pairing with `q` is invertible. -/
+theorem continuousAt_snd_comp_kerSection_coprod {X : Type*} [TopologicalSpace X]
+    {T : X → E →L[𝕜] F} {x : X} (hT : ContinuousAt T x)
+    (hinv : (((T x).coprod V.subtypeL).prod q).IsInvertible) :
+    ContinuousAt (fun y ↦ snd 𝕜 E V ∘L q.kerSection ((T y).coprod V.subtypeL)) x := by
+  have hker := (contDiffAt_kerSection (n := 0) (isInvertible_prod_comm.mp hinv)).continuousAt
+  exact continuousAt_const.clm_comp <| hker.comp
+    (f := fun y ↦ (q, (T y).coprod V.subtypeL))
+    (continuousAt_const.prodMk (hT.continuousLinearMapCoprod continuousAt_const))
+
+/-- The stabilizer component of the normalized right inverse of `T x + inclusion_V` has the
+regularity of the operator family, at every parameter where the pairing with `q` is invertible. -/
+theorem contDiffAt_snd_comp_kerSection_coprod {X : Type*} [NormedAddCommGroup X]
+    [NormedSpace 𝕜 X] {T : X → E →L[𝕜] F} {x : X} {n : ℕ∞ω} (hT : ContDiffAt 𝕜 n T x)
+    (hinv : (((T x).coprod V.subtypeL).prod q).IsInvertible) :
+    ContDiffAt 𝕜 n (fun y ↦ snd 𝕜 E V ∘L q.kerSection ((T y).coprod V.subtypeL)) x := by
+  have hcoprod : ContDiffAt 𝕜 n (fun y ↦ (T y).coprod V.subtypeL) x := by
+    simp_rw [← comp_fst_add_comp_snd]
+    exact (hT.clm_comp contDiffAt_const).add contDiffAt_const
+  exact contDiffAt_const.clm_comp <|
+    (contDiffAt_kerSection (isInvertible_prod_comm.mp hinv)).comp
+      (f := fun y ↦ (q, (T y).coprod V.subtypeL)) x (contDiffAt_const.prodMk hcoprod)
+
+end Stabilizer
 
 variable {X : Type*} [TopologicalSpace X] {A : X → E →L[𝕜] F} {q : E →L[𝕜] G}
 
