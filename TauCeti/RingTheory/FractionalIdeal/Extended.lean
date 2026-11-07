@@ -63,7 +63,7 @@ theorem count_extended (I : FractionalIdeal R⁰ K) (w : HeightOneSpectrum B) :
     count L w (extended L hf I) =
       ((w.under R).asIdeal.ramificationIdx' w.asIdeal : ℤ) * count K (w.under R) I := by
   classical
-  change count L w (extendedHom L B I) = _
+  rw [← extendedHom'_apply L hf]
   by_cases hI0 : I = 0
   · simp [hI0, count_zero]
   obtain ⟨I, rfl⟩ := isUnit_iff_ne_zero.mpr hI0
