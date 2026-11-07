@@ -63,22 +63,6 @@ variable [Fact p.Prime]
   [DistribMulAction G M] [ContinuousSMul G M] [Finite M]
   [AddCommGroup P] [TopologicalSpace P] [DiscreteTopology P] [DistribMulAction G P]
 
-omit [Fact p.Prime] in
-include hExact in
-/-- An invariant does not distinguish a `G`-stable subgroup equal to `⊤` from the whole module. -/
-private theorem invariant_addSubgroup_eq_of_eq_top (hM : IsAddPGroup p M)
-    (N : AddSubgroup M) (hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N) (htop : N = ⊤) :
-    letI := N.restrictDistribMulAction hN
-    letI := N.restrictDistribMulAction_continuousSMul hN
-    I N (hM.to_addSubgroup N) = I M hM := by
-  let := N.restrictDistribMulAction hN
-  let := N.restrictDistribMulAction_continuousSMul hN
-  exact invariant_eq_of_equiv I hExact (hM.to_addSubgroup N) hM
-    ((AddEquiv.addSubgroupCongr htop).trans AddSubgroup.topEquiv) (by
-      intro g x
-      simp only [AddEquiv.trans_apply, AddSubgroup.topEquiv_apply,
-        AddEquiv.addSubgroupCongr_apply, AddSubgroup.restrictDistribMulAction_coe_smul])
-
 include hExact in
 /-- An invariant with values in a left-cancellative additive monoid that is additive on
 equivariant short exact sequences of finite discrete `p`-primary modules is the natural
@@ -140,7 +124,7 @@ theorem invariant_eq_padicValNat_nsmul_of_isProP
         (by rw [AddSubgroup.inclusion_range, QuotientAddGroup.ker_mk'])
       rw [hprev, heq] at hstep
       simpa only [succ_nsmul] using hstep
-  exact (invariant_addSubgroup_eq_of_eq_top I hExact hM (N _) (hN _) (htop _ le_rfl)).symm.trans
-    (hind _ le_rfl)
+  exact (invariant_addSubgroup_eq_of_eq_top I hExact hM (N _) (hN _) (htop _ le_rfl)
+    (hprim _)).symm.trans (hind _ le_rfl)
 
 end TauCeti
