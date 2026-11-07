@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Sobolev.W1p.Morrey
 import TauCeti.Analysis.Sobolev.W1p.PreciseRepresentative
 import TauCeti.Data.ENNReal.Inv
 import TauCeti.MeasureTheory.Measure.Haar.NormedSpace
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.Topology.MetricSpace.Holder
 
 /-!
@@ -219,6 +220,22 @@ theorem W1p.continuousOn_preciseRepresentative (hp : (finrank ℝ E : ℝ≥0∞
       exact (closedBall_subset_closedBall (by linarith)).trans hsub)
   exact ((hK.continuousOn (ENNReal.toNNReal_one_sub_div_pos hp)).continuousAt
     (closedBall_mem_nhds x hε5)).continuousWithinAt
+
+/-- The continuous precise representative of a whole-space `W^{1,∞}` function is bounded
+pointwise by the essential supremum of its value. -/
+theorem W1p.norm_preciseRepresentative_le (u : W1p mu ⊤ ∞) (x : E) :
+    ‖preciseRepresentative mu (W1p.value u) x‖ ≤ ‖W1p.value u‖ := by
+  have hc : Continuous (preciseRepresentative mu (W1p.value u)) := by
+    simpa using (W1p.continuousOn_preciseRepresentative (ENNReal.natCast_lt_top _) u)
+  have hae : ∀ᵐ y ∂mu, ‖preciseRepresentative mu (W1p.value u) y‖ ≤ ‖W1p.value u‖ := by
+    have heq := W1p.ae_eq_preciseRepresentative u
+    have hb := Lp.ae_norm_le_norm_top (W1p.value u)
+    simp only [Opens.coe_top, Measure.restrict_univ] at heq hb
+    filter_upwards [heq, hb] with y hy hb
+    rwa [hy] at hb
+  have hd := mu.dense_of_ae hae
+  have hx := hd x
+  rwa [(isClosed_le hc.norm (continuous_const (y := ‖W1p.value u‖))).closure_eq] at hx
 
 /-- **Morrey's embedding on compact subsets.** If `n < p ≤ ∞`, where `n` is the dimension, the
 precise representative of any `u ∈ W^{1,p}(Ω)` is Hölder continuous with exponent `1 - n / p` on
