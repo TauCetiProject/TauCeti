@@ -392,10 +392,10 @@ open Filter Topology
 
 variable [AddCommGroup V] [Module ℝ V] [AddTorsor V P] {poly : Polygon P n} {p₀ : P} {d : V}
 
-/-- If a linear relation between the directions of two distinct edges and `d` has nonzero
-coefficients for both edges, then moving along both edges gives a second pair of points of the
-two edges with the same projection, contradicting
-`IsRegularProjection.subsingleton_setOf_mem_edgeSet`. -/
+/-- For a simple polygon with a regular projection along `d`, distinct edges `i ≠ j` and interior
+points `s`, `t` of them whose edge points have the same projection, any linear relation
+`g 0 • eᵢ + g 1 • eⱼ + g 2 • d = 0` between the directions `eᵢ`, `eⱼ` of the edges and `d` has
+`g 0 = 0`: the assumption `g 0 ≠ 0` is contradictory. -/
 private theorem false_of_edgePath_move (hs : poly.IsSimple ℝ)
     (hπ : poly.IsRegularProjection ℝ (projAlong ℝ p₀ d)) {i j : Fin n} (hij : i ≠ j) {s t : ℝ}
     (hsI : s ∈ Ioo (0 : ℝ) 1) (htI : t ∈ Ioo (0 : ℝ) 1)
