@@ -217,6 +217,26 @@ theorem covariantDerivative_one_eq {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z :
   simp
   linear_combination (2 * (x z 0 : ℂ) * (x z 3 : ℂ)) * I_sq
 
+/-- The real part of the covariant derivative in the real field coordinates:
+`Re ∇_v α = 2 (∂_v p - b(v) q)`. -/
+theorem re_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    (covariantDerivative x z v).re =
+      2 * (fderiv ℝ (fun w ↦ x w 2) z v - (x z 0 * v.re + x z 1 * v.im) * x z 3) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply]
+  ring
+
+/-- The imaginary part of the covariant derivative in the real field coordinates:
+`Im ∇_v α = 2 (∂_v q + b(v) p)`. -/
+theorem im_covariantDerivative {x : ℂ → EuclideanSpace ℝ (Fin 4)} {z : ℂ}
+    (hp : DifferentiableAt ℝ (fun w ↦ x w 2) z) (hq : DifferentiableAt ℝ (fun w ↦ x w 3) z)
+    (v : ℂ) :
+    (covariantDerivative x z v).im =
+      2 * (fderiv ℝ (fun w ↦ x w 3) z v + (x z 0 * v.re + x z 1 * v.im) * x z 2) := by
+  simp [covariantDerivative_apply, fderiv_sectionValue_apply hp hq, sectionValue_apply]
+  ring
+
 /-- The real curvature coefficient: `F_a = i curvature ds ∧ dt`. -/
 def curvature (x : ℂ → EuclideanSpace ℝ (Fin 4)) (z : ℂ) : ℝ :=
   fderiv ℝ (fun w ↦ x w 1) z 1 - fderiv ℝ (fun w ↦ x w 0) z I
