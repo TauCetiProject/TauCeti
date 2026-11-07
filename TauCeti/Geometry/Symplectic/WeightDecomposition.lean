@@ -142,14 +142,6 @@ private theorem coe_lineBasis_apply (J : AlmostComplexStructure V) {q : V} (hq :
     (k : Fin 1 × Fin 2) : (lineBasis J hq k : V) = ![q, J q] k.2 := by
   simp [lineBasis, Basis.span_apply]
 
-/-- A complex-linear map preserving a `J`-invariant submodule restricts to a complex-linear map of
-the restricted complex structure. -/
-private theorem isComplexLinearMap_restrict {f : V →ₗ[ℝ] V} (hfJ : IsComplexLinearMap J J f)
-    {p : Submodule ℝ V} (hJp : ∀ x ∈ p, J x ∈ p) (hfp : ∀ x ∈ p, f x ∈ p) :
-    IsComplexLinearMap (J.restrict p hJp) (J.restrict p hJp) (f.restrict hfp) :=
-  (isComplexLinearMap_iff_apply _ _ _).2 fun x ↦
-    Subtype.ext (by simp [(isComplexLinearMap_iff_apply _ _ _).1 hfJ])
-
 /-- The symplectic complement of a complex line `span(q, J q)` of a nonzero vector has smaller
 dimension than the ambient space. -/
 private theorem finrank_orthogonal_span_pair_lt [FiniteDimensional ℝ V] {q : V} (hq : q ≠ 0) :
@@ -211,7 +203,7 @@ private theorem exists_isDarbouxBasis_aux {ι : Type*} (n : ℕ) :
   have hcommW : Pairwise fun i j ↦ Commute (fW i) (fW j) := fun i j hij ↦
     LinearMap.restrict_commute (hcomm hij) (hWf i) (hWf j)
   have hfJW (i : ι) : IsComplexLinearMap JW JW (fW i) :=
-    isComplexLinearMap_restrict (hfJ i) hWJ (hWf i)
+    (hfJ i).restrict hWJ (hWf i)
   obtain ⟨m, bW, hbW, hJbW, hrotW⟩ :=
     ih _ (lt_of_lt_of_le (finrank_orthogonal_span_pair_lt hq) hn) ωW JW fW hJW hcommW
       (fun i x y ↦ hf i x y) hfJW le_rfl
