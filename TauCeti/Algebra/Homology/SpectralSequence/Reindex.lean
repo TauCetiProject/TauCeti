@@ -103,7 +103,6 @@ lemma homologyMap_restrictionMap_comp_iso_hom (φ : E ⟶ E') (r r' : ℤ) (j : 
     φ.comm (r + d) (r' + d) (f j) (by lia) (by lia)]
 
 /-- The morphism of reindexed spectral sequences induced by a morphism of spectral sequences. -/
-@[expose]
 noncomputable def reindexMap (φ : E ⟶ E') : E.reindex d f hf hd ⟶ E'.reindex d f hf hd where
   hom r hr := HomologicalComplex.restrictionMap (φ.hom (r + d))
     (ComplexShape.Embedding.mk' _ _ f f.injective (hf r))
