@@ -7,9 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Flow
 public import TauCeti.Geometry.Manifold.Riemannian.Jacobi.Uniqueness
-import TauCeti.Geometry.Manifold.VectorBundle.Section.Extension
-import TauCeti.Geometry.Manifold.VectorBundle.Scalar
-import TauCeti.Geometry.Manifold.VectorBundle.Translate
+public import TauCeti.Geometry.Manifold.Riemannian.Geodesic.InitialData
 
 /-!
 # Realizing Jacobi fields by geodesic variations
@@ -25,9 +23,7 @@ The variation realizes the given field and therefore its covariant velocity. End
 values are prescribed only to first order by the field; the nearby geodesics need not
 have fixed endpoints.
 
-The initial-state construction uses smooth section extensions and the short geodesic flow.
-It follows `CovariantDerivative.exists_contMDiffAt_tangentCurve_initialData`, strengthening
-its pointwise smoothness to smoothness throughout a fixed neighbourhood. We then use
+The initial-state construction uses `TangentSpace.exists_smooth_initialData`. We then use
 the geodesic-flow variation and its initial-value formulas in `Jacobi.Flow`, and
 `IsJacobiFieldOn.eq_of_eq_of_alongCurveWithin_eq`.
 
@@ -56,66 +52,6 @@ variable
   {p : M} {v : TangentSpace I p} {s : Set ℝ}
   {J : ∀ t, TangentSpace I (maximalGeodesic I M p v t)}
 
-/-- Use a short geodesic and globally smooth extensions to obtain initial states smooth
-on one fixed neighbourhood, with prescribed position and covariant velocities. -/
-private theorem exists_smooth_initialData (u w : TangentSpace I p) :
-    ∃ σ : ℝ → TangentBundle I M,
-      σ 0 = TotalSpace.mk' E p v ∧
-      (∀ᶠ q in 𝓝 0, ContMDiffAt 𝓘(ℝ, ℝ) I.tangent ∞ σ q) ∧
-      curveVelocity I (fun q ↦ (σ q).proj) 0 = u ∧
-      alongCurve (leviCivitaConnection I M) (fun q ↦ (σ q).proj)
-        (fun q ↦ (σ q).2) 0 = w := by
-  let γ := maximalGeodesic I M p u
-  let S := geodesicInterval I M p u
-  have hS : S ∈ 𝓝 0 := isOpen_geodesicInterval.mem_nhds zero_mem_geodesicInterval
-  have hγ : ContMDiffOn 𝓘(ℝ, ℝ) I ∞ γ S :=
-    (contMDiffOn_maximalGeodesic (I := I) (M := M)).comp
-      ((contMDiff_const (c := TotalSpace.mk' E p u)).prodMk contMDiff_id).contMDiffOn
-      (fun _ ht ↦ ht)
-  have hγ0 : γ 0 = p := maximalGeodesic_zero p u
-  have hγvel : curveVelocity I γ 0 = u := by
-    rw [← curveVelocityWithin_of_mem_nhds hS]
-    exact eq_of_heq (isGeodesicCurveOnFrom_maximalGeodesic p u).velocity_heq
-  -- Keep the correction in the fibre over γ 0 until the final initial-state equality.
-  let v₀ : TangentSpace I (γ 0) := v
-  let w₀ : TangentSpace I (γ 0) := w
-  obtain ⟨A, hA, hAv⟩ := exists_contMDiff_section_eq I E ∞ v₀
-  obtain ⟨B, hB, hBw⟩ := exists_contMDiff_section_eq I E ∞
-    (w₀ - leviCivitaConnection I M A (γ 0) (curveVelocity I γ 0))
-  let V : ∀ q, TangentSpace I (γ q) := fun q ↦ A (γ q) + q • B (γ q)
-  have hAp : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞
-      (fun q ↦ TotalSpace.mk' E (γ q) (A (γ q))) S := hA.comp_contMDiffOn hγ
-  have hBp : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞
-      (fun q ↦ TotalSpace.mk' E (γ q) (B (γ q))) S := hB.comp_contMDiffOn hγ
-  have hV : ContMDiffOn 𝓘(ℝ, ℝ) I.tangent ∞
-      (fun q ↦ TotalSpace.mk' E (γ q) (V q)) S := fun q hq ↦
-    (hAp q hq).add_sectionAlong
-      ((contMDiff_id q).contMDiffWithinAt.smul_totalSpace (hBp q hq))
-  refine ⟨fun q ↦ TotalSpace.mk' E (γ q) (V q), ?_, ?_, hγvel, ?_⟩
-  · apply TotalSpace.ext hγ0
-    simp only [V, zero_smul, add_zero]
-    exact heq_of_eq hAv
-  · filter_upwards [hS] with q hq
-    exact hV.contMDiffAt (isOpen_geodesicInterval.mem_nhds hq)
-  · have hcoordA := differentiableWithinAt_sectionCoord (s := Set.univ) γ (fun q ↦ A (γ q))
-      ((hAp.contMDiffAt hS).mdifferentiableAt (by simp)).mdifferentiableWithinAt
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ 0))
-    have hcoordB := differentiableWithinAt_sectionCoord (s := Set.univ) γ (fun q ↦ B (γ q))
-      ((hBp.contMDiffAt hS).mdifferentiableAt (by simp)).mdifferentiableWithinAt
-      (FiberBundle.mem_baseSet_trivializationAt E (TangentSpace I) (γ 0))
-    -- The initial-state curve was constructed as the pair (γ, V); expose its two projections.
-    change alongCurve (leviCivitaConnection I M) γ V 0 = w₀
-    dsimp only [V]
-    rw [← alongCurveWithin_univ, alongCurveWithin_add _ _ _ _ Set.univ hcoordA
-      (by rw [sectionCoord_smul]; exact differentiableWithinAt_id.fun_smul hcoordB),
-      alongCurveWithin_smul _ _ _ (fun q : ℝ ↦ q) Set.univ
-        differentiableWithinAt_id hcoordB,
-      alongCurveWithin_pullback_curveVelocityWithin _ _ _ uniqueDiffWithinAt_univ
-        ((hγ.contMDiffAt hS).mdifferentiableAt (by simp)).mdifferentiableWithinAt
-        (hA.mdifferentiableAt (by simp))]
-    simp [derivWithin_id', hBw, curveVelocityWithin_univ]
-
-
 /-- Choose varying initial states whose geodesic variation realizes the prescribed field. -/
 private theorem IsJacobiFieldOn.exists_initialData_variation
     (hJ : IsJacobiFieldOn I (maximalGeodesic I M p v) J s)
@@ -127,7 +63,7 @@ private theorem IsJacobiFieldOn.exists_initialData_variation
       ∀ t ∈ s, variationField I
         (fun q ↦ maximalGeodesic I M (σ q).proj (σ q).2) t = J t := by
   obtain ⟨σ, hσ0, hσ, hpos, hvel⟩ :=
-    exists_smooth_initialData (v := v)
+    TangentSpace.exists_smooth_initialData (v := v)
       (J 0) (alongCurveWithin (leviCivitaConnection I M)
         (maximalGeodesic I M p v) J s 0)
   have hF := isJacobiFieldOn_variationField_maximalGeodesic (hσ.self_of_nhds.of_le (by simp))
