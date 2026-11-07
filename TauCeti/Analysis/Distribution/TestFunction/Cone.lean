@@ -15,11 +15,11 @@ public import TauCeti.Analysis.Distribution.TestFunction.Prod
 # The cone over a current
 
 Let `Ω` be an open subset of a finite-dimensional real normed space `E`, let `p : E` and let `T`
-be a `k`-current on `Ω` whose support is a compact subset of `Ω`. The **cone** `δ_p ⫍ T` over `T`
+be a `k`-current on `Ω` whose support is a compact subset of `Ω`. The **cone** `δ_p × T` over `T`
 with vertex `p` is the pushforward of the product `[[0, 1]] × T` along the contraction
 `(x, t) ↦ p + t • (x - p)` onto `p`. On a test `(k + 1)`-form `ω` it is
 
-`(δ_p ⫍ T) ω = T (x ↦ ∫₀¹ t ^ k ω(p + t • (x - p))(x - p, ·) dt)`,
+`(δ_p × T) ω = T (x ↦ ∫₀¹ t ^ k ω(p + t • (x - p))(x - p, ·) dt)`,
 
 where the integral is cut off away from the support of `T` (`Distribution.cone`). The cone is
 supported in the union of the segments from `p` to the support of `T`, so it lies in `Ω` when `Ω`
@@ -28,12 +28,12 @@ is star-shaped with respect to `p`; in general it is the restriction to `Ω` of 
 
 The cone satisfies the **cone formula**
 
-`∂ (δ_p ⫍ T) = T - δ_p ⫍ ∂ T` in positive degree, and `∂ (δ_p ⫍ T) = T - aug(T) δ_p` in degree zero,
+`∂ (δ_p × T) = T - δ_p × ∂ T` in positive degree, and `∂ (δ_p × T) = T - aug(T) δ_p` in degree zero,
 
 where `∂ T = T ∘ d` and `aug(T)` is the augmentation (`Distribution.augmentation`). Thus the cone
 over a cycle of positive degree, and over a `0`-cycle of augmentation zero, fills it. If the
 support of `T` lies in the closed ball of radius `r` about `p` and `T` has finite mass, then
-`M(δ_p ⫍ T) ≤ r M(T) / (k + 1)`. These are the basic inputs of local filling arguments for
+`M(δ_p × T) ≤ r M(T) / (k + 1)`. These are the basic inputs of local filling arguments for
 currents.
 
 On test forms, the operator `TestFunction.coneCLM p χ` sends `ω` to `χ • K ω`, where `χ` is a test
@@ -53,11 +53,11 @@ cylinder homotopy operator `TestFunction.cylinderHomotopyCLM` of the pullback wi
 * `ContinuousLinearMap.comp_coneCLM_congr`, `ContinuousLinearMap.comp_coneCLM_comp_extDerivCLM`,
   `ContinuousLinearMap.comp_coneCLM_extDerivCLM_finZero`: independence of the cutoff and the cone
   formula for `T ∘ coneCLM p χ`.
-* `Distribution.cone`: the cone `δ_p ⫍ T` over a current, and `Distribution.cone_eq`.
+* `Distribution.cone`: the cone `δ_p × T` over a current, and `Distribution.cone_eq`.
 * `Distribution.cone_comp_extDerivCLM`, `Distribution.cone_extDerivCLM_finZero`: the cone
   formula.
 * `Distribution.dsupport_cone_subset`: the support of the cone.
-* `Distribution.mass_comp_coneCLM_le`, `Distribution.mass_cone_le`: `M(δ_p ⫍ T) ≤ r M(T) / (k + 1)`.
+* `Distribution.mass_comp_coneCLM_le`, `Distribution.mass_cone_le`: `M(δ_p × T) ≤ r M(T) / (k + 1)`.
 
 ## References
 
@@ -346,7 +346,7 @@ variable {E F G : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   {Ω : Opens E} {k : ℕ} {p : E} {χ : 𝓓(Ω, ℝ)}
 
 open Classical in
-/-- The **cone** `δ_p ⫍ T` over a `k`-current `T` on `Ω` with vertex `p`: the `(k + 1)`-current
+/-- The **cone** `δ_p × T` over a `k`-current `T` on `Ω` with vertex `p`: the `(k + 1)`-current
 `T ∘ coneCLM p χ`, for a test function `χ` equal to one on a neighbourhood of the support of `T`
 (`Distribution.cone_eq`). It is the pushforward of `[[0, 1]] × T` along `(x, t) ↦ p + t • (x - p)`.
 It is zero when no such `χ` exists, that is when the support of `T` is not a compact subset
@@ -371,7 +371,7 @@ theorem cone_eq {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] G}
   rw [cone, dite_eq_left h]
   exact T.comp_coneCLM_congr ((h.choose_spec.and hχ).mono fun x hx ↦ hx.1.trans hx.2.symm)
 
-/-- **The cone formula**: `∂ (δ_p ⫍ T) = T - δ_p ⫍ ∂ T` for a current `T` on test
+/-- **The cone formula**: `∂ (δ_p × T) = T - δ_p × ∂ T` for a current `T` on test
 `(k + 1)`-forms whose support is a compact subset of `Ω`, where `∂ T = T ∘ d`. In particular the
 cone over a cycle fills it. -/
 theorem cone_comp_extDerivCLM [IsTopologicalAddGroup G] (T : 𝓓(Ω, E [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] G)
@@ -382,7 +382,7 @@ theorem cone_comp_extDerivCLM [IsTopologicalAddGroup G] (T : 𝓓(Ω, E [⋀^Fin
     hχ.filter_mono (nhdsSet_mono (dsupport_comp_extDerivCLM_subset T))
   rw [cone_eq hχ, cone_eq hχd, T.comp_coneCLM_comp_extDerivCLM hχ]
 
-/-- **The cone formula in degree zero**: `∂ (δ_p ⫍ T) = T - aug(T) δ_p` for a current `T` on test
+/-- **The cone formula in degree zero**: `∂ (δ_p × T) = T - aug(T) δ_p` for a current `T` on test
 `0`-forms whose support is a compact subset of `Ω`, where `aug` is the augmentation. In particular
 the cone over a `0`-current of augmentation zero fills it. -/
 theorem cone_extDerivCLM_finZero (T : 𝓓(Ω, E [⋀^Fin 0]→L[ℝ] F) →L[ℝ] G)
@@ -467,7 +467,7 @@ theorem mass_comp_coneCLM_le {𝓕 : Type*} [FunLike 𝓕 𝓓(Ω, E [⋀^Fin k]
     _ = ((r / (k + 1) : ℝ≥0) : ℝ≥0∞) * mass T := mul_comm _ _
 
 /-- **The mass of the cone**: if the support of a `k`-current `T` of finite mass lies in the closed
-ball of radius `r` about `p`, then `M(δ_p ⫍ T) ≤ r M(T) / (k + 1)`. -/
+ball of radius `r` about `p`, then `M(δ_p × T) ≤ r M(T) / (k + 1)`. -/
 theorem mass_cone_le (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) →L[ℝ] V) {r : ℝ≥0}
     (hr : dsupport T ⊆ Metric.closedBall p r) (hT : mass T ≠ ⊤) :
     mass (cone p T) ≤ ((r / (k + 1) : ℝ≥0) : ℝ≥0∞) * mass T := by
