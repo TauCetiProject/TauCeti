@@ -25,7 +25,7 @@ This is the scheme form of `TauCeti.Algebra.Etale.exists_isFiniteSplit_tensorPro
 through `TauCeti.FiniteEtaleScheme.spec` and Mathlib's affine pullback comparison. Two finite étale
 schemes split over a common finite Galois extension, one splitting their disjoint union.
 
-Once a finite étale scheme `S` and a finite flat `S`-scheme `E` of constant rank `d` are both
+Once a finite étale scheme `S` and a flat `S`-scheme `E` of constant rank `d` are both
 split over the base field, `E` is `d` copies of `S`
 (`AlgebraicGeometry.Scheme.Hom.exists_split_of_finrank_eq`): the rational points of `E` above
 each rational point of `S` are counted by the rank
@@ -98,12 +98,13 @@ theorem exists_split_of_isFinite_of_etale₂ {K : Type u} [Field K] {X Y : Schem
     ⟨((Over.pullback (Spec.algebraMap K L)).mapIso eB).symm ≪≫
       TauCeti.AlgebraicGeometry.pullbackSpecIsoOfAlgEquiv K B.obj L (Fin m → L) b⟩⟩
 
-/-- **A finite flat morphism of constant rank between split schemes over a field is a trivial
-cover.** Let `p : E ⟶ S` be finite and flat of rank `d` at every point, where `S` and `E` are
-identified with `Spec (Fin n → L)` and `Spec (Fin m → L)` compatibly with their morphisms to
-`Spec L`. Then `E` is `Spec (Fin d → Fin n → L)` over `S`, that is, `d` copies of `S`. -/
+/-- **A flat morphism of constant rank between split schemes over a field is a trivial cover.**
+Let `p : E ⟶ S` be flat of rank `d` at every point, where `S` and `E` are identified with
+`Spec (Fin n → L)` and `Spec (Fin m → L)` compatibly with their morphisms to `Spec L`; such a
+`p` is automatically finite. Then `E` is `Spec (Fin d → Fin n → L)` over `S`, that is, `d`
+copies of `S`. -/
 theorem exists_split_of_finrank_eq {L : Type u} [Field L] {S E : Scheme.{u}} {n m d : ℕ}
-    (p : E ⟶ S) [IsFinite p] [Flat p] (hp : ∀ s, p.finrank s = d)
+    (p : E ⟶ S) [Flat p] (hp : ∀ s, p.finrank s = d)
     (e : S ≅ Spec (.of (Fin n → L))) (eE : E ≅ Spec (.of (Fin m → L)))
     (h : eE.hom ≫ Spec.algebraMap L (Fin m → L) = p ≫ e.hom ≫ Spec.algebraMap L (Fin n → L)) :
     ∃ e' : E ≅ Spec (.of (Fin d → Fin n → L)),
@@ -124,6 +125,13 @@ theorem exists_split_of_finrank_eq {L : Type u} [Field L] {S E : Scheme.{u}} {n 
   have hφp : Spec.map (CommRingCat.ofHom (algebraMap (Fin n → L) (Fin m → L))) = p₀ :=
     Spec.map_preimage p₀
   have : Module.Finite (Fin n → L) (Fin m → L) := .of_restrictScalars_finite L _ _
+  -- `p` is finite, being `p₀` up to isomorphisms.
+  have : IsFinite p := by
+    have : IsFinite p₀ := by
+      rw [← hφp, IsFinite.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.finite_algebraMap]
+      infer_instance
+    rw [show p = eE.hom ≫ p₀ ≫ e.inv by simp [p₀]]
+    infer_instance
   have : Module.Flat (Fin n → L) (Fin m → L) := by
     have : Flat p₀ := by dsimp only [p₀]; infer_instance
     rwa [← hφp, Flat.SpecMap_iff, CommRingCat.hom_ofHom, RingHom.flat_algebraMap_iff] at this
