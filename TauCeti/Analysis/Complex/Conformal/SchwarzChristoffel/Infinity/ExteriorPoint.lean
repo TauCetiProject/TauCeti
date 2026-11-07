@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Primitive
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Quadratic
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Image
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Power
+import TauCeti.Analysis.Normed.Field.Basic
+import TauCeti.Analysis.SpecialFunctions.Pow.Sector
 
 /-!
 # Exterior points of Schwarz--Christoffel images
@@ -104,39 +106,18 @@ private theorem exists_eventually_cone_schwarzChristoffelPrimitive
   let F : ℂ := schwarzChristoffelPrimitive a e z₀ z
   have hz0 : z ≠ 0 := fun h => by simp [h] at hzH
   have hpow0 : z ^ (β : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
-  have hβnorm : ‖(β : ℂ)‖ = β := by simp [abs_of_pos hβ]
-  -- Convert the uniform ratio limit into a relative error for the leading power.
-  have herror : ‖F - P‖ ≤ η * ‖P‖ := by
-    have hmul := mul_le_mul_of_nonneg_right hz (norm_nonneg (z ^ (β : ℂ)))
-    rw [dist_eq_norm] at hmul
-    have heq : (F / z ^ (β : ℂ) - (β : ℂ)⁻¹) * z ^ (β : ℂ) = F - P := by
-      dsimp [P]
-      field_simp
-    rw [← norm_mul, heq] at hmul
-    calc
-      ‖F - P‖ ≤ η / β * ‖z ^ (β : ℂ)‖ := hmul
-      _ = η * ‖P‖ := by
-        dsimp only [P]
-        rw [norm_div, hβnorm]
-        ring
+  have herror : ‖F - P‖ ≤ η * ‖P‖ := norm_sub_div_le_of_dist_div_le (c := (β : ℂ)) hpow0
+    (by rwa [Complex.norm_real, Real.norm_of_nonneg hβ.le])
   have hcone : c * ‖P‖ ≤ (u * P).re := by
-    have harg : |z.arg * β - θ| ≤ θ := by
-      apply abs_le.mpr
-      constructor <;> dsimp [θ] <;>
-        nlinarith [arg_nonneg_iff.mpr hzH.le, arg_le_pi z]
-    have hcos : c ≤ Real.cos (z.arg * β - θ) := by
-      simpa only [Real.cos_abs] using
-        Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ.2.le harg
-    have hure : u.re = Real.cos θ := by
-      simpa only [Real.cos_neg] using exp_ofReal_mul_I_re (-θ)
-    have huim : u.im = -Real.sin θ := by
-      simpa only [Real.sin_neg] using exp_ofReal_mul_I_im (-θ)
-    have hre : (u * P).re = ‖P‖ * Real.cos (z.arg * β - θ) := by
-      simp [P, mul_div_assoc, Complex.mul_re, cpow_ofReal_re, cpow_ofReal_im,
-        hure, huim, Real.cos_sub, abs_of_pos hβ]
-      ring
-    rw [hre]
-    simpa only [mul_comm] using mul_le_mul_of_nonneg_left hcos (norm_nonneg P)
+    have h : c * ‖z ^ (β : ℂ)‖ ≤ (u * z ^ (β : ℂ)).re :=
+      cos_mul_norm_le_re_exp_mul_cpow hβ hβhigh hzH.le
+    calc c * ‖P‖ = c * ‖z ^ (β : ℂ)‖ / β := by
+          rw [show ‖P‖ = ‖z ^ (β : ℂ)‖ / β by simp [P, abs_of_pos hβ]]
+          ring
+      _ ≤ (u * z ^ (β : ℂ)).re / β := by gcongr
+      _ = (u * P).re := by
+          rw [show u * P = u * z ^ (β : ℂ) / (β : ℂ) from (mul_div_assoc _ _ _).symm,
+            Complex.div_ofReal_re]
   -- Widen the leading cone from cosine bound `c` to `-(1 - η)`; the same
   -- error estimate controls both the real part and the norm of the primitive.
   have hreError : |(u * (F - P)).re| ≤ η * ‖P‖ := by

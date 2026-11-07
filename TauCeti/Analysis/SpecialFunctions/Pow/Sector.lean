@@ -20,6 +20,8 @@ from its principal root is `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc`.
 * `TauCeti.arg_mem_Icc_iff_norm_mul_cos_le_re` characterizes a closed symmetric sector without
   referring to the discontinuous argument function on the target side.
 * `TauCeti.cpow_inv_re_pos_of_arg_mem_sector` maps an open sector into the right half-plane.
+* `TauCeti.cos_mul_norm_le_re_exp_mul_cpow` bounds `z ^ β` on the closed upper half-plane below
+  by a cone inequality, for `0 < β < 2`.
 -/
 
 public section
@@ -51,6 +53,38 @@ theorem cpow_inv_re_pos_of_arg_mem_sector {z : ℂ} {β : ℝ} (hβ : 0 < β) (h
     linarith [harg.1]
   · rw [div_lt_iff₀ hβ]
     linarith [harg.2]
+
+/-- In the closed upper half-plane with `0 < β < 2`, the power `z ^ β`, rotated by
+`exp (-(β π / 2) i)`, lies in the cone of real part at least `cos (β π / 2)` times the norm. -/
+theorem cos_mul_norm_le_re_exp_mul_cpow {z : ℂ} {β : ℝ} (hβ : 0 < β) (hβ2 : β < 2)
+    (hz : 0 ≤ z.im) :
+    Real.cos (β * Real.pi / 2) * ‖z ^ (β : ℂ)‖ ≤
+      (exp ((-(β * Real.pi / 2) : ℝ) * Complex.I) * z ^ (β : ℂ)).re := by
+  set θ : ℝ := β * Real.pi / 2 with hθdef
+  have hθ : 0 ≤ θ ∧ θ < Real.pi := by
+    constructor <;> nlinarith [Real.pi_pos]
+  set u : ℂ := exp ((-θ : ℝ) * Complex.I)
+  set P : ℂ := z ^ (β : ℂ)
+  have harg : |z.arg * β - θ| ≤ θ := by
+    apply abs_le.mpr
+    constructor <;> dsimp [θ] <;>
+      nlinarith [arg_nonneg_iff.mpr hz, arg_le_pi z]
+  have hcos : Real.cos θ ≤ Real.cos (z.arg * β - θ) := by
+    simpa only [Real.cos_abs] using
+      Real.cos_le_cos_of_nonneg_of_le_pi (abs_nonneg _) hθ.2.le harg
+  have hure : u.re = Real.cos θ := by
+    simpa only [Real.cos_neg] using exp_ofReal_mul_I_re (-θ)
+  have huim : u.im = -Real.sin θ := by
+    simpa only [Real.sin_neg] using exp_ofReal_mul_I_im (-θ)
+  have hre : (u * P).re = ‖P‖ * Real.cos (z.arg * β - θ) := by
+    rcases eq_or_ne z 0 with rfl | hz0
+    · simp [P, hβ.ne']
+    have hPn : ‖P‖ = ‖z‖ ^ β := by
+      simp [P]
+    simp [P, Complex.mul_re, cpow_ofReal_re, cpow_ofReal_im, hure, huim, Real.cos_sub, hPn]
+    ring
+  rw [hre]
+  simpa only [mul_comm] using mul_le_mul_of_nonneg_left hcos (norm_nonneg P)
 
 end TauCeti
 
