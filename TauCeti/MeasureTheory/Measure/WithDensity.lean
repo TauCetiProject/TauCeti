@@ -44,6 +44,8 @@ measure finite.
   absolute value has the folded density.
 * `MeasureTheory.Measure.map_withDensity_eq_withDensity`: a pointwise factorization of one weight
   through a map whose Jacobian identity is already known transports that weight to the image.
+* `MeasureTheory.Measure.map_withDensity_comp`: the image of a measure weighted by a pulled-back
+  weight is the image measure weighted by that weight.
 * `MeasureTheory.Measure.map_add_right_withDensity`: translating a weighted right-invariant
   measure translates the weight.
 * `MeasureTheory.Measure.map_affine_withDensity`: the image of a weighted Haar measure under an
@@ -202,6 +204,13 @@ theorem map_withDensity_eq_withDensity {μ : Measure α} {ν : Measure β} {f : 
       Set.indicator_of_mem hzq, hz]
   · rw [Set.indicator_of_notMem (Set.mem_preimage.not.mpr hzq), Pi.mul_apply,
       Set.indicator_of_notMem hzq, mul_zero]
+
+/-- **A pulled-back weight is pushed forward.** The image under a measurable `f` of `μ` weighted by
+`g ∘ f` is the image of `μ` weighted by `g`. This is the case of
+`map_withDensity_eq_withDensity` with trivial Jacobian. -/
+theorem map_withDensity_comp {μ : Measure α} {f : α → β} {g : β → ℝ≥0∞} (hf : Measurable f)
+    (hg : Measurable g) : (μ.withDensity (g ∘ f)).map f = (μ.map f).withDensity g :=
+  map_withDensity_eq_withDensity (jac := fun _ => 1) hf measurable_const hg (by simp) (by simp)
 
 /-- **Translating a weighted invariant measure translates its weight.** If `μ` is invariant under
 right translation, then pushing `μ.withDensity f` forward along `x ↦ x + y` gives `μ` weighted by
