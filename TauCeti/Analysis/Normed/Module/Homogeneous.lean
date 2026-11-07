@@ -132,27 +132,29 @@ private theorem radial_smul (hhom : ∀ c : ℝ, 0 ≤ c → ∀ v, L (c • v) 
   rw [hσ, hσ, norm_map_div_norm_smul hhom hc, smul_comm]
 
 omit [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
-/-- Continuity of the radial rescaling `σ v = (‖L v‖ / ‖v‖) • v`. Away from the origin it is that
-of the formula; at the origin, `‖σ v‖ = ‖L v‖` tends to zero. -/
+/-- The radial rescaling `σ v = (‖L v‖ / ‖v‖) • v` is continuous when `L` is continuous with
+`L 0 = 0`. -/
 private theorem continuous_radial (hL : Continuous L) (hL0 : L 0 = 0) {σ : E → E}
     (hσ : ∀ v, σ v = (‖L v‖ / ‖v‖) • v) : Continuous σ := by
   refine continuous_iff_continuousAt.2 fun v => ?_
   rcases eq_or_ne v 0 with rfl | hv
-  · have h0 : σ 0 = 0 := by simp [hσ]
+  · -- At the origin, `‖σ v‖ = ‖L v‖` tends to zero.
+    have h0 : σ 0 = 0 := by simp [hσ]
     rw [ContinuousAt, h0, tendsto_zero_iff_norm_tendsto_zero]
     simp only [norm_radial hL0 hσ]
     simpa [hL0] using hL.norm.tendsto 0
-  · rw [show σ = fun v => (‖L v‖ / ‖v‖) • v from funext hσ]
+  · rw [funext hσ]
     exact (hL.norm.continuousAt.div continuous_norm.continuousAt
       (norm_ne_zero_iff.2 hv)).smul continuousAt_id
 
 omit [FiniteDimensional ℝ E] [NormedSpace ℝ F] in
-/-- Continuity of `τ w = (‖w‖ / ‖L w‖) • w`, given a positive lower bound `‖L w‖ ≥ m * ‖w‖`.
-At the origin, `‖τ w‖ ≤ m⁻¹ * ‖w‖` tends to zero. -/
-private theorem continuous_radial_inv (hL : Continuous L) (hne : ∀ v, v ≠ 0 → L v ≠ 0) {m : ℝ}
+/-- The map `τ w = (‖w‖ / ‖L w‖) • w` is continuous when `L` is continuous and satisfies a
+positive lower bound `‖L w‖ ≥ m * ‖w‖`. -/
+private theorem continuous_radial_inv (hL : Continuous L) {m : ℝ}
     (hm : 0 < m) (hmL : ∀ w, m * ‖w‖ ≤ ‖L w‖) {τ : E → E}
     (hτ : ∀ w, τ w = (‖w‖ / ‖L w‖) • w) : Continuous τ := by
-  have hpos {v : E} (hv : v ≠ 0) : 0 < ‖L v‖ := norm_pos_iff.2 (hne v hv)
+  have hpos {v : E} (hv : v ≠ 0) : 0 < ‖L v‖ :=
+    lt_of_lt_of_le (mul_pos hm (norm_pos_iff.2 hv)) (hmL v)
   have hτle (w : E) : ‖τ w‖ ≤ m⁻¹ * ‖w‖ := by
     rcases eq_or_ne w 0 with rfl | hw
     · simp [hτ]
@@ -162,11 +164,12 @@ private theorem continuous_radial_inv (hL : Continuous L) (hne : ∀ v, v ≠ 0 
       _ ≤ m⁻¹ * ‖w‖ * ‖L w‖ := by gcongr; exact hmL w
   refine continuous_iff_continuousAt.2 fun w => ?_
   rcases eq_or_ne w 0 with rfl | hw
-  · have h0 : τ 0 = 0 := by simp [hτ]
+  · -- At the origin, `‖τ w‖ ≤ m⁻¹ * ‖w‖` tends to zero.
+    have h0 : τ 0 = 0 := by simp [hτ]
     rw [ContinuousAt, h0, tendsto_zero_iff_norm_tendsto_zero]
     exact squeeze_zero (fun _ => norm_nonneg _) hτle
       (by simpa using (tendsto_norm_zero (E := E)).const_mul m⁻¹)
-  · rw [show τ = fun w => (‖w‖ / ‖L w‖) • w from funext hτ]
+  · rw [funext hτ]
     exact (continuous_norm.continuousAt.div hL.norm.continuousAt (hpos hw).ne').smul
       continuousAt_id
 
@@ -188,7 +191,7 @@ theorem exists_homeomorph_norm_eq (hL : Continuous L) (hne : ∀ v, v ≠ 0 → 
   have hτ : ∀ w, τ w = (‖w‖ / ‖L w‖) • w := fun _ => rfl
   obtain ⟨hτσ, hστ⟩ := radial_leftInverse_rightInverse hne hhom hσ hτ
   refine ⟨⟨⟨σ, τ, hτσ, hστ⟩, continuous_radial hL hL0 hσ,
-    continuous_radial_inv hL hne hm hmL hτ⟩, radial_smul hhom hσ, fun v => ?_,
+    continuous_radial_inv hL hm hmL hτ⟩, radial_smul hhom hσ, fun v => ?_,
     norm_radial hL0 hσ⟩
   rcases eq_or_ne v 0 with rfl | hv
   · exact ⟨1, one_pos, by simp [σ]⟩
