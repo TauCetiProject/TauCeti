@@ -185,7 +185,7 @@ theorem cdf_map_abs_of_nonneg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : 
   have hpre : (|·|) ⁻¹' Iic x = Iic x \ Iio (-x) := by
     ext y
     simp [abs_le, and_comm]
-  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+  rw [cdf_map _ _ continuous_abs.measurable.aemeasurable, hpre,
     measureReal_sdiff (Iio_subset_Iic_self.trans (Iic_subset_Iic.2 (by linarith)))
       measurableSet_Iio, cdf_eq_real]
 
@@ -194,7 +194,7 @@ theorem cdf_map_abs_of_neg (μ : Measure ℝ) [IsProbabilityMeasure μ] {x : ℝ
     cdf (μ.map (|·|)) x = 0 := by
   have hpre : (|·|) ⁻¹' Iic x = ∅ :=
     eq_empty_of_forall_notMem fun y hy => not_le.2 hx ((abs_nonneg y).trans hy)
-  rw [cdf_eq_real, map_measureReal_apply continuous_abs.measurable measurableSet_Iic, hpre,
+  rw [cdf_map _ _ continuous_abs.measurable.aemeasurable, hpre,
     measureReal_empty]
 
 /-- The cdf of the image of a symmetric law under absolute value at `x ≥ 0` is
@@ -209,7 +209,7 @@ half-line, and at `x ≥ 0` its cdf is the cdf of `μ` at `(x / s) ^ 2`. -/
 theorem cdf_map_const_mul_sqrt (μ : Measure ℝ) [IsProbabilityMeasure μ] {s : ℝ} (hs : 0 < s)
     (x : ℝ) :
     cdf (μ.map fun y ↦ s * √y) x = if x < 0 then 0 else cdf μ ((x / s) ^ 2) := by
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic]
+  rw [cdf_map _ _ (by fun_prop)]
   by_cases hx : x < 0
   · have hpre : (fun y ↦ s * √y) ⁻¹' Iic x = ∅ :=
       eq_empty_of_forall_notMem fun y hy ↦
@@ -225,7 +225,7 @@ theorem cdf_map_const_mul_sqrt (μ : Measure ℝ) [IsProbabilityMeasure μ] {s :
 floor of the argument. Unlike natural floor, integer floor also accounts for negative values. -/
 theorem cdf_map_intCast (μ : Measure ℤ) [IsProbabilityMeasure μ] (x : ℝ) :
     cdf (μ.map (Int.cast : ℤ → ℝ)) x = μ.real (Iic ⌊x⌋) := by
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, Int.preimage_Iic]
+  rw [cdf_map _ _ (by fun_prop), Int.preimage_Iic]
 
 variable (μ : Measure ℕ) [IsProbabilityMeasure μ]
 
@@ -237,7 +237,7 @@ theorem cdf_map_natCast {x : ℝ} (hx : 0 ≤ x) :
     ext k
     simp only [mem_preimage, mem_Iic]
     exact (Nat.le_floor_iff hx).symm
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre]
+  rw [cdf_map _ _ (by fun_prop), hpre]
 
 /-- Below the origin, the cdf of a natural-valued law cast to the reals vanishes: the law is
 carried by the natural numbers. -/
@@ -247,7 +247,7 @@ theorem cdf_map_natCast_of_neg {x : ℝ} (hx : x < 0) :
     ext k
     simp only [mem_preimage, mem_Iic, mem_empty_iff_false, iff_false, not_le]
     exact lt_of_lt_of_le hx (Nat.cast_nonneg k)
-  rw [cdf_eq_real, map_measureReal_apply (by fun_prop) measurableSet_Iic, hpre,
+  rw [cdf_map _ _ (by fun_prop), hpre,
     measureReal_empty]
 
 /-- Every level below one is reached by a finite cumulative mass of a natural-valued probability
