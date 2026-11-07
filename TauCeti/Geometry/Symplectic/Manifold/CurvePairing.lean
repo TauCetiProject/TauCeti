@@ -98,19 +98,22 @@ theorem abs_integralTopForm_mpullback_le [CompactSpace C] (hu : ContMDiff I' I �
   have key (s : ℝ) (hs : |s| ≤ 1) :
       0 ≤ K * integralTopForm o (SmoothForm.mpullback u hu σ).1 +
         s * integralTopForm o (SmoothForm.mpullback u hu θ).1 := by
-    rw [← integralTopForm_smul, ← integralTopForm_smul, ← integralTopForm_add_of_compactSpace o
-        (((SmoothForm.isSmoothForm _).of_le (by simp)).smul K)
-        (((SmoothForm.isSmoothForm _).of_le (by simp)).smul s),
-      ← Submodule.coe_smul, ← Submodule.coe_smul, ← Submodule.coe_add, ← map_smul, ← map_smul,
-      ← map_add]
-    refine integralTopForm_mpullback_nonneg hu ho hhol fun c v ↦ ?_
-    have hs' : |s * SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)| ≤
-        |SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)| := by
-      rw [abs_mul]
-      exact mul_le_of_le_one_left (abs_nonneg _) hs
-    rw [SmoothBundleForm.eval₂_add, SmoothForm.eval₂_smul, SmoothForm.eval₂_smul, smul_eq_mul,
-      smul_eq_mul]
-    linarith [neg_abs_le (s * SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)), hK c v]
+    have hpt (c : C) (v : TangentSpace I (u c)) :
+        0 ≤ SmoothBundleForm.eval₂ (K • σ + s • θ) (u c) v (J (u c) v) := by
+      have hs' : |s * SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)| ≤
+          |SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)| := by
+        rw [abs_mul]
+        exact mul_le_of_le_one_left (abs_nonneg _) hs
+      rw [SmoothBundleForm.eval₂_add, SmoothForm.eval₂_smul, SmoothForm.eval₂_smul, smul_eq_mul,
+        smul_eq_mul]
+      linarith [neg_abs_le (s * SmoothBundleForm.eval₂ θ (u c) v (J (u c) v)), hK c v]
+    have hσ : IsSmoothForm I' 0 (SmoothForm.mpullback u hu σ).1 :=
+      (SmoothForm.isSmoothForm _).of_le (by simp)
+    have hθ : IsSmoothForm I' 0 (SmoothForm.mpullback u hu θ).1 :=
+      (SmoothForm.isSmoothForm _).of_le (by simp)
+    simpa only [map_add, map_smul, Submodule.coe_add, Submodule.coe_smul,
+      integralTopForm_add_of_compactSpace o (hσ.smul K) (hθ.smul s), integralTopForm_smul]
+      using integralTopForm_mpullback_nonneg hu ho hhol hpt
   have h₁ := key 1 (by simp)
   have h₂ := key (-1) (by simp)
   rw [abs_le]
