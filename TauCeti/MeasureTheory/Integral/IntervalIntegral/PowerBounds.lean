@@ -141,17 +141,16 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
         ((δ ^ 2) ^ (-((1 - α) / 2)) * δ) := by field_simp
     _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by rw [hpow]; ring
 
-/-- Both integrals are of size `O(c h ^ β)` when `t' ≤ t - t'`, since then `t ≤ 2 (t - t')`. -/
-theorem norm_intervalIntegral_sub_le_of_le_sub {V : Type*} [NormedAddCommGroup V]
-    [NormedSpace ℝ V] {g₁ g₂ : ℝ → V} {c β t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1)
-    (ht' : 0 ≤ t') (htt' : t' ≤ t) (hsmall : t' ≤ t - t')
-    (h₁ : ‖∫ s in 0..t, g₁ s‖ ≤ c * t ^ β) (h₂ : ‖∫ s in 0..t', g₂ s‖ ≤ c * t' ^ β) :
-    ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖ ≤ 3 * c * (t - t') ^ β := by
+/-- If `‖x‖ ≤ c t ^ β` and `‖y‖ ≤ c t' ^ β` with `t' ≤ t - t'`, then `‖x - y‖ ≤ 3 c (t - t') ^ β`,
+since then `t ≤ 2 (t - t')`. -/
+theorem norm_sub_le_three_mul_rpow_of_le_sub {V : Type*} [SeminormedAddCommGroup V] {x y : V}
+    {c β t t' : ℝ} (hc : 0 ≤ c) (hβ₀ : 0 ≤ β) (hβ₁ : β ≤ 1) (ht' : 0 ≤ t')
+    (hsmall : t' ≤ t - t') (h₁ : ‖x‖ ≤ c * t ^ β) (h₂ : ‖y‖ ≤ c * t' ^ β) :
+    ‖x - y‖ ≤ 3 * c * (t - t') ^ β := by
   have h₃ : t ^ β ≤ 2 * (t - t') ^ β :=
-    rpow_le_two_mul_rpow_of_le_two_mul (ht'.trans htt') (by linarith) hβ₀ hβ₁
+    rpow_le_two_mul_rpow_of_le_two_mul (by linarith) (by linarith) hβ₀ hβ₁
   have h₄ : t' ^ β ≤ (t - t') ^ β := rpow_le_rpow ht' hsmall hβ₀
-  calc ‖(∫ s in 0..t, g₁ s) - ∫ s in 0..t', g₂ s‖
-      ≤ ‖∫ s in 0..t, g₁ s‖ + ‖∫ s in 0..t', g₂ s‖ := norm_sub_le _ _
+  calc ‖x - y‖ ≤ ‖x‖ + ‖y‖ := norm_sub_le _ _
     _ ≤ c * t ^ β + c * t' ^ β := add_le_add h₁ h₂
     _ ≤ c * (2 * (t - t') ^ β) + c * (t - t') ^ β := by gcongr
     _ = 3 * c * (t - t') ^ β := by ring

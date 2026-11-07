@@ -648,8 +648,9 @@ private theorem exists_norm_iteratedFDeriv_two_heatDuhamelPotential_sub_le {α :
   rw [hrep (ht'.trans htt'.le) le_rfl, hrep ht' htt'.le]
   rcases le_or_gt t' h with hsmall | hbig
   · -- For `t' ≤ h` both Hessians are already of size `O(H h^(α/2))`.
-    have hb := norm_intervalIntegral_sub_le_of_le_sub (c := C₁ * H) (β := (α : ℝ) / 2)
-      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht' htt'.le hsmall
+    have hb := norm_sub_le_three_mul_rpow_of_le_sub (x := ∫ s in 0..t, Φ t s)
+      (y := ∫ s in 0..t', Φ t' s) (c := C₁ * H) (β := (α : ℝ) / 2)
+      (mul_nonneg hC₁₀ H.coe_nonneg) (by positivity) (by linarith) ht' hsmall
       (by simpa using hnear le_rfl ht.le le_rfl) (by simpa using hnear le_rfl ht' htt'.le)
     have : 0 ≤ 2 / (2 - α) * K * H * h ^ ((α : ℝ) / 2) := by positivity
     linarith
