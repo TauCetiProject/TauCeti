@@ -26,18 +26,6 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
-/-- A Poisson singleton has nonzero mass exactly when the rate is positive or the count is zero. -/
-theorem poissonMeasure_singleton_ne_zero_iff (r : ℝ≥0) (n : ℕ) :
-    poissonMeasure r {n} ≠ 0 ↔ r ≠ 0 ∨ n = 0 := by
-  by_cases hr : r = 0
-  · subst r
-    cases n <;> simp [poissonMeasure_zero]
-  · rw [poissonMeasure_singleton, ENNReal.ofReal_ne_zero_iff]
-    constructor
-    · exact fun _ ↦ Or.inl hr
-    · intro _
-      positivity
-
 /-- The support of a Poisson law is the whole of `ℕ` at positive rate and the singleton zero at
 rate zero. -/
 @[simp]
