@@ -256,18 +256,6 @@ theorem isQuotientCoveringMap_mk [ContinuousConstSMul G A]
 variable [DiscreteTopology A]
 
 omit [TopologicalSpace E] [TopologicalSpace A] [DiscreteTopology A] in
-/-- A point of the sheet `U ×ˢ {a}` of the balanced product is the class of `(u, a)` for some
-`u ∈ U`. -/
-private theorem mem_image_prod_singleton_iff (U : Set E) (a : A) (z : BalancedProduct G E A) :
-    z ∈ Quotient.mk (MulAction.orbitRel G (E × A)) '' (U ×ˢ {a}) ↔ ∃ u ∈ U, mk G u a = z := by
-  constructor
-  · rintro ⟨⟨u, a'⟩, ⟨hu, ha'⟩, rfl⟩
-    obtain rfl : a' = a := ha'
-    exact ⟨u, hu, rfl⟩
-  · rintro ⟨u, hu, rfl⟩
-    exact ⟨(u, a), ⟨hu, rfl⟩, rfl⟩
-
-omit [TopologicalSpace E] [TopologicalSpace A] [DiscreteTopology A] in
 /-- Two points of a set `U` whose `G`-translates are pairwise disjoint have the same class in the
 balanced product only when they, and their labels, agree. -/
 private theorem eq_and_eq_of_mk_eq {U : Set E}
@@ -298,7 +286,7 @@ private theorem isOpen_of_isOpen_preimage_inter_sheet (hqc : IsQuotientCoveringM
       ext u
       constructor
       · rintro ⟨hqu, hu⟩
-        exact ⟨⟨hqu, (mem_image_prod_singleton_iff U a _).mpr ⟨u, hu, rfl⟩⟩, hu⟩
+        exact ⟨⟨hqu, (u, a), ⟨hu, rfl⟩, rfl⟩, hu⟩
       · rintro ⟨⟨hw, -⟩, hu⟩
         exact ⟨hw, hu⟩
     rw [heq]
@@ -335,7 +323,7 @@ private theorem isEvenlyCovered_of_smul_disjoint [Nonempty A] (hqc : IsQuotientC
   have hSo : ∀ a, IsOpen (S a) := fun a =>
     ht.isOpenQuotientMap.isOpenMap _ (hUo.prod (isOpen_discrete _))
   have hmemS : ∀ (a : A) (z : BalancedProduct G E A), z ∈ S a ↔ ∃ u ∈ U, mk G u a = z :=
-    mem_image_prod_singleton_iff U
+    fun a z => by simp only [S, Set.prod_singleton, Set.image_image, Set.mem_image, mk]
   have hkey : ∀ {u u' : E} {a a' : A}, u ∈ U → u' ∈ U → mk G u a = mk G u' a' →
       u = u' ∧ a = a' := eq_and_eq_of_mk_eq hdisj
   have : Nonempty (X → BalancedProduct G E A) := ⟨fun _ => mk G e (Classical.arbitrary A)⟩
