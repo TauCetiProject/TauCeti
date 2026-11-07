@@ -9,6 +9,7 @@ public import Mathlib.RingTheory.AdicCompletion.Basic
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.LocalRing
 import Mathlib.Analysis.Analytic.IsolatedZeros
 import Mathlib.Analysis.Analytic.Order
+import TauCeti.Analysis.Analytic.Uniqueness
 import TauCeti.Geometry.Manifold.Complex.Analytic
 import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Germ
 import TauCeti.Geometry.Manifold.ContMDiff.Analytic
@@ -26,9 +27,9 @@ Krull's intersection theorem is not needed). If a germ `s` lies in `𝔪_x ^ n`,
 representative of `s` read in a holomorphic chart `e` to any complex line `z ↦ e x + z • v`
 through `e x` produces a one-variable holomorphic function vanishing to order at least `n` at
 `0`. Lying in `𝔪_x ^ n` for every `n` therefore forces infinite analytic order at `0` along every
-complex line, hence vanishing on an open ball around `e x` by one-variable analytic continuation
-along radial discs. (For complex curves `E = ℂ`,
-`TauCeti.Geometry.Manifold.Complex.StructureSheaf.Order` obtains separatedness from local
+complex line, hence vanishing near `e x` by one-variable analytic continuation along radial discs
+(`AnalyticAt.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul`). (For complex curves
+`E = ℂ`, `TauCeti.Geometry.Manifold.Complex.StructureSheaf.Order` obtains separatedness from local
 coordinate division instead.)
 
 ## Main results
@@ -126,7 +127,6 @@ theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
   have hφe : AnalyticAt ℂ (φ ∘ e.symm) (e x) := by
     simpa using ((exists_toFilterGerm_nhds_eq_iff.1 ⟨s, hφ _ le_rfl⟩).self_of_nhds
       |>.analyticAt_comp_extend_symm he hx)
-  obtain ⟨r, hr, hball⟩ := Metric.isOpen_iff.1 (isOpen_analyticAt ℂ (φ ∘ e.symm)) (e x) hφe
   have hline_zero (v : E) : ∀ᶠ z : ℂ in 𝓝 0, φ (e.symm (e x + z • v)) = 0 := by
     rw [← analyticOrderAt_eq_top]
     by_contra hne
@@ -134,25 +134,12 @@ theorem iInf_pow_ker_eval_eq_bot {x : X} (hx : x ∈ e.source) :
     exact (Nat.lt_succ_self m).not_ge <| ENat.natCast_le_natCast.1 <| hm ▸
       natCast_le_analyticOrderAt_line_of_mem_pow_ker_eval e he hx
         (Ideal.mem_iInf.1 hs (m + 1)) (hφ _ le_rfl) v
-  have hzero_on_ball : ∀ y ∈ ball (e x) r, (φ ∘ e.symm) y = 0 := fun y hy ↦ by
-    set v := y - e x
-    rcases eq_or_ne v 0 with hv0 | hv0
-    · simpa [sub_eq_zero.1 hv0] using (hline_zero 0).self_of_nhds
-    · have hv_pos : 0 < ‖v‖ := norm_pos_iff.2 hv0
-      have h1R : 1 < r / ‖v‖ := (one_lt_div hv_pos).2 (by simpa [v, dist_eq_norm] using hy)
-      have hg_an : AnalyticOnNhd ℂ (fun z : ℂ ↦ (φ ∘ e.symm) (e x + z • v)) (ball 0 (r / ‖v‖)) :=
-        fun z hz ↦ (hball (by
-          rw [mem_ball, dist_self_add_left, norm_smul]
-          exact (mul_lt_mul_of_pos_right (by simpa using hz) hv_pos).trans_eq
-            (div_mul_cancel₀ r hv_pos.ne'))).comp_of_eq (by fun_prop) rfl
-      simpa [v] using hg_an.eqOn_zero_of_preconnected_of_eventuallyEq_zero
-        (convex_ball (0 : ℂ) (r / ‖v‖)).isPreconnected (mem_ball_self (zero_lt_one.trans h1R))
-        (hline_zero v) (mem_ball_zero_iff.2 ((norm_one (α := ℂ)).trans_lt h1R))
+  have h0 : φ ∘ e.symm =ᶠ[𝓝 (e x)] 0 :=
+    hφe.eventuallyEq_zero_iff_forall_eventuallyEq_zero_comp_add_smul.2 hline_zero
   apply toFilterGerm_nhds_injective x
   rw [hφ _ le_rfl, map_zero, ← Germ.coe_zero, Germ.coe_eq]
-  filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually (ball_mem_nhds _ hr)]
-    with y hys hyb
-  simpa only [Function.comp_apply, e.left_inv hys, Pi.zero_apply] using hzero_on_ball (e y) hyb
+  filter_upwards [e.open_source.mem_nhds hx, (e.continuousAt hx).eventually h0] with y hys hy0
+  simpa only [Function.comp_apply, e.left_inv hys, Pi.zero_apply] using hy0
 
 include he in
 /-- At the center of a complex analytic chart, the holomorphic stalk is Hausdorff with respect to

@@ -16,6 +16,11 @@ public import TauCeti.Order.Filter.Germ
 near the chosen point. Unlike the sheaf morphism `stalkPrecomp`, this requires no globally
 holomorphic extension of the map. Equality, evaluation and composition are characterized
 through the injective comparison with function germs. The two pullbacks agree when both apply.
+Pullback along a map with a local analytic inverse, such as a chart, is bijective
+(`stalkPullback_bijective`), in particular pullback along a continuous linear equivalence
+(`ContinuousLinearEquiv.holomorphicStalkPullback_bijective`) and along a chart followed by one
+(`stalkPullback_comp_extChartAt_bijective`), which identifies a stalk of a manifold with a stalk
+of its model.
 On the complex line, `eventually_contMDiffAt_of_analyticAt` supplies the local hypothesis
 from `AnalyticAt`.
 -/
@@ -131,4 +136,69 @@ theorem stalkPullback_comp {g : Y → Z} (hg : ∀ᶠ y in 𝓝 (f a), ContMDiff
   exact Germ.inductionOn
     (toFilterGerm K Z (g (f a)) (𝓝 (g (f a))) le_rfl s) fun _ ↦ rfl
 
+/-- Pullback along a map with a local analytic inverse near the base point, such as a chart or a
+biholomorphism, is bijective. -/
+theorem stalkPullback_bijective {g : Y → X} (hg : ∀ᶠ y in 𝓝 (f a), ContMDiffAt J I ω g y)
+    (hgf : ∀ᶠ x in 𝓝 a, g (f x) = x) (hfg : ∀ᶠ y in 𝓝 (f a), f (g y) = y) :
+    Function.Bijective (stalkPullback hf) := by
+  have hg_tendsto : Tendsto g (𝓝 (f a)) (𝓝 a) := by
+    simpa only [hgf.self_of_nhds] using hg.self_of_nhds.continuousAt.tendsto
+  refine ⟨(injective_iff_map_eq_zero _).2 fun s hs ↦ ?_, fun s ↦ ?_⟩
+  · -- A germ whose composition with `f` vanishes near `a` vanishes near `f a = f (g (f a))`.
+    obtain ⟨u, -, hu⟩ := exists_toFilterGerm_eq (f a) s
+    apply toFilterGerm_nhds_injective (f a)
+    have h0 := congrArg (toFilterGerm I X a (𝓝 a) le_rfl) hs
+    rw [toFilterGerm_stalkPullback, hu, Germ.coe_compTendsto, map_zero, ← Germ.coe_zero,
+      Germ.coe_eq] at h0
+    rw [hu, map_zero, ← Germ.coe_zero, Germ.coe_eq]
+    filter_upwards [hfg, hg_tendsto.eventually h0] with y hy hy0
+    simpa [hy] using hy0
+  · -- A germ `u` at `a` is the pullback of the germ `u ∘ g` at `f a`.
+    obtain ⟨u, hu_an, hu⟩ := exists_toFilterGerm_eq a s
+    obtain ⟨t, ht⟩ := exists_toFilterGerm_eq_of_eventually_contMDiffAt (x := f a) (f := u ∘ g)
+      ((hg.and (hg_tendsto.eventually hu_an)).mono fun y hy ↦ hy.2.comp y hy.1)
+    refine ⟨t, toFilterGerm_nhds_injective a ?_⟩
+    rw [toFilterGerm_stalkPullback, ht _ le_rfl, hu, Germ.coe_compTendsto, Germ.coe_eq]
+    filter_upwards [hgf] with x hx
+    simp [hx]
+
+variable [I.Boundaryless] [IsManifold I ω X] {V : Type} [NormedAddCommGroup V] [NormedSpace ℂ V]
+
+/-- Pullback along the extended chart at `x`, followed by a continuous linear equivalence `e` of
+the model onto a complex normed space `V`, is bijective on holomorphic stalks. The equivalence
+lets the model stalk live in `Type` even when the model space `E` does not. -/
+theorem stalkPullback_comp_extChartAt_bijective (x : X) (e : E ≃L[ℂ] V) :
+    Function.Bijective (stalkPullback (J := 𝓘(ℂ, V)) (f := e ∘ extChartAt I x) (a := x)
+      (((chartAt H x).open_source.eventually_mem (mem_chart_source H x)).mono fun _ hy ↦
+        e.contDiff.contMDiff.contMDiffAt.comp _ (contMDiffAt_extChartAt' hy))) := by
+  have hmem : ∀ᶠ z in 𝓝 (e (extChartAt I x x)), e.symm z ∈ (extChartAt I x).target := by
+    have h := e.symm.continuous.tendsto (e (extChartAt I x x))
+    rw [e.symm_apply_apply] at h
+    exact h.eventually (extChartAt_target_mem_nhds x)
+  refine stalkPullback_bijective _ (g := (extChartAt I x).symm ∘ e.symm) ?_ ?_ ?_
+  · filter_upwards [hmem] with z hz
+    exact ((contMDiffOn_extChartAt_symm (n := ω) x).contMDiffAt
+      (extChartAt_target_mem_nhds' hz)).comp z e.symm.contDiff.contMDiff.contMDiffAt
+  · filter_upwards [extChartAt_source_mem_nhds (I := I) x] with y hy
+    simpa using (extChartAt I x).left_inv hy
+  · filter_upwards [hmem] with z hz
+    simp only [Function.comp_apply, (extChartAt I x).right_inv hz,
+      ContinuousLinearEquiv.apply_symm_apply]
+
 end TauCeti.holomorphicStructureSheaf
+
+namespace ContinuousLinearEquiv
+
+open TauCeti.holomorphicStructureSheaf
+
+variable {V W : Type} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W]
+  [NormedSpace ℂ W]
+
+/-- Pullback along a continuous linear equivalence is bijective on holomorphic stalks. -/
+theorem holomorphicStalkPullback_bijective (e : V ≃L[ℂ] W) (x : V) :
+    Function.Bijective (stalkPullback (I := 𝓘(ℂ, V)) (J := 𝓘(ℂ, W)) (a := x)
+      (Eventually.of_forall fun _ ↦ e.contDiff.contMDiff.contMDiffAt)) :=
+  stalkPullback_bijective _ (Eventually.of_forall fun _ ↦ e.symm.contDiff.contMDiff.contMDiffAt)
+    (Eventually.of_forall e.symm_apply_apply) (Eventually.of_forall e.apply_symm_apply)
+
+end ContinuousLinearEquiv
