@@ -148,8 +148,12 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   -- Roth's auxiliary polynomial with these partial degrees.
   obtain ⟨P, hP0, hPdeg, hPind, hPcoeff⟩ := exists_roth_auxiliary_polynomial (ι := Fin n) hb hbα
     hε₀.le (by simpa using hd) fun i ↦ (hr i).ne'
-  obtain ⟨hPcoeff', hPlog⟩ := MvPolynomial.abs_coeff_le_exp_and_logHeight_map_le hP0
-    (by linarith : 0 < 12 * (b : ℝ) * max 1 (house α)) hPcoeff
+  have hPcoeff' : ∀ μ, |(P.coeff μ : ℝ)| ≤ Real.exp (C₁ * ∑ i, (r i : ℝ)) := fun μ ↦ by
+    rw [mul_comm, ← Nat.cast_sum, Real.exp_nat_mul, hC₁_def,
+      Real.exp_log (by linarith : 0 < 12 * (b : ℝ) * max 1 (house α))]
+    exact hPcoeff μ
+  have hPlog := (MvPolynomial.logHeight_map_intCast_le_log hP0 hPcoeff').trans_eq
+    (Real.log_exp _)
   -- Roth's lemma bounds the index of `P` at `β`.
   have : NeZero n := ⟨hn.ne'⟩
   set P' := P.map (Int.castRingHom ℚ) with hP'_def
