@@ -378,27 +378,19 @@ theorem signBasis_mul_signAt_mul_abs_det_eq [DecidableEq ι]
       signAt_of_mem _ hx]
     rcases Int.units_eq_one_or (l.sign α ⟨x, hx⟩) with hs | hs <;>
       simp [hs, _root_.Orientation.signBasis_neg]
-  have hpos : 0 < (_root_.Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) b : ℝ) *
-      L.toLinearMap.det := by
-    have h := _root_.Orientation.signBasis_mul_det_mul_pos (l.chartOrientation α ⟨x, hx⟩)
-      b (b.map L)
-    have hsB : _root_.Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩)
-        (b.map L) = 1 := by
-      rw [← hB]
-      exact _root_.Orientation.signBasis_orientation _
-    rw [hsB, Units.val_one, Int.cast_one, mul_one] at h
-    -- Normalize basis-map evaluation to a determinant composed with the original basis.
-    change 0 < (_root_.Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) b : ℝ) *
-      b.det (L.toLinearMap ∘ b) at h
-    simpa only [Module.Basis.det_comp, Module.Basis.det_self, mul_one] using h
-  rw [← hsign]
-  rcases Int.units_eq_one_or (_root_.Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) b)
-    with hs | hs
-  · simp only [hs, Units.val_one, Int.cast_one, one_mul] at hpos ⊢
-    exact abs_of_pos hpos
-  · simp only [hs, Units.val_neg, Units.val_one, Int.cast_neg, Int.cast_one,
-      neg_one_mul] at hpos ⊢
-    rw [abs_of_neg (neg_pos.mp hpos), neg_neg]
+  have hsB : _root_.Orientation.signBasis (l.chartOrientation α ⟨x, hx⟩) (b.map L) = 1 := by
+    rw [← hB]
+    exact _root_.Orientation.signBasis_orientation _
+  have h := _root_.Orientation.signBasis_mul_det_div_abs (l.chartOrientation α ⟨x, hx⟩) b
+    (b.map L)
+  have hdet : b.det (b.map L) = L.toLinearMap.det := by
+    change b.det (L.toLinearMap ∘ b) = _
+    simp only [Module.Basis.det_comp, Module.Basis.det_self, mul_one]
+  have hne : |L.toLinearMap.det| ≠ 0 :=
+    abs_ne_zero.2 (LinearEquiv.isUnit_det' L).ne_zero
+  rw [hsB, Units.val_one, Int.cast_one, one_mul, hdet, hsign] at h
+  rw [← h]
+  field_simp
 
 /-- The tangent orientations of a lift vary locally constantly in bundle trivializations. -/
 def toVectorBundleOrientation (o : OrientationLift I M ι) :
