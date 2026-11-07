@@ -635,6 +635,19 @@ theorem neg_toRoughForm {k : ℕ} (φ : SmoothForm I M F k) :
     (-φ).1 = -φ.1 :=
   rfl
 
+/-- Multiplication of smooth forms by a smooth real function, as a real-linear map. -/
+def funSMulₗ {k : ℕ} (g : C^∞⟮I, M; ℝ⟯) : SmoothForm I M F k →ₗ[ℝ] SmoothForm I M F k where
+  toFun φ := ⟨fun x ↦ g x • φ.1 x, (φ.isSmoothForm.fun_smul g.contMDiff).mem_smoothBundleForms⟩
+  map_add' φ ψ := Subtype.ext <| funext fun x ↦ smul_add (g x) (φ.1 x) (ψ.1 x)
+  map_smul' c φ := Subtype.ext <| funext fun x ↦ smul_comm (g x) c (φ.1 x)
+
+/-- The rough form underlying the product of a smooth form with a smooth function is the
+pointwise product. -/
+@[simp]
+theorem coe_funSMulₗ {k : ℕ} (g : C^∞⟮I, M; ℝ⟯) (φ : SmoothForm I M F k) :
+    (funSMulₗ g φ : RoughForm I M F k) = fun x ↦ g x • φ.1 x :=
+  (rfl)
+
 /-- A smooth form whose degree exceeds the dimension of the model space vanishes. -/
 theorem eq_zero_of_finrank_lt [FiniteDimensional ℝ E] (h : Module.finrank ℝ E < k)
     (φ : SmoothForm I M F k) : φ = 0 :=
