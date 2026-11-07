@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.SpinC.Basic
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.HalfSpin
+public import TauCeti.Topology.Algebra.Module.FiniteDimension
 
 /-!
 # Smooth half-spin representations of the Spinᶜ quotient
@@ -69,7 +70,10 @@ def realSpinCHalfSpinSmoothHom : ContMDiffMonoidMorphism I 𝓘(ℝ, S →L[ℂ]
     funext p
     simp only [Function.comp_apply, realSpinDiffeomorphUnitsRange_apply,
       ContinuousMulEquiv.symm_apply_apply]
-    simp [Module.End.toContinuousLinearMap]
+    simp only [MulEquiv.toMonoidHom_eq_coe, OneHom.toFun_eq_coe, MonoidHom.toOneHom_coe,
+      MonoidHom.coe_comp, MonoidHom.coe_ofClass, MulEquiv.coe_mk, AlgEquiv.toEquiv_eq_coe,
+      EquivLike.coe_coe, Function.comp_apply, OrthonormalBasis.realSpinCGroupHom_mk,
+      spinCGroupHalfSpinRep_mk, Module.End.toContinuousLinearMap_apply]
 
 /-- The smooth action is the algebraic quotient action after the Spinᶜ frame comparison. -/
 theorem realSpinCHalfSpinSmoothHom_apply (hQ₀' : Q ≠ 0) (x : SpinC) :

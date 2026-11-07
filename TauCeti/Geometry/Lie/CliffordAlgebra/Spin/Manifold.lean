@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Lie.CliffordAlgebra.Spin.Projection
+public import TauCeti.Geometry.Manifold.Algebra.LieGroup
 public import TauCeti.Geometry.Manifold.Instances.Comap
 
 /-!
@@ -80,19 +81,13 @@ theorem realSpinDiffeomorphUnitsRange_symm_apply (n : ℕ)
 
 /-- The original multiplication and inversion make native compact Spin a Lie group. -/
 instance instLieGroupRealSpin (n : ℕ) :
-    LieGroup 𝓘(ℝ, realSpinLieModel n) ∞ (spinGroup (realCliffordForm n 0)) where
-  contMDiff_mul := by
-    simpa only [Function.comp_def, Pi.mul_apply, realSpinDiffeomorphUnitsRange_apply,
-      realSpinDiffeomorphUnitsRange_symm_apply, ← map_mul,
-      ContinuousMulEquiv.symm_apply_apply] using
-      (realSpinDiffeomorphUnitsRange n).symm.contMDiff.comp
-      (((realSpinDiffeomorphUnitsRange n).contMDiff.comp contMDiff_fst).mul
-        ((realSpinDiffeomorphUnitsRange n).contMDiff.comp contMDiff_snd))
-  contMDiff_inv := by
-    simpa only [Function.comp_def, Pi.inv_apply, realSpinDiffeomorphUnitsRange_apply,
-      realSpinDiffeomorphUnitsRange_symm_apply, ← map_inv,
-      ContinuousMulEquiv.symm_apply_apply] using
-      (realSpinDiffeomorphUnitsRange n).symm.contMDiff.comp
-        (realSpinDiffeomorphUnitsRange n).contMDiff.inv
+    LieGroup 𝓘(ℝ, realSpinLieModel n) ∞ (spinGroup (realCliffordForm n 0)) :=
+  IsLocalDiffeomorph.lieGroup (I := 𝓘(ℝ, realSpinLieModel n))
+    (realCliffordSpinContinuousMulEquivUnitsRange n).symm.toMulEquiv.toMonoidHom
+    (by
+      convert (realSpinDiffeomorphUnitsRange n).symm.isLocalDiffeomorph using 1
+      funext g
+      exact (realSpinDiffeomorphUnitsRange_symm_apply n g).symm)
+    (realCliffordSpinContinuousMulEquivUnitsRange n).symm.surjective
 
 end TauCeti.CliffordAlgebra

@@ -97,6 +97,14 @@ theorem toContinuousLinearMap_comp (g : F →ₗ[𝕜] G) (f : E →ₗ[𝕜] F)
 
 end LinearMap
 
+/-- The endomorphism algebra equivalence agrees with the linear-map continuity conversion. -/
+@[simp]
+theorem Module.End.toContinuousLinearMap_apply {𝕜 E : Type*} [NontriviallyNormedField 𝕜]
+    [CompleteSpace 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E]
+    (f : Module.End 𝕜 E) :
+    Module.End.toContinuousLinearMap E f = LinearMap.toContinuousLinearMap f :=
+  rfl
+
 namespace MultilinearMap
 
 variable {𝕜 ι : Type*} {M : ι → Type*} {N : Type*} [NontriviallyNormedField 𝕜] [CompleteSpace 𝕜]
