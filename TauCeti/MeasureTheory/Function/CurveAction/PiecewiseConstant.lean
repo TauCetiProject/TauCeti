@@ -7,6 +7,7 @@ module
 
 public import TauCeti.MeasureTheory.Function.CurveAction.Basic
 import TauCeti.Algebra.Order.Floor.Semifield
+import TauCeti.Topology.EMetricSpace.Basic
 import TauCeti.Topology.Instances.ENNReal
 
 /-!
@@ -118,22 +119,11 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
     obtain ⟨h₁, h₂⟩ := hE.1 i hi
     rw [uIcc_of_le hT] at h₁ h₂
     exact ⟨min_le_max, max_le h₁.2 h₂.2⟩
-  have hedist i (hi : i ∈ Finset.range k) :
-      edist (U ⌈(I i).1 / τ⌉₊) (U ⌈(I i).2 / τ⌉₊) ≤ ∑ n ∈ J i, edist (U n) (U (n + 1)) := by
-    have h := edist_le_Ico_sum_edist U
-      (Nat.ceil_mono (div_le_div_of_nonneg_right (hst i hi).1 hτr.le))
-    rcases le_total (I i).1 (I i).2 with hle | hle
-    · simpa [J, s, t, min_eq_left hle, max_eq_right hle] using h
-    · rw [edist_comm]
-      simpa [J, s, t, min_eq_right hle, max_eq_left hle] using h
+  have hedist i (_ : i ∈ Finset.range k) :=
+    edist_ceil_div_le_sum_Ico_edist (NNReal.coe_nonneg τ) U (I i).1 (I i).2
   -- The index sets of disjoint intervals are disjoint.
-  have hdisj : (Finset.range k : Set ℕ).PairwiseDisjoint J := by
-    intro i hi j hj hij
-    refine Finset.disjoint_left.2 fun n hni hnj ↦ ?_
-    rw [mem_Ico_ceil_div_iff hτr] at hni hnj
-    exact Set.disjoint_left.1 (hE.2 hi hj hij)
-      ⟨lt_of_le_of_lt hni.1 (lt_min hni.2 hnj.2), min_le_left _ _⟩
-      ⟨lt_of_le_of_lt hnj.1 (lt_min hni.2 hnj.2), min_le_right _ _⟩
+  have hdisj : (Finset.range k : Set ℕ).PairwiseDisjoint J :=
+    pairwiseDisjoint_Ico_ceil_div hτr hE.2
   -- The total number of steps taken during the intervals.
   have hvol : volume (⋃ i ∈ Finset.range k, Ι (I i).1 (I i).2) =
       ENNReal.ofReal (∑ i ∈ Finset.range k, (t i - s i)) := by
@@ -146,10 +136,9 @@ theorem sum_edist_ceil_div_rpow_le (hp : 1 ≤ p) (hτ : 0 < τ) {T : ℝ} (hT :
       ENNReal.ofReal ((∑ i ∈ Finset.range k, (t i - s i)) / τ + k) := by
     rw [← ENNReal.ofReal_natCast]
     refine ENNReal.ofReal_le_ofReal ?_
-    rw [Finset.card_biUnion hdisj, Nat.cast_sum, Finset.sum_div]
-    have := Finset.sum_le_sum fun i hi ↦
-      (natCast_ceil_div_sub_ceil_div_lt hτr.le (hst i hi).1).le
-    simpa [J, Finset.sum_add_distrib] using this
+    have := card_biUnion_Ico_ceil_div_le (NNReal.coe_nonneg τ) (Finset.range k)
+      fun i hi ↦ (hst i hi).1
+    rwa [Finset.card_range] at this
   have hsub : (Finset.range k).biUnion J ⊆ Finset.range ⌈T / τ⌉₊ := by
     intro n hn
     obtain ⟨i, hi, hn⟩ := Finset.mem_biUnion.1 hn

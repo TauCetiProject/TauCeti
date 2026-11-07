@@ -5,9 +5,12 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.BigOperators.Group.Finset.Defs
 public import Mathlib.Algebra.Order.Floor.Semifield
 public import Mathlib.Order.Interval.Finset.Nat
 
+import Mathlib.Algebra.BigOperators.Field
+import Mathlib.Algebra.Order.BigOperators.Group.Finset
 import Mathlib.Data.Rat.Floor
 
 /-!
@@ -27,6 +30,10 @@ jet conditions on an integer interval of radius `B`.
 
 * `TauCeti.natCast_ceil_div_sub_ceil_div_lt`: `⌈t / τ⌉₊ - ⌈s / τ⌉₊ < (t - s) / τ + 1`.
 * `TauCeti.mem_Ico_ceil_div_iff`: `n ∈ [⌈s / τ⌉₊, ⌈t / τ⌉₊)` if and only if `n τ ∈ [s, t)`.
+* `TauCeti.pairwiseDisjoint_Ico_ceil_div`: the index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` of pairwise
+  disjoint intervals `(sᵢ, tᵢ]` are pairwise disjoint.
+* `TauCeti.card_biUnion_Ico_ceil_div_le`: the union of these index sets over `k` intervals has at
+  most `(∑ᵢ (tᵢ - sᵢ)) / τ + k` elements.
 * `TauCeti.lt_floor_add_one_mul_floor_div_add_one`: `n < (⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
 * `TauCeti.lt_two_mul_floor_add_one_mul_floor_div_add_one`:
   `n < (2 * ⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` for `B > 0`.
@@ -68,6 +75,33 @@ theorem natCast_ceil_div_sub_ceil_div_lt [Sub K] [OrderedSub K] [ExistsAddOfLE K
 theorem mem_Ico_ceil_div_iff (hτ : 0 < τ) {n : ℕ} :
     n ∈ Finset.Ico ⌈s / τ⌉₊ ⌈t / τ⌉₊ ↔ n * τ ∈ Set.Ico s t := by
   rw [Finset.mem_Ico, Nat.ceil_le, Nat.lt_ceil, div_le_iff₀ hτ, lt_div_iff₀ hτ, Set.mem_Ico]
+
+/-- The index sets `[⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)` of the multiples of a positive step `τ` lying in
+pairwise disjoint intervals `(sᵢ, tᵢ]` are pairwise disjoint. -/
+theorem pairwiseDisjoint_Ico_ceil_div (hτ : 0 < τ) {ι : Type*} {s t : ι → K} {S : Set ι}
+    (h : S.PairwiseDisjoint fun i ↦ Set.Ioc (s i) (t i)) :
+    S.PairwiseDisjoint fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊ := by
+  intro i hi j hj hij
+  refine Finset.disjoint_left.2 fun n hni hnj ↦ ?_
+  rw [mem_Ico_ceil_div_iff hτ] at hni hnj
+  exact Set.disjoint_left.1 (h hi hj hij)
+    ⟨lt_of_le_of_lt hni.1 (lt_min hni.2 hnj.2), min_le_left _ _⟩
+    ⟨lt_of_le_of_lt hnj.1 (lt_min hni.2 hnj.2), min_le_right _ _⟩
+
+/-- For a nonnegative step `τ` and intervals `[sᵢ, tᵢ]`, the multiples of `τ` lying in some
+`[sᵢ, tᵢ)` have indices in `⋃ᵢ [⌈sᵢ / τ⌉₊, ⌈tᵢ / τ⌉₊)`, and there are at most
+`(∑ᵢ (tᵢ - sᵢ)) / τ + k` of them for `k` intervals. The intervals need not be disjoint. -/
+theorem card_biUnion_Ico_ceil_div_le [Sub K] [OrderedSub K] [ExistsAddOfLE K] (hτ : 0 ≤ τ)
+    {ι : Type*} (I : Finset ι) {s t : ι → K} (hst : ∀ i ∈ I, s i ≤ t i) :
+    ((I.biUnion fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : K) ≤
+      (∑ i ∈ I, (t i - s i)) / τ + I.card := by
+  calc ((I.biUnion fun i ↦ Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : K)
+      ≤ ((∑ i ∈ I, (Finset.Ico ⌈s i / τ⌉₊ ⌈t i / τ⌉₊).card : ℕ) : K) :=
+        Nat.cast_le.2 Finset.card_biUnion_le
+    _ = ∑ i ∈ I, ((⌈t i / τ⌉₊ - ⌈s i / τ⌉₊ : ℕ) : K) := by simp
+    _ ≤ ∑ i ∈ I, ((t i - s i) / τ + 1) :=
+        Finset.sum_le_sum fun i hi ↦ (natCast_ceil_div_sub_ceil_div_lt hτ (hst i hi)).le
+    _ = _ := by rw [Finset.sum_add_distrib, Finset.sum_div]; simp
 
 /-- For `B > 0` and any `n : ℕ`, `(⌊B⌋₊ + 1) * (⌊n / B⌋₊ + 1)` strictly exceeds `n`, including
 when `n = 0` or `B < 1`. -/
