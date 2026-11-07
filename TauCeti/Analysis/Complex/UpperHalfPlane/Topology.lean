@@ -96,22 +96,21 @@ end Real
 namespace TauCeti
 
 /-- Along the upper half-plane, a limit of `f = G ∘ h` at a real point `x` is `G (h x)`, when `h`
-is continuous at `x` and maps the upper half-plane into the disc, on whose closure `G` is
-continuous. -/
-theorem mem_closedBall_and_eq_of_tendsto {G h f : ℂ → ℂ} {x : ℝ} {w : ℂ}
-    (hGc : ContinuousOn G (closedBall 0 1)) (hh : ContinuousAt h (x : ℂ))
-    (hmaps : ∀ z ∈ upperHalfPlaneSet, h z ∈ ball (0 : ℂ) 1)
+is continuous within the half-plane at `x` and maps the upper half-plane into the closed disc, on
+which `G` is continuous. -/
+theorem mem_closedBall_and_eq_of_tendsto {Y : Type*} [TopologicalSpace Y] [T2Space Y]
+    {G f : ℂ → Y} {h : ℂ → ℂ} {x : ℝ} {w : Y}
+    (hGc : ContinuousOn G (closedBall 0 1)) (hh : ContinuousWithinAt h upperHalfPlaneSet (x : ℂ))
+    (hmaps : ∀ z ∈ upperHalfPlaneSet, h z ∈ closedBall (0 : ℂ) 1)
     (hf : ∀ z ∈ upperHalfPlaneSet, f z = G (h z))
     (hfw : Tendsto f (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 w)) :
     h x ∈ closedBall (0 : ℂ) 1 ∧ G (h x) = w := by
   have := Real.nhdsWithin_upperHalfPlaneSet_neBot x
   have hev : ∀ᶠ z in 𝓝[upperHalfPlaneSet] (x : ℂ), h z ∈ closedBall (0 : ℂ) 1 :=
-    eventually_nhdsWithin_of_forall fun z hz => ball_subset_closedBall (hmaps z hz)
-  have ht : Tendsto h (𝓝[upperHalfPlaneSet] (x : ℂ)) (𝓝 (h x)) :=
-    hh.tendsto.mono_left nhdsWithin_le_nhds
-  have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto ht hev
+    eventually_nhdsWithin_of_forall hmaps
+  have hmem : h x ∈ closedBall (0 : ℂ) 1 := isClosed_closedBall.mem_of_tendsto hh.tendsto hev
   refine ⟨hmem, tendsto_nhds_unique ?_ hfw⟩
-  exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨ht, hev⟩)).congr'
+  exact ((hGc _ hmem).tendsto.comp (tendsto_nhdsWithin_iff.mpr ⟨hh.tendsto, hev⟩)).congr'
     (eventually_nhdsWithin_of_forall fun z hz => (hf z hz).symm)
 
 /-- The upper half-plane is unbounded, so the filter along which it approaches infinity is
@@ -130,10 +129,11 @@ instance cobounded_inf_principal_upperHalfPlaneSet_neBot :
   simp only [Set.mem_preimage, upperHalfPlaneSet, Set.mem_ofPred_eq]
   simpa using ht
 
-/-- For a function conjugation-symmetric near infinity and continuous at all sufficiently distant
-real points, decay along the upper half-plane implies decay along the whole plane. -/
+/-- For a function conjugation-symmetric near infinity and continuous within the upper half-plane
+at all sufficiently distant real points, decay along the upper half-plane implies decay along the
+whole plane. -/
 theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
-    (hcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hlim : Tendsto φ (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 0)) :
     Tendsto φ (cobounded ℂ) (𝓝 0) := by
@@ -152,7 +152,7 @@ theorem tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet {φ : ℂ → ℂ}
         rw [← hzre]
         exact Real.nhdsWithin_upperHalfPlaneSet_neBot _
       apply le_of_tendsto (x := 𝓝[upperHalfPlaneSet] z)
-        (((hR hzR).1 hreal.symm).norm.tendsto.mono_left nhdsWithin_le_nhds)
+        (((hR hzR).1 hreal.symm).norm.tendsto)
       filter_upwards [nhdsWithin_le_nhds
         (Metric.isClosed_closedBall.isOpen_compl.mem_nhds hzR), self_mem_nhdsWithin] with w hw hwim
       exact (by simpa using (hR hw).2 hwim : ‖φ w‖ < ε / 2).le
@@ -171,7 +171,7 @@ at infinity if `z * ψ z` has a finite limit there within the upper half-plane. 
 theorem tendsto_zero_cobounded_of_tendsto_mul_upperHalfPlaneSet
     {φ ψ : ℂ → ℂ} {c : ℂ}
     (h : Tendsto (fun z : ℂ => z * ψ z) (cobounded ℂ ⊓ 𝓟 upperHalfPlaneSet) (𝓝 c))
-    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousAt φ z)
+    (hφcont : ∀ᶠ z in cobounded ℂ, z.im = 0 → ContinuousWithinAt φ upperHalfPlaneSet z)
     (hφconj : ∀ᶠ z in cobounded ℂ, φ ((starRingEnd ℂ) z) = (starRingEnd ℂ) (φ z))
     (hφ : EqOn φ ψ upperHalfPlaneSet) : Tendsto φ (cobounded ℂ) (𝓝 0) := by
   apply tendsto_zero_cobounded_of_tendsto_upperHalfPlaneSet hφcont hφconj
