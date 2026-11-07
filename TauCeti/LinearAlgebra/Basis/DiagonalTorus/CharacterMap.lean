@@ -246,6 +246,14 @@ theorem isCharacterMap_iff :
     IsCharacterMap T F φ ↔ ∀ s, F (T s) = T (torusPointMap φ s) :=
   Iff.rfl
 
+/-- Raising every torus parameter to the `n`-th power pulls characters back by `n • id`. -/
+theorem IsCharacterMap.of_map_eq_pow {n : ℕ} (h : ∀ s, F (T s) = T (s ^ n)) :
+    IsCharacterMap T F (n • LinearMap.id) := by
+  rw [isCharacterMap_iff]
+  intro s
+  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
+    MonoidHom.id_apply] using h s
+
 /-- A character map as an equation of homomorphisms out of the torus. -/
 theorem isCharacterMap_iff_comp :
     IsCharacterMap T F φ ↔ F.comp T = T.comp (torusPointMap φ) := by
