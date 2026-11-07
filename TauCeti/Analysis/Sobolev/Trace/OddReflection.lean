@@ -95,6 +95,330 @@ private theorem inner_sub_normalLinearReflection_eq (w w' v : WithLp 2 (ℝ × E
   obtain ⟨⟨t, z⟩⟩ := v
   simp [WithLp.prod_inner_apply, inner_sub_left, ← WithLp.toLp_sub]
 
+/-- The odd reflection `f - f ∘ ρ` of a function `f` with weak gradient `G` has weak gradient
+`G - R (G ∘ ρ)`. -/
+private theorem hasWeakFDerivOn_sub_comp_normalReflection_innerSL {a : ℝ}
+    {f : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hfG : HasWeakFDerivOn volume ⊤ f fun x => innerSL ℝ (G x)) :
+    HasWeakFDerivOn volume ⊤ (fun x => f x - f (normalReflection E a x))
+      fun x => innerSL ℝ (G x - normalLinearReflection E (G (normalReflection E a x))) :=
+  (hfG.sub hfG.comp_normalReflection).congr_ae_deriv
+    (Eventually.of_forall fun x => by simp only [Pi.sub_apply, map_sub])
+
+/-- The normal component of the gradient of an odd reflection: the sum of `⟪G, ν⟫` and its
+reflection has weak gradient given by the even reflection of `D ν`. -/
+private theorem hasWeakFDerivOn_inner_normal_add_comp_normalReflection {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hG : MemLp G p volume) (hD : ∀ c, MemLp (fun x => D x c) p volume)
+    (hG0 : ∀ x ∉ normalHalfSpace (E := E) a, G x = 0)
+    (hD0 : ∀ x ∉ normalHalfSpace (E := E) a, D x = 0)
+    (hGD : ∀ c, HasWeakFDerivOn volume (normalHalfSpace a) (fun x => ⟪G x, c⟫_ℝ)
+      fun x => innerSL ℝ (D x c)) :
+    HasWeakFDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ +
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+      fun x => innerSL ℝ (D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E))))) :=
+  (hGD _).add_comp_normalReflection ((hG.inner_const _).locallyIntegrable Fact.out)
+    ((hD _).locallyIntegrable Fact.out) (fun x hx => by simp [hG0 x hx])
+    (fun x hx => by simp [hD0 x hx])
+
+/-- A tangential component of the gradient of an odd reflection is itself an odd reflection, and
+its tangential derivatives are odd reflections of those of `D`. -/
+private theorem hasWeakLineDerivOn_inner_tangent_sub_comp_normalReflection {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hG : MemLp G p volume) (hD : ∀ c, MemLp (fun x => D x c) p volume)
+    (hG0 : ∀ x ∉ normalHalfSpace (E := E) a, G x = 0)
+    (hD0 : ∀ x ∉ normalHalfSpace (E := E) a, D x = 0)
+    (hGD : ∀ c, HasWeakFDerivOn volume (normalHalfSpace a) (fun x => ⟪G x, c⟫_ℝ)
+      fun x => innerSL ℝ (D x c)) (y z : E) :
+    HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪D x (WithLp.toLp 2 ((0 : ℝ), y)) -
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((0 : ℝ), y))),
+          WithLp.toLp 2 ((0 : ℝ), z)⟫_ℝ) (WithLp.toLp 2 ((0 : ℝ), z)) :=
+  (hGD _).hasWeakLineDerivOn_sub_comp_normalReflection
+    ((hG.inner_const _).locallyIntegrable Fact.out) ((hD _).locallyIntegrable Fact.out)
+    (fun x hx => by simp [hG0 x hx]) (fun x hx => by simp [hD0 x hx]) rfl
+
+/-- The normal derivative of a tangential component of the gradient of an odd reflection is the
+even reflection of `D ν` paired with the tangential direction: weak derivatives commute. -/
+private theorem hasWeakLineDerivOn_inner_tangent_sub_comp_normalReflection_normal {a : ℝ}
+    {f : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (h2 : HasWeakFDerivOn volume ⊤ (fun x => f x - f (normalReflection E a x))
+      fun x => innerSL ℝ (G x - normalLinearReflection E (G (normalReflection E a x))))
+    (h4 : HasWeakFDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ +
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+      fun x => innerSL ℝ (D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E))))))
+    (y : E) :
+    HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E)))),
+          WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ) (WithLp.toLp 2 ((1 : ℝ), (0 : E))) := by
+  have h₁ := (h2.hasWeakLineDerivOn (WithLp.toLp 2 ((1 : ℝ), (0 : E)))).congr_ae_deriv
+    (Eventually.of_forall fun x =>
+      (innerSL_apply_apply ℝ _ _).trans (inner_sub_normalLinearReflection_normal _ _))
+  have h₂ := (h2.hasWeakLineDerivOn (WithLp.toLp 2 ((0 : ℝ), y))).congr_ae_deriv
+    (Eventually.of_forall fun x =>
+      (innerSL_apply_apply ℝ _ _).trans (inner_sub_normalLinearReflection_tangent _ _ y))
+  simpa only [innerSL_apply_apply] using
+    h₁.comm (h4.hasWeakLineDerivOn (WithLp.toLp 2 ((0 : ℝ), y))) h₂
+
+/-- The normal derivative of the odd reflection's gradient pairing: the even reflection of
+`⟪G, ν⟫` is a first-order Sobolev function. -/
+private theorem exists_wkp_one_value_ae_eq_inner_normal_add_comp_normalReflection {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hG : MemLp G p volume) (hD : ∀ c, MemLp (fun x => D x c) p volume)
+    (h4 : HasWeakFDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ +
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+      fun x => innerSL ℝ (D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E)))))) :
+    ∃ N : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1,
+      Wkp.value 1 N =ᵐ[volume] fun x => ⟪G x, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ +
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ := by
+  have hρ := measurePreserving_normalReflection (E := E) a
+  have hρD : MemLp (fun x => normalLinearReflection E (D (normalReflection E a x)
+      (WithLp.toLp 2 ((1 : ℝ), (0 : E))))) p volume :=
+    (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).comp_memLp'
+      ((hD _).comp_measurePreserving hρ)
+  have h := Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn
+    (w := fun x => ⟪G x, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ +
+      ⟪G (normalReflection E a x), WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+    (((hG.inner_const _).add ((hG.inner_const _).comp_measurePreserving hρ)).restrict _)
+    (fun v x => ⟪D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+      normalLinearReflection E (D (normalReflection E a x)
+        (WithLp.toLp 2 ((1 : ℝ), (0 : E)))), v⟫_ℝ)
+    (fun v => (((hD _).add hρD).inner_const v).restrict _) fun v => by
+      simpa only [innerSL_apply_apply] using h4.hasWeakLineDerivOn v
+  rw [ae_restrict_top] at h
+  exact h
+
+/-- The tangential components of the gradient of an odd reflection are first-order Sobolev
+functions. -/
+private theorem exists_wkp_one_value_ae_eq_inner_tangent_sub_comp_normalReflection {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (hG : MemLp G p volume) (hD : ∀ c, MemLp (fun x => D x c) p volume)
+    (h5 : ∀ y z : E, HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪D x (WithLp.toLp 2 ((0 : ℝ), y)) -
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((0 : ℝ), y))),
+          WithLp.toLp 2 ((0 : ℝ), z)⟫_ℝ) (WithLp.toLp 2 ((0 : ℝ), z)))
+    (h6 : ∀ y : E, HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E)))),
+          WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ) (WithLp.toLp 2 ((1 : ℝ), (0 : E)))) (y : E) :
+    ∃ T : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1,
+      Wkp.value 1 T =ᵐ[volume] fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ := by
+  have hρ := measurePreserving_normalReflection (E := E) a
+  have hρD (c : WithLp 2 (ℝ × E)) : MemLp (fun x => normalLinearReflection E
+      (D (normalReflection E a x) c)) p volume :=
+    (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).comp_memLp'
+      ((hD c).comp_measurePreserving hρ)
+  have hsplit (v : WithLp 2 (ℝ × E)) :
+      v.fst • WithLp.toLp 2 ((1 : ℝ), (0 : E)) + WithLp.toLp 2 ((0 : ℝ), v.snd) = v := by
+    cases v; simp [← WithLp.toLp_smul, ← WithLp.toLp_add]
+  have h := Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn
+    (w := fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+      ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+    (((hG.inner_const _).sub ((hG.inner_const _).comp_measurePreserving hρ)).restrict _)
+    (fun v x => v.fst * ⟪D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E)))),
+          WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ +
+      ⟪D x (WithLp.toLp 2 ((0 : ℝ), y)) -
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((0 : ℝ), y))),
+          WithLp.toLp 2 ((0 : ℝ), v.snd)⟫_ℝ)
+    (fun v => ((((hD _).add (hρD _)).inner_const _).const_mul v.fst).add
+      (((hD _).sub (hρD _)).inner_const _) |>.restrict _) fun v => by
+      have h := ((h6 y).smul_direction v.fst).add_direction (h5 y v.snd)
+      rw [hsplit v] at h
+      exact h
+  rw [ae_restrict_top] at h
+  exact h
+
+/-- The odd reflection `f - f ∘ ρ` is the value of an element `W` of `W^{2,p}` whenever the
+components of its gradient `G - R (G ∘ ρ)` are the values of first-order Sobolev functions, namely
+`N` in the normal direction and `T y` in the tangential directions. Its weak gradient is then
+`G - R (G ∘ ρ)`. -/
+private theorem exists_wkp_two_value_ae_eq_sub_comp_normalReflection {a : ℝ}
+    {f : WithLp 2 (ℝ × E) → ℝ} {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (hf : MemLp f p volume)
+    (h2 : HasWeakFDerivOn volume ⊤ (fun x => f x - f (normalReflection E a x))
+      fun x => innerSL ℝ (G x - normalLinearReflection E (G (normalReflection E a x))))
+    (N : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1)
+    (T : E → Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1)
+    (hN : Wkp.value 1 N =ᵐ[volume] fun x => ⟪G x, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ +
+      ⟪G (normalReflection E a x), WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+    (hT : ∀ y, Wkp.value 1 (T y) =ᵐ[volume] fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+      ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ) :
+    ∃ W : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 2,
+      Wkp.value 2 W =ᵐ[volume] (fun x => f x - f (normalReflection E a x)) ∧
+      ∀ᵐ x ∂volume, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 W) x =
+        G x - normalLinearReflection E (G (normalReflection E a x)) := by
+  have hρ := measurePreserving_normalReflection (E := E) a
+  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn 1
+    ((hf.sub (hf.comp_measurePreserving hρ)).restrict _)
+    (fun v => v.fst • N + T v.snd) fun v => by
+      refine (h2.hasWeakLineDerivOn v).congr_ae_deriv ?_
+      rw [ae_restrict_top]
+      have hadd := Lp.coeFn_add (v.fst • Wkp.value 1 N) (Wkp.value 1 (T v.snd))
+      have hsmul := Lp.coeFn_smul v.fst (Wkp.value 1 N)
+      rw [ae_restrict_top] at hadd hsmul
+      filter_upwards [hN, hT v.snd, hadd, hsmul] with x h1 h2 h3 h4
+      rw [Wkp.value_add, Wkp.value_smul, h3, Pi.add_apply, h4, Pi.smul_apply, h1, h2,
+        innerSL_apply_apply, inner_sub_normalLinearReflection_eq, smul_eq_mul]
+  rw [ae_restrict_top] at hW
+  refine ⟨W, hW, ?_⟩
+  have hval : Wkp.value 1 (Wkp.lowerOrder 1 W) =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict
+      ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E)))]
+      fun x => f x - f (normalReflection E a x) := by
+    rw [ae_restrict_top, ← Wkp.value_succ]
+    exact hW
+  have h := ((Wkp.hasWeakFDerivOn_value (Wkp.lowerOrder 1 W)).congr_ae hval).ae_eq h2
+  rw [ae_restrict_top] at h
+  filter_upwards [h] with x hx
+  exact ext_inner_right ℝ fun v => by
+    simpa only [innerSL_apply_apply] using DFunLike.congr_fun hx v
+
+/-- Each entry of the weak Hessian of `W` is a weak derivative of a component of its weak
+gradient `G - R (G ∘ ρ)`. -/
+private theorem hasWeakLineDerivOn_inner_iteratedGradient_one {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    (W : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 2)
+    (hg : ∀ᵐ x ∂volume, Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 W) x =
+      G x - normalLinearReflection E (G (normalReflection E a x)))
+    (c v : WithLp 2 (ℝ × E)) :
+    HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x - normalLinearReflection E (G (normalReflection E a x)), c⟫_ℝ)
+      (fun x => ⟪Wkp.iteratedGradient 1 W x v, c⟫_ℝ) v := by
+  have h : HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 W) x, c⟫_ℝ)
+      (fun x => ⟪Wkp.iteratedGradient 1 W x v, c⟫_ℝ) v := by
+    simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm c] using
+      ((Wkp.hasWeakFDerivOn_iteratedGradient 0 W).clm_comp (innerSL ℝ c)).hasWeakLineDerivOn v
+  refine h.congr_ae ?_
+  rw [ae_restrict_top]
+  filter_upwards [hg] with x hx
+  rw [hx]
+
+/-- The normal-direction entries of the weak Hessian of the odd reflection. -/
+private theorem ae_inner_iteratedGradient_normal_eq {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    {Φ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    (h4 : HasWeakFDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ +
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+      fun x => innerSL ℝ (D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E))))))
+    (hsymm : ∀ v c, ∀ᵐ x, ⟪D x v, c⟫_ℝ = ⟪D x c, v⟫_ℝ)
+    (hcomp : ∀ v, HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x - normalLinearReflection E (G (normalReflection E a x)),
+        WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ) (fun x => ⟪Φ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ)
+        v)
+    (v : WithLp 2 (ℝ × E)) :
+    ∀ᵐ x ∂volume, ⟪Φ x v, WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ =
+      ⟪(D x - (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+        D (normalReflection E a x) ∘L
+          (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) v,
+        WithLp.toLp 2 ((1 : ℝ), (0 : E))⟫_ℝ := by
+  have hρ := measurePreserving_normalReflection (E := E) a
+  have hae := ((hcomp v).congr_ae (Eventually.of_forall fun x =>
+    inner_sub_normalLinearReflection_normal (G x) (G (normalReflection E a x)))).ae_eq
+      (h4.hasWeakLineDerivOn v)
+  rw [ae_restrict_top] at hae
+  filter_upwards [hae, hsymm v (WithLp.toLp 2 ((1 : ℝ), (0 : E))),
+    hρ.quasiMeasurePreserving.ae
+      (hsymm (normalLinearReflection E v) (WithLp.toLp 2 ((1 : ℝ), (0 : E))))]
+    with x h1 h2 h3
+  rw [h1]
+  simp only [innerSL_apply_apply, sub_apply, ContinuousLinearMap.comp_apply,
+    ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv,
+    inner_add_left, inner_sub_left, inner_normalLinearReflection_left_eq_right,
+    normalLinearReflection_toLp_one_zero,
+    inner_neg_right]
+  rw [h2, h3]
+  ring
+
+/-- The mixed entries of the weak Hessian of the odd reflection. -/
+private theorem ae_inner_iteratedGradient_normal_tangent_eq {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    {Φ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {y : E}
+    (h6 : HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪D x (WithLp.toLp 2 ((1 : ℝ), (0 : E))) +
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((1 : ℝ), (0 : E)))),
+          WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ) (WithLp.toLp 2 ((1 : ℝ), (0 : E))))
+    (hcomp : HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x - normalLinearReflection E (G (normalReflection E a x)),
+        WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪Φ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (WithLp.toLp 2 ((1 : ℝ), (0 : E)))) :
+    ∀ᵐ x ∂volume, ⟪Φ x (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪(D x - (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+        D (normalReflection E a x) ∘L
+          (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)))
+            (WithLp.toLp 2 ((1 : ℝ), (0 : E))), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ := by
+  have hae := (hcomp.congr_ae (Eventually.of_forall fun x =>
+    inner_sub_normalLinearReflection_tangent (G x) (G (normalReflection E a x)) y)).ae_eq h6
+  rw [ae_restrict_top] at hae
+  filter_upwards [hae] with x h1
+  rw [h1]
+  simp only [sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, normalLinearReflection_toLp_one_zero,
+    map_neg, sub_neg_eq_add]
+
+/-- The tangential entries of the weak Hessian of the odd reflection. -/
+private theorem ae_inner_iteratedGradient_tangent_eq {a : ℝ}
+    {G : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E)}
+    {D : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)}
+    {Φ : WithLp 2 (ℝ × E) → WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)} {y z : E}
+    (h5 : HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x, WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ -
+        ⟪G (normalReflection E a x), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪D x (WithLp.toLp 2 ((0 : ℝ), y)) -
+        normalLinearReflection E (D (normalReflection E a x) (WithLp.toLp 2 ((0 : ℝ), y))),
+          WithLp.toLp 2 ((0 : ℝ), z)⟫_ℝ) (WithLp.toLp 2 ((0 : ℝ), z)))
+    (hsymm : ∀ v c, ∀ᵐ x, ⟪D x v, c⟫_ℝ = ⟪D x c, v⟫_ℝ)
+    (hcomp : HasWeakLineDerivOn volume ⊤
+      (fun x => ⟪G x - normalLinearReflection E (G (normalReflection E a x)),
+        WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (fun x => ⟪Φ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ)
+      (WithLp.toLp 2 ((0 : ℝ), z))) :
+    ∀ᵐ x ∂volume, ⟪Φ x (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ =
+      ⟪(D x - (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
+        D (normalReflection E a x) ∘L
+          (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)))
+            (WithLp.toLp 2 ((0 : ℝ), z)), WithLp.toLp 2 ((0 : ℝ), y)⟫_ℝ := by
+  have hρ := measurePreserving_normalReflection (E := E) a
+  have hae := (hcomp.congr_ae (Eventually.of_forall fun x =>
+    inner_sub_normalLinearReflection_tangent (G x) (G (normalReflection E a x)) y)).ae_eq h5
+  rw [ae_restrict_top] at hae
+  filter_upwards [hae, hsymm (WithLp.toLp 2 ((0 : ℝ), z)) (WithLp.toLp 2 ((0 : ℝ), y)),
+    hρ.quasiMeasurePreserving.ae
+      (hsymm (WithLp.toLp 2 ((0 : ℝ), z)) (WithLp.toLp 2 ((0 : ℝ), y)))] with x h1 h2 h3
+  rw [h1]
+  simp only [sub_apply, ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
+    LinearIsometryEquiv.coe_toContinuousLinearEquiv, normalLinearReflection_toLp_zero,
+    inner_sub_left, inner_normalLinearReflection_left_eq_right]
+  rw [h2, h3]
+
 /-- **The odd reflection of second-order data.** Let `f`, `G` and `D` vanish off the half-space
 `{x | a < x.fst}` and lie in `Lᵖ`, let `G` be the weak gradient of `f` on the whole space, let
 `x ↦ D x c` be the weak gradient of the component `⟪G, c⟫` on the half-space for every `c`, and
@@ -116,183 +440,25 @@ private theorem exists_wkp_two_sub_comp_normalReflection {a : ℝ}
         D x - (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L
           D (normalReflection E a x) ∘L
             (normalLinearReflection E : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) := by
-  -- Write `ν = (1, 0)` and `τ y = (0, y)`. We first compute the weak derivatives of the
-  -- components of the gradient `G - R (G ∘ ρ)` of the odd reflection, in every direction; they
-  -- show that `f - f ∘ ρ` is the value of an element `W` of `W^{2,p}`. Then the entries of the
-  -- weak Hessian of `W` along a basis adapted to the hyperplane are identified by uniqueness of
-  -- weak derivatives.
-  set ρ := normalReflection E a
-  set R := normalLinearReflection E
-  set ν : WithLp 2 (ℝ × E) := WithLp.toLp 2 ((1 : ℝ), (0 : E))
-  set τ : E → WithLp 2 (ℝ × E) := fun y => WithLp.toLp 2 ((0 : ℝ), y)
-  have hρ := measurePreserving_normalReflection (E := E) a
-  have hRν : R ν = -ν := by simp [R, ν, ← WithLp.toLp_neg]
-  have hRτ (y : E) : R (τ y) = τ y := by simp [R, τ]
-  have hτ (y : E) : (τ y).fst = 0 := rfl
-  have hsplit (v : WithLp 2 (ℝ × E)) : v.fst • ν + τ v.snd = v := by
-    cases v; simp [ν, τ, ← WithLp.toLp_smul, ← WithLp.toLp_add]
-  -- `Lᵖ` bounds and local integrability of the pieces
-  have hp : (1 : ℝ≥0∞) ≤ p := Fact.out
-  have hGc (c : WithLp 2 (ℝ × E)) : MemLp (fun x => ⟪G x, c⟫_ℝ) p volume := hG.inner_const c
-  have hρGc (c : WithLp 2 (ℝ × E)) : MemLp (fun x => ⟪G (ρ x), c⟫_ℝ) p volume :=
-    (hGc c).comp_measurePreserving hρ
-  have hρD (c : WithLp 2 (ℝ × E)) : MemLp (fun x => R (D (ρ x) c)) p volume :=
-    (R : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)).comp_memLp' ((hD c).comp_measurePreserving hρ)
-  have hplus (c d : WithLp 2 (ℝ × E)) :
-      MemLp (fun x => ⟪D x c + R (D (ρ x) c), d⟫_ℝ) p volume :=
-    ((hD c).add (hρD c)).inner_const d
-  have hminus (c d : WithLp 2 (ℝ × E)) :
-      MemLp (fun x => ⟪D x c - R (D (ρ x) c), d⟫_ℝ) p volume :=
-    ((hD c).sub (hρD c)).inner_const d
-  have hGc0 (c : WithLp 2 (ℝ × E)) (x : WithLp 2 (ℝ × E)) (hx : x ∉ normalHalfSpace (E := E) a) :
-      ⟪G x, c⟫_ℝ = 0 := by
-    simp [hG0 x hx]
-  have hDc0 (c : WithLp 2 (ℝ × E)) (x : WithLp 2 (ℝ × E)) (hx : x ∉ normalHalfSpace (E := E) a) :
-      D x c = 0 := by
-    simp [hD0 x hx]
-  -- the first derivatives of the odd reflection
-  have h2 : HasWeakFDerivOn volume ⊤ (fun x => f x - f (ρ x))
-      fun x => innerSL ℝ (G x - R (G (ρ x))) :=
-    (hfG.sub hfG.comp_normalReflection).congr_ae_deriv
-      (Eventually.of_forall fun x => by simp only [Pi.sub_apply, map_sub, ρ, R])
-  have hν (x : WithLp 2 (ℝ × E)) :
-      ⟪G x - R (G (ρ x)), ν⟫_ℝ = ⟪G x, ν⟫_ℝ + ⟪G (ρ x), ν⟫_ℝ := by
-    rw [inner_sub_left, inner_normalLinearReflection_left_eq_right, hRν, inner_neg_right,
-      sub_neg_eq_add]
-  have hτν (y : E) (x : WithLp 2 (ℝ × E)) :
-      ⟪G x - R (G (ρ x)), τ y⟫_ℝ = ⟪G x, τ y⟫_ℝ - ⟪G (ρ x), τ y⟫_ℝ := by
-    rw [inner_sub_left, inner_normalLinearReflection_left_eq_right, hRτ]
-  -- the normal component `∂_ν (f - f ∘ ρ)` is the even reflection of `⟪G, ν⟫`
-  have h4 := (hGD ν).add_comp_normalReflection ((hGc ν).locallyIntegrable hp)
-    ((hD ν).locallyIntegrable hp) (hGc0 ν) (hDc0 ν)
-  -- the tangential components are odd reflections, with tangential derivatives ...
-  have h5 (y z : E) := (hGD (τ y)).hasWeakLineDerivOn_sub_comp_normalReflection
-    ((hGc (τ y)).locallyIntegrable hp) ((hD (τ y)).locallyIntegrable hp) (hGc0 (τ y))
-    (hDc0 (τ y)) (d := τ z) (hτ z)
-  -- ... and normal derivative obtained by commuting the two weak derivatives
-  have h6 (y : E) : HasWeakLineDerivOn volume ⊤ (fun x => ⟪G x, τ y⟫_ℝ - ⟪G (ρ x), τ y⟫_ℝ)
-      (fun x => ⟪D x ν + R (D (ρ x) ν), τ y⟫_ℝ) ν := by
-    have h₁ := (h2.hasWeakLineDerivOn ν).congr_ae_deriv
-      (Eventually.of_forall fun x => (innerSL_apply_apply ℝ _ _).trans (hν x))
-    have h₂ := (h2.hasWeakLineDerivOn (τ y)).congr_ae_deriv
-      (Eventually.of_forall fun x => (innerSL_apply_apply ℝ _ _).trans (hτν y x))
-    simpa only [innerSL_apply_apply] using h₁.comm (h4.hasWeakLineDerivOn (τ y)) h₂
-  -- the components of the gradient are first-order Sobolev functions
-  obtain ⟨N, hN⟩ : ∃ N : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1,
-      Wkp.value 1 N =ᵐ[volume] fun x => ⟪G x, ν⟫_ℝ + ⟪G (ρ x), ν⟫_ℝ := by
-    have h := Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn
-      (w := fun x => ⟪G x, ν⟫_ℝ + ⟪G (ρ x), ν⟫_ℝ) (((hGc ν).add (hρGc ν)).restrict _)
-      (fun v x => ⟪D x ν + R (D (ρ x) ν), v⟫_ℝ)
-      (fun v => (hplus ν v).restrict _) fun v => by
-        simpa only [innerSL_apply_apply] using h4.hasWeakLineDerivOn v
-    rw [ae_restrict_top] at h
-    exact h
-  have hT (y : E) : ∃ T : Wkp (volume : Measure (WithLp 2 (ℝ × E))) ⊤ p 1,
-      Wkp.value 1 T =ᵐ[volume] fun x => ⟪G x, τ y⟫_ℝ - ⟪G (ρ x), τ y⟫_ℝ := by
-    have h := Wkp.exists_value_one_ae_eq_of_forall_hasWeakLineDerivOn
-      (w := fun x => ⟪G x, τ y⟫_ℝ - ⟪G (ρ x), τ y⟫_ℝ)
-      (((hGc (τ y)).sub (hρGc (τ y))).restrict _)
-      (fun v x => v.fst * ⟪D x ν + R (D (ρ x) ν), τ y⟫_ℝ +
-        ⟪D x (τ y) - R (D (ρ x) (τ y)), τ v.snd⟫_ℝ)
-      (fun v => (((hplus ν (τ y)).const_mul v.fst).add (hminus (τ y) (τ v.snd))).restrict _)
-      fun v => by
-        have h := ((h6 y).smul_direction v.fst).add_direction (h5 y v.snd)
-        rw [hsplit v] at h
-        exact h
-    rw [ae_restrict_top] at h
-    exact h
-  choose T hT using hT
-  -- the odd reflection is a second-order Sobolev function
-  obtain ⟨W, hW⟩ := Wkp.exists_value_ae_eq_of_forall_hasWeakLineDerivOn 1
-    ((hf.sub (hf.comp_measurePreserving hρ)).restrict _)
-    (fun v => v.fst • N + T v.snd) fun v => by
-      refine (h2.hasWeakLineDerivOn v).congr_ae_deriv ?_
-      rw [ae_restrict_top]
-      have hadd := Lp.coeFn_add (v.fst • Wkp.value 1 N) (Wkp.value 1 (T v.snd))
-      have hsmul := Lp.coeFn_smul v.fst (Wkp.value 1 N)
-      rw [ae_restrict_top] at hadd hsmul
-      filter_upwards [hN, hT v.snd, hadd, hsmul] with x h1 h2 h3 h4
-      rw [Wkp.value_add, Wkp.value_smul, h3, Pi.add_apply, h4, Pi.smul_apply, h1, h2,
-        innerSL_apply_apply, inner_sub_normalLinearReflection_eq, smul_eq_mul]
-  rw [ae_restrict_top] at hW
+  -- Write `ν = (1, 0)` and `τ y = (0, y)`. The odd reflection `f - f ∘ ρ` has weak gradient
+  -- `G - R (G ∘ ρ)` (`h2`), whose components are first-order Sobolev functions (`h4`, `h5`, `h6`),
+  -- so it is the value of an element `W` of `W^{2,p}`. The entries of its weak Hessian are
+  -- identified with those of `D - R ∘ D ∘ ρ ∘ R` by uniqueness of weak derivatives.
+  have h2 := hasWeakFDerivOn_sub_comp_normalReflection_innerSL (a := a) hfG
+  have h4 := hasWeakFDerivOn_inner_normal_add_comp_normalReflection hG hD hG0 hD0 hGD
+  have h5 := hasWeakLineDerivOn_inner_tangent_sub_comp_normalReflection hG hD hG0 hD0 hGD
+  have h6 := hasWeakLineDerivOn_inner_tangent_sub_comp_normalReflection_normal h2 h4
+  obtain ⟨N, hN⟩ := exists_wkp_one_value_ae_eq_inner_normal_add_comp_normalReflection hG hD h4
+  choose T hT using
+    exists_wkp_one_value_ae_eq_inner_tangent_sub_comp_normalReflection hG hD h5 h6
+  obtain ⟨W, hW, hg⟩ :=
+    exists_wkp_two_value_ae_eq_sub_comp_normalReflection hf h2 N T hN hT
   refine ⟨W, hW, ?_⟩
-  -- the weak gradient of `W` is `G - R (G ∘ ρ)`
-  have hg : ∀ᵐ x ∂volume,
-      Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 W) x = G x - R (G (ρ x)) := by
-    have hval : Wkp.value 1 (Wkp.lowerOrder 1 W) =ᵐ[(volume : Measure (WithLp 2 (ℝ × E))).restrict
-        ((⊤ : Opens (WithLp 2 (ℝ × E))) : Set (WithLp 2 (ℝ × E)))]
-        fun x => f x - f (ρ x) := by
-      rw [ae_restrict_top, ← Wkp.value_succ]
-      exact hW
-    have h := ((Wkp.hasWeakFDerivOn_value (Wkp.lowerOrder 1 W)).congr_ae hval).ae_eq h2
-    rw [ae_restrict_top] at h
-    filter_upwards [h] with x hx
-    exact ext_inner_right ℝ fun v => by
-      simpa only [innerSL_apply_apply] using DFunLike.congr_fun hx v
-  -- each entry of the weak Hessian of `W` is a weak derivative of a component of `G - R (G ∘ ρ)`
-  have hcomp (c v : WithLp 2 (ℝ × E)) : HasWeakLineDerivOn volume ⊤
-      (fun x => ⟪G x - R (G (ρ x)), c⟫_ℝ) (fun x => ⟪Wkp.iteratedGradient 1 W x v, c⟫_ℝ) v := by
-    have h : HasWeakLineDerivOn volume ⊤
-        (fun x => ⟪Wkp.iteratedGradient 0 (Wkp.lowerOrder 1 W) x, c⟫_ℝ)
-        (fun x => ⟪Wkp.iteratedGradient 1 W x v, c⟫_ℝ) v := by
-      simpa only [ContinuousLinearMap.comp_apply, innerSL_apply_apply, real_inner_comm c] using
-        ((Wkp.hasWeakFDerivOn_iteratedGradient 0 W).clm_comp (innerSL ℝ c)).hasWeakLineDerivOn v
-    refine h.congr_ae ?_
-    rw [ae_restrict_top]
-    filter_upwards [hg] with x hx
-    rw [hx]
-  -- compare the entries along an orthonormal basis adapted to the hyperplane
-  set b := (OrthonormalBasis.singleton Unit ℝ).prod (stdOrthonormalBasis ℝ E)
-  have hb_inl : b (Sum.inl ()) = ν := by simp [b, ν]
-  have hb_inr (j : Fin (Module.finrank ℝ E)) : b (Sum.inr j) = τ (stdOrthonormalBasis ℝ E j) := by
-    simp [b, τ]
-  have hentry (i j : Unit ⊕ Fin (Module.finrank ℝ E)) : ∀ᵐ x ∂volume,
-      ⟪Wkp.iteratedGradient 1 W x (b i), b j⟫_ℝ =
-        ⟪(D x - (R : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E)) ∘L D (ρ x) ∘L
-          (R : WithLp 2 (ℝ × E) →L[ℝ] WithLp 2 (ℝ × E))) (b i), b j⟫_ℝ := by
-    rcases j with ⟨⟩ | j
-    · -- the normal component is the even reflection of `⟪G, ν⟫`
-      have hae := ((hcomp ν (b i)).congr_ae (Eventually.of_forall hν)).ae_eq
-        (h4.hasWeakLineDerivOn (b i))
-      rw [ae_restrict_top] at hae
-      filter_upwards [hae, hsymm (b i) ν, hρ.quasiMeasurePreserving.ae (hsymm (R (b i)) ν)]
-        with x h1 h2 h3
-      rw [hb_inl, h1]
-      simp only [ρ, R] at hRν h3 ⊢
-      simp only [innerSL_apply_apply, sub_apply,
-        ContinuousLinearMap.comp_apply, ContinuousLinearEquiv.coe_coe,
-        LinearIsometryEquiv.coe_toContinuousLinearEquiv, inner_add_left, inner_sub_left,
-        inner_normalLinearReflection_left_eq_right, hRν, inner_neg_right]
-      rw [h2, h3]
-      ring
-    · rcases i with ⟨⟩ | i
-      · -- a mixed entry: the normal derivative of a tangential component
-        have hae := ((hcomp (τ (stdOrthonormalBasis ℝ E j)) ν).congr_ae
-          (Eventually.of_forall (hτν _))).ae_eq (h6 (stdOrthonormalBasis ℝ E j))
-        rw [ae_restrict_top] at hae
-        filter_upwards [hae] with x h1
-        rw [hb_inl, hb_inr, h1]
-        simp only [ρ, R] at hRν ⊢
-        simp only [sub_apply, ContinuousLinearMap.comp_apply,
-          ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv, hRν,
-          map_neg, sub_neg_eq_add]
-      · -- a tangential entry: the odd reflection of `⟪D τ, τ'⟫`
-        set y := stdOrthonormalBasis ℝ E j
-        set z := stdOrthonormalBasis ℝ E i
-        have hae := ((hcomp (τ y) (τ z)).congr_ae
-          (Eventually.of_forall (hτν y))).ae_eq (h5 y z)
-        rw [ae_restrict_top] at hae
-        filter_upwards [hae, hsymm (τ z) (τ y), hρ.quasiMeasurePreserving.ae (hsymm (τ z) (τ y))]
-          with x h1 h2 h3
-        rw [hb_inr, hb_inr, h1]
-        simp only [ρ, R] at hRτ h3 ⊢
-        simp only [sub_apply, ContinuousLinearMap.comp_apply,
-          ContinuousLinearEquiv.coe_coe, LinearIsometryEquiv.coe_toContinuousLinearEquiv, hRτ,
-          inner_sub_left, inner_normalLinearReflection_left_eq_right]
-        rw [h2, h3]
-  filter_upwards [ae_all_iff.2 fun i => ae_all_iff.2 fun j => hentry i j] with x hx
-  exact ContinuousLinearMap.coe_injective (b.toBasis.ext fun i =>
-    InnerProductSpace.ext_inner_right_basis b.toBasis fun j => by simpa using hx i j)
+  have hcomp := hasWeakLineDerivOn_inner_iteratedGradient_one W hg
+  exact ae_clm_eq_of_forall_inner_normal_tangent
+    (ae_inner_iteratedGradient_normal_eq h4 hsymm fun v => hcomp _ v)
+    (fun y => ae_inner_iteratedGradient_normal_tangent_eq (h6 y) (hcomp _ _))
+    fun y z => ae_inner_iteratedGradient_tangent_eq (h5 y z) hsymm (hcomp _ _)
 
 /-- **Odd reflection of a second-order Sobolev function with zero boundary values.** Let
 `u ∈ W^{2,p}(H)` on the half-space `H = {x | a < x.fst}` of `ℝ × E` have first-order part in
