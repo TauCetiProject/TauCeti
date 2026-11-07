@@ -614,6 +614,14 @@ private noncomputable def cylindricalPoint (φ r z a b w : ℝ) :
   (!₂[r * Real.cos φ, r * Real.sin φ, z],
     !₂[a * Real.cos φ - b * Real.sin φ, a * Real.sin φ + b * Real.cos φ, w])
 
+/-- The height of `cylindricalPoint φ r z a b w` is `z`. -/
+private theorem cylindricalPoint_fst_two (φ r z a b w : ℝ) :
+    (cylindricalPoint φ r z a b w).1 2 = z := rfl
+
+/-- The vertical momentum of `cylindricalPoint φ r z a b w` is `w`. -/
+private theorem cylindricalPoint_snd_two (φ r z a b w : ℝ) :
+    (cylindricalPoint φ r z a b w).2 2 = w := rfl
+
 /-- In cylindrical coordinates the phase space is `r² + z² = 1`, `r a + z w = 0`. -/
 private theorem mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff {φ r z a b w : ℝ} :
     cylindricalPoint φ r z a b w ∈ sphericalPendulumPhaseSpace ↔
@@ -748,7 +756,7 @@ private theorem exists_zeroFibreSheet_eq {h : ℝ}
   have hw := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
   rw [hF] at hw
   obtain ⟨φ, r, z, a, b, w, hr, rfl, hpole⟩ := exists_eq_cylindricalPoint x
-  change w ^ 2 = 2 * (h - z) * (1 - z ^ 2) - 0 ^ 2 at hw
+  simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
   rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
   obtain ⟨hF1, hF2⟩ := hF
@@ -821,7 +829,7 @@ private theorem exists_fibreSheet_eq {h j : ℝ} (hj : j ≠ 0)
   have hw2 := sq_snd_two_eq_of_mem_sphericalPendulumPhaseSpace hx
   rw [hF] at hw2
   obtain ⟨φ, r, z, a, b, w, hr, rfl, -⟩ := exists_eq_cylindricalPoint x
-  change w ^ 2 = 2 * (h - z) * (1 - z ^ 2) - j ^ 2 at hw2
+  simp only [cylindricalPoint_fst_two, cylindricalPoint_snd_two] at hw2
   obtain ⟨hx1, hx2⟩ := mem_sphericalPendulumPhaseSpace_cylindricalPoint_iff.1 hx
   rw [sphericalPendulumEnergyMomentum_cylindricalPoint, Prod.mk.injEq] at hF
   obtain ⟨hF1, hF2⟩ := hF
