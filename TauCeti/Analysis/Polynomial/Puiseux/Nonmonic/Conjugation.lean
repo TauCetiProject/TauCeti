@@ -41,18 +41,16 @@ public section
 
 open Function Metric Polynomial Set ComplexConjugate
 
-namespace TauCeti.Polynomial
+namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
-  {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {u : E × ℂ → ℂ}
-  {d n a : ℕ} {R R' : ℝ} {τ : E → E}
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] {U : Set E} {d n a : ℕ}
+  {R' : ℝ} {τ : E → E}
 
-omit [FiniteDimensional ℂ E] [SimplyConnectedSpace U] in
 /-- Conjugation compatibility of the pole-removed analytic extensions: if the punctured
 branches satisfy it, then so do the extensions on the full product, by continuity through the
 exceptional hyperplane. The removed pole is a real monomial, so scaling commutes with
 conjugation. -/
-private lemma eqOn_conj_extension {g r : Fin d → E × ℂ → ℂ} {σ : Equiv.Perm (Fin d)}
+lemma eqOn_conj_extension {g r : Fin d → E × ℂ → ℂ} {σ : Equiv.Perm (Fin d)}
     (hga : ∀ i, AnalyticOnNhd ℂ (g i) (U ×ˢ ball 0 R') ∧
       EqOn (g i) (fun b ↦ b.2 ^ (n * a) * r i b) (U ×ˢ (ball 0 R' \ {0})))
     (hσ : ∀ i b, b ∈ U ×ˢ (ball 0 R' \ {0}) →
@@ -69,6 +67,14 @@ private lemma eqOn_conj_extension {g r : Fin d → E × ℂ → ℂ} {σ : Equiv
       Complex.conj_conj]
   exact TauCeti.eqOn_prod_of_eqOn_prod_diff_singleton isOpen_ball (hga (σ i)).1.continuousOn
     (Complex.continuous_conj.comp_continuousOn ((hga i).1.continuousOn.comp hκ hκT)) hgconj
+
+end TauCeti
+
+namespace TauCeti.Polynomial
+
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimensional ℂ E]
+  {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {u : E × ℂ → ℂ}
+  {d n a : ℕ} {R R' : ℝ} {τ : E → E}
 
 /-- Construct nonmonic Puiseux branches and their pole-removed analytic extensions together
 with the unique involutive conjugation permutation. Coefficient symmetry is needed only off
