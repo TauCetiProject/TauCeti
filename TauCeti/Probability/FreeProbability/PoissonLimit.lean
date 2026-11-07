@@ -13,7 +13,8 @@ public import TauCeti.Probability.FreeProbability.FreePoisson.Basic
 # The free Poisson limit theorem
 
 For each `N`, let `b N 0, …, b N (N - 1)` be freely independent elements of an algebra `A N` with
-a normalised linear functional `φ N` over `𝕜 = ℝ` or `ℂ`, all with the same moments
+a normalised linear functional `φ N` over `𝕜 = ℝ` or `ℂ`, eventually all with the same
+moments
 `φ N (b N j ^ k) = m N k` for `k ≥ 1`. If `N * m N k → κ k` for every `k ≥ 1`, then the moments of
 the row sums `S_N = b N 0 + ⋯ + b N (N - 1)` converge to the moments of an element whose free
 cumulants are the `κ k`:
@@ -28,7 +29,8 @@ The *free Poisson limit theorem* is the case of summands with the algebraic Bern
 `c ^ n * ∑_{π ∈ NC(n)} r ^ |π|` of a free Poisson element of rate `r` and jump size `c`. When `r`
 and `c` are real and `0 ≤ r / N ≤ 1`, these are the moments of the Bernoulli law
 `(1 - r / N) δ₀ + (r / N) δ_c`, and those of `S_N` are the moments of its `N`-fold free additive
-convolution power.
+convolution power. The moment hypotheses are only required eventually in `N`, so rows
+with `r / N > 1` impose no restriction.
 
 No positivity or traciality of the functionals is assumed, the algebras may depend on `N`, and the
 conclusion is convergence of moments.
@@ -100,38 +102,39 @@ variable {A : ℕ → Type*} [∀ N, Semiring (A N)] [∀ N, Algebra 𝕜 (A N)]
   {b : ∀ N, Fin N → A N}
 
 /-- *The limit theorem for sums of free, identically distributed elements*: for each `N`, let
-`b N 0, …, b N (N - 1)` be freely independent for a normalised `φ N`, with common moments
+`b N 0, …, b N (N - 1)` be freely independent for a normalised `φ N`, eventually with common moments
 `φ N (b N j ^ k) = m N k` for `k ≥ 1`. If `N * m N k → κ k` for every `k ≥ 1`, then the moments of
 the row sums converge to `∑_{π ∈ NC(n)} ∏_{B ∈ π} κ #B`, the moments of an element whose free
 cumulants are the `κ k`. -/
 theorem tendsto_apply_sum_pow_of_tendsto_natCast_mul
     (h : ∀ N, IsFreelyIndependentElements (φ N) (b N)) (hφ : ∀ N, φ N 1 = 1)
-    {m : ℕ → ℕ → 𝕜} (hb : ∀ N j k, k ≠ 0 → φ N (b N j ^ k) = m N k) {κ : ℕ → 𝕜}
+    {m : ℕ → ℕ → 𝕜} (hb : ∀ᶠ N in atTop, ∀ j k, k ≠ 0 → φ N (b N j ^ k) = m N k) {κ : ℕ → 𝕜}
     (hm : ∀ k, k ≠ 0 → Tendsto (fun N : ℕ => (N : 𝕜) * m N k) atTop (𝓝 (κ k))) (n : ℕ) :
     Tendsto (fun N => φ N ((∑ j, b N j) ^ n)) atTop
       (𝓝 (∑ π : NoncrossingPartition (univ : Finset (Fin n)), ∏ B ∈ π.1.parts, κ #B)) := by
   -- The free cumulants of the row sum are `N` times the common free cumulants of the summands,
   -- which are given by Möbius inversion of their moments.
   refine (tendsto_finsetSum _ fun π _ => tendsto_finsetProd _ fun B hB =>
-    tendsto_natCast_mul_sum_mu_mul_prod hm (π.1.nonempty_of_mem_parts hB)).congr fun N => ?_
+    tendsto_natCast_mul_sum_mu_mul_prod hm (π.1.nonempty_of_mem_parts hB)).congr' ?_
+  filter_upwards [hb] with N hb
   have hκ (j : Fin N) (B : Finset (Fin n)) : freeCumulant (φ N) (fun _ => b N j) B =
       ∑ σ : NoncrossingPartition B, mu 𝕜 σ ⊤ * ∏ D ∈ σ.1.parts, m N #D := by
     refine (freeCumulant_eq_sum_mu_mul_partitionMoment _ _ B).trans (sum_congr rfl fun σ _ => ?_)
     rw [partitionMoment_const]
     exact congrArg _ (prod_congr rfl fun D hD =>
-      hb N j _ (σ.1.nonempty_of_mem_parts hD).card_pos.ne')
+      hb j _ (σ.1.nonempty_of_mem_parts hD).card_pos.ne')
   rw [(h N).apply_sum_pow_eq_sum_prod_sum_freeCumulant (hφ N)]
   simp_rw [hκ, sum_const, card_univ, Fintype.card_fin, nsmul_eq_mul]
 
 /-- *The free Poisson limit theorem*: for each `N`, let `b N 0, …, b N (N - 1)` be freely
-independent for a normalised `φ N`, each with the algebraic Bernoulli moments
+independent for a normalised `φ N`, eventually each with the algebraic Bernoulli moments
 `φ N (b N j ^ k) = r / N * c ^ k`, `k ≥ 1` (for real `r`, `c` with `0 ≤ r / N ≤ 1`, the moments of
 the Bernoulli law `(1 - r / N) δ₀ + (r / N) δ_c`). Then the moments of the row sums converge to
 `c ^ n * ∑_{π ∈ NC(n)} r ^ |π|`, the moments of a free Poisson element of rate `r` and jump size
 `c`. -/
 theorem tendsto_apply_sum_pow_of_apply_pow_eq_div_mul_pow
     (h : ∀ N, IsFreelyIndependentElements (φ N) (b N)) (hφ : ∀ N, φ N 1 = 1) {r c : 𝕜}
-    (hb : ∀ N j k, k ≠ 0 → φ N (b N j ^ k) = r / N * c ^ k) (n : ℕ) :
+    (hb : ∀ᶠ N in atTop, ∀ j k, k ≠ 0 → φ N (b N j ^ k) = r / N * c ^ k) (n : ℕ) :
     Tendsto (fun N => φ N ((∑ j, b N j) ^ n)) atTop
       (𝓝 (c ^ n * ∑ π : NoncrossingPartition (univ : Finset (Fin n)), r ^ #π.1.parts)) := by
   have hm (k : ℕ) (_ : k ≠ 0) :
