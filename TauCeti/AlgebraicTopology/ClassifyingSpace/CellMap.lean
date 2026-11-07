@@ -40,9 +40,10 @@ variable {G : Type u} {H : Type v} {K : Type w} [MulOne G] [MulOne H] [MulOne K]
 
 attribute [local instance] universalGSpaceVertexOrder
 
--- The vertex-order instance fixes decidable equality differently from indexedJoinMap.
--- Rebuild its simplicial-map structure with that instance for RealizationCell.map.
-private def universalGSpaceSimplicialMap (φ : G →* H) :
+/-- Relabelling vertices as a simplicial map for the increasing-index vertex orders.
+This uses the decidable equality of those orders, so it can be passed directly to the
+ordered-cell and cellular-chain comparison APIs. -/
+def universalGSpaceSimplicialMap (φ : G →* H) :
     PreAbstractSimplicialComplex.SimplicialMap
       (indexedJoin fun _ : ℕ => G).toPreAbstractSimplicialComplex
       (indexedJoin fun _ : ℕ => H).toPreAbstractSimplicialComplex where
@@ -57,7 +58,15 @@ private def universalGSpaceSimplicialMap (φ : G →* H) :
     exact congrArg (fun v : Σ _ : ℕ, G => (⟨v.1, φ v.2⟩ : Σ _ : ℕ, H))
       (hσ.2 hv' hw' heq)
 
-private theorem universalGSpaceMap_strictMonoOn (φ : G →* H) {n : ℕ}
+/-- The simplicial map applies the homomorphism to the label and preserves the index. -/
+@[simp]
+theorem universalGSpaceSimplicialMap_apply (φ : G →* H) (v : Σ _ : ℕ, G) :
+    φ.universalGSpaceSimplicialMap v = ⟨v.1, φ v.2⟩ :=
+  (rfl)
+
+/-- Relabelling is strictly increasing on each simplex for the increasing-index orders,
+even if the homomorphism is not injective. -/
+theorem universalGSpaceMap_strictMonoOn (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
     StrictMonoOn (universalGSpaceSimplicialMap φ)
       (c.1.1 : Set (Σ _ : ℕ, G)) := by
@@ -71,6 +80,13 @@ def universalGSpaceCellMap (φ : G →* H) {n : ℕ}
     (indexedJoin fun _ : ℕ => H).RealizationCell n :=
   c.map (universalGSpaceSimplicialMap φ)
     (universalGSpaceMap_strictMonoOn φ c).injOn
+
+/-- The cell map is induced by the ordered simplicial map. -/
+theorem universalGSpaceCellMap_def (φ : G →* H) {n : ℕ}
+    (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) :
+    φ.universalGSpaceCellMap c = c.map φ.universalGSpaceSimplicialMap
+      (φ.universalGSpaceMap_strictMonoOn c).injOn :=
+  (rfl)
 
 /-- The underlying face is the image under relabelling vertices. -/
 @[simp]
@@ -167,17 +183,21 @@ theorem universalGSpaceCellMulActionHom_comp (ψ : H →* K) (φ : G →* H) (n 
 
 end Group
 
+/-- The ordered simplicial map realizes to the usual continuous map of Milnor joins. -/
+@[simp]
+theorem universalGSpaceSimplicialMap_realizationMap (φ : G →* H) :
+    (universalGSpaceSimplicialMap φ).realizationMap = φ.universalGSpaceMap := by
+  -- The ordered and original simplicial maps use different decidable-equality instances.
+  -- Their barycentric-coordinate formulas identify the realized maps.
+  exact ContinuousMap.ext fun y => Subtype.ext (by simp [universalGSpaceSimplicialMap])
+
 /-- The continuous total-space map carries each characteristic map to the characteristic map
 of the relabelled simplex, with the same disk coordinates. -/
 theorem universalGSpaceMap_characteristicMap (φ : G →* H) {n : ℕ}
     (c : (indexedJoin fun _ : ℕ => G).RealizationCell n) (x : Fin n → ℝ) :
     φ.universalGSpaceMap (c.characteristicMap x) =
       (φ.universalGSpaceCellMap c).characteristicMap x := by
-  -- The ordered and original simplicial maps use different decidable-equality instances.
-  -- Identify their realization maps by coordinates before applying the ordered-cell formula.
-  have hmap : φ.universalGSpaceMap = (universalGSpaceSimplicialMap φ).realizationMap :=
-    ContinuousMap.ext fun y => Subtype.ext (by simp [universalGSpaceSimplicialMap])
-  rw [hmap]
+  rw [← universalGSpaceSimplicialMap_realizationMap]
   exact PreAbstractSimplicialComplex.SimplicialMap.realizationMap_characteristicMap _ c
     (universalGSpaceMap_strictMonoOn φ c) x
 
