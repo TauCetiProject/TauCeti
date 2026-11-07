@@ -9,6 +9,7 @@ public import TauCeti.Analysis.SpecialFunctions.QPochhammer
 import Mathlib.Analysis.Complex.Liouville
 import Mathlib.Analysis.Complex.RemovableSingularity
 import TauCeti.Analysis.Complex.UpperHalfPlane.PeriodPair
+import TauCeti.Analysis.SpecialFunctions.Elliptic.PeriodPair
 import TauCeti.NumberTheory.ModularForms.DedekindEta
 
 /-!
@@ -217,34 +218,11 @@ private theorem thetaInv_eq (hτ : 0 < τ.im) (z : ℂ) :
     obtain ⟨m, n, rfl⟩ := PeriodPair.mem_lattice.mp hw
     rw [hω₁, hω₂]
     exact (hperτ.int_mul m).add_period (hper₁.int_mul n)
-  -- Near `0`, `H` is the quotient of the difference quotients of the two sides at `0`.
-  have hH₀ : DifferentiableAt ℂ H 0 := by
-    have hd (f : ℂ → ℂ) (hf : Differentiable ℂ f) : Differentiable ℂ (dslope f 0) := fun x ↦
-      (((differentiableOn_dslope univ_mem).mpr hf.differentiableOn) x
-        trivial).differentiableAt univ_mem
-    have hBd : dslope (thetaExp τ) 0 0 ≠ 0 := by
-      rwa [dslope_same, (hasDerivAt_thetaExp_zero hτ).deriv]
-    refine (((hd _ hA) 0).div ((hd _ hB) 0) hBd).congr_of_eventuallyEq ?_
-    filter_upwards [L.compl_lattice_sdiff_singleton_mem_nhds 0] with x hx
-    by_cases hx₀ : x = 0
-    · subst hx₀
-      simp only [H, L.lattice.zero_mem, ite_true, Pi.div_apply, dslope_same,
-        (hasDerivAt_thetaExp_zero hτ).deriv, (hasDerivAt_thetaInv_zero hτ).deriv]
-      exact (mul_div_cancel_right₀ c hb).symm
-    · have hxL : x ∉ L.lattice := fun h ↦ hx ⟨h, hx₀⟩
-      simp only [H, hxL, ite_false]
-      rw [Pi.div_apply, dslope_of_ne _ hx₀, dslope_of_ne _ hx₀, slope_def_field, slope_def_field,
-        hA₀, hB₀, sub_zero, sub_zero, sub_zero, div_div_div_cancel_right₀ hx₀]
-  have hH : Differentiable ℂ H := by
-    intro x
-    by_cases hx : x ∈ L.lattice
-    · have hcomp : H = fun y ↦ H (y - x) := funext fun y ↦ by
-        rw [← hperL x hx (y - x), sub_add_cancel]
-      have h₁ : DifferentiableAt ℂ (fun y : ℂ ↦ y - x) x := differentiableAt_id.sub_const x
-      have h₂ : DifferentiableAt ℂ H ((fun y : ℂ ↦ y - x) x) := by simpa using hH₀
-      have h₃ : DifferentiableAt ℂ (fun y ↦ H (y - x)) x := h₂.comp (f := fun y ↦ y - x) x h₁
-      rwa [← hcomp] at h₃
-    · refine ((hA x).div (hB x) (hne hx)).congr_of_eventuallyEq ?_
+  have hH₀ : DifferentiableAt ℂ H 0 :=
+    L.differentiableAt_zero_ite_div (hA.analyticAt 0) (hB.analyticAt 0) hA₀ hB₀
+      (hasDerivAt_thetaInv_zero hτ) (hasDerivAt_thetaExp_zero hτ) hb
+  have hH : Differentiable ℂ H := L.differentiable_of_periodic hperL hH₀ fun x hx ↦
+    ((hA x).div (hB x) (hne hx)).congr_of_eventuallyEq <| by
       filter_upwards [L.isClosed_lattice.isOpen_compl.mem_nhds hx] with y hy
       simp [H, show y ∉ L.lattice from hy]
   -- `H` is doubly periodic, hence bounded and constant.
@@ -257,16 +235,7 @@ private theorem thetaInv_eq (hτ : 0 < τ.im) (z : ℂ) :
     have := hconst y
     simp only [H, hy, ite_false] at this
     rw [← this, div_mul_cancel₀ _ (hne hy)]
-  by_cases hz : z ∈ L.lattice
-  · have hg : Continuous fun y ↦ thetaInv τ y - c * thetaExp τ y :=
-      hA.continuous.sub (continuous_const.mul hB.continuous)
-    refine sub_eq_zero.mp (tendsto_nhds_unique (f := fun y ↦ thetaInv τ y - c * thetaExp τ y)
-      (l := 𝓝[≠] z) (hg.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
-      (tendsto_const_nhds.congr' ?_))
-    filter_upwards [nhdsWithin_le_nhds (L.compl_lattice_sdiff_singleton_mem_nhds z),
-      self_mem_nhdsWithin] with y hy hyz
-    rw [hoff y fun h ↦ hy ⟨h, hyz⟩, sub_self]
-  · exact hoff z hz
+  exact L.eq_of_forall_notMem_lattice hA.continuous (continuous_const.mul hB.continuous) hoff z
 
 /-- **Jacobi's imaginary transformation of the theta product.** For `τ` in the upper half-plane
 and every `z ∈ ℂ`,
