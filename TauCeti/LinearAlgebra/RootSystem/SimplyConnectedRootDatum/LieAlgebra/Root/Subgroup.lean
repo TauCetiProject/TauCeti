@@ -8,6 +8,7 @@ module
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.Basis
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Conjugate
 public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Weyl.Elementary
+public import TauCeti.Algebra.Lie.UniversalEnveloping.Kostant.RootSubgroup.Scheme.ToralClosure.Points
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Weyl
 import TauCeti.LinearAlgebra.RootSystem.Weyl.Orbit.Basic
 import TauCeti.Algebra.Lie.UniversalEnveloping.Basic
@@ -336,6 +337,33 @@ theorem chevalleyRootSubgroup_mem_kostantElementarySubgroup (γ : Fin t.numRoots
     simpa only [reflectionPerm_rationalRootSystem] using step i k hk
 
 end Lattice
+
+section ToralPoints
+
+variable {t ht} {V : Type} [AddCommGroup V] [Module ℚ V]
+variable (ρ : _root_.UniversalEnvelopingAlgebra ℚ (t.lieAlgebra ht) →ₐ[ℚ] Module.End ℚ V)
+variable (M : AddSubgroup V)
+variable (hM : ∀ u ∈ kostantForm (t.lieBasis ht).rootGenerator (t.lieBasis ht).h,
+  ∀ v ∈ M, ρ u v ∈ M)
+variable (hnil : ∀ i, IsNilpotent
+  (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ ((t.lieBasis ht).rootGenerator i))))
+
+/-- In any lattice basis, every all-root exponential is a point of the pinned toral closure
+over every commutative value ring. -/
+theorem basisMatrix_chevalleyRootSubgroup_mem_toralPoints
+    {n : ℕ} (b : Module.Basis (Fin n) ℤ M) (χ : Fin n → Fin t.rank → ℤ)
+    (γ : Fin t.numRoots) (A : Type*) [CommRing A] (u : Multiplicative A) :
+    Units.map (LinearMap.toMatrixAlgEquiv (b.baseChange A)).toMulEquiv
+        (chevalleyRootSubgroup ρ M hM hnil γ (CommAlgCat.of ℤ A) u) ∈
+      kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
+        ρ M hM hnil b χ A := by
+  exact kostantGeneratedPointsSubgroup_le_toralPoints _ _ _ _ _ _ _ _ A
+    (map_kostantElementarySubgroup_le_generatedPoints _ _ _ _ _ _ _ A
+      (Subgroup.mem_map_of_mem _
+        (chevalleyRootSubgroup_mem_kostantElementarySubgroup ρ M hM hnil γ
+          (CommAlgCat.of ℤ A) u)))
+
+end ToralPoints
 
 end
 

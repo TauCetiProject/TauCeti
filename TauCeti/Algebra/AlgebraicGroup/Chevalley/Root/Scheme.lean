@@ -21,8 +21,8 @@ from points over fields.
 
 `TauCeti.DynkinType.chevalleyRootSubgroupToToral` needs only Kostant stability, nilpotence of the
 simple generators, a lattice basis and torus characters. Its specialization
-`TauCeti.DynkinType.ChevalleyDatum.rootSubgroupHom` is the morphism `𝔾ₐ → G_D`, distinct from
-`TauCeti.DynkinType.ChevalleyDatum.rootSubgroup`, the homomorphism on matrix points. Their
+`TauCeti.DynkinType.ChevalleyDatum.rootSubgroup` is the morphism `𝔾ₐ → G_D`, distinct from
+`TauCeti.DynkinType.ChevalleyDatum.rootSubgroupPoints`, the homomorphism on matrix points. Their
 composites into `GLₙ` are the polynomial exponentials, agreeing at positive and negative simple
 roots with the original Kostant root subgroups. Their action on scheme-valued points is the lattice
 action in the chosen basis. This file does not assert that these morphisms are closed immersions.
@@ -92,13 +92,9 @@ theorem kostantRootSubgroupMatrix_chevalleySystem_mem_toralPoints (A : Type*) [C
         (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b q ∈
       kostantToralPointsSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         ρ M hM hnil b χ A := by
-  apply kostantGeneratedPointsSubgroup_le_toralPoints
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h ρ M hM hnil b χ A
   rw [kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup ρ M hM hnil]
-  exact map_kostantElementarySubgroup_le_generatedPoints
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h ρ M hM hnil b A
-    (Subgroup.mem_map_of_mem _ (chevalleyRootSubgroup_mem_kostantElementarySubgroup
-      ρ M hM hnil γ (CommAlgCat.of ℤ A) (AdditiveGroup.gaPointsMulEquiv q)))
+  exact basisMatrix_chevalleyRootSubgroup_mem_toralPoints ρ M hM hnil b χ γ A
+    (AdditiveGroup.gaPointsMulEquiv q)
 
 /-- The ambient coordinate morphism of every root kills the defining ideal of the pinned
 Kostant toral closure. This is tested at the universal additive-group point. -/
@@ -196,28 +192,6 @@ theorem schemePointsMulEquiv_chevalleyRootSubgroupToToral (γ : Fin t.numRoots)
   rw [h]
   exact schemePointsMulEquiv_kostantRootSubgroup _ _ _ _ _ _ _ _ A p
 
-private theorem kostantRootSubgroup_chevalleySystem_eq (γ : Fin t.numRoots)
-    (i : Fin t.rank ⊕ Fin t.rank)
-    (he : t.chevalleySystem ht γ = (t.lieBasis ht).rootGenerator i) :
-    kostantRootSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
-        (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b =
-      kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h ρ M hM i (hnil i) b := by
-  have hcoord : kostantRootSubgroupCoordinateMap (t.chevalleySystem ht) (t.lieBasis ht).h ρ M
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent ρ M hM hnil) γ
-        (isNilpotent_apply_ι_chevalleySystem ρ hnil γ) b =
-      kostantRootSubgroupCoordinateMap (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-        ρ M hM i (hnil i) b := by
-    apply CommHopfAlgCat.hom_ext
-    apply BialgHom.coe_toAlgHom_injective
-    apply GeneralLinear.coordinateHopfAlgebra_algHom_ext ℤ n
-    intro r s
-    simp only [BialgHom.coe_toAlgHom]
-    rw [kostantRootSubgroupCoordinateMap_X, kostantRootSubgroupCoordinateMap_X]
-    simp only [Comodule.coefficientMatrix_apply, Comodule.matrixCoefficient_def,
-      kostantRootSubgroupComodule_coact, he]
-  rw [kostantRootSubgroup_def, kostantRootSubgroup_def, hcoord]
-
 /-- At a positive simple root, including the all-root morphism into `GLₙ` gives the
 original simple-root Kostant subgroup. -/
 theorem chevalleyRootSubgroupToToral_simpleIndex_comp_ι (i : Fin t.rank) :
@@ -227,7 +201,7 @@ theorem chevalleyRootSubgroupToToral_simpleIndex_comp_ι (i : Fin t.rank) :
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         ρ M hM (.inl i) (hnil (.inl i)) b := by
   rw [chevalleyRootSubgroupToToral_comp_ι]
-  exact kostantRootSubgroup_chevalleySystem_eq _ _ _ _ _ _ _ (by simp)
+  exact kostantRootSubgroup_congr _ _ _ _ _ _ _ _ _ _ _ _ (by simp)
 
 /-- At a negative simple root, including the all-root morphism into `GLₙ` gives the
 original negative-simple-root Kostant subgroup. -/
@@ -239,7 +213,7 @@ theorem chevalleyRootSubgroupToToral_reflectionPerm_simpleIndex_comp_ι (i : Fin
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         ρ M hM (.inr i) (hnil (.inr i)) b := by
   rw [chevalleyRootSubgroupToToral_comp_ι]
-  exact kostantRootSubgroup_chevalleySystem_eq _ _ _ _ _ _ _ (by simp)
+  exact kostantRootSubgroup_congr _ _ _ _ _ _ _ _ _ _ _ _ (by simp)
 
 end Toral
 
@@ -247,84 +221,72 @@ namespace ChevalleyDatum
 
 variable (D : ChevalleyDatum t ht)
 
-/-- Every all-root exponential matrix of a Chevalley datum is a point of it over any
-commutative value ring. -/
-theorem kostantRootSubgroupMatrix_chevalleySystem_mem_points (A : Type*) [CommRing A]
-    (γ : Fin t.numRoots)
-    (q : HopfAlgebra.points (R := ℤ) (H := AdditiveGroup.coordinateHopfAlgebra ℤ)
-      (CommAlgCat.of ℤ A)) :
-    kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h
-        D.representation D.lattice
-        (kostantForm_chevalleySystem_apply_mem_of_isNilpotent D.representation D.lattice
-          D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
-        (isNilpotent_apply_ι_chevalleySystem D.representation
-          D.isNilpotent_representation_rootGenerator γ) D.basis q ∈ D.points A := by
-  rw [points_eq_kostantToralPointsSubgroup]
-  exact kostantRootSubgroupMatrix_chevalleySystem_mem_toralPoints _ _ _ _ _ _ A γ q
-
 /-- The integral root-subgroup morphism `𝔾ₐ → G_D` for every numbered root. Its composite
 into the general linear group is the divided-power exponential of the named root vector. -/
-def rootSubgroupHom (γ : Fin t.numRoots) : AdditiveGroup.groupScheme ℤ ⟶ D.groupScheme :=
+def rootSubgroup (γ : Fin t.numRoots) : AdditiveGroup.groupScheme ℤ ⟶ D.groupScheme :=
   chevalleyRootSubgroupToToral D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight γ
 
+/-- The datum's root morphism specializes the all-root morphism into the pinned toral closure. -/
+theorem rootSubgroup_def (γ : Fin t.numRoots) :
+    D.rootSubgroup γ =
+      chevalleyRootSubgroupToToral D.representation D.lattice D.representation_mem_lattice
+        D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight γ :=
+  (rfl)
+
 /-- Including the root morphism into `GLₙ` recovers the original polynomial exponential. -/
 @[simp]
-theorem rootSubgroupHom_comp_groupSchemeι (γ : Fin t.numRoots) :
-    D.rootSubgroupHom γ ≫ D.groupSchemeι =
+theorem rootSubgroup_comp_groupSchemeι (γ : Fin t.numRoots) :
+    D.rootSubgroup γ ≫ D.groupSchemeι =
       kostantRootSubgroup (t.chevalleySystem ht) (t.lieBasis ht).h D.representation D.lattice
         (kostantForm_chevalleySystem_apply_mem_of_isNilpotent D.representation D.lattice
           D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
         (isNilpotent_apply_ι_chevalleySystem D.representation
           D.isNilpotent_representation_rootGenerator γ) D.basis := by
-  rw [rootSubgroupHom, groupSchemeι_def]
+  rw [rootSubgroup_def, groupSchemeι_def]
   exact chevalleyRootSubgroupToToral_comp_ι D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight γ
 
 /-- At a positive simple root the composite into `GLₙ` is the original simple-root
 Kostant subgroup. -/
-theorem rootSubgroupHom_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
-    D.rootSubgroupHom (t.simpleIndex ht i) ≫ D.groupSchemeι =
+theorem rootSubgroup_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
+    D.rootSubgroup (t.simpleIndex ht i) ≫ D.groupSchemeι =
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         D.representation D.lattice D.representation_mem_lattice (.inl i)
         (D.isNilpotent_representation_rootGenerator (.inl i)) D.basis := by
-  rw [rootSubgroupHom, groupSchemeι_def]
+  rw [rootSubgroup_def, groupSchemeι_def]
   exact chevalleyRootSubgroupToToral_simpleIndex_comp_ι D.representation D.lattice
     D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
     D.basis D.coordinateWeight i
 
 /-- At a negative simple root the composite into `GLₙ` is the original negative-simple-root
 Kostant subgroup. -/
-theorem rootSubgroupHom_reflectionPerm_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
-    D.rootSubgroupHom
+theorem rootSubgroup_reflectionPerm_simpleIndex_comp_groupSchemeι (i : Fin t.rank) :
+    D.rootSubgroup
         ((t.simplyConnectedRootDatum ht).reflectionPerm (t.simpleIndex ht i) (t.simpleIndex ht i)) ≫
       D.groupSchemeι =
       kostantRootSubgroup (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
         D.representation D.lattice D.representation_mem_lattice (.inr i)
         (D.isNilpotent_representation_rootGenerator (.inr i)) D.basis := by
-  rw [rootSubgroupHom, groupSchemeι_def]
+  rw [rootSubgroup_def, groupSchemeι_def]
   exact chevalleyRootSubgroupToToral_reflectionPerm_simpleIndex_comp_ι
     D.representation D.lattice D.representation_mem_lattice
     D.isNilpotent_representation_rootGenerator D.basis D.coordinateWeight i
 
-/-- On scheme-valued points the root morphism acts by the original all-root lattice
-exponential, expressed in the weight basis of the datum. -/
-theorem schemePointsMulEquiv_rootSubgroupHom (γ : Fin t.numRoots) (A : Type) [CommRing A]
+/-- On scheme-valued points the integral root morphism is the datum's matrix-point root
+subgroup, with the same additive parameter. -/
+@[simp]
+theorem schemePointsMulEquiv_rootSubgroup (γ : Fin t.numRoots) (A : Type) [CommRing A]
     (p : (Spec (CommRingCat.of A)).asOver (Spec (CommRingCat.of ℤ)) ⟶
       (AdditiveGroup.groupScheme ℤ).X) :
     GeneralLinear.schemePointsMulEquiv D.dim A
-        (p ≫ (D.rootSubgroupHom γ).hom.hom ≫ D.groupSchemeι.hom.hom) =
-      kostantRootSubgroupMatrix (t.chevalleySystem ht) (t.lieBasis ht).h D.representation
-        D.lattice (kostantForm_chevalleySystem_apply_mem_of_isNilpotent D.representation D.lattice
-          D.representation_mem_lattice D.isNilpotent_representation_rootGenerator) γ
-        (isNilpotent_apply_ι_chevalleySystem D.representation
-          D.isNilpotent_representation_rootGenerator γ) D.basis
-        ((AdditiveGroup.groupSchemePointMulEquiv A).symm p) := by
-  rw [rootSubgroupHom, groupSchemeι_def]
-  exact schemePointsMulEquiv_chevalleyRootSubgroupToToral D.representation D.lattice
-    D.representation_mem_lattice D.isNilpotent_representation_rootGenerator
-    D.basis D.coordinateWeight γ A p
+        (p ≫ (D.rootSubgroup γ).hom.hom ≫ D.groupSchemeι.hom.hom) =
+      (D.rootSubgroupPoints γ A
+        (AdditiveGroup.gaPointsMulEquiv ((AdditiveGroup.groupSchemePointMulEquiv A).symm p)) :
+          Matrix.GeneralLinearGroup (Fin D.dim) A) := by
+  rw [rootSubgroup_def, groupSchemeι_def, schemePointsMulEquiv_chevalleyRootSubgroupToToral,
+    coe_rootSubgroupPoints, kostantRootSubgroupMatrix_eq_matrix_chevalleyRootSubgroup]
 
 end ChevalleyDatum
 
