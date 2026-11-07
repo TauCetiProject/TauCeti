@@ -213,6 +213,51 @@ private theorem existsUnique_presentationLimitMap_locOpensComap_of_existsUnique
   obtain ⟨a', rfl⟩ := (hσ W hW hWT).2 c
   rw [hau a' fun i ↦ (hσ _ (hU i) (hUT i)).1 (by rw [nat hW (hU i) hWT (hUW i), hc i])]
 
+/-- **Wedhorn's Remark 8.4 as isomorphisms of sections commuting with restriction.** For the
+rational opens `V ⊆ R(T/s)` of `Spa(A, A⁺)`, the presentation-limit sections over `V` are isomorphic
+to those of `Spa(A⟨T/s⟩, A_U⁺)` over `locOpensComap P Aplus T s S hden V`, and these
+isomorphisms commute with the restriction maps. -/
+theorem exists_iso_presentationLimitPresheaf_locOpensComap :
+    letI := locUniformSpace P T s S hden
+    letI := isUniformAddGroup_locUniformSpace P T s S hden
+    letI := isTopologicalRing_locUniformSpace P T s S hden
+    ∃ σ : (∀ V : Opens ↥(spa Aplus), V ∈ spaRationalOpens Aplus → V ≤ spaBasicOpen Aplus T s →
+        Iso ((presentationLimitPresheaf P Aplus).obj (op V))
+          ((presentationLimitPresheaf (completionLocalization P T s S hden)
+            (completedPlusSubring P Aplus T s S hden)).obj
+              (op (locOpensComap P Aplus T s S hden V)))),
+      ∀ {V V' : Opens ↥(spa Aplus)} (hV : V ∈ spaRationalOpens Aplus)
+        (hV' : V' ∈ spaRationalOpens Aplus) (hVT : V ≤ spaBasicOpen Aplus T s) (h : V' ≤ V),
+        (presentationLimitPresheaf P Aplus).map (homOfLE h).op ≫ (σ V' hV' (h.trans hVT)).hom =
+          (σ V hV hVT).hom ≫ (presentationLimitPresheaf (completionLocalization P T s S hden)
+            (completedPlusSubring P Aplus T s S hden)).map
+              (homOfLE (locOpensComap_mono P Aplus T s S hden h)).op := by
+  let _ := locUniformSpace P T s S hden
+  have _ := isUniformAddGroup_locUniformSpace P T s S hden
+  have _ := isTopologicalRing_locUniformSpace P T s S hden
+  have _ : IsHuberRing A := ⟨⟨P⟩⟩
+  let Bplus := completedPlusSubring P Aplus T s S hden
+  let Q := completionLocalization P T s S hden
+  let F := presentationLimitPresheaf P Aplus
+  let FB := presentationLimitPresheaf Q Bplus
+  let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
+      (hVW : V ≤ spaBasicOpen Aplus T s) :
+      F.obj (op V) ≅ FB.obj (op (locOpensComap P Aplus T s S hden V)) :=
+    eqToIso (presentationLimitPresheaf_obj P Aplus (op V)) ≪≫
+      presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVW ≪≫
+      eqToIso (presentationLimitPresheaf_obj Q Bplus
+        (op (locOpensComap P Aplus T s S hden V))).symm
+  refine ⟨σ, fun {V V'} hV hV' hVT h ↦ ?_⟩
+  dsimp only [σ]
+  rw [presentationLimitPresheaf_map, presentationLimitPresheaf_map]
+  simp only [Iso.trans_hom]
+  simp only [Category.assoc]
+  simp only [eqToIso.hom, eqToHom_trans_assoc, eqToHom_refl, Category.id_comp]
+  slice_lhs 2 3 =>
+    rw [presentationLimitMap_comp_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT
+      hV hV' hVT h]
+  simp only [Category.assoc]
+
 /-- **The sheaf condition transported along Wedhorn's Remark 8.4.** Let `W ⊆ R(T/s)` be rational
 opens of `Spa(A, A⁺)`, where `T` spans an open ideal and `A⁺` consists of power-bounded elements,
 and let `U i ⊆ W` be rational opens. Write `j : Spa(A⟨T/s⟩, A_U⁺) → Spa(A, A⁺)` for the map
@@ -241,27 +286,10 @@ theorem isSheafFor_ofArrows_iff_locOpensComap {W : Opens ↥(spa Aplus)}
   · rw [isSheafFor_ofArrows_iff_existsUnique_presentationLimitMap] at h ⊢
     exact existsUnique_presentationLimitMap_locOpensComap_of_existsUnique P Aplus T s S hden
       hAplus hT hW hWT hU hUW h
-  · -- the presheaf of sets has the sections of `presentationLimit`, up to `eqToHom`, so Remark 8.4
-    -- gives bijections of sections that commute with restriction
+  · -- Remark 8.4 gives bijections of sections that commute with restriction
     have _ : IsHuberRing A := ⟨⟨P⟩⟩
-    have hbij {X Y : CompleteSeparatedTopCommRingCat.{v}} (h : X = Y) :
-        Function.Bijective (eqToHom h).hom.1 := by
-      subst h
-      exact Function.bijective_id
-    have hcancel {X Y : CompleteSeparatedTopCommRingCat.{v}} (h : X = Y) (y : Y) :
-        (eqToHom h).hom.1 ((eqToHom h.symm).hom.1 y) = y := by
-      subst h
-      rfl
-    let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
-        (hVT : V ≤ spaBasicOpen Aplus T s) := Equiv.ofBijective
-      (fun x ↦ (eqToHom (presentationLimitPresheaf_obj (completionLocalization P T s S hden)
-          (completedPlusSubring P Aplus T s S hden)
-          (op (locOpensComap P Aplus T s S hden V))).symm).hom.1
-        ((presentationLimitLocIso P Aplus T s S hden hAplus hT V hV hVT).hom.hom.1
-          ((eqToHom (presentationLimitPresheaf_obj P Aplus (op V))).hom.1 x)))
-      ((hbij _).comp
-        ((bijective_presentationLimitLocIso_hom P Aplus T s S hden hAplus hT hV hVT).comp
-          (hbij _)))
+    obtain ⟨σ, σ_nat⟩ := exists_iso_presentationLimitPresheaf_locOpensComap P Aplus T s S hden
+      hAplus hT
     refine TauCeti.TopologicalSpace.Opens.isSheafFor_ofArrows_of_equiv
       (F := presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι ⋙
         forget _root_.TopCommRingCat)
@@ -270,16 +298,13 @@ theorem isSheafFor_ofArrows_iff_locOpensComap {W : Opens ↥(spa Aplus)}
         forget _root_.TopCommRingCat)
       (locOpensComap P Aplus T s S hden) (fun _ _ h ↦ locOpensComap_mono P Aplus T s S hden h)
       (locOpensComap_inf P Aplus T s S hden) (fun V hV V' hV' ↦ inf_mem_spaRationalOpens hV hV')
-      hW hU hUW (fun V hV hVW ↦ σ V hV (hVW.trans hWT)) ?_ h
+      hW hU hUW (fun V hV hVW ↦ ((forget _root_.TopCommRingCat).mapIso
+        (TopCommRingCat.isCompleteSeparated.ι.mapIso (σ V hV (hVW.trans hWT)))).toEquiv) ?_ h
     intro V V' hV hV' hVW h x
-    refine (hbij (presentationLimitPresheaf_obj (completionLocalization P T s S hden)
-      (completedPlusSubring P Aplus T s S hden)
-      (op (locOpensComap P Aplus T s S hden V')))).1 ?_
-    simp only [σ, Equiv.ofBijective_apply]
-    rw [hcancel, eqToHom_apply_presentationLimitPresheaf_map_apply,
-      eqToHom_apply_presentationLimitPresheaf_map_apply, hcancel,
-      presentationLimitLocIso_hom_presentationLimitMap_apply P Aplus T s S hden hAplus hT hV hV'
-        (hVW.trans hWT) h]
+    have := congrArg (fun f ↦ ConcreteCategory.hom (TopCommRingCat.isCompleteSeparated.ι.map f))
+      (σ_nat hV hV' (hVW.trans hWT) h)
+    simp only [Functor.map_comp] at this
+    exact DFunLike.congr_fun this x
 
 end Transport
 
