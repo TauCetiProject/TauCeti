@@ -72,6 +72,35 @@ variable {E : Type*} [MeasurableSpace E] [NormedAddCommGroup E] [NormedSpace ℝ
 
 variable [BorelSpace E] [FiniteDimensional ℝ E] [μ.IsAddHaarMeasure]
 
+omit [FiniteDimensional ℝ E] in
+/-- Translating the test function instead of the integrable function `w`: the integral of
+`t⁻¹ • (φ (· + t • -v) - φ) * w` equals that of `t⁻¹ * (w (· + t • v) - w) * φ`. -/
+private theorem integral_inv_smul_sub_comp_mul_eq {w φ : E → ℝ} (hw : Integrable w μ)
+    (hφ : Continuous φ) (hφc : HasCompactSupport φ) (t : ℝ) (v : E) :
+    ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ =
+      ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
+  obtain ⟨M, hM⟩ := hφ.bounded_above_of_compact_support hφc
+  have h1 : Integrable (fun x => w (x + t • v) * φ x) μ :=
+    (hw.comp_add_right (t • v)).mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
+  have h2 : Integrable (fun x => w x * φ x) μ :=
+    hw.mul_bdd hφ.aestronglyMeasurable (ae_of_all _ hM)
+  have h3 : Integrable (fun x => w x * φ (x + t • -v)) μ :=
+    hw.mul_bdd (hφ.comp (continuous_id.add continuous_const)).aestronglyMeasurable
+      (ae_of_all _ fun x => hM _)
+  calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
+      = t⁻¹ * (∫ y, w y * φ (y + t • -v) ∂μ - ∫ y, w y * φ y ∂μ) := by
+        rw [← integral_sub h3 h2, ← integral_const_mul]
+        congr 1 with y
+        simp only [smul_eq_mul]
+        ring
+    _ = t⁻¹ * (∫ x, w (x + t • v) * φ x ∂μ - ∫ y, w y * φ y ∂μ) := by
+        rw [← integral_add_right_eq_self (fun y => w y * φ (y + t • -v)) (t • v)]
+        simp
+    _ = ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
+        rw [← integral_sub h1 h2, ← integral_const_mul]
+        congr 1 with x
+        ring
+
 /-- **Difference quotients converge to the distributional derivative.** If `u` is locally
 integrable on `Ω` and `φ` is a test function on `Ω`, then as `t → 0` with `t ≠ 0`,
 
@@ -103,28 +132,8 @@ theorem integral_inv_mul_sub_mul_tendsto_neg_integral_lineDeriv_mul {u : E → �
       by_cases hx : x ∈ tsupport (φ : E → ℝ)
       · rw [ht x hx, hwS hx]
       · simp [image_eq_zero_of_notMem_tsupport hx]
-    obtain ⟨M, hM⟩ := φ.continuous.bounded_above_of_compact_support φ.hasCompactSupport
-    have h1 : Integrable (fun x => w (x + t • v) * φ x) μ :=
-      (hw.comp_add_right (t • v)).mul_bdd φ.aestronglyMeasurable (ae_of_all _ hM)
-    have h2 : Integrable (fun x => w x * φ x) μ :=
-      hw.mul_bdd φ.aestronglyMeasurable (ae_of_all _ hM)
-    have h3 : Integrable (fun x => w x * φ (x + t • -v)) μ :=
-      hw.mul_bdd (φ.continuous.comp (continuous_id.add continuous_const)).aestronglyMeasurable
-        (ae_of_all _ fun x => hM _)
     simp_rw [hpt]
-    calc ∫ y, (t⁻¹ • (φ (y + t • -v) - φ y)) * w y ∂μ
-        = t⁻¹ * (∫ y, w y * φ (y + t • -v) ∂μ - ∫ y, w y * φ y ∂μ) := by
-          rw [← integral_sub h3 h2, ← integral_const_mul]
-          congr 1 with y
-          simp only [smul_eq_mul]
-          ring
-      _ = t⁻¹ * (∫ x, w (x + t • v) * φ x ∂μ - ∫ y, w y * φ y ∂μ) := by
-          rw [← integral_add_right_eq_self (fun y => w y * φ (y + t • -v)) (t • v)]
-          simp
-      _ = ∫ x, t⁻¹ * (w (x + t • v) - w x) * φ x ∂μ := by
-          rw [← integral_sub h1 h2, ← integral_const_mul]
-          congr 1 with x
-          ring
+    exact integral_inv_smul_sub_comp_mul_eq hw φ.continuous φ.hasCompactSupport t v
   refine Tendsto.congr' hEq ?_
   -- The one-sided limits are Mathlib's dominated convergence for a Lipschitz function.
   rw [← nhdsLT_sup_nhdsGT]
