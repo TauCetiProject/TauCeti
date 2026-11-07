@@ -179,6 +179,37 @@ theorem normed_convolution_mem_Icc (φ : ContDiffBump (0 : G)) {w : G → ℝ} {
     convolution_lsmul_le_of_forall_le (μ := μ) φ.support_normed_eq.subset
     φ.nonneg_normed φ.integral_normed hexists fun y _ => (hwab y).2⟩
 
+open Set in
+/-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
+converges uniformly on the half-radius ball. -/
+theorem tendstoUniformlyOn_convolution_indicator_ball {x : G} {r : ℝ} (hr : 0 < r) {V : G → F}
+    (hV : IntegrableOn V (ball x r) μ) (hVc : ContinuousOn V (ball x r))
+    {phi : ℕ → ContDiffBump (0 : G)} (hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0)) :
+    TendstoUniformlyOn (fun n => (ball x r).indicator V ⋆[
+      (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ)
+      ((ball x r).indicator V) atTop (ball x (r / 2)) := by
+  let Fn := fun n => (ball x r).indicator V ⋆[
+    (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ
+  have hVm : AEStronglyMeasurable ((ball x r).indicator V) μ :=
+    (hV.integrable_indicator measurableSet_ball).aestronglyMeasurable
+  -- The mollifications converge locally uniformly throughout the larger ball.
+  have hlocal : TendstoLocallyUniformlyOn Fn ((ball x r).indicator V) atTop (ball x r) := by
+    rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
+    intro y hy
+    have hcont : ContinuousAt ((ball x r).indicator V) y :=
+      (hVc.congr fun z hz => indicator_of_mem hz V).continuousAt (isOpen_ball.mem_nhds hy)
+    have hconv : Tendsto (fun p : ℕ × G => Fn p.1 p.2) (atTop ×ˢ 𝓝 y)
+        (𝓝 (((ball x r).indicator V) y)) := by
+      simp only [Fn, convolution_flip]
+      exact ContDiffBump.convolution_tendsto_right (hphi.comp tendsto_fst)
+        (Eventually.of_forall fun _ => hVm) (hcont.tendsto.comp tendsto_snd) tendsto_snd
+    apply tendsto_uniformity_iff_dist_tendsto_zero.2
+    simpa only [dist_self, Function.comp_apply] using
+      (hcont.tendsto.comp tendsto_snd).dist hconv
+  have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
+  exact ((tendstoLocallyUniformlyOn_iff_tendstoUniformlyOn_of_compact
+    (isCompact_closedBall x (r / 2))).1 (hlocal.mono hsub)).mono ball_subset_closedBall
+
 end ContDiffBump
 
 /-- Convolution with a nonnegative normalized bump preserves the Lipschitz constant,
