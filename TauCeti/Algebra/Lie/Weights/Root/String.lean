@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Algebra.Lie.Weights.InvariantForm
+public import TauCeti.Algebra.Lie.Weights.Killing
 public import TauCeti.Algebra.Lie.Weights.Sl2System
 public import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
@@ -227,41 +228,6 @@ theorem mul_eq_of_lie_eq_smul {α β : Weight K H L} (hα : α.IsNonZero) (hβ :
 
 /-! ### The root-length ratio -/
 
-/-- A root of the form `b + n • a` exists in the root system of a Killing Lie algebra exactly when
-the Lie weight space of `n • a + b` is nontrivial, for linearly independent nonzero weights
-`a, b`. -/
-private theorem root_add_zsmul_mem_range_iff {a b : Weight K H L} (ha : a.IsNonZero)
-    (hb : b.IsNonZero) (hab : LinearIndependent K ![(a : Module.Dual K H), (b : Module.Dual K H)])
-    (n : ℤ) :
-    (rootSystem H).root ⟨b, by simpa [LieSubalgebra.root] using hb⟩ +
-        n • (rootSystem H).root ⟨a, by simpa [LieSubalgebra.root] using ha⟩ ∈
-          Set.range (rootSystem H).root ↔ rootSpace H (n • a + b) ≠ ⊥ := by
-  let P := rootSystem H
-  let ia : H.root := ⟨a, by simpa [LieSubalgebra.root] using ha⟩
-  let ib : H.root := ⟨b, by simpa [LieSubalgebra.root] using hb⟩
-  constructor
-  · rintro ⟨c, hc⟩
-    have hc' : (c.1 : H → K) = n • (a : H → K) + b := by
-      ext z
-      simpa only [P, rootSystem_root_apply, ia, ib, Weight.toLinear_apply,
-        LinearMap.add_apply, LinearMap.smul_apply, Pi.add_apply, Pi.smul_apply,
-        smul_eq_mul, add_comm] using DFunLike.congr_fun hc z
-    simpa only [hc'] using c.1.genWeightSpace_ne_bot
-  · intro h
-    let c : Weight K H L := ⟨n • (a : H → K) + b, h⟩
-    have hc : c.IsNonZero := by
-      intro hc₀
-      -- Definitional equality: `c.IsNonZero` is `(c : H → K) ≠ 0`, so `hc₀` means `c.1 = 0`.
-      change n • (a : H → K) + b = 0 at hc₀
-      have hrel : (n : K) • (a : Module.Dual K H) +
-          (1 : K) • (b : Module.Dual K H) = 0 := by
-        ext z
-        simpa [Weight.toLinear_apply] using congrFun hc₀ z
-      exact one_ne_zero (hab.eq_zero_of_pair hrel).2
-    refine ⟨⟨c, by simpa [LieSubalgebra.root] using hc⟩, ?_⟩
-    ext z
-    simp [c, Weight.toLinear_apply, add_comm]
-
 /-- The root system of a Killing Lie algebra and its Lie weight strings have the same
 ascending and descending chain coefficients. -/
 theorem rootSystem_chainCoeffs_eq {a b : Weight K H L}
@@ -289,7 +255,7 @@ theorem rootSystem_chainCoeffs_eq {a b : Weight K H L}
     simpa only [P, rootSystem_root_apply, ia, ib] using hab
   have hmem (n : ℤ) :
       P.root ib + n • P.root ia ∈ Set.range P.root ↔ rootSpace H (n • a + b) ≠ ⊥ :=
-    root_add_zsmul_mem_range_iff ha hb hab n
+    root_add_zsmul_mem_range_iff hlin n
   -- Step 2: Compare `chainTopCoeff` via characterization by maximal non-vanishing.
   constructor
   · apply le_antisymm
