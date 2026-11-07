@@ -6,12 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Constructions.BorelSpace.Order
-public import Mathlib.Dynamics.Ergodic.MeasurePreserving
 public import Mathlib.MeasureTheory.Measure.Interval
-public import Mathlib.MeasureTheory.Measure.Lebesgue.Basic
-
-import Mathlib.MeasureTheory.Group.Measure
-import Mathlib.MeasureTheory.Measure.Haar.Unique
 
 /-!
 # Continuity of measures of intervals
@@ -27,8 +22,6 @@ Mathlib's `MeasureTheory.tendsto_measure_Ioc_atBot` lets the left endpoint of `(
 * `MeasureTheory.tendsto_measure_Iio_nhdsGT`, `MeasureTheory.tendsto_measure_Iic_nhdsGT`:
   `μ (-∞, x) → μ (-∞, a]` and `μ (-∞, x] → μ (-∞, a]` as `x → a⁺`, provided some `μ (-∞, r)`,
   respectively `μ (-∞, r]`, with `r > a` is finite.
-* `MeasureTheory.measurePreserving_sub_left_restrict_Ioc`: the reflection `s ↦ a + b - s` preserves
-  Lebesgue measure restricted to `(a, b]`.
 -/
 
 public section
@@ -89,18 +82,5 @@ theorem tendsto_measure_Iic_nhdsGT (hf : ∃ r > a, μ (Iic r) ≠ ∞) :
     (fun _ _ _ hij => Iic_subset_Iic.2 hij) hf
 
 end DenselyOrdered
-
-/-- The reflection `s ↦ a + b - s` of the interval `(a, b]` preserves Lebesgue measure restricted
-to `(a, b]`. -/
-theorem measurePreserving_sub_left_restrict_Ioc (a b : ℝ) :
-    MeasurePreserving (fun s : ℝ => a + b - s) (volume.restrict (Ioc a b))
-      (volume.restrict (Ioc a b)) := by
-  have hpre : (fun s : ℝ => a + b - s) ⁻¹' Ioc a b = Ico a b := by
-    ext s
-    simp only [mem_preimage, mem_Ioc, mem_Ico]
-    constructor <;> rintro ⟨h1, h2⟩ <;> constructor <;> linarith
-  have hmp := ((volume : Measure ℝ).measurePreserving_sub_left (a + b)).restrict_preimage
-    (measurableSet_Ioc (a := a) (b := b))
-  rwa [hpre, Measure.restrict_congr_set Ico_ae_eq_Ioc] at hmp
 
 end MeasureTheory
