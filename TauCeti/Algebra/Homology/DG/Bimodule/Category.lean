@@ -161,6 +161,56 @@ instance : (forgetToRightModuleCat.{uR, uA, uB, uM} (hA := hA) (hB := hB)).Addit
 instance : (forgetToRightModuleCat.{uR, uA, uB, uM} (hA := hA) (hB := hB)).Linear R where
   map_smul _ _ := rfl
 
+/-- Build an isomorphism of DG bimodules from a right-linear equivalence preserving the
+homogeneous pieces, differential and left action. -/
+noncomputable def isoMk (e : M ≃ₗ[Bᵐᵒᵖ] N)
+    (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
+    (hd : ∀ x, N.differential (e x) = e (M.differential x))
+    (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) : M ≅ N := by
+  let i := DGRightModuleCat.isoMk (M := M.toDGRightModuleCat) (N := N.toDGRightModuleCat)
+    e (fun p x ↦ (hg p x).symm) hd
+  refine
+    { hom := ⟨i.hom, ?_⟩
+      inv := ⟨i.inv, ?_⟩
+      hom_inv_id := ?_
+      inv_hom_id := ?_ }
+  · rw [mem_dgBimoduleHomSubmodule]
+    intro a x
+    -- Normalize the unbundled-map coercion so the categorical evaluation lemma matches.
+    change i.hom (a • x) = a • i.hom x
+    simpa only [i, DGRightModuleCat.isoMk_hom_apply] using hl a x
+  · rw [mem_dgBimoduleHomSubmodule]
+    intro a x
+    -- Use the same categorical coercion for the inverse evaluation lemma.
+    change i.inv (a • x) = a • i.inv x
+    simp only [i, DGRightModuleCat.isoMk_inv_apply]
+    apply e.injective
+    simp only [LinearEquiv.apply_symm_apply, hl]
+  · apply (forgetToRightModuleCat (hA := hA) (hB := hB)).map_injective
+    rw [Functor.map_comp, CategoryTheory.Functor.map_id]
+    exact i.hom_inv_id
+  · apply (forgetToRightModuleCat (hA := hA) (hB := hB)).map_injective
+    rw [Functor.map_comp, CategoryTheory.Functor.map_id]
+    exact i.inv_hom_id
+
+/-- The isomorphism `isoMk e hg hd hl` acts by `e`. -/
+@[simp]
+theorem isoMk_hom_apply (e : M ≃ₗ[Bᵐᵒᵖ] N)
+    (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
+    (hd : ∀ x, N.differential (e x) = e (M.differential x))
+    (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) (x : M) :
+    (isoMk e hg hd hl).hom x = e x := by
+  exact DGRightModuleCat.isoMk_hom_apply _ _ _ x
+
+/-- The inverse of `isoMk e hg hd hl` acts by `e.symm`. -/
+@[simp]
+theorem isoMk_inv_apply (e : M ≃ₗ[Bᵐᵒᵖ] N)
+    (hg : ∀ p x, e x ∈ N.grading p ↔ x ∈ M.grading p)
+    (hd : ∀ x, N.differential (e x) = e (M.differential x))
+    (hl : ∀ (a : A) (x : M), e (a • x) = a • e x) (x : N) :
+    (isoMk e hg hd hl).inv x = e.symm x := by
+  exact DGRightModuleCat.isoMk_inv_apply _ _ _ x
+
 end DGBimoduleCat
 
 end TauCeti
