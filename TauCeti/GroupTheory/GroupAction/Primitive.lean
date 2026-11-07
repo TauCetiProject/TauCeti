@@ -6,11 +6,12 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.GroupTheory.GroupAction.Primitive
+public import TauCeti.GroupTheory.GroupAction.FixingSubgroup
 
 /-!
-# Point stabilizers in faithful primitive actions, and enlarging the acting group
+# Point stabilizers, larger acting groups, and transitive normal subgroups in primitive actions
 
-This file records two small facts about primitive actions.
+This file records three small facts about primitive and quasi-primitive actions.
 
 The first is the fixed-point property that distinguishes a nonregular primitive action from a
 regular one.  In a faithful primitive action, a nontrivial point stabilizer fixes only its base
@@ -23,10 +24,18 @@ smaller subgroup, so primitivity passes from a subgroup to every larger one.  Th
 primitivity of a transitive permutation group is inherited by the groups containing it.  (The
 corresponding statement for transitivity is Mathlib's `MulAction.IsPretransitive.of_compHom`.)
 
+The third is the transitivity of nontrivial normal subgroups.  In a faithful quasi-primitive
+action a nontrivial subgroup moves some point, so Mathlib's quasi-primitivity makes every
+nontrivial normal subgroup transitive.  This is the first step of the simplicity criteria in
+`TauCeti.GroupTheory.GroupAction.Simple.Basic` and
+`TauCeti.GroupTheory.GroupAction.Simple.Stabilizer`.
+
 ## Main results
 
 * `MulAction.IsBlock.of_le`, `MulAction.IsPreprimitive.of_le`: blocks pass to smaller subgroups
   and primitivity to larger ones.
+* `MulAction.IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot`: in a faithful
+  quasi-primitive action, every nontrivial normal subgroup acts transitively.
 * `TauCeti.MulAction.fixedPoints_stabilizer_eq_singleton`: a nontrivial point stabilizer in a
   faithful primitive action fixes exactly its base point.
 * `TauCeti.MulAction.exists_mem_stabilizer_smul_ne`: such a stabilizer moves every other point.
@@ -61,6 +70,18 @@ theorem _root_.MulAction.IsPreprimitive.of_le (h : H ≤ K) [IsPreprimitive H X]
   IsPreprimitive.of_surjective (f := inclusionMulActionHom h) Function.surjective_id
 
 end Enlarge
+
+section Normal
+
+variable {G X : Type*} [Group G] [MulAction G X] [FaithfulSMul G X] [IsQuasiPreprimitive G X]
+
+/-- In a faithful quasi-primitive action, every nontrivial normal subgroup acts transitively: it
+moves some point, so quasi-primitivity makes it transitive. -/
+theorem _root_.MulAction.IsQuasiPreprimitive.isPretransitive_of_normal_of_ne_bot
+    (N : Subgroup G) [N.Normal] (hN : N ≠ ⊥) : IsPretransitive N X :=
+  IsQuasiPreprimitive.isPretransitive_of_normal (fixedPoints_ne_univ_of_ne_bot hN)
+
+end Normal
 
 variable {G X : Type*} [Group G] [MulAction G X] [FaithfulSMul G X]
   [IsPreprimitive G X]
