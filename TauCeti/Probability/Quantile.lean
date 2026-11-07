@@ -91,7 +91,9 @@ makes the monotone rearrangement of two real laws a transport plan between them.
 * `Set.OrdConnected.quantile_mem` and `Set.OrdConnected.upperQuantile_mem` — interior quantiles
   lie in every interval carrying the full mass of the measure;
 * `MeasureTheory.Measure.quantile_le_upperQuantile` and
-  `MeasureTheory.Measure.upperQuantile_le_quantile` — the two quantile functions interleave;
+  `MeasureTheory.Measure.upperQuantile_le_quantile` — the two quantile functions interleave, and
+  `MeasureTheory.Measure.upperQuantile_eq_quantile_of_continuousWithinAt` — they agree where the
+  lower quantile is right continuous;
 * `MeasureTheory.Measure.continuousWithinAt_Iio_quantile` and
   `MeasureTheory.Measure.continuousWithinAt_Ioi_upperQuantile` — left continuity of the lower
   and right continuity of the upper quantile;
@@ -544,6 +546,15 @@ level, so the two quantile functions interleave. -/
 theorem upperQuantile_le_quantile (μ : Measure ℝ) {s : ℝ} (hs0 : 0 < s) (hst : s < t)
     (ht1 : t < 1) : μ.upperQuantile s ≤ μ.quantile t :=
   upperQuantile_le_of_lt_cdf μ hs0 (hst.trans_le (le_cdf_quantile μ ht1))
+
+/-- Where the lower quantile is right continuous, the upper quantile agrees with it: the upper
+quantile is squeezed between the quantile at the level and the quantiles at larger levels. -/
+theorem upperQuantile_eq_quantile_of_continuousWithinAt (μ : Measure ℝ) (h0 : 0 < t)
+    (h1 : t < 1) (h : ContinuousWithinAt μ.quantile (Ioi t) t) :
+    μ.upperQuantile t = μ.quantile t := by
+  refine le_antisymm (ge_of_tendsto h ?_) (quantile_le_upperQuantile μ h0 h1)
+  filter_upwards [Ioo_mem_nhdsGT h1] with s hs
+  exact upperQuantile_le_quantile μ h0 hs.1 hs.2
 
 /-- The upper quantile function is monotone on the levels where it is an honest generalized
 inverse. -/

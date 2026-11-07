@@ -36,6 +36,9 @@ This advances Deliverable A, Layer 1 of
 * `TauCeti.Lie.leftInvariantDerivationLinearIsometryEquivModelVectorSpace_Ad`: the canonical
   derivation–model equivalence intertwines `Ad` and `tangentAd`.
 
+* `TauCeti.Lie.leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph`:
+  the inverse tangent identification intertwines the adjoint actions.
+
 ## References
 
 * [Lie groups and the Lie algebra correspondence roadmap](https://github.com/TauCetiProject/TauCetiRoadmap/blob/main/TauCetiRoadmap/RepresentationTheory/LieGroups/README.md),
@@ -90,6 +93,25 @@ theorem leftInvariantDerivationLieEquivGroupLieAlgebra_Ad
           (I := I) (G := G)
           (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G)) D) := by
   rw [Ad_apply, LieEquiv.apply_symm_apply]
+
+/-- The inverse tangent identification intertwines the tangent and derivation adjoint actions. -/
+@[simp high]
+theorem leftInvariantDerivationLieEquivGroupLieAlgebra_symm_mfderiv_conjDiffeomorph
+    (g : G) (a : GroupLieAlgebra I G) :
+    (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+      (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).symm
+        (mfderiv I I (conjDiffeomorph (I := I) (n := 1) g) (1 : G) a) =
+      Ad (I := I) g
+        ((leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+          (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).symm a) := by
+  -- The adjoint-map codomain lets the tangent Lie equivalence apply its inverse law.
+  rw [← adjointContinuousLinearMap_apply (I := I) g a]
+  apply (leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+    (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).injective
+  simpa only [LieEquiv.coe_toLieHom, LieEquiv.apply_symm_apply, tangentAd_apply] using
+    (leftInvariantDerivationLieEquivGroupLieAlgebra_Ad g
+      ((leftInvariantDerivationLieEquivGroupLieAlgebra (I := I) (G := G)
+        (ContMDiffMul.isInteriorPoint (I := I) (n := ∞) (by simp) (1 : G))).symm a)).symm
 
 /-- The canonical isometric identification with the model space intertwines the derivation and
 tangent adjoint actions. -/
