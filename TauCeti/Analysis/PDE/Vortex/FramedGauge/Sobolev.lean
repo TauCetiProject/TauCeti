@@ -164,7 +164,8 @@ theorem contDiff_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Ci
     ContDiff ℝ j (fun z ↦ (u z : ℂ)) := by
   obtain ⟨hu, hu₁, hu₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
   have hc : Continuous (fun z ↦ (u z : ℂ)) := continuous_subtype_val.comp hu
-  have hk : finrank ℝ ℂ < 2 * 2 := by simp
+  have hk : finrank ℝ ℂ < 2 * 2 := by
+    exact_mod_cast finrank_real_complex_lt_two_mul (by norm_num : (1 : ℝ) < 2)
   have hj' : ((2 : ℕ) + j : ℝ) ≤ s := by push_cast; linarith
   have hre := (contDiff_of_mem_realSobolevFunctions hk hu₁
     ((continuous_re.comp hc).sub continuous_const) hj').add (contDiff_const (c := (1 : ℝ)))
@@ -295,7 +296,8 @@ theorem gaugeTransform_mem_framedFieldSpace {k : ℕ} (hk : 1 < k) {hs : 1 < (k 
     {u : ℂ → Circle} (hu : u ∈ sobolevGaugeGroup hs) {f : ContDiffBump (0 : ℝ)} {m : ℕ}
     {x : ℂ → EuclideanSpace ℝ (Fin 4)} (hx : x ∈ framedFieldSpace f m k) :
     gaugeTransform u x ∈ framedFieldSpace f m k := by
-  have hs' : (1 : ℝ) < k := by exact_mod_cast hk
+  have hk' : (2 : ℝ) ≤ k := by exact_mod_cast hk
+  have hs' : (1 : ℝ) < k := by linarith
   have hC : ContDiff ℝ 1 (fun z ↦ (u z : ℂ)) :=
     contDiff_of_mem_sobolevGaugeGroup hu (j := 1) (by push_cast; linarith)
   have hmul {g h : ℂ → ℝ} (hg : g ∈ realSobolevFunctions ℂ k 2)
