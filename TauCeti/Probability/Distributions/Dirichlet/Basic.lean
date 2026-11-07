@@ -181,13 +181,15 @@ theorem isProbabilityMeasure_dirichletMeasure_iff {a : ι → ℝ} :
     let _ : Nonempty ι := hι
     exact isProbabilityMeasure_dirichletMeasure ha
 
-/-- Every coordinate is almost everywhere strictly positive under a Dirichlet law with positive
-concentration parameters. -/
-theorem ae_pos_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+/-- Every coordinate is almost everywhere strictly positive under a Dirichlet law. For concentration
+vectors outside the valid range the law is zero and the statement is vacuous. -/
+theorem ae_pos_dirichletMeasure {a : ι → ℝ} :
     ∀ᵐ x ∂dirichletMeasure a, ∀ i, 0 < x i := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.2 hι) h.1, ae_zero]
+  by_cases hv : Nonempty ι ∧ ∀ i, 0 < a i
+  swap
+  · rw [dirichletMeasure_eq_zero_of_invalid hv, ae_zero]
     exact Filter.eventually_bot
+  obtain ⟨hι, ha⟩ := hv
   rw [dirichletMeasure_of_pos ha]
   rw [ae_map_iff measurable_dirichletNormalize.aemeasurable]
   · filter_upwards [ae_pos_pi_gammaMeasure a (fun _ ↦ 1),
@@ -197,15 +199,18 @@ theorem ae_pos_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
     exact div_pos (hx i) hsum
   · measurability
 
-/-- A Dirichlet measure with positive concentration parameters is concentrated on the standard
-simplex, represented in Euclidean coordinates. -/
-theorem ae_mem_stdSimplex_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+/-- A Dirichlet measure is concentrated on the standard simplex, represented in Euclidean
+coordinates. For concentration vectors outside the valid range the law is zero and the statement is
+vacuous. -/
+theorem ae_mem_stdSimplex_dirichletMeasure {a : ι → ℝ} :
     ∀ᵐ x ∂dirichletMeasure a,
       (EuclideanSpace.equiv ι ℝ) x ∈
         Set.range (fun p : StdSimplex ℝ ι ↦ (p.weights : ι → ℝ)) := by
-  rcases isEmpty_or_nonempty ι with hι | hι
-  · rw [dirichletMeasure_eq_zero_of_invalid fun h ↦ (not_nonempty_iff.2 hι) h.1, ae_zero]
+  by_cases hv : Nonempty ι ∧ ∀ i, 0 < a i
+  swap
+  · rw [dirichletMeasure_eq_zero_of_invalid hv, ae_zero]
     exact Filter.eventually_bot
+  obtain ⟨hι, ha⟩ := hv
   rw [dirichletMeasure_of_pos ha]
   rw [ae_map_iff measurable_dirichletNormalize.aemeasurable]
   · filter_upwards [ae_pos_pi_gammaMeasure a (fun _ ↦ 1),
@@ -215,11 +220,12 @@ theorem ae_mem_stdSimplex_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i
       (StdSimplex.isClosedEmbedding_toFun_comp_weights ℝ ι).isClosed_range.measurableSet.preimage
         (EuclideanSpace.equiv ι ℝ).continuous.measurable
 
-/-- Under a Dirichlet law with positive concentration parameters the coordinates almost surely
-total one: this is the coordinate form of the standard-simplex support. -/
-theorem ae_sum_eq_one_dirichletMeasure {a : ι → ℝ} (ha : ∀ i, 0 < a i) :
+/-- Under a Dirichlet law the coordinates almost surely total one: this is the coordinate form of
+the standard-simplex support. For concentration vectors outside the valid range the law is zero and
+the statement is vacuous. -/
+theorem ae_sum_eq_one_dirichletMeasure {a : ι → ℝ} :
     ∀ᵐ x ∂dirichletMeasure a, ∑ i, x i = 1 := by
-  filter_upwards [ae_mem_stdSimplex_dirichletMeasure ha] with x ⟨p, hp⟩
+  filter_upwards [ae_mem_stdSimplex_dirichletMeasure (a := a)] with x ⟨p, hp⟩
   have hxp : ∀ i, x i = p.weights i := fun i ↦ (congrFun hp i).symm
   simp [hxp]
 
