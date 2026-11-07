@@ -5,7 +5,6 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.JohnNirenberg
 public import TauCeti.MeasureTheory.Integral.SharpMaximalFunction
 
 /-!
@@ -24,10 +23,9 @@ constants, is subadditive and homogeneous, and vanishes exactly on the a.e. cons
 `‖f‖_{BMO} ≤ 2 ‖f‖_∞` (`TauCeti.bmoSeminorm_le_two_mul_eLpNorm_top`). On a seminormed group
 with a right-invariant measure the seminorm is invariant under translation, and on a
 finite-dimensional real normed space with an additive Haar measure it is invariant under dilation
-(`TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`). On `ℝⁿ` the
-John–Nirenberg inequality makes a function of bounded mean oscillation exponentially integrable
-on every ball, at a rate controlled by its seminorm
-(`TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le`).
+(`TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`). The John–Nirenberg
+inequality for functions of bounded mean oscillation on `ℝⁿ` is in
+`TauCeti.MeasureTheory.Integral.JohnNirenberg`.
 
 The **VMO modulus** of `f` is the supremum of its mean oscillations over the balls of radius at
 most `r`,
@@ -59,8 +57,6 @@ easy half of Sarason's characterization.
 * `TauCeti.bmoSeminorm_eq_zero_iff`: the seminorm vanishes exactly on a.e. constant functions.
 * `TauCeti.bmoSeminorm_comp_add_right`, `TauCeti.bmoSeminorm_comp_smul`: translation and
   dilation invariance.
-* `TauCeti.exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le`: the
-  John–Nirenberg inequality for functions of bounded mean oscillation on `ℝⁿ`.
 * `TauCeti.vmoModulus`, `TauCeti.MemVMO`: the VMO modulus and the space of functions of
   vanishing mean oscillation.
 * `TauCeti.memVMO_of_tendsto_bmoSeminorm`: VMO is closed in BMO.
@@ -199,6 +195,9 @@ integrable and its BMO seminorm is finite. -/
 def MemBMO (f : X → F) (μ : Measure X) : Prop :=
   LocallyIntegrable f μ ∧ bmoSeminorm f μ < ∞
 
+theorem memBMO_iff : MemBMO f μ ↔ LocallyIntegrable f μ ∧ bmoSeminorm f μ < ∞ :=
+  Iff.rfl
+
 theorem MemBMO.locallyIntegrable (hf : MemBMO f μ) : LocallyIntegrable f μ :=
   hf.1
 
@@ -330,6 +329,16 @@ theorem vmoModulus_const [CompleteSpace F] (b : F) (r : ℝ) :
     vmoModulus (fun _ : X => b) μ r = 0 :=
   nonpos_iff_eq_zero.1 <| (vmoModulus_le_bmoSeminorm _ μ r).trans_eq (bmoSeminorm_const b)
 
+@[simp]
+theorem vmoModulus_zero (r : ℝ) : vmoModulus (0 : X → F) μ r = 0 :=
+  nonpos_iff_eq_zero.1 <| (vmoModulus_le_bmoSeminorm _ μ r).trans_eq bmoSeminorm_zero
+
+/-- Adding a constant to an a.e. strongly measurable `f` does not change its VMO modulus. -/
+@[simp]
+theorem vmoModulus_add_const [CompleteSpace F] (hf : AEStronglyMeasurable f μ) (b : F) (r : ℝ) :
+    vmoModulus (fun y => f y + b) μ r = vmoModulus f μ r := by
+  simp only [vmoModulus, fun s => setLAverage_enorm_add_const_sub (s := s) hf.restrict]
+
 /-- The VMO modulus is homogeneous: `η_{k • f} = ‖k‖ₑ η_f`. -/
 @[simp]
 theorem vmoModulus_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F]
@@ -338,12 +347,23 @@ theorem vmoModulus_const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module �
   simp only [vmoModulus, Pi.smul_apply, setLAverage_enorm_const_smul_sub_setAverage,
     ENNReal.mul_iSup]
 
+/-- The VMO modulus of `-f` is that of `f`. -/
+@[simp]
+theorem vmoModulus_neg (r : ℝ) : vmoModulus (-f) μ r = vmoModulus f μ r := by
+  simpa using vmoModulus_const_smul (μ := μ) (f := f) (-1 : ℝ) r
+
 /-- The VMO modulus is subadditive on a.e. strongly measurable functions. -/
 theorem vmoModulus_add_le (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ)
     (r : ℝ) : vmoModulus (f + g) μ r ≤ vmoModulus f μ r + vmoModulus g μ r :=
   vmoModulus_le fun c _ hs => (setLAverage_enorm_add_sub_le hf.restrict hg.restrict).trans
     (add_le_add (setLAverage_enorm_sub_setAverage_le_vmoModulus f μ c hs)
       (setLAverage_enorm_sub_setAverage_le_vmoModulus g μ c hs))
+
+/-- The VMO modulus of a difference of a.e. strongly measurable functions is at most the sum of
+their VMO moduli. -/
+theorem vmoModulus_sub_le (hf : AEStronglyMeasurable f μ) (hg : AEStronglyMeasurable g μ)
+    (r : ℝ) : vmoModulus (f - g) μ r ≤ vmoModulus f μ r + vmoModulus g μ r := by
+  simpa [sub_eq_add_neg] using vmoModulus_add_le hf hg.neg r
 
 /-- If `f` varies by at most `ε` between points at distance less than `2 r`, then its mean
 oscillation on every ball of radius at most `r` is at most `2 ε`. -/
@@ -379,6 +399,12 @@ oscillation and its VMO modulus `η_f(r)` tends to `0` as `r → 0`. -/
 def MemVMO (f : X → F) (μ : Measure X) : Prop :=
   MemBMO f μ ∧ Tendsto (vmoModulus f μ) (𝓝[>] 0) (𝓝 0)
 
+/-- A function has vanishing mean oscillation exactly when it has bounded mean oscillation and
+its VMO modulus `η_f(r)` tends to `0` as `r → 0`. -/
+theorem memVMO_iff_tendsto :
+    MemVMO f μ ↔ MemBMO f μ ∧ Tendsto (vmoModulus f μ) (𝓝[>] 0) (𝓝 0) :=
+  Iff.rfl
+
 theorem MemVMO.memBMO (hf : MemVMO f μ) : MemBMO f μ :=
   hf.1
 
@@ -404,6 +430,11 @@ theorem memVMO_const [IsLocallyFiniteMeasure μ] [CompleteSpace F] (b : F) :
     MemVMO (fun _ : X => b) μ :=
   ⟨memBMO_const b, by
     rw [show vmoModulus (fun _ : X => b) μ = fun _ => 0 from funext (vmoModulus_const b)]
+    exact tendsto_const_nhds⟩
+
+theorem memVMO_zero : MemVMO (0 : X → F) μ :=
+  ⟨memBMO_zero, by
+    rw [show vmoModulus (0 : X → F) μ = fun _ => 0 from funext vmoModulus_zero]
     exact tendsto_const_nhds⟩
 
 theorem MemVMO.const_smul {𝕜 : Type*} [NormedDivisionRing 𝕜] [Module 𝕜 F] [NormSMulClass 𝕜 F]
@@ -527,39 +558,5 @@ theorem bmoSeminorm_comp_smul {E : Type*} [NormedAddCommGroup E] [NormedSpace �
     inv_mul_cancel₀ (norm_ne_zero_iff.2 ht), one_mul]
 
 end Invariance
-
-/-! ### The John–Nirenberg inequality for functions of bounded mean oscillation -/
-
-section JohnNirenberg
-
-variable {ι : Type*} [Fintype ι] [Nonempty ι]
-
-/-- **The John–Nirenberg inequality for functions of bounded mean oscillation.** There are
-constants `A > 0` and `C`, depending only on the dimension `n ≥ 1`, such that the following holds
-for every additive Haar measure `μ` on `ℝⁿ = EuclideanSpace ℝ ι`. If `f : ℝⁿ → E` is locally
-integrable with `‖f‖_{BMO} ≤ M` and `σ M ≤ A`, then on every ball `B`,
-
-`∫_B exp (σ ‖f - f_B‖) ≤ C |B|`. -/
-theorem exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le_of_bmoSeminorm_le :
-    ∃ A : ℝ, 0 < A ∧ ∃ C : ℝ≥0, ∀ {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-      [CompleteSpace E] {μ : Measure (EuclideanSpace ℝ ι)} [μ.IsAddHaarMeasure]
-      {f : EuclideanSpace ℝ ι → E} {M : ℝ≥0} {σ : ℝ},
-      LocallyIntegrable f μ → bmoSeminorm f μ ≤ M → σ * M ≤ A →
-      ∀ (x₀ : EuclideanSpace ℝ ι) (r : ℝ),
-        ∫⁻ x in ball x₀ r, ENNReal.ofReal (Real.exp (σ * ‖f x - ⨍ y in ball x₀ r, f y ∂μ‖)) ∂μ ≤
-          C * μ (ball x₀ r) := by
-  obtain ⟨A, hA, C, h⟩ := exists_setLIntegral_exp_mul_norm_sub_setAverage_ball_le (ι := ι)
-  refine ⟨A, hA, C, fun {E} _ _ _ μ _ f M σ hf hM hσ x₀ r => ?_⟩
-  have hn : 0 < 2 * √(Fintype.card ι : ℝ) := by
-    have : (0 : ℝ) < Fintype.card ι := by exact_mod_cast Fintype.card_pos
-    positivity
-  have hR : 2 * √(Fintype.card ι : ℝ) * r / (2 * √(Fintype.card ι : ℝ)) = r := by
-    field_simp
-  have := h (x₀ := x₀) (R := 2 * √(Fintype.card ι : ℝ) * r)
-    ((hf.integrableOn_isCompact (isCompact_closedBall _ _)).mono_set ball_subset_closedBall)
-    (fun y s _ => (setLAverage_enorm_sub_setAverage_le_bmoSeminorm f μ y s).trans hM) hσ
-  rwa [hR] at this
-
-end JohnNirenberg
 
 end TauCeti
