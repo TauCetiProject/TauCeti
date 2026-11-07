@@ -32,6 +32,8 @@ the base, stalk, and function-field algebra structures form a scalar tower.
   gives a morphism over the affine base between the spectra of the function fields.
 * `Scheme.Hom.functionFieldAlgHom`: conversely, the pullback of rational functions along a
   dominant morphism over the affine base is a `k`-algebra map of function fields.
+* `Scheme.Hom.residueFieldMap_algebraMap`: the residue field maps of a morphism over the affine
+  base are compatible with the base-ring algebra structures.
 * `Scheme.baseStalkResidueFieldIsScalarTower`: compatibility of the base, stalk, and residue-field
   algebra structures.
 * `Scheme.baseStalkFunctionFieldIsScalarTower`: compatibility of the base, stalk, and
@@ -431,6 +433,26 @@ theorem _root_.AlgebraicGeometry.Scheme.Hom.functionFieldAlgHom_comp (f : X ⟶ 
   simp
 
 end FunctionFieldMap
+
+section ResidueFieldMap
+
+variable (k : Type u) [CommRing k] {X Y : Scheme.{u}} [X.Over (Spec (.of k))]
+  [Y.Over (Spec (.of k))]
+
+/-- The residue field maps of a morphism over `Spec k` are compatible with the `k`-algebra
+structures of the residue fields. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.residueFieldMap_algebraMap (f : X ⟶ Y)
+    [f.IsOver (Spec (.of k))] (x : X) (c : k) :
+    f.residueFieldMap x (algebraMap k (Y.residueField (f x)) c) =
+      algebraMap k (X.residueField x) c := by
+  have h : Spec.map (CommRingCat.ofHom (algebraMap k (Y.residueField (f x))) ≫
+      f.residueFieldMap x) = Spec.map (CommRingCat.ofHom (algebraMap k (X.residueField x))) := by
+    rw [Spec.map_comp, ← Scheme.fromSpecResidueField_comp_over,
+      ← Scheme.fromSpecResidueField_comp_over,
+      Scheme.Hom.SpecMap_residueFieldMap_fromSpecResidueField_assoc, comp_over]
+  exact congr($(Spec.map_injective h) c)
+
+end ResidueFieldMap
 
 section RationalFunctions
 

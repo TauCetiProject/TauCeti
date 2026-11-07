@@ -108,24 +108,13 @@ theorem exists_basis_weight_lowerCentralSeries :
       (∀ i, 0 < w i ∧ w i ≤ N) ∧
       (∀ k x, x ∈ lowerCentralSeries K L L k ↔ ∀ i, w i ≤ k → b.repr x i = 0) ∧
       ∀ i j k, w k < w i + w j → b.repr ⁅b i, b j⁆ k = 0 := by
-  classical
   obtain ⟨N, hN⟩ := LieModule.IsNilpotent.nilpotent K L L
-  obtain ⟨ι, _, b, w, hweight, hmem⟩ := exists_basis_weight_of_antitone
+  obtain ⟨b, w, hweight, hmem⟩ := exists_basis_weight_of_antitone
     (fun k ↦ (lowerCentralSeries K L L k).toSubmodule)
     (fun _ _ h ↦ antitone_lowerCentralSeries K L L h)
     (by simp) N (by simp [hN])
-  let e := Fintype.equivFinOfCardEq (Module.finrank_eq_card_basis b).symm
-  let b' := b.reindex e
-  let w' := w ∘ e.symm
-  have hweight' : ∀ i, 0 < w' i ∧ w' i ≤ N := fun i ↦ hweight (e.symm i)
-  have hmem' : ∀ k x, x ∈ lowerCentralSeries K L L k ↔
-      ∀ i, w' i ≤ k → b'.repr x i = 0 := by
-    intro k x
-    rw [← LieSubmodule.mem_toSubmodule, hmem]
-    simpa [b', w', Basis.repr_reindex_apply] using
-      e.forall_congr_left (p := fun i ↦ w i ≤ k → b.repr x i = 0)
-  exact ⟨N, b', w', hweight', hmem',
-    b'.repr_lie_eq_zero_of_weight_lt w' (fun i ↦ (hweight' i).1) hmem'⟩
+  exact ⟨N, b, w, hweight, hmem,
+    b.repr_lie_eq_zero_of_weight_lt w (fun i ↦ (hweight i).1) hmem⟩
 
 end Basis
 

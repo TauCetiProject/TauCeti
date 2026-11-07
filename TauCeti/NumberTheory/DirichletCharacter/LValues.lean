@@ -238,4 +238,98 @@ theorem sum_mul_inv_mul_pi_mul_cot_ne_zero {u v : ℕ} [NeZero u] [NeZero v]
   rw [hsum'] at hL
   simpa using hL
 
+omit [NeZero N] in
+/-- For a character with `χ (-1) = -(-1) ^ k`, the series `∑ χ⁻¹ d * d ^ (-k)` over nonzero integers
+vanishes, since the terms at `d` and `-d` cancel. -/
+theorem tsum_inv_mul_zpow_neg_eq_zero_of_apply_neg_one_eq_neg
+    (hχ : χ (-1) = -(-1 : ℂ) ^ k) :
+    ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) = 0 := by
+  have hinv : χ⁻¹ (-1) = -(-1 : ℂ) ^ k := by
+    rw [MulChar.inv_apply_eq_inv', hχ]
+    rcases neg_one_pow_eq_or ℂ k with h | h <;> simp [h]
+  have hodd : ∀ d : ℤ, χ⁻¹ (-d : ℤ) * ((-d : ℤ) : ℂ) ^ (-(k : ℤ)) =
+      -(χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ))) := by
+    intro d
+    have hz : ((-d : ℤ) : ℂ) ^ (-(k : ℤ)) = (-1 : ℂ) ^ k * (d : ℂ) ^ (-(k : ℤ)) := by
+      rw [Int.cast_neg, neg_eq_neg_one_mul, mul_zpow, zpow_neg, zpow_natCast, zpow_neg,
+        zpow_natCast, ← inv_pow, inv_neg_one]
+    have hc : χ⁻¹ (-d : ℤ) = -(-1 : ℂ) ^ k * χ⁻¹ d := by
+      rw [Int.cast_neg, neg_eq_neg_one_mul, map_mul, hinv]
+    rw [hz, hc]
+    rcases neg_one_pow_eq_or ℂ k with h | h <;> rw [h] <;> ring
+  have h2 : ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
+      -∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) := by
+    rw [← tsum_neg, ← (Equiv.neg ℤ).tsum_eq]
+    exact tsum_congr hodd
+  linear_combination h2 / 2
+
+/-- The constant coefficient identity of the normalized Eisenstein series for a character with
+`χ (-1) = (-1) ^ k`. -/
+private theorem inv_normalization_mul_tsum_eq_generalizedBernoulli_of_apply_neg_one_eq_pow
+    (hk : 2 ≤ k) (hχ : χ.IsPrimitive) (hχpar : χ (-1) = (-1 : ℂ) ^ k) :
+    (2 * (-2 * π * I) ^ k / (((k - 1).factorial : ℂ) * (N : ℂ) ^ k) *
+        gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ * ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
+      -χ.generalizedBernoulli k / (2 * (k : ℂ)) := by
+  have hprod :=
+    DirichletCharacter.gaussSum_mul_gaussSum_inv_eq_neg_one_mul_card_of_isPrimitive hχ
+    (ZMod.isPrimitive_stdAddChar N)
+  rw [ZMod.card, hχpar] at hprod
+  have hv : (N : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (NeZero.ne N)
+  have hτ := DirichletCharacter.gaussSum_ne_zero_of_isPrimitive hv hχ
+    (ZMod.isPrimitive_stdAddChar N)
+  have hτinv := DirichletCharacter.gaussSum_inv_ne_zero_of_isPrimitive hv hχ
+    (ZMod.isPrimitive_stdAddChar N)
+  have hf : ((k - 1).factorial : ℂ) ≠ 0 :=
+    Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero _)
+  have hA : (-2 * π * I : ℂ) ≠ 0 := by
+    simp [Real.pi_ne_zero, Complex.I_ne_zero]
+  have hC : 2 * (-2 * π * I) ^ k / ((k - 1).factorial * (N : ℂ) ^ k) *
+      gaussSum χ⁻¹ ZMod.stdAddChar ≠ 0 := by
+    exact mul_ne_zero (div_ne_zero (mul_ne_zero (by norm_num) (pow_ne_zero _ hA))
+      (mul_ne_zero hf (pow_ne_zero _ hv))) hτinv
+  rw [inv_mul_eq_iff_eq_mul₀ hC]
+  apply mul_left_cancel₀ hτ
+  -- TauCeti's gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli evaluates the integer
+  -- row sum; the primitive Gauss-sum product and parity then cancel the normalization.
+  rw [χ.gaussSum_mul_tsum_inv_pow_eq_generalizedBernoulli hχ hk]
+  have hfac : (k.factorial : ℂ) = (k : ℂ) * (k - 1).factorial := by
+    exact_mod_cast (Nat.mul_factorial_pred (by omega : k ≠ 0)).symm
+  have hpower : (-2 * π * I : ℂ) ^ k * (-1 : ℂ) ^ k = (2 * π * I) ^ k := by
+    rw [← mul_pow]
+    congr 1
+    ring
+  have hpowv : (N : ℂ) ^ k = (N : ℂ) ^ (k - 1) * N := by
+    rw [← pow_succ, Nat.sub_add_cancel (by omega : 1 ≤ k)]
+  -- The Gauss product and the parity sign cancel the normalization factor.
+  symm
+  calc
+    _ = (2 * (-2 * π * I) ^ k / ((k - 1).factorial * (N : ℂ) ^ k) *
+        (gaussSum χ ZMod.stdAddChar * gaussSum χ⁻¹ ZMod.stdAddChar)) *
+          (-χ.generalizedBernoulli k / (2 * (k : ℂ))) := by ring
+    _ = _ := by
+      rw [hprod, hfac, hpowv]
+      have hk0 : (k : ℂ) ≠ 0 := Nat.cast_ne_zero.mpr (by omega)
+      field_simp
+      linear_combination -χ.generalizedBernoulli k * hpower
+
+/-- The constant coefficient identity of the normalized Eisenstein series: for a primitive
+character `χ` and `2 ≤ k`, the normalization of the Eisenstein series cancels against the Gauss
+sum and the `L`-value, leaving `-Bₖ,χ / (2k)`. When `χ (-1) ≠ (-1) ᵏ` both sides vanish. -/
+theorem inv_normalization_mul_tsum_eq_generalizedBernoulli
+    (hk : 2 ≤ k) (hχ : χ.IsPrimitive) :
+    (2 * (-2 * π * I) ^ k / (((k - 1).factorial : ℂ) * (N : ℂ) ^ k) *
+        gaussSum χ⁻¹ ZMod.stdAddChar)⁻¹ * ∑' d : ℤ, χ⁻¹ d * (d : ℂ) ^ (-(k : ℤ)) =
+      -χ.generalizedBernoulli k / (2 * (k : ℂ)) := by
+  by_cases hχpar : χ (-1) = (-1 : ℂ) ^ k
+  · exact inv_normalization_mul_tsum_eq_generalizedBernoulli_of_apply_neg_one_eq_pow χ hk hχ hχpar
+  · have hneg : χ (-1) = -(-1 : ℂ) ^ k := by
+      rcases χ.even_or_odd with he | ho
+      · rw [he] at hχpar ⊢
+        rcases neg_one_pow_eq_or ℂ k with h | h <;> simp_all
+      · rw [ho] at hχpar ⊢
+        rcases neg_one_pow_eq_or ℂ k with h | h <;> simp_all
+    rw [tsum_inv_mul_zpow_neg_eq_zero_of_apply_neg_one_eq_neg χ hneg,
+      generalizedBernoulli_eq_zero_of_apply_neg_one_eq_neg (Or.inl (by omega)) hneg]
+    simp
+
 end DirichletCharacter

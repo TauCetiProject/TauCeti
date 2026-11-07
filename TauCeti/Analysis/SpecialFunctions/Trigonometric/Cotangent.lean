@@ -165,6 +165,45 @@ theorem norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le {u : ℂ} {t : ℝ} (ht : 0 < t) 
   convert h using 3
   ring
 
+/-- `π cot (π u)` is bounded by `2π / (1 - e^(-2π t)) + π` when `t ≤ Im u` for some `t > 0`. -/
+theorem norm_pi_mul_cot_pi_mul_le {u : ℂ} {t : ℝ} (ht : 0 < t) (hu : t ≤ u.im) :
+    ‖π * cot (π * u)‖ ≤ 2 * π / (1 - Real.exp (-2 * π * t)) + π := by
+  have h := norm_pi_mul_cot_pi_mul_add_pi_mul_I_le ht hu
+  have hexp : Real.exp (-2 * π * u.im) ≤ 1 :=
+    Real.exp_le_one_iff.mpr (by nlinarith [Real.pi_pos])
+  have hc : 0 ≤ 2 * π / (1 - Real.exp (-2 * π * t)) :=
+    div_nonneg (by positivity) (sub_nonneg.mpr (Real.exp_le_one_iff.mpr (by nlinarith
+      [Real.pi_pos])))
+  calc ‖π * cot (π * u)‖ ≤ ‖π * cot (π * u) + π * I‖ + ‖(π * I : ℂ)‖ := by
+        simpa using norm_sub_le (π * cot (π * u) + π * I) (π * I)
+    _ ≤ 2 * π / (1 - Real.exp (-2 * π * t)) + π := by
+        have := mul_le_of_le_one_right hc hexp
+        simp only [norm_mul, Complex.norm_real, Real.norm_eq_abs, abs_of_pos Real.pi_pos,
+          Complex.norm_I, mul_one] at h ⊢
+        linarith
+
+/-- The sum of `π cot (π u)` and `π cot (π v)`, for `u` in the upper and `v` in the lower
+half-plane, at imaginary distance at least `t > 0` from the real axis and `r` from it, is at most
+`2 (2π / (1 - e^(-2π t))) e^(-2π r)`: the two cotangents approach `-π i` and `π i`. -/
+theorem norm_pi_mul_cot_pi_mul_add_pi_mul_cot_pi_mul_le {u v : ℂ} {t r : ℝ} (ht : 0 < t)
+    (hu : t ≤ u.im) (hur : r ≤ u.im) (hv : t ≤ -v.im) (hvr : r ≤ -v.im) :
+    ‖π * cot (π * u) + π * cot (π * v)‖ ≤
+      2 * (2 * π / (1 - Real.exp (-2 * π * t))) * Real.exp (-2 * π * r) := by
+  have hc : 0 ≤ 2 * π / (1 - Real.exp (-2 * π * t)) :=
+    div_nonneg (by positivity) (sub_nonneg.mpr (Real.exp_le_one_iff.mpr (by nlinarith
+      [Real.pi_pos])))
+  have e₁ : Real.exp (-2 * π * u.im) ≤ Real.exp (-2 * π * r) :=
+    Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])
+  have e₂ : Real.exp (2 * π * v.im) ≤ Real.exp (-2 * π * r) :=
+    Real.exp_le_exp.mpr (by nlinarith [Real.pi_pos])
+  have h₁ := (norm_pi_mul_cot_pi_mul_add_pi_mul_I_le ht hu).trans
+    (mul_le_mul_of_nonneg_left e₁ hc)
+  have h₂ := (norm_pi_mul_cot_pi_mul_sub_pi_mul_I_le ht hv).trans
+    (mul_le_mul_of_nonneg_left e₂ hc)
+  have h := norm_add_le (π * cot (π * u) + π * I) (π * cot (π * v) - π * I)
+  rw [add_add_sub_cancel] at h
+  linarith
+
 /-- **The `q`-expansion of the cotangent at a division point**: if `0 < Im z`, `c ≥ 1` and
 `b ∈ ℤ`, then `π cot (π (c z + b) / M) + π i = -2π i ∑_{k ≥ 1} e(k b / M) e(z / M)^(c k)`, where
 `e(k b / M) = ZMod.stdAddChar (k b)` and `e(z / M) = e^(2π i z / M)`. -/
