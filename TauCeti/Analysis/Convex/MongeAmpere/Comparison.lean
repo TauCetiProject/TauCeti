@@ -7,7 +7,10 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Extrema
+import TauCeti.Analysis.Convex.FunctionTopology
 import TauCeti.Analysis.Convex.MongeAmpere.Affine
+import TauCeti.MeasureTheory.Measure.OpenPos
+import TauCeti.Topology.Frontier
 
 /-!
 # The comparison principle for the Monge–Ampère equation
@@ -127,82 +130,6 @@ private theorem exists_mem_forall_add_inner_le (hv : ConvexOn ℝ Ω v) {G : Set
 
 variable [Nontrivial E] (μ : Measure E) [μ.IsAddHaarMeasure]
 
-omit [Nontrivial E] [DecidablePred (· ∈ Ω)] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [MeasurableSpace E] [BorelSpace E] in
-/-- Let `u` and `w` be continuous on the closure of an open set `Ω` with `w < u` on its frontier,
-and `u x₀ < w x₀` at some `x₀ ∈ Ω`. Then `{u < w}` is an open subset `G` of `Ω` containing `x₀`,
-and the closure of `G` lies in `Ω` and `w ≤ u` on the frontier of `G`. -/
-private theorem exists_isOpen_subset_pos_forall_frontier_le (hΩo : IsOpen Ω) {w : E → ℝ}
-    (huc : ContinuousOn u (closure Ω)) (hwc : ContinuousOn w (closure Ω))
-    (hfrw : ∀ y ∈ frontier Ω, w y < u y) {x₀ : E} (hx₀ : x₀ ∈ Ω) (hlt : u x₀ < w x₀) :
-    ∃ G, IsOpen G ∧ G ⊆ Ω ∧ closure G ⊆ Ω ∧ x₀ ∈ G ∧ (∀ y ∈ G, 0 < w y - u y) ∧
-      ∀ y ∈ frontier G, w y ≤ u y := by
-  set G := Ω ∩ (fun y => w y - u y) ⁻¹' Ioi 0
-  have hGo : IsOpen G := ((hwc.sub huc).mono subset_closure).isOpen_inter_preimage hΩo isOpen_Ioi
-  have hGc : closure G ⊆ Ω := by
-    have hT : closure G ⊆ closure Ω ∩ (fun y => w y - u y) ⁻¹' Ici 0 :=
-      closure_minimal (fun y hy => ⟨subset_closure hy.1, le_of_lt hy.2⟩)
-        ((hwc.sub huc).preimage_isClosed_of_isClosed isClosed_closure isClosed_Ici)
-    intro y hy
-    obtain ⟨hy₁, hy₂⟩ := hT hy
-    by_contra hyΩ
-    have := hfrw y (by rw [hΩo.frontier_eq]; exact ⟨hy₁, hyΩ⟩)
-    simp only [mem_preimage, mem_Ici] at hy₂
-    linarith
-  refine ⟨G, hGo, inter_subset_left, hGc, ⟨hx₀, sub_pos.2 hlt⟩, fun y hy => hy.2,
-    fun y hy => ?_⟩
-  rw [hGo.frontier_eq] at hy
-  have : ¬0 < w y - u y := fun h => hy.2 ⟨hGc hy.1, h⟩
-  linarith [not_lt.1 this]
-
-omit [Nontrivial E] [DecidablePred (· ∈ Ω)] [MeasurableSpace E] [BorelSpace E] in
-/-- If `v ≤ u` on the frontier of a bounded set `Ω` and `u x₀ < v x₀` at some `x₀ ∈ Ω`, with `v`
-convex on `Ω` and `u`, `v` continuous on its closure, then for a small `ε > 0` and a constant `b`
-the function `(1 + ε) v + b` is convex on `Ω` and continuous on its closure, lies below `u` on the
-frontier, and lies above `u` at `x₀`. -/
-private theorem exists_convexOn_lt_frontier_of_lt (hΩ : Bornology.IsBounded Ω)
-    (hv : ConvexOn ℝ Ω v) (hvc : ContinuousOn v (closure Ω))
-    (hfr : ∀ x ∈ frontier Ω, v x ≤ u x) {x₀ : E} (hx₀ : x₀ ∈ Ω)
-    (hlt : u x₀ < v x₀) :
-    ∃ ε > 0, ∃ b : ℝ, ContinuousOn (fun y => (1 + ε) * v y + b) (closure Ω) ∧
-      ConvexOn ℝ Ω (fun y => (1 + ε) * v y + b) ∧
-      (∀ y ∈ frontier Ω, (1 + ε) * v y + b < u y) ∧ u x₀ < (1 + ε) * v x₀ + b := by
-  -- Choose `ε > 0` with `ε |v| ≤ a / 4` on the closure of `Ω`, where `a = v x₀ - u x₀ > 0`, and
-  -- take `b = -a / 2`.
-  set a := v x₀ - u x₀
-  have ha : 0 < a := sub_pos.2 hlt
-  obtain ⟨M, hM⟩ := hΩ.isCompact_closure.exists_bound_of_continuousOn hvc
-  set ε := a / (4 * (|M| + 1))
-  have hε : 0 < ε := by positivity
-  have hεv : ∀ y ∈ closure Ω, |ε * v y| ≤ a / 4 := fun y hy => by
-    rw [abs_mul, abs_of_pos hε]
-    calc ε * |v y| ≤ ε * (|M| + 1) := by
-          gcongr
-          exact (hM y hy).trans ((le_abs_self M).trans (le_add_of_nonneg_right zero_le_one))
-      _ = a / 4 := by
-          simp only [ε]
-          field_simp
-  refine ⟨ε, hε, -(a / 2), (continuousOn_const.mul hvc).add continuousOn_const,
-    ?_, fun y hy => ?_, ?_⟩
-  · have hscaled : ConvexOn ℝ Ω (fun y => (1 + ε) * v y) := by
-      simpa only [Pi.smul_apply, smul_eq_mul] using hv.smul (by positivity : 0 ≤ 1 + ε)
-    exact hscaled.add_const (-(a / 2))
-  · have := (abs_le.1 (hεv y (frontier_subset_closure hy))).2
-    linarith [hfr y hy]
-  · have := (abs_le.1 (hεv x₀ (subset_closure hx₀))).1
-    linarith
-
-omit [Nontrivial E] in
-/-- Positive scaling and a constant shift of a real potential on a set, extended by `⊤` off that
-set: the Monge–Ampère measure is multiplied by `c ^ finrank ℝ E`. -/
-theorem mongeAmpereMeasure_ite_mul_add_of_pos {c : ℝ} (hc : 0 < c) (b : ℝ) :
-    mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x + b : ℝ) : EReal) else ⊤) =
-      ENNReal.ofReal (c ^ finrank ℝ E) •
-        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by
-  have hshift := mongeAmpereMeasure_ite_add_linearMap μ (U := Ω) (fun y => c * u y) 0 b
-  rw [mongeAmpereMeasure_ite_mul_of_pos μ hc] at hshift
-  simpa only [LinearMap.zero_apply, add_zero] using hshift
-
 omit [Nontrivial E] in
 /-- Let `w ≤ u` on the frontier of a bounded open subset `G` of `Ω` on which `u < w`, with `u`, `w`
 convex on `Ω` and continuous on its closure. Then the subgradient images of `u` and `w` over `G`
@@ -241,25 +168,6 @@ private theorem exists_measure_eq_subset_ball (hΩo : IsOpen Ω) (hu : ConvexOn 
   exact ⟨Su, Sw, mongeAmpereMeasure_ite_apply μ hΩo hu AbsolutelyContinuous.rfl hGo.measurableSet,
     mongeAmpereMeasure_ite_apply μ hΩo hwconv AbsolutelyContinuous.rfl hGo.measurableSet,
     hsub, hball⟩
-
-omit [Nontrivial E] [DecidablePred (· ∈ Ω)] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
-  [BorelSpace E] in
-/-- A contradiction from a ball of subgradients: if `MA_w = r • MA_v` with `r > 1`, `MA_u ≤ MA_v`,
-`MA_v G < ∞`, and `S_w ⊆ S_u` where `S_u` contains a ball and `μ S_u = MA_u G`, `μ S_w = MA_w G`.
--/
-private theorem false_of_subset_of_ball_subset {G Su Sw : Set E} {MAu MAv MAw : Measure E}
-    {r : ℝ≥0∞} (hr : 1 < r) (hMA : MAu ≤ MAv) (hwMA : MAw = r • MAv) (hSu : MAu G = μ Su)
-    (hSw : MAw G = μ Sw) (hsub : Sw ⊆ Su) (hball : ∃ c, ∃ η > 0, ball c η ⊆ Su)
-    (hfin : MAv G ≠ ∞) : False := by
-  obtain ⟨c, η, hη, hcη⟩ := hball
-  have h₁ : r * MAv G ≤ μ Su := by
-    rw [← smul_eq_mul, ← _root_.smul_apply, ← hwMA, hSw]
-    exact measure_mono hsub
-  have h₂ : μ Su ≤ MAv G := hSu ▸ Measure.le_iff'.1 hMA G
-  have h₃ : 0 < μ Su := (measure_ball_pos μ c hη).trans_le (measure_mono hcη)
-  have := ENNReal.mul_lt_mul_left (h₃.trans_le h₂).ne' hfin hr
-  rw [one_mul] at this
-  exact (this.trans_le (h₁.trans h₂)).false
 
 /-- **The comparison principle for the Monge–Ampère equation.** Let `Ω` be a bounded open subset
 of a real inner product space `E` of finite dimension `n ≥ 1`, and let `u` and `v` be convex on
