@@ -30,8 +30,6 @@ discriminant of the minimal polynomial does not divide the conductor exponent.
   when `n` lies in the conductor of `ℤ[θ]`.
 * `TauCeti.NumberField.IntegralPrimitiveElement.dvd_index_iff_dvd_exponent`: a prime divides the
   index exactly when it divides the conductor exponent.
-* `TauCeti.NumberField.IntegralPrimitiveElement.dvd_index_of_natCast_mul_mem_adjoin`: if some
-  `β ∉ ℤ[θ]` has `p β ∈ ℤ[θ]` for a prime `p`, then `p` divides the index.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_exponent_of_not_dvd_discr_minpoly`: a
   natural number not dividing `disc (minpoly ℤ θ)` does not divide the conductor exponent.
 * `TauCeti.NumberField.IntegralPrimitiveElement.not_dvd_index_of_conductor_sup_span_eq_top`: an
@@ -91,19 +89,6 @@ theorem dvd_exponent_of_dvd_index (θ : IntegralPrimitiveElement K) {p : ℕ} [F
 theorem dvd_index_iff_dvd_exponent (θ : IntegralPrimitiveElement K) {p : ℕ} [Fact p.Prime] :
     p ∣ θ.index ↔ p ∣ exponent θ.1 :=
   ⟨θ.dvd_exponent_of_dvd_index, fun h => h.trans θ.exponent_dvd_index⟩
-
-/-- If some `β ∈ 𝓞 K` outside `ℤ[θ]` has `p β ∈ ℤ[θ]`, then `p` divides the index of `ℤ[θ]`. -/
-theorem dvd_index_of_natCast_mul_mem_adjoin (θ : IntegralPrimitiveElement K) {p : ℕ}
-    [Fact p.Prime] {β : 𝓞 K} (hβ : β ∉ θ.adjoin) (hpβ : (p : 𝓞 K) * β ∈ θ.adjoin) :
-    p ∣ θ.index := by
-  have hq0 : θ.adjoin.toSubmodule.mkQ β ≠ 0 := by
-    rw [Ne, mkQ_eq_zero_iff]
-    exact hβ
-  have hpq : p • θ.adjoin.toSubmodule.mkQ β = 0 := by
-    rw [nsmul_mkQ_eq_zero_iff]
-    exact hpβ
-  rw [index_def, ← addOrderOf_eq_prime hpq hq0]
-  exact addOrderOf_dvd_natCard _
 
 /-- The prime case of `not_dvd_index_of_conductor_sup_span_eq_top`. -/
 private theorem not_dvd_index_of_conductor_sup_span_eq_top_of_prime
