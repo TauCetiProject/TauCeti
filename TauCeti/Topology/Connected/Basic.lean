@@ -93,3 +93,20 @@ theorem IsCompact.isPreconnected_image_iff_of_injOn {β : Type*} [TopologicalSpa
   rw [isPreconnected_iff_preconnectedSpace (s := K), preconnectedSpace_iff_univ,
     ← (hf.domRestrict.isClosedEmbedding hinj.injective).isInducing.isPreconnected_image, image_univ,
     range_domRestrict]
+
+/-- A preconnected set that meets `U` and misses its frontier lies in `U`. -/
+theorem IsPreconnected.subset_of_disjoint_frontier {U s : Set α} (hs : IsPreconnected s)
+    (hdisj : Disjoint s (frontier U)) (hmeet : (s ∩ U).Nonempty) : s ⊆ U := by
+  obtain ⟨p, hps, hpU⟩ := hmeet
+  -- A point of `U` off the frontier is interior, so `s` meets `interior U`.
+  have hpint : p ∈ interior U := by
+    by_contra hp
+    exact hdisj.le_bot ⟨hps, subset_closure hpU, hp⟩
+  have hdisj' : Disjoint s (frontier (interior U)) := hdisj.mono_right frontier_interior_subset
+  refine (hs.subset_of_closure_inter_subset isOpen_interior ⟨p, hps, hpint⟩
+    fun w ⟨hwcl, hws⟩ => ?_).trans interior_subset
+  by_contra hwU
+  have hwfr : w ∈ frontier (interior U) := by
+    rw [isOpen_interior.frontier_eq]
+    exact ⟨hwcl, hwU⟩
+  exact hdisj'.le_bot ⟨hws, hwfr⟩
