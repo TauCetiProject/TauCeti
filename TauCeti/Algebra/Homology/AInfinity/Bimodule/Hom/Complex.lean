@@ -46,12 +46,6 @@ variable {R : Type uR} {A : Type uA} {B : Type uB}
 
 attribute [local instance] Comodule.cofree
 
-/-- The ground ring supplies inverses on bar carriers, whose tensor-word construction
-initially exposes only additive-monoid instances. -/
-local instance {X : Type*} [AddCommMonoid X] [Module R X] :
-    AddCommGroup ((TensorWords R A ⊗[R] X) ⊗[R] TensorWords R B) :=
-  Module.addCommMonoidToAddCommGroup R
-
 namespace AInfinityBimodule
 
 variable (MM : AInfinityBimodule AA BB M) (NN : AInfinityBimodule AA BB N)
@@ -86,10 +80,6 @@ noncomputable def homCochains (p : ℤ) :
     refine ⟨?_, ?_, hFh.smul r⟩
     · rw [TensorProduct.map_smul_left, LinearMap.smul_comp, LinearMap.comp_smul, hFr]
     · rw [LinearMap.comp_smul, TensorProduct.map_smul_right, LinearMap.smul_comp, hFl]
-
-/-- Bimodule cochains form an additive group, using the inverses supplied by the ground ring. -/
-noncomputable instance homCochainsAddCommGroup (p : ℤ) : AddCommGroup (homCochains MM NN p) :=
-  inferInstance
 
 variable {MM NN}
 
@@ -214,6 +204,11 @@ theorem homDifferential_homDifferential (p : ℤ) (F : homCochains MM NN p) :
     ZeroMemClass.coe_zero, sub_zero, zero_sub]
   module
 
+/-- The bimodule cochain differential composed with itself is zero. -/
+theorem homDifferential_comp_homDifferential (p : ℤ) :
+    homDifferential MM NN (p + 1) ∘ₗ homDifferential MM NN p = 0 :=
+  LinearMap.ext (homDifferential_homDifferential p)
+
 /-- Degree-zero cochains are closed precisely when they commute with the bar differentials. -/
 theorem homDifferential_zero_eq_zero_iff (F : homCochains MM NN 0) :
     homDifferential MM NN 0 F = 0 ↔
@@ -331,7 +326,7 @@ variable (MM NN)
 noncomputable def homComplex : CochainComplex (ModuleCat R) ℤ :=
   CochainComplex.of (fun p ↦ ModuleCat.of R (homCochains MM NN p))
     (fun p ↦ ModuleCat.ofHom (homDifferential MM NN p))
-    (fun p ↦ ModuleCat.hom_ext (LinearMap.ext (homDifferential_homDifferential p)))
+    (fun p ↦ ModuleCat.hom_ext (homDifferential_comp_homDifferential p))
 
 /-- The terms of the Hom complex are the homogeneous bicomodule maps. -/
 @[simp]
@@ -343,6 +338,18 @@ theorem homComplex_X (p : ℤ) :
 theorem homComplex_d (p : ℤ) :
     (homComplex MM NN).d p (p + 1) = ModuleCat.ofHom (homDifferential MM NN p) := by
   apply CochainComplex.of_d
+
+/-- The degree-`p` term of the Hom complex is linearly equivalent to the cochains of degree `p`. -/
+noncomputable def homComplexXEquiv (p : ℤ) :
+    (homComplex MM NN).X p ≃ₗ[R] homCochains MM NN p :=
+  (eqToIso (homComplex_X MM NN p)).toLinearEquiv
+
+/-- Under `homComplexXEquiv`, the Hom complex differential is `homDifferential`. -/
+theorem homComplexXEquiv_d (p : ℤ) (F : (homComplex MM NN).X p) :
+    homComplexXEquiv MM NN (p + 1) (((homComplex MM NN).d p (p + 1)).hom F) =
+      homDifferential MM NN p (homComplexXEquiv MM NN p F) := by
+  rw [homComplex_d]
+  rfl
 
 end AInfinityBimodule
 
