@@ -474,6 +474,228 @@ private theorem isQuotientMapping_of_presentation {C : Type*} [CommRing C] [Topo
         (toCompletionLoc P T s S hden) (by ext; rfl)
   · exact isIntegral_algebraMap (R := Z.plus.map σ.toRingHom) (x := ⟨_, hfrac a⟩)
 
+/-- For a morphism of Huber pairs `f` that is topologically of finite type, there are finite
+weights `W` on `A`, generating an open ideal, such that `f(W)` generates an open ideal of `B` and
+`f(a) Xᵢ` lies in the plus ring of the completed weighted power series for `Q` for `a ∈ W i`. The
+weights `f(W)` are power bounded for the variables `Xᵢ`. -/
+private theorem exists_weights_isWeightedVarPowerBounded (f : Pair.Hom U V)
+    (hf : f.IsTopologicallyFiniteType) {Q : Fin 1 → Set B} (hQ : IsWeightFamily Q) :
+    ∃ W : Fin 1 → Set A, IsWeightFamily W ∧ IsWeightFamily (fun i ↦ f.toRingHom '' W i) ∧
+      (∀ i, (W i).Finite) ∧
+      (∀ i, W i ⊆ {a : A | algebraMap B (Completion (weightedRestrictedSubring Q hQ))
+        (f.toRingHom a) * (weightedX Q hQ i : weightedRestrictedSubring Q hQ) ∈
+          (V.weighted hQ).completion.plus}) ∧
+      IsWeightedVarPowerBounded (algebraMap B (Completion (weightedRestrictedSubring Q hQ)))
+        (fun i ↦ f.toRingHom '' W i)
+        fun i ↦ (weightedX Q hQ i : weightedRestrictedSubring Q hQ) := by
+  have hsmall (i : Fin 1) :
+      {a : A | algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (f.toRingHom a) *
+        (weightedX Q hQ i : weightedRestrictedSubring Q hQ) ∈
+          (V.weighted hQ).completion.plus} ∈ 𝓝 0 :=
+    ((V.weighted hQ).completion.isRingOfIntegralElements.isOpen.preimage
+      (((continuous_algebraMap_completion_weightedRestrictedSubring 1 B hQ).comp
+        f.continuous_toRingHom).mul_const _)).mem_nhds (by simp)
+  choose G hG hGopen using fun i ↦ exists_finset_subset_isOpen_span (hsmall i)
+  have hW : IsWeightFamily fun i ↦ (G i : Set A) := isWeightFamily_iff_isOpen_span.mpr hGopen
+  have hW' : IsWeightFamily fun i ↦ f.toRingHom '' (G i : Set A) :=
+    isWeightFamily_iff_isOpen_span.mpr fun i ↦ by
+      rw [← Ideal.map_span]
+      exact hf.isTopologicallyFiniteType_toRingHom.isOpen_map (hGopen i)
+  refine ⟨_, hW, hW', fun i ↦ (G i).finite_toSet, hG, ?_⟩
+  exact (isWeightedVarPowerBounded_iff_of_finite fun i ↦ (G i).finite_toSet.image _).mpr
+    fun i a ha ↦ by
+      obtain ⟨a, ha, rfl⟩ := ha
+      exact (V.weighted hQ).completion.isRingOfIntegralElements.isPowerBounded_of_mem (hG i ha)
+
+/-- A continuous ring homomorphism from the completed weighted power series with the extra
+unweighted variables `Xⱼ ↦ tⱼ Xᵢ` to the completed power series for `Q`, which is compatible with
+the coefficients and sends the variables as prescribed, is a morphism of pairs. -/
+private theorem exists_pairHom_toRingHom_eq_of_weightedX {Q : Fin 1 → Set B}
+    (hQ : IsWeightFamily Q) (W : Fin 1 → Set A) (f : Pair.Hom U V) {m : ℕ} (idx : Fin m → Fin 1)
+    (t : Fin m → B) (ht : ∀ j, t j ∈ Q (idx j))
+    (hWB : IsWeightFamily
+      (Fin.append (fun i ↦ f.toRingHom '' W i) fun _ : Fin m ↦ ({1} : Set B)))
+    (hG : ∀ i, W i ⊆ {a : A | algebraMap B (Completion (weightedRestrictedSubring Q hQ))
+      (f.toRingHom a) * (weightedX Q hQ i : weightedRestrictedSubring Q hQ) ∈
+        (V.weighted hQ).completion.plus})
+    (θ : Completion (weightedRestrictedSubring _ hWB) →+*
+      Completion (weightedRestrictedSubring Q hQ))
+    (hθc : Continuous θ)
+    (hθB : θ.comp (algebraMap B _) = algebraMap B (Completion (weightedRestrictedSubring Q hQ)))
+    (hθX : ∀ i, θ (weightedX _ hWB (Fin.castAdd m i) : weightedRestrictedSubring _ _) =
+      ((weightedX Q hQ i : weightedRestrictedSubring Q hQ) :
+        Completion (weightedRestrictedSubring Q hQ)))
+    (hθY : ∀ j, θ (weightedX _ hWB (Fin.natAdd 1 j) : weightedRestrictedSubring _ _) =
+      ((weightedC Q hQ (t j) * weightedX Q hQ (idx j) : weightedRestrictedSubring Q hQ) :
+        Completion (weightedRestrictedSubring Q hQ))) :
+    ∃ θ' : Pair.Hom (V.weighted hWB).completion (V.weighted hQ).completion,
+      θ'.toRingHom = θ := by
+  have hθC (a : B) : θ (algebraMap B _ a) =
+      algebraMap B (Completion (weightedRestrictedSubring Q hQ)) a :=
+    RingHom.congr_fun hθB a
+  refine ⟨{ toRingHom := θ
+            continuous_toRingHom := hθc
+            map_mem_plus := V.weighted_completion_plus_le_comap hWB _ hθc
+              (fun a ha ↦ by
+                rw [← algebraMap_completion_weightedRestrictedSubring_apply, hθC,
+                  algebraMap_completion_weightedRestrictedSubring_apply]
+                exact V.weightedC_mem_weighted_completion_plus hQ ha)
+              (fun j a ha ↦ by
+                rw [Completion.coe_mul, map_mul,
+                  ← algebraMap_completion_weightedRestrictedSubring_apply, hθC]
+                revert a ha
+                refine Fin.addCases (fun i a ha ↦ ?_) (fun l a ha ↦ ?_) j
+                · simp only [Fin.append_left] at ha
+                  obtain ⟨a, ha, rfl⟩ := ha
+                  rw [hθX]
+                  exact hG i ha
+                · simp only [Fin.append_right, Set.mem_singleton_iff] at ha
+                  obtain rfl : a = 1 := ha
+                  rw [hθY, map_one, one_mul]
+                  exact V.weightedC_mul_weightedX_mem_weighted_completion_plus hQ (ht l)) }, rfl⟩
+
+/-- Along a presentation `π` of `V` over the coefficients `f`, the image of the weights
+`W` (extended by `m` weights `{1}`) in the completion of the weighted power series over `U`
+under `π` is the corresponding weight family on `B`. -/
+private theorem image_weightedMapCompletion_weights (f : Pair.Hom U V) {k : ℕ}
+    {R : Fin k → Set A} (hR : IsWeightFamily R) (π : Pair.Hom (U.weighted hR).completion V)
+    (hπA : π.toRingHom.comp (algebraMap A (Completion (weightedRestrictedSubring R hR))) =
+      f.toRingHom)
+    (W : Fin 1 → Set A) {m : ℕ} (i : Fin (1 + m)) :
+    π.toRingHom '' (Fin.append
+      (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)
+      fun _ : Fin m ↦ ({1} : Set (Completion (weightedRestrictedSubring R hR)))) i =
+        Fin.append (fun i ↦ f.toRingHom '' W i) (fun _ : Fin m ↦ ({1} : Set B)) i :=
+  Fin.addCases
+    (fun j ↦ by
+      simp only [Fin.append_left, Set.image_image]
+      exact Set.image_congr fun a _ ↦ RingHom.congr_fun hπA a)
+    (fun j ↦ by simp) i
+
+omit [TopologicalSpace A] [IsTopologicalRing A] [IsHuberRing A] in
+/-- The finiteness of the concatenated weights `R`, `W` and `m` copies of `{1}`. -/
+private theorem finite_append_weights {k m : ℕ} {R : Fin k → Set A}
+    (hRfin : ∀ i, (R i).Finite) {W : Fin 1 → Set A} (hWfin : ∀ i, (W i).Finite)
+    (i : Fin (k + (1 + m))) :
+    (Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A)) i).Finite :=
+  Fin.addCases (fun j ↦ by simpa using hRfin j)
+    (fun j ↦ Fin.addCases (fun l ↦ by simpa using hWfin l) (fun _ ↦ by simp) j) i
+
+/-- Iterating weighted completions: the weighted completion over `R` followed by the weights `W`
+and the extra unweighted variables is compared with the weighted completion over the concatenated
+weights by an open quotient morphism `e` and a morphism `ι` in the other direction, both
+compatible with the weighted variables and the coefficients. -/
+private theorem exists_iterate_pairHoms {k m : ℕ} {R : Fin k → Set A}
+    (hR : IsWeightFamily R) {W : Fin 1 → Set A}
+    (hZ : IsWeightFamily (Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))))
+    (hWD : IsWeightFamily (Fin.append
+      (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)
+      fun _ : Fin m ↦ ({1} : Set (Completion (weightedRestrictedSubring R hR))))) :
+    ∃ (e : Pair.Hom (U.weighted hZ).completion
+        (((U.weighted hR).completion).weighted hWD).completion)
+      (ι : Pair.Hom (U.weighted hR).completion (U.weighted hZ).completion),
+      IsOpenQuotientMap e.toRingHom ∧
+      (∀ j, e.toRingHom (weightedX _ hZ (Fin.natAdd k j) : weightedRestrictedSubring _ hZ) =
+        (weightedX _ hWD j : weightedRestrictedSubring _ hWD)) ∧
+      (∀ a, e.toRingHom (ι.toRingHom a) =
+        algebraMap _ (Completion (weightedRestrictedSubring _ hWD)) a) ∧
+      (∀ a : A, ι.toRingHom (algebraMap A (Completion (weightedRestrictedSubring R hR)) a) =
+        algebraMap A (Completion (weightedRestrictedSubring _ hZ)) a) := by
+  have hRZ : ∀ i, Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))
+      (Fin.castAdd (1 + m) i) = R i := fun i ↦ by simp
+  have hZW : ∀ j, algebraMap A (Completion (weightedRestrictedSubring R hR)) ''
+      Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A)) (Fin.natAdd k j) =
+        Fin.append (fun i ↦ algebraMap A (Completion (weightedRestrictedSubring R hR)) '' W i)
+          (fun _ : Fin m ↦ ({1} : Set (Completion (weightedRestrictedSubring R hR)))) j :=
+    fun j ↦ Fin.addCases (fun i ↦ by simp)
+      (fun i ↦ by simp only [Fin.append_right, Set.image_singleton, map_one]) j
+  refine ⟨U.iterateSplitHom hR hWD hZ hRZ hZW,
+    (U.iterateJoinHom hR hWD hZ hRZ hZW).comp
+      ((U.weighted hR).completion.weightedCompletionHom hWD),
+    (U.isQuotientMapping_iterateSplitHom hR hWD hZ hRZ hZW).isOpenQuotientMap, fun j ↦ ?_,
+    fun a ↦ ?_, fun a ↦ ?_⟩
+  · rw [Pair.Hom.toRingHom_iterateSplitHom, iterateSplitHom_coe_weightedX, iterateVar_natAdd]
+  · have heι : (U.iterateSplitHom hR hWD hZ hRZ hZW).comp ((U.iterateJoinHom hR hWD hZ hRZ hZW).comp
+        ((U.weighted hR).completion.weightedCompletionHom hWD)) =
+          (U.weighted hR).completion.weightedCompletionHom hWD := by
+      simp [← Pair.Hom.comp_assoc]
+    simpa using RingHom.congr_fun (congrArg Pair.Hom.toRingHom heι) a
+  · simp [algebraMap_completion_weightedRestrictedSubring_apply]
+
+/-- Refining a quotient presentation `π` of `V` by a finite weight family `Q` on `B`: there is a
+presentation `σ`, with extra unweighted variables `Xⱼ`, of the completed power series for `Q` as an
+open quotient of a completed weighted power-series pair over `U`. It extends `π` along the
+coefficients and sends `Xⱼ` to `tⱼ Xᵢ`, where the `tⱼ` enumerate `Q`. The construction adapts the
+presentation in the proof of `TauCeti.Huber.IsTopologicallyFiniteType.comp`
+(`TauCeti/RingTheory/Huber/TopologicallyFiniteType/Comp.lean`): the second weights are moved to the
+original base and unweighted variables are added. The caller uses `Q = rationalWeight T s`. -/
+private theorem exists_openQuotientMap_of_weighted_presentation
+    (f : Pair.Hom U V) (hf : f.IsTopologicallyFiniteType) {k : ℕ} {R : Fin k → Set A}
+    (hRfin : ∀ i, (R i).Finite)
+    (hR : IsWeightFamily R) (π : Pair.Hom (U.weighted hR).completion V)
+    (hπ : π.IsQuotientMapping)
+    (hπf : π.comp (U.weightedCompletionHom hR) = f)
+    {Q : Fin 1 → Set B} (hQ : IsWeightFamily Q) (hQfin : ∀ i, (Q i).Finite) :
+    ∃ (m : ℕ) (idx : Fin m → Fin 1) (t : Fin m → B),
+      (∀ i, ∀ a ∈ Q i, ∃ j, idx j = i ∧ t j = a) ∧
+      ∃ (Z : Fin (k + (1 + m)) → Set A) (hZ : IsWeightFamily Z) (_ : ∀ i, (Z i).Finite)
+        (σ : Pair.Hom (U.weighted hZ).completion (V.weighted hQ).completion)
+        (ι : Pair.Hom (U.weighted hR).completion (U.weighted hZ).completion),
+        IsOpenQuotientMap σ.toRingHom ∧ (∀ j, (1 : A) ∈ Z (Fin.natAdd k (Fin.natAdd 1 j))) ∧
+        (∀ a, σ.toRingHom (algebraMap A (Completion (weightedRestrictedSubring Z hZ)) a) =
+          algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (f.toRingHom a)) ∧
+        (∀ a, σ.toRingHom (ι.toRingHom a) =
+          algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (π.toRingHom a)) ∧
+        ∀ j, σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd 1 j)) :
+            weightedRestrictedSubring Z hZ) =
+          algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (t j) *
+            (weightedX Q hQ (idx j) : weightedRestrictedSubring Q hQ) := by
+  classical
+  have hπA : π.toRingHom.comp (algebraMap A (Completion (weightedRestrictedSubring R hR))) =
+      f.toRingHom := by
+    rw [← Pair.Hom.toRingHom_weightedCompletionHom, ← Pair.Hom.toRingHom_comp, hπf]
+  obtain ⟨W, hW, hW', hWfin, hG, hb⟩ := exists_weights_isWeightedVarPowerBounded V f hf hQ
+  obtain ⟨m, idx, t, ht, hcover, θ, hθ, hθB, hθX, hθY⟩ :=
+    exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append hQ hQfin hW' hb
+  have hWD := (hR.image_algebraMap_completion hW).append (isWeightFamily_one_weight (k := m))
+  have hWB := hW'.append (isWeightFamily_one_weight (k := m))
+  have hmap := image_weightedMapCompletion_weights V f hR π hπA W (m := m)
+  let β := π.weightedMapCompletion hWD hWB fun i ↦ (hmap i).subset
+  have hβ : IsOpenQuotientMap β.toRingHom := by
+    rw [Pair.Hom.toRingHom_weightedMapCompletion]
+    exact hπ.isOpenQuotientMap.weightedMapCompletion hWD hWB hmap
+  have hβC (a) : β.toRingHom (algebraMap _ (Completion (weightedRestrictedSubring _ hWD)) a) =
+      algebraMap B (Completion (weightedRestrictedSubring _ hWB)) (π.toRingHom a) := by
+    rw [Pair.Hom.toRingHom_weightedMapCompletion,
+      algebraMap_completion_weightedRestrictedSubring_apply, weightedMapCompletion_coe,
+      weightedMap_weightedC, algebraMap_completion_weightedRestrictedSubring_apply]
+  have hβX (j) : β.toRingHom (weightedX _ hWD j : weightedRestrictedSubring _ hWD) =
+      (weightedX _ hWB j : weightedRestrictedSubring _ hWB) := by
+    rw [Pair.Hom.toRingHom_weightedMapCompletion, weightedMapCompletion_coe,
+      weightedMap_weightedX]
+  have hZ := hR.append (hW.append (isWeightFamily_one_weight (k := m)))
+  obtain ⟨e, ι, he, heX, heι, hιA⟩ := exists_iterate_pairHoms (U := U) hR hZ hWD
+  have hZfin := finite_append_weights hRfin hWfin (m := m)
+  have hZ1 : ∀ j : Fin m, (1 : A) ∈ Fin.append R (Fin.append W fun _ : Fin m ↦ ({1} : Set A))
+      (Fin.natAdd k (Fin.natAdd 1 j)) := fun j ↦ by simp
+  obtain ⟨θ', hθ'⟩ := exists_pairHom_toRingHom_eq_of_weightedX V hQ W f idx t ht hWB hG θ
+    hθ.continuous hθB hθX hθY
+  have hσι (a) : (θ'.comp (β.comp e)).toRingHom (ι.toRingHom a) =
+      algebraMap B (Completion (weightedRestrictedSubring Q hQ)) (π.toRingHom a) := by
+    simp only [Pair.Hom.toRingHom_comp, RingHom.comp_apply]
+    rw [heι, hβC, hθ']
+    exact RingHom.congr_fun hθB _
+  refine ⟨m, idx, t, hcover, _, hZ, hZfin, θ'.comp (β.comp e), ι, ?_, hZ1,
+    fun a ↦ ?_, hσι, fun j ↦ ?_⟩
+  · simpa only [Pair.Hom.toRingHom_comp, RingHom.coe_comp, Function.comp_assoc, hθ'] using
+      hθ.comp (hβ.comp he)
+  · rw [← hιA, hσι]
+    exact congrArg _ (RingHom.congr_fun hπA a)
+  · simp only [Pair.Hom.toRingHom_comp, RingHom.comp_apply]
+    rw [heX, hβX, hθ']
+    simpa only [Completion.coe_mul, ← algebraMap_completion_weightedRestrictedSubring_apply]
+      using hθY j
+
 /-- Composing a morphism of Huber pairs topologically of finite type with rational localisation
 is topologically of finite type, without a Tate hypothesis. This is the source-refinement input
 in Wedhorn's Proposition 8.50. -/
@@ -490,168 +712,51 @@ theorem isTopologicallyFiniteType_toCompletionLocHom_comp (f : Pair.Hom U V)
   have _ := isTopologicalRing_locUniformSpace P T s S hden
   have _ := isHuberRing_completion_locTopology P T s S hden
   obtain ⟨k, R, hRfin, hR, π, hπ, hπf⟩ := Pair.Hom.isTopologicallyFiniteType_iff.mp hf
-  let D := Completion (weightedRestrictedSubring R hR)
-  let Q := rationalWeight T s
-  have hQ : IsWeightFamily Q := isWeightFamily_rationalWeight hT
-  let E := Completion (weightedRestrictedSubring Q hQ)
-  let EV := (V.weighted hQ).completion
+  have hQ : IsWeightFamily (rationalWeight T s) := isWeightFamily_rationalWeight hT
   let ρ := weightedRationalEvalPairHom P V hP T s S hden hQ
-  let b : Fin 1 → E := fun i ↦ (weightedX Q hQ i : weightedRestrictedSubring Q hQ)
-  have hρC (a : B) : ρ.toRingHom (algebraMap B E a) = toCompletionLoc P T s S hden a := by
-    exact RingHom.congr_fun
-      (weightedRationalEvalHom_comp_algebraMap P T s S hden hQ) a
+  have hρC (a : B) : ρ.toRingHom
+      (algebraMap B (Completion (weightedRestrictedSubring (rationalWeight T s) hQ)) a) =
+        toCompletionLoc P T s S hden a :=
+    RingHom.congr_fun (weightedRationalEvalHom_comp_algebraMap P T s S hden hQ) a
   have hρX (i : Fin 1) :
-      ρ.toRingHom (b i) = ((IsLocalization.Away.invSelf s : S) : Completion S) := by
-    exact weightedRationalEvalHom_coe_weightedX P T s S hden hQ i
-  -- Adapt the presentation of `Huber.IsTopologicallyFiniteType.comp`: move the second weights
-  -- to the original base and add
-  -- unweighted variables for their generators. Choose the new weights using the plus ring.
-  have hsmall (i : Fin 1) :
-      {a : A | algebraMap B E (f.toRingHom a) * b i ∈ EV.plus} ∈ 𝓝 0 := by
-    exact ((EV.isRingOfIntegralElements.isOpen.preimage
-      (((continuous_algebraMap_completion_weightedRestrictedSubring 1 B hQ).comp
-        f.continuous_toRingHom).mul_const (b i))).mem_nhds (by simp))
-  choose G hG hGopen using fun i ↦ exists_finset_subset_isOpen_span (hsmall i)
-  let W : Fin 1 → Set A := fun i ↦ (G i : Set A)
-  have hW : IsWeightFamily W := isWeightFamily_iff_isOpen_span.mpr hGopen
-  have hW' : IsWeightFamily fun i ↦ f.toRingHom '' W i :=
-    isWeightFamily_iff_isOpen_span.mpr fun i ↦ by
-      rw [← Ideal.map_span]
-      exact hf.isTopologicallyFiniteType_toRingHom.isOpen_map (hGopen i)
-  have hb : IsWeightedVarPowerBounded (algebraMap B E) (fun i ↦ f.toRingHom '' W i) b :=
-    (isWeightedVarPowerBounded_iff_of_finite fun i ↦ (G i).finite_toSet.image _).mpr
-      fun i a ha ↦ by
-        obtain ⟨a, ha, rfl⟩ := ha
-        exact EV.isRingOfIntegralElements.isPowerBounded_of_mem (hG i ha)
-  obtain ⟨m, idx, t, ht, hcover, θ, hθ, hθB, hθX, hθY⟩ :=
-    exists_isOpenQuotientMap_completion_weightedRestrictedSubring_append hQ
-      (finite_rationalWeight T s) hW' hb
-  let WD : Fin (1 + m) → Set D := Fin.append
-    (fun i ↦ algebraMap A D '' W i) (fun _ ↦ ({1} : Set D))
-  let WB : Fin (1 + m) → Set B := Fin.append
-    (fun i ↦ f.toRingHom '' W i) (fun _ ↦ ({1} : Set B))
-  have hWD : IsWeightFamily WD :=
-    (hR.image_algebraMap_completion hW).append isWeightFamily_one_weight
-  have hWB : IsWeightFamily WB := hW'.append isWeightFamily_one_weight
-  have hπA : π.toRingHom.comp (algebraMap A D) = f.toRingHom := by
-    rw [← Pair.Hom.toRingHom_weightedCompletionHom, ← Pair.Hom.toRingHom_comp, hπf]
-  have hmap : ∀ i, π.toRingHom '' WD i = WB i := fun i ↦ Fin.addCases
-    (fun j ↦ by
-      simp only [WD, WB, Fin.append_left, Set.image_image]
-      exact Set.image_congr fun a _ ↦ RingHom.congr_fun hπA a)
-    (fun j ↦ by simp [WD, WB]) i
-  let β := weightedMapCompletion π.continuous_toRingHom hWD hWB fun i ↦ (hmap i).subset
-  have hβ : IsOpenQuotientMap β := hπ.isOpenQuotientMap.weightedMapCompletion hWD hWB hmap
-  let Z : Fin (k + (1 + m)) → Set A := Fin.append R (Fin.append W fun _ ↦ ({1} : Set A))
-  have hZ : IsWeightFamily Z := hR.append (hW.append isWeightFamily_one_weight)
-  have hRZ : ∀ i, Z (Fin.castAdd (1 + m) i) = R i := fun i ↦ by simp [Z]
-  have hZW : ∀ j, algebraMap A D '' Z (Fin.natAdd k j) = WD j := fun j ↦
-    Fin.addCases (fun i ↦ by simp [Z, WD]) (fun i ↦ by simp [Z, WD]) j
-  let e := U.iterateSplitHom hR hWD hZ hRZ hZW
-  have heX (j : Fin (1 + m)) :
-      e.toRingHom (weightedX Z hZ (Fin.natAdd k j) : weightedRestrictedSubring Z hZ) =
-        (weightedX WD hWD j : weightedRestrictedSubring WD hWD) := by
-    dsimp only [e]
-    rw [Pair.Hom.toRingHom_iterateSplitHom, iterateSplitHom_coe_weightedX,
-      iterateVar_natAdd]
-  -- Only plus-ring preservation is needed for the two middle maps. Their composite will be
-  -- a quotient mapping by the rational generator criterion, avoiding intermediate integrality.
-  have hθC (a : B) : θ (algebraMap B _ a) = algebraMap B E a :=
-    RingHom.congr_fun hθB a
-  let θ' : Pair.Hom (V.weighted hWB).completion EV :=
-    { toRingHom := θ
-      continuous_toRingHom := hθ.continuous
-      map_mem_plus := V.weighted_completion_plus_le_comap hWB EV hθ.continuous
-        (fun a ha ↦ by
-          rw [← algebraMap_completion_weightedRestrictedSubring_apply, hθC,
-            algebraMap_completion_weightedRestrictedSubring_apply]
-          exact V.weightedC_mem_weighted_completion_plus hQ ha)
-        (fun j a ha ↦ by
-          rw [Completion.coe_mul, map_mul,
-            ← algebraMap_completion_weightedRestrictedSubring_apply, hθC]
-          revert a ha
-          refine Fin.addCases (fun i a ha ↦ ?_) (fun l a ha ↦ ?_) j
-          · simp only [WB, Fin.append_left] at ha
-            obtain ⟨a, ha, rfl⟩ := ha
-            rw [hθX]
-            exact hG i ha
-          · simp only [WB, Fin.append_right, Set.mem_singleton_iff] at ha
-            obtain rfl : a = 1 := ha
-            rw [hθY, map_one, one_mul]
-            exact V.weightedC_mul_weightedX_mem_weighted_completion_plus hQ (ht l)) }
-  have hθ'Y (j : Fin m) :
-      θ'.toRingHom (weightedX WB hWB (Fin.natAdd 1 j) : weightedRestrictedSubring WB hWB) =
-        algebraMap B E (t j) * b (idx j) := by
-    simpa only [θ', Completion.coe_mul,
-      ← algebraMap_completion_weightedRestrictedSubring_apply] using hθY j
-  let β' : Pair.Hom (((U.weighted hR).completion).weighted hWD).completion
-      (V.weighted hWB).completion :=
-    { toRingHom := β
-      continuous_toRingHom := continuous_weightedMapCompletion ..
-      map_mem_plus := Pair.weighted_completion_plus_le_comap_weightedMapCompletion _ π hWB
-        fun i ↦ (hmap i).subset }
-  have hβX (j : Fin (1 + m)) :
-      β'.toRingHom (weightedX WD hWD j : weightedRestrictedSubring WD hWD) =
-        (weightedX WB hWB j : weightedRestrictedSubring WB hWB) := by
-    dsimp only [β', β]
-    rw [weightedMapCompletion_coe, weightedMap_weightedX]
-  let σ := ρ.comp (θ'.comp (β'.comp e))
-  have hσ : IsOpenQuotientMap σ.toRingHom := by
-    simpa only [σ, Pair.Hom.toRingHom_comp, RingHom.coe_comp, Function.comp_assoc]
-      using (isQuotientMapping_weightedRationalEvalPairHom
-        P V hP T s S hden hQ).isOpenQuotientMap.comp (hθ.comp (hβ.comp
-          (U.isQuotientMapping_iterateSplitHom hR hWD hZ hRZ hZW).isOpenQuotientMap))
-  -- The first-block inclusion retains the original plus-ring presentation of B.
-  let ι := (U.iterateJoinHom hR hWD hZ hRZ hZW).comp
-    ((U.weighted hR).completion.weightedCompletionHom hWD)
-  have hσι (a : D) : σ.toRingHom (ι.toRingHom a) =
+      ρ.toRingHom (weightedX (rationalWeight T s) hQ i : weightedRestrictedSubring _ hQ) =
+        ((IsLocalization.Away.invSelf s : S) : Completion S) :=
+    weightedRationalEvalHom_coe_weightedX P T s S hden hQ i
+  obtain ⟨m, idx, t, hcover, Z, hZ, hZfin, σ', ι, hσ', hZ1, hσ'A, hσ'ι, hσ'X⟩ :=
+    exists_openQuotientMap_of_weighted_presentation V f hf hRfin hR π hπ hπf hQ
+      (finite_rationalWeight T s)
+  let σ := ρ.comp σ'
+  have hσι (a) : σ.toRingHom (ι.toRingHom a) =
       toCompletionLoc P T s S hden (π.toRingHom a) := by
-    have heι : e.comp ι = (U.weighted hR).completion.weightedCompletionHom hWD := by
-      simp [e, ι, ← Pair.Hom.comp_assoc]
-    have hβC (a : D) : β (algebraMap D _ a) = algebraMap B _ (π.toRingHom a) := by
-      dsimp only [β, D]
-      rw [algebraMap_completion_weightedRestrictedSubring_apply, weightedMapCompletion_coe,
-        weightedMap_weightedC, algebraMap_completion_weightedRestrictedSubring_apply]
-    have heι' := RingHom.congr_fun (congrArg Pair.Hom.toRingHom heι) a
-    simp only [Pair.Hom.toRingHom_comp, RingHom.comp_apply,
-      Pair.Hom.toRingHom_weightedCompletionHom] at heι'
     simp only [σ, Pair.Hom.toRingHom_comp, RingHom.comp_apply]
-    rw [heι', hβC, hθC, hρC]
+    rw [hσ'ι, hρC]
   have hσX (j : Fin m) :
       σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd 1 j)) :
         weightedRestrictedSubring Z hZ) = (divBy (t j) s : S) := by
     simp only [σ, Pair.Hom.toRingHom_comp, RingHom.comp_apply]
-    rw [heX, hβX, hθ'Y, map_mul, hρC, hρX, toCompletionLoc_apply, ← Completion.coe_mul]
+    rw [hσ'X, map_mul, hρC, hρX, toCompletionLoc_apply, ← Completion.coe_mul]
     exact congrArg (fun x : S ↦ (x : Completion S)) (algebraMap_mul_invSelf (t j) s)
   have hσquot : σ.IsQuotientMapping := by
-    apply isQuotientMapping_of_presentation P V hP T s S hden π hπ σ hσ ι hσι
+    refine isQuotientMapping_of_presentation P V hP T s S hden π hπ σ ?_ ι hσι ?_
+    · simpa only [σ, Pair.Hom.toRingHom_comp, RingHom.coe_comp] using
+        (isQuotientMapping_weightedRationalEvalPairHom
+          P V hP T s S hden hQ).isOpenQuotientMap.comp hσ'
     intro a
     -- Every rational fraction is the image of an extra unweighted variable.
     obtain ⟨j, _, htj⟩ := hcover 0 a (by
-      dsimp only [Q]
       rw [rationalWeight_apply]
       exact Set.mem_insert_of_mem s a.2)
-    let l := Fin.natAdd k (Fin.natAdd 1 j)
-    have hl : (1 : A) ∈ Z l := by simp [l, Z]
-    have hmem := U.weightedC_mul_weightedX_mem_weighted_completion_plus hZ hl
+    have hmem := U.weightedC_mul_weightedX_mem_weighted_completion_plus hZ (hZ1 j)
     simp only [map_one, one_mul] at hmem
-    have hval : σ.toRingHom (weightedX Z hZ l : weightedRestrictedSubring Z hZ) =
-        (divBy (a : B) s : S) := by
-      simpa only [l, htj] using hσX j
+    have hval : σ.toRingHom (weightedX Z hZ (Fin.natAdd k (Fin.natAdd 1 j)) :
+        weightedRestrictedSubring Z hZ) = (divBy (a : B) s : S) := by
+      simpa only [htj] using hσX j
     exact Subring.mem_map.mpr ⟨_, hmem, hval⟩
-  refine Pair.Hom.isTopologicallyFiniteType_iff.mpr
-    ⟨k + (1 + m), Z, fun i ↦ Fin.addCases (fun j ↦ by simpa [Z] using hRfin j)
-      (fun j ↦ Fin.addCases (fun l ↦ by simpa only [Z, Fin.append_right, Fin.append_left]
-        using (G l).finite_toSet)
-        (fun _ ↦ by simp [Z]) j) i, hZ, σ, hσquot, ?_⟩
+  refine Pair.Hom.isTopologicallyFiniteType_iff.mpr ⟨k + (1 + m), Z, hZfin, hZ, σ, hσquot, ?_⟩
   apply Pair.Hom.ext
   ext a
-  have hιA : ι.toRingHom (algebraMap A D a) = algebraMap A _ a := by
-    dsimp only [ι, D]
-    simp [algebraMap_completion_weightedRestrictedSubring_apply]
-  simpa only [Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_weightedCompletionHom,
-    RingHom.comp_apply, ← hιA, hσι, toRingHom_toCompletionLocHom] using
-    congrArg (toCompletionLoc P T s S hden) (RingHom.congr_fun hπA a)
+  simp only [σ, Pair.Hom.toRingHom_comp, Pair.Hom.toRingHom_weightedCompletionHom,
+    RingHom.comp_apply, hσ'A, hρC, toRingHom_toCompletionLocHom]
 
 end TauCeti.Huber.PairOfDefinition
 
