@@ -128,6 +128,46 @@ theorem exists_gridValue_cutDist_le (ν : Measure κ) [IsProbabilityMeasure ν] 
 
 end Grid
 
+section Mismatch
+
+variable {κ : Type*} [MeasurableSpace κ]
+
+/-- **The mismatch set has square-measure at most twice the off-diagonal mass.**  For a probability
+measure `π` on pairs, the set of pairs of pairs with a mismatched coordinate -- the first pair or
+the second pair off the diagonal -- has `π.prod π`-measure at most twice the mass of `π` off the
+diagonal. -/
+private theorem prod_mismatch_le_two_mul (π : Measure (κ × κ)) [IsProbabilityMeasure π] :
+    (π.prod π) (((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)) ≤ 2 * π (Set.diagonal κ)ᶜ := by
+  calc _ ≤ (π.prod π) ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
+        (π.prod π) ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
+    _ = π (Set.diagonal κ)ᶜ + π (Set.diagonal κ)ᶜ := by
+        rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
+    _ = 2 * π (Set.diagonal κ)ᶜ := (two_mul _).symm
+
+variable [MeasurableSingletonClass κ] [Countable κ] {ν ν' : Measure κ}
+
+/-- The overlaid difference of two weighted graphs with the same edge weights is bounded by the
+indicator of the pairs of pairs with a mismatched coordinate, where it vanishes otherwise. -/
+private theorem abs_overlayDiff_ofMatrix_le_indicator [IsProbabilityMeasure ν]
+    [IsProbabilityMeasure ν'] (π : Measure (κ × κ)) (b : κ → κ → Set.Icc (0 : ℝ) 1)
+    (hb : ∀ i j, b i j = b j i) (z : (κ × κ) × (κ × κ)) :
+    |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2| ≤
+      (((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+        ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)).indicator
+          (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
+  by_cases hz : z ∈ ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
+      ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ)
+  · rw [Set.indicator_of_mem hz, Pi.one_apply]
+    exact abs_overlayDiff_apply_le_one _ _ _ _ _
+  · rw [Set.indicator_of_notMem hz]
+    simp only [Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and, not_or,
+      Set.mem_compl_iff, not_not, Set.mem_diagonal_iff] at hz
+    rw [overlayDiff_apply, Graphon.ofMatrix_apply, Graphon.ofMatrix_apply, hz.1, hz.2, sub_self,
+      abs_zero]
+
+end Mismatch
+
 section WeightShift
 
 variable {κ : Type*} [Fintype κ] [MeasurableSpace κ] [MeasurableSingletonClass κ]
@@ -166,18 +206,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
     ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) ∪
       ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) with hB
   have hBmeas : MeasurableSet B := MeasurableSet.of_discrete
-  have hle : ∀ z : (κ × κ) × (κ × κ),
-      |overlayDiff (Graphon.ofMatrix ν b hb) (Graphon.ofMatrix ν' b hb) π z.1 z.2|
-        ≤ B.indicator (1 : ((κ × κ) × (κ × κ)) → ℝ) z := by
-    intro z
-    by_cases hz : z ∈ B
-    · rw [Set.indicator_of_mem hz, Pi.one_apply]
-      exact abs_overlayDiff_apply_le_one _ _ _ _ _
-    · rw [Set.indicator_of_notMem hz]
-      simp only [hB, Set.mem_union, Set.mem_prod, Set.mem_univ, and_true, true_and, not_or,
-        Set.mem_compl_iff, not_not, Set.mem_diagonal_iff] at hz
-      rw [overlayDiff_apply, Graphon.ofMatrix_apply, Graphon.ofMatrix_apply, hz.1, hz.2, sub_self,
-        abs_zero]
+  have hle := abs_overlayDiff_ofMatrix_le_indicator (ν := ν) (ν' := ν') π b hb
   refine (cutDist_le _ _ hπ).trans ?_
   refine (cutNorm_le_integral_abs _ _).trans ?_
   have hint : Integrable (fun z : (κ × κ) × (κ × κ) =>
@@ -194,13 +223,7 @@ theorem cutDist_ofMatrix_le_two_mul_sum_tsub [IsProbabilityMeasure ν] [IsProbab
           norm_num
         rw [measureReal_def, htwo]
         refine ENNReal.toReal_mono (ENNReal.mul_ne_top (by simp) hrne) ?_
-        calc (π.prod π) B
-            ≤ (π.prod π) ((Set.diagonal κ)ᶜ ×ˢ (Set.univ : Set (κ × κ))) +
-              (π.prod π) ((Set.univ : Set (κ × κ)) ×ˢ (Set.diagonal κ)ᶜ) := measure_union_le _ _
-          _ = π (Set.diagonal κ)ᶜ + π (Set.diagonal κ)ᶜ := by
-              rw [Measure.prod_prod, Measure.prod_prod, measure_univ, mul_one, one_mul]
-          _ ≤ ∑ k, (ν {k} - ν' {k}) + ∑ k, (ν {k} - ν' {k}) := add_le_add hoff hoff
-          _ = 2 * ∑ k, (ν {k} - ν' {k}) := (two_mul _).symm
+        exact (prod_mismatch_le_two_mul π).trans (by gcongr)
 
 /-- Moving a weighting `ρ` to one that keeps `min (ρ {k}) (σ {k})` at every vertex but `k₀` costs at
 most twice the mass by which `ρ` exceeds `σ`. -/
