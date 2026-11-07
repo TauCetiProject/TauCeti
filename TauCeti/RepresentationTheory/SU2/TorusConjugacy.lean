@@ -14,9 +14,8 @@ public import TauCeti.RepresentationTheory.SU2.Weyl.Basic
 
 The maximal torus `T` of `SU(2)` built in `TauCeti/RepresentationTheory/SU2/Basic.lean` meets
 every conjugacy class: for every `g : SU(2)` there is `u : SU(2)` with `u g u⁻¹ ∈ T`. This is the
-torus-conjugacy input the compact-group roadmap asks for before the classification of the
-irreducible representations of `SU(2)`, and it is what makes a class function on `SU(2)`
-determined by its restriction to the circle.
+input to the classification of the irreducible representations of `SU(2)`, and it makes a class
+function on `SU(2)` determined by its restriction to the circle.
 
 The proof is unitary diagonalisation. A special unitary matrix is normal, so the spectral theorem
 for normal matrices (`Matrix.exists_mem_unitaryGroup_star_mul_mul_eq_diagonal`) diagonalises it by
