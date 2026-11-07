@@ -38,6 +38,8 @@ quadratic forms with the subgroup preserving both summands.
   basis `(b × c) × d` to `b × (c × d)`, up to relabelling the index.
 * `LinearEquiv.det_skewProd`: the same determinant formula for block triangular
   automorphisms, independently of the off-diagonal block.
+* `LinearMap.range_eq_graph_of_fst_eq_equiv`: a linear map into `M₁ × M₂` whose first component
+  is a linear equivalence `e` has range the graph of `snd ∘ L ∘ e⁻¹`.
 * `TauCeti.LinearMap.lsmul_restrictScalars_prodMap`: multiplication by a scalar on a product of
   complex modules is the product map of the two multiplications.
 -/
@@ -125,6 +127,29 @@ theorem det_skewProd (e₁ : M₁ ≃ₗ[R] M₁) (e₂ : M₂ ≃ₗ[R] M₂) (
 end CommRing
 
 end LinearEquiv
+
+namespace LinearMap
+
+variable {R M M₁ M₂ : Type*} [Semiring R] [AddCommMonoid M] [Module R M] [AddCommMonoid M₁]
+  [Module R M₁] [AddCommMonoid M₂] [Module R M₂]
+
+/-- If the first component `u ↦ (L u).1` of a linear map `L : M → M₁ × M₂` is a linear
+equivalence `e : M ≃ M₁`, then the range of `L` is the graph of `snd ∘ L ∘ e⁻¹ : M₁ → M₂`. -/
+theorem range_eq_graph_of_fst_eq_equiv (L : M →ₗ[R] M₁ × M₂) (e : M ≃ₗ[R] M₁)
+    (he : ∀ u, e u = (L u).1) :
+    range L = graph (snd R M₁ M₂ ∘ₗ L ∘ₗ e.symm.toLinearMap) := by
+  ext ⟨x, y⟩
+  simp only [mem_range, mem_graph_iff, coe_comp, Function.comp_apply, LinearEquiv.coe_coe,
+    snd_apply]
+  constructor
+  · rintro ⟨u, hu⟩
+    have hx : e u = x := by rw [he, hu]
+    rw [← hx, e.symm_apply_apply, hu]
+  · rintro rfl
+    refine ⟨e.symm x, Prod.ext ?_ rfl⟩
+    rw [← he, e.apply_symm_apply]
+
+end LinearMap
 
 namespace Module.Basis
 
