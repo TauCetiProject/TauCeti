@@ -227,10 +227,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_eq_lagrangianPathAction_sub
   have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
   -- A Hamiltonian independent of `s` has no `s`-derivative.
-  have hcurv (z : ℝ × ℝ) : fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 (u z)) z stdComplexLineReal = 0 := by
-    rw [← hamiltonianCurvature_zero_left ω]
-    exact hamiltonianCurvature_cylindrical ω H z (u z)
-  simpa [hcurv] using
+  simpa [fderiv_cylindrical_apply_stdComplexLineReal] using
     hω.integral_floerEnergyDensity_eq_lagrangianPathAction_sub_sub_integral hα hH' hu hi₀ hf₀ hL₀
       hc₀ hi₁ hf₁ hL₁ hc₁ hab hu₀ hu₁
 
@@ -286,12 +283,12 @@ theorem IsNondegenerate.lagrangianPathAction_le_lagrangianPathAction
         ω.hamiltonianVectorField (H z.2) (u z)) = 0) :
     lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (b, t)) (c₀ b) (c₁ b) ≤
       lagrangianPathAction α.1 f₀ f₁ H (fun t ↦ u (a, t)) (c₀ a) (c₁ a) := by
-  have h := hω.integral_floerEnergyDensity_eq_lagrangianPathAction_sub hα hH hu hi₀ hf₀ hL₀ hc₀
-    hi₁ hf₁ hL₁ hc₁ hab hu₀ hu₁
-  have hnonneg := setIntegral_nonneg (μ := volume) (measurableSet_Icc.prod measurableSet_Icc)
-    fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2) (hJ z hz)
-      (hfloer z hz)
-  linarith
+  have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
+    hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
+  -- A Hamiltonian independent of `s` has no `s`-derivative.
+  simpa [fderiv_cylindrical_apply_stdComplexLineReal] using
+    hω.lagrangianPathAction_le_lagrangianPathAction_sub_integral hα hH' hu hi₀ hf₀ hL₀ hc₀ hi₁ hf₁
+      hL₁ hc₁ hab hu₀ hu₁ J hJ hfloer
 
 /-- **The energy of a continuation strip.** Let `ω = dα` be a nondegenerate exact two-form on a
 finite-dimensional manifold, `H` a `C¹` family of Hamiltonians `H(s, t, x)`, and `u` a `C²` map
@@ -385,23 +382,12 @@ theorem IsNondegenerate.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPat
     ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
       ENNReal.ofReal (A₁ - A₂) := by
-  have hRsub (n : ℕ) : Icc (-(n : ℝ)) n ×ˢ Icc (0 : ℝ) 1 ⊆ (univ : Set ℝ) ×ˢ Icc 0 1 :=
-    prod_mono (subset_univ _) le_rfl
   have hH' : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry fun (w : ℝ × ℝ) ↦ H w.2) :=
     hH.comp ((contDiff_snd.contMDiff.comp contMDiff_fst).prodMk contMDiff_snd)
-  have hcont := hω.continuous_floerEnergyDensity_zero_left hH' (hu.of_le one_le_two)
-  -- Exhaust the strip by the rectangles `[-n, n] × [0, 1]`, on which the energy is the drop of
-  -- the action. The action is negated so that the exhaustion lemma applies to an increasing
-  -- quantity.
-  refine (setLIntegral_univ_prod_eq_ofReal_of_tendsto (F := fun s ↦ -lagrangianPathAction α.1 f₀
-    f₁ H (fun t ↦ u (s, t)) (c₀ s) (c₁ s)) (fun n ↦ ?_) hbot.neg htop.neg).trans
-    (by rw [neg_sub_neg])
-  rw [neg_sub_neg, ← hω.integral_floerEnergyDensity_eq_lagrangianPathAction_sub hα hH hu hi₀ hf₀
-      hL₀ hc₀ hi₁ hf₁ hL₁ hc₁ (neg_le_self n.cast_nonneg) (fun s _ ↦ hu₀ s) fun s _ ↦ hu₁ s,
-    ofReal_integral_eq_lintegral_ofReal
-      (hcont.continuousOn.integrableOn_compact (isCompact_Icc.prod isCompact_Icc))
-      (ae_restrict_of_forall_mem (measurableSet_Icc.prod measurableSet_Icc)
-        fun z hz ↦ hω.floerEnergyDensity_zero_left_nonneg (Kt := fun w ↦ H w.2)
-          (hJ z (hRsub n hz)) (hfloer z (hRsub n hz)))]
+  -- A Hamiltonian independent of `s` has no `s`-derivative.
+  simpa [fderiv_cylindrical_apply_stdComplexLineReal] using
+    hω.lintegral_floerEnergyDensity_eq_of_tendsto_lagrangianPathAction_sub_integral hα hH' hu hi₀
+      hf₀ hL₀ hc₀ hi₁ hf₁ hL₁ hc₁ hu₀ hu₁ J hJ hfloer
+      (by simp [fderiv_cylindrical_apply_stdComplexLineReal]) hbot htop
 
 end TauCeti.SmoothTwoForm
