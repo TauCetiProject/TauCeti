@@ -118,9 +118,11 @@ section Field
 
 variable {k : Type u} {H : Type v} [Field k] [CommRing H] [HopfAlgebra k H] (I : HopfIdeal k H)
 
-/-- The second half of `mem_span_coinvariants_of_isLinearlyReductive`: if `x ⊗ 1` is invariant in
-the cofree comodule and lies in the span of the values of the comodule morphisms `f b` out of the
-subcomodule `I`, then `x` is in the span of the coinvariants with vanishing counit. -/
+/-- The second half of `mem_span_coinvariants_of_isLinearlyReductive`. If `H ⧸ I` is linearly
+reductive, `W` is a subcomodule of `H` with the same elements as the Hopf ideal `I`, and each
+comodule morphism `f b : W → H ⊗ (H ⧸ I)` is the coaction multiplied by `b ⊗ 1` (this is `hf`),
+then any `x` with `x ⊗ 1` invariant and in `⨆ b, range (f b)` lies in the ideal spanned by the
+coinvariants of `I` with vanishing counit. -/
 private theorem mem_span_coinvariants_of_mem_iSup_range
     [Comodule k (H ⧸ I.toIdeal) H] [Comodule k (H ⧸ I.toIdeal) (H ⊗[k] (H ⧸ I.toIdeal))]
     (hcoact : ∀ h : H, Comodule.coact (R := k) (C := H ⧸ I.toIdeal) (M := H) h =
