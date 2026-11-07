@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Asymptotic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 
 /-!
 # Corner asymptotics of the Schwarz--Christoffel map
@@ -153,8 +154,8 @@ private theorem tendsto_schwarzChristoffelCornerRemainder_deriv_div_cpow
     field_simp
   simpa only [sub_self] using h.congr' heq.symm
 
-/-- A radial segment from `p` towards a point of `ball p ρ ∩ upperHalfPlaneSet` stays in that
-set. -/
+/-- For a point `z` of `ball p ρ ∩ upperHalfPlaneSet`, the points `p + t * (z - p)` with
+`0 < t ≤ 1` of the radial segment from `p` (the endpoint `p` excluded) lie in that set. -/
 private theorem radial_mem_ball_inter_upperHalfPlaneSet {p ρ : ℝ} {z : ℂ}
     (hz : z ∈ Metric.ball (p : ℂ) ρ ∩ upperHalfPlaneSet) {t : ℝ} (ht0 : 0 < t) (ht1 : t ≤ 1) :
     (p : ℂ) + (t : ℂ) * (z - (p : ℂ)) ∈ Metric.ball (p : ℂ) ρ ∩ upperHalfPlaneSet := by
@@ -170,8 +171,8 @@ private theorem radial_mem_ball_inter_upperHalfPlaneSet {p ρ : ℝ} {z : ℂ}
 
 /-- The derivative of the corner remainder along a radial segment from `p`. -/
 private theorem hasDerivAt_schwarzChristoffelCornerRemainder_radial (a e : ι → ℝ)
-    (z₀ : UpperHalfPlane) (p : ℝ) {ρ : ℝ} (he : -1 < ∑ i with a i = p, e i) {z : ℂ}
-    (hz : z ∈ Metric.ball (p : ℂ) ρ ∩ upperHalfPlaneSet) {t : ℝ} (ht0 : 0 < t) (ht1 : t ≤ 1) :
+    (z₀ : UpperHalfPlane) (p : ℝ) (he : -1 < ∑ i with a i = p, e i) {z : ℂ}
+    (hz : z ∈ upperHalfPlaneSet) {t : ℝ} (ht0 : 0 < t) :
     HasDerivAt (fun t : ℝ => schwarzChristoffelCornerRemainder a e z₀ p
         ((p : ℂ) + (t : ℂ) * (z - (p : ℂ))))
       ((z - (p : ℂ)) * (schwarzChristoffelIntegrand a e ((p : ℂ) + (t : ℂ) * (z - (p : ℂ))) -
@@ -181,23 +182,11 @@ private theorem hasDerivAt_schwarzChristoffelCornerRemainder_radial (a e : ι �
   have hinner : HasDerivAt (fun t : ℝ => (p : ℂ) + (t : ℂ) * (z - (p : ℂ))) (z - (p : ℂ)) t := by
     simpa using ((Complex.ofRealCLM.hasDerivAt (x := t)).mul_const (z - (p : ℂ))).const_add
       (p : ℂ)
-  have houter := hasDerivAt_schwarzChristoffelCornerRemainder a e z₀ p
-    (radial_mem_ball_inter_upperHalfPlaneSet hz ht0 ht1).2 he
+  have hmem : (p : ℂ) + (t : ℂ) * (z - (p : ℂ)) ∈ upperHalfPlaneSet := by
+    have hzim : 0 < z.im := hz
+    simpa using mul_pos ht0 hzim
+  have houter := hasDerivAt_schwarzChristoffelCornerRemainder a e z₀ p hmem he
   simpa [Function.comp_def] using houter.scomp t hinner
-
-/-- The integral of the radial majorant `ε * N ^ (T + 1) * t ^ T` over `[δ, 1]`. -/
-private theorem integral_mul_rpow_le {T ε N δ : ℝ} (hT : -1 < T) (hε : 0 ≤ ε) (hN : 0 ≤ N)
-    (hδ : δ ∈ Ioo (0 : ℝ) 1) :
-    (∫ t in δ..1, ε * N ^ (T + 1) * t ^ T) ≤ ε / (T + 1) * N ^ (T + 1) := by
-  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hT), Real.one_rpow]
-  have hδpow : 0 ≤ δ ^ (T + 1) := Real.rpow_nonneg hδ.1.le _
-  have hNpow : 0 ≤ N ^ (T + 1) := Real.rpow_nonneg hN _
-  calc
-    ε * N ^ (T + 1) * ((1 - δ ^ (T + 1)) / (T + 1))
-        ≤ ε * N ^ (T + 1) * (1 / (T + 1)) := by
-          gcongr
-          all_goals linarith
-    _ = ε / (T + 1) * N ^ (T + 1) := by ring
 
 /-- A radial segment estimate for the corner remainder. -/
 private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
@@ -229,8 +218,8 @@ private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
   have hγderiv : ∀ t ∈ Icc δ 1, HasDerivAt (fun t : ℝ => R (γ t))
       ((z - q) * (schwarzChristoffelIntegrand a e (γ t) - C *
         (γ t - q) ^ (T : ℂ))) t :=
-    fun t ht => hasDerivAt_schwarzChristoffelCornerRemainder_radial a e z₀ p he hz
-      (hδ.1.trans_le ht.1) ht.2
+    fun t ht => hasDerivAt_schwarzChristoffelCornerRemainder_radial a e z₀ p he hz.2
+      (hδ.1.trans_le ht.1)
   have hderiv_le : ∀ t ∈ Icc δ 1, ‖deriv (fun t : ℝ => R (γ t)) t‖ ≤ B t := by
     intro t ht
     rw [(hγderiv t ht).deriv, norm_mul]
@@ -262,7 +251,7 @@ private theorem norm_schwarzChristoffelCornerRemainder_sub_le (a e : ι → ℝ)
   have hmain := norm_sub_le_integral_of_norm_deriv_le_of_le hδ.2.le hcont hdiff
     (.of_forall fun t ht => hderiv_le t (Ioo_subset_Icc_self ht)) hBi
   have hBint : (∫ t in δ..1, B t) ≤ ε / (T + 1) * ‖z - q‖ ^ (T + 1) :=
-    integral_mul_rpow_le (by simpa [T] using he) hε hnorm.le hδ
+    integral_mul_rpow_le (by simpa [T] using he) hε hnorm.le hδ.1.le
   simpa [γ, R, q, T] using hmain.trans hBint
 
 /-- The corner remainder is bounded by an arbitrarily small multiple of the leading power. -/
