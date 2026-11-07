@@ -113,13 +113,10 @@ theorem trace_val_eq_of_isConj {g h : GL n R} (hgh : IsConj g h) :
 central. -/
 theorem eq_of_mem_range_scalar_of_isConj {g h : GL n R}
     (hg : (g : Matrix n n R) ∈ Set.range (Matrix.scalar n)) (hgh : IsConj g h) : g = h := by
-  obtain ⟨c, hc⟩ := isConj_iff.1 hgh
+  refine hgh.eq_of_left_mem_center (Subgroup.mem_center_iff.2 fun c ↦ Units.ext ?_)
   obtain ⟨a, ha⟩ := hg
-  have hcomm : c * g = g * c := by
-    refine Units.ext ?_
-    rw [Units.val_mul, Units.val_mul, ← ha]
-    exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
-  rw [← hc, hcomm, mul_assoc, mul_inv_cancel, mul_one]
+  rw [Units.val_mul, Units.val_mul, ← ha]
+  exact (Matrix.scalar_commute a (Commute.all a) (c : Matrix n n R)).symm.eq
 
 /-- **A scalar element and a non-scalar element of `GL n R` are never conjugate.** The class of a
 scalar element is a single point, so it cannot contain a non-scalar one; being scalar is therefore a

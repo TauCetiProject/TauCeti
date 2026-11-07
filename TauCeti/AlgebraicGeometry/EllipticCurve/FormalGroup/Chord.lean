@@ -5,11 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.RingTheory.PowerSeries.Derivative
 public import Mathlib.RingTheory.MvPowerSeries.Inverse
 public import TauCeti.AlgebraicGeometry.EllipticCurve.FormalGroup.WExpansion
 public import TauCeti.RingTheory.MvPowerSeries.Equiv
 public import TauCeti.RingTheory.MvPowerSeries.Inverse
 public import TauCeti.RingTheory.MvPowerSeries.NonZeroDivisors
+import TauCeti.RingTheory.MvPowerSeries.Derivative
 
 /-!
 # The chord through two points of a Weierstrass curve near the origin
@@ -43,6 +45,8 @@ from `formalThirdRoot` by composing with the formal inverse, which is left to a 
 * `WeierstrassCurve.coeff_formalSlope`, `WeierstrassCurve.formalIntercept_def` and
   `WeierstrassCurve.formalThirdRoot_def`: the defining formulas, as named lemmas. Rewrite with
   these rather than unfolding the definitions.
+* `WeierstrassCurve.subst_X_formalSlope`: on the diagonal the chord slope is the derivative
+  of the `w`-expansion, so the chord specializes to the tangent.
 * `WeierstrassCurve.formalSlope_mul_X_add`: the defining property
   `λ z₂ + w(z₁) = λ z₁ + w(z₂)` of the slope over a commutative semiring. Over a ring this
   becomes `λ · (z₂ - z₁) = w(z₂) - w(z₁)`, which justifies calling it a divided difference.
@@ -185,6 +189,25 @@ end CommSemiring
 section CommRing
 
 variable {R : Type*} [CommRing R] (W : WeierstrassCurve R)
+
+/-- On the diagonal, the chord slope is the tangent slope, namely the derivative of the
+`w`-expansion. -/
+theorem subst_X_formalSlope :
+    subst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) W.formalSlope =
+    PowerSeries.derivative W.formalW := by
+  have h := congrArg (pderiv (Sum.inr ())) W.formalSlope_mul_X_add
+  simp only [map_add, Derivation.leibniz, smul_eq_mul, pderiv_X,
+    PowerSeries.toMvPowerSeries_eq_subst, PowerSeries.pderiv_subst (.X _)] at h
+  simp only [Pi.single_apply, reduceCtorEq, ↓reduceIte, mul_one, mul_zero, add_zero, zero_add] at h
+  have hs : HasSubst (fun _ : Unit ⊕ Unit => (PowerSeries.X : PowerSeries R)) :=
+    hasSubst_of_constantCoeff_zero fun _ => PowerSeries.constantCoeff_X
+  have h' := congrArg (substAlgHom hs) h
+  simp only [map_add, map_mul, coe_substAlgHom, subst_X hs] at h'
+  simp only [PowerSeries.subst_def] at h'
+  rw [subst_comp_subst_apply (PowerSeries.HasSubst.X (Sum.inr ())).const hs] at h'
+  simp only [subst_X hs] at h'
+  rw [← PowerSeries.subst_def, PowerSeries.X_subst] at h'
+  linear_combination h'
 
 /-! ### The intercept of the chord -/
 

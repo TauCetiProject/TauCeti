@@ -11,8 +11,8 @@ public import Mathlib.Data.Pi.Interval
 public import Mathlib.LinearAlgebra.Vandermonde
 public import Mathlib.RingTheory.Polynomial.Pochhammer
 import Mathlib.Order.SuccPred.Int
-import Mathlib.LinearAlgebra.Matrix.Block
 import TauCeti.LinearAlgebra.Determinant.Basic
+import TauCeti.LinearAlgebra.Matrix.Determinant.Basic
 import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
@@ -48,10 +48,9 @@ sums, and clearing the denominators `1, 2, …, n` by a column scaling, produces
 differences `(descPochhammer ℤ (j+1)).eval (xᵢ₊₁) - (descPochhammer ℤ (j+1)).eval (xᵢ)`, whose
 determinant is `n !` times the sum.  *A row reduction*: that matrix of differences is what remains
 of the `(n+1) × (n+1)` matrix `(descPochhammer ℤ j).eval (xᵢ)` after subtracting each row from its
-successor and deleting the column `j = 0`, which is constant equal to `1`.  Multiplying on the
-left by the bidiagonal matrix performing the subtraction contributes a factor `(-1)^{n+1}` to the
-determinant, and expanding the product along its first column — where only the last entry
-survives — contributes the same sign, so the two determinants agree.
+successor and deleting the column `j = 0`, which is constant equal to `1`.  The subtraction does
+not change the determinant and leaves a single `1` in that column, in the first row, so expanding
+along it gives the two determinants equal (`Matrix.det_eq_det_of_col_zero_eq_one`).
 
 ## The lowering identity
 
@@ -157,86 +156,9 @@ private theorem det_descPochhammer_sub_eq_det_vandermonde {n : ℕ} (x : Fin (n 
         (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
           - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc)).det
       = (Matrix.vandermonde x).det := by
-  classical
-  -- `N` is the Vandermonde matrix of `x` in the falling-factorial basis, and `E` is the bidiagonal
-  -- matrix subtracting each row of `N` from its predecessor.
-  let N : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ :=
-    Matrix.of fun i j => (descPochhammer ℤ (j : ℕ)).eval (x i)
-  let E : Matrix (Fin (n + 1)) (Fin (n + 1)) ℤ := Matrix.of fun i k =>
-    (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0)
-  have hN : ∀ i j, N i j = (descPochhammer ℤ (j : ℕ)).eval (x i) := fun _ _ => rfl
-  have hE : ∀ i k, E i k
-      = (if (k : ℕ) = (i : ℕ) + 1 then (1 : ℤ) else 0) - (if k = i then 1 else 0) :=
-    fun _ _ => rfl
-  have hEN : ∀ i j : Fin (n + 1),
-      (E * N) i j
-        = (∑ k : Fin (n + 1), if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - N i j := by
-    intro i j
-    rw [Matrix.mul_apply]
-    have hterm : ∀ k : Fin (n + 1), E i k * N k j
-        = (if (k : ℕ) = (i : ℕ) + 1 then N k j else 0) - (if k = i then N k j else 0) := by
-      intro k
-      rw [hE]
-      split_ifs <;> ring
-    rw [Finset.sum_congr rfl fun k _ => hterm k, Finset.sum_sub_distrib]
-    congr 1
-    simp
-  have hEupper : E.IsUpperTriangular := by
-    intro i k hki
-    have hk : (k : ℕ) < (i : ℕ) := hki
-    have h1 : ¬ ((k : ℕ) = (i : ℕ) + 1) := by omega
-    have h2 : ¬ (k = i) := by rintro rfl; omega
-    rw [hE]
-    simp [h1, h2]
-  have hEdet : E.det = (-1 : ℤ) ^ (n + 1) := by
-    rw [Matrix.det_of_isUpperTriangular hEupper]
-    have hdiag : ∀ i : Fin (n + 1), E i i = -1 := by
-      intro i
-      rw [hE]
-      simp
-    rw [Finset.prod_congr rfl fun i _ => hdiag i]
-    simp
-  -- The column `j = 0` of `N` is constant equal to `1`, so `E * N` has a single nonzero entry
-  -- there, in its last row.
-  have hcol : ∀ i : Fin (n + 1), N i 0 = 1 := by
-    intro i
-    rw [hN]
-    simp
-  have hcastSucc : ∀ (i : Fin n) (j : Fin (n + 1)),
-      (E * N) i.castSucc j = N i.succ j - N i.castSucc j := by
-    intro i j
-    rw [hEN]
-    simp only [Fin.val_castSucc, ← Fin.val_succ, Fin.val_inj, Finset.sum_ite_eq',
-      Finset.mem_univ, ↓reduceIte]
-  have hlast : (E * N) (Fin.last n) 0 = -1 := by
-    rw [hEN, hcol]
-    have hne : ∀ k : Fin (n + 1), ¬ ((k : ℕ) = n + 1) := fun k => by omega
-    simp [hne]
-  have hsubmat : (E * N).submatrix (Fin.last n).succAbove Fin.succ
-      = Matrix.of fun i j : Fin n =>
-          (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
-            - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc) := by
-    ext i j
-    rw [Matrix.submatrix_apply, Fin.succAbove_last, hcastSucc, hN, hN]
-    simp
-  have hdetEN : (E * N).det = (-1 : ℤ) ^ (n + 1) *
-      (Matrix.of fun i j : Fin n =>
-        (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.succ)
-          - (descPochhammer ℤ ((j : ℕ) + 1)).eval (x i.castSucc)).det := by
-    rw [Matrix.det_succ_column_zero, Finset.sum_eq_single (Fin.last n)]
-    · rw [hlast, hsubmat, Fin.val_last]
-      ring
-    · intro i _ hi
-      obtain ⟨i, rfl⟩ := Fin.eq_castSucc_of_ne_last hi
-      rw [hcastSucc]
-      simp only [hcol]
-      ring
-    · simp
-  -- Both readings of `det (E * N)` carry the same sign, which therefore cancels.
-  have hdetN : N.det = (Matrix.vandermonde x).det :=
-    (det_vandermonde_eq_det_descPochhammer (n + 1) x).symm
-  rw [Matrix.det_mul, hEdet, hdetN] at hdetEN
-  exact (((isUnit_neg_one (α := ℤ)).pow (n + 1)).mul_right_inj.mp hdetEN).symm
+  rw [det_vandermonde_eq_det_descPochhammer (n + 1) x,
+    Matrix.det_eq_det_of_col_zero_eq_one _ fun _ => by simp]
+  simp
 
 /-- **Summing Vandermonde determinants over a box of nested intervals.**  For integers
 `x₀ ≤ x₁ ≤ ⋯ ≤ xₙ`, the Vandermonde determinant of `y`, summed over all integer vectors with
@@ -406,6 +328,15 @@ theorem sum_mul_prod_sub_update_sub_one {R : Type*} [CommRing R] (m : ℕ) (b : 
   -- A power of `-1` is a unit even when the coefficient ring has zero divisors.
   apply ((isUnit_neg_one (α := R)).pow (∑ i : Fin m, (Finset.Ioi i).card)).mul_right_inj.mp
   simpa only [Finset.mul_sum, mul_left_comm] using key
+
+/-- Over a domain, the matrix of falling factorials `(descPochhammer R i).eval (x j)` has nonzero
+determinant at pairwise distinct nodes. -/
+theorem det_descPochhammer_eval_ne_zero {R : Type*} [CommRing R] [IsDomain R] {n : ℕ}
+    {x : Fin n → R} (hx : Function.Injective x) :
+    (Matrix.of fun i j : Fin n => (descPochhammer R (i : ℕ)).eval (x j)).det ≠ 0 := by
+  have hv := Matrix.det_vandermonde_ne_zero_iff.mpr hx
+  rw [det_vandermonde_eq_det_descPochhammer, ← Matrix.det_transpose] at hv
+  exact hv
 
 /-! ### Integrality of weighted Vandermonde determinants -/
 
