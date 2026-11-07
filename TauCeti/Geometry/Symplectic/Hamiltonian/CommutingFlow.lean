@@ -380,9 +380,10 @@ theorem contMDiff_hamiltonianFlowAction_uncurry :
 
 /-- **The orbit maps of the Hamiltonian flow action are smooth.** -/
 theorem contMDiff_hamiltonianFlowAction_apply (x : M) :
-    ContMDiff 𝓘(ℝ, ι → ℝ) I ∞ fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x :=
-  (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
-    (contMDiff_id.prodMk contMDiff_const)
+    ContMDiff 𝓘(ℝ, ι → ℝ) I ∞ fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x := by
+  apply (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
+    (f := fun v : ι → ℝ ↦ (v, x))
+  exact contMDiff_id.prodMk contMDiff_const
 
 /-- The orbit maps of the Hamiltonian flow action are continuous. -/
 theorem continuous_hamiltonianFlowAction_apply (x : M) :
