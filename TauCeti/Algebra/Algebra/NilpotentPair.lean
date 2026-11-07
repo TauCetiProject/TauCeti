@@ -12,6 +12,7 @@ import Mathlib.Tactic.IntervalCases
 import Mathlib.Tactic.LinearCombination
 import Mathlib.Tactic.Module
 import Mathlib.Tactic.NoncommRing
+import TauCeti.Algebra.Algebra.Operations
 
 /-!
 # A square-zero and a cube-zero element with a nilpotent sum
@@ -96,22 +97,6 @@ open scoped Pointwise
 
 variable {R A : Type*} [CommSemiring R] [Ring A] [Algebra R A] {x y : A}
 
-/-- If the sets `W t` of words start with `W 0 = {x, y}`, and each product of a word in `W t`
-with `x` or `y` is an integer combination of words in `W (t + 1)`, then every product of `t + 1`
-factors from `{x, y}` is an integer combination of words in `W t`. -/
-private theorem span_pair_pow_succ_le_span_of_forall_mul_mem {W : ℕ → Set A} (h₀ : W 0 = {x, y})
-    (hS : ∀ t, ∀ b ∈ W t, b * x ∈ span ℤ (W (t + 1)) ∧ b * y ∈ span ℤ (W (t + 1))) (t : ℕ) :
-    span ℤ {x, y} ^ (t + 1) ≤ span ℤ (W t) := by
-  induction t with
-  | zero => rw [pow_one, h₀]
-  | succ t ih =>
-    rw [pow_succ]
-    refine (mul_le_mul' ih le_rfl).trans ?_
-    rw [span_mul_span, span_le]
-    rintro _ ⟨b, hb, c, hc, rfl⟩
-    rcases hc with rfl | rfl
-    exacts [(hS t b hb).1, (hS t b hb).2]
-
 /-- The reduced words of length `t + 1` for the rewriting rules `x x ↦ 0`, `y y y ↦ 0`,
 `y y x ↦ -(y x y + x y y + x y x)` and `y x y x ↦ x y x y`: the words containing none of the four
 leading words. There are none of length six. -/
@@ -149,8 +134,8 @@ private theorem span_pair_pow_succ_le_span_cubeZeroWords (hx : x ^ 2 = 0) (hy : 
   simp only [one_mul] at r₀' r₁' r₂' r₃'
   -- Each product of a reduced word with `x` or `y` is rewritten to reduced words of the next
   -- length.
-  have hS (t : ℕ) : ∀ b ∈ cubeZeroWords x y t,
-      b * x ∈ span ℤ (cubeZeroWords x y (t + 1)) ∧ b * y ∈ span ℤ (cubeZeroWords x y (t + 1)) := by
+  have hS (t : ℕ) : ∀ b ∈ cubeZeroWords x y t, ∀ c ∈ ({x, y} : Set A),
+      b * c ∈ span ℤ (cubeZeroWords x y (t + 1)) := by
     rcases Nat.lt_or_ge t 5 with ht | ht
     · interval_cases t
       all_goals
@@ -162,7 +147,7 @@ private theorem span_pair_pow_succ_le_span_cubeZeroWords (hx : x ^ 2 = 0) (hy : 
             simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true])
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 5 := ⟨t - 5, by omega⟩
       simp [cubeZeroWords]
-  exact span_pair_pow_succ_le_span_of_forall_mul_mem rfl hS t
+  exact span_pow_succ_le_span_of_forall_mul_mem subset_span hS t
 
 /-- **A square-zero and a cube-zero element with a cube-zero sum.** If `x ^ 2 = 0`, `y ^ 3 = 0`
 and `(x + y) ^ 3 = 0`, then every product of six factors from `{x, y}` vanishes. -/
@@ -216,8 +201,8 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
   simp only [one_mul] at r₀' r₁' r₂' r₃'
   -- Each product of a reduced word with `x` or `y` is rewritten to reduced words of the next
   -- length.
-  have hS (t : ℕ) : ∀ b ∈ quarticWords x y t,
-      b * x ∈ span ℤ (quarticWords x y (t + 1)) ∧ b * y ∈ span ℤ (quarticWords x y (t + 1)) := by
+  have hS (t : ℕ) : ∀ b ∈ quarticWords x y t, ∀ c ∈ ({x, y} : Set A),
+      b * c ∈ span ℤ (quarticWords x y (t + 1)) := by
     rcases Nat.lt_or_ge t 8 with ht | ht
     · interval_cases t
       all_goals
@@ -234,7 +219,7 @@ private theorem span_pair_pow_succ_le_span_quarticWords (hx : x ^ 2 = 0) (hy : y
               simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true])
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 8 := ⟨t - 8, by omega⟩
       simp [quarticWords]
-  exact span_pair_pow_succ_le_span_of_forall_mul_mem rfl hS t
+  exact span_pow_succ_le_span_of_forall_mul_mem subset_span hS t
 
 /-- **Words in a square-zero and a cube-zero element with a fourth-power-zero sum are sums of
 commutators.** Let `x ^ 2 = 0`, `y ^ 3 = 0` and `(x + y) ^ 4 = 0`, and suppose that `x`, `y`,
@@ -506,8 +491,8 @@ private theorem span_pair_pow_succ_le_span_quinticWords (hx : x ^ 2 = 0) (hy : y
   simp only [one_mul] at r₀' r₁' r₂' r₃' r₄' r₅'
   -- Each product of a reduced word with `x` or `y` is rewritten to reduced words of the next
   -- length.
-  have hS (t : ℕ) : ∀ b ∈ quinticWords x y t,
-      b * x ∈ span ℤ (quinticWords x y (t + 1)) ∧ b * y ∈ span ℤ (quinticWords x y (t + 1)) := by
+  have hS (t : ℕ) : ∀ b ∈ quinticWords x y t, ∀ c ∈ ({x, y} : Set A),
+      b * c ∈ span ℤ (quinticWords x y (t + 1)) := by
     rcases Nat.lt_or_ge t 14 with ht | ht
     · interval_cases t
       all_goals
@@ -524,7 +509,7 @@ private theorem span_pair_pow_succ_le_span_quinticWords (hx : x ^ 2 = 0) (hy : y
               simp only [Set.mem_insert_iff, Set.mem_singleton_iff, true_or, or_true])
     · obtain ⟨t, rfl⟩ : ∃ t', t = t' + 14 := ⟨t - 14, by omega⟩
       simp [quinticWords]
-  exact span_pair_pow_succ_le_span_of_forall_mul_mem rfl hS t
+  exact span_pow_succ_le_span_of_forall_mul_mem subset_span hS t
 
 /-- **A square-zero and a cube-zero element with a fifth-power-zero sum.** If `x ^ 2 = 0`,
 `y ^ 3 = 0` and `(x + y) ^ 5 = 0`, then every product of fifteen factors from `{x, y}`
