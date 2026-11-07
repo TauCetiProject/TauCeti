@@ -31,25 +31,25 @@ namespace TauCeti.Probability
 
 /-- A power-law right-tail constant of the jump distribution is multiplied by the rate
 under compound Poisson summation, including rate zero and zero tail constants. -/
-theorem tendsto_rpow_mul_real_compoundPoissonMeasure_Ioi
+theorem tendsto_rpow_mul_compoundPoissonMeasure_real_Ioi
     {μ : Measure ℝ} [IsProbabilityMeasure μ] (r : ℝ≥0) {α C : ℝ} (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (compoundPoissonMeasure r μ).real (Ioi x)) atTop
       (𝓝 ((r : ℝ) * C)) := by
   simpa only [compoundPoissonMeasure_def, integral_natCast_poissonMeasure] using
-    Measure.tendsto_rpow_mul_real_bind_convolutionPower_Ioi hα hμ
+    Measure.tendsto_rpow_mul_bind_convolutionPower_real_Ioi hα hμ
       (integrable_natCast_rpow_poissonMeasure r (by linarith : 0 ≤ α + 1))
 
 /-- A power-law left-tail constant of the jump distribution is multiplied by the rate
 under compound Poisson summation, without a right-tail or moment assumption. -/
-theorem tendsto_rpow_mul_real_compoundPoissonMeasure_Iio_neg
+theorem tendsto_rpow_mul_compoundPoissonMeasure_real_Iio_neg
     {μ : Measure ℝ} [IsProbabilityMeasure μ] (r : ℝ≥0) {α C : ℝ} (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Iio (-x))) atTop (𝓝 C)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (compoundPoissonMeasure r μ).real (Iio (-x))) atTop
       (𝓝 ((r : ℝ) * C)) := by
-  have h := tendsto_rpow_mul_real_compoundPoissonMeasure_Ioi
-    (μ := μ.map (fun y ↦ -y)) r hα (by simpa only [Measure.real_map_neg_Ioi] using hμ)
+  have h := tendsto_rpow_mul_compoundPoissonMeasure_real_Ioi
+    (μ := μ.map (fun y ↦ -y)) r hα (by simpa only [Measure.map_neg_real_Ioi] using hμ)
   rw [← map_neg_compoundPoissonMeasure] at h
-  simpa only [Measure.real_map_neg_Ioi] using h
+  simpa only [Measure.map_neg_real_Ioi] using h
 
 end TauCeti.Probability

@@ -6,7 +6,6 @@ Authors: Codex
 module
 
 public import TauCeti.MeasureTheory.Group.Convolution.Power
-public import TauCeti.Analysis.Asymptotics.Lemmas
 public import TauCeti.Analysis.SpecialFunctions.Pow.Asymptotics
 public import TauCeti.MeasureTheory.Measure.Interval
 import TauCeti.MeasureTheory.Integral.Bind
@@ -15,12 +14,12 @@ import Mathlib.MeasureTheory.Integral.DominatedConvergence
 /-!
 # Power-law tails of convolutions
 
-`tendsto_rpow_mul_real_conv_Ioi` adds finite power-law right-tail constants under convolution,
-weighted by the other factor's total mass. No assumption on the left
-tails or existence of moments is needed. The proof separates a single large summand from
-the event that both summands are moderately large.
+`tendsto_rpow_mul_conv_real_Ioi_of_tendsto` adds finite power-law right-tail constants under
+convolution, weighted by the other factor's total mass. No assumption on the left tails or
+existence of moments is needed. The proof separates a single large summand from the event that
+both summands are moderately large.
 
-`tendsto_rpow_mul_real_bind_convolutionPower_Ioi` gives the corresponding random-sum formula: a
+`tendsto_rpow_mul_bind_convolutionPower_real_Ioi` gives the corresponding random-sum formula: a
 finite count moment of order `α + 1` suffices to multiply the tail constant by the mean count.
 -/
 
@@ -37,7 +36,7 @@ variable {μ ν : Measure ℝ} [IsFiniteMeasure μ] [IsFiniteMeasure ν]
 
 /-- Splitting the threshold between the two summands bounds a convolution tail by the
 sum of the corresponding marginal tails, weighted by the other total masses. -/
-theorem real_conv_Ioi_add_le (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem conv_real_Ioi_add_le (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (a b : ℝ) :
     (μ ∗ ν).real (Ioi (a + b)) ≤
       μ.real (Ioi a) * ν.real univ + μ.real univ * ν.real (Ioi b) := by
@@ -55,7 +54,7 @@ theorem real_conv_Ioi_add_le (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFinit
 
 /-- An upper tail of a sum is covered by two large-coordinate events and the event that
 both coordinates are moderately large. -/
-theorem real_conv_Ioi_le (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem conv_real_Ioi_le (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     (δ x : ℝ) :
     (μ ∗ ν).real (Ioi x) ≤
       μ.real (Ioi ((1 - δ) * x)) * ν.real univ +
@@ -86,7 +85,7 @@ theorem real_conv_Ioi_le (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMea
 
 /-- Disjoint events with one large summand and one bounded summand give a lower bound
 for the tail of a convolution. -/
-theorem le_real_conv_Ioi (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
+theorem le_conv_real_Ioi (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMeasure ν]
     {δ x : ℝ} (hx : 0 < x) :
     μ.real (Ioi ((1 + δ) * x)) * ν.real (Icc (-(δ * x)) (δ * x)) +
         μ.real (Icc (-(δ * x)) (δ * x)) * ν.real (Ioi ((1 + δ) * x)) ≤
@@ -108,7 +107,7 @@ theorem le_real_conv_Ioi (μ ν : Measure ℝ) [IsFiniteMeasure μ] [IsFiniteMea
 /-- Finite measures with power-law right tails retain that exponent under convolution;
 the constants add with the total masses of the other factors. This includes zero constants
 and requires no left-tail or moment hypotheses. -/
-theorem tendsto_rpow_mul_real_conv_Ioi {α C D : ℝ} (hα : 0 < α)
+theorem tendsto_rpow_mul_conv_real_Ioi_of_tendsto {α C D : ℝ} (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hν : Tendsto (fun x : ℝ ↦ x ^ α * ν.real (Ioi x)) atTop (𝓝 D)) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ ∗ ν).real (Ioi x)) atTop
@@ -158,7 +157,7 @@ theorem tendsto_rpow_mul_real_conv_Ioi {α C D : ℝ} (hα : 0 < α)
     filter_upwards [(lower hδ).eventually (eventually_gt_nhds haδ),
       eventually_gt_atTop 0] with x hax hx
     apply hax.trans_le
-    convert mul_le_mul_of_nonneg_left (le_real_conv_Ioi μ ν (δ := δ) hx)
+    convert mul_le_mul_of_nonneg_left (le_conv_real_Ioi μ ν (δ := δ) hx)
       (Real.rpow_nonneg hx.le α) using 1; ring
   · intro a ha
     obtain ⟨δ, hδ, hδ', hδa⟩ :=
@@ -167,11 +166,11 @@ theorem tendsto_rpow_mul_real_conv_Ioi {α C D : ℝ} (hα : 0 < α)
     filter_upwards [(upper hδ hδ').eventually (eventually_lt_nhds hδa),
       eventually_gt_atTop 0] with x hxa hx
     apply lt_of_le_of_lt _ hxa
-    convert mul_le_mul_of_nonneg_left (real_conv_Ioi_le μ ν δ x)
+    convert mul_le_mul_of_nonneg_left (conv_real_Ioi_le μ ν δ x)
       (Real.rpow_nonneg hx.le α) using 1; ring
 
 /-- A union bound for a finite convolution power, with equal shares of the threshold. -/
-theorem real_convolutionPower_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+theorem convolutionPower_real_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
     {n : ℕ} (hn : 0 < n) (x : ℝ) :
     (μ.convolutionPower n).real (Ioi x) ≤ (n : ℝ) * μ.real (Ioi (x / n)) := by
   induction n, hn using Nat.le_induction generalizing x with
@@ -185,7 +184,7 @@ theorem real_convolutionPower_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ
       _ ≤ (μ.convolutionPower n).real (Ioi ((n : ℝ) * (x / (n + 1)))) +
           μ.real (Ioi (x / (n + 1))) := by
         simpa only [← hsplit, probReal_univ, mul_one, one_mul] using
-          real_conv_Ioi_add_le (μ.convolutionPower n) μ
+          conv_real_Ioi_add_le (μ.convolutionPower n) μ
             ((n : ℝ) * (x / (n + 1))) (x / (n + 1))
       _ ≤ (n : ℝ) * μ.real (Ioi (x / (n + 1))) + μ.real (Ioi (x / (n + 1))) := by
         gcongr
@@ -194,7 +193,7 @@ theorem real_convolutionPower_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ
 
 /-- The power-law right-tail constant of an `n`-fold convolution of a probability law is
 `n` times the original constant, including the empty convolution. -/
-theorem tendsto_rpow_mul_real_convolutionPower_Ioi {μ : Measure ℝ} [IsProbabilityMeasure μ]
+theorem tendsto_rpow_mul_convolutionPower_real_Ioi {μ : Measure ℝ} [IsProbabilityMeasure μ]
     {α C : ℝ} (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C)) (n : ℕ) :
     Tendsto (fun x : ℝ ↦ x ^ α * (μ.convolutionPower n).real (Ioi x)) atTop
@@ -206,11 +205,11 @@ theorem tendsto_rpow_mul_real_convolutionPower_Ioi {μ : Measure ℝ} [IsProbabi
     simp [measureReal_def, hx.le]
   | succ n ih =>
     simpa only [convolutionPower_succ, probReal_univ, mul_one, one_mul,
-      Nat.cast_add_one, add_mul] using tendsto_rpow_mul_real_conv_Ioi hα ih hμ
+      Nat.cast_add_one, add_mul] using tendsto_rpow_mul_conv_real_Ioi_of_tendsto hα ih hμ
 
 /-- A uniform normalized tail bound for a probability law gives a polynomial bound of order
 `α + 1` for its convolution powers, including the empty convolution. -/
-theorem rpow_mul_real_convolutionPower_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
+theorem rpow_mul_convolutionPower_real_Ioi_le (μ : Measure ℝ) [IsProbabilityMeasure μ]
     {α K : ℝ} (hα : 0 ≤ α)
     (hμ : ∀ x : ℝ, 0 < x → x ^ α * μ.real (Ioi x) ≤ K) {x : ℝ} (hx : 0 < x) (n : ℕ) :
     x ^ α * (μ.convolutionPower n).real (Ioi x) ≤ K * (n : ℝ) ^ (α + 1) := by
@@ -219,7 +218,7 @@ theorem rpow_mul_real_convolutionPower_Ioi_le (μ : Measure ℝ) [IsProbabilityM
   · have hn' : 0 < (n : ℝ) := by exact_mod_cast hn
     calc
       _ ≤ x ^ α * ((n : ℝ) * μ.real (Ioi (x / n))) :=
-        mul_le_mul_of_nonneg_left (real_convolutionPower_Ioi_le μ hn x)
+        mul_le_mul_of_nonneg_left (convolutionPower_real_Ioi_le μ hn x)
           (rpow_nonneg hx.le α)
       _ = (n : ℝ) ^ (α + 1) * ((x / n) ^ α * μ.real (Ioi (x / n))) := by
         rw [rpow_add hn', rpow_one, div_rpow hx.le hn'.le]
@@ -231,7 +230,7 @@ theorem rpow_mul_real_convolutionPower_Ioi_le (μ : Measure ℝ) [IsProbabilityM
 /-- Mixing convolution powers against a count law with a finite moment of order `α + 1`
 multiplies a power-law tail constant by the mean count. Jumps may have either sign, and
 their left tail is unrestricted. The count measure need not be finite. -/
-theorem tendsto_rpow_mul_real_bind_convolutionPower_Ioi {μ : Measure ℝ}
+theorem tendsto_rpow_mul_bind_convolutionPower_real_Ioi {μ : Measure ℝ}
     [IsProbabilityMeasure μ] {ρ : Measure ℕ} {α C : ℝ} (hα : 0 < α)
     (hμ : Tendsto (fun x : ℝ ↦ x ^ α * μ.real (Ioi x)) atTop (𝓝 C))
     (hρ : Integrable (fun n : ℕ ↦ (n : ℝ) ^ (α + 1)) ρ) :
@@ -247,9 +246,9 @@ theorem tendsto_rpow_mul_real_bind_convolutionPower_Ioi {μ : Measure ℝ}
       filter_upwards [eventually_gt_atTop 0] with x hx
       exact ae_of_all _ fun n ↦ by
         rw [Real.norm_of_nonneg (mul_nonneg (rpow_nonneg hx.le _) measureReal_nonneg)]
-        exact μ.rpow_mul_real_convolutionPower_Ioi_le hα.le hbound hx n)
+        exact μ.rpow_mul_convolutionPower_real_Ioi_le hα.le hbound hx n)
     (hρ.const_mul K)
-    (ae_of_all _ fun n ↦ tendsto_rpow_mul_real_convolutionPower_Ioi hα hμ n)
+    (ae_of_all _ fun n ↦ tendsto_rpow_mul_convolutionPower_real_Ioi hα hμ n)
   simpa only [integral_const_mul, integral_mul_const,
     bind_apply_real Measurable.of_discrete.aemeasurable measurableSet_Ioi
       (ae_of_all _ fun _ ↦ measure_ne_top _ _)] using h

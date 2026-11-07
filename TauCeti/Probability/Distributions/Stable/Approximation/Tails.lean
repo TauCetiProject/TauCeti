@@ -38,7 +38,7 @@ namespace TauCeti.Probability
 
 /-- The compensated large jumps have the right-tail constant of the stable Lévy intensity,
 independently of the positive cutoff. At full negative skewness this constant is zero. -/
-theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi
+theorem tendsto_rpow_mul_stableCompensatedPoissonMeasure_real_Ioi
     {α β ε : ℝ} (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
     Tendsto (fun x : ℝ ↦ x ^ α *
       (stableCompensatedPoissonMeasure α β ε).real (Ioi x)) atTop
@@ -59,7 +59,7 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi
       exact hx.trans (hy.trans_le (le_abs_self y))
     rw [cond_real_of_subset measurableSet_Ioi hsub, mul_div_assoc]
     simp only [measureReal_def, ν, a]
-  have hsum := tendsto_rpow_mul_real_compoundPoissonMeasure_Ioi (ν A).toNNReal hα.1 hjump
+  have hsum := tendsto_rpow_mul_compoundPoissonMeasure_real_Ioi (ν A).toNNReal hα.1 hjump
   rw [ENNReal.coe_toNNReal_eq_toReal, mul_div_cancel₀ _ ha] at hsum
   apply (hsum.rpow_mul_comp_add c).congr
   intro x
@@ -72,14 +72,14 @@ theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi
 
 /-- The compensated large jumps have the left-tail constant of the stable Lévy intensity,
 independently of the positive cutoff. At full positive skewness this constant is zero. -/
-theorem tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Iio_neg
+theorem tendsto_rpow_mul_stableCompensatedPoissonMeasure_real_Iio_neg
     {α β ε : ℝ} (hα : α ∈ Ioo 0 2) (hβ : |β| ≤ 1) (hε : 0 < ε) :
     Tendsto (fun x : ℝ ↦ x ^ α *
       (stableCompensatedPoissonMeasure α β ε).real (Iio (-x))) atTop
       (𝓝 (stableTailConstant α * (1 - β))) := by
-  have h := tendsto_rpow_mul_real_stableCompensatedPoissonMeasure_Ioi (β := -β) hα
+  have h := tendsto_rpow_mul_stableCompensatedPoissonMeasure_real_Ioi (β := -β) hα
     (by simpa only [abs_neg] using hβ) hε
   rw [← map_neg_stableCompensatedPoissonMeasure α β ε] at h
-  simpa only [Measure.real_map_neg_Ioi, sub_eq_add_neg, neg_neg] using h
+  simpa only [Measure.map_neg_real_Ioi, sub_eq_add_neg, neg_neg] using h
 
 end TauCeti.Probability

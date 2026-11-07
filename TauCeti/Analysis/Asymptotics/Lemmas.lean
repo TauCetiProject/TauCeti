@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Asymptotics.Lemmas
-public import Mathlib.Analysis.SpecialFunctions.Pow.Continuity
-public import Mathlib.Analysis.SpecialFunctions.Pow.Asymptotics
+public import Mathlib.Analysis.SpecialFunctions.Pow.Real
 public import Mathlib.Analysis.SpecificLimits.Normed
 
 /-!
@@ -54,11 +53,6 @@ estimate behind every loss of radius for power series.
 In an ordered field, the ratio `(t + x) / (t + y)` of two translates tends to `1` as `t → ∞`. This
 is the limit at infinity of antiderivatives built from such ratios, for example in elementary
 evaluations of elliptic integrals.
-
-A finite limit of `x ^ α * f x` at infinity is preserved by a fixed translation of `f`.
-For a positive exponent, a finite power-law limit also implies that the original function
-tends to zero.
-These facts transfer power-law tail constants through deterministic shifts and rescalings.
 
 ## Main results
 
@@ -215,32 +209,3 @@ theorem tendsto_add_div_add_atTop {𝕜 : Type*} [Field 𝕜] [LinearOrder 𝕜]
   ring
 
 end TauCeti
-
-/-- A real function with a finite power-law limit of positive exponent tends to zero. -/
-theorem Filter.Tendsto.of_rpow_mul {f : ℝ → ℝ} {α C : ℝ}
-    (h : Tendsto (fun x : ℝ ↦ x ^ α * f x) atTop (𝓝 C)) (hα : 0 < α) :
-    Tendsto f atTop (𝓝 0) := by
-  have hlim := h.mul (tendsto_rpow_neg_atTop hα)
-  simp only [mul_zero] at hlim
-  apply hlim.congr'
-  filter_upwards [eventually_gt_atTop 0] with x hx
-  rw [Real.rpow_neg hx.le]
-  field_simp [(Real.rpow_pos_of_pos hx α).ne']
-
-/-- A fixed translation of a real function preserves its finite power-law constant at infinity,
-for any real exponent. -/
-theorem Filter.Tendsto.rpow_mul_comp_add {f : ℝ → ℝ} {α C : ℝ}
-    (h : Tendsto (fun x : ℝ ↦ x ^ α * f x) atTop (𝓝 C)) (c : ℝ) :
-    Tendsto (fun x : ℝ ↦ x ^ α * f (x + c)) atTop (𝓝 C) := by
-  have hshift : Tendsto (fun x : ℝ ↦ x + c) atTop atTop :=
-    tendsto_atTop_add_const_right atTop c tendsto_id
-  have hratio : Tendsto (fun x : ℝ ↦ x / (x + c)) atTop (𝓝 1) := by
-    simpa using TauCeti.tendsto_add_div_add_atTop (0 : ℝ) c
-  have hlim := (hratio.rpow_const (p := α) (Or.inl one_ne_zero)).mul (h.comp hshift)
-  simp only [Real.one_rpow, one_mul] at hlim
-  apply hlim.congr'
-  filter_upwards [eventually_gt_atTop 0, eventually_gt_atTop (-c)] with x hx hxc
-  have hx' : 0 < x + c := by linarith
-  simp only [Function.comp_apply]
-  rw [Real.div_rpow hx.le hx'.le]
-  field_simp [(Real.rpow_pos_of_pos hx' α).ne']

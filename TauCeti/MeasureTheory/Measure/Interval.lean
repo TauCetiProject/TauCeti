@@ -29,7 +29,7 @@ gives a uniform bound on the normalized tail over all positive thresholds.
   respectively `μ (-∞, r]`, with `r > a` is finite.
 * `MeasureTheory.Measure.tendsto_measureReal_Icc_neg_mul_atTop`: the real mass of symmetric
   intervals with endpoints `±δx` tends to the total mass of a finite real measure when `δ > 0`.
-* `MeasureTheory.Measure.real_map_neg_Ioi`: the right tail of a reflected measure is its left tail.
+* `MeasureTheory.Measure.map_neg_real_Ioi`: the right tail of a reflected measure is its left tail.
 * `MeasureTheory.Measure.exists_rpow_mul_real_Ioi_le`: a uniform normalized tail bound from a
   finite power-law limit.
 -/
@@ -95,7 +95,7 @@ end DenselyOrdered
 
 /-- Reflection turns the real mass of an open right tail into that of the opposite left tail. -/
 @[simp]
-theorem Measure.real_map_neg_Ioi (μ : Measure ℝ) (x : ℝ) :
+theorem Measure.map_neg_real_Ioi (μ : Measure ℝ) (x : ℝ) :
     (μ.map (fun y ↦ -y)).real (Ioi x) = μ.real (Iio (-x)) := by
   rw [map_measureReal_apply measurable_neg measurableSet_Ioi]
   congr 1
