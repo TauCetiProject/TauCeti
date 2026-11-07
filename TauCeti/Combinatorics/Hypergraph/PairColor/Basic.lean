@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Logic.Function.Embedding
 public import Mathlib.Data.Prod.Basic
 public import Mathlib.Data.Option.Basic
 public import Mathlib.Data.Sym.Sym2
@@ -216,6 +217,16 @@ def coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j :
 @[simp]
 theorem coe_coordPair {ι V : Type*} (x : {x : ι → V // Function.Injective x}) (i j : ι)
     (hij : i ≠ j) : (coordPair x i j hij : V × V) = (x.1 i, x.1 j) := (rfl)
+
+/-- Coordinate pairs commute with a vertex embedding. -/
+@[simp]
+theorem _root_.Function.Embedding.coordPair_injectiveMap {ι W : Type*} (f : V ↪ W)
+    (x : {x : ι → V // Function.Injective x})
+    (i j : ι) (hij : i ≠ j) :
+    coordPair (f.injectiveMap x) i j hij = f.distinctPairMap (coordPair x i j hij) := by
+  apply Subtype.ext
+  simp only [coe_coordPair, Function.Embedding.distinctPairMap_apply,
+    Function.Embedding.injectiveMap_apply, Function.comp_apply]
 
 /-- The color of a coordinate pair is the total pair color of the two coordinates. -/
 theorem PairColorSystem.color_coordPair_eq_iff {ι κ V : Type*} (C : PairColorSystem κ V)
