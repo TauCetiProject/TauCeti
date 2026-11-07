@@ -63,11 +63,49 @@ open Set MeasureTheory TopologicalSpace Metric Filter LineDeriv
 open ContinuousLinearMap (lsmul)
 open scoped Distributions Topology Convolution Pointwise
 
+/-- The sum of a point of `closedBall 0 s` and a point of `ball x r` lies in `ball x (2 * r)` when
+`s ≤ r`. -/
+theorem Metric.add_mem_ball_two_mul_of_mem_closedBall {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {s r : ℝ} (hs : s ≤ r) {x z y : E} (hz : z ∈ closedBall (0 : E) s)
+    (hy : y ∈ ball x r) : z + y ∈ ball x (2 * r) := by
+  have hs0 : 0 ≤ s := (norm_nonneg z).trans (mem_closedBall_zero_iff.1 hz)
+  have h := add_mem_add hz hy
+  rw [closedBall_add_ball hs0 (pos_of_mem_ball hy), zero_add] at h
+  exact ball_subset_ball (by linarith) h
+
 namespace Distribution
 
 variable {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℝ F] [CompleteSpace F]
   {Ω : Opens E}
+
+/-- For a bump `ρ` of radius at most `r`, pairing a distribution with vanishing derivatives with a
+mollification of `ψ` gives the integral of `ψ` times the constant value of the regularization on
+`ball x r`. -/
+private theorem apply_mollify_eq_integral_smul_translatePairing (μ : Measure E)
+    [μ.IsAddHaarMeasure] {T : 𝓓'(Ω, F)} (hT : ∀ v : E, ∂_{v} T = 0) {x : E} {r : ℝ}
+    (hr : ball x (2 * r) ⊆ Ω) {ρ : ContDiffBump (0 : E)} (hρ : ρ.rOut ≤ r)
+    {ρ' : 𝓓((⊤ : Opens E), ℝ)} (hρ' : (ρ' : E → ℝ) = ρ.normed μ) {ψ : 𝓓(Ω, ℝ)}
+    (hψ : tsupport ψ ⊆ ball x r) (h : closedBall (0 : E) ρ.rOut + tsupport ψ ⊆ (Ω : Set E)) :
+    T (TestFunction.mollify ψ μ ρ h) = (∫ y, ψ y ∂μ) • T.translatePairing ρ' x := by
+  have htsupp : tsupport ρ' = closedBall 0 ρ.rOut := by
+    rw [hρ']
+    exact ρ.tsupport_normed_eq
+  have hU (y : E) (hy : y ∈ ball x r) : MapsTo (· + y) (tsupport ρ') Ω := fun z hz =>
+    hr (Metric.add_mem_ball_two_mul_of_mem_closedBall hρ (htsupp ▸ hz) hy)
+  have hflip : (lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip = lsmul ℝ ℝ := by
+    ext
+    simp
+  rw [T.apply_eq_integral_smul_translatePairing ρ'
+    (ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport) ψ.hasCompactSupport
+    (fun y hy => hU y (hψ hy)) (by rw [TestFunction.coe_mollify, hρ', ← convolution_flip, hflip]),
+    ← integral_smul_const]
+  refine integral_congr_ae (ae_of_all _ fun y => ?_)
+  dsimp only
+  by_cases hy : y ∈ ball x r
+  · rw [T.translatePairing_eq_of_lineDerivOp_eq_zero hT ρ' isOpen_ball
+      (convex_ball x r).isPreconnected hU hy (mem_ball_self (pos_of_mem_ball hy))]
+  · simp [image_eq_zero_of_notMem_tsupport fun h => hy (hψ h)]
 
 /-- On a ball whose double lies in `Ω`, a distribution with vanishing derivatives evaluates a test
 by its integral and its value on any integral-one test supported in that ball. -/
@@ -76,42 +114,8 @@ private theorem apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero (μ : Measu
     (hr : ball x (2 * r) ⊆ Ω) {χ : 𝓓(Ω, ℝ)} (hχ : tsupport χ ⊆ ball x r)
     (hχint : ∫ y, χ y ∂μ = 1) {φ : 𝓓(Ω, ℝ)} (hφ : tsupport φ ⊆ ball x r) :
     T φ = (∫ y, φ y ∂μ) • T χ := by
-  -- Translating `closedBall 0 s`, for `s ≤ r`, by a point of `ball x r` stays inside `Ω`.
-  have hadd {s : ℝ} (hs : s ≤ r) {z y : E} (hz : z ∈ closedBall (0 : E) s)
-      (hy : y ∈ ball x r) : z + y ∈ Ω := by
-    refine hr (mem_ball.2 ?_)
-    calc dist (z + y) x ≤ ‖z‖ + dist y x := by
-          rw [dist_eq_norm, dist_eq_norm, add_sub_assoc]
-          exact norm_add_le _ _
-      _ < s + r := add_lt_add_of_le_of_lt (mem_closedBall_zero_iff.1 hz) (mem_ball.1 hy)
-      _ ≤ 2 * r := by linarith
-  -- For a bump `ρ` of radius at most `r`, pairing `T` with a mollification of `ψ` gives the
-  -- integral of `ψ` times the constant value of the regularization on `ball x r`.
   let bump (ρ : ContDiffBump (0 : E)) : 𝓓((⊤ : Opens E), ℝ) :=
     ⟨ρ.normed μ, ρ.contDiff_normed, ρ.hasCompactSupport_normed, by simp⟩
-  have hmoll (ρ : ContDiffBump (0 : E)) (hρ : ρ.rOut ≤ r) {ψ : 𝓓(Ω, ℝ)}
-      (hψ : tsupport ψ ⊆ ball x r) (h : closedBall (0 : E) ρ.rOut + tsupport ψ ⊆ (Ω : Set E)) :
-      T (TestFunction.mollify ψ μ ρ h) = (∫ y, ψ y ∂μ) • T.translatePairing (bump ρ) x := by
-    set ρ' := bump ρ
-    have hρ' : (ρ' : E → ℝ) = ρ.normed μ := rfl
-    have htsupp : tsupport ρ' = closedBall 0 ρ.rOut := by
-      rw [hρ']
-      exact ρ.tsupport_normed_eq
-    have hU (y : E) (hy : y ∈ ball x r) : MapsTo (· + y) (tsupport ρ') Ω := fun z hz =>
-      hadd hρ (htsupp ▸ hz) hy
-    have hflip : (lsmul ℝ ℝ : ℝ →L[ℝ] ℝ →L[ℝ] ℝ).flip = lsmul ℝ ℝ := by
-      ext
-      simp
-    rw [T.apply_eq_integral_smul_translatePairing ρ'
-      (ψ.continuous.integrable_of_hasCompactSupport ψ.hasCompactSupport) ψ.hasCompactSupport
-      (fun y hy => hU y (hψ hy)) (by rw [TestFunction.coe_mollify, hρ', ← convolution_flip, hflip]),
-      ← integral_smul_const]
-    refine integral_congr_ae (ae_of_all _ fun y => ?_)
-    dsimp only
-    by_cases hy : y ∈ ball x r
-    · rw [T.translatePairing_eq_of_lineDerivOp_eq_zero hT ρ' isOpen_ball
-        (convex_ball x r).isPreconnected hU hy (mem_ball_self (pos_of_mem_ball hy))]
-    · simp [image_eq_zero_of_notMem_tsupport fun h => hy (hψ h)]
   -- Let the bumps shrink: the mollifications converge in the test-function topology.
   have hr0 : 0 < r := by
     rcases (tsupport χ).eq_empty_or_nonempty with h | ⟨y, hy⟩
@@ -128,16 +132,18 @@ private theorem apply_eq_integral_smul_of_forall_lineDerivOp_eq_zero (μ : Measu
   have hsub {ψ : 𝓓(Ω, ℝ)} (hψ : tsupport ψ ⊆ ball x r) (n : ℕ) :
       closedBall (0 : E) (ρ n).rOut + tsupport ψ ⊆ (Ω : Set E) := by
     rintro _ ⟨z, hz, y, hy, rfl⟩
-    exact hadd (hle n) hz (hψ hy)
+    exact hr (Metric.add_mem_ball_two_mul_of_mem_closedBall (hle n) hz (hψ hy))
+  have hmoll (n : ℕ) {ψ : 𝓓(Ω, ℝ)} (hψ : tsupport ψ ⊆ ball x r) :=
+    apply_mollify_eq_integral_smul_translatePairing μ hT hr (hle n) (ρ' := bump (ρ n)) rfl hψ
+      (hsub hψ n)
   have hTφ : Tendsto (fun n => (∫ y, φ y ∂μ) • T.translatePairing (bump (ρ n)) x) atTop
       (𝓝 (T φ)) :=
     (((T : 𝓓(Ω, ℝ) →L[ℝ] F).continuous.tendsto φ).comp
-      (TestFunction.tendsto_mollify φ μ hlim (hsub hφ))).congr fun n =>
-        hmoll (ρ n) (hle n) hφ (hsub hφ n)
+      (TestFunction.tendsto_mollify φ μ hlim (hsub hφ))).congr fun n => hmoll n hφ
   have hTχ : Tendsto (fun n => T.translatePairing (bump (ρ n)) x) atTop (𝓝 (T χ)) :=
     (((T : 𝓓(Ω, ℝ) →L[ℝ] F).continuous.tendsto χ).comp
       (TestFunction.tendsto_mollify χ μ hlim (hsub hχ))).congr fun n =>
-        (hmoll (ρ n) (hle n) hχ (hsub hχ n)).trans (by rw [hχint, one_smul])
+        (hmoll n hχ).trans (by rw [hχint, one_smul])
   exact tendsto_nhds_unique hTφ (hTχ.const_smul _)
 
 /-- **Constancy of distributions.** A Banach-valued distribution on a connected nonempty open
