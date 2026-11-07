@@ -70,12 +70,12 @@ theorem eq_one_of_pow_eq_one_of_comp_ker_subtype_eq {W : Type*} [AddCommGroup W]
     (hnormal : q ∘ₗ f = q) (hface : f ∘ₗ (LinearMap.ker q).subtype = (LinearMap.ker q).subtype) :
     f = 1 := by
   refine f.eq_one_of_pow_eq_one_of_range_sub_one_le (LinearMap.ker q) hn hpow ?_ ?_
-  · intro v hv
-    have h := LinearMap.congr_fun hface ⟨v, hv⟩
-    simpa using sub_eq_zero.mpr h
-  · rintro v ⟨w, rfl⟩
-    have h := LinearMap.congr_fun hnormal w
-    simpa using sub_eq_zero.mpr h
+  · rw [LinearMap.le_ker_iff_comp_subtype_eq_zero, Module.End.one_eq_id,
+      LinearMap.sub_comp, LinearMap.id_comp, sub_eq_zero]
+    exact hface
+  · rw [LinearMap.range_le_ker_iff, Module.End.one_eq_id, LinearMap.comp_sub, LinearMap.comp_id,
+      sub_eq_zero]
+    exact hnormal
 
 /-- On a two-dimensional space, an endomorphism `f` with `f * f = 0` has a basis `v, u` with
 `f u = 0` and `f v` a multiple of `u`. -/

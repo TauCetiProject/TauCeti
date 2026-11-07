@@ -104,8 +104,8 @@ theorem eventually_smul_eq_iff_on_ker (χ : OpenPartialHomeomorph X E) {x : X}
           (q : E →ₗ[𝕜] F) (n := Fintype.card G) (Invertible.ne_zero _) ?_
           (congrArg ContinuousLinearMap.toLinearMap hnormal)
           (congrArg ContinuousLinearMap.toLinearMap hfaceDeriv))
-      simpa using congrArg ContinuousLinearMap.toLinearMap
-        (show σ g ^ Fintype.card G = 1 by rw [← map_pow, pow_card_eq_one, map_one])
+      have hpow : σ g ^ Fintype.card G = 1 := by rw [← map_pow, pow_card_eq_one, map_one]
+      simpa using congrArg ContinuousLinearMap.toLinearMap hpow
     exact MulAction.mem_germKernel.mp <|
       (χ.map_eq_one_iff_mem_germKernel hx hfix σ
         (hasStrictFDerivAt_conj_smul_isotropyRepresentation hx hfix hD) g).mp hone
