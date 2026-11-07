@@ -114,6 +114,7 @@ theorem algebraMap_mul_mk_X_natAdd (j : Fin s) :
   exact Ideal.mem_sup_right (Ideal.subset_span ⟨j, rfl⟩)
 
 /-- **Each `gⱼ` becomes a unit** in `A⟨f, g⁻¹⟩`. No hypothesis on `f` or `g` is needed. -/
+@[simp high]
 theorem isUnit_algebraMap (j : Fin s) : IsUnit (algebraMap A (LaurentFraction f g) (g j)) :=
   IsUnit.of_mul_eq_one _ (algebraMap_mul_mk_X_natAdd j)
 

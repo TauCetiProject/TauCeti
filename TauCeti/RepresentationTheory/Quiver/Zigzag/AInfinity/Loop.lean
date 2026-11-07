@@ -44,7 +44,7 @@ are no closed walks of length one in a simple graph, and the loop operation of a
 length two, a backtrack, would change the product rather than add a higher operation.
 
 Such deformations include the quartic operation of Liu--Wang's Example 4.7 for affine `D₄`; see
-`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.AffineD.Four`. Longer closed walks give
+`TauCeti.RepresentationTheory.Quiver.Zigzag.AInfinity.Affine.D.Four`. Longer closed walks give
 higher operations: for instance, closed walks of lengths `6`, `8` and `12` match the path degrees
 of the nonzero cyclic classes of the preprojective algebras of the affine `E₆`, `E₇` and `E₈`
 graphs.
@@ -483,6 +483,16 @@ noncomputable def zigzagLoopAInfinityAlgebra
     (fun m _ ↦ isHomogeneous_loopOps c m)
     (AInfinity.suspensionTaylor _ _) (AInfinity.isSuspension_suspensionTaylor _ _)
     (fun r _ e x hx ↦ stasheffSum_loopOps c hc r e x hx)
+
+omit [Finite V] in
+/-- A single coefficient on a closed walk is supported on closed walks, so it defines a loop
+deformation. -/
+theorem fst_eq_snd_of_mem_support_single {w : Fin n → G.Dart}
+    (hw : ∀ i, (w i).fst = (w (i + 1)).snd) (r : k) :
+    ∀ w' ∈ (Finsupp.single w r).support, ∀ i, (w' i).fst = (w' (i + 1)).snd := by
+  intro w' hw'
+  rw [Finset.mem_singleton.mp (Finsupp.support_single_subset hw')]
+  exact hw
 
 variable (hc : ∀ w ∈ c.support, ∀ i, (w i).fst = (w (i + 1)).snd)
 

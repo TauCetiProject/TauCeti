@@ -6,7 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.AlgebraicTopology.DGNerve.Basic
-public import TauCeti.AlgebraicTopology.DoldKan.SimplexChainMap.Basic
+public import TauCeti.AlgebraicTopology.DoldKan.Cochain
+public import TauCeti.AlgebraicTopology.DoldKan.Simplices
 public import TauCeti.AlgebraicTopology.Quasicategory.RightMappingSpace
 import TauCeti.Data.Finset.Basic
 
@@ -18,8 +19,10 @@ For objects `X` and `Y` of a differential graded category `C`, the right mapping
 simplicial set `(dgHomComplex R X Y).simplexChainMaps` of chain maps from the normalized chains of
 the standard simplices to the good truncation `τ_{≥ 0} Hom_C(X, Y)`. Such chain maps are the
 simplices of the Dold–Kan construction on `τ_{≥ 0} Hom_C(X, Y)` in its normalized-chain
-description, so this identifies the mapping spaces of the differential graded nerve, and not just
-its homotopy category, in terms of the Hom complexes.
+description (`CochainComplex.simplexChainMapsIso`), so `Hom^R_{N_dg(C)}(X, Y)` is isomorphic to
+`(cochainToSSet R).obj (dgHomComplex R X Y)`, the underlying simplicial set of
+`Γ (τ_{≥ 0} Hom_C(X, Y))`. This identifies the mapping spaces of the differential graded nerve,
+and not just its homotopy category, in terms of the Hom complexes.
 
 An `n`-simplex of `Hom^R_{N_dg(C)}(X, Y)` is an `(n + 1)`-simplex of `N_dg(C)` whose first `n + 1`
 vertices span the constant simplex at `X` and whose last vertex is `Y`
@@ -40,6 +43,8 @@ map from the normalized chains of `Δ[n]`.
 * `TauCeti.dgNerve.rightMappingSpaceEquiv`: the `n`-simplices of `Hom^R_{N_dg(C)}(X, Y)` are the
   chain maps from the normalized chains of `Δ[n]` to `τ_{≥ 0} Hom_C(X, Y)`.
 * `TauCeti.dgNerve.rightMappingSpaceIso`: the resulting isomorphism of simplicial sets.
+* `TauCeti.dgNerve.rightMappingSpaceIsoCochainToSSet`: `Hom^R_{N_dg(C)}(X, Y)` is isomorphic to
+  the Dold–Kan construction on `τ_{≥ 0} Hom_C(X, Y)`.
 
 ## References
 
@@ -929,6 +934,24 @@ theorem rightMappingSpaceIso_hom_app_apply (X Y : C) (Δ : SimplexCategoryᵒᵖ
 theorem rightMappingSpaceIso_inv_app_apply (X Y : C) (Δ : SimplexCategoryᵒᵖ)
     (g : (SSet.uliftFunctor.{u, v}.obj (dgHomComplex R X Y).simplexChainMaps).obj Δ) :
     (rightMappingSpaceIso X Y).inv.app Δ g = (rightMappingSpaceEquiv X Y Δ.unop.len).symm g.down :=
+  (rfl)
+
+/-- **The Dold–Kan description of the right mapping spaces of the differential graded nerve.**
+For objects `X` and `Y` of a differential graded category, `Hom^R_{N_dg(C)}(X, Y)` is isomorphic
+to `(cochainToSSet R).obj (dgHomComplex R X Y)`, the underlying simplicial set of the Dold–Kan
+construction on the good truncation `τ_{≥ 0} Hom_C(X, Y)`. -/
+noncomputable def rightMappingSpaceIsoCochainToSSet (X Y : C) :
+    ((dgNerve R C).rightMappingSpace ((dgNerveEquiv R C).symm X)
+      ((dgNerveEquiv R C).symm Y) : SSet) ≅
+      SSet.uliftFunctor.{u, v}.obj ((cochainToSSet R).obj (dgHomComplex R X Y)) :=
+  rightMappingSpaceIso X Y ≪≫ SSet.uliftFunctor.mapIso
+    ((dgHomComplex R X Y).simplexChainMapsIso ≪≫ eqToIso (cochainToSSet_obj R _).symm)
+
+/-- `TauCeti.dgNerve.rightMappingSpaceIsoCochainToSSet` composes `rightMappingSpaceIso` with the
+normalized-chain description `CochainComplex.simplexChainMapsIso` of the Dold–Kan construction. -/
+theorem rightMappingSpaceIsoCochainToSSet_def (X Y : C) :
+    rightMappingSpaceIsoCochainToSSet X Y = rightMappingSpaceIso X Y ≪≫ SSet.uliftFunctor.mapIso
+      ((dgHomComplex R X Y).simplexChainMapsIso ≪≫ eqToIso (cochainToSSet_obj R _).symm) :=
   (rfl)
 
 end dgNerve

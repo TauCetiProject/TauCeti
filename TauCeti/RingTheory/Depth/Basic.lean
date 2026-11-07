@@ -15,8 +15,10 @@ public import TauCeti.RingTheory.KrullDimension.Quotient
 public import TauCeti.RingTheory.Regular.LinearMap
 public import Mathlib.LinearAlgebra.FreeModule.Finite.Basic
 import Mathlib.RingTheory.Flat.Localization
+import Mathlib.RingTheory.KrullDimension.Field
 import TauCeti.Algebra.Category.ModuleCat.Ext.Basic
 import TauCeti.Data.ENat.Basic
+import TauCeti.RingTheory.KrullDimension.Regular
 import TauCeti.RingTheory.Localization.Module
 
 /-!
@@ -36,10 +38,12 @@ The regular-sequence transfer lemmas for linear maps live in
 
 * `RingTheory.Sequence.IsRegular.mem_maximalIdeal`: over a local ring, every element of an
   `M`-regular sequence lies in the maximal ideal.
-* `RingTheory.Sequence.IsRegular.length_le_supportDim`: over a Noetherian local ring, the length
-  of an `M`-regular sequence on a finite module `M` is at most the dimension of its support.
 * `IsLocalRing.depth_le_supportDim`: the depth of a finite nonzero module over a Noetherian local
-  ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)).
+  ring is at most the dimension of its support (Stacks, Lemma 10.72.3 (00LK)), by the bound
+  `RingTheory.Sequence.IsRegular.length_le_supportDim` from
+  `TauCeti.RingTheory.KrullDimension.Regular`.
+* `IsLocalRing.maximalIdeal_ne_bot_of_depth_ne_zero`: a Noetherian local ring of positive depth
+  is not a field.
 * `Ideal.depth_min_snd_trd_add_one_le_fst_of_exact`,
   `Ideal.depth_min_snd_fst_sub_one_le_trd_of_exact`, and
   `Ideal.depth_min_fst_trd_le_snd_of_exact` (with `IsLocalRing.` specializations): the depth
@@ -72,6 +76,9 @@ The regular-sequence transfer lemmas for linear maps live in
 * `IsLocalRing.mem_span_singleton_of_forall_mul_mem_of_two_le_depth`: in a Noetherian local ring
   of depth at least two, `𝔪 c ⊆ (b)` for a nonzerodivisor `b` forces `c ∈ (b)`, so the maximal
   ideal is not an associated prime of `R ⧸ (b)`.
+* `IsLocalRing.mem_range_algebraMap_of_two_le_depth`: in a Noetherian local ring of depth at
+  least two, an element of the total ring of fractions lying in `R_p` for every prime `p ≠ 𝔪`
+  lies in `R`.
 * `IsLocalRing.depth_le_ringKrullDim_quotient_of_isAssociatedPrime`: the depth of a finite module
   is at most `dim (R ⧸ p)` for every associated prime `p` of the module (Matsumura, Theorem 17.2).
 * `IsLocalRing.depth_eq_zero_iff_nontrivial_linearMap` and
@@ -107,18 +114,6 @@ theorem RingTheory.Sequence.IsRegular.mem_maximalIdeal {R : Type*} [CommRing R] 
   refine reg.top_ne_smul ?_
   rw [Ideal.eq_top_of_isUnit_mem (Ideal.ofList rs) (Ideal.subset_span hr)
     (notMem_maximalIdeal.1 h), Submodule.top_smul]
-
-/-- Over a Noetherian local ring, the length of an `M`-regular sequence on a finite module `M` is at
-most the dimension of the support of `M`. -/
-theorem RingTheory.Sequence.IsRegular.length_le_supportDim {R : Type*} [CommRing R]
-    [IsLocalRing R] [IsNoetherianRing R] {M : Type*} [AddCommGroup M] [Module R M]
-    [Module.Finite R M] {rs : List R} (reg : IsRegular M rs) :
-    (rs.length : WithBot ℕ∞) ≤ Module.supportDim R M := by
-  have := reg.quot_ofList_smul_nontrivial ⊤
-  obtain ⟨e, he⟩ := WithBot.ne_bot_iff_exists.1
-    (Module.supportDim_ne_bot_of_nontrivial R (M ⧸ Ideal.ofList rs • (⊤ : Submodule R M)))
-  rw [← Module.supportDim_add_length_eq_supportDim_of_isRegular rs reg, ← he]
-  exact_mod_cast le_add_self
 
 namespace ModuleCat
 
@@ -345,6 +340,15 @@ theorem depth_le_supportDim [IsNoetherianRing R] [Module.Finite R M] [Nontrivial
   refine sSup_le ?_
   rintro _ ⟨rs, reg, -, rfl⟩
   exact WithBot.coe_le_coe.1 (hd ▸ reg.length_le_supportDim)
+
+/-- A Noetherian local ring of positive depth is not a field: its maximal ideal is nonzero. -/
+theorem maximalIdeal_ne_bot_of_depth_ne_zero {R : Type u} [CommRing R] [IsLocalRing R]
+    [IsNoetherianRing R] (h : depth (ModuleCat.of R R) ≠ 0) : maximalIdeal R ≠ ⊥ := by
+  intro hbot
+  have hle := depth_le_supportDim (R := R) (M := R)
+  rw [Module.supportDim_self_eq_ringKrullDim,
+    ringKrullDim_eq_zero_of_isField (isField_iff_maximalIdeal_eq.2 hbot)] at hle
+  exact h (by exact_mod_cast hle.antisymm (WithBot.coe_le_coe.2 zero_le))
 
 /-- Dividing a module `M` by an `M`-regular element `x` lowers the depth by at most one. No
 finiteness or Noetherian hypothesis is needed. -/
@@ -585,6 +589,46 @@ theorem mem_span_singleton_of_forall_mul_mem_of_two_le_depth {R : Type u} [CommR
     rw [Subsingleton.elim g 0, LinearMap.zero_apply]
   rwa [Submodule.liftQ_apply, LinearMap.toSpanSingleton_apply, one_smul,
     Submodule.Quotient.mk_eq_zero, hspan] at hg
+
+/-- **Algebraic Hartogs principle for fractions.** Let `R` be a Noetherian local ring of depth at
+least two with total ring of fractions `K`. An element of `K` that lies in the image of `R_p` for
+every prime `p` other than the maximal ideal lies in `R`: if for every such `p` some `t ∉ p` has
+`t x ∈ R`, then `x ∈ R`. -/
+theorem mem_range_algebraMap_of_two_le_depth {R : Type u} [CommRing R] [IsLocalRing R]
+    [IsNoetherianRing R] (K : Type*) [CommRing K] [Algebra R K] [IsFractionRing R K]
+    (hdepth : 2 ≤ depth (ModuleCat.of R R)) {x : K}
+    (hx : ∀ (p : Ideal R) [p.IsPrime], p ≠ maximalIdeal R →
+      ∃ t ∉ p, algebraMap R K t * x ∈ (algebraMap R K).range) :
+    x ∈ (algebraMap R K).range := by
+  obtain ⟨⟨c, b⟩, hcb⟩ := IsLocalization.surj (nonZeroDivisors R) x
+  have hb : IsSMulRegular R (b : R) := (isRegular_iff_mem_nonZeroDivisors.2 b.2).left
+  -- The ideal `J` of `r` with `r c ∈ (b)` lies in no prime other than the maximal ideal.
+  let J : Ideal R := Submodule.comap (LinearMap.mulRight R c) (Ideal.span {(b : R)})
+  have hJ (r : R) : r ∈ J ↔ r * c ∈ Ideal.span {(b : R)} := Iff.rfl
+  have hrad : maximalIdeal R ≤ J.radical := by
+    rw [Ideal.radical_eq_sInf]
+    refine le_sInf fun p ⟨hJp, hp⟩ ↦ ?_
+    by_contra hpm
+    obtain ⟨t, htp, y, hy⟩ := hx p fun h ↦ hpm h.ge
+    refine htp (hJp ((hJ t).2 (Ideal.mem_span_singleton'.2 ⟨y, ?_⟩)))
+    apply IsFractionRing.injective R K
+    rw [map_mul, map_mul, hy, ← hcb]
+    ring
+  obtain ⟨n, hn⟩ := Ideal.exists_pow_le_of_le_radical_of_fg hrad (IsNoetherian.noetherian _)
+  -- Descending induction on `k` with `𝔪 ^ k ≤ J`: if `𝔪 ^ (k + 1) ≤ J` and `w ∈ 𝔪 ^ k`, then
+  -- `𝔪 (w c) ⊆ (b)`, so `w c ∈ (b)` since depth is at least two.
+  have key : ∀ k, maximalIdeal R ^ k ≤ J → (1 : R) ∈ J := by
+    intro k
+    induction k with
+    | zero => exact fun h ↦ h (by simp)
+    | succ k ih =>
+      refine fun h ↦ ih fun w hw ↦ (hJ w).2 ?_
+      refine mem_span_singleton_of_forall_mul_mem_of_two_le_depth hdepth hb fun z hz ↦ ?_
+      rw [← mul_assoc]
+      exact (hJ _).1 (h (by rw [pow_succ']; exact Ideal.mul_mem_mul hz hw))
+  obtain ⟨y, hy⟩ := Ideal.mem_span_singleton'.1 ((hJ 1).1 (key n hn))
+  refine ⟨y, (IsLocalization.map_units K b).mul_left_injective ?_⟩
+  simp only [← map_mul, hy, one_mul, hcb]
 
 end IsLocalRing
 

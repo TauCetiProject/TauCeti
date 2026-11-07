@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors, Jon Crall, Claude Opus 5
 -/
 module
 
-public import Mathlib.Analysis.InnerProductSpace.Adjoint
+public import TauCeti.Analysis.InnerProductSpace.Compression
 public import Mathlib.Analysis.InnerProductSpace.ProdL2
 public import TauCeti.Analysis.Normed.Operator.Basic
 
@@ -26,6 +26,19 @@ with the adjoint of the inverse as inverse.
 For a finite-dimensional linear isometry, the adjoint returns its image vectors to their
 preimages (`LinearIsometry.adjoint_apply_apply`).
 
+An isometric inclusion also identifies the operator algebra of its source isometrically with
+an orthogonal corner in the target's operator algebra: extend by zero using `e T e†`.
+Compression is its inverse on this corner, and extension preserves composition and adjoints.
+
+## Main definitions
+
+* `ContinuousLinearMap.compression A X`: the compression `X† A X` of `A` along `X`.
+* `LinearIsometry.cornerEmbedding`: extension by zero `T ↦ e T e†`, an isometric embedding
+  of operator spaces along an isometric inclusion.
+* `ContinuousLinearEquiv.adjointEquiv`: the adjoint as a continuous linear equivalence.
+
+## Further results
+
 Two families of adjoints of linear maps between finite-dimensional inner product spaces:
 
 * the adjoint of an isometric isomorphism `e : E ≃ₗᵢ[𝕜] F`, viewed as a linear map, is its
@@ -38,6 +51,8 @@ Two families of adjoints of linear maps between finite-dimensional inner product
 Finally, a pointwise bound `‖C x‖ ≤ c * ‖x‖` passes to the adjoint
 (`LinearMap.norm_adjoint_apply_le`). This is the operator-norm bound `‖C†‖ ≤ ‖C‖` in pointwise
 form for algebraic linear maps, deduced from Mathlib's isometry `ContinuousLinearMap.adjoint`.
+Similarly, if `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`, then `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`
+(`ContinuousLinearEquiv.norm_le_inv_mul_norm_adjoint_comp_comp`).
 If a linear map vanishes on `Tᗮ`, its adjoint takes values in `T`
 (`LinearMap.adjoint_apply_mem_of_forall_mem_orthogonal`). The determinant of the adjoint of an
 endomorphism is the conjugate of its determinant (`LinearMap.det_adjoint`). For a surjective
@@ -154,7 +169,137 @@ theorem adjointEquiv_symm_apply [CompleteSpace E] [CompleteSpace F]
     A.adjointEquiv.symm x = ContinuousLinearMap.adjoint (A.symm : F →L[𝕜] E) x := by
   rw [adjointEquiv_symm, adjointEquiv_apply]
 
+/-- If `‖e⁻¹ x‖ ≤ ‖x‖ / √λ` for all `x`, then conjugating by `e` loses at most a factor `λ` in
+operator norm: `‖M‖ ≤ λ⁻¹ ‖e† ∘ M ∘ e‖`. -/
+theorem norm_le_inv_mul_norm_adjoint_comp_comp [CompleteSpace E] [CompleteSpace F]
+    (e : E ≃L[𝕜] F) {lam : ℝ} (hlam : 0 < lam) (he : ∀ x, ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖)
+    (M : F →L[𝕜] F) :
+    ‖M‖ ≤ lam⁻¹ * ‖(e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)‖ := by
+  have hK : ‖(e.symm : F →L[𝕜] E)‖ ≤ (√lam)⁻¹ :=
+    ContinuousLinearMap.opNorm_le_bound _ (by positivity) he
+  -- `M = (e⁻¹)† ∘ (e† ∘ M ∘ e) ∘ e⁻¹`
+  have hM : M = (e.symm : F →L[𝕜] E)† ∘L
+      ((e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)) ∘L (e.symm : F →L[𝕜] E) := by
+    ext x
+    refine ext_inner_right 𝕜 fun z => ?_
+    simp
+  set N := (e : E →L[𝕜] F)† ∘L M ∘L (e : E →L[𝕜] F)
+  calc ‖M‖ = ‖(e.symm : F →L[𝕜] E)† ∘L N ∘L (e.symm : F →L[𝕜] E)‖ := by rw [← hM]
+    _ ≤ ‖(e.symm : F →L[𝕜] E)†‖ * (‖N‖ * ‖(e.symm : F →L[𝕜] E)‖) :=
+        (ContinuousLinearMap.opNorm_comp_le _ _).trans
+          (mul_le_mul_of_nonneg_left (ContinuousLinearMap.opNorm_comp_le _ _) (norm_nonneg _))
+    _ ≤ (√lam)⁻¹ * (‖N‖ * (√lam)⁻¹) := by
+        rw [LinearIsometryEquiv.norm_map]
+        gcongr
+    _ = lam⁻¹ * ‖N‖ := by
+        rw [mul_comm ‖N‖, ← mul_assoc, ← mul_inv, Real.mul_self_sqrt hlam.le]
+
 end ContinuousLinearEquiv
+
+/-! ### Operator corners -/
+
+noncomputable section OperatorCorners
+
+namespace LinearIsometry
+
+open ContinuousLinearMap
+
+variable [CompleteSpace E] [CompleteSpace F]
+
+/-- Extend an operator along an isometric inclusion by zero on the orthogonal complement.
+This is an isometric embedding of operator spaces, preserving composition and adjoints.
+Its image is the corner supported on the range of the inclusion. -/
+def cornerEmbedding (e : E →ₗᵢ[𝕜] F) : (E →L[𝕜] E) →ₗᵢ[𝕜] (F →L[𝕜] F) where
+  toLinearMap :=
+    { toFun := fun T ↦ T.compression e.toContinuousLinearMap.adjoint
+      map_add' := fun T S ↦ compression_add T _ S
+      map_smul' := fun c T ↦ compression_smul T _ c }
+  norm_map' T := by
+    simp only [LinearMap.coe_mk, AddHom.coe_mk, compression_def, adjoint_adjoint]
+    rw [e.norm_toContinuousLinearMap_comp,
+      ← adjoint.norm_map (T ∘L e.toContinuousLinearMap.adjoint), adjoint_comp,
+      adjoint_adjoint, e.norm_toContinuousLinearMap_comp, adjoint.norm_map]
+
+/-- Extension by zero is compression along the adjoint of the inclusion. -/
+theorem cornerEmbedding_apply (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    e.cornerEmbedding T = T.compression e.toContinuousLinearMap.adjoint :=
+  (rfl)
+
+/-- Evaluation of the extension by zero. -/
+@[simp]
+theorem cornerEmbedding_apply_apply (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) (x : F) :
+    e.cornerEmbedding T x = e (T (e.toContinuousLinearMap.adjoint x)) := by
+  simp only [cornerEmbedding_apply, compression_apply, adjoint_adjoint,
+    coe_toContinuousLinearMap]
+
+/-- Compression to the included space is a left inverse of extension by zero. -/
+@[simp]
+theorem compression_cornerEmbedding (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    (e.cornerEmbedding T).compression e.toContinuousLinearMap = T := by
+  rw [cornerEmbedding_apply, ← compression_comp, e.adjoint_comp_self,
+    ContinuousLinearMap.one_def, compression_id]
+
+/-- Extension by zero commutes with adjoints. -/
+@[simp]
+theorem adjoint_cornerEmbedding (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    (e.cornerEmbedding T).adjoint = e.cornerEmbedding T.adjoint := by
+  simp only [cornerEmbedding_apply, adjoint_compression]
+
+/-- Extension by zero preserves the star operation on the operator algebra. -/
+@[simp]
+theorem cornerEmbedding_star (e : E →ₗᵢ[𝕜] F) (T : E →L[𝕜] E) :
+    e.cornerEmbedding (star T) = star (e.cornerEmbedding T) := by
+  simp only [ContinuousLinearMap.star_eq_adjoint, adjoint_cornerEmbedding]
+
+/-- Extension by zero preserves composition. -/
+@[simp]
+theorem cornerEmbedding_comp (e : E →ₗᵢ[𝕜] F) (T S : E →L[𝕜] E) :
+    e.cornerEmbedding (T ∘L S) = e.cornerEmbedding T ∘L e.cornerEmbedding S := by
+  ext x
+  have he (y : E) : e.toContinuousLinearMap.adjoint (e y) = y :=
+    DFunLike.congr_fun e.adjoint_comp_self y
+  simp [cornerEmbedding_apply_apply, he]
+
+/-- Extension by zero preserves multiplication in the operator algebra. -/
+@[simp]
+theorem cornerEmbedding_mul (e : E →ₗᵢ[𝕜] F) (T S : E →L[𝕜] E) :
+    e.cornerEmbedding (T * S) = e.cornerEmbedding T * e.cornerEmbedding S := by
+  simp only [ContinuousLinearMap.mul_def, cornerEmbedding_comp]
+
+/-- The identity extends to the orthogonal projection onto the included space, not in general
+ to the ambient identity. -/
+@[simp]
+theorem cornerEmbedding_id (e : E →ₗᵢ[𝕜] F) :
+    e.cornerEmbedding (ContinuousLinearMap.id 𝕜 E) =
+      e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint := by
+  simp [cornerEmbedding_apply, compression_def]
+
+/-- The unit extends to the orthogonal projection onto the included space. -/
+@[simp]
+theorem cornerEmbedding_one (e : E →ₗᵢ[𝕜] F) :
+    e.cornerEmbedding 1 = e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint := by
+  simp only [ContinuousLinearMap.one_def, cornerEmbedding_id]
+
+/-- Compressing and extending an ambient operator gives its two-sided corner compression. -/
+theorem cornerEmbedding_compression (e : E →ₗᵢ[𝕜] F) (T : F →L[𝕜] F) :
+    e.cornerEmbedding (T.compression e.toContinuousLinearMap) =
+      T.compression (e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) := by
+  rw [cornerEmbedding_apply, ← compression_comp]
+
+/-- An operator is an extension by zero exactly when it is supported on the inclusion's
+orthogonal corner. This characterizes the image without choosing a preimage. -/
+theorem mem_range_cornerEmbedding_iff (e : E →ₗᵢ[𝕜] F) (T : F →L[𝕜] F) :
+    T ∈ Set.range e.cornerEmbedding ↔
+      T.compression (e.toContinuousLinearMap ∘L e.toContinuousLinearMap.adjoint) = T := by
+  constructor
+  · rintro ⟨S, rfl⟩
+    rw [← cornerEmbedding_compression, compression_cornerEmbedding]
+  · intro h
+    exact ⟨T.compression e.toContinuousLinearMap, (e.cornerEmbedding_compression T).trans h⟩
+
+end LinearIsometry
+
+end OperatorCorners
 
 variable [FiniteDimensional 𝕜 E] [FiniteDimensional 𝕜 F]
 

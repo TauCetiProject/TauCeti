@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.MeasureTheory.Function.LpSeminorm.Defs
+import Mathlib.MeasureTheory.Function.LpSeminorm.Basic
 
 /-!
 # The `Lᵖ` integral is bounded by the `p`-th power of the `Lᵖ` seminorm
@@ -16,16 +17,19 @@ measurability the seminorm is `∞` by convention, so the inequality
 `∫⁻ ‖f‖ₑ ^ p ∂μ ≤ eLpNorm f p μ ^ p` holds for every `f`
 (`TauCeti.lintegral_rpow_enorm_le_rpow_eLpNorm`). This is the form in which a bound on the `Lᵖ`
 seminorm is used to bound an integral, with no measurability side condition.
+
+Consequently a function in `Lᵖ` for `p ≠ 0` is finite almost everywhere
+(`MeasureTheory.MemLp.ae_enorm_lt_top`), including for `p = ∞`.
 -/
 
 public section
-
-namespace TauCeti
 
 open MeasureTheory
 open scoped ENNReal NNReal
 
 variable {α ε : Type*} [MeasurableSpace α] {μ : Measure α} [TopologicalSpace ε] [ContinuousENorm ε]
+
+namespace TauCeti
 
 /-- For `p ≠ 0`, the integral `∫⁻ ‖f‖ₑ ^ p ∂μ` is at most `eLpNorm f p μ ^ p`, whether or not `f` is
 almost everywhere strongly measurable. -/
@@ -38,3 +42,17 @@ theorem lintegral_rpow_enorm_le_rpow_eLpNorm {p : ℝ≥0} (hp : p ≠ 0) (f : �
     exact le_top
 
 end TauCeti
+
+namespace MeasureTheory.MemLp
+
+/-- A function in `Lᵖ` with `p ≠ 0` is finite almost everywhere. -/
+theorem ae_enorm_lt_top {f : α → ε} {p : ℝ≥0∞} (hf : MemLp f p μ) (hp : p ≠ 0) :
+    ∀ᵐ x ∂μ, ‖f x‖ₑ < ∞ := by
+  rcases eq_or_ne p ∞ with rfl | hp_top
+  · filter_upwards [ae_le_eLpNormEssSup (f := f) (μ := μ)] with x hx
+    exact hx.trans_lt (eLpNormEssSup_le_eLpNorm_top.trans_lt hf.eLpNorm_lt_top)
+  have hlt := lintegral_rpow_enorm_lt_top_of_eLpNorm_lt_top hp hp_top hf.eLpNorm_lt_top
+  filter_upwards [ae_lt_top' (hf.aestronglyMeasurable.enorm.pow_const _) hlt.ne] with x hx
+  exact (ENNReal.rpow_lt_top_iff_of_pos (ENNReal.toReal_pos hp hp_top)).1 hx
+
+end MeasureTheory.MemLp

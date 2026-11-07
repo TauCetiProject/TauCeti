@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Geometry.Manifold.Riemannian.Prod
+public import TauCeti.Geometry.Manifold.Riemannian.Prod.Basic
 public import TauCeti.Geometry.Manifold.VectorBundle.CovariantDerivative.LeviCivita.WarpedProd
 
 /-!

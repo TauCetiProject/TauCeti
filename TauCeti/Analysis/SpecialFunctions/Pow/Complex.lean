@@ -35,12 +35,21 @@ a Schwarz--Christoffel map in the reciprocal coordinate at infinity.
 
 For a nonpositive real exponent `r`, the principal power `(t + x) ^ r` of a translate of `x` along
 the positive real axis is `O(t ^ r)` for `t > 0` when `x ∈ slitPlane ∪ {0}`, and bounded, indeed
-`O((1 + t) ^ r)`, for `t ≥ 0` when `x ∈ slitPlane`. These bounds control the integrands of improper
-integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`.
+`O((1 + t) ^ r)`, for `t ≥ 0` when `x ∈ slitPlane`. More generally, for `z ∈ slitPlane`, `t ≥ 0`,
+and any complex exponent `s` (with no sign restriction on `s.re`), `‖((t : ℂ) + w) ^ s‖` is bounded
+above by `C * (1 + t) ^ s.re` (with `C > 0`) locally uniformly in `w` near `z`, and
+`‖((t : ℂ) + z) ^ s‖` is bounded below by `c * (1 + t) ^ s.re` (with `c > 0`) at each fixed
+`z ∈ slitPlane`. These bounds control the integrands and parametric derivatives of improper
+integrals such as Carlson's elliptic integrals along `(0, ∞)`.
 
 ## Main results
 
 * `TauCeti.ofReal_mul_cpow` -- a principal power splits across a nonnegative real factor.
+* `TauCeti.ofReal_prod_cpow` -- a principal power splits across a finite product of nonnegative
+  reals.
+* `TauCeti.mul_cpow_of_arg_add_mem` -- a principal power splits across a product when the
+  arguments add in the principal range.
+* `TauCeti.mul_cpow_of_re_pos` -- the right-half-plane specialization.
 * `TauCeti.ofReal_pow_cpow` -- a principal power of a natural power of a nonnegative real
   multiplies the exponents.
 * `TauCeti.ofReal_cpow_conj` -- a principal power of a nonnegative real commutes with complex
@@ -50,14 +59,20 @@ integrals such as Carlson's elliptic integrals near both endpoints of `(0, ∞)`
 * `TauCeti.ofReal_exp_cpow` -- a principal power of a positive real exponential is an exponential.
 * `TauCeti.cpow_inv_cpow_of_arg_mem_Ioc` -- raising an inverse principal power recovers its
   base on a suitable sector.
-* `TauCeti.cpow_mul_inv` -- multiplying a principal power by the inverse of its base lowers the
-  exponent by one, including at the base `0`.
+* `TauCeti.cpow_mul_inv`, `TauCeti.cpow_add_one'` -- multiplying a principal power by `w⁻¹` or `w`
+  lowers or raises the exponent by one, including at the base `0`.
 * `TauCeti.exists_norm_ofReal_add_cpow_le_mul_rpow`, `TauCeti.exists_norm_ofReal_add_cpow_le`,
   `TauCeti.exists_norm_ofReal_add_cpow_le_mul_one_add_rpow` -- bounds on `(t + x) ^ r` for
   `r ≤ 0` along the positive real axis.
-* `TauCeti.continuousOn_ofReal_add_cpow` -- for `x ∈ slitPlane ∪ {0}`, `(t + x) ^ s` is
-  continuous in the real variable `t > 0`.
-* `Complex.cpow_neg_half_mul_self` -- two principal inverse square roots multiply to the inverse.
+* `TauCeti.exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow`,
+  `TauCeti.exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow` -- locally uniform upper and
+  pointwise lower bounds comparing `‖((t : ℂ) + w) ^ s‖` with `(1 + t) ^ s.re` for `w` near
+  `z ∈ slitPlane`, `t ≥ 0`, and arbitrary `s : ℂ`.
+* `TauCeti.continuousOn_ofReal_add_cpow`, `TauCeti.continuousOn_ofReal_add_cpow_Ici`,
+  `TauCeti.continuousOn_ofReal_add_cpow_Ici_of_re_pos` -- continuity of `t ↦ (t + x) ^ s` on
+  `(0, ∞)` and `[0, ∞)`.
+* `Complex.cpow_neg_half_mul_self`, `Complex.cpow_neg_half_mul_eq_cpow_half` -- multiplying
+  `w ^ (-1/2)` by itself or by `w` gives `w⁻¹` or `w ^ (1/2)`, including at `w = 0`.
 * `Complex.tendsto_ofReal_add_cpow_neg` -- for any complex `x` and real `s > 0`,
   `(t + x) ^ (-s)` tends to `0` as the real number `t` tends to `∞`.
 -/
@@ -85,6 +100,39 @@ theorem ofReal_mul_cpow {r : ℝ} (hr : 0 ≤ r) (z w : ℂ) :
     Complex.cpow_def_of_ne_zero (Complex.ofReal_ne_zero.mpr hr'.ne'),
     Complex.cpow_def_of_ne_zero hz, Complex.log_ofReal_mul hr' hz, add_mul, Complex.exp_add]
   rw [Complex.ofReal_log hr]
+
+/-- A principal complex power splits across a finite product of nonnegative reals:
+`((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z`. -/
+theorem ofReal_prod_cpow {ι : Type*} (s : Finset ι) {f : ι → ℝ} (hf : ∀ i ∈ s, 0 ≤ f i)
+    (z : ℂ) : ((∏ i ∈ s, f i : ℝ) : ℂ) ^ z = ∏ i ∈ s, (f i : ℂ) ^ z := by
+  classical
+  induction s using Finset.induction_on with
+  | empty => simp
+  | insert i s hi ih =>
+    rw [Finset.prod_insert hi, Finset.prod_insert hi, ofReal_mul, ofReal_mul_cpow (hf i (by simp)),
+      ← ih fun j hj ↦ hf j (Finset.mem_insert_of_mem hj)]
+
+/-- A principal power splits across a product when the sum of the arguments lies in the
+principal range `(-π, π]`, including when either factor is zero. -/
+theorem mul_cpow_of_arg_add_mem {x y : ℂ}
+    (h : arg x + arg y ∈ Set.Ioc (-Real.pi) Real.pi) (w : ℂ) :
+    (x * y) ^ w = x ^ w * y ^ w := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · simp
+  rcases eq_or_ne x 0 with rfl | hx
+  · simp [zero_cpow hw]
+  rcases eq_or_ne y 0 with rfl | hy
+  · simp [zero_cpow hw]
+  rw [cpow_def_of_ne_zero (mul_ne_zero hx hy), cpow_def_of_ne_zero hx,
+    cpow_def_of_ne_zero hy, log_mul hx hy h, add_mul, exp_add]
+
+/-- A principal power splits across a product of two numbers in the open right half-plane.
+Their arguments add without crossing the branch cut. -/
+theorem mul_cpow_of_re_pos {x y : ℂ} (hx : 0 < x.re) (hy : 0 < y.re) (w : ℂ) :
+    (x * y) ^ w = x ^ w * y ^ w := by
+  have hax := abs_lt.mp (abs_arg_lt_pi_div_two_iff.mpr (Or.inl hx))
+  have hay := abs_lt.mp (abs_arg_lt_pi_div_two_iff.mpr (Or.inl hy))
+  exact mul_cpow_of_arg_add_mem ⟨by linarith, by linarith⟩ w
 
 /-- A principal complex power of a natural power of a nonnegative real multiplies the exponents:
 `((r : ℂ) ^ n) ^ s = (r : ℂ) ^ (n * s)`.  The argument of `(r : ℂ)` is `0`, so the principal branch
@@ -233,6 +281,14 @@ theorem cpow_mul_inv {s : ℂ} (hs : s ≠ 1) (w : ℂ) : w ^ s * w⁻¹ = w ^ (
   · rw [inv_zero, mul_zero, zero_cpow (sub_ne_zero.mpr hs)]
   · rw [cpow_sub _ _ hw, cpow_one, div_eq_mul_inv]
 
+/-- Multiplying a principal power by its base raises the exponent by one:
+`w ^ (s + 1) = w ^ s * w`. Away from `s + 1 = 0` this also holds at `w = 0`, where both sides
+vanish. -/
+theorem cpow_add_one' {s : ℂ} (hs : s + 1 ≠ 0) (w : ℂ) : w ^ (s + 1) = w ^ s * w := by
+  rcases eq_or_ne w 0 with rfl | hw
+  · rw [zero_cpow hs, mul_zero]
+  · rw [cpow_add _ _ hw, cpow_one]
+
 /-- For `x ∈ slitPlane ∪ {0}` and a real exponent `r ≤ 0`, the principal power `(t + x) ^ r` is
 `O(t ^ r)` for `t > 0`. -/
 theorem exists_norm_ofReal_add_cpow_le_mul_rpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {r : ℝ}
@@ -274,12 +330,121 @@ theorem exists_norm_ofReal_add_cpow_le_mul_one_add_rpow {x : ℂ} (hx : x ∈ sl
   rw [Complex.norm_cpow_real, ← Real.mul_rpow hc.le (by linarith)]
   exact Real.rpow_le_rpow_of_nonpos (by positivity) (h t ht) hr
 
+/-- Near any `z ∈ slitPlane`, the principal power `((t : ℂ) + w) ^ s` is bounded by a constant
+multiple of `(1 + t) ^ s.re` uniformly in `w` and in `t ≥ 0`, with no sign restriction on `s`. -/
+theorem exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow {z : ℂ} (hz : z ∈ slitPlane)
+    (s : ℂ) :
+    ∃ U ∈ 𝓝 z, U ⊆ slitPlane ∧ ∃ C, 0 < C ∧
+      ∀ w ∈ U, ∀ t : ℝ, 0 ≤ t → ‖((t : ℂ) + w) ^ s‖ ≤ C * (1 + t) ^ s.re := by
+  obtain ⟨c, hc, hlow⟩ := exists_pos_forall_mem_ball_mul_one_add_le_norm_add hz
+  set M : ℝ := 1 + ‖z‖ + c
+  have hM : 1 ≤ M := by
+    have : 0 ≤ ‖z‖ := norm_nonneg z
+    linarith
+  have hM0 : 0 < M := zero_lt_one.trans_le hM
+  refine ⟨Metric.ball z c ∩ slitPlane,
+    Filter.inter_mem (Metric.ball_mem_nhds z hc) (isOpen_slitPlane.mem_nhds hz),
+    Set.inter_subset_right,
+    max (c ^ s.re) (M ^ s.re) * Real.exp (Real.pi * |s.im|), by positivity, ?_⟩
+  intro w hw t ht
+  have hw_ball : w ∈ Metric.ball z c := hw.1
+  have h1t : 0 < 1 + t := by linarith
+  -- Lower bound `c * (1 + t) ≤ ‖(t : ℂ) + w‖` from the uniform slit-plane distance estimate.
+  have hlower : c * (1 + t) ≤ ‖(t : ℂ) + w‖ := by
+    rw [add_comm (t : ℂ) w]
+    exact hlow w hw_ball ⟨t, ht⟩
+  -- Upper bound `‖(t : ℂ) + w‖ ≤ M * (1 + t)` from the triangle inequality on `ball z c`.
+  have hupper : ‖(t : ℂ) + w‖ ≤ M * (1 + t) := by
+    have hwz : ‖w - z‖ < c := by simpa [dist_eq_norm] using hw_ball
+    have hw_norm : ‖w‖ ≤ ‖z‖ + c := by
+      calc ‖w‖ = ‖(w - z) + z‖ := by ring_nf
+        _ ≤ ‖w - z‖ + ‖z‖ := norm_add_le _ _
+        _ ≤ c + ‖z‖ := by linarith
+        _ = ‖z‖ + c := add_comm _ _
+    calc ‖(t : ℂ) + w‖ ≤ ‖(t : ℂ)‖ + ‖w‖ := norm_add_le _ _
+      _ = t + ‖w‖ := by rw [Complex.norm_real, Real.norm_of_nonneg ht]
+      _ ≤ t + (‖z‖ + c) := by linarith
+      _ ≤ M * (1 + t) := by
+        have : 0 ≤ (‖z‖ + c) * t := mul_nonneg (by positivity) ht
+        linarith
+  -- Bound the radial factor `‖(t : ℂ) + w‖ ^ s.re` according to the sign of `s.re`.
+  have hrpow : ‖(t : ℂ) + w‖ ^ s.re ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
+    rcases le_or_gt s.re 0 with hs | hs
+    · calc ‖(t : ℂ) + w‖ ^ s.re
+          ≤ (c * (1 + t)) ^ s.re := Real.rpow_le_rpow_of_nonpos (by positivity) hlower hs
+        _ = c ^ s.re * (1 + t) ^ s.re := Real.mul_rpow hc.le h1t.le
+        _ ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
+          gcongr
+          exact le_max_left _ _
+    · calc ‖(t : ℂ) + w‖ ^ s.re
+          ≤ (M * (1 + t)) ^ s.re := Real.rpow_le_rpow (norm_nonneg _) hupper hs.le
+        _ = M ^ s.re * (1 + t) ^ s.re := Real.mul_rpow hM0.le h1t.le
+        _ ≤ max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re := by
+          gcongr
+          exact le_max_right _ _
+  -- Bound the angular factor `1 / exp (arg * s.im) ≤ exp (π * |s.im|)`.
+  have hexp : (Real.exp (((t : ℂ) + w).arg * s.im))⁻¹ ≤ Real.exp (Real.pi * |s.im|) := by
+    rw [← Real.exp_neg]
+    apply Real.exp_le_exp.mpr
+    calc -(((t : ℂ) + w).arg * s.im)
+        ≤ |((t : ℂ) + w).arg * s.im| := neg_le_abs _
+      _ = |((t : ℂ) + w).arg| * |s.im| := abs_mul _ _
+      _ ≤ Real.pi * |s.im| := by
+        gcongr
+        exact Complex.abs_arg_le_pi _
+  calc ‖((t : ℂ) + w) ^ s‖
+      ≤ ‖(t : ℂ) + w‖ ^ s.re / Real.exp (((t : ℂ) + w).arg * s.im) :=
+        Complex.norm_cpow_le _ _
+    _ = ‖(t : ℂ) + w‖ ^ s.re * (Real.exp (((t : ℂ) + w).arg * s.im))⁻¹ := div_eq_mul_inv _ _
+    _ ≤ (max (c ^ s.re) (M ^ s.re) * (1 + t) ^ s.re) * Real.exp (Real.pi * |s.im|) :=
+        mul_le_mul hrpow hexp (by positivity) (by positivity)
+    _ = max (c ^ s.re) (M ^ s.re) * Real.exp (Real.pi * |s.im|) * (1 + t) ^ s.re := by ring
+
+/-- For `z ∈ slitPlane` and any `s : ℂ`, `‖((t : ℂ) + z) ^ s‖` is bounded below by a positive
+multiple of `(1 + t) ^ s.re` for all `t ≥ 0`. -/
+theorem exists_pos_mul_one_add_rpow_le_norm_ofReal_add_cpow {z : ℂ} (hz : z ∈ slitPlane)
+    (s : ℂ) :
+    ∃ c, 0 < c ∧ ∀ t : ℝ, 0 ≤ t → c * (1 + t) ^ s.re ≤ ‖((t : ℂ) + z) ^ s‖ := by
+  obtain ⟨U, hU, _, C, hC, hbound⟩ :=
+    exists_mem_nhds_norm_ofReal_add_cpow_le_mul_one_add_rpow hz (-s)
+  have hzU : z ∈ U := mem_of_mem_nhds hU
+  refine ⟨C⁻¹, inv_pos.mpr hC, fun t ht => ?_⟩
+  have h1t : 0 < 1 + t := by linarith
+  have hne : ((t : ℂ) + z) ^ s ≠ 0 := by
+    rw [Complex.cpow_def_of_ne_zero (slitPlane_ne_zero (ofReal_add_mem_slitPlane hz ht))]
+    exact Complex.exp_ne_zero _
+  -- Rewrite `C * ((1 + t) ^ s.re)⁻¹ = (C⁻¹ * (1 + t) ^ s.re)⁻¹` and invert.
+  have h' : ‖((t : ℂ) + z) ^ s‖⁻¹ ≤ (C⁻¹ * (1 + t) ^ s.re)⁻¹ := by
+    calc ‖((t : ℂ) + z) ^ s‖⁻¹
+        ≤ C * (1 + t) ^ (-s).re := by
+          simpa [Complex.cpow_neg, norm_inv] using hbound z hzU t ht
+      _ = (C⁻¹ * (1 + t) ^ s.re)⁻¹ := by
+          rw [Complex.neg_re, Real.rpow_neg h1t.le, mul_inv_rev, inv_inv, mul_comm]
+  exact (inv_le_inv₀ (norm_pos_iff.mpr hne) (by positivity)).mp h'
+
 /-- For `x ∈ slitPlane ∪ {0}` and any complex exponent `s`, the principal power `(t + x) ^ s` is
 continuous in the real variable `t > 0`. -/
 theorem continuousOn_ofReal_add_cpow {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) (s : ℂ) :
     ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ioi 0) := fun _ ht =>
   ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
     (ofReal_add_mem_slitPlane_of_mem_union hx ht)).continuousWithinAt
+
+/-- For `x ∈ slitPlane` and any complex exponent `s`, the principal power `(t + x) ^ s` is
+continuous in the real variable `t ≥ 0`. -/
+theorem continuousOn_ofReal_add_cpow_Ici {x : ℂ} (hx : x ∈ slitPlane) (s : ℂ) :
+    ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun _ ht =>
+  ((Complex.continuous_ofReal.add continuous_const).continuousAt.cpow continuousAt_const
+    (ofReal_add_mem_slitPlane hx ht)).continuousWithinAt
+
+/-- For `x ∈ slitPlane ∪ {0}` and a complex exponent `s` with `0 < s.re`, the principal power
+`(t + x) ^ s` is continuous in the real variable `t ≥ 0`. -/
+theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} (hx : x ∈ slitPlane ∪ {0}) {s : ℂ}
+    (hs : 0 < s.re) : ContinuousOn (fun t : ℝ => ((t : ℂ) + x) ^ s) (Set.Ici 0) := fun t ht => by
+  have hmem : 0 ≤ ((t : ℂ) + x).re ∨ ((t : ℂ) + x).im ≠ 0 :=
+    (mem_slitPlane_union_zero_iff.mp hx).imp
+      (fun h => by simp only [Complex.add_re, Complex.ofReal_re]; linarith [ht.out]) (by simp)
+  exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
+    (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
 
 end TauCeti
 
@@ -291,6 +456,12 @@ theorem cpow_neg_half_mul_self (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w ^ (-(1 / 2) 
   · simp
   · rw [← cpow_add _ _ hw]
     norm_num [cpow_neg_one]
+
+/-- Multiplying the principal power `w ^ (-1/2)` by `w` gives `w ^ (1/2)`, including at
+`w = 0`. -/
+theorem cpow_neg_half_mul_eq_cpow_half (w : ℂ) : w ^ (-(1 / 2) : ℂ) * w = w ^ (1 / 2 : ℂ) := by
+  rw [← TauCeti.cpow_add_one' (by norm_num)]
+  norm_num
 
 /-- For any complex `x` and real `s > 0`, `(t + x) ^ (-s)` tends to `0` as the real number `t`
 tends to `∞`. -/

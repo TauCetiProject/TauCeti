@@ -97,7 +97,8 @@ private theorem simpleRootCharacter_eq_liftCharacter (i : Fin 2) :
       liftCharacter (fun j => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j) := by
   have hrow : (G2.simplyConnectedRootDatum valid_G2).root (G2.simpleIndex valid_G2 i) =
       fun j : Fin 2 => (!![2, -1; -3, 2] : Matrix (Fin 2) (Fin 2) ℤ) i j := by
-    simpa only [rank_G2, cartanMatrix_G2_eq] using root_simpleIndex G2 valid_G2 i
+    rw [← G2.rootGeneratorWeight_inl_eq_root_simpleIndex valid_G2 i,
+      G2.rootGeneratorWeight_inl_eq]
   ext l
   rw [simpleRootCharacter_apply, hrow, liftCharacter_apply]
 

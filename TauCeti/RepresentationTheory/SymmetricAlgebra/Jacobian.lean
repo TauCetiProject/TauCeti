@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Jacobian
+public import Mathlib.LinearAlgebra.FixedSubmodule
+public import TauCeti.LinearAlgebra.SymmetricAlgebra.Derivation.Ramification
 public import TauCeti.RepresentationTheory.SymmetricAlgebra.Basic
+import TauCeti.RepresentationTheory.Dual
 
 /-!
 # The Jacobian of a system of invariants
@@ -40,6 +42,8 @@ raised to the order of its pointwise stabilizer minus one.
   invariant of character `g ↦ det (ρ g⁻¹)`.
 * `Representation.dual_symmetricAlgebra_apply_jacobian`: for polynomial functions on `V`, the
   Jacobian of invariants is a relative invariant of character `g ↦ det (ρ g)`.
+* `Representation.dual_ι_pow_sub_one_dvd_jacobian`: if `g` fixes `ker ℓ` pointwise and
+  its determinant has order `e`, then `ℓ ^ (e - 1)` divides the Jacobian.
 * `Representation.jacobian_ne_zero_of_surjective_aeval`: in characteristic zero, the Jacobian of
   a generating family of the invariants of a finite group is nonzero.
 
@@ -100,5 +104,37 @@ theorem jacobian_ne_zero_of_surjective_aeval [IsDomain R] [CharZero R] [Finite G
   refine jacobian_ne_zero b fun j ↦ ?_
   rw [hA]
   exact (Algebra.IsIntegral.isIntegral _).isAlgebraic
+
+section Field
+
+variable {K G V : Type*} [Field K] [Group G] [AddCommGroup V] [Module K V]
+  [FiniteDimensional K V] (ρ : Representation K G V)
+  {n : Type*} [Fintype n] [DecidableEq n]
+
+/-- **The hyperplane multiplicity in the Jacobian.** If `g` fixes the hyperplane
+`ker ℓ` pointwise and `det (ρ g)` is a primitive `e`-th root of unity, then
+`ℓ ^ (e - 1)` divides the Jacobian of every family of invariant polynomial functions.
+This applies to a generator of the cyclic pointwise stabilizer, with `e` the order
+of its determinant character; no order-two assumption is made. -/
+theorem dual_ι_pow_sub_one_dvd_jacobian (b : Module.Basis n K (Module.Dual K V))
+    {g : G} {ℓ : Module.Dual K V} (hℓ : ℓ ≠ 0)
+    (hfix : LinearMap.ker ℓ ≤ (ρ g).fixedSubmodule)
+    {e : ℕ} (he : 0 < e) (hζ : IsPrimitiveRoot (LinearMap.det (ρ g)) e)
+    {f : n → SymmetricAlgebra K (Module.Dual K V)}
+    (hf : ∀ i, f i ∈ ρ.dual.symmetricAlgebraInvariants) :
+    ι K (Module.Dual K V) ℓ ^ (e - 1) ∣ jacobian b f := by
+  apply ι_pow_sub_one_dvd_jacobian b hℓ
+    (ρ.sub_dual_apply_mem_span_singleton (by
+      simpa only [LinearMap.fixedSubmodule_eq_ker, Module.End.one_eq_id] using hfix)) he
+  · rw [dual_apply, ← LinearMap.dualMap_def, LinearMap.det_dualMap]
+    have hinv : LinearMap.det (ρ g⁻¹) = (LinearMap.det (ρ g))⁻¹ :=
+      map_inv (LinearMap.det.comp ρ) g
+    rw [hinv]
+    exact hζ.inv
+  · intro i
+    rw [← symmetricAlgebra_apply]
+    exact (ρ.dual.mem_symmetricAlgebraInvariants _).1 (hf i) g
+
+end Field
 
 end Representation

@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.Basic
-public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.RJ
+public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Carlson.RG
 public import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Legendre
 import Mathlib.Analysis.Calculus.Deriv.Inv
 import Mathlib.Analysis.Calculus.Deriv.Pow
@@ -15,6 +14,7 @@ import Mathlib.Analysis.SpecialFunctions.Trigonometric.Inverse
 import Mathlib.MeasureTheory.Function.JacobianOneDim
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 import TauCeti.Algebra.Order.Group.EvenFunction
+import TauCeti.Analysis.SpecialFunctions.EllipticIntegral.Elementary
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Arcsin
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Bounds
 
@@ -31,13 +31,14 @@ Every Legendre integral is a combination of Carlson's symmetric integrals (DLMF 
 and at `φ = π / 2` (DLMF 19.25.1, 19.25.2, and 19.25.7 at `φ = π / 2`)
 
 * `K(k) = R_F(0, 1 - k², 1)`;
-* `E(k) = R_F(0, 1 - k², 1) - (k² / 3) R_D(0, 1 - k², 1)`;
+* `E(k) = R_F(0, 1 - k², 1) - (k² / 3) R_D(0, 1 - k², 1) = 2 R_G(0, 1 - k², 1)`;
 * `Π(k, α²) = R_F(0, 1 - k², 1) + (α² / 3) R_J(0, 1 - k², 1, 1 - α²)`.
 
 The Carlson integrals are evaluated at real arguments coerced to `ℂ`, and each identity is an
 equation in `ℂ` whose left side is the real Legendre integral; in particular the right side is
 real. The incomplete identities hold under `k² sin² φ < 1` (and `α² sin² φ < 1` for the third
-kind), which is `k ^ 2 < 1` (and `α2 < 1`) in the complete case.
+kind), which is `k ^ 2 < 1` (and `α2 < 1`) in the complete case; the `R_G` identity
+`E(k) = 2 R_G(0, 1 - k², 1)` extends to `k ^ 2 ≤ 1`.
 
 The dictionary transfers statements about Carlson's symmetric integrals to Legendre's integrals,
 and conversely.
@@ -49,6 +50,7 @@ and conversely.
   `TauCeti.Real.ofReal_legendrePi_eq_carlsonRF_add_carlsonRJ`: the incomplete integrals;
 * `TauCeti.Real.ofReal_legendreK_eq_carlsonRF`,
   `TauCeti.Real.ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD`,
+  `TauCeti.Real.ofReal_legendreEc_eq_carlsonRG`,
   `TauCeti.Real.ofReal_legendrePic_eq_carlsonRF_add_carlsonRJ`: the complete integrals.
 
 ## Implementation notes
@@ -64,10 +66,11 @@ of the three Carlson integrands into `(1 - k² sin² θ)^(-1/2) dθ / s`; under 
 * B. C. Carlson, *Special Functions of Applied Mathematics*, Academic Press, 1977, Chapter 9.
 
 B. Braams' `lean-codes` (<https://github.com/bjbraams/lean-codes>) proves these identities
-(`Carlson.legendreF_eq_of_mul_lt` in `Carlson/Elliptic/Standard.lean`, and its companions in
-`Carlson/Elliptic/LegendreStandard.lean` and `Carlson/Elliptic/LegendreThird.lean`) on top of
-Carlson's general `R`-function; the statements here follow its form, with real Carlson arguments
-coerced to `ℂ` and the hypothesis `k² sin² φ < 1`. The proofs here work directly from the integral
+(`Carlson.legendreF_eq_of_mul_lt` and `Carlson.legendreEc_eq` in `Carlson/Elliptic/Standard.lean`,
+and their companions in `Carlson/Elliptic/LegendreStandard.lean` and
+`Carlson/Elliptic/LegendreThird.lean`) on top of Carlson's general `R`-function; the statements here
+follow its form, with real Carlson arguments coerced to `ℂ` and the hypothesis `k² sin² φ < 1`
+(`k² ≤ 1` for the `R_G` evaluation of `E(k)`). The proofs here work directly from the integral
 definitions of `TauCeti.Real.legendreF` and `Complex.carlsonRF` and are not ported from it.
 -/
 
@@ -76,8 +79,8 @@ public section
 namespace TauCeti.Real
 
 open _root_.Real MeasureTheory Set
-open Complex (carlsonRF carlsonRD carlsonRJ carlsonRF_def carlsonRD_def carlsonRJ_def ofReal_cpow
-  ofReal_neg ofReal_one real_smul)
+open Complex (carlsonRF carlsonRD carlsonRG carlsonRJ carlsonRF_def carlsonRD_def carlsonRJ_def
+  ofReal_cpow ofReal_neg ofReal_one real_smul)
 
 /-! ### The substitution `t = sin² φ / sin² θ - 1` -/
 
@@ -297,6 +300,23 @@ theorem ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD {k : ℝ} (hk : k ^ 2 < 1) 
       carlsonRF 0 (1 - k ^ 2 : ℝ) 1 - (k : ℂ) ^ 2 / 3 * carlsonRD 0 (1 - k ^ 2 : ℝ) 1 := by
   simpa [legendreEc_def] using ofReal_legendreE_eq_carlsonRF_sub_carlsonRD (φ := π / 2)
     (by rw [abs_of_pos (by positivity)]) (by simpa using hk)
+
+/-- **The complete integral of the second kind as a single `R_G` value** (DLMF 19.25.1): for
+`k² ≤ 1`, `E(k) = 2 R_G(0, 1 - k², 1)`. Unlike `ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD`,
+this identity also holds at `k = ±1`, where `R_F(0, 0, 1)` and `R_D(0, 0, 1)` diverge while
+`R_G(0, 0, 1) = 1 / 2`. -/
+theorem ofReal_legendreEc_eq_carlsonRG {k : ℝ} (hk : k ^ 2 ≤ 1) :
+    (legendreEc k : ℂ) = 2 * carlsonRG 0 (1 - k ^ 2 : ℝ) 1 := by
+  rcases hk.lt_or_eq with hlt | heq
+  · have hRG := Complex.two_mul_carlsonRG_eq (x := 0) (y := (1 - k ^ 2 : ℝ)) (z := 1)
+      (Or.inr rfl) (Complex.ofReal_mem_slitPlane.mpr (sub_pos.mpr hlt))
+      Complex.one_mem_slitPlane
+    rw [hRG, ofReal_legendreEc_eq_carlsonRF_sub_carlsonRD hlt,
+      Complex.zero_cpow (by norm_num)]
+    push_cast
+    ring
+  · rcases sq_eq_one_iff.mp heq with rfl | rfl <;>
+      norm_num [Complex.carlsonRG_zero_zero (Or.inl Complex.one_mem_slitPlane)]
 
 /-- **The complete integral of the third kind in Carlson's form** (DLMF 19.25.2): for `k² < 1`
 and `α² < 1`, `Π(k, α²) = R_F(0, 1 - k², 1) + (α² / 3) R_J(0, 1 - k², 1, 1 - α²)`. -/

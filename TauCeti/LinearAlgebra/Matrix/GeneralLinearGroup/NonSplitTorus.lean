@@ -26,6 +26,8 @@ import TauCeti.Algebra.Group.Units.Basic
 -- Non-public: the order of `GL (Fin 2) F` over a finite field is used only inside the proof of
 -- `TauCeti.GL2NonSplitTorus.index_eq`.
 import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.Card
+-- Non-public: `Algebra.leftMulMatrix_algebraMap` is used only inside a proof.
+import TauCeti.LinearAlgebra.Matrix.ToLin
 import Mathlib.RingTheory.Norm.Basic
 import Mathlib.FieldTheory.Finiteness
 import Mathlib.Algebra.GroupWithZero.Units.Fintype
@@ -238,7 +240,7 @@ theorem notMem_range_scalar_gl2NonSplitTorusHom {x : Eˣ}
       Set.range (Matrix.scalar (Fin 2)) := by
   rintro ⟨c, hc⟩
   refine hx ⟨c, Algebra.leftMulMatrix_injective (nonSplitTorusBasis F E) ?_⟩
-  rw [leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
+  rw [Algebra.leftMulMatrix_algebraMap, ← coe_gl2NonSplitTorusHom]
   exact hc
 
 /-- The key computation behind non-splitness: for `x : E` outside `F`, the matrix of multiplication
@@ -269,7 +271,7 @@ theorem conj_notMem_of_det_sub_algebraMap_eq_zero {g : GL (Fin 2) F}
   -- conjugation does not change the determinant of `g - a`
   have hdet : (((x⁻¹ * g * x : GL (Fin 2) F) : Matrix (Fin 2) (Fin 2) F) -
       algebraMap F (Matrix (Fin 2) (Fin 2) F) a).det = 0 := by
-    rw [Matrix.GeneralLinearGroup.det_sub_algebraMap_conj, ha]
+    rw [Units.val_mul, Units.val_mul, Matrix.GeneralLinearGroup.det_sub_algebraMap_conj, ha]
   -- so the norm of `v - a` vanishes, forcing `v` into `F`
   have hnorm : Algebra.norm F ((v : E) - algebraMap F E a) = 0 := by
     rw [Algebra.norm_eq_matrix_det (nonSplitTorusBasis F E), map_sub,

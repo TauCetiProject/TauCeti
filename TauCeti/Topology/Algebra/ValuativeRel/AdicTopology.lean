@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.DiscreteValuationRing.Basic
 public import Mathlib.Topology.Algebra.Nonarchimedean.AdicTopology
 public import Mathlib.Topology.Algebra.Valued.ValuativeRel
-import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology
+import TauCeti.Topology.Algebra.Nonarchimedean.AdicTopology.Basic
 
 /-!
 # The valuation topology of a discretely valued field is adic

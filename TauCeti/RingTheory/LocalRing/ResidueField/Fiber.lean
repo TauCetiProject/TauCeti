@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
+import Mathlib.RingTheory.Ideal.Quotient.Noetherian
+import Mathlib.RingTheory.Localization.Submodule
 
 /-!
 # The local rings of the fibre ring
@@ -13,11 +15,13 @@ public import Mathlib.RingTheory.LocalRing.ResidueField.Fiber
 For a prime `p` of `R` and a prime `Q` of the fibre ring `κ(p) ⊗[R] B` lying over the prime `q`
 of `B`, Mathlib's `Ideal.Fiber.algEquivAux₂` identifies the local ring `(κ(p) ⊗[R] B)_Q` with
 `B_q ⧸ p B_q`. This file records that this identification is compatible with the maps from `B`.
+It also records that the fibre ring of a Noetherian algebra is Noetherian.
 
 ## Main results
 
 * `Ideal.Fiber.algEquivAux₂_algebraMap_one_tmul`: `Ideal.Fiber.algEquivAux₂` sends `1 ⊗ b` to the
   class of `b`.
+* `Ideal.Fiber.isNoetherianRing`: if `B` is Noetherian, so is the fibre ring `κ(p) ⊗[R] B`.
 -/
 
 public section
@@ -46,5 +50,11 @@ theorem algEquivAux₂_algebraMap_one_tmul (Q : Ideal (p.Fiber B)) [Q.IsPrime] (
   simp only [AlgEquiv.trans_apply, AlgEquiv.restrictScalars_apply]
   rw [← AlgEquiv.restrictScalars_apply B, ← right_algebraMap_apply,
     ← IsScalarTower.algebraMap_apply, AlgEquiv.commutes, AlgEquiv.commutes]
+
+/-- The fibre ring `κ(p) ⊗[R] B` of a Noetherian `R`-algebra `B` is Noetherian, being the quotient
+`B_p ⧸ p B_p` of a localization of `B` (`Ideal.Fiber.algEquivQuotient`). -/
+instance isNoetherianRing [IsNoetherianRing B] : IsNoetherianRing (p.Fiber B) :=
+  let : Algebra B (p.Fiber B) := rightAlgebra
+  isNoetherianRing_of_ringEquiv _ (algEquivQuotient p).symm.toRingEquiv
 
 end Ideal.Fiber

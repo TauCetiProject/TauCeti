@@ -10,6 +10,7 @@ public import Mathlib.Data.Finset.Sort
 public import Mathlib.Data.List.Rotate
 public import Mathlib.Logic.Equiv.Fin.Rotate
 import Mathlib.Data.List.Chain
+import Mathlib.Order.Interval.Finset.Fin
 
 /-!
 # Sorting finsets
@@ -26,12 +27,17 @@ Consecutive entries of the sorted list of `s` are the pairs of positions of `s` 
 `s` strictly between them, so a chain condition on the sorted list is a condition on such adjacent
 pairs.
 
+The `m`-th element of a finset `s` in increasing order, `s.orderEmbOfFin h m`, has exactly `m`
+elements of `s` below it.
+
 Mapping the sorted list of `s` along an embedding that is strictly antitone on `s` gives the
 sorted list of the image in reversed order; in particular, sorting the points of a finset of
 `Fin n` moved along the reversal `Fin.rev` reverses the list of their images.
 
 Moving the points of a finset `B` of `Fin n` along the rotation `finRotate n` (`i ↦ i + 1`, the
 last position going to `0`) commutes with sorting up to a cyclic rotation of the list.
+
+The `i`-th smallest element of `s` has exactly `i` elements of `s` below it.
 -/
 
 public section
@@ -133,6 +139,16 @@ theorem _root_.StrictAntiOn.map_finsetSort {e : α ↪ β} (he : StrictAntiOn e 
       he ((mem_sort _).1 hx) ((mem_sort _).1 hy) hxy
   rw [List.SortedLT.eq_of_mem_iff (sortedLT_sort (s.map e)) hgt.reverse fun x => by simp,
     List.reverse_reverse]
+
+/-- The `m`-th element of `s` in increasing order has exactly `m` elements of `s` below it. -/
+theorem card_filter_lt_orderEmbOfFin (s : Finset α) {k : ℕ} (h : #s = k) (m : Fin k) :
+    #{j ∈ s | j < s.orderEmbOfFin h m} = m := by
+  have e := map_orderEmbOfFin_univ s h
+  generalize s.orderEmbOfFin h = a at e ⊢
+  subst e
+  rw [filter_map, card_map]
+  simp only [Function.comp_def, RelEmbedding.coe_toEmbedding, OrderEmbedding.lt_iff_lt,
+    filter_gt_eq_Iio, Fin.card_Iio]
 
 /-- Sorting the points of a finset `B` of `Fin n` moved along the reversal `Fin.revPerm` lists the
 images under `Fin.rev` of the sorted points of `B` in reversed order. -/

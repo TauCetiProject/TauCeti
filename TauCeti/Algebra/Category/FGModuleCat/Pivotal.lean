@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Algebra.Category.FGModuleCat.Basic
 public import TauCeti.Algebra.Category.FGModuleCat.Rigid
-public import TauCeti.CategoryTheory.Monoidal.Pivotal.Symmetric
+public import TauCeti.CategoryTheory.Monoidal.Pivotal.FrobeniusSchur.Symmetric
 public import TauCeti.LinearAlgebra.Trace.Coevaluation
 
 /-!
@@ -22,14 +22,19 @@ classical one:
   into its double dual;
 * the categorical trace of an endomorphism `f` is its linear trace `LinearMap.trace K V f`, read as
   the scalar endomorphism of the unit object `K`;
-* consequently the quantum dimension of `V` is its dimension `finrank K V`.
+* consequently the quantum dimension of `V` is its dimension `finrank K V`, and every
+  Frobenius–Schur indicator `ν_n(V)` equals `finrank K V`.
 
 ## Main results
 
 * `FGModuleCat.drinfeldIso_hom_hom_hom`: the pivotal isomorphism, which is the Drinfeld isomorphism,
   is the double-dual evaluation map;
-* `FGModuleCat.trace_eq_smul`: the categorical trace is the linear trace;
-* `FGModuleCat.quantumDim_eq_smul`: the quantum dimension is the dimension.
+* `FGModuleCat.trace_eq_smul` and `FGModuleCat.trace_hom_hom_one`: the categorical trace is the
+  linear trace;
+* `FGModuleCat.quantumDim_eq_smul` and `FGModuleCat.quantumDim_hom_hom_one`: the quantum dimension
+  is the dimension;
+* `FGModuleCat.frobeniusSchurIndicator_eq_finrank`: every Frobenius–Schur indicator `ν_n(V)` of a
+  finite-dimensional vector space is `(finrank K V : K)`.
 
 ## References
 
@@ -85,11 +90,33 @@ theorem trace_eq_smul {V : FGModuleCat.{u} K} (f : V ⟶ V) :
   -- definition, since Mathlib's `Vᘁ` is `FGModuleCat.FGModuleCatDual K V`, built on `Dual K V`.
   rfl
 
+/-- Evaluating the categorical trace of `f : V ⟶ V` at `1 : K` recovers its linear trace. -/
+theorem trace_hom_hom_one {V : FGModuleCat.{u} K} (f : V ⟶ V) :
+    (trace f).hom.hom 1 = LinearMap.trace K V f.hom.hom := by
+  rw [trace_eq_smul]
+  simp [ObjectProperty.tensorUnit_obj]
+
 /-- The quantum dimension of a finite-dimensional vector space is its dimension, acting on the
 unit object by scalar multiplication. -/
 @[simp]
 theorem quantumDim_eq_smul (V : FGModuleCat.{u} K) :
     quantumDim V = (finrank K V : K) • 𝟙 (𝟙_ (FGModuleCat K)) := by
   rw [← trace_id, trace_eq_smul, hom_hom_id, LinearMap.trace_id]
+
+/-- Evaluating the quantum dimension of `V` at `1 : K` recovers `finrank K V`. -/
+theorem quantumDim_hom_hom_one (V : FGModuleCat.{u} K) :
+    (quantumDim V).hom.hom 1 = (finrank K V : K) := by
+  rw [← trace_id, trace_hom_hom_one, hom_hom_id, LinearMap.trace_id]
+
+/-- Every Frobenius–Schur indicator `ν_n(V)` of a finite-dimensional vector space in `FGModuleCat K`
+equals `(finrank K V : K)`. -/
+@[simp]
+theorem frobeniusSchurIndicator_eq_finrank (V : FGModuleCat.{u} K) (n : ℕ+) :
+    frobeniusSchurIndicator K V n = (finrank K V : K) := by
+  -- Under `tensorUnitHomLinearEquiv`, postcomposition with the cyclic shift is the shift itself.
+  rw [frobeniusSchurIndicator_eq_trace_rightComp,
+    ← LinearMap.trace_conj' _ (tensorUnitHomLinearEquiv (tensorPow V (n.natPred + 1))),
+    conj_tensorUnitHomLinearEquiv_rightComp, ← trace_hom_hom_one, trace_tensorPowShiftIso_hom,
+    quantumDim_hom_hom_one]
 
 end FGModuleCat

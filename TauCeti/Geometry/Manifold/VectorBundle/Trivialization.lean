@@ -5,10 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Geometry.Manifold.LocalDiffeomorph
+public import Mathlib.Geometry.Manifold.ContMDiffMap
 public import Mathlib.Geometry.Manifold.VectorBundle.Basic
+import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
 
 /-!
-# The fibre coordinate near a point of a fibre bundle
+# The fibre coordinate and partial diffeomorphism of a bundle trivialization
 
 Near a point `v₀` of the total space of a fibre bundle, every point can be read in the preferred
 trivialization at the base point `v₀.proj`. For a `C^n` model of the total space, the fibre
@@ -18,7 +21,9 @@ the base set of the trivialization is the topological fact
 
 For a vector bundle, the same reading applies to a `C^n` map from a normed space into the total
 space: its fibre part, read through the linear map of the trivialization at the image of the base
-point, is a `C^n` map between normed spaces there.
+point, is a `C^n` map between normed spaces there. Moreover, every atlas trivialization of a `C^n`
+vector bundle is a `C^n` partial diffeomorphism between its source in `TotalSpace F E` and its
+target `e.baseSet ×ˢ univ` in `B × F`, and hence a `C^n` local diffeomorphism in both directions.
 
 ## Main results
 
@@ -27,9 +32,12 @@ point, is a `C^n` map between normed spaces there.
 * `ContMDiffAt.contDiffAt_continuousLinearMapAt_trivializationAt`: a `C^n` map from a normed space
   into the total space of a vector bundle has `C^n` fibre coordinates in the trivialization at the
   base point of its value.
+* `Bundle.Trivialization.toPartialDiffeomorph`, `Bundle.Trivialization.isLocalDiffeomorphAt`,
+  `Bundle.Trivialization.isLocalDiffeomorphAt_symm`: an atlas trivialization of a `C^n` vector
+  bundle as a `C^n` partial diffeomorphism and local diffeomorphism.
 -/
 
-public section
+public noncomputable section
 
 open Bundle
 open scoped Manifold
@@ -73,3 +81,95 @@ theorem contDiffAt_continuousLinearMapAt_trivializationAt
   exact (trivializationAt F E (b z₀)).continuousLinearMapAt_apply_of_mem (R := 𝕜) hz _
 
 end ContMDiffAt
+
+namespace Bundle.Trivialization
+
+variable {𝕜 B F : Type*} {E : B → Type*} [NontriviallyNormedField 𝕜]
+  [NormedAddCommGroup F] [NormedSpace 𝕜 F] [TopologicalSpace (TotalSpace F E)]
+  [∀ x, TopologicalSpace (E x)] [∀ x, AddCommMonoid (E x)] [∀ x, Module 𝕜 (E x)]
+  {EB : Type*} [NormedAddCommGroup EB] [NormedSpace 𝕜 EB]
+  {HB : Type*} [TopologicalSpace HB] (IB : ModelWithCorners 𝕜 EB HB) [TopologicalSpace B]
+  [ChartedSpace HB B] (n : WithTop ℕ∞) [FiberBundle F E] [VectorBundle 𝕜 F E]
+  [ContMDiffVectorBundle n F E IB]
+  (e : Trivialization F (π F E)) [MemTrivializationAtlas e]
+
+/-- An atlas trivialization of a `C^n` vector bundle as a `C^n` partial diffeomorphism between
+its open source in `TotalSpace F E` and its open target `e.baseSet ×ˢ univ` in `B × F`. -/
+def toPartialDiffeomorph :
+    PartialDiffeomorph (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) (TotalSpace F E) (B × F) n where
+  toPartialEquiv := e.toPartialEquiv
+  open_source := e.open_source
+  open_target := e.open_target
+  contMDiffOn_toFun := e.contMDiffOn
+  contMDiffOn_invFun := e.contMDiffOn_symm
+
+/-- The underlying `PartialEquiv` of `e.toPartialDiffeomorph` is `e.toPartialEquiv`. -/
+@[simp]
+theorem toPartialDiffeomorph_toPartialEquiv :
+    (e.toPartialDiffeomorph IB n).toPartialEquiv = e.toPartialEquiv := (rfl)
+
+/-- The source of `e.toPartialDiffeomorph` is `e.source`. -/
+theorem toPartialDiffeomorph_source : (e.toPartialDiffeomorph IB n).source = e.source := (rfl)
+
+/-- The target of `e.toPartialDiffeomorph` is `e.target`. -/
+theorem toPartialDiffeomorph_target : (e.toPartialDiffeomorph IB n).target = e.target := (rfl)
+
+/-- Coercing `e.toPartialDiffeomorph` to a function recovers `e`. -/
+theorem coe_toPartialDiffeomorph : ⇑(e.toPartialDiffeomorph IB n) = e := e.coe_coe.symm
+
+/-- Applying the partial inverse of `e.toPartialDiffeomorph` agrees with
+`e.toOpenPartialHomeomorph.symm`. -/
+theorem toPartialDiffeomorph_symm_apply (q : B × F) :
+    (e.toPartialDiffeomorph IB n).toPartialEquiv.symm q = e.toOpenPartialHomeomorph.symm q := (rfl)
+
+variable {IB n e}
+
+/-- An atlas trivialization of a `C^n` vector bundle is a `C^n` local diffeomorphism at every
+point of its source. -/
+theorem isLocalDiffeomorphAt {p : TotalSpace F E} (hp : p ∈ e.source) :
+    IsLocalDiffeomorphAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n e p :=
+  TauCeti.isLocalDiffeomorphAt_of_eqOn (Φ := e.toPartialDiffeomorph IB n) hp
+    fun _ _ ↦ (congrFun e.coe_coe _).symm
+
+/-- The partial inverse of an atlas trivialization of a `C^n` vector bundle is a `C^n` local
+diffeomorphism at every point of its target. -/
+theorem isLocalDiffeomorphAt_symm {q : B × F} (hq : q ∈ e.target) :
+    IsLocalDiffeomorphAt (IB.prod 𝓘(𝕜, F)) (IB.prod 𝓘(𝕜, F)) n e.toOpenPartialHomeomorph.symm q :=
+  TauCeti.isLocalDiffeomorphAt_of_eqOn (Φ := (e.toPartialDiffeomorph IB n).symm) hq
+    fun _ _ ↦ rfl
+
+end Bundle.Trivialization
+
+
+namespace Bundle.Trivialization
+
+open TopologicalSpace
+open scoped ContDiff
+
+variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
+  {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  {H : Type*} [TopologicalSpace H] {I : ModelWithCorners 𝕜 E H}
+  {M : Type*} [TopologicalSpace M] [ChartedSpace H M]
+  {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+  {V : M → Type*} [∀ x, AddCommGroup (V x)] [∀ x, Module 𝕜 (V x)]
+  [∀ x, TopologicalSpace (V x)] [TopologicalSpace (TotalSpace F V)]
+  [FiberBundle F V] [VectorBundle 𝕜 F V]
+  {n : ℕ∞ω} [ContMDiffVectorBundle n F V I]
+  (e e' : Trivialization F (π F V)) [MemTrivializationAtlas e] [MemTrivializationAtlas e']
+  {U : Opens M} (hU : (U : Set M) ⊆ e.baseSet) (hU' : (U : Set M) ⊆ e'.baseSet)
+
+/-- The actual frame-change operator as a smooth map on any common open frame domain. -/
+def frameTransitionMap : C^n⟮I, U; 𝓘(𝕜, F →L[𝕜] F), F →L[𝕜] F⟯ :=
+  ⟨fun x ↦ (e.coordChangeL 𝕜 e' x : F →L[𝕜] F), fun x ↦
+    (contMDiffAt_coordChangeL (e := e) (e' := e') (hU x.2) (hU' x.2)).comp x
+      contMDiff_subtype_val.contMDiffAt⟩
+
+/-- Evaluation of the smooth frame-change operator is the native bundle coordinate change. -/
+@[simp]
+theorem frameTransitionMap_apply (x : U) :
+    frameTransitionMap (I := I) (n := n) e e' hU hU' x =
+      (e.coordChangeL 𝕜 e' x : F →L[𝕜] F) := by
+  rfl
+
+
+end Bundle.Trivialization

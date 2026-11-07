@@ -354,7 +354,7 @@ theorem W1p0.hasWeakFDerivOn_indicator (hsub : Omega ≤ Omega')
 /-- **The weak gradient of a `W^{1,p}_0` function on a bounded set has integral zero.** If `Ω` is
 bounded and `u ∈ W^{1,p}_0(Ω)`, then `∫_Ω ⟪∇u, w⟫ = 0` for every direction `w`. A function of
 `W^{1,p}(Ω)` need not have this property, so it detects functions with nonzero boundary values:
-for nonempty `Ω` and `w ≠ 0`, the function `x ↦ ⟪x, w⟫` is not in `W^{1,p}_0(Ω)`. -/
+a function of `W^{1,p}(Ω)` with `∫_Ω ⟪∇u, w⟫ ≠ 0` for some `w` is not in `W^{1,p}_0(Ω)`. -/
 theorem W1p0.setIntegral_inner_gradient_eq_zero (hΩ : Bornology.IsBounded (Omega : Set E))
     (u : W1p0 mu Omega p) (w : E) :
     ∫ x in Omega, ⟪W1p.gradient (u : W1p mu Omega p) x, w⟫_ℝ ∂mu = 0 := by
