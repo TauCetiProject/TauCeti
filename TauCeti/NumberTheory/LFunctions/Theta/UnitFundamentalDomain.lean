@@ -28,7 +28,8 @@ This file sets up that action and its fundamental domains:
 * `normOneSurface K` is the hypersurface `S = {y > 0 | N(y) = 1}` on which the units act.
   Coordinatewise inversion and translation by a point of `S` give the self-homeomorphisms
   `surfaceInv` and `surfaceMul`. A bounded set of parameters meets `S` inside a box `[C⁻¹, C]`
-  (`exists_forall_mem_Icc_of_isBounded`).
+  (`exists_forall_mem_Icc_of_isBounded`), so a bounded subset of `S` stays uniformly away from
+  the coordinate hyperplanes (`exists_pos_le_of_isBounded_normOneSurface`).
 * `IsUnitFundamentalDomain K D` says that `D` is a bounded measurable subset of `S` meeting every
   unit orbit, and meeting the orbit of each of its points exactly in the torsion translates.
 * `unitFundamentalDomain K` is the set of points of `S` whose coordinatewise square root lies in
@@ -295,6 +296,14 @@ theorem exists_forall_mem_Icc_of_isBounded {D : Set (realSpace K)} (hD : IsBound
     exact inv_le_pow_finrank_of_mem_normOneSurface hyS hC' hle w
   · exact (Real.le_norm_self _).trans ((norm_le_pi_norm y w).trans ((hC y hy).trans
       ((le_max_left _ _).trans (le_self_pow₀ hC' Module.finrank_pos.ne'))))
+
+/-- A bounded subset of the norm-one surface stays uniformly away from every coordinate
+hyperplane. This makes Gaussian estimates uniform on unit fundamental domains. -/
+theorem exists_pos_le_of_isBounded_normOneSurface {D : Set (realSpace K)}
+    (hD : IsBounded D) (hS : D ⊆ normOneSurface K) :
+    ∃ b > 0, ∀ x ∈ D, ∀ w, b ≤ x w := by
+  obtain ⟨C, hC1, hC⟩ := exists_forall_mem_Icc_of_isBounded hD
+  exact ⟨C⁻¹, inv_pos.mpr (zero_lt_one.trans_le hC1), fun x hx w ↦ (hC x hx (hS hx) w).1⟩
 
 /-! ### Unit fundamental domains -/
 

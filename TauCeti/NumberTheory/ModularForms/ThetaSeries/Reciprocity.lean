@@ -215,8 +215,6 @@ theorem dualGaussSum_one_one (hk : finrank ℝ E = 2 * k)
   have h := gaussSum_eq_mul_dualGaussSum hL hk 1 1
   rw [gaussSum_one] at h
   have hcov : (covolume L : ℂ) ≠ 0 := ofReal_ne_zero.mpr (covolume_pos L).ne'
-  have hsqrt : covolume L = √(Nat.card (DiscriminantGroup L) : ℝ) :=
-    inv_injective (hL.isIntegral.inv_covolume_eq_inv_sqrt_card_discriminantGroup)
   -- At `a = c = 1` the law reads `1 = (covol L)⁻¹ i^k ∑_γ e(-‖γ‖² / 2)`; conjugate it.
   have h' : dualGaussSum L hL (-1) 1 = covolume L * (-I) ^ k := by
     rw [Nat.cast_one, div_one, one_pow, one_mul] at h
@@ -228,7 +226,7 @@ theorem dualGaussSum_one_one (hk : finrank ℝ E = 2 * k)
       _ = _ := by push_cast at h; rw [← h, mul_one]
   have hconj := conj_dualGaussSum hL (-1) 1
   rw [neg_neg, h', map_mul, conj_ofReal, map_pow, map_neg, conj_I, neg_neg] at hconj
-  rw [← hconj, hsqrt]
+  rw [← hconj, hL.isIntegral.covolume_eq_sqrt_card_discriminantGroup]
 
 end IsEven
 
