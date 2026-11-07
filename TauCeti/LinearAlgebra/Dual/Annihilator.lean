@@ -31,8 +31,7 @@ namespace Submodule
 /-- A functional factoring through the quotient `V ⧸ U` annihilates `U`. -/
 theorem comp_mkQ_mem_dualAnnihilator {R V : Type*} [CommRing R] [AddCommGroup V] [Module R V]
     (U : Submodule R V) (ψ : Module.Dual R (V ⧸ U)) : ψ ∘ₗ U.mkQ ∈ U.dualAnnihilator :=
-  (mem_dualAnnihilator _).mpr fun w hw ↦ by
-    rw [LinearMap.comp_apply, mkQ_apply, (Quotient.mk_eq_zero U).mpr hw, map_zero]
+  (U.dualQuotEquivDualAnnihilator ψ).2
 
 section IsCompl
 
@@ -49,15 +48,8 @@ noncomputable def dualAnnihilatorEquivOfIsCompl (h : IsCompl p q) :
 to `p`. -/
 @[simp]
 theorem dualAnnihilatorEquivOfIsCompl_apply (h : IsCompl p q) (φ : q.dualAnnihilator) (x : p) :
-    dualAnnihilatorEquivOfIsCompl p q h φ x = (φ : Module.Dual R V) x := by
-  -- The inverse of the quotient map sends `x ∈ p` back to its class in `V ⧸ q`.
-  have hx : (q.quotientEquivOfIsCompl p h.symm).symm x = Quotient.mk (x : V) :=
-    (LinearEquiv.symm_apply_eq _).2 (quotientEquivOfIsCompl_apply_mk_right h.symm x).symm
-  rw [dualAnnihilatorEquivOfIsCompl, LinearEquiv.trans_apply, LinearEquiv.dualMap_apply, hx,
-    dualQuotEquivDualAnnihilator_symm_apply_mk]
-  -- Mathlib's `FunLike` instance on `q.dualAnnihilator` is defined by `coe φ := φ.val` and has
-  -- no evaluation lemma, so the remaining coercion step holds by that field.
-  rfl
+    dualAnnihilatorEquivOfIsCompl p q h φ x = (φ : Module.Dual R V) x :=
+  (rfl)
 
 /-- The inverse of `Submodule.dualAnnihilatorEquivOfIsCompl` extends a functional on `p` by
 zero on `q`. -/
@@ -79,9 +71,7 @@ inverse image. Neither the map nor either vector space needs to be finite-dimens
 @[simp]
 theorem dualAnnihilator_map_dualMap_eq (S : Submodule k W) (f : V →ₗ[k] W) :
     S.dualAnnihilator.map f.dualMap = (S.comap f).dualAnnihilator := by
-  rw [← S.range_dualMap_mkQ_eq, ← LinearMap.range_comp,
-    LinearMap.dualMap_comp_dualMap,
-    LinearMap.range_dualMap_eq_dualAnnihilator_ker, LinearMap.ker_comp,
-    Submodule.ker_mkQ]
+  rw [← S.range_dualMap_mkQ_eq, ← LinearMap.range_comp, LinearMap.dualMap_comp_dualMap,
+    LinearMap.range_dualMap_eq_dualAnnihilator_ker, LinearMap.ker_comp, ker_mkQ]
 
 end Submodule
