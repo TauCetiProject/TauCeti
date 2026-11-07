@@ -21,6 +21,7 @@ public import Mathlib.RingTheory.Localization.FractionRing
 public import Mathlib.RingTheory.Polynomial.Resultant.Basic
 import TauCeti.RingTheory.Polynomial.GaussLemma
 import TauCeti.RingTheory.Polynomial.Resultant.Basic
+import TauCeti.RingTheory.PowerBasis
 public import TauCeti.RingTheory.Polynomial.RootEnumeration
 
 /-!
@@ -286,20 +287,14 @@ theorem discr_map {f : R[X]} (hf : f.Monic) (φ : R →+* S) :
   nontriviality S
   exact discr_map_of_natDegree_eq φ (hf.natDegree_map φ)
 
-/-- The discriminant of a product of monic polynomials is the product of their discriminants and
-the square of their resultant. -/
-theorem discr_mul {f g : R[X]} (hf : f.Monic) (hg : g.Monic) :
-    (f * g).discr = f.discr * g.discr * (f.resultant g) ^ 2 := by
-  -- A monic factor of degree zero is `1`, and both sides are then the discriminant of the other
-  -- factor; the argument below needs both degrees positive.
-  by_cases hf0 : f.natDegree = 0
-  · obtain rfl := eq_one_of_monic_natDegree_zero hf hf0
-    have h1 : (1 : R[X]).discr = 1 := by simpa using discr_C (R := R) 1
-    simp [h1]
-  by_cases hg0 : g.natDegree = 0
-  · obtain rfl := eq_one_of_monic_natDegree_zero hg hg0
-    have h1 : (1 : R[X]).discr = 1 := by simpa using discr_C (R := R) 1
-    simp [h1]
+/-- The resultant of `f * g` against its derivative, at the natural degree bounds, is the product of
+the resultants `res(f, f')`, `res(f, g)`, `res(g, f)` and `res(g, g')` for monic `f` and `g` of
+positive degree. -/
+private theorem resultant_mul_derivative_eq {f g : R[X]} (hf : f.Monic) (hg : g.Monic)
+    (hf0 : f.natDegree ≠ 0) (hg0 : g.natDegree ≠ 0) :
+    (f * g).resultant (f * g).derivative (f.natDegree + g.natDegree)
+        (f.natDegree + g.natDegree - 1) =
+      f.resultant f.derivative * f.resultant g * (g.resultant f * g.resultant g.derivative) := by
   -- All resultants against `(f * g).derivative` are taken at the single degree bound `d`, which
   -- is the degree bound `Polynomial.discr` uses for `f * g`; the next block records that every
   -- polynomial the argument feeds to a resultant stays inside that bound.
@@ -340,6 +335,24 @@ theorem discr_mul {f g : R[X]} (hf : f.Monic) (hg : g.Monic) :
   -- `res(f * g, (f * g)')` into the product of the two resultants just computed.
   have hmul := resultant_mul_left f g (f * g).derivative d hderiv
   rw [hresf, hresg] at hmul
+  exact hmul
+
+/-- The discriminant of a product of monic polynomials is the product of their discriminants and
+the square of their resultant. -/
+theorem discr_mul {f g : R[X]} (hf : f.Monic) (hg : g.Monic) :
+    (f * g).discr = f.discr * g.discr * (f.resultant g) ^ 2 := by
+  -- A monic factor of degree zero is `1`, and both sides are then the discriminant of the other
+  -- factor; the argument below needs both degrees positive.
+  by_cases hf0 : f.natDegree = 0
+  · obtain rfl := eq_one_of_monic_natDegree_zero hf hf0
+    have h1 : (1 : R[X]).discr = 1 := by simpa using discr_C (R := R) 1
+    simp [h1]
+  by_cases hg0 : g.natDegree = 0
+  · obtain rfl := eq_one_of_monic_natDegree_zero hg hg0
+    have h1 : (1 : R[X]).discr = 1 := by simpa using discr_C (R := R) 1
+    simp [h1]
+  have hdeg : (f * g).natDegree = f.natDegree + g.natDegree := hf.natDegree_mul hg
+  have hmul := resultant_mul_derivative_eq hf hg hf0 hg0
   -- Step 3: read each resultant of a polynomial against its own derivative as a discriminant,
   -- and swap the arguments of the crossed resultant `res(g, f)`.
   have hfd : f.resultant f.derivative =
@@ -366,7 +379,6 @@ theorem discr_mul {f g : R[X]} (hf : f.Monic) (hg : g.Monic) :
     omega
   have hdisc := (hf.mul hg).resultant_deriv
   rw [hdeg] at hdisc
-  dsimp only [d] at hmul
   rw [hmul, hfd, hgd, hcomm,
     htriangle, pow_add, pow_add] at hdisc
   ring_nf at hdisc
@@ -866,27 +878,7 @@ theorem discr_powerBasis_eq_minpoly_discr {K L : Type*} [Field K] [Field L]
     refine Fintype.equivOfCardEq ?_
     rw [Fintype.card_fin, AlgHom.card]
     exact (PowerBasis.finrank pb).symm
-  let r : Fin pb.dim → E := fun i ↦ e i pb.gen
-  have hrmem : ∀ i, r i ∈ (minpoly K pb.gen).aroots E := by
-    intro i
-    rw [mem_roots, IsRoot.def, eval_map_algebraMap, aeval_algHom_apply]
-    repeat' simp [minpoly.ne_zero pb.isIntegral_gen]
-  have hrnodup : (univ.val.map r).Nodup := by
-    rw [Multiset.nodup_map_iff_of_injective]
-    · exact univ.nodup
-    · intro i j hij
-      exact e.injective (pb.algHom_ext hij)
-  have hr : ((minpoly K pb.gen).map (algebraMap K E)).roots = univ.val.map r := by
-    have hle : univ.val.map r ≤ ((minpoly K pb.gen).map (algebraMap K E)).roots :=
-      (Multiset.le_iff_subset hrnodup).2 (by
-        intro x hx
-        obtain ⟨i, _, rfl⟩ := Multiset.mem_map.mp hx
-        exact hrmem i)
-    have hcardroots : ((minpoly K pb.gen).map (algebraMap K E)).roots.card = pb.dim := by
-      rw [← hs.natDegree_eq_card_roots,
-        (minpoly.monic pb.isIntegral_gen).natDegree_map (algebraMap K E),
-        pb.natDegree_minpoly]
-    exact (Multiset.eq_of_le_of_card_le hle (by simp [hcardroots])).symm
+  have hr := pb.roots_map_minpoly_eq_map_algHom e
   apply (algebraMap K E).injective
   rw [Algebra.discr_powerBasis_eq_prod K E pb e,
     (minpoly.monic pb.isIntegral_gen).discr_eq_prod_roots_sub_sq_of_splits hs hr]
@@ -894,7 +886,6 @@ theorem discr_powerBasis_eq_minpoly_discr {K L : Type*} [Field K] [Field L]
   intro i _
   apply Finset.prod_congr rfl
   intro j _
-  dsimp only [r]
   ring
 
 end Algebra

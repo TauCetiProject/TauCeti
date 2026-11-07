@@ -7,6 +7,10 @@ module
 
 public import Mathlib.Algebra.Homology.ShortComplex.ModuleCat
 public import Mathlib.LinearAlgebra.FiniteDimensional.Lemmas
+public import Mathlib.LinearAlgebra.Dual.Defs
+public import TauCeti.LinearAlgebra.Exact
+public import TauCeti.LinearAlgebra.Dual.FiniteProjective
+public import Mathlib.Algebra.Category.ModuleCat.Projective
 
 /-!
 # Homology of short complexes of modules
@@ -22,6 +26,11 @@ two finiteness consequences of that description:
 * over a division ring, when the middle term is finite-dimensional, the dimension of the homology
   plus the dimension of the range of the first map is the dimension of the kernel of the second,
   so in particular the homology has dimension at most that of the middle term.
+
+It also defines the `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short
+complex of right `A`-modules (`CategoryTheory.ShortComplex.moduleCatOpDual`), and shows that the
+dual of a short exact sequence is short exact when every functional on `X₁` extends to `X₂`
+(`CategoryTheory.ShortComplex.ShortExact.moduleCatOpDual`).
 
 ## References
 
@@ -89,5 +98,41 @@ lemma moduleCatLeftHomologyData_π_hom_surjective :
   (ModuleCat.epi_iff_surjective _).1 inferInstance
 
 end LeftHomologyData
+
+section OpDual
+
+variable {A : Type u} [Ring A] (S : ShortComplex (ModuleCat.{u} A))
+
+/-- The `A`-dual `X₃* ⟶ X₂* ⟶ X₁*` of a short complex of left `A`-modules, a short complex of
+right `A`-modules, that is, of `Aᵐᵒᵖ`-modules. Both maps are precomposition. The body is exposed so
+that the `simps` lemmas for the two maps can be stated between the dual modules. -/
+@[expose, simps X₁ X₂ X₃ f g]
+noncomputable def moduleCatOpDual : ShortComplex (ModuleCat.{u} Aᵐᵒᵖ) where
+  X₁ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A S.X₃)
+  X₂ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A S.X₂)
+  X₃ := ModuleCat.of Aᵐᵒᵖ (Module.Dual A S.X₁)
+  f := ModuleCat.ofHom (S.g.hom.lcomp Aᵐᵒᵖ A)
+  g := ModuleCat.ofHom (S.f.hom.lcomp Aᵐᵒᵖ A)
+  zero := by
+    ext φ x
+    simp [← LinearMap.comp_apply S.g.hom S.f.hom, ← ModuleCat.hom_comp]
+
+/-- The dual of a finitely generated projective middle term is projective. -/
+instance [Module.Finite A S.X₂] [Module.Projective A S.X₂] : Projective S.moduleCatOpDual.X₂ := by
+  rw [moduleCatOpDual_X₂]
+  infer_instance
+
+variable {S}
+
+/-- **Dualizing a short exact sequence**: if every functional on `X₁` extends to `X₂`, the dual
+`0 ⟶ X₃* ⟶ X₂* ⟶ X₁* ⟶ 0` of a short exact sequence is short exact. -/
+theorem ShortExact.moduleCatOpDual (hS : S.ShortExact)
+    (hext : Function.Surjective (S.f.hom.lcomp Aᵐᵒᵖ A)) : S.moduleCatOpDual.ShortExact :=
+  ModuleCat.shortComplex_shortExact _
+    (((ShortExact.moduleCat_exact_iff_function_exact S).1 hS.exact).lcomp_of_surjective A
+      hS.moduleCat_surjective_g)
+    (LinearMap.lcomp_injective_of_surjective _ hS.moduleCat_surjective_g) hext
+
+end OpDual
 
 end CategoryTheory.ShortComplex

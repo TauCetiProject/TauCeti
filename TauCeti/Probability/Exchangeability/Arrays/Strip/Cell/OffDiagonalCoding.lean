@@ -166,15 +166,14 @@ theorem JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagon
   -- The square context and the entries of the square other than the pair generate the same
   -- information, and that information is part of the crossing strips and the diagonal.
   have hRC : MeasurableSpace.comap ((S ×ˢ S \ C).domRestrict (π := fun _ => α)) inferInstance ≤
-      MeasurableSpace.comap (offDiagonalPairSquareContext (α := α) e i j) inferInstance := by
-    rw [← squareStripsOfContext_comp (α := α) e i j hij hi hj, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (measurable_squareStripsOfContext e i j).comap_le
+      MeasurableSpace.comap (offDiagonalPairSquareContext (α := α) e i j) inferInstance :=
+    MeasurableSpace.comap_le_comap_of_eq_comp _ (measurable_squareStripsOfContext e i j)
+      (squareStripsOfContext_comp (α := α) e i j hij hi hj).symm
   have hCH : MeasurableSpace.comap (offDiagonalPairSquareContext (α := α) e i j) inferInstance ≤
-      MeasurableSpace.comap (D.domRestrict (π := fun _ => α)) inferInstance := by
-    rw [← offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict (α := α) e i j,
-      ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono
-      (measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e i j).comap_le
+      MeasurableSpace.comap (D.domRestrict (π := fun _ => α)) inferInstance :=
+    MeasurableSpace.comap_le_comap_of_eq_comp _
+      (measurable_offDiagonalPairSquareContextOfStripsAndDiagonal e i j)
+      (offDiagonalPairSquareContextOfStripsAndDiagonal_comp_domRestrict (α := α) e i j).symm
   -- The pair is conditionally independent of everything outside it, given the rest of the square
   -- spanned by the hidden vertices together with `i` and `j`.
   have hCsub : C ⊆ S ×ˢ S := by
@@ -196,9 +195,9 @@ theorem JointlyExchangeable.condIndepFun_offDiagonalPair_crossingStripsAndDiagon
     · exact hj hp.1
     · exact hij hp.symm
   have hDC : MeasurableSpace.comap (D.domRestrict (π := fun _ => α)) inferInstance ≤
-      MeasurableSpace.comap (Cᶜ.domRestrict (π := fun _ => α)) inferInstance := by
-    rw [← Set.domRestrict₂_comp_domRestrict hDsub, ← MeasurableSpace.comap_comp]
-    exact MeasurableSpace.comap_mono (Set.measurable_restrict₂ hDsub).comap_le
+      MeasurableSpace.comap (Cᶜ.domRestrict (π := fun _ => α)) inferInstance :=
+    MeasurableSpace.comap_le_comap_of_eq_comp _ (Set.measurable_restrict₂ hDsub)
+      (Set.domRestrict₂_comp_domRestrict hDsub).symm
   have hpair := TauCeti.MeasureTheory.comap_pair_le_comap_domRestrict (π := fun _ => α) C
     (Set.mem_insert (i, j) _) (Set.mem_insert_of_mem _ (Set.mem_singleton (j, i)))
   have hstep := condIndep_of_condIndep_of_le_right
@@ -447,7 +446,8 @@ private theorem map_prod_orientedPairCoding_eq
   refine Eq.trans (congrArg (Measure.map · _) (funext fun q => ?_))
     (TauCeti.MeasureTheory.Measure.map_ite_mem_eq (hcoding i j).aemeasurable
       (hswap.comp (hcoding j i)).aemeasurable hO'
-      (Filter.Eventually.of_forall fun _ => Iff.rfl) (hfwd.trans hbwd.symm))
+      (Filter.Eventually.of_forall fun _ => Iff.rfl)
+      (congrArg (Measure.restrict · _) (hfwd.trans hbwd.symm)))
   by_cases hq : offDiagonalPairSquareContextOfStripsAndDiagonal e i j q.1 ∈ O <;>
     simp [hq, offDiagonalPairSquareContextOfStripsAndDiagonal_swap e i j]
 

@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.ExactSequences
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughInjectives
+public import Mathlib.Algebra.Homology.DerivedCategory.Ext.EnoughProjectives
 public import Mathlib.Algebra.Homology.DerivedCategory.Ext.Linear
 public import TauCeti.Algebra.Homology.ShortComplex.ShortExact
 
@@ -20,7 +21,8 @@ This file collects general `Ext` API that Mathlib does not state in this form:
 * in degree zero, composition with `CategoryTheory.Abelian.Ext.mk₀ f` corresponds under
   `CategoryTheory.Abelian.Ext.addEquiv₀` to composition with `f`
   (`TauCeti.ext_addEquiv₀_mk₀_comp` and `TauCeti.ext_addEquiv₀_comp_mk₀`);
-* the vanishing of `Extⁿ(X, Y)` when either of the two objects is a zero object;
+* the vanishing of `Extⁿ(X, Y)` when either of the two objects is a zero object, and its transport
+  along an isomorphism of the first argument (`TauCeti.ext_eq_zero_of_iso`);
 * short exact cokernel sequences, the cokernel sequence of the chosen embedding into an injective
   object with the morphisms of such sequences extending a given morphism
   (`TauCeti.injectiveCokernelSequenceMap`), and a dimension-shift criterion for vanishing of the
@@ -38,7 +40,9 @@ This file collects general `Ext` API that Mathlib does not state in this form:
   sequence `S` is bijective when `Extⁿ⁺¹(P, S.X₂)` and `Extⁿ⁺²(P, S.X₂)` vanish
   (`CategoryTheory.ShortComplex.ShortExact.extClass_postcomp_bijective`);
 * extension of morphisms along a short exact sequence `S` whose cokernel `S.X₃` has
-  `Ext¹(S.X₃, Y) = 0` (`CategoryTheory.ShortComplex.ShortExact.exists_f_comp_eq_of_ext_eq_zero`).
+  `Ext¹(S.X₃, Y) = 0` (`CategoryTheory.ShortComplex.ShortExact.exists_f_comp_eq_of_ext_eq_zero`),
+  and conversely when `S.X₂` is projective
+  (`CategoryTheory.ShortComplex.ShortExact.ext_eq_zero_of_exists_f_comp_eq`);
 * the vanishing of morphisms from `X` placed in degree `n` to `Y` placed in degree zero in the
   derived category when `Extⁿ(X, Y) = 0` (`DerivedCategory.singleFunctor_hom_eq_zero_of_ext`).
 
@@ -85,6 +89,12 @@ theorem extAddEquivOfIso_apply (e : X ≅ X') (f : Y ≅ Y') (n : ℕ) (x : Ext.
     extAddEquivOfIso e f n x =
       (Ext.mk₀ e.inv).comp (x.comp (Ext.mk₀ f.hom) (add_zero n)) (zero_add n) :=
   (rfl)
+
+/-- **`Ext` vanishing transports along an isomorphism** of the first argument: if
+`Extⁿ(X', Y) = 0` and `X ≅ X'`, then `Extⁿ(X, Y) = 0`. -/
+theorem ext_eq_zero_of_iso (e : X ≅ X') {n : ℕ} (h : ∀ x : Ext.{w} X' Y n, x = 0)
+    (x : Ext.{w} X Y n) : x = 0 :=
+  (extAddEquivOfIso e (Iso.refl Y) n).map_eq_zero_iff.1 (h _)
 
 /-- The `R`-linear refinement of `TauCeti.extAddEquivOfIso`: in an `R`-linear abelian category,
 isomorphisms `X ≅ X'` and `Y ≅ Y'` identify `Extⁿ(X, Y)` and `Extⁿ(X', Y')` as `R`-modules. -/
@@ -332,6 +342,19 @@ lemma exists_f_comp_eq_of_ext_eq_zero {Y : C} (h : ∀ x : Ext.{w} S.X₃ Y 1, x
   refine ⟨Ext.addEquiv₀ x, Ext.homEquiv₀.symm.injective ?_⟩
   rw [← Ext.mk₀_addEquiv₀_apply x, Ext.mk₀_comp_mk₀] at hx
   exact hx
+
+/-- **Extension along a monomorphism kills `Ext¹` of the cokernel**: if `S` is short exact with
+projective middle term and every morphism `S.X₁ ⟶ Y` extends along `S.f`, then
+`Ext¹(S.X₃, Y) = 0`. This is the converse of `exists_f_comp_eq_of_ext_eq_zero`. -/
+lemma ext_eq_zero_of_exists_f_comp_eq [Projective S.X₂] {Y : C}
+    (h : ∀ φ : S.X₁ ⟶ Y, ∃ ψ : S.X₂ ⟶ Y, S.f ≫ ψ = φ) (x : Ext.{w} S.X₃ Y 1) : x = 0 := by
+  have := (Ext.one_subsingleton_iff_of_projective Y S hS inferInstance).2 fun x₁ ↦ by
+    obtain ⟨ψ, hψ⟩ := h (Ext.addEquiv₀ x₁)
+    refine ⟨Ext.mk₀ ψ, ?_⟩
+    -- `Ext.precomp` is an abbreviation for composition, with no simp lemma for its application.
+    change (Ext.mk₀ S.f).comp (Ext.mk₀ ψ) (add_zero 0) = x₁
+    rw [Ext.mk₀_comp_mk₀, hψ, Ext.mk₀_addEquiv₀_apply]
+  exact Subsingleton.elim _ _
 
 end CategoryTheory.ShortComplex.ShortExact
 
