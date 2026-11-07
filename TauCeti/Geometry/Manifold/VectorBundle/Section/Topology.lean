@@ -25,9 +25,9 @@ Thus this topology retains the gluing equations when taking coefficient limits.
 Point evaluation is continuous, and the section space is Hausdorff.
 
 The topology is supplied explicitly, rather than installed globally, since the frame domains
-are parameters. The results here concern a specified family of frame domains; no comparison
-between different covers or completeness assertion is made. Neither compactness nor finite
-dimensionality is needed, and the chart derivatives allow manifolds with corners.
+are parameters. The results here concern a specified family of frame domains. Cover comparison
+and continuity of open restriction are proved in `Section.FrameCover`; completeness is separate.
+Neither compactness nor finite dimensionality is needed, and chart derivatives allow corners.
 
 ## References
 
