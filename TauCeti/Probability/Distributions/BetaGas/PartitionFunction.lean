@@ -110,7 +110,7 @@ theorem integral_twoParticleGaussianBetaGasPartitionFunction {β : ℝ} (hβ : 0
   have hh : ∫ z : ℝ, h z = β ^ (-(1 : ℝ) / 2) * sqrt π := by
     have hGaussian : (∫ z : ℝ, exp (-(β * z ^ 2))) = sqrt (π / β) := by
       simpa only [neg_mul] using integral_gaussian β
-    change (∫ z : ℝ, exp (-(β * z ^ 2))) = _
+    dsimp only [h]
     rw [hGaussian, Real.sqrt_div Real.pi_pos.le, Real.sqrt_eq_rpow β,
       show -(1 : ℝ) / 2 = -(1 / 2 : ℝ) by ring, Real.rpow_neg hβ.le]
     ring
