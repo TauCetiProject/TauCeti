@@ -47,7 +47,7 @@ variable {X : Type*} [MeasurableSpace X] (Q : Measure X)
 /-- The Campbell formula for `n + 1` independent locations: distinguish one of the
 occurrences and integrate the remaining `n` locations independently. Coincident locations
 are counted separately. -/
-theorem lintegral_sum_dirac_pi_succ [SigmaFinite Q] (hg : Measurable g) (n : ℕ) :
+theorem lintegral_finsetSum_dirac_pi_succ [SigmaFinite Q] (hg : Measurable g) (n : ℕ) :
     (∫⁻ x : Fin (n + 1) → X, ∫⁻ y, g (y, ∑ i, Measure.dirac (x i))
       ∂(∑ i, Measure.dirac (x i)) ∂Measure.pi (fun _ ↦ Q)) =
       (n + 1 : ℝ≥0∞) * ∫⁻ y, ∫⁻ x : Fin n → X,
@@ -66,10 +66,12 @@ theorem lintegral_sum_dirac_pi_succ [SigmaFinite Q] (hg : Measurable g) (n : ℕ
       ← (measurePreserving_piFinSuccAbove (fun _ : Fin (n + 1) ↦ Q) i).lintegral_comp hh]
     apply lintegral_congr
     intro x
-    simpa only [h, MeasurableEquiv.piFinSuccAbove_apply,
-      Fin.insertNthEquiv_symm_apply, Fin.removeNth, Function.comp_def] using
-      congrArg (fun μ ↦ g (x i, μ)) (Fin.sum_univ_succAbove
-        (fun j ↦ Measure.dirac (x j)) i)
+    have hsplit : Measure.dirac (x i) +
+        ∑ j, Measure.dirac (Fin.removeNth i x j) = ∑ j, Measure.dirac (x j) := by
+      simpa only [Fin.removeNth_apply] using
+        (Fin.sum_univ_succAbove (fun j ↦ Measure.dirac (x j)) i).symm
+    simp only [h, MeasurableEquiv.piFinSuccAbove_apply,
+      Fin.insertNthEquiv_symm_apply, hsplit]
   simp_rw [lintegral_finsetSum_dirac (f := fun y ↦ g (y, _)) _ _
     (hg.comp (measurable_id.prodMk measurable_const))]
   rw [lintegral_finsetSum Finset.univ
@@ -84,7 +86,7 @@ selects an occurrence of the sample, whereas the right side inserts an independe
 The identity includes zero rate and extended-valued tests. For a probability location law
 this is the usual sampling formula; sigma-finite location measures give the same
 product-integral identity. -/
-theorem lintegral_sum_dirac_poissonMeasure_pi [SigmaFinite Q]
+theorem lintegral_finsetSum_dirac_poissonMeasure_pi [SigmaFinite Q]
     (r : ℝ≥0) (hg : Measurable g) :
     (∫⁻ n : ℕ, ∫⁻ x : Fin n → X, ∫⁻ y, g (y, ∑ i, Measure.dirac (x i))
       ∂(∑ i, Measure.dirac (x i)) ∂Measure.pi (fun _ ↦ Q) ∂poissonMeasure r) =
@@ -100,7 +102,7 @@ theorem lintegral_sum_dirac_poissonMeasure_pi [SigmaFinite Q]
         ∂(∑ i, Measure.dirac (x i)) ∂Measure.pi (fun _ ↦ Q)) = n * h n := by
     cases n with
     | zero => simp
-    | succ n => simpa [h, f] using lintegral_sum_dirac_pi_succ Q hg n
+    | succ n => simpa [h, f] using lintegral_finsetSum_dirac_pi_succ Q hg n
   simp_rw [hcount]
   have hd := lintegral_withDensity_eq_lintegral_mul (poissonMeasure r)
     (f := fun n : ℕ ↦ (n : ℝ≥0∞)) Measurable.of_discrete
@@ -143,7 +145,7 @@ theorem IndepFun.mecke_poissonMeasure_sample {Ω X : Type*}
       (hg.comp (measurable_id.prodMk measurable_const))]
     exact Finset.measurable_sum _ fun i _ ↦ hg.comp (by fun_prop)
   rw [hNZ.lintegral_random_prefix hind hZ hN hleft,
-    Q.lintegral_sum_dirac_poissonMeasure_pi r hg]
+    Q.lintegral_finsetSum_dirac_poissonMeasure_pi r hg]
   congr 1
   apply lintegral_congr
   intro y
