@@ -39,8 +39,8 @@ matrix of the cross product of their vectors: `[û, v̂] = (u ⨯₃ v)^`.
   product.
 * `Matrix.mulVec_cross_add_cross_mulVec`: its infinitesimal form.
 * `Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero`: its trace-zero case.
-* `Matrix.det_eq_one_of_mulVec_cross`: a matrix preserving the dot product and the cross product
-  has determinant one.
+* `Matrix.det_eq_one_of_mulVec_cross`: a matrix preserving the cross product with unit
+  determinant has determinant one.
 * `TauCeti.transpose_crossProductMatrix`: the matrix `û` is skew-symmetric.
 * `TauCeti.crossProductMatrix_cross`: `(u ⨯₃ v)^ = û v̂ - v̂ û`.
 -/
@@ -95,20 +95,21 @@ theorem _root_.Matrix.mulVec_cross_add_cross_mulVec_of_trace_eq_zero
     (M *ᵥ u) ⨯₃ w + u ⨯₃ (M *ᵥ w) = -(Mᵀ *ᵥ (u ⨯₃ w)) := by
   rw [Matrix.mulVec_cross_add_cross_mulVec, hM, zero_smul, zero_sub]
 
-/-- **A matrix preserving the dot product and the cross product has determinant one.** Its
-determinant is the triple product `M e₀ ⬝ᵥ (M e₁ ⨯₃ M e₂)` of its columns, which is
-`e₀ ⬝ᵥ (e₁ ⨯₃ e₂) = 1`. So the orthogonal matrices preserving the cross product are rotations. -/
+/-- **A matrix preserving the cross product with unit determinant has determinant one.** By the
+Cauchy--Binet identity such a matrix agrees with its transposed adjugate on cross products, and
+cross products of basis vectors span, so `M = (adj M)ᵀ`. Taking determinants gives
+`det M = (det M)²`, so `det M = 1`. In particular the orthogonal matrices preserving the cross
+product are rotations. -/
 theorem _root_.Matrix.det_eq_one_of_mulVec_cross {M : Matrix (Fin 3) (Fin 3) R}
-    (h : ∀ x y, (M *ᵥ x) ⬝ᵥ (M *ᵥ y) = x ⬝ᵥ y)
-    (h' : ∀ x y, M *ᵥ (x ⨯₃ y) = (M *ᵥ x) ⨯₃ (M *ᵥ y)) : M.det = 1 := by
-  have hcols : ![M *ᵥ Pi.single 0 1, M *ᵥ Pi.single 1 1, M *ᵥ Pi.single 2 1] = Mᵀ := by
-    ext i j
-    fin_cases i <;> simp
-  have h3 := triple_product_eq_det (M *ᵥ Pi.single 0 1) (M *ᵥ Pi.single 1 1)
-    (M *ᵥ Pi.single 2 1)
-  rw [← h', h, hcols, det_transpose] at h3
-  rw [← h3]
-  simp [cross_apply, dotProduct, Fin.sum_univ_three]
+    (hM : IsUnit M.det) (h : ∀ x y, M *ᵥ (x ⨯₃ y) = (M *ᵥ x) ⨯₃ (M *ᵥ y)) : M.det = 1 := by
+  have hadj : M = M.adjugateᵀ := by
+    refine ext_of_mulVec_single fun i ↦ ?_
+    have hi : Pi.single i 1 = Pi.single (i + 1) 1 ⨯₃ Pi.single (i + 2) (1 : R) := by
+      fin_cases i <;> ext j <;> fin_cases j <;> simp [cross_apply]
+    rw [hi, h, mulVec_cross_mulVec]
+  refine hM.mul_eq_left.mp ?_
+  conv_rhs => rw [hadj, det_transpose, det_adjugate]
+  simp [sq]
 
 /-! ### The hat map -/
 
