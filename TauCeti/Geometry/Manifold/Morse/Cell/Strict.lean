@@ -20,9 +20,10 @@ agree on the nose up to homeomorphisms of the discs.
 Let `h i : D^{k i} ≅ D^{k i}` and `h∂ i : ∂D^{k i} ≅ ∂D^{k i}` be homeomorphisms forming an
 isomorphism of the pair `(D^{k i}, ∂D^{k i})`, and suppose `α₁ i = α₀ i ∘ h∂ i`. Then the map
 `id ⊔ h : M_{c-ε} ∪_{α₁} ⨆ᵢ D^{k i} → M_{c-ε} ∪_{α₀} ⨆ᵢ D^{k i}`, which is the identity on the
-lower sublevel and `h i` on the disc of `i`, is a homeomorphism (`TauCeti.morseCellAttachmentIso`).
-If moreover the characteristic maps satisfy `χ₁ i = χ₀ i ∘ h i`, it intertwines the handle-to-cell
-comparisons `Φ₀` and `Φ₁` (`TauCeti.morseCellAttachmentIso_hom_comp_morseCellComparison`).
+lower sublevel and `h i` on the disc of `i`, is a homeomorphism (`TauCeti.morseCellAttachmentIso`,
+in `Cell/Comparison.lean`). If moreover the characteristic maps satisfy `χ₁ i = χ₀ i ∘ h i`, it
+intertwines the handle-to-cell comparisons `Φ₀` and `Φ₁`
+(`TauCeti.morseCellAttachmentIso_hom_comp_morseCellComparison`).
 
 This homeomorphism represents the relative homotopy class of Milnor's reattachment map whenever the
 homotopy of pairs `K i : χ₁ i ≃ χ₀ i ∘ h i` is stationary on the boundary sphere
@@ -30,12 +31,11 @@ homotopy of pairs `K i : χ₁ i ≃ χ₀ i ∘ h i` is stationary on the bound
 is `id ⊔ (h ∘ ρ)` for the radial map `ρ` of the disc pushing the shell `1/2 ≤ ‖x‖` onto the
 boundary sphere, and the radial push from the identity to `ρ` fixes that sphere.
 
-## Main declarations
+## Main results
 
-* `TauCeti.morseCellAttachmentIso`: the homeomorphism `id ⊔ h` of attachments along strictly
-  related attaching maps.
-* `TauCeti.morseCellAttachmentIso_hom_comp_morseCellComparison`: it is compatible with the
-  handle-to-cell comparisons when the characteristic maps are strictly related.
+* `TauCeti.morseCellAttachmentIso_hom_comp_morseCellComparison`: the homeomorphism `id ⊔ h` is
+  compatible with the handle-to-cell comparisons when the characteristic maps are strictly
+  related.
 * `TauCeti.homotopicRel_morseCellReattachment_morseCellAttachmentIso`: a reattachment map whose
   homotopy is stationary on the boundary spheres is homotopic to `id ⊔ h` relative to the lower
   sublevel.
@@ -71,22 +71,6 @@ variable (φ₀ φ₁ : ι → OpenPartialHomeomorph M (EuclideanSpace ℝ (Fin 
     (hb i).hom ≫ (φ₀ i).morseAttachingMap (hk i) hε (hball₀ i) (hf₀ i))
 
 include hhb in
-/-- The inverse homeomorphisms of an isomorphism of disc pairs also commute with the boundary
-inclusions. -/
-private theorem inv_comp_diskBoundaryInclusion (i : ι) :
-    (hb i).inv ≫ TopCat.diskBoundaryInclusion (k i) =
-      TopCat.diskBoundaryInclusion (k i) ≫ (h i).inv := by
-  rw [Iso.inv_comp_eq, ← Category.assoc, hhb, Category.assoc, Iso.hom_inv_id, Category.comp_id]
-
-include hα in
-/-- The attaching maps of the charts `φ₀` are those of the charts `φ₁` composed with the inverse
-boundary homeomorphisms. -/
-private theorem morseAttachingMap_eq_inv_comp (i : ι) :
-    (φ₀ i).morseAttachingMap (hk i) hε (hball₀ i) (hf₀ i) =
-      (hb i).inv ≫ (φ₁ i).morseAttachingMap (hk i) hε (hball₁ i) (hf₁ i) := by
-  rw [Iso.eq_inv_comp, hα]
-
-include hhb in
 /-- Along the boundary homeomorphisms, the attaching maps of the charts `φ₀` followed by the lower
 sublevel inclusion are the boundary inclusions followed by `h i` and the cells. -/
 private theorem hom_comp_morseAttachingMap_comp_morseCellAttachmentIncl (i : ι) :
@@ -95,60 +79,6 @@ private theorem hom_comp_morseAttachingMap_comp_morseCellAttachmentIncl (i : ι)
       TopCat.diskBoundaryInclusion (k i) ≫ (h i).hom ≫
         morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i := by
   rw [morseAttachingMap_comp_morseCellAttachmentIncl, ← Category.assoc, hhb, Category.assoc]
-
-/-- **The adjunction homeomorphism of strictly related attaching maps.** If homeomorphisms
-`h i` of the discs `D^{k i}` restrict to homeomorphisms `hb i` of their boundary spheres with
-`α₁ i = α₀ i ∘ hb i`, then `id ⊔ h` is a homeomorphism
-`M_{c-ε} ∪_{α₁} ⨆ᵢ D^{k i} ≅ M_{c-ε} ∪_{α₀} ⨆ᵢ D^{k i}`: it is the identity on the lower sublevel
-(`TauCeti.morseCellAttachmentIncl_comp_morseCellAttachmentIso_hom`) and `h i` on the disc of `i`
-(`TauCeti.morseCellAttachmentCell_comp_morseCellAttachmentIso_hom`). -/
-def morseCellAttachmentIso : morseCellAttachment φ₁ k hk hε hball₁ hf₁ ≅
-    morseCellAttachment φ₀ k hk hε hball₀ hf₀ where
-  hom := morseCellAttachmentDesc φ₁ k hk hε hball₁ hf₁
-    (morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀)
-    (fun i ↦ (h i).hom ≫ morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i) fun i ↦ by
-      rw [hα, Category.assoc,
-        hom_comp_morseAttachingMap_comp_morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ h hb hhb]
-  inv := morseCellAttachmentDesc φ₀ k hk hε hball₀ hf₀
-    (morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁)
-    (fun i ↦ (h i).inv ≫ morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i) fun i ↦ by
-      rw [morseAttachingMap_eq_inv_comp φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ hb hα, Category.assoc,
-        morseAttachingMap_comp_morseCellAttachmentIncl, ← Category.assoc,
-        inv_comp_diskBoundaryInclusion k h hb hhb, Category.assoc]
-  hom_inv_id := morseCellAttachment_hom_ext φ₁ k hk hball₁ hf₁ hε (by simp) fun i ↦ by simp
-  inv_hom_id := morseCellAttachment_hom_ext φ₀ k hk hball₀ hf₀ hε (by simp) fun i ↦ by simp
-
-/-- The adjunction homeomorphism is the identity on the lower sublevel. -/
-@[reassoc (attr := simp)]
-theorem morseCellAttachmentIncl_comp_morseCellAttachmentIso_hom :
-    morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁ ≫
-        (morseCellAttachmentIso φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hb hhb hα).hom =
-      morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ :=
-  morseCellAttachmentIncl_desc _ _ _ _ _ _ _ _ _
-
-/-- The adjunction homeomorphism is `h i` on the disc of `i`. -/
-@[reassoc (attr := simp)]
-theorem morseCellAttachmentCell_comp_morseCellAttachmentIso_hom (i : ι) :
-    morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i ≫
-        (morseCellAttachmentIso φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hb hhb hα).hom =
-      (h i).hom ≫ morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i :=
-  morseCellAttachmentCell_desc _ _ _ _ _ _ _ _ _ i
-
-/-- The inverse of the adjunction homeomorphism is the identity on the lower sublevel. -/
-@[reassoc (attr := simp)]
-theorem morseCellAttachmentIncl_comp_morseCellAttachmentIso_inv :
-    morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ ≫
-        (morseCellAttachmentIso φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hb hhb hα).inv =
-      morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁ :=
-  morseCellAttachmentIncl_desc _ _ _ _ _ _ _ _ _
-
-/-- The inverse of the adjunction homeomorphism is `(h i)⁻¹` on the disc of `i`. -/
-@[reassoc (attr := simp)]
-theorem morseCellAttachmentCell_comp_morseCellAttachmentIso_inv (i : ι) :
-    morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i ≫
-        (morseCellAttachmentIso φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hb hhb hα).inv =
-      (h i).inv ≫ morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i :=
-  morseCellAttachmentCell_desc _ _ _ _ _ _ _ _ _ i
 
 /-- The adjunction homeomorphism sends a point of the lower sublevel to itself. -/
 @[simp]
