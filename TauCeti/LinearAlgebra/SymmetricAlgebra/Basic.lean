@@ -15,6 +15,10 @@ injective, without a freeness assumption. Its main application is that an abelia
 embeds in its universal enveloping algebra, which is its symmetric algebra
 (`TauCeti.UniversalEnvelopingAlgebra.ι_injective_of_isLieAbelian`).
 
+The canonical generators generate the symmetric algebra (`TauCeti.SymmetricAlgebra.adjoin_range_ι`),
+and so do the images of any spanning family
+(`TauCeti.SymmetricAlgebra.adjoin_range_ι_comp_eq_top_of_span_eq_top`).
+
 For the symmetric algebra of the base semiring itself, the degree-one element `ι R R 1`
 generates the whole algebra. An algebra morphism whose range contains this element is therefore
 surjective, a criterion used for coordinate morphisms of additive root subgroups.
@@ -38,6 +42,34 @@ theorem ι_injective : Function.Injective (_root_.SymmetricAlgebra.ι R M) := by
   have : IsCentralScalar R M := ⟨fun _ _ ↦ rfl⟩
   exact Function.LeftInverse.injective (g := (TrivSqZeroExt.sndHom R M).comp
     (_root_.SymmetricAlgebra.lift (TrivSqZeroExt.inrHom R M)).toLinearMap) fun x ↦ by simp
+
+/-- The symmetric algebra is generated as an algebra by the image of the generator map. -/
+theorem adjoin_range_ι : _root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M)) = ⊤ := by
+  apply top_unique
+  intro x hx
+  clear hx
+  induction x using _root_.SymmetricAlgebra.induction with
+  | algebraMap r => exact (_root_.Algebra.adjoin R _).algebraMap_mem r
+  | ι x => exact _root_.Algebra.subset_adjoin (Set.mem_range_self x)
+  | mul a b ha hb => exact (_root_.Algebra.adjoin R _).mul_mem ha hb
+  | add a b ha hb => exact (_root_.Algebra.adjoin R _).add_mem ha hb
+
+variable {R M} in
+/-- The images of a spanning family generate the symmetric algebra as an algebra. -/
+theorem adjoin_range_ι_comp_eq_top_of_span_eq_top {ι : Type*} (x : ι → M)
+    (hx : Submodule.span R (Set.range x) = ⊤) :
+    _root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x)) = ⊤ := by
+  have hle : Submodule.span R (Set.range x) ≤
+      (_root_.Algebra.adjoin R (Set.range (SymmetricAlgebra.ι R M ∘ x))).toSubmodule.comap
+        (SymmetricAlgebra.ι R M) :=
+    Submodule.span_le.mpr <| by
+      rintro m ⟨i, rfl⟩
+      exact _root_.Algebra.subset_adjoin ⟨i, rfl⟩
+  apply top_unique
+  rw [← adjoin_range_ι R M]
+  exact _root_.Algebra.adjoin_le <| by
+    rintro p ⟨m, rfl⟩
+    exact hle (by rw [hx]; exact Submodule.mem_top)
 
 end TauCeti.SymmetricAlgebra
 

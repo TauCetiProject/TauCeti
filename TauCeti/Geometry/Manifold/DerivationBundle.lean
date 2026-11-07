@@ -32,6 +32,7 @@ a canonical linear map from the ordinary tangent space to the algebraic point de
 * `pointDerivationEquivTangentSpace`: the resulting canonical linear equivalence.
 * `PointDerivation.congr_of_eventuallyEq`: on a finite-dimensional Hausdorff real manifold, a point
   derivation depends only on the germ of a smooth function at its basepoint.
+* `Derivation.apply_congr_of_eventuallyEq`: derivations of smooth functions are local operators.
 * `tangentToPointDerivation_mfderiv`: this association commutes with differentials.
 
 ## References
@@ -263,6 +264,16 @@ theorem congr_of_eventuallyEq
   exact sub_eq_zero.mp (heq.trans hsub).symm
 
 end PointDerivation
+
+/-- **Locality of derivations.** On a finite-dimensional Hausdorff real manifold, a derivation of
+`C^∞(M, ℝ)` evaluated at `x` depends only on the germ of the function at `x`. -/
+theorem Derivation.apply_congr_of_eventuallyEq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
+    {H : Type*} [TopologicalSpace H] {I : ModelWithCorners ℝ E H}
+    {M : Type*} [TopologicalSpace M] [ChartedSpace H M] [IsManifold I ∞ M] [T2Space M]
+    (δ : Derivation ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯) {f g : C^∞⟮I, M; ℝ⟯} {x : M}
+    (hfg : (f : M → ℝ) =ᶠ[𝓝 x] g) : δ f x = δ g x :=
+  (Derivation.evalAt x δ).congr_of_eventuallyEq f g hfg
 
 variable {E' : Type*} [NormedAddCommGroup E'] [NormedSpace 𝕜 E']
   {H' : Type*} [TopologicalSpace H'] {I' : ModelWithCorners 𝕜 E' H'}
