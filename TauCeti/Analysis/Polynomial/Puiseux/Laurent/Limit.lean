@@ -155,23 +155,9 @@ private theorem C_mul_prod_clearing_zero {H : ι → 𝕜 → Polynomial 𝕜}
       C (u 0 * ∏ i ∈ Finset.univ.filter (fun i ↦ e i < 0), -(w i 0)) *
         ∏ i ∈ Finset.univ.filter (fun i ↦ 0 ≤ e i),
           (X - C (if e i = 0 then w i 0 else 0)) := by
-  classical
-  have hsplit := Finset.prod_filter_mul_prod_filter_not (s := Finset.univ)
-    (p := fun i ↦ e i < 0) (f := fun i ↦ H i 0)
-  rw [← hsplit]
   simp_rw [hH0]
-  have hneg : (∏ i ∈ Finset.univ.filter (fun i ↦ e i < 0),
-      if e i < 0 then C (-(w i 0)) else X - C (if e i = 0 then w i 0 else 0)) =
-      C (∏ i ∈ Finset.univ.filter (fun i ↦ e i < 0), -(w i 0)) := by
-    rw [map_prod]
-    exact Finset.prod_congr rfl fun i hi ↦ ite_eq_left (Finset.mem_filter.mp hi).2
-  have hpos : (∏ i ∈ Finset.univ.filter (fun i ↦ ¬ e i < 0),
-      if e i < 0 then C (-(w i 0)) else X - C (if e i = 0 then w i 0 else 0)) =
-      ∏ i ∈ Finset.univ.filter (fun i ↦ 0 ≤ e i),
-        (X - C (if e i = 0 then w i 0 else 0)) := by
-    simp only [not_lt]
-    exact Finset.prod_congr rfl fun i hi ↦ ite_eq_right (not_lt.mpr (Finset.mem_filter.mp hi).2)
-  rw [hneg, hpos, ← mul_assoc, ← C_mul]
+  rw [Finset.prod_ite]
+  simp only [not_lt, ← map_prod, ← mul_assoc, ← C_mul]
 
 /-- A complete Laurent root factorization of an analytic polynomial family with nonzero
 central fiber determines its factorization at the origin. Only the amplitudes of pole
