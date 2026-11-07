@@ -45,16 +45,11 @@ theorem integerWalk_tsum_pow_apply_self (p : unitInterval) (x : ℤ) :
   simp only [integerWalk_pow_odd_apply_self, tsum_zero, add_zero]
   apply tsum_congr
   intro n
-  rw [integerWalk_pow_even_apply_self, mul_assoc, ← mul_pow]
   have hp : unitInterval.toNNReal p ≤ 1 := by exact_mod_cast p.2.2
-  rw [ENNReal.ofReal_mul (Nat.cast_nonneg _), ENNReal.ofReal_natCast,
-    ENNReal.ofReal_pow (mul_nonneg p.2.1 (sub_nonneg.mpr p.2.2)),
-    ← Nat.centralBinom_eq_two_mul_choose]
-  have hq : ENNReal.ofReal ((p : ℝ) * (1 - (p : ℝ))) =
-      ((unitInterval.toNNReal p * (1 - unitInterval.toNNReal p) : ℝ≥0) : ℝ≥0∞) := by
-    rw [← ENNReal.ofReal_coe_nnreal]
-    simp [NNReal.coe_sub hp]
-  rw [hq]
+  rw [integerWalk_pow_even_apply_self, ← ENNReal.ofReal_coe_nnreal]
+  simp [NNReal.coe_sub hp, ← Nat.centralBinom_eq_two_mul_choose,
+    ENNReal.ofReal_mul, ENNReal.ofReal_pow (mul_nonneg p.2.1 (sub_nonneg.mpr p.2.2)),
+    ← mul_pow, mul_assoc]
 
 /-- An integer walk returns almost surely exactly for the symmetric step law.
 This includes the deterministic parameters zero and one. -/
