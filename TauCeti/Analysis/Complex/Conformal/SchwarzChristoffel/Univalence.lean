@@ -112,10 +112,10 @@ needed. -/
 theorem injOn_schwarzChristoffelPrimitive_of_sum_abs_le_one
     (a e : ι → ℝ) (z₀ : UpperHalfPlane) (he : ∑ i, |e i| ≤ 1) :
     InjOn (schwarzChristoffelPrimitive a e z₀) upperHalfPlaneSet := by
-  apply injOn_of_re_mul_deriv_pos (convex_halfSpace_im_gt 0)
+  apply (convex_halfSpace_im_gt 0).injOn_of_re_mul_deriv_pos
     (exp (-((Real.pi / 2 * ∑ i, e i : ℝ) : ℂ) * Complex.I))
   intro z hz
-  rw [deriv_schwarzChristoffelPrimitive a e z₀ hz]
+  rw [RCLike.re_to_complex, deriv_schwarzChristoffelPrimitive a e z₀ hz]
   exact re_exp_mul_schwarzChristoffelIntegrand_pos_of_sum_abs_le_one a e he hz
 
 end TauCeti
