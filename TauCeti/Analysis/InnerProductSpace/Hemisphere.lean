@@ -263,12 +263,6 @@ private theorem exists_eq_hemisphereHomeomorph_symm_or_neg (y : sphere (0 : E) 1
 variable [FiniteDimensional ℝ E] {X : Type*} [TopologicalSpace X] {A B : Set X}
 
 omit [TopologicalSpace X] in
-/-- A point outside `A` lies in `B` when `A` and `B` cover `X`. -/
-private theorem mem_of_notMem_of_union_eq_univ (hAB : A ∪ B = univ) {x : X} (hx : x ∉ A) :
-    x ∈ B :=
-  (hAB.symm ▸ mem_univ x : x ∈ A ∪ B).resolve_left hx
-
-omit [TopologicalSpace X] in
 /-- A map on `X = A ∪ B` that is injective on `A` and on `B`, and which sends exactly the points
 of `A` to values satisfying a predicate `P`, is injective. -/
 private theorem injective_of_union_eq_univ {Y : Type*} {g : X → Y} {P : Y → Prop}
@@ -279,8 +273,8 @@ private theorem injective_of_union_eq_univ {Y : Type*} {g : X → Y} {P : Y → 
   have hxy' : x ∈ A ↔ y ∈ A := by rw [← hP, ← hP, hxy]
   by_cases hx : x ∈ A
   · exact hA x y hx (hxy'.1 hx) hxy
-  · exact hB x y (mem_of_notMem_of_union_eq_univ hAB hx)
-      (mem_of_notMem_of_union_eq_univ hAB (hxy'.not.1 hx)) hxy
+  · exact hB x y (Set.compl_subset_iff_union.mpr hAB hx)
+      (Set.compl_subset_iff_union.mpr hAB (hxy'.not.1 hx)) hxy
 
 
 /-- `TauCeti.nonempty_homeomorph_sphere_of_union_closedBall` for discs in the orthogonal
@@ -320,7 +314,7 @@ private theorem nonempty_homeomorph_sphere_of_union_closedBall_orthogonal
   have hupper (x : X) : 0 ≤ ⟪(g x : E), (p : E)⟫ ↔ x ∈ A := by
     refine ⟨fun h ↦ ?_, fun hx ↦ hg_A ⟨x, hx⟩ ▸ (e.symm (eA ⟨x, hx⟩)).2⟩
     by_contra hx
-    have hxB := mem_of_notMem_of_union_eq_univ hAB hx
+    have hxB := Set.compl_subset_iff_union.mpr hAB hx
     rw [hg_B ⟨x, hxB⟩] at h
     simp only [gB, e, coe_neg_sphere, inner_neg_left, inner_coe_hemisphereHomeomorph_symm_apply,
       norm_neg, hHn, neg_nonneg] at h
