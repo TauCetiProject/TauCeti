@@ -81,39 +81,6 @@ theorem evalDirectSum_apply (x : ⨁ k : ℤ, SlashInvariantForm Γ k) (z : ℍ)
     have hxk : x k = 0 := DFinsupp.notMem_support_iff.mp hmem
     exact hk (by simp [hxk])
 
-/-- The bottom row of `(S * T * S⁻¹) ^ r` in `SL₂(ℤ)` has entries `-r` and `1`, so its automorphy
-factor at `z` is `-r z + 1`. -/
-private theorem denom_mapGL_STS_inv_pow (r : ℕ) (z : ℍ) :
-    denom (mapGL ℝ ((S * T * S⁻¹ : SL(2, ℤ)) ^ r)) z = -(r : ℂ) * z + 1 := by
-  let g : SL(2, ℤ) := (S * T * S⁻¹ : SL(2, ℤ)) ^ r
-  have hg : (S * T * S⁻¹ : SL(2, ℤ)) ^ r = g := rfl
-  have hp : g = S * T ^ r * S⁻¹ := by simp [g, conj_pow]
-  have h10 : (g : Matrix (Fin 2) (Fin 2) ℤ) 1 0 = -(r : ℤ) := by
-    rw [hp, ← zpow_natCast]
-    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.S_inv,
-      Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
-    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
-  have h11 : (g : Matrix (Fin 2) (Fin 2) ℤ) 1 1 = 1 := by
-    rw [hp, ← zpow_natCast]
-    simp only [Matrix.SpecialLinearGroup.coe_mul, ModularGroup.S_inv,
-      Matrix.SpecialLinearGroup.coe_neg, coe_S, coe_T_zpow]
-    norm_num [Matrix.mul_apply, Fin.sum_univ_two]
-  rw [hg, denom, mapGL_coe_matrix, map_apply_coe]
-  simp only [RingHom.mapMatrix_apply, Matrix.map_apply, h10, h11]
-  simp [algebraMap_int_eq]
-
-/-- The denominators of `(S T S⁻¹) ^ (n * m)` at a point `z` are pairwise distinct as `m` varies,
-for `n > 0`. -/
-private theorem denom_mapGL_STS_inv_pow_injective {n : ℕ} (hn : 0 < n) (z : ℍ) :
-    Function.Injective fun m : ℕ ↦ denom (mapGL ℝ ((S * T * S⁻¹ : SL(2, ℤ)) ^ (n * m))) z :=
-  fun m₁ m₂ hm ↦ by
-    have him := congrArg Complex.im hm
-    simp only [denom_mapGL_STS_inv_pow, Complex.add_im, Complex.one_im, add_zero,
-      Complex.neg_im, Complex.mul_im, Complex.natCast_im] at him
-    have hmul : ((n * m₁ : ℕ) : ℝ) = ((n * m₂ : ℕ) : ℝ) :=
-      mul_right_cancel₀ z.im_ne_zero (by simpa using him)
-    exact Nat.eq_of_mul_eq_mul_left hn (Nat.cast_injective hmul)
-
 /-- **Linear independence of slash-invariant forms across weights.** When `Γ` has finite-index
 intersection with `SL₂(ℤ)`, the evaluation `evalDirectSum` into `ℍ → ℂ` is injective. -/
 theorem evalDirectSum_injective [Subgroup.IsFiniteRelIndex Γ 𝒮ℒ] :
