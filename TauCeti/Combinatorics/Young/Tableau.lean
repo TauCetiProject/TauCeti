@@ -31,7 +31,10 @@ again a cell of `μ`.  A second counting lemma,
 injective on columns: it takes small values no more often than the row index does, the row filling
 `YoungTableau.rowFilling` being the extreme case.  It also defines `YoungTableau.relabel`, the
 transitive action of the permutations of the labels on the tableaux of a fixed shape, which is how
-two tableaux of the same shape are compared.
+two tableaux of the same shape are compared.  Finally it defines `YoungTableau.transpose`, the
+`μᵗ`-tableau obtained by reflecting `t` in the diagonal: rows and columns are exchanged
+(`YoungTableau.rowIndex_transpose`, `YoungTableau.colIndex_transpose`), and transposition commutes
+with relabeling (`YoungTableau.transpose_relabel`).
 
 Note that `YoungTableau μ` is an abbreviation, so that the whole `Equiv` API applies to a tableau
 directly.  As a consequence dot notation on a tableau resolves in the `Equiv` namespace, and the
@@ -457,6 +460,77 @@ theorem relabel_relabelPerm (t t' : YoungTableau μ) : relabel (relabelPerm t t'
 /-- Any two tableaux of the same shape differ by a relabeling. -/
 theorem exists_relabel_eq (t t' : YoungTableau μ) : ∃ σ, relabel σ t = t' :=
   ⟨relabelPerm t t', relabel_relabelPerm t t'⟩
+
+/-! ## Transposition -/
+
+/-- Swapping the two coordinates identifies the cells of the transpose `μᵗ` with the cells
+of `μ`. -/
+def _root_.YoungDiagram.transposeCellsEquiv (μ : YoungDiagram) :
+    ↥μ.transpose.cells ≃ ↥μ.cells :=
+  (Equiv.prodComm ℕ ℕ).subtypeEquiv fun _ => YoungDiagram.mem_transpose
+
+@[simp]
+theorem _root_.YoungDiagram.transposeCellsEquiv_apply (μ : YoungDiagram)
+    (c : ↥μ.transpose.cells) :
+    μ.transposeCellsEquiv c = ⟨(c : ℕ × ℕ).swap, YoungDiagram.mem_transpose.mp c.2⟩ :=
+  (rfl)
+
+@[simp]
+theorem _root_.YoungDiagram.transposeCellsEquiv_symm_apply (μ : YoungDiagram) (c : ↥μ.cells) :
+    μ.transposeCellsEquiv.symm c = ⟨(c : ℕ × ℕ).swap, YoungDiagram.mem_transpose.mpr c.2⟩ :=
+  (rfl)
+
+/-- The **transpose** of a `μ`-tableau: the `μᵗ`-tableau giving the cell `(j, i)` the label
+that `t` gives to the cell `(i, j)`, read in `Fin μᵗ.card` through
+`YoungDiagram.card_transpose`.  Rows and columns are exchanged: the label `k` lies in row `i` of
+`transpose t` exactly when it lies in column `i` of `t` (`rowIndex_transpose`,
+`colIndex_transpose`). -/
+def transpose (t : YoungTableau μ) : YoungTableau μ.transpose :=
+  μ.transposeCellsEquiv.trans (t.trans (finCongr (YoungDiagram.card_transpose μ).symm))
+
+@[simp]
+theorem transpose_apply (t : YoungTableau μ) (c : ↥μ.transpose.cells) :
+    transpose t c = Fin.cast (YoungDiagram.card_transpose μ).symm (t (μ.transposeCellsEquiv c)) :=
+  (rfl)
+
+@[simp]
+theorem transpose_symm_apply (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    (transpose t).symm k =
+      μ.transposeCellsEquiv.symm (t.symm (Fin.cast (YoungDiagram.card_transpose μ) k)) :=
+  (rfl)
+
+/-- The row of a label in the transposed tableau is its column in the original one. -/
+@[simp]
+theorem rowIndex_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    rowIndex (transpose t) k = colIndex t (Fin.cast (YoungDiagram.card_transpose μ) k) := by
+  rw [rowIndex_def, colIndex_def, transpose_symm_apply,
+    YoungDiagram.transposeCellsEquiv_symm_apply, Prod.fst_swap]
+
+/-- The column of a label in the transposed tableau is its row in the original one. -/
+@[simp]
+theorem colIndex_transpose (t : YoungTableau μ) (k : Fin μ.transpose.card) :
+    colIndex (transpose t) k = rowIndex t (Fin.cast (YoungDiagram.card_transpose μ) k) := by
+  rw [rowIndex_def, colIndex_def, transpose_symm_apply,
+    YoungDiagram.transposeCellsEquiv_symm_apply, Prod.snd_swap]
+
+/-- Transposing a tableau twice gives back its labels: the cell `c` of `μᵗᵗ = μ` carries the
+label that `t` gives it. -/
+theorem transpose_transpose_apply_val (t : YoungTableau μ) (c : ↥μ.transpose.transpose.cells) :
+    (transpose (transpose t) c : ℕ) = t ⟨c, by simpa using c.2⟩ := by
+  simp only [transpose_apply, YoungDiagram.transposeCellsEquiv_apply, Prod.swap_swap,
+    Fin.val_cast]
+
+/-- Distinct tableaux have distinct transposes. -/
+theorem transpose_injective : Function.Injective (transpose (μ := μ)) := fun t t' h =>
+  Equiv.ext fun c => by
+    simpa using congr($h (μ.transposeCellsEquiv.symm c))
+
+/-- Transposition commutes with relabeling, the permutation of the labels being read in
+`Fin μᵗ.card`. -/
+theorem transpose_relabel (σ : Equiv.Perm (Fin μ.card)) (t : YoungTableau μ) :
+    transpose (relabel σ t) =
+      relabel ((finCongr (YoungDiagram.card_transpose μ).symm).permCongr σ) (transpose t) :=
+  Equiv.ext fun c => by simp
 
 /-- Every Young diagram carries a tableau: enumerating its cells is one.
 
