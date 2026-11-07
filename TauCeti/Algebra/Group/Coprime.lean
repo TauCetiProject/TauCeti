@@ -48,8 +48,11 @@ coefficients of `n` and `m` and hence independent of `y`. -/]
 theorem exists_zpow_mul_zpow_eq_of_coprime {G : Type*} [Group G] {n m : ℕ}
     (h : Nat.Coprime n m) : ∃ i j : ℤ, ∀ y : G, (y ^ n) ^ i * (y ^ m) ^ j = y :=
   ⟨Nat.gcdA n m, Nat.gcdB n m, fun y ↦ by
-    rw [← zpow_natCast, ← zpow_natCast, ← zpow_mul, ← zpow_mul, ← zpow_add, ← Nat.gcd_eq_gcd_ab,
-      h.gcd_eq_one, zpow_natCast, pow_one]⟩
+    calc (y ^ n) ^ Nat.gcdA n m * (y ^ m) ^ Nat.gcdB n m
+        = y ^ ((n : ℤ) * Nat.gcdA n m + (m : ℤ) * Nat.gcdB n m) := by
+          rw [zpow_add, zpow_mul, zpow_mul, zpow_natCast, zpow_natCast]
+      _ = y ^ ((Nat.gcd n m : ℕ) : ℤ) := by rw [← Nat.gcd_eq_gcd_ab]
+      _ = y := by rw [h.gcd_eq_one, zpow_natCast, pow_one]⟩
 
 /-- **Membership from prime-to-`p` powers.** If for every prime `p` some power `x ^ m` with
 `p ∤ m` lies in the subgroup `H`, then `x` lies in `H`. -/
