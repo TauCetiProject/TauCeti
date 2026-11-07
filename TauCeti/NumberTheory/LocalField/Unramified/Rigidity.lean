@@ -112,13 +112,9 @@ theorem IsUnramified.residueFieldHom_bijective :
   -- polynomial `g` of `ζ` over `𝒪[K]`.
   have hζO : IsIntegral 𝒪[K] ζ := (Valuation.Integers.isIntegral_iff_valuation_le_one
     (Valuation.integer.integers (valuation K)) ζ).2 hζ1
-  have hgz : aeval z (minpoly 𝒪[K] ζ) = 0 := FaithfulSMul.algebraMap_injective 𝒪[L] L (by
-    rw [← aeval_algebraMap_apply, Algebra.algebraMap_ofSubsemiring_apply, map_zero]
-    exact minpoly.aeval 𝒪[K] ζ)
   have hgφ : aeval (residue 𝒪[M] ((u : 𝒪[M]ˣ) : 𝒪[M])) (minpoly 𝒪[K] ζ) = 0 := by
-    have h1 := aeval_algHom_apply (φ.restrictScalars 𝒪[K]) (residue 𝒪[L] z) (minpoly 𝒪[K] ζ)
-    rw [AlgHom.restrictScalars_apply, AlgHom.restrictScalars_apply] at h1
-    rw [hres, h1, ← ResidueField.algebraMap_eq, aeval_algebraMap_apply, hgz, map_zero, map_zero]
+    rw [hres]
+    exact aeval_residue_minpoly_eq_zero φ z
   -- So `ζ ↦ ξ` defines a `K`-embedding, whose residue map agrees with `φ` on the residue of `ζ`.
   have hroot : aeval ((u : 𝒪[M]ˣ) : M) (minpoly K pb.gen) = 0 := by
     have hgξ := aeval_minpoly_eq_zero_of_aeval_residue_eq_zero hNM hζO hζ.pow_eq_one
