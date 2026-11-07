@@ -112,11 +112,23 @@ theorem mem_fixedField_zpowers_iff (σ : M ≃ₐ[K] M) (x : M) :
   rw [mem_fixedField_iff, Subgroup.forall_mem_zpowers]
   exact (MulAction.mem_fixedBy_zpowers_iff_mem_fixedBy (g := σ) (a := x))
 
-/-- The degree of a cyclic fixed field times the order of its generator is the total degree. -/
-theorem finrank_fixedField_zpowers_mul_orderOf [FiniteDimensional K M]
-    (σ : M ≃ₐ[K] M) :
+/-- The degree of a cyclic fixed field times the order of its generator is the total degree. When
+`σ` has infinite order, `M / K` is infinite-dimensional and both sides are `0`. -/
+theorem finrank_fixedField_zpowers_mul_orderOf (σ : M ≃ₐ[K] M) :
     Module.finrank K (fixedField (Subgroup.zpowers σ)) * orderOf σ = Module.finrank K M := by
-  rw [← Nat.card_zpowers, ← finrank_fixedField_eq_card, Module.finrank_mul_finrank]
+  by_cases hfin : Finite (Subgroup.zpowers σ)
+  · have := Fintype.ofFinite (Subgroup.zpowers σ)
+    have h : Module.finrank (fixedField (Subgroup.zpowers σ)) M = orderOf σ := by
+      rw [← Nat.card_zpowers, Nat.card_eq_fintype_card]
+      exact FixedPoints.finrank_eq_card (Subgroup.zpowers σ) M
+    rw [← h, Module.finrank_mul_finrank]
+  · have hσ : orderOf σ = 0 := by
+      rw [orderOf_eq_zero_iff, ← finite_zpowers]
+      exact hfin
+    rw [hσ, mul_zero]
+    by_contra hne
+    have : FiniteDimensional K M := Module.finite_of_finrank_pos (Nat.pos_of_ne_zero (Ne.symm hne))
+    exact hfin inferInstance
 
 /-- The Galois connection between fixing subgroups and fixed intermediate fields. -/
 theorem fixingSubgroup_fixedField_gc :
@@ -579,19 +591,30 @@ theorem zpowers_toFixedFieldAlgEquiv_eq_top (σ : M ≃ₐ[K] M) [Finite (Subgro
 /-- **The automorphism group of `M` over `M ^ ⟨σ⟩` has order `orderOf σ`.** The automorphisms of
 `M` fixing the field cut out by `⟨σ⟩` number exactly the order of `σ`.
 
-Only the generated subgroup `⟨σ⟩` need be finite: `M / K` is asked to be neither finite nor
-Galois, so this applies to an automorphism of finite order of an arbitrary extension. -/
+`M / K` is asked to be neither finite nor Galois, so this applies to an automorphism of an
+arbitrary extension; when `σ` has infinite order both sides are `0`, the group being infinite. -/
 -- Not a `simp` lemma: `simpNF` rejects it. Normalising the left-hand side sends `simp` after
--- `Fintype Gal(M/M ^ ⟨σ⟩)`, and with only `Finite (Subgroup.zpowers σ)` in scope that instance
+-- `Fintype Gal(M/M ^ ⟨σ⟩)`, and without a `Finite (Subgroup.zpowers σ)` instance that instance
 -- search exhausts its heartbeat budget instead of failing, so the lemma could never fire.
-theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) [Finite (Subgroup.zpowers σ)] :
+theorem card_algEquiv_fixedField_zpowers (σ : M ≃ₐ[K] M) :
     Nat.card (M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M) = orderOf σ := by
   have horder : orderOf (toFixedFieldAlgEquiv σ) = orderOf σ := by
     rw [← orderOf_injective (AlgEquiv.restrictScalarsHom K)
       (AlgEquiv.restrictScalarsHom_injective K) (toFixedFieldAlgEquiv σ),
       AlgEquiv.restrictScalarsHom_apply, restrictScalars_toFixedFieldAlgEquiv]
-  rw [← Subgroup.card_top (G := M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M),
-    ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
+  by_cases hfin : Finite (Subgroup.zpowers σ)
+  · rw [← Subgroup.card_top (G := M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M),
+      ← zpowers_toFixedFieldAlgEquiv_eq_top σ, Nat.card_zpowers, horder]
+  · have hσ : orderOf σ = 0 := by
+      rw [orderOf_eq_zero_iff, ← finite_zpowers]
+      exact hfin
+    have hinf : Infinite (M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M) := by
+      by_contra hf
+      have : Finite (M ≃ₐ[IntermediateField.fixedField (Subgroup.zpowers σ)] M) :=
+        not_infinite_iff_finite.mp hf
+      exact (orderOf_pos (toFixedFieldAlgEquiv σ)).ne' (horder.trans hσ)
+    rw [hσ]
+    exact Nat.card_eq_zero_of_infinite
 
 /-- Every automorphism of `M` over `M ^ ⟨σ⟩` commutes with every other when `⟨σ⟩` is finite.
 Neither finiteness nor Galoisness of `M / K` is required. -/
