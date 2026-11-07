@@ -47,8 +47,6 @@ Mathlib's `ProbabilityTheory.variance_id_map`, `ProbabilityTheory.variance_const
 ## Main results
 
 * `TauCeti.Probability.map_affine_map_affine` — affine pushforwards compose;
-* `TauCeti.Probability.map_neg_eq_map_affine` — reflection is the affine map with intercept zero
-  and slope negative one;
 * `TauCeti.Probability.support_map_affine` — a nonconstant affine pushforward transports the
   topological support;
 * `TauCeti.Probability.measurable_map_affine` — affine pushforward is jointly measurable in the
@@ -89,14 +87,6 @@ variable {μ : Measure ℝ} {a b : ℝ}
 
 /-- The affine map `x ↦ a + b * x` is measurable. -/
 private theorem measurable_affine (a b : ℝ) : Measurable fun x : ℝ => a + b * x := by fun_prop
-
-/-- **Reflection as an affine pushforward.** Mapping by negation is the affine image with
-intercept zero and slope negative one. -/
-theorem map_neg_eq_map_affine (μ : Measure ℝ) :
-    μ.map Neg.neg = μ.map (fun x : ℝ ↦ 0 + -1 * x) := by
-  congr 1
-  funext x
-  simp
 
 /-- **Composition of affine pushforwards.** Applying `y ↦ c + d * y` after `x ↦ a + b * x` is the
 single affine map with intercept `c + d * a` and slope `d * b`. -/

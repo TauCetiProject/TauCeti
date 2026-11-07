@@ -40,8 +40,11 @@ namespace TauCeti.Probability
 the nonnegative half-line. -/
 theorem integrableExpSet_id_stableMeasure_one_half_neg_one {s : ℝ≥0} (hs : 0 < s) (m : ℝ) :
     integrableExpSet id (stableMeasure 2⁻¹ (-1) s m) = Ici 0 := by
-  rw [stableMeasure_one_half_neg_one hs, map_neg_eq_map_affine,
-    integrableExpSet_id_map_affine]
+  rw [stableMeasure_one_half_neg_one hs]
+  rw [show integrableExpSet id ((levyMeasure (-m - s) s).map Neg.neg) =
+      (fun t : ℝ ↦ -1 * t) ⁻¹' integrableExpSet id (levyMeasure (-m - s) s) by
+    simpa only [zero_add, neg_one_mul] using
+      (integrableExpSet_id_map_affine (μ := levyMeasure (-m - s) s) (a := 0) (b := -1))]
   simp only [neg_one_mul]
   rw [integrableExpSet_id_levyMeasure (by exact_mod_cast hs)]
   ext t
@@ -55,7 +58,11 @@ theorem mgf_id_stableMeasure_one_half_neg_one (s : ℝ≥0) (m : ℝ) {t : ℝ} 
   · rw [stableMeasure_zero_scale (by norm_num) (by norm_num), mgf_dirac']
     simp [mul_comm]
   have hspos : 0 < s := pos_iff_ne_zero.mpr hs
-  rw [stableMeasure_one_half_neg_one hspos, map_neg_eq_map_affine, mgf_id_map_affine]
+  rw [stableMeasure_one_half_neg_one hspos]
+  rw [show mgf id ((levyMeasure (-m - s) s).map Neg.neg) t =
+      exp (0 * t) * mgf id (levyMeasure (-m - s) s) (-1 * t) by
+    simpa only [zero_add, neg_one_mul] using
+      (mgf_id_map_affine (μ := levyMeasure (-m - s) s) (a := 0) (b := -1) t)]
   simp only [zero_mul, exp_zero, one_mul, neg_one_mul]
   rw [mgf_id_levyMeasure (by exact_mod_cast hspos) (-m - s) (by linarith : -t ≤ 0)]
   congr 1
