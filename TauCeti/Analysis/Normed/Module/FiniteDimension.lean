@@ -28,6 +28,9 @@ sphere consists of two antipodal points.
 A linear endomorphism of a finite-dimensional normed space that is bounded below by `c > 0` is
 injective, hence invertible, and its inverse is bounded by `c⁻¹`.
 
+Rescaled coordinates send any compact subset of a finite-dimensional real normed space into an
+arbitrarily small ball of `Fin n → ℝ`.
+
 A family of bases whose vectors depend continuously on a parameter has frame and coordinate maps
 that depend continuously on the parameter in the operator norm.
 
@@ -46,6 +49,8 @@ that depend continuously on the parameter in the operator norm.
   continuously on a parameter has continuously varying frame and coordinate maps.
 * `ContinuousLinearEquiv.piRing_apply`, `ContinuousLinearEquiv.piRing_symm_apply`: the
   identification of maps out of a coordinate space with their values on the standard basis.
+* `IsCompact.exists_continuousLinearEquiv_mapsTo_ball`: linear coordinates sending a compact set
+  into a given ball around the origin.
 -/
 
 public section
@@ -132,6 +137,28 @@ theorem continuous_det_div_conj (A : X → E ≃L[𝕜] E)
   exact (LinearEquiv.det (A x).toLinearEquiv).ne_zero
 
 end Star
+
+/-- **Rescaled coordinates.** A compact subset `C` of a finite-dimensional real normed space `X` is
+sent into the ball `‖y‖ < r` of `Fin (finrank ℝ X) → ℝ`, for any `r > 0`, by a continuous linear
+equivalence: the basis coordinates of `X`, scaled down far enough. -/
+theorem _root_.IsCompact.exists_continuousLinearEquiv_mapsTo_ball {X : Type*}
+    [NormedAddCommGroup X] [NormedSpace ℝ X] [FiniteDimensional ℝ X] {C : Set X}
+    (hC : IsCompact C) {r : ℝ} (hr : 0 < r) :
+    ∃ L : X ≃L[ℝ] Fin (Module.finrank ℝ X) → ℝ, Set.MapsTo L C (Metric.ball 0 r) := by
+  set e := (Module.finBasis ℝ X).equivFunL
+  obtain ⟨R, hR⟩ := hC.exists_bound_of_continuousOn e.continuous.continuousOn
+  set t : ℝ := r / (2 * (|R| + 1)) with ht
+  have ht0 : 0 < t := by positivity
+  set L : X →L[ℝ] Fin (Module.finrank ℝ X) → ℝ := t • (e : X →L[ℝ] _)
+  set A : (Fin (Module.finrank ℝ X) → ℝ) →L[ℝ] X := t⁻¹ • (e.symm : _ →L[ℝ] X)
+  refine ⟨.equivOfInverse L A (fun z ↦ by simp [L, A, ht0.ne'])
+    (fun y ↦ by simp [L, A, ht0.ne']), fun z hz ↦ ?_⟩
+  rw [mem_ball_zero_iff]
+  calc ‖L z‖ = t * ‖e z‖ := by simp [L, norm_smul, abs_of_pos ht0]
+    _ ≤ t * |R| := mul_le_mul_of_nonneg_left ((hR z hz).trans (le_abs_self R)) ht0.le
+    _ < r := by
+      rw [ht, div_mul_eq_mul_div, div_lt_iff₀ (by positivity)]
+      nlinarith [abs_nonneg R]
 
 end TauCeti
 
