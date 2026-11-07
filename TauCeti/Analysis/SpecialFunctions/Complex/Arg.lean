@@ -29,6 +29,7 @@ from the argument of `-z`.
 * `Complex.arg_div_eq_sub_arg_iff`: `arg (x / y) = arg x - arg y` exactly when
   `arg x - arg y ∈ (-π, π]`.
 * `Complex.arg_div_of_im_pos`: if `0 < x.im` and `0 < y.im`, then `arg (x / y) = arg x - arg y`.
+* `Complex.abs_arg_div_comm`: swapping numerator and denominator preserves `|arg (x / y)|`.
 * `Complex.exists_norm_eq_one_mul_sq_eq_neg_norm`: every `c` has a unit `ω` with `c ω² = -‖c‖`.
 * `TauCeti.image_polar_rectangle_eq`: in polar coordinates about `v`, rotated and scaled by `b`,
   the punctured truncated sector `{|arg ((z - v) / b)| < α}`, `α ≤ π`, is the image of an open
@@ -59,6 +60,11 @@ theorem arg_div_of_im_pos {x y : ℂ} (hx : 0 < x.im) (hy : 0 < y.im) :
     (fun h ↦ hy.ne' (by rw [h, zero_im]))).2
     ⟨by linarith [arg_nonneg_iff.2 hx.le, arg_lt_pi_iff.2 (Or.inr hy.ne')],
       by linarith [arg_nonneg_iff.2 hy.le, arg_le_pi x]⟩
+
+/-- Swapping numerator and denominator preserves the absolute value of the argument of a
+quotient. -/
+theorem abs_arg_div_comm (a b : ℂ) : |(a / b).arg| = |(b / a).arg| := by
+  rw [← inv_div, abs_arg_inv]
 
 /-- Every complex number `c` is rotated onto the nonpositive real axis by the square of a unit:
 `c ω² = -‖c‖`. -/

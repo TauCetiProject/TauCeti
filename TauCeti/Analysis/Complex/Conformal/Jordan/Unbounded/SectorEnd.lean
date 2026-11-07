@@ -10,6 +10,7 @@ public import Mathlib.Analysis.SpecialFunctions.Complex.Arg
 
 import TauCeti.Analysis.Complex.Conformal.LocalFrontier
 import TauCeti.Analysis.Complex.Conformal.Reflection.Corner
+import TauCeti.Analysis.SpecialFunctions.Complex.Arg
 
 /-!
 # Sector ends of an inverted coordinate
@@ -57,11 +58,6 @@ namespace TauCeti
 
 variable {f g : ℂ → ℂ} {q : ℂ}
 
-/-- Inversion about `c` preserves the unoriented angle with the bisector of the sector. -/
-private theorem abs_arg_div_sub_comm (c b w : ℂ) :
-    |(b / (w - c)).arg| = |((w - c) / b).arg| := by
-  rw [← inv_div, abs_arg_inv]
-
 /-- At a boundary point `z` of the half-plane where `g` does not vanish, the recentered inverted
 coordinate lies on one of the two bounding rays of the sector, provided `f` maps the upper
 half-plane near `z` into the sector and `g` is injective off its zeros. -/
@@ -97,7 +93,7 @@ private theorem abs_arg_recenterInvertedCoordinate_eq_of_im_eq_zero
   -- but not a value of `f` at an interior point, since `g` is injective off its zeros
   have hwS : w ∉ S := fun hw =>
     add_inv_notMem_image_of_inverted_coordinate hgf hgi hz0 hgz (hS hw)
-  rw [hGw, abs_arg_div_sub_comm]
+  rw [hGw, Complex.abs_arg_div_comm]
   exact abs_arg_div_eq_of_mem_frontier (U := S) (V := {y : ℂ | ρ < ‖y - c‖}) hb
     (isOpen_lt continuous_const (by fun_prop)) (fun y hy _ => and_iff_right hy)
     (le_max_left ρ 0 |>.trans_lt hwfar)
@@ -152,12 +148,10 @@ theorem exists_ball_sector_end_of_inverted_coordinate
   have h₃ : ball (x : ℂ) r₄ ⊆ ball (x : ℂ) r₃ :=
     ball_subset_ball ((min_le_right _ _).trans (min_le_right _ _))
   have hgG {z : ℂ} (hGz : G z ≠ 0) : g z ≠ 0 := fun h => hGz (by simp [G, h])
-  -- inversion about `c` preserves the unoriented angle with the bisector of the sector
-  have harg := abs_arg_div_sub_comm c b
   -- the open upper half-disc is carried into the sector
   have hsector (z : ℂ) (hz : z ∈ ball (x : ℂ) r₄) (hzH : 0 < z.im) :
       |(G z).arg| < β * Real.pi / 2 := by
-    rw [hGf ⟨h₁ hz, hzH⟩, harg]
+    rw [hGf ⟨h₁ hz, hzH⟩, Complex.abs_arg_div_comm]
     exact (hS₂ ⟨h₂ hz, hzH⟩).2
   -- the other boundary values lie on the two bounding rays
   have hrays (z : ℂ) (hz : z ∈ ball (x : ℂ) r₄) (hz0 : z.im = 0) (hGz : G z ≠ 0) :
