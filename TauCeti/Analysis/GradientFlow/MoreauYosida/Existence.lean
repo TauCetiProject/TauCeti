@@ -263,6 +263,24 @@ private theorem toReal_edist_sq_mul_le (hτ : 0 < τ) (hττ' : τ < τ') {A B :
     linarith
   rwa [div_le_iff₀ (by positivity)] at key
 
+/-- A sequence at distance at most `R ≠ ⊤` from a point has range of finite diameter. -/
+theorem ediam_range_ne_top_of_edist_le {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ℕ → X}
+    (hw : ∀ n, edist x (w n) ≤ R) : Metric.ediam (range w) ≠ ⊤ := by
+  refine ne_top_of_le_ne_top (b := R + R) (by finiteness) (Metric.ediam_le ?_)
+  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
+  exact (edist_triangle_left _ _ x).trans (add_le_add (hw i) (hw j))
+
+/-- A sequence of energy at most `c` at distance at most `R ≠ ⊤` from a point `x` has a
+subsequence converging for the auxiliary convergence `l`, if `l` has compactness for sequences of
+finite diameter. -/
+theorem exists_strictMono_tendsto_of_edist_le {l : X → Filter X}
+    (hcpt : ∀ (c : ℝ) ⦃v : ℕ → X⦄, Metric.ediam (range v) ≠ ⊤ → (∀ n, φ (v n) ≤ c) →
+      ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (v ∘ ψ) atTop (l y))
+    {c : ℝ} {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ℕ → X}
+    (hw : ∀ n, φ (w n) ≤ c ∧ edist x (w n) ≤ R) :
+    ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) :=
+  hcpt c (ediam_range_ne_top_of_edist_le hR fun n ↦ (hw n).2) fun n ↦ (hw n).1
+
 /-- **Existence of resolvent steps** (Ambrosio–Gigli–Savaré, Corollary 2.2.2). Let `l y` be the
 filter of an auxiliary convergence `y_n ⇀ y` on `X`, possibly weaker than that of the metric (for
 instance `l = @nhds X σ` for a topology `σ`), such that
@@ -319,11 +337,8 @@ theorem moreauYosidaResolvent_nonempty {l : X → Filter X}
     refine (le_abs_self _).trans (Real.abs_le_sqrt ?_)
     rw [le_div_iff₀ (sub_pos.2 (NNReal.coe_lt_coe.2 hττ'))]
     exact toReal_edist_sq_mul_le hτ hττ' hA (hvx n) (hle n)
-  have hdiam : Metric.ediam (range v) ≠ ⊤ := by
-    refine ne_top_of_le_ne_top (b := ENNReal.ofReal √C + ENNReal.ofReal √C) (by finiteness)
-      (Metric.ediam_le ?_)
-    rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-    exact (edist_triangle_left _ _ x).trans (add_le_add (hR i) (hR j))
+  have hdiam : Metric.ediam (range v) ≠ ⊤ :=
+    ediam_range_ne_top_of_edist_le ENNReal.ofReal_ne_top hR
   obtain ⟨y, ψ, hψ, hy⟩ := hcpt (M + 1) hdiam fun n ↦
     (le_add_of_nonneg_right (EReal.coe_ennreal_nonneg _)).trans (hle n)
   have hdiam' : Metric.ediam (range (v ∘ ψ)) ≠ ⊤ :=

@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.GradientFlow.MoreauYosida.Existence
 public import TauCeti.Topology.EMetricSpace.Ascoli
 public import TauCeti.Topology.MetricSpace.Holder
-public import Mathlib.Topology.MetricSpace.Holder
 import Mathlib.Algebra.Order.Chebyshev
 import TauCeti.Data.EReal.Operations
 import Mathlib.Analysis.SpecialFunctions.Pow.NNReal
@@ -547,20 +546,6 @@ theorem IsGeneralizedMinimizingMovement.apply_zero (hl : ∀ y, pure y ≤ l y)
     simpa using h0.edist (tendsto_const_nhds (x := x₀))
   rw [h3.liminf_eq] at h2
   exact edist_le_zero.1 h2
-
-/-- A sequence of energy at most `c` at finite distance `R` from a point `x₀` has a subsequence
-converging for the auxiliary convergence `l`, if `l` has compactness for sequences of finite
-diameter. -/
-private theorem exists_strictMono_tendsto_of_edist_le
-    (hcpt : ∀ (c : ℝ) ⦃v : ℕ → X⦄, Metric.ediam (range v) ≠ ⊤ → (∀ n, φ (v n) ≤ c) →
-      ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (v ∘ ψ) atTop (l y))
-    {c : ℝ} {x₀ : X} {R : ℝ≥0∞} (hR : R ≠ ⊤) {w : ℕ → X}
-    (hw : ∀ n, φ (w n) ≤ c ∧ edist x₀ (w n) ≤ R) :
-    ∃ y, ∃ ψ : ℕ → ℕ, StrictMono ψ ∧ Tendsto (w ∘ ψ) atTop (l y) := by
-  refine hcpt c (ne_top_of_le_ne_top (b := R + R) (by finiteness) (Metric.ediam_le ?_))
-    fun n ↦ (hw n).1
-  rintro _ ⟨i, rfl⟩ _ ⟨j, rfl⟩
-  exact (edist_triangle_left _ _ x₀).trans (add_le_add (hw i).2 (hw j).2)
 
 /-- **Compactness of minimizing movements** (Ambrosio–Gigli–Savaré, Section 3.3). Let `l y` be
 the filter of an auxiliary convergence `y_n ⇀ y` for which the distance is jointly sequentially
