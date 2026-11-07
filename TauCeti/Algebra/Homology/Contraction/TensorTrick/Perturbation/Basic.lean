@@ -124,16 +124,6 @@ private theorem exists_pow_perturbationTensor_apply_eq_zero
       rw [map_add, pow_add, mul_apply_eq_comp, hm, map_zero, zero_add, pow_mul_comm,
         mul_apply_eq_comp, hk, map_zero]
 
-/-- The co-Leibniz rule of an odd graded coderivation, in terms of tensor products of maps. -/
-theorem deconcatenation_comp_of_isGradedCoderivation {G : InternalGrading R M}
-    {b : Module.End R (ReducedTensorWords R M)} (hb : IsGradedCoderivation G 1 b) :
-    deconcatenation R M ∘ₗ b =
-      (TensorProduct.map b LinearMap.id +
-        TensorProduct.map (ReducedTensorWords.map (R := R) (G.koszulTwist 1)) b) ∘ₗ
-          deconcatenation R M := by
-  rw [isGradedCoderivation_iff.mp hb, LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
-    LinearMap.add_comp]
-
 end ReducedTensorWords
 
 /-! ### The perturbed tensor-trick contraction -/
@@ -302,7 +292,7 @@ theorem isCoalgHom_reducedTensorWords_perturb_incl (hδ : IsGradedCoderivation G
   have hΔh : deconcatenation R M ∘ₗ h =
       (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ deconcatenation R M :=
     c.deconcatenation_comp_reducedTensorWordsHomotopy G
-  have hΔδ := ReducedTensorWords.deconcatenation_comp_of_isGradedCoderivation hδ
+  have hΔδ := hδ.deconcatenation_comp_eq
   set K := (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ
     (TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ)
   have hK : Function.Injective
@@ -384,7 +374,7 @@ private theorem map_perturb_proj_comp_deconcatenation_add_eq
   have hΔh : deconcatenation R M ∘ₗ h =
       (TensorProduct.map h π + TensorProduct.map τ h) ∘ₗ deconcatenation R M :=
     c.deconcatenation_comp_reducedTensorWordsHomotopy G
-  have hΔδ := ReducedTensorWords.deconcatenation_comp_of_isGradedCoderivation hδ
+  have hΔδ := hδ.deconcatenation_comp_eq
   have hΔδh : deconcatenation R M ∘ₗ δ ∘ₗ h =
       ((TensorProduct.map δ LinearMap.id + TensorProduct.map τ δ) ∘ₗ
         (TensorProduct.map h π + TensorProduct.map τ h)) ∘ₗ deconcatenation R M := by
@@ -514,7 +504,7 @@ theorem isGradedCoderivation_reducedTensorWords_perturbedDifferential
   have hbi' : b ∘ₗ i' = i' ∘ₗ D' := (T.perturb δ hsq hU).dM_comp_incl
   have hΔb : deconcatenation R M ∘ₗ b =
       (TensorProduct.map b LinearMap.id + TensorProduct.map τ b) ∘ₗ deconcatenation R M :=
-    ReducedTensorWords.deconcatenation_comp_of_isGradedCoderivation hb
+    hb.deconcatenation_comp_eq
   rw [isGradedCoderivation_iff, LinearMap.lTensor_comp_rTensor, LinearMap.rTensor_def,
     ← LinearMap.add_comp]
   have key : TensorProduct.map i' i' ∘ₗ deconcatenation R N ∘ₗ D' =
