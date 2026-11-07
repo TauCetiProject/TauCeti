@@ -24,6 +24,8 @@ prime is regular (`TauCeti.isRegularRing_of_isRegularLocalRing`). This file test
 statements on small examples:
 
 * a field has global dimension `0`;
+* `ℤ` has global dimension `1`, realized by the cyclic module `ℤ ⧸ 2ℤ`, so the suprema over cyclic
+  and over finite modules are both `1`;
 * the dual numbers `k[ε] = k[x] ⧸ (x²)` over a field `k` are a Noetherian local ring which is not
   regular, so they have infinite global dimension;
 * for the regular local ring `A = k[x, y]_(x, y)` and its prime `P = (x)`, the localization `A_P`
@@ -41,6 +43,34 @@ variable (k : Type u) [Field k]
 /-- *globalDimension_field*: a field has global dimension `0`. -/
 example : globalDimension.{u} k = 0 :=
   globalDimension_eq_zero_of_isSemisimpleRing k
+
+section Integers
+
+open CategoryTheory
+
+/-- *globalDimension_int*: `ℤ` has global dimension `1`. -/
+example : globalDimension.{0} ℤ = 1 :=
+  globalDimension_eq_one_of_isPrincipalIdealRing Int.not_isField
+
+/-- *projectiveDimension_int_quotient_two*: the cyclic `ℤ`-module `ℤ ⧸ 2ℤ` has projective
+dimension `1`. -/
+example : projectiveDimension (ModuleCat.of ℤ (ℤ ⧸ span {(2 : ℤ)})) = 1 := by
+  rw [← projectiveDimension_eq_of_iso
+    (Shrink.linearEquiv.{0} ℤ (ℤ ⧸ span {(2 : ℤ)})).toModuleIso]
+  exact ModuleCat.projectiveDimension_quotient_span_singleton_eq_one two_ne_zero
+    (by norm_num [Int.isUnit_iff])
+
+/-- *globalDimension_int_iSup*: the global dimension `1` of `ℤ` is the supremum of the projective
+dimensions of its cyclic modules and of its finite modules. -/
+example : (⨆ I : Ideal ℤ, projectiveDimension
+      (ModuleCat.of ℤ (Shrink.{0} (ℤ ⧸ I)))) = 1 ∧
+    (⨆ (M : ModuleCat.{0} ℤ) (_ : Module.Finite ℤ M), projectiveDimension M) = 1 :=
+  ⟨(globalDimension_eq_iSup_cyclic ℤ).symm.trans
+      (globalDimension_eq_one_of_isPrincipalIdealRing Int.not_isField),
+    (globalDimension_eq_iSup_finite ℤ).symm.trans
+      (globalDimension_eq_one_of_isPrincipalIdealRing Int.not_isField)⟩
+
+end Integers
 
 section DualNumber
 

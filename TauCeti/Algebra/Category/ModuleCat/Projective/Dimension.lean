@@ -9,6 +9,7 @@ public import Mathlib.Algebra.Category.ModuleCat.Ext.Baer
 public import Mathlib.Algebra.Category.ModuleCat.Ext.DimensionShifting
 public import TauCeti.Algebra.Category.ModuleCat.FiniteLength
 public import TauCeti.CategoryTheory.Abelian.Projective.Dimension
+import Mathlib.RingTheory.Flat.TorsionFree
 import TauCeti.LinearAlgebra.FreeModule.PID
 
 /-!
@@ -26,7 +27,9 @@ The proof adapts `ModuleCat.hasProjectiveDimensionLT_of_forall_finite` from
 
 Over a principal ideal ring without zero divisors, every module has projective dimension at most
 one: a submodule of a projective module is free, and hence projective. This supplies the
-hereditary condition in terms of Mathlib's projective-dimension predicate.
+hereditary condition in terms of Mathlib's projective-dimension predicate. Over a principal ideal
+domain the bound is attained by every torsion cyclic module `R ⧸ (a)` with `a` a nonzero nonunit,
+which is not projective because projective modules over a domain are torsion-free.
 
 For a module of projective dimension at most one, the standard free presentation has
 projective kernel and hence is a projective resolution of length one. More generally, for a
@@ -197,5 +200,25 @@ instance hasProjectiveDimensionLE_one_of_isPrincipalIdealRing {R : Type u} [Comm
     ((ModuleCat.mono_iff_injective f).mp inferInstance)
   have : Module.Projective R X := Module.Projective.of_free
   exact ModuleCat.projective_of_categoryTheory_projective X
+
+/-- Over a principal ideal domain, the quotient `R ⧸ (a)` by a nonzero nonunit `a` has projective
+dimension exactly one. It is not projective, since projective modules over a domain are
+torsion-free while `a` kills the nonzero class of `1`, and every module over a principal ideal
+domain has projective dimension at most one. -/
+theorem projectiveDimension_quotient_span_singleton_eq_one {R : Type u} [CommRing R] [IsDomain R]
+    [IsPrincipalIdealRing R] [Small.{v} R] {a : R} (ha : a ≠ 0) (ha' : ¬ IsUnit a) :
+    projectiveDimension (ModuleCat.of R (Shrink.{v} (R ⧸ Ideal.span {a}))) = 1 := by
+  refine le_antisymm ((projectiveDimension_le_iff _ 1).mpr inferInstance) ?_
+  rw [← Nat.cast_one, projectiveDimension_ge_iff, ← projective_iff_hasProjectiveDimensionLT_one,
+    ← IsProjective.iff_projective]
+  intro hP
+  have := Module.Projective.of_equiv (Shrink.linearEquiv R (R ⧸ Ideal.span {a}))
+  -- The class of `1` in `R ⧸ (a)` is a nonzero element killed by `a`.
+  have h1 : Ideal.Quotient.mk (Ideal.span {a}) 1 ≠ 0 := by
+    rwa [Ne, Ideal.Quotient.eq_zero_iff_mem, Ideal.mem_span_singleton, ← isUnit_iff_dvd_one]
+  refine h1 ((smul_eq_zero_iff_right ha).mp ?_)
+  rw [Algebra.smul_def, Ideal.Quotient.algebraMap_eq, ← map_mul, mul_one,
+    Ideal.Quotient.eq_zero_iff_mem]
+  exact Ideal.mem_span_singleton_self a
 
 end ModuleCat
