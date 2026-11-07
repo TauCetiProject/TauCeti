@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Complex.PlaneSeparation.JordanCurve
 import Mathlib.Analysis.Complex.Convex
 import Mathlib.LinearAlgebra.Complex.FiniteDimensional
+import TauCeti.Analysis.Complex.LocalLine
 import TauCeti.Analysis.Complex.PlaneSeparation.Inside
 import TauCeti.Analysis.Contour.Winding.Separation
 
@@ -176,42 +177,11 @@ private theorem IsJordanCurve.notMem_model_connectedComponentIn_of_locally_eq_li
     rw [hcoord] at him
     simpa only [neg_im, mul_im, I_re, I_im, ofReal_re, ofReal_im, zero_mul, one_mul,
       zero_add, sub_zero, neg_eq_zero] using him
-  let φ : ℝ → ℂ := fun t => p + t / v
-  have hφcont : Continuous φ := by fun_prop
-  have hφ0 : Tendsto φ (𝓝 (0 : ℝ)) (𝓝 p) := by
-    simpa [φ] using hφcont.tendsto 0
-  have hφv (t : ℝ) : v * (φ t - p) = t := by
-    dsimp [φ]
-    field_simp [hv]
-    ring
-  have hφd (t : ℝ) : ((φ t - p) / d).im = t := by
-    have heq : (φ t - p) / d = I * t := by
-      dsimp [φ, d]
-      field_simp [hv, I_ne_zero]
-      simp [Complex.I_sq]
-    rw [heq]
-    simp
   have hr : 0 < r := by
     by_contra h
     have := mul_nonpos_of_nonpos_of_nonneg (le_of_not_gt h) (norm_nonneg v)
     linarith
-  have hφball : ∀ᶠ t in 𝓝 (0 : ℝ), φ t ∈ ball p r :=
-    hφ0.eventually (ball_mem_nhds p hr)
-  have hφC : ∀ᶠ t in 𝓝 (0 : ℝ), φ t ∈ C := by
-    filter_upwards [hφball] with t ht
-    exact (hline _ ht).mpr (by rw [hφv]; simp)
-  have hleft : p ∈ closure (C ∩ {q | 0 < ((q - p) / d).im}) := by
-    apply mem_closure_of_tendsto (b := 𝓝[>] (0 : ℝ))
-      (hφ0.mono_left nhdsWithin_le_nhds)
-    filter_upwards [hφC.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin]
-      with t htC (ht : 0 < t)
-    exact ⟨htC, by simpa [hφd] using ht⟩
-  have hright : p ∈ closure (C ∩ {q | ((q - p) / d).im < 0}) := by
-    apply mem_closure_of_tendsto (b := 𝓝[<] (0 : ℝ))
-      (hφ0.mono_left nhdsWithin_le_nhds)
-    filter_upwards [hφC.filter_mono nhdsWithin_le_nhds, self_mem_nhdsWithin]
-      with t htC (ht : t < 0)
-    exact ⟨htC, by simpa [hφd] using ht⟩
+  obtain ⟨hleft, hright⟩ := mem_closure_inter_of_locally_eq_line hv hr hline
   have hstart : d * ((-s : ℝ) : ℂ) + p = p + I * s / v := by
     dsimp [d]
     push_cast
