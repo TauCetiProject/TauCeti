@@ -9,6 +9,7 @@ public import TauCeti.Analysis.Distribution.SchwartzSpace.LittlewoodPaley
 public import TauCeti.Analysis.PDE.HeatKernel.Semigroup
 import Mathlib.Analysis.Fourier.Convolution
 import TauCeti.Analysis.Bochner.Fourier.Nonneg
+import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 import TauCeti.Analysis.Distribution.SchwartzSpace.BandLimited
 import TauCeti.Analysis.PDE.HeatKernel.Derivatives
 import TauCeti.Analysis.SpecialFunctions.Gaussian.Basic
@@ -26,7 +27,8 @@ transform lives in the annulus `ν r ≤ ‖ξ‖ ≤ ν R`, `r > 0`, this symbo
 with `C` depending only on `r`, `R` and `E`. This is the heat estimate for the dyadic blocks of
 the Littlewood–Paley decomposition: for `j ≥ 1` the block `Δⱼ f` has frequencies of size `2^j`,
 so `‖e^{tΔ} Δⱼ f‖_p ≤ C exp(-c 4^j t) ‖Δⱼ f‖_p`. It is how the heat semigroup gains regularity
-on Besov and Hölder–Zygmund spaces, `‖e^{tΔ} f‖_{𝒞^{s + 2σ}} ≤ C t^{-σ} ‖f‖_{𝒞^s}`.
+on Besov and Hölder–Zygmund spaces, `‖e^{tΔ} f‖_{𝒞^{s + 2σ}} ≤ C t^{-σ} ‖f‖_{𝒞^s}` for
+`σ ≥ 0` and `0 < t ≤ 1`.
 
 The proof writes `e^{tΔ} f` as the convolution of `f` with the kernel `𝓕⁻ σ`, where
 `σ ξ = χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)` and `χ` is a smooth cutoff equal to `1` on the annulus
@@ -38,8 +40,6 @@ Plancherel bound for kernels of band-limited symbols then gives
 
 ## Main declarations
 
-* `TauCeti.exists_norm_iteratedFDeriv_exp_neg_mul_norm_sq_le`: the derivatives of the Gaussian
-  `exp(-c ‖ξ‖²)` are `O(c^{k/2} exp(-c ‖ξ‖² / 2))`, uniformly in `c ≥ 0`.
 * `TauCeti.exists_integral_norm_fourierInv_mul_exp_le`: the `L¹` norm of the kernel of the
   frequency-localized heat multiplier `χ (ν⁻¹ ξ) exp(-4π² t ‖ξ‖²)` is
   `O(exp(-π² r² ν² t))` when `χ` vanishes on the ball of radius `r`.
@@ -62,58 +62,11 @@ noncomputable section
 namespace TauCeti
 
 open MeasureTheory Metric Module Real Set Function FourierTransform SchwartzMap ContinuousLinearMap
-open scoped ContDiff Convolution SchwartzMap LineDeriv NNReal ENNReal ComplexConjugate
+open scoped ContDiff Convolution SchwartzMap LineDeriv NNReal ENNReal ComplexConjugate Topology
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
 
-/-! ### Derivatives of a Gaussian -/
-
-/-- **Derivatives of a Gaussian.** For every order `k` there is a constant `C` such that, for
-every `c ≥ 0`, `‖D^k exp(-c ‖ξ‖²)‖ ≤ C c^{k/2} exp(-c ‖ξ‖² / 2)`. -/
-theorem exists_norm_iteratedFDeriv_exp_neg_mul_norm_sq_le (k : ℕ) :
-    ∃ C, ∀ c, 0 ≤ c → ∀ ξ : E,
-      ‖iteratedFDeriv ℝ k (fun ξ ↦ rexp (-(c * ‖ξ‖ ^ 2))) ξ‖ ≤
-        C * √c ^ k * rexp (-(c * ‖ξ‖ ^ 2) / 2) := by
-  obtain ⟨C, hC⟩ := exists_norm_iteratedFDeriv_heatKernel_le_rpow_mul_exp (E := E) k
-  set a : ℝ := π ^ ((finrank ℝ E : ℝ) / 2)
-  set G : E → ℝ := fun η ↦ rexp (-‖η‖ ^ 2)
-  -- The unit Gaussian `exp(-‖η‖²)` is `π^(n/2) K_{1/4}(η)`.
-  have hG : G = fun η ↦ a • heatKernel (1 / 4) η := by
-    funext η
-    rw [heatKernel_apply, smul_eq_mul, ← mul_assoc, show 4 * π * (1 / 4) = π by ring,
-      show -‖η‖ ^ 2 / (4 * (1 / 4)) = -‖η‖ ^ 2 by ring, neg_div, rpow_neg pi_pos.le,
-      mul_inv_cancel₀ (by positivity), one_mul]
-  have hK : ContDiff ℝ k (heatKernel (1 / 4) : E → ℝ) := contDiff_heatKernel _
-  refine ⟨a * (C * (1 / 4) ^ (-(finrank ℝ E + k : ℝ) / 2)), fun c hc ξ ↦ ?_⟩
-  -- `exp(-c ‖ξ‖²)` is the unit Gaussian at `√c ξ`.
-  have hfun : (fun ξ : E ↦ rexp (-(c * ‖ξ‖ ^ 2))) = fun ξ ↦ G (√c • ξ) := by
-    funext ξ
-    simp only [G, norm_smul, mul_pow, norm_of_nonneg (sqrt_nonneg c), sq_sqrt hc]
-  have he : -‖√c • ξ‖ ^ 2 / (8 * (1 / 4)) = -(c * ‖ξ‖ ^ 2) / 2 := by
-    rw [norm_smul, mul_pow, norm_of_nonneg (sqrt_nonneg c), sq_sqrt hc]
-    ring
-  have hb := he ▸ hC (1 / 4) (by norm_num) (√c • ξ)
-  rw [hfun, iteratedFDeriv_comp_const_smul _ (hG ▸ hK.const_smul a)]
-  beta_reduce
-  rw [hG, iteratedFDeriv_const_smul_apply' hK.contDiffAt, norm_smul, norm_smul, norm_pow,
-    norm_of_nonneg (sqrt_nonneg c), norm_of_nonneg (by positivity)]
-  calc √c ^ k * (a * ‖iteratedFDeriv ℝ k (heatKernel (1 / 4)) (√c • ξ)‖)
-      ≤ √c ^ k * (a * (C * (1 / 4) ^ (-(finrank ℝ E + k : ℝ) / 2) *
-          rexp (-(c * ‖ξ‖ ^ 2) / 2))) := by
-        gcongr
-    _ = _ := by ring
-
 /-! ### The kernel of the frequency-localized heat multiplier -/
-
-/-- A smooth cutoff `χ` vanishing on the ball of radius `r` has all its derivatives vanishing
-there. -/
-private theorem iteratedFDeriv_eq_zero_of_norm_lt {χ : E → ℝ} {r : ℝ}
-    (hχr : ∀ ξ, ‖ξ‖ < r → χ ξ = 0) (i : ℕ) {η : E} (hη : ‖η‖ < r) : iteratedFDeriv ℝ i χ η = 0 := by
-  refine image_eq_zero_of_notMem_tsupport fun h ↦ ?_
-  have hsub : tsupport χ ⊆ {ξ | r ≤ ‖ξ‖} := closure_minimal (fun ξ hξ ↦ by
-    by_contra h
-    exact hξ (hχr ξ (not_le.1 h))) (isClosed_le continuous_const continuous_norm)
-  exact absurd (hsub (tsupport_iteratedFDeriv_subset i h)) (not_le.2 hη)
 
 section Kernel
 
@@ -153,7 +106,11 @@ private theorem exists_norm_iteratedFDeriv_mul_exp_le (hχ : ContDiff ℝ ∞ χ
   rw [Finset.sum_mul]
   refine Finset.sum_le_sum fun i _ ↦ ?_
   rcases lt_or_ge ‖η‖ r with hη | hη
-  · rw [iteratedFDeriv_eq_zero_of_norm_lt hχr i hη, norm_zero, mul_zero, zero_mul]
+  · -- `χ` vanishes near `η`, hence so do its derivatives.
+    have h0 : χ =ᶠ[𝓝 η] 0 :=
+      Filter.mem_of_superset ((isOpen_lt continuous_norm continuous_const).mem_nhds hη) hχr
+    rw [(h0.iteratedFDeriv ℝ i).eq_of_nhds, iteratedFDeriv_zero, Pi.zero_apply, norm_zero,
+      mul_zero, zero_mul]
     exact mul_nonneg (hD0 i) (exp_pos _).le
   -- On `‖η‖ ≥ r` the Gaussian factor is at most `exp(-π² r² τ)²`, and one of the two factors
   -- absorbs the power `√τ ^ (k - i)` produced by the derivatives of the Gaussian.
@@ -379,47 +336,6 @@ private theorem heatSemigroup_toLp_eq_convolutionLp {χ : E → ℝ} (hχ : Cont
   exact Lp.ext (h₁.trans (convolutionLp_ae_eq_convolution hp
     (𝓕⁻ (cutoffHeatSymbol hχ hχc hν t)).integrable.re (f.memLp p)).symm)
 
-omit [MeasurableSpace E] [BorelSpace E] in
-/-- A smooth, even, compactly supported cutoff equal to `1` on the annulus `r ≤ ‖ξ‖ ≤ R` and
-vanishing on the ball of radius `r / 2`, built as a bump function of `‖ξ‖²`. -/
-private theorem exists_cutoff_annulus {r : ℝ} (hr : 0 < r) (R : ℝ) :
-    ∃ χ : E → ℝ, ContDiff ℝ ∞ χ ∧ HasCompactSupport χ ∧ (∀ ξ, ‖ξ‖ < r / 2 → χ ξ = 0) ∧
-      (∀ ξ, χ (-ξ) = χ ξ) ∧ ∀ ξ, r ≤ ‖ξ‖ → ‖ξ‖ ≤ R → χ ξ = 1 := by
-  set a : ℝ := r ^ 2
-  set b : ℝ := (|R| + 2 * r) ^ 2
-  have ha : 0 < a := by positivity
-  have hab : a < b := pow_lt_pow_left₀ (by linarith [abs_nonneg R]) hr.le two_ne_zero
-  let ρ : ContDiffBump ((a + b) / 2) := ⟨(b - a) / 2, b / 2, by linarith, by linarith⟩
-  refine ⟨fun ξ ↦ ρ (‖ξ‖ ^ 2), ρ.contDiff.comp (contDiff_norm_sq ℝ), ?_, fun ξ hξ ↦ ?_,
-    fun ξ ↦ by simp, fun ξ h₁ h₂ ↦ ?_⟩
-  · refine HasCompactSupport.intro (isCompact_closedBall (0 : E) (2 * (|R| + 2 * r)))
-      fun ξ hξ ↦ ρ.zero_of_le_dist ?_
-    have hξ' : 2 * (|R| + 2 * r) < ‖ξ‖ := by simpa using hξ
-    have : 4 * b < ‖ξ‖ ^ 2 := by
-      have := pow_lt_pow_left₀ hξ' (by positivity) two_ne_zero
-      simp only [b]
-      nlinarith
-    rw [Real.dist_eq, le_abs]
-    left
-    simp only [ρ]
-    linarith
-  · refine ρ.zero_of_le_dist ?_
-    have : ‖ξ‖ ^ 2 < a / 4 := by
-      have := pow_lt_pow_left₀ hξ (norm_nonneg _) two_ne_zero
-      simp only [a]
-      nlinarith
-    rw [Real.dist_eq, le_abs]
-    right
-    simp only [ρ]
-    nlinarith [sq_nonneg ‖ξ‖]
-  · refine ρ.one_of_mem_closedBall ?_
-    have hlo : a ≤ ‖ξ‖ ^ 2 := pow_le_pow_left₀ hr.le h₁ 2
-    have hhi : ‖ξ‖ ^ 2 ≤ b :=
-      pow_le_pow_left₀ (norm_nonneg _) (h₂.trans ((le_abs_self R).trans (by linarith))) 2
-    rw [mem_closedBall, Real.dist_eq, abs_le]
-    simp only [ρ]
-    constructor <;> linarith
-
 /-- **The heat flow of a function with frequencies in an annulus.** Let `0 < r` and `R` be real.
 There is a constant `C`, depending only on `r`, `R` and `E`, such that for every `1 ≤ p < ∞`,
 every frequency scale `ν > 0`, every time `t ≥ 0` and every Schwartz function `f` whose Fourier
@@ -433,7 +349,7 @@ theorem exists_norm_heatSemigroup_toLp_le_of_support_fourier_subset {r : ℝ} (h
       support (𝓕 (f : E → F)) ⊆ closedBall 0 (ν * R) \ ball 0 (ν * r) →
         ‖heatSemigroup hp t (f.toLp p)‖ ≤
           C * rexp (-(π ^ 2 * r ^ 2 / 4 * (ν ^ 2 * t))) * ‖f.toLp p‖ := by
-  obtain ⟨χ, hχ, hχc, hχ0, hχe, hχ1⟩ := exists_cutoff_annulus (E := E) hr R
+  obtain ⟨χ, hχ, hχc, hχ0, hχe, hχ1⟩ := exists_contDiff_cutoff_annulus (E := E) hr R
   obtain ⟨C₀, hC₀⟩ := exists_integral_norm_fourierInv_mul_exp_le hχ hχc (half_pos hr) hχ0
   refine ⟨max C₀ 1, fun {p} _ hp ν hν t f hf ↦ ?_⟩
   rcases eq_or_ne t 0 with rfl | ht
