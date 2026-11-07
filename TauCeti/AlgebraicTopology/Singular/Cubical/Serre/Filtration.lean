@@ -28,8 +28,8 @@ Serre normalizes cubical chains by the cubes independent of their last coordinat
 normalized chains of `TauCeti.AlgebraicTopology.Singular.Cubical.Normalized` divide out the cubes
 independent of any coordinate (Massey's convention).  The filtration is defined on the
 unnormalized chains, where the two conventions do not intervene, and transported to the
-normalized chains as an image.  The Serre spectral sequence is the spectral sequence of this
-filtration of the normalized cubical chain complex.
+normalized chains as an image.  This filtration is the input for the Serre spectral sequence of
+the normalized cubical chain complex.
 
 ## Main definitions
 
@@ -224,7 +224,7 @@ theorem serreFiltration_mono {s t : ℤ} (hst : s ≤ t) (n : ℕ) :
     serreFiltration R p s n ≤ serreFiltration R p t n :=
   Submodule.map_mono (CubicalChain.serreFiltration_mono hst n)
 
-/-- The boundary preserves the Serre filtration: it is a filtration by subcomplexes. -/
+/-- The boundary maps the `s`-th piece in degree `n + 1` into the `s`-th piece in degree `n`. -/
 theorem boundary_mem_serreFiltration {s : ℤ} {n : ℕ} {f : NormalizedCubicalChain E R (n + 1)}
     (hf : f ∈ serreFiltration R p s (n + 1)) : boundary E R n f ∈ serreFiltration R p s n := by
   obtain ⟨g, hg, rfl⟩ := hf
