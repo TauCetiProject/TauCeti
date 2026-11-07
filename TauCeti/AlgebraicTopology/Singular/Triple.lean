@@ -221,6 +221,33 @@ theorem isZero_singularHomology_totalPair (n : ℕ)
     IsZero ((totalPair.obj T).singularHomology R n) :=
   (T.singularHomology_exact_total R n).isZero_of_both_isZero hinner houter
 
+/-- **Removing an acyclic inner pair**: if `Hₙ(A, B)` and `Hₙ₋₁(A, B)` vanish, then
+`Hₙ(X, B) ⟶ Hₙ(X, A)` is an isomorphism. In degree `0` only `H₀(A, B)` needs to vanish. -/
+theorem isIso_singularHomologyMap_totalToOuter_of_isZero (n : ℕ)
+    (hn : IsZero ((innerPair.obj T).singularHomology R n))
+    (hm : ∀ m, m + 1 = n → IsZero ((innerPair.obj T).singularHomology R m)) :
+    IsIso (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+  have : Mono (TopPair.singularHomologyMap (totalToOuter.app T) R n) :=
+    (T.singularHomology_exact_total R n).mono_g (hn.eq_of_src _ _)
+  have : Epi (TopPair.singularHomologyMap (totalToOuter.app T) R n) := by
+    cases n with
+    | zero => infer_instance
+    | succ m =>
+      exact (T.singularHomology_exact_outer R (m + 1) m).epi_f ((hm m rfl).eq_of_tgt _ _)
+  exact isIso_of_mono_of_epi _
+
+/-- **Removing an acyclic outer pair**: if `Hₙ(X, A)` and `Hₙ₊₁(X, A)` vanish, then
+`Hₙ(A, B) ⟶ Hₙ(X, B)` is an isomorphism. -/
+theorem isIso_singularHomologyMap_innerToTotal_of_isZero (n : ℕ)
+    (hn : IsZero ((outerPair.obj T).singularHomology R n))
+    (hn' : IsZero ((outerPair.obj T).singularHomology R (n + 1))) :
+    IsIso (TopPair.singularHomologyMap (innerToTotal.app T) R n) := by
+  have : Epi (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_total R n).epi_f (hn.eq_of_tgt _ _)
+  have : Mono (TopPair.singularHomologyMap (innerToTotal.app T) R n) :=
+    (T.singularHomology_exact_inner R (n + 1) n).mono_g (hn'.eq_of_src _ _)
+  exact isIso_of_mono_of_epi _
+
 /-- The connecting morphism of a triple `(X, A, B)` is the connecting morphism of the pair
 `(X, A)` followed by the map `Hₘ(A) ⟶ Hₘ(A, B)`.  This factorization is what makes two consecutive
 connecting morphisms of a filtration compose to zero. -/
