@@ -26,8 +26,9 @@ of an ideal on a module, complementing `Mathlib/RingTheory/Ideal/Operations.lean
   Over a commutative semiring, this implies that the divisor antidiagonal of the unit ideal
   is a singleton.
 * `Ideal.toAddSubgroup_mul_eq_closure_mul`: additive generators of a product of ideals.
-* `Ideal.smul_top_eq_top_of_pi`: an ideal that expands the whole of a product of modules expands
-  the whole of every factor.
+* `Ideal.smul_top_eq_top_of_surjective`: an ideal that expands the whole of a module expands the
+  whole of the target of any surjective linear map out of it, for instance of every factor of a
+  product.
 * `Ideal.smul_top_eq_comap_mul`: the action on an ideal identifies its product submodule.
 * `Ideal.image_fintypeLinearCombination_pi`: linear combinations with coefficients in an ideal
   give precisely the ideal multiple of the span.
@@ -161,20 +162,20 @@ theorem mem_span_range_fin_two_sq_iff (v : Fin 2 → R) {x : R} :
 
 end CommSemiring
 
-section Pi
+section Surjective
 
-variable {R : Type*} [Semiring R] {ι : Type*} {M : ι → Type*} [∀ i, AddCommMonoid (M i)]
-    [∀ i, Module R (M i)]
+variable {R : Type*} [Semiring R] {M N : Type*} [AddCommMonoid M] [AddCommMonoid N] [Module R M]
+    [Module R N]
 
-/-- **Expanding a product expands every factor**: if `I • ⊤ = ⊤` in `∀ i, M i` then `I • ⊤ = ⊤` in
-each `M i`. Thus properness of `I • ⊤` in one factor implies properness in the product. -/
-theorem smul_top_eq_top_of_pi (I : Ideal R) (h : I • (⊤ : Submodule R (∀ i, M i)) = ⊤) (i : ι) :
-    I • (⊤ : Submodule R (M i)) = ⊤ := by
-  have := congrArg (Submodule.map (LinearMap.proj (R := R) (φ := M) i)) h
-  rwa [Submodule.map_smul'', Submodule.map_top,
-    LinearMap.range_eq_top.mpr (Function.surjective_eval i)] at this
+/-- **Expanding a module expands its quotients**: if `I • ⊤ = ⊤` in `M` then `I • ⊤ = ⊤` in the
+target of any surjective linear map out of `M`. For a product `∀ i, M i` and a projection this says
+that properness of `I • ⊤` in one factor implies properness in the product. -/
+theorem smul_top_eq_top_of_surjective (I : Ideal R) (f : M →ₗ[R] N) (hf : Function.Surjective f)
+    (h : I • (⊤ : Submodule R M) = ⊤) : I • (⊤ : Submodule R N) = ⊤ := by
+  have := congrArg (Submodule.map f) h
+  rwa [Submodule.map_smul'', Submodule.map_top, LinearMap.range_eq_top.mpr hf] at this
 
-end Pi
+end Surjective
 
 /-- The linear-combination map carries the tuples with all coefficients in a two-sided ideal `J`
 onto the ideal multiple `J • span v` of the submodule spanned by the family. -/
