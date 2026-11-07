@@ -481,9 +481,13 @@ theorem contMDiff_hamiltonianFlowAction_uncurry :
 
 /-- **The orbit maps of the Hamiltonian flow action are smooth.** -/
 theorem contMDiff_hamiltonianFlowAction_apply (x : M) :
-    ContMDiff 𝓘(ℝ, ι → ℝ) I ∞ fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x :=
-  (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
-    (contMDiff_id.prodMk contMDiff_const)
+    ContMDiff 𝓘(ℝ, ι → ℝ) I ∞ fun v ↦ (hσ.hamiltonianFlowAction hF hcomm hc v).toMul x := by
+  -- Elaborating the composite before matching it against the goal avoids a slow unification of
+  -- `?g ∘ ?f` with the orbit map.
+  have h := (hσ.contMDiff_hamiltonianFlowAction_uncurry hF hcomm hc).comp
+    (contMDiff_id.prodMk contMDiff_const :
+      ContMDiff 𝓘(ℝ, ι → ℝ) (𝓘(ℝ, ι → ℝ).prod I) ∞ fun v : ι → ℝ ↦ (v, x))
+  exact h
 
 /-- The orbit maps of the Hamiltonian flow action are continuous. -/
 theorem continuous_hamiltonianFlowAction_apply (x : M) :
