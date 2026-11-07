@@ -11,6 +11,7 @@ import Mathlib.NumberTheory.ZetaValues
 public import Mathlib.Analysis.SpecialFunctions.Complex.CircleAddChar
 import TauCeti.Analysis.SpecialFunctions.Trigonometric.Cotangent
 import TauCeti.Data.ZMod.Count
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Cotangent
 
 /-!
 # Generalized Bernoulli numbers and primitive character sums
@@ -28,7 +29,9 @@ coefficients of normalized Eisenstein series.
 In weight one the cotangent takes the place of the critical-value sum: for a nontrivial primitive
 `φ` modulo `v ∣ N`, `∑_{j mod N} φ⁻¹(j) π cot (π j / N) = N · 2π i g(φ⁻¹) B₁,φ / v`
 (`DirichletCharacter.IsPrimitive.sum_inv_mul_pi_mul_cot`), by the finite Fourier expansion of the
-cotangent and the Fourier coefficients of `φ⁻¹`.
+cotangent and the Fourier coefficients of `φ⁻¹`. For primitive odd characters the first
+generalized Bernoulli number is nonzero (`DirichletCharacter.generalizedBernoulli_one_ne_zero`),
+by the cotangent formula for `L(1, φ⁻¹)` and Dirichlet nonvanishing.
 
 ## References
 
@@ -171,5 +174,24 @@ theorem IsPrimitive.sum_inv_mul_pi_mul_cot {v N : ℕ} [NeZero v] [NeZero N]
   rw [hN]
   push_cast
   field_simp
+
+/-- The first generalized Bernoulli number of a primitive odd character is nonzero.
+Primitivity is essential: an imprimitive odd character can acquire an Euler factor vanishing
+at zero. -/
+theorem generalizedBernoulli_one_ne_zero (hχ : χ.IsPrimitive) (hodd : χ.Odd) :
+    χ.generalizedBernoulli 1 ≠ 0 := by
+  have hχ1 : χ ≠ 1 := by
+    rintro rfl
+    exact Odd.not_even 1 hodd even_one
+  have hinv : χ⁻¹.Odd := by
+    rw [Odd, MulChar.inv_apply_eq_inv', hodd, inv_neg, inv_one]
+  have hL := χ⁻¹.two_mul_LFunction_one_eq_sum_mul_cot hinv
+  have hsum := hχ.sum_inv_mul_pi_mul_cot (dvd_refl N) hχ1
+  simp only [ZMod.natCast_zmod_val] at hsum
+  simp_rw [div_mul_eq_mul_div] at hL
+  rw [← Finset.sum_div, hsum] at hL
+  intro hB
+  have hzero : χ⁻¹.LFunction 1 = 0 := by simpa [hB] using hL
+  exact LFunction_apply_one_ne_zero (inv_ne_one.mpr hχ1) hzero
 
 end DirichletCharacter
