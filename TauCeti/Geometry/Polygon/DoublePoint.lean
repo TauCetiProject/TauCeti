@@ -24,13 +24,12 @@ regular projection the partner is unique (`Polygon.IsRegularProjection.eq_double
 so the partner map is an involution (`Polygon.IsRegularProjection.involutive_doublePointPartner`)
 whose non-fixed points on the polygon are exactly the double points; no vertex is a double point.
 
-Second, for a simple polygon over a linearly ordered field and an affine regular projection, there
-are only finitely many double points (`Polygon.IsRegularProjection.finite_doublePoints`). The key
-step is that two distinct edges contain at most one pair of points with the same image
-(`Polygon.IsRegularProjection.subsingleton_setOf_mem_edgeSet`): if the projections of two edges
-overlapped in a segment, an end of the overlap would be the image of a vertex of one edge and of
-a point of the other, which regularity forces to be a common point of the two edges, and two
-distinct edges of a simple polygon share at most one point. The projection along a direction,
+Second, for an affine regular projection over a linearly ordered field, there are only finitely
+many double points (`Polygon.IsRegularProjection.finite_doublePoints`). Each double point has a
+distinct partner, and for any two edges there is at most one pair of distinct points with the same
+image. If their projected edges overlap along a nontrivial segment, regularity forces the overlap
+endpoints to be common points of the edges, so the matching points throughout the overlap
+coincide. The projection along a direction,
 `Polygon.projAlong`, is affine, so these results apply to it.
 
 Third, for a simple real polygon and the projection along a direction `d`, the crossings are
@@ -70,8 +69,8 @@ projection of `poly` along `d` (`Polygon.doublePoints_map_projAlong`).
 * `Polygon.IsRegularProjection.subsingleton_setOf_mem_edgeSet`: two distinct edges of a simple
   polygon contain at most one pair of points with the same image under an affine regular
   projection.
-* `Polygon.IsRegularProjection.finite_doublePoints`: an affine regular projection of a simple
-  polygon has finitely many double points.
+* `Polygon.IsRegularProjection.finite_doublePoints`: an affine regular projection has finitely
+  many double points.
 * `Polygon.IsRegularProjection.linearIndependent_of_projAlong_eq`: the crossings of a regular
   projection along a direction are transverse.
 
@@ -279,10 +278,147 @@ theorem doublePoints_map_projAlong (hf : Injective f.linear) (q₀ : P') (p₀ :
 
 end Map
 
+section Endpoint
+
+variable [Ring R] [PartialOrder R] [AddCommGroup V] [Module R V]
+  [AddTorsor V P] [AddCommGroup W] [Module R W] [AddTorsor W Q] {poly : Polygon P n} {π : P →ᵃ[R] Q}
+
+private theorem IsRegularProjection.edgePath_eq_of_overlap_endpoint
+    (hπ : poly.IsRegularProjection R π) {i j : Fin n} {h : R → R}
+    (hh : ∀ u, h u = lineMap (h 0) (h 1) u)
+    (hrel : ∀ u, π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
+      π (lineMap (poly j) (poly (finRotate n j)) u))
+    {u : R} (hu : u ∈ Icc (0 : R) 1)
+    (hhu : lineMap (h 0) (h 1) u ∈ Icc (0 : R) 1)
+    (hend : u = 0 ∨ u = 1 ∨ lineMap (h 0) (h 1) u = 0 ∨ lineMap (h 0) (h 1) u = 1) :
+    lineMap (poly i) (poly (finRotate n i)) (h u) = lineMap (poly j) (poly (finRotate n j)) u := by
+  rw [← hh u] at hhu hend
+  have hX : lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i := ⟨_, hhu, rfl⟩
+  have hY : lineMap (poly j) (poly (finRotate n j)) u ∈ poly.edgeSet R j := ⟨_, hu, rfl⟩
+  have hXb := mem_iUnion.2 ⟨i, hX⟩
+  have hYb := mem_iUnion.2 ⟨j, hY⟩
+  rcases hend with rfl | rfl | h0 | h1
+  · rw [lineMap_apply_zero]
+    exact hπ.eq_vertex_of_apply_eq j hXb (by simpa only [lineMap_apply_zero] using hrel 0)
+  · rw [lineMap_apply_one]
+    exact hπ.eq_vertex_of_apply_eq _ hXb (by simpa only [lineMap_apply_one] using hrel 1)
+  · rw [h0, lineMap_apply_zero]
+    exact (hπ.eq_vertex_of_apply_eq i hYb
+      ((hrel u).symm.trans (by rw [h0, lineMap_apply_zero]))).symm
+  · rw [h1, lineMap_apply_one]
+    exact (hπ.eq_vertex_of_apply_eq _ hYb
+      ((hrel u).symm.trans (by rw [h1, lineMap_apply_one]))).symm
+
+end Endpoint
+
+section AffineReparam
+
+variable [Field R] [AddCommGroup V] [Module R V] [AddTorsor V P]
+  [AddCommGroup W] [Module R W] [AddTorsor W Q] {poly : Polygon P n} {π : P →ᵃ[R] Q}
+
+private theorem IsRegularProjection.exists_edgePath_reparam {i j : Fin n} {s s' t t' : R}
+    (htt' : t ≠ t')
+    (hxy : π (poly.edgePath R i s) = π (poly.edgePath R j t))
+    (hxy' : π (poly.edgePath R i s') = π (poly.edgePath R j t')) :
+    ∃ h : R → R, (∀ u, h u = lineMap (h 0) (h 1) u) ∧ h t = s ∧ h t' = s' ∧
+      ∀ u, π (poly.edgePath R i (h u)) = π (poly.edgePath R j u) := by
+  have htt'₀ : t' - t ≠ 0 := sub_ne_zero.2 htt'.symm
+  set h : R → R := fun u ↦ lineMap s s' ((u - t) / (t' - t)) with h_def
+  refine ⟨h, ?_, ?_, ?_, ?_⟩
+  · intro u
+    simp only [h_def, lineMap_apply_ring']
+    field_simp
+    ring
+  · simp [h_def]
+  · simp [h_def, div_self htt'₀]
+  · intro u
+    have hu : lineMap t t' ((u - t) / (t' - t)) = u := by
+      rw [lineMap_apply_ring']
+      field_simp
+      ring
+    conv_rhs => rw [← hu]
+    simp only [h_def, AffineMap.apply_lineMap, hxy, hxy']
+
+private theorem IsRegularProjection.edgePath_eq_of_eq_at_two
+    {i j : Fin n} {h : R → R} {u₁ u₂ t : R}
+    (hh : ∀ u, h u = lineMap (h 0) (h 1) u) (hu₁₂ : u₁ ≠ u₂)
+    (h₁ : poly.edgePath R i (h u₁) = poly.edgePath R j u₁)
+    (h₂ : poly.edgePath R i (h u₂) = poly.edgePath R j u₂) :
+    poly.edgePath R i (h t) = poly.edgePath R j t := by
+  let f : R →ᵃ[R] P := (poly.edgePath R i).comp (lineMap (h 0) (h 1))
+  let g : R →ᵃ[R] P := poly.edgePath R j
+  have eq_at {f g : R →ᵃ[R] P} {a b c : R} (hab : a ≠ b)
+      (ha : f a = g a) (hb : f b = g b) : f c = g c := by
+    have hc : c = lineMap a b ((c - a) / (b - a)) := by
+      rw [lineMap_apply_ring']
+      field_simp [sub_ne_zero.mpr hab.symm]
+      ring
+    rw [hc, f.apply_lineMap, g.apply_lineMap, ha, hb]
+  have h₁' : f u₁ = g u₁ := by
+    dsimp only [f, g, AffineMap.coe_comp, Function.comp_apply]
+    rw [← hh u₁]
+    exact h₁
+  have h₂' : f u₂ = g u₂ := by
+    dsimp only [f, g, AffineMap.coe_comp, Function.comp_apply]
+    rw [← hh u₂]
+    exact h₂
+  have hft : f t = poly.edgePath R i (h t) := by
+    dsimp [f]
+    rw [← hh t]
+  exact hft.symm.trans ((eq_at hu₁₂ h₁' h₂').trans rfl)
+
+end AffineReparam
+
 section Finite
 
 variable [Field R] [LinearOrder R] [IsStrictOrderedRing R] [AddCommGroup V] [Module R V]
   [AddTorsor V P] [AddCommGroup W] [Module R W] [AddTorsor W Q] {poly : Polygon P n} {π : P →ᵃ[R] Q}
+
+/-- For two pairs of points on edges with the same projected image, if their first points differ,
+then each pair has identical points. -/
+private theorem IsRegularProjection.eq_of_two_edgePairs (hπ : poly.IsRegularProjection R π)
+    {i j : Fin n} {x y x' y' : P} (hx : x ∈ poly.edgeSet R i) (hy : y ∈ poly.edgeSet R j)
+    (hxy : π x = π y) (hx' : x' ∈ poly.edgeSet R i) (hy' : y' ∈ poly.edgeSet R j)
+    (hxy' : π x' = π y') (hxx : x ≠ x') : x = y ∧ x' = y' := by
+  obtain ⟨s, hsI, rfl⟩ := hx
+  obtain ⟨s', hsI', rfl⟩ := hx'
+  obtain ⟨t, ht, rfl⟩ := hy
+  obtain ⟨t', ht', rfl⟩ := hy'
+  have hss' : s ≠ s' := by rintro rfl; exact hxx rfl
+  have htt' : t ≠ t' := by
+    rintro rfl
+    exact hxx (hπ.injOn_edgeSet i ⟨s, hsI, rfl⟩ ⟨s', hsI', rfl⟩ (hxy.trans hxy'.symm))
+  obtain ⟨h, hh, ht₀, ht₁, hrel⟩ := IsRegularProjection.exists_edgePath_reparam htt' hxy hxy'
+  obtain ⟨u₁, u₂, hne₁₂, hu⟩ := TauCeti.exists_lineMap_endpoint ht ht'
+    (by rw [← hh, ht₀]; exact hsI) (by rw [← hh, ht₁]; exact hsI')
+    (by rw [← hh, ← hh, ht₀, ht₁]; exact hss')
+  have hcommon (u : R) (hu' : u ∈ ({u₁, u₂} : Set R)) :
+      poly.edgePath R i (h u) = poly.edgePath R j u :=
+    hπ.edgePath_eq_of_overlap_endpoint hh hrel (hu u hu').1 (hu u hu').2.1 (hu u hu').2.2
+  have hu₁₂ : u₁ ≠ u₂ := by rintro rfl; exact hne₁₂ rfl
+  have hxy₀ : poly.edgePath R i s = poly.edgePath R j t := by
+    simpa only [ht₀] using IsRegularProjection.edgePath_eq_of_eq_at_two (t := t) hh hu₁₂
+      (hcommon u₁ (.inl rfl)) (hcommon u₂ (.inr rfl))
+  have hxy₁ : poly.edgePath R i s' = poly.edgePath R j t' := by
+    simpa only [ht₁] using IsRegularProjection.edgePath_eq_of_eq_at_two (t := t') hh hu₁₂
+      (hcommon u₁ (.inl rfl)) (hcommon u₂ (.inr rfl))
+  exact ⟨hxy₀, hxy₁⟩
+
+private theorem IsRegularProjection.subsingleton_setOf_mem_edgeSet_of_ne
+    (hπ : poly.IsRegularProjection R π) {i j : Fin n} :
+    {p : P × P | p.1 ∈ poly.edgeSet R i ∧ p.2 ∈ poly.edgeSet R j ∧ π p.1 = π p.2 ∧
+      p.1 ≠ p.2}.Subsingleton := by
+  by_cases hij : i = j
+  · subst j
+    intro p hp q hq
+    exact False.elim (hp.2.2.2 (hπ.injOn_edgeSet i hp.1 hp.2.1 hp.2.2.1))
+  · rintro ⟨x, y⟩ ⟨hx, hy, hxy, hxy_ne⟩ ⟨x', y'⟩ ⟨hx', hy', hxy', _⟩
+    dsimp only at hx hy hxy hx' hy' hxy' hxy_ne
+    suffices hxx : x = x' by
+      subst hxx
+      rw [hπ.injOn_edgeSet j hy hy' (hxy.symm.trans hxy')]
+    by_contra hne
+    exact hxy_ne (hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hne).1
 
 /-- **Two distinct edges cross at most once.** For an affine regular projection `π` of a simple
 polygon, two distinct edges contain at most one pair of points with the same image under `π`. For
@@ -290,86 +426,26 @@ consecutive edges this pair is their common vertex, taken twice. -/
 theorem IsRegularProjection.subsingleton_setOf_mem_edgeSet (hs : poly.IsSimple R)
     (hπ : poly.IsRegularProjection R π) {i j : Fin n} (hij : i ≠ j) :
     {p : P × P | p.1 ∈ poly.edgeSet R i ∧ p.2 ∈ poly.edgeSet R j ∧ π p.1 = π p.2}.Subsingleton := by
-  have hinj := hπ.injOn_edgeSet
   rintro ⟨x, y⟩ ⟨hx, hy, hxy⟩ ⟨x', y'⟩ ⟨hx', hy', hxy'⟩
   dsimp only at hx hy hxy hx' hy' hxy'
-  suffices hxx : x = x' by
-    subst hxx
-    rw [hinj j hy hy' (hxy.symm.trans hxy')]
-  by_contra hne
-  obtain ⟨s, hsI, rfl⟩ := hx
-  obtain ⟨s', hsI', rfl⟩ := hx'
-  obtain ⟨t, ht, rfl⟩ := hy
-  obtain ⟨t', ht', rfl⟩ := hy'
-  have hss' : s ≠ s' := by rintro rfl; exact hne rfl
-  have htt' : t ≠ t' := by
-    rintro rfl
-    exact hne (hinj i ⟨s, hsI, rfl⟩ ⟨s', hsI', rfl⟩ (hxy.trans hxy'.symm))
-  have htt'₀ : t' - t ≠ 0 := sub_ne_zero.2 htt'.symm
-  -- Under `π`, edge `j` at the parameter `u` lies over edge `i` at the parameter `h u`, an
-  -- affine function of `u`.
-  set h : R → R := fun u ↦ lineMap s s' ((u - t) / (t' - t)) with h_def
-  have hh (u : R) : h u = lineMap (h 0) (h 1) u := by
-    simp only [h_def, lineMap_apply_ring']
-    field_simp
-    ring
-  have hrel (u : R) : π (lineMap (poly i) (poly (finRotate n i)) (h u)) =
-      π (lineMap (poly j) (poly (finRotate n j)) u) := by
-    have hu : lineMap t t' ((u - t) / (t' - t)) = u := by
-      rw [lineMap_apply_ring']
-      field_simp
-      ring
-    conv_rhs => rw [← hu]
-    simp only [h_def, AffineMap.apply_lineMap, hxy, hxy']
-  have ht₀ : h t = s := by simp [h_def]
-  have ht₁ : h t' = s' := by simp [h_def, div_self htt'₀]
-  -- The overlap of the two edges under `π` has two distinct ends.
-  obtain ⟨u₁, u₂, hne₁₂, hu⟩ := TauCeti.exists_lineMap_endpoint ht ht'
-    (by rw [← hh, ht₀]; exact hsI) (by rw [← hh, ht₁]; exact hsI')
-    (by rw [← hh, ← hh, ht₀, ht₁]; exact hss')
-  -- By regularity, each end of the overlap is a common point of the two edges.
-  have hcommon (u : R) (hu' : u ∈ ({u₁, u₂} : Set R)) :
-      lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i ∩ poly.edgeSet R j := by
-    obtain ⟨hu, hhu, hend⟩ := hu u hu'
-    rw [← hh] at hhu hend
-    have hX : lineMap (poly i) (poly (finRotate n i)) (h u) ∈ poly.edgeSet R i := ⟨_, hhu, rfl⟩
-    have hY : lineMap (poly j) (poly (finRotate n j)) u ∈ poly.edgeSet R j := ⟨_, hu, rfl⟩
-    have hXb := mem_iUnion.2 ⟨i, hX⟩
-    have hYb := mem_iUnion.2 ⟨j, hY⟩
-    suffices lineMap (poly i) (poly (finRotate n i)) (h u) =
-        lineMap (poly j) (poly (finRotate n j)) u from ⟨hX, this ▸ hY⟩
-    rcases hend with rfl | rfl | h0 | h1
-    · rw [lineMap_apply_zero]
-      exact hπ.eq_vertex_of_apply_eq j hXb (by simpa only [lineMap_apply_zero] using hrel 0)
-    · rw [lineMap_apply_one]
-      exact hπ.eq_vertex_of_apply_eq _ hXb (by simpa only [lineMap_apply_one] using hrel 1)
-    · rw [h0, lineMap_apply_zero]
-      exact (hπ.eq_vertex_of_apply_eq i hYb
-        ((hrel u).symm.trans (by rw [h0, lineMap_apply_zero]))).symm
-    · rw [h1, lineMap_apply_one]
-      exact (hπ.eq_vertex_of_apply_eq _ hYb
-        ((hrel u).symm.trans (by rw [h1, lineMap_apply_one]))).symm
-  -- Two distinct common points of two distinct edges contradict simplicity.
-  refine hne₁₂ ?_
-  rw [← hh, ← hh]
-  exact lineMap_injective R (hs.hasNondegenerateEdges i)
-    (hs.subsingleton_edgeSet_inter hij (hcommon u₁ (.inl rfl)) (hcommon u₂ (.inr rfl)))
+  by_cases hxx : x = x'
+  · subst x'
+    rw [hπ.injOn_edgeSet j hy hy' (hxy.symm.trans hxy')]
+  · obtain ⟨hxy₀, hxy₁⟩ := hπ.eq_of_two_edgePairs hx hy hxy hx' hy' hxy' hxx
+    exact False.elim (hxx (hs.subsingleton_edgeSet_inter hij
+      ⟨hx, hxy₀ ▸ hy⟩ ⟨hx', hxy₁ ▸ hy'⟩))
 
-/-- **An affine regular projection of a simple polygon has finitely many double points.** Each
-double point lies on an edge sharing its image with a point of another edge, and two distinct edges
-contain at most one such pair (`IsRegularProjection.subsingleton_setOf_mem_edgeSet`). -/
-theorem IsRegularProjection.finite_doublePoints (hs : poly.IsSimple R)
-    (hπ : poly.IsRegularProjection R π) : (poly.doublePoints R π).Finite := by
+/-- **An affine regular projection has finitely many double points.** Each double point has a
+distinct partner, and for any two edges there is at most one pair of distinct points with the same
+image. -/
+theorem IsRegularProjection.finite_doublePoints (hπ : poly.IsRegularProjection R π) :
+    (poly.doublePoints R π).Finite := by
   refine Finite.subset (finite_iUnion fun i : Fin n ↦ finite_iUnion fun j : Fin n ↦
-    finite_iUnion fun hij : i ≠ j ↦ ((hπ.subsingleton_setOf_mem_edgeSet hs hij).image
-      Prod.fst).finite) ?_
+    ((hπ.subsingleton_setOf_mem_edgeSet_of_ne (i := i) (j := j)).image Prod.fst).finite) ?_
   rintro x ⟨hx, y, hy, hyx, hπyx⟩
   obtain ⟨i, hxi⟩ := mem_iUnion.1 hx
   obtain ⟨j, hyj⟩ := mem_iUnion.1 hy
-  have hij : i ≠ j := by
-    rintro rfl
-    exact hyx (hπ.injOn_edgeSet i hyj hxi hπyx)
-  exact mem_iUnion₂.2 ⟨i, j, mem_iUnion.2 ⟨hij, (x, y), ⟨hxi, hyj, hπyx.symm⟩, rfl⟩⟩
+  exact mem_iUnion₂.2 ⟨i, j, (x, y), ⟨hxi, hyj, hπyx.symm, hyx.symm⟩, rfl⟩
 
 end Finite
 
