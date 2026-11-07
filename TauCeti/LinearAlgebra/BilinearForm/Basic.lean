@@ -119,12 +119,12 @@ end LinearMap.BilinForm.IsSymm
 
 namespace LinearMap
 
-variable {R M N P : Type*} [CommSemiring R] [AddCommGroup M] [AddCommGroup P]
-  [IsAddTorsionFree P] [Module R M] [Module R P]
+variable {R M N P : Type*} [CommSemiring R] [AddCommGroup P] [IsAddTorsionFree P] [Module R P]
 
 /-- A bilinear map with additively torsion-free values sees its left argument only modulo
 elements of finite additive order. -/
-theorem apply_eq_apply_of_isOfFinAddOrder_sub_left [AddCommMonoid N] [Module R N]
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_left [AddCommGroup M] [Module R M]
+    [AddCommMonoid N] [Module R N]
     (B : M →ₗ[R] N →ₗ[R] P) {x x' : M} (h : IsOfFinAddOrder (x - x')) (y : N) :
     B x y = B x' y := by
   have := ((B.flip y).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
@@ -132,7 +132,8 @@ theorem apply_eq_apply_of_isOfFinAddOrder_sub_left [AddCommMonoid N] [Module R N
 
 /-- A bilinear map with additively torsion-free values sees its right argument only modulo
 elements of finite additive order. -/
-theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommGroup N] [Module R N]
+theorem apply_eq_apply_of_isOfFinAddOrder_sub_right [AddCommMonoid M] [Module R M]
+    [AddCommGroup N] [Module R N]
     (B : M →ₗ[R] N →ₗ[R] P) {y y' : N} (h : IsOfFinAddOrder (y - y')) (x : M) :
     B x y = B x y' := by
   have := ((B x).toAddMonoidHom.isOfFinAddOrder h).eq_zero'
