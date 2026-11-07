@@ -241,6 +241,61 @@ private theorem ad_pow_lie_sum_root_eq_zero {σ : Equiv.Perm I} (hB : B.PosDef)
   rw [Nat.cast_succ, Int.toNat_of_nonneg hm, foldedCartanMatrix_apply_of_sameCycle hσ O hj']
   ring
 
+/-- The Cartan sum of an orbit `O` acts on a folded sum over an orbit `P` by the folded column sum,
+when each Cartan vector `H_i` acts on `G j` by the scalar `ε * B i j`. -/
+private theorem lie_sum_cartan_sum_eq_smul_sum {σ : Equiv.Perm I} (hB : B.PosDef)
+    (hdiag : ∀ i, B i i = 2) (hσ : B.reindex σ σ = B)
+    (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) (G : I → ShellLieAlgebra B) (ε : ℤ) :
+    letI := lieRing hB fun i ↦ hdiag i ▸ even_two
+    (∀ i j, ⁅cartan B (Pi.single i 1), G j⁆ = (ε * B i j) • G j) →
+      ⁅∑ i with σ.SameCycle i O.out, cartan B (Pi.single i 1), ∑ j with σ.SameCycle j P.out, G j⁆ =
+        (ε * ∑ i with σ.SameCycle i O.out, B i P.out) • ∑ j with σ.SameCycle j P.out, G j := by
+  let _ := lieRing hB fun i ↦ hdiag i ▸ even_two
+  intro hG
+  calc _ = ∑ i with σ.SameCycle i O.out, ∑ j with σ.SameCycle j P.out, (ε * B i j) • G j := by
+        rw [sum_lie]
+        simp only [lie_sum, hG]
+    _ = ∑ j with σ.SameCycle j P.out, ∑ i with σ.SameCycle i O.out, (ε * B i j) • G j :=
+        sum_comm
+    _ = ∑ j with σ.SameCycle j P.out, (ε * ∑ i with σ.SameCycle i O.out, B i P.out) • G j :=
+        sum_congr rfl fun j hj ↦ by
+          rw [← sum_smul, ← mul_sum, sum_apply_eq_of_sameCycle hσ O (by simpa using hj)]
+    _ = _ := (smul_sum ..).symm
+
+/-- The higher Serre relation for the folded `E`-vectors. -/
+private theorem ad_pow_lie_foldedE_foldedE {σ : Equiv.Perm I} (hB : B.PosDef)
+    (hdiag : ∀ i, B i i = 2) (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
+    (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    letI := lieRing hB fun i ↦ hdiag i ▸ even_two
+    (ad ℤ (ShellLieAlgebra B) (foldedE hdiag σ O) ^ (-B.foldedCartanMatrix σ O P).toNat)
+      ⁅foldedE hdiag σ O, foldedE hdiag σ P⁆ = 0 := by
+  let _ := lieRing hB fun i ↦ hdiag i ▸ even_two
+  rcases eq_or_ne O P with rfl | hOP
+  · rw [foldedCartanMatrix_apply_self hB hdiag hoff hσ]
+    simp
+  · simpa only [foldedE_def, chevalleyE_def] using
+      ad_pow_lie_sum_root_eq_zero hB hdiag hoff hσ (ζ := 1) (by norm_num)
+        (r := fun i ↦ ⟨Pi.single i 1, single_mem_normTwoShell (hdiag i)⟩) (fun i ↦ by simp) hOP
+
+/-- The higher Serre relation for the folded `F`-vectors. -/
+private theorem ad_pow_lie_foldedF_foldedF {σ : Equiv.Perm I} (hB : B.PosDef)
+    (hdiag : ∀ i, B i i = 2) (hoff : ∀ i j, i ≠ j → B i j ≤ 0) (hσ : B.reindex σ σ = B)
+    (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) :
+    letI := lieRing hB fun i ↦ hdiag i ▸ even_two
+    (ad ℤ (ShellLieAlgebra B) (foldedF hdiag σ O) ^ (-B.foldedCartanMatrix σ O P).toNat)
+      ⁅foldedF hdiag σ O, foldedF hdiag σ P⁆ = 0 := by
+  let _ := lieRing hB fun i ↦ hdiag i ▸ even_two
+  rcases eq_or_ne O P with rfl | hOP
+  · rw [foldedCartanMatrix_apply_self hB hdiag hoff hσ]
+    simp
+  · have key := ad_pow_lie_sum_root_eq_zero hB hdiag hoff hσ (ζ := -1) (by norm_num)
+      (r := fun i ↦
+        ⟨-Pi.single i 1, neg_mem_normTwoShell.mpr (single_mem_normTwoShell (hdiag i))⟩)
+      (fun i ↦ by simp) hOP
+    simp only [← chevalleyF_def B hdiag] at key
+    simp only [foldedF_def, map_zsmul, smul_pow, LinearMap.smul_apply, smul_lie, lie_smul, key,
+      smul_zero]
+
 /-- **The folded frame is a Serre system for the folded Cartan matrix.** For a positive definite
 `B` with diagonal entries `2` and nonpositive off-diagonal entries, and a diagram automorphism `σ`
 of `B`, the vectors `H'_O = c_O ∑_{i ∈ O} Hᵢ`, `E'_O = ∑_{i ∈ O} Eᵢ` and `F'_O = c_O ∑_{i ∈ O} Fᵢ`
@@ -261,20 +316,6 @@ theorem isSerreSystem_folded (σ : Equiv.Perm I) (hB : B.PosDef)
     h.lie_E_F_self
   have hEF' : ∀ i j, i ≠ j → ⁅chevalleyE B hdiag i, chevalleyF B hdiag j⁆ = 0 :=
     h.lie_E_F_of_ne
-  -- The Cartan sum of `O` acts on a folded sum over `P` by the folded column sum.
-  have hcartan (O P : Quotient (Equiv.Perm.SameCycle.setoid σ)) (G : I → ShellLieAlgebra B)
-      (ε : ℤ) (hG : ∀ i j, ⁅cartan B (Pi.single i 1), G j⁆ = (ε * B i j) • G j) :
-      ⁅∑ i with σ.SameCycle i O.out, cartan B (Pi.single i 1), ∑ j with σ.SameCycle j P.out, G j⁆ =
-        (ε * ∑ i with σ.SameCycle i O.out, B i P.out) • ∑ j with σ.SameCycle j P.out, G j := by
-    calc _ = ∑ i with σ.SameCycle i O.out, ∑ j with σ.SameCycle j P.out, (ε * B i j) • G j := by
-          rw [sum_lie]
-          simp only [lie_sum, hG]
-      _ = ∑ j with σ.SameCycle j P.out, ∑ i with σ.SameCycle i O.out, (ε * B i j) • G j :=
-          sum_comm
-      _ = ∑ j with σ.SameCycle j P.out, (ε * ∑ i with σ.SameCycle i O.out, B i P.out) • G j :=
-          sum_congr rfl fun j hj ↦ by
-            rw [← sum_smul, ← mul_sum, sum_apply_eq_of_sameCycle hσ O (by simpa using hj)]
-      _ = _ := (smul_sum ..).symm
   refine
     { lie_H_H := fun O P ↦ ?_
       lie_E_F_self := fun O ↦ ?_
@@ -290,27 +331,14 @@ theorem isSerreSystem_folded (σ : Equiv.Perm I) (hB : B.PosDef)
   · rw [foldedE_def, foldedF_def, lie_smul, sum_lie, sum_eq_zero, smul_zero]
     refine fun i hi ↦ (lie_sum ..).trans (sum_eq_zero fun i' hi' ↦ hEF' i i' ?_)
     exact Equiv.Perm.ne_of_sameCycle_out (by simpa using hi) (by simpa using hi') hOP
-  · rw [foldedH_def, foldedE_def, smul_lie, hcartan O P _ 1 hHE, foldedCartanMatrix_apply]
+  · rw [foldedH_def, foldedE_def, smul_lie,
+      lie_sum_cartan_sum_eq_smul_sum hB hdiag hσ O P _ 1 hHE, foldedCartanMatrix_apply]
     module
-  · rw [foldedH_def, foldedF_def, smul_lie, lie_smul, hcartan O P _ (-1) hHF,
-      foldedCartanMatrix_apply]
+  · rw [foldedH_def, foldedF_def, smul_lie, lie_smul,
+      lie_sum_cartan_sum_eq_smul_sum hB hdiag hσ O P _ (-1) hHF, foldedCartanMatrix_apply]
     module
-  · rcases eq_or_ne O P with rfl | hOP
-    · rw [foldedCartanMatrix_apply_self hB hdiag hoff hσ]
-      simp
-    · simpa only [foldedE_def, chevalleyE_def] using
-        ad_pow_lie_sum_root_eq_zero hB hdiag hoff hσ (ζ := 1) (by norm_num)
-          (r := fun i ↦ ⟨Pi.single i 1, single_mem_normTwoShell (hdiag i)⟩) (fun i ↦ by simp) hOP
-  · rcases eq_or_ne O P with rfl | hOP
-    · rw [foldedCartanMatrix_apply_self hB hdiag hoff hσ]
-      simp
-    · have key := ad_pow_lie_sum_root_eq_zero hB hdiag hoff hσ (ζ := -1) (by norm_num)
-        (r := fun i ↦
-          ⟨-Pi.single i 1, neg_mem_normTwoShell.mpr (single_mem_normTwoShell (hdiag i))⟩)
-        (fun i ↦ by simp) hOP
-      simp only [← chevalleyF_def B hdiag] at key
-      simp only [foldedF_def, map_zsmul, smul_pow, LinearMap.smul_apply, smul_lie, lie_smul, key,
-        smul_zero]
+  · exact ad_pow_lie_foldedE_foldedE hB hdiag hoff hσ O P
+  · exact ad_pow_lie_foldedF_foldedF hB hdiag hoff hσ O P
 
 /-! ### Fixedness under the pinned action -/
 

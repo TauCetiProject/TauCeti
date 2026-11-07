@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Basic
 public import TauCeti.Analysis.Convex.Extrema
-import TauCeti.Analysis.Convex.FunctionTopology
+import TauCeti.Analysis.Convex.Function.Topology
 import TauCeti.Analysis.Convex.MongeAmpere.Affine
 import TauCeti.MeasureTheory.Measure.OpenPos
 import TauCeti.Topology.Frontier
