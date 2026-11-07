@@ -31,7 +31,7 @@ variable {Δ Γ : Subgroup PSL(2, ℝ)}
 /-- The fibres of the coset map to the interior fibre over `z` are the sets of cosets with the
 same orbit translate. -/
 private theorem card_fiber_eq_card_orbitOfCosetTranslate
-    [DiscreteTopology Δ] [DiscreteTopology Γ] (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] (z : ℍ)
+    (h : Δ ≤ Γ) (z : ℍ)
     {φ : Γ ⧸ Δ.subgroupOf Γ → {y : Δ.CompactifiedQuotient //
       compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)}}
     (hφ : ∀ c, φ c = orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z)
@@ -54,7 +54,7 @@ private theorem card_fiber_eq_card_orbitOfCosetTranslate
 /-- The number of cosets in the fibre of the coset map over the image of `c` is the local
 multiplicity of the quotient map there. -/
 private theorem card_fiber_eq_localMultiplicity
-    [DiscreteTopology Δ] [DiscreteTopology Γ] (h : Δ ≤ Γ) [Δ.IsFiniteRelIndex Γ] (z : ℍ)
+    [DiscreteTopology Δ] [DiscreteTopology Γ] (h : Δ ≤ Γ) (z : ℍ)
     {φ : Γ ⧸ Δ.subgroupOf Γ → {y : Δ.CompactifiedQuotient //
       compactifiedQuotientMap h y = .ofQuotient (Quotient.mk'' z)}}
     (hφ : ∀ c, φ c = orbitFiberEquivCompactifiedFiber h (Quotient.mk'' z)
