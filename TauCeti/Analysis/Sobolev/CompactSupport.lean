@@ -66,10 +66,10 @@ theorem HasWeakLineDerivOn.indicator_of_isClosed (h : HasWeakLineDerivOn μ Ω u
     HasWeakLineDerivOn μ V ((Ω : Set E).indicator u) ((Ω : Set E).indicator u') v := by
   rw [hasWeakLineDerivOn_iff_testFunction]
   refine ⟨h.completeSpace,
-    h.locallyIntegrableOn.indicator_of_isClosed Ω.isOpen.measurableSet
+    h.locallyIntegrableOn.indicator_of_isClosed Ω.isOpen.measurableSet.nullMeasurableSet
       V.isOpen.isLocallyClosed hK hKV hu,
-    h.locallyIntegrableOn_deriv.indicator_of_isClosed Ω.isOpen.measurableSet
-      V.isOpen.isLocallyClosed hK hKV hu', ?_⟩
+    h.locallyIntegrableOn_deriv.indicator_of_isClosed
+      Ω.isOpen.measurableSet.nullMeasurableSet V.isOpen.isLocallyClosed hK hKV hu', ?_⟩
   intro φ
   -- Only the compact part of the test support that meets `K` needs a cutoff.
   have hC : IsCompact (tsupport (φ : E → ℝ) ∩ K) := φ.hasCompactSupport.inter_right hK
