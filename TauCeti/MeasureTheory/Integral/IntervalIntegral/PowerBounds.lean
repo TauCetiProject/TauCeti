@@ -140,4 +140,19 @@ theorem norm_integral_le_of_ae_norm_le_rpow {F : Type*} [NormedAddCommGroup F]
         ((δ ^ 2) ^ (-((1 - α) / 2)) * δ) := by field_simp
     _ = (2 / α * A + 2 / (1 - α) * B) * δ ^ α := by rw [hpow]; ring
 
+/-- For `-1 < T` and `0 ≤ δ`, the integral of `ε * N ^ (T + 1) * t ^ T` over `[δ, 1]` is at most
+`ε / (T + 1) * N ^ (T + 1)`. -/
+theorem integral_mul_rpow_le {T ε N δ : ℝ} (hT : -1 < T) (hε : 0 ≤ ε) (hN : 0 ≤ N)
+    (hδ : 0 ≤ δ) :
+    (∫ t in δ..1, ε * N ^ (T + 1) * t ^ T) ≤ ε / (T + 1) * N ^ (T + 1) := by
+  rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl hT), Real.one_rpow]
+  have hδpow : 0 ≤ δ ^ (T + 1) := Real.rpow_nonneg hδ _
+  have hNpow : 0 ≤ N ^ (T + 1) := Real.rpow_nonneg hN _
+  calc
+    ε * N ^ (T + 1) * ((1 - δ ^ (T + 1)) / (T + 1))
+        ≤ ε * N ^ (T + 1) * (1 / (T + 1)) := by
+          gcongr
+          all_goals linarith
+    _ = ε / (T + 1) * N ^ (T + 1) := by ring
+
 end TauCeti
