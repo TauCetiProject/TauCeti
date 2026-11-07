@@ -25,8 +25,6 @@ equations of `D - div g` and of `E` at each codimension-one point gives `E = D -
 
 ## Main declarations
 
-* `SchemeWeilDivisor.inv_localEquation_mem_sections`: the inverse of a local equation for `D` on
-  `U` is a section of `𝒪_X(D)` over `U`;
 * `SchemeWeilDivisor.IsLocallyPrincipal.exists_rationalFunctionsMul_eq`: every `𝒪_X`-linear map
   `𝒪_X(D) ⟶ 𝒦_X` is the inclusion followed by multiplication by a rational function;
 * `SchemeWeilDivisor.IsLocallyPrincipal.exists_sheafι_app_ne_zero`: `𝒪_X(D)` has a section which
@@ -79,20 +77,6 @@ section LocallyNoetherian
 
 variable [IsLocallyNoetherian X]
 
-/-- The inverse of a local equation for `D` on `U` is a section of `𝒪_X(D)` over `U`: its order
-at a codimension-one point of `U` is exactly `-D`. -/
-lemma inv_localEquation_mem_sections {D : SchemeWeilDivisor X} {U : X.Opens} [Nonempty U]
-    {f : Additive X.functionFieldˣ}
-    (hf : ∀ y : CodimensionOnePoint X, (y : X) ∈ U → WeilDivisor.coeff D y = orderAt y f) :
-    (Scheme.rationalFunctionsEquiv U).symm
-        ((Additive.toMul f : X.functionFieldˣ) : X.functionField)⁻¹ ∈ sections D U := by
-  refine mem_sections.mpr fun y hy ↦ Or.inr ?_
-  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, hf y hy, orderAt_apply]
-
-end LocallyNoetherian
-
-variable [IsNoetherian X]
-
 /-- Let `ψ` be an `𝒪_X`-linear map from `𝒪_X(D)` to the rational functions, and `s₀` a section
 over a neighbourhood `U₀` of the generic point which `𝒪_X(D) → 𝒦_X` sends to `fK⁻¹`. Then over any
 open subset the image of a section `s` is the image of `s` in `𝒦_X` times the rational function
@@ -135,6 +119,10 @@ private lemma rationalFunctionsEquiv_app_eq_mul {D : SchemeWeilDivisor X}
     Scheme.rationalFunctionsEquiv_map, Algebra.smul_def, RingHom.algebraMap_toAlgebra,
     hgerm]
   ring
+
+end LocallyNoetherian
+
+variable [IsNoetherian X]
 
 /-- **An `𝒪_X`-linear map from `𝒪_X(D)` to the rational functions is multiplication by a rational
 function.** A local equation for `D` near the generic point trivializes `𝒪_X(D)` there, and the
@@ -204,37 +192,6 @@ private lemma mem_sections_of_factor {D E : SchemeWeilDivisor X} {c : X.function
   simp only [Scheme.Modules.Hom.comp_app, ConcreteCategory.comp_apply] at key
   rw [← key]
   exact sheafι_app_mem E U _
-
-/-- Locally principal divisors with the same sections over every open subset have the same
-coefficient at every codimension-one point: local equations at the point give sections of each
-other's divisor sheaf, which compares the coefficients. -/
-lemma coeff_eq_of_sections_eq {F E : SchemeWeilDivisor X}
-    (hF : IsLocallyPrincipal F) (hE : IsLocallyPrincipal E)
-    (hsec : ∀ U : X.Opens, sections F U = sections E U) (y : CodimensionOnePoint X) :
-    WeilDivisor.coeff F y = WeilDivisor.coeff E y := by
-  obtain ⟨U₁, hy₁, h₁, hh₁⟩ := isLocallyPrincipal_iff.mp hF (y : X)
-  obtain ⟨U₂, hy₂, h₂, hh₂⟩ := isLocallyPrincipal_iff.mp hE (y : X)
-  have hyU : (y : X) ∈ (U₁ ⊓ U₂ : X.Opens) := ⟨hy₁, hy₂⟩
-  have : Nonempty (U₁ ⊓ U₂ : X.Opens) := ⟨⟨_, hyU⟩⟩
-  have m1 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
-      ((Additive.toMul h₁ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
-        sections E (U₁ ⊓ U₂ : X.Opens) := by
-    rw [← hsec]
-    exact inv_localEquation_mem_sections fun z hz ↦ hh₁ z hz.1
-  have m2 : (Scheme.rationalFunctionsEquiv (U₁ ⊓ U₂ : X.Opens)).symm
-      ((Additive.toMul h₂ : X.functionFieldˣ) : X.functionField)⁻¹ ∈
-        sections F (U₁ ⊓ U₂ : X.Opens) := by
-    rw [hsec]
-    exact inv_localEquation_mem_sections fun z hz ↦ hh₂ z hz.2
-  have b1 := (mem_sections.mp m1 y hyU).resolve_left (by
-    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
-    exact Units.ne_zero _)
-  have b2 := (mem_sections.mp m2 y hyU).resolve_left (by
-    simp only [LinearEquiv.apply_symm_apply, inv_eq_zero]
-    exact Units.ne_zero _)
-  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₁ y hy₁] at b1
-  rw [LinearEquiv.apply_symm_apply, Scheme.ord_inv, ← orderAt_apply, ← hh₂ y hy₂] at b2
-  omega
 
 /-- **Isomorphic divisor sheaves come from linearly equivalent divisors.** This is the converse of
 `SchemeWeilDivisor.nonempty_iso_sheaf_of_linearlyEquivalent`. -/
