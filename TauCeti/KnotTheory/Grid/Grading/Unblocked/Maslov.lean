@@ -47,7 +47,7 @@ theorem mem_maslovChainMinusPiece {m : ℤ} {c : GridChainMinus R n} :
 variable {G R} in
 /-- Equivalently, every monomial of a Maslov-homogeneous chain has the specified
 Maslov degree. -/
-theorem mem_maslovChainMinusPiece_iff {m : ℤ} {c : GridChainMinus R n} :
+theorem mem_maslovChainMinusPiece_iff_forall_mem_support {m : ℤ} {c : GridChainMinus R n} :
     c ∈ G.maslovChainMinusPiece R m ↔ ∀ x : GridState n, ∀ e ∈ (c x).support,
       G.maslovOℤ x - 2 * (e.degree : ℤ) = m := by
   have hw (e : Fin n →₀ ℕ) :
@@ -68,12 +68,42 @@ theorem single_monomial_mem_maslovChainMinusPiece (x : GridState n) (e : Fin n �
     (Finsupp.single x (monomial e r) : GridChainMinus R n) ∈
       G.maslovChainMinusPiece R (G.maslovOℤ x - 2 * (e.degree : ℤ)) := by
   classical
-  rw [mem_maslovChainMinusPiece_iff]
+  rw [mem_maslovChainMinusPiece_iff_forall_mem_support]
   intro y d hd
   rcases eq_or_ne y x with rfl | hy
   · rw [Finsupp.single_eq_same] at hd
     rw [Finset.mem_singleton.mp (MvPolynomial.support_monomial_subset hd)]
   · simp [Finsupp.single_eq_of_ne hy] at hd
+
+variable {R} in
+/-- Multiplication by a polynomial variable lowers Maslov degree by two. -/
+theorem X_smul_mem_maslovChainMinusPiece (i : Fin n) {m : ℤ} {c : GridChainMinus R n}
+    (hc : c ∈ G.maslovChainMinusPiece R m) :
+    (MvPolynomial.X i : MvPolynomial (Fin n) R) • c ∈
+      G.maslovChainMinusPiece R (m - 2) := by
+  rw [mem_maslovChainMinusPiece] at hc ⊢
+  intro x
+  simp only [Finsupp.smul_apply, smul_eq_mul]
+  convert (isWeightedHomogeneous_X R (fun _ : Fin n => (-2 : ℤ)) i).mul (hc x) using 1
+  ring
+
+variable {R} in
+/-- Multiplication by a variable reflects Maslov homogeneity as well as lowering degree
+by two, over any commutative coefficient semiring. -/
+theorem X_smul_mem_maslovChainMinusPiece_iff (i : Fin n) {m : ℤ} {c : GridChainMinus R n} :
+    (MvPolynomial.X i : MvPolynomial (Fin n) R) • c ∈ G.maslovChainMinusPiece R (m - 2) ↔
+      c ∈ G.maslovChainMinusPiece R m := by
+  refine ⟨fun hc => ?_, G.X_smul_mem_maslovChainMinusPiece i⟩
+  rw [mem_maslovChainMinusPiece_iff_forall_mem_support] at hc ⊢
+  intro x e he
+  have hmem : Finsupp.single i 1 + e ∈
+      (((MvPolynomial.X i : MvPolynomial (Fin n) R) • c) x).support := by
+    simpa only [Finsupp.smul_apply, smul_eq_mul, MvPolynomial.mem_support_iff,
+      coeff_X_mul] using MvPolynomial.mem_support_iff.mp he
+  have h := hc x _ hmem
+  have hdeg : ((Finsupp.single i 1 + e).degree : ℤ) = 1 + (e.degree : ℤ) := by simp
+  rw [hdeg] at h
+  omega
 
 end TauCeti.GridDiagram
 
@@ -85,7 +115,7 @@ variable {n : ℕ} (G : OddComponentGridDiagram n) (R : Type*) [CommSemiring R]
 theorem bigradedChainMinusPiece_le_maslovChainMinusPiece (g : ℤ × ℤ) :
     G.bigradedChainMinusPiece R g ≤ G.1.maslovChainMinusPiece R g.1 := by
   intro c hc
-  rw [GridDiagram.mem_maslovChainMinusPiece_iff]
+  rw [GridDiagram.mem_maslovChainMinusPiece_iff_forall_mem_support]
   intro x e he
   simpa only [monomialBidegree_fst] using congrArg Prod.fst
     (G.mem_bigradedChainMinusPiece.mp hc x e he)

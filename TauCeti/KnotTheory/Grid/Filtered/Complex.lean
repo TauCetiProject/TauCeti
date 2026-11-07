@@ -66,9 +66,7 @@ theorem coe_gradedFilteredDifferential (m : ℤ) (c : G.maslovChainMinusPiece R 
     (G.gradedFilteredDifferential R m c : GridChainMinus R n) = G.filteredDifferential R c :=
   (rfl)
 
-end CommSemiring
-
-variable [CommRing R] [CharP R 2]
+variable [CharP R 2]
 
 /-- Consecutive Maslov-graded filtered differentials compose to zero. -/
 theorem gradedFilteredDifferential_comp_eq_zero (m : ℤ) :
@@ -78,6 +76,10 @@ theorem gradedFilteredDifferential_comp_eq_zero (m : ℤ) :
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, coe_gradedFilteredDifferential,
     ZeroMemClass.coe_zero]
   exact LinearMap.congr_fun (G.filteredDifferential_comp_self_eq_zero R) c
+
+end CommSemiring
+
+variable [CommRing R] [CharP R 2]
 
 /-- The grid complex counting every empty rectangle, indexed by `O`-Maslov degree.
 The Alexander grading is a filtration, not a second homological degree. -/
@@ -92,6 +94,7 @@ noncomputable def gradedFilteredComplex : ChainComplex (ModuleCat R) ℤ :=
 theorem gradedFilteredComplex_X (m : ℤ) :
     (G.gradedFilteredComplex R).X m = ModuleCat.of R (G.maslovChainMinusPiece R m) := (rfl)
 
+-- Object transports keep the computation API well-typed while the complex body is unexposed.
 /-- The consecutive differential is the restriction of the total filtered differential. -/
 @[simp]
 theorem gradedFilteredComplex_d (m : ℤ) :
@@ -163,9 +166,7 @@ theorem coe_alexanderFilteredDifferential (a m : ℤ)
     (G.alexanderFilteredDifferential R a m c : GridChainMinus R n) =
       G.1.filteredDifferential R c := (rfl)
 
-end CommSemiring
-
-variable [CommRing R] [CharP R 2]
+variable [CharP R 2]
 
 /-- Consecutive differentials within one Alexander filtration level compose to zero. -/
 theorem alexanderFilteredDifferential_comp_eq_zero (a m : ℤ) :
@@ -176,6 +177,10 @@ theorem alexanderFilteredDifferential_comp_eq_zero (a m : ℤ) :
   simp only [LinearMap.comp_apply, LinearMap.zero_apply, coe_alexanderFilteredDifferential,
     ZeroMemClass.coe_zero]
   exact LinearMap.congr_fun (G.1.filteredDifferential_comp_self_eq_zero R) c
+
+end CommSemiring
+
+variable [CommRing R] [CharP R 2]
 
 /-- Alexander filtration level `a` as a Maslov-graded chain complex. -/
 noncomputable def alexanderFiltrationComplex (a : ℤ) : ChainComplex (ModuleCat R) ℤ :=
@@ -209,6 +214,7 @@ noncomputable def alexanderFiltrationComplexMap {a b : ℤ} (hab : a ≤ b) :
     (Submodule.inclusion (G.alexanderFilteredChainPiece_mono R m hab))) (fun m => by
       simp only [alexanderFiltrationComplex_d]
       ext c
+      -- Both restrictions apply the same ambient differential; inclusion changes only membership.
       rfl)
 
 /-- Inclusion in the total Maslov-graded filtered grid complex. -/
@@ -218,8 +224,10 @@ noncomputable def alexanderFiltrationComplexι (a : ℤ) :
     (Submodule.inclusion fun _ hc => (mem_alexanderFilteredChainPiece.mp hc).1)) (fun m => by
     simp only [alexanderFiltrationComplex_d, GridDiagram.gradedFilteredComplex_d]
     ext c
+    -- The restricted and total graded differentials have the same underlying chain.
     rfl)
 
+-- As for the differentials, the transports identify the unexposed complexes' degree objects.
 /-- The filtration inclusion acts by inclusion of the explicit chain submodules. -/
 @[simp]
 theorem alexanderFiltrationComplexMap_f {a b : ℤ} (hab : a ≤ b) (m : ℤ) :
@@ -266,6 +274,7 @@ instance mono_alexanderFiltrationComplexι (a : ℤ) :
 theorem alexanderFiltrationComplexMap_refl (a : ℤ) :
     G.alexanderFiltrationComplexMap R (le_refl a) = 𝟙 _ := by
   ext m c
+  -- Self-inclusion leaves the underlying chain unchanged, as does the identity.
   rfl
 
 /-- Filtration inclusions compose as inclusions. -/
@@ -274,6 +283,7 @@ theorem alexanderFiltrationComplexMap_comp {a b c : ℤ} (hab : a ≤ b) (hbc : 
     G.alexanderFiltrationComplexMap R hab ≫ G.alexanderFiltrationComplexMap R hbc =
       G.alexanderFiltrationComplexMap R (hab.trans hbc) := by
   ext m x
+  -- Composite and direct inclusion differ only in their membership proofs.
   rfl
 
 /-- Filtration inclusions commute with the inclusions into the total complex. -/
@@ -282,6 +292,7 @@ theorem alexanderFiltrationComplexMap_ι {a b : ℤ} (hab : a ≤ b) :
     G.alexanderFiltrationComplexMap R hab ≫ G.alexanderFiltrationComplexι R b =
       G.alexanderFiltrationComplexι R a := by
   ext m c
+  -- Both routes include the same chain in its Maslov piece; membership proofs are irrelevant.
   rfl
 
 end TauCeti.OddComponentGridDiagram
