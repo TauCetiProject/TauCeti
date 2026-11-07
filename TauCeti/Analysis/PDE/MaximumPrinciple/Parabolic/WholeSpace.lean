@@ -193,7 +193,7 @@ private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
   set R := |Mu| / ε + 1
   have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := fun s hs y hy ↦
     sub_mul_mul_one_add_sq_neg_of_lt (Real.one_le_exp (mul_nonneg hK.le hs.1)) hε
-      (hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩) hy
+      (hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩) ((lt_add_one _).trans hy)
   by_contra hlt
   have hw₁ : 0 < w (t₁, x₁) := by simp only [w]; linarith
   have hx₁ : x₁ ∈ Metric.closedBall 0 R := by
