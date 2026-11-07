@@ -111,6 +111,35 @@ theorem IsSubdivision.trans (h' : K''.IsSubdivision K') (h : K'.IsSubdivision K)
   obtain ⟨u, hu, htu⟩ := h.exists_convexHull_subset ht
   exact ⟨u, hu, hst.trans htu⟩
 
+/-- **A complex whose faces lie in finitely many convex cells subdivides the covered complex.**
+Let finitely many convex cells `P p`, each inside a simplex `σ p` of `K`, cover `K`, and let a
+complex `M` with space the union of the cells have finitely many faces on each cell, each face
+inside a cell. Then `M` is a finite subdivision of `K`, and the convex hull of each face of `M`
+lies in a cell. -/
+theorem isSubdivision_of_cells {J : Type*} [Finite J] {P : J → Set E}
+    {σ : J → Finset E} {M : SimplicialComplex 𝕜 E} (hσ : ∀ p, σ p ∈ K.faces)
+    (hPσ : ∀ p, P p ⊆ convexHull 𝕜 (σ p : Set E)) (hPv : ∀ p, Convex 𝕜 (P p))
+    (hcov : ∀ x ∈ K.space, ∃ q, x ∈ P q) (hMs : M.space = ⋃ p, P p)
+    (hMP : ∀ p, (M.restrict (P p)).faces.Finite) (hMface : ∀ s ∈ M.faces, ∃ p, (s : Set E) ⊆ P p) :
+    M.IsSubdivision K ∧ M.faces.Finite ∧
+      ∀ s ∈ M.faces, ∃ p, convexHull 𝕜 (s : Set E) ⊆ P p := by
+  have hconv : ∀ s ∈ M.faces, ∃ p, convexHull 𝕜 (s : Set E) ⊆ P p := fun s hs => by
+    obtain ⟨p, hsp⟩ := hMface s hs
+    exact ⟨p, convexHull_min hsp (hPv p)⟩
+  refine ⟨⟨?_, fun s hs => ?_⟩, ?_, hconv⟩
+  · rw [hMs]
+    ext x
+    refine ⟨fun hx => ?_, fun hx => ?_⟩
+    · obtain ⟨p, hxp⟩ := mem_iUnion.1 hx
+      exact mem_space_iff.2 ⟨_, hσ p, hPσ p hxp⟩
+    · obtain ⟨q, hxq⟩ := hcov x hx
+      exact mem_iUnion.2 ⟨q, hxq⟩
+  · obtain ⟨p, hp⟩ := hconv s hs
+    exact ⟨_, hσ p, hp.trans (hPσ p)⟩
+  · refine (Set.finite_iUnion hMP).subset fun s hs => ?_
+    obtain ⟨p, hsp⟩ := hMface s hs
+    exact mem_iUnion.2 ⟨p, mem_restrict_faces.2 ⟨hs, hsp⟩⟩
+
 end IsSubdivision
 
 variable {E ι J : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
@@ -311,36 +340,6 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
     · exact .inr ⟨i, by omega, hpi, hsi⟩
 
 end Cells
-
-omit [FiniteDimensional ℝ E] in
-/-- **A complex whose faces lie in finitely many convex cells subdivides the covered complex.**
-Let finitely many convex cells `P p`, each inside a simplex `σ p` of `K`, cover `K`, and let a
-complex `M` with space the union of the cells have finitely many faces on each cell, each face
-inside a cell. Then `M` is a finite subdivision of `K`, and the convex hull of each face of `M`
-lies in a cell. -/
-theorem isSubdivision_of_cells [Finite J] {K : SimplicialComplex ℝ E} {P : J → Set E}
-    {σ : J → Finset E} {M : SimplicialComplex ℝ E} (hσ : ∀ p, σ p ∈ K.faces)
-    (hPσ : ∀ p, P p ⊆ convexHull ℝ (σ p : Set E)) (hPv : ∀ p, Convex ℝ (P p))
-    (hcov : ∀ x ∈ K.space, ∃ q, x ∈ P q) (hMs : M.space = ⋃ p, P p)
-    (hMP : ∀ p, (M.restrict (P p)).faces.Finite) (hMface : ∀ s ∈ M.faces, ∃ p, (s : Set E) ⊆ P p) :
-    M.IsSubdivision K ∧ M.faces.Finite ∧
-      ∀ s ∈ M.faces, ∃ p, convexHull ℝ (s : Set E) ⊆ P p := by
-  have hconv : ∀ s ∈ M.faces, ∃ p, convexHull ℝ (s : Set E) ⊆ P p := fun s hs => by
-    obtain ⟨p, hsp⟩ := hMface s hs
-    exact ⟨p, convexHull_min hsp (hPv p)⟩
-  refine ⟨⟨?_, fun s hs => ?_⟩, ?_, hconv⟩
-  · rw [hMs]
-    ext x
-    refine ⟨fun hx => ?_, fun hx => ?_⟩
-    · obtain ⟨p, hxp⟩ := mem_iUnion.1 hx
-      exact mem_space_iff.2 ⟨_, hσ p, hPσ p hxp⟩
-    · obtain ⟨q, hxq⟩ := hcov x hx
-      exact mem_iUnion.2 ⟨q, hxq⟩
-  · obtain ⟨p, hp⟩ := hconv s hs
-    exact ⟨_, hσ p, hp.trans (hPσ p)⟩
-  · refine (Set.finite_iUnion hMP).subset fun s hs => ?_
-    obtain ⟨p, hsp⟩ := hMface s hs
-    exact mem_iUnion.2 ⟨p, mem_restrict_faces.2 ⟨hs, hsp⟩⟩
 
 /-- **Relative simplicial subdivision of a family of compact convex cells.** Let `P i` be a
 locally finite family of compact convex sets with pairwise disjoint intrinsic interiors, with
