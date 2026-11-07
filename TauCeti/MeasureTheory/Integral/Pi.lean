@@ -33,6 +33,7 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 
 * `TauCeti.lintegral_fintype_prod_eq_prod`: the product formula, for measurable factors.
 * `TauCeti.lintegral_fintype_prod_eq_prod₀`: the same for almost everywhere measurable factors.
+* `TauCeti.integral_integral_update_pi`: the one-coordinate Fubini identity.
 * `TauCeti.integral_pi_eq_integral_integral_update`: the two-coordinate Fubini
   identity.
 * `TauCeti.integral_pi_succ`: splitting off the zeroth coordinate of a finite product measure.
@@ -53,6 +54,26 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)]
+
+/-- Averaging an integrable function over a freshly resampled probability coordinate preserves its
+expectation under `Measure.pi`. -/
+theorem integral_integral_update_pi {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] (i : ι) [IsProbabilityMeasure (μ i)]
+    {h : (∀ j, α j) → E} (hh : Integrable h (Measure.pi μ)) :
+    ∫ x, ∫ y, h (Function.update x i y) ∂μ i ∂Measure.pi μ = ∫ x, h x ∂Measure.pi μ := by
+  have hmp := measurePreserving_update_prod_pi μ i
+  have hint := hmp.integrable_comp_of_integrable hh
+  refine (integral_prod _ hint).symm.trans ?_
+  have hae : AEStronglyMeasurable h
+      (Measure.map (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2)
+        ((Measure.pi μ).prod (μ i))) := by
+    rw [hmp.map_eq]
+    exact hh.aestronglyMeasurable
+  calc
+    ∫ q : (∀ j, α j) × α i, h (Function.update q.1 i q.2) ∂((Measure.pi μ).prod (μ i)) =
+        ∫ x, h x ∂(Measure.map (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2)
+          ((Measure.pi μ).prod (μ i))) := (integral_map hmp.measurable.aemeasurable hae).symm
+    _ = ∫ x, h x ∂Measure.pi μ := by rw [hmp.map_eq]
 
 /-- **Fubini after a two-coordinate refresh.** An integral against a finite product of sigma-finite
 measures is an outer integral over the assignment and an inner integral over a fresh independent

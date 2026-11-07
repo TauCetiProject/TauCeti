@@ -8,22 +8,24 @@ module
 public import Mathlib.Probability.Distributions.Gaussian.Real
 public import TauCeti.Probability.Distributions.Gaussian.IntegrationByParts
 public import TauCeti.Probability.Concentration.EfronStein
+public import TauCeti.MeasureTheory.Integral.Pi
+public import TauCeti.MeasureTheory.Integral.Bochner.Basic
 import Mathlib.Analysis.Calculus.ContDiff.Operations
 import Mathlib.Analysis.Calculus.Deriv.Pi
-import Mathlib.MeasureTheory.Measure.CharacteristicFunction.Basic
+import Mathlib.Probability.Distributions.Gaussian.Fernique
 import Mathlib.Analysis.Calculus.ParametricIntegral
 
 /-!
 # The Gaussian Poincaré inequality
 
 This file proves the Poincaré inequality `Var f(G) ≤ E ‖∇f(G)‖²` for the standard Gaussian law,
-on `ℝ` and on `Fin n → ℝ` with the product law, for continuously differentiable functions with
-bounded values and bounded (partial) derivatives.
+on `ℝ` and on `ι → ℝ` for finite `ι` with the product law, for continuously differentiable
+functions with bounded values and bounded (partial) derivatives.
 
 The one-dimensional proof is Gaussian interpolation. For two independent standard Gaussians `X, Z`
 and `Y_θ = cos θ • X + sin θ • Z` the function `ψ θ = E f(X) f(Y_θ)` runs from `E f²` at `θ = 0` to
 `(E f)²` at `θ = π / 2`, and `ψ' θ = -sin θ • E f'(X) f'(Y_θ)`, by Gaussian integration by parts
-after the rotation `(X, Z) ↦ (Y_θ, sin θ • X - cos θ • Z)`, which preserves the Gaussian product
+after the reflection `(X, Z) ↦ (Y_θ, sin θ • X - cos θ • Z)`, which preserves the Gaussian product
 law. Since `E f'(X) f'(Y_θ) ≤ E f'²`, the function `ψ θ + E f'² (1 - cos θ)` is monotone on
 `[0, π / 2]`, which gives `Var f ≤ E f'²`. The `n`-dimensional inequality follows by tensorization
 from the Efron–Stein inequality `efronStein`.
@@ -32,12 +34,15 @@ from the Efron–Stein inequality `efronStein`.
 
 * `TauCeti.Probability.variance_le_integral_deriv_sq_gaussianReal`: the Poincaré inequality for
   `gaussianReal 0 1`;
-* `TauCeti.Probability.variance_le_sum_integral_fderiv_sq_pi`: the Poincaré inequality for the
-  product of `n` standard Gaussian laws;
-* `TauCeti.Probability.measurePreserving_orthogonal_gaussianReal`: invariance of the Gaussian
-  product law on `ℝ × ℝ` under orthogonal maps;
-* `TauCeti.Probability.integral_integral_update_pi`: resampling one coordinate preserves
-  expectations under `Measure.pi`.
+* `TauCeti.Probability.variance_le_sum_integral_fderiv_sq_pi`: the Poincaré inequality for
+  finite products of standard Gaussian laws.
+
+## References
+
+* C. Houdré and V. Pérez-Abreu, *Covariance identities and inequalities for functionals on Wiener
+  and Poisson spaces*, Annals of Probability 23 (1995), 400–419.
+* G. W. Anderson, A. Guionnet, and O. Zeitouni, *An Introduction to Random Matrices*, Cambridge
+  University Press (2010), §2.3.
 -/
 
 public section
@@ -47,62 +52,20 @@ open scoped NNReal
 
 namespace TauCeti.Probability
 
-/-- The characteristic function of the standard Gaussian law at a continuous linear functional. -/
-theorem charFunDual_gaussianReal_zero_one (ℓ : StrongDual ℝ ℝ) :
-    charFunDual (gaussianReal 0 1) ℓ = Complex.exp (-((ℓ 1 : ℝ) : ℂ) ^ 2 / 2) := by
-  have h : ∀ x : ℝ, ℓ x = ℓ 1 * x := fun x => by
-    simpa [mul_comm] using ℓ.map_smul x 1
-  have key := charFun_gaussianReal (μ := 0) (v := 1) (ℓ 1)
-  rw [charFun_apply_real] at key
-  rw [charFunDual_apply]
-  convert key using 1
-  · congr 1
-    funext x
-    rw [h x]
-    push_cast
-    ring_nf
-  · simp [neg_div]
-
-/-- The standard Gaussian product law on `ℝ × ℝ` is invariant under the orthogonal map
-`(x, z) ↦ (c x + s z, s x - c z)` when `c ^ 2 + s ^ 2 = 1`. -/
-theorem measurePreserving_orthogonal_gaussianReal {c s : ℝ} (h : c ^ 2 + s ^ 2 = 1) :
-    MeasurePreserving (fun p : ℝ × ℝ => (c * p.1 + s * p.2, s * p.1 - c * p.2))
-      ((gaussianReal 0 1).prod (gaussianReal 0 1))
-      ((gaussianReal 0 1).prod (gaussianReal 0 1)) := by
-  let M : ℝ × ℝ →L[ℝ] ℝ × ℝ :=
-    ((c • ContinuousLinearMap.fst ℝ ℝ ℝ + s • ContinuousLinearMap.snd ℝ ℝ ℝ).prod
-      (s • ContinuousLinearMap.fst ℝ ℝ ℝ - c • ContinuousLinearMap.snd ℝ ℝ ℝ))
-  have hM : (fun p : ℝ × ℝ => (c * p.1 + s * p.2, s * p.1 - c * p.2)) = M := by
-    ext p <;> simp [M]
-  rw [hM]
-  refine ⟨M.continuous.measurable, ?_⟩
-  refine ((charFunDual_eq_prod_iff (μ := gaussianReal 0 1) (ν := gaussianReal 0 1)
-    (ξ := ((gaussianReal 0 1).prod (gaussianReal 0 1)).map M)).1 fun L => ?_)
-  rw [charFunDual_map, charFunDual_prod]
-  simp only [charFunDual_gaussianReal_zero_one, ← Complex.exp_add]
-  congr 1
-  have h1 : L (c, s) = c * L (1, 0) + s * L (0, 1) := by
-    have : ((c, s) : ℝ × ℝ) = c • ((1, 0) : ℝ × ℝ) + s • ((0, 1) : ℝ × ℝ) := by simp
-    rw [this, map_add, map_smul, map_smul]
-    simp
-  have h2 : L (s, -c) = s * L (1, 0) - c * L (0, 1) := by
-    have : ((s, -c) : ℝ × ℝ) = s • ((1, 0) : ℝ × ℝ) - c • ((0, 1) : ℝ × ℝ) := by simp
-    rw [this, map_sub, map_smul, map_smul]
-    simp
-  have h3 : ((L.comp M).comp (ContinuousLinearMap.inl ℝ ℝ ℝ) : StrongDual ℝ ℝ) 1 =
-      c * L (1, 0) + s * L (0, 1) := by
-    rw [← h1]; simp [M]
-  have h4 : ((L.comp M).comp (ContinuousLinearMap.inr ℝ ℝ ℝ) : StrongDual ℝ ℝ) 1 =
-      s * L (1, 0) - c * L (0, 1) := by
-    rw [← h2]; simp [M]
-  have h5 : (L.comp (ContinuousLinearMap.inl ℝ ℝ ℝ) : StrongDual ℝ ℝ) 1 = L (1, 0) := by simp
-  have h6 : (L.comp (ContinuousLinearMap.inr ℝ ℝ ℝ) : StrongDual ℝ ℝ) 1 = L (0, 1) := by simp
-  rw [h3, h4, h5, h6]
-  have hC : (c : ℂ) ^ 2 + (s : ℂ) ^ 2 = 1 := by exact_mod_cast h
-  push_cast
-  linear_combination (-((L (1, 0) : ℂ) ^ 2 + (L (0, 1) : ℂ) ^ 2) / 2) * hC
-
 local notation "γ" => gaussianReal 0 1
+
+private theorem measurePreserving_reflection_gaussianReal (θ : ℝ) :
+    MeasurePreserving
+      (fun p : ℝ × ℝ => (cos θ * p.1 + sin θ * p.2, sin θ * p.1 - cos θ * p.2))
+      (Measure.prod γ γ) (Measure.prod γ γ) := by
+  have hrot : MeasurePreserving (ContinuousLinearMap.rotation θ : ℝ × ℝ →L[ℝ] ℝ × ℝ)
+      (Measure.prod γ γ) (Measure.prod γ γ) :=
+    ⟨by fun_prop, IsGaussian.map_rotation_eq_self (μ := γ) (by simp [integral_id_gaussianReal]) _⟩
+  have hneg : MeasurePreserving (fun x : ℝ => -x) γ γ :=
+    ⟨by fun_prop, by simpa using (gaussianReal_map_neg (μ := 0) (v := 1))⟩
+  convert ((MeasurePreserving.id γ).prod hneg).comp hrot using 1
+  funext p
+  simp [ContinuousLinearMap.rotation_apply, sub_eq_add_neg, add_comm]
 
 section Interpolation
 
@@ -151,18 +114,6 @@ private theorem integral_mul_comp_affine (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f
   simp_rw [mul_comm (deriv f _) s]
   exact integral_const_mul s _
 
-private theorem integrable_of_abs_le {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    [IsFiniteMeasure μ] {g : α → ℝ} (hg : AEStronglyMeasurable g μ) {C : ℝ}
-    (h : ∀ x, |g x| ≤ C) : Integrable g μ :=
-  (integrable_const C).mono' hg (ae_of_all _ fun x => by simpa using h x)
-
-private theorem integral_comp_of_measurePreserving {α β : Type*} [MeasurableSpace α]
-    [MeasurableSpace β] {μ : Measure α} {ν : Measure β} {T : α → β}
-    (hT : MeasurePreserving T μ ν) {g : β → ℝ} (hg : AEStronglyMeasurable g ν) :
-    ∫ a, g (T a) ∂μ = ∫ b, g b ∂ν := by
-  rw [← hT.map_eq]
-  exact (integral_map hT.measurable.aemeasurable (hT.map_eq ▸ hg)).symm
-
 private theorem hasDerivAt_interp (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤ A)
     (hB : ∀ x, |deriv f x| ≤ B) (θ : ℝ) :
     HasDerivAt (fun θ => ∫ p, f p.1 * f (cos θ * p.1 + sin θ * p.2) ∂(Measure.prod γ γ))
@@ -179,9 +130,9 @@ private theorem hasDerivAt_interp (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x| ≤
     (x₀ := θ) (bound := fun p => A * B * (|p.1| + |p.2|)) (s := Set.univ) Filter.univ_mem
     ?_ ?_ ?_ ?_ ?_ ?_).2
   · exact Filter.Eventually.of_forall fun t => (by fun_prop : Continuous _).aestronglyMeasurable
-  · refine integrable_of_abs_le (C := A * A) (by fun_prop : Continuous _).aestronglyMeasurable
-      fun p => ?_
-    rw [abs_mul]
+  · refine Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable (A * A)
+      (ae_of_all _ fun p => ?_)
+    rw [Real.norm_eq_abs, abs_mul]
     exact mul_le_mul (hA _) (hA _) (abs_nonneg _) hA0
   · exact (by fun_prop : Continuous _).aestronglyMeasurable
   · refine ae_of_all _ fun p t _ => ?_
@@ -217,7 +168,8 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
   obtain ⟨s, hsdef⟩ : ∃ s, s = sin θ := ⟨_, rfl⟩
   rw [← hcdef, ← hsdef]
   have hcs : c ^ 2 + s ^ 2 = 1 := by rw [hcdef, hsdef]; exact cos_sq_add_sin_sq θ
-  have hmp := measurePreserving_orthogonal_gaussianReal hcs
+  have hmp := measurePreserving_reflection_gaussianReal θ
+  rw [← hcdef, ← hsdef] at hmp
   let H : ℝ × ℝ → ℝ := fun q => f (c * q.1 + s * q.2) * (deriv f q.1 * (-q.2))
   have hHc : Continuous H := by fun_prop
   have hHint : Integrable H (Measure.prod γ γ) := by
@@ -240,7 +192,7 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
     rw [show c * (c * p.1 + s * p.2) + s * (s * p.1 - c * p.2) = p.1 by
       linear_combination p.1 * hcs]
     ring
-  rw [e1, integral_comp_of_measurePreserving hmp hHc.aestronglyMeasurable,
+  rw [e1, MeasurePreserving.integral_comp_of_aestronglyMeasurable hmp hHc.aestronglyMeasurable,
     integral_prod _ hHint]
   have hinner : ∀ u : ℝ, ∫ v, H (u, v) ∂γ = -s * (deriv f u * ∫ v, deriv f (c * u + s * v) ∂γ) := by
     intro u
@@ -254,10 +206,10 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
   congr 1
   have hint : Integrable (fun p : ℝ × ℝ => deriv f p.1 * deriv f (c * p.1 + s * p.2))
       (Measure.prod γ γ) :=
-    integrable_of_abs_le (C := B * B) (by fun_prop : Continuous _).aestronglyMeasurable
-      fun p => by
-        rw [abs_mul]
-        exact mul_le_mul (hB _) (hB _) (abs_nonneg _) hB0
+    Integrable.of_bound (by fun_prop : Continuous _).aestronglyMeasurable (B * B)
+      (ae_of_all _ fun p => by
+        rw [Real.norm_eq_abs, abs_mul]
+        exact mul_le_mul (hB _) (hB _) (abs_nonneg _) hB0)
   rw [integral_prod _ hint]
   congr 1
   funext u
@@ -265,18 +217,63 @@ private theorem integral_interp_deriv (hf : ContDiff ℝ 1 f) (hA : ∀ x, |f x|
 
 end Interpolation
 
+private theorem integral_deriv_mul_deriv_rot_le {f : ℝ → ℝ} {B : ℝ}
+    (hf : ContDiff ℝ 1 f) (hB : ∀ x, |deriv f x| ≤ B) (θ : ℝ) :
+    ∫ p, deriv f p.1 * deriv f (cos θ * p.1 + sin θ * p.2) ∂(Measure.prod γ γ) ≤
+      ∫ x, deriv f x ^ 2 ∂γ := by
+  have hc' : Continuous (deriv f) := hf.continuous_deriv le_rfl
+  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
+  let D := ∫ x, deriv f x ^ 2 ∂γ
+  have hD : D = ∫ x, deriv f x ^ 2 ∂γ := rfl
+  let J : ℝ → ℝ := fun θ =>
+    ∫ p, deriv f p.1 * deriv f (cos θ * p.1 + sin θ * p.2) ∂(Measure.prod γ γ)
+  have hmp := measurePreserving_reflection_gaussianReal θ
+  have hg : Continuous fun x => deriv f x ^ 2 := by fun_prop
+  have e1 : ∫ p, deriv f p.1 ^ 2 ∂(Measure.prod γ γ) = D := by
+    rw [hD]
+    exact MeasurePreserving.integral_comp_of_aestronglyMeasurable
+      (T := Prod.fst) (measurePreserving_fst) (g := fun x => deriv f x ^ 2)
+      hg.aestronglyMeasurable
+  have e2 : ∫ p, deriv f (cos θ * p.1 + sin θ * p.2) ^ 2 ∂(Measure.prod γ γ) = D := by
+    rw [hD]
+    exact MeasurePreserving.integral_comp_of_aestronglyMeasurable
+      (T := fun p : ℝ × ℝ => cos θ * p.1 + sin θ * p.2)
+      ((measurePreserving_fst (μ := γ) (ν := γ)).comp hmp)
+      (g := fun x => deriv f x ^ 2) hg.aestronglyMeasurable
+  have hint : Integrable (fun x => deriv f x ^ 2) γ :=
+    Integrable.of_bound hg.aestronglyMeasurable (B ^ 2)
+      (ae_of_all _ fun x => by
+        rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _), ← sq_abs]
+        exact pow_le_pow_left₀ (abs_nonneg _) (hB _) 2)
+  have i1 : Integrable (fun p : ℝ × ℝ => deriv f p.1 ^ 2) (Measure.prod γ γ) :=
+    (measurePreserving_fst (μ := γ) (ν := γ)).integrable_comp_of_integrable hint
+  have i2 : Integrable (fun p : ℝ × ℝ => deriv f (cos θ * p.1 + sin θ * p.2) ^ 2)
+      (Measure.prod γ γ) :=
+    ((measurePreserving_fst (μ := γ) (ν := γ)).comp hmp).integrable_comp_of_integrable hint
+  have hle : J θ ≤ ∫ p, (deriv f p.1 ^ 2 + deriv f (cos θ * p.1 + sin θ * p.2) ^ 2) / 2
+      ∂(Measure.prod γ γ) := by
+    refine integral_mono (Integrable.of_bound
+      (by fun_prop : Continuous _).aestronglyMeasurable (B * B)
+      (ae_of_all _ fun p => ?_)) ((i1.add i2).div_const 2) fun p => ?_
+    · rw [Real.norm_eq_abs, abs_mul]
+      exact mul_le_mul (hB _) (hB _) (abs_nonneg _) hB0
+    · simp only
+      nlinarith [sq_nonneg (deriv f p.1 - deriv f (cos θ * p.1 + sin θ * p.2))]
+  rw [integral_div, integral_add i1 i2, e1, e2] at hle
+  linarith
+
 /-- **The Gaussian Poincaré inequality on `ℝ`.** For a continuously differentiable function `f`
 with bounded values and bounded derivative, the variance of `f` under the standard Gaussian law is
-at most the expectation of `(f')²`. The constant `1` is optimal, as `f = id` shows. -/
+at most the expectation of `(f')²`. In the unrestricted classical inequality, the identity
+function shows that the constant `1` is optimal; it does not satisfy the boundedness hypothesis
+of this theorem. -/
 theorem variance_le_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (hf : ContDiff ℝ 1 f)
     (hfb : ∃ A, ∀ x, |f x| ≤ A) (hdb : ∃ B, ∀ x, |deriv f x| ≤ B) :
     variance f γ ≤ ∫ x, deriv f x ^ 2 ∂γ := by
   obtain ⟨A, hA⟩ := hfb
   obtain ⟨B, hB⟩ := hdb
   have hc : Continuous f := hf.continuous
-  have hc' : Continuous (deriv f) := hf.continuous_deriv le_rfl
   have hA0 : 0 ≤ A := (abs_nonneg _).trans (hA 0)
-  have hB0 : 0 ≤ B := (abs_nonneg _).trans (hB 0)
   obtain ⟨D, hD⟩ : ∃ D, D = ∫ x, deriv f x ^ 2 ∂γ := ⟨_, rfl⟩
   rw [← hD]
   let ψ : ℝ → ℝ := fun θ =>
@@ -287,41 +284,8 @@ theorem variance_le_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (hf : ContD
     have := hasDerivAt_interp hf hA hB θ
     rwa [integral_interp_deriv hf hA hB θ] at this
   have hJ : ∀ θ, J θ ≤ D := fun θ => by
-    have hcs : cos θ ^ 2 + sin θ ^ 2 = 1 := cos_sq_add_sin_sq θ
-    have hmp := measurePreserving_orthogonal_gaussianReal hcs
-    have hg : Continuous fun x => deriv f x ^ 2 := by fun_prop
-    have e1 : ∫ p, deriv f p.1 ^ 2 ∂(Measure.prod γ γ) = D := by
-      rw [hD]
-      exact integral_comp_of_measurePreserving (T := Prod.fst) (measurePreserving_fst)
-        (g := fun x => deriv f x ^ 2) hg.aestronglyMeasurable
-    have e2 : ∫ p, deriv f (cos θ * p.1 + sin θ * p.2) ^ 2 ∂(Measure.prod γ γ) = D := by
-      rw [hD]
-      exact integral_comp_of_measurePreserving
-        (T := fun p : ℝ × ℝ => cos θ * p.1 + sin θ * p.2)
-        ((measurePreserving_fst (μ := γ) (ν := γ)).comp hmp)
-        (g := fun x => deriv f x ^ 2) hg.aestronglyMeasurable
-    have i1 : Integrable (fun p : ℝ × ℝ => deriv f p.1 ^ 2) (Measure.prod γ γ) :=
-      integrable_of_abs_le (C := B ^ 2) (by fun_prop : Continuous _).aestronglyMeasurable
-        fun p => by
-          rw [abs_of_nonneg (sq_nonneg _), ← sq_abs]
-          exact pow_le_pow_left₀ (abs_nonneg _) (hB _) 2
-    have i2 : Integrable (fun p : ℝ × ℝ => deriv f (cos θ * p.1 + sin θ * p.2) ^ 2)
-        (Measure.prod γ γ) :=
-      integrable_of_abs_le (C := B ^ 2) (by fun_prop : Continuous _).aestronglyMeasurable
-        fun p => by
-          rw [abs_of_nonneg (sq_nonneg _), ← sq_abs]
-          exact pow_le_pow_left₀ (abs_nonneg _) (hB _) 2
-    have hle : J θ ≤ ∫ p, (deriv f p.1 ^ 2 + deriv f (cos θ * p.1 + sin θ * p.2) ^ 2) / 2
-        ∂(Measure.prod γ γ) := by
-      refine integral_mono (integrable_of_abs_le (C := B * B)
-        (by fun_prop : Continuous _).aestronglyMeasurable fun p => ?_) ((i1.add i2).div_const 2)
-        fun p => ?_
-      · rw [abs_mul]
-        exact mul_le_mul (hB _) (hB _) (abs_nonneg _) hB0
-      · simp only
-        nlinarith [sq_nonneg (deriv f p.1 - deriv f (cos θ * p.1 + sin θ * p.2))]
-    rw [integral_div, integral_add i1 i2, e1, e2] at hle
-    linarith
+    simpa only [J, hD] using integral_deriv_mul_deriv_rot_le hf hB θ
+  -- The derivative bound makes the corrected interpolation monotone.
   have hφ : MonotoneOn (fun θ => ψ θ + D * (1 - cos θ)) (Set.Icc 0 (π / 2)) := by
     have hd : ∀ θ, HasDerivAt (fun θ => ψ θ + D * (1 - cos θ))
         (sin θ * (D - J θ)) θ := fun θ => by
@@ -335,10 +299,12 @@ theorem variance_le_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (hf : ContD
     rw [interior_Icc] at hθ
     exact mul_nonneg (sin_nonneg_of_nonneg_of_le_pi hθ.1.le (by linarith [hθ.2, pi_pos]))
       (sub_nonneg.2 (hJ θ))
+  -- The endpoints are the second moment and the square of the mean.
   have h0 : ψ 0 = ∫ x, f x * f x ∂γ := by
     simp only [ψ, cos_zero, sin_zero, one_mul, zero_mul, add_zero]
-    exact integral_comp_of_measurePreserving (T := Prod.fst) (measurePreserving_fst)
-      (g := fun x => f x * f x) (by fun_prop : Continuous _).aestronglyMeasurable
+    exact MeasurePreserving.integral_comp_of_aestronglyMeasurable
+      (T := Prod.fst) (measurePreserving_fst) (g := fun x => f x * f x)
+      (by fun_prop : Continuous _).aestronglyMeasurable
   have h1 : ψ (π / 2) = (∫ x, f x ∂γ) * ∫ x, f x ∂γ := by
     simp only [ψ, cos_pi_div_two, sin_pi_div_two, zero_mul, one_mul, zero_add]
     exact integral_prod_mul (μ := γ) (ν := γ) (fun x => f x) (fun x => f x)
@@ -353,122 +319,82 @@ theorem variance_le_integral_deriv_sq_gaussianReal {f : ℝ → ℝ} (hf : ContD
 
 section Pi
 
-/-- Resampling one coordinate of a `Measure.pi` sample from an independent draw of that
-coordinate's law does not change the law of the sample. -/
-theorem map_update_prod_pi {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
-    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+private theorem lintegral_evariance_update_le {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {f : (ι → ℝ) → ℝ} {A B : ℝ} (hf : ContDiff ℝ 1 f)
+    (hA : ∀ x, |f x| ≤ A) (hB : ∀ x j, |fderiv ℝ f x (Pi.single j 1)| ≤ B)
     (i : ι) :
-    ((Measure.pi μ).prod (μ i)).map (fun q => Function.update q.1 i q.2) = Measure.pi μ := by
-  refine (Measure.pi_eq fun s hs => ?_).symm
-  rw [Measure.map_apply measurable_update' (MeasurableSet.univ_pi hs)]
-  have hpre : (fun q : (∀ j, α j) × α i => Function.update q.1 i q.2) ⁻¹' (Set.univ.pi s) =
-      (Set.univ.pi (Function.update s i Set.univ)) ×ˢ s i := by
-    ext ⟨x, y⟩
-    simp only [Set.mem_preimage, Set.mem_pi, Set.mem_univ, true_implies, Set.mem_prod]
-    constructor
-    · intro h
-      refine ⟨fun j => ?_, by simpa using h i⟩
-      by_cases hj : j = i
-      · subst hj; simp
-      · simpa [Function.update_of_ne hj] using h j
-    · rintro ⟨h1, h2⟩ j
-      by_cases hj : j = i
-      · subst hj; simpa using h2
-      · simpa [Function.update_of_ne hj] using h1 j
-  rw [hpre, Measure.prod_prod, Measure.pi_pi,
-    ← Finset.mul_prod_erase Finset.univ (fun j => μ j (s j)) (Finset.mem_univ i),
-    ← Finset.mul_prod_erase Finset.univ (fun j => μ j (Function.update s i Set.univ j))
-      (Finset.mem_univ i)]
-  have h1 : ∏ j ∈ Finset.univ.erase i, μ j (Function.update s i Set.univ j) =
-      ∏ j ∈ Finset.univ.erase i, μ j (s j) :=
-    Finset.prod_congr rfl fun j hj => by rw [Function.update_of_ne (Finset.ne_of_mem_erase hj)]
-  rw [h1]
-  simp [mul_comm]
+    ∫⁻ x, evariance (fun y => f (Function.update x i y)) γ ∂(Measure.pi fun _ : ι => γ) ≤
+      ENNReal.ofReal
+        (∫ x, fderiv ℝ f x (Pi.single i 1) ^ 2 ∂(Measure.pi fun _ : ι => γ)) := by
+  let h : (ι → ℝ) → ℝ := fun z => fderiv ℝ f z (Pi.single i 1) ^ 2
+  have hcont : Continuous h :=
+    (((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).pow 2)
+  have hbd : ∀ z, |h z| ≤ B ^ 2 := fun z => by
+    simp only [h]
+    rw [abs_of_nonneg (sq_nonneg _), ← sq_abs]
+    exact pow_le_pow_left₀ (abs_nonneg _) (hB _ _) 2
+  have hslice : ∀ x : ι → ℝ, evariance (fun y => f (Function.update x i y)) γ ≤
+      ENNReal.ofReal (∫ y, h (Function.update x i y) ∂γ) := by
+    intro x
+    have hg : ContDiff ℝ 1 (fun y => f (Function.update x i y)) :=
+      hf.comp (contDiff_update 1 x i)
+    have hd : ∀ y, deriv (fun y => f (Function.update x i y)) y =
+        fderiv ℝ f (Function.update x i y) (Pi.single i 1) := fun y =>
+      ((hf.differentiable one_ne_zero (Function.update x i y)).hasFDerivAt.comp_hasDerivAt y
+        (hasDerivAt_update x i y)).deriv
+    have hmemx : MemLp (fun y => f (Function.update x i y)) 2 γ :=
+      MemLp.of_bound hg.continuous.aestronglyMeasurable A
+        (ae_of_all _ fun y => by simpa using hA _)
+    rw [← hmemx.ofReal_variance_eq]
+    refine ENNReal.ofReal_le_ofReal ?_
+    have := variance_le_integral_deriv_sq_gaussianReal hg ⟨A, fun y => hA _⟩
+      ⟨B, fun y => by rw [hd]; exact hB _ _⟩
+    simpa [hd, h] using this
+  have hu : Measurable fun q : (ι → ℝ) × ℝ => h (Function.update q.1 i q.2) :=
+    hcont.measurable.comp measurable_update'
+  have hGm : StronglyMeasurable fun x : ι → ℝ => ∫ y, h (Function.update x i y) ∂γ :=
+    hu.stronglyMeasurable.integral_prod_right'
+  have hGint : Integrable (fun x : ι → ℝ => ∫ y, h (Function.update x i y) ∂γ)
+      (Measure.pi fun _ : ι => γ) :=
+    Integrable.of_bound hGm.aestronglyMeasurable (B ^ 2) (ae_of_all _ fun x => by
+      have := norm_integral_le_of_norm_le_const (μ := γ)
+        (f := fun y => h (Function.update x i y)) (C := B ^ 2)
+        (ae_of_all _ fun y => by simpa using hbd _)
+      simpa using this)
+  calc ∫⁻ x, evariance (fun y => f (Function.update x i y)) γ ∂(Measure.pi fun _ : ι => γ)
+      ≤ ∫⁻ x, ENNReal.ofReal (∫ y, h (Function.update x i y) ∂γ)
+        ∂(Measure.pi fun _ : ι => γ) := lintegral_mono hslice
+    _ = ENNReal.ofReal (∫ x, ∫ y, h (Function.update x i y) ∂γ
+        ∂(Measure.pi fun _ : ι => γ)) :=
+      (ofReal_integral_eq_lintegral_ofReal hGint
+        (ae_of_all _ fun x => integral_nonneg fun y => sq_nonneg _)).symm
+    _ = ENNReal.ofReal (∫ x, h x ∂(Measure.pi fun _ : ι => γ)) := by
+      have hint : Integrable h (Measure.pi fun _ : ι => γ) :=
+        Integrable.of_bound hcont.aestronglyMeasurable (B ^ 2)
+          (ae_of_all _ fun x => by simpa using hbd x)
+      rw [integral_integral_update_pi (fun _ : ι => γ) i hint]
 
-/-- Averaging a bounded measurable function over a freshly resampled coordinate preserves its
-expectation under `Measure.pi`. -/
-theorem integral_integral_update_pi {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
-    [∀ i, MeasurableSpace (α i)] (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
-    (i : ι) {h : (∀ j, α j) → ℝ} (hh : Measurable h) {C : ℝ} (hC : ∀ x, |h x| ≤ C) :
-    ∫ x, ∫ y, h (Function.update x i y) ∂μ i ∂Measure.pi μ = ∫ x, h x ∂Measure.pi μ := by
-  have hu : Measurable fun q : (∀ j, α j) × α i => h (Function.update q.1 i q.2) :=
-    hh.comp measurable_update'
-  have hint : Integrable (fun q : (∀ j, α j) × α i => h (Function.update q.1 i q.2))
-      ((Measure.pi μ).prod (μ i)) :=
-    integrable_of_abs_le hu.aestronglyMeasurable fun q => hC _
-  refine (integral_prod _ hint).symm.trans ?_
-  exact integral_comp_of_measurePreserving
-    (T := fun q : (∀ j, α j) × α i => Function.update q.1 i q.2)
-    ⟨measurable_update', map_update_prod_pi μ i⟩ hh.aestronglyMeasurable
-
-/-- **The Gaussian Poincaré inequality on `ℝⁿ`.** For a continuously differentiable function `f`
-on `Fin n → ℝ` with bounded values and bounded partial derivatives, the variance of `f` under
-the product of `n` standard Gaussian laws is at most the expectation of the squared Euclidean norm
+/-- **The finite-dimensional Gaussian Poincaré inequality.** For a continuously differentiable
+function `f` on `ι → ℝ` with bounded values and bounded partial derivatives, its variance under
+the product of standard Gaussian laws is at most the expectation of the squared Euclidean norm
 of its gradient, `∑ i, (∂ᵢ f)²`. -/
-theorem variance_le_sum_integral_fderiv_sq_pi {n : ℕ} {f : (Fin n → ℝ) → ℝ}
+theorem variance_le_sum_integral_fderiv_sq_pi {ι : Type*} [Fintype ι] [DecidableEq ι]
+    {f : (ι → ℝ) → ℝ}
     (hf : ContDiff ℝ 1 f) (hfb : ∃ A, ∀ x, |f x| ≤ A)
     (hdb : ∃ B, ∀ x i, |fderiv ℝ f x (Pi.single i 1)| ≤ B) :
-    variance f (Measure.pi fun _ : Fin n => γ) ≤
-      ∑ i, ∫ x, fderiv ℝ f x (Pi.single i 1) ^ 2 ∂(Measure.pi fun _ : Fin n => γ) := by
+    variance f (Measure.pi fun _ : ι => γ) ≤
+      ∑ i, ∫ x, fderiv ℝ f x (Pi.single i 1) ^ 2 ∂(Measure.pi fun _ : ι => γ) := by
   obtain ⟨A, hA⟩ := hfb
   obtain ⟨B, hB⟩ := hdb
   have hc : Continuous f := hf.continuous
-  have hmem : MemLp f 2 (Measure.pi fun _ : Fin n => γ) :=
+  have hmem : MemLp f 2 (Measure.pi fun _ : ι => γ) :=
     MemLp.of_bound hc.aestronglyMeasurable A (ae_of_all _ fun x => by simpa using hA x)
-  have hES := efronStein (fun _ : Fin n => γ) hc.measurable hmem
+  have hES := efronStein (fun _ : ι => γ) hc.measurable hmem
   rw [← hmem.ofReal_variance_eq] at hES
-  have hcoord : ∀ i : Fin n,
-      ∫⁻ x, evariance (fun y => f (Function.update x i y)) γ ∂(Measure.pi fun _ : Fin n => γ) ≤
-        ENNReal.ofReal
-          (∫ x, fderiv ℝ f x (Pi.single i 1) ^ 2 ∂(Measure.pi fun _ : Fin n => γ)) := by
-    intro i
-    let h : (Fin n → ℝ) → ℝ := fun z => fderiv ℝ f z (Pi.single i 1) ^ 2
-    have hcont : Continuous h :=
-      (((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).pow 2)
-    have hbd : ∀ z, |h z| ≤ B ^ 2 := fun z => by
-      simp only [h]
-      rw [abs_of_nonneg (sq_nonneg _), ← sq_abs]
-      exact pow_le_pow_left₀ (abs_nonneg _) (hB _ _) 2
-    have hslice : ∀ x : Fin n → ℝ, evariance (fun y => f (Function.update x i y)) γ ≤
-        ENNReal.ofReal (∫ y, h (Function.update x i y) ∂γ) := by
-      intro x
-      have hg : ContDiff ℝ 1 (fun y => f (Function.update x i y)) :=
-        hf.comp (contDiff_update 1 x i)
-      have hd : ∀ y, deriv (fun y => f (Function.update x i y)) y =
-          fderiv ℝ f (Function.update x i y) (Pi.single i 1) := fun y =>
-        ((hf.differentiable one_ne_zero (Function.update x i y)).hasFDerivAt.comp_hasDerivAt y
-          (hasDerivAt_update x i y)).deriv
-      have hmemx : MemLp (fun y => f (Function.update x i y)) 2 γ :=
-        MemLp.of_bound hg.continuous.aestronglyMeasurable A
-          (ae_of_all _ fun y => by simpa using hA _)
-      rw [← hmemx.ofReal_variance_eq]
-      refine ENNReal.ofReal_le_ofReal ?_
-      have := variance_le_integral_deriv_sq_gaussianReal hg ⟨A, fun y => hA _⟩
-        ⟨B, fun y => by rw [hd]; exact hB _ _⟩
-      simpa [hd, h] using this
-    have hu : Measurable fun q : (Fin n → ℝ) × ℝ => h (Function.update q.1 i q.2) :=
-      hcont.measurable.comp measurable_update'
-    have hGm : StronglyMeasurable fun x : Fin n → ℝ => ∫ y, h (Function.update x i y) ∂γ :=
-      hu.stronglyMeasurable.integral_prod_right'
-    have hGint : Integrable (fun x : Fin n → ℝ => ∫ y, h (Function.update x i y) ∂γ)
-        (Measure.pi fun _ : Fin n => γ) :=
-      integrable_of_abs_le (C := B ^ 2) hGm.aestronglyMeasurable fun x => by
-        have := norm_integral_le_of_norm_le_const (μ := γ)
-          (f := fun y => h (Function.update x i y)) (C := B ^ 2)
-          (ae_of_all _ fun y => by simpa using hbd _)
-        simpa using this
-    calc ∫⁻ x, evariance (fun y => f (Function.update x i y)) γ ∂(Measure.pi fun _ : Fin n => γ)
-        ≤ ∫⁻ x, ENNReal.ofReal (∫ y, h (Function.update x i y) ∂γ)
-          ∂(Measure.pi fun _ : Fin n => γ) := lintegral_mono hslice
-      _ = ENNReal.ofReal (∫ x, ∫ y, h (Function.update x i y) ∂γ
-          ∂(Measure.pi fun _ : Fin n => γ)) :=
-        (ofReal_integral_eq_lintegral_ofReal hGint
-          (ae_of_all _ fun x => integral_nonneg fun y => sq_nonneg _)).symm
-      _ = ENNReal.ofReal (∫ x, h x ∂(Measure.pi fun _ : Fin n => γ)) := by
-        rw [integral_integral_update_pi (fun _ : Fin n => γ) i hcont.measurable hbd]
+  have hcoord := lintegral_evariance_update_le hf hA hB
   have hsum := hES.trans (Finset.sum_le_sum fun i _ => hcoord i)
-  have hnn : ∀ i ∈ (Finset.univ : Finset (Fin n)),
-      0 ≤ ∫ x, fderiv ℝ f x (Pi.single i 1) ^ 2 ∂(Measure.pi fun _ : Fin n => γ) :=
+  have hnn : ∀ i ∈ (Finset.univ : Finset (ι)),
+      0 ≤ ∫ x, fderiv ℝ f x (Pi.single i 1) ^ 2 ∂(Measure.pi fun _ : ι => γ) :=
     fun i _ => integral_nonneg fun x => sq_nonneg _
   rw [← ENNReal.ofReal_sum_of_nonneg hnn] at hsum
   exact (ENNReal.ofReal_le_ofReal_iff (Finset.sum_nonneg hnn)).1 hsum
