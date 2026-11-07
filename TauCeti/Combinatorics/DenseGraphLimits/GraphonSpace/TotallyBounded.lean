@@ -9,6 +9,7 @@ public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.OfMatrixGrid
 public import TauCeti.Combinatorics.DenseGraphLimits.CutMetric.UnitIntervalModel
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.Density
 public import TauCeti.Combinatorics.DenseGraphLimits.GraphonSpace.UnitIntervalEmbedding
+import TauCeti.Algebra.Order.Archimedean.Basic
 
 /-!
 # Graphon space is totally bounded
@@ -70,37 +71,13 @@ private def netPoint {n N : ℕ} (hN : 0 < N)
         (fun i j => gridValue N (p.2.1 i j))
         (fun i j => congrArg (gridValue N) (p.2.2 i j))))
 
-/-- **The net parameters.** For `ε > 0` there are a number of blocks `n` large enough for the weak
-regularity lemma at precision `ε / 4` and a grid size `N` fine enough that both the block values
-(multiples of `1 / (N + 1)`) and the vertex weights (multiples of `1 / N`) are rounded to within
-`ε / 4`. -/
-private theorem exists_net_parameters {ε : ℝ} (hε : 0 < ε) :
-    ∃ n N : ℕ, 0 < n ∧ 4 ^ (Nat.ceil (1 / (ε / 4) ^ 2)) ≤ n ∧ 0 < N ∧
-      1 / ((N : ℝ) + 1) ≤ ε / 4 ∧ 2 * (n : ℝ) / (N : ℝ) ≤ ε / 4 := by
-  have hn0 : 0 < 4 ^ (Nat.ceil (1 / (ε / 4) ^ 2)) := pow_pos (by norm_num) _
-  set n : ℕ := 4 ^ (Nat.ceil (1 / (ε / 4) ^ 2)) with hndef
-  have hn1 : (1 : ℝ) ≤ (n : ℝ) := by exact_mod_cast hn0
-  set N : ℕ := Nat.ceil (8 * (n : ℝ) / ε) + 1 with hNdef
-  have hN : 0 < N := Nat.succ_pos _
-  have hNR : 8 * (n : ℝ) / ε ≤ (N : ℝ) := by
-    rw [hNdef]
-    push_cast
-    linarith [Nat.le_ceil (8 * (n : ℝ) / ε)]
-  have hNpos : (0 : ℝ) < (N : ℝ) := by exact_mod_cast hN
-  have hεN : 8 * (n : ℝ) ≤ ε * N := by
-    rw [div_le_iff₀ hε] at hNR
-    linarith
-  refine ⟨n, N, hn0, le_rfl, hN, ?_, ?_⟩
-  · rw [div_le_div_iff₀ (by positivity) (by norm_num)]
-    nlinarith
-  · rw [div_le_div_iff₀ hNpos (by norm_num)]
-    nlinarith
-
 /-- **Graphon space over the unit interval is totally bounded.** -/
 theorem totallyBounded_graphonSpaceI : TotallyBounded (Set.univ : Set GraphonSpaceI) := by
   rw [Metric.totallyBounded_iff]
   intro ε hε
-  obtain ⟨n, N, hn0, hnge, hN, hgrid, hweight⟩ := exists_net_parameters hε
+  obtain ⟨n, N, hn0, hnge, hN, hgrid, hweight⟩ :=
+    TauCeti.exists_nat_ge_and_div_le (K := ℝ) (by positivity : (0 : ℝ) < ε / 4)
+      (4 ^ Nat.ceil (1 / (ε / 4) ^ 2))
   have : NeZero n := ⟨hn0.ne'⟩
   refine ⟨Set.range (netPoint (n := n) hN), Set.finite_range _, ?_⟩
   rintro x -

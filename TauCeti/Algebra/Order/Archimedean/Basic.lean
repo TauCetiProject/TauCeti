@@ -22,6 +22,8 @@ Hölder inequality is iterated.
 
 * `TauCeti.exists_div_pow_le_and_forall_mul_pow_lt_one`: for `1 < r`, `0 < s < r` and `0 < p`
   there is `M > 0` with `s / r ^ M ≤ p` and `s / r ^ M * r ^ k < 1` for all `k < M`.
+* `TauCeti.exists_nat_ge_and_div_le`: for `0 < δ` and `n₀ : ℕ` there are `n ≥ n₀` and `N > 0`
+  with `1 / (N + 1) ≤ δ` and `2 * n / N ≤ δ`.
 -/
 
 public section
@@ -52,5 +54,22 @@ theorem exists_div_pow_le_and_forall_mul_pow_lt_one {r s p : K} (hr : 1 < r)
           rw [pow_succ]
           field_simp
       _ < 1 := (div_lt_one hr0).2 hsr
+
+/-- For `δ > 0` and any `n₀`, there are a positive `n ≥ n₀` and a positive `N` so large that both
+`1 / (N + 1)` and `2 * n / N` are at most `δ`. -/
+theorem exists_nat_ge_and_div_le {δ : K} (hδ : 0 < δ) (n₀ : ℕ) :
+    ∃ n N : ℕ, 0 < n ∧ n₀ ≤ n ∧ 0 < N ∧ 1 / ((N : K) + 1) ≤ δ ∧ 2 * (n : K) / N ≤ δ := by
+  have hn : (1 : K) ≤ ((n₀ + 1 : ℕ) : K) := by exact_mod_cast Nat.succ_pos n₀
+  have hn0 : (0 : K) < ((n₀ + 1 : ℕ) : K) := hn.trans_lt' zero_lt_one
+  obtain ⟨N, hN⟩ := exists_nat_gt (2 * ((n₀ + 1 : ℕ) : K) / δ)
+  have hNpos : (0 : K) < N := hN.trans' (by positivity)
+  have h2 : 2 * ((n₀ + 1 : ℕ) : K) / N ≤ δ := by
+    rw [div_le_iff₀ hNpos]
+    rw [div_lt_iff₀ hδ] at hN
+    linarith
+  refine ⟨n₀ + 1, N, n₀.succ_pos, n₀.le_succ, by exact_mod_cast hNpos, ?_, h2⟩
+  calc 1 / ((N : K) + 1) ≤ 1 / N := one_div_le_one_div_of_le hNpos (by linarith)
+    _ ≤ 2 * ((n₀ + 1 : ℕ) : K) / N := by gcongr; linarith
+    _ ≤ δ := h2
 
 end TauCeti
