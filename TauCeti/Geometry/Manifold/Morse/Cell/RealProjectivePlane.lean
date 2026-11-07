@@ -32,8 +32,8 @@ composite with the reflection `(u₀, u₁) ↦ (-u₀, u₁)` of the first nega
 of radius `√ε`, and the two charts give attaching maps `α₊, α₋ : ∂D² → {f ≤ 2 - ε}` of the
 `2`-cell (`TauCeti.projectivePlaneAttachingMap`, `TauCeti.projectivePlaneAttachingMapReflect`),
 `w ↦ [√ε w₀ / √2 : √ε w₁ : √(1 - ε (w₀² / 2 + w₁²))]` and its reflection. They are related
-strictly by the reflection `r` of the circle: `α₋ = α₊ ∘ r`
-(`TauCeti.projectivePlaneAttachingMapReflect_apply`).
+strictly by the reflection `r` of the circle (`TauCeti.diskBoundaryTwoReflect`): `α₋ = α₊ ∘ r`
+(`TauCeti.projectivePlaneAttachingMapReflect_eq_comp`).
 
 The lower sublevel `{f ≤ c}`, `1 ≤ c < 2`, misses the maximum, and the flattening
 `[x : y : z] ↦ [x : y : (1 - t) z]` lowers `f`. So the projection `[x : y : z] ↦ [x : y]` is a
@@ -56,7 +56,7 @@ reflection `r` of their source.
 
 * `TauCeti.projectivePlaneHeight_eq_of_mem_projectivePlaneTopChart_source`: the normal form at the
   maximum.
-* `TauCeti.projectivePlaneAttachingMapReflect_apply`: the strict relation `α₋ = α₊ ∘ r`.
+* `TauCeti.projectivePlaneAttachingMapReflect_eq_comp`: the strict relation `α₋ = α₊ ∘ r`.
 * `TauCeti.projectivePlaneSublevelHomotopyEquiv`, `TauCeti.projectivePlaneSublevelCircleEquiv`:
   the sublevels below the maximum are homotopy equivalent to the projective line and the circle.
 * `TauCeti.degree_projectivePlaneAttachingMap`, `TauCeti.degree_projectivePlaneAttachingMapReflect`:
@@ -402,25 +402,40 @@ theorem coe_projectivePlaneAttachingMapReflect_apply (hε : 0 ≤ ε) (hε1 : ε
   congr 1
   refine PiLp.ext (Fin.forall_fin_two.2 ⟨?_, ?_⟩) <;> simp
 
-/-- **The two attaching maps differ strictly by a reflection.** The attaching map of the reflected
-chart is the attaching map of the top chart precomposed with the reflection
-`r (w₀, w₁) = (-w₀, w₁)` of the boundary circle: `α₋ = α₊ ∘ r`. -/
+/-- The attaching map of the reflected chart at `w` is the attaching map of the top chart at the
+reflection `r w = (-w₀, w₁)` of `w` (`TauCeti.diskBoundaryTwoReflect`). -/
 theorem projectivePlaneAttachingMapReflect_apply (hε : 0 ≤ ε) (hε1 : ε < 1)
-    {w w' : TopCat.diskBoundary.{0} 2}
-    (h₀ : (w'.down : EuclideanSpace ℝ (Fin 2)) 0 = -(w.down : EuclideanSpace ℝ (Fin 2)) 0)
-    (h₁ : (w'.down : EuclideanSpace ℝ (Fin 2)) 1 = (w.down : EuclideanSpace ℝ (Fin 2)) 1) :
-    projectivePlaneAttachingMapReflect hε hε1 w = projectivePlaneAttachingMap hε hε1 w' := by
+    (w : TopCat.diskBoundary.{0} 2) :
+    projectivePlaneAttachingMapReflect hε hε1 w =
+      projectivePlaneAttachingMap hε hε1 (diskBoundaryTwoReflect.hom w) := by
   refine Subtype.ext ?_
   rw [coe_projectivePlaneAttachingMapReflect_apply hε hε1,
     coe_projectivePlaneAttachingMap_apply hε hε1]
   congr 2
-  exact PiLp.ext (Fin.forall_fin_two.2 ⟨h₀.symm, h₁.symm⟩)
+  exact PiLp.ext (Fin.forall_fin_two.2 ⟨(diskBoundaryTwoReflect_hom_apply_zero w).symm,
+    (diskBoundaryTwoReflect_hom_apply_one w).symm⟩)
+
+open CategoryTheory in
+/-- **The two attaching maps differ strictly by a reflection.** The attaching map of the reflected
+chart is the attaching map of the top chart precomposed with the reflection
+`r (w₀, w₁) = (-w₀, w₁)` of the boundary circle (`TauCeti.diskBoundaryTwoReflect`):
+`α₋ = α₊ ∘ r`. -/
+theorem projectivePlaneAttachingMapReflect_eq_comp (hε : 0 ≤ ε) (hε1 : ε < 1) :
+    projectivePlaneAttachingMapReflect hε hε1 =
+      diskBoundaryTwoReflect.hom ≫ projectivePlaneAttachingMap hε hε1 :=
+  TopCat.ext (projectivePlaneAttachingMapReflect_apply hε hε1)
 
 end Attaching
 
 /-! ### The lower sublevels are homotopy equivalent to the projective line `z = 0` -/
 
 section Sublevel
+
+/-- Equal nonzero vectors span the same point of the projective space. -/
+private theorem mk_eq_mk_of_eq {V : Type*} [AddCommGroup V] [Module ℝ V] {v w : V} (h : v = w)
+    {hv : v ≠ 0} {hw : w ≠ 0} : mk ℝ v hv = mk ℝ w hw := by
+  subst h
+  rfl
 
 /-- The linear map `(x, y, z) ↦ (x, y)`. -/
 private def dropLast : (Fin 3 → ℝ) →ₗ[ℝ] Fin 2 → ℝ :=
@@ -623,7 +638,7 @@ private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     have hd : dropLast v ≠ 0 := (projectivePlaneHeight_mk_lt_two_iff v hv).1 (hy.trans_lt hc₂)
     simp only [Icc.coe_zero, ContinuousMap.id_apply]
     rw [linearProjection_mk _ _ (flatten_ne_zero hd 0)]
-    exact (mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨1, by rw [one_smul, flatten_zero]⟩
+    exact mk_eq_mk_of_eq (flatten_zero v)
   map_one_left y := by
     obtain ⟨y, hy⟩ := y
     refine Subtype.ext ?_
@@ -632,7 +647,7 @@ private def flattenHomotopy (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
     simp only [Icc.coe_one, ContinuousMap.comp_apply, sublevelToLine, lineToSublevel,
       ContinuousMap.coe_mk]
     rw [linearProjection_mk _ _ (flatten_ne_zero hd 1), linearProjection_mk _ _ hd, map_mk]
-    exact (mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨1, by rw [one_smul, flatten_one]⟩
+    exact mk_eq_mk_of_eq (flatten_one v)
 
 /-- **The lower sublevels deformation retract onto the projective line.** For `1 ≤ c < 2` the
 projection `[x : y : z] ↦ [x : y]` is a homotopy equivalence from the sublevel `{f ≤ c}` onto
@@ -650,7 +665,7 @@ def projectivePlaneSublevelHomotopyEquiv (hc₁ : 1 ≤ c) (hc₂ : c < 2) :
       simp only [ContinuousMap.comp_apply, sublevelToLine, lineToSublevel, ContinuousMap.coe_mk,
         map_mk, ContinuousMap.id_apply]
       rw [linearProjection_mk _ _ (by rwa [dropLast_addLast])]
-      exact (mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨1, by rw [one_smul, dropLast_addLast]⟩
+      exact mk_eq_mk_of_eq (dropLast_addLast w)
     rw [h]
 
 private theorem projectivePlaneSublevelHomotopyEquiv_apply (hc₁ : 1 ≤ c) (hc₂ : c < 2)
@@ -666,7 +681,7 @@ theorem projectivePlaneSublevelHomotopyEquiv_apply_of_eq (hc₁ : 1 ≤ c) (hc�
     projectivePlaneSublevelHomotopyEquiv hc₁ hc₂ y = mk ℝ ![v 0, v 1] hd := by
   rw [projectivePlaneSublevelHomotopyEquiv_apply, hy,
     linearProjection_mk _ _ (by rwa [dropLast_apply])]
-  exact (mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨1, by rw [one_smul, dropLast_apply]⟩
+  exact mk_eq_mk_of_eq (dropLast_apply v)
 
 /-- The homotopy inverse of the projection is the inclusion `[x : y] ↦ [x : y : 0]`. -/
 theorem coe_projectivePlaneSublevelHomotopyEquiv_symm_apply_mk (hc₁ : 1 ≤ c) (hc₂ : c < 2)
@@ -674,7 +689,7 @@ theorem coe_projectivePlaneSublevelHomotopyEquiv_symm_apply_mk (hc₁ : 1 ≤ c)
     ((projectivePlaneSublevelHomotopyEquiv hc₁ hc₂).symm (mk ℝ w hw) : ℙ ℝ (Fin 3 → ℝ)) =
       mk ℝ ![w 0, w 1, 0] hw' :=
   (map_mk addLast addLast_injective w hw).trans
-    ((mk_eq_mk_iff' ℝ _ _ _ _).2 ⟨1, by rw [one_smul, addLast_apply]⟩)
+    (mk_eq_mk_of_eq (addLast_apply w))
 
 end Sublevel
 
@@ -825,11 +840,7 @@ private theorem degree_eq_two_of_forall {x : Circle} (γ : Path x x) {a : ℝ} (
         (Complex.continuous_ofReal.comp hNc) fun p ↦ Complex.ofReal_ne_zero.2 (hN p).ne') _ }
   have hF (p : I × I) : (F p : ℂ) = z p ^ 2 / (N p : ℂ) := rfl
   let δ := Circle.expLoop.map (continuous_pow 2)
-  have hδ : Circle.degree δ = 2 := by
-    have h₁ : Circle.degree Circle.expLoop = 1 := Multiplicative.ofAdd.injective
-      ((Circle.fundamentalGroupMulEquiv_fromPath _).symm.trans
-        Circle.fundamentalGroupMulEquiv_expLoop)
-    simp [δ, Circle.degree_map_pow, h₁]
+  have hδ : Circle.degree δ = 2 := by simp [δ, Circle.degree_map_pow]
   refine (Circle.degree_eq_of_homotopy γ δ F (fun t ↦ ?_) (fun t ↦ ?_) (fun s ↦ ?_)).trans hδ
   · refine Circle.coe_injective ?_
     rw [hF, hγ t]
@@ -907,15 +918,9 @@ private theorem coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingM
         ((w.down : EuclideanSpace ℝ (Fin 2)) 1 : ℝ) * Complex.I) ^ 2 /
       ((-((√2)⁻¹ * (w.down : EuclideanSpace ℝ (Fin 2)) 0)) ^ 2 +
         (w.down : EuclideanSpace ℝ (Fin 2)) 1 ^ 2 : ℝ) := by
-  let w' : TopCat.diskBoundary.{0} 2 := ⟨⟨reflectFirst w.down, by
-    rw [mem_sphere_zero_iff_norm, LinearIsometryEquiv.norm_map]
-    exact mem_sphere_zero_iff_norm.1 w.down.2⟩⟩
-  have h₀ : (w'.down : EuclideanSpace ℝ (Fin 2)) 0 = -(w.down : EuclideanSpace ℝ (Fin 2)) 0 :=
-    reflectFirst_apply_zero _
-  have h₁ : (w'.down : EuclideanSpace ℝ (Fin 2)) 1 = (w.down : EuclideanSpace ℝ (Fin 2)) 1 :=
-    reflectFirst_apply_one _
-  rw [projectivePlaneAttachingMapReflect_apply hε.le hε1 h₀ h₁,
-    coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1, h₀, h₁, mul_neg]
+  rw [projectivePlaneAttachingMapReflect_apply hε.le hε1,
+    coe_projectivePlaneSublevelCircleEquiv_projectivePlaneAttachingMap hε hε1,
+    diskBoundaryTwoReflect_hom_apply_zero, diskBoundaryTwoReflect_hom_apply_one, mul_neg]
 
 /-- **The attaching map of the reflected chart has degree `-2`.** Read in the circle
 `TauCeti.projectivePlaneSublevelCircleEquiv`, the attaching map `α₋ = α₊ ∘ r` along the

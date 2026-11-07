@@ -59,8 +59,9 @@ transformation, so `deck ((↑) : 𝕜 → AddCircle p)` acts transitively on ev
 * `AddCircle.fundamentalGroupMulEquiv_eq_windingNumberIso`: for positive periods the
   chosen-lift computation agrees with Mathlib, including the sign of the generator.
 * `Circle.fundamentalGroupMulEquiv`: `π₁(Circle, x) ≃* Multiplicative ℤ`.
-* `Circle.expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the loop `t ↦ exp(2πit)`,
-  going once counterclockwise around the circle, is sent to the generator `ofAdd 1`.
+* `Circle.expLoop`, `Circle.degree_expLoop` and `Circle.fundamentalGroupMulEquiv_expLoop`: the
+  loop `t ↦ exp(2πit)`, going once counterclockwise around the circle, has degree `1` and is sent
+  to the generator `ofAdd 1`.
 * `Circle.mapOfEq_toCircle_expLoop`: a loop `γ`, read as a map from the circle, sends the class
   of `Circle.expLoop` to the class of `γ`.
 * `Circle.fundamentalGroupMulEquiv_fromPath`: the class of a loop is sent to its degree
@@ -425,6 +426,13 @@ def expLoop : Path (1 : Circle) 1 where
 theorem expLoop_apply (t : unitInterval) : expLoop t = Circle.exp (2 * Real.pi * t) :=
   (rfl)
 
+/-- The counterclockwise loop `t ↦ exp(2πit)` has degree `1`: its angle lift `t ↦ 2πt` gains one
+full turn. -/
+@[simp]
+theorem degree_expLoop : degree expLoop = 1 :=
+  degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
+    (n := 1) (by simp)
+
 /-- **The counterclockwise loop generates `π₁(S¹)` positively.** The isomorphism
 `π₁(Circle, 1) ≃* Multiplicative ℤ` sends the class of `t ↦ exp(2πit)` to `ofAdd 1`. -/
 @[simp]
@@ -432,9 +440,7 @@ theorem fundamentalGroupMulEquiv_expLoop :
     fundamentalGroupMulEquiv 1
       (FundamentalGroup.fromPath (Path.Homotopic.Quotient.mk expLoop)) =
       Multiplicative.ofAdd 1 := by
-  rw [fundamentalGroupMulEquiv_fromPath,
-    degree_eq_of_sub_eq expLoop (θ := fun t => 2 * Real.pi * t) (by fun_prop) (fun _ => rfl)
-      (n := 1) (by simp)]
+  rw [fundamentalGroupMulEquiv_fromPath, degree_expLoop]
 
 /-- A loop `γ`, read as a map from the circle by `Path.toCircle`, sends the class of the
 counterclockwise loop `expLoop` to the class of `γ`. So every element of a fundamental group is

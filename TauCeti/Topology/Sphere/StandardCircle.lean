@@ -25,6 +25,7 @@ the point `(1, 0)` and is injective elsewhere, so it is a quotient map of `I¹` 
   and is injective elsewhere.
 * `TauCeti.diskBoundaryTwoLoop`: the same counterclockwise parametrization as a loop of the
   boundary circle `∂D²`, based at `(1, 0)`.
+* `TauCeti.diskBoundaryTwoReflect`: the reflection `(w₀, w₁) ↦ (-w₀, w₁)` of `∂D²`.
 -/
 
 public section
@@ -205,5 +206,52 @@ theorem diskBoundaryTwoLoop_apply_one (t : I) :
   rw [diskBoundaryTwoLoop_down_apply, EuclideanSpace.coe_sphereHomeomorphCircle_symm_apply,
     Circle.coe_exp, Complex.orthonormalBasisOneI_repr_apply]
   exact Complex.exp_ofReal_mul_I_im _
+
+/-! ### The reflection of `∂D²` -/
+
+/-- The reflection `(w₀, w₁) ↦ (-w₀, w₁)` of the boundary circle `∂D²`. -/
+private def diskBoundaryTwoReflectFun (w : TopCat.diskBoundary.{0} 2) :
+    TopCat.diskBoundary.{0} 2 :=
+  ⟨⟨!₂[-(w.down : EuclideanSpace ℝ (Fin 2)) 0, (w.down : EuclideanSpace ℝ (Fin 2)) 1], by
+    have h := mem_sphere_zero_iff_norm.1 w.down.2
+    rw [mem_sphere_zero_iff_norm, EuclideanSpace.norm_eq, Fin.sum_univ_two] at *
+    simpa using h⟩⟩
+
+private theorem continuous_diskBoundaryTwoReflectFun : Continuous diskBoundaryTwoReflectFun :=
+  continuous_uliftUp.comp (Continuous.subtype_mk (by fun_prop) _)
+
+private theorem diskBoundaryTwoReflectFun_involutive :
+    Function.Involutive diskBoundaryTwoReflectFun := fun w ↦
+  ULift.ext (Subtype.ext (PiLp.ext (Fin.forall_fin_two.2 ⟨by simp [diskBoundaryTwoReflectFun],
+    by simp [diskBoundaryTwoReflectFun]⟩)))
+
+/-- The reflection `(w₀, w₁) ↦ (-w₀, w₁)` of the boundary circle `∂D²`, as an isomorphism of
+topological spaces. It is its own inverse. -/
+def diskBoundaryTwoReflect : TopCat.diskBoundary.{0} 2 ≅ TopCat.diskBoundary.{0} 2 :=
+  TopCat.isoOfHomeo
+    { toFun := diskBoundaryTwoReflectFun
+      invFun := diskBoundaryTwoReflectFun
+      left_inv := diskBoundaryTwoReflectFun_involutive
+      right_inv := diskBoundaryTwoReflectFun_involutive
+      continuous_toFun := continuous_diskBoundaryTwoReflectFun
+      continuous_invFun := continuous_diskBoundaryTwoReflectFun }
+
+/-- The reflection of `∂D²` is its own inverse. -/
+theorem diskBoundaryTwoReflect_inv : diskBoundaryTwoReflect.inv = diskBoundaryTwoReflect.hom := by
+  rfl
+
+/-- The reflection of `∂D²` negates the first coordinate. -/
+@[simp]
+theorem diskBoundaryTwoReflect_hom_apply_zero (w : TopCat.diskBoundary.{0} 2) :
+    ((diskBoundaryTwoReflect.hom w).down : EuclideanSpace ℝ (Fin 2)) 0 =
+      -(w.down : EuclideanSpace ℝ (Fin 2)) 0 := by
+  rfl
+
+/-- The reflection of `∂D²` fixes the second coordinate. -/
+@[simp]
+theorem diskBoundaryTwoReflect_hom_apply_one (w : TopCat.diskBoundary.{0} 2) :
+    ((diskBoundaryTwoReflect.hom w).down : EuclideanSpace ℝ (Fin 2)) 1 =
+      (w.down : EuclideanSpace ℝ (Fin 2)) 1 := by
+  rfl
 
 end TauCeti
