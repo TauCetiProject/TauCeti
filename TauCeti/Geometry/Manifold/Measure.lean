@@ -18,6 +18,13 @@ measurable structure on the manifold itself.  The definition is independent of t
 measure on the model and has the usual subset and countable-union closure properties. On a
 manifold with a finite-dimensional model a null set has empty interior, so its complement is
 dense; this is how Sard's theorem produces regular values.
+
+Nullity of an image `f '' s` under a map between manifolds can be checked on coordinate
+expressions (`TauCeti.isNullSet_image_of_forall_addHaar_image_extChartAt`): when the source is
+Lindelöf, it suffices that every coordinate expression
+`extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm` sends the chart image of the points of `s` seen by
+both charts to a Haar-null set. This is how Sard-type statements about maps between normed spaces
+pass to manifolds.
 -/
 
 public section
@@ -121,5 +128,38 @@ theorem isNullSet_boundary {I : ModelWithCorners ℝ E H} [FiniteDimensional ℝ
     simpa only [extChartAt_source] using hz.2
   exact (ModelWithCorners.isBoundaryPoint_iff_mem_frontier_range one_ne_zero
     (IsManifold.chart_mem_maximalAtlas x) hsource).mp hz.1
+
+section Image
+
+variable {E' H' N : Type*} [NormedAddCommGroup E'] [NormedSpace ℝ E'] [MeasurableSpace E']
+  [BorelSpace E'] [TopologicalSpace H'] [TopologicalSpace N] [ChartedSpace H' N]
+  {I : ModelWithCorners ℝ E H} {J : ModelWithCorners ℝ E' H'} {f : M → N} {s : Set M}
+
+/-- **Nullity of an image is read in coordinates.** Let `M` be Lindelöf. Suppose that for every
+chart at `x₀` of `M` and every chart at `y₀` of `N`, the coordinate expression
+`extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm` sends the chart image of the points of `s` lying in
+both charts to a set that is null for every Haar measure. Then `f '' s` is null in `N`.
+
+No regularity of `f` is assumed, and both manifolds may have boundary or corners. -/
+theorem isNullSet_image_of_forall_addHaar_image_extChartAt [LindelofSpace M]
+    (h : ∀ (x₀ : M) (y₀ : N) (μ : Measure E') [μ.IsAddHaarMeasure],
+      μ ((extChartAt J y₀ ∘ f ∘ (extChartAt I x₀).symm) ''
+        (extChartAt I x₀ '' (s ∩ (chartAt H x₀).source ∩ f ⁻¹' (chartAt H' y₀).source))) = 0) :
+    IsNullSet J (f '' s) := by
+  obtain ⟨t, htc, -, hcover⟩ := isLindelof_univ.elim_nhds_subcover
+    (fun x : M ↦ (chartAt H x).source) fun x _ ↦ chart_source_mem_nhds H x
+  have hst : s = ⋃ x ∈ t, s ∩ (chartAt H x).source := by
+    rw [← inter_iUnion₂, eq_comm, inter_eq_left]
+    exact (subset_univ s).trans hcover
+  rw [hst, image_iUnion₂]
+  refine IsNullSet.biUnion htc fun x₀ _ ↦ (isNullSet_iff J _).2 fun y₀ μ _ ↦ ?_
+  convert h x₀ y₀ μ using 2
+  -- On the source of the chart at `x₀`, the inverse chart undoes the chart.
+  rw [extChartAt_source, ← image_inter_preimage, image_image, image_image]
+  refine image_congr fun x hx ↦ ?_
+  have hx' : x ∈ (extChartAt I x₀).source := by rw [extChartAt_source]; exact hx.1.2
+  simp only [Function.comp_apply, (extChartAt I x₀).left_inv hx']
+
+end Image
 
 end TauCeti
