@@ -16,7 +16,10 @@ family is controlled and converges pointwise away from one exceptional point. Wh
 measure zero, the pointwise hypotheses supply the almost-everywhere hypotheses of the dominated
 convergence theorem. It also records the convergence of integrals against cutoffs
 which equal one on a closed ball and are supported in shrinking larger balls, and against cutoffs
-which equal one on balls exhausting a normed space.
+which equal one on balls exhausting a normed space, as well as convergence after removing a
+shrinking neighbourhood of zero from an integrable function vanishing at zero, and the convergence
+of interval integrals `∫ Φ(t, y_i(t)) dt` of a continuous function along maps `y_i` with values in
+a compact set which converge pointwise.
 
 ## Main declarations
 
@@ -27,6 +30,11 @@ which equal one on balls exhausting a normed space.
   `h → 0⁺`.
 * `TauCeti.tendsto_integral_smul_of_eq_one_ball`: integrals against `[0, 1]`-valued cutoffs equal
   to one on `ball 0 (R i)` with `R i → ∞` tend to the integral over the whole space.
+* `TauCeti.tendsto_integral_abs_gt`: removing a shrinking neighbourhood of zero recovers the
+  integral of an integrable function vanishing at zero.
+* `TauCeti.tendsto_intervalIntegral_comp_of_tendsto`: for continuous `Φ`, the integrals
+  `∫_{t₁}^{t₂} Φ(t, y_i(t)) dt` converge when the `y_i` stay in a compact set and converge
+  pointwise.
 -/
 
 public section
@@ -62,6 +70,26 @@ theorem tendsto_integral_mul_of_dominated_away {ι : Type*} {l : Filter ι}
     exact hi x hx
   · filter_upwards [hae] with x hx
     exact (hlim x hx).mul_const _
+
+/-- Removing a shrinking neighbourhood of zero recovers the integral of an integrable
+function vanishing at zero. The measure may charge zero, and the cutoff parameter approaches
+zero from either side. -/
+theorem tendsto_integral_abs_gt {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {μ : Measure ℝ} {f : ℝ → E} (hf : Integrable f μ) (hf₀ : f 0 = 0) :
+    Tendsto (fun ε : ℝ ↦ ∫ x in {x : ℝ | ε < |x|}, f x ∂μ) (𝓝 0)
+      (𝓝 (∫ x, f x ∂μ)) := by
+  have hs (ε : ℝ) : MeasurableSet {x : ℝ | ε < |x|} := by measurability
+  simp_rw [← integral_indicator (hs _)]
+  refine tendsto_integral_filter_of_dominated_convergence (fun x ↦ ‖f x‖)
+    (.of_forall fun ε ↦ hf.aestronglyMeasurable.indicator (hs ε))
+    (.of_forall fun ε ↦ ae_of_all _ fun x ↦ norm_indicator_le_norm_self _ _) hf.norm ?_
+  apply ae_of_all
+  intro x
+  by_cases hx : x = 0
+  · simp [hx, hf₀, indicator_apply]
+  · apply tendsto_const_nhds.congr'
+    filter_upwards [eventually_lt_nhds (abs_pos.mpr hx)] with ε hε
+    simp only [indicator_apply, mem_ofPred_eq, ite_eq_left hε]
 
 /-- **Dominated convergence for shrinking cutoffs.** Let `f : α → E` be measurable, and let the
 cutoffs `ψ h : E → ℝ`, for `h > 0`, be measurable with absolute value at most one, equal to one
@@ -121,5 +149,27 @@ theorem tendsto_integral_smul_of_eq_one_ball {E F : Type*} [NormedAddCommGroup E
   · refine tendsto_const_nhds.congr' ?_
     filter_upwards [hR.eventually_gt_atTop ‖x‖] with i hi
     rw [hχ1 i x hi, one_smul]
+
+/-- **Dominated convergence for continuous functions of converging maps.** Let `Φ : ℝ × V → E`
+be continuous, and let the maps `y i : ℝ → V` be continuous on `[t₁, t₂]` with values there in a
+compact set `K`. If the `y i` converge pointwise on `[t₁, t₂]` to `x`, then
+`∫_{t₁}^{t₂} Φ(t, y i t) dt` tends to `∫_{t₁}^{t₂} Φ(t, x t) dt`. -/
+theorem tendsto_intervalIntegral_comp_of_tendsto {ι V E : Type*} {l : Filter ι}
+    [l.IsCountablyGenerated] [TopologicalSpace V] [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {Φ : ℝ × V → E} (hΦ : Continuous Φ) {K : Set V} (hK : IsCompact K) {y : ι → ℝ → V}
+    {x : ℝ → V} {t₁ t₂ : ℝ} (hy : ∀ i, ContinuousOn (y i) (uIcc t₁ t₂))
+    (hyK : ∀ i, ∀ t ∈ uIcc t₁ t₂, y i t ∈ K)
+    (hyx : ∀ t ∈ uIcc t₁ t₂, Tendsto (fun i ↦ y i t) l (𝓝 (x t))) :
+    Tendsto (fun i ↦ ∫ t in t₁..t₂, Φ (t, y i t)) l (𝓝 (∫ t in t₁..t₂, Φ (t, x t))) := by
+  obtain ⟨C, hC⟩ := (isCompact_uIcc.prod hK).exists_bound_of_continuousOn hΦ.continuousOn
+  refine intervalIntegral.tendsto_integral_filter_of_dominated_convergence (fun _ ↦ C)
+    (Eventually.of_forall fun i ↦ ?_)
+    (Eventually.of_forall fun i ↦ Eventually.of_forall fun t ht ↦
+      hC _ ⟨uIoc_subset_uIcc ht, hyK i t (uIoc_subset_uIcc ht)⟩)
+    intervalIntegrable_const
+    (Eventually.of_forall fun t ht ↦ (hΦ.tendsto (t, x t)).comp
+      (tendsto_const_nhds.prodMk_nhds (hyx t (uIoc_subset_uIcc ht))))
+  exact ((hΦ.comp_continuousOn (continuousOn_id.prodMk (hy i))).aestronglyMeasurable
+    measurableSet_uIcc).mono_measure (Measure.restrict_mono uIoc_subset_uIcc le_rfl)
 
 end TauCeti

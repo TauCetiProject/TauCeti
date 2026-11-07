@@ -128,6 +128,86 @@ private theorem alternant_eq_X_last_pow_mul_det {n : ℕ} (e : Fin (n + 1) → �
   exact congrArg (y ^ e (Fin.last n) * Matrix.det ·)
     (Matrix.ext fun i j => by rw [Matrix.submatrix_apply, hAU_cs, Matrix.of_apply])
 
+/-- **The reduced block of the branching rule.**  Each entry of the `n × n` block left after
+column reduction of the alternant of the row lengths of `μ` is `x_i - y` times the geometric sum
+`∑_{λ_{j+1} ≤ m ≤ λ_j} x_i ^ (m + n - 1 - j) · y ^ (λ_j - m)`, where `y = x_n`. -/
+private theorem block_eq_mul_sum (n : ℕ) (μ : _root_.YoungDiagram) :
+    (Matrix.of fun i j : Fin n => (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^
+      μ.betaNumber (n + 1) j.castSucc - X i.castSucc ^ μ.betaNumber (n + 1) j.succ *
+        X (Fin.last n) ^ (μ.betaNumber (n + 1) j.castSucc - μ.betaNumber (n + 1) j.succ)) =
+      Matrix.of fun i j : Fin n => (X i.castSucc - X (Fin.last n)) *
+        (Matrix.of fun i j : Fin n =>
+          ∑ m ∈ Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
+            X i.castSucc ^ (m + (n - 1 - j)) * X (Fin.last n) ^ (μ.rowLen j - m)) i j := by
+  refine Matrix.ext fun i j => ?_
+  rw [Matrix.of_apply, Matrix.of_apply, Matrix.of_apply]
+  set y : MvPolynomial (Fin (n + 1)) R := X (Fin.last n) with hy
+  set a := μ.rowLen ((j : ℕ) + 1)
+  set b := μ.rowLen j
+  set c := n - 1 - j
+  have hab : a ≤ b := μ.rowLen_anti _ _ (Nat.le_succ _)
+  have h1 : μ.betaNumber (n + 1) j.castSucc = b + 1 + c := by
+    simp only [YoungDiagram.betaNumber_def, Fin.val_castSucc]
+    omega
+  have h2 : μ.betaNumber (n + 1) j.succ = a + c := by
+    simp only [YoungDiagram.betaNumber_def, Fin.val_succ]
+    omega
+  have h3 : μ.betaNumber (n + 1) j.castSucc - μ.betaNumber (n + 1) j.succ = b + 1 - a := by
+    rw [h1, h2]; omega
+  -- Keep `b + 1` in the bound so the geometric sum matches the interval calculation below.
+  have hab1 : a ≤ b + 1 := Nat.le_succ_of_le hab
+  have hgeom := (Commute.all (X i.castSucc : MvPolynomial (Fin (n + 1)) R) y).geom_sum₂_Ico_mul
+    hab1
+  have hsum : ∑ m ∈ Icc a b, (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^ (m + c) *
+      y ^ (b - m) = X i.castSucc ^ c *
+        ∑ m ∈ Ico a (b + 1), X i.castSucc ^ m * y ^ (b + 1 - 1 - m) := by
+    rw [Finset.Ico_add_one_right_eq_Icc, Finset.mul_sum]
+    refine sum_congr rfl fun m _ => ?_
+    rw [pow_add, Nat.add_sub_cancel]
+    ring
+  rw [hsum, h3, h1, h2]
+  linear_combination (-(X i.castSucc ^ c : MvPolynomial (Fin (n + 1)) R)) * hgeom
+
+/-- **Multilinear expansion of the reduced block.**  The determinant of the block whose entries
+are the geometric sums of `block_eq_mul_sum` is the sum, over the families of row lengths of the
+interlacing shapes, of the determinants obtained by choosing one summand in each column. -/
+private theorem det_sum_block_eq_sum_det (n : ℕ) (μ : _root_.YoungDiagram) :
+    (Matrix.of fun i j : Fin n =>
+      ∑ m ∈ Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
+        (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^ (m + (n - 1 - j)) *
+          X (Fin.last n) ^ (μ.rowLen j - m)).det =
+      ∑ r ∈ Fintype.piFinset (fun j : Fin n =>
+        Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j)),
+        (Matrix.of fun i j : Fin n =>
+          (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^ (r j + (n - 1 - j)) *
+            X (Fin.last n) ^ (μ.rowLen j - r j)).det := by
+  simp_rw [← Matrix.det_transpose (Matrix.of _), Matrix.det.eq_1]
+  have h := (Matrix.detRowAlternating (R := MvPolynomial (Fin (n + 1)) R)
+    (n := Fin n)).toMultilinearMap.map_sum_finset
+      (fun j (m : ℕ) i => X i.castSucc ^ (m + (n - 1 - j)) * X (Fin.last n) ^ (μ.rowLen j - m))
+      (fun j : Fin n => Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j))
+  simp only [AlternatingMap.coe_multilinearMap] at h
+  convert h using 3 with r
+  · congr 1
+    ext j i
+    simp [Finset.sum_apply]
+  · rfl
+
+/-- One summand of `det_sum_block_eq_sum_det`: the block with entries
+`x_i ^ (r_j + n - 1 - j) · y ^ (λ_j - r_j)` has determinant
+`∏_j y ^ (λ_j - r_j)` times the alternant of the exponents `r_j + n - 1 - j` in the first `n`
+letters. -/
+private theorem det_block_term (n : ℕ) (μ : _root_.YoungDiagram) (r : Fin n → ℕ) :
+    (Matrix.of fun i j : Fin n =>
+      (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^ (r j + (n - 1 - j)) *
+        X (Fin.last n) ^ (μ.rowLen j - r j)).det =
+      (∏ j : Fin n, X (Fin.last n) ^ (μ.rowLen j - r j)) *
+        rename Fin.castSucc (alternant (Fin n) R fun j => r j + (n - 1 - j)) := by
+  rw [alternant_def, AlgHom.map_det, ← Matrix.det_mul_row]
+  congr 1
+  ext i j : 1
+  simp [mul_comm]
+
 /-- **The branching rule for alternants.**  For a shape `μ` with at most `n + 1` rows, the
 alternant `a_{λ+δ}` of its row lengths `λ` shifted by the staircase `δ_j = n - j` on `n + 1`
 letters is the Vandermonde factor `∏_{i < n} (x_i - x_n)` times the sum, over the shapes `ν` with
@@ -143,95 +223,34 @@ theorem alternant_eq_prod_mul_sum_interlacingShapes (n : ℕ) (μ : _root_.Young
         ∑ ν ∈ YoungDiagram.interlacingShapes n μ,
           X (Fin.last n) ^ (μ.card - ν.card) *
             rename Fin.castSucc (alternant (Fin n) R fun j => ν.betaNumber n j) := by
-  set y : MvPolynomial (Fin (n + 1)) R := X (Fin.last n) with hy
-  set e : Fin (n + 1) → ℕ := fun j => μ.betaNumber (n + 1) j with he
-  have he_anti : ∀ j : Fin n, e j.succ ≤ e j.castSucc := by
+  have he_anti : ∀ j : Fin n, μ.betaNumber (n + 1) j.succ ≤ μ.betaNumber (n + 1) j.castSucc := by
     intro j
     have := μ.rowLen_anti j (j + 1) (Nat.le_succ _)
-    simp only [he, YoungDiagram.betaNumber_def, Fin.val_succ, Fin.val_castSucc]
+    simp only [YoungDiagram.betaNumber_def, Fin.val_succ, Fin.val_castSucc]
     omega
-  -- After column reduction, each entry of the block is `x_i - y` times a geometric sum.
-  set N : Matrix (Fin n) (Fin n) (MvPolynomial (Fin (n + 1)) R) := Matrix.of fun i j =>
-    ∑ m ∈ Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
-      X i.castSucc ^ (m + (n - 1 - j)) * y ^ (μ.rowLen j - m) with hN
-  have hblock : (Matrix.of fun i j : Fin n => (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^
-      e j.castSucc - X i.castSucc ^ e j.succ * y ^ (e j.castSucc - e j.succ)) =
-      Matrix.of fun i j : Fin n => (X i.castSucc - y) * N i j := by
-    refine Matrix.ext fun i j => ?_
-    rw [Matrix.of_apply, Matrix.of_apply, hN, Matrix.of_apply]
-    set a := μ.rowLen ((j : ℕ) + 1)
-    set b := μ.rowLen j
-    set c := n - 1 - j
-    have hab : a ≤ b := μ.rowLen_anti _ _ (Nat.le_succ _)
-    have h1 : e j.castSucc = b + 1 + c := by
-      simp only [he, YoungDiagram.betaNumber_def, Fin.val_castSucc]
-      omega
-    have h2 : e j.succ = a + c := by
-      simp only [he, YoungDiagram.betaNumber_def, Fin.val_succ]
-      omega
-    have h3 : e j.castSucc - e j.succ = b + 1 - a := by rw [h1, h2]; omega
-    -- Keep `b + 1` in the bound so the geometric sum matches the interval calculation below.
-    have hab1 : a ≤ b + 1 := Nat.le_succ_of_le hab
-    have hgeom := (Commute.all (X i.castSucc : MvPolynomial (Fin (n + 1)) R) y).geom_sum₂_Ico_mul
-      hab1
-    have hsum : ∑ m ∈ Icc a b, (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^ (m + c) *
-        y ^ (b - m) = X i.castSucc ^ c *
-          ∑ m ∈ Ico a (b + 1), X i.castSucc ^ m * y ^ (b + 1 - 1 - m) := by
-      rw [Finset.Ico_add_one_right_eq_Icc, Finset.mul_sum]
-      refine sum_congr rfl fun m _ => ?_
-      rw [pow_add, Nat.add_sub_cancel]
-      ring
-    rw [hsum, h3, h1, h2]
-    linear_combination (-(X i.castSucc ^ c : MvPolynomial (Fin (n + 1)) R)) * hgeom
   -- The right-hand side, as a sum over the families of row lengths of the interlacing shapes.
-  have hsum : ∑ ν ∈ YoungDiagram.interlacingShapes n μ, y ^ (μ.card - ν.card) *
+  have hsum : ∑ ν ∈ YoungDiagram.interlacingShapes n μ, X (Fin.last n) ^ (μ.card - ν.card) *
       rename Fin.castSucc (alternant (Fin n) R fun j => ν.betaNumber n j) =
       ∑ r ∈ Fintype.piFinset fun j : Fin n => Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
-        y ^ (μ.card - ∑ j, r j) *
+        X (Fin.last n) ^ (μ.card - ∑ j, r j) *
           rename Fin.castSucc (alternant (Fin n) R fun j => r j + (n - 1 - j)) := by
     simp only [YoungDiagram.betaNumber_def]
     rw [← YoungDiagram.sum_interlacingShapes_eq_sum_piFinset hμ]
     refine sum_congr rfl fun ν hν => ?_
     rw [YoungDiagram.card_eq_sum_range_rowLen ν (YoungDiagram.mem_interlacingShapes.mp hν).2,
       ← Fin.sum_univ_eq_sum_range]
-  -- Pull the factor `x_i - y` out of each row and expand the block multilinearly in its columns.
-  have hdet_sum : (Matrix.of fun i j : Fin n =>
-      ∑ m ∈ Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j),
-        X i.castSucc ^ (m + (n - 1 - j)) * y ^ (μ.rowLen j - m)).det =
-      ∑ r ∈ Fintype.piFinset (fun j : Fin n =>
-        Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j)),
-        (Matrix.of fun i j : Fin n =>
-          X i.castSucc ^ (r j + (n - 1 - j)) * y ^ (μ.rowLen j - r j)).det := by
-    simp_rw [← Matrix.det_transpose (Matrix.of _), Matrix.det.eq_1]
-    have h := (Matrix.detRowAlternating (R := MvPolynomial (Fin (n + 1)) R)
-      (n := Fin n)).toMultilinearMap.map_sum_finset
-        (fun j (m : ℕ) i => X i.castSucc ^ (m + (n - 1 - j)) * y ^ (μ.rowLen j - m))
-        (fun j : Fin n => Icc (μ.rowLen ((j : ℕ) + 1)) (μ.rowLen j))
-    simp only [AlternatingMap.coe_multilinearMap] at h
-    convert h using 3 with r
-    · congr 1
-      ext j i
-      simp [Finset.sum_apply]
-    · rfl
-  have hel : e (Fin.last n) = μ.rowLen n := by simp [he, YoungDiagram.betaNumber_def]
-  rw [alternant_eq_X_last_pow_mul_det e he_anti, ← hy, hel, hblock, Matrix.det_mul_column, hN,
-    hdet_sum, hsum, mul_left_comm, Finset.mul_sum]
+  have hel : μ.betaNumber (n + 1) (Fin.last n) = μ.rowLen n := by
+    simp [YoungDiagram.betaNumber_def]
+  rw [alternant_eq_X_last_pow_mul_det _ he_anti, hel, block_eq_mul_sum, Matrix.det_mul_column,
+    det_sum_block_eq_sum_det, hsum, mul_left_comm, Finset.mul_sum]
   congr 1
   refine sum_congr rfl fun r hr => ?_
   have hr' : ∀ j ∈ univ, r j ≤ μ.rowLen j := fun j _ =>
     (mem_Icc.mp (Fintype.mem_piFinset.mp hr j)).2
-  have hdet : (Matrix.of fun i j : Fin n =>
-      (X i.castSucc : MvPolynomial (Fin (n + 1)) R) ^ (r j + (n - 1 - j)) *
-        y ^ (μ.rowLen j - r j)).det = (∏ j : Fin n, y ^ (μ.rowLen j - r j)) *
-          rename Fin.castSucc (alternant (Fin n) R fun j => r j + (n - 1 - j)) := by
-    rw [alternant_def, AlgHom.map_det, ← Matrix.det_mul_row]
-    congr 1
-    ext i j : 1
-    simp [mul_comm]
   have hcard : μ.card = ∑ j : Fin n, μ.rowLen j + μ.rowLen n := by
     rw [YoungDiagram.card_eq_sum_range_rowLen μ hμ, sum_range_succ, Fin.sum_univ_eq_sum_range]
   have hle : ∑ j : Fin n, r j ≤ ∑ j : Fin n, μ.rowLen j := sum_le_sum hr'
-  rw [hdet, ← mul_assoc, prod_pow_eq_pow_sum, ← pow_add, sum_tsub_distrib _ hr', hcard]
+  rw [det_block_term, ← mul_assoc, prod_pow_eq_pow_sum, ← pow_add, sum_tsub_distrib _ hr', hcard]
   congr 2
   omega
 

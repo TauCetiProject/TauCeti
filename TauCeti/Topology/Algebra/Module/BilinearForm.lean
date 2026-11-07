@@ -58,8 +58,12 @@ use.
   space (`ContinuousLinearMap.dual_finrank_eq`).
 * `ContinuousLinearMap.isInvertible_of_separatingLeft`: in finite dimensions, a map into the dual
   with left-separating bilinear form is invertible.
+* `TauCeti.isOpen_setOf_nondegenerate`: nondegeneracy is open for a family of bilinear forms
+  on a finite-dimensional space with continuous scalar evaluations.
 * `ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm`: in finite dimensions,
   the continuous bilinear forms with nondegenerate bilinear form are an open set.
+* `ContinuousAt.eventually_toBilinForm_nondegenerate`: in finite dimensions, nondegeneracy of a
+  continuous family of bilinear forms at a point holds on a neighbourhood of the point.
 * `ContinuousLinearMap.isInvertible_of_pos`: in finite dimensions, a map into the dual that is
   positive on nonzero diagonal vectors is invertible.
 * `ContinuousLinearMap.exists_pos_forall_le_neg_mul_sq`: a continuous bilinear form negative on
@@ -186,23 +190,43 @@ theorem isInvertible_toContinuousBilinearMap_iff_separatingLeft
 
 end FiniteDimensional
 
+/-- Nondegeneracy is open for a family of bilinear forms on a finite-dimensional space.
+Only continuity of each scalar evaluation is required. -/
+theorem isOpen_setOf_nondegenerate
+    {𝕜 V X : Type*} [Field 𝕜] [TopologicalSpace 𝕜] [IsTopologicalRing 𝕜] [T1Space 𝕜]
+    [AddCommGroup V] [Module 𝕜 V] [FiniteDimensional 𝕜 V] [TopologicalSpace X]
+    {B : X → LinearMap.BilinForm 𝕜 V}
+    (hB : ∀ v w, Continuous fun x ↦ B x v w) :
+    IsOpen {x | (B x).Nondegenerate} := by
+  let b := Module.finBasis 𝕜 V
+  have hc : Continuous fun x ↦ ((B x).toMatrix b).det := by
+    refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
+    simpa only [LinearMap.BilinForm.toMatrix_apply] using hB (b i) (b j)
+  have hset : {x | (B x).Nondegenerate} =
+      (fun x ↦ ((B x).toMatrix b).det) ⁻¹' {0}ᶜ := by
+    ext x
+    exact LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b
+  rw [hset]
+  exact isOpen_compl_singleton.preimage hc
+
 /-- In finite dimensions, the continuous bilinear forms whose bilinear form is nondegenerate form
 an open set. -/
 theorem _root_.ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm
     {𝕜 E : Type*} [NontriviallyNormedField 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
     [FiniteDimensional 𝕜 E] :
     IsOpen {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} := by
-  let b := Module.finBasis 𝕜 E
-  have hc : Continuous fun B : E →L[𝕜] E →L[𝕜] 𝕜 ↦ (B.toBilinForm.toMatrix b).det := by
-    refine Continuous.matrix_det (continuous_pi fun i ↦ continuous_pi fun j ↦ ?_)
-    simpa only [LinearMap.BilinForm.toMatrix_apply, ContinuousLinearMap.toBilinForm_apply] using
+  exact isOpen_setOf_nondegenerate fun v w ↦ by
+    simpa only [ContinuousLinearMap.toBilinForm_apply] using
       (continuous_id.clm_apply continuous_const).clm_apply continuous_const
-  have hset : {B : E →L[𝕜] E →L[𝕜] 𝕜 | B.toBilinForm.Nondegenerate} =
-      (fun B ↦ (B.toBilinForm.toMatrix b).det) ⁻¹' {0}ᶜ := by
-    ext B
-    exact LinearMap.BilinForm.nondegenerate_iff_det_ne_zero b
-  rw [hset]
-  exact isOpen_compl_singleton.preimage hc
+
+/-- In finite dimensions, nondegeneracy of the bilinear form of a continuous family of continuous
+bilinear forms at a point persists on a neighbourhood of the point. -/
+theorem _root_.ContinuousAt.eventually_toBilinForm_nondegenerate
+    {X 𝕜 E : Type*} [TopologicalSpace X] [NontriviallyNormedField 𝕜] [NormedAddCommGroup E]
+    [NormedSpace 𝕜 E] [FiniteDimensional 𝕜 E] {g : X → E →L[𝕜] E →L[𝕜] 𝕜} {x : X}
+    (hg : ContinuousAt g x) (hnd : (g x).toBilinForm.Nondegenerate) :
+    ∀ᶠ y in nhds x, (g y).toBilinForm.Nondegenerate :=
+  hg.eventually (ContinuousLinearMap.isOpen_setOf_nondegenerate_toBilinForm.mem_nhds hnd)
 
 /-- In finite dimensions, a continuous linear map into the dual that is positive on nonzero
 diagonal vectors is invertible. This is the musical isomorphism of a Riemannian metric. -/

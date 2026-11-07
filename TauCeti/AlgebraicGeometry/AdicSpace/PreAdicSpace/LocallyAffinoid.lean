@@ -97,6 +97,13 @@ theorem isLocallyAffinoid_iff_sSup_eq_top : isLocallyAffinoid X ↔ sSup X.affin
   · rw [h]
     exact Opens.mem_top x
 
+variable {X} in
+/-- An open affinoid subspace is quasi-compact: its underlying space is spectral. -/
+theorem isCompact_of_mem_affinoidOpens {U : Opens X} (hU : U ∈ X.affinoidOpens) :
+    IsCompact (U : Set X) :=
+  isCompact_iff_compactSpace.mpr
+    (spectralSpace_of_isAffinoid ((mem_propOpens_iff _).mp hU)).toCompactSpace
+
 /-- For a locally affinoid object `X`, the indexed supremum of its open affinoid subspaces is
 `⊤`. -/
 theorem isLocallyAffinoid.iSup_affinoidOpens_eq_top {X : PreAdicSpace.{u}}
