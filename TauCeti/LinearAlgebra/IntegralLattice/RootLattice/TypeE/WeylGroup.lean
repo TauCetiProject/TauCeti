@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.IntegralLattice.Isometry.Reflection
+import TauCeti.LinearAlgebra.IntegralLattice.Isometry.NormShell
 public import TauCeti.LinearAlgebra.IntegralLattice.RootLattice.TypeE.Roots
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Datum
 import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.E8.Automorphism
@@ -130,17 +131,16 @@ private theorem dotProduct_typeE₈WeightEquiv (x y : typeE₈RootLattice) :
 /-- The permutation of the 240 root indices induced by an isometry of the E₈ lattice. -/
 private noncomputable def typeE₈RootPerm (g : Isometry typeE₈RootLattice typeE₈RootLattice) :
     Equiv.Perm (Fin 240) :=
-  typeE₈RootEquiv.trans <| (g.carrierEquiv.toEquiv.subtypeEquiv fun x ↦
-    (g.carrierEquiv_mem_vectorsOfNorm_iff x 2).symm).trans typeE₈RootEquiv.symm
+  typeE₈RootEquiv.trans <|
+    (Isometry.normShellHom typeE₈RootLattice 2 g).trans typeE₈RootEquiv.symm
 
 private theorem typeE₈RootVector_typeE₈RootPerm
     (g : Isometry typeE₈RootLattice typeE₈RootLattice) (i : Fin 240) :
     typeE₈RootVector (typeE₈RootPerm g i) = g.carrierEquiv (typeE₈RootVector i) := by
-  have h : (typeE₈RootEquiv (typeE₈RootPerm g i) : typeE₈RootLattice) =
-      g.carrierEquiv (typeE₈RootEquiv i) := by
-    simp only [typeE₈RootPerm, Equiv.trans_apply, Equiv.apply_symm_apply,
-      Equiv.subtypeEquiv_apply, LinearEquiv.coe_toEquiv]
-  simpa only [typeE₈RootEquiv_apply] using h
+  apply Subtype.ext
+  simpa only [← typeE₈RootEquiv_apply, typeE₈RootPerm, Equiv.trans_apply,
+    Equiv.apply_symm_apply, Isometry.coe_carrierEquiv_apply] using
+    Isometry.coe_normShellHom_apply g 2 (typeE₈RootEquiv i)
 
 /-- The automorphism of the pinned E₈ datum induced by an isometry of the E₈ lattice: its weight
 map is the isometry, transported along the weight identification. -/

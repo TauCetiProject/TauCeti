@@ -22,6 +22,9 @@ the product of their first nonzero homogeneous Taylor components remains nonzero
 
 These coefficient formulas supply the algebraic input for choosing uniform directions in
 families of constant ambient order, and hence for analytic preparation of discriminants.
+Restricting to lines through the origin also detects homogeneity over an infinite domain:
+`MvPolynomial.isHomogeneous_iff_forall_eval_smul` says that `p` is homogeneous of degree `n`
+exactly when `eval (a • x) p = a ^ n • eval x p` for all `a` and `x`.
 
 ## References
 
@@ -211,6 +214,31 @@ theorem exists_natTrailingDegree_aeval_C_add_C_mul_X_eq (p : MvPolynomial σ R)
     simpa only [hm] using hv () (Finset.mem_singleton_self ())
   refine ⟨v, Polynomial.trailingDegree_eq_top.not.1 (by simp [hdegree]), ?_⟩
   exact Polynomial.natTrailingDegree_eq_of_trailingDegree_eq_some hdegree
+
+/-- Over an infinite domain, a polynomial is homogeneous of degree `n` exactly when scaling the
+point by `a` scales its value by `a ^ n`. The reverse implication needs infinitely many scalars:
+over a finite field with `q` elements, `X ^ q - X` vanishes everywhere without being
+homogeneous. -/
+theorem isHomogeneous_iff_forall_eval_smul {p : MvPolynomial σ R} {n : ℕ} :
+    p.IsHomogeneous n ↔ ∀ (a : R) (x : σ → R), eval (a • x) p = a ^ n • eval x p := by
+  refine ⟨fun hp a x => hp.eval_smul x a, fun h => ?_⟩
+  -- The restriction of `p` to the line through `x` is the monomial `eval x p • t ^ n`, so its
+  -- coefficient of degree `m ≠ n`, the degree-`m` component evaluated at `x`, vanishes.
+  have hcomp : ∀ m ≠ n, homogeneousComponent m p = 0 := by
+    intro m hm
+    refine MvPolynomial.funext fun x => ?_
+    have hQ : aeval (fun i ↦ Polynomial.C (x i) * Polynomial.X) p =
+        Polynomial.monomial n (eval x p) := Polynomial.funext fun a => by
+      have hline := eval_aeval_C_add_C_mul_X p 0 x a
+      simp only [Pi.zero_apply, map_zero, zero_add] at hline
+      rw [hline, h, Polynomial.eval_monomial, smul_eq_mul, mul_comm]
+    rw [map_zero, ← coeff_aeval_C_mul_X, hQ, Polynomial.coeff_monomial_of_ne _ hm]
+  have hp : p = homogeneousComponent n p := by
+    conv_lhs => rw [← sum_homogeneousComponent p]
+    refine Finset.sum_eq_single n (fun m _ hm => hcomp m hm) fun hn => ?_
+    exact homogeneousComponent_eq_zero n p (by simpa [Nat.lt_succ_iff] using hn)
+  rw [hp]
+  exact homogeneousComponent_isHomogeneous n p
 
 end InfiniteDomain
 

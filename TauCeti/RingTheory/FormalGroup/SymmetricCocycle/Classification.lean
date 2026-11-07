@@ -224,15 +224,6 @@ section Polynomial
 
 variable {R : Type*} [CommRing R]
 
-/-- The coefficient of `XⁱYⁿ⁻ⁱ` in `C_n`, for `0 < i < n`, is `n.choose i / d_n`. -/
-private theorem coeff_single_add_single_lazardCocycle {n i : ℕ} (hi : 0 < i) (hin : i < n) :
-    (lazardCocycle n R).coeff (Finsupp.single 0 i + Finsupp.single 1 (n - i)) =
-      ((n.choose i / lazardGcd n : ℕ) : R) := by
-  rw [coeff_lazardCocycle]
-  simp only [Finsupp.add_apply, Finsupp.single_apply]
-  rw [ite_eq_left ⟨by simp; omega, by simp; omega, by simp; omega⟩]
-  simp
-
 /-- The coefficients `bᵢ` of `XⁱYⁿ⁻ⁱ` in a symmetric additive 2-cocycle satisfy the coefficient
 equations in degree `n`. -/
 theorem isSymmetricCocycleCoeff_coeff {f : MvPolynomial (Fin 2) R} (hs : f.IsSymmetric)

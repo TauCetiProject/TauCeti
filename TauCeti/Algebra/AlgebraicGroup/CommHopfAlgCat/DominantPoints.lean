@@ -113,4 +113,19 @@ theorem mapPointsFunctor_app_surjective_of_injective
   exact (congrArg (BialgHom.mapDomain (baseChangeMap (K := L) f).hom)
     (eK.apply_symm_apply q)).trans hq
 
+omit [IsAlgClosed k] in
+/-- An injective coordinate homomorphism of finite-type affine group schemes is surjective
+on convolution-group points valued in any algebraically closed extension field. -/
+theorem mapDomain_surjective_of_injective
+    (L : Type w) [Field L] [Algebra k L] [IsAlgClosed L] (f : H ⟶ K)
+    (hf : Function.Injective f.hom) :
+    Function.Surjective (BialgHom.mapDomain (A := L) f.hom) := by
+  intro p
+  obtain ⟨q, hq⟩ := mapPointsFunctor_app_surjective_of_injective L f hf p
+  refine ⟨q, ?_⟩
+  -- Rewriting fails at reducible transparency across the point functor's `CommAlgCat`
+  -- coefficient carrier and the raw field `L`. Apply the two pointwise API equations instead.
+  exact (BialgHom.mapDomain_apply f.hom q).trans
+    ((CommHopfAlgCat.Hom.mapPointsFunctor_app_apply f (CommAlgCat.of k L) q).symm.trans hq)
+
 end TauCeti.CommHopfAlgCat

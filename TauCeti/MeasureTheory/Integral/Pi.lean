@@ -9,6 +9,8 @@ public import Mathlib.Analysis.SpecialFunctions.Exp
 public import Mathlib.MeasureTheory.Integral.Pi
 public import Mathlib.MeasureTheory.Integral.Prod
 public import TauCeti.MeasureTheory.Constructions.Pi
+import Mathlib.MeasureTheory.Integral.Marginal
+import TauCeti.MeasureTheory.Function.Lp.Iterated
 
 /-!
 # Integrals over finite product measures
@@ -33,8 +35,11 @@ Mathlib's: reduce a `Fin (n + 1)`-indexed product to a binary product measure al
 
 * `TauCeti.lintegral_fintype_prod_eq_prod`: the product formula, for measurable factors.
 * `TauCeti.lintegral_fintype_prod_eq_prod₀`: the same for almost everywhere measurable factors.
+* `TauCeti.lintegral_pi_update`: refreshing a coordinate preserves lower integrals.
+* `TauCeti.ae_memLp_two_pi_update`: almost every refreshed coordinate slice is in L².
 * `TauCeti.integral_pi_eq_integral_integral_update`: the two-coordinate Fubini
   identity.
+* `TauCeti.integral_pi_succ`: splitting off the zeroth coordinate of a finite product measure.
 * `TauCeti.integral_pi_sum_mul`: Fubini over a sum of index types, for a product of a function of
   each block of coordinates.
 * `TauCeti.setIntegral_prod_le_exp_mul_pow`: the exponential-moment (Chernoff) bound for the
@@ -52,6 +57,38 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {α : ι → Type*}
   [∀ i, MeasurableSpace (α i)]
+
+/-- Refreshing one coordinate with an independent sample preserves the lower integral over a
+finite product of probability measures. -/
+theorem lintegral_pi_update (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {g : (∀ i, α i) → ℝ≥0∞} (hg : Measurable g) (i : ι) :
+    (∫⁻ x, ∫⁻ y, g (Function.update x i y) ∂μ i ∂Measure.pi μ) =
+      ∫⁻ x, g x ∂Measure.pi μ := by
+  have hm : Measurable (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2)) :=
+    hg.comp measurable_update'
+  apply lintegral_eq_of_lmarginal_eq (μ := μ) {i} hm.lintegral_prod_right hg
+  simp only [lmarginal_singleton]
+  funext x
+  simp only [Function.update_idem]
+  simp
+
+/-- For an L² function on a finite product of probability spaces, almost every one-coordinate
+slice obtained by an independent refresh is again in L². -/
+theorem ae_memLp_two_pi_update (μ : ∀ i, Measure (α i)) [∀ i, IsProbabilityMeasure (μ i)]
+    {g : (∀ i, α i) → ℝ} (hg : Measurable g) (hL : MemLp g 2 (Measure.pi μ)) (i : ι) :
+    ∀ᵐ x ∂Measure.pi μ, MemLp (fun y ↦ g (Function.update x i y)) 2 (μ i) := by
+  have hm : Measurable (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2)) :=
+    hg.comp measurable_update'
+  have hupdate : MemLp (fun q : (∀ j, α j) × α i ↦ g (Function.update q.1 i q.2))
+      2 ((Measure.pi μ).prod (μ i)) := by
+    apply (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
+      hm.aestronglyMeasurable).mpr
+    simp only [ENNReal.toReal_ofNat]
+    rw [lintegral_prod _ (hm.enorm.pow_const (2 : ℝ)).aemeasurable,
+      lintegral_pi_update μ (hg.enorm.pow_const (2 : ℝ)) i]
+    exact (eLpNorm_lt_top_iff_lintegral_rpow_enorm_lt_top (p := 2) (by norm_num) (by norm_num)
+      hg.aestronglyMeasurable).mp hL
+  exact hupdate.ae_memLp_prod_right
 
 /-- **Fubini after a two-coordinate refresh.** An integral against a finite product of sigma-finite
 measures is an outer integral over the assignment and an inner integral over a fresh independent
@@ -197,5 +234,17 @@ theorem setIntegral_prod_le_exp_mul_pow {ι : Type*} [Fintype ι] {g : ℝ → �
     _ = _ := by
       rw [integral_const_mul,
         integral_fintype_prod_volume_eq_pow fun x ↦ Real.exp (-(l * x)) * g x]
+
+/-- Integrating over a finite product measure on `Fin (n + 1)` splits off the zeroth coordinate.
+The remaining coordinates retain their dependent types, and the codomain of `f` can be any real
+normed space. -/
+theorem integral_pi_succ {n : ℕ} {α : Fin (n + 1) → Type*} [∀ i, MeasurableSpace (α i)]
+    (μ : ∀ i, Measure (α i)) [∀ i, SigmaFinite (μ i)] {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (f : (∀ i, α i) → E) :
+    ∫ x, f x ∂Measure.pi μ =
+      ∫ p : α 0 × (∀ i : Fin n, α (Fin.succAbove (0 : Fin (n + 1)) i)),
+        f ((MeasurableEquiv.piFinSuccAbove α 0).symm p)
+          ∂((μ 0).prod (Measure.pi fun i ↦ μ (Fin.succAbove (0 : Fin (n + 1)) i))) := by
+  rw [← ((measurePreserving_piFinSuccAbove μ 0).symm).integral_comp']
 
 end TauCeti

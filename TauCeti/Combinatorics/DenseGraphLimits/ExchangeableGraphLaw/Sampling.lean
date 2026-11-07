@@ -8,7 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.ExchangeableGraphLaw.Dissociated
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Consistency
 public import TauCeti.Combinatorics.DenseGraphLimits.Sampling.Unbiased
-import TauCeti.MeasureTheory.Measure.FiniteOrder
+import TauCeti.MeasureTheory.Measure.WellFoundedOrder
 
 /-!
 # The sampling laws of a graphon form an exchangeable graph law
@@ -112,7 +112,7 @@ theorem sampleGraph_eq_of_forall_homDensity_eq (U : Graphon Ω₁ μ₁) (W : Gr
     (h : ∀ (F : SimpleGraph (Fin n)) [DecidableRel F.Adj], homDensity F U = homDensity F W) :
     sampleGraph U n = sampleGraph W n := by
   classical
-  refine Measure.ext_of_Ici_of_finite _ _ fun F => ?_
+  refine Measure.ext_of_Ici_of_wellFoundedGT _ _ fun F => ?_
   rw [sampleGraph_Ici, sampleGraph_Ici, h F]
 
 end CrossCarrier

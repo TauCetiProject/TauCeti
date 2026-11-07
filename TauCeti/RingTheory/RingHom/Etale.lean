@@ -26,12 +26,17 @@ Together with the stability of étale ring maps under composition and cobase cha
 finite presentability, this makes filtered colimits of étale ring maps stable under composition
 (`CategoryTheory.MorphismProperty.isStableUnderComposition_ind`).
 
+Composition preserves étaleness also when the three rings live in different universes
+(`RingHom.Etale.comp`). This is the ring-homomorphism form of `Algebra.Etale.comp`.
+
 ## Main results
 
 * `RingHom.Etale.preIndSpreads`: étale ring maps out of a small filtered colimit of commutative
   rings are pushouts of étale ring maps out of a stage.
 * `RingHom.Etale.isStableUnderComposition_ind`: filtered colimits of étale ring maps, in the
   sense of `CategoryTheory.MorphismProperty.ind`, are stable under composition.
+* `RingHom.Etale.comp`: the composite of two étale ring homomorphisms, in arbitrary universes, is
+  étale.
 
 ## References
 
@@ -125,5 +130,17 @@ instance Etale.isStableUnderComposition_ind :
     (MorphismProperty.ind.{u}
       (toMorphismProperty Etale : MorphismProperty CommRingCat.{u})).IsStableUnderComposition :=
   MorphismProperty.isStableUnderComposition_ind Etale.toMorphismProperty_le_isFinitelyPresentable
+
+section Comp
+
+variable {R S T : Type*} [CommRing R] [CommRing S] [CommRing T]
+
+/-- The composite of two étale ring homomorphisms is étale. -/
+theorem Etale.comp {f : R →+* S} {g : S →+* T} (hg : g.Etale) (hf : f.Etale) :
+    (g.comp f).Etale := by
+  algebraize [f, g, g.comp f]
+  exact Algebra.Etale.comp R S T
+
+end Comp
 
 end RingHom

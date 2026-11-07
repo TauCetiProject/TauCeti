@@ -144,6 +144,12 @@ def cechComplexRestrict (W : Opens X) (U : ι → Opens X) (P : X.Presheaf A) :
   cechComplexPullback W.inclusion' U
     (Functor.whiskerRight (NatTrans.op W.isOpenEmbedding.isOpenMap.adjunction.counit) P)
 
+/-- Open restriction is pullback along the inclusion, with its canonical coefficient map. -/
+theorem cechComplexRestrict_eq (W : Opens X) (U : ι → Opens X) (P : X.Presheaf A) :
+    cechComplexRestrict W U P = cechComplexPullback W.inclusion' U
+      (Functor.whiskerRight (NatTrans.op W.isOpenEmbedding.isOpenMap.adjunction.counit) P) :=
+  (rfl)
+
 /-- A tuple coordinate of open restriction is the usual restriction along the inclusion of
 the corresponding intersection in the open subspace into the ambient intersection. -/
 @[simp, reassoc]

@@ -5,8 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Analysis.Calculus.Gradient.Basic
 public import Mathlib.Analysis.InnerProductSpace.Harmonic.Basic
 import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
+import TauCeti.Analysis.InnerProductSpace.Harmonic.Basic
 import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 
 /-!
@@ -14,17 +16,20 @@ import TauCeti.Analysis.InnerProductSpace.Harmonic.Weyl
 
 Let `E` be a finite-dimensional real inner product space. If `f : E → ℝ` is harmonic at `x`, then
 so is each of its directional derivatives `y ↦ Df(y) v`
-(`InnerProductSpace.HarmonicAt.fderiv_apply`). Consequently every estimate proved for harmonic
-functions, such as the decay of their oscillation and of their integrals on shrinking balls,
-applies verbatim to the partial derivatives of a harmonic function, and hence controls its
-gradient. This is how gradient decay estimates for solutions of constant-coefficient elliptic
-equations are reduced to the harmonic case.
+(`InnerProductSpace.HarmonicAt.fderiv_apply`), and so is its gradient `∇f`, whose coordinates in an
+orthonormal basis are directional derivatives (`InnerProductSpace.HarmonicAt.gradient`).
+Consequently every estimate proved for harmonic functions, such as the decay of their oscillation
+and of their integrals on shrinking balls, applies verbatim to the partial derivatives and to the
+gradient of a harmonic function. This is how gradient decay estimates for solutions of
+constant-coefficient elliptic equations are reduced to the harmonic case.
 
 ## Main declarations
 
 * `InnerProductSpace.HarmonicAt.fderiv_apply`: a directional derivative of a function harmonic at
   `x` is harmonic at `x`.
 * `InnerProductSpace.HarmonicOnNhd.fderiv_apply`: the same on a set.
+* `InnerProductSpace.HarmonicAt.gradient` and `InnerProductSpace.HarmonicOnNhd.gradient`: the
+  gradient of a harmonic function is harmonic.
 
 ## Implementation notes
 
@@ -42,6 +47,7 @@ it is harmonic by Weyl's lemma (`TauCeti.harmonicOnNhd_iff_weaklyHarmonicOn`).
 public section
 
 open MeasureTheory TopologicalSpace
+open scoped Gradient
 
 namespace InnerProductSpace
 
@@ -74,5 +80,23 @@ the directional derivative `y ↦ Df(y) v`, for every direction `v`. -/
 theorem HarmonicOnNhd.fderiv_apply {s : Set E} (hf : HarmonicOnNhd f s) (v : E) :
     HarmonicOnNhd (fun y => fderiv ℝ f y v) s :=
   fun x hx => (hf x hx).fderiv_apply v
+
+/-- **The gradient of a harmonic function is harmonic.** If `f` is harmonic at `x`, then so is
+its gradient `∇f`, as a vector-valued function: in an orthonormal basis its coordinates are the
+directional derivatives of `f`. -/
+theorem HarmonicAt.gradient {x : E} (hf : HarmonicAt f x) : HarmonicAt (∇ f) x := by
+  set b := stdOrthonormalBasis ℝ E
+  have h : ∇ f = fun y => ∑ i, fderiv ℝ f y (b i) • b i := by
+    funext y
+    conv_lhs => rw [← b.sum_repr' (∇ f y)]
+    simp only [real_inner_comm _ (b _), inner_gradient_left]
+  rw [h]
+  exact HarmonicAt.sum _ fun i _ =>
+    (hf.fderiv_apply (b i)).comp_CLM ((1 : ℝ →L[ℝ] ℝ).smulRight (b i))
+
+/-- **The gradient of a harmonic function is harmonic.** If `f` is harmonic on `s`, then so is
+its gradient `∇f`. -/
+theorem HarmonicOnNhd.gradient {s : Set E} (hf : HarmonicOnNhd f s) : HarmonicOnNhd (∇ f) s :=
+  fun x hx => (hf x hx).gradient
 
 end InnerProductSpace

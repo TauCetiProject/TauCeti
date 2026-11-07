@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.MeasureTheory.Integral.ExpDecay
+public import TauCeti.MeasureTheory.Integral.Exp.Decay
 
 /-!
 # The Laplace transform of `|sin|`

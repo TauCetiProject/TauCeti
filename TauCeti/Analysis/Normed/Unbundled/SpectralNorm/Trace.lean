@@ -10,6 +10,7 @@ public import Mathlib.RingTheory.Trace.Basic
 
 import Mathlib.Analysis.Normed.Ring.Ultra
 import TauCeti.Analysis.Normed.Module.Dual.Bounded
+import TauCeti.Analysis.Normed.Unbundled.SpectralNorm.Irreducible
 
 /-!
 # Spectral bounds for the trace and linear functionals
@@ -42,14 +43,9 @@ theorem norm_trace_le_spectralNorm (x : L) :
   refine (mul_le_of_le_one_left (norm_nonneg _)
     (IsUltrametricDist.norm_natCast_le_one K _)).trans ?_
   rw [Polynomial.nextCoeff_of_natDegree_pos hr]
-  have h := le_ciSup (spectralValueTerms_bddAbove (minpoly K x))
-    ((minpoly K x).natDegree - 1)
-  rw [spectralValueTerms_of_lt_natDegree _ (Nat.sub_lt hr one_pos)] at h
-  have hdegree : ((minpoly K x).natDegree : ℝ) -
-      (((minpoly K x).natDegree - 1 : ℕ) : ℝ) = 1 := by
-    rw [Nat.cast_sub hr, Nat.cast_one, sub_sub_cancel]
-  rw [hdegree, div_one, Real.rpow_one] at h
-  simpa only [spectralNorm, spectralValue] using h
+  simpa only [spectralNorm, Nat.sub_sub_self hr, pow_one] using
+    (minpoly.monic (Algebra.IsIntegral.isIntegral (R := K) x)).norm_coeff_le_spectralValue_pow
+      ((minpoly K x).natDegree - 1)
 
 end TauCeti
 

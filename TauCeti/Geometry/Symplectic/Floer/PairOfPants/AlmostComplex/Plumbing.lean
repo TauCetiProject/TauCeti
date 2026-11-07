@@ -186,17 +186,7 @@ theorem contMDiffAt_plumbedAlmostComplex {n : ℕ∞} (hq : q ≠ inf)
     have hw'1 : w' ≠ 1 := fun h => hw.2
       ((q.plumbingMap_sub_endCenter_div L w).symm.trans (congrArg (q.plumbingMap L) h))
     -- The inserted piece also moves with the length through the inverse plumbing map.
-    have hfactor : ContDiff ℝ n (fun l : ℝ => q.plumbingFactor l) := by
-      have hr : ContDiff ℝ n (fun l : ℝ => Real.exp (-(2 * π * l)) / 2) := by fun_prop
-      simpa only [plumbingFactor_eq_mul_ofReal, Function.comp_apply, Complex.ofRealCLM_apply] using
-        (contDiff_const (𝕜 := ℝ) (c := q.endScale)).mul (Complex.ofRealCLM.contDiff.comp hr)
-    have hf : ContDiffAt ℝ n
-        (fun p : ℝ × ℂ => (p.2 - q.endCenter) / q.plumbingFactor p.1) (L, w) := by
-      have hg : ContDiff ℝ n (fun p : ℝ × ℂ => q.plumbingFactor p.1) :=
-        hfactor.comp contDiff_fst
-      simpa only [div_eq_mul_inv, Pi.inv_apply] using
-        ((contDiff_snd (𝕜 := ℝ)).sub (contDiff_const (c := q.endCenter))).contDiffAt.mul
-          ((hg.contDiffAt (x := (L, w))).inv (q.plumbingFactor_ne_zero L))
+    have hf := (q.contDiff_inverse_plumbingMap (n := n)).contDiffAt (x := (L, w))
     have hcoord : ContMDiffAt (𝓘(ℝ, ℝ).prod (𝓘(ℝ, ℂ).prod I)) 𝓘(ℝ, ℂ) n
         (fun p : ℝ × (ℂ × M) => (p.2.1 - q.endCenter) / q.plumbingFactor p.1) (L, (w, x)) :=
       hf.contMDiffAt.comp (f := fun p : ℝ × (ℂ × M) => (p.1, p.2.1)) (L, (w, x))

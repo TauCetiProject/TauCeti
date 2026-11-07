@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.Newforms.Fricke
 public import TauCeti.NumberTheory.ModularForms.Petersson.FiniteIndex
 import TauCeti.Data.ZMod.Units
 import TauCeti.NumberTheory.ModularForms.Newforms.PeterssonAdjoint
-import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
+import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 import TauCeti.NumberTheory.ModularForms.Petersson.AtkinLehner
 import TauCeti.NumberTheory.ModularForms.Petersson.Conjugate
 

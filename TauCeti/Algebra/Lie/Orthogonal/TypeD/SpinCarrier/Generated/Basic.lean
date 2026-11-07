@@ -56,7 +56,8 @@ identified with a pinned simply connected group scheme of type `Dₙ`.
 * J. S. Milne, *Algebraic Groups* (2017), §2.h.
 
 The free base-change proof follows the type-`B` spin generated subgroup in
-`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic`.
+`TauCeti.Algebra.Lie.Orthogonal.TypeB.SpinCarrier.Generated.Basic`. Compatibility with the
+factored generator maps follows `TauCeti.Algebra.Lie.E7.Minuscule.Generated.RelativeBaseChange`.
 -/
 
 public section
@@ -180,6 +181,20 @@ theorem generatedCoordinateMap_comp_generatedCoordinateLift (j : Sum (Fin n ⊕ 
   generatedCoordinateMap_comp_generatedCoordinateDesc n hn A (generatorCoordinateMap n hn A j)
     ((le_generatedDefiningIdeal_iff n hn A _).mp le_rfl j)
 
+/-- The numbered root-subgroup coordinate maps of the generated spin group are surjective.
+Thus the numbered root subgroups are closed subgroups of the generated group. -/
+theorem generatedCoordinateLift_inl_surjective (k : Fin n ⊕ Fin n) :
+    Function.Surjective (generatedCoordinateLift n hn A (.inl k)).hom := by
+  have h : Function.Surjective
+      (generatedCoordinateMap n hn A ≫ generatedCoordinateLift n hn A (.inl k)).hom := by
+    rw [generatedCoordinateMap_comp_generatedCoordinateLift, generatorCoordinateMap_inl,
+      ← coordinateMap_comp_rootSubgroupToBaseChangeCoordinateMap,
+      _root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp]
+    exact (rootSubgroupToBaseChangeCoordinateMap_surjective n hn A k).comp
+      (coordinateMap_surjective n hn A)
+  rw [_root_.CommHopfAlgCat.hom_comp, BialgHom.coe_comp] at h
+  exact Function.Surjective.of_comp h
+
 /-- The generator lift is the unique factorization through the generated subgroup. -/
 theorem generatedCoordinateLift_unique (j : Sum (Fin n ⊕ Fin n) Unit)
     (g : generatedCoordinateHopfAlgebra n hn A ⟶ generatorCoordinateAlgebra n A j)
@@ -258,6 +273,40 @@ theorem baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebra
         generatedCoordinateMap n hn K :=
   CommHopfAlgCat.baseChangeMap_mkQuotient_comp_quotientBaseChangeIsoOfMapEq_hom _ _ _
     (map_baseChangeHopfIdeal_generatedDefiningIdeal n hn k K)
+
+/-- Free scalar extension respects every factored root and torus coordinate map. -/
+@[reassoc (attr := simp)]
+theorem baseChangeMap_generatedCoordinateLift_comp_generatorCoordinateAlgebraBaseChangeIso_hom
+    [Module.Free k K] (j : (Fin n ⊕ Fin n) ⊕ Unit) :
+    CommHopfAlgCat.baseChangeMap (K := K) (generatedCoordinateLift n hn k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom =
+      (generatedCoordinateHopfAlgebraBaseChangeIso n hn k K).hom ≫
+        generatedCoordinateLift n hn K j := by
+  let F := CommHopfAlgCat.baseChangeFunctor (k := k) (K := K)
+  have := ConcreteCategory.epi_of_surjective _
+    (CommHopfAlgCat.baseChangeMap_surjective (K := K) _
+      (generatedCoordinateMap_surjective n hn k))
+  rw [← CommHopfAlgCat.baseChangeFunctor_map] at this ⊢
+  apply (cancel_epi (F.map (generatedCoordinateMap n hn k))).mp
+  have hquot :=
+    baseChangeMap_generatedCoordinateMap_comp_generatedCoordinateHopfAlgebraBaseChangeIso_hom_assoc
+      n hn k K (generatedCoordinateLift n hn K j)
+  calc
+    _ = F.map (generatorCoordinateMap n hn k j) ≫
+        (generatorCoordinateAlgebraBaseChangeIso n k K j).hom := by
+      rw [← Category.assoc, ← Functor.map_comp,
+        generatedCoordinateMap_comp_generatedCoordinateLift]
+    _ = (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom ≫
+        generatorCoordinateMap n hn K j := by
+      rw [CommHopfAlgCat.baseChangeFunctor_map]
+      exact (Iso.inv_comp_eq
+        (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n))).mp
+        (generatorCoordinateMap_baseChange n hn k K j)
+    _ = (GeneralLinear.coordinateHopfAlgebraBaseChangeIso k K (dimension n)).hom ≫
+        generatedCoordinateMap n hn K ≫ generatedCoordinateLift n hn K j := by
+      rw [generatedCoordinateMap_comp_generatedCoordinateLift]
+    _ = _ := by
+      simpa only [CommHopfAlgCat.baseChangeFunctor_map] using hquot.symm
 
 end BaseChange
 

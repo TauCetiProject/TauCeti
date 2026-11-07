@@ -436,7 +436,7 @@ theorem comp_chevalleyInvolution_ofSubalgebras_symm
 
 /-- **The pinned Chevalley involution exchanges opposite root spaces.** For every Cartan
 functional `χ`, it carries the `χ`-root space onto the root space indexed by `-χ`. -/
-@[simp]
+@[simp↓]
 theorem map_rootSpace_chevalleyInvolution
     (χ : Module.Dual ℚ (t.cartanSubalgebra ht)) :
     (LieAlgebra.rootSpace (t.cartanSubalgebra ht) χ).toSubmodule.map

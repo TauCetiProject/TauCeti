@@ -22,6 +22,8 @@ by finitely many basic opens, so that covers can be described and glued chart by
 
 ## Main results
 
+* `TauCeti.IsLocalRing.mem_preimage_puncturedSpectrum_iff`: the primes of an `R`-algebra `B` in
+  the preimage of the punctured spectrum are those not lying over `𝔪`.
 * `TauCeti.IsLocalRing.puncturedSpectrum_eq_iSup_basicOpen`: if some set `s` generates an ideal
   whose radical is the maximal ideal, the puncture is the union of the basic opens `D(x)` for
   `x ∈ s`.
@@ -29,6 +31,9 @@ by finitely many basic opens, so that covers can be described and glued chart by
   maximal ideal is the radical of a finitely generated ideal.
 * `TauCeti.IsLocalRing.isCompact_puncturedSpectrum_of_fg_maximalIdeal`: the special case of a
   finitely generated maximal ideal, in particular of a Noetherian local ring.
+* `TauCeti.IsLocalRing.preimage_puncturedSpectrum`: for an algebra `A'` over `A` whose closed
+  point is the only point over the closed point of `Spec A`, the punctured spectrum of `A'` is the
+  preimage of that of `A`.
 
 ## References
 
@@ -71,6 +76,19 @@ theorem mem_puncturedSpectrum_iff (x : PrimeSpectrum R) :
   change x ∈ ({IsLocalRing.closedPoint R}ᶜ : Set (PrimeSpectrum R)) ↔ _
   simp
 
+/-- A prime of an `R`-algebra `B` lies in the preimage of the punctured spectrum of `R` exactly
+when it does not lie over the maximal ideal of `R`. -/
+@[simp]
+theorem mem_preimage_puncturedSpectrum_iff {B : Type u} [CommRing B] [Algebra R B]
+    (q : PrimeSpectrum B) :
+    q ∈ Spec.map (CommRingCat.ofHom (algebraMap R B)) ⁻¹ᵁ puncturedSpectrum R ↔
+      q.asIdeal.under R ≠ IsLocalRing.maximalIdeal R := by
+  -- The base map of `Spec.map` is `PrimeSpectrum.comap`, by definition.
+  change PrimeSpectrum.comap (algebraMap R B) q ∈ puncturedSpectrum R ↔ _
+  rw [mem_puncturedSpectrum_iff, Ne, Ne, PrimeSpectrum.ext_iff, PrimeSpectrum.comap_asIdeal]
+  -- The ideal of `closedPoint R` is `maximalIdeal R`, by definition.
+  rfl
+
 /-- The deleted closed point lies outside the punctured spectrum. -/
 theorem closedPoint_notMem_puncturedSpectrum :
     IsLocalRing.closedPoint R ∉ puncturedSpectrum R := by
@@ -112,5 +130,34 @@ theorem isCompact_puncturedSpectrum_of_fg_maximalIdeal
     (hfg : (IsLocalRing.maximalIdeal R).FG) :
     IsCompact (SetLike.coe (puncturedSpectrum R) : Set (PrimeSpectrum R)) :=
   isCompact_puncturedSpectrum R hfg (IsLocalRing.maximalIdeal.isMaximal R).isPrime.radical
+
+section
+
+variable {A A' : Type u} [CommRing A] [IsLocalRing A] [CommRing A'] [IsLocalRing A']
+  [Algebra A A']
+
+/-- If the closed point of `Spec A'` is the only point over the closed point of `Spec A`, the
+punctured spectrum of `A'` is the preimage of the punctured spectrum of `A`. -/
+theorem preimage_puncturedSpectrum
+    (h : ((IsLocalRing.maximalIdeal A).map (algebraMap A A')).radical =
+      IsLocalRing.maximalIdeal A') :
+    Spec.map (CommRingCat.ofHom (algebraMap A A')) ⁻¹ᵁ puncturedSpectrum A =
+      puncturedSpectrum A' := by
+  have : IsLocalHom (algebraMap A A') :=
+    ((IsLocalRing.local_hom_tfae (algebraMap A A')).out 1 3).mpr (h ▸ Ideal.le_radical)
+  -- A point `x` of `Spec A'` maps to the point `PrimeSpectrum.comap (algebraMap A A') x`.
+  have key (x : PrimeSpectrum A') : PrimeSpectrum.comap (algebraMap A A') x =
+      IsLocalRing.closedPoint A ↔ x = IsLocalRing.closedPoint A' := by
+    refine ⟨fun hx ↦ PrimeSpectrum.ext (le_antisymm
+      (IsLocalRing.le_maximalIdeal x.isPrime.ne_top)
+      (?_ : IsLocalRing.maximalIdeal A' ≤ x.asIdeal)),
+      fun hx ↦ hx ▸ IsLocalRing.comap_closedPoint _⟩
+    rw [← h, x.isPrime.radical_le_iff, Ideal.map_le_iff_le_comap]
+    exact (congrArg PrimeSpectrum.asIdeal hx).ge
+  ext x
+  exact ((mem_puncturedSpectrum_iff A _).trans (key x).not).trans
+    (mem_puncturedSpectrum_iff A' x).symm
+
+end
 
 end TauCeti.IsLocalRing

@@ -30,6 +30,9 @@ transfers to an arbitrary one.
 
 ## Main statements
 
+* `TauCeti.mongeAmpereMeasure_mul_of_pos` gives the homogeneity of the Monge–Ampère measure
+  under positive scaling of an extended-real potential, and
+  `TauCeti.mongeAmpereMeasure_ite_mul_of_pos` is its form for a real function on a set.
 * `TauCeti.mongeAmpereMeasure_add_affine` proves invariance of the Aleksandrov Monge–Ampère
   measure under addition of an affine function, and `TauCeti.mongeAmpereMeasure_ite_add_linearMap`
   is its form for a finite convex function on a set and an affine function given by a linear
@@ -52,7 +55,9 @@ noncomputable section
 
 namespace TauCeti
 
-open MeasureTheory Measure Set
+open MeasureTheory Measure Set Module
+
+open scoped ENNReal Pointwise
 
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
 
@@ -132,6 +137,82 @@ theorem mongeAmpereMeasure_ite_add_linearMap {U : Set E} [DecidablePred (· ∈ 
   congr 1
   funext y
   split_ifs <;> simp [hq, add_assoc]
+
+/-- Multiplying an extended-real potential by a positive scalar `c` multiplies its Aleksandrov
+Monge–Ampère measure with respect to additive Haar measure by `c ^ finrank ℝ E`. -/
+theorem mongeAmpereMeasure_mul_of_pos (f : E → EReal) {c : ℝ} (hc : 0 < c) :
+    mongeAmpereMeasure μ (fun x ↦ (c : EReal) * f x) =
+      ENNReal.ofReal (c ^ finrank ℝ E) • mongeAmpereMeasure μ f := by
+  set g : E → EReal := fun x ↦ (c : EReal) * f x
+  have hc' : 0 < (c : EReal) := EReal.coe_pos.2 hc
+  have hle (a b : EReal) : (c : EReal) * a ≤ (c : EReal) * b ↔ a ≤ b := by
+    rw [← EReal.div_le_iff_le_mul hc' (EReal.coe_ne_top c), ← EReal.mul_div,
+      EReal.mul_div_cancel (EReal.coe_ne_bot c) (EReal.coe_ne_top c) hc'.ne']
+  have heq (a b : EReal) : (c : EReal) * a = (c : EReal) * b ↔ a = b := by
+    simp only [le_antisymm_iff, hle]
+  have hbot (x : E) : g x ≠ ⊥ ↔ f x ≠ ⊥ := by
+    simpa only [g, EReal.coe_mul_bot_of_pos hc] using (heq (f x) ⊥).not
+  have htop (x : E) : g x ≠ ⊤ ↔ f x ≠ ⊤ := by
+    simpa only [g, EReal.coe_mul_top_of_pos hc] using (heq (f x) ⊤).not
+  -- Scaling the height coordinate carries one real epigraph onto the other.
+  let scaleHeight (a : ℝ) : E × ℝ →ₗ[ℝ] E × ℝ :=
+    LinearMap.prodMap LinearMap.id (a • LinearMap.id)
+  have hheight (x : E) (t : ℝ) : g x ≤ ((c * t : ℝ) : EReal) ↔ f x ≤ (t : EReal) := by
+    simp only [g, EReal.coe_mul, hle]
+  have hpreimage : scaleHeight c ⁻¹' {p : E × ℝ | g p.1 ≤ p.2} =
+      {p : E × ℝ | f p.1 ≤ p.2} :=
+    Set.ext fun p ↦ hheight p.1 p.2
+  have hpreimageInv : scaleHeight c⁻¹ ⁻¹' {p : E × ℝ | f p.1 ≤ p.2} =
+      {p : E × ℝ | g p.1 ≤ p.2} := by
+    ext p
+    simp only [mem_preimage, mem_ofPred_eq, scaleHeight, LinearMap.prodMap_apply,
+      LinearMap.id_apply, LinearMap.smul_apply, smul_eq_mul]
+    rw [← hheight, mul_inv_cancel_left₀ hc.ne']
+  have hconv : Convex ℝ {p : E × ℝ | g p.1 ≤ p.2} ↔ Convex ℝ {p : E × ℝ | f p.1 ≤ p.2} :=
+    ⟨fun h ↦ hpreimage ▸ h.linear_preimage (scaleHeight c),
+      fun h ↦ hpreimageInv ▸ h.linear_preimage (scaleHeight c⁻¹)⟩
+  by_cases hf : Convex ℝ {p : E × ℝ | f p.1 ≤ p.2}
+  swap
+  · rw [mongeAmpereMeasure_eq_zero_of_not_convex μ hf,
+      mongeAmpereMeasure_eq_zero_of_not_convex μ (mt hconv.1 hf), smul_zero]
+  by_cases hfbot : ∀ x, f x ≠ ⊥
+  swap
+  · obtain ⟨x, hx⟩ := not_forall_not.1 hfbot
+    have hgx : g x = ⊥ := by
+      simp only [g, hx, EReal.coe_mul_bot_of_pos hc]
+    rw [mongeAmpereMeasure_eq_zero_of_eq_bot μ hx,
+      mongeAmpereMeasure_eq_zero_of_eq_bot μ hgx, smul_zero]
+  have hdom : {x | g x ≠ ⊤} = {x | f x ≠ ⊤} := Set.ext htop
+  have hsub (x p : E) : c • p ∈ subdifferential (innerₗ E) g x ↔
+      p ∈ subdifferential (innerₗ E) f x := by
+    have hineq (y : E) : g x + (inner ℝ (y - x) (c • p) : EReal) ≤ g y ↔
+        f x + (inner ℝ (y - x) p : EReal) ≤ f y := by
+      simp only [g, real_inner_smul_right, EReal.coe_mul,
+        ← EReal.left_distrib_of_nonneg_of_ne_top hc'.le (EReal.coe_ne_top c), hle]
+    simp only [mem_subdifferential_iff, hbot, htop, innerₗ_apply_apply, hineq]
+  have himage (s : Set E) : subgradientImage (innerₗ E) g s =
+      c • subgradientImage (innerₗ E) f s := by
+    ext p
+    rw [← smul_inv_smul₀ hc.ne' p, smul_mem_smul_set_iff₀ hc.ne']
+    simp only [mem_subgradientImage_iff, hsub]
+  ext s hs
+  rw [_root_.smul_apply, smul_eq_mul,
+    mongeAmpereMeasure_apply μ (hconv.2 hf) (fun x ↦ (hbot x).2 (hfbot x))
+      AbsolutelyContinuous.rfl hs,
+    mongeAmpereMeasure_apply μ hf hfbot AbsolutelyContinuous.rfl hs, hdom, himage,
+    addHaar_smul, abs_of_pos (pow_pos hc _)]
+
+/-- Positive scaling of a real potential on a set, extended by `⊤` off that set. -/
+theorem mongeAmpereMeasure_ite_mul_of_pos {Ω : Set E} [DecidablePred (· ∈ Ω)] {u : E → ℝ}
+    {c : ℝ} (hc : 0 < c) :
+    mongeAmpereMeasure μ (fun x => if x ∈ Ω then ((c * u x : ℝ) : EReal) else ⊤) =
+      ENNReal.ofReal (c ^ finrank ℝ E) •
+        mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) := by
+  have hscale : (fun x ↦ (c : EReal) * (if x ∈ Ω then (u x : EReal) else ⊤)) =
+      (fun x ↦ if x ∈ Ω then ((c * u x : ℝ) : EReal) else ⊤) := by
+    funext x
+    split_ifs <;> simp only [EReal.coe_mul, EReal.coe_mul_top_of_pos hc]
+  rw [← hscale, mongeAmpereMeasure_mul_of_pos μ _ hc]
 
 /-- **Change of variables for the Aleksandrov Monge–Ampère measure.** For an affine equivalence
 `A` of `E` with linear part `L` and a measurable set `s`,
