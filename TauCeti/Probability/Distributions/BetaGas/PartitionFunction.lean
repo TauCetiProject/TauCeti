@@ -36,6 +36,13 @@ def twoParticleGaussianBetaGasPartitionFunction (β : ℝ) : ℝ :=
   ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
     ∂(volume.prod volume)
 
+/-- The partition function is the integral of the unnormalized density. -/
+theorem twoParticleGaussianBetaGasPartitionFunction_def (β : ℝ) :
+    twoParticleGaussianBetaGasPartitionFunction β =
+      ∫ p : ℝ × ℝ, exp (-β / 2 * (p.1 ^ 2 + p.2 ^ 2)) * |p.1 - p.2| ^ β
+        ∂(volume.prod volume) := by
+  simp [twoParticleGaussianBetaGasPartitionFunction]
+
 private def betaGasCenter (p : ℝ × ℝ) : ℝ × ℝ :=
   (p.1 - p.2, p.2 + (p.1 - p.2) / 2)
 
