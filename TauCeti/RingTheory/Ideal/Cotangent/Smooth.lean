@@ -5,20 +5,16 @@ Authors: Codex
 -/
 module
 
-public import Mathlib.RingTheory.Smooth.Basic
+public import TauCeti.RingTheory.Extension.Cotangent.Smooth
 
 /-!
 # Projective cotangent modules at augmented points
 
-For an extension `P → S` of `R`-algebras with `P` and `S` formally smooth over `R`, the
-cotangent module `I / I²` of its kernel is projective over `S`: Mathlib's splitting criterion
-for formal smoothness exhibits it as a direct summand of the projective module
-`S ⊗[P] Ω[P⁄R]`.
-
-Specialized to an augmentation `f : A →ₐ[R] R`, the module `ker(f) / ker(f)²` is projective
-over `R` when `A` is formally smooth. This does not require a noetherian base or a finite-type
-algebra. It supplies the projectivity input for forming the adjoint comodule of a
-smooth affine group over a ring.
+For an augmentation `f : A →ₐ[R] R` of a formally smooth `R`-algebra `A`, the module
+`ker(f) / ker(f)²` is projective over `R`. This is the specialization of
+`Algebra.Extension.projective_cotangent_of_formallySmooth` to the extension `A → R` given by `f`.
+It does not require a noetherian base or a finite-type algebra. It supplies the projectivity
+input for forming the adjoint comodule of a smooth affine group over a ring.
 
 ## References
 
@@ -27,19 +23,6 @@ smooth affine group over a ring.
 -/
 
 public section
-
-namespace Algebra.Extension
-
-variable {R S : Type*} [CommRing R] [CommRing S] [Algebra R S]
-
-/-- The cotangent module of an extension of formally smooth algebras is projective: it is a
-direct summand of `S ⊗[P] Ω[P⁄R]` via the cotangent complex. -/
-theorem projective_cotangent_of_formallySmooth (P : Extension R S)
-    [FormallySmooth R P.Ring] [FormallySmooth R S] : Module.Projective S P.Cotangent :=
-  have ⟨l, hl⟩ := P.formallySmooth_iff_split_injection.mp ‹_›
-  .of_split P.cotangentComplex l hl
-
-end Algebra.Extension
 
 namespace AlgHom
 
