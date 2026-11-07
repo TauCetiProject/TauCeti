@@ -5,8 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Basis
-public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Branching
+public import TauCeti.RingTheory.MvPolynomial.Symmetric.Schur.Stability
 
 /-!
 # The symmetric functions of a fixed degree
@@ -102,6 +101,7 @@ theorem stableSymmetricProj_apply (d : ℕ) (f : stableSymmetricSubmodule R n) :
 
 /-- Setting the last variable to zero in the projection to `d + 1` variables gives the projection
 to `d` variables. -/
+@[simp]
 theorem aeval_snoc_zero_stableSymmetricProj (d : ℕ) (f : stableSymmetricSubmodule R n) :
     aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0)
         (stableSymmetricProj R n (d + 1) f : MvPolynomial (Fin (d + 1)) R) =
@@ -124,14 +124,6 @@ theorem stableSymmetricProj_eq_zero_of_le {f : stableSymmetricSubmodule R n} {d 
     rw [← aeval_snoc_zero_stableSymmetricProj, hf, Submodule.coe_zero, map_zero,
       Submodule.coe_zero]
 
-/-- The Schur polynomial of a partition in `d + 1` variables becomes the Schur polynomial in `d`
-variables once the last variable is set to zero. -/
-theorem aeval_snoc_zero_schurPoly (d : ℕ) (μ : n.Partition) :
-    aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0) (schurPoly (Fin (d + 1)) R μ) =
-      schurPoly (Fin d) R μ := by
-  rw [schurPoly_eq_rename, schurPoly_eq_rename, rename_diagramSchurPoly, rename_diagramSchurPoly,
-    aeval_snoc_zero_diagramSchurPoly]
-
 variable (R) in
 /-- **The Schur function** `s_μ` of a partition `μ` of `n`: the compatible family of the Schur
 polynomials of `μ` in all finite alphabets. -/
@@ -152,32 +144,6 @@ end CommSemiring
 section CommRing
 
 variable {R : Type*} [CommRing R] {n : ℕ}
-
-/-- **Stability in degree `n`**: as long as `n ≤ d`, setting the last of `d + 1` variables to zero
-loses no information about a symmetric polynomial of degree `n`. The Schur polynomials of the
-partitions of `n` are a basis on both sides, and setting a variable to zero matches them up.
-For `d < n` this fails: `s_((1,1))` vanishes in one variable. -/
-theorem injOn_aeval_snoc_zero_symmetricHomogeneousSubmodule {d : ℕ} (hn : n ≤ d) :
-    Set.InjOn (aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0))
-      (symmetricHomogeneousSubmodule (Fin (d + 1)) R n : Set (MvPolynomial (Fin (d + 1)) R)) := by
-  let φ : symmetricHomogeneousSubmodule (Fin (d + 1)) R n →ₗ[R] MvPolynomial (Fin d) R :=
-    (aeval (Fin.snoc (X : Fin d → MvPolynomial (Fin d) R) 0)).toLinearMap.comp
-      (symmetricHomogeneousSubmodule (Fin (d + 1)) R n).subtype
-  suffices hφ : Function.Injective φ from
-    fun p hp q hq hpq => congrArg Subtype.val (@hφ ⟨p, hp⟩ ⟨q, hq⟩ hpq)
-  refine (injective_iff_map_eq_zero φ).mpr fun p hp => ?_
-  let b := schurPolyBasis (Fin (d + 1)) R n
-  let e := partitionEquivSchurIndex (Fin (d + 1)) n (by simpa using hn.trans d.le_succ)
-  have hsum : ∑ μ : n.Partition, b.repr p (e μ) • schurPoly (Fin d) R μ = 0 := by
-    refine Eq.trans ?_ hp
-    conv_rhs => rw [← b.sum_repr p]
-    rw [map_sum, ← e.sum_comp]
-    refine Finset.sum_congr rfl fun μ _ => ?_
-    simp [φ, b, e, aeval_snoc_zero_schurPoly]
-  have hc := Fintype.linearIndependent_iff.mp
-    (linearIndependent_schurPoly (σ := Fin d) (R := R) (by simpa using hn)) _ hsum
-  refine b.repr.injective (Finsupp.ext fun ν => ?_)
-  simpa using hc (e.symm ν)
 
 /-- **A symmetric function of degree `n` is determined by its projection to any alphabet with at
 least `n` letters.** -/
