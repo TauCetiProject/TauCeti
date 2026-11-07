@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Gluing.GlueData
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.Prod
+public import TauCeti.Topology.Category.TopCat.GlueData
 
 /-!
 # Products of glued manifold atlases
@@ -41,13 +42,6 @@ universe u v
 
 variable (D : TopCat.GlueData.{u}) (D' : TopCat.GlueData.{v})
 
-private theorem prod_ι_cover (x : D.toGlueData.glued × D'.toGlueData.glued) :
-    ∃ (ij : D.J × D'.J) (y : D.U ij.1 × D'.U ij.2),
-      Prod.map (D.toGlueData.ι ij.1) (D'.toGlueData.ι ij.2) y = x := by
-  obtain ⟨i, y, hy⟩ := D.ι_jointly_surjective x.1
-  obtain ⟨j, z, hz⟩ := D'.ι_jointly_surjective x.2
-  exact ⟨(i, j), (y, z), Prod.ext hy hz⟩
-
 variable {H : Type*} [TopologicalSpace H] {H' : Type*} [TopologicalSpace H']
   [∀ i, ChartedSpace H (D.U i)] [∀ j, ChartedSpace H' (D'.U j)]
 
@@ -58,7 +52,7 @@ noncomputable def prodChartedSpace :
     ChartedSpace (ModelProd H H') (D.toGlueData.glued × D'.toGlueData.glued) :=
   TauCeti.chartedSpaceOfIsOpenEmbedding
     (fun ij : D.J × D'.J ↦ (D.ι_isOpenEmbedding ij.1).prodMap (D'.ι_isOpenEmbedding ij.2))
-    (D.prod_ι_cover D')
+    (D.prod_ι_jointly_surjective D')
 
 /-- The chosen chart in the product gluing comes from a pair of pieces containing the point,
 using the inverse of their product inclusion followed by their product chart. -/
@@ -72,7 +66,7 @@ theorem exists_chartAt_prodChartedSpace_eq
             ).toOpenPartialHomeomorph _).symm.trans (chartAt (ModelProd H H') y) :=
   TauCeti.exists_chartAt_chartedSpaceOfIsOpenEmbedding_eq
     (fun ij : D.J × D'.J ↦ (D.ι_isOpenEmbedding ij.1).prodMap (D'.ι_isOpenEmbedding ij.2))
-    (D.prod_ι_cover D') x
+    (D.prod_ι_jointly_surjective D') x
 
 variable {D D'} {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
@@ -108,17 +102,17 @@ theorem isManifold_prodChartedSpace :
     IsManifold (I.prod I') n (D.toGlueData.glued × D'.toGlueData.glued) :=
   TauCeti.isManifold_chartedSpaceOfIsOpenEmbedding
     (fun ij : D.J × D'.J ↦ (D.ι_isOpenEmbedding ij.1).prodMap (D'.ι_isOpenEmbedding ij.2))
-    (D.prod_ι_cover D') (h.prod_transition h')
+    (D.prod_ι_jointly_surjective D') (h.prod_transition h')
 
 /-- Pairs of canonical inclusions are local diffeomorphisms for the atlas glued from product
 pieces, including when one of the pieces is empty. -/
-theorem isLocalDiffeomorph_prod_ι (ij : D.J × D'.J) :
+theorem isLocalDiffeomorph_prodMap_ι (ij : D.J × D'.J) :
     letI := D.prodChartedSpace D' (H := H) (H' := H')
     IsLocalDiffeomorph (I.prod I') (I.prod I') n
       (Prod.map (D.toGlueData.ι ij.1) (D'.toGlueData.ι ij.2)) :=
   TauCeti.isLocalDiffeomorph_chartedSpaceOfIsOpenEmbedding
     (fun ij : D.J × D'.J ↦ (D.ι_isOpenEmbedding ij.1).prodMap (D'.ι_isOpenEmbedding ij.2))
-    (D.prod_ι_cover D') (h.prod_transition h') ij
+    (D.prod_ι_jointly_surjective D') (h.prod_transition h') ij
 
 /-- Gluing product charts and taking the product of the glued manifolds give the same maximal
 atlas, although the chosen chart at a point can differ. -/
@@ -132,9 +126,9 @@ theorem maximalAtlas_prodChartedSpace_eq :
   let := D'.chartedSpace H'
   let := h.isManifold
   let := h'.isManifold
-  exact TauCeti.maximalAtlas_eq_of_forall_isLocalDiffeomorph (D.prod_ι_cover D')
+  exact TauCeti.maximalAtlas_eq_of_forall_isLocalDiffeomorph (D.prod_ι_jointly_surjective D')
     (h.isManifold_prodChartedSpace h') inferInstance
-    (h.isLocalDiffeomorph_prod_ι h')
+    (h.isLocalDiffeomorph_prodMap_ι h')
     (fun ij ↦ (h.isLocalDiffeomorph_ι ij.1).prodMap (h'.isLocalDiffeomorph_ι ij.2))
 
 /-- The identity diffeomorphism from the atlas glued from pairs of pieces to the ordinary
@@ -142,6 +136,7 @@ product of the glued manifolds. Both structures live on the same topological car
 noncomputable def prodDiffeomorph (h : D.IsCompatible I n) (h' : D'.IsCompatible I' n) :
     letI := D.chartedSpace H
     letI := D'.chartedSpace H'
+    -- Mathlib's atlas binders are anonymous; the two atlases on this carrier must be explicit.
     @Diffeomorph 𝕜 _ _ _ _ _ _ _ _ _ _ _
       (I.prod I') (I.prod I') (D.toGlueData.glued × D'.toGlueData.glued) _
       (D.prodChartedSpace D') (D.toGlueData.glued × D'.toGlueData.glued) _
@@ -152,33 +147,54 @@ noncomputable def prodDiffeomorph (h : D.IsCompatible I n) (h' : D'.IsCompatible
       (I.prod I') (I.prod I') (D.toGlueData.glued × D'.toGlueData.glued) _
       (D.prodChartedSpace D') (D.toGlueData.glued × D'.toGlueData.glued) _
       inferInstance n id := by
-    -- Specify the source atlas explicitly: the target uses the ordinary product atlas.
+    -- The detector also has an anonymous source-atlas binder.
     exact (@TauCeti.isLocalDiffeomorph_iff_forall_comp 𝕜 _ _ _ _ _ _ (I.prod I') n
-      _ _ _ _ _ _ _ (D.prod_ι_cover D') (D.prodChartedSpace D')
-      (h.isLocalDiffeomorph_prod_ι h') _ _ _ _ _ (I.prod I') _ _ inferInstance id).2
+      _ _ _ _ _ _ _ (D.prod_ι_jointly_surjective D') (D.prodChartedSpace D')
+      (h.isLocalDiffeomorph_prodMap_ι h') _ _ _ _ _ (I.prod I') _ _ inferInstance id).2
         (fun ij ↦ (h.isLocalDiffeomorph_ι ij.1).prodMap (h'.isLocalDiffeomorph_ι ij.2))
   exact @IsLocalDiffeomorph.diffeomorphOfBijective 𝕜 _ _ _ _ _ _ _ _ _ _ _
     (I.prod I') (I.prod I') _ _ (D.prodChartedSpace D') _ _ inferInstance n id
     hid Function.bijective_id
 
+/-- The underlying map of the product comparison is the identity. -/
+@[simp]
+theorem coe_prodDiffeomorph : ⇑(h.prodDiffeomorph h') = id := by
+  let := D.chartedSpace H
+  let := D'.chartedSpace H'
+  simp only [prodDiffeomorph, TauCeti.coe_diffeomorphOfBijective]
+
 /-- The product comparison fixes every point. -/
 @[simp]
 theorem prodDiffeomorph_apply (x : D.toGlueData.glued × D'.toGlueData.glued) :
-    h.prodDiffeomorph h' x = x := by
-  simp [prodDiffeomorph]
+    h.prodDiffeomorph h' x = x :=
+  congrFun (h.coe_prodDiffeomorph h') x
 
-/-- Forgetting smoothness gives the identity equivalence, in both directions. -/
+/-- The inverse product comparison fixes every point. -/
+@[simp]
+theorem prodDiffeomorph_symm_apply (x : D.toGlueData.glued × D'.toGlueData.glued) :
+    letI := D.chartedSpace H
+    letI := D'.chartedSpace H'
+    @Diffeomorph.symm 𝕜 _ _ _ _ _ _ _ _ _ _ _ (I.prod I') (I.prod I')
+      _ _ (D.prodChartedSpace D') _ _ inferInstance n (h.prodDiffeomorph h') x = x := by
+  let := D.chartedSpace H
+  let := D'.chartedSpace H'
+  simpa only [prodDiffeomorph_apply] using
+    (@Diffeomorph.symm_apply_apply 𝕜 _ _ _ _ _ _ _ _ _ _ _ (I.prod I') (I.prod I')
+      _ _ (D.prodChartedSpace D') _ _ inferInstance n (h.prodDiffeomorph h') x)
+
+/-- Forgetting smoothness gives the identity equivalence. -/
 @[simp]
 theorem prodDiffeomorph_toEquiv :
     letI := D.chartedSpace H
     letI := D'.chartedSpace H'
+    -- Explicit atlases prevent synthesis from assigning the ordinary atlas to both sides.
     @Diffeomorph.toEquiv 𝕜 _ _ _ _ _ _ _ _ _ _ _ (I.prod I') (I.prod I')
       _ _ (D.prodChartedSpace D') _ _ inferInstance n (h.prodDiffeomorph h') = Equiv.refl _ :=
   Equiv.ext (h.prodDiffeomorph_apply h')
 
 /-- A map on the ordinary product of glued manifolds is smooth exactly when it is smooth on
 all pairs of pieces. This tests joint smoothness, not merely separate smoothness. -/
-theorem contMDiff_prod_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+theorem contMDiff_iff_forall_prodMap_ι {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 F]
     {K : Type*} [TopologicalSpace K] {J : ModelWithCorners 𝕜 F K}
     {N : Type*} [TopologicalSpace N] [ChartedSpace K N] {m : ℕ∞ω} (hm : m ≤ n)
     {f : D.toGlueData.glued × D'.toGlueData.glued → N} :
@@ -193,7 +209,7 @@ theorem contMDiff_prod_iff {F : Type*} [NormedAddCommGroup F] [NormedSpace 𝕜 
     exact hf.comp (((h.isLocalDiffeomorph_ι i).prodMap
       (h'.isLocalDiffeomorph_ι j)).contMDiff.of_le hm)
   · intro hf x
-    obtain ⟨⟨i, j⟩, y, rfl⟩ := D.prod_ι_cover D' x
+    obtain ⟨⟨i, j⟩, y, rfl⟩ := D.prod_ι_jointly_surjective D' x
     exact (((h.isLocalDiffeomorph_ι i y.1).prodMap
       (h'.isLocalDiffeomorph_ι j y.2)).contMDiffAt_comp_iff hm).1 (hf i j y)
 
