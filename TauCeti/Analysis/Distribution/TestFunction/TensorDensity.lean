@@ -5,13 +5,13 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Distribution.Distribution
 public import TauCeti.Analysis.Distribution.TestFunction.Prod
 import TauCeti.Analysis.Calculus.ContDiff.Bounds
 import TauCeti.Analysis.Distribution.TestFunction.Convergence
 import TauCeti.Analysis.Distribution.TestFunction.PartitionOfUnity
 import TauCeti.Analysis.Distribution.TestFunction.SmulLeft
 import TauCeti.Analysis.Fourier.TorusDecay
+import TauCeti.Analysis.Normed.Module.FiniteDimension
 
 /-!
 # Density of tensor products of test functions
@@ -48,10 +48,9 @@ Real-valued test functions are the ones on which Mathlib's distributions `𝓓'(
 
 * `TestFunction.dense_span_prodSMulCLM`: tensor products of real test functions span a dense
   subspace of the real test functions on a product.
-* `TestFunction.continuousLinearMap_ext_prodSMulCLM`: a continuous linear map on the test functions
-  on a product, with Hausdorff target, is determined by its values on tensor products.
-* `Distribution.ext_prodSMulCLM`: a distribution on a product is determined by its values on
-  tensor products.
+* `TestFunction.ext_prodSMulCLM`: a continuous linear map on the test functions on a product, with
+  Hausdorff target, is determined by its values on tensor products. In particular this applies to
+  distributions on a product.
 
 ## References
 
@@ -187,28 +186,6 @@ private theorem tendsto_of_eq_mul_re {G : Type*} [NormedAddCommGroup G] [NormedS
     rw [Function.notMem_support.1 fun h' ↦ hz' (support_iteratedFDeriv_subset k h'), norm_zero]
     exact hε
 
-/-- A compact subset of a finite-dimensional real normed space is sent into the open unit cube
-`‖y‖ < 1 / 2` of `Fin n → ℝ` by a linear isomorphism `L`, with inverse `A`. -/
-private theorem exists_clm_mapsTo_ball {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X]
-    [FiniteDimensional ℝ X] {C : Set X} (hC : IsCompact C) :
-    ∃ (L : X →L[ℝ] Fin (Module.finrank ℝ X) → ℝ) (A : (Fin (Module.finrank ℝ X) → ℝ) →L[ℝ] X),
-      (∀ z, A (L z) = z) ∧ (∀ y, L (A y) = y) ∧ MapsTo L C (Metric.ball 0 (1 / 2)) := by
-  set e := (Module.finBasis ℝ X).equivFunL
-  obtain ⟨R, hR⟩ := hC.exists_bound_of_continuousOn e.continuous.continuousOn
-  set t : ℝ := 1 / (4 * (|R| + 1)) with ht
-  have ht0 : 0 < t := by positivity
-  set L : X →L[ℝ] Fin (Module.finrank ℝ X) → ℝ := t • (e : X →L[ℝ] _)
-  set A : (Fin (Module.finrank ℝ X) → ℝ) →L[ℝ] X := t⁻¹ • (e.symm : _ →L[ℝ] X)
-  have hAL (z : X) : A (L z) = z := by simp [L, A, ht0.ne']
-  have hLA (y : Fin (Module.finrank ℝ X) → ℝ) : L (A y) = y := by simp [L, A, ht0.ne']
-  refine ⟨L, A, hAL, hLA, fun z hz ↦ ?_⟩
-  rw [mem_ball_zero_iff]
-  calc ‖L z‖ = t * ‖e z‖ := by simp [L, norm_smul, abs_of_pos ht0]
-    _ ≤ t * |R| := mul_le_mul_of_nonneg_left ((hR z hz).trans (le_abs_self R)) ht0.le
-    _ < 1 / 2 := by
-      rw [ht, div_mul_eq_mul_div, one_mul, div_lt_iff₀ (by positivity)]
-      linarith [abs_nonneg R]
-
 /-- **Density of tensor products of test functions.** For open sets `Ω ⊆ E` and `O ⊆ D` of
 finite-dimensional real normed spaces and `V = Ω ×ˢ O`, the tensor products
 `(x, t) ↦ ψ t • φ x` of real test functions `φ` on `Ω` and `ψ` on `O` span a dense subspace of
@@ -232,21 +209,22 @@ theorem dense_span_prodSMulCLM [FiniteDimensional ℝ E] [FiniteDimensional ℝ 
   have hCV : C ⊆ V := hV ▸ prod_mono χ₁.tsupport_subset χ₂.tsupport_subset
   have hKC : tsupport (f : E × D → ℝ) ⊆ C := fun z hz ↦
     ⟨subset_tsupport _ (by simp [(hχf z hz).1]), subset_tsupport _ (by simp [(hχf z hz).2])⟩
-  -- Linear coordinates `L` sending `C` into the open unit cube, with inverse `A`.
-  obtain ⟨L, A, hAL, hLA, hLC⟩ := exists_clm_mapsTo_ball hC
+  -- Linear coordinates `L` sending `C` into the open unit cube.
+  obtain ⟨L, hLC⟩ := hC.exists_continuousLinearEquiv_mapsTo_ball one_half_pos
   -- `f` read in these coordinates is approximated by trigonometric polynomials on the cube.
-  set g : (Fin (Module.finrank ℝ (E × D)) → ℝ) → ℂ := fun y ↦ (f (A y) : ℂ)
-  have hg : ContDiff ℝ ∞ g := ofRealCLM.contDiff.comp (f.contDiff.comp A.contDiff)
+  set g : (Fin (Module.finrank ℝ (E × D)) → ℝ) → ℂ := fun y ↦ (f (L.symm y) : ℂ)
+  have hg : ContDiff ℝ ∞ g := ofRealCLM.contDiff.comp (f.contDiff.comp L.symm.contDiff)
   have hgsupp : support g ⊆ Metric.ball 0 (1 / 2) := fun y hy ↦ by
-    have hAy : A y ∈ tsupport (f : E × D → ℝ) := subset_tsupport _ (by simpa [g] using hy)
-    simpa [hLA] using hLC (hKC hAy)
+    have hAy : L.symm y ∈ tsupport (f : E × D → ℝ) := subset_tsupport _ (by simpa [g] using hy)
+    simpa using hLC (hKC hAy)
   obtain ⟨c, hc⟩ := TauCeti.UnitAddTorus.exists_tendstoUniformlyOn_iteratedFDeriv_sum_cexp hg hgsupp
-  choose h hh hhz using exists_mem_tensorSpan_eq_mul_re_sum hV.symm.subset χ₁ χ₂ L c
-  refine mem_closure_of_tendsto (tendsto_of_eq_mul_re hCV L hLC hg (fun z ↦ ?_) (fun s ↦ ?_) hc hhz)
-    (Eventually.of_forall hh)
+  set L' : E × D →L[ℝ] Fin (Module.finrank ℝ (E × D)) → ℝ := L.toContinuousLinearMap
+  choose h hh hhz using exists_mem_tensorSpan_eq_mul_re_sum hV.symm.subset χ₁ χ₂ L' c
+  refine mem_closure_of_tendsto
+    (tendsto_of_eq_mul_re hCV L' hLC hg (fun z ↦ ?_) (fun s ↦ ?_) hc hhz) (Eventually.of_forall hh)
   · by_cases hz : z ∈ tsupport (f : E × D → ℝ)
-    · simp [g, hAL, (hχf z hz).1, (hχf z hz).2]
-    · simp [g, hAL, image_eq_zero_of_notMem_tsupport hz]
+    · simp [g, L', (hχf z hz).1, (hχf z hz).2]
+    · simp [g, L', image_eq_zero_of_notMem_tsupport hz]
   · have hof : ContDiff ℝ ∞ fun r : ℝ ↦ (r : ℂ) := ofRealCLM.contDiff
     fun_prop
 

@@ -521,18 +521,9 @@ theorem tendstoUniformly_iteratedFDeriv_sum_mFourier {f : UnitAddTorus d → ℂ
       iteratedFDeriv ℝ k (fun y ↦ ∑ n ∈ s, e n y) x = ∑ n ∈ s, iteratedFDeriv ℝ k (e n) x :=
     (congrFun (iteratedFDeriv_sum fun n _ ↦ ((contDiff_mFourier_coe n).const_smul _).of_le
       (mod_cast le_top : (k : WithTop ℕ∞) ≤ (⊤ : ℕ∞))) x).trans (Finset.sum_apply _ _ _)
-  -- The difference is the tail of the differentiated series.
-  rw [Metric.tendstoUniformly_iff]
-  intro ε hε
-  filter_upwards [(tendsto_tsum_compl_atTop_zero v).eventually (gt_mem_nhds hε)] with s hs x
-  have hsumm : Summable fun n ↦ iteratedFDeriv ℝ k (e n) x := .of_norm_bounded hv (hbound · x)
-  rw [iteratedFDeriv_eq_tsum_mFourier hK hf, dist_eq_norm, hpartial,
-    ← hsumm.sum_add_tsum_subtype_compl s, add_sub_cancel_left]
-  have htail : ‖∑' n : {n // n ∉ s}, iteratedFDeriv ℝ k (e n) x‖ ≤ ∑' n : {n // n ∉ s}, v n :=
-    tsum_of_norm_bounded (f := fun n : {n // n ∉ s} ↦ iteratedFDeriv ℝ k (e n) x)
-      (g := fun n : {n // n ∉ s} ↦ v n) (hv.comp_injective Subtype.val_injective).hasSum
-      fun n ↦ hbound n x
-  exact htail.trans_lt hs
+  rw [funext (iteratedFDeriv_eq_tsum_mFourier hK hf)]
+  convert tendstoUniformly_tsum hv hbound using 1
+  exact funext fun s ↦ funext (hpartial s)
 
 /-! ### Trigonometric approximation on the open unit cube -/
 
