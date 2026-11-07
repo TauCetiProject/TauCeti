@@ -10,12 +10,13 @@ public import TauCeti.Geometry.Symplectic.Manifold.AlmostComplex.Chart
 public import TauCeti.Geometry.Manifold.DifferentialForm.Regularity
 import TauCeti.Analysis.Calculus.DifferentialForm.Basic
 import TauCeti.Geometry.Manifold.ContMDiff.Defs
+import TauCeti.Geometry.Manifold.MFDeriv.Chart
 
 /-!
 # The maximum principle for `J`-holomorphic curves in an almost complex manifold
 
-Let `M` be a manifold without boundary carrying a smooth almost complex structure `J`, a `C¹`
-one-form `α` and a function `ρ : M → ℝ` with
+Let `M` be a manifold without boundary carrying a smooth almost complex structure `J`, a one-form
+`α` and a function `ρ : M → ℝ` with
 
 `dρ ∘ J = -α`.
 
@@ -68,7 +69,7 @@ public section
 
 namespace TauCeti.Pseudoholomorphic
 
-open InnerProductSpace Laplacian Filter Topology Complex Set
+open InnerProductSpace Laplacian Filter Topology Complex Set Bundle
 open scoped _root_.Manifold ContDiff
 
 variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace H]
@@ -76,81 +77,19 @@ variable {E H M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [Topological
   [IsManifold I ∞ M] {J : SmoothAlmostComplexStructure I M} {α : RoughForm I M ℝ 1}
   {ρ : M → ℝ} {u : ℂ → M} {z : ℂ}
 
-omit [I.Boundaryless] in
-/-- The derivative of `u : ℂ → M` read in the extended chart at `x` is the derivative of the chart
-composed with that of `u`. -/
-private theorem fderiv_extChartAt_comp_apply {x : M} {w : ℂ}
-    (hws : u w ∈ (extChartAt I x).source) (hwd : MDifferentiableAt 𝓘(ℝ, ℂ) I u w) (v : ℂ) :
-    fderiv ℝ (extChartAt I x ∘ u) w v =
-      mfderiv I 𝓘(ℝ, E) (extChartAt I x) (u w) (mfderiv 𝓘(ℝ, ℂ) I u w v) := by
-  have hws' : u w ∈ (chartAt H x).source := by rwa [← extChartAt_source I]
-  have h := congr($(mfderiv_comp w (mdifferentiableAt_extChartAt hws') hwd) v)
-  rw [mfderiv_eq_fderiv] at h
-  -- `mfderiv_eq_fderiv` only inserts the identifications of tangent spaces of `ℂ` and `E`.
-  exact h
-
-omit [I.Boundaryless] in
-/-- Read in the extended chart at `x`, a solution of the Cauchy--Riemann equation
-`∂ₜu = J(u) ∂ₛu` at `w` solves the Cauchy--Riemann equation for `J.inChart x`. -/
-private theorem fderiv_extChartAt_comp_apply_I {x : M} {w : ℂ}
-    (hws : u w ∈ (extChartAt I x).source) (hwd : MDifferentiableAt 𝓘(ℝ, ℂ) I u w)
-    (hw : mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) = J (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ))) :
-    fderiv ℝ (extChartAt I x ∘ u) w Complex.I =
-      J.inChart x ((extChartAt I x ∘ u) w) (fderiv ℝ (extChartAt I x ∘ u) w 1) := by
-  have hinv := congr($(mfderivWithin_extChartAt_symm_comp_mfderiv_extChartAt' hws)
-    (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)))
-  rw [fderiv_extChartAt_comp_apply hws hwd, fderiv_extChartAt_comp_apply hws hwd,
-    Function.comp_apply, hw]
-  exact (congrArg _ (congrArg _ hinv)).symm.trans
-    (J.inChart_extChartAt_apply_eq_mfderiv x hws _).symm
-
-omit [I.Boundaryless] in
-/-- Read in the extended chart at `x`, the identity `dρ ∘ J = -α` at the point with coordinate
-`e` becomes `d(ρ ∘ φ⁻¹) ∘ J_φ = -α_φ` at `e`, for the coordinate expressions `J_φ = J.inChart x`
-and `α_φ = α.inChartAt x` of `J` and `α`. -/
-private theorem fderiv_comp_extChartAt_symm_inChart_apply {x : M} {e : E}
-    (he : e ∈ (extChartAt I x).target)
-    (hed : DifferentiableAt ℝ (ρ ∘ (extChartAt I x).symm) e)
-    (hJ : ∀ v, mvfderiv I ρ ((extChartAt I x).symm e) (J ((extChartAt I x).symm e) v) =
-      -α ((extChartAt I x).symm e) ![v]) (v : E) :
-    fderiv ℝ (ρ ∘ (extChartAt I x).symm) e (J.inChart x e v) =
-      -α.inChartAt x e (fun _ ↦ v) := by
-  set y := (extChartAt I x).symm e
-  have hy : y ∈ (chartAt H x).source := by
-    rw [← extChartAt_source I]
-    exact (extChartAt I x).map_target he
-  -- Near `y`, `ρ` is `ρ ∘ φ⁻¹` read through the chart `φ`, so `dρ_y = d(ρ ∘ φ⁻¹)_e ∘ dφ_y`.
-  have hρeq : mfderiv I 𝓘(ℝ) ρ y =
-      mfderiv I 𝓘(ℝ) ((ρ ∘ (extChartAt I x).symm) ∘ extChartAt I x) y := by
-    refine Filter.EventuallyEq.mfderiv_eq ?_
-    filter_upwards [extChartAt_source_mem_nhds' (I := I) ((extChartAt_source I x).symm ▸ hy)]
-      with y' hy'
-    simp only [Function.comp_apply, (extChartAt I x).left_inv hy']
-  have hed' : MDifferentiableAt 𝓘(ℝ, E) 𝓘(ℝ) (ρ ∘ (extChartAt I x).symm)
-      (extChartAt I x y) := by
-    rw [(extChartAt I x).right_inv he]
-    exact hed.mdifferentiableAt
-  set a := mfderivWithin 𝓘(ℝ, E) I (extChartAt I x).symm (range I) e v
-  have h := congr($(mfderiv_comp y hed' (mdifferentiableAt_extChartAt hy)) (J y a))
-  rw [← hρeq, mfderiv_eq_fderiv, (extChartAt I x).right_inv he] at h
-  have ha : (fun _ : Fin 1 ↦ a) = ![a] := by
-    funext i
-    fin_cases i
-    rfl
-  rw [J.inChart_apply_eq_mfderiv x he, RoughForm.inChartAt_apply, ha, ← hJ a]
-  -- `h` is the chain rule, up to the identifications of tangent spaces of `E` and `ℝ`.
-  exact h.symm
-
 /-- **The Laplacian of `ρ` along a `J`-holomorphic curve in a manifold.** Let `u : ℂ → M` be
-`C²` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` near `z`. Let `α` be a `C¹`
-one-form and `ρ` a function `C²` at `u z` with `dρ ∘ J = -α` near `u z`. Then
+`C²` at `z` and solve the Cauchy--Riemann equation `∂ₜu = J(u) ∂ₛu` near `z`. Let `α` be a
+one-form differentiable at `u z` and `ρ` a function `C²` at `u z` with `dρ ∘ J = -α` near `u z`.
+Then
 
 `Δ(ρ ∘ u)(z) = dα(∂ₛu, ∂ₜu)`. -/
 theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     (hu : ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
     (hCR : ∀ᶠ w in 𝓝 z,
       mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) = J (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)))
-    (hρ : ContMDiffAt I 𝓘(ℝ) 2 ρ (u z)) (hα : IsSmoothForm I 1 α)
+    (hρ : ContMDiffAt I 𝓘(ℝ) 2 ρ (u z))
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) (u z))
     (hρJ : ∀ᶠ y in 𝓝 (u z), ∀ v, mvfderiv I ρ y (J y v) = -α y ![v]) :
     Δ (ρ ∘ u) z = mextDeriv α (u z)
       ![mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ), mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ)] := by
@@ -175,10 +114,8 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     have h := contMDiffWithinAt_extChartAt_symm_range_self (I := I) (n := 2) (u z)
     rw [hrange, contMDiffWithinAt_univ] at h
     exact contMDiffAt_iff_contDiffAt.1 (hρ.comp_of_eq h (extChartAt_to_inv (u z)))
-  have hω : DifferentiableAt ℝ (α.inChartAt (u z)) ((extChartAt I (u z) ∘ u) z) := by
-    have h := hα.contDiffWithinAt_inChartAt_self (u z)
-    rw [hrange, contDiffWithinAt_univ] at h
-    exact h.differentiableAt one_ne_zero
+  have hω : DifferentiableAt ℝ (α.inChartAt (u z)) ((extChartAt I (u z) ∘ u) z) :=
+    α.differentiableAt_inChartAt hα
   -- The three identities of the computation in local coordinates.
   have hJsq : ∀ᶠ e in 𝓝 ((extChartAt I (u z) ∘ u) z),
       ∀ v, J.inChart (u z) e (J.inChart (u z) e v) = -v := by
@@ -188,7 +125,7 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
       J.inChart (u z) ((extChartAt I (u z) ∘ u) w) (fderiv ℝ (extChartAt I (u z) ∘ u) w 1) := by
     filter_upwards [hCR, hsrc, ContMDiffAt.eventually_mdifferentiableAt hu one_le_two]
       with w hw hws hwd
-    exact fderiv_extChartAt_comp_apply_I hws hwd hw
+    exact J.fderiv_extChartAt_comp_apply_eq_inChart (u z) hwd hws hw
   have hρJc : ∀ᶠ e in 𝓝 ((extChartAt I (u z) ∘ u) z),
       (fderiv ℝ (ρ ∘ (extChartAt I (u z)).symm) e).comp (J.inChart (u z) e) =
         -L (α.inChartAt (u z) e) := by
@@ -197,8 +134,12 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     filter_upwards [htgt, (hρc.eventually (by simp)).mono fun e he ↦
       he.differentiableAt (by norm_num), hsymm.eventually hρJ] with e he hed hJ
     ext v
-    rw [ContinuousLinearMap.comp_apply, neg_apply, hL]
-    exact fderiv_comp_extChartAt_symm_inChart_apply he hed hJ v
+    rw [ContinuousLinearMap.comp_apply, neg_apply, hL,
+      J.fderiv_comp_extChartAt_symm_inChart_apply (u z) he hed, hJ, RoughForm.inChartAt_apply]
+    congr 2
+    funext i
+    fin_cases i
+    rfl
   -- The computation in the chart, transported back.
   have hloc := JHolomorphic.laplacian_comp_eq_of_fderiv_comp_eq_neg huc hCRc hρc
     (L.differentiableAt.comp _ hω) hJsq hρJc
@@ -213,8 +154,8 @@ theorem laplacian_comp_eq_of_mvfderiv_comp_eq_neg
     rfl
   -- The chart at `u z` has the identity as derivative there.
   have hD₀ (v : ℂ) : fderiv ℝ (extChartAt I (u z) ∘ u) z v = mfderiv 𝓘(ℝ, ℂ) I u z v := by
-    rw [fderiv_extChartAt_comp_apply (mem_extChartAt_source (u z))
-      (hu.mdifferentiableAt (by norm_num)), mfderiv_extChartAt_self]
+    rw [(hu.mdifferentiableAt (by norm_num)).fderiv_extChartAt_comp_apply
+      (mem_extChartAt_source (u z)), mfderiv_extChartAt_self]
     -- The identity of the tangent space at `u z` applied to `mfderiv u z v`.
     rfl
   have hR (a b : E) : mextDeriv α (u z) ![a, b] =
@@ -232,7 +173,9 @@ exterior derivative `dα` tames `J` at `u z`, that is `dα(v, J v) ≥ 0` for ev
 theorem laplacian_comp_nonneg_of_mvfderiv_comp_eq_neg (hu : ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
     (hCR : ∀ᶠ w in 𝓝 z,
       mfderiv 𝓘(ℝ, ℂ) I u w (Complex.I : ℂ) = J (u w) (mfderiv 𝓘(ℝ, ℂ) I u w (1 : ℂ)))
-    (hρ : ContMDiffAt I 𝓘(ℝ) 2 ρ (u z)) (hα : IsSmoothForm I 1 α)
+    (hρ : ContMDiffAt I 𝓘(ℝ) 2 ρ (u z))
+    (hα : MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) (u z))
     (hρJ : ∀ᶠ y in 𝓝 (u z), ∀ v, mvfderiv I ρ y (J y v) = -α y ![v])
     (htame : ∀ v, 0 ≤ mextDeriv α (u z) ![v, J (u z) v]) :
     0 ≤ Δ (ρ ∘ u) z := by
@@ -246,25 +189,29 @@ private theorem contDiffAt_and_laplacian_nonneg {R : ℝ} {U : Set ℂ} (hU : Is
     (hu : ∀ z ∈ U, ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
     (hCR : ∀ z ∈ U,
       mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
-    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x) (hα : IsSmoothForm I 1 α)
+    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
+    (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
     (hρJ : ∀ x, R < ρ x → ∀ v, mvfderiv I ρ x (J x v) = -α x ![v])
     (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J x v]) (hRz : R < ρ (u z)) :
     ContDiffAt ℝ 2 (ρ ∘ u) z ∧ 0 ≤ Δ (ρ ∘ u) z := by
   refine ⟨contMDiffAt_iff_contDiffAt.1 ((hρ _ hRz).comp z (hu z hz)), ?_⟩
   have hnhds : ∀ᶠ x in 𝓝 (u z), R < ρ x := (hρ _ hRz).continuousAt.eventually (lt_mem_nhds hRz)
   exact laplacian_comp_nonneg_of_mvfderiv_comp_eq_neg (hu z hz)
-    (eventually_of_mem (hU.mem_nhds hz) hCR) (hρ _ hRz) hα (hnhds.mono hρJ) (htame _ hRz)
+    (eventually_of_mem (hU.mem_nhds hz) hCR) (hρ _ hRz) (hα _ hRz) (hnhds.mono hρJ) (htame _ hRz)
 
 /-- **The maximum principle for `J`-holomorphic curves in a manifold.** Suppose that on the region
-`{ρ > R}` the function `ρ` is `C²`, `dρ ∘ J = -α` for a `C¹` one-form `α`, and `dα` tames `J`. Let
-`K ⊆ ℂ` be compact and `u` be `C²` and `J`-holomorphic on the interior of `K`, with `ρ ∘ u`
-continuous on `K`. If `u` maps the frontier of `K` into `{ρ ≤ R}`, then it maps all of `K` into
-`{ρ ≤ R}`. -/
+`{ρ > R}` the function `ρ` is `C²`, `dρ ∘ J = -α` for a one-form `α` differentiable there, and
+`dα` tames `J`. Let `K ⊆ ℂ` be compact and `u` be `C²` and `J`-holomorphic on the interior of
+`K`, with `ρ ∘ u` continuous on `K`. If `u` maps the frontier of `K` into `{ρ ≤ R}`, then it
+maps all of `K` into `{ρ ≤ R}`. -/
 theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
     (hf : ContinuousOn (ρ ∘ u) K) (hu : ∀ z ∈ interior K, ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
     (hCR : ∀ z ∈ interior K,
       mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
-    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x) (hα : IsSmoothForm I 1 α)
+    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
+    (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
     (hρJ : ∀ x, R < ρ x → ∀ v, mvfderiv I ρ x (J x v) = -α x ![v])
     (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J x v])
     (hbdry : ∀ z ∈ frontier K, ρ (u z) ≤ R) (hz : z ∈ K) : ρ (u z) ≤ R :=
@@ -276,16 +223,19 @@ theorem comp_le_of_comp_le_frontier {R : ℝ} {K : Set ℂ} (hK : IsCompact K)
     (fun w hw ↦ hbdry w hw) hz
 
 /-- **No escape for strips in a manifold.** Suppose that on the region `{ρ > R}` the function `ρ`
-is `C²`, `dρ ∘ J = -α` for a `C¹` one-form `α`, and `dα` tames `J`. Let `u` be `C²` and
-`J`-holomorphic on the open strip `ℝ × (0, 1)`, with `ρ ∘ u` continuous on the closed strip
-`ℝ × [0, 1]`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into `{ρ ≤ R}`, and also the
-two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole strip into `{ρ ≤ R}`. -/
+is `C²`, `dρ ∘ J = -α` for a one-form `α` differentiable there, and `dα` tames `J`. Let `u` be
+`C²` and `J`-holomorphic on the open strip `ℝ × (0, 1)`, with `ρ ∘ u` continuous on the closed
+strip `ℝ × [0, 1]`. If `u` maps both boundary lines `ℑ z = 0` and `ℑ z = 1` into `{ρ ≤ R}`, and
+also the two ends `|ℜ z| ≥ T` of the strip for some `T`, then `u` maps the whole strip into
+`{ρ ≤ R}`. -/
 theorem comp_le_of_comp_le_strip_boundary_of_comp_le_ends {R T : ℝ}
     (hf : ContinuousOn (ρ ∘ u) (univ ×ℂ Icc 0 1))
     (hu : ∀ z : ℂ, 0 < z.im → z.im < 1 → ContMDiffAt 𝓘(ℝ, ℂ) I 2 u z)
     (hCR : ∀ z : ℂ, 0 < z.im → z.im < 1 →
       mfderiv 𝓘(ℝ, ℂ) I u z (Complex.I : ℂ) = J (u z) (mfderiv 𝓘(ℝ, ℂ) I u z (1 : ℂ)))
-    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x) (hα : IsSmoothForm I 1 α)
+    (hρ : ∀ x, R < ρ x → ContMDiffAt I 𝓘(ℝ) 2 ρ x)
+    (hα : ∀ x, R < ρ x → MDifferentiableAt I (I.prod 𝓘(ℝ, E [⋀^Fin 1]→L[ℝ] ℝ))
+      (fun y ↦ TotalSpace.mk' (E [⋀^Fin 1]→L[ℝ] ℝ) y (α y)) x)
     (hρJ : ∀ x, R < ρ x → ∀ v, mvfderiv I ρ x (J x v) = -α x ![v])
     (htame : ∀ x, R < ρ x → ∀ v, 0 ≤ mextDeriv α x ![v, J x v])
     (h₀ : ∀ z : ℂ, z.im = 0 → ρ (u z) ≤ R) (h₁ : ∀ z : ℂ, z.im = 1 → ρ (u z) ≤ R)

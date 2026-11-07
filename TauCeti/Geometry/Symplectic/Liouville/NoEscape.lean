@@ -85,7 +85,8 @@ theorem liouvilleRadialCoordinate_le_of_le_strip_boundary_of_le_ends
     (h.contMDiffAt_liouvilleRadialCoordinate hZ
       ((h.one_lt_liouvilleRadialCoordinate_iff hZ).1 (hR.trans_lt hx))).of_le (by simp)
   refine Pseudoholomorphic.comp_le_of_comp_le_strip_boundary_of_comp_le_ends hf hu hCR hρ
-    (α.isSmoothForm.of_le (by simp)) hJ (fun x hx v ↦ ?_) h₀ h₁ hends hz₀ hz₁
+    (fun x _ ↦ ((isSmoothForm_def _ _).1 α.isSmoothForm x).mdifferentiableAt (by simp)) hJ
+    (fun x hx v ↦ ?_) h₀ h₁ hends hz₀ hz₁
   rw [h.mextDeriv_eq]
   simpa only [SmoothBundleForm.eval₂_apply] using htame x hx v
 
