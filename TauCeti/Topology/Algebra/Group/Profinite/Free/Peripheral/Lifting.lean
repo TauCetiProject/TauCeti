@@ -131,6 +131,211 @@ theorem level_one_eq_univ (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) :
   let _ := hF.gradedPieceModule 0 0
   simp [defect_def, cusp_def, List.sum_ofFn, ← Finset.smul_sum]
 
+/-- Modulo `γ_{m+2}`, correcting the conjugators `c i` and `d` of the defect by `c' i` and `d'`
+multiplies the defect by the product `(∏ i, b' i) * bz'` of the correction commutators
+`b' i = ⁅(w i)⁻¹, (c' i)⁻¹⁆`, where `w i` is the conjugated power of the `i`-th entry, and the
+cusp commutator `bz' = ⁅wz⁻¹, d'⁻¹⁆`, where `wz` is the conjugated power of the cusp. The
+correction commutators `b' i` and `bz'` are assumed to lie in `γ_{m+1}`, which makes them central
+modulo `γ_{m+2}`. -/
+private theorem mk_defect_mul_correction (hF : IsProP p F) (x : Fin r → F) (u : ℤ_[p]) (m : ℕ)
+    (c c' : Fin r → F) (d d' : F)
+    (b' : Fin r → pLowerCentralSeries 0 F (0 + m + 1))
+    (bz' : pLowerCentralSeries 0 F (0 + m + 1))
+    (hb' : ∀ i, (b' i : F) = ⁅((c i)⁻¹ * hF.padicPow (x i) u * c i)⁻¹, (c' i)⁻¹⁆)
+    (hbz' : (bz' : F) = ⁅(d⁻¹ * hF.padicPow (cusp x) u * d)⁻¹, d'⁻¹⁆) :
+    ((defect hF x u (fun i ↦ c i * c' i) (d * d') : F) :
+        F ⧸ pLowerCentralSeries 0 F ((0 + m + 1) + 1)) =
+      ((defect hF x u c d *
+          (((List.ofFn b').prod * bz' : pLowerCentralSeries 0 F (0 + m + 1)) : F) : F) :
+        F ⧸ pLowerCentralSeries 0 F ((0 + m + 1) + 1)) := by
+  let w : Fin r → F := fun i ↦ (c i)⁻¹ * hF.padicPow (x i) u * c i
+  let wz : F := d⁻¹ * hF.padicPow (cusp x) u * d
+  have hfactor (i : Fin r) :
+      (c i * c' i)⁻¹ * hF.padicPow (x i) u * (c i * c' i) = w i * (b' i : F) := by
+    rw [hb' i, commutatorElement_def]
+    simp only [w]
+    group
+  have hfactorCusp :
+      (d * d')⁻¹ * hF.padicPow (cusp x) u * (d * d') = wz * (bz' : F) := by
+    rw [hbz', commutatorElement_def]
+    simp only [wz]
+    group
+  simp only [defect, hfactor, hfactorCusp]
+  let N := pLowerCentralSeries 0 F ((0 + m + 1) + 1)
+  have hBcoe : ((((List.ofFn b').prod * bz' : pLowerCentralSeries 0 F (0 + m + 1))) : F) =
+      (List.ofFn fun i ↦ (b' i : F)).prod * bz' := by
+    -- The coercion of an element of the subgroup `γ_{m+1}` to `F` is its subtype homomorphism;
+    -- exposing it lets `map_mul` and `map_list_prod` push the coercion through the product.
+    change (pLowerCentralSeries 0 F (0 + m + 1)).subtype ((List.ofFn b').prod * bz') = _
+    rw [map_mul, map_list_prod, List.map_ofFn]
+    rfl
+  rw [hBcoe]
+  -- Unfold the local abbreviation of the quotient subgroup and restate the goal as the equality
+  -- in `F ⧸ N` of `∏ (w i * b' i) * (wz * bz')` with `((∏ w i) * wz) * ((∏ b' i) * bz')`, the
+  -- shape to which the quotient multiplication lemmas below apply.
+  change (((List.ofFn fun i ↦ w i * (b' i : F)).prod * (wz * bz') : F) : F ⧸ N) =
+    ((((List.ofFn w).prod * wz) * ((List.ofFn fun i ↦ (b' i : F)).prod * bz') : F) : F ⧸ N)
+  have hcen : ∀ i, (((b' i : F)) : F ⧸ N) ∈ Submonoid.center _ := fun i ↦
+    Submonoid.mem_center_iff.mpr fun q ↦ by
+      obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
+      exact (commute_mk_of_mem_pLowerCentralSeries (b' i).2 g).eq
+  have hsplit :
+      (((List.ofFn fun i ↦ w i * (b' i : F)).prod : F) : F ⧸ N) =
+        ((List.ofFn w).prod : F ⧸ N) * ((List.ofFn fun i ↦ (b' i : F)).prod : F ⧸ N) := by
+    simp only [← QuotientGroup.mk'_apply, map_list_prod, List.ofFn_eq_map, List.map_map,
+      Function.comp_def, map_mul]
+    exact List.prod_map_mul_of_mem_center (List.finRange r)
+      (fun i ↦ QuotientGroup.mk' N (w i)) (fun i ↦ QuotientGroup.mk' N (b' i))
+      (fun i _ ↦ hcen i)
+  have hbprod : (List.ofFn fun i ↦ (b' i : F)).prod ∈ pLowerCentralSeries 0 F (0 + m + 1) := by
+    apply Subgroup.list_prod_mem
+    intro t ht
+    rw [List.mem_ofFn] at ht
+    obtain ⟨i, rfl⟩ := ht
+    exact (b' i).2
+  simp only [QuotientGroup.mk_mul, hsplit]
+  exact (commute_mk_of_mem_pLowerCentralSeries hbprod wz).symm.mul_mul_mul_comm _ _
+
+/-- The graded classes of the correction commutators sum to `u` times the sum of the graded
+brackets of the classes of the peripheral tuple with the classes of the corrections. -/
+private theorem sum_gradedMk_correction_eq {k : ℕ} (hF : IsProP p F)
+    (e : F ≃ₜ* freeProP p (Fin (k + 1))) (u : ℤ_[p]ˣ) (m : ℕ)
+    (c : Fin (k + 1) → F) (d : F) (q : Fin (k + 1) → pLowerCentralSeries 0 F m)
+    (c' : Fin (k + 1) → F) (d' : F) (hc'0 : c' 0 = 1)
+    (hc's : ∀ i : Fin k, c' i.succ = q i.castSucc) (hd' : d' = q (Fin.last k))
+    (b' : Fin (k + 1) → pLowerCentralSeries 0 F (0 + m + 1))
+    (bz' : pLowerCentralSeries 0 F (0 + m + 1))
+    (hb' : ∀ i, (b' i : F) =
+      ⁅((c i)⁻¹ * hF.padicPow (basis e i) u * c i)⁻¹, (c' i)⁻¹⁆)
+    (hbz' : (bz' : F) = ⁅(d⁻¹ * hF.padicPow (cusp (basis e)) u * d)⁻¹, d'⁻¹⁆) :
+    letI := hF.gradedPieceModule 0 0
+    letI := hF.gradedPieceModule 0 m
+    letI := hF.gradedPieceModule 0 (0 + m + 1)
+    (∑ i, gradedMk 0 F (0 + m + 1) (b' i)) + gradedMk 0 F (0 + m + 1) bz' =
+      (u : ℤ_[p]) • ∑ i, gradedBracket 0 F 0 m
+        (gradedMkZero 0 F (peripheralTuple (basis e) i.succ)) (gradedMk 0 F m (q i)) := by
+  let _ := hF.gradedPieceModule 0 0
+  let _ := hF.gradedPieceModule 0 m
+  let _ := hF.gradedPieceModule 0 (0 + m + 1)
+  have hbzero : gradedMk 0 F (0 + m + 1) (b' 0) = 0 := by
+    rw [gradedMk_eq_zero_iff]
+    simp [hb', hc'0]
+  have hbsucc (i : Fin k) :
+      gradedMk 0 F (0 + m + 1) (b' i.succ) =
+        (u : ℤ_[p]) • gradedBracket 0 F 0 m
+          (gradedMkZero 0 F (basis e i.succ)) (gradedMk 0 F m (q i.castSucc)) := by
+    rw [← hF.gradedMk_commutatorElement_inv_conj_padicPow_inv (basis e i.succ) (c i.succ)
+      (q i.castSucc) (u : ℤ_[p])]
+    congr 1
+    exact Subtype.ext (by simp [hb', hc's])
+  have hbzclass : gradedMk 0 F (0 + m + 1) bz' =
+      (u : ℤ_[p]) • gradedBracket 0 F 0 m
+        (gradedMkZero 0 F (cusp (basis e))) (gradedMk 0 F m (q (Fin.last k))) := by
+    rw [← hF.gradedMk_commutatorElement_inv_conj_padicPow_inv (cusp (basis e)) d
+      (q (Fin.last k)) (u : ℤ_[p])]
+    congr 1
+    exact Subtype.ext (by simp [hbz', hd'])
+  rw [Fin.sum_univ_succ, Fin.sum_univ_castSucc]
+  simp only [hbzero, zero_add]
+  simp_rw [hbsucc]
+  rw [hbzclass, ← Finset.smul_sum, ← smul_add]
+  simp only [Fin.succ_castSucc, peripheralTuple_castSucc, Fin.succ_last,
+    peripheralTuple_last]
+
+/-- If the graded corrections solve the bracket equation in `gr_{m+1}`, then multiplying the defect
+by the product of the correction commutators lands in `γ_{m+2}`. -/
+private theorem defect_mul_correction_prod_mem {k : ℕ} (hF : IsProP p F)
+    (e : F ≃ₜ* freeProP p (Fin (k + 1))) (u : ℤ_[p]ˣ) (m : ℕ)
+    (c : Fin (k + 1) → F) (d : F) (q : Fin (k + 1) → pLowerCentralSeries 0 F m)
+    (c' : Fin (k + 1) → F) (d' : F) (hc'0 : c' 0 = 1)
+    (hc's : ∀ i : Fin k, c' i.succ = q i.castSucc) (hd' : d' = q (Fin.last k))
+    (b' : Fin (k + 1) → pLowerCentralSeries 0 F (0 + m + 1))
+    (bz' : pLowerCentralSeries 0 F (0 + m + 1))
+    (hb' : ∀ i, (b' i : F) =
+      ⁅((c i)⁻¹ * hF.padicPow (basis e i) u * c i)⁻¹, (c' i)⁻¹⁆)
+    (hbz' : (bz' : F) = ⁅(d⁻¹ * hF.padicPow (cusp (basis e)) u * d)⁻¹, d'⁻¹⁆)
+    (hdef : defect hF (basis e) u c d ∈ pLowerCentralSeries 0 F (0 + m + 1))
+    (hy : letI := hF.gradedPieceModule 0 0
+      letI := hF.gradedPieceModule 0 m
+      letI := hF.gradedPieceModule 0 (0 + m + 1)
+      (∑ i, gradedBracket 0 F 0 m
+          (gradedMkZero 0 F (peripheralTuple (basis e) i.succ)) (gradedMk 0 F m (q i))) =
+        -((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • gradedMk 0 F (0 + m + 1) ⟨defect hF (basis e) u c d, hdef⟩) :
+    defect hF (basis e) u c d *
+        (((List.ofFn b').prod * bz' : pLowerCentralSeries 0 F (0 + m + 1)) : F) ∈
+      pLowerCentralSeries 0 F ((0 + m + 1) + 1) := by
+  let _ := hF.gradedPieceModule 0 0
+  let _ := hF.gradedPieceModule 0 m
+  let _ := hF.gradedPieceModule 0 (0 + m + 1)
+  have hcorr := sum_gradedMk_correction_eq hF e u m c d q c' d' hc'0 hc's hd' b' bz' hb' hbz'
+  have hB : gradedMk 0 F (0 + m + 1) ((List.ofFn b').prod * bz') =
+      -gradedMk 0 F (0 + m + 1) ⟨defect hF (basis e) u c d, hdef⟩ := by
+    rw [gradedMk_mul, gradedMk_list_prod, List.map_ofFn, Function.comp_def, List.sum_ofFn, hcorr,
+      hy, ← mul_smul]
+    simp
+  have hDB : gradedMk 0 F (0 + m + 1)
+      (⟨defect hF (basis e) u c d, hdef⟩ * ((List.ofFn b').prod * bz')) = 0 := by
+    rw [gradedMk_mul, hB, add_neg_cancel]
+  exact gradedMk_eq_zero_iff.mp hDB
+
+/-- The correction step of `exists_mem_level_succ` in positive rank: the graded corrections
+solve the bracket equation in `gr_{m+1}` and give conjugators at the next level. -/
+private theorem exists_mem_level_succ_of_succ {k : ℕ} (hF : IsProP p F)
+    (e : F ≃ₜ* freeProP p (Fin (k + 1))) (u : ℤ_[p]ˣ) (m : ℕ)
+    (c : Fin (k + 1) → F) (d : F) (h : (c, d) ∈ level hF (basis e) (u : ℤ_[p]) (m + 1)) :
+    ∃ (c' : Fin (k + 1) → F) (d' : F),
+      (∀ i, c' i ∈ closedLowerCentralSeries F m) ∧
+      d' ∈ closedLowerCentralSeries F m ∧
+      (∀ h0 : 0 < k + 1, c' ⟨0, h0⟩ = 1) ∧
+      ((fun i ↦ c i * c' i), d * d') ∈ level hF (basis e) (u : ℤ_[p]) (m + 1 + 1) := by
+  -- Read the current defect in `gr_m` and use the peripheral tuple without its first entry
+  -- as a finite topological generating family. Its bracket coefficients prescribe the
+  -- corrections while leaving the first conjugator unchanged.
+  have hdef : defect hF (basis e) u c d ∈ pLowerCentralSeries 0 F (m + 1) := by
+    rw [← closedLowerCentralSeries_def]
+    exact h
+  let _ := hF.gradedPieceModule 0 0
+  let _ := hF.gradedPieceModule 0 m
+  let _ := hF.gradedPieceModule 0 (0 + m + 1)
+  obtain ⟨y, hy⟩ := exists_sum_gradedBracket_eq_of_range m
+    (peripheralTuple (basis e) ∘ Fin.succ)
+    (topologicalClosure_closure_range_peripheralTuple_comp_succ e)
+    (-((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • gradedMk 0 F (0 + m + 1)
+      ⟨defect hF (basis e) u c d, by simpa using hdef⟩)
+  choose q hq using fun i ↦ gradedMk_surjective m (y i)
+  let c' : Fin (k + 1) → F := Fin.cases 1 (fun i ↦ q i.castSucc)
+  let d' : F := q (Fin.last k)
+  have hc' (i : Fin (k + 1)) : c' i ∈ pLowerCentralSeries 0 F m := by
+    induction i using Fin.cases with
+    | zero => exact one_mem _
+    | succ i => exact (q i.castSucc).2
+  have hd' : d' ∈ pLowerCentralSeries 0 F m := (q (Fin.last k)).2
+  let b' : Fin (k + 1) → pLowerCentralSeries 0 F (0 + m + 1) := fun i ↦
+    ⟨⁅((c i)⁻¹ * hF.padicPow (basis e i) u * c i)⁻¹, (c' i)⁻¹⁆,
+      commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 _)
+        (inv_mem (hc' i))⟩
+  let bz' : pLowerCentralSeries 0 F (0 + m + 1) :=
+    ⟨⁅(d⁻¹ * hF.padicPow (cusp (basis e)) u * d)⁻¹, d'⁻¹⁆,
+      commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 _) (inv_mem hd')⟩
+  have hdefB := defect_mul_correction_prod_mem hF e u m c d q c' d' rfl (fun _ ↦ rfl) rfl
+    b' bz' (fun _ ↦ rfl) rfl (by simpa using hdef) (by simpa only [hq, Function.comp_apply]
+      using hy)
+  have hquot := mk_defect_mul_correction hF (basis e) u m c c' d d' b' bz'
+    (fun _ ↦ rfl) rfl
+  refine ⟨c', d', ?_, ?_, ?_, ?_⟩
+  · intro i
+    rw [closedLowerCentralSeries_def]
+    simpa using hc' i
+  · rw [closedLowerCentralSeries_def]
+    simpa using hd'
+  · intro _
+    rfl
+  · simp only [mem_level_iff]
+    rw [closedLowerCentralSeries_def]
+    have hqone := hquot.trans ((QuotientGroup.eq_one_iff _).mpr hdefB)
+    have hmem := (QuotientGroup.eq_one_iff _).mp hqone
+    simpa only [Nat.zero_add] using hmem
+
 /-- A pair of conjugators whose defect lies in `γ_n`, for positive `n`, can be corrected so that
 its defect lies in `γ_{n+1}`. The corrections lie in `γ_{n-1}`, and the correction at the first
 basis element is trivial. The unit hypothesis on `u` is used to rescale the required graded
@@ -158,166 +363,7 @@ theorem exists_mem_level_succ (hF : IsProP p F)
           Subsingleton.elim _ _
         rw [heq]
         exact one_mem _
-    | succ k =>
-      -- Read the current defect in `gr_m` and use the peripheral tuple without its first entry
-      -- as a finite topological generating family. Its bracket coefficients prescribe the
-      -- corrections while leaving the first conjugator unchanged.
-      have hdef : defect hF (basis e) u c d ∈ pLowerCentralSeries 0 F (m + 1) := by
-        rw [← closedLowerCentralSeries_def]
-        exact h
-      let _ := hF.gradedPieceModule 0 0
-      let _ := hF.gradedPieceModule 0 m
-      let _ := hF.gradedPieceModule 0 (0 + m + 1)
-      let z : gradedPiece 0 F (0 + m + 1) :=
-        gradedMk 0 F (0 + m + 1) ⟨defect hF (basis e) u c d, by simpa using hdef⟩
-      obtain ⟨y, hy⟩ := exists_sum_gradedBracket_eq_of_range m
-        (peripheralTuple (basis e) ∘ Fin.succ)
-        (topologicalClosure_closure_range_peripheralTuple_comp_succ e)
-        (-((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • z)
-      choose q hq using fun i ↦ gradedMk_surjective m (y i)
-      let c' : Fin (k + 1) → F := Fin.cases 1 (fun i ↦ q i.castSucc)
-      let d' : F := q (Fin.last k)
-      have hc' (i : Fin (k + 1)) : c' i ∈ pLowerCentralSeries 0 F m := by
-        induction i using Fin.cases with
-        | zero => exact one_mem _
-        | succ i => exact (q i.castSucc).2
-      have hd' : d' ∈ pLowerCentralSeries 0 F m := (q (Fin.last k)).2
-      let w : Fin (k + 1) → F := fun i ↦
-        (c i)⁻¹ * hF.padicPow (basis e i) u * c i
-      let wz : F := d⁻¹ * hF.padicPow (cusp (basis e)) u * d
-      let b : Fin (k + 1) → F := fun i ↦ ⁅(w i)⁻¹, (c' i)⁻¹⁆
-      let bz : F := ⁅wz⁻¹, (d')⁻¹⁆
-      have hb (i : Fin (k + 1)) : b i ∈ pLowerCentralSeries 0 F (0 + m + 1) :=
-        commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 (w i)⁻¹)
-          (inv_mem (hc' i))
-      have hbz : bz ∈ pLowerCentralSeries 0 F (0 + m + 1) :=
-        commutator_mem_pLowerCentralSeries (mem_pLowerCentralSeries_zero 0 wz⁻¹) (inv_mem hd')
-      let b' : Fin (k + 1) → pLowerCentralSeries 0 F (0 + m + 1) :=
-        fun i ↦ ⟨b i, hb i⟩
-      let bz' : pLowerCentralSeries 0 F (0 + m + 1) := ⟨bz, hbz⟩
-      -- Each modified conjugate differs from the old one by a commutator. In the graded piece,
-      -- these commutators are the unit `u` times the chosen bracket corrections.
-      have hbzero : gradedMk 0 F (0 + m + 1) (b' 0) = 0 := by
-        rw [gradedMk_eq_zero_iff]
-        simp [b', b, c']
-      have hbsucc (i : Fin k) :
-          gradedMk 0 F (0 + m + 1) (b' i.succ) =
-            (u : ℤ_[p]) • gradedBracket 0 F 0 m
-              (gradedMkZero 0 F (basis e i.succ)) (gradedMk 0 F m (q i.castSucc)) := by
-        simpa only [b', b, w, c', Fin.cases_succ, Subgroup.coe_inv] using
-          hF.gradedMk_commutatorElement_inv_conj_padicPow_inv (basis e i.succ) (c i.succ)
-            (q i.castSucc) (u : ℤ_[p])
-      have hbzclass : gradedMk 0 F (0 + m + 1) bz' =
-          (u : ℤ_[p]) • gradedBracket 0 F 0 m
-            (gradedMkZero 0 F (cusp (basis e))) (gradedMk 0 F m (q (Fin.last k))) := by
-        simpa only [bz', bz, wz, d', Subgroup.coe_inv] using
-          hF.gradedMk_commutatorElement_inv_conj_padicPow_inv (cusp (basis e)) d
-            (q (Fin.last k)) (u : ℤ_[p])
-      have hcorr :
-          (∑ i, gradedMk 0 F (0 + m + 1) (b' i)) +
-              gradedMk 0 F (0 + m + 1) bz' =
-            (u : ℤ_[p]) •
-              ∑ i, gradedBracket 0 F 0 m
-                (gradedMkZero 0 F (peripheralTuple (basis e) i.succ))
-                (gradedMk 0 F m (q i)) := by
-        rw [Fin.sum_univ_succ, Fin.sum_univ_castSucc]
-        simp only [hbzero, zero_add]
-        simp_rw [hbsucc]
-        rw [hbzclass, ← Finset.smul_sum, ← smul_add]
-        simp only [Fin.succ_castSucc, peripheralTuple_castSucc, Fin.succ_last,
-          peripheralTuple_last]
-      have hyq :
-          (∑ i, gradedBracket 0 F 0 m
-              (gradedMkZero 0 F (peripheralTuple (basis e) i.succ))
-              (gradedMk 0 F m (q i))) =
-            -((u⁻¹ : ℤ_[p]ˣ) : ℤ_[p]) • z := by
-        simpa only [hq, Function.comp_apply] using hy
-      let B : pLowerCentralSeries 0 F (0 + m + 1) := (List.ofFn b').prod * bz'
-      have hB : gradedMk 0 F (0 + m + 1) B = -z := by
-        -- Unfold the local correction product to expose `gradedMk_mul` and `gradedMk_list_prod`.
-        change gradedMk 0 F (0 + m + 1) ((List.ofFn b').prod * bz') = -z
-        rw [gradedMk_mul, gradedMk_list_prod, List.map_ofFn, Function.comp_def,
-          List.sum_ofFn, hcorr, hyq, ← mul_smul]
-        simp
-      have hdefB : defect hF (basis e) u c d * (B : F) ∈
-          pLowerCentralSeries 0 F ((0 + m + 1) + 1) := by
-        have hbase : defect hF (basis e) u c d * (B : F) ∈
-            pLowerCentralSeries 0 F (0 + m + 1) :=
-          mul_mem (by simpa using hdef) B.2
-        let DB : pLowerCentralSeries 0 F (0 + m + 1) :=
-          ⟨defect hF (basis e) u c d * (B : F), hbase⟩
-        have hDB : gradedMk 0 F (0 + m + 1) DB = 0 := calc
-          gradedMk 0 F (0 + m + 1) ⟨defect hF (basis e) u c d * (B : F), hbase⟩ =
-              z + gradedMk 0 F (0 + m + 1) B := by
-            rw [← gradedMk_mul]
-            rfl
-          _ = 0 := by rw [hB, add_neg_cancel]
-        exact (gradedMk_eq_zero_iff.mp hDB)
-      have hfactor (i : Fin (k + 1)) :
-          (c i * c' i)⁻¹ * hF.padicPow (basis e i) u * (c i * c' i) = w i * b i := by
-        simp only [w, b]
-        rw [commutatorElement_def]
-        group
-      have hfactorCusp :
-          (d * d')⁻¹ * hF.padicPow (cusp (basis e)) u * (d * d') = wz * bz := by
-        simp only [wz, bz]
-        rw [commutatorElement_def]
-        group
-      -- Modulo the next central-series term, all correction commutators are central. Hence the
-      -- interleaved corrected factors can be collected after the original defect.
-      have hquot :
-          ((defect hF (basis e) u (fun i ↦ c i * c' i) (d * d') : F) :
-              F ⧸ pLowerCentralSeries 0 F ((0 + m + 1) + 1)) =
-            ((defect hF (basis e) u c d * (B : F) : F) :
-              F ⧸ pLowerCentralSeries 0 F ((0 + m + 1) + 1)) := by
-        simp only [defect, hfactor, hfactorCusp]
-        have hBcoe : (B : F) = (List.ofFn b).prod * bz := by
-          -- Expose the local subtype-valued definition before mapping its product to `F`.
-          rw [show B = (List.ofFn b').prod * bz' from rfl]
-          -- Restate coercion as the subgroup homomorphism so its product map lemmas apply.
-          change (pLowerCentralSeries 0 F (0 + m + 1)).subtype
-              ((List.ofFn b').prod * bz') = _
-          rw [map_mul, map_list_prod, List.map_ofFn]
-          rfl
-        rw [hBcoe]
-        let N := pLowerCentralSeries 0 F ((0 + m + 1) + 1)
-        -- Name the quotient and expose the four product blocks used in the central rearrangement.
-        change (((List.ofFn fun i ↦ w i * b i).prod * (wz * bz) : F) : F ⧸ N) =
-          ((((List.ofFn w).prod * wz) * ((List.ofFn b).prod * bz) : F) : F ⧸ N)
-        have hcen : ∀ i, ((b i : F) : F ⧸ N) ∈ Submonoid.center _ := fun i ↦
-          Submonoid.mem_center_iff.mpr fun q ↦ by
-            obtain ⟨g, rfl⟩ := QuotientGroup.mk_surjective q
-            exact (commute_mk_of_mem_pLowerCentralSeries (hb i) g).eq
-        have hsplit :
-            (((List.ofFn fun i ↦ w i * b i).prod : F) : F ⧸ N) =
-              ((List.ofFn w).prod : F ⧸ N) * ((List.ofFn b).prod : F ⧸ N) := by
-          simp only [← QuotientGroup.mk'_apply, map_list_prod, List.ofFn_eq_map, List.map_map,
-            Function.comp_def, map_mul]
-          exact List.prod_map_mul_of_mem_center (List.finRange (k + 1))
-            (fun i ↦ QuotientGroup.mk' N (w i)) (fun i ↦ QuotientGroup.mk' N (b i))
-            (fun i _ ↦ hcen i)
-        have hbprod : (List.ofFn b).prod ∈ pLowerCentralSeries 0 F (0 + m + 1) := by
-          apply Subgroup.list_prod_mem
-          intro t ht
-          rw [List.mem_ofFn] at ht
-          obtain ⟨i, rfl⟩ := ht
-          exact hb i
-        -- The central block `∏ b` commutes past `wz`, which collects the corrected factors.
-        simp only [QuotientGroup.mk_mul, hsplit]
-        exact (commute_mk_of_mem_pLowerCentralSeries hbprod wz).symm.mul_mul_mul_comm _ _
-      refine ⟨c', d', ?_, ?_, ?_, ?_⟩
-      · intro i
-        rw [closedLowerCentralSeries_def]
-        simpa using hc' i
-      · rw [closedLowerCentralSeries_def]
-        simpa using hd'
-      · intro _
-        rfl
-      · simp only [mem_level_iff]
-        rw [closedLowerCentralSeries_def]
-        have hqone := hquot.trans ((QuotientGroup.eq_one_iff _).mpr hdefB)
-        have hmem := (QuotientGroup.eq_one_iff _).mp hqone
-        simpa only [Nat.zero_add] using hmem
+    | succ k => exact exists_mem_level_succ_of_succ hF e u m c d h
 
 omit [CompactSpace F] [TotallyDisconnectedSpace F] in
 /-- **The closed lower central series of a free pro-`p` group of rank at least two never
