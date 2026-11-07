@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Probability.Distributions.FisherSnedecor.Basic
 import all TauCeti.Probability.Distributions.FisherSnedecor.Basic
-import TauCeti.Analysis.SpecialFunctions.Gamma
+import TauCeti.Analysis.SpecialFunctions.Gamma.Basic
 
 /-!
 # Parameter measurability of Fisher's F distribution

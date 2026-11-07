@@ -37,7 +37,8 @@ at most `|x - Re e| ^ s`.
 
 ## Main declarations
 
-* `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball.
+* `TauCeti.integrableOn_norm_rpow_ball`: integrability on a centred ball, and
+  `TauCeti.integrableOn_norm_rpow_ball_iff`: its converse on a nontrivial space.
 * `TauCeti.integral_norm_rpow_ball`: the exact radial integral.
 * `TauCeti.integrableOn_norm_sub_rpow_ball`: integrability after translation.
 * `TauCeti.integral_norm_sub_rpow_ball`: the exact integral with any centre.
@@ -81,6 +82,20 @@ theorem integrableOn_norm_rpow_ball {s : ℝ} (hs : -(Module.finrank ℝ E : ℝ
   · filter_upwards with x
     rw [neg_neg, one_mul, Real.norm_of_nonneg (Real.rpow_nonneg (norm_nonneg x) _)]
   · exact (by fun_prop : Measurable fun x : E => ‖x‖ ^ s).aestronglyMeasurable
+
+/-- On a nontrivial space, the kernel `x ↦ ‖x‖ ^ s` is integrable on a ball of positive radius
+centred at the origin exactly when `-dim E < s`. -/
+theorem integrableOn_norm_rpow_ball_iff [Nontrivial E] {s R : ℝ} (hR : 0 < R) :
+    IntegrableOn (fun x : E => ‖x‖ ^ s) (ball 0 R) mu ↔ -(Module.finrank ℝ E : ℝ) < s := by
+  have hd : 1 ≤ Module.finrank ℝ E := Module.finrank_pos
+  have hcongr : IntegrableOn (fun y : ℝ => y ^ (Module.finrank ℝ E - 1) • y ^ s) (Ioo 0 R) ↔
+      IntegrableOn (fun y : ℝ => y ^ ((Module.finrank ℝ E : ℝ) - 1 + s)) (Ioo 0 R) :=
+    integrableOn_congr_fun (fun y hy => by
+      rw [smul_eq_mul, Real.rpow_add hy.1, ← Real.rpow_natCast, Nat.cast_sub hd, Nat.cast_one])
+      measurableSet_Ioo
+  rw [integrableOn_fun_norm_addHaar mu (f := fun r : ℝ => r ^ s), hcongr,
+    intervalIntegral.integrableOn_Ioo_rpow_iff hR]
+  constructor <;> intro h <;> linarith
 
 /-- A norm power is integrable outside a positive-radius closed ball exactly below the
 negative dimension. This includes divergence at the logarithmic borderline. -/
