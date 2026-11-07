@@ -297,9 +297,10 @@ theorem tendsto_add_mul_add_deriv_mul {t d e k : ℝ} :
   rcases lt_trichotomy t 0 with ht | ht | ht
   · have ht' (n : ℕ) : ((n : ℝ) + 1) * t < 0 := mul_neg_of_pos_of_neg (by positivity) ht
     simp [zero_of_nonpos (ht' _).le, deriv_of_neg (ht' _), ht.le]
-  · have hd : deriv smoothTransition 0 = 0 :=
-      (show IsLocalMin smoothTransition 0 from Eventually.of_forall fun x => by
-        simpa using nonneg x).deriv_eq_zero
+  · -- `smoothTransition` is nonnegative and vanishes at `0`, so `0` is a local minimum.
+    have hmin : IsLocalMin smoothTransition 0 :=
+      Eventually.of_forall fun x => by simpa using nonneg x
+    have hd : deriv smoothTransition 0 = 0 := hmin.deriv_eq_zero
     simp [ht, hd]
   · have hev : ∀ᶠ n : ℕ in atTop, 1 < ((n : ℝ) + 1) * t :=
       (Tendsto.atTop_mul_const ht (tendsto_natCast_atTop_atTop.atTop_add
