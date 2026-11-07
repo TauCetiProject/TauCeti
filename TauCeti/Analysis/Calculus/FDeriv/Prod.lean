@@ -55,6 +55,8 @@ variable vanishes everywhere is constant along every horizontal line.
 * `TauCeti.hasDerivAt_slice_left`, `TauCeti.hasDerivAt_slice_right`: the partial derivatives of
   a function in a scalar first or second variable are its derivative applied to `(1, 0)` and
   `(0, 1)`.
+* `TauCeti.fderiv_apply_mk_one_zero`: the derivative of a function in a scalar first variable,
+  applied to `(1, 0)`, is the derivative of its first-variable slice.
 * `TauCeti.fderiv_comp_graph_apply`: the chain rule along a graph `x ↦ f (x, u x)`.
 * `HasFDerivAt.fderiv_comp_graph_eq_fderiv_slice_of_fderiv_right_eq_zero`: along a differentiable
   graph through a spatial critical point, only the parameter derivative contributes.
@@ -223,6 +225,12 @@ applied to `(1, 0)`. -/
 theorem hasDerivAt_slice_left {s : 𝕜} {b : F} (hu : DifferentiableAt 𝕜 u (s, b)) :
     HasDerivAt (fun s ↦ u (s, b)) (fderiv 𝕜 u (s, b) (1, 0)) s :=
   hu.hasFDerivAt.comp_hasDerivAt s (hasDerivAt_prodMk_left s b)
+
+/-- Where `u` is differentiable, its derivative applied to `(1, 0)` is its partial derivative in
+the first variable. -/
+theorem fderiv_apply_mk_one_zero {z : 𝕜 × F} (hu : DifferentiableAt 𝕜 u z) :
+    fderiv 𝕜 u z (1, 0) = deriv (fun s ↦ u (s, z.2)) z.1 :=
+  (hasDerivAt_slice_left (s := z.1) (b := z.2) hu).deriv.symm
 
 /-- The derivative in the first variable of a first partial derivative `fderiv 𝕜 u · v` is the
 second derivative of `u` in the direction `(1, 0)`. -/
