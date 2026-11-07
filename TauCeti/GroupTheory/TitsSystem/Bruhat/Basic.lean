@@ -296,7 +296,7 @@ The nondegeneracy axiom rules out the smaller alternative in
 theorem bruhatCell_mul_self_eq_union_of_mem_simple {s : T.WeylGroup} (hs : s ∈ T.simple) :
     T.bruhatCell s * T.bruhatCell s = T.bruhatCell 1 ∪ T.bruhatCell s := by
   obtain ⟨r, hr, b, hb⟩ := T.exists_conj_not_mem s hs
-  have hs_inv : s⁻¹ = s := inv_eq_of_mul_eq_one_right (T.simple_sq_eq_one hs)
+  have hs_inv : s⁻¹ = s := T.inv_simple hs
   have hr_inv :
       (QuotientGroup.mk r⁻¹ : T.WeylGroup) = QuotientGroup.mk r := by
     calc
@@ -325,9 +325,9 @@ theorem bruhatCell_mul_self_eq_union_of_mem_simple {s : T.WeylGroup} (hs : s ∈
   rcases T.bruhatCell_mul_eq_or_eq_union_of_mem_simple hs s with hsmall | hbig
   · exfalso
     have hx' := hx
-    rw [hsmall, T.simple_sq_eq_one hs, bruhatCell_one] at hx'
+    rw [hsmall, T.simple_mul_simple_self hs, bruhatCell_one] at hx'
     exact hb hx'
-  · simpa only [T.simple_sq_eq_one hs] using hbig
+  · simpa only [T.simple_mul_simple_self hs] using hbig
 
 /-- The identity Bruhat cell acts on the union of Bruhat cells by left multiplication. -/
 private theorem oneCell_mul_bruhatCells_subset :
@@ -406,7 +406,7 @@ private theorem multipliesBruhatCells (q : T.WeylGroup) : T.MultipliesBruhatCell
   induction hq using Subgroup.closure_induction'' with
   | mem s hs => exact T.multipliesBruhatCells_simple s hs
   | inv_mem s hs =>
-      have hinv : s⁻¹ = s := inv_eq_of_mul_eq_one_right (T.simple_sq_eq_one hs)
+      have hinv : s⁻¹ = s := T.inv_simple hs
       rw [hinv]
       exact T.multipliesBruhatCells_simple s hs
   | one => exact T.multipliesBruhatCells_one

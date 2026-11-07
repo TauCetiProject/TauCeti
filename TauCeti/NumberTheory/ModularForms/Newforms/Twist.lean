@@ -10,7 +10,7 @@ public import TauCeti.NumberTheory.ModularForms.Twist.Basic
 import TauCeti.NumberTheory.ModularForms.Newforms.Coefficient
 import TauCeti.NumberTheory.ModularForms.Newforms.Decomposition
 import TauCeti.NumberTheory.ModularForms.Newforms.RingEigenvalue
-import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne
+import TauCeti.NumberTheory.ModularForms.Newforms.StrongMultiplicityOne.Basic
 import TauCeti.NumberTheory.ModularForms.Twist.Hecke
 
 /-!
@@ -108,9 +108,9 @@ theorem exists_newform_qExpansion_coeff_prime_eq_twist [NeZero M] [NeZero L] (f 
         (f.heckeTCuspNat_eq_eigenvalue_smul hp (hpL.coprime_dvd_right hNL'))
   refine ⟨R, inferInstance, hR, g, hgχ, fun p hp hpL ↦ ?_⟩
   have hg' : (qExpansion 1 g.toCuspForm).coeff p = _ :=
-    g.qExpansion_coeff_eq_eigenvalue g.isNorm ⟨p, hp.pos⟩ (hpL.coprime_dvd_right hR)
+    g.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ (hpL.coprime_dvd_right hR)
   have hf' : (qExpansion 1 f.toCuspForm).coeff p = _ :=
-    f.qExpansion_coeff_eq_eigenvalue f.isNorm ⟨p, hp.pos⟩ (hpL.coprime_dvd_right hNL')
+    f.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ (hpL.coprime_dvd_right hNL')
   rw [hg', hg p hp hpL, hf']
 
 /-! ### The primitive twist -/
@@ -213,9 +213,9 @@ theorem level_eq_primitiveTwistLevel_and_coe_eq_primitiveTwist [NeZero M] {R L :
   · rw [← ZMod.unitsMap_comp (f.primitiveTwistLevel_dvd_mul_mul ψ) hL₀, ← MonoidHom.comp_assoc,
       primitiveTwist_χ_comp_unitsMap_mul_mul, twist_χ_comp_unitsMap]
   · have hpL := hpL'.coprime_dvd_right hL
-    have hg := g.qExpansion_coeff_eq_eigenvalue g.isNorm ⟨p, hp.pos⟩ (hpL'.coprime_dvd_right hR')
-    have ht := (f.primitiveTwist ψ).qExpansion_coeff_eq_eigenvalue (f.primitiveTwist ψ).isNorm
-      ⟨p, hp.pos⟩ (hpL'.coprime_dvd_right hT')
+    have hg := g.qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩ (hpL'.coprime_dvd_right hR')
+    have ht := (f.primitiveTwist ψ).qExpansion_coeff_eq_eigenvalue ⟨p, hp.pos⟩
+      (hpL'.coprime_dvd_right hT')
     rw [← hg, ← ht]
     exact (h p hp hpL hpS).trans (qExpansion_coeff_primitiveTwist f ψ hp
       (hpL.coprime_dvd_right hNL) (hpL.coprime_dvd_right hML)).symm
