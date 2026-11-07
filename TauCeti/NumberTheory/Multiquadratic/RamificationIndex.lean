@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
+import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.FieldTheory.Galois.SquareRoot
 import TauCeti.FieldTheory.IntermediateField.Adjoin.EqTop

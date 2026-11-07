@@ -8,6 +8,7 @@ module
 public import TauCeti.NumberTheory.Multiquadratic.ResidueDegree
 public import TauCeti.NumberTheory.Multiquadratic.Quadratic.Ramification
 import TauCeti.Algebra.Algebra.Equiv
+import TauCeti.Algebra.CharZero.IntCast
 import TauCeti.Algebra.Field.SqrtIntDiv
 import TauCeti.Algebra.Squarefree
 import TauCeti.FieldTheory.Galois.FixedField
