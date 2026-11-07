@@ -7,6 +7,7 @@ module
 
 public import TauCeti.LinearAlgebra.RootSystem.BaseChange.Pi
 public import TauCeti.LinearAlgebra.RootSystem.FiniteType.Irreducible
+public import TauCeti.LinearAlgebra.RootSystem.RankTwo
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Assembly
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.Reduced
 
@@ -207,6 +208,14 @@ theorem hasCartanType_rationalRootSystem :
 which over a field of characteristic zero forces irreducibility. -/
 instance instIsIrreducibleRationalRootSystem : (t.rationalRootSystem ht).IsIrreducible :=
   (hasCartanType_rationalRootSystem t ht).isIrreducible ht
+
+/-- The rational root system has no triple bond unless its Dynkin type is `G₂`. -/
+theorem isNotG2_rationalRootSystem (h : t ≠ .G2) :
+    (t.rationalRootSystem ht).IsNotG2 := by
+  rw [← RootPairing.not_isG2_iff_isNotG2]
+  intro hG2
+  exact h ((t.hasCartanType_rationalRootSystem ht).eq_of_valid
+    (hasCartanType_G2_of_isG2 hG2 (t.rationalBase ht)) ht (by simp))
 
 /-! ## The Bourbaki numbering of the base support -/
 

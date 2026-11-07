@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.Root.Vector
+public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.DoubleChain
 import TauCeti.LinearAlgebra.RootSystem.InvariantForm.RootString
 
 /-!
@@ -150,6 +151,17 @@ theorem structureConstant_eq_natCast_or_eq_neg_natCast {α β : Fin t.numRoots}
   exact (t.isChevalleySystem_chevalleySystem ht).intStructureConstant_eq_natCast_or_eq_neg_natCast
     _ _ _ (LieSubalgebra.isNonZero_coe_root _) (LieSubalgebra.isNonZero_coe_root _)
     (LieSubalgebra.isNonZero_coe_root _) (coe_rootEquiv_eq_add_iff.2 hγ)
+
+/-- The second structure constant in a double chain outside `G₂` is `±2`. -/
+theorem structureConstant_eq_two_or_eq_neg_two_of_double_chain (h : t ≠ .G2)
+    {α β γ δ : Fin t.numRoots}
+    (hγ : (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root β)
+    (hδ : (t.simplyConnectedRootDatum ht).root δ =
+      (t.simplyConnectedRootDatum ht).root α + (t.simplyConnectedRootDatum ht).root γ) :
+    t.structureConstant ht α γ = 2 ∨ t.structureConstant ht α γ = -2 := by
+  simpa [chainBotCoeff_eq_one_of_double_chain h hγ hδ] using
+    structureConstant_eq_natCast_or_eq_neg_natCast ⟨δ, hδ⟩
 
 /-- The structure constant of a genuine root sum is nonzero. -/
 theorem structureConstant_ne_zero {α β : Fin t.numRoots}
