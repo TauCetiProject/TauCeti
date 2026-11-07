@@ -270,7 +270,7 @@ namespace VectorField
 omit [CompleteSpace E] in
 /-- At the centre of the preferred chart, the Lie bracket of the inverse-chart pullbacks of two
 vector fields is their manifold Lie bracket. -/
-theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
+theorem lieBracketWithin_mpullbackWithin_extChartAt_symm
     (V W : ∀ y : M, TangentSpace I y) (s : Set M) (x : M) :
     lieBracketWithin 𝕜 (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm V (Set.range I))
       (mpullbackWithin 𝓘(𝕜, E) I (extChartAt I x).symm W (Set.range I))
@@ -278,9 +278,15 @@ theorem lieBracketWithin_mpullbackWithin_extChartAt_symm [IsManifold I 1 M]
         mlieBracketWithin I V W s x := by
   -- The chart derivative at its centre is the identity of `E`; `TangentSpace I x` is not
   -- syntactically `E`, so the identification is made on the inverse before evaluating it.
+  have hid : HasMFDerivAt I 𝓘(𝕜, E) (extChartAt I x) x (ContinuousLinearMap.id 𝕜 E) := by
+    refine ⟨continuousAt_extChartAt x, ?_⟩
+    -- Near the chart point the round trip through the chart is the identity.
+    exact (hasFDerivWithinAt_id (extChartAt I x x) (Set.range I)).congr_of_eventuallyEq
+      (Filter.eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin x)
+        fun _ ↦ (extChartAt I x).right_inv)
+      ((extChartAt I x).right_inv (mem_extChartAt_target x))
   have hinverse : (mfderiv I 𝓘(𝕜, E) (extChartAt I x) x).inverse = ContinuousLinearMap.id 𝕜 E :=
-    (congrArg (fun f : E →L[𝕜] E ↦ f.inverse) (mfderiv_extChartAt_self (I := I) (x := x))).trans
-      ContinuousLinearMap.inverse_id
+    (congrArg (fun f : E →L[𝕜] E ↦ f.inverse) hid.mfderiv).trans ContinuousLinearMap.inverse_id
   rw [mlieBracketWithin_apply]
   exact (congrArg (fun f : E →L[𝕜] E ↦ f (lieBracketWithin 𝕜 _ _ _ _)) hinverse).symm
 
