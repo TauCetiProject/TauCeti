@@ -130,6 +130,39 @@ theorem _root_.Polynomial.psc_eq_zero_of_lt_natDegree_gcd {p q : K[X]}
       rw [h, mul_zero] at hpg
       exact hpg.symm
 
+omit [DecidableEq K] in
+/-- A relation `A * q + B * p = 0` is forced by the vanishing of the window of coefficients in
+degrees `d, …, m + n - d - 1`, where `d` is the degree of a common divisor `g` of `p` and `q` and
+`A`, `B` have degrees below `m - d` and `n - d`: the combination then has degree below `d`, so
+the divisor `g` forces it to vanish. -/
+private theorem mul_add_mul_eq_zero_of_coeff_window {p q A B g : K[X]} {m n : ℕ} (hp : p ≠ 0)
+    (hm : p.natDegree = m) (hn : q.natDegree ≤ n) (hgp : g ∣ p) (hgq : g ∣ q) (hg0 : g ≠ 0)
+    (hAdeg : A.degree < (m - g.natDegree : ℕ)) (hBdeg : B.degree < (n - g.natDegree : ℕ))
+    (hwin : ∀ i : Fin ((m - g.natDegree) + (n - g.natDegree)),
+      (A * q + B * p).coeff (i + g.natDegree) = 0) :
+    A * q + B * p = 0 := by
+  set d := g.natDegree with hd
+  have hdm : d ≤ m := hm ▸ natDegree_le_of_dvd hgp hp
+  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
+    rcases eq_or_ne q 0 with rfl | hq0
+    · rw [mul_zero, zero_add]
+      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm.le).trans_le
+        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
+    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm.le hn hdm
+        ((natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
+  have hdeg : (A * q + B * p).degree < d := by
+    rw [degree_lt_iff_coeff_zero]
+    intro e he
+    by_cases hlt : e < (m - d) + (n - d) + d
+    · have := hwin ⟨e - d, by omega⟩
+      rwa [Nat.sub_add_cancel he] at this
+    · apply coeff_eq_zero_of_degree_lt
+      exact hsumdeg.trans_le (WithBot.coe_le_coe.mpr
+        (by omega : (m - d) + (n - d) + d ≤ e))
+  exact eq_zero_of_dvd_of_degree_lt
+    (dvd_add (dvd_mul_of_dvd_right hgq _) (dvd_mul_of_dvd_right hgp _))
+    (by rw [degree_eq_natDegree hg0]; exact hdeg)
+
 /-- At the degree of the gcd, the principal subresultant coefficient is nonzero, provided the left
 bound is the actual degree of the nonzero left polynomial and the right bound dominates the degree
 of the right polynomial. -/
@@ -138,12 +171,10 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
     psc p q m n (EuclideanDomain.gcd p q).natDegree ≠ 0 := by
   set g := EuclideanDomain.gcd p q with hg
   clear_value g
-  set d := g.natDegree with hd
-  clear_value d
   have hgp : g ∣ p := hg ▸ EuclideanDomain.gcd_dvd_left p q
   have hgq : g ∣ q := hg ▸ EuclideanDomain.gcd_dvd_right p q
   have hg0 : g ≠ 0 := fun h => hp (EuclideanDomain.gcd_eq_zero_iff.mp (hg ▸ h)).1
-  have hdm : d ≤ m := hd ▸ hm ▸ natDegree_le_of_dvd hgp hp
+  set d := g.natDegree with hd
   rw [psc_def, Ne, ← Matrix.exists_mulVec_eq_zero_iff]
   rintro ⟨v, hv, hMv⟩
   -- The kernel vector encodes a relation `A * q + B * p` with no coefficients in degrees
@@ -156,28 +187,10 @@ theorem _root_.Polynomial.psc_natDegree_gcd_ne_zero {p q : K[X]} {m n : ℕ}
   generalize hB : ofFn (n - d) (fun k => v (Fin.natAdd (m - d) k)) = B at hwin
   have hAdeg : A.degree < (m - d : ℕ) := hA ▸ ofFn_degree_lt _
   have hBdeg : B.degree < (n - d : ℕ) := hB ▸ ofFn_degree_lt _
-  have hsumdeg : (A * q + B * p).degree < ((m - d) + (n - d) + d : ℕ) := by
-    rcases eq_or_ne q 0 with rfl | hq0
-    · rw [mul_zero, zero_add]
-      exact (degree_mul_lt_of_degree_lt_of_natDegree_le hBdeg hm.le).trans_le
-        (WithBot.coe_le_coe.mpr (by omega : n - d + m ≤ m - d + (n - d) + d))
-    · exact degree_mul_add_mul_lt_of_degree_lt_of_natDegree_le hm.le hn hdm
-        (hd ▸ (natDegree_le_of_dvd hgq hq0).trans hn) hAdeg hBdeg
-  have hdeg : (A * q + B * p).degree < d := by
-    rw [degree_lt_iff_coeff_zero]
-    intro e he
-    by_cases hlt : e < (m - d) + (n - d) + d
-    · have := hwin ⟨e - d, by omega⟩
-      rwa [Nat.sub_add_cancel he] at this
-    · apply coeff_eq_zero_of_degree_lt
-      exact hsumdeg.trans_le (WithBot.coe_le_coe.mpr
-        (by omega : (m - d) + (n - d) + d ≤ e))
-  have hzero : A * q + B * p = 0 :=
-    eq_zero_of_dvd_of_degree_lt (dvd_add (dvd_mul_of_dvd_right hgq _) (dvd_mul_of_dvd_right hgp _))
-      (by rw [degree_eq_natDegree hg0, ← hd]; exact hdeg)
+  have hzero := mul_add_mul_eq_zero_of_coeff_window hp hm hn hgp hgq hg0 hAdeg hBdeg hwin
   -- Bézout for the gcd forces `A = 0`, and then `B = 0`.
   have hA0 : A = 0 :=
-    eq_zero_of_mul_add_mul_eq_zero_of_degree_lt hzero (by rw [hm, ← hg, ← hd]; exact hAdeg)
+    eq_zero_of_mul_add_mul_eq_zero_of_degree_lt hzero (by rw [hm, ← hg]; exact hAdeg)
   have hB0 : B = 0 := by
     rw [hA0, zero_mul, zero_add] at hzero
     exact (mul_eq_zero.mp hzero).resolve_right hp
