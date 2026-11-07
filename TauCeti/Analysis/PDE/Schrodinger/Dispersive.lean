@@ -174,6 +174,59 @@ variable [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
 variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℂ F] [CompleteSpace F]
 
+/-- The regularized Gaussian Fourier multipliers `exp(-b_k ‖ξ‖²)` converge strongly to the
+Schrödinger propagator `S(t)` when `b_k → 4π² t i` with `0 < Re b_k`. -/
+private theorem tendsto_fourierMultiplierCLM_gaussian_schrodingerPropagator {t : ℝ}
+    {b : ℕ → ℂ} (hbre : ∀ k, 0 < (b k).re)
+    (hb : Tendsto b atTop (𝓝 (((4 * π ^ 2 * t : ℝ) : ℂ) * I)))
+    (f : Lp F 2 (volume : Measure E)) :
+    Tendsto (fun k ↦ Lp.fourierMultiplierCLM F
+      ((SchwartzMap.gaussian (hbre k) : 𝓢(E, ℂ)).toLp ∞) f) atTop
+      (𝓝 (schrodingerPropagator F t f)) := by
+  set b₀ : ℂ := ((4 * π ^ 2 * t : ℝ) : ℂ) * I
+  rw [schrodingerPropagator_def]
+  refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun k ↦
+    SchwartzMap.norm_toLp_top_le.trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _ zero_le_one
+      fun ξ ↦ ?_)) ?_ f
+  · simp only [pow_zero, norm_iteratedFDeriv_zero, one_mul, SchwartzMap.gaussian_apply]
+    rw [norm_cexp_neg_mul_sq, Real.exp_le_one_iff]
+    exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (hbre k).le) (sq_nonneg _)
+  · filter_upwards [ae_all_iff.2 fun k ↦
+        (SchwartzMap.gaussian (hbre k) : 𝓢(E, ℂ)).coeFn_toLp ∞ volume,
+      (memLp_schrodingerSymbol (E := E) t).coeFn_toLp] with ξ h₁ h₂
+    simp only [h₁, h₂, SchwartzMap.gaussian_apply]
+    have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = schrodingerSymbol t ξ := by
+      rw [schrodingerSymbol_apply]
+      congr 1
+      simp only [b₀]
+      push_cast
+      ring
+    rw [← hval]
+    exact ((Complex.continuous_exp.comp (continuous_neg.mul continuous_const)).tendsto
+      b₀).comp hb
+
+omit [CompleteSpace F] in
+/-- For integrable `f`, the regularized convolution integrals `∫ G_{b_k}(x - y) f(y) dy` converge
+at every point `x` to `∫ K_t(x - y) f(y) dy`. -/
+private theorem tendsto_integral_gaussianKernel_smul {t : ℝ} (ht : t ≠ 0)
+    {b : ℕ → ℂ} (hbre : ∀ k, 0 < (b k).re) (hbim : ∀ k, (b k).im = 4 * π ^ 2 * t)
+    (hb : Tendsto b atTop (𝓝 (((4 * π ^ 2 * t : ℝ) : ℂ) * I)))
+    (f : Lp F 2 (volume : Measure E)) (hf : Integrable f) (x : E) :
+    Tendsto (fun k ↦ ∫ y, gaussianKernel (b k) (x - y) • f y) atTop
+      (𝓝 (∫ y, schrodingerKernel t (x - y) • f y)) := by
+  refine tendsto_integral_of_dominated_convergence
+    (fun y ↦ (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ‖f y‖) (fun k ↦ ?_)
+    (hf.norm.const_mul _) (fun k ↦ Eventually.of_forall fun y ↦ ?_)
+    (Eventually.of_forall fun y ↦ ?_)
+  · have hc : Continuous fun y ↦ gaussianKernel (b k) (x - y) := by
+      unfold gaussianKernel
+      fun_prop
+    exact hc.aestronglyMeasurable.smul (Lp.aestronglyMeasurable f)
+  · rw [norm_smul]
+    exact mul_le_mul_of_nonneg_right
+      (norm_gaussianKernel_le ht (hbre k).le (hbim k) (x - y)) (norm_nonneg _)
+  · exact ((tendsto_gaussianKernel ht (x - y)).comp hb).smul_const _
+
 /-- **The kernel of the Schrödinger propagator.** For `t ≠ 0` and `f ∈ L²` integrable,
 `S(t) f(x) = ∫ K_t(x - y) f(y) dy` for almost every `x`. -/
 theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
@@ -190,48 +243,15 @@ theorem schrodingerPropagator_ae_eq_integral {t : ℝ} (ht : t ≠ 0)
     have h := (continuous_ofReal.tendsto 0).comp tendsto_one_div_add_atTop_nhds_zero_nat
     simpa [b] using h.add_const b₀
   set σ : ℕ → 𝓢(E, ℂ) := fun k ↦ SchwartzMap.gaussian (hbre k)
-  -- The regularized multipliers converge strongly to `S(t)`.
   have hL2 : Tendsto (fun k ↦ Lp.fourierMultiplierCLM F ((σ k).toLp ∞) f) atTop
-      (𝓝 (schrodingerPropagator F t f)) := by
-    rw [schrodingerPropagator_def]
-    refine Lp.tendsto_fourierMultiplierCLM_apply (C := 1) (Eventually.of_forall fun k ↦
-      SchwartzMap.norm_toLp_top_le.trans (SchwartzMap.seminorm_le_bound ℝ 0 0 _ zero_le_one
-        fun ξ ↦ ?_)) ?_ f
-    · simp only [pow_zero, norm_iteratedFDeriv_zero, one_mul, σ, SchwartzMap.gaussian_apply]
-      rw [norm_cexp_neg_mul_sq, Real.exp_le_one_iff]
-      exact mul_nonpos_of_nonpos_of_nonneg (neg_nonpos.2 (hbre k).le) (sq_nonneg _)
-    · filter_upwards [ae_all_iff.2 fun k ↦ (σ k).coeFn_toLp ∞ volume,
-        (memLp_schrodingerSymbol (E := E) t).coeFn_toLp] with ξ h₁ h₂
-      simp only [h₁, h₂, σ, SchwartzMap.gaussian_apply]
-      have hval : cexp (-b₀ * (‖ξ‖ : ℂ) ^ 2) = schrodingerSymbol t ξ := by
-        rw [schrodingerSymbol_apply]
-        congr 1
-        simp only [b₀]
-        push_cast
-        ring
-      rw [← hval]
-      exact ((Complex.continuous_exp.comp (continuous_neg.mul continuous_const)).tendsto
-        b₀).comp hb
+      (𝓝 (schrodingerPropagator F t f)) :=
+    tendsto_fourierMultiplierCLM_gaussian_schrodingerPropagator hbre hb f
   -- The regularized multipliers are convolutions with the regularized kernels.
   have hconv : ∀ k, Lp.fourierMultiplierCLM F ((σ k).toLp ∞) f =ᵐ[volume]
       fun x ↦ ∫ y, gaussianKernel (b k) (x - y) • f y := fun k ↦ by
     filter_upwards [SchwartzMap.coeFn_fourierMultiplierCLM_toLp (σ k) f] with x hx
     simp only [hx, σ, SchwartzMap.fourierInv_gaussian, gaussianKernel]
-  -- For integrable `f`, the convolution integrals converge at every point.
-  have hlim : ∀ x, Tendsto (fun k ↦ ∫ y, gaussianKernel (b k) (x - y) • f y) atTop
-      (𝓝 (∫ y, schrodingerKernel t (x - y) • f y)) := fun x ↦ by
-    refine tendsto_integral_of_dominated_convergence
-      (fun y ↦ (4 * π * |t|) ^ (-(Module.finrank ℝ E : ℝ) / 2) * ‖f y‖) (fun k ↦ ?_)
-      (hf.norm.const_mul _) (fun k ↦ Eventually.of_forall fun y ↦ ?_)
-      (Eventually.of_forall fun y ↦ ?_)
-    · have hc : Continuous fun y ↦ gaussianKernel (b k) (x - y) := by
-        unfold gaussianKernel
-        fun_prop
-      exact hc.aestronglyMeasurable.smul (Lp.aestronglyMeasurable f)
-    · rw [norm_smul]
-      exact mul_le_mul_of_nonneg_right
-        (norm_gaussianKernel_le ht (hbre k).le (hbim k) (x - y)) (norm_nonneg _)
-    · exact ((tendsto_gaussianKernel ht (x - y)).comp hb).smul_const _
+  have hlim := tendsto_integral_gaussianKernel_smul ht hbre hbim hb f hf
   obtain ⟨ns, hns, hae⟩ := (tendstoInMeasure_of_tendsto_Lp hL2).exists_seq_tendsto_ae
   filter_upwards [hae, ae_all_iff.2 hconv] with x hx hxc
   refine tendsto_nhds_unique hx ?_
