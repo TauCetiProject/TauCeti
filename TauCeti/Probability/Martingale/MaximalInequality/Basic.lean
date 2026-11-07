@@ -11,13 +11,14 @@ public import TauCeti.Topology.Algebra.InfiniteSum.ENNReal
 public import TauCeti.MeasureTheory.Constructions.BorelSpace.RightContinuous
 
 /-!
-# Doob's maximal inequality over finite sets and in continuous time
+# Doob's maximal inequality over finite and countable sets and in continuous time
 
 Mathlib's `MeasureTheory.maximal_ineq` is Doob's maximal inequality for a nonnegative submartingale
 indexed by `ℕ`. This file transfers it to a general linearly ordered time set. For a nonnegative
 submartingale `f`, a time `T` and `ε : ℝ≥0`:
 
-* over any finite set `F` of times `≤ T`, `ε P(∃ t ∈ F, ε ≤ f_t) ≤ E[f_T]`;
+* over any finite or countable set `F` of times `≤ T`,
+  `ε P(∃ t ∈ F, ε ≤ f_t) ≤ E[f_T 1_{∃ t ∈ F, ε ≤ f_t}] ≤ E[f_T]`;
 * if every path is right-continuous before `T` (almost surely), and the time set is densely ordered
   and separable (for instance `ℝ≥0`), `ε P(∃ t ≤ T, ε < f_t) ≤ E[f_T]`.
 
@@ -36,6 +37,10 @@ this is how the running maximum of an exponential martingale is shown to be inte
   inequality retaining the crossing event in the terminal expectation.
 * `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le`: the maximal inequality over a finite
   set of times.
+* `MeasureTheory.Submartingale.mul_measure_exists_mem_le_le_setIntegral_of_countable`: the
+  event-refined inequality over a countable set of times.
+* `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le_setIntegral`: the event-refined
+  inequality over all times `t ≤ T`, for right-continuous paths.
 * `MeasureTheory.Submartingale.mul_measure_exists_le_lt_le`: the maximal inequality over all times
   `t ≤ T`, for right-continuous paths.
 * `MeasureTheory.Submartingale.lintegral_iSup_sqrt_le`: the bound on `E[sup_{t ≤ T} √f_t]`.
@@ -116,9 +121,99 @@ theorem mul_measure_exists_mem_le_le [IsFiniteMeasure μ] (hf : Submartingale f 
     (ENNReal.ofReal_le_ofReal
       (setIntegral_le_integral (hf.integrable T) (Eventually.of_forall (hnonneg T))))
 
+/-- **Event-refined Doob inequality on a countable set.** Sampling need not include the
+terminal time; the expectation is restricted to exactly the sampled crossing event. -/
+theorem mul_measure_exists_mem_le_le_setIntegral_of_countable [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) (ε : ℝ≥0)
+    {S : Set ι} (hS : S.Countable) {T : ι} (hST : ∀ t ∈ S, t ≤ T) :
+    ε * μ {ω | ∃ t ∈ S, (ε : ℝ) ≤ f t ω} ≤
+      ENNReal.ofReal (∫ ω in {ω | ∃ t ∈ S, (ε : ℝ) ≤ f t ω}, f T ω ∂μ) := by
+  classical
+  have := hS.to_subtype
+  let A : Finset S → Set Ω := fun F ↦ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω}
+  have hdir : Directed (· ⊆ ·) A := fun F G ↦ ⟨F ∪ G,
+    fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_left _ ht, h⟩,
+    fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_right _ ht, h⟩⟩
+  have hUnion : (⋃ F, A F) = {ω | ∃ t ∈ S, (ε : ℝ) ≤ f t ω} := by
+    ext ω
+    constructor
+    · intro h
+      obtain ⟨F, t, ht, h⟩ := mem_iUnion.1 h
+      exact ⟨t, t.2, h⟩
+    · rintro ⟨t, ht, h⟩
+      exact mem_iUnion.2 ⟨{⟨t, ht⟩}, ⟨t, ht⟩, Finset.mem_singleton_self _, h⟩
+  rw [← hUnion, hdir.measure_iUnion, ENNReal.mul_iSup]
+  apply iSup_le
+  intro F
+  have hbound := hf.mul_measure_exists_mem_le_le_setIntegral hnonneg ε
+    (F := F.map (Function.Embedding.subtype _)) (T := T) (by
+      intro t ht
+      obtain ⟨⟨t, htS⟩, _, rfl⟩ := Finset.mem_map.1 ht
+      exact hST t htS)
+  have hset : {ω | ∃ t ∈ F.map (Function.Embedding.subtype _), (ε : ℝ) ≤ f t ω} = A F := by
+    ext ω
+    simp [A]
+  rw [hset] at hbound
+  refine hbound.trans (ENNReal.ofReal_le_ofReal (setIntegral_mono_set
+    (hf.integrable T).integrableOn (Eventually.of_forall (fun _ ↦ hnonneg T _)) ?_))
+  exact Eventually.of_forall (subset_iUnion A F)
+
+/-- The event-refined Doob inequality also holds for strict crossings on a countable set. -/
+theorem mul_measure_exists_mem_lt_le_setIntegral_of_countable [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) (ε : ℝ≥0)
+    {S : Set ι} (hS : S.Countable) {T : ι} (hST : ∀ t ∈ S, t ≤ T) :
+    ε * μ {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} ≤
+      ENNReal.ofReal (∫ ω in {ω | ∃ t ∈ S, (ε : ℝ) < f t ω}, f T ω ∂μ) := by
+  obtain ⟨δ, hδanti, hδlt, hδlim⟩ := exists_seq_strictAnti_tendsto ε
+  let A : ℕ → Set Ω := fun n ↦ {ω | ∃ t ∈ S, (δ n : ℝ) ≤ f t ω}
+  have hmono : Monotone A := by
+    intro i j hij ω ⟨t, ht, h⟩
+    refine ⟨t, ht, le_trans ?_ h⟩
+    exact_mod_cast hδanti.antitone hij
+  have hsub (n : ℕ) : A n ⊆ {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} := by
+    rintro ω ⟨t, ht, h⟩
+    have hn : (ε : ℝ) < δ n := hδlt n
+    exact ⟨t, ht, hn.trans_le h⟩
+  have hUnion : (⋃ n, A n) = {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} := by
+    apply Subset.antisymm (iUnion_subset hsub)
+    rintro ω ⟨t, ht, h⟩
+    obtain ⟨n, hn⟩ := ((NNReal.tendsto_coe.2 hδlim).eventually (Iio_mem_nhds h)).exists
+    exact mem_iUnion.2 ⟨n, t, ht, hn.le⟩
+  rw [← hUnion, hmono.measure_iUnion, ENNReal.mul_iSup]
+  refine iSup_le fun n ↦ ?_
+  calc ε * μ (A n) ≤ δ n * μ (A n) := by gcongr; exact (hδlt n).le
+    _ ≤ ENNReal.ofReal (∫ ω in A n, f T ω ∂μ) :=
+      hf.mul_measure_exists_mem_le_le_setIntegral_of_countable hnonneg (δ n) hS hST
+    _ ≤ _ := ENNReal.ofReal_le_ofReal (setIntegral_mono_set
+      (hf.integrable T).integrableOn (Eventually.of_forall (fun _ ↦ hnonneg T _))
+      (Eventually.of_forall (by rw [hUnion]; exact hsub n)))
+
 section ContinuousTime
 
 variable [TopologicalSpace ι] [OrderTopology ι] [DenselyOrdered ι]
+
+/-- **Event-refined Doob inequality in continuous time.** Almost surely right-continuous paths
+allow all times before the terminal time, retaining the same strict crossing event in the
+terminal expectation. The measure need not be complete and the filtration need not be usual. -/
+theorem mul_measure_exists_le_lt_le_setIntegral
+    [TopologicalSpace.SeparableSpace ι] [IsFiniteMeasure μ]
+    (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) {T : ι}
+    (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t)
+    (ε : ℝ≥0) :
+    ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤
+      ENNReal.ofReal (∫ ω in {ω | ∃ t ≤ T, (ε : ℝ) < f t ω}, f T ω ∂μ) := by
+  obtain ⟨S, hSc, hST, hS⟩ :=
+    TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
+  have heq : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} =ᵐ[μ]
+      {ω | ∃ t ∈ S, (ε : ℝ) < f t ω} := by
+    filter_upwards [hcont] with ω hω
+    exact propext ⟨fun ⟨t, ht, h⟩ ↦ by
+      obtain ⟨s, hs, hεs⟩ := hS hω ht h
+      exact ⟨s, hs, hεs⟩,
+      fun ⟨t, ht, h⟩ ↦ ⟨t, hST ht, h⟩⟩
+  rw [measure_congr heq, setIntegral_congr_set heq]
+  exact hf.mul_measure_exists_mem_lt_le_setIntegral_of_countable hnonneg ε hSc
+    (fun _ ht ↦ hST ht)
 
 /-- **Doob's maximal inequality in continuous time.** Let `f` be a nonnegative submartingale
 indexed by a densely ordered separable time set, such as `ℝ≥0`, whose paths are almost surely
@@ -126,34 +221,10 @@ right-continuous at every time before `T`. Then `ε P(∃ t ≤ T, ε < f_t) ≤
 theorem mul_measure_exists_le_lt_le [TopologicalSpace.SeparableSpace ι] [IsFiniteMeasure μ]
     (hf : Submartingale f ℱ μ) (hnonneg : 0 ≤ f) {T : ι}
     (hcont : ∀ᵐ ω ∂μ, ∀ t < T, ContinuousWithinAt (fun u ↦ f u ω) (Ioi t) t) (ε : ℝ≥0) :
-    ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) := by
-  classical
-  -- By right-continuity the event is, up to a null set, the union over the finite subsets `F` of
-  -- a countable set `S` of times `≤ T`, dense below `T`; this union is directed.
-  obtain ⟨S, hSc, hST, hS⟩ :=
-    TopologicalSpace.exists_countable_subset_Iic_exists_mem_lt (α := ℝ) T
-  have := hSc.to_subtype
-  let A : Finset S → Set Ω := fun F ↦ {ω | ∃ t ∈ F, (ε : ℝ) ≤ f t ω}
-  have hA : ∀ F, ε * μ (A F) ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) := fun F ↦ by
-    refine le_trans ?_ (hf.mul_measure_exists_mem_le_le hnonneg ε
-      (F := F.map (Function.Embedding.subtype _)) fun t ht ↦ ?_)
-    · gcongr
-      rintro ω ⟨t, ht, hεt⟩
-      exact ⟨t, Finset.mem_map_of_mem _ ht, hεt⟩
-    · obtain ⟨⟨s, hs⟩, -, rfl⟩ := Finset.mem_map.1 ht
-      exact hST hs
-  have hdir : Directed (· ⊆ ·) A := fun F₁ F₂ ↦ ⟨F₁ ∪ F₂,
-    fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_left _ ht, h⟩,
-    fun _ ⟨t, ht, h⟩ ↦ ⟨t, Finset.mem_union_right _ ht, h⟩⟩
-  have hsub : {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ᵐ[μ] ⋃ F, A F := by
-    filter_upwards [hcont] with ω hω ⟨t, htT, hεt⟩
-    obtain ⟨s, hs, hεs⟩ := hS hω htT hεt
-    exact mem_iUnion.2 ⟨{⟨s, hs⟩}, ⟨s, hs⟩, Finset.mem_singleton_self _, hεs.le⟩
-  calc ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ ε * μ (⋃ F, A F) := by
-        gcongr 1
-        exact measure_mono_ae hsub
-    _ = ⨆ F, ε * μ (A F) := by rw [hdir.measure_iUnion, ENNReal.mul_iSup]
-    _ ≤ _ := iSup_le hA
+    ε * μ {ω | ∃ t ≤ T, (ε : ℝ) < f t ω} ≤ ENNReal.ofReal (∫ ω, f T ω ∂μ) :=
+  (hf.mul_measure_exists_le_lt_le_setIntegral hnonneg hcont ε).trans
+    (ENNReal.ofReal_le_ofReal
+      (setIntegral_le_integral (hf.integrable T) (Eventually.of_forall (hnonneg T))))
 
 /-- **The running maximum of the square root of a submartingale is integrable.** For a
 nonnegative submartingale `f` whose paths are almost surely right-continuous before `T`,
