@@ -249,8 +249,9 @@ private theorem homogeneousComponent_homDefect_eq_zero_of_pow (hF : F.height p =
   rw [hk, homogeneousComponent_homDefect_eq_smul_lazardCocycle hf hp' hpK hk₀ (hk ▸ hΦ),
     ← neg_sub, map_neg, ← pSeriesError, ← hk, hP₀, neg_zero, zero_smul, MvPolynomial.coe_zero]
 
-/-- If `N + 1` is not a power of `p`, some multiple of `(X + Y)ᴹ - Xᴹ - Yᴹ` cancels the
-degree-`M = N + 1` part of the homomorphism defect: it is `r C_M` with `d_M` prime to `p`. -/
+/-- Let `f` be a homomorphism from `F` to `G` up to degree `N`, with `N + 1` not a power of `p`.
+Then some multiple of `(X + Y)ᴹ - Xᴹ - Yᴹ` cancels the degree-`M = N + 1` part of the
+homomorphism defect: it is `r C_M` with `d_M` prime to `p`. -/
 private theorem exists_smul_add_homogeneousComponent_homDefect_eq_zero
     {f : PowerSeries K} (hf : PowerSeries.constantCoeff f = 0) {N : ℕ}
     (hpow : ¬∃ k, N + 1 = p ^ k) (hΦ : ((N + 1 : ℕ) : ℕ∞) ≤ (F.homDefect G f).order) :
@@ -373,8 +374,9 @@ private theorem exists_pow_sub_one_eq_div [IsSepClosed K] (hF : F.height p = h)
   rw [zero_pow (by omega)] at hc₁
   exact div_ne_zero (F.coeff_nsmulSeries_ne_zero hF) (G.coeff_nsmulSeries_ne_zero hG) hc₁.symm
 
-/-- The first approximation `c₁ X`, where `c₁ ^ (p ^ h - 1) = u / v`, is a homomorphism up to
-degree `2` and satisfies the `p`-series condition in degree `p ^ h`. -/
+/-- The first approximation `c₁ X`, where `c₁ ^ (p ^ h - 1) = u / v`, has homomorphism defect
+vanishing below degree `2` (it is a homomorphism up to degree `1`) and satisfies the
+`p`-series condition in degree `p ^ h`. -/
 private theorem approx_zero_spec (hF : F.height p = h) (hG : G.height p = h) {c₁ : K}
     (hc₁ : c₁ ^ (p ^ h - 1) = PowerSeries.coeff (p ^ h) (F.nsmulSeries p) /
       PowerSeries.coeff (p ^ h) (G.nsmulSeries p)) :
