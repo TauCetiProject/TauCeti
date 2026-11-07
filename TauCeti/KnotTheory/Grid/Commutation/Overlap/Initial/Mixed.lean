@@ -226,8 +226,9 @@ namespace TauCeti.GridRectanglePentagonDecomposition
 variable {n : ℕ} {a s : Fin n} {x z : GridState n}
 
 /-- If the recut rectangle ends where the recut pentagon starts, the recut of a rectangle--pentagon
-domain whose empty pieces share their initial side is of the first mixed kind: its rectangle
-starts on the replaced line, avoiding the turn row. -/
+domain whose empty pieces share their initial side is of the second mixed kind: its rectangle ends
+where the pentagon starts, the pentagon's bottom row lying strictly between the rectangle's bottom
+row and the pentagon's top row. -/
 private theorem pentagonRectangle_sides_of_rectangle_end_eq_pentagon_start
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
@@ -255,9 +256,8 @@ private theorem pentagonRectangle_sides_of_rectangle_end_eq_pentagon_start
     exact hrow
 
 /-- If the recut rectangle starts where the recut pentagon ends, the recut of a rectangle--pentagon
-domain whose empty pieces share their initial side is of the second mixed kind: its rectangle ends
-where the pentagon starts, the pentagon's bottom row lying strictly between the rectangle's bottom
-row and the pentagon's top row. -/
+domain whose empty pieces share their initial side is of the first mixed kind: its rectangle
+starts on the replaced line, avoiding the turn row. -/
 private theorem pentagonRectangle_sides_of_rectangle_start_eq_pentagon_end
     (D : GridRectanglePentagonDecomposition a s x z)
     (hcommon : D.rectangle.left = D.pentagon.left)
@@ -286,26 +286,6 @@ private theorem pentagonRectangle_sides_of_rectangle_start_eq_pentagon_end
         ← GridRectangleBetween.top_def] at h
     rw [hErbottom, hErtop]
     exact Finset.disjoint_right.mp (Grid.disjoint_cIco_cIco_of_mem_cIoo hrow) hturn
-
-/-- Emptiness of both pieces of a rectangle--pentagon domain whose pieces share their initial side
-puts the rectangle's top row strictly between its bottom row and the pentagon's top row. -/
-private theorem top_mem_cIoo_of_isEmpty_of_left_eq_left
-    (D : GridRectanglePentagonDecomposition a s x z)
-    (hcommon' : D.toRectangleDecomposition.first.left = D.toRectangleDecomposition.second.left)
-    (hright : D.rectangle.right ≠ D.pentagon.right)
-    (hrectangle : D.rectangle.IsEmpty) (hpentagon : D.pentagon.IsEmpty) :
-    D.rectangle.top ∈ Grid.cIoo D.rectangle.bottom D.pentagon.top := by
-    simpa only [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def,
-      toRectangleDecomposition_first_left, toRectangleDecomposition_first_right,
-      toRectangleDecomposition_second_right, toRectangleDecomposition_middle] using
-      (D.toRectangleDecomposition.cyclicOrder_of_isEmpty_of_left_eq_left hcommon'
-        (by simpa only [toRectangleDecomposition_first_right,
-          toRectangleDecomposition_second_right] using hright)
-        (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_first_toGridRectangle] using hrectangle)
-        (by simpa only [GridRectangleBetween.isEmpty_iff_toGridRectangle_isEmptyFor,
-          D.toRectangleDecomposition_middle,
-          D.toRectangleDecomposition_second_toGridRectangle] using hpentagon)).2
 
 /-- The recut of a rectangle--pentagon domain whose two empty pieces share their initial side and
 no other side, read as a pentagon followed by a rectangle, is of one of two mixed kinds: its
