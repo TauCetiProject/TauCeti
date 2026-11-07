@@ -50,6 +50,8 @@ Fourier-series proof of the Schwartz kernel theorem.
 ## Main results
 
 * `UnitAddTorus.mFourierCoeff_comp_add`: the coefficients of a translate.
+* `UnitAddTorus.mFourierCoeff_add` and `UnitAddTorus.mFourierCoeff_smul`: the coefficients are
+  linear in the function.
 * `TauCeti.UnitAddTorus.mFourierCoeff_eq_smul_of_hasDerivAt`: the coefficients of a directional
   derivative.
 * `TauCeti.UnitAddTorus.exists_continuous_comp_coe_eq_iteratedFDeriv` and
@@ -121,6 +123,24 @@ theorem mFourierCoeff_comp_add (f : UnitAddTorus d → E) (v : UnitAddTorus d) (
   congr 1 with z
   rw [smul_smul, mFourier_apply_add, mul_left_comm, ← mFourier_add, add_neg_cancel, mFourier_zero,
     ContinuousMap.one_apply, mul_one]
+
+/-- The Fourier coefficients of a sum of integrable functions are the sums of their
+coefficients. -/
+theorem mFourierCoeff_add {f g : UnitAddTorus d → E} (hf : Integrable f) (hg : Integrable g)
+    (n : d → ℤ) : mFourierCoeff (f + g) n = mFourierCoeff f n + mFourierCoeff g n := by
+  have hφ (h : UnitAddTorus d → E) (hh : Integrable h) :
+      Integrable (fun z ↦ mFourier (-n) z • h z) :=
+    hh.bdd_smul 1 (mFourier (-n)).continuous.aestronglyMeasurable
+      (Filter.Eventually.of_forall fun z ↦ (norm_mFourier_apply _ z).le)
+  simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Pi.add_apply, smul_add]
+  exact integral_add (hφ f hf) (hφ g hg)
+
+/-- Taking Fourier coefficients commutes with scalar multiplication. -/
+@[simp]
+theorem mFourierCoeff_smul (c : ℂ) (f : UnitAddTorus d → E) (n : d → ℤ) :
+    mFourierCoeff (c • f) n = c • mFourierCoeff f n := by
+  simp only [TauCeti.UnitAddTorus.mFourierCoeff_eq_integral_volume, Pi.smul_apply, smul_comm _ c,
+    integral_smul]
 
 end UnitAddTorus
 
