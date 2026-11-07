@@ -51,9 +51,12 @@ obtained by allowing `d i = 0`, which the positivity of the symmetrizer excludes
   the symmetrizer.
 * `TauCeti.SymmetrizableDatum.exists_pos_symmetrizer_eq_mul_of_isIndecomposable`: two
   symmetrizers of an indecomposable matrix differ by a positive rational factor.
-* `TauCeti.SymmetrizableDatum.normalizeSymmetrizer_eq_of_isIndecomposable`: an
-  indecomposable matrix has a unique symmetrizer with coprime entries, and every symmetrizer is
-  a positive integer multiple of it (`symmetrizer_eq_gcd_mul_normalizeSymmetrizer`).
+* `TauCeti.SymmetrizableDatum.normalizeSymmetrizer_eq_of_isIndecomposable`: any two
+  symmetrizers of an indecomposable matrix have the same normalization. Its entries are coprime
+  (`gcd_normalizeSymmetrizer_symmetrizer`), and every symmetrizer is a positive integer multiple
+  of it (`symmetrizer_eq_gcd_mul_normalizeSymmetrizer`).
+* `Matrix.IsFiniteCartan.posDef_symmetrizedMatrix_toSymmetrizableDatum`: the symmetrized matrix
+  of a finite-type Cartan matrix is positive definite.
 
 ## References
 
@@ -91,9 +94,12 @@ structure SymmetrizableDatum (I : Type*) where
 
 namespace SymmetrizableDatum
 
+attribute [simp] diag
+
 variable {I J K I' I'' : Type*} (A : SymmetrizableDatum I)
 
 /-- The symmetrizer is nonzero. -/
+@[simp]
 theorem symmetrizer_ne_zero (i : I) : A.symmetrizer i ≠ 0 :=
   (A.symmetrizer_pos i).ne'
 
@@ -205,7 +211,7 @@ theorem reindex_reindex (e : I ≃ I') (e' : I' ≃ I'') :
 block-diagonal matrix of the two matrices, with the two symmetrizers side by side. -/
 def sum (A' : SymmetrizableDatum J) : SymmetrizableDatum (I ⊕ J) where
   cartan := fromBlocks A.cartan 0 0 A'.cartan
-  diag := by rintro (i | i) <;> simp [A.diag, A'.diag]
+  diag := by rintro (i | i) <;> simp
   offDiag_nonpos := by
     rintro (i | i) (j | j) hij
     · simpa using A.offDiag_nonpos i j fun h => hij (congrArg Sum.inl h)
@@ -294,6 +300,11 @@ theorem exists_pos_symmetrizer_eq_mul_of_isIndecomposable [Finite I]
 
 variable [Fintype I]
 
+/-- The greatest common divisor of the entries of the symmetrizer is positive. -/
+theorem gcd_symmetrizer_pos [Nonempty I] : 0 < Finset.univ.gcd A.symmetrizer :=
+  have ⟨i⟩ := ‹Nonempty I›
+  Nat.pos_of_dvd_of_pos (Finset.gcd_dvd (Finset.mem_univ i)) (A.symmetrizer_pos i)
+
 /-- The datum with the same generalized Cartan matrix and the symmetrizer divided by the
 greatest common divisor of its entries. -/
 def normalizeSymmetrizer : SymmetrizableDatum I where
@@ -302,21 +313,18 @@ def normalizeSymmetrizer : SymmetrizableDatum I where
   offDiag_nonpos := A.offDiag_nonpos
   zero_comm := A.zero_comm
   symmetrizer i := A.symmetrizer i / Finset.univ.gcd A.symmetrizer
-  symmetrizer_pos i := by
-    have hdvd := Finset.gcd_dvd (f := A.symmetrizer) (Finset.mem_univ i)
-    exact Nat.div_pos (Nat.le_of_dvd (A.symmetrizer_pos i) hdvd)
-      (Nat.pos_of_dvd_of_pos hdvd (A.symmetrizer_pos i))
+  symmetrizer_pos i :=
+    have : Nonempty I := ⟨i⟩
+    Nat.div_pos (Nat.le_of_dvd (A.symmetrizer_pos i) (Finset.gcd_dvd (Finset.mem_univ i)))
+      A.gcd_symmetrizer_pos
   symmetrizes i j := by
-    obtain ⟨a, ha⟩ := Finset.gcd_dvd (f := A.symmetrizer) (Finset.mem_univ i)
-    obtain ⟨b, hb⟩ := Finset.gcd_dvd (f := A.symmetrizer) (Finset.mem_univ j)
-    have hg : Finset.univ.gcd A.symmetrizer ≠ 0 := fun h0 => A.symmetrizer_ne_zero i <| by
-      rw [ha, h0, zero_mul]
-    have hs := A.symmetrizes i j
-    rw [ha, hb, Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hg),
-      Nat.mul_div_cancel_left _ (Nat.pos_of_ne_zero hg)]
-    rw [ha, hb] at hs
-    push_cast at hs
-    exact mul_left_cancel₀ (Int.natCast_ne_zero.mpr hg) (by linear_combination hs)
+    have : Nonempty I := ⟨i⟩
+    -- Multiply both sides by the gcd `g` and use `g * (d i / g) = d i`.
+    apply mul_left_cancel₀ (Int.natCast_ne_zero.mpr A.gcd_symmetrizer_pos.ne')
+    rw [← mul_assoc, ← mul_assoc, ← Nat.cast_mul, ← Nat.cast_mul,
+      Nat.mul_div_cancel' (Finset.gcd_dvd (Finset.mem_univ i)),
+      Nat.mul_div_cancel' (Finset.gcd_dvd (Finset.mem_univ j))]
+    exact A.symmetrizes i j
 
 @[simp]
 theorem normalizeSymmetrizer_cartan : A.normalizeSymmetrizer.cartan = A.cartan :=
@@ -340,8 +348,8 @@ theorem gcd_normalizeSymmetrizer_symmetrizer [Nonempty I] :
   rw [Finset.gcd_congr rfl fun i _ => A.normalizeSymmetrizer_symmetrizer i]
   exact Finset.gcd_div_eq_one (Finset.mem_univ i₀) (A.symmetrizer_ne_zero i₀)
 
-/-- An indecomposable generalized Cartan matrix has a unique symmetrizer with coprime entries:
-any two symmetrizers have the same normalization. -/
+/-- Any two symmetrizers of an indecomposable generalized Cartan matrix have the same
+normalization. -/
 theorem normalizeSymmetrizer_eq_of_isIndecomposable (hA : A.cartan.IsIndecomposable)
     {A' : SymmetrizableDatum I} (h : A'.cartan = A.cartan) :
     A'.normalizeSymmetrizer = A.normalizeSymmetrizer := by
@@ -396,9 +404,53 @@ theorem toSymmetrizableDatum_cartan (hM : M.IsFiniteCartan) :
     hM.toSymmetrizableDatum.cartan = M :=
   (rfl)
 
+/-- The symmetrized matrix of `hM.toSymmetrizableDatum` is positive definite. -/
+theorem posDef_symmetrizedMatrix_toSymmetrizableDatum (hM : M.IsFiniteCartan) :
+    hM.toSymmetrizableDatum.symmetrizedMatrix.PosDef := by
+  obtain ⟨hpos, hdef⟩ := hM.exists_posDef.choose_spec
+  rw [TauCeti.SymmetrizableDatum.symmetrizedMatrix_eq_diagonal_mul]
+  convert hdef using 3
+  · funext i
+    exact Int.toNat_of_nonneg (hpos i).le
+  · rfl
+
 end Matrix.IsFiniteCartan
 
 /-! ### Examples -/
+
+/-- Type `A₁`: the matrix `(2)` with symmetrizer `(1)` has symmetrized matrix `(2)`. -/
+example : ∃ A : TauCeti.SymmetrizableDatum (Fin 1),
+    A.cartan = !![2] ∧ A.symmetrizer = 1 ∧ A.symmetrizedMatrix = !![2] :=
+  ⟨{ cartan := !![2]
+     diag := by decide
+     offDiag_nonpos := by simp [Fin.forall_fin_one]
+     zero_comm := by simp
+     symmetrizer := 1
+     symmetrizer_pos := by decide
+     symmetrizes := by decide }, rfl, rfl, by ext i j; fin_cases i; fin_cases j; rfl⟩
+
+/-- Affine type `A₁⁽¹⁾`: the matrix `[[2, -2], [-2, 2]]` with symmetrizer `(1, 1)` is a datum
+that is not of finite type, since its determinant vanishes; its symmetrized matrix is itself. -/
+example : ∃ A : TauCeti.SymmetrizableDatum (Fin 2),
+    A.cartan = !![2, -2; -2, 2] ∧ A.symmetrizer = 1 ∧ A.cartan.det = 0 ∧
+      A.symmetrizedMatrix = A.cartan :=
+  ⟨{ cartan := !![2, -2; -2, 2]
+     diag := by decide
+     offDiag_nonpos := by simp [Fin.forall_fin_two]
+     zero_comm := by simp [Fin.forall_fin_two]
+     symmetrizer := 1
+     symmetrizer_pos := by decide
+     symmetrizes := by decide }, rfl, rfl, by simp [det_fin_two], by ext i j; simp⟩
+
+/-- The empty index set carries a datum, with the empty matrix. -/
+example : Nonempty (TauCeti.SymmetrizableDatum (Fin 0)) :=
+  ⟨{ cartan := !![]
+     diag := nofun
+     offDiag_nonpos := nofun
+     zero_comm := nofun
+     symmetrizer := nofun
+     symmetrizer_pos := nofun
+     symmetrizes := nofun }⟩
 
 /-- The symmetrizer `(1, 2)` symmetrizes the Cartan matrix of type `B₂`, `[[2, -2], [-1, 2]]`. -/
 example :
