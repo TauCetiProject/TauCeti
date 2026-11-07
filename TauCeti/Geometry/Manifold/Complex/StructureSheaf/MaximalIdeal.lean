@@ -108,7 +108,7 @@ variable {x}
 include he in
 /-- Every representative of a holomorphic germ at `x` is analytic at `e x` when read in the
 chart `e`. -/
-private theorem analyticAt_comp_symm_of_toFilterGerm_eq (hx : x ∈ e.source)
+theorem analyticAt_comp_symm_of_toFilterGerm_eq (hx : x ∈ e.source)
     {s : (holomorphicStructureSheaf 𝓘(ℂ, E) X).presheaf.stalk x} {φ : X → ℂ}
     (hφ : toFilterGerm 𝓘(ℂ, E) X x (𝓝 x) le_rfl s = φ) :
     AnalyticAt ℂ (φ ∘ e.symm) (e x) := by

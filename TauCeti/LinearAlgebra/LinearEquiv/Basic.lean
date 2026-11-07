@@ -11,7 +11,7 @@ public import Mathlib.Algebra.Module.Equiv.Basic
 /-!
 # Elementary linear-equivalence transport
 
-Transport of submodule stability through an intertwining linear equivalence.
+Transport of submodule stability through an intertwining semilinear equivalence.
 Symmetry of a linear automorphism agrees with inversion in its group structure.
 -/
 
@@ -23,20 +23,18 @@ namespace LinearEquiv
 theorem symm_eq_inv {R V : Type*} [Semiring R] [AddCommMonoid V] [Module R V]
     (e : V ≃ₗ[R] V) : e.symm = e⁻¹ := rfl
 
-/-- Transport stability of a mapped submodule through an intertwining linear equivalence. -/
+/-- Transport stability of a mapped submodule through an intertwining semilinear
+equivalence. -/
 theorem mem_of_preserves_map
-    {R V W : Type*} [Semiring R]
-    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module R W]
-    (e : V ≃ₗ[R] W) (p : Submodule R V) (q : Submodule R W)
-    (hmap : p.map e.toLinearMap = q) (f : V → V) (g : W → W)
+    {R S V W : Type*} [Semiring R] [Semiring S]
+    [AddCommMonoid V] [Module R V] [AddCommMonoid W] [Module S W]
+    {σ : R →+* S} {σ' : S →+* R} [RingHomInvPair σ σ'] [RingHomInvPair σ' σ]
+    (e : V ≃ₛₗ[σ] W) (p : Submodule R V) (q : Submodule S W)
+    (hmap : p.map (e : V →ₛₗ[σ] W) = q) (f : V → V) (g : W → W)
     (hcomm : ∀ x, e (f x) = g (e x))
     (hstable : ∀ {y}, y ∈ q → g y ∈ q)
     {x : V} (hx : x ∈ p) : f x ∈ p := by
-  have hex : e x ∈ q := by
-    rw [← hmap]
-    exact Submodule.mem_map_of_mem hx
-  have hfx := hstable hex
-  rw [← hcomm x, ← hmap] at hfx
-  simpa only [Submodule.mem_map_equiv, LinearEquiv.symm_apply_apply] using hfx
+  subst hmap
+  simpa [← hcomm] using hstable (Submodule.mem_map_of_mem hx)
 
 end LinearEquiv
