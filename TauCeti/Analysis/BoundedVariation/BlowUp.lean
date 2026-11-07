@@ -17,6 +17,7 @@ import Mathlib.MeasureTheory.Measure.Haar.NormedSpace
 import TauCeti.Analysis.Distribution.TestFunction.Dilation
 import TauCeti.Analysis.Distribution.TestFunction.Divergence
 import TauCeti.Analysis.Distribution.TestFunction.Translation
+import TauCeti.Analysis.Normed.Module.Ball
 import TauCeti.Analysis.Sobolev.WeakDeriv.Basic
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -289,13 +290,6 @@ theorem integral_divergenceCLM_mul_indicator_nonneg_of_tendsto_measure_symmDiff_
 
 /-! ### Perimeter and volume of the blow-ups -/
 
-omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
-/-- The blow-up map `y ↦ x + r • y` pulls `ball x (r * R)` back to `ball 0 R`. -/
-private theorem preimage_add_smul_ball {r : ℝ} (hr : 0 < r) (R : ℝ) :
-    (fun y => x + r • y) ⁻¹' ball x (r * R) = ball 0 R := by
-  ext y
-  simp [norm_smul, abs_of_pos hr, mul_lt_mul_iff_right₀ hr]
-
 /-- **The perimeter of a blow-up in a ball.** Against an additive Haar measure and for `r > 0`, the
 perimeter in `ball 0 R` of the blow-up `(fun y => x + r • y) ⁻¹' s` is `r / r ^ n` times the
 perimeter of `s` in `ball x (r * R)`, where `n = dim E`. -/
@@ -321,7 +315,10 @@ theorem perimeter_ball_zero_preimage_add_smul {r : ℝ} (hr : 0 < r) (R : ℝ) :
 theorem measure_preimage_add_smul_inter_ball {r : ℝ} (hr : 0 < r) (ρ : ℝ) :
     μ ((fun y => x + r • y) ⁻¹' s ∩ ball 0 ρ) =
       ENNReal.ofReal ((r ^ finrank ℝ E)⁻¹) * μ (s ∩ ball x (r * ρ)) := by
-  rw [← preimage_add_smul_ball (x := x) hr ρ, ← preimage_inter]
+  have hball : (fun y => x + r • y) ⁻¹' ball x (r * ρ) = ball 0 ρ := by
+    simpa [abs_of_pos hr, add_comm] using
+      preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr.ne') ρ
+  rw [← hball, ← preimage_inter]
   have h : (fun y => x + r • y) ⁻¹' (s ∩ ball x (r * ρ)) =
       (r • ·) ⁻¹' ((fun y => x + y) ⁻¹' (s ∩ ball x (r * ρ))) := rfl
   rw [h, Measure.addHaar_preimage_smul μ hr.ne', measure_preimage_add,
@@ -338,7 +335,10 @@ omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarM
 private theorem preimage_add_smul_inter_ball_eq {a b : Set E} {r R : ℝ} (hr : 0 < r)
     (h : a ∩ ball x (r * R) = b ∩ ball x (r * R)) :
     (fun y => x + r • y) ⁻¹' a ∩ ball 0 R = (fun y => x + r • y) ⁻¹' b ∩ ball 0 R := by
-  rw [← preimage_add_smul_ball hr R, ← preimage_inter, ← preimage_inter, h]
+  have hball : (fun y => x + r • y) ⁻¹' ball x (r * R) = ball 0 R := by
+    simpa [abs_of_pos hr, add_comm] using
+      preimage_smul_vadd_ball_norm x (c := r) (norm_pos_iff.2 hr.ne') R
+  rw [← hball, ← preimage_inter, ← preimage_inter, h]
 
 omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [μ.IsAddHaarMeasure] in
 /-- Sets that agree on `ball x (r * R)` have blow-ups at scale `r` with the same symmetric
