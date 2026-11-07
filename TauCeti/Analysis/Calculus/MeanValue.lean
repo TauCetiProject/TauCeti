@@ -48,6 +48,12 @@ For a function on the real line with derivative of norm at most `D r ^ (β - 1)`
 where `0 ≤ β ≤ 1`, the increments satisfy `‖u b - u a‖ ≤ 2 D |b - a| a ^ (β - 1)` for `a > 0` and
 `a / 2 ≤ b` (`TauCeti.norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt`).
 
+## Space-time functions vanishing outside a time interval
+
+A function of time and space with derivative bounded by `C` that vanishes outside the time
+interval `(a, b)` is bounded by `C (b - a)`, by the mean value inequality from its value at the
+time `a` (`TauCeti.norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero`).
+
 ## Comparing maps with nearby derivatives
 
 If two maps on a convex set have derivatives within `ε` of a common linear map and agree at a
@@ -183,6 +189,27 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
   calc ‖u b - u a‖ ≤ D * (a / 2) ^ (β - 1) * |b - a| := hmv
     _ ≤ D * (2 * a ^ (β - 1)) * |b - a| := by gcongr
     _ = _ := by ring
+
+
+/-- A function with derivative bounded by `C` that vanishes outside the time interval `(a, b)` is
+bounded by `C * (b - a)`, by the mean value inequality from its value at the time `a`. -/
+theorem norm_le_mul_sub_of_forall_notMem_Ioo_eq_zero {E : Type*} [NormedAddCommGroup E]
+    [NormedSpace ℝ E] {a b : ℝ} {φ : ℝ × E → ℝ} (hφd : Differentiable ℝ φ) {C : ℝ}
+    (hC : ∀ q, ‖fderiv ℝ φ q‖ ≤ C) (hzero : ∀ q : ℝ × E, q.1 ∉ Ioo a b → φ q = 0) (hab : a ≤ b)
+    (q : ℝ × E) : ‖φ q‖ ≤ C * (b - a) := by
+  have hC0 : 0 ≤ C := (norm_nonneg _).trans (hC 0)
+  by_cases hq : q.1 ∈ Ioo a b
+  · have hq' : q - (a, q.2) = (q.1 - a, 0) := by ext <;> simp
+    have hn : ‖q - (a, q.2)‖ ≤ b - a := by
+      rw [hq', Prod.norm_def, norm_zero, Real.norm_eq_abs, max_eq_left (abs_nonneg _),
+        abs_of_pos (sub_pos.2 hq.1)]
+      linarith [hq.2]
+    have := convex_univ.norm_image_sub_le_of_norm_fderiv_le (fun p _ ↦ hφd p) (fun p _ ↦ hC p)
+      (mem_univ (a, q.2)) (mem_univ q)
+    rw [hzero (a, q.2) (by simp), sub_zero] at this
+    exact this.trans (mul_le_mul_of_nonneg_left hn hC0)
+  · rw [hzero q hq, norm_zero]
+    exact mul_nonneg hC0 (sub_nonneg.2 hab)
 
 end TauCeti
 
