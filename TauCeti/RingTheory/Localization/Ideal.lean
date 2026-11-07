@@ -9,7 +9,7 @@ public import Mathlib.Algebra.Module.Submodule.Pointwise
 public import Mathlib.RingTheory.Localization.Away.Basic
 public import Mathlib.RingTheory.Localization.AtPrime.Basic
 public import Mathlib.RingTheory.Noetherian.Defs
-import Mathlib.RingTheory.Support
+import TauCeti.RingTheory.Support
 import Mathlib.Algebra.GroupWithZero.Action.Regular
 
 /-!
@@ -74,16 +74,6 @@ theorem map_algebraMap_away_eq_span_singleton {B B' : Type*} [CommSemiring B]
 
 variable {A : Type*} [CommRing A]
 
-/-- A finite module each of whose elements is killed by an element outside the prime `P` is
-killed by a single element outside `P`. -/
-private theorem exists_notMem_forall_smul_eq_zero {P : Ideal A} [P.IsPrime] (M : Type*)
-    [AddCommGroup M] [Module A M] [Module.Finite A M] (h : ∀ m : M, ∃ r ∉ P, r • m = 0) :
-    ∃ r ∉ P, ∀ m : M, r • m = 0 := by
-  have hP := (Module.notMem_support_iff' (p := ⟨P, inferInstance⟩)).mpr h
-  rw [Module.mem_support_iff_of_finite, IsConcreteLE.not_le_iff_exists] at hP
-  obtain ⟨r, hr, hrP⟩ := hP
-  exact ⟨r, hrP, Module.mem_annihilator.mp hr⟩
-
 /-- **Spreading out generators.** Let `P` be a prime of `A` and `S` the localization of `A` at
 `P`. If a finitely generated ideal `q` generates in `S` an ideal contained in the principal ideal
 of the image of `a`, then some `r ∉ P` satisfies `r • q ≤ (a)`. -/
@@ -93,7 +83,7 @@ theorem exists_notMem_smul_le_span_singleton_of_map_le {P : Ideal A} [P.IsPrime]
     ∃ r ∉ P, r • q ≤ span {a} := by
   have : Module.Finite A q := Module.Finite.iff_fg.mpr hq
   -- Every element of `q` lands in `(a)` after multiplication by an element outside `P`.
-  obtain ⟨r, hrP, hr⟩ := exists_notMem_forall_smul_eq_zero
+  obtain ⟨r, hrP, hr⟩ := Module.exists_notMem_forall_smul_eq_zero
     (q ⧸ Submodule.comap q.subtype (span {a})) <| by
     intro m
     obtain ⟨⟨b, hb⟩, rfl⟩ := Submodule.Quotient.mk_surjective _ m
@@ -122,13 +112,14 @@ theorem exists_notMem_smul_le_span_singleton_of_map_eq [IsNoetherianRing A] {P :
   obtain ⟨r₁, hr₁P, hr₁⟩ :=
     exists_notMem_smul_le_span_singleton_of_map_le (P := P) S (IsNoetherian.noetherian q) hq.le
   -- Every element killed by `a` is killed by an element outside `P`.
-  obtain ⟨r₂, hr₂P, hr₂⟩ := exists_notMem_forall_smul_eq_zero (P := P) (span {a}).annihilator <| by
-    rintro ⟨b, hb⟩
-    rw [Submodule.mem_annihilator_span_singleton, smul_eq_mul] at hb
-    have hb' : algebraMap A S b = 0 := isSMulRegular_iff_right_eq_zero_of_smul.mp hreg _ <| by
-      rw [smul_eq_mul, ← map_mul, mul_comm a b, hb, map_zero]
-    obtain ⟨u, hu⟩ := (IsLocalization.map_eq_zero_iff P.primeCompl S b).mp hb'
-    exact ⟨u, u.2, Subtype.ext hu⟩
+  obtain ⟨r₂, hr₂P, hr₂⟩ :=
+    Module.exists_notMem_forall_smul_eq_zero (P := P) (span {a}).annihilator <| by
+      rintro ⟨b, hb⟩
+      rw [Submodule.mem_annihilator_span_singleton, smul_eq_mul] at hb
+      have hb' : algebraMap A S b = 0 := isSMulRegular_iff_right_eq_zero_of_smul.mp hreg _ <| by
+        rw [smul_eq_mul, ← map_mul, mul_comm a b, hb, map_zero]
+      obtain ⟨u, hu⟩ := (IsLocalization.map_eq_zero_iff P.primeCompl S b).mp hb'
+      exact ⟨u, u.2, Subtype.ext hu⟩
   refine ⟨r₁ * r₂, fun h ↦ (‹P.IsPrime›.mem_or_mem h).elim hr₁P hr₂P, fun x hx ↦ ?_, fun b hb ↦ ?_⟩
   · obtain ⟨b, hb, rfl⟩ := (Submodule.mem_smul_pointwise_iff_exists _ _ _).mp hx
     have := hr₁ (Submodule.smul_mem_pointwise_smul b r₁ q hb)
