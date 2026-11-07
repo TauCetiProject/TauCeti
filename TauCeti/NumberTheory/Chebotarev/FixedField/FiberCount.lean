@@ -551,7 +551,7 @@ theorem fixedField_frobenius_pow_fiber_card_mul
   have : Fintype T := Fintype.ofFinite T
   rw [← card_sigma_fixedField_pow_eq C σ m p hp, Nat.card_sigma, Finset.sum_mul,
     Finset.sum_congr rfl fun τ _ ↦ hS τ, Finset.sum_const, Finset.card_univ,
-    ← Nat.card_eq_fintype_card, σ.card_fixedField_pow_roots C m, smul_eq_mul]
+    ← Nat.card_eq_fintype_card, σ.card_fixedField_pow_roots C.carrier m, smul_eq_mul]
 
 /-- **The powered fibre count, as a quotient.** The number of primes of `L ^ ⟨σ⟩` above `p`, of
 residue degree one over `K`, whose relative Frobenius has `m`-th power `σ`, is
