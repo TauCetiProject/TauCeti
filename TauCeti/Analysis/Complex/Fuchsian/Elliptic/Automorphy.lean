@@ -390,6 +390,21 @@ theorem analyticOrderAt_automorphyUntwist
 
 /-! ### The powers of the differential of the local quotient coordinate -/
 
+/-- The local quotient coordinate `w = u ^ m` of `ψ`, read on `ℂ` through
+`UpperHalfPlane.ofComplex`. -/
+private def quotientCoordinateOnComplex (t : ℂ) : ℂ :=
+  ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^ Nat.card (stabilizer Γ z)
+
+private theorem quotientCoordinateOnComplex_def (t : ℂ) :
+    ψ.quotientCoordinateOnComplex t =
+      ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^ Nat.card (stabilizer Γ z) :=
+  (rfl)
+
+/-- The local quotient coordinate, read on `ℂ`, at a point of the invariant disc. -/
+private theorem quotientCoordinateOnComplex_coe (τ : stabilizerBall Γ z ε) :
+    ψ.quotientCoordinateOnComplex ((τ : ℍ) : ℂ) = ψ.quotientCoordinate τ := by
+  rw [quotientCoordinateOnComplex_def, ofComplex_apply, quotientCoordinate_def, coordinate_def]
+
 /-- **The `j`-th power of the differential of the local quotient coordinate**, as a function of
 weight `2 * j` on the upper half-plane: `τ ↦ (dw / dτ) ^ j` for the local quotient coordinate
 `w = u ^ m` of `ψ`, read on `ℂ` through `UpperHalfPlane.ofComplex`. It is the weight-`2 * j`
@@ -402,27 +417,23 @@ automorphy frame is the transition function between the two frames, of order `j 
 at the centre
 (`Subgroup.LinearizingCoordinate.analyticOrderAt_automorphyDescent_differentialFrame`). -/
 def differentialFrame (j : ℕ) (τ : ℍ) : ℂ :=
-  deriv (fun t : ℂ ↦ ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^
-    Nat.card (stabilizer Γ z)) τ ^ j
+  deriv ψ.quotientCoordinateOnComplex τ ^ j
 
 theorem differentialFrame_def (j : ℕ) (τ : ℍ) :
     ψ.differentialFrame j τ = deriv (fun t : ℂ ↦ ψ.toEquiv
       (UpperHalfPlane.discCoordinate z (ofComplex t)) ^ Nat.card (stabilizer Γ z)) τ ^ j :=
   (rfl)
 
+private theorem differentialFrame_eq_deriv (j : ℕ) (τ : ℍ) :
+    ψ.differentialFrame j τ = deriv ψ.quotientCoordinateOnComplex τ ^ j :=
+  (rfl)
+
 /-- The local quotient coordinate, read on `ℂ`, is holomorphic at the points of the invariant
 disc. -/
-private theorem differentiableAt_quotientCoordinate {τ : ℍ} (hτ : τ ∈ ball z ε) :
-    DifferentiableAt ℂ (fun t : ℂ ↦ ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^
-      Nat.card (stabilizer Γ z)) τ :=
+private theorem differentiableAt_quotientCoordinateOnComplex {τ : ℍ} (hτ : τ ∈ ball z ε) :
+    DifferentiableAt ℂ ψ.quotientCoordinateOnComplex τ :=
   mdifferentiableAt_iff.mp
     ((ψ.mdifferentiableOn_quotientCoordinate τ hτ).mdifferentiableAt (isOpen_ball.mem_nhds hτ))
-
-/-- The local quotient coordinate, read on `ℂ`, at a point of the invariant disc. -/
-private theorem quotientCoordinate_ofComplex (τ : stabilizerBall Γ z ε) :
-    ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex ((τ : ℍ) : ℂ))) ^
-      Nat.card (stabilizer Γ z) = ψ.quotientCoordinate τ := by
-  rw [ofComplex_apply, quotientCoordinate_def, coordinate_def]
 
 /-- **The transformation law of the powers of the differential of the local quotient
 coordinate.** If `g ∈ SL(2, ℝ)` lifts an element of the stabilizer of `z`, then
@@ -433,59 +444,45 @@ theorem differentialFrame_smul (j : ℕ) (q : stabilizer Γ z) {g : SL(2, ℝ)}
     (hg : (g : PSL(2, ℝ)) = ((q : Γ) : PSL(2, ℝ))) {τ : ℍ} (hτ : τ ∈ ball z ε) :
     ψ.differentialFrame j (g • τ) =
       denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ (2 * (j : ℤ)) * ψ.differentialFrame j τ := by
-  set W : ℂ → ℂ := fun t ↦ ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^
-    Nat.card (stabilizer Γ z) with hW
-  set G : ℂ → ℂ := fun t ↦ (((g : PSL(2, ℝ)) • ofComplex t : ℍ) : ℂ) with hG
   have hτ' : τ ∈ stabilizerBall Γ z ε := (mem_stabilizerBall Γ z ε).2 (mem_ball.mp hτ)
   have hgτ : g • τ ∈ ball z ε := by
     rw [← coe_smul_stabilizerBall_of_coe_eq q hg ⟨τ, hτ'⟩]
     exact mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 (q • ⟨τ, hτ'⟩ : stabilizerBall Γ z ε).2)
   -- the local quotient coordinate is invariant under `g` near `τ`
-  have hinv : W ∘ G =ᶠ[nhds (τ : ℂ)] W := by
+  have hinv : (fun t : ℂ ↦ ψ.quotientCoordinateOnComplex
+      (((g : PSL(2, ℝ)) • ofComplex t : ℍ) : ℂ)) =ᶠ[nhds (τ : ℂ)]
+        ψ.quotientCoordinateOnComplex := by
     filter_upwards [(isOpenEmbedding_coe.isOpenMap _ isOpen_ball).mem_nhds
       (mem_image_of_mem _ hτ)] with t ht
     obtain ⟨σ, hσ, rfl⟩ := ht
     have hσ' : σ ∈ stabilizerBall Γ z ε := (mem_stabilizerBall Γ z ε).2 (mem_ball.mp hσ)
-    have h := ψ.quotientCoordinate_ofComplex (q • ⟨σ, hσ'⟩)
-    rw [quotientCoordinate_smul, coe_smul_stabilizerBall_of_coe_eq q hg] at h
-    simpa [hG, hW, pslMk_smul] using h.trans (ψ.quotientCoordinate_ofComplex ⟨σ, hσ'⟩).symm
-  have hGτ : G τ = ((g • τ : ℍ) : ℂ) := by simp only [hG, ofComplex_apply, pslMk_smul]
-  have hchain : HasDerivAt (W ∘ G)
-      (deriv W ((g • τ : ℍ) : ℂ) * (denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ 2)⁻¹) τ := by
-    have hd := (Matrix.ProjectiveSpecialLinearGroup.hasStrictDerivAt_coe_smul (g : PSL(2, ℝ))
-      τ).hasDerivAt
-    rw [Matrix.SpecialLinearGroup.smulDeriv_coe] at hd
-    have hWd : HasDerivAt W (deriv W (G τ)) (G τ) := by
-      rw [hGτ]
-      exact (ψ.differentiableAt_quotientCoordinate hgτ).hasDerivAt
-    have h := hWd.comp (τ : ℂ) hd
-    rw [hGτ] at h
+    have h := ψ.quotientCoordinateOnComplex_coe (q • ⟨σ, hσ'⟩)
+    rw [quotientCoordinate_smul, coe_smul_stabilizerBall_of_coe_eq q hg,
+      ← ψ.quotientCoordinateOnComplex_coe ⟨σ, hσ'⟩] at h
+    rw [ofComplex_apply, pslMk_smul]
     exact h
-  have hderiv : deriv W ((g • τ : ℍ) : ℂ) =
-      denom (Matrix.SpecialLinearGroup.mapGL ℝ g) τ ^ 2 * deriv W τ := by
-    have h := hchain.deriv
-    rw [hinv.deriv_eq] at h
-    rw [h, mul_left_comm, mul_inv_cancel₀ (pow_ne_zero 2 (denom_ne_zero _ _)), mul_one]
-  rw [differentialFrame_def, differentialFrame_def, ← hW, hderiv, mul_pow, zpow_mul, zpow_ofNat,
-    zpow_natCast]
+  have hderiv := Matrix.ProjectiveSpecialLinearGroup.deriv_smul_mul_smulDeriv_of_eventuallyEq _
+    hinv (by rw [pslMk_smul]; exact ψ.differentiableAt_quotientCoordinateOnComplex hgτ)
+  rw [pslMk_smul, Matrix.SpecialLinearGroup.smulDeriv_coe] at hderiv
+  rw [differentialFrame_eq_deriv, differentialFrame_eq_deriv, ← hderiv, zpow_mul,
+    zpow_ofNat, zpow_natCast, ← mul_pow, mul_left_comm,
+    mul_inv_cancel₀ (pow_ne_zero 2 (denom_ne_zero _ _)), mul_one]
 
 /-- **The powers of the differential of the local quotient coordinate are holomorphic** on the
 invariant disc. -/
 theorem mdifferentiableOn_differentialFrame (j : ℕ) :
     MDifferentiableOn 𝓘(ℂ) 𝓘(ℂ) (ψ.differentialFrame j) (ball z ε) := by
-  set W : ℂ → ℂ := fun t ↦ ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^
-    Nat.card (stabilizer Γ z) with hW
   have hU : IsOpen (((↑) : ℍ → ℂ) '' ball z ε) := isOpenEmbedding_coe.isOpenMap _ isOpen_ball
-  have hWd : DifferentiableOn ℂ W (((↑) : ℍ → ℂ) '' ball z ε) := by
+  have hWd : DifferentiableOn ℂ ψ.quotientCoordinateOnComplex (((↑) : ℍ → ℂ) '' ball z ε) := by
     rintro _ ⟨σ, hσ, rfl⟩
-    exact (ψ.differentiableAt_quotientCoordinate hσ).differentiableWithinAt
+    exact (ψ.differentiableAt_quotientCoordinateOnComplex hσ).differentiableWithinAt
   intro τ hτ
   refine (mdifferentiableAt_iff.mpr ?_).mdifferentiableWithinAt
-  have hD : DifferentiableAt ℂ (fun t ↦ deriv W t ^ j) τ :=
+  have hD : DifferentiableAt ℂ (fun t ↦ deriv ψ.quotientCoordinateOnComplex t ^ j) τ :=
     ((hWd.deriv hU).differentiableAt (hU.mem_nhds (mem_image_of_mem _ hτ))).pow j
   refine hD.congr_of_eventuallyEq ?_
   filter_upwards [isOpen_upperHalfPlaneSet.mem_nhds τ.im_pos] with t ht
-  rw [Function.comp_apply, differentialFrame_def, ← hW, ofComplex_apply_of_im_pos ht,
+  rw [Function.comp_apply, differentialFrame_eq_deriv, ofComplex_apply_of_im_pos ht,
     UpperHalfPlane.coe_mk]
 
 /-- The derivative of the point with coordinate `u` does not vanish at the centre: the inverse
@@ -510,12 +507,10 @@ private theorem deriv_pointOf_zero_ne_zero : deriv ψ.pointOf 0 ≠ 0 := by
   exact mul_ne_zero (coe_sub_conj_ne_zero z z) (ψ.deriv_invFun_ne_zero h0t)
 
 /-- The local quotient coordinate, read on `ℂ`, at the point with coordinate `u` is `u ^ m`. -/
-private theorem quotientCoordinate_pointOf {u : ℂ} (hu : u ∈ ψ.toEquiv.target) :
-    ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex (ψ.pointOf u))) ^
-      Nat.card (stabilizer Γ z) = u ^ Nat.card (stabilizer Γ z) := by
+private theorem quotientCoordinateOnComplex_pointOf {u : ℂ} (hu : u ∈ ψ.toEquiv.target) :
+    ψ.quotientCoordinateOnComplex (ψ.pointOf u) = u ^ Nat.card (stabilizer Γ z) := by
   obtain ⟨σ, rfl⟩ := (ψ.mem_target_iff u).mp hu
-  rw [pointOf_coordinate]
-  exact (ψ.quotientCoordinate_ofComplex σ).trans (quotientCoordinate_def ψ σ)
+  rw [pointOf_coordinate, quotientCoordinateOnComplex_coe, quotientCoordinate_def]
 
 /-- The chain rule for `w = u ^ m` in the coordinate `u`: the untwisted powers of the
 differential times `(dτ / du) ^ j` are `(τ - conj z) ^ (2 * j) * m ^ j * u ^ (j * (m - 1))`. -/
@@ -525,20 +520,20 @@ private theorem automorphyUntwist_differentialFrame_mul (j : ℕ) {u : ℂ}
       (ψ.pointOf u - conj (z : ℂ)) ^ (2 * j) * (Nat.card (stabilizer Γ z) : ℂ) ^ j *
         u ^ (j * (Nat.card (stabilizer Γ z) - 1)) := by
   set m := Nat.card (stabilizer Γ z) with hm
-  set W : ℂ → ℂ := fun t ↦ ψ.toEquiv (UpperHalfPlane.discCoordinate z (ofComplex t)) ^ m with hW
   obtain ⟨τ, rfl⟩ := (ψ.mem_target_iff u).mp hu
   have hτ : (τ : ℍ) ∈ ball z ε := mem_ball.mpr ((mem_stabilizerBall Γ z ε).1 τ.2)
-  have hWP : W ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)] fun u ↦ u ^ m := by
+  have hWP : ψ.quotientCoordinateOnComplex ∘ ψ.pointOf =ᶠ[nhds (ψ.coordinate τ)]
+      fun u ↦ u ^ m := by
     filter_upwards [ψ.isOpen_target.mem_nhds hu] with v hv
-    exact ψ.quotientCoordinate_pointOf hv
-  have hWd := ψ.differentiableAt_quotientCoordinate hτ
+    exact ψ.quotientCoordinateOnComplex_pointOf hv
+  have hWd := ψ.differentiableAt_quotientCoordinateOnComplex hτ
   rw [← pointOf_coordinate ψ τ] at hWd
   have hchain := deriv_comp _ hWd (ψ.differentiableAt_pointOf hu)
   rw [hWP.deriv_eq, deriv_pow_field] at hchain
   have hU : ψ.automorphyUntwist (2 * j) (ψ.differentialFrame j) (ψ.coordinate τ) =
       (ψ.pointOf (ψ.coordinate τ) - conj (z : ℂ)) ^ (2 * j) *
-        deriv W (ψ.pointOf (ψ.coordinate τ)) ^ j := by
-    rw [automorphyUntwist_coordinate, differentialFrame_def, ← hW, pointOf_coordinate]
+        deriv ψ.quotientCoordinateOnComplex (ψ.pointOf (ψ.coordinate τ)) ^ j := by
+    rw [automorphyUntwist_coordinate, differentialFrame_eq_deriv, pointOf_coordinate]
     norm_cast
   rw [hU, mul_assoc, ← mul_pow, ← hchain, mul_pow, ← pow_mul, mul_comm (m - 1)]
   ring
