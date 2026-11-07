@@ -296,14 +296,13 @@ private theorem apply_coe_eval_map (g : P.integers.decompositionSubgroup F)
 omit [Algebra k F] [IsScalarTower k F F'] [Algebra.IsIntegral F F'] in
 /-- **The Taylor step.**  If `d = g z - z` lies in `𝔪_P` and the derivative of `f` at `z` is a unit
 modulo `𝔪_P`, then `f (g z) - f z = d · u` in `F'` for a unit `u` of `𝒪_P`. -/
-private theorem exists_isUnit_eval_smul_sub_eval (fS : Polynomial P.integers) (z d : P.integers)
-    (g : P.integers.decompositionSubgroup F) (hd : d = g • z - z)
+private theorem exists_isUnit_eval_smul_sub_eval (fS : Polynomial P.integers) (z : P.integers)
+    (g : P.integers.decompositionSubgroup F)
     (hder : IsLocalRing.residue P.integers ((derivative fS).eval z) ≠ 0)
-    (hd1 : (d : F') ∈ P.filtration 1) :
+    (hd1 : ((g • z - z : P.integers) : F') ∈ P.filtration 1) :
     ∃ u : P.integers, IsUnit u ∧
       ((fS.eval (g • z) : P.integers) : F') - ((fS.eval z : P.integers) : F') =
-        (d : F') * (u : F') := by
-  subst hd
+        ((g • z - z : P.integers) : F') * (u : F') := by
   set d : P.integers := g • z - z with hd
   obtain ⟨K, hK⟩ := binomExpansion fS z d
   rw [add_sub_cancel] at hK
@@ -337,17 +336,15 @@ private theorem apply_sub_mem_filtration_two {g : P.integers.decompositionSubgro
   have hv : t⁻¹ * w ∈ P.integers :=
     mul_mem_integers_of_mem_filtration (by rw [ord_inv, ht]) hw1
   have hσv : σ (t⁻¹ * w) ∈ P.integers := (mem_integers_decompositionSubgroup_apply F P g).mpr hv
-  have hσw : σ w - w ∈ P.filtration 2 := by
-    have hsplit : σ w - w = (σ t - t) * σ (t⁻¹ * w) + t * (σ (t⁻¹ * w) - t⁻¹ * w) := by
-      rw [map_mul, map_inv₀]
-      field_simp [(_root_.map_ne_zero σ).mpr ht0]
-      ring
-    rw [hsplit]
-    refine Submodule.add_mem _ ?_ ?_
-    · simpa using P.mul_mem_filtration hgt (P.mem_filtration_zero_iff.mpr hσv)
-    · have h := P.mul_mem_filtration (P.mem_filtration_ord t) (hg0 _ hv)
-      rwa [ht, show (1 : ℤ) + 1 = 2 by norm_num] at h
-  exact hσw
+  have hsplit : σ w - w = (σ t - t) * σ (t⁻¹ * w) + t * (σ (t⁻¹ * w) - t⁻¹ * w) := by
+    rw [map_mul, map_inv₀]
+    field_simp [(_root_.map_ne_zero σ).mpr ht0]
+    ring
+  rw [hsplit]
+  refine Submodule.add_mem _ ?_ ?_
+  · simpa using P.mul_mem_filtration hgt (P.mem_filtration_zero_iff.mpr hσv)
+  · have h := P.mul_mem_filtration (P.mem_filtration_ord t) (hg0 _ hv)
+    rwa [ht, show (1 : ℤ) + 1 = 2 by norm_num] at h
 
 /- An automorphism in `G_0(P)` fixing a uniformizer modulo `𝔪_P²` lies in `G_1(P)` when the residue
 extension is separable.  The value `z(P)` of a function `z` integral at `P` is a simple root of a
@@ -382,7 +379,8 @@ private theorem mem_ramificationGroup_one_of_sub_mem_filtration_two
     rw [hd, show ((g • z - z : P.integers) : F') = ((g • z : P.integers) : F') - (z : F') from rfl,
       ValuationSubring.coe_decompositionSubgroup_smul]
   have hd1 : (d : F') ∈ P.filtration 1 := hdcoe ▸ hg0 x hx
-  obtain ⟨u, hunit, hdu⟩ := exists_isUnit_eval_smul_sub_eval F P fS z d g hd hder hd1
+  obtain ⟨u, hunit, hdu⟩ := exists_isUnit_eval_smul_sub_eval F P fS z g hder hd1
+  rw [← hd] at hdu
   -- `σ (f z) - f z ∈ 𝔪_P²`, writing `f z = t v` with `v` integral at `P`.
   set w : F' := ((fS.eval z : P.integers) : F') with hw
   have hw1 : w ∈ P.filtration 1 := by
