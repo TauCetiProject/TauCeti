@@ -460,29 +460,6 @@ theorem fixedField_frobenius_fiber_card
 
 /-! ### Powered fibres -/
 
-omit [IsGalois K L] in
-/-- The `m`-th roots `τ` of `σ` in `Gal(L/E)` that, read over `K`, lie in `C`, correspond to the
-`m`-th roots of `σ` in `C ∩ ⟨σ⟩`. -/
-private theorem card_fixedField_pow_roots (C : ConjClasses (L ≃ₐ[K] L)) (σ : L ≃ₐ[K] L) (m : ℕ) :
-    Nat.card {τ : L ≃ₐ[↥(fixedField (Subgroup.zpowers σ))] L //
-        τ ^ m = σ.toFixedFieldAlgEquiv ∧ AlgEquiv.restrictScalars K τ ∈ C.carrier} =
-      Nat.card {w : L ≃ₐ[K] L // w ∈ C.carrier ∧ w ∈ Subgroup.zpowers σ ∧ w ^ m = σ} := by
-  refine Nat.card_congr (Equiv.ofBijective (fun τ ↦ ⟨AlgEquiv.restrictScalars K τ.1, τ.2.2,
-    σ.restrictScalars_mem_zpowers τ.1, ?_⟩) ⟨?_, ?_⟩)
-  · rw [← AlgEquiv.restrictScalarsHom_apply, ← map_pow, τ.2.1,
-      AlgEquiv.restrictScalarsHom_apply, AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
-  · intro τ₁ τ₂ h
-    exact Subtype.ext (AlgEquiv.restrictScalars_injective K (congrArg Subtype.val h))
-  · rintro ⟨w, hwC, ⟨k, rfl⟩, hwm⟩
-    have hk : AlgEquiv.restrictScalars K (σ.toFixedFieldAlgEquiv ^ k) = σ ^ k := by
-      rw [← AlgEquiv.restrictScalarsHom_apply, map_zpow, AlgEquiv.restrictScalarsHom_apply,
-        AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
-    refine ⟨⟨σ.toFixedFieldAlgEquiv ^ k, ?_, hk ▸ hwC⟩, Subtype.ext hk⟩
-    apply AlgEquiv.restrictScalars_injective K
-    rw [← AlgEquiv.restrictScalarsHom_apply, map_pow, AlgEquiv.restrictScalarsHom_apply, hk,
-      AlgEquiv.restrictScalars_toFixedFieldAlgEquiv]
-    exact hwm
-
 /-- The residue-degree-one primes of `L ^ ⟨σ⟩` over `p` whose relative Frobenius is an `m`-th root
 of `σ` are the disjoint union, over the `m`-th roots `τ` of `σ` that lie in `C` when read over `K`,
 of the residue-degree-one primes of the relative fibre of `τ`. -/
@@ -574,7 +551,7 @@ theorem fixedField_frobenius_pow_fiber_card_mul
   have : Fintype T := Fintype.ofFinite T
   rw [← card_sigma_fixedField_pow_eq C σ m p hp, Nat.card_sigma, Finset.sum_mul,
     Finset.sum_congr rfl fun τ _ ↦ hS τ, Finset.sum_const, Finset.card_univ,
-    ← Nat.card_eq_fintype_card, card_fixedField_pow_roots C σ m, smul_eq_mul]
+    ← Nat.card_eq_fintype_card, σ.card_fixedField_pow_roots C m, smul_eq_mul]
 
 /-- **The powered fibre count, as a quotient.** The number of primes of `L ^ ⟨σ⟩` above `p`, of
 residue degree one over `K`, whose relative Frobenius has `m`-th power `σ`, is
