@@ -27,13 +27,17 @@ variable {V : Type u} [CommRing V]
 -- Classically, almost elements of the rank-one internal endomorphism object
 -- recover the scalar ring, sending the identity almost element to `1`.
 -- This fixes the comparison on a nonzero element whenever `V` is nontrivial.
+-- Transport the identity along the public internal-Hom object equation.
 example :
     ∃ e : (elements (classical V)).obj
         ((alHom (classical V) ((toAlmost (classical V)).obj (ModuleCat.of V V))).obj
           ((toAlmost (classical V)).obj (ModuleCat.of V V))) ≅ ModuleCat.of V V,
-      e.hom.hom (((adjElements (classical V)).unit.app
-        (ModuleCat.of V ((toAlmost (classical V)).obj (ModuleCat.of V V) ⟶
-          (toAlmost (classical V)).obj (ModuleCat.of V V)))).hom (𝟙 _)) = 1 := by
+      ((elements (classical V)).map (eqToHom (alHom_obj (classical V)
+        ((toAlmost (classical V)).obj (ModuleCat.of V V))
+        ((toAlmost (classical V)).obj (ModuleCat.of V V))).symm) ≫ e.hom).hom
+        (((adjElements (classical V)).unit.app
+          (ModuleCat.of V ((toAlmost (classical V)).obj (ModuleCat.of V V) ⟶
+            (toAlmost (classical V)).obj (ModuleCat.of V V)))).hom (𝟙 _)) = 1 := by
   let F := toAlmost (classical V)
   let e₀ : (ModuleCat.of V V ⟶ ModuleCat.of V V) ≃ₗ[V]
       (F.obj (ModuleCat.of V V) ⟶ F.obj (ModuleCat.of V V)) :=
@@ -43,7 +47,12 @@ example :
   let k := (asIso ((adjElements (classical V)).unit.app
     (ModuleCat.of V (F.obj (ModuleCat.of V V) ⟶ F.obj (ModuleCat.of V V))))).symm ≪≫
       e.toModuleIso
-  refine ⟨k, ?_⟩
+  let t := (elements (classical V)).mapIso
+    (eqToIso (alHom_obj (classical V) (F.obj (ModuleCat.of V V))
+      (F.obj (ModuleCat.of V V))))
+  refine ⟨t ≪≫ k, ?_⟩
+  change (t.inv ≫ (t.hom ≫ k.hom)).hom _ = 1
+  rw [← Category.assoc, t.inv_hom_id, Category.id_comp]
   have h : e (F.map (𝟙 (ModuleCat.of V V))) = 1 := by
     -- Express the almost identity through the map defining the linear equivalence.
     change (LinearMap.ringLmapEquivSelf V V V)

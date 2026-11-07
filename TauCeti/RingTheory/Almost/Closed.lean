@@ -44,7 +44,7 @@ namespace TauCeti.Almost.Module
 variable {V : Type u} [CommRing V] (S : BasicSetup V)
 
 /-- Internal Hom out of `M`: almostify the `V`-modules of morphisms out of `M`. -/
-@[expose] noncomputable def alHom (M : Module S) : Module S ⥤ Module S :=
+noncomputable def alHom (M : Module S) : Module S ⥤ Module S :=
   (linearCoyoneda V (Module S)).obj (op M) ⋙ toAlmost S
 
 /-- The internal Hom object is the almostification of the module of almost morphisms. -/
@@ -53,10 +53,12 @@ theorem alHom_obj (M N : Module S) :
     (alHom S M).obj N = (toAlmost S).obj (ModuleCat.of V (M ⟶ N)) :=
   (rfl)
 
-/-- Internal Hom acts on its target by postcomposition. -/
-@[simp]
+/-- Internal Hom acts on its target by postcomposition. This is a named rewrite so
+generic functor laws still match before the map is expanded. -/
 theorem alHom_map {M N N' : Module S} (f : N ⟶ N') :
-    (alHom S M).map f = (toAlmost S).map (ModuleCat.ofHom (Linear.rightComp V M f)) :=
+    (alHom S M).map f = eqToHom (alHom_obj S M N) ≫
+      (toAlmost S).map (ModuleCat.ofHom (Linear.rightComp V M f)) ≫
+        eqToHom (alHom_obj S M N').symm :=
   (rfl)
 
 /-- Internal Hom is additive in its target. -/
@@ -127,18 +129,19 @@ noncomputable def alHomToAlmost (M N : ModuleCat.{u} V) :
   (toAlmost S).mapIso (homLinearEquiv S M N).toModuleIso
 
 /-- The comparison on almostifications is the almostification of the linear
-almost-Hom comparison. -/
-@[simp]
+almost-Hom comparison. This is a named rewrite so generic isomorphism inverse
+laws still match before the comparison maps are expanded. -/
 theorem alHomToAlmost_hom (M N : ModuleCat.{u} V) :
     (alHomToAlmost S M N).hom =
-      (toAlmost S).map (homLinearEquiv S M N).toModuleIso.hom :=
+      eqToHom (alHom_obj S ((toAlmost S).obj M) ((toAlmost S).obj N)) ≫
+        (toAlmost S).map (homLinearEquiv S M N).toModuleIso.hom :=
   (rfl)
 
 /-- The inverse comparison almostifies the inverse linear almost-Hom comparison. -/
-@[simp]
 theorem alHomToAlmost_inv (M N : ModuleCat.{u} V) :
     (alHomToAlmost S M N).inv =
-      (toAlmost S).map (homLinearEquiv S M N).toModuleIso.inv :=
+      (toAlmost S).map (homLinearEquiv S M N).toModuleIso.inv ≫
+        eqToHom (alHom_obj S ((toAlmost S).obj M) ((toAlmost S).obj N)).symm :=
   (rfl)
 
 end TauCeti.Almost.Module
