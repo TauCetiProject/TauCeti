@@ -5,6 +5,7 @@ Authors: Wentao Li
 -/
 module
 
+public import TauCeti.Algebra.QuadraticAlgebra.Span
 public import TauCeti.NumberTheory.QuadraticOrder.Field
 public import TauCeti.NumberTheory.NumberField.Global.Orders.Lattice
 import TauCeti.Data.Rat.PrimitiveDenominator
