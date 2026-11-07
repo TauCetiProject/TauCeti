@@ -25,8 +25,7 @@ about genuine diagonal representatives. The **ring-level** theorem
 `diagElem_mul_of_coprime` needs no positivity at all: on a tuple with a zero entry both
 sides degenerate, and coprimality forces the *other* tuple to be all ones (a zero entry makes
 that determinant `0`, and `Nat.Coprime 0 m` holds only for `m = 1`), so the identity survives.
-It does assume `[NeZero n]`, which is what the arithmetic Hecke triple instance — and hence
-multiplication in `IntegralHeckeRing n` — requires.
+Both levels hold for every rank `n`.
 
 The scalar row (Shimura 3.17) lives in `GLn/ScalarMul.lean`.
 
@@ -46,8 +45,7 @@ Chris Birkbeck).
   tuples with coprime determinants, a product of representatives lies in the double coset of
   the product tuple.
 * `HeckeRing.GLn.diagElem_mul_of_coprime`: the ring-level statement — `T(a) · T(b) = T(a * b)`
-  from **coprimality alone**, given `[NeZero n]`; the zero-entry case degenerates as described
-  above.
+  from **coprimality alone**; the zero-entry case degenerates as described above.
 
 ## References
 
@@ -496,8 +494,7 @@ private lemma multiplicity_coprime_le_one (a b : Fin n → ℕ) (ha_pos : ∀ i,
 
 /-- Coprime product in the integral `GL_n` Hecke ring (Shimura, Proposition 3.16):
 `T(a) · T(b) = T(a * b)` for entrywise positive `a`, `b` whose determinants `∏ aᵢ`, `∏ bᵢ`
-are coprime. Positivity is required — without it `natDiagGL` takes its junk value. The
-`[NeZero n]` in scope is what multiplication in `IntegralHeckeRing n` needs.
+are coprime. Positivity is required — without it `natDiagGL` takes its junk value.
 
 Deliberately **not** `@[simp]`, unlike the parallel scalar theorem `diagElem_const_mul`. The
 `simpNF` linter rejects the attribute here — "left-hand side does not simplify, when using the
