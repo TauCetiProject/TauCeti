@@ -80,22 +80,13 @@ theorem exists_finset_orderAt_eq_iInf_transverse (n D : ℕ)
   classical
   by_cases hn : n = 0
   · subst n
-    -- With no base variables, the distinguished-coordinate substitution is a renaming of the
-    -- Taylor expansion, which preserves order.
+    -- With no base variables, the distinguished-coordinate substitution preserves order.
     refine ⟨{0}, ?_, fun p _ a ↦ ?_⟩
     · intro v _ i
       exact Fin.elim0 i
     simp only [Finset.mem_singleton, iInf_subtype, iInf_iInf_eq_left]
-    have horder : p.orderAt a =
-        (aeval (fun _ : Fin 1 ↦ C (a 0) + X (1 : Fin 2)) p).orderAt (0 : Fin 2 → K) := by
-      have h : aeval (fun _ : Fin 1 ↦ C (a 0) + X (1 : Fin 2)) p =
-          rename (fun _ : Fin 1 ↦ (1 : Fin 2)) (taylor a p) := by
-        rw [taylor_apply, ← AlgHom.comp_apply]
-        congr 1
-        ext i
-        simp [add_comm, Subsingleton.elim i 0]
-      rw [h, orderAt_rename (fun _ _ _ ↦ Subsingleton.elim _ _), orderAt_taylor]
-      simp
+    have horder := (orderAt_aeval_C_add_X (f := fun _ : Fin 1 ↦ (1 : Fin 2))
+      (fun _ _ _ ↦ Subsingleton.elim _ _) p a).symm
     convert horder using 2
     congr 1
     ext i
