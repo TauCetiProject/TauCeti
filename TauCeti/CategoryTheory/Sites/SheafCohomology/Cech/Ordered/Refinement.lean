@@ -66,8 +66,9 @@ private lemma strictMonoCechComplexMap_f_π_eq
       (((fromStrictMonoCechComplex V).app P).f n ≫
         Pi.π _ (φ.f ∘ a.1)) ≫
           P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op := by
-  -- Keep the tuple products explicitly typed: simplifying their opaque formal-coproduct
-  -- presentation before composing the projection identities obstructs rewriting.
+  -- Rewriting after the projection identity fails at implicit transparency: the product's
+  -- index type is presented through FormalCoproduct.cech rather than Fin (n + 1) → ι.
+  -- Compose the explicitly typed identities instead; reassociation alone does not fix this.
   rw [strictMonoCechComplexMap_def]
   simp only [HomologicalComplex.comp_f, Category.assoc]
   exact (congrArg (fun f ↦ ((fromStrictMonoCechComplex V).app P).f n ≫
@@ -88,6 +89,7 @@ theorem strictMonoCechComplexMap_f_π
           P.map (Pi.lift fun j ↦ Pi.π (fun j ↦ V ((φ.f ∘ a.1) j))
             (Tuple.sort (φ.f ∘ a.1) j)).op ≫
           P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op) := by
+  -- As in the preceding lemma, compose typed identities to avoid the opaque product indices.
   exact (strictMonoCechComplexMap_f_π_eq P φ n a).trans
     ((congrArg (fun f ↦ f ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op)
       (fromStrictMonoCechComplex_app_f_π V P n ha)).trans
@@ -99,6 +101,7 @@ theorem strictMonoCechComplexMap_f_π_of_not_injective
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (n : ℕ)
     (a : {a : Fin (n + 1) → ι // StrictMono a}) (ha : ¬Function.Injective (φ.f ∘ a.1)) :
     (strictMonoCechComplexMap P φ).f n ≫ strictMonoCechComplexπ U P a = 0 := by
+  -- The same opaque product indices prevent rewriting the zero-coordinate identity in place.
   exact (strictMonoCechComplexMap_f_π_eq P φ n a).trans
     ((congrArg (fun f ↦ f ≫ P.map (Limits.Pi.map fun j ↦ φ.φ (a.1 j)).op)
       (fromStrictMonoCechComplex_app_f_π_of_not_injective V P n ha)).trans zero_comp)
@@ -123,22 +126,38 @@ theorem strictMonoCechComplexMap_id :
 def toStrictMonoCechComplexMapHomotopy
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     Homotopy ((toStrictMonoCechComplex V).app P ≫ strictMonoCechComplexMap P φ)
-      (cechComplexMap P φ ≫ (toStrictMonoCechComplex U).app P) := by
-  simpa only [strictMonoCechComplexMap_def, Category.assoc,
-    strictMonoCechComplexHomotopyEquiv_hom, strictMonoCechComplexHomotopyEquiv_inv] using
+      (cechComplexMap P φ ≫ (toStrictMonoCechComplex U).app P) :=
+  (Homotopy.ofEq (by simp only [strictMonoCechComplexMap_def, Category.assoc,
+    strictMonoCechComplexHomotopyEquiv_hom, strictMonoCechComplexHomotopyEquiv_inv])).trans
     ((strictMonoCechComplexHomotopyEquiv V P).homotopyHomInvId.compRightId
       (cechComplexMap P φ ≫ (toStrictMonoCechComplex U).app P))
+
+@[simp]
+lemma toStrictMonoCechComplexMapHomotopy_hom
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (i j : ℕ) :
+    (toStrictMonoCechComplexMapHomotopy P φ).hom i j =
+      (strictMonoCechComplexHomotopyEquiv V P).homotopyHomInvId.hom i j ≫
+        (cechComplexMap P φ).f j ≫ ((toStrictMonoCechComplex U).app P).f j := by
+  simp [toStrictMonoCechComplexMapHomotopy]
 
 /-- Alternating extension from ordered to tuple cochains intertwines refinement up to homotopy.
 -/
 def fromStrictMonoCechComplexMapHomotopy
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     Homotopy (strictMonoCechComplexMap P φ ≫ (fromStrictMonoCechComplex U).app P)
-      ((fromStrictMonoCechComplex V).app P ≫ cechComplexMap P φ) := by
-  simpa only [strictMonoCechComplexMap_def, Category.assoc,
-    strictMonoCechComplexHomotopyEquiv_hom, strictMonoCechComplexHomotopyEquiv_inv] using
+      ((fromStrictMonoCechComplex V).app P ≫ cechComplexMap P φ) :=
+  (Homotopy.ofEq (by simp only [strictMonoCechComplexMap_def, Category.assoc,
+    strictMonoCechComplexHomotopyEquiv_hom, strictMonoCechComplexHomotopyEquiv_inv])).trans
     ((strictMonoCechComplexHomotopyEquiv U P).homotopyHomInvId.compLeftId
       ((fromStrictMonoCechComplex V).app P ≫ cechComplexMap P φ))
+
+@[simp]
+lemma fromStrictMonoCechComplexMapHomotopy_hom
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) (i j : ℕ) :
+    (fromStrictMonoCechComplexMapHomotopy P φ).hom i j =
+      ((fromStrictMonoCechComplex V).app P).f i ≫ (cechComplexMap P φ).f i ≫
+        (strictMonoCechComplexHomotopyEquiv U P).homotopyHomInvId.hom i j := by
+  simp [fromStrictMonoCechComplexMapHomotopy, Category.assoc]
 
 /-- Any two actual refinement functions induce homotopic ordered refinement maps. -/
 def strictMonoCechComplexMapHomotopy
@@ -163,10 +182,23 @@ def strictMonoCechComplexMapCompHomotopy {τ : Type w} [LinearOrder τ] {W : τ 
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
     (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ W) :
     Homotopy (strictMonoCechComplexMap P ψ ≫ strictMonoCechComplexMap P φ)
-      (strictMonoCechComplexMap P (φ ≫ ψ)) := by
-  simpa only [strictMonoCechComplexMap_def, cechComplexMap_comp, Category.assoc] using
-    ((toStrictMonoCechComplexMapHomotopy P φ).compLeft
-      ((fromStrictMonoCechComplex W).app P ≫ cechComplexMap P ψ))
+      (strictMonoCechComplexMap P (φ ≫ ψ)) :=
+  (Homotopy.ofEq (by simp only [strictMonoCechComplexMap_def, Category.assoc])).trans
+    (((toStrictMonoCechComplexMapHomotopy P φ).compLeft
+      ((fromStrictMonoCechComplex W).app P ≫ cechComplexMap P ψ)).trans
+        (Homotopy.ofEq (by
+          simp only [strictMonoCechComplexMap_def, cechComplexMap_comp, Category.assoc])))
+
+@[simp]
+lemma strictMonoCechComplexMapCompHomotopy_hom {τ : Type w} [LinearOrder τ] {W : τ → C}
+    (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V)
+    (ψ : FormalCoproduct.mk _ V ⟶ FormalCoproduct.mk _ W) (i j : ℕ) :
+    (strictMonoCechComplexMapCompHomotopy P φ ψ).hom i j =
+      ((fromStrictMonoCechComplex W).app P).f i ≫ (cechComplexMap P ψ).f i ≫
+        (toStrictMonoCechComplexMapHomotopy P φ).hom i j := by
+  simp only [strictMonoCechComplexMapCompHomotopy, Homotopy.trans_hom, Homotopy.ofEq_hom,
+    Homotopy.compLeft_hom, HomologicalComplex.comp_f, Pi.zero_apply,
+    zero_add, add_zero, Category.assoc]
 
 section Homology
 
@@ -217,7 +249,7 @@ theorem strictMonoCechComplexHomologyMap_comp {τ : Type w} [LinearOrder τ] {W 
 
 /-- The tuple-to-ordered cohomology isomorphisms commute with every raw refinement. -/
 @[reassoc]
-theorem homologyMap_toStrictMonoCechComplex_comp
+theorem homologyMap_toStrictMonoCechComplex_comp_homologyMap_strictMonoCechComplexMap
     (φ : FormalCoproduct.mk _ U ⟶ FormalCoproduct.mk _ V) :
     HomologicalComplex.homologyMap ((toStrictMonoCechComplex V).app P) n ≫
         HomologicalComplex.homologyMap (strictMonoCechComplexMap P φ) n =
