@@ -84,13 +84,15 @@ private noncomputable def uniformizerPowToMaximalIdealGraded (π : R)
       (maximalIdeal R • ⊤ : Submodule R (maximalIdeal R ^ m : Ideal R)) :=
   (Submodule.mkQ _).comp <|
     (LinearMap.mulRight R (π ^ m)).codRestrict _
-      (IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow hπ m)
+      (IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow
+        ((mem_maximalIdeal π).2 hπ.not_isUnit) m)
 
 private theorem uniformizerPowToMaximalIdealGraded_apply (π : R)
     (hπ : Irreducible π) (m : ℕ) (x : R) :
     uniformizerPowToMaximalIdealGraded π hπ m x =
       Submodule.Quotient.mk
-        ⟨x * π ^ m, IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow hπ m x⟩ :=
+        ⟨x * π ^ m, IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow
+        ((mem_maximalIdeal π).2 hπ.not_isUnit) m x⟩ :=
   rfl
 
 private theorem ker_uniformizerPowToMaximalIdealGraded (π : R)
@@ -131,7 +133,8 @@ theorem residueFieldEquivMaximalIdealGradedOfUniformizer_mk (π : R)
     (hπ : Irreducible π) (m : ℕ) (x : R) :
     residueFieldEquivMaximalIdealGradedOfUniformizer π hπ m (residue R x) =
       Submodule.Quotient.mk
-        ⟨x * π ^ m, IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow hπ m x⟩ := by
+        ⟨x * π ^ m, IsDiscreteValuationRing.mul_pow_mem_maximalIdeal_pow
+        ((mem_maximalIdeal π).2 hπ.not_isUnit) m x⟩ := by
   -- `residue R x` is the class of `x` in `R ⧸ 𝔪`.
   rw [residue_def, ← Ideal.Quotient.mk_eq_mk]
   -- The equivalence is a composite out of `R ⧸ 𝔪`, while its stated domain is the definition
