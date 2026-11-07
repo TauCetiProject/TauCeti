@@ -72,18 +72,6 @@ structure PreTorsor (G : Sheaf J GrpCat.{w}) where
 
 attribute [instance] PreTorsor.mulAction
 
-/-- Two sections `a`, `b` of a sheaf of sets over `U` agree as soon as they agree after
-restriction along every `f : V ⟶ U` along which a given section `q` of `Q` over `U` lifts
-through a locally surjective morphism `η : F ⟶ Q`. -/
-private lemma ext_of_isLocallySurjective {F Q : Cᵒᵖ ⥤ Type w} (η : F ⟶ Q)
-    [Presheaf.IsLocallySurjective J η] {Z : Sheaf J (Type w)} {U : Cᵒᵖ} (q : Q.obj U)
-    {a b : Z.obj.obj U}
-    (h : ∀ ⦃V : C⦄ (f : V ⟶ U.unop) (x : F.obj (op V)), η.app _ x = Q.map f.op q →
-      Z.obj.map f.op a = Z.obj.map f.op b) :
-    a = b :=
-  (((isSheaf_iff_isSheaf_of_type J _).1 Z.property).isSeparated _
-    (Presheaf.imageSieve_mem J η q)).ext fun _ f ⟨x, hx⟩ ↦ h f x hx
-
 namespace PreTorsor
 
 variable {G : Sheaf J GrpCat.{w}} (F : PreTorsor G)
@@ -137,14 +125,14 @@ private lemma map_smul' {U V : Cᵒᵖ} (f : U ⟶ V) (g : G.obj.obj U)
 
 private lemma one_smul' {U : Cᵒᵖ} (q : (CategoryTheory.sheafify J F.presheaf).obj U) :
     F.smul 1 q = q :=
-  ext_of_isLocallySurjective (CategoryTheory.toSheafify J F.presheaf)
+  Presheaf.ext_of_isLocallySurjective J (CategoryTheory.toSheafify J F.presheaf)
     (Z := (presheafToSheaf J (Type w)).obj F.presheaf) q fun V f x hx ↦ by
     rw [F.map_smul', map_one, ← hx, smul_toSheafify, one_smul]
 
 private lemma mul_smul' {U : Cᵒᵖ} (g h : G.obj.obj U)
     (q : (CategoryTheory.sheafify J F.presheaf).obj U) :
     F.smul (g * h) q = F.smul g (F.smul h q) :=
-  ext_of_isLocallySurjective (CategoryTheory.toSheafify J F.presheaf)
+  Presheaf.ext_of_isLocallySurjective J (CategoryTheory.toSheafify J F.presheaf)
     (Z := (presheafToSheaf J (Type w)).obj F.presheaf) q fun V f x hx ↦ by
     rw [F.map_smul', F.map_smul', F.map_smul', map_mul, ← hx, smul_toSheafify, smul_toSheafify,
       smul_toSheafify, mul_smul]
@@ -238,7 +226,7 @@ def sheafifyLift {R : Torsor G} (ρ : F.presheaf ⟶ R.sheaf.obj)
           ρ.app V x :=
       congrArg (fun φ ↦ φ.app V x)
         (CategoryTheory.toSheafify_sheafifyLift J ρ R.sheaf.property)
-    refine ext_of_isLocallySurjective F.toSheafify q fun V f x hx ↦ ?_
+    refine Presheaf.ext_of_isLocallySurjective J F.toSheafify q fun V f x hx ↦ ?_
     rw [R.map_smul, ← NatTrans.naturality_apply,
       ← NatTrans.naturality_apply, F.sheafify.map_smul, ← hx, ← toSheafify_smul]
     exact (hρ' _ _).trans ((hρ _ _ _).trans (congrArg _ (hρ' _ _).symm))

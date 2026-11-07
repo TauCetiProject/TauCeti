@@ -21,11 +21,15 @@ its two components lift.
 Through Mathlib's `CategoryTheory.GrothendieckTopology.W_iff_isLocallyBijective`, such products
 are inverted by sheafification; this is how the action of a sheaf of groups on a presheaf is
 extended to its sheafification.
+
+The file also records that sections of a sheaf of sets are determined by their restrictions
+along the sieve on which a given section lifts through a locally surjective morphism
+(`CategoryTheory.Presheaf.ext_of_isLocallySurjective`).
 -/
 
 public section
 
-open CategoryTheory MonoidalCategory
+open CategoryTheory MonoidalCategory Opposite
 
 universe w v u
 
@@ -55,5 +59,17 @@ instance isLocallySurjective_tensorHom [IsLocallySurjective J f] [IsLocallySurje
       (imageSieve_mem J f (U := Opposite.op _) y.1) (imageSieve_mem J g (U := Opposite.op _) y.2))
     rintro V a ⟨⟨x₁, hx₁⟩, ⟨x₂, hx₂⟩⟩
     exact ⟨(x₁, x₂), Prod.ext hx₁ hx₂⟩
+
+/-- Two sections `a`, `b` of a sheaf of sets over `U` agree as soon as they agree after
+restriction along every `f : V ⟶ U` along which a given section `q` of `Q` over `U` lifts
+through a locally surjective morphism `η : F ⟶ Q`. -/
+lemma ext_of_isLocallySurjective {F Q : Cᵒᵖ ⥤ Type w} (η : F ⟶ Q)
+    [IsLocallySurjective J η] {Z : Sheaf J (Type w)} {U : Cᵒᵖ} (q : Q.obj U)
+    {a b : Z.obj.obj U}
+    (h : ∀ ⦃V : C⦄ (f : V ⟶ U.unop) (x : F.obj (op V)), η.app _ x = Q.map f.op q →
+      Z.obj.map f.op a = Z.obj.map f.op b) :
+    a = b :=
+  (((isSheaf_iff_isSheaf_of_type J _).1 Z.property).isSeparated _
+    (imageSieve_mem J η q)).ext fun _ f ⟨x, hx⟩ ↦ h f x hx
 
 end CategoryTheory.Presheaf
