@@ -16,8 +16,10 @@ public import TauCeti.LinearAlgebra.SymmetricAlgebra.LinearPoints
 For arbitrary modules `M` and `N` over a commutative ring `R`, a scheme morphism
 `Spec (Sym M) ⟶ Spec (Sym N)` over `Spec R` is induced by a unique linear map `N → M`
 if its action on points commutes with every scalar in every commutative test algebra.
-In particular, this condition forces additivity; no characteristic or finiteness hypothesis
-is needed. Testing only the scalars of `R` would not suffice.
+In particular, this condition forces additivity by applying
+`TauCeti.SymmetricAlgebra.linearPoints_add_of_smul` to `specSymmetricAlgebraPointsMap`;
+no characteristic or finiteness hypothesis is needed. Testing only the scalars of `R`
+would not suffice.
 
 `specSymmetricAlgebraHomEquiv` identifies actual affine-scheme points with linear functionals,
 naturally in the test algebra. The recognition theorem transports the algebraic result
@@ -237,19 +239,6 @@ theorem specSymmetricAlgebraPointsMap_smul_iff_exists_specSymmetricAlgebraMap
   · rintro ⟨f, rfl⟩ S c g
     rw [specSymmetricAlgebraPointsMap_specSymmetricAlgebraMap]
     exact SymmetricAlgebra.linearPointsMap_app_smul R f S c g
-
-/-- Scalar equivariance of a scheme morphism forces additivity on every test algebra. -/
-theorem specSymmetricAlgebraPointsMap_add_of_smul
-    (ψ : (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R M))) ⟶
-      (algSpec R).obj (op (CommAlgCat.of R (SymmetricAlgebra R N))))
-    (hψ : ∀ (S : CommAlgCat.{u} R) (c : S) (g : M →ₗ[R] S),
-      (specSymmetricAlgebraPointsMap ψ).app S (c • g) =
-        c • ((specSymmetricAlgebraPointsMap ψ).app S g : N →ₗ[R] S))
-    (S : CommAlgCat.{u} R) (p q : M →ₗ[R] S) :
-    (specSymmetricAlgebraPointsMap ψ).app S (p + q) =
-      (specSymmetricAlgebraPointsMap ψ).app S p +
-        (specSymmetricAlgebraPointsMap ψ).app S q :=
-  SymmetricAlgebra.linearPoints_add_of_smul R (specSymmetricAlgebraPointsMap ψ) hψ S p q
 
 /-- The affine linear spectrum used by relative Spec is the symmetric-algebra object of
 `algSpec` after forgetting its affine-morphism property. -/
