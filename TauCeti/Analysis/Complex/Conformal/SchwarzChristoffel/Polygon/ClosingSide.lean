@@ -161,14 +161,15 @@ theorem im_schwarzChristoffelVertex_zero_lt (a e : Fin (n + 1) → ℝ) (z₀ : 
   rw [← hW, ← hW]
   simp only [Fin.val_zero]
   by_cases hθk : θ k ≤ -Real.pi
-  · exact lt_of_step_of_le_neg_pi W θ hθmono hθlow hkval hkn' hθk hstep
+  · exact height_lt_of_monotone_turning_of_le_neg_pi W θ hθmono hθlow hkval hkn' hθk hstep
   · have hWn : W n = W 0 := by
       have h1 := hW (Fin.last n)
       have h0 := hW 0
       rw [Fin.val_last] at h1
       rw [Fin.val_zero] at h0
       rw [h1, h0, hends]
-    exact lt_of_step_of_not_le_neg_pi W θ hθmono hθlast hkn' hθk hstep hWn
+    exact height_lt_of_monotone_turning_of_neg_pi_lt W θ hθmono hθlast hkn' (not_le.1 hθk) hstep
+      hWn
 
 /-- **Every finite Schwarz--Christoffel vertex lies on or above the closing line.** The line is
 identified by the imaginary part of the first finite vertex. -/

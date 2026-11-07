@@ -23,10 +23,11 @@ from a reference direction `θ`, raises the height by `d * sin (ψ - θ)`.
 
 ## Main results
 
-* `TauCeti.lt_of_step_of_le_neg_pi`, `TauCeti.lt_of_step_of_not_le_neg_pi` -- telescoping
-  estimates: for a sequence whose steps are positive multiples of `sin (θ l)` with `θ` strictly
-  increasing, the height at an index `k` exceeds the initial height, when `θ k ≤ -π`
-  (resp. when the chain closes up and `-π < θ k`).
+* `TauCeti.height_lt_of_monotone_turning_of_le_neg_pi`,
+  `TauCeti.height_lt_of_monotone_turning_of_neg_pi_lt` -- telescoping estimates: for a sequence
+  whose steps are positive multiples of `sin (θ l)` with `θ` strictly increasing, the height at an
+  index `k` exceeds the initial height, when `θ k ≤ -π` (resp. when the chain closes up and
+  `-π < θ k`).
 * `TauCeti.heights_nonneg_of_monotone_turning` -- every height of such a chain, measured from
   the line through one of its steps, is nonnegative.
 -/
@@ -149,7 +150,7 @@ theorem heights_nonneg_of_monotone_turning {n i : ℕ} (hi : i < n) {H φ : ℕ 
 /-- A telescoping step: if every side before `k` points upward, then `W k > W 0`.  Here the
 steps `W (l + 1) - W l` are positive multiples of `sin (θ l)` for a strictly increasing sequence
 `θ` bounded below by `-2π`, and `θ k ≤ -π`. -/
-theorem lt_of_step_of_le_neg_pi {n : ℕ} (W : ℕ → ℝ) (θ : Fin (n + 1) → ℝ)
+theorem height_lt_of_monotone_turning_of_le_neg_pi {n : ℕ} (W : ℕ → ℝ) (θ : Fin (n + 1) → ℝ)
     (hθmono : StrictMono θ) (hθlow : ∀ l, -2 * Real.pi < θ l) {k : Fin (n + 1)}
     (hkval : 0 < k.val) (hkn' : k.val < n) (hθk : θ k ≤ -Real.pi)
     (hstep : ∀ l (hl : l < n), ∃ d : ℝ, 0 < d ∧
@@ -169,9 +170,9 @@ theorem lt_of_step_of_le_neg_pi {n : ℕ} (W : ℕ → ℝ) (θ : Fin (n + 1) �
 /-- A telescoping step: if every side from `k` on points downward and the total height change is
 zero (`W n = W 0`), then `W 0 < W k`.  Here the steps `W (l + 1) - W l` are positive multiples of
 `sin (θ l)` for a strictly increasing sequence `θ` with `θ n = 0`, and `-π < θ k`. -/
-theorem lt_of_step_of_not_le_neg_pi {n : ℕ} (W : ℕ → ℝ) (θ : Fin (n + 1) → ℝ)
+theorem height_lt_of_monotone_turning_of_neg_pi_lt {n : ℕ} (W : ℕ → ℝ) (θ : Fin (n + 1) → ℝ)
     (hθmono : StrictMono θ) (hθlast : θ (Fin.last n) = 0) {k : Fin (n + 1)}
-    (hkn' : k.val < n) (hθk : ¬ θ k ≤ -Real.pi)
+    (hkn' : k.val < n) (hθk : -Real.pi < θ k)
     (hstep : ∀ l (hl : l < n), ∃ d : ℝ, 0 < d ∧
       W (l + 1) - W l = d * Real.sin (θ ⟨l, by omega⟩))
     (hWn : W n = W 0) : W 0 < W k.val := by
