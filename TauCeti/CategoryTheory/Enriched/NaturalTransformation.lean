@@ -53,8 +53,13 @@ theorem unitGradedNaturality_iff
       (F.obj X ⟶[V] F.obj Y) ◁ aY ≫ eComp V (F.obj X) (F.obj Y) (G.obj Y) =
     G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
       aX ▷ (G.obj X ⟶[V] G.obj Y) ≫ eComp V (F.obj X) (G.obj X) (G.obj Y))
-  have hl := leftUnitor_hom_comp_rightUnitor_inv_whiskerLeft (F.map X Y) aY
-  have hr := leftUnitor_hom_comp_leftUnitor_inv_whiskerRight (G.map X Y) aX
+  have hl : (λ_ (X ⟶[V] Y)).hom ≫ F.map X Y ≫ (ρ_ (F.obj X ⟶[V] F.obj Y)).inv ≫
+      (F.obj X ⟶[V] F.obj Y) ◁ aY = (β_ (𝟙_ V) (X ⟶[V] Y)).hom ≫ (F.map X Y ⊗ₘ aY) := by
+    rw [← rightUnitor_inv_comp_tensorHom, braiding_tensorUnit_left, Category.assoc]
+  have hr : (λ_ (X ⟶[V] Y)).hom ≫ G.map X Y ≫ (λ_ (G.obj X ⟶[V] G.obj Y)).inv ≫
+      aX ▷ (G.obj X ⟶[V] G.obj Y) = aX ⊗ₘ G.map X Y := by
+    rw [← leftUnitor_inv_comp_tensorHom]
+    simp
   constructor
   · intro h
     apply (cancel_epi (λ_ (X ⟶[V] Y)).hom).mp

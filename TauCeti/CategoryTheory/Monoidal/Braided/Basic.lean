@@ -21,8 +21,7 @@ This file also records naturality of the re-associated crossing
 `(α_ X Y Z).inv ≫ (β_ X Y).hom ▷ Z ≫ (α_ Y X Z).hom : X ⊗ (Y ⊗ Z) ⟶ Y ⊗ (X ⊗ Z)` of the first
 two factors of a right-bracketed triple with respect to whiskered and tensor-product morphisms,
 and the unitor identity `(λ_ X).hom ▷ 𝟙_ C ≫ (ρ_ X).hom` expressed through the braiding
-`β_ X (𝟙_ C)` of `X` past the tensor unit, and two identities relating a morphism conjugated by
-unitors and whiskered by a morphism out of the unit to the tensor product of the two morphisms.
+`β_ X (𝟙_ C)` of `X` past the tensor unit.
 
 It also records that the inverse tensorator `δ` of a braided functor commutes with the braiding
 (`CategoryTheory.Functor.δ_braiding`), the `δ`-form of `Functor.map_braiding`.
@@ -131,23 +130,6 @@ theorem _root_.CategoryTheory.Functor.δ_braiding {D : Type*} [Category* D] [Mon
     Functor.OplaxMonoidal.δ F X Y ≫ (β_ (F.obj X) (F.obj Y)).hom =
       F.map (β_ X Y).hom ≫ Functor.OplaxMonoidal.δ F Y X := by
   rw [← cancel_mono (Functor.LaxMonoidal.μ F Y X)]
-  simp
-
-/-- Precomposing `f` followed by the right unitor inverse and the whiskering by
-`g : 𝟙_ C ⟶ Z` with the left unitor gives the braiding of the unit past the source of `f`,
-followed by the tensor product of `f` and `g`. -/
-theorem leftUnitor_hom_comp_rightUnitor_inv_whiskerLeft {X Y Z : C} (f : X ⟶ Y)
-    (g : 𝟙_ C ⟶ Z) :
-    (λ_ X).hom ≫ f ≫ (ρ_ Y).inv ≫ Y ◁ g = (β_ (𝟙_ C) X).hom ≫ (f ⊗ₘ g) := by
-  rw [← rightUnitor_inv_comp_tensorHom, braiding_tensorUnit_left, Category.assoc]
-
-omit [BraidedCategory C] in
-/-- Precomposing `f` followed by the left unitor inverse and the whiskering by
-`g : 𝟙_ C ⟶ Z` on the right with the left unitor gives the tensor product of `g` and `f`. -/
-theorem leftUnitor_hom_comp_leftUnitor_inv_whiskerRight {X Y Z : C} (f : X ⟶ Y)
-    (g : 𝟙_ C ⟶ Z) :
-    (λ_ X).hom ≫ f ≫ (λ_ Y).inv ≫ g ▷ Y = g ⊗ₘ f := by
-  rw [← leftUnitor_inv_comp_tensorHom]
   simp
 
 end TauCeti
