@@ -184,7 +184,7 @@ private theorem contMDiffAt_pantsEnd (w : ThricePuncturedSphere) (x : M) :
         (h₀.isNondegenerate.tames_iff.mp (hJ q _) x)
         (J₀.almostComplexStructureAt_toLinearMap x).symm
         ((J q _).almostComplexStructureAt_toLinearMap x).symm).map _
-    exact (Floer.contMDiffAt_smoothTransition_endCoord q (ne_endCenter w.2 q) x).smul
+    exact (Floer.contMDiffAt_smoothTransition_endCoord q 1 (ne_endCenter w.2 q) x).smul
       (SymplecticForm.contMDiffAt_cayleyFormula_of_isUnit hA (hB q) hu)
   have hcoordC {p : ℂ × M} (hp : p.2 ∈ e.baseSet) :
       coord p.2 (pantsCayley J J₀ p.1 p.2) = C p := by

@@ -57,15 +57,18 @@ is the single-neck model of the same deformation.
   `a = 1` and `L = 0`, for `2/3 ≤ R ≤ 3/2`
   (`TauCeti.Floer.cappedComparisonPerturbation_of_mem_Icc`), and for `R ≥ 2` it has necks of
   length `R - 1` (`TauCeti.Floer.cappedComparisonPerturbation_of_two_le`).
-* For a symplectic vector space target and `|H_q| ≤ B_q`, the integrated curvature of the datum
-  along any map is at most `2 |a| (B₀ + B₁ + B_∞)`, independently of `L`
-  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le`). Along the
+* For a manifold target with a smooth two-form, and `|H_q| ≤ B_q`, the integrated curvature of
+  the datum along any map is at most `2 |a| (B₀ + B₁ + B_∞)`, independently of `L`
+  (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le`). Along the
   family `K_R`, `R ≥ 0`, it is therefore at most `2 (B₀ + B₁ + B_∞)`
-  (`TauCeti.SymplecticForm.lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le`).
+  (`TauCeti.SmoothTwoForm.lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le`).
   Each end contributes at most `2 |a| B_q`: the two transition collars each contribute `|a| B_q`,
-  and the curvature vanishes along the neck, however long it is.
+  and the curvature vanishes along the neck, however long it is. On a compact target every
+  continuous `H_q` of period one is bounded, so the bound applies to the actual comparison family.
+  A symplectic vector space is the case of the constant form `TauCeti.SymplecticForm.constSmooth`.
 
-Almost complex structures, manifold targets for the curvature bound and the moduli spaces of the
+The almost complex structures of the family are in
+`TauCeti.Geometry.Symplectic.Floer.PairOfPants.AlmostComplex.Capped`; the moduli spaces of the
 comparison are not treated here.
 
 ## References
@@ -409,6 +412,24 @@ theorem contMDiff_cappedPerturbation {n : ℕ∞} (hH : ∀ q, Function.Periodic
       (q.contDiffAt_endAngularForm hw).contMDiffAt contMDiffAt_fst
   exact (hP.smul hHq).smul hdt
 
+/-- The capped perturbation is differentiable in the point of `ℂ`. -/
+private theorem differentiable_cappedPerturbation_domain (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (a L : ℝ) (x : M)
+    (v : ℂ) : Differentiable ℝ fun w ↦ cappedPerturbation a L H w x v := by
+  have h : ContMDiff 𝓘(ℝ, ℂ) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 fun w ↦ cappedPerturbation a L H w x :=
+    (contMDiff_cappedPerturbation (n := 1) hH hHs).comp (f := fun w : ℂ ↦ (w, ((a, L), x)))
+      (contMDiff_id.prodMk contMDiff_const)
+  exact (h.contDiff.differentiable one_ne_zero).clm_apply (differentiable_const v)
+
+/-- The capped perturbation is differentiable in the target point. -/
+private theorem mdifferentiable_cappedPerturbation_target (hH : ∀ q, Function.Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (Function.uncurry (H q))) (a L : ℝ) (w v : ℂ) :
+    MDifferentiable I 𝓘(ℝ) fun y ↦ cappedPerturbation a L H w y v := by
+  have h : ContMDiff I 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1 fun y ↦ cappedPerturbation a L H w y :=
+    (contMDiff_cappedPerturbation (n := 1) hH hHs).comp (f := fun y : M ↦ (w, ((a, L), y)))
+      (contMDiff_const.prodMk (contMDiff_const.prodMk contMDiff_id))
+  exact (h.mdifferentiable one_ne_zero).clm_apply mdifferentiable_const
+
 /-- A component `K(v)` of the capped perturbation, for a fixed tangent vector `v` of `ℂ`, is `C^n`
 jointly in the point of the plane chart `ℝ × ℝ` and the target point. -/
 theorem contMDiff_cappedPerturbation_apply {n : ℕ∞} (hH : ∀ q, Periodic (H q) 1)
@@ -481,37 +502,22 @@ end TauCeti.Floer
 
 /-! ### The integrated curvature -/
 
-namespace TauCeti.SymplecticForm
+namespace TauCeti.SmoothTwoForm
 
 open Floer
 
-variable {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] {H : Puncture → ℝ → V → ℝ}
-  {a L : ℝ}
-
-/-- The capped perturbation is `C¹` jointly in the point of `ℂ` and the target point. -/
-private theorem contDiff_cappedPerturbation_prod (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) (a L : ℝ) :
-    ContDiff ℝ 1 (fun p : ℂ × V ↦ cappedPerturbation a L H p.1 p.2) := by
-  have hHs' : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod 𝓘(ℝ, V)) 𝓘(ℝ, ℝ) 1 (uncurry (H q)) := fun q ↦ by
-    have h := (hHs q).contMDiff
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod] at h
-    exact h
-  have hι : ContMDiff (𝓘(ℝ, ℂ).prod 𝓘(ℝ, V)) (𝓘(ℝ, ℂ).prod (𝓘(ℝ, ℝ × ℝ).prod 𝓘(ℝ, V))) 1
-      fun p : ℂ × V ↦ (p.1, ((a, L), p.2)) :=
-    contMDiff_fst.prodMk (contMDiff_const.prodMk contMDiff_snd)
-  have h : ContMDiff 𝓘(ℝ, ℂ × V) 𝓘(ℝ, ℂ →L[ℝ] ℝ) 1
-      (fun p : ℂ × V ↦ cappedPerturbation a L H p.1 p.2) := by
-    rw [modelWithCornersSelf_prod, ← chartedSpaceSelf_prod]
-    exact (contMDiff_cappedPerturbation (n := 1) hH hHs').comp hι
-  exact h.contDiff
+variable {E G M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [TopologicalSpace G]
+  {I : ModelWithCorners ℝ E G} [TopologicalSpace M] [ChartedSpace G M] [IsManifold I (⊤ : ℕ∞) M]
+  {H : Puncture → ℝ → M → ℝ} {a L : ℝ}
 
 /-- The curvature of the datum over the image of the strip of the end `q` is at most `2 |a| B_q`
 for a bound `B_q` of the Hamiltonian of that end: each of the two transition collars contributes
 at most `|a| B_q`. -/
-private theorem setLIntegral_image_endChart_cappedPerturbation_le [FiniteDimensional ℝ V]
-    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
-    (u : ℝ × ℝ → V) (q : Puncture) :
+private theorem setLIntegral_image_endChart_cappedPerturbation_le
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    (u : ℝ × ℝ → M) (q : Puncture) :
     ∫⁻ z in endChart q '' endStrip q, ‖ω.hamiltonianCurvature
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -541,22 +547,28 @@ private theorem setLIntegral_image_endChart_cappedPerturbation_le [FiniteDimensi
             inv_one, ENNReal.ofReal_one, one_add_one_eq_two]
       _ = _ := by
           rw [← ENNReal.ofReal_ofNat 2, ← ENNReal.ofReal_mul (abs_nonneg a), mul_comm]
+  -- The Hamiltonian of the end `q` is differentiable in time at each target point.
+  have hHt (x : M) : Differentiable ℝ fun t ↦ H q t x :=
+    (((hHs q).comp (f := fun t : ℝ ↦ (t, x)) (contMDiff_id.prodMk contMDiff_const)).contDiff
+      ).differentiable one_ne_zero
   exact (ω.setLIntegral_image_endChart_enorm_hamiltonianCurvature_le
     (P := fun σ ↦ a * cappedEndProfile L σ)
-    (fun _ _ _ ↦ (contDiff_cappedPerturbation_prod hH hHs a L).differentiable one_ne_zero _)
+    (fun _ _ x v ↦ (differentiable_cappedPerturbation_domain hH hHs a L x v).differentiableAt)
+    (fun w _ _ v ↦ (mdifferentiable_cappedPerturbation_target hH hHs a L w v).mdifferentiableAt)
     (fun _ hz x v ↦ cappedPerturbation_cylindricalEndLift_of_pos (hH q) hz x v)
-    (fun σ ↦ (hasDerivAt_cappedEndProfile L σ).differentiableAt.const_mul a)
-    ((hHs q).differentiable one_ne_zero) (hB q) u).trans (by gcongr)
+    (fun σ ↦ (hasDerivAt_cappedEndProfile L σ).differentiableAt.const_mul a) hHt (hB q) u).trans
+      (by gcongr)
 
 /-- **The integrated curvature of the capped perturbation.** Let `K` be the capped perturbation
 with scaling factor `a` and neck length `L`, built from period-one `C¹` Hamiltonians `H_q` with
 `|H_q| ≤ B_q`, and write its components in the global coordinate `z = s + i t` of `ℂ` as
 `K_s(z) = K(z)(1)` and `K_t(z) = K(z)(i)`. Then for every map `u` into the target, the integral of
 `|R_K(z, u(z))|` over the plane is at most `2 |a| (B₀ + B₁ + B_∞)`, independently of `L`. -/
-theorem lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le [FiniteDimensional ℝ V]
-    (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
-    (a L : ℝ) (u : ℝ × ℝ → V) :
+theorem lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    (a L : ℝ) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedPerturbation a L H (Complex.equivRealProdCLM.symm z) x Complex.I)
@@ -569,9 +581,10 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedPerturbation_le [FiniteDimens
 /-- **The curvature bound is uniform over the comparison family.** For every `R ≥ 0` the
 integrated curvature of `K_R` along any map is at most `2 (B₀ + B₁ + B_∞)`. -/
 theorem lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le
-    [FiniteDimensional ℝ V] (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
-    {R : ℝ} (hR : 0 ≤ R) (u : ℝ × ℝ → V) :
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {R : ℝ} (hR : 0 ≤ R) (u : ℝ × ℝ → M) :
     ∫⁻ z, ‖ω.hamiltonianCurvature
         (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x
@@ -587,14 +600,15 @@ theorem lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le
 value at most `2 (B₀ + B₁ + B_∞)`. This is the curvature term that an energy identity for the
 comparison family would need to bound uniformly over the family. -/
 theorem abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le
-    [FiniteDimensional ℝ V] (ω : SymplecticForm V) (hH : ∀ q, Periodic (H q) 1)
-    (hHs : ∀ q, ContDiff ℝ 1 (uncurry (H q))) {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
-    {R : ℝ} (hR : 0 ≤ R) (u : ℝ × ℝ → V) (s : Set (ℝ × ℝ)) :
+    (ω : SmoothTwoForm I M) (hH : ∀ q, Periodic (H q) 1)
+    (hHs : ∀ q, ContMDiff (𝓘(ℝ, ℝ).prod I) 𝓘(ℝ, ℝ) 1 (uncurry (H q)))
+    {B : Puncture → ℝ} (hB : ∀ q t x, |H q t x| ≤ B q)
+    {R : ℝ} (hR : 0 ≤ R) (u : ℝ × ℝ → M) (s : Set (ℝ × ℝ)) :
     |∫ z in s, ω.hamiltonianCurvature
         (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x 1)
         (fun z x ↦ cappedComparisonPerturbation H R (Complex.equivRealProdCLM.symm z) x
           Complex.I) z (u z)| ≤ 2 * ∑ q, B q := by
-  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 0)
+  have hB₀ (q : Puncture) : 0 ≤ B q := (abs_nonneg _).trans (hB q 0 (u 0))
   rw [← ENNReal.ofReal_le_ofReal_iff
       (mul_nonneg zero_le_two (Finset.sum_nonneg fun q _ ↦ hB₀ q)),
     ← Real.enorm_eq_ofReal_abs, ENNReal.ofReal_mul zero_le_two, ENNReal.ofReal_ofNat,
@@ -602,4 +616,4 @@ theorem abs_setIntegral_hamiltonianCurvature_cappedComparisonPerturbation_le
   exact (enorm_integral_le_lintegral_enorm _).trans ((setLIntegral_le_lintegral _ _).trans
     (lintegral_enorm_hamiltonianCurvature_cappedComparisonPerturbation_le ω hH hHs hB hR u))
 
-end TauCeti.SymplecticForm
+end TauCeti.SmoothTwoForm
