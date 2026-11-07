@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Polynomial.Div
 public import Mathlib.Algebra.Squarefree.Basic
 public import Mathlib.RingTheory.Ideal.Operations
+public import Mathlib.RingTheory.Nilpotent.Lemmas
 public import Mathlib.RingTheory.Polynomial.UniqueFactorization
 
 /-!
@@ -43,10 +44,6 @@ theorem isRadical_span_of_map (hp : p.Monic) (f : R →+* S)
 theorem isRadical_span_of_map_squarefree {K : Type*} [Field K] (hp : p.Monic)
     (f : R →+* K) (hf : Function.Injective f) (h : Squarefree (p.map f)) :
     (Ideal.span {p}).IsRadical := by
-  apply hp.isRadical_span_of_map f hf
-  apply (Ideal.isRadical_iff_pow_one_lt 2 (by decide)).mpr
-  intro q hq
-  rw [Ideal.mem_span_singleton] at hq ⊢
-  exact (h.dvd_pow_iff_dvd (by decide : 2 ≠ 0)).mp hq
+  exact hp.isRadical_span_of_map f hf (isRadical_iff_span_singleton.mp h.isRadical)
 
 end Polynomial.Monic

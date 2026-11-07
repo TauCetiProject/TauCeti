@@ -14,8 +14,8 @@ public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Rechart
 Weierstrass division identifies a distinguished polynomial quotient with its holomorphic
 germ quotient. Radicality can therefore be checked over the fraction field of the base
 germ ring. The theorem `isRadical_span_nodeEquation` proves that `xy - s(b)` generates a
-radical ideal for every holomorphic base germ `s` vanishing at the base point, even if `s`
-is zero or has a multiple zero. The invertible change `x = u + v`, `y = u - v` gives the
+radical ideal for every holomorphic base germ `s`, even if `s` is zero or has a multiple zero.
+The invertible change `x = u + v`, `y = u - v` gives the
 quadratic normal form `u² - v² - s(b)`. The nonzero coefficient `v² + s(b)`, not the
 derivative of `s`, ensures reducedness. This is a statement about the actual holomorphic
 germ quotient; no analytic-space category or global-sections exactness is assumed.
@@ -39,14 +39,12 @@ variable {E : Type} [NormedAddCommGroup E] [NormedSpace ℂ E]
 `s` is zero or has arbitrarily high vanishing order. Here `v` is the extra base coordinate
 and `u` is the final vertical coordinate. -/
 private theorem isRadical_span_nodeNormalForm [FiniteDimensional ℂ E] (b : E)
-    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b)
-    (hs : eval 𝓘(ℂ, E) E b s = 0) :
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b) :
     (Ideal.span {(evalVertical (b, (0 : ℂ)) 0
       (X ^ 2 - C (evalVertical b 0 (X ^ 2 + C s))))}).IsRadical := by
   apply isRadical_span_evalVertical_X_pow_sub_C
   · apply (map_ne_zero_iff _ (evalVertical_injective b 0)).mpr
     exact (monic_X_pow_add_C s (by decide : 2 ≠ 0)).ne_zero
-  · simp [hs]
   · decide
 
 /-- The holomorphic germ of `xy - s(b)` at a point of the ambient base times two lines.
@@ -110,25 +108,24 @@ private theorem nodeCoordinateChange_equation (b : E)
     Pi.sub_apply, Pi.add_apply, Pi.pow_apply]
   ring
 
-/-- **All holomorphic node equations are reduced.** The ideal `(xy - s(b))` at a central
-node is radical for every holomorphic base germ vanishing there, including permanent nodes
-and singular total spaces such as `xy = b²`. -/
+/-- **All holomorphic node equations are reduced.** The ideal `(xy - s(b))` at `(b, 0, 0)`
+is radical for every holomorphic base germ, including permanent nodes and singular total
+spaces such as `xy = b²`. If `s(b) ≠ 0`, the equation is a unit and its ideal is the whole ring. -/
 theorem isRadical_span_nodeEquation [FiniteDimensional ℂ E] (b : E)
-    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b)
-    (hs : eval 𝓘(ℂ, E) E b s = 0) :
+    (s : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b) :
     (Ideal.span {nodeEquation b 0 0 s}).IsRadical := by
   let e := nodeCoordinateChange (E := E)
   let p := ((b, (0 : ℂ)), (0 : ℂ))
   let F := stalkPrecomp 𝓘(ℂ, (E × ℂ) × ℂ) ((E × ℂ) × ℂ) e e.contMDiff p
   have hrad : (Ideal.span {F (nodeEquation b (0 + 0) (0 - 0) s)}).IsRadical := by
     rw [nodeCoordinateChange_equation]
-    exact isRadical_span_nodeNormalForm b s hs
+    exact isRadical_span_nodeNormalForm b s
   have hmap : (Ideal.span {nodeEquation b (0 + 0) (0 - 0) s}).map F =
       Ideal.span {F (nodeEquation b (0 + 0) (0 - 0) s)} := by
     simp only [Ideal.map_span, Set.image_singleton]
   rw [← hmap] at hrad
   have h := hrad.comap (f := F)
-  rw [Ideal.comap_map_of_bijective F (e.bijective_stalkPrecomp p)] at h
+  rw [Ideal.comap_map_of_bijective F (e.stalkPrecomp_bijective p)] at h
   -- Eliminate the coordinate equalities dependently, including the stalk ring instances.
   have transport (x y : ℂ) (hx : x = 0) (hy : y = 0) :
       (Ideal.span {nodeEquation b x y s}).IsRadical →

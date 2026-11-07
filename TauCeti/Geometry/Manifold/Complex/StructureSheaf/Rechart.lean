@@ -31,7 +31,7 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
   {Y : Type} [TopologicalSpace Y] [ChartedSpace G Y]
 
 /-- Pullback by a biholomorphism is bijective on the holomorphic stalks. -/
-theorem bijective_stalkPrecomp (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X) :
+theorem stalkPrecomp_bijective (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X) :
     Function.Bijective (stalkPrecomp I X e e.contMDiff x) := by
   constructor
   · intro s t hst
@@ -64,12 +64,36 @@ def holomorphicStalkEquiv (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X) :
     (holomorphicStructureSheaf J Y).presheaf.stalk (e x) ≃+*
       (holomorphicStructureSheaf I X).presheaf.stalk x :=
   RingEquiv.ofBijective (stalkPrecomp I X e e.contMDiff x)
-    (e.bijective_stalkPrecomp x)
+    (e.stalkPrecomp_bijective x)
 
 /-- The stalk equivalence acts by pullback of germs. -/
 @[simp]
 theorem holomorphicStalkEquiv_apply (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X)
     (s : (holomorphicStructureSheaf J Y).presheaf.stalk (e x)) :
     e.holomorphicStalkEquiv x s = stalkPrecomp I X e e.contMDiff x s := (rfl)
+
+/-- The inverse stalk equivalence pulls germs back along the inverse biholomorphism.
+The source germ is transported along `e.symm (e x) = x`. -/
+@[simp]
+theorem holomorphicStalkEquiv_symm_apply (e : X ≃ₘ^ω⟮I, J⟯ Y) (x : X)
+    (s : (holomorphicStructureSheaf I X).presheaf.stalk x) :
+    (e.holomorphicStalkEquiv x).symm s =
+      stalkPrecomp J Y e.symm e.symm.contMDiff (e x)
+        ((e.symm_apply_apply x).symm ▸ s) := by
+  apply (e.holomorphicStalkEquiv x).injective
+  rw [RingEquiv.apply_symm_apply, holomorphicStalkEquiv_apply]
+  obtain ⟨f, _, hfs⟩ := exists_toFilterGerm_eq x s
+  -- Eliminate the base-point equality dependently, including the stalk ring instances.
+  have transport (z : X) (hz : z = x) :
+      toFilterGerm I X z (𝓝 z) le_rfl (hz.symm ▸ s) = f := by
+    subst z
+    exact hfs _ le_rfl
+  have hfs' := transport _ (e.symm_apply_apply x)
+  apply toFilterGerm_nhds_injective x
+  rw [toFilterGerm_stalkPrecomp, toFilterGerm_stalkPrecomp, hfs', hfs _ le_rfl,
+    Germ.coe_compTendsto, Germ.coe_compTendsto]
+  congr 1
+  funext z
+  simp
 
 end Diffeomorph

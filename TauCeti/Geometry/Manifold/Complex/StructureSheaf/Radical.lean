@@ -7,7 +7,7 @@ module
 
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Weierstrass
 public import TauCeti.Geometry.Manifold.Complex.StructureSheaf.Domain
-public import TauCeti.RingTheory.Polynomial.Radical
+public import TauCeti.RingTheory.Polynomial.Monic.Radical
 import Mathlib.FieldTheory.Separable
 import Mathlib.RingTheory.Ideal.Quotient.Nilpotent
 import Mathlib.RingTheory.Localization.FractionRing
@@ -18,8 +18,8 @@ import Mathlib.RingTheory.Localization.FractionRing
 Weierstrass division identifies a distinguished polynomial quotient with its holomorphic
 germ quotient. Thus radicality is equivalent for the two defining ideals. Squarefreeness
 over the fraction field of the base germ ring gives a useful sufficient criterion.
-In particular, `u^n = h` is reduced for every nonzero holomorphic germ `h` vanishing at the
-base point, without any restriction on the multiplicity or factorization of `h`.
+In particular, `u^n = h` in a centered vertical coordinate is reduced for every nonzero
+holomorphic germ `h`, without any restriction on its value, multiplicity or factorization.
 
 ## References
 
@@ -52,12 +52,20 @@ theorem isRadical_span_evalVertical_iff {b : E} {w : ℂ}
       let := h
       exact isReduced_of_injective e.symm e.symm.injective⟩
 
-/-- The hypersurface `u^n = h` is reduced when the holomorphic germ `h` is nonzero and
-vanishes at the base point. No squarefreeness or simple-zero assumption on `h` is needed. -/
-theorem isRadical_span_evalVertical_X_pow_sub_C {b : E}
+/-- The hypersurface `u^n = h` in the centered vertical coordinate is reduced when the
+holomorphic germ `h` is nonzero. No vanishing, squarefreeness or simple-zero assumption on
+`h` is needed. -/
+theorem isRadical_span_evalVertical_X_pow_sub_C {b : E} {w : ℂ}
     (h : (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b)
-    (hh : h ≠ 0) (hb : eval 𝓘(ℂ, E) E b h = 0) {n : ℕ} (hn : n ≠ 0) :
-    (Ideal.span {evalVertical b 0 (X ^ n - C h)}).IsRadical := by
+    (hh : h ≠ 0) {n : ℕ} (hn : n ≠ 0) :
+    (Ideal.span {evalVertical b w (X ^ n - C h)}).IsRadical := by
+  by_cases hb : eval 𝓘(ℂ, E) E b h = 0
+  swap
+  · have hu : IsUnit (evalVertical b w (X ^ n - C h)) := by
+      rw [isUnit_stalk_iff]
+      simpa [hn] using hb
+    rw [Ideal.span_singleton_eq_top.mpr hu]
+    simp [Ideal.IsRadical]
   let A := (holomorphicStructureSheaf 𝓘(ℂ, E) E).presheaf.stalk b
   have hP : (X ^ n - C h).IsDistinguishedAt (IsLocalRing.maximalIdeal A) := by
     refine ⟨⟨fun {i} hi ↦ ?_⟩, monic_X_pow_sub_C h hn⟩
