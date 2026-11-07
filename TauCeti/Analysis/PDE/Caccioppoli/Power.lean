@@ -100,6 +100,46 @@ private theorem exists_w1p0_value_gradient_ae_eq_sq_mul_rpow {u : W1p mu Omega 2
     simp only [smul_eq_mul]
     module
 
+/-- The first integrability fact of the Caccioppoli inequality for powers: if `u ∈ H¹(Ω)` is
+bounded below by a positive constant, `p < 1`, and `ψ` is continuous with `|ψ| ≤ M`, then
+`ψ² u^{p-2} ‖∇u‖²` is integrable. -/
+private theorem integrable_sq_mul_rpow_mul_norm_gradient_sq {u : W1p mu Omega 2} {ε : ℝ}
+    (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {p : ℝ} (hp : p < 1)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : Continuous ψ) {M : ℝ} (hψM : ∀ x, |ψ x| ≤ M) :
+    Integrable (fun x => ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
+      (mu.restrict Omega) := by
+  refine ((W1p.integrable_norm_gradient_sq u).const_mul (M ^ 2 * ε ^ (p - 2))).mono' ?_ ?_
+  · exact (hψ.pow 2).aestronglyMeasurable.mul
+      (((Lp.aestronglyMeasurable (W1p.value u)).aemeasurable.pow_const _).mul
+        ((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.pow_const 2)
+        ).aestronglyMeasurable
+  · filter_upwards [hεu] with x hx
+    have hU : 0 < W1p.value u x := hε.trans_le hx
+    rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), ← mul_assoc]
+    exact mul_le_mul_of_nonneg_right (mul_le_mul
+      (sq_le_sq' (abs_le.1 (hψM x)).1 (abs_le.1 (hψM x)).2)
+      (Real.rpow_le_rpow_of_nonpos hε hx (by linarith)) (by positivity) (by positivity))
+      (by positivity)
+
+/-- The second integrability fact of the Caccioppoli inequality for powers: if `u ∈ H¹(Ω)` is
+bounded below by a positive constant, `p < 1`, and `ψ` is smooth with `‖∇ψ‖ ≤ M`, then `‖∇ψ‖² u^p`
+is integrable, because `u^p = (u^{p/2})²` for the Sobolev function `u^{p/2}`. -/
+private theorem integrable_norm_gradient_sq_mul_rpow {u : W1p mu Omega 2} {ε : ℝ}
+    (hε : 0 < ε) (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {p : ℝ} (hp : p < 1)
+    {ψ : EuclideanSpace ℝ ι → ℝ} (hψ : ContDiff ℝ ∞ ψ) {M : ℝ}
+    (hgradM : ∀ x, ‖∇ ψ x‖ ≤ M) :
+    Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) (mu.restrict Omega) := by
+  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
+    (by linarith : p / 2 ≤ 1) hεu
+  refine ((W1p.integrable_value_sq w).bdd_mul
+    ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
+    (Filter.Eventually.of_forall fun x => by
+      rw [Pi.pow_apply, norm_pow, norm_norm]
+      exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)).congr ?_
+  filter_upwards [hwv, hεu] with x hx hux
+  rw [hx, ← Real.rpow_natCast, ← Real.rpow_mul (hε.le.trans hux)]
+  norm_num
+
 variable [DecidableEq ι]
 
 /-- The pointwise form of the Caccioppoli inequality for powers. At a point where `u` has value
@@ -165,6 +205,34 @@ private theorem mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add {A : M
     _ = _ := by
         field_simp
 
+/-- The pointwise estimate of the Caccioppoli inequality for powers, almost everywhere on `Ω`:
+if the test function `v` has gradient `(p - 1) ψ² u^{p-2} ∇u + 2 ψ u^{p-1} ∇ψ` almost everywhere,
+then `λ ψ² u^{p-2} ‖∇u‖²` is bounded by the energy integrand of `u` and `v` (times `-(1 - p)⁻¹`),
+half of the left side, and `(2Λ² / λ / (1 - p)²) ‖∇ψ‖² u^p`. -/
+private theorem UniformlyEllipticOn.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyIntegrand
+    (h : UniformlyEllipticOn (Omega : Set (EuclideanSpace ℝ ι)) a lam Lam)
+    {u v : W1p mu Omega 2} {ε : ℝ} (hε : 0 < ε)
+    (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x) {p : ℝ} (hp : p < 1)
+    {ψ : EuclideanSpace ℝ ι → ℝ}
+    (hvg : ∀ᵐ x ∂mu.restrict Omega, W1p.gradient v x =
+      (ψ x ^ 2 * ((p - 1) * W1p.value u x ^ (p - 1 - 1))) • W1p.gradient u x +
+        (2 * ψ x * W1p.value u x ^ (p - 1)) • ∇ ψ x) :
+    ∀ᵐ x ∂mu.restrict Omega,
+      lam * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2)) ≤
+        -(1 - p)⁻¹ * energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
+            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField v x)
+          + lam / 2 * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
+          + 2 * Lam ^ 2 / lam / (1 - p) ^ 2 * (‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) := by
+  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    ae_restrict_mem Omega.isOpen.measurableSet
+  have hlam := h.pos
+  filter_upwards [hmem, hεu, hvg] with x hx hux hgx
+  rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgx]
+  simp only [Pi.zero_apply, driftForm_apply, massForm_apply, inner_zero_left, zero_mul,
+    add_zero]
+  exact mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add hlam (h.lower_bound hx)
+    (h.upper_bound hx) hp (hε.trans_le hux) (ψ x) (W1p.gradient u x) (∇ ψ x)
+
 /-- **The Caccioppoli inequality for powers of a positive supersolution.** Let `a` be measurable
 and uniformly elliptic on `Ω` with constants `0 < λ ≤ Λ`, and let `u ∈ H¹(Ω)` be a weak
 supersolution of `-∂ᵢ(aⁱʲ ∂ⱼu) ≥ 0`, that is `a(u, v) ≥ 0` for every nonnegative
@@ -196,52 +264,14 @@ theorem UniformlyEllipticOn.setIntegral_sq_mul_rpow_mul_norm_gradient_sq_le
     rw [h1]
     exact mul_nonneg (sq_nonneg _) (Real.rpow_nonneg (hε.le.trans h2) _))
   rw [energyFormH1_def] at hpos
-  have hmem : ∀ᵐ x ∂mu.restrict Omega, x ∈ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    ae_restrict_mem Omega.isOpen.measurableSet
   have hE := h.integrable_energyIntegrand_jetField (b := 0) (c := 0) (beta := 0) (gamma := 0)
     ha aestronglyMeasurable_const aestronglyMeasurable_const (fun _ _ => by simp)
     (fun _ _ => by simp) u (v : W1p mu Omega 2)
-  -- The pointwise estimate.
-  have hpt : ∀ᵐ x ∂mu.restrict Omega,
-      lam * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2)) ≤
-        -(1 - p)⁻¹ * energyIntegrand (a x) ((0 : EuclideanSpace ℝ ι → EuclideanSpace ℝ ι) x)
-            ((0 : EuclideanSpace ℝ ι → ℝ) x) (jetField u x) (jetField (v : W1p mu Omega 2) x)
-          + lam / 2 * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
-          + 2 * Lam ^ 2 / lam / (1 - p) ^ 2 * (‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) := by
-    filter_upwards [hmem, hεu, hvg] with x hx hux hgx
-    rw [energyIntegrand_apply, jetField_apply, jetField_apply, hgx]
-    simp only [Pi.zero_apply, driftForm_apply, massForm_apply, inner_zero_left, zero_mul,
-      add_zero]
-    exact mul_sq_mul_rpow_mul_norm_sq_le_neg_matrixBilinearForm_add hlam (h.lower_bound hx)
-      (h.upper_bound hx) hp (hε.trans_le hux) (ψ x) (W1p.gradient u x) (∇ ψ x)
+  have hpt := h.ae_mul_sq_mul_rpow_mul_norm_sq_le_energyIntegrand hε hεu hp hvg
   -- Integrability of the three terms.
   obtain ⟨M, hM, hψM, hgradM⟩ := (hψ.of_le (by simp)).exists_abs_le_and_norm_gradient_le hcpt
-  have hF : Integrable (fun x => ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
-      (mu.restrict Omega) := by
-    refine ((W1p.integrable_norm_gradient_sq u).const_mul (M ^ 2 * ε ^ (p - 2))).mono' ?_ ?_
-    · exact (hψ.continuous.pow 2).aestronglyMeasurable.mul
-        (((Lp.aestronglyMeasurable (W1p.value u)).aemeasurable.pow_const _).mul
-          ((Lp.aestronglyMeasurable (W1p.gradient u)).aemeasurable.norm.pow_const 2)
-          ).aestronglyMeasurable
-    · filter_upwards [hεu] with x hx
-      have hU : 0 < W1p.value u x := hε.trans_le hx
-      rw [Real.norm_eq_abs, abs_of_nonneg (by positivity), ← mul_assoc]
-      exact mul_le_mul_of_nonneg_right (mul_le_mul
-        (sq_le_sq' (abs_le.1 (hψM x)).1 (abs_le.1 (hψM x)).2)
-        (Real.rpow_le_rpow_of_nonpos hε hx (by linarith)) (by positivity) (by positivity))
-        (by positivity)
-  -- The power `u^{p/2}` is a Sobolev function, so `u^p` is integrable.
-  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_rpow (by simp) hε
-    (by linarith : p / 2 ≤ 1) hεu
-  have hY : Integrable (fun x => ‖∇ ψ x‖ ^ 2 * W1p.value u x ^ p) (mu.restrict Omega) := by
-    refine ((W1p.integrable_value_sq w).bdd_mul
-      ((ContDiff.continuous_gradient hψ).norm.pow 2).aestronglyMeasurable (c := M ^ 2)
-      (Filter.Eventually.of_forall fun x => by
-        rw [Pi.pow_apply, norm_pow, norm_norm]
-        exact pow_le_pow_left₀ (norm_nonneg _) (hgradM x) 2)).congr ?_
-    filter_upwards [hwv, hεu] with x hx hux
-    rw [hx, ← Real.rpow_natCast, ← Real.rpow_mul (hε.le.trans hux)]
-    norm_num
+  have hF := integrable_sq_mul_rpow_mul_norm_gradient_sq hε hεu hp hψ.continuous hψM
+  have hY := integrable_norm_gradient_sq_mul_rpow (u := u) hε hεu hp hψ hgradM
   -- Integrate the pointwise estimate and absorb half of the left side.
   have hI : ∫ x in Omega, lam * (ψ x ^ 2 * (W1p.value u x ^ (p - 2) * ‖W1p.gradient u x‖ ^ 2))
       ∂mu ≤ ∫ x in Omega, (-(1 - p)⁻¹ * energyIntegrand (a x)

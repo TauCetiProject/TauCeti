@@ -33,6 +33,8 @@ carrier.
 ## Main declarations
 
 * `TauCeti.DynkinType.e7MinusculeWeight`: the fifty-six weights in fundamental coordinates.
+* `TauCeti.DynkinType.odd_e7MinusculeWeight_add_add`: every weight pairs oddly with the sum of
+  the simple coroots at the Bourbaki nodes `2`, `5` and `7`.
 * `TauCeti.DynkinType.e7MinusculeReflection`: the permutation induced by a simple reflection.
 * `TauCeti.DynkinType.e7MinusculeWeight_reflection`: the simple-reflection equation.
 * `TauCeti.DynkinType.exists_e7MinusculeWeight_apply_eq_neg_one_iff_ne_zero`: the highest weight
@@ -116,6 +118,14 @@ theorem e7MinusculeWeight_apply_eq_neg_one_or_eq_zero_or_eq_one (a : Fin 56) (i 
     e7MinusculeWeight a i = -1 ∨ e7MinusculeWeight a i = 0 ∨
       e7MinusculeWeight a i = 1 := by
   fin_cases a <;> fin_cases i <;> decide
+
+/-- **Every `E₇` minuscule weight pairs oddly with the sum of the simple coroots at the Bourbaki
+nodes `2`, `5` and `7`** (zero-based indices `1`, `4` and `6`). These are the nodes at which `ϖ₇`
+has a half-integral coefficient in the simple-root basis, and the parity is constant along the
+Weyl orbit. -/
+theorem odd_e7MinusculeWeight_add_add (a : Fin 56) :
+    Odd (e7MinusculeWeight a 1 + e7MinusculeWeight a 4 + e7MinusculeWeight a 6) := by
+  fin_cases a <;> decide
 
 /-- The highest weight `ϖ₇`, at index `0`, is the only weight of the table with no simple-coroot
 coordinate equal to `-1`. -/
