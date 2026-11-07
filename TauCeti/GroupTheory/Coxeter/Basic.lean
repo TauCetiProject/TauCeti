@@ -27,6 +27,8 @@ reflections are indexed by an empty type has a trivial group.
 * `CoxeterSystem.subsingleton_of_isEmpty`: a Coxeter system of rank zero has a trivial group.
 * `CoxeterSystem.commute_simple_of_eq_two`: two simple reflections commute when their entry of the
   Coxeter matrix is `2`.
+* `CoxeterSystem.isConj_wordProd_append`: rotating a word `l₁ ++ l₂` to `l₂ ++ l₁` conjugates the
+  element it spells.
 -/
 
 public section
@@ -90,5 +92,12 @@ theorem subsingleton_of_isEmpty [IsEmpty B] : Subsingleton W :=
 theorem commute_simple_of_eq_two {i i' : B} (h : M i i' = 2) :
     Commute (cs.simple i) (cs.simple i') := by
   simpa [h, pow_two, ← eq_inv_iff_mul_eq_one, commute_iff_eq] using cs.simple_mul_simple_pow i i'
+
+/-- **Rotating a word conjugates the element it spells**: `l₁ ++ l₂` and `l₂ ++ l₁` spell
+conjugate elements. -/
+theorem isConj_wordProd_append (l₁ l₂ : List B) :
+    IsConj (cs.wordProd (l₁ ++ l₂)) (cs.wordProd (l₂ ++ l₁)) := by
+  rw [wordProd_append, wordProd_append]
+  exact isConj_iff.mpr ⟨(cs.wordProd l₁)⁻¹, by simp⟩
 
 end CoxeterSystem
