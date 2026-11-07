@@ -69,9 +69,8 @@ including its initial state. -/
 @[simp↓]
 theorem integerWalk_zero_reaches_iff (x y : ℤ) :
     (integerWalk 0).Reaches x y ↔ y ≤ x := by
-  suffices (∃ n : ℕ, x - (n : ℤ) = y) ↔ y ≤ x by
-    simpa [Kernel.reaches_def, integerWalk_zero, Kernel.deterministic_pow,
-      Kernel.deterministic_apply, sub_eq_add_neg, Pi.single_apply, pos_iff_ne_zero] using this
+  rw [integerWalk_zero, Kernel.reaches_deterministic]
+  simp only [sub_eq_add_neg, add_right_iterate, nsmul_eq_mul, mul_neg, mul_one]
   constructor
   · rintro ⟨n, hn⟩
     omega
@@ -83,36 +82,39 @@ including its initial state. -/
 @[simp↓]
 theorem integerWalk_one_reaches_iff (x y : ℤ) :
     (integerWalk 1).Reaches x y ↔ x ≤ y := by
-  suffices (∃ n : ℕ, x + (n : ℤ) = y) ↔ x ≤ y by
-    simpa [Kernel.reaches_def, integerWalk_one, Kernel.deterministic_pow,
-      Kernel.deterministic_apply, Pi.single_apply, pos_iff_ne_zero] using this
+  rw [integerWalk_one, Kernel.reaches_deterministic]
+  simp only [add_right_iterate, nsmul_eq_mul, mul_one]
   constructor
   · rintro ⟨n, hn⟩
     omega
   · intro h
     exact ⟨(y - x).toNat, by have := Int.toNat_of_nonneg (sub_nonneg.mpr h); omega⟩
 
+private lemma integerWalk_eq_endpoint_of_not {p : unitInterval}
+    (hp : ¬(0 < (p : ℝ) ∧ (p : ℝ) < 1)) :
+    integerWalk p = integerWalk 0 ∨ integerWalk p = integerWalk 1 := by
+  have heq : p = 0 ∨ p = 1 := by
+    simpa only [unitInterval.coe_pos, unitInterval.coe_lt_one,
+      unitInterval.pos_iff_ne_zero, unitInterval.lt_one_iff_ne_one, not_and_or,
+      not_not] using hp
+  exact heq.imp (congrArg integerWalk) (congrArg integerWalk)
+
 /-- Distinct integers communicate exactly when both step probabilities are positive. -/
 @[simp↓]
 theorem integerWalk_communicates_iff (p : unitInterval) (x y : ℤ) :
     (integerWalk p).Communicates x y ↔ x = y ∨ 0 < (p : ℝ) ∧ (p : ℝ) < 1 := by
-  by_cases hp : 0 < (p : ℝ)
-  · by_cases hp' : (p : ℝ) < 1
-    · rw [Kernel.communicates_def]
-      exact iff_of_true ⟨integerWalk_reaches hp hp' x y, integerWalk_reaches hp hp' y x⟩
-        (Or.inr ⟨hp, hp'⟩)
-    · have heq : p = 1 := Subtype.ext (by
-        simpa using le_antisymm p.2.2 (le_of_not_gt hp'))
-      subst p
-      simp only [Kernel.communicates_def, integerWalk_one_reaches_iff]
-      constructor <;> intro h <;> simp_all
-      omega
-  · have heq : p = 0 := Subtype.ext (by
-      simpa using le_antisymm (le_of_not_gt hp) p.2.1)
-    subst p
-    simp only [Kernel.communicates_def, integerWalk_zero_reaches_iff]
-    constructor <;> intro h <;> simp_all
-    omega
+  by_cases hp : 0 < (p : ℝ) ∧ (p : ℝ) < 1
+  · rw [Kernel.communicates_def]
+    exact iff_of_true ⟨integerWalk_reaches hp.1 hp.2 x y,
+      integerWalk_reaches hp.1 hp.2 y x⟩ (Or.inr hp)
+  · rw [or_iff_left hp]
+    rcases integerWalk_eq_endpoint_of_not hp with h | h
+    · rw [h, Kernel.communicates_def, integerWalk_zero_reaches_iff,
+        integerWalk_zero_reaches_iff]
+      exact ⟨fun h => le_antisymm h.2 h.1, fun h => ⟨h.ge, h.le⟩⟩
+    · rw [h, Kernel.communicates_def, integerWalk_one_reaches_iff,
+        integerWalk_one_reaches_iff]
+      exact ⟨fun h => le_antisymm h.1 h.2, fun h => ⟨h.le, h.ge⟩⟩
 
 /-- The integer walk is irreducible for counting measure exactly at the
 nondeterministic parameters. -/
@@ -142,15 +144,12 @@ theorem integerWalk_returnLengths (p : unitInterval) (x : ℤ) :
       exact ⟨hn, ⟨k, by omega⟩⟩
     · rintro ⟨hn, k, hk⟩
       exact ⟨hn, k, by omega, by omega⟩
-  · have heq : p = 0 ∨ p = 1 := by
-      rcases le_or_gt (p : ℝ) 0 with h | h
-      · exact Or.inl (Subtype.ext (by simpa using le_antisymm h p.2.1))
-      · exact Or.inr (Subtype.ext (by
-          simpa using le_antisymm p.2.2 (le_of_not_gt (fun h' => hp ⟨h, h'⟩))))
-    rcases heq with rfl | rfl <;>
-      ext n <;>
-      simp [integerWalk_zero, integerWalk_one, Kernel.returnLengths_deterministic,
-        Function.IsPeriodicPt, Function.IsFixedPt, sub_eq_add_neg, add_right_iterate] <;> omega
+  · rcases integerWalk_eq_endpoint_of_not hp with h | h
+    · rw [h, integerWalk_zero]
+      simpa only [sub_eq_add_neg] using
+        Kernel.returnLengths_deterministic_add Measurable.of_discrete (by decide : (-1 : ℤ) ≠ 0) x
+    · rw [h, integerWalk_one]
+      exact Kernel.returnLengths_deterministic_add Measurable.of_discrete (by decide) x
 
 /-- Every nondeterministic integer walk has period two. Deterministic drift has
 period zero, using the gcd-of-the-empty-set convention. -/
