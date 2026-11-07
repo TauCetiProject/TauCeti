@@ -9,7 +9,7 @@ public import TauCeti.Analysis.Convex.SubgradientImage
 public import TauCeti.Analysis.Convex.Differentiability
 public import Mathlib.Analysis.InnerProductSpace.Positive
 import TauCeti.Algebra.Order.Archimedean.Basic
-import TauCeti.Algebra.Order.BigOperators.Sum.QuadraticIncrements
+import TauCeti.Algebra.Order.BigOperators.Sum.SubSumBound
 import TauCeti.Analysis.Calculus.SecondOrderExpansion
 import TauCeti.Analysis.InnerProductSpace.LinearApproximation
 import TauCeti.Analysis.Calculus.Sard.EqualDimension
@@ -166,6 +166,19 @@ private theorem abs_toReal_sub_toReal_sub_le_of_mem_subdifferential {p₀ p₁ y
   rw [abs_le]
   constructor <;> nlinarith
 
+/-- The expected increments `a * u + (k * a + a / 2) * a * X` of the quadratic
+`t ↦ t * u + t ^ 2 * X / 2` along the grid `k * a` sum, over `k < n` with `n * a = 1`, to the value
+`u + X / 2` of the quadratic at `1`. -/
+private theorem sum_range_add_mul_add_div_two {a u X : ℝ} {n : ℕ} (hna : (n : ℝ) * a = 1) :
+    ∑ k ∈ Finset.range n, (a * u + (k * a + a / 2) * a * X) = u + X / 2 := by
+  have hsum : ∀ m : ℕ, ∑ k ∈ Finset.range m, (a * u + (k * a + a / 2) * a * X) =
+      m * a * u + (m * a) ^ 2 * X / 2 := fun m => by
+    induction m with
+    | zero => simp
+    | succ m ih => rw [Finset.sum_range_succ, ih]; push_cast; ring
+  rw [hsum, hna]
+  ring
+
 /-- **A first-order expansion of the subdifferential gives a second-order expansion of the
 function.** Suppose `f : E → EReal` has subgradients at every point near `x`, and that these
 follow the expansion `y' = y + A (x' - x) + o(‖x' - x‖)` uniformly over the subdifferential at
@@ -223,7 +236,8 @@ theorem isLittleO_of_forall_mem_subdifferential_norm_sub_le {x y : E} {A : E →
     congr 1
     push_cast
     ring
-  have hbound := abs_sub_sub_add_div_two_le_of_forall_lt (G := fun k => F (p k)) hna hstep
+  have hbound := TauCeti.abs_sub_sub_sum_range_le_of_forall_lt (G := fun k => F (p k)) hstep
+  rw [sum_range_add_mul_add_div_two hna, nsmul_eq_mul] at hbound
   have hpn : F (p n) - F (p 0) = F x' - F x := by
     simp only [p, Nat.cast_zero, zero_mul, zero_smul, add_zero, hna, one_smul, h, add_sub_cancel]
   have : (n : ℝ) * (‖A‖ * ‖h‖ ^ 2 * a ^ 2 / 2 + c / 2 * ‖h‖ ^ 2 * a) =
