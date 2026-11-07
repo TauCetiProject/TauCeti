@@ -143,6 +143,63 @@ theorem range_standardSimplex_coordinates (σ : Finset α) :
 theorem standardSimplexHomeomorph_symm_val (σ : Finset α) (w : Convexity.StdSimplex ℝ σ) :
     ((standardSimplexHomeomorph σ).symm w : α →₀ ℝ) = w.weights.mapDomain Subtype.val := (rfl)
 
+/-- The barycentric coordinates of a point of a closed coordinate simplex sum to one. -/
+@[simp]
+theorem sum_standardSimplex_eq_one (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
+  simpa using (standardSimplexHomeomorph σ y).total_of_fintype
+
+section LinearCombination
+
+variable {E : Type*} [AddCommGroup E] [Module ℝ E]
+
+/-- Sending barycentric coordinates to the corresponding linear combination of an affinely
+independent family is injective on the closed coordinate simplex. -/
+theorem injective_linearCombination_standardSimplex {p : σ → E} (hp : AffineIndependent ℝ p) :
+    Function.Injective
+      fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.1 a := by
+  intro y y' hyy'
+  have h := hp.eq_of_sum_eq_sum (s := Finset.univ) (w₁ := fun a : σ => y.1 a)
+    (w₂ := fun a : σ => y'.1 a) (by simp only [sum_standardSimplex_eq_one])
+    (by simpa [Fintype.linearCombination_apply] using hyy')
+  refine (standardSimplexHomeomorph σ).injective (Convexity.StdSimplex.ext ?_)
+  ext a
+  exact h a (Finset.mem_univ a)
+
+/-- The range of the map from the closed coordinate simplex sending barycentric coordinates to the
+corresponding linear combination of a family `p` is the convex hull of `p`. -/
+theorem range_linearCombination_standardSimplex (p : σ → E) :
+    Set.range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ p fun a => y.1 a) =
+      convexHull ℝ (Set.range p) := by
+  refine Set.Subset.antisymm ?_ fun z hz => ?_
+  · rintro _ ⟨y, rfl⟩
+    simp only [Fintype.linearCombination_apply]
+    exact (convex_convexHull ℝ _).sum_mem (fun a _ => StandardSimplex.nonneg y a)
+      (sum_standardSimplex_eq_one y) fun a _ => subset_convexHull ℝ _ (Set.mem_range_self a)
+  -- A point of the convex hull is a convex combination, extended by zero to all of `σ`.
+  obtain ⟨t, u, hu0, hu1, rfl⟩ := (convexHull_range_eq_exists_affineCombination (R := ℝ) p ▸ hz :
+    ∃ (t : Finset σ) (u : σ → ℝ), _)
+  classical
+  let w : Convexity.StdSimplex ℝ σ :=
+    ⟨Finsupp.equivFunOnFinite.symm fun a => if a ∈ t then u a else 0,
+      fun a => by
+        by_cases h : a ∈ t
+        · simpa [h] using hu0 a h
+        · simp [h],
+      by
+        rw [Finsupp.sum_fintype _ _ fun _ => rfl]
+        simp only [Finsupp.equivFunOnFinite_symm_apply_apply, Finset.sum_ite_mem,
+          Finset.univ_inter]
+        exact hu1⟩
+  refine ⟨(standardSimplexHomeomorph σ).symm w, ?_⟩
+  have hw : ∀ a : σ, ((standardSimplexHomeomorph σ).symm w).1 a = if a ∈ t then u a else 0 :=
+    fun a => by
+      rw [← standardSimplexHomeomorph_weights, Homeomorph.apply_symm_apply]
+      exact Finsupp.equivFunOnFinite_symm_apply_apply _ _
+  simp only [Fintype.linearCombination_apply, hw, ite_smul, zero_smul, Finset.sum_ite_mem,
+    Finset.univ_inter, Finset.affineCombination_eq_linear_combination _ _ _ hu1]
+
+end LinearCombination
+
 end Finset
 
 namespace AbstractSimplicialComplex

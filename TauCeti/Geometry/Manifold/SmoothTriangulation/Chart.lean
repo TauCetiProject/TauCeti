@@ -102,61 +102,6 @@ theorem isSimplexImmersion_extChartAt_comp_iff [IsManifold I n M] [IsManifold I 
 
 end TauCeti
 
-namespace AffineBasis
-
-variable {ι : Type*} {E : Type*} [AddCommGroup E] [Module ℝ E] {σ : Finset ι}
-
-/-- The barycentric coordinates of a point of the standard simplex sum to one. -/
-private theorem sum_standardSimplex_eq_one (y : StandardSimplex σ) : ∑ a : σ, y.1 a = 1 := by
-  simpa using (Finset.standardSimplexHomeomorph σ y).total_of_fintype
-
-/-- A linear combination of an affine basis with weights summing to zero vanishes only if all
-the weights vanish. -/
-theorem eq_zero_of_sum_eq_zero_of_linearCombination_eq_zero (b : AffineBasis σ ℝ E)
-    (v : σ → ℝ) (hv : ∑ a, v a = 0) (hv0 : Fintype.linearCombination ℝ b v = 0) : v = 0 := by
-  refine funext fun a => (affineIndependent_iff_of_fintype ℝ ⇑b).mp b.ind v hv ?_ a
-  rwa [Finset.weightedVSub_eq_linear_combination _ hv, ← Fintype.linearCombination_apply]
-
-/-- The map from the standard simplex sending barycentric coordinates to the corresponding linear
-combination of an affine basis is injective. -/
-theorem injective_linearCombination_standardSimplex (b : AffineBasis σ ℝ E) :
-    Injective fun y : StandardSimplex σ => Fintype.linearCombination ℝ b fun a => y.1 a := by
-  intro y y' hyy'
-  have hv := b.eq_zero_of_sum_eq_zero_of_linearCombination_eq_zero
-    ((fun a : σ => y.1 a) - fun a : σ => y'.1 a)
-    (by simp only [Pi.sub_apply, Finset.sum_sub_distrib, sum_standardSimplex_eq_one, sub_self])
-    (by rw [map_sub]; exact sub_eq_zero.mpr hyy')
-  refine (Finset.standardSimplexHomeomorph σ).injective (Convexity.StdSimplex.ext ?_)
-  ext a
-  simpa [sub_eq_zero] using congrFun hv a
-
-/-- The range of the map from the standard simplex sending barycentric coordinates to the
-corresponding linear combination of an affine basis is the closed simplex it spans. -/
-theorem range_linearCombination_standardSimplex (b : AffineBasis σ ℝ E) :
-    range (fun y : StandardSimplex σ => Fintype.linearCombination ℝ b fun a => y.1 a) =
-      convexHull ℝ (range b) := by
-  refine Subset.antisymm ?_ fun z hz => ?_
-  · rintro _ ⟨y, rfl⟩
-    simp only [Fintype.linearCombination_apply]
-    exact (convex_convexHull ℝ _).sum_mem (fun a _ => StandardSimplex.nonneg y a)
-      (sum_standardSimplex_eq_one y) fun a _ => subset_convexHull ℝ _ (mem_range_self a)
-  -- A point of the closed simplex is the image of its barycentric coordinates.
-  rw [b.convexHull_eq_nonneg_coord] at hz
-  let w : Convexity.StdSimplex ℝ σ :=
-    ⟨Finsupp.equivFunOnFinite.symm fun a => b.coord a z, fun a => hz a, by
-      rw [Finsupp.sum_fintype _ _ fun _ => rfl]
-      simpa using b.sum_coord_apply_eq_one z⟩
-  refine ⟨(Finset.standardSimplexHomeomorph σ).symm w, ?_⟩
-  have hw : (fun a : σ => ((Finset.standardSimplexHomeomorph σ).symm w).1 a) =
-      fun a => b.coord a z := by
-    funext a
-    rw [← Finset.standardSimplexHomeomorph_weights, Homeomorph.apply_symm_apply]
-    exact Finsupp.equivFunOnFinite_symm_apply_apply _ _
-  simp only
-  rw [hw, Fintype.linearCombination_apply, b.linear_combination_coord_eq_self]
-
-end AffineBasis
-
 namespace ModelWithCorners.IsInteriorPoint
 
 open TauCeti
@@ -187,13 +132,13 @@ theorem exists_isSimplexImmersion_isClosedEmbedding_range_mem_nhds [FiniteDimens
   let L : (σ → ℝ) →ₗ[ℝ] E := Fintype.linearCombination ℝ b
   let p : StandardSimplex σ → E := fun y => L fun a => y.1 a
   have hL (v : σ → ℝ) (hv : ∑ a, v a = 0) (hv0 : L v = 0) : v = 0 :=
-    AffineBasis.eq_zero_of_sum_eq_zero_of_linearCombination_eq_zero b v hv hv0
-  have hp : range p = convexHull ℝ (range b) :=
-    AffineBasis.range_linearCombination_standardSimplex b
+    funext fun a => b.ind.eq_zero_of_sum_eq_zero (s := Finset.univ) hv
+      (by simpa [L, Fintype.linearCombination_apply] using hv0) a (Finset.mem_univ a)
+  have hp : range p = convexHull ℝ (range b) := Finset.range_linearCombination_standardSimplex b
   have hpt : range p ⊆ (extChartAt I x).target := fun z hz => (hbt (hp ▸ hz)).1
   have hpc : Continuous p := L.continuous_of_finiteDimensional.comp <|
     continuous_pi fun a => (continuous_apply (a : ι)).comp continuous_induced_dom
-  have hpi : Injective p := AffineBasis.injective_linearCombination_standardSimplex b
+  have hpi : Injective p := Finset.injective_linearCombination_standardSimplex b.ind
   refine ⟨(extChartAt I x).symm ∘ p,
     (LinearMap.isSimplexImmersion L hL).extChartAt_symm_comp hpt, ?_, ?_, ?_⟩
   · refine Continuous.isClosedEmbedding
