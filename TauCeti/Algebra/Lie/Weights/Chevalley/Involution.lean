@@ -73,61 +73,6 @@ variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebr
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
 
-omit [CharZero K] [LieAlgebra.IsKilling K L] [LieModule.IsTriangularizable K H L] in
-/-- The root space of a zero weight is the Cartan subalgebra. -/
-theorem toSubmodule_rootSpace_eq_of_isZero {χ : Weight K H L} (hχ : χ.IsZero) :
-    (rootSpace H χ).toSubmodule = H.toSubmodule := by
-  -- `Weight.IsZero` is the vanishing of the coercion, but only up to unfolding the definition.
-  have hχcoe : (χ : H → K) = 0 := hχ
-  simp only [hχcoe, rootSpace_zero_eq K L H]
-  simp
-
-omit [CharZero K] [LieAlgebra.IsKilling K L] [FiniteDimensional K L] in
-/-- A linear map of a Lie algebra that respects the bracket on a pair `(v, w)` respects it on the
-swapped pair. -/
-theorem map_lie_swap {f : L →ₗ[K] L} {v w : L} (h : f ⁅v, w⁆ = ⁅f v, f w⁆) :
-    f ⁅w, v⁆ = ⁅f w, f v⁆ := by
-  calc f ⁅w, v⁆ = f (-⁅v, w⁆) := by rw [lie_skew w v]
-    _ = -f ⁅v, w⁆ := map_neg _ _
-    _ = -⁅f v, f w⁆ := by rw [h]
-    _ = ⁅f w, f v⁆ := lie_skew (f w) (f v)
-
-omit [CharZero K] [LieAlgebra.IsKilling K L] in
-/-- A linear map of `L` respects the bracket as soon as it does so on every pair of root vectors,
-since the root spaces span `L`. -/
-theorem map_lie_eq_of_forall_mem_rootSpace (f : L →ₗ[K] L)
-    (h : ∀ (χ₁ χ₂ : Weight K H L) (v : L), v ∈ rootSpace H χ₁ → ∀ w : L, w ∈ rootSpace H χ₂ →
-      f ⁅v, w⁆ = ⁅f v, f w⁆) (v w : L) : f ⁅v, w⁆ = ⁅f v, f w⁆ := by
-  have htop : ⨆ χ : Weight K H L, (rootSpace H χ).toSubmodule = ⊤ :=
-    LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top' K H L)
-  -- Extend from weight vectors by linearity in each argument.
-  have hright : ∀ (χ₁ : Weight K H L) (v : L), v ∈ rootSpace H χ₁ → ∀ w : L,
-      f ⁅v, w⁆ = ⁅f v, f w⁆ := by
-    intro χ₁ v hv w
-    have hle : (⊤ : Submodule K L) ≤
-        LinearMap.eqLocus (f.comp (LieAlgebra.ad K L v)) ((LieAlgebra.ad K L (f v)).comp f) := by
-      rw [← htop]
-      exact iSup_le fun χ₂ u hu ↦ h χ₁ χ₂ v hv u hu
-    exact hle trivial
-  have hle : (⊤ : Submodule K L) ≤
-      LinearMap.eqLocus (f.comp (LieAlgebra.ad K L w)) ((LieAlgebra.ad K L (f w)).comp f) := by
-    rw [← htop]
-    exact iSup_le fun χ₁ u hu ↦ map_lie_swap (hright χ₁ u hu w)
-  exact map_lie_swap (hle trivial)
-
-omit [CharZero K] [LieAlgebra.IsKilling K L] in
-/-- A linear map of `L` that squares to the identity on each root space is an involution. -/
-theorem involutive_of_forall_mem_rootSpace (f : L →ₗ[K] L)
-    (h : ∀ (χ : Weight K H L) (v : L), v ∈ rootSpace H χ → f (f v) = v) :
-    Function.Involutive f := by
-  have htop : ⨆ χ : Weight K H L, (rootSpace H χ).toSubmodule = ⊤ :=
-    LieSubmodule.iSup_toSubmodule_eq_top.mpr (iSup_genWeightSpace_eq_top' K H L)
-  intro v
-  have hle : (⊤ : Submodule K L) ≤ LinearMap.eqLocus (f.comp f) LinearMap.id := by
-    rw [← htop]
-    exact iSup_le fun χ u hu ↦ h χ u hu
-  exact hle trivial
-
 namespace IsSl2System
 
 variable {x : Weight K H L → L} (hx : IsSl2System x)
@@ -248,26 +193,6 @@ private theorem exists_linearMap_neg_cartan_and_root :
   · rw [hnonzero χ hχ v hv]
     exact Submodule.smul_mem _ _ (hx.mem_rootSpace (-χ))
 
-omit hx in
-/-- A map negating a Cartan element and a root vector respects the bracket of a zero-weight vector
-with a root vector: a Cartan element brackets with a weight vector through its weight. -/
-private theorem map_lie_eq_of_isZero_of_isNonZero (ω : L →ₗ[K] L)
-    (hzero : ∀ χ : Weight K H L, χ.IsZero → ∀ v : L, v ∈ rootSpace H χ → ω v = -v)
-    (hωmem : ∀ χ : Weight K H L, χ.IsNonZero → ∀ v : L, v ∈ rootSpace H χ →
-      ω v ∈ rootSpace H (-χ))
-    {χ₁ χ₂ : Weight K H L} (hχ₁ : χ₁.IsZero) (hχ₂ : χ₂.IsNonZero) {v : L}
-    (hv : v ∈ rootSpace H χ₁) {w : L} (hw : w ∈ rootSpace H χ₂) :
-    ω ⁅v, w⁆ = ⁅ω v, ω w⁆ := by
-  have hvH : v ∈ H := by
-    have := toSubmodule_rootSpace_eq_of_isZero (K := K) (L := L) (H := H) hχ₁
-    exact (SetLike.ext_iff.mp this v).mp hv
-  have hlie : ⁅v, w⁆ = (χ₂ : H → K) ⟨v, hvH⟩ • w :=
-    lie_eq_smul_of_mem_rootSpace hw ⟨v, hvH⟩
-  have hstep : ⁅v, ω w⁆ = ((-χ₂ : Weight K H L) : H → K) ⟨v, hvH⟩ • ω w :=
-    lie_eq_smul_of_mem_rootSpace (hωmem χ₂ hχ₂ w hw) ⟨v, hvH⟩
-  rw [hlie, map_smul, hzero χ₁ hχ₁ v hv, neg_lie, hstep]
-  simp
-
 /-- The linear map `ω` respects the bracket of any two root-space vectors, provided it negates the
 Cartan subalgebra, exchanges each root vector with the negative of its opposite, and the family is
 integrally normalised. -/
@@ -308,10 +233,10 @@ private theorem map_lie_eq_of_mem_rootSpace (hn : hx.IsChevalleyNormalized) (ω 
           (fun γ hγ _ ↦ hωroot γ hγ) (hcartan (coroot χ₁)),
         hωroot χ₁ hχ₁, hωroot χ₂ hχ₂]
       simp
-    · exact map_lie_swap
-        (map_lie_eq_of_isZero_of_isNonZero ω hzero hωmem (not_not.mp hχ₂) hχ₁ hw hv)
+    · exact LinearMap.map_lie_swap
+        (ω.map_lie_eq_of_isZero_of_isNonZero hzero hωmem (not_not.mp hχ₂) hχ₁ hw hv)
   · by_cases hχ₂ : χ₂.IsNonZero
-    · exact map_lie_eq_of_isZero_of_isNonZero ω hzero hωmem (not_not.mp hχ₁) hχ₂ hv hw
+    · exact ω.map_lie_eq_of_isZero_of_isNonZero hzero hωmem (not_not.mp hχ₁) hχ₂ hv hw
     · -- Both lie in the Cartan subalgebra, which is abelian.
       have hvH : v ∈ H := by
         have := toSubmodule_rootSpace_eq_of_isZero (K := K) (L := L) (H := H) (not_not.mp hχ₁)
@@ -335,11 +260,11 @@ subalgebra, and on the root space of `χ` it sends `v` to
 theorem exists_isChevalleySystem (hn : hx.IsChevalleyNormalized) :
     ∃ ω : L ≃ₗ⁅K⁆ L, IsChevalleySystem ω x := by
   obtain ⟨ω, hzero, hωroot, hωmem⟩ := hx.exists_linearMap_neg_cartan_and_root
-  have hlie := map_lie_eq_of_forall_mem_rootSpace (H := H) ω
+  have hlie := LinearMap.map_lie_eq_of_forall_mem_rootSpace (H := H) ω
     fun χ₁ χ₂ v hv w hw ↦ hx.map_lie_eq_of_mem_rootSpace hn ω hzero hωroot hωmem χ₁ χ₂ v hv w hw
   -- The map is an involution, hence bijective.
   have hinvol : Function.Involutive ω := by
-    refine involutive_of_forall_mem_rootSpace (H := H) ω fun χ v hv ↦ ?_
+    refine LinearMap.involutive_of_forall_mem_rootSpace (H := H) ω fun χ v hv ↦ ?_
     by_cases hχ : χ.IsNonZero
     · obtain ⟨c, rfl⟩ : ∃ c : K, c • x χ = v := by
         refine Submodule.mem_span_singleton.mp ?_
