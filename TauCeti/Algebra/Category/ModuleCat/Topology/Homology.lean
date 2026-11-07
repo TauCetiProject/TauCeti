@@ -8,6 +8,7 @@ module
 public import Mathlib.Algebra.Category.ModuleCat.Topology.Homology
 public import Mathlib.Algebra.Exact.Basic
 public import Mathlib.Algebra.Homology.ShortComplex.HomologicalComplex
+public import TauCeti.Algebra.Homology.HomologicalComplex.Basic
 public import TauCeti.Topology.Algebra.Module.Quotient
 import Mathlib.CategoryTheory.ConcreteCategory.EpiMono
 
@@ -280,8 +281,7 @@ theorem homologyMap_homologyπ_cyclesMkOfEq {L : HomologicalComplex (TopModuleCa
     (hj : c.next n = j) (hx : (K.d n j).hom x = 0) :
     homologyMap f n (K.homologyπ n (K.cyclesMkOfEq x j hj hx)) =
       L.homologyπ n (L.cyclesMkOfEq ((f.f n).hom x) j hj (by
-        rw [← ConcreteCategory.comp_apply, f.comm, ConcreteCategory.comp_apply, hx,
-          map_zero])) := by
+        rw [HomologicalComplex.Hom.comm_apply, hx, map_zero])) := by
   rw [← ConcreteCategory.comp_apply, homologyπ_naturality, ConcreteCategory.comp_apply]
   congr 1
   apply L.iCycles_injective n
