@@ -183,10 +183,8 @@ theorem hamiltonianAction_le_hamiltonianAction_of_monotone (ω : SymplecticForm 
   -- `∂_s H` is the derivative of the monotone functions `s ↦ H_{(s, t)}(x)`.
   have hnonneg : 0 ≤ ∫ z in Icc a b ×ˢ Icc 0 1, fderiv ℝ (fun w ↦ H w (u z)) z stdComplexLineReal :=
     setIntegral_nonneg (measurableSet_Icc.prod measurableSet_Icc) fun z _ ↦ by
-      rw [stdComplexLineReal_eq, ← (hasDerivAt_slice_left (s := z.1) (b := z.2)
-        (u := fun w ↦ H w (u z)) ((hH.differentiable one_ne_zero (z, u z)).comp
-          (f := fun w : ℝ × ℝ ↦ (w, u z)) z
-          (differentiableAt_id.prodMk (differentiableAt_const _)))).deriv]
+      rw [stdComplexLineReal_eq, fderiv_apply_mk_one_zero (u := fun w ↦ H w (u z))
+        ((hH.comp (contDiff_id.prodMk contDiff_const)).differentiable one_ne_zero z)]
       exact (hmono z.2 (u z)).deriv_nonneg
   linarith
 
@@ -262,9 +260,7 @@ theorem integral_floerEnergyDensity_eq_hamiltonianAction_sub (ω : SymplecticFor
     ∫ z in Icc a b ×ˢ Icc 0 1, ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z =
       ω.hamiltonianAction H (fun t ↦ u (b, t)) - ω.hamiltonianAction H (fun t ↦ u (a, t)) := by
   -- A cylindrical family does not depend on `s`.
-  have h0 (z : ℝ × ℝ) (x : V) : fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z stdComplexLineReal = 0 :=
-    stdComplexLineReal_eq ▸ fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
-  simpa only [h0, integral_zero, sub_zero] using
+  simpa only [fderiv_cylindrical_apply_stdComplexLineReal, integral_zero, sub_zero] using
     ω.integral_floerEnergyDensity_eq_hamiltonianAction_sub_sub_integral
       (H := fun w ↦ H w.2) (contDiff_uncurry_cylindrical hH) hU hu hab hRU hper
 
@@ -311,12 +307,12 @@ theorem lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction (ω : Sympl
     ∫⁻ z in (univ : Set ℝ) ×ˢ Icc 0 1,
         ENNReal.ofReal (ω.floerEnergyDensity (fun _ _ ↦ 0) (fun w ↦ H w.2) u z) =
       ENNReal.ofReal (A₂ - A₁) := by
-  have h0 (z : ℝ × ℝ) (x : V) : fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z stdComplexLineReal = 0 :=
-    stdComplexLineReal_eq ▸ fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
-  simpa only [h0, integral_zero, sub_zero] using
+  simpa only [fderiv_cylindrical_apply_stdComplexLineReal, integral_zero, sub_zero] using
     ω.lintegral_floerEnergyDensity_eq_of_tendsto_hamiltonianAction_sub_integral
       (H := fun w ↦ H w.2) (J := fun _ ↦ J) (fun _ _ ↦ hJ) (contDiff_uncurry_cylindrical hH) hU hu
-      hRU hper hfloer (by simp only [h0]; exact integrableOn_zero) hbot htop
+      hRU hper hfloer
+      (by simp only [fderiv_cylindrical_apply_stdComplexLineReal]; exact integrableOn_zero) hbot
+      htop
 
 end Energy
 

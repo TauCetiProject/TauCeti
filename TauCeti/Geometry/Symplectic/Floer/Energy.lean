@@ -127,6 +127,14 @@ theorem fderiv_mul_apply_stdComplexLineReal {β h : ℝ → ℝ} {z : ℝ × ℝ
   simp [stdComplexLineReal]
   ring
 
+/-- The `∂_s` derivative of a family `H_t(x)` independent of `s` vanishes. This is the domain part
+of the curvature of a cylindrical perturbation `K = H_t dt`, for any target. -/
+theorem fderiv_cylindrical_apply_stdComplexLineReal {X G : Type*} [NormedAddCommGroup G]
+    [NormedSpace ℝ G] (H : ℝ → X → G) (z : ℝ × ℝ) (x : X) :
+    fderiv ℝ (fun w : ℝ × ℝ ↦ H w.2 x) z stdComplexLineReal = 0 := by
+  rw [stdComplexLineReal_eq]
+  exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
+
 end TauCeti
 
 namespace TauCeti.SymplecticForm
@@ -160,8 +168,8 @@ theorem hamiltonianCurvature_zero_left (ω : SymplecticForm V) (Kt : ℝ × ℝ 
 theorem hamiltonianCurvature_cylindrical (ω : SymplecticForm V) (H : ℝ → V → ℝ) (z : ℝ × ℝ)
     (x : V) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) (fun w ↦ H w.2) z x = 0 := by
-  rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
-  exact fderiv_comp_snd_apply_mk_zero (fun t ↦ H t x) z 1
+  rw [hamiltonianCurvature_zero_left]
+  exact fderiv_cylindrical_apply_stdComplexLineReal H z x
 
 /-- **The curvature of a homotopy of Hamiltonians.** A perturbation `K = H_{(s, t)} dt` without
 `ds` component, given by a family `H_{(s, t)}` of Hamiltonians, has curvature `∂_s H_{(s, t)}`. -/
@@ -169,7 +177,7 @@ theorem hamiltonianCurvature_homotopy (ω : SymplecticForm V) {H : ℝ × ℝ �
     {x : V} (hH : DifferentiableAt ℝ (fun w ↦ H w x) z) :
     ω.hamiltonianCurvature (fun _ _ ↦ 0) H z x = deriv (fun s ↦ H (s, z.2) x) z.1 := by
   rw [hamiltonianCurvature_zero_left, stdComplexLineReal_eq]
-  exact (hasDerivAt_slice_left (s := z.1) (b := z.2) hH).deriv.symm
+  exact fderiv_apply_mk_one_zero hH
 
 /-- A continuation perturbation `K = β(s) H_t dt` has curvature `β'(s) H_t`. -/
 theorem hamiltonianCurvature_continuation (ω : SymplecticForm V) {β : ℝ → ℝ} {H : ℝ → V → ℝ}
