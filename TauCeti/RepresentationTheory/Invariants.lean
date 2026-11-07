@@ -594,12 +594,14 @@ open scoped MonoidAlgebra
 
 universe u v w
 
-variable {k : Type u} {G : Type v} [Field k] [Group G] [Finite G] [NeZero (Nat.card G : k)]
+variable {k : Type u} {G : Type v} [Field k] [Group G] [NeZero (Nat.card G : k)]
 
 /-- Under Maschke's hypothesis, taking invariants preserves short exact sequences of
 representations. -/
 theorem Rep.shortExact_map_invariantsFunctor {S : ShortComplex (Rep.{w} k G)} (hS : S.ShortExact) :
     (S.map (Rep.invariantsFunctor k G)).ShortExact := by
+  -- A nonzero cardinality in `k` forces `G` to be finite (`Maschke` needs `Finite G`).
+  have : Finite G := Nat.finite_of_card_ne_zero fun h ↦ NeZero.ne (Nat.card G : k) (by simp [h])
   have : (Rep.invariantsFunctor k G).PreservesEpimorphisms := ⟨fun {X Y} f hf ↦ by
       have : Module.Projective k[G] Y.ρ.asModule :=
         Module.projective_of_isSemisimpleRing k[G] Y.ρ.asModule
