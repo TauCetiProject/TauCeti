@@ -66,7 +66,6 @@ private theorem CohomologicalDimensionLE.nsmul_eq_zero {n : ℕ}
   let := K.restrictDistribMulAction hK
   have : ContinuousSMul G K := K.restrictDistribMulAction_continuousSMul hK
   have hKp : IsAddPGroup p K := by
-    rw [isAddPGroup_iff_pow_nsmul_eq_zero]
     rintro ⟨_, m, rfl⟩
     obtain ⟨k, hk⟩ := hc m
     exact ⟨k, Subtype.ext hk⟩

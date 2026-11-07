@@ -75,7 +75,7 @@ theorem _root_.IsAddPGroup.continuousMap {V : Type*} [AddCommGroup V] [Topologic
     [DiscreteTopology V] (h : IsAddPGroup p V) (X : Type*)
     [TopologicalSpace X] [CompactSpace X] : IsAddPGroup p C(X, V) := by
   refine fun f ↦ ?_
-  choose k hk using isAddPGroup_iff_pow_nsmul_eq_zero.1 h
+  choose k hk using h
   have hfin : (Set.range f).Finite := (isCompact_range f.continuous).finite_of_discrete
   refine ⟨hfin.toFinset.sup k, ContinuousMap.ext fun x ↦ ?_⟩
   obtain ⟨c, hc⟩ := pow_dvd_pow p
