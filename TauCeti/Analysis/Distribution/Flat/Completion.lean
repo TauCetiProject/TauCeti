@@ -210,6 +210,7 @@ theorem boundaryCLM_boundaryCLM (T : RealFlatChain Ω (k + 2)) :
   | ih T => simp
 
 /-- Evaluation of the boundary agrees with evaluation on the exterior derivative. -/
+@[simp]
 theorem evalCLM_boundaryCLM (T : RealFlatChain Ω (k + 1))
     (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
     evalCLM ω (boundaryCLM T) = evalCLM (extDerivCLM ω) T := by
@@ -225,6 +226,12 @@ theorem evalCLM_boundaryCLM (T : RealFlatChain Ω (k + 1))
 
 @[simp] theorem evalCLM_sub (ω η : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : RealFlatChain Ω k) :
     evalCLM (ω - η) T = evalCLM ω T - evalCLM η T := by
+  induction T using Completion.induction_on with
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | ih T => simp
+
+@[simp] theorem evalCLM_neg (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : RealFlatChain Ω k) :
+    evalCLM (-ω) T = -evalCLM ω T := by
   induction T using Completion.induction_on with
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih T => simp
