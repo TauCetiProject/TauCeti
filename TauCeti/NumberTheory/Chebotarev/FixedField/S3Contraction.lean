@@ -134,36 +134,26 @@ private theorem pow_three_eq_two_of_mem_rootSet
     (by simpa only [map_ofNat] using hx)
   simpa only [map_ofNat] using h
 
-private theorem two_ne_zero_of_algebra_rat {L : Type*} [Field L] [Algebra ℚ L] :
-    (2 : L) ≠ 0 := by
-  simpa only [map_ofNat, map_zero] using
-    (algebraMap ℚ L).injective.ne (by norm_num : (2 : ℚ) ≠ 0)
-
 /-- The quotient of two distinct roots of `X ^ 3 - 2` is a primitive cube root of unity. -/
 private theorem isPrimitiveRoot_div_of_mem_rootSet
     {L : Type*} [Field L] [Algebra ℚ L] {beta gamma : L}
     (hbeta : beta ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L)
     (hgamma : gamma ∈ (X ^ 3 - 2 : ℚ[X]).rootSet L) (hne : gamma ≠ beta) :
     IsPrimitiveRoot (gamma / beta) 3 := by
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
   have hbeta3 := pow_three_eq_two_of_mem_rootSet hbeta
   have hbeta0 : beta ≠ 0 := by
     rintro rfl
-    exact two_ne_zero_of_algebra_rat (by simpa using hbeta3.symm)
+    exact two_ne_zero (by simpa using hbeta3.symm)
   have hzeta3 : (gamma / beta) ^ 3 = 1 := by
     rw [div_pow, pow_three_eq_two_of_mem_rootSet hgamma, hbeta3,
-      div_self two_ne_zero_of_algebra_rat]
+      div_self two_ne_zero]
   have hzeta1 : gamma / beta ≠ 1 := fun hz ↦ hne ((div_eq_one_iff_eq hbeta0).mp hz)
-  refine IsPrimitiveRoot.mk_of_lt _ (by decide) hzeta3 fun l hl hlt ↦ ?_
-  interval_cases l
-  · simpa only [pow_one] using hzeta1
-  · intro hzeta2
-    apply hzeta1
-    calc
-      gamma / beta = (gamma / beta) ^ 3 := by rw [pow_succ, hzeta2, one_mul]
-      _ = 1 := hzeta3
+  exact isPrimitiveRoot_of_mem_nthRootsFinset (by decide)
+    ((mem_nthRootsFinset (by decide) _).mpr hzeta3) hzeta1
 
-/-- In the splitting field of `X ^ 3 - 2`, the quotient of a root by a fixed root generates the
-field over any intermediate field containing that fixed root. -/
+/-- In the splitting field of `X ^ 3 - 2`, the quotient of a distinct root by a fixed root
+generates the field over any intermediate field containing that fixed root. -/
 private theorem adjoin_div_eq_top_of_mem
     {L : Type*} [Field L] [Algebra ℚ L]
     [Polynomial.IsSplittingField ℚ L (X ^ 3 - 2 : ℚ[X])]
@@ -176,10 +166,11 @@ private theorem adjoin_div_eq_top_of_mem
   let _ : Algebra ℚ E := E.algebra'
   let _ : IsScalarTower ℚ E L := E.isScalarTower_mid'
   have hzeta := isPrimitiveRoot_div_of_mem_rootSet hbeta hgamma hne
+  have : CharZero L := charZero_of_injective_algebraMap (algebraMap ℚ L).injective
   have hbeta3 := pow_three_eq_two_of_mem_rootSet hbeta
   have hbeta0 : beta ≠ 0 := by
     rintro rfl
-    exact two_ne_zero_of_algebra_rat (by simpa using hbeta3.symm)
+    exact two_ne_zero (by simpa using hbeta3.symm)
   have htopE : IntermediateField.adjoin E ((X ^ 3 - 2 : ℚ[X]).rootSet L) = ⊤ :=
     IntermediateField.adjoin_eq_top_of_adjoin_eq_top ℚ
       (isSplittingField_iff_intermediateField.mp inferInstance).2
@@ -188,7 +179,7 @@ private theorem adjoin_div_eq_top_of_mem
   refine IntermediateField.adjoin_le_iff.mpr fun delta hdelta ↦ ?_
   have hmu : (delta / beta) ^ 3 = 1 := by
     rw [div_pow, pow_three_eq_two_of_mem_rootSet hdelta, hbeta3,
-      div_self two_ne_zero_of_algebra_rat]
+      div_self two_ne_zero]
   have hbeta_mem : beta ∈ IntermediateField.adjoin E ({gamma / beta} : Set L) :=
     IntermediateField.algebraMap_mem _ (⟨beta, hbetaE⟩ : E)
   have := (IntermediateField.adjoin E ({gamma / beta} : Set L)).mul_mem hbeta_mem
