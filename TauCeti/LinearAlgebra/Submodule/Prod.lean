@@ -11,14 +11,16 @@ public import Mathlib.Order.SupIndep
 /-!
 # Products of submodules
 
-Products of submodules preserve indexed suprema and independence of families of submodules, and
-the two coordinate copies `Submodule.fst` and `Submodule.snd` of the factors of a product module
-are cut out by the vanishing of the other coordinate and are complementary.
+Products of submodules commute with indexed suprema, and a family of products is independent
+exactly when both families of factors are. The two coordinate copies `Submodule.fst` and
+`Submodule.snd` of the factors of a product module are cut out by the vanishing of the other
+coordinate and are complementary.
 
 ## Main declarations
 
 * `TauCeti.iSup_prod_submodule`: products commute with indexed suprema.
-* `TauCeti.iSupIndep.prod`: products of independent families are independent.
+* `TauCeti.iSupIndep_prod_iff`, `iSupIndep.prod`: a family of products is independent exactly
+  when both families of factors are.
 * `Submodule.mem_fst_iff`, `Submodule.mem_snd_iff`: membership in the coordinate copies of the
   factors.
 * `Submodule.isCompl_fst_snd`: the coordinate copies of the two factors are complementary.
@@ -59,17 +61,22 @@ theorem iSup_prod_submodule {R M N : Type*} {ι : Sort*} [Semiring R]
     [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
     (P : ι → Submodule R M) (Q : ι → Submodule R N) :
     (⨆ i, (P i).prod (Q i)) = (⨆ i, P i).prod (⨆ i, Q i) := by
-  simp only [LinearMap.prod_eq_sup_map, _root_.Submodule.map_iSup, iSup_sup_eq]
+  simp only [LinearMap.prod_eq_sup_map, Submodule.map_iSup, iSup_sup_eq]
 
-/-- Componentwise products of independent families of submodules are independent.
+/-- A family of componentwise products of submodules is independent exactly when both families
+of factors are independent. -/
+theorem iSupIndep_prod_iff {R M N : Type*} {ι : Sort*} [Semiring R]
+    [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
+    {P : ι → Submodule R M} {Q : ι → Submodule R N} :
+    iSupIndep (fun i ↦ (P i).prod (Q i)) ↔ iSupIndep P ∧ iSupIndep Q := by
+  simp only [iSupIndep, disjoint_iff, iSup_prod_submodule, Submodule.prod_inf_prod,
+    Submodule.prod_eq_bot_iff, forall_and]
 
-Use `TauCeti.iSupIndep.prod hP hQ`, or `hP.prod hQ` after `open TauCeti`. -/
-theorem iSupIndep.prod {R M N : Type*} {ι : Sort*} [Semiring R]
+/-- Componentwise products of independent families of submodules are independent. -/
+theorem _root_.iSupIndep.prod {R M N : Type*} {ι : Sort*} [Semiring R]
     [AddCommMonoid M] [AddCommMonoid N] [Module R M] [Module R N]
     {P : ι → Submodule R M} {Q : ι → Submodule R N}
-    (hP : iSupIndep P) (hQ : iSupIndep Q) : iSupIndep (fun i ↦ (P i).prod (Q i)) := by
-  intro i
-  simp only [iSup_prod_submodule, disjoint_iff, _root_.Submodule.prod_inf_prod,
-    (hP i).eq_bot, (hQ i).eq_bot, _root_.Submodule.prod_bot]
+    (hP : iSupIndep P) (hQ : iSupIndep Q) : iSupIndep (fun i ↦ (P i).prod (Q i)) :=
+  iSupIndep_prod_iff.2 ⟨hP, hQ⟩
 
 end TauCeti
