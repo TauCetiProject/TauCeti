@@ -163,7 +163,7 @@ theorem compLinearL_id (f : CkHolderSpace k α E F) : compLinearL (.id ℝ E) f 
   ext fun _ ↦ by simp
 
 @[simp]
-theorem compLinearL_comp (e : E →L[ℝ] E') (e' : E' →L[ℝ] E'')
+theorem compLinearL_compLinearL (e : E →L[ℝ] E') (e' : E' →L[ℝ] E'')
     (f : CkHolderSpace k α E'' F) :
     compLinearL e (compLinearL e' f) = compLinearL (e'.comp e) f :=
   ext fun _ ↦ by simp
