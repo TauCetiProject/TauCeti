@@ -23,9 +23,6 @@ This file records general-purpose facts about open subsets of schemes.
 * `AlgebraicGeometry.Scheme.Hom.preimage_finset_inf` and
   `AlgebraicGeometry.Scheme.Hom.preimage_finite_product`: inverse images commute with finite
   intersections, written as `Finset.inf` or as finite products of opens.
-* `AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom`: the comparison morphism from the product
-  of the inverse images to the inverse image of the product, the hypothesis of
-  `TauCeti.CategoryTheory.cechComplexCompIso` for `f⁻¹`.
 * `AlgebraicGeometry.Scheme.Hom.isAffineOpen_finset_inf_preimage`: along an affine morphism, the
   inverse images of a family of opens with affine nonempty finite intersections, such as the covers
   used to compute cohomology by Čech complexes, again have affine nonempty finite intersections.
@@ -99,15 +96,6 @@ lemma _root_.AlgebraicGeometry.Scheme.Hom.preimage_finite_product {Y : Scheme.{u
   exact (congrArg (f ⁻¹ᵁ ·) (CompleteLattice.finite_product_eq_finset_image_inf U id)).trans <|
     (f.preimage_finset_inf _ U).trans
       (CompleteLattice.finite_product_eq_finset_image_inf (fun j ↦ f ⁻¹ᵁ U j) id).symm
-
-open Limits in
-/-- The finite product of the inverse images of opens maps to the inverse image of their product,
-as both are the same open (`preimage_finite_product`). This is the hypothesis of
-`TauCeti.CategoryTheory.cechComplexCompIso` for the functor `f⁻¹`. -/
-lemma _root_.AlgebraicGeometry.Scheme.Hom.nonempty_pi_preimage_hom {Y : Scheme.{u}} (f : X ⟶ Y)
-    {J : Type*} [Finite J] (U : J → Y.Opens) :
-    Nonempty ((∏ᶜ fun j ↦ f ⁻¹ᵁ U j) ⟶ f ⁻¹ᵁ ∏ᶜ U) :=
-  ⟨homOfLE (f.preimage_finite_product U).ge⟩
 
 /-- Along an affine morphism, the inverse images of a family of opens whose nonempty finite
 intersections are affine again have affine nonempty finite intersections. -/
