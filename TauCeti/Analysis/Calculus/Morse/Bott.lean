@@ -34,8 +34,6 @@ forms is not part of this statement: they vary with the base point.
 
 ## Main declarations
 
-* `TauCeti.fderiv_fderiv_apply_inl_eq_zero`: along a critical zero section, the Hessian vanishes
-  on base directions.
 * `TauCeti.isInvertible_fderiv_fderiv_slice_right_of_ker_le`: the vertical Hessian at a
   Morse–Bott point of the zero section is invertible.
 * `TauCeti.exists_morseBott_chart_of_contDiffOn`: the Morse–Bott lemma in product coordinates.
@@ -56,19 +54,6 @@ namespace TauCeti
 
 variable {P F : Type*} [NormedAddCommGroup P] [NormedSpace ℝ P]
   [NormedAddCommGroup F] [NormedSpace ℝ F] {f : P × F → ℝ} {a : P}
-
-/-- **Base directions of a critical zero section are null for the Hessian.** If `f` is `C²` at
-`(a, 0)` and every point `(b, 0)` with `b` near `a` is a critical point of `f`, then the Hessian of
-`f` at `(a, 0)` vanishes on every base direction `(u, 0)`. -/
-theorem fderiv_fderiv_apply_inl_eq_zero (hf : ContDiffAt ℝ 2 f (a, 0))
-    (hcrit : ∀ᶠ b in 𝓝 a, fderiv ℝ f (b, 0) = 0) (u : P) :
-    fderiv ℝ (fderiv ℝ f) (a, 0) (u, 0) = 0 := by
-  -- The map `b ↦ Df(b, 0)` vanishes near `a`, so its derivative `D²f(a, 0) ∘ inl` vanishes.
-  have hd : HasFDerivAt (fun b ↦ fderiv ℝ f (b, 0))
-      ((fderiv ℝ (fderiv ℝ f) (a, 0)).comp (ContinuousLinearMap.inl ℝ P F)) a :=
-    (hf.hasFDerivAt_fderiv le_rfl).comp a (hasFDerivAt_prodMk_left a 0)
-  have hzero := hd.unique ((hasFDerivAt_const (0 : P × F →L[ℝ] ℝ) a).congr_of_eventuallyEq hcrit)
-  simpa using congr($hzero u)
 
 /-- **The vertical Hessian at a Morse–Bott point is invertible.** If `f` is `C²` at `(a, 0)`, every
 point `(b, 0)` with `b` near `a` is critical, and the kernel of the Hessian at `(a, 0)` consists of
