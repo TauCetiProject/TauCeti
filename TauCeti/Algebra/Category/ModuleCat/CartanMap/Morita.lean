@@ -8,7 +8,7 @@ module
 public import Mathlib.RingTheory.Morita.Basic
 public import TauCeti.Algebra.Category.ModuleCat.CartanMap.Basic
 public import TauCeti.Algebra.Category.ModuleCat.Equivalence
-public import TauCeti.CategoryTheory.Preadditive.Equivalence
+public import TauCeti.CategoryTheory.Adjunction.Additive
 
 /-!
 # Morita invariance of `K₀(proj A)`, `G₀(mod A)` and the Cartan map
