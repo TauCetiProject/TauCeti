@@ -11,7 +11,7 @@ public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
 
 import TauCeti.Analysis.Calculus.InverseFunctionTheorem
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
-import TauCeti.Geometry.Manifold.MFDeriv.Chart
+import TauCeti.Geometry.Manifold.MFDeriv.Chart.Basic
 
 /-!
 # Smooth finite-group linearization

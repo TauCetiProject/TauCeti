@@ -6,8 +6,10 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Algebra.Group.ForwardDiff
+public import Mathlib.Combinatorics.Enumerative.Stirling
 import Mathlib.Data.Nat.Choose.Sum
 import Mathlib.Tactic.Abel
+import TauCeti.RingTheory.Polynomial.Pochhammer
 
 /-!
 # Alternating forward differences and the discrete Leibniz rule
@@ -23,6 +25,12 @@ of its factors. Its shifted form evaluates the second factor along the arithmeti
 starting at the input point. Its unshifted form uses only differences at that point, of orders
 at most the output order, so it also computes products in finite-difference coordinates.
 
+The `k`-th forward difference of `t ↦ t ^ m` at `0` is `k! S(m, k)`, where `S` is the Stirling
+number of the second kind. Expanding `(x + i h) ^ m` binomially then writes the `k`-th forward
+difference of `y ↦ y ^ m` with any step `h` at any point `x` as `k!` times an integral
+combination of the monomials `x ^ (m - l) h ^ l`, `k ≤ l ≤ m`. This explicit divisibility by `k!`
+is what bounds forward differences of power series over ultrametric rings.
+
 ## Main declarations
 
 * `TauCeti.neg_one_pow_smul_fwdDiff_iter_succ`: a negative forward difference advances the
@@ -34,6 +42,9 @@ at most the output order, so it also computes products in finite-difference coor
 * `TauCeti.sum_neg_one_pow_mul_choose_succ`: the successor step for alternating binomial sums.
 * `TauCeti.fwdDiff_iter_smul`: the discrete Leibniz rule, with the second factor shifted by
   the order of the difference on the first factor.
+* `TauCeti.fwdDiff_iter_pow_apply_zero`: `Δᵏ (t ↦ t ^ m) (0) = k! S(m, k)`.
+* `TauCeti.fwdDiff_iter_pow_eq_sum`: the `k`-th difference of `y ↦ y ^ m` with step `h` at `x`
+  as `∑ₗ C(m, l) x ^ (m - l) h ^ l k! S(l, k)`.
 -/
 
 public section
@@ -141,5 +152,49 @@ theorem fwdDiff_iter_smul_eq_sum_range_sum_range [Module R G] (h : M) (f : M →
   refine Finset.sum_congr rfl fun j _ ↦ ?_
   rw [← Function.iterate_add_apply, Nat.add_comm j (n - i), smul_comm, smul_smul,
     smul_comm]
+
+section Pow
+
+open Finset
+
+variable {R : Type*}
+
+/-- **Forward differences of powers at zero.** The `k`-th forward difference of `t ↦ t ^ m` at
+`0` is `k!` times the Stirling number of the second kind `S(m, k)`. In particular it vanishes for
+`m < k` and equals `k!` for `m = k` (`fwdDiff_iter_eq_factorial`). -/
+theorem fwdDiff_iter_pow_apply_zero [Ring R] (k m : ℕ) :
+    Δ_[1]^[k] (fun t : R ↦ t ^ m) 0 = k.factorial * m.stirlingSecond k := by
+  have h : (fun t : R ↦ t ^ m) =
+      ∑ j ∈ range (m + 1), m.stirlingSecond j • fun t : R ↦ (descPochhammer R j).eval t := by
+    funext t
+    simp [pow_eq_sum_stirlingSecond_mul_descPochhammer_eval m t, nsmul_eq_mul]
+  rw [h, fwdDiff_iter_finsetSum, Finset.sum_apply]
+  simp only [fwdDiff_iter_const_smul, Pi.smul_apply, fwdDiff_iter_descPochhammer_eval]
+  -- only the falling factorial of degree `k` contributes
+  rw [sum_eq_single k (fun j _ hjk ↦ ?_) (fun hk ↦ ?_)]
+  · simp only [Nat.descFactorial_self, tsub_self, descPochhammer_zero, Polynomial.eval_one,
+      mul_one, nsmul_eq_mul]
+    exact Nat.cast_comm _ _
+  · rcases lt_or_gt_of_ne hjk with hj | hj
+    · simp [Nat.descFactorial_eq_zero_iff_lt.mpr hj]
+    · simp [descPochhammer_ne_zero_eval_zero (R := R) (show j - k ≠ 0 by omega)]
+  · simp [Nat.stirlingSecond_eq_zero_of_lt (show m < k by simpa using hk)]
+
+/-- **Forward differences of powers with any step.** The `k`-th forward difference of
+`y ↦ y ^ m` with step `h` at `x` is `∑ₗ C(m, l) x ^ (m - l) h ^ l k! S(l, k)`, where `S` is the
+Stirling number of the second kind. Only the terms with `k ≤ l` are nonzero, and every term is
+divisible by `k!`. -/
+theorem fwdDiff_iter_pow_eq_sum [CommRing R] (h x : R) (k m : ℕ) :
+    Δ_[h]^[k] (fun y : R ↦ y ^ m) x = ∑ l ∈ range (m + 1),
+      x ^ (m - l) * h ^ l * m.choose l * (k.factorial * l.stirlingSecond k) := by
+  simp_rw [← fwdDiff_iter_pow_apply_zero, fwdDiff_iter_eq_sum_shift, mul_sum]
+  rw [sum_comm]
+  refine sum_congr rfl fun i _ ↦ ?_
+  rw [add_comm x, add_pow, smul_sum]
+  refine sum_congr rfl fun l _ ↦ ?_
+  simp only [zsmul_eq_mul, nsmul_eq_mul, zero_add, mul_one]
+  ring
+
+end Pow
 
 end TauCeti
