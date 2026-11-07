@@ -296,7 +296,7 @@ theorem d_iCycles_apply (j : ι) (z : K.cycles n) : (K.d n j).hom (K.iCycles n z
 
 /-- The underlying element of the cycle `K.toCycles i n x` is the differential of `x`. -/
 @[simp]
-theorem iCycles_toCycles_apply (i : ι) [K.HasHomology n] (x : K.X i) :
+theorem iCycles_toCycles_apply (i : ι) (x : K.X i) :
     K.iCycles n (K.toCycles i n x) = (K.d i n).hom x := by
   have h := ConcreteCategory.congr_hom (K.toCycles_i i n) x
   simpa only [ConcreteCategory.comp_apply] using h
