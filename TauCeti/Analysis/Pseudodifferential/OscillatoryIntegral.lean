@@ -20,16 +20,18 @@ integral
 
 need not converge absolutely: a symbol of order `m ≥ 0` does not decay in `ξ`. It is defined by
 regularization: the integrand is multiplied by `χ(εξ)` for a compactly supported continuous
-cutoff `χ` with `χ(0) = 1`, which makes it absolutely integrable on `E × E`, and one lets
-`ε → 0`.
+cutoff `χ` with `χ(0) = 1`, which makes it absolutely integrable on `E × E` when `b` is a.e.
+strongly measurable with integrable position slices of polynomially bounded `L¹` norm, and one
+lets `ε → 0`.
 
 The limit exists, and is independent of the cutoff, as soon as the position derivatives of the
-amplitude have polynomial growth in the frequency: if `y ↦ b(y, ξ)` is `C^N` with integrable
-derivatives, and both `∫ ‖b(y, ξ)‖ dy` and `∫ ‖D_y^N b(y, ξ)‖ dy` are at most `C ⟨ξ⟩ ^ m`,
-where `⟨ξ⟩ ^ s = (1 + ‖ξ‖²) ^ (s / 2)` and `N > m + dim E`. Integrating by parts `N` times in the
-position, `‖ξ‖ ^ N ‖∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy‖ ≤ ∫ ‖D_y^N b(y, ξ)‖ dy`, so the position
-integral is `O(⟨ξ⟩ ^ (m - N))` and hence integrable in the frequency. The limit of the
-regularized integrals is therefore the iterated integral with the position integral inside,
+amplitude have polynomial growth in the frequency: if `b` is a.e. strongly measurable on
+`E × E`, `y ↦ b(y, ξ)` is `C^N` with integrable derivatives, and both `∫ ‖b(y, ξ)‖ dy` and
+`∫ ‖D_y^N b(y, ξ)‖ dy` are at most `C ⟨ξ⟩ ^ m`, where `⟨ξ⟩ ^ s = (1 + ‖ξ‖²) ^ (s / 2)` and
+`N > m + dim E`. Integrating by parts `N` times in the position,
+`‖ξ‖ ^ N ‖∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy‖ ≤ ∫ ‖D_y^N b(y, ξ)‖ dy`, so the position integral is
+`O(⟨ξ⟩ ^ (m - N))` and hence integrable in the frequency. The limit of the regularized integrals
+is therefore the iterated integral with the position integral inside,
 `TauCeti.oscillatoryIntegral`.
 
 The left Kohn–Nirenberg quantization of a coefficient `a(x, ξ)` on a Schwartz function `u` is
@@ -44,6 +46,8 @@ regularizations.
 * `TauCeti.integrable_integral_exp_smul`: the position integral is integrable in the frequency.
 * `TauCeti.norm_oscillatoryIntegral_le`: the bound
   `‖∫∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ‖ ≤ 2 ^ (N + 1) C ∫ ⟨ξ⟩ ^ (m - N) dξ`.
+* `TauCeti.integrable_cutoff_smul`: for `ε ≠ 0` the regularized integrand
+  `χ(εξ) exp(-i ⟪y, ξ⟫) b(y, ξ)` is integrable on `E × E`.
 * `TauCeti.tendsto_integral_cutoff_smul_oscillatoryIntegral`: the regularized double integrals
   `∫∫ χ(εξ) exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ` tend to the oscillatory integral as `ε → 0`, for every
   cutoff `χ`.
@@ -72,10 +76,11 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
 /-- The oscillatory integral `∫∫ exp(-i ⟪y, ξ⟫) b(y, ξ) dy dξ` of an amplitude `b(y, ξ)`, as the
 iterated Bochner integral with the position integral inside. It is the oscillatory integral only
 for amplitudes whose position slices `y ↦ b(y, ξ)` are integrable; otherwise the inner Bochner
-integral is `0`. If the slices are `C^N` with integrable derivatives up to order `N`, and both
-`∫ ‖b(y, ξ)‖ dy` and `∫ ‖D_y^N b(y, ξ)‖ dy` are at most `C ⟨ξ⟩ ^ m` with `N > m + dim E`, the
-position integral is integrable in the frequency (`integrable_integral_exp_smul`) and this is the
-limit of the regularized double integrals (`tendsto_integral_cutoff_smul_oscillatoryIntegral`). -/
+integral is `0`. If `b` is a.e. strongly measurable on `E × E`, the slices are `C^N` with
+integrable derivatives up to order `N`, and both `∫ ‖b(y, ξ)‖ dy` and `∫ ‖D_y^N b(y, ξ)‖ dy`
+are at most `C ⟨ξ⟩ ^ m` with `N > m + dim E`, the position integral is integrable in the
+frequency (`integrable_integral_exp_smul`) and this is the limit of the regularized double
+integrals (`tendsto_integral_cutoff_smul_oscillatoryIntegral`). -/
 def oscillatoryIntegral (b : E × E → W) : W :=
   ∫ ξ, ∫ y, Complex.exp (-(⟪y, ξ⟫ * Complex.I)) • b (y, ξ)
 
@@ -189,9 +194,11 @@ theorem norm_oscillatoryIntegral_le (hdiff : ∀ ξ, ContDiff ℝ N fun y ↦ b 
 
 variable {χ : E → ℂ}
 
-/-- For `ε ≠ 0`, the regularized integrand `χ(εξ) exp(-i ⟪y, ξ⟫) b(y, ξ)` is integrable on
-`E × E`. -/
-private lemma integrable_cutoff_smul (hb : AEStronglyMeasurable b)
+/-- **The regularized integrand is integrable.** If `b` is a.e. strongly measurable, its position
+slices `y ↦ b(y, ξ)` are integrable with `∫ ‖b(y, ξ)‖ dy ≤ C ⟨ξ⟩ ^ m`, and `χ` is continuous
+and compactly supported, then for `ε ≠ 0` the regularized integrand
+`χ(εξ) exp(-i ⟪y, ξ⟫) b(y, ξ)` is integrable on `E × E`. -/
+theorem integrable_cutoff_smul (hb : AEStronglyMeasurable b)
     (hint₀ : ∀ ξ, Integrable fun y ↦ b (y, ξ))
     (h₀ : ∀ ξ, ∫ y, ‖b (y, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2))
     (hχ : Continuous χ) (hχs : HasCompactSupport χ) {ε : ℝ} (hε : ε ≠ 0) :
