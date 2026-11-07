@@ -105,11 +105,8 @@ theorem differentiableOn_and_im_nonneg_iff_exists_eq_I_mul_herglotzTransform_cay
     exact ⟨μ, (F I).re, hμ, hrep⟩
   · rintro ⟨μ, a, hμ, hrep⟩
     let c : ℂ → ℂ := fun z => (z - I) / (z + I)
-    have hc : DifferentiableOn ℂ c UpperHalfPlane.upperHalfPlaneSet := by
-      intro z hz
-      exact (((differentiableAt_id.sub (differentiableAt_const I)).div
-        (differentiableAt_id.add (differentiableAt_const I))
-        (add_I_ne_zero_of_im_nonneg hz.le)).differentiableWithinAt)
+    have hc : DifferentiableOn ℂ c UpperHalfPlane.upperHalfPlaneSet :=
+      differentiableOn_sub_I_div_add_I_im_nonneg.mono fun _ hz => mem_ofPred.mpr hz.le
     have htransform : DifferentiableOn ℂ (fun z => μ.herglotzTransform (c z))
         UpperHalfPlane.upperHalfPlaneSet :=
       (Measure.differentiableOn_herglotzTransform μ).comp hc
