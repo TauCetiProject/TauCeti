@@ -27,11 +27,19 @@ therefore the four-punctured sphere `ℂ ∖ {0, 1, ψ_{q,L}(1)}`: the two input
 `q = 0` the new puncture is `e^{-2πL}/4`, for `q = 1` it is `1 - e^{-2πL}/4`; as `L → ∞` it
 collides with `c_q`, and the four-punctured sphere breaks into the two pairs of pants.
 
+Cutting both spheres along the circles at the middle of the neck, `Re z = L/2` on the end `q` of
+`S` and `Re z = -L/2` on the end at `∞` of `S'`, and truncating their remaining ends at `±s = R`,
+gives the compact truncation `Σ_R` of the four-punctured sphere
+(`TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation`), the domain over which the energy of
+maps on the plumbed sphere is computed.
+
 ## Main definitions
 
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingFactor q L`: the factor `b_q e^{-2πL} / 2`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap q L`: the plumbing map
   `w ↦ c_q + b_q e^{-2πL} w / 2`.
+* `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation q L R`: the truncation `Σ_R` of the
+  plumbed four-punctured sphere.
 
 ## Main results
 
@@ -46,6 +54,9 @@ collides with `c_q`, and the four-punctured sphere breaks into the two pairs of 
   `ℂ ∖ {0, 1, ψ_{q,L}(1)}`.
 * `TauCeti.ThricePuncturedSphere.Puncture.plumbingMap_image_inter`: the two pieces overlap
   exactly in the image of the neck `-L < Re z < 0`.
+* `TauCeti.ThricePuncturedSphere.Puncture.plumbedTruncation_subset`,
+  `TauCeti.ThricePuncturedSphere.Puncture.isCompact_plumbedTruncation`: the truncation `Σ_R` is a
+  compact subset of the four-punctured sphere.
 
 ## References
 
@@ -271,5 +282,57 @@ theorem plumbingMap_image_inter {q : Puncture} (hq : q ≠ inf) (L : ℝ) :
     refine ⟨⟨w', ⟨hinf, hw'⟩, rfl⟩,
       q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos (by rw [endSign_eq_one hq]; linarith),
       by linarith⟩
+
+/-- **The truncated plumbed four-punctured sphere.** For neck length `L` and `R ≥ L / 2`, the
+part `Re z ≤ L / 2` of the end `q` of the truncation `S_R` of the receiving thrice-punctured
+sphere, together with the image under the plumbing map of the part `Re z ≥ -L / 2` of the end at
+`∞` of the truncation `S_R` of the inserted one. The two pieces meet along the circle
+`Re z = L / 2` of the end `q`, the image of the circle `Re z = -L / 2` of the end at `∞`
+(`re_endCoord_plumbingMap`). The four boundary circles are the circles `±s = R` of the two
+remaining ends of the receiving sphere and the images of the circles `s = R` of the two input
+ends of the inserted one. -/
+def plumbedTruncation (q : Puncture) (L R : ℝ) : Set ℂ :=
+  (truncation R ∩ {w | (q.endCoord w).re ≤ L / 2}) ∪
+    q.plumbingMap L '' (truncation R ∩ {w | -(L / 2) ≤ (inf.endCoord w).re})
+
+theorem plumbedTruncation_def (q : Puncture) (L R : ℝ) :
+    q.plumbedTruncation L R =
+      (truncation R ∩ {w | (q.endCoord w).re ≤ L / 2}) ∪
+        q.plumbingMap L '' (truncation R ∩ {w | -(L / 2) ≤ (inf.endCoord w).re}) :=
+  (rfl)
+
+/-- The truncated plumbed sphere lies in the plumbed four-punctured sphere
+`ℂ ∖ {0, 1, ψ_{q,L}(1)}`. -/
+theorem plumbedTruncation_subset {q : Puncture} (hq : q ≠ inf) {L : ℝ} (hL : 0 < L) (R : ℝ) :
+    q.plumbedTruncation L R ⊆ {w | (w ≠ 0 ∧ w ≠ 1) ∧ w ≠ q.plumbingMap L 1} := by
+  rintro w (⟨hw, hwL⟩ | ⟨w', ⟨hw', hwL'⟩, rfl⟩)
+  · refine ⟨⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩, fun h => ?_⟩
+    have h' : (q.endCoord w).re ≤ L / 2 := hwL
+    rw [h, re_endCoord_plumbingMap q L one_ne_zero] at h'
+    linarith [re_endCoord_inf_one_pos]
+  · obtain ⟨hw0, hw1, -⟩ := mem_truncation.1 hw'
+    have h' : -(L / 2) ≤ (inf.endCoord w').re := hwL'
+    refine ⟨q.ne_zero_and_ne_one_of_endSign_mul_re_endCoord_pos ?_,
+      (q.plumbingMap_injective L).ne hw1⟩
+    rw [endSign_eq_one hq, one_mul, re_endCoord_plumbingMap q L hw0]
+    linarith
+
+/-- The truncated plumbed sphere is compact. -/
+theorem isCompact_plumbedTruncation (q : Puncture) (L R : ℝ) :
+    IsCompact (q.plumbedTruncation L R) := by
+  -- On a truncation the longitudinal coordinates are continuous, as it avoids the punctures.
+  have hcont (r : Puncture) : ContinuousOn (fun w => (r.endCoord w).re) (truncation R) :=
+    fun w hw => ((r.contDiffAt_re_endCoord
+      (ne_endCenter ⟨(mem_truncation.1 hw).1, (mem_truncation.1 hw).2.1⟩ r)
+      (n := 0)).continuousAt).continuousWithinAt
+  have hT := isCompact_truncation R
+  refine (hT.of_isClosed_subset ((hcont q).preimage_isClosed_of_isClosed hT.isClosed
+    isClosed_Iic) inter_subset_left).union ((hT.of_isClosed_subset
+      ((hcont inf).preimage_isClosed_of_isClosed hT.isClosed isClosed_Ici)
+      inter_subset_left).image ?_)
+  have h : q.plumbingMap L = fun w => q.endCenter + q.plumbingFactor L * w :=
+    funext (plumbingMap_apply q L)
+  rw [h]
+  fun_prop
 
 end TauCeti.ThricePuncturedSphere.Puncture
