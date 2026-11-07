@@ -429,6 +429,19 @@ local instance f4ShortRootCotangentAdjointComodule :
   Derivation.adjointComodule
     (R := 𝔽₂) (H := GeneralLinear.coordinateHopfAlgebra 𝔽₂ 26)
 
+omit [CommRing A] [Algebra 𝔽₂ A] in
+/-- A vector in the span of the first `k` coordinates of a basis has nonzero coordinates only at
+indices below `k`. -/
+private theorem lt_of_mem_support_repr_of_mem_span_range {R M : Type*} [Semiring R]
+    [AddCommMonoid M] [Module R M] {N k : ℕ} (b : Module.Basis (Fin N) R M) (e : Fin k → Fin N)
+    (he : ∀ j, (e j).val < k) {x : M} (hx : x ∈ Submodule.span R (Set.range fun j => b (e j)))
+    {i : Fin N} (hi : i ∈ (b.repr x).support) : i.val < k := by
+  have hsupp := b.repr_support_subset_of_mem_span (Set.range e)
+    (by simpa only [← Set.range_comp, Function.comp_def] using hx)
+  rcases hsupp hi with ⟨i', hi'⟩
+  rw [← hi']
+  exact he i'
+
 /-- A point acts block triangularly on the adapted flag if it preserves its two nontrivial steps. -/
 theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
     (g : HopfAlgebra.points
@@ -457,19 +470,14 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
         f4ShortRootCotangentFlagIdeal (A := A) := by
       rw [hj]
       exact f4ShortRootCotangentFlagBasis_mem_ideal j'
-    have hmap := hIdeal hjmem
-    unfold f4ShortRootCotangentFlagIdeal at hmap
-    have hsupp :=
-      (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
-        (Set.range fun i : Fin f4ShortRootRepresentedIdealRank =>
-          Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
-        (by simpa only [← Set.range_comp, Function.comp_def] using hmap)
     apply Finsupp.notMem_support_iff.mp
     intro hcoord
-    rcases hsupp hcoord with ⟨i', hi'⟩
-    have hiIdeal : i.val < f4ShortRootRepresentedIdealRank := by
-      rw [← hi']
-      exact i'.isLt
+    have hiIdeal := lt_of_mem_support_repr_of_mem_span_range
+      (f4ShortRootCotangentFlagBasis.baseChange A)
+      (fun i : Fin f4ShortRootRepresentedIdealRank =>
+        Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
+      (fun i ↦ by simp) (by simpa only [f4ShortRootCotangentFlagIdeal] using hIdeal hjmem)
+      hcoord
     rw [f4ShortRootCotangentFlagWeight_of_ideal j hjIdeal,
       f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal] at hweight
     omega
@@ -480,37 +488,21 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
           f4ShortRootCotangentFlagRange (A := A) := by
         rw [hj]
         exact f4ShortRootCotangentFlagBasis_mem_range j'
-      have hmap := hRange hjmem
-      unfold f4ShortRootCotangentFlagRange at hmap
-      have hsupp :=
-        (f4ShortRootCotangentFlagBasis.baseChange A).repr_support_subset_of_mem_span
-          (Set.range fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
-            Fin.castAdd f4ShortRootRepresentedComplementRank i)
-          (by simpa only [← Set.range_comp, Function.comp_def] using hmap)
       apply Finsupp.notMem_support_iff.mp
       intro hcoord
-      rcases hsupp hcoord with ⟨i', hi'⟩
-      have hiRange : i.val < f4ShortRootRepresentedIdealRank + 26 := by
-        rw [← hi']
-        exact i'.isLt
+      have hiRange := lt_of_mem_support_repr_of_mem_span_range
+        (f4ShortRootCotangentFlagBasis.baseChange A)
+        (fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
+          Fin.castAdd f4ShortRootRepresentedComplementRank i)
+        (fun i ↦ by simp) (by simpa only [f4ShortRootCotangentFlagRange] using hRange hjmem)
+        hcoord
       have hjWeight : f4ShortRootCotangentFlagWeight j = 1 :=
         f4ShortRootCotangentFlagWeight_of_quotient j hjIdeal hjRange
-      have hiWeight : 1 ≤ f4ShortRootCotangentFlagWeight i := by
-        by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · rw [f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal]
-          omega
-        · rw [f4ShortRootCotangentFlagWeight_of_quotient i hiIdeal hiRange]
+      have hiWeight := one_le_f4ShortRootCotangentFlagWeight i hiRange
       omega
     · have hjWeight : f4ShortRootCotangentFlagWeight j = 0 :=
         f4ShortRootCotangentFlagWeight_of_complement j hjRange
-      have hiNonneg : 0 ≤ f4ShortRootCotangentFlagWeight i := by
-        by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · rw [f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal]
-          omega
-        · by_cases hiRange : i.val < f4ShortRootRepresentedIdealRank + 26
-          · rw [f4ShortRootCotangentFlagWeight_of_quotient i hiIdeal hiRange]
-            omega
-          · rw [f4ShortRootCotangentFlagWeight_of_complement i hiRange]
+      have hiNonneg := f4ShortRootCotangentFlagWeight_nonneg i
       omega
 
 end
