@@ -109,17 +109,19 @@ theorem coexactForms_zero (o : Manifold.Orientation I M (Fin m)) (hkl : k + 0 = 
   (rfl)
 
 /-- Below the top degree, coexact forms are the range of the codifferential. -/
-theorem coexactForms_add_one (o : Manifold.Orientation I M (Fin m)) (hkl : k + (l + 1) = m)
-    (hkl' : k + 1 + l = m) :
-    coexactForms o hkl = LinearMap.range (SmoothForm.codifferential o hkl') :=
+@[simp]
+theorem coexactForms_add_one (o : Manifold.Orientation I M (Fin m)) (hkl : k + (l + 1) = m) :
+    coexactForms o hkl =
+      LinearMap.range (SmoothForm.codifferential o (by omega : k + 1 + l = m)) :=
   (rfl)
 
 /-- Below the top degree, a form is coexact precisely when it is the codifferential of a
 form. -/
 theorem mem_coexactForms_add_one (o : Manifold.Orientation I M (Fin m)) (hkl : k + (l + 1) = m)
-    (hkl' : k + 1 + l = m) (α : SmoothForm I M ℝ k) :
-    α ∈ coexactForms o hkl ↔ ∃ β, SmoothForm.codifferential o hkl' β = α := by
-  rw [coexactForms_add_one o hkl hkl', LinearMap.mem_range]
+    (α : SmoothForm I M ℝ k) :
+    α ∈ coexactForms o hkl ↔
+      ∃ β, SmoothForm.codifferential o (by omega : k + 1 + l = m) β = α := by
+  rw [coexactForms_add_one o hkl, LinearMap.mem_range]
 
 /-- The coexact forms do not depend on the orientation. -/
 @[simp]
@@ -128,7 +130,17 @@ theorem coexactForms_neg_orientation (o : Manifold.Orientation I M (Fin m)) (hkl
   rcases l with _ | l
   · simp
   · ext α
-    simp [mem_coexactForms_add_one _ hkl (show k + 1 + l = m by omega)]
+    simp
+
+/-- **Coexact forms are coclosed**: since `d* ∘ d* = 0`, the codifferential of a coexact form
+vanishes. -/
+theorem codifferential_eq_zero_of_mem_coexactForms (o : Manifold.Orientation I M (Fin m))
+    (hkl : k + 1 + l = m) {φ : SmoothForm I M ℝ (k + 1)} (hφ : φ ∈ coexactForms o hkl) :
+    SmoothForm.codifferential o hkl φ = 0 := by
+  rcases l with _ | l
+  · simp_all
+  · obtain ⟨β, rfl⟩ := (mem_coexactForms_add_one o hkl φ).1 hφ
+    exact SmoothForm.codifferential_codifferential o hkl _ β
 
 /-! ### Orthogonality -/
 
@@ -159,18 +171,6 @@ theorem integralTopForm_inner_mextDeriv_eq_zero_of_codifferential_eq_zero
   rw [integralTopForm_inner_mextDeriv_eq_inner_codifferential o hkl α β h, hβ]
   simp only [ZeroMemClass.coe_zero, Pi.zero_apply, map_zero, zero_smul]
   exact integralTopForm_zero o
-
-/-- **Exact forms are orthogonal to coexact forms**: on an oriented boundaryless Riemannian
-manifold, `∫_M ⟨dα, d*β⟩ vol = 0`, when `dα` or `β` is compactly supported. -/
-theorem integralTopForm_inner_mextDeriv_codifferential_eq_zero
-    (o : Manifold.Orientation I M (Fin m)) (hkl : k + 1 + 1 + l = m) (α : SmoothForm I M ℝ k)
-    (β : SmoothForm I M ℝ (k + 1 + 1))
-    (h : mextDerivₗ I k α ∈ compactlySupportedForms I M (k + 1) ∨
-      β ∈ compactlySupportedForms I M (k + 1 + 1)) :
-    integralTopForm o (fun x ↦ alternatingFormInner (TangentSpace I x) (k + 1)
-      ((mextDerivₗ I k α).1 x) ((codifferential o hkl β).1 x) • riemannianVolumeForm o x) = 0 :=
-  integralTopForm_inner_codifferential_eq_zero_of_mextDeriv_eq_zero o hkl
-    ((mem_closedForms_iff_mextDerivₗ_eq_zero I _).1 (mextDerivₗ_mem_closedForms I k α)) β h
 
 end SmoothForm
 
@@ -223,7 +223,7 @@ theorem disjoint_closedForms_coexactForms (o : Manifold.Orientation I M (Fin m))
   have hkl' : k + 1 + l = m := by omega
   rw [Submodule.disjoint_def]
   rintro φ hφ hφ'
-  obtain ⟨β, rfl⟩ := (mem_coexactForms_add_one o hkl hkl' φ).1 hφ'
+  obtain ⟨β, rfl⟩ := (mem_coexactForms_add_one o hkl φ).1 hφ'
   -- `∫ |d*β|² vol = ∫ ⟨d*β, d*β⟩ vol` vanishes since `d*β` is closed, and the pairing is definite.
   refine (SmoothForm.integralTopForm_inner_self_smul_riemannianVolumeForm_eq_zero_iff o hkl
     (by simp [compactlySupportedForms_eq_top])).1 ?_
