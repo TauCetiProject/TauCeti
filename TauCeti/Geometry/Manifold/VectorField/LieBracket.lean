@@ -22,11 +22,11 @@ prerequisite for Deliverable A, Layer 1 of the Lie-groups roadmap.
 
 ## Main results
 
-* `TauCeti.mlieBracket_eq_lieBracket`: on a normed space, the manifold Lie bracket is the Lie
+* `VectorField.mlieBracket_eq_lieBracket`: on a normed space, the manifold Lie bracket is the Lie
   bracket of vector fields on that space.
-* `TauCeti.mlieBracket_const_model_space`: constant model-space vector fields have zero
+* `VectorField.mlieBracket_const_model_space`: constant model-space vector fields have zero
   manifold Lie bracket.
-* `TauCeti.mlieBracket_continuousLinearMap_model_space`: the manifold Lie bracket of the linear
+* `VectorField.mlieBracket_continuousLinearMap_model_space`: the manifold Lie bracket of the linear
   vector fields `y ↦ A y` and `y ↦ B y` is `x ↦ B (A x) - A (B x)`.
 * `mvfderiv_mlieBracket`: a differential sends the manifold bracket to the commutator of
   directional derivatives.
@@ -66,7 +66,7 @@ section
 
 variable [IsManifold I (minSmoothness 𝕜 2) M]
 
-namespace TauCeti
+namespace VectorField
 
 /-- Constant vector fields on a normed vector space have zero manifold Lie bracket. -/
 @[simp]
@@ -137,7 +137,7 @@ theorem mlieBracket_continuousLinearMap_model_space (A B : F →L[𝕜] F) (x : 
   refine (congrFun mlieBracket_eq_lieBracket x).trans ?_
   rw [VectorField.lieBracket, A.fderiv, B.fderiv]
 
-end TauCeti
+end VectorField
 
 /-- Let `f` have enough derivatives for symmetry of its second derivative at `x`, and let `V` and
 `W` be differentiable vector fields there. Then the differential of `f` on the manifold bracket is
