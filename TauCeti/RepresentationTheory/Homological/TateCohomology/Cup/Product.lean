@@ -381,7 +381,9 @@ private theorem cupNeg_map_right {N' : Rep k G} (f : N ⟶ N') (p : ℤ) (n : �
       (tensorDimensionShiftDownIso N' M (p - ((n + 1 + 1 : ℕ) : ℤ))
         (p - ((n + 1 : ℕ) : ℤ)) (by push_cast; ring)).inv z)
       (ih (dimensionShiftDownMap f) hy) using 1
-    · dsimp only [hy]
+    · -- Holds by `rfl` because `Int.negSucc (n + 1) + 1` reduces to `Int.negSucc n`, so the
+      -- degree-`Int.negSucc n` naturality square from `ih` and the one from the rewrite agree.
+      dsimp only [hy]
       rfl
     · rw [Units.smul_def, Units.smul_def, map_zsmul,
         ← ModuleCat.comp_apply, ← ModuleCat.comp_apply,
