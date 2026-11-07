@@ -190,7 +190,8 @@ private theorem dim_add_le_one_add_dim_add_of_effective (hF : IsFunctionField k 
           using hxLA
       obtain ⟨c, hc⟩ := (isIntegrallyClosedIn_iff_forall_isAlgebraic.mp hex) (x : F)
         (_root_.mem_algebraicClosure_iff.mp
-          (mem_algebraicClosure_of_mul_mem_riemannRochSpace hF hspace hz0 hzord x.2 hxprodA))
+          (mem_algebraicClosure_of_mul_mem_riemannRochSpace hF hz0 hzord x.2
+            (by rwa [hspace])))
       apply Submodule.mem_span_singleton.mpr
       refine ⟨c, Subtype.ext ?_⟩
       simpa only [oneB, Submodule.coe_smul_of_tower, Algebra.smul_def, mul_one] using hc

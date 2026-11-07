@@ -63,8 +63,8 @@ Fields and Codes*, 2nd ed., Definition 1.4.4 through Definition 1.4.10.
   `ℓ(D) ≤ deg D⁺ + [algebraicClosure k F : k]` and hence `ℓ(D) ≤ deg D⁺ + 1` over an exact
   constant field (Proposition 1.4.9).
 * `TauCeti.mem_algebraicClosure_of_mul_mem_riemannRochSpace`: a section `x` of `L(B)` with
-  `z * x ∈ L(A)`, for `z` of the exact order `-D.coeff P` on the support of `B` and
-  `L(D) = L(A)`, is algebraic over the constants.
+  `z * x ∈ L(D)`, for `z` of the exact order `-D.coeff P` on the support of `B`, is algebraic
+  over the constants.
 * `TauCeti.dim_add_le_one_add_dim_add_of_finrank_ker_eq_one`: a map `L(B) → L(A + B) / L(A)` with
   one-dimensional kernel gives `ℓ(A) + ℓ(B) ≤ 1 + ℓ(A + B)`.
 
@@ -638,11 +638,11 @@ theorem Divisor.dim_eq_zero_of_lt_zero (hF : IsFunctionField k F) {D : Divisor k
     (riemannRochSpace_eq_bot_of_lt_zero hF hD)
 
 /-- A section `x` of `L(B)` such that `z * x ∈ L(D)`, where `z` has the exact order `-D.coeff P` at
-every place `P` in the support of `B` and `L(D)` is `L(A)`, is algebraic over the constants. -/
+every place `P` in the support of `B`, is algebraic over the constants. -/
 theorem mem_algebraicClosure_of_mul_mem_riemannRochSpace (hF : IsFunctionField k F)
-    {A B D : Divisor k F} (hspace : riemannRochSpace D = riemannRochSpace A) {z x : F}
+    {B D : Divisor k F} {z x : F}
     (hz0 : z ≠ 0) (hzord : ∀ P ∈ B.support, P.ord z = -D.coeff P)
-    (hxB : x ∈ riemannRochSpace B) (hxz : z * x ∈ riemannRochSpace A) :
+    (hxB : x ∈ riemannRochSpace B) (hxz : z * x ∈ riemannRochSpace D) :
     x ∈ algebraicClosure k F := by
   apply (Place.mem_algebraicClosure_iff_forall_mem_integers hF).mpr
   intro P
@@ -651,7 +651,7 @@ theorem mem_algebraicClosure_of_mul_mem_riemannRochSpace (hF : IsFunctionField k
   · simp [hx0]
   by_cases hPB : P ∈ B.support
   · have hbound := (mem_riemannRochSpace_iff_neg_le_ord (mul_ne_zero hz0 hx0)).mp
-      (hspace ▸ hxz) P
+      hxz P
     rw [P.ord_mul hz0 hx0, hzord P hPB] at hbound
     omega
   · have hxbound := (mem_riemannRochSpace_iff_neg_le_ord hx0).mp hxB P
