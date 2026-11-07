@@ -64,6 +64,21 @@ namespace PDE
 variable {ι : Type*} [Fintype ι] [DecidableEq ι] {F : Type*} [NormedAddCommGroup F]
   [NormedSpace ℝ F]
 
+/-- If a continuous linear automorphism `e` satisfies `‖e y‖ ^ 2 = q y` and `q` is bounded below by
+`λ ‖y‖ ^ 2` with `0 < λ`, then `‖e⁻¹ x‖ ≤ ‖x‖ / √λ`. -/
+theorem norm_symm_le_inv_sqrt_mul_norm {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {e : E ≃L[ℝ] E} {q : E → ℝ} {lam : ℝ} (hlam : 0 < lam) (hnorm : ∀ y, ‖e y‖ ^ 2 = q y)
+    (hA : ∀ ξ, lam * ‖ξ‖ ^ 2 ≤ q ξ) (x : E) : ‖e.symm x‖ ≤ (√lam)⁻¹ * ‖x‖ := by
+  -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
+  have h := hA (e.symm x)
+  rw [← hnorm, e.apply_symm_apply] at h
+  have hl : √lam * ‖e.symm x‖ ≤ ‖x‖ := by
+    rw [← Real.sqrt_sq (norm_nonneg x), ← Real.sqrt_sq (norm_nonneg (e.symm x)),
+      ← Real.sqrt_mul hlam.le]
+    exact Real.sqrt_le_sqrt h
+  rw [inv_mul_eq_div, le_div_iff₀' (Real.sqrt_pos.2 hlam)]
+  exact hl
+
 /-- **A constant-coefficient operator is the Laplacian in suitable linear coordinates.** Let `A`
 be a square matrix whose quadratic form satisfies `λ ‖ξ‖² ≤ ξᵀ A ξ ≤ Λ ‖ξ‖²` with `0 < λ`. Then
 there is a continuous linear automorphism `e` of `EuclideanSpace ℝ ι`, with
@@ -110,15 +125,7 @@ theorem exists_continuousLinearEquiv_laplacian_comp_eq {A : Matrix ι ι ℝ} {l
     simpa [Matrix.toQuadraticForm'_apply, EuclideanSpace.inner_eq_star_dotProduct, hTt,
       dotProduct_comm] using h
   refine ⟨e, fun x => ?_, fun y => ?_, fun u y hu => ?_⟩
-  · -- `√λ ‖y‖ ≤ ‖e y‖`, applied to `y = e⁻¹ x`.
-    have h := hA (e.symm x)
-    rw [← hnorm, e.apply_symm_apply] at h
-    have hl : √lam * ‖e.symm x‖ ≤ ‖x‖ := by
-      rw [← Real.sqrt_sq (norm_nonneg x), ← Real.sqrt_sq (norm_nonneg (e.symm x)),
-        ← Real.sqrt_mul hlam.le]
-      exact Real.sqrt_le_sqrt h
-    rw [inv_mul_eq_div, le_div_iff₀' (Real.sqrt_pos.2 hlam)]
-    exact hl
+  · exact norm_symm_le_inv_sqrt_mul_norm hlam hnorm hA x
   · rw [← Real.sqrt_sq (norm_nonneg (e y)), hnorm, ← Real.sqrt_sq (norm_nonneg y),
       ← Real.sqrt_mul' _ (sq_nonneg _)]
     exact Real.sqrt_le_sqrt (hA' y)
