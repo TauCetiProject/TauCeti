@@ -37,11 +37,12 @@ Probabilistic Number Theory*, Chapter II.1).
 * `TauCeti.LSeries.differentiableOn_mul_integral_of_isBigO`: under the bound `A(n) = O(n ^ r)`,
   the function `s ↦ s * ∫ t in Set.Ioi 1, A(⌊t⌋₊) * t ^ (-(s + 1))` is
   complex-differentiable on `{s | r < s.re}`.
-* `TauCeti.LSeries.integrableOn_sum_mul_cpow_of_bound` and
-  `TauCeti.LSeries.norm_mul_integral_le_of_bound`: uniformly bounded partial sums give an
-  absolutely convergent integral and the explicit bound `C * ‖s‖ / s.re` on `Re(s) > 0`.
+* `TauCeti.LSeries.integrableOn_sum_mul_cpow_of_isBigO`: under the same bound the integral
+  converges absolutely on `{s | r < s.re}`.
+* `TauCeti.LSeries.norm_mul_integral_le_of_bound`: uniformly bounded partial sums give the
+  explicit bound `C * ‖s‖ / s.re` on `Re(s) > 0`.
 * `TauCeti.LSeries.exists_differentiableOn_eq_LSeries_sub_div_of_isBigO`: if instead the partial
-  sums are `κ n + O(n ^ r)` with `0 ≤ r ≤ 1`, then `LSeries f s - κ / (s - 1)` continues
+  sums are `κ n + O(n ^ r)` with `r ≤ 1`, then `LSeries f s - κ / (s - 1)` continues
   holomorphically from `Re s > 1` to `Re s > r`. When `r < 1` this half-plane contains `s = 1`, so
   there `LSeries f` has at most a simple pole, at `s = 1`, with residue `κ`.
 -/
@@ -77,6 +78,35 @@ private theorem integral_Ioi_one_eq_mellin (f : ℕ → ℂ) (s : ℂ) :
     setIntegral_indicator measurableSet_Ici,
     Set.inter_eq_right.mpr (Set.Ici_subset_Ioi.mpr zero_lt_one), integral_Ici_eq_integral_Ioi]
 
+/-- The partial-sum step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k` is locally integrable on
+`(0, ∞)`. -/
+private theorem locallyIntegrableOn_sum_Icc_natFloor (f : ℕ → ℂ) :
+    LocallyIntegrableOn (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (Set.Ioi 0) := by
+  simpa using (locallyIntegrableOn_mul_sum_Icc f le_rfl (m := 1)
+    (g := fun _ ↦ (1 : ℂ)) (locallyIntegrableOn_const 1)).mono_set Set.Ioi_subset_Ici_self
+
+/-- A bound `O(n ^ r)` on the partial sums transfers to the step function
+`t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k` as `O(t ^ r)`. -/
+private theorem isBigO_sum_Icc_natFloor (f : ℕ → ℂ) {r : ℝ}
+    (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) :
+    (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) =O[atTop] (· ^ r) := by
+  have hmax : (fun t : ℝ ↦ max t 0) =ᶠ[atTop] fun t ↦ t := by
+    filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
+    exact max_eq_left ht
+  have hequiv : (fun t : ℝ ↦ (⌊t⌋₊ : ℝ)) ~[atTop] fun t ↦ max t 0 :=
+    isEquivalent_nat_floor.congr_right hmax.symm
+  exact (hO.comp_tendsto tendsto_nat_floor_atTop).trans <|
+    (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
+      (hmax.fun_comp fun t ↦ t ^ r)
+
+/-- The step function `t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k` vanishes near `0`, so it is `O(g)` there for
+every `g`. -/
+private theorem isBigO_sum_Icc_natFloor_nhdsGT_zero (f : ℕ → ℂ) (g : ℝ → ℝ) :
+    (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) =O[𝓝[>] 0] g := by
+  refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
+  filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
+  exact (sum_Icc_one_natFloor_eq_zero f ht.2).symm
+
 /-- **Holomorphy of the partial-summation integral.** If the partial sums
 `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, then
 `s ↦ s * ∫ t in Set.Ioi 1, (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * t ^ (-(s + 1))` is complex-differentiable
@@ -89,59 +119,30 @@ theorem differentiableOn_mul_integral_of_isBigO (f : ℕ → ℂ) {r : ℝ}
     DifferentiableOn ℂ
       (fun s : ℂ ↦ s * ∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
       {s | r < s.re} := by
-  set A : ℝ → ℂ := fun t ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k
-  have hloc : LocallyIntegrableOn A (Set.Ioi 0) := by
-    simpa [A] using (locallyIntegrableOn_mul_sum_Icc f le_rfl (m := 1)
-      (g := fun _ ↦ (1 : ℂ)) (locallyIntegrableOn_const 1)).mono_set Set.Ioi_subset_Ici_self
-  have htop : A =O[atTop] (· ^ (-(-r))) := by
-    simp_rw [neg_neg]
-    have hmax : (fun t : ℝ ↦ max t 0) =ᶠ[atTop] fun t ↦ t := by
-      filter_upwards [eventually_ge_atTop (0 : ℝ)] with t ht
-      exact max_eq_left ht
-    have hequiv : (fun t : ℝ ↦ (⌊t⌋₊ : ℝ)) ~[atTop] fun t ↦ max t 0 :=
-      isEquivalent_nat_floor.congr_right hmax.symm
-    exact (hO.comp_tendsto tendsto_nat_floor_atTop).trans <|
-      (hequiv.rpow fun _ ↦ le_max_right _ _).isBigO.congr' EventuallyEq.rfl
-        (hmax.fun_comp fun t ↦ t ^ r)
-  have hbot (b : ℝ) : A =O[𝓝[>] 0] (· ^ (-b)) := by
-    refine (isBigO_zero _ _).congr' ?_ EventuallyEq.rfl
-    filter_upwards [Ioo_mem_nhdsGT zero_lt_one] with t ht
-    exact (sum_Icc_one_natFloor_eq_zero f ht.2).symm
   intro s hs
-  have hmellin : DifferentiableAt ℂ (fun z : ℂ ↦ mellin A (-z)) s :=
-    (mellin_differentiableAt_of_isBigO_rpow hloc htop (by simpa using hs) (hbot ((-s).re - 1))
-      (by linarith)).comp s differentiableAt_id.neg
+  have hmellin : DifferentiableAt ℂ
+      (fun z : ℂ ↦ mellin (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-z)) s :=
+    (mellin_differentiableAt_of_isBigO_rpow (a := -r) (locallyIntegrableOn_sum_Icc_natFloor f)
+      (by rw [neg_neg]; exact isBigO_sum_Icc_natFloor f hO) (by simpa using hs)
+      (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)).comp s
+      differentiableAt_id.neg
   simp_rw [integral_Ioi_one_eq_mellin]
   exact (differentiableAt_id.mul hmellin).differentiableWithinAt
 
-private theorem ae_norm_sum_mul_cpow_le (f : ℕ → ℂ) {C : ℝ}
-    (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) (s : ℂ) :
-    ∀ᵐ (t : ℝ) ∂volume.restrict (Set.Ioi (1 : ℝ)),
-      ‖(∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1))‖ ≤
-        C * t ^ (-(s.re + 1)) := by
-  filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
-  rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht)]
-  simp only [neg_re, add_re, one_re]
-  exact mul_le_mul_of_nonneg_right (hf _) (Real.rpow_nonneg (zero_lt_one.trans ht).le _)
-
-/-- Uniformly bounded partial sums give an absolutely convergent partial-summation integral
-on `Re(s) > 0`. -/
-theorem integrableOn_sum_mul_cpow_of_bound (f : ℕ → ℂ) {C : ℝ}
-    (hf : ∀ n, ‖∑ k ∈ Icc 1 n, f k‖ ≤ C) {s : ℂ} (hs : 0 < s.re) :
+/-- If the partial sums `∑ k ∈ Icc 1 n, f k` are `O(n ^ r)`, the partial-summation integral
+converges absolutely on the half-plane `r < Re s`. -/
+theorem integrableOn_sum_mul_cpow_of_isBigO (f : ℕ → ℂ) {r : ℝ}
+    (hO : (fun n ↦ ∑ k ∈ Icc 1 n, f k) =O[atTop] fun n ↦ (n : ℝ) ^ r) {s : ℂ} (hs : r < s.re) :
     IntegrableOn (fun t : ℝ ↦ (∑ k ∈ Icc 1 ⌊t⌋₊, f k) * (t : ℂ) ^ (-(s + 1)))
       (Set.Ioi 1) := by
-  have hloc : LocallyIntegrableOn
-      (fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1)) * (∑ k ∈ Icc 1 ⌊t⌋₊, f k)) (Set.Ici 1) := by
-    refine locallyIntegrableOn_mul_sum_Icc f zero_le_one
-      (g := fun t : ℝ ↦ (t : ℂ) ^ (-(s + 1))) ?_
-    refine ContinuousOn.locallyIntegrableOn (fun t ht ↦ ?_) measurableSet_Ici
-    exact (continuousAt_ofReal_cpow_const _ _
-      (.inr (zero_lt_one.trans_le ht).ne')).continuousWithinAt
-  exact ((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1)
-    zero_lt_one).const_mul C).mono'
-      (by simpa only [mul_comm] using
-        (hloc.mono_set Set.Ioi_subset_Ici_self).aestronglyMeasurable)
-      (ae_norm_sum_mul_cpow_le f hf s)
+  have hconv : MellinConvergent (fun t : ℝ ↦ ∑ k ∈ Icc 1 ⌊t⌋₊, f k) (-s) :=
+    mellinConvergent_of_isBigO_rpow (a := -r) (locallyIntegrableOn_sum_Icc_natFloor f)
+      (by rw [neg_neg]; exact isBigO_sum_Icc_natFloor f hO) (by simpa using hs)
+      (isBigO_sum_Icc_natFloor_nhdsGT_zero f _) (sub_one_lt (-s).re)
+  refine (hconv.mono_set (Set.Ioi_subset_Ioi zero_le_one)).congr_fun (fun t _ ↦ ?_)
+    measurableSet_Ioi
+  dsimp only
+  rw [smul_eq_mul, mul_comm, neg_add']
 
 /-- If partial sums are bounded by `C`, their partial-summation continuation has norm at most
 `C * ‖s‖ / s.re` on `Re(s) > 0`. -/
@@ -152,22 +153,22 @@ theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
   have hbound : ‖∫ t in Set.Ioi (1 : ℝ), (∑ k ∈ Icc 1 ⌊t⌋₊, f k) *
       (t : ℂ) ^ (-(s + 1))‖ ≤ C / s.re := by
     calc
-      _ ≤ ∫ t in Set.Ioi (1 : ℝ), C * t ^ (-(s.re + 1)) :=
-        norm_integral_le_of_norm_le
-          ((integrableOn_Ioi_rpow_of_lt (by linarith : -(s.re + 1) < -1)
-            zero_lt_one).const_mul C) (ae_norm_sum_mul_cpow_le f hf s)
+      _ ≤ ∫ t in Set.Ioi (1 : ℝ), C * t ^ (-(s.re + 1)) := by
+        refine norm_integral_le_of_norm_le ((integrableOn_Ioi_rpow_of_lt
+          (by linarith : -(s.re + 1) < -1) zero_lt_one).const_mul C) ?_
+        filter_upwards [ae_restrict_mem measurableSet_Ioi] with t ht
+        rw [norm_mul, norm_cpow_eq_rpow_re_of_pos (zero_lt_one.trans ht)]
+        simp only [neg_re, add_re, one_re]
+        exact mul_le_mul_of_nonneg_right (hf _) (Real.rpow_nonneg (zero_lt_one.trans ht).le _)
       _ = C / s.re := by
         rw [integral_const_mul, integral_Ioi_rpow_of_lt (by linarith) zero_lt_one,
           Real.one_rpow]
-        congr 1
         ring
-  rw [norm_mul]
-  calc
-    _ ≤ ‖s‖ * (C / s.re) := mul_le_mul_of_nonneg_left hbound (norm_nonneg _)
-    _ = C * ‖s‖ / s.re := by ring
+  rw [norm_mul, mul_comm C, mul_div_assoc]
+  exact mul_le_mul_of_nonneg_left hbound (norm_nonneg _)
 
 /-- **Continuation of an L-series with its pole at `s = 1` removed.** If the partial sums
-`∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` with `0 ≤ r ≤ 1` and `LSeries f` converges absolutely on
+`∑ k ∈ Icc 1 n, f k` are `κ n + O(n ^ r)` with `r ≤ 1` and `LSeries f` converges absolutely on
 `Re s > 1`, then there is a function holomorphic on the half-plane `Re s > r` that agrees with
 `LSeries f s - κ / (s - 1)` on `Re s > 1`. When `r < 1`, so that the half-plane contains `s = 1`,
 `LSeries f` therefore continues meromorphically to `Re s > r` with at most a simple pole, at
@@ -175,7 +176,7 @@ theorem norm_mul_integral_le_of_bound (f : ℕ → ℂ) {C : ℝ}
 
 `TauCeti.exists_differentiableOn_eq_dedekindZeta_sub` is the Dedekind-zeta instance. -/
 theorem exists_differentiableOn_eq_LSeries_sub_div_of_isBigO (f : ℕ → ℂ) (κ : ℂ) {r : ℝ}
-    (hr₀ : 0 ≤ r) (hr₁ : r ≤ 1)
+    (hr : r ≤ 1)
     (hO : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, f k - κ * n) =O[atTop] fun n ↦ (n : ℝ) ^ r)
     (hf : ∀ s : ℂ, 1 < s.re → LSeriesSummable f s) :
     ∃ G : ℂ → ℂ, DifferentiableOn ℂ G {s | r < s.re} ∧
@@ -185,6 +186,13 @@ theorem exists_differentiableOn_eq_LSeries_sub_div_of_isBigO (f : ℕ → ℂ) (
   have hO' : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (f - κ • (1 : ℕ → ℂ)) k) =O[atTop]
       fun n ↦ (n : ℝ) ^ r := by
     simpa only [hsum] using hO
+  -- Mathlib's integral representation needs a nonnegative exponent, so weaken `r` to `max r 0`.
+  have hO₀ : (fun n : ℕ ↦ ∑ k ∈ Icc 1 n, (f - κ • (1 : ℕ → ℂ)) k) =O[atTop]
+      fun n ↦ (n : ℝ) ^ max r 0 := by
+    refine hO'.trans <| .of_bound' ?_
+    filter_upwards [eventually_ge_atTop 1] with n hn
+    rw [Real.norm_of_nonneg (by positivity), Real.norm_of_nonneg (by positivity)]
+    exact Real.rpow_le_rpow_of_exponent_le (mod_cast hn) (le_max_left r 0)
   -- Subtracting `κ` times the coefficients of the Riemann zeta function leaves partial sums
   -- `O(n ^ r)`, so the partial-summation integral of `f - κ` continues its `L`-series; add
   -- `κ (ζ(s) - 1/(s-1))`, which is entire (Mathlib's `riemannZeta₀`).
@@ -196,7 +204,8 @@ theorem exists_differentiableOn_eq_LSeries_sub_div_of_isBigO (f : ℕ → ℂ) (
     LSeriesSummable.smul _ (LSeriesSummable_one_iff.mpr hs)
   have hs0 : s ≠ 1 := fun h ↦ by simp [h] at hs
   dsimp only
-  rw [← LSeries_eq_mul_integral _ hr₀ (hr₁.trans_lt hs) ((hf s hs).sub hs1) hO',
+  rw [← LSeries_eq_mul_integral _ (le_max_right r 0) (max_lt (hr.trans_lt hs) (by linarith))
+      ((hf s hs).sub hs1) hO₀,
     LSeries_sub (hf s hs) hs1, LSeries_smul, LSeries_one_eq_riemannZeta hs,
     riemannZeta_eq_inv_sub_add hs0]
   ring
