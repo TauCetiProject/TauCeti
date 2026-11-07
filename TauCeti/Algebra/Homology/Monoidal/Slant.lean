@@ -5,9 +5,9 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import TauCeti.Algebra.Category.ModuleCat.Monoidal.TensorMk
 public import TauCeti.Algebra.Homology.Kronecker
 public import TauCeti.Algebra.Homology.Monoidal.Homology.Cross
-public import TauCeti.Algebra.Homology.Monoidal.Summand
 public import TauCeti.Algebra.Homology.Monoidal.Tensor.Differential
 
 /-!
@@ -30,7 +30,7 @@ and a cocycle slanted by a boundary is a coboundary, so the slant product descen
 
 `Hₚ(K) × Hⁿ(Hom(T, P)) ⟶ H^q(Hom(L, P))`
 
-(`TauCeti.ChainComplex.slant`). It is characterized by the evaluation law
+(`TauCeti.ChainComplex.slant`). It satisfies the evaluation law
 `⟨φ / x, y⟩ = ⟨φ, D_*(x × y)⟩` for homology classes `x ∈ Hₚ(K)` and `y ∈ H_q(L)`
 (`TauCeti.ChainComplex.kronecker_slant`), where `x × y` is the homology cross product
 `HomologicalComplex.homologyCross`, and it is natural along maps of the triples `(K, L, T)`
@@ -72,45 +72,19 @@ variable {k : Type u} [CommRing k] {K L T : ChainComplex (ModuleCat.{u} k) ℕ} 
 
 section Cochain
 
-/-- Tensoring on the left with a fixed element `z ∈ M`, as a morphism `N ⟶ M ⊗ N`. -/
-private def tensorElem {M N : ModuleCat.{u} k} (z : M) : N ⟶ M ⊗ N :=
-  ModuleCat.ofHom (TensorProduct.mk k M N z)
-
-@[reassoc]
-private lemma tensorElem_whiskerLeft {M N N' : ModuleCat.{u} k} (z : M) (g : N' ⟶ N) :
-    g ≫ tensorElem (N := N) z = tensorElem z ≫ (M ◁ g) := by
-  ext v
-  rfl
-
-@[reassoc]
-private lemma tensorElem_whiskerRight {M M' N : ModuleCat.{u} k} (z : M) (g : M ⟶ M') :
-    tensorElem (N := N) z ≫ (g ▷ N) = tensorElem (g z) := by
-  ext v
-  rfl
-
-private lemma tensorElem_add {M N : ModuleCat.{u} k} (z z' : M) :
-    tensorElem (N := N) (z + z') = tensorElem z + tensorElem z' := by
-  ext v
-  exact TensorProduct.add_tmul z z' v
-
-private lemma tensorElem_smul {M N : ModuleCat.{u} k} (r : k) (z : M) :
-    tensorElem (N := N) (r • z) = r • tensorElem z := by
-  ext v
-  exact TensorProduct.smul_tmul' r z v
-
 variable (k) in
 /-- **The slant product of a chain and a cochain** along `D : K ⊗ L ⟶ T`: for `p + q = n`, the
 `k`-bilinear map sending a chain `z ∈ K_p` and a cochain `φ : T_n ⟶ P` to the cochain
 `v ↦ φ (D (z ⊗ v))` on `L_q` (`TauCeti.ChainComplex.slantCochain_apply`). -/
 def slantCochain (p q n : ℕ) (h : p + q = n) : K.X p →ₗ[k] (T.X n ⟶ P) →ₗ[k] (L.X q ⟶ P) :=
-  LinearMap.mk₂ k (fun z φ ↦ tensorElem z ≫ ιTensorObj K L p q n h ≫ D.f n ≫ φ)
-    (fun z z' φ ↦ by rw [tensorElem_add, Preadditive.add_comp])
-    (fun r z φ ↦ by rw [tensorElem_smul, Linear.smul_comp])
+  LinearMap.mk₂ k (fun z φ ↦ ModuleCat.tensorMk z ≫ ιTensorObj K L p q n h ≫ D.f n ≫ φ)
+    (fun z z' φ ↦ by rw [ModuleCat.tensorMk_add, Preadditive.add_comp])
+    (fun r z φ ↦ by rw [ModuleCat.tensorMk_smul, Linear.smul_comp])
     (fun z φ φ' ↦ by simp only [Preadditive.comp_add])
     (fun r z φ ↦ by simp only [Linear.comp_smul])
 
 private lemma slantCochain_eq (p q n : ℕ) (h : p + q = n) (z : K.X p) (φ : T.X n ⟶ P) :
-    slantCochain k D p q n h z φ = tensorElem z ≫ ιTensorObj K L p q n h ≫ D.f n ≫ φ :=
+    slantCochain k D p q n h z φ = ModuleCat.tensorMk z ≫ ιTensorObj K L p q n h ≫ D.f n ≫ φ :=
   LinearMap.mk₂_apply ..
 
 /-- The slant product `φ / z` evaluates `φ` on `D (z ⊗ v)`. -/
@@ -132,7 +106,7 @@ lemma d_comp_slantCochain_zero (q : ℕ) (z : K.X 0) (φ : T.X q ⟶ P) :
     L.d (q + 1) q ≫ slantCochain k D 0 q q (zero_add q) z φ =
       slantCochain k D 0 (q + 1) (q + 1) (zero_add _) z (T.d (q + 1) q ≫ φ) := by
   rw [slantCochain_eq, slantCochain_eq, D.comm_assoc, tensorObj_d_eq,
-    tensorElem_whiskerLeft_assoc]
+    ModuleCat.comp_tensorMk_assoc]
   simp only [Preadditive.add_comp, Preadditive.comp_add,
     ChainComplex.ιTensorObj_D₁_zero_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc, zero_comp,
     zero_add, pow_zero, one_smul, Category.assoc]
@@ -149,7 +123,7 @@ lemma slantCochain_d_comp_succ (p s n : ℕ) (h : p + 1 + s = n) (w : K.X (p + 1
   simp only [Preadditive.add_comp, Preadditive.comp_add,
     ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_succ_assoc,
     Preadditive.zsmul_comp, Preadditive.comp_zsmul, Category.assoc,
-    tensorElem_whiskerRight_assoc, tensorElem_whiskerLeft_assoc]
+    ModuleCat.tensorMk_whiskerRight_assoc, ModuleCat.comp_tensorMk_assoc]
 
 /-- **The slant product by a boundary, in degree zero of `L`**: for a chain `w ∈ K_{p+1}`,
 `φ / ∂w = δφ / w` on `L_0`. -/
@@ -159,7 +133,7 @@ lemma slantCochain_d_zero (p : ℕ) (w : K.X (p + 1)) (φ : T.X p ⟶ P) :
   rw [slantCochain_eq, slantCochain_eq, D.comm_assoc, tensorObj_d_eq]
   simp only [Preadditive.add_comp, Preadditive.comp_add,
     ChainComplex.ιTensorObj_D₁_succ_assoc, ChainComplex.ιTensorObj_D₂_zero_assoc, zero_comp,
-    add_zero, tensorElem_whiskerRight_assoc]
+    add_zero, ModuleCat.tensorMk_whiskerRight_assoc]
 
 /-- **Naturality of the slant product of chains and cochains**: if chain maps `f : K' ⟶ K`,
 `g : L' ⟶ L` and `e : T' ⟶ T` satisfy `(f ⊗ g) ≫ D = D' ≫ e`, then slanting the pulled-back
@@ -182,7 +156,10 @@ section Cohomology
 
 variable (k) in
 /-- The slant product of chains and cochains `TauCeti.ChainComplex.slantCochain`, as a bilinear
-map into the cochain modules of the complexes `Hom(-, -)`. -/
+map into the cochain modules of the complexes `Hom(-, -)`. The cochain module
+`(L.linearYonedaObj k P).X q` agrees with `L.X q ⟶ P` only after unfolding `linearYonedaObj`, so
+`rw` and `simp` with the `iCycles` and `toCycles` lemmas of `linearYonedaObj` match values of this
+map but not values of `slantCochain`. -/
 private def slantCochainHom (p q n : ℕ) (h : p + q = n) :
     K.X p →ₗ[k] (T.linearYonedaObj k P).X n →ₗ[k] (L.linearYonedaObj k P).X q :=
   slantCochain k D p q n h
@@ -233,12 +210,6 @@ private lemma slantCochain_d_of_d_comp_eq_zero (p s n : ℕ) (h : p + 1 + s = n)
     neg_neg] at hd
   exact hd
 
-private lemma d_comp_slantCochainHom_iCycles (p q n : ℕ) (h : p + q = n) (z : K.cycles p)
-    (φ : (T.linearYonedaObj k P).cycles n) :
-    L.d (q + 1) q ≫ slantCochainHom k D p q n h (K.iCycles p z)
-      ((T.linearYonedaObj k P).iCycles n φ) = 0 :=
-  d_comp_slantCochain_iCycles D p q n h z _ (d_comp_linearYonedaObj_iCycles _ _ φ)
-
 private lemma slantCochainHom_d_of_d_comp_eq_zero (p s n : ℕ) (h : p + 1 + s = n)
     (w : K.X (p + 1)) (φ : (T.linearYonedaObj k P).cycles n) :
     slantCochainHom k D p (s + 1) n (by omega) (K.d (p + 1) p w)
@@ -255,7 +226,7 @@ private def slantCyclesLeft (p q n : ℕ) (h : p + q = n) (z : K.cycles p) :
     (ModuleCat.ofHom (slantCochainHom k D p q n h (K.iCycles p z) ∘ₗ
       ((T.linearYonedaObj k P).iCycles n).hom)) (q + 1) (by simp) (by
         ext φ
-        exact d_comp_slantCochainHom_iCycles D p q n h z φ)
+        exact d_comp_slantCochain_iCycles D p q n h z _ (d_comp_linearYonedaObj_iCycles _ _ φ))
 
 private lemma iCycles_slantCyclesLeft (p q n : ℕ) (h : p + q = n) (z : K.cycles p)
     (φ : (T.linearYonedaObj k P).cycles n) :
@@ -436,15 +407,6 @@ lemma slant_homologyπ (p q n : ℕ) (h : p + q = n) (z : K.cycles p)
     (toCycles_comp_slantCyclesHomology D p q n h)).2 z
   rw [slant, ← slantHomologyLeft_homologyπ]
   exact LinearMap.congr_fun hfac _
-
-/-- The Kronecker map on the classes of a cocycle `φ` and a cycle `x` is `φ` evaluated on `x`, as
-an equation of elements. -/
-private lemma kronecker_homologyπ_homologyπ {X : ChainComplex (ModuleCat.{u} k) ℕ} (i : ℕ)
-    (φ : (X.linearYonedaObj k P).cycles i) (x : X.cycles i) :
-    kronecker k X P i ((X.linearYonedaObj k P).homologyπ i φ) (X.homologyπ i x) =
-      ConcreteCategory.hom (X := X.X i) (Y := P) ((X.linearYonedaObj k P).iCycles i φ)
-        (X.iCycles i x) :=
-  ConcreteCategory.congr_hom (kronecker_homologyπ i φ) x
 
 /-- **The evaluation law of the slant product**, `⟨φ / x, y⟩ = ⟨φ, D_*(x × y)⟩`: the Kronecker
 pairing of the slant product `φ / x` with a class `y ∈ H_q(L)` is the Kronecker pairing of `φ`

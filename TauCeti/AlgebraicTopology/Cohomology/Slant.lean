@@ -22,7 +22,7 @@ on `Y` represented by the cochain `σ ↦ φ (u_*(z × σ))`, where `z` is a cyc
 `z × σ` is the shuffle product of singular chains. It is the slant product of chains and cochains
 `TauCeti.ChainComplex.slant` along the shuffle map followed by `u`, with `X` as the first factor.
 
-The slant product is characterized by the evaluation law
+The slant product satisfies the evaluation law
 `⟨φ / x, y⟩ = ⟨φ, u_*(x × y)⟩` (`TopCat.singularKronecker_singularSlant`), where `x × y` is the
 homology cross product `TopCat.singularHomologyCross`; on the classes of a cycle and a cocycle it
 is the class of the slant product of representatives (`TopCat.singularSlant_homologyπ`), and it is
