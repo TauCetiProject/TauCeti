@@ -26,6 +26,8 @@ These are the archimedean unit inputs to the narrow ambiguous class number formu
 
 * `NumberField.isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_one`: a unit of
   conjugation norm one is, up to sign, totally positive.
+* `NumberField.mul_ringOfIntegersQuadraticConj_eq_one_of_isTotallyPositive`: a totally positive
+  unit has conjugation norm one.
 * `NumberField.exists_isTotallyPositive_notMem_square`: under the stated real and norm-one
   hypotheses, there is a totally positive unit that is not a square.
 -/
@@ -70,6 +72,23 @@ theorem isTotallyPositive_or_neg_of_mul_ringOfIntegersQuadraticConj_eq_neg_one
   have hcoe : ((θ * u : 𝓞 K) : K) = (θ : K) * (u : K) := by push_cast; ring
   rw [hcoe, map_mul, norm_gen_eq_neg_radicand hmin hgen, hu]
   linarith
+
+/-- A totally positive unit of a quadratic field has norm one: the conjugate product is not `-1`. -/
+theorem mul_ringOfIntegersQuadraticConj_eq_one_of_isTotallyPositive
+    (hmin : minpoly ℤ θ = X ^ 2 - C d) (hgen : Algebra.adjoin ℚ {(θ : K)} = ⊤)
+    {ε : (𝓞 K)ˣ} (hpos : IsTotallyPositive ((ε : 𝓞 K) : K)) :
+    (ε : 𝓞 K) * ringOfIntegersQuadraticConj hmin hgen (ε : 𝓞 K) = 1 := by
+  rcases mul_ringOfIntegersQuadraticConj_unit_eq_one_or_neg_one hmin hgen ε with h | h
+  · exact h
+  · have hεK : (((ε : 𝓞 K) : K)) ≠ 0 :=
+      RingOfIntegers.coe_ne_zero_iff.mpr ε.ne_zero
+    have hnorm_pos := norm_pos_of_isTotallyPositive hεK hpos
+    have hnorm_neg : Algebra.norm ℚ (((ε : 𝓞 K) : K)) = -1 := by
+      apply (algebraMap ℚ K).injective
+      rw [algebraMap_norm_eq_mul_ringOfIntegersQuadraticConj hmin hgen, h]
+      simp
+    rw [hnorm_neg] at hnorm_pos
+    norm_num at hnorm_pos
 
 open scoped Pointwise in
 /-- **A real quadratic field with no unit of norm `-1` has a totally positive unit that is not a
