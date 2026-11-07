@@ -14,9 +14,9 @@ Every finite-dimensional realization contains a minimal sub-realization, with a 
 subspace annihilated by all simple roots. Thus an arbitrary realization differs from a minimal
 one only by central directions. We compute the dimension of these extra central directions.
 
-Restriction to a subspace is a realization when it contains the coroots and, together with the
-Cartan center, spans the ambient space. This criterion ensures that the restricted roots remain
-independent even for singular matrices.
+For the construction `CartanRealization.restrict` in `Realization/Basic.lean`, we characterize
+minimality by `cartanCenter ⊓ M ≤ corootSpan` in `isMinimal_restrict_iff`. We then prove the
+central splitting and compute the dimension of a complement to any minimal sub-realization.
 
 The mathematical source is V. G. Kac, *Infinite-dimensional Lie algebras*, third edition,
 §1.1, Proposition 1.1 and Proposition 1.6.
