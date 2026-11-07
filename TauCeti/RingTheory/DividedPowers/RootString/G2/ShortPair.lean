@@ -186,6 +186,9 @@ private theorem mul_g2ShortPairMonomial (hxy : x * y = y * x + z)
   rw [mul_dividedPower_shortPairMonomial hxy hxz hzy hxw hxs hys hzw hzs hws
     (n - b - c - 2 * d) b c d, hA, eqB, eqC]
 
+-- The reindexing architecture of the next four lemmas follows the proof of the other type-`G₂`
+-- configuration in `TauCeti.RingTheory.DividedPowers.RootString.G2.Basic`.
+
 /-- Reindexing the `x`-derivative term raising the exponent of `z` in the series. -/
 private theorem sum_g2ShortPairMonomial_shift_fst {n k : ℕ} :
     ∑ p ∈ {p ∈ g2ShortPairSeriesIndex n k |
