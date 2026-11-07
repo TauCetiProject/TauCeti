@@ -35,36 +35,6 @@ local subgroups at all but finitely many primes.
 
 public section
 
-namespace QuadraticMap
-
-open Module TauCeti TauCeti.QuadraticMap
-
-noncomputable section
-
-variable {K V ι : Type*} [Field K] [TopologicalSpace K] [IsTopologicalRing K]
-  [AddCommGroup V] [Module K V] [Finite ι]
-
-/-- The coordinates of the image of a basis vector under an orthogonal transformation depend
-continuously on the transformation. -/
-theorem continuous_equivFun_orthogonalGroup_apply_basis
-    (Q : QuadraticForm K V) (b : Basis ι K V) (i : ι) :
-    Continuous (fun g : orthogonalGroup Q ↦ b.equivFun ((g : V ≃ₗ[K] V) (b i))) := by
-  classical
-  have := Fintype.ofFinite ι
-  have hM : Continuous (fun g : orthogonalGroup Q ↦
-      LinearMap.toMatrix b b (g : V ≃ₗ[K] V).toLinearMap) :=
-    (IsModuleTopology.continuous_of_linearMap
-      (LinearMap.toMatrixAlgEquiv b).toLinearMap).comp
-      (continuous_linearEquiv_toLinearMap.comp continuous_subtype_val)
-  exact (continuous_pi fun k ↦ ((continuous_apply i).comp
-    ((continuous_apply k).comp hM))).congr fun g ↦ by
-      ext k
-      exact LinearMap.toMatrix_apply b b (g : V ≃ₗ[K] V).toLinearMap k i
-
-end
-
-end QuadraticMap
-
 namespace TauCeti
 namespace QuadraticMap
 
