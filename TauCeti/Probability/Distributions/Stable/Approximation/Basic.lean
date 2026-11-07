@@ -8,6 +8,7 @@ module
 public import TauCeti.Probability.Distributions.CompoundPoisson.Basic
 public import TauCeti.Probability.Distributions.Stable.LevyKhintchine
 public import Mathlib.Probability.Moments.IntegrableExpMul
+import TauCeti.MeasureTheory.Integral.Bochner.Set
 import TauCeti.Probability.Distributions.Affine
 import TauCeti.Probability.Distributions.CompoundPoisson.Transforms
 
@@ -93,20 +94,12 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
     rw [charFun_apply_real, ProbabilityTheory.cond, integral_smul_measure,
       ENNReal.toReal_inv, Complex.real_smul, Complex.ofReal_inv]
     simp only [Complex.ofReal_mul]
-  have hfinite : IsFiniteMeasure (ν.restrict s) :=
-    isFiniteMeasure_stableLevyMeasure_restrict_abs_gt hε
-  have hexp : IntegrableOn (fun x : ℝ ↦ Complex.exp ((t * x : ℝ) * Complex.I)) s ν := by
-    let _ := hfinite
-    exact Integrable.of_bound (by fun_prop) 1 (ae_of_all _ fun x ↦ by
-      simpa using (Complex.norm_exp_ofReal_mul_I (t * x)).le)
-  have hsin : IntegrableOn (fun x : ℝ ↦ sin x) s ν := by
-    let _ := hfinite
-    exact Integrable.of_bound (by fun_prop) 1
-      (ae_of_all _ fun x ↦ by simpa using abs_sin_le_one x)
-  have hone : IntegrableOn (fun _ : ℝ ↦ (1 : ℂ)) s ν := integrableOn_const hm_top
+  have hexp := integrableOn_exp_ofReal_mul_I_of_measure_ne_top (ν := ν) (s := s) t hm_top
+  have hsin := integrableOn_sin_of_measure_ne_top (ν := ν) (s := s) hm_top
   have hsinC : IntegrableOn (fun x : ℝ ↦ (t * sin x : ℝ) * Complex.I) s ν := by
-    apply (hsin.ofReal.const_mul ((t : ℂ) * Complex.I)).congr
+    refine (hsin.ofReal.const_mul ((t : ℂ) * Complex.I)).congr ?_
     exact ae_of_all _ fun x ↦ by simp only [Complex.ofReal_mul]; ring_nf; rfl
+  have hone : IntegrableOn (fun _ : ℝ ↦ (1 : ℂ)) s ν := integrableOn_const hm_top
   -- Translation contributes the compensating phase. The compound-Poisson exponent then
   -- cancels the cutoff mass introduced by normalization.
   rw [stableCompensatedPoissonMeasure_def]
@@ -125,19 +118,7 @@ theorem charFun_stableCompensatedPoissonMeasure {α β ε : ℝ}
   have hsub₂ := integral_sub hexp hone
   simp only [Pi.sub_apply] at hsub₁ hsub₂
   rw [hsub₁, hsub₂, integral_const]
-  have hsin_integral :
-      ∫ x in s, (t * sin x : ℝ) * Complex.I ∂ν = (t * c : ℝ) * Complex.I := by
-    calc
-      _ = ((t : ℂ) * Complex.I) * ∫ x in s, (sin x : ℂ) ∂ν := by
-        rw [← integral_const_mul]
-        congr with x
-        push_cast
-        ring
-      _ = ((t : ℂ) * Complex.I) * (c : ℂ) := by
-        congr 1
-        exact integral_ofReal
-      _ = (t * c : ℝ) * Complex.I := by push_cast; ring
-  rw [hsin_integral]
+  rw [integral_mul_const, integral_complex_ofReal, integral_const_mul]
   have hm_real : (ν s).toReal ≠ 0 := ENNReal.toReal_ne_zero.mpr ⟨hm0, hm_top⟩
   have hinner : inner ℝ (-c) t = -t * c := by rw [Real.inner_apply]; ring
   rw [hinner, measureReal_restrict_apply_univ]

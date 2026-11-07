@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.Sobolev.Leibniz
 public import TauCeti.Analysis.Sobolev.Wkp.Basic
 import TauCeti.Analysis.Sobolev.Wkp.LineDeriv
+import TauCeti.MeasureTheory.Function.Lp.Norm
 import TauCeti.MeasureTheory.Function.LpSeminorm.ContinuousOn
 
 /-!
@@ -26,6 +27,10 @@ the recorded weak derivatives of any Sobolev function whose value is `ζ u`:
   `TauCeti.Wkp.iteratedGradient 1 w`, a field of endomorphisms of `E`, and `a ⊗ b` denotes the
   rank-one map `v ↦ ⟪a, v⟫ b`. The remainder `∇ζ ⊗ ∇u + ∇u ⊗ ∇ζ + u D²ζ` is at most
   `2 ‖∇ζ‖ ‖∇u‖ + ‖D²ζ‖ |u|` pointwise in operator norm (`TauCeti.norm_leibnizRemainder_le`).
+* consequently `‖D²w - ζ D²u‖ ≤ 2 c₁ ‖∇u‖ + c₂ ‖u‖` for `‖∇ζ‖ ≤ c₁`, `‖D²ζ‖ ≤ c₂`
+  (`TauCeti.Wkp.norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul`), and for a cutoff `ζ`
+  with `|ζ| ≤ 1`, `‖D²w‖ ≤ ‖D²u‖ + 2 c₁ ‖∇u‖ + c₂ ‖u‖`
+  (`TauCeti.Wkp.norm_iteratedGradient_one_le_of_value_ae_eq_mul`).
 
 Nothing is assumed about `ζ` beyond smoothness, nor about `Ω` beyond openness: the formulas follow
 from uniqueness of weak derivatives, so they hold for every `w` with value `ζ u`, however it was
@@ -122,6 +127,52 @@ theorem iteratedGradient_one_ae_eq_of_value_ae_eq_mul (hzeta : ContDiff ℝ ∞ 
   filter_upwards [(hasWeakFDerivOn_iteratedGradient 0 w).ae_eq h] with x hx
   simp only [hx, Pi.add_apply, value_succ, hfd]
   abel
+
+/-- **The weak Hessian of a product, minus the principal part.** If `u, w ∈ W^{2,p}(Ω)` and
+`w = ζ u` almost everywhere on `Ω` for a smooth `ζ` with `‖∇ζ‖ ≤ c₁` and `‖D²ζ‖ ≤ c₂`, and
+`ζ D²u ∈ Lᵖ(Ω)`, then
+
+`‖D²w - ζ D²u‖ ≤ 2 c₁ ‖∇u‖ + c₂ ‖u‖`. -/
+theorem norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul {u w : Wkp mu Omega p 2}
+    {c₁ c₂ : ℝ} (hzeta : ContDiff ℝ ∞ zeta) (hg : ∀ x, ‖∇ zeta x‖ ≤ c₁)
+    (hh : ∀ x, ‖fderiv ℝ (∇ zeta) x‖ ≤ c₂)
+    (hzu : MemLp (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega))
+    (hw : (value 2 w : E → ℝ) =ᵐ[mu.restrict Omega] fun x => zeta x * value 2 u x) :
+    ‖iteratedGradient 1 w - hzu.toLp _‖ ≤
+      2 * c₁ * ‖iteratedGradient 0 (lowerOrder 1 u)‖ + c₂ * ‖value 2 u‖ := by
+  have hc₁ : 0 ≤ c₁ := (norm_nonneg _).trans (hg 0)
+  have hc₂ : 0 ≤ c₂ := (norm_nonneg _).trans (hh 0)
+  have hD := iteratedGradient_one_ae_eq_of_value_ae_eq_mul hzeta hw
+  refine TauCeti.Lp.norm_le_add_of_ae_norm_le (by positivity) hc₂ ?_
+  filter_upwards [Lp.coeFn_sub (iteratedGradient 1 w) (hzu.toLp _), hD, hzu.coeFn_toLp] with
+    x h1 h2 h3
+  rw [h1, Pi.sub_apply, h2, h3, add_assoc, add_assoc, add_sub_cancel_left, ← add_assoc]
+  exact (norm_leibnizRemainder_le zeta _ _ x).trans (by gcongr <;> apply_assumption)
+
+/-- **The weak Hessian of a cutoff.** If `u, w ∈ W^{2,p}(Ω)` and `w = η u` almost everywhere on `Ω`
+for a smooth `η` with `|η| ≤ 1`, `‖∇η‖ ≤ c₁` and `‖D²η‖ ≤ c₂`, then
+
+`‖D²w‖ ≤ ‖D²u‖ + 2 c₁ ‖∇u‖ + c₂ ‖u‖`. -/
+theorem norm_iteratedGradient_one_le_of_value_ae_eq_mul {u w : Wkp mu Omega p 2} {c₁ c₂ : ℝ}
+    (hzeta : ContDiff ℝ ∞ zeta) (habs : ∀ x, |zeta x| ≤ 1)
+    (hg : ∀ x, ‖∇ zeta x‖ ≤ c₁) (hh : ∀ x, ‖fderiv ℝ (∇ zeta) x‖ ≤ c₂)
+    (hw : (value 2 w : E → ℝ) =ᵐ[mu.restrict Omega] fun x => zeta x * value 2 u x) :
+    ‖iteratedGradient 1 w‖ ≤ ‖iteratedGradient 1 u‖ +
+      (2 * c₁ * ‖iteratedGradient 0 (lowerOrder 1 u)‖ + c₂ * ‖value 2 u‖) := by
+  have hzu : MemLp (fun x => zeta x • iteratedGradient 1 u x) p (mu.restrict Omega) :=
+    (memLp_top_of_bound hzeta.continuous.aestronglyMeasurable 1
+      (Filter.Eventually.of_forall fun x => by simpa [Real.norm_eq_abs] using habs x)).smul
+      (Lp.memLp _)
+  have hzun : ‖hzu.toLp _‖ ≤ ‖iteratedGradient 1 u‖ := by
+    refine Lp.norm_le_norm_of_ae_le ?_
+    filter_upwards [hzu.coeFn_toLp] with x hx
+    rw [hx, norm_smul, Real.norm_eq_abs]
+    exact mul_le_of_le_one_left (norm_nonneg _) (habs x)
+  have h := norm_add_le (hzu.toLp _)
+    (iteratedGradient 1 w - hzu.toLp _)
+  rw [add_sub_cancel] at h
+  exact h.trans
+    (add_le_add hzun (norm_iteratedGradient_one_sub_toLp_le_of_value_ae_eq_mul hzeta hg hh hzu hw))
 
 /-- **Smooth multiplication in `W^{k,p}`.** Let `Ω` have compact closure inside an open set `U`.
 If `ψ` is smooth on `U` and `u ∈ W^{k,p}(Ω)`, then `ψ u` lies in `W^{k,p}(Ω)`: some element of

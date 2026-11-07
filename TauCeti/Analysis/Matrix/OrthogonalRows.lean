@@ -26,6 +26,8 @@ a coordinate selection.
   consists of some rows of a unitary matrix.
 * `Matrix.exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix` — a matrix is an invertible
   square factor of its Gram matrix times such a row selection.
+* `Matrix.exists_orthogonal_mul_eq_mul_submatrix_one` — the same over `ℝ`, with the row selection
+  written as a submatrix of the identity matrix times an invertible orthogonal matrix.
 -/
 
 public section
@@ -70,5 +72,22 @@ theorem exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix [Fintype m] (M : Ma
       _ = 1 := by simp [← hT, conjTranspose_nonsing_inv]
   obtain ⟨Q, hQ, hQV⟩ := exists_mul_conjTranspose_eq_one_and_submatrix_eq (T⁻¹ * M) he hVV
   exact ⟨Q, hQ, by simp [hQV, ← Matrix.mul_assoc]⟩
+
+/-- **A matrix is an invertible square factor times a row selection of an orthogonal matrix.** Over
+`ℝ`, if `T * Tᵀ = A * Aᵀ` with `T` invertible and `e : m → n` injective, then `A = T * (E * Q)`
+for a row selection `E` of the identity matrix at the indices `e i` and an invertible orthogonal
+matrix `Q`. -/
+theorem exists_orthogonal_mul_eq_mul_submatrix_one {m n : Type*} [Fintype m] [DecidableEq m]
+    [Fintype n] [DecidableEq n] {e : m → n} (he : Function.Injective e) (A : Matrix m n ℝ)
+    (Tm : Matrix m m ℝ) (hTm : Tm.det ≠ 0) (hA : Tm * Tmᵀ = A * Aᵀ) :
+    ∃ Q : Matrix n n ℝ, Q * Qᵀ = 1 ∧ Q.det ≠ 0 ∧
+      A = Tm * ((1 : Matrix n n ℝ).submatrix e id * Q) := by
+  obtain ⟨Q, hQ, hQfac⟩ := exists_mul_conjTranspose_eq_one_and_eq_mul_submatrix A he hTm
+    (by simpa using hA)
+  rw [conjTranspose_eq_transpose_of_trivial] at hQ
+  refine ⟨Q, hQ, det_ne_zero_of_right_inverse hQ, ?_⟩
+  have hsel : (1 : Matrix n n ℝ).submatrix e id * Q = Q.submatrix e id := by
+    simpa using one_submatrix_mul e (Equiv.refl n) Q
+  rw [hsel, hQfac]
 
 end Matrix
