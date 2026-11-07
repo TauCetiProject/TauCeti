@@ -31,6 +31,19 @@ public section
 
 open Filter Polynomial Topology
 
+namespace Polynomial
+
+/-- Translating by `τ` and reflecting at a degree bound `d` sends the root `a⁻¹ + τ` of `p` to
+the root `a` of `(taylor τ p).reflect d`, for nonzero `a`, when `natDegree p ≤ d`. -/
+theorem isRoot_reflect_taylor_iff {K : Type*} [Field K] {p : K[X]} {d : ℕ}
+    (hp : p.natDegree ≤ d) (τ : K) {a : K} (ha : a ≠ 0) :
+    ((taylor τ p).reflect d).IsRoot a ↔ p.IsRoot (a⁻¹ + τ) := by
+  let : Invertible a⁻¹ := invertibleOfNonzero (inv_ne_zero ha)
+  have h := eval₂_reflect_eq_zero_iff (RingHom.id K) a⁻¹ d (taylor τ p) (by simpa using hp)
+  simpa [IsRoot.def, eval₂_id, taylor_apply, eval_comp] using h
+
+end Polynomial
+
 namespace TauCeti
 
 /-- Every finite root of a nonzero central fiber is approximated by roots of nearby fibers
@@ -62,12 +75,8 @@ theorem eventually_exists_isRoot_norm_sub_lt
     · rwa [htop]
   let u : K := (z - τ)⁻¹
   have hu : u ≠ 0 := inv_ne_zero hzτ
-  have hroot : (G x₀).IsRoot u := by
-    let : Invertible (z - τ) := invertibleOfNonzero hzτ
-    have h := (eval₂_reflect_eq_zero_iff (RingHom.id K) (z - τ) d
-      (taylor τ (F x₀)) (by simpa using hdeg.self_of_nhds)).2
-        (by simpa [taylor_apply, eval_comp] using hz.eq_zero)
-    simpa only [eval₂_id, invOf_eq_inv, G, u, IsRoot.def] using h
+  have hroot : (G x₀).IsRoot u :=
+    (isRoot_reflect_taylor_iff hdeg.self_of_nhds τ hu).2 (by simpa [u] using hz)
   -- Choose the matching tolerance in reciprocal coordinates, keeping away from zero.
   have hclose : ∀ᶠ b in 𝓝 u, b ≠ 0 ∧ ‖z - (b⁻¹ + τ)‖ < ε := by
     have hcont : ContinuousAt (fun b : K ↦ ‖z - (b⁻¹ + τ)‖) u :=
@@ -95,10 +104,6 @@ theorem eventually_exists_isRoot_norm_sub_lt
     rw [hb, eval_mul, eval_C, eval_prod]
     apply mul_eq_zero_of_right
     exact Finset.prod_eq_zero (Finset.mem_univ i) (by simp)
-  let : Invertible ((b i)⁻¹) := invertibleOfNonzero (inv_ne_zero hbi.1)
-  have h := (eval₂_reflect_eq_zero_iff (RingHom.id K) ((b i)⁻¹) d
-    (taylor τ (F x)) (by simpa using hxdeg)).1
-      (by simpa only [eval₂_id, invOf_eq_inv, inv_inv] using hbroot)
-  simpa [IsRoot.def, eval₂_id, taylor_apply, eval_comp] using h
+  exact (isRoot_reflect_taylor_iff hxdeg τ hbi.1).1 hbroot
 
 end TauCeti
