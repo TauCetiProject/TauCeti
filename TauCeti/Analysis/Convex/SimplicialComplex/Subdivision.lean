@@ -260,9 +260,9 @@ private theorem exists_subdivision_lt_succ {L K : SimplicialComplex ℝ E}
       exact hKP k hk
     obtain ⟨hsp, hfin⟩ := hK'C ⟨k, hk⟩
     exact ⟨hsp, hfin (finite_faces_restrict_of_forall_lt
-      (fun k => Module.finrank ℝ (vectorSpan ℝ (P k))) hPc hPlf hLfin
+      (fun k => Module.finrank ℝ (vectorSpan ℝ (P k))) k (hPc k) hPlf (hLfin k)
       (fun m hm => (hKP m hm).2) (fun s hs => (hKf s hs).imp_right fun ⟨m, hm, _, hsm⟩ =>
-        ⟨m, hm, hsm⟩) k)⟩
+        ⟨m, hm, hsm⟩))⟩
   · rcases hK'f s hs with hsK | ⟨⟨i, hi⟩, hpi, hsi⟩
     · exact (hKf s hsK).imp_right fun ⟨k, hk, hpk, hsk⟩ => ⟨k, by omega, hpk, hsk⟩
     · exact .inr ⟨i, by omega, hpi, hsi⟩

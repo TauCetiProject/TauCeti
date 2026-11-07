@@ -192,19 +192,19 @@ theorem locallyFinite_convexHull_of_finite_restrict {K L : SimplicialComplex �
   · exact .inr (Set.mem_biUnion (x := i) ⟨y, (hPv i).convexHull_subset_iff.2 hσi hyσ, hyV⟩
       (mem_restrict_faces.2 ⟨σ.2, hσi⟩))
 
-/-- The restriction of `K` to a cell `P k` has finitely many faces, if the cells are compact and
-locally finite, the restriction of `L` to every cell has finitely many faces, the restriction of
+/-- The restriction of `K` to a cell `P k` has finitely many faces, if `P k` is compact, the cells
+are locally finite, the restriction of `L` to `P k` has finitely many faces, the restriction of
 `K` to every cell `P m` with `d m < n` has finitely many faces, and every face of `K` is a face of
 `L` or lies in such a cell. -/
 theorem finite_faces_restrict_of_forall_lt {L K : SimplicialComplex 𝕜 E} {P : ι → Set E}
-    (d : ι → ℕ) {n : ℕ} (hPc : ∀ i, IsCompact (P i)) (hPlf : LocallyFinite P)
-    (hLfin : ∀ i, (L.restrict (P i)).faces.Finite)
+    (d : ι → ℕ) {n : ℕ} (k : ι) (hPc : IsCompact (P k)) (hPlf : LocallyFinite P)
+    (hLfin : (L.restrict (P k)).faces.Finite)
     (hKP : ∀ k, d k < n → (K.restrict (P k)).faces.Finite)
     (hKf : ∀ s ∈ K.faces, s ∈ L.faces ∨
-      ∃ k, d k < n ∧ (s : Set E) ⊆ P k) (k : ι) :
+      ∃ k, d k < n ∧ (s : Set E) ⊆ P k) :
     (K.restrict (P k)).faces.Finite := by
-  refine ((hLfin k).union (((hPlf.finite_nonempty_inter_compact
-    (hPc k)).inter_of_left {m | d m < n}).biUnion
+  refine (hLfin.union (((hPlf.finite_nonempty_inter_compact
+    hPc).inter_of_left {m | d m < n}).biUnion
       fun m hm => hKP m hm.2)).subset ?_
   -- a face of `K` in `P k` is a face of `L` or lies in a smaller cell meeting `P k`
   intro s hs
