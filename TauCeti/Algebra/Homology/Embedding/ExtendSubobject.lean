@@ -27,18 +27,23 @@ complex is set up.
 
 ## Main results
 
-* `HomologicalComplex.mono_extendMap`: extension preserves degreewise monomorphisms, and so
-  monomorphisms when the category has pullbacks.
+* `HomologicalComplex.mono_extendMap`: extension preserves degreewise monomorphisms.
+* `HomologicalComplex.mono_extendMap_of_mono`: when the category has pullbacks, extension preserves
+  monomorphisms, and `e.extendFunctor C` preserves monomorphisms. This is the dual of
+  `HomologicalComplex.epi_extendMap` (`ExtendHomology/Sequence.lean`), which needs an abelian
+  category.
 * `HomologicalComplex.mem_range_extendMap_f_iff`: for complexes of modules, in the degree `e.f i`
   the range of an extended chain map is the range of the chain map in degree `i`.
 * `CategoryTheory.Subobject.extend_eq_mk`, `CategoryTheory.Subobject.mk_extend`: the extension of
   a subcomplex is the subcomplex of the extended inclusion, and that of `Subobject.mk f` is
   `Subobject.mk` of the extension of `f`.
+* `CategoryTheory.Subobject.extendIso`: the extended subcomplex is isomorphic to the extension of
+  the subcomplex, compatibly with the inclusions (`CategoryTheory.Subobject.extendIso_inv_arrow`).
 * `CategoryTheory.Subobject.extend_mono`, `CategoryTheory.Subobject.extend_bot`,
   `CategoryTheory.Subobject.extend_top`: extension of subcomplexes is monotone and preserves `⊥`
   and `⊤`.
 * `CategoryTheory.Subobject.epi_extend_arrow_f`,
-  `CategoryTheory.Subobject.epi_extend_arrow_f_of_notMem`: the degrees in which the inclusion of
+  `CategoryTheory.Subobject.epi_extend_arrow_f_of_forall_ne`: the degrees in which the inclusion of
   the extended subcomplex is an epimorphism.
 * `CategoryTheory.Subobject.extend_factors`: extension is compatible with chain maps.
 * `CategoryTheory.Subobject.mem_range_extend_arrow_f_iff`: for complexes of modules, in the degree
@@ -74,6 +79,10 @@ instance mono_extendMap_of_mono [HasPullbacks C] (φ : K ⟶ L) [Mono φ] :
     Mono (extendMap φ e) :=
   have (i : ι) : Mono (φ.f i) := (eval C c i).map_mono φ
   mono_extendMap e φ
+
+/-- With pullbacks, extension along an embedding of complex shapes preserves monomorphisms. -/
+instance [HasPullbacks C] : (e.extendFunctor C).PreservesMonomorphisms :=
+  ⟨fun φ _ ↦ mono_extendMap_of_mono e φ⟩
 
 /-- Extension along an embedding of complex shapes preserves isomorphisms. -/
 instance (φ : K ⟶ L) [IsIso φ] : IsIso (extendMap φ e) :=
@@ -123,6 +132,25 @@ theorem mk_extend {A : HomologicalComplex C c} (f : A ⟶ K) [Mono f] :
     rw [Functor.mapIso_hom, ComplexShape.Embedding.extendFunctor_map,
       ← HomologicalComplex.extendMap_comp, Subobject.underlyingIso_hom_comp_eq_mk])
 
+/-- The extended subcomplex is isomorphic to the extension of the subcomplex. -/
+def extendIso (S : Subobject K) :
+    ((S.extend e : Subobject (K.extend e)) : HomologicalComplex C c') ≅
+      (S : HomologicalComplex C c).extend e :=
+  Subobject.underlyingIso (HomologicalComplex.extendMap S.arrow e)
+
+/-- Under `extendIso`, the inclusion of the extended subcomplex is the extension of the
+inclusion. -/
+@[reassoc (attr := simp)]
+theorem extendIso_inv_arrow (S : Subobject K) :
+    (S.extendIso e).inv ≫ (S.extend e).arrow = HomologicalComplex.extendMap S.arrow e :=
+  Subobject.underlyingIso_arrow _
+
+/-- Under `extendIso`, the inclusion of the extended subcomplex is the extension of the
+inclusion. -/
+theorem arrow_eq_extendIso_hom_comp (S : Subobject K) :
+    (S.extend e).arrow = (S.extendIso e).hom ≫ HomologicalComplex.extendMap S.arrow e := by
+  rw [← extendIso_inv_arrow, Iso.hom_inv_id_assoc]
+
 /-- Extension of subcomplexes is monotone. -/
 theorem extend_mono {S T : Subobject K} (h : S ≤ T) : S.extend e ≤ T.extend e :=
   Subobject.mk_le_mk_of_comm (HomologicalComplex.extendMap (Subobject.ofLE S T h) e) (by
@@ -145,26 +173,27 @@ the inclusion of `S` is one in degree `i`. In an abelian category, this says tha
 subcomplex is everything in degree `e.f i` when `S` is everything in degree `i`. -/
 theorem epi_extend_arrow_f (S : Subobject K) {i : ι} {i' : ι'} (hi : e.f i = i')
     [Epi (S.arrow.f i)] : Epi ((S.extend e).arrow.f i') := by
-  rw [extend_eq_mk, ← Subobject.underlyingIso_hom_comp_eq_mk, HomologicalComplex.comp_f,
+  rw [arrow_eq_extendIso_hom_comp, HomologicalComplex.comp_f,
     HomologicalComplex.extendMap_f _ e hi]
   infer_instance
 
 /-- Outside the image of the embedding, the inclusion of the extended subcomplex is an
 epimorphism, because the term of `K.extend e` there is zero. -/
-theorem epi_extend_arrow_f_of_notMem (S : Subobject K) {i' : ι'} (hi' : ∀ i, e.f i ≠ i') :
+theorem epi_extend_arrow_f_of_forall_ne (S : Subobject K) {i' : ι'} (hi' : ∀ i, e.f i ≠ i') :
     Epi ((S.extend e).arrow.f i') :=
-  ⟨fun g h _ ↦ (K.isZero_extend_X e i' hi').eq_of_src g h⟩
+  (K.isZero_extend_X e i' hi').epi _
 
 /-- If the composite of the inclusion of `S` with a chain map `φ` factors through `T`, then the
 same holds for the extended subcomplexes and the extended chain map. -/
 theorem extend_factors (φ : K ⟶ L) {S : Subobject K} {T : Subobject L}
     (h : T.Factors (S.arrow ≫ φ)) :
     (T.extend e).Factors ((S.extend e).arrow ≫ HomologicalComplex.extendMap φ e) := by
-  rw [extend_eq_mk e S, ← Subobject.underlyingIso_hom_comp_eq_mk, Category.assoc,
-    ← HomologicalComplex.extendMap_comp, ← Subobject.factorThru_arrow _ _ h,
-    HomologicalComplex.extendMap_comp, extend_eq_mk e T]
-  exact Subobject.factors_of_factors_right _
-    ((Subobject.mk_factors_iff _ _).2 ⟨HomologicalComplex.extendMap (T.factorThru _ h) e, rfl⟩)
+  have hw : (S.extend e).arrow ≫ HomologicalComplex.extendMap φ e =
+      ((S.extendIso e).hom ≫ HomologicalComplex.extendMap (T.factorThru _ h) e ≫
+        (T.extendIso e).inv) ≫ (T.extend e).arrow := by
+    simp [arrow_eq_extendIso_hom_comp e S, ← HomologicalComplex.extendMap_comp]
+  rw [hw]
+  exact Subobject.factors_comp_arrow _
 
 section ModuleCat
 

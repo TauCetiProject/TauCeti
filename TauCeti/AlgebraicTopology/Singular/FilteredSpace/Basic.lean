@@ -92,8 +92,7 @@ lemma singularChainFiltrationι_def (q : ℤ) :
         ComplexShape.embeddingDownNat := by
   rw [singularChainFiltrationι]
 
-/-- The singular chains of `X q` form a subcomplex of those of `Y`, also after reindexing: the
-inclusion is a monomorphism before reindexing, and extension preserves monomorphisms. -/
+/-- The singular chains of `X q` form a subcomplex of those of `Y`, also after reindexing. -/
 instance (q : ℤ) : Mono (singularChainFiltrationι R X q) := by
   have : Mono (SSet.chainComplexMap (TopCat.toSSet.map (TopPair.ofSubset (X q)).map) R) :=
     ((TopPair.ofSubset (X q)).shortExact_singularChainComplexShortComplex R).mono_f
