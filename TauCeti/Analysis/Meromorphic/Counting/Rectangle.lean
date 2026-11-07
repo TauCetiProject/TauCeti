@@ -69,6 +69,7 @@ theorem zeroCount_reProdIm_Ioc_eq_add (hf : MeromorphicOn f U)
         zeroCount f U (Icc σ₁ σ₂ ×ℂ Ioc t₂ t₃) := by
   obtain ⟨hsplit, hdisjoint, hfirst, hsecond⟩ := rectangle_partition hf ht12 ht23 hU
   rw [← hsplit]
-  exact zeroCount_union hdisjoint hfirst hsecond
+  exact zeroCount_union hdisjoint (zeroCount_support_finite hfirst)
+    (zeroCount_support_finite hsecond)
 
 end TauCeti

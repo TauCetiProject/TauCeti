@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.Analysis.Meromorphic.Divisor
+public import TauCeti.Analysis.Meromorphic.Divisor
 
 /-!
 # Counting zeros and poles in a region
@@ -26,22 +26,7 @@ open Set
 
 variable {𝕜 : Type*} [NontriviallyNormedField 𝕜]
   {E : Type*} [NormedAddCommGroup E] [NormedSpace 𝕜 E]
-  {f : 𝕜 → E} {U R S K : Set 𝕜}
-
-/-- A meromorphic divisor has finite support on any subset of a compact set in its domain. -/
-theorem MeromorphicOn.divisor_finite_inter_support_of_isCompact
-    (hf : MeromorphicOn f U) (hK : IsCompact K) (hKU : K ⊆ U) (hRK : R ⊆ K) :
-    (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite := by
-  apply ((MeromorphicOn.divisor f K).finiteSupport hK).subset
-  intro z hz
-  simpa only [Function.mem_support, hf.divisor_apply (hKU (hRK hz.1)),
-    (hf.mono_set hKU).divisor_apply (hRK hz.1)] using hz.2
-
-/-- A bounded region has finite divisor support when its closure is in the meromorphic domain. -/
-theorem MeromorphicOn.divisor_finite_inter_support [ProperSpace 𝕜]
-    (hf : MeromorphicOn f U) (hR : Bornology.IsBounded R) (hRU : closure R ⊆ U) :
-    (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
-  hf.divisor_finite_inter_support_of_isCompact hR.isCompact_closure hRU subset_closure
+  {f : 𝕜 → E} {U R S : Set 𝕜}
 
 namespace TauCeti
 
@@ -87,11 +72,11 @@ theorem zeroCount_support_finite
 
 /-- Without negative divisor values, the signed count agrees with the natural zero count. -/
 theorem divisorCount_eq_zeroCount
-    (hR : (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite)
     (hnonneg : ∀ z ∈ R, 0 ≤ MeromorphicOn.divisor f U z) :
     divisorCount f U R = (zeroCount f U R : ℤ) := by
-  have hcast := (Nat.castAddMonoidHom ℤ).map_finsum_mem' (zeroCount_support_finite hR)
-  simp only [Nat.coe_castAddMonoidHom] at hcast
+  have hcast := (Nat.castAddMonoidHom ℤ).map_finsum_of_injective
+    Nat.cast_injective (fun z ↦ ∑ᶠ _ : z ∈ R, (MeromorphicOn.divisor f U z).toNat)
+  simp only [AddMonoidHom.map_finsum_Prop, Nat.coe_castAddMonoidHom] at hcast
   rw [divisorCount_def, zeroCount_def, hcast]
   exact finsum_congr fun z ↦ finsum_congr fun hz ↦ (Int.toNat_of_nonneg (hnonneg z hz)).symm
 
@@ -102,33 +87,32 @@ theorem divisorCount_union (hRS : Disjoint R S)
     divisorCount f U (R ∪ S) = divisorCount f U R + divisorCount f U S :=
   finsum_mem_union' hRS hR hS
 
-/-- The zero count is additive on disjoint regions with finite divisor support. -/
+/-- The zero count is additive on disjoint regions with finite positive support. -/
 theorem zeroCount_union (hRS : Disjoint R S)
-    (hR : (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite)
-    (hS : (S ∩ Function.support (MeromorphicOn.divisor f U)).Finite) :
+    (hR : (R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite)
+    (hS : (S ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite) :
     zeroCount f U (R ∪ S) = zeroCount f U R + zeroCount f U S :=
-  finsum_mem_union' hRS (zeroCount_support_finite hR) (zeroCount_support_finite hS)
+  finsum_mem_union' hRS hR hS
 
 /-- Enlargement splits the zero count into the original region and the added region. -/
 theorem zeroCount_add_sdiff (hRS : R ⊆ S)
-    (hS : (S ∩ Function.support (MeromorphicOn.divisor f U)).Finite) :
+    (hS : (S ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite) :
     zeroCount f U R + zeroCount f U (S \ R) = zeroCount f U S :=
-  finsum_mem_add_sdiff' hRS (zeroCount_support_finite hS)
+  finsum_mem_add_sdiff' hRS hS
 
 /-- The zero count is monotone under enlargement, even when the function has poles. -/
 theorem zeroCount_mono (hRS : R ⊆ S)
-    (hS : (S ∩ Function.support (MeromorphicOn.divisor f U)).Finite) :
+    (hS : (S ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite) :
     zeroCount f U R ≤ zeroCount f U S := by
   rw [← zeroCount_add_sdiff hRS hS]
   exact Nat.le_add_right _ _
 
 /-- A finite zero count vanishes exactly when each positive multiplicity vanishes. -/
 theorem zeroCount_eq_zero_iff
-    (hR : (R ∩ Function.support (MeromorphicOn.divisor f U)).Finite) :
+    (hR : (R ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite) :
     zeroCount f U R = 0 ↔ ∀ z ∈ R, (MeromorphicOn.divisor f U z).toNat = 0 := by
   classical
-  rw [zeroCount_def, finsum_mem_eq_sum _ (zeroCount_support_finite hR),
-    Finset.sum_eq_zero_iff]
+  rw [zeroCount_def, finsum_mem_eq_sum _ hR, Finset.sum_eq_zero_iff]
   simp only [Finite.mem_toFinset, mem_inter_iff, Function.mem_support]
   constructor
   · intro h z hz
@@ -139,10 +123,10 @@ theorem zeroCount_eq_zero_iff
 
 /-- An enlargement leaves the count unchanged exactly when no positive multiplicity is added. -/
 theorem zeroCount_eq_iff_of_subset (hRS : R ⊆ S)
-    (hS : (S ∩ Function.support (MeromorphicOn.divisor f U)).Finite) :
+    (hS : (S ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite) :
     zeroCount f U R = zeroCount f U S ↔
       ∀ z ∈ S \ R, (MeromorphicOn.divisor f U z).toNat = 0 := by
-  have hdiff : ((S \ R) ∩ Function.support (MeromorphicOn.divisor f U)).Finite :=
+  have hdiff : ((S \ R) ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite :=
     hS.subset fun _ hz ↦ ⟨hz.1.1, hz.2⟩
   rw [← zeroCount_eq_zero_iff hdiff, ← zeroCount_add_sdiff hRS hS]
   omega
@@ -150,7 +134,7 @@ theorem zeroCount_eq_iff_of_subset (hRS : R ⊆ S)
 /-- If divisor values on the added region are nonnegative, unchanged count means zero divisor
 on that difference. No regularity of the chosen values at removable singularities is needed. -/
 theorem zeroCount_eq_iff_divisor_eq_zero (hRS : R ⊆ S)
-    (hS : (S ∩ Function.support (MeromorphicOn.divisor f U)).Finite)
+    (hS : (S ∩ Function.support (fun z ↦ (MeromorphicOn.divisor f U z).toNat)).Finite)
     (hnonneg : ∀ z ∈ S \ R, 0 ≤ MeromorphicOn.divisor f U z) :
     zeroCount f U R = zeroCount f U S ↔ ∀ z ∈ S \ R, MeromorphicOn.divisor f U z = 0 := by
   rw [zeroCount_eq_iff_of_subset hRS hS]
