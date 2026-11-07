@@ -7,6 +7,8 @@ module
 
 public import TauCeti.Algebra.AlgebraicGroup.GeneralLinear.StandardComodule
 public import TauCeti.Algebra.AlgebraicGroup.SpecialLinear.Basic
+import TauCeti.LinearAlgebra.Dual.Lemmas
+import TauCeti.LinearAlgebra.Matrix.GeneralLinearGroup.NonzeroVectors
 import Mathlib.LinearAlgebra.Transvection.Basic
 
 /-!
@@ -264,51 +266,15 @@ section Simple
 variable (k : Type u) [Field k] (m : ℕ) [NeZero m]
 
 omit [NeZero m] in
-/-- Any two nonzero vectors of `k^m` are exchanged by a linear automorphism. -/
-private theorem exists_linearEquiv_apply_eq {v w : Fin m → k} (hv : v ≠ 0) (hw : w ≠ 0) :
-    ∃ φ : (Fin m → k) ≃ₗ[k] (Fin m → k), φ w = v := by
-  -- Extend the equivalence between the two lines to an ambient equivalence.
-  let e : (k ∙ w) ≃ₗ[k] (k ∙ v) :=
-    (LinearEquiv.toSpanNonzeroSingleton k (Fin m → k) w hw).symm.trans
-      (LinearEquiv.toSpanNonzeroSingleton k (Fin m → k) v hv)
-  obtain ⟨φ, hφ⟩ := Submodule.exists_linearEquiv_restrict_eq e
-  have hφw : φ w = v := by
-    have hone := hφ ⟨w, Submodule.mem_span_singleton_self w⟩
-    have he : e ⟨w, Submodule.mem_span_singleton_self w⟩ =
-        ⟨v, Submodule.mem_span_singleton_self v⟩ := by
-      simp only [e, LinearEquiv.trans_apply]
-      rw [LinearEquiv.coord_self k (Fin m → k) w hw]
-      exact LinearEquiv.toSpanNonzeroSingleton_one k (Fin m → k) v hv
-    rw [he] at hone
-    exact hone.symm
-  exact ⟨φ, hφw⟩
-
-omit [NeZero m] in
-/-- For `m ≥ 2` and `v ≠ 0`, some linear functional vanishes at `v` and takes the value `1`
-at some vector. -/
-private theorem exists_dual_apply_eq_one {v : Fin m → k} (hm : 2 ≤ m) (hv : v ≠ 0) :
-    ∃ (f : Module.Dual k (Fin m → k)) (z : Fin m → k), f z = 1 ∧ f v = 0 := by
-  have hspan : k ∙ v ≠ ⊤ := by
-    intro htop
-    have hfin := congrArg
-      (fun S : Submodule k (Fin m → k) ↦ Module.finrank k S) htop
-    rw [finrank_span_singleton hv, finrank_top, Module.finrank_pi k] at hfin
-    simp only [Fintype.card_fin] at hfin
-    omega
-  obtain ⟨z, hz⟩ := SetLike.exists_notMem_of_ne_top (k ∙ v) hspan rfl
-  obtain ⟨f, hfz, hfspan⟩ :=
-    Submodule.exists_dual_map_eq_bot_of_notMem hz inferInstance
-  have hfv : f v = 0 := by
-    have hvmap : f v ∈ (k ∙ v).map f :=
-      ⟨v, Submodule.mem_span_singleton_self v, rfl⟩
-    rw [hfspan, Submodule.mem_bot] at hvmap
-    exact hvmap
-  let f' : Module.Dual k (Fin m → k) := (f z)⁻¹ • f
-  have hf'z : f' z = 1 := by
-    simp [f', hfz]
-  have hf'v : f' v = 0 := by
-    simp [f', hfv]
-  exact ⟨f', z, hf'z, hf'v⟩
+/-- For `m ≥ 2` and `v ≠ 0`, the line through `v` is not all of `k^m`. -/
+private theorem span_singleton_ne_top {v : Fin m → k} (hm : 2 ≤ m) (hv : v ≠ 0) :
+    k ∙ v ≠ ⊤ := by
+  intro htop
+  have hfin := congrArg
+    (fun S : Submodule k (Fin m → k) ↦ Module.finrank k S) htop
+  rw [finrank_span_singleton hv, finrank_top, Module.finrank_pi k] at hfin
+  simp only [Fintype.card_fin] at hfin
+  omega
 
 omit [NeZero m] in
 /-- For `m ≥ 2`, every nonzero vector of `k^m` is the image of every other one under a
@@ -317,10 +283,16 @@ private theorem exists_specialLinearGroup_mulVec {v w : Fin m → k} (hm : 2 ≤
     (hv : v ≠ 0) (hw : w ≠ 0) :
     ∃ g : Matrix.SpecialLinearGroup (Fin m) k,
       (g : Matrix (Fin m) (Fin m) k) *ᵥ w = v := by
-  obtain ⟨φ, hφw⟩ := exists_linearEquiv_apply_eq k m hv hw
+  obtain ⟨g, hg⟩ := TauCeti.exists_smul_eq_of_ne_zero hw hv
+  let φ : (Fin m → k) ≃ₗ[k] (Fin m → k) := (Matrix.GeneralLinearGroup.toLin g).toLinearEquiv
+  have hφw : φ w = v := by
+    simpa [φ, Units.smul_def, ← Matrix.mulVecLin_apply, ← Matrix.GeneralLinearGroup.coe_toLin]
+      using hg
   -- A second direction modulo `k · v` gives a rank-one correction that fixes `v` and has
   -- determinant inverse to that of `φ`.
-  obtain ⟨f', z, hf'z, hf'v⟩ := exists_dual_apply_eq_one k m hm hv
+  obtain ⟨f', z, hf'z, hf'v⟩ :=
+    Submodule.exists_dual_apply_eq_one_apply_eq_zero_of_span_singleton_ne_top
+      (span_singleton_ne_top k m hm hv)
   let d := LinearEquiv.det φ
   let z' : Fin m → k := ((↑d⁻¹ : k) - 1) • z
   have hf'z' : f' z' = (↑d⁻¹ : k) - 1 := by
