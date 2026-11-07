@@ -88,6 +88,22 @@ private theorem exists_sectionCover_pointsDivisor
     exact ht
   exact ⟨s, hs, inferInstance, hcovers⟩
 
+/-- A morphism is bounded by an ideal sheaf if it is on each member of an open cover of the
+source, provided the morphism is quasi-compact. -/
+theorem _root_.AlgebraicGeometry.Scheme.Hom.le_ker_of_openCover {X Y : Scheme.{u}} (f : X ⟶ Y)
+    [QuasiCompact f] (I : Y.IdealSheafData) (𝒰 : X.OpenCover) (h : ∀ a, I ≤ (𝒰.f a ≫ f).ker) :
+    I ≤ f.ker := by
+  rw [← f.iInf_ker_openCover_map_comp 𝒰]
+  exact le_iInf h
+
+/-- A morphism to the elliptic curve from a proper `S`-scheme has quasi-compact underlying map. -/
+private theorem quasiCompact_left_of_isProper {T : Over S} (f : T ⟶ Over.mk E.structureMap)
+    [IsProper T.hom] : QuasiCompact f.left := by
+  have : IsProper (f.left ≫ E.structureMap) := by
+    exact (Over.w f).symm ▸ (inferInstance : IsProper T.hom)
+  have := IsProper.of_comp f.left E.structureMap
+  infer_instance
+
 /-- A fibrewise injective finite family of torsion sections cuts out a subgroup scheme.
 The torsion level is required to be invertible on the base. -/
 theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFiberwiseInjective φ)
@@ -114,16 +130,6 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
   have : IsFinite D.hom :=
     inferInstanceAs (IsFinite ((E.pointsDivisor φ).subschemeι ≫ E.structureMap))
   have : IsProper (D ⊗ D).hom := by rw [Over.tensorObj_hom]; infer_instance
-  have hqc {T : Over S} (f : T ⟶ Over.mk E.structureMap) [IsProper T.hom] :
-      QuasiCompact f.left := by
-    have : IsProper (f.left ≫ E.structureMap) := by
-      exact (Over.w f).symm ▸ (inferInstance : IsProper T.hom)
-    have := IsProper.of_comp f.left E.structureMap
-    infer_instance
-  have hcheck {T : Scheme.{u}} (f : T ⟶ E.carrier) [QuasiCompact f]
-      (𝒱 : T.OpenCover) (h : ∀ a, I ≤ (𝒱.f a ≫ f).ker) : I ≤ f.ker := by
-    rw [← f.iInf_ker_openCover_map_comp 𝒱]
-    exact le_iInf h
   -- The section cover detects the three subgroup equations: the unit lies on the divisor,
   -- and multiplication and inversion preserve it after restriction to the section charts.
   apply (GroupScheme.exists_grpObj_isMonHom_iff_ker_le i).mpr
@@ -132,8 +138,9 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
   refine ⟨?_, ?_, ?_⟩
   · simpa [i, I, map_one, one_left] using E.pointsDivisor_le_ker φ 1
   · -- Cover the product by pairs of the disjoint sections.
-    have := hqc ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap])
-    apply hcheck _ (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom)
+    have := quasiCompact_left_of_isProper ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap])
+    apply Scheme.Hom.le_ker_of_openCover _ _
+      (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom)
     rintro ⟨a, b⟩
     have h : (Scheme.Pullback.openCoverOfLeftRight 𝒰 𝒰 D.hom D.hom).f (a, b) ≫
         ((i ⊗ₘ i) ≫ μ[Over.mk E.structureMap]).left =
@@ -143,8 +150,8 @@ theorem IsFiberwiseInjective.exists_grpObj_isMonHom_pointsDivisor (hφ : E.IsFib
       exact h
     rw [h]
     exact (E.pointsDivisor_le_ker φ (a * b)).trans (Scheme.Hom.le_ker_comp _ _)
-  · have := hqc (i ≫ ι[Over.mk E.structureMap])
-    apply hcheck _ 𝒰
+  · have := quasiCompact_left_of_isProper (i ≫ ι[Over.mk E.structureMap])
+    apply Scheme.Hom.le_ker_of_openCover _ _ 𝒰
     intro a
     have h : 𝒰.f a ≫ (i ≫ ι[Over.mk E.structureMap]).left = (φ a⁻¹).left := by
       dsimp only [𝒰]
