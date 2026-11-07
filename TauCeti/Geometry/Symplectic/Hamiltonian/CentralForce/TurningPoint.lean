@@ -7,8 +7,7 @@ module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.Radial
 public import TauCeti.Geometry.Symplectic.Hamiltonian.CentralForce.RadialAction
-import Mathlib.Analysis.Calculus.Deriv.MeanValue
-import Mathlib.MeasureTheory.Function.JacobianOneDim
+import TauCeti.MeasureTheory.Function.JacobianOneDim
 
 /-!
 # Radial motion between simple turning points
@@ -137,70 +136,6 @@ section Motion
 
 variable {γ : ℝ → ℝ × ℝ} {t₁ t₂ : ℝ}
 
-/-- The reduced Hamiltonian is constant along an integral curve of its Hamiltonian vector field
-on `[t₁, t₂]` in the half-line `r > 0`. -/
-private theorem centralForceHamiltonian_effectivePotential_eq
-    (hγ : ∀ t ∈ Icc t₁ t₂, HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
-      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
-    (hr : ∀ t ∈ Icc t₁ t₂, 0 < (γ t).1) (hU : ∀ t ∈ Icc t₁ t₂, DifferentiableAt ℝ U (γ t).1) :
-    ∀ t ∈ Icc t₁ t₂, centralForceHamiltonian m (effectivePotential m ℓ U) (γ t) =
-      centralForceHamiltonian m (effectivePotential m ℓ U) (γ t₁) := by
-  have hd (t : ℝ) (ht : t ∈ Icc t₁ t₂) :
-      HasDerivAt (fun s ↦ centralForceHamiltonian m (effectivePotential m ℓ U) (γ s)) 0 t := by
-    have hU' : HasDerivAt (effectivePotential m ℓ U)
-        (deriv U (γ t).1 - ℓ ^ 2 / (m * (γ t).1 ^ 3)) ‖(γ t).1‖ := by
-      rw [Real.norm_of_nonneg (hr t ht).le]
-      exact hasDerivAt_effectivePotential (hU t ht).hasDerivAt (hr t ht).ne'
-    have hH := hasFDerivAt_centralForceHamiltonian (m := m) hU' (hr t ht).ne'
-    have h := hH.comp_hasDerivAt t (hγ t ht)
-    rwa [← hH.fderiv, SymplecticForm.fderiv_apply_hamiltonianVectorField] at h
-  exact constant_of_has_deriv_right_zero (fun t ht ↦ (hd t ht).continuousAt.continuousWithinAt)
-    fun t ht ↦ (hd t (Ico_subset_Icc_self ht)).hasDerivWithinAt
-
-/-- Along an integral curve of the reduced Hamiltonian vector field in `r > 0`, the radius has
-derivative `p_r / m`. -/
-private theorem hasDerivAt_fst_of_hasDerivAt {t : ℝ}
-    (hγ : HasDerivAt γ ((stdSymplecticForm (V := ℝ)).hamiltonianVectorField
-      (centralForceHamiltonian m (effectivePotential m ℓ U)) (γ t)) t)
-    (hr : 0 < (γ t).1) (hU : DifferentiableAt ℝ U (γ t).1) :
-    HasDerivAt (fun s ↦ (γ s).1) ((γ t).2 / m) t := by
-  rw [← Prod.mk.eta (p := γ t),
-    stdSymplecticForm_hamiltonianVectorField_centralForceHamiltonian_effectivePotential
-      hU.hasDerivAt hr] at hγ
-  convert (hasFDerivAt_fst (𝕜 := ℝ) (p := γ t)).comp_hasDerivAt t hγ using 1 <;>
-    simp [Function.comp_def]
-
-/-- **Change of variables from time to radius.** If the radius `r(t)` has derivative `p_r(t) / m`
-with `p_r` continuous and nonvanishing on `(t₁, t₂)`, and carries `(t₁, t₂)` onto `(r₁, r₂)`, then
-integrating over the radii is integrating over the times against `dr = |p_r| / m dt`. -/
-private theorem setIntegral_Ioo_eq_setIntegral_abs_div_mul (hm : 0 < m)
-    (hγ : ∀ t ∈ Ioo t₁ t₂, HasDerivAt (fun s ↦ (γ s).1) ((γ t).2 / m) t)
-    (hp : ContinuousOn (fun t ↦ (γ t).2) (Ioo t₁ t₂)) (hp0 : ∀ t ∈ Ioo t₁ t₂, (γ t).2 ≠ 0)
-    (himage : (fun t ↦ (γ t).1) '' Ioo t₁ t₂ = Ioo r₁ r₂) (g : ℝ → ℝ) :
-    ∫ r in Ioo r₁ r₂, g r = ∫ t in Ioo t₁ t₂, |(γ t).2| / m * g (γ t).1 := by
-  -- `p_r` has a constant sign on the interval, so the radius is strictly monotone there.
-  have hsign : (∀ t ∈ Ioo t₁ t₂, 0 < (γ t).2) ∨ ∀ t ∈ Ioo t₁ t₂, (γ t).2 < 0 := by
-    by_contra h
-    simp only [not_or, not_forall, not_lt] at h
-    obtain ⟨⟨a, ha, ha0⟩, ⟨b, hb, hb0⟩⟩ := h
-    obtain ⟨c, hc, hc0⟩ := isPreconnected_Ioo.intermediate_value ha hb hp ⟨ha0, hb0⟩
-    exact hp0 c hc hc0
-  have hrc : ContinuousOn (fun t ↦ (γ t).1) (Ioo t₁ t₂) :=
-    fun t ht ↦ (hγ t ht).continuousAt.continuousWithinAt
-  have hinj : InjOn (fun t ↦ (γ t).1) (Ioo t₁ t₂) := by
-    rcases hsign with hpos | hneg
-    · refine (strictMonoOn_of_deriv_pos (convex_Ioo t₁ t₂) hrc fun t ht ↦ ?_).injOn
-      rw [interior_Ioo] at ht
-      rw [(hγ t ht).deriv]
-      exact div_pos (hpos t ht) hm
-    · refine (strictAntiOn_of_deriv_neg (convex_Ioo t₁ t₂) hrc fun t ht ↦ ?_).injOn
-      rw [interior_Ioo] at ht
-      rw [(hγ t ht).deriv]
-      exact div_neg_of_neg_of_pos (hneg t ht) hm
-  rw [← himage, integral_image_eq_integral_abs_deriv_smul measurableSet_Ioo
-    (fun t ht ↦ (hγ t ht).hasDerivWithinAt) hinj g]
-  simp only [smul_eq_mul, abs_div, abs_of_pos hm]
-
 /-- The hypotheses shared by the time and angle formulas along one leg of the radial motion give
 the change of variables from time to radius with `|p_r| = |p_r|(r)`, and `r₁ ≤ r₂`. -/
 private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
@@ -214,7 +149,7 @@ private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
     r₁ ≤ r₂ ∧ (∀ t ∈ Ioo t₁ t₂, absRadialMomentum m U ℓ E (γ t).1 = |(γ t).2| ∧ (γ t).2 ≠ 0) ∧
       ∀ g : ℝ → ℝ, ∫ r in Ioo r₁ r₂, g r = ∫ t in Ioo t₁ t₂, |(γ t).2| / m * g (γ t).1 := by
   have hIoo : Ioo t₁ t₂ ⊆ Icc t₁ t₂ := Ioo_subset_Icc_self
-  have hEt := centralForceHamiltonian_effectivePotential_eq hγ hr hU
+  have hEt := centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt hγ hr hU
   -- On the level `E`, `p_r² / (2m) = E - U_ℓ(r) > 0` strictly between the radii.
   have hp (t : ℝ) (htI : t ∈ Ioo t₁ t₂) :
       absRadialMomentum m U ℓ E (γ t).1 = |(γ t).2| ∧ (γ t).2 ≠ 0 := by
@@ -241,11 +176,12 @@ private theorem leg_data (hm : 0 < m) (ht : t₁ ≤ t₂)
     · rcases hends with ⟨h₁, h₂⟩ | ⟨h₁, h₂⟩ <;> linarith
     · obtain ⟨h₁, h₂⟩ := hmem _ ⟨left_lt_add_div_two.2 ht', add_div_two_lt_right.2 ht'⟩
       exact (h₁.trans h₂).le
-  exact ⟨h₁₂, hp, setIntegral_Ioo_eq_setIntegral_abs_div_mul hm
-    (fun t htI ↦ hasDerivAt_fst_of_hasDerivAt (hγ t (hIoo htI)) (hr t (hIoo htI))
-      (hU t (hIoo htI)))
-    (fun t htI ↦ (hγ t (hIoo htI)).continuousAt.snd.continuousWithinAt)
-    (fun t htI ↦ (hp t htI).2) himage⟩
+  refine ⟨h₁₂, hp, fun g ↦ ?_⟩
+  rw [← himage, integral_image_eq_integral_abs_deriv_smul_of_ne_zero (convex_Ioo t₁ t₂)
+    (fun t htI ↦ (hasDerivAt_fst_of_hasDerivAt_effectivePotential (hγ t (hIoo htI))
+      (hr t (hIoo htI)) (hU t (hIoo htI))).hasDerivWithinAt)
+    (fun t htI ↦ div_ne_zero (hp t htI).2 hm.ne') g]
+  simp only [smul_eq_mul, abs_div, abs_of_pos hm]
 
 /-- **The time between turning radii is the radial quadrature.** Let `(r(t), p_r(t))` be an
 integral curve on `[t₁, t₂]`, in the half-line `r > 0`, of the Hamiltonian vector field of the
@@ -314,7 +250,7 @@ theorem sub_eq_radialPeriod (hm : 0 < m) {t₃ : ℝ} (ht₁₂ : t₁ ≤ t₂)
     t₃ - t₁ = radialPeriod m U ℓ E r₁ r₂ := by
   have hsub₁ : Icc t₁ t₂ ⊆ Icc t₁ t₃ := Icc_subset_Icc_right ht₂₃
   have hsub₂ : Icc t₂ t₃ ⊆ Icc t₁ t₃ := Icc_subset_Icc_left ht₁₂
-  have hE₂ := (centralForceHamiltonian_effectivePotential_eq hγ hr hU t₂
+  have hE₂ := (centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt hγ hr hU t₂
     ⟨ht₁₂, ht₂₃⟩).trans hE
   have h₁ := sub_eq_integral_div_absRadialMomentum hm ht₁₂ (fun t ht ↦ hγ t (hsub₁ ht))
     (fun t ht ↦ hr t (hsub₁ ht)) (fun t ht ↦ hU t (hsub₁ ht)) hE hlt hends hmem₁₂
@@ -340,7 +276,7 @@ theorem sub_eq_two_mul_apsidalAngle (hm : 0 < m) {t₃ : ℝ} (ht₁₂ : t₁ �
     θ t₃ - θ t₁ = 2 * apsidalAngle m U ℓ E r₁ r₂ := by
   have hsub₁ : Icc t₁ t₂ ⊆ Icc t₁ t₃ := Icc_subset_Icc_right ht₂₃
   have hsub₂ : Icc t₂ t₃ ⊆ Icc t₁ t₃ := Icc_subset_Icc_left ht₁₂
-  have hE₂ := (centralForceHamiltonian_effectivePotential_eq hγ hr hU t₂
+  have hE₂ := (centralForceHamiltonian_effectivePotential_eq_of_hasDerivAt hγ hr hU t₂
     ⟨ht₁₂, ht₂₃⟩).trans hE
   have h₁ := sub_eq_apsidalAngle hm ht₁₂ (fun t ht ↦ hγ t (hsub₁ ht))
     (fun t ht ↦ hr t (hsub₁ ht)) (fun t ht ↦ hU t (hsub₁ ht)) hE hlt hends hmem₁₂
