@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Geometry.Symplectic.Hamiltonian.EquivariantMomentMap.Basic
+public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.Level
 public import TauCeti.Geometry.Symplectic.Hamiltonian.MomentMap.RegularLevel
 
 /-!
