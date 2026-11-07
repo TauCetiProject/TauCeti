@@ -11,6 +11,7 @@ import Mathlib.Geometry.Manifold.Instances.Sphere
 import TauCeti.AlgebraicTopology.Singular.InvarianceOfDomain
 import TauCeti.AlgebraicTopology.Sphere.Zero
 import TauCeti.Geometry.Sphere.Circle
+import TauCeti.Topology.JordanCurve.Separation
 import TauCeti.Topology.Path.Arc
 
 /-!
@@ -28,13 +29,15 @@ between them, and the closure of each is the corresponding closed arc, which is 
 of an injective path from `p` to `q`, hence a closed one-dimensional disc with boundary `{p, q}`
 (`Path.exists_homeomorph_range_closedBall`).
 The open arcs are read off Mathlib's `Circle.path`, which traces the arc from one point to another
-counterclockwise; the circle is then transported to the unit sphere of any two-dimensional real
-inner product space. The collar does govern how the two sides of `Σ` meet the two components: at
-each point of `S⁰` the two collar arcs lie in different components, since otherwise, by invariance
-of domain, the corresponding point of `Σ` would have a neighbourhood missing one component, whose
-closure contains `Σ`. Unlike for `m ≥ 2`, the two sides `β(S⁰ × (0, 1])` and `β(S⁰ × [-1, 0))` of
-the collar need not lie in different components: each side has two pieces, one at each point of
-`Σ`, and both pieces of one side may lie in the same component.
+counterclockwise; that they are open, connected and disjoint and cover the complement of `{p, q}` is
+in `TauCeti/Topology/JordanCurve/Separation.lean`. The circle is then transported to the unit sphere
+of any two-dimensional real inner product space. The collar does govern how the two sides of `Σ`
+meet the two components: at each point of `S⁰` the two collar arcs lie in different components,
+since otherwise, by invariance of domain, the corresponding point of `Σ` would have a neighbourhood
+missing one component, whose closure contains `Σ`. Unlike for `m ≥ 2`, the two sides
+`β(S⁰ × (0, 1])` and `β(S⁰ × [-1, 0))` of the collar need not lie in different components: each
+side has two pieces, one at each point of `Σ`, and both pieces of one side may lie in the same
+component.
 
 ## Main results
 
@@ -61,26 +64,18 @@ namespace TauCeti
 variable {E F X : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
   [NormedAddCommGroup F] [InnerProductSpace ℝ F] [TopologicalSpace X]
 
-/-- One complementary arc of a pair of distinct points of the circle: it is open and connected,
-its closure is the closed arc, and that closure is a closed one-dimensional disc whose boundary
-sphere corresponds to the two points. -/
-private theorem isOpen_isConnected_closure_path_image_Ioo {z w : Circle} (hzw : z ≠ w)
+/-- The closure of one complementary arc of a pair of distinct points of the circle is the closed
+arc, and it is a closed one-dimensional disc whose boundary sphere corresponds to the two points. -/
+private theorem closure_path_image_Ioo_homeomorph_closedBall {z w : Circle} (hzw : z ≠ w)
     (hE : finrank ℝ E = 1) :
-    IsOpen (z.path w '' Ioo 0 1) ∧ IsConnected (z.path w '' Ioo 0 1) ∧
-      closure (z.path w '' Ioo 0 1) = range (z.path w) ∧
+    closure (z.path w '' Ioo 0 1) = range (z.path w) ∧
       ∃ e : closure (z.path w '' Ioo 0 1) ≃ₜ closedBall (0 : E) 1,
         ∀ y : closure (z.path w '' Ioo 0 1), (y : Circle) ∈ ({z, w} : Set Circle) ↔
           ‖(e y : E)‖ = 1 := by
   have hcl := (z.path w).closure_image_Ioo
-  refine ⟨?_, ?_, hcl, ?_⟩
-  · rw [← Circle.compl_range_path hzw.symm]
-    exact (isCompact_range (w.path z).continuous).isClosed.isOpen_compl
-  · have : IsConnected (Ioo 0 1 : Set unitInterval) :=
-      ⟨nonempty_Ioo.2 zero_lt_one, isPreconnected_Ioo⟩
-    exact this.image _ (z.path w).continuous.continuousOn
-  · obtain ⟨e, he⟩ :=
-      (z.path w).exists_homeomorph_range_closedBall (Circle.path_injective_of_ne hzw) hE
-    exact ⟨(Homeomorph.setCongr hcl).trans e, fun y ↦ he (Homeomorph.setCongr hcl y)⟩
+  obtain ⟨e, he⟩ :=
+    (z.path w).exists_homeomorph_range_closedBall (Circle.path_injective_of_ne hzw) hE
+  exact ⟨hcl, (Homeomorph.setCongr hcl).trans e, fun y ↦ he (Homeomorph.setCongr hcl y)⟩
 
 /-- **Two points cut the circle into two discs.** The complement of two distinct points `z` and
 `w` of the circle is the union of two disjoint open connected sets, which are therefore its two
@@ -95,18 +90,14 @@ theorem exists_closure_homeomorph_closedBall_circle {z w : Circle} (hzw : z ≠ 
         ∀ y : closure A, (y : Circle) ∈ ({z, w} : Set Circle) ↔ ‖(e y : E)‖ = 1) ∧
       (∃ e : closure B ≃ₜ closedBall (0 : E) 1,
         ∀ y : closure B, (y : Circle) ∈ ({z, w} : Set Circle) ↔ ‖(e y : E)‖ = 1) := by
-  obtain ⟨hAo, hAc, hAcl, eA⟩ := isOpen_isConnected_closure_path_image_Ioo hzw hE
-  obtain ⟨hBo, hBc, hBcl, eB⟩ := isOpen_isConnected_closure_path_image_Ioo hzw.symm hE
+  obtain ⟨hAcl, eA⟩ := closure_path_image_Ioo_homeomorph_closedBall hzw hE
+  obtain ⟨hBcl, eB⟩ := closure_path_image_Ioo_homeomorph_closedBall hzw.symm hE
   rw [pair_comm w z] at eB
-  -- The two open arcs are the complements of the two closed arcs, which cover the circle and
-  -- meet exactly in `{z, w}`.
+  -- The two open arcs are the complements of the two closed arcs.
   have hA : z.path w '' Ioo 0 1 = (range (w.path z))ᶜ := (Circle.compl_range_path hzw.symm).symm
   have hB : w.path z '' Ioo 0 1 = (range (z.path w))ᶜ := (Circle.compl_range_path hzw).symm
-  have hunion : z.path w '' Ioo 0 1 ∪ w.path z '' Ioo 0 1 = {z, w}ᶜ := by
-    rw [hA, hB, ← compl_inter, inter_comm, Circle.range_path_inter_range_path hzw]
-  have hdisj : Disjoint (z.path w '' Ioo 0 1) (w.path z '' Ioo 0 1) := by
-    rw [hA, hB, disjoint_compl_left_iff_subset, compl_subset_iff_union,
-      Circle.range_path_union_range_path hzw]
+  have hunion := Circle.path_image_Ioo_union hzw
+  have hdisj := Circle.disjoint_path_image_Ioo hzw
   -- Each closed arc is the complement of the opposite open arc.
   have hcompl {S T : Set Circle} (hST : Disjoint S T) (hu : S ∪ T = {z, w}ᶜ) :
       Tᶜ = S ∪ {z, w} := by
@@ -119,7 +110,9 @@ theorem exists_closure_homeomorph_closedBall_circle {z w : Circle} (hzw : z ≠ 
     · rintro (hS | hP) hT
       · exact disjoint_left.1 hST hS hT
       · exact (hu ▸ (Or.inr hT : y ∈ S ∪ T) : y ∈ ({z, w} : Set Circle)ᶜ) hP
-  refine ⟨_, _, hAo, hBo, hAc, hBc, hdisj, hunion, ?_, ?_, eA, eB⟩
+  refine ⟨_, _, Circle.isOpen_path_image_Ioo hzw, Circle.isOpen_path_image_Ioo hzw.symm,
+    (Circle.isPathConnected_path_image_Ioo z w).isConnected,
+    (Circle.isPathConnected_path_image_Ioo w z).isConnected, hdisj, hunion, ?_, ?_, eA, eB⟩
   · rw [hAcl, ← compl_compl (range _), ← hB, hcompl hdisj hunion]
   · rw [hBcl, ← compl_compl (range _), ← hA, hcompl hdisj.symm (union_comm _ _ ▸ hunion)]
 
