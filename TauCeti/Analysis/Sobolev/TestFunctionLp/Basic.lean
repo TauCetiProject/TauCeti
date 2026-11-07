@@ -15,6 +15,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Dilation
 public import TauCeti.MeasureTheory.Measure.Haar.Restrict
 import Mathlib.Analysis.InnerProductSpace.Dual
 import Mathlib.Analysis.Normed.Module.HahnBanach
+import Mathlib.LinearAlgebra.Isomorphisms
 import Mathlib.MeasureTheory.Function.L2Space
 import TauCeti.MeasureTheory.Function.LocallyIntegrable
 
@@ -37,8 +38,8 @@ the normalized `Lᵖ` dilation `MeasureTheory.Measure.dilateLp`, up to an explic
 factor, as recorded by `TauCeti.testFunctionLp_dilateTestFunction` and
 `TauCeti.gradientTestFunctionLp_dilateTestFunction`.
 
-On that subspace of `L²(Ω)`, a distributional derivative bounded by the `L²` norm of test functions
-extends by Hahn–Banach to a bounded functional on `L²(Ω)`, and the negative of its Riesz
+A distributional derivative bounded by the `Lᵠ` norm of test functions extends by Hahn–Banach
+to a bounded functional on `Lᵠ(Ω)` for every `q ≥ 1`. At `q = 2`, the negative of its Riesz
 representative is a weak derivative:
 `TauCeti.exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le`.
 -/
@@ -141,7 +142,54 @@ end Injectivity
 
 section Representation
 
-variable [mu.IsOpenPosMeasure] [IsLocallyFiniteMeasure (mu.restrict Omega)]
+variable [IsLocallyFiniteMeasure (mu.restrict Omega)]
+
+omit [IsLocallyFiniteMeasure (mu.restrict Omega)] in
+/-- A distributional directional test bound extends to a continuous functional on `Lᵠ`
+with the same bound, for every `q ≥ 1`. No σ-finiteness assumption is needed. -/
+theorem exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm {q : ℝ≥0∞}
+    [Fact (1 ≤ q)] {u : E → ℝ} (hu : LocallyIntegrableOn u Omega mu) (v : E)
+    {C : ℝ} (hC : 0 ≤ C)
+    (hbound : ∀ phi : 𝓓(Omega, ℝ),
+      |∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu| ≤
+        C * (eLpNorm (phi : E → ℝ) q mu).toReal) :
+    ∃ Λ : StrongDual ℝ (Lp ℝ q (mu.restrict Omega)), ‖Λ‖ ≤ C ∧
+      ∀ phi : 𝓓(Omega, ℝ),
+        Λ (testFunctionLp q phi) = ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu := by
+  let ℓ : 𝓓(Omega, ℝ) →L[ℝ] ℝ :=
+    (TestFunction.integralAgainstBilinCLM (n := ⊤) (ContinuousLinearMap.mul ℝ ℝ) mu u).comp
+      (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ v)
+  have hℓ (phi : 𝓓(Omega, ℝ)) :
+      ℓ phi = ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu := by
+    simp [ℓ, TestFunction.integralAgainstBilinCLM_eq_integral hu]
+  let T := testFunctionLpₗ mu Omega q
+  have hnorm (phi : 𝓓(Omega, ℝ)) :
+      ‖T phi‖ = (eLpNorm (phi : E → ℝ) q mu).toReal := by
+    rw [testFunctionLpₗ_apply, ← toReal_enorm]
+    exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm q phi)
+  have hker : LinearMap.ker T.rangeRestrict ≤ LinearMap.ker ℓ.toLinearMap := by
+    rw [LinearMap.ker_rangeRestrict]
+    intro phi hphi
+    have h := hbound phi
+    rw [← hnorm, LinearMap.mem_ker.mp hphi, norm_zero, mul_zero] at h
+    rw [LinearMap.mem_ker]
+    exact (hℓ phi).trans (abs_nonpos_iff.mp h)
+  let f₀ : LinearMap.range T →ₗ[ℝ] ℝ :=
+    T.rangeRestrict.liftOfSurjective T.surjective_rangeRestrict ⟨ℓ.toLinearMap, hker⟩
+  have hf₀_apply (phi : 𝓓(Omega, ℝ)) : f₀ (T.rangeRestrict phi) = ℓ phi :=
+    LinearMap.equivOfSurjective_apply T.surjective_rangeRestrict hker
+  have hcoe (phi : 𝓓(Omega, ℝ)) :
+      (T.rangeRestrict phi : Lp ℝ q (mu.restrict Omega)) = testFunctionLp q phi :=
+    testFunctionLpₗ_apply q phi
+  have hf₀ : ∀ s, ‖f₀ s‖ ≤ C * ‖s‖ := by
+    intro s
+    obtain ⟨phi, rfl⟩ := T.surjective_rangeRestrict s
+    rw [hf₀_apply, Real.norm_eq_abs, hℓ, ← Submodule.norm_coe, hcoe]
+    simpa only [testFunctionLpₗ_apply] using (hnorm phi ▸ hbound phi)
+  obtain ⟨Λ, hΛ, hΛnorm⟩ := exists_extension_norm_eq _ (f₀.mkContinuous C hf₀)
+  refine ⟨Λ, hΛnorm.trans_le (LinearMap.mkContinuous_norm_le _ hC hf₀), fun phi ↦ ?_⟩
+  have h := hΛ (T.rangeRestrict phi)
+  simpa only [hcoe, LinearMap.mkContinuous_apply, hf₀_apply, hℓ] using h
 
 /-- **An `L²`-bounded distributional derivative is an `L²` weak derivative.** Let `u` be locally
 integrable on `Omega`. If for some `C ≥ 0` every test function `phi` on `Omega` satisfies
@@ -155,43 +203,19 @@ theorem exists_norm_le_hasWeakLineDerivOn_of_abs_integral_lineDeriv_mul_le {u : 
     (hbound : ∀ phi : 𝓓(Omega, ℝ),
       |∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu| ≤ C * (eLpNorm (phi : E → ℝ) 2 mu).toReal) :
     ∃ g : Lp ℝ 2 (mu.restrict Omega), ‖g‖ ≤ C ∧ HasWeakLineDerivOn mu Omega u g v := by
-  -- The test functions, as a subspace of `L²(Omega)`.
-  let T : 𝓓(Omega, ℝ) →ₗ[ℝ] Lp ℝ 2 (mu.restrict Omega) :=
-    { toFun := testFunctionLp 2
-      map_add' := testFunctionLp_add 2
-      map_smul' := testFunctionLp_smul 2 }
-  have hT : Function.Injective T := testFunctionLp_injective 2
-  -- The pairing `phi ↦ ∫ ∂_v phi * u`, which the hypothesis bounds by the `L²` norm of `phi`.
-  let ℓ : 𝓓(Omega, ℝ) →L[ℝ] ℝ :=
-    (TestFunction.integralAgainstBilinCLM (n := ⊤) (ContinuousLinearMap.mul ℝ ℝ) mu u).comp
-      (TestFunction.lineDerivCLM (n := ⊤) (k := ⊤) ℝ v)
-  have hℓ : ∀ phi, ℓ phi = ∫ x, lineDeriv ℝ (phi : E → ℝ) x v * u x ∂mu := fun phi => by
-    simp [ℓ, TestFunction.integralAgainstBilinCLM_eq_integral hu]
-  let e := LinearEquiv.ofInjective T hT
-  let f₀ : LinearMap.range T →ₗ[ℝ] ℝ := ℓ.toLinearMap ∘ₗ e.symm.toLinearMap
-  have hf₀ : ∀ s, ‖f₀ s‖ ≤ C * ‖s‖ := by
-    intro s
-    obtain ⟨phi, rfl⟩ := e.surjective s
-    have hnorm : ‖e phi‖ = (eLpNorm (phi : E → ℝ) 2 mu).toReal := by
-      rw [← Submodule.norm_coe, LinearEquiv.ofInjective_apply, ← toReal_enorm]
-      exact congrArg ENNReal.toReal (enorm_testFunctionLp_eq_eLpNorm 2 phi)
-    simpa [f₀, hℓ, hnorm] using hbound phi
-  obtain ⟨g', hg'f, hg'norm⟩ := exists_extension_norm_eq _ (f₀.mkContinuous C hf₀)
-  refine ⟨(InnerProductSpace.toDual ℝ _).symm (-g'), ?_, ?_⟩
-  · rw [LinearIsometryEquiv.norm_map, norm_neg, hg'norm]
-    exact LinearMap.mkContinuous_norm_le _ hC hf₀
-  · set g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (mu.restrict Omega))).symm (-g')
-    have hg : LocallyIntegrableOn g Omega mu :=
-      Lp.locallyIntegrableOn g (by norm_num)
+  obtain ⟨Λ, hΛnorm, hΛphi⟩ :=
+    exists_dual_norm_le_of_abs_integral_lineDeriv_mul_le_eLpNorm hu v hC hbound
+  let g := (InnerProductSpace.toDual ℝ (Lp ℝ 2 (mu.restrict Omega))).symm (-Λ)
+  refine ⟨g, ?_, ?_⟩
+  · simpa only [g, LinearIsometryEquiv.norm_map, norm_neg] using hΛnorm
+  · have hg : LocallyIntegrableOn g Omega mu := Lp.locallyIntegrableOn g (by norm_num)
     refine hasWeakLineDerivOn_iff_testFunction.2 ⟨inferInstance, hu, hg, fun phi => ?_⟩
-    have hg'phi : g' (T phi) = ℓ phi := by
-      simpa [f₀, e, LinearEquiv.ofInjective_apply] using hg'f (e phi)
-    have hinner : ⟪g, T phi⟫_ℝ = ∫ x, (phi : E → ℝ) x • g x ∂mu := by
+    have hinner : ⟪g, testFunctionLp 2 phi⟫_ℝ = ∫ x, (phi : E → ℝ) x • g x ∂mu := by
       rw [L2.inner_def, ← setIntegral_smul_eq_integral_smul phi]
       refine integral_congr_ae ?_
       filter_upwards [testFunctionLp_apply_ae (mu := mu) 2 phi] with x hx
-      simp [T, hx]
-    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hg'phi, hℓ, neg_neg]
+      simp [hx]
+    rw [← hinner, InnerProductSpace.toDual_symm_apply, neg_apply, hΛphi, neg_neg]
     simp only [smul_eq_mul]
 
 end Representation
