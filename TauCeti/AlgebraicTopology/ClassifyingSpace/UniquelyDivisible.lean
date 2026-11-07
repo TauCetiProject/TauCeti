@@ -7,7 +7,7 @@ module
 
 public import Mathlib.Algebra.Field.ZMod
 public import Mathlib.Algebra.Module.PID
-public import TauCeti.Algebra.Module.LocalizedModule.AwayInt
+public import TauCeti.Algebra.Module.LocalizedModule.Away.Int
 public import TauCeti.Algebra.Module.LocalizedModule.TwoDivisible
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.LocalizationAway
 public import TauCeti.AlgebraicTopology.ClassifyingSpace.Prod
@@ -101,7 +101,7 @@ private theorem subsingleton_groupHomology_of_addEquiv_pi_prod (hm : m ≠ 0) (h
       (fun hN hN' n ↦ subsingleton_groupHomology_multiplicative_prod k hN hN' n)
       (fun _ ↦ Localization.Away m) (fun _ ↦ hR)
   have : Finite T :=
-    finite_of_moduleFinite_localizationAway (m := m) fun x ↦
+    finite_of_moduleFinite_localizationAway_of_isAddTorsion (m := m) fun x ↦
       isOfFinAddOrder_of_smul_eq_zero hq (hqT x)
   have htors (n : ℕ) :
       Subsingleton (groupHomology (Rep.trivial k (Multiplicative T) k) (n + 1)) := by
