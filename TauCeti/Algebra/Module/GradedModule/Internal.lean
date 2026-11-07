@@ -719,7 +719,7 @@ namespace InternalGrading
 
 section KoszulTwistMul
 
-variable {R : Type u} {A : Type v} [CommRing R]
+variable {R : Type u} {A : Type v} [Ring R]
 
 /-- **The Koszul twist of a graded algebra is multiplicative**: degrees add under multiplication,
 so the signs `(-1) ^ (q |a|)` multiply. -/

@@ -11,6 +11,7 @@ import Mathlib.Analysis.Calculus.Deriv.AffineMap
 public import Mathlib.Analysis.Calculus.Deriv.Basic
 public import Mathlib.Analysis.Convex.Basic
 public import Mathlib.Analysis.RCLike.Basic
+public import Mathlib.Topology.MetricSpace.Thickening
 import Mathlib.Analysis.Calculus.Deriv.Comp
 import Mathlib.Analysis.Calculus.Deriv.MeanValue
 import Mathlib.Analysis.Calculus.Deriv.Mul
@@ -34,6 +35,9 @@ using its one-variable mean value inequality along the same line segment.
 Let `w` be a differentiable real function on a real normed space whose derivative has norm at
 most `L` on the band `{a ≤ w ≤ b}`. Starting from a point where `w ≥ b`, the function cannot reach
 the level `a` within distance `(b - a) / L` (`TauCeti.lt_apply_add_of_norm_fderiv_le`).
+Consequently the outer shell of the `r`-thickening of `{w ≥ 0}` lies in `{-(L r) < w < 0}` when
+`‖Dw‖ ≤ L` on `{-(L r) ≤ w ≤ 0}`
+(`Differentiable.thickening_sdiff_subset_preimage_Ioo_of_norm_fderiv_le`).
 
 Mathlib's `Convex.norm_image_sub_le_of_norm_fderiv_le` needs the derivative bound along the
 whole segment; here it is only assumed on the band, which is what is available near a level set
@@ -201,6 +205,22 @@ theorem norm_sub_le_mul_abs_sub_mul_rpow_of_hasDerivAt {F : Type*} [NormedAddCom
     _ = _ := by ring
 
 end TauCeti
+
+/-- **The outer shell of a thickening of a superlevel set lies in a level band.** Let `w` be
+differentiable with `‖Dw‖ ≤ L` wherever `-(L r) ≤ w ≤ 0`. Then the part of the open
+`r`-neighbourhood of `{w ≥ 0}` outside `{w ≥ 0}` lies in `{-(L r) < w < 0}`. -/
+theorem Differentiable.thickening_sdiff_subset_preimage_Ioo_of_norm_fderiv_le {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {w : E → ℝ} (hw : Differentiable ℝ w) {L r : ℝ}
+    (hL : 0 < L) (hgrad : ∀ x, -(L * r) ≤ w x → w x ≤ 0 → ‖fderiv ℝ w x‖ ≤ L) :
+    Metric.thickening r {x | 0 ≤ w x} \ {x | 0 ≤ w x} ⊆ w ⁻¹' Ioo (-(L * r)) 0 := by
+  rintro x ⟨hx, hxs⟩
+  obtain ⟨p, hp, hpx⟩ := Metric.mem_thickening_iff.1 hx
+  refine ⟨?_, lt_of_not_ge hxs⟩
+  have := TauCeti.lt_apply_add_of_norm_fderiv_le hw (a := -(L * r)) (b := 0) hL.le hgrad
+    (hp : 0 ≤ w p) (z := x - p) (by
+      rw [← dist_eq_norm]
+      linarith [mul_lt_mul_of_pos_left hpx hL])
+  simpa using this
 
 namespace Convex
 
