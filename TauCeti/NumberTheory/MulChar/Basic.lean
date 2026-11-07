@@ -68,14 +68,6 @@ theorem orderOf_ringHomComp {R R' R'' : Type*} [CommMonoid R] [CommRing R'] [Com
     orderOf (χ.ringHomComp f) = orderOf χ := by
   rw [← ringHomCompHom_apply, orderOf_injective _ (injective_ringHomComp hf)]
 
-/-- A multiplicative character of order dividing `m` is fixed by the `q`-th power map whenever
-`m` divides `q - 1`. -/
-theorem pow_eq_self_of_pow_eq_one {R R' : Type*} [CommMonoid R] [CommMonoidWithZero R']
-    {χ : MulChar R R'} {m q : ℕ} (hχ : χ ^ m = 1) (hmq : m ∣ q - 1) (hq : 0 < q) :
-    χ ^ q = χ := by
-  obtain ⟨k, hk⟩ := hmq
-  rw [← Nat.sub_add_cancel hq, hk, pow_succ, pow_mul, hχ, one_pow, one_mul]
-
 section Transport
 
 variable {R S R' R'' F G : Type*} [CommMonoid R] [CommMonoid S] [CommMonoidWithZero R']
