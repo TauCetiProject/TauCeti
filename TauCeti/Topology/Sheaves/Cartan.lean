@@ -112,10 +112,10 @@ private lemma quasiIso_cechAugmentation_image (hF : IsCechAcyclicOn B F) {ι : T
   have : TopCat.Presheaf.IsFlasque (TopCat.Sheaf.presheaf (Injective.under F)) :=
     isFlasque_of_injective (Injective.under F)
   exact quasiIso_cechAugmentation_X₃_of_shortExact U isTerminalTop
-    ((injectiveImageSequence F).map ((Functor.whiskeringLeft _ _ AddCommGrpCat.{u}).obj
+    (F.injectiveImageSequence.map ((Functor.whiskeringLeft _ _ AddCommGrpCat.{u}).obj
       (prod.functor.obj Y).op))
-    (injectiveImageSequence_map_shortExact F _)
-    (fun _ _ ↦ injectiveImageSequence_map_shortExact F _) (hF U Y hY hU hYU)
+    (F.injectiveImageSequence_map_shortExact _)
+    (fun _ _ ↦ F.injectiveImageSequence_map_shortExact _) (hF U Y hY hU hYU)
     (TopCat.Sheaf.quasiIso_cechAugmentation_prod_of_isFlasque (Injective.under F) U Y hYU)
 
 /-- Let `π : F₂ ⟶ F₃` be a morphism of sheaves, `G` its image presheaf, and `U i` opens covering

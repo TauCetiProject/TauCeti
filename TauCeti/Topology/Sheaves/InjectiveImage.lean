@@ -22,30 +22,30 @@ cohomology apply the long exact Čech sequence to it.
 
 ## Main definitions
 
-* `TauCeti.Topology.injectiveImageSequence F`: the sequence `0 ⟶ F ⟶ I ⟶ G ⟶ 0` of presheaves.
+* `CategoryTheory.Sheaf.injectiveImageSequence F`: the sequence `0 ⟶ F ⟶ I ⟶ G ⟶ 0` of presheaves.
 
 ## Main results
 
-* `TauCeti.Topology.injectiveImageSequence_map_shortExact`: this sequence is exact on the sections
-  over every open.
+* `CategoryTheory.Sheaf.injectiveImageSequence_map_shortExact`: this sequence is exact on the
+  sections over every open.
 -/
 
 public section
 
 noncomputable section
 
-open CategoryTheory Limits Opposite TopologicalSpace
+open CategoryTheory Limits Opposite TopologicalSpace TauCeti
 
 universe u
 
-namespace TauCeti.Topology
+namespace CategoryTheory.Sheaf
 
 variable {X : TopCat.{u}} (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
 
 /-- The sequence of presheaves `0 ⟶ F ⟶ I ⟶ G ⟶ 0`, where `F ⟶ I` is the chosen embedding into an
 injective sheaf and `G` is the image presheaf of `I ⟶ Q`, for `Q` its cokernel sheaf. Unlike the
 cokernel sequence of sheaves, it is exact on the sections over every open
-(`TauCeti.Topology.injectiveImageSequence_map_shortExact`). -/
+(`CategoryTheory.Sheaf.injectiveImageSequence_map_shortExact`). -/
 abbrev injectiveImageSequence : ShortComplex ((Opens X)ᵒᵖ ⥤ AddCommGrpCat.{u}) :=
   ShortComplex.mk (Injective.ι F).hom (factorThruImage (cokernel.π (Injective.ι F)).hom) (by
     rw [← cancel_mono (image.ι _), Category.assoc, image.fac, zero_comp]
@@ -70,4 +70,4 @@ theorem injectiveImageSequence_map_shortExact (V : (Opens X)ᵒᵖ) :
   · dsimp
     infer_instance
 
-end TauCeti.Topology
+end CategoryTheory.Sheaf

@@ -24,7 +24,7 @@ Let `F` be a sheaf of abelian groups on a topological space `X` and `W` an open 
 the Čech cohomology `ČH¹(W, F)` vanishes, in the cover-colimit sense of
 `TauCeti.Topology.cechCohomology` and for the restriction `V ↦ F(V)` of `F` to the subspace `W`,
 then so does the sheaf cohomology `H¹(W, F)`
-(`TauCeti.Topology.subsingleton_H'_one_of_isZero_cechCohomology`).
+(`CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCohomology`).
 
 This is the form in which Čech computations feed the comparison of the Čech cohomology of a cover
 with sheaf cohomology: the degree one Leray theorem asks for `H¹(U i, F) = 0` on the members `U i`
@@ -48,8 +48,8 @@ So `ČH⁰(W, I) ⟶ ČH⁰(W, Q)` is onto. As `I` and `Q` are sheaves, this map
 
 ## Main results
 
-* `TauCeti.Topology.subsingleton_H'_one_of_isZero_cechCohomology`: if the restriction of `F` to an
-  open `W` has vanishing degree one Čech cohomology, then `H¹(W, F) = 0`.
+* `CategoryTheory.Sheaf.subsingleton_H'_one_of_isZero_cechCohomology`: if the restriction of `F` to
+  an open `W` has vanishing degree one Čech cohomology, then `H¹(W, F) = 0`.
 
 ## References
 
@@ -146,17 +146,17 @@ private lemma surjective_app_functor_obj_top (W : Opens X)
   -- restriction of presheaves on `X` to the subspace `W`
   let R := (Functor.whiskeringLeft _ _ AddCommGrpCat.{u}).obj Φ.op
   have hS₁ (U : PointOpenCover Y) :
-      (((injectiveImageSequence F).map R).map
+      ((F.injectiveImageSequence.map R).map
         (cechComplexFunctor U.toFormalCoproduct.obj)).ShortExact :=
     TauCeti.CategoryTheory.shortExact_map_cechComplexFunctor _ _ fun _ _ ↦
-      injectiveImageSequence_map_shortExact F _
+      F.injectiveImageSequence_map_shortExact _
   have hS₂ (U : PointOpenCover Y) :
       (((imageCokernelSequence F).map R).map
         (cechComplexFunctor U.toFormalCoproduct.obj)).ShortExact :=
     TauCeti.CategoryTheory.shortExact_map_cechComplexFunctor _ _ fun _ _ ↦
       imageCokernelSequence_map_shortExact F _
   -- `ČH⁰(W, I) ⟶ ČH⁰(W, G)` is onto, as `ČH¹(W, F) = 0`
-  have h₁ : Epi ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (injectiveImageSequence F).g)) :=
+  have h₁ : Epi ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map F.injectiveImageSequence.g)) :=
     (ShortComplex.exact_iff_epi _ (h.eq_zero_of_tgt _)).1
       (TauCeti.CategoryTheory.cechCohomology_exact₃ _ _ hS₁ 0)
   -- `ČH⁰(W, G) ⟶ ČH⁰(W, Q)` is onto, as `ČH⁰(W, C) = 0`; the map `G ⟶ Q` is the first map
@@ -174,10 +174,10 @@ private lemma surjective_app_functor_obj_top (W : Opens X)
       (P.map (cokernel.π (Injective.ι F))).hom) := by
     -- the restriction of a morphism of sheaves is its whiskering by `Φ.op`
     have hfac : (P.map (cokernel.π (Injective.ι F))).hom =
-        R.map ((injectiveImageSequence F).g ≫ image.ι (cokernel.π (Injective.ι F)).hom) :=
+        R.map (F.injectiveImageSequence.g ≫ image.ι (cokernel.π (Injective.ι F)).hom) :=
       congrArg R.map (image.fac _).symm
     have h₄ := epi_comp
-      ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map (injectiveImageSequence F).g))
+      ((cechCohomology Y AddCommGrpCat.{u} 0).map (R.map F.injectiveImageSequence.g))
       ((cechCohomology Y AddCommGrpCat.{u} 0).map
         (R.map (image.ι (cokernel.π (Injective.ι F)).hom)))
     rwa [← Functor.map_comp, ← Functor.map_comp, ← hfac] at h₄
@@ -188,6 +188,14 @@ private lemma surjective_app_functor_obj_top (W : Opens X)
   rw [← AddCommGrpCat.epi_iff_surjective, hnat]
   exact epi_comp' (epi_comp' (IsIso.epi_of_iso (cechCohomologyZeroIso _).hom) h₃)
     (IsIso.epi_of_iso (cechCohomologyZeroIso _).inv)
+
+end TauCeti.Topology
+
+namespace CategoryTheory.Sheaf
+
+open TauCeti TauCeti.Topology
+
+variable {X : TopCat.{u}} (F : Sheaf (Opens.grothendieckTopology X) AddCommGrpCat.{u})
 
 /-- **Čech `H¹` vanishing implies sheaf `H¹` vanishing.** Let `F` be a sheaf of abelian groups on
 `X` and `W` an open subset. If the restriction of `F` to the subspace `W` has vanishing degree one
@@ -202,4 +210,4 @@ theorem subsingleton_H'_one_of_isZero_cechCohomology (W : Opens X)
     (surjective_app_functor_obj_top F W h)
     (subsingleton_H'_succ_of_isFlasque (Injective.under F) 0 _)
 
-end TauCeti.Topology
+end CategoryTheory.Sheaf
