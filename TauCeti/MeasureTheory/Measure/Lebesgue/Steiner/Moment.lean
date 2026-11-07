@@ -31,6 +31,44 @@ namespace TauCeti
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
   [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
 
+/-- The second-moment integrand of a null-measurable set, integrated along the lines parallel to
+`e`, is almost everywhere measurable in the transverse coordinate. -/
+theorem aemeasurable_lintegral_line_indicator_norm_sq (e : E) (he : ‖e‖ = 1) {u : Set E}
+    (hu : NullMeasurableSet u volume) :
+    AEMeasurable (fun y : (ℝ ∙ e)ᗮ ↦
+      ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e)) volume :=
+  aemeasurable_lintegral_line e he
+    ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+
+/-- Tonelli for the second moment: the second moment of a null-measurable set is the iterated
+integral over the lines parallel to `e`. -/
+theorem lintegral_norm_sq_eq_lintegral_lintegral_line (e : E) (he : ‖e‖ = 1) {u : Set E}
+    (hu : NullMeasurableSet u volume) :
+    (∫⁻ x in u, ENNReal.ofReal (‖x‖ ^ 2)) =
+      ∫⁻ y : (ℝ ∙ e)ᗮ, ∫⁻ t : ℝ,
+        u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) := by
+  rw [← lintegral_indicator₀ hu]
+  exact lintegral_eq_lintegral_lintegral_line e he
+    ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+
+omit [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] in
+/-- On the line through `y` parallel to `e`, the second-moment integrand of a set `u` is
+`‖y‖ ^ 2 + t ^ 2` on the section of `u`. -/
+theorem lintegral_line_indicator_norm_sq_eq (e : E) (he : ‖e‖ = 1) {u : Set E} (y : (ℝ ∙ e)ᗮ)
+    (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
+    ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e) =
+      ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
+  rw [← lintegral_indicator₀ hu]
+  apply lintegral_congr
+  intro t
+  -- Explicit section membership distinguishes its indicator from the ambient set's indicator.
+  by_cases ht : (y : E) + t • e ∈ u
+  · rw [indicator_of_mem ht,
+      indicator_of_mem (show t ∈ {t : ℝ | (y : E) + t • e ∈ u} from ht),
+      norm_add_smul_sq e he]
+  · rw [indicator_of_notMem ht,
+      indicator_of_notMem (show t ∉ {t : ℝ | (y : E) + t • e ∈ u} from ht)]
+
 private theorem lintegral_norm_sq_steinerSymmetrization_le_and_eq_iff
     (e : E) (he : ‖e‖ = 1) {s : Set E} (hs : NullMeasurableSet s volume)
     (hmoment : (∫⁻ x in s, ENNReal.ofReal (‖x‖ ^ 2)) ≠ ∞) :
@@ -43,28 +81,15 @@ private theorem lintegral_norm_sq_steinerSymmetrization_le_and_eq_iff
     ∫⁻ t : ℝ, u.indicator (fun x ↦ ENNReal.ofReal (‖x‖ ^ 2)) ((y : E) + t • e)
   -- Tonelli transports the ambient moment and its finiteness to almost every line.
   have hS := nullMeasurableSet_steinerSymmetrization e he hs
-  have hmeas (u : Set E) (hu : NullMeasurableSet u volume) : AEMeasurable (m u) volume := by
-    exact aemeasurable_lintegral_line e he
-      ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+  have hmeas (u : Set E) (hu : NullMeasurableSet u volume) : AEMeasurable (m u) volume :=
+    aemeasurable_lintegral_line_indicator_norm_sq e he hu
   have hformula (u : Set E) (hu : NullMeasurableSet u volume) :
-      (∫⁻ x in u, ENNReal.ofReal (‖x‖ ^ 2)) = ∫⁻ y, m u y := by
-    rw [← lintegral_indicator₀ hu]
-    exact lintegral_eq_lintegral_lintegral_line e he
-      ((continuous_norm.pow 2).measurable.ennreal_ofReal.aemeasurable.indicator₀ hu)
+      (∫⁻ x in u, ENNReal.ofReal (‖x‖ ^ 2)) = ∫⁻ y, m u y :=
+    lintegral_norm_sq_eq_lintegral_lintegral_line e he hu
   have hsection (u : Set E) (y : (ℝ ∙ e)ᗮ)
       (hu : NullMeasurableSet {t : ℝ | (y : E) + t • e ∈ u} volume) :
-      m u y = ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) := by
-    dsimp only [m]
-    rw [← lintegral_indicator₀ hu]
-    apply lintegral_congr
-    intro t
-    -- Explicit section membership distinguishes its indicator from the ambient set's indicator.
-    by_cases ht : (y : E) + t • e ∈ u
-    · rw [indicator_of_mem ht,
-        indicator_of_mem (show t ∈ {t : ℝ | (y : E) + t • e ∈ u} from ht),
-        norm_add_smul_sq e he]
-    · rw [indicator_of_notMem ht,
-        indicator_of_notMem (show t ∉ {t : ℝ | (y : E) + t • e ∈ u} from ht)]
+      m u y = ∫⁻ t in {t : ℝ | (y : E) + t • e ∈ u}, ENNReal.ofReal (‖y‖ ^ 2 + t ^ 2) :=
+    lintegral_line_indicator_norm_sq_eq e he y hu
   have hmoment' : (∫⁻ y, m s y) ≠ ∞ := by rwa [← hformula s hs]
   have hfinite := ae_lt_top' (hmeas s hs) hmoment'
   have hcomp : ∀ᵐ y : (ℝ ∙ e)ᗮ ∂volume,
