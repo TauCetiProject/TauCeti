@@ -5,9 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-import Mathlib.Analysis.Normed.Group.Pointwise
-import TauCeti.Analysis.PositiveDefinite.Kernel.Kolmogorov
 public import TauCeti.Analysis.PositiveDefinite.Function.Difference
+public import TauCeti.Analysis.PositiveDefinite.Kernel.Shift
 public import TauCeti.Analysis.PositiveDefinite.SemigroupGroup.Basic
 
 /-!
@@ -21,11 +20,9 @@ involutive semigroup `ℝ≥0 × V`, then every iterated time difference built f
 
 is again positive definite.
 
-The argument uses the canonical Kolmogorov decomposition of the BCR kernel. For any finite linear
-combination of feature vectors, translating every time coordinate by `s` gives a vector `w s` whose
-Gram function depends only on the sum of the two translation parameters. Its diagonal values form
-a bounded nonnegative log-convex sequence along any arithmetic progression. Such a sequence is
-decreasing, which is exactly positivity of the time difference.
+The first time difference is obtained from `TauCeti.posSemidef_sub_comp_shift`: the BCR kernel of
+a bounded positive-definite function is a bounded positive-definite kernel, the time shift is a
+symmetric shift of it, and the shifted kernel is dominated by the kernel itself.
 
 Applying Bochner's theorem to those differences makes the corresponding alternating differences
 of the spatial Bochner measures positive, the time-regularity input required to assemble the BCR
@@ -71,53 +68,6 @@ open ComplexConjugate InnerProductSpace Set
 open scoped ComplexOrder NNReal Pointwise fwdDiff
 
 namespace TauCeti
-
-private lemma antitone_of_nonneg_logConvex_bddAbove {u : ℕ → ℝ}
-    (hnonneg : ∀ n, 0 ≤ u n)
-    (hlog : ∀ n, u (n + 1) ^ 2 ≤ u n * u (n + 2))
-    (hbdd : BddAbove (range u)) : Antitone u := by
-  suffices hstep : ∀ n, u (n + 1) ≤ u n by
-    exact antitone_nat_of_succ_le hstep
-  intro n
-  by_contra hle
-  have hlt : u n < u (n + 1) := lt_of_not_ge hle
-  let d := u (n + 1) - u n
-  have hd : 0 < d := sub_pos.mpr hlt
-  have hinc : ∀ k, d ≤ u (n + k + 1) - u (n + k) := by
-    intro k
-    induction k with
-    | zero => simp [d]
-    | succ k ih =>
-        have hpos : 0 < u (n + k) := by
-          by_contra h
-          have hz : u (n + k) = 0 := le_antisymm (not_lt.mp h) (hnonneg _)
-          have := hlog (n + k)
-          have hu1pos : 0 < u (n + k + 1) := by nlinarith [ih, hd]
-          rw [hz, zero_mul] at this
-          exact (not_le_of_gt (sq_pos_of_pos hu1pos)) this
-        have hlog' := hlog (n + k)
-        have hnext : u (n + k + 1) - u (n + k) ≤
-            u (n + k + 2) - u (n + k + 1) := by
-          nlinarith
-        simpa only [Nat.add_assoc, Nat.succ_eq_add_one] using ih.trans hnext
-  have hlower : ∀ k : ℕ, u n + (k : ℝ) * d ≤ u (n + k) := by
-    intro k
-    induction k with
-    | zero => simp
-    | succ k ih =>
-        have hk := hinc k
-        calc
-          u n + (↑(k + 1) : ℝ) * d = (u n + (k : ℝ) * d) + d := by
-            push_cast
-            ring
-          _ ≤ u (n + k) + d := by simpa [add_comm] using add_le_add_right ih d
-          _ ≤ u (n + k + 1) := by linarith
-          _ = u (n + (k + 1)) := by congr 1
-  obtain ⟨B, hB⟩ := hbdd
-  obtain ⟨k : ℕ, hk⟩ := exists_nat_gt ((B - u n) / d)
-  have hrange : u (n + k) ≤ B := hB ⟨n + k, rfl⟩
-  have hk' : B - u n < (k : ℝ) * d := (div_lt_iff₀ hd).mp (by exact_mod_cast hk)
-  nlinarith [hlower k]
 
 universe u
 
@@ -264,130 +214,18 @@ variable {V : Type u} [AddCommGroup V] {F : ℝ≥0 × V → ℂ}
 
 namespace IsSemigroupGroupPD
 
-/-- The Hermitian symmetry of the alternating time difference of a BCR-positive-definite
-function. -/
-private theorem star_timeDifference_apply (hF : IsSemigroupGroupPD F) (h : ℝ≥0)
-    (p q : ℝ≥0 × V) :
-    star (TauCeti.timeDifference h F (p.1 + q.1, p.2 - q.2)) =
-      TauCeti.timeDifference h F (q.1 + p.1, q.2 - p.2) := by
-  rw [timeDifference_apply, timeDifference_apply, star_sub]
-  -- Express scalar star as complex conjugation so the BCR symmetry lemma applies.
-  change conj (F (p.1 + q.1, p.2 - q.2)) -
-      conj (F (p.1 + q.1 + h, p.2 - q.2)) = _
-  rw [hF.conj_symm p q]
-  rw [add_right_comm p.1 q.1 h]
-  have hs := hF.conj_symm (p.1 + h, p.2) q
-  rw [hs]
-  simp only [add_comm, add_left_comm]
-
-/-- A Gram family `w` whose Gram matrix is read off a bounded function `q` has `q h ≤ q 0`: the
-values `q (n • h)` are log-convex, nonnegative and bounded, hence antitone. -/
-theorem le_of_inner_eq_bddAbove {H : Type*} [NormedAddCommGroup H] [InnerProductSpace ℂ H]
-    (w : ℝ≥0 → H) (q : ℝ≥0 → ℝ) (h : ℝ≥0) (hq : ∀ s, q s = ‖w (s / 2)‖ ^ 2)
-    (hinner : ∀ a b, ⟪w a, w b⟫_ℂ = (q (a + b) : ℂ)) (hbdd : BddAbove (range q)) :
-    q h ≤ q 0 := by
-  have hq_nonneg (s : ℝ≥0) : 0 ≤ q s := by rw [hq]; positivity
-  let u (n : ℕ) : ℝ := q (n • h)
-  have hu_log (n : ℕ) : u (n + 1) ^ 2 ≤ u n * u (n + 2) := by
-    let a := (n • h) / 2
-    let b := ((n + 2) • h) / 2
-    let m := (n + 1) • h
-    have hmid : (n • h) / 2 + ((n + 2) • h) / 2 = (n + 1) • h := by
-      ext
-      simp only [NNReal.coe_add, NNReal.coe_div, NNReal.coe_ofNat, NNReal.coe_nsmul]
-      ring
-    have hcross : ⟪w a, w b⟫_ℂ = (q m : ℂ) := by
-      rw [hinner]
-      exact congrArg (fun s => (q s : ℂ)) (by simpa only [a, b, m] using hmid)
-    have hnorm := norm_inner_le_norm (𝕜 := ℂ) (w a) (w b)
-    have hsquare : ‖⟪w a, w b⟫_ℂ‖ ^ 2 ≤ (‖w a‖ * ‖w b‖) ^ 2 :=
-      (sq_le_sq₀ (norm_nonneg _) (mul_nonneg (norm_nonneg _) (norm_nonneg _))).2 hnorm
-    rw [hcross, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (hq_nonneg m), mul_pow,
-      ← hq, ← hq] at hsquare
-    simpa [u, a, b, m] using hsquare
-  have hu_bdd : BddAbove (range u) := by
-    obtain ⟨B, hB⟩ := hbdd
-    exact ⟨B, by rintro _ ⟨n, rfl⟩; exact hB ⟨_, rfl⟩⟩
-  have hanti : Antitone u :=
-    antitone_of_nonneg_logConvex_bddAbove (fun n => hq_nonneg _) hu_log hu_bdd
-  simpa [u] using hanti (Nat.zero_le 1)
-
-/-- The real part of a Gram-type quadratic form built from a function bounded by `C` is bounded
-independently of the shift `s`. -/
-private theorem re_sum_sum_le {ι : Type*} [Fintype ι] (F : ℝ≥0 × V → ℂ) (p : ι → ℝ≥0 × V)
-    (c : ι → ℂ) {C : ℝ} (hC : ∀ x, ‖F x‖ ≤ C) (s : ℝ≥0) :
-    RCLike.re (∑ i, ∑ j, star (c i) *
-      F ((p i).1 + (p j).1 + s, (p i).2 - (p j).2) * c j) ≤ ∑ i, ∑ j, ‖c i‖ * C * ‖c j‖ := by
-  calc
-    _ ≤ ‖∑ i, ∑ j, star (c i) * F ((p i).1 + (p j).1 + s, (p i).2 - (p j).2) * c j‖ :=
-      RCLike.re_le_norm _
-    _ ≤ ∑ i, ‖∑ j, star (c i) * F ((p i).1 + (p j).1 + s,
-        (p i).2 - (p j).2) * c j‖ := norm_sum_le _ _
-    _ ≤ ∑ i, ∑ j, ‖star (c i) * F ((p i).1 + (p j).1 + s,
-        (p i).2 - (p j).2) * c j‖ := Finset.sum_le_sum fun i _ => norm_sum_le _ _
-    _ ≤ _ := by
-      apply Finset.sum_le_sum
-      intro i _
-      apply Finset.sum_le_sum
-      intro j _
-      simp only [norm_mul, norm_star]
-      gcongr
-      exact hC _
-
 /-- A bounded BCR-positive-definite function remains positive definite after subtracting a forward
 time translate. In other words, for every `h : ℝ≥0`, the first alternating time difference
 `(t, v) ↦ F (t, v) - F (t + h, v)` is semigroup-group positive definite. -/
 theorem timeDifference (hF : IsSemigroupGroupPD F)
     (hbounded : Bornology.IsBounded (range F)) (h : ℝ≥0) :
     IsSemigroupGroupPD (TauCeti.timeDifference h F) := by
-  rw [isSemigroupGroupPD_iff_posSemidef]
-  refine posSemidef_iff_finite_sum.{0, u, u}.mpr ?_
-  refine ⟨star_timeDifference_apply hF h, ?_⟩
-  intro ι _ p c
-  classical
-  let K : (ℝ≥0 × V) → (ℝ≥0 × V) → ℂ :=
-    fun a b => F (a.1 + b.1, a.2 - b.2)
-  let hK : Matrix.PosSemidef K := hF.posSemidef
-  let w (s : ℝ≥0) : Matrix.PosSemidef.KolmogorovSpace hK :=
-    ∑ i, c i • hK.kolmogorovFeature ((p i).1 + s, (p i).2)
-  let z (s : ℝ≥0) : ℂ := ∑ i, ∑ j, star (c i) *
-    F ((p i).1 + (p j).1 + s, (p i).2 - (p j).2) * c j
-  let q (s : ℝ≥0) : ℝ := RCLike.re (z s)
-  have hinner (a b : ℝ≥0) : ⟪w a, w b⟫_ℂ = z (a + b) := by
-    simp only [w, sum_inner, inner_sum, inner_smul_left, inner_smul_right,
-      Matrix.PosSemidef.inner_kolmogorovFeature, K, RCLike.star_def, z]
-    simp_rw [Finset.mul_sum]
-    rw [Finset.sum_comm]
-    apply Finset.sum_congr rfl
-    intro i _
-    apply Finset.sum_congr rfl
-    intro j _
-    rw [add_add_add_comm]
-    ring
-  have hq_inner (s : ℝ≥0) : q s = ‖w (s / 2)‖ ^ 2 := by
-    rw [← inner_self_eq_norm_sq (𝕜 := ℂ) (w (s / 2)), hinner, add_halves]
-  have hz_eq (s : ℝ≥0) : z s = (q s : ℂ) := by
-    calc
-      z s = ⟪w (s / 2), w (s / 2)⟫_ℂ := by rw [hinner, add_halves]
-      _ = (‖w (s / 2)‖ : ℂ) ^ 2 := inner_self_eq_norm_sq_to_K _
-      _ = (q s : ℂ) := by rw [hq_inner]; norm_cast
+  rw [isSemigroupGroupPD_iff_posSemidef] at hF ⊢
   obtain ⟨C, hC⟩ := isBounded_iff_forall_norm_le.mp hbounded
-  have hdiff : 0 ≤ q 0 - q h :=
-    sub_nonneg.mpr <| le_of_inner_eq_bddAbove w q h hq_inner
-      (fun a b => by rw [hinner, hz_eq])
-      ⟨_, by rintro _ ⟨s, rfl⟩; exact re_sum_sum_le F p c (fun x => hC _ ⟨x, rfl⟩) s⟩
-  have hnonneg : (0 : ℂ) ≤ (q 0 : ℂ) - (q h : ℂ) := by
-    rw [Complex.nonneg_iff]
-    exact ⟨by simpa using hdiff, by simp⟩
-  rw [← hz_eq 0, ← hz_eq h] at hnonneg
-  refine hnonneg.trans_eq ?_
-  simp only [z]
-  rw [← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun i _ => ?_
-  rw [← Finset.sum_sub_distrib]
-  refine Finset.sum_congr rfl fun j _ => ?_
-  simp only [add_zero, timeDifference_apply]
-  ring_nf
+  convert posSemidef_sub_comp_shift
+    (K := fun p q : ℝ≥0 × V => F (p.1 + q.1, p.2 - q.2)) (σ := fun p => (p.1 + h, p.2)) hF
+    (fun p q => by simp only [add_right_comm p.1 h q.1, add_assoc]) (fun p => hC _ ⟨_, rfl⟩) using 2
+  simp [add_right_comm]
 
 /-- Every alternating time difference along a finite list of steps of a bounded
 BCR-positive-definite function is again semigroup-group positive definite. -/
