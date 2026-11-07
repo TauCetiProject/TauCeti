@@ -5,6 +5,10 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Basic.Finite.Prod
+public import Mathlib.Basic.Finite.Sigma
+public import Mathlib.Combinatorics.Quiver.ConnectedComponent
+public import Mathlib.Data.Fintype.Powerset
 public import Mathlib.Data.Set.Lattice.Bounded
 public import TauCeti.Combinatorics.Network.Basic
 public import TauCeti.Combinatorics.Network.Walk
@@ -20,6 +24,11 @@ This file supplies the elementary set operations used to build subnetworks: indu
 restriction and deletion of vertices or arrows, singleton and empty subnetworks, and unions inside
 a fixed ambient network. It also defines the subnetwork traced by a directed walk. In particular,
 isolated selected vertices remain visible under every operation that does not delete them.
+
+A subnetwork is strongly connected when its own arrow family on its selected vertices is, which
+is the case exactly when any two selected vertices are joined by an ambient walk along selected
+arrows. Adjoining a walk between two selected vertices preserves strong connectivity; this is the
+step by which directed ear decompositions build strongly connected networks.
 -/
 
 public section
@@ -54,6 +63,11 @@ theorem ext {S T : N.Subnetwork} (hV : S.vertexSet = T.vertexSet)
   cases hV
   cases hA
   rfl
+
+/-- A network with finitely many vertices and arrows has finitely many subnetworks. -/
+instance [Finite V] [∀ v w, Finite (N.Hom v w)] : Finite N.Subnetwork :=
+  Finite.of_injective (fun S : N.Subnetwork ↦ (S.vertexSet, S.arrowSet)) fun _ _ h ↦
+    Subnetwork.ext (congrArg Prod.fst h) (congrArg Prod.snd h)
 
 /-- The arrow family of a subnetwork, indexed by its selected vertex subtype. -/
 abbrev Hom (S : N.Subnetwork) (x y : ↥S.vertexSet) :=
@@ -468,3 +482,93 @@ theorem target_mem_toSubnetwork {s t : V} (p : ArrowWalk N.Hom s t) :
   @Quiver.Path.end_mem_vertices V ⟨N.Hom⟩ s t p
 
 end TauCeti.ArrowWalk
+
+namespace TauCeti.Network.Subnetwork
+
+variable {K : Type w} {V : Type u} [LE K] {N : Network K V}
+
+/-! ### Strong connectivity -/
+
+/-- A subnetwork is strongly connected when its own arrow family, on its selected vertices, is
+strongly connected. -/
+abbrev IsStronglyConnected (S : N.Subnetwork) : Prop :=
+  @Quiver.IsStronglyConnected S.vertexSet ⟨S.Hom⟩
+
+/-- A walk along arrows of `S` from a vertex of `S` ends in `S` and lifts to a walk of `S`. -/
+private theorem exists_arrowWalk_of_forall_mem (S : N.Subnetwork) {u : V}
+    (hu : u ∈ S.vertexSet) {w : V} (p : ArrowWalk N.Hom u w)
+    (hp : ∀ a ∈ p.arrows, a ∉ S.arrowSetᶜ) :
+    ∃ hw : w ∈ S.vertexSet, Nonempty (ArrowWalk S.Hom ⟨u, hu⟩ ⟨w, hw⟩) := by
+  induction p with
+  | nil => exact ⟨hu, ⟨ArrowWalk.nil _⟩⟩
+  | cons q e ih =>
+    simp only [ArrowWalk.arrows_cons, List.mem_append, List.mem_singleton] at hp
+    obtain ⟨ht, ⟨q'⟩⟩ := ih fun a ha ↦ hp a (.inl ha)
+    have he := not_not.1 (hp _ (.inr rfl))
+    exact ⟨S.target_mem _ he, ⟨q'.cons ⟨e, he⟩⟩⟩
+
+/-- A walk of a subnetwork is an ambient walk along arrows of the subnetwork. -/
+private theorem reachableWithout_of_arrowWalk (S : N.Subnetwork) {x y : ↥S.vertexSet}
+    (p : ArrowWalk S.Hom x y) : ReachableWithout S.arrowSetᶜ x.1 y.1 := by
+  induction p with
+  | nil => exact .refl _ _
+  | cons _ e ih => exact ih.tail e.1 (not_not.2 e.2)
+
+/-- A subnetwork is strongly connected exactly when any two of its vertices are joined by an
+ambient walk along its arrows. -/
+theorem isStronglyConnected_iff_forall_reachableWithout (S : N.Subnetwork) :
+    S.IsStronglyConnected ↔
+      ∀ u ∈ S.vertexSet, ∀ w ∈ S.vertexSet, ReachableWithout S.arrowSetᶜ u w := by
+  constructor
+  · intro h u hu w hw
+    obtain ⟨p⟩ := h ⟨u, hu⟩ ⟨w, hw⟩
+    exact S.reachableWithout_of_arrowWalk p
+  · intro h u w
+    obtain ⟨p, hp⟩ := reachableWithout_def.1 (h u u.2 w w.2)
+    exact (S.exists_arrowWalk_of_forall_mem u.2 p hp).2
+
+/-- A singleton subnetwork is strongly connected. -/
+theorem isStronglyConnected_singleton (x : V) : (N.singletonSubnetwork x).IsStronglyConnected := by
+  rintro ⟨u, hu⟩ ⟨w, hw⟩
+  simp only [vertexSet_singleton, Set.mem_singleton_iff] at hu hw
+  subst hu hw
+  exact ⟨ArrowWalk.nil _⟩
+
+/-- The full subnetwork is strongly connected exactly when the network is. -/
+theorem isStronglyConnected_top_iff :
+    (⊤ : N.Subnetwork).IsStronglyConnected ↔ @Quiver.IsStronglyConnected V ⟨N.Hom⟩ := by
+  rw [isStronglyConnected_iff_forall_reachableWithout]
+  simp only [arrowSet_top, Set.compl_univ, reachableWithout_empty_iff, vertexSet_top,
+    Set.mem_univ, forall_const]
+  exact (@Quiver.isStronglyConnected_iff V ⟨N.Hom⟩).symm
+
+/-- Adjoining a walk between two vertices of a strongly connected subnetwork preserves strong
+connectivity. -/
+theorem IsStronglyConnected.sup_toSubnetwork {S : N.Subnetwork} (hS : S.IsStronglyConnected)
+    {a b : V} (p : ArrowWalk N.Hom a b) (ha : a ∈ S.vertexSet) (hb : b ∈ S.vertexSet) :
+    (S ⊔ p.toSubnetwork).IsStronglyConnected := by
+  rw [isStronglyConnected_iff_forall_reachableWithout] at hS ⊢
+  have hmono {u w : V} (h : ReachableWithout S.arrowSetᶜ u w) :
+      ReachableWithout (S ⊔ p.toSubnetwork).arrowSetᶜ u w :=
+    h.mono (Set.compl_subset_compl.2 (by simp))
+  -- Each vertex of `p` is reachable from `a` and reaches `b` along `p`.
+  have hsplit (v : V) (hv : v ∈ p.vertices) :
+      ReachableWithout (S ⊔ p.toSubnetwork).arrowSetᶜ a v ∧
+        ReachableWithout (S ⊔ p.toSubnetwork).arrowSetᶜ v b := by
+    obtain ⟨p₁, p₂, rfl⟩ := @Quiver.Path.exists_eq_comp_of_mem_vertices V ⟨N.Hom⟩ _ _ p _ hv
+    refine ⟨reachableWithout_def.2 ⟨p₁, fun c hc ↦ ?_⟩,
+      reachableWithout_def.2 ⟨p₂, fun c hc ↦ ?_⟩⟩ <;>
+      simp [ArrowWalk.arrows_comp, hc]
+  have hto (u : V) (hu : u ∈ (S ⊔ p.toSubnetwork).vertexSet) :
+      ReachableWithout (S ⊔ p.toSubnetwork).arrowSetᶜ u a := by
+    rcases (by simpa using hu : u ∈ S.vertexSet ∨ u ∈ p.vertices) with hu | hu
+    · exact hmono (hS u hu a ha)
+    · exact (hsplit u hu).2.trans (hmono (hS b hb a ha))
+  have hfrom (w : V) (hw : w ∈ (S ⊔ p.toSubnetwork).vertexSet) :
+      ReachableWithout (S ⊔ p.toSubnetwork).arrowSetᶜ a w := by
+    rcases (by simpa using hw : w ∈ S.vertexSet ∨ w ∈ p.vertices) with hw | hw
+    · exact hmono (hS a ha w hw)
+    · exact (hsplit w hw).1
+  exact fun u hu w hw ↦ (hto u hu).trans (hfrom w hw)
+
+end TauCeti.Network.Subnetwork
