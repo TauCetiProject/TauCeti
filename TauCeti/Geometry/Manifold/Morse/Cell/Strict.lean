@@ -23,7 +23,7 @@ isomorphism of the pair `(D^{k i}, ∂D^{k i})`, and suppose `α₁ i = α₀ i 
 lower sublevel and `h i` on the disc of `i`, is a homeomorphism (`TauCeti.morseCellAttachmentIso`,
 in `Cell/Comparison.lean`). If moreover the characteristic maps satisfy `χ₁ i = χ₀ i ∘ h i`, it
 intertwines the handle-to-cell comparisons `Φ₀` and `Φ₁`
-(`TauCeti.morseCellAttachmentIso_hom_comp_morseCellComparison`).
+(`TauCeti.morseCellAttachmentIso_hom_comp_morseCellComparison`, also in `Cell/Comparison.lean`).
 
 This homeomorphism represents the relative homotopy class of Milnor's reattachment map whenever the
 homotopy of pairs `K i : χ₁ i ≃ χ₀ i ∘ h i` is stationary on the boundary sphere
@@ -33,9 +33,6 @@ boundary sphere, and the radial push from the identity to `ρ` fixes that sphere
 
 ## Main results
 
-* `TauCeti.morseCellAttachmentIso_hom_comp_morseCellComparison`: the homeomorphism `id ⊔ h` is
-  compatible with the handle-to-cell comparisons when the characteristic maps are strictly
-  related.
 * `TauCeti.homotopicRel_morseCellReattachment_morseCellAttachmentIso`: a reattachment map whose
   homotopy is stationary on the boundary spheres is homotopic to `id ⊔ h` relative to the lower
   sublevel.
@@ -80,57 +77,9 @@ private theorem hom_comp_morseAttachingMap_comp_morseCellAttachmentIncl (i : ι)
         morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i := by
   rw [morseAttachingMap_comp_morseCellAttachmentIncl, ← Category.assoc, hhb, Category.assoc]
 
-/-- The adjunction homeomorphism sends a point of the lower sublevel to itself. -/
-@[simp]
-theorem morseCellAttachmentIso_hom_morseCellAttachmentIncl (x : {x | f x ≤ c - ε}) :
-    (morseCellAttachmentIso φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hb hhb hα).hom
-        (morseCellAttachmentIncl φ₁ k hk hε hball₁ hf₁ x) =
-      morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ x := by
-  rw [← ConcreteCategory.comp_apply, morseCellAttachmentIncl_comp_morseCellAttachmentIso_hom]
-
-/-- The adjunction homeomorphism sends the point `w` of the disc of `i` to the point `h i w` of
-the disc of `i`. -/
-@[simp]
-theorem morseCellAttachmentIso_hom_morseCellAttachmentCell (i : ι) (w : TopCat.disk.{u} (k i)) :
-    (morseCellAttachmentIso φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hb hhb hα).hom
-        (morseCellAttachmentCell φ₁ k hk hε hball₁ hf₁ i w) =
-      morseCellAttachmentCell φ₀ k hk hε hball₀ hf₀ i ((h i).hom w) := by
-  rw [← ConcreteCategory.comp_apply, morseCellAttachmentCell_comp_morseCellAttachmentIso_hom,
-    ConcreteCategory.comp_apply]
-
-/-- If the characteristic maps are strictly related, `χ₁ i = χ₀ i ∘ h i`, then the adjunction
-homeomorphism intertwines the handle-to-cell comparisons: `Φ₀ ∘ (id ⊔ h) = Φ₁`. -/
-theorem morseCellAttachmentIso_hom_comp_morseCellComparison
-    (hχ : ∀ i, (φ₁ i).morseCharacteristicMap (hk i) hε (hball₁ i) (hf₁ i) =
-      (h i).hom ≫ (φ₀ i).morseCharacteristicMap (hk i) hε (hball₀ i) (hf₀ i)) :
-    (morseCellAttachmentIso φ₀ φ₁ k hk hε hball₀ hball₁ hf₀ hf₁ h hb hhb hα).hom ≫
-        morseCellComparison φ₀ k hk hε hball₀ hf₀ =
-      morseCellComparison φ₁ k hk hε hball₁ hf₁ :=
-  morseCellAttachment_hom_ext φ₁ k hk hball₁ hf₁ hε (by simp) fun i ↦ by simp [hχ]
-
 section Reattachment
 
 open unitInterval
-
-/-- At its end, the radial push with radius `1/2` sends a point `x` of the disc with
-`1/2 ≤ ‖x‖` to `x / ‖x‖`. -/
-private theorem coe_diskRadialPush_one_of_le_norm {m : ℕ} {w : TopCat.disk.{u} m}
-    (hw : 1 / 2 ≤ ‖w.down.1‖) :
-    (TopCat.diskRadialPush m (by norm_num : (0 : ℝ) ≤ 1 / 2) (1, w)).down.1 =
-      ‖w.down.1‖⁻¹ • w.down.1 := by
-  rw [TopCat.coe_diskRadialPush_apply_down, radialPush_one, radialRetraction_of_le_norm hw,
-    smul_smul]
-  congr 1
-  field_simp
-
-/-- At its end, the radial push with radius `1/2` sends a point `x` of the disc with
-`‖x‖ ≤ 1/2` to `2x`. -/
-private theorem coe_diskRadialPush_one_of_norm_le {m : ℕ} {w : TopCat.disk.{u} m}
-    (hw : ‖w.down.1‖ ≤ 1 / 2) :
-    (TopCat.diskRadialPush m (by norm_num : (0 : ℝ) ≤ 1 / 2) (1, w)).down.1 =
-      (2 : ℝ) • w.down.1 := by
-  rw [TopCat.coe_diskRadialPush_apply_down, radialPush_one, radialRetraction_of_norm_le hw]
-  norm_num
 
 variable
   (K : ∀ i, ((φ₁ i).morseCharacteristicMap (hk i) hε (hball₁ i) (hf₁ i)).hom.Homotopy
@@ -153,22 +102,19 @@ private theorem morseCellReattachment_morseCellAttachmentCell_of_stationary
   by_cases hw : 1 / 2 ≤ ‖w.down.1‖
   · have hw₁ : ‖w.down.1‖ ≤ 1 := mem_closedBall_zero_iff.1 w.down.2
     -- The point `x / ‖x‖` of the boundary sphere reached by the radial push.
-    set s : TopCat.diskBoundary.{u} (k i) :=
-      ULift.up ⟨‖w.down.1‖⁻¹ • w.down.1, by
-        rw [mem_sphere_zero_iff_norm, norm_smul, norm_inv, norm_norm,
-          inv_mul_cancel₀ (by linarith)]⟩
-    have hs : TopCat.diskBoundaryInclusion (k i) s =
-        TopCat.diskRadialPush (k i) (by norm_num : (0 : ℝ) ≤ 1 / 2) (1, w) :=
-      ULift.ext (Subtype.ext ((TopCat.coe_diskBoundaryInclusion_apply_down (k i) s).trans
-        (coe_diskRadialPush_one_of_le_norm hw).symm))
+    obtain ⟨s, hs⟩ := (mem_range_diskBoundaryInclusion_iff _).2
+      (TopCat.norm_diskRadialPush_one (by norm_num : (0 : ℝ) < 1 / 2) hw)
     obtain ⟨t, ht⟩ : ∃ t : I, (t : ℝ) = 2 - 2 * ‖w.down.1‖ :=
       ⟨⟨2 - 2 * ‖w.down.1‖, by linarith, by linarith⟩, rfl⟩
     rw [morseCellReattachment_morseCellAttachmentCell_of_le_norm φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
-      hf₁ _ _ K hK i hw ht (s := s) rfl, ← hs]
+      hf₁ _ _ K hK i hw ht ((TopCat.coe_diskBoundaryInclusion_apply_down (k i) s).symm.trans
+        ((congrArg (fun v ↦ v.down.1) hs).trans
+          (TopCat.coe_diskRadialPush_one_of_le_norm (by norm_num) hw))), ← hs]
     exact (congrArg _ (Subtype.ext (hKb i t s))).trans (ConcreteCategory.congr_hom
       (hom_comp_morseAttachingMap_comp_morseCellAttachmentIncl φ₀ k hk hε hball₀ hf₀ h hb hhb i) s)
   · exact morseCellReattachment_morseCellAttachmentCell_of_norm_le φ₀ φ₁ k hk hε hball₀ hball₁ hf₀
-      hf₁ _ _ K hK i (not_le.1 hw).le (coe_diskRadialPush_one_of_norm_le (not_le.1 hw).le)
+      hf₁ _ _ K hK i (not_le.1 hw).le
+      ((TopCat.coe_diskRadialPush_one_of_norm_le _ (not_le.1 hw).le).trans (by norm_num))
 
 /-- **The strict comparison represents the reattachment map.** If the homotopies of pairs
 `K i : χ₁ i ≃ χ₀ i ∘ h i` are stationary on the boundary spheres, where they are
