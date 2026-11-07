@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Logic.Equiv.Option
+public import Mathlib.Data.Fintype.Perm
+public import Mathlib.SetTheory.Cardinal.Finite
 
 /-!
 # Extending a matching of the complements of two points
@@ -13,6 +15,10 @@ public import Mathlib.Logic.Equiv.Option
 A relation between two index types that holds along an equivalence of the complements of two
 points, and also holds at those two points, is realised by an equivalence of the whole types
 (`Equiv.exists_equiv_forall_of_equiv_subtype_ne`).
+
+Conversely, `Equiv.optionSubtype` identifies the equivalences sending one point to another with
+the equivalences of their complements, so between two types with `m + 1` elements there are `m!`
+equivalences sending a given point to a given point (`Nat.card_subtype_equiv_apply_eq`).
 -/
 
 public section
@@ -38,3 +44,23 @@ theorem exists_equiv_forall_of_equiv_subtype_ne {ι κ : Type*}
     exact h ⟨i, hi⟩
 
 end Equiv
+
+open Equiv in
+/-- Between two finite types of the same cardinality, the equivalences sending `a` to `b` are
+counted by the factorial of the number of remaining points. -/
+theorem Nat.card_subtype_equiv_apply_eq {α β : Type*} [Finite α]
+    (hαβ : Nat.card α = Nat.card β) (a : α) (b : β) :
+    Nat.card {e : α ≃ β // e a = b} = (Nat.card α - 1).factorial := by
+  classical
+  have : Finite β := Nat.finite_of_card_ne_zero (by
+    have := Nat.card_pos_iff.2 ⟨⟨a⟩, ‹_›⟩; omega)
+  let := Fintype.ofFinite α
+  let := Fintype.ofFinite β
+  let E : {e : α ≃ β // e a = b} ≃ ({x // x ≠ a} ≃ {y // y ≠ b}) :=
+    ((equivCongr (optionSubtypeNe a) (Equiv.refl β)).symm.subtypeEquiv (fun e ↦ by simp)).trans
+      (optionSubtype b)
+  have hb : Fintype.card {x // x ≠ a} = Fintype.card {y // y ≠ b} := by
+    simpa [Fintype.card_subtype_compl, Nat.card_eq_fintype_card] using congrArg (· - 1) hαβ
+  rw [Nat.card_congr E, Nat.card_eq_fintype_card,
+    Fintype.card_equiv (Fintype.equivOfCardEq hb), Nat.card_eq_fintype_card]
+  simp [Fintype.card_subtype_compl]

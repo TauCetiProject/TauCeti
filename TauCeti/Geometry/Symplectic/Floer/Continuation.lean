@@ -83,6 +83,8 @@ continuation cylinders are not treated here.
 * `SymplecticForm.integral_floerEnergyDensity_linearHomotopy_le`,
   `SymplecticForm.hamiltonianAction_le_hamiltonianAction_add_of_linearHomotopy`: the energy bound
   and the action shift of a linear homotopy with a monotone profile over a rectangle.
+* `TauCeti.Floer.abs_continuationHomotopy_le`: a common bound for `H₀` and `H₁` bounds the
+  continuation homotopy.
 * `TauCeti.Floer.fderiv_continuationHomotopy_stdComplexLineReal`,
   `SymplecticForm.hamiltonianCurvature_continuationHomotopy`: the `s`-derivative and the curvature
   of the continuation homotopy are `β'(s) (H₁ - H₀)`.
@@ -184,6 +186,17 @@ theorem continuationHomotopy_of_nonpos {z : ℝ × ℝ} (hz : z.1 ≤ 0) (x : V)
 theorem continuationHomotopy_of_one_le {z : ℝ × ℝ} (hz : 1 ≤ z.1) (x : V) :
     continuationHomotopy H₀ H₁ z x = H₁ z.2 x :=
   linearHomotopy_of_eq_one (smoothTransition.one_of_one_le hz) x
+
+/-- The continuation homotopy is a convex combination of `H₀` and `H₁`, so a common bound
+`|H₀|, |H₁| ≤ B` bounds it. -/
+theorem abs_continuationHomotopy_le {B : ℝ} {z : ℝ × ℝ} {x : V} (h₀ : |H₀ z.2 x| ≤ B)
+    (h₁ : |H₁ z.2 x| ≤ B) : |continuationHomotopy H₀ H₁ z x| ≤ B := by
+  have hβ₀ := smoothTransition.nonneg z.1
+  have hβ₁ := smoothTransition.le_one z.1
+  rw [continuationHomotopy_def, abs_le]
+  obtain ⟨h₀l, h₀u⟩ := abs_le.1 h₀
+  obtain ⟨h₁l, h₁u⟩ := abs_le.1 h₁
+  constructor <;> nlinarith
 
 /-- The continuation homotopy of two `Cⁿ` time-dependent Hamiltonians is `Cⁿ`. -/
 theorem contDiff_uncurry_continuationHomotopy [NormedAddCommGroup V] [NormedSpace ℝ V] {n : ℕ∞}
