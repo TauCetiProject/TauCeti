@@ -571,6 +571,26 @@ theorem tendsto_extChartAt_restrict (U : Opens M) (x : M) (y : U) {z : E}
   change U.carrier.Mem ((extChartAt I x).symm w)
   exact hwU
 
+/-- Every inherited source chart of an open subset of a normed space has that open subset as
+its extended target. -/
+theorem extChartAt_opens_target (U : Opens E) (x : U) :
+    (extChartAt 𝓘(𝕜, E) x).target = (U : Set E) := by
+  simp [extChartAt, Opens.chartAt_eq, OpenPartialHomeomorph.subtypeRestr_def]
+
+/-- The target of an inherited chart is canonically homeomorphic to the open source. -/
+noncomputable def openChartTargetHomeomorph (U : Opens E) (x : U) :
+    (extChartAt 𝓘(𝕜, E) x).target ≃ₜ U :=
+  Homeomorph.setCongr (extChartAt_opens_target U x)
+
+/-- The chart-target homeomorphism retains the ambient coordinate value. -/
+theorem coe_openChartTargetHomeomorph_apply (U : Opens E) (x : U)
+    (z : (extChartAt 𝓘(𝕜, E) x).target) :
+    ((U.openChartTargetHomeomorph (𝕜 := 𝕜) x z : U) : E) = z := by
+  -- The set-congruence homeomorphism changes only the membership proof.
+  unfold openChartTargetHomeomorph
+  rfl
+
+
 end TopologicalSpace.Opens
 
 open scoped ContDiff
