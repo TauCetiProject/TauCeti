@@ -6,11 +6,11 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Probability.Distributions.Semicircle.ResolventTransform
-import TauCeti.Analysis.Complex.UpperHalfPlaneLogKernel
-import Mathlib.Analysis.SpecialFunctions.Complex.LogDeriv
+import TauCeti.Analysis.Complex.UpperHalfPlane.LogKernel
 import Mathlib.Analysis.SpecialFunctions.Integrals.Basic
 import Mathlib.MeasureTheory.Integral.DominatedConvergence
 import Mathlib.MeasureTheory.Function.SpecialFunctions.Basic
+import TauCeti.MeasureTheory.Measure.ResolventTransform.Expansion
 
 /-!
 # The logarithmic potential of the semicircle law
@@ -86,67 +86,6 @@ theorem integrable_log_abs_sub_semicircleReal (x a : ℝ) (v : ℝ≥0) :
     rw [← Measure.restrict_smul]
     exact Measure.restrict_mono_measure (semicircleReal_le_smul_volume a hv) _
 
-private theorem log_norm_sub_bound (x y ε : ℝ) (hεpos : 0 < ε) (hεle : ε ≤ 1)
-    (hy : y ∈ Icc (-2 : ℝ) 2) (hxy : y ≠ x) :
-    ‖Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖‖ ≤
-      ‖Real.log |x - y|‖ + Real.log (|x| + 3) := by
-  have hdiff : 0 < |x - y| := abs_pos.mpr (sub_ne_zero.mpr (Ne.symm hxy))
-  have hlow :
-      |x - y| ≤ ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := by
-    have hre : ((x : ℂ) + (ε : ℂ) * Complex.I - y).re = x - y := by simp
-    rw [← hre]
-    exact Complex.abs_re_le_norm _
-  have hhigh :
-      ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ |x - y| + 1 := by
-    calc
-      ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖
-          = ‖((x - y : ℝ) : ℂ) + (ε : ℂ) * Complex.I‖ := by
-        congr 1
-        push_cast
-        ring
-      _ ≤ ‖((x - y : ℝ) : ℂ)‖ + ‖(ε : ℂ) * Complex.I‖ := norm_add_le _ _
-      _ = |x - y| + ε := by
-        rw [Complex.norm_real, Real.norm_eq_abs]
-        simp [abs_of_pos hεpos]
-      _ ≤ |x - y| + 1 := by linarith
-  have hdiff_le : |x - y| ≤ |x| + 2 := by
-    rw [abs_le]
-    constructor
-    · have hx := neg_abs_le x
-      have hy' := hy.2
-      linarith
-    · have hx := le_abs_self x
-      have hy' := hy.1
-      linarith
-  have hlog_low := Real.log_le_log hdiff hlow
-  have hnormpos : 0 < ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ :=
-    lt_of_lt_of_le hdiff hlow
-  have hlog_high : Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤
-      Real.log (|x| + 3) :=
-    Real.log_le_log hnormpos (by linarith [hhigh, hdiff_le])
-  have hlog_bound :
-      |Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖| ≤ ‖Real.log |x - y|‖ + Real.log (|x| + 3) := by
-    apply abs_le.mpr
-    constructor
-    · calc
-        -(‖Real.log |x - y|‖ + Real.log (|x| + 3)) ≤ Real.log |x - y| := by
-          have hconst : 0 ≤ Real.log (|x| + 3) :=
-            Real.log_nonneg (by have := abs_nonneg x; linarith)
-          have hneg : -‖Real.log |x - y|‖ ≤ Real.log |x - y| := by
-            rw [Real.norm_eq_abs]
-            exact neg_abs_le _
-          calc
-            -(‖Real.log |x - y|‖ + Real.log (|x| + 3))
-                ≤ -‖Real.log |x - y|‖ := by linarith
-            _ ≤ Real.log |x - y| := hneg
-        _ ≤ Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ := hlog_low
-    · calc
-        Real.log ‖(x : ℂ) + (ε : ℂ) * Complex.I - y‖ ≤ Real.log (|x| + 3) :=
-          hlog_high
-        _ ≤ ‖Real.log |x - y|‖ + Real.log (|x| + 3) :=
-          le_add_of_nonneg_left (norm_nonneg _)
-  simpa only [Real.norm_eq_abs] using hlog_bound
-
 private theorem tendsto_log_norm_sub_integral (x : ℝ) :
     Tendsto
       (fun ε : ℝ ↦ ∫ y : ℝ,
@@ -172,7 +111,7 @@ private theorem tendsto_log_norm_sub_integral (x : ℝ) :
     let := nullSingletonClass_semicircleReal 0 one_pos
     filter_upwards [ae_mem_Icc_semicircleReal_zero_one,
       (semicircleReal 0 1).ae_ne x] with y hy hxy
-    simpa only [bound] using log_norm_sub_bound x y ε hεpos hεle hy hxy
+    simpa only [bound] using TauCeti.log_norm_sub_bound x y ε hεpos hεle hy hxy
   · let := nullSingletonClass_semicircleReal 0 one_pos
     filter_upwards [(semicircleReal 0 1).ae_ne x] with y hxy
     have harg : ContinuousAt
@@ -401,28 +340,9 @@ private theorem m_at_imaginary_axis (t : ℝ) (ht : 0 < t) :
 
 private theorem tendsto_mul_m_im_atTop :
     Tendsto (fun t : ℝ ↦ t * (m (t * Complex.I)).im) atTop (𝓝 1) := by
-  refine tendsto_order.2 ⟨fun a ha ↦ ?_, fun a ha ↦ ?_⟩
-  · have hδ : 0 < 1 - a := sub_pos.mpr ha
-    filter_upwards [eventually_gt_atTop (max 1 (1 / (1 - a)))] with t ht
-    have ht1 : 1 < t := lt_of_le_of_lt (le_max_left _ _) ht
-    have ht0 : 0 < t := by linarith
-    have htd : 1 / (1 - a) < t := lt_of_le_of_lt (le_max_right _ _) ht
-    have hδt : 1 < (1 - a) * t := by
-      simpa [mul_comm] using (div_lt_iff₀ hδ).mp htd
-    have hδt2 : 1 < (1 - a) * t ^ 2 := by nlinarith
-    have ht2 : 1 / t ^ 2 < 1 - a := (div_lt_iff₀ (sq_pos_of_pos ht0)).mpr hδt2
-    have h := (m_at_imaginary_axis t ht0).2
-    have hb : 0 < (m (t * Complex.I)).im := m_im_pos (by simpa using ht0)
-    have hb_le : (m (t * Complex.I)).im ≤ 1 / t := by
-      apply (le_div_iff₀ ht0).2
-      nlinarith [sq_nonneg (m (t * Complex.I)).im]
-    have hb_sq : (m (t * Complex.I)).im ^ 2 ≤ 1 / t ^ 2 := by
-      have hsq := (sq_le_sq₀ (le_of_lt hb) (by positivity : 0 ≤ 1 / t)).2 hb_le
-      simpa [one_div_pow] using hsq
-    nlinarith
-  · filter_upwards [eventually_gt_atTop 0] with t ht
-    have h := (m_at_imaginary_axis t ht).2
-    nlinarith [sq_nonneg (m (t * Complex.I)).im]
+  have h := (Complex.continuous_re.tendsto _).comp
+    (tendsto_mul_I_mul_resolventTransform (μ := semicircleReal 0 1))
+  simpa [m, Complex.mul_re] using h.neg
 
 private theorem integrable_log_norm_imaginary (t : ℝ) (ht : 0 < t) :
     Integrable (fun y : ℝ ↦ Real.log ‖(t : ℂ) * Complex.I - y‖)
