@@ -173,6 +173,31 @@ section UnitaryConjSelfAdjoint
 
 variable [CompleteSpace H] [CompleteSpace H']
 
+/-- If `A` is self-adjoint and the domain of `unitaryConj U A` is dense, then the adjoint of
+`unitaryConj U A` has no larger domain than `unitaryConj U A`. -/
+theorem mem_unitaryConj_domain_of_mem_adjoint_domain {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜] H}
+    (hA : IsSelfAdjoint A) (hdenseB : Dense ((unitaryConj U A).domain : Set H')) {y : H'}
+    (hy : y ∈ (_root_.LinearPMap.adjoint (unitaryConj U A)).domain) :
+    y ∈ (unitaryConj U A).domain := by
+  set B := unitaryConj U A with hB
+  have hform := _root_.LinearPMap.adjoint_isFormalAdjoint (T := B) hdenseB ⟨y, hy⟩
+  rw [hB, mem_unitaryConj_domain_iff]
+  have hwit : ∀ u : A.domain,
+      ⟪U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), (u : H)⟫_𝕜 = ⟪U.symm y, A u⟫_𝕜 := by
+    intro u
+    have h := hform ⟨U (u : H), map_mem_unitaryConj_domain U A u⟩
+    rw [unitaryConj_apply_map] at h
+    calc ⟪U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), (u : H)⟫_𝕜
+        = ⟪(_root_.LinearPMap.adjoint B) ⟨y, hy⟩, U (u : H)⟫_𝕜 := by
+          rw [← U.inner_map_map (U.symm _) (u : H), U.apply_symm_apply]
+      _ = ⟪y, U (A u)⟫_𝕜 := h
+      _ = ⟪U.symm y, A u⟫_𝕜 := by
+          rw [← U.inner_map_map (U.symm y) (A u), U.apply_symm_apply]
+  have hmem : U.symm y ∈ (_root_.LinearPMap.adjoint A).domain :=
+    _root_.LinearPMap.mem_adjoint_domain_of_exists _
+      ⟨U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), hwit⟩
+  rwa [_root_.LinearPMap.isSelfAdjoint_def.mp hA] at hmem
+
 /-- Unitary conjugation preserves self-adjointness, transporting the domain. -/
 theorem isSelfAdjoint_unitaryConj {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜] H}
     (hA : IsSelfAdjoint A) : IsSelfAdjoint (unitaryConj U A) := by
@@ -208,25 +233,8 @@ theorem isSelfAdjoint_unitaryConj {U : H ≃ₗᵢ[𝕜] H'} {A : H →ₗ.[𝕜
       _ = ⟪(x : H'), B y⟫_𝕜 := by
           rw [U.apply_symm_apply, hB_apply y hy]
   -- the adjoint domain of `B` sits inside `B`'s domain
-  have hsub : ∀ y : H', y ∈ (_root_.LinearPMap.adjoint B).domain → y ∈ B.domain := by
-    intro y hy
-    have hform := _root_.LinearPMap.adjoint_isFormalAdjoint (T := B) hdenseB ⟨y, hy⟩
-    rw [hB, mem_unitaryConj_domain_iff]
-    have hwit : ∀ u : A.domain,
-        ⟪U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), (u : H)⟫_𝕜 = ⟪U.symm y, A u⟫_𝕜 := by
-      intro u
-      have h := hform ⟨U (u : H), map_mem_unitaryConj_domain U A u⟩
-      rw [unitaryConj_apply_map] at h
-      calc ⟪U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), (u : H)⟫_𝕜
-          = ⟪(_root_.LinearPMap.adjoint B) ⟨y, hy⟩, U (u : H)⟫_𝕜 := by
-            rw [← U.inner_map_map (U.symm _) (u : H), U.apply_symm_apply]
-        _ = ⟪y, U (A u)⟫_𝕜 := h
-        _ = ⟪U.symm y, A u⟫_𝕜 := by
-            rw [← U.inner_map_map (U.symm y) (A u), U.apply_symm_apply]
-    have hmem : U.symm y ∈ (_root_.LinearPMap.adjoint A).domain :=
-      _root_.LinearPMap.mem_adjoint_domain_of_exists _
-        ⟨U.symm ((_root_.LinearPMap.adjoint B) ⟨y, hy⟩), hwit⟩
-    rwa [_root_.LinearPMap.isSelfAdjoint_def.mp hA] at hmem
+  have hsub : ∀ y : H', y ∈ (_root_.LinearPMap.adjoint B).domain → y ∈ B.domain := fun y hy ↦
+    mem_unitaryConj_domain_of_mem_adjoint_domain hA hdenseB hy
   have hle : B ≤ _root_.LinearPMap.adjoint B :=
     _root_.LinearPMap.IsFormalAdjoint.le_adjoint (T := B) (S := B) hdenseB hsymB
   have hdomeq : B.domain = (_root_.LinearPMap.adjoint B).domain :=
