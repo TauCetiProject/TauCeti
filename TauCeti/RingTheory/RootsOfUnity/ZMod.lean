@@ -144,7 +144,8 @@ noncomputable def zmodEquivRootsOfUnity (h : IsPrimitiveRoot ζ k) :
   zmodAddEquivOfGenerator (g := Additive.ofMul ⟨ζ, h.mem_rootsOfUnity⟩)
     (fun x => by
       obtain ⟨i, hi⟩ := Subgroup.mem_zpowers_iff.1 (h.zpowers_eq_of_isCyclic.ge x.toMul.2)
-      exact ⟨i, Additive.toMul.injective (Subtype.ext hi)⟩)
+      refine ⟨i, Additive.toMul.injective (Subtype.ext ?_)⟩
+      rwa [toMul_zsmul, Subgroup.coe_zpow, toMul_ofMul])
     ((Nat.card_congr Additive.toMul).trans h.natCard_rootsOfUnity_of_isCyclic)
 
 /-- **The equivalence sends the class of an integer `i` to `ζ ^ i`**, which determines it on all
