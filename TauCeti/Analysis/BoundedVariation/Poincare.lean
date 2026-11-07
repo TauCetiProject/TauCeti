@@ -268,6 +268,49 @@ theorem setLIntegral_enorm_sub_setAverage_le_mul_totalVariationOn_of_eq_ball {c 
 
 /-! ### The localized inequality -/
 
+/-- The deviation of `u` from its mean over `T` on `A ⊆ U` is at most that of a continuous
+approximation `v`, plus `(1 + μ(U) / μ(T))` times the `L¹(closure U)` distance from `v` to `u`. -/
+private theorem setLIntegral_enorm_sub_setAverage_le_add_of_continuous {U T A : Set E}
+    (hUK : IsCompact (closure U)) (huK : IntegrableOn u (closure U) μ) {v : E → ℝ}
+    (hv : Continuous v) (hT : T ⊆ U) (hA : A ⊆ U) :
+    ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ ≤
+      (∫⁻ x in closure U, ‖v x - u x‖ₑ ∂μ) +
+        μ U / μ T * ∫⁻ x in closure U, ‖v x - u x‖ₑ ∂μ +
+        ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ := by
+  set e := ∫⁻ x in closure U, ‖v x - u x‖ₑ ∂μ
+  -- The means over `T` differ by at most `e / μ(T)`.
+  have hab : ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ ≤ e / μ T := by
+    have hTK : T ⊆ closure U := hT.trans subset_closure
+    rw [← setAverage_fun_sub
+      ((hv.locallyIntegrable.integrableOn_isCompact hUK).mono_set hTK) (huK.mono_set hTK)]
+    refine (enorm_setAverage_le_setLAverage μ _ T).trans ?_
+    rw [setLAverage_eq]
+    gcongr
+    exact lintegral_mono_set hTK
+  -- The triangle inequality through `v` and its mean.
+  have hdist : AEMeasurable (fun x => ‖v x - u x‖ₑ) (μ.restrict A) :=
+    ((hv.aestronglyMeasurable.restrict.sub huK.aestronglyMeasurable).enorm).mono_measure
+      (Measure.restrict_mono (hA.trans subset_closure) le_rfl)
+  calc ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ
+      ≤ ∫⁻ x in A, (‖v x - u x‖ₑ + ‖v x - ⨍ y in T, v y ∂μ‖ₑ +
+          ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ) ∂μ := by
+        refine lintegral_mono fun x => ?_
+        rw [← enorm_neg (v x - u x)]
+        refine le_of_eq_of_le ?_
+          ((enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _))
+        congr 1
+        ring
+    _ = ∫⁻ x in A, ‖v x - u x‖ₑ ∂μ + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ +
+          ‖(⨍ y in T, v y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ * μ A := by
+        rw [lintegral_add_right _ measurable_const, lintegral_add_left' hdist,
+          setLIntegral_const]
+    _ ≤ e + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ + e / μ T * μ U := by
+        gcongr
+        exact lintegral_mono_set (hA.trans subset_closure)
+    _ = e + μ U / μ T * e + ∫⁻ x in A, ‖v x - ⨍ y in T, v y ∂μ‖ₑ ∂μ := by
+        simp only [div_eq_mul_inv]
+        ring
+
 /-- The inequality on a convex open set `U` whose closure is a compact subset of `Ω`, with the
 mean over a measurable `T ⊆ U`, a set `A ⊆ U` and the variation of `u` on `Ω`. -/
 private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Set E}
@@ -300,43 +343,48 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_closure_subset {U T : Se
         ).totalVariationOn_eq_setLIntegral_enorm_fderiv (μ := μ) (Ω := ⟨U, hU⟩)
       rw [Opens.coe_mk] at hL
       exact hL ▸ hvn
-    -- The means over `T` differ by at most `e n / μ(T)`.
-    have hab : ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ ≤ e n / μ T := by
-      have hTK : T ⊆ closure U := hT.trans subset_closure
-      rw [← setAverage_fun_sub
-        (((hv n).continuous.locallyIntegrable.integrableOn_isCompact hUK).mono_set hTK)
-        (huK.mono_set hTK)]
-      refine (enorm_setAverage_le_setLAverage μ _ T).trans ?_
-      rw [setLAverage_eq]
-      gcongr
-      exact lintegral_mono_set hTK
-    -- The triangle inequality through `v n` and its mean.
-    have hdist : AEMeasurable (fun x => ‖v n x - u x‖ₑ) (μ.restrict A) :=
-      (((hv n).continuous.aestronglyMeasurable.restrict.sub huK.aestronglyMeasurable).enorm
-        ).mono_measure (Measure.restrict_mono (hA.trans subset_closure) le_rfl)
-    calc ∫⁻ x in A, ‖u x - ⨍ y in T, u y ∂μ‖ₑ ∂μ
-        ≤ ∫⁻ x in A, (‖v n x - u x‖ₑ + ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ +
-            ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ) ∂μ := by
-          refine lintegral_mono fun x => ?_
-          rw [← enorm_neg (v n x - u x)]
-          refine le_of_eq_of_le ?_
-            ((enorm_add_le _ _).trans (add_le_add_left (enorm_add_le _ _) _))
-          congr 1
-          ring
-      _ = ∫⁻ x in A, ‖v n x - u x‖ₑ ∂μ + ∫⁻ x in A, ‖v n x - ⨍ y in T, v n y ∂μ‖ₑ ∂μ +
-            ‖(⨍ y in T, v n y ∂μ) - ⨍ y in T, u y ∂μ‖ₑ * μ A := by
-          rw [lintegral_add_right _ measurable_const, lintegral_add_left' hdist,
-            setLIntegral_const]
-      _ ≤ e n + C * totalVariationOn μ Ω u + e n / μ T * μ U := by
-          gcongr
-          exact lintegral_mono_set (hA.trans subset_closure)
-      _ = e n + M * e n + C * totalVariationOn μ Ω u := by
-          simp only [M, div_eq_mul_inv]
-          ring
+    refine (setLIntegral_enorm_sub_setAverage_le_add_of_continuous hUK huK (hv n).continuous hT
+      hA).trans ?_
+    gcongr
   have hlim : Tendsto (fun n => e n + M * e n + C * totalVariationOn μ Ω u) atTop
       (𝓝 (0 + M * 0 + C * totalVariationOn μ Ω u)) :=
     (he.add (ENNReal.Tendsto.const_mul he (Or.inr hM))).add tendsto_const_nhds
   simpa using ge_of_tendsto hlim (hvar.mono hbound)
+
+omit [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E] [BorelSpace E]
+  [μ.IsAddHaarMeasure] in
+/-- If the integrals of `g` over `A ∩ V n`, for an increasing sequence of sets `V n` covering `A`,
+are eventually bounded by a sequence converging to `c`, then the integral of `g` over `A` is at
+most `c`. -/
+private theorem setLIntegral_le_of_forall_inter_le {V : ℕ → Set E} (hV : Monotone V)
+    (hA : A ⊆ ⋃ n, V n) {g : E → ℝ≥0∞} {f : ℕ → ℝ≥0∞} {c : ℝ≥0∞}
+    (hf : Tendsto f atTop (𝓝 c)) (h : ∀ᶠ n in atTop, ∫⁻ x in A ∩ V n, g x ∂μ ≤ f n) :
+    ∫⁻ x in A, g x ∂μ ≤ c := by
+  have hAV : ⋃ n, A ∩ V n = A := by rw [← inter_iUnion, inter_eq_left.2 hA]
+  have hdir : Directed (· ⊆ ·) fun n => A ∩ V n :=
+    Monotone.directed_le fun m n hmn => inter_subset_inter_right A (hV hmn)
+  have hsup : ∫⁻ x in A, g x ∂μ = ⨆ k, ∫⁻ x in A ∩ V k, g x ∂μ := by
+    rw [← setLIntegral_iUnion_of_directed _ hdir, hAV]
+  rw [hsup]
+  refine iSup_le fun k => ge_of_tendsto hf ?_
+  filter_upwards [h, eventually_ge_atTop k] with n hn hkn
+  exact (lintegral_mono_set (inter_subset_inter_right A (hV hkn))).trans hn
+
+/-- The bounds `K / m n * T + M * ‖s n - a‖` converge to `K / m₀ * T` when `m n → m₀ > 0` and
+`s n → a`, for finite `M`. -/
+private theorem tendsto_ofReal_div_mul_add_mul_enorm_sub {K a m₀ : ℝ} {m s : ℕ → ℝ}
+    {T M : ℝ≥0∞} (hK : 0 ≤ K) (hm₀ : 0 < m₀) (hm : Tendsto m atTop (𝓝 m₀))
+    (hs : Tendsto s atTop (𝓝 a)) (hM : M ≠ ∞) :
+    Tendsto (fun n => ENNReal.ofReal (K / m n) * T + M * ‖s n - a‖ₑ) atTop
+      (𝓝 (ENNReal.ofReal (K / m₀) * T + M * 0)) := by
+  refine Tendsto.add ?_ (ENNReal.Tendsto.const_mul ?_ (Or.inr hM))
+  · rcases eq_or_ne K 0 with hK₀ | hK₀
+    · simp [hK₀]
+    refine ENNReal.Tendsto.mul_const
+      (ENNReal.tendsto_ofReal (tendsto_const_nhds.div hm hm₀.ne')) (Or.inl ?_)
+    exact (ENNReal.ofReal_pos.2 (div_pos (lt_of_le_of_ne hK hK₀.symm) hm₀)).ne'
+  · have h0 : Tendsto (fun n ↦ s n - a) atTop (𝓝 0) := by simpa using hs.sub_const a
+    simpa [Function.comp_def] using (continuous_enorm.tendsto (0 : ℝ)).comp h0
 
 /-- The inequality for a measurable `S`, from the inequality on an exhaustion of `Ω` by convex
 open sets with compact closures in `Ω`. -/
@@ -396,26 +444,10 @@ private theorem setLIntegral_enorm_sub_setAverage_le_of_measurableSet
   -- The bounds converge to `C μ(A) ^ (1/n) |Du|(Ω)`.
   have hlim : Tendsto (fun n => ENNReal.ofReal (K / μ.real (S ∩ V n)) * T +
       μ Ω * ‖(⨍ y in S ∩ V n, u y ∂μ) - a‖ₑ) atTop
-      (𝓝 (ENNReal.ofReal (K / μ.real S) * T + μ Ω * 0)) := by
-    refine Tendsto.add ?_ (ENNReal.Tendsto.const_mul ?_ (Or.inr hΩfin))
-    · rcases eq_or_ne K 0 with hK | hK
-      · simp [hK]
-      refine ENNReal.Tendsto.mul_const
-        (ENNReal.tendsto_ofReal (tendsto_const_nhds.div hmeas hSpos.ne')) (Or.inl ?_)
-      exact (ENNReal.ofReal_pos.2 (div_pos (lt_of_le_of_ne (by positivity) hK.symm) hSpos)).ne'
-    · have h0 : Tendsto (fun n ↦ (⨍ y in S ∩ V n, u y ∂μ) - a) atTop (𝓝 0) := by
-        simpa using havg.sub_const a
-      simpa [Function.comp_def] using (continuous_enorm.tendsto (0 : ℝ)).comp h0
-  -- `A` is the increasing union of the sets `A ∩ V n`.
-  have hAV : ⋃ n, A ∩ V n = A := by rw [← inter_iUnion, hVunion, inter_eq_left.2 hA]
-  have hdir : Directed (· ⊆ ·) fun n => A ∩ V n :=
-    Monotone.directed_le fun m n hmn => inter_subset_inter_right A (hVmono hmn)
-  have hsup : ∫⁻ x in A, ‖u x - a‖ₑ ∂μ = ⨆ k, ∫⁻ x in A ∩ V k, ‖u x - a‖ₑ ∂μ := by
-    rw [← setLIntegral_iUnion_of_directed _ hdir, hAV]
-  rw [hsup, mul_assoc]
-  refine iSup_le fun k => ge_of_tendsto (by simpa using hlim) ?_
-  filter_upwards [hpiece, eventually_ge_atTop k] with n hn hkn
-  exact (lintegral_mono_set (inter_subset_inter_right A (hVmono hkn))).trans hn
+      (𝓝 (ENNReal.ofReal (K / μ.real S) * T)) := by
+    simpa using tendsto_ofReal_div_mul_add_mul_enorm_sub (by positivity) hSpos hmeas havg hΩfin
+  rw [mul_assoc]
+  exact setLIntegral_le_of_forall_inter_le hVmono (hVunion ▸ hA) hlim hpiece
 
 /-- The localized Poincaré–Wirtinger inequality for `u` integrable on `Ω`. -/
 private theorem setLIntegral_enorm_sub_setAverage_le_of_integrableOn
