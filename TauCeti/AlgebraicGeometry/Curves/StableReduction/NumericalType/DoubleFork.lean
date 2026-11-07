@@ -114,16 +114,10 @@ private lemma doubleForkExtra_comm (left right : T.Component) (n : ℕ)
       · simp [hk, hl]
     · simp [hk]
 
-/-- The position of a middle vertex of the double fork lies below the chain length. -/
-private lemma succ_lt_of_doubleFork_middle (ht : 3 < t) (k : Fin (t - 4 + 2)) :
-    (k : ℕ) + 1 < t := by
-  have hk := k.isLt
-  omega
-
 /-- The intersection matrix of the double fork on the two left leaves. -/
 private lemma intersection_doubleForkEmbedding_inl_inl
     (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
-    (ht : 3 < t) {w : ℤ} (hwleft : (T.weight left : ℤ) = w)
+    {w : ℤ} (hwleft : (T.weight left : ℤ) = w)
     (hchainEntry : ∀ i j, i < t → j < t →
       T.intersection (c i) (c j) =
         if i = j then -(2 * w) else if i + 1 = j ∨ j + 1 = i then w else 0)
@@ -133,6 +127,7 @@ private lemma intersection_doubleForkEmbedding_inl_inl
         (doubleForkEmbedding t c left right (.inl l)) =
       -w * doubleForkCartanMatrix (t - 4) (.inl k) (.inl l) +
         doubleForkExtra T left right (t - 4) (.inl k) (.inl l) := by
+  have ht := hl.two_lt
   simp only [doubleForkEmbedding]
   fin_cases k <;> fin_cases l
   all_goals dsimp
@@ -158,7 +153,7 @@ private lemma intersection_doubleForkEmbedding_inl_inr_inl (ht : 3 < t) {w : ℤ
         (doubleForkEmbedding t c left right (.inr (.inl l))) =
       -w * doubleForkCartanMatrix (t - 4) (.inl k) (.inr (.inl l)) +
         doubleForkExtra T left right (t - 4) (.inl k) (.inr (.inl l)) := by
-  have hlt := succ_lt_of_doubleFork_middle ht l
+  have hlt : (l : ℕ) + 1 < t := by have := l.isLt; omega
   simp only [doubleForkEmbedding]
   fin_cases k
   all_goals dsimp
@@ -220,8 +215,7 @@ private lemma intersection_doubleForkEmbedding_inr_inl_inr_inl (ht : 3 < t) {w :
       -w * doubleForkCartanMatrix (t - 4) (.inr (.inl k)) (.inr (.inl l)) +
         doubleForkExtra T left right (t - 4) (.inr (.inl k)) (.inr (.inl l)) := by
   simp only [doubleForkEmbedding, doubleForkExtra, doubleForkCartanMatrix_inr_inl_inr_inl]
-  rw [hchainEntry (k + 1) (l + 1) (succ_lt_of_doubleFork_middle ht k)
-    (succ_lt_of_doubleFork_middle ht l)]
+  rw [hchainEntry (k + 1) (l + 1) (by have := k.isLt; omega) (by have := l.isLt; omega)]
   split_ifs <;> omega
 
 /-- The intersection matrix of the double fork between a middle vertex and a right leaf. -/
@@ -235,7 +229,7 @@ private lemma intersection_doubleForkEmbedding_inr_inl_inr_inr (ht : 3 < t) {w :
         (doubleForkEmbedding t c left right (.inr (.inr l))) =
       -w * doubleForkCartanMatrix (t - 4) (.inr (.inl k)) (.inr (.inr l)) +
         doubleForkExtra T left right (t - 4) (.inr (.inl k)) (.inr (.inr l)) := by
-  have hlt := succ_lt_of_doubleFork_middle ht k
+  have hlt : (k : ℕ) + 1 < t := by have := k.isLt; omega
   simp only [doubleForkEmbedding]
   fin_cases l
   all_goals dsimp
@@ -249,7 +243,7 @@ private lemma intersection_doubleForkEmbedding_inr_inl_inr_inr (ht : 3 < t) {w :
 /-- The intersection matrix of the double fork on the two right leaves. -/
 private lemma intersection_doubleForkEmbedding_inr_inr_inr_inr
     (hr : T.IsSelfIntersectionMinusTwoFork t c right)
-    (ht : 3 < t) {w : ℤ} (hwright : (T.weight right : ℤ) = w)
+    {w : ℤ} (hwright : (T.weight right : ℤ) = w)
     (hchainEntry : ∀ i j, i < t → j < t →
       T.intersection (c i) (c j) =
         if i = j then -(2 * w) else if i + 1 = j ∨ j + 1 = i then w else 0)
@@ -259,6 +253,7 @@ private lemma intersection_doubleForkEmbedding_inr_inr_inr_inr
         (doubleForkEmbedding t c left right (.inr (.inr l))) =
       -w * doubleForkCartanMatrix (t - 4) (.inr (.inr k)) (.inr (.inr l)) +
         doubleForkExtra T left right (t - 4) (.inr (.inr k)) (.inr (.inr l)) := by
+  have ht := hr.two_lt
   have hlast_ne_penultimate : t - 1 ≠ t - 2 := by omega
   simp only [doubleForkEmbedding]
   fin_cases k <;> fin_cases l
@@ -304,7 +299,7 @@ private lemma intersection_doubleForkEmbedding_eq
           doubleForkExtra T left right (t - 4) k l := by
     rw [T.intersection_comm, h, ← (doubleForkCartanMatrix_isSymm (t - 4)).apply,
       doubleForkExtra_comm]
-  have hll := intersection_doubleForkEmbedding_inl_inl (right := right) hl ht hwleft hchainEntry
+  have hll := intersection_doubleForkEmbedding_inl_inl (right := right) hl hwleft hchainEntry
     hleftEntry
   have hlm := intersection_doubleForkEmbedding_inl_inr_inl (right := right) ht hchainEntry
     hleftEntry
@@ -314,7 +309,7 @@ private lemma intersection_doubleForkEmbedding_eq
     ht hchainEntry
   have hmr := intersection_doubleForkEmbedding_inr_inl_inr_inr (left := left) ht hchainEntry
     hrightEntry
-  have hrr := intersection_doubleForkEmbedding_inr_inr_inr_inr (left := left) hr ht hwright
+  have hrr := intersection_doubleForkEmbedding_inr_inr_inr_inr (left := left) hr hwright
     hchainEntry hrightEntry
   rcases i with k | k | k <;> rcases j with l | l | l
   · exact hll k l
@@ -333,13 +328,14 @@ other and with the two leaves are the simply laced ones. -/
 private lemma exists_weight_intersection_entries
     (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
-    (ht : 3 < t) (hcard : t + 1 < Fintype.card T.Component) :
+    (hcard : t + 1 < Fintype.card T.Component) :
     ∃ w : ℕ+, (T.weight right : ℤ) = w ∧ (T.weight left : ℤ) = w ∧
       (∀ i j, i < t → j < t →
         T.intersection (c i) (c j) =
           if i = j then -(2 * (w : ℤ)) else if i + 1 = j ∨ j + 1 = i then w else 0) ∧
       (∀ i, i < t → T.intersection (c i) right = if i = t - 2 then (w : ℤ) else 0) ∧
       (∀ i, i < t → T.intersection (c i) left = if i = 1 then (w : ℤ) else 0) := by
+  have ht := hr.two_lt
   have hchainCard : t < Fintype.card T.Component := by omega
   have hreversePenultimate : t - 1 - (t - 2) = 1 := by omega
   -- Classifying the two forks fixes one common weight, every chain edge, and the two leaf edges.
@@ -441,7 +437,7 @@ theorem not_oppositeFork (hr : T.IsSelfIntersectionMinusTwoFork t c right)
   have hleftRight := hr.opposite_branch_ne hl ht
   have hleft_ne_chain : ∀ i < t, left ≠ c i := fun _ hi ↦ hl.branch_ne_reverse hi
   obtain ⟨w, hwright, hwleft, hchainEntry, hrightEntry, hleftEntry⟩ :=
-    exists_weight_intersection_entries hr hl ht (by omega)
+    exists_weight_intersection_entries hr hl (by omega)
   exact false_of_intersection_doubleForkEmbedding_eq ht hleftRight
     (doubleForkEmbedding_injective hr ht hleftRight hleft_ne_chain) hcard
     (intersection_doubleForkEmbedding_eq hr hl ht w hwright hwleft hchainEntry hrightEntry
