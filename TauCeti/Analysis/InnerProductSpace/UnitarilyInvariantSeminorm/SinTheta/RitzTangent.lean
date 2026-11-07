@@ -39,6 +39,24 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
   [NormedAddCommGroup E] [InnerProductSpace 𝕜 E] [FiniteDimensional 𝕜 E]
   [NormedAddCommGroup F] [InnerProductSpace 𝕜 F] [FiniteDimensional 𝕜 F]
 
+/-- The trial-space spectral bound on the Ritz compression, in quadratic-form shape. -/
+private theorem re_inner_ritz_le_of_pointSpectrumIn
+    {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric) (X : F →ₗᵢ[𝕜] E) {α : ℝ}
+    (h : Module.End.PointSpectrumIn
+      (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) ⊤ (Set.Iic α)) (y : F) :
+    RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) y, y⟫_𝕜 ≤ α * ‖y‖ ^ 2 :=
+  (hA.adjoint_conj X.toLinearMap).re_inner_apply_self_le_of_pointSpectrumIn
+    (fun _ _ => Submodule.mem_top) h Submodule.mem_top
+
+/-- The separated spectral bound on `Uᗮ`, in quadratic-form shape. -/
+private theorem le_re_inner_of_pointSpectrumIn_orthogonal
+    {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
+    {U : Submodule 𝕜 E} (hU : U ∈ Module.End.invtSubmodule A) {β : ℝ}
+    (h : Module.End.PointSpectrumIn A Uᗮ (Set.Ici β)) {y : E} (hy : y ∈ Uᗮ) :
+    β * ‖y‖ ^ 2 ≤ RCLike.re ⟪A y, y⟫_𝕜 :=
+  hA.le_re_inner_apply_self_of_pointSpectrumIn
+    (LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hA hU) h hy
+
 /-- Separated one-sided spectral bounds force the trial and exact subspaces to be
 transverse.  Thus the tangent has no `π/2` pole; this is a conclusion, not an
 extra hypothesis. -/
@@ -53,21 +71,9 @@ private theorem isTransverse_of_tanThetaSpectralGap
   rw [Submodule.disjoint_def]
   intro x hx hxperp
   rcases hx with ⟨y, rfl⟩
-  have hUperpRed : (Uᗮ ∈ Module.End.invtSubmodule A) :=
-      LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hA hU
   have hxyUperp : X.toLinearMap y ∈ Uᗮ := hxperp
-  have hTopRed : (⊤ ∈ Module.End.invtSubmodule ((X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))) :=
-    by
-    intro z _
-    exact Submodule.mem_top
-  have hMupper :
-      RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) y, y⟫_𝕜 ≤ α * ‖y‖ ^ 2 :=
-    (hA.adjoint_conj X.toLinearMap).re_inner_apply_self_le_of_pointSpectrumIn
-      hTopRed hgap.1 Submodule.mem_top
-  have hAlower :
-      (α + δ) * ‖X.toLinearMap y‖ ^ 2 ≤
-        RCLike.re ⟪A (X.toLinearMap y), X.toLinearMap y⟫_𝕜 :=
-    hA.le_re_inner_apply_self_of_pointSpectrumIn hUperpRed hgap.2 hxyUperp
+  have hMupper := re_inner_ritz_le_of_pointSpectrumIn hA X hgap.1 y
+  have hAlower := le_re_inner_of_pointSpectrumIn_orthogonal hA hU hgap.2 hxyUperp
   have hinner :
       RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap) y, y⟫_𝕜 =
         RCLike.re ⟪A (X.toLinearMap y), X.toLinearMap y⟫_𝕜 := by
@@ -96,6 +102,30 @@ private noncomputable def tanThetaResidualWitness
     (((Real.sqrt (1 - σ ^ 2) : ℝ) : 𝕜)⁻¹) •
       (LinearMap.leftSingularVector S i - ((σ : ℝ) : 𝕜) • X v)
 
+
+/-- At a zero sine the witness is the Ritz vector. -/
+private theorem tanThetaResidualWitness_of_singularValues_eq_zero
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    {i : Fin (finrank 𝕜 F)}
+    (h : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i = 0) :
+    tanThetaResidualWitness U X i = X.toLinearMap
+      (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i) := by
+  simp [tanThetaResidualWitness, h]
+
+/-- At a nonzero sine the witness is the normalized residual direction. -/
+private theorem tanThetaResidualWitness_of_singularValues_ne_zero
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    {i : Fin (finrank 𝕜 F)}
+    (h : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i ≠ 0) :
+    tanThetaResidualWitness U X i =
+      (((Real.sqrt (1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2) :
+        ℝ) : 𝕜)⁻¹) •
+        (LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i -
+          (((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i : ℝ) : 𝕜) •
+            X.toLinearMap (LinearMap.rightSingularBasis
+              (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)) := by
+  simp [tanThetaResidualWitness, h]
+
 /-- The residual witnesses form an orthonormal family once the tangent has no pole. -/
 private theorem orthonormal_tanThetaResidualWitness
     (U : Submodule 𝕜 E) [U.HasOrthogonalProjection]
@@ -103,192 +133,141 @@ private theorem orthonormal_tanThetaResidualWitness
     (htrans : Disjoint (LinearMap.range X.toLinearMap) Uᗮ) :
     Orthonormal 𝕜 (tanThetaResidualWitness U X) := by
   classical
-  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
   rw [orthonormal_iff_ite]
   intro i j
-  -- On the diagonal, zero sines use Ritz vectors; positive sines require cosine normalization.
-  by_cases hij : i = j
-  · subst j
-    rw [ite_eq_left rfl]
-    let σ := S.singularValues i
-    let v := LinearMap.rightSingularBasis S i
-    have hvv : ⟪v, v⟫_𝕜 = 1 := by
-      simp [v]
-    by_cases hσ : σ = 0
-    · have hw : tanThetaResidualWitness U X i = X.toLinearMap v := by
-        simp [tanThetaResidualWitness, S, σ, v, hσ]
-      rw [hw]
-      calc
-        ⟪X.toLinearMap v, X.toLinearMap v⟫_𝕜 = ⟪v, v⟫_𝕜 :=
-          X.inner_map_map v v
-        _ = 1 := hvv
-    · let y := LinearMap.leftSingularVector S i
-      have hXadj : X.toLinearMap.adjoint y = ((σ : ℝ) : 𝕜) • v := by
-        simpa [S, σ, v, y] using
-          Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-            U X.toLinearMap (i := i)
-      have hyy : ⟪y, y⟫_𝕜 = 1 := by
-        simpa [y] using
-          (orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
-            ⟨i, hσ⟩ ⟨i, hσ⟩)
-      have hXv_y : ⟪X.toLinearMap v, y⟫_𝕜 = ((σ : ℝ) : 𝕜) := by
-        calc
-          ⟪X.toLinearMap v, y⟫_𝕜 = ⟪v, X.toLinearMap.adjoint y⟫_𝕜 :=
-            (LinearMap.adjoint_inner_right X.toLinearMap v y).symm
-          _ = ⟪v, ((σ : ℝ) : 𝕜) • v⟫_𝕜 := by rw [hXadj]
-          _ = ((σ : ℝ) : 𝕜) := by rw [inner_smul_right, hvv, mul_one]
-      have hy_Xv : ⟪y, X.toLinearMap v⟫_𝕜 = ((σ : ℝ) : 𝕜) := by
-        calc
-          ⟪y, X.toLinearMap v⟫_𝕜 = ⟪X.toLinearMap.adjoint y, v⟫_𝕜 :=
-            (LinearMap.adjoint_inner_left X.toLinearMap v y).symm
-          _ = ⟪((σ : ℝ) : 𝕜) • v, v⟫_𝕜 := by rw [hXadj]
-          _ = ((σ : ℝ) : 𝕜) := by
-            rw [inner_smul_left, RCLike.conj_ofReal, hvv, mul_one]
-      have hXX : ⟪X.toLinearMap v, X.toLinearMap v⟫_𝕜 = 1 := by
-        calc
-          ⟪X.toLinearMap v, X.toLinearMap v⟫_𝕜 = ⟪v, v⟫_𝕜 :=
-            X.inner_map_map v v
-          _ = 1 := hvv
-      have hraw :
-          ⟪y - ((σ : ℝ) : 𝕜) • X.toLinearMap v,
-            y - ((σ : ℝ) : 𝕜) • X.toLinearMap v⟫_𝕜 =
-            (((1 - σ ^ 2 : ℝ) : 𝕜)) := by
-        simp only [inner_sub_left, inner_sub_right, inner_smul_left,
-          inner_smul_right, RCLike.conj_ofReal, hyy, hy_Xv, hXv_y, hXX]
-        push_cast
-        ring
-      have hσnonneg : 0 ≤ σ := S.singularValues_nonneg i
-      have hσlt : σ < 1 := by
-        simpa [S, σ] using
-          Submodule.singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint U X htrans i
-      let c := Real.sqrt (1 - σ ^ 2)
-      have hcpos : 0 < c := by
-        dsimp [c]
-        exact Real.sqrt_pos.2 (by nlinarith)
-      have hcne : c ≠ 0 := ne_of_gt hcpos
-      have hw :
-          tanThetaResidualWitness U X i =
-            ((((c : ℝ) : 𝕜)⁻¹) •
-              (y - ((σ : ℝ) : 𝕜) • X.toLinearMap v)) := by
-        simp [tanThetaResidualWitness, S, σ, v, y, c, hσ]
-      have hc_sq : c ^ 2 = 1 - σ ^ 2 := by
-        dsimp [c]
-        exact Real.sq_sqrt (by nlinarith)
-      have hnormalize : c⁻¹ * (c⁻¹ * (1 - σ ^ 2)) = 1 := by
-        field_simp [hcne]
-        nlinarith
-      rw [hw]
-      simp only [inner_smul_left, inner_smul_right, map_inv₀,
-        RCLike.conj_ofReal, hraw]
-      exact_mod_cast hnormalize
-  -- Off the diagonal, right singular vectors are orthogonal. The adjoint relation
-  -- kills mixed Ritz/left-singular pairings, including both zero-sine branches.
-  · rw [ite_eq_right hij]
-    let σi := S.singularValues i
-    let σj := S.singularValues j
-    let vi := LinearMap.rightSingularBasis S i
-    let vj := LinearMap.rightSingularBasis S j
-    have hvv : ⟪vi, vj⟫_𝕜 = 0 := by
-      simp [vi, vj, hij,
-        orthonormal_iff_ite.mp (LinearMap.rightSingularBasis S).orthonormal i j]
-    have hXX : ⟪X.toLinearMap vi, X.toLinearMap vj⟫_𝕜 = 0 := by
-      calc
-        ⟪X.toLinearMap vi, X.toLinearMap vj⟫_𝕜 = ⟪vi, vj⟫_𝕜 :=
-          X.inner_map_map vi vj
-        _ = 0 := hvv
-    by_cases hi : σi = 0
-    · have hwi : tanThetaResidualWitness U X i = X.toLinearMap vi := by
-        simp [tanThetaResidualWitness, S, σi, vi, hi]
-      by_cases hj : σj = 0
-      · have hwj : tanThetaResidualWitness U X j = X.toLinearMap vj := by
-          simp [tanThetaResidualWitness, S, σj, vj, hj]
-        rw [hwi, hwj, hXX]
-      · let yj := LinearMap.leftSingularVector S j
-        have hXadjj : X.toLinearMap.adjoint yj = ((σj : ℝ) : 𝕜) • vj := by
-          simpa [S, σj, vj, yj] using
-            Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-            U X.toLinearMap (i := j)
-        have hXvi_yj :
-            ⟪X.toLinearMap vi, yj⟫_𝕜 = ((σj : ℝ) : 𝕜) * ⟪vi, vj⟫_𝕜 :=
-          by rw [← LinearMap.adjoint_inner_right, hXadjj, inner_smul_right]
-        have hraw :
-            ⟪X.toLinearMap vi,
-              yj - ((σj : ℝ) : 𝕜) • X.toLinearMap vj⟫_𝕜 = 0 := by
-          rw [inner_sub_right, inner_smul_right, hXvi_yj, hXX, hvv]
-          simp
-        let cj := Real.sqrt (1 - σj ^ 2)
-        have hwj :
-            tanThetaResidualWitness U X j =
-              ((((cj : ℝ) : 𝕜)⁻¹) •
-                (yj - ((σj : ℝ) : 𝕜) • X.toLinearMap vj)) := by
-          simp [tanThetaResidualWitness, S, σj, vj, yj, cj, hj]
-        rw [hwi, hwj, inner_smul_right, hraw, mul_zero]
-    · let yi := LinearMap.leftSingularVector S i
-      have hXadji : X.toLinearMap.adjoint yi = ((σi : ℝ) : 𝕜) • vi := by
-        simpa [S, σi, vi, yi] using
-          Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-            U X.toLinearMap (i := i)
-      by_cases hj : σj = 0
-      · have hyi_Xvj :
-            ⟪yi, X.toLinearMap vj⟫_𝕜 = ((σi : ℝ) : 𝕜) * ⟪vi, vj⟫_𝕜 := by
-          calc
-            ⟪yi, X.toLinearMap vj⟫_𝕜 =
-                ⟪X.toLinearMap.adjoint yi, vj⟫_𝕜 :=
-              (LinearMap.adjoint_inner_left X.toLinearMap vj yi).symm
-            _ = ⟪((σi : ℝ) : 𝕜) • vi, vj⟫_𝕜 := by rw [hXadji]
-            _ = ((σi : ℝ) : 𝕜) * ⟪vi, vj⟫_𝕜 := by
-              rw [inner_smul_left, RCLike.conj_ofReal]
-        have hraw :
-            ⟪yi - ((σi : ℝ) : 𝕜) • X.toLinearMap vi,
-              X.toLinearMap vj⟫_𝕜 = 0 := by
-          rw [inner_sub_left, inner_smul_left, RCLike.conj_ofReal,
-            hyi_Xvj, hXX, hvv]
-          simp
-        let ci := Real.sqrt (1 - σi ^ 2)
-        have hwi :
-            tanThetaResidualWitness U X i =
-              ((((ci : ℝ) : 𝕜)⁻¹) •
-                (yi - ((σi : ℝ) : 𝕜) • X.toLinearMap vi)) := by
-          simp [tanThetaResidualWitness, S, σi, vi, yi, ci, hi]
-        have hwj : tanThetaResidualWitness U X j = X.toLinearMap vj := by
-          simp [tanThetaResidualWitness, S, σj, vj, hj]
-        rw [hwi, hwj, inner_smul_left, hraw, mul_zero]
-      · let yj := LinearMap.leftSingularVector S j
-        have hXadjj : X.toLinearMap.adjoint yj = ((σj : ℝ) : 𝕜) • vj := by
-          simpa [S, σj, vj, yj] using
-            Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-            U X.toLinearMap (i := j)
-        have hyy : ⟪yi, yj⟫_𝕜 = 0 := by
-          simpa [yi, yj, hij] using
-            (orthonormal_iff_ite.mp (LinearMap.orthonormal_leftSingularVector S)
-              ⟨i, hi⟩ ⟨j, hj⟩)
-        have hyi_Xvj :
-            ⟪yi, X.toLinearMap vj⟫_𝕜 = ((σi : ℝ) : 𝕜) * ⟪vi, vj⟫_𝕜 :=
-          by rw [← LinearMap.adjoint_inner_left, hXadji, inner_smul_left, RCLike.conj_ofReal]
-        have hXvi_yj :
-            ⟪X.toLinearMap vi, yj⟫_𝕜 = ((σj : ℝ) : 𝕜) * ⟪vi, vj⟫_𝕜 :=
-          by rw [← LinearMap.adjoint_inner_right, hXadjj, inner_smul_right]
-        have hraw :
-            ⟪yi - ((σi : ℝ) : 𝕜) • X.toLinearMap vi,
-              yj - ((σj : ℝ) : 𝕜) • X.toLinearMap vj⟫_𝕜 = 0 := by
-          simp only [inner_sub_left, inner_sub_right, inner_smul_left,
-            inner_smul_right, RCLike.conj_ofReal,
-            hyy, hyi_Xvj, hXvi_yj, hXX, hvv]
-          ring
-        let ci := Real.sqrt (1 - σi ^ 2)
-        let cj := Real.sqrt (1 - σj ^ 2)
-        have hwi :
-            tanThetaResidualWitness U X i =
-              ((((ci : ℝ) : 𝕜)⁻¹) •
-                (yi - ((σi : ℝ) : 𝕜) • X.toLinearMap vi)) := by
-          simp [tanThetaResidualWitness, S, σi, vi, yi, ci, hi]
-        have hwj :
-            tanThetaResidualWitness U X j =
-              ((((cj : ℝ) : 𝕜)⁻¹) •
-                (yj - ((σj : ℝ) : 𝕜) • X.toLinearMap vj)) := by
-          simp [tanThetaResidualWitness, S, σj, vj, yj, cj, hj]
-        simp only [hwi, hwj, inner_smul_left, inner_smul_right,
-          hraw, mul_zero, mul_zero]
+  by_cases hi : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i = 0 <;>
+    by_cases hj : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues j = 0
+  · rw [tanThetaResidualWitness_of_singularValues_eq_zero U X hi,
+      tanThetaResidualWitness_of_singularValues_eq_zero U X hj]
+    exact (X.inner_map_map _ _).trans
+      ((LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)).inner_eq_ite i j)
+  · rw [ite_eq_right (by rintro rfl; exact hj hi),
+      tanThetaResidualWitness_of_singularValues_eq_zero U X hi,
+      tanThetaResidualWitness_of_singularValues_ne_zero U X hj, inner_smul_right,
+      Submodule.inner_map_sub_leftSingularVector_eq_zero, mul_zero]
+  · rw [ite_eq_right (by rintro rfl; exact hi hj),
+      tanThetaResidualWitness_of_singularValues_eq_zero U X hj,
+      tanThetaResidualWitness_of_singularValues_ne_zero U X hi, inner_smul_left,
+      ← inner_conj_symm, Submodule.inner_map_sub_leftSingularVector_eq_zero, map_zero, mul_zero]
+  · rw [tanThetaResidualWitness_of_singularValues_ne_zero U X hi,
+      tanThetaResidualWitness_of_singularValues_ne_zero U X hj, inner_smul_left, inner_smul_right,
+      Submodule.inner_sub_leftSingularVector_eq_ite U X hi hj]
+    by_cases hij : i = j
+    · subst hij
+      have hσlt := Submodule.singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint
+        U X htrans i
+      have hσnonneg := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues_nonneg i
+      have hpos : 0 < 1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2 :=
+        by nlinarith
+      have hnormalize : ∀ t : ℝ, 0 < t → (Real.sqrt t)⁻¹ * ((Real.sqrt t)⁻¹ * t) = 1 :=
+        fun t ht => by
+        rw [← mul_assoc, ← mul_inv, Real.mul_self_sqrt ht.le, inv_mul_cancel₀ ht.ne']
+      simp only [ite_true, map_inv₀, RCLike.conj_ofReal]
+      exact_mod_cast hnormalize _ hpos
+    · simp [hij]
+
+/-- A tangent of the trial subspace against `U` is the sine over the cosine, with the sines
+read off the singular values of the projection onto `Uᗮ`. -/
+private theorem singularValues_eq_div_sqrt_of_singularValues_eq_principalTangents
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    (tanTheta0 : F →ₗ[𝕜] E)
+    (htan : tanTheta0.singularValues = (LinearMap.range X.toLinearMap).principalTangents U)
+    (i : Fin (finrank 𝕜 F)) :
+    tanTheta0.singularValues i =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i /
+        Real.sqrt
+          (1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2) := by
+  calc
+    tanTheta0.singularValues i = (LinearMap.range X.toLinearMap).principalTangents U i :=
+      congrArg (fun z : ℕ →₀ ℝ => z (i : ℕ)) htan
+    _ = _ := by
+      rw [Submodule.principalTangents_apply_eq_div]
+      have heq := U.principalSines_range_eq_singularValues
+        (X := X.toContinuousLinearMap) X.isometry
+      have heq' : (LinearMap.range X.toLinearMap).principalSines U =
+          (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues := by
+        simpa only [ContinuousLinearMap.toLinearMap_comp,
+          LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
+      rw [heq']
+
+/-- The pairing of a sine left singular vector with the Ritz residual of the matching right
+singular vector is the sine times the gap between the two Rayleigh quotients. -/
+private theorem re_inner_leftSingularVector_ritzResidual
+    {A : E →ₗ[𝕜] E} (hA : A.IsSymmetric)
+    {U : Submodule 𝕜 E} [U.HasOrthogonalProjection] (hU : U ∈ Module.End.invtSubmodule A)
+    (X : F →ₗᵢ[𝕜] E) (i : Fin (finrank 𝕜 F)) :
+    RCLike.re ⟪LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i,
+        (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
+          (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)⟫_𝕜 =
+      (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i *
+        (RCLike.re ⟪A (LinearMap.leftSingularVector
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+          LinearMap.leftSingularVector (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i⟫_𝕜 -
+          RCLike.re ⟪(X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)
+            (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i),
+            LinearMap.rightSingularBasis
+              (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i⟫_𝕜) := by
+  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
+  let M := (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)
+  let R := (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
+  let σ := S.singularValues i
+  let v := LinearMap.rightSingularBasis S i
+  let y := LinearMap.leftSingularVector S i
+  have hSv : S v = ((σ : ℝ) : 𝕜) • y := by
+    simpa [S, σ, v, y] using LinearMap.apply_rightSingularBasis S i
+  have hSadj : S.adjoint y = ((σ : ℝ) : 𝕜) • v := by
+    simpa only [S, σ, v, y] using LinearMap.adjoint_leftSingularVector S i
+  have hyUperp : y ∈ Uᗮ := by
+    dsimp [y]
+    rw [LinearMap.leftSingularVector_def]
+    exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
+  have hSyl := LinearMap.congr_fun
+    (hA.sylvester_starProjection_orthogonal_comp hU X.toLinearMap M) v
+  have hright :
+      ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
+    -- Expand composition so the projection can move across the inner product.
+    change ⟪y, Uᗮ.starProjection (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜
+    rw [← Uᗮ.inner_starProjection_left_eq_right,
+      Submodule.starProjection_eq_self_iff.mpr hyUperp]
+  have hsyl' : A (S v) - S (M v) = Uᗮ.starProjection.toLinearMap (R v) := by
+    simpa [S, M, R] using hSyl
+  have hSM : ⟪y, S (M v)⟫_𝕜 = ⟪S.adjoint y, M v⟫_𝕜 :=
+    (LinearMap.adjoint_inner_left S (M v) y).symm
+  have hpairComplex :
+      ⟪y, R v⟫_𝕜 = (((σ : ℝ) : 𝕜) * (⟪y, A y⟫_𝕜 - ⟪v, M v⟫_𝕜)) := by
+    calc
+      ⟪y, R v⟫_𝕜 = ⟪y, A (S v) - S (M v)⟫_𝕜 := by rw [hsyl', hright]
+      _ = (((σ : ℝ) : 𝕜) * ⟪y, A y⟫_𝕜) - (((σ : ℝ) : 𝕜) * ⟪v, M v⟫_𝕜) := by
+        rw [inner_sub_right, hSv, map_smul, inner_smul_right, hSM, hSadj, inner_smul_left,
+          RCLike.conj_ofReal]
+      _ = _ := by ring
+  have hAy : RCLike.re ⟪y, A y⟫_𝕜 = RCLike.re ⟪A y, y⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  have hMv : RCLike.re ⟪v, M v⟫_𝕜 = RCLike.re ⟪M v, v⟫_𝕜 := by
+    rw [← inner_conj_symm, RCLike.conj_re]
+  rw [hpairComplex, RCLike.re_ofReal_mul, map_sub, hAy, hMv]
+
+/-- At a nonzero sine, the pairing of the residual witness with the Ritz residual of the matching
+right singular vector is that of the sine left singular vector, divided by the cosine. -/
+private theorem re_inner_tanThetaResidualWitness_ritzResidual
+    (A : E →ₗ[𝕜] E) (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (X : F →ₗᵢ[𝕜] E)
+    {i : Fin (finrank 𝕜 F)}
+    (h : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i ≠ 0) :
+    RCLike.re ⟪tanThetaResidualWitness U X i,
+        (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
+          (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)⟫_𝕜 =
+      (Real.sqrt
+          (1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2))⁻¹ *
+        RCLike.re ⟪LinearMap.leftSingularVector
+            (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i,
+          (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
+            (LinearMap.rightSingularBasis
+              (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)⟫_𝕜 := by
+  rw [tanThetaResidualWitness_of_singularValues_ne_zero U X h]
+  simp only [inner_smul_left, inner_sub_left, LinearMap.inner_map_ritzResidual_eq_zero, mul_zero,
+    sub_zero, map_inv₀, RCLike.conj_ofReal]
+  rw [← RCLike.ofReal_inv, RCLike.re_ofReal_mul]
 
 /-- The scalar spectral-gap estimate for one principal tangent.
 
@@ -312,149 +291,45 @@ private theorem tanThetaResidualWitness_scalar
         (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
           (LinearMap.rightSingularBasis ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)) i)⟫_𝕜
           := by
-  let S := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap)
-  let M := (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap)
-  let R := (A ∘ₗ X.toLinearMap - X.toLinearMap ∘ₗ (X.toLinearMap.adjoint ∘ₗ A ∘ₗ X.toLinearMap))
-  let σ := S.singularValues i
-  let v := LinearMap.rightSingularBasis S i
-  have hvnorm : ‖v‖ = 1 := (LinearMap.rightSingularBasis S).orthonormal.norm_eq_one i
-  have hσnonneg : 0 ≤ σ := S.singularValues_nonneg i
   have htrans := isTransverse_of_tanThetaSpectralGap hA hU X hδ hgap
-  have hσlt : σ < 1 :=
-    Submodule.singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint U X htrans i
-  have hcpos : 0 < Real.sqrt (1 - σ ^ 2) := Real.sqrt_pos.2 (by nlinarith)
-  -- Convert the accepted principal-tangent formula to the sine/cosine quotient.
-  have htan_i : tanTheta0.singularValues i = σ / Real.sqrt (1 - σ ^ 2) := by
-    calc
-      tanTheta0.singularValues i = (LinearMap.range X.toLinearMap).principalTangents U i :=
-        congrArg (fun z : ℕ →₀ ℝ => z (i : ℕ)) htan
-      _ = σ / Real.sqrt (1 - σ ^ 2) := by
-        rw [Submodule.principalTangents_apply_eq_div]
-        have heq := U.principalSines_range_eq_singularValues
-          (X := X.toContinuousLinearMap) X.isometry
-        have heq' : (LinearMap.range X.toLinearMap).principalSines U = S.singularValues := by
-          simpa only [ContinuousLinearMap.toLinearMap_comp,
-            LinearIsometry.toLinearMap_toContinuousLinearMap] using heq
-        rw [heq']
-  by_cases hσzero : σ = 0
-  · have hgal := LinearMap.congr_fun (LinearMap.adjoint_comp_ritzResidual_eq_zero A X) v
-    -- Express Galerkin orthogonality with the local residual map R.
-    change X.toLinearMap.adjoint (R v) = 0 at hgal
-    have horth : ⟪X.toLinearMap v, R v⟫_𝕜 = 0 := by
-      rw [← LinearMap.adjoint_inner_right, hgal, inner_zero_right]
-    have hwitness : tanThetaResidualWitness U X i = X.toLinearMap v := by
-      simp [tanThetaResidualWitness, S, σ, v, hσzero]
-    rw [htan_i, hσzero, zero_div, mul_zero, hwitness]
-    -- At a zero sine, the chosen witness is the corresponding Ritz vector.
-    change 0 ≤ RCLike.re ⟪X.toLinearMap v, R v⟫_𝕜
-    rw [horth]
-    simp
-  · let y := LinearMap.leftSingularVector S i
-    have hynorm : ‖y‖ = 1 := by
-      simpa [y] using (LinearMap.orthonormal_leftSingularVector S).norm_eq_one ⟨i, hσzero⟩
-    have hSv : S v = ((σ : ℝ) : 𝕜) • y := by
-      simpa [S, σ, v, y] using LinearMap.apply_rightSingularBasis S i
-    have hSadj : S.adjoint y = ((σ : ℝ) : 𝕜) • v := by
-      simpa only [S, σ, v, y] using LinearMap.adjoint_leftSingularVector S i
-    have hyUperp : y ∈ Uᗮ := by
-      dsimp [y]
+  have hσlt := Submodule.singularValues_starProjection_orthogonal_comp_lt_one_of_disjoint
+    U X htrans i
+  have hσnonneg := (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues_nonneg i
+  have hgal := LinearMap.inner_map_ritzResidual_eq_zero A X
+    (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)
+  rw [singularValues_eq_div_sqrt_of_singularValues_eq_principalTangents U X tanTheta0 htan i]
+  by_cases hσzero : (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i = 0
+  · rw [tanThetaResidualWitness_of_singularValues_eq_zero U X hσzero, hσzero, zero_div, mul_zero,
+      hgal, map_zero]
+  · have hcpos : 0 < Real.sqrt
+        (1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2) :=
+      Real.sqrt_pos.2 (by nlinarith)
+    have hy : LinearMap.leftSingularVector
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i ∈ Uᗮ := by
       rw [LinearMap.leftSingularVector_def]
-      exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem (X v))
-    have hXadj : X.toLinearMap.adjoint y = ((σ : ℝ) : 𝕜) • v := by
-      simpa [S, σ, v, y] using
-        Submodule.adjoint_apply_leftSingularVector_starProjection_orthogonal_comp
-            U X.toLinearMap (i := i)
-    have hMupper : RCLike.re ⟪M v, v⟫_𝕜 ≤ α := by
-      have hTopRed : (⊤ ∈ Module.End.invtSubmodule M) := fun z _ => Submodule.mem_top
-      have hbound : RCLike.re ⟪M v, v⟫_𝕜 ≤ α * ‖v‖ ^ 2 :=
-        (hA.adjoint_conj X.toLinearMap).re_inner_apply_self_le_of_pointSpectrumIn
-          hTopRed hgap.1 Submodule.mem_top
-      simpa [hvnorm] using hbound
-    have hAlower : α + δ ≤ RCLike.re ⟪A y, y⟫_𝕜 := by
-      have hUperpRed : (Uᗮ ∈ Module.End.invtSubmodule A) :=
-          LinearMap.IsSymmetric.orthogonalComplement_mem_invtSubmodule hA hU
-      have hbound : (α + δ) * ‖y‖ ^ 2 ≤ RCLike.re ⟪A y, y⟫_𝕜 :=
-        hA.le_re_inner_apply_self_of_pointSpectrumIn hUperpRed hgap.2 hyUperp
-      simpa [hynorm] using hbound
-    have hSyl := LinearMap.congr_fun
-      (hA.sylvester_starProjection_orthogonal_comp hU X.toLinearMap M) v
-    -- Pair the projected Sylvester identity with the sine left singular vector;
-    -- the ordered form bounds supply the gap times its singular value.
-    have hpair :
-        RCLike.re ⟪y, R v⟫_𝕜 =
-          σ * (RCLike.re ⟪A y, y⟫_𝕜 - RCLike.re ⟪M v, v⟫_𝕜) := by
-      have hright :
-          ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜 := by
-        -- Expand composition so the projection can move across the inner product.
-        change ⟪y, Uᗮ.starProjection (R v)⟫_𝕜 = ⟪y, R v⟫_𝕜
-        rw [← Uᗮ.inner_starProjection_left_eq_right,
-          Submodule.starProjection_eq_self_iff.mpr hyUperp]
-      have hsyl' : A (S v) - S (M v) = Uᗮ.starProjection.toLinearMap (R v) := by
-        simpa [S, M, R] using hSyl
-      have hSM : ⟪y, S (M v)⟫_𝕜 = ⟪S.adjoint y, M v⟫_𝕜 := by
-        exact (LinearMap.adjoint_inner_left S (M v) y).symm
-      have hpairComplex :
-          ⟪y, R v⟫_𝕜 =
-            (((σ : ℝ) : 𝕜) * (⟪y, A y⟫_𝕜 - ⟪v, M v⟫_𝕜)) := by
-        calc
-          ⟪y, R v⟫_𝕜 = ⟪y, Uᗮ.starProjection.toLinearMap (R v)⟫_𝕜 := hright.symm
-          _ = ⟪y, A (S v) - S (M v)⟫_𝕜 := by rw [hsyl']
-          _ = ⟪y, A (S v)⟫_𝕜 - ⟪y, S (M v)⟫_𝕜 := inner_sub_right _ _ _
-          _ = (((σ : ℝ) : 𝕜) * ⟪y, A y⟫_𝕜) - ⟪y, S (M v)⟫_𝕜 := by
-            rw [hSv, map_smul, inner_smul_right]
-          _ = (((σ : ℝ) : 𝕜) * ⟪y, A y⟫_𝕜) -
-              (((σ : ℝ) : 𝕜) * ⟪v, M v⟫_𝕜) := by
-            rw [hSM, hSadj, inner_smul_left, RCLike.conj_ofReal]
-          _ = (((σ : ℝ) : 𝕜) * (⟪y, A y⟫_𝕜 - ⟪v, M v⟫_𝕜)) := by ring
-      have hAy : RCLike.re ⟪y, A y⟫_𝕜 = RCLike.re ⟪A y, y⟫_𝕜 := by
-        rw [← inner_conj_symm, RCLike.conj_re]
-      have hMv : RCLike.re ⟪v, M v⟫_𝕜 = RCLike.re ⟪M v, v⟫_𝕜 := by
-        rw [← inner_conj_symm, RCLike.conj_re]
-      rw [hpairComplex, RCLike.re_ofReal_mul, map_sub, hAy, hMv]
-    have hpair_lower : δ * σ ≤ RCLike.re ⟪y, R v⟫_𝕜 := by
-      rw [hpair]
-      nlinarith
-    -- Galerkin orthogonality removes the Ritz component of the normalized witness.
-    have hgal := LinearMap.congr_fun (LinearMap.adjoint_comp_ritzResidual_eq_zero A X) v
-    -- Express Galerkin orthogonality with the local residual map R.
-    change X.toLinearMap.adjoint (R v) = 0 at hgal
-    have hXorth : ⟪X.toLinearMap v, R v⟫_𝕜 = 0 := by
-      rw [← LinearMap.adjoint_inner_right, hgal, inner_zero_right]
-    have hrawComplex :
-        ⟪y - ((σ : ℝ) : 𝕜) • X.toLinearMap v, R v⟫_𝕜 =
-          ⟪y, R v⟫_𝕜 := by
-      rw [inner_sub_left, inner_smul_left, RCLike.conj_ofReal, hXorth,
-        mul_zero, sub_zero]
-    have hraw :
-        RCLike.re ⟪y - ((σ : ℝ) : 𝕜) • X.toLinearMap v, R v⟫_𝕜 =
-          RCLike.re ⟪y, R v⟫_𝕜 := congrArg RCLike.re hrawComplex
-    let c := Real.sqrt (1 - σ ^ 2)
-    have hcpos' : 0 < c := by simpa [c] using hcpos
-    have hscale :
-        RCLike.re ⟪((((c : ℝ) : 𝕜)⁻¹) •
-            (y - ((σ : ℝ) : 𝕜) • X.toLinearMap v)), R v⟫_𝕜 =
-          RCLike.re ⟪y, R v⟫_𝕜 / c := by
-      calc
-        RCLike.re ⟪((((c : ℝ) : 𝕜)⁻¹) •
-            (y - ((σ : ℝ) : 𝕜) • X.toLinearMap v)), R v⟫_𝕜 =
-            c⁻¹ * RCLike.re
-              ⟪y - ((σ : ℝ) : 𝕜) • X.toLinearMap v, R v⟫_𝕜 := by
-                rw [inner_smul_left, map_inv₀, RCLike.conj_ofReal,
-                  ← RCLike.ofReal_inv, RCLike.re_ofReal_mul]
-        _ = c⁻¹ * RCLike.re ⟪y, R v⟫_𝕜 := by rw [hraw]
-        _ = RCLike.re ⟪y, R v⟫_𝕜 / c := by
-          simp [div_eq_mul_inv, mul_comm]
-    rw [htan_i]
-    -- Unfold the witness using the local complementary cosine c.
-    change δ * (σ / c) ≤
-      RCLike.re ⟪
-        (if σ = 0 then X.toLinearMap v else
-          ((((c : ℝ) : 𝕜)⁻¹) •
-            (y - ((σ : ℝ) : 𝕜) • X.toLinearMap v))),
-        R v⟫_𝕜
-    rw [ite_eq_right hσzero, hscale]
-    simpa [div_eq_mul_inv, mul_assoc] using
-      (div_le_div_iff_of_pos_right hcpos').2 hpair_lower
+      exact Uᗮ.smul_mem _ (Uᗮ.starProjection_apply_mem _)
+    have hynorm : ‖LinearMap.leftSingularVector
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i‖ = 1 :=
+      (LinearMap.orthonormal_leftSingularVector _).norm_eq_one ⟨i, hσzero⟩
+    have hvnorm : ‖LinearMap.rightSingularBasis
+        (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i‖ = 1 :=
+      (LinearMap.rightSingularBasis _).orthonormal.norm_eq_one i
+    have hMupper := re_inner_ritz_le_of_pointSpectrumIn hA X hgap.1
+      (LinearMap.rightSingularBasis (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap) i)
+    have hAlower := le_re_inner_of_pointSpectrumIn_orthogonal hA hU hgap.2 hy
+    rw [hvnorm] at hMupper
+    rw [hynorm] at hAlower
+    have hpair := re_inner_leftSingularVector_ritzResidual hA hU X i
+    rw [re_inner_tanThetaResidualWitness_ritzResidual A U X hσzero]
+    calc
+      _ = (Real.sqrt
+            (1 - ((Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) ^ 2))⁻¹ *
+          (δ * (Uᗮ.starProjection.toLinearMap ∘ₗ X.toLinearMap).singularValues i) := by
+        rw [div_eq_inv_mul]; ring
+      _ ≤ _ := by
+        refine mul_le_mul_of_nonneg_left ?_ (inv_nonneg.2 hcpos.le)
+        rw [hpair]
+        nlinarith
 
 /-- Ky Fan domination up to the full trial-space dimension. -/
 private theorem kyFan_tanTheta0_ritzResidual_le_of_le_finrank
