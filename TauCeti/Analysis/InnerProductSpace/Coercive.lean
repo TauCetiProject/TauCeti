@@ -28,6 +28,10 @@ bound the change of this form under a perturbation of `A`
 `⟪S (A v), v⟫ - ½ ⟪D v, v⟫` that appears when integrating against a family of quadratic forms
 (`ContinuousLinearMap.neg_mul_norm_sq_le_inner_sub`).
 
+A real coercive quadratic form also stays nonnegative under a small perturbation of the operator
+and a small scalar shift (`inner_add_smul_id_nonneg_of_norm_sub_le`), which gives the convexity
+of perturbed barrier functions, for instance in the Monge–Ampère viscosity argument.
+
 ## Provenance
 
 Adapted from `ForTauCeti/Analysis/InnerProductSpace/CoerciveUnit.lean`
@@ -117,5 +121,28 @@ theorem le_re_of_mem_spectrum_of_coercive (N : E →L[ℂ] E) {c : ℝ}
     nlinarith
   rw [spectrum.mem_iff] at hz
   exact hz (by simpa [Algebra.algebraMap_eq_smul_one] using hunit.neg)
+
+section Real
+
+variable {F : Type*} [NormedAddCommGroup F] [InnerProductSpace ℝ F]
+
+/-- **The quadratic form stays nonnegative under small perturbations.** If `κ ‖v‖² ≤ ⟪A v, v⟫`
+and `‖D - A‖ ≤ κ + t`, then `0 ≤ ⟪(D + t • id) v, v⟫`. -/
+theorem inner_add_smul_id_nonneg_of_norm_sub_le {A D : F →L[ℝ] F} {κ t : ℝ}
+    (hA : ∀ v, κ * ‖v‖ ^ 2 ≤ inner ℝ (A v) v) (hD : ‖D - A‖ ≤ κ + t) (v : F) :
+    0 ≤ inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v := by
+  set B := D - A
+  have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := by
+    nlinarith [abs_le.1 (abs_real_inner_le_norm (B v) v), B.le_opNorm v, norm_nonneg v]
+  have h₂ : inner ℝ ((D + t • ContinuousLinearMap.id ℝ F) v) v =
+      inner ℝ (A v) v + inner ℝ (B v) v + t * ‖v‖ ^ 2 := by
+    simp only [B, _root_.add_apply, _root_.sub_apply, _root_.smul_apply,
+      ContinuousLinearMap.id_apply, inner_add_left, inner_sub_left, real_inner_smul_left,
+      real_inner_self_eq_norm_sq]
+    ring
+  rw [h₂]
+  nlinarith [hA v, mul_nonneg (sub_nonneg.2 hD) (sq_nonneg ‖v‖)]
+
+end Real
 
 end ContinuousLinearMap

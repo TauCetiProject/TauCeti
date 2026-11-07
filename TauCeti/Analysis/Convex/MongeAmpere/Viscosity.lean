@@ -6,6 +6,8 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Convex.MongeAmpere.Comparison
+import TauCeti.Analysis.InnerProductSpace.Coercive
+import TauCeti.Analysis.Normed.Operator.Determinant
 import Mathlib.Analysis.InnerProductSpace.Calculus
 
 /-!
@@ -161,15 +163,6 @@ end Defs
 variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   {Ω : Set E} {u f : E → ℝ}
 
-omit [FiniteDimensional ℝ E] in
-/-- `det (A + t • id) → det A` as `t → 0`. -/
-private theorem tendsto_det_add_smul_id (A : E →L[ℝ] E) :
-    Tendsto (fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det) (𝓝 0) (𝓝 A.det) := by
-  have : Continuous fun t : ℝ => (A + t • ContinuousLinearMap.id ℝ E).det :=
-    ContinuousLinearMap.continuous_det.comp
-      (continuous_const.add (continuous_id.smul continuous_const))
-  simpa using this.tendsto 0
-
 section Measure
 
 variable [MeasurableSpace E] [BorelSpace E] [DecidablePred (· ∈ Ω)] (μ : Measure E)
@@ -256,7 +249,7 @@ theorem isMongeAmpereViscositySubsolution_of_withDensity_le_mongeAmpereMeasure [
   set I := ContinuousLinearMap.id ℝ E
   -- Choose `t > 0` with `det (A + t) < f x₀`.
   obtain ⟨t, htA, ht⟩ : ∃ t : ℝ, (A + t • I).det < f x₀ ∧ 0 < t :=
-    ((((tendsto_det_add_smul_id A).eventually (gt_mem_nhds hlt)).filter_mono
+    (((ContinuousLinearMap.eventually_det_add_smul_id_lt hlt).filter_mono
       nhdsWithin_le_nhds).and (self_mem_nhdsWithin (s := Ioi (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `φ` is convex near `x`,
   -- `u - φ ≤ u x₀ - φ x₀`, `φ` and `∇ φ` are differentiable, and `det (D²φ + t) < f`.
@@ -293,18 +286,11 @@ theorem isMongeAmpereViscositySubsolution_of_withDensity_le_mongeAmpereMeasure [
       exact add_nonneg this (mul_nonneg ht.le (sq_nonneg _))
   -- `MA_ψ = det (D²φ + t) dx ≤ f dx ≤ MA_u` on `ball x₀ r`.
   have hMAB : mongeAmpereMeasure μ
-        (fun x => if x ∈ ball x₀ r then ((φ x + t / 2 * ‖x - x₀‖ ^ 2 + c : ℝ) : EReal) else ⊤) ≤
+      (fun x => if x ∈ ball x₀ r then ((φ x + t / 2 * ‖x - x₀‖ ^ 2 + c : ℝ) : EReal) else ⊤) ≤
       mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (u x : EReal) else ⊤) := by
-    rw [hψMA, mongeAmpereMeasure_ite_eq_restrict μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
-      AbsolutelyContinuous.rfl]
-    calc (μ.restrict (ball x₀ r)).withDensity
-          (fun x => ENNReal.ofReal (fderiv ℝ (∇ φ) x + t • I).det)
-        ≤ (μ.restrict (ball x₀ r)).withDensity fun x => ENNReal.ofReal (f x) :=
-          withDensity_mono (ae_restrict_of_forall_mem measurableSet_ball fun x hx =>
-            ENNReal.ofReal_le_ofReal (hRdet x (ball_subset_ball hrR.le hx)).le)
-      _ = ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict (ball x₀ r) := by
-          rw [restrict_withDensity measurableSet_ball, restrict_restrict_of_subset hbΩ]
-      _ ≤ _ := Measure.restrict_mono subset_rfl hMA
+    rw [hψMA]
+    exact withDensity_restrict_le_mongeAmpereMeasure μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
+      AbsolutelyContinuous.rfl (fun x hx => (hRdet x (ball_subset_ball hrR.le hx)).le) hMA
   -- `u < ψ` on the sphere and `ψ < u` at the centre, contradicting the comparison principle.
   refine false_of_mongeAmpereMeasure_le_of_le_sphere μ hr hψc (hu.subset hbΩ (convex_ball x₀ r))
     hψcont ((hu.continuousOn hΩ).mono hBΩ) hMAB (fun x hx => ?_) ?_
@@ -345,8 +331,8 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
   simp only [ContinuousLinearMap.coe_coe, RCLike.re_to_real] at hA
   -- Choose `-κ / 2 < t < 0` with `f x₀ < det (A + t)`.
   obtain ⟨t, ⟨htA, htκ⟩, ht⟩ : ∃ t : ℝ, (f x₀ < (A + t • I).det ∧ -(κ / 2) < t) ∧ t < 0 :=
-    (((((tendsto_det_add_smul_id A).eventually (lt_mem_nhds hlt)).and
-      (lt_mem_nhds (by linarith))).filter_mono nhdsWithin_le_nhds).and
+    ((((ContinuousLinearMap.eventually_lt_det_add_smul_id hlt).and
+      (lt_mem_nhds (by linarith : -(κ / 2) < 0))).filter_mono nhdsWithin_le_nhds).and
       (self_mem_nhdsWithin (s := Iio (0 : ℝ)))).exists
   -- Choose `R > 0` such that on `ball x₀ R`: `x ∈ Ω`, `u - φ ≥ u x₀ - φ x₀`, `φ` and `∇ φ` are
   -- differentiable, `‖D²φ - A‖ < κ / 2`, and `f < det (D²φ + t)`.
@@ -370,34 +356,16 @@ theorem isMongeAmpereViscositySupersolution_of_mongeAmpereMeasure_le_withDensity
   -- The barrier `ψ = φ + (t / 2) ‖· - x₀‖² + c` is convex on `ball x₀ r`, by coercivity of `A`.
   set c := u x₀ - φ x₀ - t * r ^ 2 / 4 with hc
   obtain ⟨hψc, hψcont, hψMA⟩ := convexOn_mongeAmpereMeasure_add_mul_norm_sq μ c hrR hRφ hRd
-    fun x hx v => by
-      -- `⟪(D²φ x + t) v, v⟫ ≥ (κ - ‖D²φ x - A‖ + t) ‖v‖² ≥ 0`.
-      set B := fderiv ℝ (∇ φ) x - A
-      have hB : ‖B‖ < κ / 2 := by simpa [B, dist_eq_norm] using hRA x hx
-      have h₁ : -(‖B‖ * ‖v‖ ^ 2) ≤ inner ℝ (B v) v := by
-        nlinarith [abs_le.1 (abs_real_inner_le_norm (B v) v), B.le_opNorm v, norm_nonneg v]
-      have h₂ : inner ℝ ((fderiv ℝ (∇ φ) x + t • I) v) v =
-          inner ℝ (A v) v + inner ℝ (B v) v + t * ‖v‖ ^ 2 := by
-        simp only [B, _root_.add_apply, _root_.sub_apply, _root_.smul_apply,
-          ContinuousLinearMap.id_apply, inner_add_left, inner_sub_left, real_inner_smul_left,
-          real_inner_self_eq_norm_sq, I]
-        ring
-      rw [h₂]
-      nlinarith [hA v, sq_nonneg ‖v‖]
+    fun x hx v => ContinuousLinearMap.inner_add_smul_id_nonneg_of_norm_sub_le (t := t) hA (by
+      have : ‖fderiv ℝ (∇ φ) x - A‖ < κ / 2 := by simpa [dist_eq_norm] using hRA x hx
+      linarith) v
   -- `MA_u ≤ f dx ≤ det (D²φ + t) dx = MA_ψ` on `ball x₀ r`.
   have hMAB : mongeAmpereMeasure μ (fun x => if x ∈ ball x₀ r then (u x : EReal) else ⊤) ≤
       mongeAmpereMeasure μ
         (fun x => if x ∈ ball x₀ r then ((φ x + t / 2 * ‖x - x₀‖ ^ 2 + c : ℝ) : EReal) else ⊤) := by
-    rw [hψMA, mongeAmpereMeasure_ite_eq_restrict μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
-      AbsolutelyContinuous.rfl]
-    calc (mongeAmpereMeasure μ fun x => if x ∈ Ω then (u x : EReal) else ⊤).restrict (ball x₀ r)
-        ≤ ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict (ball x₀ r) :=
-          Measure.restrict_mono subset_rfl hMA
-      _ = (μ.restrict (ball x₀ r)).withDensity fun x => ENNReal.ofReal (f x) := by
-          rw [restrict_withDensity measurableSet_ball, restrict_restrict_of_subset hbΩ]
-      _ ≤ _ :=
-          withDensity_mono (ae_restrict_of_forall_mem measurableSet_ball fun x hx =>
-            ENNReal.ofReal_le_ofReal (hRdet x (ball_subset_ball hrR.le hx)).le)
+    rw [hψMA]
+    exact mongeAmpereMeasure_le_withDensity_restrict μ hΩ isOpen_ball (convex_ball x₀ r) hbΩ hu
+      AbsolutelyContinuous.rfl (fun x hx => (hRdet x (ball_subset_ball hrR.le hx)).le) hMA
   -- `ψ < u` on the sphere and `u < ψ` at the centre, contradicting the comparison principle.
   refine false_of_mongeAmpereMeasure_le_of_le_sphere μ hr (hu.subset hbΩ (convex_ball x₀ r)) hψc
     ((hu.continuousOn hΩ).mono hBΩ) hψcont hMAB (fun x hx => ?_) ?_

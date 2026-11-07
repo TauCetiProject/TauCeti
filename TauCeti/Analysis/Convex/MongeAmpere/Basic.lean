@@ -91,6 +91,9 @@ bounded below by `Convex.ofReal_dist_mul_pow_mul_addHaar_ball_le`.
   set;
 * `TauCeti.mongeAmpereMeasure_ite_eq_restrict` — the measure is local: restricting a convex
   function to an open convex subset restricts its Monge–Ampère measure;
+* `TauCeti.withDensity_restrict_le_mongeAmpereMeasure` and
+  `TauCeti.mongeAmpereMeasure_le_withDensity_restrict` — comparison of a density with the
+  Monge–Ampère measure on an open convex subset;
 * `TauCeti.injOn_gradient_inter_setOf_det_ne_zero` — the gradient is injective on the points
   where the subdifferential is the single gradient with an expansion of nonzero determinant;
 * `TauCeti.withDensity_image_gradient_eq_setLIntegral` — the change of variables formula
@@ -380,6 +383,49 @@ theorem mongeAmpereMeasure_ite_eq_restrict {U : Set E} [DecidablePred (· ∈ U)
     h x' (hUΩ hx')⟩
   filter_upwards [mem_nhdsWithin_of_mem_nhds (hU.mem_nhds hx.2)] with x' hx'
   simpa only [LinearMap.flip_apply, innerₗ_apply_apply] using h x' hx'
+
+/-- **Density below an Aleksandrov subsolution on an open convex set.** Let `u` be convex on an open
+set `Ω` and `U ⊆ Ω` open and convex. If `f dμ ≤ MA_u^Ω` on `Ω`, where `MA_u^Ω` is the
+Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g ≤ f` on `U` satisfies
+`g dμ ≤ MA_u^U` on `U`, where `MA_u^U` is the Monge–Ampère measure of `u` extended by `⊤` off
+`U`. -/
+theorem withDensity_restrict_le_mongeAmpereMeasure {U : Set E} [DecidablePred (· ∈ U)]
+    {f g : E → ℝ} (hΩ : IsOpen Ω) (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
+    (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) (hg : ∀ x ∈ U, g x ≤ f x)
+    (hMA : (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x)) ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤)) :
+    (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) ≤
+      mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) := by
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu hμ]
+  calc (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x))
+      ≤ (μ.restrict U).withDensity fun x => ENNReal.ofReal (f x) :=
+        withDensity_mono (ae_restrict_of_forall_mem hU.measurableSet fun x hx =>
+          ENNReal.ofReal_le_ofReal (hg x hx))
+    _ = ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict U := by
+        rw [restrict_withDensity hU.measurableSet, restrict_restrict_of_subset hUΩ]
+    _ ≤ _ := Measure.restrict_mono subset_rfl hMA
+
+/-- **Density above an Aleksandrov supersolution on an open convex set.** Let `u` be convex on an
+open set `Ω` and `U ⊆ Ω` open and convex. If `MA_u^Ω ≤ f dμ` on `Ω`, where `MA_u^Ω` is the
+Monge–Ampère measure of `u` extended by `⊤` off `Ω`, then every density `g ≥ f` on `U` satisfies
+`MA_u^U ≤ g dμ` on `U`, where `MA_u^U` is the Monge–Ampère measure of `u` extended by `⊤` off
+`U`. -/
+theorem mongeAmpereMeasure_le_withDensity_restrict {U : Set E} [DecidablePred (· ∈ U)]
+    {f g : E → ℝ} (hΩ : IsOpen Ω) (hU : IsOpen U) (hUc : Convex ℝ U) (hUΩ : U ⊆ Ω)
+    (hu : ConvexOn ℝ Ω u) (hμ : μ ≪ ν) (hg : ∀ x ∈ U, f x ≤ g x)
+    (hMA : mongeAmpereMeasure μ (fun x => if x ∈ Ω then (u x : EReal) else ⊤) ≤
+      (μ.restrict Ω).withDensity (fun x => ENNReal.ofReal (f x))) :
+    mongeAmpereMeasure μ (fun x => if x ∈ U then (u x : EReal) else ⊤) ≤
+      (μ.restrict U).withDensity (fun x => ENNReal.ofReal (g x)) := by
+  rw [mongeAmpereMeasure_ite_eq_restrict μ hΩ hU hUc hUΩ hu hμ]
+  calc (mongeAmpereMeasure μ fun x => if x ∈ Ω then (u x : EReal) else ⊤).restrict U
+      ≤ ((μ.restrict Ω).withDensity fun x => ENNReal.ofReal (f x)).restrict U :=
+        Measure.restrict_mono subset_rfl hMA
+    _ = (μ.restrict U).withDensity fun x => ENNReal.ofReal (f x) := by
+        rw [restrict_withDensity hU.measurableSet, restrict_restrict_of_subset hUΩ]
+    _ ≤ _ :=
+        withDensity_mono (ae_restrict_of_forall_mem hU.measurableSet fun x hx =>
+          ENNReal.ofReal_le_ofReal (hg x hx))
 
 end Ite
 
