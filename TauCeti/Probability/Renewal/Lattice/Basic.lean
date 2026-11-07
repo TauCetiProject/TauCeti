@@ -37,7 +37,7 @@ therefore no greatest one.
 
 ## Main statements
 
-* `MeasureTheory.Measure.IsLatticeSpan.measure_Ioc_mul_eq_singleton`: an interval between
+* `MeasureTheory.Measure.IsLatticeSpan.measure_Ioc_mul_eq_measure_singleton`: an interval between
   consecutive lattice points carries only its right endpoint.
 * `MeasureTheory.Measure.IsLatticeSpan.measure_Iic_eq_of_mem_Ico`: cumulative mass is constant
   between consecutive lattice points.
@@ -111,7 +111,7 @@ theorem IsLatticeSpan.measure_compl_range (h : μ.IsLatticeSpan a) :
 
 /-- An interval between consecutive lattice points carries only its right endpoint.
 The left endpoint is excluded, even when the measure has an atom there. -/
-theorem IsLatticeSpan.measure_Ioc_mul_eq_singleton (h : μ.IsLatticeSpan a) (n : ℕ) :
+theorem IsLatticeSpan.measure_Ioc_mul_eq_measure_singleton (h : μ.IsLatticeSpan a) (n : ℕ) :
     μ (Ioc ((n : ℝ≥0) * a) ((n + 1 : ℕ) * a)) = μ {((n + 1 : ℕ) : ℝ≥0) * a} := by
   apply measure_congr
   filter_upwards [h.ae_mem_range] with x hx

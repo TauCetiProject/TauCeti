@@ -24,9 +24,10 @@ single-location masses represented by the renewal countdown chain.
 
 The additive identity is stated in extended nonnegative reals, without a finiteness assumption.
 The real subtraction identity requires local finiteness of the renewal measure. It therefore
-applies to every probability interarrival law with mass at zero less than one. Increments at
-zero are allowed: the atom at zero is not removed from the renewal function, but cancels from
-each difference of its values.
+applies to every probability interarrival law with mass at zero less than one. The renewal
+function counts genuine arrivals after gaps of length zero, including the mass of `μ ∗ U` at
+zero, but excludes the initial unit mass of `U` at zero. This zero-time arrival mass occurs in
+both values and cancels in each difference, including the step from zero to `a`.
 
 ## References
 
@@ -55,14 +56,10 @@ theorem IsLatticeSpan.conv [SFinite ν] (hμ : μ.IsLatticeSpan a) (hν : ν.IsL
 power, the point mass at zero. -/
 theorem IsLatticeSpan.convolutionPower [SFinite μ] (hμ : μ.IsLatticeSpan a) (n : ℕ) :
     (μ.convolutionPower n).IsLatticeSpan a := by
-  induction n with
-  | zero =>
-    rw [convolutionPower_zero]
-    refine ⟨hμ.pos, ?_⟩
-    exact (ae_dirac_iff (countable_range _).measurableSet).2 ⟨0, by simp⟩
-  | succ n ih =>
-    rw [convolutionPower_succ]
-    exact ih.conv hμ
+  refine ⟨hμ.pos, ae_mem_convolutionPower_of_ae_mem (countable_range _).measurableSet
+    ⟨0, by simp⟩ ?_ hμ.ae_mem_range n⟩
+  rintro z ⟨x, ⟨m, rfl⟩, y, ⟨k, rfl⟩, rfl⟩
+  exact ⟨m + k, by simp [Nat.cast_add, add_mul]⟩
 
 /-- The renewal measure of a lattice measure is concentrated on the same lattice. This does
 not require probability normalization or local finiteness. -/
@@ -94,12 +91,12 @@ theorem IsLatticeSpan.renewalFunction_succ_mul [SFinite μ] (hμ : μ.IsLatticeS
     rw [dirac_apply, indicator_of_notMem (by simpa using hpos.ne'), zero_add]
   rw [renewalFunction_def, ← Iic_union_Ioc_eq_Iic hle,
     measure_union (Iic_disjoint_Ioc le_rfl) measurableSet_Ioc,
-    (hμ.conv hμ.renewalMeasure).measure_Ioc_mul_eq_singleton, hatom, renewalFunction_def]
+    (hμ.conv hμ.renewalMeasure).measure_Ioc_mul_eq_measure_singleton, hatom, renewalFunction_def]
 
 /-- For a locally finite lattice renewal measure, a real renewal-function increment equals
 its singleton mass. Genuine zero-increment arrivals are included in both renewal-function
 values and cancel in their difference. -/
-theorem IsLatticeSpan.toReal_renewalFunction_sub_mul [SFinite μ]
+theorem IsLatticeSpan.toReal_renewalFunction_succ_mul_sub [SFinite μ]
     [IsLocallyFiniteMeasure μ.renewalMeasure] (hμ : μ.IsLatticeSpan a) (n : ℕ) :
     (μ.renewalFunction ((n + 1 : ℕ) * a)).toReal -
         (μ.renewalFunction ((n : ℝ≥0) * a)).toReal =
