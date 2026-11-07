@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Basic
-public import Mathlib.LinearAlgebra.Finsupp.LinearCombination
+public import TauCeti.Algebra.Homology.DG.Twisted.RowFinite.Continuation
+public import TauCeti.LinearAlgebra.Finsupp.LinearCombination
 
 /-!
 # Attaching free generators to a row-finite twisted module along cycles
@@ -47,6 +47,19 @@ the image of the attaching cycle. Attaching along rows that only involve generat
 smaller index preserves one-sidedness
 (`TauCeti.RowFiniteTwistingCocycle.attach_m_eq_zero_of_le`), which is what makes the index
 filtration of an iterated attachment a filtration by subcomplexes.
+
+The attached module sits in a sequence
+
+`0 → K_m → K_{attach} → K_0(Q) → 0`
+
+of differential graded left modules, where `K_0(Q)` is the free module on the new generators with
+the zero cocycle, carrying the coefficient differential alone. The inclusion
+(`TauCeti.RowFiniteTwistingCocycle.attachInclusion`) and the projection onto the new coordinates
+(`TauCeti.RowFiniteTwistingCocycle.attachProjection`) are continuation cocycles, hence chain maps;
+the inclusion is injective, its image is the kernel of the projection
+(`TauCeti.RowFiniteTwistingCocycle.exact_linearCombination_attachInclusion_attachProjection`), and
+the projection is onto. So the quotient by the old generators is a direct sum of shifted copies of
+the algebra, one for each new generator, as for the relative chains of a CW pair.
 
 ## References
 
@@ -172,6 +185,124 @@ theorem attach_m_eq_zero_of_le (hm : ∀ x y, ind x ≤ ind y → m.m x y = 0)
     · simpa [mapDomain_apply_of_injective Sum.inl_injective] using hm x y hzw
     · simpa [mapDomain_apply_of_injective Sum.inl_injective] using hal q y hzw
   · rcases z with x | q <;> simp [mapDomain_of_notMem_range]
+
+/-- The rows of the attached cocycle have no entries on the new generators. -/
+@[simp]
+theorem attach_m_apply_inr (z : P ⊕ Q) (q : Q) : (m.attach a ha hca).m z (Sum.inr q) = 0 := by
+  rcases z with x | q' <;> simp [mapDomain_of_notMem_range]
+
+/-! ### The short exact sequence of the attachment -/
+
+section Exact
+
+variable (hA : IsDGAlgebra 𝒜 d)
+
+/-- The inclusion of the old free module into the attached one, as a continuation cocycle. -/
+noncomputable def attachInclusion : RowFiniteContinuationCocycle m (m.attach a ha hca) where
+  ν x := single (Sum.inl x) 1
+  mem_graded x y := by
+    classical
+    by_cases hxy : Sum.inl x = y
+    · subst y
+      simpa using SetLike.one_mem_graded 𝒜
+    · simp [single_eq_of_ne (Ne.symm hxy)]
+  continuation x := by
+    rw [(m.attach a ha hca).differential_single_one hA, attach_m_inl]
+    simp [linearCombination_apply, mapDomain]
+
+@[simp]
+theorem attachInclusion_ν (x : P) :
+    (m.attachInclusion ha hca hA).ν x = single (Sum.inl x) 1 :=
+  (rfl)
+
+/-- The inclusion of the old free module is `Finsupp.mapDomain Sum.inl`. -/
+@[simp]
+theorem linearCombination_attachInclusion (v : P →₀ A) :
+    linearCombination A (m.attachInclusion ha hca hA).ν v = mapDomain Sum.inl v := by
+  simp [linearCombination_apply, mapDomain]
+
+/-- The inclusion of the old free module is `Finsupp.mapDomain Sum.inl`, as a function. -/
+theorem coe_linearCombination_attachInclusion :
+    ⇑(linearCombination A (m.attachInclusion ha hca hA).ν) = mapDomain Sum.inl :=
+  funext (m.linearCombination_attachInclusion ha hca hA)
+
+/-- The projection of the attached free module onto the free module of the new generators, with
+the zero cocycle, as a continuation cocycle. -/
+noncomputable def attachProjection :
+    RowFiniteContinuationCocycle (m.attach a ha hca) (0 : RowFiniteTwistingCocycle 𝒜 d Q indQ) where
+  ν := Sum.elim 0 fun q ↦ single q 1
+  mem_graded := by
+    classical
+    rintro (x | q) q'
+    · simp [zero_mem]
+    · by_cases hq : q = q'
+      · subst q'
+        simpa using SetLike.one_mem_graded 𝒜
+      · simp [single_eq_of_ne (Ne.symm hq), zero_mem]
+  continuation := by
+    rintro (x | q)
+    · simp
+    · simp [hA.map_one_eq_zero]
+
+@[simp]
+theorem attachProjection_ν_inl (x : P) : (m.attachProjection ha hca hA).ν (Sum.inl x) = 0 :=
+  (rfl)
+
+@[simp]
+theorem attachProjection_ν_inr (q : Q) :
+    (m.attachProjection ha hca hA).ν (Sum.inr q) = single q 1 :=
+  (rfl)
+
+/-- The projection reads off the coefficients of the new generators. -/
+@[simp]
+theorem linearCombination_attachProjection_apply (v : P ⊕ Q →₀ A) (q : Q) :
+    linearCombination A (m.attachProjection ha hca hA).ν v q = v (Sum.inr q) := by
+  classical
+  rw [linearCombination_apply, Finsupp.sum_apply, Finsupp.sum, Finset.sum_eq_single (Sum.inr q)]
+  · simp
+  · rintro (x | q') _ hne
+    · simp
+    · simp [show q' ≠ q from fun h ↦ hne (h ▸ rfl)]
+  · intro h
+    simp [notMem_support_iff.mp h]
+
+include hA in
+/-- On the coefficients of the new generators, the differential of the attached free module is the
+coefficient differential: the attaching rows only reach the old generators. -/
+theorem attach_differential_apply_inr (v : P ⊕ Q →₀ A) (q : Q) :
+    rowFiniteTwistedDifferential (𝒜 := 𝒜) (d := d) (m.attach a ha hca).m v (Sum.inr q) =
+      d (v (Sum.inr q)) := by
+  have h := congrArg (· q) ((m.attachProjection ha hca hA).linearCombination_differential hA v)
+  simpa using h.symm
+
+/-- The projection onto the new generators is onto. -/
+theorem linearCombination_attachProjection_surjective :
+    Function.Surjective (linearCombination A (m.attachProjection ha hca hA).ν) := by
+  intro w
+  refine ⟨mapDomain Sum.inr w, Finsupp.ext fun q ↦ ?_⟩
+  rw [linearCombination_attachProjection_apply, mapDomain_apply_of_injective Sum.inr_injective]
+
+/-- The inclusion of the old free module is injective. -/
+theorem linearCombination_attachInclusion_injective :
+    Function.Injective (linearCombination A (m.attachInclusion ha hca hA).ν) := by
+  rw [coe_linearCombination_attachInclusion]
+  exact mapDomain_injective Sum.inl_injective
+
+/-- **Exactness of the attachment sequence.** A vector of the attached free module comes from the
+old free module exactly when the projection onto the new generators kills it. -/
+theorem exact_linearCombination_attachInclusion_attachProjection :
+    Function.Exact (linearCombination A (m.attachInclusion ha hca hA).ν)
+      (linearCombination A (m.attachProjection ha hca hA).ν) := by
+  intro v
+  rw [coe_linearCombination_attachInclusion, mem_range_mapDomain_iff _ Sum.inl_injective,
+    Finsupp.ext_iff]
+  simp only [linearCombination_attachProjection_apply, coe_zero, Pi.zero_apply]
+  refine ⟨?_, fun h q ↦ h _ (by simp)⟩
+  rintro h (x | q) hs
+  · exact absurd ⟨x, rfl⟩ hs
+  · exact h q
+
+end Exact
 
 section Maps
 
