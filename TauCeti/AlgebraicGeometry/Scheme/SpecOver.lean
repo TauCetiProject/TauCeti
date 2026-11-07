@@ -112,6 +112,17 @@ noncomputable def algSpecObjIsoOverMk : (algSpec R).obj (op A) ≅ Over.mk (Spec
     simp only [Iso.refl_hom, algSpec_obj_hom, Over.mk_hom, Spec.algebraMap]
     exact Category.id_comp _)
 
+/-- The underlying scheme morphism of `algSpecObjIsoOverMk A` is the identity of `Spec A`. -/
+@[simp]
+theorem algSpecObjIsoOverMk_hom_left : (algSpecObjIsoOverMk A).hom.left = 𝟙 _ :=
+  (rfl)
+
+/-- The underlying scheme morphism of the inverse of `algSpecObjIsoOverMk A` is the identity of
+`Spec A`. -/
+@[simp]
+theorem algSpecObjIsoOverMk_inv_left : (algSpecObjIsoOverMk A).inv.left = 𝟙 _ :=
+  (rfl)
+
 variable (A B) in
 /-- Morphisms `algSpec B ⟶ algSpec A` of schemes over `Spec R` are the `R`-algebra homomorphisms
 `A →ₐ[R] B`, since Mathlib's `algSpec` is fully faithful. -/
