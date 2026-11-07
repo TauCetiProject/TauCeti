@@ -71,6 +71,31 @@ private def rayTransport {z : ℕ → X} (q : ∀ k, Path (z k) (z (k + 1))) (k 
   | 0 => 𝟙 _
   | k + 1 => rayTransport q k ≫ Path.Homotopic.Quotient.mk (q k)
 
+/-- A chain supported on the singular `1`-simplex of a path only has nonzero coefficients on
+simplices whose image lies in the image of the path. -/
+private lemma range_simplexMap_subset_range_of_ne_zero_simplex₁ {x y : X} (q : Path x y)
+    {σ : (TopCat.toSSet.obj X) _⦋1⦌}
+    {a : L.obj (initialVertex (simplex₁ q.toContinuousMap))}
+    (hσ : (twistedChainComplexCoeff L σ).hom
+      ((ιTwistedChainComplex L 1 (simplex₁ q.toContinuousMap)).hom a) ≠ 0) :
+    Set.range (simplexMap σ) ⊆ Set.range q := by
+  obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
+  rintro _ ⟨p, rfl⟩
+  -- `simplexMap` evaluates the singular simplex at the unlifted point.
+  exact ⟨_, (congr($(toSSetObjEquiv_simplex₁ _) p.down)).symm⟩
+
+/-- A chain supported on the singular vertex at a point of a path only has nonzero coefficients on
+simplices whose image lies in the image of the path. -/
+private lemma range_simplexMap_subset_range_of_ne_zero_vertex {x y : X} (q : Path x y)
+    {σ : (TopCat.toSSet.obj X) _⦋0⦌}
+    {a : L.obj (initialVertex (TopCat.toSSetObj₀Equiv.symm x))}
+    (hσ : (twistedChainComplexCoeff L σ).hom
+      ((ιTwistedChainComplex L 0 (TopCat.toSSetObj₀Equiv.symm x)).hom a) ≠ 0) :
+    Set.range (simplexMap σ) ⊆ Set.range q := by
+  obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
+  rintro _ ⟨_, rfl⟩
+  exact ⟨0, q.source⟩
+
 variable [T2Space X] [WeaklyLocallyCompactSpace X] [LocallyPathConnectedSpace X]
   [SigmaCompactSpace X]
 
@@ -111,16 +136,11 @@ theorem locallyFiniteBoundary_zero_surjective
       ((twistedChainComplex L).d 1 0).hom (y ik) = e ik - e (ik.1, ik.2 + 1) := by
     simp only [y, e, map_neg, d_ιTwistedChainComplex_simplex₁_apply, neg_sub, hm]
   have hy (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (y ik) ≠ 0) :
-      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
-    rintro _ ⟨p, rfl⟩
-    -- `simplexMap` evaluates the singular simplex at the unlifted point.
-    exact ⟨_, (congr($(toSSetObjEquiv_simplex₁ _) p.down)).symm⟩
+      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) :=
+    range_simplexMap_subset_range_of_ne_zero_simplex₁ L _ hσ
   have he (ik : S × ℕ) σ (hσ : (twistedChainComplexCoeff L σ).hom (e ik) ≠ 0) :
-      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) := by
-    obtain rfl := eq_of_twistedChainComplexCoeff_ιTwistedChainComplex_ne_zero L hσ
-    rintro _ ⟨_, rfl⟩
-    exact ⟨0, (q ik.1 ik.2).source⟩
+      Set.range (simplexMap σ) ⊆ Set.range (q ik.1 ik.2) :=
+    range_simplexMap_subset_range_of_ne_zero_vertex L (q ik.1 ik.2) hσ
   have he0 (i : S) : e (i, 0) = (ιTwistedChainComplex L 0 i.1).hom (c i.1) := by
     simp only [e, m, rayTransport, Category.comp_id]
     rw [ιTwistedChainComplex_zero_apply_eq_toSSetObj₀Equiv_symm L i.1 (hz0 i).symm]
