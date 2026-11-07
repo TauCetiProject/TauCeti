@@ -196,13 +196,6 @@ theorem orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries
       simpa using hP i 1 one_ne_zero).tprod_eq]
   simp only [hσ, pow_one]
 
-/-- Finitely many classes below each period cutoff, as a limit along the cofinite filter. -/
-private theorem tendsto_period_cofinite_atTop
-    (hfin : ∀ C : ℝ, {i ∈ Set.univ | N (γ i) ≤ C}.Finite) :
-    Tendsto (fun i => N (γ i)) cofinite atTop :=
-  tendsto_atTop.2 fun C => eventually_cofinite.2 <|
-    (hfin C).subset fun _ hi => ⟨trivial, le_of_lt (not_le.1 hi)⟩
-
 include hdet in
 /-- **The configuration count of the orbit tori is an integral Euler product.** Let the orbit
 tori, of classes `γ i` of positive period with finitely many below each cutoff, be pairwise
@@ -222,7 +215,8 @@ theorem configurationCountSeries_eq_eulerProduct {r : ι → ι → Prop} (hr : 
       (if (1 + P i).det < 0 then 1 else 0))
     (fun i _ k => by rw [hw, torusWeight_def])
     fun i _ => constantCoeff_torusWeightSeries _ _).unique ((Equiv.Set.univ ι).hasProd_iff.2
-      (hasProd_ofPowerSeries_torusWeightSeries hpos (tendsto_period_cofinite_atTop hfin) hdet hP))
+      (hasProd_ofPowerSeries_torusWeightSeries hpos
+        ((northcott_iff_tendsto _).1 ⟨fun C => by simpa using hfin C⟩) hdet hP))
 
 include hdet in
 /-- **The configuration count of the orbit tori is the orbit zeta function.** Let the orbit
@@ -240,10 +234,11 @@ theorem orbitZeta_eq_mapRingHom_configurationCountSeries {r : ι → ι → Prop
       mapRingHom (Int.castRingHom K) (AddMonoidHom.id H) ⟨1, one_pos, by simp⟩
         (configurationCountSeries r γ w (fun i _ => hpos i) hfin) := by
   have hP₁ (i : ι) : (1 - P i).det ≠ 0 := by simpa using hP i 1 one_ne_zero
-  rw [orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries hpos
-      (tendsto_period_cofinite_atTop hfin) hdet hP K,
-    (hasProd_ofPowerSeries_torusWeightSeries hpos (tendsto_period_cofinite_atTop hfin) hdet
-      hP₁).tprod_eq, configurationCountSeries_eq_eulerProduct hpos hdet hr hw hfin hP₁]
+  have hN : Tendsto (fun i => N (γ i)) cofinite atTop :=
+    (northcott_iff_tendsto _).1 ⟨fun C => by simpa using hfin C⟩
+  rw [orbitZeta_eq_mapRingHom_tprod_ofPowerSeries_torusWeightSeries hpos hN hdet hP K,
+    (hasProd_ofPowerSeries_torusWeightSeries hpos hN hdet hP₁).tprod_eq,
+    configurationCountSeries_eq_eulerProduct hpos hdet hr hw hfin hP₁]
 
 end Product
 

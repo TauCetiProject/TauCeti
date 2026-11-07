@@ -83,6 +83,7 @@ intersections are inputs here; the geometric theorems supplying them are separat
 * `TauCeti.finite_compatibleConfigurations`: finiteness of the configurations of a class.
 * `TauCeti.configurationCount_zero`, `TauCeti.configurationCount_eq_zero_of_area_neg`: the
   counts in class zero and in classes of negative area.
+* `TauCeti.configurationCount_empty`: the counts with no candidates.
 * `TauCeti.configurationCount_eq_of_area_lt`: candidates of area larger than `ω A` do not
   contribute.
 * `TauCeti.configurationCount_eq_of_forall_support_subset`: the conditional comparison of the
@@ -315,6 +316,19 @@ theorem configurationCount_eq_of_area_lt (hts : t ⊆ s) (h : ∀ c ∈ s, c ∉
 
 end Area
 
+/-- With no candidates, the empty configuration in class zero is the only configuration. -/
+@[simp]
+theorem configurationCount_empty [DecidableEq H] (A : H) :
+    configurationCount r cls w ∅ A = if A = 0 then 1 else 0 := by
+  split_ifs with hA
+  · rw [hA]
+    exact configurationCount_zero (ω := 0) fun _ hc ↦ hc.elim
+  · rw [configurationCount_def, finsum_mem_eq_zero_of_forall_eq_zero]
+    rintro l ⟨hl, -, hlA⟩
+    rw [Finsupp.support_eq_empty.1 (Finset.coe_eq_empty.1 (Set.subset_empty_iff.1 hl)),
+      map_zero] at hlA
+    exact absurd hlA.symm hA
+
 end Configuration
 
 end TauCeti
@@ -481,28 +495,7 @@ theorem coeff_configurationCountSeries {w : ι → ℕ → R} {hpos : ∀ c ∈ 
     (configurationCountSeries r cls w hpos hfin).coeff A = configurationCount r cls w s A :=
   (rfl)
 
-end CommSemiring
-
-variable [CommRing R] {w : ι → ℕ → R} {f : ι → R⟦X⟧}
-
-/-- With no candidates, the empty configuration in class zero is the only configuration. -/
-private theorem configurationCount_empty [DecidableEq H] (A : H) :
-    configurationCount r cls w ∅ A = if A = 0 then 1 else 0 := by
-  split_ifs with hA
-  · rw [hA]
-    exact configurationCount_zero (ω := 0) fun _ hc ↦ hc.elim
-  · rw [configurationCount_def, finsum_mem_eq_zero_of_forall_eq_zero]
-    rintro l ⟨hl, -, hlA⟩
-    rw [Finsupp.support_eq_empty.1 (Finset.coe_eq_empty.1 (Set.subset_empty_iff.1 hl)),
-      map_zero] at hlA
-    exact absurd hlA.symm hA
-
-/-- Adding to a configuration a candidate `c` that does not occur in it. -/
-private theorem single_add_apply_erase {c : ι} {m : ι →₀ ℕ} (hm : m c = 0) (k : ℕ) :
-    (Finsupp.single c k + m) c = k ∧ (Finsupp.single c k + m).erase c = m := by
-  refine ⟨by simp [hm], ?_⟩
-  rw [Finsupp.erase_add, Finsupp.erase_single, zero_add,
-    Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.2 hm)]
+variable {w : ι → ℕ → R} {f : ι → R⟦X⟧}
 
 /-- A configuration of `t`, together with a candidate `c` compatible with `t` and taken `k`
 times, is a configuration of `t ∪ {c}`. -/
@@ -529,20 +522,6 @@ private theorem erase_mem_compatibleConfigurations {c : ι} {t : Set ι}
     exact (hl.1 hd.2).resolve_left hd.1
   exact ⟨hsupp, ht.mono (hsupp.trans (Set.subset_insert c t)), rfl⟩
 
-/-- The class of a configuration splits into the contribution of `c` and the rest. -/
-private theorem smul_add_linearCombination_erase (l : ι →₀ ℕ) (c : ι) :
-    l c • cls c + Finsupp.linearCombination ℕ cls (l.erase c) =
-      Finsupp.linearCombination ℕ cls l := by
-  conv_rhs => rw [← Finsupp.single_add_erase c l]
-  rw [map_add, Finsupp.linearCombination_single]
-
-/-- Adding a candidate `c` not occurring in a configuration multiplies its weight by `w c k`. -/
-private theorem prod_single_add {c : ι} {m : ι →₀ ℕ} (hm : m c = 0) (hw0 : w c 0 = 1) (k : ℕ) :
-    (Finsupp.single c k + m).prod w = w c k * m.prod w := by
-  rw [Finsupp.prod_add_index_of_disjoint (Finset.disjoint_of_subset_left
-    Finsupp.support_single_subset (Finset.disjoint_singleton_left.2
-      (Finsupp.notMem_support_iff.2 hm))), Finsupp.prod_single_index hw0]
-
 /-- **Adding one candidate.** Let `c` be a candidate, not in `t`, compatible with every candidate
 of the finite set `t`, and let its weights `w c k = [t ^ k] f c` come from a series with constant
 term `1`. If `b` is the generating series of the counts over `t`, then `f c (e ^ cls c) * b` is
@@ -566,6 +545,14 @@ private theorem coeff_ofPowerSeries_mul_eq_configurationCount_insert {c : ι} {t
   have hw0 : w c 0 = 1 := by rw [hw, coeff_zero_eq_constantCoeff_apply, hf]
   have hmc {m : ι →₀ ℕ} {B : H} (hm : m ∈ compatibleConfigurations r cls t B) : m c = 0 :=
     Finsupp.notMem_support_iff.1 fun h ↦ hct (hm.1 h)
+  -- Adding `c` to a configuration of `t`, and splitting a configuration at `c`.
+  have hle {m : ι →₀ ℕ} (hm : m c = 0) (k : ℕ) : (Finsupp.single c k + m).erase c = m := by
+    rw [Finsupp.erase_add, Finsupp.erase_single, zero_add,
+      Finsupp.erase_of_notMem_support (Finsupp.notMem_support_iff.2 hm)]
+  have hsplit (l : ι →₀ ℕ) : l c • cls c + Finsupp.linearCombination ℕ cls (l.erase c) =
+      Finsupp.linearCombination ℕ cls l := by
+    simpa only [Finsupp.linearCombination_apply] using
+      Finsupp.add_sum_erase' l c (fun i n ↦ n • cls i) fun _ ↦ zero_smul _ _
   -- The coefficient of the product at `A` is regrouped along the map sending a configuration of
   -- `t ∪ {c}` to the class of its `c`-part and the class of the rest.
   let φ : (ι →₀ ℕ) → H × H := fun l ↦ (l c • cls c, Finsupp.linearCombination ℕ cls (l.erase c))
@@ -578,33 +565,33 @@ private theorem coeff_ofPowerSeries_mul_eq_configurationCount_insert {c : ι} {t
     refine Finset.sum_nbij' (fun m ↦ Finsupp.single c (l c) + m) (fun l' ↦ l'.erase c)
       (fun m hm ↦ ?_) (fun l' hl' ↦ ?_) (fun m hm ↦ ?_) (fun l' hl' ↦ ?_) fun m hm ↦ ?_
     · rw [Set.Finite.mem_toFinset] at hm
-      obtain ⟨hlc, hle⟩ := single_add_apply_erase (hmc hm) (l c)
       rw [Finset.mem_filter, Set.Finite.mem_toFinset]
-      refine ⟨?_, by simp only [φ, hlc, hle, hm.2.2]⟩
-      rw [← (Set.Finite.mem_toFinset _).1 hl |>.2.2, ← smul_add_linearCombination_erase]
+      refine ⟨?_, by simp [φ, hmc hm, hle (hmc hm), hm.2.2]⟩
+      rw [← (Set.Finite.mem_toFinset _).1 hl |>.2.2, ← hsplit]
       exact single_add_mem_compatibleConfigurations_insert ht hm (l c)
     · rw [Finset.mem_filter, Set.Finite.mem_toFinset] at hl'
       rw [Set.Finite.mem_toFinset, ← (Prod.ext_iff.1 hl'.2).2]
       exact erase_mem_compatibleConfigurations ht hl'.1
     · rw [Set.Finite.mem_toFinset] at hm
-      exact (single_add_apply_erase (hmc hm) _).2
+      exact hle (hmc hm) _
     · rw [Finset.mem_filter] at hl'
       rw [← hinj (Prod.ext_iff.1 hl'.2).1, Finsupp.single_add_erase]
     · rw [Set.Finite.mem_toFinset] at hm
-      exact (prod_single_add (hmc hm) hw0 _).symm
+      rw [Finsupp.prod_add_index_of_disjoint (Finset.disjoint_of_subset_left
+        Finsupp.support_single_subset (Finset.disjoint_singleton_left.2
+          (Finsupp.notMem_support_iff.2 (hmc hm)))), Finsupp.prod_single_index hw0]
   · obtain ⟨l, hl, rfl⟩ := Finset.mem_image.1 hp
-    exact (smul_add_linearCombination_erase l c).trans ((Set.Finite.mem_toFinset _).1 hl).2.2
+    exact (hsplit l).trans ((Set.Finite.mem_toFinset _).1 hl).2.2
   · -- A nonzero pair of coefficients comes from a configuration of `t ∪ {c}`.
     obtain ⟨k, rfl⟩ : ∃ k : ℕ, k • cls c = u := by
       by_contra h
       exact hu (coeff_ofPowerSeries_of_forall_nsmul_ne hγ (fun k hk ↦ h ⟨k, hk⟩) _)
     rw [hb, configurationCount_def] at hv
     obtain ⟨m, hm, -⟩ := exists_ne_zero_of_finsum_mem_ne_zero hv
-    obtain ⟨hlc, hle⟩ := single_add_apply_erase (hmc hm) k
     refine Finset.mem_image.2 ⟨Finsupp.single c k + m, (Set.Finite.mem_toFinset _).2 ?_, ?_⟩
     · rw [← huv]
       exact single_add_mem_compatibleConfigurations_insert ht hm k
-    · simp only [φ, hlc, hle, hm.2.2]
+    · simp [φ, hmc hm, hle (hmc hm), hm.2.2]
 
 /-- **Independent-component expansion over finitely many candidates.** Let the candidates of `s`
 be pairwise compatible, of positive period `N`, with weights `w c k = [t ^ k] f c` given by series
@@ -627,6 +614,10 @@ theorem configurationCount_eq_coeff_prod_ofPowerSeries (hs : s.Pairwise r)
     exact coeff_ofPowerSeries_mul_eq_configurationCount_insert
       (fun h ↦ hc (Subtype.val_injective.mem_set_image.1 h)) (hs.mono hsub)
       (T.finite_toSet.image _) (fun d hd ↦ hpos d (hsub hd)) (hw c c.2) (hf c c.2) ih A
+
+end CommSemiring
+
+variable [CommRing R] {w : ι → ℕ → R} {f : ι → R⟦X⟧}
 
 /-- **The generating series is the product of the local series.** Let the candidates of `s` be
 pairwise compatible, as distinct orbit tori of a mapping torus are, of positive period `N` and
