@@ -272,11 +272,11 @@ variable {E F : Type*} [MeasurableSpace E] [TopologicalSpace E] [AddZeroClass E]
   {μ : Measure E} {u : E → F} {s K : Set E}
 
 /-- A function locally integrable on an open set agrees with a globally integrable function
-on each compact subset and on all sufficiently small translates of that subset. -/
+on all sufficiently small translates of each compact subset; taking the translation `0` shows that
+they agree on the subset itself. -/
 theorem exists_integrable_eqOn_add_of_isCompact (hu : LocallyIntegrableOn u s μ)
     (hs : IsOpen s) (hK : IsCompact K) (hKs : K ⊆ s) :
-    ∃ w : E → F, Integrable w μ ∧ EqOn w u K ∧
-      ∀ᶠ y in 𝓝 (0 : E), ∀ x ∈ K, w (x + y) = u (x + y) := by
+    ∃ w : E → F, Integrable w μ ∧ ∀ᶠ y in 𝓝 (0 : E), ∀ x ∈ K, w (x + y) = u (x + y) := by
   obtain ⟨U, hU, hKU, huU⟩ : ∃ U, IsOpen U ∧ K ⊆ U ∧ IntegrableOn u U μ := by
     refine hK.induction_on ?_ ?_ ?_ ?_
     · exact ⟨∅, isOpen_empty, Subset.rfl, integrableOn_empty⟩
@@ -290,8 +290,7 @@ theorem exists_integrable_eqOn_add_of_isCompact (hu : LocallyIntegrableOn u s μ
       obtain ⟨U, hUV, hU, hxU⟩ := mem_nhds_iff.1 hV
       exact ⟨U, nhdsWithin_le_nhds (hU.mem_nhds hxU),
         U, hU, Subset.rfl, huV.mono_set hUV⟩
-  refine ⟨U.indicator u, (integrable_indicator_iff hU.measurableSet).2 huU,
-    fun x hx => indicator_of_mem (hKU hx) u, ?_⟩
+  refine ⟨U.indicator u, (integrable_indicator_iff hU.measurableSet).2 huU, ?_⟩
   obtain ⟨V, hV, hKV⟩ := compact_open_separated_add_right hK hU hKU
   filter_upwards [hV] with y hy x hx
   exact indicator_of_mem (hKV ⟨x, hx, y, hy, rfl⟩) u
