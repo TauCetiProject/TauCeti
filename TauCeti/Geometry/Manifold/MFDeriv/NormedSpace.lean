@@ -114,10 +114,21 @@ theorem _root_.Filter.EventuallyEq.mvfderiv_eq {f₁ f : M → F} {x : M} (hf : 
 
 /-- A map into the model space with the germ of the extended chart at `x` has the identity as
 derivative at `x`, a tangent vector at `x` being read as a vector of the model space. -/
-theorem mvfderiv_apply_of_eventuallyEq_extChartAt [IsManifold I 1 M] {f : M → E} {x : M}
+theorem mvfderiv_apply_of_eventuallyEq_extChartAt {f : M → E} {x : M}
     (hf : f =ᶠ[𝓝 x] extChartAt I x) (v : TangentSpace I x) : mvfderiv I f x v = v := by
   rw [hf.mvfderiv_eq]
-  simp only [mvfderiv, mfderiv_extChartAt_self]
+  -- Mathlib's `mfderiv_extChartAt_self` assumes `IsManifold I 1 M`, which this does not need.
+  have hev : writtenInExtChartAt I 𝓘(𝕜, E) x (extChartAt I x) =ᶠ[𝓝[Set.range I] (extChartAt I x x)]
+      id :=
+    Filter.eventuallyEq_of_mem (extChartAt_target_mem_nhdsWithin x) fun z hz => by
+      simpa [writtenInExtChartAt] using (extChartAt I x).right_inv hz
+  have hd : MDifferentiableAt I 𝓘(𝕜, E) (extChartAt I x) x :=
+    (mdifferentiableAt_iff _ _).2 ⟨continuousAt_extChartAt x,
+      differentiableWithinAt_id.congr_of_eventuallyEq hev (by simp [writtenInExtChartAt])⟩
+  have hD : mfderiv I 𝓘(𝕜, E) (extChartAt I x) x = ContinuousLinearMap.id 𝕜 _ := by
+    rw [hd.mfderiv, hev.fderivWithin_eq (by simp [writtenInExtChartAt])]
+    exact fderivWithin_id (I.uniqueDiffOn.uniqueDiffWithinAt (Set.mem_range_self _))
+  simp only [mvfderiv, hD]
   -- Both tangent identifications are the identity of `E` across type synonyms.
   rfl
 
