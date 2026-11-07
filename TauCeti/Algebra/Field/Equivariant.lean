@@ -10,9 +10,9 @@ public import Mathlib.Algebra.GroupWithZero.Units.Basic
 public import Mathlib.Algebra.Ring.Hom.Defs
 
 /-!
-# Equivariant additive maps between fields
+# Equivariant additive maps from division rings to fields
 
-Let `a` and `b` be two families of units in two fields, indexed by the same type.
+Let `a` and `b` be families of units in a division ring and a field, indexed by the same type.
 If `a` is surjective, a nonzero additive map intertwining the corresponding scalar
 multiplications is a scalar multiple of a unique field homomorphism. The scalar is its value
 at one, and the field homomorphism carries `a` to `b`.
@@ -31,12 +31,12 @@ public section
 
 namespace AddMonoidHom
 
-variable {K L T : Type*} [Field K] [Field L]
+variable {K L T : Type*} [DivisionRing K] [Field L]
 
 /-- A nonzero additive map intertwining two scalar families, with surjective source family,
 is its value at one times a unique field homomorphism. That homomorphism intertwines the two
-families. The fields need not be equal or algebraically closed, and no multiplicativity of
-the scalar families is assumed. -/
+families. The source may be a division ring, the target need not be algebraically closed,
+and no multiplicativity of the scalar families is assumed. -/
 theorem existsUnique_ringHom_of_equivariant (f : K →+ L) {a : T → Kˣ} {b : T → Lˣ}
     (ha : Function.Surjective a) (hf : f ≠ 0)
     (heq : ∀ t x, f ((a t : K) * x) = (b t : L) * f x) :
