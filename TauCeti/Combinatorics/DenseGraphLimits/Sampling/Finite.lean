@@ -8,6 +8,7 @@ module
 public import TauCeti.Combinatorics.DenseGraphLimits.HomDensity.Basic
 public import Mathlib.Probability.Combinatorics.BinomialRandomGraph.Defs
 public import Mathlib.Probability.ProbabilityMassFunction.Constructions
+import TauCeti.Combinatorics.SimpleGraph.Finite
 
 /-!
 # Finite sampling from a graphon
@@ -171,6 +172,44 @@ theorem sampleMass_le_one : sampleMass W G ≤ 1 := by
   simpa using h
 
 open Classical in
+/-- The summand of `sum_sampleIntegrand_inter_eq`: if the edges of `H` meet `A` in `B`, the
+conditional mass of `H` is the product of the factors decided by `A` and the factors of the
+undecided edges of `⊤ \ A`, split according to whether `H` uses them. -/
+private lemma sampleIntegrand_eq_of_edgeFinset_inter_eq {A B : Finset (Sym2 (Fin n))}
+    (hA : A ⊆ (⊤ : SimpleGraph (Fin n)).edgeFinset) (H : SimpleGraph (Fin n))
+    (hH : H.edgeFinset ∩ A = B) (x : Fin n → Ω) :
+    sampleIntegrand W H x =
+      ((∏ e ∈ B, edgeFactor W x e) * ∏ e ∈ A \ B, (1 - edgeFactor W x e)) *
+        ((∏ e ∈ H.edgeFinset \ A, edgeFactor W x e) *
+          ∏ e ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A),
+            (1 - edgeFactor W x e)) := by
+  have hmem : ∀ e, e ∈ B ↔ e ∈ H.edgeFinset ∧ e ∈ A := by
+    intro e
+    rw [← hH, Finset.mem_inter]
+  have hunion : B ∪ (H.edgeFinset \ A) = H.edgeFinset := by
+    ext e
+    simp only [Finset.mem_union, Finset.mem_sdiff, hmem]
+    tauto
+  have hdisj : Disjoint B (H.edgeFinset \ A) :=
+    Finset.disjoint_left.mpr fun e he hne => (Finset.mem_sdiff.mp hne).2 ((hmem e).mp he).2
+  have hcompl :
+      (⊤ : SimpleGraph (Fin n)).edgeFinset \ H.edgeFinset =
+        (A \ B) ∪ (((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A)) := by
+    ext e
+    simp only [Finset.mem_sdiff, Finset.mem_union, hmem]
+    exact ⟨fun h => by by_cases heA : e ∈ A <;> tauto,
+      fun h => h.elim (fun h => ⟨hA h.1, fun hH => h.2 ⟨hH, h.1⟩⟩) fun h => ⟨h.1.1, by tauto⟩⟩
+  have hdisj' : Disjoint (A \ B)
+      (((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A)) :=
+    Finset.disjoint_left.mpr fun e he hne =>
+      (Finset.mem_sdiff.mp (Finset.mem_sdiff.mp hne).1).2 (Finset.mem_sdiff.mp he).1
+  have hprod : (∏ e ∈ H.edgeFinset, edgeFactor W x e) =
+      (∏ e ∈ B, edgeFactor W x e) * ∏ e ∈ H.edgeFinset \ A, edgeFactor W x e := by
+    rw [← Finset.prod_union hdisj, hunion]
+  rw [sampleIntegrand_def, hprod, hcompl, Finset.prod_union hdisj']
+  ring
+
+open Classical in
 /-- At fixed vertex positions, summing the conditional masses over the graphs whose edges meet a
 fixed loop-free set `A` in a prescribed subset `B` collapses to the product of the edge factors of
 `B` against the complementary factors of `A \ B`: the edges left undecided by `A` contribute
@@ -181,17 +220,6 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
     ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin n) => H.edgeFinset ∩ A = B),
         sampleIntegrand W H x =
       (∏ e ∈ B, edgeFactor W x e) * ∏ e ∈ A \ B, (1 - edgeFactor W x e) := by
-  have hnotdiag : ∀ e ∈ (⊤ : SimpleGraph (Fin n)).edgeFinset, ¬ e.IsDiag := fun e he =>
-    (⊤ : SimpleGraph (Fin n)).not_isDiag_of_mem_edgeSet (SimpleGraph.mem_edgeFinset.mp he)
-  -- The graph built from `B` together with a set `S` of undecided edges has edge set `B ∪ S`.
-  have hedge : ∀ S ⊆ (⊤ : SimpleGraph (Fin n)).edgeFinset \ A, ∀ e,
-      e ∈ (SimpleGraph.fromEdgeSet (↑(B ∪ S) : Set (Sym2 (Fin n)))).edgeSet ↔ e ∈ B ∪ S := by
-    intro S hSsub e
-    rw [SimpleGraph.edgeSet_fromEdgeSet]
-    refine ⟨fun h => Finset.mem_coe.mp h.1, fun h => ⟨Finset.mem_coe.mpr h, ?_⟩⟩
-    rcases Finset.mem_union.mp h with h' | h'
-    · exact hnotdiag e (hA (hBA h'))
-    · exact hnotdiag e (Finset.mem_sdiff.mp (hSsub h')).1
   have hsum : ∑ H ∈ Finset.univ.filter (fun H : SimpleGraph (Fin n) => H.edgeFinset ∩ A = B),
         sampleIntegrand W H x =
       ∑ S ∈ ((⊤ : SimpleGraph (Fin n)).edgeFinset \ A).powerset,
@@ -216,8 +244,11 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
       have hSsub := Finset.mem_powerset.mp hS
       rw [Finset.mem_filter]
       refine ⟨Finset.mem_univ _, ?_⟩
+      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset
+        (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset))
       ext e
-      simp only [Finset.mem_inter, SimpleGraph.mem_edgeFinset, hedge S hSsub e, Finset.mem_union]
+      simp only [Finset.mem_inter, SimpleGraph.mem_edgeFinset, hset, Finset.mem_coe,
+        Finset.mem_union]
       exact ⟨fun h => h.1.resolve_right fun heS => (Finset.mem_sdiff.mp (hSsub heS)).2 h.2,
         fun h => ⟨Or.inl h, hBA h⟩⟩
     -- Adding back the edges a graph uses outside `A` recovers that graph.
@@ -230,39 +261,16 @@ theorem sum_sampleIntegrand_inter_eq (A B : Finset (Sym2 (Fin n)))
     -- The edges that `B ∪ S` uses outside `A` are exactly `S`, since `S` avoids `A`.
     · intro S hS
       have hSsub := Finset.mem_powerset.mp hS
+      have hset := SimpleGraph.edgeSet_fromEdgeSet_of_subset
+        (Finset.union_subset (hBA.trans hA) (hSsub.trans Finset.sdiff_subset))
       ext e
-      simp only [Finset.mem_sdiff, SimpleGraph.mem_edgeFinset, hedge S hSsub e, Finset.mem_union]
+      simp only [Finset.mem_sdiff, SimpleGraph.mem_edgeFinset, hset, Finset.mem_coe,
+        Finset.mem_union]
       exact ⟨fun h => h.1.resolve_left fun heB => h.2 (hBA heB),
         fun h => ⟨Or.inr h, (Finset.mem_sdiff.mp (hSsub h)).2⟩⟩
-    -- The summands agree: the edges of `H` split as `B` together with the edges used outside `A`,
-    -- and the edges missing from `H` split as `A \ B` together with the undecided edges it skips.
+    -- The summands agree.
     · intro H hH
-      rw [Finset.mem_filter] at hH
-      have hmem : ∀ e, e ∈ B ↔ e ∈ H.edgeFinset ∧ e ∈ A := by
-        intro e
-        rw [← hH.2, Finset.mem_inter]
-      have hunion : B ∪ (H.edgeFinset \ A) = H.edgeFinset := by
-        ext e
-        simp only [Finset.mem_union, Finset.mem_sdiff, hmem]
-        tauto
-      have hdisj : Disjoint B (H.edgeFinset \ A) :=
-        Finset.disjoint_left.mpr fun e he hne => (Finset.mem_sdiff.mp hne).2 ((hmem e).mp he).2
-      have hcompl :
-          (⊤ : SimpleGraph (Fin n)).edgeFinset \ H.edgeFinset =
-            (A \ B) ∪ (((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A)) := by
-        ext e
-        simp only [Finset.mem_sdiff, Finset.mem_union, hmem]
-        exact ⟨fun h => by by_cases heA : e ∈ A <;> tauto,
-          fun h => h.elim (fun h => ⟨hA h.1, fun hH => h.2 ⟨hH, h.1⟩⟩) fun h => ⟨h.1.1, by tauto⟩⟩
-      have hdisj' : Disjoint (A \ B)
-          (((⊤ : SimpleGraph (Fin n)).edgeFinset \ A) \ (H.edgeFinset \ A)) :=
-        Finset.disjoint_left.mpr fun e he hne =>
-          (Finset.mem_sdiff.mp (Finset.mem_sdiff.mp hne).1).2 (Finset.mem_sdiff.mp he).1
-      have hprod : (∏ e ∈ H.edgeFinset, edgeFactor W x e) =
-          (∏ e ∈ B, edgeFactor W x e) * ∏ e ∈ H.edgeFinset \ A, edgeFactor W x e := by
-        rw [← Finset.prod_union hdisj, hunion]
-      rw [sampleIntegrand_def, hprod, hcompl, Finset.prod_union hdisj']
-      ring
+      exact sampleIntegrand_eq_of_edgeFinset_inter_eq W hA H (Finset.mem_filter.mp hH).2 x
   rw [hsum, ← Finset.mul_sum, ← Finset.prod_add]
   simp
 
