@@ -58,19 +58,9 @@ theorem prod_span_tangentConeAt_le {𝕜 E F : Type*} [NontriviallyNormedField �
     {s : Set E} {t : Set F} {x : E} {y : F} (hx : x ∈ closure s) (hy : y ∈ closure t) :
     (Submodule.span 𝕜 (tangentConeAt 𝕜 s x)).prod (Submodule.span 𝕜 (tangentConeAt 𝕜 t y)) ≤
       Submodule.span 𝕜 (tangentConeAt 𝕜 (s ×ˢ t) (x, y)) := by
-  rintro ⟨v, w⟩ ⟨hv, hw⟩
-  rw [← Prod.fst_add_snd (v, w)]
-  refine add_mem ?_ ?_
-  · have h : (Submodule.span 𝕜 (tangentConeAt 𝕜 s x)).map (LinearMap.inl 𝕜 E F) ≤
-        Submodule.span 𝕜 (tangentConeAt 𝕜 (s ×ˢ t) (x, y)) := by
-      rw [Submodule.map_span]
-      exact Submodule.span_mono (subset_tangentConeAt_prod_left hy)
-    exact h ⟨v, hv, rfl⟩
-  · have h : (Submodule.span 𝕜 (tangentConeAt 𝕜 t y)).map (LinearMap.inr 𝕜 E F) ≤
-        Submodule.span 𝕜 (tangentConeAt 𝕜 (s ×ˢ t) (x, y)) := by
-      rw [Submodule.map_span]
-      exact Submodule.span_mono (subset_tangentConeAt_prod_right hx)
-    exact h ⟨w, hw, rfl⟩
+  rw [← LinearMap.span_inl_union_inr]
+  exact Submodule.span_mono
+    (union_subset (subset_tangentConeAt_prod_left hy) (subset_tangentConeAt_prod_right hx))
 
 end TauCeti
 
