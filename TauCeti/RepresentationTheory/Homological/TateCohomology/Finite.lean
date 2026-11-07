@@ -17,8 +17,9 @@ Herbrand quotient of a finite cyclic group uses: a finite representation has Her
 not change the quotient (`TauCeti.TateCohomology.herbrandQuotient_eq_of_shortExact_of_finite_X₁`
 and its relatives).
 
-Along a short exact sequence, `Ĥⁿ⁺¹(G, X₁)` is finite whenever `Ĥⁿ(G, X₃)` and `Ĥⁿ⁺¹(G, X₂)`
-are (`TauCeti.TateCohomology.finite_tateCohomology_X₁_of_shortExact`).
+Along a short exact sequence, `tateCohomology X₁ (n + 1)` is finite whenever
+`tateCohomology X₃ n` and `tateCohomology X₂ (n + 1)` are
+(`TauCeti.TateCohomology.finite_tateCohomology_X₁_of_shortExact`).
 -/
 
 public section
@@ -50,7 +51,7 @@ instance finite_tateCohomology (M : Rep R G) [Finite M] (n : ℤ) : Finite (tate
     inferInstance
 
 /-- For a short exact sequence `0 ⟶ X₁ ⟶ X₂ ⟶ X₃ ⟶ 0` of representations and `m = n + 1`, if
-`Ĥⁿ(G, X₃)` and `Ĥᵐ(G, X₂)` are finite, then so is `Ĥᵐ(G, X₁)`. -/
+`tateCohomology X₃ n` and `tateCohomology X₂ m` are finite, then so is `tateCohomology X₁ m`. -/
 theorem finite_tateCohomology_X₁_of_shortExact {S : ShortComplex (Rep R G)}
     (hS : S.ShortExact) (n m : ℤ) (hnm : n + 1 = m) [Finite (tateCohomology S.X₃ n)]
     [Finite (tateCohomology S.X₂ m)] : Finite (tateCohomology S.X₁ m) := by
