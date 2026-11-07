@@ -12,6 +12,7 @@ public import TauCeti.LinearAlgebra.Basis.RangeSpan
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.KostantForm
 public import TauCeti.LinearAlgebra.RootSystem.SimplyConnectedRootDatum.LieAlgebra.WeightLattice
 import TauCeti.Algebra.Lie.Sl2.Basic
+import TauCeti.LinearAlgebra.RootSystem.Weyl.Group
 
 /-!
 # Chevalley data and their group schemes
@@ -69,6 +70,8 @@ by finitely many weight vectors
 * `TauCeti.DynkinType.ChevalleyDatum.span_range_coordinateWeight_eq_top`: the coordinate weights
   span `Fin t.rank → ℤ`.
 * `TauCeti.DynkinType.ChevalleyDatum.root_mem_weightLattice`: every root lies in `Λ(D)`.
+* `TauCeti.DynkinType.ChevalleyDatum.eq_one_of_forall_smul_weight_eq`: the weights detect the
+  Weyl group, including when `Λ(D)` is a proper sublattice of the full weight lattice.
 * `TauCeti.DynkinType.ChevalleyDatum.isNilpotent_representation_rootGenerator`: the numbered root
   generators act nilpotently.
 * `TauCeti.DynkinType.ChevalleyDatum.isClosedImmersion_torus`: the torus is a closed subgroup of
@@ -204,6 +207,24 @@ theorem root_mem_weightLattice (γ : Fin t.numRoots) :
   rootSpan_le_span_weight ht D.representation D.lattice D.representation_mem_lattice D.basis
     D.weight D.injective_representation_ι D.span_lattice_eq_top D.isCartanWeightVector_basis
     (Submodule.subset_span ⟨γ, rfl⟩)
+
+/-- The weights of a faithful Chevalley datum detect the Weyl group, even when they generate
+only a proper sublattice of the full weight lattice. -/
+theorem eq_one_of_forall_smul_weight_eq (w : (t.simplyConnectedRootDatum ht).weylGroup)
+    (hw : ∀ j, w • D.weight j = D.weight j) : w = 1 := by
+  have hroot (γ : Fin t.numRoots) : w • (t.simplyConnectedRootDatum ht).root γ =
+      (t.simplyConnectedRootDatum ht).root γ := by
+    exact LinearMap.eqOn_span (f := (RootPairing.Equiv.weightHom _ w.val).toLinearMap)
+      (g := LinearMap.id) (by rintro _ ⟨j, rfl⟩; exact hw j) (D.root_mem_weightLattice γ)
+  apply Subtype.ext
+  apply RootPairing.Equiv.indexHom_injective_of_corootSpan_eq_top _
+    (t.span_coroot_simplyConnectedRootDatum ht)
+  apply Equiv.ext
+  intro γ
+  apply (t.simplyConnectedRootDatum ht).root.injective
+  simpa only [RootPairing.weylGroup_apply_root, RootPairing.weylGroupToPerm_apply,
+    Subgroup.coe_one, RootPairing.Equiv.indexHom_apply, RootPairing.Equiv.toHom_one,
+    RootPairing.Hom.indexEquiv_one, Equiv.refl_apply] using hroot γ
 
 /-- The **coordinate root** of a root `γ`: the root, written in the chosen basis of the weight
 lattice. It is the character of the torus with character lattice `Λ(D)` through which that torus
