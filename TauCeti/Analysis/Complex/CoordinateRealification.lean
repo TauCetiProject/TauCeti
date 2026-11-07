@@ -211,19 +211,19 @@ theorem image_complexPiEquivRealPi_setOf_star_eq (n : ℕ) :
       rw [hk_eq]
       simpa [τ] using hσ₁ i
     have him : ((complexPiEquivRealPi n).symm y i).im = 0 := by
-      have := congrArg Complex.im (congrFun hy i)
-      simp only [Pi.star_apply, Complex.star_def, Complex.conj_im] at this
-      linarith
+      exact Complex.conj_eq_iff_im.mp (congrFun hy i)
     rw [complexPiEquivRealPi_symm_apply] at him
     rwa [hτk]
   · intro hy
     ext i
-    rw [Pi.star_apply, Complex.star_def, complexPiEquivRealPi_symm_apply]
+    rw [Pi.star_apply, Complex.star_def]
+    refine Complex.conj_eq_iff_im.mpr ?_
+    rw [complexPiEquivRealPi_symm_apply]
     have hτi : τ (σ₀ (1, i)) = ⟨2 * i.val + 1, by omega⟩ := by simpa [τ] using hσ₁ i
     have him : y ⟨2 * i.val + 1, by omega⟩ = 0 := by
       rw [← hτi]
       exact hy (σ₀ (1, i)) (by rw [hσ₀]; dsimp; omega)
-    apply Complex.ext <;> simp [him]
+    exact him
 
 end
 
