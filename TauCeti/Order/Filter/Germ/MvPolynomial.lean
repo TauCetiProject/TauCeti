@@ -29,6 +29,8 @@ elements.
 
 * `Filter.Germ.mvPolynomialAlgebra`: coordinate polynomials acting on germs as polynomial functions.
 * `Filter.Germ.aeval_coe`: evaluating a polynomial relation at the germ of a function.
+* `Filter.Germ.eval₂_coeRingHom_comp_coe`: the same for coefficients acting through an arbitrary
+  ring homomorphism into functions.
 * `Filter.Germ.isAlgebraic_coe_iff`: algebraic germs are germs of functions satisfying a nonzero
   polynomial relation.
 -/
@@ -74,6 +76,22 @@ theorem aeval_coe [CommSemiring R] {l : Filter (σ → R)} (P : (MvPolynomial σ
   rw [key, aeval_def, RingHom.algebraMap_toAlgebra]
   -- `Germ.coeRingHom` is the coercion to germs by definition (`Germ.coe_coeRingHom`).
   exact (hom_eval₂ (p := P) (g := coeRingHom (R := R) l) ..).symm
+
+/-- Evaluating a polynomial with coefficients in `S` at the germ of `f : α → T`, where the
+coefficients act on germs through `u : S →+* (α → T)` followed by the coercion to germs, gives the
+germ of the pointwise evaluations: at `y`, the coefficients are evaluated by `u · y`. -/
+theorem eval₂_coeRingHom_comp_coe {α S T : Type*} [CommSemiring S] [CommSemiring T]
+    (l : Filter α) (u : S →+* (α → T)) (P : S[X]) (f : α → T) :
+    P.eval₂ ((coeRingHom l).comp u) (f : Germ l T) =
+      ((fun y ↦ (P.map ((Pi.evalRingHom (fun _ : α ↦ T) y).comp u)).eval (f y) : α → T) :
+        Germ l T) := by
+  have heval : P.eval₂ u f =
+      (fun y ↦ (P.map ((Pi.evalRingHom (fun _ : α ↦ T) y).comp u)).eval (f y)) := by
+    funext y
+    rw [eval_map]
+    exact hom_eval₂ P u (Pi.evalRingHom (fun _ : α ↦ T) y) f
+  rw [← heval]
+  exact (hom_eval₂ P u (coeRingHom l) f).symm
 
 /-- The germ of `f` is algebraic over the coordinate polynomials exactly when `f` satisfies a
 nonzero polynomial relation `P (y, f y) = 0` eventually along `l`. -/
