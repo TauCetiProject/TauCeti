@@ -81,7 +81,8 @@ private theorem HasWeakFDerivOn.exists_contDiffOn_one_ae_eq_ball
     linarith [hsmall n]
   have hsub : closedBall x (r / 2) ⊆ ball x r := closedBall_subset_ball (half_lt_self hr)
   have hunif : TendstoUniformlyOn f' ((ball x r).indicator U) atTop (ball x (r / 2)) :=
-    ContDiffBump.tendstoUniformlyOn_convolution_indicator_ball hr hU hUc hphi
+    ContDiffBump.tendstoUniformlyOn_convolution_indicator_ball hr
+      (hU.integrable_indicator measurableSet_ball).aestronglyMeasurable hUc hphi
   -- Almost everywhere convergence of the values supplies a single anchor point.
   have hae : ∀ᵐ y ∂mu, Tendsto (fun n => f n y) atTop (𝓝 ((ball x r).indicator u y)) := by
     simp only [f, convolution_flip]

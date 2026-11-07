@@ -183,15 +183,13 @@ open Set in
 /-- Mollifying a function that is continuous on a ball by bumps with radii tending to `0`
 converges uniformly on the half-radius ball. -/
 theorem tendstoUniformlyOn_convolution_indicator_ball {x : G} {r : ℝ} (hr : 0 < r) {V : G → F}
-    (hV : IntegrableOn V (ball x r) μ) (hVc : ContinuousOn V (ball x r))
+    (hVm : AEStronglyMeasurable ((ball x r).indicator V) μ) (hVc : ContinuousOn V (ball x r))
     {phi : ℕ → ContDiffBump (0 : G)} (hphi : Tendsto (fun n => (phi n).rOut) atTop (𝓝 0)) :
     TendstoUniformlyOn (fun n => (ball x r).indicator V ⋆[
       (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ)
       ((ball x r).indicator V) atTop (ball x (r / 2)) := by
   let Fn := fun n => (ball x r).indicator V ⋆[
     (ContinuousLinearMap.lsmul ℝ ℝ).flip, μ] (phi n).normed μ
-  have hVm : AEStronglyMeasurable ((ball x r).indicator V) μ :=
-    (hV.integrable_indicator measurableSet_ball).aestronglyMeasurable
   -- The mollifications converge locally uniformly throughout the larger ball.
   have hlocal : TendstoLocallyUniformlyOn Fn ((ball x r).indicator V) atTop (ball x r) := by
     rw [isOpen_ball.tendstoLocallyUniformlyOn_iff_forall_tendsto]
