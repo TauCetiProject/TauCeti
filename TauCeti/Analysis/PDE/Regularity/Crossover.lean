@@ -57,9 +57,85 @@ open scoped ENNReal NNReal
 
 namespace TauCeti
 
+/-- If the mean absolute oscillation of `f` over `s` is at most `M`, then so is its mean
+`‖·‖ₑ`-oscillation, as an extended nonnegative real. -/
+theorem setLAverage_enorm_sub_setAverage_le_ofReal {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {s : Set α} {f : α → ℝ} {M : ℝ} (hs : μ s ≠ ⊤) (hf : IntegrableOn f s μ)
+    (h : ⨍ x in s, |f x - ⨍ z in s, f z ∂μ| ∂μ ≤ M) :
+    ⨍⁻ x in s, ‖f x - ⨍ z in s, f z ∂μ‖ₑ ∂μ ≤ ENNReal.ofReal M := by
+  rw [setLAverage_eq]
+  simp_rw [Real.enorm_eq_ofReal_abs]
+  calc (∫⁻ x in s, ENNReal.ofReal |f x - ⨍ z in s, f z ∂μ| ∂μ) / μ s
+      = ENNReal.ofReal (⨍ x in s, |f x - ⨍ z in s, f z ∂μ| ∂μ) :=
+        (ofReal_setAverage (f := fun x => |f x - ⨍ z in s, f z ∂μ|)
+          (hf.sub (integrableOn_const hs)).abs (ae_of_all _ fun _ => abs_nonneg _)).symm
+    _ ≤ ENNReal.ofReal M := ENNReal.ofReal_le_ofReal h
+
+/-- **From a John–Nirenberg bound to averages.** If `g` is almost everywhere positive on `B` and
+`∫_B exp (p log g) · ∫_B exp (-p log g) ≤ C μ(B)²`, then `⨍_B g^p · ⨍_B g^{-p} ≤ C`. -/
+theorem setAverage_rpow_mul_setAverage_rpow_neg_le {α : Type*} [MeasurableSpace α]
+    {μ : Measure α} {B : Set α} {g : α → ℝ} {p : ℝ} {C : ℝ≥0} (hB0 : μ B ≠ 0) (hBt : μ B ≠ ⊤)
+    (hpos : ∀ᵐ x ∂μ.restrict B, 0 < g x) (hmeas : AEMeasurable g (μ.restrict B))
+    (h : (∫⁻ x in B, ENNReal.ofReal (Real.exp (p * Real.log (g x))) ∂μ) *
+        ∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * Real.log (g x)))) ∂μ ≤ C * μ B ^ 2) :
+    (⨍ x in B, g x ^ p ∂μ) * (⨍ x in B, g x ^ (-p) ∂μ) ≤ C := by
+  have hrpow (q : ℝ) : ⨍ x in B, g x ^ q ∂μ =
+      (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (q * Real.log (g x))) ∂μ).toReal := by
+    rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae
+      (hpos.mono fun x hx => Real.rpow_nonneg hx.le q) (hmeas.pow_const q).aestronglyMeasurable]
+    congr 2
+    refine lintegral_congr_ae (hpos.mono fun x hx => ?_)
+    dsimp only
+    rw [Real.rpow_def_of_pos hx, mul_comm]
+  have hB0 : 0 < μ.real B := ENNReal.toReal_pos hB0 hBt
+  rw [hrpow, hrpow]
+  simp only [neg_mul] at h ⊢
+  calc (μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (p * Real.log (g x))) ∂μ).toReal *
+        ((μ.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * Real.log (g x)))) ∂μ).toReal)
+      = (μ.real B)⁻¹ ^ 2 * ((∫⁻ x in B, ENNReal.ofReal (Real.exp (p * Real.log (g x))) ∂μ) *
+          ∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * Real.log (g x)))) ∂μ).toReal := by
+        rw [ENNReal.toReal_mul]
+        ring
+    _ ≤ (μ.real B)⁻¹ ^ 2 * ((C : ℝ≥0∞) * μ B ^ 2).toReal := by
+        gcongr
+        exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top hBt)
+    _ = C := by
+        rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.coe_toReal, ← measureReal_def]
+        field_simp
+
 namespace PDE
 
 variable {ι : Type*} [Fintype ι] [DecidableEq ι]
+
+/-- The elementary estimate behind the choice of the exponent range in Moser's crossover
+estimate: if `|p| ≤ A / (C₀ + 1) * (λ / Λ)` then `|p| * (C₀ Λ / λ) ≤ A`. -/
+private lemma abs_mul_le_of_le_div_mul {A C₀ lam Lam p : ℝ} (hA : 0 < A) (hC₀ : 0 ≤ C₀)
+    (hlam : 0 < lam) (hLam : 0 ≤ Lam) (hp : |p| ≤ A / (C₀ + 1) * (lam / Lam)) :
+    |p| * (C₀ * (Lam / lam)) ≤ A := by
+  have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
+    rw [div_mul_div_comm, mul_comm lam]
+    exact div_self_le_one _
+  calc |p| * (C₀ * (Lam / lam))
+      ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
+    _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
+    _ ≤ A * 1 * 1 :=
+        mul_le_mul (mul_le_mul_of_nonneg_left
+          (div_le_one_of_le₀ (by linarith) (by linarith)) hA.le) hratio (by positivity)
+          (by positivity)
+    _ = A := by rw [mul_one, mul_one]
+
+omit [DecidableEq ι] in
+/-- The logarithm of a Sobolev function bounded below by a positive constant is integrable on
+every subset of `Ω` of finite measure. -/
+private lemma integrableOn_log_value (mu : Measure (EuclideanSpace ℝ ι)) [mu.IsAddHaarMeasure]
+    {Omega : Opens (EuclideanSpace ℝ ι)} {u : W1p mu Omega 2} {ε : ℝ} (hε : 0 < ε)
+    (hεu : ∀ᵐ x ∂mu.restrict Omega, ε ≤ W1p.value u x)
+    {S : Set (EuclideanSpace ℝ ι)} (hS : S ⊆ (Omega : Set (EuclideanSpace ℝ ι))) (hSt : mu S ≠ ⊤) :
+    IntegrableOn (fun x => Real.log (W1p.value u x)) S mu := by
+  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_log (by simp) hε hεu
+  have : IsFiniteMeasure (mu.restrict S) := isFiniteMeasure_restrict.2 hSt
+  exact (((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure
+    (Measure.restrict_mono hS le_rfl)).integrable one_le_two
 
 /-- **Moser's crossover estimate.** There are constants `c > 0` and `K`, depending only on the
 dimension `n ≥ 1`, with the following property. Let `a` be measurable and uniformly elliptic on
@@ -100,13 +176,6 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
   have hs1 : 1 ≤ s := Real.one_le_sqrt.2 (by exact_mod_cast Fintype.card_pos)
   have hrR : r ≤ R := by nlinarith
   set f : EuclideanSpace ℝ ι → ℝ := fun x => Real.log (W1p.value u x)
-  -- `log u` is a Sobolev function, hence integrable on sets of finite measure in `Ω`.
-  obtain ⟨w, hwv, -⟩ := W1p.exists_value_gradient_ae_eq_log (by simp) hε hεu
-  have hint : ∀ S ⊆ (Omega : Set (EuclideanSpace ℝ ι)), mu S ≠ ⊤ → IntegrableOn f S mu :=
-    fun S hS hSt => by
-      have : IsFiniteMeasure (mu.restrict S) := isFiniteMeasure_restrict.2 hSt
-      exact (((Lp.memLp (W1p.value w)).ae_eq hwv).mono_measure
-        (Measure.restrict_mono hS le_rfl)).integrable one_le_two
   have hball' : ball x₀ (2 * R) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
     (ball_subset_ball (by linarith)).trans hball
   -- `log u` has mean oscillation at most `C₀ Λ/λ` on every ball inside `B(x₀, R)`.
@@ -118,69 +187,26 @@ theorem exists_setAverage_rpow_mul_setAverage_rpow_neg_le [Nonempty ι] :
     intro y ρ hsub
     rcases le_or_gt ρ 0 with hρ | hρ
     · simp [ball_eq_empty.2 hρ]
-    have hd := (ball_subset_ball_iff hρ).1 hsub
     have h2 : ball y (2 * ρ) ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
-      (ball_subset_ball' (by linarith [dist_nonneg (x := y) (y := x₀)])).trans hball'
-    have hfi := hint (ball y ρ) ((ball_subset_ball (by linarith : ρ ≤ 2 * ρ)).trans h2)
-      measure_ball_lt_top.ne
-    rw [setLAverage_eq]
-    simp_rw [Real.enorm_eq_ofReal_abs]
-    calc (∫⁻ x in ball y ρ, ENNReal.ofReal |f x - ⨍ z in ball y ρ, f z ∂mu| ∂mu) / mu (ball y ρ)
-        = ENNReal.ofReal (⨍ x in ball y ρ, |f x - ⨍ z in ball y ρ, f z ∂mu| ∂mu) :=
-          (ofReal_setAverage (f := fun x => |f x - ⨍ z in ball y ρ, f z ∂mu|)
-            (hfi.sub (integrableOn_const measure_ball_lt_top.ne)).abs
-            (ae_of_all _ fun _ => abs_nonneg _)).symm
-      _ ≤ M := ENNReal.ofReal_le_ofReal (hC₀' mu h ha hu hε hεu hρ h2)
+      (ball_subset_ball' (by linarith [dist_nonneg (x := y) (y := x₀),
+        (ball_subset_ball_iff hρ).1 hsub])).trans hball'
+    exact setLAverage_enorm_sub_setAverage_le_ofReal measure_ball_lt_top.ne
+      (integrableOn_log_value mu hε hεu ((ball_subset_ball (by linarith : ρ ≤ 2 * ρ)).trans h2)
+        measure_ball_lt_top.ne) (hC₀' mu h ha hu hε hεu hρ h2)
   -- For `|p| ≤ c λ/Λ` the John–Nirenberg crossover estimate applies to `log u` with `σ = p`.
   have hσ : |p| * M ≤ A := by
     rw [hMc]
-    have hLam := h.upper_nonneg
-    have hratio : lam / Lam * (Lam / lam) ≤ 1 := by
-      rw [div_mul_div_comm, mul_comm lam]
-      exact div_self_le_one _
-    calc |p| * (C₀ * (Lam / lam))
-        ≤ A / (C₀ + 1) * (lam / Lam) * (C₀ * (Lam / lam)) := by gcongr
-      _ = A * (C₀ / (C₀ + 1)) * (lam / Lam * (Lam / lam)) := by field_simp
-      _ ≤ A * 1 * 1 :=
-          mul_le_mul (mul_le_mul_of_nonneg_left
-            (div_le_one_of_le₀ (by linarith) (by linarith)) hA.le) hratio (by positivity)
-            (by positivity)
-      _ = A := by rw [mul_one, mul_one]
-  have hJ := hJN (hint _ ((ball_subset_ball (by linarith)).trans hball')
+    exact abs_mul_le_of_le_div_mul hA hC₀ hlam h.upper_nonneg hp
+  have hBΩ : ball x₀ r ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
+    (ball_subset_ball (by linarith)).trans hball'
+  have hJ := hJN (integrableOn_log_value mu hε hεu ((ball_subset_ball (by linarith)).trans hball')
     measure_ball_lt_top.ne) hM hσ
   rw [hRr] at hJ
-  -- Rewrite `exp (± p log u)` as `u^{±p}` and pass from integrals to averages.
-  set B := ball x₀ r
-  have hBΩ : B ⊆ (Omega : Set (EuclideanSpace ℝ ι)) :=
-    (ball_subset_ball (by linarith)).trans hball'
-  have hpos : ∀ᵐ x ∂mu.restrict B, 0 < W1p.value u x :=
-    (ae_restrict_of_ae_restrict_of_subset hBΩ hεu).mono fun x hx => hε.trans_le hx
-  have hmeas : AEMeasurable (fun x => W1p.value u x) (mu.restrict B) :=
-    ((Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hBΩ le_rfl)).aemeasurable
-  have hrpow (q : ℝ) : ⨍ x in B, W1p.value u x ^ q ∂mu =
-      (mu.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (q * f x)) ∂mu).toReal := by
-    rw [setAverage_eq, smul_eq_mul, integral_eq_lintegral_of_nonneg_ae
-      (hpos.mono fun x hx => Real.rpow_nonneg hx.le q) (hmeas.pow_const q).aestronglyMeasurable]
-    congr 2
-    refine lintegral_congr_ae (hpos.mono fun x hx => ?_)
-    dsimp only
-    rw [Real.rpow_def_of_pos hx, mul_comm]
-  have hB0 : 0 < mu.real B := ENNReal.toReal_pos (measure_ball_pos mu x₀ hr).ne'
+  exact setAverage_rpow_mul_setAverage_rpow_neg_le (measure_ball_pos mu x₀ hr).ne'
     measure_ball_lt_top.ne
-  rw [hrpow, hrpow]
-  simp only [neg_mul] at hJ ⊢
-  calc (mu.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (p * f x)) ∂mu).toReal *
-        ((mu.real B)⁻¹ * (∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * f x))) ∂mu).toReal)
-      = (mu.real B)⁻¹ ^ 2 * ((∫⁻ x in B, ENNReal.ofReal (Real.exp (p * f x)) ∂mu) *
-          ∫⁻ x in B, ENNReal.ofReal (Real.exp (-(p * f x))) ∂mu).toReal := by
-        rw [ENNReal.toReal_mul]
-        ring
-    _ ≤ (mu.real B)⁻¹ ^ 2 * ((C : ℝ≥0∞) * mu B ^ 2).toReal := by
-        gcongr
-        exact ENNReal.mul_ne_top ENNReal.coe_ne_top (ENNReal.pow_ne_top measure_ball_lt_top.ne)
-    _ = C := by
-        rw [ENNReal.toReal_mul, ENNReal.toReal_pow, ENNReal.coe_toReal, ← measureReal_def]
-        field_simp
+    ((ae_restrict_of_ae_restrict_of_subset hBΩ hεu).mono fun x hx => hε.trans_le hx)
+    (((Lp.aestronglyMeasurable _).mono_measure (Measure.restrict_mono hBΩ le_rfl)).aemeasurable)
+    hJ
 
 end PDE
 
