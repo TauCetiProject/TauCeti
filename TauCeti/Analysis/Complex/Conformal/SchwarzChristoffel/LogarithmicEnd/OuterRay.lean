@@ -8,6 +8,9 @@ module
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.LogarithmicEnd.Ray
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
 
+import TauCeti.Algebra.BigOperators.Finset.Filter
+import TauCeti.Topology.Order.Interval
+
 /-!
 # Outer boundary rays at logarithmic Schwarz--Christoffel prevertices
 
@@ -36,31 +39,6 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
-/-- If no prevertex with nonzero exponent sits at `x`, the exponent sum over the prevertices
-at `x` vanishes, so it exceeds `-1`. -/
-private theorem neg_one_lt_sum_filter_eq_of_forall_ne (a e : ι → ℝ) {x : ℝ}
-    (h : ∀ i, e i ≠ 0 → a i ≠ x) : -1 < ∑ i with a i = x, e i := by
-  rw [Finset.sum_eq_zero fun i hi => by_contra fun hei => h i hei (Finset.mem_filter.mp hi).2]
-  norm_num
-
-/-- A continuous positive function on `Ioi p` that tends to `0` at `+∞` and to `+∞` at `p⁺`
-has image `Ioi 0`. -/
-theorem image_Ioi_eq_Ioi_zero_of_tendsto {d : ℝ → ℝ} {p : ℝ} (hcont : ContinuousOn d (Ioi p))
-    (hpos : ∀ x ∈ Ioi p, 0 < d x) (htop : Tendsto d atTop (𝓝 0))
-    (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi 0 :=
-  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
-    (isPreconnected_Ioi.intermediate_value_Ioi (le_principal_iff.mpr (Ioi_mem_atTop p))
-      (le_principal_iff.mpr self_mem_nhdsWithin) hcont htop hp)
-
-/-- A continuous positive function on `Iio p` that tends to `0` at `-∞` and to `+∞` at `p⁻`
-has image `Ioi 0`. -/
-theorem image_Iio_eq_Ioi_zero_of_tendsto {d : ℝ → ℝ} {p : ℝ} (hcont : ContinuousOn d (Iio p))
-    (hpos : ∀ x ∈ Iio p, 0 < d x) (hbot : Tendsto d atBot (𝓝 0))
-    (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi 0 :=
-  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
-    (isPreconnected_Iio.intermediate_value_Ioi (le_principal_iff.mpr (Iio_mem_atBot p))
-      (le_principal_iff.mpr self_mem_nhdsWithin) hcont hbot hp)
-
 /-- **A right outer edge issuing from a logarithmic prevertex is an open ray.**
 If every nonzero prevertex lies at or to the left of `p`, the boundary values for parameters
 strictly larger than `p` form the horizontal ray extending left from the finite value at
@@ -76,7 +54,8 @@ theorem schwarzChristoffelBoundary_image_Ioi_of_prevertex_sum_eq_neg_one
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   let d : ℝ → ℝ := fun x => ‖V - B x‖
   have hfinite {x : ℝ} (hx : p < x) : -1 < ∑ i with a i = x, e i :=
-    neg_one_lt_sum_filter_eq_of_forall_ne a e fun i hei => ((ha i hei).trans_lt hx).ne
+    by rw [Finset.sum_filter_eq_zero_of_forall_ne Finset.univ a e
+      fun i _ hei => ((ha i hei).trans_lt hx).ne]; norm_num
   have hBtop : Tendsto B atTop (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atTop_atTop
@@ -137,7 +116,8 @@ theorem schwarzChristoffelBoundary_image_Iio_of_prevertex_sum_eq_neg_one
   let u : ℂ := exp ((Real.pi * ∑ i, e i) * Complex.I)
   let d : ℝ → ℝ := fun x => ‖B x - V‖
   have hfinite {x : ℝ} (hx : x < p) : -1 < ∑ i with a i = x, e i :=
-    neg_one_lt_sum_filter_eq_of_forall_ne a e fun i hei => (hx.trans_le (ha i hei)).ne'
+    by rw [Finset.sum_filter_eq_zero_of_forall_ne Finset.univ a e
+      fun i _ hei => (hx.trans_le (ha i hei)).ne']; norm_num
   have hBbot : Tendsto B atBot (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atBot_atTop
