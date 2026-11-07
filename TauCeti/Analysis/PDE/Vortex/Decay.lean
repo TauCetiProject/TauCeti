@@ -96,8 +96,7 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
     ∃ K, 0 ≤ K ∧ ∀ z, 1 - 4 * (x z 2 ^ 2 + x z 3 ^ 2) ≤ K * Real.exp (-(c * ‖z‖)) := by
   set s : ℂ → ℝ := fun z ↦ 4 * (x z 2 ^ 2 + x z 3 ^ 2) with hs
   have hs₁ : ∀ z, s z ≤ 1 := normSq_le_one_of_tendsto hb₁ hb₂ hp hq hsol hlim
-  have hs₀ : ∀ z, 0 ≤ s z := fun z ↦ by positivity
-  have hscd : ContDiff ℝ 2 s := contDiff_const.mul ((hp.pow 2).add (hq.pow 2))
+  have hscd : ContDiff ℝ 2 s := contDiff_normSq hp hq
   -- Outside a disc of radius `R`, `|α|² > 4 c²`.
   have h4c : 4 * c ^ 2 < 1 := by nlinarith
   obtain ⟨R₀, -, hR₀⟩ := hasBasis_cobounded_norm.eventually_iff.mp
@@ -124,25 +123,16 @@ private theorem exists_one_sub_normSq_le_mul_exp_of_nonneg
     fun z hz ↦ TauCeti.le_mul_exp_of_sq_mul_le_laplacian hR hc₀ (le_max_right _ _) hucont hucd
       hsub (fun w hw ↦ ((le_abs_self _).trans (hM w (mem_sphere_zero_iff_norm.mpr hw))).trans
         (le_max_left _ _)) hulim hz
-  -- Transfer to the modulus defect, using `1 - |α|² ≤ 1` inside the disc.
-  refine ⟨max (max M 0 * Real.exp (c * R)) (Real.exp (c * R)),
-    (Real.exp_pos _).le.trans (le_max_right _ _), fun z ↦ ?_⟩
-  have hsplit : ∀ A : ℝ, A * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) =
-      A * Real.exp (-(c * (‖z‖ - R))) := fun A ↦ by
-    rw [exp_neg_mul_sub, mul_assoc]
-  rcases le_or_gt R ‖z‖ with hz | hz
-  · calc 1 - s z ≤ u z := by linarith [Real.log_le_sub_one_of_pos (hpos z hz)]
-      _ ≤ max M 0 * Real.exp (-(c * (‖z‖ - R))) := hdecay z hz
-      _ = max M 0 * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := (hsplit _).symm
-      _ ≤ _ := mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le
-  · calc 1 - s z ≤ 1 := by linarith [hs₀ z]
-      _ ≤ 1 * Real.exp (-(c * (‖z‖ - R))) := by
-        rw [one_mul]
-        exact Real.one_le_exp (by nlinarith)
-      _ = 1 * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := (hsplit _).symm
-      _ ≤ _ := by
-        rw [one_mul]
-        exact mul_le_mul_of_nonneg_right (le_max_right _ _) (Real.exp_pos _).le
+  -- Transfer to the modulus defect outside the disc, and extend the bound to the whole plane.
+  obtain ⟨K, hK⟩ := exists_forall_le_mul_exp_of_eventually_le (continuous_const.sub hscd.continuous)
+    (K := max M 0 * Real.exp (c * R)) (by
+      filter_upwards [tendsto_norm_cocompact_atTop.eventually_ge_atTop R] with z hz
+      calc 1 - s z ≤ u z := by linarith [Real.log_le_sub_one_of_pos (hpos z hz)]
+        _ ≤ max M 0 * Real.exp (-(c * (‖z‖ - R))) := hdecay z hz
+        _ = max M 0 * Real.exp (c * R) * Real.exp (-(c * ‖z‖)) := by
+          rw [exp_neg_mul_sub, mul_assoc])
+  exact ⟨max K 0, le_max_right _ _, fun z ↦ (hK z).trans
+    (mul_le_mul_of_nonneg_right (le_max_left _ _) (Real.exp_pos _).le)⟩
 
 /-- **Exponential decay of the modulus defect of a plane vortex.** A vortex on the whole plane
 whose section satisfies `|α| → 1` at infinity has `1 - |α(z)|² ≤ K exp (-c |z|)` for every rate
