@@ -15,7 +15,8 @@ public import Mathlib.Topology.Algebra.Module.Spaces.ContinuousLinearMap
 This file restricts a continuous representation of a monoid to a submodule preserved by every
 action operator, the continuous counterpart of Mathlib's `Representation.subrepresentation`, and
 descends it to the quotient by such a submodule, the continuous counterpart of
-`Representation.quotient`.
+`Representation.quotient`. In particular an intertwining map acts on its kernel and on the quotient
+by its range, the representations underlying `TopRep.ker` and `TopRep.coker`.
 
 ## Main definitions
 
@@ -25,6 +26,8 @@ descends it to the quotient by such a submodule, the continuous counterpart of
   subrepresentation into its ambient representation.
 * `ContRepresentation.quotient`: a continuous representation descended to the quotient by an
   invariant submodule, the continuous counterpart of `Representation.quotient`.
+* `ContIntertwiningMap.kerRepresentation`: the action on the kernel of an intertwining map.
+* `ContIntertwiningMap.cokerRepresentation`: the action on the quotient by its range.
 
 ## Main results
 
@@ -189,3 +192,50 @@ theorem continuous_subrepresentation (hπ : Continuous π) :
 end Continuity
 
 end ContRepresentation
+
+namespace ContIntertwiningMap
+
+variable {R G V W : Type*} [Ring R] [Monoid G] [AddCommGroup V] [TopologicalSpace V]
+  [IsTopologicalAddGroup V] [Module R V] [AddCommGroup W] [TopologicalSpace W]
+  [IsTopologicalAddGroup W] [Module R W]
+  {π : ContRepresentation R G V} {ρ : ContRepresentation R G W}
+  (T : ContIntertwiningMap π ρ)
+
+/-- The action of `G` on the kernel of an intertwining map `T : π →ⁱL ρ`: the restriction of `π`
+to the invariant submodule `ker T`, as in Mathlib's `Representation.IntertwiningMap.ker`. -/
+def kerRepresentation : ContRepresentation R G T.toContinuousLinearMap.ker :=
+  π.subrepresentation _ fun g _ hv ↦ T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv
+
+/-- The kernel representation acts as `π` on the underlying vectors. -/
+@[simp]
+theorem coe_kerRepresentation_apply (g : G) (v : T.toContinuousLinearMap.ker) :
+    ((T.kerRepresentation g v : T.toContinuousLinearMap.ker) : V) = π g v :=
+  ContRepresentation.coe_subrepresentation_apply g v
+
+/-- The kernel representation is the restriction of `π` to `ker T`, so the API of
+`ContRepresentation.subrepresentation` applies to it. -/
+theorem kerRepresentation_eq_subrepresentation :
+    T.kerRepresentation = π.subrepresentation _ fun g _ hv ↦
+      T.toIntertwiningMap.ker.apply_mem_toSubmodule g hv :=
+  (rfl)
+
+/-- The action of `G` on the cokernel of an intertwining map `T : π →ⁱL ρ`: the descent of `ρ` to
+the quotient by the invariant submodule `range T`, as in Mathlib's
+`Representation.IntertwiningMap.range`. -/
+def cokerRepresentation : ContRepresentation R G (W ⧸ T.toContinuousLinearMap.range) :=
+  ρ.quotient _ fun g _ hw ↦ T.toIntertwiningMap.range.apply_mem_toSubmodule g hw
+
+/-- The cokernel representation acts on the class of `w` as `ρ` acts on `w`. -/
+@[simp]
+theorem cokerRepresentation_apply_mk (g : G) (w : W) :
+    T.cokerRepresentation g (Submodule.Quotient.mk w) = Submodule.Quotient.mk (ρ g w) :=
+  ContRepresentation.quotient_apply_mk g w
+
+/-- The cokernel representation is the descent of `ρ` to the quotient by `range T`, so the API of
+`ContRepresentation.quotient` applies to it. -/
+theorem cokerRepresentation_eq_quotient :
+    T.cokerRepresentation = ρ.quotient _ fun g _ hw ↦
+      T.toIntertwiningMap.range.apply_mem_toSubmodule g hw :=
+  (rfl)
+
+end ContIntertwiningMap

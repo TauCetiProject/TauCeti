@@ -57,6 +57,6 @@ theorem _root_.Module.End.isNilpotent_sub_one_of_pow_expChar_pow_eq_one (p n : �
   · exact ⟨0, LinearMap.ext fun x => Subsingleton.elim _ _⟩
   · have : ExpChar (Module.End k V) p :=
       expChar_of_injective_algebraMap (FaithfulSMul.algebraMap_injective k (Module.End k V)) p
-    exact TauCeti.isNilpotent_sub_one_of_pow_expChar_pow_eq_one p n h
+    exact TauCeti.isNilpotent_sub_one_of_pow_expChar_pow_eq_one h
 
 end TauCeti

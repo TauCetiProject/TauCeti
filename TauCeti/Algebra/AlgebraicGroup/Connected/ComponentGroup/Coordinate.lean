@@ -295,6 +295,39 @@ private theorem counitAlgHom_comp_componentCoordinateMap
       rw [Bialgebra.counitAlgHom_apply, ConstantGroup.counit_apply,
         ConstantGroup.eval_apply]
 
+/-- At every `k`-point of the tensor square of `H`, both composites in the coalgebra law evaluate as
+the convolution of the two restricted points, so they agree. -/
+private theorem algHom_comp_map_comp_comulAlgHom_componentCoordinateMap
+    (H : FiniteTypeCommHopfAlgCat.{u, u} k) (f : TensorProduct k H H →ₐ[k] k) :
+    (f.comp (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H))).comp
+        (Bialgebra.comulAlgHom k
+          (ConstantGroup.coordinateRing k (ConnectedComponents (PrimeSpectrum H)))) =
+      (f.comp (Bialgebra.comulAlgHom k H)).comp (componentCoordinateMap H) := by
+  let C := ConnectedComponents (PrimeSpectrum H)
+  let g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
+    toConv (f.comp (Algebra.TensorProduct.includeLeft (R := k) (A := H) (B := H)))
+  let h : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
+    toConv (f.comp (Algebra.TensorProduct.includeRight (R := k) (A := H) (B := H)))
+  set q := f.comp (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H))
+  have hqleft :
+      q.comp (Algebra.TensorProduct.includeLeft (R := k)
+        (A := ConstantGroup.coordinateRing k C) (B := ConstantGroup.coordinateRing k C)) =
+        g.ofConv.comp (componentCoordinateMap H) := by
+    simp [q, g, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
+  have hqright :
+      q.comp (Algebra.TensorProduct.includeRight (R := k)
+        (A := ConstantGroup.coordinateRing k C) (B := ConstantGroup.coordinateRing k C)) =
+        h.ofConv.comp (componentCoordinateMap H) := by
+    simp [q, h, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight]
+  have htarget : f.comp (Bialgebra.comulAlgHom k H) = (g * h).ofConv := by
+    apply WithConv.toConv_injective
+    rw [Bialgebra.toConv_comp_comulAlgHom]
+  rw [htarget, eval_componentCoordinateMap, map_mul]
+  apply WithConv.toConv_injective
+  rw [Bialgebra.toConv_comp_comulAlgHom, hqleft, hqright,
+    eval_componentCoordinateMap, eval_componentCoordinateMap]
+  exact (ConstantGroup.eval_mul k C _ _).symm
+
 private theorem map_comp_comulAlgHom_componentCoordinateMap
     (H : FiniteTypeCommHopfAlgCat.{u, u} k) :
     (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
@@ -306,85 +339,21 @@ private theorem map_comp_comulAlgHom_componentCoordinateMap
   let _ : Algebra.FiniteType k (TensorProduct k H H) :=
     Algebra.FiniteType.trans (R := k) (S := H) (A := TensorProduct k H H)
       inferInstance inferInstance
-  let delta : C → ConstantGroup.coordinateRing k C :=
-    fun D ↦ (ConstantGroup.functionAlgEquiv k C).symm (Pi.single D 1)
+  let e := (ConstantGroup.functionAlgEquiv k C).symm
+  apply AlgHom.toLinearMap_injective
+  refine ((Pi.basisFun k C).map e.toLinearEquiv).ext fun D ↦ ?_
   -- It suffices to check the coalgebra law on the delta-function basis. Each side sends a delta
   -- function to an idempotent, so algebraically closed points separate the two images even though
   -- the tensor square of `H` need not be reduced.
-  have hdelta (D : C) :
-      ((Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
-          (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))) (delta D) =
-        ((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)) (delta D) := by
-    have hsingle : IsIdempotentElem (Pi.single D 1 : C → k) :=
-      (CompleteOrthogonalIdempotents.single (fun _ : C ↦ k)).idem D
-    have hdelta_idem : IsIdempotentElem (delta D) :=
-      hsingle.map (ConstantGroup.functionAlgEquiv k C).symm.toRingHom
-    apply TauCeti.eq_of_isIdempotentElem_of_forall_algHom_apply_eq
-      (k := k) (K := k)
-      (hdelta_idem.map
-        ((Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
-          (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))).toRingHom)
-      (hdelta_idem.map
-        ((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)).toRingHom)
-    intro f
-    -- Restrict a point of the tensor square to its two factors. Comultiplication evaluates as
-    -- convolution on both the constant component group and `H`.
-    let g : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
-      toConv (f.comp (Algebra.TensorProduct.includeLeft
-        (R := k) (A := H) (B := H)))
-    let h : HopfAlgebra.points (R := k) (H := H) (CommAlgCat.of k k) :=
-      toConv (f.comp (Algebra.TensorProduct.includeRight
-        (R := k) (A := H) (B := H)))
-    let q :=
-      f.comp (Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H))
-    have hqleft :
-        q.comp (Algebra.TensorProduct.includeLeft (R := k)
-          (A := ConstantGroup.coordinateRing k C)
-          (B := ConstantGroup.coordinateRing k C)) =
-          g.ofConv.comp (componentCoordinateMap H) := by
-      simp [q, g, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeLeft]
-    have hqright :
-        q.comp (Algebra.TensorProduct.includeRight (R := k)
-          (A := ConstantGroup.coordinateRing k C)
-          (B := ConstantGroup.coordinateRing k C)) =
-          h.ofConv.comp (componentCoordinateMap H) := by
-      simp [q, h, AlgHom.comp_assoc, Algebra.TensorProduct.map_comp_includeRight]
-    have hsource :
-        q.comp (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C)) =
-          ConstantGroup.eval k C (rationalComponentMap H g * rationalComponentMap H h) := by
-      apply WithConv.toConv_injective
-      rw [Bialgebra.toConv_comp_comulAlgHom, hqleft, hqright,
-        eval_componentCoordinateMap, eval_componentCoordinateMap]
-      exact (ConstantGroup.eval_mul k C _ _).symm
-    have htarget :
-        f.comp (Bialgebra.comulAlgHom k H) = (g * h).ofConv := by
-      apply WithConv.toConv_injective
-      rw [Bialgebra.toConv_comp_comulAlgHom]
-    calc
-      f (((Algebra.TensorProduct.map (componentCoordinateMap H) (componentCoordinateMap H)).comp
-          (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))) (delta D)) =
-          (q.comp (Bialgebra.comulAlgHom k (ConstantGroup.coordinateRing k C))) (delta D) := rfl
-      _ = ConstantGroup.eval k C
-          (rationalComponentMap H g * rationalComponentMap H h) (delta D) :=
-        AlgHom.congr_fun hsource (delta D)
-      _ = ConstantGroup.eval k C (rationalComponentMap H (g * h)) (delta D) := by
-        rw [map_mul]
-      _ = (g * h).ofConv (componentCoordinateMap H (delta D)) :=
-        (AlgHom.congr_fun (eval_componentCoordinateMap H (g * h)) (delta D)).symm
-      _ = (f.comp (Bialgebra.comulAlgHom k H)) (componentCoordinateMap H (delta D)) := by
-        rw [htarget]
-      _ = f (((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)) (delta D)) := rfl
-  apply AlgHom.toLinearMap_injective
-  apply LinearMap.ext
-  intro a
-  have ha : a = ∑ D, (ConstantGroup.functionAlgEquiv k C a D) • delta D := by
-    apply (ConstantGroup.functionAlgEquiv k C).injective
-    simpa only [map_sum, map_smul, delta, AlgEquiv.apply_symm_apply] using
-      (pi_eq_sum_univ' (ConstantGroup.functionAlgEquiv k C a))
-  rw [ha, map_sum, map_sum]
-  simp only [map_smul]
-  exact Finset.sum_congr rfl fun D _ ↦ congrArg ((ConstantGroup.functionAlgEquiv k C a D) • ·)
-    (hdelta D)
+  have hidem : IsIdempotentElem (e (Pi.single D 1)) :=
+    ((CompleteOrthogonalIdempotents.single (fun _ : C ↦ k)).idem D).map e.toRingHom
+  simp only [Module.Basis.map_apply, Pi.basisFun_apply, AlgEquiv.toLinearEquiv_apply,
+    AlgHom.toLinearMap_apply]
+  exact TauCeti.eq_of_isIdempotentElem_of_forall_algHom_apply_eq (k := k) (K := k)
+    (hidem.map ((Algebra.TensorProduct.map (componentCoordinateMap H)
+      (componentCoordinateMap H)).comp (Bialgebra.comulAlgHom k _)).toRingHom)
+    (hidem.map ((Bialgebra.comulAlgHom k H).comp (componentCoordinateMap H)).toRingHom)
+    fun f ↦ AlgHom.congr_fun (algHom_comp_map_comp_comulAlgHom_componentCoordinateMap H f) _
 
 /-- The coordinate bialgebra morphism representing projection to the finite constant group of
 connected components. -/
