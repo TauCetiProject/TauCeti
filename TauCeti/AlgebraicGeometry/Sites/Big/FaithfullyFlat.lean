@@ -112,46 +112,6 @@ lemma bigSectionsRestrict_bigSectionsBaseChange_tmul {T₀ T T' : Over S} (g : T
     (((bigSectionsRestrict F g).map_smulₛₗ a _).trans
       (congrArg (_ • ·) (bigSectionsRestrict_comp F g f s).symm))
 
-/-- For a morphism `f : T' ⟶ T` of affine `S`-schemes, the scheme `Spec (Γ(T', 𝒪) ⊗[Γ(T, 𝒪)]
-Γ(T', 𝒪))` is an affine `S`-scheme with two maps `g₁`, `g₂` to `T'` that agree after composing
-with `f`. Under the identification `κ` of its global sections with the tensor product, they induce
-the two inclusions of the factors. -/
-private theorem exists_affine_pair_comp_eq {T T' : Over S} (f : T' ⟶ T) [IsAffine T.left]
-    [IsAffine T'.left] :
-    letI := f.left.appTop.hom.toAlgebra
-    ∃ (Z : Over S) (_ : IsAffine Z.left) (g₁ g₂ : Z ⟶ T')
-      (κ : Γ(Z.left, ⊤) →+* Γ(T'.left, ⊤) ⊗[Γ(T.left, ⊤)] Γ(T'.left, ⊤)),
-      g₁ ≫ f = g₂ ≫ f ∧ (∀ a, κ (g₁.left.appTop a) = a ⊗ₜ 1) ∧
-        ∀ a, κ (g₂.left.appTop a) = 1 ⊗ₜ a := by
-  algebraize [f.left.appTop.hom]
-  let A := Γ(T.left, ⊤)
-  let A' := Γ(T'.left, ⊤)
-  -- The test scheme `Z = Spec (A' ⊗[A] A')` over `S`, with the two maps `g₁`, `g₂ : Z ⟶ T'`
-  -- induced by the inclusions `χ₁`, `χ₂` of the two factors.
-  let B := CommRingCat.of (A' ⊗[A] A')
-  let χ₁ : A' ⟶ B := CommRingCat.ofHom Algebra.TensorProduct.includeLeftRingHom
-  let χ₂ : A' ⟶ B := CommRingCat.ofHom Algebra.TensorProduct.includeRight.toRingHom
-  have hχ : f.left.appTop ≫ χ₁ = f.left.appTop ≫ χ₂ := by
-    ext a
-    exact (Algebra.TensorProduct.algebraMap_apply (R := A) (A := A') (B := A') a).symm.trans
-      (Algebra.TensorProduct.algebraMap_apply' a)
-  let ι (χ : A' ⟶ B) : Spec B ⟶ T'.left := Spec.map χ ≫ T'.left.isoSpec.inv
-  have hι : ι χ₁ ≫ f.left = ι χ₂ ≫ f.left := by
-    simp only [ι, Category.assoc, ← Scheme.isoSpec_inv_naturality, ← Spec.map_comp_assoc, hχ]
-  let κ := (Scheme.ΓSpecIso B).hom.hom
-  have hκ (χ : A' ⟶ B) (a : A') : κ ((ι χ).appTop a) = χ a := by
-    have h : (ι χ).appTop ≫ (Scheme.ΓSpecIso B).hom = χ := by
-      rw [Scheme.Hom.comp_appTop, Scheme.isoSpec_inv_appTop, Category.assoc,
-        Scheme.ΓSpecIso_naturality, Iso.inv_hom_id_assoc]
-    exact congr(($h).hom a)
-  let Z : Over S := Over.mk (ι χ₁ ≫ T'.hom)
-  have : IsAffine Z.left := inferInstanceAs (IsAffine (Spec B))
-  let g₁ : Z ⟶ T' := Over.homMk (ι χ₁)
-  let g₂ : Z ⟶ T' := Over.homMk (ι χ₂) (by
-    dsimp only [Z, Over.mk_hom]
-    rw [← Over.w f, reassoc_of% hι])
-  exact ⟨Z, this, g₁, g₂, κ, Over.OverMorphism.ext hι, hκ χ₁, hκ χ₂⟩
-
 /-- Faithfully flat descent of sections: if two maps `g₁`, `g₂ : Z ⟶ T'` of affine `S`-schemes
 agree after composing with `f : T' ⟶ T`, and the global sections of `Z` are identified by `κ`
 with `Γ(T', 𝒪) ⊗[Γ(T, 𝒪)] Γ(T', 𝒪)` so that `g₁`, `g₂` induce the two inclusions, then sections
@@ -241,7 +201,7 @@ theorem isSheafFor_bigPresheaf_singleton_of_flat_of_surjective {T T' : Over S} (
   let A := Γ(T.left, ⊤)
   let A' := Γ(T'.left, ⊤)
   let M := Γ((pullback T.hom).obj F, ⊤)
-  obtain ⟨Z, _, g₁, g₂, κ, hg, hκ₁, hκ₂⟩ := exists_affine_pair_comp_eq f
+  obtain ⟨Z, _, g₁, g₂, κ, hg, hκ₁, hκ₂⟩ := TauCeti.AlgebraicGeometry.exists_affine_pair_comp_eq f
   have hamitsur := lTensor_mk_one_sub_mk_one_eq_zero_of_bigSectionsRestrict_eq F f g₁ g₂ hg κ
     hκ₁ hκ₂
   let e := bigSectionsBaseChange F f
