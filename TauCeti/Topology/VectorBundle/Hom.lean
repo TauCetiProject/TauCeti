@@ -26,7 +26,9 @@ which is zero at noninvertible maps. In the same generality, invertibility of th
 maps is an open condition along a continuous Hom-bundle section, composition of
 continuous Hom-bundle sections is continuous, and a `σ`-semilinear Hom-bundle section whose
 preferred-frame coordinate expression is locally constant around each frame centre is continuous
-(`TauCeti.continuous_hom_bundle_of_inCoordinates_eq_const`).
+(`TauCeti.continuous_hom_bundle_of_inCoordinates_eq_const`). Read in the trivializations at a
+fixed point, a continuous Hom-bundle section is a continuous family of operators on their common
+base set (`TauCeti.continuousOn_inCoordinates`).
 
 For two vector bundle cores, a section of Mathlib's Hom bundle between them is continuous
 exactly when it is continuous in every pair of a source chart and a target chart, on their
@@ -62,6 +64,23 @@ variable {𝕜 B F₁ F₂ M : Type*} [NontriviallyNormedField 𝕜]
   [FiberBundle F₂ E₂] [VectorBundle 𝕜 F₂ E₂]
   [∀ x, IsTopologicalAddGroup (E₂ x)] [∀ x, ContinuousSMul 𝕜 (E₂ x)]
 
+/-- Inverse Hom-frame coordinates conjugate a model operator by the inverse target frame and
+forward source frame. No square identity or equality of the two model fibres is required. -/
+theorem Bundle.Trivialization.continuousLinearMap_symmL
+    (e₁ : Trivialization F₁ (TotalSpace.proj : TotalSpace F₁ E₁ → B))
+    (e₂ : Trivialization F₂ (TotalSpace.proj : TotalSpace F₂ E₂ → B))
+    [MemTrivializationAtlas e₁] [MemTrivializationAtlas e₂]
+    {x : B} (hx : x ∈ e₁.baseSet ∩ e₂.baseSet) (A : F₁ →L[𝕜] F₂) :
+    (e₁.continuousLinearMap (RingHom.id 𝕜) e₂).symmL 𝕜 x A =
+      (e₂.symmL 𝕜 x).comp (A.comp (e₁.continuousLinearMapAt 𝕜 x)) := by
+  rw [Trivialization.symmL_apply (R := 𝕜)
+    (e := e₁.continuousLinearMap (RingHom.id 𝕜) e₂) (by simpa only
+      [Trivialization.baseSet_continuousLinearMap] using hx)]
+  -- The Hom trivialization and its native pretrivialization share the inverse fibre map.
+  convert! Bundle.Pretrivialization.continuousLinearMap_symm_apply'
+    (RingHom.id 𝕜) e₁ e₂ hx A using 1
+
+
 namespace TauCeti
 
 /-- For a finite-dimensional model source, a fibrewise continuous linear map is continuous
@@ -95,6 +114,23 @@ theorem continuous_hom_bundle_iff [CompleteSpace 𝕜] [FiniteDimensional 𝕜 F
     -- `TotalSpace.mk'` is the total-space constructor; the second component of
     -- `e₂` applied to this point is precisely its fibre coordinate.
     rfl
+
+/-- On the common base set of the trivializations at `x₀`, the coordinate expressions of a
+continuous Hom-bundle section in these fixed trivializations form a continuous family of
+operators. -/
+theorem continuousOn_inCoordinates {ϕ : ∀ x, E₁ x →L[𝕜] E₂ x}
+    (hϕ : Continuous fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (ϕ x))
+    (x₀ : B) :
+    ContinuousOn (fun x ↦ ContinuousLinearMap.inCoordinates F₁ E₁ F₂ E₂ x₀ x x₀ x (ϕ x))
+      ((trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) := by
+  let e := trivializationAt (F₁ →L[𝕜] F₂) (fun x ↦ E₁ x →L[𝕜] E₂ x) x₀
+  -- The section stays in the source of `e` over its base set, the common base set.
+  have hmaps : MapsTo (fun x ↦ TotalSpace.mk' (F₁ →L[𝕜] F₂) (E := fun x ↦ E₁ x →L[𝕜] E₂ x) x (ϕ x))
+      ((trivializationAt F₁ E₁ x₀).baseSet ∩ (trivializationAt F₂ E₂ x₀).baseSet) e.source :=
+    fun x hx ↦ by rwa [e.mem_source, hom_trivializationAt_baseSet]
+  -- The fibre coordinate of `e` is the coordinate expression in the trivializations at `x₀`.
+  refine (e.continuousOn.comp hϕ.continuousOn hmaps).snd.congr fun x _ ↦ ?_
+  simp only [Function.comp_apply, e, hom_trivializationAt_apply]
 
 end TauCeti
 

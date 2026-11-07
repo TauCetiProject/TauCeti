@@ -303,6 +303,11 @@ theorem tateTheta_eq_zero_iff (q u : Kˣ) (hq : ‖(q : K)‖ < 1) :
   · rintro ⟨n, rfl⟩
     simpa using tateTheta_zpow_mul q 1 n
 
+/-- The theta function is nonzero away from the powers of `q`. -/
+theorem tateTheta_ne_zero (q : Kˣ) (hq : ‖(q : K)‖ < 1) {u : Kˣ}
+    (hu : u ∉ Subgroup.zpowers q) : tateTheta q u ≠ 0 :=
+  fun h ↦ hu ((tateTheta_eq_zero_iff q u hq).mp h)
+
 end TauCeti
 
 end
