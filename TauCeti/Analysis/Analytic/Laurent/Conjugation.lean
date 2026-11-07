@@ -108,3 +108,33 @@ theorem laurent_eq_of_conj {u v : E × ℂ → ℂ} {x₀ : E} {m n : ℤ} {τ :
   exact hext p.1 hp.1 hp.2
 
 end AnalyticAt
+
+namespace TauCeti
+
+/-- Units of conjugation-related Laurent branches at paired base points agree after conjugation
+near the hyperplane `z = 0`, and the exponents agree; the base point need not be fixed by `τ`. -/
+theorem exponent_eq_and_unit_conj {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+    {U : Set E} (hU : IsOpen U) {R' : ℝ} (hR' : 0 < R')
+    {d : ℕ} {r W : Fin d → E × ℂ → ℂ} {e : Fin d → ℤ} {σ : Equiv.Perm (Fin d)} {τ : E → E}
+    (hτ : ContinuousOn τ U) (hτU : MapsTo τ U U)
+    (hWa : ∀ i, ∀ x ∈ U, AnalyticAt ℂ (W i) (x, 0)) (hW0 : ∀ i, ∀ x ∈ U, W i (x, 0) ≠ 0)
+    (hform : ∀ x ∈ U, ∀ᶠ b in 𝓝 (x, (0 : ℂ)),
+      (∀ i, W i b ≠ 0) ∧ (b.2 ≠ 0 → ∀ i, r i b = b.2 ^ e i * W i b))
+    (hσ : ∀ i, ∀ b ∈ U ×ˢ (Metric.ball (0 : ℂ) R' \ {0}),
+      r (σ i) b = conj (r i (τ b.1, conj b.2)))
+    {x : E} (hx : x ∈ U) (i : Fin d) :
+    e (σ i) = e i ∧ ∀ᶠ b in 𝓝 (x, (0 : ℂ)), W (σ i) b = conj (W i (τ b.1, conj b.2)) := by
+  have hκt : Tendsto (fun b : E × ℂ ↦ (τ b.1, conj b.2)) (𝓝 (x, (0 : ℂ))) (𝓝 (τ x, (0 : ℂ))) := by
+    simpa only [Prod.map_def, map_zero] using
+      (hτ.continuousAt (hU.mem_nhds hx)).tendsto.prodMap_nhds
+        (Complex.continuous_conj.tendsto (0 : ℂ))
+  apply ((hWa (σ i) x hx).restrictScalars (𝕜 := ℝ)).laurent_eq_of_conj (hW0 (σ i) x hx)
+    ((hWa i (τ x) (hτU hx)).restrictScalars (𝕜 := ℝ)) (hW0 i (τ x) (hτU hx))
+    (hτ.continuousAt (hU.mem_nhds hx))
+  filter_upwards [hform x hx, hκt.eventually (hform (τ x) (hτU hx)),
+    (hU.prod Metric.isOpen_ball).mem_nhds (x := (x, (0 : ℂ))) ⟨hx, Metric.mem_ball_self hR'⟩]
+    with b hb hκb hbT hb0
+  rw [← hb.2 hb0 (σ i), hσ i b ⟨hbT.1, hbT.2, hb0⟩,
+    hκb.2 (by simpa only [ne_eq, map_eq_zero] using hb0) i]
+
+end TauCeti
