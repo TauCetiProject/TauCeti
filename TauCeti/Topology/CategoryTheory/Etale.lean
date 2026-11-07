@@ -74,7 +74,7 @@ theorem finite_total_arrows_of_proper_source_target
   have hc : IsCompact {a : Quiver.Total C | a.left = x ∧ a.right = y} := by
     simpa only [Set.preimage, Set.mem_singleton_iff, Prod.mk.injEq] using
       hp.isCompact_preimage (isCompact_singleton (x := (x, y)))
-  exact hs.finite_preimage_singleton_inter (s := Quiver.Total.right ⁻¹' {y}) hc
+  exact hs.isLocallyInjective.finite_preimage_singleton_inter (s := Quiver.Total.right ⁻¹' {y}) hc
 
 /-- Every hom type is finite in a quiver with proper source-target map and locally
 homeomorphic source. Applied with equal endpoints, this gives finiteness of isotropy. -/

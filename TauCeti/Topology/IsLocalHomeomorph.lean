@@ -60,25 +60,16 @@ domain.** In particular the total space of a covering of a locally path-connecte
 locally path-connected. -/
 theorem _root_.IsLocalHomeomorph.locallyPathConnectedSpace [LocallyPathConnectedSpace B]
     {p : E → B} (hp : IsLocalHomeomorph p) : LocallyPathConnectedSpace E := by
-  constructor
-  intro e
-  rw [Filter.hasBasis_self]
-  intro U hU
-  obtain ⟨W, hWU, hWopen, heW⟩ := mem_nhds_iff.mp hU
-  let φ := hp.localInverseAt e
-  have hpe_source : p e ∈ φ.source := hp.apply_self_mem_localInverseAt_source
-  have hsource : IsOpen (φ.source ∩ φ ⁻¹' W) :=
-    φ.continuousOn_toFun.isOpen_inter_preimage φ.open_source hWopen
-  have hpe : p e ∈ φ.source ∩ φ ⁻¹' W := by
-    refine ⟨hpe_source, ?_⟩
-    simpa only [Set.mem_preimage, φ, hp.localInverseAt_apply_self] using heW
-  obtain ⟨V, ⟨hVopen, hpeV, hVpath⟩, hVsub⟩ :=
-    (isOpen_isPathConnected_basis (p e)).mem_iff.mp (hsource.mem_nhds hpe)
-  refine ⟨φ '' V, ?_, hVpath.image' (φ.continuousOn_toFun.mono fun _ hv => (hVsub hv).1), ?_⟩
-  · exact (φ.isOpen_image_of_subset_source hVopen
-      (hVsub.trans Set.inter_subset_left)).mem_nhds ⟨p e, hpeV, by simp [φ]⟩
-  · rintro z ⟨y, hyV, rfl⟩
-    exact hWU (hVsub hyV).2
+  -- Transport a basis of path-connected neighbourhoods of `p e` along the local inverse at `e`.
+  have hb (e : E) : (𝓝 e).HasBasis
+      (fun s ↦ s ∈ 𝓝 (p e) ∧ IsPathConnected s ∧ s ⊆ (hp.localInverseAt e).source)
+      (hp.localInverseAt e '' ·) := by
+    have h := (hp.localInverseAt e).map_nhds_eq hp.apply_self_mem_localInverseAt_source
+    rw [hp.localInverseAt_apply_self] at h
+    exact h ▸ (pathConnected_subset_basis (hp.localInverseAt e).open_source
+      hp.apply_self_mem_localInverseAt_source).map _
+  exact .of_bases hb fun e _ ⟨_, hs, hsub⟩ ↦
+    hs.image' ((hp.localInverseAt e).continuousOn.mono hsub)
 
 /-- Let `L` be a local inverse of a local homeomorphism `p` at `e`. If `φ` is continuous at `z`,
 satisfies `p ∘ φ = p` near `z`, and sends `z` into the target of `L`, then `L ∘ p` agrees with `φ`
@@ -87,23 +78,23 @@ theorem _root_.IsLocalHomeomorph.localInverseAt_comp_eventuallyEq {p : E → B}
     (hp : IsLocalHomeomorph p) {e z : E} {φ : E → E} (hφ : ContinuousAt φ z)
     (hφz : φ z ∈ (hp.localInverseAt e).target) (hpφ : p ∘ φ =ᶠ[𝓝 z] p) :
     hp.localInverseAt e ∘ p =ᶠ[𝓝 z] φ := by
-  set L := hp.localInverseAt e
-  filter_upwards [hφ.preimage_mem_nhds (L.open_target.mem_nhds hφz), hpφ] with w hw hpw
-  have hL : L (L.symm (φ w)) = φ w := L.right_inv hw
-  rw [hp.localInverseAt_symm] at hL
-  rwa [Function.comp_apply, ← hpw]
+  filter_upwards [hφ.preimage_mem_nhds ((hp.localInverseAt e).open_target.mem_nhds hφz), hpφ]
+    with w hw hpw
+  rw [Function.comp_apply, ← hpw]
+  simpa using (hp.localInverseAt e).right_inv hw
 
 section FiberSum
 
-/-- A compact set of points in one fiber of a local homeomorphism is finite. -/
-theorem _root_.IsLocalHomeomorph.finite_preimage_singleton_inter {p : E → B}
-    (hp : IsLocalHomeomorph p) {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) :
+omit [TopologicalSpace B] in
+/-- A compact set of points in one fiber of a locally injective map, such as a local
+homeomorphism, is finite. -/
+theorem _root_.IsLocallyInjective.finite_preimage_singleton_inter {p : E → B}
+    (hp : IsLocallyInjective p) {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) :
     (p ⁻¹' {b} ∩ s).Finite := by
-  apply hs.finite
-  apply hp.isLocalHomeomorphOn.isDiscrete_of_image
-  refine (Set.subsingleton_singleton (a := b)).isDiscrete.mono ?_
-  rintro _ ⟨e, he, rfl⟩
-  exact he.1
+  -- The fiber is discrete: `p` is constant on it and locally injective.
+  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b} ∩ s) → E) = fun _ ↦ b := funext fun e ↦ e.2.1
+  exact hs.finite ⟨(discreteTopology_iff_locallyInjective b).2 <|
+    hb ▸ hp.comp_right continuous_subtype_val Subtype.val_injective⟩
 
 /-- **Sums over the fibers of a local homeomorphism are locally finite sums.** Let `p : E → B`
 be a local homeomorphism of Hausdorff spaces with weakly locally compact base, and let `f` be a
@@ -122,12 +113,13 @@ theorem _root_.IsLocalHomeomorph.eventually_finsum_mem_preimage_singleton_eq_sum
   classical
   -- `F` is the finite set of points of the fiber over `b₀` in the support of `f`. Separate them
   -- by disjoint open sets `W e` on which `p` is injective.
-  have hF := hp.finite_preimage_singleton_inter (hf (isCompact_singleton (x := b₀)))
+  have hF :=
+    hp.isLocallyInjective.finite_preimage_singleton_inter (hf (isCompact_singleton (x := b₀)))
   obtain ⟨O, hO, hdisj⟩ := hF.t2_separation
   have hW (e : E) : ∃ W : Set E, IsOpen W ∧ e ∈ W ∧ W ⊆ O e ∧ Set.InjOn p W := by
-    obtain ⟨φ, heφ, rfl⟩ := hp e
-    exact ⟨O e ∩ φ.source, (hO e).2.inter φ.open_source, ⟨(hO e).1, heφ⟩,
-      Set.inter_subset_left, φ.injOn.mono Set.inter_subset_right⟩
+    obtain ⟨U, hU, heU, hinj⟩ := hp.isLocallyInjective e
+    exact ⟨O e ∩ U, (hO e).2.inter hU, ⟨(hO e).1, heU⟩, Set.inter_subset_left,
+      hinj.mono Set.inter_subset_right⟩
   choose W hWo hWe hWO hWinj using hW
   -- Away from the image of the rest `L` of the support over a compact neighbourhood `K`, every
   -- point of a fiber in the support lies in some `W e`.
