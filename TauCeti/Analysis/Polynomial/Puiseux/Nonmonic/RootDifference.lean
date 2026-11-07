@@ -45,6 +45,22 @@ variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E] [FiniteDimension
   {U : Set E} [SimplyConnectedSpace U] {F : E × ℂ → ℂ[X]} {d n a c : ℕ} {R R' : ℝ}
   {u v : E × ℂ → ℂ}
 
+omit [NormedSpace ℂ E] [FiniteDimensional ℂ E] [SimplyConnectedSpace U] in
+/-- A power-times-unit form for `G` off the hyperplane `t = 0`, on `U × (ball 0 R \ {0})`,
+pulls back along `(w, t) ↦ (w, t ^ n)` to a power-times-unit form with exponent `n * m` near
+every point `(x, 0)` with `x ∈ U`, whenever `R' ^ n ≤ R`. -/
+theorem eventually_comp_pow_eq_pow_mul {G w : E × ℂ → ℂ} {m : ℕ} (hU : IsOpen U) (hR' : 0 < R')
+    (hn : n ≠ 0) (hR : R' ^ n ≤ R) (h : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), G b = b.2 ^ m * w b)
+    {x : E} (hx : x ∈ U) :
+    ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
+      G (b.1, b.2 ^ n) = b.2 ^ (n * m) * w (b.1, b.2 ^ n) := by
+  have hx' : (x, (0 : ℂ)) ∈ U ×ˢ ball 0 R' := ⟨hx, mem_ball_self hR'⟩
+  filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
+  have hqmem : MapsTo (fun b : E × ℂ ↦ (b.1, b.2 ^ n)) (U ×ˢ (ball 0 R' \ {0}))
+      (U ×ˢ (ball 0 R \ {0})) :=
+    (mapsTo_id U).prodMap (mapsTo_pow_ball_zero_diff_singleton hn hR)
+  simpa only [← pow_mul] using h _ (hqmem ⟨hb.1, hb.2, hb0⟩)
+
 /-- Construct a complete distinct nonmonic Puiseux splitting, analytic extensions after
 pole removal, and global Laurent unit forms for every pairwise root difference.
 Each difference has a single exponent and a unit analytic and nowhere zero on the full product.
@@ -110,13 +126,11 @@ theorem exists_analyticOnNhd_nonmonic_root_sub_eq_zpow_mul_unit
     exact hnorm b ⟨hb.1, hb.2, hb0⟩
   -- Apply the Laurent difference theorem to this constructed normalized splitting.
   have hl : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
-      (F (q b)).coeff d = b.2 ^ (n * a) * u (q b) := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
-    simpa only [q, ← pow_mul] using hlead _ (hqmem ⟨hb.1, hb.2, hb0⟩)
+      (F (q b)).coeff d = b.2 ^ (n * a) * u (q b) :=
+    eventually_comp_pow_eq_pow_mul (G := fun b ↦ (F b).coeff d) hU hR' hn hR hlead hx
   have hD : ∀ᶠ b in 𝓝 (x, (0 : ℂ)), b.2 ≠ 0 →
-      (F (q b)).discr = b.2 ^ (n * c) * v (q b) := by
-    filter_upwards [(hU.prod isOpen_ball).mem_nhds hx'] with b hb hb0
-    simpa only [q, ← pow_mul] using hdiscr _ (hqmem ⟨hb.1, hb.2, hb0⟩)
+      (F (q b)).discr = b.2 ^ (n * c) * v (q b) :=
+    eventually_comp_pow_eq_pow_mul (G := fun b ↦ (F b).discr) hU hR' hn hR hdiscr hx
   obtain ⟨e, w, hw, hw0, heq⟩ := TauCeti.exists_root_sub_eq_zpow_mul_unit
     (fun k ↦ hsa k _ hx') ((hv.comp hq hqfull) _ hx')
     (by simpa only [comp_apply, q, zero_pow hn] using hv0 _ hxR)
