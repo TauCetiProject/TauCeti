@@ -152,12 +152,15 @@ theorem coordinateDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCo
     coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_const_smul_apply hf.contDiffAt,
     smul_apply]
 
-theorem coordinateDeriv_neg (α : List (Fin n)) {f : CoordinateSpace n → A}
-    (hf : ContDiff ℝ α.length f) :
+@[simp]
+theorem coordinateDeriv_neg (α : List (Fin n)) (f : CoordinateSpace n → A) :
     coordinateDeriv α (-f) = -coordinateDeriv α f := by
-  funext x
-  rw [Pi.neg_apply, coordinateDeriv_eq_iteratedFDeriv α (f := -f) hf.neg,
-    coordinateDeriv_eq_iteratedFDeriv α hf, iteratedFDeriv_neg_apply, neg_apply]
+  induction α with
+  | nil => rfl
+  | cons j js ih =>
+    funext x
+    rw [coordinateDeriv_cons, ih, fderiv_neg, neg_apply, Pi.neg_apply,
+      coordinateDeriv_cons]
 
 @[simp]
 theorem coordinateDeriv_zero (α : List (Fin n)) :
@@ -374,16 +377,15 @@ theorem mixedDeriv_const_smul {R : Type*} [Semiring R] [Module R A] [SMulCommCla
   rw [h, coordinateDeriv_const_smul α
     (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.smul_apply]
 
-theorem mixedDeriv_neg (ha : ContDiff ℝ ∞ a) (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
+@[simp]
+theorem mixedDeriv_neg (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     mixedDeriv α β (-a) x ξ = -mixedDeriv α β a x ξ := by
   have h : (fun y => coordinateDeriv β (fun η => (-a) (y, η)) ξ) =
       -fun y => coordinateDeriv β (fun η => a (y, η)) ξ := by
     funext y
-    exact congrFun
-      (coordinateDeriv_neg β (contDiff_infty.1 (ha.comp (contDiff_prodMk_right y)) _)) ξ
+    exact congrFun (coordinateDeriv_neg β _) ξ
   simp only [mixedDeriv_def]
-  rw [h, coordinateDeriv_neg α
-    (contDiff_infty.1 (contDiff_coordinateDeriv_slice ha β ξ) _), Pi.neg_apply]
+  rw [h, coordinateDeriv_neg α, Pi.neg_apply]
 
 @[simp]
 theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
@@ -394,16 +396,32 @@ theorem mixedDeriv_zero (α β : List (Fin n)) (x ξ : CoordinateSpace n) :
     exact congrFun (coordinateDeriv_zero β) ξ
   rw [mixedDeriv_def, h, coordinateDeriv_zero, Pi.zero_apply]
 
+/-- Mixed derivatives at `x` only depend on the values at positions near `x`: if `a` and `b` agree
+for all frequencies at all positions near `x`, then so do all their mixed derivatives at `x`. -/
+theorem mixedDeriv_congr_of_eventually {x : CoordinateSpace n}
+    (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = b (y, η)) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β a x ξ = mixedDeriv α β b x ξ := by
+  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x]
+      fun y => coordinateDeriv β (fun η => b (y, η)) ξ := by
+    filter_upwards [h] with y hy
+    rw [show (fun η => a (y, η)) = fun η => b (y, η) from funext hy]
+  rw [mixedDeriv_def, mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds]
+
 /-- If `a` vanishes for all frequencies at all positions near `x`, then so do all its mixed
 derivatives at `x`. -/
 theorem mixedDeriv_eq_zero_of_eventually {x : CoordinateSpace n}
     (h : ∀ᶠ y in nhds x, ∀ η, a (y, η) = 0) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = 0 := by
-  have h' : (fun y => coordinateDeriv β (fun η => a (y, η)) ξ) =ᶠ[nhds x] 0 := by
-    filter_upwards [h] with y hy
-    have hy' : (fun η => a (y, η)) = 0 := funext hy
-    rw [hy', coordinateDeriv_zero, Pi.zero_apply, Pi.zero_apply]
-  rw [mixedDeriv_def, (h'.coordinateDeriv α).eq_of_nhds, coordinateDeriv_zero, Pi.zero_apply]
+    mixedDeriv α β a x ξ = 0 :=
+  (mixedDeriv_congr_of_eventually (b := 0) h α β ξ).trans (mixedDeriv_zero α β x ξ)
+
+/-- Cutting `a` off outside the positions of an open set `U` does not change its mixed derivatives
+at positions of `U`. -/
+theorem mixedDeriv_indicator_prod_univ_of_mem {U : Set (CoordinateSpace n)} (hU : IsOpen U)
+    {x : CoordinateSpace n} (hx : x ∈ U) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
+    mixedDeriv α β ((U ×ˢ Set.univ).indicator a) x ξ = mixedDeriv α β a x ξ := by
+  refine mixedDeriv_congr_of_eventually ?_ α β ξ
+  filter_upwards [hU.mem_nhds hx] with y hy η
+  exact Set.indicator_of_mem (Set.mk_mem_prod hy (Set.mem_univ η)) _
 
 variable {α β : List (Fin n)} {x ξ : CoordinateSpace n} {C D w : ℝ}
 

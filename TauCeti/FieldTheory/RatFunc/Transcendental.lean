@@ -370,4 +370,16 @@ theorem ratFuncAlgebraOfTranscendental_eq_liftAlgebra [Algebra k[X] F] [IsScalar
         Polynomial.aeval_X_left_apply]
   exact congrArg (· r) h
 
+/-- **The polynomial ring is the base of a rational function field**: if `x` is transcendental over
+`k` and `k(x)` is the whole field `F`, then `F` is the fraction field of `k[X]`, with `k[X]` acting
+through `X ↦ x`. -/
+theorem isFractionRing_polynomial_aeval (hx : Transcendental k x) (hxtop : k⟮x⟯ = ⊤) :
+    letI : Algebra k[X] F := (Polynomial.aeval x).toAlgebra
+    IsFractionRing k[X] F := by
+  let : Algebra k[X] F := (Polynomial.aeval x).toAlgebra
+  let e : RatFunc k ≃ₐ[k] F := (RatFunc.algEquivOfTranscendental x hx).trans
+    ((IntermediateField.equivOfEq hxtop).trans IntermediateField.topEquiv)
+  refine IsLocalization.isLocalization_of_algEquiv _ { e with commutes' := fun p ↦ ?_ }
+  simp [e, RingHom.algebraMap_toAlgebra]
+
 end TauCeti
