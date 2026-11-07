@@ -10,6 +10,7 @@ public import Mathlib.Topology.Algebra.Support
 public import Mathlib.Topology.Connected.LocallyPathConnected
 public import Mathlib.Topology.IsLocalHomeomorph
 public import Mathlib.Topology.OpenPartialHomeomorph.Constructions
+public import TauCeti.Topology.SeparatedMap
 
 /-!
 # Local homeomorphisms: path-connectedness, local inverses, fiber sums, products, base change
@@ -27,10 +28,12 @@ A local inverse `L` of `p` composed with `p` is a local deck transformation of `
 into the target of `L`. This is what identifies the transition maps of charts pushed forward along
 `p` with deck transformations.
 
-The fibers of a local homeomorphism are discrete. If the support of `f : E → M` meets the preimage
-of each compact set in a compact set, then summing `f` over the fibers of `p` gives a function on
-`B` which near each point is a finite sum of `f` composed with local sections of `p`. This is how
-the regularity of such fiber sums is controlled, as for the source map of an étale groupoid.
+The fibers of a local homeomorphism are discrete, so their compact subsets are finite
+(`IsLocallyInjective.finite_preimage_singleton_inter` in `TauCeti.Topology.SeparatedMap`). If the
+support of `f : E → M` meets the preimage of each compact set in a compact set, then summing `f`
+over the fibers of `p` gives a function on `B` which near each point is a finite sum of `f`
+composed with local sections of `p`. This is how the regularity of such fiber sums is controlled,
+as for the source map of an étale groupoid.
 
 ## Main results
 
@@ -84,17 +87,6 @@ theorem _root_.IsLocalHomeomorph.localInverseAt_comp_eventuallyEq {p : E → B}
   simpa using (hp.localInverseAt e).right_inv hw
 
 section FiberSum
-
-omit [TopologicalSpace B] in
-/-- A compact set of points in one fiber of a locally injective map, such as a local
-homeomorphism, is finite. -/
-theorem _root_.IsLocallyInjective.finite_preimage_singleton_inter {p : E → B}
-    (hp : IsLocallyInjective p) {s : Set E} {b : B} (hs : IsCompact (p ⁻¹' {b} ∩ s)) :
-    (p ⁻¹' {b} ∩ s).Finite := by
-  -- The fiber is discrete: `p` is constant on it and locally injective.
-  have hb : p ∘ ((↑) : ↥(p ⁻¹' {b} ∩ s) → E) = fun _ ↦ b := funext fun e ↦ e.2.1
-  exact hs.finite ⟨(discreteTopology_iff_locallyInjective b).2 <|
-    hb ▸ hp.comp_right continuous_subtype_val Subtype.val_injective⟩
 
 /-- **Sums over the fibers of a local homeomorphism are locally finite sums.** Let `p : E → B`
 be a local homeomorphism of Hausdorff spaces with weakly locally compact base, and let `f` be a
