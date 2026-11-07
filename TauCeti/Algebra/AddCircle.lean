@@ -56,7 +56,9 @@ cyclic of order `n` with a distinguished generator, the one of invariant `1 / n`
   elements.
 * `AddCircle.eq_torsionBy_of_natCard_eq`: a subgroup of `AddCircle p` with `n` elements is the
   `n`-torsion; equivalently, `AddCircle.exists_eq_torsionBy` writes every finite subgroup as a
-  torsion subgroup.
+  torsion subgroup, and `AddCircle.isAddCyclic_of_finite` shows that it is cyclic.
+* `AddMonoidHom.isCyclic_range_comp_toMultiplicativeRight`: a finite image of a group in `ℚ/ℤ`,
+  through a character of a group `B` composed with a homomorphism into `B`, is cyclic.
 * `AddCircle.torsionBy_le_torsionBy_iff` and `AddCircle.torsionBy_inj`: the torsion subgroups
   are ordered by divisibility, and pairwise distinct.
 * `AddCircle.nsmul_coe_period_div` and `AddCircle.nsmul_coe_period_div_of_mul_eq`: scaling the
@@ -252,6 +254,12 @@ theorem exists_eq_torsionBy {H : AddSubgroup (AddCircle p)} [Finite H] :
     ∃ n : ℕ, 0 < n ∧ H = (AddCircle p)[(n : ℤ)] :=
   ⟨Nat.card H, Nat.card_pos,
     eq_torsionBy_of_natCard_eq p (Nat.cast_ne_zero.mpr Nat.card_pos.ne') rfl⟩
+
+/-- Every finite subgroup of `AddCircle p` is cyclic. -/
+theorem isAddCyclic_of_finite (H : AddSubgroup (AddCircle p)) [Finite H] : IsAddCyclic H := by
+  obtain ⟨n, hn, hH⟩ := exists_eq_torsionBy p (H := H)
+  rw [hH]
+  exact isAddCyclic_torsionBy p (Nat.cast_ne_zero.mpr hn.ne')
 
 end FiniteSubgroups
 
@@ -484,6 +492,34 @@ theorem exists_mem_torsionBy_rat (u : AddCircle p) :
 end Rat
 
 end AddCircle
+
+namespace AddMonoidHom
+
+/-- The image of a group under a composite of a homomorphism into a group `B` with a
+character of `B` in `ℚ/ℤ` is cyclic, as soon as this image is finite. -/
+theorem isCyclic_range_comp_toMultiplicativeRight {G B : Type*} [Group G] [Group B]
+    (χ : Additive B →+ AddCircle (1 : ℚ)) (g : G →* B)
+    [Finite (χ.toMultiplicativeRight.comp g).range] :
+    IsCyclic (χ.toMultiplicativeRight.comp g).range := by
+  set f := χ.toMultiplicativeRight.comp g
+  -- The image of `f` embeds into the additive image `A` of the composite, a finite subgroup of ℚ/ℤ.
+  set A : AddSubgroup (AddCircle (1 : ℚ)) := (χ.comp (MonoidHom.toAdditive g)).range
+  have hA (y : f.range) : y.val.toAdd ∈ A := by
+    obtain ⟨σ, hσ⟩ := y.property
+    exact ⟨Additive.ofMul σ, by simpa [f] using congrArg Multiplicative.toAdd hσ⟩
+  have : Finite A := Finite.of_injective (fun a : A ↦ (⟨Multiplicative.ofAdd a.val, by
+      obtain ⟨σ, hσ⟩ := a.property
+      exact ⟨Additive.toMul σ, by simpa [f] using hσ⟩⟩ : f.range)) fun a b h ↦
+    Subtype.ext (congrArg (fun y : f.range ↦ y.val.toAdd) h)
+  have : IsAddCyclic A := AddCircle.isAddCyclic_of_finite (1 : ℚ) A
+  let j : f.range →* Multiplicative A := {
+    toFun := fun y ↦ Multiplicative.ofAdd ⟨y.val.toAdd, hA y⟩
+    map_one' := rfl
+    map_mul' := fun _ _ ↦ rfl }
+  exact isCyclic_of_injective j fun y z h ↦ Subtype.ext (Multiplicative.toAdd.injective
+    (congrArg (fun t : Multiplicative A ↦ (t.toAdd : AddCircle (1 : ℚ))) h))
+
+end AddMonoidHom
 
 namespace ZMod
 
