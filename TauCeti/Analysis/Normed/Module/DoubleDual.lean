@@ -21,6 +21,9 @@ to transfer Banach–Alaoglu compactness back to the weak topology.
 In particular, in a reflexive seminormed space over a proper field, where the canonical map is
 surjective, every norm-bounded set has weakly compact closure
 (`TauCeti.isCompact_closure_toWeakSpace`).
+
+Finally, every linear map from a vector space into the bidual of a normed space lifts into the
+space on the subspace of vectors sent into the canonical image (`TauCeti.exists_lift_doubleDual`).
 -/
 
 public section
@@ -92,5 +95,28 @@ theorem isCompact_closure_toWeakSpace
     apply WeakDual.toStrongDual.injective
     simpa only [inclusionInDoubleDualWeak_apply, LinearEquiv.symm_apply_apply,
       StrongDual.toStrongDual_toWeakDual] using hx
+
+end TauCeti
+
+namespace TauCeti
+
+open NormedSpace
+
+variable {𝕜 E V : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [NormedSpace 𝕜 E]
+  [AddCommGroup V] [Module 𝕜 V]
+
+/-- A linear map `ι : V → E**` lifts into `E` on the subspace `F₀` of the vectors that it maps
+into the canonical image of `E`: there is a linear map `A : F₀ → E` whose canonical image is
+`ι`, and every `v` with `ι v` equal to the canonical image of `x` lies in `F₀`. -/
+theorem exists_lift_doubleDual (ι : V →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) :
+    ∃ (F₀ : Submodule 𝕜 V) (A : F₀ →ₗ[𝕜] E),
+      (∀ φ : F₀, inclusionInDoubleDual 𝕜 E (A φ) = ι φ) ∧
+        ∀ v x, ι v = inclusionInDoubleDual 𝕜 E x → v ∈ F₀ := by
+  let J := inclusionInDoubleDual 𝕜 E
+  have hJ : Function.Injective J := (inclusionInDoubleDualLi 𝕜 (E := E)).injective
+  let F₀ : Submodule 𝕜 V := (LinearMap.range (J : E →ₗ[𝕜] _)).comap ι
+  exact ⟨F₀, LinearMap.codRestrictOfInjective (ι ∘ₗ F₀.subtype) J hJ fun φ ↦ φ.2,
+    fun φ ↦ LinearMap.codRestrictOfInjective_comp_apply (ι ∘ₗ F₀.subtype) (J : E →ₗ[𝕜] _)
+      hJ _ φ, fun v x hv ↦ ⟨x, hv.symm⟩⟩
 
 end TauCeti

@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Normed.Module.FinitelyRepresentable
 import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.Analysis.RCLike.Lemmas
 import TauCeti.Analysis.Normed.Module.Annihilator
+import TauCeti.Analysis.Normed.Module.DoubleDual
 import TauCeti.Analysis.Normed.Module.Dual.Helly
 import TauCeti.Analysis.Normed.Operator.Basic
 import TauCeti.LinearAlgebra.Projection
@@ -237,21 +238,6 @@ namespace LinearIsometry
 variable [NormedAddCommGroup E] [NormedSpace 𝕜 E]
 variable {V : Type*} [NormedAddCommGroup V] [NormedSpace 𝕜 V]
 
-/-- A linear map `ι : V → E**` lifts into `E` on the subspace `F₀` of the vectors that it maps
-into the canonical image of `E`: there is a linear map `A : F₀ → E` whose canonical image is
-`ι`, and every `v` with `ι v` equal to the canonical image of `x` lies in `F₀`. -/
-private theorem exists_lift_doubleDual {V : Type*} [AddCommGroup V] [Module 𝕜 V]
-    (ι : V →ₗ[𝕜] StrongDual 𝕜 (StrongDual 𝕜 E)) :
-    ∃ (F₀ : Submodule 𝕜 V) (A : F₀ →ₗ[𝕜] E),
-      (∀ φ : F₀, inclusionInDoubleDual 𝕜 E (A φ) = ι φ) ∧
-        ∀ v x, ι v = inclusionInDoubleDual 𝕜 E x → v ∈ F₀ := by
-  let J := inclusionInDoubleDual 𝕜 E
-  have hJ : Function.Injective J := (inclusionInDoubleDualLi 𝕜 (E := E)).injective
-  let F₀ : Submodule 𝕜 V := (LinearMap.range (J : E →ₗ[𝕜] _)).comap ι
-  exact ⟨F₀, LinearMap.codRestrictOfInjective (ι ∘ₗ F₀.subtype) J hJ fun φ ↦ φ.2,
-    fun φ ↦ LinearMap.codRestrictOfInjective_comp_apply (ι ∘ₗ F₀.subtype) (J : E →ₗ[𝕜] _)
-      hJ _ φ, fun v x hv ↦ ⟨x, hv.symm⟩⟩
-
 /-- **The principle of local reflexivity.** Let `ι : V → E**` be a linear isometry from a
 finite-dimensional normed space into the bidual of `E`, let `G` be a finite-dimensional subspace
 of the dual of `E`, and let `ε > 0`. Then some continuous linear map `T : V → E` satisfies
@@ -286,7 +272,7 @@ theorem exists_continuousLinearMap_of_doubleDual [FiniteDimensional 𝕜 V]
   have : FiniteDimensional 𝕜 (Submodule.span 𝕜 (Set.range h)) :=
     FiniteDimensional.span_of_finite 𝕜 (Set.finite_range h)
   have : FiniteDimensional 𝕜 G' := Submodule.finiteDimensional_sup _ _
-  obtain ⟨F₀, A, hA, hF₀⟩ := exists_lift_doubleDual ι.toLinearMap
+  obtain ⟨F₀, A, hA, hF₀⟩ := TauCeti.exists_lift_doubleDual ι.toLinearMap
   let J := inclusionInDoubleDual 𝕜 E
   have hJ : Function.Injective J := (inclusionInDoubleDualLi 𝕜 (E := E)).injective
   obtain ⟨T', hTA, hTG, hTu⟩ := TauCeti.exists_linearMap_norm_apply_lt ι.toLinearMap G' F₀ A hA
