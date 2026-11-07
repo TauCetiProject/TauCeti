@@ -9,6 +9,8 @@ public import TauCeti.Analysis.Polynomial.SimpleRoots.Covering
 public import TauCeti.Topology.Covering.PowerSubstitution
 import Mathlib.Analysis.Complex.Polynomial.Basic
 import Mathlib.Analysis.Analytic.Constructions
+import TauCeti.Analysis.Polynomial.Puiseux.PowerSubstitution
+import TauCeti.Topology.ContinuousOn.Extension
 
 /-!
 # Analytic root branches after a power substitution
@@ -48,73 +50,6 @@ section Continuous
 variable {E : Type*} [TopologicalSpace E]
   {U : Set E} {F : E × ℂ → ℂ[X]} {d n : ℕ} {R R' : ℝ}
 
-/-- Half of a positive real radius lies in the punctured disc of that radius. -/
-private theorem ofReal_half_mem_ball_diff_zero {R' : ℝ} (hR' : 0 < R') :
-    ((R' / 2 : ℝ) : ℂ) ∈ ball (0 : ℂ) R' \ {0} := by
-  constructor
-  · simpa [mem_ball_zero_iff, abs_of_pos hR'] using half_lt_self hR'
-  · simpa using ne_of_gt (half_pos hR')
-
-/-- A continuous function on a subtype of a space extends to a function that is continuous on the
-subset and agrees with it there. -/
-private theorem exists_continuousOn_eq_of_continuous {X : Type*} [TopologicalSpace X] {A : Set X}
-    {s : A → ℂ} (hs : Continuous s) : ∃ r : X → ℂ, ContinuousOn r A ∧ ∀ a : A, r a = s a := by
-  have hr : ∀ a : A, extend Subtype.val s 0 a = s a := fun a =>
-    Subtype.val_injective.extend_apply _ _ a
-  refine ⟨extend Subtype.val s 0, ?_, hr⟩
-  rw [continuousOn_iff_continuous_domRestrict]
-  exact hs.congr fun a => (hr a).symm
-
-/-- The finite root covering gives continuous, pointwise injective root functions on the
-punctured product after a power substitution, indexed by `Fin d` using the cardinality of one
-fibre. They are defined on the subtype of parameters and substituted radii. -/
-private theorem exists_continuous_isRoot_powerSubstitution
-    [SimplyConnectedSpace U] [LocallyPathConnectedSpace U]
-    (hR' : 0 < R') (hn : n ≠ 0) (hR : R' ^ n ≤ R) (hdvd : d.factorial ∣ n)
-    (hF : ∀ i ≤ d, ContinuousOn (fun b => (F b).coeff i) (U ×ˢ (ball 0 R \ {0})))
-    (hdeg : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).natDegree = d)
-    (hsep : ∀ b ∈ U ×ˢ (ball 0 R \ {0}), (F b).Separable) :
-    ∃ s : Fin d → U × ↥(ball (0 : ℂ) R' \ {0}) → ℂ, (∀ i, Continuous (s i)) ∧
-      (∀ b, Injective fun i => s i b) ∧
-      ∀ i b, (F (b.1.1, b.2.1 ^ n)).IsRoot (s i b) := by
-  classical
-  -- Restrict the family to the punctured product and form its root covering.
-  let B := U × ↥(ball (0 : ℂ) R \ {0})
-  let B' := U × ↥(ball (0 : ℂ) R' \ {0})
-  let incl : B → E × ℂ := fun b => (b.1.1, b.2.1)
-  let G : B → ℂ[X] := F ∘ incl
-  let Z := {q : B × ℂ // (G q.1).IsRoot q.2}
-  let p : Z → B := fun q => q.1.1
-  have hincl : ∀ b, incl b ∈ U ×ˢ (ball 0 R \ {0}) := fun b => ⟨b.1.2, b.2.2⟩
-  have hic : Continuous incl :=
-    (continuous_subtype_val.comp continuous_fst).prodMk
-      (continuous_subtype_val.comp continuous_snd)
-  have hp : IsCoveringMap p := isCoveringMap_fst_isRoot
-    (fun i hi => (hF i hi).comp_continuous hic hincl)
-    (fun b => hdeg _ (hincl b)) (fun b => hsep _ (hincl b))
-  -- At one base point the fibre has exactly `d` points. Lift all of them and index by `Fin d`.
-  let a : B' := (Classical.ofNonempty, ⟨_, ofReal_half_mem_ball_diff_zero hR'⟩)
-  let q := powerSubstitution U hn hR
-  have hqa := hincl (q a)
-  let : Finite (p ⁻¹' {q a}) := finite_preimage_fst_isRoot (hsep _ hqa).ne_zero
-  have hcard : Nat.card (p ⁻¹' {q a}) = d :=
-    natCard_preimage_fst_isRoot (hdeg _ hqa) (hsep _ hqa)
-  obtain ⟨L, hL, hinj⟩ := hp.exists_continuousMap_lifts_powerSubstitution hn hR a
-    (by rw [← hcard] at hdvd; exact hdvd)
-  let : Fintype (p ⁻¹' {q a}) := Fintype.ofFinite _
-  let e : Fin d ≃ p ⁻¹' {q a} :=
-    (Fintype.equivFinOfCardEq (by simpa only [Nat.card_eq_fintype_card] using hcard)).symm
-  have hbase : ∀ i b, p (L (e i) b) = q b := fun i b => congrFun (hL (e i)).2 b
-  refine ⟨fun i b => (L (e i) b).1.2, fun i =>
-    continuous_snd.comp (continuous_subtype_val.comp (L (e i)).continuous),
-    fun b i j hij => e.injective (hinj b ?_), fun i b => ?_⟩
-  · exact Subtype.ext (Prod.ext ((hbase i b).trans (hbase j b).symm) hij)
-  · -- Read the root equation through the projections defining the root space.
-    have hz : (F (incl (p (L (e i) b)))).IsRoot (L (e i) b).1.2 := (L (e i) b).2
-    rw [hbase i b] at hz
-    simpa only [incl, q, powerSubstitution_apply_fst,
-      coe_powerSubstitution_apply_snd] using hz
-
 /-- The finite root covering gives a continuous, pointwise injective list of roots after a power
 substitution. The list is indexed by `Fin d`, using the cardinality of one fibre. -/
 private theorem exists_continuousOn_isRoot_powerSubstitution
@@ -127,16 +62,29 @@ private theorem exists_continuousOn_isRoot_powerSubstitution
       (∀ i, ContinuousOn (r i) (U ×ˢ (ball 0 R' \ {0}))) ∧
       ∀ b ∈ U ×ˢ (ball 0 R' \ {0}),
         Injective (fun i => r i b) ∧ ∀ i, (F (b.1, b.2 ^ n)).IsRoot (r i b) := by
-  obtain ⟨s, hs, hinj, hroot⟩ :=
-    exists_continuous_isRoot_powerSubstitution hR' hn hR hdvd hF hdeg hsep
+  -- Restrict the family to the punctured product, where the root covering is available.
+  let incl : U × ↥(ball (0 : ℂ) R \ {0}) → E × ℂ := fun b => (b.1.1, b.2.1)
+  have hincl : ∀ b, incl b ∈ U ×ˢ (ball 0 R \ {0}) := fun b => ⟨b.1.2, b.2.2⟩
+  have hic : Continuous incl :=
+    (continuous_subtype_val.comp continuous_fst).prodMk
+      (continuous_subtype_val.comp continuous_snd)
+  have : Nonempty (U × ↥(ball (0 : ℂ) R' \ {0})) := by
+    obtain ⟨x, hx, hxR⟩ := NormedField.exists_norm_lt ℂ hR'
+    exact ⟨(Classical.ofNonempty, ⟨x, mem_ball_zero_iff.2 hxR, norm_pos_iff.1 hx⟩)⟩
+  obtain ⟨s, hs⟩ := exists_continuousMap_isRoot_powerSubstitution (F := F ∘ incl)
+    (fun i hi => (hF i hi).comp_continuous hic hincl) (fun b => hdeg _ (hincl b))
+    (fun b => hsep _ (hincl b)) hn hR hdvd
   let sub : U ×ˢ (ball (0 : ℂ) R' \ {0}) → U × ↥(ball (0 : ℂ) R' \ {0}) := fun b =>
     (⟨b.1.1, b.2.1⟩, ⟨b.1.2, b.2.2⟩)
   have hsub : Continuous sub := by fun_prop
-  choose r hr hrs using fun i => exists_continuousOn_eq_of_continuous ((hs i).comp hsub)
+  choose r hr hrs using fun i => exists_continuousOn_eq_of_continuous ((s i).continuous.comp hsub)
   refine ⟨r, hr, fun b hb => ?_⟩
   have hrb : ∀ i, r i b = s i (sub ⟨b, hb⟩) := fun i => hrs i ⟨b, hb⟩
-  exact ⟨fun i j hij => hinj (sub ⟨b, hb⟩) ((hrb i).symm.trans (hij.trans (hrb j))),
-    fun i => by rw [hrb i]; exact hroot i (sub ⟨b, hb⟩)⟩
+  refine ⟨fun i j hij => (hs (sub ⟨b, hb⟩)).1 ((hrb i).symm.trans (hij.trans (hrb j))),
+    fun i => ?_⟩
+  rw [hrb i]
+  simpa only [incl, comp_apply, powerSubstitution_apply_fst,
+    coe_powerSubstitution_apply_snd] using (hs (sub ⟨b, hb⟩)).2 i
 
 end Continuous
 
