@@ -157,18 +157,6 @@ variable [CommRing R] [Ring A] [Algebra R A]
   [SetLike.GradedSMul (InternalGrading.ofDecomposition 𝒜).opposite.piece ℳ]
   (mP : P → P → A) (mQ : Q → Q → A) (ν₀ ν₁ : P → Q → A) (dM : M →ₗ[R] M)
 
-/-- Reassociating two right actions past the Koszul signs: when the degree shifts `n` and `m`
-add up to an odd integer, the two signs combine to a single opposite sign. -/
-private theorem negOnePow_smul_op_smul_negOnePow_smul_op_smul {q n m : ℤ} (hnm : Odd (n + m))
-    (a b : A) (α : M) :
-    (q + n).negOnePow • (op a • (q.negOnePow • (op b • α))) =
-      -(m.negOnePow • (op (b * a) • α)) := by
-  have hsign : (q + n).negOnePow * q.negOnePow = -m.negOnePow := by
-    rw [← Int.negOnePow_succ]
-    obtain ⟨k, hk⟩ := hnm
-    exact negOnePow_mul_negOnePow_of_even ⟨q + k - m, by omega⟩
-  rw [smul_comm (op a) q.negOnePow, smul_smul, hsign, op_mul, mul_smul, Units.neg_smul]
-
 omit [Algebra R A] [IsScalarTower R Aᵐᵒᵖ M] in
 /-- The chain homotopy identity follows from its value on homogeneous elementary tensors. -/
 private theorem homotopyMap_twistedDifferential_of_single [DecidableEq P]
@@ -180,17 +168,14 @@ private theorem homotopyMap_twistedDifferential_of_single [DecidableEq P]
     continuationMap R M ν₁ f - continuationMap R M ν₀ f =
       twistedDifferential mQ ℳ dM (homotopyMap h ℳ f) +
         homotopyMap h ℳ (twistedDifferential mP ℳ dM f) := by
-  rw [← Finset.univ_sum_single f]
-  simp only [map_sum, ← Finset.sum_sub_distrib, ← Finset.sum_add_distrib]
-  refine Finset.sum_congr rfl fun x _ ↦ ?_
-  generalize f x = α
-  induction α using DirectSum.Decomposition.inductionOn ℳ with
-  | zero => simp
-  | @homogeneous i α => exact key x α.2
-  | add a b ha hb =>
-    simp only [Pi.single_add, map_add] at ha hb ⊢
-    rw [add_sub_add_comm, ha, hb]
-    abel
+  have hlin : continuationMap R M ν₁ - continuationMap R M ν₀ =
+      twistedDifferential mQ ℳ dM ∘ₗ homotopyMap h ℳ +
+        homotopyMap h ℳ ∘ₗ twistedDifferential mP ℳ dM := by
+    refine LinearMap.pi_ext' fun x ↦ ?_
+    refine DirectSum.decompose_lhom_ext ℳ fun i ↦ ?_
+    refine LinearMap.ext fun α ↦ ?_
+    simpa using key x α.2
+  simpa using LinearMap.congr_fun hlin f
 
 /-- **The chain homotopy identity**: for a matrix `h` with homogeneous entries which satisfies the
 parametrized equation between the continuation cocycles `ν₀` and `ν₁`, and a differential graded

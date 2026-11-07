@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Order.BigOperators.Group.LocallyFinite
 public import Mathlib.Algebra.Ring.NegOnePow
+import Mathlib.Algebra.Module.Basic
 import Mathlib.Tactic.Ring
 
 /-!
@@ -30,11 +31,13 @@ This file provides the cast to a ground ring of Mathlib's unit-valued sign chara
 * `Int.negOnePow_mul_one_sub`, `Int.negOnePow_mul_two_sub`: signs of quadratic products.
 * `Int.negOnePow_sub_sub_one`, `TauCeti.negOnePow_mul_negOnePow_of_even`: the parity
   identities behind the sign cancellations of twisted differentials.
+* `TauCeti.negOnePow_smul_op_smul_negOnePow_smul_op_smul`: reassociating two right actions past
+  two signs.
 -/
 
 public section
 
-universe uR uA uI
+universe uR uA uI uM
 
 namespace TauCeti
 
@@ -156,6 +159,25 @@ theorem negOnePow_mul_negOnePow_of_even {a b c : ℤ} (h : Even (a + b - c)) :
   exact h
 
 end Parity
+
+section OppositeAction
+
+variable {A : Type uA} {M : Type uM} [Monoid A] [AddCommGroup M] [DistribMulAction Aᵐᵒᵖ M]
+
+/-- Reassociating two right actions past two signs: when the shifts `n` and `m` add up to an odd
+integer, the two signs combine to a single opposite sign. -/
+theorem negOnePow_smul_op_smul_negOnePow_smul_op_smul {q n m : ℤ} (hnm : Odd (n + m))
+    (a b : A) (α : M) :
+    (q + n).negOnePow • (MulOpposite.op a • (q.negOnePow • (MulOpposite.op b • α))) =
+      -(m.negOnePow • (MulOpposite.op (b * a) • α)) := by
+  have hsign : (q + n).negOnePow * q.negOnePow = -m.negOnePow := by
+    rw [← Int.negOnePow_succ]
+    obtain ⟨k, hk⟩ := hnm
+    exact negOnePow_mul_negOnePow_of_even ⟨q + k - m, by omega⟩
+  rw [smul_comm (MulOpposite.op a) q.negOnePow, smul_smul, hsign, MulOpposite.op_mul, mul_smul,
+    Units.neg_smul]
+
+end OppositeAction
 
 section CommRing
 
