@@ -95,6 +95,37 @@ theorem isCAD_succ_iff_exists_isSemialgebraicStack {𝒞 : Set (Set (Fin (n + 1)
     · rw [← (hθ C hC).2] at hE
       exact hE.1
 
+/-- A set whose projection is the base `C` is recovered from its preimage under the cylinder
+over `C`. -/
+private lemma image_cylinder_preimage_eq {C : Set (Fin n → ℝ)} {E : Set (Fin (n + 1) → ℝ)}
+    (hEC : Fin.tail '' E = C) : cylinder C '' (cylinder C ⁻¹' E) = E := by
+  refine image_preimage_eq_of_subset fun y hy ↦ ?_
+  rw [range_cylinder, mem_ofPred_eq, ← hEC]
+  exact mem_image_of_mem _ hy
+
+/-- If the preimages under the cylinder over `C` of the cells of `𝒞` lying over `C` are exactly the
+section and sector sets of a stack `θ`, then these cells are the cells of the stack. -/
+private lemma eq_stackCells_of_image_cylinder_preimage {𝒞 : Set (Set (Fin (n + 1) → ℝ))}
+    {C : Set (Fin n → ℝ)} {k : ℕ} {θ : Fin k → C → ℝ}
+    (hθ𝒜 : (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C} =
+      range (sectionSet θ) ∪ range (sectorSet θ)) :
+    {E ∈ 𝒞 | Fin.tail '' E = C} = stackCells C θ := by
+  ext E
+  refine ⟨fun hE ↦ ?_, fun hE ↦ ?_⟩
+  · have hA : cylinder C ⁻¹' E ∈ (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C} :=
+      mem_image_of_mem _ hE
+    rw [hθ𝒜] at hA
+    rw [← image_cylinder_preimage_eq hE.2]
+    rcases hA with ⟨i, hi⟩ | ⟨j, hj⟩
+    · exact hi ▸ image_cylinder_sectionSet_mem_stackCells i
+    · exact hj ▸ image_cylinder_sectorSet_mem_stackCells j
+  · have hA : ∃ A ∈ (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C}, cylinder C '' A = E := by
+      rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
+      · exact ⟨_, hθ𝒜 ▸ Or.inl (mem_range_self i), rfl⟩
+      · exact ⟨_, hθ𝒜 ▸ Or.inr (mem_range_self j), rfl⟩
+    obtain ⟨_, ⟨E', hE', rfl⟩, rfl⟩ := hA
+    rwa [image_cylinder_preimage_eq hE'.2]
+
 /-- **The finite-partition characterization of a CAD.** A set `𝒞` of subsets of `ℝ ^ (n + 1)` is
 a cylindrical algebraic decomposition exactly when it is a finite partition of `ℝ ^ (n + 1)` into
 semialgebraic sets, the projections of its cells forgetting coordinate `0` form a cylindrical
@@ -115,12 +146,6 @@ theorem isCAD_succ_iff {𝒞 : Set (Set (Fin (n + 1) → ℝ))} :
   have hCc := h𝒟.isConnected hC
   have : PreconnectedSpace C := isPreconnected_iff_preconnectedSpace.1 hCc.isPreconnected
   have : Nonempty C := hCc.nonempty.to_subtype
-  -- The cells over `C` lie in the image of the cylinder over `C`.
-  have himage {E : Set (Fin (n + 1) → ℝ)} (hEC : Fin.tail '' E = C) :
-      cylinder C '' (cylinder C ⁻¹' E) = E := by
-    refine image_preimage_eq_of_subset fun y hy ↦ ?_
-    rw [range_cylinder, mem_ofPred_eq, ← hEC]
-    exact mem_image_of_mem _ hy
   -- Pulled back to `C × ℝ`, the cells over `C` partition the cylinder into stack cells.
   set 𝒜 := (cylinder C ⁻¹' ·) '' {E ∈ 𝒞 | Fin.tail '' E = C}
   obtain ⟨k, θ, hc, hθ, hθ𝒜⟩ := exists_eq_range_sectionSet_union_range_sectorSet (𝒜 := 𝒜)
@@ -146,21 +171,7 @@ theorem isCAD_succ_iff {𝒞 : Set (Set (Fin (n + 1) → ℝ))} :
       · exact Or.inr ⟨j, (preimage_image_eq _ cylinder_injective).symm.trans
           (congrArg (cylinder _ ⁻¹' ·) hj)⟩)
   -- Pushing forward the common stack gives the cells of `𝒞` over `C`.
-  have hstack : {E ∈ 𝒞 | Fin.tail '' E = C} = stackCells C θ := by
-    ext E
-    refine ⟨fun hE ↦ ?_, fun hE ↦ ?_⟩
-    · have hA : cylinder C ⁻¹' E ∈ 𝒜 := mem_image_of_mem _ hE
-      rw [hθ𝒜] at hA
-      rw [← himage hE.2]
-      rcases hA with ⟨i, hi⟩ | ⟨j, hj⟩
-      · exact hi ▸ image_cylinder_sectionSet_mem_stackCells i
-      · exact hj ▸ image_cylinder_sectorSet_mem_stackCells j
-    · have hA : ∃ A ∈ 𝒜, cylinder C '' A = E := by
-        rcases mem_stackCells.1 hE with ⟨i, rfl⟩ | ⟨j, rfl⟩
-        · exact ⟨_, hθ𝒜 ▸ Or.inl (mem_range_self i), rfl⟩
-        · exact ⟨_, hθ𝒜 ▸ Or.inr (mem_range_self j), rfl⟩
-      obtain ⟨_, ⟨E', hE', rfl⟩, rfl⟩ := hA
-      rwa [himage hE'.2]
+  have hstack := eq_stackCells_of_image_cylinder_preimage hθ𝒜
   refine ⟨k, θ, ⟨hc, hθ, fun i ↦ ?_, fun j ↦ ?_⟩, hstack⟩
   · exact hsemi _ (hstack ▸ image_cylinder_sectionSet_mem_stackCells i).1
   · exact hsemi _ (hstack ▸ image_cylinder_sectorSet_mem_stackCells j).1
