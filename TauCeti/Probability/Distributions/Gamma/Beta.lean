@@ -29,9 +29,8 @@ Gamma-distributed, and the two are independent.
   product of a
   Beta law and a Gamma law.
 * `TauCeti.Probability.map_div_add_gammaMeasure` gives the Beta marginal.
-* `TauCeti.Probability.map_snd_div_add_gammaMeasure` is the same Beta marginal for the ratio
-  `y / (y + x)`, and `TauCeti.Probability.map_prod_prod_gammaMeasure_div_add` carries it along an
-  independent factor.
+* `MeasureTheory.Measure.map_prod_prod_gammaMeasure_div_add` carries the Beta marginal, for the
+  ratio `y / (y + x)`, along an independent factor.
 * `TauCeti.Probability.indepFun_div_add_gammaMeasure` proves independence under the product Gamma
   law.
 * `TauCeti.Probability.hasLaw_div_add_prod_gammaMeasure_of_indepFun`,
@@ -338,28 +337,22 @@ theorem map_div_add_gammaMeasure {a b r : ℝ} (ha : 0 < a) (hb : 0 < b) (hr : 0
   rw [Measure.map_map measurable_fst (by fun_prop)] at h
   simpa only [Function.comp_def, Measure.map_fst_prod, measure_univ, one_smul] using h
 
-/-- The ratio `y / (y + x)` of two independent Gamma variables with a common positive rate, with
-the Gamma law of `y` in the second factor, has a Beta law. -/
-theorem map_snd_div_add_gammaMeasure {a b r : ℝ} (ha : 0 < a) (hb : 0 < b) (hr : 0 < r) :
-    ((gammaMeasure b r).prod (gammaMeasure a r)).map (fun z ↦ z.2 / (z.2 + z.1)) =
-      betaMeasure a b := by
-  let _ := isProbabilityMeasure_gammaMeasure ha hr
-  let _ := isProbabilityMeasure_gammaMeasure hb hr
-  rw [← Measure.prod_swap (μ := gammaMeasure a r) (ν := gammaMeasure b r),
-    Measure.map_map (by fun_prop) measurable_swap]
-  exact map_div_add_gammaMeasure ha hb hr
-
 /-- The Gamma–Beta ratio law, carried along an independent factor: for independent Gamma
 totals `t ~ Γ(q, r)` and `s ~ Γ(p, r)` and an independent `w ~ δ`, the pair `(s / (s + t), w)` has
 law `Beta(p, q) ⊗ δ`. -/
-theorem map_prod_prod_gammaMeasure_div_add {α : Type*} [MeasurableSpace α]
+theorem _root_.MeasureTheory.Measure.map_prod_prod_gammaMeasure_div_add {α : Type*}
+    [MeasurableSpace α]
     (δ : Measure α) [SFinite δ] {p q r : ℝ} (hp : 0 < p) (hq : 0 < q) (hr : 0 < r) :
     ((δ.prod (gammaMeasure q r)).prod (gammaMeasure p r)).map
       (fun z ↦ (z.2 / (z.2 + z.1.2), z.1.1)) = (betaMeasure p q).prod δ := by
   let _ := isProbabilityMeasure_gammaMeasure hp hr
   let _ := isProbabilityMeasure_gammaMeasure hq hr
   let _ := isProbabilityMeasureBeta hp hq
-  have hbeta := map_snd_div_add_gammaMeasure hp hq hr
+  have hbeta : ((gammaMeasure q r).prod (gammaMeasure p r)).map (fun z ↦ z.2 / (z.2 + z.1)) =
+      betaMeasure p q := by
+    rw [← Measure.prod_swap (μ := gammaMeasure p r) (ν := gammaMeasure q r),
+      Measure.map_map (by fun_prop) measurable_swap]
+    exact map_div_add_gammaMeasure hp hq hr
   calc
     _ = (δ.prod ((gammaMeasure q r).prod (gammaMeasure p r))).map
         (fun z ↦ (z.2.2 / (z.2.2 + z.2.1), z.1)) := by

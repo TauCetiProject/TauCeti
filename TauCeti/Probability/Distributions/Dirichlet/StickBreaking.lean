@@ -135,7 +135,7 @@ theorem map_dirichletStickSplit_dirichletMeasure {a : Option ι → ℝ}
   have htail : μ.map (fun x ↦ (dirichletNormalize x, ∑ i, x i)) = δ.prod γ :=
     map_dirichletNormalize_sum_pi_gammaMeasure (fun i ↦ ha (some i)) one_pos
   -- Reassociate the three factors and apply the Gamma–Beta ratio law to the two totals.
-  have hratio := map_prod_prod_gammaMeasure_div_add δ (ha none) hA one_pos
+  have hratio := δ.map_prod_prod_gammaMeasure_div_add (ha none) hA one_pos
   rw [dirichletMeasure_of_pos ha, Measure.map_map measurable_dirichletStickSplit
     measurable_dirichletNormalize, ← Measure.pi_map_piOptionEquivProd]
   rw [Measure.map_map (by fun_prop) (by fun_prop)]
