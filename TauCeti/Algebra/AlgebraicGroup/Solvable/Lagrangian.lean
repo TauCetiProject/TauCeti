@@ -50,6 +50,27 @@ variable {k H M : Type*} [Field k] [IsAlgClosed k] [CommRing H] [HopfAlgebra k H
   [Group.IsSolvable (WithConv (H →ₐ[k] k))]
   [AddCommGroup M] [Module k M] [Comodule k H M] [FiniteDimensional k M]
 
+omit [ConnectedSpace (PrimeSpectrum H)] [Group.IsSolvable (WithConv (H →ₐ[k] k))]
+  [FiniteDimensional k M] in
+/-- If a subrepresentation `N` is isotropic but not equal to its orthogonal complement, then
+the pullback of `N` to the orthogonal subrepresentation `Nᗮ` is a proper subspace. -/
+private theorem comap_orthogonal_subtype_toSubmodule_ne_top {B : BilinForm k M}
+    (hinv : TauCeti.Representation.IsInvariantForm
+      (Comodule.basePointsRepresentation (H := H) M) B)
+    (N : Subcomodule k H M) (hN : N.toSubmodule ≤ B.orthogonal N.toSubmodule)
+    (heq : N.toSubmodule ≠ B.orthogonal N.toSubmodule) :
+    (N.comap (N.orthogonal B hinv).subtype).toSubmodule ≠ ⊤ := by
+  intro htop
+  apply heq
+  apply le_antisymm hN
+  intro m hm
+  have hmO : m ∈ N.orthogonal B hinv := by
+    rwa [← Subcomodule.mem_toSubmodule, Subcomodule.orthogonal_toSubmodule]
+  have : (⟨m, hmO⟩ : N.orthogonal B hinv) ∈ (N.comap (N.orthogonal B hinv).subtype).toSubmodule :=
+    htop ▸ Submodule.mem_top
+  simpa only [Subcomodule.mem_toSubmodule, Subcomodule.mem_comap,
+    Subcomodule.subtype_apply] using this
+
 private theorem exists_isotropic_extension {B : BilinForm k M} (hB : B.IsAlt)
     (hinv : TauCeti.Representation.IsInvariantForm
       (Comodule.basePointsRepresentation (H := H) M) B)
@@ -66,16 +87,7 @@ private theorem exists_isotropic_extension {B : BilinForm k M} (hB : B.IsAlt)
   have : Module.Finite k O := O.finite
   let K := N.comap O.subtype
   let Q := O ⧸ K.toSubmodule
-  have hK : K.toSubmodule ≠ ⊤ := by
-    intro htop
-    apply heq
-    apply le_antisymm hN
-    intro m hm
-    have hmO : m ∈ O := by
-      rwa [← Subcomodule.mem_toSubmodule, Subcomodule.orthogonal_toSubmodule]
-    have : (⟨m, hmO⟩ : O) ∈ K.toSubmodule := htop ▸ Submodule.mem_top
-    simpa only [K, Subcomodule.mem_toSubmodule, Subcomodule.mem_comap,
-      Subcomodule.subtype_apply] using this
+  have hK : K.toSubmodule ≠ ⊤ := comap_orthogonal_subtype_toSubmodule_ne_top hinv N hN heq
   have : Nontrivial Q := Submodule.Quotient.nontrivial_iff.mpr hK
   -- Pull the eigenline back, then include it in the original representation.
   obtain ⟨q, c, hq, -, hcoact⟩ :=
