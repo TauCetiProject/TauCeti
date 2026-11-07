@@ -70,7 +70,7 @@ is the product of the represented `k`- and `l`-root values. -/
 theorem commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -96,7 +96,7 @@ theorem commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
     schemePointsMulEquiv_kostantRootSubgroup,
     schemePointsMulEquiv_kostantRootSubgroup]
   apply commutatorElement_kostantRootSubgroupMatrix_of_lie_lie_eq
-    e h ρ M hM b hij hiij hil hjk hjl hi hj hk hl
+    e h ρ M hM b hij hiij hil hjk hi hj hk hl
   · simpa only [AdditiveGroup.schemePointsMulEquiv_apply] using hr
   · simpa only [AdditiveGroup.schemePointsMulEquiv_apply] using hs
 
@@ -105,7 +105,7 @@ points written out at parameters `c t u` and `d t² u`. -/
 theorem commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq'
     {i j k l : I} {c d : ℤ}
     (hij : ⁅e i, e j⁆ = c • e k) (hiij : ⁅e i, ⁅e i, e j⁆⁆ = (2 * d) • e l)
-    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0) (hjl : ⁅e j, e l⁆ = 0)
+    (hil : ⁅e i, e l⁆ = 0) (hjk : ⁅e j, e k⁆ = 0)
     (hi : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e i))))
     (hj : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e j))))
     (hk : IsNilpotent (ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))))
@@ -129,7 +129,7 @@ theorem commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
                   Multiplicative.toAdd (AdditiveGroup.schemePointsMulEquiv A q)))) ≫
             (kostantRootSubgroup e h ρ M hM l hl b).hom.hom) :=
   commutatorElement_schemePointsMulEquiv_kostantRootSubgroup_of_lie_lie_eq
-    e h ρ M hM b A hij hiij hil hjk hjl hi hj hk hl p q _ _
+    e h ρ M hM b A hij hiij hil hjk hi hj hk hl p q _ _
       (congrArg Multiplicative.toAdd
         ((AdditiveGroup.schemePointsMulEquiv A).apply_symm_apply _))
       (congrArg Multiplicative.toAdd

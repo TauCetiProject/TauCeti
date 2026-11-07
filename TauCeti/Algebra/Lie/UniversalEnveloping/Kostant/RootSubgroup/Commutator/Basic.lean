@@ -113,16 +113,6 @@ variable (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M)
 -- Match tensor products to the `ℤ`-algebra instance stored by `CommAlgCat` objects.
 attribute [local instance high] Algebra.toModule
 
-/-- A Kostant-stable lattice is stable under the divided powers of every integral multiple of a
-distinguished root vector. -/
-theorem dividedPower_zsmul_apply_mem (e : ι → L) (h : κ → L)
-    (ρ : _root_.UniversalEnvelopingAlgebra ℚ L →ₐ[ℚ] Module.End ℚ V) (M : AddSubgroup V)
-    (hM : ∀ u ∈ kostantForm e h, ∀ v ∈ M, ρ u v ∈ M) (c : ℤ) (k : ι) : ∀ n, ∀ v ∈ M,
-    Associative.dividedPower n (c • ρ (_root_.UniversalEnvelopingAlgebra.ι ℚ (e k))) • v ∈ M := by
-  intro n v hv
-  rw [Associative.dividedPower_zsmul, smul_assoc]
-  exact M.zsmul_mem (dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) _
-
 variable {A : Type*} [CommRing A] [Algebra ℤ A]
 
 /-- **The degenerate Chevalley commutator relation for Kostant root subgroups.** Root subgroups
@@ -169,11 +159,11 @@ theorem kostantRootSubgroupPoints_mul_of_lie_eq {i j k : ι} {c : ℤ}
   have hcxz := commute_of_lie_eq_zero ρ hik
   have hcyz := commute_of_lie_eq_zero ρ hjk
   -- Stability of `M` under the divided powers of the scaled commutator.
-  have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
+  have hMz := dividedPower_zsmul_smul_mem c M (dividedPower_smul_mem_of_kostantForm_apply_mem hM k)
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
   rw [hw, ← baseChangeExp_zsmul c M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk]
+      (dividedPower_smul_mem_of_kostantForm_apply_mem hM k) hMz hk]
   exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy (Commute.smul_right hcxz c)
     (Commute.smul_right hcyz c) hi hj _ _ hMz _ _
 
@@ -334,15 +324,15 @@ theorem kostantRootSubgroupPoints_mul_of_lie_lie_eq {i j k l : ι} {c d : ℤ}
   have hcxw := commute_of_lie_eq_zero ρ hil
   have hcyz := commute_of_lie_eq_zero ρ hjk
   -- Stability of `M` under the divided powers of the two scaled root vectors.
-  have hMz := dividedPower_zsmul_apply_mem e h ρ M hM c k
-  have hMw := dividedPower_zsmul_apply_mem e h ρ M hM d l
+  have hMz := dividedPower_zsmul_smul_mem c M (dividedPower_smul_mem_of_kostantForm_apply_mem hM k)
+  have hMw := dividedPower_zsmul_smul_mem d M (dividedPower_smul_mem_of_kostantForm_apply_mem hM l)
   have hz := hk.smul c
   refine Units.ext ?_
   simp only [Units.val_mul, kostantRootSubgroupPoints_val]
   rw [hp, hq, ← baseChangeExp_zsmul c M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM k n hv) hMz hk,
+      (dividedPower_smul_mem_of_kostantForm_apply_mem hM k) hMz hk,
     ← baseChangeExp_zsmul d M
-      (fun n _ hv => dividedPower_apply_mem_of_kostantForm_apply_mem e h ρ hM l n hv) hMw hl]
+      (dividedPower_smul_mem_of_kostantForm_apply_mem hM l) hMw hl]
   exact baseChangeExp_mul_baseChangeExp_of_commutator_eq_two_nsmul M hxy hxz
     (Commute.smul_right hcxw d) (Commute.smul_right hcyz c)
     hi hj hz _ _ hMz hMw _ _

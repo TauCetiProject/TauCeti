@@ -35,8 +35,9 @@ additional structures such as filtrations, bialgebras, or antipodes.
   under a ring homomorphism is the ring commutator of the images.
 * `TauCeti.UniversalEnvelopingAlgebra.commute_of_lie_eq_zero`: images of Lie-commuting elements
   commute.
-* `TauCeti.UniversalEnvelopingAlgebra.zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq`: a scaled
-  Lie-bracket relation gives the corresponding scaled ring-commutator relation.
+* `TauCeti.UniversalEnvelopingAlgebra.zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq` and
+  `TauCeti.UniversalEnvelopingAlgebra.commute_zsmul_of_zsmul_lie_eq_zero`: a scaled Lie-bracket
+  relation gives the corresponding scaled ring-commutator or commutation relation.
 * `TauCeti.UniversalEnvelopingAlgebra.mul_eq_mul_add_zsmul_of_lie_eq`: an integral Lie-bracket
   structure constant gives the corresponding ring-commutator relation.
 * `TauCeti.UniversalEnvelopingAlgebra.lie_map_ι`: a ring homomorphism maps the bracket of
@@ -199,6 +200,17 @@ theorem zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (ρ : F) {a b b' : L} {p q 
   rw [← map_zsmul, ← map_zsmul, hab, map_zsmul, map_zsmul] at hbracket
   rw [← sub_eq_iff_eq_add', ← natCast_zsmul, ← mul_zsmul, ← hbracket]
   simp only [smul_sub, mul_smul_comm, smul_mul_assoc, mul_zsmul, smul_comm p q]
+
+/-- Integer-scaled images of elements whose scaled Lie bracket vanishes commute under every ring
+homomorphism from the universal enveloping algebra. -/
+theorem commute_zsmul_of_zsmul_lie_eq_zero (ρ : F) {a b : L} {p q : ℤ}
+    (hab : (p * q) • ⁅a, b⁆ = 0) :
+    Commute (p • ρ (_root_.UniversalEnvelopingAlgebra.ι R a))
+      (q • ρ (_root_.UniversalEnvelopingAlgebra.ι R b)) := by
+  have h := zsmul_mul_zsmul_eq_add_nsmul_of_zsmul_lie_eq (R := R) ρ
+    (p := p) (q := q) (b' := a) (r := 0) (n := 0) (by simpa using hab)
+  rw [zero_smul, add_zero] at h
+  exact h
 
 /-- A bracket relation with an integral structure constant becomes the corresponding commutator
 relation under every ring homomorphism from the universal enveloping algebra. -/

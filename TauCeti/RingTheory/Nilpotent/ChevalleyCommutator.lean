@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.GroupTheory.Commutator.Basic
 public import TauCeti.RingTheory.DividedPowers.NormalOrdering
 public import TauCeti.RingTheory.Nilpotent.BaseChangeAction
 import TauCeti.Algebra.BigOperators.Finset.Range
@@ -29,11 +30,12 @@ E_x(t) E_y(u) = E_y(u) E_z(t * u) E_x(t).
 
 Equivalently `E_x(t) E_y(u) E_x(t)⁻¹ = E_y(u) E_z(t * u)`: conjugating the one-parameter subgroup
 of `y` by the one-parameter subgroup of `x` multiplies it by the one-parameter subgroup of the
-commutator, at the product parameter. This is the class-two case of the Chevalley commutator
-formula, the case in which the only root of the form `i α + j β` besides `α` and `β` is `α + β`;
-in a simply-laced root system every pair of non-proportional roots falls under it or under the
-commuting case `TauCeti.commute_baseChangeExp` from
-`TauCeti.RingTheory.Nilpotent.BaseChangeAction`.
+commutator, at the product parameter. Reading these actions as bundled one-parameter subgroups
+`TauCeti.baseChangeExpHom` in `(R ⊗[ℤ] M ≃ₗ[R] R ⊗[ℤ] M)` yields the group-commutator identity
+`⁅E_x(t), E_y(u)⁆ = E_z(t * u)`. This is the class-two case of the Chevalley commutator formula,
+the case in which the only root of the form `i α + j β` besides `α` and `β` is `α + β`; in a
+simply-laced root system every pair of non-proportional roots falls under it or under the commuting
+case `TauCeti.commute_baseChangeExp` from `TauCeti.RingTheory.Nilpotent.BaseChangeAction`.
 
 Nothing here divides by a factorial in `R`, so the relation holds over a ring of arbitrary
 characteristic. The whole point is the coefficient-one normal-ordering rule
@@ -45,13 +47,16 @@ its generating-function form.
 
 * `TauCeti.integralDividedPower_mul_integralDividedPower_of_commutator_eq`: normal ordering for the
   integral operators restricted to `M`.
-* `TauCeti.baseChangeExp_zsmul`: rescaling an element by an integer rescales the parameter of its
-  exponential, which is how an integer structure constant enters.
-* `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq`: the Chevalley commutator relation.
-* `TauCeti.baseChangeExp_conj_of_commutator_eq`: its conjugation form.
+* `TauCeti.baseChangeExp_mul_baseChangeExp_of_commutator_eq` and
+  `TauCeti.baseChangeExp_conj_of_commutator_eq`: the Chevalley commutator relation and its
+  conjugation form.
+* `TauCeti.baseChangeExpHom_mul_of_commutator_eq` and
+  `TauCeti.commutatorElement_baseChangeExpHom_of_commutator_eq`: multiplication and
+  element-commutator laws for `baseChangeExpHom`.
 
 ## References
 
+* R. Steinberg, *Lectures on Chevalley Groups*, Chapter 3, Lemma 15.
 * J. E. Humphreys, *Introduction to Lie Algebras and Representation Theory*, §§26--27.
 * R. W. Carter, *Simple Groups of Lie Type*, §4.4 and Theorem 5.2.2.
 * J. C. Jantzen, *Representations of Algebraic Groups*, II.1.
@@ -61,7 +66,8 @@ public section
 
 namespace TauCeti
 
-open Finset TensorProduct
+open Finset Multiplicative TensorProduct
+open scoped commutatorElement
 
 universe u v
 
@@ -92,50 +98,8 @@ theorem integralDividedPower_mul_integralDividedPower_of_commutator_eq
   simpa only [mul_assoc] using
     Associative.dividedPower_mul_dividedPower_of_commutator_eq hxy hxz hyz m n
 
-/-! ## Rescaling by an integer -/
-
-/-- Restricting the divided power of an integer multiple scales the restricted operator by the
-same power of that integer. -/
-theorem integralDividedPower_zsmul (c : ℤ) {x : A} (M : S) (n : ℕ)
-    (hM : ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hcM : ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M) :
-    integralDividedPower (c • x) M n hcM = c ^ n • integralDividedPower x M n hM := by
-  ext v
-  rw [coe_integralDividedPower_apply, Associative.dividedPower_zsmul, smul_assoc,
-    LinearMap.smul_apply, ← coe_integralDividedPower_apply x M n hM v]
-  rfl
-
 -- Match tensor products to the module structure carried by the explicit `ℤ`-algebra.
 attribute [local instance high] Algebra.toModule
-
-section BaseChange
-
-variable {R : Type v} [CommRing R] [Algebra ℤ R]
-
-/-- Rescaling an element by an integer `c` rescales the parameter of its integral exponential by
-`c`. This is how an integer Chevalley structure constant is absorbed into the parameter of a root
-subgroup. -/
-theorem baseChangeExp_zsmul (c : ℤ) {x : A} (M : S)
-    (hM : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
-    (hcM : ∀ n, ∀ v ∈ M, Associative.dividedPower n (c • x) • v ∈ M)
-    (hx : IsNilpotent x) (t : R) :
-    baseChangeExp (c • x) M hcM t = baseChangeExp x M hM ((c : R) * t) := by
-  obtain ⟨k, hk⟩ := hx
-  have hck : (c • x) ^ k = 0 := by
-    rw [smul_pow, hk, smul_zero]
-  rw [baseChangeExp_of_pow_eq_zero (c • x) M hcM hck,
-    baseChangeExp_of_pow_eq_zero x M hM hk]
-  refine Finset.sum_congr rfl fun n _ => ?_
-  have hb : ((c ^ n • integralDividedPower x M n (hM n)).baseChange R :
-      Module.End R (R ⊗[ℤ] M)) = c ^ n • (integralDividedPower x M n (hM n)).baseChange R :=
-    map_zsmul (Module.End.baseChangeHom ℤ R M) _ _
-  rw [integralDividedPower_zsmul c M n (hM n) (hcM n), hb,
-    ← Int.cast_smul_eq_zsmul R (c ^ n) ((integralDividedPower x M n (hM n)).baseChange R),
-    smul_smul, Int.cast_pow]
-  congr 1
-  ring
-
-end BaseChange
 
 /-! ## The Chevalley commutator relation -/
 
@@ -208,6 +172,37 @@ theorem baseChangeExp_conj_of_commutator_eq
   rw [baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy hxz hyz hx hy hMx hMy hMz t u,
     mul_assoc, ← baseChangeExp_add x M hMx hx t (-t), add_neg_cancel,
     baseChangeExp_zero x M hMx hx, mul_one]
+
+/-- **Class-two multiplication law for `baseChangeExpHom`.** If `x * y = y * x + z` with `z`
+commuting with both `x` and `y`, then `E_x(t) E_y(u) = E_y(u) E_z(t * u) E_x(t)`. -/
+theorem baseChangeExpHom_mul_of_commutator_eq {x y z : A} (M : S)
+    (hxy : x * y = y * x + z) (hxz : Commute x z) (hyz : Commute y z)
+    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
+    (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
+    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (t u : Multiplicative R) :
+    baseChangeExpHom x M hMx hx t * baseChangeExpHom y M hMy hy u =
+      baseChangeExpHom y M hMy hy u * baseChangeExpHom z M hMz hz (ofAdd (toAdd t * toAdd u)) *
+        baseChangeExpHom x M hMx hx t :=
+  LinearEquiv.toLinearMap_inj.mp <| by
+    simp only [LinearEquiv.coe_toLinearMap_mul, baseChangeExpHom_toLinearMap, toAdd_ofAdd]
+    exact baseChangeExp_mul_baseChangeExp_of_commutator_eq M hxy hxz hyz hx hy hMx hMy hMz
+      (toAdd t) (toAdd u)
+
+/-- **Class-two element-commutator relation for `baseChangeExpHom`.** If `x * y = y * x + z` with
+`z` commuting with both `x` and `y`, then `⁅E_x(t), E_y(u)⁆ = E_z(t * u)`. -/
+theorem commutatorElement_baseChangeExpHom_of_commutator_eq {x y z : A} (M : S)
+    (hxy : x * y = y * x + z) (hxz : Commute x z) (hyz : Commute y z)
+    (hMx : ∀ n, ∀ v ∈ M, Associative.dividedPower n x • v ∈ M)
+    (hMy : ∀ n, ∀ v ∈ M, Associative.dividedPower n y • v ∈ M)
+    (hMz : ∀ n, ∀ v ∈ M, Associative.dividedPower n z • v ∈ M)
+    (hx : IsNilpotent x) (hy : IsNilpotent y) (hz : IsNilpotent z) (t u : Multiplicative R) :
+    ⁅baseChangeExpHom x M hMx hx t, baseChangeExpHom y M hMy hy u⁆ =
+      baseChangeExpHom z M hMz hz (ofAdd (toAdd t * toAdd u)) := by
+  rw [commutatorElement_def,
+    baseChangeExpHom_mul_of_commutator_eq M hxy hxz hyz hMx hMy hMz hx hy hz t u,
+    mul_inv_cancel_right, (commute_baseChangeExpHom M hyz hMy hMz hy hz u _).eq,
+    mul_inv_cancel_right]
 
 end Commutator
 
