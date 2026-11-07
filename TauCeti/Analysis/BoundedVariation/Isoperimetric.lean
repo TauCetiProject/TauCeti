@@ -268,15 +268,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 /-- **The sharp isoperimetric inequality for regular superlevel sets.** Let `u` be smooth and
-compactly supported, and let `t > 0` be a regular value of `u`. In dimension `n ≥ 1`, if
-`F = {u > t}` has positive volume, then `n ω_n ^ (1 / n) |F| ^ (1 - 1 / n) ≤ P(F)`. -/
+compactly supported, and let `t > 0` be a regular value of `u`. If `F = {u > t}` has positive
+volume, then `n ω_n ^ (1 / n) |F| ^ (1 - 1 / n) ≤ P(F)`, trivially so in dimension `n = 0`. -/
 theorem ContDiff.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt {u : E → ℝ}
     (hu : ContDiff ℝ ∞ u) (huc : HasCompactSupport u) {t : ℝ} (ht : 0 < t)
-    (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) (hn : finrank ℝ E ≠ 0)
-    (hV : volume {x | t < u x} ≠ 0) :
+    (hreg : ∀ x, u x = t → fderiv ℝ u x ≠ 0) (hV : volume {x | t < u x} ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real {x | t < u x} ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤
       perimeter volume ⊤ {x | t < u x} := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · simp [hn]
   obtain ⟨w, hw, hK, hnorm, hset⟩ := hu.exists_contDiff_setOf_pos_eq_setOf_lt huc ht hreg
   rw [← hset] at hV ⊢
   exact ofReal_le_perimeter_setOf_pos hw (by norm_num) hK hnorm hn hV
@@ -291,15 +292,16 @@ variable {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDim
   [MeasurableSpace E] [BorelSpace E]
 
 /-- **The sharp isoperimetric inequality, extended-real form.** In a Euclidean space of dimension
-`n ≥ 1`, every null-measurable set `s` of finite positive volume satisfies
+`n`, every null-measurable set `s` of finite positive volume satisfies
 `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
 perimeter of `s` in the whole space, finite or infinite. No boundedness or regularity is
-assumed. -/
+assumed, and the case `n = 0` is trivial. -/
 theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
-    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
-    (hs0 : volume s ≠ 0) :
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hs0 : volume s ≠ 0) :
     ENNReal.ofReal (finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹)) ≤ perimeter volume ⊤ s := by
+  rcases eq_or_ne (finrank ℝ E) 0 with hn | hn
+  · simp [hn]
   obtain ⟨u, t, hprop, hsymm, hP⟩ := hs.exists_smooth_perimeter_approximation hμs
   set F : ℕ → Set E := fun k => {x | t k < u k x}
   have hFm (k : ℕ) : NullMeasurableSet (F k) volume := by
@@ -323,7 +325,7 @@ theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
   filter_upwards [hV.eventually (lt_mem_nhds hpos)] with k hk
   obtain ⟨hu, huc, htk, hreg, -⟩ := hprop k
   refine hu.ofReal_mul_volume_real_rpow_mul_le_perimeter_setOf_lt huc htk.1
-    (fun x hx h0 => ?_) hn ?_
+    (fun x hx h0 => ?_) ?_
   · obtain ⟨v, hv⟩ := hreg x hx 1
     simp [h0] at hv
   · intro h
@@ -331,16 +333,17 @@ theorem ofReal_mul_volume_real_rpow_mul_le_perimeter
     exact hk.false
 
 /-- **The sharp isoperimetric inequality, real-valued form.** In a Euclidean space of dimension
-`n ≥ 1`, every null-measurable set `s` of finite positive volume and finite perimeter satisfies
+`n`, every null-measurable set `s` of finite positive volume and finite perimeter satisfies
 `n ω_n ^ (1 / n) |s| ^ (1 - 1 / n) ≤ P(s)`, where `ω_n = volume (ball 0 1)` and `P(s)` is the
-perimeter of `s` in the whole space. No boundedness or regularity is assumed. -/
+perimeter of `s` in the whole space. No boundedness or regularity is assumed, and the case
+`n = 0` is trivial. -/
 theorem mul_volume_real_rpow_mul_le_perimeter_toReal
-    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤) (hn : finrank ℝ E ≠ 0)
+    {s : Set E} (hs : NullMeasurableSet s volume) (hμs : volume s ≠ ⊤)
     (hs0 : volume s ≠ 0) (hP : perimeter volume ⊤ s ≠ ⊤) :
     finrank ℝ E * volume.real (ball (0 : E) 1) ^ (finrank ℝ E : ℝ)⁻¹ *
         volume.real s ^ (1 - (finrank ℝ E : ℝ)⁻¹) ≤ (perimeter volume ⊤ s).toReal :=
   (ENNReal.ofReal_le_iff_le_toReal hP).1
-    (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0)
+    (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hs0)
 
 /-- **The sharp isoperimetric inequality.** In a Euclidean space of dimension `n ≥ 1`, every
 null-measurable set `s` of finite positive volume satisfies `P(s)^n ≥ n^n ω_n |s|^(n-1)`, where
@@ -354,7 +357,7 @@ theorem finrank_pow_mul_volume_ball_mul_volume_pow_le_perimeter_pow
       perimeter volume ⊤ s ^ finrank ℝ E := by
   rw [finrank_pow_mul_volume_ball_mul_volume_pow_eq_ofReal hμs hn,
     ENNReal.ofReal_pow (by positivity)]
-  exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hn hs0) _
+  exact pow_le_pow_left₀ zero_le (hs.ofReal_mul_volume_real_rpow_mul_le_perimeter hμs hs0) _
 
 /-- **The sharp isoperimetric inequality in dimension `n ≥ 2`.** In a Euclidean space of
 dimension `n ≥ 2`, every null-measurable set `s` of finite volume satisfies
