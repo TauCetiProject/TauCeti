@@ -118,32 +118,13 @@ theorem isSheafFor_ofArrows_inf_spaBasicOpen_of_isUnit_topCommRingCat
           (hC.isSheafFor_ofArrows_inf_laurentCoverOpen P hA hAplus) R hV))
     (isInducing_presentationLimitPresheafMap_standardSieve_of_isUnit P hC hA hAplus hT hu hW) E
 
-omit [IsTateRing A] in
-/-- Restriction to opens `V i ≤ W` is inducing on sections of the presentation-limit presheaf as
-soon as it is inducing on presentation limits. -/
-theorem isInducing_restrictionMap_of_isInducing_presentationLimitMap {ι : Type*}
-    {W : Opens ↥(spa Aplus)} {V : ι → Opens ↥(spa Aplus)} (h : ∀ i, V i ≤ W)
-    (hl : IsInducing fun (x : presentationLimit (P := P) Aplus W) (i : ι) ↦
-      (presentationLimitMap (P := P) (h i)).hom.1 x) :
-    IsInducing fun (x : (presentationLimitPresheaf P Aplus).obj (op W)) (i : ι) ↦
-      ((presentationLimitPresheaf P Aplus).map (homOfLE (h i)).op).hom.1 x := by
-  let G := TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ _root_.TopCommRingCat TopCat
-  let e (V : Opens ↥(spa Aplus)) :
-      (presentationLimitPresheaf P Aplus).obj (op V) ≃ₜ presentationLimit (P := P) Aplus V :=
-    TopCat.homeoOfIso (G.mapIso (eqToIso (presentationLimitPresheaf_obj P Aplus (op V))))
-  have e_apply (V : Opens ↥(spa Aplus)) (x : (presentationLimitPresheaf P Aplus).obj (op V)) :
-      e V x = (eqToHom (presentationLimitPresheaf_obj P Aplus (op V))).hom.1 x := rfl
-  exact ((e W).isInducing_pi_iff_of_homeomorph (fun i ↦ e (V i)) fun x i ↦ by
-    rw [e_apply, e_apply]
-    exact eqToHom_apply_presentationLimitPresheaf_map_apply P (h i) x).mpr hl
-
 section Completion
 
 variable (U : Finset A) (s : A) (S : Type v) [CommRing S] [Algebra A S] [IsLocalization.Away s S]
   (hden : HasDenominatorPower P U s S)
 
 /-- The pieces `R(U/s) ∩ R(T/t)` of a standard rational cover of `R(U/s)` are rational opens when
-some generator becomes a unit in the completed coordinate ring `A⟨U/s⟩`. -/
+every generator becomes a unit in the completed coordinate ring `A⟨U/s⟩`. -/
 private theorem inf_spaBasicOpen_mem_spaRationalOpens_of_isUnit
     (hP : P.ringOfDefinition ≤ Aplus) (hU : IsOpen (Ideal.span (U : Set A) : Set A))
     {T : Finset A} (hT : T.Nonempty)
@@ -209,10 +190,10 @@ private theorem ofArrows_locOpensComap_eq_ofArrows_image (T : Finset A) :
     exact ⟨⟨t, ht⟩, e ≫ eqToHom (hpull ⟨t, ht⟩).symm, Subsingleton.elim _ _⟩
 
 omit [IsTateRing A] in
-/-- Over the completed coordinate ring `A⟨U/s⟩`, restriction to the pullbacks of the generating
-pieces of a standard cover of `R(U/s)` is inducing on presentation limits whenever it is inducing
-on sections of the presheaf. This transports Wedhorn's Remark 8.4 along the isomorphisms
-`presentationLimitLocIso`. -/
+/-- If restriction to the pullbacks of the pieces of a standard cover of `R(U/s)` is inducing on
+sections of the presentation-limit presheaf over the completed coordinate ring `A⟨U/s⟩`, and each
+piece is rational, then restriction from `R(U/s)` to the pieces is inducing on presentation limits
+over `A`. -/
 private theorem isInducing_presentationLimitMap_pieces_of_completion
     (hAplus : ∀ ⦃a⦄, a ∈ Aplus → IsPowerBounded a)
     (hU : IsOpen (Ideal.span (U : Set A) : Set A)) {T : Finset A}
@@ -234,14 +215,7 @@ private theorem isInducing_presentationLimitMap_pieces_of_completion
   let _ := locUniformSpace P U s S hden
   have _ := isUniformAddGroup_locUniformSpace P U s S hden
   have _ := isTopologicalRing_locUniformSpace P U s S hden
-  let FB := presentationLimitPresheaf (completionLocalization P U s S hden)
-    (completedPlusSubring P Aplus U s S hden)
   let G := TopCommRingCat.isCompleteSeparated.ι ⋙ forget₂ _root_.TopCommRingCat TopCat
-  let eB (V : Opens ↥(spa (completedPlusSubring P Aplus U s S hden))) :
-      FB.obj (op V) ≃ₜ presentationLimit (P := completionLocalization P U s S hden)
-        (completedPlusSubring P Aplus U s S hden) V :=
-    TopCat.homeoOfIso (G.mapIso (eqToIso (presentationLimitPresheaf_obj
-      (completionLocalization P U s S hden) (completedPlusSubring P Aplus U s S hden) (op V))))
   let σ (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
       (hVW : V ≤ spaBasicOpen Aplus U s) :
       presentationLimit (P := P) Aplus V ≃ₜ
@@ -250,28 +224,15 @@ private theorem isInducing_presentationLimitMap_pieces_of_completion
     TopCat.homeoOfIso (G.mapIso
       (presentationLimitLocIso P Aplus U s S hden hAplus hU V hV hVW))
   let pieces (t : T) := spaBasicOpen Aplus U s ⊓ spaBasicOpen Aplus T t
-  have eB_apply (V : Opens ↥(spa (completedPlusSubring P Aplus U s S hden)))
-      (x : FB.obj (op V)) : eB V x = (eqToHom (presentationLimitPresheaf_obj
-        (completionLocalization P U s S hden) (completedPlusSubring P Aplus U s S hden)
-        (op V))).hom.1 x := rfl
   have σ_apply (V : Opens ↥(spa Aplus)) (hV : V ∈ spaRationalOpens Aplus)
       (hVW : V ≤ spaBasicOpen Aplus U s) (x : presentationLimit (P := P) Aplus V) :
       σ V hV hVW x =
         (presentationLimitLocIso P Aplus U s S hden hAplus hU V hV hVW).hom.hom.1 x := rfl
   -- Pass from the presheaf over the completed coordinate ring to its presentation limits.
-  have hBpl : IsInducing fun
-      (x : presentationLimit (P := completionLocalization P U s S hden)
-        (completedPlusSubring P Aplus U s S hden)
-        (locOpensComap P Aplus U s S hden (spaBasicOpen Aplus U s))) (t : T) ↦
-      (presentationLimitMap (P := completionLocalization P U s S hden)
-        (locOpensComap_mono P Aplus U s S hden
-          (inf_le_left : pieces t ≤ spaBasicOpen Aplus U s))).hom.1 x :=
-    ((eB _).isInducing_pi_iff_of_homeomorph (fun t ↦ eB (locOpensComap P Aplus U s S hden
-      (pieces t))) fun x t ↦ by
-        rw [eB_apply, eB_apply]
-        exact eqToHom_apply_presentationLimitPresheaf_map_apply
-          (completionLocalization P U s S hden)
-          (locOpensComap_mono P Aplus U s S hden inf_le_left) x).mp hB
+  have hBpl := ((isInducing_restrictionMap_iff_isInducing_presentationLimitMap
+    (completionLocalization P U s S hden)
+    (fun t : T ↦ locOpensComap_mono P Aplus U s S hden
+      (inf_le_left : pieces t ≤ spaBasicOpen Aplus U s))).mp hB)
   -- Transport along Remark 8.4 to the presentation limits over `P`.
   exact ((σ (spaBasicOpen Aplus U s) (spaBasicOpen_mem_spaRationalOpens hU)
     le_rfl).isInducing_pi_iff_of_homeomorph
@@ -325,7 +286,7 @@ theorem isInducing_presentationLimitPresheafMap_standardSieve
   -- Recover the full standard sieve from its generating arrows.
   exact (TopCommRingCat.isInducing_restrictionMap_ofArrows_iff
     (presentationLimitPresheaf P Aplus ⋙ TopCommRingCat.isCompleteSeparated.ι) _ _).mpr
-    (isInducing_restrictionMap_of_isInducing_presentationLimitMap P (fun t : T ↦ inf_le_left)
+    ((isInducing_restrictionMap_iff_isInducing_presentationLimitMap P (fun t : T ↦ inf_le_left)).mpr
       (isInducing_presentationLimitMap_pieces_of_completion P U s _ hden hAplus hU
         (inf_spaBasicOpen_mem_spaRationalOpens_of_isUnit P U s _ hden hP hU hT hu)
         ((TopCommRingCat.isInducing_restrictionMap_ofArrows_iff
