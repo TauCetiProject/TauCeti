@@ -192,24 +192,6 @@ private theorem IsWarpedProduct.curvatureOperator_vertical
 
 variable [T2Space M] [T2Space N]
 
-omit [FiniteDimensional ℝ E] [IsManifold I ∞ M]
-  [IsContMDiffRiemannianBundle I ∞ E fun x : M ↦ TangentSpace I x] [FiniteDimensional ℝ F]
-  [IsManifold J ∞ N] [IsContMDiffRiemannianBundle J ∞ F fun y : N ↦ TangentSpace J y]
-  [IsContMDiffRiemannianBundle (I.prod J) ∞ (E × F) fun p : M × N ↦ TangentSpace (I.prod J) p]
-  [T2Space M] [T2Space N] in
-/-- Where the warping function vanishes, a warped product has no vertical vectors, because the
-installed metric is positive definite. -/
-private theorem IsWarpedProduct.eq_zero_of_warping_eq_zero
-    (h : IsWarpedProduct I J N f) {p : M × N} (hf₀ : f p.1 = 0) (a : TangentSpace J p.2) :
-    a = 0 := by
-  let e := tangentSpaceProdEquiv (I := I) (J := J) p
-  have h0 : e.symm (0, a) = 0 := by
-    rw [← inner_self_eq_zero (𝕜 := ℝ), h.inner_eq]
-    simp only [e, ContinuousLinearEquiv.apply_symm_apply, inner_zero_left, hf₀,
-      zero_pow two_ne_zero, zero_mul, add_zero]
-  simpa using congrArg (fun x => (e x).2) h0
-
-
 /-- On three vertical vectors, warped-product curvature is the fibre curvature minus the
 constant-curvature tensor with coefficient `|grad f|²`, and has no horizontal component.
 All inner products on the right use the original metric of `N`. -/
