@@ -7,7 +7,6 @@ module
 
 public import TauCeti.NumberTheory.NumberField.Units.Regulator.Basic
 import Mathlib.NumberTheory.NumberField.InfinitePlace.Embeddings
-import Mathlib.Topology.Algebra.Polynomial
 import TauCeti.Analysis.Polynomial.CoeffBound
 import TauCeti.Algebra.Polynomial.Card.BoundedCoeff
 import TauCeti.NumberTheory.NumberField.Index.PowerBasis
@@ -98,17 +97,6 @@ noncomputable def unitCandidates (B : ℝ) : Finset ℤ[X] :=
 
 variable {K}
 
-/-- The roots in `ℂ` of the minimal polynomial over `ℚ` of an element of a number field are the
-values of that element at the complex embeddings. -/
-private theorem mem_roots_map_minpoly_iff (x : K) (z : ℂ) :
-    z ∈ ((minpoly ℚ x).map (algebraMap ℚ ℂ)).roots ↔ ∃ φ : K →+* ℂ, φ x = z := by
-  have hx : IsIntegral ℚ x := IsIntegral.of_finite ℚ x
-  have hne : (minpoly ℚ x).map (algebraMap ℚ ℂ) ≠ 0 := ((minpoly.monic hx).map _).ne_zero
-  rw [mem_roots hne, IsRoot.def, eval_map, ← aeval_def]
-  have h := Set.ext_iff.mp (Embeddings.range_eval_eq_rootSet_minpoly K ℂ x) z
-  rw [Set.mem_range, mem_rootSet_of_ne (minpoly.ne_zero hx)] at h
-  exact h.symm
-
 /-- Membership in the candidate list is exactly monicity, field degree, constant coefficient
 `±1`, and the binomial coefficient bounds. -/
 @[simp]
@@ -131,14 +119,8 @@ private theorem norm_le_one_of_mem_roots_erase (hr : rank K = 1) {w : InfinitePl
   obtain ⟨φ, rfl⟩ := (mem_roots_map_minpoly_iff _ _).mp hz.2
   have hne : InfinitePlace.mk φ ≠ w := by
     intro hφ
-    rw [← mk_embedding w, mk_eq_iff] at hφ
-    rcases hφ with hφ | hφ
-    · exact hz.1 (DFunLike.congr_fun hφ _)
-    · have hreal : ComplexEmbedding.conjugate (embedding w) = embedding w :=
-        ComplexEmbedding.isReal_iff.mp (isReal_iff.mp hw)
-      have hφ' : φ = embedding w := by
-        rw [← ComplexEmbedding.involutive_conjugate K φ, hφ, hreal]
-      exact hz.1 (DFunLike.congr_fun hφ' _)
+    have hreal : ComplexEmbedding.IsReal φ := isReal_of_mk_isReal (hφ.symm ▸ hw)
+    exact hz.1 (DFunLike.congr_fun (hφ ▸ embedding_mk_eq_of_isReal hreal).symm _)
   exact (lt_one_of_rank_eq_one_of_ne_of_one_lt hr hne hw1).le
 
 /-- Every unit generating `K` over `ℚ` whose value at a real infinite place lies in `(1, B]`
