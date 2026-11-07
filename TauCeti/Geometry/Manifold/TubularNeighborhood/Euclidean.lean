@@ -63,39 +63,36 @@ section Local
 
 variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
 
-/-- The compression `R u` to the normal space `W₀ = (fderiv ℝ g u₀).rangeᗮ` at `u₀` of the
-orthogonal projection onto the normal space at `u` is continuous at `u₀`, equals the identity there,
-and so is invertible near `u₀`, where `g` is also `C²` with injective derivative. -/
+omit [FiniteDimensional ℝ E] in
+/-- The compression to the normal space `(fderiv ℝ g u₀).rangeᗮ` at `u₀` of the orthogonal
+projection onto the normal space `(fderiv ℝ g u).rangeᗮ` at `u`. -/
+private noncomputable def localNormalCompression (g : E → V) (u₀ u : E) :
+    (fderiv ℝ g u₀).rangeᗮ →L[ℝ] (fderiv ℝ g u₀).rangeᗮ :=
+  (fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
+    (fderiv ℝ g u).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL
+
+/-- The compression `localNormalCompression g u₀` is continuous at `u₀`, equals the identity
+there, and so is invertible near `u₀`, where `g` is also `C²` with injective derivative. -/
 private theorem continuousAt_and_eq_one_and_eventually_isUnit_compression {g : E → V} {u₀ : E}
     (hg : ContDiffAt ℝ 2 g u₀) (hinj : Injective (fderiv ℝ g u₀)) :
-    ContinuousAt (fun u => (fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
-      (fderiv ℝ g u).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL) u₀ ∧
-    (fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
-      (fderiv ℝ g u₀).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL = 1 ∧
+    ContinuousAt (localNormalCompression g u₀) u₀ ∧ localNormalCompression g u₀ u₀ = 1 ∧
     ∀ᶠ u in 𝓝 u₀, ContDiffAt ℝ 2 g u ∧ Injective (fderiv ℝ g u) ∧
-      IsUnit ((fderiv ℝ g u₀).rangeᗮ.orthogonalProjectionOnto ∘L
-        (fderiv ℝ g u).rangeᗮ.starProjection ∘L (fderiv ℝ g u₀).rangeᗮ.subtypeL) := by
-  let A : E → E →L[ℝ] V := fderiv ℝ g
-  set W₀ := (A u₀).rangeᗮ
-  let Q : E → V →L[ℝ] V := fun u => (A u).rangeᗮ.starProjection
-  let R : E → W₀ →L[ℝ] W₀ := fun u => W₀.orthogonalProjectionOnto ∘L Q u ∘L W₀.subtypeL
-  have hQW : ∀ w : W₀, Q u₀ w = w := fun w => Submodule.starProjection_eq_self_iff.mpr w.2
-  have hR₀ : R u₀ = 1 := by
+      IsUnit (localNormalCompression g u₀ u) := by
+  have hR₀ : localNormalCompression g u₀ u₀ = 1 := by
     ext w
-    simp [R, hQW]
-  have hQ₀ : ContDiffAt ℝ 1 Q u₀ :=
-    (hg.fderiv_right (m := 1) (by norm_num)).starProjection_orthogonal_range hinj
-  have hRc : ContinuousAt R u₀ :=
-    continuousAt_const.clm_comp (hQ₀.continuousAt.clm_comp continuousAt_const)
-  have hev : ∀ᶠ u in 𝓝 u₀, ContDiffAt ℝ 2 g u ∧ Injective (A u) ∧ IsUnit (R u) := by
-    have h2 : ∀ᶠ u in 𝓝 u₀, Injective (A u) :=
-      (hg.fderiv_right (m := 1) (by norm_num)).continuousAt.preimage_mem_nhds
-        (ContinuousLinearMap.isOpen_injective.mem_nhds hinj)
-    have hRu₀ : IsUnit (R u₀) := hR₀ ▸ isUnit_one
-    have h3 : ∀ᶠ u in 𝓝 u₀, IsUnit (R u) :=
-      hRc.preimage_mem_nhds ((Units.isOpen (R := W₀ →L[ℝ] W₀)).mem_nhds hRu₀)
-    exact (hg.eventually (by simp)).and (h2.and h3)
-  exact ⟨hRc, hR₀, hev⟩
+    simp [localNormalCompression, Submodule.starProjection_eq_self_iff.mpr w.2]
+  have hRc : ContinuousAt (localNormalCompression g u₀) u₀ := by
+    unfold localNormalCompression
+    exact continuousAt_const.clm_comp
+      (((hg.fderiv_right (m := 1) (by norm_num)).starProjection_orthogonal_range
+        hinj).continuousAt.clm_comp continuousAt_const)
+  have h2 : ∀ᶠ u in 𝓝 u₀, Injective (fderiv ℝ g u) :=
+    (hg.fderiv_right (m := 1) (by norm_num)).continuousAt.preimage_mem_nhds
+      (ContinuousLinearMap.isOpen_injective.mem_nhds hinj)
+  have hRu₀ : IsUnit (localNormalCompression g u₀ u₀) := hR₀ ▸ isUnit_one
+  have h3 : ∀ᶠ u in 𝓝 u₀, IsUnit (localNormalCompression g u₀ u) := hRc.preimage_mem_nhds
+    ((Units.isOpen (R := (fderiv ℝ g u₀).rangeᗮ →L[ℝ] (fderiv ℝ g u₀).rangeᗮ)).mem_nhds hRu₀)
+  exact ⟨hRc, hR₀, (hg.eventually (by simp)).and (h2.and h3)⟩
 
 /-- The normal map with fibres parametrized by the normal space at `u₀` is a local
 homeomorphism `h` near `(u₀, 0)`. -/
@@ -130,20 +127,18 @@ private theorem exists_openPartialHomeomorph_normal_of_isUnit_compression {g : E
       ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
         ρ p ∈ h.source ∧ (fderiv ℝ g p.1).rangeᗮ.starProjection (ρ p).2 = p.2 ∧
           h (ρ p) = g p.1 + p.2 := by
-  let A : E → E →L[ℝ] V := fderiv ℝ g
-  set W₀ := (A u₀).rangeᗮ
-  let Q : E → V →L[ℝ] V := fun u => (A u).rangeᗮ.starProjection
-  let R : E → W₀ →L[ℝ] W₀ := fun u => W₀.orthogonalProjectionOnto ∘L Q u ∘L W₀.subtypeL
+  set W₀ := (fderiv ℝ g u₀).rangeᗮ
   obtain ⟨hRc, hR₀, hev⟩ := continuousAt_and_eq_one_and_eventually_isUnit_compression hg hinj
   obtain ⟨h, hsrc, hΨh⟩ := exists_openPartialHomeomorph_normalParametrization hg hinj
-  -- `ρ` inverts `(u, w) ↦ (u, Q u w)` on normal vectors, and is continuous at `(u₀, 0)`.
+  set R := localNormalCompression g u₀
+  -- `ρ` inverts `(u, w) ↦ (u, (fderiv ℝ g u).rangeᗮ.starProjection w)` on normal vectors, and is
+  -- continuous at `(u₀, 0)`.
   let ρ : E × V → E × W₀ := fun p => (p.1, Ring.inverse (R p.1) (W₀.orthogonalProjectionOnto p.2))
   have hρc : ContinuousAt ρ (u₀, 0) := by
     refine continuousAt_fst.prodMk (ContinuousAt.clm_apply ?_
       (W₀.orthogonalProjectionOnto.continuous.comp continuous_snd).continuousAt)
     have hinvc : ContinuousAt Ring.inverse (R u₀) := by
-      -- `hR₀` is stated for the explicit compression, which is definitionally `R u₀`.
-      rw [show R u₀ = 1 from hR₀]
+      rw [hR₀]
       exact NormedRing.inverse_continuousAt (R := W₀ →L[ℝ] W₀) 1
     exact ContinuousAt.comp (x := ((u₀, 0) : E × V)) hinvc
       (ContinuousAt.comp (x := ((u₀, 0) : E × V)) hRc continuousAt_fst)
@@ -152,20 +147,23 @@ private theorem exists_openPartialHomeomorph_normal_of_isUnit_compression {g : E
     hρc.preimage_mem_nhds (by rw [hρ₀]; exact h.open_source.mem_nhds hsrc)
   obtain ⟨s₁, hs₁, t, ht, hst⟩ := mem_nhds_prod_iff.mp hρΩ
   obtain ⟨δ, hδ, hδt⟩ := Metric.mem_nhds_iff.mp ht
-  set s := interior (s₁ ∩ {u | ContDiffAt ℝ 2 g u ∧ Injective (A u) ∧ IsUnit (R u)})
+  set s := interior (s₁ ∩ {u | ContDiffAt ℝ 2 g u ∧ Injective (fderiv ℝ g u) ∧ IsUnit (R u)})
   have hs : s ∈ 𝓝 u₀ := interior_mem_nhds.mpr (inter_mem hs₁ hev)
-  have hss : ∀ {u}, u ∈ s → u ∈ s₁ ∧ ContDiffAt ℝ 2 g u ∧ Injective (A u) ∧ IsUnit (R u) :=
+  have hss : ∀ {u}, u ∈ s →
+      u ∈ s₁ ∧ ContDiffAt ℝ 2 g u ∧ Injective (fderiv ℝ g u) ∧ IsUnit (R u) :=
     fun hu => interior_subset
-      (s := s₁ ∩ {u | ContDiffAt ℝ 2 g u ∧ Injective (A u) ∧ IsUnit (R u)}) hu
-  have hkey : ∀ p : E × V, p.1 ∈ s → p.2 ∈ (A p.1).rangeᗮ → ‖p.2‖ < δ →
-      ρ p ∈ h.source ∧ Q p.1 (ρ p).2 = p.2 := by
+      (s := s₁ ∩ {u | ContDiffAt ℝ 2 g u ∧ Injective (fderiv ℝ g u) ∧ IsUnit (R u)}) hu
+  have hkey : ∀ p : E × V, p.1 ∈ s → p.2 ∈ (fderiv ℝ g p.1).rangeᗮ → ‖p.2‖ < δ →
+      ρ p ∈ h.source ∧ (fderiv ℝ g p.1).rangeᗮ.starProjection (ρ p).2 = p.2 := by
     rintro ⟨u, v⟩ hu hv hvδ
     obtain ⟨hu₁, -, hAu, hRu⟩ := hss hu
     refine ⟨hst ⟨hu₁, hδt (mem_ball_zero_iff.mpr hvδ)⟩, ?_⟩
+    simp only [ρ, R, localNormalCompression] at hRu ⊢
     refine Submodule.starProjection_inverse_apply ?_ hRu hv
     rw [LinearMap.finrank_orthogonal_range_of_injective hinj,
       LinearMap.finrank_orthogonal_range_of_injective hAu]
-  have hΨρ : ∀ p : E × V, Q p.1 (ρ p).2 = p.2 → h (ρ p) = g p.1 + p.2 := by
+  have hΨρ : ∀ p : E × V, (fderiv ℝ g p.1).rangeᗮ.starProjection (ρ p).2 = p.2 →
+      h (ρ p) = g p.1 + p.2 := by
     intro p hp
     rw [hΨh]
     exact congrArg (g p.1 + ·) hp
