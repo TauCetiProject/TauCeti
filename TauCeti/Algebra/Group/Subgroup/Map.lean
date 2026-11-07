@@ -44,8 +44,6 @@ uses it rather than repeating the composition of `MulEquiv.subgroupMap` with
   kernel lies in the subgroup.
 * `MonoidHom.center_le_ker`: the centre lies in the kernel of a surjection onto a
   centreless group.
-* `TauCeti.Subgroup.map_commutator_eq_commutator`: a surjective homomorphism carries the derived
-  subgroup onto the derived subgroup.
 * `Subgroup.map_inf_comap`: the image of `H ⊓ f⁻¹(K)` is `f(H) ⊓ K`.
 * `Subgroup.normalCore_comap_of_forall_exists_mul_eq`: the normal core of `f⁻¹(B)` is the preimage
   of the normal core of `B` when every element is `f x * b` with `b ∈ B`.
@@ -227,17 +225,6 @@ theorem _root_.MonoidHom.subgroupCongr_injective {A A' : Subgroup G} {B B' : Sub
 
 /-! ## Transporting the derived subgroup -/
 
-/-- A surjective homomorphism carries the derived subgroup onto the derived subgroup.
-
-Without surjectivity only `≤` survives (Mathlib's `Subgroup.map_derivedSeries_le_derivedSeries`);
-Mathlib's `map_commutator_eq` keeps an equality for an arbitrary `f`, at the cost of describing the
-image as `⁅f.range, f.range⁆`. Reach for this lemma rather than `Subgroup.map_derivedSeries_eq`
-whenever the derived subgroup is spelled `commutator`; `MulEquiv.commutatorCongr` below is the
-isomorphism it unlocks. -/
-theorem Subgroup.map_commutator_eq_commutator {f : G →* H} (hf : Function.Surjective f) :
-    (commutator G).map f = commutator H := by
-  rw [_root_.map_commutator_eq, MonoidHom.range_eq_top_of_surjective _ hf, _root_.commutator_def]
-
 /-- The isomorphism of derived subgroups restricted from an isomorphism of groups.
 
 This is `Subgroup.congrOfMapEq` for the derived subgroup: the map equality is supplied internally,
@@ -245,7 +232,7 @@ so a use site names only `e`, and the target is `commutator H` itself rather tha
 `(commutator G).map e` that `MulEquiv.subgroupMap` would land in. It acts as `e` on elements, and
 its inverse as `e.symm`. -/
 def _root_.MulEquiv.commutatorCongr (e : G ≃* H) : ↥(commutator G) ≃* ↥(commutator H) :=
-  Subgroup.congrOfMapEq e <| Subgroup.map_commutator_eq_commutator e.surjective
+  Subgroup.congrOfMapEq e <| map_commutator_of_surjective e.surjective
 
 /-- The restriction `MulEquiv.commutatorCongr e` to the derived subgroups agrees with `e` on
 underlying
