@@ -129,11 +129,8 @@ private theorem map_eq_zero_of_isPGroup
     {p : ℕ} (hp : p.Prime) (hpG : IsPGroup p L.Gal) :
     groupCohomology.map (MonoidHom.id L.Gal) (L.repMap φ) 2 y = 0 := by
   have : Fact p.Prime := ⟨hp⟩
-  have hdvd : p ∣ Nat.card L.Gal := by
-    obtain ⟨k, hk⟩ := IsPGroup.iff_card.1 hpG
-    rcases k with _ | k
-    · exact absurd (hk.trans (pow_zero p)) (by rwa [← L.degree_eq_natCard_gal, hn])
-    · exact hk ▸ dvd_pow_self p k.succ_ne_zero
+  have hdvd : p ∣ Nat.card L.Gal :=
+    hpG.card_eq_or_dvd.resolve_left (by rwa [← L.degree_eq_natCard_gal, hn])
   have := IsPGroup.isNilpotent hpG
   obtain ⟨N, hNi, hN⟩ := Group.IsNilpotent.exists_normal_index_eq_of_dvd_card hdvd
   let T := L.quotientRefinement N
