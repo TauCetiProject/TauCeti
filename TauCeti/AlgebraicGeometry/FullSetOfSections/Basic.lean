@@ -75,41 +75,6 @@ open _root_.AlgebraicGeometry Scheme.IdealSheafData
 
 variable {Z S : Scheme.{u}} (g : Z ⟶ S)
 
-section Section
-
-variable {σ : S ⟶ Z} (hσ : σ ≫ g = 𝟙 S)
-
-include hσ in
-/-- A section `σ` of `g` pulls `g⁻¹ U` back to `U`. -/
-theorem preimage_preimage_of_comp_eq_id (U : S.Opens) : σ ⁻¹ᵁ g ⁻¹ᵁ U = U := by
-  rw [← Scheme.Hom.comp_preimage, hσ, Scheme.Hom.id_preimage]
-
-/-- The ring map `Γ(S, U) → Γ(Z, g⁻¹ U) → Γ(S, U)` of a section is the identity. -/
-theorem app_comp_appLE_of_comp_eq_id (U : S.Opens) :
-    g.app U ≫ σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge = 𝟙 _ := by
-  rw [Scheme.Hom.app_eq_appLE, Scheme.Hom.appLE_comp_appLE]
-  have key : ∀ (f : S ⟶ S) (_ : f = 𝟙 S) (e : U ≤ f ⁻¹ᵁ U), f.appLE U U e = 𝟙 _ := by
-    rintro _ rfl e
-    simp only [Scheme.Hom.appLE, Scheme.Hom.id_app]
-    exact S.presheaf.map_id _
-  exact key _ hσ _
-
-/-- The `Γ(S, U)`-algebra map `σ^* : Γ(Z, g⁻¹ U) → Γ(S, U)` of a section `σ` of `g`, over an open
-`U` of `S`. -/
-noncomputable def sectionAlgHom (U : S.Opens) :
-    letI := (g.app U).hom.toAlgebra
-    Γ(Z, g ⁻¹ᵁ U) →ₐ[Γ(S, U)] Γ(S, U) :=
-  letI := (g.app U).hom.toAlgebra
-  { (σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge).hom with
-    commutes' a := congr($(app_comp_appLE_of_comp_eq_id g hσ U).hom a) }
-
-@[simp]
-theorem sectionAlgHom_apply (U : S.Opens) (b : Γ(Z, g ⁻¹ᵁ U)) :
-    sectionAlgHom g hσ U b = σ.appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g hσ U).ge b :=
-  (rfl)
-
-end Section
-
 variable {ι : Type*} (s : ι → (S ⟶ Z)) (hs : ∀ i, s i ≫ g = 𝟙 S)
 
 variable {T : Scheme.{u}} (t : T ⟶ S)
@@ -172,6 +137,8 @@ noncomputable def fullSetLocus : S.IdealSheafData where
     refine map_fullSetLocusIdeal_of_isPushout (A' := Γ(S, S.basicOpen f))
       (B' := Γ(Z, g ⁻¹ᵁ S.basicOpen f)) _ _ fun i b ↦ ?_
     -- `sectionAlgHom` evaluates `appLE`; write both sides as composites to use its naturality
+    refine (sectionAlgHom_apply g (hs i) (S.basicOpen f) _).trans ?_
+    rw [sectionAlgHom_apply]
     change (Z.presheaf.map (homOfLE hle).op ≫ (s i).appLE _ (S.basicOpen f)
       (preimage_preimage_of_comp_eq_id g (hs i) _).ge) b =
       ((s i).appLE _ U.1 (preimage_preimage_of_comp_eq_id g (hs i) _).ge ≫
@@ -246,6 +213,7 @@ private theorem fullSetLocus_ideal_le_ker_iff (U : S.affineOpens) (V : T.affineO
     rintro _ _ rfl _ _
     rfl
   -- `sectionAlgHom` evaluates `appLE`; write both sides as composites of `appLE`s
+  simp only [sectionAlgHom_apply]
   change (gZ.appLE (g ⁻¹ᵁ U) (g' ⁻¹ᵁ V.1) hle ≫
       (s' i).appLE _ V (preimage_preimage_of_comp_eq_id _ (hs' i) _).ge) b =
     ((s i).appLE (g ⁻¹ᵁ U) U (preimage_preimage_of_comp_eq_id g (hs i) _).ge ≫

@@ -5,8 +5,8 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import Mathlib.CategoryTheory.Limits.Shapes.WidePullbacks
 public import TauCeti.AlgebraicGeometry.FullSetOfSections.Basic
+public import TauCeti.AlgebraicGeometry.SectionTupleScheme
 
 /-!
 # The scheme of full sets of sections
@@ -26,14 +26,13 @@ represents the functor of `ι`-indexed full sets of sections of `Z`.
 
 ## Main definitions
 
-* `TauCeti.AlgebraicGeometry.sectionTupleScheme g ι`: the scheme of `ι`-tuples of sections of
-  `g`, the fibre power of `Z` over `S`.
-* `TauCeti.AlgebraicGeometry.universalSection g ι i`: the universal `i`-th section over it.
 * `TauCeti.AlgebraicGeometry.fullSetTupleLocus g ι`: the ideal sheaf of the full-set locus of the
   universal family of sections.
 
 ## Main results
 
+* `TauCeti.AlgebraicGeometry.fullSetTupleLocus_def`: it is the full-set locus of the universal
+  family of sections.
 * `TauCeti.AlgebraicGeometry.fullSetTupleLocus_le_ker_lift_iff`: the universal property of the
   scheme of full sets of sections.
 * `TauCeti.AlgebraicGeometry.isFullSetOfSections_fullSetTupleLocus`: over the closed subscheme,
@@ -57,30 +56,6 @@ open _root_.AlgebraicGeometry Scheme.IdealSheafData
 
 variable {Z S : Scheme.{u}} (g : Z ⟶ S) (ι : Type) [Fintype ι]
 
-/-- The **scheme of `ι`-tuples of sections** of `g : Z ⟶ S`: the `ι`-fold fibre power
-`Z ×_S ⋯ ×_S Z`. Its `T`-points over `S` are the families of `T`-points of `Z` over `S`
-(`WidePullback.lift`), that is, the families of sections of the base change `Z_T ⟶ T`. -/
-noncomputable abbrev sectionTupleScheme : Scheme.{u} :=
-  widePullback S (fun _ : ι ↦ Z) fun _ ↦ g
-
-/-- The **universal `i`-th section** over the scheme of tuples of sections: the section of the
-base change of `Z` to `sectionTupleScheme g ι` given by the `i`-th projection. -/
-noncomputable def universalSection (i : ι) :
-    sectionTupleScheme g ι ⟶ pullback (WidePullback.base fun _ : ι ↦ g) g :=
-  graphSection (T := Over.mk (WidePullback.base _)) (Over.homMk (WidePullback.π _ i))
-
-/-- The universal section is a section of the base change of `g`. -/
-@[reassoc (attr := simp)]
-theorem universalSection_fst (i : ι) :
-    universalSection g ι i ≫ pullback.fst _ g = 𝟙 _ :=
-  graphSection_fst _
-
-/-- The universal `i`-th section followed by the projection to `Z` is the `i`-th projection. -/
-@[reassoc (attr := simp)]
-theorem universalSection_snd (i : ι) :
-    universalSection g ι i ≫ pullback.snd _ g = WidePullback.π _ i :=
-  graphSection_snd _
-
 variable [IsFinite g] [Flat g] [LocallyOfFinitePresentation g]
 
 /-- The ideal sheaf of the **scheme of full sets of sections** of `g` indexed by `ι`
@@ -89,6 +64,12 @@ tuples of sections. Its closed subscheme represents the `ι`-indexed full sets o
 (`fullSetTupleLocus_le_ker_lift_iff`). -/
 noncomputable def fullSetTupleLocus : (sectionTupleScheme g ι).IdealSheafData :=
   fullSetLocus (pullback.fst _ g) (universalSection g ι) (universalSection_fst g ι)
+
+/-- The scheme of full sets of sections is the full-set locus of the universal family of
+sections, so `fullSetLocus_ideal` and `fullSetLocus_pullback` apply to it. -/
+theorem fullSetTupleLocus_def : fullSetTupleLocus g ι =
+    fullSetLocus (pullback.fst _ g) (universalSection g ι) (universalSection_fst g ι) :=
+  (rfl)
 
 /-- **The universal property of the scheme of full sets of sections** (Katz–Mazur 1.9.1). A
 family `x : ι → (T ⟶ Z)` of `T`-points of `Z` over `t : T ⟶ S` factors through the closed
