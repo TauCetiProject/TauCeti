@@ -210,11 +210,10 @@ private theorem finiteComponent_ideleFiniteCoord_ofFiniteIdele_unitEmbedding_eq_
   have hcoord :
       v.ideleFiniteCoord (IdeleGroup.ofFiniteIdele (𝓞 K) K (unitEmbedding (𝓞 K) K x)) =
         Units.map (algebraMap K (v.adicCompletion K)).toMonoidHom x := by
-    have hfin := congrArg v.ideleFiniteCoord
-      (IdeleGroup.prod_ofCompletion_mul_ofFiniteIdele (IdeleGroup.unitEmbedding (𝓞 K) K x))
-    simpa only [map_mul, map_prod, HeightOneSpectrum.ideleFiniteCoord_ofCompletion,
-      Finset.prod_const_one, one_mul, IdeleGroup.toFiniteIdele_unitEmbedding,
-      HeightOneSpectrum.ideleFiniteCoord_unitEmbedding] using hfin
+    rw [← HeightOneSpectrum.ideleFiniteCoord_unitEmbedding v x]
+    refine Units.ext ?_
+    simp only [HeightOneSpectrum.coe_ideleFiniteCoord, ← IdeleGroup.coe_toFiniteIdele,
+      IdeleGroup.toFiniteIdele_ofFiniteIdele, IdeleGroup.toFiniteIdele_unitEmbedding]
   refine χ.finiteComponent_eq_one_of_mem_unitFiltration ?_
   rw [hcoord, HeightOneSpectrum.mem_unitFiltration_adicCompletion_iff]
   have hdvd := (𝔣.mem_support_iff v).mp hv
