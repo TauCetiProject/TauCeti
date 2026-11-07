@@ -202,7 +202,7 @@ theorem _root_.Polynomial.cauchyIndex_univ_eq_permanencesMinusVariations_signedP
       List.map_reverse_range_eq_replicate_append _ (Nat.zero_le _) fun j _ hj => ?_]
     · simp
     · rcases eq_or_ne j 0 with rfl | hj0
-      · exact signedPsc_zero_right p (by simp) (by simpa using h)
+      · exact signedPsc_zero_right p (by simpa using h)
       · rw [signedPsc_of_lt _ _ (by simp only [natDegree_zero]; omega)]
         simp [hj.ne, hj0]
   have hp : p ≠ 0 := by rintro rfl; simp at h
