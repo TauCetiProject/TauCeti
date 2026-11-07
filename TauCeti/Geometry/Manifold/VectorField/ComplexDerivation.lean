@@ -294,7 +294,8 @@ fields of its real and imaginary parts. -/
 def complexDerivationEquivComplexifiedVectorField :
     Derivation ℂ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ C^∞⟮I, M; 𝓘(ℝ, ℂ), ℂ⟯ ≃ₗ[ℂ]
       ℂ ⊗[ℝ] Cₛ^∞⟮I; E, (TangentSpace I : M → Type _)⟯ :=
-  Derivation.complexifyEquiv.symm.trans (derivationEquivSmoothVectorField.baseChange ℝ ℂ _ _)
+  Derivation.complexifyEquiv.symm.trans
+    ((derivationEquivSmoothVectorField.restrictScalars ℝ).baseChange ℝ ℂ _ _)
 
 /-- The equivalence sends a complex derivation to `1 ⊗ X + i ⊗ Y`, where `X` and `Y` are the
 vector fields of its real and imaginary parts. -/
