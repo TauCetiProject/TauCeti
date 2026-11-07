@@ -11,7 +11,7 @@ public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeA.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeB.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeC.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeD
-public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE6
+public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE6.Basic
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.TypeE7.Frobenius
 public import TauCeti.GroupTheory.SpecificGroups.CFSG.Unimodular
 
