@@ -138,7 +138,7 @@ theorem natCard_H0_mul_natCard_H2_mul_pow (M : Type u) [AddCommGroup M] [Topolog
       · exact hM
     -- a `G`-stable subgroup `N` of order `p` with trivial action
     obtain ⟨N, hNcard, hNfix⟩ := exists_addSubgroup_natCard_eq_invariant_of_isProP hG
-      (isAddPGroup_iff_pow_nsmul_eq_zero.1 (IsAddPGroup.of_card hk))
+      (IsAddPGroup.of_card hk)
     have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x hx ↦ (hNfix g x hx).symm ▸ hx
     let := N.restrictDistribMulAction hN
     let := N.quotientDistribMulAction hN

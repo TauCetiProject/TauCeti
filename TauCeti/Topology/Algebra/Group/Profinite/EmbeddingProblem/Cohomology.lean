@@ -199,9 +199,9 @@ variable {M : Type v} [AddCommGroup M] [TopologicalSpace M] [IsTopologicalAddGro
 theorem subsingleton_H2_of_isAddPGroup (hproj : IsProjective.{u, max u v, u} p G)
     (hG : IsProP p G) (hM : IsAddPGroup p M) : Subsingleton (H2 G M) :=
   -- `Additive (Multiplicative M)` is `M` with the same instances, so the multiplicative statement
-  -- applies as it stands; `isAddPGroup_additive_iff` reads the hypothesis the same way.
+  -- applies as it stands.
   hproj.subsingleton_H2 hG (M := Multiplicative M)
-    (IsPGroup.isProP ((isAddPGroup_additive_iff (M := Multiplicative M)).1 hM))
+    (IsPGroup.isProP (hM : IsPGroup p (Multiplicative M)))
 
 end Additive
 

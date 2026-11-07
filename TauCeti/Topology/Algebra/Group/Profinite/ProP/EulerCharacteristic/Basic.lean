@@ -153,7 +153,7 @@ theorem natCard_H1_mul_natCard (M : Type v) [AddCommGroup M] [TopologicalSpace M
       Nat.card_of_subsingleton (0 : H0 G M), one_pow]
   -- a `G`-stable subgroup `N` of order `p` with trivial action
   obtain ⟨N, hNcard, hNfix⟩ :=
-    exists_addSubgroup_natCard_eq_invariant_of_isProP hG (isAddPGroup_iff_pow_nsmul_eq_zero.1 hM)
+    exists_addSubgroup_natCard_eq_invariant_of_isProP hG hM
   have hN : ∀ g : G, ∀ x ∈ N, g • x ∈ N := fun g x hx ↦ (hNfix g x hx).symm ▸ hx
   let := N.restrictDistribMulAction hN
   let := N.quotientDistribMulAction hN

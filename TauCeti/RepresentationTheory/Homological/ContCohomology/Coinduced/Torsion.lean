@@ -40,7 +40,7 @@ theorem isAddPGroup_discreteCoind (hM : IsAddPGroup p M) :
     IsAddPGroup p (DiscreteCoind G U M) := by
   refine fun f ↦ ?_
   let cf := DiscreteCoind.toContinuousMap G U M f
-  obtain ⟨k, hk⟩ := isAddPGroup_iff_pow_nsmul_eq_zero.1 (hM.continuousMap G) cf
+  obtain ⟨k, hk⟩ := hM.continuousMap G cf
   refine ⟨k, DiscreteCoind.ext fun g ↦ ?_⟩
   -- `cf` has the same values as `f`, so evaluating `hk` at `g` gives `p ^ k • f g = 0`.
   have hkg : p ^ k • f g = 0 := by
