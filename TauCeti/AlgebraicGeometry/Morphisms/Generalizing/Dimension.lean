@@ -10,6 +10,8 @@ public import Mathlib.AlgebraicGeometry.Properties
 import Mathlib.AlgebraicGeometry.Morphisms.UniversallyOpen
 import Mathlib.RingTheory.Ideal.GoingDown
 import Mathlib.RingTheory.Ideal.KrullsHeightTheorem
+import TauCeti.AlgebraicGeometry.Fibers.Dimension
+import TauCeti.Topology.KrullDimension.Basic
 
 /-!
 # The dimension formula for generalizing morphisms
@@ -25,14 +27,14 @@ of its stabilizer.
 
 The proof passes to compatible affine charts `Spec S → X` and `Spec R → Y` and applies Mathlib's
 `Ideal.height_eq_height_add_of_liesOver_of_hasGoingDown`: the chart map `Spec S → Spec R` is
-generalizing, which is going down for `R → S`. The generizations of a point of `Spec S` lying
-over a prime `q` of `R` are exactly its generizations in the closed subset `V(q S)`, and the
-codimension of a point of `Spec A` inside a closed subset `V(I)` is its height in `A ⧸ I`.
+generalizing, which is going down for `R → S`. The codimension of a point of `Spec S` in its
+fibre over `Spec R` is its height in `S ⧸ q S` by
+`TauCeti.AlgebraicGeometry.coheight_fiber_eq_height_map`, and the chart identifies that fibre
+with an open part of the fibre of `f`, along which coheights agree by
+`Topology.IsOpenEmbedding.coheight_subtype_eq`.
 
 ## Main declarations
 
-* `TauCeti.AlgebraicGeometry.coheight_zeroLocus_eq_height_map`: the codimension of a point of
-  `Spec A` inside `V(I)` is the height of its image in `A ⧸ I`.
 * `AlgebraicGeometry.Scheme.Hom.coheight_eq_coheight_add_coheight_preimage`: for a generalizing
   morphism, such as a flat one, the codimension of a point is that of its image plus that in its
   fibre.
@@ -49,24 +51,6 @@ public section
 open CategoryTheory Order Topology TopologicalSpace AlgebraicGeometry
 
 universe u
-
-namespace TauCeti.AlgebraicGeometry
-
-/-- In `Spec A`, the codimension of a point `x` of the closed subset `V(I)`, written as
-`{y | I ≤ y.asIdeal}`, inside `V(I)` is the height of the image of `x` in `A ⧸ I`. -/
-theorem coheight_zeroLocus_eq_height_map {A : CommRingCat.{u}} (I : Ideal A) (x : Spec A)
-    (hx : I ≤ x.asIdeal) :
-    coheight (⟨x, hx⟩ : {y : Spec A | I ≤ y.asIdeal}) =
-      (x.asIdeal.map (Ideal.Quotient.mk I)).height := by
-  let e : {y : Spec A | I ≤ y.asIdeal} ≃o (PrimeSpectrum.zeroLocus (R := A) I)ᵒᵈ :=
-    { toEquiv := (Equiv.refl _).trans OrderDual.toDual
-      map_rel_iff' := fun {a b} ↦ PrimeSpectrum.le_iff_specializes b.1 a.1 }
-  rw [← coheight_orderIso e, ← height_ofDual,
-    ← height_orderIso I.primeSpectrumQuotientOrderIsoZeroLocus.symm,
-    ← PrimeSpectrum.height_eq_orderHeight]
-  congr 1
-
-end TauCeti.AlgebraicGeometry
 
 namespace AlgebraicGeometry
 
@@ -115,38 +99,13 @@ theorem Scheme.Hom.coheight_eq_coheight_add_coheight_preimage [IsLocallyNoetheri
     hV.fromSpec, hx', ← coheight_eq_of_isOpenImmersion hU.fromSpec, hcomm_apply, hx'] at hheight
   rw [hheight]
   congr 1
-  -- The fibre of `Spec S → Spec R` over `q` lies in `V(I)` and contains its generizations there.
-  let T : Set (Spec S) := {v | Spec.map φ v = Spec.map φ x'}
-  have hT {v : Spec S} (hv : v ∈ T) : Spec.map φ v = Spec.map φ x' := hv
-  have hTI {v : Spec S} (hv : v ∈ T) : I ≤ v.asIdeal :=
-    Ideal.map_le_iff_le_comap.mpr (congrArg PrimeSpectrum.asIdeal hv).ge
-  have hTup {v v' : Spec S} (hv : v ∈ T) (hvv' : v ≤ v') (hv' : I ≤ v'.asIdeal) :
-      v' ∈ T := by
-    have hle : v'.asIdeal ≤ v.asIdeal := (PrimeSpectrum.le_iff_specializes _ _).mpr hvv'
-    refine PrimeSpectrum.ext (le_antisymm ?_ (Ideal.map_le_iff_le_comap.mp hv'))
-    rw [← hT hv]
-    exact Ideal.comap_mono hle
-  have hx'T : x' ∈ T := rfl
-  refine (TauCeti.AlgebraicGeometry.coheight_zeroLocus_eq_height_map I x' (hTI rfl)).symm.trans ?_
-  refine (coheight_eq_of_strictMono
-    (fun v : T ↦ (⟨v, hTI v.2⟩ : {v : Spec S | I ≤ v.asIdeal})) (fun _ _ h ↦ h)
-    (fun v b h ↦ ⟨⟨b, hTup v.2 h.le b.2⟩, h, rfl⟩) ⟨x', hx'T⟩).symm.trans ?_
-  -- The chart identifies the fibre of `Spec S → Spec R` with an open part of the fibre of `f`,
-  -- containing all generizations of its points.
-  let F : T → f ⁻¹' {f x} := fun v ↦ ⟨hV.fromSpec v, by
-    rw [Set.mem_preimage, Set.mem_singleton_iff, ← hcomm_apply, hT v.2, hcomm_apply, hx']⟩
-  have hι : IsInducing hV.fromSpec := hV.fromSpec.isOpenEmbedding.isInducing
-  have hlt {a b : Spec S} : hV.fromSpec a < hV.fromSpec b ↔ a < b :=
-    and_congr hι.specializes_iff (not_congr hι.specializes_iff)
-  have hxF : (⟨x, rfl⟩ : f ⁻¹' {f x}) = F ⟨x', hx'T⟩ := Subtype.ext hx'.symm
-  rw [hxF]
-  refine coheight_eq_of_strictMono F
-    (fun _ _ h ↦ Subtype.coe_lt_coe.mp (hlt.mpr h)) (fun v b h ↦ ?_) _
-  obtain ⟨v', hv'⟩ : (b : X) ∈ Set.range hV.fromSpec :=
-    h.le.mem_open hV.fromSpec.isOpenEmbedding.isOpen_range ⟨v, rfl⟩
-  have hv'T : v' ∈ T := hU.fromSpec.isOpenEmbedding.injective <| by
-    rw [hcomm_apply, hcomm_apply, hv', hx']
-    exact b.2
-  exact ⟨⟨v', hv'T⟩, hlt.mp (by rw [hv']; exact h), Subtype.ext hv'⟩
+  refine (TauCeti.AlgebraicGeometry.coheight_fiber_eq_height_map φ x').symm.trans ?_
+  -- The chart identifies the fibre of `Spec S → Spec R` with an open part of the fibre of `f`.
+  have hTF (v : Spec S) : v ∈ {v : Spec S | Spec.map φ v = Spec.map φ x'} ↔
+      hV.fromSpec v ∈ f ⁻¹' {f x} := by
+    rw [Set.mem_preimage, Set.mem_singleton_iff, Set.mem_ofPred_eq, ← hx', ← hcomm_apply,
+      ← hcomm_apply, hU.fromSpec.isOpenEmbedding.injective.eq_iff]
+  subst hx'
+  exact hV.fromSpec.isOpenEmbedding.coheight_subtype_eq hTF rfl
 
 end AlgebraicGeometry

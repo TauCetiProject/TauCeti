@@ -37,9 +37,14 @@ Integrating the identity over a rectangle `[a₁, b₁] × [a₂, b₂]` of the 
 (`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`). The exterior derivative
 `d(K(u))` is a function on the domain alone, so the divergence theorem applies to it whatever
 the target. The integrability of the energy density and of `R_K(u)` is assumed, and that of the
-area density follows. When the perturbation data vanish outside a compact set, `d(K(u))` is
-compactly supported and integrates to zero, so over every region containing that set the energy
-is `∫ u^* ω - ∫ R_K(u)`, with no boundary term.
+area density follows. If `K(u)` has compact support in the plane, the boundary term disappears
+and the energy over the whole plane is `∫ u^* ω - ∫ R_K(u)`
+(`SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_hasCompactSupport`). This is the
+form of the identity on a closed domain, such as a sphere whose perturbation data vanish near one
+point. More generally, when the perturbation data themselves vanish outside a compact set and
+`u` is only `C¹` near that set, the energy over every region containing it is
+`∫ u^* ω - ∫ R_K(u)`
+(`SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`).
 
 A punctured domain carries no global coordinate, so these objects must also be compared across
 changes of domain coordinates `φ`. For the pulled-back datum `φ^*K`
@@ -68,10 +73,12 @@ form they recover the vector-space definitions.
 * `SmoothTwoForm.IsNondegenerate.floerEnergyDensity_eq`: the pointwise energy identity.
 * `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity`: the energy identity on a
   rectangle.
-* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_forall_notMem_eq_zero`: for
+* `SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_hasCompactSupport`: the energy
+  identity on the plane for a compactly supported perturbation.
+* `SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`: for
   perturbation data vanishing outside a compact set, the energy over any region containing that
   set is `∫ u^* ω - ∫ R_K(u)`, with no boundary term; the vector-space case is
-  `SymplecticForm.integral_floerEnergyDensity_of_forall_notMem_eq_zero`.
+  `SymplecticForm.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`.
 * `SmoothTwoForm.perturbedMFDeriv_perturbationPullback`,
   `SmoothTwoForm.floerEnergyDensity_perturbationPullback`,
   `SmoothTwoForm.hamiltonianCurvature_perturbationPullback`: naturality of the perturbed
@@ -196,6 +203,15 @@ theorem floerEnergyDensity_def (ω : SmoothTwoForm I M) (Ks Kt : ℝ × ℝ → 
       SmoothBundleForm.eval₂ ω (u z) (ω.perturbedMFDeriv Ks Kt u z stdComplexLineReal)
         (ω.perturbedMFDeriv Ks Kt u z stdComplexLineImag) :=
   (rfl)
+
+/-- For the zero perturbation the Floer energy density is the symplectic area density
+`ω(∂_s u, ∂_t u)`. -/
+@[simp]
+theorem floerEnergyDensity_zero (ω : SmoothTwoForm I M) (u : ℝ × ℝ → M) (z : ℝ × ℝ) :
+    ω.floerEnergyDensity (fun _ _ ↦ 0) (fun _ _ ↦ 0) u z =
+      SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+        (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) := by
+  simp [floerEnergyDensity_def]
 
 variable {ω : SmoothTwoForm I M} {Ks Kt : ℝ × ℝ → M → ℝ}
   {u : ℝ × ℝ → M} {z : ℝ × ℝ}
@@ -504,6 +520,67 @@ theorem IsNondegenerate.integral_floerEnergyDensity [FiniteDimensional ℝ E]
     integral_add harea hderiv, stdComplexLineReal_eq, stdComplexLineImag_eq,
     integral_fderiv_sub_fderiv_Icc hU hg hf hab habU]
 
+/-- **The energy identity on the plane, for a compactly supported perturbation.** Let `u` and the
+perturbation data `K = K_s ds + K_t dt` be `C¹` on the whole plane, for a nondegenerate two-form
+on a finite-dimensional manifold, and suppose that the pulled-back one-form
+`K(u) = K_s(u) ds + K_t(u) dt` has compact support. If the energy density and the curvature
+`R_K(u)` are integrable over the plane, then the energy is the symplectic area `∫ u^* ω` minus the
+integral of `R_K(u)`: the exterior derivative `d(K(u))` integrates to zero. This applies to
+perturbation data on a closed surface that vanish near a point, written in the plane chart of the
+complement of that point. -/
+theorem IsNondegenerate.integral_floerEnergyDensity_of_hasCompactSupport
+    [FiniteDimensional ℝ E] (hω : ω.IsNondegenerate) (hu : ContMDiff 𝓘(ℝ, ℝ × ℝ) I 1 u)
+    (hKs : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks))
+    (hKt : ContMDiff (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Kt))
+    (hKs₀ : HasCompactSupport fun w ↦ Ks w (u w)) (hKt₀ : HasCompactSupport fun w ↦ Kt w (u w))
+    (hE : Integrable (ω.floerEnergyDensity Ks Kt u))
+    (hR : Integrable fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z)) :
+    ∫ z, ω.floerEnergyDensity Ks Kt u z =
+      (∫ z, (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ)) -
+        ∫ z, ω.hamiltonianCurvature Ks Kt z (u z) := by
+  -- The pulled-back components `K_s(u)` and `K_t(u)` are compactly supported `C¹` functions on
+  -- the plane, so the integrals of their partial derivatives vanish.
+  have hgraph : ContMDiff 𝓘(ℝ, ℝ × ℝ) (𝓘(ℝ, ℝ × ℝ).prod I) 1 (fun w ↦ (w, u w)) :=
+    contMDiff_id.prodMk hu
+  have hf : ContDiff ℝ 1 (fun w ↦ Kt w (u w)) := contMDiff_iff_contDiff.mp (hKt.comp hgraph)
+  have hg : ContDiff ℝ 1 (fun w ↦ Ks w (u w)) := contMDiff_iff_contDiff.mp (hKs.comp hgraph)
+  have hf' : Integrable fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal :=
+    ((hf.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
+      (hKt₀.fderiv_apply (𝕜 := ℝ) _)
+  have hg' : Integrable fun z ↦ fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag :=
+    ((hg.continuous_fderiv one_ne_zero).clm_apply continuous_const).integrable_of_hasCompactSupport
+      (hKs₀.fderiv_apply (𝕜 := ℝ) _)
+  have hdK : Integrable fun z ↦ fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+      fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag := hf'.sub hg'
+  have hderiv : ∫ z, (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+      fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) = 0 := by
+    rw [integral_sub hf' hg', integral_fderiv_apply_eq_zero_of_hasCompactSupport hf hKt₀,
+      integral_fderiv_apply_eq_zero_of_hasCompactSupport hg hKs₀, sub_zero]
+  -- The pointwise energy identity.
+  have hpt (z : ℝ × ℝ) : ω.floerEnergyDensity Ks Kt u z =
+      (SmoothBundleForm.eval₂ ω (u z) (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+          (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+          fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) -
+        ω.hamiltonianCurvature Ks Kt z (u z) :=
+    hω.floerEnergyDensity_eq ((hu z).mdifferentiableAt one_ne_zero)
+      ((hKs _).mdifferentiableAt one_ne_zero) ((hKt _).mdifferentiableAt one_ne_zero)
+  -- The symplectic area density is integrable, as a combination of integrable functions.
+  have harea : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) :=
+    ((hE.sub hdK).add hR).congr (Filter.Eventually.of_forall fun z ↦ by
+      simp only [Pi.add_apply, Pi.sub_apply, hpt z]
+      ring)
+  have hsum : Integrable fun z ↦ (SmoothBundleForm.eval₂ ω (u z)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineReal)
+      (mfderiv 𝓘(ℝ, ℝ × ℝ) I u z stdComplexLineImag) : ℝ) +
+        (fderiv ℝ (fun w ↦ Kt w (u w)) z stdComplexLineReal -
+          fderiv ℝ (fun w ↦ Ks w (u w)) z stdComplexLineImag) := harea.add hdK
+  rw [integral_congr_ae (Filter.Eventually.of_forall hpt), integral_sub hsum hR,
+    integral_add harea hdK, hderiv, add_zero]
+
 open Filter Topology
 
 /-- The pointwise energy identity `E = u^* ω + d(K(u)) - R_K(u)` holds at every point of the
@@ -548,7 +625,7 @@ a finite-dimensional manifold. Then for every measurable set `D ⊇ C` over whic
 and the curvature `R_K(u)` are integrable, the energy over `D` is the symplectic area `∫_D u^* ω`
 minus the integral of `R_K(u)`: the exterior derivative `d(K(u))` is compactly supported, so the
 boundary term of the energy identity vanishes. Closedness of the two-form is not used. -/
-theorem IsNondegenerate.integral_floerEnergyDensity_of_forall_notMem_eq_zero
+theorem IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero
     [FiniteDimensional ℝ E] (hω : ω.IsNondegenerate) {U C D : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hu : ContMDiffOn 𝓘(ℝ, ℝ × ℝ) I 1 u U)
     (hKs : ContMDiffOn (𝓘(ℝ, ℝ × ℝ).prod I) 𝓘(ℝ) 1 (uncurry Ks) (U ×ˢ univ))
@@ -614,6 +691,7 @@ theorem IsNondegenerate.integral_floerEnergyDensity_of_forall_notMem_eq_zero
   rw [setIntegral_congr_fun hD fun z _ ↦ hpt z, integral_sub hsum hR,
     integral_add harea hdi.integrableOn, hdD, add_zero]
 
+
 end Integral
 
 end TauCeti.SmoothTwoForm
@@ -664,9 +742,9 @@ open MeasureTheory Set Filter Topology in
 over an open neighbourhood `U` of `C`. Then for every measurable set `D ⊇ C` over which the energy
 density is integrable, the energy over `D` is the symplectic area `∫_D u^* ω` minus the integral of
 the curvature `R_K(u)`. This is the constant-form case of
-`TauCeti.SmoothTwoForm.IsNondegenerate.integral_floerEnergyDensity_of_forall_notMem_eq_zero`; the
+`TauCeti.SmoothTwoForm.IsNondegenerate.setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero`; the
 curvature is continuous here, so its integrability is automatic. -/
-theorem integral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : SymplecticForm V)
+theorem setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : SymplecticForm V)
     {Ks Kt : ℝ × ℝ → V → ℝ} {u : ℝ × ℝ → V} {U C D : Set (ℝ × ℝ)} (hU : IsOpen U)
     (hu : ContDiffOn ℝ 1 u U) (hKs : ContDiffOn ℝ 1 (uncurry Ks) (U ×ˢ univ))
     (hKt : ContDiffOn ℝ 1 (uncurry Kt) (U ×ˢ univ)) (hC : IsCompact C) (hCU : C ⊆ U)
@@ -694,7 +772,8 @@ theorem integral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : SymplecticFor
   have hR' : (fun z ↦ ω.constSmooth.hamiltonianCurvature Ks Kt z (u z)) =
       fun z ↦ ω.hamiltonianCurvature Ks Kt z (u z) :=
     funext fun z ↦ hamiltonianCurvature_constSmooth ω Ks Kt z (u z)
-  have h := (isNondegenerate_constSmooth ω).integral_floerEnergyDensity_of_forall_notMem_eq_zero hU
+  have h :=
+    (isNondegenerate_constSmooth ω).setIntegral_floerEnergyDensity_of_forall_notMem_eq_zero hU
     (contMDiffOn_iff_contDiffOn.mpr hu) (hK' hKs) (hK' hKt) hC hCU hKsC hKtC hD hCD
     (hE' ▸ hE) (hR' ▸ hR)
   have harea (z : ℝ × ℝ) :
@@ -708,5 +787,6 @@ theorem integral_floerEnergyDensity_of_forall_notMem_eq_zero (ω : SymplecticFor
     rw [NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) z stdComplexLineReal,
       NormedSpace.fromTangentSpace_apply (𝕜 := ℝ) z stdComplexLineImag]
   simpa only [hE', hR', harea] using h
+
 
 end TauCeti.SymplecticForm
