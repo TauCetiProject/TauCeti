@@ -59,10 +59,7 @@ theorem iIndepFun_measure_iff (hN : ∀ i, AEMeasurable (N i) P) :
       iIndepFun.iIndepFun_process₀
         (fun i A ↦ (Measure.measurable_coe A.property).comp_aemeasurable (hN i)) h
     apply iIndep_of_iIndep_of_le he.iIndep
-    intro i
-    dsimp only
-    rw [Measure.measurableSpace_eq_comap_eval (X := X i), MeasurableSpace.comap_comp]
-    exact le_rfl
+    exact fun i ↦ (Measure.comap_eq_comap_eval (N i)).le
 
 variable {S T : Type*} [MeasurableSpace S] [MeasurableSpace T]
   {M : Ω → Measure S} {L : Ω → Measure T}
@@ -89,9 +86,7 @@ theorem indepFun_measure_iff [IsZeroOrProbabilityMeasure P]
         (fun A ↦ (Measure.measurable_coe A.property).comp_aemeasurable hM)
         (fun B ↦ (Measure.measurable_coe B.property).comp_aemeasurable hL) h
     apply indep_of_indep_of_le he
-    · rw [Measure.measurableSpace_eq_comap_eval (X := S), MeasurableSpace.comap_comp]
-      exact le_rfl
-    · rw [Measure.measurableSpace_eq_comap_eval (X := T), MeasurableSpace.comap_comp]
-      exact le_rfl
+    · exact (Measure.comap_eq_comap_eval M).le
+    · exact (Measure.comap_eq_comap_eval L).le
 
 end ProbabilityTheory

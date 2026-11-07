@@ -58,6 +58,15 @@ theorem measurableSpace_eq_comap_eval :
     simpa only [MeasurableSpace.comap_id] using hid.comap_le
   · exact (Measurable.of_eval fun A ↦ measurable_coe A.property).comap_le
 
+/-- A measure-valued map generates the same measurable space as its joint evaluations
+on all measurable sets. No measurability assumption on the map is needed. -/
+theorem comap_eq_comap_eval {Ω : Type*} (N : Ω → Measure X) :
+    MeasurableSpace.comap N inferInstance =
+      MeasurableSpace.comap
+        (fun ω (A : {A : Set X // MeasurableSet A}) ↦ N ω A.val)
+        MeasurableSpace.pi := by
+  rw [measurableSpace_eq_comap_eval, MeasurableSpace.comap_comp, Function.comp_def]
+
 /-- Finite laws on the space of measures are determined by their finite-dimensional
 measurable-set evaluations. The empty family records the total mass of the law. -/
 theorem ext_of_forall_finset_map_eval_eq {Q Q' : Measure (Measure X)}
