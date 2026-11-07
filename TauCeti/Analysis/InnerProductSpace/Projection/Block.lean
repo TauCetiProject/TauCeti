@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.InnerProductSpace.Reflection
+import TauCeti.Analysis.InnerProductSpace.InvariantSubspace
 
 /-!
 # Diagonal and off-diagonal blocks of an operator
@@ -298,6 +299,14 @@ theorem commute_reflection_iff {A : E →L[𝕜] E} :
   have h2 : Commute ((2 : 𝕜)⁻¹ • (2 • U.starProjection - 1 + 1)) A :=
     (h.add_left (Commute.one_left A)).smul_left _
   rwa [sub_add_cancel, ← ofNat_smul_eq_nsmul 𝕜, inv_smul_smul₀ two_ne_zero] at h2
+
+/-- Reflection across an invariant subspace commutes with a symmetric operator. -/
+theorem _root_.LinearMap.IsSymmetric.commute_reflection {A : E →L[𝕜] E}
+    (hA : A.toLinearMap.IsSymmetric) (hU : ∀ x ∈ U, A x ∈ U) :
+    Commute (U.reflection : E →L[𝕜] E) A :=
+  (U.commute_reflection_iff).2
+    (Submodule.isReducing_coe_iff_commute_starProjection.mp
+      ((hA.isReducing_iff_mem_invtSubmodule U).2 hU))
 
 /-- The off-diagonal part of `A` vanishes exactly when `A` commutes with the orthogonal
 projection onto `U`, that is, when `A` is block diagonal relative to `U ⊕ Uᗮ`. -/

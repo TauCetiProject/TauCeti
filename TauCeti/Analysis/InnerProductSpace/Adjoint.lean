@@ -12,6 +12,8 @@ public import TauCeti.Analysis.Normed.Operator.Basic
 /-!
 # Adjoints of linear maps
 
+An endomorphism and its adjoint have the same real quadratic form
+(`ContinuousLinearMap.re_inner_star_apply_self`).
 For bounded operators between complete inner product spaces, the adjoint takes values in the
 orthogonal complement of the kernel (`ContinuousLinearMap.adjoint_apply_mem_orthogonal_ker`).
 An operator on a Hilbert space is invertible exactly when its adjoint is
@@ -74,6 +76,12 @@ variable {𝕜 E F : Type*} [RCLike 𝕜]
 namespace ContinuousLinearMap
 
 open scoped InnerProduct
+
+/-- An operator and its adjoint have the same real quadratic form. -/
+@[simp] theorem re_inner_star_apply_self [CompleteSpace E] (T : E →L[𝕜] E) (x : E) :
+    RCLike.re (inner 𝕜 (star T x) x) = RCLike.re (inner 𝕜 (T x) x) := by
+  rw [star_eq_adjoint, adjoint_inner_left]
+  exact inner_re_symm x (T x)
 
 /-- The adjoint of a bounded operator takes values in the orthogonal complement of its kernel. -/
 theorem adjoint_apply_mem_orthogonal_ker [CompleteSpace E] [CompleteSpace F]

@@ -1,11 +1,13 @@
 /-
-Copyright (c) 2026 The Tau Ceti contributors. All rights reserved.
+Copyright (c) 2026 The Tau Ceti contributors and Kitware, Inc. All rights reserved.
 Released under Apache 2.0 license as described in the file LICENSE.
-Authors: The Tau Ceti contributors
+Authors: The Tau Ceti contributors, Jon Crall, OpenAI GPT-5.6 Thinking, Claude Opus 5,
+  OpenAI GPT-6
 -/
 module
 
 public import Mathlib.Analysis.InnerProductSpace.Projection.Reflection
+public import Mathlib.Analysis.InnerProductSpace.Adjoint
 import Mathlib.Analysis.InnerProductSpace.Projection.FiniteDimensional
 public import Mathlib.Analysis.InnerProductSpace.Calculus
 public import Mathlib.Analysis.SpecialFunctions.Complex.Circle
@@ -644,3 +646,93 @@ theorem exists_contDiff_path_of_det_eq_one [FiniteDimensional ℝ F] (e : F ≃�
   exact (isJoinedToOne_list_prod l).1 he
 
 end LinearIsometryEquiv
+
+namespace Submodule
+
+variable {𝕜 E : Type*} [RCLike 𝕜] [NormedAddCommGroup E] [InnerProductSpace 𝕜 E]
+
+/-- A subspace reflection, viewed as a bounded operator, squares to the identity. -/
+@[simp] theorem reflection_mul_self (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    (U.reflection : E →L[𝕜] E) * (U.reflection : E →L[𝕜] E) = 1 := by
+  ext x
+  simpa only [mul_apply_eq_comp, one_apply_eq_self, LinearIsometryEquiv.coe_coe''] using
+    U.reflection_reflection x
+
+/-- A subspace reflection is self-adjoint as a bounded operator. -/
+theorem isSelfAdjoint_reflection [CompleteSpace E]
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    IsSelfAdjoint (U.reflection : E →L[𝕜] E) := by
+  rw [ContinuousLinearMap.isSelfAdjoint_iff', LinearIsometryEquiv.adjoint_eq_symm,
+    reflection_symm]
+
+/-- A subspace reflection is a unitary bounded operator. -/
+theorem reflection_mem_unitary [CompleteSpace E]
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] :
+    (U.reflection : E →L[𝕜] E) ∈ unitary (E →L[𝕜] E) := by
+  simpa only [Unitary.coe_symm_linearIsometryEquiv_apply] using
+    (Unitary.linearIsometryEquiv.symm U.reflection).property
+
+/-- Full off-diagonality is anticommutation with the source reflection.
+
+Adapted from `reflection_anticommutes_of_maps_orthogonal` in
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). -/
+theorem reflection_mul_eq_neg_mul_of_maps_orthogonal
+    (U : Submodule 𝕜 E) [U.HasOrthogonalProjection] (H : E →L[𝕜] E)
+    (hHU : ∀ x ∈ U, H x ∈ Uᗮ)
+    (hHUperp : ∀ x ∈ Uᗮ, H x ∈ U) :
+    (U.reflection : E →L[𝕜] E) * H = -(H * (U.reflection : E →L[𝕜] E)) := by
+  apply ContinuousLinearMap.ext
+  intro x
+  let p : E := U.starProjection x
+  let m : E := x - U.starProjection x
+  have hp : p ∈ U := U.starProjection_apply_mem x
+  have hm : m ∈ Uᗮ := U.sub_starProjection_mem_orthogonal x
+  have hxpm : x = p + m := by
+    simpa only [p, m, starProjection_orthogonal_val] using
+      (U.starProjection_add_starProjection_orthogonal x).symm
+  have hHp : H p ∈ Uᗮ := hHU p hp
+  have hHm : H m ∈ U := hHUperp m hm
+  have hJp : (U.reflection : E →L[𝕜] E) p = p := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hp
+  have hJm : (U.reflection : E →L[𝕜] E) m = -m := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hm
+  have hJHp : (U.reflection : E →L[𝕜] E) (H p) = -H p := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using
+      U.reflection_mem_subspace_orthogonalComplement_eq_neg hHp
+  have hJHm : (U.reflection : E →L[𝕜] E) (H m) = H m := by
+    simpa only [LinearIsometryEquiv.coe_coe''] using U.reflection_mem_subspace_eq_self hHm
+  simp only [mul_apply_eq_comp, neg_apply]
+  calc
+    (U.reflection : E →L[𝕜] E) (H x) = (U.reflection : E →L[𝕜] E) (H p + H m) := by
+      rw [hxpm, map_add]
+    _ = (U.reflection : E →L[𝕜] E) (H p) + (U.reflection : E →L[𝕜] E) (H m) := map_add _ _ _
+    _ = -(H p) + H m := by rw [hJHp, hJHm]
+    _ = -(H (p - m)) := by
+      have hmap : H (p - m) = H p - H m := map_sub H p m
+      rw [hmap]
+      abel
+    _ = -(H ((U.reflection : E →L[𝕜] E) x)) := by
+      have hJx : (U.reflection : E →L[𝕜] E) x = p - m := by
+        rw [hxpm, map_add, hJp, hJm]
+        module
+      rw [hJx]
+
+/-- The symmetric product of two subspace reflections is
+`R_V R_U + R_U R_V = 2 I - 4 (P_U - P_V)²`.
+
+Extracted from the reflection-product calculation in
+`DavisKahan/InfiniteDimensional/TanTwoTheta/QuarterAcuteFormGap.lean`, Kitware DKPS
+(Jon Crall, OpenAI GPT-5.6 Thinking and Claude Opus 5; Apache-2.0). -/
+theorem reflection_mul_add_mul_reflection
+    (U V : Submodule 𝕜 E) [U.HasOrthogonalProjection] [V.HasOrthogonalProjection] :
+    (V.reflection : E →L[𝕜] E) * (U.reflection : E →L[𝕜] E) +
+        (U.reflection : E →L[𝕜] E) * (V.reflection : E →L[𝕜] E) =
+      (2 : 𝕜) • (1 : E →L[𝕜] E) -
+        (4 : 𝕜) • ((U.starProjection - V.starProjection) *
+          (U.starProjection - V.starProjection)) := by
+  simp only [coe_reflection, show (4 : 𝕜) = 2 + 2 by norm_num, add_smul, two_smul]
+  noncomm_ring [U.isIdempotentElem_starProjection.eq, V.isIdempotentElem_starProjection.eq]
+
+end Submodule
