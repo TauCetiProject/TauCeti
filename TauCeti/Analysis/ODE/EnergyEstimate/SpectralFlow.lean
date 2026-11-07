@@ -12,9 +12,8 @@ public import TauCeti.Analysis.ODE.EnergyEstimate.Index
 /-!
 # The index of the trajectory operator is the spectral flow
 
-Let `A : ℝ → End(E)` be a `C¹` family of symmetric operators on a finite-dimensional real inner
-product space `E`, with invertible limits `A±` at `±∞` and with `A'` tending to zero at both ends,
-so that the trajectory operator `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)` is Fredholm. A
+Let `A : ℝ → End(E)` be a differentiable family of symmetric operators on a finite-dimensional
+real inner product space `E`, with invertible limits `A±` at `±∞`, so that the trajectory operator `D_A u = u' + A u : W^{1,2}(ℝ, E) → L²(ℝ, E)` is Fredholm. A
 *crossing* of `A` is a time `t` at which `A t` is not invertible, and its *crossing form* is the
 quadratic form `v ↦ ⟪A' t v, v⟫` on the kernel of `A t`. The crossing is *regular* when its crossing
 form is nondegenerate.
@@ -118,19 +117,18 @@ theorem finite_setOf_ker_ne_bot_of_tendsto (hA : Differentiable ℝ A)
 
 namespace WeakDerivStep
 
-/-- **The index of the trajectory operator is the spectral flow.** Let `A` be a `C¹` family of
-symmetric operators on a finite-dimensional real inner product space with invertible limits `A±`
-at `±∞`, and with derivative tending to zero at both ends. Suppose that every crossing `t` of `A`,
+/-- **The index of the trajectory operator is the spectral flow.** Let `A` be a differentiable
+family of symmetric operators on a finite-dimensional real inner product space with invertible
+limits `A±` at `±∞`. Suppose that every crossing `t` of `A`,
 where `A t` is not injective, is regular: the crossing form `Γₜ : v ↦ ⟪A' t v, v⟫` on the kernel of
 `A t` is nondegenerate. Then the index of the trajectory operator `u ↦ u' + A u` from
 `W^{1,2}(ℝ, E)` to `L²(ℝ, E)` is the sum over the (finitely many) crossings of the signatures
 `sigPos Γₜ - sigNeg Γₜ`. Times at which `A t` is invertible contribute zero to the sum. -/
 theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
-    (hA : ContDiff ℝ 1 A) (hsym : ∀ s, (A s : E →ₗ[ℝ] E).IsSymmetric)
+    (hA : Differentiable ℝ A) (hsym : ∀ s, (A s : E →ₗ[ℝ] E).IsSymmetric)
     {Aminus Aplus : E →L[ℝ] E} {α : ℝ} (hα : 0 < α)
     (hminus : ∀ v, α * ‖v‖ ≤ ‖Aminus v‖) (hplus : ∀ v, α * ‖v‖ ≤ ‖Aplus v‖)
     (hbot : Tendsto A atBot (𝓝 Aminus)) (htop : Tendsto A atTop (𝓝 Aplus))
-    (hdbot : Tendsto (deriv A) atBot (𝓝 0)) (hdtop : Tendsto (deriv A) atTop (𝓝 0))
     (AL : Lp (E →L[ℝ] E) ∞ (volume.restrict ((⊤ : Opens ℝ) : Set ℝ)))
     (hAL : AL =ᵐ[volume.restrict ((⊤ : Opens ℝ) : Set ℝ)] A)
     (hreg : ∀ t, LinearMap.ker (A t : E →ₗ[ℝ] E) ≠ ⊥ →
@@ -138,17 +136,18 @@ theorem index_trajectoryOperator_eq_finsum_sigPos_sub_sigNeg_crossingForm
     (trajectoryOperator (p := 2) AL).index =
       ∑ᶠ t, ((sigPos (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t))) : ℤ) -
         sigNeg (crossingForm ((innerSL ℝ).comp (A t)) ((innerSL ℝ).comp (deriv A t)))) := by
-  have hAd : Differentiable ℝ A := hA.differentiable one_ne_zero
   obtain ⟨a, b, hab, hout, ha, hb⟩ := exists_le_forall_ker_eq_bot_and_sigNeg_eq_of_tendsto hsym
     (ker_eq_bot_of_mul_norm_le hα hminus) (ker_eq_bot_of_mul_norm_le hα hplus) hbot htop
   have hnd {s : ℝ} (hs : s ∉ Ioo a b) : ((innerSL ℝ).comp (A s)).toBilinForm.Nondegenerate :=
     nondegenerate_toBilinForm_innerSL_comp_iff.2 (hout s hs)
   have hcross := sigNeg_sub_sigNeg_eq_finsum_sigPos_sub_sigNeg_crossingForm hab
-    (continuous_innerSL_comp hAd).continuousOn (fun t _ ↦ (hsym t).isSymm_toBilinForm_innerSL_comp)
-    (hnd (by simp)) (hnd (by simp)) (fun t _ _ ↦ hasDerivAt_innerSL_comp hAd t)
+    (continuous_innerSL_comp hA).continuousOn (fun t _ ↦ (hsym t).isSymm_toBilinForm_innerSL_comp)
+    (hnd (by simp)) (hnd (by simp)) (fun t _ _ ↦ hasDerivAt_innerSL_comp hA t)
     (fun t _ ↦ nondegenerate_crossingForm_of_not_nondegenerate hreg t)
-  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA hsym hα hminus
-      hplus hbot htop hdbot hdtop AL hAL, ← ha, ← hb, hcross]
+  rw [index_trajectoryOperator_eq_finrank_pointSpectralSubspace_sub_finrank hA.continuous
+      (isClosed_setOf_isSymmetric.mem_of_tendsto hbot (.of_forall hsym))
+      (isClosed_setOf_isSymmetric.mem_of_tendsto htop (.of_forall hsym)) hα hminus hplus hbot htop
+      AL hAL, ← ha, ← hb, hcross]
   -- Only crossings contribute, and all crossings lie in `(a, b)`.
   refine (finsum_mem_inter_support_eq' _ (Ioo a b) univ fun t ht ↦
     iff_of_true ?_ (mem_univ t)).trans (finsum_mem_univ _)
