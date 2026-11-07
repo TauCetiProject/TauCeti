@@ -46,27 +46,6 @@ variable (p : ℕ) [Fact p.Prime] (K L : Type) [Field K] [Field L] [Algebra K L]
     Additive ↑(padicCompletionUnits p L))
   (j : L →ₐ[K] SeparableClosure K)
 
-/-- The relation-module comparison map intertwines the Lyndon and reciprocity coordinates with the
-original algebraic map. -/
-private theorem ofMul_symm_apply_relationModuleToAbelianizationProPEquivariant
-    (x : Additive (abelianizationProP p (freeProfiniteGroup ι)
-      (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker)) :
-    letI := freeProfiniteGroup.presentationClassModuleAction p (g := g)
-      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
-    letI := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p (g := g)
-      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
-    ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm
-        (relationModuleToAbelianizationProPEquivariant p K L hg β j x.toMul)) =
-      β (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg x) := by
-  have hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)) := by
-    rw [hg, Subgroup.coe_top]
-    exact dense_univ
-  let := freeProfiniteGroup.presentationClassModuleAction p hd
-  let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
-  rw [relationModuleToAbelianizationProPEquivariant_apply,
-    relationModuleToAbelianizationProP_apply]
-  exact congrArg ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm_apply_apply _)
-
 /-- The explicit second-cohomology map on arithmetic kernels is the original algebraic
 relation-module map, in Lyndon and reciprocity coordinates. -/
 theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
@@ -133,10 +112,15 @@ theorem explicitH2EquivPadicCompletionUnits_explicitCoeff2_relationModule :
     exact ofMul_symm_apply_relationModuleToAbelianizationProPEquivariant p K L hg β j x
   dsimp only
   intro x
-  exact apply_explicitCoeff2_of_eq (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ f.toAdditive hf F hF
-    (freeProfiniteGroup.explicitH2EquivRelationModule_eq_explicitH2AddEquivGroupCohomology
-      p hg ψ hψ rfl)
-    (explicitH2EquivPadicCompletionUnits_eq_explicitH2AddEquivGroupCohomology p K L j χ hχ rfl) x
+  have heN := explicitH2EquivPadicCompletionUnits_eq_explicitH2AddEquivGroupCohomology p K L j χ hχ
+    rfl
+  have heM := freeProfiniteGroup.explicitH2EquivRelationModule_eq_explicitH2AddEquivGroupCohomology
+    p hg ψ hψ rfl
+  have hnat := explicitH2AddEquivGroupCohomology_explicitCoeff2 (.refl (L ≃ₐ[K] L)) ψ χ hψ hχ
+    f.toAdditive hf F hF x
+  refine (DFunLike.congr_fun heN _).trans (hnat.trans ?_)
+  rw [DFunLike.congr_fun heM x]
+  rfl
 
 /-- A surjective arithmetic relation-module map with projective kernel induces a bijection
 on explicit second cohomology after transport through Lyndon and local reciprocity. -/

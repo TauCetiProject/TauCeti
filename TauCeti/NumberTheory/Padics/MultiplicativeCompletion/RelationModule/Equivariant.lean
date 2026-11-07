@@ -80,6 +80,28 @@ theorem relationModuleToAbelianizationProPEquivariant_apply
       relationModuleToAbelianizationProP p K L hg β j x :=
   (rfl)
 
+/-- The relation-module comparison map intertwines the Lyndon and reciprocity coordinates with the
+original algebraic map. -/
+theorem ofMul_symm_apply_relationModuleToAbelianizationProPEquivariant
+    (x : Additive (abelianizationProP p (freeProfiniteGroup ι)
+      (freeProfiniteGroup.lift g : freeProfiniteGroup ι →* L ≃ₐ[K] L).ker)) :
+    letI := freeProfiniteGroup.presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
+    letI := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p (g := g)
+      (by rw [hg, Subgroup.coe_top]; exact dense_univ)
+    Additive.ofMul ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm
+        (relationModuleToAbelianizationProPEquivariant p K L hg β j x.toMul)) =
+      β (freeProfiniteGroup.abelianizationProPEquivRelationModule p hg x) := by
+  have hd : Dense (Subgroup.closure (Set.range g) : Set (L ≃ₐ[K] L)) := by
+    rw [hg, Subgroup.coe_top]
+    exact dense_univ
+  let := freeProfiniteGroup.presentationClassModuleAction p hd
+  let := freeProfiniteGroup.continuousSMul_presentationClassModuleAction p hd
+  rw [relationModuleToAbelianizationProPEquivariant_apply,
+    relationModuleToAbelianizationProP_apply]
+  exact congrArg Additive.ofMul
+    ((padicCompletionUnitsEquivAbelianizationProP p K L j).symm_apply_apply _)
+
 /-- The equivariant kernel transport is continuous. -/
 theorem continuous_relationModuleToAbelianizationProPEquivariant :
     Continuous (relationModuleToAbelianizationProPEquivariant p K L hg β j) :=
