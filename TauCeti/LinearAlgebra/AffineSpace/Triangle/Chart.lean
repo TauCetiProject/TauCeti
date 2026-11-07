@@ -26,6 +26,10 @@ in the coordinate plane.
 Three points of the coordinate plane over a field are affinely independent exactly when the
 determinant of the two difference vectors is nonzero (`TauCeti.affineIndependent_iff_det_ne_zero`).
 
+If the sides `b - a` and `d - a` of a parallelogram `abcd` are linearly independent, then three of
+its vertices `b`, `d`, `c = b + (d - a)` are affinely independent
+(`LinearIndependent.affineIndependent_vsub_vadd`).
+
 ## Main definitions
 
 * `TauCeti.triangleChart`: the affine chart of the plane through three points.
@@ -35,6 +39,9 @@ determinant of the two difference vectors is nonzero (`TauCeti.affineIndependent
 * `TauCeti.triangleChart_injective`: the chart of an affinely independent triple is injective.
 * `TauCeti.affineIndependent_iff_det_ne_zero`: three points of `k × k` are affinely independent iff
   `det (y - x, z - x) ≠ 0`.
+* `LinearIndependent.affineIndependent_vsub_vadd`: if `b - a`, `d - a` are linearly independent,
+  then `b`, `d`, `b + (d - a)` (three vertices of the parallelogram `abcd`) are affinely
+  independent.
 -/
 
 public section
@@ -155,9 +162,8 @@ section Parallelogram
 
 variable {R V P : Type*} [Ring R] [AddCommGroup V] [Module R V] [AddTorsor V P]
 
-/-- If the sides `b - a` and `d - a` are linearly independent, then so are the sides `d - b` and
-`c - b` of the triangle `bdc`, where `c = b + (d - a)` is the fourth vertex of the parallelogram
-`abcd`. -/
+/-- If the sides `b - a` and `d - a` are linearly independent, then the points `b`, `d`,
+`c = b + (d - a)` (three vertices of the parallelogram `abcd`) are affinely independent. -/
 theorem LinearIndependent.affineIndependent_vsub_vadd {a b d : P}
     (hli : LinearIndependent R ![b -ᵥ a, d -ᵥ a]) :
     AffineIndependent R ![b, d, (d -ᵥ a) +ᵥ b] := by
