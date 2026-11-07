@@ -86,30 +86,31 @@ theorem irreducible_t : Irreducible t := by
   let e := RingEquiv.subringCongr
     (congrArg ValuationSubring.toSubring basePlace.integers_def)
   have he : e t = (Valuation.Uniformizer.mk' uniformizer_X).val := by
-    ext
-    rfl
+    exact Subtype.ext (RingEquiv.coe_subringCongr_apply _ t)
   apply (MulEquiv.irreducible_iff e).mp
   rw [he, IsDiscreteValuationRing.irreducible_iff_uniformizer]
   exact (Valuation.Uniformizer.mk' uniformizer_X).is_generator
+
+private theorem t_mem_maximalIdeal : t ∈ maximalIdeal BaseRing :=
+  (mem_maximalIdeal t).mpr irreducible_t.not_isUnit
 
 private def residueEquiv : basePlace.ResidueField ≃ₐ[Constants] Constants :=
   (basePlace.residueFieldEquivOfDegreeEqOne (by
     simp [Place.degree_adicOfIrreducible])).symm
 
 /-- Reduction identifies the first constant with a nonsquare in `𝔽₂(s)(u)`. -/
-private theorem not_exists_sq_eq_residue_s :
-    ¬ ∃ a : ResidueField BaseRing, a ^ 2 = residue BaseRing s := by
-  rintro ⟨a, h⟩
-  apply RatFunc.sq_ne_C_X (residueEquiv a)
+theorem sq_ne_residue_s (a : ResidueField BaseRing) :
+    a ^ 2 ≠ residue BaseRing s := by
+  intro h
+  apply RatFunc.pow_ne_C_X (by decide : 1 < 2) (residueEquiv a)
   simpa only [s, map_pow, ← basePlace.algebraMap_residueField, AlgEquiv.commutes,
     Algebra.algebraMap_self, RingHom.id_apply] using congrArg residueEquiv h
 
 /-- Differentiation in the second variable obstructs a square representation after reduction. -/
-private theorem not_exists_sq_add_residue_s_mul_sq_eq_residue_u :
-    ¬ ∃ a b : ResidueField BaseRing,
-      a ^ 2 + residue BaseRing s * b ^ 2 = residue BaseRing u := by
-  rintro ⟨a, b, h⟩
-  apply RatFunc.sq_add_C_mul_sq_ne_X (residueEquiv a) (residueEquiv b)
+theorem sq_add_residue_s_mul_sq_ne_residue_u (a b : ResidueField BaseRing) :
+    a ^ 2 + residue BaseRing s * b ^ 2 ≠ residue BaseRing u := by
+  intro h
+  apply RatFunc.pow_add_C_mul_pow_ne_X 2 (residueEquiv a) (residueEquiv b)
     (RatFunc.X : RatFunc (ZMod 2))
   simpa only [s, u, map_add, map_mul, map_pow, ← basePlace.algebraMap_residueField,
     AlgEquiv.commutes, Algebra.algebraMap_self, RingHom.id_apply] using congrArg residueEquiv h
@@ -118,40 +119,31 @@ private theorem not_exists_sq_add_residue_s_mul_sq_eq_residue_u :
 abbrev ExtensionRing := FierceBiquadratic.RingYZ t s u
 
 instance : IsDomain ExtensionRing :=
-  FierceBiquadratic.isDomain_ringYZ ((mem_maximalIdeal t).mpr irreducible_t.not_isUnit)
-    (fun a h ↦ not_exists_sq_eq_residue_s ⟨a, h⟩)
-    (fun a b h ↦ not_exists_sq_add_residue_s_mul_sq_eq_residue_u ⟨a, b, h⟩)
+  FierceBiquadratic.isDomain_ringYZ t_mem_maximalIdeal
+    sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
 
 /-- The explicit biquadratic extension is a discrete valuation ring. -/
 instance : IsDiscreteValuationRing ExtensionRing :=
-  FierceBiquadratic.isDiscreteValuationRing_ringYZ
-    ((mem_maximalIdeal t).mpr irreducible_t.not_isUnit)
-    (fun a h ↦ not_exists_sq_eq_residue_s ⟨a, h⟩)
-    (fun a b h ↦ not_exists_sq_add_residue_s_mul_sq_eq_residue_u ⟨a, b, h⟩)
+  FierceBiquadratic.isDiscreteValuationRing_ringYZ t_mem_maximalIdeal
+    sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
 
 instance : IsLocalHom (algebraMap BaseRing ExtensionRing) :=
-  FierceBiquadratic.isLocalHom_algebraMap_ringYZ
-    ((mem_maximalIdeal t).mpr irreducible_t.not_isUnit)
-    (fun a h ↦ not_exists_sq_eq_residue_s ⟨a, h⟩)
-    (fun a b h ↦ not_exists_sq_add_residue_s_mul_sq_eq_residue_u ⟨a, b, h⟩)
+  FierceBiquadratic.isLocalHom_algebraMap_ringYZ t_mem_maximalIdeal
+    sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
 
 /-- The parameter remains a uniformizer in the extension: its ramification index is one. -/
 theorem irreducible_algebraMap_t : Irreducible (algebraMap BaseRing ExtensionRing t) :=
   FierceBiquadratic.irreducible_algebraMap_ringYZ irreducible_t
-    (fun a h ↦ not_exists_sq_eq_residue_s ⟨a, h⟩)
-    (fun a b h ↦ not_exists_sq_add_residue_s_mul_sq_eq_residue_u ⟨a, b, h⟩)
+    sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
 
 /-- The explicit residue extension has degree four. -/
 theorem finrank_residueField :
     Module.finrank (ResidueField BaseRing) (ResidueField ExtensionRing) = 4 :=
-  FierceBiquadratic.finrank_residueField_ringYZ
-    ((mem_maximalIdeal t).mpr irreducible_t.not_isUnit)
-    (fun a h ↦ not_exists_sq_eq_residue_s ⟨a, h⟩)
-    (fun a b h ↦ not_exists_sq_add_residue_s_mul_sq_eq_residue_u ⟨a, b, h⟩)
+  FierceBiquadratic.finrank_residueField_ringYZ t_mem_maximalIdeal
+    sq_ne_residue_s sq_add_residue_s_mul_sq_ne_residue_u
 
 /-- The explicit degree-four residue extension is purely inseparable. -/
 instance : IsPurelyInseparable (ResidueField BaseRing) (ResidueField ExtensionRing) :=
-  FierceBiquadratic.isPurelyInseparable_residueField_ringYZ
-    ((mem_maximalIdeal t).mpr irreducible_t.not_isUnit)
+  FierceBiquadratic.isPurelyInseparable_residueField_ringYZ t_mem_maximalIdeal
 
 end TauCeti.FierceBiquadraticExample

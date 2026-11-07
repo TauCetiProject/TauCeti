@@ -37,29 +37,43 @@ open TauCeti
 
 variable {k : Type*} [Field k]
 
-/-- The first variable of `k(s)(u)` is not a square, over any coefficient field. -/
-theorem sq_ne_C_X (a : RatFunc (RatFunc k)) :
-    a ^ 2 ≠ RatFunc.C (RatFunc.X : RatFunc k) := by
+/-- The first variable of `k(s)(u)` is not an `n`th power for `1 < n`,
+over any coefficient field. -/
+theorem pow_ne_C_X {n : ℕ} (hn : 1 < n) (a : RatFunc (RatFunc k)) :
+    a ^ n ≠ RatFunc.C (RatFunc.X : RatFunc k) := by
   intro h
   obtain ⟨b, hb⟩ := IsIntegrallyClosedIn.exists_algebraMap_eq_of_isIntegral_pow
-    (R := RatFunc k) (by decide : 0 < 2) (h ▸ isIntegral_algebraMap)
-  have hC : RatFunc.C (b ^ 2) = RatFunc.C (RatFunc.X : RatFunc k) := by
+    (R := RatFunc k) (zero_lt_one.trans hn) (h ▸ isIntegral_algebraMap)
+  have hC : RatFunc.C (b ^ n) = RatFunc.C (RatFunc.X : RatFunc k) := by
     rw [← RatFunc.algebraMap_eq_C, map_pow, hb]
     exact h
-  exact ratFunc_pow_ne_X (by decide : 1 < 2) b (RatFunc.C_injective hC)
+  exact ratFunc_pow_ne_X hn b (RatFunc.C_injective hC)
 
-variable [CharP k 2]
-
-/-- In characteristic two the variable is not a sum `a² + c b²` with `c` constant. -/
-theorem sq_add_C_mul_sq_ne_X (a b : RatFunc k) (c : k) :
-    a ^ 2 + RatFunc.C c * b ^ 2 ≠ RatFunc.X := by
+/-- In characteristic `p` the variable is not a sum `a ^ p + c * b ^ p`
+with `c` constant. -/
+theorem pow_add_C_mul_pow_ne_X (p : ℕ) [CharP k p] (a b : RatFunc k) (c : k) :
+    a ^ p + RatFunc.C c * b ^ p ≠ RatFunc.X := by
   intro h
   have hd := congrArg (KaehlerDifferential.D k (RatFunc k)) h
   have hX := (kaehlerBasisRatFunc k).ne_zero ()
   simp only [kaehlerBasisRatFunc_apply] at hX
   exact hX (by
-    simpa [Derivation.leibniz_pow, ← RatFunc.algebraMap_eq_C, two_nsmul,
-      add_self_eq_zero_of_charTwo (RatFunc k)] using hd.symm)
+    simpa [Derivation.leibniz_pow, ← RatFunc.algebraMap_eq_C,
+      ← Nat.cast_smul_eq_nsmul (RatFunc k), CharP.cast_eq_zero (RatFunc k) p] using hd.symm)
+
+variable [CharP k 2]
+
+/-- The quadratic form `a² + s b²` over `k(s)(u)` in characteristic two
+vanishes only when both coefficients vanish. -/
+theorem eq_zero_of_sq_add_C_X_mul_sq_eq_zero {a b : RatFunc (RatFunc k)}
+    (h : a ^ 2 + RatFunc.C (RatFunc.X : RatFunc k) * b ^ 2 = 0) :
+    a = 0 ∧ b = 0 := by
+  have hb : b = 0 := by
+    by_contra hb
+    apply pow_ne_C_X (by decide : 1 < 2) (a / b)
+    rw [div_pow, div_eq_iff (pow_ne_zero 2 hb)]
+    exact CharTwo.add_eq_zero.mp h
+  exact ⟨by simpa [hb] using h, hb⟩
 
 end RatFunc
 
@@ -85,20 +99,10 @@ theorem isPIndependentPair_ratFunc_C_X_X :
     apply (smul_left_injective (RatFunc (RatFunc k)) hX)
     simpa [Derivation.leibniz_pow, ← RatFunc.algebraMap_eq_C, two_nsmul,
       add_self_eq_zero_of_charTwo (RatFunc (RatFunc k)), add_smul, mul_smul, mul_comm] using hd
-  have h11 : c 1 1 = 0 := by
-    by_contra h11
-    apply RatFunc.sq_ne_C_X (c 0 1 / c 1 1)
-    rw [div_pow, div_eq_iff (pow_ne_zero 2 h11)]
-    exact CharTwo.add_eq_zero.mp he
-  have h01 : c 0 1 = 0 := by simpa [h11] using he
+  obtain ⟨h01, h11⟩ := RatFunc.eq_zero_of_sq_add_C_X_mul_sq_eq_zero he
   have he' : c 0 0 ^ 2 + RatFunc.C (RatFunc.X : RatFunc k) * c 1 0 ^ 2 = 0 := by
     simpa [h11, h01, mul_comm] using hsum
-  have h10 : c 1 0 = 0 := by
-    by_contra h10
-    apply RatFunc.sq_ne_C_X (c 0 0 / c 1 0)
-    rw [div_pow, div_eq_iff (pow_ne_zero 2 h10)]
-    exact CharTwo.add_eq_zero.mp he'
-  have h00 : c 0 0 = 0 := by simpa [h10] using he'
+  obtain ⟨h00, h10⟩ := RatFunc.eq_zero_of_sq_add_C_X_mul_sq_eq_zero he'
   interval_cases i <;> interval_cases j <;> assumption
 
 end TauCeti
