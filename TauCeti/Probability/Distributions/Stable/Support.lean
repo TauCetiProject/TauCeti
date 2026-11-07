@@ -107,16 +107,10 @@ theorem stablePDFReal_pos_of_abs_lt_one (hα : α ∈ Ioc 0 2) (hβ : |β| < 1)
     rw [← Measure.support_withDensity_ofReal (μ := volume) hf hf0,
       ← funext (stablePDF_eq_ofReal α β r c),
       ← stableMeasure_eq_withDensity α β hr c, support_stableMeasure_of_abs_lt_one hα hβ hr c]
-  have hfinite : ConvolutionExists (stablePDFReal α β r c) (stablePDFReal α β r c)
-      (mul ℝ ℝ) volume :=
-    convolutionExists_of_integrable_of_ae_norm_le (mul ℝ ℝ)
-      (integrable_stablePDFReal α β r c) hf.aestronglyMeasurable
-      (.of_forall fun y ↦ by
-        rw [Real.norm_eq_abs, abs_of_nonneg (hf0 y)]
-        exact stablePDFReal_le hα hβ.le hr c y)
   rw [← congrFun hconv x]
   apply (convolution_pos_iff_mem_interior_add_tsupport hf hf hf0 hf0
-    (by rw [hsupp]; exact convex_univ) (by rw [hsupp]; exact convex_univ) (hfinite x)).2
+    (by rw [hsupp]; exact convex_univ) (by rw [hsupp]; exact convex_univ)
+    (convolutionExists_stablePDFReal hα hβ.le hr (integrable_stablePDFReal α β r c) c x)).2
   simp [hsupp]
 
 end TauCeti.Probability
