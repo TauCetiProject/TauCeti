@@ -8,6 +8,7 @@ module
 public import TauCeti.Analysis.ExteriorPower.Plucker
 import Mathlib.LinearAlgebra.Matrix.NonsingularInverse
 import Mathlib.Algebra.Order.AbsoluteValue.Int
+import TauCeti.LinearAlgebra.Matrix.Shear
 
 /-!
 # Nonarchimedean changes of coordinates for Plücker vectors
@@ -144,39 +145,6 @@ theorem exists_pivot_inv_mul_le_one [Finite ι] (v : AbsoluteValue K ℝ)
     simpa [Matrix.mul_apply, Matrix.mulVec, dotProduct, Matrix.cramer_apply] using hcr
   rw [← hid, map_mul] at hb
   exact (mul_le_mul_iff_right₀ (v.pos hP0)).mp (by simpa [mul_comm] using hb)
-
-/-- A matrix supported on the pivot rows and the non-pivot columns, with entries in the unit ball
-whenever those of a given family `B` are, and agreeing with `B` there, has square zero. -/
-private theorem exists_shear (v : AbsoluteValue K ℝ) (e : Fin p ↪ ι) (B : Matrix (Fin p) ι K)
-    (hb : ∀ a j, v (B a j) ≤ 1) :
-    ∃ N : Matrix ι ι K, N * N = 0 ∧ (∀ i j, v (N i j) ≤ 1) ∧
-      (∀ i, ∀ j ∈ range e, N i j = 0) ∧ (∀ i ∉ range e, ∀ j, N i j = 0) ∧
-      ∀ a j, j ∉ range e → N (e a) j = B a j := by
-  classical
-  let N : Matrix ι ι K := Matrix.of
-    (Function.extend e (fun a j ↦ if j ∈ range e then 0 else B a j) 0)
-  have hrow (a : Fin p) (j : ι) : N (e a) j = if j ∈ range e then 0 else B a j := by
-    simp [N, e.injective.extend_apply]
-  have hout {i : ι} (hi : i ∉ range e) (j : ι) : N i j = 0 := by
-    simp [N, Function.extend_apply' _ _ _ hi]
-  have hcol (i : ι) {j : ι} (hj : j ∈ range e) : N i j = 0 := by
-    by_cases hi : i ∈ range e
-    · obtain ⟨a, rfl⟩ := hi
-      simp [hrow, hj]
-    · exact hout hi j
-  refine ⟨N, ?_, fun i j ↦ ?_, hcol, fun i hi j ↦ hout hi j, fun a j hj ↦ by simp [hrow, hj]⟩
-  · ext i j
-    refine Finset.sum_eq_zero fun k _ ↦ ?_
-    by_cases hk : k ∈ range e
-    · simp [hcol i hk]
-    · simp [hout hk j]
-  · by_cases hi : i ∈ range e
-    · obtain ⟨a, rfl⟩ := hi
-      rw [hrow]
-      split_ifs
-      · simp
-      · exact hb a j
-    · simp [hout hi j]
 
 /-- An independent family can be supported on pivot coordinates by a change
 of coordinates integral in both directions. Its pivot determinant attains the
