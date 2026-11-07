@@ -43,12 +43,15 @@ Hamiltonian monodromy of the pendulum around the focus–focus value `(1, 0)` of
 
 ## Implementation notes
 
-The proof splits `(-1, 1)` at heights close to the poles. Near a pole `z = ∓1` at which
-`f(z) = 2 (h - z) (1 - z²)` has a simple zero, the integrand is `ψ f' j / (f √(f - j²))` with
-`ψ = 4 (h - z) / f'` continuous, and this contributes `π ψ(∓1) = π` in the limit by the
-concentration lemma `TauCeti.tendsto_integral_mul_mul_div_mul_sqrt_sub_sq`. Near the turning point
-`z = h` of the oscillations the same lemma applies with `ψ(h) = 0`, and away from the zeros of `f`
-the integrand is `O(j)` uniformly.
+The proof splits `(-1, 1)` at heights close to the zeros of `f(z) = 2 (h - z) (1 - z²)`. Near the
+south pole `z = -1`, where `f` has a simple zero with `f' > 0`, the integrand is
+`ψ f' j / (f √(f - j²))` with `ψ = 4 (h - z) / f'` continuous, and this contributes
+`π ψ(-1) = π` in the limit by the concentration lemma
+`TauCeti.tendsto_integral_mul_mul_div_mul_sqrt_sub_sq`. Near the upper zero `e` of `f`, where
+`f' < 0`, the reflection `z ↦ -z` reduces to the same lemma with `ψ = 4 (h - z) / (-f')`: at the
+north pole `e = 1`, for `h > 1`, this contributes `π ψ(1) = π`, while at the turning point `e = h`
+of the oscillations, for `-1 < h < 1`, it contributes `π ψ(h) = 0`. Away from the zeros of `f` the
+integrand is `O(j)` uniformly.
 
 ## Main declarations
 

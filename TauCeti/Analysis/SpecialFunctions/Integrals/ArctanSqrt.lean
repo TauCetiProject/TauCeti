@@ -80,15 +80,6 @@ private theorem hasDerivAt_two_mul_arctan_sqrt_sub_sq_div {j t : ℝ} (hj : 0 < 
   rw [hsq]
   ring
 
-/-- A function with positive derivative on `(a, b)` is strictly increasing on `[a, b]`. -/
-private theorem strictMonoOn_of_hasDerivAt_pos (hf : ContinuousOn f (Icc a b))
-    (hderiv : ∀ x ∈ Ioo a b, HasDerivAt f (f' x) x) (hpos : ∀ x ∈ Ioo a b, 0 < f' x) :
-    StrictMonoOn f (Icc a b) :=
-  strictMonoOn_of_deriv_pos (convex_Icc a b) hf fun x hx ↦ by
-    rw [interior_Icc] at hx
-    rw [(hderiv x hx).deriv]
-    exact hpos x hx
-
 /-- At a point where `f` is positive, `2 arctan (√(f x - j²) / j) → π` as `j → 0⁺`. -/
 private theorem tendsto_two_mul_arctan_sqrt_sub_sq_div {x : ℝ} (hx : 0 < f x) :
     Tendsto (fun j ↦ 2 * arctan (√(f x - j ^ 2) / j)) (𝓝[>] 0) (𝓝 π) := by
@@ -112,8 +103,10 @@ private theorem mul_div_mul_sqrt_sub_sq_nonneg {j t : ℝ} (hj : 0 < j) (ht : t 
     0 ≤ f' t * j / (f t * √(f t - j ^ 2)) := by
   have hft : 0 < f t := by
     rw [← hfa]
-    exact strictMonoOn_of_hasDerivAt_pos hf hderiv hpos ⟨le_rfl, (ht.1.trans ht.2).le⟩
-      (Ioo_subset_Icc_self ht) ht.1
+    exact (strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a b) hf
+        (fun x hx ↦ (hderiv x (by rwa [interior_Icc] at hx)).hasDerivWithinAt)
+        fun x hx ↦ hpos x (by rwa [interior_Icc] at hx))
+      ⟨le_rfl, (ht.1.trans ht.2).le⟩ (Ioo_subset_Icc_self ht) ht.1
   exact div_nonneg (mul_nonneg (hpos t ht).le hj.le) (mul_nonneg hft.le (Real.sqrt_nonneg _))
 
 omit hfa in
@@ -123,7 +116,9 @@ private theorem eqOn_mul_div_mul_sqrt_sub_sq_zero {j y : ℝ} (hy : y ∈ Icc a 
     EqOn (fun t ↦ f' t * j / (f t * √(f t - j ^ 2))) 0 (uIcc a y) := by
   intro t ht
   rw [uIcc_of_le hy.1] at ht
-  have hmono := (strictMonoOn_of_hasDerivAt_pos hf hderiv hpos).monotoneOn
+  have hmono := (strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a b) hf
+      (fun x hx ↦ (hderiv x (by rwa [interior_Icc] at hx)).hasDerivWithinAt)
+      fun x hx ↦ hpos x (by rwa [interior_Icc] at hx)).monotoneOn
   exact mul_div_mul_sqrt_sub_sq_eq_zero
     ((hmono ⟨ht.1, ht.2.trans hy.2⟩ hy ht.2).trans hfy)
 
@@ -149,7 +144,9 @@ private theorem intervalIntegrable_and_integral_mul_div_mul_sqrt_sub_sq {j x : �
     ⟨by rw [hfa]; positivity, hlt⟩
   have hzab : z ∈ Icc a b := ⟨hz.1.le, hz.2.le.trans hx.2⟩
   obtain ⟨hint₁, hval₁⟩ := hzero z hzab hfz.le
-  have hmono := strictMonoOn_of_hasDerivAt_pos hf hderiv hpos
+  have hmono := strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a b) hf
+      (fun x hx ↦ (hderiv x (by rwa [interior_Icc] at hx)).hasDerivWithinAt)
+      fun x hx ↦ hpos x (by rwa [interior_Icc] at hx)
   have hIoo : ∀ t ∈ Ioo z x, t ∈ Ioo a b := fun t ht ↦ ⟨hz.1.trans ht.1, ht.2.trans_le hx.2⟩
   have hcont : ContinuousOn (fun t ↦ 2 * arctan (√(f t - j ^ 2) / j)) (Icc z x) :=
     continuousOn_const.mul (continuous_arctan.comp_continuousOn
@@ -218,7 +215,9 @@ theorem tendsto_integral_mul_mul_div_mul_sqrt_sub_sq (hab : a < b) {ψ : ℝ →
       (𝓝[>] 0) (𝓝 (π * ψ a)) := by
   set k : ℝ → ℝ → ℝ := fun j x ↦ f' x * j / (f x * √(f x - j ^ 2)) with hk
   set G : ℝ → ℝ → ℝ := fun j x ↦ 2 * arctan (√(f x - j ^ 2) / j) with hG
-  have hmono := strictMonoOn_of_hasDerivAt_pos hf hderiv hpos
+  have hmono := strictMonoOn_of_hasDerivWithinAt_pos (convex_Icc a b) hf
+      (fun x hx ↦ (hderiv x (by rwa [interior_Icc] at hx)).hasDerivWithinAt)
+      fun x hx ↦ hpos x (by rwa [interior_Icc] at hx)
   have hlim : ∀ x ∈ Ioc a b, Tendsto (fun j ↦ G j x) (𝓝[>] 0) (𝓝 π) := fun x hx ↦
     tendsto_two_mul_arctan_sqrt_sub_sq_div (by
       rw [← hfa]; exact hmono ⟨le_rfl, hab.le⟩ (Ioc_subset_Icc_self hx) hx.1)
