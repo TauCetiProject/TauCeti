@@ -8,8 +8,9 @@ module
 public import TauCeti.Analysis.Convex.Perspective
 public import Mathlib.MeasureTheory.Integral.Average
 public import Mathlib.MeasureTheory.Integral.Bochner.Basic
+public import TauCeti.MeasureTheory.Integral.Average
+public import TauCeti.MeasureTheory.Integral.Bochner.Basic
 
-import Mathlib.Analysis.Convex.Continuous
 import Mathlib.Analysis.Convex.Integral
 import Mathlib.MeasureTheory.Integral.Bochner.ContinuousLinearMap
 
@@ -34,56 +35,7 @@ public section
 open MeasureTheory Set Filter
 open scoped ENNReal
 
-namespace MeasureTheory
-
-variable {α : Type*} [MeasurableSpace α] {ν : Measure α} {g : α → ℝ}
-
-/-- Integrating against the measure with density `1 / g` divides the integrand by `g`, for `g`
-almost everywhere positive with integrable reciprocal. -/
-theorem integral_withDensity_ofReal_inv (hg : ∀ᵐ x ∂ν, 0 < g x)
-    (hi : Integrable (fun x ↦ (g x)⁻¹) ν) (f : α → ℝ) :
-    ∫ x, f x ∂ν.withDensity (fun x ↦ ENNReal.ofReal (g x)⁻¹) = ∫ x, f x / g x ∂ν := by
-  rw [integral_withDensity_eq_integral_toReal_smul₀
-    hi.aestronglyMeasurable.aemeasurable.ennreal_ofReal (by simp)]
-  refine integral_congr_ae ?_
-  filter_upwards [hg] with x hx
-  simp [ENNReal.toReal_ofReal (inv_pos.mpr hx).le, div_eq_mul_inv, mul_comm]
-
-/-- A function is integrable against the measure with density `1 / g` exactly when its quotient
-by `g` is integrable, for `g` almost everywhere positive with integrable reciprocal. -/
-theorem integrable_withDensity_ofReal_inv_iff (hg : ∀ᵐ x ∂ν, 0 < g x)
-    (hi : Integrable (fun x ↦ (g x)⁻¹) ν) {f : α → ℝ} :
-    Integrable f (ν.withDensity (fun x ↦ ENNReal.ofReal (g x)⁻¹)) ↔
-      Integrable (fun x ↦ f x / g x) ν := by
-  rw [integrable_withDensity_iff_integrable_smul₀'
-    hi.aestronglyMeasurable.aemeasurable.ennreal_ofReal (by simp)]
-  refine integrable_congr ?_
-  filter_upwards [hg] with x hx
-  simp [ENNReal.toReal_ofReal (inv_pos.mpr hx).le, div_eq_mul_inv, mul_comm]
-
-end MeasureTheory
-
 namespace ConvexOn
-
-/-- **Jensen's inequality for a monotone function convex on the half-line.** Extending `Φ`
-constantly to the left gives Jensen a continuous convex function on a closed set. -/
-theorem map_average_le_of_monotoneOn_Ici {α : Type*} [MeasurableSpace α] {μ : Measure α}
-    [IsFiniteMeasure μ] [NeZero μ] {g : α → ℝ} {Φ : ℝ → ℝ}
-    (hΦ : ConvexOn ℝ (Ici 0) Φ) (hΦm : MonotoneOn Φ (Ici 0)) (hg : ∀ᵐ x ∂μ, 0 ≤ g x)
-    (hgi : Integrable g μ) (hΦi : Integrable (fun x ↦ Φ (g x)) μ) :
-    Φ (⨍ x, g x ∂μ) ≤ ⨍ x, Φ (g x) ∂μ := by
-  have himage : (fun t : ℝ ↦ max t 0) '' univ = Ici 0 :=
-    ext fun s ↦ ⟨fun ⟨_, _, h⟩ ↦ h ▸ le_max_right _ _, fun h ↦ ⟨s, trivial, max_eq_left h⟩⟩
-  have hmax : ConvexOn ℝ univ (fun t : ℝ ↦ max t 0) :=
-    (convexOn_id convex_univ).sup (convexOn_const 0 convex_univ)
-  have hΦmax := ConvexOn.comp (himage ▸ hΦ) hmax (himage ▸ hΦm)
-  have hc : ContinuousOn (fun t : ℝ ↦ Φ (max t 0)) univ := by
-    simpa [Function.comp_def] using hΦmax.continuousOn_interior
-  have hJ := hΦmax.map_average_le hc isClosed_univ (ae_of_all _ fun _ ↦ mem_univ _) hgi
-    (hΦi.congr (hg.mono fun x hx ↦ by simp [Function.comp_def, max_eq_left hx]))
-  have hr : ⨍ x, Φ (max (g x) 0) ∂μ = ⨍ x, Φ (g x) ∂μ :=
-    average_congr (hg.mono fun x hx ↦ by simp only [max_eq_left hx])
-  simpa only [Function.comp_apply, max_eq_left (average_nonneg_of_ae hg), hr] using hJ
 
 /-- A reciprocal-weighted Jensen comparison. A lower bound `P` on the measure of a level
 surface and an upper bound `M` on its reciprocal-gradient integral yield a lower bound on
@@ -108,22 +60,25 @@ theorem mul_map_div_le_integral_div {α : Type*} [MeasurableSpace α] {ν : Meas
     have hz := (integral_eq_zero_iff_of_nonneg_ae hgn hi).mp hm0.symm
     obtain ⟨x, hx, hx0⟩ := (hg.and hz).exists
     exact (inv_pos.mpr hx).ne' hx0
+  have hg0 : ∀ᵐ x ∂ν, 0 ≤ g x := hg.mono fun _ hx ↦ hx.le
+  have hiae : AEMeasurable (fun x ↦ (g x)⁻¹) ν := hi.aestronglyMeasurable.aemeasurable
   let μ := ν.withDensity (fun x ↦ ENNReal.ofReal (g x)⁻¹)
   have : IsFiniteMeasure μ := isFiniteMeasure_withDensity
     ((lintegral_ofReal_ne_top_iff_integrable hi.aestronglyMeasurable hgn).mpr hi)
   have hμm : μ.real univ = m := by
-    simpa using integral_withDensity_ofReal_inv hg hi (fun _ ↦ (1 : ℝ))
+    simpa using integral_withDensity_ofReal_inv hg0 hiae (fun _ ↦ (1 : ℝ))
   have : NeZero μ := ⟨fun h ↦ by simpa [h] using hμm.trans_ne hm.ne'⟩
   have hweight : (fun x ↦ g x / g x) =ᵐ[ν] fun _ ↦ (1 : ℝ) := by
     filter_upwards [hg] with x hx using div_self hx.ne'
-  have hμg : Integrable g μ := (integrable_withDensity_ofReal_inv_iff hg hi).mpr
+  have hμg : Integrable g μ := (integrable_withDensity_ofReal_inv_iff hg0 hiae).mpr
     ((integrable_const (1 : ℝ)).congr hweight.symm)
   have hμΦ : Integrable (fun x ↦ Φ (g x)) μ :=
-    (integrable_withDensity_ofReal_inv_iff hg hi).mpr hΦi
+    (integrable_withDensity_ofReal_inv_iff hg0 hiae).mpr hΦi
   have hμint : ∫ x, g x ∂μ = ν.real univ := by
-    rw [integral_withDensity_ofReal_inv hg hi]
+    rw [integral_withDensity_ofReal_inv hg0 hiae]
     simpa only [integral_const, smul_eq_mul, mul_one] using integral_congr_ae hweight
-  have hμΦint : ∫ x, Φ (g x) ∂μ = ∫ x, Φ (g x) / g x ∂ν := integral_withDensity_ofReal_inv hg hi _
+  have hμΦint : ∫ x, Φ (g x) ∂μ = ∫ x, Φ (g x) / g x ∂ν :=
+    integral_withDensity_ofReal_inv hg0 hiae _
   have hgμ : ∀ᵐ x ∂μ, 0 ≤ g x :=
     (withDensity_absolutelyContinuous ν _).ae_le (hg.mono fun _ hx ↦ hx.le)
   have hJ := hΦ.map_average_le_of_monotoneOn_Ici hΦm hgμ hμg hμΦ
