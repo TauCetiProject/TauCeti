@@ -24,6 +24,8 @@ Chevalley–Demazure carrier is asserted here.
 
 ## Main results
 
+* `TauCeti.TypeCLieIndex.isCharacterMap_frobenius`: the represented Frobenius has the
+  uniform native datum Frobenius map as character map.
 * `TauCeti.TypeCLieIndex.isCharacterMap_steinberg`: the represented Steinberg map has the
   uniform native datum Steinberg map as character map.
 
@@ -42,6 +44,15 @@ public section
 namespace TauCeti.TypeCLieIndex
 
 variable (d : TypeCLieIndex)
+
+/-- The native root-datum Frobenius is the character pullback of the represented symplectic
+Frobenius, on the full-weight torus in the index's fundamental-weight coordinates. -/
+theorem isCharacterMap_frobenius :
+    IsCharacterMap d.weightTorus d.frobenius d.1.datumFrobenius.weightMap := by
+  rw [ValidLieTypeIndex.datumFrobenius_weightMap, isCharacterMap_iff]
+  intro s
+  simpa only [torusPointMap_nsmul, torusPointMap_id, MonoidHom.pow_apply,
+    MonoidHom.id_apply] using d.frobenius_weightTorus s
 
 /-- The uniform native datum Steinberg map is the character pullback of the represented
 Steinberg map on the type-C fundamental-weight torus. The diagram factor is trivial on this
