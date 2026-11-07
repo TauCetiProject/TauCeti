@@ -176,7 +176,7 @@ example : quantumBinomial Complex.I 3 2 = -1 := by
 example : quantumBinomial (-1 : ℚ) 2 1 = -2 := by
   have hq : IsPrimitiveRoot ((-1 : ℚ) ^ 2) 1 := by simp
   have := quantumBinomial_mul_add_mul_add hq 2 1 (n₀ := 0) (k₀ := 0) (by norm_num) (by norm_num)
-  norm_num at this
+  norm_num [-quantumBinomial_neg_left] at this
   exact this
 
 end TauCeti
