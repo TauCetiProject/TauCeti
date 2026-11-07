@@ -541,8 +541,10 @@ variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 
 /-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
 `D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
-derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. -/
-private theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
+derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. The constant sums
+`C s₁ t₁ * D s₂ t₂` over all splittings of `α` into `s₁, s₂` and of `β` into `t₁, t₂`, as in the
+Leibniz rule. -/
+theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
     {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
     (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
     (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
