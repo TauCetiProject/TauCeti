@@ -81,7 +81,7 @@ private lemma mpullback_areaForm_coeff {E : Type*} [NormedAddCommGroup E] [Norme
 a continuous linear equivalence `e`, where `E` carries the Haar measure of the basis transported
 from `1, i`. -/
 private lemma integral_range_transport {E M : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E] [TopologicalSpace M]
+    [MeasurableSpace E] [BorelSpace E] [TopologicalSpace M]
     [CompactSpace M] (e : E ≃L[ℝ] ℂ) {f : M → ℂ} (hf : Continuous f) (g : ℂ → ℝ)
     (hgi : IntegrableOn (fun y ↦ g (e y)) (range (e.symm ∘ f))
       (Complex.basisOneI.map e.symm.toLinearEquiv).addHaar) :
