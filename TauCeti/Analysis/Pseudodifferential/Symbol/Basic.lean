@@ -110,6 +110,19 @@ theorem coefficient_injective :
     Function.Injective (coefficient : Symbol n V W m → CoordinateSpace n × CoordinateSpace n → _) :=
   fun _ _ h => Symbol.ext h
 
+/-- A symbol of order `m` has the growth bound `‖a(x, ξ)‖ ≤ C ⟨ξ⟩ ^ m` uniformly for `x` in each
+compact set. -/
+theorem exists_norm_coefficient_le (a : Symbol n V W m) (K : Set (CoordinateSpace n))
+    (hK : IsCompact K) :
+    ∃ C, ∀ x ∈ K, ∀ ξ, ‖a.coefficient (x, ξ)‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ (m / 2) := by
+  obtain ⟨C, -, hC⟩ := a.exists_bound K hK [] []
+  exact ⟨C, fun x hx ξ ↦ by simpa using hC x hx ξ⟩
+
+/-- Each frequency slice `ξ ↦ a(x, ξ)` of a symbol is continuous. -/
+theorem continuous_coefficient_slice (a : Symbol n V W m) (x : CoordinateSpace n) :
+    Continuous fun ξ ↦ a.coefficient (x, ξ) :=
+  a.contDiff_coefficient.continuous.comp (continuous_const.prodMk continuous_id)
+
 /-- A symbol satisfies its estimates with constants uniform in the position. -/
 def IsUniform (a : Symbol n V W m) : Prop :=
   ∀ α β : List (Fin n), ∃ C : ℝ, 0 ≤ C ∧ ∀ x ξ,
@@ -186,7 +199,7 @@ instance : Neg (Symbol n V W m) where
       exists_bound := fun K hK α β => by
         obtain ⟨C, hC, ha⟩ := a.exists_bound K hK α β
         exact ⟨C, hC, fun x hx ξ => by
-          rw [mixedDeriv_neg a.contDiff_coefficient, norm_neg]
+          rw [mixedDeriv_neg, norm_neg]
           exact ha x hx ξ⟩ }
 
 instance : Sub (Symbol n V W m) where
@@ -529,7 +542,7 @@ variable {U : Type*} [NormedAddCommGroup U] [NormedSpace ℂ U] {m'' : ℝ}
 /-- The product estimate behind `TauCeti.Symbol.comp`: bounds `C s t ⟨ξ⟩^(m' - |t|)` and
 `D s t ⟨ξ⟩^(m - |t|)` on all mixed derivatives of `b` and `a` at `(x, ξ)` bound the mixed
 derivative `∂_x^α ∂_ξ^β` of `b ∘ a` by a constant times `⟨ξ⟩^(m' + m - |β|)`. -/
-private theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
+theorem norm_mixedDeriv_comp_le {b : CoordinateSpace n × CoordinateSpace n → W →L[ℂ] U}
     {a : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W} (hb : ContDiff ℝ ∞ b)
     (ha : ContDiff ℝ ∞ a) {x ξ : CoordinateSpace n} {C D : List (Fin n) → List (Fin n) → ℝ}
     (hC : ∀ s t, ‖mixedDeriv s t b x ξ‖ ≤ C s t * (1 + ‖ξ‖ ^ 2) ^ ((m' - t.length) / 2))
