@@ -29,6 +29,7 @@ Baker--Campbell--Hausdorff expansion.
 ## Main results
 
 * `NormedSpace.contDiff_exp`: the exponential is smooth of every order, including analytic.
+* `NormedSpace.tendsto_exp_nhds_zero_nhds_one`: the exponential tends to `1` at the origin.
 * `NormedSpace.expSeries_partialSum_three`: the third partial sum of the exponential series is
   `1 + x + 2⁻¹ • x ^ 2`.
 * `NormedSpace.isBigO_exp_sub_quadratic`: `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` at the
@@ -72,6 +73,11 @@ variable (𝕂 : Type*) {A : Type*} [NontriviallyNormedField 𝕂] [NormedRing A
 /-- The exponential on a complete normed algebra is smooth of every order, including analytic. -/
 theorem contDiff_exp {k : ℕ∞ω} : ContDiff 𝕂 k (exp : A → A) :=
   contDiff_iff_contDiffAt.mpr fun x ↦ (exp_analytic (𝕂 := 𝕂) x).contDiffAt.of_le le_top
+
+include 𝕂 in
+/-- The exponential on a complete normed algebra is continuous at `0`, with value `1`. -/
+theorem tendsto_exp_nhds_zero_nhds_one : Tendsto (exp : A → A) (𝓝 (0 : A)) (𝓝 (1 : A)) := by
+  simpa only [exp_zero] using (exp_analytic (𝕂 := 𝕂) (0 : A)).continuousAt.tendsto
 
 /-- **The quadratic Taylor estimate for the exponential.**  In a complete normed algebra,
 `exp x - (1 + x + 2⁻¹ • x ^ 2)` is `O(‖x‖ ^ 3)` as `x → 0`. -/
