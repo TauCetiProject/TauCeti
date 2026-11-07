@@ -29,7 +29,7 @@ The unit-homomorphism face of `χ_L` needed by spaces of modular forms with char
 * `ZLattice.IsEven.discChar_intCast`: `χ_L a = (D_L / a)` for `a` coprime to the level.
 * `ZLattice.discChar_isQuadratic`: `χ_L` is quadratic.
 * `ZLattice.IsEven.discChar_neg_one`: `χ_L (-1) = (-1)^k` in rank `2k`.
-* `ZLattice.IsEven.discChar_eq_one_of_isSquare` and
+* `ZLattice.discChar_eq_one_of_isSquare` and
   `ZLattice.IsEven.discChar_eq_one_of_isUnimodular`: `χ_L` is trivial when `D_L` is a square, in
   particular when `L` is unimodular.
 
@@ -78,6 +78,7 @@ theorem discChar_eq_changeLevel :
 
 /-- **The defining evaluation**: away from the level, `χ_L` is the Kronecker symbol of the signed
 discriminant. -/
+@[simp]
 theorem discChar_intCast {a : ℤ} (ha : IsCoprime a (level L)) :
     discChar L a = (TauCeti.kroneckerSym (signedDiscr L) a : ℂ) := by
   have hD : IsCoprime a ((signedDiscr L).natAbs : ℤ) := by
@@ -102,17 +103,21 @@ theorem discChar_neg_one {k : ℕ} (hk : finrank ℝ E = 2 * k) :
   rw [← Int.cast_one, ← Int.cast_neg, TauCeti.kroneckerChar_intCast] at h
   rw [← Int.cast_one, ← Int.cast_neg, hL.discChar_intCast hE h₁, h]
 
-/-- `χ_L` is trivial when the signed discriminant is a square. -/
-theorem discChar_eq_one_of_isSquare (hsq : IsSquare (signedDiscr L)) : discChar L = 1 := by
-  rw [hL.discChar_eq_changeLevel hE, TauCeti.primitiveCharacter_kroneckerChar_of_isSquare _ _ hsq,
-    DirichletCharacter.changeLevel_one]
-
-/-- `χ_L` is trivial for an even unimodular lattice of even rank. -/
-theorem discChar_eq_one_of_isUnimodular (hU : IsUnimodular L) : discChar L = 1 :=
-  hL.discChar_eq_one_of_isSquare hE
-    (by rw [hL.signedDiscr_eq_one_of_isUnimodular hU]; exact ⟨1, rfl⟩)
-
 end IsEven
+
+/-- `χ_L` is trivial when the signed discriminant is a square. This holds with no further
+hypothesis, since the junk value is the trivial character. -/
+theorem discChar_eq_one_of_isSquare (hsq : IsSquare (signedDiscr L)) : discChar L = 1 := by
+  by_cases h : IsEven L ∧ Even (finrank ℝ E)
+  · rw [h.1.discChar_eq_changeLevel h.2,
+      TauCeti.primitiveCharacter_kroneckerChar_of_isSquare _ _ hsq,
+      DirichletCharacter.changeLevel_one]
+  · simp only [discChar, h, dite_false]
+
+/-- `χ_L` is trivial for an even unimodular lattice. -/
+theorem IsEven.discChar_eq_one_of_isUnimodular (hL : IsEven L) (hU : IsUnimodular L) :
+    discChar L = 1 :=
+  discChar_eq_one_of_isSquare (by rw [hL.signedDiscr_eq_one_of_isUnimodular hU]; exact ⟨1, rfl⟩)
 
 /-- `χ_L` is a quadratic character. This holds with no hypothesis, since the junk value is the
 trivial character. -/
