@@ -66,6 +66,15 @@ theorem relDensityOn_def (H : Colored3Graph κ V) (c : κ)
       #{x ∈ supp | H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) = c} / #supp :=
   (rfl)
 
+/-- Relative densities agree when the colorings agree on the underlying unordered triples
+of the support. -/
+theorem relDensityOn_congr {H H' : Colored3Graph κ V}
+    {supp : Finset {x : Fin 3 → V // Function.Injective x}}
+    (h : ∀ x ∈ supp, H.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩) =
+      H'.color (Set.powersetCard.ofFinEmb 3 V ⟨x.1, x.2⟩)) (c : κ) :
+    H.relDensityOn c supp = H'.relDensityOn c supp := by
+  rw [relDensityOn_def, relDensityOn_def, filter_congr fun x hx ↦ by rw [h x hx]]
+
 /-- Multiplying a relative density by the support size recovers the color count, including
 when the support is empty. -/
 theorem relDensityOn_mul_card (H : Colored3Graph κ V) (c : κ)
