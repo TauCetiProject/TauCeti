@@ -473,6 +473,8 @@ private def pointSequence (i : ℕ) : Fin 275 := Fin.ofNat 275 i
 
 @[simp] private theorem pointSequence_two : pointSequence 2 = 2 := rfl
 
+@[simp] private theorem pointSequence_three : pointSequence 3 = 3 := rfl
+
 private theorem stabilizerChain_insert (n : ℕ) {S : Set (Fin 275)}
     (h : McL.stabilizerChain pointSequence n =
       McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) S) :
@@ -668,7 +670,7 @@ private theorem mem_orbit_fixing_zero_one_two_iff (x : Fin 275) :
     rw [hg0, h03] at h0
     rw [hg1, h13] at h1
     rw [hg2, h23] at h2
-    exact ⟨h0, h1, h2⟩
+    simpa only [subgroup_smul_def, Equiv.Perm.smul_def] using And.intro h0 (And.intro h1 h2)
   · rintro ⟨h0, h1, h2⟩
     obtain ⟨hg0, hg1, hg2, hg3⟩ := threePointWords_apply x h0 h1 h2
     have hfix : wordValue (threePointWords x) ∈
@@ -676,7 +678,8 @@ private theorem mem_orbit_fixing_zero_one_two_iff (x : Fin 275) :
       simp only [mem_fixingSubgroup_iff, Set.mem_insert_iff, Set.mem_singleton_iff,
         forall_eq_or_imp, forall_eq, Equiv.Perm.smul_def]
       exact ⟨hg0, hg1, hg2⟩
-    exact ⟨⟨wordValue (threePointWords x), wordValue_mem _, hfix⟩, hg3⟩
+    refine ⟨⟨wordValue (threePointWords x), wordValue_mem _, hfix⟩, ?_⟩
+    simpa only [subgroup_smul_def, Equiv.Perm.smul_def] using hg3
 
 /-- The exact orbit of `3` under the pointwise stabilizer of `{0, 1, 2}` in the ATLAS model. -/
 theorem orbit_fixing_zero_one_two_three :
@@ -701,8 +704,7 @@ private theorem stabilizerChain_four :
     McL.stabilizerChain pointSequence 4 =
       McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3} : Set (Fin 275)) := by
   have h := stabilizerChain_insert 3 stabilizerChain_three
-  have hpoint : pointSequence 3 = 3 := rfl
-  rw [hpoint, Set.insert_comm (3 : Fin 275) 0,
+  rw [pointSequence_three, Set.insert_comm (3 : Fin 275) 0,
     Set.insert_comm (3 : Fin 275) 1, Set.pair_comm (3 : Fin 275) 2] at h
   exact h
 
@@ -711,8 +713,7 @@ theorem card_eq_89812800_mul_card_fixingSubgroup :
     Nat.card McL = 89812800 * Nat.card
       ↥(McL ⊓ fixingSubgroup (Equiv.Perm (Fin 275)) ({0, 1, 2, 3} : Set (Fin 275))) := by
   have h3 := McL.ncard_orbit_mul_card_stabilizerChain_succ pointSequence 3
-  have hpoint : pointSequence 3 = 3 := rfl
-  rw [stabilizerChain_three, stabilizerChain_four, hpoint,
+  rw [stabilizerChain_three, stabilizerChain_four, pointSequence_three,
     ncard_orbit_fixing_zero_one_two_three] at h3
   rw [card_eq_2494800_mul_card_fixingSubgroup, ← h3, ← mul_assoc]
   norm_num
