@@ -53,8 +53,6 @@ vectors, this is exactly the invariance needed to make `L` a module over the Kos
 
 ## Main results
 
-* `TauCeti.coe_add_natCast_smul_ne_zero`: an ascending root string through a root other than `-α`
-  never meets the zero weight.
 * `TauCeti.IsChevalleySystem.ad_pow_rootVector_eq_zero_or_exists`: the root-string form of the
   iterated adjoint action, with its rising-factorial coefficient.
 * `TauCeti.IsChevalleySystem.inv_factorial_smul_ad_pow_mem_chevalleyLieLattice`: the Chevalley
@@ -77,52 +75,6 @@ universe u v
 variable {K : Type u} {L : Type v} [Field K] [CharZero K] [LieRing L] [LieAlgebra K L]
   [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
   {H : LieSubalgebra K L} [H.IsCartanSubalgebra] [LieModule.IsTriangularizable K H L]
-
-/-- **Root strings avoid the zero weight.** If `α` and `β` are roots with `β ≠ -α`, then no
-weight `β + n α` of the ascending `α`-string through `β` is zero.
-
-Only `± α` are multiples of a root `α`, so a vanishing member of the string would force `β = α`
-and then `(n + 1) α = 0`. -/
-theorem coe_add_natCast_smul_ne_zero {α β : Weight K H L} (hα : α.IsNonZero) (hβ : β.IsNonZero)
-    (hαβ : (α : H → K) + β ≠ 0) (n : ℕ) : (β : H → K) + (n : K) • (α : H → K) ≠ 0 := by
-  intro h
-  have hsmul : (β : H → K) = (-(n : K)) • (α : H → K) := by
-    rw [neg_smul, eq_neg_iff_add_eq_zero]
-    exact h
-  rcases eq_neg_or_eq_of_eq_smul α β hβ _ hsmul with hb | hb
-  · refine hαβ ?_
-    rw [hb, Weight.coe_neg]
-    abel
-  · refine hα ?_
-    rw [hb] at h
-    have hzero : ((n : K) + 1) • (α : H → K) = 0 := by
-      rw [add_smul, one_smul, add_comm]
-      exact h
-    have hn1 : ((n : K) + 1) ≠ 0 := by
-      have : ((n + 1 : ℕ) : K) ≠ 0 := Nat.cast_ne_zero.2 (Nat.succ_ne_zero n)
-      push_cast at this
-      exact this
-    exact (smul_eq_zero.mp hzero).resolve_left hn1
-
-/-- A weight on a nonopposite ascending root string is nonzero. -/
-theorem _root_.LieModule.Weight.isNonZero_of_coe_eq_add_natCast_smul
-    (γ : Weight K H L) {α β : Weight K H L} (hα : α.IsNonZero) (hβ : β.IsNonZero)
-    (hab : (α : H → K) + β ≠ 0) {n : ℕ}
-    (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K)) : γ.IsNonZero := by
-  rw [Weight.IsNonZero, Weight.IsZero, hγ]
-  exact coe_add_natCast_smul_ne_zero hα hβ hab n
-
-omit [CharZero K] [LieAlgebra.IsKilling K L] [FiniteDimensional K L]
-    [LieModule.IsTriangularizable K H L] in
-/-- Consecutive weights on an ascending string differ by its step root. -/
-theorem _root_.LieModule.Weight.coe_eq_add_of_coe_eq_add_natCast_smul_succ
-    (δ : Weight K H L) {α β γ : Weight K H L} {n : ℕ}
-    (hγ : (γ : H → K) = (β : H → K) + (n : K) • (α : H → K))
-    (hδ : (δ : H → K) = (β : H → K) + ((n + 1 : ℕ) : K) • (α : H → K)) :
-    (δ : H → K) = (α : H → K) + γ := by
-  rw [hδ, hγ]
-  push_cast
-  module
 
 namespace IsChevalleySystem
 
