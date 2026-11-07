@@ -9,22 +9,21 @@ public import TauCeti.Analysis.Distribution.Flat.Basic
 public import Mathlib.Analysis.Normed.Module.Completion
 
 /-!
-# The real normal flat completion
+# Completion of real normal currents in flat norm
 
-Normal currents on an open subset of a real normed space carry the real normal flat norm.
-`TauCeti.NormalCurrent` bundles the existing continuous-linear test-form functional with its
-normality proof and equips it with this norm, rather than the topology inherited from the dual.
-Its native uniform completion is `TauCeti.FlatChain`. Evaluation on a fixed smooth test
-form extends continuously to this completion, as does the boundary, which is a contraction.
-The resulting evaluation is a continuous-linear test-form functional and agrees with the
-original current on normal currents. No injectivity of this comparison is asserted here.
+`TauCeti.FlatNormedCurrent Ω k` is the space of real normal currents, with norm given by
+`ContinuousLinearMap.normalFlatMass`. Its wrapper keeps this norm topology distinct from the
+compact-convergence topology on distributions. Neither compact support nor integrality is imposed.
 
-No support condition or integral multiplicity is imposed. In particular this completion is not
-an integral flat-chain completion, and its elements are not asserted to be normal currents.
+The native completion carries a contractive boundary and continuous evaluation at each smooth
+test form. Each completed chain still defines a continuous functional on the original LF test
+space. Boundary commutes with this comparison and squares to zero. We do not assert injectivity
+of the comparison, or identify finite-mass elements of the completion with integral currents.
 
 ## References
 
 * H. Federer, *Geometric Measure Theory*, §4.1.12 (real flat chains).
+* L. Simon, *Introduction to Geometric Measure Theory*, Chapter 6, §2.
 -/
 
 public section
@@ -32,195 +31,212 @@ public section
 noncomputable section
 
 open Distribution TestFunction TopologicalSpace UniformSpace
-open scoped Distributions ENNReal BoundedContinuousFunction
+open scoped Distributions ENNReal NNReal BoundedContinuousFunction Topology
 
 namespace TauCeti
 
-variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+variable {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] {Ω : Opens E} {k : ℕ}
 
-/-- Normal real currents with the real normal flat norm. There is no compact-support condition.
-This is a normed version of the existing test-form dual, not a new model of currents. -/
-def NormalCurrent (Ω : Opens E) (k : ℕ) : Type _ := ↥(normalCurrentSubmodule Ω k)
+/-- A real normal current equipped below with flat norm, not the distribution topology.
+There is no compact-support condition. -/
+def FlatNormedCurrent (Ω : Opens E) (k : ℕ) : Type _ := ↥(normalCurrentSubmodule Ω k)
 
-namespace NormalCurrent
+namespace FlatNormedCurrent
 
-variable {Ω : Opens E} {k : ℕ}
-
-instance : AddCommGroup (NormalCurrent Ω k) :=
+instance : AddCommGroup (FlatNormedCurrent Ω k) :=
   inferInstanceAs (AddCommGroup (normalCurrentSubmodule Ω k))
 
-instance : Module ℝ (NormalCurrent Ω k) :=
+instance : Module ℝ (FlatNormedCurrent Ω k) :=
   inferInstanceAs (Module ℝ (normalCurrentSubmodule Ω k))
 
 /-- The underlying current, forgetting only its normality proof. -/
-def toCurrent : NormalCurrent Ω k →ₗ[ℝ] (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) :=
+def toCurrent : FlatNormedCurrent Ω k →ₗ[ℝ] (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) :=
   (normalCurrentSubmodule Ω k).subtype
 
 /-- Bundle a normal current for the flat norm. -/
 def ofCurrent (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) (hT : IsNormal T) :
-    NormalCurrent Ω k := ⟨T, mem_normalCurrentSubmodule.2 hT⟩
+    FlatNormedCurrent Ω k := ⟨T, mem_normalCurrentSubmodule.2 hT⟩
 
 @[simp] theorem toCurrent_ofCurrent (T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ)
     (hT : IsNormal T) : (ofCurrent T hT).toCurrent = T := (rfl)
 
-/-- The underlying current is normal. -/
-theorem isNormal (T : NormalCurrent Ω k) : IsNormal T.toCurrent :=
+/-- Both the underlying current and its boundary have finite mass. -/
+theorem isNormal (T : FlatNormedCurrent Ω k) : IsNormal T.toCurrent :=
   mem_normalCurrentSubmodule.1 T.property
 
-@[ext] theorem ext {T S : NormalCurrent Ω k} (h : T.toCurrent = S.toCurrent) : T = S :=
+@[ext]
+theorem ext {T S : FlatNormedCurrent Ω k} (h : T.toCurrent = S.toCurrent) : T = S :=
   Subtype.ext h
 
-@[simp] theorem ofCurrent_toCurrent (T : NormalCurrent Ω k) :
+@[simp] theorem ofCurrent_toCurrent (T : FlatNormedCurrent Ω k) :
     ofCurrent T.toCurrent T.isNormal = T := (rfl)
 
-instance : Norm (NormalCurrent Ω k) := ⟨fun T => T.toCurrent.normalFlatMass.toReal⟩
+instance : Norm (FlatNormedCurrent Ω k) := ⟨fun T => T.toCurrent.normalFlatMass.toReal⟩
 
-/-- The norm is the finite real value of the normal flat mass. -/
-theorem norm_eq (T : NormalCurrent Ω k) : ‖T‖ = T.toCurrent.normalFlatMass.toReal := (rfl)
+/-- The flat norm is the real value of the finite extended normal flat mass. -/
+theorem norm_def (T : FlatNormedCurrent Ω k) :
+    ‖T‖ = T.toCurrent.normalFlatMass.toReal := (rfl)
 
-/-- The flat mass is finite on the normal-current space. -/
-theorem normalFlatMass_ne_top (T : NormalCurrent Ω k) : T.toCurrent.normalFlatMass ≠ ⊤ :=
-  T.toCurrent.normalFlatMass_ne_top_iff.2 T.isNormal
+/-- The extended flat mass of a normal current is finite. -/
+theorem normalFlatMass_ne_top (T : FlatNormedCurrent Ω k) :
+    T.toCurrent.normalFlatMass ≠ ⊤ :=
+  T.toCurrent.normalFlatMass_ne_top_iff.mpr T.isNormal
 
-private theorem normCore : NormedSpace.Core ℝ (NormalCurrent Ω k) where
-  norm_nonneg _ := ENNReal.toReal_nonneg
-  norm_smul a T := by
-    simp [norm_eq, ← ofReal_norm]
-  norm_triangle T S := by
-    exact (ENNReal.toReal_mono (ENNReal.add_ne_top.2
-      ⟨T.normalFlatMass_ne_top, S.normalFlatMass_ne_top⟩)
-      (T.toCurrent.normalFlatMass_add_le S.toCurrent)).trans_eq
-        (ENNReal.toReal_add T.normalFlatMass_ne_top S.normalFlatMass_ne_top)
-  norm_eq_zero_iff T := by
-    rw [norm_eq, ENNReal.toReal_eq_zero_iff, or_iff_left T.normalFlatMass_ne_top,
-      ContinuousLinearMap.normalFlatMass_eq_zero_iff]
-    exact ⟨fun h => ext (by simpa using h), fun h => by simp [h]⟩
+private theorem norm_smul_eq (a : ℝ) (T : FlatNormedCurrent Ω k) :
+    ‖a • T‖ = ‖a‖ * ‖T‖ := by
+  simp [norm_def, ENNReal.toReal_mul]
 
-/-- The metric on normal currents is induced by the real normal flat norm. -/
-instance : NormedAddCommGroup (NormalCurrent Ω k) :=
-  NormedAddCommGroup.ofCore (𝕜 := ℝ) (by exact normCore (Ω := Ω) (k := k))
+/-- The normal flat mass is a genuine norm on real normal currents. -/
+instance : NormedAddCommGroup (FlatNormedCurrent Ω k) :=
+  let core : NormedSpace.Core ℝ (FlatNormedCurrent Ω k) := {
+    norm_nonneg _ := ENNReal.toReal_nonneg
+    norm_smul a T := by exact norm_smul_eq a T
+    norm_triangle T S := by
+      have h := ENNReal.toReal_mono (ENNReal.add_ne_top.mpr
+        ⟨T.normalFlatMass_ne_top, S.normalFlatMass_ne_top⟩)
+        (T.toCurrent.normalFlatMass_add_le S.toCurrent)
+      simpa [norm_def,
+        ENNReal.toReal_add T.normalFlatMass_ne_top S.normalFlatMass_ne_top] using h
+    norm_eq_zero_iff T := by
+      rw [norm_def, ENNReal.toReal_eq_zero_iff]
+      simp only [T.normalFlatMass_ne_top, or_false, ContinuousLinearMap.normalFlatMass_eq_zero_iff]
+      exact ⟨fun h => ext h, fun h => h ▸ toCurrent.map_zero⟩ }
+  NormedAddCommGroup.ofCore core
 
-instance : NormedSpace ℝ (NormalCurrent Ω k) :=
-  NormedSpace.ofCore (by exact normCore (Ω := Ω) (k := k))
+instance : NormedSpace ℝ (FlatNormedCurrent Ω k) where
+  norm_smul_le a T := by exact (norm_smul_eq a T).le
 
 /-- Recovering the extended flat mass from the norm does not lose information. -/
-@[simp] theorem enorm_eq (T : NormalCurrent Ω k) : ‖T‖ₑ = T.toCurrent.normalFlatMass := by
-  rw [← _root_.ofReal_norm, norm_eq, ENNReal.ofReal_toReal T.normalFlatMass_ne_top]
+@[simp] theorem enorm_eq (T : FlatNormedCurrent Ω k) : ‖T‖ₑ = T.toCurrent.normalFlatMass := by
+  rw [← _root_.ofReal_norm, norm_def, ENNReal.ofReal_toReal T.normalFlatMass_ne_top]
 
-/-- Evaluation is bounded by the flat norm times the larger of the sup norms of `ω` and `dω`. -/
-theorem norm_apply_le (T : NormalCurrent Ω k) (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
+/-- Flat norm bounds evaluation using the maximum of the sup norms of a test and its derivative. -/
+theorem norm_apply_le (T : FlatNormedCurrent Ω k)
+    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
     ‖T.toCurrent ω‖ ≤ ‖T‖ * max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] ℝ)‖
       ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] ℝ)‖ := by
-  apply (ENNReal.ofReal_le_ofReal_iff (by positivity)).1
-  rw [ENNReal.ofReal_mul (norm_nonneg T), _root_.ofReal_norm T, enorm_eq]
-  simpa only [ENNReal.ofReal_max, _root_.ofReal_norm] using
-    T.toCurrent.enorm_apply_le_normalFlatMass_mul ω
+  have h := ENNReal.toReal_mono
+    (ENNReal.mul_ne_top T.normalFlatMass_ne_top (by finiteness))
+    (T.toCurrent.enorm_apply_le_normalFlatMass_mul ω)
+  simpa [norm_def, ENNReal.toReal_mul, ENNReal.toReal_max] using h
 
-/-- Evaluation on a fixed smooth test form is continuous in the flat norm. -/
-def evalCLM (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) : NormalCurrent Ω k →L[ℝ] ℝ :=
-  LinearMap.mkContinuous
-    { toFun := fun T => T.toCurrent ω
-      map_add' := by intros; simp
-      map_smul' := by intros; simp }
-    (max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] ℝ)‖
-      ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] ℝ)‖)
-    (fun T => by simpa [mul_comm] using T.norm_apply_le ω)
+/-- Evaluation at a fixed test form is continuous in flat norm. -/
+def evalCLM (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) : FlatNormedCurrent Ω k →L[ℝ] ℝ :=
+  ({ toFun := fun T => T.toCurrent ω, map_add' := by simp, map_smul' := by simp } :
+    FlatNormedCurrent Ω k →ₗ[ℝ] ℝ).mkContinuous
+      (max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] ℝ)‖
+        ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] ℝ)‖)
+      (fun T => by simpa [mul_comm] using T.norm_apply_le ω)
 
-@[simp] theorem evalCLM_apply (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : NormalCurrent Ω k) :
+@[simp]
+theorem evalCLM_apply (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : FlatNormedCurrent Ω k) :
     evalCLM ω T = T.toCurrent ω := (rfl)
 
-/-- Boundary on normal currents, a contraction for the flat norm. Defined only from positive
-degrees `k + 1`; degree-zero currents get no boundary, since there are no negative-degree
-currents. -/
-def boundary : NormalCurrent Ω (k + 1) →L[ℝ] NormalCurrent Ω k :=
-  LinearMap.mkContinuous
-    { toFun := fun T => ofCurrent (T.toCurrent ∘L extDerivCLM) T.isNormal.comp_extDerivCLM
-      map_add' := fun T S => ext (by simp [ContinuousLinearMap.add_comp])
-      map_smul' := fun a T => ext (by simp [ContinuousLinearMap.smul_comp]) }
-    1 (fun T => by
-      simpa [norm_eq] using ENNReal.toReal_mono T.normalFlatMass_ne_top
-        T.toCurrent.normalFlatMass_comp_extDerivCLM_le)
+/-- Boundary is a contraction in flat norm. Defined only from positive degrees `k + 1`;
+degree-zero currents get no boundary map, since there are no negative-degree currents. -/
+def boundaryCLM : FlatNormedCurrent Ω (k + 1) →L[ℝ] FlatNormedCurrent Ω k :=
+  ({ toFun := fun T => ofCurrent (T.toCurrent ∘L extDerivCLM) T.isNormal.comp_extDerivCLM
+     map_add' := fun _ _ => ext (by simp [ContinuousLinearMap.add_comp])
+     map_smul' := fun _ _ => ext (by simp [ContinuousLinearMap.smul_comp]) } :
+    FlatNormedCurrent Ω (k + 1) →ₗ[ℝ] FlatNormedCurrent Ω k).mkContinuous 1 (fun T => by
+      simpa [norm_def] using ENNReal.toReal_mono T.normalFlatMass_ne_top
+        (T.toCurrent.normalFlatMass_comp_extDerivCLM_le))
 
-@[simp] theorem toCurrent_boundary (T : NormalCurrent Ω (k + 1)) :
-    (boundary T).toCurrent = T.toCurrent ∘L extDerivCLM := (rfl)
+@[simp]
+theorem toCurrent_boundaryCLM (T : FlatNormedCurrent Ω (k + 1)) :
+    (boundaryCLM T).toCurrent = T.toCurrent ∘L extDerivCLM := (rfl)
 
-/-- Boundary does not increase the normal flat norm. -/
-theorem norm_boundary_le (T : NormalCurrent Ω (k + 1)) : ‖boundary T‖ ≤ ‖T‖ := by
-  have h : ‖(boundary : NormalCurrent Ω (k + 1) →L[ℝ] NormalCurrent Ω k)‖ ≤ 1 :=
+/-- Taking boundary does not increase the flat norm. -/
+theorem norm_boundaryCLM_le (T : FlatNormedCurrent Ω (k + 1)) : ‖boundaryCLM T‖ ≤ ‖T‖ := by
+  have h : ‖(boundaryCLM : FlatNormedCurrent Ω (k + 1) →L[ℝ] FlatNormedCurrent Ω k)‖ ≤ 1 :=
     LinearMap.mkContinuous_norm_le _ zero_le_one _
-  simpa using boundary.le_of_opNorm_le h T
+  simpa using boundaryCLM.le_of_opNorm_le h T
 
-@[simp] theorem boundary_boundary (T : NormalCurrent Ω (k + 2)) :
-    boundary (boundary T) = 0 := by
+/-- Two successive boundaries of a real normal current vanish. -/
+@[simp]
+theorem boundaryCLM_boundaryCLM (T : FlatNormedCurrent Ω (k + 2)) :
+    boundaryCLM (boundaryCLM T) = 0 := by
   apply ext
   simp [ContinuousLinearMap.comp_assoc, extDerivCLM_comp_extDerivCLM]
 
-end NormalCurrent
+end FlatNormedCurrent
 
-/-- The native completion of normal real currents in the normal flat norm. It carries the native
-complete real normed-space structure. No integrality or normality of completion elements
-is asserted. -/
-abbrev FlatChain (Ω : Opens E) (k : ℕ) := Completion (NormalCurrent Ω k)
+/-- The real normal flat completion, using the native uniform-space completion.
+This is not the integral-decomposition flat completion. -/
+abbrev RealFlatChain (Ω : Opens E) (k : ℕ) := Completion (FlatNormedCurrent Ω k)
 
-namespace FlatChain
+namespace RealFlatChain
 
-variable {Ω : Opens E} {k : ℕ}
+/-- Evaluation on a test form, extended continuously from normal currents to flat chains. -/
+def evalCLM (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) : RealFlatChain Ω k →L[ℝ] ℝ :=
+  (FlatNormedCurrent.evalCLM ω).fromCompletion
 
-/-- Continuous evaluation of a real flat chain on a fixed smooth test form. -/
-def evalCLM (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) : FlatChain Ω k →L[ℝ] ℝ :=
-  (NormalCurrent.evalCLM ω).fromCompletion
+@[simp]
+theorem evalCLM_coe (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : FlatNormedCurrent Ω k) :
+    evalCLM ω (T : RealFlatChain Ω k) = T.toCurrent ω := by
+  simp [evalCLM]
 
-@[simp] theorem evalCLM_coe (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : NormalCurrent Ω k) :
-    evalCLM ω (T : FlatChain Ω k) = T.toCurrent ω := by simp [evalCLM]
-
-/-- Boundary extends to a continuous linear map between the real normal flat completions. -/
-def boundary : FlatChain Ω (k + 1) →L[ℝ] FlatChain Ω k :=
-  NormalCurrent.boundary.completion
-
-@[simp] theorem boundary_coe (T : NormalCurrent Ω (k + 1)) :
-    boundary (T : FlatChain Ω (k + 1)) =
-      (NormalCurrent.boundary T : FlatChain Ω k) := by simp [boundary]
-
-/-- The boundary on the completion is still a contraction. -/
-theorem norm_boundary_le (T : FlatChain Ω (k + 1)) : ‖boundary T‖ ≤ ‖T‖ := by
-  induction T using Completion.induction_on with
-  | hp => exact isClosed_le (by fun_prop) (by fun_prop)
-  | ih T => simpa using NormalCurrent.norm_boundary_le T
-
-@[simp] theorem boundary_boundary (T : FlatChain Ω (k + 2)) :
-    boundary (boundary T) = 0 := by
-  induction T using Completion.induction_on with
-  | hp => exact isClosed_eq (by fun_prop) continuous_const
-  | ih T => simp
-
-/-- The flat evaluation bound survives passage to the completion. -/
-theorem norm_evalCLM_le (T : FlatChain Ω k) (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
+/-- The test-form estimate persists in the completion. -/
+theorem norm_evalCLM_le (T : RealFlatChain Ω k)
+    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
     ‖evalCLM ω T‖ ≤ ‖T‖ * max ‖(ω : E →ᵇ E [⋀^Fin k]→L[ℝ] ℝ)‖
       ‖(extDerivCLM ω : E →ᵇ E [⋀^Fin (k + 1)]→L[ℝ] ℝ)‖ := by
   induction T using Completion.induction_on with
   | hp => exact isClosed_le (by fun_prop) (by fun_prop)
   | ih T => simpa using T.norm_apply_le ω
 
-@[simp] theorem evalCLM_add (ω η : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : FlatChain Ω k) :
+/-- Boundary extends to a continuous map between the real flat completions. -/
+def boundaryCLM : RealFlatChain Ω (k + 1) →L[ℝ] RealFlatChain Ω k :=
+  FlatNormedCurrent.boundaryCLM.completion
+
+@[simp]
+theorem boundaryCLM_coe (T : FlatNormedCurrent Ω (k + 1)) :
+    boundaryCLM (T : RealFlatChain Ω (k + 1)) =
+      (FlatNormedCurrent.boundaryCLM T : RealFlatChain Ω k) :=
+  ContinuousLinearMap.completion_apply_coe _ _
+
+/-- Boundary remains a contraction after completion. -/
+theorem norm_boundaryCLM_le (T : RealFlatChain Ω (k + 1)) : ‖boundaryCLM T‖ ≤ ‖T‖ := by
+  induction T using Completion.induction_on with
+  | hp => exact isClosed_le (by fun_prop) (by fun_prop)
+  | ih T => simpa using T.norm_boundaryCLM_le
+
+/-- Two successive boundaries of a completed real flat chain vanish. -/
+@[simp]
+theorem boundaryCLM_boundaryCLM (T : RealFlatChain Ω (k + 2)) :
+    boundaryCLM (boundaryCLM T) = 0 := by
+  induction T using Completion.induction_on with
+  | hp => exact isClosed_eq (by fun_prop) continuous_const
+  | ih T => simp
+
+/-- Evaluation of the boundary agrees with evaluation on the exterior derivative. -/
+theorem evalCLM_boundaryCLM (T : RealFlatChain Ω (k + 1))
+    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
+    evalCLM ω (boundaryCLM T) = evalCLM (extDerivCLM ω) T := by
+  induction T using Completion.induction_on with
+  | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
+  | ih T => simp
+
+@[simp] theorem evalCLM_add (ω η : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : RealFlatChain Ω k) :
     evalCLM (ω + η) T = evalCLM ω T + evalCLM η T := by
   induction T using Completion.induction_on with
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih T => simp
 
-@[simp] theorem evalCLM_sub (ω η : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : FlatChain Ω k) :
+@[simp] theorem evalCLM_sub (ω η : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) (T : RealFlatChain Ω k) :
     evalCLM (ω - η) T = evalCLM ω T - evalCLM η T := by
   induction T using Completion.induction_on with
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih T => simp
 
 @[simp] theorem evalCLM_smul (a : ℝ) (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ))
-    (T : FlatChain Ω k) : evalCLM (a • ω) T = a • evalCLM ω T := by
+    (T : RealFlatChain Ω k) : evalCLM (a • ω) T = a • evalCLM ω T := by
   induction T using Completion.induction_on with
   | hp => exact isClosed_eq (by fun_prop) (by fun_prop)
   | ih T => simp
 
 /-- Evaluation of a flat chain is continuous in the test-form topology. -/
-theorem continuous_evalCLM_left (T : FlatChain Ω k) : Continuous fun ω => evalCLM ω T := by
+theorem continuous_evalCLM_left (T : RealFlatChain Ω k) : Continuous fun ω => evalCLM ω T := by
   refine continuous_iff_continuousAt.2 fun ω => tendsto_iff_norm_sub_tendsto_zero.2 ?_
   have hc : Continuous fun η : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) => ‖T‖ *
       max ‖toBoundedContinuousFunctionCLM ℝ (η - ω)‖
@@ -230,42 +246,48 @@ theorem continuous_evalCLM_left (T : FlatChain Ω k) : Continuous fun ω => eval
     (by simpa only [sub_self, map_zero, norm_zero, max_self, mul_zero] using hc.tendsto ω)
   simpa only [evalCLM_sub, toBoundedContinuousFunctionCLM_apply] using norm_evalCLM_le T (η - ω)
 
-/-- A real flat chain acts continuously and real-linearly on smooth test forms.
-This map does not claim that its image has finite mass or finite boundary mass. -/
-def toCurrent : FlatChain Ω k →ₗ[ℝ] (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) where
-  toFun T :=
-    { toFun := fun ω => evalCLM ω T
-      map_add' ω η := evalCLM_add ω η T
-      map_smul' a ω := evalCLM_smul a ω T
-      cont := continuous_evalCLM_left T }
-  map_add' T S := by ext ω; exact (evalCLM ω).map_add T S
-  map_smul' a T := by ext ω; exact (evalCLM ω).map_smul a T
+/-- A completed real flat chain acts continuously on the original LF space of smooth tests.
+This comparison does not assert that the completed chain has finite mass. -/
+def toCurrent (T : RealFlatChain Ω k) : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ where
+  toFun ω := evalCLM ω T
+  map_add' ω η := evalCLM_add ω η T
+  map_smul' a ω := evalCLM_smul a ω T
+  cont := continuous_evalCLM_left T
 
-@[simp] theorem toCurrent_apply (T : FlatChain Ω k)
-    (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) : T.toCurrent ω = evalCLM ω T := (rfl)
+@[simp]
+theorem toCurrent_apply (T : RealFlatChain Ω k) (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
+    toCurrent T ω = evalCLM ω T := (rfl)
 
-/-- The completion-to-current map agrees with the original normal current on the dense subspace. -/
-@[simp] theorem toCurrent_coe (T : NormalCurrent Ω k) :
-    toCurrent (T : FlatChain Ω k) = T.toCurrent := by
+@[simp]
+theorem toCurrent_coe (T : FlatNormedCurrent Ω k) :
+    toCurrent (T : RealFlatChain Ω k) = T.toCurrent := by
   ext ω
   simp
 
-/-- The boundary is the transpose of exterior differentiation, with no extra sign. -/
-@[simp] theorem toCurrent_boundary (T : FlatChain Ω (k + 1)) :
-    (boundary T).toCurrent = T.toCurrent ∘L extDerivCLM := by
-  ext ω
-  induction T using Completion.induction_on with
-  | hp =>
-    simp only [toCurrent_apply, ContinuousLinearMap.comp_apply]
-    exact isClosed_eq (by fun_prop) (by fun_prop)
-  | ih T => simp
+/-- The comparison from the real flat completion to currents is real-linear. -/
+def toCurrentLinearMap : RealFlatChain Ω k →ₗ[ℝ] (𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ) →L[ℝ] ℝ) where
+  toFun := toCurrent
+  map_add' _ _ := by ext ω; simp
+  map_smul' _ _ := by ext ω; simp
 
-/-- Flat convergence in the native completion implies convergence on every fixed test form. -/
-theorem tendsto_apply {ι : Type*} {l : Filter ι} {Ts : ι → FlatChain Ω k}
-    {T : FlatChain Ω k} (h : Filter.Tendsto Ts l (nhds T))
+@[simp]
+theorem toCurrentLinearMap_apply (T : RealFlatChain Ω k) :
+    toCurrentLinearMap T = toCurrent T := (rfl)
+
+/-- The current comparison intertwines completed boundary with the original current boundary. -/
+@[simp]
+theorem toCurrent_boundaryCLM (T : RealFlatChain Ω (k + 1)) :
+    toCurrent (boundaryCLM T) = toCurrent T ∘L extDerivCLM := by
+  ext ω
+  exact evalCLM_boundaryCLM T ω
+
+/-- Norm convergence of completed chains implies evaluation convergence on every fixed test.
+The topology asserted here is weak test evaluation, not compact convergence on test families. -/
+theorem tendsto_toCurrent_apply {ι : Type*} {l : Filter ι} {Ts : ι → RealFlatChain Ω k}
+    {T : RealFlatChain Ω k} (h : Filter.Tendsto Ts l (𝓝 T))
     (ω : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] ℝ)) :
-    Filter.Tendsto (fun i => (Ts i).toCurrent ω) l (nhds (T.toCurrent ω)) :=
+    Filter.Tendsto (fun i => toCurrent (Ts i) ω) l (𝓝 (toCurrent T ω)) :=
   (evalCLM ω).continuous.continuousAt.tendsto.comp h
 
-end FlatChain
+end RealFlatChain
 end TauCeti

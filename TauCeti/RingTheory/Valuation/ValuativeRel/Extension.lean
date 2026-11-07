@@ -37,6 +37,7 @@ the two valuative topologies.
   valuative relation is nontrivial.
 * `TauCeti.integerRingAlgebra`: the induced algebra structure on the valuation rings.
 * `TauCeti.residueFieldAlgebra`: the induced algebra structure on the residue fields.
+* `TauCeti.algebraMap_integerRing_dvd_iff`: the map of valuation rings reflects divisibility.
 * `TauCeti.aroots_eq_map_roots_integerRing`: the roots in `L` of a monic polynomial over the
   valuation ring of `K` are its roots in the valuation ring of `L`.
 * `IsAlgebraic.exists_ne_zero_vle`: a nonzero algebraic element has value at least that of some
@@ -102,6 +103,17 @@ noncomputable instance residueFieldAlgebra : Algebra 𝓀ᵥ[K] 𝓀ᵥ[L] :=
 theorem coe_algebraMap_integerRing (x : 𝒪ᵥ[K]) :
     ((algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x : 𝒪ᵥ[L]) : L) = algebraMap K L (x : K) :=
   Valuation.HasExtension.coe_algebraMap_valuationSubring_eq (valuation K) (valuation L) x
+
+/-- The integer-ring structure map reflects divisibility: an integer of `K` divides another in the
+integers of `L` exactly when it does in the integers of `K`, since both say that its value is
+at least the other's. -/
+@[simp]
+theorem algebraMap_integerRing_dvd_iff {x y : 𝒪ᵥ[K]} :
+    algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] x ∣ algebraMap 𝒪ᵥ[K] 𝒪ᵥ[L] y ↔ x ∣ y := by
+  rw [(Valuation.integer.integers _).dvd_iff_le, (Valuation.integer.integers _).dvd_iff_le,
+    ← RingHom.comp_apply, ← RingHom.comp_apply, ← IsScalarTower.algebraMap_eq]
+  simp only [IsScalarTower.algebraMap_apply 𝒪ᵥ[K] K L]
+  exact Valuation.HasExtension.val_map_le_iff (vR := valuation K) (vA := valuation L) _ _
 
 open Polynomial in
 variable (L) in
