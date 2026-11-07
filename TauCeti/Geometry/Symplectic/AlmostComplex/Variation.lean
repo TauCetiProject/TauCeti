@@ -7,8 +7,6 @@ module
 
 public import TauCeti.Geometry.Symplectic.AlmostComplex
 public import Mathlib.Analysis.Calculus.BumpFunction.FiniteDimension
-public import Mathlib.Analysis.Normed.Module.FiniteDimension
-public import Mathlib.MeasureTheory.Integral.Bochner.Set
 
 /-!
 # Localized variations of almost complex structures at injective points
@@ -47,7 +45,8 @@ There are two versions, one for each tangent condition:
 Their contrapositives, `AlmostComplexStructure.eq_zero_of_forall_mem_tangentSpace_integral_eq_zero`
 and `SymplecticForm.eq_zero_of_forall_mem_compatibleTangentSpace_integral_eq_zero`, say that a
 covector field annihilating all such variations vanishes at every injective point where
-`w ≠ 0`. With `w = ∂ₜu`, these are the points where `du ≠ 0`.
+`w ≠ 0`. If `u` is `J`-holomorphic and `w = ∂ₜu`, so that `∂ₛu = -J ∂ₜu`, these are the
+points where `du ≠ 0`.
 
 The variation is `Y x = ρ x • (A + J x A J x) / 2` for a bump function `ρ` at `u z₀` and an
 endomorphism `A` tangent at `J (u z₀)` with `η z₀ (A (w z₀)) > 0`. Averaging with the conjugate by

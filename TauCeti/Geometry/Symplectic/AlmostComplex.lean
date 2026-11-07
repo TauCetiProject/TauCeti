@@ -349,6 +349,7 @@ theorem add_mul_mul_mem_tangentSpace (J : AlmostComplexStructure V) (Y : Module.
 
 /-- Conjugation by `J` fixes the variations of `J`: `J Y J = Y` when `Y` anticommutes with `J`.
 Hence the average `(Y + J Y J) / 2` is a projection onto the tangent space. -/
+@[simp]
 theorem mul_mul_eq_of_mem_tangentSpace {J : AlmostComplexStructure V} {Y : Module.End ℝ V}
     (hY : Y ∈ J.tangentSpace) : J.toLinearMap * Y * J.toLinearMap = Y := by
   ext v
