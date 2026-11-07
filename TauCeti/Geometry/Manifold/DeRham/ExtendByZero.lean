@@ -8,8 +8,9 @@ module
 public import TauCeti.Geometry.Manifold.DeRham.CompactSupport
 public import TauCeti.Geometry.Manifold.DifferentialForm.Opens
 public import TauCeti.Geometry.Manifold.LocalDiffeomorph.OpenSubset
-import Mathlib.Geometry.Manifold.PartitionOfUnity
 import TauCeti.Geometry.Manifold.DeRham.DegreeZero
+import TauCeti.Geometry.Manifold.DifferentialForm.Support
+import Mathlib.Geometry.Manifold.PartitionOfUnity
 
 /-!
 # Extension by zero of compactly supported forms
@@ -34,12 +35,16 @@ extension by zero is discontinuous at the other origin.
 * `TauCeti.compactlySupportedForms.extendByZero_injective` and
   `TauCeti.compactlySupportedForms.mem_range_extendByZero_iff`: it is injective, and its image
   consists of the compactly supported forms supported in the smaller open subset.
+* `TauCeti.compactlySupportedForms.exists_sum_extendByZero`: every compactly supported form is
+  a finite sum of extensions by zero from an arbitrary open cover.
 * `TauCeti.compactlySupportedForms.mextDerivₗ_extendByZero`: it commutes with the exterior
   derivative.
 * `TauCeti.compactlySupportedDeRhamComplex.extendByZero`: the induced cochain map of compactly
   supported de Rham complexes.
 * `TauCeti.compactlySupportedDeRhamCohomology.extendByZero`: the induced map on compactly supported
   de Rham cohomology, computed on classes by `extendByZero_mk`.
+* `TauCeti.compactlySupportedDeRhamCohomology.exists_sum_extendByZero`: in degree at least the
+  model dimension, every class is a finite sum of extensions by zero from an open cover.
 * `TauCeti.compactlySupportedDeRhamCohomology.extendByZeroTop`: extension by zero from an open
   subset into the whole manifold on compactly supported cohomology. A class of a form supported in
   `U` comes from `U` (`mk_mem_range_extendByZeroTop`), and in the top degree the classes from the
@@ -158,6 +163,44 @@ theorem mem_range_extendByZero_iff {U W : Opens M} (h : U ≤ W) {k : ℕ}
 
 end Forms
 
+/-- A compactly supported smooth form on an open subset is a finite sum of extensions by zero
+from any open cover. The summands need not be closed, even if the original form is closed. -/
+theorem exists_sum_extendByZero [FiniteDimensional ℝ E] [IsManifold I ∞ M]
+    {W : Opens M} [SigmaCompactSpace W] {ι : Type*} (U : ι → Opens M)
+    (hU : ∀ i, U i ≤ W) (hcover : W ≤ iSup U) (k : ℕ)
+    (φ : compactlySupportedForms I W k) :
+    ∃ s : Finset ι, ∃ ψ : ∀ i, compactlySupportedForms I (U i) k,
+      φ = ∑ i ∈ s, extendByZero (hU i) k (ψ i) := by
+  classical
+  have : LocallyCompactSpace H := I.locallyCompactSpace
+  have : SecondCountableTopology H := I.secondCountableTopology
+  have : SecondCountableTopology W := ChartedSpace.secondCountable_of_sigmaCompact H W
+  have : LocallyCompactSpace W := ChartedSpace.locallyCompactSpace H W
+  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
+    (fun i ↦ {x : W | (x : M) ∈ U i})
+    (fun i ↦ (U i).isOpen.preimage continuous_subtype_val) (fun x _ ↦ by
+      obtain ⟨i, hi⟩ := Opens.mem_iSup.mp (hcover x.2)
+      exact Set.mem_iUnion.mpr ⟨i, hi⟩)
+  -- Use the model-fibre view for function-support lemmas, whose codomain is nondependent.
+  let θ (i : ι) : compactlySupportedForms I W k :=
+    ⟨⟨fun x ↦ ρ i x • φ.1.1 x,
+        (φ.1.isSmoothForm.fun_smul (ρ i).contMDiff).mem_smoothBundleForms⟩,
+      (mem_compactlySupportedForms I).mpr <|
+        ((mem_compactlySupportedForms I).mp φ.2).of_isClosed_subset (isClosed_tsupport _)
+          (_root_.tsupport_smul_subset_right (ρ i)
+            (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1))⟩
+  have hθ (i : ι) : θ i ∈ LinearMap.range (extendByZero (hU i) k) :=
+    (mem_range_extendByZero_iff (hU i)).mpr <|
+      (_root_.tsupport_smul_subset_left (ρ i)
+        (show W → E [⋀^Fin k]→L[ℝ] ℝ from φ.1.1)).trans (hρ i)
+  choose ψ hψ using hθ
+  obtain ⟨s, hs, -⟩ := RoughForm.exists_finset_partition_eq φ.1.1
+    ((mem_compactlySupportedForms I).mp φ.2) ρ.toPartitionOfUnity
+  refine ⟨s, ψ, ?_⟩
+  simp_rw [hψ]
+  refine Subtype.ext <| Subtype.ext ?_
+  exact hs.trans (by ext x; simp [θ])
+
 /-- Extension by zero of compactly supported forms commutes with the exterior derivative. -/
 theorem mextDerivₗ_extendByZero [IsManifold I 2 M] {U W : Opens M} (h : U ≤ W) (k : ℕ)
     (φ : compactlySupportedForms I U k) :
@@ -205,6 +248,17 @@ theorem coe_extendByZero {U W : Opens M} (h : U ≤ W) (k : ℕ)
   (rfl)
 
 end compactlySupportedClosedForms
+
+/-- Viewing a compactly supported form as closed in top degree commutes with extension by zero. -/
+@[simp]
+theorem compactlySupportedForms.toClosedOfFinrankLe_extendByZero [FiniteDimensional ℝ E]
+    {U W : Opens M} (h : U ≤ W) {k : ℕ} (hk : Module.finrank ℝ E ≤ k)
+    (φ : compactlySupportedForms I U k) :
+    toClosedOfFinrankLe I hk (extendByZero h k φ) =
+      compactlySupportedClosedForms.extendByZero h k (toClosedOfFinrankLe I hk φ) := by
+  apply Subtype.ext ∘ Subtype.ext
+  simp only [coe_toClosedOfFinrankLe, coe_extendByZero,
+    compactlySupportedClosedForms.coe_extendByZero]
 
 namespace compactlySupportedDeRhamComplex
 
@@ -299,6 +353,29 @@ theorem extendByZero_extendByZero {U V W : Opens M} (h₁ : U ≤ V) (h₂ : V �
   rw [extendByZero, extendByZero, extendByZero,
     ← compactlySupportedDeRhamComplex.extendByZero_comp_extendByZero h₁ h₂,
     HomologicalComplex.homologyMap_comp, ModuleCat.hom_comp, LinearMap.comp_apply]
+
+/-- Every compactly supported class in degree at least the model dimension is a finite sum of
+classes extended by zero from the members of an arbitrary open cover. -/
+theorem exists_sum_extendByZero [FiniteDimensional ℝ E] {M : Type*}
+    [TopologicalSpace M] [ChartedSpace H M] [T2Space M] [IsManifold I ∞ M]
+    {W : Opens M} [SigmaCompactSpace W] {ι : Type*} (U : ι → Opens M)
+    (hU : ∀ i, U i ≤ W) (hcover : W ≤ iSup U) {n : ℕ} (hn : Module.finrank ℝ E ≤ n)
+    (c : compactlySupportedDeRhamCohomology I W n) :
+    ∃ s : Finset ι, ∃ d : ∀ i, compactlySupportedDeRhamCohomology I (U i) n,
+      c = ∑ i ∈ s, extendByZero (hU i) n (d i) := by
+  classical
+  obtain ⟨φ, rfl⟩ := mk_surjective I n c
+  let φc : compactlySupportedForms I W n :=
+    ⟨φ.1, (compactlySupportedClosedForms_le_compactlySupportedForms I n) φ.2⟩
+  obtain ⟨s, ψ, hψ⟩ := compactlySupportedForms.exists_sum_extendByZero U hU hcover n φc
+  refine ⟨s, fun i ↦ mk I n (compactlySupportedForms.toClosedOfFinrankLe I hn (ψ i)), ?_⟩
+  have hφ := congrArg (compactlySupportedForms.toClosedOfFinrankLe I hn) hψ
+  simp only [map_sum, compactlySupportedForms.toClosedOfFinrankLe_extendByZero] at hφ
+  have heq : compactlySupportedForms.toClosedOfFinrankLe I hn φc = φ :=
+    Subtype.ext (compactlySupportedForms.coe_toClosedOfFinrankLe I hn φc)
+  rw [heq] at hφ
+  rw [hφ, map_sum]
+  simp only [extendByZero_mk]
 
 end compactlySupportedDeRhamCohomology
 
@@ -485,35 +562,24 @@ theorem mk_mem_range_extendByZeroTop (U : Opens M) {k : ℕ}
     ← compactlySupportedForms.coe_extendByZero (le_top : U ≤ ⊤), hχ]
 
 /-- In the top degree, a submodule of `H^n_c(M)` containing the classes from every member of a
-family of open subsets covering `M` is everything: a partition of unity splits every compactly
-supported top form into finitely many forms supported in members of the family. -/
+family of open subsets covering `M` is everything: every class is a finite sum of extensions by zero
+from members of the family (`exists_sum_extendByZero`). -/
 theorem eq_top_of_forall_range_extendByZeroTop_le [FiniteDimensional ℝ E] [SigmaCompactSpace M]
     {n : ℕ} (hn : Module.finrank ℝ E ≤ n)
     {K : Submodule ℝ (compactlySupportedDeRhamCohomology I M n)} (V : M → Opens M)
     (hxV : ∀ x, x ∈ V x) (hK : ∀ x, LinearMap.range (extendByZeroTop (V x) n) ≤ K) : K = ⊤ := by
-  obtain ⟨ρ, hρ⟩ := SmoothPartitionOfUnity.exists_isSubordinate I isClosed_univ
-    (fun x ↦ (V x : Set M)) (fun x ↦ (V x).isOpen) fun x _ ↦ Set.mem_iUnion.mpr ⟨x, hxV x⟩
+  have : SigmaCompactSpace (⊤ : Opens M) :=
+    (Diffeomorph.ofTop (⊤ : Opens M) rfl : (⊤ : Opens M) ≃ₘ⟮I, I⟯ M).toHomeomorph.isClosedEmbedding
+      |>.sigmaCompactSpace
   refine eq_top_iff.mpr fun y _ ↦ ?_
-  obtain ⟨φ, rfl⟩ := mk_surjective I n y
-  have hc := (mem_compactlySupportedForms I).mp ((mem_compactlySupportedClosedForms I).mp φ.2).1
-  obtain ⟨s, hs, -⟩ := RoughForm.exists_finset_partition_eq φ.1.1 hc ρ.toPartitionOfUnity
-  -- The pieces `ρ i • φ` of `φ`, each supported in `V i`.
-  let ψ (i : M) : compactlySupportedClosedForms I M n :=
-    ⟨⟨fun x ↦ ρ i x • φ.1.1 x, (φ.1.isSmoothForm.fun_smul (ρ i).contMDiff).mem_smoothBundleForms⟩,
-      (mem_compactlySupportedClosedForms I).mpr
-        ⟨(mem_compactlySupportedForms I).mpr (hc.of_isClosed_subset (isClosed_tsupport _)
-          (_root_.tsupport_smul_subset_right (ρ i) (show M → E [⋀^Fin n]→L[ℝ] ℝ from φ.1.1))),
-          mem_closedForms_of_finrank_le I hn _⟩⟩
-  have hφ : φ = ∑ i ∈ s, ψ i := Subtype.ext <| Subtype.ext <| by
-    rw [Submodule.coe_sum, Submodule.coe_sum]
-    refine hs.trans (funext fun x ↦ ?_)
-    simp only [ψ, Finset.sum_apply]
-    -- The partition of unity and its underlying continuous partition agree pointwise.
-    rfl
-  rw [hφ, map_sum]
-  exact K.sum_mem fun i _ ↦ hK i (mk_mem_range_extendByZeroTop (V i) (ψ i)
-    ((_root_.tsupport_smul_subset_left (ρ i) (show M → E [⋀^Fin n]→L[ℝ] ℝ from φ.1.1)).trans
-      (hρ i)))
+  obtain ⟨s, d, hd⟩ := exists_sum_extendByZero V (fun _ ↦ le_top)
+    (fun x _ ↦ Opens.mem_iSup.mpr ⟨x, hxV x⟩) hn
+    (equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) n y)
+  have hy : y = ∑ i ∈ s, extendByZeroTop (V i) n (d i) :=
+    (equivOfDiffeomorph (Diffeomorph.ofTop ⊤ rfl) n).injective <| by
+      rw [hd, map_sum]
+      simp only [equivOfDiffeomorph_extendByZeroTop]
+  exact hy ▸ K.sum_mem fun i _ ↦ hK i ⟨d i, rfl⟩
 
 end compactlySupportedDeRhamCohomology
 

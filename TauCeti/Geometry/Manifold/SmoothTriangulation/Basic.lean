@@ -226,13 +226,13 @@ theorem of_le (h : IsSmoothTriangulation I n f) (hmn : m ≤ n) : IsSmoothTriang
   fun σ => (h σ).of_le hmn
 
 /-- A smooth triangulation of `M` followed by a diffeomorphism `M ≃ N` is a smooth triangulation
-of `N`. -/
-theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^n⟮I, J⟯ N) (hn : n ≠ 0) :
-    IsSmoothTriangulation J n (f.trans Φ.toHomeomorph) := fun σ =>
+of `N`. The diffeomorphism may be of any class `Cᵐ` with `n ≤ m` and `m ≠ 0`. -/
+theorem trans_diffeomorph (h : IsSmoothTriangulation I n f) (Φ : M ≃ₘ^m⟮I, J⟯ N) (hnm : n ≤ m)
+    (hm : m ≠ 0) : IsSmoothTriangulation J n (f.trans Φ.toHomeomorph) := fun σ =>
   -- `(f.trans Φ.toHomeomorph) ∘ faceInclusion K σ` is `Φ ∘ (f ∘ faceInclusion K σ)` by definition.
-  (h σ).comp (φ := Φ) Φ.contMDiff (fun x => by
-    rw [← Φ.mfderivToContinuousLinearEquiv_coe hn]
-    exact (Φ.mfderivToContinuousLinearEquiv hn x).injective)
+  (h σ).comp (φ := Φ) (Φ.contMDiff.of_le hnm) (fun x => by
+    rw [← Φ.mfderivToContinuousLinearEquiv_coe hm]
+    exact (Φ.mfderivToContinuousLinearEquiv hm x).injective)
 
 /-- Relabelling the complex of a smooth triangulation by a simplicial isomorphism gives a smooth
 triangulation: precomposing with the homeomorphism of realizations induced by mutually inverse

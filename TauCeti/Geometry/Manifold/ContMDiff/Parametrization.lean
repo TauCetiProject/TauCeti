@@ -13,6 +13,7 @@ public import Mathlib.Geometry.Manifold.IsManifold.InteriorBoundary
 
 import TauCeti.Geometry.Manifold.ContMDiff.Subtype
 import TauCeti.Geometry.Manifold.LocalDiffeomorph.Basic
+import TauCeti.Geometry.Manifold.ModelTransport.Boundaryless
 
 /-!
 # Globally defined differentiable local parametrizations
@@ -22,6 +23,9 @@ Every point of a finite-dimensional boundaryless real `C^n` manifold lies in the
 for every finite order or smoothness order `n ≤ ∞`.
 These parametrizations allow continuity and smoothness to be tested on globally defined plots,
 without requiring a chart inverse to extend beyond its domain.
+In particular, every point of a finite-dimensional boundaryless real manifold, on any boundaryless
+model, has an open neighbourhood homeomorphic to `ℝᵐ`
+(`TauCeti.exists_isOpen_mem_nonempty_homeomorph_euclideanSpace`).
 
 The construction uses Mathlib's `OpenPartialHomeomorph.univBall` and `toEuclidean` to shrink
 an ordinary manifold chart.
@@ -90,6 +94,23 @@ theorem exists_contMDiff_parametrization (x : M) :
     exact OpenPartialHomeomorph.contDiffOn_univBall_symm.contMDiffOn.comp
       (hcf.mono inter_subset_left) (fun z hz => by
         simpa only [b, OpenPartialHomeomorph.univBall_target _ hr] using hz.2)
+
+/-- Every point of a finite-dimensional boundaryless real manifold has an open neighbourhood
+homeomorphic to `ℝᵐ`, where `m` is the dimension of the model vector space. The neighbourhood is
+the image of a global parametrization of the copy of the manifold modelled on `E`. -/
+theorem exists_isOpen_mem_nonempty_homeomorph_euclideanSpace {H N : Type*} [TopologicalSpace H]
+    (I : ModelWithCorners ℝ E H) [I.Boundaryless] [TopologicalSpace N] [ChartedSpace H N]
+    (x : N) : ∃ U : Set N, IsOpen U ∧ x ∈ U ∧
+      Nonempty (U ≃ₜ EuclideanSpace ℝ (Fin (Module.finrank ℝ E))) := by
+  set e := BoundarylessModel.homeomorph I N
+  -- Every charted space is a `C⁰` manifold; state it at the order used by the parametrization.
+  have : IsManifold 𝓘(ℝ, E) ((0 : ℕ∞) : ℕ∞ω) (BoundarylessModel I N) :=
+    inferInstanceAs (IsManifold 𝓘(ℝ, E) 0 _)
+  obtain ⟨φ, hφ, hx, -⟩ :=
+    exists_contMDiff_parametrization (E := E) (M := BoundarylessModel I N) (n := 0) (e x)
+  exact ⟨e ⁻¹' φ.target, φ.open_target.preimage e.continuous, hx,
+    ⟨(e.sets rfl).trans <| φ.toHomeomorphSourceTarget.symm.trans <|
+      (Homeomorph.setCongr hφ).trans (Homeomorph.Set.univ _)⟩⟩
 
 section CoordinateBall
 

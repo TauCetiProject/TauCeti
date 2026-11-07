@@ -13,13 +13,16 @@ import Mathlib.Tactic.Group
 /-!
 # Identities of unbundled cocycles
 
-Facts about cocycles in the sense of Mathlib's unbundled `groupCohomology.IsCocycle₁` and
-`groupCohomology.IsCocycle₂`, which need no topology and no representation:
+Facts about cocycles in the sense of Mathlib's unbundled `groupCohomology.IsCocycle₁`,
+`groupCohomology.IsCocycle₂` and `groupCohomology.IsMulCocycle₁`, which need no topology and no
+representation:
 
 * `groupCohomology.smul_apply_inv_mul_mul_of_isCocycle₁`: conjugating the argument by `k` and
   then acting by `k` adds `m • f k - f k` to the value at `m`, for any scalar multiplication of
   `G` on `M`: `k • f (k⁻¹ * m * k) = m • f k - f k + f m`.
 * `groupCohomology.smul_zero_of_isCocycle₁`: an action admitting a `1`-cocycle fixes `0`.
+* `groupCohomology.IsMulCocycle₁.pow`: pointwise powers of multiplicative `1`-cocycles are
+  multiplicative `1`-cocycles.
 * `groupCohomology.zeroLocus`: the zero locus `{g | f g = 0}` is a subgroup of `G`, for any group
   action (not necessarily distributive) admitting the cocycle. As a set it is `f ⁻¹' {0}`
   (`groupCohomology.coe_zeroLocus`). `GroupCohomology/Cocycle/Topology.lean` shows it is closed
@@ -57,6 +60,11 @@ theorem smul_apply_inv_mul_mul_of_isCocycle₁ {G M : Type*} [Group G] [AddCommG
 theorem smul_zero_of_isCocycle₁ {G M : Type*} [Monoid G] [AddCommGroup M] [MulAction G M]
     {f : G → M} (hf : IsCocycle₁ f) (g : G) : g • (0 : M) = 0 := by
   simpa only [mul_one, map_one_of_isCocycle₁ hf, right_eq_add] using hf g 1
+
+/-- A pointwise power of a multiplicative `1`-cocycle is a multiplicative `1`-cocycle. -/
+theorem IsMulCocycle₁.pow {G M : Type*} [Monoid G] [CommGroup M] [MulDistribMulAction G M]
+    {f : G → M} (hf : IsMulCocycle₁ f) (n : ℕ) : IsMulCocycle₁ (f ^ n) := fun g h => by
+  simp only [Pi.pow_apply, hf g h, mul_pow, smul_pow']
 
 variable {G M : Type*} [Group G] [AddCommGroup M] [MulAction G M]
 
