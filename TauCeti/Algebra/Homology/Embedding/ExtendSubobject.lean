@@ -27,14 +27,14 @@ complex is set up.
 
 ## Main results
 
-* `HomologicalComplex.mono_extendMap`: extension preserves degreewise monomorphisms.
-* `HomologicalComplex.mono_extendMap_of_mono`: when the category has pullbacks, extension preserves
+* `HomologicalComplex.mono_extendMap_of_mono_f`: extension preserves degreewise monomorphisms.
+* `HomologicalComplex.mono_extendMap`: when the category has pullbacks, extension preserves
   monomorphisms, and `e.extendFunctor C` preserves monomorphisms. This is the dual of
   `HomologicalComplex.epi_extendMap` (`ExtendHomology/Sequence.lean`), which needs an abelian
   category.
 * `HomologicalComplex.mem_range_extendMap_f_iff`: for complexes of modules, in the degree `e.f i`
   the range of an extended chain map is the range of the chain map in degree `i`.
-* `CategoryTheory.Subobject.extend_eq_mk`, `CategoryTheory.Subobject.mk_extend`: the extension of
+* `CategoryTheory.Subobject.extend_eq_mk`, `CategoryTheory.Subobject.extend_mk`: the extension of
   a subcomplex is the subcomplex of the extended inclusion, and that of `Subobject.mk f` is
   `Subobject.mk` of the extension of `f`.
 * `CategoryTheory.Subobject.extendIso`: the extended subcomplex is isomorphic to the extension of
@@ -64,7 +64,7 @@ namespace HomologicalComplex
 variable {K L : HomologicalComplex C c}
 
 /-- Extension along an embedding of complex shapes preserves degreewise monomorphisms. -/
-theorem mono_extendMap (φ : K ⟶ L) [∀ i, Mono (φ.f i)] : Mono (extendMap φ e) := by
+theorem mono_extendMap_of_mono_f (φ : K ⟶ L) [∀ i, Mono (φ.f i)] : Mono (extendMap φ e) := by
   refine mono_of_mono_f _ fun i' ↦ ?_
   by_cases hi' : ∃ i, e.f i = i'
   · obtain ⟨i, hi⟩ := hi'
@@ -75,14 +75,14 @@ theorem mono_extendMap (φ : K ⟶ L) [∀ i, Mono (φ.f i)] : Mono (extendMap �
 
 /-- With pullbacks, the evaluations preserve monomorphisms, so extension along an embedding of
 complex shapes preserves monomorphisms of complexes. -/
-instance mono_extendMap_of_mono [HasPullbacks C] (φ : K ⟶ L) [Mono φ] :
+instance mono_extendMap [HasPullbacks C] (φ : K ⟶ L) [Mono φ] :
     Mono (extendMap φ e) :=
   have (i : ι) : Mono (φ.f i) := (eval C c i).map_mono φ
-  mono_extendMap e φ
+  mono_extendMap_of_mono_f e φ
 
 /-- With pullbacks, extension along an embedding of complex shapes preserves monomorphisms. -/
 instance [HasPullbacks C] : (e.extendFunctor C).PreservesMonomorphisms :=
-  ⟨fun φ _ ↦ mono_extendMap_of_mono e φ⟩
+  ⟨fun φ _ ↦ mono_extendMap e φ⟩
 
 /-- Extension along an embedding of complex shapes preserves isomorphisms. -/
 instance (φ : K ⟶ L) [IsIso φ] : IsIso (extendMap φ e) :=
@@ -126,7 +126,7 @@ theorem extend_eq_mk (S : Subobject K) :
 
 /-- The extension of the subcomplex `Subobject.mk f` is the subcomplex of the extension of `f`. -/
 @[simp]
-theorem mk_extend {A : HomologicalComplex C c} (f : A ⟶ K) [Mono f] :
+theorem extend_mk {A : HomologicalComplex C c} (f : A ⟶ K) [Mono f] :
     (Subobject.mk f).extend e = Subobject.mk (HomologicalComplex.extendMap f e) :=
   Subobject.mk_eq_mk_of_comm _ _ ((e.extendFunctor C).mapIso (Subobject.underlyingIso f)) (by
     rw [Functor.mapIso_hom, ComplexShape.Embedding.extendFunctor_map,
