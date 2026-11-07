@@ -332,16 +332,16 @@ theorem exists_eventually_hessian_eq_model_space {x₀ : E}
     simp
   -- Cut `φ₀` off to a globally smooth function, equal to it near `x₀`.
   obtain ⟨χ, hχ, -, hχ₁, -, hχV⟩ :=
-    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff hV (singleton_subset_iff.2 hx₀V)
+    (isCompact_singleton (x := x₀)).exists_contDiff_cutoff_eventuallyEq_one hV
+      (singleton_subset_iff.2 hx₀V)
   set φ : E → ℝ := fun x ↦ χ x • φ₀ x
   have hφ : ContDiff ℝ ∞ φ :=
     (contDiffOn_fst.comp hσ (mapsTo_univ _ _)).contDiff_smul_of_tsupport_subset hV
       hχ.contDiffOn hχV
   have hφφ₀ : ∀ᶠ y in 𝓝 x₀, φ =ᶠ[𝓝 y] φ₀ := by
-    filter_upwards [isOpen_interior.eventually_mem (singleton_subset_iff.1 hχ₁)] with y hy
-    filter_upwards [isOpen_interior.mem_nhds hy] with z hz
-    have hz₁ : χ z = 1 := interior_subset hz
-    simp [φ, hz₁]
+    filter_upwards [(hχ₁ x₀ rfl).eventually_nhds] with y hy
+    filter_upwards [hy] with z hz
+    simp [φ, hz]
   have hVx₀ : ∀ᶠ y in 𝓝 x₀, y ∈ V := hV.mem_nhds hx₀V
   have hDφx₀ : fderiv ℝ φ x₀ = (σ x₀).2 := by
     rw [hφφ₀.self_of_nhds.fderiv_eq, hDφ₀ x₀ hx₀V]
