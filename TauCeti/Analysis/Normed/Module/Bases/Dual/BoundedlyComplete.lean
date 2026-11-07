@@ -86,7 +86,7 @@ theorem IsShrinking.isBoundedlyComplete_dualBasis [ProperSpace 𝕜]
     filter_upwards [eventually_gt_atTop i] with n hn
     symm
     simpa only [IsShrinking.dualBasis_coord_apply] using
-      hb.dualBasis.coord_sum_range a hn
+      hb.dualBasis.coord_sum a (Finset.mem_range.2 hn)
   simpa only [IsShrinking.dualBasis_coord_apply, WeakDual.toStrongDual_apply] using
     eq_of_nhds_neBot (hc.clusterPt.mono ht)
 

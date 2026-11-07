@@ -19,6 +19,11 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 
 ## Main declarations
 
+* `TauCeti.tendsto_setLIntegral_enorm_sub_of_tendsto_Lp`: convergence of representatives on a
+  finite-measure set.
+* `MeasureTheory.MemLp.coeFn_toLp_indicator_restrict`: recover a function from its zero extension
+  on a measurable subset.
+
 * `MeasureTheory.Measure.LpToL1CLM`: the continuous inclusion from `Lᵖ` to `L¹` on
   a finite-measure space.
 * `MeasureTheory.Measure.LpToL1CLM_coeFn`: the inclusion has the original representative almost
@@ -31,6 +36,8 @@ useful whenever an `Lᵖ` identity is tested against integrals on finite-measure
 * `Set.setIntegralLp_apply`: the pointwise formula for this map.
 * `MeasureTheory.Lp.integralPositiveLinearMap`: integration against a finite measure as a
   positive linear functional on real `Lᵖ`.
+* `TauCeti.totallyBounded_restrict_of_forall_eqOn`: restricting a totally bounded family of `Lᵖ`
+  classes to a measurable set on which they agree with given functions.
 -/
 
 public section
@@ -179,3 +186,65 @@ theorem integralPositiveLinearMap_apply (φ : Lp ℝ p μ) :
   (Set.setIntegralLp_apply (𝕜 := ℝ) Set.univ (measure_lt_top μ _) φ).trans setIntegral_univ
 
 end MeasureTheory.Lp
+
+namespace TauCeti
+
+open Filter MeasureTheory Set
+open scoped ENNReal Topology
+
+variable {α F : Type*} [MeasurableSpace α] [NormedAddCommGroup F]
+  {mu : Measure α} {p : ℝ≥0∞}
+
+/-- Restricting a totally bounded family of `Lᵖ(μ)` classes `g u` to a measurable set `K` on which
+`g u = u` gives a totally bounded family of `Lᵖ(μ|_K)` classes `u`. -/
+theorem totallyBounded_restrict_of_forall_eqOn [NormedSpace ℝ F] [Fact (1 ≤ p)] {K : Set α}
+    (hK : MeasurableSet K) {S : Set (α → F)} {g : (α → F) → α → F}
+    (hg : ∀ u ∈ S, MemLp (g u) p mu) (hgK : ∀ u ∈ S, ∀ x ∈ K, g u x = u x)
+    (hT : TotallyBounded {f : Lp F p mu | ∃ u ∈ S, f =ᵐ[mu] g u}) :
+    TotallyBounded {f : Lp F p (mu.restrict K) | ∃ u ∈ S, f =ᵐ[mu.restrict K] u} := by
+  have hle : mu.restrict K ≤ (1 : ℝ≥0∞) • mu := by simpa using Measure.restrict_le_self
+  let res : Lp F p mu →L[ℝ] Lp F p (mu.restrict K) :=
+    Lp.LpToLpOfMeasureLeSMul ENNReal.one_ne_top hle
+  refine (hT.image res.uniformContinuous).subset ?_
+  rintro f ⟨u, hu, hfu⟩
+  refine ⟨(hg u hu).toLp _, ⟨u, hu, MemLp.coeFn_toLp _⟩, ?_⟩
+  refine Lp.ext ?_
+  filter_upwards [Lp.coeFn_LpToLpOfMeasureLeSMul (μ := mu.restrict K) ENNReal.one_ne_top hle
+      ((hg u hu).toLp _), ae_restrict_of_ae (MemLp.coeFn_toLp (hg u hu)),
+    ae_restrict_mem hK, hfu] with x h₁ h₂ hx h₃
+  rw [h₁, h₂, h₃, hgK u hu x hx]
+/-- `Lᵖ` convergence gives `L¹` convergence of representatives on every finite-measure set. -/
+theorem tendsto_setLIntegral_enorm_sub_of_tendsto_Lp
+    {E H ι : Type*} [MeasurableSpace E] [NormedAddCommGroup H] [NormedSpace ℝ H]
+    {μ : Measure E} {r : ℝ≥0∞} [Fact (1 ≤ r)] {W : Set E} (hW : μ W < ⊤)
+    {l : Filter ι} {A : ι → Lp H r μ} {A₀ : Lp H r μ} (hA : Tendsto A l (𝓝 A₀))
+    {a : ι → E → H} {a₀ : E → H} (ha : ∀ n, A n =ᵐ[μ] a n)
+    (ha₀ : A₀ =ᵐ[μ.restrict W] a₀) :
+    Tendsto (fun n => ∫⁻ x in W, ‖a n x - a₀ x‖ₑ ∂μ) l (𝓝 0) := by
+  let R := W.LpToL1RestrictCLM (𝕜 := ℝ) (F := H) (p := r) hW
+  have h := (R.continuous.tendsto A₀).comp hA
+  rw [Lp.tendsto_Lp_iff_tendsto_eLpNorm'] at h
+  refine h.congr fun n => ?_
+  rw [eLpNorm_one_eq_lintegral_enorm ((Lp.aestronglyMeasurable _).sub
+    (Lp.aestronglyMeasurable _))]
+  apply lintegral_congr_ae
+  filter_upwards [W.LpToL1RestrictCLM_coeFn (𝕜 := ℝ) hW (A n),
+    W.LpToL1RestrictCLM_coeFn (𝕜 := ℝ) hW A₀, ae_restrict_of_ae (ha n), ha₀]
+    with x h₁ h₂ h₃ h₄
+  rw [Function.comp_apply, Pi.sub_apply]
+  exact congrArg (fun z => ‖z‖ₑ) (congrArg₂ (· - ·) (h₁.trans h₃) (h₂.trans h₄))
+
+end TauCeti
+
+namespace MeasureTheory
+
+/-- The class of a zero extension agrees with the original function on a measurable subset
+of its original domain. -/
+theorem MemLp.coeFn_toLp_indicator_restrict {E F : Type*} [MeasurableSpace E]
+    [NormedAddCommGroup F] {μ : Measure E} {p : ENNReal} {s W : Set E} {f : E → F}
+    (hf : MemLp (s.indicator f) p μ) (hW : MeasurableSet W) (hWs : W ⊆ s) :
+    hf.toLp (s.indicator f) =ᵐ[μ.restrict W] f := by
+  filter_upwards [ae_restrict_of_ae hf.coeFn_toLp, ae_restrict_mem hW] with x h₁ h₂
+  rw [h₁, Set.indicator_of_mem (hWs h₂)]
+
+end MeasureTheory
