@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Analysis.SpecialFunctions.Trigonometric.Basic
 import Mathlib.Analysis.SpecialFunctions.Arcosh
+import Mathlib.Analysis.SpecialFunctions.Trigonometric.Bounds
 
 /-!
 # Trigonometric bounds and nonvanishing criteria
@@ -15,7 +16,8 @@ The sine of `π / x` is positive for real `x > 1`. The sine of `π * x` is nonze
 `x ∈ (-1, 1)`, a criterion used to detect nonflat Schwarz–Christoffel turns. The sine is
 nonpositive on `[π, 2π]`. For real `a < 1` the quantity `1 - a sin² θ` is positive, a bound
 `a sin² φ < 1` with `φ ≤ π / 2` gives `a sin² θ < 1` for `θ ∈ [0, φ]`, and
-`1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Cosine is positive strictly between two
+`1 - k² ≤ 1 - k² sin² θ ≤ 1` for every real `k`. Jordan's inequality gives `θ ≤ π / 2 * sin θ` on
+`[0, π / 2]`. Cosine is positive strictly between two
 angles in `[-π/2, π/2]`, in either orientation (`TauCeti.cos_pos_of_mem_uIoo`). On
 `(-π / 2, π / 2)` the square of the sine is less than `1`, so `sin (x / 2) ^ 2 < 1` for `|x| < π`.
 
@@ -117,6 +119,14 @@ theorem exists_pos_cosh_mul_sin_mul_sin_eq {α β γ : ℝ} (hα : 0 < α) (hβ 
   have hκ := one_lt_cos_mul_cos_add_cos_div_sin_mul_sin hα hβ hγ h
   refine ⟨arcosh _, arcosh_pos hκ, ?_⟩
   rw [cosh_arcosh hκ.le, div_mul_cancel₀ _ hs.ne']
+
+/-- Jordan's inequality in the form `θ ≤ π / 2 * sin θ` for `θ ∈ [0, π / 2]`, with the sine given
+as a value `s`. -/
+theorem le_pi_div_two_mul_of_sin_eq {θ s : ℝ} (h0 : 0 ≤ θ) (h1 : θ ≤ π / 2)
+    (hsin : sin θ = s) : θ ≤ π / 2 * s := by
+  have h := mul_le_sin h0 h1
+  rw [hsin, div_mul_eq_mul_div, div_le_iff₀ Real.pi_pos] at h
+  nlinarith
 
 /-- **The parameters of the hyperbolic law of cosines.** Positive angles `α, β` and `γ ≥ 0` with
 `α + β + γ < π` determine `K` with `K sin α sin β = cos α cos β + cos γ` and `t > 1` with
