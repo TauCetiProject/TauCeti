@@ -19,8 +19,8 @@ show that intertwining by an isomorphism is symmetric and transitive.
 
 ## Main results
 
-* `MulEquiv.symm_comp_eq_comp_symm_of_comp_eq_comp`: an intertwining relation inverts along
-  `ψ.symm`.
+* `MulEquiv.symm_comp_eq_comp_symm_iff`: `ψ.symm` intertwines `F'` with `F` exactly when `ψ`
+  intertwines `F` with `F'`.
 * `TauCeti.trans_comp_eq_comp_trans_of_comp_eq_comp`: intertwining relations compose along
   `ψ.trans χ`.
 -/
@@ -32,15 +32,19 @@ namespace MulEquiv
 variable {M M' : Type*} [MulOneClass M] [MulOneClass M']
   {F : M →* M} {F' : M' →* M'}
 
-/-- An isomorphism intertwining two endomorphisms has an inverse intertwining them the other way.
+/-- An isomorphism intertwines two endomorphisms exactly when its inverse intertwines them the
+other way.
 
-The equation is not symmetric in `ψ` and `ψ.symm`, so this provides the symmetry direction for
+The equation is not symmetric in `ψ` and `ψ.symm`, so this provides the symmetry law for
 intertwining relations. -/
-theorem symm_comp_eq_comp_symm_of_comp_eq_comp (ψ : M ≃* M')
-    (hψ : (ψ : M →* M').comp F = F'.comp (ψ : M →* M')) :
-    (ψ.symm : M' →* M).comp F' = F.comp (ψ.symm : M' →* M) :=
-  have h : Function.Semiconj ψ F F' := fun x => DFunLike.congr_fun hψ x
-  MonoidHom.ext (h.inverse_left ψ.symm_apply_apply ψ.apply_symm_apply)
+@[simp]
+theorem symm_comp_eq_comp_symm_iff (ψ : M ≃* M') :
+    (ψ.symm : M' →* M).comp F' = F.comp (ψ.symm : M' →* M) ↔
+      (ψ : M →* M').comp F = F'.comp (ψ : M →* M') :=
+  ⟨fun h => MonoidHom.ext <| Function.Semiconj.inverse_left (f := ψ.symm) (DFunLike.congr_fun h)
+      ψ.apply_symm_apply ψ.symm_apply_apply,
+    fun h => MonoidHom.ext <| Function.Semiconj.inverse_left (f := ψ) (DFunLike.congr_fun h)
+      ψ.symm_apply_apply ψ.apply_symm_apply⟩
 
 end MulEquiv
 
@@ -54,8 +58,7 @@ theorem trans_comp_eq_comp_trans_of_comp_eq_comp {ψ : M ≃* M'} {χ : M' ≃* 
     (hψ : (ψ : M →* M').comp F = F'.comp (ψ : M →* M'))
     (hχ : (χ : M' →* M'').comp F' = F''.comp (χ : M' →* M'')) :
     ((ψ.trans χ : M ≃* M'') : M →* M'').comp F = F''.comp ((ψ.trans χ : M ≃* M'') : M →* M'') :=
-  have h₁ : Function.Semiconj ψ F F' := fun x => DFunLike.congr_fun hψ x
-  have h₂ : Function.Semiconj χ F' F'' := fun x => DFunLike.congr_fun hχ x
-  MonoidHom.ext (h₁.trans h₂)
+  MonoidHom.ext <| Function.Semiconj.trans (fab := ψ) (fbc := χ) (DFunLike.congr_fun hψ)
+    (DFunLike.congr_fun hχ)
 
 end TauCeti
