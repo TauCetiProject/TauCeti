@@ -72,7 +72,7 @@ theorem exists_ker_pow_succ_eq_one_sub (hK : IsCompactOperator K) :
   · exact (hsep m n h).not_gt (by rwa [norm_sub_rev])
   · exact (hsep n m h).not_gt hlt
 
-variable [CompleteSpace 𝕜] [IsRCLikeNormedField 𝕜] [CompleteSpace X]
+variable [IsRCLikeNormedField 𝕜] [CompleteSpace X]
 
 /-- **The stable Riesz splitting at `1`.** For a compact operator `K`, the kernels and ranges
 of powers of `1 - K` are constant from some stage onward, and their stable values are
