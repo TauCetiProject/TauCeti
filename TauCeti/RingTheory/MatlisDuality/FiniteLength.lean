@@ -7,6 +7,7 @@ module
 
 public import TauCeti.Algebra.Module.Injective.Cogenerator
 public import TauCeti.Algebra.Module.Injective.Envelope.Basic
+public import TauCeti.RingTheory.LocalRing.ResidueField.Quotient
 
 /-!
 # Matlis duality for modules of finite length
@@ -82,15 +83,6 @@ theorem residueFieldLinearMapEquiv_apply_apply (hι : Function.Injective ι)
     (hess : IsEssential (LinearMap.range ι)) (a b : ResidueField R) :
     residueFieldLinearMapEquiv hι hess a b = ι (a * b) :=
   (rfl)
-
-/-- The quotient by a maximal ideal is the residue field. -/
-private def quotientEquivResidueField {𝔪 : Ideal R} (h𝔪 : 𝔪.IsMaximal) :
-    (R ⧸ 𝔪) ≃ₗ[R] ResidueField R :=
-  -- `𝔪` is the maximal ideal, the kernel of `residue`.
-  Submodule.quotEquivOfEq _ _ (by
-      ext r
-      simp [eq_maximalIdeal h𝔪, ResidueField.algebraMap_eq, residue_eq_zero_iff]) ≪≫ₗ
-    (Algebra.linearMap R (ResidueField R)).quotKerEquivOfSurjective residue_surjective
 
 /-- The Matlis dual of `R ⧸ 𝔪` has length one, for the maximal ideal `𝔪`. -/
 private theorem length_quotient_linearMap (hι : Function.Injective ι)
