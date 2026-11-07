@@ -31,37 +31,6 @@ public section
 
 open IsDedekindDomain NumberField NumberField.InfinitePlace QuadraticMap
 
-namespace NumberField.QuadraticForm
-
-open TauCeti
-
-variable {K : Type*} [Field K] [NumberField K]
-
-omit [NumberField K] in
-/-- A regular form of positive rank over an extension `L` of `K`, whose discriminant is induced by
-the square class of a unit `d` of `K`, is equivalent to a diagonal form whose coefficient product
-differs from the image of `d` by a square. -/
-theorem exists_equivalent_weightedSumSquares_isSquare_div_prod {L : Type*} [Field L]
-    [Invertible (2 : L)] {n : ℕ} (φ : K →+* L) (d : Kˣ)
-    (Q : _root_.QuadraticForm L (Fin (n + 1) → L)) (hQ : Q.Nondegenerate)
-    (hd : RegularFormClass.discr (formClass Q hQ) = φ.squareClassMap (squareClass d)) :
-    ∃ a : Fin (n + 1) → Lˣ, Q.Equivalent (weightedSumSquares L a) ∧
-      IsSquare (Units.map φ.toMonoidHom d / ∏ i, a i) := by
-  classical
-  obtain ⟨a, ha⟩ := by
-    have h := Q.equivalent_weightedSumSquares_units_of_nondegenerate'
-      (QuadraticMap.nondegenerate_associated_iff.mpr hQ).1
-    rw [Module.finrank_fin_fun] at h
-    exact h
-  refine ⟨a, ha, ?_⟩
-  have h := discr_formClass Q hQ ⟨n + 1, a⟩
-    (by simpa only [presentedForm_eq_weightedSumSquares] using ha)
-  rw [hd, RingHom.squareClassMap_apply] at h
-  have hs := (squareClass_eq_iff_isSquare_mul _ _).mp h
-  simpa only [pow_two, mul_div_mul_right_eq_div] using hs.div (IsSquare.sq (∏ i, a i))
-
-end NumberField.QuadraticForm
-
 namespace TauCeti.NumberField.QuadraticForm
 
 variable {K : Type*} [Field K] [NumberField K]
@@ -96,11 +65,11 @@ theorem exists_form_discr_eq_equivalent_at_places
       (Invertible.map (algebraMap K (v.1.adicCompletion K)) 2).copy 2 (map_ofNat _ _).symm
     -- Diagonalize the prescribed local forms, tracking the square class of the coefficient product.
     choose a ha hprodU using fun v : S =>
-      _root_.NumberField.QuadraticForm.exists_equivalent_weightedSumSquares_isSquare_div_prod
-      (algebraMap K (v.1.adicCompletion K)) d (U v) (hU v) (hUd v)
+      (algebraMap K (v.1.adicCompletion K)).exists_equivalent_weightedSumSquares_isSquare_div_prod
+      d (U v) (hU v) (hUd v)
     choose b hb hprodR using fun w : T =>
-      _root_.NumberField.QuadraticForm.exists_equivalent_weightedSumSquares_isSquare_div_prod
-      (embedding_of_isReal w.1.2) d (R w) (hR w) (hRd w)
+      (embedding_of_isReal w.1.2).exists_equivalent_weightedSumSquares_isSquare_div_prod
+      d (R w) (hR w) (hRd w)
     -- Approximate the coefficients, with the last one fixed by their global product.
     obtain ⟨c, hc, hcv, hcw⟩ :=
       GlobalNumberFields.exists_coefficients_prod_eq_isSquare_div_at_places S T d a b hprodU hprodR
