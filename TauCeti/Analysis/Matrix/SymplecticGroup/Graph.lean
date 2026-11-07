@@ -42,9 +42,11 @@ Conley–Zehnder index of symplectic paths is expressed as a Robbin–Salamon in
 ## Proof
 
 The determinant of the frame is `det ((A₁₂ - A₂₁) + i (A₁₁ + A₂₂))` by a Schur complement
-(`TauCeti.GLSymplectic.det_graphFrame`), and the realification of that complex matrix is
-`A J + J A`. If `A J Aᵀ = J`, then `(A J + J A) Aᵀ = J (1 + A Aᵀ)` is invertible because `1 + A Aᵀ`
-is positive definite, so the frame is invertible. For a realified unitary matrix `A = U_ℝ` the
+(`TauCeti.GLSymplectic.det_graphFrame`), and its phase is the Maslov phase of the graph
+(`TauCeti.GLSymplectic.coe_graphPhase_eq_maslovPhase`). The realification of
+`(A₁₂ - A₂₁) + i (A₁₁ + A₂₂)` is `A J + J A`. If `A J Aᵀ = J`, then
+`(A J + J A) Aᵀ = J (1 + A Aᵀ)` is invertible because `1 + A Aᵀ` is positive definite, so the frame
+is invertible. For a realified unitary matrix `A = U_ℝ` the
 complex matrix is `2 i U`, so the graph phase is `(-1)ⁿ (det U)² = (-1)ⁿ ρ(A)²`
 (`TauCeti.GLSymplectic.coe_graphPhase_inclusion`). A general loop is deformed to its loop of
 orthogonal polar factors through symplectic matrices, which changes no degree
@@ -202,6 +204,14 @@ theorem coe_graphFrameEquiv (A : GLSymplectic n ℝ) :
       Matrix.toLin' (graphFrame (A : GL (n ⊕ n) ℝ)) :=
   (rfl)
 
+/-- The graph of a symplectic matrix is the image of the real points under its graph frame
+automorphism. -/
+theorem graphSubspace_eq_map (A : GLSymplectic n ℝ) :
+    graphSubspace (A : GL (n ⊕ n) ℝ) =
+      (LinearMap.range (Complex.ofRealAm.toLinearMap.compLeft (n ⊕ n))).map
+        (((graphFrameEquiv A).toLinearEquiv : (n ⊕ n → ℂ) →ₗ[ℂ] (n ⊕ n → ℂ)).restrictScalars ℝ) :=
+  (rfl)
+
 /-- The graph frame automorphism depends continuously on the symplectic matrix. -/
 theorem continuous_graphFrameEquiv :
     Continuous fun A : GLSymplectic n ℝ =>
@@ -234,6 +244,17 @@ theorem coe_graphPhase (A : GLSymplectic n ℝ) :
         conj (graphFrame ((A : GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det := by
   simp [graphPhase]
 
+/-- **The graph phase is the Maslov phase of the graph** relative to the real points of
+`ℂ^{n ⊕ n}`. -/
+theorem coe_graphPhase_eq_maslovPhase (A : GLSymplectic n ℝ) :
+    (graphPhase A : ℂ) = isMaximalTotallyReal_range_compLeft_ofReal.maslovPhase
+      (isMaximalTotallyReal_graphSubspace (mem_iff_mem_symplecticGroup.1 A.2)) := by
+  -- `graphSubspace A` is by definition the image of the real points under the graph frame
+  -- (`graphSubspace_eq_map`), so the two maximal-totally-real proofs concern the same subspace.
+  refine Eq.trans ?_ ((isMaximalTotallyReal_range_compLeft_ofReal.maslovPhase_map
+    (graphFrameEquiv A).toLinearEquiv).symm.trans rfl)
+  rw [coe_graphPhase, coe_graphFrameEquiv, LinearMap.det_toLin']
+
 /-- The graph phase depends continuously on the symplectic matrix. -/
 theorem continuous_graphPhase : Continuous (graphPhase : GLSymplectic n ℝ → Circle) := by
   have hd : Continuous fun A : GLSymplectic n ℝ =>
@@ -263,10 +284,7 @@ theorem coe_graphPhase_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup
       toBlocks₁₂, toBlocks₂₁, toBlocks₂₂, Matrix.of_apply, realify_apply_inl_inl,
       realify_apply_inl_inr, realify_apply_inr_inl, realify_apply_inr_inr, RCLike.re_to_complex,
       RCLike.im_to_complex, smul_eq_mul, ofReal_sub, ofReal_neg, ofReal_add]
-    nth_rw 5 [← re_add_im ((V : Matrix n n ℂ) i j)]
-    ring_nf
-    rw [I_sq]
-    ring
+    apply Complex.ext <;> simp <;> ring
   have hdet : (graphFrame (((Subgroup.inclusion inf_le_left U : GLSymplectic n ℝ) :
       GL (n ⊕ n) ℝ) : Matrix (n ⊕ n) (n ⊕ n) ℝ)).det =
       (2 * Complex.I) ^ Fintype.card n * (V : Matrix n n ℂ).det := by
@@ -286,33 +304,6 @@ theorem coe_graphPhase_inclusion (U : ↥(GLSymplectic n ℝ ⊓ unitarySubgroup
   ring_nf
 
 /-! ### The Maslov index of the graph loop -/
-
-/-- **Deforming a loop to its orthogonal polar factors.** For every continuous map `g` from the
-symplectic group to the circle, the loop `g ∘ γ` has the degree of the loop of `g` on the
-orthogonal polar factors of `γ`: the polar deformation `P^{1-s} U` of `A = P U` stays symplectic. -/
-theorem degree_map_inclusion_polarUnitary {A : GLSymplectic n ℝ} (γ : Path A A)
-    {g : GLSymplectic n ℝ → Circle} (hg : Continuous g) :
-    Circle.degree ((γ.map continuous_inclusion_polarUnitary).map hg) =
-      Circle.degree (γ.map hg) := by
-  let D : GLSymplectic n ℝ × I → GLSymplectic n ℝ := fun p ↦
-    ⟨polarDeformation (p.1 : GL (n ⊕ n) ℝ) p.2, polarDeformation_mem p.1.2 _⟩
-  have hD : Continuous D := by
-    refine Continuous.subtype_mk ?_ _
-    have h := (polarHomotopy (n ⊕ n) ℝ).continuous.comp
-      (continuous_snd.prodMk (continuous_subtype_val.comp continuous_fst) :
-        Continuous fun p : GLSymplectic n ℝ × I ↦ (p.2, (p.1 : GL (n ⊕ n) ℝ)))
-    simpa only [Function.comp_def, polarHomotopy_apply] using h
-  have hD0 (A : GLSymplectic n ℝ) : D (A, 0) = A := Subtype.ext (by simp [D])
-  have hD1 (A : GLSymplectic n ℝ) : D (A, 1) = Subgroup.inclusion inf_le_left (polarUnitary A) :=
-    Subtype.ext (Units.ext (by simp [D]))
-  let F : C(I × I, Circle) :=
-    ⟨fun p ↦ g (D (γ p.2, p.1)),
-      hg.comp (hD.comp ((γ.continuous.comp continuous_snd).prodMk continuous_fst))⟩
-  refine (Circle.degree_eq_of_homotopy (γ.map hg) _ F (fun t ↦ ?_) (fun t ↦ ?_)
-    (fun s ↦ ?_)).symm
-  · simp [F, hD0]
-  · simp [F, hD1]
-  · simp [F]
 
 /-- The **graph loop** of a loop `γ` of symplectic matrices: the loop `t ↦ Γ(γ t)` of graphs, as a
 loop of maximal totally real subspaces of `ℂⁿ × ℂⁿ = ℂ^{n ⊕ n}`, framed by the graph frames. -/
@@ -337,13 +328,8 @@ theorem maslovIndex_graphLoop {A : GLSymplectic n ℝ} (γ : Path A A) :
   have hL₀ := isMaximalTotallyReal_range_compLeft_ofReal (ι := n ⊕ n)
   -- The Maslov phase of the graph relative to the real points is the graph phase.
   have hphase (t : I) : ((γ.map continuous_graphPhase) t : ℂ) =
-      hL₀.maslovPhase ((graphLoop γ).isMaximalTotallyReal t) := by
-    -- `graphLoop γ t` is by definition the image of the real points under the graph frame, so the
-    -- two maximal-totally-real proofs below concern the same subspace.
-    refine Eq.trans ?_
-      ((hL₀.maslovPhase_map (graphFrameEquiv (γ t)).toLinearEquiv).symm.trans rfl)
-    rw [Path.map_coe, Function.comp_apply, coe_graphPhase, coe_graphFrameEquiv,
-      LinearMap.det_toLin']
+      hL₀.maslovPhase ((graphLoop γ).isMaximalTotallyReal t) :=
+    coe_graphPhase_eq_maslovPhase (γ t)
   -- On the orthogonal polar factors the graph phase is `(-1)ⁿ ρ²`.
   let c : Circle := ⟨(-1) ^ Fintype.card n, mem_sphere_zero_iff_norm.2 (by simp)⟩
   have hunit : Circle.degree ((γ.map continuous_inclusion_polarUnitary).map continuous_graphPhase) =
