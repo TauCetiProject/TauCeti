@@ -48,7 +48,7 @@ argument through subsequential limits requires.
 public section
 
 open MeasureTheory Filter Polynomial Set Finset
-open scoped Topology
+open scoped Topology BoundedContinuousFunction
 
 namespace TauCeti
 
@@ -107,6 +107,41 @@ private theorem dominator_le {f : ℝ → ℝ} {p : ℝ[X]} {C δ R M t c : ℝ}
       _ ≤ c * ((R / M) ^ 2) ^ n := by gcongr
   linarith
 
+/-- A polynomial dominating `|f - p|` everywhere, whose integral against a probability measure
+concentrated on `[-R, R]` is at most `3δ`, when `p` approximates the bounded function `f` within `δ`
+on `[-M, M]` for some `M > R`. -/
+private theorem exists_dominating_polynomial {μ : Measure ℝ} [IsProbabilityMeasure μ]
+    {f : ℝ →ᵇ ℝ} {p : ℝ[X]} {R M δ : ℝ} (hR : 0 ≤ R) (hRM : R < M) (hδ : 0 < δ)
+    (hae : ∀ᵐ x ∂μ, |x| ≤ R) (hp : ∀ x ∈ Icc (-M) M, |p.eval x - f x| < δ) :
+    ∃ q : ℝ[X], (∀ x, |f x - p.eval x| ≤ q.eval x) ∧ ∫ x, q.eval x ∂μ ≤ 3 * δ := by
+  have hM : 0 < M := hR.trans_lt hRM
+  have hμ := integrable_pow_of_ae_abs_le hae
+  set C := ‖f‖
+  have hfC (x : ℝ) : |f x| ≤ C := by simpa [Real.norm_eq_abs] using f.norm_coe_le_norm x
+  set t := δ / ((C + δ) ^ 2 + 1)
+  have ht : 0 < t := by positivity
+  set c := C + 1 / (4 * t)
+  have hc : 0 < c := by positivity
+  have hRM' : (R / M) ^ 2 < 1 := by
+    rw [div_pow, div_lt_one (by positivity)]
+    exact pow_lt_pow_left₀ hRM hR two_ne_zero
+  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (div_pos hδ hc) hRM'
+  set q : ℝ[X] := Polynomial.C δ + Polynomial.C t * p ^ 2 +
+    Polynomial.C (c / M ^ (2 * n)) * X ^ (2 * n)
+  have hq (x : ℝ) : q.eval x = δ + t * p.eval x ^ 2 + c / M ^ (2 * n) * x ^ (2 * n) := by
+    simp [q]
+  refine ⟨q, fun x => (hq x).symm ▸ abs_sub_eval_le hM ht hfC hp n x, ?_⟩
+  have htδ : t * (C + δ) ^ 2 ≤ δ := by
+    rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
+    nlinarith
+  have hb : ∀ᵐ x ∂μ, q.eval x ≤ 3 * δ := by
+    filter_upwards [hae] with x hx
+    rw [hq]
+    exact dominator_le hR hRM ht hc.le hfC hp htδ ((lt_div_iff₀' hc).1 hn).le hx
+  calc ∫ x, q.eval x ∂μ ≤ ∫ _, 3 * δ ∂μ :=
+        integral_mono_ae (integrable_eval_of_forall_integrable_pow hμ q) (integrable_const _) hb
+    _ = 3 * δ := by simp
+
 end TauCeti
 
 namespace MeasureTheory.ProbabilityMeasure
@@ -131,7 +166,6 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   set R := max R₀ 0
   have hR : 0 ≤ R := le_max_right _ _
   set M := R + 1
-  have hM : 0 < M := by positivity
   have hae : ∀ᵐ x ∂(μ : Measure ℝ), |x| ≤ R := by
     filter_upwards [ae_iff.mpr hμK] with x hx
     exact (hR₀ x hx).trans (le_max_left _ _)
@@ -144,50 +178,12 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
   intro f
   rw [Metric.tendsto_nhds]
   intro ε hε
-  -- Approximate `f` by a polynomial `p` on `[-M, M]`.
+  -- Approximate `f` by a polynomial `p` on `[-M, M]`, and dominate `|f - p|` by a polynomial `q`.
   set δ := ε / 6 with hδε
   have hδ : 0 < δ := by positivity
-  set C := ‖f‖
-  have hfC (x : ℝ) : |f x| ≤ C := by simpa [Real.norm_eq_abs] using f.norm_coe_le_norm x
   obtain ⟨p, hp⟩ := exists_polynomial_near_of_continuousOn (-M) M f f.continuous.continuousOn δ hδ
-  -- The polynomial `q` dominating `|f - p|` everywhere.
-  set t := δ / ((C + δ) ^ 2 + 1)
-  have ht : 0 < t := by positivity
-  set c := C + 1 / (4 * t)
-  have hc : 0 < c := by positivity
-  have hRM : (R / M) ^ 2 < 1 := by
-    rw [div_pow, div_lt_one (by positivity)]
-    exact pow_lt_pow_left₀ (by linarith) hR two_ne_zero
-  obtain ⟨n, hn⟩ := exists_pow_lt_of_lt_one (div_pos hδ hc) hRM
-  set q : ℝ[X] := Polynomial.C δ + Polynomial.C t * p ^ 2 +
-    Polynomial.C (c / M ^ (2 * n)) * X ^ (2 * n)
-  have hq (x : ℝ) : q.eval x = δ + t * p.eval x ^ 2 + c / M ^ (2 * n) * x ^ (2 * n) := by
-    simp [q]
-  have hfpq (x : ℝ) : |f x - p.eval x| ≤ q.eval x := by
-    rw [hq]
-    exact abs_sub_eval_le hM ht hfC hp n x
-  -- The limit of `∫ q dμᵢ` is at most `3δ`.
-  have hqμ : ∫ x, q.eval x ∂(μ : Measure ℝ) ≤ 3 * δ := by
-    have htδ : t * (C + δ) ^ 2 ≤ δ := by
-      rw [div_mul_eq_mul_div, div_le_iff₀ (by positivity)]
-      nlinarith
-    have hb : ∀ᵐ x ∂(μ : Measure ℝ), q.eval x ≤ 3 * δ := by
-      filter_upwards [hae] with x hx
-      rw [hq]
-      exact dominator_le hR (by linarith) ht hc.le hfC hp htδ ((lt_div_iff₀' hc).1 hn).le hx
-    calc ∫ x, q.eval x ∂(μ : Measure ℝ) ≤ ∫ _, 3 * δ ∂(μ : Measure ℝ) :=
-          integral_mono_ae (integrable_eval_of_forall_integrable_pow hμ q) (integrable_const _) hb
-      _ = 3 * δ := by simp
-  -- On the limit side, `|f - p| < δ` on the support of `μ`, so `|∫ f dμ - ∫ p dμ| ≤ δ`.
-  have hfpμ : |∫ x, f x ∂(μ : Measure ℝ) - ∫ x, p.eval x ∂(μ : Measure ℝ)| ≤ δ := by
-    rw [← integral_sub (f.integrable _) (integrable_eval_of_forall_integrable_pow hμ p)]
-    have hb : ∀ᵐ x ∂(μ : Measure ℝ), ‖f x - p.eval x‖ ≤ δ := by
-      filter_upwards [hae] with x hx
-      have := hp x (abs_le.1 (hx.trans (by linarith)))
-      rw [Real.norm_eq_abs, abs_sub_comm]
-      exact this.le
-    have := norm_integral_le_of_norm_le_const hb
-    rwa [Real.norm_eq_abs, probReal_univ, mul_one] at this
+  obtain ⟨q, hfpq, hqμ⟩ := exists_dominating_polynomial hR (lt_add_one R) hδ hae hp
+  have hfpμ := abs_integral_eval_sub_le (lt_add_one R).le hae hp
   -- Eventually `∫ q dμᵢ < 4δ` and `|∫ p dμᵢ - ∫ p dμ| < δ`. Since `|f - p| ≤ q`, the triangle
   -- inequality bounds `|∫ f dμᵢ - ∫ f dμ|` by
   -- `|∫ f dμᵢ - ∫ p dμᵢ| + |∫ p dμᵢ - ∫ p dμ| + |∫ p dμ - ∫ f dμ| < 4δ + δ + δ = ε`.
@@ -199,7 +195,6 @@ theorem tendsto_of_tendsto_integral_pow {μs : ι → ProbabilityMeasure ℝ}
     exact norm_integral_le_of_norm_le hqint
       (ae_of_all _ fun x => (Real.norm_eq_abs _).trans_le (hfpq x))
   rw [Real.dist_eq] at hpi ⊢
-  rw [abs_sub_comm] at hfpμ
   linarith [hδε, abs_sub_le (∫ x, f x ∂(μs i : Measure ℝ)) (∫ x, p.eval x ∂(μs i : Measure ℝ))
       (∫ x, f x ∂(μ : Measure ℝ)),
     abs_sub_le (∫ x, p.eval x ∂(μs i : Measure ℝ)) (∫ x, p.eval x ∂(μ : Measure ℝ))

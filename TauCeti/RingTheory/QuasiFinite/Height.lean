@@ -89,6 +89,7 @@ theorem height_eq_height_of_quasiFiniteAt [Algebra.FiniteType R S]
   obtain ⟨S', hS', r, hrq, hbij⟩ :=
     Algebra.QuasiFiniteAt.exists_fg_and_exists_notMem_and_awayMap_bijective (R := R) q
   have : Module.Finite R S' := ⟨(Submodule.fg_top _).mpr hS'⟩
+  have : IsDomain R := (FaithfulSMul.algebraMap_injective R S).isDomain
   have : FaithfulSMul R S' := (faithfulSMul_iff_algebraMap_injective R S').mpr fun a b h ↦
     FaithfulSMul.algebraMap_injective R S (congrArg Subtype.val h)
   have : (q.under S').LiesOver (q.under R) := ⟨(under_under (B := S') q).symm⟩

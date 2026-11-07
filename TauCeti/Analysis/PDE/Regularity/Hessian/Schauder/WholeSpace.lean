@@ -54,9 +54,11 @@ The first and second derivatives are then removed from the right side by the int
 inequalities `‖D²u‖_∞ ≤ 32 ε⁻² ‖u‖_∞ + 2 ε^α [D²u]_α` and
 `‖Du‖_∞ ≤ 34 ε⁻¹ ‖u‖_∞ + 2 ε^(1+α) [D²u]_α`
 (`HolderWith.norm_iteratedFDeriv_add_two_le_of_norm_le`,
-`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`). Taking for `[D²u]_α` the Hölder
-norm `nnHolderNorm`, which is finite, and `ε` so small that `4 C ε^α ≤ 1 / 2`, the resulting
-multiple of `[D²u]_α` is absorbed into the left side.
+`HolderWith.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove`), which for `ε ≤ 1` give the
+common bound `(34 ε⁻¹ + 32 ε⁻²) ‖u‖_∞ + 2 ε^α [D²u]_α`
+(`HolderWith.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le`). Taking for
+`[D²u]_α` the Hölder norm `nnHolderNorm`, which is finite, and `ε` so small that
+`4 C ε^α ≤ 1 / 2`, the resulting multiple of `[D²u]_α` is absorbed into the left side.
 
 ## Main declarations
 
@@ -183,20 +185,17 @@ theorem exists_holderWith_iteratedFDeriv_two_and_norm_le_of_sum_smul_fderiv_fder
   have hH : HolderWith H α (iteratedFDeriv ℝ 2 u) := hmem.holderWith
   have hN0 (y : E) : ‖iteratedFDeriv ℝ 0 u y‖ ≤ N := by
     simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hN y
-  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ 32 * N / ε ^ 2 + 2 * H * ε ^ (α : ℝ) :=
-    hH.norm_iteratedFDeriv_add_two_le_of_norm_le (k := 0) hu hN0 hbdd hε x
-  have h1 (x : E) : ‖fderiv ℝ u x‖ ≤ 34 * N / ε + 2 * H * ε ^ (α : ℝ) := by
-    have h := hH.norm_iteratedFDeriv_succ_le_of_norm_le_of_bddAbove (k := 0) hu hN0 hbdd hε x
-    rw [zero_add, norm_iteratedFDeriv_one] at h
-    have hε' : ε ^ (1 + (α : ℝ)) ≤ ε ^ (α : ℝ) :=
-      Real.rpow_le_rpow_of_exponent_ge hε hε1 (by linarith)
-    nlinarith [H.coe_nonneg]
+  have h1 (x : E) : ‖fderiv ℝ u x‖ ≤ c * N + 2 * H * ε ^ (α : ℝ) := by
+    have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0
+      hbdd hε hε1 x).1
+    rwa [zero_add, norm_iteratedFDeriv_one] at h
+  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ c * N + 2 * H * ε ^ (α : ℝ) :=
+    (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0 hbdd hε
+      hε1 x).2
   -- The first estimate with `N₁ = (1 + c) N + 4 H ε^α`, which bounds `|u|`, `‖Du‖` and `‖D²u‖`.
   have hNN : 0 ≤ (N : ℝ) := N.coe_nonneg
   have hHε : 0 ≤ (H : ℝ) * ε ^ (α : ℝ) := by positivity
-  have h34 : 0 ≤ 34 * (N : ℝ) / ε := by positivity
-  have h32 : 0 ≤ 32 * (N : ℝ) / ε ^ 2 := by positivity
-  have hcN : 34 * N / ε + 32 * N / ε ^ 2 = c * N := by simp only [c]; ring
+  have hcN : 0 ≤ c * N := by positivity
   set N₁ : ℝ := (1 + c) * N + 4 * H * ε ^ (α : ℝ)
   have hN₁ : 0 ≤ N₁ := by positivity
   have hHN : H ≤ C₁ * (K + N₁.toNNReal) := by
