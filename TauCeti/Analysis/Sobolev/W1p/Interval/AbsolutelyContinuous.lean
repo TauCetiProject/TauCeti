@@ -44,19 +44,19 @@ variable {a b : ℝ} {p : ℝ≥0∞} [Fact (1 ≤ p)] {f : ℝ → ℝ}
 Sobolev class, including at `p = ∞`; the recorded weak gradient is its classical derivative
 almost everywhere. -/
 theorem exists_w1p_value_gradient_ae_eq (hf : AbsolutelyContinuousOnInterval f a b)
-    (hab : a ≤ b) (hdf : MemLp (deriv f) p (volume.restrict (Ioo a b))) :
+    (hdf : MemLp (deriv f) p (volume.restrict (Ioo a b))) :
     ∃ u : TauCeti.W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
       TauCeti.W1p.value u =ᵐ[volume.restrict (Ioo a b)] f ∧
       TauCeti.W1p.gradient u =ᵐ[volume.restrict (Ioo a b)] deriv f := by
   have hv : MemLp f p (volume.restrict (Ioo a b)) :=
-    ((uIcc_of_le hab ▸ hf.continuousOn).memLp_restrict_of_subset_isCompact
-      isCompact_Icc measurableSet_Ioo Ioo_subset_Icc_self p)
+    hf.continuousOn.memLp_restrict_of_subset_isCompact
+      isCompact_uIcc measurableSet_Ioo (Ioo_subset_Icc_self.trans Icc_subset_uIcc) p
   have hw : TauCeti.HasWeakFDerivOn volume ⟨Ioo a b, isOpen_Ioo⟩ f
       (fun t ↦ innerSL ℝ (deriv f t)) := by
     apply TauCeti.hasWeakFDerivOn_iff.2
     intro v
     simpa [Pi.smul_def, smul_eq_mul, real_inner_comm, mul_comm] using
-      (hf.hasWeakLineDerivOn hab).smul_direction v
+      hf.hasWeakLineDerivOn.smul_direction v
   refine ⟨TauCeti.W1p.mk (hv.toLp f) (hdf.toLp (deriv f))
     ((hw.congr_ae hv.coeFn_toLp.symm).congr_ae_deriv ?_), ?_, ?_⟩
   · filter_upwards [hdf.coeFn_toLp] with t ht
@@ -77,7 +77,7 @@ theorem existsUnique_intervalRepresentativeL_eq (hab : a < b) {f : ℝ → ℝ}
     (hdf : MemLp (deriv f) p (volume.restrict (Ioo a b))) :
     ∃! u : W1p volume ⟨Ioo a b, isOpen_Ioo⟩ p,
       ∀ t : Icc a b, intervalRepresentativeL hab u t = f t := by
-  obtain ⟨u, hu, -⟩ := hf.exists_w1p_value_gradient_ae_eq hab.le hdf
+  obtain ⟨u, hu, -⟩ := hf.exists_w1p_value_gradient_ae_eq hdf
   let w : C(Icc a b, ℝ) := ⟨fun t ↦ f t,
     (uIcc_of_le hab.le ▸ hf.continuousOn).domRestrict⟩
   have heq : intervalRepresentativeL hab u = w := by
