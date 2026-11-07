@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.RepresentationTheory.Tensor.External
+import all TauCeti.RepresentationTheory.LinHom.Basic
 
 /-!
 # External Hom representations
@@ -21,8 +22,8 @@ codomain. This realizes the operator blocks in two-sided Fourier decompositions 
 choosing bases for the representations.
 
 The construction consumes Mathlib's `Representation.linHom` on the two projection
-pullbacks, and the contraction comparison consumes `dualTensorHomEquiv` and
-`Representation.dualTensorHom_comm`.
+pullbacks, and the contraction comparison consumes
+`Representation.Equiv.dualTensorHomOfProjective`.
 
 ## References
 
@@ -64,10 +65,14 @@ theorem externalLinHom_comp_diag (τ : Representation k G W) :
 /-- Contraction identifies the external product of the dual domain and the codomain with
 external Hom. Only the domain needs to be finite projective. -/
 noncomputable def externalDualTensorHom [Module.Finite k V] [Module.Projective k V] :
-    Equiv (ρ.dual.externalTensor σ) (externalLinHom ρ σ) :=
-  .mk (dualTensorHomEquiv k V W) fun p ↦ by
-    simpa [externalLinHom, externalTensor_apply] using
-      dualTensorHom_comm (ρ.comp (MonoidHom.fst G H)) (σ.comp (MonoidHom.snd G H)) p
+    Equiv (ρ.dual.externalTensor σ) (externalLinHom ρ σ) := by
+  let e := Equiv.dualTensorHomOfProjective
+    (ρ.comp (MonoidHom.fst G H)) (σ.comp (MonoidHom.snd G H))
+  -- Repackage equivariance because externalTensor hides its pullback-tensor implementation.
+  refine { e with isIntertwining' := ?_ }
+  intro p
+  simpa [externalTensor_apply, tprod_apply, dual_apply, externalLinHom] using
+    e.isIntertwining' p
 
 @[simp]
 theorem externalDualTensorHom_apply [Module.Finite k V] [Module.Projective k V]
@@ -80,13 +85,11 @@ vectors tensored with the images of the basis vectors. -/
 theorem externalDualTensorHom_symm_apply [Module.Finite k V] [Module.Projective k V]
     {ι : Type*} [Fintype ι] (b : Module.Basis ι k V) (f : V →ₗ[k] W) :
     (externalDualTensorHom ρ σ).symm f = ∑ i, b.coord i ⊗ₜ[k] f (b i) := by
-  apply (externalDualTensorHom ρ σ).injective
-  simp only [Equiv.toLinearEquiv_apply, Equiv.coe_toIntertwiningMap,
-    Equiv.apply_symm_apply, externalDualTensorHom_apply, map_sum]
-  ext v
-  simp only [LinearMap.sum_apply, dualTensorHom_apply]
-  simpa only [map_sum, map_smul, Module.Basis.coord_apply] using
-    congrArg f (b.sum_repr v).symm
+  classical
+  -- Unwrap the equivariant comparison to apply Mathlib's linear basis-comparison lemma.
+  change (dualTensorHomEquiv k V W).symm f = _
+  rw [← dualTensorHomEquivOfBasis_eq_dualTensorHomEquiv b]
+  simp [dualTensorHomEquivOfBasis]
 
 namespace IntertwiningMap
 
@@ -136,9 +139,11 @@ theorem externalLinHom_map_dualTensorHom {ρ' : Representation k G V'}
     a.externalLinHom b (dualTensorHom k V W t) =
       dualTensorHom k V' W'
         (TensorProduct.map a.toLinearMap.dualMap b.toLinearMap t) := by
-  induction t using TensorProduct.inductionOn with
-  | tmul f w => ext v; simp
-  | add x y hx hy => simp_all
+  have h : dualTensorHom k V' W' ∘ₗ TensorProduct.map a.toLinearMap.dualMap b.toLinearMap =
+      b.toLinearMap.compRight k ∘ₗ a.toLinearMap.lcomp k W ∘ₗ dualTensorHom k V W := by
+    rw [← LinearMap.lTensor_comp_rTensor, ← LinearMap.comp_assoc,
+      dualTensorHom_comp_lTensor, LinearMap.comp_assoc, dualTensorHom_comp_rTensor_dualMap]
+  exact (LinearMap.congr_fun h t).symm
 
 end Semiring
 
