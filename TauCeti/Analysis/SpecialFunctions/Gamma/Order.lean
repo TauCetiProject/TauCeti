@@ -8,6 +8,7 @@ module
 public import Mathlib.Analysis.SpecialFunctions.Gamma.Deligne
 public import Mathlib.Analysis.Complex.CauchyIntegral
 public import Mathlib.Analysis.Meromorphic.Order
+public import Mathlib.Analysis.Meromorphic.Complex
 public import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 
 /-!
@@ -63,6 +64,7 @@ theorem hasDerivAt_inv_Gamma_neg_nat (n : ℕ) :
     ring
 
 /-- The entire reciprocal Gamma function has a simple zero at each nonpositive integer. -/
+@[simp]
 theorem analyticOrderAt_inv_Gamma_neg_nat (n : ℕ) :
     analyticOrderAt (fun s : ℂ ↦ (Gamma s)⁻¹) (-(n : ℂ)) = 1 := by
   apply (differentiable_one_div_Gamma.analyticAt _).analyticOrderAt_eq_one_of_zero_deriv_ne_zero
@@ -72,6 +74,7 @@ theorem analyticOrderAt_inv_Gamma_neg_nat (n : ℕ) :
       (Nat.cast_ne_zero.mpr (Nat.factorial_ne_zero n))
 
 /-- Gamma has a simple pole at each nonpositive integer. -/
+@[simp]
 theorem meromorphicOrderAt_Gamma_neg_nat (n : ℕ) :
     meromorphicOrderAt Gamma (-(n : ℂ)) = -1 := by
   have hq : meromorphicOrderAt (fun s : ℂ ↦ (Gamma s)⁻¹) (-(n : ℂ)) = 1 := by
@@ -105,7 +108,8 @@ theorem meromorphicOrderAt_Gamma_eq_neg_one_iff (s : ℂ) :
   · rw [meromorphicOrderAt_Gamma_of_ne_neg_nat (not_exists.mp hs)]
     simp [hs]
 
-/-- The nonvanishing exponential factor changes no order in the real archimedean factor. -/
+/-- The meromorphic order of `Gammaℝ` at `s` equals that of `Gamma` at `s / 2`. -/
+@[simp]
 theorem meromorphicOrderAt_Gammaℝ (s : ℂ) :
     meromorphicOrderAt Gammaℝ s = meromorphicOrderAt Gamma (s / 2) := by
   have he : Gammaℝ = (fun z : ℂ ↦ (Real.pi : ℂ) ^ (-z / 2)) *
@@ -118,6 +122,7 @@ theorem meromorphicOrderAt_Gammaℝ (s : ℂ) :
   simp
 
 /-- The complex archimedean factor has the same meromorphic orders as Gamma. -/
+@[simp]
 theorem meromorphicOrderAt_Gammaℂ (s : ℂ) :
     meromorphicOrderAt Gammaℂ s = meromorphicOrderAt Gamma s := by
   have he : Gammaℂ = (fun z : ℂ ↦ 2 * (2 * Real.pi : ℂ) ^ (-z)) * Gamma :=
@@ -158,39 +163,57 @@ theorem meromorphicOrderAt_Gammaℂ_nonpos (s : ℂ) : meromorphicOrderAt Gamma�
   rw [meromorphicOrderAt_Gammaℂ]
   exact meromorphicOrderAt_Gamma_nonpos _
 
-/-- Gamma has order zero exactly where its total value is nonzero. -/
-theorem meromorphicOrderAt_Gamma_eq_zero_iff (s : ℂ) :
-    meromorphicOrderAt Gamma s = 0 ↔ Gamma s ≠ 0 := by
-  by_cases hs : ∃ n : ℕ, s = -(n : ℂ)
-  · obtain ⟨n, rfl⟩ := hs
-    simp [meromorphicOrderAt_Gamma_neg_nat, Gamma_neg_nat_eq_zero]
-  · have hn : ∀ n : ℕ, s ≠ -(n : ℂ) := not_exists.mp hs
-    simp [meromorphicOrderAt_Gamma_of_ne_neg_nat hn, Gamma_ne_zero hn]
+end Complex
 
-/-- The real archimedean factor has order zero exactly where its total value is nonzero. -/
-theorem meromorphicOrderAt_Gammaℝ_eq_zero_iff (s : ℂ) :
-    meromorphicOrderAt Gammaℝ s = 0 ↔ Gammaℝ s ≠ 0 := by
-  rw [meromorphicOrderAt_Gammaℝ, meromorphicOrderAt_Gamma_eq_zero_iff]
-  simp [Gammaℝ_def, Real.pi_ne_zero]
+namespace TauCeti
 
-/-- The complex archimedean factor has order zero exactly where its total value is nonzero. -/
-theorem meromorphicOrderAt_Gammaℂ_eq_zero_iff (s : ℂ) :
-    meromorphicOrderAt Gammaℂ s = 0 ↔ Gammaℂ s ≠ 0 := by
-  rw [meromorphicOrderAt_Gammaℂ, meromorphicOrderAt_Gamma_eq_zero_iff]
-  simp [Gammaℂ_def, Real.pi_ne_zero]
+/-- The real archimedean gamma factor is in meromorphic normal form on the whole plane. -/
+theorem meromorphicNFOn_Gammaℝ : MeromorphicNFOn Gammaℝ Set.univ :=
+  meromorphicNFOn_inv.mp <| AnalyticOnNhd.meromorphicNFOn <|
+    analyticOnNhd_univ_iff_differentiable.mpr differentiable_Gammaℝ_inv
+
+/-- The complex archimedean gamma factor is in meromorphic normal form on the whole plane. -/
+theorem meromorphicNFOn_Gammaℂ : MeromorphicNFOn Gammaℂ Set.univ :=
+  meromorphicNFOn_inv.mp <| AnalyticOnNhd.meromorphicNFOn <|
+    analyticOnNhd_univ_iff_differentiable.mpr differentiable_Gammaℂ_inv
 
 /-- The real archimedean gamma factor is meromorphic on the whole plane. -/
 @[fun_prop]
-theorem _root_.Meromorphic.Gammaℝ : Meromorphic Gammaℝ := by
-  intro s
-  have h := (differentiable_Gammaℝ_inv.analyticAt s).meromorphicAt.inv
-  simpa only [Pi.inv_def, inv_inv] using h
+theorem meromorphic_Gammaℝ : Meromorphic Gammaℝ :=
+  meromorphicOn_univ.mp meromorphicNFOn_Gammaℝ.meromorphicOn
 
 /-- The complex archimedean gamma factor is meromorphic on the whole plane. -/
 @[fun_prop]
-theorem _root_.Meromorphic.Gammaℂ : Meromorphic Gammaℂ := by
-  intro s
-  have h := (differentiable_Gammaℂ_inv.analyticAt s).meromorphicAt.inv
-  simpa only [Pi.inv_def, inv_inv] using h
+theorem meromorphic_Gammaℂ : Meromorphic Gammaℂ :=
+  meromorphicOn_univ.mp meromorphicNFOn_Gammaℂ.meromorphicOn
+
+/-- The real archimedean gamma factor is meromorphic on any subset of the plane. -/
+@[fun_prop]
+theorem meromorphicOn_Gammaℝ {U : Set ℂ} : MeromorphicOn Gammaℝ U :=
+  meromorphic_Gammaℝ.meromorphicOn
+
+/-- The complex archimedean gamma factor is meromorphic on any subset of the plane. -/
+@[fun_prop]
+theorem meromorphicOn_Gammaℂ {U : Set ℂ} : MeromorphicOn Gammaℂ U :=
+  meromorphic_Gammaℂ.meromorphicOn
+
+end TauCeti
+
+namespace Complex
+
+/-- Gamma has order zero exactly where its total value is nonzero. -/
+theorem meromorphicOrderAt_Gamma_eq_zero_iff (s : ℂ) :
+    meromorphicOrderAt Gamma s = 0 ↔ Gamma s ≠ 0 :=
+  (MeromorphicNFOn.Gamma (Set.mem_univ s)).meromorphicOrderAt_eq_zero_iff
+
+/-- The real archimedean factor has order zero exactly where its total value is nonzero. -/
+theorem meromorphicOrderAt_Gammaℝ_eq_zero_iff (s : ℂ) :
+    meromorphicOrderAt Gammaℝ s = 0 ↔ Gammaℝ s ≠ 0 :=
+  (TauCeti.meromorphicNFOn_Gammaℝ (Set.mem_univ s)).meromorphicOrderAt_eq_zero_iff
+
+/-- The complex archimedean factor has order zero exactly where its total value is nonzero. -/
+theorem meromorphicOrderAt_Gammaℂ_eq_zero_iff (s : ℂ) :
+    meromorphicOrderAt Gammaℂ s = 0 ↔ Gammaℂ s ≠ 0 :=
+  (TauCeti.meromorphicNFOn_Gammaℂ (Set.mem_univ s)).meromorphicOrderAt_eq_zero_iff
 
 end Complex
