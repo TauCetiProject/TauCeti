@@ -70,16 +70,8 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
   -- which `s` acts linearly with `s ^ m = 1`, and compute the trace of `g = q • s` along
   -- `A[Q] / A` with `LinearMap.trace_restrictScalars_smul_of_pow_eq_one`.
   classical
-  let s := pFreePart p g
-  let q := pPart p g
-  let m := orderOf s
-  have hmul : s * q = g := pFreePart_mul_pPart p g
-  have hsq : Commute s q := commute_pFreePart_pPart p g
-  have hq1 : q ≠ 1 := pPart_ne_one_of_dvd_orderOf Fact.out (orderOf_pos g).ne' hg
-  have hQ : IsPGroup p (Subgroup.zpowers q) :=
-    isPGroup_zpowers_pPart Fact.out (orderOf_pos g).ne'
-  have hpm : ¬p ∣ m := not_dvd_orderOf_pFreePart Fact.out (orderOf_pos g).ne'
-  have hsm : s ^ m = 1 := pow_orderOf_eq_one s
+  obtain ⟨s, q, hmul, hsq, hq1, hQ, hpm⟩ :=
+    exists_commute_mul_eq_of_dvd_orderOf Fact.out (orderOf_pos g).ne' hg
   rw [← hmul]
   -- Restrict `X` to the local group algebra `A[Q]` of `Q = ⟨q⟩`.
   let Q := Subgroup.zpowers q
@@ -108,13 +100,10 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
     let _ := Module.addCommMonoidToAddCommGroup (MonoidAlgebra A Q) (M := X)
     Module.free_of_flat_of_isLocalRing
   -- The element `s` commutes with `Q`, so it acts `A[Q]`-linearly.
-  have hcomm : ∀ c : Q, Commute s (Q.subtype c) := by
-    rintro ⟨_, j, rfl⟩
-    exact hsq.zpow_right j
-  obtain ⟨S, hSapply⟩ := MonoidHom.exists_linearMap_apply_eq_single_smul (A := A) Q.subtype hcomm X
-    fun _ _ ↦ rfl
-  have hS : S ^ m = 1 := LinearMap.ext fun x ↦ by
-    rw [Module.End.pow_apply_eq_single_pow_smul S hSapply, hsm, ← one_def, one_smul,
+  obtain ⟨S, hSapply⟩ := MonoidHom.exists_linearMap_apply_eq_single_smul (A := A) Q.subtype
+    (by rintro ⟨_, j, rfl⟩; exact hsq.zpow_right j) X fun _ _ ↦ rfl
+  have hS : S ^ orderOf s = 1 := LinearMap.ext fun x ↦ by
+    rw [Module.End.pow_apply_eq_single_pow_smul S hSapply, pow_orderOf_eq_one, ← one_def, one_smul,
       one_apply_eq_self]
   -- The element `g = s * q` acts as the scalar `q ∈ A[Q]` times `S`.
   let q' : Q := ⟨q, Subgroup.mem_zpowers q⟩
@@ -128,7 +117,7 @@ theorem trace_ofModule'_eq_zero_of_dvd_orderOf (hp : ¬IsUnit (p : A)) {g : G}
     change _ = φ (single q' (1 : A)) • (single s (1 : A) : MonoidAlgebra A G) • x
     rw [← mul_smul]
     simp [φ, q', single_mul_single, hsq.eq]
-  have hm : IsUnit (m : A) :=
+  have hm : IsUnit (orderOf s : A) :=
     (Nat.coprime_comm.mp ((Nat.Prime.coprime_iff_not_dvd Fact.out).mpr hpm)).isUnit_natCast hp
   have hq' : q' ≠ 1 := fun h ↦ hq1 (congrArg Subtype.val h)
   have : Fintype Q := Fintype.ofFinite Q
