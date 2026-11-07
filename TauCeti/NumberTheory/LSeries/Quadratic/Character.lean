@@ -7,16 +7,18 @@ module
 
 public import Mathlib.NumberTheory.EulerProduct.DirichletLSeries
 public import Mathlib.NumberTheory.LSeries.Nonvanishing
+import TauCeti.NumberTheory.DirichletCharacter.LFunction.Conjugate
 
 /-!
-# Positivity of the `L`-function of a quadratic character on `[1, ∞)`
+# Positivity of quadratic `L`-functions on `[1, ∞)` and down to the first real zero
 
 A quadratic Dirichlet character `χ` takes only the values `0`, `1` and `-1`. At a real point
 `s > 1` every Euler factor `(1 - χ(p) p⁻ˢ)⁻¹` is then a positive real number, and the logarithmic
 form of the Euler product writes `L(s, χ)` as the exponential of a real number. Hence `L(s, χ)` is
 real and positive there. For nontrivial `χ` the continued `L`-function is continuous at `s = 1`, so
 `L(1, χ)` is a nonnegative real number; Mathlib's nonvanishing theorem
-`DirichletCharacter.LFunction_apply_one_ne_zero` then makes it positive.
+`DirichletCharacter.LFunction_apply_one_ne_zero` then makes it positive. Since `L(s, χ)` is also
+real on the rest of the real axis, it stays positive to the left of `1` up to its first real zero.
 
 Positivity is stated with `ComplexOrder`, where `0 < z` means that `z` is a positive real number.
 The value `L(1, χ)` is the one that enters the analytic class number formula of a quadratic field,
@@ -30,6 +32,8 @@ where it is compared with real quantities.
   `0 < L(1, χ)`.
 * `DirichletCharacter.LFunction_pos_of_one_le`: for a nontrivial quadratic character `χ` and
   real `s ≥ 1`, `0 < L(s, χ)`.
+* `DirichletCharacter.LFunction_pos_of_forall_ne_zero`: positivity extends to the left of `1` as
+  far as `L(s, χ)` has no real zero.
 
 ## References
 
@@ -102,5 +106,29 @@ theorem LFunction_pos_of_one_le (hχ : χ.IsQuadratic) (hχ₁ : χ ≠ 1) {s : 
   rcases hs.eq_or_lt with rfl | hs
   · simpa using LFunction_apply_one_pos hχ hχ₁
   · exact LFunction_pos_of_one_lt hχ hs
+
+/-- The continued `L`-function of a nontrivial quadratic Dirichlet character is a positive real
+number at any real point `β ≤ 1` such that it has no zero on `[β, 1)`. -/
+theorem LFunction_pos_of_forall_ne_zero (hχ : χ.IsQuadratic) (hχ₁ : χ ≠ 1) {β : ℝ} (hβ : β ≤ 1)
+    (h : ∀ x ∈ Set.Ico β 1, χ.LFunction x ≠ 0) : 0 < χ.LFunction β := by
+  have him (x : ℝ) : ((χ.LFunction x).re : ℂ) = χ.LFunction x :=
+    Complex.ext (ofReal_re _) <| by
+      rw [ofReal_im, LFunction_im_eq_zero_of_isQuadratic hχ x (.inr hχ₁)]
+  let f : ℝ → ℝ := fun x ↦ (χ.LFunction x).re
+  have hf : Continuous f :=
+    continuous_re.comp ((differentiable_LFunction hχ₁).continuous.comp continuous_ofReal)
+  have hf₁ : 0 < f 1 := by
+    have h₁ := LFunction_pos_of_one_le hχ hχ₁ le_rfl
+    exact (Complex.lt_def.mp h₁).1
+  rw [← him, zero_lt_real]
+  by_contra hneg
+  obtain ⟨x, ⟨hx, hx₁⟩, hx₀⟩ := intermediate_value_Icc hβ hf.continuousOn
+    ⟨not_lt.mp hneg, hf₁.le⟩
+  have hne : x ≠ 1 := by
+    rintro rfl
+    exact hf₁.ne' hx₀
+  refine h x ⟨hx, lt_of_le_of_ne hx₁ hne⟩ ?_
+  have hx₀' : (χ.LFunction x).re = 0 := hx₀
+  rw [← him, hx₀', ofReal_zero]
 
 end DirichletCharacter
