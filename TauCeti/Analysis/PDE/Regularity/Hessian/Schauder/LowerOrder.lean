@@ -105,6 +105,69 @@ private theorem holderOnWith_fderiv_apply_add_mul {s : Set E} {u : E → ℝ} {b
       rw [← NNReal.coe_le_coe, coe_nnnorm, NNReal.coe_one]; exact ContinuousLinearMap.norm_id_le)
   · exact mul_le_of_le_one_left zero_le ContinuousLinearMap.opNNNorm_lsmul_le
 
+/-- The bookkeeping of constants in the interior estimate:
+`C₀ (M + N P + N) ≤ C₀ (1 + P) (M + N)`. -/
+private theorem mul_add_mul_add_le_mul_one_add_mul_add (C₀ M N P : ℝ≥0) :
+    C₀ * (M + N * P + N) ≤ C₀ * (1 + P) * (M + N) := by
+  calc C₀ * (M + N * P + N) ≤ C₀ * ((1 + P) * (M + N)) := by
+        gcongr
+        calc M + N * P + N = M + N * (1 + P) := by ring
+          _ ≤ (1 + P) * M + (1 + P) * N := by
+            rw [mul_comm N]
+            gcongr
+            exact le_mul_of_one_le_left zero_le le_self_add
+          _ = (1 + P) * (M + N) := by ring
+    _ = C₀ * (1 + P) * (M + N) := by ring
+
+/-- If `u` is `C²` on the whole space, with `|u| ≤ N`, and `Du` and `D²u` are bounded by `P`, then
+`u` and `Du` are globally `α`-Hölder, with constants `P + 2 N` and `P + 2 P`. -/
+private theorem holderOnWith_univ_of_norm_le_of_norm_iteratedFDeriv_two_le {α N P : ℝ≥0}
+    (hα1 : α < 1) {u : E → ℝ} (hu : ContDiff ℝ 2 u) (hN : ∀ x, |u x| ≤ N)
+    (h1 : ∀ x, ‖fderiv ℝ u x‖ ≤ P) (h2 : ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ P) :
+    HolderOnWith (P + 2 * N) α u univ ∧ HolderOnWith (P + 2 * P) α (fderiv ℝ u) univ := by
+  refine ⟨(holderWith_of_norm_le_of_norm_fderiv_le hα1.le (hu.differentiable (by norm_num))
+      (fun x => by rw [Real.norm_eq_abs]; exact hN x) h1).holderOnWith univ,
+    (holderWith_of_norm_le_of_norm_fderiv_le hα1.le
+      ((hu.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num)) h1
+      fun x => ?_).holderOnWith univ⟩
+  rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
+  exact h2 x
+
+/-- The interpolation inequalities at scale `0 < ε ≤ 1` for a `C²` function `u` with `|u| ≤ N` and
+bounded, globally `α`-Hölder second derivative with Hölder constant `H`: both `‖Du‖` and `‖D²u‖`
+are bounded by `(34 / ε + 32 / ε²) N + 2 H ε^α`. -/
+private theorem norm_fderiv_le_and_norm_iteratedFDeriv_two_le {α H N : ℝ≥0} {ε : ℝ} (hε : 0 < ε)
+    (hε1 : ε ≤ 1) {u : E → ℝ} (hu : ContDiff ℝ 2 u) (hN : ∀ x, |u x| ≤ N)
+    (hbdd : BddAbove (range fun x => ‖iteratedFDeriv ℝ 2 u x‖))
+    (hH : HolderWith H α (iteratedFDeriv ℝ 2 u)) :
+    (∀ x, ‖fderiv ℝ u x‖ ≤ (34 / ε + 32 / ε ^ 2) * N + 2 * H * ε ^ (α : ℝ)) ∧
+      ∀ x, ‖iteratedFDeriv ℝ 2 u x‖ ≤ (34 / ε + 32 / ε ^ 2) * N + 2 * H * ε ^ (α : ℝ) := by
+  have hN0 (y : E) : ‖iteratedFDeriv ℝ 0 u y‖ ≤ N := by
+    simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hN y
+  refine ⟨fun x => ?_, fun x => ?_⟩
+  · have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0
+      hbdd hε hε1 x).1
+    rwa [zero_add, norm_iteratedFDeriv_one] at h
+  · exact (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0 hbdd hε
+      hε1 x).2
+
+/-- The absorption step of the global estimate: if `K₀ + N = K + γ N + 2 β ε^α H`, with
+`H ≤ C₀ (K₀ + N)` and `2 C₀ β ε^α ≤ 1 / 2`, then `C₀ (K₀ + N) ≤ 2 C₀ (1 + γ) (K + N)`. -/
+private theorem mul_le_two_mul_one_add_mul_of_absorb {C₀ K N γ β e H K₀ : ℝ} (hC₀ : 0 ≤ C₀)
+    (hK : 0 ≤ K) (hN : 0 ≤ N) (hγ : 0 ≤ γ) (hK₀ : K₀ + N = K + γ * N + 2 * β * e * H)
+    (hHle : H ≤ C₀ * (K₀ + N)) (habs : 2 * C₀ * β * e * H ≤ 1 / 2 * H) :
+    C₀ * (K₀ + N) ≤ 2 * C₀ * (1 + γ) * (K + N) := by
+  have hKγ : 0 ≤ C₀ * (K + γ * N) := by positivity
+  rw [hK₀] at hHle ⊢
+  have hγN : K + γ * N ≤ (1 + γ) * (K + N) := by nlinarith
+  have hsplit : C₀ * (K + γ * N + 2 * β * e * H) = C₀ * (K + γ * N) + 2 * C₀ * β * e * H := by
+    ring
+  rw [hsplit] at hHle ⊢
+  have hH2 : H ≤ 2 * (C₀ * (K + γ * N)) := by linarith
+  have hC₀γ : C₀ * (K + γ * N) ≤ C₀ * ((1 + γ) * (K + N)) :=
+    mul_le_mul_of_nonneg_left hγN hC₀
+  linarith
+
 /-- **The interior Schauder estimate with lower-order terms.** Let `0 < α < 1`, let
 `Ω ⊆ ℝ^{n+1}` be open and `K ⊆ Ω` compact. Let `a` be a matrix-valued coefficient, `b` a
 vector field and `c` a function, each `α`-Hölder on a ball around each `x ∈ K`, with `a x`
@@ -174,16 +237,7 @@ theorem exists_holderOnWith_iteratedFDeriv_two_of_sum_smul_fderiv_fderiv_add_fde
     exact h.mono_const (le_of_eq (by ring))
   have key := hC₀ (hu.mono hUΩ) (fun x hx => hN₀ x (hUΩ hx)) (fun x hx => hN₁ x (hUΩ hx))
     (fun x hx => hN₂ x (hUΩ hx)) (fun S hS hSc => hV S (hS.trans hUΩ) hSc) hprin
-  refine key.mono_const ?_
-  calc C₀ * (M + N * P + N) ≤ C₀ * ((1 + P) * (M + N)) := by
-        gcongr
-        calc M + N * P + N = M + N * (1 + P) := by ring
-          _ ≤ (1 + P) * M + (1 + P) * N := by
-            rw [mul_comm N]
-            gcongr
-            exact le_mul_of_one_le_left zero_le le_self_add
-          _ = (1 + P) * (M + N) := by ring
-    _ = C₀ * (1 + P) * (M + N) := by ring
+  exact key.mono_const (mul_add_mul_add_le_mul_one_add_mul_add C₀ M N P)
 
 /-- **The global Schauder estimate with lower-order terms on the whole space.** Let `0 < α < 1`,
 and let `λ`, `Λ`, `L` and `B` be given. Then there is a constant `C`, depending only on `n`, `α`,
@@ -229,32 +283,14 @@ theorem
   -- the interpolation inequalities at scale `ε`.
   set H := nnHolderNorm α (iteratedFDeriv ℝ 2 u)
   have hH : HolderWith H α (iteratedFDeriv ℝ 2 u) := hmem.holderWith
-  have hN0 (y : E) : ‖iteratedFDeriv ℝ 0 u y‖ ≤ N := by
-    simpa only [norm_iteratedFDeriv_zero, Real.norm_eq_abs] using hN y
-  have hNN : 0 ≤ (N : ℝ) := N.coe_nonneg
-  have hHe : 0 ≤ (H : ℝ) * e := by positivity
   set P : ℝ := c' * N + 2 * H * e
   have hP : 0 ≤ P := by positivity
-  have h1 (x : E) : ‖fderiv ℝ u x‖ ≤ P := by
-    have h := (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0
-      hbdd hε hε1 x).1
-    rwa [zero_add, norm_iteratedFDeriv_one] at h
-  have h2 (x : E) : ‖iteratedFDeriv ℝ 2 u x‖ ≤ P :=
-    (hH.norm_iteratedFDeriv_succ_le_and_norm_iteratedFDeriv_add_two_le (k := 0) hu hN0 hbdd hε
-      hε1 x).2
+  obtain ⟨h1, h2⟩ := norm_fderiv_le_and_norm_iteratedFDeriv_two_le hε hε1 hu hN hbdd hH
   set P' : ℝ≥0 := P.toNNReal
   have hPP' : (P' : ℝ) = P := Real.coe_toNNReal _ hP
   -- `u` and `Du` are bounded by `N` and `P'`, with derivatives bounded by `P'`, hence `α`-Hölder.
-  have hHu : HolderOnWith (P' + 2 * N) α u univ :=
-    (holderWith_of_norm_le_of_norm_fderiv_le hα1.le (hu.differentiable (by norm_num))
-      (fun x => by rw [Real.norm_eq_abs]; exact hN x) fun x => (h1 x).trans hPP'.ge).holderOnWith
-      univ
-  have hHDu : HolderOnWith (P' + 2 * P') α (fderiv ℝ u) univ := by
-    refine (holderWith_of_norm_le_of_norm_fderiv_le hα1.le
-      ((hu.fderiv_right (m := 1) (by norm_num)).differentiable (by norm_num))
-      (fun x => (h1 x).trans hPP'.ge) fun x => ?_).holderOnWith univ
-    rw [← norm_iteratedFDeriv_one, norm_iteratedFDeriv_fderiv]
-    exact (h2 x).trans hPP'.ge
+  obtain ⟨hHu, hHDu⟩ := holderOnWith_univ_of_norm_le_of_norm_iteratedFDeriv_two_le hα1 hu hN
+    (fun x => (h1 x).trans hPP'.ge) fun x => (h2 x).trans hPP'.ge
   -- The principal part `L u - (b · ∇u + c u)` is globally `α`-Hölder with constant `K₀`.
   have hlow := holderOnWith_fderiv_apply_add_mul hHu hHDu (fun x _ => hN x)
     (fun x _ => (h1 x).trans hPP'.ge) (hLb.holderOnWith univ) (fun x _ => hBb x)
@@ -268,24 +304,13 @@ theorem
   obtain ⟨hH₀, h₁, h₂⟩ := hC₀ hEll hLa hu hN hbdd hmem hprin
   -- Absorption: `C₀ (K₀ + N) = C₀ (K + γ N) + 2 C₀ β ε^α H` and `2 C₀ β ε^α ≤ 1 / 2`.
   have hK₀ : ((K₀ : ℝ) + N) = K + γ * N + 2 * β * e * H := by
-    simp only [K₀, γ, β]
-    push_cast
-    rw [hPP']
-    simp only [P]
+    push_cast [K₀, γ, β, hPP', P]
     ring
   have hHle : (H : ℝ) ≤ C₀ * (K₀ + N) := by exact_mod_cast hH₀.nnholderNorm_le
   have habs : 2 * C₀ * β * e * H ≤ 1 / 2 * H := mul_le_mul_of_nonneg_right hεC H.coe_nonneg
-  have hKγ : 0 ≤ (C₀ : ℝ) * (K + γ * N) := by positivity
-  have hbound : (C₀ : ℝ) * (K₀ + N) ≤ 2 * C₀ * (1 + γ) * (K + N) := by
-    rw [hK₀] at hHle ⊢
-    have hγN : (K : ℝ) + γ * N ≤ (1 + γ) * (K + N) := by nlinarith [K.coe_nonneg]
-    have hsplit : (C₀ : ℝ) * (K + γ * N + 2 * β * e * H) =
-        C₀ * (K + γ * N) + 2 * C₀ * β * e * H := by ring
-    rw [hsplit] at hHle ⊢
-    have hH2 : (H : ℝ) ≤ 2 * (C₀ * (K + γ * N)) := by linarith
-    have hC₀γ : (C₀ : ℝ) * (K + γ * N) ≤ C₀ * ((1 + γ) * (K + N)) :=
-      mul_le_mul_of_nonneg_left hγN C₀.coe_nonneg
-    linarith
+  have hbound : (C₀ : ℝ) * (K₀ + N) ≤ 2 * C₀ * (1 + γ) * (K + N) :=
+    mul_le_two_mul_one_add_mul_of_absorb C₀.coe_nonneg K.coe_nonneg N.coe_nonneg hγ hK₀
+      hHle habs
   have hC : (2 * C₀ * (1 + γ)) * (K + N) ≤ (((2 * C₀ * (1 + γ)).toNNReal : ℝ≥0) : ℝ) * (K + N) :=
     mul_le_mul_of_nonneg_right (Real.le_coe_toNNReal _) (by positivity)
   refine ⟨hH.mono ?_, fun x => (h₁ x).trans ?_, fun x => (h₂ x).trans ?_⟩
