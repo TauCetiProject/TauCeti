@@ -10,7 +10,7 @@ public import TauCeti.MeasureTheory.Function.Lp.Convolution
 public import TauCeti.MeasureTheory.Function.Lp.Translation
 
 import TauCeti.Analysis.Convolution.Basic
-import TauCeti.MeasureTheory.Function.Holder
+import Mathlib.MeasureTheory.Function.Holder
 
 /-!
 # Smooth approximate identities in `Lᵖ`
