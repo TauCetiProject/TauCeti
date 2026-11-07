@@ -6,7 +6,6 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Topology.Grassmannian.Orthonormal
-import Mathlib.LinearAlgebra.SesquilinearForm.Orthogonal
 
 /-!
 # Forgetting the last vector of an orthonormal frame
