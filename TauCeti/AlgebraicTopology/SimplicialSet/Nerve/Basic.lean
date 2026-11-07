@@ -22,6 +22,10 @@ An `n + 1`-simplex of the nerve lies in the image of the `i`-th degeneracy exact
 `CategoryTheory.nerve.range_σ_eq_preimage`). This generalizes, and adapts the proof of, Mathlib's
 `PartialOrder.mem_range_nerve_σ_iff` from partial orders to arbitrary categories.
 
+Prepending an arrow `b` to a string commutes with deleting any vertex but the first two, and
+deleting the second vertex composes `b` with the first arrow of the string
+(`CategoryTheory.nerve.δ_succ_precomp`).
+
 A `3`-simplex of the nerve is a sequence of three composable morphisms `ComposableArrows.mk₃ f g h`.
 Its faces are the `2`-simplices obtained by dropping a vertex, whose arrows are composites of
 consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of the faces of
@@ -33,6 +37,7 @@ consecutive arrows among `f`, `g` and `h`. This extends Mathlib's description of
   `i`-th degeneracy of its `i`-th face.
 * `CategoryTheory.nerve.mem_range_σ_iff`: the image of the `i`-th degeneracy consists of the
   strings whose `i`-th arrow is an identity.
+* `CategoryTheory.nerve.δ_succ_precomp`: the faces of a string with a prepended arrow.
 * `CategoryTheory.nerve.δ₀_mk₃_eq`, …, `CategoryTheory.nerve.δ₃_mk₃_eq`: the faces of the
   `3`-simplex of the nerve given by three composable morphisms.
 -/
@@ -117,6 +122,28 @@ theorem range_σ_eq_preimage {n : ℕ} (i : Fin (n + 1)) :
       (fun s : ComposableArrows C (n + 1) ↦ s.totalArrow i.castSucc i.succ i.castSucc_le_succ) ⁻¹'
         Set.range fun x : C ↦ (⟨x, x, 𝟙 x⟩ : Quiver.Total C) :=
   Set.ext fun s ↦ mem_range_σ_iff s i
+
+/-- Deleting a vertex other than the first one from a string with a prepended arrow `b` deletes
+the corresponding vertex of the original string. If that vertex was the first one, the prepended
+arrow is composed with the deleted arrow, so in all cases `b` is followed by the arrow from the
+first vertex to the new second vertex. -/
+theorem δ_succ_precomp {n : ℕ} (j : Fin (n + 2)) (σ : ComposableArrows C (n + 1)) {y : C}
+    (b : y ⟶ σ.left) :
+    (nerve C).δ j.succ (σ.precomp b) =
+      ((nerve C).δ j σ).precomp (b ≫ σ.map (homOfLE (Fin.zero_le (j.succAbove 0)))) := by
+  refine ComposableArrows.ext_succ_of_totalArrow
+    ((nerve C).δ_comp_δ_apply (Fin.zero_le j) (σ.precomp b)) ?_
+  -- The face reindexes along `j.succ.succAbove`, which fixes `0` and sends `1` to the
+  -- successor of `j.succAbove 0`.
+  refine ((σ.precomp b).totalArrow_whiskerLeft _ 0 1 (Fin.zero_le _)).trans ?_
+  -- The reindexing functor acts on objects by `j.succ.succAbove` by definition (as in
+  -- `nerve.δ_obj`); `simp` only unfolds it into forgetful functors, so `change` states this.
+  change (σ.precomp b).totalArrow (j.succ.succAbove 0) (j.succ.succAbove 1) _ = _
+  simp only [Fin.succ_succAbove_zero, Fin.succ_succAbove_one,
+    ComposableArrows.totalArrow_precomp_zero_succ]
+  -- By definition of `precomp`, the first arrow of the right-hand side is the prepended one.
+  rw [ComposableArrows.totalArrow_def]
+  rfl
 
 section Faces
 
