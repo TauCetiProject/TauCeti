@@ -65,7 +65,8 @@ theorem isCompletelyMonotoneOnIoi_div_of_isCompletelyMonotoneOnIoi_deriv
   refine ⟨hsmooth.div contDiffOn_id fun t ht => ht.ne', fun n t ht => ?_⟩
   -- The Taylor polynomial of order `n` of `f` at `t`, evaluated at `ε ∈ (0, t)`, dominates `f ε`.
   have hle : ∀ ε ∈ Ioo 0 t, f ε ≤ taylorWithinEval f n (Ioi 0) t ε := fun ε hε =>
-    le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg isOpen_Ioi hε.2.le
+    le_taylorWithinEval_of_neg_one_pow_mul_iteratedDerivWithin_nonneg
+      isOpen_Ioi.uniqueDiffOn hε.2.le
       (fun z hz => lt_of_lt_of_le hε.1 hz.1) (hsmooth.of_le (by exact_mod_cast le_top))
       fun z hz => by
         have hz0 : 0 < z := hε.1.trans hz.1
@@ -79,7 +80,8 @@ theorem isCompletelyMonotoneOnIoi_div_of_isCompletelyMonotoneOnIoi_deriv
     ge_of_tendsto (hcont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds)
       (eventually_of_mem (Ioo_mem_nhdsGT ht) fun ε hε => (hnonneg ε hε.1).trans (hle ε hε))
   have hsq : ((-1 : ℝ) ^ n) * (-1) ^ n = 1 := by rw [← mul_pow]; norm_num
-  rw [iteratedDeriv_div_id isOpen_Ioi ht ht.ne' (hsmooth.of_le (by exact_mod_cast le_top)),
+  rw [iteratedDeriv_div_id isOpen_Ioi ht ht.ne'
+      ((hsmooth.contDiffAt (isOpen_Ioi.mem_nhds ht)).of_le (by exact_mod_cast le_top)),
     ← mul_assoc, ← mul_assoc, ← mul_assoc, hsq, one_mul]
   positivity
 
