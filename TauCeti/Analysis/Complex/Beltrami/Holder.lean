@@ -17,11 +17,11 @@ import TauCeti.Topology.MetricSpace.Holder
 # The Beltrami equation with small Hölder coefficient
 
 Let `0 < α < 1` and let `μ` be a bounded `α`-Hölder function on `ℂ` vanishing off the closed disc
-`closedBall c r`. This file solves the Beltrami equation `∂̄ψ = μ ∂ψ` near the disc when the
+`closedBall c r`. This file solves the Beltrami equation `\bar∂ψ = μ ∂ψ` near the disc when the
 Hölder norm `‖μ‖ = ‖μ‖_∞ + [μ]_α` is small, with a solution `C¹`-close to the identity.
 
 The solution is `ψ = z + T h`, where `T h(w) = π⁻¹ ∫ (w - z)⁻¹ h(z) dz` is the Cauchy transform
-of a source `h` supported in the disc. Since `∂̄ T h = h` and `∂ T h = B h` for the Beurling
+of a source `h` supported in the disc. Since `\bar∂ T h = h` and `∂ T h = B h` for the Beurling
 operator `B = ∂ T`, the Beltrami equation for `ψ` is the fixed-point equation
 `h = μ (1 + B h)` for its source. On the Banach space of `α`-Hölder functions supported in the
 disc, `B` is bounded with values in the Hölder functions on the disc
@@ -41,7 +41,7 @@ complex structure on a surface, after the Beltrami coefficient has been made sma
 
 * `TauCeti.exists_conjWirtingerDeriv_eq_mul_wirtingerDeriv`: for `‖μ‖` below a threshold
   depending only on `α`, `c` and `r`, there is a source `h` supported in the disc with
-  `‖h‖ ≤ 2 ‖μ‖` such that `ψ = z + T h` is `C¹` on `ball c (r + 1)`, solves `∂̄ψ = μ ∂ψ` there,
+  `‖h‖ ≤ 2 ‖μ‖` such that `ψ = z + T h` is `C¹` on `ball c (r + 1)`, solves `\bar∂ψ = μ ∂ψ` there,
   has derivative within `C ‖μ‖` of the identity in the Hölder norm on the disc, and has an
   invertible strict derivative at every point of the disc.
 
@@ -140,7 +140,7 @@ private theorem conjWirtingerDeriv_id_add {T : ℂ → ℂ} {z : ℂ} (hT : Diff
   linear_combination (2 : ℂ)⁻¹ * I_sq
 
 /-- Regularity of `T h` for a source supported in the disc: it is `C¹` on `ball c (r + 1)` with
-`∂̄ T h = h` there, and on the disc its real derivative is the bounded derivative operator
+`\bar∂ T h = h` there, and on the disc its real derivative is the bounded derivative operator
 applied to `h`. -/
 private theorem cauchy_regularity (hα : 0 < α) (hα1 : α < 1) (hr : 0 ≤ r)
     (h : supportedHolderSubmodule (Y := ℂ) α (closedBall c r)) :
@@ -161,8 +161,8 @@ and `C` such that every bounded `α`-Hölder function `μ` vanishing off `closed
 `‖μ‖ < δ` admits a source `h`, vanishing off the disc with `‖h‖ ≤ 2 ‖μ‖`, for which
 `ψ(w) = w + π⁻¹ ∫ (w - z)⁻¹ h(z) dz`
 
-* is `C¹` on `ball c (r + 1)`, with `∂̄ψ = h` there;
-* solves the Beltrami equation `∂̄ψ = μ ∂ψ` on `ball c (r + 1)`;
+* is `C¹` on `ball c (r + 1)`, with `\bar∂ψ = h` there;
+* solves the Beltrami equation `\bar∂ψ = μ ∂ψ` on `ball c (r + 1)`;
 * has real derivative within `C ‖μ‖` of the identity at every point of the disc, with
   `α`-Hölder constant at most `C ‖μ‖` there;
 * has an invertible strict derivative at every point of the disc, so it is a local
