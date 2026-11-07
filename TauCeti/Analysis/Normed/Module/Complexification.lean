@@ -5,6 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
+public import Mathlib.Algebra.Module.LinearMap.FiniteRange
 public import Mathlib.Analysis.Complex.Circle
 public import Mathlib.Analysis.Normed.Operator.Basic
 public import Mathlib.Analysis.Normed.Operator.LinearIsometry
@@ -435,6 +436,20 @@ theorem complexify_apply_im (T : X →L[ℝ] Y) (z : Complexification X) :
 theorem complexify_ofReal (T : X →L[ℝ] Y) (x : X) :
     T.complexify (ofReal x) = ofReal (T x) := by
   ext <;> simp
+
+/-- Complexification preserves finite rank. -/
+theorem hasFiniteRange_complexify (T : X →L[ℝ] Y) (hT : T.toLinearMap.HasFiniteRange) :
+    T.complexify.toLinearMap.HasFiniteRange := by
+  let i := (ofRealLI Y).toLinearMap
+  let J := (LinearMap.lsmul ℂ (Complexification Y) Complex.I).restrictScalars ℝ
+  have hreal : T.complexify.toLinearMap.restrictScalars ℝ =
+      (i.comp T.toLinearMap).comp (reCLM X).toLinearMap +
+        (J.comp (i.comp T.toLinearMap)).comp (imCLM X).toLinearMap := by
+    ext z <;> simp [i, J]
+  apply Submodule.FG.of_restrictScalars ℝ
+  rw [← LinearMap.range_restrictScalars, hreal]
+  exact ((hT.comp_left i).comp_right (reCLM X).toLinearMap).add
+    (((hT.comp_left i).comp_left J).comp_right (imCLM X).toLinearMap)
 
 /-- The complexification is the unique complex-linear extension of `T`. -/
 theorem eq_complexify_iff (T : X →L[ℝ] Y) (S : Complexification X →L[ℂ] Complexification Y) :
