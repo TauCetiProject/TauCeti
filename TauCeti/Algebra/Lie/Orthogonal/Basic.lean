@@ -23,8 +23,9 @@ and consumed by the exponential and Lie-subgroup files that compare `so` with st
 statements about the unitary — that is, orthogonal — group of `Matrix n n ℝ`.
 
 The file also records invertibility of the indefinite Gram matrix
-`LieAlgebra.Orthogonal.indefiniteDiagonal p q R`, and symmetry and invertibility of the split
-odd orthogonal Gram matrix `LieAlgebra.Orthogonal.JB ι R`.
+`LieAlgebra.Orthogonal.indefiniteDiagonal p q R`, symmetry of the split even orthogonal Gram
+matrix `LieAlgebra.Orthogonal.JD ι R`, and symmetry and invertibility of the split odd orthogonal
+Gram matrix `LieAlgebra.Orthogonal.JB ι R`.
 
 ## Main results
 
@@ -32,6 +33,7 @@ odd orthogonal Gram matrix `LieAlgebra.Orthogonal.JB ι R`.
   skew-adjoint matrices.
 * `LieAlgebra.Orthogonal.isUnit_indefiniteDiagonal`: the Gram matrix of the indefinite form is
   invertible.
+* `LieAlgebra.Orthogonal.isSymm_JD`: the split even orthogonal Gram matrix is symmetric.
 * `LieAlgebra.Orthogonal.isSymm_JB` and `LieAlgebra.Orthogonal.isUnit_JB`: the split odd
   orthogonal Gram matrix is symmetric and is invertible when two is a unit.
 -/
@@ -64,6 +66,11 @@ theorem isUnit_indefiniteDiagonal : IsUnit (indefiniteDiagonal p q R) :=
   isUnit_diagonal.mpr (Pi.isUnit_iff.mpr fun i ↦ by cases i <;> simp)
 
 variable {ι : Type*} [DecidableEq ι]
+
+/-- The Gram matrix of the split even orthogonal form is symmetric. -/
+@[simp]
+theorem isSymm_JD : (JD ι R).IsSymm := by
+  simp [Matrix.IsSymm, JD, Matrix.fromBlocks_transpose]
 
 /-- The Gram matrix of the split odd orthogonal form is symmetric. -/
 @[simp]
