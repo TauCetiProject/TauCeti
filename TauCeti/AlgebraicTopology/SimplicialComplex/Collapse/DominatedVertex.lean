@@ -34,17 +34,9 @@ namespace PreAbstractSimplicialComplex
 
 variable {ι : Type*} [DecidableEq ι]
 
-omit [DecidableEq ι] in
-/-- If no face contains `v`, deleting `v` changes nothing. -/
-private theorem deletion_singleton_eq_of_forall_notMem {K : PreAbstractSimplicialComplex ι} {v : ι}
-    (hempty : ∀ σ ∈ K, v ∉ σ) : deletion K {v} = K := by
-  apply SetLike.ext
-  intro σ
-  simp only [mem_deletion, Finset.singleton_subset_iff]
-  exact ⟨And.left, fun hσ => ⟨hσ, hempty σ hσ⟩⟩
-
-/-- If some face contains `v` and every face containing `v` can be enlarged by `w ≠ v`, there is a
-free pair `σ ⊂ insert w σ` with `v ∈ σ` and `w ∉ σ`, obtained from a maximal such face. -/
+/-- If some face contains `v`, finitely many faces contain `v`, and every face containing `v` can be
+enlarged by `w ≠ v`, there is a free pair `σ ⊂ insert w σ` with `v ∈ σ` and `w ∉ σ`, obtained from
+a maximal such face. -/
 private theorem exists_isFreePair_incident {K : PreAbstractSimplicialComplex ι} {v w : ι}
     (hwv : w ≠ v) (hfin : {σ : Finset ι | σ ∈ K ∧ v ∈ σ}.Finite)
     (hdom : ∀ σ ∈ K, v ∈ σ → insert w σ ∈ K) (hempty : ∃ σ ∈ K, v ∈ σ) :
@@ -74,19 +66,6 @@ private theorem exists_isFreePair_incident {K : PreAbstractSimplicialComplex ι}
     have heq := hmax.eq_of_ge hτS hsub
     exact Or.inr (by rw [← heq, Finset.insert_erase hwτ])
   · exact Or.inl (hmax.eq_of_ge ⟨hτ, hστ hvσ, hwτ⟩ hστ)
-
-omit [DecidableEq ι] in
-/-- Deleting a face `σ` containing `v` strictly decreases the set of faces containing `v`. -/
-private theorem ncard_incident_deletion_lt {K : PreAbstractSimplicialComplex ι} {v : ι}
-    {σ : Finset ι} (hσ : σ ∈ K) (hvσ : v ∈ σ) (hfin : {τ : Finset ι | τ ∈ K ∧ v ∈ τ}.Finite) :
-    {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ}.ncard < {τ : Finset ι | τ ∈ K ∧ v ∈ τ}.ncard := by
-  refine Set.ncard_lt_ncard (Set.ssubset_iff_subset_ne.mpr
-    ⟨fun _ h => ⟨deletion_le h.1, h.2⟩, ?_⟩) hfin
-  intro heq
-  have hσT : σ ∈ {τ : Finset ι | τ ∈ deletion K σ ∧ v ∈ τ} := by
-    rw [heq]
-    exact ⟨hσ, hvσ⟩
-  exact (mem_deletion.mp hσT.1).2 Finset.Subset.rfl
 
 /-- Domination of `v` by `w ∉ σ` survives deleting a face `σ` containing `v`, and a subsequent
 deletion of `v` is unchanged. -/
