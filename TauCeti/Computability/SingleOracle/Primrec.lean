@@ -380,4 +380,15 @@ theorem primrec₂_setAnswers_equivBitIndices :
     Primrec₂ fun m z => setAnswers (Finset.equivBitIndices m : Set ℕ) z :=
   (option_some.comp indicator_equivBitIndices).of_eq fun _ => by simp
 
+/-- Bounded evaluation against computable finite stages is computable uniformly in the stage
+and the input. The stages are supplied by their binary finite-set codes. -/
+theorem computable₂_evaln_setAnswers {A : ℕ → Finset ℕ}
+    (hA : Computable fun s => Finset.equivBitIndices.symm (A s)) (c : Code) :
+    Computable₂ fun s x => evaln (setAnswers (A s)) s c x := by
+  have hargs : Computable (fun p : ℕ × ℕ =>
+      (Finset.equivBitIndices.symm (A p.1), p.1, c, p.2)) := (hA.comp Computable.fst).pair
+    (Computable.fst.pair ((Computable.const c).pair Computable.snd))
+  exact ((primrec_evaln primrec₂_setAnswers_equivBitIndices).to_comp.comp hargs).of_eq
+    fun p => by simp only [Finset.equivBitIndices.apply_symm_apply]
+
 end TauCeti.Oracle.Single.Code
