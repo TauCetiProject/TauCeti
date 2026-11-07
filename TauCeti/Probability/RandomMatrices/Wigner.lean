@@ -99,6 +99,20 @@ def wignerCoordinateMeasures {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
   | .inl u => μ u
   | .inr i => ν i
 
+/-- The coordinate law above the diagonal. -/
+@[simp]
+theorem wignerCoordinateMeasures_inl {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
+    (ν : Fin n → Measure ℝ) (u : StrictUpperFin n) :
+    wignerCoordinateMeasures μ ν (.inl u) = μ u := by
+  simp [wignerCoordinateMeasures]
+
+/-- The coordinate law on the diagonal. -/
+@[simp]
+theorem wignerCoordinateMeasures_inr {n : ℕ} (μ : StrictUpperFin n → Measure ℂ)
+    (ν : Fin n → Measure ℝ) (i : Fin n) :
+    wignerCoordinateMeasures μ ν (.inr i) = ν i := by
+  simp [wignerCoordinateMeasures]
+
 /-- The finite family of random variables used to construct a Wigner matrix. -/
 def wignerCoordinates {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
     (n : ℕ) (ω : Ω) :
@@ -106,7 +120,21 @@ def wignerCoordinates {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ �
   | .inl u => ξ (wignerUpperIndex u) ω
   | .inr i => η i.val ω
 
-/-- Construct the normalized Wigner matrix from its finite vector of independent coordinates. -/
+/-- The coordinate above the diagonal comes from the infinite upper-triangular array. -/
+@[simp]
+theorem wignerCoordinates_inl {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    (n : ℕ) (ω : Ω) (u : StrictUpperFin n) :
+    wignerCoordinates ξ η n ω (.inl u) = ξ (wignerUpperIndex u) ω := by
+  simp [wignerCoordinates]
+
+/-- The diagonal coordinate comes from the diagonal array. -/
+@[simp]
+theorem wignerCoordinates_inr {Ω : Type*} (ξ : StrictUpper → Ω → ℂ) (η : ℕ → Ω → ℝ)
+    (n : ℕ) (ω : Ω) (i : Fin n) :
+    wignerCoordinates ξ η n ω (.inr i) = η i.val ω := by
+  simp [wignerCoordinates]
+
+/-- Construct the normalized Wigner matrix from its finite vector of coordinates. -/
 def wignerMatrixOfCoordinates {n : ℕ}
     (x : (k : WignerCoordinateIndex n) → WignerCoordinateType k) :
     Matrix (Fin n) (Fin n) ℂ :=
@@ -114,6 +142,16 @@ def wignerMatrixOfCoordinates {n : ℕ}
     if h : i.val < j.val then x (Sum.inl ⟨(i, j), h⟩)
     else if h' : j.val < i.val then star (x (Sum.inl ⟨(j, i), h'⟩))
     else (x (Sum.inr i) : ℂ)
+
+/-- The entries of the finite-coordinate construction. -/
+@[simp]
+theorem wignerMatrixOfCoordinates_apply {n : ℕ}
+    (x : (k : WignerCoordinateIndex n) → WignerCoordinateType k) (i j : Fin n) :
+    wignerMatrixOfCoordinates x i j = ((Real.sqrt n)⁻¹ : ℂ) *
+      if h : i.val < j.val then x (Sum.inl ⟨(i, j), h⟩)
+      else if h' : j.val < i.val then star (x (Sum.inl ⟨(j, i), h'⟩))
+      else (x (Sum.inr i) : ℂ) := by
+  simp [wignerMatrixOfCoordinates]
 
 /-- The coordinate construction agrees with `wignerMatrix`. -/
 theorem wignerMatrix_eq_wignerMatrixOfCoordinates {Ω : Type*}
