@@ -8,6 +8,8 @@ module
 public import Mathlib.Analysis.Distribution.Sobolev
 public import TauCeti.Analysis.Calculus.BumpFunction.LittlewoodPaley
 import TauCeti.Analysis.Distribution.SchwartzSpace.Cutoff
+import TauCeti.Analysis.Distribution.TemperedDistribution.Lp
+import TauCeti.Analysis.Fourier.ChangeOfVariables
 
 /-!
 # The inhomogeneous Littlewood–Paley decomposition of a tempered distribution
@@ -30,6 +32,12 @@ The blocks are almost orthogonal: there is `L`, depending only on `φ`, with `Δ
 `|j - k| ≥ L`. Being Fourier multipliers, they commute with every Fourier multiplier of temperate
 growth, in particular with the Bessel potentials `J^s` of Mathlib's Bessel-potential spaces.
 
+The blocks are bounded on every `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`: there is `C`, depending only
+on `φ`, with `‖Δⱼ f‖_p ≤ C ‖f‖_p` for every `f ∈ Lᵖ`. The kernel `𝓕⁻ ψⱼ` of `Δⱼ` is a Schwartz
+function, and for `j ≥ 1` it is the `L¹`-normalised dilate `2^{(j-1)n} 𝓕⁻ ψ₁ (2^{j-1} ·)` of the
+first dyadic kernel, since `ψ_{j+1} = ψ₁ (2^{-j} ·)`; so all the kernels have `L¹` norm at most
+`max ‖𝓕⁻ ψ₀‖₁ ‖𝓕⁻ ψ₁‖₁`, and Young's inequality bounds the blocks.
+
 This decomposition underlies the dyadic description of Besov spaces and of the Bessel-potential
 spaces `H^{s,p}`: the Besov norm of `u` is a weighted sequence norm of the `Lᵖ` norms of the
 blocks `Δⱼ u`.
@@ -47,6 +55,10 @@ blocks `Δⱼ u`.
 * `TemperedDistribution.littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite`: a Schwartz function
   whose Fourier transform is carried by the region where `ψⱼ = 1` is its own `j`-th block and has
   no other block.
+* `ContDiffBump.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ`: the dyadic kernels
+  `𝓕⁻ ψⱼ`, `j ≥ 1`, all have the same `L¹` norm.
+* `TemperedDistribution.exists_littlewoodPaleyBlock_eq_and_norm_le`: the blocks are bounded on
+  `Lᵖ`, `1 ≤ p ≤ ∞`, uniformly in `j`.
 
 ## References
 
@@ -63,6 +75,22 @@ open scoped SchwartzMap
 
 variable {E F : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E] [FiniteDimensional ℝ E]
   [MeasurableSpace E] [BorelSpace E] [NormedAddCommGroup F] [NormedSpace ℂ F]
+
+namespace ContDiffBump
+
+variable (φ : ContDiffBump (0 : E))
+
+/-- **The dyadic kernels are `L¹`-dilates of one another.** Since `ψ_{j+1} = ψ₁ (2^{-j} ·)`, the
+kernel `𝓕⁻ ψ_{j+1}` is `2^{jn} 𝓕⁻ ψ₁ (2^j ·)` in dimension `n`, so it has the same `L¹` norm as
+`𝓕⁻ ψ₁`. -/
+theorem integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ (j : ℕ) :
+    ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley (j + 1) ξ : ℂ)) x‖ =
+      ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) x‖ := by
+  simp_rw [φ.inhomogeneousLittlewoodPaley_succ_apply_eq_one_apply j]
+  exact TauCeti.integral_norm_fourierInv_comp_smul
+    (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley 1 ξ : ℂ)) (inv_ne_zero (pow_ne_zero _ two_ne_zero))
+
+end ContDiffBump
 
 namespace TemperedDistribution
 
@@ -205,5 +233,37 @@ theorem littlewoodPaleyBlock_toTemperedDistributionCLM_eq_ite [CompleteSpace F] 
   split_ifs
   · rw [FourierTransform.fourierInv_fourier_eq]
   · simp
+
+section Lp
+
+open MeasureTheory
+open scoped ENNReal
+
+/-- **The Littlewood–Paley blocks are bounded on `Lᵖ` uniformly in `j`.** There is `C`, depending
+only on `φ`, such that for every `1 ≤ p ≤ ∞`, every `j` and every `f ∈ Lᵖ`, the block `Δⱼ f` is a
+function in `Lᵖ` with `‖Δⱼ f‖_p ≤ C ‖f‖_p`. -/
+theorem exists_littlewoodPaleyBlock_eq_and_norm_le [CompleteSpace F] :
+    ∃ C : ℝ, ∀ {p : ℝ≥0∞} [Fact (1 ≤ p)] (j : ℕ) (f : Lp F p (volume : Measure E)),
+      ∃ g : Lp F p (volume : Measure E),
+        littlewoodPaleyBlock F φ j (f : 𝓢'(E, F)) = g ∧ ‖g‖ ≤ C * ‖f‖ := by
+  set K : ℕ → ℝ := fun j ↦ ∫ x, ‖𝓕⁻ (fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ)) x‖
+  refine ⟨max (K 0) (K 1), fun {p} _ j f ↦ ?_⟩
+  -- The kernel of `Δ₀` is `𝓕⁻ φ`; every later kernel has the `L¹` norm of `𝓕⁻ ψ₁`.
+  have hK : K j ≤ max (K 0) (K 1) := by
+    rcases j with _ | j
+    · exact le_max_left _ _
+    · exact (φ.integral_norm_fourierInv_inhomogeneousLittlewoodPaley_succ j).le.trans
+        (le_max_right _ _)
+  -- The symbol `ψⱼ` is smooth and compactly supported, hence a Schwartz function.
+  have hσ := (φ.hasCompactSupport_inhomogeneousLittlewoodPaley j).comp_left Complex.ofReal_zero
+  set σ : 𝓢(E, ℂ) :=
+    hσ.toSchwartzMap (Complex.ofRealCLM.contDiff.comp (φ.contDiff_inhomogeneousLittlewoodPaley j))
+  have hσ_coe : (σ : E → ℂ) = fun ξ ↦ (φ.inhomogeneousLittlewoodPaley j ξ : ℂ) :=
+    funext (HasCompactSupport.toSchwartzMap_toFun _ _)
+  obtain ⟨g, hg, hgf⟩ := exists_fourierMultiplierCLM_eq_and_norm_le σ f
+  rw [hσ_coe] at hg hgf
+  exact ⟨g, hg, hgf.trans (mul_le_mul_of_nonneg_right hK (norm_nonneg f))⟩
+
+end Lp
 
 end TemperedDistribution
