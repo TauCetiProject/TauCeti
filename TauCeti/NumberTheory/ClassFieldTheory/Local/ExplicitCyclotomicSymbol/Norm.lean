@@ -56,44 +56,6 @@ open NumberField
 
 namespace TauCeti
 
-
-/-- A global element of `K` that is `ρ`-close to `y` relative to `‖y‖` at the embedding
-`K ⊆ M ⊆ AlgebraicClosure ℚ_[p]`, and `ρ`-close to `1` at the other embeddings, at the places above
-the primes in `L` and at the infinite places. -/
-private theorem exists_approx_of_le_adjoin (p : ℕ) [Fact p.Prime]
-    (K : IntermediateField ℚ (AlgebraicClosure ℚ_[p])) [NumberField K] [IsGalois ℚ K]
-    (M : IntermediateField ℚ_[p] (AlgebraicClosure ℚ_[p]))
-    (hMK : M ≤ IntermediateField.adjoin ℚ_[p] (K : Set (AlgebraicClosure ℚ_[p])))
-    {L : Finset ℕ} (hL : ∀ ℓ ∈ L, ℓ.Prime) (hpL : p ∉ L) (y : M) (hy0 : y ≠ 0)
-    {ρ : ℝ} (hρ : 0 < ρ) (hρ1 : ρ ≤ 1) :
-    ∃ Y : K, Y ≠ 0 ∧ ‖(Y : AlgebraicClosure ℚ_[p]) - y‖ < ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ ∧
-      (∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[p],
-        (∃ h : AlgebraicClosure ℚ_[p] ≃ₐ[ℚ_[p]] AlgebraicClosure ℚ_[p], ∀ x : K, φ x = h x) ∨
-          ‖φ Y - 1‖ < ρ) ∧
-      (∀ ℓ (hℓ : ℓ ∈ L), haveI : Fact ℓ.Prime := ⟨hL ℓ hℓ⟩
-        ∀ φ : K →ₐ[ℚ] AlgebraicClosure ℚ_[ℓ], ‖φ Y - 1‖ < ρ) ∧
-      ∀ w : InfinitePlace K, w (Y - 1) < ρ := by
-  have hynorm : 0 < ‖(y : AlgebraicClosure ℚ_[p])‖ := norm_pos_iff.mpr (by simpa using hy0)
-  obtain ⟨y₀, hy₀K, hy₀⟩ := exists_mem_norm_sub_lt_of_mem_adjoin p K (hMK y.2)
-    (ε := ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ / 2) (by positivity)
-  obtain ⟨Y, hY0, hYp, hYL, hYinf⟩ := GlobalNumberFields.exists_galois_padic_approximation p K hL
-    hpL ⟨y₀, hy₀K⟩ (ρ := min (ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ / 2) ρ)
-    (lt_min (by positivity) hρ)
-  have hYy : ‖(Y : AlgebraicClosure ℚ_[p]) - y‖ < ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ := by
-    calc ‖(Y : AlgebraicClosure ℚ_[p]) - y‖
-        = ‖((Y : AlgebraicClosure ℚ_[p]) - y₀) + (y₀ - y)‖ := by ring_nf
-      _ ≤ ‖(Y : AlgebraicClosure ℚ_[p]) - y₀‖ + ‖y₀ - (y : AlgebraicClosure ℚ_[p])‖ :=
-        norm_add_le _ _
-      _ < ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ / 2 + ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ / 2 :=
-        add_lt_add (hY0.trans_le (min_le_left _ _)) (by rwa [norm_sub_rev])
-      _ = ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ := by ring
-  refine ⟨Y, ?_, hYy, fun φ ↦ (hYp φ).imp_right fun h ↦ h.trans_le (min_le_right _ _),
-    fun ℓ hℓ φ ↦ (hYL ℓ hℓ φ).trans_le (min_le_right _ _),
-    fun w ↦ (hYinf w).trans_le (min_le_right _ _)⟩
-  rintro rfl
-  have : ‖(y : AlgebraicClosure ℚ_[p])‖ < ρ * ‖(y : AlgebraicClosure ℚ_[p])‖ := by simpa using hYy
-  nlinarith [mul_le_of_le_one_left hynorm.le hρ1]
-
 /-- The explicit symbols of the norm `aU` of a global `Y` that is close to `y` at `p` and close to
 `1` at the other primes dividing `m` and at the infinite places: at `p` it is that of the local
 norm of `y`, at the other primes dividing `m` it is trivial, and `aU` is positive. -/
@@ -170,7 +132,7 @@ theorem cyclotomicSymbol_norm_fixes (p : ℕ) [Fact p.Prime] (m : ℕ) [NeZero m
   -- A global `Y ∈ K` approximating `y`.
   have hL : ∀ ℓ ∈ m.primeFactors.erase p, ℓ.Prime := fun ℓ hℓ ↦
     Nat.prime_of_mem_primeFactors (Finset.mem_of_mem_erase hℓ)
-  obtain ⟨Y, hY, hYy, hYp, hYL, hYinf⟩ := exists_approx_of_le_adjoin p K M hMK hL
+  obtain ⟨Y, hY, hYy, hYp, hYL, hYinf⟩ := GlobalNumberFields.exists_approx_of_le_adjoin p K M hMK hL
     (Finset.notMem_erase p _) (y : M) y.ne_zero (ρ := (m : ℝ)⁻¹)
     (inv_pos.mpr (by exact_mod_cast Nat.pos_of_ne_zero (NeZero.ne m)))
     (inv_le_one_of_one_le₀ (by exact_mod_cast NeZero.one_le))
