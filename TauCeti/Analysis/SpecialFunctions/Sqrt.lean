@@ -15,7 +15,8 @@ with the identity near `1`. These bounds control scalar spectral factors of
 positive operators close to the identity. The file also records that the square root is
 `1/2`-Hölder, `|√t - √s| ≤ √|t - s|`, that `√(1 + t²) - 1 ≤ |t|`, that `c √u` tends to `0` as
 `u → 0`, and through positive values as `u → 0⁺` when `c > 0`, and the cancellation
-`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables.
+`|d| (√(d² c p))⁻¹ = (√c)⁻¹ (√p)⁻¹` used in changes of variables, and that the radial profile
+`t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function supported in `(0, ∞)` is `C^k`.
 
 ## Main results
 
@@ -30,6 +31,8 @@ positive operators close to the identity. The file also records that the square 
 * `Real.tendsto_mul_sqrt_nhds_zero`: `c √u → 0` as `u → 0`.
 * `Real.tendsto_mul_sqrt_nhdsGT_zero`, `Real.tendsto_sqrt_nhdsGT_zero`: for `c > 0`,
   `c √u → 0⁺` as `u → 0⁺`.
+* `Real.contDiff_div_sqrt_pow`: if `ψ` is `C^k` with support in `(0, ∞)`, then
+  `t ↦ ψ (√t) / (√t) ^ n` is `C^k`.
 
 ## References
 
@@ -142,6 +145,24 @@ theorem tendsto_mul_sqrt_nhdsGT_zero {c : ℝ} (hc : 0 < c) :
 /-- The square root tends to `0` through positive values as `u → 0⁺`. -/
 theorem tendsto_sqrt_nhdsGT_zero : Tendsto (√·) (𝓝[>] 0) (𝓝[>] (0 : ℝ)) := by
   simpa using tendsto_mul_sqrt_nhdsGT_zero one_pos
+
+/-- The radial profile `t ↦ ψ (√t) / (√t) ^ n` of a `C^k` function `ψ` supported in `(0, ∞)` is
+`C^k`. -/
+lemma contDiff_div_sqrt_pow {k : WithTop ℕ∞} {ψ : ℝ → ℝ} (hψ : ContDiff ℝ k ψ)
+    (hψs : tsupport ψ ⊆ Set.Ioi 0) (n : ℕ) : ContDiff ℝ k fun t ↦ ψ (√t) / (√t) ^ n := by
+  rw [contDiff_iff_contDiffAt]
+  intro t
+  by_cases ht : √t ∈ tsupport ψ
+  · have ht0 : 0 < t := Real.sqrt_pos.mp (hψs ht)
+    exact ((hψ.contDiffAt.comp t (Real.contDiffAt_sqrt ht0.ne')).div
+      ((Real.contDiffAt_sqrt ht0.ne').pow _) (pow_ne_zero _ (Real.sqrt_pos.mpr ht0).ne'))
+  · have hev : ∀ᶠ s in 𝓝 t, ψ (√s) / (√s) ^ n = 0 := by
+      have : ∀ᶠ s in 𝓝 t, √s ∉ tsupport ψ :=
+        Real.continuous_sqrt.continuousAt.preimage_mem_nhds
+          ((isClosed_tsupport ψ).isOpen_compl.mem_nhds ht)
+      filter_upwards [this] with s hs
+      simp [image_eq_zero_of_notMem_tsupport hs]
+    exact (contDiffAt_const (c := (0 : ℝ))).congr_of_eventuallyEq hev
 
 end Real
 
