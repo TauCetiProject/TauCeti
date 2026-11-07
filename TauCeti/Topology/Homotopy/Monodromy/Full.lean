@@ -122,19 +122,11 @@ private theorem _root_.IsCoveringMap.mapOfNatTrans_eq_of_path_in_sheets
   have hqmono : hq.monodromy (Path.Homotopic.Quotient.mk γ) fe' = gz' :=
     IsCoveringMap.monodromy_eq_of_path_in_sheet hq φq hφq γ hγφq fe' gz' hfeφq
       (φq.map_source hpzφq)
-  have hα := ConcreteCategory.congr_hom
-    (α.naturality (Path.Homotopic.Quotient.mk γ)) e'
-  rw [_root_.IsCoveringMap.monodromyFunctor_map,
-    _root_.IsCoveringMap.monodromyFunctor_map] at hα
-  -- The rewrites leave bundled `Type` composites under `ConcreteCategory.hom`, where the
-  -- pointwise composition lemmas do not match, so expose their definitionally equal values.
-  change α.app (FundamentalGroupoid.mk (p z))
-      (hp.monodromy (Path.Homotopic.Quotient.mk γ) e') =
-    hq.monodromy (Path.Homotopic.Quotient.mk γ)
-      (α.app (FundamentalGroupoid.mk (p e)) e') at hα
+  have hα := α.naturality_apply (Path.Homotopic.Quotient.mk γ) e'
   have hαe : α.app (FundamentalGroupoid.mk (p e)) e' = fe' := by
     simpa only [e', fe', f] using IsCoveringMap.mapOfNatTrans_apply hp hq α e
-  rw [hpmono, hαe, hqmono] at hα
+  rw [show hp.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) e' = z' from hpmono, hαe,
+    show hq.monodromyFunctor.map (Path.Homotopic.Quotient.mk γ) fe' = gz' from hqmono] at hα
   exact congrArg Subtype.val hα
 
 /-- The map forced by a natural transformation of monodromy functors is continuous when the
