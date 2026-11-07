@@ -97,6 +97,18 @@ private theorem reflectTestFunction_apply (hU : MapsTo (normalReflection E a) U 
     reflectTestFunction hU φ x = φ (normalReflection E a x) :=
   rfl
 
+/-- If `G` cut off to a set `K` is integrable, then pairing `G` with the derivative of a smooth
+compactly supported function `χ` with `tsupport χ ⊆ K` is integrable. -/
+private theorem integrable_fderiv_apply_of_tsupport_subset {K : Set (WithLp 2 (ℝ × E))}
+    (hGK : Integrable (K.indicator G)) {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ)
+    (hχc : HasCompactSupport χ) (hχK : tsupport χ ⊆ K) :
+    Integrable fun x => fderiv ℝ χ x (G x) :=
+  (integrable_fderiv_apply (hχ.of_le (by simp)) hχc aestronglyMeasurable_id hGK).congr
+    (Eventually.of_forall fun x => by
+      by_cases hxK : x ∈ K
+      · simp [hxK]
+      · simp [hxK, fderiv_of_notMem_tsupport ℝ fun h => hxK (hχK h)])
+
 /-- The pairing of the weak gradient with the gradient of a test function on `U` vanishing on the
 hyperplane `{a} × E` is zero, when `w` is weakly harmonic on `U ∩ H` and `G` vanishes off `H`. -/
 private theorem integral_fderiv_apply_eq_zero
@@ -113,13 +125,6 @@ private theorem integral_fderiv_apply_eq_zero
   have hGK : Integrable (K.indicator G) :=
     (hw.locallyIntegrableOn_gradient.integrableOn_compact_subset hψU hKc).integrable_indicator
       hKc.measurableSet
-  have hint {χ : WithLp 2 (ℝ × E) → ℝ} (hχ : ContDiff ℝ ∞ χ) (hχc : HasCompactSupport χ)
-      (hχK : tsupport χ ⊆ K) : Integrable fun x => fderiv ℝ χ x (G x) :=
-    (integrable_fderiv_apply (hχ.of_le (by simp)) hχc aestronglyMeasurable_id hGK).congr
-      (Eventually.of_forall fun x => by
-        by_cases hxK : x ∈ K
-        · simp [hxK]
-        · simp [hxK, fderiv_of_notMem_tsupport ℝ fun h => hxK (hχK h)])
   set η : ℕ → WithLp 2 (ℝ × E) → ℝ := fun n => normalCutoff a ((n : ℝ) + 1) with hη
   have hηψ (n : ℕ) : ContDiff ℝ ∞ (η n * ψ) := (contDiff_normalCutoff a _).mul hψ
   have hηψU (n : ℕ) : tsupport (η n * ψ) ⊆ (U ⊓ normalHalfSpace a : Opens _) := by
@@ -134,7 +139,8 @@ private theorem integral_fderiv_apply_eq_zero
     rw [(hw.mono inf_le_left).integral_laplacian_smul_eq_neg_integral_inner θ, neg_eq_zero,
       hθ] at h
     simpa only [inner_gradient_left] using h
-  have I1 : Integrable fun x => fderiv ℝ ψ x (G x) := hint hψ hψc subset_rfl
+  have I1 : Integrable fun x => fderiv ℝ ψ x (G x) :=
+    integrable_fderiv_apply_of_tsupport_subset hGK hψ hψc subset_rfl
   have I2 (n : ℕ) : Integrable fun x => η n x * fderiv ℝ ψ x (G x) :=
     I1.bdd_mul (contDiff_normalCutoff a _).continuous.aestronglyMeasurable
       (Eventually.of_forall fun x => by
@@ -149,7 +155,8 @@ private theorem integral_fderiv_apply_eq_zero
         (hψ.differentiable (by simp) x)]
       simp only [FunLike.coe_add, Pi.add_apply, FunLike.coe_smul, Pi.smul_apply, smul_eq_mul]
       ring
-    rw [hfun, integral_sub (hint (hηψ n) hψc.mul_left tsupport_mul_subset_right) (I2 n), key n,
+    rw [hfun, integral_sub (integrable_fderiv_apply_of_tsupport_subset hGK (hηψ n) hψc.mul_left
+        tsupport_mul_subset_right) (I2 n), key n,
       zero_sub]
   -- The boundary-layer term tends to zero.
   have hlayer := tendsto_integral_mul_fderiv_normalCutoff_apply hGK.locallyIntegrable
