@@ -35,7 +35,9 @@ conversely `μ A ≤ 2 ^ k c μHE[k] A` whenever `μ (closedBall x r) ≤ c ω_k
 at every `x ∈ A` (`MeasureTheory.Measure.measure_le_mul_euclideanHausdorffMeasure`), and a
 null-measurable set `A` of finite `μHE[k]` measure satisfies
 `μHE[k] (A ∩ closedBall x r) / (ω_k r ^ k) → 0` for `μHE[k]`-almost every `x ∉ A`
-(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`).
+(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div`). In a proper metric space,
+local finiteness of the restricted measure suffices for this zero-density assertion
+(`TauCeti.ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure`).
 
 On a nonempty affine subspace `s` of a Euclidean affine space, volume on the direction of `s`,
 transported to `s` by adding a base point, is the Euclidean Hausdorff measure of the dimension
@@ -269,6 +271,31 @@ theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div (k : ℕ) {A :
   dsimp only
   rw [_root_.smul_apply, smul_eq_mul, EuclideanSpace.volume_closedBall_eq_div_mul 0 hr.le,
     ENNReal.mul_div_mul_left _ _ hω0 hωtop]
+
+/-- **Zero density outside a locally finite set**, Euclidean normalization. In a proper
+metric space, local finiteness of the restricted Hausdorff measure suffices; the set may
+have infinite total measure. -/
+theorem ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div_of_isLocallyFiniteMeasure
+    [ProperSpace X] (k : ℕ) {A : Set X} (hA : NullMeasurableSet A μHE[k])
+    [IsLocallyFiniteMeasure (μHE[k].restrict A)] :
+    ∀ᵐ x ∂μHE[k], x ∉ A → Tendsto (fun r ↦ μHE[k] (A ∩ closedBall x r) /
+      volume (closedBall (0 : EuclideanSpace ℝ (Fin k)) r)) (𝓝[>] 0) (𝓝 0) := by
+  classical
+  rcases isEmpty_or_nonempty X with hX | hX
+  · exact Eventually.of_forall fun x ↦ isEmptyElim x
+  let x₀ := Classical.choice hX
+  have hfin (j : ℕ) : μHE[k] (A ∩ ball x₀ j) ≠ ∞ := by
+    rw [inter_comm, ← Measure.restrict_apply measurableSet_ball]
+    exact measure_ball_lt_top.ne
+  have hzero (j : ℕ) := ae_tendsto_euclideanHausdorffMeasure_inter_closedBall_div k
+    (hA.inter measurableSet_ball.nullMeasurableSet) (hfin j)
+  filter_upwards [ae_all_iff.mpr hzero] with x hx hxA
+  obtain ⟨j, hj⟩ := exists_nat_gt (dist x x₀)
+  have hxj : x ∈ ball x₀ j := mem_ball.mpr hj
+  refine (hx j (fun h ↦ hxA h.1)).congr' ?_
+  filter_upwards [eventually_nhdsWithin_of_eventually_nhds
+    (eventually_closedBall_subset (isOpen_ball.mem_nhds hxj))] with r hr
+  rw [inter_assoc, inter_eq_right.mpr hr]
 
 end TauCeti
 
