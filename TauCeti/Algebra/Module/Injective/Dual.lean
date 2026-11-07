@@ -7,6 +7,7 @@ module
 
 public import Mathlib.Algebra.Module.Injective
 public import Mathlib.LinearAlgebra.Dual.Lemmas
+public import TauCeti.LinearAlgebra.Dual.RightAction
 
 /-!
 # The dual regular module is injective
@@ -21,8 +22,6 @@ installed as a global instance on all duals. This follows the convention of
 
 ## Main results
 
-* `LinearEquiv.isScalarTower_of_dual_regular`: such an identification makes the actions of the
-  base ring and the algebra compatible.
 * `LinearEquiv.moduleInjective_of_dual_regular`: the dual of the right regular module is
   injective.
 
@@ -37,20 +36,6 @@ public section
 namespace LinearEquiv
 
 variable {k A Q : Type*}
-
-section Semiring
-
-variable [CommSemiring k] [Semiring A] [Algebra k A] [AddCommMonoid Q] [Module A Q] [Module k Q]
-
-/-- A left `A`-module identified with the dual of the right regular module, with action
-`(a • φ) x = φ (x * a)`, has compatible actions of `k` and `A`. -/
-theorem isScalarTower_of_dual_regular (e : Q ≃ₗ[k] Module.Dual k A)
-    (he : ∀ (a : A) (q : Q) (x : A), e (a • q) x = e q (x * a)) :
-    IsScalarTower k A Q :=
-  IsScalarTower.of_algebraMap_smul fun c q => e.injective <| LinearMap.ext fun x => by
-    simp [he, ← Algebra.commutes, ← Algebra.smul_def]
-
-end Semiring
 
 variable [Field k] [Ring A] [Algebra k A] [AddCommGroup Q] [Module A Q] [Module k Q]
 
