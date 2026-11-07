@@ -6,8 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Analysis.Hofer
-public import Mathlib.Analysis.Calculus.FDeriv.Add
-public import Mathlib.Analysis.Calculus.FDeriv.Equiv
+public import TauCeti.Analysis.Calculus.FDeriv.Comp
 public import Mathlib.Analysis.SpecialFunctions.Sqrt
 
 /-!
@@ -172,9 +171,6 @@ theorem exists_tendsto_norm_fderiv_rescale_le {u : ι → E → F} {z : ι → E
   have hNc : Tendsto (fun i ↦ ‖fderiv ℝ (u i) (c i)‖) l atTop :=
     tendsto_atTop_mono' l (hball.mono fun i hi ↦ hi.1) hblow
   have hNtop : Tendsto N l atTop := tendsto_atTop_mono (fun i ↦ le_max_right _ _) hNc
-  have hd (i : ι) (w : E) : fderiv ℝ (fun w ↦ u i (c i + (N i)⁻¹ • w)) w =
-      (N i)⁻¹ • fderiv ℝ (u i) (c i + (N i)⁻¹ • w) := by
-    rw [fderiv_comp_smul (f := fun y ↦ u i (c i + y)), fderiv_comp_add_left]
   refine ⟨c, fun i ↦ (N i)⁻¹, fun i ↦ ρ i * N i, fun i ↦ inv_pos.2 (hN i), hc,
     tendsto_inv_atTop_zero.comp hNtop,
     tendsto_atTop_mono (fun i ↦ mul_le_mul_of_nonneg_left (le_max_right _ _) (hρ i).le) hρN,
@@ -183,12 +179,13 @@ theorem exists_tendsto_norm_fderiv_rescale_le {u : ι → E → F} {z : ι → E
   have hNeq : N i = ‖fderiv ℝ (u i) (c i)‖ := max_eq_right hNi
   have hNinv : ‖(N i)⁻¹‖ = (N i)⁻¹ := Real.norm_of_nonneg (inv_pos.2 (hN i)).le
   refine ⟨?_, fun w hw ↦ ?_⟩
-  · rw [hd, smul_zero, add_zero, norm_smul, hNinv, ← hNeq, inv_mul_cancel₀ (hN i).ne']
+  · rw [fderiv_comp_add_smul, smul_zero, add_zero, norm_smul, hNinv, ← hNeq,
+      inv_mul_cancel₀ (hN i).ne']
   · -- The point `c i + (N i)⁻¹ • w` lies within `ρ i` of `c i`, where `‖du i‖ ≤ 2 N i`.
     have hy : dist (c i) (c i + (N i)⁻¹ • w) ≤ ρ i := by
       rw [dist_self_add_right, norm_smul, hNinv, inv_mul_le_iff₀ (hN i)]
       linarith
-    rw [hd, norm_smul, hNinv, inv_mul_le_iff₀ (hN i)]
+    rw [fderiv_comp_add_smul, norm_smul, hNinv, inv_mul_le_iff₀ (hN i)]
     linarith [hi.2 _ hy]
 
 end Rescale

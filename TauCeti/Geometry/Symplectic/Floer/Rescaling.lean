@@ -131,10 +131,8 @@ theorem perturbedFDeriv_rescale (ω : SymplecticForm V) :
   -- Unlike `SymplecticForm.perturbedFDeriv_perturbationPullback`, this needs no differentiability:
   -- the chain rule for affine reparametrizations and the homogeneity `X_{ε H} = ε X_H` hold for
   -- arbitrary maps and Hamiltonians.
-  have hd : fderiv ℝ (fun w ↦ u (c + ε • w)) w = ε • fderiv ℝ u (c + ε • w) := by
-    rw [fderiv_comp_smul (f := fun y ↦ u (c + y)), fderiv_comp_add_left]
   refine ContinuousLinearMap.ext fun v ↦ ?_
-  simp [perturbedFDeriv_apply, hd, smul_sub, smul_comm ε]
+  simp [perturbedFDeriv_apply, fderiv_comp_add_smul, smul_sub, smul_comm ε]
 
 /-- **Rescaled solutions.** For a nonzero scale `ε`, the rescaled map `w ↦ u(c + ε w)` solves the
 Floer equation for the rescaled perturbation `ε K(c + ε w)` at `w`, with respect to a structure
@@ -173,8 +171,7 @@ theorem hamiltonianCurvature_rescale (ω : SymplecticForm V) {x : V} :
       ε • ε • fderiv ℝ (fun z ↦ K z x) (c + ε • w) := by
     -- The function `w ↦ ε * K (c + ε • w) x` is the scalar multiple `ε • (w ↦ K (c + ε • w) x)`.
     refine (congrFun (fderiv_const_smul_field (f := fun w ↦ K (c + ε • w) x) ε) w).trans ?_
-    rw [Pi.smul_apply, fderiv_comp_smul (f := fun y ↦ K (c + y) x),
-      fderiv_comp_add_left (f := fun z ↦ K z x)]
+    rw [Pi.smul_apply, fderiv_comp_add_smul (fun z ↦ K z x)]
   simp only [hamiltonianCurvature_def, hd, poissonBracket_const_mul_left,
     poissonBracket_const_mul_right, smul_apply, smul_eq_mul]
   ring
