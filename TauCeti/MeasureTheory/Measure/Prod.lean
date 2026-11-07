@@ -48,7 +48,17 @@ theorem fst_withDensity {α β : Type*} [MeasurableSpace α] [MeasurableSpace β
     lintegral_withDensity_eq_lintegral_mul ρ (f := fun p ↦ f p.1)
       (by fun_prop) (by fun_prop), lintegral_withDensity_eq_lintegral_mul _ hf hg,
     Measure.fst, lintegral_map (hf.mul hg) measurable_fst]
-  rfl
+  simp only [Pi.mul_apply]
+
+/-- An integrable nonnegative weight on the first marginal makes the weighted joint measure
+finite. -/
+theorem isFiniteMeasure_withDensity_fst {α β : Type*} [MeasurableSpace α] [MeasurableSpace β]
+    (ρ : Measure (α × β)) {f : α → ℝ≥0∞} (hf : Measurable f)
+    (hint : ∫⁻ x, f x ∂ρ.fst < ∞) :
+    IsFiniteMeasure (ρ.withDensity (fun p ↦ f p.1)) := by
+  apply isFiniteMeasure_withDensity
+  rw [Measure.fst, lintegral_map hf measurable_fst] at hint
+  exact hint.ne
 
 /-- A set of zero first-marginal mass carries no mass in any rectangle over it: if
 `σ.fst t = 0`, then `σ (t ×ˢ s) = 0` for every `s`. Neither set needs to be measurable. -/

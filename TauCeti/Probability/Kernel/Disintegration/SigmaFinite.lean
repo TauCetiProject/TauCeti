@@ -72,11 +72,8 @@ theorem exists_isMarkovKernel_compProd_eq (ρ : Measure (α × β)) [SigmaFinite
     ∃ κ : Kernel α β, IsMarkovKernel κ ∧ ρ.fst ⊗ₘ κ = ρ := by
   obtain ⟨g, hpos, hg, hint⟩ := exists_pos_lintegral_lt_of_sigmaFinite ρ.fst one_ne_zero
   let σ := ρ.withDensity (fun p ↦ (g p.1 : ℝ≥0∞))
-  have : IsFiniteMeasure (ρ.fst.withDensity fun x ↦ (g x : ℝ≥0∞)) :=
-    isFiniteMeasure_withDensity (hint.trans_le le_top).ne
-  have : IsFiniteMeasure σ.fst := by
-    rwa [fst_withDensity ρ hg.coe_nnreal_ennreal]
-  have : IsFiniteMeasure σ := ⟨by simpa only [fst_univ] using measure_lt_top σ.fst Set.univ⟩
+  have : IsFiniteMeasure σ :=
+    ρ.isFiniteMeasure_withDensity_fst hg.coe_nnreal_ennreal (hint.trans_le le_top)
   exact ⟨σ.condKernel, inferInstance,
     (withDensity_fst_compProd_eq_iff ρ σ.condKernel hg hpos).1 (σ.disintegrate σ.condKernel)⟩
 
@@ -106,11 +103,8 @@ theorem eq_sigmaFiniteCondKernel_of_measure_eq_compProd
     (hκ : ρ.fst ⊗ₘ κ = ρ) : κ =ᵐ[ρ.fst] ρ.sigmaFiniteCondKernel := by
   obtain ⟨g, hpos, hg, hint⟩ := exists_pos_lintegral_lt_of_sigmaFinite ρ.fst one_ne_zero
   let σ := ρ.withDensity (fun p ↦ (g p.1 : ℝ≥0∞))
-  have : IsFiniteMeasure (ρ.fst.withDensity fun x ↦ (g x : ℝ≥0∞)) :=
-    isFiniteMeasure_withDensity (hint.trans_le le_top).ne
-  have : IsFiniteMeasure σ.fst := by
-    rwa [fst_withDensity ρ hg.coe_nnreal_ennreal]
-  have : IsFiniteMeasure σ := ⟨by simpa only [fst_univ] using measure_lt_top σ.fst Set.univ⟩
+  have : IsFiniteMeasure σ :=
+    ρ.isFiniteMeasure_withDensity_fst hg.coe_nnreal_ennreal (hint.trans_le le_top)
   have h₁ := ProbabilityTheory.eq_condKernel_of_measure_eq_compProd κ
     ((withDensity_fst_compProd_eq_iff ρ κ hg hpos).2 hκ).symm
   have h₂ := ProbabilityTheory.eq_condKernel_of_measure_eq_compProd ρ.sigmaFiniteCondKernel
