@@ -99,25 +99,6 @@ private theorem exists_curvatureTensor_coordinates (x₀ : M) :
     (trivializationAt E (TangentSpace I) x₀).symmL_apply hx]
   simp only [Trivialization.symm_linearMapAt _ hx]
 
-omit [T2Space M] [RiemannianBundle fun x : M ↦ TangentSpace I x]
-  [ContMDiffCovariantDerivative cov ∞] in
-/-- In the trivialization `C` at `γ t`, the covariant derivative along `γ` of `Q` is the ordinary
-derivative of its coordinate reading plus the Christoffel term. -/
-private theorem continuousLinearMapAt_alongCurveWithin
-    {C : TangentSpace I (γ t) →L[ℝ] E}
-    (hC : C = (trivializationAt E (TangentSpace I) (γ t)).continuousLinearMapAt ℝ (γ t))
-    (Q : ∀ r, TangentSpace I (γ r)) :
-    C (alongCurveWithin cov γ Q s t) =
-      derivWithin (sectionCoord (F := E) γ Q (γ t)) s t +
-        christoffelMap (Module.finBasis ℝ E)
-          (cov.isCovariantDerivativeOn
-            (s := (trivializationAt E (TangentSpace I) (γ t)).baseSet)) (γ t)
-          (C (Q t)) (derivWithin (extChartAt I (γ t) ∘ γ) s t) := by
-  subst hC
-  rw [alongCurveWithin_apply, Trivialization.continuousLinearMapAt_symmL
-      _ (mem_baseSet_trivializationAt E (TangentSpace I) (γ t)),
-    alongCurveInChartWithin_apply, sectionCoord_apply]
-
 /-- Coordinate reading `A` of the curvature at `γ t` together with the product rule for it in the
 model fibre, including the Christoffel term, for arbitrary differentiable input fields. -/
 private theorem exists_coordinates_alongCurveWithin_curvatureTensor
