@@ -69,7 +69,6 @@ private theorem continuousAt_windingNumber_of_avoidance_of_le {γ : ℝ → ℂ}
     have hoff' : ∀ t ∈ Set.uIcc a b, γ t ≠ w := by
       rw [Set.uIcc_of_le hab]; exact fun t ht ↦ sub_ne_zero.mp (h_ne w hw t ht)
     exact windingNumber_eq_integral_of_avoidance hcont' hoff'
-      (intervalIntegrable_inv_sub_mul_deriv hcont' hoff' hderiv_int)
   refine ContinuousAt.congr ?_ h_eq_nbhd.symm
   refine ContinuousAt.mul continuousAt_const ?_
   refine intervalIntegral.continuousAt_of_dominated_interval (bound := fun t ↦ ε⁻¹ * ‖deriv γ t‖)
@@ -88,8 +87,7 @@ private theorem continuousAt_windingNumber_of_avoidance_of_le {γ : ℝ → ℂ}
 /-- **The generalized winding number is continuous in the point, off the curve.** If `γ` is
 continuous on `Set.uIcc a b`, avoids `w₀` there, and the index integrand `(γ · - w₀)⁻¹ * deriv γ`
 at `w₀` is interval-integrable, then `fun w ↦ windingNumber γ a b w` is continuous at `w₀`, on an
-arbitrary oriented interval. The stated hypothesis matches `windingNumber_eq_integral_of_avoidance`
-and `exists_int_windingNumber_of_closed`. -/
+arbitrary oriented interval. The stated hypothesis matches `exists_int_windingNumber_of_closed`. -/
 theorem continuousAt_windingNumber_of_avoidance {γ : ℝ → ℂ} {w₀ : ℂ} {a b : ℝ}
     (hγ_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ w₀)
     (h_int : IntervalIntegrable (fun t ↦ (γ t - w₀)⁻¹ * deriv γ t) volume a b) :

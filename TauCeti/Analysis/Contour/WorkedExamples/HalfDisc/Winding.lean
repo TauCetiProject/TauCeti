@@ -114,7 +114,7 @@ theorem windingNumber_halfDiscBoundary_eq_one {s : ℂ} (him : 0 < s.im) (hs : �
       (-R) (R + Real.pi) :=
     intervalIntegrable_inv_sub_mul_deriv hcont havoid
       (isPwC1ImmersionOn_halfDiscBoundary hR).isPiecewiseC1On.intervalIntegrable_deriv
-  rw [windingNumber_eq_integral_of_avoidance hcont havoid hint]
+  rw [windingNumber_eq_integral_of_avoidance hcont havoid]
   -- Split the contour integral at the junction.
   have hsub₁ : uIcc (-R) R ⊆ uIcc (-R) (R + Real.pi) := by
     rw [uIcc_of_le (by linarith), uIcc_of_le (by linarith)]
@@ -146,7 +146,7 @@ theorem windingNumber_halfDiscBoundary_eq_one {s : ℂ} (him : 0 < s.im) (hs : �
     have hw := windingNumber_circleMap_eq_one_of_dist_lt (c := 0) (w := s) (R := R)
       (by simpa using hs)
     rw [windingNumber_eq_integral_of_avoidance (continuous_circleMap 0 R).continuousOn
-      (fun t _ => havoidC t) hintC] at hw
+      (fun t _ => havoidC t)] at hw
     calc (∫ θ in (0 : ℝ)..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ)
         = 2 * (Real.pi : ℂ) * Complex.I * ((2 * (Real.pi : ℂ) * Complex.I)⁻¹ *
             ∫ θ in (0 : ℝ)..(2 * Real.pi), (circleMap 0 R θ - s)⁻¹ * deriv (circleMap 0 R) θ) := by

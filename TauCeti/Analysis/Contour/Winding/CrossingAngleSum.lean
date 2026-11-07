@@ -151,7 +151,7 @@ private theorem exists_hasCauchyPVAt_exp_mul_eq_of_forall_le {γ : ℝ → ℂ} 
     intervalIntegrable_inv_sub_mul_deriv hpc.continuousOn havoid hpc.intervalIntegrable_deriv
   have hval : 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ l u s
       = ∫ t in l..u, (γ t - s)⁻¹ * deriv γ t := by
-    rw [windingNumber_eq_integral_of_avoidance hpc.continuousOn havoid hint,
+    rw [windingNumber_eq_integral_of_avoidance hpc.continuousOn havoid,
       mul_inv_cancel_left₀ Complex.two_pi_I_ne_zero]
   refine ⟨2 * (Real.pi : ℂ) * Complex.I * windingNumber γ l u s, ?_, ?_⟩
   · have h0 : HasCauchyPVAt γ l u (fun z => (z - s)⁻¹) s

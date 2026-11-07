@@ -118,9 +118,8 @@ theorem windingNumber_eq_integral_of_not_mem_trace (C : Cycle) {z : ℂ} (hz : z
     ← Int.cast_smul_eq_zsmul ℂ, smul_eq_mul, Finset.mul_sum]
   refine Finset.sum_congr rfl fun γ hγ ↦ ?_
   have hoff := avoids_of_mem_support hz hγ
-  have hint := intervalIntegrable_inv_sub_mul_deriv γ.continuousOn hoff γ.intervalIntegrable_deriv
   have hwind := TauCeti.Contour.windingNumber_eq_integral_of_avoidance
-    γ.continuousOn hoff hint
+    γ.continuousOn hoff
   rw [hwind]
   have hinter :
       (∫ t in γ.a..γ.b, deriv γ t * (γ t - z)⁻¹) =

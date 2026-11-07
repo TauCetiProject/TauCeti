@@ -164,12 +164,7 @@ theorem windingNumber_circleMap_eq_circleIntegral {c w : ℂ} {R : ℝ}
   have hderiv : Continuous (fun θ => deriv (circleMap c R) θ) := by
     simp only [deriv_circleMap]
     exact (continuous_circleMap 0 R).mul continuous_const
-  have hint : IntervalIntegrable
-      (fun t => (circleMap c R t - w)⁻¹ * deriv (circleMap c R) t) MeasureTheory.volume
-      0 (2 * Real.pi) :=
-    intervalIntegrable_inv_sub_mul_deriv hcont (fun t _ => havoid t)
-      (hderiv.intervalIntegrable _ _)
-  rw [windingNumber_eq_integral_of_avoidance hcont (fun t _ => havoid t) hint]
+  rw [windingNumber_eq_integral_of_avoidance hcont (fun t _ => havoid t)]
   congr 1
   simp only [circleIntegral, smul_eq_mul]
   exact intervalIntegral.integral_congr fun θ _ => mul_comm _ _
@@ -237,11 +232,7 @@ theorem windingNumber_circleMap_center {c : ℂ} {R : ℝ} (hR : R ≠ 0) (a b :
     simp only [deriv_circleMap]
     exact (continuous_circleMap 0 R).mul continuous_const
   have havoid : ∀ θ, circleMap c R θ ≠ c := fun _ => circleMap_ne_center hR
-  have hint : IntervalIntegrable
-      (fun t => (circleMap c R t - c)⁻¹ * deriv (circleMap c R) t) MeasureTheory.volume a b :=
-    intervalIntegrable_inv_sub_mul_deriv hcont (fun t _ => havoid t)
-      (hderiv.intervalIntegrable _ _)
-  rw [windingNumber_eq_integral_of_avoidance hcont (fun t _ => havoid t) hint,
+  rw [windingNumber_eq_integral_of_avoidance hcont (fun t _ => havoid t),
     ← indexIntegral_arc_interval (z₀ := c) hR a b]
   congr 1
   exact intervalIntegral.integral_congr fun θ _ => inv_mul_eq_div _ _

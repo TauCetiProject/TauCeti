@@ -52,12 +52,11 @@ private theorem windingNumber_unitSegment_re_bounds {q : ℂ} (hq : 0 < q.im) :
       (Complex.ofRealCLM.hasDerivAt (x := t))
   have hh : windingNumber (fun t : ℝ ↦ (t : ℂ)) 0 1 q =
       (2 * (Real.pi : ℂ) * I)⁻¹ * ∫ t in (0 : ℝ)..1, ((t : ℂ) - q)⁻¹ := by
-    apply (windingNumber_eq_integral_of_avoidance
-      Complex.continuous_ofReal.continuousOn (fun t _ ↦ sub_ne_zero.mp (hne t)) ?_).trans
-    · exact congrArg (fun w ↦ (2 * (Real.pi : ℂ) * I)⁻¹ * w)
-        (intervalIntegral.integral_congr fun t _ ↦ by
-          rw [(hd t).deriv, mul_one])
-    · exact hfi.congr fun t _ ↦ by rw [(hd t).deriv, mul_one]
+    refine (windingNumber_eq_integral_of_avoidance
+      Complex.continuous_ofReal.continuousOn (fun t _ ↦ sub_ne_zero.mp (hne t))).trans ?_
+    exact congrArg (fun w ↦ (2 * (Real.pi : ℂ) * I)⁻¹ * w)
+      (intervalIntegral.integral_congr fun t _ ↦ by
+        rw [(hd t).deriv, mul_one])
   have hpos (t : ℝ) : 0 < (((t : ℂ) - q)⁻¹).im := by
     rw [Complex.inv_im]
     simp only [Complex.sub_im, Complex.ofReal_im, zero_sub, neg_neg]

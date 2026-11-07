@@ -103,8 +103,7 @@ theorem intervalIntegral_deriv_smul_polarPart (decomp : PolarPartDecomposition f
   have hne' : ∀ t ∈ uIcc a b, γ t - (s : ℂ) ≠ 0 := fun t ht => sub_ne_zero.mpr (h_ne t ht)
   have hindex : ∫ t in a..b, (γ t - (s : ℂ))⁻¹ * deriv γ t
       = 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b s := by
-    rw [windingNumber_eq_integral_of_avoidance hcont h_ne
-        (intervalIntegrable_inv_sub_mul_deriv hcont h_ne hderiv), ← mul_assoc,
+    rw [windingNumber_eq_integral_of_avoidance hcont h_ne, ← mul_assoc,
       mul_inv_cancel₀ Complex.two_pi_I_ne_zero, one_mul]
   have hterm : ∀ k : Fin (decomp.order s), IntervalIntegrable
       (fun t => decomp.coeff s k / (γ t - (s : ℂ)) ^ (k.val + 1) * deriv γ t) volume a b :=

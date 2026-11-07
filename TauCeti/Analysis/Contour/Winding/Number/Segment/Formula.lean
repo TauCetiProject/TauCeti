@@ -59,14 +59,7 @@ private theorem windingNumber_eq_integral_inv_sub (hv : v ≠ 0)
     intro t
     have : deriv (fun t : ℝ ↦ (t : ℂ)) t = 1 := ofRealCLM.hasDerivAt.deriv
     rw [this, mul_one]
-  have h_intble : IntervalIntegrable (fun t : ℝ ↦ ((t : ℂ) - q)⁻¹) volume a b := by
-    refine ContinuousOn.intervalIntegrable ?_
-    exact ContinuousOn.inv₀ (by fun_prop) fun t ht ↦ hne t ht
-  have h_int : IntervalIntegrable
-      (fun t : ℝ ↦ ((t : ℂ) - q)⁻¹ * deriv (fun t : ℝ ↦ (t : ℂ)) t)
-      volume a b :=
-    h_intble.congr fun t _ ↦ (h_integrand t).symm
-  rw [windingNumber_eq_integral_of_avoidance h_cont h_avoid h_int]
+  rw [windingNumber_eq_integral_of_avoidance h_cont h_avoid]
   congr 1
   exact intervalIntegral.integral_congr (fun t _ ↦ h_integrand t)
 

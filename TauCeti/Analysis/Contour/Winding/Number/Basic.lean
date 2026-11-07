@@ -44,7 +44,7 @@ value does not exist.
 * `TauCeti.Contour.intervalIntegrable_inv_sub_mul_deriv` — integrability of the index integrand
   for a point off the curve.
 * `TauCeti.Contour.windingNumber_eq_integral_of_avoidance` — reduces `windingNumber` to the ordinary
-  index integral `(2πi)⁻¹ · ∮_γ dz/(z − z₀)` under the continuity, avoidance, and integrability
+  index integral `(2πi)⁻¹ · ∮_γ dz/(z − z₀)` under the continuity and avoidance
   hypotheses stated there.
 
 This provides the foundation for the generalized residue theorem (Hungerbühler–Wasem, Thm 3.3).
@@ -164,15 +164,15 @@ theorem intervalIntegrable_inv_sub_mul_deriv {γ : ℝ → ℂ} {w : ℂ} {a b :
   hderiv_int.continuousOn_mul ((hγ_cont.sub continuousOn_const).inv₀
     fun t ht ↦ sub_ne_zero.mpr (hoff t ht))
 
-/-- If `γ` is continuous on `[a, b]`, avoids `z₀` there, and the index integrand is
-interval-integrable, the generalized winding number is the ordinary index integral: the principal
-value collapses to `(2πi)⁻¹ · ∮_γ dz/(z − z₀)`. -/
+/-- If `γ` is continuous on `[a, b]` and avoids `z₀` there, the generalized winding number is the
+ordinary index integral: the principal value collapses to `(2πi)⁻¹ · ∮_γ dz/(z − z₀)`. When the
+index integrand is not integrable, both sides are the junk value `0`. -/
 theorem windingNumber_eq_integral_of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {z₀ : ℂ}
-    (h_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ z₀)
-    (hf_int : IntervalIntegrable (fun t => (γ t - z₀)⁻¹ * deriv γ t) volume a b) :
+    (h_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ z₀) :
     windingNumber γ a b z₀
-      = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∫ t in a..b, (γ t - z₀)⁻¹ * deriv γ t :=
-  windingNumber_eq_of_hasCauchyPVAt (HasCauchyPVAt.of_avoidance h_cont h_avoid hf_int)
+      = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∫ t in a..b, (γ t - z₀)⁻¹ * deriv γ t := by
+  rw [windingNumber_eq_cauchyPVAt]
+  exact congrArg _ (cauchyPVAt_eq_integral_of_avoidance h_cont h_avoid)
 
 end TauCeti.Contour
 

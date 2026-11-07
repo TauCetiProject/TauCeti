@@ -71,7 +71,7 @@ private lemma windingNumber_fdBoundary_eq_log_of_slit {a b : ℝ} (hab : a ≤ b
     rw [sdiff_empty, min_eq_left hab, max_eq_right hab] at hs
     exact h_diff s hs
   rw [windingNumber_eq_integral_of_avoidance (continuous_fdBoundary H).continuousOn
-      h_avoid h_int,
+      h_avoid,
     integral_inv_sub_mul_deriv_eq_log countable_empty (continuous_fdBoundary H).continuousOn
       h_diff' h_slit h_int]
 

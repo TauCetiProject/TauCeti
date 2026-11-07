@@ -40,6 +40,5 @@ theorem _root_.AbsolutelyContinuousOnInterval.windingNumber_eq_integral
       ∫ t in a..b, (γ t - z)⁻¹ * deriv γ t :=
   windingNumber_eq_integral_of_avoidance hγ.continuousOn
     (fun t ht htz ↦ hz ⟨t, ht, htz⟩)
-    (hγ.intervalIntegrable_inv_sub_mul_deriv hz)
 
 end TauCeti.Contour

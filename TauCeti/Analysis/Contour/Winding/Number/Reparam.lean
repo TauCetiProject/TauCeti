@@ -84,17 +84,11 @@ theorem windingNumber_comp_reparam (hφ : ∀ t ∈ Set.uIcc a b, HasDerivAt φ 
     refine (continuousOn_id.sub continuousOn_const).inv₀ ?_
     rintro _ ⟨u, hu, rfl⟩
     exact sub_ne_zero.mpr (havoid u hu)
-  -- the index integrand along the reparametrized curve is continuous, hence integrable
-  have hderivcont : ContinuousOn (deriv (γ ∘ φ)) (Set.uIcc a b) :=
-    continuousOn_deriv_comp_reparam hφ hφ' hγ hγ'
   have hcompcont : ContinuousOn (γ ∘ φ) (Set.uIcc a b) := hγcont.comp hφcont hmaps
   have hcompavoid : ∀ t ∈ Set.uIcc a b, (γ ∘ φ) t ≠ z₀ := fun t ht => havoid (φ t) ⟨t, ht, rfl⟩
-  rw [windingNumber_eq_integral_of_avoidance hcompcont hcompavoid
-      (intervalIntegrable_inv_sub_mul_deriv hcompcont hcompavoid hderivcont.intervalIntegrable),
+  rw [windingNumber_eq_integral_of_avoidance hcompcont hcompavoid,
     windingNumber_eq_integral_of_avoidance (hγcont.mono hsub)
-      (fun u hu => havoid u (hsub hu))
-      (intervalIntegrable_inv_sub_mul_deriv (hγcont.mono hsub) (fun u hu => havoid u (hsub hu))
-        (hγ'.mono hsub).intervalIntegrable)]
+      (fun u hu => havoid u (hsub hu))]
   congr 1
   -- both index integrands are the contour integrand of the kernel `(· - z₀)⁻¹`, with the two
   -- factors in the opposite order

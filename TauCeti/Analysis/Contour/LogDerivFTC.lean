@@ -249,10 +249,7 @@ theorem windingNumber_comp_eq_integral_logDeriv {γ : ℝ → ℂ} {h : ℂ → 
     have hcomp : logDeriv (h ∘ γ) t = logDeriv h (γ t) * deriv γ t :=
       logDeriv_comp (hh t htu).differentiableAt (hp t htIoo)
     rw [sub_zero, ← div_eq_inv_mul, ← logDeriv_apply, hcomp, smul_eq_mul, mul_comm]
-  have hint : IntervalIntegrable (fun t => deriv γ t • logDeriv h (γ t)) volume a b :=
-    intervalIntegrable_deriv_smul_logDeriv hγ hh hne
-  rw [windingNumber_eq_integral_of_avoidance hcont
-      (fun t ht => hne t ht) (hint.congr_ae ((ae_restrict_iff' measurableSet_uIoc).mpr hae))]
+  rw [windingNumber_eq_integral_of_avoidance hcont (fun t ht => hne t ht)]
   exact congrArg _ (intervalIntegral.integral_congr_ae hae).symm
 
 section BoundaryTolerant

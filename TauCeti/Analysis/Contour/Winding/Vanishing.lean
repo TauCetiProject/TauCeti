@@ -68,8 +68,7 @@ private theorem windingNumber_eq_zero_of_far {γ : ℝ → ℂ} {a b R : ℝ} {w
   obtain ⟨n, hn⟩ := hint
   have h_norm_wind : ‖windingNumber γ a b w‖
       ≤ (2 * Real.pi)⁻¹ * ((∫ t in Ι a b, ‖deriv γ t‖) / (‖w‖ - R)) := by
-    rw [windingNumber_eq_integral_of_avoidance hγ_cont h_off
-        (intervalIntegrable_inv_sub_mul_deriv hγ_cont h_off hderiv_int),
+    rw [windingNumber_eq_integral_of_avoidance hγ_cont h_off,
       norm_mul, norm_inv_two_pi_I]
     gcongr
     simpa only [smul_eq_mul] using norm_integral_inv_sub_smul_le hderiv_int

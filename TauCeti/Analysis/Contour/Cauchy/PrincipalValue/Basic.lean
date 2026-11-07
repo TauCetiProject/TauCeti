@@ -557,6 +557,20 @@ theorem HasCauchyPVAt.of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → �
   refine (intervalIntegrable_congr fun t ht => ?_).mpr hf_int
   exact ite_eq_left (hε.2.trans_le (ht₀_min (Set.uIoc_subset_uIcc ht)))
 
+/-- **Avoidance, without integrability.** If `γ` stays away from `z₀` throughout `[a, b]`, the
+symmetric excision is eventually inert, so `cauchyPVAt` is the ordinary contour integral. When the
+integrand is not integrable, both sides are the junk value `0`. -/
+theorem cauchyPVAt_eq_integral_of_avoidance {γ : ℝ → ℂ} {a b : ℝ} {f : ℂ → ℂ} {z₀ : ℂ}
+    (h_cont : ContinuousOn γ (Set.uIcc a b)) (h_avoid : ∀ t ∈ Set.uIcc a b, γ t ≠ z₀) :
+    cauchyPVAt γ a b f z₀ = ∫ t in a..b, f (γ t) * deriv γ t := by
+  obtain ⟨t₀, ht₀, ht₀_min⟩ := isCompact_uIcc.exists_isMinOn
+    Set.nonempty_uIcc (h_cont.sub continuousOn_const).norm
+  have hpos : 0 < ‖γ t₀ - z₀‖ := norm_pos_iff.mpr (sub_ne_zero.mpr (h_avoid t₀ ht₀))
+  refine Filter.Tendsto.limUnder_eq (tendsto_const_nhds.congr' ?_)
+  filter_upwards [Ioo_mem_nhdsGT hpos] with ε hε
+  refine intervalIntegral.integral_congr fun t ht => ?_
+  exact (ite_eq_left (hε.2.trans_le (ht₀_min ht))).symm
+
 /-- **Concatenation.** The principal values along adjacent subcurves `[a, b]` and `[b, c]` add to
 the principal value along `[a, c]`. The integrability of the excised integrand across `[a, c]` and
 the additivity of the integral both follow from the two given principal values, so no ordering or

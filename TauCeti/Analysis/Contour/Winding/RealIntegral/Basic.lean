@@ -77,7 +77,7 @@ theorem windingNumber_eq_real_integral_of_closed {γ : ℝ → ℂ} {w : ℂ} {a
   -- The winding number is the ordinary index integral, and it equals the integer `n`.
   have hwind_int : windingNumber γ a b w
       = (2 * (Real.pi : ℂ) * Complex.I)⁻¹ * ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t :=
-    windingNumber_eq_integral_of_avoidance hγ_cont h_avoid h_int
+    windingNumber_eq_integral_of_avoidance hγ_cont h_avoid
   have h2πI_ne : (2 * (Real.pi : ℂ) * Complex.I) ≠ 0 := Complex.two_pi_I_ne_zero
   -- Read off the index integral: `∮_γ dz/(z − w) = 2πi · n`.
   have hCI : (∫ t in a..b, (γ t - w)⁻¹ * deriv γ t) = 2 * (Real.pi : ℂ) * Complex.I * (n : ℂ) := by

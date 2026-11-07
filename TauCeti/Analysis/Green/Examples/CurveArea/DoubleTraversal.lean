@@ -67,9 +67,9 @@ theorem windingNumber_circleMap_twice {c z : ℂ} {R : ℝ}
     rw [hspan, zero_add] at he
     simpa only [zsmul_eq_mul, Int.cast_ofNat] using he
   rw [Contour.windingNumber_eq_integral_of_avoidance
-    (continuous_circleMap c R).continuousOn (fun t _ ↦ ha t) (hi.intervalIntegrable _ _),
+    (continuous_circleMap c R).continuousOn (fun t _ ↦ ha t),
     Contour.windingNumber_eq_integral_of_avoidance
-      (continuous_circleMap c R).continuousOn (fun t _ ↦ ha t) (hi.intervalIntegrable _ _), he']
+      (continuous_circleMap c R).continuousOn (fun t _ ↦ ha t), he']
   ring
 
 /-- The winding weight of an actual double traversal is twice the single-traversal weight. -/

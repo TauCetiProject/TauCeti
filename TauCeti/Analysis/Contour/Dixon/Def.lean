@@ -98,7 +98,7 @@ theorem dixonH1_eq_dixonH2_sub_windingNumber_mul_f {f : ℂ → ℂ} {γ : ℝ �
       dixonH2 f γ a b w - 2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b w * f w := by
   have hw_int : ∫ t in a..b, (γ t - w)⁻¹ * deriv γ t =
       2 * (Real.pi : ℂ) * Complex.I * windingNumber γ a b w := by
-    rw [windingNumber_eq_integral_of_avoidance h_cont hoff h_base_int, ← mul_assoc,
+    rw [windingNumber_eq_integral_of_avoidance h_cont hoff, ← mul_assoc,
       mul_inv_cancel₀ Complex.two_pi_I_ne_zero, one_mul]
   have h_fw_div_int : IntervalIntegrable (fun t ↦ f w / (γ t - w) * deriv γ t) volume a b :=
     (fw_div_eq f γ w) ▸ (h_base_int.const_mul (f w))
