@@ -41,6 +41,8 @@ the nonnegative half-line. -/
 theorem integrableExpSet_id_stableMeasure_one_half_neg_one {s : ℝ≥0} (hs : 0 < s) (m : ℝ) :
     integrableExpSet id (stableMeasure 2⁻¹ (-1) s m) = Ici 0 := by
   rw [stableMeasure_one_half_neg_one hs]
+  -- The affine transport lemma writes reflection as `fun x ↦ 0 + -1 * x`, whereas the stable
+  -- specialization uses `Neg.neg`; isolate their normalization before rewriting the domain.
   rw [show integrableExpSet id ((levyMeasure (-m - s) s).map Neg.neg) =
       (fun t : ℝ ↦ -1 * t) ⁻¹' integrableExpSet id (levyMeasure (-m - s) s) by
     simpa only [zero_add, neg_one_mul] using
@@ -59,6 +61,8 @@ theorem mgf_id_stableMeasure_one_half_neg_one (s : ℝ≥0) (m : ℝ) {t : ℝ} 
     simp [mul_comm]
   have hspos : 0 < s := pos_iff_ne_zero.mpr hs
   rw [stableMeasure_one_half_neg_one hspos]
+  -- As above, normalize the `Neg.neg` reflection to the affine map expected by
+  -- `mgf_id_map_affine` before rewriting the transform.
   rw [show mgf id ((levyMeasure (-m - s) s).map Neg.neg) t =
       exp (0 * t) * mgf id (levyMeasure (-m - s) s) (-1 * t) by
     simpa only [zero_add, neg_one_mul] using
