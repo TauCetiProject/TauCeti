@@ -146,6 +146,26 @@ theorem sum_antidiagonal_coeff_localLogDerivSeries_eq (D : EulerProductData K)
       rw [PowerSeries.coeff_succ_X_mul, PowerSeries.coeff_derivative] at h
       simpa [Nat.cast_add, Nat.cast_one, mul_comm] using h
 
+/-- The Cauchy-product terms of the local logarithmic-derivative series against the local Euler
+factor collapse to `n * D(P ^ n) * x ^ n`. -/
+theorem sum_antidiagonal_mul_pow_localLogDerivSeries (D : EulerProductData K)
+    (P : HeightOneSpectrum (𝓞 K)) (x : ℂ) (n : ℕ) :
+    ∑ ij ∈ Finset.antidiagonal n,
+        (PowerSeries.coeff ij.1 (D.localLogDerivSeries P) * x ^ ij.1) *
+          (D (P.primeIdealPow ij.2) * x ^ ij.2) =
+      (n : ℂ) * D (P.primeIdealPow n) * x ^ n := by
+  calc
+    _ = (∑ ij ∈ Finset.antidiagonal n,
+        PowerSeries.coeff ij.1 (D.localLogDerivSeries P) * D (P.primeIdealPow ij.2)) * x ^ n := by
+      rw [Finset.sum_mul]
+      apply Finset.sum_congr rfl
+      intro ij hij
+      rw [Finset.mem_antidiagonal] at hij
+      rw [← hij, pow_add]
+      ring
+    _ = (n : ℂ) * D (P.primeIdealPow n) * x ^ n := by
+      rw [D.sum_antidiagonal_coeff_localLogDerivSeries_eq P n]
+
 /-- The first local logarithmic-derivative coefficient is the coefficient at `P`. -/
 @[simp]
 theorem coeff_one_localLogDerivSeries (D : EulerProductData K)

@@ -10,7 +10,7 @@ public import TauCeti.RepresentationTheory.CharacterTable.GL2.Cuspidal.Basic
 public import TauCeti.RepresentationTheory.Simple.Basic
 public import Mathlib.NumberTheory.LegendreSymbol.Complex
 -- Non-public: nontriviality of the canonical primitive complex additive character of `F`.
-import TauCeti.NumberTheory.LegendreSymbol.Complex
+import TauCeti.NumberTheory.LegendreSymbol.AddCharacter
 -- Non-public: bundling a representation with `FDRep.of` preserves its character.
 import TauCeti.RepresentationTheory.FDRep.Basic
 -- Non-public: Frobenius reciprocity for class functions turns each pairing with an induced
@@ -186,38 +186,18 @@ private theorem sum_GL2CuspidalVirtualCharacter_mul_GL2NonSplitTorusRep
       field_simp
       ring
   -- the character `u ↦ θ(u^q) θ(u)⁻¹` is nontrivial, so it sums to zero over `Eˣ`
-  have hφne : (Units.coeHom ℂ).comp φ ≠ 1 := by
-    intro h
-    refine hθ ?_
-    rw [← MonoidHom.comp_one (Units.coeHom ℂ)] at h
-    have h1 : φ = 1 := (MonoidHom.cancel_left Units.coeHom_injective).mp h
-    refine MonoidHom.ext fun u => ?_
-    have hu := DFunLike.congr_fun h1 u
-    rw [hφ, MonoidHom.div_apply, MonoidHom.one_apply, div_eq_one,
-      Nat.card_eq_fintype_card] at hu
-    exact hu
-  have hφsum : ∑ u : Eˣ, (φ u : ℂ) = 0 := sum_hom_units_eq_zero _ hφne
+  have hφsum : ∑ u : Eˣ, (φ u : ℂ) = 0 :=
+    sum_hom_units_eq_zero ((Units.coeHom ℂ).comp φ) fun h => hθ <| MonoidHom.ext fun u => by
+      simpa [hφ, div_eq_one_iff_eq, Units.ext_iff, Nat.card_eq_fintype_card] using
+        DFunLike.congr_fun h u
   -- the units of `E` coming from `F` are the image of `Fˣ`
   have hfilter : (Finset.univ.filter fun u : Eˣ => (u : E) ∈ Set.range (algebraMap F E)) =
       Finset.univ.map ⟨Units.map (algebraMap F E : F →* E),
-        Units.map_injective (algebraMap F E).injective⟩ := by
-    calc
-      _ = Finset.univ.filter (fun u : Eˣ =>
-            u ∈ Set.range (Units.map (algebraMap F E : F →* E))) := by
-          apply Finset.filter_congr
-          intro u _
-          exact mem_range_iff_exists_units_map_eq (algebraMap F E) u
-      _ = Finset.univ.image (Units.map (algebraMap F E : F →* E)) :=
-        Finset.univ_filter_mem_range _
-      _ = _ := by
-        simpa only [Function.Embedding.coeFn_mk] using
-          (Finset.map_eq_image
-            ⟨Units.map (algebraMap F E : F →* E),
-              Units.map_injective (algebraMap F E).injective⟩ Finset.univ).symm
+        Units.map_injective (algebraMap F E).injective⟩ := Finset.ext fun u => by
+    simp only [Finset.mem_filter, Finset.mem_univ, true_and, Finset.mem_map,
+      Function.Embedding.coeFn_mk, mem_range_iff_exists_units_map_eq]
   have hcardE : ((Fintype.card E - 1 : ℕ) : ℂ) = (Fintype.card F : ℂ) ^ 2 - 1 := by
-    rw [← Fintype.card_units, ← Nat.card_eq_fintype_card,
-      Nat.card_congr (GL2NonSplitTorus.unitsEquiv (F := F) (E := E)).toEquiv,
-      GL2NonSplitTorus.natCard_eq (F := F) (E := E), Nat.card_eq_fintype_card,
+    rw [Module.card_eq_pow_finrank (K := F), Algebra.IsQuadraticExtension.finrank_eq_two F E,
       Nat.cast_sub (Nat.one_le_pow _ _ Fintype.card_pos)]
     push_cast
     ring
@@ -334,7 +314,7 @@ noncomputable def GL2Cuspidal (theta : Eˣ →* ℂˣ)
     (htheta : theta.comp (powMonoidHom (Fintype.card F)) ≠ theta) : FDRep ℂ (GL (Fin 2) F) :=
   FDRep.of (gl2CuspidalRepresentation theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)
-    (primitiveChar_to_Complex_ne_one F) htheta)
+    (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one htheta)
 
 /-- The character of `TauCeti.GL2Cuspidal` is the cuspidal virtual character from which it was
 constructed. -/
@@ -347,7 +327,7 @@ theorem character_GL2Cuspidal (theta : Eˣ →* ℂˣ)
   rw [GL2Cuspidal, FDRep.character_of]
   exact (gl2CuspidalRepresentation_spec theta
     (AddChar.FiniteField.primitiveChar_to_Complex F)
-    (primitiveChar_to_Complex_ne_one F) htheta).2
+    (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one htheta).2
 
 /-- The cuspidal representation has degree `q - 1`. -/
 @[simp]
@@ -369,7 +349,7 @@ theorem simple_GL2Cuspidal (theta : Eˣ →* ℂˣ)
     rw [GL2Cuspidal, FDRep.of_ρ']
     exact (gl2CuspidalRepresentation_spec theta
       (AddChar.FiniteField.primitiveChar_to_Complex F)
-      (primitiveChar_to_Complex_ne_one F) htheta).1
+      (AddChar.FiniteField.primitiveChar_to_Complex_isPrimitive F).ne_one htheta).1
   exact FDRep.simple_of_isIrreducible _
 
 end TauCeti
