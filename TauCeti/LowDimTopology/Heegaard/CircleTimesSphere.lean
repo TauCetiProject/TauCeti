@@ -411,21 +411,6 @@ theorem periodicMaslovIndices_circleTimesSphere_one (a : Fin 2) :
   rw [periodicMaslovIndices_def, periodicDomains_circleTimesSphere_one,
     AddMonoidHom.map_zmultiples, maslovIndex_circleTimesSphere_annulus_add_two_bigon]
 
-/-- With the basepoint in the bigon `B₁`, the diagram is weakly admissible at both generators:
-its periodic domains `k (A + 2 B₂)` have Maslov index `2 k`, so the only one of index zero is
-zero. It is not weakly admissible
-(`TauCeti.HeegaardRegionSystem.not_weaklyAdmissible_circleTimesSphere_one`), since `A + 2 B₂`
-has no negative coefficient; that periodic domain has nonzero Maslov index and is not tested by
-weak admissibility at a generator. -/
-theorem weaklyAdmissibleAt_circleTimesSphere_one (a : Fin 2) :
-    (circleTimesSphere 1).WeaklyAdmissibleAt ![0, 1, 1] (circleTimesSphereGenerator 1 a) := by
-  refine weaklyAdmissibleAt_iff.mpr fun P hP hμ _ => ?_
-  rw [periodicDomains_circleTimesSphere_one, AddSubgroup.mem_zmultiples_iff] at hP
-  obtain ⟨k, rfl⟩ := hP
-  rw [map_zsmul, maslovIndex_circleTimesSphere_annulus_add_two_bigon] at hμ
-  obtain rfl : k = 0 := by simpa using hμ
-  exact zero_zsmul _
-
 /-- With the basepoint in the bigon `B₁`, the diagram is strongly admissible at both generators:
 a nonzero periodic domain `k (A + 2 B₂)` of nonnegative Maslov index `2 k` has `k > 0`, and its
 coefficient `2 k` on `B₂` exceeds half its index. -/
@@ -442,6 +427,16 @@ theorem stronglyAdmissible_circleTimesSphere_one (a : Fin 2) :
   simp only [zsmul_eq_mul, Pi.mul_apply, Pi.intCast_apply, Matrix.cons_val, Int.cast_mul]
   push_cast
   linarith
+
+/-- With the basepoint in the bigon `B₁`, the diagram is weakly admissible at both generators,
+since it is strongly admissible there: its periodic domains `k (A + 2 B₂)` have Maslov index
+`2 k`, so the only one of index zero is zero. It is not weakly admissible
+(`TauCeti.HeegaardRegionSystem.not_weaklyAdmissible_circleTimesSphere_one`), since `A + 2 B₂`
+has no negative coefficient; that periodic domain has nonzero Maslov index and is not tested by
+weak admissibility at a generator. -/
+theorem weaklyAdmissibleAt_circleTimesSphere_one (a : Fin 2) :
+    (circleTimesSphere 1).WeaklyAdmissibleAt ![0, 1, 1] (circleTimesSphereGenerator 1 a) :=
+  (stronglyAdmissible_circleTimesSphere_one a).weaklyAdmissibleAt
 
 /-- With the basepoint in the bigon `B₁`, the relative grading of `p₀` over `p₁` is one modulo
 two: the bigons give `-1` and `1`, which agree modulo the periodic Maslov indices. -/
