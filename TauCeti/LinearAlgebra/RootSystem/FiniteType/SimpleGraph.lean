@@ -74,7 +74,7 @@ variable {G} [Finite V]
 /-- **A positive definite graph Cartan matrix is of finite type.** If `2I - A` is positive
 definite over some linear ordered field, then the integer matrix `2I - A` is of finite type. -/
 theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOrder R]
-    [IsStrictOrderedRing R] [StarRing R] [TrivialStar R] (h : (G.graphCartanMatrix R).PosDef) :
+    [IsStrictOrderedRing R] [StarRing R] (h : (G.graphCartanMatrix R).PosDef) :
     IsFiniteType (G.graphCartanMatrix ℤ) := by
   have : Fintype V := Fintype.ofFinite V
   refine isFiniteType_of_posDef_map_intCast (fun i ↦ by simp) (fun i j hij ↦ ?_) ?_
@@ -88,7 +88,9 @@ theorem isFiniteType_graphCartanMatrix_of_posDef {R : Type*} [Field R] [LinearOr
   have hx' : Rat.castHom R ∘ x ≠ 0 := fun h0 ↦
     hx (funext fun i ↦ by simpa using congrFun h0 i)
   have hpos := h.dotProduct_mulVec_pos hx'
-  rw [← graphCartanMatrix_map G (Rat.castHom R), star_trivial] at hpos
+  have hstar : star (Rat.castHom R ∘ x) = Rat.castHom R ∘ x :=
+    funext fun i ↦ star_ratCast (x i)
+  rw [← graphCartanMatrix_map G (Rat.castHom R), hstar] at hpos
   have hcast : Rat.castHom R (x ⬝ᵥ G.graphCartanMatrix ℚ *ᵥ x) =
       Rat.castHom R ∘ x ⬝ᵥ (G.graphCartanMatrix ℚ).map (Rat.castHom R) *ᵥ (Rat.castHom R ∘ x) := by
     rw [RingHom.map_dotProduct]
