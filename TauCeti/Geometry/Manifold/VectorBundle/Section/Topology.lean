@@ -87,6 +87,12 @@ specified frame domains. For smooth sections, all finite derivative orders are i
 def frameTopology : TopologicalSpace Cₛ^n⟮I; F, V⟯ :=
   .induced (frameJet (I := I) e U hU) inferInstance
 
+/-- The frame topology is the topology induced by the existing native frame jet. -/
+theorem frameTopology_eq_induced_frameJet :
+    frameTopology (I := I) (n := n) e U hU =
+      TopologicalSpace.induced (frameJet (I := I) (n := n) e U hU) inferInstance := by
+  rfl
+
 /-- A section family is continuous exactly when all its frame-coordinate chart jets are
 continuous in the compact-open topology. -/
 theorem continuous_frameTopology_iff {P : Type*} [TopologicalSpace P]
