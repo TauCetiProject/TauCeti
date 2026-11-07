@@ -37,8 +37,9 @@ variable {C : Type u} [Category.{v} C] [Abelian C]
   [PreservesFiniteLimits F] [PreservesFiniteColimits F]
   [PreservesFiniteLimits G] [PreservesFiniteColimits G]
 
-/-- An exact left adjoint preserves Ext bijectively with coefficients in any object
-on which the adjunction unit is an isomorphism. The source object is unrestricted. -/
+/-- For an adjunction `F ⊣ G` between exact functors, `F` preserves Ext bijectively with
+coefficients in any object on which the unit is an isomorphism. The source object is
+unrestricted. -/
 theorem mapExt_bijective_of_isIso_unit_app (adj : F ⊣ G) (X Y : C) (n : ℕ)
     [IsIso (adj.unit.app Y)] : Function.Bijective (F.mapExtAddHom.{w, w'} X Y n) := by
   let e : Ext.{w} X Y n ≃+ Ext.{w'} (F.obj X) (F.obj Y) n :=

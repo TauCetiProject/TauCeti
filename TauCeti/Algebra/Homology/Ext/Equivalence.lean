@@ -10,12 +10,11 @@ public import TauCeti.Algebra.Homology.Ext.Map.Adjunction
 /-!
 # `Ext` groups are invariant under an additive equivalence
 
-Mathlib's `CategoryTheory.Adjunction.extEquiv` promotes an adjunction `F ⊣ G` between exact
-functors to an additive equivalence `Extⁿ(F X, Y) ≃+ Extⁿ(X, G Y)`.  For an equivalence `e` this
-specialises, along `CategoryTheory.Equivalence.toAdjunction` and the transport of the target along
-the unit isomorphism from `TauCeti.extAddEquivOfIso`, to the invariance of `Ext` under `e`, which
-Mathlib does not state in this form.  (`CategoryTheory.Abelian.Ext.mapExactFunctor` is shown
-bijective only under a projective- or injective-object hypothesis.)
+An additive equivalence `e` induces an additive equivalence on `Ext` groups via
+`e.functor.mapExtAddHom`, whose underlying map is
+`CategoryTheory.Abelian.Ext.mapExactFunctor`. Bijectivity follows from
+`CategoryTheory.Adjunction.mapExt_bijective_of_isIso_unit_app` applied to `e.toAdjunction`.
+That criterion uses Mathlib's `CategoryTheory.Adjunction.extEquiv`.
 
 ## Main definitions
 
@@ -42,10 +41,9 @@ universe w w' v v' u u' t
 variable {C : Type u} [Category.{v} C] [Abelian C] {D : Type u'} [Category.{v'} D] [Abelian D]
   [HasExt.{w} C] [HasExt.{w'} D]
 
-/-- **`Ext` groups are invariant under an additive equivalence.**  The equivalence `e` carries
-`Extⁿ(X, Y)` isomorphically onto `Extⁿ(e X, e Y)`.  This is `CategoryTheory.Adjunction.extEquiv`
-for the adjunction `e.functor ⊣ e.inverse`, with the target transported along the unit
-isomorphism. -/
+/-- **`Ext` groups are invariant under an additive equivalence.** The additive equivalence
+`Extⁿ(X, Y) ≃+ Extⁿ(e X, e Y)` has underlying map
+`CategoryTheory.Abelian.Ext.mapExactFunctor` for `e.functor`. -/
 noncomputable def _root_.CategoryTheory.Equivalence.extAddEquiv
     (e : C ≌ D) [e.functor.Additive] (X Y : C) (n : ℕ) :
     Ext.{w} X Y n ≃+ Ext.{w'} (e.functor.obj X) (e.functor.obj Y) n :=
