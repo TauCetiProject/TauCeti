@@ -10,6 +10,7 @@ public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Auxiliary
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.IndexEstimate
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.KeyInequality
 public import TauCeti.NumberTheory.DiophantineApproximation.Roth.Parameters
+public import TauCeti.Algebra.Order.Ring.MulGrowth
 public import TauCeti.Order.Northcott.Sequence
 import TauCeti.Algebra.MvPolynomial.Degrees
 
@@ -79,17 +80,6 @@ private theorem two_le_twelve_mul_max_house (α : ℝ) {b : ℕ} (hb : 0 < b) :
   have hb₁ : (1 : ℝ) ≤ b := by exact_mod_cast hb
   nlinarith [le_max_left 1 (house α)]
 
-/-- A sequence `h` with `L ≤ h 0` and `M h k ≤ h (k + 1)` for `M ≥ 2` and `L > 0` is positive and
-monotone. -/
-theorem forall_pos_and_monotone_of_mul_le {h : ℕ → ℝ} {M L : ℝ} (hM : 2 ≤ M) (hL : 0 < L)
-    (h₀ : L ≤ h 0) (hh : ∀ k, M * h k ≤ h (k + 1)) : (∀ k, 0 < h k) ∧ Monotone h := by
-  have hpos : ∀ k, 0 < h k := by
-    intro k
-    induction k with
-    | zero => exact hL.trans_le h₀
-    | succ k ih => exact (by nlinarith : 0 < M * h k).trans_le (hh k)
-  exact ⟨hpos, monotone_nat_of_le_succ fun k ↦ by nlinarith [hh k, hpos k]⟩
-
 /-- The degree bounds `⌊D / h i⌋₊` of Roth's auxiliary polynomial, for `D = h (n - 1) / ε` and a
 positive monotone sequence `h`: they are positive, `⌊D / h i⌋₊ * h i` lies between `(1 - ε) D`
 and `D`, and `5 h i ≤ D`. -/
@@ -113,19 +103,6 @@ private theorem two_mul_mul_rpow_inv_two_pow {ε : ℝ} (hε : 0 ≤ ε) (n : �
   rw [one_div, (by norm_cast : (2 : ℝ) ^ (n - 1) = ((2 ^ (n - 1) : ℕ) : ℝ)),
     pow_rpow_inv_natCast (by positivity) (pow_ne_zero _ two_ne_zero), Fintype.card_fin]
   ring
-
-/-- If the coefficients of a nonzero integer polynomial `P` are bounded by `B ^ ∑ i, r i` for
-`B > 0`, then they are bounded by `exp (log B * ∑ i, r i)`, and the logarithmic height of `P` over
-`ℚ` is at most `log B * ∑ i, r i`. -/
-private theorem abs_coeff_le_exp_and_logHeight_map_le {ι : Type*} [Fintype ι]
-    {P : MvPolynomial ι ℤ} (hP0 : P ≠ 0) {B : ℝ} (hB : 0 < B) {r : ι → ℕ}
-    (hP : ∀ μ, |(P.coeff μ : ℝ)| ≤ B ^ ∑ i, r i) :
-    (∀ μ, |(P.coeff μ : ℝ)| ≤ exp (log B * ∑ i, (r i : ℝ))) ∧
-      (P.map (Int.castRingHom ℚ)).logHeight ≤ log B * ∑ i, (r i : ℝ) := by
-  have h : ∀ μ, |(P.coeff μ : ℝ)| ≤ exp (log B * ∑ i, (r i : ℝ)) := fun μ ↦ by
-    rw [mul_comm, ← Nat.cast_sum, exp_nat_mul, exp_log hB]
-    exact hP μ
-  exact ⟨h, (logHeight_map_intCast_le_log hP0 h).trans_eq (log_exp _)⟩
 
 /-- The main step of the proof of Roth's theorem. Let `β₀, β₁, …` be rational approximations
 of `α` with `|βₖ - α| ≤ H(βₖ) ^ (-κ)`, whose logarithmic heights satisfy `L ≤ h(β₀)` and
@@ -155,7 +132,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   have hC₁ : log 2 ≤ C₁ := log_le_log two_pos h12
   have hC₁₀ : 0 ≤ C₁ := log_nonneg (by linarith)
   have hL₀ : 0 < L := lt_of_lt_of_le (by positivity) hL
-  obtain ⟨hpos, hmono⟩ := forall_pos_and_monotone_of_mul_le hM₂ hL₀ h₀ hh
+  obtain ⟨hpos, hmono⟩ := forall_pos_and_monotone_of_mul_le (by linarith) hL₀ h₀ hh
   -- The degree bounds `r i = ⌊D / h i⌋₊` for `D = h (n - 1) / ε`.
   set D := h (n - 1) / ε with hD_def
   have hεD : ε * D = h (n - 1) := by rw [hD_def]; field_simp
@@ -171,7 +148,7 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
   -- Roth's auxiliary polynomial with these partial degrees.
   obtain ⟨P, hP0, hPdeg, hPind, hPcoeff⟩ := exists_roth_auxiliary_polynomial (ι := Fin n) hb hbα
     hε₀.le (by simpa using hd) fun i ↦ (hr i).ne'
-  obtain ⟨hPcoeff', hPlog⟩ := abs_coeff_le_exp_and_logHeight_map_le hP0
+  obtain ⟨hPcoeff', hPlog⟩ := MvPolynomial.abs_coeff_le_exp_and_logHeight_map_le hP0
     (by linarith : 0 < 12 * (b : ℝ) * max 1 (house α)) hPcoeff
   -- Roth's lemma bounds the index of `P` at `β`.
   have : NeZero n := ⟨hn.ne'⟩
@@ -196,8 +173,8 @@ private theorem roth_inequality {α : ℝ} {b : ℕ} (hb : 0 < b)
     hPcoeff' hPind hindβ hκ (by nlinarith) (fun i ↦ hβ i) hlow hup
   rw [Fintype.card_fin] at key
   refine le_of_mul_le_mul_right ?_ hD₀
-  linarith [show (n + (4 * C₁ + 2 * log (2 * max 1 |α|) + 4) / L) * D =
-    n * D + (4 * C₁ + 2 * log (2 * max 1 |α|) + 4) * D / L by ring]
+  rw [add_mul, div_mul_eq_mul_div]
+  linarith
 
 /-- **Roth's theorem** (Roth, 1955). If `α` is a real algebraic number and `κ > 2`, then only
 finitely many rational numbers `ξ` satisfy `|ξ - α| ≤ H(ξ) ^ (-κ)`, where `H` is the
