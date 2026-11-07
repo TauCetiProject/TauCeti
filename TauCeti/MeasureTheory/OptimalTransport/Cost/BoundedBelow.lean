@@ -351,7 +351,9 @@ private theorem lintegral_residual_add_lintegral_eq
     hnfxm.comp_quasiMeasurePreserving mpfst.quasiMeasurePreserving
   have hnfymp : AEMeasurable (fun z : X × Y ↦ ENNReal.ofReal (-fy z.2)) π :=
     hnfym.comp_quasiMeasurePreserving mpsnd.quasiMeasurePreserving
-  -- Integrate the pointwise residual balance after adjoining those four parts.
+  -- Integrate the pointwise residual balance after adjoining those four parts. The goal states
+  -- the marginal integrals with `h.fst x - k.fst x`; `change` folds them into the `let`-bound
+  -- `fx`/`fy` (definitionally equal), which is the form `hpxmap`, ..., `hnymap` use.
   change (∫⁻ z, h.residual z ∂π) + (∫⁻ x, ENNReal.ofReal (fx x) ∂μ) +
       (∫⁻ y, ENNReal.ofReal (fy y) ∂ν) = (∫⁻ z, k.residual z ∂π) +
       (∫⁻ x, ENNReal.ofReal (-fx x) ∂μ) + (∫⁻ y, ENNReal.ofReal (-fy y) ∂ν)
@@ -395,17 +397,17 @@ theorem planCostBddBelow_congr_lowerBound
     planCostBddBelow π hπ h = planCostBddBelow π hπ k := by
   simp only [planCostBddBelow]
   -- Split the change of normalization into its positive and negative marginal parts.
-  let fx : X → ℝ := fun x ↦ h.fst x - k.fst x
-  let fy : Y → ℝ := fun y ↦ h.snd y - k.snd y
-  have hfx : Integrable fx μ := h.integrable_fst.sub k.integrable_fst
-  have hfy : Integrable fy ν := h.integrable_snd.sub k.integrable_snd
+  have hfx : Integrable (fun x ↦ h.fst x - k.fst x) μ :=
+    h.integrable_fst.sub k.integrable_fst
+  have hfy : Integrable (fun y ↦ h.snd y - k.snd y) ν :=
+    h.integrable_snd.sub k.integrable_snd
   refine coe_add_add_eq_of_add_add_eq hfx.lintegral_lt_top.ne hfx.neg.lintegral_lt_top.ne
     hfy.lintegral_lt_top.ne hfy.neg.lintegral_lt_top.ne (lintegral_residual_add_lintegral_eq h k hπ)
     ?_
   simp only [Pi.neg_apply]
   rw [← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfx,
-    ← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfy]
-  simp only [fx, fy, integral_sub h.integrable_fst k.integrable_fst,
+    ← integral_eq_lintegral_pos_part_sub_lintegral_neg_part hfy,
+    integral_sub h.integrable_fst k.integrable_fst,
     integral_sub h.integrable_snd k.integrable_snd]
   ring
 
