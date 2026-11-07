@@ -57,6 +57,8 @@ for set and probability integrals.
 
 ## Set and probability integrals
 
+* `nonpos_nonneg_of_mem_Icc_of_integral_eq_zero`: a mean zero random variable with values in
+  `[a, b]` has `a ≤ 0 ≤ b`.
 * `setIntegral_norm_add_sq_le` integrates the pointwise bound
   `‖g + h‖² ≤ 2 ‖g‖² + 2 ‖h‖²` over a set.
 * `setIntegral_norm_sub_sq_le_add_of_le` transfers a square-mean decay estimate from `K` on a
@@ -544,6 +546,15 @@ theorem measure_compl_roots_eq_zero_of_integral_norm_eval_sq_eq_zero {𝕜 : Typ
   refine measure_mono_null (fun w hw ↦ ?_) (ae_iff.1 hae)
   have hw' : p.eval w ≠ 0 := fun h0 ↦ hw (by simp [mem_roots hp, h0])
   simpa using hw'
+
+/-- A mean zero random variable with values in `[a, b]` has `a ≤ 0 ≤ b`. -/
+theorem nonpos_nonneg_of_mem_Icc_of_integral_eq_zero {Ω : Type*} [mΩ : MeasurableSpace Ω]
+    {μ : Measure Ω} [IsProbabilityMeasure μ] {X : Ω → ℝ}
+    {a b : ℝ} (hX : Integrable X μ) (hbound : ∀ᵐ ω ∂μ, X ω ∈ Set.Icc a b)
+    (hmean : ∫ ω, X ω ∂μ = 0) : a ≤ 0 ∧ 0 ≤ b := by
+  constructor
+  · simpa [hmean] using integral_mono_ae (integrable_const a) hX (hbound.mono fun ω h => h.1)
+  · simpa [hmean] using integral_mono_ae hX (integrable_const b) (hbound.mono fun ω h => h.2)
 
 end MeasureTheory
 
