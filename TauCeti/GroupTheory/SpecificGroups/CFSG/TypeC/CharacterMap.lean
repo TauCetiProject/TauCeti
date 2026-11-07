@@ -15,8 +15,8 @@ public import TauCeti.LinearAlgebra.Basis.DiagonalTorus.CharacterMap
 The standard symplectic carrier uses fundamental-weight coordinates for its torus. On these
 coordinates the represented Frobenius raises each parameter to the field order `q`, so its
 character pullback is multiplication by `q`. This file identifies that pullback with the
-independently defined root-datum Frobenius and with the uniform datum Steinberg map for every
-validated type-C index. The latter is untwisted: its native diagram permutation is the identity.
+uniform datum Steinberg map for every validated type-C index. This family is untwisted: its
+native diagram permutation is the identity, so the datum Steinberg map equals the datum Frobenius.
 
 The torus is `TauCeti.TypeCLieIndex.weightTorus`, using the index's own numbered rank rather than
 the predecessor rank parameter of the symplectic carrier. No identification with a canonical
@@ -42,20 +42,6 @@ public section
 namespace TauCeti.TypeCLieIndex
 
 variable (d : TypeCLieIndex)
-
-/-- The represented Frobenius raises every indexed fundamental-weight torus coordinate to `q`.
-The rank transport preserves powers coordinatewise. -/
-@[simp]
-theorem frobenius_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.frobenius (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
-  rw [weightTorus_apply, frobenius_weightTorusPoints, weightTorus_apply]
-  rfl
-
-/-- The represented Steinberg map raises every indexed torus coordinate to the field order. -/
-@[simp]
-theorem steinberg_weightTorus (s : Fin d.1.rank → d.1.Closureˣ) :
-    d.steinberg (d.weightTorus s) = d.weightTorus (s ^ d.1.fieldOrder) := by
-  rw [steinberg_def, frobenius_weightTorus]
 
 /-- The uniform native datum Steinberg map is the character pullback of the represented
 Steinberg map on the type-C fundamental-weight torus. The diagram factor is trivial on this
