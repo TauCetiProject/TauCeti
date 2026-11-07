@@ -12,10 +12,12 @@ public import TauCeti.Data.Rat.HurwitzTriangle
 -- structure of `ℚ` it sums in is what the estimates are read in.
 public import Mathlib.Algebra.BigOperators.Group.Multiset.Basic
 public import Mathlib.Algebra.Order.Field.Rat
--- Non-public: `Multiset.card_nsmul_le_sum` and `Multiset.sum_le_card_nsmul` bound that sum by the
+-- Non-public: `Nat.one_sub_one_div_cast_le_one` bounds one branch contribution by `1`,
+-- `Multiset.card_nsmul_le_sum` and `Multiset.sum_le_card_nsmul` bound that sum by the
 -- number of branch points, and the arithmetic is closed by `linarith` and `positivity`, in the
 -- proofs only.
 import Mathlib.Algebra.Order.BigOperators.Group.Multiset
+import Mathlib.Data.Nat.Cast.Order.Field
 import Mathlib.Tactic.Linarith
 import Mathlib.Tactic.Positivity
 
@@ -43,9 +45,10 @@ comes closer, and there the deficit `1 - 1/a - 1/b - 1/c` is the hyperbolic trip
 
 * `TauCeti.one_div_forty_two_le_hyperbolic_deficit`: a positive deficit is at least `1/42`.
 * `TauCeti.hyperbolic_deficit_two_three_seven`: the genus-zero data `(2, 3, 7)` attains it.
-* `TauCeti.half_le_one_sub_one_div` and `Nat.one_sub_one_div_le_one`: the contribution of one
-  branch point, with the sums `TauCeti.card_div_two_le_sum_one_sub_one_div`,
-  `Multiset.sum_one_sub_one_div_le_card` and `TauCeti.sum_one_sub_one_div_eq_card_div_two`.
+* `TauCeti.half_le_one_sub_one_div`: the contribution of one branch point is at least `1/2`
+  (it is at most `1` by Mathlib's `Nat.one_sub_one_div_cast_le_one`), with the sums
+  `TauCeti.card_div_two_le_sum_one_sub_one_div`, `Multiset.sum_one_sub_one_div_le_card` and
+  `TauCeti.sum_one_sub_one_div_eq_card_div_two`.
 
 ## Reference
 
@@ -54,11 +57,6 @@ H. Stichtenoth, *Algebraic Function Fields and Codes*, second edition, Exercise 
 
 public section
 
-/-- The contribution `1 - 1/n` of a branch point is at most `1`. -/
-theorem Nat.one_sub_one_div_le_one (n : ℕ) : 1 - 1 / (n : ℚ) ≤ 1 := by
-  have hnonneg : (0 : ℚ) ≤ 1 / n := by positivity
-  linarith
-
 /-- The total contribution of the branch points is at most their number. -/
 theorem Multiset.sum_one_sub_one_div_le_card (e : Multiset ℕ) :
     (e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ)).sum ≤ e.card := by
@@ -66,7 +64,7 @@ theorem Multiset.sum_one_sub_one_div_le_card (e : Multiset ℕ) :
   have hhigh : ∀ x ∈ e.map fun n : ℕ ↦ 1 - 1 / (n : ℚ), x ≤ 1 := by
     intro x hx
     obtain ⟨n, _, rfl⟩ := Multiset.mem_map.mp hx
-    exact Nat.one_sub_one_div_le_one n
+    exact Nat.one_sub_one_div_cast_le_one n
   have := Multiset.sum_le_card_nsmul _ 1 hhigh
   rwa [hcard, nsmul_eq_mul, mul_one] at this
 
