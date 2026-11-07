@@ -282,9 +282,8 @@ private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
   ring_nf at hadd
   simpa only [F, G, Function.comp_apply] using hadd
 
-/-- A limit of regular times in a closed set `K` on which the maximal trajectory is continuous is
-regular: restart at a nearby regular time and use continuity of the fixed maximal trajectory to
-make the remaining time lie in the regular time-zero germ. -/
+/-- The regular times of the maximal trajectory through `x` that lie in a closed set `K`, on which
+the trajectory is continuous, form a closed set. -/
 private theorem isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter [CompleteSpace E]
     [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) {K : Set ℝ}
@@ -292,6 +291,8 @@ private theorem isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter [CompleteSp
     IsClosed ({s : ℝ | IsMaximalIntegralCurveFlowPoint (I := I) n v (x, s)} ∩ K) := by
   have hPopen : IsOpen {p | IsMaximalIntegralCurveFlowPoint (I := I) n v p} :=
     isOpen_isMaximalIntegralCurveFlowPoint (I := I) n v
+  -- Restart at a nearby regular time and use continuity of the fixed maximal trajectory to make
+  -- the remaining time lie in the regular time-zero germ.
   rw [← closure_subset_iff_isClosed]
   intro r hr
   have hrK : r ∈ K := hK.closure_subset_iff.mpr inter_subset_right hr
