@@ -39,15 +39,16 @@ theorem eq_of_sum_eq {α β A : Type*} [Fintype β] [AddCancelCommMonoid A]
     (hT : ∀ r : β → α, Function.RightInverse r π → ∑ b, T (r b) = ∑ b, T (r₀ b))
     {a a' : α} (h : π a = π a') : T a = T a' := by
   classical
-  -- Replacing the representative `r₀ (π a)` by any `t` in the same fibre leaves the sum unchanged.
-  have key (t : α) (ht : π t = π a) : T t + ∑ b ∈ {π a}ᶜ, T (r₀ b) = ∑ b, T (r₀ b) := by
+  -- Replacing the representative `r₀ (π a)` by any `t` in the same fibre leaves the sum unchanged,
+  -- and the two sums differ only in their terms at `π a`.
+  have key (t : α) (ht : π t = π a) : T t = T (r₀ (π a)) := by
     have hr : Function.RightInverse (Function.update r₀ (π a) t) π := fun b => by
       rcases eq_or_ne b (π a) with rfl | hb
       · rw [Function.update_self, ht]
       · rw [Function.update_of_ne hb, hr₀ b]
-    rw [← hT _ hr, Fintype.sum_eq_add_sum_compl (π a), Function.update_self]
-    exact congrArg (T t + ·) (sum_congr rfl fun b hb => by
-      rw [Function.update_of_ne (by simpa using hb)])
-  exact add_right_cancel ((key a rfl).trans (key a' h.symm).symm)
+    have := (sum_eq_sum_iff_single (mem_univ (π a)) fun b _ hb => by
+      rw [Function.update_of_ne hb]).mp (hT _ hr)
+    rwa [Function.update_self] at this
+  exact (key a rfl).trans (key a' h.symm).symm
 
 end Function.RightInverse
