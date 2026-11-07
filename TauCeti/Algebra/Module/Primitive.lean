@@ -65,6 +65,12 @@ def IsPrimitive (v : M) : Prop := ∃ f : M →ₗ[ℤ] ℤ, f v = 1
 on it. This is the introduction and elimination interface for `IsPrimitive`. -/
 theorem isPrimitive_def {v : M} : IsPrimitive v ↔ ∃ f : M →ₗ[ℤ] ℤ, f v = 1 := Iff.rfl
 
+/-- A vector is primitive if its image under an integer-linear map is primitive. -/
+theorem IsPrimitive.of_map [Module ℤ M] [Module ℤ N] {g : M →ₗ[ℤ] N} {v : M}
+    (h : IsPrimitive (g v)) : IsPrimitive v := by
+  obtain ⟨f, hf⟩ := h
+  exact ⟨f.comp g.toAddMonoidHom.toIntLinearMap, hf⟩
+
 /-- A primitive vector is nonzero. -/
 theorem IsPrimitive.ne_zero {v : M} (h : IsPrimitive v) : v ≠ 0 := by
   rintro rfl
