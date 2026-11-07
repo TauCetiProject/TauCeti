@@ -300,7 +300,7 @@ theorem disjoint_schwarzChristoffelPolygon_edgeSet_of_short_turn
         (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), Fin.mk_le_mk.mpr (by omega)⟩)
         (hfinite _ ⟨Fin.mk_le_mk.mpr (by omega), le_rfl⟩) hturn hshort
     exact hjpos.le
-  have hpos := im_mul_lineMap_sub_pos u Vi Vi' Vj Vj' s t ht.1 hfirst hmiddle hlast
+  have hpos := Complex.im_mul_lineMap_sub_pos u Vi Vi' Vj Vj' s t ht.1 hfirst hmiddle hlast
   have heq' : AffineMap.lineMap Vj Vj' t = AffineMap.lineMap Vi Vi' s := by
     simpa only [AffineMap.lineMap_apply_module', add_comm, Vi, Vi', Vj, Vj'] using heq
   rw [heq', sub_self, mul_zero, Complex.zero_im] at hpos

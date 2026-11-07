@@ -162,6 +162,10 @@ theorem eq_left_of_mem_segment_of_im_le_of_lt {u v z : ℂ} {h : ℝ}
   have hs1 : s = 1 := by linarith
   simp [ht0, hs1]
 
+end TauCeti
+
+namespace Complex
+
 /-- A point on a later side lies strictly on the positive side of the line through an earlier side,
 when the rotated first side is real, the intermediate chord is strictly positive and the later
 side is nonnegative. -/
@@ -177,4 +181,4 @@ theorem im_mul_lineMap_sub_pos (u Vi Vi' Vj Vj' : ℂ) (s t : ℝ) (ht : 0 ≤ t
     smul_eq_mul, mul_smul_comm, Complex.smul_im, smul_eq_mul, hfirst, mul_zero, zero_add]
   exact add_pos_of_pos_of_nonneg hmiddle (mul_nonneg ht hlast)
 
-end TauCeti
+end Complex
