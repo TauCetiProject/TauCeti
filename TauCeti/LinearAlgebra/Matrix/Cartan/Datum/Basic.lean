@@ -42,7 +42,7 @@ uses it, and the lattices of root data are the case of free `ℤ`-modules of fin
 * `TauCeti.CartanDatum.braidLength`: the length `2, 3, 4, 6` of the braid relation between two
   distinct nodes with Cartan product `aᵢⱼ aⱼᵢ = 0, 1, 2, 3`.
 * `TauCeti.CartanDatum.Hom`: a morphism of Cartan data, a linear map of coweight lattices carrying
-  coroots to coroots and compatible with the roots, as induced by a central isogeny of root data.
+  coroots to coroots and compatible with the roots, such as the one induced by a central isogeny.
 
 ## Main results
 

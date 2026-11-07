@@ -10,13 +10,15 @@ public import TauCeti.LinearAlgebra.Matrix.Cartan.Datum.Basic
 /-!
 # Morphisms of Cartan data
 
-A central isogeny of root data `(X, Y) → (X', Y')` consists of a map of weight lattices
+A compatible morphism of root data `(X, Y) → (X', Y')` consists of a map of weight lattices
 `X' → X` and a map of coweight lattices `Y → Y'`, transpose to each other for the two pairings and
-carrying roots to roots and coroots to coroots. Because the pairings are perfect, the map of
-weights is determined by the map of coweights. This file therefore defines a morphism of Cartan
-data `TauCeti.CartanDatum.Hom D D'` as a linear map `Y → Y'` carrying `hᵢ` to `h'ᵢ`, under which
-each `α'ᵢ` pulls back to `αᵢ`, and which keeps the symmetrizer; the map of weights is recovered as
-its transpose `TauCeti.CartanDatum.Hom.weightMap`.
+carrying roots to roots and coroots to coroots. These conditions say nothing about the central
+directions: a central isogeny is such a morphism whose lattice maps are moreover injective with
+finite cokernel, whereas a general morphism may, for instance, be zero between two rootless tori.
+Because the pairings are perfect, the map of weights is determined by the map of coweights. This
+file therefore defines a morphism of Cartan data `TauCeti.CartanDatum.Hom D D'` as a linear map
+`Y → Y'` carrying `hᵢ` to `h'ᵢ`, under which each `α'ᵢ` pulls back to `αᵢ`, and which keeps the
+symmetrizer; the map of weights is recovered as its transpose `TauCeti.CartanDatum.Hom.weightMap`.
 
 The coweight lattice indexes the toral generators `K_y` of a quantized enveloping algebra, and a
 morphism of data supplies what an assignment `K_y ↦ K_(f y)`, `Eᵢ ↦ Eᵢ`, `Fᵢ ↦ Fᵢ` of quantum
