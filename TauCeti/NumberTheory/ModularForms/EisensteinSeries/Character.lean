@@ -206,17 +206,6 @@ theorem tsum_charWeight_mul_zpow [NeZero N] (huv : u * v ∣ N) (c a : ℤ) :
       exact hc ((hu.of_mul_right_left).dvd_of_dvd_mul_left (by simpa using hn))
     · rw [zero_mul]
 
-/-- The first coordinate of `x γ⁻¹` for `γ ∈ SL₂(ℤ)`. -/
-private lemma vecMul_inv_apply_zero (x : Fin 2 → ℤ) (γ : SL(2, ℤ)) :
-    (x ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) 0 = x 0 * γ 1 1 - x 1 * γ 1 0 := by
-  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
-  ring
-
-/-- The second coordinate of `x γ⁻¹` for `γ ∈ SL₂(ℤ)`. -/
-private lemma vecMul_inv_apply_one (x : Fin 2 → ℤ) (γ : SL(2, ℤ)) :
-    (x ᵥ* ((γ⁻¹ : SL(2, ℤ)) : Matrix (Fin 2) (Fin 2) ℤ)) 1 = -(x 0 * γ 0 1) + x 1 * γ 0 0 := by
-  simp [vecMul, dotProduct, Matrix.adjugate_fin_two]
-
 /-- **The transformation of the weight under `Γ₀(N)`.** For `γ ∈ Γ₀(N)` with lower-right entry
 `d`, right multiplication by `γ⁻¹` multiplies the weight by `ψ(d) φ(d)`. -/
 theorem charWeight_vecMul_inv [NeZero N] (huv : u * v ∣ N) {γ : SL(2, ℤ)} (hγ : γ ∈ Gamma0 N)
