@@ -12,31 +12,40 @@ import TauCeti.Analysis.Calculus.BumpFunction.Cutoff
 /-!
 # Symbols on an open set of positions
 
-For an open set `U ⊆ ℝⁿ` of positions, a (local) symbol of order `m` on `U × ℝⁿ` is a map
-`a : ℝⁿ × ℝⁿ → (V →L[ℂ] W)` that is smooth on `U × ℝⁿ` and satisfies the Hörmander estimates
+For an open set `U ⊆ ℝⁿ`, a symbol of order `m` on `U × ℝⁿ` is a map `a(x, ξ)`, smooth on
+`U × ℝⁿ`, such that on every compact set `K ⊆ U` of positions every mixed derivative satisfies
 
-`‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C_{K,α,β} ⟨ξ⟩^(m - |β|)` for `x ∈ K` and all `ξ`
+`‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C_{K,α,β} ⟨ξ⟩^(m - |β|)` for `x ∈ K` and all `ξ`.
 
-on every compact set `K ⊆ U`, where `⟨ξ⟩ = (1 + ‖ξ‖²)^(1/2)`. These are the coefficients of
-pseudodifferential operators in a chart: a symbol on a chart domain need not extend to a symbol
-on all of `ℝⁿ`, and its estimates may degenerate at the boundary of `U`.
+These are the symbols that arise in a chart of a manifold, whose domain is an open subset of `ℝⁿ`.
+We define their class `TauCeti.LocalSymbol U V W m` and show that it is a complex vector space. As
+for homogeneous symbols at `ξ = 0`, values outside the domain are fixed by a convention: the
+coefficient is `0` at every position outside `U`. So a local symbol is determined by its values on
+`U × ℝⁿ` (`TauCeti.LocalSymbol.ext_of_mem`), and its mixed derivatives at positions of `U` are the
+usual ones, since they only depend on the values nearby (`TauCeti.mixedDeriv_congr_of_eventually`).
 
-The class `TauCeti.LocalSymbol U V W m` fixes the value of the coefficient outside `U × ℝⁿ` to be
-zero, which makes it extensional on the coefficient. It is a complex vector space, and it is
-related to the class `TauCeti.Symbol n V W m` of symbols on all of `ℝⁿ` as follows:
+The local classes are compared with the class `TauCeti.Symbol n V W m` of symbols on `ℝⁿ × ℝⁿ`:
 
-* `TauCeti.Symbol.restrict U`: a symbol on `ℝⁿ` restricts to a symbol on `U`, and
-  `TauCeti.LocalSymbol.restrict` restricts a symbol on `U` to a smaller open set `U' ⊆ U`; the
-  restrictions are compatible (`Symbol.restrict_restrict`, `LocalSymbol.restrict_restrict`);
-* `TauCeti.LocalSymbol.topEquiv`: symbols on `U = ℝⁿ` are exactly the symbols of `Symbol`, the
-  inverse being the restriction to `ℝⁿ` (`Symbol.restrict_top`);
+* `TauCeti.Symbol.restrict`: a symbol on `ℝⁿ × ℝⁿ` restricts to a symbol on `U × ℝⁿ` with the same
+  estimates on the compact subsets of `U`;
+* `TauCeti.LocalSymbol.restrict`: a symbol on `U × ℝⁿ` restricts to every smaller open set, and
+  restrictions compose (`TauCeti.LocalSymbol.restrict_restrict`,
+  `TauCeti.Symbol.restrict_restrict`);
+* `TauCeti.Symbol.restrictTopEquiv`: for `U = ℝⁿ` restriction is a linear equivalence
+  (`TauCeti.Symbol.restrict_top`), so the local class over all of `ℝⁿ` is exactly
+  `TauCeti.Symbol`.
+
+A smooth coefficient on `U × ℝⁿ` need not extend smoothly to `ℝⁿ × ℝⁿ` (for instance `1 / x₁` on
+the half-space `x₁ > 0`), so for `U ≠ ℝⁿ` a local symbol is in general not the restriction of a
+global one. It does extend after multiplication by a cutoff:
+
 * `TauCeti.LocalSymbol.extend`: after multiplication by a smooth cutoff `ψ(x)` whose support is a
   closed subset of `ℝⁿ` contained in `U`, a symbol on `U` extends by zero to a symbol on `ℝⁿ`.
   For a compactly supported cutoff the extension has compact spatial support
-  (`LocalSymbol.hasCompactSpatialSupport_extend`), so it satisfies its estimates uniformly in the
-  position (`Symbol.HasCompactSpatialSupport.isUniform`). Restricting the extension to an open
-  set on which `ψ = 1` recovers the restriction of the original symbol
-  (`LocalSymbol.restrict_extend_of_eqOn_one`).
+  (`TauCeti.LocalSymbol.hasCompactSpatialSupport_extend`), so it satisfies its estimates uniformly
+  in the position (`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). Restricting the extension
+  to an open set on which `ψ = 1` recovers the restriction of the original symbol
+  (`TauCeti.LocalSymbol.restrict_extend_of_eqOn_one`).
 
 The order inclusions `TauCeti.LocalSymbol.inclusion` commute with restriction and extension.
 
@@ -51,116 +60,57 @@ public section
 
 noncomputable section
 
-open Set Filter TopologicalSpace
 open scoped ContDiff Topology
+open Set Filter
 
 namespace TauCeti
 
 variable {n : ℕ}
 
-/-- The class `S^m_{1,0}(U × ℝⁿ)` of symbols of order `m` on an open set `U` of positions, with
-values in `V →L[ℂ] W`: maps `a` that are smooth on `U × ℝⁿ`, vanish for positions outside `U`, and
-satisfy on every compact set `K ⊆ U` of positions and for all words `α`, `β` of coordinate indices
-the estimate `‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)` for some `C`, all `x ∈ K` and all
-frequencies `ξ`, where `⟨ξ⟩^t = (1 + ‖ξ‖²)^(t/2)`.
-
-The vanishing outside `U` is a value convention: no condition relates the values on `U` to the
-values outside it. -/
+/-- The class `S^m_{1,0}` of symbols of order `m` on `U × ℝⁿ`, for an open set `U ⊆ ℝⁿ` of
+positions, with values in `V →L[ℂ] W`: maps `a`, smooth on `U × ℝⁿ`, such that on every compact
+set `K ⊆ U` of positions and for all words `α`, `β` of coordinate indices,
+`‖∂_x^α ∂_ξ^β a(x, ξ)‖ ≤ C ⟨ξ⟩^(m - |β|)` for some `C`, all `x ∈ K` and all frequencies `ξ`. By
+convention the coefficient vanishes at positions outside `U`. -/
 @[ext]
-structure LocalSymbol (U : Opens (CoordinateSpace n)) (V W : Type*) [NormedAddCommGroup V]
-    [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] (m : ℝ) where
+structure LocalSymbol (U : TopologicalSpace.Opens (CoordinateSpace n)) (V W : Type*)
+    [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] (m : ℝ) where
   /-- The coefficient `a(x, ξ)` of the symbol at the position `x` and the frequency `ξ`, set to
-  zero for positions outside `U`. -/
+  `0` at positions outside `U`. -/
   coefficient : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W
   contDiffOn_coefficient : ContDiffOn ℝ ∞ coefficient ((U : Set (CoordinateSpace n)) ×ˢ univ)
-  coefficient_eq_zero : ∀ x ∉ U, ∀ ξ, coefficient (x, ξ) = 0
-  exists_bound : ∀ K : Set (CoordinateSpace n), IsCompact K → K ⊆ U → ∀ α β : List (Fin n),
+  coefficient_of_notMem : ∀ x ∉ U, ∀ ξ, coefficient (x, ξ) = 0
+  exists_bound : ∀ K : Set (CoordinateSpace n), K ⊆ U → IsCompact K → ∀ α β : List (Fin n),
     ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ,
       ‖mixedDeriv α β coefficient x ξ‖ ≤ C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2)
 
-section Localization
-
-/-! ### Computing mixed derivatives after a cutoff -/
-
-variable {A : Type*} [NormedAddCommGroup A] [NormedSpace ℝ A]
-  {a b : CoordinateSpace n × CoordinateSpace n → A} {U : Set (CoordinateSpace n)}
-  {x : CoordinateSpace n}
-
-/-- Multiplying a function by a cutoff equal to `1` near the position `x` does not change its
-mixed derivatives at `x`. -/
-private theorem mixedDeriv_eq_cutoff_smul {ρ : CoordinateSpace n → ℝ}
-    (hρ : ∀ᶠ y in 𝓝 x, ρ y = 1) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
-    mixedDeriv α β a x ξ = mixedDeriv α β (fun p => ρ p.1 • a p) x ξ :=
-  mixedDeriv_congr_of_eventually
-    (by filter_upwards [hρ] with y hy η using by rw [hy, one_smul]) α β ξ
-
-/-- A function smooth on `U × ℝⁿ`, multiplied by a smooth cutoff whose support is a closed subset
-of `ℝⁿ` contained in `U`, is smooth on all of `ℝⁿ × ℝⁿ`. -/
-private theorem contDiff_cutoff_smul (ha : ContDiffOn ℝ ∞ a (U ×ˢ univ)) (hU : IsOpen U)
-    {ρ : CoordinateSpace n → ℝ} (hρ : ContDiff ℝ ∞ ρ) (hρU : tsupport ρ ⊆ U) :
-    ContDiff ℝ ∞ fun p => ρ p.1 • a p := by
-  refine ha.contDiff_smul_of_tsupport_subset (hU.prod isOpen_univ)
-    (hρ.comp contDiff_fst).contDiffOn ?_
-  refine (tsupport_comp_subset_preimage ρ continuous_fst).trans ?_
-  rw [← prod_univ]
-  exact prod_mono hρU subset_rfl
-
-/-- There is a smooth cutoff, with support in `U`, equal to `1` near every point of a compact
-set `K ⊆ U`. -/
-private theorem exists_cutoff (hU : IsOpen U) {K : Set (CoordinateSpace n)} (hK : IsCompact K)
-    (hKU : K ⊆ U) : ∃ ρ : CoordinateSpace n → ℝ, ContDiff ℝ ∞ ρ ∧ tsupport ρ ⊆ U ∧
-      ∀ x ∈ K, ∀ᶠ y in 𝓝 x, ρ y = 1 := by
-  obtain ⟨ρ, hρ, -, hKρ, -, hρU⟩ := hK.exists_contDiff_cutoff hU hKU
-  exact ⟨ρ, hρ, hρU, fun x hx => mem_interior_iff_mem_nhds.1 (hKρ hx)⟩
-
-/-- Mixed derivatives of functions smooth on `U × ℝⁿ` are additive at positions in `U`. -/
-private theorem mixedDeriv_add_of_contDiffOn (ha : ContDiffOn ℝ ∞ a (U ×ˢ univ))
-    (hb : ContDiffOn ℝ ∞ b (U ×ˢ univ)) (hU : IsOpen U) (hx : x ∈ U) (α β : List (Fin n))
-    (ξ : CoordinateSpace n) :
-    mixedDeriv α β (a + b) x ξ = mixedDeriv α β a x ξ + mixedDeriv α β b x ξ := by
-  obtain ⟨ρ, hρ, hρU, hρx⟩ := exists_cutoff hU isCompact_singleton (singleton_subset_iff.2 hx)
-  have hρx := hρx x rfl
-  have h : (fun p => ρ p.1 • (a + b) p) = (fun p => ρ p.1 • a p) + fun p => ρ p.1 • b p := by
-    funext p
-    simp [smul_add]
-  rw [mixedDeriv_eq_cutoff_smul hρx, mixedDeriv_eq_cutoff_smul (a := a) hρx,
-    mixedDeriv_eq_cutoff_smul (a := b) hρx, h,
-    mixedDeriv_add (contDiff_cutoff_smul ha hU hρ hρU) (contDiff_cutoff_smul hb hU hρ hρU)]
-
-/-- Mixed derivatives of functions smooth on `U × ℝⁿ` commute with constant scalars at
-positions in `U`. -/
-private theorem mixedDeriv_const_smul_of_contDiffOn {R : Type*} [Semiring R] [Module R A]
-    [SMulCommClass ℝ R A] [ContinuousConstSMul R A] (ha : ContDiffOn ℝ ∞ a (U ×ˢ univ))
-    (hU : IsOpen U) (hx : x ∈ U) (c : R) (α β : List (Fin n)) (ξ : CoordinateSpace n) :
-    mixedDeriv α β (c • a) x ξ = c • mixedDeriv α β a x ξ := by
-  obtain ⟨ρ, hρ, hρU, hρx⟩ := exists_cutoff hU isCompact_singleton (singleton_subset_iff.2 hx)
-  have hρx := hρx x rfl
-  have h : (fun p => ρ p.1 • (c • a) p) = c • fun p => ρ p.1 • a p := by
-    funext p
-    simp [smul_comm (ρ p.1) c]
-  rw [mixedDeriv_eq_cutoff_smul hρx, mixedDeriv_eq_cutoff_smul (a := a) hρx, h,
-    mixedDeriv_const_smul (contDiff_cutoff_smul ha hU hρ hρU)]
-
-end Localization
-
 namespace LocalSymbol
 
-variable {U U' U'' : Opens (CoordinateSpace n)} {V W : Type*} [NormedAddCommGroup V]
-  [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m m' : ℝ}
+variable {U U' U'' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
+  [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
-theorem coefficient_injective :
-    Function.Injective (coefficient : LocalSymbol U V W m → CoordinateSpace n × CoordinateSpace n →
-      V →L[ℂ] W) :=
+theorem coefficient_injective : Function.Injective
+    (coefficient : LocalSymbol U V W m → CoordinateSpace n × CoordinateSpace n → _) :=
   fun _ _ h => LocalSymbol.ext h
 
-/-- Two symbols on `U` are equal once their coefficients agree at all positions in `U`. -/
+/-- A local symbol is determined by its values at the positions of its domain. -/
 theorem ext_of_mem {a b : LocalSymbol U V W m}
     (h : ∀ x ∈ U, ∀ ξ, a.coefficient (x, ξ) = b.coefficient (x, ξ)) : a = b := by
   ext1
-  funext p
-  by_cases hp : p.1 ∈ U
-  · exact h p.1 hp p.2
-  · rw [a.coefficient_eq_zero p.1 hp p.2, b.coefficient_eq_zero p.1 hp p.2]
+  funext ⟨x, ξ⟩
+  by_cases hx : x ∈ U
+  · exact h x hx ξ
+  · rw [a.coefficient_of_notMem x hx ξ, b.coefficient_of_notMem x hx ξ]
+
+/-- At a position `x ∈ U`, the coefficient of a local symbol agrees nearby with a smooth function on
+all of `ℝⁿ × ℝⁿ`. -/
+private theorem exists_contDiff_eventually_eq_coefficient (a : LocalSymbol U V W m)
+    {x : CoordinateSpace n} (hx : x ∈ U) :
+    ∃ g : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W, ContDiff ℝ ∞ g ∧
+      ∀ᶠ y in 𝓝 x, ∀ η, g (y, η) = a.coefficient (y, η) :=
+  let ⟨g, hg, hga⟩ := a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ
+    isCompact_singleton U.isOpen (singleton_subset_iff.2 hx)
+  ⟨g, hg, hga x rfl⟩
 
 section Module
 
@@ -168,34 +118,47 @@ instance : Zero (LocalSymbol U V W m) where
   zero :=
     { coefficient := 0
       contDiffOn_coefficient := contDiffOn_const
-      coefficient_eq_zero := fun _ _ _ => rfl
-      exists_bound := fun _ _ _ α β => ⟨0, le_rfl, fun x _ ξ => by simp⟩ }
+      coefficient_of_notMem := fun _ _ _ => rfl
+      exists_bound := fun _ _ _ α β => ⟨0, le_rfl, fun x _ ξ => by simp [mixedDeriv_zero]⟩ }
 
 instance : Add (LocalSymbol U V W m) where
   add a b :=
     { coefficient := a.coefficient + b.coefficient
       contDiffOn_coefficient := a.contDiffOn_coefficient.add b.contDiffOn_coefficient
-      coefficient_eq_zero := fun x hx ξ => by
-        simp [a.coefficient_eq_zero x hx ξ, b.coefficient_eq_zero x hx ξ]
-      exists_bound := fun K hK hKU α β => by
-        obtain ⟨C, hC, ha⟩ := a.exists_bound K hK hKU α β
-        obtain ⟨D, hD, hb⟩ := b.exists_bound K hK hKU α β
+      coefficient_of_notMem := fun x hx ξ => by
+        simp [a.coefficient_of_notMem x hx ξ, b.coefficient_of_notMem x hx ξ]
+      exists_bound := fun K hKU hK α β => by
+        obtain ⟨C, hC, ha⟩ := a.exists_bound K hKU hK α β
+        obtain ⟨D, hD, hb⟩ := b.exists_bound K hKU hK α β
         refine ⟨C + D, add_nonneg hC hD, fun x hx ξ => ?_⟩
-        rw [mixedDeriv_add_of_contDiffOn a.contDiffOn_coefficient b.contDiffOn_coefficient
-          U.isOpen (hKU hx), add_mul]
-        exact (norm_add_le _ _).trans (add_le_add (ha x hx ξ) (hb x hx ξ)) }
+        obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventually_eq_coefficient (hKU hx)
+        obtain ⟨g, hg, hgb⟩ := b.exists_contDiff_eventually_eq_coefficient (hKU hx)
+        have hfg : ∀ᶠ y in 𝓝 x, ∀ η, (a.coefficient + b.coefficient) (y, η) = (f + g) (y, η) := by
+          filter_upwards [hfa, hgb] with y hya hyb η
+          rw [Pi.add_apply, Pi.add_apply, hya, hyb]
+        rw [mixedDeriv_congr_of_eventually hfg]
+        refine norm_mixedDeriv_add_le hf hg ?_ ?_
+        · rw [mixedDeriv_congr_of_eventually hfa]
+          exact ha x hx ξ
+        · rw [mixedDeriv_congr_of_eventually hgb]
+          exact hb x hx ξ }
 
 instance : SMul ℂ (LocalSymbol U V W m) where
   smul c a :=
     { coefficient := c • a.coefficient
       contDiffOn_coefficient := a.contDiffOn_coefficient.const_smul c
-      coefficient_eq_zero := fun x hx ξ => by simp [a.coefficient_eq_zero x hx ξ]
-      exists_bound := fun K hK hKU α β => by
-        obtain ⟨C, hC, ha⟩ := a.exists_bound K hK hKU α β
+      coefficient_of_notMem := fun x hx ξ => by simp [a.coefficient_of_notMem x hx ξ]
+      exists_bound := fun K hKU hK α β => by
+        obtain ⟨C, hC, ha⟩ := a.exists_bound K hKU hK α β
         refine ⟨‖c‖ * C, mul_nonneg (norm_nonneg c) hC, fun x hx ξ => ?_⟩
-        rw [mixedDeriv_const_smul_of_contDiffOn a.contDiffOn_coefficient U.isOpen (hKU hx),
-          norm_smul, mul_assoc]
-        exact mul_le_mul_of_nonneg_left (ha x hx ξ) (norm_nonneg c) }
+        obtain ⟨f, hf, hfa⟩ := a.exists_contDiff_eventually_eq_coefficient (hKU hx)
+        have hcf : ∀ᶠ y in 𝓝 x, ∀ η, (c • a.coefficient) (y, η) = (c • f) (y, η) := by
+          filter_upwards [hfa] with y hy η
+          rw [Pi.smul_apply, Pi.smul_apply, hy]
+        rw [mixedDeriv_congr_of_eventually hcf]
+        refine norm_mixedDeriv_smul_le hf c ?_
+        rw [mixedDeriv_congr_of_eventually hfa]
+        exact ha x hx ξ }
 
 instance : Neg (LocalSymbol U V W m) where
   neg a := (-1 : ℂ) • a
@@ -226,8 +189,9 @@ theorem coefficient_neg (a : LocalSymbol U V W m) : (-a).coefficient = -a.coeffi
 
 @[simp]
 theorem coefficient_sub (a b : LocalSymbol U V W m) :
-    (a - b).coefficient = a.coefficient - b.coefficient :=
-  (congrArg (a.coefficient + ·) (coefficient_neg b)).trans (sub_eq_add_neg _ _).symm
+    (a - b).coefficient = a.coefficient - b.coefficient := by
+  rw [sub_eq_add_neg a.coefficient]
+  exact congrArg (a.coefficient + ·) (coefficient_neg b)
 
 @[simp]
 theorem coefficient_nsmul (k : ℕ) (a : LocalSymbol U V W m) :
@@ -251,39 +215,41 @@ end Module
 
 section Restrict
 
-/-- The restriction of a symbol on `U` to a smaller open set `U' ⊆ U`: the coefficient is kept on
-`U' × ℝⁿ` and set to zero elsewhere. -/
+/-- The restriction of a local symbol on `U` to a smaller open set `U'`, extended by zero at
+positions outside `U'`. It satisfies the same estimates on the compact subsets of `U'`. -/
 def restrict (h : U' ≤ U) : LocalSymbol U V W m →ₗ[ℂ] LocalSymbol U' V W m where
   toFun a :=
     { coefficient := ((U' : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient
       contDiffOn_coefficient := (a.contDiffOn_coefficient.mono (prod_mono h subset_rfl)).congr
-        fun p hp => indicator_of_mem hp _
-      coefficient_eq_zero := fun x hx ξ => indicator_of_notMem (by simp [hx]) _
-      exists_bound := fun K hK hKU' α β => by
-        obtain ⟨C, hC, ha⟩ := a.exists_bound K hK (hKU'.trans h) α β
+        fun _ hp => indicator_of_mem hp _
+      coefficient_of_notMem := fun x hx ξ => indicator_of_notMem (by simp [hx]) _
+      exists_bound := fun K hKU' hK α β => by
+        obtain ⟨C, hC, ha⟩ := a.exists_bound K (hKU'.trans h) hK α β
         refine ⟨C, hC, fun x hx ξ => ?_⟩
-        rw [mixedDeriv_congr_of_eventually (b := a.coefficient) ?_]
-        · exact ha x hx ξ
-        filter_upwards [U'.isOpen.mem_nhds (hKU' hx)] with y hy η
-        exact indicator_of_mem (by simpa using hy) _ }
+        rw [mixedDeriv_indicator_prod_univ_of_mem U'.isOpen (hKU' hx)]
+        exact ha x hx ξ }
   map_add' a b := by
     ext1
-    exact indicator_add _ _ _
+    exact indicator_add' _ _ _
   map_smul' c a := by
     ext1
-    exact indicator_const_smul _ c a.coefficient
+    exact indicator_const_smul _ c _
+
+theorem coefficient_restrict (h : U' ≤ U) (a : LocalSymbol U V W m) :
+    (restrict h a).coefficient = ((U' : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient :=
+  (rfl)
 
 @[simp]
-theorem coefficient_restrict_of_mem (h : U' ≤ U) (a : LocalSymbol U V W m) {x : CoordinateSpace n}
-    (hx : x ∈ U') (ξ : CoordinateSpace n) :
+theorem coefficient_restrict_of_mem (h : U' ≤ U) (a : LocalSymbol U V W m)
+    {x : CoordinateSpace n} (hx : x ∈ U') (ξ : CoordinateSpace n) :
     (restrict h a).coefficient (x, ξ) = a.coefficient (x, ξ) :=
-  indicator_of_mem (by simpa using hx) _
+  indicator_of_mem (mk_mem_prod hx (mem_univ ξ)) _
 
 @[simp]
 theorem coefficient_restrict_of_notMem (h : U' ≤ U) (a : LocalSymbol U V W m)
     {x : CoordinateSpace n} (hx : x ∉ U') (ξ : CoordinateSpace n) :
     (restrict h a).coefficient (x, ξ) = 0 :=
-  (restrict h a).coefficient_eq_zero x hx ξ
+  (restrict h a).coefficient_of_notMem x hx ξ
 
 @[simp]
 theorem restrict_self (a : LocalSymbol U V W m) : restrict le_rfl a = a :=
@@ -292,20 +258,24 @@ theorem restrict_self (a : LocalSymbol U V W m) : restrict le_rfl a = a :=
 @[simp]
 theorem restrict_restrict (h : U' ≤ U) (h' : U'' ≤ U') (a : LocalSymbol U V W m) :
     restrict h' (restrict h a) = restrict (h'.trans h) a :=
-  ext_of_mem fun x hx ξ => by simp [hx, h' hx]
+  ext_of_mem fun x hx ξ => by
+    rw [coefficient_restrict_of_mem _ _ hx, coefficient_restrict_of_mem _ _ (h' hx),
+      coefficient_restrict_of_mem _ _ hx]
 
 end Restrict
 
 section Inclusion
+
+variable {m' : ℝ}
 
 /-- A symbol of order `m` on `U` is a symbol of every order `m' ≥ m` on `U`, since `⟨ξ⟩ ≥ 1`. -/
 def inclusion (h : m ≤ m') : LocalSymbol U V W m →ₗ[ℂ] LocalSymbol U V W m' where
   toFun a :=
     { coefficient := a.coefficient
       contDiffOn_coefficient := a.contDiffOn_coefficient
-      coefficient_eq_zero := a.coefficient_eq_zero
-      exists_bound := fun K hK hKU α β => by
-        obtain ⟨C, hC, ha⟩ := a.exists_bound K hK hKU α β
+      coefficient_of_notMem := a.coefficient_of_notMem
+      exists_bound := fun K hKU hK α β => by
+        obtain ⟨C, hC, ha⟩ := a.exists_bound K hKU hK α β
         refine ⟨C, hC, fun x hx ξ => (ha x hx ξ).trans (mul_le_mul_of_nonneg_left ?_ hC)⟩
         exact Real.rpow_le_rpow_of_exponent_le (by nlinarith [sq_nonneg ‖ξ‖]) (by linarith) }
   map_add' _ _ := (rfl)
@@ -325,82 +295,96 @@ theorem restrict_inclusion (h : m ≤ m') (hU : U' ≤ U) (a : LocalSymbol U V W
 
 end Inclusion
 
-section Top
-
-/-- Symbols on the whole space `U = ℝⁿ` of positions are the symbols on `ℝⁿ`. -/
-def topEquiv : LocalSymbol (⊤ : Opens (CoordinateSpace n)) V W m ≃ₗ[ℂ] Symbol n V W m where
-  toFun a :=
-    { coefficient := a.coefficient
-      contDiff_coefficient := by
-        rw [← contDiffOn_univ, ← univ_prod_univ]
-        exact a.contDiffOn_coefficient
-      exists_bound := fun K hK α β => a.exists_bound K hK (subset_univ K) α β }
-  invFun a :=
-    { coefficient := a.coefficient
-      contDiffOn_coefficient := a.contDiff_coefficient.contDiffOn
-      coefficient_eq_zero := fun x hx => absurd (Opens.mem_top x) hx
-      exists_bound := fun K hK _ α β => a.exists_bound K hK α β }
-  left_inv _ := (rfl)
-  right_inv _ := (rfl)
-  map_add' _ _ := (rfl)
-  map_smul' _ _ := (rfl)
-
-@[simp]
-theorem coefficient_topEquiv (a : LocalSymbol (⊤ : Opens (CoordinateSpace n)) V W m) :
-    (topEquiv a).coefficient = a.coefficient := (rfl)
-
-@[simp]
-theorem coefficient_topEquiv_symm (a : Symbol n V W m) :
-    (topEquiv.symm a : LocalSymbol (⊤ : Opens (CoordinateSpace n)) V W m).coefficient =
-      a.coefficient := (rfl)
-
-end Top
-
 end LocalSymbol
 
 namespace Symbol
 
-variable {U U' : Opens (CoordinateSpace n)} {V W : Type*} [NormedAddCommGroup V]
-  [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m m' : ℝ}
+variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
+  [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m : ℝ}
 
-/-- The restriction of a symbol on `ℝⁿ` to the open set `U` of positions: the coefficient is kept
-on `U × ℝⁿ` and set to zero elsewhere. -/
-def restrict (U : Opens (CoordinateSpace n)) : Symbol n V W m →ₗ[ℂ] LocalSymbol U V W m :=
-  LocalSymbol.restrict le_top ∘ₗ LocalSymbol.topEquiv.symm.toLinearMap
+/-- Over all of `ℝⁿ`, the local symbols are exactly the symbols on `ℝⁿ × ℝⁿ`: a symbol on
+`ℝⁿ × ℝⁿ` is a local symbol on `⊤` with the same coefficient, and this is a linear equivalence. -/
+def restrictTopEquiv :
+    Symbol n V W m ≃ₗ[ℂ] LocalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m where
+  toFun a :=
+    { coefficient := a.coefficient
+      contDiffOn_coefficient := a.contDiff_coefficient.contDiffOn
+      coefficient_of_notMem := fun x hx => absurd (TopologicalSpace.Opens.mem_top x) hx
+      exists_bound := fun K _ hK α β => a.exists_bound K hK α β }
+  map_add' _ _ := rfl
+  map_smul' _ _ := rfl
+  invFun a :=
+    { coefficient := a.coefficient
+      contDiff_coefficient := contDiffOn_univ.1 <| by
+        simpa using a.contDiffOn_coefficient
+      exists_bound := fun K hK α β => a.exists_bound K (by simp) hK α β }
+  left_inv _ := rfl
+  right_inv _ := rfl
+
+@[simp]
+theorem coefficient_restrictTopEquiv_apply (a : Symbol n V W m) :
+    (restrictTopEquiv a).coefficient = a.coefficient := (rfl)
+
+@[simp]
+theorem coefficient_restrictTopEquiv_symm_apply
+    (a : LocalSymbol (⊤ : TopologicalSpace.Opens (CoordinateSpace n)) V W m) :
+    (restrictTopEquiv.symm a : Symbol n V W m).coefficient = a.coefficient := (rfl)
+
+/-- The restriction of a symbol on `ℝⁿ × ℝⁿ` to the open set `U` of positions, extended by zero
+at positions outside `U`: the restriction from `⊤` to `U` of the corresponding local symbol. It
+satisfies the same estimates on the compact subsets of `U`. -/
+def restrict (U : TopologicalSpace.Opens (CoordinateSpace n)) :
+    Symbol n V W m →ₗ[ℂ] LocalSymbol U V W m :=
+  LocalSymbol.restrict le_top ∘ₗ restrictTopEquiv.toLinearMap
+
+theorem coefficient_restrict (a : Symbol n V W m) :
+    (a.restrict U).coefficient = ((U : Set (CoordinateSpace n)) ×ˢ univ).indicator a.coefficient :=
+  (rfl)
 
 @[simp]
 theorem coefficient_restrict_of_mem (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∈ U)
-    (ξ : CoordinateSpace n) : (restrict U a).coefficient (x, ξ) = a.coefficient (x, ξ) :=
-  LocalSymbol.coefficient_restrict_of_mem le_top _ hx ξ
+    (ξ : CoordinateSpace n) : (a.restrict U).coefficient (x, ξ) = a.coefficient (x, ξ) :=
+  LocalSymbol.coefficient_restrict_of_mem le_top (restrictTopEquiv a) hx ξ
 
 @[simp]
 theorem coefficient_restrict_of_notMem (a : Symbol n V W m) {x : CoordinateSpace n} (hx : x ∉ U)
-    (ξ : CoordinateSpace n) : (restrict U a).coefficient (x, ξ) = 0 :=
-  (restrict U a).coefficient_eq_zero x hx ξ
-
-/-- Restricting to the whole space of positions is the inverse of `LocalSymbol.topEquiv`. -/
-theorem restrict_top (a : Symbol n V W m) : restrict ⊤ a = LocalSymbol.topEquiv.symm a :=
-  LocalSymbol.ext_of_mem fun x hx ξ => by simp [hx]
+    (ξ : CoordinateSpace n) : (a.restrict U).coefficient (x, ξ) = 0 :=
+  (a.restrict U).coefficient_of_notMem x hx ξ
 
 @[simp]
 theorem restrict_restrict (h : U' ≤ U) (a : Symbol n V W m) :
-    LocalSymbol.restrict h (restrict U a) = restrict U' a :=
-  LocalSymbol.ext_of_mem fun x hx ξ => by simp [hx, h hx]
+    LocalSymbol.restrict h (a.restrict U) = a.restrict U' :=
+  LocalSymbol.restrict_restrict le_top h (restrictTopEquiv a)
 
-theorem restrict_inclusion (h : m ≤ m') (a : Symbol n V W m) :
-    restrict U (inclusion h a) = LocalSymbol.inclusion h (restrict U a) :=
+/-- Restricting a symbol to all of `ℝⁿ` gives the corresponding local symbol on `⊤`. -/
+@[simp]
+theorem restrict_top (a : Symbol n V W m) : a.restrict ⊤ = restrictTopEquiv a :=
+  LocalSymbol.restrict_self (restrictTopEquiv a)
+
+theorem restrict_inclusion {m' : ℝ} (h : m ≤ m') (a : Symbol n V W m) :
+    (inclusion h a).restrict U = LocalSymbol.inclusion h (a.restrict U) :=
   LocalSymbol.ext_of_mem fun x hx ξ => by simp [hx]
 
 end Symbol
 
 namespace LocalSymbol
 
-variable {U U' : Opens (CoordinateSpace n)} {V W : Type*} [NormedAddCommGroup V]
-  [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m m' : ℝ}
+variable {U U' : TopologicalSpace.Opens (CoordinateSpace n)} {V W : Type*}
+  [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedAddCommGroup W] [NormedSpace ℂ W] {m m' : ℝ}
 
 section Extend
 
 variable {ψ : CoordinateSpace n → ℝ}
+
+/-- The cut-off coefficient `ψ(x) a(x, ξ)`, for a smooth cutoff `ψ` whose support is a closed
+subset of `ℝⁿ` contained in `U`, is smooth on all of `ℝⁿ × ℝⁿ`. -/
+private theorem contDiff_cutoff_smul (a : LocalSymbol U V W m) (hψ : ContDiff ℝ ∞ ψ)
+    (hψU : tsupport ψ ⊆ U) : ContDiff ℝ ∞ fun p => ψ p.1 • a.coefficient p := by
+  refine a.contDiffOn_coefficient.contDiff_smul_of_tsupport_subset (U.isOpen.prod isOpen_univ)
+    (hψ.comp contDiff_fst).contDiffOn ?_
+  refine (tsupport_comp_subset_preimage ψ continuous_fst).trans ?_
+  rw [← prod_univ]
+  exact prod_mono hψU subset_rfl
 
 /-- The cut-off coefficient `ψ(x) a(x, ξ)` satisfies the symbol estimates on every compact set of
 positions. -/
@@ -409,20 +393,16 @@ private theorem exists_bound_extend (a : LocalSymbol U V W m) (hψ : ContDiff �
     (α β : List (Fin n)) :
     ∃ C : ℝ, 0 ≤ C ∧ ∀ x ∈ K, ∀ ξ, ‖mixedDeriv α β (fun p => ψ p.1 • a.coefficient p) x ξ‖ ≤
       C * (1 + ‖ξ‖ ^ 2) ^ ((m - β.length) / 2) := by
-  -- Near the compact set `L = K ∩ tsupport ψ ⊆ U`, replace `a` by the smooth function `b = ρ • a`.
+  -- Near the compact set `L = K ∩ tsupport ψ ⊆ U`, replace `a` by a smooth function `b`.
   set L := K ∩ tsupport ψ
   have hL : IsCompact L := hK.inter_right (isClosed_tsupport ψ)
   have hLU : L ⊆ U := inter_subset_right.trans hψU
-  obtain ⟨ρ, hρ, hρU, hρL⟩ := exists_cutoff U.isOpen hL hLU
-  set b : CoordinateSpace n × CoordinateSpace n → V →L[ℂ] W := fun p => ρ p.1 • a.coefficient p
-  have hb : ContDiff ℝ ∞ b := contDiff_cutoff_smul a.contDiffOn_coefficient U.isOpen hρ hρU
-  have hab : ∀ x ∈ L, ∀ᶠ y in 𝓝 x, ∀ η, b (y, η) = a.coefficient (y, η) := fun x hx => by
-    filter_upwards [hρL x hx] with y hy η
-    simp [b, hy]
+  obtain ⟨b, hb, hab⟩ :=
+    a.contDiffOn_coefficient.exists_contDiff_eventually_eq_prod_univ hL U.isOpen hLU
   -- Bounds for the derivatives of `ψ` and the mixed derivatives of `a` on `L`.
   choose B hB using fun i : ℕ => hL.exists_bound_of_continuousOn
     (hψ.continuous_iteratedFDeriv (WithTop.coe_le_coe.2 le_top) (m := i)).continuousOn
-  choose C hC0 hC using fun γ : List (Fin n) => a.exists_bound L hL hLU γ β
+  choose C hC0 hC using fun γ : List (Fin n) => a.exists_bound L hLU hL γ β
   refine ⟨∑ i ∈ Finset.range (α.length + 1), (α.length.choose i : ℝ) * max (B i) 0 *
       ∑ w : Fin (α.length - i) → Fin n, C (List.ofFn w), Finset.sum_nonneg fun i _ =>
         mul_nonneg (by positivity) (Finset.sum_nonneg fun w _ => hC0 _), fun x hx ξ => ?_⟩
@@ -463,7 +443,7 @@ def extend (ψ : CoordinateSpace n → ℝ) (hψ : ContDiff ℝ ∞ ψ) (hψU : 
     LocalSymbol U V W m →ₗ[ℂ] Symbol n V W m where
   toFun a :=
     { coefficient := fun p => ψ p.1 • a.coefficient p
-      contDiff_coefficient := contDiff_cutoff_smul a.contDiffOn_coefficient U.isOpen hψ hψU
+      contDiff_coefficient := a.contDiff_cutoff_smul hψ hψU
       exists_bound := fun _ hK α β => a.exists_bound_extend hψ hψU hK α β }
   map_add' a b := by
     ext1
@@ -484,7 +464,7 @@ theorem coefficient_extend (a : LocalSymbol U V W m) (p : CoordinateSpace n × C
 cutoff. -/
 theorem coefficient_extend_restrict (a : Symbol n V W m)
     (p : CoordinateSpace n × CoordinateSpace n) :
-    (extend ψ hψ hψU (Symbol.restrict U a)).coefficient p = ψ p.1 • a.coefficient p := by
+    (extend ψ hψ hψU (a.restrict U)).coefficient p = ψ p.1 • a.coefficient p := by
   obtain ⟨x, ξ⟩ := p
   by_cases hx : x ∈ U
   · simp [hx]
@@ -496,7 +476,7 @@ theorem inclusion_extend (h : m ≤ m') (a : LocalSymbol U V W m) :
 
 /-- For a compactly supported cutoff, the extension has compact spatial support. In particular it
 satisfies the symbol estimates uniformly in the position
-(`Symbol.HasCompactSpatialSupport.isUniform`). -/
+(`TauCeti.Symbol.HasCompactSpatialSupport.isUniform`). -/
 theorem hasCompactSpatialSupport_extend (hψc : HasCompactSupport ψ) (a : LocalSymbol U V W m) :
     (extend ψ hψ hψU a).HasCompactSpatialSupport :=
   Symbol.hasCompactSpatialSupport_iff.2
@@ -505,7 +485,7 @@ theorem hasCompactSpatialSupport_extend (hψc : HasCompactSupport ψ) (a : Local
 /-- On an open set `U' ⊆ U` on which the cutoff equals `1`, the extension restricts to the
 restriction of the original symbol. -/
 theorem restrict_extend_of_eqOn_one (h : U' ≤ U) (hψ1 : EqOn ψ 1 U')
-    (a : LocalSymbol U V W m) : Symbol.restrict U' (extend ψ hψ hψU a) = restrict h a :=
+    (a : LocalSymbol U V W m) : (extend ψ hψ hψU a).restrict U' = restrict h a :=
   ext_of_mem fun x hx ξ => by simp [hx, show ψ x = 1 from hψ1 hx]
 
 end Extend

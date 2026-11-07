@@ -225,6 +225,45 @@ private theorem wassersteinEDist_one_map_le_iSup [IsProbabilityMeasure μ]
   refine le_iSup₂_of_le G hG (le_of_eq ?_)
   rw [hint, hint, hμU, hνU]
 
+omit [StandardBorelSpace X] in
+/-- Weak duality for quantized laws: if `μ.map T` and `ν.map T'` are quantizations of `μ` and `ν`
+within `W₁` distance `δ`, then their `1`-Wasserstein distance is at most the supremum of the
+differences of expectations of the `1`-Lipschitz real functions under `μ` and `ν`, plus `δ + δ`. -/
+private theorem wassersteinEDist_one_map_le_iSup_add [IsProbabilityMeasure μ]
+    [IsProbabilityMeasure ν] {T T' : X → X} {s s' : Finset X} {δ : ℝ≥0∞}
+    (hμ : HasFiniteMoment 1 μ) (hν : HasFiniteMoment 1 ν) (hT : Measurable T)
+    (hT' : Measurable T') (hTs : ∀ x, T x ∈ s) (hT's : ∀ x, T' x ∈ s')
+    (hμT' : HasFiniteMoment 1 (μ.map T)) (hνT' : HasFiniteMoment 1 (ν.map T'))
+    (hμT : wassersteinEDist 1 μ (μ.map T) ≤ δ) (hνT : wassersteinEDist 1 ν (ν.map T') ≤ δ) :
+    wassersteinEDist 1 (μ.map T) (ν.map T') ≤
+      (⨆ (f : X → ℝ) (_ : LipschitzWith 1 f), ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)) +
+        (δ + δ) := by
+  set R := ⨆ (f : X → ℝ) (_ : LipschitzWith 1 f), ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)
+  classical
+  refine (wassersteinEDist_one_map_le_iSup hT hT' (t := s ∪ s')
+    (fun x ↦ Finset.mem_union_left _ (hTs x)) (fun x ↦ Finset.mem_union_right _ (hT's x))).trans
+    (iSup₂_le fun G hG ↦ ?_)
+  have h₀ : ENNReal.ofReal (∫ x, G x ∂μ - ∫ x, G x ∂ν) ≤ R :=
+    le_iSup₂ (f := fun (f : X → ℝ) (_ : LipschitzWith 1 f) ↦
+      ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)) G hG
+  have h₁ := ofReal_integral_sub_integral_le_wassersteinEDist_one hG
+    (hμT'.integrable_of_lipschitzWith hG) (hμ.integrable_of_lipschitzWith hG)
+  have h₂ := ofReal_integral_sub_integral_le_wassersteinEDist_one hG
+    (hν.integrable_of_lipschitzWith hG) (hνT'.integrable_of_lipschitzWith hG)
+  rw [wassersteinEDist_comm measurable_edist] at h₁
+  calc ENNReal.ofReal (∫ x, G x ∂(μ.map T) - ∫ x, G x ∂(ν.map T'))
+      = ENNReal.ofReal ((∫ x, G x ∂μ - ∫ x, G x ∂ν) +
+          ((∫ x, G x ∂(μ.map T) - ∫ x, G x ∂μ) + (∫ x, G x ∂ν - ∫ x, G x ∂(ν.map T')))) := by
+        congr 1
+        ring
+    _ ≤ ENNReal.ofReal (∫ x, G x ∂μ - ∫ x, G x ∂ν) +
+          (ENNReal.ofReal (∫ x, G x ∂(μ.map T) - ∫ x, G x ∂μ) +
+            ENNReal.ofReal (∫ x, G x ∂ν - ∫ x, G x ∂(ν.map T'))) :=
+        ENNReal.ofReal_add_le.trans (by gcongr; exact ENNReal.ofReal_add_le)
+    _ ≤ R + (δ + δ) := by
+        gcongr
+        exacts [h₁.trans hμT, h₂.trans hνT]
+
 /-- **Kantorovich–Rubinstein duality.** For probability measures with finite first moments on a
 second-countable pseudometric space whose measurable structure is standard Borel and contains the
 open sets — in particular on a Polish metric space with its Borel σ-algebra — the
@@ -259,31 +298,8 @@ theorem wassersteinEDist_one_eq_iSup [IsProbabilityMeasure μ] [IsProbabilityMea
     (hasFiniteMoment_iff_wassersteinEDist_ne_top_of_hasFiniteMoment measurable_edist hν).2
       (ne_top_of_le_ne_top hδtop hνT)
   -- the quantized laws satisfy the formula, and quantizing moves each expectation by at most `δ`
-  have hquant : wassersteinEDist 1 (μ.map T) (ν.map T') ≤ R + (δ + δ) := by
-    classical
-    refine (wassersteinEDist_one_map_le_iSup hT hT' (t := s ∪ s')
-      (fun x ↦ Finset.mem_union_left _ (hTs x)) (fun x ↦ Finset.mem_union_right _ (hT's x))).trans
-      (iSup₂_le fun G hG ↦ ?_)
-    have h₀ : ENNReal.ofReal (∫ x, G x ∂μ - ∫ x, G x ∂ν) ≤ R :=
-      le_iSup₂ (f := fun (f : X → ℝ) (_ : LipschitzWith 1 f) ↦
-        ENNReal.ofReal (∫ x, f x ∂μ - ∫ x, f x ∂ν)) G hG
-    have h₁ := ofReal_integral_sub_integral_le_wassersteinEDist_one hG
-      (hμT'.integrable_of_lipschitzWith hG) (hμ.integrable_of_lipschitzWith hG)
-    have h₂ := ofReal_integral_sub_integral_le_wassersteinEDist_one hG
-      (hν.integrable_of_lipschitzWith hG) (hνT'.integrable_of_lipschitzWith hG)
-    rw [wassersteinEDist_comm measurable_edist] at h₁
-    calc ENNReal.ofReal (∫ x, G x ∂(μ.map T) - ∫ x, G x ∂(ν.map T'))
-        = ENNReal.ofReal ((∫ x, G x ∂μ - ∫ x, G x ∂ν) +
-            ((∫ x, G x ∂(μ.map T) - ∫ x, G x ∂μ) + (∫ x, G x ∂ν - ∫ x, G x ∂(ν.map T')))) := by
-          congr 1
-          ring
-      _ ≤ ENNReal.ofReal (∫ x, G x ∂μ - ∫ x, G x ∂ν) +
-            (ENNReal.ofReal (∫ x, G x ∂(μ.map T) - ∫ x, G x ∂μ) +
-              ENNReal.ofReal (∫ x, G x ∂ν - ∫ x, G x ∂(ν.map T'))) :=
-          ENNReal.ofReal_add_le.trans (by gcongr; exact ENNReal.ofReal_add_le)
-      _ ≤ R + (δ + δ) := by
-          gcongr
-          exacts [h₁.trans hμT, h₂.trans hνT]
+  have hquant : wassersteinEDist 1 (μ.map T) (ν.map T') ≤ R + (δ + δ) :=
+    wassersteinEDist_one_map_le_iSup_add hμ hν hT hT' hTs hT's hμT' hνT' hμT hνT
   -- pass from the quantized laws back to `μ` and `ν` by the triangle inequality
   calc wassersteinEDist 1 μ ν
       ≤ wassersteinEDist 1 μ (μ.map T) + (wassersteinEDist 1 (μ.map T) (ν.map T') +

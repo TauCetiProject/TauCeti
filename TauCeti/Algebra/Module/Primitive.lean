@@ -14,6 +14,7 @@ public import Mathlib.RingTheory.Int.Basic
 import Mathlib.LinearAlgebra.Basis.Prod
 import Mathlib.LinearAlgebra.Projection
 import Mathlib.LinearAlgebra.Transvection.Basic
+import TauCeti.LinearAlgebra.Basis.Fin
 
 /-!
 # Primitive vectors in integer modules
@@ -230,14 +231,8 @@ theorem IsPrimitive.exists_basis [Module.Free ℤ M] [Module.Finite ℤ M] {v : 
     ∃ (n : ℕ) (b : Module.Basis (Fin n) ℤ M) (j : Fin n), b j = v := by
   obtain ⟨f, hf⟩ := isPrimitive_def.1 hv
   obtain ⟨m, ⟨c⟩⟩ := Submodule.nonempty_basis_of_pid (Module.finBasis ℤ M) (LinearMap.ker f)
-  refine ⟨m + 1, Module.Basis.mkFinCons v c ?_ ?_, 0, ?_⟩
-  · intro a x hx hax
-    have h := congrArg f hax
-    simp only [map_add, map_smul, hf, LinearMap.mem_ker.1 hx, map_zero, add_zero, smul_eq_mul,
-      mul_one] at h
-    exact h
-  · exact fun z ↦ ⟨-f z, by simp [LinearMap.mem_ker, hf]⟩
-  · simp
+  obtain ⟨b, hb, -⟩ := c.exists_basis_finCons_of_apply_eq_one hf
+  exact ⟨m + 1, b, 0, hb⟩
 
 end TauCeti
 

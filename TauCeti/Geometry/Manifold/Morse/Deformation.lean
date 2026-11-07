@@ -14,6 +14,7 @@ import TauCeti.Dynamics.Flow.Conjugacy
 import TauCeti.Geometry.Manifold.MFDeriv.Curve
 import TauCeti.Geometry.Manifold.Morse.CriticalPoints
 import TauCeti.Geometry.Manifold.VectorField.ModelChart
+import TauCeti.Topology.Homotopy.DeformationRetract
 
 /-!
 # Deformation of sublevels
@@ -24,6 +25,13 @@ the sublevel `M_b = {f ≤ b}` deformation retracts onto `M_a = {f ≤ a}`, by a
 `M_a` pointwise (`TauCeti.exists_sublevelDeformation`); in particular the inclusion of `M_a` into
 `M_b` is a homotopy equivalence (`TauCeti.exists_sublevelHomotopyEquiv`). The manifold itself need
 not be compact, nor σ-compact.
+
+Since `M_a` is a strong deformation retract of `M_b`, any two retractions of `M_b` onto `M_a` are
+homotopic relative to `M_a` (`TauCeti.homotopicRel_sublevel_retraction`). So the retraction is
+determined up to such homotopy by `f`, `a` and `b` alone, whatever vector field or metric produced
+it. In particular, for `a ≤ a' ≤ b' ≤ b`, the retraction of `M_b` restricted to `M_{b'}` is
+homotopic relative to `M_a` to the composite of the retractions of `M_{b'}` onto `M_{a'}` and of
+`M_{a'}` onto `M_a` (`TauCeti.homotopicRel_sublevel_retraction_comp_sublevelInclusion`).
 
 Following Milnor, the deformation is the flow of a vector field `X` with `df(X) = -1` on the band,
 along which `f` decreases at unit speed. Since `df(X) ≤ 0` everywhere, the time-`(b - a)` map of
@@ -52,6 +60,10 @@ bound on the number of critical points of a smooth function.
   without critical points.
 * `TauCeti.exists_sublevelDeformation` and `TauCeti.exists_sublevelHomotopyEquiv`: the deformation
   retraction of `M_b` onto `M_a` and the resulting homotopy equivalence.
+* `TauCeti.homotopicRel_sublevel_retraction` and
+  `TauCeti.homotopicRel_sublevel_retraction_comp_sublevelInclusion`: retractions of `M_b` onto
+  `M_a` are unique up to homotopy relative to `M_a`, and so commute with restriction to smaller
+  bands.
 * `TauCeti.exists_diffeomorph_sublevel` and `TauCeti.exists_sublevelHomeomorph`: a diffeomorphism
   of `M` carrying `M_b` onto `M_a` and `f⁻¹(b)` onto `f⁻¹(a)`, and the resulting homeomorphism
   `M_b ≃ₜ M_a`.
@@ -224,6 +236,42 @@ theorem exists_sublevelHomotopyEquiv (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a
   have : r.comp (sublevelInclusion f a b hab) =
       ContinuousMap.id _ := ContinuousMap.ext hr
   exact this ▸ .refl _
+
+/-- **Retractions across a band without critical points are unique up to homotopy.** Under the
+hypotheses of `TauCeti.exists_sublevelDeformation`, any two retractions of `{f ≤ b}` onto
+`{f ≤ a}` are homotopic relative to `{f ≤ a}`. In particular, the deformation retraction does not
+depend, up to such a homotopy, on the descending vector field or the metric used to build it. -/
+theorem homotopicRel_sublevel_retraction (hf : ContMDiff I 𝓘(ℝ) ∞ f) (hab : a ≤ b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b))
+    (hreg : ∀ x, a ≤ f x → f x ≤ b → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    {r r' : C({x | f x ≤ b}, {x | f x ≤ a})}
+    (hr : ∀ x, r (sublevelInclusion f a b hab x) = x)
+    (hr' : ∀ x, r' (sublevelInclusion f a b hab x) = x) :
+    r.HomotopicRel r' {x | f x ≤ a} := by
+  obtain ⟨r₀, -, h₀⟩ := exists_sublevelDeformation hf hab hcompact hreg
+  exact (ContinuousMap.HomotopicRel.of_leftInverse h₀ hr).symm.trans
+    (ContinuousMap.HomotopicRel.of_leftInverse h₀ hr')
+
+/-- **Retractions across nested bands commute up to homotopy.** Let `a ≤ a' ≤ b' ≤ b`, with the
+band `f⁻¹[a, b']` compact and free of critical points. Restricting a retraction of `{f ≤ b}` onto
+`{f ≤ a}` to `{f ≤ b'}` gives, up to homotopy relative to `{f ≤ a}`, the composite of a retraction
+of `{f ≤ b'}` onto `{f ≤ a'}` with a retraction of `{f ≤ a'}` onto `{f ≤ a}`. Nothing is assumed
+about the band `f⁻¹[b', b]`. -/
+theorem homotopicRel_sublevel_retraction_comp_sublevelInclusion (hf : ContMDiff I 𝓘(ℝ) ∞ f)
+    {a' b' : ℝ} (haa' : a ≤ a') (ha'b' : a' ≤ b') (hb'b : b' ≤ b)
+    (hcompact : IsCompact (f ⁻¹' Icc a b'))
+    (hreg : ∀ x, a ≤ f x → f x ≤ b' → mfderiv I 𝓘(ℝ) f x ≠ 0)
+    {r : C({x | f x ≤ b}, {x | f x ≤ a})} {r₁ : C({x | f x ≤ b'}, {x | f x ≤ a'})}
+    {r₂ : C({x | f x ≤ a'}, {x | f x ≤ a})}
+    (hr : ∀ x, r (sublevelInclusion f a b (haa'.trans (ha'b'.trans hb'b)) x) = x)
+    (hr₁ : ∀ x, r₁ (sublevelInclusion f a' b' ha'b' x) = x)
+    (hr₂ : ∀ x, r₂ (sublevelInclusion f a a' haa' x) = x) :
+    (r.comp (sublevelInclusion f b' b hb'b)).HomotopicRel (r₂.comp r₁) {x | f x ≤ a} := by
+  -- Both maps are retractions of `{f ≤ b'}` onto `{f ≤ a}`, across the band `[a, b']`.
+  refine homotopicRel_sublevel_retraction hf (haa'.trans ha'b') hcompact hreg (fun x ↦ ?_)
+    (fun x ↦ ?_)
+  · simp only [ContinuousMap.comp_apply, sublevelInclusion_sublevelInclusion, hr]
+  · rw [ContinuousMap.comp_apply, ← sublevelInclusion_sublevelInclusion f haa' ha'b', hr₁, hr₂]
 
 /-- **Sublevels on either side of a band without critical points are diffeomorphic**
 (Milnor, Theorem 3.1). If `f` is smooth, `a ≤ b`, and the band `f⁻¹[a, b]` is compact and contains
