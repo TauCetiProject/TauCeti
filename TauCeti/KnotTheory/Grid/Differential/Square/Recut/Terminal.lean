@@ -233,16 +233,6 @@ private theorem target_eq_swapColumns_swapColumns_of_right_eq_right
   rw [← hmid, hright]
   exact D.second.target_eq_swapColumns
 
-/-- Emptiness of the first rectangle of a decomposition, read in the source state: no column
-strictly inside its column span has its source point strictly between its two side rows. -/
-private theorem forall_notMem_cIoo_first (D : GridRectangleDecomposition x z)
-    (hfirst : D.first.IsEmpty) :
-    ∀ c ∈ Grid.cIoo D.first.left D.first.right,
-      x c ∉ Grid.cIoo (x D.first.left) (x D.first.right) := by
-  have h := hfirst
-  rw [GridRectangleBetween.isEmpty_iff_forall_notMem_cIoo] at h
-  simpa only [GridRectangleBetween.bottom_def, GridRectangleBetween.top_def] using h
-
 /-- The two old rectangles of a decomposition sharing their terminal side column cover disjoint
 sets of squares once the shared corner row lies strictly between the other two corner rows. -/
 private theorem disjoint_coveredSquares_of_right_eq_right (D : GridRectangleDecomposition x z)
@@ -256,9 +246,8 @@ private theorem disjoint_coveredSquares_of_right_eq_right (D : GridRectangleDeco
 other rectangle. -/
 private theorem not_mem_cIoo_and_mem_cIoo {a b d : Fin n} :
     ¬(a ∈ Grid.cIoo d b ∧ d ∈ Grid.cIoo a b) := by
-  rw [Grid.mem_cIoo, Grid.mem_cIoo]
-  rintro ⟨⟨_, hfirstLeft⟩, ⟨_, hsecondLeft⟩⟩
-  split_ifs at hfirstLeft hsecondLeft <;> omega
+  rintro ⟨h, h'⟩
+  exact (Finset.disjoint_left.mp (Grid.disjoint_cIoo_swap a b)) h' (Grid.mem_cIoo_cyclic_right h)
 
 /-- The recut of a decomposition sharing its terminal side column, in the configuration where the
 initial side of the first rectangle lies strictly inside the column span of the second one. -/
@@ -278,7 +267,7 @@ private theorem exists_isRepartition_of_right_eq_right_of_mem_cIoo_left
     exists_isRepartition_col_cut_common_right D.first.left_ne_right hleft.symm
       (D.second_left_ne_first_right_of_right_eq_right hright)
       (D.target_eq_swapColumns_swapColumns_of_right_eq_right hright) hcol hrow
-      (D.forall_notMem_cIoo_first hfirst)
+      (D.first.isEmpty_iff_forall_notMem_cIoo.mp hfirst)
       (D.forall_notMem_cIoo_second_of_right_eq_right hright hleft hsecond)
   have hmiddle : E.middle ≠ D.middle := by
     intro h
@@ -316,7 +305,7 @@ private theorem exists_isRepartition_of_right_eq_right_of_mem_cIoo_right
     exists_isRepartition_complementary_col_cut_common_right D.first.left_ne_right hleft.symm
       (D.second_left_ne_first_right_of_right_eq_right hright)
       (D.target_eq_swapColumns_swapColumns_of_right_eq_right hright) hcol hrow
-      (D.forall_notMem_cIoo_first hfirst)
+      (D.first.isEmpty_iff_forall_notMem_cIoo.mp hfirst)
       (D.forall_notMem_cIoo_second_of_right_eq_right hright hleft hsecond)
   have hmiddle : E.middle ≠ D.middle := by
     intro h
