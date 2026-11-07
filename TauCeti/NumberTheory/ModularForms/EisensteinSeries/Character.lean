@@ -101,7 +101,7 @@ theorem charWeight_intCast [NeZero N] (huv : u * v ∣ N) (x : Fin 2 → ℤ) :
   rw [h1]
   simp only [hdvd]
   split_ifs with h
-  · rw [ZMod.natCast_val_div_eq_intCast_div huv h]
+  · rw [ZMod.natCast_val_div_eq_intCast_div huv _]
   · rfl
 
 /-- Scaling the first coordinate of an integer pair by `R`, coprime to `v`, and the second by `S`
