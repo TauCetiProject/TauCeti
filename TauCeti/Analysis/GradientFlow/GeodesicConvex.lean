@@ -5,7 +5,7 @@ Authors: The Tau Ceti contributors
 -/
 module
 
-public import TauCeti.Analysis.GradientFlow.Slope
+public import TauCeti.Analysis.GradientFlow.RelaxedSlope
 public import TauCeti.Data.EReal.Operations
 public import TauCeti.Topology.MetricSpace.CATZero
 import TauCeti.Topology.Instances.EReal
@@ -43,7 +43,8 @@ The inequality `≤` holds for every energy (`TauCeti.descendingSlope_le_iSup`);
 gives `≥`, by comparing `φ` with its convexity bound near `x` along a geodesic towards `y`. As a
 supremum of lower semicontinuous functions, the descending slope of a lower semicontinuous
 geodesically convex energy is lower semicontinuous on its effective domain `{x | φ x ≠ ⊤}`
-(`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`).
+(`TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`), so it is also the relaxed
+slope there (`TauCeti.GeodesicallyConvex.relaxedSlope_eq_descendingSlope`).
 
 The three notions are stable under the usual operations, as far as each allows. Convexity along a
 fixed curve passes to sums (adding the parameters), to nonnegative multiples, to pointwise suprema
@@ -87,6 +88,8 @@ curve need no such assumption.
 * `TauCeti.GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope`: the descending slope of a
   lower semicontinuous `m`-geodesically convex energy is lower semicontinuous on its effective
   domain.
+* `TauCeti.GeodesicallyConvex.relaxedSlope_eq_descendingSlope`: for such an energy the relaxed
+  and the descending slopes agree on the effective domain.
 
 ## References
 
@@ -533,6 +536,13 @@ theorem GeodesicallyConvex.lowerSemicontinuousOn_descendingSlope (hφ : Geodesic
               ring
           _ ≤ (φ x - s + ((m / 2 * dist x y ^ 2 : ℝ) : EReal)).toENNReal :=
               EReal.toENNReal_le_toENNReal (add_le_add_left (EReal.sub_le_sub hhx' le_rfl) _)
+
+/-- **The relaxed slope of a lower semicontinuous geodesically convex energy is its descending
+slope** at every point of its effective domain `{x | φ x ≠ ⊤}`. -/
+theorem GeodesicallyConvex.relaxedSlope_eq_descendingSlope (hφ : GeodesicallyConvex m φ)
+    (hlsc : LowerSemicontinuousOn φ {x | φ x ≠ ⊤}) (hx : φ x ≠ ⊤) :
+    relaxedSlope φ x = descendingSlope φ x :=
+  TauCeti.relaxedSlope_eq_descendingSlope hx (hφ.lowerSemicontinuousOn_descendingSlope hlsc x hx)
 
 end MetricSpace
 

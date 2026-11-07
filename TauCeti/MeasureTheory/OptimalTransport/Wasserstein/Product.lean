@@ -81,9 +81,6 @@ theorem wassersteinEDist_map_toLp_prod_rpow (hp : p ≠ ∞)
         ^ p.toReal
       = wassersteinEDist p μ₁ ν₁ ^ p.toReal + wassersteinEDist p μ₂ ν₂ ^ p.toReal := by
   have hp0 : p ≠ 0 := (zero_lt_one.trans_le (Fact.out : (1 : ℝ≥0∞) ≤ p)).ne'
-  have hcZ : Measurable fun w : WithLp p (X × Y) × WithLp p (X × Y) ↦
-      edist w.1 w.2 ^ p.toReal :=
-    ENNReal.continuous_rpow_const.measurable.comp (measurable_edist_withLp_prod hdX hdY)
   have hcX : Measurable fun z : X × X ↦ edist z.1 z.2 ^ p.toReal :=
     ENNReal.continuous_rpow_const.measurable.comp hdX
   have hcY : Measurable fun z : Y × Y ↦ edist z.1 z.2 ^ p.toReal :=
@@ -92,7 +89,7 @@ theorem wassersteinEDist_map_toLp_prod_rpow (hp : p ≠ ∞)
     wassersteinEDist_rpow_eq_transportCost hdX hp0 hp,
     wassersteinEDist_rpow_eq_transportCost hdY hp0 hp, ← MeasurableEquiv.coe_toLp p (X × Y),
     ← transportCost_comp_prodMap (MeasurableEquiv.toLp p (X × Y))
-      (MeasurableEquiv.toLp p (X × Y)) hcZ]
+      (MeasurableEquiv.toLp p (X × Y))]
   have hsep : (fun z : (X × Y) × X × Y ↦
         edist (MeasurableEquiv.toLp p (X × Y) z.1) (MeasurableEquiv.toLp p (X × Y) z.2)
           ^ p.toReal)
