@@ -52,6 +52,35 @@ theorem perpBisector_def (p q : ℍ) :
       geodesicBetween p q * ↑(dilation (dist p q / 2)) * ↑(rotation (Real.pi / 4)) :=
   (rfl)
 
+/-- In the imaginary-axis coordinates `w = (geodesicBetween p q)⁻¹ • z`, the difference of the
+hyperbolic cosines of the distances from `z` to `p` and `q` is explicit in `w`, with sign that of
+`exp (-(dist p q / 2)) ^ 2 * ‖w‖ ^ 2 - 1`. -/
+private theorem cosh_dist_sub_cosh_dist_eq_of_inv_smul (p q z : ℍ) :
+    Real.cosh (dist z p) - Real.cosh (dist z q) =
+      (Real.exp (dist p q) - 1) * (Real.exp (-(dist p q / 2)) ^ 2 *
+        Complex.normSq (((geodesicBetween p q)⁻¹ • z : ℍ) : ℂ) - 1) /
+          (2 * ((geodesicBetween p q)⁻¹ • z : ℍ).im) := by
+  have h0 : (geodesicBetween p q)⁻¹ • p = UpperHalfPlane.I := by
+    rw [inv_smul_eq_iff, ← geodesicLine_zero, geodesicLine_geodesicBetween_zero]
+  have h1 : (geodesicBetween p q)⁻¹ • q = geodesicLine 1 (dist p q) := by
+    rw [inv_smul_eq_iff, smul_geodesicLine, mul_one, geodesicLine_geodesicBetween_dist]
+  -- The inverse half-distance dilation scales squared norms by `exp (-d)`.
+  have ha : Real.exp (-(dist p q / 2)) ^ 2 * Real.exp (dist p q) = 1 := by
+    rw [sq, ← Real.exp_add, ← Real.exp_add]
+    have hd : -(dist p q / 2) + -(dist p q / 2) + dist p q = 0 := by ring
+    rw [hd, Real.exp_zero]
+  rw [← dist_smul (geodesicBetween p q)⁻¹ z p, ← dist_smul (geodesicBetween p q)⁻¹ z q, h0, h1,
+    cosh_dist', cosh_dist', geodesicLine_one_apply]
+  simp only [UpperHalfPlane.I_re, UpperHalfPlane.I_im, UpperHalfPlane.mk_re,
+    UpperHalfPlane.mk_im, sub_zero, one_pow, mul_one]
+  simp only [Complex.normSq_apply, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
+  generalize ((geodesicBetween p q)⁻¹ • z : ℍ) = w
+  generalize Real.exp (-(dist p q / 2)) = a at ha ⊢
+  have hw := w.im_pos.ne'
+  have he0 := (Real.exp_pos (dist p q)).ne'
+  field_simp [hw, he0]
+  linear_combination -(w.re ^ 2 + w.im ^ 2) * (Real.exp (dist p q) - 1) * ha
+
 /-- The real part of `(perpBisector p q)⁻¹ • z` is a positive multiple of
 `Real.cosh (dist z p) - Real.cosh (dist z q)`. -/
 private theorem exists_pos_re_inv_perpBisector_smul_eq {p q : ℍ} (hpq : p ≠ q) (z : ℍ) :
@@ -65,16 +94,7 @@ private theorem exists_pos_re_inv_perpBisector_smul_eq {p q : ℍ} (hpq : p ≠ 
   let a := Real.exp (-(d / 2))
   let v : ℍ := (↑(dilation (d / 2)) : PSL(2, ℝ))⁻¹ • w
   let N := Complex.normSq ((Real.sin (Real.pi / 4) : ℂ) * v + Real.cos (Real.pi / 4))
-  have h0 : g⁻¹ • p = UpperHalfPlane.I := by
-    rw [inv_smul_eq_iff, ← geodesicLine_zero, geodesicLine_geodesicBetween_zero]
-  have h1 : g⁻¹ • q = geodesicLine 1 d := by
-    rw [inv_smul_eq_iff, smul_geodesicLine, mul_one, geodesicLine_geodesicBetween_dist]
   have he : 1 < Real.exp d := Real.one_lt_exp_iff.mpr (dist_pos.mpr hpq)
-  -- The inverse half-distance dilation scales squared norms by `exp (-d)`.
-  have ha : a ^ 2 * Real.exp d = 1 := by
-    rw [sq, ← Real.exp_add, ← Real.exp_add]
-    have hd : -(d / 2) + -(d / 2) + d = 0 := by ring
-    rw [hd, Real.exp_zero]
   have hN : 0 < N := normSq_sin_mul_add_cos_pos _ v
   have hn : Complex.normSq (v : ℂ) = a ^ 2 * Complex.normSq (w : ℂ) := by
     dsimp only [v]
@@ -94,19 +114,9 @@ private theorem exists_pos_re_inv_perpBisector_smul_eq {p q : ℍ} (hpq : p ≠ 
       rw [Real.sin_pi_div_four, Real.cos_pi_div_four, sub_self]
     rw [hr', re_rotation_inv_smul, ht, ht', zero_mul, add_zero, hn]
     ring
-  -- Compare distances in the imaginary-axis coordinates using Mathlib's cosine formula.
   have hc : Real.cosh (dist z p) - Real.cosh (dist z q) =
-      (Real.exp d - 1) * (a ^ 2 * Complex.normSq (w : ℂ) - 1) / (2 * w.im) := by
-    rw [← dist_smul g⁻¹ z p, ← dist_smul g⁻¹ z q, h0, h1, cosh_dist', cosh_dist',
-      geodesicLine_one_apply]
-    simp only [UpperHalfPlane.I_re, UpperHalfPlane.I_im, UpperHalfPlane.mk_re,
-      UpperHalfPlane.mk_im, sub_zero, one_pow, mul_one]
-    simp only [Complex.normSq_apply, UpperHalfPlane.coe_re, UpperHalfPlane.coe_im]
-    have hw := w.im_pos.ne'
-    have he0 := (Real.exp_pos d).ne'
-    dsimp only [w] at hw ⊢
-    field_simp [hw, he0]
-    linear_combination -(w.re ^ 2 + w.im ^ 2) * (Real.exp d - 1) * ha
+      (Real.exp d - 1) * (a ^ 2 * Complex.normSq (w : ℂ) - 1) / (2 * w.im) :=
+    cosh_dist_sub_cosh_dist_eq_of_inv_smul p q z
   refine ⟨w.im / ((Real.exp d - 1) * N),
     div_pos w.im_pos (mul_pos (sub_pos.mpr he) hN), ?_⟩
   rw [hr, hc]
