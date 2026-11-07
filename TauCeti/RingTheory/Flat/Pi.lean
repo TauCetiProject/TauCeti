@@ -20,7 +20,7 @@ upgrades it to faithful flatness.
 
 Mathlib defines `Module.FaithfullyFlat` as flatness plus `m • ⊤ ≠ ⊤` for every maximal ideal `m`,
 so the criterion is about locating a single component that keeps `m` proper — the factorwise half
-of that is `Ideal.smul_top_eq_top_of_pi`, a general ideal-action fact with no flatness or
+of that is `Ideal.smul_top_eq_top_of_surjective`, a general ideal-action fact with no flatness or
 finiteness in it, which lives in `TauCeti/RingTheory/Ideal/Operations.lean`: a product is
 faithfully flat as soon as each factor is flat and **no maximal ideal expands in every factor at
 once**. Individually the factors may all fail to be faithfully flat.
@@ -75,7 +75,8 @@ that the failures are not simultaneous. -/
 theorem FaithfullyFlat.pi_of_exists_submodule_ne_top [Finite ι] [∀ i, Flat R (M i)]
     (h : ∀ m : Ideal R, m.IsMaximal → ∃ i, m • (⊤ : Submodule R (M i)) ≠ ⊤) :
     FaithfullyFlat R (∀ i, M i) where
-  submodule_ne_top m hm htop := (h m hm).elim fun i hi ↦ hi (m.smul_top_eq_top_of_pi htop i)
+  submodule_ne_top m hm htop := (h m hm).elim fun i hi ↦
+    hi (m.smul_top_eq_top_of_surjective (LinearMap.proj i) (Function.surjective_eval i) htop)
 
 /-- **One faithfully flat factor carries a finite product of flat modules.** This is the special
 case of `FaithfullyFlat.pi_of_exists_submodule_ne_top` where one fixed index works for every
