@@ -358,7 +358,7 @@ theorem tendsto_moreauYosida_nhdsGT_zero (hφ : LowerSemicontinuousAt φ x) {σ 
   have hdδ : (δ₀ : ℝ) ≤ d := by
     rw [← ENNReal.coe_toReal δ₀]
     exact ENNReal.toReal_mono hz hzδ
-  exact Real.le_add_sq_div_two_mul_of_sq_div_le hδ₀'.le hdδ hτ₀ (by exact_mod_cast hτσ) hτK h
+  exact Real.le_add_sq_div_two_mul_of_sq_div_le hδ₀'.le hdδ hτ₀ (by exact_mod_cast hτσ.le) hτK h
 
 variable {y : ℝ → X} {σ : ℝ}
 
