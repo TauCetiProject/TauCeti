@@ -96,8 +96,7 @@ theorem isMeagre_image_of_not_isRegularPoint_of_index_le_two [LindelofSpace s]
   have hfd : fderiv ℝ g (extChartAt I x x) = mfderiv I J f x := by
     rw [((hf x hx).mdifferentiableAt hn0).mfderiv_abuse, I.range_eq_univ, fderivWithin_univ,
       writtenInExtChartAt]
-  have hg : ContDiffAt ℝ n g (extChartAt I x x) := by
-    simpa only [I.range_eq_univ, contDiffWithinAt_univ] using (contMDiffAt_iff.1 (hf x hx)).2
+  have hg : ContDiffAt ℝ n g (extChartAt I x x) := (hf x hx).contDiffAt_writtenInExtChartAt
   obtain ⟨V, hV, -, -, hVnd⟩ :=
     exists_mem_nhds_isClosed_isNowhereDense_image_criticalPoints_of_index_le_two hg
       (by rw [hfd]; exact hFred x hx) (by rw [hfd]; exact hindex x hx)
