@@ -14,7 +14,7 @@ public import Mathlib.Topology.Algebra.InfiniteSum.Nonarchimedean
 
 In a complete ultrametric normed group, a family vanishing at infinity on a discrete index
 is unconditionally summable. Summation is a norm-decreasing continuous linear map
-`sumCLM R : C₀(I, E) →L[R] E`, for any continuous scalar action. It is characterised by
+`tsumCLM R : C₀(I, E) →L[R] E`, for any continuous scalar action. It is characterised by
 sending `single i x` to `x`, commutes with bounded coefficient maps, and is invariant under
 reindexing.
 
@@ -43,11 +43,17 @@ summable. -/
 theorem summable (f : C₀(I, E)) : Summable f :=
   NonarchimedeanAddGroup.summable_of_tendsto_cofinite_zero f.tendsto_cofinite
 
+omit [DiscreteTopology I] [CompleteSpace E] in
+/-- The unconditional sum of an ultrametric null family is bounded by its sup norm. -/
+theorem norm_tsum_le (f : C₀(I, E)) : ‖∑' i, f i‖ ≤ ‖f‖ :=
+  IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg f)
+    (norm_coe_le_norm f)
+
 variable (R) [Semiring R] [Module R E] [ContinuousConstSMul R E]
 
 /-- Summation of null families in a complete ultrametric normed module, as a continuous
 linear map. The scalar ring need not be normed. -/
-noncomputable def sumCLM : C₀(I, E) →L[R] E :=
+noncomputable def tsumCLM : C₀(I, E) →L[R] E :=
   let L : C₀(I, E) →ₗ[R] E :=
     { toFun := fun f ↦ ∑' i, f i
       map_add' f g := by
@@ -58,60 +64,60 @@ noncomputable def sumCLM : C₀(I, E) →L[R] E :=
         exact f.summable.tsum_const_smul r }
   { L with
     cont := AddMonoidHomClass.continuous_of_bound L 1 fun f ↦ by
-      simpa only [L, LinearMap.coe_mk, AddHom.coe_mk, one_mul] using
-        IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg
-          (f := fun i : I ↦ f i) (norm_nonneg f) (fun i ↦ norm_coe_le_norm f i) }
+      simpa only [L, LinearMap.coe_mk, AddHom.coe_mk, one_mul] using norm_tsum_le f }
 
 variable {R}
 
-/-- `sumCLM` is unconditional summation. -/
-theorem sumCLM_apply (f : C₀(I, E)) : sumCLM R f = ∑' i, f i := (rfl)
+/-- `tsumCLM` is unconditional summation. -/
+theorem tsumCLM_apply (f : C₀(I, E)) : tsumCLM R f = ∑' i, f i := (rfl)
 
 /-- Summation is norm-decreasing, also for empty indices and the zero module. -/
-theorem norm_sumCLM_apply_le (f : C₀(I, E)) : ‖sumCLM R f‖ ≤ ‖f‖ := by
-  rw [sumCLM_apply]
-  exact IsUltrametricDist.norm_tsum_le_of_forall_le_of_nonneg (norm_nonneg f)
-    (norm_coe_le_norm f)
+theorem norm_tsumCLM_apply_le (f : C₀(I, E)) : ‖tsumCLM R f‖ ≤ ‖f‖ := by
+  simpa only [tsumCLM_apply] using norm_tsum_le f
 
-/-- The terms of a null family sum to its image under `sumCLM`. -/
-theorem hasSum_sumCLM (f : C₀(I, E)) : HasSum (fun i ↦ f i) (sumCLM R f) := by
-  simpa only [sumCLM_apply] using f.summable.hasSum
+/-- A uniform bound for summation, suitable for coefficientwise composition via `compLeft`. -/
+theorem tsumCLM_bound : ∃ C, ∀ f : C₀(I, E), ‖tsumCLM R f‖ ≤ C * ‖f‖ :=
+  ⟨1, fun f ↦ by simpa only [one_mul] using norm_tsumCLM_apply_le (R := R) f⟩
+
+/-- The terms of a null family sum to its image under `tsumCLM`. -/
+theorem hasSum_tsumCLM (f : C₀(I, E)) : HasSum (fun i ↦ f i) (tsumCLM R f) := by
+  simpa only [tsumCLM_apply] using f.summable.hasSum
 
 /-- Summation sends a coordinate vector to its value. -/
 @[simp]
-theorem sumCLM_single [DecidableEq I] (i : I) (x : E) :
-    sumCLM R (single i x) = x := by
-  simp [sumCLM_apply, coe_single]
+theorem tsumCLM_single [DecidableEq I] (i : I) (x : E) :
+    tsumCLM R (single i x) = x := by
+  simp [tsumCLM_apply, coe_single]
 
 /-- The summation map is the unique continuous linear map sending each coordinate vector
 to its value. -/
-theorem eq_sumCLM_iff [DecidableEq I] (u : C₀(I, E) →L[R] E) :
-    u = sumCLM R ↔ ∀ i x, u (single i x) = x := by
+theorem eq_tsumCLM_iff [DecidableEq I] (u : C₀(I, E) →L[R] E) :
+    u = tsumCLM R ↔ ∀ i x, u (single i x) = x := by
   refine ⟨fun h ↦ by simp [h], fun h ↦ ?_⟩
   exact continuousLinearMap_ext fun i x ↦ by simp [h]
 
 /-- A sum over a finite coordinate truncation is the corresponding finite partial sum. -/
 @[simp]
-theorem sumCLM_indicatorCLM (s : Finset I) (f : C₀(I, E)) :
-    sumCLM R (indicatorCLM R (s : Set I) f) = ∑ i ∈ s, f i := by
+theorem tsumCLM_indicatorCLM (s : Finset I) (f : C₀(I, E)) :
+    tsumCLM R (indicatorCLM R (s : Set I) f) = ∑ i ∈ s, f i := by
   classical
   rw [indicatorCLM_finset_apply, map_sum]
   simp
 
 /-- The error of a finite partial sum is bounded by the sup norm of the omitted tail. -/
-theorem norm_sum_sub_sumCLM_le (s : Finset I) (f : C₀(I, E)) :
-    ‖(∑ i ∈ s, f i) - sumCLM R f‖ ≤ ‖indicatorCLM R (s : Set I) f - f‖ := by
-  simpa using norm_sumCLM_apply_le (R := R) (indicatorCLM R (s : Set I) f - f)
+theorem norm_sum_sub_tsumCLM_le (s : Finset I) (f : C₀(I, E)) :
+    ‖(∑ i ∈ s, f i) - tsumCLM R f‖ ≤ ‖indicatorCLM R (s : Set I) f - f‖ := by
+  simpa using norm_tsumCLM_apply_le (R := R) (indicatorCLM R (s : Set I) f - f)
 
 variable [NormedAddCommGroup F] [IsUltrametricDist F] [CompleteSpace F]
   [Module R F] [ContinuousConstSMul R F]
 
 /-- Summation commutes with any bounded continuous linear coefficient map. -/
-theorem sumCLM_compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖)
+theorem tsumCLM_compLeft (u : E →L[R] F) (hu : ∃ C, ∀ x, ‖u x‖ ≤ C * ‖x‖)
     (f : C₀(I, E)) :
-    sumCLM R (compLeft u hu f) = u (sumCLM R f) := by
-  simpa only [sumCLM_apply, compLeft_apply] using
-    ((hasSum_sumCLM (R := R) f).mapL u).tsum_eq
+    tsumCLM R (compLeft u hu f) = u (tsumCLM R f) := by
+  simpa only [tsumCLM_apply, compLeft_apply] using
+    ((hasSum_tsumCLM (R := R) f).mapL u).tsum_eq
 
 section Reindex
 
@@ -119,25 +125,25 @@ variable [TopologicalSpace J] [DiscreteTopology J]
 
 /-- Summation is invariant under reindexing a discrete family by a homeomorphism. -/
 @[simp]
-theorem sumCLM_congrLeft (e : I ≃ₜ J) (f : C₀(I, E)) :
-    sumCLM R (congrLeft R E e f) = sumCLM R f := by
-  simp only [sumCLM_apply, congrLeft_apply]
-  convert e.symm.toEquiv.tsum_eq f using 1
+theorem tsumCLM_congrLeft (e : I ≃ₜ J) (f : C₀(I, E)) :
+    tsumCLM R (congrLeft R E e f) = tsumCLM R f := by
+  simpa only [tsumCLM_apply, congrLeft_apply, Homeomorph.coe_toEquiv] using
+    e.symm.toEquiv.tsum_eq f
 
 /-- Summing the inner variable of a product null family gives a null family in the outer
 variable. The hypothesis controls both indices jointly. -/
 theorem tendsto_tsum_cofinite (f : C₀(I × J, E)) :
     Tendsto (fun i ↦ ∑' j, f (i, j)) cofinite (𝓝 0) := by
-  simpa only [Function.comp_def, sumCLM_apply, curryEquiv_apply_apply] using
-    ((sumCLM ℕ).continuous.tendsto' 0 0 (map_zero _)).comp
+  simpa only [Function.comp_def, tsumCLM_apply, curryEquiv_apply_apply] using
+    ((tsumCLM ℕ).continuous.tendsto' 0 0 (map_zero _)).comp
       (curryEquiv ℕ E f).tendsto_cofinite
 
 /-- Fubini's identity for a null family on a product, expressed using the native model-space
 isometry and coefficientwise summation. -/
-theorem sumCLM_curryEquiv (f : C₀(I × J, E)) :
-    sumCLM R (compLeft (sumCLM R) ⟨1, fun g ↦ by
-      simpa using norm_sumCLM_apply_le (R := R) g⟩ (curryEquiv R E f)) = sumCLM R f := by
-  simpa only [sumCLM_apply, compLeft_apply, curryEquiv_apply_apply] using f.summable.tsum_prod.symm
+theorem tsumCLM_curryEquiv (f : C₀(I × J, E)) :
+    tsumCLM R (compLeft (tsumCLM R) (tsumCLM_bound (R := R)) (curryEquiv R E f)) =
+      tsumCLM R f := by
+  simpa only [tsumCLM_apply, compLeft_apply, curryEquiv_apply_apply] using f.summable.tsum_prod.symm
 
 end Reindex
 
