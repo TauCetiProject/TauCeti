@@ -69,6 +69,51 @@ variable {R : Type u} [CommRing R] [IsLocalRing R] [Small.{v} R]
 
 variable [IsNoetherianRing R]
 
+omit [IsNoetherianRing R] in
+/-- A finite module over a local ring is a quotient of a finite free module, with free module in
+the universe of the module, by a submodule contained in `𝔪 • ⊤`. -/
+theorem exists_surjective_ker_le_maximalIdeal_smul_shrink (M : Type v) [AddCommGroup M]
+    [Module R M] [Module.Finite R M] :
+    ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M),
+      Function.Surjective g ∧ LinearMap.ker g ≤ maximalIdeal R • ⊤ := by
+  obtain ⟨f, hf, hfker⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul R M
+  let e : (Fin (Module.finrank (ResidueField R) (ResidueField R ⊗[R] M)) → Shrink.{v} R) ≃ₗ[R]
+      (Fin (Module.finrank (ResidueField R) (ResidueField R ⊗[R] M)) → R) :=
+    LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
+  refine ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective, ?_⟩
+  rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
+  refine (Submodule.map_mono hfker).trans ?_
+  rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
+
+omit [IsNoetherianRing R] in
+/-- The inductive step of the Auslander–Buchsbaum formula: for a minimal free presentation
+`0 → K → F → M → 0` whose kernel `K` has projective dimension `p` and `depth K + p = depth R`,
+one has `depth M + 1 ≤ depth K`. -/
+private theorem depth_add_one_le_depth_ker_of_depth_add_eq (p : ℕ) {M : Type v} [AddCommGroup M]
+    [Module R M] {n : ℕ} {g : (Fin n → Shrink.{v} R) →ₗ[R] M} (hg : Function.Surjective g)
+    (hker : LinearMap.ker g ≤ maximalIdeal R • ⊤) [Module.Finite R (LinearMap.ker g)]
+    (hpK : projectiveDimension (ModuleCat.of R (LinearMap.ker g)) = p)
+    (hF : depth (ModuleCat.of R (Fin n → Shrink.{v} R)) = depth (ModuleCat.of R R))
+    (hK : depth (ModuleCat.of R (LinearMap.ker g)) + p = depth (ModuleCat.of R R))
+    (hKtop : depth (ModuleCat.of R (LinearMap.ker g)) ≠ ⊤) :
+    depth (ModuleCat.of R M) + 1 ≤ depth (ModuleCat.of R (LinearMap.ker g)) := by
+  rcases p with _ | q
+  · -- `K` is free and lies in `𝔪 F`.
+    have : Projective (ModuleCat.of R (LinearMap.ker g)) :=
+      ((projectiveDimension_eq_zero_iff _).mp (by exact_mod_cast hpK)).1
+    have : Module.Projective R (LinearMap.ker g) := (IsProjective.iff_projective _).mpr this
+    have : Module.Free R (LinearMap.ker g) := Module.free_of_flat_of_isLocalRing
+    exact depth_add_one_le_depth_ker hg hker
+  · -- `depth K < depth R = depth F`.
+    have h := depth_min_snd_trd_add_one_le_fst_of_exact _ g
+      (LinearMap.exact_subtype_ker_map g) (LinearMap.ker g).injective_subtype hg
+    refine (inf_le_iff.mp h).resolve_left fun h' ↦ ?_
+    rw [hF, ← hK] at h'
+    generalize depth (ModuleCat.of R (LinearMap.ker g)) = b at h' hKtop
+    induction b using ENat.recTopCoe with
+    | top => exact hKtop rfl
+    | coe b => norm_cast at h'; omega
+
 /-- The Auslander–Buchsbaum formula for a module of projective dimension `p : ℕ`, by induction
 on `p`. -/
 private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [AddCommGroup M]
@@ -84,16 +129,7 @@ private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [A
     simpa using depth_eq_depth_self_of_free M
   | succ p ih =>
     -- A minimal free presentation, with free module transported to the universe of `M`.
-    obtain ⟨n, g, hg, hker⟩ : ∃ (n : ℕ) (g : (Fin n → Shrink.{v} R) →ₗ[R] M),
-        Function.Surjective g ∧ LinearMap.ker g ≤ maximalIdeal R • ⊤ := by
-      obtain ⟨f, hf, hfker⟩ := TauCeti.IsLocalRing.exists_surjective_ker_le_maximalIdeal_smul R M
-      let e : (Fin (Module.finrank (ResidueField R) (ResidueField R ⊗[R] M)) → Shrink.{v} R) ≃ₗ[R]
-          (Fin (Module.finrank (ResidueField R) (ResidueField R ⊗[R] M)) → R) :=
-        LinearEquiv.piCongrRight fun _ ↦ Shrink.linearEquiv R R
-      refine ⟨_, f ∘ₗ e.toLinearMap, hf.comp e.surjective, ?_⟩
-      rw [LinearMap.ker_comp, Submodule.comap_equiv_eq_map_symm]
-      refine (Submodule.map_mono hfker).trans ?_
-      rw [Submodule.map_smul'', Submodule.map_top, LinearEquiv.range]
+    obtain ⟨n, g, hg, hker⟩ := exists_surjective_ker_le_maximalIdeal_smul_shrink (R := R) M
     have hM : ¬ Module.Projective R M := fun h ↦ by
       have := Projective.projectiveDimension_le_zero (ModuleCat.of R M)
       rw [hp] at this
@@ -116,23 +152,7 @@ private theorem depth_add_eq_of_projectiveDimension_eq (p : ℕ) (M : Type v) [A
       not_subsingleton (LinearMap.ker g) ((depth_eq_top_iff _).mp h)
     have h₁ := depth_min_snd_fst_sub_one_le_trd_of_exact _ g (LinearMap.exact_subtype_ker_map g)
       (LinearMap.ker g).injective_subtype hg
-    have h₂ : depth (ModuleCat.of R M) + 1 ≤ depth (ModuleCat.of R (LinearMap.ker g)) := by
-      rcases p with _ | q
-      · -- `K` is free and lies in `𝔪 F`.
-        have : Projective (ModuleCat.of R (LinearMap.ker g)) :=
-          ((projectiveDimension_eq_zero_iff _).mp (by exact_mod_cast hpK)).1
-        have : Module.Projective R (LinearMap.ker g) := (IsProjective.iff_projective _).mpr this
-        have : Module.Free R (LinearMap.ker g) := Module.free_of_flat_of_isLocalRing
-        exact depth_add_one_le_depth_ker hg hker
-      · -- `depth K < depth R = depth F`.
-        have h := depth_min_snd_trd_add_one_le_fst_of_exact _ g
-          (LinearMap.exact_subtype_ker_map g) (LinearMap.ker g).injective_subtype hg
-        refine (inf_le_iff.mp h).resolve_left fun h' ↦ ?_
-        rw [hF, ← hK] at h'
-        generalize depth (ModuleCat.of R (LinearMap.ker g)) = b at h' hKtop
-        induction b using ENat.recTopCoe with
-        | top => exact hKtop rfl
-        | coe b => norm_cast at h'; omega
+    have h₂ := depth_add_one_le_depth_ker_of_depth_add_eq p hg hker hpK hF hK hKtop
     rw [hF, ← hK] at h₁
     rw [← hK]
     exact ENat.add_succ_eq_of_le_of_le h₁ h₂
