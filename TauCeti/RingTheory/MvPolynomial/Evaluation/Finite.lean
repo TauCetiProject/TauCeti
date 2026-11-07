@@ -18,9 +18,6 @@ A finitely generated submodule of multivariate polynomials over an integral doma
 separated by finitely many evaluations. The evaluation points can be chosen in any box with
 infinite sides. In particular, one finite set tests all polynomials with a prescribed total
 degree bound, rather than depending on the coefficients of the polynomial being tested.
-
-The proof passes to the fraction field, where the span of the submodule is
-finite-dimensional, so the kernels of the evaluation maps have a finite subintersection.
 -/
 
 public section
@@ -37,6 +34,9 @@ theorem exists_finset_eq_zero_iff_forall_eval_eq_zero (V : Submodule R (MvPolyno
     [Module.Finite R V] (s : σ → Set R) (hs : ∀ i, (s i).Infinite) :
     ∃ T : Finset (σ → R), (↑T : Set (σ → R)) ⊆ Set.pi Set.univ s ∧
       ∀ p ∈ V, p = 0 ↔ ∀ v ∈ T, eval v p = 0 := by
+  -- Pass to a field `K` containing `R`, where the `K`-span of the image of `V` is
+  -- finite-dimensional, so the kernels of the evaluation maps at the box points have a finite
+  -- subintersection.
   classical
   obtain ⟨K, _, _, _⟩ : ∃ (K : Type _) (_ : Field K) (_ : Algebra R K), FaithfulSMul R K :=
     ⟨FractionRing R, inferInstance, inferInstance, inferInstance⟩
