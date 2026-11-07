@@ -446,6 +446,15 @@ theorem continuousOn_ofReal_add_cpow_Ici_of_re_pos {x : ℂ} (hx : x ∈ slitPla
   exact (ContinuousAt.comp (f := fun u : ℝ => (u : ℂ) + x)
     (Complex.continuousAt_cpow_const_of_re_pos hmem hs) (by fun_prop)).continuousWithinAt
 
+/-- For `w` in the right half-plane and `p > 0`, the principal powers combine:
+`w⁻ʳ * pʳ = (p / w)ʳ`. -/
+theorem one_div_cpow_mul_ofReal_rpow {w : ℂ} (hw : 0 < w.re) {p : ℝ} (hp : 0 < p) (r : ℝ) :
+    (1 / w ^ (r : ℂ)) * ((p ^ r : ℝ) : ℂ) = ((p : ℂ) / w) ^ (r : ℂ) := by
+  have hw_arg : w.arg ≠ Real.pi := fun h ↦
+    (not_lt_of_ge hw.le) (Complex.arg_eq_pi_iff.mp h).1
+  rw [div_eq_mul_inv (p : ℂ) w, ofReal_mul_cpow hp.le, Complex.inv_cpow w (r : ℂ) hw_arg,
+    ← Complex.ofReal_cpow hp.le, one_div, mul_comm]
+
 end TauCeti
 
 namespace Complex
