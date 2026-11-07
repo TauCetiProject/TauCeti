@@ -51,6 +51,23 @@ open YoungDiagram (ofPartition card_ofPartition)
 
 variable {R : Type*} [CommRing R]
 
+/-- Multiplying an alternant by `p_r` only needs the exponent moves onto a free position: a move
+onto an occupied position repeats an exponent, and its alternant vanishes. -/
+private theorem psum_mul_alternant_eq_sum_filter {N : ℕ} {r : ℕ} (hr : 0 < r) (α : Fin N → ℕ) :
+    psum (Fin N) R r * alternant (Fin N) R α =
+      ∑ j : Fin N with ∀ i, α i ≠ α j + r,
+        alternant (Fin N) R (Function.update α j (α j + r)) := by
+  rw [psum_mul_alternant]
+  refine (sum_filter_of_ne fun j _ hj => ?_).symm
+  by_contra hcol
+  simp only [not_forall, not_not] at hcol
+  obtain ⟨i, hi⟩ := hcol
+  have hij : i ≠ j := by
+    rintro rfl
+    omega
+  refine hj (alternant_eq_zero_of_not_injective fun hinj => hij (hinj ?_))
+  rw [Function.update_of_ne hij, Function.update_self, hi]
+
 open scoped Classical in
 /-- **The Murnaghan–Nakayama rule for alternants.**  Let `ν` be a Young diagram with at most `N`
 rows and `β` its beta-numbers relative to `N`, so that `a_β = s_ν · a_δ`.  For `r > 0`, multiplying
@@ -67,18 +84,8 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
   -- The power-sum rule expands `p_r * a_β` as the sum of `a_(β + r e_j)` over bead moves.
   -- The bialternant identity identifies `a_β` with `s_ν * a_δ`.
   set β : Fin N → ℕ := fun j => ν.betaNumber N j with hβ
-  rw [psum_mul_alternant]
-  -- A bead raised onto an occupied position repeats an exponent, and its alternant vanishes.
-  rw [← sum_filter_of_ne (p := fun j => ∀ i, β i ≠ β j + r) fun j _ hj => by
-    by_contra hcol
-    simp only [not_forall, not_not] at hcol
-    obtain ⟨i, hi⟩ := hcol
-    have hij : i ≠ j := by
-      rintro rfl
-      omega
-    refine hj (alternant_eq_zero_of_not_injective fun hinj => hij (hinj ?_))
-    rw [Function.update_of_ne hij, Function.update_self, hi]]
-  -- Every other bead move adds a rim hook meeting rows `a ≤ i ≤ j`, with `j` its bottom row.
+  rw [psum_mul_alternant_eq_sum_filter hr]
+  -- Each free bead move adds a rim hook meeting rows `a ≤ i ≤ j`, with `j` its bottom row.
   have hex : ∀ j : Fin N, (∀ i, β i ≠ β j + r) → ∃ μ : (ν.card + r).Partition,
       ((ofPartition μ).IsRimHook ν ∧ (ofPartition μ).colLen 0 ≤ N) ∧
         ∃ a, (ofPartition μ).rimHookRows ν = Icc a (j : ℕ) := by
@@ -90,13 +97,6 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
   choose! f hfS hfrows using hex
   -- The resulting beta-numbers differ by the cycle `(a a+1 ⋯ j)`, whose sign is the
   -- rim hook weight `(-1) ^ (j - a)`.
-  have hterm : ∀ (μ : (ν.card + r).Partition) (a : ℕ) (j : Fin N)
-      (hμ : (ofPartition μ).IsRimHook ν) (hab : (ofPartition μ).rimHookRows ν = Icc a (j : ℕ)),
-      Function.update β j (β j + r) = (fun i : Fin N => (ofPartition μ).betaNumber N i) ∘
-        Fin.cycleIcc ⟨a, (hμ.le_of_rimHookRows_eq_Icc hab).trans_lt j.isLt⟩ j := by
-    intro μ a j hμ hab
-    have hu := hμ.update_betaNumber_eq_comp_cycleIcc hab j.isLt
-    rwa [card_ofPartition, Nat.add_sub_cancel_left] at hu
   refine sum_bij (fun j _ => f j)
     (fun j hj => mem_filter.mpr ⟨mem_univ _, hfS j (mem_filter.mp hj).2⟩) ?_ ?_ ?_
   · -- Distinct bead moves give distinct rim hooks: the bottom row of the hook is the moved row.
@@ -124,7 +124,9 @@ theorem psum_mul_alternant_betaNumber {N : ℕ} (ν : YoungDiagram) (hν : ν.co
     obtain ⟨a, hab⟩ := hfrows j (mem_filter.mp hj).2
     have hrim := (hfS j (mem_filter.mp hj).2).1
     have hle : a ≤ j := hrim.le_of_rimHookRows_eq_Icc hab
-    rw [hterm (f j) a j hrim hab, alternant_comp_perm,
+    have hu := hrim.update_betaNumber_eq_comp_cycleIcc hab j.isLt
+    simp only [card_ofPartition, Nat.add_sub_cancel_left] at hu
+    rw [hu, alternant_comp_perm,
       Fin.sign_cycleIcc_of_le (Fin.le_iff_val_le_val.mpr hle),
       YoungDiagram.rimHookHeight_eq_sub hab, Units.smul_def, zsmul_eq_mul]
     simp
