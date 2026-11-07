@@ -16,12 +16,12 @@ This file develops the first-order factorization of a smooth map through displac
 basepoint. It is the analytic input for identifying point derivations on a finite-dimensional
 smooth manifold with tangent vectors.
 
-Its higher-order analogue is `taylorRemainderFactor n f x y`, the averaged `(n + 1)`-st derivative
-of `f` along the segment from `x` to `y` with the weight of Taylor's integral remainder. Evaluated
-on `n + 1` copies of `y - x`, it is the remainder of the Taylor expansion of order `n` of `f` at
-`x`, and it depends smoothly on `y`. Expanding the increment in a basis turns this remainder into
-a combination of products of `n + 1` coordinate functions vanishing at `x`, which is how the
-powers of the vanishing ideal of a point are described by vanishing derivatives.
+Its higher-order analogue is `TauCeti.taylorRemainderFactor n f x y`, the averaged `(n + 1)`-st
+derivative of `f` along the segment from `x` to `y` with the weight of Taylor's integral remainder.
+Evaluated on `n + 1` copies of `y - x`, it is the remainder of the Taylor expansion of order `n`
+of `f` at `x`, and it depends smoothly on `y`. Expanding the increment in a basis turns this
+remainder into a combination of products of `n + 1` coordinate functions vanishing at `x`, which
+is how the powers of the vanishing ideal of a point are described by vanishing derivatives.
 -/
 
 public section
@@ -140,6 +140,8 @@ theorem ContDiff.contDiff_hadamardFactor (f : E → F)
     (x : E) : ContDiff ℝ ∞ (hadamardFactor f x) := by
   simpa using ContDiff.contDiff_hadamardFactor_of_succ (⊤ : ℕ∞) f (by simpa using hf) x
 
+namespace TauCeti
+
 open scoped Nat in
 /-- The averaged `(n + 1)`-st derivative of `f` along the segment from `x` to `y`, with the weight
 `(1 - t) ^ n / n!` of the integral form of Taylor's remainder. Evaluated on `n + 1` copies of
@@ -148,6 +150,10 @@ open scoped Nat in
 noncomputable def taylorRemainderFactor (n : ℕ) (f : E → F) (x y : E) :
     ContinuousMultilinearMap ℝ (fun _ : Fin (n + 1) ↦ E) F :=
   (n ! : ℝ)⁻¹ • segmentAverage (fun t ↦ (1 - t) ^ n) (iteratedFDeriv ℝ (n + 1) f) x (y - x)
+
+end TauCeti
+
+open TauCeti
 
 /-- If `f` is `k + (n + 1)` times continuously differentiable, its Taylor remainder factor of
 order `n` is `k` times continuously differentiable in the endpoint. -/

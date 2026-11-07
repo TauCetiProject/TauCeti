@@ -74,7 +74,8 @@ theorem exists_taylor_coords {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ
       ∀ y, f y = ∑ k ∈ Finset.range (n + 1), (k ! : ℝ)⁻¹ * iteratedFDeriv ℝ k f x (fun _ ↦ y - x) +
         ∑ r, a r y * ∏ j, (b.coord (r j) y - b.coord (r j) x) := by
   have hf : ContDiff ℝ ∞ f := f.contMDiff.contDiff
-  refine ⟨fun r ↦ ⟨fun y ↦ taylorRemainderFactor n f x y (fun j ↦ b (r j)), ?_⟩, fun y ↦ ?_⟩
+  refine ⟨fun r ↦ ⟨fun y ↦ TauCeti.taylorRemainderFactor n f x y (fun j ↦ b (r j)), ?_⟩,
+    fun y ↦ ?_⟩
   · exact ((ContinuousMultilinearMap.apply ℝ (fun _ : Fin (n + 1) ↦ E) ℝ
       (fun j ↦ b (r j))).contDiff.comp
         ((hf.of_le (by simp)).contDiff_taylorRemainderFactor (k := ⊤) x)).contMDiff
@@ -82,7 +83,7 @@ theorem exists_taylor_coords {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ
     simp only [smul_eq_mul]
     congr 1
     -- Expand the increment in the basis and use multilinearity of the remainder factor.
-    set T := taylorRemainderFactor n f x y
+    set T := TauCeti.taylorRemainderFactor n f x y
     conv_lhs => rw [← b.sum_repr (y - x)]
     rw [T.map_sum]
     refine Finset.sum_congr rfl fun r _ ↦ ?_

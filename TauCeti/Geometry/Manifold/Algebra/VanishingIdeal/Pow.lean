@@ -9,7 +9,6 @@ public import TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic
 public import TauCeti.RingTheory.Derivation.DifferentialOperator
 import TauCeti.Analysis.Calculus.IteratedFDeriv.Mul
 import TauCeti.Geometry.Manifold.ContMDiffMap.ExtChartAt
-import TauCeti.Geometry.Manifold.ContMDiffMap.Hadamard
 
 /-!
 # Powers of the vanishing ideal of a point and jets of smooth functions
@@ -28,10 +27,9 @@ Grothendieck's sense of iterated commutators with multiplication operators, maps
 the value `(D f)(x)` depends only on the `m`-jet of `f` at `x`. No continuity of `D` is assumed.
 
 The inclusion of `I_x ^ (m + 1)` in the functions with vanishing `m`-jet holds because orders of
-vanishing add under multiplication. For the converse, Taylor's formula with integral remainder
-writes the chart expression of a function with vanishing `m`-jet, near `φ x`, as a combination of
-products of `m + 1` coordinate functions vanishing at `φ x` with smooth coefficients; the
-remaining discrepancy vanishes near `x` and lies in every power of `I_x`. The case `m = 1` is
+vanishing add under multiplication. The converse is Hadamard's lemma of order `m`,
+`TauCeti.mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero`, proved in
+`TauCeti.Geometry.Manifold.Algebra.VanishingIdeal.Basic`. The case `m = 1` is
 `TauCeti.mem_smoothVanishingIdeal_sq_iff_of_isInteriorPoint`.
 
 ## Main results
@@ -41,11 +39,12 @@ remaining discrepancy vanishes near `x` and lies in every power of `I_x`. The ca
   order at most `m` of `f ∘ φ⁻¹` vanish at `φ x`.
 * `TauCeti.mem_smoothVanishingIdeal_pow_succ_iff`: the same at every point of a boundaryless
   manifold.
-* `TauCeti.quotient_mk_eq_mk_iff_iteratedFDeriv_eq`: two smooth functions have the same class
-  modulo `I_x ^ (m + 1)` if and only if their chart expressions have the same derivatives of order
-  at most `m` at `φ x`.
-* `TauCeti.apply_apply_eq_of_iteratedFDeriv_eq`: a differential operator of order at most `m` on
-  `C^∞(M)` takes the same value at `x` on two functions with the same `m`-jet at `x`.
+* `TauCeti.quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff`: two smooth functions have the same
+  class modulo `I_x ^ (m + 1)` if and only if their chart expressions have the same derivatives of
+  order at most `m` at `φ x`.
+* `TauCeti.differentialOperators_apply_eq_of_iteratedFDeriv_eq`: a differential operator of order
+  at most `m` on `C^∞(M)` takes the same value at `x` on two functions with the same `m`-jet at
+  `x`.
 
 ## References
 
@@ -56,7 +55,7 @@ remaining discrepancy vanishes near `x` and lies in every power of `I_x`. The ca
 
 public section
 
-open scoped ContDiff Manifold Topology Nat
+open scoped ContDiff Manifold Topology
 
 noncomputable section
 
@@ -107,54 +106,6 @@ theorem iteratedFDeriv_comp_extChartAt_symm_eq_zero_of_mem_smoothVanishingIdeal_
         ← (hu'.iteratedFDeriv ℝ k).eq_of_nhds, ← (hv'.iteratedFDeriv ℝ k).eq_of_nhds,
         hu k hk, hv k hk, add_zero]
 
-/-- **Hadamard's lemma of order `m`.** At an interior point `x`, a smooth function whose chart
-expression has vanishing derivatives of every order at most `m` at the image of `x` lies in
-`I_x ^ (m + 1)`. -/
-theorem mem_smoothVanishingIdeal_pow_succ_of_iteratedFDeriv_eq_zero {x : M}
-    (hx : I.IsInteriorPoint x) {m : ℕ} {f : C^∞⟮I, M; ℝ⟯}
-    (hf : ∀ k ≤ m,
-      iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) = 0) :
-    f ∈ smoothVanishingIdeal I x ^ (m + 1) := by
-  -- Near `x`, write `f` as a smooth function `g` of a globally smooth localized chart `F`.
-  obtain ⟨F, hF⟩ := exists_contMDiffMap_eventuallyEq_extChartAt (I := I) x
-  obtain ⟨g, hg⟩ := exists_contMDiffMap_comp_eventuallyEq hx F hF f
-  have hFx : F x = extChartAt I x x := hF.eq_of_nhds
-  have hchart := comp_extChartAt_symm_eventuallyEq_of_eventuallyEq_comp hx hF hg
-  have hgk (k : ℕ) (hk : k ≤ m) : iteratedFDeriv ℝ k g (F x) = 0 := by
-    rw [hFx, ← (hchart.iteratedFDeriv ℝ k).eq_of_nhds]
-    exact hf k hk
-  -- Taylor's formula writes `g` as a combination of products of `m + 1` coordinate functions
-  -- vanishing at `F x`; pulling back by `F` gives an element of `I_x ^ (m + 1)`.
-  let b := Module.finBasis ℝ E
-  obtain ⟨a, ha⟩ := ContMDiffMap.exists_taylor_coords g (F x) b m
-  let c (i : Fin (Module.finrank ℝ E)) : C^∞⟮I, M; ℝ⟯ :=
-    ⟨fun y ↦ b.coord i (F y) - b.coord i (F x),
-      ((b.coord i).toContinuousLinearMap.contDiff.contMDiff.comp F.contMDiff).sub contMDiff_const⟩
-  have hc (i) (y : M) : c i y = b.coord i (F y) - b.coord i (F x) := rfl
-  let P : C^∞⟮I, M; ℝ⟯ := ∑ r, (a r).comp F * ∏ j, c (r j)
-  have hP : P ∈ smoothVanishingIdeal I x ^ (m + 1) := by
-    refine Ideal.sum_mem _ fun r _ ↦ Ideal.mul_mem_left _ _ ?_
-    have := Ideal.prod_mem_prod (s := Finset.univ)
-      (I := fun _ : Fin (m + 1) ↦ smoothVanishingIdeal I x) (x := fun j ↦ c (r j))
-      fun j _ ↦ mem_smoothVanishingIdeal_iff.mpr (by simp [hc])
-    simpa using this
-  -- The remainder `f - P` vanishes near `x`, since the Taylor polynomial of `g` at `F x` is zero.
-  have hfP : f - P ∈ smoothVanishingIdeal I x ^ (m + 1) := by
-    refine mem_smoothVanishingIdeal_pow_of_eventuallyEq_zero ?_ _
-    filter_upwards [hg] with y hy
-    have hPy : P y = ∑ r, a r (F y) * ∏ j, (b.coord (r j) (F y) - b.coord (r j) (F x)) := by
-      change ContMDiffMap.evalRingHom y P = _
-      simp only [P, map_sum, map_mul, map_prod]
-      rfl
-    have hsum : ∑ k ∈ Finset.range (m + 1),
-        (k ! : ℝ)⁻¹ * iteratedFDeriv ℝ k g (F x) (fun _ ↦ F y - F x) = 0 :=
-      Finset.sum_eq_zero fun k hk ↦ by
-        rw [hgk k (Nat.lt_succ_iff.mp (Finset.mem_range.mp hk))]
-        simp
-    rw [Pi.zero_apply, ContMDiffMap.coe_sub, Pi.sub_apply, hPy, hy, Function.comp_apply,
-      ha (F y), hsum, zero_add, sub_self]
-  simpa using add_mem hfP hP
-
 /-- **The powers of the vanishing ideal.** At an interior point `x` of a finite-dimensional
 Hausdorff real manifold, a smooth function is a finite sum of products of `m + 1` smooth functions
 vanishing at `x` if and only if its chart expression has vanishing derivatives of every order at
@@ -180,8 +131,8 @@ theorem mem_smoothVanishingIdeal_pow_succ_iff [BoundarylessManifold I M] (x : M)
 /-- **Jets as quotients.** At an interior point `x`, two smooth functions have the same class in
 `C^∞(M) / I_x ^ (m + 1)`, the space of `m`-jets at `x`, if and only if their chart expressions have
 the same derivatives of every order at most `m` at the image of `x`. -/
-theorem quotient_mk_eq_mk_iff_iteratedFDeriv_eq {x : M} (hx : I.IsInteriorPoint x) (m : ℕ)
-    (f g : C^∞⟮I, M; ℝ⟯) :
+theorem quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff {x : M} (hx : I.IsInteriorPoint x)
+    (m : ℕ) (f g : C^∞⟮I, M; ℝ⟯) :
     Ideal.Quotient.mk (smoothVanishingIdeal I x ^ (m + 1)) f =
         Ideal.Quotient.mk (smoothVanishingIdeal I x ^ (m + 1)) g ↔
       ∀ k ≤ m, iteratedFDeriv ℝ k ((f : M → ℝ) ∘ (extChartAt I x).symm) (extChartAt I x x) =
@@ -201,7 +152,8 @@ theorem quotient_mk_eq_mk_iff_iteratedFDeriv_eq {x : M} (hx : I.IsInteriorPoint 
 operator of order at most `m` on `C^∞(M)`, in the sense of iterated commutators with
 multiplication operators, takes the same value at `x` on two smooth functions whose chart
 expressions have the same derivatives of every order at most `m` at the image of `x`. -/
-theorem apply_apply_eq_of_iteratedFDeriv_eq {m : ℕ} {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
+theorem differentialOperators_apply_eq_of_iteratedFDeriv_eq {m : ℕ}
+    {D : C^∞⟮I, M; ℝ⟯ →ₗ[ℝ] C^∞⟮I, M; ℝ⟯}
     (hD : D ∈ differentialOperators ℝ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ C^∞⟮I, M; ℝ⟯ m) {x : M}
     (hx : I.IsInteriorPoint x) {f g : C^∞⟮I, M; ℝ⟯}
     (hfg : ∀ k ≤ m,
@@ -210,7 +162,7 @@ theorem apply_apply_eq_of_iteratedFDeriv_eq {m : ℕ} {D : C^∞⟮I, M; ℝ⟯ 
     D f x = D g x := by
   have hmem : f - g ∈ smoothVanishingIdeal I x ^ (m + 1) := by
     rw [← Ideal.Quotient.eq]
-    exact (quotient_mk_eq_mk_iff_iteratedFDeriv_eq hx m f g).mpr hfg
+    exact (quotient_mk_smoothVanishingIdeal_pow_succ_eq_iff hx m f g).mpr hfg
   have h := apply_mem_smul_top_of_mem_pow_smul_top hD (smoothVanishingIdeal I x)
     (x := f - g) (by simpa using hmem)
   rw [smul_eq_mul, Ideal.mul_top, map_sub, mem_smoothVanishingIdeal_iff, ContMDiffMap.coe_sub,
