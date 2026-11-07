@@ -154,7 +154,7 @@ theorem nonempty_isometry_dyadicU_or_dyadicV_of_isAddKleinFour
     simpa [x, y] using e.map_add (1, 0) (0, 1)
   have hpair : A.toFiniteBilinearModule.pairing x y =
       ((1 / 2 : ℚ) : AddCircle (1 : ℚ)) :=
-    pairing_eq_half_of_addEquiv A hA hAlt e
+    FiniteBilinearModule.pairing_eq_half_of_addEquiv A.toFiniteBilinearModule hA hAlt e
   have htwoQuad (a : A) : (2 : ℤ) • A.quadratic a = 0 := by
     have hpolar : (2 : ℕ) • A.quadratic a = 0 := by
       rw [← QuadraticMap.polar_self, A.polar_eq_pairing, hAlt]
