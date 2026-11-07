@@ -52,7 +52,7 @@ namespace TauCeti.ClassFieldTheory
 variable {K E : Type} [Field K] [NumberField K] [Field E] [Algebra K E]
 
 /-- Every place of `K` has a prime of a number field extension `M` lying over it. -/
-private theorem exists_isPrime_liesOver {M : Type} [Field M] [NumberField M] [Algebra K M]
+private theorem exists_isPrime_liesOver {M : Type} [Field M] [Algebra K M]
     (v : HeightOneSpectrum (𝓞 K)) :
     ∃ Q : Ideal (𝓞 M), Q.IsPrime ∧ Q.LiesOver v.asIdeal := by
   obtain ⟨Q, hQ, hQv⟩ := Ideal.exists_maximal_ideal_liesOver_of_isIntegral (S := 𝓞 M) v.asIdeal
@@ -71,8 +71,6 @@ private theorem exists_pow_eq_kummerField {p : ℕ} {Δ : Subgroup Kˣ}
 contains the places above `p`. -/
 private theorem isUnramifiedAt_kummerField_of_notMem {p : ℕ} [NeZero p]
     [HasEnoughRootsOfUnity K p] (S : Finset (HeightOneSpectrum (𝓞 K)))
-    [(powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex
-      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)]
     (hpS : ∀ v : HeightOneSpectrum (𝓞 K), (p : 𝓞 K) ∈ v.asIdeal → v ∈ S)
     (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ S)
     (Q : Ideal (𝓞 (kummerField E p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K))))
