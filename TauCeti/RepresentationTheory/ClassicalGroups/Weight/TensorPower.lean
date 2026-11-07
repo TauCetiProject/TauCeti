@@ -214,11 +214,13 @@ theorem weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq [Nontrivial k]
 
 /-- **Every weight of a subrepresentation of `(kⁿ)^{⊗d}` is nonnegative of total degree `d`**:
 it is a weight of the ambient tensor power. -/
-theorem nonneg_and_sum_eq_of_weightSpace_tensorPowerRep_subrepresentation_ne_bot [Nontrivial k]
+theorem nonneg_and_sum_eq_of_weightSpace_tensorPowerRep_subrepresentation_ne_bot
     (hchar : Function.Injective (weightChar k (κ := Fin n)))
     (S : Subrepresentation (tensorPowerRep k n d)) {l : Fin n → ℤ}
     (hl : weightSpace (W := S.toSubmodule) S.toRepresentation l ≠ ⊥) :
     (∀ i, 0 ≤ l i) ∧ ∑ i, l i = d := by
+  rcases subsingleton_or_nontrivial k with _ | _
+  · exact absurd (Subsingleton.elim _ _) hl
   refine (weightSpace_tensorPowerRep_ne_bot_iff_nonneg_sum_eq hchar l).mp fun hbot => hl ?_
   rw [Subrepresentation.weightSpace_toRepresentation_eq_bot_iff, hbot, inf_bot_eq]
 
