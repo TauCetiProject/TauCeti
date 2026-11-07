@@ -5,6 +5,7 @@ Authors: pi
 -/
 module
 
+public import Mathlib.Combinatorics.SimpleGraph.Bipartite
 public import Mathlib.Combinatorics.SimpleGraph.Finite
 public import TauCeti.Data.Finset.Basic
 
@@ -29,81 +30,83 @@ namespace SimpleGraph
 
 variable {V : Type*}
 
-/-- The cut with sides `S` and `Sᶜ`, regarded as a graph on all vertices. -/
-def cutGraph (S : Set V) : SimpleGraph V where
-  Adj u v := (u ∈ S ∧ v ∉ S) ∨ (v ∈ S ∧ u ∉ S)
-
-@[simp] theorem cutGraph_adj (S : Set V) (u v : V) :
-    (cutGraph S).Adj u v ↔ (u ∈ S ∧ v ∉ S) ∨ (v ∈ S ∧ u ∉ S) := Iff.rfl
-
-@[simp] theorem cutGraph_empty : cutGraph (∅ : Set V) = ⊥ := by
-  ext u v
-  simp
-
-@[simp] theorem cutGraph_univ : cutGraph (Set.univ : Set V) = ⊥ := by
-  ext u v
-  simp
-
-/-- Exchanging the two sides does not change the cut. -/
-@[simp] theorem cutGraph_compl (S : Set V) : cutGraph Sᶜ = cutGraph S := by
-  ext u v
-  simp only [cutGraph_adj, Set.mem_compl_iff]
-  tauto
-
 /-- Adding binary gauges corresponds to symmetric difference of their cuts. -/
-theorem cutGraph_symmDiff (S T : Set V) :
-    cutGraph (S ∆ T) = cutGraph S ∆ cutGraph T := by
+theorem top_between_symmDiff (S T : Set V) :
+    (⊤ : SimpleGraph V).between (S ∆ T) (S ∆ T)ᶜ =
+      (⊤ : SimpleGraph V).between S Sᶜ ∆ (⊤ : SimpleGraph V).between T Tᶜ := by
   ext u v
-  simp only [cutGraph_adj, symmDiff_def, Set.mem_union, Set.mem_sdiff,
-    sup_adj, sdiff_adj]
+  simp only [between_adj, top_adj, Set.mem_compl_iff, symmDiff_def, Set.mem_union,
+    Set.mem_sdiff, sup_adj, sdiff_adj]
   tauto
 
 section Finite
 
-variable [Fintype V] [DecidableEq V]
-
-open Classical in
 /-- Every cut contains at most as many edges of `G` as non-edges of `G`. -/
 def IsCutMinimal (G : SimpleGraph V) : Prop :=
-  ∀ S : Set V, (G ⊓ cutGraph S).edgeFinset.card ≤ (cutGraph S \ G).edgeFinset.card
+  ∀ S : Set V, (G.between S Sᶜ).edgeSet.encard ≤
+    ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeSet.encard
 
-open Classical in
-/-- The defining cut inequality for cut-minimality. -/
-theorem isCutMinimal_iff (G : SimpleGraph V) :
+variable [Fintype V] [DecidableEq V]
+
+/-- The defining cut inequality for cut-minimality, using decidable edge finsets. -/
+theorem isCutMinimal_iff (G : SimpleGraph V) [DecidableRel G.Adj] :
     G.IsCutMinimal ↔
-      ∀ S : Set V, (G ⊓ cutGraph S).edgeFinset.card ≤
-        (cutGraph S \ G).edgeFinset.card := Iff.rfl
+      ∀ (S : Set V) [DecidablePred (· ∈ S)], (G.between S Sᶜ).edgeFinset.card ≤
+        ((⊤ : SimpleGraph V).between S Sᶜ \ G).edgeFinset.card := by
+  simp only [IsCutMinimal]
+  constructor
+  · intro h S _
+    simpa only [Set.encard_eq_coe_toFinset_card, edgeFinset, Set.toFinset_card,
+      Set.fintypeCard_eq_ncard, Nat.cast_le] using h S
+  · intro h S
+    classical
+    simpa only [Set.encard_eq_coe_toFinset_card, edgeFinset, Set.toFinset_card,
+      Set.fintypeCard_eq_ncard, Nat.cast_le] using h S
 
-open Classical in
 /-- Cut-minimality says that at most half of each cut consists of edges. -/
-theorem isCutMinimal_iff_two_mul_card_inter_le (G : SimpleGraph V) :
-    G.IsCutMinimal ↔ ∀ S : Set V,
-      2 * (G.edgeFinset ∩ (cutGraph S).edgeFinset).card ≤ (cutGraph S).edgeFinset.card := by
-  simp only [isCutMinimal_iff, edgeFinset_inf, edgeFinset_sdiff]
+theorem isCutMinimal_iff_two_mul_card_inter_le (G : SimpleGraph V) [DecidableRel G.Adj] :
+    G.IsCutMinimal ↔ ∀ (S : Set V) [DecidablePred (· ∈ S)],
+      2 * (G.edgeFinset ∩ ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset).card ≤
+        ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset.card := by
+  rw [isCutMinimal_iff]
   apply forall_congr'
   intro S
-  have h := Finset.card_sdiff_add_card_inter (cutGraph S).edgeFinset G.edgeFinset
+  apply forall_congr'
+  intro _
+  have hbetween : G.between S Sᶜ = G ⊓ (⊤ : SimpleGraph V).between S Sᶜ := by
+    ext u v
+    simp only [between_adj, inf_adj, top_adj]
+    exact and_congr_right fun h ↦ (and_iff_right h.ne).symm
+  have hfin : (G.between S Sᶜ).edgeFinset =
+      (G ⊓ (⊤ : SimpleGraph V).between S Sᶜ).edgeFinset := edgeFinset_inj.mpr hbetween
+  rw [hfin, edgeFinset_inf, edgeFinset_sdiff]
+  have h := Finset.card_sdiff_add_card_inter
+    ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset G.edgeFinset
   rw [Finset.inter_comm] at h
   omega
 
-open Classical in
 /-- A graph is cut-minimal exactly when switching any cut does not reduce its edge count.
 This is the cardinality criterion used to identify minimal binary cochains. -/
-theorem isCutMinimal_iff_card_le_card_symmDiff (G : SimpleGraph V) :
-    G.IsCutMinimal ↔ ∀ S : Set V,
-      G.edgeFinset.card ≤ (G.edgeFinset ∆ (cutGraph S).edgeFinset).card := by
+theorem isCutMinimal_iff_card_le_card_symmDiff (G : SimpleGraph V) [DecidableRel G.Adj] :
+    G.IsCutMinimal ↔ ∀ (S : Set V) [DecidablePred (· ∈ S)],
+      G.edgeFinset.card ≤ (G.edgeFinset ∆ ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset).card := by
   rw [isCutMinimal_iff_two_mul_card_inter_le]
   apply forall_congr'
   intro S
+  apply forall_congr'
+  intro _
   have h := Finset.card_symmDiff_add_two_mul_card_inter
-    G.edgeFinset (cutGraph S).edgeFinset
+    G.edgeFinset ((⊤ : SimpleGraph V).between S Sᶜ).edgeFinset
   omega
+
+end Finite
 
 /-- The empty graph is cut-minimal. -/
 @[simp] theorem isCutMinimal_bot : (⊥ : SimpleGraph V).IsCutMinimal := by
-  classical
-  simp [isCutMinimal_iff]
-
-end Finite
+  intro S
+  have h : (⊥ : SimpleGraph V).between S Sᶜ = ⊥ := by
+    ext u v
+    simp [between_adj]
+  simp [h]
 
 end SimpleGraph
