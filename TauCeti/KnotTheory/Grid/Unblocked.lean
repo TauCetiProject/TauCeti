@@ -211,6 +211,27 @@ theorem forall_mem_support_relabelColumnsRenameEquiv_iff (κ : Equiv.Perm (Fin n
     fun x ↦ ⟨x.relabelColumns κ.symm, by simp⟩]
   simp only [support_relabelColumnsRenameEquiv_apply_relabelColumns, Finset.forall_mem_image]
 
+/-- The map on `GC⁻` with matrix coefficients `M`, linear over the polynomial ring: it sends the
+generator `x` with coefficient `p` to `∑ y, p * M x y • y`. -/
+noncomputable def matrixMap (M : GridState n → GridState n → MvPolynomial (Fin n) R) :
+    GridChainMinus R n →ₗ[MvPolynomial (Fin n) R] GridChainMinus R n :=
+  Finsupp.linearCombination (MvPolynomial (Fin n) R) fun x => Finsupp.equivFunOnFinite.symm (M x)
+
+/-- The matrix coefficients of the map with matrix coefficients `M`. -/
+theorem matrixMap_single_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
+    (x y : GridState n) (p : MvPolynomial (Fin n) R) :
+    matrixMap R M (Finsupp.single x p) y = p * M x y := by
+  rw [matrixMap, Finsupp.linearCombination_single, Finsupp.smul_apply, smul_eq_mul,
+    Finsupp.equivFunOnFinite_symm_apply_apply]
+
+/-- The coefficient formula for the map with matrix coefficients `M` on an arbitrary chain. -/
+@[simp]
+theorem matrixMap_apply_apply (M : GridState n → GridState n → MvPolynomial (Fin n) R)
+    (c : GridChainMinus R n) (y : GridState n) :
+    matrixMap R M c y = c.sum fun x p => p * M x y := by
+  rw [matrixMap, Finsupp.linearCombination_apply]
+  simp [Finsupp.sum_apply]
+
 /-- The map on `GC⁻` with matrix coefficients `M`, semilinear over the renaming of the variables
 by `σ`: it sends the generator `x` with coefficient `p` to `∑ y, rename σ p * M x y • y`. -/
 noncomputable def renameMatrixMap (σ : Equiv.Perm (Fin n))
