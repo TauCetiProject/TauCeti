@@ -191,7 +191,7 @@ private theorem sum_erase_top_mu_bot (hpair : {m₁, m₂} ⊆ s) (hmin₁ : ∀
     (fun x _ => (x.1.part m₂).max' ⟨m₂, x.1.mem_part_self.2 hm₂s⟩)
     (fun y hy => ?_) (fun x hx => ?_) (fun y hy => ?_) (fun x hx => ?_) (fun y hy => ?_)
   · -- The split partition joins with the atom to the top, and is not the top itself.
-    exact splitPartition_mem_erase_top_sup_pairPartition hpair hle hadj _ (hCs y)
+    exact splitPartition_mem_erase_top_sup_pairPartition hpair _ (hCs y)
       (Finset.convex_filter_erase_le hmin₁ y) (hm₂C hy) (hm₁C y)
   · -- The last position of the part through `m₂` is not `m₁`.
     obtain ⟨hu, hne⟩ := hX x hx
