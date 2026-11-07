@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.Probability.Independence.Process.Basic
-public import TauCeti.Probability.RandomMeasure.Law
+public import TauCeti.MeasureTheory.Measure.GiryMonad
 
 /-!
 # Independence of random measures from evaluations
@@ -59,7 +59,7 @@ theorem iIndepFun_measure_iff (hN : ∀ i, AEMeasurable (N i) P) :
       iIndepFun.iIndepFun_process₀
         (fun i A ↦ (Measure.measurable_coe A.property).comp_aemeasurable (hN i)) h
     apply iIndep_of_iIndep_of_le he.iIndep
-    exact fun i ↦ (Measure.comap_eq_comap_eval (N i)).le
+    exact fun i ↦ (Measure.measurableSpace_comap_eq_comap_eval (N i)).le
 
 variable {S T : Type*} [MeasurableSpace S] [MeasurableSpace T]
   {M : Ω → Measure S} {L : Ω → Measure T}
@@ -86,7 +86,7 @@ theorem indepFun_measure_iff [IsZeroOrProbabilityMeasure P]
         (fun A ↦ (Measure.measurable_coe A.property).comp_aemeasurable hM)
         (fun B ↦ (Measure.measurable_coe B.property).comp_aemeasurable hL) h
     apply indep_of_indep_of_le he
-    · exact (Measure.comap_eq_comap_eval M).le
-    · exact (Measure.comap_eq_comap_eval L).le
+    · exact (Measure.measurableSpace_comap_eq_comap_eval M).le
+    · exact (Measure.measurableSpace_comap_eq_comap_eval L).le
 
 end ProbabilityTheory
