@@ -105,11 +105,11 @@ def leftDual (L : WindingWord α) : WindingWord α := shift (-1) L.reverse
   simp [leftDual, rightDual, shift, List.map_reverse, List.map_map, Function.comp_def]
 
 /-- Two right duals preserve port order and increase every level by two. -/
-@[simp] theorem rightDual_rightDual (L : WindingWord α) : L.rightDual.rightDual = shift 2 L := by
+theorem rightDual_rightDual (L : WindingWord α) : L.rightDual.rightDual = shift 2 L := by
   simp [rightDual, shift, List.map_reverse, List.map_map, Function.comp_def, add_assoc]
 
 /-- Two left duals preserve port order and decrease every level by two. -/
-@[simp] theorem leftDual_leftDual (L : WindingWord α) : L.leftDual.leftDual = shift (-2) L := by
+theorem leftDual_leftDual (L : WindingWord α) : L.leftDual.leftDual = shift (-2) L := by
   simp [leftDual, shift, List.map_reverse, List.map_map, Function.comp_def, add_assoc]
 
 /-- Right duality is a bijection of boundary words, with left duality as inverse. -/
@@ -257,7 +257,7 @@ theorem normalize_surjective : Function.Surjective (normalize : RigidObject α �
   fun L ↦ ⟨ofWord L, normalize_ofWord L⟩
 
 /-- Double right duality of a generator is not erased by normalization. -/
-theorem normalize_rightDual_rightDual_of_ne (a : α) :
+theorem normalize_rightDual_rightDual_ne (a : α) :
     normalize (RigidObject.of a).rightDual.rightDual ≠ normalize (.of a) := by
   simp
 
