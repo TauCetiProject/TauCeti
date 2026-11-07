@@ -10,6 +10,7 @@ public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Infinity.Log
 import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Boundary
 import TauCeti.Analysis.Complex.UpperHalfPlane.Topology
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import TauCeti.MeasureTheory.Integral.IntervalIntegral.PowerBounds
 
 /-!
 # Power growth of Schwarz--Christoffel primitives at infinity
@@ -203,18 +204,8 @@ private theorem norm_schwarzChristoffelPowerRemainder_sub_le (a e : ι → ℝ)
       exact hbound t (Ioo_subset_Icc_self ht)
   have hmain :=
     norm_sub_le_integral_of_norm_deriv_le_of_le hδ1 hcont hdiff hfB hBi
-  have hint : (∫ t in δ..1, B t) ≤ η / (S + 1) * ‖z‖ ^ (S + 1) := by
-    simp only [B]
-    rw [intervalIntegral.integral_const_mul, integral_rpow (Or.inl (by simpa [S] using hsum)),
-      Real.one_rpow]
-    have hS1 : 0 < S + 1 := by dsimp [S]; linarith
-    have hδpow : 0 ≤ δ ^ (S + 1) := Real.rpow_nonneg hδ0.le _
-    calc
-      η * ‖z‖ ^ (S + 1) * ((1 - δ ^ (S + 1)) / (S + 1))
-          ≤ η * ‖z‖ ^ (S + 1) * (1 / (S + 1)) := by
-            gcongr
-            linarith
-      _ = η / (S + 1) * ‖z‖ ^ (S + 1) := by ring
+  have hint : (∫ t in δ..1, B t) ≤ η / (S + 1) * ‖z‖ ^ (S + 1) :=
+    integral_mul_rpow_le (by simpa [S] using hsum) hη (norm_nonneg z) hδ0.le
   simpa [Q, δ, S] using hmain.trans hint
 
 /-- **Power asymptotic at infinity.** If the total turning exponent is greater than `-1`,
