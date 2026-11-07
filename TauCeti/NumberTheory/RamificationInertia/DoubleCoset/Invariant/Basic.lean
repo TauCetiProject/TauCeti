@@ -11,6 +11,7 @@ public import TauCeti.GroupTheory.DoubleCoset.Map
 public import TauCeti.RepresentationTheory.Induction.Mackey.Subgroup
 public import TauCeti.RingTheory.Ideal.Pointwise
 public import TauCeti.RingTheory.Invariant.Basic
+import TauCeti.NumberTheory.RamificationInertia.Galois
 
 /-!
 # The double-coset splitting law over invariant rings

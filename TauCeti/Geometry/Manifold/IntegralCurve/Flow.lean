@@ -214,7 +214,7 @@ private theorem isOpen_isMaximalIntegralCurveFlowPoint (n : ℕ)
   refine ⟨Filter.mem_of_superset (hu.mem_nhds hqu) hup, hq⟩
 
 /-- Every initial state at time zero is a regular point of the finite-order maximal flow. -/
-private theorem isMaximalIntegralCurveFlowPoint_zero [CompleteSpace E] [FiniteDimensional ℝ E]
+private theorem isMaximalIntegralCurveFlowPoint_zero [CompleteSpace E]
     (n : ℕ) (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) :
     IsMaximalIntegralCurveFlowPoint (I := I) n v (x, 0) := by
   have hvone : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)) :=
@@ -283,9 +283,43 @@ private theorem IsMaximalIntegralCurveFlowPoint.add (n : ℕ)
   ring_nf at hadd
   simpa only [F, G, Function.comp_apply] using hadd
 
+/-- The regular times of the maximal trajectory through `x` that lie in a closed set `K`, on which
+the trajectory is continuous, form a closed set. -/
+private theorem isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter [CompleteSpace E]
+    (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
+    (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) (x : M) {K : Set ℝ}
+    (hK : IsClosed K) (hcurve : ContinuousOn (maximalIntegralCurve v x) K) :
+    IsClosed ({s : ℝ | IsMaximalIntegralCurveFlowPoint (I := I) n v (x, s)} ∩ K) := by
+  have hPopen : IsOpen {p | IsMaximalIntegralCurveFlowPoint (I := I) n v p} :=
+    isOpen_isMaximalIntegralCurveFlowPoint (I := I) n v
+  -- Restart at a nearby regular time and use continuity of the fixed maximal trajectory to make
+  -- the remaining time lie in the regular time-zero germ.
+  rw [← closure_subset_iff_isClosed]
+  intro r hr
+  have hrK : r ∈ K := hK.closure_subset_iff.mpr inter_subset_right hr
+  have hgr : ContinuousWithinAt
+      (fun s : ℝ ↦ (maximalIntegralCurve v x s, r - s)) K r :=
+    (hcurve r hrK).prodMk ((continuousAt_const.sub continuousAt_id).continuousWithinAt)
+  have hzero : (maximalIntegralCurve v x r, (0 : ℝ)) ∈
+      {p | IsMaximalIntegralCurveFlowPoint (I := I) n v p} :=
+    isMaximalIntegralCurveFlowPoint_zero (I := I) n hv _
+  have hpre : {s : ℝ | IsMaximalIntegralCurveFlowPoint (I := I) n v
+      (maximalIntegralCurve v x s, r - s)} ∈ 𝓝[K] r := by
+    have hzero' : (maximalIntegralCurve v x r, r - r) ∈
+        {p | IsMaximalIntegralCurveFlowPoint (I := I) n v p} := by
+      simpa only [sub_self] using hzero
+    exact hgr.eventually (hPopen.mem_nhds hzero')
+  obtain ⟨w, hwr, hw⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hpre
+  obtain ⟨s, hsw, hsS, hsK⟩ := mem_closure_iff_nhds.mp hr w hwr
+  have hsr : IsMaximalIntegralCurveFlowPoint (I := I) n v
+      (maximalIntegralCurve v x s, r - s) := hw ⟨hsw, hsK⟩
+  have hadd := hsS.add n hv hsr
+  ring_nf at hadd
+  exact ⟨hadd, hrK⟩
+
 /-- Every point in the natural domain is a regular point of the finite-order maximal flow. -/
 private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
-    [FiniteDimensional ℝ E] (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
+    (n : ℕ) [IsManifold I (n + 1 : ℕ) M]
     (hv : CMDiff (n + 1 : ℕ) (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     {x : M} {t : ℝ} (ht : t ∈ maximalIntegralCurveInterval v x) :
     IsMaximalIntegralCurveFlowPoint (I := I) n v (x, t) := by
@@ -310,34 +344,8 @@ private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
     exact hPopen.preimage (continuous_const.prodMk continuous_id)
   have hcurve : ContinuousOn (maximalIntegralCurve v x) K :=
     (isMIntegralCurveOn_maximalIntegralCurve hvone).continuousOn.mono hKsub
-  -- A limit of regular times is regular: restart at a nearby regular time and use continuity of
-  -- the fixed maximal trajectory to make the remaining time lie in the regular time-zero germ.
-  have hSKclosed : IsClosed (S ∩ K) := by
-    rw [← closure_subset_iff_isClosed]
-    intro r hr
-    have hrK : r ∈ K := by
-      apply (isClosed_Icc.closure_subset_iff.mpr inter_subset_right) hr
-    have hgr : ContinuousWithinAt
-        (fun s : ℝ ↦ (maximalIntegralCurve v x s, r - s)) K r := by
-      exact (hcurve r hrK).prodMk
-        ((continuousAt_const.sub continuousAt_id).continuousWithinAt)
-    have hzero :
-        (maximalIntegralCurve v x r, (0 : ℝ)) ∈ P :=
-      isMaximalIntegralCurveFlowPoint_zero (I := I) n hv _
-    have hpre : {s : ℝ | (maximalIntegralCurve v x s, r - s) ∈ P} ∈ 𝓝[K] r := by
-      have hzero' : (maximalIntegralCurve v x r, r - r) ∈ P := by
-        simpa only [sub_self] using hzero
-      exact hgr.eventually (hPopen.mem_nhds hzero')
-    obtain ⟨w, hwr, hw⟩ := mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hpre
-    obtain ⟨s, hsw, hsS, hsK⟩ :=
-      (mem_closure_iff_nhds.mp hr w hwr)
-    have hs : IsMaximalIntegralCurveFlowPoint (I := I) n v (x, s) := hsS
-    have hsr : IsMaximalIntegralCurveFlowPoint (I := I) n v
-        (maximalIntegralCurve v x s, r - s) :=
-      hw ⟨hsw, hsK⟩
-    have hadd := hs.add n hv hsr
-    ring_nf at hadd
-    exact ⟨hadd, hrK⟩
+  have hSKclosed : IsClosed (S ∩ K) :=
+    isClosed_setOf_isMaximalIntegralCurveFlowPoint_inter n hv x isClosed_Icc hcurve
   have h0K : (0 : ℝ) ∈ K := by
     exact ⟨min_le_left _ _, le_max_left _ _⟩
   have htK : t ∈ K := by
@@ -368,24 +376,22 @@ private theorem isMaximalIntegralCurveFlowPoint_of_mem [CompleteSpace E]
 
 /-- **The natural domain of the maximal flow is open.** This is openness jointly in the initial
 point and time, not merely openness of each individual maximal interval. -/
-theorem isOpen_maximalIntegralCurveFlowDomain [FiniteDimensional ℝ E]
+theorem isOpen_maximalIntegralCurveFlowDomain [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     IsOpen (maximalIntegralCurveFlowDomain v) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   let _ : IsManifold I (0 + 1 : ℕ) M := IsManifold.of_le (n := 1) (by norm_num)
   rw [isOpen_iff_mem_nhds]
   intro p hp
   exact (isMaximalIntegralCurveFlowPoint_of_mem (I := I) 0 hv hp).1
 
 /-- **Smoothness of the maximal flow.** The maximal flow of a `C^n` vector field, `1 ≤ n ≤ ∞`, on
-a finite-dimensional boundaryless manifold is jointly `C^n` in its initial point and time on its
-natural domain. -/
-theorem contMDiffOn_maximalIntegralCurve [FiniteDimensional ℝ E] {n : ℕ∞} (hn : 1 ≤ n)
+a boundaryless manifold modelled on a complete normed space is jointly `C^n` in its initial point
+and time on its natural domain. -/
+theorem contMDiffOn_maximalIntegralCurve [CompleteSpace E] {n : ℕ∞} (hn : 1 ≤ n)
     [IsManifold I n M] (hv : CMDiff n (fun y ↦ (⟨y, v y⟩ : TangentBundle I M))) :
     ContMDiffOn (I.prod 𝓘(ℝ, ℝ)) I n
       (fun p : M × ℝ ↦ maximalIntegralCurve v p.1 p.2)
       (maximalIntegralCurveFlowDomain v) := by
-  let _ : CompleteSpace E := FiniteDimensional.complete ℝ E
   intro p hp
   rw [contMDiffWithinAt_iff_nat]
   intro m hm
@@ -411,7 +417,7 @@ theorem continuousAt_maximalIntegralCurve [FiniteDimensional ℝ E]
 /-- **The ω-limit set of a forward maximal integral curve is invariant under the maximal flow.**
 If the maximal integral curve through `x` is defined for all positive time and `z` is one of its
 cluster points as `t → ∞`, then so is every point of the maximal integral curve through `z`. -/
-theorem mapClusterPt_atTop_maximalIntegralCurve [FiniteDimensional ℝ E]
+theorem mapClusterPt_atTop_maximalIntegralCurve [CompleteSpace E]
     (hv : CMDiff 1 (fun y ↦ (⟨y, v y⟩ : TangentBundle I M)))
     (hx : Ici 0 ⊆ maximalIntegralCurveInterval v x) {z : M}
     (hz : MapClusterPt z atTop (maximalIntegralCurve v x))
