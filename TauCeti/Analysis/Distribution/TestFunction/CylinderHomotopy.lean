@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Calculus.DifferentialForm.CylinderHomotopy
+public import TauCeti.Analysis.Convex.SegmentUIcc
 public import TauCeti.Analysis.Distribution.Mass.Normal
 
 /-!
@@ -265,12 +266,6 @@ section Interval
 
 variable {a b : ℝ}
 
-omit [CompleteSpace F] in
-/-- The affine time reparametrization sends `[0, 1]` into the oriented interval from `a` to `b`. -/
-private theorem mul_add_mem_uIcc {t : ℝ} (ht : t ∈ Icc (0 : ℝ) 1) : (b - a) * t + a ∈ uIcc a b := by
-  simpa [← segment_eq_uIcc, AffineMap.lineMap_apply_ring', mul_comm] using
-    lineMap_mem_segment ℝ a b ht
-
 /-- The affine reparametrization `(x, t) ↦ (x, (b - a) * t + a)` of the time line, as a
 homeomorphism of `E × ℝ` when `a ≠ b`. -/
 private def reparam (a b : ℝ) (hab : a ≠ b) : E × ℝ ≃ₜ E × ℝ :=
@@ -309,7 +304,7 @@ omit [NormedSpace ℝ E] [CompleteSpace F] in
 private theorem reparamPreimage_spec (hab : a ≠ b) (hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω) :
     ∀ p ∈ reparamPreimage hab W, p.2 ∈ Icc (0 : ℝ) 1 → p.1 ∈ Ω := fun p hp ht ↦ by
   rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage] at hp
-  simpa [reparam_apply] using hW _ hp (by simpa [reparam_apply] using mul_add_mem_uIcc ht)
+  simpa [reparam_apply] using hW _ hp (by simpa [reparam_apply] using sub_mul_add_mem_uIcc ht)
 
 omit [NormedSpace ℝ E] [CompleteSpace F] in
 private theorem isCompact_inter_preimage_reparam (hab : a ≠ b) (K : Set (E × ℝ))
@@ -331,6 +326,23 @@ private theorem curryLeft_compContinuousLinearMap_reparam (hab : a ≠ b) {m : �
   simpa [fderiv_reparam, Function.comp_def, Matrix.vecCons] using
     α.toMultilinearMap.cons_smul (fun i ↦ (v i, 0)) (b - a) (0, 1)
 
+omit [CompleteSpace F] in
+/-- The pullback along the reparametrization is given by the pullback formula at every point of
+`E × ℝ`, including points off the preimage of `W`, where both sides vanish. -/
+private theorem pullbackCLM_reparam_apply (hab : a ≠ b) {m : ℕ}
+    (ω : 𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F)) (p : E × ℝ) :
+    pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
+        (isCompact_inter_preimage_reparam hab) ω p =
+      (ω (reparam a b hab p)).compContinuousLinearMap (fderiv ℝ (reparam a b hab) p) := by
+  by_cases hp : p ∈ reparamPreimage hab W
+  · exact pullbackCLM_apply_of_mem _ hp
+  · have hp' : reparam a b hab p ∉ tsupport ω := fun h ↦ hp <| by
+      rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage]
+      exact ω.tsupport_subset h
+    rw [pullbackCLM_apply_of_notMem _ hp, image_eq_zero_of_notMem_tsupport hp']
+    ext v
+    simp
+
 variable {hW : ∀ p ∈ W, p.2 ∈ uIcc a b → p.1 ∈ Ω}
 
 omit [CompleteSpace F] in
@@ -349,15 +361,10 @@ private theorem pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hab : a ≠ b)
   ext ω x : 2
   rw [ContinuousLinearMap.comp_apply,
     pullbackCLM_prodMk_left_apply (reparamPreimage_spec hab hW) ht,
-    pullbackCLM_prodMk_left_apply hW (hs ▸ mul_add_mem_uIcc ht)]
-  by_cases hxt : (x, t) ∈ reparamPreimage hab W
-  · rw [pullbackCLM_apply_of_mem _ hxt, reparam_apply, hs]
-    ext v
-    simp [fderiv_reparam, Function.comp_def]
-  · have hxs : (x, s) ∉ tsupport ω := fun h ↦ hxt <| by
-      rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage, reparam_apply]
-      exact hs ▸ ω.tsupport_subset h
-    rw [pullbackCLM_apply_of_notMem _ hxt, image_eq_zero_of_notMem_tsupport hxs]
+    pullbackCLM_prodMk_left_apply hW (hs ▸ sub_mul_add_mem_uIcc ht), pullbackCLM_reparam_apply,
+    reparam_apply, hs]
+  ext v
+  simp [fderiv_reparam, Function.comp_def]
 
 /-- The **cylinder homotopy operator over an oriented interval** on test forms: the continuous
 linear map sending a test `(k + 1)`-form `ω` on `W` to the test `k`-form
@@ -392,15 +399,7 @@ theorem coe_intervalCylinderHomotopyCLM (ω : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1
     coe_cylinderHomotopyCLM, Pi.smul_apply, cylinderHomotopy_apply, cylinderHomotopy_apply,
     ← intervalIntegral.integral_smul]
   refine intervalIntegral.integral_congr fun t _ ↦ ?_
-  by_cases hxt : (x, t) ∈ reparamPreimage hab W
-  · rw [pullbackCLM_apply_of_mem _ hxt, curryLeft_compContinuousLinearMap_reparam,
-      reparam_apply]
-  · have hxt' : ((x, (b - a) * t + a) : E × ℝ) ∉ tsupport ω := fun h ↦ hxt <| by
-      rw [SetLike.mem_coe.symm, coe_reparamPreimage, mem_preimage, reparam_apply]
-      exact ω.tsupport_subset h
-    rw [pullbackCLM_apply_of_notMem _ hxt, image_eq_zero_of_notMem_tsupport hxt']
-    ext v
-    simp
+  rw [pullbackCLM_reparam_apply, curryLeft_compContinuousLinearMap_reparam, reparam_apply]
 
 /-- The operator over an oriented interval is `x ↦ ∫ t in a..b, ω(x, t)(∂ₜ, ·)`. -/
 @[simp]
@@ -420,7 +419,7 @@ theorem intervalCylinderHomotopyCLM_self (hW : ∀ p ∈ W, p.2 ∈ uIcc a a →
 /-- **Orientation reversal**: exchanging the endpoints changes the sign of the operator. -/
 theorem intervalCylinderHomotopyCLM_symm (hW' : ∀ p ∈ W, p.2 ∈ uIcc b a → p.1 ∈ Ω) :
     (intervalCylinderHomotopyCLM b a hW' : 𝓓(W, (E × ℝ) [⋀^Fin (k + 1)]→L[ℝ] F) →L[ℝ] _) =
-      -intervalCylinderHomotopyCLM a b hW := by
+      -intervalCylinderHomotopyCLM a b fun p hp ht ↦ hW' p hp (uIcc_comm a b ▸ ht) := by
   ext ω x : 2
   simp [intervalIntegral.integral_symm a b]
 
@@ -445,7 +444,7 @@ theorem tsupport_intervalCylinderHomotopyCLM_subset (ω : 𝓓(W, (E × ℝ) [�
   rintro _ ⟨p, ⟨hp, -, ht⟩, rfl⟩
   have hp' := (tsupport_pullbackCLM_subset ω hp).2
   rw [mem_preimage, reparam_apply] at hp'
-  exact ⟨_, ⟨hp', mem_univ _, mul_add_mem_uIcc ht⟩, rfl⟩
+  exact ⟨_, ⟨hp', mem_univ _, sub_mul_add_mem_uIcc ht⟩, rfl⟩
 
 /-- The operator over an oriented interval is pointwise bounded by `|b - a|` times any bound for
 the form along `{x} × [[a, b]]`, for the sup norm on `E × ℝ`. -/
@@ -454,7 +453,44 @@ theorem norm_intervalCylinderHomotopyCLM_apply_le (ω : 𝓓(W, (E × ℝ) [⋀^
     ‖intervalCylinderHomotopyCLM a b hW ω x‖ ≤ |b - a| * B := by
   rw [coe_intervalCylinderHomotopyCLM, Pi.smul_apply, norm_smul, Real.norm_eq_abs]
   gcongr
-  exact norm_cylinderHomotopy_le fun t ht ↦ h _ (mul_add_mem_uIcc ht)
+  exact norm_cylinderHomotopy_le fun t ht ↦ h _ (sub_mul_add_mem_uIcc ht)
+
+omit [CompleteSpace F] in
+/-- The slice at time `1` of the reparametrized form is the slice at time `b`. -/
+private theorem pullbackCLM_prodMk_one_comp_pullbackCLM_reparam (hab : a ≠ b) {m : ℕ} :
+    (pullbackCLM (fun x ↦ (x, (1 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left (reparamPreimage_spec hab hW)
+          ⟨zero_le_one, le_rfl⟩) ∘L
+      pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
+        (isCompact_inter_preimage_reparam hab) :
+        𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
+      pullbackCLM (fun x ↦ (x, b)) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left hW right_mem_uIcc) :=
+  pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨zero_le_one, le_rfl⟩ (by ring)
+
+omit [CompleteSpace F] in
+/-- The slice at time `0` of the reparametrized form is the slice at time `a`. -/
+private theorem pullbackCLM_prodMk_zero_comp_pullbackCLM_reparam (hab : a ≠ b) {m : ℕ} :
+    (pullbackCLM (fun x ↦ (x, (0 : ℝ))) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left (reparamPreimage_spec hab hW)
+          ⟨le_rfl, zero_le_one⟩) ∘L
+      pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
+        (isCompact_inter_preimage_reparam hab) :
+        𝓓(W, (E × ℝ) [⋀^Fin m]→L[ℝ] F) →L[ℝ] _) =
+      pullbackCLM (fun x ↦ (x, a)) (contDiffOn_id.prodMk contDiffOn_const)
+        (isCompact_inter_preimage_prodMk_left hW left_mem_uIcc) :=
+  pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨le_rfl, zero_le_one⟩ (by ring)
+
+/-- **Naturality of `d`**: for `a ≠ b`, `h_{a,b} ∘ d` is the unit-interval `h ∘ d` applied after
+the pullback along the reparametrization. -/
+private theorem intervalCylinderHomotopyCLM_comp_extDerivCLM_of_ne (hab : a ≠ b) :
+    (intervalCylinderHomotopyCLM a b hW ∘L extDerivCLM :
+        𝓓(W, (E × ℝ) [⋀^Fin k]→L[ℝ] F) →L[ℝ] _) =
+      (cylinderHomotopyCLM (reparamPreimage_spec hab hW) ∘L extDerivCLM) ∘L
+        pullbackCLM (reparam a b hab) (contDiff_reparam hab).contDiffOn
+          (isCompact_inter_preimage_reparam hab) := by
+  rw [intervalCylinderHomotopyCLM_of_ne hab, ContinuousLinearMap.comp_assoc,
+    pullbackCLM_comp_extDerivCLM, ContinuousLinearMap.comp_assoc]
 
 /-- **The homotopy formula over an oriented interval** on test forms:
 `h_{a,b} ∘ d = ι_b^* - ι_a^* - d ∘ h_{a,b}` on test `(k + 1)`-forms, where `ιₜ^*` is the pullback
@@ -470,14 +506,11 @@ theorem intervalCylinderHomotopyCLM_comp_extDerivCLM :
   by_cases hab : a = b
   · subst hab
     simp
-  rw [intervalCylinderHomotopyCLM_of_ne hab, intervalCylinderHomotopyCLM_of_ne hab,
-    ContinuousLinearMap.comp_assoc, pullbackCLM_comp_extDerivCLM, ← ContinuousLinearMap.comp_assoc,
-    cylinderHomotopyCLM_comp_extDerivCLM, ContinuousLinearMap.sub_comp,
-    ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc,
-    pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨zero_le_one, le_rfl⟩
-      (s := b) (by ring),
-    pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨le_rfl, zero_le_one⟩
-      (s := a) (by ring)]
+  rw [intervalCylinderHomotopyCLM_comp_extDerivCLM_of_ne hab, cylinderHomotopyCLM_comp_extDerivCLM,
+    intervalCylinderHomotopyCLM_of_ne hab]
+  simp only [ContinuousLinearMap.sub_comp, ContinuousLinearMap.comp_assoc,
+    pullbackCLM_prodMk_one_comp_pullbackCLM_reparam (hW := hW) hab,
+    pullbackCLM_prodMk_zero_comp_pullbackCLM_reparam (hW := hW) hab]
 
 /-- **The homotopy formula over an oriented interval on test `0`-forms**:
 `h_{a,b} ∘ d = ι_b^* - ι_a^*`, where `ιₜ^*` is the pullback along the slice `x ↦ (x, t)`. -/
@@ -491,13 +524,11 @@ theorem intervalCylinderHomotopyCLM_comp_extDerivCLM_finZero :
   by_cases hab : a = b
   · subst hab
     simp
-  rw [intervalCylinderHomotopyCLM_of_ne hab, ContinuousLinearMap.comp_assoc,
-    pullbackCLM_comp_extDerivCLM, ← ContinuousLinearMap.comp_assoc,
-    cylinderHomotopyCLM_comp_extDerivCLM_finZero, ContinuousLinearMap.sub_comp,
-    pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨zero_le_one, le_rfl⟩
-      (s := b) (by ring),
-    pullbackCLM_prodMk_left_comp_pullbackCLM_reparam (hW := hW) hab ⟨le_rfl, zero_le_one⟩
-      (s := a) (by ring)]
+  rw [intervalCylinderHomotopyCLM_comp_extDerivCLM_of_ne hab,
+    cylinderHomotopyCLM_comp_extDerivCLM_finZero]
+  simp only [ContinuousLinearMap.sub_comp,
+    pullbackCLM_prodMk_one_comp_pullbackCLM_reparam (hW := hW) hab,
+    pullbackCLM_prodMk_zero_comp_pullbackCLM_reparam (hW := hW) hab]
 
 end Interval
 
@@ -653,9 +684,8 @@ theorem mass_comp_intervalCylinderHomotopyCLM_comp_extDerivCLM_finZero_le
 
 omit [NormedSpace ℝ V] in
 /-- **Products with an oriented interval preserve locally finite mass.** If a map `T` on test
-`k`-forms on `Ω` has locally finite mass, so does `[[a, b]] × T = T ∘ h_{a,b}` on `W`. On a compact
-`K ⊆ W` its order-zero bound is `|b - a|` times that of `T` on the projection to `E` of the part of
-`K` over `[[a, b]]`. -/
+`k`-forms on `Ω` has locally finite mass, so does `[[a, b]] × T = T ∘ h_{a,b}` on `W`. For the
+quantitative local mass bound see `Distribution.localMass_comp_intervalCylinderHomotopyCLM_le`. -/
 theorem HasLocallyFiniteMass.comp_intervalCylinderHomotopyCLM
     {T : 𝓓(Ω, E [⋀^Fin k]→L[ℝ] F) → V} (hT : HasLocallyFiniteMass T) :
     HasLocallyFiniteMass (T ∘ intervalCylinderHomotopyCLM a b hW) := by
