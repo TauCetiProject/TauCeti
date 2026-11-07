@@ -143,6 +143,17 @@ theorem adicCompletionEquivEnd_of (hι : IsInjectiveEnvelope ι) (r : R) (x : E)
   obtain ⟨n, hn⟩ := ((maximalIdeal R).primaryComponent_mem E x).mp (hι.mem_primaryComponent x)
   exact hι.adicCompletionEquivEnd_apply_of_mem _ hn (AdicCompletion.evalₐ_of _ n r)
 
+/-- Over a complete Noetherian local ring, every endomorphism of the injective hull of the
+residue field is scalar multiplication. -/
+theorem exists_eq_smul_id [IsAdicComplete (maximalIdeal R) R]
+    (hι : IsInjectiveEnvelope ι) (f : Module.End R E) : ∃ r : R, f = r • LinearMap.id := by
+  obtain ⟨r, hr⟩ := (AdicCompletion.of_bijective (maximalIdeal R) R).surjective
+    (hι.adicCompletionEquivEnd.symm f)
+  refine ⟨r, LinearMap.ext fun x ↦ ?_⟩
+  have h := hι.adicCompletionEquivEnd_of r x
+  rw [hr, AlgEquiv.apply_symm_apply] at h
+  exact h
+
 /-- The completed scalar of an endomorphism `φ` has residue `[r]` modulo `𝔪ⁿ` whenever `φ` is
 multiplication by `r` on the elements killed by `𝔪ⁿ`. -/
 theorem evalₐ_adicCompletionEquivEnd_symm (hι : IsInjectiveEnvelope ι) (φ : Module.End R E)
