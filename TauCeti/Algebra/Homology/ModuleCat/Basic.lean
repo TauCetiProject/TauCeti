@@ -164,14 +164,14 @@ theorem Hom.boundaryMap_injective (φ : K ⟶ L) (i : ι) {j : ι}
   fun _ _ hxy ↦ Subtype.ext (hφ (congrArg Subtype.val hxy))
 
 /-- Let `K ⟶ L ⟶ M` be chain maps of complexes of modules, let `h = c.prev i` and
-`j = c.next i`. If the sequence `K ⟶ L ⟶ M` is exact in degrees `i` and `j`, `L ⟶ M` is
+`j = c.next i`. If the sequence `K ⟶ L ⟶ M` is exact in degree `i`, `L ⟶ M` is
 surjective in degree `h` and `M` is exact in degree `i`, then the induced maps on the images of
 the differentials `K.X i ⟶ K.X j`, `L.X i ⟶ L.X j` and `M.X i ⟶ M.X j` form a sequence that is
 exact in the middle. -/
 theorem Hom.exact_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} {h i j : ι} (hh : c.prev i = h)
     (hj : c.next i = j) (hi : Function.Exact (φ.f i).hom (ψ.f i).hom)
-    (hj' : Function.Exact (φ.f j).hom (ψ.f j).hom) (hψ : Function.Surjective (ψ.f h).hom)
-    (hM : M.ExactAt i) : Function.Exact (φ.boundaryMap i j) (ψ.boundaryMap i j) := by
+    (hψ : Function.Surjective (ψ.f h).hom) (hM : M.ExactAt i) :
+    Function.Exact (φ.boundaryMap i j) (ψ.boundaryMap i j) := by
   rintro ⟨_, x, rfl⟩
   constructor
   · intro hx
@@ -187,9 +187,11 @@ theorem Hom.exact_boundaryMap {φ : K ⟶ L} {ψ : L ⟶ M} {h i j : ι} (hh : c
       exact hz.symm)
     refine ⟨⟨(K.d i j).hom x', x', rfl⟩, Subtype.ext ?_⟩
     rw [coe_boundaryMap, ← Hom.comm_apply, hx'', map_sub, d_comp_d_apply, sub_zero]
-  · rintro ⟨x', hx'⟩
+  · rintro ⟨⟨_, y, rfl⟩, hx'⟩
     rw [← hx']
-    exact Subtype.ext (hj'.apply_apply_eq_zero _)
+    refine Subtype.ext ?_
+    simp only [coe_boundaryMap, ← Hom.comm_apply, hi.apply_apply_eq_zero, map_zero]
+    rfl
 
 end BoundaryMap
 
