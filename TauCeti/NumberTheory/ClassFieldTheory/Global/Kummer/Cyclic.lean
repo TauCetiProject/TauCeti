@@ -49,6 +49,53 @@ namespace TauCeti.ClassFieldTheory
 variable {K L : Type} [Field K] [NumberField K] [Field L] [NumberField L] [Algebra K L]
   [IsGalois K L]
 
+/-- If the places outside a finite set `S` containing the ramified support of `F/K` are unramified,
+then every place of `K` outside `S` has an unramified place of `F` above it. -/
+private theorem exists_liesOver_isUnramifiedAt_of_notMem_finset {F : Type} [Field F]
+    [NumberField F] [Algebra K F] (S : Finset (HeightOneSpectrum (𝓞 K)))
+    (hS : TauCeti.NumberField.ramifiedSupport K F ⊆ S) (v : HeightOneSpectrum (𝓞 K))
+    (hv : v ∉ (S : Set _)) :
+    ∃ w : HeightOneSpectrum (𝓞 F), w.asIdeal.LiesOver v.asIdeal ∧
+      Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
+  obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 F) v
+  have : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
+  refine ⟨w, inferInstance, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_
+    w.asIdeal⟩
+  exact fun hram ↦ hv (hS hram)
+
+/-- The auxiliary cardinality count: if `F'` is a degree-`p` subextension of the Kummer field of
+the `S`-units and `p ^ #T = [M : F']`, then `#T + 1 = #S_∞(K) + #S`. -/
+private theorem card_add_one_eq_of_finrank_kummerField {p : ℕ} (hp : p.Prime)
+    [HasEnoughRootsOfUnity K p]
+    (S T : Finset (HeightOneSpectrum (𝓞 K)))
+    (hroots : ∀ a ∈ (S : Set (HeightOneSpectrum (𝓞 K))).unit K,
+      ∃ x : SeparableClosure K, x ^ p = algebraMap K (SeparableClosure K) (a : K))
+    (F' : IntermediateField K (kummerField (SeparableClosure K) p
+      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)))
+    (hcard : p ^ T.card = Module.finrank F' (kummerField (SeparableClosure K) p
+      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)))
+    (hF' : Module.finrank K F' = p) :
+    T.card + 1 = Fintype.card (InfinitePlace K) + S.card := by
+  classical
+  have : NeZero p := ⟨hp.ne_zero⟩
+  have : (powMonoidHom p : Kˣ →* Kˣ).range.IsFiniteRelIndex
+      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K) :=
+    ⟨by rw [relIndex_range_powMonoidHom_sUnits_numberField]; exact pow_ne_zero _ hp.ne_zero⟩
+  have hdegree : Module.finrank K (kummerField (SeparableClosure K) p
+      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) =
+      p ^ (Fintype.card (InfinitePlace K) + S.card) := by
+    rw [finrank_kummerField hroots, relIndex_range_powMonoidHom_sUnits_numberField,
+      Nat.card_coe_set_eq, Set.ncard_coe_finset]
+  -- Bypass intermediate-field module inference when applying the tower formula.
+  have : Module.Free F' (kummerField (SeparableClosure K) p
+      ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)) := Module.Free.of_divisionRing _ _
+  apply Nat.pow_right_injective hp.two_le
+  calc
+    p ^ (T.card + 1) = p ^ T.card * p := pow_succ _ _
+    _ = Module.finrank F' _ * Module.finrank K F' := congrArg₂ (· * ·) hcard hF'.symm
+    _ = Module.finrank K _ := (mul_comm _ _).trans (Module.finrank_mul_finrank K F' _)
+    _ = p ^ (Fintype.card (InfinitePlace K) + S.card) := hdegree
+
 /-- **Auxiliary Kummer norms for a prime-degree extension.** Suppose that `L/K` has prime
 degree `p` and `K` contains the `p`-th roots of unity. Given any finite set `S₀` of finite
 places of `K`, there are finite sets `S ⊇ S₀` and `T` such that `S` generates the class group
@@ -86,14 +133,8 @@ theorem exists_auxiliaryKummerNorms_of_finrank_prime {p : ℕ} (hp : p.Prime)
   obtain ⟨S, hS₀S, hcl, hpS⟩ := ClassGroup.exists_finset_superset_closure_classGroupMk_image_eq_top
     (S₀ ∪ TauCeti.NumberField.ramifiedSupport K F) (a := (p : 𝓞 K))
     (Nat.cast_ne_zero.mpr hp.ne_zero)
-  have hur (v : HeightOneSpectrum (𝓞 K)) (hv : v ∉ (S : Set _)) :
-      ∃ w : HeightOneSpectrum (𝓞 F), w.asIdeal.LiesOver v.asIdeal ∧
-        Algebra.IsUnramifiedAt (𝓞 K) w.asIdeal := by
-    obtain ⟨w, hw⟩ := HeightOneSpectrum.under_surjective (𝓞 K) (𝓞 F) v
-    have : w.asIdeal.LiesOver v.asIdeal := hw ▸ inferInstance
-    refine ⟨w, inferInstance, TauCeti.NumberField.isUnramifiedAway_ramifiedSupport v ?_
-      w.asIdeal⟩
-    exact fun hram ↦ hv (hS₀S (Finset.mem_union_right _ hram))
+  have hur := exists_liesOver_isUnramifiedAt_of_notMem_finset (F := F) S
+    (Finset.subset_union_right.trans hS₀S)
   let M := kummerField (SeparableClosure K) p ((S : Set (HeightOneSpectrum (𝓞 K))).unit K)
   have hFM : F ≤ M := TauCeti.NumberField.le_kummerField_sUnits_of_isCyclic hcl hF.dvd hur
   let F' := IntermediateField.restrict hFM
@@ -113,18 +154,7 @@ theorem exists_auxiliaryKummerNorms_of_finrank_prime {p : ℕ} (hp : p.Prime)
   obtain ⟨T, hST, hcard, hsurj, hnorm⟩ :=
     exists_auxiliaryKummerIdeleClassSubgroup_le_range_ideleClassNormMap hp S hpS
       hζ.toInteger_isPrimitiveRoot hroots F'
-  have hdegree : Module.finrank K M = p ^ (Fintype.card (InfinitePlace K) + S.card) := by
-    rw [finrank_kummerField hroots, relIndex_range_powMonoidHom_sUnits_numberField,
-      Nat.card_coe_set_eq, Set.ncard_coe_finset]
-  -- Bypass intermediate-field module inference when applying the tower formula.
-  have : Module.Free F' M := Module.Free.of_divisionRing F' M
-  have hcount : T.card + 1 = Fintype.card (InfinitePlace K) + S.card := by
-    apply Nat.pow_right_injective hp.two_le
-    calc
-      p ^ (T.card + 1) = p ^ T.card * p := pow_succ _ _
-      _ = Module.finrank F' M * Module.finrank K F' := congrArg₂ (· * ·) hcard hF'.symm
-      _ = Module.finrank K M := (mul_comm _ _).trans (Module.finrank_mul_finrank K F' M)
-      _ = p ^ (Fintype.card (InfinitePlace K) + S.card) := hdegree
+  have hcount := card_add_one_eq_of_finrank_kummerField hp S T hroots F' hcard hF'
   refine ⟨S, Finset.union_subset_left hS₀S, hcl, hpS, T, hST, hcount, hsurj, ?_⟩
   exact (range_ideleClassNormMap_eq_of_algEquiv e).symm ▸ hnorm
 
