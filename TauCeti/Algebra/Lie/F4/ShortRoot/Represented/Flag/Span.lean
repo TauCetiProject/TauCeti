@@ -476,7 +476,8 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
       (f4ShortRootCotangentFlagBasis.baseChange A)
       (fun i : Fin f4ShortRootRepresentedIdealRank =>
         Fin.castAdd f4ShortRootRepresentedComplementRank (Fin.castAdd 26 i))
-      (fun i ↦ i.isLt) (hIdeal hjmem) hcoord
+      (fun i ↦ by simp) (by simpa only [f4ShortRootCotangentFlagIdeal] using hIdeal hjmem)
+      hcoord
     rw [f4ShortRootCotangentFlagWeight_of_ideal j hjIdeal,
       f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal] at hweight
     omega
@@ -493,25 +494,15 @@ theorem f4ShortRoot_adjoint_blockTriangular_of_preserves_flag
         (f4ShortRootCotangentFlagBasis.baseChange A)
         (fun i : Fin (f4ShortRootRepresentedIdealRank + 26) =>
           Fin.castAdd f4ShortRootRepresentedComplementRank i)
-        (fun i ↦ i.isLt) (hRange hjmem) hcoord
+        (fun i ↦ by simp) (by simpa only [f4ShortRootCotangentFlagRange] using hRange hjmem)
+        hcoord
       have hjWeight : f4ShortRootCotangentFlagWeight j = 1 :=
         f4ShortRootCotangentFlagWeight_of_quotient j hjIdeal hjRange
-      have hiWeight : 1 ≤ f4ShortRootCotangentFlagWeight i := by
-        by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · rw [f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal]
-          omega
-        · rw [f4ShortRootCotangentFlagWeight_of_quotient i hiIdeal hiRange]
+      have hiWeight := one_le_f4ShortRootCotangentFlagWeight i hiRange
       omega
     · have hjWeight : f4ShortRootCotangentFlagWeight j = 0 :=
         f4ShortRootCotangentFlagWeight_of_complement j hjRange
-      have hiNonneg : 0 ≤ f4ShortRootCotangentFlagWeight i := by
-        by_cases hiIdeal : i.val < f4ShortRootRepresentedIdealRank
-        · rw [f4ShortRootCotangentFlagWeight_of_ideal i hiIdeal]
-          omega
-        · by_cases hiRange : i.val < f4ShortRootRepresentedIdealRank + 26
-          · rw [f4ShortRootCotangentFlagWeight_of_quotient i hiIdeal hiRange]
-            omega
-          · rw [f4ShortRootCotangentFlagWeight_of_complement i hiRange]
+      have hiNonneg := f4ShortRootCotangentFlagWeight_nonneg i
       omega
 
 end

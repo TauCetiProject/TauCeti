@@ -147,6 +147,18 @@ theorem f4ShortRootCotangentFlagWeight_of_complement
   have hi' : ¬ i.val < f4ShortRootRepresentedIdealRank := by omega
   simp [f4ShortRootCotangentFlagWeight, hi', hi]
 
+/-- The weights of the adapted flag are nonnegative. -/
+theorem f4ShortRootCotangentFlagWeight_nonneg (i) : 0 ≤ f4ShortRootCotangentFlagWeight i := by
+  unfold f4ShortRootCotangentFlagWeight
+  split_ifs <;> omega
+
+/-- Indices in the represented ideal or quotient block have weight at least one. -/
+theorem one_le_f4ShortRootCotangentFlagWeight (i)
+    (hi : i.val < f4ShortRootRepresentedIdealRank + 26) :
+    1 ≤ f4ShortRootCotangentFlagWeight i := by
+  unfold f4ShortRootCotangentFlagWeight
+  split_ifs <;> omega
+
 /-- The first block of the represented-range basis is the represented-ideal basis. -/
 @[simp]
 theorem f4ShortRootRepresentedRangeBasis_ideal
