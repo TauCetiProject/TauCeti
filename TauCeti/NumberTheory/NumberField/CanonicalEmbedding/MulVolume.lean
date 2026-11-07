@@ -31,8 +31,8 @@ mixed space leaves the volume of every set unchanged.
 * `NumberField.mixedEmbedding.abs_algebraNorm`: the absolute value of that norm is
   `mixedEmbedding.norm c`;
 * `NumberField.mixedEmbedding.abs_det_changeOfVariables`: the real determinant of the
-  `mixedSpace K`-linear change of variables `z ↦ ∑ i, z i • b i` of `ι → mixedSpace K`, for a
-  `K`-basis `b` of `ι → K`, is `|N (det b)|`;
+  `mixedSpace K`-linear change of variables `z ↦ ∑ i, z i • b i` of `ι → mixedSpace K`, for any
+  family `b` of vectors of `ι → K`, is `|N (det b)|`;
 * `NumberField.mixedEmbedding.volume_image_mul_left`: multiplication by `c` scales volume by
   `mixedEmbedding.norm c`;
 * `NumberField.mixedEmbedding.integral_comp_mul_left`: the corresponding change of variables
@@ -121,12 +121,12 @@ open scoped Classical in
 /-- The real determinant of the change of variables `z ↦ ∑ i, z i • b i` of `ι → mixedSpace K` is
 the algebra norm of `det b`, up to sign. -/
 theorem abs_det_changeOfVariables {ι : Type*} [Fintype ι] [DecidableEq ι]
-    (b : Module.Basis ι K (ι → K)) :
+    (b : ι → ι → K) :
     |LinearMap.det
       ((Matrix.toLin' (Matrix.of fun j i ↦ mixedEmbedding K (b i j))).restrictScalars ℝ)| =
-      |(Algebra.norm ℚ (Matrix.of ⇑b).det : ℝ)| := by
+      |(Algebra.norm ℚ (Matrix.of b).det : ℝ)| := by
   have hA : (Matrix.of fun j i ↦ mixedEmbedding K (b i j)) =
-      ((Matrix.of ⇑b).map (mixedEmbedding K)).transpose := rfl
+      ((Matrix.of b).map (mixedEmbedding K)).transpose := rfl
   rw [LinearMap.det_restrictScalars, LinearMap.det_toLin', hA, Matrix.det_transpose,
     ← RingHom.mapMatrix_apply, ← RingHom.map_det, abs_algebraNorm, norm_eq_norm]
   simp
