@@ -166,7 +166,7 @@ theorem differentExponent_add_one_eq_of_pow_eq_of_gcd_ord_eq_one {y : F'} {n : �
     rintro rfl
     exact hn Nat.cast_zero
   obtain ⟨z, c, hgenz, hz, hc, hz0⟩ :=
-    exists_adjoin_eq_top_pow_eq_ord_eq_one k F (P'.restrict k F) hgen hy hu hn0 h
+    exists_adjoin_eq_top_pow_eq_ord_eq_one k F (P'.restrict k F) hgen hy hu h
   -- `d ≤ (n - 1) · ord_{P'} z`, while `n · ord_{P'} z = e(P' ∣ P) ≤ d + 1`; so `ord_{P'} z = 1`.
   have hd := differentExponent_le_mul_ord_of_pow_eq k F hgenz hz hn
     ((P'.restrict k F).mem_integers_iff_ord_nonneg.mpr (hc ▸ zero_le_one)) hz0
