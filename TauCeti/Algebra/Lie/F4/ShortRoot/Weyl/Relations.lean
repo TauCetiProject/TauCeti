@@ -61,46 +61,12 @@ private def negativeMatrix (i : Fin 4) : Matrix (Fin 26) (Fin 26) ℤ :=
 
 private theorem weylMatrix_certificate : ∀ i : Fin 4,
     positiveMatrix i * negativeMatrix i * positiveMatrix i = weylMatrix i := by
-  intro i
-  fin_cases i <;> decide +kernel
-
--- The explicit instance lets typeclass synthesis handle the matrix projection under two
--- finite quantifiers without unfolding the Coxeter matrix.
-private instance (i j : Fin 4) (n : ℕ) : Decidable (CoxeterMatrix.F₄ i j = n) :=
-  inferInstance
-
--- Remove List.prod's trailing identity before kernel computation and balance four-factor
--- products. Otherwise nested matrix multiplication repeatedly recomputes the inner products.
-private theorem braid_certificate_two : ∀ i j : Fin 4, CoxeterMatrix.F₄ i j = 2 →
-    weylMatrix i * weylMatrix j = weylMatrix j * weylMatrix i := by
   decide +kernel
 
-private theorem braid_certificate_three : ∀ i j : Fin 4, CoxeterMatrix.F₄ i j = 3 →
-    weylMatrix i * weylMatrix j * weylMatrix i =
-      weylMatrix j * weylMatrix i * weylMatrix j := by
-  decide +kernel
-
-private theorem braid_certificate_four : ∀ i j : Fin 4, CoxeterMatrix.F₄ i j = 4 →
-    (weylMatrix i * weylMatrix j) * (weylMatrix i * weylMatrix j) =
-      (weylMatrix j * weylMatrix i) * (weylMatrix j * weylMatrix i) := by
-  decide +kernel
-
-private theorem braid_certificate (i j : Fin 4) :
+private theorem braid_certificate : ∀ i j : Fin 4,
     ((CoxeterSystem.braidWord CoxeterMatrix.F₄ i j).map weylMatrix).prod =
       ((CoxeterSystem.braidWord CoxeterMatrix.F₄ j i).map weylMatrix).prod := by
-  by_cases hij : i = j
-  · subst j
-    rfl
-  have hM : ∀ i j : Fin 4, i ≠ j →
-      CoxeterMatrix.F₄ i j = 2 ∨ CoxeterMatrix.F₄ i j = 3 ∨ CoxeterMatrix.F₄ i j = 4 := by
-    decide +kernel
-  rcases hM i j hij with h | h | h
-  all_goals simp only [CoxeterSystem.braidWord, ← CoxeterMatrix.symmetric _ i j, h,
-    CoxeterSystem.alternatingWord, List.concat_eq_append, List.nil_append,
-    List.cons_append, List.map_cons, List.map_nil, List.prod_cons, List.prod_nil, mul_one]
-  · exact braid_certificate_two i j h
-  · simpa only [mul_assoc] using (braid_certificate_three i j h).symm
-  · simpa only [mul_assoc] using braid_certificate_four i j h
+  decide +kernel
 
 private theorem coe_simpleWeylPoint_int (i : Fin 4) :
     ((simpleWeylPoint i ℤ : Matrix.GeneralLinearGroup (Fin 26) ℤ) :
