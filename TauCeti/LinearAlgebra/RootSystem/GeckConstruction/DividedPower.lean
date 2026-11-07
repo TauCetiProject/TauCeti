@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import Mathlib.LinearAlgebra.RootSystem.GeckConstruction.Semisimple
+public import TauCeti.LinearAlgebra.RootSystem.Reduced
 public import TauCeti.RingTheory.DividedPowers.Associative
 import Mathlib.Tactic.FieldSimp
 import Mathlib.Tactic.Module
@@ -117,30 +118,9 @@ private lemma dividedPower_f_eq_omega_mul_dividedPower_e_mul_omega (s : b.suppor
 
 variable [P.IsReduced]
 
-omit [Fintype ι] [DecidableEq ι] [P.IsCrystallographic] in
-/-- A root `k = j + n • s` with `j ≠ -s` is not `-s`: otherwise `-j` would be a positive multiple
-of `s`, which a reduced root pairing excludes. -/
-private lemma ne_neg_of_root_eq_add_nsmul (s : b.support) {j k : ι}
-    (hj : let _i := P.indexNeg; j ≠ -s) {n : ℕ} (hkroot : P.root k = P.root j + n • P.root s) :
-    let _i := P.indexNeg; k ≠ -s := by
-  have : HasUniqueDiv M := .of_isTorsionFree ℚ M
-  intro _i
-  rintro rfl
-  replace hkroot : P.root (-j) = (n + 1) • P.root s := by
-    simp only [indexNeg_neg, root_reflectionPerm, reflection_apply_self,
-      neg_eq_iff_add_eq_zero, add_smul, one_smul] at hkroot ⊢
-    rw [← hkroot]
-    module
-  rcases n.eq_zero_or_pos with rfl | hn
-  · apply hj
-    rw [zero_add, one_smul, EmbeddingLike.apply_eq_iff_eq] at hkroot
-    simp [← hkroot, -indexNeg_neg]
-  · have _i : (n + 1).AtLeastTwo := ⟨by omega⟩
-    exact P.nsmul_notMem_range_root (n := n + 1) (i := s) ⟨-j, hkroot⟩
-
 omit [P.IsReduced] in
-/-- The raising operator kills the root vector of `k = j + n • s` if `j + (n + 1) • s` is not a
-root. -/
+/-- The raising operator kills the root vector of `k = j + n • s` if `k ≠ -s` and
+`j + (n + 1) • s` is not a root. -/
 private lemma e_mulVec_v_eq_zero_of_notMem_range_add (s : b.support) {j k : ι} {n : ℕ}
     (hks : let _i := P.indexNeg; k ≠ -s) (hkroot : P.root k = P.root j + n • P.root s)
     (hmem : P.root j + (n + 1) • P.root s ∉ range P.root) :
@@ -184,7 +164,7 @@ private lemma e_pow_mulVec_v_eq_zero_or_exists (s : b.support) {j : ι}
       · left
         rw [pow_succ', ← Matrix.mulVec_mulVec, h0, Matrix.mulVec_zero]
       -- The ordinary root-string formula excludes the exceptional string through `-s`.
-      have hks := ne_neg_of_root_eq_add_nsmul s hj hkroot
+      have hks := P.ne_neg_of_root_eq_add_nsmul s hj hkroot
       rw [pow_succ', ← Matrix.mulVec_mulVec, hkpow, Matrix.mulVec_smul]
       by_cases hmem : P.root j + (n + 1) • P.root s ∈ range P.root
       -- If the next root exists, advance its index and the rising-factorial coefficient together.
