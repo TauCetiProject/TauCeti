@@ -53,10 +53,10 @@ The homology of `M` vanishes above its dimension, so the alternating sum `∑ᶠ
 is a finite sum, equal to `dim V · ∑ᵢ (-1)ⁱ cᵢ(f)`
 (`TauCeti.IsMorse.finsum_neg_one_pow_mul_finrank_singularHomology`). When `M` has finite CW type,
 the signed count is therefore the cellular Euler characteristic `TauCeti.eulerChar M`
-(`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar`), which vanishes in
-odd dimension (`TauCeti.eulerChar_eq_zero_of_odd_finrank`), and the number of critical points of a
-Morse function has the parity of the Euler characteristic
-(`TauCeti.IsMorse.toNat_totalCriticalCount_modEq_eulerChar`). On `Sⁿ` the
+(`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar`), so the number of
+critical points has the parity of `eulerChar M`
+(`TauCeti.IsMorse.toNat_totalCriticalCount_modEq_eulerChar`), and `eulerChar M` vanishes in odd
+dimension (`TauCeti.eulerChar_eq_zero_of_odd_finrank`). On `Sⁿ` the
 signed count of every Morse function is `1 + (-1) ^ n`
 (`TauCeti.IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_sphere`).
 
@@ -211,11 +211,11 @@ theorem IsMorse.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar [Fini
     hf.finsum_neg_one_pow_mul_finrank_singularHomology (ModuleCat.of K K), hK, Nat.cast_one,
     one_mul]
 
-/-- **The parity of the number of critical points.** If a compact boundaryless manifold `M` has
-finite CW type, the number of critical points of every Morse function on `M` is congruent modulo
-`2` to the Euler characteristic of `M`. -/
+/-- **Parity of the number of critical points.** Every Morse function on a compact boundaryless
+manifold `M` of finite CW type has a number of critical points congruent to the Euler
+characteristic of `M` modulo `2`. -/
 theorem IsMorse.toNat_totalCriticalCount_modEq_eulerChar [FiniteCWType M] (hf : IsMorse I f) :
-    ((totalCriticalCount I f).toNat : ℤ) ≡ eulerChar M [ZMOD 2] := by
+    (totalCriticalCount I f).toNat ≡ eulerChar M [ZMOD 2] := by
   rw [← hf.sum_range_neg_one_pow_mul_toNat_criticalCount_eq_eulerChar]
   exact toNat_totalCriticalCount_modEq_sum_range_neg_one_pow_mul_toNat_criticalCount
     hf.finite_criticalPoints le_rfl

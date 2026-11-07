@@ -98,6 +98,14 @@ theorem continuation_iff (ν : P → Q →₀ A)
 
 variable (ν : RowFiniteContinuationCocycle mP mQ)
 
+/-- Over an algebra concentrated in cohomological degrees `≤ 0`, a row-finite continuation cocycle
+has no entries strictly increasing the index: `ν x y` has degree `indQ y - indP x`. -/
+theorem ν_eq_zero_of_lt_of_nonpos (h𝒜 : ∀ n, 0 < n → 𝒜 n = ⊥) {x : P} {y : Q}
+    (hxy : indP x < indQ y) : ν.ν x y = 0 := by
+  have hν := ν.mem_graded x y
+  rw [h𝒜 _ (by omega)] at hν
+  exact (Submodule.mem_bot R).1 hν
+
 /-- Substitution of finite continuation rows preserves total degree. -/
 theorem linearCombination_mem_totalGrading {n : ℤ} {f : P →₀ A}
     (hf : f ∈ rowFiniteTotalGrading 𝒜 indP n) :
