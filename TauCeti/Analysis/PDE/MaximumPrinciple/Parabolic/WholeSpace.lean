@@ -6,7 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.PDE.MaximumPrinciple.NonDivergence
-import TauCeti.Analysis.SpecialFunctions.Exp.PolynomialBarrier
+import TauCeti.Algebra.Order.Field.PolynomialBarrier
 
 /-!
 # The comparison principle for parabolic equations on the whole space
@@ -192,7 +192,7 @@ private theorem le_mul_exp_mul_of_deriv_le_of_nonpos
   -- Outside the ball of radius `R`, the perturbation dominates the bound on `u`, so `w < 0`.
   set R := |Mu| / ε + 1
   have hout : ∀ ⦃s⦄, s ∈ Icc 0 t₁ → ∀ y, R < ‖y‖ → w (s, y) < 0 := fun s hs y hy ↦
-    Real.sub_mul_exp_mul_neg_of_lt (mul_nonneg hK.le hs.1) hε
+    sub_mul_mul_one_add_sq_neg_of_lt (Real.one_le_exp (mul_nonneg hK.le hs.1)) hε
       (hMu ⟨(s, y), ⟨hsub' hs, mem_univ y⟩, rfl⟩) hy
   by_contra hlt
   have hw₁ : 0 < w (t₁, x₁) := by simp only [w]; linarith
