@@ -36,6 +36,31 @@ namespace TauCeti
 
 variable {ι : Type*} [Fintype ι]
 
+/-- If no prevertex with nonzero exponent sits at `x`, the exponent sum over the prevertices
+at `x` vanishes, so it exceeds `-1`. -/
+private theorem neg_one_lt_sum_filter_eq_of_forall_ne (a e : ι → ℝ) {x : ℝ}
+    (h : ∀ i, e i ≠ 0 → a i ≠ x) : -1 < ∑ i with a i = x, e i := by
+  rw [Finset.sum_eq_zero fun i hi => by_contra fun hei => h i hei (Finset.mem_filter.mp hi).2]
+  norm_num
+
+/-- A continuous positive function on `Ioi p` that tends to `0` at `+∞` and to `+∞` at `p⁺`
+has image `Ioi 0`. -/
+theorem image_Ioi_eq_Ioi_zero_of_tendsto {d : ℝ → ℝ} {p : ℝ} (hcont : ContinuousOn d (Ioi p))
+    (hpos : ∀ x ∈ Ioi p, 0 < d x) (htop : Tendsto d atTop (𝓝 0))
+    (hp : Tendsto d (𝓝[>] p) atTop) : d '' Ioi p = Ioi 0 :=
+  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
+    (isPreconnected_Ioi.intermediate_value_Ioi (le_principal_iff.mpr (Ioi_mem_atTop p))
+      (le_principal_iff.mpr self_mem_nhdsWithin) hcont htop hp)
+
+/-- A continuous positive function on `Iio p` that tends to `0` at `-∞` and to `+∞` at `p⁻`
+has image `Ioi 0`. -/
+theorem image_Iio_eq_Ioi_zero_of_tendsto {d : ℝ → ℝ} {p : ℝ} (hcont : ContinuousOn d (Iio p))
+    (hpos : ∀ x ∈ Iio p, 0 < d x) (hbot : Tendsto d atBot (𝓝 0))
+    (hp : Tendsto d (𝓝[<] p) atTop) : d '' Iio p = Ioi 0 :=
+  Subset.antisymm (by rintro _ ⟨x, hx, rfl⟩; exact hpos x hx)
+    (isPreconnected_Iio.intermediate_value_Ioi (le_principal_iff.mpr (Iio_mem_atBot p))
+      (le_principal_iff.mpr self_mem_nhdsWithin) hcont hbot hp)
+
 /-- **A right outer edge issuing from a logarithmic prevertex is an open ray.**
 If every nonzero prevertex lies at or to the left of `p`, the boundary values for parameters
 strictly larger than `p` form the horizontal ray extending left from the finite value at
@@ -50,15 +75,8 @@ theorem schwarzChristoffelBoundary_image_Ioi_of_prevertex_sum_eq_neg_one
   let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   let d : ℝ → ℝ := fun x => ‖V - B x‖
-  have hsum {x : ℝ} (hx : p < x) : ∑ i with a i = x, e i = 0 := by
-    apply Finset.sum_eq_zero
-    intro i hi
-    have hax := (Finset.mem_filter.mp hi).2
-    by_contra hei
-    exact (not_le_of_gt hx) (hax ▸ ha i hei)
-  have hfinite {x : ℝ} (hx : p < x) : -1 < ∑ i with a i = x, e i := by
-    rw [hsum hx]
-    norm_num
+  have hfinite {x : ℝ} (hx : p < x) : -1 < ∑ i with a i = x, e i :=
+    neg_one_lt_sum_filter_eq_of_forall_ne a e fun i hei => ((ha i hei).trans_lt hx).ne
   have hBtop : Tendsto B atTop (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atTop_atTop
@@ -80,13 +98,8 @@ theorem schwarzChristoffelBoundary_image_Ioi_of_prevertex_sum_eq_neg_one
     rw [norm_pos_iff, sub_ne_zero]
     exact (schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_le
       a e z₀ (hfinite hx) (fun i hi => (ha i hi).trans (le_of_lt hx)) hS).symm
-  have hdimage : d '' Ioi p = Ioi 0 := by
-    apply Subset.antisymm
-    · rintro _ ⟨x, hx, rfl⟩
-      exact hdpos hx
-    · exact isPreconnected_Ioi.intermediate_value_Ioi
-        (le_principal_iff.mpr (Ioi_mem_atTop p))
-        (le_principal_iff.mpr self_mem_nhdsWithin) hcont hdtop hdp
+  have hdimage : d '' Ioi p = Ioi 0 :=
+    image_Ioi_eq_Ioi_zero_of_tendsto hcont (fun _ hx => hdpos hx) hdtop hdp
   have hangle {x : ℝ} (hx : p < x) : schwarzChristoffelEdgeAngle a e x = 0 := by
     rw [schwarzChristoffelEdgeAngle_eq_sum_filter, Finset.sum_eq_zero, mul_zero]
     intro i hi
@@ -123,15 +136,8 @@ theorem schwarzChristoffelBoundary_image_Iio_of_prevertex_sum_eq_neg_one
   let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
   let u : ℂ := exp ((Real.pi * ∑ i, e i) * Complex.I)
   let d : ℝ → ℝ := fun x => ‖B x - V‖
-  have hsum {x : ℝ} (hx : x < p) : ∑ i with a i = x, e i = 0 := by
-    apply Finset.sum_eq_zero
-    intro i hi
-    have hax := (Finset.mem_filter.mp hi).2
-    by_contra hei
-    exact (not_le_of_gt hx) (hax ▸ ha i hei)
-  have hfinite {x : ℝ} (hx : x < p) : -1 < ∑ i with a i = x, e i := by
-    rw [hsum hx]
-    norm_num
+  have hfinite {x : ℝ} (hx : x < p) : -1 < ∑ i with a i = x, e i :=
+    neg_one_lt_sum_filter_eq_of_forall_ne a e fun i hei => (hx.trans_le (ha i hei)).ne'
   have hBbot : Tendsto B atBot (𝓝 V) := by
     apply tendsto_schwarzChristoffelBoundaryValue_atInfinity a e z₀ hS
       tendsto_abs_atBot_atTop
@@ -152,13 +158,8 @@ theorem schwarzChristoffelBoundary_image_Iio_of_prevertex_sum_eq_neg_one
     rw [norm_pos_iff, sub_ne_zero]
     exact schwarzChristoffelBoundary_ne_vertexAtInfinity_of_forall_ge
       a e z₀ (hfinite hx) (fun i hi => (le_of_lt hx).trans (ha i hi)) hS
-  have hdimage : d '' Iio p = Ioi 0 := by
-    apply Subset.antisymm
-    · rintro _ ⟨x, hx, rfl⟩
-      exact hdpos hx
-    · exact isPreconnected_Iio.intermediate_value_Ioi
-        (le_principal_iff.mpr (Iio_mem_atBot p))
-        (le_principal_iff.mpr self_mem_nhdsWithin) hcont hdbot hdp
+  have hdimage : d '' Iio p = Ioi 0 :=
+    image_Iio_eq_Ioi_zero_of_tendsto hcont (fun _ hx => hdpos hx) hdbot hdp
   have hdir {x : ℝ} (hx : x ∈ Iio p) : B x - V = (d x : ℂ) * u := by
     simpa only [B, V, d, u] using
       schwarzChristoffelBoundary_sub_vertexAtInfinity_eq_norm_mul
