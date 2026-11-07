@@ -18,9 +18,9 @@ To compute the pullback of its composite with Frobenius, combine
 `isCharacterMap_scToralDiagramAutPoints` with `isCharacterMap_kostantToralFrobenius` via
 `IsCharacterMap.comp`, obtaining `p ^ k • (diagramAut σ)⁻¹.weightMap`.
 
-The proof specializes the weight-component compatibility of `scModuleDiagramEquiv` and the
-generic toral-closure character-map theorem. In particular it does not require the diagram
-action to permute the weight basis, nor generation of the point group by root subgroups.
+The proof uses the weight-torus action formula and identifies inverse relabelling with the
+dual of the diagram weight map. It does not require the diagram action to permute the weight
+basis, nor generation of the point group by root subgroups.
 
 ## References
 
@@ -52,28 +52,17 @@ theorem isCharacterMap_scToralDiagramAutPoints (hσ : σ ∈ t.diagramSymmetry)
         (t.scWeightBasis ht) (t.scWeight ht) A)
       (t.scToralDiagramAutPoints ht hσ A).toMonoidHom
       (diagramAut ht hσ)⁻¹.toHom.weightMap := by
-  have h := isCharacterMap_kostantNumberedSymmetryPoints
-    (t.lieBasis ht).rootGenerator (t.lieBasis ht).h
-    (representation ℚ (t.lieAlgebra ht) (t.scModule ht)) (t.scLattice ht).toAddSubgroup
-    (t.kostantForm_apply_mem_scLattice ht)
-    (t.isNilpotent_representation_scModule_rootGenerator ht)
-    (t.scWeightBasis ht) (t.scWeight ht) (diagramRootGeneratorPerm σ)
-    (t.scModuleDiagramEquiv ht hσ) (fun _ => t.scModuleDiagramEquiv_mem_scLattice_iff ht hσ)
-    (t.scModuleDiagramEquiv_representation_rootGenerator ht hσ)
-    (diagramRootGeneratorPerm σ).surjective σ
-    (fun _ _ hxy => t.scWeight_apply_eq_of_repr_scModuleDiagramEquiv_ne_zero ht hσ hxy) A
-  have hφ : (diagramAut ht hσ)⁻¹.toHom.weightMap = LinearMap.funLeft ℤ ℤ σ := by
-    rw [diagramAut_inv_weightMap]
-    apply LinearMap.ext
-    intro x
-    exact LinearEquiv.funCongrLeft_apply ℤ ℤ σ x
-  -- Transport only the character-map argument: rewriting the whole specialized point action
-  -- with `rw [hφ]` causes an elaboration timeout.
-  apply (congrArg (IsCharacterMap _ _) hφ).mpr
-  rw [isCharacterMap_iff]
-  intro s
-  apply Subtype.ext
-  simpa only [MulEquiv.coe_toMonoidHom, coe_scToralDiagramAutPoints,
-    coe_kostantNumberedSymmetryPoints] using congrArg Subtype.val (h.map_apply s)
+  refine isCharacterMap_iff.mpr fun s => ?_
+  have hs : torusPointMap (diagramAut ht hσ)⁻¹.toHom.weightMap s =
+      fun j => s (σ⁻¹ j) := by
+    funext j
+    have hsingle : LinearMap.funLeft ℤ ℤ σ (Pi.single j 1) =
+        (Pi.single (σ.symm j) 1 : Fin t.rank → ℤ) :=
+      Pi.single_comp_equiv σ j 1
+    simp only [torusPointMap_apply, diagramAut_inv_weightMap, LinearEquiv.coe_coe,
+      LinearEquiv.funCongrLeft_apply, hsingle, torusCharacter_single, zpow_one,
+      Equiv.Perm.inv_def]
+  simpa only [MulEquiv.coe_toMonoidHom, hs] using
+    t.scToralDiagramAutPoints_kostantToralWeightTorusPoints ht hσ A s
 
 end TauCeti.DynkinType
