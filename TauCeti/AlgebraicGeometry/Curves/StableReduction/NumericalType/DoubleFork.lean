@@ -322,9 +322,9 @@ private lemma intersection_doubleForkEmbedding_eq
   · exact hswap _ _ (hmr l k)
   · exact hrr k l
 
-/-- For a double fork of `(-2)`-indices in a numerical type with at least `t + 2` components, all
-the weights are one common `w` and the intersection numbers of the chain components with each
-other and with the two leaves are the simply laced ones. -/
+/-- For a double fork of `(-2)`-indices in a numerical type with at least `t + 2` components, the
+two leaves have a common weight `w`, and the chain-chain and chain-leaf intersection numbers are
+the simply laced entries scaled by `w`. -/
 private lemma exists_weight_intersection_entries
     (hr : T.IsSelfIntersectionMinusTwoFork t c right)
     (hl : T.IsSelfIntersectionMinusTwoFork t (fun i ↦ c (t - 1 - i)) left)
@@ -366,9 +366,9 @@ private lemma exists_weight_intersection_entries
       exact hleftEdge
     · exact hleftZero hi hi1
 
-/-- The intersection numbers of an injective family `doubleForkEmbedding` of the vertices of the
-affine-`D` diagram are `-w` times its Cartan matrix plus a nonnegative off-diagonal block between
-the two leaves; this contradicts negative definiteness when the family is a proper subset. -/
+/-- If an injective `doubleForkEmbedding` with distinct leaves misses some component, and its
+intersection numbers are `-w` times the affine-`D` Cartan matrix plus the leaf block
+`doubleForkExtra`, then the affine-`D` marks give nonnegative row sums, which is impossible. -/
 private lemma false_of_intersection_doubleForkEmbedding_eq
     (ht : 3 < t) (hleftRight : left ≠ right)
     (he : Function.Injective (doubleForkEmbedding t c left right))
