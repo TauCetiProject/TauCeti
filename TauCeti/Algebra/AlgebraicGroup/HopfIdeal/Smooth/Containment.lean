@@ -58,9 +58,8 @@ variable [HopfAlgebra k H] [HopfAlgebra k K]
 /-- The base change to `κ` of the cotangent complex of an extension vanishes when the kernel of the
 extension lies in the square of the kernel of `P.Ring → κ`. -/
 private theorem lTensor_cotangentComplex_eq_zero {R S κ : Type u} [CommRing R] [CommRing S]
-    [CommRing κ] [Algebra R S] [Algebra R κ] [Algebra S κ] [IsScalarTower R S κ]
+    [CommRing κ] [Algebra R S] [Algebra S κ]
     (P : Algebra.Extension R S) [Algebra P.Ring κ] [IsScalarTower P.Ring S κ]
-    [IsScalarTower R P.Ring κ]
     (h : ∀ x ∈ P.ker, x ∈ RingHom.ker (algebraMap P.Ring κ) ^ 2) :
     P.cotangentComplex.lTensor κ = 0 := by
   apply LinearMap.ext
