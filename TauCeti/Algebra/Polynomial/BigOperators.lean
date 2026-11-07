@@ -51,6 +51,26 @@ theorem coeff_zero_sum_C_mul_X_pow_sub (c : ℕ → R) (N : ℕ) :
 
 end Semiring
 
+section MapProd
+
+variable {ι R S : Type*} [CommRing R] [CommRing S] [IsDomain S] (f : R →+* S)
+
+/-- Over a domain, the image of a finite product of polynomials is nonzero when the image of each
+factor is nonzero. -/
+theorem prod_map_ne_zero (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
+    (∏ k ∈ s, P k).map f ≠ 0 := by
+  rw [Polynomial.map_prod]
+  exact Finset.prod_ne_zero_iff.mpr h
+
+/-- Over a domain, the degree of the image of a finite product of polynomials is the sum of the
+degrees of the images of the factors, when each image is nonzero. -/
+theorem natDegree_prod_map (s : Finset ι) (P : ι → R[X]) (h : ∀ k ∈ s, (P k).map f ≠ 0) :
+    ((∏ k ∈ s, P k).map f).natDegree = ∑ k ∈ s, ((P k).map f).natDegree := by
+  rw [Polynomial.map_prod]
+  exact natDegree_prod _ _ h
+
+end MapProd
+
 variable {ι R : Type*} [CommSemiring R]
 
 /-- If each factor `f i` has degree at most `n i`, the coefficient of the product in degree
