@@ -18,7 +18,8 @@ unique, and how cells account for points in consecutive skeleta, so that a map s
 `skeletonLT C (n + 1)` into a set exactly when it does so on `skeletonLT C n` and on the closed
 `n`-cells (`TauCeti.mapsTo_skeletonLT_succ_iff`).  Every point of the complex lies in some
 skeleton above any given level.  With a single `0`-cell, the `0`-skeleton is the base together
-with that point (`TauCeti.skeletonLT_one_eq_insert`).
+with that point (`TauCeti.skeletonLT_one_eq_insert`).  The preimages of the skeleta under a map
+into the ambient space form an increasing filtration (`TauCeti.preimageSkeleton`).
 
 The mathematical source is Hatcher, *Algebraic Topology*, Section 2.2.
 -/
@@ -153,5 +154,39 @@ lemma exists_mem_skeletonLT_add (k : ℕ) {x : X} (hx : x ∈ C) :
   rw [← iUnion_skeletonLT_eq_complex (C := C), mem_iUnion] at hx
   obtain ⟨j, hj⟩ := hx
   exact ⟨j, skeletonLT_mono (by exact_mod_cast Nat.le_add_left j k) hj⟩
+
+variable {E : Type*}
+
+variable (C) in
+/-- The preimage under `f : E → X` of the `q`-skeleton of a relative CW complex `C` in `X`, the
+`q`th stage of the skeletal filtration of `E`. The `q`-skeleton is `skeletonLT C (q + 1)`, the union
+of the base and of the cells of dimension at most `q`; for `q < 0` it is the base. -/
+def preimageSkeleton (f : E → X) (q : ℤ) : Set E :=
+  f ⁻¹' skeletonLT C ((q + 1).toNat : ℕ∞)
+
+/-- The defining equation of the skeletal filtration: `preimageSkeleton C f q` is the preimage
+under `f` of `skeletonLT C (q + 1)`. -/
+lemma preimageSkeleton_def (f : E → X) (q : ℤ) :
+    preimageSkeleton C f q = f ⁻¹' skeletonLT C ((q + 1).toNat : ℕ∞) := by
+  rw [preimageSkeleton]
+
+@[simp]
+lemma mem_preimageSkeleton_iff (f : E → X) (q : ℤ) (x : E) :
+    x ∈ preimageSkeleton C f q ↔ f x ∈ skeletonLT C ((q + 1).toNat : ℕ∞) := Iff.rfl
+
+/-- The preimages of the skeleta form an increasing filtration. -/
+lemma monotone_preimageSkeleton (f : E → X) : Monotone (preimageSkeleton C f) :=
+  fun _ _ h ↦ Set.preimage_mono (skeletonLT_mono (by exact_mod_cast Int.toNat_le_toNat (by lia)))
+
+/-- Below degree `0` the skeletal filtration is the preimage of the base. -/
+@[simp]
+lemma preimageSkeleton_of_neg (f : E → X) {q : ℤ} (hq : q < 0) :
+    preimageSkeleton C f q = f ⁻¹' D := by
+  rw [preimageSkeleton_def, Int.toNat_of_nonpos (by lia), Nat.cast_zero, skeletonLT_zero_eq_base]
+
+/-- For an absolute CW complex the skeletal filtration is empty below degree `0`. -/
+lemma preimageSkeleton_eq_empty {C : Set X} [CWComplex C] (f : E → X) {q : ℤ} (hq : q < 0) :
+    preimageSkeleton C f q = ∅ := by
+  rw [preimageSkeleton_of_neg f hq, Set.preimage_empty]
 
 end TauCeti

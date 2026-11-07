@@ -71,7 +71,8 @@ private theorem eLpNorm_le_ofReal_inv_mul_of_forall {p : ℝ≥0∞} {k : ℕ∞
   have h1 := hC (fun x => φ (r⁻¹ • x))
     (hφ.comp (ContDiff.const_smul r⁻¹ (contDiff_id (𝕜 := ℝ) (E := E))))
     (φ.hasCompactSupport.comp_homeomorph (Homeomorph.smul (Units.mk0 r⁻¹ (inv_ne_zero hr.ne'))))
-  rw [μ.eLpNorm_comp_inv_smul _ hr p, μ.eLpNorm_fderiv_comp_inv_smul _ hr p] at h1
+  rw [μ.eLpNorm_comp_inv_smul _ hr.ne' p, μ.eLpNorm_fderiv_comp_inv_smul _ hr.ne' p,
+    abs_of_pos hr] at h1
   set s := ENNReal.ofReal (r ^ ((finrank ℝ E : ℝ) / p.toReal)) with hs_def
   have hs0 : s ≠ 0 := by
     rw [hs_def, Ne, ENNReal.ofReal_eq_zero, not_le]
