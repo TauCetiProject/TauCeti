@@ -10,6 +10,8 @@ public import TauCeti.Algebra.AlgebraicGroup.Representation.Tannaka.PointFaithfu
 public import TauCeti.Algebra.Coalgebra.Comodule.Finite.ScalarExtension.Monoidal
 public import TauCeti.CategoryTheory.Monoidal.Conjugation
 
+import TauCeti.Algebra.Category.ModuleCat.Monoidal.Tmul
+
 /-!
 # Tensor automorphisms from algebraic-group points
 
@@ -183,25 +185,6 @@ theorem scalarExtensionComponent_natural
   simpa only [bmap, SemimoduleCat.hom_comp, SemimoduleCat.hom_ofHom] using
     congrArg SemimoduleCat.Hom.hom hcat'
 
-/-- A linear map `c` on the target of `e : X ⊗[A] Y →ₗ[A] Z` that intertwines `e` with the tensor
-product of two linear maps `a` and `b`, as a square of module maps, evaluates on the image of a
-pure tensor by `c (e (x ⊗ₜ y)) = e (a x ⊗ₜ b y)`. -/
-private theorem apply_tmul_of_comp_eq {X Y Z : Type u} [AddCommMonoid X] [Module A X]
-    [AddCommMonoid Y] [Module A Y] [AddCommMonoid Z] [Module A Z] (e : X ⊗[A] Y →ₗ[A] Z)
-    {a : X →ₗ[A] X} {b : Y →ₗ[A] Y} {c : Z →ₗ[A] Z}
-    (h : (SemimoduleCat.ofHom e : (SemimoduleCat.of A X ⊗ SemimoduleCat.of A Y) ⟶
-            SemimoduleCat.of A Z) ≫ SemimoduleCat.ofHom c =
-      (SemimoduleCat.ofHom a ⊗ₘ SemimoduleCat.ofHom b) ≫
-        (SemimoduleCat.ofHom e : (SemimoduleCat.of A X ⊗ SemimoduleCat.of A Y) ⟶
-            SemimoduleCat.of A Z))
-    (x : X) (y : Y) : c (e (x ⊗ₜ[A] y)) = e (a x ⊗ₜ[A] b y) := by
-  have hlin := congrArg SemimoduleCat.Hom.hom h
-  -- The hypothesis `h` mentions the object `of A X ⊗ of A Y`, whose carrier is `X ⊗[A] Y` only up
-  -- to unfolding the monoidal structure of `SemimoduleCat`, so `rw` cannot see the redexes of
-  -- `hom_comp` and `hom_tensorHom`; `erw` matches them up to that definitional equality.
-  erw [SemimoduleCat.hom_comp, SemimoduleCat.hom_comp, SemimoduleCat.hom_tensorHom] at hlin
-  exact LinearMap.congr_fun hlin (x ⊗ₜ[A] y)
-
 /-- Tensor compatibility of the explicitly transported components of a tensor automorphism. -/
 @[simp]
 theorem scalarExtensionComponent_tensor
@@ -262,8 +245,7 @@ theorem scalarExtensionComponent_tensor
       ofHom_scalarExtensionComponent R H A η N hN]
     convert hcat using 1 <;>
       simp only [iM, iN, iMN, aM, aN, aMN, eqToIso.inv, eqToIso.hom] <;> rfl
-  exact apply_tmul_of_comp_eq A
-    (TensorProduct.AlgebraTensorModule.distribBaseChange R A M N).symm.toLinearMap hcat' x y
+  exact SemimoduleCat.apply_tmul_of_comp_eq d hcat' x y
 
 -- Conjugating by an object transport turns the identity into the identity. Stated for a
 -- variable object so that the transport can be substituted away.
