@@ -6,6 +6,7 @@ Authors: The Tau Ceti contributors
 module
 
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Compactification
+public import TauCeti.Analysis.Convex.PolygonalRange
 public import TauCeti.Data.Fin.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.Polygon.Basic
 public import TauCeti.Analysis.Complex.Conformal.SchwarzChristoffel.UnboundedEdge
@@ -58,86 +59,22 @@ theorem range_schwarzChristoffelCompactifiedBoundary (a e : Fin (n + 1) → ℝ)
     (hfinite : ∀ j, -1 < ∑ i with a i = a j, e i) (hinfty : ∑ i, e i < -1) :
     Set.range (schwarzChristoffelCompactifiedBoundary a e z₀) =
       (schwarzChristoffelPolygon a e z₀).boundary ℝ := by
-  classical
-  let B : ℝ → ℂ := schwarzChristoffelBoundary a e z₀
-  let V : ℂ := schwarzChristoffelVertexAtInfinity a e z₀
-  have hfree (i : Fin n) :
-      ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) :=
+  have hfinite' (i : Fin n) : ∀ j, e j ≠ 0 → a j ∉ Ioo (a i.castSucc) (a i.succ) :=
     fun j _ ↦ not_mem_Ioo_castSucc_succ a ha i j
-  have hright : ∀ i, e i ≠ 0 → a i ≤ a (Fin.last n) := by
-    intro i _
-    exact ha i.le_last
-  have hleft : ∀ i, e i ≠ 0 → a 0 ≤ a i := by
-    intro i _
-    exact ha i.zero_le
-  have hbounded (i : Fin n) :
-      B '' Icc (a i.castSucc) (a i.succ) =
-        segment ℝ (schwarzChristoffelVertex a e z₀ i.castSucc)
-          (schwarzChristoffelVertex a e z₀ i.succ) := by
-    exact schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
-      (ha i.castSucc_le_succ) (hfree i) (hfinite i.castSucc) (hfinite i.succ)
-  have hrightImage :
-      B '' Ici (a (Fin.last n)) =
-        segment ℝ (schwarzChristoffelVertex a e z₀ (Fin.last n)) V \ {V} := by
-    exact schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last n)
-      (hfinite (Fin.last n)) hright hinfty
-  have hleftImage :
-      B '' Iic (a 0) =
-        segment ℝ (schwarzChristoffelVertex a e z₀ 0) V \ {V} := by
-    exact schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0
-      (hfinite 0) hleft hinfty
+  have hb := fun i : Fin n ↦ schwarzChristoffelBoundary_image_Icc_prevertex a e z₀
+    (ha i.castSucc_le_succ) (hfinite' i) (hfinite i.castSucc) (hfinite i.succ)
+  have hr := schwarzChristoffelBoundary_image_Ici_prevertex a e z₀ (Fin.last n)
+    (hfinite (Fin.last n)) (fun i _ ↦ ha i.le_last) hinfty
+  have hl := schwarzChristoffelBoundary_image_Iic_prevertex a e z₀ 0
+    (hfinite 0) (fun i _ ↦ ha i.zero_le) hinfty
   rw [schwarzChristoffelPolygon_boundary]
-  ext z
-  constructor
-  · rintro ⟨x, rfl⟩
-    induction x using OnePoint.rec with
-    | infty =>
-        simp only [schwarzChristoffelCompactifiedBoundary_infty]
-        exact Or.inr (left_mem_segment ℝ _ _)
-    | coe x =>
-        simp only [schwarzChristoffelCompactifiedBoundary_coe]
-        by_cases hxleft : x ≤ a 0
-        · have himage : B x ∈ B '' Iic (a 0) := ⟨x, hxleft, rfl⟩
-          rw [hleftImage] at himage
-          exact Or.inr
-            (segment_symm ℝ (schwarzChristoffelVertex a e z₀ 0) V ▸ himage.1)
-        · by_cases hxright : a (Fin.last n) ≤ x
-          · have himage : B x ∈ B '' Ici (a (Fin.last n)) := ⟨x, hxright, rfl⟩
-            rw [hrightImage] at himage
-            exact Or.inl (Or.inr himage.1)
-          · have hn : n ≠ 0 := by
-              intro h
-              subst n
-              simp only [Fin.last_zero] at hxright
-              exact hxright (le_of_lt (lt_of_not_ge hxleft))
-            obtain ⟨i, hi⟩ := exists_mem_Icc_castSucc_succ a hn
-              ⟨(lt_of_not_ge hxleft).le, (lt_of_not_ge hxright).le⟩
-            have himage : B x ∈ B '' Icc (a i.castSucc) (a i.succ) := ⟨x, hi, rfl⟩
-            rw [hbounded i] at himage
-            exact Or.inl (Or.inl (Set.mem_iUnion.mpr ⟨i, himage⟩))
-  · intro hz
-    rcases hz with (hz | hzleft)
-    · rcases hz with (hzbounded | hzright)
-      · obtain ⟨i, hi⟩ := Set.mem_iUnion.mp hzbounded
-        rw [← hbounded i] at hi
-        obtain ⟨x, _, rfl⟩ := hi
-        exact ⟨(x : OnePoint ℝ), by simp [B]⟩
-      · by_cases hzeq : z = V
-        · subst z
-          exact ⟨∞, by simp [V]⟩
-        · have hi' : z ∈ segment ℝ (schwarzChristoffelVertex a e z₀ (Fin.last n)) V \ {V} :=
-            ⟨hzright, by simpa using hzeq⟩
-          rw [← hrightImage] at hi'
-          obtain ⟨x, _, rfl⟩ := hi'
-          exact ⟨(x : OnePoint ℝ), by simp [B]⟩
-    · by_cases hzeq : z = V
-      · subst z
-        exact ⟨∞, by simp [V]⟩
-      · have hi' : z ∈ segment ℝ (schwarzChristoffelVertex a e z₀ 0) V \ {V} :=
-          ⟨segment_symm ℝ V (schwarzChristoffelVertex a e z₀ 0) ▸ hzleft,
-            by simpa using hzeq⟩
-        rw [← hleftImage] at hi'
-        obtain ⟨x, _, rfl⟩ := hi'
-        exact ⟨(x : OnePoint ℝ), by simp [B]⟩
+  exact (range_subset_union_segments a _ _ _ _
+    (schwarzChristoffelCompactifiedBoundary_infty a e z₀)
+    (schwarzChristoffelCompactifiedBoundary_coe a e z₀) (fun i ↦ (hb i).subset)
+    (hr.subset.trans sdiff_subset) (hl.subset.trans sdiff_subset)).antisymm
+    (union_segments_subset_range a _ _ _ _
+      (schwarzChristoffelCompactifiedBoundary_infty a e z₀)
+      (schwarzChristoffelCompactifiedBoundary_coe a e z₀) (fun i ↦ (hb i).superset)
+      hr.superset hl.superset)
 
 end TauCeti
