@@ -52,30 +52,6 @@ namespace TauCeti.UpperHalfPlane.ConvexPolygon
 
 variable {n : ℕ} [NeZero n] {P : ConvexPolygon n}
 
-/-- If `g S g⁻¹` acts as `z ↦ μ * z + c` with `0 < μ < 1`, then the images of points at real part
-`u` and height `μ⁻¹ ^ k` under `g S ^ k g⁻¹` tend to the point at height `1` over the fixed
-point `c / (1 - μ)`. -/
-private theorem tendsto_conj_pow_smul_inv_pow {g S : PSL(2, ℝ)} {μ c : ℝ} (hμ₀ : 0 < μ)
-    (hμ₁ : μ < 1) (hSz : ∀ z : ℍ, (((g * S * g⁻¹) • z : ℍ) : ℂ) = μ * z + c) (u : ℝ)
-    (w : ℕ → ℍ) (hw : ∀ k, (w k : ℂ) = u + ((μ⁻¹ ^ k : ℝ) : ℂ) * Complex.I) (z₀ : ℍ)
-    (hz₀ : (z₀ : ℂ) = ((c / (1 - μ) : ℝ) : ℂ) + Complex.I) :
-    Tendsto (fun k : ℕ ↦ (g * S ^ k * g⁻¹) • w k) atTop (𝓝 z₀) := by
-  rw [UpperHalfPlane.isEmbedding_coe.tendsto_nhds_iff, Function.comp_def, hz₀]
-  have hμk : Tendsto (fun k : ℕ ↦ ((c / (1 - μ) : ℝ) : ℂ) + ((μ ^ k : ℝ) : ℂ) *
-      (u - ((c / (1 - μ) : ℝ) : ℂ)) + Complex.I) atTop
-      (𝓝 (((c / (1 - μ) : ℝ) : ℂ) + ((0 : ℝ) : ℂ) * (u - ((c / (1 - μ) : ℝ) : ℂ)) +
-        Complex.I)) :=
-    (((Complex.continuous_ofReal.tendsto 0).comp
-      (tendsto_pow_atTop_nhds_zero_of_lt_one hμ₀.le hμ₁)).mul_const _ |>.const_add _).add_const _
-  convert hμk using 2 with k
-  · rw [← conj_pow, coe_pow_smul_eq_of_coe_smul_eq hμ₁.ne hSz, hw]
-    have : (μ : ℂ) ^ k * ((μ⁻¹ ^ k : ℝ) : ℂ) = 1 := by
-      have : μ ^ k * μ⁻¹ ^ k = 1 := by rw [← mul_pow, mul_inv_cancel₀ hμ₀.ne', one_pow]
-      exact_mod_cast this
-    push_cast at this ⊢
-    linear_combination Complex.I * this
-  · simp
-
 /-- A contracting affine map at an ideal vertex destroys local finiteness: if `g` moves the ideal
 vertex `ξ` of `P` to `∞` and `g S g⁻¹` acts as `z ↦ μ * z + c` with `0 < μ < 1`, then the
 translates of `P` by the powers of `S` accumulate at `g⁻¹ • (x₀ + i)`, where `x₀` is the fixed point
@@ -109,8 +85,9 @@ private theorem not_locallyFinite_of_coe_conj_smul_eq {j : Fin n} {ξ : OnePoint
       (((g • P).mem_vertexSector_iff_of_vertex_eq_inr_infty hQ _).2
         ⟨by simp [w, u], by simpa [w, u] using huv.le⟩)
   set z₀ : ℍ := ⟨x₀ + Complex.I, by simp⟩
-  have hlim : Tendsto (fun k ↦ (g * S ^ k * g⁻¹) • w k) atTop (𝓝 z₀) :=
-    tendsto_conj_pow_smul_inv_pow hμ₀ hμ₁ hSz u w (fun k ↦ by simp [w, ht]) z₀ (by simp [z₀, x₀])
+  have hlim : Tendsto (fun k ↦ (g * S ^ k * g⁻¹) • w k) atTop (𝓝 z₀) := by
+    simpa only [conj_pow] using tendsto_pow_smul_of_coe_smul_eq hμ₀ hμ₁ hSz u w
+      (fun k ↦ by simp [w, ht]) z₀ (by simp [z₀, x₀])
   -- the powers `S ^ k` are pairwise distinct, as `g S^k g⁻¹` moves `i` to height `μ ^ k`
   have him (k : ℕ) : ((g * S ^ k * g⁻¹) • UpperHalfPlane.I).im = μ ^ k := by
     rw [← UpperHalfPlane.coe_im, hpow]
