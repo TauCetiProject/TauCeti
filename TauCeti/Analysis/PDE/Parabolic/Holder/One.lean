@@ -42,6 +42,8 @@ consecutive orders, and that the spatial gradient lowers the order by one: it ma
   value and the Hölder gradient, as continuous linear maps.
 * `TauCeti.ParabolicC1HolderSpace.mk`: the constructor from a value, a Hölder gradient and a
   finite temporal seminorm.
+* `TauCeti.ParabolicC1HolderSpace.timeSliceL` and `TauCeti.ParabolicC1HolderSpace.norm_eq`: the
+  `ℓ^∞` family of Hölder time slices, and the norm as the sum of the three field norms.
 * `TauCeti.ParabolicC1HolderSpace.timeEHolderNorm_le_nnnorm` and
   `TauCeti.ParabolicC1HolderSpace.fullNorm_le_norm_le`: the temporal seminorm and the comparison
   with the full parabolic norm.
@@ -164,8 +166,8 @@ def spatialFDerivL :
     ParabolicC1HolderSpace α E F a b →L[ℝ] HolderSpace α (slab (E := E) a b) (E →L[ℝ] F) :=
   gradJetL.comp toJetL
 
-/-- The family of Hölder time slices. -/
-private def timeSliceL : ParabolicC1HolderSpace α E F a b →L[ℝ]
+/-- The family of Hölder time slices `x ↦ (t ↦ u (x, t))`. -/
+def timeSliceL : ParabolicC1HolderSpace α E F a b →L[ℝ]
     lp (fun _ : E ↦ HolderSpace ((1 + α) / 2) (Icc a b) F) ∞ :=
   sliceJetL.comp toJetL
 
@@ -206,7 +208,8 @@ theorem fderiv_eq (f : ParabolicC1HolderSpace α E F a b) (t : Icc a b) (x : E) 
     fderiv ℝ (fun y ↦ f (slabMk y t)) x = spatialFDerivL f (slabMk x t) :=
   (f.hasSpatialFDerivAt t x).fderiv
 
-private theorem timeSliceL_apply (f : ParabolicC1HolderSpace α E F a b) (x : E) (t : Icc a b) :
+/-- The time slice at `x` is the map `t ↦ u (x, t)`. -/
+theorem timeSliceL_apply (f : ParabolicC1HolderSpace α E F a b) (x : E) (t : Icc a b) :
     timeSliceL f x t = f (slabMk x t) :=
   (isJetGraph_toJetL f).2 x t
 
@@ -218,7 +221,7 @@ private theorem coe_timeSliceL (f : ParabolicC1HolderSpace α E F a b) (x : E) :
 
 /-- The norm is the sum of the supremum norm, the Hölder norm of the gradient, and the norm of
 the family of Hölder time slices. -/
-private theorem norm_eq (f : ParabolicC1HolderSpace α E F a b) :
+theorem norm_eq (f : ParabolicC1HolderSpace α E F a b) :
     ‖f‖ = ‖valueL f‖ + (‖spatialFDerivL f‖ + ‖timeSliceL f‖) := by
   rw [← norm_toJetL f]
   simp only [WithLp.prod_norm_eq_add (show (0 : ℝ) < (1 : ℝ≥0∞).toReal by norm_num),
