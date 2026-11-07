@@ -124,7 +124,16 @@ private theorem exists_eventually_cone_schwarzChristoffelPrimitive
   have hz0 : z ≠ 0 := fun h => by simp [h] at hzH
   have hpow0 : z ^ (β : ℂ) ≠ 0 := cpow_ne_zero_iff.mpr (Or.inl hz0)
   have herror : ‖F - P‖ ≤ η * ‖P‖ := norm_sub_cpow_div_le_of_dist_div_cpow_le hβ hpow0 hz
-  have hcone : c * ‖P‖ ≤ (u * P).re := cos_mul_norm_le_re_exp_mul_cpow_div hβ hβhigh hzH
+  have hcone : c * ‖P‖ ≤ (u * P).re := by
+    have h : c * ‖z ^ (β : ℂ)‖ ≤ (u * z ^ (β : ℂ)).re :=
+      cos_mul_norm_le_re_exp_mul_cpow hβ hβhigh hzH.le
+    calc c * ‖P‖ = c * ‖z ^ (β : ℂ)‖ / β := by
+          rw [show ‖P‖ = ‖z ^ (β : ℂ)‖ / β by simp [P, abs_of_pos hβ]]
+          ring
+      _ ≤ (u * z ^ (β : ℂ)).re / β := by gcongr
+      _ = (u * P).re := by
+          rw [show u * P = u * z ^ (β : ℂ) / (β : ℂ) from (mul_div_assoc _ _ _).symm,
+            Complex.div_ofReal_re]
   -- Widen the leading cone from cosine bound `c` to `-(1 - η)`; the same
   -- error estimate controls both the real part and the norm of the primitive.
   have hreError : |(u * (F - P)).re| ≤ η * ‖P‖ := by
