@@ -44,6 +44,8 @@ is not treated.
 
 ## Main results
 
+* `TauCeti.Vortex.exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup`: for `u ∈ G_s`, the complex
+  function `u - 1` lies in `H^s(ℂ; ℂ)`.
 * `TauCeti.Vortex.tendsto_cocompact_of_mem_sobolevGaugeGroup`: elements of `G_s` tend to one at
   infinity.
 * `TauCeti.Vortex.mem_sobolevGaugeGroup_inf_framedGaugeGroup`: the smooth subgroup of `G_s` is
@@ -112,6 +114,31 @@ theorem mem_sobolevGaugeGroup {s : ℝ} (hs : 1 < s) (u : ℂ → Circle) :
       (fun z ↦ (u z : ℂ).re - 1) ∈ realSobolevFunctions ℂ s 2 ∧
       (fun z ↦ (u z : ℂ).im) ∈ realSobolevFunctions ℂ s 2 :=
   Iff.rfl
+
+open MeasureTheory in
+open scoped SchwartzMap in
+/-- **Elements of `G_s` are `1 + h` with `h ∈ H^s(ℂ; ℂ)`.** For `u ∈ G_s`, the complex function
+`u - 1` agrees almost everywhere with an `L²` function in Mathlib's Bessel-potential space
+`H^s(ℂ; ℂ)`. -/
+theorem exists_memSobolev_ae_eq_of_mem_sobolevGaugeGroup {s : ℝ} {hs : 1 < s} {u : ℂ → Circle}
+    (hu : u ∈ sobolevGaugeGroup hs) :
+    ∃ h : Lp ℂ 2 (volume : Measure ℂ), h =ᵐ[volume] (fun z ↦ (u z : ℂ) - 1) ∧
+      MemSobolev s 2 (h : 𝓢'(ℂ, ℂ)) := by
+  obtain ⟨-, h₁, h₂⟩ := (mem_sobolevGaugeGroup hs u).1 hu
+  obtain ⟨a, hae, ha⟩ := mem_realSobolevFunctions.1 h₁
+  obtain ⟨b, hbe, hb⟩ := mem_realSobolevFunctions.1 h₂
+  refine ⟨ofRealCLM.compLp a + I • ofRealCLM.compLp b, ?_, ?_⟩
+  · filter_upwards [Lp.coeFn_add (ofRealCLM.compLp a) (I • ofRealCLM.compLp b),
+      Lp.coeFn_smul I (ofRealCLM.compLp b), ofRealCLM.coeFn_compLp (p := 2) (μ := volume) a,
+      ofRealCLM.coeFn_compLp (p := 2) (μ := volume) b, hae, hbe] with z h h' ha' hb' ha'' hb''
+    rw [h, Pi.add_apply, h', Pi.smul_apply, ha', hb']
+    apply Complex.ext <;> simp [ha'', hb'']
+  · have e := map_add (Lp.toTemperedDistributionCLM ℂ (volume : Measure ℂ) 2)
+      (ofRealCLM.compLp a) (I • ofRealCLM.compLp b)
+    rw [map_smul, Lp.toTemperedDistributionCLM_apply, Lp.toTemperedDistributionCLM_apply,
+      Lp.toTemperedDistributionCLM_apply] at e
+    rw [e]
+    exact ha.add (hb.smul I)
 
 /-- The Sobolev gauge groups decrease as the order increases: `G_s ≤ G_s'` for `1 < s' ≤ s`. -/
 theorem sobolevGaugeGroup_mono {s s' : ℝ} (hs' : 1 < s') (h : s' ≤ s) :
