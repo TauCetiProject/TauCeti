@@ -8,7 +8,6 @@ module
 public import TauCeti.Analysis.Complex.Fuchsian.Compactification.Manifold
 public import TauCeti.Analysis.Complex.Fuchsian.DirichletDomain.Cofinite
 import TauCeti.Geometry.Manifold.Complex.Analytic
-import TauCeti.MeasureTheory.Group.DirichletDomain.Compact
 
 /-!
 # Cusp-free compactification and cocompact Fuchsian groups
@@ -76,12 +75,6 @@ end Subgroup.CompactifiedQuotient
 namespace Subgroup
 
 variable {Γ : Subgroup PSL(2, ℝ)} [DiscreteTopology Γ]
-
-/-- A discrete subgroup with compact coarse quotient is cofinite. Its compact Dirichlet
-fundamental domain has finite hyperbolic area. -/
-theorem isCofinite_of_compactSpace [CompactSpace (orbitRel.Quotient Γ ℍ)] : Γ.IsCofinite := by
-  obtain ⟨p, hp⟩ := Γ.exists_isFundamentalDomain_dirichletDomain
-  exact hp.isCofinite_of_volume_ne_top (isCompact_dirichletDomain_of_compactSpace p).measure_ne_top
 
 /-- A discrete subgroup has compact coarse quotient exactly when it is cofinite and cusp-free. -/
 theorem compactSpace_quotient_iff_isCofinite_and_isEmpty_cuspOrbit :
