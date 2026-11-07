@@ -79,7 +79,6 @@ theorem differentiable_divisorProductOne : Differentiable ℂ (divisorProductOne
 
 include hsum in
 /-- The genus-one divisor product has zero first derivative at the origin. -/
-@[simp]
 theorem deriv_divisorProductOne_zero : deriv (divisorProductOne f) 0 = 0 := by
   have h := logDeriv_tprod_weierstrassFactorOne_pow
     (fun ρ : (MeromorphicOn.divisor f Set.univ).support ↦ (ρ : ℂ)⁻¹)
